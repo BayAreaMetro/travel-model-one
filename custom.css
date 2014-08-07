@@ -2,6 +2,7 @@ table {
   max-width: 95%;
   border: 1px solid rgba(0,0,0,0.15);
   background-color: whiteSmoke;
+  padding: 5px;
 }
 th {
   font-weight: bold;

@@ -40,6 +40,9 @@ The land use file: http://analytics.mtc.ca.gov/foswiki/Main/TazData
 ```{r ReadHouseholds}
 input.pop.households <- read.table(file = "hhFile.p2011s3a1.2010.csv", header=TRUE, sep=",")
 input.ct.households  <- read.table(file = "householdData_3.csv", header=TRUE, sep = ",")
+walk_subzone_labels  <- c("Cannot walk to transit (more than two-thirds of a mile away)",
+                          "Short-walk to transit (less than one-third of a mile)",
+                          "Long-walk to transit (between one-third and two-thirds of a mile)")
 
 input.tazData <- read.table(file="tazData.csv", header=TRUE, sep=",")
 county_labels <- c("San\nFrancisco","San\nMateo","Santa\nClara","Alameda",
@@ -78,24 +81,24 @@ households <- mutate(households, incQ=1*(income<30000) + 2*((income>=30000)&(inc
 summary(households$incQ)
 
 # workers are hworkers capped at 4
-households <- mutate(households, workers=4*(hworkers>=4) + hworkers*(hworkers<4))
+households    <- mutate(households, workers=4*(hworkers>=4) + hworkers*(hworkers<4))
+worker_labels <- c("Zero", "One", "Two", "Three", "Four or more")
 
 # kidsNoDr is 1 if the household has children in the househole that don't drive
 # (either pre-school age or school age)
-households <- mutate(households, kidsNoDr=(hpresch>=1)|(hschpred>=1))
+households    <- mutate(households, kidsNoDr=(hpresch>=1)|(hschpred>=1))
 ```
 
 ## Auto Ownership Summary By County
 ```{r AutoOwnershipSummaryByCountyGraph, fig.width=8, fig.height=5}
 # summarize
-auto_ownership_summary <- summarise(group_by(households, SD, COUNTY, autos, incQ, walk_subzone, workers, kidsNoDr), freq=n())
+autoown_summary <- summarise(group_by(households, SD, COUNTY, autos, incQ, walk_subzone, workers, kidsNoDr), freq=n())
 auto_labels <- c("Zero automobiles", "One automobile", "Two automobiles",
                  "Three automobiles", "Four or more automobiles")
 
 # by County
-auto_ownership_summary_county <- summarise(group_by(auto_ownership_summary, COUNTY, autos), freq=sum(freq))
-# png("auto_ownership_summary_county.png", height=500, width=800)
-ggplot(auto_ownership_summary_county, aes(x=as.factor(COUNTY), y=freq, fill=as.factor(autos))) +
+autoown_summary_county <- summarise(group_by(autoown_summary, COUNTY, autos), freq=sum(freq))
+ggplot(autoown_summary_county, aes(x=as.factor(COUNTY), y=freq, fill=as.factor(autos))) +
   geom_bar(stat="identity", position="fill") +
   scale_y_continuous(labels=percent, breaks=seq(0,1,0.1)) +
   scale_x_discrete(labels=county_labels) +
@@ -108,16 +111,134 @@ ggplot(auto_ownership_summary_county, aes(x=as.factor(COUNTY), y=freq, fill=as.f
 ```
 
 ```{r AutoOwnershipSummaryByCountyTable, results='asis', echo=FALSE}
-aosc_table <- dcast(auto_ownership_summary_county, autos ~ COUNTY, value.var="freq")
+aos_ac_table                     <- dcast(autoown_summary_county, autos ~ COUNTY, value.var="freq")
 # make rownames readable
-stopifnot(aosc_table$autos == c(0,1,2,3,4))
-rownames(aosc_table) <- auto_labels
-aosc_table           <- select(aosc_table, -autos)
+stopifnot(aos_ac_table$autos == c(0,1,2,3,4))
+rownames(aos_ac_table)           <- auto_labels
+aos_ac_table                     <- select(aos_ac_table, -autos)
 # add Sum row and name it Everyone
-aosc_table_summed    <- addmargins(as.table(as.matrix(aosc_table)), 1, FUN=sum)
-rownames(aosc_table)[6] <- "Everyone"
+aos_ac_table_summed              <- addmargins(as.table(as.matrix(aos_ac_table)), 1, FUN=sum)
+rownames(aos_ac_table_summed)[6] <- "Everyone"
 # name columns
-colnames(aosc_table) <- county_labels
-aosc_xtable          <- xtable(apply(aosc_table, 2, prettyNum, big.mark=","), align="lrrrrrrrrr")
-print(aosc_xtable, type="html")
+colnames(aos_ac_table_summed)    <- county_labels
+aos_ac_xtable                    <- xtable(apply(aos_ac_table_summed, 2, prettyNum, big.mark=","), 
+                                         align="lrrrrrrrrr",
+                                         caption="Automobile Ownership Levels by County")
+print(aos_ac_xtable, type="html")
+
+
+# shares
+aos_ac_table_share              <- prop.table(as.table(as.matrix(aos_ac_table)),2)
+aos_ac_table_share              <- addmargins(aos_ac_table_share, 1, FUN=sum)
+rownames(aos_ac_table_share)[6] <- "Everyone"
+colnames(aos_ac_table_share)    <- county_labels
+aos_ac_xtable_share             <- xtable(apply(aos_ac_table_share, 2, function(u) sprintf("%.1f%%",u*100)),
+                                        align="lrrrrrrrrr",
+                                        caption="Automobile Ownership Share by County")
+rownames(aos_ac_xtable_share)   <- append(auto_labels,"Everyone")
+print(aos_ac_xtable_share, type="html")
+```
+
+## Auto Ownership Summary By Workers
+```{r AutoOwnershipSummaryByWorkersGraph, fig.width=8, fig.height=5}
+# by Workers
+autoown_summary_workers <- summarise(group_by(autoown_summary, workers, autos), freq=sum(freq))
+
+ggplot(autoown_summary_workers, aes(x=as.factor(workers), y=freq, fill=as.factor(autos))) +
+  geom_bar(stat="identity", position="fill") +
+  scale_y_continuous(labels=percent, breaks=seq(0,1,0.1)) +
+  scale_x_discrete(labels=worker_labels) +
+  xlab("Workers in the Household") + 
+  ylab("Share of Households") +
+  ggtitle("Households by Automobile Ownership and Number of Workers") +
+  scale_fill_discrete(name="", 
+                      breaks=c(4,3,2,1,0), 
+                      labels=rev(auto_labels))
+```
+
+```{r AutoOwnershipSummaryByWorkersTable, results='asis', echo=FALSE}
+aos_aw_table <- dcast(autoown_summary_workers, autos ~ workers, value.var="freq")
+# make rownames readable
+stopifnot(aos_aw_table$autos == c(0,1,2,3,4))
+rownames(aos_aw_table)           <- auto_labels
+aos_aw_table                     <- select(aos_aw_table, -autos)
+# add Sum row and name it Everyone
+aos_aw_table_summed              <- addmargins(as.table(as.matrix(aos_aw_table)), 1, FUN=sum)
+rownames(aos_aw_table_summed)[6] <- "Everyone"
+# name columns
+colnames(aos_aw_table_summed)    <- worker_labels
+aosw_xtable                      <- xtable(apply(aos_aw_table_summed, 2, prettyNum, big.mark=","), 
+                                           align="lrrrrr",
+                                           caption="Automobile Ownership Levels by Number of Workers")
+print(aosw_xtable, type="html")
+
+
+# shares
+aos_aw_table_share              <- prop.table(as.table(as.matrix(aos_aw_table)),2)
+aos_aw_table_share              <- addmargins(aos_aw_table_share, 1, FUN=sum)
+rownames(aos_aw_table_share)[6] <- "Everyone"
+colnames(aos_aw_table_share)    <- worker_labels
+aosw_xtable_share               <- xtable(apply(aos_aw_table_share, 2, function(u) sprintf("%.1f%%",u*100)),
+                                          align="lrrrrr",
+                                          caption="Automobile Ownership Share by Number of Workers")
+rownames(aosw_xtable_share)     <- append(auto_labels,"Everyone")
+print(aosw_xtable_share, type="html")
+```
+
+## Average Auto Ownership Summary By County and Transit Availability
+```{r AutoOwnershipSummaryByCountyTrnAvailGraph, fig.width=8, fig.height=5}
+# by Workers
+autoown_summary_trncoutny <- summarise(group_by(autoown_summary, COUNTY, walk_subzone, autos), freq=sum(freq))
+autoown_summary_trncoutny <- mutate(autoown_summary_trncoutny, totautos=autos*freq)
+# ggplot(autoown_summary_workers, aes(x=as.factor(workers), y=freq, fill=as.factor(autos))) +
+#  geom_bar(stat="identity", position="fill") +
+#  scale_y_continuous(labels=percent, breaks=seq(0,1,0.1)) +
+#  scale_x_discrete(labels=worker_labels) +
+#  xlab("Workers in the Household") + 
+#  ylab("Share of Households") +
+#  ggtitle("Households by Automobile Ownership and Number of Workers") +
+#  scale_fill_discrete(name="", 
+#                      breaks=c(4,3,2,1,0), 
+#                      labels=rev(auto_labels))
+```
+
+```{r AutoOwnershipSummaryByCountyTrnAvailTable, results='asis', echo=FALSE}
+# households in walk_subzones x county
+aos_wc_table                  <- dcast(autoown_summary_trncoutny, walk_subzone ~ COUNTY, 
+                                       value.var="freq", fun.aggregate=sum)
+stopifnot(aos_wc_table$walk_subzone == c(0,1,2))
+rownames(aos_wc_table)        <- walk_subzone_labels
+aos_wc_table                  <- select(aos_wc_table, -walk_subzone)
+aos_wc_table_summed           <- addmargins(as.table(as.matrix(aos_wc_table)), 1, FUN=sum)
+
+# total autos in walk_subzones x county
+aos_wc_table_totaut           <- dcast(autoown_summary_trncoutny, walk_subzone ~ COUNTY, 
+                                       value.var="totautos", fun.aggregate=sum)
+stopifnot(aos_wc_table_totaut$walk_subzone == c(0,1,2))
+rownames(aos_wc_table_totaut) <- walk_subzone_labels
+aos_wc_table_totaut           <- select(aos_wc_table_totaut, -walk_subzone)
+aos_wc_table_totaut_summed    <- addmargins(as.table(as.matrix(aos_wc_table_totaut)), 1, FUN=sum)
+
+# avg autos in walk_subzones x county
+aos_wc_table_avgaut           <- aos_wc_table_totaut_summed/aos_wc_table_summed
+rownames(aos_wc_table_avgaut)[4] <- "Everyone"
+colnames(aos_wc_table_avgaut) <- county_labels
+aos_wc_xtable_avgaut          <- xtable(apply(aos_wc_table_avgaut, 2, function(u) sprintf("%.2f",u)), 
+                                        align="lrrrrrrrrr",
+                                        caption=paste("Average Automobile Ownership Levels",
+                                                      "(capped at 4 per household) by County ",
+                                                      "and Walk-to-Transit Accessibility"))
+rownames(aos_wc_xtable_avgaut)<- append(walk_subzone_labels, "Everyone")
+print(aos_wc_xtable_avgaut, type="html")
+
+# number of households in walk_subzones x county
+rownames(aos_wc_table_summed)[4] <- "Everyone"
+colnames(aos_wc_table_summed) <- county_labels
+aos_wc_xtable_summed          <- xtable(apply(aos_wc_table_summed, 2, prettyNum, big.mark=","), 
+                                        align="lrrrrrrrrr",
+                                        caption=paste("Number of households by County",
+                                                      "and Walk-to-Transit Accessibility"))
+rownames(aos_wc_xtable_summed)<- append(walk_subzone_labels, "Everyone")
+print(aos_wc_xtable_summed, type="html")
+
 ```
