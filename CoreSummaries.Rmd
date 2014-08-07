@@ -1,0 +1,123 @@
+---
+title: "Core Summaries"
+author: "Lisa Zorn"
+date: "Friday, August 01, 2014"
+output:
+  html_document:
+    css: custom.css
+    toc: yes
+# runtime: shiny
+---
+
+This R Markdown document is made interactive using Shiny. Unlike the more traditional workflow of creating static reports, you can now create documents that allow your readers to change the assumptions underlying your analysis and see the results immediately. 
+
+To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
+
+# Initialization: Set the workspace and load needed libraries
+```{r Initialization}
+library(knitr)
+library(ggplot2)
+library(scales)
+library(xtable)
+library(dplyr)
+library(reshape2)
+opts_knit$set(root.dir="C:/Users/lzorn/Documents/2010_04_ZZZ")
+# if running outside of knitr
+setwd("C:/Users/lzorn/Documents/2010_04_ZZZ")
+```
+
+# Household files
+
+## Read the household files and land use file.
+
+There are two household files:
+
+ * the model input file from the synthesized household/population (http://analytics.mtc.ca.gov/foswiki/Main/PopSynHousehold)
+ * the model output file (http://analytics.mtc.ca.gov/foswiki/Main/Household)
+
+The land use file: http://analytics.mtc.ca.gov/foswiki/Main/TazData
+
+```{r ReadHouseholds}
+input.pop.households <- read.table(file = "hhFile.p2011s3a1.2010.csv", header=TRUE, sep=",")
+input.ct.households  <- read.table(file = "householdData_3.csv", header=TRUE, sep = ",")
+
+input.tazData <- read.table(file="tazData.csv", header=TRUE, sep=",")
+county_labels <- c("San\nFrancisco","San\nMateo","Santa\nClara","Alameda",
+                   "Contra\nCosta","Solano","Napa","Sonoma","Marin")
+```
+
+## Join them
+
+Rename/drop some columns and join them on household id. Also join with tazData to get the super district and county.
+
+```{r JoinHouseholds}
+input.pop.households <- select(input.pop.households, HHID, PERSONS, hworkers, huniv, hpresch, hschpred, hschdriv)
+input.ct.households <- select(input.ct.households, -jtf_choice)
+input.tazData <- select(input.tazData, ZONE, SD, COUNTY)
+
+# rename
+names(input.pop.households)[names(input.pop.households)=="HHID"] <- "hh_id"
+names(input.tazData)[names(input.tazData)=="ZONE"] <- "taz"
+
+households <- inner_join(input.pop.households, input.ct.households)
+households <- inner_join(households, input.tazData)
+# wrap as a d data frame tbl so it's nicer for printing
+households <- tbl_df(households)
+```
+
+## Check that autos is always set
+```{r CheckAutosSet}
+sum(is.na(households$autos))
+stopifnot(sum(is.na(households$autos))==0)
+```
+
+## Recode a few new variables and summarize
+```{r RecodeNewVars}
+# incQ are Income Quartiles
+households <- mutate(households, incQ=1*(income<30000) + 2*((income>=30000)&(income<60000)) + 3*((income>=60000)&(income<100000)) + 4*(income>=100000))
+summary(households$incQ)
+
+# workers are hworkers capped at 4
+households <- mutate(households, workers=4*(hworkers>=4) + hworkers*(hworkers<4))
+
+# kidsNoDr is 1 if the household has children in the househole that don't drive
+# (either pre-school age or school age)
+households <- mutate(households, kidsNoDr=(hpresch>=1)|(hschpred>=1))
+```
+
+## Auto Ownership Summary By County
+```{r AutoOwnershipSummaryByCountyGraph, fig.width=8, fig.height=5}
+# summarize
+auto_ownership_summary <- summarise(group_by(households, SD, COUNTY, autos, incQ, walk_subzone, workers, kidsNoDr), freq=n())
+auto_labels <- c("Zero automobiles", "One automobile", "Two automobiles",
+                 "Three automobiles", "Four or more automobiles")
+
+# by County
+auto_ownership_summary_county <- summarise(group_by(auto_ownership_summary, COUNTY, autos), freq=sum(freq))
+# png("auto_ownership_summary_county.png", height=500, width=800)
+ggplot(auto_ownership_summary_county, aes(x=as.factor(COUNTY), y=freq, fill=as.factor(autos))) +
+  geom_bar(stat="identity", position="fill") +
+  scale_y_continuous(labels=percent, breaks=seq(0,1,0.1)) +
+  scale_x_discrete(labels=county_labels) +
+  xlab("County of Residence") + 
+  ylab("Share of Households") +
+  ggtitle("Households by Automobile Ownership and County of Residence") +
+  scale_fill_discrete(name="", 
+                      breaks=c(4,3,2,1,0), 
+                      labels=rev(auto_labels))
+```
+
+```{r AutoOwnershipSummaryByCountyTable, results='asis', echo=FALSE}
+aosc_table <- dcast(auto_ownership_summary_county, autos ~ COUNTY, value.var="freq")
+# make rownames readable
+stopifnot(aosc_table$autos == c(0,1,2,3,4))
+rownames(aosc_table) <- auto_labels
+aosc_table           <- select(aosc_table, -autos)
+# add Sum row and name it Everyone
+aosc_table_summed    <- addmargins(as.table(as.matrix(aosc_table)), 1, FUN=sum)
+rownames(aosc_table)[6] <- "Everyone"
+# name columns
+colnames(aosc_table) <- county_labels
+aosc_xtable          <- xtable(apply(aosc_table, 2, prettyNum, big.mark=","), align="lrrrrrrrrr")
+print(aosc_xtable, type="html")
+```
