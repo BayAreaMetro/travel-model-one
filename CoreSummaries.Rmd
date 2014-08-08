@@ -75,10 +75,12 @@ stopifnot(sum(is.na(households$autos))==0)
 ```
 
 ## Recode a few new variables and summarize
-```{r RecodeNewVars}
+```{r RecodeHouseholdVars}
 # incQ are Income Quartiles
-households <- mutate(households, incQ=1*(income<30000) + 2*((income>=30000)&(income<60000)) + 3*((income>=60000)&(income<100000)) + 4*(income>=100000))
-summary(households$incQ)
+households    <- mutate(households, incQ=1*(income<30000) + 
+                                         2*((income>=30000)&(income<60000)) +
+                                         3*((income>=60000)&(income<100000)) +
+                                         4*(income>=100000))
 
 # workers are hworkers capped at 4
 households    <- mutate(households, workers=4*(hworkers>=4) + hworkers*(hworkers<4))
@@ -88,6 +90,68 @@ worker_labels <- c("Zero", "One", "Two", "Three", "Four or more")
 # (either pre-school age or school age)
 households    <- mutate(households, kidsNoDr=(hpresch>=1)|(hschpred>=1))
 ```
+
+# Trip Files
+
+The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip
+
+```{r ReadTrips}
+trips           <- read.table(file="indivTripData_3.csv", header=TRUE, sep=",")
+joint_trips     <- read.table(file="jointTripData_3.csv", header=TRUE, sep=",")
+
+trips           <- select(input.ct.trips, hh_id, person_id, orig_taz, dest_taz,
+                          trip_mode, orig_purpose, dest_purpose, depart_hour)
+trips           <- mutate(trips, 
+                          amode=1*(trip_mode==7) +                                           # walk
+                                2*(trip_mode==8) +                                           # bike
+                                3*((trip_mode>=9)&(trip_mode<=13)) +                         # walk trn walk
+                                4*((trip_mode>=14)&(trip_mode<=18)&(orig_purpose=='Home')) + # drive trn walk
+                                5*((trip_mode>=14)&(trip_mode<=18)&(dest_purpose=='Home')),  # walk trn drive
+                          wlk_trip=1*(amode==1),
+                          bik_trip=1*(amode==2),
+                          wtr_trip=1*(amode==4),
+                          dtr_trip=1*(amode==3) + 1*(amode==5),
+                          timeCode=1*(depart_hour<6) +                                       # EA
+                                   2*((depart_hour>5)&(depart_hour<10)) +                    # AM
+                                   3*((depart_hour>9)&(depart_hour<15)) +                    # MD
+                                   4*((depart_hour>14)&(depart_hour<19)) +                   # PM
+                                   5*((depart_hour>18)),                                     # EV
+                          active=0
+                          )
+colnames(trips)
+```
+
+```{r attachActive}
+timeCode_labels <- c("EA","AM","MD","PM","EV")
+timeCode_values <- c(1,2,3,4,5)
+trips2          <- trips
+for (timeCode_val in timeCode_values) {
+  timeCode    <- timeCode_labels[timeCode_val]
+  activeSkims <- read.table(file = paste0("ActiveTimeSkimsDatabase",timeCode,".csv"), header=TRUE, sep=",")
+  # rename columns for join
+  names(activeSkims)[names(activeSkims)=="orig"] <- "orig_taz"  
+  names(activeSkims)[names(activeSkims)=="dest"] <- "dest_taz"
+  activeSkims <- mutate(activeSkims, timeCode=timeCode_val)
+  
+  # left join trips to the skims
+  trips2 <- left_join(trips2, activeSkims, by=c("orig_taz","dest_taz","timeCode"))
+  # assign active value if we can
+  trips2 <- mutate(trips2,
+                   active2=((timeCode==timeCode_val)*(amode==1)*walk) +
+                           ((timeCode==timeCode_val)*(amode==2)*bike) +
+                           ((timeCode==timeCode_val)*(amode==3)*wTrnW) +
+                           ((timeCode==timeCode_val)*(amode==4)*dTrnW) +
+                           ((timeCode==timeCode_val)*(amode==5)*wTrnD)
+                   )
+  sum(is.na(trips2$active2))
+  trips2$active2[is.na(trips2$active2)] <- 0
+  trips2 <- mutate(trips2, active=active+active2)
+  sum(trips2$active==0)
+  trips2 <- select(trips2, -walk, -bike, -wTrnW, -dTrnW, -wTrnD)
+}
+```
+
+# Auto Ownership Summaries
 
 ## Auto Ownership Summary By County
 ```{r AutoOwnershipSummaryByCountyGraph, fig.width=8, fig.height=5}
