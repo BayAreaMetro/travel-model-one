@@ -21,9 +21,25 @@ library(scales)
 library(xtable)
 library(dplyr)
 library(reshape2)
-opts_knit$set(root.dir="C:/Users/lzorn/Documents/2010_04_ZZZ")
-# if running outside of knitr
-setwd("C:/Users/lzorn/Documents/2010_04_ZZZ")
+
+# run test mode?  It's a short version
+TEST        <- TRUE
+
+ITER        <- 3
+SRC_DIR     <- "C:/Users/lzorn/Documents/2010_04_ZZZ"
+POPSYN_HH   <- "hhFile.p2011s3a1.2010"
+POPSYN_PERS <- "personFile.p2011s3a1.2010"
+
+if (TEST) {
+  ITER        <- 1
+  SRC_DIR     <- "C:/Users/lzorn/Documents/2020_03_116"
+  POPSYN_HH   <- "hhFile.p2011s6g.2020"
+  POPSYN_PERS <- "personFile.p2011s6g.2020"
+}
+
+opts_knit$set(root.dir=SRC_DIR)
+# this is for running outside of knitr
+setwd(SRC_DIR)
 ```
 
 # Household files
@@ -38,8 +54,8 @@ There are two household files:
 The land use file: http://analytics.mtc.ca.gov/foswiki/Main/TazData
 
 ```{r ReadHouseholds}
-input.pop.households <- read.table(file = "hhFile.p2011s3a1.2010.csv", header=TRUE, sep=",")
-input.ct.households  <- read.table(file = "householdData_3.csv", header=TRUE, sep = ",")
+input.pop.households <- read.table(file = paste0(POPSYN_HH,".csv"), header=TRUE, sep=",")
+input.ct.households  <- read.table(file = paste0("householdData_",ITER,".csv"), header=TRUE, sep = ",")
 walk_subzone_labels  <- c("Cannot walk to transit (more than two-thirds of a mile away)",
                           "Short-walk to transit (less than one-third of a mile)",
                           "Long-walk to transit (between one-third and two-thirds of a mile)")
@@ -55,26 +71,21 @@ Rename/drop some columns and join them on household id. Also join with tazData t
 
 ```{r JoinHouseholds}
 input.pop.households <- select(input.pop.households, HHID, PERSONS, hworkers, huniv, hpresch, hschpred, hschdriv)
-input.ct.households <- select(input.ct.households, -jtf_choice)
-input.tazData <- select(input.tazData, ZONE, SD, COUNTY)
+input.ct.households  <- select(input.ct.households, -jtf_choice)
+input.tazData        <- select(input.tazData, ZONE, SD, COUNTY)
 
 # rename
 names(input.pop.households)[names(input.pop.households)=="HHID"] <- "hh_id"
 names(input.tazData)[names(input.tazData)=="ZONE"] <- "taz"
 
-households <- inner_join(input.pop.households, input.ct.households)
-households <- inner_join(households, input.tazData)
+households <- inner_join(input.pop.households, input.ct.households, "hh_id")
+households <- inner_join(households, input.tazData, "taz")
 # wrap as a d data frame tbl so it's nicer for printing
 households <- tbl_df(households)
 ```
 
-## Check that autos is always set
-```{r CheckAutosSet}
-sum(is.na(households$autos))
-stopifnot(sum(is.na(households$autos))==0)
-```
 
-## Recode a few new variables and summarize
+## Recode a few new variables
 ```{r RecodeHouseholdVars}
 # incQ are Income Quartiles
 households    <- mutate(households, incQ=1*(income<30000) + 
@@ -91,41 +102,50 @@ worker_labels <- c("Zero", "One", "Two", "Three", "Four or more")
 households    <- mutate(households, kidsNoDr=(hpresch>=1)|(hschpred>=1))
 ```
 
-# Trip Files
+# Person files
 
-The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip
+Fields: http://analytics.mtc.ca.gov/foswiki/Main/Person
 
-```{r ReadTrips}
-trips           <- read.table(file="indivTripData_3.csv", header=TRUE, sep=",")
-joint_trips     <- read.table(file="jointTripData_3.csv", header=TRUE, sep=",")
-
-trips           <- select(input.ct.trips, hh_id, person_id, orig_taz, dest_taz,
-                          trip_mode, orig_purpose, dest_purpose, depart_hour)
-trips           <- mutate(trips, 
-                          amode=1*(trip_mode==7) +                                           # walk
-                                2*(trip_mode==8) +                                           # bike
-                                3*((trip_mode>=9)&(trip_mode<=13)) +                         # walk trn walk
-                                4*((trip_mode>=14)&(trip_mode<=18)&(orig_purpose=='Home')) + # drive trn walk
-                                5*((trip_mode>=14)&(trip_mode<=18)&(dest_purpose=='Home')),  # walk trn drive
-                          wlk_trip=1*(amode==1),
-                          bik_trip=1*(amode==2),
-                          wtr_trip=1*(amode==4),
-                          dtr_trip=1*(amode==3) + 1*(amode==5),
-                          timeCode=1*(depart_hour<6) +                                       # EA
-                                   2*((depart_hour>5)&(depart_hour<10)) +                    # AM
-                                   3*((depart_hour>9)&(depart_hour<15)) +                    # MD
-                                   4*((depart_hour>14)&(depart_hour<19)) +                   # PM
-                                   5*((depart_hour>18)),                                     # EV
-                          active=0
-                          )
-colnames(trips)
+```{r ReadPersons}
+input.ct.persons     <- read.table(file = paste0("personData_",ITER,".csv"), header=TRUE, sep = ",")
+persons              <- select(input.ct.persons, hh_id, person_id, person_num)
 ```
 
-```{r attachActive}
+
+# Trips
+
+## Define how we will add active travel time
+```{r addActiveColumn}
+
+# function init_active: creates a few new columns relevant to looking up the active travel time
+init_active <- function(trips) {
+  trips <- mutate(trips, 
+                  amode=1*(trip_mode==7) +                                           # walk
+                        2*(trip_mode==8) +                                           # bike
+                        3*((trip_mode>=9)&(trip_mode<=13)) +                         # walk trn walk
+                        4*((trip_mode>=14)&(trip_mode<=18)&(orig_purpose=='Home')) + # drive trn walk
+                        5*((trip_mode>=14)&(trip_mode<=18)&(dest_purpose=='Home')),  # walk trn drive
+                  wlk_trip=1*(amode==1),
+                  bik_trip=1*(amode==2),
+                  wtr_trip=1*(amode==4),
+                  dtr_trip=1*(amode==3) + 1*(amode==5),
+                  timeCode=1*(depart_hour<6) +                                       # EA
+                           2*((depart_hour>5)&(depart_hour<10)) +                    # AM
+                           3*((depart_hour>9)&(depart_hour<15)) +                    # MD
+                           4*((depart_hour>14)&(depart_hour<19)) +                   # PM
+                           5*((depart_hour>18)),                                     # EV
+                  active=0
+                  )
+}
+
 timeCode_labels <- c("EA","AM","MD","PM","EV")
 timeCode_values <- c(1,2,3,4,5)
-trips2          <- trips
-for (timeCode_val in timeCode_values) {
+
+# function add_active: attaches the active skims of the given time period (from timeCode_values)
+# to the given trip data.frame (joining on the columns orig_taz, dest_taz, and timeCode).
+# Fills in values to the column 'active' for the given time period.
+add_active <- function(timeCode_val, trips) {
+
   timeCode    <- timeCode_labels[timeCode_val]
   activeSkims <- read.table(file = paste0("ActiveTimeSkimsDatabase",timeCode,".csv"), header=TRUE, sep=",")
   # rename columns for join
@@ -134,21 +154,86 @@ for (timeCode_val in timeCode_values) {
   activeSkims <- mutate(activeSkims, timeCode=timeCode_val)
   
   # left join trips to the skims
-  trips2 <- left_join(trips2, activeSkims, by=c("orig_taz","dest_taz","timeCode"))
-  # assign active value if we can
-  trips2 <- mutate(trips2,
-                   active2=((timeCode==timeCode_val)*(amode==1)*walk) +
-                           ((timeCode==timeCode_val)*(amode==2)*bike) +
-                           ((timeCode==timeCode_val)*(amode==3)*wTrnW) +
-                           ((timeCode==timeCode_val)*(amode==4)*dTrnW) +
-                           ((timeCode==timeCode_val)*(amode==5)*wTrnD)
-                   )
-  sum(is.na(trips2$active2))
-  trips2$active2[is.na(trips2$active2)] <- 0
-  trips2 <- mutate(trips2, active=active+active2)
-  sum(trips2$active==0)
-  trips2 <- select(trips2, -walk, -bike, -wTrnW, -dTrnW, -wTrnD)
+  trips <- left_join(trips, activeSkims, by=c("orig_taz","dest_taz","timeCode"))
+  # assign active value if we can to new column active2
+  trips <- mutate(trips,
+                  active2=((timeCode==timeCode_val)*(amode==1)*walk) +
+                          ((timeCode==timeCode_val)*(amode==2)*bike) +
+                          ((timeCode==timeCode_val)*(amode==3)*wTrnW) +
+                          ((timeCode==timeCode_val)*(amode==4)*dTrnW) +
+                          ((timeCode==timeCode_val)*(amode==5)*wTrnD)
+                  )
+  print(paste("For", timeCode, "assigned", prettyNum(sum(!is.na(trips$active2)),big.mark=","),
+              "active times, with", prettyNum(sum(!is.na(trips$active2)&(trips$active2>0)),big.mark=","),
+              "nonzero values"))
+  trips$active2[is.na(trips$active2)] <- 0           # make the unassigned ones 0 for summing
+  trips <- mutate(trips, active=active+active2)      # sum
+  print(paste("  -> total nonzero active times:",prettyNum(sum(trips$active!=0),big.mark=",")))
+  trips <- select(trips, -walk, -bike, -wTrnW, -dTrnW, -wTrnD, -active2) # get rid of new variables
 }
+```
+
+## Read Individual Trips and recode a few variables
+
+The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip
+
+```{r ReadIndividualTrips}
+trips           <- read.table(file=paste0("indivTripData_",ITER,".csv"), header=TRUE, sep=",")
+trips           <- select(trips, hh_id, person_id, orig_taz, dest_taz,
+                          trip_mode, orig_purpose, dest_purpose, depart_hour)
+trips           <- init_active(trips)
+
+# add active transportation time to individual trips
+for (timeCode_val in timeCode_values) {
+  trips <- add_active(timeCode_val, trips)
+}
+```
+
+## Read Joint Trips and recode a few variables
+
+The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/JointTrip
+
+```{r ReadJointTrips}
+joint_trips     <- read.table(file=paste0("jointTripData_",ITER,".csv"), header=TRUE, sep=",")
+joint_trips     <- select(joint_trips, hh_id, tour_id, stop_id, inbound, orig_taz, dest_taz,
+                          trip_mode, orig_purpose, dest_purpose, depart_hour)
+joint_trips     <- init_active(joint_trips)
+
+# add active transportation time to joint trips
+for (timeCode_val in timeCode_values) {
+  joint_trips   <- add_active(timeCode_val, joint_trips)
+}
+```
+
+```{r readJointTours}
+joint_tours    <- read.table(file=paste0("jointTourData_",ITER,".csv"), header=TRUE, sep=",")
+joint_tours    <- select(joint_tours, hh_id, tour_id, tour_participants)
+
+# tour participants are person ids separated by spaces -- create a table of hh_id, person_num for them
+joint_tour_persons <- data.frame(hh_id=numeric(), tour_id=numeric(), person_num=numeric())
+# unwind particpants into table with cols hh_id, tour_id, person_num1, person_num2, ...
+participants   <- strsplit(as.character(joint_tours$tour_participants)," ")
+max_peeps      <- max(sapply(participants,length))
+participants   <- lapply(participants, function(X) c(X,rep(NA, max_peeps-length(X))))
+participants   <- data.frame(t(do.call(cbind, participants)))
+participants   <- mutate(participants, hh_id=joint_tours$hh_id, tour_id=joint_tours$tour_id)
+# melt the persons so they are each on their own row
+for (peep in 1:max_peeps) {
+  jtp <- melt(participants, id.var=c("hh_id","tour_id"), measure.vars=paste0("X",peep), na.rm=TRUE)
+  jtp <- mutate(jtp, person_num=value)
+  jtp <- select(jtp, hh_id, tour_id, person_num)
+  joint_tour_persons <- rbind(joint_tour_persons, jtp)
+}
+joint_tour_persons <- transform(joint_tour_persons, person_num=as.numeric(person_num))
+# sort by hh_id
+joint_tour_persons <- joint_tour_persons[with(joint_tour_persons, order(hh_id, tour_id)),]
+# merge with the persons to get the person_id
+joint_tour_persons <- left_join(joint_tour_persons, persons, by=c("hh_id","person_num"))
+
+# attach persons to the joint_trips
+joint_person_trips <- inner_join(joint_trips, joint_tour_persons, by=c("hh_id", "tour_id"))
+# cleanup
+remove(peep,participants,max_peeps,jtp)
 ```
 
 # Auto Ownership Summaries
@@ -177,7 +262,7 @@ ggplot(autoown_summary_county, aes(x=as.factor(COUNTY), y=freq, fill=as.factor(a
 ```{r AutoOwnershipSummaryByCountyTable, results='asis', echo=FALSE}
 aos_ac_table                     <- dcast(autoown_summary_county, autos ~ COUNTY, value.var="freq")
 # make rownames readable
-stopifnot(aos_ac_table$autos == c(0,1,2,3,4))
+
 rownames(aos_ac_table)           <- auto_labels
 aos_ac_table                     <- select(aos_ac_table, -autos)
 # add Sum row and name it Everyone
@@ -223,7 +308,7 @@ ggplot(autoown_summary_workers, aes(x=as.factor(workers), y=freq, fill=as.factor
 ```{r AutoOwnershipSummaryByWorkersTable, results='asis', echo=FALSE}
 aos_aw_table <- dcast(autoown_summary_workers, autos ~ workers, value.var="freq")
 # make rownames readable
-stopifnot(aos_aw_table$autos == c(0,1,2,3,4))
+# stopifnot(aos_aw_table$autos == c(0,1,2,3,4))
 rownames(aos_aw_table)           <- auto_labels
 aos_aw_table                     <- select(aos_aw_table, -autos)
 # add Sum row and name it Everyone
@@ -270,7 +355,7 @@ autoown_summary_trncoutny <- mutate(autoown_summary_trncoutny, totautos=autos*fr
 # households in walk_subzones x county
 aos_wc_table                  <- dcast(autoown_summary_trncoutny, walk_subzone ~ COUNTY, 
                                        value.var="freq", fun.aggregate=sum)
-stopifnot(aos_wc_table$walk_subzone == c(0,1,2))
+# stopifnot(aos_wc_table$walk_subzone == c(0,1,2))
 rownames(aos_wc_table)        <- walk_subzone_labels
 aos_wc_table                  <- select(aos_wc_table, -walk_subzone)
 aos_wc_table_summed           <- addmargins(as.table(as.matrix(aos_wc_table)), 1, FUN=sum)
@@ -278,7 +363,7 @@ aos_wc_table_summed           <- addmargins(as.table(as.matrix(aos_wc_table)), 1
 # total autos in walk_subzones x county
 aos_wc_table_totaut           <- dcast(autoown_summary_trncoutny, walk_subzone ~ COUNTY, 
                                        value.var="totautos", fun.aggregate=sum)
-stopifnot(aos_wc_table_totaut$walk_subzone == c(0,1,2))
+# stopifnot(aos_wc_table_totaut$walk_subzone == c(0,1,2))
 rownames(aos_wc_table_totaut) <- walk_subzone_labels
 aos_wc_table_totaut           <- select(aos_wc_table_totaut, -walk_subzone)
 aos_wc_table_totaut_summed    <- addmargins(as.table(as.matrix(aos_wc_table_totaut)), 1, FUN=sum)
