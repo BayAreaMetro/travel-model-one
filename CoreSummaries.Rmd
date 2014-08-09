@@ -44,7 +44,7 @@ setwd(SRC_DIR)
 
 # Household files
 
-## Read the household files and land use file.
+## Read the household files and land use file
 
 There are two household files:
 
@@ -82,6 +82,8 @@ households <- inner_join(input.pop.households, input.ct.households, "hh_id")
 households <- inner_join(households, input.tazData, "taz")
 # wrap as a d data frame tbl so it's nicer for printing
 households <- tbl_df(households)
+# clean up
+remove(input.pop.households, input.ct.households)
 ```
 
 
@@ -104,17 +106,99 @@ households    <- mutate(households, kidsNoDr=(hpresch>=1)|(hschpred>=1))
 
 # Person files
 
-Fields: http://analytics.mtc.ca.gov/foswiki/Main/Person
+There are two person files:
 
+ * the model input file from the synthesized household/population (http://analytics.mtc.ca.gov/foswiki/Main/PopSynPerson)
+ * the model output file (http://analytics.mtc.ca.gov/foswiki/Main/Person)
+
+## Read the person files
 ```{r ReadPersons}
+input.pop.persons    <- read.table(file = paste0(POPSYN_PERS,".csv"), header=TRUE, sep=",")
 input.ct.persons     <- read.table(file = paste0("personData_",ITER,".csv"), header=TRUE, sep = ",")
-persons              <- select(input.ct.persons, hh_id, person_id, person_num)
 ```
 
+## Join them
+```{r}
+# rename
+names(input.pop.persons)[names(input.pop.persons)=="HHID"] <- "hh_id"
+names(input.pop.persons)[names(input.pop.persons)=="PERID"] <- "person_id"
+
+persons <- inner_join(input.pop.persons, input.ct.persons, by=c("hh_id", "person_id"))
+
+# wrap as a d data frame tbl so it's nicer for printing
+persons              <- tbl_df(persons)
+# clean up
+remove(input.pop.persons, input.ct.persons)
+```
 
 # Trips
 
-## Define how we will add active travel time
+## Read Individual Trips and recode a few variables
+
+The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip
+
+```{r ReadIndividualTrips}
+indiv_trips     <- read.table(file=paste0("indivTripData_",ITER,".csv"), header=TRUE, sep=",")
+indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest_taz,
+                          trip_mode, orig_purpose, dest_purpose, depart_hour)
+```
+
+## Read Joint Trips and recode a few variables
+
+The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/JointTrip
+
+```{r ReadJointTrips}
+joint_trips     <- read.table(file=paste0("jointTripData_",ITER,".csv"), header=TRUE, sep=",")
+joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz,
+                          trip_mode, orig_purpose, dest_purpose, depart_hour)
+```
+
+## Joint Trips need person ids -- attach them (via Joint Tours)
+
+```{r readJointTours}
+joint_tours    <- read.table(file=paste0("jointTourData_",ITER,".csv"), header=TRUE, sep=",")
+joint_tours    <- select(joint_tours, hh_id, tour_id, tour_participants)
+
+# tour participants are person ids separated by spaces -- create a table of hh_id, person_num for them
+joint_tour_persons <- data.frame(hh_id=numeric(), tour_id=numeric(), person_num=numeric())
+# unwind particpants into table with cols hh_id, tour_id, person_num1, person_num2, ...
+participants   <- strsplit(as.character(joint_tours$tour_participants)," ")
+max_peeps      <- max(sapply(participants,length))
+participants   <- lapply(participants, function(X) c(X,rep(NA, max_peeps-length(X))))
+participants   <- data.frame(t(do.call(cbind, participants)))
+participants   <- mutate(participants, hh_id=joint_tours$hh_id, tour_id=joint_tours$tour_id)
+# melt the persons so they are each on their own row
+for (peep in 1:max_peeps) {
+  jtp <- melt(participants, id.var=c("hh_id","tour_id"), measure.vars=paste0("X",peep), na.rm=TRUE)
+  jtp <- mutate(jtp, person_num=value)
+  jtp <- select(jtp, hh_id, tour_id, person_num)
+  joint_tour_persons <- rbind(joint_tour_persons, jtp)
+}
+joint_tour_persons <- transform(joint_tour_persons, person_num=as.numeric(person_num))
+# sort by hh_id
+joint_tour_persons <- joint_tour_persons[with(joint_tour_persons, order(hh_id, tour_id)),]
+# merge with the persons to get the person_id
+joint_tour_persons <- left_join(joint_tour_persons, persons, by=c("hh_id","person_num"))
+
+# attach persons to the joint_trips
+joint_person_trips <- inner_join(joint_trips, joint_tour_persons, by=c("hh_id", "tour_id"))
+# select out person_num and the person table columns
+joint_person_trips <- select(joint_person_trips, hh_id, person_id, tour_id, orig_taz, dest_taz, trip_mode,
+                             orig_purpose, dest_purpose, depart_hour)
+# cleanup
+remove(peep,participants,max_peeps,jtp,joint_tour_persons)
+```
+
+## Combine Individual Trips and Joint Person Trips
+```{r combineTrips}
+trips <- rbind(indiv_trips, joint_person_trips)
+print(paste("Combined",prettyNum(nrow(indiv_trips),big.mark=","),
+            "individual trips with",prettyNum(nrow(joint_person_trips),big.mark=","),
+            "joint trips to make",prettyNum(nrow(trips),big.mark=",")," total trips"))
+remove(indiv_trips,joint_person_trips)
+```
+
+## Add active travel time to the Trips
 ```{r addActiveColumn}
 
 # function init_active: creates a few new columns relevant to looking up the active travel time
@@ -171,70 +255,14 @@ add_active <- function(timeCode_val, trips) {
   print(paste("  -> total nonzero active times:",prettyNum(sum(trips$active!=0),big.mark=",")))
   trips <- select(trips, -walk, -bike, -wTrnW, -dTrnW, -wTrnD, -active2) # get rid of new variables
 }
-```
 
-## Read Individual Trips and recode a few variables
-
-The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip
-
-```{r ReadIndividualTrips}
-trips           <- read.table(file=paste0("indivTripData_",ITER,".csv"), header=TRUE, sep=",")
-trips           <- select(trips, hh_id, person_id, orig_taz, dest_taz,
-                          trip_mode, orig_purpose, dest_purpose, depart_hour)
-trips           <- init_active(trips)
-
-# add active transportation time to individual trips
+# go go gadget: Add active transportation time to trips
+trips <- init_active(trips)
 for (timeCode_val in timeCode_values) {
   trips <- add_active(timeCode_val, trips)
 }
 ```
 
-## Read Joint Trips and recode a few variables
-
-The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/JointTrip
-
-```{r ReadJointTrips}
-joint_trips     <- read.table(file=paste0("jointTripData_",ITER,".csv"), header=TRUE, sep=",")
-joint_trips     <- select(joint_trips, hh_id, tour_id, stop_id, inbound, orig_taz, dest_taz,
-                          trip_mode, orig_purpose, dest_purpose, depart_hour)
-joint_trips     <- init_active(joint_trips)
-
-# add active transportation time to joint trips
-for (timeCode_val in timeCode_values) {
-  joint_trips   <- add_active(timeCode_val, joint_trips)
-}
-```
-
-```{r readJointTours}
-joint_tours    <- read.table(file=paste0("jointTourData_",ITER,".csv"), header=TRUE, sep=",")
-joint_tours    <- select(joint_tours, hh_id, tour_id, tour_participants)
-
-# tour participants are person ids separated by spaces -- create a table of hh_id, person_num for them
-joint_tour_persons <- data.frame(hh_id=numeric(), tour_id=numeric(), person_num=numeric())
-# unwind particpants into table with cols hh_id, tour_id, person_num1, person_num2, ...
-participants   <- strsplit(as.character(joint_tours$tour_participants)," ")
-max_peeps      <- max(sapply(participants,length))
-participants   <- lapply(participants, function(X) c(X,rep(NA, max_peeps-length(X))))
-participants   <- data.frame(t(do.call(cbind, participants)))
-participants   <- mutate(participants, hh_id=joint_tours$hh_id, tour_id=joint_tours$tour_id)
-# melt the persons so they are each on their own row
-for (peep in 1:max_peeps) {
-  jtp <- melt(participants, id.var=c("hh_id","tour_id"), measure.vars=paste0("X",peep), na.rm=TRUE)
-  jtp <- mutate(jtp, person_num=value)
-  jtp <- select(jtp, hh_id, tour_id, person_num)
-  joint_tour_persons <- rbind(joint_tour_persons, jtp)
-}
-joint_tour_persons <- transform(joint_tour_persons, person_num=as.numeric(person_num))
-# sort by hh_id
-joint_tour_persons <- joint_tour_persons[with(joint_tour_persons, order(hh_id, tour_id)),]
-# merge with the persons to get the person_id
-joint_tour_persons <- left_join(joint_tour_persons, persons, by=c("hh_id","person_num"))
-
-# attach persons to the joint_trips
-joint_person_trips <- inner_join(joint_trips, joint_tour_persons, by=c("hh_id", "tour_id"))
-# cleanup
-remove(peep,participants,max_peeps,jtp)
-```
 
 # Auto Ownership Summaries
 
