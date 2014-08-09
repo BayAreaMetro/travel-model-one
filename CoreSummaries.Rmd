@@ -261,8 +261,40 @@ trips <- init_active(trips)
 for (timeCode_val in timeCode_values) {
   trips <- add_active(timeCode_val, trips)
 }
+trips <- tbl_df(trips)
 ```
 
+# Active Transportation Summary
+```{r ActiveTransportationSummary}
+# we only want some variables - sum them to hh_id/person_id
+trips_ats   <- select(trips, hh_id, person_id, wlk_trip, bik_trip, wtr_trip, dtr_trip, active)
+trips_melt  <- tbl_df(melt(trips_ats, id.vars=c("hh_id","person_id")))
+trips_dcast <- tbl_df(dcast(trips_melt, hh_id+person_id ~ variable, fun.aggregate=sum))
+# append person type, activity_pattern, value_of_time from persons
+trips_by_person <- left_join(trips_dcast, select(persons, hh_id, person_id, ptype, 
+                                                 activity_pattern, value_of_time), by=c("hh_id","person_id"))
+
+# append autos, taz, COUNTY from households
+trips_by_person <- left_join(trips_by_person, select(households, hh_id, autos, taz, COUNTY), by=c("hh_id"))
+# recode zeroAuto
+trips_by_person <- mutate(trips_by_person, 
+                          zeroAuto=(autos==0),
+                          atHomeA=1.0*(activity_pattern=='H'))
+# todo: understand "atHomeA" variable.  It looks like active is not set... But what about auto trips?
+
+# summarize
+active_summary <- summarise(group_by(trips_by_person, taz, COUNTY, ptype, zeroAuto), 
+                            freq     = n(),
+                            active   = mean(active),
+                            wlk_trip = mean(wlk_trip),
+                            bik_trip = mean(bik_trip),
+                            wtr_trip = mean(wtr_trip),
+                            dtr_trip = mean(dtr_trip),
+                            atHomeA   = mean(atHomeA))
+
+write.table(active_summary, "active_summary.csv", sep=",")
+
+```
 
 # Auto Ownership Summaries
 
