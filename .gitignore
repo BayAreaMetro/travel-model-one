@@ -1,8 +1,8 @@
 .RData
 .Rhistory
 .Rproj.user/*
-CoreSummaries.html
-CoreSummaries.md
+*.html
+*.md
 CoreSummaries_files/*
 Thumbs.db
 figure/*
