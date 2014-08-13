@@ -14,7 +14,7 @@ This R Markdown document is made interactive using Shiny. Unlike the more tradit
 To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
 
 # Initialization: Set the workspace and load needed libraries
-```{r Initialization}
+```{r Initialization, results='hold'}
 library(knitr)
 library(ggplot2)
 library(scales)
@@ -60,12 +60,12 @@ The land use file: http://analytics.mtc.ca.gov/foswiki/Main/TazData
 ```{r ReadHouseholds}
 input.pop.households <- read.table(file = paste0(POPSYN_HH,".csv"), header=TRUE, sep=",")
 input.ct.households  <- read.table(file = paste0("householdData_",ITER,".csv"), header=TRUE, sep = ",")
-walk_subzone_labels  <- c("Cannot walk to transit (more than two-thirds of a mile away)",
+WALK_SUBZONE_LABELS  <- c("Cannot walk to transit (more than two-thirds of a mile away)",
                           "Short-walk to transit (less than one-third of a mile)",
                           "Long-walk to transit (between one-third and two-thirds of a mile)")
 
-input.tazData <- read.table(file="tazData.csv", header=TRUE, sep=",")
-county_labels <- c("San\nFrancisco","San\nMateo","Santa\nClara","Alameda",
+tazData              <- read.table(file="tazData.csv", header=TRUE, sep=",")
+COUNTY_LABELS <- c("San\nFrancisco","San\nMateo","Santa\nClara","Alameda",
                    "Contra\nCosta","Solano","Napa","Sonoma","Marin")
 ```
 
@@ -76,14 +76,14 @@ Rename/drop some columns and join them on household id. Also join with tazData t
 ```{r JoinHouseholds}
 input.pop.households <- select(input.pop.households, HHID, PERSONS, hworkers, huniv, hpresch, hschpred, hschdriv)
 input.ct.households  <- select(input.ct.households, -jtf_choice)
-input.tazData        <- select(input.tazData, ZONE, SD, COUNTY)
+tazData              <- select(tazData, ZONE, SD, COUNTY, PRKCST)
 
 # rename
 names(input.pop.households)[names(input.pop.households)=="HHID"] <- "hh_id"
-names(input.tazData)[names(input.tazData)=="ZONE"] <- "taz"
+names(tazData)[names(tazData)=="ZONE"] <- "taz"
 
 households <- inner_join(input.pop.households, input.ct.households, "hh_id")
-households <- inner_join(households, input.tazData, "taz")
+households <- inner_join(households, tazData, "taz")
 # wrap as a d data frame tbl so it's nicer for printing
 households <- tbl_df(households)
 # clean up
@@ -91,7 +91,8 @@ remove(input.pop.households, input.ct.households)
 ```
 
 
-## Recode a few new variables
+## Recode a few new variables:
+Create income quartiles (incQ), worker categories (workers), and dummy for households with children that don't drive (kidsNoDr).
 ```{r RecodeHouseholdVars}
 # incQ are Income Quartiles
 households    <- mutate(households, incQ=1*(income<30000) + 
@@ -101,7 +102,7 @@ households    <- mutate(households, incQ=1*(income<30000) +
 
 # workers are hworkers capped at 4
 households    <- mutate(households, workers=4*(hworkers>=4) + hworkers*(hworkers<4))
-worker_labels <- c("Zero", "One", "Two", "Three", "Four or more")
+WORKER_LABELS <- c("Zero", "One", "Two", "Three", "Four or more")
 
 # kidsNoDr is 1 if the household has children in the househole that don't drive
 # (either pre-school age or school age)
@@ -122,8 +123,8 @@ input.ct.persons     <- read.table(file = paste0("personData_",ITER,".csv"), hea
 ```
 
 ## Join them
-```{r}
-ptype_labels         <- c("Full-time worker","Part-time worker","College student","Non-working adult","Retired",
+```{r JoinPersons}
+PTYPE_LABELS         <- c("Full-time worker","Part-time worker","College student","Non-working adult","Retired",
                           "Driving-age student","Non-driving-age student","Child too young for school")
 
 # Rename
@@ -131,14 +132,134 @@ names(input.pop.persons)[names(input.pop.persons)=="HHID"] <- "hh_id"
 names(input.pop.persons)[names(input.pop.persons)=="PERID"] <- "person_id"
 
 # Inner join so persons must be present in both.  So only simulated persons stay.
-persons <- inner_join(input.pop.persons, input.ct.persons, by=c("hh_id", "person_id"))
+persons              <- inner_join(input.pop.persons, input.ct.persons, by=c("hh_id", "person_id"))
 # Get incQ from Households
-persons <- left_join(persons, select(households, hh_id, incQ), by=c("hh_id"))
+persons              <- left_join(persons, select(households, hh_id, incQ), by=c("hh_id"))
 
 # wrap as a d data frame tbl so it's nicer for printing
 persons              <- tbl_df(persons)
 # clean up
 remove(input.pop.persons, input.ct.persons)
+```
+
+# Tours
+
+## Read Individual Tours
+
+The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour
+
+```{r readIndividualTours}
+indiv_tours     <- read.table(file=paste0("indivTourData_",ITER,".csv"), header=TRUE, sep=",")
+indiv_tours     <- tbl_df(indiv_tours)
+```
+
+## Function to add Cost to Tours
+```{r Tours_AddCostColumn}
+TIMECODE_LABELS <- c("EA","AM","MD","PM","EV")
+TIMECODE_VALUES <- c(1,2,3,4,5)
+
+# function add_cost: attaches the cost skims of the given time period (from TIMECODE_VALUES)
+# to the given tours data.frame (joining on the columns orig_taz, dest_taz, and timeCode).
+# Fills in values to the column 'cost' for the given time period based on the column 'costMode'.
+add_cost <- function(timeCode_val, tours, reverse_od=FALSE) {
+  
+  costSkims   <- read.table(file = paste0("CostSkimsDatabase",TIMECODE_LABELS[timeCode_val],".csv"), header=TRUE, sep=",")
+  # rename columns for join -- reversing if needed (return trip)
+  if (reverse_od) {
+    names(costSkims)[names(costSkims)=="orig"] <- "dest_taz"  
+    names(costSkims)[names(costSkims)=="dest"] <- "orig_taz"    
+  } else {
+    names(costSkims)[names(costSkims)=="orig"] <- "orig_taz"  
+    names(costSkims)[names(costSkims)=="dest"] <- "dest_taz"
+  }
+  # recode -999 as NA
+  costSkims   <- mutate(costSkims,
+                        timeCode = timeCode_val,
+                        da       = ifelse(da    == -999,NA,da    ),
+                        daToll   = ifelse(daToll== -999,NA,daToll),
+                        s2       = ifelse(s2    == -999,NA,s2    ),
+                        s2Toll   = ifelse(s2Toll== -999,NA,s2Toll),
+                        s3       = ifelse(s3    == -999,NA,s3    ),
+                        s3Toll   = ifelse(s3Toll== -999,NA,s3Toll),
+                        wTrnW    = ifelse(wTrnW == -999,NA,wTrnW ),
+                        dTrnW    = ifelse(dTrnW == -999,NA,dTrnW ),
+                        wTrnD    = ifelse(wTrnD == -999,NA,wTrnD ))
+  
+  # Left join tours to the skims
+  tours <- left_join(tours, costSkims, by=c("orig_taz","dest_taz","timeCode"))
+  # assign active value if we can to new column active2
+  tours <- mutate(tours,
+                  cost2=((timeCode==timeCode_val)*(costMode==1)*da    ) +
+                        ((timeCode==timeCode_val)*(costMode==2)*daToll) +
+                        ((timeCode==timeCode_val)*(costMode==3)*s2    ) +
+                        ((timeCode==timeCode_val)*(costMode==4)*s2Toll) +
+                        ((timeCode==timeCode_val)*(costMode==5)*s3    ) +
+                        ((timeCode==timeCode_val)*(costMode==6)*s3Toll) +
+                        ((timeCode==timeCode_val)*(costMode==7)*0.0   ) +
+                        ((timeCode==timeCode_val)*(costMode==8)*0.0   ) +
+                        ((timeCode==timeCode_val)*(costMode==9)*wTrnW ) +
+                        ((timeCode==timeCode_val)*(costMode==10)*dTrnW)
+                  )
+  print(paste("For", TIMECODE_LABELS[timeCode_val], "assigned", prettyNum(sum(!is.na(tours$cost2)),big.mark=","),
+              "costs, with", prettyNum(sum(!is.na(tours$cost2)&(tours$cost2>0)),big.mark=","),
+              "nonzero values"))
+  tours$cost2[is.na(tours$cost2)] <- 0           # make the unassigned ones 0 for summing
+  tours <- mutate(tours, cost=cost+cost2)        # sum
+  print(paste("  -> total nonzero costs:",prettyNum(sum(tours$cost!=0),big.mark=",")))
+  tours <- select(tours, -da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -wTrnW, -dTrnW, -wTrnD, -cost2) # rid new variables
+}
+```
+
+## Function to add Distance to Tours
+```{r Tours_AddDistanceColumn}
+
+TIMECODE_LABELS <- c("EA","AM","MD","PM","EV")
+TIMECODE_VALUES <- c(1,2,3,4,5)
+
+# function add_distance: attaches the distance skims of the given time period (from TIMECODE_VALUES)
+# to the given tours data.frame (joining on the columns orig_taz, dest_taz, and timeCode).
+# Fills in values to the column 'distance' for the given time period based on the column 'tour_mode'.
+add_distance <- function(timeCode_val, tours) {
+  
+  distSkims   <- read.table(file = paste0("DistanceSkimsDatabase",TIMECODE_LABELS[timeCode_val],".csv"), header=TRUE, sep=",")
+  # rename columns for join -- reversing if needed (return trip)
+  names(distSkims)[names(distSkims)=="orig"] <- "orig_taz"  
+  names(distSkims)[names(distSkims)=="dest"] <- "dest_taz"
+  
+  distSkims   <- mutate(distSkims,
+                        timeCode = timeCode_val,
+                        da       = ifelse(da    == -999,NA,da    ),
+                        daToll   = ifelse(daToll== -999,NA,daToll),
+                        s2       = ifelse(s2    == -999,NA,s2    ),
+                        s2Toll   = ifelse(s2Toll== -999,NA,s2Toll),
+                        s3       = ifelse(s3    == -999,NA,s3    ),
+                        s3Toll   = ifelse(s3Toll== -999,NA,s3Toll),
+                        walk     = ifelse(walk  == -999,NA,walk  ),
+                        bike     = ifelse(bike  == -999,NA,bike ))
+  
+  # Left join tours to the skims
+  tours <- left_join(tours, distSkims, by=c("orig_taz","dest_taz","timeCode"))
+  # assign active value if we can to new column active2
+  tours <- mutate(tours,
+                  distance2=((timeCode==timeCode_val)*(tour_mode==1)*da    ) +
+                            ((timeCode==timeCode_val)*(tour_mode==2)*daToll) +
+                            ((timeCode==timeCode_val)*(tour_mode==3)*s2    ) +
+                            ((timeCode==timeCode_val)*(tour_mode==4)*s2Toll) +
+                            ((timeCode==timeCode_val)*(tour_mode==5)*s3    ) +
+                            ((timeCode==timeCode_val)*(tour_mode==6)*s3Toll) +
+                            ((timeCode==timeCode_val)*(tour_mode==7)*walk  ) +
+                            ((timeCode==timeCode_val)*(tour_mode==8)*bike  ) +
+                            # Use the drive alone time as the distance for transit modes
+                            ((timeCode==timeCode_val)*(tour_mode>=9)*da    )
+                  )
+  print(paste("For", TIMECODE_LABELS[timeCode_val], "assigned", prettyNum(sum(!is.na(tours$distance2)),big.mark=","),
+              "distances, with", prettyNum(sum(!is.na(tours$distance2)&(tours$distance2>0)),big.mark=","),
+              "nonzero values"))
+  tours$distance2[is.na(tours$distance2)] <- 0         # make the unassigned ones 0 for summing
+  tours <- mutate(tours, distance=distance+distance2)  # sum
+  print(paste("  -> total nonzero distances:",prettyNum(sum(tours$distance!=0),big.mark=",")))
+  tours <- select(tours, -da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -walk, -bike, -distance2) # rid new variables
+}
 ```
 
 # Trips
@@ -165,7 +286,7 @@ joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz,
 
 ## Joint Trips need person ids -- attach them (via Joint Tours)
 
-```{r readJointTours}
+```{r ReadJointTours}
 joint_tours    <- read.table(file=paste0("jointTourData_",ITER,".csv"), header=TRUE, sep=",")
 joint_tours    <- select(joint_tours, hh_id, tour_id, tour_participants)
 
@@ -200,7 +321,7 @@ remove(peep,participants,max_peeps,jtp,joint_tour_persons)
 ```
 
 ## Combine Individual Trips and Joint Person Trips
-```{r combineTrips}
+```{r CombineTrips}
 trips <- rbind(indiv_trips, joint_person_trips)
 print(paste("Combined",prettyNum(nrow(indiv_trips),big.mark=","),
             "individual trips with",prettyNum(nrow(joint_person_trips),big.mark=","),
@@ -209,7 +330,7 @@ remove(indiv_trips,joint_person_trips)
 ```
 
 ## Add active travel time to the Trips
-```{r addActiveColumn}
+```{r Trips_AddActiveColumn}
 
 # function init_active: creates a few new columns relevant to looking up the active travel time
 init_active <- function(trips) {
@@ -232,16 +353,15 @@ init_active <- function(trips) {
                   )
 }
 
-timeCode_labels <- c("EA","AM","MD","PM","EV")
-timeCode_values <- c(1,2,3,4,5)
+TIMECODE_LABELS <- c("EA","AM","MD","PM","EV")
+TIMECODE_VALUES <- c(1,2,3,4,5)
 
-# function add_active: attaches the active skims of the given time period (from timeCode_values)
+# function add_active: attaches the active skims of the given time period (from TIMECODE_VALUES)
 # to the given trip data.frame (joining on the columns orig_taz, dest_taz, and timeCode).
 # Fills in values to the column 'active' for the given time period.
 add_active <- function(timeCode_val, trips) {
 
-  timeCode    <- timeCode_labels[timeCode_val]
-  activeSkims <- read.table(file = paste0("ActiveTimeSkimsDatabase",timeCode,".csv"), header=TRUE, sep=",")
+  activeSkims <- read.table(file = paste0("ActiveTimeSkimsDatabase",TIMECODE_LABELS[timeCode_val],".csv"), header=TRUE, sep=",")
   # rename columns for join
   names(activeSkims)[names(activeSkims)=="orig"] <- "orig_taz"  
   names(activeSkims)[names(activeSkims)=="dest"] <- "dest_taz"
@@ -263,7 +383,7 @@ add_active <- function(timeCode_val, trips) {
                           ((timeCode==timeCode_val)*(amode==4)*dTrnW2) +
                           ((timeCode==timeCode_val)*(amode==5)*wTrnD2)
                   )
-  print(paste("For", timeCode, "assigned", prettyNum(sum(!is.na(trips$active2)),big.mark=","),
+  print(paste("For", TIMECODE_LABELS[timeCode_val], "assigned", prettyNum(sum(!is.na(trips$active2)),big.mark=","),
               "active times, with", prettyNum(sum(!is.na(trips$active2)&(trips$active2>0)),big.mark=","),
               "nonzero values"))
   trips$active2[is.na(trips$active2)] <- 0           # make the unassigned ones 0 for summing
@@ -274,7 +394,7 @@ add_active <- function(timeCode_val, trips) {
 
 # go go gadget: Add active transportation time to trips
 trips <- init_active(trips)
-for (timeCode_val in timeCode_values) {
+for (timeCode_val in TIMECODE_VALUES) {
   trips <- add_active(timeCode_val, trips)
 }
 trips <- tbl_df(trips)
@@ -347,7 +467,44 @@ write.table(active_summary, "summary/ActiveTransport.csv", sep=",", row.names=FA
 ```
 
 ## Active Travel Summary - Overall
-```{r ActiveTransportationSummary_overall, results='asis', echo=FALSE}
+```{r ActiveTransportationSummary_overall, results='asis', echo=FALSE, eval=FALSE}
+# function active_summary_to_xtable: updates the active_summary table by:
+# - multiplying trip rates to get number of trips
+# - combining walk-transit and drive-transit
+# - creating a formatted xtable for printing
+active_summary_to_xtable <- function(active_summary, caption) {
+  # multiply the trip rates by the number of people to get number of trips
+  active_summary[,6:9]      <- active_summary[,6:9]*active_summary[,1]
+  # combine walk-transit and drive-transit to transit
+  active_summary            <- mutate(active_summary, tr_trip=dtr_trip+wtr_trip)
+  # transpose it
+  active_summary_t          <- tbl_df(as.data.frame(t(active_summary)))
+  # add category and measure columns
+  print(active_summary_t)
+  active_summary_t$Category <- c("Regional"," ",
+                                 "Active travel"," "," "," ",
+                                 " "," "," "," ")
+  active_summary_t$Measure  <- c("Population",
+                                 "Share of population that does not leave home on a typical weekday",
+                                 "Average minutes of active travel per person per typical weekday",
+                                 "Share of the population that engages in at least 15 minutes of active travel per typical weekday",
+                                 "Share of the population that engages in at least 30 minutes of active travel per typical weekday",
+                                 "Total walk trips (excluding walking as part of transit travel",
+                                 "Total bicycle trips",
+                                 "Walk trips which are part of walk to transit travel per person",
+                                 "Walk trips which are part of drive to transit travel per person",
+                                 "Walk trips which are part of transit travel per person")
+  # reorder columns
+  colnames                  <- append(tail(colnames(active_summary_t),2), 
+                                      head(colnames(active_summary_t),length(colnames(active_summary_t))-2))
+  active_summary_t          <- active_summary_t[colnames]
+  active_summary_xtable     <- xtable(active_summary_t,
+                                      caption=caption
+                                      # align="lllr"
+                                      )
+  return(active_summary_xtable)
+}
+
 active_summary_all <- summarise(trips_by_person, 
                             freq     = n(),
                             atHomeA  = mean(atHomeA),
@@ -359,36 +516,17 @@ active_summary_all <- summarise(trips_by_person,
                             wtr_trip = mean(wtr_trip),
                             dtr_trip = mean(dtr_trip)
                             )
-# multiply the trip rates by the number of people to get number of trips
-active_summary_all[,6:9] <- active_summary_all[,6:9]*active_summary_all[,1]
-# combine walk-transit and drive-transit
-active_summary_all[,8]   <- active_summary_all[,8]+active_summary_all[,9]
-active_summary_all$dtr_trip <- NULL
-# transpose it
-active_summary_all <- tbl_df(as.data.frame(t(active_summary_all)))
-active_summary_all$Category <- c("Regional","Regional",
-                                 "Active travel","Active travel","Active travel",
-                                 "Active travel","Active travel","Active travel")
-active_summary_all$Measure  <- c("Population",
-                                 "Share of population that does not leave home on a typical weekday",
-                                 "Average minutes of active travel per person per typical weekday",
-                                 "Share of the population that engages in at least 15 minutes of active travel per typical weekday",
-                                 "Share of the population that engages in at least 30 minutes of active travel per typical weekday",
-                                 "Total walk trips (excluding walking as part of transit travel",
-                                 "Total bicycle trips",
-                                 "Total walk trips which are part of transit travel")
-# reorder columns
-active_summary_all          <- active_summary_all[c("Category", "Measure", "V1")]
-colnames(active_summary_all)[3] <- "Quantity"
-ats_all_xtable              <- xtable(active_summary_all,
-                                      caption="Active Travel - Regional Summary",
-                                      align="lllr")
-ats_all_xtable$Quantity     <- xtable_pretty(ats_all_xtable$Measure, ats_all_xtable$Quantity)
-print(ats_all_xtable, type="html", include.rownames=FALSE)
+# convert to xtable
+active_summary_all_xtable              <- active_summary_to_xtable(active_summary_all, "Active Travel - Regional Summary")
+# rename column
+colnames(active_summary_all_xtable)[3] <- "Quantity"
+# format the numbers
+active_summary_all_xtable$Quantity     <- xtable_pretty(active_summary_all_xtable$Measure, active_summary_all_xtable$Quantity)
+print(active_summary_all_xtable, type="html", include.rownames=FALSE)
 ```
 
 ## Active Travel Summary - By Person Type
-```{r ActiveTransportationSummary_ptype, results='asis', echo=FALSE}
+```{r ActiveTransportationSummary_ptype, results='asis', echo=FALSE, eval=FALSE}
 active_summary_ptype <- summarise(group_by(trips_by_person, ptype),
                             freq     = n(),
                             atHomeA  = mean(atHomeA),
@@ -400,52 +538,79 @@ active_summary_ptype <- summarise(group_by(trips_by_person, ptype),
                             wtr_trip = mean(wtr_trip),
                             dtr_trip = mean(dtr_trip)
                             )
-if (identical(as.numeric(active_summary_ptype$ptype), c(1,2,3,4,5,6,7,8))) {
-  rownames(active_summary_ptype) <- ptype_labels
-} else {
-  rownames(active_summary_ptype) <- active_summary_ptype$ptype
+active_summary_ptype <- select(active_summary_ptype, -ptype)
+# convert to xtable
+active_summary_ptype_xtable                <- active_summary_to_xtable(active_summary_ptype,"Active Travel By Person Type")
+# rename column
+colnames(active_summary_ptype_xtable)[3:length(colnames(active_summary_ptype_xtable))] <- PTYPE_LABELS
+# format the numbers
+for (ptype_val in PTYPE_LABELS) {
+  active_summary_ptype_xtable[[ptype_val]] <- xtable_pretty(active_summary_ptype_xtable$Measure, 
+                                                            get(ptype_val, active_summary_ptype_xtable))
 }
-active_summary_ptype$ptype <- NULL
-# multiply the trip rates by the number of people to get number of trips
-active_summary_ptype[,6:9] <- active_summary_ptype[,6:9]*active_summary_ptype[,1]
-# combine walk-transit and drive-transit
-active_summary_ptype[,8]   <- active_summary_ptype[,8]+active_summary_ptype[,9]
-active_summary_ptype$dtr_trip   <- NULL
-
-# transpose it to get ptypes across the top
-active_summary_ptype       <- as.data.frame(t(active_summary_ptype))
-# add label cols
-active_summary_ptype$Category <- active_summary_all$Category
-active_summary_ptype$Measure  <- active_summary_all$Measure
-# reorder columns
-active_summary_ptype          <- active_summary_ptype[append(c("Category", "Measure"), ptype_labels)]
-ats_ptype_xtable              <- xtable(active_summary_ptype,
-                                        caption="Active Travel - By Person Type",
-                                        align="lllrrrrrrrr")
-for (ptype_val in ptype_labels) {
-  ats_ptype_xtable[[ptype_val]] <- xtable_pretty(ats_ptype_xtable$Measure, get(ptype_val, ats_ptype_xtable))
-}
-print(ats_all_xtable, type="html", include.rownames=FALSE)
+print(active_summary_ptype_xtable, type="html", include.rownames=FALSE)
 ```
 
 ## Active Travel Summary - By County of Residence
-```{r ActiveTransportationSummary_county}
-
+```{r ActiveTransportationSummary_county, results='asis', echo=FALSE, eval=FALSE}
+active_summary_county <- summarise(group_by(trips_by_person, COUNTY),
+                            freq     = n(),
+                            atHomeA  = mean(atHomeA),
+                            active   = mean(active),
+                            more15   = mean(more15),
+                            more30   = mean(more30),
+                            wlk_trip = mean(wlk_trip),
+                            bik_trip = mean(bik_trip),
+                            wtr_trip = mean(wtr_trip),
+                            dtr_trip = mean(dtr_trip)
+                            )
+identical(as.integer(active_summary_county$COUNTY), as.integer(c(1,2,3,4,5,6,7,8,9)))
+active_summary_county <- select(active_summary_county, -COUNTY)
+# convert to xtable
+active_summary_county_xtable                <- active_summary_to_xtable(active_summary_county,"Active Travel By County of Residence")
+# rename column
+colnames(active_summary_county_xtable)[3:length(colnames(active_summary_county_xtable))] <- COUNTY_LABELS
+# format the numbers
+for (county_val in COUNTY_LABELS) {
+  active_summary_county_xtable[[county_val]] <- xtable_pretty(active_summary_county_xtable$Measure, 
+                                                            get(county_val, active_summary_county_xtable))
+}
+print(active_summary_county_xtable, type="html", include.rownames=FALSE)
 ```
 
 ## Active Travel Summary - By Automobile Ownership
-```{r ActiveTransportationSummary_zeroauto}
+```{r ActiveTransportationSummary_zeroauto, results='asis', echo=FALSE, eval=FALSE}
+active_summary_zerauto <- summarise(group_by(trips_by_person, zeroAuto),
+                            freq     = n(),
+                            atHomeA  = mean(atHomeA),
+                            active   = mean(active),
+                            more15   = mean(more15),
+                            more30   = mean(more30),
+                            wlk_trip = mean(wlk_trip),
+                            bik_trip = mean(bik_trip),
+                            wtr_trip = mean(wtr_trip),
+                            dtr_trip = mean(dtr_trip)
+                            )
+print(active_summary_zerauto$zeroAuto)
+identical(as.integer(active_summary_zerauto$zeroAuto), as.integer(c(0,1)))
+active_summary_zerauto <- select(active_summary_zerauto, -zeroAuto)
+# convert to xtable
+active_summary_zerauto_xtable                <- active_summary_to_xtable(active_summary_zerauto,"Active Travel By Auto Ownership")
+# rename column
+zerauto_labels                               <- c("Non-zero Automobiles", "Zero Automobiles")
+colnames(active_summary_zerauto_xtable)[3:length(colnames(active_summary_zerauto_xtable))] <- zerauto_labels
+# format the numbers
+for (zerauto_val in zerauto_labels) {
+  active_summary_zerauto_xtable[[zerauto_val]] <- xtable_pretty(active_summary_zerauto_xtable$Measure, 
+                                                            get(zerauto_val, active_summary_zerauto_xtable))
+}
+print(active_summary_zerauto_xtable, type="html", include.rownames=FALSE)
 ```
 
 # Activity Pattern Summary
 ```{r ActivityPatternSummary}
 actpatt_summary <- summarise(group_by(persons, type, activity_pattern, imf_choice, inmf_choice, incQ), freq=n())
 write.table(actpatt_summary, "summary/ActivityPattern.csv", sep=",", row.names=FALSE)
-```
-
-# Activity Pattern Summary By Person Type
-```{r ActivityPatternSummaryByPersonType}
-aps_pp_table                     <- dcast(actpatt_summary, type ~ activity_pattern, value.var="freq")
 ```
 
 # Auto Ownership Summaries
@@ -465,7 +630,7 @@ autoown_summary_county <- summarise(group_by(autoown_summary, COUNTY, autos), fr
 ggplot(autoown_summary_county, aes(x=as.factor(COUNTY), y=freq, fill=as.factor(autos))) +
   geom_bar(stat="identity", position="fill") +
   scale_y_continuous(labels=percent, breaks=seq(0,1,0.1)) +
-  scale_x_discrete(labels=county_labels) +
+  scale_x_discrete(labels=COUNTY_LABELS) +
   xlab("County of Residence") + 
   ylab("Share of Households") +
   ggtitle("Households by Automobile Ownership and County of Residence") +
@@ -484,7 +649,7 @@ aos_ac_table                     <- select(aos_ac_table, -autos)
 aos_ac_table_summed              <- addmargins(as.table(as.matrix(aos_ac_table)), 1, FUN=sum)
 rownames(aos_ac_table_summed)[6] <- "Everyone"
 # name columns
-colnames(aos_ac_table_summed)    <- county_labels
+colnames(aos_ac_table_summed)    <- COUNTY_LABELS
 aos_ac_xtable                    <- xtable(apply(aos_ac_table_summed, 2, prettyNum, big.mark=","), 
                                          align="lrrrrrrrrr",
                                          caption="Automobile Ownership Levels by County")
@@ -495,7 +660,7 @@ print(aos_ac_xtable, type="html")
 aos_ac_table_share              <- prop.table(as.table(as.matrix(aos_ac_table)),2)
 aos_ac_table_share              <- addmargins(aos_ac_table_share, 1, FUN=sum)
 rownames(aos_ac_table_share)[6] <- "Everyone"
-colnames(aos_ac_table_share)    <- county_labels
+colnames(aos_ac_table_share)    <- COUNTY_LABELS
 aos_ac_xtable_share             <- xtable(apply(aos_ac_table_share, 2, function(u) sprintf("%.1f%%",u*100)),
                                         align="lrrrrrrrrr",
                                         caption="Automobile Ownership Share by County")
@@ -511,7 +676,7 @@ autoown_summary_workers <- summarise(group_by(autoown_summary, workers, autos), 
 ggplot(autoown_summary_workers, aes(x=as.factor(workers), y=freq, fill=as.factor(autos))) +
   geom_bar(stat="identity", position="fill") +
   scale_y_continuous(labels=percent, breaks=seq(0,1,0.1)) +
-  scale_x_discrete(labels=worker_labels) +
+  scale_x_discrete(labels=WORKER_LABELS) +
   xlab("Workers in the Household") + 
   ylab("Share of Households") +
   ggtitle("Households by Automobile Ownership and Number of Workers") +
@@ -530,7 +695,7 @@ aos_aw_table                     <- select(aos_aw_table, -autos)
 aos_aw_table_summed              <- addmargins(as.table(as.matrix(aos_aw_table)), 1, FUN=sum)
 rownames(aos_aw_table_summed)[6] <- "Everyone"
 # name columns
-colnames(aos_aw_table_summed)    <- worker_labels
+colnames(aos_aw_table_summed)    <- WORKER_LABELS
 aosw_xtable                      <- xtable(apply(aos_aw_table_summed, 2, prettyNum, big.mark=","), 
                                            align="lrrrrr",
                                            caption="Automobile Ownership Levels by Number of Workers")
@@ -541,7 +706,7 @@ print(aosw_xtable, type="html")
 aos_aw_table_share              <- prop.table(as.table(as.matrix(aos_aw_table)),2)
 aos_aw_table_share              <- addmargins(aos_aw_table_share, 1, FUN=sum)
 rownames(aos_aw_table_share)[6] <- "Everyone"
-colnames(aos_aw_table_share)    <- worker_labels
+colnames(aos_aw_table_share)    <- WORKER_LABELS
 aosw_xtable_share               <- xtable(apply(aos_aw_table_share, 2, function(u) sprintf("%.1f%%",u*100)),
                                           align="lrrrrr",
                                           caption="Automobile Ownership Share by Number of Workers")
@@ -557,7 +722,7 @@ autoown_summary_trncoutny <- mutate(autoown_summary_trncoutny, totautos=autos*fr
 # ggplot(autoown_summary_workers, aes(x=as.factor(workers), y=freq, fill=as.factor(autos))) +
 #  geom_bar(stat="identity", position="fill") +
 #  scale_y_continuous(labels=percent, breaks=seq(0,1,0.1)) +
-#  scale_x_discrete(labels=worker_labels) +
+#  scale_x_discrete(labels=WORKER_LABELS) +
 #  xlab("Workers in the Household") + 
 #  ylab("Share of Households") +
 #  ggtitle("Households by Automobile Ownership and Number of Workers") +
@@ -571,7 +736,7 @@ autoown_summary_trncoutny <- mutate(autoown_summary_trncoutny, totautos=autos*fr
 aos_wc_table                  <- dcast(autoown_summary_trncoutny, walk_subzone ~ COUNTY, 
                                        value.var="freq", fun.aggregate=sum)
 # stopifnot(aos_wc_table$walk_subzone == c(0,1,2))
-rownames(aos_wc_table)        <- walk_subzone_labels
+rownames(aos_wc_table)        <- WALK_SUBZONE_LABELS
 aos_wc_table                  <- select(aos_wc_table, -walk_subzone)
 aos_wc_table_summed           <- addmargins(as.table(as.matrix(aos_wc_table)), 1, FUN=sum)
 
@@ -579,30 +744,122 @@ aos_wc_table_summed           <- addmargins(as.table(as.matrix(aos_wc_table)), 1
 aos_wc_table_totaut           <- dcast(autoown_summary_trncoutny, walk_subzone ~ COUNTY, 
                                        value.var="totautos", fun.aggregate=sum)
 # stopifnot(aos_wc_table_totaut$walk_subzone == c(0,1,2))
-rownames(aos_wc_table_totaut) <- walk_subzone_labels
+rownames(aos_wc_table_totaut) <- WALK_SUBZONE_LABELS
 aos_wc_table_totaut           <- select(aos_wc_table_totaut, -walk_subzone)
 aos_wc_table_totaut_summed    <- addmargins(as.table(as.matrix(aos_wc_table_totaut)), 1, FUN=sum)
 
 # avg autos in walk_subzones x county
 aos_wc_table_avgaut           <- aos_wc_table_totaut_summed/aos_wc_table_summed
 rownames(aos_wc_table_avgaut)[4] <- "Everyone"
-colnames(aos_wc_table_avgaut) <- county_labels
+colnames(aos_wc_table_avgaut) <- COUNTY_LABELS
 aos_wc_xtable_avgaut          <- xtable(apply(aos_wc_table_avgaut, 2, function(u) sprintf("%.2f",u)), 
                                         align="lrrrrrrrrr",
                                         caption=paste("Average Automobile Ownership Levels",
                                                       "(capped at 4 per household) by County ",
                                                       "and Walk-to-Transit Accessibility"))
-rownames(aos_wc_xtable_avgaut)<- append(walk_subzone_labels, "Everyone")
+rownames(aos_wc_xtable_avgaut)<- append(WALK_SUBZONE_LABELS, "Everyone")
 print(aos_wc_xtable_avgaut, type="html")
 
 # number of households in walk_subzones x county
 rownames(aos_wc_table_summed)[4] <- "Everyone"
-colnames(aos_wc_table_summed) <- county_labels
+colnames(aos_wc_table_summed) <- COUNTY_LABELS
 aos_wc_xtable_summed          <- xtable(apply(aos_wc_table_summed, 2, prettyNum, big.mark=","), 
                                         align="lrrrrrrrrr",
                                         caption=paste("Number of households by County",
                                                       "and Walk-to-Transit Accessibility"))
-rownames(aos_wc_xtable_summed)<- append(walk_subzone_labels, "Everyone")
+rownames(aos_wc_xtable_summed)<- append(WALK_SUBZONE_LABELS, "Everyone")
 print(aos_wc_xtable_summed, type="html")
 
 ```
+
+# Commute By Employment Location Summaries
+```{r CommuteByEmploymentLocationSummary}
+commute_tours   <- select(indiv_tours, hh_id, person_id, orig_taz, dest_taz, tour_purpose, start_hour, end_hour, tour_mode)
+# select out non-work travel
+commute_tours   <- subset(commute_tours, (tour_purpose!="atwork_business" & tour_purpose!="atwork_eat"  & tour_purpose!="atwork_maint" &
+                                          tour_purpose!="eatout"          & tour_purpose!="escort_kids" & tour_purpose!="escort_no kids" &
+                                          tour_purpose!="othdiscr"        & tour_purpose!="othmaint"    & tour_purpose!="school_grade" &
+                                          tour_purpose!="school_high"     & tour_purpose!="shopping"    & tour_purpose!="social" &
+                                          tour_purpose!="university"))
+
+# TODO: add this to all tours, not just commute?
+# The cost database contains simplified transit modes, build a cross-walk from the full modes;
+commute_tours   <- mutate(commute_tours, 
+                          costMode  =(tour_mode<=8)*tour_mode +         # auto, walk, bike all in the skims
+                                     # All walk to transit sub modes get best path walk to transit skim
+                                     (tour_mode>=9)*(tour_mode<=13)*9 +
+                                     # All drive transit walk sub modes get the best path drive transit walk skim (tours start at home)
+                                     (tour_mode>=14)*10,
+                          timeCodeHw=(start_hour<6)*1 +                  # EA
+                                     (start_hour>5)*(start_hour<10)*2 +  # AM
+                                     (start_hour>9)*(start_hour<15)*3 +  # MD
+                                     (start_hour>14)*(start_hour<19)*4 + # PM
+                                     (start_hour>18)*5,                  # EV
+                          timeCodeWh=(end_hour<6)*1 +                  # EA
+                                     (end_hour>5)*(end_hour<10)*2 +    # AM
+                                     (end_hour>9)*(end_hour<15)*3 +    # MD
+                                     (end_hour>14)*(end_hour<19)*4 +   # PM
+                                     (end_hour>18)*5                   # EV
+                          )
+                                     
+# Initialize for home-work cost lookup
+commute_tours   <- mutate(commute_tours, timeCode=timeCodeHw, cost=0.0)
+# Add home-work cost to tours
+for (timeCode_val in TIMECODE_VALUES) {
+  commute_tours <- add_cost(timeCode_val, commute_tours, reverse_od=FALSE)
+}
+# That set it as cost, so rename
+commute_tours   <- mutate(commute_tours, hwCost=cost)
+# Initialize for work-home cost lookup.
+commute_tours   <- mutate(commute_tours, timeCode=timeCodeWh, cost=0.0)
+# Add work-home cost to tours
+for (timeCode_val in TIMECODE_VALUES) {
+  commute_tours <- add_cost(timeCode_val, commute_tours, reverse_od=TRUE)
+}
+# That set it as cost, so rename
+commute_tours   <- mutate(commute_tours, whCost=cost)
+# Save cost as the average of hwCost and whCost
+commute_tours   <- mutate(commute_tours, cost=0.5*(hwCost+whCost))
+
+# Add distance to tours
+commute_tours   <- mutate(commute_tours, distance=0.0)
+for (timeCode_val in TIMECODE_VALUES) {
+  commute_tours <- add_distance(timeCode_val, commute_tours)
+}
+
+# Calculate the duration
+commute_tours   <- mutate(commute_tours,
+                          duration=end_hour-start_hour+0.5)
+# Get the superdistrict, parking cost from tazdata
+commute_tours   <- left_join(commute_tours,
+                             mutate(tazData, dest_taz=taz) %.% select(dest_taz, SD, PRKCST),
+                             by=c("dest_taz"))
+# Get the free-parking choice from persons
+commute_tours   <- left_join(commute_tours,
+                             select(persons, person_id, fp_choice),
+                             by=c("person_id"))
+
+# Compute the tour parking cost
+commute_tours   <- mutate(commute_tours, parking_rate=ifelse(fp_choice==1,0.0,PRKCST))
+commute_tours   <- mutate(commute_tours, parking_cost=parking_rate*duration)
+# Distribute costs across shared ride modes (same value used in skims, assignment);
+commute_tours   <- mutate(commute_tours, parking_cost=ifelse((tour_mode==3)|(tour_mode==4),parking_cost/1.75,parking_cost))
+commute_tours   <- mutate(commute_tours, parking_cost=ifelse((tour_mode==5)|(tour_mode==6),parking_cost/2.50,parking_cost))
+# Set the transit parking cost to zero
+commute_tours   <- mutate(commute_tours, parking_cost=ifelse(tour_mode>6,0.0,parking_cost))
+# Sum parking and out-of-pocket cost
+commute_tours   <- mutate(commute_tours, totCost=cost+parking_cost)
+# summarise
+commute_summary <- summarise(group_by(commute_tours, SD, tour_mode), 
+                             freq         = n(),
+                             totCost      = mean(totCost),
+                             cost         = mean(cost),
+                             parking_cost = mean(parking_cost),
+                             distance     = mean(distance))
+write.table(commute_summary, "summary/CommuteByEmploymentLocation.csv", sep=",", row.names=FALSE)
+
+# TODO: something is going wrong.  Start with
+# commute_tours[(commute_tours$SD==26)&(commute_tours$tour_mode==2),]
+# It doesn't match the xlsx
+```
+
