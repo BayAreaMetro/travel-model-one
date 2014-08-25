@@ -161,6 +161,8 @@ TIMECODE_VALUES <- c(1,2,3,4,5)
 # function add_cost: attaches the cost skims of the given time period (from TIMECODE_VALUES)
 # to the given tours data.frame (joining on the columns orig_taz, dest_taz, and timeCode).
 # Fills in values to the column 'cost' for the given time period based on the column 'costMode'.
+# Pass revers_ode as TRUE to do return trip; this uses the dest taz as the origin and the origin
+# taz as the dest, and it uses wTrnD cost rather than dTrnW
 add_cost <- function(timeCode_val, tours, reverse_od=FALSE) {
   
   costSkims   <- read.table(file = paste0("CostSkimsDatabase",TIMECODE_LABELS[timeCode_val],".csv"), header=TRUE, sep=",")
@@ -172,18 +174,18 @@ add_cost <- function(timeCode_val, tours, reverse_od=FALSE) {
     names(costSkims)[names(costSkims)=="orig"] <- "orig_taz"  
     names(costSkims)[names(costSkims)=="dest"] <- "dest_taz"
   }
-  # recode -999 as NA
+  # recode -999 as 0
   costSkims   <- mutate(costSkims,
                         timeCode = timeCode_val,
-                        da       = ifelse(da    == -999,NA,da    ),
-                        daToll   = ifelse(daToll== -999,NA,daToll),
-                        s2       = ifelse(s2    == -999,NA,s2    ),
-                        s2Toll   = ifelse(s2Toll== -999,NA,s2Toll),
-                        s3       = ifelse(s3    == -999,NA,s3    ),
-                        s3Toll   = ifelse(s3Toll== -999,NA,s3Toll),
-                        wTrnW    = ifelse(wTrnW == -999,NA,wTrnW ),
-                        dTrnW    = ifelse(dTrnW == -999,NA,dTrnW ),
-                        wTrnD    = ifelse(wTrnD == -999,NA,wTrnD ))
+                        da       = ifelse(da    == -999,0,da    ),
+                        daToll   = ifelse(daToll== -999,0,daToll),
+                        s2       = ifelse(s2    == -999,0,s2    ),
+                        s2Toll   = ifelse(s2Toll== -999,0,s2Toll),
+                        s3       = ifelse(s3    == -999,0,s3    ),
+                        s3Toll   = ifelse(s3Toll== -999,0,s3Toll),
+                        wTrnW    = ifelse(wTrnW == -999,0,wTrnW ),
+                        dTrnW    = ifelse(dTrnW == -999,0,dTrnW ),
+                        wTrnD    = ifelse(wTrnD == -999,0,wTrnD ))
   
   # Left join tours to the skims
   tours <- left_join(tours, costSkims, by=c("orig_taz","dest_taz","timeCode"))
@@ -198,8 +200,14 @@ add_cost <- function(timeCode_val, tours, reverse_od=FALSE) {
                         ((timeCode==timeCode_val)*(costMode==7)*0.0   ) +
                         ((timeCode==timeCode_val)*(costMode==8)*0.0   ) +
                         ((timeCode==timeCode_val)*(costMode==9)*wTrnW ) +
-                        ((timeCode==timeCode_val)*(costMode==10)*dTrnW)
+                        ((timeCode==timeCode_val)*(costMode==10)*(1-reverse_od)*dTrnW) +
+                        ((timeCode==timeCode_val)*(costMode==10)*(reverse_od   *wTrnD))
                   )
+  
+  print(t(tours[(tours$SD==19)&(tours$tour_mode==15),]))
+  print(t(tours[(tours$SD==27)&(tours$tour_mode==17),]))
+  print(t(tours[(tours$SD==29)&(tours$tour_mode==12),]))
+  
   print(paste("For", TIMECODE_LABELS[timeCode_val], "assigned", prettyNum(sum(!is.na(tours$cost2)),big.mark=","),
               "costs, with", prettyNum(sum(!is.na(tours$cost2)&(tours$cost2>0)),big.mark=","),
               "nonzero values"))
@@ -228,14 +236,14 @@ add_distance <- function(timeCode_val, tours) {
   
   distSkims   <- mutate(distSkims,
                         timeCode = timeCode_val,
-                        da       = ifelse(da    == -999,NA,da    ),
-                        daToll   = ifelse(daToll== -999,NA,daToll),
-                        s2       = ifelse(s2    == -999,NA,s2    ),
-                        s2Toll   = ifelse(s2Toll== -999,NA,s2Toll),
-                        s3       = ifelse(s3    == -999,NA,s3    ),
-                        s3Toll   = ifelse(s3Toll== -999,NA,s3Toll),
-                        walk     = ifelse(walk  == -999,NA,walk  ),
-                        bike     = ifelse(bike  == -999,NA,bike ))
+                        da       = ifelse(da    == -999,0,da    ),
+                        daToll   = ifelse(daToll== -999,0,daToll),
+                        s2       = ifelse(s2    == -999,0,s2    ),
+                        s2Toll   = ifelse(s2Toll== -999,0,s2Toll),
+                        s3       = ifelse(s3    == -999,0,s3    ),
+                        s3Toll   = ifelse(s3Toll== -999,0,s3Toll),
+                        walk     = ifelse(walk  == -999,0,walk  ),
+                        bike     = ifelse(bike  == -999,0,bike ))
   
   # Left join tours to the skims
   tours <- left_join(tours, distSkims, by=c("orig_taz","dest_taz","timeCode"))
@@ -252,6 +260,9 @@ add_distance <- function(timeCode_val, tours) {
                             # Use the drive alone time as the distance for transit modes
                             ((timeCode==timeCode_val)*(tour_mode>=9)*da    )
                   )
+  # debug
+  print(t(tours[(tours$SD==27)&(tours$tour_mode==17),]))
+  
   print(paste("For", TIMECODE_LABELS[timeCode_val], "assigned", prettyNum(sum(!is.na(tours$distance2)),big.mark=","),
               "distances, with", prettyNum(sum(!is.na(tours$distance2)&(tours$distance2>0)),big.mark=","),
               "nonzero values"))
@@ -801,7 +812,13 @@ commute_tours   <- mutate(commute_tours,
                                      (end_hour>14)*(end_hour<19)*4 +   # PM
                                      (end_hour>18)*5                   # EV
                           )
-                                     
+
+
+#### TEMP
+commute_tours   <- left_join(commute_tours,
+                             mutate(tazData, dest_taz=taz) %.% select(dest_taz, SD, PRKCST),
+                             by=c("dest_taz"))
+
 # Initialize for home-work cost lookup
 commute_tours   <- mutate(commute_tours, timeCode=timeCodeHw, cost=0.0)
 # Add home-work cost to tours
@@ -831,9 +848,9 @@ for (timeCode_val in TIMECODE_VALUES) {
 commute_tours   <- mutate(commute_tours,
                           duration=end_hour-start_hour+0.5)
 # Get the superdistrict, parking cost from tazdata
-commute_tours   <- left_join(commute_tours,
-                             mutate(tazData, dest_taz=taz) %.% select(dest_taz, SD, PRKCST),
-                             by=c("dest_taz"))
+#commute_tours   <- left_join(commute_tours,
+#                             mutate(tazData, dest_taz=taz) %.% select(dest_taz, SD, PRKCST),
+#                             by=c("dest_taz"))
 # Get the free-parking choice from persons
 commute_tours   <- left_join(commute_tours,
                              select(persons, person_id, fp_choice),

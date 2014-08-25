@@ -384,186 +384,6 @@
         <semantic-value key='[Country].[Name]' value='&quot;United States&quot;' />
       </semantic-values>
     </datasource>
-    <datasource caption='ActivityPattern' inline='true' name='textscan.41862.719548923611' version='8.3'>
-      <connection class='textscan' directory='C:/Users/lzorn/Documents/2010_04_ZZZ/summary' filename='ActivityPattern.csv'>
-        <relation name='ActivityPattern#csv' table='[ActivityPattern#csv]' type='table'>
-          <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
-            <column datatype='string' name='type' ordinal='0' />
-            <column datatype='string' name='activity_pattern' ordinal='1' />
-            <column datatype='integer' name='imf_choice' ordinal='2' />
-            <column datatype='integer' name='inmf_choice' ordinal='3' />
-            <column datatype='integer' name='incQ' ordinal='4' />
-            <column datatype='integer' name='freq' ordinal='5' />
-          </columns>
-        </relation>
-        <metadata-records>
-          <metadata-record class='column'>
-            <remote-name>type</remote-name>
-            <remote-type>129</remote-type>
-            <local-name>[type]</local-name>
-            <parent-name>[ActivityPattern#csv]</parent-name>
-            <remote-alias>type</remote-alias>
-            <ordinal>0</ordinal>
-            <local-type>string</local-type>
-            <aggregation>Count</aggregation>
-            <scale>1</scale>
-            <width>1073741823</width>
-            <contains-null>true</contains-null>
-            <collation flag='0' name='LEN_RUS' />
-            <attributes>
-              <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
-              <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
-              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
-              <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>8</attribute>
-              <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
-            </attributes>
-          </metadata-record>
-          <metadata-record class='column'>
-            <remote-name>activity_pattern</remote-name>
-            <remote-type>129</remote-type>
-            <local-name>[activity_pattern]</local-name>
-            <parent-name>[ActivityPattern#csv]</parent-name>
-            <remote-alias>activity_pattern</remote-alias>
-            <ordinal>1</ordinal>
-            <local-type>string</local-type>
-            <aggregation>Count</aggregation>
-            <scale>1</scale>
-            <width>1073741823</width>
-            <contains-null>true</contains-null>
-            <collation flag='0' name='LEN_RUS' />
-            <attributes>
-              <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
-              <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
-              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
-              <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>8</attribute>
-              <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
-            </attributes>
-          </metadata-record>
-          <metadata-record class='column'>
-            <remote-name>imf_choice</remote-name>
-            <remote-type>20</remote-type>
-            <local-name>[imf_choice]</local-name>
-            <parent-name>[ActivityPattern#csv]</parent-name>
-            <remote-alias>imf_choice</remote-alias>
-            <ordinal>2</ordinal>
-            <local-type>integer</local-type>
-            <aggregation>Sum</aggregation>
-            <contains-null>true</contains-null>
-            <attributes>
-              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
-              <attribute datatype='string' name='DebugRemoteType'>&quot;sint64&quot;</attribute>
-            </attributes>
-          </metadata-record>
-          <metadata-record class='column'>
-            <remote-name>inmf_choice</remote-name>
-            <remote-type>20</remote-type>
-            <local-name>[inmf_choice]</local-name>
-            <parent-name>[ActivityPattern#csv]</parent-name>
-            <remote-alias>inmf_choice</remote-alias>
-            <ordinal>3</ordinal>
-            <local-type>integer</local-type>
-            <aggregation>Sum</aggregation>
-            <contains-null>true</contains-null>
-            <attributes>
-              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
-              <attribute datatype='string' name='DebugRemoteType'>&quot;sint64&quot;</attribute>
-            </attributes>
-          </metadata-record>
-          <metadata-record class='column'>
-            <remote-name>incQ</remote-name>
-            <remote-type>20</remote-type>
-            <local-name>[incQ]</local-name>
-            <parent-name>[ActivityPattern#csv]</parent-name>
-            <remote-alias>incQ</remote-alias>
-            <ordinal>4</ordinal>
-            <local-type>integer</local-type>
-            <aggregation>Sum</aggregation>
-            <contains-null>true</contains-null>
-            <attributes>
-              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
-              <attribute datatype='string' name='DebugRemoteType'>&quot;sint64&quot;</attribute>
-            </attributes>
-          </metadata-record>
-          <metadata-record class='column'>
-            <remote-name>freq</remote-name>
-            <remote-type>20</remote-type>
-            <local-name>[freq]</local-name>
-            <parent-name>[ActivityPattern#csv]</parent-name>
-            <remote-alias>freq</remote-alias>
-            <ordinal>5</ordinal>
-            <local-type>integer</local-type>
-            <aggregation>Sum</aggregation>
-            <contains-null>true</contains-null>
-            <attributes>
-              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
-              <attribute datatype='string' name='DebugRemoteType'>&quot;sint64&quot;</attribute>
-            </attributes>
-          </metadata-record>
-          <metadata-record class='capability'>
-            <remote-name></remote-name>
-            <remote-type>0</remote-type>
-            <parent-name>[ActivityPattern#csv]</parent-name>
-            <remote-alias></remote-alias>
-            <aggregation>Count</aggregation>
-            <contains-null>true</contains-null>
-            <attributes>
-              <attribute datatype='string' name='character-set'>&quot;UTF-8&quot;</attribute>
-              <attribute datatype='string' name='field-delimiter'>&quot;,&quot;</attribute>
-              <attribute datatype='string' name='header-row'>&quot;true&quot;</attribute>
-              <attribute datatype='string' name='locale'>&quot;en_US&quot;</attribute>
-              <attribute datatype='string' name='single-char'>&quot;&quot;</attribute>
-            </attributes>
-          </metadata-record>
-        </metadata-records>
-      </connection>
-      <aliases enabled='yes' />
-      <column datatype='string' name='[:Measure Names]' role='dimension' type='nominal'>
-        <aliases>
-          <alias key='&quot;[textscan.41862.719548923611].[pcto:sum:freq:qk:1]&quot;' value='% of Total for Person Type' />
-          <alias key='&quot;[textscan.41862.719548923611].[sum:freq:qk]&quot;' value='Quantity' />
-        </aliases>
-      </column>
-      <column datatype='real' default-format='p0.00%' name='[Calculation1]' role='measure' type='quantitative'>
-        <calculation class='tableau' formula='SUM([freq]) / TOTAL(SUM([freq]))'>
-          <table-calc ordering-type='Rows' />
-        </calculation>
-      </column>
-      <column datatype='integer' name='[Number of Records]' role='measure' type='quantitative' user:auto-column='numrec'>
-        <calculation class='tableau' formula='1' />
-      </column>
-      <column caption='Daily Activity Pattern' datatype='string' name='[activity_pattern]' role='dimension' type='nominal'>
-        <aliases>
-          <alias key='&quot;H&quot;' value='Home' />
-          <alias key='&quot;M&quot;' value='Mandatory' />
-          <alias key='&quot;N&quot;' value='Non-mandatory' />
-        </aliases>
-      </column>
-      <column caption='Freq' datatype='integer' name='[freq]' role='measure' type='quantitative'>
-      </column>
-      <column aggregation='Sum' caption='Imf Choice' datatype='integer' name='[imf_choice]' role='dimension' type='ordinal'>
-      </column>
-      <column aggregation='Sum' caption='Inc Q' datatype='integer' name='[incQ]' role='dimension' type='ordinal'>
-        <aliases>
-          <alias key='1' value='Less than $30,000' />
-          <alias key='2' value='$30,000 to $60,000' />
-          <alias key='3' value='$60,000 to $100,000' />
-          <alias key='4' value='More than $100,000' />
-        </aliases>
-      </column>
-      <column aggregation='Sum' caption='Inmf Choice' datatype='integer' name='[inmf_choice]' role='dimension' type='ordinal'>
-      </column>
-      <column caption='Person Type' datatype='string' name='[type]' role='dimension' type='nominal'>
-      </column>
-      <column-instance column='[activity_pattern]' derivation='None' name='[none:activity_pattern:nk]' pivot='key' type='nominal' />
-      <column-instance column='[freq]' derivation='Sum' name='[pcto:sum:freq:qk:1]' pivot='key' type='quantitative'>
-        <table-calc ordering-field='[textscan.41862.719548923611].[none:activity_pattern:nk]' ordering-type='Field' type='PctTotal' />
-      </column-instance>
-      <column-instance column='[freq]' derivation='Sum' name='[sum:freq:qk]' pivot='key' type='quantitative' />
-      <layout dim-ordering='alphabetic' dim-percentage='0.5' measure-ordering='alphabetic' measure-percentage='0.4' show-structure='true' />
-      <semantic-values>
-        <semantic-value key='[Country].[Name]' value='&quot;United States&quot;' />
-      </semantic-values>
-    </datasource>
     <datasource caption='AutomobileOwnership' inline='true' name='textscan.41863.595200555559' version='8.3'>
       <connection class='textscan' directory='C:/Users/lzorn/Documents/2010_04_ZZZ/summary' filename='AutomobileOwnership.csv'>
         <relation name='AutomobileOwnership#csv' table='[AutomobileOwnership#csv]' type='table'>
@@ -790,6 +610,381 @@
           </encoding>
         </style-rule>
       </style>
+      <semantic-values>
+        <semantic-value key='[Country].[Name]' value='&quot;United States&quot;' />
+      </semantic-values>
+    </datasource>
+    <datasource caption='ActivityPattern' inline='true' name='textscan.41862.719548923611' version='8.3'>
+      <connection class='textscan' directory='C:/Users/lzorn/Documents/2020_03_116/summary' filename='ActivityPattern.csv'>
+        <relation name='ActivityPattern#csv' table='[ActivityPattern#csv]' type='table'>
+          <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
+            <column datatype='string' name='type' ordinal='0' />
+            <column datatype='string' name='activity_pattern' ordinal='1' />
+            <column datatype='integer' name='imf_choice' ordinal='2' />
+            <column datatype='integer' name='inmf_choice' ordinal='3' />
+            <column datatype='integer' name='incQ' ordinal='4' />
+            <column datatype='integer' name='freq' ordinal='5' />
+          </columns>
+        </relation>
+        <refresh increment-key='' incremental-updates='false'>
+        </refresh>
+        <metadata-records>
+          <metadata-record class='column'>
+            <remote-name>type</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[type]</local-name>
+            <parent-name>[ActivityPattern#csv]</parent-name>
+            <remote-alias>type</remote-alias>
+            <ordinal>0</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>activity_pattern</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[activity_pattern]</local-name>
+            <parent-name>[ActivityPattern#csv]</parent-name>
+            <remote-alias>activity_pattern</remote-alias>
+            <ordinal>1</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>imf_choice</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[imf_choice]</local-name>
+            <parent-name>[ActivityPattern#csv]</parent-name>
+            <remote-alias>imf_choice</remote-alias>
+            <ordinal>2</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;sint64&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>inmf_choice</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[inmf_choice]</local-name>
+            <parent-name>[ActivityPattern#csv]</parent-name>
+            <remote-alias>inmf_choice</remote-alias>
+            <ordinal>3</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;sint64&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>incQ</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[incQ]</local-name>
+            <parent-name>[ActivityPattern#csv]</parent-name>
+            <remote-alias>incQ</remote-alias>
+            <ordinal>4</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;sint64&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>freq</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[freq]</local-name>
+            <parent-name>[ActivityPattern#csv]</parent-name>
+            <remote-alias>freq</remote-alias>
+            <ordinal>5</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;sint64&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='capability'>
+            <remote-name></remote-name>
+            <remote-type>0</remote-type>
+            <parent-name>[ActivityPattern#csv]</parent-name>
+            <remote-alias></remote-alias>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='character-set'>&quot;UTF-8&quot;</attribute>
+              <attribute datatype='string' name='field-delimiter'>&quot;,&quot;</attribute>
+              <attribute datatype='string' name='header-row'>&quot;true&quot;</attribute>
+              <attribute datatype='string' name='locale'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='single-char'>&quot;&quot;</attribute>
+            </attributes>
+          </metadata-record>
+        </metadata-records>
+      </connection>
+      <aliases enabled='yes' />
+      <column datatype='string' name='[:Measure Names]' role='dimension' type='nominal'>
+        <aliases>
+          <alias key='&quot;[textscan.41862.719548923611].[pcto:sum:freq:qk:1]&quot;' value='% of Total for Person Type' />
+          <alias key='&quot;[textscan.41862.719548923611].[sum:freq:qk]&quot;' value='Quantity' />
+        </aliases>
+      </column>
+      <column datatype='real' default-format='p0.00%' name='[Calculation1]' role='measure' type='quantitative'>
+        <calculation class='tableau' formula='SUM([freq]) / TOTAL(SUM([freq]))'>
+          <table-calc ordering-type='Rows' />
+        </calculation>
+      </column>
+      <column datatype='integer' name='[Number of Records]' role='measure' type='quantitative' user:auto-column='numrec'>
+        <calculation class='tableau' formula='1' />
+      </column>
+      <column caption='Daily Activity Pattern' datatype='string' name='[activity_pattern]' role='dimension' type='nominal'>
+        <aliases>
+          <alias key='&quot;H&quot;' value='Home' />
+          <alias key='&quot;M&quot;' value='Mandatory' />
+          <alias key='&quot;N&quot;' value='Non-mandatory' />
+        </aliases>
+      </column>
+      <column caption='Freq' datatype='integer' name='[freq]' role='measure' type='quantitative'>
+      </column>
+      <column aggregation='Sum' caption='Imf Choice' datatype='integer' name='[imf_choice]' role='dimension' type='ordinal'>
+      </column>
+      <column aggregation='Sum' caption='Inc Q' datatype='integer' name='[incQ]' role='dimension' type='ordinal'>
+        <aliases>
+          <alias key='1' value='Less than $30,000' />
+          <alias key='2' value='$30,000 to $60,000' />
+          <alias key='3' value='$60,000 to $100,000' />
+          <alias key='4' value='More than $100,000' />
+        </aliases>
+      </column>
+      <column aggregation='Sum' caption='Inmf Choice' datatype='integer' name='[inmf_choice]' role='dimension' type='ordinal'>
+      </column>
+      <column caption='Person Type' datatype='string' name='[type]' role='dimension' type='nominal'>
+      </column>
+      <column-instance column='[activity_pattern]' derivation='None' name='[none:activity_pattern:nk]' pivot='key' type='nominal' />
+      <column-instance column='[freq]' derivation='Sum' name='[pcto:sum:freq:qk:1]' pivot='key' type='quantitative'>
+        <table-calc ordering-field='[textscan.41862.719548923611].[none:activity_pattern:nk]' ordering-type='Field' type='PctTotal' />
+      </column-instance>
+      <column-instance column='[freq]' derivation='Sum' name='[sum:freq:qk]' pivot='key' type='quantitative' />
+      <extract count='-1' enabled='false' units='records'>
+        <connection class='dataengine' dbname='C:\Users\lzorn\Documents\CoreSummaries\ActivityPattern.tde' schema='Extract' tablename='Extract' update-time='08/16/2014 12:49:40 AM'>
+          <relation name='Extract' table='[Extract].[Extract]' type='table' />
+          <calculations>
+            <calculation column='[Number of Records]' formula='1' />
+          </calculations>
+          <refresh increment-key='' incremental-updates='false'>
+            <refresh-event add-from-file-path='' increment-value='%null%' refresh-type='create' rows-inserted='4298' timestamp-start='2014-08-16 00:49:40.967' />
+          </refresh>
+          <metadata-records>
+            <metadata-record class='column'>
+              <remote-name>Number of Records</remote-name>
+              <remote-type>16</remote-type>
+              <local-name>[Number of Records]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>Number of Records</remote-alias>
+              <ordinal>0</ordinal>
+              <local-type>integer</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>1</approx-count>
+              <contains-null>false</contains-null>
+              <statistics>
+                <statistic aggregation='Min' datatype='integer'>1</statistic>
+                <statistic aggregation='Max' datatype='integer'>1</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='string' name='DebugRemoteMetadata (ordered)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>1</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;sint8&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>activity_pattern</remote-name>
+              <remote-type>129</remote-type>
+              <local-name>[activity_pattern]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>activity_pattern</remote-alias>
+              <ordinal>1</ordinal>
+              <family>ActivityPattern#csv</family>
+              <local-type>string</local-type>
+              <aggregation>Count</aggregation>
+              <approx-count>3</approx-count>
+              <scale>1</scale>
+              <width>1073741823</width>
+              <contains-null>false</contains-null>
+              <collation flag='0' name='LEN_RUS' />
+              <statistics>
+                <statistic aggregation='Min' datatype='string'>&quot;H&quot;</statistic>
+                <statistic aggregation='Max' datatype='string'>&quot;N&quot;</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (comparable)'>true</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (ordered)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>0</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>freq</remote-name>
+              <remote-type>3</remote-type>
+              <local-name>[freq]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>freq</remote-alias>
+              <ordinal>2</ordinal>
+              <family>ActivityPattern#csv</family>
+              <local-type>integer</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>1142</approx-count>
+              <contains-null>false</contains-null>
+              <statistics>
+                <statistic aggregation='Min' datatype='integer'>1</statistic>
+                <statistic aggregation='Max' datatype='integer'>607577</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (comparable)'>true</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;array&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>5</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>2</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;sint32&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>imf_choice</remote-name>
+              <remote-type>16</remote-type>
+              <local-name>[imf_choice]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>imf_choice</remote-alias>
+              <ordinal>3</ordinal>
+              <family>ActivityPattern#csv</family>
+              <local-type>integer</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>6</approx-count>
+              <contains-null>false</contains-null>
+              <statistics>
+                <statistic aggregation='Min' datatype='integer'>0</statistic>
+                <statistic aggregation='Max' datatype='integer'>5</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>1</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>2</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;sint8&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>incQ</remote-name>
+              <remote-type>16</remote-type>
+              <local-name>[incQ]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>incQ</remote-alias>
+              <ordinal>4</ordinal>
+              <family>ActivityPattern#csv</family>
+              <local-type>integer</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>4</approx-count>
+              <contains-null>false</contains-null>
+              <statistics>
+                <statistic aggregation='Min' datatype='integer'>1</statistic>
+                <statistic aggregation='Max' datatype='integer'>4</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>1</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>1</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;sint8&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>inmf_choice</remote-name>
+              <remote-type>16</remote-type>
+              <local-name>[inmf_choice]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>inmf_choice</remote-alias>
+              <ordinal>5</ordinal>
+              <family>ActivityPattern#csv</family>
+              <local-type>integer</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>90</approx-count>
+              <contains-null>false</contains-null>
+              <statistics>
+                <statistic aggregation='Min' datatype='integer'>0</statistic>
+                <statistic aggregation='Max' datatype='integer'>93</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>1</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>4</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;sint8&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>type</remote-name>
+              <remote-type>129</remote-type>
+              <local-name>[type]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>type</remote-alias>
+              <ordinal>6</ordinal>
+              <family>ActivityPattern#csv</family>
+              <local-type>string</local-type>
+              <aggregation>Count</aggregation>
+              <approx-count>8</approx-count>
+              <scale>1</scale>
+              <width>1073741823</width>
+              <contains-null>false</contains-null>
+              <collation flag='0' name='LEN_RUS' />
+              <statistics>
+                <statistic aggregation='Min' datatype='string'>&quot;Child too young for school&quot;</statistic>
+                <statistic aggregation='Max' datatype='string'>&quot;University student&quot;</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (comparable)'>true</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>3</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+              </attributes>
+            </metadata-record>
+          </metadata-records>
+        </connection>
+      </extract>
+      <layout dim-ordering='alphabetic' dim-percentage='0.5' measure-ordering='alphabetic' measure-percentage='0.4' show-structure='true' />
       <semantic-values>
         <semantic-value key='[Country].[Name]' value='&quot;United States&quot;' />
       </semantic-values>
@@ -2001,6 +2196,8 @@
           <field>[textscan.41862.719202812499].[none:ptype:ok]</field>
         </color-one-way>
       </highlight>
+      <viewpoint>
+      </viewpoint>
     </window>
     <window auto-hidden='0' class='worksheet' maximized='0' name='ActiveTravelByPersonType'>
       <cards>
@@ -2027,6 +2224,8 @@
           <field>[textscan.41862.719202812499].[none:ptype:ok]</field>
         </color-one-way>
       </highlight>
+      <viewpoint>
+      </viewpoint>
     </window>
     <window auto-hidden='0' class='worksheet' maximized='0' name='ActiveTravelByCounty'>
       <cards>
@@ -2053,6 +2252,8 @@
           <field>[textscan.41862.719202812499].[none:ptype:ok]</field>
         </color-one-way>
       </highlight>
+      <viewpoint>
+      </viewpoint>
     </window>
     <window auto-hidden='0' class='worksheet' maximized='0' name='ActiveTravelByAutoOwnership'>
       <cards>
@@ -2080,6 +2281,8 @@
           <field>[textscan.41862.719202812499].[none:zeroAuto:nk]</field>
         </color-one-way>
       </highlight>
+      <viewpoint>
+      </viewpoint>
     </window>
     <window auto-hidden='0' class='worksheet' maximized='0' name='ActivityByPersonType'>
       <cards>
@@ -2161,6 +2364,8 @@
           <field>[textscan.41863.595200555559].[none:autos:ok]</field>
         </color-one-way>
       </highlight>
+      <viewpoint>
+      </viewpoint>
     </window>
     <window auto-hidden='0' class='worksheet' maximized='0' name='AutoOwnershipByWorkers'>
       <cards>
@@ -2188,6 +2393,8 @@
           <field>[textscan.41863.595200555559].[none:workers:ok]</field>
         </color-one-way>
       </highlight>
+      <viewpoint>
+      </viewpoint>
     </window>
     <window auto-hidden='0' class='worksheet' maximized='0' name='AutoOwnershipByCounty,TrnAvail'>
       <cards>
@@ -2215,6 +2422,8 @@
           <field>[textscan.41863.595200555559].[none:walk_subzone:ok]</field>
         </color-one-way>
       </highlight>
+      <viewpoint>
+      </viewpoint>
     </window>
     <window auto-hidden='0' class='worksheet' maximized='0' name='AutoOwnershipByCountyGraph'>
       <cards>
@@ -2241,6 +2450,8 @@
           <field>[textscan.41863.595200555559].[none:autos:ok]</field>
         </color-one-way>
       </highlight>
+      <viewpoint>
+      </viewpoint>
     </window>
     <window auto-hidden='0' class='worksheet' maximized='0' name='AutoOwnershipByWorkersGraph'>
       <cards>
@@ -2268,6 +2479,8 @@
           <field>[textscan.41863.595200555559].[none:workers:ok]</field>
         </color-one-way>
       </highlight>
+      <viewpoint>
+      </viewpoint>
     </window>
   </windows>
   <thumbnails>
