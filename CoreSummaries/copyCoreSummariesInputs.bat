@@ -1,70 +1,32 @@
-echo on
-set RUN_NAME=2010_04_ZZZ
-
-:: destination directory - on the local disk
-set TARGET_DIR=C:\Users\lzorn\Documents\%RUN_NAME%
-set TIMEPERIODS=EA AM MD PM EV
-
-:: look these up?
-if %RUN_NAME% EQU 2010_03_YYY (
-  set CITER=3
-  set RUN_DIR=B:\Projects\2010_03_YYY.archived
-  set POPSYN_HH=hhFile.p2011s3a.2010
-  set POPSYN_PERS=personFile.p2011s3a1.2010
-  set RUN_DESC=Year 2010 (version 0.3)
-)
-if %RUN_NAME% EQU 2010_04_ZZZ (
-  set CITER=3
-  set RUN_DIR=B:\Projects\%RUN_NAME%.archived
-  set POPSYN_HH=hhFile.p2011s3a1.2010
-  set POPSYN_PERS=personFile.p2011s3a1.2010
-)
-
-if %RUN_NAME% EQU 2020_03_116 (
-  :: use for testing -- short files
-  set CITER=1
-  set RUN_DIR=B:\Projects\2020_03_116.archived
-  set POPSYN_HH=hhFile.p2011s6g.2020
-  set POPSYN_PERS=personFile.p2011s6g.2020
-)
-
-if %RUN_NAME% EQU 2040_03_116 (
-  set CITER=3
-  set RUN_DIR=B:\Projects\2040_03_116.archived
-  set POPSYN_HH=hhFile.p2011s6g.2040
-  set POPSYN_PERS=personFile.p2011s6g.2040
-  set RUN_DESC=Year 2040, Plan (version 0.3)
-)
-
-if %RUN_NAME% EQU 2040_03_127 (
-  set CITER=3
-  set RUN_DIR=B:\Projects\2040_03_127.archived
-  set POPSYN_HH=hhFile.p2011s6g.2040
-  set POPSYN_PERS=personFile.p2011s6g.2040
-  set RUN_DESC=Year 2040, TIP 2015 (version 0.3)
-)
-
-if %RUN_NAME% EQU 2040_03_129 (
-  set CITER=3
-  set RUN_DIR=B:\Projects\2040_03_129.archived
-  set POPSYN_HH=hhFile.p2011s6g.2040
-  set POPSYN_PERS=personFile.p2011s6g.2040
-  set RUN_DESC=Year 2040, RTP 2013 (version 0.3)
-)
+::
+:: Parameters (environment variables):
+::   RUN_NAME    : run name (e.g. 2010_04_ZZZ).  Often part of RUN_DIR. Used for TARGET_DIR.
+::   RUN_DIR     : location model run (e.g. B:\Projects\%RUN_NAME%.archived)
+::   ITER        : iteration files to use (e.g. 3 for final iteration, 1 for first iteration)
+::   POPSYN_HH   : synthesized household file (e.g. hhFile.p2011s3a1.2010)
+::   POPSYN_PERS : synthesized persons file (e.g. personFile.p2011s3a1.2010)
+::   TARGET_DIR  : destination directory for all files
+::
+:: This script copies over all the files required to create core summaries from the RUN_DIR
+:: to the destination directory, TARGET_DIR
+::
+:: Files are only copied if they don't exist yet in the target directory.
+::
 
 if not exist %TARGET_DIR% (mkdir %TARGET_DIR%)
 
 if not exist "%TARGET_DIR%\%POPSYN_HH%.csv"     ( copy "%RUN_DIR%\popsyn\%POPSYN_HH%.csv"     "%TARGET_DIR%" )
 if not exist "%TARGET_DIR%\%POPSYN_PERS%.csv"   ( copy "%RUN_DIR%\popsyn\%POPSYN_PERS%.csv"   "%TARGET_DIR%" )
 
-if not exist "%TARGET_DIR%\tazData.csv"                     ( copy "%RUN_DIR%\INPUT\landuse\tazData.csv"             "%TARGET_DIR%" )
-if not exist "%TARGET_DIR%\householdData_%CITER%.csv"       ( copy "%RUN_DIR%\main\householdData_%CITER%.csv"        "%TARGET_DIR%" )
-if not exist "%TARGET_DIR%\personData_%CITER%.csv"          ( copy "%RUN_DIR%\main\personData_%CITER%.csv"           "%TARGET_DIR%" )
-if not exist "%TARGET_DIR%\indivTripData_%CITER%.csv"       ( copy "%RUN_DIR%\main\indivTripData_%CITER%.csv"        "%TARGET_DIR%" )
-if not exist "%TARGET_DIR%\indivTourData_%CITER%.csv"       ( copy "%RUN_DIR%\main\indivTourData_%CITER%.csv"        "%TARGET_DIR%" )
-if not exist "%TARGET_DIR%\jointTripData_%CITER%.csv"       ( copy "%RUN_DIR%\main\jointTripData_%CITER%.csv"        "%TARGET_DIR%" )
-if not exist "%TARGET_DIR%\jointTourData_%CITER%.csv"       ( copy "%RUN_DIR%\main\jointTourData_%CITER%.csv"        "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\tazData.csv"                    ( copy "%RUN_DIR%\INPUT\landuse\tazData.csv"        "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\householdData_%ITER%.csv"       ( copy "%RUN_DIR%\main\householdData_%ITER%.csv"    "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\personData_%ITER%.csv"          ( copy "%RUN_DIR%\main\personData_%ITER%.csv"       "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\indivTripData_%ITER%.csv"       ( copy "%RUN_DIR%\main\indivTripData_%ITER%.csv"    "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\indivTourData_%ITER%.csv"       ( copy "%RUN_DIR%\main\indivTourData_%ITER%.csv"    "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\jointTripData_%ITER%.csv"       ( copy "%RUN_DIR%\main\jointTripData_%ITER%.csv"    "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\jointTourData_%ITER%.csv"       ( copy "%RUN_DIR%\main\jointTourData_%ITER%.csv"    "%TARGET_DIR%" )
 
+set TIMEPERIODS=EA AM MD PM EV
 FOR %%H in (%TIMEPERIODS%) DO (
   if not exist "%TARGET_DIR%\ActiveTimeSkimsDatabase%%H.csv" (
     copy "%RUN_DIR%\database\ActiveTimeSkimsDatabase%%H.csv" "%TARGET_DIR%"
@@ -77,5 +39,4 @@ FOR %%H in (%TIMEPERIODS%) DO (
   )  
 )
 
-:: "C:\Program Files\R\R-3.1.1\bin\x64\Rscript.exe" knit_CoreSummaries.R
 :done
