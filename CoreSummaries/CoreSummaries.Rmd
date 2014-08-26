@@ -10,7 +10,7 @@ output:
 ---
 
 # Initialization: Set the workspace and load needed libraries
-```{r Initialization, results='hold', error=TRUE}
+```{r Initialization, results="hold", error=TRUE}
 library(knitr)
 library(ggplot2)
 library(scales)
@@ -44,6 +44,11 @@ stopifnot(nchar(ITER        )>0)
 if (!file.exists(file.path(TARGET_DIR,"summary"))) {
   dir.create(file.path(TARGET_DIR,"summary"))
 }
+
+cat("TARGET_DIR  = ",TARGET_DIR)
+cat("POPSYN_HH   = ",POPSYN_HH)
+cat("POPSYN_PERS = ",POPSYN_PERS)
+cat("ITER        = ",ITER)
 ```
 # Land Use
 
@@ -68,8 +73,10 @@ There are two household files:
  * the model output file (http://analytics.mtc.ca.gov/foswiki/Main/Household)
 
 ```{r ReadHouseholds}
-input.pop.households <- read.table(file = file.path(TARGET_DIR,paste0(POPSYN_HH,".csv")), header=TRUE, sep=",")
-input.ct.households  <- read.table(file = file.path(TARGET_DIR,paste0("householdData_",ITER,".csv")), header=TRUE, sep = ",")
+input.pop.households <- read.table(file = file.path(TARGET_DIR,paste0(POPSYN_HH,".csv")), 
+                                   header=TRUE, sep=",")
+input.ct.households  <- read.table(file = file.path(TARGET_DIR,paste0("householdData_",ITER,".csv")), 
+                                   header=TRUE, sep = ",")
 WALK_SUBZONE_LABELS  <- c("Cannot walk to transit (more than two-thirds of a mile away)",
                           "Short-walk to transit (less than one-third of a mile)",
                           "Long-walk to transit (between one-third and two-thirds of a mile)")
@@ -80,7 +87,8 @@ WALK_SUBZONE_LABELS  <- c("Cannot walk to transit (more than two-thirds of a mil
 Rename/drop some columns and join them on household id. Also join with tazData to get the super district and county.
 
 ```{r JoinHouseholds}
-input.pop.households <- select(input.pop.households, HHID, PERSONS, hworkers, huniv, hpresch, hschpred, hschdriv)
+input.pop.households <- select(input.pop.households, HHID, PERSONS, hworkers, huniv, hpresch, 
+                               hschpred, hschdriv)
 input.ct.households  <- select(input.ct.households, -jtf_choice)
 
 # rename
@@ -122,8 +130,10 @@ There are two person files:
 
 ## Read the person files
 ```{r ReadPersons}
-input.pop.persons    <- read.table(file = file.path(TARGET_DIR,paste0(POPSYN_PERS,".csv")), header=TRUE, sep=",")
-input.ct.persons     <- read.table(file = file.path(TARGET_DIR,paste0("personData_",ITER,".csv")), header=TRUE, sep = ",")
+input.pop.persons    <- read.table(file = file.path(TARGET_DIR,paste0(POPSYN_PERS,".csv")), 
+                                   header=TRUE, sep=",")
+input.ct.persons     <- read.table(file = file.path(TARGET_DIR,paste0("personData_",ITER,".csv")),
+                                   header=TRUE, sep = ",")
 ```
 
 ## Join them
@@ -153,7 +163,8 @@ remove(input.pop.persons, input.ct.persons)
 The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour
 
 ```{r readIndividualTours}
-indiv_tours     <- read.table(file=file.path(TARGET_DIR,paste0("indivTourData_",ITER,".csv")), header=TRUE, sep=",")
+indiv_tours     <- read.table(file=file.path(TARGET_DIR,paste0("indivTourData_",ITER,".csv")), 
+                              header=TRUE, sep=",")
 indiv_tours     <- tbl_df(indiv_tours)
 ```
 
@@ -165,12 +176,14 @@ TIMECODE_VALUES <- c(1,2,3,4,5)
 # function add_cost: attaches the cost skims of the given time period (from TIMECODE_VALUES)
 # to the given tours data.frame (joining on the columns orig_taz, dest_taz, and timeCode).
 # Fills in values to the column 'cost' for the given time period based on the column 'costMode'.
-# Pass revers_ode as TRUE to do return trip; this uses the dest taz as the origin and the origin
+# Pass reverse_od as TRUE to do return trip; this uses the dest taz as the origin and the origin
 # taz as the dest, and it uses wTrnD cost rather than dTrnW.
 # Tallies failed costs (expected cost but -999 found) in the field cost_fail
 add_cost <- function(timeCode_val, tours, reverse_od=FALSE) {
   
-  costSkims   <- read.table(file = file.path(TARGET_DIR,paste0("CostSkimsDatabase",TIMECODE_LABELS[timeCode_val],".csv")), header=TRUE, sep=",")
+  costSkims   <- read.table(file = file.path(TARGET_DIR,paste0("CostSkimsDatabase",
+                                                               TIMECODE_LABELS[timeCode_val],".csv")), 
+                            header=TRUE, sep=",")
   # rename columns for join -- reversing if needed (return trip)
   if (reverse_od) {
     names(costSkims)[names(costSkims)=="orig"] <- "dest_taz"  
@@ -213,7 +226,7 @@ add_cost <- function(timeCode_val, tours, reverse_od=FALSE) {
   tours <- mutate(tours, cost=cost+cost2,        # sum
                          cost_fail=cost_fail+cost_fail2)
   print(paste("  -> total nonzero costs:",prettyNum(sum(tours$cost!=0),big.mark=",")))
-  tours <- select(tours, -da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -wTrnW, -dTrnW, -wTrnD, -cost2) # rid new variables
+  tours <- select(tours, -da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -wTrnW, -dTrnW, -wTrnD, -cost2, -cost_fail2) # rid new variables
 }
 ```
 
@@ -228,7 +241,9 @@ TIMECODE_VALUES <- c(1,2,3,4,5)
 # Fills in values to the column 'distance' for the given time period based on the column 'tour_mode'.
 add_distance <- function(timeCode_val, tours) {
   
-  distSkims   <- read.table(file = file.path(TARGET_DIR,paste0("DistanceSkimsDatabase",TIMECODE_LABELS[timeCode_val],".csv")), header=TRUE, sep=",")
+  distSkims   <- read.table(file = file.path(TARGET_DIR,paste0("DistanceSkimsDatabase",
+                                                               TIMECODE_LABELS[timeCode_val],".csv")), 
+                            header=TRUE, sep=",")
   # rename columns for join -- reversing if needed (return trip)
   names(distSkims)[names(distSkims)=="orig"] <- "orig_taz"  
   names(distSkims)[names(distSkims)=="dest"] <- "dest_taz"
@@ -267,6 +282,65 @@ add_distance <- function(timeCode_val, tours) {
   tours <- mutate(tours, distance=distance+distance2)  # sum
   print(paste("  -> total nonzero distances:",prettyNum(sum(tours$distance!=0),big.mark=",")))
   tours <- select(tours, -da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -walk, -bike, -distance2) # rid new variables
+}
+```
+
+## Function to add Time to Tours
+```{r ToursAddTimeColumn}
+# function add_time: attaches the time skims of the given time period (from TIMECODE_VALUES)
+# to the given tours data.frame (joining on the columns orig_taz, dest_taz, and timeCode).
+# Fills in values to the column 'time' for the given time period based on the column 'costMode'.
+# Pass reverse_od as TRUE to do return trip; this uses the dest taz as the origin and the origin
+# taz as the dest, and it uses wTrnD time rather than dTrnW.
+# Tallies failed times (expected time but -999 found) in the field time_fail
+add_time <- function(timeCode_val, tours, reverse_od=FALSE) {
+  
+  timeSkims   <- read.table(file = file.path(TARGET_DIR,paste0("TimeSkimsDatabase",
+                                                               TIMECODE_LABELS[timeCode_val],".csv")), 
+                            header=TRUE, sep=",")
+  # rename columns for join -- reversing if needed (return trip)
+  if (reverse_od) {
+    names(timeSkims)[names(timeSkims)=="orig"] <- "dest_taz"  
+    names(timeSkims)[names(timeSkims)=="dest"] <- "orig_taz"    
+  } else {
+    names(timeSkims)[names(timeSkims)=="orig"] <- "orig_taz"  
+    names(timeSkims)[names(timeSkims)=="dest"] <- "dest_taz"
+  }
+  # don't recode -999 as 0 -- we'll deal with it after join
+  timeSkims   <- mutate(timeSkims,
+                        timeCode = timeCode_val)
+  
+  # Left join tours to the skims
+  tours <- left_join(tours, timeSkims, by=c("orig_taz","dest_taz","timeCode"))
+  # assign active value if we can to new column active2
+  tours <- mutate(tours,
+                  time2=((timeCode==timeCode_val)*(costMode==1)*da    ) +
+                        ((timeCode==timeCode_val)*(costMode==2)*daToll) +
+                        ((timeCode==timeCode_val)*(costMode==3)*s2    ) +
+                        ((timeCode==timeCode_val)*(costMode==4)*s2Toll) +
+                        ((timeCode==timeCode_val)*(costMode==5)*s3    ) +
+                        ((timeCode==timeCode_val)*(costMode==6)*s3Toll) +
+                        ((timeCode==timeCode_val)*(costMode==7)*0.0   ) +
+                        ((timeCode==timeCode_val)*(costMode==8)*0.0   ) +
+                        ((timeCode==timeCode_val)*(costMode==9)*wTrnW ) +
+                        ((timeCode==timeCode_val)*(costMode==10)*(1-reverse_od)*dTrnW) +
+                        ((timeCode==timeCode_val)*(costMode==10)*(reverse_od   *wTrnD))
+                  )
+
+  tours <- mutate(tours,
+                  time_fail2 = ifelse(time2==-999,1,0),    # tally the time_fail
+                  time2      = ifelse(time2==-999,0,time2) # reset the -999 to zero
+                  )
+      
+  print(paste("For", TIMECODE_LABELS[timeCode_val], "assigned", prettyNum(sum(!is.na(tours$time2)),big.mark=","),
+              "times, with", prettyNum(sum(!is.na(tours$time2)&(tours$time2>0)),big.mark=","),
+              "nonzero values"))
+  tours$time2[is.na(tours$time2)]           <- 0           # make the unassigned ones 0 for summing
+  tours$time_fail2[is.na(tours$time_fail2)] <- 0           # make the unassigned ones 0 for summing
+  tours <- mutate(tours, time=time+time2,        # sum
+                         time_fail=time_fail+time_fail2)
+  print(paste("  -> total nonzero times:",prettyNum(sum(tours$time!=0),big.mark=",")))
+  tours <- select(tours, -da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -wTrnW, -dTrnW, -wTrnD, -time2, -time_fail2) # rid new variables
 }
 ```
 
@@ -811,7 +885,7 @@ commute_tours   <- mutate(commute_tours,
                           )
 
 
-#### TEMP
+# Add in County, Superdistrict, Parking Cost from TAZ Data for the employment location (the tour destination)
 commute_tours   <- left_join(commute_tours,
                              mutate(tazData, dest_taz=taz) %.% select(dest_taz, COUNTY, SD, PRKCST),
                              by=c("dest_taz"))
@@ -830,6 +904,13 @@ for (timeCode_val in TIMECODE_VALUES) {
   commute_tours <- add_distance(timeCode_val, commute_tours)
 }
 
+# Add time
+commute_tours   <- mutate(commute_tours, time=0.0, time_fail=0)
+for (timeCode_val in TIMECODE_VALUES) {
+  commute_tours <- add_time(timeCode_val, commute_tours)
+}
+
+
 # Initialize for work-home cost lookup.
 commute_tours   <- mutate(commute_tours, timeCode=timeCodeWh, cost=0.0)
 # Add work-home cost to tours
@@ -844,10 +925,7 @@ commute_tours   <- mutate(commute_tours, cost=0.5*(hwCost+whCost))
 # Calculate the duration
 commute_tours   <- mutate(commute_tours,
                           duration=end_hour-start_hour+0.5)
-# Get the superdistrict, parking cost from tazdata
-#commute_tours   <- left_join(commute_tours,
-#                             mutate(tazData, dest_taz=taz) %.% select(dest_taz, SD, PRKCST),
-#                             by=c("dest_taz"))
+
 # Get the free-parking choice from persons
 commute_tours   <- left_join(commute_tours,
                              select(persons, person_id, fp_choice),
@@ -879,3 +957,37 @@ commute_summary <- summarise(group_by(commute_tours, COUNTY, SD, tour_mode),
 write.table(commute_summary, file.path(TARGET_DIR,"summary","CommuteByEmploymentLocation.csv"), sep=",", row.names=FALSE)
 ```
 
+# Commute By Income Summaries
+```{r CommuteByIncomeSummary}
+commute_tours            <- left_join(commute_tours,
+                                      select(households, hh_id, incQ),
+                                      by=c("hh_id"))
+commute_inc_summary_byjob <- summarise(group_by(commute_tours, COUNTY, SD, dest_taz, tour_mode, incQ), 
+                                       freq         = n(),
+                                       totCost      = mean(totCost, na.rm=TRUE),
+                                       cost         = mean(cost,    na.rm=TRUE),
+                                       parking_cost = mean(parking_cost),
+                                       distance     = mean(distance),
+                                       duration     = mean(time),
+                                       cost_fail    = sum(cost_fail),
+                                       time_fail    = sum(time_fail))
+write.table(commute_inc_summary_byjob, 
+            file.path(TARGET_DIR,"summary","CommuteByIncomeJob.csv"), sep=",", row.names=FALSE)
+
+# The COUNTY and super district are by destination right now; add residence
+commute_tours   <- left_join(commute_tours,
+                             mutate(tazData, orig_taz=taz, res_COUNTY=COUNTY, res_SD=SD) %.% select(orig_taz, res_COUNTY, res_SD),
+                             by=c("orig_taz"))
+commute_inc_summary_byres <- summarise(group_by(commute_tours, res_COUNTY, res_SD, orig_taz, tour_mode, incQ), 
+                                       freq         = n(),
+                                       totCost      = mean(totCost, na.rm=TRUE),
+                                       cost         = mean(cost,    na.rm=TRUE),
+                                       parking_cost = mean(parking_cost),
+                                       distance     = mean(distance),
+                                       duration     = mean(time),
+                                       cost_fail    = sum(cost_fail),
+                                       time_fail    = sum(time_fail))
+write.table(commute_inc_summary_byres, 
+            file.path(TARGET_DIR,"summary","CommuteByIncomeHousehold.csv"), sep=",", row.names=FALSE)
+
+```
