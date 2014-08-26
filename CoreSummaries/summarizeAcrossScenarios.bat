@@ -8,10 +8,11 @@ set RUN_NAME_SET=2010_04_ZZZ 2040_03_116
 for %%H in (%RUN_NAME_SET%) DO (
 
   set RUN_NAME=%%H
-  :: copy the inputs from the model run directory
+  rem copy the inputs from the model run directory
   call summarizeScenario.bat
   if %ERRORLEVEL% GTR 0 goto done
 
+  rem create the combined version
 )
 
 :done

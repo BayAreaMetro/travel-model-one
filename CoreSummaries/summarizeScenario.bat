@@ -85,8 +85,8 @@ echo Missing %NEED_SUMMARY% summaries in %TARGET_DIR%\summary
 if %NEED_SUMMARY% GTR 0 (
   echo %DATE% %TIME% Running summary script for %RUN_NAME%
   rem No .Rprofile -- we set the environment variables here.
-  rem "C:\Program Files\R\R-3.1.1\bin\x64\Rscript.exe" --no-init-file knit_CoreSummaries.R
-  rem IF %ERRORLEVEL% GTR 0 goto done
+  "C:\Program Files\R\R-3.1.1\bin\x64\Rscript.exe" --no-init-file knit_CoreSummaries.R
+  IF %ERRORLEVEL% GTR 0 goto done
   echo %DATE% %TIME% ...Done
   
   copy CoreSummaries.html "%TARGET_DIR%\summary"
