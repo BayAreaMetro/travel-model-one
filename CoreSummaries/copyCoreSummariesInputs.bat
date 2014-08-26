@@ -36,7 +36,11 @@ FOR %%H in (%TIMEPERIODS%) DO (
   )
   if not exist "%TARGET_DIR%\DistanceSkimsDatabase%%H.csv" (
     copy "%RUN_DIR%\database\DistanceSkimsDatabase%%H.csv" "%TARGET_DIR%"
-  )  
+  )
+  
+  if not exist "%TARGET_DIR%\TimeSkimsDatabase%%H.csv" (
+    copy "%RUN_DIR%\database\TimeSkimsDatabase%%H.csv" "%TARGET_DIR%"
+  )
 )
 
 :done
