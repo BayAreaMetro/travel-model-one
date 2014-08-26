@@ -320,8 +320,8 @@ add_time <- function(timeCode_val, tours, reverse_od=FALSE) {
                         ((timeCode==timeCode_val)*(costMode==4)*s2Toll) +
                         ((timeCode==timeCode_val)*(costMode==5)*s3    ) +
                         ((timeCode==timeCode_val)*(costMode==6)*s3Toll) +
-                        ((timeCode==timeCode_val)*(costMode==7)*0.0   ) +
-                        ((timeCode==timeCode_val)*(costMode==8)*0.0   ) +
+                        ((timeCode==timeCode_val)*(costMode==7)*walk  ) +
+                        ((timeCode==timeCode_val)*(costMode==8)*bike  ) +
                         ((timeCode==timeCode_val)*(costMode==9)*wTrnW ) +
                         ((timeCode==timeCode_val)*(costMode==10)*(1-reverse_od)*dTrnW) +
                         ((timeCode==timeCode_val)*(costMode==10)*(reverse_od   *wTrnD))
