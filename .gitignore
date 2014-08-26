@@ -5,5 +5,5 @@
 *.md
 CoreSummaries_files/*
 Thumbs.db
-figure/*
+CoreSummaries/figure/*
 .Rproj.user
