@@ -166,6 +166,9 @@ The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/Individ
 indiv_tours     <- read.table(file=file.path(TARGET_DIR,paste0("indivTourData_",ITER,".csv")), 
                               header=TRUE, sep=",")
 indiv_tours     <- tbl_df(indiv_tours)
+
+# add income from household table
+indiv_tours     <- left_join(indiv_tours, select(households, hh_id, incQ), by=c("hh_id"))
 ```
 
 ## Function to add Cost to Tours
@@ -312,7 +315,7 @@ add_time <- function(timeCode_val, tours, reverse_od=FALSE) {
   
   # Left join tours to the skims
   tours <- left_join(tours, timeSkims, by=c("orig_taz","dest_taz","timeCode"))
-  # assign active value if we can to new column active2
+  # assign time value if we can to new column time2
   tours <- mutate(tours,
                   time2=((timeCode==timeCode_val)*(costMode==1)*da    ) +
                         ((timeCode==timeCode_val)*(costMode==2)*daToll) +
@@ -326,7 +329,7 @@ add_time <- function(timeCode_val, tours, reverse_od=FALSE) {
                         ((timeCode==timeCode_val)*(costMode==10)*(1-reverse_od)*dTrnW) +
                         ((timeCode==timeCode_val)*(costMode==10)*(reverse_od   *wTrnD))
                   )
-
+  
   tours <- mutate(tours,
                   time_fail2 = ifelse(time2==-999,1,0),    # tally the time_fail
                   time2      = ifelse(time2==-999,0,time2) # reset the -999 to zero
@@ -340,7 +343,7 @@ add_time <- function(timeCode_val, tours, reverse_od=FALSE) {
   tours <- mutate(tours, time=time+time2,        # sum
                          time_fail=time_fail+time_fail2)
   print(paste("  -> total nonzero times:",prettyNum(sum(tours$time!=0),big.mark=",")))
-  tours <- select(tours, -da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -wTrnW, -dTrnW, -wTrnD, -time2, -time_fail2) # rid new variables
+  tours <- select(tours, -da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -walk, -bike, -wTrnW, -dTrnW, -wTrnD, -time2, -time_fail2) # rid new variables
 }
 ```
 
@@ -721,7 +724,7 @@ ggplot(autoown_summary_county, aes(x=as.factor(COUNTY), y=freq, fill=as.factor(a
                       labels=rev(auto_labels))
 ```
 
-```{r AutoOwnershipSummaryByCountyTable, results='asis', echo=FALSE}
+```{r AutoOwnershipSummaryByCountyTable, results='asis', echo=FALSE, eval=FALSE}
 aos_ac_table                     <- dcast(autoown_summary_county, autos ~ COUNTY, value.var="freq")
 # make rownames readable
 
@@ -856,7 +859,7 @@ print(aos_wc_xtable_summed, type="html")
 
 # Commute By Employment Location Summaries
 ```{r CommuteByEmploymentLocationSummary}
-commute_tours   <- select(indiv_tours, hh_id, person_id, orig_taz, dest_taz, tour_purpose, start_hour, end_hour, tour_mode)
+commute_tours   <- select(indiv_tours, hh_id, person_id, orig_taz, dest_taz, tour_purpose, start_hour, end_hour, tour_mode, incQ)
 # select out non-work travel
 commute_tours   <- subset(commute_tours, (tour_purpose!="atwork_business" & tour_purpose!="atwork_eat"  & tour_purpose!="atwork_maint" &
                                           tour_purpose!="eatout"          & tour_purpose!="escort_kids" & tour_purpose!="escort_no kids" &
@@ -942,9 +945,10 @@ commute_tours   <- mutate(commute_tours, parking_cost=ifelse(tour_mode>6,0.0,par
 # Sum parking and out-of-pocket cost
 commute_tours   <- mutate(commute_tours, totCost=cost+parking_cost)
 
-# tours with cost failures should be dropped from the cost mean
+# tours with failures should be dropped from the mean
 commute_tours$totCost[commute_tours$cost_fail>0] <- NA
-commute_tours$cost[commute_tours$cost_fail>0] <- NA
+commute_tours$cost[commute_tours$cost_fail>0]    <- NA
+commute_tours$time[commute_tours$time_fail>0]    <- NA
 
 # summarise
 commute_summary <- summarise(group_by(commute_tours, COUNTY, SD, tour_mode), 
@@ -959,16 +963,13 @@ write.table(commute_summary, file.path(TARGET_DIR,"summary","CommuteByEmployment
 
 # Commute By Income Summaries
 ```{r CommuteByIncomeSummary}
-commute_tours            <- left_join(commute_tours,
-                                      select(households, hh_id, incQ),
-                                      by=c("hh_id"))
 commute_inc_summary_byjob <- summarise(group_by(commute_tours, COUNTY, SD, dest_taz, tour_mode, incQ), 
                                        freq         = n(),
                                        totCost      = mean(totCost, na.rm=TRUE),
                                        cost         = mean(cost,    na.rm=TRUE),
                                        parking_cost = mean(parking_cost),
                                        distance     = mean(distance),
-                                       duration     = mean(time),
+                                       duration     = mean(time,    na.rm=TRUE),
                                        cost_fail    = sum(cost_fail),
                                        time_fail    = sum(time_fail))
 write.table(commute_inc_summary_byjob, 
@@ -984,7 +985,7 @@ commute_inc_summary_byres <- summarise(group_by(commute_tours, res_COUNTY, res_S
                                        cost         = mean(cost,    na.rm=TRUE),
                                        parking_cost = mean(parking_cost),
                                        distance     = mean(distance),
-                                       duration     = mean(time),
+                                       duration     = mean(time,    na.rm=TRUE),
                                        cost_fail    = sum(cost_fail),
                                        time_fail    = sum(time_fail))
 write.table(commute_inc_summary_byres, 
