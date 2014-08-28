@@ -7,3 +7,5 @@ CoreSummaries_files/*
 Thumbs.db
 CoreSummaries/figure/*
 .Rproj.user
+*/*.dmp
+*/*.log
