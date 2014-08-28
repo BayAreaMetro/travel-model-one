@@ -18,13 +18,14 @@ if not exist %TARGET_DIR% (mkdir %TARGET_DIR%)
 if not exist "%TARGET_DIR%\%POPSYN_HH%.csv"     ( copy "%RUN_DIR%\popsyn\%POPSYN_HH%.csv"     "%TARGET_DIR%" )
 if not exist "%TARGET_DIR%\%POPSYN_PERS%.csv"   ( copy "%RUN_DIR%\popsyn\%POPSYN_PERS%.csv"   "%TARGET_DIR%" )
 
-if not exist "%TARGET_DIR%\tazData.csv"                    ( copy "%RUN_DIR%\INPUT\landuse\tazData.csv"        "%TARGET_DIR%" )
-if not exist "%TARGET_DIR%\householdData_%ITER%.csv"       ( copy "%RUN_DIR%\main\householdData_%ITER%.csv"    "%TARGET_DIR%" )
-if not exist "%TARGET_DIR%\personData_%ITER%.csv"          ( copy "%RUN_DIR%\main\personData_%ITER%.csv"       "%TARGET_DIR%" )
-if not exist "%TARGET_DIR%\indivTripData_%ITER%.csv"       ( copy "%RUN_DIR%\main\indivTripData_%ITER%.csv"    "%TARGET_DIR%" )
-if not exist "%TARGET_DIR%\indivTourData_%ITER%.csv"       ( copy "%RUN_DIR%\main\indivTourData_%ITER%.csv"    "%TARGET_DIR%" )
-if not exist "%TARGET_DIR%\jointTripData_%ITER%.csv"       ( copy "%RUN_DIR%\main\jointTripData_%ITER%.csv"    "%TARGET_DIR%" )
-if not exist "%TARGET_DIR%\jointTourData_%ITER%.csv"       ( copy "%RUN_DIR%\main\jointTourData_%ITER%.csv"    "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\tazData.csv"                    ( copy "%RUN_DIR%\INPUT\landuse\tazData.csv"         "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\householdData_%ITER%.csv"       ( copy "%RUN_DIR%\main\householdData_%ITER%.csv"     "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\personData_%ITER%.csv"          ( copy "%RUN_DIR%\main\personData_%ITER%.csv"        "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\indivTripData_%ITER%.csv"       ( copy "%RUN_DIR%\main\indivTripData_%ITER%.csv"     "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\indivTourData_%ITER%.csv"       ( copy "%RUN_DIR%\main\indivTourData_%ITER%.csv"     "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\jointTripData_%ITER%.csv"       ( copy "%RUN_DIR%\main\jointTripData_%ITER%.csv"     "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\jointTourData_%ITER%.csv"       ( copy "%RUN_DIR%\main\jointTourData_%ITER%.csv"     "%TARGET_DIR%" )
+if not exist "%TARGET_DIR%\avgload5period.csv"             ( copy "%RUN_DIR%\hwy\iter%ITER%\avgload5period.csv" "%TARGET_DIR%" )
 
 set TIMEPERIODS=EA AM MD PM EV
 FOR %%H in (%TIMEPERIODS%) DO (
