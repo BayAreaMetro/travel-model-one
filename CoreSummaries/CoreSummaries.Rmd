@@ -549,6 +549,8 @@ active_summary <- summarise(group_by(trips_by_person, taz, COUNTY, ptype, zeroAu
                             atHomeA  = mean(atHomeA))
 
 write.table(active_summary, file.path(TARGET_DIR,"summary","ActiveTransport.csv"), sep=",", row.names=FALSE)
+summary <- active_summary  # name it generically for rdata
+save(summary, file=file.path(TARGET_DIR,"summary","ActiveTransport.rdata"))
 ```
 
 ## Active Travel Summary - Overall
@@ -696,6 +698,8 @@ print(active_summary_zerauto_xtable, type="html", include.rownames=FALSE)
 ```{r ActivityPatternSummary}
 actpatt_summary <- summarise(group_by(persons, type, activity_pattern, imf_choice, inmf_choice, incQ), freq=n())
 write.table(actpatt_summary, file.path(TARGET_DIR,"summary","ActivityPattern.csv"), sep=",", row.names=FALSE)
+summary <- actpatt_summary  # name it generically for rdata
+save(summary, file=file.path(TARGET_DIR,"summary","ActivityPattern.rdata"))
 ```
 
 # Auto Ownership Summaries
@@ -703,6 +707,8 @@ write.table(actpatt_summary, file.path(TARGET_DIR,"summary","ActivityPattern.csv
 # summarise
 autoown_summary <- summarise(group_by(households, SD, COUNTY, autos, incQ, walk_subzone, workers, kidsNoDr), freq=n())
 write.table(autoown_summary, file.path(TARGET_DIR,"summary","AutomobileOwnership.csv"), sep=",", row.names=FALSE)
+summary <- autoown_summary  # name it generically for rdata
+save(summary, file=file.path(TARGET_DIR,"summary","AutomobileOwnership.rdata"))
 ```
 
 ## Auto Ownership Summary By County
@@ -959,6 +965,8 @@ commute_summary <- summarise(group_by(commute_tours, COUNTY, SD, tour_mode),
                              distance     = mean(distance),
                              cost_fail    = sum(cost_fail))
 write.table(commute_summary, file.path(TARGET_DIR,"summary","CommuteByEmploymentLocation.csv"), sep=",", row.names=FALSE)
+summary <- commute_summary  # name it generically for rdata
+save(summary, file=file.path(TARGET_DIR,"summary","CommuteByEmploymentLocation.rdata"))
 ```
 
 # Commute By Income Summaries
@@ -974,6 +982,8 @@ commute_inc_summary_byjob <- summarise(group_by(commute_tours, COUNTY, SD, dest_
                                        time_fail    = sum(time_fail))
 write.table(commute_inc_summary_byjob, 
             file.path(TARGET_DIR,"summary","CommuteByIncomeJob.csv"), sep=",", row.names=FALSE)
+summary <- commute_inc_summary_byjob  # name it generically for rdata
+save(summary, file=file.path(TARGET_DIR,"summary","CommuteByIncomeJob.rdata"))
 
 # The COUNTY and super district are by destination right now; add residence
 commute_tours   <- left_join(commute_tours,
@@ -990,5 +1000,6 @@ commute_inc_summary_byres <- summarise(group_by(commute_tours, res_COUNTY, res_S
                                        time_fail    = sum(time_fail))
 write.table(commute_inc_summary_byres, 
             file.path(TARGET_DIR,"summary","CommuteByIncomeHousehold.csv"), sep=",", row.names=FALSE)
-
+summary <- commute_inc_summary_byres  # name it generically for rdata
+save(summary, file=file.path(TARGET_DIR,"summary","CommuteByIncomeHousehold.rdata"))
 ```
