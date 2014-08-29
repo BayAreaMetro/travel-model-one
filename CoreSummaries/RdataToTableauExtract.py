@@ -1,8 +1,15 @@
 
 USAGE = """
-python RdataToTableauExtract.py summary.rdata summary.tde
+python RdataToTableauExtract.py input_dir1 [input_dir2 input_dir3] output_dir summary.rdata
 
-Extracts the summary table in summary.rdata to the Tableau Data Extract file, summary.tde
+Loops through the input dirs (one is ok) and reads the summary.rdata within.
+Convertes them into a Tableau Data Extract.
+
+Adds an additional column to the resulting output, dir, which will contain the input_dir
+source of the data.  Also uses pandas.DataFrame.fillna to replace NAs with zero, since
+Tableau doesn't like them.
+
+Outputs summary.tde (named the same as summary.rdata but with s/rdata/tde) into output_dir.
 
 """
 
@@ -41,10 +48,22 @@ def read_rdata(rdata_fullpath):
     # read in the data from the R session with python
     r.r("load('%s')" % rdata_fullpath_forR)
     # check that it's there
-    print "Dimensions are %s" % str(r.r('dim(active_summary)'))
+    # print "Dimensions are %s" % str(r.r('dim(model_summary)'))
     
-    table_df = com.load_data('active_summary')
-    return table_df
+    table_df = com.load_data('model_summary')
+    # add the new column
+    table_df['dir'] = rdata_fullpath
+    print "Read %d lines from %s" % (len(table_df), rdata_fullpath)
+
+    # fillna
+    for col in table_df.columns:
+        nullcount = sum(pd.isnull(table_df[col]))
+        if nullcount > 0: print "  Found %d NA values in column %s" % (nullcount, col)
+    table_df = table_df.fillna(0)
+    for col in table_df.columns:
+        nullcount = sum(pd.isnull(table_df[col]))
+        if nullcount > 0: print "  Found %d NA values in column %s" % (nullcount, col)
+        return table_df
 
 def write_tde(table_df, tde_fullpath):
     """
@@ -93,33 +112,60 @@ def write_tde(table_df, tde_fullpath):
         tde_table.insert(row)
 
     tdefile.close()
-    print "Wrote %s" % tde_fullpath
+    print "Wrote %d lines to %s" % (len(table_df), tde_fullpath)
 
     
 if __name__ == '__main__':
 
     optlist, args = getopt.getopt(sys.argv[1:], "")
-    if len(args) < 2:
+    if len(args) < 3:
         print USAGE
         sys.exit(2)
-
-    if len(args) > 2:
-        print "Concat not implemented yet"
+    
+    rdata_filename = args[-1]
+    if not rdata_filename.endswith(".rdata"):
+        print USAGE
+        print "Invalid rdata filename [%s]" % rdata_filename
         sys.exit(2)
     
-    for rdata_fullpath in args[:-1]:
-        if not rdata_fullpath.endswith(".rdata"):
-            print "Invalid rdata file [%s]" % rdata_fullpath
+    # input path checking
+    for rdata_dirpath in args[:-2]:
+        # check it's a path
+        if not os.path.isdir(rdata_dirpath):
+            print USAGE
+            print "Invalid input directory [%s]" % rdata_dirpath
             sys.exit(2)
-        table_df = read_rdata(rdata_fullpath)
-        
-    tde_fullpath = args[-1]
-    if not tde_fullpath.endswith(".tde"):
-        print "Invalid tde file [%s]" % tde_fullpath
-        sys.exit(2)
-    print tde_fullpath
+        # check it has summary.rdata
+        if not os.path.isfile(os.path.join(rdata_dirpath, rdata_filename)):
+            print USAGE
+            print "File doesn't exist: [%s]" % os.path.join(rdata_dirpath, rdata_filename)
+            sys.exit(2)
+        # print "Valid input rdata_dirpath [%s]" % rdata_dirpath
     
-    write_tde(table_df, tde_fullpath)
+    # output path checking
+    tde_dirpath = args[-2]
+    if not os.path.isdir(tde_dirpath):
+        print USAGE
+        print "Invalid output directory [%s]" % tde_dirpath
+        sys.exit(2)
+
+    # print "Valid output tde_dirpath [%s]" % tde_dirpath
+    tde_filename = rdata_filename.replace(".rdata", ".tde")    
+    # print "Will write to [%s]" % os.path.join(tde_dirpath, tde_filename)
+    # print
+    
+    # checking done -- do the job
+    full_table_df = None
+    set_fulltable = False
+    for rdata_dirpath in args[:-2]:
+        table_df = read_rdata(os.path.join(rdata_dirpath, rdata_filename))
+        if set_fulltable==False: # it doesn't like checking if a dataFrame is none
+            full_table_df = table_df
+            set_fulltable = True
+        else:
+            full_table_df = full_table_df.append(table_df)
+    
+    write_tde(full_table_df, os.path.join(tde_dirpath, tde_filename))
 
 """
 TODO: clean this up

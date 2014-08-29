@@ -5,7 +5,7 @@
 ::  Uses the RUN_NAME to set ITER, RUN_DIR, POPSYN_HH, POPSYN_PERS, RUN_DESC
 ::  (Todo: Should these be in a better location?  Like M:\Application\Model One\Model Run Directory.xlsx?
 ::
-echo off
+:: @echo off
 setlocal enabledelayedexpansion
 
 set ITER=0
@@ -90,13 +90,23 @@ echo Missing %NEED_SUMMARY% summaries in %TARGET_DIR%\summary
 if %NEED_SUMMARY% GTR 0 (
   echo %DATE% %TIME% Running summary script for %RUN_NAME%
   rem No .Rprofile -- we set the environment variables here.
-  "C:\Program Files\R\R-3.1.1\bin\x64\Rscript.exe" --no-init-file knit_CoreSummaries.R
+  echo "%R_HOME%\bin\x64\Rscript.exe"
+  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\knit_CoreSummaries.R"
   IF %ERRORLEVEL% GTR 0 goto done
   echo %DATE% %TIME% ...Done
   
   copy CoreSummaries.html "%TARGET_DIR%\summary"
 )
 
+:: convert the summaries to tde for just this dir
+for %%X in ("%TARGET_DIR%\summary\*.rdata") DO (
+  if not exist "%TARGET_DIR%\summary\%%~nX.tde" (
+    python "%CODE_DIR%\RdataToTableauExtract.py" "%TARGET_DIR%\summary" "%TARGET_DIR%\summary" %%~nxX
+    if %ERRORLEVEL% GTR 0 goto done
+  )
+)
 echo.
+
+endlocal
 
 :done
