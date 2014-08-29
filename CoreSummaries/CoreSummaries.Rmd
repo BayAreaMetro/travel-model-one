@@ -55,7 +55,7 @@ cat("ITER        = ",ITER)
 The land use file: http://analytics.mtc.ca.gov/foswiki/Main/TazData
 ```{r readLandUse}
 
-tazData              <- read.table(file=file.path(TARGET_DIR,"tazData.csv"), header=TRUE, sep=",")
+tazData              <- read.table(file=file.path(TARGET_DIR,"modelfiles","tazData.csv"), header=TRUE, sep=",")
 COUNTY_LABELS        <- c("San\nFrancisco","San\nMateo","Santa\nClara","Alameda",
                           "Contra\nCosta","Solano","Napa","Sonoma","Marin")
 tazData              <- select(tazData, ZONE, SD, COUNTY, PRKCST)
@@ -73,9 +73,9 @@ There are two household files:
  * the model output file (http://analytics.mtc.ca.gov/foswiki/Main/Household)
 
 ```{r ReadHouseholds}
-input.pop.households <- read.table(file = file.path(TARGET_DIR,paste0(POPSYN_HH,".csv")), 
+input.pop.households <- read.table(file = file.path(TARGET_DIR,"modelfiles",paste0(POPSYN_HH,".csv")), 
                                    header=TRUE, sep=",")
-input.ct.households  <- read.table(file = file.path(TARGET_DIR,paste0("householdData_",ITER,".csv")), 
+input.ct.households  <- read.table(file = file.path(TARGET_DIR,"modelfiles",paste0("householdData_",ITER,".csv")), 
                                    header=TRUE, sep = ",")
 WALK_SUBZONE_LABELS  <- c("Cannot walk to transit (more than two-thirds of a mile away)",
                           "Short-walk to transit (less than one-third of a mile)",
@@ -130,9 +130,9 @@ There are two person files:
 
 ## Read the person files
 ```{r ReadPersons}
-input.pop.persons    <- read.table(file = file.path(TARGET_DIR,paste0(POPSYN_PERS,".csv")), 
+input.pop.persons    <- read.table(file = file.path(TARGET_DIR,"modelfiles",paste0(POPSYN_PERS,".csv")), 
                                    header=TRUE, sep=",")
-input.ct.persons     <- read.table(file = file.path(TARGET_DIR,paste0("personData_",ITER,".csv")),
+input.ct.persons     <- read.table(file = file.path(TARGET_DIR,"modelfiles",paste0("personData_",ITER,".csv")),
                                    header=TRUE, sep = ",")
 ```
 
@@ -163,7 +163,7 @@ remove(input.pop.persons, input.ct.persons)
 The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour
 
 ```{r readIndividualTours}
-indiv_tours     <- read.table(file=file.path(TARGET_DIR,paste0("indivTourData_",ITER,".csv")), 
+indiv_tours     <- read.table(file=file.path(TARGET_DIR,"modelfiles",paste0("indivTourData_",ITER,".csv")), 
                               header=TRUE, sep=",")
 indiv_tours     <- tbl_df(indiv_tours)
 
@@ -184,8 +184,9 @@ TIMECODE_VALUES <- c(1,2,3,4,5)
 # Tallies failed costs (expected cost but -999 found) in the field cost_fail
 add_cost <- function(timeCode_val, tours, reverse_od=FALSE) {
   
-  costSkims   <- read.table(file = file.path(TARGET_DIR,paste0("CostSkimsDatabase",
-                                                               TIMECODE_LABELS[timeCode_val],".csv")), 
+  costSkims   <- read.table(file = file.path(TARGET_DIR,"modelfiles",
+                                             paste0("CostSkimsDatabase",
+                                                    TIMECODE_LABELS[timeCode_val],".csv")), 
                             header=TRUE, sep=",")
   # rename columns for join -- reversing if needed (return trip)
   if (reverse_od) {
@@ -244,8 +245,9 @@ TIMECODE_VALUES <- c(1,2,3,4,5)
 # Fills in values to the column 'distance' for the given time period based on the column 'tour_mode'.
 add_distance <- function(timeCode_val, tours) {
   
-  distSkims   <- read.table(file = file.path(TARGET_DIR,paste0("DistanceSkimsDatabase",
-                                                               TIMECODE_LABELS[timeCode_val],".csv")), 
+  distSkims   <- read.table(file = file.path(TARGET_DIR,"modelfiles",
+                                             paste0("DistanceSkimsDatabase",
+                                                    TIMECODE_LABELS[timeCode_val],".csv")), 
                             header=TRUE, sep=",")
   # rename columns for join -- reversing if needed (return trip)
   names(distSkims)[names(distSkims)=="orig"] <- "orig_taz"  
@@ -298,8 +300,9 @@ add_distance <- function(timeCode_val, tours) {
 # Tallies failed times (expected time but -999 found) in the field time_fail
 add_time <- function(timeCode_val, tours, reverse_od=FALSE) {
   
-  timeSkims   <- read.table(file = file.path(TARGET_DIR,paste0("TimeSkimsDatabase",
-                                                               TIMECODE_LABELS[timeCode_val],".csv")), 
+  timeSkims   <- read.table(file = file.path(TARGET_DIR,"modelfiles",
+                                             paste0("TimeSkimsDatabase",
+                                                    TIMECODE_LABELS[timeCode_val],".csv")), 
                             header=TRUE, sep=",")
   # rename columns for join -- reversing if needed (return trip)
   if (reverse_od) {
@@ -354,7 +357,8 @@ add_time <- function(timeCode_val, tours, reverse_od=FALSE) {
 The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip
 
 ```{r ReadIndividualTrips}
-indiv_trips     <- read.table(file=file.path(TARGET_DIR,paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
+indiv_trips     <- read.table(file=file.path(TARGET_DIR,"modelfiles",
+                                             paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
 indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest_taz,
                           trip_mode, orig_purpose, dest_purpose, depart_hour)
 ```
@@ -364,7 +368,8 @@ indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest
 The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/JointTrip
 
 ```{r ReadJointTrips}
-joint_trips     <- read.table(file=file.path(TARGET_DIR,paste0("jointTripData_",ITER,".csv")), header=TRUE, sep=",")
+joint_trips     <- read.table(file=file.path(TARGET_DIR,"modelfiles",
+                                             paste0("jointTripData_",ITER,".csv")), header=TRUE, sep=",")
 joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz,
                           trip_mode, orig_purpose, dest_purpose, depart_hour)
 ```
@@ -372,7 +377,8 @@ joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz,
 ## Joint Trips need person ids -- attach them (via Joint Tours)
 
 ```{r ReadJointTours}
-joint_tours    <- read.table(file=file.path(TARGET_DIR,paste0("jointTourData_",ITER,".csv")), header=TRUE, sep=",")
+joint_tours    <- read.table(file=file.path(TARGET_DIR,"modelfiles",
+                                            paste0("jointTourData_",ITER,".csv")), header=TRUE, sep=",")
 joint_tours    <- select(joint_tours, hh_id, tour_id, tour_participants)
 
 # tour participants are person ids separated by spaces -- create a table of hh_id, person_num for them
@@ -446,7 +452,8 @@ TIMECODE_VALUES <- c(1,2,3,4,5)
 # Fills in values to the column 'active' for the given time period.
 add_active <- function(timeCode_val, trips) {
 
-  activeSkims <- read.table(file = file.path(TARGET_DIR,paste0("ActiveTimeSkimsDatabase",TIMECODE_LABELS[timeCode_val],".csv")), header=TRUE, sep=",")
+  activeSkims <- read.table(file = file.path(TARGET_DIR,"modelfiles",
+                                             paste0("ActiveTimeSkimsDatabase",TIMECODE_LABELS[timeCode_val],".csv")), header=TRUE, sep=",")
   # rename columns for join
   names(activeSkims)[names(activeSkims)=="orig"] <- "orig_taz"  
   names(activeSkims)[names(activeSkims)=="dest"] <- "dest_taz"
