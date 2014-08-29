@@ -6,6 +6,7 @@
 ::  (Todo: Should these be in a better location?  Like M:\Application\Model One\Model Run Directory.xlsx?
 ::
 echo off
+setlocal enabledelayedexpansion
 
 set ITER=0
 
@@ -74,11 +75,15 @@ set TARGET_DIR=C:\Users\lzorn\Documents\%RUN_NAME%
 call copyCoreSummariesInputs.bat
 
 :: See if we're missing any summaries
+if not exist "%TARGET_DIR%\summary" ( mkdir "%TARGET_DIR%\summary" )
+
 set NEED_SUMMARY=0
 if not exist "%TARGET_DIR%\summary\ActiveTransport.csv"             ( set /a NEED_SUMMARY+=1 )
 if not exist "%TARGET_DIR%\summary\ActivityPattern.csv"             ( set /a NEED_SUMMARY+=1 )
 if not exist "%TARGET_DIR%\summary\AutomobileOwnership.csv"         ( set /a NEED_SUMMARY+=1 )
 if not exist "%TARGET_DIR%\summary\CommuteByEmploymentLocation.csv" ( set /a NEED_SUMMARY+=1 )
+if not exist "%TARGET_DIR%\summary\CommuteByIncomeHousehold.csv"    ( set /a NEED_SUMMARY+=1 )
+if not exist "%TARGET_DIR%\summary\CommuteByIncomeJob.csv"          ( set /a NEED_SUMMARY+=1 )
 echo Missing %NEED_SUMMARY% summaries in %TARGET_DIR%\summary
 
 :: If we need to, create the core summaries.
