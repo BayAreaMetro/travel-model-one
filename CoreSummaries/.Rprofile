@@ -4,5 +4,5 @@
   Sys.setenv(POPSYN_HH="hhFile.p2011s3a1.2010")                  # The synthesized households file
   Sys.setenv(POPSYN_PERS="personFile.p2011s3a1.2010")            # The synthesized persons file
   Sys.setenv(ITER="3")
-  cat("\nWelcome at", date(), "\n")
+  # cat("\nWelcome at", date(), "\n")
 }
