@@ -97,15 +97,26 @@ if %NEED_SUMMARY% GTR 0 (
   
   copy CoreSummaries.html "%TARGET_DIR%\summary"
 )
+echo.
 
 :: convert the summaries to tde for just this dir
 for %%X in ("%TARGET_DIR%\summary\*.rdata") DO (
   if not exist "%TARGET_DIR%\summary\%%~nX.tde" (
     python "%CODE_DIR%\RdataToTableauExtract.py" "%TARGET_DIR%\summary" "%TARGET_DIR%\summary" %%~nxX
     if %ERRORLEVEL% GTR 0 goto done
+    
+    echo.
   )
 )
-echo.
+
+:: convert the avgload5period.csv
+if not exist "%TARGET_DIR%\summary\avgload5period.tde" (
+  python "%CODE_DIR%\csvToTableauExtract.py" "%TARGET_DIR%\modelfiles" "%TARGET_DIR%\summary" avgload5period.csv
+  if %ERRORLEVEL% GTR 0 goto done
+  
+  echo.
+)
+
 
 endlocal
 

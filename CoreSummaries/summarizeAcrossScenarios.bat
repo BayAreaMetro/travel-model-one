@@ -29,12 +29,23 @@ set SUMMARY_DIRS=%RUN_NAME_SET: =\summary %
 set SUMMARY_DIRS=%SUMMARY_DIRS%\summary
 echo %SUMMARY_DIRS%
 
-:: Run the conversion script
-for %%H in (ActiveTransport.rdata ActivityPattern.rdata AutomobileOwnership.rdata CommuteByEmploymentLocation.rdata CommuteByIncomeHousehold.rdata CommuteByIncomeJob.rdata) DO (
-  python "%CODE_DIR%\RdataToTableauExtract.py" %SUMMARY_DIRS% %COMBINED_DIR% %%H
-  if %ERRORLEVEL% GTR 0 goto done
+:: Run the conversion script to aggregate all rdata files into a single tde
+for %%H in (ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob) DO (
+  if not exist "%COMBINED_DIR%\%%H.tde" (
+    python "%CODE_DIR%\RdataToTableauExtract.py" %SUMMARY_DIRS% %COMBINED_DIR% %%H.rdata
+    if %ERRORLEVEL% GTR 0 goto done
+    echo.
+  )
 )
 
+:: Convert the avgload5period.csv
+set MODELFILE_DIRS=%RUN_NAME_SET: =\modelfiles %
+set MODELFILE_DIRS=%MODELFILE_DIRS%\modelfiles
+echo %MODELFILE_DIRS%
+
+if not exist "%COMBINED_DIR%\avgload5period.tde" (
+  python "%CODE_DIR%\csvToTableauExtract.py" %MODELFILE_DIRS% %COMBINED_DIR% avgload5period.csv
+)
 :done
 
 set PATH=%OLD_PATH%
