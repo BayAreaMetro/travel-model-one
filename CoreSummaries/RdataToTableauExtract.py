@@ -5,8 +5,8 @@ python RdataToTableauExtract.py input_dir1 [input_dir2 input_dir3] output_dir su
 Loops through the input dirs (one is ok) and reads the summary.rdata within.
 Convertes them into a Tableau Data Extract.
 
-Adds an additional column to the resulting output, dir, which will contain the input_dir
-source of the data.  Also uses pandas.DataFrame.fillna to replace NAs with zero, since
+Adds an additional column to the resulting output, src, which will contain the input file
+source of the data.  Also uses pandas.DataFrame.fillna() to replace NAs with zero, since
 Tableau doesn't like them.
 
 Outputs summary.tde (named the same as summary.rdata but with s/rdata/tde) into output_dir.
@@ -43,7 +43,7 @@ def read_rdata(rdata_fullpath):
     
     # we want forward slashes for R
     rdata_fullpath_forR = rdata_fullpath.replace("\\", "/")
-    print "Loading %s" % rdata_fullpath_forR
+    # print "Loading %s" % rdata_fullpath_forR
     
     # read in the data from the R session with python
     r.r("load('%s')" % rdata_fullpath_forR)
@@ -52,17 +52,17 @@ def read_rdata(rdata_fullpath):
     
     table_df = com.load_data('model_summary')
     # add the new column
-    table_df['dir'] = rdata_fullpath
+    table_df['src'] = rdata_fullpath
     print "Read %d lines from %s" % (len(table_df), rdata_fullpath)
 
     # fillna
     for col in table_df.columns:
         nullcount = sum(pd.isnull(table_df[col]))
-        if nullcount > 0: print "  Found %d NA values in column %s" % (nullcount, col)
+        if nullcount > 0: print "  Found %5d NA values in column %s" % (nullcount, col)
     table_df = table_df.fillna(0)
     for col in table_df.columns:
         nullcount = sum(pd.isnull(table_df[col]))
-        if nullcount > 0: print "  Found %d NA values in column %s" % (nullcount, col)
+        if nullcount > 0: print "  -> Found %5d NA values in column %s" % (nullcount, col)
         return table_df
 
 def write_tde(table_df, tde_fullpath):
