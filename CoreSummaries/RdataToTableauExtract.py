@@ -52,7 +52,10 @@ def read_rdata(rdata_fullpath):
     
     table_df = com.load_data('model_summary')
     # add the new column
-    table_df['src'] = rdata_fullpath
+    src = os.path.split(rdata_fullpath)[0] # remove the filename part of the path
+    src = os.path.split(src)[0]            # remove the 'summary' part of the path
+    
+    table_df['src'] = src
     print "Read %d lines from %s" % (len(table_df), rdata_fullpath)
 
     # fillna
