@@ -414,7 +414,7 @@ add_time <- function(this_timeperiod, tours, reverse_od=FALSE) {
 ```
 
 
-## Function to add
+## Function to add Active travel time to tours
 
 Function `add_active`: attaches the active skims of the given time period `this_timeperiod`
 to the given trip data.frame (joining on the columns `orig_taz`, `dest_taz`, and `timeCode`).
@@ -658,148 +658,8 @@ model_summary <- active_summary  # name it generically for rdata
 save(model_summary, file=file.path(TARGET_DIR,"summary","ActiveTransport.rdata"))
 ```
 
-## Active Travel Summary - Overall
-```{r ActiveTransportationSummary_overall, results='asis', echo=FALSE, eval=FALSE}
-# function active_summary_to_xtable: updates the active_summary table by:
-# - multiplying trip rates to get number of trips
-# - combining walk-transit and drive-transit
-# - creating a formatted xtable for printing
-active_summary_to_xtable <- function(active_summary, caption) {
-  # multiply the trip rates by the number of people to get number of trips
-  active_summary[,6:9]      <- active_summary[,6:9]*active_summary[,1]
-  # combine walk-transit and drive-transit to transit
-  active_summary            <- mutate(active_summary, tr_trip=dtr_trip+wtr_trip)
-  # transpose it
-  active_summary_t          <- tbl_df(as.data.frame(t(active_summary)))
-  # add category and measure columns
-  print(active_summary_t)
-  active_summary_t$Category <- c("Regional"," ",
-                                 "Active travel"," "," "," ",
-                                 " "," "," "," ")
-  active_summary_t$Measure  <- c("Population",
-                                 "Share of population that does not leave home on a typical weekday",
-                                 "Average minutes of active travel per person per typical weekday",
-                                 "Share of the population that engages in at least 15 minutes of active travel per typical weekday",
-                                 "Share of the population that engages in at least 30 minutes of active travel per typical weekday",
-                                 "Total walk trips (excluding walking as part of transit travel",
-                                 "Total bicycle trips",
-                                 "Walk trips which are part of walk to transit travel per person",
-                                 "Walk trips which are part of drive to transit travel per person",
-                                 "Walk trips which are part of transit travel per person")
-  # reorder columns
-  colnames                  <- append(tail(colnames(active_summary_t),2), 
-                                      head(colnames(active_summary_t),length(colnames(active_summary_t))-2))
-  active_summary_t          <- active_summary_t[colnames]
-  active_summary_xtable     <- xtable(active_summary_t,
-                                      caption=caption
-                                      # align="lllr"
-                                      )
-  return(active_summary_xtable)
-}
-
-active_summary_all <- summarise(trips_by_person, 
-                            freq     = n(),
-                            atHomeA  = mean(atHomeA),
-                            active   = mean(active),
-                            more15   = mean(more15),
-                            more30   = mean(more30),
-                            wlk_trip = mean(wlk_trip),
-                            bik_trip = mean(bik_trip),
-                            wtr_trip = mean(wtr_trip),
-                            dtr_trip = mean(dtr_trip)
-                            )
-# convert to xtable
-active_summary_all_xtable              <- active_summary_to_xtable(active_summary_all, "Active Travel - Regional Summary")
-# rename column
-colnames(active_summary_all_xtable)[3] <- "Quantity"
-# format the numbers
-active_summary_all_xtable$Quantity     <- xtable_pretty(active_summary_all_xtable$Measure, active_summary_all_xtable$Quantity)
-print(active_summary_all_xtable, type="html", include.rownames=FALSE)
-```
-
-## Active Travel Summary - By Person Type
-```{r ActiveTransportationSummary_ptype, results='asis', echo=FALSE, eval=FALSE}
-active_summary_ptype <- summarise(group_by(trips_by_person, ptype),
-                            freq     = n(),
-                            atHomeA  = mean(atHomeA),
-                            active   = mean(active),
-                            more15   = mean(more15),
-                            more30   = mean(more30),
-                            wlk_trip = mean(wlk_trip),
-                            bik_trip = mean(bik_trip),
-                            wtr_trip = mean(wtr_trip),
-                            dtr_trip = mean(dtr_trip)
-                            )
-active_summary_ptype <- select(active_summary_ptype, -ptype)
-# convert to xtable
-active_summary_ptype_xtable                <- active_summary_to_xtable(active_summary_ptype,"Active Travel By Person Type")
-# rename column
-colnames(active_summary_ptype_xtable)[3:length(colnames(active_summary_ptype_xtable))] <- PTYPE_LABELS
-# format the numbers
-for (ptype_val in PTYPE_LABELS) {
-  active_summary_ptype_xtable[[ptype_val]] <- xtable_pretty(active_summary_ptype_xtable$Measure, 
-                                                            get(ptype_val, active_summary_ptype_xtable))
-}
-print(active_summary_ptype_xtable, type="html", include.rownames=FALSE)
-```
-
-## Active Travel Summary - By County of Residence
-```{r ActiveTransportationSummary_county, results='asis', echo=FALSE, eval=FALSE}
-active_summary_county <- summarise(group_by(trips_by_person, COUNTY),
-                            freq     = n(),
-                            atHomeA  = mean(atHomeA),
-                            active   = mean(active),
-                            more15   = mean(more15),
-                            more30   = mean(more30),
-                            wlk_trip = mean(wlk_trip),
-                            bik_trip = mean(bik_trip),
-                            wtr_trip = mean(wtr_trip),
-                            dtr_trip = mean(dtr_trip)
-                            )
-identical(as.integer(active_summary_county$COUNTY), as.integer(c(1,2,3,4,5,6,7,8,9)))
-active_summary_county <- select(active_summary_county, -COUNTY)
-# convert to xtable
-active_summary_county_xtable                <- active_summary_to_xtable(active_summary_county,"Active Travel By County of Residence")
-# rename column
-colnames(active_summary_county_xtable)[3:length(colnames(active_summary_county_xtable))] <- COUNTY_LABELS
-# format the numbers
-for (county_val in COUNTY_LABELS) {
-  active_summary_county_xtable[[county_val]] <- xtable_pretty(active_summary_county_xtable$Measure, 
-                                                            get(county_val, active_summary_county_xtable))
-}
-print(active_summary_county_xtable, type="html", include.rownames=FALSE)
-```
-
-## Active Travel Summary - By Automobile Ownership
-```{r ActiveTransportationSummary_zeroauto, results='asis', echo=FALSE, eval=FALSE}
-active_summary_zerauto <- summarise(group_by(trips_by_person, zeroAuto),
-                            freq     = n(),
-                            atHomeA  = mean(atHomeA),
-                            active   = mean(active),
-                            more15   = mean(more15),
-                            more30   = mean(more30),
-                            wlk_trip = mean(wlk_trip),
-                            bik_trip = mean(bik_trip),
-                            wtr_trip = mean(wtr_trip),
-                            dtr_trip = mean(dtr_trip)
-                            )
-print(active_summary_zerauto$zeroAuto)
-identical(as.integer(active_summary_zerauto$zeroAuto), as.integer(c(0,1)))
-active_summary_zerauto <- select(active_summary_zerauto, -zeroAuto)
-# convert to xtable
-active_summary_zerauto_xtable                <- active_summary_to_xtable(active_summary_zerauto,"Active Travel By Auto Ownership")
-# rename column
-zerauto_labels                               <- c("Non-zero Automobiles", "Zero Automobiles")
-colnames(active_summary_zerauto_xtable)[3:length(colnames(active_summary_zerauto_xtable))] <- zerauto_labels
-# format the numbers
-for (zerauto_val in zerauto_labels) {
-  active_summary_zerauto_xtable[[zerauto_val]] <- xtable_pretty(active_summary_zerauto_xtable$Measure, 
-                                                            get(zerauto_val, active_summary_zerauto_xtable))
-}
-print(active_summary_zerauto_xtable, type="html", include.rownames=FALSE)
-```
-
 # Activity Pattern Summary
+
 ```{r ActivityPatternSummary, error=FALSE}
 actpatt_summary <- summarise(group_by(persons, type, activity_pattern, imf_choice, inmf_choice, incQ_label), freq=n())
 write.table(actpatt_summary, file.path(TARGET_DIR,"summary","ActivityPattern.csv"), sep=",", row.names=FALSE)
@@ -808,6 +668,7 @@ save(model_summary, file=file.path(TARGET_DIR,"summary","ActivityPattern.rdata")
 ```
 
 # Auto Ownership Summaries
+
 ```{r AutoOwnershipSummary, error=FALSE}
 # summarise
 autoown_summary <- summarise(group_by(households, SD, COUNTY, county_name, autos, 
@@ -818,6 +679,7 @@ save(model_summary, file=file.path(TARGET_DIR,"summary","AutomobileOwnership.rda
 ```
 
 ## Auto Ownership Summary By County
+
 ```{r AutoOwnershipSummaryByCountyGraph, fig.width=8, fig.height=5}
 auto_labels <- c("Zero automobiles", "One automobile", "Two automobiles",
                  "Three automobiles", "Four or more automobiles")
@@ -836,36 +698,8 @@ ggplot(autoown_summary_county, aes(x=as.factor(COUNTY), y=freq, fill=as.factor(a
                       labels=rev(auto_labels))
 ```
 
-```{r AutoOwnershipSummaryByCountyTable, results='asis', echo=FALSE, eval=FALSE}
-aos_ac_table                     <- dcast(autoown_summary_county, autos ~ COUNTY, value.var="freq")
-# make rownames readable
-
-rownames(aos_ac_table)           <- auto_labels
-aos_ac_table                     <- select(aos_ac_table, -autos)
-# add Sum row and name it Everyone
-aos_ac_table_summed              <- addmargins(as.table(as.matrix(aos_ac_table)), 1, FUN=sum)
-rownames(aos_ac_table_summed)[6] <- "Everyone"
-# name columns
-colnames(aos_ac_table_summed)    <- COUNTY_LABELS
-aos_ac_xtable                    <- xtable(apply(aos_ac_table_summed, 2, prettyNum, big.mark=","), 
-                                         align="lrrrrrrrrr",
-                                         caption="Automobile Ownership Levels by County")
-print(aos_ac_xtable, type="html")
-
-
-# shares
-aos_ac_table_share              <- prop.table(as.table(as.matrix(aos_ac_table)),2)
-aos_ac_table_share              <- addmargins(aos_ac_table_share, 1, FUN=sum)
-rownames(aos_ac_table_share)[6] <- "Everyone"
-colnames(aos_ac_table_share)    <- COUNTY_LABELS
-aos_ac_xtable_share             <- xtable(apply(aos_ac_table_share, 2, function(u) sprintf("%.1f%%",u*100)),
-                                        align="lrrrrrrrrr",
-                                        caption="Automobile Ownership Share by County")
-rownames(aos_ac_xtable_share)   <- append(auto_labels,"Everyone")
-print(aos_ac_xtable_share, type="html")
-```
-
 ## Auto Ownership Summary By Workers
+
 ```{r AutoOwnershipSummaryByWorkersGraph, fig.width=8, fig.height=5}
 # by Workers
 autoown_summary_workers <- summarise(group_by(autoown_summary, workers, autos), freq=sum(freq))
@@ -882,36 +716,8 @@ ggplot(autoown_summary_workers, aes(x=as.factor(workers), y=freq, fill=as.factor
                       labels=rev(auto_labels))
 ```
 
-```{r AutoOwnershipSummaryByWorkersTable, results='asis', echo=FALSE}
-aos_aw_table <- dcast(autoown_summary_workers, autos ~ workers, value.var="freq")
-# make rownames readable
-# stopifnot(aos_aw_table$autos == c(0,1,2,3,4))
-rownames(aos_aw_table)           <- auto_labels
-aos_aw_table                     <- select(aos_aw_table, -autos)
-# add Sum row and name it Everyone
-aos_aw_table_summed              <- addmargins(as.table(as.matrix(aos_aw_table)), 1, FUN=sum)
-rownames(aos_aw_table_summed)[6] <- "Everyone"
-# name columns
-colnames(aos_aw_table_summed)    <- WORKER_LABELS
-aosw_xtable                      <- xtable(apply(aos_aw_table_summed, 2, prettyNum, big.mark=","), 
-                                           align="lrrrrr",
-                                           caption="Automobile Ownership Levels by Number of Workers")
-print(aosw_xtable, type="html")
-
-
-# shares
-aos_aw_table_share              <- prop.table(as.table(as.matrix(aos_aw_table)),2)
-aos_aw_table_share              <- addmargins(aos_aw_table_share, 1, FUN=sum)
-rownames(aos_aw_table_share)[6] <- "Everyone"
-colnames(aos_aw_table_share)    <- WORKER_LABELS
-aosw_xtable_share               <- xtable(apply(aos_aw_table_share, 2, function(u) sprintf("%.1f%%",u*100)),
-                                          align="lrrrrr",
-                                          caption="Automobile Ownership Share by Number of Workers")
-rownames(aosw_xtable_share)     <- append(auto_labels,"Everyone")
-print(aosw_xtable_share, type="html")
-```
-
 ## Average Auto Ownership Summary By County and Transit Availability
+
 ```{r AutoOwnershipSummaryByCountyTrnAvailGraph, fig.width=8, fig.height=5}
 # by Workers
 autoown_summary_trncoutny <- summarise(group_by(autoown_summary, COUNTY, walk_subzone, autos), freq=sum(freq))
@@ -926,47 +732,6 @@ autoown_summary_trncoutny <- mutate(autoown_summary_trncoutny, totautos=autos*fr
 #  scale_fill_discrete(name="", 
 #                      breaks=c(4,3,2,1,0), 
 #                      labels=rev(auto_labels))
-```
-
-```{r AutoOwnershipSummaryByCountyTrnAvailTable, results='asis', echo=FALSE}
-# households in walk_subzones x county
-aos_wc_table                  <- dcast(autoown_summary_trncoutny, walk_subzone ~ COUNTY, 
-                                       value.var="freq", fun.aggregate=sum)
-# stopifnot(aos_wc_table$walk_subzone == c(0,1,2))
-rownames(aos_wc_table)        <- LOOKUP_WALK_SUBZONE$walk_subzone_label
-aos_wc_table                  <- select(aos_wc_table, -walk_subzone)
-aos_wc_table_summed           <- addmargins(as.table(as.matrix(aos_wc_table)), 1, FUN=sum)
-
-# total autos in walk_subzones x county
-aos_wc_table_totaut           <- dcast(autoown_summary_trncoutny, walk_subzone ~ COUNTY, 
-                                       value.var="totautos", fun.aggregate=sum)
-# stopifnot(aos_wc_table_totaut$walk_subzone == c(0,1,2))
-rownames(aos_wc_table_totaut) <- WALK_SUBZONE_LABELS
-aos_wc_table_totaut           <- select(aos_wc_table_totaut, -walk_subzone)
-aos_wc_table_totaut_summed    <- addmargins(as.table(as.matrix(aos_wc_table_totaut)), 1, FUN=sum)
-
-# avg autos in walk_subzones x county
-aos_wc_table_avgaut           <- aos_wc_table_totaut_summed/aos_wc_table_summed
-rownames(aos_wc_table_avgaut)[4] <- "Everyone"
-colnames(aos_wc_table_avgaut) <- COUNTY_LABELS
-aos_wc_xtable_avgaut          <- xtable(apply(aos_wc_table_avgaut, 2, function(u) sprintf("%.2f",u)), 
-                                        align="lrrrrrrrrr",
-                                        caption=paste("Average Automobile Ownership Levels",
-                                                      "(capped at 4 per household) by County ",
-                                                      "and Walk-to-Transit Accessibility"))
-rownames(aos_wc_xtable_avgaut)<- append(WALK_SUBZONE_LABELS, "Everyone")
-print(aos_wc_xtable_avgaut, type="html")
-
-# number of households in walk_subzones x county
-rownames(aos_wc_table_summed)[4] <- "Everyone"
-colnames(aos_wc_table_summed) <- COUNTY_LABELS
-aos_wc_xtable_summed          <- xtable(apply(aos_wc_table_summed, 2, prettyNum, big.mark=","), 
-                                        align="lrrrrrrrrr",
-                                        caption=paste("Number of households by County",
-                                                      "and Walk-to-Transit Accessibility"))
-rownames(aos_wc_xtable_summed)<- append(WALK_SUBZONE_LABELS, "Everyone")
-print(aos_wc_xtable_summed, type="html")
-
 ```
 
 # Commute By Employment Location Summaries
