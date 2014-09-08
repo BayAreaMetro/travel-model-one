@@ -933,7 +933,7 @@ autoown_summary_trncoutny <- mutate(autoown_summary_trncoutny, totautos=autos*fr
 aos_wc_table                  <- dcast(autoown_summary_trncoutny, walk_subzone ~ COUNTY, 
                                        value.var="freq", fun.aggregate=sum)
 # stopifnot(aos_wc_table$walk_subzone == c(0,1,2))
-rownames(aos_wc_table)        <- WALK_SUBZONE_LABELS
+rownames(aos_wc_table)        <- LOOKUP_WALK_SUBZONE$walk_subzone_label
 aos_wc_table                  <- select(aos_wc_table, -walk_subzone)
 aos_wc_table_summed           <- addmargins(as.table(as.matrix(aos_wc_table)), 1, FUN=sum)
 
@@ -971,7 +971,8 @@ print(aos_wc_xtable_summed, type="html")
 
 # Commute By Employment Location Summaries
 ```{r CommuteByEmploymentLocationSummary, error=FALSE}
-commute_tours   <- select(indiv_tours, hh_id, person_id, orig_taz, dest_taz, tour_purpose, start_hour, end_hour, tour_mode, incQ)
+commute_tours   <- select(indiv_tours, hh_id, person_id, orig_taz, dest_taz, tour_purpose,
+                          start_hour, end_hour, tour_mode, incQ, incQ_label)
 # select out non-work travel
 commute_tours   <- subset(commute_tours, (tour_purpose!="atwork_business" & tour_purpose!="atwork_eat"  & tour_purpose!="atwork_maint" &
                                           tour_purpose!="eatout"          & tour_purpose!="escort_kids" & tour_purpose!="escort_no kids" &
