@@ -72,7 +72,7 @@ if %ITER% EQU 0 (
 set TARGET_DIR=C:\Users\lzorn\Documents\%RUN_NAME%
 
 :: Copy the inputs from the model run directory into the TARGET_DIR
-call copyCoreSummariesInputs.bat
+call "%CODE_DIR%\copyCoreSummariesInputs.bat"
 
 :: See if we're missing any summaries
 if not exist "%TARGET_DIR%\summary" ( mkdir "%TARGET_DIR%\summary" )
@@ -84,6 +84,7 @@ if not exist "%TARGET_DIR%\summary\AutomobileOwnership.csv"         ( set /a NEE
 if not exist "%TARGET_DIR%\summary\CommuteByEmploymentLocation.csv" ( set /a NEED_SUMMARY+=1 )
 if not exist "%TARGET_DIR%\summary\CommuteByIncomeHousehold.csv"    ( set /a NEED_SUMMARY+=1 )
 if not exist "%TARGET_DIR%\summary\CommuteByIncomeJob.csv"          ( set /a NEED_SUMMARY+=1 )
+if not exist "%TARGET_DIR%\summary\TripDistance.csv"                ( set /a NEED_SUMMARY+=1 )
 echo Missing %NEED_SUMMARY% summaries in %TARGET_DIR%\summary
 
 :: If we need to, create the core summaries.
@@ -117,6 +118,19 @@ if not exist "%TARGET_DIR%\summary\avgload5period.tde" (
   echo.
 )
 
+:: convert the transit files
+if not exist "%TARGET_DIR%\summary\trnline.tde" (
+  FOR %%H in (EA AM MD PM EV) DO (
+    FOR %%J in (loc lrf exp hvy com) DO (
+      rem walk -> transit -> walk
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --append "%TARGET_DIR%\modelfiles" "%TARGET_DIR%\summary" trnline%%H_wlk_%%J_wlk.csv
+      rem drive -> transit -> walk
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --append "%TARGET_DIR%\modelfiles" "%TARGET_DIR%\summary" trnline%%H_drv_%%J_wlk.csv      
+      rem walk -> transit -> drive
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --append "%TARGET_DIR%\modelfiles" "%TARGET_DIR%\summary" trnline%%H_wlk_%%J_drv.csv
+    )
+  )
+)
 
 endlocal
 

@@ -45,6 +45,21 @@ FOR %%H in (%TIMEPERIODS%) DO (
   if not exist "%TARGET_DIR%\modelfiles\TimeSkimsDatabase%%H.csv" (
     copy "%RUN_DIR%\database\TimeSkimsDatabase%%H.csv" "%TARGET_DIR%\modelfiles"
   )
+  
+  FOR %%J in (loc lrf exp hvy com) DO (
+    rem walk -> transit -> walk
+    if not exist "%TARGET_DIR%\modelfiles\trnline%%H_wlk_%%J_wlk.csv" (
+      copy "%RUN_DIR%\trn\trnline%%H_wlk_%%J_wlk.csv" "%TARGET_DIR%\modelfiles"
+    )
+    rem drive -> transit -> walk
+    if not exist "%TARGET_DIR%\modelfiles\trnline%%H_drv_%%J_wlk.csv" (
+      copy "%RUN_DIR%\trn\trnline%%H_drv_%%J_wlk.csv" "%TARGET_DIR%\modelfiles"
+    )
+    rem walk -> transit -> drive
+    if not exist "%TARGET_DIR%\modelfiles\trnline%%H_wlk_%%J_drv.csv" (
+      copy "%RUN_DIR%\trn\trnline%%H_wlk_%%J_drv.csv" "%TARGET_DIR%\modelfiles"
+    )
+  )
 )
 
 endlocal
