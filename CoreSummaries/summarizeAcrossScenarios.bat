@@ -46,6 +46,20 @@ echo %MODELFILE_DIRS%
 if not exist "%COMBINED_DIR%\avgload5period.tde" (
   python "%CODE_DIR%\csvToTableauExtract.py" %MODELFILE_DIRS% %COMBINED_DIR% avgload5period.csv
 )
+
+:: convert the transit files
+if not exist "%COMBINED_DIR%\trnline.tde" (
+  FOR %%H in (EA AM MD PM EV) DO (
+    FOR %%J in (loc lrf exp hvy com) DO (
+      rem walk -> transit -> walk
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\tableau\reference-transit-modes.csv" --append %MODELFILE_DIRS% "%COMBINED_DIR%" trnline%%H_wlk_%%J_wlk.csv
+      rem drive -> transit -> walk
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\tableau\reference-transit-modes.csv" --append %MODELFILE_DIRS% "%COMBINED_DIR%" trnline%%H_drv_%%J_wlk.csv      
+      rem walk -> transit -> drive
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\tableau\reference-transit-modes.csv"  --append %MODELFILE_DIRS% "%COMBINED_DIR%" trnline%%H_wlk_%%J_drv.csv
+    )
+  )
+)
 :done
 
 set PATH=%OLD_PATH%
