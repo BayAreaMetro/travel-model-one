@@ -1,5 +1,5 @@
 USAGE = """
-python csvToTableauExtract.py [--header "colname1,colname2,..."] [--output output.tde] [--append]
+python csvToTableauExtract.py [--header "colname1,colname2,..."] [--output output.tde] [--join join.csv] [--append]
   input_dir1 [input_dir2 input_dir3] output_dir summary.csv
 
   + Pass --header "colname1,colname2,..." to include column names if they're not included
@@ -8,6 +8,8 @@ python csvToTableauExtract.py [--header "colname1,colname2,..."] [--output outpu
   + Pass --output output.tde to specify an output filename to use.  If none is specified,
     summary.tde will be used (the input file name but with s/csv/tde).
 
+  + Pass --join join.csv to join the data to a csv.  Will join on common column names.
+  
   + Pass --append if the data should be appended to the output tde.  If not passed and
     the file exists, the script will error.
     
@@ -60,7 +62,7 @@ unwind_timeperiods = {'cspdEA':['cspd','EA'],
 
 if __name__ == '__main__':
 
-    optlist, args = getopt.getopt(sys.argv[1:], "h:o:a", ['header=','output=','append'])
+    optlist, args = getopt.getopt(sys.argv[1:], "h:o:j:a", ['header=','output=','join=','append'])
     if len(args) < 3:
         print USAGE
         sys.exit(2)
@@ -68,6 +70,7 @@ if __name__ == '__main__':
     arg_header          = None
     arg_tde_filename    = None
     arg_append          = False
+    arg_join            = []
     unwinding           = False
     for opt,arg in optlist:
         if opt in ('-h', '--header'):
@@ -76,6 +79,8 @@ if __name__ == '__main__':
             arg_tde_filename = arg
         elif opt in ('-a', '--append'):
             arg_append = True
+        elif opt in ('-j', '--join'):
+            arg_join.append(arg)
     
     csv_filename = args[-1]
     if not csv_filename.endswith(".csv"):
@@ -125,6 +130,9 @@ if __name__ == '__main__':
 
     # Define the columns by the first csv
     table_df = pandas.read_csv(os.path.join(csv_dirpaths[0], csv_filename), names=arg_header)
+    for join_table_file in arg_join:
+        join_df = pandas.read_csv(join_table_file)
+        table_df = pandas.merge(table_df, join_df, how='left')
 
     # Step 2: Create the tableDef
     tableDef = tde.TableDefinition()
@@ -179,7 +187,10 @@ if __name__ == '__main__':
         src = os.path.split(src)[0]            # remove the 'summary' part of the path
     
         table_df = pandas.read_csv(csv_fullpath, names=arg_header)
-
+        for join_table_file in arg_join:
+            join_df = pandas.read_csv(join_table_file)
+            table_df = pandas.merge(table_df, join_df, how='left')
+        
         # make sure the header is consistent
         header = [col.strip() for col in table_df.columns]
         assert(header == old_colnames)
