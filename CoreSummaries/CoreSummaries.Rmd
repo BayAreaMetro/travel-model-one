@@ -739,10 +739,12 @@ autoown_summary_trncoutny <- mutate(autoown_summary_trncoutny, totautos=autos*fr
 commute_tours   <- select(indiv_tours, hh_id, person_id, orig_taz, dest_taz, tour_purpose,
                           start_hour, end_hour, tour_mode, incQ, incQ_label)
 # select out non-work travel
-commute_tours   <- subset(commute_tours, (tour_purpose!="atwork_business" & tour_purpose!="atwork_eat"  & tour_purpose!="atwork_maint" &
-                                          tour_purpose!="eatout"          & tour_purpose!="escort_kids" & tour_purpose!="escort_no kids" &
-                                          tour_purpose!="othdiscr"        & tour_purpose!="othmaint"    & tour_purpose!="school_grade" &
-                                          tour_purpose!="school_high"     & tour_purpose!="shopping"    & tour_purpose!="social" &
+commute_tours   <- subset(commute_tours, (tour_purpose!="atwork_business" & tour_purpose!="atwork_eat"     &
+                                          tour_purpose!="atwork_maint"    & tour_purpose!="eatout"         &
+                                          tour_purpose!="escort_kids"     & tour_purpose!="escort_no kids" &
+                                          tour_purpose!="othdiscr"        & tour_purpose!="othmaint"       &
+                                          tour_purpose!="school_grade"    & tour_purpose!="school_high"    &
+                                          tour_purpose!="shopping"        & tour_purpose!="social"         &
                                           tour_purpose!="university"))
 
 # TODO: add this to all tours, not just commute?
@@ -751,7 +753,8 @@ commute_tours   <- mutate(commute_tours,
                           costMode  =(tour_mode<=8)*tour_mode +         # auto, walk, bike all in the skims
                                      # All walk to transit sub modes get best path walk to transit skim
                                      (tour_mode>=9)*(tour_mode<=13)*9 +
-                                     # All drive transit walk sub modes get the best path drive transit walk skim (tours start at home)
+                                     # All drive transit walk sub modes get the best path
+                                     # drive transit walk skim (tours start at home)
                                      (tour_mode>=14)*10,
                           timeCodeHwNum=(start_hour<6)*1 +                  # EA
                                         (start_hour>5)*(start_hour<10)*2 +  # AM
@@ -766,10 +769,12 @@ commute_tours   <- mutate(commute_tours,
                           )
 # add timeCodeHw and timeCodeWh (character abbreviation versions)
 commute_tours   <- left_join(commute_tours, 
-                             select(mutate(LOOKUP_TIMEPERIOD, timeCodeHwNum=timeCodeNum, timeCodeHw=timeperiod_abbrev), 
+                             select(mutate(LOOKUP_TIMEPERIOD, 
+                                           timeCodeHwNum=timeCodeNum, timeCodeHw=timeperiod_abbrev), 
                                     timeCodeHwNum, timeCodeHw))
 commute_tours   <- left_join(commute_tours, 
-                             select(mutate(LOOKUP_TIMEPERIOD, timeCodeWhNum=timeCodeNum, timeCodeWh=timeperiod_abbrev), 
+                             select(mutate(LOOKUP_TIMEPERIOD, 
+                                           timeCodeWhNum=timeCodeNum, timeCodeWh=timeperiod_abbrev), 
                                     timeCodeWhNum, timeCodeWh))
 
 # Add in County, Superdistrict, Parking Cost from TAZ Data for the employment location (the tour destination)
@@ -822,8 +827,10 @@ commute_tours   <- left_join(commute_tours,
 commute_tours   <- mutate(commute_tours, parking_rate=ifelse(fp_choice==1,0.0,PRKCST))
 commute_tours   <- mutate(commute_tours, parking_cost=parking_rate*duration)
 # Distribute costs across shared ride modes (same value used in skims, assignment);
-commute_tours   <- mutate(commute_tours, parking_cost=ifelse((tour_mode==3)|(tour_mode==4),parking_cost/1.75,parking_cost))
-commute_tours   <- mutate(commute_tours, parking_cost=ifelse((tour_mode==5)|(tour_mode==6),parking_cost/2.50,parking_cost))
+commute_tours   <- mutate(commute_tours, 
+                          parking_cost=ifelse((tour_mode==3)|(tour_mode==4),parking_cost/1.75,parking_cost))
+commute_tours   <- mutate(commute_tours,
+                          parking_cost=ifelse((tour_mode==5)|(tour_mode==6),parking_cost/2.50,parking_cost))
 # Set the transit parking cost to zero
 commute_tours   <- mutate(commute_tours, parking_cost=ifelse(tour_mode>6,0.0,parking_cost))
 # Sum parking and out-of-pocket cost
@@ -842,14 +849,16 @@ commute_summary <- summarise(group_by(commute_tours, COUNTY, county_name, SD, to
                              parking_cost = mean(parking_cost),
                              distance     = mean(distance),
                              cost_fail    = sum(cost_fail))
-write.table(commute_summary, file.path(TARGET_DIR,"summary","CommuteByEmploymentLocation.csv"), sep=",", row.names=FALSE)
+write.table(commute_summary, file.path(TARGET_DIR,"summary","CommuteByEmploymentLocation.csv"),
+            sep=",", row.names=FALSE)
 model_summary <- commute_summary  # name it generically for rdata
 save(model_summary, file=file.path(TARGET_DIR,"summary","CommuteByEmploymentLocation.rdata"))
 ```
 
 # Commute By Income Summaries
 ```{r CommuteByIncomeSummary, error=FALSE}
-commute_inc_summary_byjob <- summarise(group_by(commute_tours, COUNTY, county_name, SD, dest_taz, tour_mode, incQ, incQ_label), 
+commute_inc_summary_byjob <- summarise(group_by(commute_tours, COUNTY, county_name, SD, dest_taz, 
+                                                tour_mode, incQ, incQ_label), 
                                        freq         = n(),
                                        totCost      = mean(totCost, na.rm=TRUE),
                                        cost         = mean(cost,    na.rm=TRUE),
@@ -865,10 +874,12 @@ save(model_summary, file=file.path(TARGET_DIR,"summary","CommuteByIncomeJob.rdat
 
 # The COUNTY and super district are by destination right now; add residence
 commute_tours   <- left_join(commute_tours,
-                             mutate(tazData, orig_taz=taz, res_COUNTY=COUNTY, res_county_name=county_name, res_SD=SD) %.% 
+                             mutate(tazData, orig_taz=taz, res_COUNTY=COUNTY, res_county_name=county_name, 
+                                    res_SD=SD) %.% 
                                select(orig_taz, res_COUNTY, res_county_name, res_SD),
                              by=c("orig_taz"))
-commute_inc_summary_byres <- summarise(group_by(commute_tours, res_COUNTY, res_county_name, res_SD, orig_taz, tour_mode, incQ, incQ_label), 
+commute_inc_summary_byres <- summarise(group_by(commute_tours, res_COUNTY, res_county_name, res_SD, orig_taz,
+                                                tour_mode, incQ, incQ_label), 
                                        freq         = n(),
                                        totCost      = mean(totCost, na.rm=TRUE),
                                        cost         = mean(cost,    na.rm=TRUE),
@@ -885,7 +896,8 @@ save(model_summary, file=file.path(TARGET_DIR,"summary","CommuteByIncomeHousehol
 
 # Trip Distance Summary
 ```{r TripDistanceSummary, error=FALSE}
-tripdist_summary          <- summarise(group_by(trips, autoSuff, autoSuff_label, incQ, incQ_label, timeCode, timeperiod_label, trip_mode, tour_purpose),
+tripdist_summary          <- summarise(group_by(trips, autoSuff, autoSuff_label, incQ, incQ_label, timeCode,
+                                                timeperiod_label, trip_mode, tour_purpose),
                                        freq         = n(),
                                        distance     = mean(distance))
 write.table(tripdist_summary,
