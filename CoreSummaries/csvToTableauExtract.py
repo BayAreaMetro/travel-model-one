@@ -19,8 +19,20 @@ source of the data.  Also uses pandas.DataFrame.fillna() to replace NAs with zer
 Tableau doesn't like them.
 
 """
-import csv, datetime, getopt, os, sys
+import csv, datetime, itertools, getopt, os, pandas, sys
 import dataextract as tde
+
+# create a dict for the field maps
+# Define type maps
+# Caveat: I am not including all of the possibilities here
+fieldMap = { 
+    'float64' :     tde.Type.DOUBLE,
+    'float32' :     tde.Type.DOUBLE,
+    'int64' :       tde.Type.DOUBLE,
+    'int32' :       tde.Type.DOUBLE,
+    'object':       tde.Type.UNICODE_STRING,
+    'bool' :        tde.Type.BOOLEAN
+}
 
 unwind_timeperiods = {'cspdEA':['cspd','EA'],
                       'cspdAM':['cspd','AM'],
@@ -112,19 +124,14 @@ if __name__ == '__main__':
     tdefile = tde.Extract(tde_fullpath)
 
     # Define the columns by the first csv
-    csvfile = open(os.path.join(csv_dirpaths[0], csv_filename), 'rb')
-    csvReader = csv.reader(csvfile, delimiter=",", quotechar='"')
-    if arg_header:
-        header = arg_header
-    else:
-        header = csvReader.next()
+    table_df = pandas.read_csv(os.path.join(csv_dirpaths[0], csv_filename), names=arg_header)
 
     # Step 2: Create the tableDef
     tableDef = tde.TableDefinition()
     old_colnames = []
     colnames_to_types = {}
     new_colnames_to_idx = {}
-    for col in header:
+    for (col,dtype) in itertools.izip(table_df.columns, table_df.dtypes):
         colname = col.strip() # strip whitespace
         old_colnames.append(colname)
 
@@ -141,28 +148,20 @@ if __name__ == '__main__':
 
         new_colnames_to_idx[new_colname] = len(new_colnames_to_idx)
         # figure out data type
-        if new_colname in ['use','name','path id']:
-            colnames_to_types[new_colname] = tde.Type.CHAR_STRING
-        elif colname in ['a','b','gl','ft','at','owner','mode']:
-            colnames_to_types[new_colname] = tde.Type.INTEGER
-        else:
-            colnames_to_types[new_colname] = tde.Type.DOUBLE
-
+        colnames_to_types[new_colname] = fieldMap[str(dtype)]
         tableDef.addColumn(new_colname, colnames_to_types[new_colname])
-        # other options: tde.Type.DATE,DOUBLE,INTEGER
 
     if unwinding:
         # add the time period column
-        tableDef.addColumn("timeperiod", tde.Type.CHAR_STRING)
+        tableDef.addColumn("timeperiod", tde.Type.UNICODE_STRING)
         new_colnames_to_idx["timeperiod"] = len(new_colnames_to_idx)
     # add the src column
-    tableDef.addColumn("src", tde.Type.CHAR_STRING)
+    tableDef.addColumn("src", tde.Type.UNICODE_STRING)
     new_colnames_to_idx["src"] = len(new_colnames_to_idx)
     
     # print "old_colnames = %s" % str(old_colnames)
     # print "new colnames = %s" % str(new_colnames_to_idx)
     # print colnames_to_types
-    csvfile.close()
     
     # Step 3: Creat the table in the image of the tableDef
     if arg_append:
@@ -179,20 +178,15 @@ if __name__ == '__main__':
         src = os.path.split(csv_fullpath)[0]   # remove the filename part of the path
         src = os.path.split(src)[0]            # remove the 'summary' part of the path
     
-        csvfile = open(csv_fullpath, 'rb')
-        csvReader = csv.reader(open(csv_fullpath,'rb'), delimiter=",", quotechar='"')
-        
+        table_df = pandas.read_csv(csv_fullpath, names=arg_header)
+
         # make sure the header is consistent
-        if arg_header:
-            header = arg_header
-        else:
-            header = csvReader.next()
-        header = [col.strip() for col in header]
+        header = [col.strip() for col in table_df.columns]
         assert(header == old_colnames)
 
         csv_lines_read = 0
         tde_lines_written = 0
-        for line in csvReader:
+        for count, line in table_df.iterrows():
             csv_lines_read += 1
             
             timeperiods = ['huh']
@@ -200,27 +194,26 @@ if __name__ == '__main__':
             
             for timeperiod in timeperiods:
                 # set the row items    
-                for idx in range(len(header)):
-                    colname = header[idx].strip() # strip whitespace
+                for idx in range(len(table_df.columns)):
+                    orig_colname = table_df.columns[idx]
+                    colname = orig_colname.strip() # strip whitespace
 
                     # straightforward case
                     if colname in new_colnames_to_idx.keys():
                         col_idx = new_colnames_to_idx[colname]
 
                         try:
-                            if colnames_to_types[colname] == tde.Type.CHAR_STRING:
-                                newrow.setCharString(col_idx, str(line[idx]))
+                            if colnames_to_types[colname] == tde.Type.UNICODE_STRING:
+                                newrow.setString(col_idx, str(line[orig_colname]))
                             elif colnames_to_types[colname] == tde.Type.INTEGER:
-                                if line[idx]=="":
-                                    newrow.setInteger(col_idx,0)
-                                else:
-                                    newrow.setInteger(col_idx, int(line[idx]))
+                                newrow.setInteger(col_idx, int(line[orig_colname]))
                             elif colnames_to_types[colname] == tde.Type.DOUBLE:
-                                newrow.setDouble(col_idx, float(line[idx]))
+                                newrow.setDouble(col_idx, float(line[orig_colname]))
                             else:
                                 raise
                         except:
-                            print "exception!  colname=[%s] val=[%s]" % (colname, str(line[idx]))
+                            print "line = ", line
+                            print "exception!  colname=[%s] val=[%s]" % (colname, str(line[orig_colname]))
                             raise
                             
                     # unwind case
@@ -229,18 +222,17 @@ if __name__ == '__main__':
                         col_tp      = unwind_timeperiods[colname][1]
                         col_idx     = new_colnames_to_idx[new_colname]
                         if col_tp == timeperiod:
-                            newrow.setDouble(col_idx, float(line[idx]))
+                            newrow.setDouble(col_idx, float(line[orig_colname]))
 
                 if unwinding:
                     # and the time period
-                    newrow.setCharString(new_colnames_to_idx["timeperiod"], timeperiod)
+                    newrow.setString(new_colnames_to_idx["timeperiod"], timeperiod)
                 # and the src
-                newrow.setCharString(new_colnames_to_idx["src"], src)
+                newrow.setString(new_colnames_to_idx["src"], src)
                 table.insert(newrow)
                 
                 tde_lines_written += 1
         
-        csvfile.close()
         print "Read  %6d rows from %s" % (csv_lines_read, csv_fullpath)
         
     # Step 5: Close the tde
