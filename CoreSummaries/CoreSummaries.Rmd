@@ -478,8 +478,8 @@ The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/JointTr
 ```{r ReadJointTrips, error=FALSE}
 joint_trips     <- read.table(file=file.path(TARGET_DIR,"modelfiles",
                                              paste0("jointTripData_",ITER,".csv")), header=TRUE, sep=",")
-joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz,
-                          trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour)
+joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz, trip_mode,
+                          num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour)
 ```
 
 ## Joint Trips need person ids -- attach them (via Joint Tours)
@@ -514,16 +514,15 @@ joint_tour_persons <- left_join(joint_tour_persons, persons, by=c("hh_id","perso
 joint_person_trips <- inner_join(joint_trips, joint_tour_persons, by=c("hh_id", "tour_id"))
 # select out person_num and the person table columns
 joint_person_trips <- select(joint_person_trips, hh_id, person_id, tour_id, orig_taz, dest_taz, trip_mode,
-                             tour_purpose, orig_purpose, dest_purpose, depart_hour)
+                             num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour)
 # cleanup
 remove(peep,participants,max_peeps,jtp,joint_tour_persons)
 ```
 
 ## Combine Individual Trips and Joint Person Trips
 ```{r CombineTrips, error=FALSE}
-joint_person_trips <- mutate(joint_person_trips, joint=TRUE)
-indiv_trips        <- mutate(indiv_trips,        joint=FALSE)
-trips <- rbind(indiv_trips, joint_person_trips)
+indiv_trips        <- mutate(indiv_trips,        num_participants=1)
+trips <- tbl_df(rbind(indiv_trips, joint_person_trips))
 print(paste("Combined",prettyNum(nrow(indiv_trips),big.mark=","),
             "individual trips with",prettyNum(nrow(joint_person_trips),big.mark=","),
             "joint trips to make",prettyNum(nrow(trips),big.mark=",")," total trips"))
