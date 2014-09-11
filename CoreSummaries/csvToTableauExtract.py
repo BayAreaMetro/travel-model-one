@@ -191,6 +191,15 @@ if __name__ == '__main__':
             join_df = pandas.read_csv(join_table_file)
             table_df = pandas.merge(table_df, join_df, how='left')
         
+        # fillna - tableau doesn't like them
+        for col in table_df.columns:
+            nullcount = sum(pandas.isnull(table_df[col]))
+            if nullcount > 0: print "  Found %5d NA values in column %s" % (nullcount, col)
+        table_df = table_df.fillna(0)
+        for col in table_df.columns:
+            nullcount = sum(pandas.isnull(table_df[col]))
+            if nullcount > 0: print "  -> Found %5d NA values in column %s" % (nullcount, col)
+                
         # make sure the header is consistent
         header = [col.strip() for col in table_df.columns]
         assert(header == old_colnames)
