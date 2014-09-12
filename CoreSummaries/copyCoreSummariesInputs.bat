@@ -28,6 +28,7 @@ if not exist "%TARGET_DIR%\modelfiles\indivTripData_%ITER%.csv"       ( copy "%R
 if not exist "%TARGET_DIR%\modelfiles\indivTourData_%ITER%.csv"       ( copy "%RUN_DIR%\main\indivTourData_%ITER%.csv"     "%TARGET_DIR%\modelfiles" )
 if not exist "%TARGET_DIR%\modelfiles\jointTripData_%ITER%.csv"       ( copy "%RUN_DIR%\main\jointTripData_%ITER%.csv"     "%TARGET_DIR%\modelfiles" )
 if not exist "%TARGET_DIR%\modelfiles\jointTourData_%ITER%.csv"       ( copy "%RUN_DIR%\main\jointTourData_%ITER%.csv"     "%TARGET_DIR%\modelfiles" )
+if not exist "%TARGET_DIR%\modelfiles\wsLocResults_%ITER%.csv"        ( copy "%RUN_DIR%\main\wsLocResults_%ITER%.csv"      "%TARGET_DIR%\modelfiles" )
 if not exist "%TARGET_DIR%\modelfiles\avgload5period.csv"             ( copy "%RUN_DIR%\hwy\iter%ITER%\avgload5period.csv" "%TARGET_DIR%\modelfiles" )
 
 set TIMEPERIODS=EA AM MD PM EV

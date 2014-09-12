@@ -30,7 +30,7 @@ set SUMMARY_DIRS=%SUMMARY_DIRS%\summary
 echo %SUMMARY_DIRS%
 
 :: Run the conversion script to aggregate all rdata files into a single tde
-for %%H in (ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob TripDistance) DO (
+for %%H in (ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork TripDistance) DO (
   if not exist "%COMBINED_DIR%\%%H.tde" (
     python "%CODE_DIR%\RdataToTableauExtract.py" %SUMMARY_DIRS% %COMBINED_DIR% %%H.rdata
     if %ERRORLEVEL% GTR 0 goto done

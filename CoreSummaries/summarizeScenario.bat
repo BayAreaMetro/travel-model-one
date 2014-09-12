@@ -84,6 +84,7 @@ if not exist "%TARGET_DIR%\summary\AutomobileOwnership.csv"         ( set /a NEE
 if not exist "%TARGET_DIR%\summary\CommuteByEmploymentLocation.csv" ( set /a NEED_SUMMARY+=1 )
 if not exist "%TARGET_DIR%\summary\CommuteByIncomeHousehold.csv"    ( set /a NEED_SUMMARY+=1 )
 if not exist "%TARGET_DIR%\summary\CommuteByIncomeJob.csv"          ( set /a NEED_SUMMARY+=1 )
+if not exist "%TARGET_DIR%\summary\JourneyToWork.csv"               ( set /a NEED_SUMMARY+=1 )
 if not exist "%TARGET_DIR%\summary\TripDistance.csv"                ( set /a NEED_SUMMARY+=1 )
 echo Missing %NEED_SUMMARY% summaries in %TARGET_DIR%\summary
 
