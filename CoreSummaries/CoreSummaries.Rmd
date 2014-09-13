@@ -220,12 +220,23 @@ remove(input.pop.persons, input.ct.persons)
 The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour
 
 ```{r readIndividualTours, error=FALSE}
-indiv_tours     <- read.table(file=file.path(TARGET_DIR,"modelfiles",paste0("indivTourData_",ITER,".csv")), 
-                              header=TRUE, sep=",")
-indiv_tours     <- tbl_df(indiv_tours)
+indiv_tours     <- tbl_df(read.table(file=file.path(TARGET_DIR,"modelfiles",
+                                                    paste0("indivTourData_",ITER,".csv")), 
+                                     header=TRUE, sep=","))
 
 # add income from household table
 indiv_tours     <- left_join(indiv_tours, select(households, hh_id, income, incQ, incQ_label), by=c("hh_id"))
+indiv_tours     <- mutate(indiv_tours, num_participants=1)
+```
+
+## Read Joint Tours
+
+The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/JointTour
+
+```{r readJointTours, error=FALSE}
+joint_tours    <- tbl_df(read.table(file=file.path(TARGET_DIR,"modelfiles",
+                                                   paste0("jointTourData_",ITER,".csv")), 
+                                    header=TRUE, sep=","))
 ```
 
 ## Function to add Cost to Tours
@@ -476,19 +487,28 @@ indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest
 The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/JointTrip
 
 ```{r ReadJointTrips, error=FALSE}
-joint_trips     <- read.table(file=file.path(TARGET_DIR,"modelfiles",
-                                             paste0("jointTripData_",ITER,".csv")), header=TRUE, sep=",")
+joint_trips     <- tbl_df(read.table(file=file.path(TARGET_DIR,"modelfiles",
+                                                    paste0("jointTripData_",ITER,".csv")), 
+                                     header=TRUE, sep=","))
 joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz, trip_mode,
                           num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour)
+
+print(paste("Read",prettyNum(nrow(joint_trips),big.mark=","),
+            "joint trips or ",prettyNum(sum(joint_trips$num_participants),big.mark=","),
+            "joint person trips"))
+
+## Add `num_participants` to joint_tours
+joint_tours     <- left_join(joint_tours, 
+                             unique(select(joint_trips, hh_id, tour_id, num_participants)),
+                             by=c("hh_id","tour_id"))
 ```
 
-## Joint Trips need person ids -- attach them (via Joint Tours)
+## Convert joint trips to joint person trips
 
-```{r ReadJointTours, error=FALSE}
-joint_tours    <- read.table(file=file.path(TARGET_DIR,"modelfiles",
-                                            paste0("jointTourData_",ITER,".csv")), header=TRUE, sep=",")
-joint_tours    <- select(joint_tours, hh_id, tour_id, tour_participants)
+Do this by getting the tour participants person ids from the joint_tours table, and unwinding it so that each joint trip
+because a trip per partipant.
 
+```{r UnwindJoinTrips, error=FALSE}
 # tour participants are person ids separated by spaces -- create a table of hh_id, person_num for them
 joint_tour_persons <- data.frame(hh_id=numeric(), tour_id=numeric(), person_num=numeric())
 # unwind particpants into table with cols hh_id, tour_id, person_num1, person_num2, ...
@@ -906,6 +926,56 @@ write.table(journeytowork_summary,
             file.path(TARGET_DIR,"summary","JourneyToWork.csv"), sep=",", row.names=FALSE)
 model_summary <- journeytowork_summary  # name it generically for rdata
 save(model_summary, file=file.path(TARGET_DIR,"summary","JourneyToWork.rdata"))
+```
+
+## Time of Day Summary
+```{r TimeOfDaySummary, error=FALSE}
+tours <- rbind(select(indiv_tours, -person_id, -person_num, -person_type, -atWork_freq),
+               select(joint_tours, -tour_composition, -tour_participants))
+
+# add residence TAZ info
+tours <- left_join(tours, select(households, hh_id, taz, SD, COUNTY, county_name),
+                   by=c("hh_id"))
+
+# add simple_purpose
+tours <- mutate(tours, simple_purpose='non-work')
+tours$simple_purpose[tours$tour_purpose=='work_low'] <- 'work'
+tours$simple_purpose[tours$tour_purpose=='work_med'] <- 'work'
+tours$simple_purpose[tours$tour_purpose=='work_high'] <- 'work'
+tours$simple_purpose[tours$tour_purpose=='work_very high'] <- 'work'
+
+tours$simple_purpose[tours$tour_purpose=='school_grade'] <- 'school'
+tours$simple_purpose[tours$tour_purpose=='school_high' ] <- 'school'
+
+tours$simple_purpose[tours$tour_purpose=='university'  ] <- 'college'
+
+tours$simple_purpose[tours$tour_purpose=='atwork_business'] <- 'at work'
+tours$simple_purpose[tours$tour_purpose=='atwork_eat'     ] <- 'at work'
+tours$simple_purpose[tours$tour_purpose=='atwork_maint'   ] <- 'at work'
+
+timeofday_summary <- summarise(group_by(tours,SD,COUNTY,county_name,
+                                        simple_purpose,tour_mode,start_hour,end_hour),
+                               freq              = n(),
+                               num_participants  = sum(num_participants))
+write.table(timeofday_summary,
+            file.path(TARGET_DIR,"summary","TimeOfDay.csv"), sep=",", row.names=FALSE)
+model_summary <- timeofday_summary # name it generically for rdata
+save(model_summary, file=file.path(TARGET_DIR, "summary", "TimeOfDay.rdata"))
+
+# another table -- who's touring?
+persons_touring <- data.frame(hour=numeric(), simple_purpose=character(), persons_touring=numeric())
+for (h in min(timeofday_summary$start_hour):max(timeofday_summary$end_hour)) { 
+  touring_at_hour <- subset(timeofday_summary, 
+                         (timeofday_summary$start_hour<=h)&(timeofday_summary$end_hour>=h))
+  touring_at_hour <- summarise(group_by(touring_at_hour, simple_purpose), persons_touring=sum(num_participants))
+  touring_at_hour <- mutate(touring_at_hour, hour=h)
+  persons_touring <- rbind(persons_touring, touring_at_hour)
+}
+write.table(persons_touring,
+            file.path(TARGET_DIR,"summary","TimeOfDay_personsTouring.csv"), 
+            sep=",", row.names=FALSE)
+model_summary <- persons_touring
+save(model_summary, file=file.path(TARGET_DIR, "summary", "TimeOfDay_personsTouring.rdata"))
 ```
 
 ## Trip Distance Summary
