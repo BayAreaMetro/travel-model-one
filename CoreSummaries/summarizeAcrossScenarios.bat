@@ -14,6 +14,8 @@ set R_HOME=C:\Program Files\R\R-3.1.1
 set R_USER=lzorn
 set R_LIBS_USER=C:\Users\lzorn\Documents\R\win-library\3.1
 
+set RDATA=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance
+
 for %%H in (%RUN_NAME_SET%) DO (
 
   set RUN_NAME=%%H
@@ -30,7 +32,7 @@ set SUMMARY_DIRS=%SUMMARY_DIRS%\summary
 echo %SUMMARY_DIRS%
 
 :: Run the conversion script to aggregate all rdata files into a single tde
-for %%H in (ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork TimeOfDay TripDistance) DO (
+for %%H in (%RDATA%) DO (
   if not exist "%COMBINED_DIR%\%%H.tde" (
     python "%CODE_DIR%\RdataToTableauExtract.py" %SUMMARY_DIRS% %COMBINED_DIR% %%H.rdata
     if %ERRORLEVEL% GTR 0 goto done

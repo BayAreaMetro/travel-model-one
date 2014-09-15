@@ -78,15 +78,9 @@ call "%CODE_DIR%\copyCoreSummariesInputs.bat"
 if not exist "%TARGET_DIR%\summary" ( mkdir "%TARGET_DIR%\summary" )
 
 set NEED_SUMMARY=0
-if not exist "%TARGET_DIR%\summary\ActiveTransport.csv"             ( set /a NEED_SUMMARY+=1 )
-if not exist "%TARGET_DIR%\summary\ActivityPattern.csv"             ( set /a NEED_SUMMARY+=1 )
-if not exist "%TARGET_DIR%\summary\AutomobileOwnership.csv"         ( set /a NEED_SUMMARY+=1 )
-if not exist "%TARGET_DIR%\summary\CommuteByEmploymentLocation.csv" ( set /a NEED_SUMMARY+=1 )
-if not exist "%TARGET_DIR%\summary\CommuteByIncomeHousehold.csv"    ( set /a NEED_SUMMARY+=1 )
-if not exist "%TARGET_DIR%\summary\CommuteByIncomeJob.csv"          ( set /a NEED_SUMMARY+=1 )
-if not exist "%TARGET_DIR%\summary\JourneyToWork.csv"               ( set /a NEED_SUMMARY+=1 )
-if not exist "%TARGET_DIR%\summary\TimeOfDay.csv"                   ( set /a NEED_SUMMARY+=1 )
-if not exist "%TARGET_DIR%\summary\TripDistance.csv"                ( set /a NEED_SUMMARY+=1 )
+for %%X in (%RDATA%) DO (
+  if not exist "%TARGET_DIR%\summary\%%X.csv"             ( set /a NEED_SUMMARY+=1 )
+)
 echo Missing %NEED_SUMMARY% summaries in %TARGET_DIR%\summary
 
 :: If we need to, create the core summaries.
@@ -99,6 +93,11 @@ if %NEED_SUMMARY% GTR 0 (
   echo %DATE% %TIME% ...Done
   
   copy CoreSummaries.html "%TARGET_DIR%\summary"
+  
+  rem This will make all the tdes stale
+  for %%X in (%RDATA%) DO (
+    del "%TARGET_DIR%\summary\%%X.tde"
+  )
 )
 echo.
 
