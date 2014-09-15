@@ -237,13 +237,18 @@ The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/JointTo
 joint_tours    <- tbl_df(read.table(file=file.path(TARGET_DIR,"modelfiles",
                                                    paste0("jointTourData_",ITER,".csv")), 
                                     header=TRUE, sep=","))
+# add income from household table
+joint_tours    <- left_join(joint_tours, select(households, hh_id, income, incQ, incQ_label), by=c("hh_id"))
 ```
 
-## Function to add Cost to Tours
+## Function to add Cost to Tours or Trips
 
 Function `add_cost`: attaches the cost skims for the given time period abbreviation `this_timeperiod`
-to the given tours data.frame (joining on the columns `orig_taz`, `dest_taz`, and `timeCode`).
-Fills in values to the column `cost` for the given time period based on the column `costMode`.
+to the given tours data.frame (note: this can be the trips data frame). Joining is done on the columns 
+`orig_taz`, `dest_taz`, and `timeCode`.
+
+The function fills in values to the column `cost` and `cost_fail` for the given time
+period based on the column `costMode`.
 
 Pass `reverse_od` as TRUE to do return trip; this uses the dest taz as the origin and the origin
 taz as the dest, and it uses wTrnD cost rather than dTrnW.
@@ -317,7 +322,7 @@ add_distance <- function(this_timeperiod, tours) {
                                              paste0("DistanceSkimsDatabase",
                                                     this_timeperiod,".csv")), 
                             header=TRUE, sep=",")
-  # rename columns for join -- reversing if needed (return trip)
+  # rename columns for join
   names(distSkims)[names(distSkims)=="orig"] <- "orig_taz"  
   names(distSkims)[names(distSkims)=="dest"] <- "dest_taz"
   
