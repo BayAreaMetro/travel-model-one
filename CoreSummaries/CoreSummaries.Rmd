@@ -395,17 +395,18 @@ add_distance <- function(this_timeperiod, tours) {
 }
 ```
 
-## Function to add Time to Tours
+## Function to add Time to Tours or Trips
 
 Function `add_time`: attaches the time skims for the given time period `this_timeperiod`
-to the given tours data.frame (joining on the columns `orig_taz`, `dest_taz`, and `timeCode`).
+to the given tours data.frame (note: this can be the trips data frame).  Joining is done on the
+columns `orig_taz`, `dest_taz`, and `timeCode`.
 
 Fills in values to the column `time` for the given time period based on the column `costMode`.
 
-Pass reverse_od as TRUE to do return trip; this uses the dest taz as the origin and the origin
+Pass `reverse_od` as TRUE to do return trip; this uses the dest taz as the origin and the origin
 taz as the dest, and it uses wTrnD time rather than dTrnW.
 
-Tallies failed times (expected time but -999 found) in the field time_fail
+Tallies failed times (expected time but -999 found) in the field `time_fail`.
 
 ```{r addTimeColumn}
 add_time <- function(this_timeperiod, tours, reverse_od=FALSE) {
@@ -691,7 +692,7 @@ for (timeperiod in LOOKUP_TIMEPERIOD$timeperiod_abbrev) {
 trips <- tbl_df(trips)
 ```
 
-## Add Travel Cost to Trips
+## Add Travel Cost and Travel Time to Trips
 ```{r Trips_AddCostColumn, error=FALSE}
 trips <- mutate(trips,
                 costMode  =(trip_mode<=8)*trip_mode +         # auto, walk, bike all in the skims
@@ -701,9 +702,12 @@ trips <- mutate(trips,
                            (trip_mode>=14)*(orig_purpose=='Home')*10 +
                            (trip_mode>=14)*(dest_purpose=='Home')*11,
                 cost      =0,
-                cost_fail =0)
+                cost_fail =0,
+                time      =0,
+                time_fail =0)
 for (timeperiod in LOOKUP_TIMEPERIOD$timeperiod_abbrev) {
   trips <- add_cost(timeperiod, trips)
+  trips <- add_time(timeperiod, trips)
 }
 trips <- tbl_df(trips)
 ```
@@ -1103,6 +1107,21 @@ write.table(travelcost_summary,
 model_summary <- travelcost_summary # name it generically for rdata
 save(model_summary, file=file.path(TARGET_DIR, "summary", "TravelCost.rdata"))
 remove(costs_by_household,travelcost_summary,model_summary)
+```
+
+## Per Trip Travel Time Summary
+```{r PerTripTravelTimeSummary, error=FALSE}
+triptime_summary <- summarise(group_by(trips, incQ, incQ_label, trip_mode, tour_purpose),
+                              freq             = n(),
+                              num_participants = sum(num_participants)
+                              trvlTime         = mean(time),
+                              time_fail        = sum(time_fail))
+write.table(triptime_summary,
+            file.path(TARGET_DIR,"summary","PerTripTravelTime.csv"), sep=",", row.names=FALSE)
+model_summary <- triptime_summary # name it generically for rdata
+save(model_summary, file=file.path(TARGET_DIR, "summary", "PerTripTravelTime.rdata"))
+remove(triptime_summary, model_summary)
+
 ```
 
 ## Cleanup and save tours, trips and households

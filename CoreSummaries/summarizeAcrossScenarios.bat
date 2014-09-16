@@ -14,7 +14,7 @@ set R_HOME=C:\Program Files\R\R-3.1.1
 set R_USER=lzorn
 set R_LIBS_USER=C:\Users\lzorn\Documents\R\win-library\3.1
 
-set RDATA=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance
+set RDATA=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork PerTripTravelTime TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance
 
 for %%H in (%RUN_NAME_SET%) DO (
 
