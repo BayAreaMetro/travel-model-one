@@ -1113,7 +1113,7 @@ remove(costs_by_household,travelcost_summary,model_summary)
 ```{r PerTripTravelTimeSummary, error=FALSE}
 triptime_summary <- summarise(group_by(trips, incQ, incQ_label, trip_mode, tour_purpose),
                               freq             = n(),
-                              num_participants = sum(num_participants)
+                              num_participants = sum(num_participants),
                               trvlTime         = mean(time),
                               time_fail        = sum(time_fail))
 write.table(triptime_summary,
