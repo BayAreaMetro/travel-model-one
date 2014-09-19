@@ -2,7 +2,7 @@
 .Rhistory
 .Rproj.user/*
 *.html
-*.md
+CoreSummaries/CoreSummaries.md
 CoreSummaries_files/*
 Thumbs.db
 CoreSummaries/figure/*
