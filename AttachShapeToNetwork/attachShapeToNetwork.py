@@ -5,8 +5,8 @@
 # Create by lmz 9/18/2014.
 #
 # Uses 
-# * pyshp (https://github.com/GeospatialPython/pyshp) to read shapefiles
-# * shapely (http://toblerity.org/shapely) to 
+# * fiona (http://toblerity.org/fiona) to read shapefiles
+# * shapely (http://toblerity.org/shapely) to perform shape calcs
 #
 USAGE = """
 
@@ -37,10 +37,11 @@ LINKO=%s,FORMAT=SDF,INCLUDE=A,B
 ENDRUN
 """
 import csv
+import fiona  # requires gdal and vcredist_x64.exe
 import getopt
 import logging
 import os
-import shapefile
+import pprint
 import shapely.geometry
 import shutil
 import subprocess
@@ -124,35 +125,40 @@ def readShapefile(filename, shp_fieldnames):
     """
     Reads shapefile.
     
-    Returns a list of [shapely.Polygon instances, shp_fieldname1 value, shp_fieldname2 value, ...]
+    Returns two items: 
+     - a list of field types for the shp_fieldnames, and 
+     - a list of [shapely.Polygon OR shapely.MutliPolygon instances, 
+                  shp_fieldname1 value, 
+                  shp_fieldname2 value, ...]
     """
-    reader = shapefile.Reader(filename)
-
-    # find the field indices for each shapefile fieldname
-    field_indices = [-1]*len(shp_fieldnames)
-    for rf_idx in range(0, len(reader.fields)):        
-        for sf_idx in range(len(shp_fieldnames)):
-            if reader.fields[rf_idx][0] == shp_fieldnames[sf_idx]:
-                field_indices[sf_idx] = rf_idx-1 # delete doesn't count
+    fi_reader = fiona.open(filename)
     
+    shp_fieldtypes = []
+    # make sure the required fields are in the schema
     for sf_idx in range(len(shp_fieldnames)):
-        if field_indices[sf_idx] == -1:
-            raise Exception("Failed to find field '%s' in shapefile %s" % 
-                   (shp_fieldnames[sf_idx], filename))
-    
+        assert shp_fieldnames[sf_idx] in fi_reader.schema['properties']
+        shp_fieldtypes.append(fi_reader.schema['properties'][shp_fieldnames[sf_idx]])
+
     shape_data = []
-    for shapeRec in reader.shapeRecords():
-        tuple = [ shapely.geometry.Polygon(shapeRec.shape.points) ]
+    cleaned = 0
+    for shape_idx in range(len(fi_reader)):
+        rec = next(fi_reader)
+        tuple = []
         
-        if not tuple[0].is_valid:
-            logger.warn("Shapefile record invalid: %s" % str(shapeRec))
-            
+        geom = shapely.geometry.shape(rec['geometry'])
+        if not geom.is_valid:
+            clean = geom.buffer(0.0)
+            assert clean.is_valid
+            geom = clean
+            cleaned += 1
+        tuple.append( geom )
+        
         for sf_idx in range(len(shp_fieldnames)):
-            tuple.append(shapeRec.record[field_indices[sf_idx]])
+            tuple.append( rec['properties'][shp_fieldnames[sf_idx]] )
         shape_data.append(tuple)
-        
-    logger.info("Read %d shapes from %s" % (len(shape_data), filename))
-    return shape_data
+
+    logger.info("Read %d shapes from %s, cleaned %d" % (len(shape_data), filename, cleaned))
+    return shp_fieldtypes, shape_data
     
 def joinCubeLinksToShapes(cube_linestrings, shapefile_data):
     """
@@ -166,7 +172,7 @@ def joinCubeLinksToShapes(cube_linestrings, shapefile_data):
     # let's see where we are.
     # make a list of indices which contain the linestring
     linestring_num = 1
-    line_to_shapeidx = []  # same length as cube_linstrings, indexes into shapefile_data
+    line_to_shapeidx = []  # same length as cube_linestrings, indexes into shapefile_data
     for linestring_tuple in cube_linestrings:
         linestring = linestring_tuple[0]
         maxintline_len = -1.0
@@ -183,6 +189,11 @@ def joinCubeLinksToShapes(cube_linestrings, shapefile_data):
             if linestring.bounds[2] < polygon.bounds[0]: continue  # max < min
             if linestring.bounds[3] < polygon.bounds[1]: continue
             
+            if polygon.contains(linestring):
+                maxintline_idx = idx
+                maxintline_len = linestring_length
+                break
+                
             try:
                 intline = polygon.intersection(linestring)
                 if intline.length >= 0 and intline.length > maxintline_len:
@@ -201,8 +212,19 @@ def joinCubeLinksToShapes(cube_linestrings, shapefile_data):
         if maxintline_idx == -1:
             logger.warn("No match found for linestring %5d - %5d" %
                 (linestring_tuple[1], linestring_tuple[2]))
-        
+
+        line_to_shapeidx.append(maxintline_idx)
+
         linestring_num += 1
+        
+        if linestring_num % 100 == 0:
+            logger.info("Processed %7d links" % linestring_num)
+
+    return line_to_shapeidx
+
+def writeCubeNetworkWithNewCols(cube_linestrings, cube_newfields, shp_fieldtypes):
+    # not implemented yet
+    pass
     
 if __name__ == '__main__':
     logger = logging.getLogger('attachShapeToNetwork')
@@ -236,8 +258,9 @@ if __name__ == '__main__':
     SHAPE_INFILE    = args[1]
     CUBENET_OUTFILE = args[2]
      
-    cube_linestrings = readCubeNetwork(CUBENET_INFILE)
-    shapefile_data   = readShapefile(SHAPE_INFILE, SHAPE_FIELDS)
+    cube_linestrings                 = readCubeNetwork(CUBENET_INFILE)
+    shp_fieldtypes, shapefile_data   = readShapefile(SHAPE_INFILE, SHAPE_FIELDS)
     
-    cube_newfield    = joinCubeLinksToShapes(cube_linestrings, shapefile_data)
+    cube_newfields = joinCubeLinksToShapes(cube_linestrings, shapefile_data)
     
+    writeCubeNetworkWithNewCols(cube_linestrings, cube_newfields, shp_fieldtypes)
