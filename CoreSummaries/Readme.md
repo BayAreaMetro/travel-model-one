@@ -28,8 +28,8 @@ This script summarizes a single scenario.
 but this mapping will likely be elsewhere or removed.)
 
 It works by
- * copying the files required via [copyCoreSummariesInputs.bat]
- * running the R script, CoreSummaries.Rmd, if needed (if any of the summary outputs don't exist)
+ * copying the files required via [copyCoreSummariesInputs.bat](copyCoreSummariesInputs.bat)
+ * running the R script, [CoreSummaries.Rmd](CoreSummaries.Rmd), if needed (if any of the summary outputs don't exist)
  * converting the resulting `.rdata` files to Tableau Data Extracts
  * converting a couple of other csv files to Tablea Data Extracts
 
