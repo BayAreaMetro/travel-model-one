@@ -8,12 +8,12 @@ don't exist, so to force everything to run, clear out the scenario and across-sc
 
 The files contained are as follows (from the top down):
 
-### [summarizeAcrossScenarios.bat]
+### summarizeAcrossScenarios.bat
 
 This file sets up some environment variables such as what scenarios we will summarize,
 where this code is setup, and where the combined (across scenarios) data files should reside.
 
-It then goes through each scenario and calls [summarizeScenario.bat]
+It then goes through each scenario and calls [summarizeScenario.bat](summarizeScenario.bat)
 
 After those summaries are complete, it creates a Tableau Data Extract for each summary type,
 which combines the data across scenarios.  The Tableau workbook then loads data across all the
