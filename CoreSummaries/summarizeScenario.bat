@@ -86,13 +86,17 @@ echo Missing %NEED_SUMMARY% summaries in %TARGET_DIR%\summary
 :: If we need to, create the core summaries.
 if %NEED_SUMMARY% GTR 0 (
   echo %DATE% %TIME% Running summary script for %RUN_NAME%
+  
+  rem delete this just in case, so we don't move an old one by accident
+  if exist CoreSummaries.html ( del CoreSummaries.html )
+  
   rem No .Rprofile -- we set the environment variables here.
   echo "%R_HOME%\bin\x64\Rscript.exe"
   call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\knit_CoreSummaries.R"
   IF %ERRORLEVEL% GTR 0 goto done
   echo %DATE% %TIME% ...Done
   
-  copy CoreSummaries.html "%TARGET_DIR%\summary"
+  move CoreSummaries.html "%TARGET_DIR%\summary"
   
   rem This will make all the tdes stale
   for %%X in (%RDATA%) DO (
