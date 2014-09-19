@@ -6,7 +6,7 @@
   </preferences>
   <datasources>
     <datasource caption='TravelCost Extract' inline='true' name='C:\Users\lzorn\Documents\2010_04_ZZZ\summary\TravelCost.tde' version='8.3'>
-      <connection class='dataengine' dbname='C:\Users\lzorn\Documents\2010_04_ZZZ\summary\TravelCost.tde' schema='Extract' tablename='Extract'>
+      <connection class='dataengine' dbname='C:\Users\lzorn\Documents\AcrossScenarios\TravelCost.tde' schema='Extract' tablename='Extract'>
         <relation name='Extract (Extract.Extract)' table='[Extract].[Extract]' type='table' />
         <metadata-records>
           <metadata-record class='column'>
@@ -29,7 +29,7 @@
               <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;array&quot;</attribute>
               <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4</attribute>
-              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>7</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>8</attribute>
               <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
               <attribute datatype='string' name='DebugRemoteType'>&quot;float&quot;</attribute>
@@ -55,7 +55,7 @@
               <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;array&quot;</attribute>
               <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4</attribute>
-              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>4</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>5</attribute>
               <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
               <attribute datatype='string' name='DebugRemoteType'>&quot;float&quot;</attribute>
@@ -85,7 +85,7 @@
               <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
               <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
-              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>5</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>6</attribute>
               <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
               <attribute datatype='string' name='DebugRemoteType'>&quot;wstr&quot;</attribute>
@@ -111,7 +111,7 @@
               <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;array&quot;</attribute>
               <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4</attribute>
-              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>3</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>4</attribute>
               <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
               <attribute datatype='string' name='DebugRemoteType'>&quot;float&quot;</attribute>
@@ -136,9 +136,8 @@
               <attribute datatype='boolean' name='DebugRemoteMetadata (comparable)'>true</attribute>
               <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;array&quot;</attribute>
               <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
-              <attribute datatype='string' name='DebugRemoteMetadata (ordered)'>&quot;asc&quot;</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4</attribute>
-              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>0</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>1</attribute>
               <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
               <attribute datatype='string' name='DebugRemoteType'>&quot;float&quot;</attribute>
@@ -168,7 +167,7 @@
               <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
               <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
-              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>1</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>2</attribute>
               <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
               <attribute datatype='string' name='DebugRemoteType'>&quot;wstr&quot;</attribute>
@@ -194,7 +193,7 @@
               <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;array&quot;</attribute>
               <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4</attribute>
-              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>2</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>3</attribute>
               <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
               <attribute datatype='string' name='DebugRemoteType'>&quot;float&quot;</attribute>
@@ -209,7 +208,7 @@
             <ordinal>7</ordinal>
             <local-type>real</local-type>
             <aggregation>Sum</aggregation>
-            <approx-count>1421</approx-count>
+            <approx-count>2072</approx-count>
             <contains-null>false</contains-null>
             <statistics>
               <statistic aggregation='Min' datatype='real'>1.0</statistic>
@@ -220,7 +219,7 @@
               <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;array&quot;</attribute>
               <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4</attribute>
-              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>8</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>9</attribute>
               <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>2</attribute>
               <attribute datatype='string' name='DebugRemoteType'>&quot;float&quot;</attribute>
@@ -235,11 +234,11 @@
             <ordinal>8</ordinal>
             <local-type>real</local-type>
             <aggregation>Sum</aggregation>
-            <approx-count>4022</approx-count>
+            <approx-count>11854</approx-count>
             <contains-null>false</contains-null>
             <statistics>
               <statistic aggregation='Min' datatype='real'>0.0</statistic>
-              <statistic aggregation='Max' datatype='real'>6696.9876653703705</statistic>
+              <statistic aggregation='Max' datatype='real'>8254.8989090714294</statistic>
             </statistics>
             <attributes>
               <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
@@ -255,7 +254,7 @@
             <ordinal>9</ordinal>
             <local-type>real</local-type>
             <aggregation>Sum</aggregation>
-            <approx-count>4021</approx-count>
+            <approx-count>11850</approx-count>
             <contains-null>false</contains-null>
             <statistics>
               <statistic aggregation='Min' datatype='real'>0.0</statistic>
@@ -275,14 +274,18 @@
             <ordinal>10</ordinal>
             <local-type>real</local-type>
             <aggregation>Sum</aggregation>
-            <approx-count>3099</approx-count>
+            <approx-count>8454</approx-count>
             <contains-null>false</contains-null>
             <statistics>
               <statistic aggregation='Min' datatype='real'>0.0</statistic>
-              <statistic aggregation='Max' datatype='real'>220.29500000000002</statistic>
+              <statistic aggregation='Max' datatype='real'>325.25</statistic>
             </statistics>
             <attributes>
+              <attribute datatype='boolean' name='DebugRemoteMetadata (comparable)'>true</attribute>
+              <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;array&quot;</attribute>
+              <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>2</attribute>
               <attribute datatype='string' name='DebugRemoteType'>&quot;double&quot;</attribute>
             </attributes>
           </metadata-record>
@@ -295,7 +298,7 @@
             <ordinal>11</ordinal>
             <local-type>real</local-type>
             <aggregation>Sum</aggregation>
-            <approx-count>15</approx-count>
+            <approx-count>17</approx-count>
             <contains-null>false</contains-null>
             <statistics>
               <statistic aggregation='Min' datatype='real'>0.0</statistic>
@@ -306,7 +309,7 @@
               <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;array&quot;</attribute>
               <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4</attribute>
-              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>6</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>7</attribute>
               <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
               <attribute datatype='string' name='DebugRemoteType'>&quot;float&quot;</attribute>
@@ -321,11 +324,11 @@
             <ordinal>12</ordinal>
             <local-type>real</local-type>
             <aggregation>Sum</aggregation>
-            <approx-count>3482</approx-count>
+            <approx-count>9539</approx-count>
             <contains-null>false</contains-null>
             <statistics>
               <statistic aggregation='Min' datatype='real'>0.0</statistic>
-              <statistic aggregation='Max' datatype='real'>4751.4620260571428</statistic>
+              <statistic aggregation='Max' datatype='real'>6666.3139090714285</statistic>
             </statistics>
             <attributes>
               <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
@@ -341,7 +344,7 @@
             <ordinal>13</ordinal>
             <local-type>real</local-type>
             <aggregation>Sum</aggregation>
-            <approx-count>1766</approx-count>
+            <approx-count>4404</approx-count>
             <contains-null>false</contains-null>
             <statistics>
               <statistic aggregation='Min' datatype='real'>0.0</statistic>
@@ -365,14 +368,14 @@
             <ordinal>14</ordinal>
             <local-type>string</local-type>
             <aggregation>Count</aggregation>
-            <approx-count>1</approx-count>
+            <approx-count>3</approx-count>
             <scale>2</scale>
             <width>1073741823</width>
             <contains-null>false</contains-null>
             <collation flag='0' name='binary' />
             <statistics>
-              <statistic aggregation='Min' datatype='string'>&quot;C:\\Users\\lzorn\\Documents\\2010_04_ZZZ&quot;</statistic>
-              <statistic aggregation='Max' datatype='string'>&quot;C:\\Users\\lzorn\\Documents\\2010_04_ZZZ&quot;</statistic>
+              <statistic aggregation='Min' datatype='string'>&quot;2010_04_ZZZ&quot;</statistic>
+              <statistic aggregation='Max' datatype='string'>&quot;2040_03_127&quot;</statistic>
             </statistics>
             <attributes>
               <attribute datatype='string' name='DebugRemoteCollation'>&quot;binary&quot;</attribute>
@@ -381,6 +384,8 @@
               <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
               <attribute datatype='string' name='DebugRemoteMetadata (ordered)'>&quot;asc&quot;</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>0</attribute>
+              <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
               <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
               <attribute datatype='string' name='DebugRemoteType'>&quot;wstr&quot;</attribute>
             </attributes>
@@ -434,7 +439,7 @@
           <formatted-text>
             <run>Typical day out-of-pocket household average by county, income quartile and automobile ownership category for </run>
             <run>&lt;</run>
-            <run>[C:\Users\lzorn\Documents\2010_04_ZZZ\summary\TravelCost.tde].[none:src:nk]</run>
+            <run>Page Name</run>
             <run>&gt;</run>
           </formatted-text>
         </title>
@@ -524,6 +529,16 @@
       </table>
     </worksheet>
     <worksheet name='Income,Auto'>
+      <layout-options>
+        <title>
+          <formatted-text>
+            <run>Average out-of-pocket household expenditures for transportation on a typical travel day for </run>
+            <run>&lt;</run>
+            <run>Page Name</run>
+            <run>&gt;</run>
+          </formatted-text>
+        </title>
+      </layout-options>
       <table>
         <view>
           <datasources>
@@ -546,6 +561,9 @@
             </column>
             <column-instance column='[autos]' derivation='None' name='[none:autos:ok]' pivot='key' type='ordinal' />
             <column-instance column='[incQ_label]' derivation='None' name='[none:incQ_label:nk]' pivot='key' type='nominal' />
+            <column-instance column='[src]' derivation='None' name='[none:src:nk]' pivot='key' type='nominal' />
+            <column datatype='string' name='[src]' role='dimension' type='nominal'>
+            </column>
             <column-instance column='[Calculation_4070915162654650]' derivation='User' name='[usr:Calculation_4070915162654650:qk]' pivot='key' type='quantitative' />
           </datasource-dependencies>
           <sort class='manual' column='[C:\Users\lzorn\Documents\2010_04_ZZZ\summary\TravelCost.tde].[none:incQ_label:nk]' direction='ASC'>
@@ -582,6 +600,9 @@
         </panes>
         <rows total='true'>[C:\Users\lzorn\Documents\2010_04_ZZZ\summary\TravelCost.tde].[none:incQ_label:nk]</rows>
         <cols total='true'>[C:\Users\lzorn\Documents\2010_04_ZZZ\summary\TravelCost.tde].[none:autos:ok]</cols>
+        <pages>
+          <column>[C:\Users\lzorn\Documents\2010_04_ZZZ\summary\TravelCost.tde].[none:src:nk]</column>
+        </pages>
       </table>
     </worksheet>
   </worksheets>
@@ -632,6 +653,7 @@
         <edge name='left'>
           <strip size='160'>
             <card type='pages' />
+            <card type='currpage' />
             <card type='filters' />
             <card type='marks' />
           </strip>
@@ -643,12 +665,21 @@
           <strip size='31'>
             <card type='rows' />
           </strip>
+          <strip size='31'>
+            <card type='title' />
+          </strip>
+        </edge>
+        <edge name='bottom'>
+          <strip size='56'>
+            <card type='caption' />
+          </strip>
         </edge>
       </cards>
       <highlight>
         <color-one-way>
           <field>[C:\Users\lzorn\Documents\2010_04_ZZZ\summary\TravelCost.tde].[none:autos:ok]</field>
           <field>[C:\Users\lzorn\Documents\2010_04_ZZZ\summary\TravelCost.tde].[none:incQ_label:nk]</field>
+          <field>[C:\Users\lzorn\Documents\2010_04_ZZZ\summary\TravelCost.tde].[none:src:nk]</field>
         </color-one-way>
       </highlight>
     </window>
