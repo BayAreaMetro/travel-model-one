@@ -87,7 +87,7 @@ LOOKUP_WALK_SUBZONE$walk_subzone <- as.integer(LOOKUP_WALK_SUBZONE$walk_subzone)
 
 ######### person types
 LOOKUP_PTYPE         <- data.frame(ptype=c(1,2,3,4,5,6,7,8),
-                                   pytpe_label=c("Full-time worker","Part-time worker","College student","Non-working adult",
+                                   ptype_label=c("Full-time worker","Part-time worker","College student","Non-working adult",
                                                  "Retired","Driving-age student","Non-driving-age student",
                                                  "Child too young for school"))
 LOOKUP_PTYPE$ptype   <- as.integer(LOOKUP_PTYPE$ptype)
@@ -210,6 +210,9 @@ names(input.pop.persons)[names(input.pop.persons)=="PERID"] <- "person_id"
 persons              <- inner_join(input.pop.persons, input.ct.persons, by=c("hh_id", "person_id"))
 # Get incQ from Households
 persons              <- left_join(persons, select(households, hh_id, incQ, incQ_label), by=c("hh_id"))
+
+# Person type label
+persons              <- left_join(persons, LOOKUP_PTYPE, by=c("ptype"))
 
 # wrap as a d data frame tbl so it's nicer for printing
 persons              <- tbl_df(persons)
@@ -635,8 +638,11 @@ remove(indiv_trips,joint_person_trips)
 
 Add some variable to trips, such as:
   * `timeCode`, a recoding of the `depart_hour` for joining skims
-  * `incQ` from the household table
-  * `autoSuff` from the household table
+  * `home_taz` from household table
+  * `incQ` and label from the household table
+  * `autoSuff` and label from the household table
+  * `walk_subzone` and label from the household table
+  * `ptype` and label from persons
   
 ```{r Trips_AddTimeCode, error=FALSE}
 trips <- mutate(trips, 
@@ -648,9 +654,14 @@ trips <- mutate(trips,
                 )
 trips <- left_join(trips, LOOKUP_TIMEPERIOD, by=c("timeCodeNum"))
 trips <- select(mutate(trips, timeCode=timeperiod_abbrev), -timeperiod_abbrev)
-trips <- left_join(trips,
-                   select(households, hh_id, incQ, incQ_label, autoSuff, autoSuff_label),
+trips <- left_join(trips,                   
+                   mutate(households, home_taz=taz) %.% 
+                     select(hh_id, incQ, incQ_label, autoSuff, autoSuff_label,
+                            home_taz, walk_subzone, walk_subzone_label),
                    by=c("hh_id"))
+trips <- left_join(trips,
+                   select(persons, hh_id, person_id, ptype, ptype_label),
+                   by=c("hh_id","person_id"))
 ```
 
 ## Add Trip Distance to Trips
@@ -1121,7 +1132,6 @@ write.table(triptime_summary,
 model_summary <- triptime_summary # name it generically for rdata
 save(model_summary, file=file.path(TARGET_DIR, "summary", "PerTripTravelTime.rdata"))
 remove(triptime_summary, model_summary)
-
 ```
 
 ## Cleanup and save tours, trips and households
@@ -1134,4 +1144,59 @@ remove(tours)
 
 save(households, file=file.path(TARGET_DIR, "updated_output", "households.rdata"))
 remove(households)
+```
+
+## Vehicle Miles Traveled
+```{r VehicleMilesTraveledSummary, error=FALSE}
+# maybe don't save/load but just keep it?  I started having memory problems though...
+load(file=file.path(TARGET_DIR,"updated_output","trips.rdata"))
+auto_trips <- subset(trips, trip_mode<=6)
+remove(trips)
+
+auto_trips <- mutate(auto_trips,
+                     vmt_indiv=(num_participants==1)*(trip_mode==1)*distance +
+                               (num_participants==1)*(trip_mode==2)*distance +
+                               (num_participants==1)*(trip_mode==3)*(distance/2.0) +
+                               (num_participants==1)*(trip_mode==4)*(distance/2.0) +
+                               (num_participants==1)*(trip_mode==5)*(distance/3.25) +
+                               (num_participants==1)*(trip_mode==6)*(distance/3.25),
+                     vmt_joint=(num_participants>1)*(distance/num_participants),
+                     vmt=vmt_indiv+vmt_joint)
+
+# sum them to hh_id, person_id
+auto_trips_melt  <- tbl_df(melt(select(auto_trips, hh_id, person_id, vmt_indiv, vmt_joint, vmt), 
+                           id.vars=c("hh_id", "person_id")))
+auto_trips_dcast <- tbl_df(dcast(auto_trips_melt, hh_id+person_id ~ variable, fun.aggregate=sum))
+remove(auto_trips_melt)
+
+# add to persons so we get zero-vmt persons
+load(file=file.path(TARGET_DIR,"updated_output","persons.rdata"))
+persons          <- left_join(persons, auto_trips_dcast, by=c("hh_id","person_id"))
+remove(auto_trips_dcast)
+persons$vmt_indiv[is.na(persons$vmt_indiv)] <- 0
+persons$vmt_joint[is.na(persons$vmt_joint)] <- 0
+persons$vmt[is.na(persons$vmt)]             <- 0
+
+# add household vars
+load(file=file.path(TARGET_DIR,"updated_output","households.rdata"))
+persons          <- left_join(persons, select(households, hh_id, taz, COUNTY, 
+                                              walk_subzone, walk_subzone_label, 
+                                              autoSuff, autoSuff_label),
+                              by=c("hh_id"))
+remove(households)
+
+# added new person vars so save it
+save(persons, file=file.path(TARGET_DIR, "updated_output", "persons.rdata"))
+
+vmt_summary      <- summarise(group_by(persons, COUNTY, taz, walk_subzone, walk_subzone_label,
+                                       ptype, ptype_label, autoSuff, autoSuff_label),
+                              freq             = n(),
+                              vmt_indiv        = mean(vmt_indiv),
+                              vmt_joint        = mean(vmt_joint),
+                              vmt              = mean(vmt))
+write.table(vmt_summary,
+            file.path(TARGET_DIR,"summary","VehicleMilesTraveled.csv"), sep=",", row.names=FALSE)
+model_summary <- vmt_summary # name it generically for rdata
+save(model_summary, file=file.path(TARGET_DIR, "summary", "VehicleMilesTraveled.rdata"))
+remove(vmt_summary, model_summary)
 ```
