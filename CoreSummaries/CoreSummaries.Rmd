@@ -14,14 +14,11 @@ output:
 library(knitr)
 library(ggplot2)
 library(scales)
-library(xtable)
 library(dplyr)
 library(reshape2)
 
 # For RStudio, these can be set in the .Rprofile
 TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
-POPSYN_HH    <- Sys.getenv("POPSYN_HH")   # The synthesized households file
-POPSYN_PERS  <- Sys.getenv("POPSYN_PERS") # The synthesized persons file
 ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to read
 
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
@@ -30,14 +27,10 @@ TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
 TEST        <- FALSE
 if (TEST) {
   TARGET_DIR  <- "C:/Users/lzorn/Documents/2020_03_116"
-  POPSYN_HH   <- "hhFile.p2011s6g.2020"
-  POPSYN_PERS <- "personFile.p2011s6g.2020"
   ITER        <- "1"
 }
 
 stopifnot(nchar(TARGET_DIR  )>0)
-stopifnot(nchar(POPSYN_HH   )>0)
-stopifnot(nchar(POPSYN_PERS )>0)
 stopifnot(nchar(ITER        )>0)
 
 # write results in TARGET_DIR/core_summaries
@@ -50,8 +43,6 @@ if (!file.exists(file.path(TARGET_DIR,"updated_output"))) {
 }
 
 cat("TARGET_DIR  = ",TARGET_DIR)
-cat("POPSYN_HH   = ",POPSYN_HH)
-cat("POPSYN_PERS = ",POPSYN_PERS)
 cat("ITER        = ",ITER)
 ```
 
@@ -115,9 +106,9 @@ There are two household files:
  * the model output file (http://analytics.mtc.ca.gov/foswiki/Main/Household)
 
 ```{r ReadHouseholds, error=FALSE}
-input.pop.households <- read.table(file = file.path(TARGET_DIR,"popsyn",paste0(POPSYN_HH,".csv")), 
+input.pop.households <- read.table(file = file.path(TARGET_DIR,"popsyn","hhFile.csv"), 
                                    header=TRUE, sep=",")
-input.ct.households  <- read.table(file = file.path(TARGET_DIR,"popsyn",paste0("householdData_",ITER,".csv")), 
+input.ct.households  <- read.table(file = file.path(TARGET_DIR,"main",paste0("householdData_",ITER,".csv")), 
                                    header=TRUE, sep = ",")
 
 ```
@@ -194,7 +185,7 @@ There are two person files:
 
 ## Read the person files
 ```{r ReadPersons, error=FALSE}
-input.pop.persons    <- read.table(file = file.path(TARGET_DIR,"main",paste0(POPSYN_PERS,".csv")), 
+input.pop.persons    <- read.table(file = file.path(TARGET_DIR,"popsyn","personFile.csv"),
                                    header=TRUE, sep=",")
 input.ct.persons     <- read.table(file = file.path(TARGET_DIR,"main",paste0("personData_",ITER,".csv")),
                                    header=TRUE, sep = ",")
