@@ -1179,7 +1179,7 @@ persons$vmt[is.na(persons$vmt)]             <- 0
 
 # add household vars
 load(file=file.path(TARGET_DIR,"updated_output","households.rdata"))
-persons          <- left_join(persons, select(households, hh_id, taz, COUNTY, 
+persons          <- left_join(persons, select(households, hh_id, taz, COUNTY, county_name,
                                               walk_subzone, walk_subzone_label, 
                                               autoSuff, autoSuff_label),
                               by=c("hh_id"))
@@ -1188,8 +1188,10 @@ remove(households)
 # added new person vars so save it
 save(persons, file=file.path(TARGET_DIR, "updated_output", "persons.rdata"))
 
-vmt_summary      <- summarise(group_by(persons, COUNTY, taz, walk_subzone, walk_subzone_label,
-                                       ptype, ptype_label, autoSuff, autoSuff_label),
+vmt_summary      <- summarise(group_by(persons, COUNTY, county_name, taz,
+                                       walk_subzone, walk_subzone_label,
+                                       ptype, ptype_label,
+                                       autoSuff, autoSuff_label),
                               freq             = n(),
                               vmt_indiv        = mean(vmt_indiv),
                               vmt_joint        = mean(vmt_joint),
