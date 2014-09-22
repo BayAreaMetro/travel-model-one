@@ -21,7 +21,8 @@ source of the data.  Also uses pandas.DataFrame.fillna() to replace NAs with zer
 Tableau doesn't like them.
 
 """
-import csv, datetime, itertools, getopt, os, pandas, sys
+import csv, datetime, itertools, getopt, os, sys
+import pandas
 import dataextract as tde
 
 # create a dict for the field maps
