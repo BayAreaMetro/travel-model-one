@@ -10,7 +10,9 @@ setlocal enabledelayedexpansion
 
 :: Overhead
 set R_HOME=C:\Program Files\R\R-3.1.1
-:: set R_USER=mtcpb  rem Setting this causes mainmodel's R to be angry about knitr
+rem Setting this causes mainmodel's R to be angry about knitr
+rem Set it for the rdata python script
+:: set R_USER=mtcpb
 set RDATA=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork PerTripTravelTime TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance VehicleMilesTraveled
 set CODE_DIR=.\CTRAMP\scripts\core_summaries
 
@@ -53,6 +55,7 @@ if %NEED_SUMMARY% GTR 0 (
 )
 echo.
 
+set R_USER=mtcpb
 :: convert the summaries to tde for just this dir
 for %%X in ("%TARGET_DIR%\core_summaries\*.rdata") DO (
   if not exist "%TARGET_DIR%\core_summaries\%%~nX.tde" (
