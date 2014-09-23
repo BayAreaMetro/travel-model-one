@@ -15,50 +15,56 @@
 :: @echo off
 setlocal enabledelayedexpansion
 
-if not exist %TARGET_DIR%            (mkdir %TARGET_DIR%)
-if not exist %TARGET_DIR%\modelfiles (mkdir %TARGET_DIR%\modelfiles)
+if not exist "%TARGET_DIR%"                 (mkdir "%TARGET_DIR%"         )
+if not exist "%TARGET_DIR%\popsyn"          (mkdir "%TARGET_DIR%\popsyn"  )
+if not exist "%TARGET_DIR%\landuse"         (mkdir "%TARGET_DIR%\landuse" )
+if not exist "%TARGET_DIR%\main"            (mkdir "%TARGET_DIR%\main"    )
+if not exist "%TARGET_DIR%\hwy"             (mkdir "%TARGET_DIR%\hwy"     )
+if not exist "%TARGET_DIR%\hwy\iter%ITER%"  (mkdir "%TARGET_DIR%\hwy\iter%ITER%")
+if not exist "%TARGET_DIR%\database"        (mkdir "%TARGET_DIR%\database")
+if not exist "%TARGET_DIR%\trn"             (mkdir "%TARGET_DIR%\trn"     )
 
-if not exist "%TARGET_DIR%\modelfiles\%POPSYN_HH%.csv"     ( copy "%RUN_DIR%\popsyn\%POPSYN_HH%.csv"     "%TARGET_DIR%\modelfiles" )
-if not exist "%TARGET_DIR%\modelfiles\%POPSYN_PERS%.csv"   ( copy "%RUN_DIR%\popsyn\%POPSYN_PERS%.csv"   "%TARGET_DIR%\modelfiles" )
+if not exist "%TARGET_DIR%\popsyn\hhFile.csv"       ( copy "%RUN_DIR%\popsyn\hhFile*.csv"         "%TARGET_DIR%\popsyn\hhFile.csv"     )
+if not exist "%TARGET_DIR%\popsyn\personFile.csv"   ( copy "%RUN_DIR%\popsyn\personFile.*.csv"    "%TARGET_DIR%\popsyn\personFile.csv" )
 
-if not exist "%TARGET_DIR%\modelfiles\tazData.csv"                    ( copy "%RUN_DIR%\INPUT\landuse\tazData.csv"         "%TARGET_DIR%\modelfiles" )
-if not exist "%TARGET_DIR%\modelfiles\householdData_%ITER%.csv"       ( copy "%RUN_DIR%\main\householdData_%ITER%.csv"     "%TARGET_DIR%\modelfiles" )
-if not exist "%TARGET_DIR%\modelfiles\personData_%ITER%.csv"          ( copy "%RUN_DIR%\main\personData_%ITER%.csv"        "%TARGET_DIR%\modelfiles" )
-if not exist "%TARGET_DIR%\modelfiles\indivTripData_%ITER%.csv"       ( copy "%RUN_DIR%\main\indivTripData_%ITER%.csv"     "%TARGET_DIR%\modelfiles" )
-if not exist "%TARGET_DIR%\modelfiles\indivTourData_%ITER%.csv"       ( copy "%RUN_DIR%\main\indivTourData_%ITER%.csv"     "%TARGET_DIR%\modelfiles" )
-if not exist "%TARGET_DIR%\modelfiles\jointTripData_%ITER%.csv"       ( copy "%RUN_DIR%\main\jointTripData_%ITER%.csv"     "%TARGET_DIR%\modelfiles" )
-if not exist "%TARGET_DIR%\modelfiles\jointTourData_%ITER%.csv"       ( copy "%RUN_DIR%\main\jointTourData_%ITER%.csv"     "%TARGET_DIR%\modelfiles" )
-if not exist "%TARGET_DIR%\modelfiles\wsLocResults_%ITER%.csv"        ( copy "%RUN_DIR%\main\wsLocResults_%ITER%.csv"      "%TARGET_DIR%\modelfiles" )
-if not exist "%TARGET_DIR%\modelfiles\avgload5period.csv"             ( copy "%RUN_DIR%\hwy\iter%ITER%\avgload5period.csv" "%TARGET_DIR%\modelfiles" )
+if not exist "%TARGET_DIR%\landuse\tazData.csv"               ( copy "%RUN_DIR%\INPUT\landuse\tazData.csv"         "%TARGET_DIR%\landuse"   )
+if not exist "%TARGET_DIR%\main\householdData_%ITER%.csv"     ( copy "%RUN_DIR%\main\householdData_%ITER%.csv"     "%TARGET_DIR%\main"      )
+if not exist "%TARGET_DIR%\main\personData_%ITER%.csv"        ( copy "%RUN_DIR%\main\personData_%ITER%.csv"        "%TARGET_DIR%\main"      )
+if not exist "%TARGET_DIR%\main\indivTripData_%ITER%.csv"     ( copy "%RUN_DIR%\main\indivTripData_%ITER%.csv"     "%TARGET_DIR%\main"      )
+if not exist "%TARGET_DIR%\main\indivTourData_%ITER%.csv"     ( copy "%RUN_DIR%\main\indivTourData_%ITER%.csv"     "%TARGET_DIR%\main"      )
+if not exist "%TARGET_DIR%\main\jointTripData_%ITER%.csv"     ( copy "%RUN_DIR%\main\jointTripData_%ITER%.csv"     "%TARGET_DIR%\main"      )
+if not exist "%TARGET_DIR%\main\jointTourData_%ITER%.csv"     ( copy "%RUN_DIR%\main\jointTourData_%ITER%.csv"     "%TARGET_DIR%\main"      )
+if not exist "%TARGET_DIR%\main\wsLocResults_%ITER%.csv"      ( copy "%RUN_DIR%\main\wsLocResults_%ITER%.csv"      "%TARGET_DIR%\main"      )
+if not exist "%TARGET_DIR%\hwy\iter%ITER%\avgload5period.csv" ( copy "%RUN_DIR%\hwy\iter%ITER%\avgload5period.csv" "%TARGET_DIR%\hwy\iter%ITER%")
 
 set TIMEPERIODS=EA AM MD PM EV
 FOR %%H in (%TIMEPERIODS%) DO (
-  if not exist "%TARGET_DIR%\modelfiles\ActiveTimeSkimsDatabase%%H.csv" (
-    copy "%RUN_DIR%\database\ActiveTimeSkimsDatabase%%H.csv" "%TARGET_DIR%\modelfiles"
+  if not exist "%TARGET_DIR%\database\ActiveTimeSkimsDatabase%%H.csv" (
+    copy "%RUN_DIR%\database\ActiveTimeSkimsDatabase%%H.csv" "%TARGET_DIR%\database"
   )
-  if not exist "%TARGET_DIR%\modelfiles\CostSkimsDatabase%%H.csv" (
-    copy "%RUN_DIR%\database\CostSkimsDatabase%%H.csv" "%TARGET_DIR%\modelfiles"
+  if not exist "%TARGET_DIR%\database\CostSkimsDatabase%%H.csv" (
+    copy "%RUN_DIR%\database\CostSkimsDatabase%%H.csv" "%TARGET_DIR%\database"
   )
-  if not exist "%TARGET_DIR%\modelfiles\DistanceSkimsDatabase%%H.csv" (
-    copy "%RUN_DIR%\database\DistanceSkimsDatabase%%H.csv" "%TARGET_DIR%\modelfiles"
+  if not exist "%TARGET_DIR%\database\DistanceSkimsDatabase%%H.csv" (
+    copy "%RUN_DIR%\database\DistanceSkimsDatabase%%H.csv" "%TARGET_DIR%\database"
   )
   
-  if not exist "%TARGET_DIR%\modelfiles\TimeSkimsDatabase%%H.csv" (
-    copy "%RUN_DIR%\database\TimeSkimsDatabase%%H.csv" "%TARGET_DIR%\modelfiles"
+  if not exist "%TARGET_DIR%\database\TimeSkimsDatabase%%H.csv" (
+    copy "%RUN_DIR%\database\TimeSkimsDatabase%%H.csv" "%TARGET_DIR%\database"
   )
   
   FOR %%J in (loc lrf exp hvy com) DO (
     rem walk -> transit -> walk
-    if not exist "%TARGET_DIR%\modelfiles\trnline%%H_wlk_%%J_wlk.csv" (
-      copy "%RUN_DIR%\trn\trnline%%H_wlk_%%J_wlk.csv" "%TARGET_DIR%\modelfiles"
+    if not exist "%TARGET_DIR%\trn\trnline%%H_wlk_%%J_wlk.csv" (
+      copy "%RUN_DIR%\trn\trnline%%H_wlk_%%J_wlk.csv" "%TARGET_DIR%\trn"
     )
     rem drive -> transit -> walk
-    if not exist "%TARGET_DIR%\modelfiles\trnline%%H_drv_%%J_wlk.csv" (
-      copy "%RUN_DIR%\trn\trnline%%H_drv_%%J_wlk.csv" "%TARGET_DIR%\modelfiles"
+    if not exist "%TARGET_DIR%\trn\trnline%%H_drv_%%J_wlk.csv" (
+      copy "%RUN_DIR%\trn\trnline%%H_drv_%%J_wlk.csv" "%TARGET_DIR%\trn"
     )
     rem walk -> transit -> drive
-    if not exist "%TARGET_DIR%\modelfiles\trnline%%H_wlk_%%J_drv.csv" (
-      copy "%RUN_DIR%\trn\trnline%%H_wlk_%%J_drv.csv" "%TARGET_DIR%\modelfiles"
+    if not exist "%TARGET_DIR%\trn\trnline%%H_wlk_%%J_drv.csv" (
+      copy "%RUN_DIR%\trn\trnline%%H_wlk_%%J_drv.csv" "%TARGET_DIR%\trn"
     )
   )
 )

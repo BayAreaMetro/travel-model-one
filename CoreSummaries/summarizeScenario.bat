@@ -14,46 +14,34 @@ set ITER=0
 if %RUN_NAME% EQU 2010_03_YYY (
   set ITER=3
   set RUN_DIR=B:\Projects\2010_03_YYY.archived
-  set POPSYN_HH=hhFile.p2011s3a.2010
-  set POPSYN_PERS=personFile.p2011s3a1.2010
   set RUN_DESC=Year 2010 (version 0.3)
 )
 if %RUN_NAME% EQU 2010_04_ZZZ (
   set ITER=3
   set RUN_DIR=B:\Projects\%RUN_NAME%.archived
-  set POPSYN_HH=hhFile.p2011s3a1.2010
-  set POPSYN_PERS=personFile.p2011s3a1.2010
 )
 
 if %RUN_NAME% EQU 2020_03_116 (
   :: use for testing -- short files
   set ITER=1
   set RUN_DIR=B:\Projects\2020_03_116.archived
-  set POPSYN_HH=hhFile.p2011s6g.2020
-  set POPSYN_PERS=personFile.p2011s6g.2020
 )
 
 if %RUN_NAME% EQU 2040_03_116 (
   set ITER=3
   set RUN_DIR=B:\Projects\2040_03_116.archived
-  set POPSYN_HH=hhFile.p2011s6g.2040
-  set POPSYN_PERS=personFile.p2011s6g.2040
   set RUN_DESC=Year 2040, Plan (version 0.3)
 )
 
 if %RUN_NAME% EQU 2040_03_127 (
   set ITER=3
   set RUN_DIR=B:\Projects\2040_03_127.archived
-  set POPSYN_HH=hhFile.p2011s6g.2040
-  set POPSYN_PERS=personFile.p2011s6g.2040
   set RUN_DESC=Year 2040, TIP 2015 (version 0.3)
 )
 
 if %RUN_NAME% EQU 2040_03_129 (
   set ITER=3
   set RUN_DIR=B:\Projects\2040_03_129.archived
-  set POPSYN_HH=hhFile.p2011s6g.2040
-  set POPSYN_PERS=personFile.p2011s6g.2040
   set RUN_DESC=Year 2040, RTP 2013 (version 0.3)
 )
 
@@ -64,8 +52,6 @@ if %ITER% EQU 0 (
   echo RUN_NAME    = %RUN_NAME%
   echo RUN_DIR     = %RUN_DIR%
   echo RUN_DESC    = %RUN_DESC%
-  echo POPSYN_HH   = %POPSYN_HH%
-  echo POPSYN_PERS = %POPSYN_PERS%
 )
 
 :: Input files will be copied into here
@@ -75,13 +61,13 @@ set TARGET_DIR=C:\Users\lzorn\Documents\%RUN_NAME%
 call "%CODE_DIR%\copyCoreSummariesInputs.bat"
 
 :: See if we're missing any summaries
-if not exist "%TARGET_DIR%\summary" ( mkdir "%TARGET_DIR%\summary" )
+if not exist "%TARGET_DIR%\core_summaries" ( mkdir "%TARGET_DIR%\core_summaries" )
 
 set NEED_SUMMARY=0
 for %%X in (%RDATA%) DO (
-  if not exist "%TARGET_DIR%\summary\%%X.csv"             ( set /a NEED_SUMMARY+=1 )
+  if not exist "%TARGET_DIR%\core_summaries\%%X.csv"             ( set /a NEED_SUMMARY+=1 )
 )
-echo Missing %NEED_SUMMARY% summaries in %TARGET_DIR%\summary
+echo Missing %NEED_SUMMARY% summaries in %TARGET_DIR%\core_summaries
 
 :: If we need to, create the core summaries.
 if %NEED_SUMMARY% GTR 0 (
@@ -96,19 +82,19 @@ if %NEED_SUMMARY% GTR 0 (
   IF %ERRORLEVEL% GTR 0 goto done
   echo %DATE% %TIME% ...Done
   
-  move CoreSummaries.html "%TARGET_DIR%\summary"
+  move CoreSummaries.html "%TARGET_DIR%\core_summaries"
   
   rem This will make all the tdes stale
   for %%X in (%RDATA%) DO (
-    del "%TARGET_DIR%\summary\%%X.tde"
+    del "%TARGET_DIR%\core_summaries\%%X.tde"
   )
 )
 echo.
 
 :: convert the summaries to tde for just this dir
-for %%X in ("%TARGET_DIR%\summary\*.rdata") DO (
-  if not exist "%TARGET_DIR%\summary\%%~nX.tde" (
-    python "%CODE_DIR%\RdataToTableauExtract.py" "%TARGET_DIR%\summary" "%TARGET_DIR%\summary" %%~nxX
+for %%X in ("%TARGET_DIR%\core_summaries\*.rdata") DO (
+  if not exist "%TARGET_DIR%\core_summaries\%%~nX.tde" (
+    python "%CODE_DIR%\RdataToTableauExtract.py" "%TARGET_DIR%\core_summaries" "%TARGET_DIR%\core_summaries" %%~nxX
     if %ERRORLEVEL% GTR 0 goto done
     
     echo.
@@ -116,23 +102,23 @@ for %%X in ("%TARGET_DIR%\summary\*.rdata") DO (
 )
 
 :: convert the avgload5period.csv
-if not exist "%TARGET_DIR%\summary\avgload5period.tde" (
-  python "%CODE_DIR%\csvToTableauExtract.py" "%TARGET_DIR%\modelfiles" "%TARGET_DIR%\summary" avgload5period.csv
+if not exist "%TARGET_DIR%\core_summaries\avgload5period.tde" (
+  python "%CODE_DIR%\csvToTableauExtract.py" "%TARGET_DIR%\modelfiles" "%TARGET_DIR%\core_summaries" avgload5period.csv
   if %ERRORLEVEL% GTR 0 goto done
   
   echo.
 )
 
 :: convert the transit files
-if not exist "%TARGET_DIR%\summary\trnline.tde" (
+if not exist "%TARGET_DIR%\core_summaries\trnline.tde" (
   FOR %%H in (EA AM MD PM EV) DO (
     FOR %%J in (loc lrf exp hvy com) DO (
       rem walk -> transit -> walk
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\tableau\reference-transit-modes.csv" --append "%TARGET_DIR%\modelfiles" "%TARGET_DIR%\summary" trnline%%H_wlk_%%J_wlk.csv
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append "%TARGET_DIR%\modelfiles" "%TARGET_DIR%\core_summaries" trnline%%H_wlk_%%J_wlk.csv
       rem drive -> transit -> walk
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\tableau\reference-transit-modes.csv" --append "%TARGET_DIR%\modelfiles" "%TARGET_DIR%\summary" trnline%%H_drv_%%J_wlk.csv      
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append "%TARGET_DIR%\modelfiles" "%TARGET_DIR%\core_summaries" trnline%%H_drv_%%J_wlk.csv      
       rem walk -> transit -> drive
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\tableau\reference-transit-modes.csv"  --append "%TARGET_DIR%\modelfiles" "%TARGET_DIR%\summary" trnline%%H_wlk_%%J_drv.csv
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv"  --append "%TARGET_DIR%\modelfiles" "%TARGET_DIR%\core_summaries" trnline%%H_wlk_%%J_drv.csv
     )
   )
 )

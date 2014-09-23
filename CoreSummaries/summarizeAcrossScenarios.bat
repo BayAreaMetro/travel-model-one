@@ -27,8 +27,8 @@ for %%H in (%RUN_NAME_SET%) DO (
 
 :: Create the Tablea Data Extracts covering all scenarios
 :: First, create the summary dirs list
-set SUMMARY_DIRS=%RUN_NAME_SET: =\summary %
-set SUMMARY_DIRS=%SUMMARY_DIRS%\summary
+set SUMMARY_DIRS=%RUN_NAME_SET: =\core_summaries %
+set SUMMARY_DIRS=%SUMMARY_DIRS%\core_summaries
 echo %SUMMARY_DIRS%
 
 :: Run the conversion script to aggregate all rdata files into a single tde
@@ -54,11 +54,11 @@ if not exist "%COMBINED_DIR%\trnline.tde" (
   FOR %%H in (EA AM MD PM EV) DO (
     FOR %%J in (loc lrf exp hvy com) DO (
       rem walk -> transit -> walk
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\tableau\reference-transit-modes.csv" --append %MODELFILE_DIRS% "%COMBINED_DIR%" trnline%%H_wlk_%%J_wlk.csv
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append %MODELFILE_DIRS% "%COMBINED_DIR%" trnline%%H_wlk_%%J_wlk.csv
       rem drive -> transit -> walk
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\tableau\reference-transit-modes.csv" --append %MODELFILE_DIRS% "%COMBINED_DIR%" trnline%%H_drv_%%J_wlk.csv      
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append %MODELFILE_DIRS% "%COMBINED_DIR%" trnline%%H_drv_%%J_wlk.csv      
       rem walk -> transit -> drive
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\tableau\reference-transit-modes.csv"  --append %MODELFILE_DIRS% "%COMBINED_DIR%" trnline%%H_wlk_%%J_drv.csv
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv"  --append %MODELFILE_DIRS% "%COMBINED_DIR%" trnline%%H_wlk_%%J_drv.csv
     )
   )
 )
