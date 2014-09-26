@@ -215,7 +215,7 @@ if __name__ == '__main__':
     for csv_dirpath in csv_dirpaths:
         csv_fullpath = os.path.join(csv_dirpath, csv_filename)
         
-        src = os.path.split(rdata_fullpath)[0] # remove the filename part of the path
+        src = os.path.split(csv_fullpath)[0] # remove the filename part of the path
         (head,tail) = os.path.split(src)       # remove other tails from path
         while head != "":
             src = head
@@ -223,7 +223,7 @@ if __name__ == '__main__':
 
         scenario = 'unknown'
         # add the new column `Scenario`
-        if src_to_scenario: and src in src_to_scenario:
+        if src_to_scenario and src in src_to_scenario:
             scenario = src_to_scenario[src]
     
         table_df = pandas.read_csv(csv_fullpath, names=arg_header)
