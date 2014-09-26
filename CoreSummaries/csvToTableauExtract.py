@@ -16,9 +16,13 @@ python csvToTableauExtract.py [--header "colname1,colname2,..."] [--output outpu
 Loops through the input dirs (one is ok) and reads the summary.csv within.
 Convertes them into a Tableau Data Extract.
 
-Adds an additional column to the resulting output, src, which will contain the input file
-source of the data.  Also uses pandas.DataFrame.fillna() to replace NAs with zero, since
-Tableau doesn't like them.
+Adds an additional column to the resulting output, `src`, which will contain the input file
+source of the data.  If the file "ScenarioKey.csv" exists in the current working directory,
+and it contains a column mapping `src` to `Scenario`, then the first level dir will be used to
+add another human readable column name.  (e.g. if '2010_04_ZZZ\blah' is an input dir,
+then the mapping needs to map '2010_04_ZZZ' to a scenario name.)
+
+Also uses pandas.DataFrame.fillna() to replace NAs with zero, since Tableau doesn't like them.
 
 """
 import csv, datetime, itertools, getopt, os, sys
@@ -59,7 +63,30 @@ unwind_timeperiods = {'cspdEA':['cspd','EA'],
                       'vcEV':['vc','EV'],
                       }
 
-
+def read_scenario_key():
+    """
+    Reads the scenario key from "ScenarioKey.csv"
+    Returns dictionary of src -> scenario or None if nothing valid found
+    """
+    SCENARIO_KEY_FILENAME = "ScenarioKey.csv"
+    if not os.path.exists(SCENARIO_KEY_FILENAME):
+        print("File [%s] does not exist.  No mapping from src to Scenario." % SCENARIO_KEY_FILENAME)
+        return None
+    
+    csv_reader = csv.DictReader(open(SCENARIO_KEY_FILENAME))
+    src_to_scenario = {}
+    for row in csv_reader:
+        if 'src' not in row:
+            print("File [%s] does not have 'src' column: %s.  No mapping from src to Scenario" %
+                  (SCENARIO_KEY_FILENAME, str(row)))
+            return None
+        if 'Scenario' not in row:
+            print("File [%s] does not have 'Scenario' column: %s.  No mapping from src to Scenario" %
+                  (SCENARIO_KEY_FILENAME, str(row)))
+            return None
+        src_to_scenario[row['src']] = row['Scenario']
+        print("Mapping src [%s] to Scenario [%s]" % (row['src'], row['Scenario']))
+    return src_to_scenario
 
 if __name__ == '__main__':
 
@@ -110,6 +137,8 @@ if __name__ == '__main__':
         print USAGE
         print "Invalid output directory [%s]" % tde_dirpath
         sys.exit(2)
+
+    src_to_scenario = read_scenario_key()
 
     # print "Valid output tde_dirpath [%s]" % tde_dirpath
     if arg_tde_filename:
@@ -167,6 +196,8 @@ if __name__ == '__main__':
     # add the src column
     tableDef.addColumn("src", tde.Type.UNICODE_STRING)
     new_colnames_to_idx["src"] = len(new_colnames_to_idx)
+    tableDef.addColumn("Scenario", tde.Type.UNICODE_STRING)
+    new_colnames_to_idx["Scenario"] = len(new_colnames_to_idx)
     
     # print "old_colnames = %s" % str(old_colnames)
     # print "new colnames = %s" % str(new_colnames_to_idx)
@@ -184,8 +215,16 @@ if __name__ == '__main__':
     for csv_dirpath in csv_dirpaths:
         csv_fullpath = os.path.join(csv_dirpath, csv_filename)
         
-        src = os.path.split(csv_fullpath)[0]   # remove the filename part of the path
-        src = os.path.split(src)[0]            # remove the 'summary' part of the path
+        src = os.path.split(rdata_fullpath)[0] # remove the filename part of the path
+        (head,tail) = os.path.split(src)       # remove other tails from path
+        while head != "":
+            src = head
+            (head,tail) = os.path.split(src)
+
+        scenario = 'unknown'
+        # add the new column `Scenario`
+        if src_to_scenario: and src in src_to_scenario:
+            scenario = src_to_scenario[src]
     
         table_df = pandas.read_csv(csv_fullpath, names=arg_header)
         for join_table_file in arg_join:
@@ -250,6 +289,7 @@ if __name__ == '__main__':
                     newrow.setString(new_colnames_to_idx["timeperiod"], timeperiod)
                 # and the src
                 newrow.setString(new_colnames_to_idx["src"], src)
+                newrow.setString(new_colnames_to_idx["Scenario"], scenario)
                 table.insert(newrow)
                 
                 tde_lines_written += 1

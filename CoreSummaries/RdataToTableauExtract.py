@@ -5,9 +5,13 @@ python RdataToTableauExtract.py input_dir1 [input_dir2 input_dir3] output_dir su
 Loops through the input dirs (one is ok) and reads the summary.rdata within.
 Convertes them into a Tableau Data Extract.
 
-Adds an additional column to the resulting output, src, which will contain the input file
-source of the data.  Also uses pandas.DataFrame.fillna() to replace NAs with zero, since
-Tableau doesn't like them.
+Adds an additional column to the resulting output, `src`, which will contain the input file
+source of the data.  If the file "ScenarioKey.csv" exists in the current working directory,
+and it contains a column mapping `src` to `Scenario`, then the first level dir will be used to
+add another human readable column name.  (e.g. if '2010_04_ZZZ\blah' is an input dir,
+then the mapping needs to map '2010_04_ZZZ' to a scenario name.)
+
+Also uses pandas.DataFrame.fillna() to replace NAs with zero, since Tableau doesn't like them.
 
 Outputs summary.tde (named the same as summary.rdata but with s/rdata/tde) into output_dir.
 
@@ -15,6 +19,7 @@ Outputs summary.tde (named the same as summary.rdata but with s/rdata/tde) into 
 
 # rpy2 requires R_HOME to be set (I used C:\Program Files\R\R-3.1.1)
 #      and R_USER to be set (I used lzorn)
+import csv
 import dataextract as tde
 import pandas as pd
 import pandas.rpy.common as com
@@ -36,7 +41,32 @@ fieldMap = {
     'bool' :        tde.Type.BOOLEAN
 }
 
-def read_rdata(rdata_fullpath):
+def read_scenario_key():
+    """
+    Reads the scenario key from "ScenarioKey.csv"
+    Returns dictionary of src -> scenario or None if nothing valid found
+    """
+    SCENARIO_KEY_FILENAME = "ScenarioKey.csv"
+    if not os.path.exists(SCENARIO_KEY_FILENAME):
+        print("File [%s] does not exist.  No mapping from src to Scenario." % SCENARIO_KEY_FILENAME)
+        return None
+    
+    csv_reader = csv.DictReader(open(SCENARIO_KEY_FILENAME))
+    src_to_scenario = {}
+    for row in csv_reader:
+        if 'src' not in row:
+            print("File [%s] does not have 'src' column: %s.  No mapping from src to Scenario" %
+                  (SCENARIO_KEY_FILENAME, str(row)))
+            return None
+        if 'Scenario' not in row:
+            print("File [%s] does not have 'Scenario' column: %s.  No mapping from src to Scenario" %
+                  (SCENARIO_KEY_FILENAME, str(row)))
+            return None
+        src_to_scenario[row['src']] = row['Scenario']
+        print("Mapping src [%s] to Scenario [%s]" % (row['src'], row['Scenario']))
+    return src_to_scenario
+    
+def read_rdata(rdata_fullpath, src_to_scenario):
     """
     Returns the pandas DataFrame
     """
@@ -51,11 +81,21 @@ def read_rdata(rdata_fullpath):
     # print "Dimensions are %s" % str(r.r('dim(model_summary)'))
     
     table_df = com.load_data('model_summary')
-    # add the new column
+    # add the new column `src`
     src = os.path.split(rdata_fullpath)[0] # remove the filename part of the path
-    src = os.path.split(src)[0]            # remove the 'summary' part of the path
-    
+    (head,tail) = os.path.split(src)       # remove other tails from path
+    while head != "":
+        src = head
+        (head,tail) = os.path.split(src)
     table_df['src'] = src
+
+    # add the new column `Scenario`
+    if src_to_scenario:
+        if src in src_to_scenario:
+            table_df['Scenario'] = src_to_scenario[src]
+        else:
+            table_df['Scenario'] = 'unknown'
+
     print "Read %d lines from %s" % (len(table_df), rdata_fullpath)
 
     # fillna
@@ -157,11 +197,13 @@ if __name__ == '__main__':
     # print "Will write to [%s]" % os.path.join(tde_dirpath, tde_filename)
     # print
     
+    src_to_scenario = read_scenario_key()
+    
     # checking done -- do the job
     full_table_df = None
     set_fulltable = False
     for rdata_dirpath in args[:-2]:
-        table_df = read_rdata(os.path.join(rdata_dirpath, rdata_filename))
+        table_df = read_rdata(os.path.join(rdata_dirpath, rdata_filename), src_to_scenario)
         if set_fulltable==False: # it doesn't like checking if a dataFrame is none
             full_table_df = table_df
             set_fulltable = True
@@ -169,38 +211,3 @@ if __name__ == '__main__':
             full_table_df = full_table_df.append(table_df)
     
     write_tde(full_table_df, os.path.join(tde_dirpath, tde_filename))
-
-"""
-TODO: clean this up
-RUN_NAME_SET = os.environ['RUN_NAME_SET']
-RUN_NAMES = RUN_NAME_SET.split()
-print "RUN_NAMES = ", str(RUN_NAMES)
-
-ROOT_DIR = r"C:\Users\lzorn\Documents"
-
-run_name = RUN_NAMES[0]
-summary_dir = os.path.join(ROOT_DIR, run_name, "summary")
-        
-# Read the data file
-try:
-    summary_files = os.listdir(summary_dir)
-except:
-    # This always causes an exception although it still seems to work... Move on.
-    pass
-
-print summary_files
-    
-for summary_file in summary_files:
-    
-    if not summary_file.endswith(".rdata"):
-        continue
-        # pass
-        
-    print "Extracting from %s" % summary_file
-    # read in the data from the R session within python
-    rdata_fullpath = os.path.join(summary_dir, summary_file)
-    
-    # Create the Tableau Data Extract for just this summary
-    tde_fullpath = rdata_fullpath.replace(".rdata", ".tde")
-    sys.exit(0)
-"""
