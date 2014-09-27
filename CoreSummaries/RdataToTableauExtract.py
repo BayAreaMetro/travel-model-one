@@ -1,19 +1,28 @@
 
 USAGE = """
-python RdataToTableauExtract.py input_dir1 [input_dir2 input_dir3] output_dir summary.rdata
+python dataToTableauExtract.py [--append] [--timeperiod code] [--join join.csv] [--output output.tde] 
+  input_dir1 [input_dir2 input_dir3] output_dir summary.(rdata|dbf)
 
-Loops through the input dirs (one is ok) and reads the summary.rdata within.
+  + Pass --output output.tde to specify an output filename to use.  If none is specified,
+    summary.tde will be used (the input file name but with s/csv/tde).
+
+  + Pass --join join.csv to join the data to a csv.  Will join on common column names.
+
+  + Pass --append if the data should be appended to the output tde.  If not passed and
+    the file exists, the script will error
+
+Loops through the input dirs (one is ok) and reads the summary.(rdata|dbf) within.
 Convertes them into a Tableau Data Extract.
 
 Adds an additional column to the resulting output, `src`, which will contain the input file
 source of the data.  If the file "ScenarioKey.csv" exists in the current working directory,
 and it contains a column mapping `src` to `Scenario`, then the first level dir will be used to
-add another human readable column name.  (e.g. if '2010_04_ZZZ\blah' is an input dir,
+add another human readable column name.  (e.g. if '2010_04_ZZZ\\blah' is an input dir,
 then the mapping needs to map '2010_04_ZZZ' to a scenario name.)
 
 Also uses pandas.DataFrame.fillna() to replace NAs with zero, since Tableau doesn't like them.
 
-Outputs summary.tde (named the same as summary.rdata but with s/rdata/tde) into output_dir.
+Outputs summary.tde (named the same as the input file but with tde as the suffix) into output_dir.
 
 """
 
@@ -22,8 +31,6 @@ Outputs summary.tde (named the same as summary.rdata but with s/rdata/tde) into 
 import csv
 import dataextract as tde
 import pandas as pd
-import pandas.rpy.common as com
-from rpy2 import robjects as r
 import getopt
 import os
 import sys
@@ -70,7 +77,9 @@ def read_rdata(rdata_fullpath, src_to_scenario):
     """
     Returns the pandas DataFrame
     """
-    
+    import pandas.rpy.common as com
+    from rpy2 import robjects as r
+
     # we want forward slashes for R
     rdata_fullpath_forR = rdata_fullpath.replace("\\", "/")
     # print "Loading %s" % rdata_fullpath_forR
@@ -81,22 +90,6 @@ def read_rdata(rdata_fullpath, src_to_scenario):
     # print "Dimensions are %s" % str(r.r('dim(model_summary)'))
     
     table_df = com.load_data('model_summary')
-    # add the new column `src`
-    src = os.path.split(rdata_fullpath)[0] # remove the filename part of the path
-    (head,tail) = os.path.split(src)       # remove other tails from path
-    while head != "":
-        src = head
-        (head,tail) = os.path.split(src)
-    table_df['src'] = src
-
-    # add the new column `Scenario`
-    if src_to_scenario:
-        if src in src_to_scenario:
-            table_df['Scenario'] = src_to_scenario[src]
-        else:
-            table_df['Scenario'] = 'unknown'
-
-    print "Read %d lines from %s" % (len(table_df), rdata_fullpath)
 
     # fillna
     for col in table_df.columns:
@@ -108,12 +101,31 @@ def read_rdata(rdata_fullpath, src_to_scenario):
         if nullcount > 0: print "  -> Found %5d NA values in column %s" % (nullcount, col)
         return table_df
 
-def write_tde(table_df, tde_fullpath):
+def read_dbf(dbf_fullpath, src_to_scenario):
+    """
+    Returns the pandas DataFrame
+    """
+    import pysal
+    dbfin = pysal.open(dbf_fullpath)
+    vars = dbfin.header
+    data = dict([(var, dbfin.by_col(var)) for var in vars])
+
+    table_df = pd.DataFrame(data)
+
+    print "Read %d lines from %s" % (len(table_df), dbf_fullpath)
+
+    return table_df
+
+def write_tde(table_df, tde_fullpath, arg_append):
     """
     Writes the given pandas dataframe to the Tableau Data Extract given by tde_fullpath
     """
+    if arg_append and not os.path.isfile(tde_fullpath):
+        print "Couldn't append -- file doesn't exist"
+        arg_append = False
+
     # Remove it if already exists
-    if os.path.exists(tde_fullpath):
+    if not arg_append and os.path.exists(tde_fullpath):
         os.remove(tde_fullpath)
     tdefile = tde.Extract(tde_fullpath)
 
@@ -132,7 +144,10 @@ def write_tde(table_df, tde_fullpath):
         table_def.addColumn(cname, ctype)        
 
     # create the extract from the Table Definition
-    tde_table = tdefile.addTable('Extract', table_def)
+    if arg_append:
+        tde_table = tdefile.openTable('Extract')
+    else:
+        tde_table = tdefile.addTable('Extract', table_def)
     row = tde.Row(table_def)
 
     for r in range(0, table_df.shape[0]):
@@ -160,30 +175,47 @@ def write_tde(table_df, tde_fullpath):
     
 if __name__ == '__main__':
 
-    optlist, args = getopt.getopt(sys.argv[1:], "")
+    optlist, args = getopt.getopt(sys.argv[1:], "o:at:j:",['output=','append','timeperiod=','join='])
+
+    data_filename       = args[-1]
+    arg_tde_filename    = None
+    arg_append          = False
+    arg_timeperiod      = None    
+    arg_join            = []
+    for opt,arg in optlist:
+        if opt in ('-o', '--output'):
+            arg_tde_filename = arg
+        elif opt in ('-a', '--append'):
+            arg_append = True
+        elif opt in ('-t', '--timeperiod'):
+            arg_timeperiod = arg
+        elif opt in ('-j', '--join'):
+            arg_join.append(arg)
+
     if len(args) < 3:
         print USAGE
+        print sys.argv
         sys.exit(2)
     
-    rdata_filename = args[-1]
-    if not rdata_filename.endswith(".rdata"):
+
+    if not data_filename.endswith(".rdata") and not data_filename.endswith(".dbf"):
         print USAGE
-        print "Invalid rdata filename [%s]" % rdata_filename
+        print "Invalid data filename [%s]" % data_filename
         sys.exit(2)
     
     # input path checking
-    for rdata_dirpath in args[:-2]:
+    for data_dirpath in args[:-2]:
         # check it's a path
-        if not os.path.isdir(rdata_dirpath):
+        if not os.path.isdir(data_dirpath):
             print USAGE
-            print "Invalid input directory [%s]" % rdata_dirpath
+            print "Invalid input directory [%s]" % data_dirpath
             sys.exit(2)
-        # check it has summary.rdata
-        if not os.path.isfile(os.path.join(rdata_dirpath, rdata_filename)):
+        # check it has summary.data
+        if not os.path.isfile(os.path.join(data_dirpath, data_filename)):
             print USAGE
-            print "File doesn't exist: [%s]" % os.path.join(rdata_dirpath, rdata_filename)
+            print "File doesn't exist: [%s]" % os.path.join(data_dirpath, data_filename)
             sys.exit(2)
-        # print "Valid input rdata_dirpath [%s]" % rdata_dirpath
+        # print "Valid input data_dirpath [%s]" % data_dirpath
     
     # output path checking
     tde_dirpath = args[-2]
@@ -193,21 +225,53 @@ if __name__ == '__main__':
         sys.exit(2)
 
     # print "Valid output tde_dirpath [%s]" % tde_dirpath
-    tde_filename = rdata_filename.replace(".rdata", ".tde")    
+    if arg_tde_filename:
+        tde_filename = arg_tde_filename
+    else:
+        tde_filename = data_filename[:data_filename.rfind(".")] + ".tde"
     # print "Will write to [%s]" % os.path.join(tde_dirpath, tde_filename)
     # print
     
     src_to_scenario = read_scenario_key()
-    
+
     # checking done -- do the job
     full_table_df = None
     set_fulltable = False
-    for rdata_dirpath in args[:-2]:
-        table_df = read_rdata(os.path.join(rdata_dirpath, rdata_filename), src_to_scenario)
+    for data_dirpath in args[:-2]:
+        data_fullpath = os.path.join(data_dirpath, data_filename)
+        if data_filename.endswith(".rdata"):
+            table_df = read_rdata(data_fullpath, src_to_scenario)
+        else:
+            table_df = read_dbf(data_fullpath, src_to_scenario)
+
+        # read join table
+        for join_table_file in arg_join:
+            join_df = pandas.read_csv(join_table_file)
+            table_df = pandas.merge(table_df, join_df, how='left')
+
+        # add the new column `src`
+        src = os.path.split(data_fullpath)[0] # remove the filename part of the path
+        (head,tail) = os.path.split(src)       # remove other tails from path
+        while head != "":
+            src = head
+            (head,tail) = os.path.split(src)
+        table_df['src'] = src
+
+        # add the new column `Scenario`
+        if src_to_scenario:
+            if src in src_to_scenario:
+                table_df['Scenario'] = src_to_scenario[src]
+            else:
+                table_df['Scenario'] = 'unknown'
+
+        # add time period
+        if arg_timeperiod:
+            table_df['timeperiod'] = arg_timeperiod
+
         if set_fulltable==False: # it doesn't like checking if a dataFrame is none
             full_table_df = table_df
             set_fulltable = True
         else:
             full_table_df = full_table_df.append(table_df)
     
-    write_tde(full_table_df, os.path.join(tde_dirpath, tde_filename))
+    write_tde(full_table_df, os.path.join(tde_dirpath, tde_filename), arg_append)

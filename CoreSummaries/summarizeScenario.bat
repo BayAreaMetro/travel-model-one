@@ -1,8 +1,10 @@
 ::
 ::  Parameters (environment variables):
-::   RUN_NAME    : run name (e.g. 2010_04_ZZZ).  Often part of RUN_DIR. Used for TARGET_DIR.
-::
-::  Uses the RUN_NAME to set ITER, RUN_DIR, POPSYN_HH, POPSYN_PERS, RUN_DESC
+::    CODE_DIR
+::    RDATA
+::    R_HOME
+::    RUN_NAME  : run name (e.g. 2010_04_ZZZ)
+::  Uses the RUN_NAME to set ITER, RUN_DIR, RUN_DESC
 ::  (Todo: Should these be in a better location?  Like M:\Application\Model One\Model Run Directory.xlsx?
 ::
 :: @echo off

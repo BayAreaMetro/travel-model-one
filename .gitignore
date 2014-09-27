@@ -2,6 +2,8 @@
 .Rhistory
 .Rproj.user/*
 *.html
+*.bak
+*/*.bak
 CoreSummaries/CoreSummaries.md
 CoreSummaries_files/*
 Thumbs.db

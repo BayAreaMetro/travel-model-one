@@ -54,17 +54,29 @@ FOR %%H in (%TIMEPERIODS%) DO (
   )
   
   FOR %%J in (loc lrf exp hvy com) DO (
-    rem walk -> transit -> walk
+    rem walk -> transit -> walk line files
     if not exist "%TARGET_DIR%\trn\trnline%%H_wlk_%%J_wlk.csv" (
       copy "%RUN_DIR%\trn\trnline%%H_wlk_%%J_wlk.csv" "%TARGET_DIR%\trn"
     )
-    rem drive -> transit -> walk
+    rem drive -> transit -> walk line files
     if not exist "%TARGET_DIR%\trn\trnline%%H_drv_%%J_wlk.csv" (
       copy "%RUN_DIR%\trn\trnline%%H_drv_%%J_wlk.csv" "%TARGET_DIR%\trn"
     )
-    rem walk -> transit -> drive
+    rem walk -> transit -> drive line files
     if not exist "%TARGET_DIR%\trn\trnline%%H_wlk_%%J_drv.csv" (
       copy "%RUN_DIR%\trn\trnline%%H_wlk_%%J_drv.csv" "%TARGET_DIR%\trn"
+    )
+    rem walk -> transit -> walk link files
+    if not exist "%TARGET_DIR%\trn\trnlink%%H_wlk_%%J_wlk.dbf" (
+      copy "%RUN_DIR%\trn\trnlink%%H_wlk_%%J_wlk.dbf" "%TARGET_DIR%\trn"
+    )
+    rem drive -> transit -> walk link files
+    if not exist "%TARGET_DIR%\trn\trnlink%%H_drv_%%J_wlk.dbf" (
+      copy "%RUN_DIR%\trn\trnlink%%H_drv_%%J_wlk.dbf" "%TARGET_DIR%\trn"
+    )
+    rem walk -> transit -> drive link files
+    if not exist "%TARGET_DIR%\trn\trnlink%%H_wlk_%%J_drv.dbf" (
+      copy "%RUN_DIR%\trn\trnlink%%H_wlk_%%J_drv.dbf" "%TARGET_DIR%\trn"
     )
   )
 )

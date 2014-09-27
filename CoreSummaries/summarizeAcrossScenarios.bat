@@ -75,11 +75,30 @@ if not exist "%COMBINED_DIR%\trnline.tde" (
   FOR %%H in (EA AM MD PM EV) DO (
     FOR %%J in (loc lrf exp hvy com) DO (
       rem walk -> transit -> walk
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append %MODELFILE_DIRS% "%COMBINED_DIR%" trnline%%H_wlk_%%J_wlk.csv
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append %TRNFILE_DIRS% "%COMBINED_DIR%" trnline%%H_wlk_%%J_wlk.csv
+      IF %ERRORLEVEL% GTR 0 goto done
       rem drive -> transit -> walk
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append %MODELFILE_DIRS% "%COMBINED_DIR%" trnline%%H_drv_%%J_wlk.csv      
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append %TRNFILE_DIRS% "%COMBINED_DIR%" trnline%%H_drv_%%J_wlk.csv      
+      IF %ERRORLEVEL% GTR 0 goto done
       rem walk -> transit -> drive
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv"  --append %MODELFILE_DIRS% "%COMBINED_DIR%" trnline%%H_wlk_%%J_drv.csv
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv"  --append %TRNFILE_DIRS% "%COMBINED_DIR%" trnline%%H_wlk_%%J_drv.csv
+      IF %ERRORLEVEL% GTR 0 goto done
+    )
+  )
+)
+
+if not exist "%COMBINED_DIR%\trnlink.tde" (
+  FOR %%H in (EA AM MD PM EV) DO (
+    FOR %%J in (loc lrf exp hvy com) DO (
+      rem walk -> transit -> walk
+      python "%CODE_DIR%\RdataToTableauExtract.py" --output trnlink.tde --append --timeperiod %%H --join "%CODE_DIR%\reference-transit-modes.csv" %TRNFILE_DIRS% "%COMBINED_DIR%" trnlink%%H_wlk_%%J_wlk.dbf
+      IF %ERRORLEVEL% GTR 0 goto done
+      rem drive -> transit -> walk
+      python "%CODE_DIR%\RdataToTableauExtract.py" --output trnlink.tde --append --timeperiod %%H --join "%CODE_DIR%\reference-transit-modes.csv" %TRNFILE_DIRS% "%COMBINED_DIR%" trnlink%%H_drv_%%J_wlk.dbf
+      IF %ERRORLEVEL% GTR 0 goto done
+      rem walk -> transit -> drive
+      python "%CODE_DIR%\RdataToTableauExtract.py" --output trnlink.tde --append --timeperiod %%H --join "%CODE_DIR%\reference-transit-modes.csv" %TRNFILE_DIRS% "%COMBINED_DIR%" trnlink%%H_wlk_%%J_drv.dbf
+      IF %ERRORLEVEL% GTR 0 goto done
     )
   )
 )
