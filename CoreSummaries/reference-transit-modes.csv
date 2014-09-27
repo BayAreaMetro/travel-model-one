@@ -1,140 +1,140 @@
-Name,mode,Aggregate Mode,Seats,Notes
-Walk access connectors,1,Auxiliary,,
-Drive access connectors,2,Auxiliary,,
-Stop-to-stop and stop-to-station aux nodes,3,Auxiliary,,
-Drive access walk funnel (lot) links,4,Auxiliary,,
-Walk access walk funnel links,5,Auxiliary,,
-Not used,6,Auxiliary,,
-Not used,7,Auxiliary,,
-Not used,8,Auxiliary,,
-Not used,9,Auxiliary,,
-West Berkeley,10,Local,20,
-Broadway Shuttle,11,Local,20,
-Emery Go Round,12,Local,20,
-Stanford Shuttles,13,Local,20,
-Caltrain Shuttles,14,Local,20,
-VTA Shuttles,15,Local,20,
-Palo Alto/Menlo Park Shuttles,16,Local,20,
-Wheels Ace Shuttles,17,Local,20,
-Amtrak Shuttles,18,Local,20,
-Burlingame Shuttle,19,Local,20,
-MUNI Cable Cars,20,Local,40,
-MUNI-Local,21,Local,40,Collapsed 3 MUNI local files into 1.
-Reserved,22,Local,,
-Reserved,23,Local,,
-SamTrans-Local,24,Local,40,Collapsed 4 SamTrans local files into 1.
-Reserved,25,Local,,
-Reserved,26,Local,,
-Reserved,27,Local,,
-SCVTA-Local,28,Local,40,Collapsed SCVTA local and limited.
-Reserved,29,Local,,
-AC Transit-Local,30,Local,40,Collapsed 3 AC Transit Files into 1.
-Reserved,31,Local,,
-Reserved,32,Local,,
-LAVTA-Local,33,Local,40,Collapsed 4 LAVTA local files into 1.
-Reserved,34,Local,,
-Reserved,35,Local,,
-Reserved,36,Local,,
-Reserved,37,Local,,
-Union City,38,Local,40,
-Reserved,39,Local,,
-AirBART,40,Local,40,
-Reserved,41,Local,,
-CCCTA-Local,42,Local,40,
-Reserved,43,Local,,
-Tri-Delta,44,Local,40,
-Reserved,45,Local,,
-WestCat-Local,46,Local,40,"ML30Z now in Westcat-Express, mode 89."
-Reserved,47,Local,,
-Reserved,48,Local,,
-Vallejo-Local,49,Local,40,"Bus to BART in Vallejo-Express, Mode 90."
-Reserved,50,Local,,
-Reserved,51,Local,,
-Fairfield-Local,52,Local,40,Local and citylink service collapsed.
-Reserved,53,Local,,
-Reserved,54,Local,,
-Amercian Canyon,55,Local,40,
-Vacaville,56,Local,40,
-Reserved,57,Local,,
-Benicia,58,Local,40,
-Reserved,59,Local,,
-Napa Transit,60,Local,40,Vine and NVT service collapsed into 1 file.
-Reserved,61,Local,,
-Reserved,62,Local,,
-Sonoma-Local,63,Local,40,Local and intercity collapsed into 1 file.
-Reserved,64,Local,,
-Reserved,65,Local,,
-Santa Rosa,66,Local,40,
-Reserved,67,Local,,
-Petaluma,68,Local,40,
-Reserved,69,Local,,
-Golden Gate Transit-Local,70,Local,40,Collapsed 3 GGT local services into 1.
-Reserved,71,Local,,
-Reserved,72,Local,,
-Reserved,73,Local,,
-Reserved,74,Local,,
-Reserved,75,Local,,
-Reserved,76,Local,,
-Reserved,77,Local,,
-Reserved,78,Local,,
-Reserved,79,Local,,
-SamTrans-Express,80,Express,40,
-SCVTA-Express,81,Express,40,
-Dumbarton-Express,82,Express,40,
-Reserved,83,Express,,
-AC Transbay,84,Express,40,
-AC Bus Rapid Transit (BRT),85,Express,40,
-CCCTA-Express,86,Express,40,
-Golden Gate Transit-Express,87,Express,40,"Formerly GGT SF, Marin to SF"
-Golden Gate Transit-Richmond,88,Express,40,Marin to Richmond
-MUNI Bus Rapid Transit (BRT),89,Express,40,
-Westcat-Express,90,Express,40,Includes ML30Z Service.
-Vallejo-Express,91,Express,40,BARTlink and former Benicia to BART.
-Fairfield-Express,92,Express,40,Includes service to BART (BARTlink).
-Reserved,93,Express,,
-Reserved,94,Express,,
-Reserved,95,Express,,
-Reserved,96,Express,,
-Reserved,97,Express,,
-Reserved,98,Express,,
-Reserved,99,Express,,
-East Bay Ferries,100,Ferry,250,
-Golden Gate Transit Ferry - Larkspur,101,Ferry,600,
-Golden Gate Transit Ferry - Sausalito,102,Ferry,600,
-Tiburon Ferry,103,Ferry,250,
-Vallejo Ferries,104,Ferry,330,
-Reserved,105,Ferry,,
-Reserved,106,Ferry,,
-Reserved,107,Ferry,,
-Reserved,108,Ferry,,
-Reserved,109,Ferry,,
-MUNI Metro,110,Light Rail,128,
-SCVTA-LRT,111,Light Rail,152,
-Reserved,112,Light Rail,,
-Reserved,113,Light Rail,,
-Reserved,114,Light Rail,,
-Reserved,115,Light Rail,,
-Reserved,116,Light Rail,,
-Reserved,117,Light Rail,,
-Reserved,118,Light Rail,,
-Reserved,119,Light Rail,,
-BART,120,Heavy Rail,525,
-Oakland Airport Connector (Future),121,Heavy Rail,280,
-Reserved,122,Heavy Rail,,
-Reserved,123,Heavy Rail,,
-Reserved,124,Heavy Rail,,
-Reserved,125,Heavy Rail,,
-Reserved,126,Heavy Rail,,
-Reserved,127,Heavy Rail,,
-Reserved,128,Heavy Rail,,
-Reserved,129,Heavy Rail,,
-Caltrain  ,130,Commuter Rail,700,
-Amtrak-Capitol Corridor,131,Commuter Rail,280,
-Amtrak-San Joaquins,132,Commuter Rail,280,
-ACE,133,Commuter Rail,280,
-Dumbarton Rail (Future),134,Commuter Rail,280,
-SMART (Future),135,Commuter Rail,280,
-E-BART (Future),136,Commuter Rail,280,
-High-Speed Rail (Future),137,Commuter Rail,280,
-Reserved,138,Commuter Rail,,
-Reserved,139,Commuter Rail,,
+Name,mode,Aggregate Mode,Seats
+Walk access connectors,1,Auxiliary,
+Drive access connectors,2,Auxiliary,
+Stop-to-stop and stop-to-station aux nodes,3,Auxiliary,
+Drive access walk funnel (lot) links,4,Auxiliary,
+Walk access walk funnel links,5,Auxiliary,
+Not used,6,Auxiliary,
+Not used,7,Auxiliary,
+Not used,8,Auxiliary,
+Not used,9,Auxiliary,
+West Berkeley,10,Local,20
+Broadway Shuttle,11,Local,20
+Emery Go Round,12,Local,20
+Stanford Shuttles,13,Local,20
+Caltrain Shuttles,14,Local,20
+VTA Shuttles,15,Local,20
+Palo Alto/Menlo Park Shuttles,16,Local,20
+Wheels Ace Shuttles,17,Local,20
+Amtrak Shuttles,18,Local,20
+Burlingame Shuttle,19,Local,20
+MUNI Cable Cars,20,Local,40
+MUNI-Local,21,Local,40
+Reserved,22,Local,
+Reserved,23,Local,
+SamTrans-Local,24,Local,40
+Reserved,25,Local,
+Reserved,26,Local,
+Reserved,27,Local,
+SCVTA-Local,28,Local,40
+Reserved,29,Local,
+AC Transit-Local,30,Local,40
+Reserved,31,Local,
+Reserved,32,Local,
+LAVTA-Local,33,Local,40
+Reserved,34,Local,
+Reserved,35,Local,
+Reserved,36,Local,
+Reserved,37,Local,
+Union City,38,Local,40
+Reserved,39,Local,
+AirBART,40,Local,40
+Reserved,41,Local,
+CCCTA-Local,42,Local,40
+Reserved,43,Local,
+Tri-Delta,44,Local,40
+Reserved,45,Local,
+WestCat-Local,46,Local,40
+Reserved,47,Local,
+Reserved,48,Local,
+Vallejo-Local,49,Local,40
+Reserved,50,Local,
+Reserved,51,Local,
+Fairfield-Local,52,Local,40
+Reserved,53,Local,
+Reserved,54,Local,
+Amercian Canyon,55,Local,40
+Vacaville,56,Local,40
+Reserved,57,Local,
+Benicia,58,Local,40
+Reserved,59,Local,
+Napa Transit,60,Local,40
+Reserved,61,Local,
+Reserved,62,Local,
+Sonoma-Local,63,Local,40
+Reserved,64,Local,
+Reserved,65,Local,
+Santa Rosa,66,Local,40
+Reserved,67,Local,
+Petaluma,68,Local,40
+Reserved,69,Local,
+Golden Gate Transit-Local,70,Local,40
+Reserved,71,Local,
+Reserved,72,Local,
+Reserved,73,Local,
+Reserved,74,Local,
+Reserved,75,Local,
+Reserved,76,Local,
+Reserved,77,Local,
+Reserved,78,Local,
+Reserved,79,Local,
+SamTrans-Express,80,Express,40
+SCVTA-Express,81,Express,40
+Dumbarton-Express,82,Express,40
+Reserved,83,Express,
+AC Transbay,84,Express,40
+AC Bus Rapid Transit (BRT),85,Express,40
+CCCTA-Express,86,Express,40
+Golden Gate Transit-Express,87,Express,40
+Golden Gate Transit-Richmond,88,Express,40
+MUNI Bus Rapid Transit (BRT),89,Express,40
+Westcat-Express,90,Express,40
+Vallejo-Express,91,Express,40
+Fairfield-Express,92,Express,40
+Reserved,93,Express,
+Reserved,94,Express,
+Reserved,95,Express,
+Reserved,96,Express,
+Reserved,97,Express,
+Reserved,98,Express,
+Reserved,99,Express,
+East Bay Ferries,100,Ferry,250
+Golden Gate Transit Ferry - Larkspur,101,Ferry,600
+Golden Gate Transit Ferry - Sausalito,102,Ferry,600
+Tiburon Ferry,103,Ferry,250
+Vallejo Ferries,104,Ferry,330
+Reserved,105,Ferry,
+Reserved,106,Ferry,
+Reserved,107,Ferry,
+Reserved,108,Ferry,
+Reserved,109,Ferry,
+MUNI Metro,110,Light Rail,128
+SCVTA-LRT,111,Light Rail,152
+Reserved,112,Light Rail,
+Reserved,113,Light Rail,
+Reserved,114,Light Rail,
+Reserved,115,Light Rail,
+Reserved,116,Light Rail,
+Reserved,117,Light Rail,
+Reserved,118,Light Rail,
+Reserved,119,Light Rail,
+BART,120,Heavy Rail,525
+Oakland Airport Connector (Future),121,Heavy Rail,280
+Reserved,122,Heavy Rail,
+Reserved,123,Heavy Rail,
+Reserved,124,Heavy Rail,
+Reserved,125,Heavy Rail,
+Reserved,126,Heavy Rail,
+Reserved,127,Heavy Rail,
+Reserved,128,Heavy Rail,
+Reserved,129,Heavy Rail,
+Caltrain  ,130,Commuter Rail,700
+Amtrak-Capitol Corridor,131,Commuter Rail,280
+Amtrak-San Joaquins,132,Commuter Rail,280
+ACE,133,Commuter Rail,280
+Dumbarton Rail (Future),134,Commuter Rail,280
+SMART (Future),135,Commuter Rail,280
+E-BART (Future),136,Commuter Rail,280
+High-Speed Rail (Future),137,Commuter Rail,280
+Reserved,138,Commuter Rail,
+Reserved,139,Commuter Rail,
