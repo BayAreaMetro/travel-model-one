@@ -30,7 +30,7 @@ Outputs summary.tde (named the same as the input file but with tde as the suffix
 #      and R_USER to be set (I used lzorn)
 import csv
 import dataextract as tde
-import pandas as pd
+import pandas
 import getopt
 import os
 import sys
@@ -93,11 +93,11 @@ def read_rdata(rdata_fullpath, src_to_scenario):
 
     # fillna
     for col in table_df.columns:
-        nullcount = sum(pd.isnull(table_df[col]))
+        nullcount = sum(pandas.isnull(table_df[col]))
         if nullcount > 0: print "  Found %5d NA values in column %s" % (nullcount, col)
     table_df = table_df.fillna(0)
     for col in table_df.columns:
-        nullcount = sum(pd.isnull(table_df[col]))
+        nullcount = sum(pandas.isnull(table_df[col]))
         if nullcount > 0: print "  -> Found %5d NA values in column %s" % (nullcount, col)
         return table_df
 
@@ -110,7 +110,7 @@ def read_dbf(dbf_fullpath, src_to_scenario):
     vars = dbfin.header
     data = dict([(var, dbfin.by_col(var)) for var in vars])
 
-    table_df = pd.DataFrame(data)
+    table_df = pandas.DataFrame(data)
 
     print "Read %d lines from %s" % (len(table_df), dbf_fullpath)
 
@@ -247,6 +247,9 @@ if __name__ == '__main__':
         # read join table
         for join_table_file in arg_join:
             join_df = pandas.read_csv(join_table_file)
+            # hack -- the csvs have lowercase 'mode' but the dbfs have uppercase
+            if 'MODE' in table_df.columns and 'mode' in join_df.columns:
+                join_df.rename(columns={'mode':'MODE'}, inplace=True)
             table_df = pandas.merge(table_df, join_df, how='left')
 
         # add the new column `src`
