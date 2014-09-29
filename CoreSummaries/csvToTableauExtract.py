@@ -215,11 +215,19 @@ if __name__ == '__main__':
     for csv_dirpath in csv_dirpaths:
         csv_fullpath = os.path.join(csv_dirpath, csv_filename)
         
+        # add the new column `src`
         src = os.path.split(csv_fullpath)[0] # remove the filename part of the path
-        (head,tail) = os.path.split(src)       # remove other tails from path
-        while head != "":
-            src = head
-            (head,tail) = os.path.split(src)
+        (head,tail) = os.path.split(src)      # remove one more dir from path (e.g. core_summaries)
+        src = head
+        (head,tail) = os.path.split(src)      # src is tail now
+        # this is a bit of a hack... figure out a better way
+        if tail != "OUTPUT":
+            src = tail
+        else:
+            (head,tail) = os.path.split(head)
+            src=tail
+        table_df['src'] = src
+        print "  - src is [%s]" % src
 
         scenario = 'unknown'
         # add the new column `Scenario`

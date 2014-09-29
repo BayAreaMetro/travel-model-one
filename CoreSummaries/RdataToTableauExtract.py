@@ -73,7 +73,7 @@ def read_scenario_key():
         print("Mapping src [%s] to Scenario [%s]" % (row['src'], row['Scenario']))
     return src_to_scenario
     
-def read_rdata(rdata_fullpath, src_to_scenario):
+def read_rdata(rdata_fullpath):
     """
     Returns the pandas DataFrame
     """
@@ -82,7 +82,7 @@ def read_rdata(rdata_fullpath, src_to_scenario):
 
     # we want forward slashes for R
     rdata_fullpath_forR = rdata_fullpath.replace("\\", "/")
-    # print "Loading %s" % rdata_fullpath_forR
+    print "Loading %s" % rdata_fullpath_forR
     
     # read in the data from the R session with python
     r.r("load('%s')" % rdata_fullpath_forR)
@@ -99,9 +99,11 @@ def read_rdata(rdata_fullpath, src_to_scenario):
     for col in table_df.columns:
         nullcount = sum(pandas.isnull(table_df[col]))
         if nullcount > 0: print "  -> Found %5d NA values in column %s" % (nullcount, col)
-        return table_df
+    
+    print "Read %d lines from %s" % (len(table_df), rdata_fullpath)
+    return table_df
 
-def read_dbf(dbf_fullpath, src_to_scenario):
+def read_dbf(dbf_fullpath):
     """
     Returns the pandas DataFrame
     """
@@ -240,9 +242,9 @@ if __name__ == '__main__':
     for data_dirpath in args[:-2]:
         data_fullpath = os.path.join(data_dirpath, data_filename)
         if data_filename.endswith(".rdata"):
-            table_df = read_rdata(data_fullpath, src_to_scenario)
+            table_df = read_rdata(data_fullpath)
         else:
-            table_df = read_dbf(data_fullpath, src_to_scenario)
+            table_df = read_dbf(data_fullpath)
 
         # read join table
         for join_table_file in arg_join:
@@ -254,27 +256,36 @@ if __name__ == '__main__':
 
         # add the new column `src`
         src = os.path.split(data_fullpath)[0] # remove the filename part of the path
-        (head,tail) = os.path.split(src)       # remove other tails from path
-        while head != "":
-            src = head
-            (head,tail) = os.path.split(src)
+        (head,tail) = os.path.split(src)      # remove one more dir from path (e.g. core_summaries)
+        src = head
+        (head,tail) = os.path.split(src)      # src is tail now
+        # this is a bit of a hack... figure out a better way
+        if tail != "OUTPUT":
+            src = tail
+        else:
+            (head,tail) = os.path.split(head)
+            src=tail
         table_df['src'] = src
+        print "  - src is [%s]" % src
 
         # add the new column `Scenario`
         if src_to_scenario:
+            scenario = 'unknown'
             if src in src_to_scenario:
-                table_df['Scenario'] = src_to_scenario[src]
-            else:
-                table_df['Scenario'] = 'unknown'
+                scenario = src_to_scenario[src]
+            print "  - Scenario is [%s]" % scenario
+            table_df['Scenario'] = 'unknown'
 
         # add time period
         if arg_timeperiod:
             table_df['timeperiod'] = arg_timeperiod
+            print "  - timeperiod is [%s]" % arg_timeperiod
 
         if set_fulltable==False: # it doesn't like checking if a dataFrame is none
             full_table_df = table_df
             set_fulltable = True
         else:
             full_table_df = full_table_df.append(table_df)
+        print "Full table has length %d" % len(full_table_df)
     
     write_tde(full_table_df, os.path.join(tde_dirpath, tde_filename), arg_append)
