@@ -1,10 +1,14 @@
 ::
 ::  Parameters (environment variables):
-::    CODE_DIR
-::    RDATA
-::    R_HOME
-::    RUN_NAME  : run name (e.g. 2010_04_ZZZ)
-::  Uses the RUN_NAME to set ITER, RUN_DIR, RUN_DESC
+::    CODE_DIR    : Location of CoreSummaries directory with the R and python code
+::                  (e.g. C:\Users\lzorn\Documents\Travel Model One Utilities\CoreSummaries)
+::    R_HOME      : Location of R (e.g. C:\Program Files\R\R-3.1.1)
+::    R_USER      : User.  (e.g same value as %USERNAME%)
+::    R_LIBS_USER : Location of R Libs (e.g. C:\Users\%R_USER%\Documents\R\win-library\3.1)
+::    RUN_NAME    : run name (e.g. 2010_04_ZZZ)
+::    RDATA       : The output .rdata files (e.g. ActiveTransport ActivityPattern AutomobileOwnership...)
+::
+::  Uses the RUN_NAME to set ITER, RUN_DIR
 ::  (Todo: Should these be in a better location?  Like M:\Application\Model One\Model Run Directory.xlsx?
 ::
 :: @echo off
@@ -16,7 +20,6 @@ set ITER=0
 if %RUN_NAME% EQU 2010_03_YYY (
   set ITER=3
   set RUN_DIR=B:\Projects\2010_03_YYY.archived
-  set RUN_DESC=Year 2010 (version 0.3)
 )
 if %RUN_NAME% EQU 2010_04_ZZZ (
   set ITER=3
@@ -32,19 +35,16 @@ if %RUN_NAME% EQU 2020_03_116 (
 if %RUN_NAME% EQU 2040_03_116 (
   set ITER=3
   set RUN_DIR=B:\Projects\2040_03_116.archived
-  set RUN_DESC=Year 2040, Plan (version 0.3)
 )
 
 if %RUN_NAME% EQU 2040_03_127 (
   set ITER=3
   set RUN_DIR=B:\Projects\2040_03_127.archived
-  set RUN_DESC=Year 2040, TIP 2015 (version 0.3)
 )
 
 if %RUN_NAME% EQU 2040_03_129 (
   set ITER=3
   set RUN_DIR=B:\Projects\2040_03_129.archived
-  set RUN_DESC=Year 2040, RTP 2013 (version 0.3)
 )
 
 if %ITER% EQU 0 (
@@ -53,7 +53,6 @@ if %ITER% EQU 0 (
 ) else (
   echo RUN_NAME    = %RUN_NAME%
   echo RUN_DIR     = %RUN_DIR%
-  echo RUN_DESC    = %RUN_DESC%
 )
 
 :: Input files will be copied into here
