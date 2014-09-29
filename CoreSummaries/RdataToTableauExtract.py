@@ -274,7 +274,7 @@ if __name__ == '__main__':
             if src in src_to_scenario:
                 scenario = src_to_scenario[src]
             print "  - Scenario is [%s]" % scenario
-            table_df['Scenario'] = 'unknown'
+            table_df['Scenario'] = scenario
 
         # add time period
         if arg_timeperiod:
