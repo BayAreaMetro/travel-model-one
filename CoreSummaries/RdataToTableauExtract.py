@@ -12,7 +12,7 @@ python dataToTableauExtract.py [--append] [--timeperiod code] [--join join.csv] 
     the file exists, the script will error
 
 Loops through the input dirs (one is ok) and reads the summary.(rdata|dbf) within.
-Convertes them into a Tableau Data Extract.
+Converts them into a Tableau Data Extract.
 
 Adds an additional column to the resulting output, `src`, which will contain the input file
 source of the data.  If the file "ScenarioKey.csv" exists in the current working directory,
