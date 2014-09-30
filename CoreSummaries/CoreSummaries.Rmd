@@ -1193,3 +1193,67 @@ model_summary <- vmt_summary # name it generically for rdata
 save(model_summary, file=file.path(TARGET_DIR, "core_summaries", "VehicleMilesTraveled.rdata"))
 remove(vmt_summary, model_summary)
 ```
+
+```{r VehicleMilesTraveled_Climate, error=FALSE}
+mandatory_locations <- tbl_df(read.table(file=file.path(TARGET_DIR,"main",
+                                                        paste0("wsLocResults_",ITER,".csv")), 
+                                         header=TRUE, sep=","))
+# we only want work_locations to have hh_id, person_id, workLocation
+work_locations      <- subset(mandatory_locations, WorkLocation>0)
+remove(mandatory_locations)
+work_locations      <- mutate(work_locations, hh_id=HHID, person_id=PersonID)
+work_locations      <- select(work_locations, hh_id, person_id, WorkLocation)
+
+# attach it to persons
+load(file=file.path(TARGET_DIR, "updated_output", "persons.rdata"))
+persons             <- left_join(persons, work_locations, by=c("hh_id", "person_id"))
+persons$WorkLocation[is.na(persons$WorkLocation)] <- 0    # change NA to 0
+# save, since we added something (WorkLocation)
+save(persons, file=file.path(TARGET_DIR, "updated_output", "persons.rdata"))
+
+# we only care about very specific vars
+vmt_persons <- select(persons, hh_id, person_id, taz, COUNTY, county_name, WorkLocation)
+remove(persons, work_locations)
+
+# we want: orig_taz, dest_taz, WorkLocation -> #persons, vmt
+
+# get the auto trips again
+load(file=file.path(TARGET_DIR,"updated_output","trips.rdata"))
+auto_trips <- subset(trips, trip_mode<=6)
+remove(trips)
+auto_trips <- mutate(auto_trips,
+                     vmt_indiv=(num_participants==1)*(trip_mode==1)*distance +
+                               (num_participants==1)*(trip_mode==2)*distance +
+                               (num_participants==1)*(trip_mode==3)*(distance/2.0) +
+                               (num_participants==1)*(trip_mode==4)*(distance/2.0) +
+                               (num_participants==1)*(trip_mode==5)*(distance/3.25) +
+                               (num_participants==1)*(trip_mode==6)*(distance/3.25),
+                     vmt_joint=(num_participants>1)*(distance/num_participants),
+                     vmt=vmt_indiv+vmt_joint,
+                     trips=1)
+auto_trips <- select(auto_trips, hh_id, person_id, orig_taz, dest_taz, vmt, vmt_indiv, vmt_joint, trips)
+auto_trips <- left_join(auto_trips, select(vmt_persons, hh_id, person_id, taz, WorkLocation), 
+                        by=c("hh_id","person_id"))
+
+# sum them to origin, destination, taz, WorkLocation
+auto_trips_melt  <- tbl_df(melt(select(auto_trips, -hh_id,-person_id),
+                           id.vars=c("orig_taz", "dest_taz", "taz", "WorkLocation")))
+auto_trips_odhw <- tbl_df(dcast(auto_trips_melt,orig_taz+dest_taz+taz+WorkLocation ~ variable, fun.aggregate=sum))
+remove(auto_trips, auto_trips_melt)
+
+# save it
+write.table(auto_trips_odhw,
+            file.path(TARGET_DIR,"core_summaries","AutoTripsVMT_perOrigDestHomeWork.csv"), sep=",", row.names=FALSE)
+model_summary <- auto_trips_odhw # name it generically for rdata
+save(model_summary, file=file.path(TARGET_DIR, "core_summaries", "AutoTripsVMT_perOrigDestHomeWork.rdata"))
+remove(auto_trips_odhw, model_summary)
+
+# that was trips/vmt - we also want persons
+person_hw_summary      <- summarise(group_by(vmt_persons, COUNTY, county_name, taz, WorkLocation),
+                                    freq = n())
+write.table(person_hw_summary,
+            file.path(TARGET_DIR,"core_summaries","AutoTripsVMT_personsHomeWork.csv"), sep=",", row.names=FALSE)
+model_summary <- person_hw_summary # name it generically for rdata
+save(model_summary, file=file.path(TARGET_DIR, "core_summaries", "AutoTripsVMT_personsHomeWork.rdata"))
+remove(person_hw_summary, model_summary)
+```
