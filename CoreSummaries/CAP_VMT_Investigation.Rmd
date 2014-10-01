@@ -1,0 +1,18 @@
+---
+title: "CAP VMT investigation"
+author: "Lisa Zorn"
+date: "Wednesday, October 01, 2014"
+output: html_document
+---
+```{r}
+library(knitr)
+library(dplyr)
+mandatory_locations <- tbl_df(read.table(file="C:/Users/lzorn/Documents/2010_03_YYY/main/wsLocResults_3.csv",
+                                         header=TRUE, sep=","))
+work_locs <- as.data.frame(table(mandatory_locations$WorkLocation))
+
+work_locs$Freq[work_locs$Var1==0]
+
+# Menlo Park TAZs according to M:\Application\Model One\Climate Action Plans\Scripts\CAPforMenloParkSPDE.sas
+work_locs$Freq[work_locs$Var1==331] + work_locs$Freq[work_locs$Var1==336] + work_locs$Freq[work_locs$Var1==337] + work_locs$Freq[work_locs$Var1==338] + work_locs$Freq[work_locs$Var1==340] + work_locs$Freq[work_locs$Var1==341] + work_locs$Freq[work_locs$Var1==343] + work_locs$Freq[work_locs$Var1==344] + work_locs$Freq[work_locs$Var1==345] + work_locs$Freq[work_locs$Var1==346] 
+```
