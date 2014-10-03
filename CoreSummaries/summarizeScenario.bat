@@ -17,36 +17,43 @@ setlocal enabledelayedexpansion
 set ITER=0
 
 :: look these up?
-if %RUN_NAME% EQU 2010_03_YYY (
+echo RUN_NAME=%RUN_NAME%
+if "%RUN_NAME%" == "2005_03_YYY" (
+  set ITER=3
+  set RUN_DIR=B:\Projects\2005_03_YYY.archived
+)
+
+if "%RUN_NAME%" == "2010_03_YYY" (
   set ITER=3
   set RUN_DIR=B:\Projects\2010_03_YYY.archived
 )
-if %RUN_NAME% EQU 2010_04_ZZZ (
+if "%RUN_NAME%" == "2010_04_ZZZ" (
   set ITER=3
   set RUN_DIR=B:\Projects\%RUN_NAME%.archived
 )
 
-if %RUN_NAME% EQU 2020_03_116 (
+if "%RUN_NAME%" == "2020_03_116" (
   :: use for testing -- short files
   set ITER=1
   set RUN_DIR=B:\Projects\2020_03_116.archived
 )
 
-if %RUN_NAME% EQU 2040_03_116 (
+if "%RUN_NAME%" == "2040_03_116" (
   set ITER=3
   set RUN_DIR=B:\Projects\2040_03_116.archived
 )
 
-if %RUN_NAME% EQU 2040_03_127 (
+if "%RUN_NAME%" EQU "2040_03_127" (
   set ITER=3
   set RUN_DIR=B:\Projects\2040_03_127.archived
 )
 
-if %RUN_NAME% EQU 2040_03_129 (
+if "%RUN_NAME%" EQU "2040_03_129" (
   set ITER=3
   set RUN_DIR=B:\Projects\2040_03_129.archived
 )
 
+echo ITER=!ITER!=%ITER%
 if %ITER% EQU 0 (
   echo Did not understand RUN_NAME [%RUN_NAME%].
   goto done
