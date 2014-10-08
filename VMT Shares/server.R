@@ -25,7 +25,7 @@ shinyServer(function(input, output) {
     "(Simulation Year 2010; Simulation ID: 2010_03_YYY)"
   })
   
-  output$table1 <- renderTable({
+  output$table1 <- renderDataTable({
     # Create taz_frame: data frame containing the TAZs in the input
     taz_str_list <- do.call("rbind", strsplit(input$tazs,","))
     taz_frame    <- data.frame(apply(taz_str_list, 2, as.numeric))
@@ -98,6 +98,16 @@ shinyServer(function(input, output) {
     all_summary$work_in_area[all_summary$work_in_area==-1] <- "Non-worker"
     
     all_summary
-  })
+  }, options = list("paging"=FALSE,      # no paging
+                    "searching"=FALSE,   # no search/filter boxes
+                    "columnDefs"= list(list("className"="alignRight",
+                                            "targets"=list(2,3,4,5,6,7)),
+                                       list("type"="num-fmt",
+                                            "targets"=list(2,3,4,5,6,7))
+                                       # list("render"="function(data,type,full,meta) { console.log('hi'); console.log(data); console.log(type); console.log(full); console.log(meta); return '123';}",
+                                       #      "targets"=list(2,3))
+                                       )
+                    )
+  )
   
 })

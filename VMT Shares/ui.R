@@ -21,6 +21,10 @@ shinyUI(fluidPage(
   
   h3(textOutput("text1")),
   h4(textOutput("text2")),
-  tableOutput("table1")
-
+  dataTableOutput("table1"),
+  # don't show the per-col filters
+  tags$head(
+    tags$style(".table .alignRight {text-align:right;}"),
+    tags$script(type="text/javascript",HTML("console.log('yo');"))
+  )
 ))
