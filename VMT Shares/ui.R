@@ -1,10 +1,24 @@
 library(shiny)
+library(leaflet)
 library(ggplot2)
-
-#dataset <- diamonds
 
 shinyUI(fluidPage(
   titlePanel("Passenger Vehicle Miles Traveled"),
+  
+  fluidRow(
+    column(12,
+           leafletMap("map","100%",400,
+                      initialTileLayer="//{s}.tiles.mapbox.com/v3/lmz.jni2k354/{z}/{x}/{y}.png",
+                      initialTileLayerAttribution = HTML('Maps by <a href="http://www.mapbox.com/">Mapbox</a>'),
+                      options=list(center=c(37.796864,-122.266018),
+                                   zoom=11)
+           ))
+  ),
+  fluidRow(
+    column(12,
+           htmlOutput("details")
+           )
+  ),
   
   fluidRow(
     column(4,
@@ -14,17 +28,22 @@ shinyUI(fluidPage(
     ),
     column(8,
            textInput("tazs", label=h4("TAZs of Interest"),
-                     value="1034,1035,1036,1037,1038,1039"),
-           helpText("List comma-separated TAZs. e.g. '1034,1035,1036,1037,1038,1039'")
+                     value=""),
+           helpText("List comma-separated TAZs. e.g."),
+           pre("1034,1035,1036,1037,1038,1039")
     )
   ),
   
   h3(textOutput("text1")),
   h4(textOutput("text2")),
   dataTableOutput("table1"),
-  # don't show the per-col filters
+  
   tags$head(
-    tags$style(".table .alignRight {text-align:right;}"),
+    # define right aligned columns
+    tags$style(paste(".table .alignRight {text-align:right;}",
+                     "input#tazs {display:block; width:95%; }",
+                     "pre {display:inline-block; }")),
+    # test javascript
     tags$script(type="text/javascript",HTML("console.log('yo');"))
   )
 ))

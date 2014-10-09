@@ -1,22 +1,80 @@
 library(shiny)
+library(leaflet)
+library(rjson)
 library(dplyr)
 library(reshape2)
 library(ggplot2)
 
 MAX_TAZ <- 1454
 
-load("C:/Users/lzorn/Documents/2010_03_YYY/core_summaries/AutoTripsVMT_personsHomeWork.rdata")
+taz_geojson <- fromJSON(file="data/mtc_taz_boundaries_1454_zone_system_simplify50pct.geojson")
+
+load("data/2010_03_YYY/AutoTripsVMT_personsHomeWork.rdata")
 persons_hwlocs <- model_summary
 remove(model_summary)
 print(head(persons_hwlocs))
 
-load("C:/Users/lzorn/Documents/2010_03_YYY/core_summaries/AutoTripsVMT_perOrigDestHomeWork.rdata")
+load("data/2010_03_YYY/AutoTripsVMT_perOrigDestHomeWork.rdata")
 vmt_hwlocs <- model_summary
 remove(model_summary)
 print(head(vmt_hwlocs))
 
-shinyServer(function(input, output) {
-
+shinyServer(function(input, output, session) {  
+  map <- createLeafletMap(session, "map")
+  
+  # session$onFlushed is necessary to delay the drawing of the polygons until
+  # after the map is created
+  session$onFlushed(once=TRUE, function() {
+    print(paste(Sys.time()," map$addGeoJSON starting"))
+    map$addGeoJSON(taz_geojson, "taz_geojson")
+    print(paste(Sys.time(), " map$addGeoJSON completed"))
+  })
+  
+  values <- reactiveValues(selectedFeature = NULL)
+  
+  observe({
+    print("observe1")
+    print(values)
+    evt <- input$map_click
+    print(evt)
+    if (is.null(evt))
+      return()
+    
+    isolate({
+      # An empty part of the map was clicked.
+      # Null out the selected feature.
+      values$selectedFeature <- NULL
+    })
+  })
+  
+  observe({
+    print("observe2")
+    evt <- input$map_geojson_click
+    print(evt)    
+    if (is.null(evt))
+      return()
+    
+    isolate({
+      # A GeoJSON feature was clicked. Save its properties
+      # to selectedFeature.
+      values$selectedFeature <- evt$properties
+      evt$properties$style <- list("color"="#fff")
+    })
+  })
+  
+  output$details <- renderText({
+    # Render values$selectedFeature, if it isn't NULL.
+    if (is.null(values$selectedFeature))
+      return(NULL)
+    as.character(tags$div(
+      tags$h3(values$selectedFeature$name),
+      tags$div(
+        "properties:",
+        values$selectedFeature
+      )
+    ))
+  })
+  
   output$text1 <- renderText({
     paste("Vehicle Miles Traveled for ",input$areaname)
   })
@@ -28,6 +86,12 @@ shinyServer(function(input, output) {
   output$table1 <- renderDataTable({
     # Create taz_frame: data frame containing the TAZs in the input
     taz_str_list <- do.call("rbind", strsplit(input$tazs,","))
+    print(length(taz_str_list))
+    if (length(taz_str_list)==0) {
+      return(list())
+    }
+    
+    
     taz_frame    <- data.frame(apply(taz_str_list, 2, as.numeric))
     names(taz_frame) <- c("taz")
     
