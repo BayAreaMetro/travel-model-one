@@ -1,9 +1,13 @@
 library(shiny)
-library(leaflet)
+
+
 library(rjson)
 library(dplyr)
 library(reshape2)
 library(ggplot2)
+# library(devtools)
+# devtools::install_github('jcheng5/leaflet-shiny')
+library(leaflet)
 
 MAX_TAZ <- 1454
 
@@ -25,9 +29,9 @@ shinyServer(function(input, output, session) {
   # session$onFlushed is necessary to delay the drawing of the polygons until
   # after the map is created
   session$onFlushed(once=TRUE, function() {
-    print(paste(Sys.time()," map$addGeoJSON starting"))
-    map$addGeoJSON(taz_geojson, "taz_geojson")
-    print(paste(Sys.time(), " map$addGeoJSON completed"))
+    #print(paste(Sys.time()," map$addGeoJSON starting"))
+    #map$addGeoJSON(taz_geojson, "taz_geojson")
+    #print(paste(Sys.time(), " map$addGeoJSON completed"))
   })
   
   values <- reactiveValues(selectedFeature = NULL)
