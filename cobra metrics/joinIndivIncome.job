@@ -1,0 +1,79 @@
+RUN PGM = MATRIX
+FILEI DBI[1] = 'main\IndivTripData_%ITER%.csv', delimiter=',',
+                  hh_id             = 1,
+                  person_id         = 2,
+                  person_num        = 3,
+                  tour_id           = 4,
+                  stop_id           = 5,
+                  inbound           = 6,
+                  tour_purpose(c)   = 7,
+                  orig_purpose(c)   = 8,
+                  dest_purpose(c)   = 9,
+                  orig_taz          = 10,
+                  orig_walk_segment = 11,
+                  dest_taz          = 12,
+                  dest_walk_segment = 13,
+                  parking_taz       = 14,
+                  depart_hour       = 15,
+                  trip_mode         = 16,
+                  tour_mode         = 17,
+                  tour_category(c)  = 18,
+               SORT=hh_id
+
+FILEI DBI[2]= 'main\householdData_%ITER%.csv', DELIMITER=',',
+                  hh_id		    = 1,
+                  taz  		    = 2,
+                  walk_subzone      = 3,
+                  income	    = 4, 
+                  autos		    = 5,	
+                  jtf_choice	    = 6,
+                  size	            = 7,
+                  workers           = 8,	
+                  auto_suff(c)      = 9,
+                SORT=hh_id, JOINTODBI=1 JOINTOFIELDS=hh_id
+
+FILEO PRINTO[1] = "main\IndivTripDataIncome_%ITER%.csv"
+                                                                                    
+ZONES=1   
+
+; Ignore header (K =1)
+LOOP K=2,DBI.1.NUMRECORDS
+;LOOP K=2,100 ; turn-on only for testing
+
+     X1=DBIReadRecord(1,K)  
+        
+                  T_hh_id             = DI.1.hh_id
+                  T_person_id         = DI.1.person_id
+                  T_person_num        = DI.1.person_num
+                  T_tour_id           = DI.1.tour_id 
+                  T_stop_id           = DI.1.stop_id 
+                  T_inbound           = DI.1.inbound
+                  T_tour_purpose      = DI.1.tour_purpose
+                  T_orig_purpose      = DI.1.orig_purpose 
+                  T_dest_purpose      = DI.1.dest_purpose
+                  T_orig_taz          = DI.1.orig_taz 
+                  T_orig_walk_segment = DI.1.orig_walk_segment
+                  T_dest_taz          = DI.1.dest_taz 
+                  T_dest_walk_segment = DI.1.dest_walk_segment
+                  T_parking_taz       = DI.1.parking_taz 
+                  T_depart_hour       = DI.1.depart_hour 
+                  T_trip_mode         = DI.1.trip_mode
+                  T_tour_mode         = DI.1.tour_mode 
+                  T_tour_category     = DI.1.tour_category
+                  T_income	      = DI.2.income
+
+; Print Header at K==2
+IF (K==2) PRINT PRINTO=1 CSV=T LIST= 'hh_id', 'person_id', 'person_num','tour_id',
+                  'stop_id', 'inbound', 'tour_purpose', 'orig_purpose', 
+                  'dest_purpose', 'orig_taz', 'orig_walk_segment', 'dest_taz',
+                  'dest_walk_segment', 'parking_taz','depart_hour','trip_mode',
+                  'tour_mode', 'tour_category', 'income'
+
+IF(K>1) PRINT PRINTO=1 CSV=T LIST= T_hh_id, T_person_id, T_person_num,T_tour_id,
+                  T_stop_id, T_inbound, T_tour_purpose, T_orig_purpose, 
+                  T_dest_purpose, T_orig_taz, T_orig_walk_segment, T_dest_taz,
+                  T_dest_walk_segment, T_parking_taz,T_depart_hour,T_trip_mode,
+                  T_tour_mode, T_tour_category, T_income
+ENDLOOP
+
+ENDRUN                  

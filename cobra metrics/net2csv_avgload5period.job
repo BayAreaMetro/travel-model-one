@@ -1,0 +1,114 @@
+
+;
+; This is the same as the last part of CTRAMP\scripts\feedback\MergeNetworks.job
+; except it also exports the volume by vehicle class fields (volXX_da, volXX_s2, etc.)
+;
+
+; set the current iteration DOS token as a TP+ token
+token_current_iteration = '%ITER%'
+
+; step three: dump the network to a csv file
+run pgm = network
+
+   filei neti = hwy\iter@token_current_iteration@\avgload5period.net
+   fileo printo[1] = hwy\iter@token_current_iteration@\avgload5period_vehclasses.csv
+
+   phase = linkmerge
+   
+      if (_doOnce = 0)
+      
+          print CSV=T, list = 
+                "a",
+                "b",
+                "distance",
+                "lanes",
+                "gl",
+                "use",
+                "ft",
+                "at",
+                "cap",
+                "ffs",
+                "fft",
+                "cspdEA",
+                "cspdAM",
+                "cspdMD",
+                "cspdPM",
+                "cspdEV",
+                "volEA_tot",
+                "volAM_tot",
+                "volMD_tot",
+                "volPM_tot",
+                "volEV_tot",
+                "ctimEA",
+                "ctimAM",
+                "ctimMD",
+                "ctimPM",
+                "ctimEV",
+                "vcEA",
+                "vcAM",
+                "vcMD",
+                "vcPM",
+                "vcEV",
+                "volEA_da",    "volAM_da",    "volMD_da",    "volPM_da",    "volEV_da",
+                "volEA_s2",    "volAM_s2",    "volMD_s2",    "volPM_s2",    "volEV_s2",
+                "volEA_s3",    "volAM_s3",    "volMD_s3",    "volPM_s3",    "volEV_s3",
+                "volEA_sm",    "volAM_sm",    "volMD_sm",    "volPM_sm",    "volEV_sm",
+                "volEA_hv",    "volAM_hv",    "volMD_hv",    "volPM_hv",    "volEV_hv",
+                "volEA_dat",   "volAM_dat",   "volMD_dat",   "volPM_dat",   "volEV_dat",
+                "volEA_s2t",   "volAM_s2t",   "volMD_s2t",   "volPM_s2t",   "volEV_s2t",
+                "volEA_s3t",   "volAM_s3t",   "volMD_s3t",   "volPM_s3t",   "volEV_s3t",
+                "volEA_smt",   "volAM_smt",   "volMD_smt",   "volPM_smt",   "volEV_smt",
+                "volEA_hvt",   "volAM_hvt",   "volMD_hvt",   "volPM_hvt",   "volEV_hvt",
+                printo=1
+         
+         _doOnce = 1
+      
+      endif
+   
+      print CSV=T, list = 
+             A(8.0L),
+             B(8.0L),
+             DISTANCE(8.2L),
+             LANES(4L),
+             GL(4.0L),
+             USE(4.0L),
+             FT(4.0L),
+             AT(4.0L),
+             CAP(8.0L),
+             FFS(8.2L),
+             FFT(8.2L),
+             cspdEA(8.2L),
+             cspdAM(8.2L),
+             cspdMD(8.2L),
+             cspdPM(8.2L),
+             cspdEV(8.2L),
+             volEA_tot(12.2L),
+             volAM_tot(12.2L),
+             volMD_tot(12.2L),
+             volPM_tot(12.2L),
+             volEV_tot(12.2L),
+             ctimEA(8.2L),
+             ctimAM(8.2L),
+             ctimMD(8.2L),
+             ctimPM(8.2L),
+             ctimEV(8.2L),
+             vcEA(8.4L),
+             vcAM(8.4L),
+             vcMD(8.4L),
+             vcPM(8.4L),
+             vcEV(8.4L),
+             volEA_da(12.2L),  volAM_da(12.2L),  volMD_da(12.2L),  volPM_da(12.2L),  volEV_da(12.2L),
+             volEA_s2(12.2L),  volAM_s2(12.2L),  volMD_s2(12.2L),  volPM_s2(12.2L),  volEV_s2(12.2L),
+             volEA_s3(12.2L),  volAM_s3(12.2L),  volMD_s3(12.2L),  volPM_s3(12.2L),  volEV_s3(12.2L),
+             volEA_sm(12.2L),  volAM_sm(12.2L),  volMD_sm(12.2L),  volPM_sm(12.2L),  volEV_sm(12.2L),
+             volEA_hv(12.2L),  volAM_hv(12.2L),  volMD_hv(12.2L),  volPM_hv(12.2L),  volEV_hv(12.2L),
+             volEA_dat(12.2L), volAM_dat(12.2L), volMD_dat(12.2L), volPM_dat(12.2L), volEV_dat(12.2L),
+             volEA_s2t(12.2L), volAM_s2t(12.2L), volMD_s2t(12.2L), volPM_s2t(12.2L), volEV_s2t(12.2L),
+             volEA_s3t(12.2L), volAM_s3t(12.2L), volMD_s3t(12.2L), volPM_s3t(12.2L), volEV_s3t(12.2L),
+             volEA_smt(12.2L), volAM_smt(12.2L), volMD_smt(12.2L), volPM_smt(12.2L), volEV_smt(12.2L),
+             volEA_hvt(12.2L), volAM_hvt(12.2L), volMD_hvt(12.2L), volPM_hvt(12.2L), volEV_hvt(12.2L),
+             printo=1
+   
+   endphase
+   
+endrun

@@ -1,0 +1,123 @@
+; produces two tables (csvs)
+; VMT and VHT by timeperiod and class
+
+; set the current iteration DOS token as a TP+ token
+token_current_iteration = '%ITER%'
+
+*echo ,DA,S2,S3,SM,HV,DAT,S2T,S3T,SMT,HVT > metrics\VMT_by_timeperiod_vehclass.csv
+*echo timeperiod,DA,S2,S3,SM,HV,DAT,S2T,S3T,SMT,HVT > metrics\VHT_by_timeperiod_vehclass.csv
+*echo timeperiod,DA,S2,S3,SM,HV,DAT,S2T,S3T,SMT,HVT > metrics\VFFHT_by_timeperiod_vehclass.csv
+*echo timeperiod,delay_hours > metrics\hours_nonrecurring_delay_by_timeperiod.csv
+
+loop period = 1, 5
+   
+   ; a two letter token is used for each time period
+   if (period = 1)   
+      token_period = 'EA'   
+  
+   elseif (period = 2)   
+      token_period = 'AM'    
+  
+   elseif (period = 3)   
+      token_period = 'MD'    
+  
+   elseif (period = 4)   
+      token_period = 'PM'
+  
+   elseif (period = 5)   
+      token_period = 'EV'
+      
+   endif
+
+run pgm = network
+
+   filei neti[1] = hwy\iter@token_current_iteration@\avgload5period.net
+   fileo LINkO   = hwy\iter@token_current_iteration@\avgload5period_exported.dbf, format=dbf
+
+   lookup name=nrdelay,
+    LOOKUP[1]=1, RESULT=2,
+    LOOKUP[2]=1, RESULT=3,
+    LOOKUP[3]=1, RESULT=4,
+    SETUPPER=T, LIST=y,
+    file="%CODE_DIR%\nonRecurringDelayLookup.csv"
+
+   fileo printo[1] = metrics\VMT_by_timeperiod_vehclass.csv, append=T
+   fileo printo[2] = metrics\VHT_by_timeperiod_vehclass.csv, append=T
+   fileo printo[3] = metrics\VFFHT_by_timeperiod_vehclass.csv, append=T
+   fileo printo[4] = metrics\hours_nonrecurring_delay_by_timeperiod.csv, append=T
+   
+   ; vehicle miles
+   _vmt_da  = _vmt_da  + vol@token_period@_da*distance
+   _vmt_s2  = _vmt_s2  + vol@token_period@_s2*distance
+   _vmt_s3  = _vmt_s3  + vol@token_period@_s3*distance
+   _vmt_sm  = _vmt_sm  + vol@token_period@_sm*distance
+   _vmt_hv  = _vmt_hv  + vol@token_period@_hv*distance
+
+   _vmt_dat = _vmt_dat + vol@token_period@_dat*distance
+   _vmt_s2t = _vmt_s2t + vol@token_period@_s2t*distance
+   _vmt_s3t = _vmt_s3t + vol@token_period@_s3t*distance
+   _vmt_smt = _vmt_smt + vol@token_period@_smt*distance
+   _vmt_hvt = _vmt_hvt + vol@token_period@_hvt*distance
+
+   ; vehicle hours
+   _vht_da  = _vht_da  + vol@token_period@_da*ctim@token_period@ / 60.0
+   _vht_s2  = _vht_da  + vol@token_period@_s2*ctim@token_period@ / 60.0
+   _vht_s3  = _vht_da  + vol@token_period@_s3*ctim@token_period@ / 60.0
+   _vht_sm  = _vht_da  + vol@token_period@_sm*ctim@token_period@ / 60.0
+   _vht_hv  = _vht_da  + vol@token_period@_hv*ctim@token_period@ / 60.0
+
+   _vht_dat  = _vht_dat + vol@token_period@_dat*ctim@token_period@ / 60.0
+   _vht_s2t  = _vht_dat + vol@token_period@_s2t*ctim@token_period@ / 60.0
+   _vht_s3t  = _vht_dat + vol@token_period@_s3t*ctim@token_period@ / 60.0
+   _vht_smt  = _vht_dat + vol@token_period@_smt*ctim@token_period@ / 60.0
+   _vht_hvt  = _vht_dat + vol@token_period@_hvt*ctim@token_period@ / 60.0
+
+   ; vehicle free flow hours
+   _vht_ff_da  = _vht_ff_da  + vol@token_period@_da*fft / 60.0
+   _vht_ff_s2  = _vht_ff_s2  + vol@token_period@_s2*fft / 60.0
+   _vht_ff_s3  = _vht_ff_s3  + vol@token_period@_s3*fft / 60.0
+   _vht_ff_sm  = _vht_ff_sm  + vol@token_period@_sm*fft / 60.0
+   _vht_ff_hv  = _vht_ff_hv  + vol@token_period@_hv*fft / 60.0
+   
+   _vht_ff_dat = _vht_ff_dat + vol@token_period@_dat*fft / 60.0
+   _vht_ff_s2t = _vht_ff_s2t + vol@token_period@_s2t*fft / 60.0
+   _vht_ff_s3t = _vht_ff_s3t + vol@token_period@_s3t*fft / 60.0
+   _vht_ff_smt = _vht_ff_smt + vol@token_period@_smt*fft / 60.0
+   _vht_ff_hvt = _vht_ff_hvt + vol@token_period@_hvt*fft / 60.0
+
+   ; only for freeway-to-freeway connectors and freeways
+   if (FT < 3)
+       ; idx 1 means 2 lanes
+       ; idx 2 means 3 lanes
+       ; idx 3 means 4 lanes
+       _lane_idx = lanes - 1
+       if (_lane_idx < 1) _lane_idx = 1
+       if (_lane_idx > 3) _lane_idx = 3
+    
+       print list="look up for ",vc@token_period@(6.4), " is ",
+         nrdelay(_lane_idx,vc@token_period@)(11.9S),
+         " (", lanes, " lanes), "
+    
+       _vmt = vol@token_period@_da*distance + vol@token_period@_dat*distance +
+              vol@token_period@_s2*distance + vol@token_period@_s2t*distance +
+              vol@token_period@_s3*distance + vol@token_period@_s3t*distance +
+              vol@token_period@_sm*distance + vol@token_period@_smt*distance +
+              vol@token_period@_hv*distance + vol@token_period@_hvt*distance
+    
+       _nrcdelay = _nrcdelay + _vmt*nrdelay(_lane_idx,vc@token_period@)
+   ENDIF
+
+   phase = summary
+      print CSV=T, LIST="@token_period@",
+         _vmt_da, _vmt_s2, _vmt_s3, _vmt_sm, _vmt_hv,
+         _vmt_dat,_vmt_s2t,_vmt_s3t,_vmt_smt,_vmt_hvt, PRINTO=1
+      print CSV=T, LIST="@token_period@",
+         _vht_da, _vht_s2, _vht_s3, _vht_sm, _vht_hv,
+         _vht_dat,_vht_s2t,_vht_s3t,_vht_smt,_vht_hvt, PRINTO=2
+      print CSV=T, LIST="@token_period@",
+         _vht_ff_da, _vht_ff_s2, _vht_ff_s3, _vht_ff_sm, _vht_ff_hv,
+         _vht_ff_dat,_vht_ff_s2t,_vht_ff_s3t,_vht_ff_smt,_vht_ff_hvt, PRINTO=3
+      print CSV=T, LIST="@token_period@", _nrcdelay, PRINTO=4
+   endphase
+endrun
+endloop

@@ -1,0 +1,146 @@
+*del metrics\auto_times.csv
+
+; ADD AUTO MODE SUMMARY TO THE ABOVE TRANSIT MODE SUMMARIES
+; 3.  Trips per day by income quartile and mode
+; 5.  Average travel time by mode and income quartile
+; 6.  Average travel cost by mode and income quartile
+; Loop thru time periods
+  loop inc = 1,4                     
+   if (inc = 1)  token_inc   = 'inc1'
+   if (inc = 2)  token_inc   = 'inc2'
+   if (inc = 3)  token_inc   = 'inc3'
+   if (inc = 4)  token_inc   = 'inc4'
+ 
+; Loop thru Auto modes 
+  loop auto = 1,6
+   if (auto  = 1)  
+   	token_auto  = 'da'
+   	token_time  = 'TIMEDA'
+   	token_dist  = 'DISTDA'
+   	token_Btoll = 'BTOLLDA' 
+        token_vtoll = '1'   ;There are no value toll but some specification is required for CUBE to use this token name
+   elseif (auto  = 2)  
+   	token_auto  = 'datoll'
+   	token_time  = 'TOLLTIMEDA'
+   	token_dist  = 'TOLLDISTDA'
+   	token_btoll = 'TOLLBTOLLDA' 
+   	token_vtoll = 'TOLLVTOLLDA'
+   elseif (auto  = 3)  
+   	token_auto  = 'sr2'
+   	token_time  = 'TIMES2'
+   	token_dist  = 'DISTS2'
+   	token_btoll = 'BTOLLS2' 
+        token_vtoll = '1'  ;There are no value toll but some specification is required for CUBE to use this token name
+   elseif (auto  = 4)  
+   	token_auto  = 'sr2toll' 
+   	token_time  = 'TOLLTIMES2'
+   	token_dist  = 'TOLLDISTS2'
+   	token_btoll = 'TOLLBTOLLS2' 
+   	token_vtoll = 'TOLLVTOLLS2'   	
+   elseif (auto  = 5)  
+   	token_auto  = 'sr3'
+      	token_time  = 'TIMES3'
+      	token_dist  = 'DISTS3'
+      	token_btoll = 'BTOLLS3' 
+        token_vtoll = '1'  ;There are no value toll but some specification is required for CUBE to use this token name
+   elseif (auto  = 6)  
+   	token_auto  = 'sr3toll' 
+      	token_time  = 'TOLLTIMES3'
+      	token_dist  = 'TOLLDISTS3'
+      	token_btoll = 'TOLLBTOLLS3' 
+   	      token_vtoll = 'TOLLVTOLLS3'    
+   endif
+  ; Read Auto Operating Cost from Properties file
+  Read File = "CTRAMP\scripts\block\hwyParam.block"
+    
+  RUN PGM = MATRIX
+  ; Read person trips for a transitmode for all time periods and Access+Egress combinations
+     FILEI MATI[1] = "main\tripsEA@token_inc@.tpp"   
+     FILEI MATI[2] = "main\tripsAM@token_inc@.tpp"   
+     FILEI MATI[3] = "main\tripsMD@token_inc@.tpp"   
+     FILEI MATI[4] = "main\tripsPM@token_inc@.tpp"   
+     FILEI MATI[5] = "main\tripsEV@token_inc@.tpp"  
+  
+  ; Read Highway Skims   
+     FILEI MATI[6] = "skims\HWYSKMEA.tpp"
+     FILEI MATI[7] = "skims\HWYSKMAM.tpp"
+     FILEI MATI[8] = "skims\HWYSKMMD.tpp"
+     FILEI MATI[9] = "skims\HWYSKMPM.tpp"
+     FILEI MATI[10]= "skims\HWYSKMEV.tpp"
+     
+     FILEO PRINTO[1] = "metrics\auto_times.csv",APPEND=T 
+
+     ; Trips EA * Skims EA  
+      MW[1]   = mi.1.@token_auto@ * mi.6.@token_time@ 
+      MW[2]   = mi.1.@token_auto@ * mi.6.@token_dist@
+      if (@auto@ == 1 | @auto@ == 3 | @auto@ == 5) 
+        ; Trip Cost = Trips * (Value Toll + Bridge Toll + (Distance * Auto Operating Cost)) 
+      	MW[3]   = mi.1.@token_auto@ * (mi.6.@token_btoll@ + (mi.6.@token_dist@ * @AUTOOPCOST@))
+      else 	
+      	MW[3]   = mi.1.@token_auto@ * (mi.6.@token_vtoll@ + mi.6.@token_btoll@ + (mi.6.@token_dist@ * @AUTOOPCOST@))
+      endif
+      
+     ; Trips AM * Skims AM  
+      MW[4]   = mi.2.@token_auto@ * mi.7.@token_time@ 
+      MW[5]   = mi.2.@token_auto@ * mi.7.@token_dist@
+      if (@auto@ == 1 | @auto@ == 3 | @auto@ == 5) 
+      	MW[6]   = mi.2.@token_auto@ * (mi.7.@token_btoll@ + (mi.7.@token_dist@ * @AUTOOPCOST@))
+      else 	
+      	MW[6]   = mi.2.@token_auto@ * (mi.7.@token_vtoll@ + mi.7.@token_btoll@ + (mi.7.@token_dist@ * @AUTOOPCOST@))
+      endif     
+ 
+      ; Trips MD * Skims MD  
+       MW[7]   = mi.3.@token_auto@ * mi.8.@token_time@ 
+       MW[8]   = mi.3.@token_auto@ * mi.8.@token_dist@
+      if (@auto@ == 1 | @auto@ == 3 | @auto@ == 5) 
+      	MW[9]   = mi.3.@token_auto@ * (mi.8.@token_btoll@ + (mi.8.@token_dist@ * @AUTOOPCOST@))
+      else 	
+      	MW[9]   = mi.3.@token_auto@ * (mi.8.@token_vtoll@ + mi.8.@token_btoll@ + (mi.8.@token_dist@ * @AUTOOPCOST@))
+      endif 
+    
+
+     ; Trips PM * Skims PM  
+      MW[10]   = mi.4.@token_auto@ * mi.9.@token_time@ 
+      MW[11]   = mi.4.@token_auto@ * mi.9.@token_dist@
+      if (@auto@ == 1 | @auto@ == 3 | @auto@ == 5) 
+      	MW[12]   = mi.4.@token_auto@ * (mi.9.@token_btoll@ + (mi.9.@token_dist@ * @AUTOOPCOST@))
+      else 	
+      	MW[12]   = mi.4.@token_auto@ * (mi.9.@token_vtoll@ + mi.9.@token_btoll@ + (mi.9.@token_dist@ * @AUTOOPCOST@))
+      endif 
+
+     ; Trips EV * Skims EV 
+      MW[13]   = mi.5.@token_auto@ * mi.10.@token_time@ 
+      MW[14]   = mi.5.@token_auto@ * mi.10.@token_dist@
+      if (@auto@ == 1 | @auto@ == 3 | @auto@ == 5) 
+      	MW[15]   = mi.5.@token_auto@ * (mi.10.@token_btoll@ + (mi.10.@token_dist@ * @AUTOOPCOST@))
+      else 	
+      	MW[15]   = mi.5.@token_auto@ * (mi.10.@token_vtoll@ + mi.10.@token_btoll@ + (mi.10.@token_dist@ * @AUTOOPCOST@))
+      endif 
+        
+     ; Compute Daily Trips, TripTime, TripDist, TripCost
+     MW[16] = mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
+     MW[17] = MW[1]+MW[4]+MW[7]+MW[10]+MW[13]  ; TripTime
+     MW[18] = MW[2]+MW[5]+MW[8]+MW[11]+MW[14]  ; TripDist
+     MW[19] = MW[3]+MW[6]+MW[9]+MW[12]+MW[15]  ; TripCost     
+     
+     JLOOP          
+      Daily_Trips = Daily_Trips + MW[16]
+      TripTime   = TripTime + MW[17]
+      TripDist   = TripDist + MW[18]
+      TripCost   = TripCost + MW[19]
+     ENDJLOOP
+    
+       Trips = Daily_Trips
+       if (Trips <>0)
+        Avg_time = TripTime/Trips
+        Avg_dist = TripDist/Trips
+        Avg_Cost = TripCost/Trips
+       Endif
+      Mode   = '@token_auto@'
+      Income = '@token_inc@'
+      
+      if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=1 LIST="Income,Mode,Daily Trips,Avg Time,Avg Dist,Avg Cost"
+      if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Income, Mode, Trips(10.2L), Avg_time(10.2L), Avg_dist(10.2L), Avg_Cost(10.2L)
+    ENDRUN
+endloop
+endloop
