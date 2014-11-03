@@ -9,7 +9,7 @@ set ITER=1
 set SAMPLESHARE=0.15
 :: ALL_PROJECT_METRICS_DIR=the location to collect all the metrics files from projects.
 :: These will be rolled up into a single dashboard.
-set ALL_PROJECT_METRICS_DIR=..
+set ALL_PROJECT_METRICS_DIR=..\all_project_metrics
 
 :: Required input file:  INPUT\metrics\BC_config.csv
 if not exist metrics (mkdir metrics)
@@ -24,22 +24,22 @@ if not exist metrics\autos_owned.csv (
   rem Tally auto ownership from household data
   rem Input: main\householdData_%ITER%.csv
   rem Output: metrics\autos_owned.csv
-  python %CODE_DIR%\tallyAutos.py
+  python "%CODE_DIR%\tallyAutos.py"
 )
 
-if not exist main\IndivTripDataIncome.csv (
+if not exist main\IndivTripDataIncome_%ITER%.csv (
   rem Attach income to individual trips
   rem Input : main\IndivTripData_%ITER%.csv,  main\householdData_%ITER%.csv
   rem Output: main\IndivTripDataIncome.csv 
-  runtpp %CODE_DIR%\joinIndivIncome.job
+  runtpp "%CODE_DIR%\joinIndivIncome.job"
   IF ERRORLEVEL 2 goto error
 )
 
-if not exist main\JointTripDataIncome.csv (
+if not exist main\JointTripDataIncome_%ITER%.csv (
   rem Attach income to joint trips
   rem Input : main\JointTripData_%ITER%.csv, main\householdData_%ITER%.csv
   rem Output: main\JointTripDataIncome.csv
-  runtpp %CODE_DIR%\joinJointIncome.job
+  runtpp "%CODE_DIR%\joinJointIncome.job"
   IF ERRORLEVEL 2 goto error
 )
 
@@ -50,7 +50,7 @@ if not exist main\tripsEV.tpp (
   rem         main\Jointrips(EA|AM|MD|PM|EV)inc[1-4].dat
   rem         main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp,
   rem         main\trips(EA|AM|MD|PM|EV).tpp
-  runtpp %CODE_DIR%\prepAssignIncome.job
+  runtpp "%CODE_DIR%\prepAssignIncome.job"
   IF ERRORLEVEL 2 goto error
 )
 
@@ -60,7 +60,7 @@ if not exist metrics\transit_times_by_mode_income.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
   rem Input : trips(EA|AM|MD|PM|EV).tpp, transit skims
   rem Output: metrics\transit_times.csv
-  runtpp %CODE_DIR%\sumTransitTimes.job
+  runtpp "%CODE_DIR%\sumTransitTimes.job"
   if ERRORLEVEL 2 goto error
 )
 
@@ -68,7 +68,7 @@ if not exist metrics\auto_times.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
   rem Input : trips(EA|AM|MD|PM|EV).tpp, hwy skims
   rem Output: metrics\auto_times.csv
-  runtpp %CODE_DIR%\sumAutoTimes.job
+  runtpp "%CODE_DIR%\sumAutoTimes.job"
   if ERRORLEVEL 2 goto error
 )
 
@@ -76,7 +76,7 @@ if not exist metrics\nonmot_times.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
   rem Input : trips(EA|AM|MD|PM|EV).tpp, hwy skims
   rem Output: metrics\nonmot_times.csv
-  runtpp %CODE_DIR%\sumNonmotTimes.job
+  runtpp "%CODE_DIR%\sumNonmotTimes.job"
   if ERRORLEVEL 2 goto error
 )
 
@@ -84,7 +84,7 @@ if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
   rem Export network to csv version (with vehicle class volumn columns intact)
   rem Input : hwy\iter%ITER%\avgload5period.net
   rem Output: hwy\iter%ITER%\avgload5period_vehclasses.csv
-  runtpp %CODE_DIR%\net2csv_avgload5period.job
+  runtpp "%CODE_DIR%\net2csv_avgload5period.job"
   IF ERRORLEVEL 2 goto error
 )
 
@@ -92,7 +92,7 @@ if not exist metrics\vmt_vht_metrics.csv (
   rem Summarize network links to vmt, vht, and other collision and emissions estimations
   rem Input: hyw\iter%ITER%\avgload5period_vehclasses.csv
   rem Output: metrics\vmt_vht_metrics.csv
-  call python %CODE_DIR%\hwynet.py hwy\iter%ITER%\avgload5period_vehclasses.csv
+  call python "%CODE_DIR%\hwynet.py" hwy\iter%ITER%\avgload5period_vehclasses.csv
   IF ERRORLEVEL 2 goto error
 )
 
@@ -101,7 +101,7 @@ if not exist trn\quickboards.xls (
   rem Input: trn\trnlink[timperiod]_[acc]_[trnmode]_[egr].dbf, quickboards.ctl
   rem Output: trn\quickboards.xls
   cd trn
-  call quickboards %CODE_DIR%\quickboards.ctl quickboards.xls
+  call quickboards "%CODE_DIR%\quickboards.ctl" quickboards.xls
   cd ..
 )
 
@@ -110,10 +110,10 @@ if not exist metrics\transit_boards_miles.csv (
   rem Summarize quickboards output to pull daily boardings and passenger miles
   rem Input: trn\quickboards.xls
   rem Output: metrics\transit_board_miles.csv
-  call python %CODE_DIR%\transit.py trn\quickboards.xls
+  call python "%CODE_DIR%\transit.py" trn\quickboards.xls
 )
 
-python %CODE_DIR%\RunResults.py metrics %ALL_PROJECT_METRICS_DIR%
+python "%CODE_DIR%\RunResults.py" metrics %ALL_PROJECT_METRICS_DIR%
 
 :error
 echo ERRORLEVEL=%ERRORLEVEL%
