@@ -3,6 +3,7 @@ import collections
 import operator
 import os
 import re
+import string
 import sys
 
 import pandas as pd     # yay for DataFrames and Series!
@@ -23,7 +24,13 @@ class RunResults:
     """
 
     # Required keys for each project in the BC_config.csv
-    REQUIRED_KEYS = ['Project ID','Project Name','County','Project Type','Project Capital Costs','Net Annual O&M Costs']
+    REQUIRED_KEYS = [
+      'Project ID',
+      'Project Name',
+      'County',
+      'Project Type',
+      'Project Capital Costs (millions of $2013)',
+      'Net Annual O&M Costs (millions of $2013)']
 
     # Do these ever change?  Should they go into BC_config.csv?
     PROJECTED_2040_POPULATION   = 9299150
@@ -87,13 +94,13 @@ class RunResults:
     # Table 9: Benefit Valuations
     # Units in dollars
     BENEFIT_VALUATION           = {
-    ('Travel Time (Hours)','Auto/Truck'                         ):     -16.03,  # Auto
-    ('Travel Time (Hours)','Auto/Truck','Truck (VHT)'           ):     -26.24,  # Truck
-    ('Travel Time (Hours)','Non-Recurring Freeway Delay','Auto' ):     -16.03,
-    ('Travel Time (Hours)','Non-Recurring Freeway Delay','Truck'):     -26.24,
-    ('Travel Time (Hours)','Transit In-Vehicle'                 ):     -16.03,
-    ('Travel Time (Hours)','Transit Out-of-Vehicle'             ):     -35.27,
-    ('Travel Time (Hours)','Walk/Bike'                          ):     -16.03,
+    ('Travel Time','Auto/Truck (Hours)'                         ):     -16.03,  # Auto
+    ('Travel Time','Auto/Truck (Hours)','Truck (VHT)'           ):     -26.24,  # Truck
+    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Auto' ):     -16.03,
+    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck'):     -26.24,
+    ('Travel Time','Transit In-Vehicle (Hours)'                 ):     -16.03,
+    ('Travel Time','Transit Out-of-Vehicle (Hours)'             ):     -35.27,
+    ('Travel Time','Walk/Bike (Hours)'                          ):     -16.03,
     ('Travel Cost','VMT','Auto'                                 ):      -0.2688,
     ('Travel Cost','VMT','Truck'                                ):      -0.3950,
     ('Travel Cost','Vehicle Ownership'                          ):   -6290.0,
@@ -209,28 +216,28 @@ class RunResults:
         daily_results   = collections.OrderedDict()
 
         ######################################################################################
-        cat1            = 'Travel Time (Hours)'
-        cat2            = 'Auto/Truck'
+        cat1            = 'Travel Time'
+        cat2            = 'Auto/Truck (Hours)'
         daily_results[(cat1,cat2,'SOV (PHT)'  )] = vmt_byclass.loc[['DA','DAT'],'VHT'].sum()
         daily_results[(cat1,cat2,'HOV2 (PHT)' )] = vmt_byclass.loc[['S2','S2T'],'VHT'].sum()*2
         daily_results[(cat1,cat2,'HOV3+ (PHT)')] = vmt_byclass.loc[['S3','S3T'],'VHT'].sum()*3.5
         daily_results[(cat1,cat2,'Truck (VHT)')] = vmt_byclass.loc[['SM','SMT','HV','HVT'],'VHT'].sum()
 
         # TODO: These are vehicle hours, I think.  Why not make them person hours?
-        cat2            = 'Non-Recurring Freeway Delay'
+        cat2            = 'Non-Recurring Freeway Delay (Hours)'
         daily_results[(cat1,cat2,'Auto' )] = \
             vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'],'Non-Recurring Freeway Delay'].sum()
         daily_results[(cat1,cat2,'Truck')] = \
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'Non-Recurring Freeway Delay'].sum()
 
-        cat2            = 'Transit In-Vehicle'
+        cat2            = 'Transit In-Vehicle (Hours)'
         daily_results[(cat1,cat2,'Local Bus'       )] = transit_byclass.loc['loc','In-vehicle hours']
         daily_results[(cat1,cat2,'Light Rail/Ferry')] = transit_byclass.loc['lrf','In-vehicle hours']
         daily_results[(cat1,cat2,'Express Bus'     )] = transit_byclass.loc['exp','In-vehicle hours']
         daily_results[(cat1,cat2,'Heavy Rail'      )] = transit_byclass.loc['hvy','In-vehicle hours']
         daily_results[(cat1,cat2,'Commuter Rail'   )] = transit_byclass.loc['com','In-vehicle hours']
 
-        cat2            = 'Transit Out-of-Vehicle'
+        cat2            = 'Transit Out-of-Vehicle (Hours)'
         daily_results[(cat1,cat2,'Walk Access+Egress' )] = transit_byclass.loc[:,'Walk acc & egr hours'].sum() + \
                                                      transit_byclass.loc[:,'Aux walk hours'].sum()
         daily_results[(cat1,cat2,'Drive Access+Egress')] = transit_byclass.loc[:,'Drive acc & egr hours'].sum()
@@ -238,7 +245,7 @@ class RunResults:
                                                      transit_byclass.loc[:,'Xfer wait hours'].sum()
         # TODO: What's the "OVTT Adjustment (Total Trips)"  ?
 
-        cat2            = 'Walk/Bike'
+        cat2            = 'Walk/Bike (Hours)'
         daily_results[(cat1,cat2,'Walk')] = nonmot_byclass.loc['Walk','Total Time (Hours)']
         daily_results[(cat1,cat2,'Bike')] = nonmot_byclass.loc['Bike','Total Time (Hours)']
 
@@ -346,6 +353,7 @@ class RunResults:
             if group.sum() < 1000:
                 self.lil_cats[name] = 1
 
+        # sum to categories
         self.daily_category_results = self.daily_results.sum(level=[0,1])
 
     def calculateBenefitCosts(self, BC_detail_workbook, all_projects_dir):
@@ -377,24 +385,18 @@ class RunResults:
         format_highlight= workbook.add_format({'bg_color':'yellow'})
         format_highlight_money = workbook.add_format({'bg_color':'yellow',
                                                      'num_format':'_($* #,##0_);_($* (#,##0);_($* "-"_);_(@_)'})
+
         worksheet.write(1,0, "Project Run Dir", format_label)
         worksheet.write(1,1, os.path.realpath(self.rundir), format_highlight)
-        worksheet.write(2,0, "Project ID", format_label)
-        worksheet.write(2,1, self.config.loc['Project ID'], format_highlight)
-        worksheet.write(3,0, "Project Name", format_label)
-        worksheet.write(3,1, self.config.loc['Project Name'], format_highlight)
-        worksheet.write(4,0, "County", format_label)
-        worksheet.write(4,1, self.config.loc['County'], format_highlight)
-        worksheet.write(5,0, "Project Type", format_label)
-        worksheet.write(5,1, self.config.loc['Project Type'], format_highlight)
-        worksheet.write(6,0, "Project Capital Costs", format_label)
-        worksheet.write(6,1, int(self.config.loc['Project Capital Costs']), format_highlight_money)
-        worksheet.write(7,0, "Net Annual O&M Costs", format_label)
-        worksheet.write(7,1, int(self.config.loc['Net Annual O&M Costs']), format_highlight_money)
+        for col in range(2,7): worksheet.write(1,col,"",format_highlight)
 
-        for row in range(1,8):
-            for col in range(2,7):
-                worksheet.write(row,col,"",format_highlight)
+        row = 2
+        for key in RunResults.REQUIRED_KEYS:
+            worksheet.write(row,0, key, format_label)
+            worksheet.write(row,1, self.config.loc[key], 
+                            format_highlight_money if string.find(key,'Costs') >= 0 else format_highlight)
+            for col in range(2,7): worksheet.write(row,col,"",format_highlight)
+
 
         if self.base_dir:
             worksheet.write(8,0, "Base Run Dir", format_label)
@@ -415,7 +417,7 @@ class RunResults:
             worksheet.write(row,3,"Daily\nDifference",format_header)
             worksheet.write(row,4,"Annual\nDifference",format_header)
             worksheet.write(row,6,"Benefit Valuation\n(per unit)",format_header)
-            worksheet.write(row,8,"Annual\nBenefit",format_header)
+            worksheet.write(row,8,"Annual\nBenefit ($2013)",format_header)
 
         # Data rows
         row  += 1
@@ -553,9 +555,9 @@ class RunResults:
                     worksheet.write(row,8, # annual benefit
                                     '=%s*%s' % (xl_rowcol_to_cell(row,4), xl_rowcol_to_cell(row,6)),
                                     format_ann_ben)
-                    if (cat1,cat2,'Annual Benefit') not in bc_metrics:
-                        bc_metrics[(cat1,cat2,'Annual Benefit')] = 0
-                    bc_metrics[(cat1,cat2,'Annual Benefit')] += valuation*nominal_diff
+                    if (cat1,cat2,'Annual Benefit ($2013)') not in bc_metrics:
+                        bc_metrics[(cat1,cat2,'Annual Benefit ($2013)')] = 0
+                    bc_metrics[(cat1,cat2,'Annual Benefit ($2013)')] += valuation*nominal_diff
 
             row += 1
 
@@ -564,14 +566,17 @@ class RunResults:
         worksheet.set_column(5,5,2.0)
         worksheet.set_column(7,7,2.0)
         workbook.close()
+        print("Wrote %s" % BC_detail_workbook)
 
-        idx = pd.MultiIndex.from_tuples(bc_metrics.keys(), 
-                                        names=['category1','category2','variable_name'])
-        self.bc_metrics = pd.Series(bc_metrics, index=idx)
-        self.bc_metrics.name = 'values'
+        if self.base_dir:
+            idx = pd.MultiIndex.from_tuples(bc_metrics.keys(), 
+                                            names=['category1','category2','variable_name'])
+            self.bc_metrics = pd.Series(bc_metrics, index=idx)
+            self.bc_metrics.name = 'values'
  
-        self.bc_metrics.to_csv(os.path.join(all_projects_dir, "%s.csv" % self.config.loc['Project ID']),
-                               header=True)
+            all_proj_filename = os.path.join(all_projects_dir, "%s.csv" % self.config.loc['Project ID'])
+            self.bc_metrics.to_csv(all_proj_filename, header=True)
+            print("Wrote %s" % all_proj_filename)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage=USAGE)
