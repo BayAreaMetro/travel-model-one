@@ -25,12 +25,26 @@ class RunResults:
 
     # Required keys for each project in the BC_config.csv
     REQUIRED_KEYS = [
-      'Project ID',
-      'Project Name',
-      'County',
-      'Project Type',
-      'Project Capital Costs (millions of $2013)',
-      'Net Annual O&M Costs (millions of $2013)']
+      'Project ID'  ,  # String identifier for the project
+      'Project Name',  # Descriptive name for the project
+      'County'      ,  # County where the project is located
+      'Project Type',  # Categorization of the project
+      'Project Mode',  # Road or transit submode.  Used for Out-of-vehicle Transit Travel Time adjustments
+      # Note: The following could be moved to a centralized source if BC_config.csv files become
+      # cumbersome...
+      'Capital Costs'         ,   # Capital Costs
+      'Annual O&M Costs'      ,   # Operations & Maintenance costs
+      'Farebox Recovery Ratio',   # What percentage of O&M are expected each year
+      'Life of Project'           # To annualize capital costs
+      ]
+    UNITS = {
+      'Capital Costs'                 :'millions of $2013',
+      'Annual O&M Costs'              :'millions of $2013',
+      'Life of Project'               :'years',
+      'Annual Capital Costs'          :'millions of $2013',
+      'Annual O&M Costs not recovered':'millions of $2013',
+      'Net Annual Costs'              :'millions of $2013',
+    }
 
     # Do these ever change?  Should they go into BC_config.csv?
     PROJECTED_2040_POPULATION   = 9299150
@@ -92,32 +106,32 @@ class RunResults:
 
     # See 'Plan Bay Area Performance Assessment Report_FINAL.pdf'
     # Table 9: Benefit Valuations
-    # Units in dollars
+    # Units in 2013 dollars
     BENEFIT_VALUATION           = {
-    ('Travel Time','Auto/Truck (Hours)'                         ):     -16.03,  # Auto
-    ('Travel Time','Auto/Truck (Hours)','Truck (VHT)'           ):     -26.24,  # Truck
-    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Auto' ):     -16.03,
-    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck'):     -26.24,
-    ('Travel Time','Transit In-Vehicle (Hours)'                 ):     -16.03,
-    ('Travel Time','Transit Out-of-Vehicle (Hours)'             ):     -35.27,
-    ('Travel Time','Walk/Bike (Hours)'                          ):     -16.03,
-    ('Travel Cost','VMT','Auto'                                 ):      -0.2688,
-    ('Travel Cost','VMT','Truck'                                ):      -0.3950,
-    ('Travel Cost','Vehicle Ownership'                          ):   -6290.0,
-    ('Air Pollutant','PM2.5 (tons)','PM2.5 Gasoline'            ): -487200.0,
-    ('Air Pollutant','PM2.5 (tons)','PM2.5 Diesel'              ): -490300.0,
-    ('Air Pollutant','CO2 (metric tons)','CO2'                  ):     -55.35,
-    ('Air Pollutant','Other (tons)','NOX'                       ):   -7800.0,
-    ('Air Pollutant','Other (tons)','SO2'                       ):  -40500.0,
+    ('Travel Time','Auto/Truck (Hours)'                                       ):     -16.03,  # Auto
+    ('Travel Time','Auto/Truck (Hours)','Truck (VHT)'                         ):     -26.24,  # Truck
+    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Auto'               ):     -16.03,
+    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck'              ):     -26.24,
+    ('Travel Time','Transit In-Vehicle (Hours)'                               ):     -16.03,
+    ('Travel Time','Transit Out-of-Vehicle (Hours)'                           ):     -35.27,
+    ('Travel Time','Walk/Bike (Hours)'                                        ):     -16.03,
+    ('Travel Cost','VMT','Auto'                                               ):      -0.2688,
+    ('Travel Cost','VMT','Truck'                                              ):      -0.3950,
+    ('Travel Cost','Vehicle Ownership'                                        ):   -6290.0,
+    ('Air Pollutant','PM2.5 (tons)','PM2.5 Gasoline'                          ): -487200.0,
+    ('Air Pollutant','PM2.5 (tons)','PM2.5 Diesel'                            ): -490300.0,
+    ('Air Pollutant','CO2 (metric tons)','CO2'                                ):     -55.35,
+    ('Air Pollutant','Other (tons)','NOX'                                     ):   -7800.0,
+    ('Air Pollutant','Other (tons)','SO2'                                     ):  -40500.0,
     ('Air Pollutant','Volatile Organic Compounds (metric tons)','Acetaldehyde' ):  -5700,
     ('Air Pollutant','Volatile Organic Compounds (metric tons)','Benzene'      ): -12800,
     ('Air Pollutant','Volatile Organic Compounds (metric tons)','1,3-Butadiene'): -32200,
     ('Air Pollutant','Volatile Organic Compounds (metric tons)','Formaldehyde' ):  -6400,
     ('Air Pollutant','Volatile Organic Compounds (metric tons)','All other VOC'):  -5100,
-    ('Collisions & Active Transport','Fatalies due to Collisions'): -4590000,
-    ('Collisions & Active Transport','Injuries due to Collisions'):   -64400,
-    ('Collisions & Active Transport','Property Damage Only (PDO) Collisions'): -2455,
-    ('Collisions & Active Transport','Active Individuals'        ):     1220,
+    ('Collisions & Active Transport','Fatalies due to Collisions'            ): -4590000,
+    ('Collisions & Active Transport','Injuries due to Collisions'            ):   -64400,
+    ('Collisions & Active Transport','Property Damage Only (PDO) Collisions' ):    -2455,
+    ('Collisions & Active Transport','Active Individuals'                    ):     1220,
     }
 
     def __init__(self, rundir, read_base=True):
@@ -131,15 +145,20 @@ class RunResults:
         of a base directory.
     """
         # read the configs
-        self.rundir = rundir
+        self.rundir = os.path.abspath(rundir)
         config_file = os.path.join(rundir, "BC_config.csv")
         self.config = pd.Series.from_csv(config_file, header=None, index_col=0)
+        self.config['Project Run Dir'] = self.rundir
 
         # Make sure required values are in the configuration
         print("Reading result csvs from '%s'" % self.rundir)
         try:
             for key in RunResults.REQUIRED_KEYS:
-                print("  %16s '%s'" % (key, self.config.loc[key]))
+                unit = None
+                if key in RunResults.UNITS: unit = RunResults.UNITS[key]
+                config_key  = '%s (%s)' % (key,unit) if unit else key
+
+                print("  %25s '%s'" % (config_key, self.config.loc[config_key]))
 
         except KeyError as e:
             print("Configuration file %s missing required variable: %s" % (config_file, str(e)))
@@ -376,7 +395,7 @@ class RunResults:
         worksheet.protect()
 
         # Notice row
-        format_red      = workbook.add_format({'font_color':'red'})
+        format_red      = workbook.add_format({'font_color':'red', 'bold':True})
         worksheet.write(0,0, "This workbook is written by the script %s.  " % os.path.realpath(__file__) + 
                              "DO NOT CHANGE THE WORKBOOK, CHANGE THE SCRIPT.",
                              format_red)
@@ -384,27 +403,82 @@ class RunResults:
         format_label    = workbook.add_format({'align':'right','indent':1})
         format_highlight= workbook.add_format({'bg_color':'yellow'})
         format_highlight_money = workbook.add_format({'bg_color':'yellow',
-                                                     'num_format':'_($* #,##0_);_($* (#,##0);_($* "-"_);_(@_)'})
+                                                     'num_format':'_($* #,##0.0_);_($* (#,##0.0);_($* "-"_);_(@_)'})
 
         worksheet.write(1,0, "Project Run Dir", format_label)
         worksheet.write(1,1, os.path.realpath(self.rundir), format_highlight)
         for col in range(2,7): worksheet.write(1,col,"",format_highlight)
 
+        # Config-based rows
         row = 2
         for key in RunResults.REQUIRED_KEYS:
             worksheet.write(row,0, key, format_label)
-            worksheet.write(row,1, self.config.loc[key], 
+            unit = None
+            if key in RunResults.UNITS: unit = RunResults.UNITS[key]
+
+            config_key  = '%s (%s)' % (key,unit) if unit else key
+            try:    val = float(self.config.loc[config_key])
+            except: val = self.config.loc[config_key]
+
+            worksheet.write(row,1, val, 
                             format_highlight_money if string.find(key,'Costs') >= 0 else format_highlight)
             for col in range(2,7): worksheet.write(row,col,"",format_highlight)
 
+            if unit: worksheet.write(row,2, '(%s)' % unit,format_highlight)
+            row += 1
 
+        # Run directory
         if self.base_dir:
-            worksheet.write(8,0, "Base Run Dir", format_label)
-            worksheet.write(8,1, self.base_dir, format_highlight)
-            for col in range(2,7): worksheet.write(8,col,"",format_highlight)
+            worksheet.write(row,0, "Base Run Dir", format_label)
+            worksheet.write(row,1, self.base_dir, format_highlight)
+            for col in range(2,7): worksheet.write(row,col,"",format_highlight)
+        row += 1
+
+        # Calculated from config
+        format_highlight= workbook.add_format({'bg_color':'#FFFFC0'})
+        format_highlight_money = workbook.add_format({'bg_color':'#FFFFC0',
+                                                     'num_format':'_($* #,##0.0_);_($* (#,##0.0);_($* "-"_);_(@_)'})
+
+        # Annual Capital Costs
+        worksheet.write(row,0, 'Annual Capital Costs', format_label)
+        worksheet.write(row,1, '=%s/%s' % 
+                        (xl_rowcol_to_cell(RunResults.REQUIRED_KEYS.index('Capital Costs')+2,1), 
+                         xl_rowcol_to_cell(RunResults.REQUIRED_KEYS.index('Life of Project')+2,1)),
+                         format_highlight_money)
+        worksheet.write(row,2, '(%s)' % RunResults.UNITS['Annual Capital Costs'], format_highlight)
+        for col in range(3,7): worksheet.write(row,col,"",format_highlight)
+        bc_metrics[('Annual Capital Costs (%s)' % RunResults.UNITS['Annual Capital Costs'],"","")] = \
+            float(self.config.loc['Capital Costs (%s)' % RunResults.UNITS['Capital Costs']]) / \
+            float(self.config.loc['Life of Project (%s)' % RunResults.UNITS['Life of Project']])
+        row += 1
+
+        # Annual O&M Costs not recovered
+        worksheet.write(row,0, 'Annual O&M Costs not recovered', format_label)
+        worksheet.write(row,1, '=%s*(1-%s)' % 
+                        (xl_rowcol_to_cell(RunResults.REQUIRED_KEYS.index('Annual O&M Costs')+2,1), 
+                         xl_rowcol_to_cell(RunResults.REQUIRED_KEYS.index('Farebox Recovery Ratio')+2,1)),
+                         format_highlight_money)
+        worksheet.write(row,2, '(%s)' % RunResults.UNITS['Annual O&M Costs not recovered'],
+                        format_highlight)
+        for col in range(3,7): worksheet.write(row,col,"",format_highlight)
+        bc_metrics[('Annual O&M Costs not recovered (%s)' % RunResults.UNITS['Annual O&M Costs not recovered'],"","")] = \
+            float(self.config.loc['Annual O&M Costs (%s)' % RunResults.UNITS['Annual O&M Costs']])* \
+            (1.0-float(self.config.loc['Farebox Recovery Ratio']))
+        row += 1
+
+        # Net Annual Costs
+        worksheet.write(row,0, 'Net Annual Costs', format_label)
+        worksheet.write(row,1, '=%s+%s' %  (xl_rowcol_to_cell(row-2,1), xl_rowcol_to_cell(row-1,1)),
+                        format_highlight_money)
+        worksheet.write(row,2, '(%s)' % RunResults.UNITS['Net Annual Costs'], format_highlight)
+        for col in range(3,7): worksheet.write(row,col,"",format_highlight)
+        bc_metrics[('Net Annual Costs (%s)' % RunResults.UNITS['Net Annual Costs'],"","")] = \
+            bc_metrics[('Annual Capital Costs (%s)' % RunResults.UNITS['Annual Capital Costs'],"","")] + \
+            bc_metrics[('Annual O&M Costs not recovered (%s)' % RunResults.UNITS['Annual O&M Costs not recovered'],"","")]        
+        row += 1
 
         # Header row
-        row  = 10
+        row += 1 # space
         format_header = workbook.add_format({'bg_color':'#1F497D',
                                              'font_color':'white',
                                              'bold':True,
@@ -565,6 +639,30 @@ class RunResults:
         worksheet.set_column(1,8,13.0)
         worksheet.set_column(5,5,2.0)
         worksheet.set_column(7,7,2.0)
+        worksheet.set_column(8,8,15.0)
+        worksheet.set_column(9,9,2.0)
+
+        # THIS IS COBRA
+        format_red      = workbook.add_format({'font_color':'white','bg_color':'#C0504D','align':'right','bold':True})
+        for row in range(1,9):
+            for col in range(10,13):
+                worksheet.write(row,col,"",format_red)
+        worksheet.write(1,10,"co",format_red)
+        worksheet.write(2,10,"b" ,format_red)
+        worksheet.write(3,10,"r" ,format_red)
+        worksheet.write(4,10,"a" ,format_red)
+        format_red      = workbook.add_format({'font_color':'white','bg_color':'#C0504D'})
+        worksheet.write(1,11,"st",format_red)
+        worksheet.write(2,11,"enefit" ,format_red)
+        worksheet.write(3,11,"results" ,format_red)
+        worksheet.write(4,11,"nalyzer" ,format_red)
+        worksheet.set_column(11,11,8.0)
+        worksheet.set_column(12,12,15.0)
+
+        worksheet.insert_image(2, 12, 
+                               os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                            "King-cobra.png"),
+                               {'x_scale':0.1, 'y_scale':0.1})
         workbook.close()
         print("Wrote %s" % BC_detail_workbook)
 

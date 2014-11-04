@@ -17,6 +17,7 @@ if __name__ == '__main__':
 
     ALL_PROJECTS_DATA_FILENAME = "AllProjects_Data.csv"
     ALL_PROJECTS_DESC_FILENAME = "AllProjects_Desc.csv"
+    NUM_DESCRIPTION_FIELDS     = 23
 
     all_projs_dict = {}
     for proj_file in os.listdir("."):
@@ -38,11 +39,11 @@ if __name__ == '__main__':
     # and the columns are the project ids
 
     # save the project attributes (constants) aside for later
-    projs_desc          = all_projs_dataframe.iloc[:16,]
+    projs_desc          = all_projs_dataframe.iloc[:NUM_DESCRIPTION_FIELDS,]
 
     # stack the rows -- that is, before the columns were the project ids, one col per project
     # convert it to rows -- so there's one value column, and a row per project id
-    all_projs_dataframe = all_projs_dataframe.iloc[16:,].stack()
+    all_projs_dataframe = all_projs_dataframe.iloc[NUM_DESCRIPTION_FIELDS:,].stack()
     # Name the new column in the index 'Values'
     new_names = list(all_projs_dataframe.index.names)
     new_names[-1] = 'Project ID'
@@ -55,4 +56,5 @@ if __name__ == '__main__':
     projs_desc.index = projs_desc.index.get_level_values(0)
     projs_desc = projs_desc.transpose()
     projs_desc.to_csv(ALL_PROJECTS_DESC_FILENAME, index=False, header=True)
+    # print projs_desc.columns
 
