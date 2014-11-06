@@ -11,5 +11,10 @@ set SCRIPT=Trips_origSD_destSD_departhour_tripmode
 
 call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\knit_Rmd.R"
 
-move "%SCRIPT%.html" "%TARGET_DIR%\core_summaries"
+if exist OUTPUT (
+  move "%SCRIPT%.html" "%TARGET_DIR%\OUTPUT"
+) else (
+  move "%SCRIPT%.html" "%TARGET_DIR%\core_summaries"
+)
+
 del "%SCRIPT%.md"

@@ -5,14 +5,20 @@ date: "Wednesday, November 05, 2014"
 output: html_document
 ---
 
+This html is output by https://github.com/MetropolitanTransportationCommission/Travel-Model-One-Utilities/blob/master/CoreSummaries/DataRequests/Trips_origSD_destSD_departhour_tripmode.Rmd
+
 Simple script to summarize *trips* by
  * Superdistrict of origin
  * Superdistrict of Destination
  * Departure Hour
  * Travel mode
  
-Note: Much of this code is duplicated from CoreSummaries.Rmd but I'm running it in
+Note: Much of this code is from CoreSummaries.Rmd but I'm running it in
 directories without CoreSummaries output so it's simpler just to make a new one.
+
+It should be easy to run via `runDataRequestSummary.bat`.
+
+Outputs file into subdir `OUTPUT` if it exists, otherwise into a `core_summaries`.
 
 # Initialization: Set the workspace and load needed libraries
 ```{r Initialization, results='hold', error=FALSE}
@@ -29,11 +35,6 @@ ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to re
 stopifnot(nchar(TARGET_DIR  )>0)
 stopifnot(nchar(ITER        )>0)
 
-# write results in TARGET_DIR/core_summaries
-if (!file.exists(file.path(TARGET_DIR,"core_summaries"))) {
-  dir.create(file.path(TARGET_DIR,"core_summaries"))
-}
-
 cat("TARGET_DIR  = ",TARGET_DIR)
 cat("ITER        = ",ITER)
 ```
@@ -42,7 +43,13 @@ cat("ITER        = ",ITER)
 
 The land use file: http://analytics.mtc.ca.gov/foswiki/Main/TazData
 ```{r readLandUse, error=FALSE}
-tazData           <- read.table(file=file.path(TARGET_DIR,"landuse","tazData.csv"), header=TRUE, sep=",")
+file_rundir       <- file.path(TARGET_DIR,"landuse","tazData.csv")
+file_archive      <- file.path(TARGET_DIR,"OUTPUT","tazData.csv")
+if (file.exists(file_rundir)) {
+  tazData         <- read.table(file=file_rundir, header=TRUE, sep=",")
+} else {
+  tazData         <- read.table(file=file_archive, header=TRUE, sep=",")
+}
 tazData           <- select(tazData, ZONE, SD, COUNTY, PRKCST, OPRKCST)
 names(tazData)[names(tazData)=="ZONE"] <- "taz"
 ```
@@ -54,8 +61,13 @@ names(tazData)[names(tazData)=="ZONE"] <- "taz"
 The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip
 
 ```{r ReadIndividualTrips, error=FALSE}
-indiv_trips     <- read.table(file=file.path(TARGET_DIR,"main",
-                                             paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
+file_rundir       <- file.path(TARGET_DIR,"main",paste0("indivTripData_",ITER,".csv"))
+file_archive      <- file.path(TARGET_DIR,"OUTPUT",paste0("indivTripData_",ITER,".csv"))
+if (file.exists(file_rundir)) {
+  indiv_trips     <- tbl_df(read.table(file=file_rundir, header=TRUE, sep=","))
+} else {
+  indiv_trips     <- tbl_df(read.table(file=file_archive, header=TRUE, sep=","))
+}
 indiv_trips     <- select(indiv_trips, orig_taz, dest_taz, trip_mode, depart_hour)
 indiv_trips     <- mutate(indiv_trips, num_participants=1)
 
@@ -67,9 +79,13 @@ print(paste("Read",prettyNum(nrow(indiv_trips),big.mark=",")))
 The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/JointTrip
 
 ```{r ReadJointTrips, error=FALSE}
-joint_trips     <- tbl_df(read.table(file=file.path(TARGET_DIR,"main",
-                                                    paste0("jointTripData_",ITER,".csv")), 
-                                     header=TRUE, sep=","))
+file_rundir       <- file.path(TARGET_DIR,"main",paste0("jointTripData_",ITER,".csv"))
+file_archive      <- file.path(TARGET_DIR,"OUTPUT",paste0("jointTripData_",ITER,".csv"))
+if (file.exists(file_rundir)) {
+  joint_trips     <- tbl_df(read.table(file=file_rundir, header=TRUE, sep=","))
+} else {
+  joint_trips     <- tbl_df(read.table(file=file_archive, header=TRUE, sep=","))
+}
 joint_trips     <- select(joint_trips, orig_taz, dest_taz, trip_mode,
                           num_participants, depart_hour)
 
@@ -100,6 +116,14 @@ trips_summary <- summarise(group_by(trips,
                                     trip_mode, depart_hour), 
                             freq     = n(),
                             num_participants = sum(num_participants))
-write.table(trips_summary, file.path(TARGET_DIR,"core_summaries","Trips_origSD_destSD_departhour_tripmode.csv"), sep=",", row.names=FALSE)
 
+if (file.exists(file.path(TARGET_DIR,"OUTPUT"))) {
+  write.table(trips_summary, file.path(TARGET_DIR,"OUTPUT","Trips_origSD_destSD_departhour_tripmode.csv"), sep=",", row.names=FALSE)
+} else {
+  # write results in TARGET_DIR/core_summaries
+  if (!file.exists(file.path(TARGET_DIR,"core_summaries"))) {
+    dir.create(file.path(TARGET_DIR,"core_summaries"))
+  }
+  write.table(trips_summary, file.path(TARGET_DIR,"core_summaries","Trips_origSD_destSD_departhour_tripmode.csv"), sep=",", row.names=FALSE)
+}
 ```
