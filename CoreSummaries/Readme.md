@@ -52,7 +52,7 @@ before the `freq` column.  These outputs include:
 
 #### ActiveTransport
 
-Active transportation summary of persons.  Sum(freq) = Population
+Active transportation summary of persons.  Sum(freq) = population
 
 | Column Name | Description |
 |-------------|-------------|
@@ -71,29 +71,213 @@ Active transportation summary of persons.  Sum(freq) = Population
 | atHomeA | Share of population that does not leave home on a typical weekday |
    
 #### ActivityPattern
-Activity pattern summary of persons.  Sum(freq) = Population
+Activity pattern summary of persons.  Sum(freq) = population
 
-   * *type* - Person type string.  One of ("Full-time worker"; "Part-time worker"; "University student"; "Nonworker"; "Retired"; "Student of non-driving age"; "Student of driving age"; "Child too young for school")
-   * *activity_pattern*	- Daily activity pattern category.  One of 'H' for home, 'M' for mandatory, or 'N' for non-mandatory. 
-   * *imf_choice* - Individual mandatory tour frequency .  See http://analytics.mtc.ca.gov/foswiki/Main/Person
-   * *inmf_choice* - Individual non-mandatory tour frequency. See http://analytics.mtc.ca.gov/foswiki/Main/Person
-   * *incQ_label* - Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k')
-   * *freq* - Frequency of persons
+| Column Name | Description |
+|-------------|-------------|
+| type | Person type string.  One of ("Full-time worker"; "Part-time worker"; "University student"; "Nonworker"; "Retired"; "Student of non-driving age"; "Student of driving age"; "Child too young for school") |
+| activity_pattern | Daily activity pattern category.  One of 'H' for home, 'M' for mandatory, or 'N' for non-mandatory. |
+| imf_choice | Individual mandatory tour frequency .  See http://analytics.mtc.ca.gov/foswiki/Main/Person |
+| inmf_choice | Individual non-mandatory tour frequency. See http://analytics.mtc.ca.gov/foswiki/Main/Person |
+| incQ_label | Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k') |
+| freq | Frequency of persons |
 
- * *AutomobileOwnership*
- * *AutoTripsVMT_perOrigDestHomeWork*
- * *AutoTripsVMT_personsHomeWork*
- * *CommuteByEmploymentLocation*
- * *CommuteByIncomeHousehold*
- * *CommuteByIncomeJob*
- * *JourneyToWork*
- * *PerTripTravelTime*
- * *TimeOfDay*
- * *TimeOfDay_personsTouring*
- * *TravelCost*
- * *TripDistance*
- * *VehicleMilesTraveled*
+#### AutomobileOwnership
+Automobile Ownership summary of households.  Sum(freq) = households
 
+| Column Name | Description |
+|-------------|-------------|
+| SD | Superdistrict geographical designation of residence. See http://analytics.mtc.ca.gov/foswiki/Main/TazData |
+| COUNTY | County code of residence.  See http://analytics.mtc.ca.gov/foswiki/Main/TazData |
+| county_name	| County name of residence. |
+| autos | Number of autos in the household, from 0 to 4 |
+| incQ	| Income quartile, from 1 to 4 |
+| incQ_label | Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k') |
+| walk_subzone | Walk to transit sub-zone.  One of 0,1, or 2.  See http://analytics.mtc.ca.gov/foswiki/Main/Household |
+| walk_subzone_label | String version of `walk_subzone` |
+| workers | Number of workers in the household |
+| kidsNoDr| Boolean; True iff the household has children in the househole that don't drive
+ (either pre-school age or school age) |
+| freq | Frequency of households |
+
+#### AutoTripsVMT_perOrigDestHomeWork
+Automobile trips for VMT summing.  Sum(trips) = total auto trips for an average weekday.
+
+| Column Name | Description |
+|-------------|-------------|
+| orig_taz | Origin TAZ for the trip |
+| dest_taz | Destination TAZ for the trip |
+| taz | TAZ of residence for the tripmaker |
+| WorkLocation | TAZ of work location for the tripmaker, or 0 if none |
+| vmt | VMT for the trips, a sum of `vmt_indiv` and `vmt_joint` |
+| vmt_indiv	| VMT from individual trips |
+| vmt_joint | VMT from joint trips |
+| trips | Number of trips |
+
+#### AutoTripsVMT_personsHomeWork
+Automobile trips by person.  Sum(freq) = population
+
+| Column Name | Description |
+|-------------|-------------|
+| COUNTY | County code of residence |
+| county_name	| County name of residence |
+| taz	| TAZ of residence |
+| WorkLocation	| TAZ of Work location or 0 if none |
+| freq | Number of persons with this home/work combination |
+
+#### CommuteByEmploymentLocation
+Commute characteristics by employment location.  Sum(freq) = commute tours
+
+| Column Name | Description |
+|-------------|-------------|
+| dest_COUNTY | County code of work commute destination |
+| dest_county_name | County name of work commute destination |
+| dest_SD	| Superdistrict of work commute destination |
+| tour_mode	| Work tour mode.  See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour |
+| freq | Number of commute tours |
+| totCost	| Total round-trip out of pocket costs in $2000.  Sum of `cost` and `parking_cost`. |
+| cost | See http://analytics.mtc.ca.gov/foswiki/Main/SimpleSkims#Cost for what's included |
+| parking_cost | Parking costs |
+| distance | Distance of commute |
+| cost_fail | Commute tours for which the cost lookup failed |
+
+#### CommuteByIncomeHousehold
+Commute characteristics by household location. Sum(freq) = commute tours
+
+| Column Name | Description |
+|-------------|-------------|
+| res_COUNTY | County code of residence |
+| res_county_name | County name of residence |
+| res_SD | Superdistrict of residence |
+| orig_taz | Origin TAZ |
+| tour_mode | Work tour mode.  See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour |
+| incQ	| Income quartile |
+| incQ_label | Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k') |
+| freq | Number of commute tours.
+| totCost  | Total round-trip out of pocket costs in $2000.  Sum of `cost` and `parking_cost`. |
+| cost | See http://analytics.mtc.ca.gov/foswiki/Main/SimpleSkims#Cost for what's included |
+| parking_cost | Parking costs |
+| distance | Distance of commute |
+| duration	| Duration of commute |
+| cost_fail | Commute tours for which the cost lookup failed |
+| time_fail | Commute tours for which the time lookup failed |
+
+#### CommuteByIncomeJob
+Commute characteristics by job location.  Sum(freq) = commute tours
+
+Columns are the same as CommuteByIncomeHousehold, except they are summed 
+to job/destination geographies instead of to residential geographies.
+
+#### JourneyToWork
+Workplace location summaries (including when tours are not made.)  Sum(freq) = persons with work locations
+
+| Column Name | Description |
+|-------------|-------------|
+| homeCOUNTY | County code of residence |
+| home_county_name	| County name of residence |
+| HomeTAZ | TAZ of residence |
+| WorkLocation | TAZ of work location |
+| workCOUNTY | County code of work location |
+| work_county_name | County name of work location |
+| freq | Number of persons with home/work locations as described |
+| Income | Average income |
+
+#### PerTripTravelTime
+Sum(freq) = trips
+
+| Column Name | Description |
+|-------------|-------------|
+| incQ | Income quartile |
+| incQ_label | Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k') |
+| trip_mode | Trip mode. See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip |
+| tour_purpose | Tour purpose for the trip.  See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour |
+| freq | Number of trips |
+| num_participants | Number of participants for these trips |
+| trvlTime | Average travel time |
+| time_fail | Commute tours for which the time lookup failed |
+
+#### TimeOfDay
+Sum(freq) = tours
+
+| Column Name | Description |
+|-------------|-------------|
+| SD | Superdistrict of residence |
+| COUNTY | County of residence |
+| county_name | County name of residence |
+| simple_purpose | Simple tour purpose, one of ('work', 'school', 'non-work', 'at-work', 'college') |
+| tour_mode | Tour mode.  See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour |
+
+| start_hour | Start hour for the tour, in [5,23] |
+| end_hour | End  hour for the tour, in [5,23] |
+| freq | Number of tours |
+| num_participants | Number of person participants |
+
+#### TimeOfDay_personsTouring
+Summary of how many persons are touring at a given hour.
+
+| Column Name | Description |
+|-------------|-------------|
+| simple_purpose | Simple tour purpose, one of ('work', 'school', 'non-work', 'at-work', 'college') |
+| persons_touring | Number of persons touring |
+| hour | The hour of their tour, in [5,23] |
+
+#### TravelCost
+Travel costs by household.  Sum(freq) = households
+
+| Column Name | Description |
+|-------------|-------------|
+| SD | Superdistrict of residence |
+| COUNTY | County code of residence |
+| county_name | County name of residence |
+| people | Persons per household, capped at 6 |
+| incQ | Income Quartile |
+| incQ_label | Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k') |
+| autos | Number of autos in the household, from 0 to 4 |
+| freq | Number of households |
+| total_cost | Total travel costs |
+| trip_cost_indiv | Total travel costs from individual trips |
+| trip_cost_joint	| Total travel costs from joint trips |
+| cost_fail | Trips for which the cost lookup failed |
+| pcost_indiv | Parking cost from individual trips |
+| pcost_joint | Parking cost from joint trips |
+
+
+#### TripDistance
+Distance summaries for trips.  Sum(freq) = trips
+
+| Column Name | Description |
+|-------------|-------------|
+| autoSuff | Auto sufficiency code, one of [0,1,2] |
+| autoSuff_label | Auto sufficiency label, one of ('Zero automobiles','Automobiles < workers','Automobiles >= workers') |
+| incQ | Income Quartile |
+| incQ_label | Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k') |
+| timeCode | Time period of trip, one of ('AM','MD','PM','EV','EA') |
+| timeperiod_label | Time period label, one of ('AM Peak', 'Midday', 'PM Peak', 'Evening', 'Early AM') |
+| trip_mode | Trip mode. See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip |
+| tour_purpose | Tour purpose for the trip.  See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour |
+| freq | Number of trips |
+| distance | Total trip distance |
+
+#### VehicleMilesTraveled
+Auto vehicle miles traveled summed to persons. Sum(freq) = population
+
+| Column Name | Description |
+|-------------|-------------|
+| COUNTY | County code of residence |
+| county_name | County name of residence |
+| taz | TAZ of residence |
+| walk_subzone | Walk to transit sub-zone.  One of 0,1, or 2.  See http://analytics.mtc.ca.gov/foswiki/Main/Household |
+| walk_subzone_label | String version of `walk_subzone` |
+| ptype | Person type. (1:"Full-time worker"; 2:"Part-time worker"; 3:"University student"; 4:"Nonworker"; 5:"Retired"; 6:"Student of non-driving age"; 7:"Student of driving age"; 8:"Child too young for school" |
+| ptype_label	| Person type label from 'ptype' |
+| autoSuff | Auto sufficiency code, one of [0,1,2] |
+| autoSuff_label | Auto sufficiency label, one of ('Zero automobiles','Automobiles < workers','Automobiles >= workers') |
+| freq | Number of persons |
+| vmt_indiv | VMT from individual trips |
+| vmt_joint	| VMT from joing trips |
+| vmt | Total VMT |
+
+
+#### Additional Output Tables
 It also outputs updated `.rdata` versions of the Trip, Tours, Persons and Households table, 
 with the extra data fields added.
-  
