@@ -1,0 +1,105 @@
+---
+title: "TripsSimple"
+author: "Lisa Zorn"
+date: "Wednesday, November 05, 2014"
+output: html_document
+---
+
+Simple script to summarize *trips* by
+ * Superdistrict of origin
+ * Superdistrict of Destination
+ * Departure Hour
+ * Travel mode
+ 
+Note: Much of this code is duplicated from CoreSummaries.Rmd but I'm running it in
+directories without CoreSummaries output so it's simpler just to make a new one.
+
+# Initialization: Set the workspace and load needed libraries
+```{r Initialization, results='hold', error=FALSE}
+library(knitr)
+library(ggplot2)
+library(scales)
+library(dplyr)
+library(reshape2)
+
+# For RStudio, these can be set in the .Rprofile
+TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
+ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to read
+
+stopifnot(nchar(TARGET_DIR  )>0)
+stopifnot(nchar(ITER        )>0)
+
+# write results in TARGET_DIR/core_summaries
+if (!file.exists(file.path(TARGET_DIR,"core_summaries"))) {
+  dir.create(file.path(TARGET_DIR,"core_summaries"))
+}
+
+cat("TARGET_DIR  = ",TARGET_DIR)
+cat("ITER        = ",ITER)
+```
+
+# Land Use
+
+The land use file: http://analytics.mtc.ca.gov/foswiki/Main/TazData
+```{r readLandUse, error=FALSE}
+tazData           <- read.table(file=file.path(TARGET_DIR,"landuse","tazData.csv"), header=TRUE, sep=",")
+tazData           <- select(tazData, ZONE, SD, COUNTY, PRKCST, OPRKCST)
+names(tazData)[names(tazData)=="ZONE"] <- "taz"
+```
+
+# Trips
+
+## Read Individual Trips and recode a few variables
+
+The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip
+
+```{r ReadIndividualTrips, error=FALSE}
+indiv_trips     <- read.table(file=file.path(TARGET_DIR,"main",
+                                             paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
+indiv_trips     <- select(indiv_trips, orig_taz, dest_taz, trip_mode, depart_hour)
+indiv_trips     <- mutate(indiv_trips, num_participants=1)
+
+print(paste("Read",prettyNum(nrow(indiv_trips),big.mark=",")))
+```
+
+## Read Joint Trips and recode a few variables
+
+The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/JointTrip
+
+```{r ReadJointTrips, error=FALSE}
+joint_trips     <- tbl_df(read.table(file=file.path(TARGET_DIR,"main",
+                                                    paste0("jointTripData_",ITER,".csv")), 
+                                     header=TRUE, sep=","))
+joint_trips     <- select(joint_trips, orig_taz, dest_taz, trip_mode,
+                          num_participants, depart_hour)
+
+print(paste("Read",prettyNum(nrow(joint_trips),big.mark=","),
+            "joint trips or ",prettyNum(sum(joint_trips$num_participants),big.mark=","),
+            "joint person trips"))
+```
+
+## Append them and add the superdistricts, and save
+
+```{r CombineTrips, error=FALSE}
+trips <- tbl_df(rbind(indiv_trips, joint_trips))
+remove(indiv_trips,joint_trips)
+
+trips <- left_join(trips,
+                  mutate(tazData, orig_taz=taz, orig_SD=SD, orig_COUNTY=COUNTY) %.% 
+                  select(orig_taz, orig_SD, orig_COUNTY),
+                  by=c("orig_taz"))
+
+trips <- left_join(trips,
+                  mutate(tazData, dest_taz=taz, dest_SD=SD, dest_COUNTY=COUNTY) %.% 
+                  select(dest_taz, dest_SD, dest_COUNTY),
+                  by=c("dest_taz"))
+
+trips_summary <- summarise(group_by(trips,
+                                    orig_SD, orig_COUNTY,
+                                    dest_SD, dest_COUNTY,
+                                    trip_mode, depart_hour), 
+                            freq     = n(),
+                            num_participants = sum(num_participants))
+write.table(trips_summary, file.path(TARGET_DIR,"core_summaries","Trips_origSD_destSD_departhour_tripmode.csv"), sep=",", row.names=FALSE)
+
+```
