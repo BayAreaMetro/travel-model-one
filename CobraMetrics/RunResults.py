@@ -48,6 +48,8 @@ class RunResults:
 
     # Do these ever change?  Should they go into BC_config.csv?
     PROJECTED_2040_POPULATION   = 9299150
+    YEARLY_AUTO_TRIPS_PER_AUTO  = 1583
+
     AVERAGE_WALK_SPEED          = 3.0       # mph
     AVERAGE_BIKE_SPEED          = 12.0      # mph
     PERCENT_POP_INACTIVE        = 0.62
@@ -66,28 +68,28 @@ class RunResults:
     #    the Bay Area counties, taking into account average trip durations, parking subsidy rates,
     #    and hourly parking rates. The following per-trip parking cost savings were estimated for
     #    each auto trip reduced by county:"
-    PARKING_COST_PER_TRIP_WORK = collections.OrderedDict({
-    'San Francisco': 7.16,
-    'San Mateo'    : 0.00,
-    'Santa Clara'  : 0.15,
-    'Alameda'      : 0.54,
-    'Contra Costa' : 0.00,
-    'Solano'       : 0.00,
-    'Napa'         : 0.00,
-    'Sonoma'       : 0.00,
-    'Marin'        : 0.00
-    })
-    PARKING_COST_PER_TRIP_NONWORK = collections.OrderedDict({
-    'San Francisco': 5.64,
-    'San Mateo'    : 0.04,
-    'Santa Clara'  : 0.33,
-    'Alameda'      : 0.39,
-    'Contra Costa' : 0.00,
-    'Solano'       : 0.00,
-    'Napa'         : 0.00,
-    'Sonoma'       : 0.00,
-    'Marin'        : 0.00
-    })
+    PARKING_COST_PER_TRIP_WORK = collections.OrderedDict([
+    ('San Francisco',7.16),
+    ('San Mateo'    ,0.0),
+    ('Santa Clara'  ,0.1),
+    ('Alameda'      ,0.5),
+    ('Contra Costa' ,0.0),
+    ('Solano'       ,0.0),
+    ('Napa'         ,0.0),
+    ('Sonoma'       ,0.0),
+    ('Marin'        ,0.0)
+    ])
+    PARKING_COST_PER_TRIP_NONWORK = collections.OrderedDict([
+    ('San Francisco',5.64),
+    ('San Mateo'    ,0.04),
+    ('Santa Clara'  ,0.33),
+    ('Alameda'      ,0.39),
+    ('Contra Costa' ,0.00),
+    ('Solano'       ,0.00),
+    ('Napa'         ,0.00),
+    ('Sonoma'       ,0.00),
+    ('Marin'        ,0.00)
+    ])
 
     # From 'Plan Bay Area Performance Assessment Report_FINAL.pdf'
     # Model output only captured direct particulate matter emissions; emissions were
@@ -100,7 +102,8 @@ class RunResults:
 
     # Already annual -- don't annualize. Default false.
     ALREADY_ANNUAL = {
-    ('Travel Cost','Vehicle Ownership'): True,
+    ('Travel Cost','Vehicle Ownership (Modeled)'                 ): True,
+    ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'    ): True,
     ('Collisions & Active Transport','Active Individuals','Total'): True,
     }
 
@@ -117,7 +120,29 @@ class RunResults:
     ('Travel Time','Walk/Bike (Hours)'                                        ):     -16.03,
     ('Travel Cost','VMT','Auto'                                               ):      -0.2688,
     ('Travel Cost','VMT','Truck'                                              ):      -0.3950,
-    ('Travel Cost','Vehicle Ownership'                                        ):   -6290.0,
+    ('Travel Cost','Vehicle Ownership (Modeled)'                              ):   -6290.0,
+    ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                 ):   -6290.0,
+    ('Travel Cost','Noise','Auto VMT'                                         ):      -0.0012,
+    ('Travel Cost','Noise','Truck VMT'                                        ):      -0.0150,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in San Francisco'): -7.16,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in San Mateo'    ):  0.00,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in Santa Clara'  ): -0.15,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in Alameda'      ): -0.54,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in Contra Costa' ):  0.00,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in Solano'       ):  0.00,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in Napa'         ):  0.00,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in Sonoma'       ):  0.00,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in Marin'        ):  0.00,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in San Francisco'): -5.64,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in San Mateo'    ): -0.04,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in Santa Clara'  ): -0.33,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in Alameda'      ): -0.39,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in Contra Costa' ):  0.00,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in Solano'       ):  0.00,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in Napa'         ):  0.00,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in Sonoma'       ):  0.00,
+    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in Marin'        ):  0.00,
+
     ('Air Pollutant','PM2.5 (tons)','PM2.5 Gasoline'                          ): -487200.0,
     ('Air Pollutant','PM2.5 (tons)','PM2.5 Diesel'                            ): -490300.0,
     ('Air Pollutant','CO2 (metric tons)','CO2'                                ):     -55.35,
@@ -134,7 +159,7 @@ class RunResults:
     ('Collisions & Active Transport','Active Individuals'                    ):     1220,
     }
 
-    def __init__(self, rundir, read_base=True):
+    def __init__(self, rundir, read_base=True, parking_cost_config=None):
         """
     Parameters
     ----------
@@ -143,6 +168,9 @@ class RunResults:
     read_base : bool
         Pass true if we should create another instance of this class to read the output
         of a base directory.
+    parking_cost_config : dict
+        Pass parking cost config if this is a base scenario and we should use the
+        project's parking costs.
     """
         # read the configs
         self.rundir = os.path.abspath(rundir)
@@ -179,8 +207,26 @@ class RunResults:
             print("")
             print("BASE:")
             self.base_dir = os.path.realpath(self.base_dir)
-            self.base_results = RunResults(rundir = self.base_dir, read_base=False) # don't recursive loop
+
+            # pass the parking config
+            base_parking_cost_config = {}
+            total_parking_cost_allocation = 0.0
+            for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
+                key = 'percent parking cost incurred in %s' % county
+                # convert to floats
+                self.config.loc[key] = float(self.config.loc[key])
+                base_parking_cost_config[key] = self.config.loc[key]
+                total_parking_cost_allocation += self.config.loc[key]
+
+            assert(total_parking_cost_allocation == 1.0)
+            self.base_results = RunResults(rundir = self.base_dir, 
+                                           read_base=False, # don't recursive loop
+                                           parking_cost_config=base_parking_cost_config)
             self.base_results.calculateDailyMetrics()
+
+        if parking_cost_config:
+            print key
+            for key in parking_cost_config.keys(): self.config[key] = parking_cost_config[key]
 
         print("")
         # read the csvs
@@ -272,13 +318,9 @@ class RunResults:
         cat1            = 'Travel Cost'
         cat2            = 'VMT'
         daily_results[(cat1,cat2,'Auto' )] = \
-            vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'],'VMT'].sum()        
+            vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'],'VMT'].sum()
         daily_results[(cat1,cat2,'Truck')] = \
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
-
-        # Vehicles Owned
-        cat2            = 'Vehicle Ownership'
-        daily_results[(cat1,cat2,'All Income Quartiles')] = self.autos_owned['total autos'].sum()
 
         # Parking
         cat2            = 'Auto Trips'
@@ -286,10 +328,30 @@ class RunResults:
         daily_results[(cat1,cat2,'HOV2' )] = auto_byclass.loc[['sr2','sr2toll'],'Daily Trips'].sum()/2.0
         daily_results[(cat1,cat2,'HOV3+')] = auto_byclass.loc[['sr3','sr3toll'],'Daily Trips'].sum()/3.5
         total_autotrips = daily_results[(cat1,cat2,'SOV')] + daily_results[(cat1,cat2,'HOV2')] + daily_results[(cat1,cat2,'HOV3+')]
-        cat2            = 'Trips with Parking Costs'
-        daily_results[(cat1,cat2,'Work'    )] = total_autotrips * RunResults.PERCENT_PARKING_NONHOME * RunResults.PERCENT_PARKING_WORK
-        daily_results[(cat1,cat2,'Non-Work')] = total_autotrips * RunResults.PERCENT_PARKING_NONHOME * (1.0-RunResults.PERCENT_PARKING_WORK)
+        cat2            = 'Trips with Parking Costs affected by Project'
+        for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
+            daily_results[(cat1,cat2,'Work Trips in %s'     % county)] = total_autotrips * \
+                RunResults.PERCENT_PARKING_NONHOME * RunResults.PERCENT_PARKING_WORK * \
+                self.config.loc['percent parking cost incurred in %s' % county]
+        for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
+            daily_results[(cat1,cat2,'Non-Work Trips in %s' % county)] = total_autotrips * \
+                RunResults.PERCENT_PARKING_NONHOME * (1.0-RunResults.PERCENT_PARKING_WORK) * \
+                self.config.loc['percent parking cost incurred in %s' % county]
 
+        # Vehicles Owned
+        cat2            = 'Vehicle Ownership (Modeled)'
+        daily_results[(cat1,cat2,'Total')] = self.autos_owned['total autos'].sum()
+
+        # Vehicles Owned - estimated from auto trips
+        cat2            = 'Vehicle Ownership (Est. from Auto Trips)'
+        daily_results[(cat1,cat2,'Total')] =total_autotrips*RunResults.ANNUALIZATION/RunResults.YEARLY_AUTO_TRIPS_PER_AUTO
+
+        # Noise
+        cat2            = 'Noise'
+        daily_results[(cat1,cat2,'Auto VMT')] = \
+            vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'],'VMT'].sum()
+        daily_results[(cat1,cat2,'Truck VMT')] = \
+            vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
         ######################################################################################
         cat1            = 'Air Pollutant'
         cat2            = 'PM2.5 (tons)'
@@ -521,7 +583,7 @@ class RunResults:
         for key,value in self.daily_results.iteritems():
 
             # What's the valuation of this metric?
-            valuation = 0
+            valuation = None
             if (key[0],key[1],key[2]) in RunResults.BENEFIT_VALUATION:
                 valuation = RunResults.BENEFIT_VALUATION[(key[0],key[1],key[2])]
             elif (key[0],key[1]) in RunResults.BENEFIT_VALUATION:
@@ -591,7 +653,7 @@ class RunResults:
 
                     # worksheet.write(row,6, "", format_cat2d_lil)    
 
-                    if valuation != 0:
+                    if valuation != None:
                         worksheet.write(row,8,
                                         '=SUM(%s)' % xl_range(row+1,8,row+len(self.daily_results[cat1][cat2]),8),
                                         format_cat2_ben)
@@ -622,7 +684,7 @@ class RunResults:
                     nominal_diff = RunResults.ANNUALIZATION * (self.daily_results[cat1][cat2][key[2]] - \
                                                                self.base_results.daily_results[cat1][cat2][key[2]])
 
-                if valuation != 0:
+                if valuation != None:
                     worksheet.write(row,6, # diff annual
                                     valuation,
                                     format_benval_lil if abs(valuation)<1000 else format_benval_big)
