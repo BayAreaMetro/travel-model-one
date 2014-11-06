@@ -124,24 +124,24 @@ class RunResults:
     ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                 ):   -6290.0,
     ('Travel Cost','Noise','Auto VMT'                                         ):      -0.0012,
     ('Travel Cost','Noise','Truck VMT'                                        ):      -0.0150,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in San Francisco'): -7.16,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in San Mateo'    ):  0.00,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in Santa Clara'  ): -0.15,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in Alameda'      ): -0.54,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in Contra Costa' ):  0.00,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in Solano'       ):  0.00,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in Napa'         ):  0.00,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in Sonoma'       ):  0.00,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Work Trips in Marin'        ):  0.00,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in San Francisco'): -5.64,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in San Mateo'    ): -0.04,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in Santa Clara'  ): -0.33,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in Alameda'      ): -0.39,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in Contra Costa' ):  0.00,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in Solano'       ):  0.00,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in Napa'         ):  0.00,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in Sonoma'       ):  0.00,
-    ('Travel Cost','Trips with Parking Costs affected by Project','Non-Work Trips in Marin'        ):  0.00,
+    ('Travel Cost','Parking Costs','Work Trips in San Francisco'): -7.16,
+    ('Travel Cost','Parking Costs','Work Trips in San Mateo'    ):  0.00,
+    ('Travel Cost','Parking Costs','Work Trips in Santa Clara'  ): -0.15,
+    ('Travel Cost','Parking Costs','Work Trips in Alameda'      ): -0.54,
+    ('Travel Cost','Parking Costs','Work Trips in Contra Costa' ):  0.00,
+    ('Travel Cost','Parking Costs','Work Trips in Solano'       ):  0.00,
+    ('Travel Cost','Parking Costs','Work Trips in Napa'         ):  0.00,
+    ('Travel Cost','Parking Costs','Work Trips in Sonoma'       ):  0.00,
+    ('Travel Cost','Parking Costs','Work Trips in Marin'        ):  0.00,
+    ('Travel Cost','Parking Costs','Non-Work Trips in San Francisco'): -5.64,
+    ('Travel Cost','Parking Costs','Non-Work Trips in San Mateo'    ): -0.04,
+    ('Travel Cost','Parking Costs','Non-Work Trips in Santa Clara'  ): -0.33,
+    ('Travel Cost','Parking Costs','Non-Work Trips in Alameda'      ): -0.39,
+    ('Travel Cost','Parking Costs','Non-Work Trips in Contra Costa' ):  0.00,
+    ('Travel Cost','Parking Costs','Non-Work Trips in Solano'       ):  0.00,
+    ('Travel Cost','Parking Costs','Non-Work Trips in Napa'         ):  0.00,
+    ('Travel Cost','Parking Costs','Non-Work Trips in Sonoma'       ):  0.00,
+    ('Travel Cost','Parking Costs','Non-Work Trips in Marin'        ):  0.00,
 
     ('Air Pollutant','PM2.5 (tons)','PM2.5 Gasoline'                          ): -487200.0,
     ('Air Pollutant','PM2.5 (tons)','PM2.5 Diesel'                            ): -490300.0,
@@ -328,7 +328,7 @@ class RunResults:
         daily_results[(cat1,cat2,'HOV2' )] = auto_byclass.loc[['sr2','sr2toll'],'Daily Trips'].sum()/2.0
         daily_results[(cat1,cat2,'HOV3+')] = auto_byclass.loc[['sr3','sr3toll'],'Daily Trips'].sum()/3.5
         total_autotrips = daily_results[(cat1,cat2,'SOV')] + daily_results[(cat1,cat2,'HOV2')] + daily_results[(cat1,cat2,'HOV3+')]
-        cat2            = 'Trips with Parking Costs affected by Project'
+        cat2            = 'Parking Costs'
         for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
             daily_results[(cat1,cat2,'Work Trips in %s'     % county)] = total_autotrips * \
                 RunResults.PERCENT_PARKING_NONHOME * RunResults.PERCENT_PARKING_WORK * \
