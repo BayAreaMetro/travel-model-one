@@ -287,5 +287,11 @@ if __name__ == '__main__':
         else:
             full_table_df = full_table_df.append(table_df)
         print "Full table has length %d" % len(full_table_df)
+        
+        # This takes too long... Just forget it
+        # AutoTripsVMT_personsHomeWork.rdata shouldn't be done
+        if len(full_table_df) > 5000000:
+            print "Table is too long.  Skipping"
+            sys.exit(0)
     
     write_tde(full_table_df, os.path.join(tde_dirpath, tde_filename), arg_append)
