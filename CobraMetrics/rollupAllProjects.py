@@ -19,7 +19,8 @@ if __name__ == '__main__':
     ALL_PROJECTS_DESC_FILENAME = "AllProjects_Desc.csv"
     NUM_DESCRIPTION_FIELDS     = 23
 
-    all_projs_dict = {}
+    all_projs_list = []
+    proj_ids       = []
     for proj_file in os.listdir("."):
 
         # skip this one, if it exists already
@@ -30,11 +31,12 @@ if __name__ == '__main__':
         proj_series = pd.Series.from_csv(proj_file, index_col=[0,1,2], header=0)
         proj_id     = proj_series.loc['Project ID',numpy.NaN,numpy.NaN]
         assert("%s.csv" % proj_id == proj_file)
-        all_projs_dict[proj_id] = proj_series
+        all_projs_list.append(proj_series)
+        proj_ids.append(proj_id)
 
-
-    all_projs_dataframe = pd.DataFrame(all_projs_dict)
-    # print all_projs_dataframe
+    all_projs_dataframe = pd.concat(all_projs_list, axis=1, 
+                                    join_axes=[all_projs_list[0].index],
+                                    names=proj_ids)
     # all_projs_dataframe now has a 3-tuple MultiIndex for rows,
     # and the columns are the project ids
 
