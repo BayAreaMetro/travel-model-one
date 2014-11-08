@@ -23,6 +23,7 @@ if not exist hwy\iter%ITER%\avgload5period.net (copy %RUN_DIR%\hwy\iter%ITER%\av
 if not exist CTRAMP\scripts\block (mkdir CTRAMP\scripts\block)
 if not exist CTRAMP\scripts\block\hwyParam.block (copy %RUN_DIR%\CTRAMP\scripts\block\hwyParam.block CTRAMP\scripts\block)
 
+if not exist nonres (mkdir nonres)
 if not exist trn (mkdir trn)
 if not exist skims (mkdir skims)
 for %%H in (ea am md pm ev) DO (
@@ -35,8 +36,9 @@ for %%H in (ea am md pm ev) DO (
     if not exist trn\trnlink%%H_drv_%%J_wlk.dbf (copy %RUN_DIR%\trn\trnlink%%H_drv_%%J_wlk.dbf trn)
     if not exist trn\trnlink%%H_wlk_%%J_drv.dbf (copy %RUN_DIR%\trn\trnlink%%H_wlk_%%J_drv.dbf trn)
   )
-
-  if not exist skims\HWYSKM%%H.tpp (copy %RUN_DIR%\skims\HWYSKM%%H.tpp skims)
+  if not exist nonres\tripstrk%%H.tpp   (copy %RUN_DIR%\nonres\tripstrk%%H.tpp nonres)
+  if not exist skims\HWYSKM%%H.tpp      (copy %RUN_DIR%\skims\HWYSKM%%H.tpp skims)
+  if not exist skims\COM_HWYSKIM%%H.tpp (copy %RUN_DIR%\skims\COM_HWYSKIM%%H.tpp skims)
 )
 
 if not exist skims\nonmotskm.tpp (copy %RUN_DIR%\skims\nonmotskm.tpp skims)

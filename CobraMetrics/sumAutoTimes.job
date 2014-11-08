@@ -54,7 +54,7 @@
   Read File = "CTRAMP\scripts\block\hwyParam.block"
     
   RUN PGM = MATRIX
-  ; Read person trips for a transitmode for all time periods and Access+Egress combinations
+  ; Read person trips for an income quartile for all time periods
      FILEI MATI[1] = "main\tripsEA@token_inc@.tpp"   
      FILEI MATI[2] = "main\tripsAM@token_inc@.tpp"   
      FILEI MATI[3] = "main\tripsMD@token_inc@.tpp"   
@@ -74,7 +74,7 @@
       MW[1]   = mi.1.@token_auto@ * mi.6.@token_time@ 
       MW[2]   = mi.1.@token_auto@ * mi.6.@token_dist@
       if (@auto@ == 1 | @auto@ == 3 | @auto@ == 5) 
-        ; Trip Cost = Trips * (Value Toll + Bridge Toll + (Distance * Auto Operating Cost)) 
+        ; Trip Cost = Trips * (Value Toll + Bridge Toll + (Distance * Auto Operating Cost))
       	MW[3]   = mi.1.@token_auto@ * (mi.6.@token_btoll@ + (mi.6.@token_dist@ * @AUTOOPCOST@))
       else 	
       	MW[3]   = mi.1.@token_auto@ * (mi.6.@token_vtoll@ + mi.6.@token_btoll@ + (mi.6.@token_dist@ * @AUTOOPCOST@))
@@ -121,7 +121,7 @@
      MW[16] = mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
      MW[17] = MW[1]+MW[4]+MW[7]+MW[10]+MW[13]  ; TripTime
      MW[18] = MW[2]+MW[5]+MW[8]+MW[11]+MW[14]  ; TripDist
-     MW[19] = MW[3]+MW[6]+MW[9]+MW[12]+MW[15]  ; TripCost     
+     MW[19] = MW[3]+MW[6]+MW[9]+MW[12]+MW[15]  ; TripCost
      
      JLOOP          
       Daily_Trips = Daily_Trips + MW[16]
@@ -144,3 +144,187 @@
     ENDRUN
 endloop
 endloop
+
+RUN PGM = MATRIX
+  ; Read truck trips for all time periods
+  FILEI MATI[1] = "nonres\tripstrkEA.tpp"
+  FILEI MATI[2] = "nonres\tripstrkAM.tpp"   
+  FILEI MATI[3] = "nonres\tripstrkMD.tpp"   
+  FILEI MATI[4] = "nonres\tripstrkPM.tpp"   
+  FILEI MATI[5] = "nonres\tripstrkEV.tpp"  
+  
+  ; Read Highway Skims   
+  FILEI MATI[6] = "skims\COM_HWYSKMEA.tpp"
+  FILEI MATI[7] = "skims\COM_HWYSKMAM.tpp"
+  FILEI MATI[8] = "skims\COM_HWYSKMMD.tpp"
+  FILEI MATI[9] = "skims\COM_HWYSKMPM.tpp"
+  FILEI MATI[10]= "skims\COM_HWYSKMEV.tpp"
+
+  FILEO PRINTO[1] = "metrics\auto_times.csv",APPEND=T 
+
+  ; Trips EA * Skims EA  
+  MW[1]   = (mi.1.vstruck * mi.6.timevsm) + 
+            ( mi.1.struck * mi.6.timesml) +
+            ( mi.1.mtruck * mi.6.timemed) +
+            ( mi.1.ctruck * mi.6.timelrg)
+  MW[2]   = (mi.1.vstruck * mi.6.distvsm) +
+            ( mi.1.struck * mi.6.distsml) +
+            ( mi.1.mtruck * mi.6.distmed) +
+            ( mi.1.ctruck * mi.6.distlrg)
+  MW[3]   = (mi.1.vstruck *(mi.6.distvsm*@TRUCKOPCOST@ + mi.6.pvcostvsm)) +
+            ( mi.1.struck *(mi.6.distvml*@TRUCKOPCOST@ + mi.6.pvcostsml)) +
+            ( mi.1.mtruck *(mi.6.distmed*@TRUCKOPCOST@ + mi.6.pvcostmed)) +
+            ( mi.1.ctruck *(mi.6.distlrg*@TRUCKOPCOST@ + mi.6.pvcostlrg))
+
+  ; TOLL Trips EA * Skims EA  
+  MW[4]   = (mi.1.vstrucktoll *  mi.6.tolltimevsm) + 
+            ( mi.1.strucktoll *  mi.6.tolltimesml) +
+            ( mi.1.mtrucktoll *  mi.6.tolltimemed) +
+            ( mi.1.ctrucktoll *  mi.6.tolltimelrg)
+  MW[5]   = (mi.1.vstrucktoll *  mi.6.tolldistvsm) +
+            ( mi.1.strucktoll *  mi.6.tolldistsml) +
+            ( mi.1.mtrucktoll *  mi.6.tolldistmed) +
+            ( mi.1.ctrucktoll *  mi.6.tolldistlrg)
+  MW[6]   = (mi.1.vstrucktoll * (mi.6.tolldistvsm*@TRUCKOPCOST@ + mi.6.tollpvcostvsm)) +
+            ( mi.1.strucktoll * (mi.6.tolldistvml*@TRUCKOPCOST@ + mi.6.tollpvcostsml)) +
+            ( mi.1.mtrucktoll * (mi.6.tolldistmed*@TRUCKOPCOST@ + mi.6.tollpvcostmed)) +
+            ( mi.1.ctrucktoll * (mi.6.tolldistlrg*@TRUCKOPCOST@ + mi.6.tollpvcostlrg))
+
+  ; Trips AM * Skims AM  
+  MW[7]   = (mi.2.vstruck * mi.7.timevsm) + 
+            ( mi.2.struck * mi.7.timesml) +
+            ( mi.2.mtruck * mi.7.timemed) +
+            ( mi.2.ctruck * mi.7.timelrg)
+  MW[8]   = (mi.2.vstruck * mi.7.distvsm) +
+            ( mi.2.struck * mi.7.distsml) +
+            ( mi.2.mtruck * mi.7.distmed) +
+            ( mi.2.ctruck * mi.7.distlrg)
+  MW[9]   = (mi.2.vstruck *(mi.7.distvsm*@TRUCKOPCOST@ + mi.7.pvcostvsm)) +
+            ( mi.2.struck *(mi.7.distvml*@TRUCKOPCOST@ + mi.7.pvcostsml)) +
+            ( mi.2.mtruck *(mi.7.distmed*@TRUCKOPCOST@ + mi.7.pvcostmed)) +
+            ( mi.2.ctruck *(mi.7.distlrg*@TRUCKOPCOST@ + mi.7.pvcostlrg))
+
+  ; TOLL Trips AM * Skims AM
+  MW[10]  = (mi.2.vstrucktoll *  mi.7.tolltimevsm) + 
+            ( mi.2.strucktoll *  mi.7.tolltimesml) +
+            ( mi.2.mtrucktoll *  mi.7.tolltimemed) +
+            ( mi.2.ctrucktoll *  mi.7.tolltimelrg)
+  MW[11]  = (mi.2.vstrucktoll *  mi.7.tolldistvsm) +
+            ( mi.2.strucktoll *  mi.7.tolldistsml) +
+            ( mi.2.mtrucktoll *  mi.7.tolldistmed) +
+            ( mi.2.ctrucktoll *  mi.7.tolldistlrg)
+  MW[12]  = (mi.2.vstrucktoll * (mi.7.tolldistvsm*@TRUCKOPCOST@ + mi.7.tollpvcostvsm)) +
+            ( mi.2.strucktoll * (mi.7.tolldistvml*@TRUCKOPCOST@ + mi.7.tollpvcostsml)) +
+            ( mi.2.mtrucktoll * (mi.7.tolldistmed*@TRUCKOPCOST@ + mi.7.tollpvcostmed)) +
+            ( mi.2.ctrucktoll * (mi.7.tolldistlrg*@TRUCKOPCOST@ + mi.7.tollpvcostlrg))
+
+  ; Trips MD * Skims MD
+  MW[13]  = (mi.3.vstruck * mi.8.timevsm) + 
+            ( mi.3.struck * mi.8.timesml) +
+            ( mi.3.mtruck * mi.8.timemed) +
+            ( mi.3.ctruck * mi.8.timelrg)
+  MW[14]  = (mi.3.vstruck * mi.8.distvsm) +
+            ( mi.3.struck * mi.8.distsml) +
+            ( mi.3.mtruck * mi.8.distmed) +
+            ( mi.3.ctruck * mi.8.distlrg)
+  MW[15]  = (mi.3.vstruck *(mi.8.distvsm*@TRUCKOPCOST@ + mi.8.pvcostvsm)) +
+            ( mi.3.struck *(mi.8.distvml*@TRUCKOPCOST@ + mi.8.pvcostsml)) +
+            ( mi.3.mtruck *(mi.8.distmed*@TRUCKOPCOST@ + mi.8.pvcostmed)) +
+            ( mi.3.ctruck *(mi.8.distlrg*@TRUCKOPCOST@ + mi.8.pvcostlrg))
+
+  ; TOLL Trips MD * Skims MD
+  MW[16]  = (mi.3.vstrucktoll *  mi.8.tolltimevsm) + 
+            ( mi.3.strucktoll *  mi.8.tolltimesml) +
+            ( mi.3.mtrucktoll *  mi.8.tolltimemed) +
+            ( mi.3.ctrucktoll *  mi.8.tolltimelrg)
+  MW[17]  = (mi.3.vstrucktoll *  mi.8.tolldistvsm) +
+            ( mi.3.strucktoll *  mi.8.tolldistsml) +
+            ( mi.3.mtrucktoll *  mi.8.tolldistmed) +
+            ( mi.3.ctrucktoll *  mi.8.tolldistlrg)
+  MW[18]  = (mi.3.vstrucktoll * (mi.8.tolldistvsm*@TRUCKOPCOST@ + mi.8.tollpvcostvsm)) +
+            ( mi.3.strucktoll * (mi.8.tolldistvml*@TRUCKOPCOST@ + mi.8.tollpvcostsml)) +
+            ( mi.3.mtrucktoll * (mi.8.tolldistmed*@TRUCKOPCOST@ + mi.8.tollpvcostmed)) +
+            ( mi.3.ctrucktoll * (mi.8.tolldistlrg*@TRUCKOPCOST@ + mi.8.tollpvcostlrg))
+
+  ; Trips PM * Skims PM
+  MW[19]  = (mi.4.vstruck * mi.9.timevsm) + 
+            ( mi.4.struck * mi.9.timesml) +
+            ( mi.4.mtruck * mi.9.timemed) +
+            ( mi.4.ctruck * mi.9.timelrg)
+  MW[20]  = (mi.4.vstruck * mi.9.distvsm) +
+            ( mi.4.struck * mi.9.distsml) +
+            ( mi.4.mtruck * mi.9.distmed) +
+            ( mi.4.ctruck * mi.9.distlrg)
+  MW[21]  = (mi.4.vstruck *(mi.9.distvsm*@TRUCKOPCOST@ + mi.9.pvcostvsm)) +
+            ( mi.4.struck *(mi.9.distvml*@TRUCKOPCOST@ + mi.9.pvcostsml)) +
+            ( mi.4.mtruck *(mi.9.distmed*@TRUCKOPCOST@ + mi.9.pvcostmed)) +
+            ( mi.4.ctruck *(mi.9.distlrg*@TRUCKOPCOST@ + mi.9.pvcostlrg))
+
+  ; TOLL Trips PM * Skims PM
+  MW[22]  = (mi.4.vstrucktoll *  mi.9.tolltimevsm) + 
+            ( mi.4.strucktoll *  mi.9.tolltimesml) +
+            ( mi.4.mtrucktoll *  mi.9.tolltimemed) +
+            ( mi.4.ctrucktoll *  mi.9.tolltimelrg)
+  MW[23]  = (mi.4.vstrucktoll *  mi.9.tolldistvsm) +
+            ( mi.4.strucktoll *  mi.9.tolldistsml) +
+            ( mi.4.mtrucktoll *  mi.9.tolldistmed) +
+            ( mi.4.ctrucktoll *  mi.9.tolldistlrg)
+  MW[24]  = (mi.4.vstrucktoll * (mi.9.tolldistvsm*@TRUCKOPCOST@ + mi.9.tollpvcostvsm)) +
+            ( mi.4.strucktoll * (mi.9.tolldistvml*@TRUCKOPCOST@ + mi.9.tollpvcostsml)) +
+            ( mi.4.mtrucktoll * (mi.9.tolldistmed*@TRUCKOPCOST@ + mi.9.tollpvcostmed)) +
+            ( mi.4.ctrucktoll * (mi.9.tolldistlrg*@TRUCKOPCOST@ + mi.9.tollpvcostlrg))
+
+  ; Trips EV * Skims EV
+  MW[25]  = (mi.5.vstruck * mi.10.timevsm) + 
+            ( mi.5.struck * mi.10.timesml) +
+            ( mi.5.mtruck * mi.10.timemed) +
+            ( mi.5.ctruck * mi.10.timelrg)
+  MW[26]  = (mi.5.vstruck * mi.10.distvsm) +
+            ( mi.5.struck * mi.10.distsml) +
+            ( mi.5.mtruck * mi.10.distmed) +
+            ( mi.5.ctruck * mi.10.distlrg)
+  MW[27]  = (mi.5.vstruck *(mi.10.distvsm*@TRUCKOPCOST@ + mi.10.pvcostvsm)) +
+            ( mi.5.struck *(mi.10.distvml*@TRUCKOPCOST@ + mi.10.pvcostsml)) +
+            ( mi.5.mtruck *(mi.10.distmed*@TRUCKOPCOST@ + mi.10.pvcostmed)) +
+            ( mi.5.ctruck *(mi.10.distlrg*@TRUCKOPCOST@ + mi.10.pvcostlrg))
+
+  ; TOLL Trips EV * Skims EV
+  MW[28]  = (mi.5.vstrucktoll *  mi.10.tolltimevsm) + 
+            ( mi.5.strucktoll *  mi.10.tolltimesml) +
+            ( mi.5.mtrucktoll *  mi.10.tolltimemed) +
+            ( mi.5.ctrucktoll *  mi.10.tolltimelrg)
+  MW[29]  = (mi.5.vstrucktoll *  mi.10.tolldistvsm) +
+            ( mi.5.strucktoll *  mi.10.tolldistsml) +
+            ( mi.5.mtrucktoll *  mi.10.tolldistmed) +
+            ( mi.5.ctrucktoll *  mi.10.tolldistlrg)
+  MW[30]  = (mi.5.vstrucktoll * (mi.10.tolldistvsm*@TRUCKOPCOST@ + mi.10.tollpvcostvsm)) +
+            ( mi.5.strucktoll * (mi.10.tolldistvml*@TRUCKOPCOST@ + mi.10.tollpvcostsml)) +
+            ( mi.5.mtrucktoll * (mi.10.tolldistmed*@TRUCKOPCOST@ + mi.10.tollpvcostmed)) +
+            ( mi.5.ctrucktoll * (mi.10.tolldistlrg*@TRUCKOPCOST@ + mi.10.tollpvcostlrg))
+
+  ; Compute Daily Trips, TripTime, TripDist, TripCost
+  MW[31] = mi.1.vstruck + mi.1.struck + mi.1.mtruck + mi.1.ctruck +
+           mi.2.vstruck + mi.2.struck + mi.2.mtruck + mi.2.ctruck +
+           mi.3.vstruck + mi.3.struck + mi.3.mtruck + mi.3.ctruck +
+           mi.4.vstruck + mi.4.struck + mi.4.mtruck + mi.4.ctruck +
+           mi.5.vstruck + mi.5.struck + mi.5.mtruck + mi.5.ctruck
+  MW[32] = MW[1]+MW[4]+MW[7]+MW[10]+MW[13]+MW[16]+MW[19]+MW[22]+MW[25]+MW[28] ; TripTime
+  MW[33] = MW[2]+MW[5]+MW[8]+MW[11]+MW[14]+MW[17]+MW[20]+MW[23]+MW[26]+Mw[29] ; TripDist
+  MW[34] = MW[3]+MW[6]+MW[9]+MW[12]+MW[15]+MW[18]+MW[21]+MW[24]+MW[27]+MW[30] ; TripCost
+  
+  JLOOP          
+    Daily_Trips = Daily_Trips + MW[31]
+    TripTime    = TripTime    + MW[32]
+    TripDist    = TripDist    + MW[33]
+    TripCost    = TripCost    + MW[34]
+  ENDJLOOP
+ 
+  Trips = Daily_Trips
+  if (Trips <>0)
+    Avg_time = TripTime/Trips
+    Avg_dist = TripDist/Trips
+    Avg_Cost = TripCost/Trips
+  Endif
+   
+  if(I = 1454) PRINT PRINTO=1 CSV=T LIST= "na", "truck", Trips(10.2L), Avg_time(10.2L), Avg_dist(10.2L), Avg_Cost(10.2L)
+ENDRUN
