@@ -9,6 +9,7 @@ import sys
 import pandas as pd     # yay for DataFrames and Series!
 import xlsxwriter       # for writing workbooks -- formatting is better than openpyxl
 from xlsxwriter.utility import xl_range, xl_rowcol_to_cell
+pd.set_option('display.precision',10)
 
 USAGE = """
 
@@ -111,66 +112,64 @@ class RunResults:
     # Table 9: Benefit Valuations
     # Units in 2013 dollars
     BENEFIT_VALUATION           = {
-    ('Travel Time','Auto/Truck (Hours)'                                       ):     -16.03,  # Auto
-    ('Travel Time','Auto/Truck (Hours)','Truck (VHT)'                         ):     -26.24,  # Truck
-    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Auto'               ):     -16.03,
-    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck'              ):     -26.24,
-    ('Travel Time','Transit In-Vehicle (Hours)'                               ):     -16.03,
-    ('Travel Time','Transit Out-of-Vehicle (Hours)'                           ):     -35.27,
-    ('Travel Time','Walk/Bike (Hours)'                                        ):     -16.03,
-    ('Travel Cost','VMT','Auto'                                               ):      -0.2688,
-    ('Travel Cost','VMT','Truck'                                              ):      -0.3950,
-    ('Travel Cost','Vehicle Ownership (Modeled)'                              ):   -6290.0,
-    ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                 ):   -6290.0,
-    ('Travel Cost','Noise','Auto VMT'                                         ):      -0.0012,
-    ('Travel Cost','Noise','Truck VMT'                                        ):      -0.0150,
-    ('Travel Cost','Parking Costs','Work Trips in San Francisco'): -7.16,
-    ('Travel Cost','Parking Costs','Work Trips in San Mateo'    ):  0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Santa Clara'  ): -0.15,
-    ('Travel Cost','Parking Costs','Work Trips in Alameda'      ): -0.54,
-    ('Travel Cost','Parking Costs','Work Trips in Contra Costa' ):  0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Solano'       ):  0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Napa'         ):  0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Sonoma'       ):  0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Marin'        ):  0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in San Francisco'): -5.64,
-    ('Travel Cost','Parking Costs','Non-Work Trips in San Mateo'    ): -0.04,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Santa Clara'  ): -0.33,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Alameda'      ): -0.39,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Contra Costa' ):  0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Solano'       ):  0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Napa'         ):  0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Sonoma'       ):  0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Marin'        ):  0.00,
-
-    ('Air Pollutant','PM2.5 (tons)','PM2.5 Gasoline'                          ): -487200.0,
-    ('Air Pollutant','PM2.5 (tons)','PM2.5 Diesel'                            ): -490300.0,
-    ('Air Pollutant','CO2 (metric tons)','CO2'                                ):     -55.35,
-    ('Air Pollutant','Other (tons)','NOX'                                     ):   -7800.0,
-    ('Air Pollutant','Other (tons)','SO2'                                     ):  -40500.0,
-    ('Air Pollutant','Volatile Organic Compounds (metric tons)','Acetaldehyde' ):  -5700,
-    ('Air Pollutant','Volatile Organic Compounds (metric tons)','Benzene'      ): -12800,
-    ('Air Pollutant','Volatile Organic Compounds (metric tons)','1,3-Butadiene'): -32200,
-    ('Air Pollutant','Volatile Organic Compounds (metric tons)','Formaldehyde' ):  -6400,
-    ('Air Pollutant','Volatile Organic Compounds (metric tons)','All other VOC'):  -5100,
-    ('Collisions & Active Transport','Fatalies due to Collisions'            ): -4590000,
-    ('Collisions & Active Transport','Injuries due to Collisions'            ):   -64400,
-    ('Collisions & Active Transport','Property Damage Only (PDO) Collisions' ):    -2455,
-    ('Collisions & Active Transport','Active Individuals'                    ):     1220,
+    ('Travel Time','Auto/Truck (Hours)'                                        ):     -16.03,  # Auto
+    ('Travel Time','Auto/Truck (Hours)','Truck (VHT)'                          ):     -26.24,  # Truck
+    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Auto'                ):     -16.03,
+    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck'               ):     -26.24,
+    ('Travel Time','Transit In-Vehicle (Hours)'                                ):     -16.03,
+    ('Travel Time','Transit Out-of-Vehicle (Hours)'                            ):     -35.266,
+    ('Travel Time','Walk/Bike (Hours)'                                         ):     -16.03,
+    ('Travel Cost','VMT','Auto'                                                ):      -0.2688,
+    ('Travel Cost','VMT','Truck'                                               ):      -0.3950,
+    ('Travel Cost','Operating Costs','Auto ($2000)'                            ):       1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Cost','Operating Costs','Truck ($2000)'                           ):       1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Cost','Vehicle Ownership (Modeled)'                               ):   -6290.0,
+    ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                  ):   -6290.0,
+    ('Travel Cost','Noise','Auto VMT'                                          ):      -0.0012,
+    ('Travel Cost','Noise','Truck VMT'                                         ):      -0.0150,
+    ('Travel Cost','Parking Costs','Work Trips in San Francisco'               ):      -7.16,
+    ('Travel Cost','Parking Costs','Work Trips in San Mateo'                   ):       0.00,
+    ('Travel Cost','Parking Costs','Work Trips in Santa Clara'                 ):      -0.15,
+    ('Travel Cost','Parking Costs','Work Trips in Alameda'                     ):      -0.54,
+    ('Travel Cost','Parking Costs','Work Trips in Contra Costa'                ):       0.00,
+    ('Travel Cost','Parking Costs','Work Trips in Solano'                      ):       0.00,
+    ('Travel Cost','Parking Costs','Work Trips in Napa'                        ):       0.00,
+    ('Travel Cost','Parking Costs','Work Trips in Sonoma'                      ):       0.00,
+    ('Travel Cost','Parking Costs','Work Trips in Marin'                       ):       0.00,
+    ('Travel Cost','Parking Costs','Non-Work Trips in San Francisco'           ):      -5.64,
+    ('Travel Cost','Parking Costs','Non-Work Trips in San Mateo'               ):      -0.04,
+    ('Travel Cost','Parking Costs','Non-Work Trips in Santa Clara'             ):      -0.33,
+    ('Travel Cost','Parking Costs','Non-Work Trips in Alameda'                 ):      -0.39,
+    ('Travel Cost','Parking Costs','Non-Work Trips in Contra Costa'            ):       0.00,
+    ('Travel Cost','Parking Costs','Non-Work Trips in Solano'                  ):       0.00,
+    ('Travel Cost','Parking Costs','Non-Work Trips in Napa'                    ):       0.00,
+    ('Travel Cost','Parking Costs','Non-Work Trips in Sonoma'                  ):       0.00,
+    ('Travel Cost','Parking Costs','Non-Work Trips in Marin'                   ):       0.00,
+    ('Air Pollutant','PM2.5 (tons)','PM2.5 Gasoline'                           ): -487200.0,
+    ('Air Pollutant','PM2.5 (tons)','PM2.5 Diesel'                             ): -490300.0,
+    ('Air Pollutant','CO2 (metric tons)','CO2'                                 ):     -55.35,
+    ('Air Pollutant','Other (tons)','NOX'                                      ):   -7800.0,
+    ('Air Pollutant','Other (tons)','SO2'                                      ):  -40500.0,
+    ('Air Pollutant','Volatile Organic Compounds (metric tons)','Acetaldehyde' ):   -5700,
+    ('Air Pollutant','Volatile Organic Compounds (metric tons)','Benzene'      ):  -12800,
+    ('Air Pollutant','Volatile Organic Compounds (metric tons)','1,3-Butadiene'):  -32200,
+    ('Air Pollutant','Volatile Organic Compounds (metric tons)','Formaldehyde' ):   -6400,
+    ('Air Pollutant','Volatile Organic Compounds (metric tons)','All other VOC'):   -5100,
+    ('Collisions & Active Transport','Fatalies due to Collisions'              ):-4590000,
+    ('Collisions & Active Transport','Injuries due to Collisions'              ):  -64400,
+    ('Collisions & Active Transport','Property Damage Only (PDO) Collisions'   ):   -2455,
+    ('Collisions & Active Transport','Active Individuals'                      ):    1220,
     }
 
-    def __init__(self, rundir, read_base=True, parking_cost_config=None):
+    def __init__(self, rundir, overwrite_config=None):
         """
     Parameters
     ----------
     rundir : string
         The directory containing the raw output for the model run.
-    read_base : bool
-        Pass true if we should create another instance of this class to read the output
-        of a base directory.
-    parking_cost_config : dict
-        Pass parking cost config if this is a base scenario and we should use the
-        project's parking costs.
+    overwrite_config : dict
+        Pass overwrite config if this is a base scenario and we should use the
+        project's parking costs and ovtt adjustment mode.
     """
         # read the configs
         self.rundir = os.path.abspath(rundir)
@@ -192,48 +191,23 @@ class RunResults:
             print("Configuration file %s missing required variable: %s" % (config_file, str(e)))
             sys.exit(2)
 
-        # Not required
-        self.base_dir     = None
-        self.base_results = None
-        if read_base:
-            try:
-                self.base_dir     = self.config.loc['base_dir']
-            except:
-                # this is ok -- no base_dir specified
-                self.base_dir     = None
+        self.is_base_dir = False
+        if overwrite_config:
+            self.is_base_dir = True
+            for key in overwrite_config.keys(): self.config[key] = overwrite_config[key]
+            print "OVERWRITE_CONFIG FOR BASE_DIR: ", self.config
 
-        if self.base_dir:
-            # these are not ok - let exceptions raise
-            print("")
-            print("BASE:")
-            self.base_dir = os.path.realpath(self.base_dir)
-
-            # pass the parking config
-            base_parking_cost_config = {}
-            total_parking_cost_allocation = 0.0
-            for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
-                key = 'percent parking cost incurred in %s' % county
-                # convert to floats
-                self.config.loc[key] = float(self.config.loc[key])
-                base_parking_cost_config[key] = self.config.loc[key]
-                total_parking_cost_allocation += self.config.loc[key]
-
-            assert(total_parking_cost_allocation == 1.0)
-            self.base_results = RunResults(rundir = self.base_dir, 
-                                           read_base=False, # don't recursive loop
-                                           parking_cost_config=base_parking_cost_config)
-            self.base_results.calculateDailyMetrics()
-
-        if parking_cost_config:
-            print key
-            for key in parking_cost_config.keys(): self.config[key] = parking_cost_config[key]
+        elif 'base_dir' not in self.config.keys():
+            self.is_base_dir = True
+            self.config['ovtt_adjustment'] = 0.0
 
         print("")
         # read the csvs
         self.auto_times = \
             pd.read_table(os.path.join(self.rundir, "auto_times.csv"),
                           sep=",", index_col=[0,1])
-        # print self.auto_times
+        self.auto_times['Total Cost'] = self.auto_times['Daily Trips']*self.auto_times['Avg Cost']
+        print self.auto_times
 
         self.autos_owned = \
             pd.read_table(os.path.join(self.rundir, "autos_owned.csv"),
@@ -252,9 +226,9 @@ class RunResults:
                                        sep=",", index_col=[0,1])
         # print self.nonmot_times
 
-        self.transit_boards_miles = \
-            pd.read_table(os.path.join(self.rundir, "transit_boards_miles.csv"),
-                          sep=",", index_col=0)
+        # self.transit_boards_miles = \
+        #     pd.read_table(os.path.join(self.rundir, "transit_boards_miles.csv"),
+        #                   sep=",", index_col=0)
         # print self.transit_boards_miles
 
         self.transit_times_by_acc_mode_egr = \
@@ -270,8 +244,9 @@ class RunResults:
     def calculateDailyMetrics(self):
         """
         Calculates the daily output metrics which will actually get used for the benefits/cost
-        analysis.
+        analysis.     
         """
+
         # we really want these by class -- ignore time periods and income levels
         vmt_byclass     = self.vmt_vht_metrics.sum(level='vehicle class') # vehicles, not people
         transit_byclass = self.transit_times_by_acc_mode_egr.sum(level='Mode')
@@ -308,7 +283,25 @@ class RunResults:
         daily_results[(cat1,cat2,'Drive Access+Egress')] = transit_byclass.loc[:,'Drive acc & egr hours'].sum()
         daily_results[(cat1,cat2,'Wait'               )] = transit_byclass.loc[:,'Init wait hours'].sum() + \
                                                      transit_byclass.loc[:,'Xfer wait hours'].sum()
-        # TODO: What's the "OVTT Adjustment (Total Trips)"  ?
+        # Out-of-Vehicle ajustment
+        auto_person_trips = auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Daily Trips'].sum()
+        # If this is base dir, ovtt adjustment comes from project
+
+        if self.is_base_dir:
+            self.ovtt_adjustment = self.config.loc['ovtt_adjustment']
+        elif self.config.loc['Project Mode'] in ['com','hvy','exp','lrf','loc']:
+            self.ovtt_adjustment = transit_byclass.loc[self.config.loc['Project Mode'],'Out-of-vehicle hours'] / \
+                                   transit_byclass.loc[self.config.loc['Project Mode'],'Transit Trips']
+        elif self.config.loc['Project Mode'] == 'road':
+            self.ovtt_adjustment = transit_byclass.loc[:,'Out-of-vehicle hours'].sum() / \
+                                   transit_byclass.loc[:,'Transit Trips'].sum()
+        else:
+            raise Exception("Invalid Project Mode:'%s'; Should be one of 'road','com','hvy','exp','lrf','loc'" % \
+                            self.config.loc['Project Mode'])
+
+        daily_results[(cat1,cat2,'Ajustment for %s' % self.config.loc['Project Mode'])] = \
+            self.ovtt_adjustment * auto_person_trips
+                                   
 
         cat2            = 'Walk/Bike (Hours)'
         daily_results[(cat1,cat2,'Walk')] = nonmot_byclass.loc['Walk','Total Time (Hours)']
@@ -322,21 +315,32 @@ class RunResults:
         daily_results[(cat1,cat2,'Truck')] = \
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
 
+        cat2            = 'Operating Costs'
+        daily_results[(cat1,cat2,'Auto ($2000)' )] = \
+            0.01*auto_byclass.loc[['da','datoll','s2','s2toll','s3','s3toll'],'Total Cost'].sum()
+        daily_results[(cat1,cat2,'Truck ($2000)')] = \
+            0.01*auto_byclass.loc['truck','Total Cost'].sum()
+
         # Parking
-        cat2            = 'Auto Trips'
+        cat2            = 'Auto Trips'       # These are by person; change to vehicle
         daily_results[(cat1,cat2,'SOV'  )] = auto_byclass.loc[['da' ,'datoll' ],'Daily Trips'].sum()
         daily_results[(cat1,cat2,'HOV2' )] = auto_byclass.loc[['sr2','sr2toll'],'Daily Trips'].sum()/2.0
         daily_results[(cat1,cat2,'HOV3+')] = auto_byclass.loc[['sr3','sr3toll'],'Daily Trips'].sum()/3.5
         total_autotrips = daily_results[(cat1,cat2,'SOV')] + daily_results[(cat1,cat2,'HOV2')] + daily_results[(cat1,cat2,'HOV3+')]
+
         cat2            = 'Parking Costs'
-        for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
-            daily_results[(cat1,cat2,'Work Trips in %s'     % county)] = total_autotrips * \
-                RunResults.PERCENT_PARKING_NONHOME * RunResults.PERCENT_PARKING_WORK * \
-                self.config.loc['percent parking cost incurred in %s' % county]
-        for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
-            daily_results[(cat1,cat2,'Non-Work Trips in %s' % county)] = total_autotrips * \
-                RunResults.PERCENT_PARKING_NONHOME * (1.0-RunResults.PERCENT_PARKING_WORK) * \
-                self.config.loc['percent parking cost incurred in %s' % county]
+        try:
+            for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
+                daily_results[(cat1,cat2,'Work Trips in %s'     % county)] = total_autotrips * \
+                    RunResults.PERCENT_PARKING_NONHOME * RunResults.PERCENT_PARKING_WORK * \
+                    float(self.config.loc['percent parking cost incurred in %s' % county])
+            for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
+                daily_results[(cat1,cat2,'Non-Work Trips in %s' % county)] = total_autotrips * \
+                    RunResults.PERCENT_PARKING_NONHOME * (1.0-RunResults.PERCENT_PARKING_WORK) * \
+                    float(self.config.loc['percent parking cost incurred in %s' % county])
+        except:
+            # base dirs don't have parking costs
+            assert(self.is_base_dir)
 
         # Vehicles Owned
         cat2            = 'Vehicle Ownership (Modeled)'
@@ -436,6 +440,7 @@ class RunResults:
 
         # sum to categories
         self.daily_category_results = self.daily_results.sum(level=[0,1])
+        print self.daily_category_results
 
     def calculateBenefitCosts(self, BC_detail_workbook, all_projects_dir):
         """
@@ -445,6 +450,45 @@ class RunResults:
         Writes a readable version into `BC_detail_workbook`, and flat csv series
         into a csv in `all_projects_dir` named [Project ID].csv.
         """
+        self.base_results = None
+
+        try:
+            self.base_dir     = self.config.loc['base_dir']
+        except:
+            # this is ok -- no base_dir specified
+            self.base_dir     = None
+
+        if self.base_dir:
+            # these are not ok - let exceptions raise
+            print("")
+            print("BASE:")
+            self.base_dir = os.path.realpath(self.base_dir)
+
+            # pass the parking config for overwrite
+            base_overwrite_config = {}
+            total_parking_cost_allocation = 0.0
+            for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
+                key = 'percent parking cost incurred in %s' % county
+                # convert to floats
+                self.config.loc[key] = float(self.config.loc[key])
+                base_overwrite_config[key] = self.config.loc[key]
+                total_parking_cost_allocation += self.config.loc[key]
+
+            assert(total_parking_cost_allocation == 1.0)
+
+            # pass the project mode for overwrite to base
+            base_overwrite_config['Project Mode'] = self.config.loc['Project Mode']
+            # and the ovtt adjustment
+            base_overwrite_config['ovtt_adjustment'] = self.ovtt_adjustment
+            print self.base_dir
+            print base_overwrite_config
+            self.base_results = RunResults(rundir = self.base_dir, 
+                                           overwrite_config=base_overwrite_config)
+            self.base_results.calculateDailyMetrics()
+            print "base results----"
+            print self.base_results.config
+            print self.base_results.daily_category_results
+
         # these will be the daily and annual diffs, and monetized diffs
         # key = (category1, category2, variable name)
         bc_metrics      = collections.OrderedDict()
@@ -645,10 +689,17 @@ class RunResults:
                                         '=%d*%s' % (RunResults.ANNUALIZATION, xl_rowcol_to_cell(row,3)),
                                         format_cat2d_lil if (cat1,cat2) in self.lil_cats else format_cat2d_big)
 
-                        bc_metrics[(cat1,cat2,'Daily Difference')] = self.daily_category_results[(cat1,cat2)] - \
-                                                                     self.base_results.daily_category_results[(cat1,cat2)]
-                        bc_metrics[(cat1,cat2,'Annual Difference')] = RunResults.ANNUALIZATION * \
-                                                                      bc_metrics[(cat1,cat2,'Daily Difference')]
+                        try:
+                            bc_metrics[(cat1,cat2,'Daily Difference')] = self.daily_category_results[(cat1,cat2)] - \
+                                                                         self.base_results.daily_category_results[(cat1,cat2)]
+                            bc_metrics[(cat1,cat2,'Annual Difference')] = RunResults.ANNUALIZATION * \
+                                                                          bc_metrics[(cat1,cat2,'Daily Difference')]
+                        except Exception as e:
+                            print cat1, cat2
+                            print e
+                            # print self.daily_category_results[(cat1,cat2)]
+                            # print self.base_results.daily_category_results[(cat1,cat2)]
+                            sys.exit()
 
 
                     # worksheet.write(row,6, "", format_cat2d_lil)    
@@ -735,7 +786,7 @@ class RunResults:
             self.bc_metrics.name = 'values'
  
             all_proj_filename = os.path.join(all_projects_dir, "%s.csv" % self.config.loc['Project ID'])
-            self.bc_metrics.to_csv(all_proj_filename, header=True)
+            self.bc_metrics.to_csv(all_proj_filename, header=True, float_format='%.5f')
             print("Wrote %s" % all_proj_filename)
 
 if __name__ == '__main__':
