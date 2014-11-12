@@ -1,0 +1,216 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; CalculateSpeeds.job
+;
+; TP+ script to compute the speeds from a highway network with successively averaged roadway volumes (see 
+; AverageNetworkVolumes.job for details).  The script first loops through the five time periods, which are: (a) early 
+; AM, 3 am to 6 am; (b) AM peak period, 6 am to 10 am; (c) midday, 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; 
+; and, (e) evening, 7 pm to 3 am.  A dummy highway assignment is used to compute the speeds, therefore utilizing the
+; volume delay functions. 
+;
+;
+; Input:  (1) Five time-period-specific highway networks with the following variables: (a) V_1, VC_1, V1_X, etc, 
+;             which are the averaged volumes as computed by AverageNetworkVolumes.job; (b) DISTANCE (miles); 
+;             (c) FT, which is the facility type a code which determines the links' free-flow speed, capacity, 
+;             and volume/speed relationship; (d) TOLLCLASS, which is a code, less than FIRSTVALUE - 1 (see hwyParam.block) 
+;             indicates the link is a bridge toll and a value higher than FIRSTVALUE indicates the link is a value toll; 
+;             (e) OT, which is the observed travel time for links immune to congestion (generally used to represent 
+;             toll booth delay and centroid connector travel time); (f) FFS,which is the free flow speed (in miles 
+;             per hour); (g) TSIN, which is a code, a value of one indicates the link is immune to congestion and 
+;             has a fixed time coded in the OT field; (h) CAPCLASS, which is a speed/capacity look-up code (see 
+;             the "SpeedCapacity.block" file); and (i) TOLLXX_CC, where XX is a two-character time-period code and
+;             CC is a two or three-character vehicle class code, and the value is the dollar value of the toll to go 
+;             through the link in year 2000 dollars. 
+;
+; Output: (1) Five time-period-specific highway networks with the following link-specific variables which represent 
+;             the composite roadway conditions of all previous model iterations: (a) CTIM, which is the congested 
+;             travel time (minutes); (b) VC, which is the volume-to-capacity ratio; (c) CSPD, which is the congested
+;             travel speed (miles per hour); (d) VDT, which is the vehicle-distance traveled on each link (in vehicle
+;             times miles); and, (e) VHT, which is the vehicle-hours traveled on each link. 
+;                                     
+;
+; Notes:  (1)  
+;
+; See also: (1) AverageNetworkVolumes.job -- computes an average vehicle volume based on the current and previous
+;               model iterations. 
+;           (2) MergeNetworks.job -- Prepares the networks for the next iteration skimming and combines the volumes
+;               into a single network. 
+;
+; version:  Travel Model One
+; authors:  dto (2010 08 10); gde (2009)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; set the current iteration DOS token as a TP+ token
+token_current_iteration = '%ITER%'
+
+; do, more or less, the same assignment procedure for each time period
+loop period = 1,5
+  
+   ; a two letter token is used for each time period  
+   if (period = 1)    
+      token_period = 'EA'
+      
+      ; set the capacity factor, which is the number of hours represented in the assignment
+      token_capfac = 'parameters capfac = 3'
+      
+      ; set the processors to be used for the intrastep multithreading
+      token_intrastep_processlist = '6'
+      
+   elseif (period = 2)      
+      token_period = 'AM'
+      token_capfac = 'parameters capfac = 4'
+      token_intrastep_processlist = '7-11'
+      
+   elseif (period = 3)   
+      token_period = 'MD'
+      token_capfac = 'parameters capfac = 5'
+      token_intrastep_processlist = '12'
+  
+   elseif (period = 4)   
+      token_period = 'PM'
+      token_capfac = 'parameters capfac = 4'
+      token_intrastep_processlist = '13-15'
+  
+   elseif (period = 5) 
+      token_period = 'EV'
+      token_capfac = 'parameters capfac = 8'
+      token_intrastep_processlist = '16'
+  
+   endif
+   
+   ; distribute via cluster
+   DistributeMultistep processid = 'CTRAMP', processNum = @period@, commpath = 'm:\commpath'
+  
+   ; step 1: use the assignment routine to compute link speeds with the averaged volume
+   run pgm = highway
+  
+      ; overhead causes time losses with Intrastep distribution -- leave our for now, but leave instructure there for future
+      ; DistributeIntrastep processid = "ctramp", processlist = @token_intrastep_processlist@, commpath = 'm:\commpath', saveprn = f
+      
+      ; use the networks with the averaged (through big iterations) volumes -- see AverageNetworkVolumes.job
+      neti = hwy\iter@token_current_iteration@\xavgload@token_period@.net
+      
+      ; temporary output network with averaged speeds
+      neto = hwy\iter@token_current_iteration@\x2avgload@token_period@.net 
+      
+      ; hwyParam.bock contains variables used in the remainder of the script, particularly in the generalized cost expressions
+      read file = ctramp\scripts\block\hwyparam.block
+      
+      ; set the assignment paramters -- equilibrium assignment
+      parameters combine = equi                                 
+      
+      ; set the assignment parameters -- 1454 internal zones + 21 external zones
+      parameters zones = 1475
+      
+      ; set the assignment parameters -- single dummy iteration just to calculate speeds
+      parameters maxiters = 1
+      
+      ; set the assignment parameters -- closure criteria (irrelevant for single iteration)
+      parameters relativegap = 0.005
+      
+      ; set the assignment parameters -- other closure criteria (do not use)
+      parameters gap = 0, aad = 0, raad = 0, rmse = 0
+    
+      ; set the number of hours in the assignment (see the loop tokens)
+      @token_capfac@ 
+       
+      ; read in the speed/capacity table
+      read file = ctramp\scripts\block\SpeedCapacity_1hour.block 
+      
+      ; set the working variables
+      phase = linkread
+      
+         ; distance is used in the volume/delay functions and the generalized cost function
+         distance = li.DISTANCE
+         
+         ; facility type is used in the compuation of the volume/delay function parameter
+         linkclass = li.FT
+         
+         ; tollclass determines whether a link is only available to value toll payers
+         lw.tollclass = li.TOLLCLASS
+         
+         ; fixed time links (where TSIN = 1) are indifferent to congestion
+         lw.ot = li.OT
+         
+         ; free-flow speed is used in the volume/delay functions
+         lw.ffs = li.FFS
+         
+         ; free-flow time is a function of free-flow speed and distance and is used in the generalized cost function
+         lw.fft = (distance / lw.ffs) * 60.0 
+         
+         ; TSIN is a code, where 1 indicates the link has a fixed time and is immune to demand
+         lw.tsin = li.TSIN
+         
+         ; link capacity is a function of the number of lanes
+         lw.lanes = li.LANES
+     
+         ; the speed/capacity table and the computation of the volume/delay function parameter (see FreeFlowSpeed.block) uses the capacity class code
+         ; which is area type * 10 + facility type
+         lw.capclass = li.CAPCLASS
+           
+         ; set the input time to OT for fixed time links
+         if (lw.tsin = 1)
+            t0 = lw.ot
+         endif        
+         
+      ; the setting of critical speeds and computation of the volume/delay function parameter is in the FreeFlowSpeed.block file  
+      read file = ctramp\scripts\block\FreeFlowSpeed.block 
+      
+      ; compute the generalized cost for passenger vehicles (we are not building paths, so only a dummy is required)
+      lw.gencost_da = lw.fft + (0.6/vot) * (lw.dist * autoopcost + li.TOLL@token_period@_DA)   
+
+      endphase
+      
+      ; in order to compute speeds, one pathload statement is required, which is included with dummy volume
+      phase = iloop
+      
+         pathload path = lw.gencost_da, vol[20] = 0
+         
+      endphase
+      
+      ; compute the speeds with the volume delay curves
+      phase = adjust
+      
+         ; total volume includes each of the 10 classes
+         function v = li.v1_1 + li.v2_1 + li.v3_1 + li.v4_1 + trkpce * li.v5_1 + li.v6_1 + li.v7_1 + li.v8_1 + li.v9_1 + trkpce * li.v10_1
+                 
+         ; the volume delay functions are housed in the SpeedFlowCurve.block file
+         read file = ctramp\scripts\block\SpeedFlowCurve.block 
+            
+         ; set the generalized cost functions (we are not building paths, so only a dummy is required)
+         lw.gencost_da = time + (0.6/vot) * (lw.dist * autoopcost + li.TOLL@token_period@_DA)   
+            
+      endphase
+      
+   endrun
+   
+   ; step 2: shift the newly-computed speeds to the "_1" variable codes (volume is already in V_1 from AverageNetworkVolumes.job)
+   run pgm = network
+    
+      ; use the network from step 1
+      neti = hwy\iter@token_current_iteration@\x2avgload@token_period@.net                 
+          
+      ; output network with averaged speeds, excluding the dummy assignment results from AverageNetworkVolumes and from step 1 of this script   
+      neto = hwy\iter@token_current_iteration@\avgload@token_period@.net, 
+             exclude = V_1, VC_1, V1_1, V2_1, V3_1, V4_1, V5_1, V6_1, V7_1, V8_1, V9_1, V10_1,  
+                       VT_1, V1T_1, V2T_1, V3T_1, V4T_1, V5T_1, V6T_1, V7T_1, V8T_1, V9T_1, V10T_1,
+                       V_2, TIME_2, VC_2, CSPD_2, VDT_2, VHT_2, V20_2, VT_2, V20T_2
+      
+      ; shift the key information to the renamed variables (see RenameAssignmentVariables.job), as expected by TestNetworkConvergence script
+      CTIM = TIME_2
+      VC   = VC_2
+      CSPD = CSPD_2
+      VDT  = VDT_2
+      VHT  = VHT_2
+      
+   endrun
+  
+   EndDistributeMultistep
+  
+endloop ; time period loop
+
+Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
+          printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+

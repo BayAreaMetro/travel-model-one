@@ -1,0 +1,73 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; IxTimeOfDay.job
+;
+; TP+ script to apply diurnal factors to the daily estimate of internal/external personal vehicle trips.  A separate 
+; sketch process is used to generate the internal/external trip table, which is independent of land use patterns 
+; and congestion in the current implementation. The internal/external trip table includes only passenger vehicles,
+; and does not include trucks.
+;
+; The five time periods modeled are: (a) early AM, 3 am to 6 am; (b) AM peak period, 6 am to 10 am; (c) midday, 
+; 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; and, (e) evening, 7 pm to 3 am the next day.
+;
+; The diurnal factors are taken from the BAYCAST model.  The entire estimation of internal/external travel demand
+; is taken from the BAYCAST model and is not improved for Travel Model One. 
+;
+; Input:  (1)  A daily trip table, containing trips in production/attraction format for the following modes, drive
+;              alone (i.e. single-occupant personal passenger vehicle), shared ride 2 (double-occupant personal
+;              passenger vehicle), and shared ride 3+ (three-or-more-occupants personal passenger vehicle). The 
+;              tables must be named "ix_daily_da", "ix_daily_sr2", and "ix_daily_sr3".
+;
+; Output: (1)  Five time-of-day-specific estimates of internal/external demand, each time-of-day-specific matrices
+;              containing four tables, one for drive alone (da), one for shared ride 2 (sr2), and one for shared ride
+;              3 (sr3).
+;
+; Notes:  (1) Performance can not be improved with distributing to the cluster
+;
+; See also: (1) IxTollChoice.job, which applies a toll/no toll choice model for each vehicle class.
+;
+; version:  Travel Model One (version 0.1)
+; authors:  dto (2011 01 31); gde (2009)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+run pgm = matrix
+
+   ; read in the static internal external trip table
+   filei mati[1] = nonres\ixDailyx4.tpp
+   
+   ; write out a trip table for each time period
+   fileo mato[1] = nonres\tripsIxEAx.tpp, mo = 1-3,   name = DA, S2, S3
+   fileo mato[2] = nonres\tripsIxAMx.tpp, mo = 4-6,   name = DA, S2, S3
+   fileo mato[3] = nonres\tripsIxMDx.tpp, mo = 7-9,   name = DA, S2, S3
+   fileo mato[4] = nonres\tripsIxPMx.tpp, mo = 10-12, name = DA, S2, S3
+   fileo mato[5] = nonres\tripsIxEVx.tpp, mo = 13-15, name = DA, S2, S3
+   
+   ; convert the input tables from p/a format to origin/destination format
+   ;   - early AM
+   mw[1] = 0.500 * 0.15329 * mi.1.ix_daily_da  + 0.500 * 0.06440 * mi.1.ix_daily_da.T
+   mw[2] = 0.500 * 0.15329 * mi.1.ix_daily_sr2 + 0.500 * 0.06440 * mi.1.ix_daily_sr2.T
+   mw[3] = 0.500 * 0.15329 * mi.1.ix_daily_sr3 + 0.500 * 0.06440 * mi.1.ix_daily_sr3.T
+   
+   ;   - AM peak
+   mw[4] = 0.500 * 0.26441 * mi.1.ix_daily_da  + 0.500 * 0.17540 * mi.1.ix_daily_da.T
+   mw[5] = 0.500 * 0.26441 * mi.1.ix_daily_sr2 + 0.500 * 0.17540 * mi.1.ix_daily_sr2.T
+   mw[6] = 0.500 * 0.26441 * mi.1.ix_daily_sr3 + 0.500 * 0.17540 * mi.1.ix_daily_sr3.T
+   
+   ;   - midday
+   mw[7] = 0.500 * 0.25720 * mi.1.ix_daily_da  + 0.500 * 0.26950 * mi.1.ix_daily_da.T
+   mw[8] = 0.500 * 0.25720 * mi.1.ix_daily_sr2 + 0.500 * 0.26950 * mi.1.ix_daily_sr2.T
+   mw[9] = 0.500 * 0.25720 * mi.1.ix_daily_sr3 + 0.500 * 0.26950 * mi.1.ix_daily_sr3.T 
+   
+   ;   - PM peak
+   mw[10] = 0.500 * 0.21490 * mi.1.ix_daily_da  + 0.500 * 0.29824 * mi.1.ix_daily_da.T
+   mw[11] = 0.500 * 0.21490 * mi.1.ix_daily_sr2 + 0.500 * 0.29824 * mi.1.ix_daily_sr2.T
+   mw[12] = 0.500 * 0.21490 * mi.1.ix_daily_sr3 + 0.500 * 0.29824 * mi.1.ix_daily_sr3.T 
+   
+   ;   - evening
+   mw[13] = 0.500 * 0.11020 * mi.1.ix_daily_da  + 0.500 * 0.19246 * mi.1.ix_daily_da.T
+   mw[14] = 0.500 * 0.11020 * mi.1.ix_daily_sr2 + 0.500 * 0.19246 * mi.1.ix_daily_sr2.T
+   mw[15] = 0.500 * 0.11020 * mi.1.ix_daily_sr3 + 0.500 * 0.19246 * mi.1.ix_daily_sr3.T 
+   
+endrun

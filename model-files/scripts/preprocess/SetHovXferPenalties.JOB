@@ -1,0 +1,63 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; SetTolls.job
+;
+; TP+ script to set the bridge and value tolls in the highway network.  A value toll is paid to save time by 
+; taking a parallel (e.g. HOT) or nearby facility.  The time periods are: early AM, 3 am to 6 am; AM peak, 6 am to
+; 10 am; midday, 10 am to 3 pm; PM peak, 3 pm to 7 pm; and evening, 7 pm to 3 am the next day.
+;
+; A separate SetTolls.job is needed for each forecast year and for each pricing alternative. 
+;
+; The variable TOLL is a legacy from the previous model and it is referenced here.  Eventually, the variable TOLLCLASS
+; will replace TOLL.  Each of the eight existing Bay Area bridge toll booths has a unique TOLLCLASS code as follows:
+; (1) Benicia-Martinez Bridge; (2) Carquinez Bridge; (3) Richmond Bridge; (4) Golden Gate Bridge; (5) San Francisco/
+; Oakland Bay Bridge; (6) San Mateo Bridge; (7) Dumbarton Bridge; (8) Antioch Bridge.  TOLLCLASS codes nine and ten
+; are reserved for testing new Bridges. 
+;
+; TOLLCLASS codes 11 and above (please see hwyParam.block which denotes this value) are reserved for so-called "value
+; toll" facilities, which are currently used to model high-occupancy toll (HOT) lanes.  These variables can be used
+; to toll specific links (each link with a different toll needs a different TOLLCLASS code). 
+;
+; All tolls should be expressed in year 2000 cents.
+;
+; Separate tolls can be charged to each of seven vehicle classes, as follows: (1) single-occupancy passenger 
+; vehicles, or drive alone, "DA"; (2) two-occupant passenger vehicles, or shared ride two, "S2"; (3) three-or-more-
+; occupant passenger vehicles, or shared ride three, "S3"; (4) very small commercial trucks, which are assumed to 
+; be two-axle vehicles, "VSM"; (5) small commercial trucks, which are assumed to be two-axle vehicles, "SML"; (6)
+; medium commercial trucks, which are assumed to be three-axle vehicles, "MED"; and, (7) combination trucks, which
+; are charged the average of the five- and six-axle fee, "LRG". 
+;
+;
+; Input:  A highway network containing the field TOLL, where TOLL holds an integer representing the toll booth at 
+;         each bridge.  
+;
+; Output: A highway network containing the following fields: TOLLCLASS, TOLLXX_YY, where XX is a two-letter code
+;         representing one of the five time periods and YY is the path in question, be it drive alone, shared
+;         ride 2 or 3+, or very small, small, medium, or large (combination) trucks. 
+;
+;; See also: (1) hwyParam.block, which stores the "firstValue" variable denoting 11 as the first value toll. 
+;
+; version:  Travel Model One
+; authors:  dto (2010 08 10); gde (2009 03 12)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+run pgm = hwynet
+
+   ; begin with the standard input network
+   neti = hwy\withTolls.net
+
+   ; write out to the same name with the added variables   
+   neto = hwy\withHovXferPenalties.net
+   
+   ; set a generic bridge toll value and only change the bridge-specific values below as needed
+   if (FT=6 && A>1475 && B>1475 && DISTANCE=0)
+   
+      HovXPen  = 0.5 
+      
+   endif
+   
+endrun
+
+* copy hwy\withHovXferPenalties.net hwy\withTolls.net

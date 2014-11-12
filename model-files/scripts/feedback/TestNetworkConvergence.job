@@ -1,0 +1,180 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; TestNetworkConvergence.job
+;
+; TP+ script to compare successive iterations of highway assignment results to compute measures of network
+; convergence.  A model is converged when, broadly speaking, the input highway speeds equal the output highway
+; speeds.  This script informs whether that condition has been reached by computing the following statistics:
+; (1) "gap", which is the ratio of the difference in vehicle-hours of travel between the current and previous
+; iterations, scaled by the vehicle-hours traveled of the current iteration; (2) "maximum volume difference", 
+; which is the maximum absolute difference in volume for any link in the network; (3) "maximum vehicle-hours
+; difference", which is the maximum absolute difference in vehicle-hours for any link in the network; (4)
+; percent root-mean-square error of the volumes, which is the "error", or difference in link volume, which is then
+; squared, or multiplied by itself to remove the direction of the error, then averaged across all links, which is
+; the "mean", and the square root of this mean is taken, which accounts for the error previously being squared. 
+;
+; The above calculations are done on each time-period-specific highway networks, which are as follows: (a) early AM,
+; 3 am to 6 am; (b) AM peak period, 6 am to 10 am; (c) midday, 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; and, 
+; (e) evening, 7 pm to 3 am the next day.  
+;
+;
+; Input:  (1) Five time-period-specific highway networks, each with volumes averaged using the successive averaging
+;             weights, with updated speeds, containing the following variables: (a) VOL, which is the link volume, 
+;             (b) VDT, which is the vehicle-distance traveled on each link (in vehicle times miles); and, (e) VHT, 
+;             which is the vehicle-hours traveled on each link.
+;
+;         (2) Five time-period-specific highway network from the previous iteration, with the same characteristics
+;             as the network described above. 
+;
+; Output: (1) A table in the \logs\feedback.rpt file that presents the statistics noted above, as well as the
+;             total vehicle-miles traveled (VMT) and vehicle-hours traveled (VHT) for the current iteration. 
+;                                     
+;
+; Notes:  (1) The average volume in the percent root mean square error calculation is computed by taking the sum
+;             of the volume divided by the number of links.  If the time-period-specific networks have different
+;             numbers of links, then the maximum number of links in any given network is used.  This should not be
+;             a problem as if any links are removed from a given time of day assignment, the number will likely be
+;             a very small proportion of total links, thus not disrupting the calculation. 
+;
+; See also: (1) AverageNetworkVolumes.job -- computes the average volume for this iteration, using the successive
+;               averaging weights.
+;           (2) CalculateSpeeds.job -- uses the average volumes to compute speeds, and creates the networks input
+;               into the present script. 
+;
+; version:  Travel Model One
+; authors:  dto (2010 08 09); gde (2009)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; set previous iteration DOS token as a TP+ token
+token_previous_iteration = '%PREV_ITER%'
+
+; set the current iteration DOS token as a TP+ token
+token_current_iteration = '%ITER%'
+
+run pgm = network
+
+   ; read in the networks from the previous iteration with the successive averaging already performed
+   neti[1] = hwy\iter@token_previous_iteration@\avgloadEA.net
+   neti[2] = hwy\iter@token_previous_iteration@\avgloadAM.net
+   neti[3] = hwy\iter@token_previous_iteration@\avgloadMD.net
+   neti[4] = hwy\iter@token_previous_iteration@\avgloadPM.net
+   neti[5] = hwy\iter@token_previous_iteration@\avgloadEV.net
+   
+   ; read in the networks from the current iteration with the successive averaging already performed
+   neti[6] = hwy\iter@token_current_iteration@\avgloadEA.net
+   neti[7] = hwy\iter@token_current_iteration@\avgloadAM.net
+   neti[8] = hwy\iter@token_current_iteration@\avgloadMD.net
+   neti[9] = hwy\iter@token_current_iteration@\avgloadPM.net
+   neti[10]= hwy\iter@token_current_iteration@\avgloadEV.net
+   
+   ; sum the volume, vmt, and vht across the five time-of-day assignments for the previous iteration
+   _vtot_last   = li.1.VOL + li.2.VOL + li.3.VOL + li.4.VOL + li.5.VOL
+   _vhttot_last = li.1.VHT + li.2.VHT + li.3.VHT + li.4.VHT + li.5.VHT
+   _vmttot_last = li.1.VDT + li.2.VDT + li.3.VDT + li.4.VDT + li.5.VDT
+   
+   ; sum the volume, vmt, and vht across the five time-of-day assignments for the current iteration
+   _vtot_next   = li.6.VOL + li.7.VOL + li.8.VOL + li.9.VOL + li.10.VOL
+   _vhttot_next = li.6.VHT + li.7.VHT + li.8.VHT + li.9.VHT + li.10.VHT
+   _vmttot_next = li.6.VDT + li.7.VDT + li.8.VDT + li.9.VDT + li.10.VDT
+   
+   ; gap calculation: numerator is the time-period-specific difference in volume * time of subsequent iteration
+   _gapnumEA  = _gapnumEA  + abs(li.6.VHT  - li.1.VHT)
+   _gapnumAM  = _gapnumAM  + abs(li.7.VHT  - li.2.VHT)
+   _gapnumMD  = _gapnumMD  + abs(li.8.VHT  - li.3.VHT)
+   _gapnumPM  = _gapnumPM  + abs(li.9.VHT  - li.4.VHT)
+   _gapnumEV  = _gapnumEV  + abs(li.10.VHT - li.5.VHT)
+   _gapnumtot = _gapnumtot + abs(_vhttot_next - _vhttot_last)
+   
+   ; gap calculation: denominator is the time-period-specific total volume * time of the present iteration
+   _vhtEA  = _vhtEA  + li.6.VHT 
+   _vhtAM  = _vhtAM  + li.7.VHT 
+   _vhtMD  = _vhtMD  + li.8.VHT 
+   _vhtPM  = _vhtPM  + li.9.VHT 
+   _vhtEV  = _vhtEV  + li.10.VHT   
+   _vhttot = _vhttot + _vhttot_next 
+   
+   ; root-mean-squared error calculation: squared error bit is the difference in the volumes, squared, then scaled by 1000 to avoid overflow, summed over all links
+   _sqerrEA  = _sqerrEA  + ((li.6.VOL  - li.1.VOL)    * (li.6.VOL  - li.1.VOL)    / 1000.0 )
+   _sqerrAM  = _sqerrAM  + ((li.7.VOL  - li.2.VOL)    * (li.7.VOL  - li.2.VOL)    / 1000.0 )
+   _sqerrMD  = _sqerrMD  + ((li.8.VOL  - li.3.VOL)    * (li.8.VOL  - li.3.VOL)    / 1000.0 )
+   _sqerrPM  = _sqerrPM  + ((li.9.VOL  - li.4.VOL)    * (li.9.VOL  - li.4.VOL)    / 1000.0 )
+   _sqerrEV  = _sqerrEV  + ((li.10.VOL - li.5.VOL)    * (li.10.VOL - li.5.VOL)    / 1000.0 )
+   _sqerrtot = _sqerrtot + ((_vtot_next - _vtot_last) * (_vtot_next - _vtot_last) / 1000.0 )
+   
+   ; root-mean-squared error calculation: sum the previous iteration volume to facilitate the percent RMSE calculation
+   _sumvolEA  = _sumvolEA  + li.1.VOL  
+   _sumvolAM  = _sumvolAM  + li.2.VOL  
+   _sumvolMD  = _sumvolMD  + li.3.VOL  
+   _sumvolPM  = _sumvolPM  + li.4.VOL  
+   _sumvolEV  = _sumvolEV  + li.5.VOL 
+   _sumvoltot = _sumvoltot + _vtot_last 
+   
+   ; root-mean-squared error calculation: count the number of affected links (see Notes above)
+   _numlinks  = _numlinks + 1
+   
+   ; maximum change calculation: for VHT
+   _maxvhtdiffEA  = max(_maxvhtdiffEA, abs(li.6.VHT  - li.1.VHT))
+   _maxvhtdiffAM  = max(_maxvhtdiffAM, abs(li.7.VHT  - li.2.VHT))
+   _maxvhtdiffMD  = max(_maxvhtdiffMD, abs(li.8.VHT  - li.3.VHT))
+   _maxvhtdiffPM  = max(_maxvhtdiffPM, abs(li.9.VHT  - li.4.VHT))
+   _maxvhtdiffEV  = max(_maxvhtdiffEV, abs(li.10.VHT - li.5.VHT))  
+   _maxvhtdifftot = max(_maxvhtdifftot, abs(_vhttot_next - _vhttot_last))
+   
+   ; maximum change calculation: for volume
+   _maxvoldiffEA  = max(_maxvoldiffEA, abs(li.6.VOL  - li.1.VOL))
+   _maxvoldiffAM  = max(_maxvoldiffAM, abs(li.7.VOL  - li.2.VOL))
+   _maxvoldiffMD  = max(_maxvoldiffMD, abs(li.8.VOL  - li.3.VOL))
+   _maxvoldiffPM  = max(_maxvoldiffPM, abs(li.9.VOL  - li.4.VOL))
+   _maxvoldiffEV  = max(_maxvoldiffEV, abs(li.10.VOL - li.5.VOL))
+   _maxvoldifftot = max(_maxvoldifftot, abs(_vtot_last - _vtot_next))
+   
+   ; vmt for comparison
+   _vmtEA  = _vmtEA  + li.6.VDT 
+   _vmtAM  = _vmtAM  + li.7.VDT 
+   _vmtMD  = _vmtMD  + li.8.VDT 
+   _vmtPM  = _vmtPM  + li.9.VDT 
+   _vmtEV  = _vmtEV  + li.10.VDT   
+   _vmttot = _vmttot + _vmttot_next
+   
+   
+   ; links are processed, do network-wide calculations and present results
+   phase = summary
+   
+      ; gap calculation: previously-computed numerator or previously-computed denominator
+      _gapEA  = _gapnumEA /  _vhtEA  * 100.0
+      _gapAM  = _gapnumAM /  _vhtAM  * 100.0
+      _gapMD  = _gapnumMD /  _vhtMD  * 100.0
+      _gapPM  = _gapnumPM /  _vhtPM  * 100.0
+      _gapEV  = _gapnumEV /  _vhtEV  * 100.0 	 
+      _gaptot = _gapnumtot / _vhttot * 100.0
+      
+      ; percent root-mean-square error calculation, accounting for the previous 1000 scaling for overflow
+      _rmseEA  = ( sqrt ( 1000 * (_sqerrEA /_numlinks) ) ) / (_sumvolEA /_numlinks) * 100
+      _rmseAM  = ( sqrt ( 1000 * (_sqerrAM /_numlinks) ) ) / (_sumvolAM /_numlinks) * 100
+      _rmseMD  = ( sqrt ( 1000 * (_sqerrMD /_numlinks) ) ) / (_sumvolMD /_numlinks) * 100
+      _rmsePM  = ( sqrt ( 1000 * (_sqerrPM /_numlinks) ) ) / (_sumvolPM /_numlinks) * 100
+      _rmseEV  = ( sqrt ( 1000 * (_sqerrEV /_numlinks) ) ) / (_sumvolEV /_numlinks) * 100
+      _rmsetot = ( sqrt ( 1000 * (_sqerrtot/_numlinks) ) ) / (_sumvoltot/_numlinks) * 100
+      
+      ; print results to a report file
+      list = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",, file = logs\feedback.rpt, append = t
+      list = " ", file = logs\feedback.rpt, append = t 
+      list = "Network Convergence Statistics for Iteration @token_current_iteration@", file = logs\feedback.rpt, append = t
+      list = " ", file = logs\feedback.rpt, append = t
+      list = " period   vehs * miles   vehs * hours  maxvoldiff  maxvhtdiff         gap      % rmse ", file = logs\feedback.rpt, append = t
+      list = " ------ -------------- -------------- ----------- ----------- ----------- ----------- ", file = logs\feedback.rpt, append = t
+      list = " EA    ",_vmtEA(15.0C), _vhtEA(15.0C), _maxvoldiffEA(12.2), _maxvhtdiffEA(12.2), _gapEA(11.2),"%",  _rmseEA(11.2),"%", file = logs\feedback.rpt, append = t
+      list = " AM    ",_vmtAM(15.0C), _vhtAM(15.0C), _maxvoldiffAM(12.2), _maxvhtdiffAM(12.2), _gapAM(11.2),"%",  _rmseAM(11.2),"%", file = logs\feedback.rpt, append = t
+      list = " MD    ",_vmtMD(15.0C), _vhtMD(15.0C), _maxvoldiffMD(12.2), _maxvhtdiffMD(12.2), _gapMD(11.2),"%",  _rmseMD(11.2),"%", file = logs\feedback.rpt, append = t
+      list = " PM    ",_vmtPM(15.0C), _vhtPM(15.0C), _maxvoldiffPM(12.2), _maxvhtdiffPM(12.2), _gapPM(11.2),"%",  _rmsePM(11.2),"%", file = logs\feedback.rpt, append = t
+      list = " EV    ",_vmtEV(15.0C), _vhtEV(15.0C), _maxvoldiffEV(12.2), _maxvhtdiffEV(12.2), _gapEV(11.2),"%",  _rmseEV(11.2),"%", file = logs\feedback.rpt, append = t
+      list = " Total ",_vmttot(15.0C),_vhttot(15.0C),_maxvoldifftot(12.2),_maxvhtdifftot(12.2),_gaptot(11.2),"%", _rmsetot(11.2),"%",file = logs\feedback.rpt, append = t
+      list = " ", file = logs\feedback.rpt, append = t
+      list = " ", file = logs\feedback.rpt, append = t
+      list = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",, file = logs\feedback.rpt, append = t
+  	 
+  endphase
+  
+endrun

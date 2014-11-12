@@ -1,0 +1,152 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; AverageNetworkVolumes.job
+;
+; TP+ script to compute the weighted average of roadway volumes for successive iterations of the entire model
+; stream.  The iteration weights are set in the primary model stream file, RunModel.  Here, we average the volumes
+; from the current iteration with the averaged volumes for ALL previous iterations.  This method of successive
+; avarages "forces" model convergence.
+;
+; The script performs the volume averaging for five time-period-specific assignments. Assignments are performed 
+; for each of the following time periods: (a) early AM, 3 am to 6 am; (b) AM peak period, 6 am to 10 am; (c) midday,
+; 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; and, (e) evening, 7 pm to 3 am.  
+;
+; Ten vehicle classes are tracked in each assignment, with value-toll-eligible and not-value-toll-eligible classes
+; as follows:
+;      (1) drive alone, no value toll (da)
+;      (2) shared ride 2, no value toll (s2)
+;      (3) shared ride 3+, no value toll (s3)
+;      (4) very small, small, and medium trucks, no value toll (sm)
+;      (5) large trucks, no value toll (hv)
+;      (6) drive alone, value toll eligible (daT)
+;      (7) shared ride 2, value toll eligible (s2T)
+;      (8) shared ride 3+, value toll eligible (s3T)
+;      (9) very small, small, and medium trucks, value toll eligible (smT)
+;     (10) large trucks, value toll eligible (hvT)
+;
+; Input:  (1) A highway network for each time period with the following fields: (a) VOL, which is the total a-to-b link
+;         volume, in units of equivalent passenger vehicles; (b) VC, which is the volume to capacity ratio; (c) CTIM, which 
+;         is the congested travel time in minutes; (d) CSPD, which is the congested travel speed in miles per hour;
+;         (e) VDT, which is the vehicle-distance traveled, in miles; (f) VHT, which is the vehicle hours traveled,
+;         in hours; (g) VOL_XXY, which is the a-to-b link volume for vehicles in class XX (see codes in above list), 
+;         and Y is "T" for the value-toll-eligible classes and blank for the non-value-toll-eligible classes; (h) VOLT,
+;         which is the total b-to-a link volume, in units of equivalent passenger vehicles; (i) VOLT_XXY, which is the 
+;         total b-to-a link volume for two-way links only and XX and Y have the same meaning as in (g).
+;
+; Output: (1) Five highway networks with the averaged volume, one for each time period, stored in the same variables
+;          as the input variables. 
+;                                     
+; Notes:  (1) Overhead gains are too small to distribute via Cluster. 
+;
+; See also: (1) HwyAssign.job, which peforms the highway assignment;
+;	    (2) CalculateSpeeds.job, which computes speeds from this average volumes. 
+;
+; version:  Travel Model One
+; authors:  dto (2010 08 10); gde (2009)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; set previous iteration DOS token as a TP+ token
+token_previous_iteration = '%PREV_ITER%'
+
+; set the current iteration DOS token as a TP+ token
+token_current_iteration = '%ITER%'
+
+; set the previous iteration weight DOS token as a TP+ token
+token_previous_weight = '%PREV_WGT%'
+
+; set the current weight DOS token as a TP+ token
+token_current_weight = '%WGT%'
+
+; do, more or less, the same procedure for each time period
+loop period = 1, 5
+  
+   ; a two letter token is used for each time period  
+   if (period = 1)    
+      token_period = 'EA'
+      
+   elseif (period = 2)      
+      token_period = 'AM'
+      
+   elseif (period = 3)   
+      token_period = 'MD'
+
+   elseif (period = 4)   
+      token_period = 'PM'
+
+   elseif (period = 5) 
+      token_period = 'EV'
+
+   endif   
+   
+   run pgm = network
+   
+      ; read in the average loaded network from the previous iteration 
+      neti[1] = hwy\iter@token_previous_iteration@\avgload@token_period@.net
+      
+      ; read in the loaded network from the current iteration
+      neti[2] = hwy\iter@token_current_iteration@\load@token_period@_renamed.net
+  	
+      ; write out the average loaded network
+      neto = hwy\iter@token_current_iteration@\xavgload@token_period@.net
+  	
+      ; average the volumes
+      v_1   = @token_previous_weight@ * li.1.vol  + @token_current_weight@ * li.2.vol
+      vc_1  = @token_previous_weight@ * li.1.vc   + @token_current_weight@ * li.2.vc 
+                            
+      v1_1  = @token_previous_weight@ * li.1.vol_da   + @token_current_weight@ * li.2.vol_da 
+      v2_1  = @token_previous_weight@ * li.1.vol_s2   + @token_current_weight@ * li.2.vol_s2 
+      v3_1  = @token_previous_weight@ * li.1.vol_s3   + @token_current_weight@ * li.2.vol_s3 
+      v4_1  = @token_previous_weight@ * li.1.vol_sm   + @token_current_weight@ * li.2.vol_sm 
+      v5_1  = @token_previous_weight@ * li.1.vol_hv   + @token_current_weight@ * li.2.vol_hv 
+      v6_1  = @token_previous_weight@ * li.1.vol_daT  + @token_current_weight@ * li.2.vol_daT
+      v7_1  = @token_previous_weight@ * li.1.vol_s2T  + @token_current_weight@ * li.2.vol_s2T
+      v8_1  = @token_previous_weight@ * li.1.vol_s3T  + @token_current_weight@ * li.2.vol_s3T
+      v9_1  = @token_previous_weight@ * li.1.vol_smT  + @token_current_weight@ * li.2.vol_smT	
+      v10_1 = @token_previous_weight@ * li.1.vol_hvT  + @token_current_weight@ * li.2.vol_hvT	
+               
+      vt_1  = @token_previous_weight@ * li.1.volT     + @token_current_weight@ * li.2.volT    
+      v1t_1 = @token_previous_weight@ * li.1.volT_da  + @token_current_weight@ * li.2.volT_da 
+      v2t_1 = @token_previous_weight@ * li.1.volT_s2  + @token_current_weight@ * li.2.volT_s2 
+      v3t_1 = @token_previous_weight@ * li.1.volT_s3  + @token_current_weight@ * li.2.volT_s3 
+      v4t_1 = @token_previous_weight@ * li.1.volT_sm  + @token_current_weight@ * li.2.volT_sm 
+      v5t_1 = @token_previous_weight@ * li.1.volT_hv  + @token_current_weight@ * li.2.volT_hv 
+      v6t_1 = @token_previous_weight@ * li.1.volT_daT + @token_current_weight@ * li.2.volT_daT
+      v7t_1 = @token_previous_weight@ * li.1.volT_s2T + @token_current_weight@ * li.2.volT_s2T
+      v8t_1 = @token_previous_weight@ * li.1.volT_s3T + @token_current_weight@ * li.2.volT_s3T
+      v9t_1 = @token_previous_weight@ * li.1.volT_smT + @token_current_weight@ * li.2.volT_smT
+      v10t_1= @token_previous_weight@ * li.1.volT_hvT + @token_current_weight@ * li.2.volT_hvT
+      
+      ; update the renamed volume variables, which are just along for the ride
+      vol      = V_1   
+      
+      vol_da   = V1_1  
+      vol_s2   = V2_1  
+      vol_s3   = V3_1  
+      vol_sm   = V4_1  
+      vol_hv   = V5_1  
+      
+      vol_daT  = V6_1  
+      vol_s2T  = V7_1  
+      vol_s3T  = V8_1  
+      vol_smT  = V9_1  
+      vol_hvT  = V10_1 
+      
+      volT     = VT_1  
+      
+      volT_da  = V1T_1 
+      volT_s2  = V2T_1 
+      volT_s3  = V3T_1 
+      volT_sm  = V4T_1 
+      volT_hv  = V5T_1 
+      
+      volT_daT = V6T_1 
+      volT_s2T = V7T_1 
+      volT_s3T = V8T_1 
+      volT_smT = V9T_1 
+      volT_hvT = V10T_1
+  		    
+  endrun
+  
+endloop ; time period loop

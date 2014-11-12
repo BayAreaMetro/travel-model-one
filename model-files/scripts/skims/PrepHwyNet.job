@@ -1,0 +1,201 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; PrepHwyNet.job
+;
+; TP+ script does three things.  First, it computes the bus travel time on every highway link by assuming a fixed
+; delay (in minutes per mile), segmented by area type and facility type.  Links with speeds below a very low 
+; minimum threshold are sped up to that minimum threshold to help the path builder find valid paths.  This step 
+; also adds transit-only nodes to the highway network which are needed for the second and third steps in the script. 
+;
+; Second, transit-only access links are added to the highway network.  This is necessary for TP+ to 
+; automatically generate walk and drive access links. 
+;
+; Third, and last, transit-only transfer links are added to the highway network.  This is necessary for TP+
+; to automatically generate transfer access links. 
+;
+; The script first loops through the five time periods, which are: (a) early AM, 3 am to 6 am; (b) AM peak period, 
+; 6 am to 10 am; (c) midday, 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; and, (e) evening, 7 pm to 3 am the next 
+; day.
+;
+; The facility type (FT) codes used by this script are as follows: (1) freeway-to-freeway connector; (2) freeway; 
+; (3) expressway; (4) collector; (5) freeway ramp; (6) dummy link; (7) major arterial; (8) metered ramp; 
+; (9) special facility. 
+;
+; The area type (AT) codes used by this script are as follows: (0) regional core; (1) central business 
+; district (CBD); (2) urban business; (3) urban; (4) suburban; (5) rural. 
+;
+; Input:  (1)  A highway network that contains the following variables: (i) PNROK, for which a code of 1 means
+;	       the link can be used for park-and-ride connectors, a 0 means the link cannot 
+;              (see CreateFiveHighwayNetworks.job); (ii) CTIM, which is the congested travel time (iii) FT, 
+;              facility type, whose codes are described above; (iv) AT, area type, whose codes are described above; 
+;              (v) DISTANCE, coded in miles. 
+;
+;	  (2)  Access link files, which connect transit-only infrastructure to the highway network;  these files
+;              contain only an A-node and a B-node, where the A-node is on the highway network and the B-node is
+;	       a walk-access-funnel link, meaning all walk-access links enter the transit-only infrastructure
+;	       via this node, which allows for easier accounting of walk access usage. 
+;
+;	  (3)  Transfer link files, which allow bus users to transfer directly to transit-only infrastructure; 
+;	       these files contain an A-node, B-node, and a distance, in miles.  The A-node is a point on the
+;	       highway network (the point where the nearest bus stops) and the B-node is a stop on the transit-
+;	       only infrastructure. 
+;
+; Output: (1)  A time-period-specific transit background network that contains transit-only nodes and the
+;	       variables PNR_TIME, which is the park-and-ride drive access link time (big values allow us to 
+;	       disallow park-and-riding on certain bridges) and BUS_TIME, which is the speed buses travel
+;	       on highway lanes;
+;	
+;	  (2)  The above network with transit access links included, as described above;
+;
+;	  (3)  The network in (1) with transit transfer links included, as described above. 
+;
+; Notes:  (1) 
+;
+; See also: (1) TransitSkims.job -- Uses the bus speeds computed here to estimate transit travel times
+;           (2) BuildTransitNetworks.job -- Creates the transit networks that are subsequently skimmed and assigned
+;	    (3) CreateFiveHighwayNetworks.job -- Codes the PNROK variable on the network
+;
+; version:  Travel Model One (v 0.3)
+; authors:  dto (2011 09 08); dto (2010 08 10); gde
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; set the minimum speed below hich links are written to SpeedErrors.log
+token_minimum_speed = 2.0
+
+; time period loop
+loop period = 1, 5
+
+   ; define a two-letter token for each time period
+   if (period = 1)   
+      token_period = 'EA'
+      
+   elseif (period = 2)   
+      token_period = 'AM'
+      
+   elseif (period = 3)   
+      token_period = 'MD'
+      
+   elseif (period = 4)   
+      token_period = 'PM'
+      
+   elseif (period = 5)   
+      token_period = 'EV' 
+   
+   endif 
+   
+   ; faster to do without distributing using cluster
+   
+   ; compute bus travel times
+   run pgm = network
+   
+      ; use the same highway network used in the skimming
+      neti[1] = hwy\avgload@token_period@.net
+      
+      ; read in the transit-only nodes that are used by the links in the subsequent job stream steps
+      nodei[2] = trn\transit_support_nodes.dat var = n,x,y  
+      
+      ; output a time-period-specific transit background network
+      neto = trn\@token_period@_transit_background.net
+      
+      ; set the park-and-ride time to the highway time, except the bridges which the park-and-ride paths ignore
+      if (PNROK=1)
+      	PNR_TIME = CTIM
+      	
+      else 
+      	PNR_TIME = 9999
+      	
+      endif
+      
+      ; bus time is a function of highway time and delay per mile, segmented by area type and facility type
+      delayfactor = 0.0
+      
+      ; buses travel on freeway-to-freeway connectors, freeways, and expressways at the same speed as automobiles
+      if (FT = 1 | FT = 2 | FT = 3)
+      
+         ; segment by area type to facility easy change in the future, if needed
+         if (AT = 0) delayfactor = 0.0
+         if (AT = 1) delayfactor = 0.0
+         if (AT = 2) delayfactor = 0.0
+         if (AT = 3) delayfactor = 0.0
+         if (AT = 4) delayfactor = 0.0
+         if (AT = 5) delayfactor = 0.0
+       
+      ; all other facilities get an area-type-specific delay factor 
+      else
+      
+         ; delay is minutes per mile
+         if (AT = 0) delayfactor = 2.46
+         if (AT = 1) delayfactor = 2.46
+         if (AT = 2) delayfactor = 1.74
+         if (AT = 3) delayfactor = 1.74
+         if (AT = 4) delayfactor = 1.14
+         if (AT = 5) delayfactor = 0.08
+         
+      endif
+      
+      ; no congestion for BRT facilities (two-levels)
+      if (BRT = 1) delayfactor = 0.00
+      if (BRT = 2) delayfactor = 0.50 * delayfactor
+      
+      ; log and fix very slow speeds that will give TRNBUILD difficulty in building transit paths
+      if (TSIN = 0)
+      
+         ; compute the congested speed
+         CSPD  = DISTANCE / (CTIM/60.0)
+               
+        if (CSPD < @token_minimum_speed@) 
+        
+           CSPD = @token_minimum_speed@
+           CTIM = li.1.DISTANCE / (CSPD/60.0)
+           list = "cspd@token_period@ below threshold of @token_minimum_speed@ mph for link:  ", a(8.0), "-", b(8.0), file = logs\SpeedErrors.log
+               
+        endif
+            
+      endif
+
+      ; compute bus time      
+      BUS_TIME = CTIM + delayfactor * DISTANCE
+      
+   endrun   
+   
+   ; add transit-only access links to the highway network to facilitate automated access link building
+   run pgm = network
+   
+      ; use the input network created by the previous step
+      neti = trn\@token_period@_transit_background.net
+   
+      ; add the access links
+      linki[2] = trn\express_bus_neti_access_links.dat,   var = a, var = b, rev = 1
+      linki[3] = trn\light_rail_neti_access_links.dat,    var = a, var = b, rev = 1
+      linki[4] = trn\ferry_neti_access_links.dat,         var = a, var = b, rev = 1
+      linki[5] = trn\heavy_rail_neti_access_links.dat,    var = a, var = b, rev = 1
+      linki[6] = trn\commuter_rail_neti_access_links.dat, var = a, var = b, rev = 1
+
+   
+      ; output a temporary network used in the BuildTransitNetworks.job script
+      neto = trn\@token_period@_temporary_transit_background_accesslinks.net
+      
+   endrun
+
+   ; add transit-only transfer links to the highway network to facilitate automated transfer link building
+   run pgm=network
+   
+      ; use the input network created by the previous step
+      neti = trn\@token_period@_transit_background.net
+      
+      ; add the transit transfer links
+      linki[2] = trn\express_bus_neti_xfer_links.dat,   var = a, var = b, var = DISTANCE, rev = 1
+      linki[3] = trn\light_rail_neti_xfer_links.dat,    var = a, var = b, var = DISTANCE, rev = 1
+      linki[4] = trn\ferry_neti_xfer_links.dat,         var = a, var = b, var = DISTANCE, rev = 1 
+      linki[5] = trn\heavy_rail_neti_xfer_links.dat,    var = a, var = b, var = DISTANCE, rev = 1
+      linki[6] = trn\commuter_rail_neti_xfer_links.dat, var = a, var = b, var = DISTANCE, rev = 1
+      
+      ; output a temporary network used in the BuildTransitNetworks.job script
+      neto = trn\@token_period@_temporary_transit_background_transferlinks.net
+       
+   endrun
+   
+endloop ; period
+

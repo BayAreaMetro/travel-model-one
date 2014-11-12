@@ -1,0 +1,711 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; PrepAssign.job
+;
+; TP+ script to convert the trip lists written out by the CT-RAMP software into origin/destination matrices that
+; can be assigned to highway and transit networks. The first step goes through the individual trip list and stores
+; trips, by mode, that are relevant for each time interval.  A fixed format file, sorted first by origin zone and
+; then by destination zone is written to disk. Note that each record in the individual travel list represents one 
+; person trip.
+;
+; The second step goes through the joint travel trip list and stores trips, by mode, that are relevant for each time
+; interval.  A fixed format file, sorted first by origin zone and then by destination zone, is written to disk. Note
+; that joint travel includes trips in which two or more persons from the same household travel together for a 
+; complete tour (i.e. from when they leave home to when they return, the group stays together).  Joint travel is only
+; represented for a handful of travel purposes as described below.
+;
+; The third and final step reads in the fixed format data from steps one and two and stores the data as a TP+ matrix
+; with 23 tables (see Output below for details).  Note that the trips are scaled up by the sampling rate -- if the 
+; model was run on only half the synthetic population, then each resulting trip is counted twice, which allows for
+; a fully representative quantity of demand to be assigned to the roadway and transit networks.   
+; 
+; Each of these three steps is executed separately for each of the five time periods, which are defined as follows:
+; (a) early AM, 3 am to 6 am; (b) AM peak period, 6 am to 10 am; (c) midday, 10 am to 3 pm; (d) PM peak period, 
+; 3 pm to 7 pm; and, (e) evening, 7 pm to 3 am.
+;
+; Input:  (A) A trip list for individual travel with the following data fields:
+;              (1)  hh_id - unique (to the population) household identification number
+;              (2)  person_id - unique (to the population) person identification number
+;              (3)  person_num - unique (to the household) person number
+;              (4)  tour_id - unique (to the person) tour identification number
+;              (5)  stop_id - unique (to the half tour) stop identification number
+;              (6)  inbound - boolean, 1 is the trip is on the inbound (to home) leg of the tour
+;              (7)  tour_purpose - "work_low", "work_med", "work_high", "work_very high", "school_high", "school_grade",
+;                                  "atwork_business", "atwork_eat", "atwork_maint", "eatout", "escort_kids", 
+;                                  "escort_no kids", "othdiscr", "othmaint", "shopping", "social"
+;              (8)  orig_purpose - purpose of the activity at the origin end of the trip (see tour_purpose list above, add "Home")
+;              (9)  dest_purpose - purpose of the activity at the destination end of the trip (see tour_purpose list above, add "Home")
+;              (10) orig_taz - location, in the MTC zone system, of the origin location of the trip
+;              (11) orig_walk_segment - walk to transit origin sub-zone, 0 is cannot walk to transit, 1 is short-walk
+;                                       to transit, and 2 is long walk to transit
+;              (12) dest_taz - location, in the MTC zone system, of the destination location of the trip
+;              (13) dest_walk_segment - walk to transit destination sub-zone, see definitions for orig_walk_segment 
+;                                       directly above
+;              (14) parking_taz - parking location, in the MTC zone system, of automobile travelers headed to one of
+;                                 the regional TAZs
+;              (15) depart_hour - time when trip leaves the origin, between 5 and 23, where 5 is the hour from 5 am 
+;                                 to 6 am, 6 is the hour from 6 am to 7 am, ..., 23 is the hour from 11 pm to midnight.
+;              (16) trip_mode - travel mode code, where 1 - "Drive alone free", 2 - "Drive alone pay", 3 - "Shared ride 2 free", 
+;                               4 - "Shared ride 2 pay", 5 - "Shared ride 3+ free", 6 - "Shared ride 3+ pay", 7 - "Walk", 
+;                               8 - "Bike", 9 - "Walk to local bus", 10 - "Walk to light rail or ferry", 11 - "Walk to express bus", 
+;                              12 - "Walk to BART", 13 - "Walk to commuter rail", 14 - "Drive to local bus", 
+;                              15 - "Drive to light rail or ferry", 16 - "Drive to express bus", 17 - "Drive to BART", 
+;                              18 - "Drive to commuter rail"
+;              (17) tour_mode - which is not the same as travel mode -- same codes as for trip mode.
+;
+;         (A) A trip list for joint travel with the following data fields:
+;              (1)  hh_id - same as above
+;              (2)  tour_id - same as above
+;              (3)  stop_id - same as above
+;              (4)  inbound - same as above
+;              (5)  tour_purpose - purpose of the tour for which the trip is a component: "eatout", "othdiscr", 
+;                                 "othmaint", "shopping", "social"
+;              (6)  orig_purpose - purpose of the activity at the origin end of the trip: "Home", "eatout", "othdiscr", 
+;                                 "othmaint", "shopping", "social"
+;              (7)  dest_purpose - purpose of the activity at the destination end of the trip (see orig_purpose list above)
+;              (8)  orig_taz - same as above
+;              (9)  orig_walk_segment - same as above
+;              (10) dest_taz - same as above
+;              (11) dest_walk_segment - same as above
+;              (12) parking_taz - same as above
+;              (13) depart_hour - same as above
+;              (14) trip_mode - travel mode code, where 1 - "Drive alone free", 2 - "Drive alone pay", 3 - "Shared ride 2 free", 
+;                               4 - "Shared ride 2 pay", 5 - "Shared ride 3+ free", 6 - "Shared ride 3+ pay", 7 - "Walk", 
+;                               8 - "Bike", 9 - "Walk to local bus", 10 - "Walk to light rail or ferry", 11 - "Walk to express bus", 
+;                              12 - "Walk to BART", 13 - "Walk to commuter rail", 14 - "Drive to local bus", 
+;                              15 - "Drive to light rail or ferry", 16 - "Drive to express bus", 17 - "Drive to BART", 
+;                              18 - "Drive to commuter rail"
+;              (15) num_participants - the number of persons traveling on the joint tour
+;              (16) tour_mode - which is not necessarily the travel mode -- same codes as for trip mode.
+;
+;
+; Output: (A) Five time-period-specific trip tables with the following values in each table:
+;              (1)  Drive alone, no value toll
+;              (2)  Drive alone, value toll
+;              (3)  Shared ride 2, no value toll
+;              (4)  Shared ride 2, value toll
+;              (5)  Shared ride 3+, no value toll
+;              (6)  Shared ride 3+, value toll
+;              (7)  Walk
+;              (8)  Bicycle
+;              (9)  Walk, local bus, walk
+;              (10) Walk, light rail/ferry, walk
+;              (11) Walk, express bus, walk
+;              (12) Walk, heavy rail, walk
+;              (13) Walk, commuter rail, walk
+;              (14) Drive, local bus, walk
+;              (15) Drive, light rail/ferry, walk
+;              (16) Drive, express bus, walk
+;              (17) Drive, heavy rail, walk
+;              (18) Drive, commuter rail, walk
+;              (19) Walk, local bus, drive
+;              (20) Walk, light rail/ferry, drive
+;              (21) Walk, express bus, drive
+;              (22) Walk, heavy rail, drive
+;              (23) Walk, commuter rail, drive
+;                                     
+; Notes:  (1)
+;
+; See also: (1) HwyAssign.job, which performs highway assignments;
+;           (2) TransitAssign.job, which performs transit assignments. 
+;
+; version:  Travel Model One
+; authors:  dto (2010 07 14); gde (2009)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; make time-period-specific copies of the individual trip data
+* copy main\indivTripData_%ITER%.csv main\indivTripData_temp_EA.csv
+* copy main\indivTripData_%ITER%.csv main\indivTripData_temp_AM.csv
+* copy main\indivTripData_%ITER%.csv main\indivTripData_temp_MD.csv
+* copy main\indivTripData_%ITER%.csv main\indivTripData_temp_PM.csv
+* copy main\indivTripData_%ITER%.csv main\indivTripData_temp_EV.csv
+
+; make time-period-specific copies of the joint trip data
+* copy main\jointtripdata_%ITER%.csv main\jointtripdata_temp_EA.csv
+* copy main\jointtripdata_%ITER%.csv main\jointtripdata_temp_AM.csv
+* copy main\jointtripdata_%ITER%.csv main\jointtripdata_temp_MD.csv
+* copy main\jointtripdata_%ITER%.csv main\jointtripdata_temp_PM.csv
+* copy main\jointtripdata_%ITER%.csv main\jointtripdata_temp_EV.csv
+
+; the number of zones is used throughout to size arrays to store data
+token_zones = '1454'
+   
+; arrays and sized as zones x zones to store matrix data in a one-dimensional array
+token_zones_by_zones = '2114116'
+   
+; set the sample share as a TP+ token
+token_sample_share = '%SAMPLESHARE%'
+
+; do, more or less, the same procedure for each time period
+loop period = 1, 5
+  
+   ; a two letter token is used for each time period 
+   if (period = 1)  
+  
+      token_period = 'EA'   
+     
+      ; trips in the following time window are considered
+      token_relevant_time_interval = 'ri.depart_hour >= 3 && ri.depart_hour < 6'   
+   
+   
+   elseif (period = 2)   
+     
+      token_period = 'AM'  
+     
+      ; trips in the following time window are considered
+      token_relevant_time_interval = 'ri.depart_hour >= 6 && ri.depart_hour < 10'   
+  
+   elseif (period = 3)   
+      
+      token_period = 'MD'  
+      
+      ; trips in the following time window are considered
+      token_relevant_time_interval = 'ri.depart_hour >= 10 && ri.depart_hour < 15'   
+
+   elseif (period = 4)   
+      
+      token_period = 'PM' 
+     
+      ; trips in the following time window are considered
+      token_relevant_time_interval = 'ri.depart_hour >= 15 && ri.depart_hour < 19'       
+
+
+   elseif (period = 5)   
+      
+      token_period = 'EV'  
+      
+      ; trips in the following time window are considered
+      token_relevant_time_interval = 'ri.depart_hour >= 19 || ri.depart_hour < 3'     
+  
+   endif 
+   
+   ; do each time of day as a separate process
+   DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = 'm:\commpath'
+   
+   
+   ; step one: convert individual trip list to an origin/destination list
+   run pgm = matrix
+
+      ; read in the trip data for the current iteration (note %ITER% is set by RunModel.bat)
+      filei reci = main\IndivTripData_temp_@token_period@.csv, delimiter=',', 
+                hh_id             = 1,
+                person_id         = 2,
+                person_num        = 3,
+                tour_id           = 4,
+                stop_id           = 5,
+                inbound           = 6,
+                tour_purpose(c)   = 7,
+                orig_purpose(c)   = 8,
+                dest_purpose(c)   = 9,
+                orig_taz          = 10,
+                orig_walk_segment = 11,
+                dest_taz          = 12,
+                dest_walk_segment = 13,
+                parking_taz       = 14,
+                depart_hour       = 15,
+                trip_mode         = 16,
+                tour_mode         = 17
+                    
+      ; create zones x zones one dimensional arrays to store trips, one for each assigned path 
+      array da          = @token_zones_by_zones@    
+      array datoll      = @token_zones_by_zones@  
+     
+      array sr2         = @token_zones_by_zones@      
+      array sr2toll     = @token_zones_by_zones@      
+     
+      array sr3         = @token_zones_by_zones@      
+      array sr3toll     = @token_zones_by_zones@      
+     
+      array walk        = @token_zones_by_zones@      
+      array bike        = @token_zones_by_zones@      
+     
+      array wlk_loc_wlk = @token_zones_by_zones@      
+      array wlk_lrf_wlk = @token_zones_by_zones@    
+      array wlk_exp_wlk = @token_zones_by_zones@        
+      array wlk_hvy_wlk = @token_zones_by_zones@      
+      array wlk_com_wlk = @token_zones_by_zones@      
+     
+      array drv_loc_wlk = @token_zones_by_zones@      
+      array drv_lrf_wlk = @token_zones_by_zones@       
+      array drv_exp_wlk = @token_zones_by_zones@     
+      array drv_hvy_wlk = @token_zones_by_zones@      
+      array drv_com_wlk = @token_zones_by_zones@       
+     
+      array wlk_loc_drv = @token_zones_by_zones@      
+      array wlk_lrf_drv = @token_zones_by_zones@       
+      array wlk_exp_drv = @token_zones_by_zones@     
+      array wlk_hvy_drv = @token_zones_by_zones@      
+      array wlk_com_drv = @token_zones_by_zones@      
+     
+      ; create a unique index for each origin destination pair
+      od_position = @token_zones@ * (ri.orig_taz-1) + ri.dest_taz
+     
+      ; if statement - only read in the trips relevant to the current time period
+      if (@token_relevant_time_interval@)
+     
+         ; create person trip tables
+         ; - drive alone, no value toll
+         if (ri.trip_mode = 1) 
+            da[od_position] = da[od_position] + 1    
+            
+         ; - drive alone, value toll
+         elseif (ri.trip_mode = 2)          
+            datoll[od_position] = datoll[od_position] + 1
+    
+         ; - shared ride 2, no value toll
+         elseif (ri.trip_mode = 3)                          
+            sr2[od_position] = sr2[od_position] + 1                                      
+    
+         ; - shared ride 2, value toll
+         elseif (ri.trip_mode = 4)                       
+            sr2toll[od_position] = sr2toll[od_position] + 1                                      
+    
+         ; - shared ride 3 or more, no value toll
+         elseif (ri.trip_mode = 5)                             
+            sr3[od_position] = sr3[od_position] + 1                                      
+    
+         ; - shared ride 3 or more, value toll
+         elseif (ri.trip_mode = 6)                       
+            sr3toll[od_position] = sr3toll[od_position] + 1
+             
+         ; - walk
+         elseif (ri.trip_mode = 7)                         
+            walk[od_position] = walk[od_position] + 1                                    
+    
+         ; - bicycle
+         elseif (ri.trip_mode = 8)                         
+            bike[od_position] = bike[od_position] + 1
+             
+         ; - walk, local bus, walk        
+         elseif (ri.trip_mode = 9)                       
+            wlk_loc_wlk[od_position] = wlk_loc_wlk[od_position] + 1                                      
+    
+         ; - walk, light rail/ferry, walk
+         elseif (ri.trip_mode = 10)                                  
+            wlk_lrf_wlk[od_position] = wlk_lrf_wlk[od_position] + 1                       
+    
+         ; - walk, express bus, walk
+         elseif (ri.trip_mode = 11)                       
+            wlk_exp_wlk[od_position] = wlk_exp_wlk[od_position] + 1                                          
+    
+         ; - walk, heavy rail, walk
+         elseif (ri.trip_mode = 12)                       
+            wlk_hvy_wlk[od_position] = wlk_hvy_wlk[od_position] + 1                                      
+    
+         ; - walk, commuter rail, walk
+         elseif (ri.trip_mode = 13)                       
+            wlk_com_wlk[od_position] = wlk_com_wlk[od_position] + 1
+             
+         ; - drive, local, walk (outbound)
+         elseif (ri.trip_mode = 14 && ri.inbound = 0) 
+            drv_loc_wlk[od_position] = drv_loc_wlk[od_position] + 1                                      
+    
+         ; - drive, light rail/ferry, walk (outbound)
+         elseif (ri.trip_mode = 15 && ri.inbound = 0)                
+            drv_lrf_wlk[od_position] = drv_lrf_wlk[od_position] + 1                       
+    
+         ; - drive, express bus, walk (outbound)
+         elseif (ri.trip_mode = 16 && ri.inbound = 0) 
+            drv_exp_wlk[od_position] = drv_exp_wlk[od_position] + 1                                      
+    
+         ; - drive, heavy rail, walk (outbound)
+         elseif (ri.trip_mode = 17 && ri.inbound = 0) 
+            drv_hvy_wlk[od_position] = drv_hvy_wlk[od_position] + 1
+            
+         ; - drive, commuter rail, walk (outbound) 
+         elseif (ri.trip_mode = 18 && ri.inbound = 0) 
+            drv_com_wlk[od_position] = drv_com_wlk[od_position] + 1
+             
+         ; - walk, local, drive (inbound)
+         elseif (ri.trip_mode = 14 && ri.inbound = 1) 
+            wlk_loc_drv[od_position] = wlk_loc_drv[od_position] + 1                                      
+    
+         ; - walk, light rail/ferry, drive (inbound)
+         elseif (ri.trip_mode = 15 && ri.inbound = 1) 
+            wlk_lrf_drv[od_position] = wlk_lrf_drv[od_position] + 1                                      
+    
+         ; - walk, express bus, drive (inbound)
+         elseif (ri.trip_mode = 16 && ri.inbound = 1)                
+            wlk_exp_drv[od_position] = wlk_exp_drv[od_position] + 1                       
+         
+         ; - walk, heavy rail, drive (inbound)
+         elseif (ri.trip_mode = 17 && ri.inbound = 1) 
+            wlk_hvy_drv[od_position] = wlk_hvy_drv[od_position] + 1                                      
+    
+         ; - walk, commuter rail, drive (inbound)
+         elseif (ri.trip_mode = 18 && ri.inbound = 1) 
+            wlk_com_drv[od_position] = wlk_com_drv[od_position] + 1
+                                          
+         endif ; trip mode if
+           
+      endif ; departure hour if 
+      
+      ; write the output only once
+      if (i = 0)
+      
+         ; loop through each origin zone
+         loop orig = 1, @token_zones@
+         
+            ; loop through each destination zone
+            loop dest = 1, @token_zones@
+            
+               ; compute the unique position in each array
+               position = @token_zones@ * (orig - 1) + dest
+               
+               ; write the results to a fixed format file easily read in by TP+
+               print list = orig(5.0), dest(5.0),                    
+                     da[position](20.4lrs),
+                     datoll[position](20.4lrs),    
+                     sr2[position](20.4lrs),       
+                     sr2toll[position](20.4lrs),   
+                     sr3[position](20.4lrs),       
+                     sr3toll[position](20.4lrs),   
+                     walk[position](20.4lrs),      
+                     bike[position](20.4lrs),      
+                     wlk_loc_wlk[position](20.4lrs),  
+                     wlk_lrf_wlk[position](20.4lrs),  
+                     wlk_exp_wlk[position](20.4lrs),  
+                     wlk_hvy_wlk[position](20.4lrs),  
+                     wlk_com_wlk[position](20.4lrs),  
+                     drv_loc_wlk[position](20.4lrs), 
+                     drv_lrf_wlk[position](20.4lrs), 
+                     drv_exp_wlk[position](20.4lrs), 
+                     drv_hvy_wlk[position](20.4lrs), 
+                     drv_com_wlk[position](20.4lrs), 
+                     wlk_loc_drv[position](20.4lrs),  
+                     wlk_lrf_drv[position](20.4lrs),  
+                     wlk_exp_drv[position](20.4lrs),  
+                     wlk_hvy_drv[position](20.4lrs),  
+                     wlk_com_drv[position](20.4lrs),  
+                     file = main\IndivTrips@token_period@.dat            
+         
+         endloop ; dest
+       
+      endloop ; orig
+      
+      endif ; if i = 0
+    
+  endrun
+
+
+   ; step two: convert joint trip list to an origin/destination list
+   run pgm = matrix
+
+      ; read in the trip data for the current iteration (note %ITER% is set by RunModel.bat)
+      filei reci = main\jointtripdata_temp_@token_period@.csv, delimiter=',', 
+                hh_id             = 1,
+                tour_id           = 2,
+                stop_id           = 3,
+                inbound           = 4,
+                tour_purpose(c)   = 5,
+                orig_purpose(c)   = 6,
+                dest_purpose(c)   = 7,
+                orig_taz          = 8,
+                orig_walk_segment = 9,
+                dest_taz          = 10,
+                dest_walk_segment = 11,
+                parking_taz       = 12,
+                depart_hour       = 13,
+                trip_mode         = 14,
+                num_participants  = 15, 
+                tour_mode         = 16
+               
+      ; create zones x zones one dimensional arrays to store trips, one for each assigned path 
+      array da          = @token_zones_by_zones@    
+      array datoll      = @token_zones_by_zones@  
+     
+      array sr2         = @token_zones_by_zones@      
+      array sr2toll     = @token_zones_by_zones@      
+     
+      array sr3         = @token_zones_by_zones@      
+      array sr3toll     = @token_zones_by_zones@      
+     
+      array walk        = @token_zones_by_zones@      
+      array bike        = @token_zones_by_zones@      
+     
+      array wlk_loc_wlk = @token_zones_by_zones@      
+      array wlk_lrf_wlk = @token_zones_by_zones@    
+      array wlk_exp_wlk = @token_zones_by_zones@        
+      array wlk_hvy_wlk = @token_zones_by_zones@      
+      array wlk_com_wlk = @token_zones_by_zones@      
+     
+      array drv_loc_wlk = @token_zones_by_zones@      
+      array drv_lrf_wlk = @token_zones_by_zones@       
+      array drv_exp_wlk = @token_zones_by_zones@     
+      array drv_hvy_wlk = @token_zones_by_zones@      
+      array drv_com_wlk = @token_zones_by_zones@       
+     
+      array wlk_loc_drv = @token_zones_by_zones@      
+      array wlk_lrf_drv = @token_zones_by_zones@       
+      array wlk_exp_drv = @token_zones_by_zones@     
+      array wlk_hvy_drv = @token_zones_by_zones@      
+      array wlk_com_drv = @token_zones_by_zones@      
+     
+      ; create a unique index for each origin destination pair
+      od_position = @token_zones@ * (ri.orig_taz-1) + ri.dest_taz
+     
+      ; if statement - only read in the trips relevant to the current time period
+      if (@token_relevant_time_interval@)
+     
+         ; create person trip tables
+         ; - drive alone, no value toll
+         if (ri.trip_mode = 1) 
+            da[od_position] = da[od_position] + ri.num_participants    
+            
+         ; - drive alone, value toll
+         elseif (ri.trip_mode = 2)          
+            datoll[od_position] = datoll[od_position] + ri.num_participants
+    
+         ; - shared ride 2, no value toll
+         elseif (ri.trip_mode = 3)                          
+            sr2[od_position] = sr2[od_position] + ri.num_participants                                      
+    
+         ; - shared ride 2, value toll
+         elseif (ri.trip_mode = 4)                       
+            sr2toll[od_position] = sr2toll[od_position] + ri.num_participants                                      
+    
+         ; - shared ride 3 or more, no value toll
+         elseif (ri.trip_mode = 5)                             
+            sr3[od_position] = sr3[od_position] + ri.num_participants                                      
+    
+         ; - shared ride 3 or more, value toll
+         elseif (ri.trip_mode = 6)                       
+            sr3toll[od_position] = sr3toll[od_position] + ri.num_participants
+             
+         ; - walk
+         elseif (ri.trip_mode = 7)                         
+            walk[od_position] = walk[od_position] + ri.num_participants                                    
+    
+         ; - bicycle
+         elseif (ri.trip_mode = 8)                         
+            bike[od_position] = bike[od_position] + ri.num_participants
+             
+         ; - walk, local bus, walk        
+         elseif (ri.trip_mode = 9)                       
+            wlk_loc_wlk[od_position] = wlk_loc_wlk[od_position] + ri.num_participants                                      
+    
+         ; - walk, light rail/ferry, walk
+         elseif (ri.trip_mode = 10)                                  
+            wlk_lrf_wlk[od_position] = wlk_lrf_wlk[od_position] + ri.num_participants                       
+    
+         ; - walk, express bus, walk
+         elseif (ri.trip_mode = 11)                       
+            wlk_exp_wlk[od_position] = wlk_exp_wlk[od_position] + ri.num_participants                                          
+    
+         ; - walk, heavy rail, walk
+         elseif (ri.trip_mode = 12)                       
+            wlk_hvy_wlk[od_position] = wlk_hvy_wlk[od_position] + ri.num_participants                                      
+    
+         ; - walk, commuter rail, walk
+         elseif (ri.trip_mode = 13)                       
+            wlk_com_wlk[od_position] = wlk_com_wlk[od_position] + ri.num_participants
+             
+         ; - drive, local, walk (outbound)
+         elseif (ri.trip_mode = 14 && ri.inbound = 0) 
+            drv_loc_wlk[od_position] = drv_loc_wlk[od_position] + ri.num_participants                                      
+    
+         ; - drive, light rail/ferry, walk (outbound)
+         elseif (ri.trip_mode = 15 && ri.inbound = 0)                
+            drv_lrf_wlk[od_position] = drv_lrf_wlk[od_position] + ri.num_participants                       
+    
+         ; - drive, express bus, walk (outbound)
+         elseif (ri.trip_mode = 16 && ri.inbound = 0) 
+            drv_exp_wlk[od_position] = drv_exp_wlk[od_position] + ri.num_participants                                      
+    
+         ; - drive, heavy rail, walk (outbound)
+         elseif (ri.trip_mode = 17 && ri.inbound = 0) 
+            drv_hvy_wlk[od_position] = drv_hvy_wlk[od_position] + ri.num_participants
+            
+         ; - drive, commuter rail, walk (outbound) 
+         elseif (ri.trip_mode = 18 && ri.inbound = 0) 
+            drv_com_wlk[od_position] = drv_com_wlk[od_position] + ri.num_participants
+             
+         ; - walk, local, drive (inbound)
+         elseif (ri.trip_mode = 14 && ri.inbound = 1) 
+            wlk_loc_drv[od_position] = wlk_loc_drv[od_position] + ri.num_participants                                      
+    
+         ; - walk, light rail/ferry, drive (inbound)
+         elseif (ri.trip_mode = 15 && ri.inbound = 1) 
+            wlk_lrf_drv[od_position] = wlk_lrf_drv[od_position] + ri.num_participants                                      
+    
+         ; - walk, express bus, drive (inbound)
+         elseif (ri.trip_mode = 16 && ri.inbound = 1)                
+            wlk_exp_drv[od_position] = wlk_exp_drv[od_position] + ri.num_participants                       
+         
+         ; - walk, heavy rail, drive (inbound)
+         elseif (ri.trip_mode = 17 && ri.inbound = 1) 
+            wlk_hvy_drv[od_position] = wlk_hvy_drv[od_position] + ri.num_participants                                      
+    
+         ; - walk, commuter rail, drive (inbound)
+         elseif (ri.trip_mode = 18 && ri.inbound = 1) 
+            wlk_com_drv[od_position] = wlk_com_drv[od_position] + ri.num_participants
+                                          
+         endif ; trip mode if
+           
+      endif ; departure hour if 
+      
+      ; write the output only once
+      if (i = 0)
+      
+         ; loop through each origin zone
+         loop orig = 1, @token_zones@
+         
+            ; loop through each destination zone
+            loop dest = 1, @token_zones@
+            
+               ; compute the unique position in each array
+               position = @token_zones@ * (orig - 1) + dest
+               
+               ; write the results to a fixed format file easily read in by TP+
+               print list = orig(5.0), dest(5.0),                    
+                     da[position](20.4lrs),
+                     datoll[position](20.4lrs),    
+                     sr2[position](20.4lrs),       
+                     sr2toll[position](20.4lrs),   
+                     sr3[position](20.4lrs),       
+                     sr3toll[position](20.4lrs),   
+                     walk[position](20.4lrs),      
+                     bike[position](20.4lrs),      
+                     wlk_loc_wlk[position](20.4lrs),  
+                     wlk_lrf_wlk[position](20.4lrs),  
+                     wlk_exp_wlk[position](20.4lrs),  
+                     wlk_hvy_wlk[position](20.4lrs),  
+                     wlk_com_wlk[position](20.4lrs),  
+                     drv_loc_wlk[position](20.4lrs), 
+                     drv_lrf_wlk[position](20.4lrs), 
+                     drv_exp_wlk[position](20.4lrs), 
+                     drv_hvy_wlk[position](20.4lrs), 
+                     drv_com_wlk[position](20.4lrs), 
+                     wlk_loc_drv[position](20.4lrs),  
+                     wlk_lrf_drv[position](20.4lrs),  
+                     wlk_exp_drv[position](20.4lrs),  
+                     wlk_hvy_drv[position](20.4lrs),  
+                     wlk_com_drv[position](20.4lrs),  
+                     file = main\JointTrips@token_period@.dat            
+         
+         endloop ; dest
+       
+      endloop ; orig
+      
+      endif ; if i = 0
+    
+   endrun
+ 
+    
+   ; step three: convert the fixed format files to tp+ matrices
+   run pgm = matrix
+     
+      ; read in the individual trips fixed format file from step one
+      filei mati[1] = main\IndivTrips@token_period@.dat, pattern = ijm:v, fields = #1,2,0,3-26
+      
+      ; read in the joint trips fixed format file from step two
+      filei mati[2] = main\jointtrips@token_period@.dat, pattern=ijm:v, fields=#1,2,0,3-26
+     
+      ; write out a matrix that combines the individual and joint trips for assignment
+      fileo mato[1] = main\trips@token_period@.tpp, mo = 1-23, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+                                                                   walk, bike, 
+                                                                   wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, 
+                                                                   drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
+                                                                   wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv 
+                    
+      zones = @token_zones@                
+    
+      ; scale up the trips to account for sampling (sampleshare set in RunModel.bat)
+      ; - drive alone, no value toll
+      mw[1]  = (mi.1.1  + mi.2.1 ) * (1 / @token_sample_share@) 
+      
+      ; - drive alone, value toll
+      mw[2]  = (mi.1.2  + mi.2.2 ) * (1 / @token_sample_share@)
+      
+      ; - shared ride 2, no value toll
+      mw[3]  = (mi.1.3  + mi.2.3 ) * (1 / @token_sample_share@) 
+      
+      ; - shared ride 2, value toll
+      mw[4]  = (mi.1.4  + mi.2.4 ) * (1 / @token_sample_share@)  
+      
+      ; - shared ride 3+, no value toll
+      mw[5]  = (mi.1.5  + mi.2.5 ) * (1 / @token_sample_share@)     
+      
+      ; shared ride 3+, value toll
+      mw[6]  = (mi.1.6  + mi.2.6 ) * (1 / @token_sample_share@)
+      
+      ; walk
+      mw[7]  = (mi.1.7  + mi.2.7 ) * (1 / @token_sample_share@)     
+      
+      ; bicycle
+      mw[8]  = (mi.1.8  + mi.2.8 ) * (1 / @token_sample_share@) 
+      
+      ; walk, local bus, walk
+      mw[9]  = (mi.1.9  + mi.2.9 ) * (1 / @token_sample_share@)
+      
+      ; walk, light rail/ferry, walk
+      mw[10] = (mi.1.10 + mi.2.10) * (1 / @token_sample_share@)
+      
+      ; walk, express bus, walk
+      mw[11] = (mi.1.11 + mi.2.11) * (1 / @token_sample_share@)
+      
+      ; walk, heavy rail, walk
+      mw[12] = (mi.1.12 + mi.2.12) * (1 / @token_sample_share@) 
+      
+      ; walk, commuter rail, walk
+      mw[13] = (mi.1.13 + mi.2.13) * (1 / @token_sample_share@) 
+      
+      ; drive, local bus, walk
+      mw[14] = (mi.1.14 + mi.2.14) * (1 / @token_sample_share@)
+      
+      ; drive, light rail/ferry, walk
+      mw[15] = (mi.1.15 + mi.2.15) * (1 / @token_sample_share@) 
+      
+      ; drive, express bus, walk
+      mw[16] = (mi.1.16 + mi.2.16) * (1 / @token_sample_share@) 
+      
+      ; drive, heavy rail, walk
+      mw[17] = (mi.1.17 + mi.2.17) * (1 / @token_sample_share@)
+      
+      ; drive, commuter rail, walk
+      mw[18] = (mi.1.18 + mi.2.18) * (1 / @token_sample_share@)
+      
+      ; walk, local bus, drive
+      mw[19] = (mi.1.19 + mi.2.19) * (1 / @token_sample_share@)
+      
+      ; walk, light rail/ferry, drive
+      mw[20] = (mi.1.20 + mi.2.20) * (1 / @token_sample_share@)
+      
+      ; walk, express bus, drive
+      mw[21] = (mi.1.21 + mi.2.21) * (1 / @token_sample_share@) 
+      
+      ; walk, heavy rail, drive
+      mw[22] = (mi.1.22 + mi.2.22) * (1 / @token_sample_share@)
+      
+      ; walk, commuter rail, drive
+      mw[23] = (mi.1.23 + mi.2.23) * (1 / @token_sample_share@)       
+    
+   endrun
+   
+   EndDistributeMultistep
+
+endloop ; time period loop
+
+
+Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+
+
+; delete the time-period-specific copies of the individual trip data used in this scrip
+* del main\IndivTripData_temp_EA.csv
+* del main\IndivTripData_temp_AM.csv
+* del main\IndivTripData_temp_MD.csv
+* del main\IndivTripData_temp_PM.csv
+* del main\IndivTripData_temp_EV.csv
+
+; delete time-period-specific copies of the joint trip data used in this script
+* del main\jointtripdata_temp_EA.csv
+* del main\jointtripdata_temp_AM.csv
+* del main\jointtripdata_temp_MD.csv
+* del main\jointtripdata_temp_PM.csv
+* del main\jointtripdata_temp_EV.csv
+
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               

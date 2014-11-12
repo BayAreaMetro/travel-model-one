@@ -1,0 +1,85 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; NonMotorizedSkims.job
+;
+; TP+ script to compute zone-to-zone walk distance and bicycle distance, including the intrazonal distance.
+; The bicycle and walk networks are created by the script CreateNonMotorizedNetwork.job; to modify roadways
+; can and cannot be used for non-motorized travel, please see that script.  Here, we are simply finding the
+; shortest distance path using links with BIKEOK and WALKOK equals 1, for bicycle and walk respectively.  A third
+; skim table finds the shortest path distance using all links for other analysis methods. 
+;
+;
+; Input:  (1) A highway network containing the fields BIKEOK, WALKOK, and DISTANCE
+;
+; Output: (1) Three table skim in Citilabs TP+ format: 
+;		(i)   walk distance (miles), which restricts walking on links where WALKOK is zero; 
+;		(ii)  bicycle distance (miles), which restricts bicycling on links where BIKEOK is zero;
+;		(iii) distance (miles), no restrictions.
+;                                      
+;
+; Notes:  (1)  Output matrices are in miles and are stored as real values;
+;	  (2)  WALKOK equals 1 means pedestrians are allowed on the link, 0 means pedestrians are not allowed;
+;	  (3)  BIKEOK equals 1 means bikes are allowed on the link, 0 means bikes are not allowed;
+;	  (4)  Intrazonal distance is one half the distance to the nearest neighbor;
+;	  (5)  Distances are all shortest path, ignoring slope, presence of sidewalks or bicycle facilities, etc;
+;	  (6)  Testing suggested 4 threads optimize runtime performance.
+;
+;
+; version:  Travel Model One
+; authors:  dto (2010 03 25); gde (2009 02 10)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+run pgm = highway    
+    
+   ; use cluster over four threads
+   distributeintrastep processid = 'ctramp', processlist = 1-4, commpath = 'm:\commpath', saveprn = f
+    
+   ; input network, which needs WALKOK, BIKEOK, and DISTANCE
+   neti = hwy\nonMotorized.net
+    
+   ; output matrix, which contains three tables: walk distance, bike distance, and (raw) distance
+   mato = skims\nonmotskm.tpp, combine = f, mo = 1-3, name = DISTWALK, DISTBIKE, DIST
+
+   ; set assignment parameters
+   parameters combine  = equi ; equilibrium assignment
+   parameters maxiters = 1    ; a single iteration is needed (bikes/peds do not congest the network)
+ 
+   ; set network variables
+   phase = linkread
+   
+      ; the distance variable is stored in the network as DISTANCE
+      lw.dist = li.DISTANCE
+  		   
+      ; skim two classes, walk and bicycle, and use the BIKEOK variable for both
+      if (li.WALKOK = 0)    addtogroup = 2  ; walk restrictions
+      if (li.BIKEOK = 0)    addtogroup = 3  ; bike restrictions
+      
+   endphase ; linkread
+
+   ; skim the network
+   phase = iloop
+
+      ; walk: shortest distance path, ignore class 2 links, skim DISTANCE variable
+      pathload path = lw.dist, excludegrp = 2, mw[1] = pathtrace(lw.dist)
+      
+      ; bike: shortest distance path, ignore class 3 links, skim DISTANCE variable
+      pathload path = lw.dist, excludegrp = 3, mw[2] = pathtrace(lw.dist)
+      
+      ; shortest distance, consider all links 
+      pathload path = lw.dist, mw[3] = pathtrace(lw.dist)
+      
+      ; compute intrazonal distance: 1/2 the distance of the nearest neighbor 
+      mw[1][i] = rowmin(1) * 0.5 
+      mw[2][i] = rowmin(2) * 0.5  
+      mw[3][i] = rowmin(3) * 0.5  
+    
+      ; allow intrazonal walking and biking even if the centroid connector connects to a restricted link
+      if (mw[1][i] > 999) mw[1][i] = mw[3][i]
+      if (mw[2][i] > 999) mw[2][i] = mw[3][i]
+         
+  endphase ; iloop
+
+endrun
+

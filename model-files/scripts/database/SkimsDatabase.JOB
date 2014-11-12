@@ -1,0 +1,352 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; SkimsDatabase.job
+;
+; TP+ script to dump skims into CSV databases that can be read into and used by SAS procedures.  Four databases are
+; written for each of the five times of day, which are (a) early AM, 3 am to 6 am; (b) AM peak period, 6 am to 10 am; 
+; (c) midday, 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; and, (e) evening, 7 pm to 3 am the next day.
+;
+; The time database contains the skimmed plus terminal time for automobile travel; the walk and bicycle time is based
+; on an assumed travel speed (the same as is used in the mode choice model) and the distance is based on the roadway
+; network minus freeways and bridges (as appropriate); the transit time uses the best transit path for each of the
+; three access/egress combinations (i.e. walk-transit-walk, drive-transit-walk, and walk-transit-drive).  Note that
+; using the best transit path, rather than building a separate time for each of the five (for each of the access/egress
+; combinations) paths, will introduce a bit of inconsistency to analyses using this data.  This inconsistency is deemed
+; worth avoiding carrying around an additional fifteen (for each time period) time values.
+;
+; The distance database does not include values for transit, as distance is not skimmed.
+;
+; The cost database includes, for automobile travel, bridge tolls, value (HOT-lane) tolls, and an assumed per distance
+; automobile cost; two- and three-plus-occupancy automobile travel cost is scaled to distribute the costs to each
+; traveler.  For transit travel, the cost database includes only the fare; bicycle and walk travel are assumed to be
+; free.  All prices are in year 2000 cents. 
+;
+; The active time database does not include values for automobile travel; is the same as the time database for walk
+; and bicycle travel; and includes the walk access, auxiliary, and walk egress time for transit travel. 
+;
+;
+; Input:  (1)  Time-period-specific highway skims (see HwySkims.job)
+;         (2)  Time-period-specific transit skimes (see TransitSkims.job) for each of access/egress combination
+;         (3)  Non-motorized skim (see NonMotorizedSkims.job)
+;         (4)  Zonal data file, which contains the TERMINAL variable, in minutes (highway terminal time)
+;         (5)  Highway parameters block, which contains AUTOOPCOST (automobile operating cost), SR2COSTSHARE (translates
+;              carpool costs to individual costs), and SR3COSTSHARE. 
+;
+; Output: (1)  Time-period-specific time database, containing the origin-to-destination travel time for the following
+;              travel modes: drive alone no value toll, drive alone value toll, shared ride 2 no value toll, share
+;              ride 2 value toll, shared ride 3+ no value toll, shared ride 3+ value toll, walk, bicycle, walk to
+;              best transit to walk, drive to best transit to walk, walk to best transit to drive.  Data are
+;              in minutes.
+;         (2)  Time-period-specific distance database, containing the origin-to-destination travel distance for the
+;              following travel modes: drive alone no value toll, drive alone value toll, shared ride 2 no value toll, share
+;              ride 2 value toll, shared ride 3+ no value toll, shared ride 3+ value toll, walk, bicycle.  Distance
+;              for transit travel is not included. Data values are in miles. 
+;         (3)  Time-period-specific cost database, containing the origin-to-destination out-of-pocket travel cost for the following
+;              travel modes: drive alone no value toll, drive alone value toll, shared ride 2 no value toll, share
+;              ride 2 value toll, shared ride 3+ no value toll, shared ride 3+ value toll, walk to
+;              best transit to walk, drive to best transit to walk, walk to best transit to drive.  Walk and bicycle
+;              are assumed to be free. Data are in year 2000 cents.
+;         (4)  Time-period-specific active time database, containing the origin-to-destination active travel time 
+;              for the following travel modes: walk, bicycle, walk to best transit to walk, drive to best transit 
+;              to walk, walk to best transit to drive.  Automobile travel is assumed to be entirely passive.  
+;              Data are in minutes.
+;
+; Notes:  (1)  Output matrices are in miles, minutes, and cents ($2000) and are stored as real values;
+;	  (2)  Intrazonal distance/time is one half the distance/time to the nearest neighbor;
+;	  (3)  Intrazonal bridge and value tolls are assumed to be zero
+;
+; See also: (1) HwySkims.job, which does the highway skimming
+;	    (2) TransitSkims.job, which does the transit skimming
+;           (3) NonMotorizedSkims.job, which does the non-motorized (walk and bike) skimming
+;
+; version:  Travel Model One
+; authors:  dto (2010 12 14)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; walk speed should be set to the same value as in the mode choice UEC
+token_walk_speed =  3.00
+
+; max walk distance is just used here to avoid very large numbers printed in the data; it will not be used as a threshold in the analysis
+token_max_walk_distance = 75.0
+
+; bicycle speed should be set to the same value as in the mode choice UEC
+token_bike_speed = 12.00
+
+; max bicycle distance is just used here to avoid very large numbers printed in the data; it will not be used as a threshold in the analysis
+token_max_bike_distance = 75.0
+
+; only print the data for internal to internal flows
+token_internal_zones = 1454
+
+; dump time-period-specific databases
+loop period = 1, 5
+  
+   ; set a debug origin
+   token_debug_origin = '1026'
+     
+   ; set a debug destination
+   token_debug_destination = '1'
+     
+   ; set a debug filename prefix
+   token_debug_filename = 'logs\SkimsDatabase'
+  
+   ; a two letter token is used for each time period
+   if (period = 1)   
+      token_period = 'EA'   
+  
+   elseif (period = 2)   
+      token_period = 'AM'    
+  
+   elseif (period = 3)   
+      token_period = 'MD'    
+  
+   elseif (period = 4)   
+      token_period = 'PM'
+  
+   elseif (period = 5)   
+      token_period = 'EV'
+      
+   endif
+   
+   ; do each time of day as a separate process
+   DistributeMultistep processid = 'ctramp', processNum = period, commpath = 'm:\commpath'
+     
+   ; total travel time by mode
+   run pgm = matrix
+      
+      ; highway skim
+      filei mati[1] = skims\hwyskm@token_period@.tpp
+      
+      ; non-motorized skim
+      filei mati[2] = skims\nonmotskm.tpp
+      
+      ; walk, generic transit, walk skim
+      filei mati[3] = skims\trnskm@token_period@_wlk_trn_wlk.tpp
+      
+      ; drive, generic transit, walk skim
+      filei mati[4] = skims\trnskm@token_period@_drv_trn_wlk.tpp
+      
+      ; walk, generic transit, drive skim
+      filei mati[5] = skims\trnskm@token_period@_wlk_trn_drv.tpp
+
+      ; zonal data in DBF format (allows to use header rows)
+      filei zdati[1] = landuse\tazdata.dbf
+      
+      ; block file containing highway parameters (see note above)
+      read file = ctramp\scripts\block\hwyparam.block
+      
+      ; print header for time by mode for each of the three files 
+      if (i==1) 
+      
+         list = "orig,dest,da,daToll,s2,s2Toll,s3,s3Toll,walk,bike,wTrnW,dTrnW,wTrnD", file = database\TimeSkimsDatabase@token_period@.csv
+         list = "orig,dest,da,daToll,s2,s2Toll,s3,s3Toll,walk,bike",                   file = database\DistanceSkimsDatabase@token_period@.csv
+         list = "orig,dest,da,daToll,s2,s2Toll,s3,s3Toll,wTrnW,dTrnW,wTrnD",           file = database\CostSkimsDatabase@token_period@.csv
+         list = "orig,dest,walk,bike,wTrnW,dTrnW,wTrnD",                               file = database\ActiveTimeSkimsDatabase@token_period@.csv
+         
+      
+      endif
+      
+      if (i<=@token_internal_zones@)
+      
+         jloop
+         
+            if (j<=@token_internal_zones@)
+      
+               ; time calculations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+               da_Time     = mi.1.TIMEDA     + zi.1.TERMINAL[j]
+               daToll_Time = mi.1.TOLLTIMEDA + zi.1.TERMINAL[j]
+               
+               s2_Time     = mi.1.TIMES2     + zi.1.TERMINAL[j]
+               s2Toll_Time = mi.1.TOLLTIMES2 + zi.1.TERMINAL[j]
+               
+               s3_Time     = mi.1.TIMES3     + zi.1.TERMINAL[j]
+               s3Toll_Time = mi.1.TOLLTIMES3 + zi.1.TERMINAL[j]
+               
+               if (mi.2.DISTWALK>@token_max_walk_distance@)
+                  walk_Time = -999.0
+               else
+                  walk_Time = mi.2.DISTWALK * 60.0 / @token_walk_speed@
+               endif
+               
+               if (mi.2.DISTBIKE>@token_max_bike_distance@)
+                  bike_Time = -999.0
+               else
+                  bike_Time = mi.2.DISTBIKE * 60.0 / @token_bike_speed@
+               endif
+               
+               if (mi.3.IVT > 0 )
+                  wTrnW_Time  = (mi.3.IVT + mi.3.IWAIT + mi.3.XWAIT + mi.3.WACC + mi.3.WAUX + mi.3.WEGR)/100.0
+               else
+                  wTrnW_Time = -999.0
+               endif
+               
+               if (mi.4.IVT > 0 )
+                  dTrnW_Time  = (mi.4.IVT + mi.4.IWAIT + mi.4.XWAIT +             mi.4.WAUX + mi.4.WEGR + mi.4.DTIME)/100.0
+               else
+                  dTrnW_Time  = -999.0
+               endif
+               
+               if (mi.5.IVT > 0 )
+                  wTrnD_Time  = (mi.5.IVT + mi.5.IWAIT + mi.5.XWAIT + mi.5.WACC + mi.5.WAUX +             mi.5.DTIME)/100.0
+               else
+                  wTrnD_Time = -999.0
+               endif
+               
+               
+               ; distance calculations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+               da_Dist     = mi.1.DISTDA
+               daToll_Dist = mi.1.TOLLDISTDA
+               
+               s2_Dist     = mi.1.DISTS2
+               s2Toll_Dist = mi.1.TOLLDISTS2
+               
+               s3_Dist     = mi.1.DISTS3
+               s3Toll_Dist = mi.1.TOLLDISTS3
+               
+               if (mi.2.DISTWALK>@token_max_walk_distance@)
+                  walk_Dist   = -999.0
+               else
+                  walk_Dist   = mi.2.DISTWALK
+               endif
+               
+               if (mi.2.DISTBIKE>@token_max_bike_distance@)
+                  bike_Dist   = -999.0
+               else
+                  bike_Dist   = mi.2.DISTBIKE
+               endif
+               
+               
+               ; transit distance is not skimmed
+               
+               ; cost calculations (prices in year 2000 cents) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+               da_Cost     = mi.1.BTOLLDA                        + mi.1.DISTDA     * AUTOOPCOST
+               daToll_Cost = mi.1.TOLLBTOLLDA + mi.1.TOLLVTOLLDA + mi.1.TOLLDISTDA * AUTOOPCOST
+               
+               s2_Cost     = (mi.1.BTOLLS2                        + mi.1.DISTS2     * AUTOOPCOST)/SR2COSTSHARE
+               s2Toll_Cost = (mi.1.TOLLBTOLLS2 + mi.1.TOLLVTOLLS2 + mi.1.TOLLDISTS2 * AUTOOPCOST)/SR2COSTSHARE
+               
+               s3_Cost     = (mi.1.BTOLLS3                        + mi.1.DISTS3     * AUTOOPCOST)/SR3COSTSHARE
+               s3Toll_Cost = (mi.1.TOLLBTOLLS3 + mi.1.TOLLVTOLLS3 + mi.1.TOLLDISTS3 * AUTOOPCOST)/SR3COSTSHARE
+               
+               ; bike is free
+               ; walk is free
+               
+               if (mi.3.IVT > 0 )
+                  wTrnW_Cost  = mi.3.FARE
+               else
+                  wTrnW_Cost  = -999.0
+               endif
+               
+               if (mi.4.IVT > 0 )
+                  dTrnW_Cost  = mi.4.FARE
+               else
+                  dTrnW_Cost  = -999.0
+               endif
+               
+               if (mi.5.IVT > 0 )
+                  wTrnD_Cost  = mi.5.FARE
+               else
+                  wTrnD_Cost  = -999.0
+               endif
+               
+               
+               ; active time calculations ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+               walk_Active = walk_Time
+               bike_Active = bike_Time
+               
+               if (mi.3.IVT > 0 )
+                  wTrnW_Active  = (mi.3.WACC + mi.3.WAUX + mi.3.WEGR)/100.0
+               else
+                  wTrnW_Active  = -999.0
+               endif
+               
+               if (mi.4.IVT > 0 )
+                  dTrnW_Active  = (            mi.4.WAUX + mi.4.WEGR)/100.0
+               else
+                  dTrnW_Active  = -999.0
+               endif
+               
+               if (mi.5.IVT > 0 )
+                  wTrnD_Active  = (mi.5.WACC + mi.5.WAUX            )/100.0
+               else
+                  wTrnD_Active  = -999.0
+               endif
+               
+               ; write the output ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+               list = i(8.0),",",j(8.0),",",da_Time(10.2),",",daToll_Time(10.2),",",s2_Time(10.2),",",s2Toll_Time(10.2),",",s3_Time(10.2),",",s3Toll_Time(10.2),",",
+                          walk_Time(10.2),",",bike_Time(10.2),",",wTrnW_Time(10.2),",",dTrnW_Time(10.2),",",wTrnD_Time(10.2), 
+                      file = database\TimeSkimsDatabase@token_period@.csv
+                      
+               list = i(8.0),",",j(8.0),",",da_Dist(10.2),",",daToll_Dist(10.2),",",s2_Dist(10.2),",",s2Toll_Dist(10.2),",",s3_Dist(10.2),",",s3Toll_Dist(10.2),",",
+      	            walk_Dist(10.2),",",bike_Dist(10.2), 
+                      file = database\DistanceSkimsDatabase@token_period@.csv
+            
+               list = i(8.0),",",j(8.0),",",da_Cost(10.2),",",daToll_Cost(10.2),",",s2_Cost(10.2),",",s2Toll_Cost(10.2),",",s3_Cost(10.2),",",s3Toll_Cost(10.2),",",
+                          wTrnW_Cost(10.2),",",dTrnW_Cost(10.2),",",wTrnD_Cost(10.2), 
+                      file = database\CostSkimsDatabase@token_period@.csv
+                      
+               list = i(8.0),",",j(8.0),",",walk_Active(10.2),",",bike_Active(10.2),",",wTrnW_Active(10.2),",",dTrnW_Active(10.2),",",wTrnD_Active(10.2), 
+                      file = database\ActiveTimeSkimsDatabase@token_period@.csv
+                      
+                      
+               ; debug print ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+               if (i = @token_debug_origin@ & j = @token_debug_destination@) 
+               
+                  ; one header
+                  if (@period@ = 1)
+                  
+                     list = 'Debug for origin zone ',@token_debug_origin@(5.0),'  and destination zone ',@token_debug_destination@(5.0),'.', file = @token_debug_filename@.@token_period@.debug
+                     list = ' ', file = @token_debug_filename@.@token_period@.debug
+                  
+                     list = ' time period              mode           path           time       distance           cost    active time', file = @token_debug_filename@.@token_period@.debug
+                     list = ' ----------- ----------------- -------------- -------------- -------------- -------------- --------------', file = @token_debug_filename@.@token_period@.debug
+                  
+                  ; break for everyone else
+                  else
+                  
+                     list = ' ----------- ----------------- -------------- -------------- -------------- -------------- --------------', file = @token_debug_filename@.@token_period@.debug 
+                  
+                  endif
+                  
+                  list = '          @token_period@       drive alone           free', da_Time(15.2),     da_Dist(15.2),     da_Cost(15.2),     '           ----',  file = @token_debug_filename@.@token_period@.debug 
+                  list = '          @token_period@       drive alone           toll', daToll_Time(15.2), daToll_Dist(15.2), daToll_Cost(15.2), '           ----',  file = @token_debug_filename@.@token_period@.debug
+                  list = '          @token_period@     shared ride 2           free', s2_Time(15.2),     s2_Dist(15.2),     s2_Cost(15.2),     '           ----',  file = @token_debug_filename@.@token_period@.debug 
+                  list = '          @token_period@     shared ride 2           toll', s2Toll_Time(15.2), s2Toll_Dist(15.2), s2Toll_Cost(15.2), '           ----',  file = @token_debug_filename@.@token_period@.debug
+                  list = '          @token_period@    shared ride 3+           free', s3_Time(15.2),     s3_Dist(15.2),     s3_Cost(15.2),     '           ----',  file = @token_debug_filename@.@token_period@.debug 
+                  list = '          @token_period@    shared ride 3+           toll', s3Toll_Time(15.2), s3Toll_Dist(15.2), s3Toll_Cost(15.2), '           ----',  file = @token_debug_filename@.@token_period@.debug
+                  list = '          @token_period@              walk           ----', walk_Time(15.2),   walk_Dist(15.2),   '           ----', walk_Active(15.2),  file = @token_debug_filename@.@token_period@.debug 
+      	          list = '          @token_period@           bicycle           ----', bike_Time(15.2),   bike_Dist(15.2),   '           ----', bike_Active(15.2),  file = @token_debug_filename@.@token_period@.debug
+                  list = '          @token_period@           transit      walk,walk', wTrnW_Time(15.2),  '           ----', wTrnW_Cost(15.2),  wTrnW_Active(15.2), file = @token_debug_filename@.@token_period@.debug 
+      	          list = '          @token_period@           transit     drive,walk', dTrnW_Time(15.2),  '           ----', dTrnW_Cost(15.2),  dTrnW_Active(15.2), file = @token_debug_filename@.@token_period@.debug
+                  list = '          @token_period@           transit     walk,drive', wTrnD_Time(15.2),  '           ----', wTrnD_Cost(15.2),  wTrnD_Active(15.2), file = @token_debug_filename@.@token_period@.debug 
+      	
+               
+               endif  ; debug
+               
+            endif ; internal j zones only
+         
+         endjloop
+      
+      endif ; internal i zones only
+      
+   endrun
+   
+   EndDistributeMultistep
+
+endloop ; token_period
+
+Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
+          printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+           
+; combine and delete the debug files
+* copy @token_debug_filename@.EA.debug+@token_debug_filename@.AM.debug+@token_debug_filename@.MD.debug+@token_debug_filename@.PM.debug+@token_debug_filename@.EV.debug @token_debug_filename@.debug
+* del @token_debug_filename@.EA.debug
+* del @token_debug_filename@.AM.debug
+* del @token_debug_filename@.MD.debug
+* del @token_debug_filename@.PM.debug
+* del @token_debug_filename@.EV.debug
+
+
+

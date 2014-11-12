@@ -1,0 +1,295 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; MergeNetworks.job
+;
+; TP+ script to merge time-period-specific assignment results into a single TP+ and CSV network.  The combined network
+; is not used by the model stream.  Variables are first given time-period-specific names in the first step of the
+; script and then the five networks are merged. Daily volumes, delay, vehicle-miles traveled, and vehicle-hours
+; traveled calculations are performed.  Note that delay is computed as the difference between congested time and free-flow time. 
+;
+; The five time periods are as follows:(a) early AM, 3 am to 6 am; (b) AM peak period, 6 am to 10 am; (c) midday, 
+; 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; and, (e) evening, 7 pm to 3 am the next morning.
+;
+; Each highway assignment tracks ten classes of vehicles; the vehicle classes are  value-toll-paying and not-value
+; -toll-paying classes of the following types: (a) single-occupant passenger vehicles; (b)two-occupant passenger 
+; vehicles; (c) three or more occupant passenger vehicles; (d) very small, small, and medium commercial vehicles; and, 
+; (e) large commercial vehicles (combination trucks).
+;
+; Input:  (1) Five time-period-specific highway networks with the following variables: (a) CTIM, which is the
+;             congested travel time (in minutes), as computed by CalculateSpeeds.job; (b) TSIN, which is a switch,
+;             a value of 1 indicating that the link is immune to congestion and has a fixed travel time (e.g. bridge
+;             toll plazas); (c) DISTANCE, which is the link distance in miles; (d) VX_1, where X takes on the integers
+;             one through ten, corresponding to the ten vehicle classes noted above -- the non-paying classes are
+;             one through five and the value-toll-paying classes are six through ten; (e) other core variables 
+;             are not used in the script but are dumped to a CSV file; these variables are: (i) LANES, which is the
+;             number of travel lanes; (ii) GL, which is the county code (1 - San Francisco, 2 - San Mateo, 3 -
+;             Santa Clara, 4 - Alameda, 5 - Contra Cost, 6 - Solano, 7 - Napa, 8 - Sonoma, 9 - Marin, 0 - outside
+;             the nine county Bay Area); (iii) USE, which is the link use code (see HwyAssign.job); (iv) FT, which
+;             is the facility type (see HwyAssign.job); (v) AT, which is the area type (see HwyAssign.job); (vi) CAP,
+;             which is the link capacity in vehicles per hour per lane; (vii) FFS, which is the link free-flow speed
+;             in miles per hour; and, (viii) FFT, which is the link free-flow travel time in minutes. 
+;
+; Output: (1) Five time-period-specific highway variables with the core variables noted above as well as the output
+;             variables noted below (these variables are then merged into the single highway network noted below). 
+;         (2) A single highway network in TP+ and CSV format with the core variables noted above as well as the
+;             following output variables: (a) ctimXX, where XX is a two-letter string indicating the time-of-day for
+;             which the variable is specific (EA is early AM; AM is the AM peak period; MD is the midday; PM is the
+;             PM peak period; and, EV is the evening), which is the congested travel time in minutes; 
+;             (b) cspdXX, where XX is again the two-letter time-of-day string, which is the congested travel speed
+;             in miles per hour; (c) volXX_YYY, where XX is the two-letter time-of-day string (including 24hr, which
+;             is the daily volume) and YYY is a two-or-three letter string indicating assigned vehicle class (da 
+;             is drive alone free; s2 is shared ride 2 free; s3 is shared ride 3 free; sm is small, medium, or 
+;             large trucks; hv is large, combination trucks; add a "T" to each of the three letter code for the 
+;             companion value-toll paying class; tot is the sum of all vehicle classes); (d) delayXX, which is the link
+;             delay, which is the difference between the congested time and the free-flow travel time; (e) vmtXX, 
+;             which is the link vehicle-miles traveled; and, (f) vhtXX, which is the link vehicle-hours traveled.  
+;
+; Notes:  (1) The assigned volumes stored in the assignment variable names (e.g. V1_1) are used by the
+;             AverageNetworkVolumes.job.
+;         (2) Made USE time-of-day specific in 26 June 2013 update
+;
+; See also: (1) CalculateSpeeds.job, which creates the input networks to this script.
+;           (2) HwyAssign.job, which performs the time-period-specific highway assignments.
+;           (3) HwySkims.job, which uses the congested time to build level-of-service matrices for the next
+;               model execution iteration.
+;           (4) AverageNetworkVolumes.job, which uses the volumes in the output avgloadXX networks in the next
+;               model execution iteration. 
+;
+; version:  Travel Model One
+; authors:  dto (2013 06 26; 2010 08 10); gde (2009)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; set the current iteration DOS token as a TP+ token
+token_current_iteration = '%ITER%'
+
+; step one: create time-period-specific networks with readable variable names for use in next iteratin
+loop period = 1, 5
+   
+   ; a two letter token is used for each time period
+   if (period = 1)   
+      token_period = 'EA'   
+  
+   elseif (period = 2)   
+      token_period = 'AM'    
+  
+   elseif (period = 3)   
+      token_period = 'MD'    
+  
+   elseif (period = 4)   
+      token_period = 'PM'
+  
+   elseif (period = 5)   
+      token_period = 'EV'
+      
+   endif
+   
+   ; disable distribution: process is faster without the distribution overhead
+  ; DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = 'm:\commpath'
+   
+   run pgm = network
+   
+      ; read in the time-period-specific assigned and averaged (over iterations) network (see CalculateSpeeds.job)
+      neti[1] = hwy\iter@token_current_iteration@\avgload@token_period@.net
+      
+      ; write out the network that will be used to create level-of-service matrices for the next iteration (see HwySkims.job)
+      neto = hwy\iter@token_current_iteration@\x3avgload@token_period@.net
+      
+      ; congested time variable is stored in CTIM
+      ctim@token_period@ = CTIM
+      
+      ; for non-fixed links, computed the congested speed from the DISTANCE variable
+      if (TSIN = 0) cspd@token_period@ = DISTANCE / (CTIM/60.0)
+      
+      ; set the v/c ratio
+      vc@token_period@ = VC
+      
+      ; keep track of USE code by time of day
+      use@token_period@ = USE
+      
+      ; set the assignment-class-specific volumes: non-value-toll-paying classes
+      vol@token_period@_da = VOL_DA                     
+      vol@token_period@_s2 = VOL_S2                                               
+      vol@token_period@_s3 = VOL_S3                                               
+      vol@token_period@_sm = VOL_SM                                               
+      vol@token_period@_hv = VOL_HV                                               
+             
+      ; set the assignment-class-specific volumes: value-toll-eligible classes
+      vol@token_period@_daT = VOL_DAT                                               
+      vol@token_period@_s2T = VOL_S2T                                               
+      vol@token_period@_s3T = VOL_S3T                                               
+      vol@token_period@_smT = VOL_SMT                                               
+      vol@token_period@_hvT = VOL_HVT 
+            
+      ; set the assignment-class-specific volumes: total volume
+      vol@token_period@_tot = vol@token_period@_da  + vol@token_period@_s2 +  vol@token_period@_s3  + vol@token_period@_sm  +  vol@token_period@_hv + 
+                              vol@token_period@_daT + vol@token_period@_s2T + vol@token_period@_s3T + vol@token_period@_smT + vol@token_period@_hvT
+                              
+      ; compute delay, vehicle-miles traveled, and vehicle-hours traveled (ignore centroid connectors and other dummy links)
+      if (FT != 6)
+      
+         ; delay is the congested time minus the free-flow time, weighted by the link volume, and converted from minutes to hours
+         delay@token_period@ = (CTIM - FFT) * vol@token_period@_tot / 60.0
+         
+         ; vehicle-miles traveled is the distance weighted by the volume
+         vmt@token_period@ = DISTANCE * vol@token_period@_tot
+         
+         ; vehicle-hours traveled is the congested travel time (expressed here in minutes) weighted by the volume, and converted from minutes to hours
+         vht@token_period@ = CTIM * vol@token_period@_tot / 60.0 
+         
+         
+      endif ; facility type is not six check
+      
+   
+   endrun
+   
+;   EndDistributeMultistep
+   
+endloop
+
+; Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
+;           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+
+
+; step two: build single network with all time-period-specific information included, as summarized in previous step
+run pgm = hwynet
+
+   ; read in the time-period-specific assigned and averaged (over iterations) networks (see CalculateSpeeds.job)
+   neti[1] = hwy\iter@token_current_iteration@\x3avgloadEA.net
+   neti[2] = hwy\iter@token_current_iteration@\x3avgloadAM.net          
+   neti[3] = hwy\iter@token_current_iteration@\x3avgloadMD.net          
+   neti[4] = hwy\iter@token_current_iteration@\x3avgloadPM.net           
+   neti[5] = hwy\iter@token_current_iteration@\x3avgloadEV.net
+   
+   ; output network includes time-period-specific and 24-hour volumes
+   neto = hwy\iter@token_current_iteration@\avgload5period.net, exclude = USE, VOL, CTIM, VC, CSPD, VDT, VHT,
+                                                                          VOL_DA, VOL_S2, VOL_S3, VOL_SM, VOL_HV,
+                                                                          VOL_DAT, VOL_S2T, VOL_S3T, VOL_SMT, VOL_HVT,
+                                                                          VOLT, VOLT_DA, VOLT_S2, VOLT_S3, VOLT_SM, VOLT_HV,
+                                                                          VOLT_DAT, VOLT_S2T, VOLT_S3T, VOLT_SMT, VOLT_HVT
+     
+   ; combine the records of the time-period-specific assignments
+   merge record = t     
+     
+   ; linkmerge phase start
+   phase = linkmerge
+               
+      ; combine the assignment results to build 24-hour volumes
+      vol24hr_da  = volEA_da  + volAM_da  + volMD_da  + volPM_da  + volEV_da         
+      vol24hr_s2  = volEA_s2  + volAM_s2  + volMD_s2  + volPM_s2  + volEV_s2         
+      vol24hr_s3  = volEA_s3  + volAM_s3  + volMD_s3  + volPM_s3  + volEV_s3         
+      vol24hr_sm  = volEA_sm  + volAM_sm  + volMD_sm  + volPM_sm  + volEV_sm         
+      vol24hr_hv  = volEA_hv  + volAM_hv  + volMD_hv  + volPM_hv  + volEV_hv  
+      
+      vol24hr_daT = volEA_daT + volAM_daT + volMD_dat + volPM_daT + volEV_daT        
+      vol24hr_s2T = volEA_s2T + volAM_s2T + volMD_s2t + volPM_s2T + volEV_s2T        
+      vol24hr_s3T = volEA_s3T + volAM_s3T + volMD_s3t + volPM_s3T + volEV_s3T        
+      vol24hr_smT = volEA_smT + volAM_smT + volMD_smt + volPM_smT + volEV_smT        
+      vol24hr_hvT = volEA_hvT + volAM_hvT + volMD_hvt + volPM_hvt + volEV_hvT
+      
+      vol24hr_tot = volEA_tot + volAM_tot + volMD_tot + volPM_tot + volEV_tot
+      
+      ; compute delay, vehicle-miles traveled, and vehicle-hours traveled (ignore centroid connectors and other dummy links)
+      if (FT != 6)
+      
+         ; vehicle delay is the difference between congested time and free flow time, times number of vehicles
+         delay24hr = delayEA + delayAM + delayMD + delayPM + delayEV
+         
+         ; vehicle-miles traveled is the distance weighted by the volume
+         vmt24hr = vmtEA + vmtAM + vmtMD + vmtPM + vmtEV
+         
+         ; vehicle-hours traveled is the congested travel time (expressed here in minutes) weighted by the volume
+         vht24hr = vhtEA + vhtAM + vhtMD + vhtPM + vhtEV
+      
+      endif ; facility type check
+
+   endphase
+
+endrun
+
+; step three: dump the network to a csv file
+run pgm = network
+
+   neti = hwy\iter@token_current_iteration@\avgload5period.net
+   
+   phase = linkmerge
+   
+      if (_doOnce = 0)
+      
+         list = "       a,",
+                "       b,",
+                "distance,",
+                "   lanes,",
+                "  gl,",
+                " use,",
+                "  ft,",
+                "  at,",
+                "     cap,",
+                "     ffs,",
+                "     fft,",
+                "  cspdEA,",
+                "  cspdAM,",
+                "  cspdMD,",
+                "  cspdPM,",
+                "  cspdEV,",
+                "   volEA_tot,",
+                "   volAM_tot,",
+                "   volMD_tot,",
+                "   volPM_tot,",
+                "   volEV_tot,",
+                "  ctimEA,",
+                "  ctimAM,",
+                "  ctimMD,",
+                "  ctimPM,",
+                "  ctimEV,",
+                "    vcEA,",
+                "    vcAM,",
+                "    vcMD,",
+                "    vcPM,",
+                "    vcEV",
+                file = hwy\iter@token_current_iteration@\avgload5period.csv
+         
+         _doOnce = 1
+      
+      endif
+   
+      list = A(8.0), ",",
+             B(8.0), ",",
+             DISTANCE(8.2), ",",
+             LANES(8.2),",",
+             GL(4.0),",",
+             USE(4.0),",",
+             FT(4.0),",",
+             AT(4.0),",",
+             CAP(8.0),",",
+             FFS(8.2),",",
+             FFT(8.2),",",
+             cspdEA(8.2),",",
+             cspdAM(8.2),",",
+             cspdMD(8.2),",",
+             cspdPM(8.2),",",
+             cspdEV(8.2),",",
+             volEA_tot(12.2),",",
+             volAM_tot(12.2),",",
+             volMD_tot(12.2),",",
+             volPM_tot(12.2),",",
+             volEV_tot(12.2),",",
+             ctimEA(8.2),",",
+             ctimAM(8.2),",",
+             ctimMD(8.2),",",
+             ctimPM(8.2),",",
+             ctimEV(8.2),",",
+             vcEA(8.4),",",
+             vcAM(8.4),",",
+             vcMD(8.4),",",
+             vcPM(8.4),",",
+             vcEV(8.4),
+             file = hwy\iter@token_current_iteration@\avgload5period.csv
+   
+   endphase
+   
+endrun
+
+     
+

@@ -1,0 +1,144 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; TruckTripDistribution.job
+;
+; TP+ script to apply BAYCAST's trip distribution model.  The implementation is identical to the BAYCAST implementation,
+; though scripts and input files have been consolidated.  A simple gravity model is used to distribute the truck
+; trips, with separate friction factors used for each class of truck.  The four truck types are: very small trucks 
+; (two-axle, four-tire), small trucks (two-axle, six-tire), medium trucks (three-axle), and large or combination 
+; (four or more axle) trucks.
+;
+; A blended travel time is used as the impedance measure, specifically the weighted average of the AM travel time
+; (one-third weight) and the midday travel time (two-thirds weight). 
+;
+; Input:  (1) Level-of-service matrices for the AM peak period (6 am to 10 am) and midday period (10 am to 3 pm)
+;             which contain truck-class specific estimates of congested travel time (in minutes) using the following
+;             table names:(a) timeVSM, which is the time for very small trucks; (b) timeSML, which is the time for 
+;             small trucks; (c) timeMED, which is the time for medium trucks; and, (d) timeLRG, which is the time
+;             for large trucks.
+;         (2) Trip generation results in ASCII format with the following fields (each 12 columns wide): (a) zone 
+;             number; (b) very small truck trip productions; (c) very small truck trip attractions; (d) small truck
+;             trip productions; (e) small truck trip attractions; (f) medium truck trip productions; (g) medium 
+;             truck trip attractions; (h) large truck trip productions; and, (i) large truck trip attractions. 
+;         (3) A matrix of k-factors, as calibrated by Chuck Purvis.  Note the very small truck model does not use
+;             k-factors; the small, medium, and large trucks use the same k-factors. 
+;         (4) A table of friction factors in ASCII format with the following fields (each 12 columns wide): (a)
+;             impedance measure (blended travel time); (b) friction factors for very small trucks; (c) friction
+;             factors for small trucks; (d) friction factors for medium trucks; and, (e) friction factors for large
+;             trucks. 
+;
+; Output: (1) A four-table production/attraction trip table matrix of daily class-specific truck trips (in units 
+;             of trips x 100, to be consistent with the previous application)with a table for (a) very small trucks,
+;             (b) small trucks, (c) medium trucks, and (d) large trucks.
+;
+; Notes:  (1) These scripts do not update the BAYCAST truck model; rather, the model is simply implemented in a
+;             manner consistent with the Travel Model One implementation. 
+;
+; See also: (1) TruckTripGeneration.job, which applies the generation model.
+;           (2) TruckTimeOfDay.job, which applies diurnal factors to the daily trips generated here. 
+;           (3) TruckTollChoice.job, which applies a toll/no toll choice model for trucks.
+;
+; version:  Travel Model One (v 0.3)
+; authors:  dto (2011 09 08); dto (2010 08 31); cp (date unknown)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; set the number of zones token
+token_number_of_internal_zones = 1454
+
+; step one: create the weighted travel time matrix
+run pgm = matrix
+
+   ; distribute via cluster
+   DistributeIntrastep processid = 'CTRAMP', processlist = 1-2, commpath = 'm:\commpath', saveprn = f
+
+   ; read in the AM peak period commercial skims
+   filei mati[1] = skims\com_hwyskimAM.tpp
+   
+   ; read in the midday period commercial skims
+   filei mati[2] = skims\com_hwyskimMD.tpp
+   
+   ; write out the blended travel time (1/3 peak, 2/3 off-peak) for each truck class
+   fileo mato[1] = nonres\blendedTruckTime.tpp, mo = 1-4, name = timeVSM, timeSML, timeMED, timeLRG
+   
+   ; compute the blended travel time for each truck class
+   ;   - very small
+   mw[1] = mi.1.timeVSM * 1.0/3.0 + mi.2.timeVSM * 2.0/3.0
+   
+   ;   - small
+   mw[2] = mi.1.timeSML * 1.0/3.0 + mi.2.timeSML * 2.0/3.0
+   
+   ;   - medium
+   mw[3] = mi.1.timeMED * 1.0/3.0 + mi.2.timeMED * 2.0/3.0
+   
+   ;   - large
+   mw[4] = mi.1.timeLRG * 1.0/3.0 + mi.2.timeLRG * 2.0/3.0
+
+endrun
+
+; step two: apply the distribution models
+run pgm = tripdist
+
+   ; read in the trip generation output
+   filei zdati[1] = nonres\TruckTG.dat, z = 1-12, verySmallTruckP = 13-24, verySmallTruckA = 25-36,
+                                                      smallTruckP = 37-48,     smallTruckA = 49-60,
+                                                     mediumTruckP = 61-72,    mediumTruckA = 73-84, 
+                                                      largeTruckP = 85-96,     largeTruckA = 97-108
+                                                
+   ; read in the level of service matrix with the blended time
+   filei mati[1] = nonres\blendedTruckTime.tpp
+   
+   ; read in the k-factors
+   filei mati[2] = nonres\truckkfact.k22.z1454.mat
+   
+   ; write out the results
+   fileo mato[1] = nonres\DailyTruckTrips.tpp, mo = 5-8, name = verySmall, small, medium, large 
+                                                
+   ; set the parameters
+   ;   - maximum iterations is 99
+   maxiters = 99
+   
+   ;   - maximum root mean square error is 10
+   maxrmse = 10
+   
+   ;   - number of zones
+   zones = @token_number_of_internal_zones@ 
+   
+   ; set the production and attraction variables
+   setpa p[1] = zi.1.verySmallTruckP
+   setpa a[1] = zi.1.verySmallTruckA
+   
+   setpa p[2] = zi.1.smallTruckP
+   setpa a[2] = zi.1.smallTruckA
+   
+   setpa p[3] = zi.1.mediumTruckP
+   setpa a[3] = zi.1.mediumTruckA
+   
+   setpa p[4] = zi.1.largeTruckP
+   setpa a[4] = zi.1.largeTruckA
+   
+   ; set the friction factors (time is in column 1, very small FF in 2, small FF in 3, medium FF in 4, and large FF in 5)
+   lookup list = Y, file = nonres\truckFF.dat, name = truckff, 
+          lookup[1] = 1, result = 2,
+          lookup[2] = 1, result = 3,
+          lookup[3] = 1, result = 4,
+          lookup[4] = 1, result = 5,
+          interpolate = Y, setupper = N
+          
+   ; apply the gravity models (note the very small trucks do not use the K-factors)
+   gravity purpose = 1, los = mi.1.timeVSM, ffactors = truckff
+   gravity purpose = 2, los = mi.1.timeSML, ffactors = truckff, kfactors = mi.2.truck_k
+   gravity purpose = 3, los = mi.1.timeMED, ffactors = truckff, kfactors = mi.2.truck_k
+   gravity purpose = 4, los = mi.1.timeLRG, ffactors = truckff, kfactors = mi.2.truck_k
+   
+   ; scale the trips by 100 and bucket round (to be consistent with Chuck's application)
+   mw[5] = mw[1] * 100.0
+   mw[6] = mw[2] * 100.0
+   mw[7] = mw[3] * 100.0
+   mw[8] = mw[4] * 100.0
+   
+   temp = rowfix(5) + rowfix(6) + rowfix(7) + rowfix(8)
+   
+endrun
+

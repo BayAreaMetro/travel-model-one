@@ -1,0 +1,84 @@
+;-----------------------------------------------------------------------
+; Ja Calculations
+; Code Free Flow Speeds for Links
+;-----------------------------------------------------------------------
+          IF (LI.CAPCLASS = 01) CritSpd = 18.835
+	  IF (LI.CAPCLASS = 02) CritSpd = 25.898
+	  IF (LI.CAPCLASS = 03) CritSpd = 11.772            
+	  IF (LI.CAPCLASS = 04) CritSpd = 4.709
+	  IF (LI.CAPCLASS = 05) CritSpd = 11.772
+	  IF (LI.CAPCLASS = 06) CritSpd = 47.087
+	  IF (LI.CAPCLASS = 07) CritSpd = 7.063
+	  IF (LI.CAPCLASS = 08) CritSpd = 9.417
+	  IF (LI.CAPCLASS = 09) CritSpd = 25.898           
+	  IF (LI.CAPCLASS = 10) CritSpd = 14.126           
+;-----------------------------------------------------------------------
+	  IF (LI.CAPCLASS = 11) CritSpd=18.835
+	  IF (LI.CAPCLASS = 12) CritSpd=25.898
+	  IF (LI.CAPCLASS = 13) CritSpd=11.772            
+	  IF (LI.CAPCLASS = 14) CritSpd=4.709
+	  IF (LI.CAPCLASS = 15) CritSpd=11.772
+	  IF (LI.CAPCLASS = 16) CritSpd=47.087
+	  IF (LI.CAPCLASS = 17) CritSpd=9.417
+	  IF (LI.CAPCLASS = 18) CritSpd=9.417
+	  IF (LI.CAPCLASS = 19) CritSpd=28.252      
+	  IF (LI.CAPCLASS = 20) CritSpd=16.480     
+;-----------------------------------------------------------------------
+          IF (LI.CAPCLASS = 21) CritSpd = 21.189
+	  IF (LI.CAPCLASS = 22) CritSpd = 28.252
+	  IF (LI.CAPCLASS = 23) CritSpd = 14.126            
+	  IF (LI.CAPCLASS = 24) CritSpd = 7.063
+	  IF (LI.CAPCLASS = 25) CritSpd = 14.126
+	  IF (LI.CAPCLASS = 26) CritSpd = 47.087
+	  IF (LI.CAPCLASS = 27) CritSpd = 11.772
+	  IF (LI.CAPCLASS = 28) CritSpd = 11.772
+	  IF (LI.CAPCLASS = 29) CritSpd = 30.607      
+	  IF (LI.CAPCLASS = 30) CritSpd = 18.835     
+;-----------------------------------------------------------------------
+          IF (LI.CAPCLASS = 31) CritSpd = 21.189
+	  IF (LI.CAPCLASS = 32) CritSpd = 28.252
+	  IF (LI.CAPCLASS = 33) CritSpd = 14.126            
+	  IF (LI.CAPCLASS = 34) CritSpd = 9.417
+	  IF (LI.CAPCLASS = 35) CritSpd = 14.126
+	  IF (LI.CAPCLASS = 36) CritSpd = 47.087
+	  IF (LI.CAPCLASS = 37) CritSpd = 11.772
+	  IF (LI.CAPCLASS = 38) CritSpd = 11.772
+	  IF (LI.CAPCLASS = 39) CritSpd = 23.543     
+	  IF (LI.CAPCLASS = 40) CritSpd = 9.417     
+;-----------------------------------------------------------------------
+          IF (LI.CAPCLASS = 41) CritSpd = 23.543
+	  IF (LI.CAPCLASS = 42) CritSpd = 30.607
+	  IF (LI.CAPCLASS = 43) CritSpd = 16.480            
+	  IF (LI.CAPCLASS = 44) CritSpd = 11.772
+	  IF (LI.CAPCLASS = 45) CritSpd = 16.480
+	  IF (LI.CAPCLASS = 46) CritSpd = 47.087
+	  IF (LI.CAPCLASS = 47) CritSpd = 14.126
+	  IF (LI.CAPCLASS = 48) CritSpd = 14.126
+	  IF (LI.CAPCLASS = 49) CritSpd = 21.189      
+	  IF (LI.CAPCLASS = 50) CritSpd = 11.772     
+;-----------------------------------------------------------------------
+          IF (LI.CAPCLASS = 51) CritSpd = 23.543
+	  IF (LI.CAPCLASS = 52) CritSpd = 30.607
+	  IF (LI.CAPCLASS = 53) CritSpd = 16.480            
+	  IF (LI.CAPCLASS = 54) CritSpd = 14.126
+	  IF (LI.CAPCLASS = 55) CritSpd = 16.480
+	  IF (LI.CAPCLASS = 56) CritSpd = 47.087
+	  IF (LI.CAPCLASS = 57) CritSpd = 16.480
+	  IF (LI.CAPCLASS = 58) CritSpd = 14.126
+	  IF (LI.CAPCLASS = 59) CritSpd = 23.543      
+	  IF (LI.CAPCLASS = 60) CritSpd = 16.480     
+;-----------------------------------------------------------------------	
+COMP Tc=0
+IF (LI.FT=1-5,7-10)  
+   
+   TcDist1 = (1/CritSpd)
+   ToDist1 = (1/LI.FFS)
+   
+   Ja10000Dist1 = ( (TcDist1 - ToDist1)^2 ) * 10000  
+  
+   Tc = (DISTANCE / CritSpd)
+   To = (DISTANCE / LI.FFS)
+   
+   Ja10000 = (((Tc-To)^2)/(DISTANCE^2))*10000  ;DISTANCE^2 can be deleted if deleted in Akcelik formula
+
+ENDIF  

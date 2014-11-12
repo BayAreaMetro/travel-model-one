@@ -1,0 +1,514 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; Accessibility.job
+;
+; TP+ script to compute measures of accessibility used by the automobile ownership model.  The accessibility measure
+; first multiplies an employment variable by a mode-specific decay function.  The product reflects the difficulty
+; of accessing the activities the farther (in terms of round-trip travel time) the jobs are from the location in 
+; question. The products to each destination zone are next summed over each origin zone, and the logarithm of the 
+; product mutes large differences.  The decay function on the walk accessibility measure is steeper than automobile
+; or transit.  The minimum accessibility is zero.  
+;
+; Level-of-service variables from three of MTC's five time periods are used in the script, specifically the AM peak
+; period, the midday period, and the PM peak period.  The five time periods are: (a) early AM, 3 am to 6 am; (b) AM 
+; peak period, 6 am to 10 am; (c) midday, 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; and, (e) evening, 7 pm
+; to 3 am the next day.
+;
+; Scripts from the statistical software used to originally compute the accessibility measures are included below the 
+; script in an Appendix for reference. 
+;
+; Input:  (A) Highway skims for the AM peak period, midday period, and PM peak period are used.  Each skim is expected
+;             to include a table named "TOLLTIMEDA", which is the drive alone in-vehicle travel time for automobiles
+;             willing to pay a "value" (time-savings) toll.  This path is used as a proxy for automobile travel time. 
+;         (B) Transit skims for the AM peak period, midday period, and PM peak period are used.  Each skim is expected
+;             to include the following tables: (i) "IVT", in-vehicle time; (ii) "IWAIT", initial wait time; (iii) "XWAIT",
+;             transfer wait time; (iv) "WACC", walk access time; (v) "WAUX", auxiliary walk time; and, (vi) "WEGR", walk
+;             egress time.  The skims are from the transit paths in which all line-haul modes are weighted equally.  
+;         (C) Zonal data file in DBF format (so that header columns can be read), which must include the following 
+;             variables: (i) "TOTEMP", total employment; (ii) "RETEMPN", retail trade employment per the NAICS 
+;             classification. 
+;
+; Output: (A) CSV file with the following data items (note the accessibility measures are relative and unit-less): 
+;            (i)    taz, travel analysis zone number; 
+;            (ii)   autoPeakRetail, the accessibility by automobile during peak conditions to retail employment for this TAZ; 
+;            (iii)  autoPeakTotal, the accessibility by automobile during peak conditions to all employment; 
+;            (iv)   autoOffPeakRetail, the accessibility by automobile during off-peak conditions to retail employment; 
+;            (v)    autoOffPeakTotal, the accessibility by automobile during off-peak conditions to all employment; 
+;            (vi)   transitPeakRetail, the accessibility by transit during peak conditions to retail employment; 
+;            (vii)  transitPeakTotal, the accessibility by transit during peak conditions to all employment;
+;            (viii) transitOffPeakRetail, the accessiblity by transit during off-peak conditions to retail employment;
+;            (ix)   transitOffPeakTotal, the accessiblity by transit during off-peak conditions to all employment;
+;            (x)    nonMotorizedRetail, the accessibility by walking during all time periods to retail employment;
+;            (xi)   nonMotorizedTotal, the accessibility by walking during all time periods to all employment. 
+;                           
+;
+; Notes:  (1) 
+;
+; See also: (1) The automobile ownership model UEC (\model\CTRAMP\model\AutoOwnership.xls). 
+;
+; version:  Travel Model One
+; authors:  dto (2010 08 30); gde (2009 04 30); bts (2009 04 09); jh (2008 11 10); dto (2007 12 20)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+    
+
+; set a debug switch
+token_debug_on_switch = '1'
+
+; set a debug origin
+token_debug_origin = '1224'
+     
+; set a debug destination
+token_debug_destination = '1'
+
+; model parameters - dispersion parameters
+token_dispersion_parameter_automobile = '-0.05'
+token_dispersion_parameter_transit    = '-0.05'
+token_dispersion_parameter_walk       = '-1.00'
+
+; model assumptions - maximum walk distance in miles
+token_maximum_walk_distance = '3.0'
+
+; model assumptions - perceived minute of in-vehicle time for every minute of out-of-vehicle time
+token_out_of_vehicle_time_weight = '2.0'
+
+run pgm = matrix
+
+   ; am peak period highway skim
+   filei mati[1] = skims\hwyskmAM.tpp
+   
+   ; midday period highway skim
+   filei mati[2] = skims\hwyskmMD.tpp 
+   
+   ; pm peak period highway skim
+   filei mati[3] = skims\hwyskmPM.tpp
+   
+   ; generic (all line-haul modes weighted equally) am peak period walk-transit-walk skim
+   filei mati[4] = skims\trnskmAM_wlk_com_wlk.tpp
+   
+   ; generic midday peak period walk-transit-walk skim
+   filei mati[5] = skims\trnskmMD_wlk_com_wlk.tpp
+   
+   ; generic pm peak period walk-transit-walk skim
+   filei mati[6] = skims\trnskmPM_wlk_com_wlk.tpp
+   
+   ; non-motorized distance skim
+   filei mati[7] = skims\nonmotskm.tpp
+   
+   ; generic (all line-haul modes weighted equally) am peak period drv-transit-walk skim
+   filei mati[8] = skims\trnskmAM_drv_com_wlk.tpp
+      
+   ; generic midday peak period walk-transit-walk skim
+   filei mati[9] = skims\trnskmMD_drv_com_wlk.tpp
+      
+   ; generic pm peak period walk-transit-drv skim
+   filei mati[10] = skims\trnskmPM_wlk_com_drv.tpp
+   
+   ; zonal data in DBF format (allows to use header rows)
+   filei zdati[1]= landuse\tazdata.dbf
+   
+   ; only need calculations for the internal zones (xxx check that this is true xxx)
+   zones = 1454                 
+   
+   ; set the dispersion parameters
+   _kAuto = @token_dispersion_parameter_automobile@
+   _kTran = @token_dispersion_parameter_transit@
+   _kWalk = @token_dispersion_parameter_walk@
+   
+   ; set maximum non-motorized distance
+   _maxNmDistance = @token_maximum_walk_distance@
+   
+   ; write the header for the output file
+   if(i = 1)
+   
+      list = "taz,autoPeakRetail,autoPeakTotal,autoOffPeakRetail,autoOffPeakTotal,",
+                 "transitPeakRetail,transitPeakTotal,transitOffPeakRetail,transitOffPeakTotal,",
+                 "nonMotorizedRetail,nonMotorizedTotal,",
+                 "drvTrnPeakRetail,drvTrnPeakTotal,drvTrnOffPeakRetail,drvTrnOffPeakTotal", 
+             file=skims/accessibilityCom.csv
+   
+   endif 
+   
+   ; initialize origin loop sum variables (Au is automobile, Tr is transit, and Nm is non-motorized)
+   sumAuPkRetail = 0.0
+   sumAuPkTotal  = 0.0
+   
+   sumAuOpRetail = 0.0
+   sumAuOpTotal  = 0.0
+   
+   sumTrPkRetail = 0.0
+   sumTrPkTotal  = 0.0
+   
+   sumTrOpRetail = 0.0
+   sumTrOpTotal  = 0.0
+   
+   sumNmRetail   = 0.0
+   sumNmTotal    = 0.0
+   
+   sumDtPkRetail = 0.0
+   sumDtPkTotal  = 0.0
+   
+   sumDtOpRetail = 0.0
+   sumDtOpTotal  = 0.0
+   
+   ; loop through each destinaton zone
+   jloop
+   
+     ; get the destination zone employment variables from the TAZ data file (use column header names)
+     retailEmp = zi.1.RETEMPN[j] 
+     totalEmp  = zi.1.TOTEMP[j]
+     
+     ; initialize origin/destination specific values
+     auPkRetail = 0.0
+     auOpRetail = 0.0
+     
+     trPkRetail = 0.0
+     trOpRetail = 0.0
+     
+     nmRetail   = 0.0
+     
+     auPkTotal  = 0.0
+     auOpTotal  = 0.0
+     
+     trPkTotal  = 0.0
+     trOpTotal  = 0.0
+     
+     nmTotal    = 0.0
+     
+     dtPkRetail = 0.0
+     dtOpRetail = 0.0
+     
+     dtPkTotal = 0.0
+     dtOpTotal = 0.0
+     
+     ; set the automobile level-of-service variables origin/destination time
+     ;   - assume peak occurs in AM for outbound and PM for inbound
+     auPkTime = mi.1.TOLLTIMEDA[j] + mi.3.TOLLTIMEDA.T[j]
+     
+     ;   - assume midday occurs entirely in the midday period
+     auOpTime = mi.2.TOLLTIMEDA[j] + mi.2.TOLLTIMEDA.T[j]
+     
+     ; compute the decay function for automobile accessibility
+     auPkRetail = retailEmp * exp(_kAuto * auPkTime)
+     auOpRetail = retailEmp * exp(_kAuto * auOpTime)
+        
+     auPkTotal  = totalEmp  * exp(_kAuto * auPkTime)
+     auOpTotal  = totalEmp  * exp(_kAuto * auOpTime)
+     
+     ; set the peak transit level-of-service variables (separately for origin and destination)
+     ;   - peak, origin-to-destination (convert minutes x 100 to minutes), assume outbound occurs in AM peak
+     inVehicleTime    = mi.4.IVT[j]
+     outOfVehicleTime = @token_out_of_vehicle_time_weight@ * (mi.4.IWAIT[j] + mi.4.XWAIT[j] + mi.4.WACC[j] + mi.4.WAUX[j] + mi.4.WEGR[j])
+     trPkTime_od      = (inVehicleTime + outOfVehicleTime)/100.0
+     
+     ;   - peak, destination-to-origin (convert minutes x 100 to minutes), assume inbound occurs in PM peak
+     inVehicleTime    = mi.6.IVT.T[j]
+     outOfVehicleTime = @token_out_of_vehicle_time_weight@ * (mi.6.IWAIT.T[j] + mi.6.XWAIT.T[j] + mi.6.WACC.T[j] + mi.6.WAUX.T[j] + mi.6.WEGR.T[j])
+     trPkTime_do     = (inVehicleTime + outOfVehicleTime)/100.0
+     
+     ;   - peak round-trip time
+     trPkTime = trPkTime_od + trPkTime_do
+     
+     ; compute the decay function for peak transit accessibility if a round trip path is available (zero otherwise)
+     if(trPkTime_od > 0 && trPkTime_do > 0)
+     
+        trPkRetail = retailEmp * exp(_kTran * trPkTime)
+        trPkTotal  = totalEmp  * exp(_kTran * trPkTime)
+        
+     endif
+     
+     ; set the off-peak transit level-of-service variables (separately for the origin and destination)
+     ;   - off-peak, origin-to-destination, assume outbound occurs in the MD time period
+     inVehicleTime    = mi.5.IVT[j]
+     outOfVehicleTime = @token_out_of_vehicle_time_weight@ * (mi.5.IWAIT[j] + mi.5.XWAIT[j] + mi.5.WACC[j] + mi.5.WAUX[j] + mi.5.WEGR[j])
+     trOpTime_od     = (inVehicleTime + outOfVehicleTime)/100.0
+     
+     ;   - off-peak, destination-to-origin, assume it's the same time as the origin-to-destination
+     inVehicleTime    = mi.5.IVT.T[j]
+     outOfVehicleTime = @token_out_of_vehicle_time_weight@ * (mi.5.IWAIT.T[j] + mi.5.XWAIT.T[j] + mi.5.WACC.T[j] + mi.5.WAUX.T[j] + mi.5.WEGR.T[j])
+     trOpTime_do     = (inVehicleTime + outOfVehicleTime)/100.0
+     
+     ;   - off-peak, round-trip time
+     trOpTime = trOpTime_od + trOpTime_do
+     
+     ; compute the decay function for off-peak transit accessibility if a round trip path is available (zero otherwise)
+     if(trOpTime>0)
+     
+        trOpRetail = retailEmp * exp(_kTran * trOpTime)
+        trOpTotal  = totalEmp  * exp(_kTran * trOpTime)
+        
+     endif
+     
+     ; set the peak drive-transit level-of-service variables (separately for origin and destination)
+     ;   - peak, origin-to-destination (convert minutes x 100 to minutes), assume outbound occurs in AM peak
+     inVehicleTime    = mi.8.IVT[j]
+     outOfVehicleTime = @token_out_of_vehicle_time_weight@ * (mi.8.IWAIT[j] + mi.8.XWAIT[j] + mi.8.DTIME[j])
+     dtPkTime_od      = (inVehicleTime + outOfVehicleTime)/100.0
+     
+     ;   - peak, destination-to-origin (convert minutes x 100 to minutes), assume inbound occurs in PM peak
+     inVehicleTime    = mi.10.IVT.T[j]
+     outOfVehicleTime = @token_out_of_vehicle_time_weight@ * (mi.10.IWAIT.T[j] + mi.10.XWAIT.T[j] + mi.10.DTIME.T[j])
+     dtPkTime_do     = (inVehicleTime + outOfVehicleTime)/100.0
+     
+     ;   - peak round-trip time
+     dtPkTime = dtPkTime_od + dtPkTime_do
+     
+     ; compute the decay function for peak transit accessibility if a round trip path is available (zero otherwise)
+     if(dtPkTime_od > 0 && dtPkTime_do > 0)
+     
+        dtPkRetail = retailEmp * exp(_kTran * dtPkTime)
+        dtPkTotal  = totalEmp  * exp(_kTran * dtPkTime)
+        
+     endif
+     
+     ; set the off-peak transit level-of-service variables (separately for the origin and destination)
+     ;   - off-peak, origin-to-destination, assume outbound occurs in the MD time period
+     inVehicleTime    = mi.9.IVT[j]
+     outOfVehicleTime = @token_out_of_vehicle_time_weight@ * (mi.9.IWAIT[j] + mi.9.XWAIT[j] + mi.9.WACC[j] + mi.9.WAUX[j] + mi.9.WEGR[j])
+     dtOpTime_od     = (inVehicleTime + outOfVehicleTime)/100.0
+     
+     ;   - off-peak, destination-to-origin, assume it's the same time as the origin-to-destination
+     inVehicleTime    = mi.9.IVT.T[j]
+     outOfVehicleTime = @token_out_of_vehicle_time_weight@ * (mi.9.IWAIT.T[j] + mi.9.XWAIT.T[j] + mi.9.WACC.T[j] + mi.9.WAUX.T[j] + mi.9.WEGR.T[j])
+     dtOpTime_do     = (inVehicleTime + outOfVehicleTime)/100.0
+     
+     ;   - off-peak, round-trip time
+     dtOpTime = dtOpTime_od + dtOpTime_do
+     
+     ; compute the decay function for off-peak transit accessibility if a round trip path is available (zero otherwise)
+     if(dtOpTime>0)
+     
+        dtOpRetail = retailEmp * exp(_kTran * dtOpTime)
+        dtOpTotal  = totalEmp  * exp(_kTran * dtOpTime)
+        
+     endif
+     
+     ; set the round-trip walk distance (level-of-service)
+     nmDist = mi.7.DISTWALK[j] + mi.7.DISTWALK.T[j]
+        
+     ; compute the decay function for walk accessibility if a round trip path is shorter than the threshold (zero otherwise)
+     if(nmDist <= @token_maximum_walk_distance@)
+     
+        nmRetail = retailEmp * exp(_kWalk * nmDist)
+        nmTotal  = totalEmp  * exp(_kWalk * nmDist)
+        
+     endif
+
+     ; origin-destination-specific debug information
+     if(@token_debug_on_switch@==1 && i==@token_debug_origin@&& j==@token_debug_destination@)
+     
+        list = "Origin zone                               = ",@token_debug_origin@(15.0)      ,file=logs/Accessibility.debug
+        list = "Destination zone                          = ",@token_debug_destination@(15.0) ,file=logs/Accessibility.debug
+        list = "Retail/Service Emp                        = ",retailEmp(15.2)                 ,file=logs/Accessibility.debug
+        list = "Total Emp                                 = ",totalEmp(15.2)                  ,file=logs/Accessibility.debug
+        list = " "                                                                            ,file=logs/Accessibility.debug
+        list = "Peak     / Auto    / Time                 = ",auPkTime(15.2)                  ,file=logs/Accessibility.debug
+        list = "Off-Peak / Auto    / Time                 = ",auOpTime(15.2)                  ,file=logs/Accessibility.debug
+        list = "Peak     / Auto    / Retail Accessibility = ",auPkRetail(15.2)                ,file=logs/Accessibility.debug
+        list = "Off-Peak / Auto    / Retail Accessibility = ",auOpRetail(15.2)                ,file=logs/Accessibility.debug
+        list = "Peak     / Auto    / Total  Accessibility = ",auPkTotal(15.2)                 ,file=logs/Accessibility.debug
+        list = "Off-Peak / Auto    / Total  Accessibility = ",auOpTotal(15.2)                 ,file=logs/Accessibility.debug
+        list = " "                                                                            ,file=logs/Accessibility.debug
+        list = "Peak     / Transit / Time                 = ",trPkTime(15.2)                  ,file=logs/Accessibility.debug
+        list = "Off-Peak / Transit / Time                 = ",trOpTime(15.2)                  ,file=logs/Accessibility.debug
+        list = "Peak     / Transit / Retail Accessibility = ",trPkRetail(15.2)                ,file=logs/Accessibility.debug
+        list = "Off-Peak / Transit / Retail Accessibility = ",trOpRetail(15.2)                ,file=logs/Accessibility.debug
+        list = "Peak     / Transit / Total  Accessibility = ",trPkTotal(15.2)                 ,file=logs/Accessibility.debug
+        list = "Off-Peak / Transit / Total  Accessibility = ",trOpTotal(15.2)                 ,file=logs/Accessibility.debug
+        list = " "                                                                            ,file=logs/Accessibility.debug
+        list = "All      / Walk    / Distance             = ",nmDist(15.2)                    ,file=logs/Accessibility.debug
+        list = "All      / Walk    / Retail Accessibility = ",nmRetail(15.2)                  ,file=logs/Accessibility.debug
+        list = "All      / Walk    / Total  Accessibility = ",nmTotal(15.2)                   ,file=logs/Accessibility.debug
+     
+     endif
+     
+     ; sum the decay functions over each possible destination
+     sumAuPkRetail = sumAuPkRetail + auPkRetail
+     sumAuPkTotal  = sumAuPkTotal  + auPkTotal
+     
+     sumAuOpRetail = sumAuOpRetail + auOpRetail
+     sumAuOpTotal  = sumAuOpTotal  + auOpTotal
+     
+     sumTrPkRetail = sumTrPkRetail + trPkRetail
+     sumTrPkTotal  = sumTrPkTotal  + trPkTotal
+     
+     sumTrOpRetail = sumTrOpRetail + trOpRetail
+     sumTrOpTotal  = sumTrOpTotal  + trOpTotal
+     
+     sumNmRetail   = sumNmRetail   + nmRetail
+     sumNmTotal    = sumNmTotal    + nmTotal
+     
+     sumDtPkRetail = sumDtPkRetail + dtPkRetail
+     sumDtPkTotal  = sumDtPkTotal  + dtPkTotal
+     
+     sumDtOpRetail = sumDtOpRetail + dtOpRetail
+     sumDtOpTotal  = sumDtOpTotal  + dtOpTotal
+   
+   endjloop
+   
+   ; compute the logsums
+   lnAuPkRetail = ln(sumAuPkRetail + 1.0)
+   lnAuPkTotal  = ln(sumAuPkTotal  + 1.0)
+   
+   lnAuOpRetail = ln(sumAuOpRetail + 1.0)
+   lnAuOpTotal  = ln(sumAuOpTotal  + 1.0)
+   
+   lnTrPkRetail = ln(sumTrPkRetail + 1.0)
+   lnTrPkTotal  = ln(sumTrPkTotal  + 1.0)
+         
+   lnTrOpRetail = ln(sumTrOpRetail + 1.0)
+   lnTrOpTotal  = ln(sumTrOpTotal  + 1.0)
+   
+   lnNmRetail   = ln(sumNmRetail   + 1.0)
+   lnNmTotal    = ln(sumNmTotal    + 1.0)
+   
+   lnDtPkRetail = ln(sumDtPkRetail + 1.0)
+   lnDtPkTotal  = ln(sumDtPkTotal  + 1.0)
+         
+   lnDtOpRetail = ln(sumDtOpRetail + 1.0)
+   lnDtOpTotal  = ln(sumDtOpTotal  + 1.0)
+   
+   ; debug for the row total information
+   if(@token_debug_on_switch@==1 && i==@token_debug_origin@)
+     
+      list = " ",file=logs/Accessibility.debug
+      list = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~", file=logs/Accessibility.debug
+      list = " ",file=logs/Accessibility.debug
+      list = "Origin zone                    = ",@token_debug_origin@(15.0),file=logs/Accessibility.debug
+      list = "Sum of Auto Peak Retail        = ",sumAuPkRetail(15.2)       ,file=logs/Accessibility.debug
+      list = "LogSum Auto Peak Retail        = ",lnAuPkRetail(15.2)        ,file=logs/Accessibility.debug
+      list = "Sum of Auto Off-Peak Retail    = ",sumAuOpRetail(15.2)       ,file=logs/Accessibility.debug
+      list = "LogSum Auto Off-Peak Retail    = ",lnAuOpRetail(15.2)        ,file=logs/Accessibility.debug
+      list = " ",file=logs/Accessibility.debug
+      list = "Sum of Auto Peak Total         = ",sumAuPkTotal(15.2)        ,file=logs/Accessibility.debug
+      list = "LogSum Auto Peak Total         = ",lnAuPkTotal(15.2)         ,file=logs/Accessibility.debug
+      list = "Sum of Auto Off-Peak Total     = ",sumAuOpTotal(15.2)        ,file=logs/Accessibility.debug
+      list = "LogSum Auto Off-Peak Total     = ",lnAuOpTotal(15.2)         ,file=logs/Accessibility.debug
+      list = " ",file=logs/Accessibility.debug
+      list = "Sum of Transit Peak Retail     = ",sumTrPkRetail(15.2)       ,file=logs/Accessibility.debug
+      list = "LogSum Transit Peak Retail     = ",lnTrPkRetail(15.2)        ,file=logs/Accessibility.debug
+      list = "Sum of Transit Off-Peak Retail = ",sumTrOpRetail(15.2)       ,file=logs/Accessibility.debug
+      list = "LogSum Transit Off-Peak Retail = ",lnTrOpRetail(15.2)        ,file=logs/Accessibility.debug
+      list = " ",file=logs/Accessibility.debug
+      list = "Sum of Transit Peak Total      = ",sumTrPkTotal(15.2)        ,file=logs/Accessibility.debug
+      list = "LogSum Transit Peak Total      = ",lnTrPkTotal(15.2)         ,file=logs/Accessibility.debug
+      list = "Sum of Transit Off-Peak Total  = ",sumTrOpTotal(15.2)        ,file=logs/Accessibility.debug
+      list = "LogSum Transit Off-Peak Total  = ",lnTrOpTotal(15.2)         ,file=logs/Accessibility.debug
+      list = " ",file=logs/Accessibility.debug
+      list = "Sum of Non-motorized Retail    = ",sumNmRetail(15.2)         ,file=logs/Accessibility.debug
+      list = "LogSum Non-motorized Retail    = ",lnNmRetail(15.2)          ,file=logs/Accessibility.debug
+      list = "Sum of Non-motorized Total     = ",sumNmTotal(15.2)          ,file=logs/Accessibility.debug
+      list = "LogSum Non-motorized Total     = ",lnNmTotal(15.2)           ,file=logs/Accessibility.debug
+     
+   endif
+   
+   ; write out the data to a CSV file used by the automobile ownership model
+   list = i(8.0),",",lnAuPkRetail(15.4),",",lnAuPkTotal(15.4),",",lnAuOpRetail(15.4),",",lnAuOpTotal(15.4), ",",
+                     lnTrPkRetail(15.4),",",lnTrPkTotal(15.4),",",lnTrOpRetail(15.4),",",lnTrOpTotal(15.4), ",",
+                     lnNmRetail(15.4),  ",",lnNmTotal(15.4), ",",
+                     lnDtPkRetail(15.4),",",lnDtPkTotal(15.4),",",lnDtOpRetail(15.4),",",lnDtOpTotal(15.4),
+          file=skims/accessibilityCom.csv
+   
+
+endrun
+
+
+; ----------------------------------------------------------------------------------------------------------------
+; Appendix: Original Estimation Calculations
+;
+;   Part One: Variable definitions
+;      sovdist ,           {sov distance           }
+;      sovtime ,           {sov in-vehicle time    }
+;      sovtoll ,           {sov toll cost          }
+;      hovdist ,           {hov distance           }
+;      hovtime ,           {hov in-vehicle time    }
+;      hovtoll ,           {hov toll cost          }
+;      wltfare ,           {local transit fare cost          }
+;      wltwalk ,           {local transit total walk time    }
+;      wltfwait,           {local transit first wait time    }
+;      wltxfers,           {local transit transfers          }
+;      wltxfert,           {local transit transfer time      }
+;      wltlociv,           {local transit local in-vehicle time}
+;      wptfare ,           {premium transit fare cost          }
+;      wptwalk ,           {premium transit total walk time    }
+;      wptfwait,           {premium transit first wait time    }
+;      wptxfers,           {premium transit transfers          }
+;      wptxfert,           {premium transit transfer time      }
+;      wptlociv,           {premium transit local in-vehicle time}
+;      wptprmiv,           {premium transit premium in-vehicle time}
+;      dtwfare ,           {drive to transit fare cost          }
+;      dtwwalk ,           {drive to transit total walk time    }
+;      dtwfwait,           {drive to transit first wait time    }
+;      dtwxfers,           {drive to transit transfers          }
+;      dtwxfert,           {drive to transit transfer time      }
+;      dtwlociv,           {drive to transit local in-vehicle time}
+;      dtwprmiv,           {drive to transit premium in-vehicle time}
+;      dtwautot,           {drive to transit auto in-vehicle time}
+;      wtdfare ,           {drive from transit fare cost          }
+;      wtdwalk ,           {drive from transit total walk time    }
+;      wtdfwait,           {drive from transit first wait time    }
+;      wtdxfers,           {drive from transit transfers          }
+;      wtdxfert,           {drive from transit transfer time      }
+;      wtdlociv,           {drive from transit local in-vehicle time}
+;      wtdprmiv,           {drive from transit premium in-vehicle time}
+;      wtdautot:todmat;    {drive from transit auto in-vehicle time};
+;
+;  Part Two:  Automobile accessibility calculations
+;  
+;     1=AM,2=MD,3=PM,4=NT
+;     {peak car}
+;     accm[2]:=accm[2]+(retemp[d]+seremp[d])*exp(-0.05*(sovtime[1,o,d]+sovtime[3,d,o])/100.0);
+;     accm[1]:=accm[1]+ totemp[d]           *exp(-0.05*(sovtime[1,o,d]+sovtime[3,d,o])/100.0);
+;     {off-peak car}
+;     accm[3]:=accm[3]+ totemp[d]           *exp(-0.05*(sovtime[2,o,d]+sovtime[2,d,o])/100.0);
+;     accm[4]:=accm[4]+(retemp[d]+seremp[d])*exp(-0.05*(sovtime[2,o,d]+sovtime[4,d,o])/100.0);
+;
+;   Part Three:  Transit accessibility calculations
+;
+;      {peak transit}
+;      ltt:=2.0*(wltwalk[1,o,d]+wltfwait[1,o,d]+wltxfert[1,o,d])+wltlociv[1,o,d]
+;        +2.0*(wltwalk[3,d,o]+wltfwait[3,d,o]+wltxfert[3,d,o])+wltlociv[3,d,o];
+;      ptt:=2.0*(wptwalk[1,o,d]+wptfwait[1,o,d]+wptxfert[1,o,d])+wptlociv[1,o,d]+wptprmiv[1,o,d]
+;        +2.0*(wptwalk[3,d,o]+wptfwait[3,d,o]+wptxfert[3,d,o])+wptlociv[3,d,o]+wptprmiv[3,d,o];
+;      ltt2:=   (wltwalk[1,o,d]+wltfwait[1,o,d]+wltxfert[1,o,d])+wltlociv[1,o,d]
+;        +(wltwalk[3,d,o]+wltfwait[3,d,o]+wltxfert[3,d,o])+wltlociv[3,d,o];
+;      ptt2:=   (wptwalk[1,o,d]+wptfwait[1,o,d]+wptxfert[1,o,d])+wptlociv[1,o,d]+wptprmiv[1,o,d]
+;        +(wptwalk[3,d,o]+wptfwait[3,d,o]+wptxfert[3,d,o])+wptlociv[3,d,o]+wptprmiv[3,d,o];
+      
+;      if (ltt>0) and (ltt<ptt) then begin
+;        accm[5]:=accm[5]+ totemp[d]           *exp(-0.05*ltt2/100.0);
+;        accm[6]:=accm[6]+(retemp[d]+seremp[d])*exp(-0.05*ltt2/100.0);
+;      end else
+;       if (ptt>0) then begin
+;        accm[5]:=accm[5]+ totemp[d]           *exp(-0.05*ptt2/100.0);
+;        accm[6]:=accm[6]+(retemp[d]+seremp[d])*exp(-0.05*ptt2/100.0);
+;      end;
+      
+;     {off-peak transit}
+;      ltt:=2.0*(wltwalk[2,o,d]+wltfwait[2,o,d]+wltxfert[2,o,d])+wltlociv[2,o,d]
+;        +2.0*(wltwalk[2,d,o]+wltfwait[2,d,o]+wltxfert[2,d,o])+wltlociv[2,d,o];
+;      ptt:=2.0*(wptwalk[2,o,d]+wptfwait[2,o,d]+wptxfert[2,o,d])+wptlociv[2,o,d]+wptprmiv[2,o,d]
+;        +2.0*(wptwalk[2,d,o]+wptfwait[2,d,o]+wptxfert[2,d,o])+wptlociv[2,d,o]+wptprmiv[2,d,o];
+;      ltt2:=   (wltwalk[2,o,d]+wltfwait[2,o,d]+wltxfert[2,o,d])+wltlociv[2,o,d]
+;        +(wltwalk[2,d,o]+wltfwait[2,d,o]+wltxfert[2,d,o])+wltlociv[2,d,o];
+;      ptt2:=   (wptwalk[2,o,d]+wptfwait[2,o,d]+wptxfert[2,o,d])+wptlociv[2,o,d]+wptprmiv[2,o,d]
+;        +(wptwalk[2,d,o]+wptfwait[2,d,o]+wptxfert[2,d,o])+wptlociv[2,d,o]+wptprmiv[2,d,o];
+;      if (ltt>0) and (ltt<ptt) then begin
+;        accm[7]:=accm[7]+ totemp[d]           *exp(-0.05*ltt2/100.0);
+;        accm[8]:=accm[8]+(retemp[d]+seremp[d])*exp(-0.05*ltt2/100.0);
+;      end else
+;      if (ptt>0) then begin
+;        accm[7]:=accm[7]+ totemp[d]           *exp(-0.05*ptt2/100.0);
+;        accm[8]:=accm[8]+(retemp[d]+seremp[d])*exp(-0.05*ptt2/100.0);
+;      end;
+;
+;   Part Four:  Non-motorized calculations
+;
+;      if (sovdist[2,o,d]<=300) then begin
+;        accm[ 9]:=accm[ 9]+ totemp[d]           *exp(-1.00*(sovdist[2,o,d]+sovdist[2,d,o])/100.0);
+;        accm[10]:=accm[10]+(retemp[d]+seremp[d])*exp(-1.00*(sovdist[2,o,d]+sovdist[2,d,o])/100.0);
+;      end;
+;
+; ----------------------------------------------------------------------------------------------------------------
+

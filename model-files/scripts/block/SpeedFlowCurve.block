@@ -1,0 +1,29 @@
+
+;************** BPR Variation for Freeway Links ************
+  FUNCTION TC[1] = T0 * (1 + 0.20 * ( (V/C)/0.75 )^6)
+  FUNCTION TC[2] = T0 * (1 + 0.20 * ( (V/C)/0.75 )^6)
+  FUNCTION TC[9] = T0 * (1 + 0.20 * ( (V/C)/0.75 )^6) 
+;***********************************************************
+
+;*********************************   Akcelik Curve  ****************************************
+
+FUNCTION
+TC[3]  = 60 * ( (DISTANCE/LI.FFS) + ( 0.25 *( ( (V/C) - 1) + ( ( ( ( (V/C) - 1)^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )
+
+FUNCTION
+TC[4]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1)^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )
+
+FUNCTION
+TC[5]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1)^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )
+
+FUNCTION
+TC[6]  = T0    ;For time based links congested time TC = coded time OT = T0
+
+FUNCTION
+TC[7]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) ) 
+
+FUNCTION
+TC[8]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) ) 
+
+FUNCTION
+TC[10] = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )  

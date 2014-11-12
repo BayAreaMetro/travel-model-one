@@ -1,0 +1,265 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; IxTollChoice.job
+;
+; TP+ script to apply a binomial choice model for drive alone, shared ride 2, and shared ride 3 internal/external
+; personal vehicle travel.  Two loops are used. The first cycles through the five time periods and the second 
+; cycles through the three vehicle classes.
+;
+; The time periods are: (a) early AM, 3 am to 6 am; (b) AM peak period, 7 am to 10 am; (c) midday, 10 am to 3 pm; 
+; (d) PM peak period, 3 pm to 7 pm; and, (e) evening, 7 pm to 3 am the next day.  A separate value toll paying 
+; versus no value toll paying path choice model is applied to each of the fifteen time period/vehicle type combinations.
+;
+; Input:  (1) Time-period-specific origin/destination matrices of drive alone, shared ride 2, and share ride 3+ 
+;             internal/external trip tables. 
+;	  (2) Skims providing the time and cost for value toll and non-value toll paths for each; the tables must
+;             have the following names:
+;	         (a) Non-value-toll paying time: TIMEXXX;
+;                (b) Non-value-toll distance: DISTXXX
+;	         (c) Non-value-toll bridge toll is: BTOLLXXX;
+;	         (d) Value-toll paying time is: TOLLTIMEXXX;
+;	         (e) Value-toll paying distance is: TOLLDISTXXX;
+;		 (f) Value-toll bridge toll is: TOLLBTOLLXXX;
+;		 (g) Value-toll value toll is: TOLLVTOLLXXX,
+;             where XXX is DA, S2, or S3.
+;
+; Output: Five, six-table trip matrices, one for each time period.  Two tables for each vehicle class
+;         representing value-toll paying path trips and non-value-toll paying path trips. 
+;
+; Notes:  (1)  TOLLCLASS is a code, 1 through 10 are reserved for bridges; 11 and up is reserved for value toll
+;              facilities. 
+;	  (2)  All costs should be coded in year 2000 cents
+;         (3)  The in-vehicle time coefficient is taken from the work trip mode choice model. 
+;
+; See also: (1) HwySkims.job, which creates the level-of-service matrices for this analysis;
+;	    (2) SetTolls.job, which sets the tolls used by the skimming process;
+;	    (3) IxTimeOfDay.job, which uses diurnal factors to split the daily internal/external trip table to 
+;               the five time periods used in assignment
+;
+; version:  Travel Model One
+; authors:  dto (2010 09 03); gde (2009)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; set the time coefficient
+token_model_coefficient_in_vehicle = '-0.0220/0.25'
+
+; set the cost coefficient, which is a function of the value of time in the highway parameter block
+token_model_coefficient_cost = '(_kIvtt / VOT) * 0.6'
+
+; set a debug origin
+token_debug_origin = '1028'
+     
+; set a debug destination
+token_debug_destination = '1'
+     
+; set a debug filename prefix
+token_debug_filename = 'logs\IxTollChoice'
+
+; loop through each time period
+loop period = 1,5
+
+   ; set a debug origin
+   token_debug_origin = '1474'
+     
+   ; set a debug destination
+   token_debug_destination = '1'
+     
+   ; set a debug filename prefix
+   token_debug_filename = 'logs\IxTollChoice'
+  
+   ; set the appropriate tokens  
+   if (period = 1)   
+      token_period   = 'EA'   
+  
+   elseif (period = 2)   
+      token_period   = 'AM'    
+  
+   elseif (period = 3)   
+      token_period   = 'MD'    
+   
+   elseif (period = 4)   
+      token_period   = 'PM'    
+  
+   elseif (period = 5)   
+      token_period   = 'EV'  
+  
+   endif
+  
+   ; distribute via cluster
+   DistributeMultistep processid="ctramp",processnum=@period@, commpath='m:\commpath'
+   
+   ; loop through each vehicle class 
+   loop class = 1,3
+      
+      ; drive alone
+      if (class = 1) 
+         token_class      = 'DA'
+         token_cost_share = '1.0'
+      
+      elseif (class = 2)
+         token_class      = 'S2'
+         token_cost_share = 'SR2COSTSHARE' 
+         
+      elseif (class = 3)
+         token_class      = 'S3'
+         token_cost_share = 'SR3COSTSHARE'
+         
+      endif
+
+      run pgm = matrix
+  
+         ; read in the time-period-specific IX trip tables
+         filei mati[1] = nonres\tripsix@token_period@x.tpp
+      
+         ; read in the time-period-specific IX skims
+         filei mati[2] = skims\hwyskm@token_period@.tpp
+      
+         ; write out the time-period-specific results
+         fileo mato[1] = nonres\tripsIx@token_period@_@token_class@.tpp, mo = 1-2, name = free, toll
+      
+         ; read in the highway assignment parameter block
+         read file = ctramp\scripts\block\hwyparam.block
+       
+         ; set universal variables
+         _kIvtt = @token_model_coefficient_in_vehicle@
+         _kCost = @token_model_coefficient_cost@
+                                       
+         jloop
+         
+            ; set the input trips
+            inputTrips = mi.1.@token_class@
+            
+            ; set the level-of-service variables -- no toll
+            noTollTime =  mi.2.TIME@token_class@[j]                  
+            noTollCost =  mi.2.DIST@token_class@[j] * AUTOOPCOST +  mi.2.BTOLL@token_class@[j]/@token_cost_share@
+            
+            ; set the level-of-service variables -- toll
+            tollTime  =  mi.2.TOLLTIME@token_class@[j]                
+            tollCost  =  mi.2.TOLLDIST@token_class@[j] * AUTOOPCOST + mi.2.TOLLBTOLL@token_class@[j]/@token_cost_share@
+            tollValue =  mi.2.TOLLVTOLL@token_class@[j]/@token_cost_share@
+            
+            ; initialize/reste the utility and exponential utility values
+            utilityToll   = 0.0
+            utilityNoToll = 0.0
+        
+            expToll   = 0.0
+            expNoToll = 0.0 
+            
+            ; probability calculations
+            if (tollValue > 0.0 && inputTrips > 0.0)
+            
+               if (noTollTime > 0.0)                
+              
+                  ; set the utility
+                  utilityNoToll = _kIvtt * noTollTime + _kCost * noTollCost
+                  utilityToll   = _kIvtt * tollTime   + _kCost * tollCost   + _kCost * tollValue
+                 
+                  ; compute the exponentiated utility
+                  expNoToll = exp(utilityNoToll) 
+                  expToll   = exp(utilityToll)
+                  
+                  ; compute the probability
+                  probNoToll = expNoToll/(expNoToll + expToll)
+                  probToll   = 1.0 - probNoToll
+                  
+               ; if there is only a toll path
+               else
+               
+                  probNoToll = 0.0
+                  probToll   = 1.0
+                  
+               endif
+               
+            ; if there is only a free path
+            else
+            
+               probNoToll = 1.0
+               probToll   = 0.0
+               
+            endif
+            
+            ; apply the probabilities to the input trips
+            tripsNoToll = probNoToll * inputTrips
+            tripsToll   = probToll   * inputTrips
+            
+            ; add the values to the output matrices
+            mw[1][j] = tripsNoToll
+            mw[2][j] = tripsToll
+            
+            ; print out some debug information
+            if (i = @token_debug_origin@ & j = @token_debug_destination@) 
+            
+               ; one header
+               if (@period@ = 1 & @class@ = 1)
+               
+                  list = 'Debug for origin zone ',@token_debug_origin@(5.0),'  and destination zone ',@token_debug_destination@(5.0),'.', file = @token_debug_filename@.@token_period@.debug
+	          list = ' ', file = @token_debug_filename@.@token_period@.debug
+	              
+                  list = ' time period   class    path      time      cost   utility      prob	   trips', file = @token_debug_filename@.@token_class@.@token_period@.debug
+                  list = ' ----------- ------- ------- --------- --------- --------- --------- ---------', file = @token_debug_filename@.@token_class@.@token_period@.debug
+               
+               ; break for everyone else
+               else
+               
+                  list = ' ----------- ------- ------- --------- --------- --------- --------- ---------', file = @token_debug_filename@.@token_class@.@token_period@.debug
+               
+               endif
+               
+               list = '          @token_period@     @token_class@    free', noTollTime(10.2), noTollCost(10.2),           utilityNoToll(10.2),  probNoToll(10.4),  mw[1][j](10.2), file = @token_debug_filename@.@token_class@.@token_period@.debug               
+               list = '          @token_period@     @token_class@    toll', tollTime(10.2),   (tollCost + tollValue)(10.2), utilityToll(10.2),    probToll(10.4),  mw[2][j](10.2), file = @token_debug_filename@.@token_class@.@token_period@.debug
+               
+            endif ; debug i/j if
+            
+         endjloop
+         
+      endrun
+      
+   endloop ; vehicle class
+   
+   ; combine the three vehicle class tables into a single trip table for assignment
+   run pgm = matrix
+ 
+      ; drive alone
+      mati[1] = nonres\tripsIx@token_period@_DA.tpp
+      
+      ; shared ride 2
+      mati[2] = nonres\tripsIx@token_period@_S2.tpp
+      
+      ; medium truck trips
+      mati[3] = nonres\tripsIx@token_period@_S3.tpp
+      
+      ; combined output matrix
+      mato = nonres\tripsIx@token_period@.tpp, mo = 1-6, name = DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
+                                                              
+      ; set the non-value-toll paying path trips first
+      mw[1] = mi.1.free
+      mw[2] = mi.2.free
+      mw[3] = mi.3.free
+   
+      ; set the value toll paying path trips second
+      mw[4] = mi.1.toll
+      mw[5] = mi.2.toll
+      mw[6] = mi.3.toll
+   
+   endrun
+   
+   EndDistributeMultiStep
+   
+endloop ; time-of-day
+                  
+Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+           
+; combine the debug output
+* copy @token_debug_filename@.DA.EA.debug+@token_debug_filename@.S2.EA.debug+@token_debug_filename@.S3.EA.debug @token_debug_filename@.EA.debug
+* copy @token_debug_filename@.DA.AM.debug+@token_debug_filename@.S2.AM.debug+@token_debug_filename@.S3.AM.debug @token_debug_filename@.AM.debug
+* copy @token_debug_filename@.DA.MD.debug+@token_debug_filename@.S2.MD.debug+@token_debug_filename@.S3.MD.debug @token_debug_filename@.MD.debug
+* copy @token_debug_filename@.DA.PM.debug+@token_debug_filename@.S2.PM.debug+@token_debug_filename@.S3.PM.debug @token_debug_filename@.PM.debug
+* copy @token_debug_filename@.DA.EV.debug+@token_debug_filename@.S2.EV.debug+@token_debug_filename@.S3.EV.debug @token_debug_filename@.EV.debug
+* copy @token_debug_filename@.EA.debug+@token_debug_filename@.AM.debug+@token_debug_filename@.MD.debug+@token_debug_filename@.PM.debug+@token_debug_filename@.EV.debug @token_debug_filename@.debug
+* copy @token_debug_filename@.debug disco.text
+* del @token_debug_filename@*.debug
+* copy disco.text @token_debug_filename@.debug
+* del disco.text

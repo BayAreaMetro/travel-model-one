@@ -1,0 +1,475 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; SetTolls.job
+;
+; TP+ script to set the bridge and value tolls in the highway network.  A value toll is paid to save time by 
+; taking a parallel (e.g. HOT) or nearby facility.  The time periods are: early AM, 3 am to 6 am; AM peak, 6 am to
+; 10 am; midday, 10 am to 3 pm; PM peak, 3 pm to 7 pm; and evening, 7 pm to 3 am the next day.
+;
+; A separate SetTolls.job is needed for each forecast year and for each pricing alternative. 
+;
+; The variable TOLL is a legacy from the previous model and it is referenced here.  Eventually, the variable TOLLCLASS
+; will replace TOLL.  Each of the eight existing Bay Area bridge toll booths has a unique TOLLCLASS code as follows:
+; (1) Benicia-Martinez Bridge; (2) Carquinez Bridge; (3) Richmond Bridge; (4) Golden Gate Bridge; (5) San Francisco/
+; Oakland Bay Bridge; (6) San Mateo Bridge; (7) Dumbarton Bridge; (8) Antioch Bridge.  TOLLCLASS codes nine and ten
+; are reserved for testing new Bridges. 
+;
+; TOLLCLASS codes 11 and above (please see hwyParam.block which denotes this value) are reserved for so-called "value
+; toll" facilities, which are currently used to model high-occupancy toll (HOT) lanes.  These variables can be used
+; to toll specific links (each link with a different toll needs a different TOLLCLASS code). 
+;
+; All tolls should be expressed in year 2000 cents.
+;
+; Separate tolls can be charged to each of seven vehicle classes, as follows: (1) single-occupancy passenger 
+; vehicles, or drive alone, "DA"; (2) two-occupant passenger vehicles, or shared ride two, "S2"; (3) three-or-more-
+; occupant passenger vehicles, or shared ride three, "S3"; (4) very small commercial trucks, which are assumed to 
+; be two-axle vehicles, "VSM"; (5) small commercial trucks, which are assumed to be two-axle vehicles, "SML"; (6)
+; medium commercial trucks, which are assumed to be three-axle vehicles, "MED"; and, (7) combination trucks, which
+; are charged the average of the five- and six-axle fee, "LRG". 
+;
+;
+; Input:  A highway network containing the field TOLL, where TOLL holds an integer representing the toll booth at 
+;         each bridge.  
+;
+; Output: A highway network containing the following fields: TOLLCLASS, TOLLXX_YY, where XX is a two-letter code
+;         representing one of the five time periods and YY is the path in question, be it drive alone, shared
+;         ride 2 or 3+, or very small, small, medium, or large (combination) trucks. 
+;
+;; See also: (1) hwyParam.block, which stores the "firstValue" variable denoting 11 as the first value toll. 
+;
+; version:  Travel Model One
+; authors:  dto (2010 08 10); gde (2009 03 12)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+run pgm = hwynet
+
+   ; begin with the standard input network
+   neti = hwy\freeflow.net
+
+   ; write out to the same name with the added variables   
+   neto = hwy\withTolls.net
+   
+   ; set a generic bridge toll value and only change the bridge-specific values below as needed
+   if (TOLLCLASS > 0 && TOLLCLASS < 11)
+   
+      ; early AM
+      ;   - drive alone
+      TOLLEA_DA  = 402  
+      
+      ;   - shared ride 2
+      TOLLEA_S2  = 402  
+      
+      ;   - shared ride 3+
+      TOLLEA_S3  = 402  
+      
+      ;   - very small commercial trucks
+      TOLLEA_VSM = 402  
+      
+      ;   - small commercial trucks
+      TOLLEA_SML = 402  
+      
+      ;   - medium commercial trucks
+      TOLLEA_MED = 482  
+      
+      ;   - large (combination) commercial trucks
+      TOLLEA_LRG = 934  
+      
+      ; AM peak 
+      TOLLAM_DA  = 402
+      TOLLAM_S2  = 402
+      TOLLAM_S3  = 201
+      TOLLAM_VSM = 402
+      TOLLAM_SML = 402
+      TOLLAM_MED = 482
+      TOLLAM_LRG = 934
+      
+      ; midday 
+      TOLLMD_DA  = 402
+      TOLLMD_S2  = 402
+      TOLLMD_S3  = 402
+      TOLLMD_VSM = 402
+      TOLLMD_SML = 402
+      TOLLMD_MED = 482
+      TOLLMD_LRG = 934
+      
+      ; PM peak
+      TOLLPM_DA  = 402
+      TOLLPM_S2  = 402
+      TOLLPM_S3  = 201
+      TOLLPM_VSM = 402
+      TOLLPM_SML = 402
+      TOLLPM_MED = 482
+      TOLLPM_LRG = 934
+      
+      ; evening
+      TOLLEV_DA  = 402
+      TOLLEV_S2  = 402
+      TOLLEV_S3  = 402
+      TOLLEV_VSM = 402
+      TOLLEV_SML = 402
+      TOLLEV_MED = 482
+      TOLLEV_LRG = 934
+      
+   endif
+   
+   
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   ; bencia-martinez bridge (changes from base tolls above)
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   if (TOLLCLASS = 1)
+    
+      ; AM peak, shared ride 3+
+      TOLLAM_S3 = 201
+      
+      ; PM peak, shared ride 3+
+      TOLLPM_S3 = 201
+      
+   endif ; end: benicia-martinez
+ 
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   ; carquinez bridge (changes from base tolls above)
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   if (TOLLCLASS = 2)
+    
+      ; AM peak, shared ride 3+
+      TOLLAM_S3 = 201
+      
+      ; PM peak, shared ride 3+
+      TOLLPM_S3 = 201
+      
+   endif ; end: carquinez bridge
+   
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   ; richmond-san rafael bridge (changes from base tolls above)
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   if (TOLLCLASS = 3)
+    
+      ; AM peak, shared ride 3+
+      TOLLAM_S3 = 201
+      
+      ; PM peak, shared ride 3+
+      TOLLPM_S3 = 201
+            
+   endif ; end: richmond-san rafael bridge
+   
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   ; golden gate bridge (changes from base tolls above)
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   if (TOLLCLASS = 4)
+    
+      ; early AM period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLEA_DA  = 402
+      TOLLEA_S2  = 402
+      TOLLEA_S3  = 402
+      TOLLEA_VSM = 402
+      TOLLEA_SML = 402
+      TOLLEA_MED = 602
+      TOLLEA_LRG = 1104
+      
+      ; AM peak period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLAM_DA  = 402
+      TOLLAM_S2  = 402
+      TOLLAM_S3  = 241
+      TOLLAM_VSM = 402
+      TOLLAM_SML = 402
+      TOLLAM_MED = 602
+      TOLLAM_LRG = 1104
+
+      ; midday period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLMD_DA  = 402
+      TOLLMD_S2  = 402
+      TOLLMD_S3  = 402
+      TOLLMD_VSM = 402
+      TOLLMD_SML = 402
+      TOLLMD_MED = 602
+      TOLLMD_LRG = 1104
+      
+      ; PM peak period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLPM_DA  = 402
+      TOLLPM_S2  = 402
+      TOLLPM_S3  = 241
+      TOLLPM_VSM = 402
+      TOLLPM_SML = 402
+      TOLLPM_MED = 602
+      TOLLPM_LRG = 1104
+      
+      ; evening period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLEV_DA  = 402
+      TOLLEV_S2  = 402
+      TOLLEV_S3  = 402
+      TOLLEV_VSM = 402
+      TOLLEV_SML = 402
+      TOLLEV_MED = 602
+      TOLLEV_LRG = 1104
+      
+   endif ; end: golden gate bridge
+   
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   ; san francisco-oakland bridge (changes from base tolls above)
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   if (TOLLCLASS = 5)
+    
+    ; early AM period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLEA_DA  = 321
+      TOLLEA_S2  = 321
+      TOLLEA_S3  = 321
+      TOLLEA_VSM = 321
+      TOLLEA_SML = 321
+      TOLLEA_MED = 482
+      TOLLEA_LRG = 934
+      
+      ; AM peak period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLAM_DA  = 482
+      TOLLAM_S2  = 482
+      TOLLAM_S3  = 201
+      TOLLAM_VSM = 482
+      TOLLAM_SML = 482
+      TOLLAM_MED = 482
+      TOLLAM_LRG = 934
+
+      ; midday period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLMD_DA  = 321
+      TOLLMD_S2  = 321
+      TOLLMD_S3  = 321
+      TOLLMD_VSM = 321
+      TOLLMD_SML = 321
+      TOLLMD_MED = 482
+      TOLLMD_LRG = 934
+      
+      ; PM peak period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLPM_DA  = 482
+      TOLLPM_S2  = 482
+      TOLLPM_S3  = 201
+      TOLLPM_VSM = 482
+      TOLLPM_SML = 482
+      TOLLPM_MED = 482
+      TOLLPM_LRG = 934
+      
+      ; evening period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLEV_DA  = 321
+      TOLLEV_S2  = 321
+      TOLLEV_S3  = 321
+      TOLLEV_VSM = 321
+      TOLLEV_SML = 321
+      TOLLEV_MED = 482
+      TOLLEV_LRG = 934 
+      
+            
+   endif ; end: san francisco oakland bridge
+   
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   ; san mateo - hayward bridge
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   if (TOLLCLASS = 6)
+      
+      ; AM peak, shared ride 2
+      TOLLAM_S2 = 201
+      
+      ; AM peak, shared ride 3+
+      TOLLAM_S3 = 201
+      
+      ; PM peak, shared ride 2
+      TOLLPM_S2 = 201
+      
+      ; PM peak, shared ride 3+
+      TOLLPM_S3 = 201
+      
+   endif ; end: san mateo - hayward bridge
+   
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   ; dumbarton bridge
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   if (TOLLCLASS = 7)
+      
+      ; AM peak, shared ride 2
+      TOLLAM_S2 = 201
+      
+      ; AM peak, shared ride 3+
+      TOLLAM_S3 = 201
+      
+      ; PM peak, shared ride 2
+      TOLLPM_S2 = 201
+      
+      ; PM peak, shared ride 3+
+      TOLLPM_S3 = 201
+      
+   endif ; end: dumbarton bridge
+                    
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   ; antioch bridge (changes from base tolls above)
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   if (TOLLCLASS = 8)
+    
+      ; AM peak, shared ride 3+
+      TOLLAM_S3 = 201
+      
+      ; PM peak, shared ride 3+
+      TOLLPM_S3 = 201
+      
+   endif ; end: antioch bridge
+   
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   ; placeholder bridge number one (set all tolls to zero)
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   if (TOLLCLASS = 9)
+    
+      ; early AM period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLEA_DA  = 0
+      TOLLEA_S2  = 0
+      TOLLEA_S3  = 0
+      TOLLEA_VSM = 0
+      TOLLEA_SML = 0
+      TOLLEA_MED = 0
+      TOLLEA_LRG = 0
+      
+      ; AM peak period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLAM_DA  = 0
+      TOLLAM_S2  = 0
+      TOLLAM_S3  = 0
+      TOLLAM_VSM = 0
+      TOLLAM_SML = 0
+      TOLLAM_MED = 0
+      TOLLAM_LRG = 0
+
+      ; midday period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLMD_DA  = 0
+      TOLLMD_S2  = 0
+      TOLLMD_S3  = 0
+      TOLLMD_VSM = 0
+      TOLLMD_SML = 0
+      TOLLMD_MED = 0
+      TOLLMD_LRG = 0
+      
+      ; PM peak period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLPM_DA  = 0
+      TOLLPM_S2  = 0
+      TOLLPM_S3  = 0
+      TOLLPM_VSM = 0
+      TOLLPM_SML = 0
+      TOLLPM_MED = 0
+      TOLLPM_LRG = 0
+      
+      ; evening period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLEV_DA  = 0
+      TOLLEV_S2  = 0
+      TOLLEV_S3  = 0
+      TOLLEV_VSM = 0
+      TOLLEV_SML = 0
+      TOLLEV_MED = 0
+      TOLLEV_LRG = 0
+      
+   endif ; end: place holder bridge one
+   
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   ; placeholder bridge number two (set all tolls to zero)
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   if (TOLLCLASS = 10)
+    
+      ; early AM period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLEA_DA  = 0
+      TOLLEA_S2  = 0
+      TOLLEA_S3  = 0
+      TOLLEA_VSM = 0
+      TOLLEA_SML = 0
+      TOLLEA_MED = 0
+      TOLLEA_LRG = 0
+      
+      ; AM peak period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLAM_DA  = 0
+      TOLLAM_S2  = 0
+      TOLLAM_S3  = 0
+      TOLLAM_VSM = 0
+      TOLLAM_SML = 0
+      TOLLAM_MED = 0
+      TOLLAM_LRG = 0
+
+      ; midday period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLMD_DA  = 0
+      TOLLMD_S2  = 0
+      TOLLMD_S3  = 0
+      TOLLMD_VSM = 0
+      TOLLMD_SML = 0
+      TOLLMD_MED = 0
+      TOLLMD_LRG = 0
+      
+      ; PM peak period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLPM_DA  = 0
+      TOLLPM_S2  = 0
+      TOLLPM_S3  = 0
+      TOLLPM_VSM = 0
+      TOLLPM_SML = 0
+      TOLLPM_MED = 0
+      TOLLPM_LRG = 0
+      
+      ; evening period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      TOLLEV_DA  = 0
+      TOLLEV_S2  = 0
+      TOLLEV_S3  = 0
+      TOLLEV_VSM = 0
+      TOLLEV_SML = 0
+      TOLLEV_MED = 0
+      TOLLEV_LRG = 0
+      
+   endif ; end: place holder bridge two
+   
+   
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   ; Facility:  I-680 southbound from I-580 to CA 237
+   ; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   if (TOLLCLASS = 25)
+       
+         ; early AM period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         TOLLEA_DA  = 0
+         TOLLEA_S2  = 0
+         TOLLEA_S3  = 0
+         TOLLEA_VSM = 0
+         TOLLEA_SML = 0
+         TOLLEA_MED = 0
+         TOLLEA_LRG = 0
+         
+         ; AM peak period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         TOLLAM_DA  = 5.0 * DISTANCE
+         TOLLAM_S2  = 0.0
+         TOLLAM_S3  = 0.0
+         TOLLAM_VSM = 5.0 * DISTANCE
+         TOLLAM_SML = 5.0 * DISTANCE
+         TOLLAM_MED = 5.0 * DISTANCE
+         TOLLAM_LRG = 0.0
+   
+         ; midday period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         TOLLMD_DA  = 0.0 * DISTANCE
+         TOLLMD_S2  = 0.0 * DISTANCE
+         TOLLMD_S3  = 0.0
+         TOLLMD_VSM = 0.0 * DISTANCE
+         TOLLMD_SML = 0.0 * DISTANCE
+         TOLLMD_MED = 0.0 * DISTANCE
+         TOLLMD_LRG = 0.0
+         
+         ; PM peak period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         TOLLPM_DA  = 0.0
+         TOLLPM_S2  = 0.0
+         TOLLPM_S3  = 0.0
+         TOLLPM_VSM = 0.0
+         TOLLPM_SML = 0.0 
+         TOLLPM_MED = 0.0 
+         TOLLPM_LRG = 0.0
+         
+         ; evening period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         TOLLEV_DA  = 0
+         TOLLEV_S2  = 0
+         TOLLEV_S3  = 0
+         TOLLEV_VSM = 0
+         TOLLEV_SML = 0
+         TOLLEV_MED = 0
+         TOLLEV_LRG = 0
+         
+   endif ; end: TOLLCLASS 25
+   
+ 
+
+        
+endrun
+
+
