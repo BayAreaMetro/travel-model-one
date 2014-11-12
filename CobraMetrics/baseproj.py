@@ -539,15 +539,15 @@ else:
 
 
 # WRITE PROJECT DAILY OUTPUTS TO CSV
-csv_output = [tt_sov, tt_hov2, tt_hov3, tt_truck, nrdelay_auto, nrdelay_truck, 
-              tt_ivtt_com, tt_ivtt_hvy, tt_ivtt_exp, tt_ivtt_lrf, tt_ivtt_loc, 
-              tt_ovtt_wk, tt_ovtt_dr, tt_ovtt_wait, autrips_per, autrips_veh, 
-              tt_wk, tt_bk, vmt_auto, vmt_truck, d_pm_fine, g_pm_fine, co2, 
-              acetaldehyde, benzene, butadiene, formaldehyde, rog_other, nox, 
-              so2, fatal, injury, pdo, park_per_sf, park_per_sm, park_per_scl, 
-              park_per_ala, park_per_cc, park_per_sol, park_per_nap, 
-              park_per_son, park_per_mrn, ownership_fac, pop_2040, veh_ownership, 
-              active_time, active_indv, ovtt_adjust, autrips_per]
+csv_output = [tt_sov, tt_hov2, tt_hov3, tt_truck, nrdelay_auto, nrdelay_truck, # 0-5
+              tt_ivtt_com, tt_ivtt_hvy, tt_ivtt_exp, tt_ivtt_lrf, tt_ivtt_loc, # 6-10
+              tt_ovtt_wk, tt_ovtt_dr, tt_ovtt_wait, autrips_per, autrips_veh,  # 11-15
+              tt_wk, tt_bk, vmt_auto, vmt_truck, d_pm_fine, g_pm_fine, co2,    # 16-22
+              acetaldehyde, benzene, butadiene, formaldehyde, rog_other, nox,  # 23-28
+              so2, fatal, injury, pdo, park_per_sf, park_per_sm, park_per_scl, # 29-35
+              park_per_ala, park_per_cc, park_per_sol, park_per_nap,           # 36-39
+              park_per_son, park_per_mrn, ownership_fac, pop_2040, veh_ownership, # 40-44
+              active_time, active_indv, ovtt_adjust, autrips_per]              # 45-48
                        
 csv_file_name = project_id + '_step1output.csv'
 f = open(csv_file_name,'wt')
