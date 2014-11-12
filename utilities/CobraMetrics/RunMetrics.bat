@@ -3,22 +3,20 @@
 :: to intermediate summaries, and then rolls up those summaries into a set of Benefit/Cost metrics.
 ::
 :: Required environment variables:
-:: ITER=the iteration corresponding to the output for which we'll calculate metrics.
-set ITER=1
-:: SAMPLESHARE=the sampling used for this iteration
-set SAMPLESHARE=0.15
-:: ALL_PROJECT_METRICS_DIR=the location to collect all the metrics files from projects.
-:: These will be rolled up into a single dashboard.
+:: * ITER=the iteration corresponding to the output for which we'll calculate metrics.
+set ITER=3
+:: * SAMPLESHARE=the sampling used for this iteration
+set SAMPLESHARE=1.00
+:: * ALL_PROJECT_METRICS_DIR=the location to collect all the metrics files from projects.
 set ALL_PROJECT_METRICS_DIR=..\all_project_metrics
+:: These will be rolled up into a single dashboard.
+
+:: Location of the metrics scripts
+set CODE_DIR=.\CTRAMP\scripts\metrics
 
 :: Required input file:  INPUT\metrics\BC_config.csv
 if not exist metrics (mkdir metrics)
 copy INPUT\metrics\BC_config.csv metrics
-
-set PATH=C:\Program Files (x86)\Git\cmd;C:\Python27;C:\Python27\Scripts;C:\Program Files (x86)\Citilabs\CubeVoyager;M:\Software\Quickboards;C:\Program Files (x86)\Java\jdk1.6.0_17\bin
-set CLASSPATH=.;C:\Program Files (x86)\Java\jre7\lib\ext\QTJava.zip;M:\Software\Quickboards\quickboards.jar
-:: The CODE_DIR is where-ever this batch file is located
-set CODE_DIR=%~dp0
 
 if not exist metrics\autos_owned.csv (
   rem Tally auto ownership from household data
@@ -28,18 +26,11 @@ if not exist metrics\autos_owned.csv (
 )
 
 if not exist main\IndivTripDataIncome_%ITER%.csv (
-  rem Attach income to individual trips
-  rem Input : main\IndivTripData_%ITER%.csv,  main\householdData_%ITER%.csv
-  rem Output: main\IndivTripDataIncome.csv 
-  runtpp "%CODE_DIR%\joinIndivIncome.job"
-  IF ERRORLEVEL 2 goto error
-)
-
-if not exist main\JointTripDataIncome_%ITER%.csv (
-  rem Attach income to joint trips
-  rem Input : main\JointTripData_%ITER%.csv, main\householdData_%ITER%.csv
-  rem Output: main\JointTripDataIncome.csv
-  runtpp "%CODE_DIR%\joinJointIncome.job"
+  rem Attach income to individual trips.  Uses 2 processes.
+  rem Input : main\IndivTripData_%ITER%.csv,  main\householdData_%ITER%.csv,
+  rem         main\ointTripData_%ITER%.csv,   main\householdData_%ITER%.csv
+  rem Output: main\IndivTripDataIncome.csv,   main\JointTripDataIncome.csv
+  runtpp "%CODE_DIR%\joinTripsWithIncome.job"
   IF ERRORLEVEL 2 goto error
 )
 
@@ -113,7 +104,8 @@ if not exist metrics\transit_boards_miles.csv (
   call python "%CODE_DIR%\transit.py" trn\quickboards.xls
 )
 
-python "%CODE_DIR%\RunResults.py" metrics %ALL_PROJECT_METRICS_DIR%
+if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")
+python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
 
 :error
 echo ERRORLEVEL=%ERRORLEVEL%
