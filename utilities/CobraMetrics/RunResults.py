@@ -148,17 +148,17 @@ class RunResults:
     ('Air Pollutant','PM2.5 (tons)','PM2.5 Gasoline'                           ): -487200.0,
     ('Air Pollutant','PM2.5 (tons)','PM2.5 Diesel'                             ): -490300.0,
     ('Air Pollutant','CO2 (metric tons)','CO2'                                 ):     -55.35,
-    ('Air Pollutant','Other (tons)','NOX'                                      ):   -7800.0,
-    ('Air Pollutant','Other (tons)','SO2'                                      ):  -40500.0,
-    ('Air Pollutant','Volatile Organic Compounds (metric tons)','Acetaldehyde' ):   -5700,
-    ('Air Pollutant','Volatile Organic Compounds (metric tons)','Benzene'      ):  -12800,
-    ('Air Pollutant','Volatile Organic Compounds (metric tons)','1,3-Butadiene'):  -32200,
-    ('Air Pollutant','Volatile Organic Compounds (metric tons)','Formaldehyde' ):   -6400,
-    ('Air Pollutant','Volatile Organic Compounds (metric tons)','All other VOC'):   -5100,
-    ('Collisions & Active Transport','Fatalies due to Collisions'              ):-4590000,
-    ('Collisions & Active Transport','Injuries due to Collisions'              ):  -64400,
-    ('Collisions & Active Transport','Property Damage Only (PDO) Collisions'   ):   -2455,
-    ('Collisions & Active Transport','Active Individuals'                      ):    1220,
+    ('Air Pollutant','Other','NOX (tons)'                                      ):   -7800.0,
+    ('Air Pollutant','Other','SO2 (tons)'                                      ):  -40500.0,
+    ('Air Pollutant','Other','VOC: Acetaldehyde (metric tons)'                 ):   -5700.0,
+    ('Air Pollutant','Other','VOC: Benzene (metric tons)'                      ):  -12800.0,
+    ('Air Pollutant','Other','VOC: 1,3-Butadiene (metric tons)'                ):  -32200.0,
+    ('Air Pollutant','Other','VOC: Formaldehyde (metric tons)'                 ):   -6400.0,
+    ('Air Pollutant','Other','All other VOC (metric tons)'                     ):   -5100.0,
+    ('Collisions & Active Transport','Fatalies due to Collisions'              ):-4590000.0,
+    ('Collisions & Active Transport','Injuries due to Collisions'              ):  -64000.0,
+    ('Collisions & Active Transport','Property Damage Only (PDO) Collisions'   ):   -2455.0,
+    ('Collisions & Active Transport','Active Individuals'                      ):    1220.0,
     }
 
     def __init__(self, rundir, overwrite_config=None):
@@ -369,21 +369,20 @@ class RunResults:
         cat2            = 'CO2 (metric tons)'
         daily_results[(cat1,cat2,'CO2')] = vmt_byclass.loc[:,'CO2'  ].sum()
 
-        cat2            = 'Other (tons)'
-        daily_results[(cat1,cat2,'NOX')] = vmt_byclass.loc[:,'S_NOx'].sum()*RunResults.EMISSIONS_SCALEUP
-        daily_results[(cat1,cat2,'SO2')] = vmt_byclass.loc[:,'SOx'  ].sum()*RunResults.EMISSIONS_SCALEUP
+        cat2            = 'Other'
+        daily_results[(cat1,cat2,'NOX (tons)')] = vmt_byclass.loc[:,'W_NOx'].sum()*RunResults.EMISSIONS_SCALEUP
+        daily_results[(cat1,cat2,'SO2 (tons)')] = vmt_byclass.loc[:,'SOx'  ].sum()*RunResults.EMISSIONS_SCALEUP
 
         # http://en.wikipedia.org/wiki/Volatile_organic_compound
-        cat2            = 'Volatile Organic Compounds (metric tons)'
-        daily_results[(cat1,cat2,'Acetaldehyde' )] = vmt_byclass.loc[:,'Acetaldehyde'  ].sum()*RunResults.EMISSIONS_SCALEUP
-        daily_results[(cat1,cat2,'Benzene'      )] = vmt_byclass.loc[:,'Benzene'       ].sum()*RunResults.EMISSIONS_SCALEUP
-        daily_results[(cat1,cat2,'1,3-Butadiene')] = vmt_byclass.loc[:,'Butadiene'     ].sum()*RunResults.EMISSIONS_SCALEUP
-        daily_results[(cat1,cat2,'Formaldehyde' )] = vmt_byclass.loc[:,'Formaldehyde'  ].sum()*RunResults.EMISSIONS_SCALEUP
-        daily_results[(cat1,cat2,'All other VOC')] = vmt_byclass.loc[:,'ROG'].sum()*RunResults.EMISSIONS_SCALEUP \
-            - daily_results[(cat1,cat2,'Acetaldehyde' )] \
-            - daily_results[(cat1,cat2,'Benzene'      )] \
-            - daily_results[(cat1,cat2,'1,3-Butadiene')] \
-            - daily_results[(cat1,cat2,'Formaldehyde' )]
+        daily_results[(cat1,cat2,'VOC: Acetaldehyde (metric tons)' )] = vmt_byclass.loc[:,'Acetaldehyde'  ].sum()*RunResults.EMISSIONS_SCALEUP
+        daily_results[(cat1,cat2,'VOC: Benzene (metric tons)'      )] = vmt_byclass.loc[:,'Benzene'       ].sum()*RunResults.EMISSIONS_SCALEUP
+        daily_results[(cat1,cat2,'VOC: 1,3-Butadiene (metric tons)')] = vmt_byclass.loc[:,'Butadiene'     ].sum()*RunResults.EMISSIONS_SCALEUP
+        daily_results[(cat1,cat2,'VOC: Formaldehyde (metric tons)' )] = vmt_byclass.loc[:,'Formaldehyde'  ].sum()*RunResults.EMISSIONS_SCALEUP
+        daily_results[(cat1,cat2,'All other VOC (metric tons)'     )] = vmt_byclass.loc[:,'ROG'].sum()*RunResults.EMISSIONS_SCALEUP \
+            - daily_results[(cat1,cat2,'VOC: Acetaldehyde (metric tons)' )] \
+            - daily_results[(cat1,cat2,'VOC: Benzene (metric tons)'      )] \
+            - daily_results[(cat1,cat2,'VOC: 1,3-Butadiene (metric tons)')] \
+            - daily_results[(cat1,cat2,'VOC: Formaldehyde (metric tons)' )]
 
         ######################################################################################
         cat1            = 'Collisions & Active Transport'
