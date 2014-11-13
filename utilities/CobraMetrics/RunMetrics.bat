@@ -110,7 +110,11 @@ if not exist metrics\transit_boards_miles.csv (
 if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")
 python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
 
+:cleanup
 move *.PRN logs
+
+:success
+echo FINISHED METRICS SUCESSFULLY!
 
 :error
 echo ERRORLEVEL=%ERRORLEVEL%

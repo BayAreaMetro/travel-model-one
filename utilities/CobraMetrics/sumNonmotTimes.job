@@ -7,6 +7,7 @@ loop inc = 1,4
    if (inc = 3)  token_inc   = 'inc3'
    if (inc = 4)  token_inc   = 'inc4'
    
+   DistributeMultistep processid = 'ctramp', processNum = inc, commpath = 'm:\commpath'   
    RUN PGM = MATRIX
   ; Read person trips for a transitmode for all time periods and Access+Egress combinations
   ; Sum them to get daily total transit trips by transitmode
@@ -18,7 +19,7 @@ loop inc = 1,4
      
      FILEI MATI[6] = "skims\nonmotskm.tpp" 
      
-     FILEO PRINTO[1] = "metrics\nonmot_times.csv",APPEND=T 
+     FILEO PRINTO[1] = "metrics\nonmot_times_@token_inc@.csv",APPEND=T 
      
      ; Daily Walk Trips
      MW[1] = mi.1.walk + mi.2.walk + mi.3.walk + mi.4.walk + mi.5.walk
@@ -66,6 +67,19 @@ loop inc = 1,4
           if(I = 1 & @inc@=1) PRINT PRINTO=1 CSV=T LIST= "Income","Mode","Daily Trips","Total Time (Hours)","Total Dist","Avg Time (Min)", "Avg Dist"
           if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Income,"Walk",walk_trips,walk_triptime,walk_tripdist,AvgWalkTime,AvgWalkDist 
           if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Income,"Bike",bike_trips,bike_triptime,bike_tripdist,AvgBikeTime,AvgBikeDist           
-         ENDRUN
+   ENDRUN
+   EndDistributeMultistep
          
 endloop
+
+Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
+                 CTRAMP4.script.end,
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+
+; combine the income files into one
+* copy metrics\nonmot_times_inc1.csv+metrics\nonmot_times_inc2.csv+metrics\nonmot_times_inc3.csv+metrics\nonmot_times_inc4.csv metrics\nonmot_times.csv
+; delete the individual ones
+* del metrics\nonmot_times_inc1.csv
+* del metrics\nonmot_times_inc2.csv
+* del metrics\nonmot_times_inc3.csv
+* del metrics\nonmot_times_inc4.csv
