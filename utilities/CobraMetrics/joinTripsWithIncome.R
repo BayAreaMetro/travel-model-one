@@ -36,7 +36,7 @@ cat(paste("Read",prettyNum(nrow(indiv_trips),big.mark=","),"indvidual trips\n"))
 
 # Join and write it out
 indiv_trips       <- left_join(indiv_trips, households)
-write.table(indiv_trips, outfile, sep=",", row.names=TRUE)
+write.table(indiv_trips, outfile, sep=",", row.names=FALSE)
 remove(indiv_trips)
 cat(paste("Wrote",outfile,"\n"))
 
@@ -55,6 +55,6 @@ cat(paste("Read",prettyNum(nrow(joint_trips),big.mark=","),
             "joint person trips\n"))
 # Join and write it out
 joint_trips        <- left_join(joint_trips, households)
-write.table(joint_trips, outfile, sep=",", row.names=TRUE)
+write.table(joint_trips, outfile, sep=",", row.names=FALSE)
 remove(joint_trips)
 cat(paste("Wrote",outfile,"\n"))

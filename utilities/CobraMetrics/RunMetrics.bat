@@ -34,7 +34,7 @@ if not exist main\indivTripDataIncome_%ITER%.csv (
   rem Input : main\householdData_%ITER%.csv,
   rem         main\indivTripData_%ITER%.csv, main\jointTripData_%ITER%.csv
   rem Output: main\indivTripDataIncome.csv,  main\JointTripDataIncome.csv
-  call "%R_HOME%\bin\Rscript.exe" "%CODE_DIR%\joinTripsWithIncome.R"
+  call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\joinTripsWithIncome.R"
   IF ERRORLEVEL 2 goto error
 )
 
