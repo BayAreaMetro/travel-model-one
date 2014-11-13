@@ -94,10 +94,10 @@ if not exist trn\quickboards.xls (
   rem Create quickboards summaries of transit output
   rem Input: trn\trnlink[timperiod]_[acc]_[trnmode]_[egr].dbf, quickboards.ctl
   rem Output: trn\quickboards.xls
-  cd trn
-  call quickboards "%CODE_DIR%\quickboards.ctl" quickboards.xls
-  cd ..
-)
+  call "%CODE_DIR%\quickboards.bat" "%CODE_DIR%\quickboards.ctl" quickboards.xls
+  if ERRORLEVEL 1 goto error
+  move quickboards.xls trn
+ )
 
 :transit
 if not exist metrics\transit_boards_miles.csv (
@@ -110,8 +110,11 @@ if not exist metrics\transit_boards_miles.csv (
 if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")
 python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
 
+move *.PRN logs
+
 :error
 echo ERRORLEVEL=%ERRORLEVEL%
+
 
 
 
