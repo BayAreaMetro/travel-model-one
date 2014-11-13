@@ -289,7 +289,7 @@
                 	       wlk_exp_drv[position](20.4lrs),  
                 	       wlk_hvy_drv[position](20.4lrs),  
                 	       wlk_com_drv[position](20.4lrs),  
-                	       file = main\IndivTrips@token_period@inc1.dat
+                	       file = main\indivTrips@token_period@inc1.dat
                 	       
                 elseif ( income = 2 ) 
                  
@@ -318,7 +318,7 @@
                 	       wlk_exp_drv[position](20.4lrs),  
                 	       wlk_hvy_drv[position](20.4lrs),  
                 	       wlk_com_drv[position](20.4lrs),  
-                	       file = main\IndivTrips@token_period@inc2.dat
+                	       file = main\indivTrips@token_period@inc2.dat
                 	       
                  elseif ( income = 3 ) 
                   
@@ -347,7 +347,7 @@
                  	       wlk_exp_drv[position](20.4lrs),  
                  	       wlk_hvy_drv[position](20.4lrs),  
                  	       wlk_com_drv[position](20.4lrs),  
-                	       file = main\IndivTrips@token_period@inc3.dat
+                	       file = main\indivTrips@token_period@inc3.dat
 
                 elseif ( income = 4 ) 
                  
@@ -376,7 +376,7 @@
                 	       wlk_exp_drv[position](20.4lrs),  
                 	       wlk_hvy_drv[position](20.4lrs),  
                 	       wlk_com_drv[position](20.4lrs),  
-                	       file = main\IndivTrips@token_period@inc4.dat
+                	       file = main\indivTrips@token_period@inc4.dat
                 	       
                 endif
  
@@ -609,7 +609,7 @@
                 	       wlk_exp_drv[position](20.4lrs),  
                 	       wlk_hvy_drv[position](20.4lrs),  
                 	       wlk_com_drv[position](20.4lrs),  
-                	       file = main\JointTrips@token_period@inc1.dat
+                	       file = main\jointTrips@token_period@inc1.dat
                 	       
                 elseif ( income = 2 ) 
                  
@@ -638,7 +638,7 @@
                 	       wlk_exp_drv[position](20.4lrs),  
                 	       wlk_hvy_drv[position](20.4lrs),  
                 	       wlk_com_drv[position](20.4lrs),  
-                	       file = main\JointTrips@token_period@inc2.dat
+                	       file = main\jointTrips@token_period@inc2.dat
                 	       
                  elseif ( income = 3 ) 
                   
@@ -667,7 +667,7 @@
                  	       wlk_exp_drv[position](20.4lrs),  
                  	       wlk_hvy_drv[position](20.4lrs),  
                  	       wlk_com_drv[position](20.4lrs),  
-                	       file = main\JointTrips@token_period@inc3.dat
+                	       file = main\jointTrips@token_period@inc3.dat
 
                 elseif ( income = 4 ) 
                  
@@ -696,7 +696,7 @@
                 	       wlk_exp_drv[position](20.4lrs),  
                 	       wlk_hvy_drv[position](20.4lrs),  
                 	       wlk_com_drv[position](20.4lrs),  
-                	       file = main\JointTrips@token_period@inc4.dat
+                	       file = main\jointTrips@token_period@inc4.dat
                 	       
                 endif        
            
@@ -717,7 +717,7 @@
      run pgm = matrix
        
         ; read in the individual trips fixed format file from step one
-        filei mati[1] = main\IndivTrips@token_period@inc@income@.dat, pattern = ijm:v, fields = #1,2,0,3-26
+        filei mati[1] = main\indivTrips@token_period@inc@income@.dat, pattern = ijm:v, fields = #1,2,0,3-26
         
         ; read in the joint trips fixed format file from step two
         filei mati[2] = main\jointtrips@token_period@inc@income@.dat, pattern=ijm:v, fields=#1,2,0,3-26
@@ -815,7 +815,7 @@
   			filei mati[4] = main\trips@token_period@inc4.tpp
   			
   			 ; write out a matrix that combines the individual and joint trips for assignment
-        fileo mato[1] = main\trips@token_period@.tpp, mo = 1-23, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+        fileo mato[1] = main\trips@token_period@allinc.tpp, mo = 1-23, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                                                                      walk, bike, 
                                                                      wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, 
                                                                      drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
