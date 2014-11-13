@@ -40,7 +40,7 @@ parser = optparse.OptionParser()
 (options,args) = parser.parse_args()
 
 datafile            = args[0]
-lookupdir           = os.path.join( os.path.dirname(os.path.realpath(__file__)), "data" )
+lookupdir           = os.path.join( "INPUT","metrics" )
 vmt_vht_outputfile  = os.path.join("metrics", "vmt_vht_metrics.csv")
 vclasses            = ['DA','S2','S3','SM','HV','DAT','S2T','S3T','SMT','HVT']
 vclassgroup         = {'DA':'auto',  'DAT':'auto', # use for emissions
