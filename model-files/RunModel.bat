@@ -94,6 +94,11 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
 if ERRORLEVEL 2 goto done
 
+:: Add additional pavement costs for state of good repair work
+runtpp CTRAMP\scripts\preprocess\AddPavementCost.job
+if ERRORLEVEL 2 goto done
+
+
 
 :: ------------------------------------------------------------------------------------------------------
 ::

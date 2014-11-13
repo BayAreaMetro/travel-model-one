@@ -1,3 +1,6 @@
+; TODO
+; 1. update documentation
+; 2. test
 ; ----------------------------------------------------------------------------------------------------------------
 ;
 ; TransitSkims.job
@@ -283,7 +286,7 @@
                 read file = trn\xfare.far
                 
                 ; output skim matrix
-                fileo mato  = skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@.tpp
+                fileo mato  = skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@_temp.tpp
                 
                 ; the bus times are based on those computed in the highway network
                 hwytime = BUS_TIME
@@ -354,7 +357,10 @@
                 read file = ctramp\scripts\block\transferprohibitors_@token_access@_trn_@token_egress@.block
                 
                 ; set the desired output
-                matrices name = ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
+                matrices name = ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtFerry, 
+                                dist_20,dist_21,dist_24,dist_28,dist_30,dist_33,dist_38,dist_42,dist_44,dist_46,dist_49,dist_52,dist_56,dist_60,dist_66,dist_68,
+                                dist_69,dist_70,dist_87,dist_110,dist_111,dist_120,dist_130,dist_133,
+
                                  
                          ; in-vehicle time for all transit modes, use TP+ code 1001    
                          mw[1]  = time(1001),
@@ -404,21 +410,290 @@
                          ; commuter rail in-vehicle time (modes 130 through 139)
                          mw[16] = time(130,131,132,133,134,135,136,137,138,139), 
                          
-                         ; capture the ferry in-vehicle time in order to distinguish between ferry paths and light rail paths in the light rail/ferry choice                  
+                         ; capture the ferry in-vehicle time in order to distinguish between ferry paths and light rail paths in the light rail/ferry choice (modes 100 to 109)                  
                          mw[17] = time(100,101,102,103,104,105,106,107,108,109),
                          
-                         ; muni local time
-                         mw[18] = time(20,21),
-                         
-                         ; muni metro time
-                         mw[19] = time(110)
+                         mw[18] = dist(20),
+			 
+			 mw[19] = dist(21),
+			 
+			 mw[20] = dist(24),
+			 
+			 mw[21] = dist(28),
+			 
+			 mw[22] = dist(30),
+			 
+			 mw[23] = dist(33),
+			 
+			 mw[24] = dist(38),
+			 
+			 mw[25] = dist(42),
+			 
+			 mw[26] = dist(44),
+			 
+			 mw[27] = dist(46),
+			 
+			 mw[28] = dist(49),
+			 
+			 mw[29] = dist(52),
+			 
+			 mw[30] = dist(56),
+			 
+			 mw[31] = dist(60),
+			 
+			 mw[32] = dist(66),
+			 
+			 mw[33] = dist(68),
+			 
+			 mw[34] = dist(69),
+			 
+			 mw[35] = dist(70),
+			 
+			 mw[36] = dist(87),
+			 
+			 mw[37] = dist(110),
+			 
+			 mw[38] = dist(111),
+			 
+			 mw[39] = dist(120),
+			 
+			 mw[40] = dist(130),
+			 
+			 mw[41] = dist(133)
                          
                 ; trace a selection of o/d pairs for debugging
                 select trace=(i=@token_debug_origin@ && j=@token_debug_destination@)
                
-            endrun
+         endrun
+         
+         run pgm = matrix
+         
+            filei mati = skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@_temp.tpp
             
-            ; print out some debug
+            fileo mato = skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@_board_delay.tpp, mo = 1, 
+                         name = wait_board_delay
+                         
+                         
+            ; read in boarding penalties
+            read file = input\sgr\boarding_penalties_by_mode_code.block
+                         
+            jloop
+            
+               _BoardCount = 0
+	       _BoardDelay = 0
+	       _FinalBoardDelay = 0
+	       
+	       if (mi.1.dist_30 > 0)
+	          _BoardDelay = _BoardDelay + _board_30
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_133 > 0)
+	          _BoardDelay = _BoardDelay + _board_133
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_120 > 0)
+	          _BoardDelay = _BoardDelay + _board_120
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_130 > 0)
+	          _BoardDelay = _BoardDelay + _board_130
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_42 > 0)
+	          _BoardDelay = _BoardDelay + _board_42
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_44 > 0)
+	          _BoardDelay = _BoardDelay + _board_44
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_52 > 0)
+	          _BoardDelay = _BoardDelay + _board_52
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_87 > 0)
+	          _BoardDelay = _BoardDelay + _board_87
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_33 > 0)
+	          _BoardDelay = _BoardDelay + _board_33
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_70 > 0)
+	          _BoardDelay = _BoardDelay + _board_70
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_60 > 0)
+	          _BoardDelay = _BoardDelay + _board_60
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_68 > 0)
+	          _BoardDelay = _BoardDelay + _board_68
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_24 > 0)
+	          _BoardDelay = _BoardDelay + _board_24
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_66 > 0)
+	          _BoardDelay = _BoardDelay + _board_66
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_20 > 0)
+	          _BoardDelay = _BoardDelay + _board_20
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_110 > 0)
+	          _BoardDelay = _BoardDelay + _board_110
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_21 > 0)
+	          _BoardDelay = _BoardDelay + _board_21
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_49 > 0)
+	          _BoardDelay = _BoardDelay + _board_49
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_69 > 0)
+	          _BoardDelay = _BoardDelay + _board_69
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_38 > 0)
+	          _BoardDelay = _BoardDelay + _board_38
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_56 > 0)
+	          _BoardDelay = _BoardDelay + _board_56
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_111 > 0)
+	          _BoardDelay = _BoardDelay + _board_111
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_28 > 0)
+	          _BoardDelay = _BoardDelay + _board_28
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+	       if (mi.1.dist_46 > 0)
+	          _BoardDelay = _BoardDelay + _board_46
+	          _BoardCount = _BoardCount + 1
+	       endif
+	       
+
+            endjloop
+            
+            ; adjust for multiple boardings on a single mode or for modes i have no data for
+	    if (_BoardCount > 0) _FinalBoardDelay = _BoardDelay + ((_BoardDelay/_BoardCount) * (mi.1.boards - _BoardCount))
+	    
+	    ; add the additional delay per boarding to the current wait time skim  
+	    mw[1] = _FinalBoardDelay
+                         
+         endrun
+         
+         run pgm = matrix
+         
+            filei mati = skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@_temp.tpp
+	                
+	    fileo mato = skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@_ivtt_delay.tpp, mo = 1-7, 
+                         name = loc_ivtt_delay, exp_ivtt_delay, lrt_ivtt_delay, hvy_ivtt_delay, com_ivtt_delay, fer_ivtt_delay, all_ivtt_delay     
+                         
+            ; read in boarding penalties
+            read file = input\sgr\invehicle_penalties_by_mode_code.block
+            
+            jloop
+            
+               mw[1] = mi.1.dist_30  * _invehicle_30  +
+                       mi.1.dist_42  * _invehicle_42  +
+                       mi.1.dist_44  * _invehicle_44  +
+                       mi.1.dist_52  * _invehicle_52  +
+                       mi.1.dist_33  * _invehicle_33  +
+                       mi.1.dist_70  * _invehicle_70  +
+                       mi.1.dist_60  * _invehicle_60  +
+                       mi.1.dist_68  * _invehicle_68  +
+                       mi.1.dist_24  * _invehicle_24  +
+                       mi.1.dist_66  * _invehicle_66  +
+                       mi.1.dist_20  * _invehicle_20  +
+                       mi.1.dist_21  * _invehicle_21  +
+                       mi.1.dist_49  * _invehicle_49  +
+                       mi.1.dist_69  * _invehicle_69  +
+                       mi.1.dist_38  * _invehicle_38  +
+                       mi.1.dist_56  * _invehicle_56  +
+                       mi.1.dist_28  * _invehicle_28  + 
+                       mi.1.dist_46  * _invehicle_46
+                                     
+               mw[2] = mi.1.dist_87  * _invehicle_87
+                                     
+               mw[3] = mi.1.dist_110 * _invehicle_110 +
+                       mi.1.dist_111 * _invehicle_111
+                                     
+               mw[4] = mi.1.dist_120 * _invehicle_120
+                                     
+               mw[5] = mi.1.dist_130 * _invehicle_130 + 
+                       mi.1.dist_133 * _invehicle_133
+                       
+               mw[6] = 0
+                                     
+               mw[7] = mw[1] + mw[2] + mw[3] + mw[4] + mw[5] + mw[6]                     
+                                     
+                                              
+            endjloop
+         
+         endrun
+         
+         run pgm = matrix
+         
+            filei mati[1] = skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@_temp.tpp
+            filei mati[2] = skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@_board_delay.tpp
+            filei mati[3] = skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@_ivtt_delay.tpp
+            
+            fileo mato    = skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@.tpp, mo = 1 - 17,
+                            name = ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtFerry
+                            
+            mw[1]  = mi.1.ivt   + mi.3.all_ivtt_delay
+            mw[2]  = mi.1.iwait + mi.2.wait_board_delay
+            mw[3]  = mi.1.xwait
+            mw[4]  = mi.1.wait  + mi.2.wait_board_delay
+            mw[5]  = mi.1.wacc
+            mw[6]  = mi.1.waux
+            mw[7]  = mi.1.wegr
+            mw[8]  = mi.1.dtime
+            mw[9]  = mi.1.ddist
+            mw[10] = mi.1.fare
+            mw[11] = mi.1.boards
+            mw[12] = mi.1.ivtLOC   + mi.3.loc_ivtt_delay
+            mw[13] = mi.1.ivtLRF   + mi.3.lrt_ivtt_delay
+            mw[14] = mi.1.ivtEXP   + mi.3.exp_ivtt_delay
+            mw[15] = mi.1.ivtHVY   + mi.3.hvy_ivtt_delay
+            mw[16] = mi.1.ivtCOM   + mi.3.com_ivtt_delay
+            mw[17] = mi.1.ivtFerry + mi.3.fer_ivtt_delay
+         
+         endrun
+                     
+         ; print out some debug
    	 run pgm = matrix
    	    
    	    mati[1] = skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@.tpp
@@ -486,25 +761,7 @@
       	            ctramp14.script.end, 
       	            ctramp15.script.end, 
               printfiles = merge, DelDistribFiles = t, CheckReturnCode = t
-              
-; put in a quick dummy tp+ action to see if this helps the return code 4 error
-run pgm = matrix
-
-   fileo mato = deleteMe.mtx, mo = 1
-   
-   zones = 10
-   
-   ; loop through each destinaton zone
-   jloop
-   
-     mw[1] = i + j
-   
-   endjloop
-   
-   
-
-endrun
-              
+                   
 
 ; combine all the debug output
 * copy @token_debug_filename@.ea.wlk.com.wlk.debug+@token_debug_filename@.ea.wlk.hvy.wlk.debug+@token_debug_filename@.ea.wlk.exp.wlk.debug+@token_debug_filename@.ea.wlk.lrf.wlk.debug+@token_debug_filename@.ea.wlk.loc.wlk.debug+@token_debug_filename@.ea.wlk.trn.wlk.debug @token_debug_filename@.ea.wlk.all.wlk.debug
@@ -534,8 +791,4 @@ endrun
 * del @token_debug_filename@*.debug
 * copy disco.text @token_debug_filename@.debug
 * del disco.text
-
-* del deleteMe.mtx
-
-
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      

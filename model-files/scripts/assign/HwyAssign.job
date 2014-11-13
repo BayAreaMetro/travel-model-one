@@ -1,3 +1,7 @@
+; TODO: what are we going to do about 2000, 2005, and 2015.
+; Option 1: this version is just used for project perf assessment (choice for now)
+; Option 2: we make up values for all four years and see if the model validates, then use it for PBAs
+
 ; ----------------------------------------------------------------------------------------------------------------
 ;
 ; HwyAssign.job
@@ -32,7 +36,9 @@
 ;	      code, a value of one indicates the link is immune to congestion and has a fixed time coded in the OT 
 ;	      field; (g) CAPCLASS, which is a speed/capacity look-up code (see the "SpeedCapacity.block" file); and
 ;	      (h) TOLLXX_CC, where XX is a two-character time-period code and CC is a two or three-character vehicle
-;	      class code, and the value is the dollar value of the toll to go through the link in year 2000 dollars.
+;	      class code, and the value is the dollar value of the toll to go through the link in year 2000 dollars;
+;         (i) add_pave_XX, where XX is a two- or three-character vehicle class, is a county-specific increase 
+;         in the vehicle operating cost relative to 2010 due to pavement degradation.
 ;
 ; Output: (A) Five loaded highway networks, one for each time period, containing the following data for each link:
 ;              (1)  V_1 - volume, in passenger car equivalents (if assigned again, volume would be labeled V_2);
@@ -68,10 +74,11 @@
 ;         (5) For v 0.4, return to Frank-Wolfe and use 64 threads
 ;
 ; See also: (1) CreateFiveHighwayNetworks.job, which creates the time-specific networks;
-;	    (2) SetTolls.job, which sets the time- and class-specific bridge and value tools. 
+;	    (2) SetTolls.job, which sets the time- and class-specific bridge and value tools;
+;       (3) AddPavementCost.job, which sets the pavement degradation cost.
 ;
-; version:  Travel Model One (v 0.4)
-; authors:  dto (2014 01 23); dto (2011 12 13); dto (2010 08 10); gde (2009)
+; version:  Travel Model One (v 0.5)
+; authors:  dto(2014 08 XX); dto (2014 01 23); dto (2011 12 13); dto (2010 08 10); gde (2009)
 ;
 ;
 ; ----------------------------------------------------------------------------------------------------------------
@@ -212,23 +219,32 @@ loop period = 1, 5
          ; the speed/capacity table and the computation of the volume/delay function parameter (see FreeFlowSpeed.block) uses the capacity class code
          ; which is area type * 10 + facility type
          lw.capclass = li.CAPCLASS
+         
+         ; additional vehicle operating costs associated with pavement degradation
+         lw.add_pave_DA  = li.add_pave_DA
+         lw.add_pave_S2  = li.add_pave_S2
+         lw.add_pave_S3  = li.add_pave_S3
+         lw.add_pave_SML = li.add_pave_SML
+         lw.add_pave_LRG = li.add_pave_LRG
       	
          ; set the input time to OT for fixed time links
          if (lw.tsin = 1)
             t0 = lw.ot
-         endif	    
+         endif
+
+         ; TODO lisa will test whether or not we need these apparently (see evidence below) pointless intermediate variables
       
-	 ; the setting of critical speeds and computation of the volume/delay function parameter is in the FreeFlowSpeed.block file  
-	 read file = ctramp\scripts\block\FreeFlowSpeed.block 
+	     ; the setting of critical speeds and computation of the volume/delay function parameter is in the FreeFlowSpeed.block file
+	     read file = ctramp\scripts\block\FreeFlowSpeed.block
 	 
-	 ; compute the generalized cost for passenger vehicles
-      	 lw.gencost_da = lw.fft + (0.6/vot) * (lw.dist * autoopcost + li.TOLL@token_period@_DA)   
-         lw.gencost_s2 = lw.fft + (0.6/vot) * (lw.dist * autoopcost + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
-         lw.gencost_s3 = lw.fft + (0.6/vot) * (lw.dist * autoopcost + li.TOLL@token_period@_S3 / sr3costshare)  + @token_hov_xfer_pen@
+	     ; compute the generalized cost for passenger vehicles
+         lw.gencost_da = lw.fft + (0.6/vot) * (lw.dist * (autoopcost + lw.add_pave_da) + li.TOLL@token_period@_DA)
+         lw.gencost_s2 = lw.fft + (0.6/vot) * (lw.dist * (autoopcost + lw.add_pave_s2) + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
+         lw.gencost_s3 = lw.fft + (0.6/vot) * (lw.dist * (autoopcost + lw.add_pave_s3) + li.TOLL@token_period@_S3 / sr3costshare)  + @token_hov_xfer_pen@
          
          ; compute the generalized cost for very small, small, and medium trucks (use small truck costs) and large trucks
-         lw.gencost_sml = lw.fft + (0.6/truckvot) * (lw.dist * truckopcost + li.TOLL@token_period@_SML)
-         lw.gencost_lrg = lw.fft + (0.6/truckvot) * (lw.dist * truckopcost + li.TOLL@token_period@_LRG)
+         lw.gencost_sml = lw.fft + (0.6/truckvot) * (lw.dist * (truckopcost + lw.add_pave_sml) + li.TOLL@token_period@_SML)
+         lw.gencost_lrg = lw.fft + (0.6/truckvot) * (lw.dist * (truckopcost + lw.add_pave_lrg) + li.TOLL@token_period@_LRG)
          
          ; create the link exclusion classes -- HOV only (23), HOV 3+ only (3), no large trucks (4)                
          if (li.USE = 2,3)   addtogroup = 23 
@@ -295,12 +311,12 @@ loop period = 1, 5
          read file = ctramp\scripts\block\SpeedFlowCurve.block 
       
          ; set the generalized cost functions (same as before, only now we start with "time")
-         lw.gencost_da = time + (0.6/vot) * (lw.dist * autoopcost + li.TOLL@token_period@_DA)   
-         lw.gencost_s2 = time + (0.6/vot) * (lw.dist * autoopcost + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
-         lw.gencost_s3 = time + (0.6/vot) * (lw.dist * autoopcost + li.TOLL@token_period@_S3 / sr3costshare) + @token_hov_xfer_pen@
+         lw.gencost_da = time + (0.6/vot) * (lw.dist * (autoopcost + lw.add_pave_da) + li.TOLL@token_period@_DA)
+         lw.gencost_s2 = time + (0.6/vot) * (lw.dist * (autoopcost + lw.add_pave_s2) + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
+         lw.gencost_s3 = time + (0.6/vot) * (lw.dist * (autoopcost + lw.add_pave_s3) + li.TOLL@token_period@_S3 / sr3costshare) + @token_hov_xfer_pen@
          
-         lw.gencost_sml = time + (0.6/truckvot) * (lw.dist * truckopcost + li.TOLL@token_period@_SML)
-         lw.gencost_lrg = time + (0.6/truckvot) * (lw.dist * truckopcost + li.TOLL@token_period@_LRG)
+         lw.gencost_sml = time + (0.6/truckvot) * (lw.dist * (truckopcost + lw.add_pave_sml) + li.TOLL@token_period@_SML)
+         lw.gencost_lrg = time + (0.6/truckvot) * (lw.dist * (truckopcost + lw.add_pave_lrg) + li.TOLL@token_period@_LRG)
          
       endphase
       
