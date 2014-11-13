@@ -70,6 +70,6 @@ print boardings
 outfile = open(outputfile, 'w')
 writer = csv.writer(outfile,lineterminator='\n')
 writer.writerow(['Transit mode','Daily Boardings','Daily Passenger Miles Traveled'])
-for mode_str in ['loc','exp','ferry','lrt','hvy','com']:
+for mode_str in ['loc','exp','lrf','hvy','com']:
 	writer.writerow([mode_str,boardings[mode_str],passmiles[mode_str]])
 outfile.close()
