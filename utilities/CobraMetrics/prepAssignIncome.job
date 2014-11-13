@@ -1,16 +1,7 @@
 ; make time-period-specific copies of the individual trip data
-* copy main\indivTripDataIncome_%ITER%.csv main\indivTripData_temp_EA.csv
-* copy main\indivTripDataIncome_%ITER%.csv main\indivTripData_temp_AM.csv
-* copy main\indivTripDataIncome_%ITER%.csv main\indivTripData_temp_MD.csv
-* copy main\indivTripDataIncome_%ITER%.csv main\indivTripData_temp_PM.csv
-* copy main\indivTripDataIncome_%ITER%.csv main\indivTripData_temp_EV.csv
 
-; make time-period-specific copies of the joint trip data
-* copy main\jointtripdataIncome_%ITER%.csv main\jointtripdata_temp_EA.csv
-* copy main\jointtripdataIncome_%ITER%.csv main\jointtripdata_temp_AM.csv
-* copy main\jointtripdataIncome_%ITER%.csv main\jointtripdata_temp_MD.csv
-* copy main\jointtripdataIncome_%ITER%.csv main\jointtripdata_temp_PM.csv
-* copy main\jointtripdataIncome_%ITER%.csv main\jointtripdata_temp_EV.csv
+  ; the iteration
+  token_iter = '%ITER%'
 
   ; the number of zones is used throughout to size arrays to store data
   token_zones = '1454'
@@ -73,7 +64,7 @@
      run pgm = matrix
   
         ; read in the trip data for the current iteration (note %ITER% is set by RunModel.bat)
-        filei reci = main\IndivTripData_temp_@token_period@.csv, delimiter=',', 
+        filei reci = main\indivTripDataIncome_@token_iter@.csv, delimiter=',', 
                   hh_id             = 1,
                   person_id         = 2,
                   person_num        = 3,
@@ -395,7 +386,7 @@
      run pgm = matrix    
         
         ; read in the trip data for the current iteration (note %ITER% is set by RunModel.bat)
-        filei reci = main\jointtripdata_temp_@token_period@.csv, delimiter=',', 
+        filei reci = main\jointTripDataIncome_@token_iter@.csv, delimiter=',', 
                   hh_id             = 1,
                   tour_id           = 2,
                   stop_id           = 3,
@@ -856,20 +847,3 @@
   
   Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end,
   		             printfiles = merge, deldistribfiles = t, CheckReturnCode = t
-  ;
-  ;
-  ;			
-			
-; delete the time-period-specific copies of the individual trip data used in this scrip
-* del main\IndivTripData_temp_EA.csv
-* del main\IndivTripData_temp_AM.csv
-* del main\IndivTripData_temp_MD.csv
-* del main\IndivTripData_temp_PM.csv
-* del main\IndivTripData_temp_EV.csv
-
-; delete time-period-specific copies of the joint trip data used in this script
-* del main\jointtripdata_temp_EA.csv
-* del main\jointtripdata_temp_AM.csv
-* del main\jointtripdata_temp_MD.csv
-* del main\jointtripdata_temp_PM.csv
-* del main\jointtripdata_temp_EV.csv
