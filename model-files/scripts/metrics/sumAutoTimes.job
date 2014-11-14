@@ -1,9 +1,12 @@
 *del metrics\auto_times.csv
 
-; ADD AUTO MODE SUMMARY TO THE ABOVE TRANSIT MODE SUMMARIES
-; 3.  Trips per day by income quartile and mode
-; 5.  Average travel time by mode and income quartile
-; 6.  Average travel cost by mode and income quartile
+; Create auto summary based on trips per day by income quartile and mode of:
+; - Average travel distance
+; - Average travel time 
+; - Average travel cost (auto operating cost, including pavement costs) by mode and income quartile
+;   NOTE this does NOT INCLUDE BRIDGE OR VALUE TOLLS
+;
+
 ; Loop thru time periods
   loop inc = 1,4                     
    if (inc = 1)  token_inc   = 'inc1'
@@ -16,41 +19,35 @@
 ; Loop thru Auto modes 
   loop auto = 1,6
    if (auto  = 1)  
-   	token_auto  = 'da'
-   	token_time  = 'TIMEDA'
-   	token_dist  = 'DISTDA'
-   	token_Btoll = 'BTOLLDA' 
-        token_vtoll = '1'   ;There are no value toll but some specification is required for CUBE to use this token name
+   	token_auto   = 'da'
+   	token_time   = 'TIMEDA'
+   	token_dist   = 'DISTDA'
+   	token_pvcost = 'PVCOSTDA'
    elseif (auto  = 2)  
-   	token_auto  = 'datoll'
-   	token_time  = 'TOLLTIMEDA'
-   	token_dist  = 'TOLLDISTDA'
-   	token_btoll = 'TOLLBTOLLDA' 
-   	token_vtoll = 'TOLLVTOLLDA'
+   	token_auto   = 'datoll'
+   	token_time   = 'TOLLTIMEDA'
+   	token_dist   = 'TOLLDISTDA'
+   	token_pvcost = 'TOLLPVCOSTDA'
    elseif (auto  = 3)  
-   	token_auto  = 'sr2'
-   	token_time  = 'TIMES2'
-   	token_dist  = 'DISTS2'
-   	token_btoll = 'BTOLLS2' 
-        token_vtoll = '1'  ;There are no value toll but some specification is required for CUBE to use this token name
+   	token_auto   = 'sr2'
+   	token_time   = 'TIMES2'
+   	token_dist   = 'DISTS2'
+   	token_pvcost = 'PVCOSTS2'
    elseif (auto  = 4)  
-   	token_auto  = 'sr2toll' 
-   	token_time  = 'TOLLTIMES2'
-   	token_dist  = 'TOLLDISTS2'
-   	token_btoll = 'TOLLBTOLLS2' 
-   	token_vtoll = 'TOLLVTOLLS2'   	
+   	token_auto   = 'sr2toll'
+   	token_time   = 'TOLLTIMES2'
+   	token_dist   = 'TOLLDISTS2'
+   	token_pvcost = 'TOLLPVCOSTS2'
    elseif (auto  = 5)  
-   	token_auto  = 'sr3'
-      	token_time  = 'TIMES3'
-      	token_dist  = 'DISTS3'
-      	token_btoll = 'BTOLLS3' 
-        token_vtoll = '1'  ;There are no value toll but some specification is required for CUBE to use this token name
+   	token_auto   = 'sr3'
+    token_time   = 'TIMES3'
+    token_dist   = 'DISTS3'
+    token_pvcost = 'PVCOSTS3'
    elseif (auto  = 6)  
-   	token_auto  = 'sr3toll' 
-      	token_time  = 'TOLLTIMES3'
-      	token_dist  = 'TOLLDISTS3'
-      	token_btoll = 'TOLLBTOLLS3' 
-   	      token_vtoll = 'TOLLVTOLLS3'    
+   	token_auto   = 'sr3toll'
+    token_time   = 'TOLLTIMES3'
+    token_dist   = 'TOLLDISTS3'
+    token_pvcost = 'TOLLPVCOSTS3'
    endif
   ; Read Auto Operating Cost from Properties file
   Read File = "CTRAMP\scripts\block\hwyParam.block"
@@ -75,49 +72,27 @@
      ; Trips EA * Skims EA  
       MW[1]   = mi.1.@token_auto@ * mi.6.@token_time@ 
       MW[2]   = mi.1.@token_auto@ * mi.6.@token_dist@
-      if (@auto@ == 1 | @auto@ == 3 | @auto@ == 5) 
-        ; Trip Cost = Trips * (Value Toll + Bridge Toll + (Distance * Auto Operating Cost))
-      	MW[3]   = mi.1.@token_auto@ * (mi.6.@token_btoll@ + (mi.6.@token_dist@ * @AUTOOPCOST@))
-      else 	
-      	MW[3]   = mi.1.@token_auto@ * (mi.6.@token_vtoll@ + mi.6.@token_btoll@ + (mi.6.@token_dist@ * @AUTOOPCOST@))
-      endif
+      MW[3]   = mi.1.@token_auto@ * (mi.6.@token_pvcost@ + (mi.6.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
       
      ; Trips AM * Skims AM  
       MW[4]   = mi.2.@token_auto@ * mi.7.@token_time@ 
       MW[5]   = mi.2.@token_auto@ * mi.7.@token_dist@
-      if (@auto@ == 1 | @auto@ == 3 | @auto@ == 5) 
-      	MW[6]   = mi.2.@token_auto@ * (mi.7.@token_btoll@ + (mi.7.@token_dist@ * @AUTOOPCOST@))
-      else 	
-      	MW[6]   = mi.2.@token_auto@ * (mi.7.@token_vtoll@ + mi.7.@token_btoll@ + (mi.7.@token_dist@ * @AUTOOPCOST@))
-      endif     
+      MW[6]   = mi.2.@token_auto@ * (mi.7.@token_pvcost@ + (mi.7.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
  
       ; Trips MD * Skims MD  
        MW[7]   = mi.3.@token_auto@ * mi.8.@token_time@ 
        MW[8]   = mi.3.@token_auto@ * mi.8.@token_dist@
-      if (@auto@ == 1 | @auto@ == 3 | @auto@ == 5) 
-      	MW[9]   = mi.3.@token_auto@ * (mi.8.@token_btoll@ + (mi.8.@token_dist@ * @AUTOOPCOST@))
-      else 	
-      	MW[9]   = mi.3.@token_auto@ * (mi.8.@token_vtoll@ + mi.8.@token_btoll@ + (mi.8.@token_dist@ * @AUTOOPCOST@))
-      endif 
-    
+       MW[9]   = mi.3.@token_auto@ * (mi.8.@token_pvcost@ + (mi.8.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
 
      ; Trips PM * Skims PM  
       MW[10]   = mi.4.@token_auto@ * mi.9.@token_time@ 
       MW[11]   = mi.4.@token_auto@ * mi.9.@token_dist@
-      if (@auto@ == 1 | @auto@ == 3 | @auto@ == 5) 
-      	MW[12]   = mi.4.@token_auto@ * (mi.9.@token_btoll@ + (mi.9.@token_dist@ * @AUTOOPCOST@))
-      else 	
-      	MW[12]   = mi.4.@token_auto@ * (mi.9.@token_vtoll@ + mi.9.@token_btoll@ + (mi.9.@token_dist@ * @AUTOOPCOST@))
-      endif 
+      MW[12]   = mi.4.@token_auto@ * (mi.9.@token_pvcost@ + (mi.9.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
 
      ; Trips EV * Skims EV 
       MW[13]   = mi.5.@token_auto@ * mi.10.@token_time@ 
       MW[14]   = mi.5.@token_auto@ * mi.10.@token_dist@
-      if (@auto@ == 1 | @auto@ == 3 | @auto@ == 5) 
-      	MW[15]   = mi.5.@token_auto@ * (mi.10.@token_btoll@ + (mi.10.@token_dist@ * @AUTOOPCOST@))
-      else 	
-      	MW[15]   = mi.5.@token_auto@ * (mi.10.@token_vtoll@ + mi.10.@token_btoll@ + (mi.10.@token_dist@ * @AUTOOPCOST@))
-      endif 
+      MW[15]   = mi.5.@token_auto@ * (mi.10.@token_pvcost@ + (mi.10.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
         
      ; Compute Daily Trips, TripTime, TripDist, TripCost
      MW[16] = mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
