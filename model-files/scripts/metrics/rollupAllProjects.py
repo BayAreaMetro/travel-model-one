@@ -45,6 +45,7 @@ if __name__ == '__main__':
 
     # stack the rows -- that is, before the columns were the project ids, one col per project
     # convert it to rows -- so there's one value column, and a row per project id
+    all_projs_dataframe.columns = proj_ids
     all_projs_dataframe = all_projs_dataframe.iloc[NUM_DESCRIPTION_FIELDS:,].stack()
     # Name the new column in the index 'Values'
     new_names = list(all_projs_dataframe.index.names)
