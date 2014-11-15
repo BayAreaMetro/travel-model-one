@@ -13,9 +13,12 @@ pd.set_option('display.precision',10)
 
 USAGE = """
 
-  python RunResults project_dir all_projects.xlsx
+  python RunResults project_metrics_dir all_projects_metrics_dir
 
-  Processes the run results in project_dir and outputs project_dir\BC.xlsx with run results summary.
+  Processes the run results in project_metrics_dir and outputs:
+  * project_metrics_dir\BC_[Project ID].xlsx with run results summary
+  * all_projects_metrics_dir\[Project ID].csv with a version for rolling up
+
 """
 
 class RunResults:
@@ -488,6 +491,22 @@ class RunResults:
             print self.base_results.config
             print self.base_results.daily_category_results
 
+        workbook        = xlsxwriter.Workbook(BC_detail_workbook)
+        bc_metrics      = self.writeBCWorksheet(workbook)
+        workbook.close()
+        print("Wrote %s" % BC_detail_workbook)
+
+        if self.base_dir:
+            idx = pd.MultiIndex.from_tuples(bc_metrics.keys(), 
+                                            names=['category1','category2','variable_name'])
+            self.bc_metrics = pd.Series(bc_metrics, index=idx)
+            self.bc_metrics.name = 'values'
+ 
+            all_proj_filename = os.path.join(all_projects_dir, "%s.csv" % self.config.loc['Project ID'])
+            self.bc_metrics.to_csv(all_proj_filename, header=True, float_format='%.5f')
+            print("Wrote %s" % all_proj_filename)
+
+    def writeBCWorksheet(self, workbook):
         # these will be the daily and annual diffs, and monetized diffs
         # key = (category1, category2, variable name)
         bc_metrics      = collections.OrderedDict()
@@ -495,7 +514,6 @@ class RunResults:
         for key,val in self.config.iteritems():
             bc_metrics[(key,"","")] = val
 
-        workbook        = xlsxwriter.Workbook(BC_detail_workbook)
         worksheet       = workbook.add_worksheet('project')
         worksheet.protect()
 
@@ -590,11 +608,11 @@ class RunResults:
                                              'text_wrap':True,
                                              'align':'center'})
         worksheet.write(row,0,"Benefit/Cost",format_header)
-        worksheet.write(row,1,"Daily\nWith Project" if self.base_dir else "Daily",format_header)
+        worksheet.write(row,1,"Daily\nScenario" if self.base_dir else "Daily",format_header)
         if self.base_dir:
-            worksheet.write(row,2,"Daily\nNo Build",format_header)
-            worksheet.write(row,3,"Daily\nDifference",format_header)
-            worksheet.write(row,4,"Annual\nDifference",format_header)
+            worksheet.write(row,2,"Daily\nBaseline",format_header)
+            worksheet.write(row,3,"Daily\nScenario - Baseline",format_header)
+            worksheet.write(row,4,"Annual\nScenario - Baseline",format_header)
             worksheet.write(row,6,"Benefit Valuation\n(per unit)",format_header)
             worksheet.write(row,8,"Annual\nBenefit ($2013)",format_header)
 
@@ -775,18 +793,7 @@ class RunResults:
                                os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                             "King-cobra.png"),
                                {'x_scale':0.1, 'y_scale':0.1})
-        workbook.close()
-        print("Wrote %s" % BC_detail_workbook)
-
-        if self.base_dir:
-            idx = pd.MultiIndex.from_tuples(bc_metrics.keys(), 
-                                            names=['category1','category2','variable_name'])
-            self.bc_metrics = pd.Series(bc_metrics, index=idx)
-            self.bc_metrics.name = 'values'
- 
-            all_proj_filename = os.path.join(all_projects_dir, "%s.csv" % self.config.loc['Project ID'])
-            self.bc_metrics.to_csv(all_proj_filename, header=True, float_format='%.5f')
-            print("Wrote %s" % all_proj_filename)
+        return bc_metrics
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage=USAGE)
@@ -799,5 +806,5 @@ if __name__ == '__main__':
     rr = RunResults(args.project_dir)
     rr.calculateDailyMetrics()
 
-    rr.calculateBenefitCosts(os.path.join(args.project_dir, "BC.xlsx"),
+    rr.calculateBenefitCosts(os.path.join(args.project_dir, "BC_%s.xlsx" % rr.config.loc['Project ID']),
                              args.all_projects_dir)
