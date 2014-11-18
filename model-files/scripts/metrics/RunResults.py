@@ -108,7 +108,7 @@ class RunResults:
     ALREADY_ANNUAL = {
     ('Travel Cost','Vehicle Ownership (Modeled)'                 ): True,
     ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'    ): True,
-    ('Collisions & Active Transport','Active Individuals','Total'): True,
+    ('Collisions, Active Transport & Noise','Active Individuals','Total'): True,
     }
 
     # See 'Plan Bay Area Performance Assessment Report_FINAL.pdf'
@@ -128,8 +128,6 @@ class RunResults:
     ('Travel Cost','Operating Costs','Truck ($2000)'                           ):       1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Vehicle Ownership (Modeled)'                               ):   -6290.0,
     ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                  ):   -6290.0,
-    ('Travel Cost','Noise','Auto VMT'                                          ):      -0.0012,
-    ('Travel Cost','Noise','Truck VMT'                                         ):      -0.0150,
     ('Travel Cost','Parking Costs','Work Trips in San Francisco'               ):      -7.16,
     ('Travel Cost','Parking Costs','Work Trips in San Mateo'                   ):       0.00,
     ('Travel Cost','Parking Costs','Work Trips in Santa Clara'                 ):      -0.15,
@@ -158,10 +156,12 @@ class RunResults:
     ('Air Pollutant','Other','VOC: 1,3-Butadiene (metric tons)'                ):  -32200.0,
     ('Air Pollutant','Other','VOC: Formaldehyde (metric tons)'                 ):   -6400.0,
     ('Air Pollutant','Other','All other VOC (metric tons)'                     ):   -5100.0,
-    ('Collisions & Active Transport','Fatalies due to Collisions'              ):-4590000.0,
-    ('Collisions & Active Transport','Injuries due to Collisions'              ):  -64000.0,
-    ('Collisions & Active Transport','Property Damage Only (PDO) Collisions'   ):   -2455.0,
-    ('Collisions & Active Transport','Active Individuals'                      ):    1220.0,
+    ('Collisions, Active Transport & Noise','Fatalies due to Collisions'           ):-4590000.0,
+    ('Collisions, Active Transport & Noise','Injuries due to Collisions'           ):  -64000.0,
+    ('Collisions, Active Transport & Noise','Property Damage Only (PDO) Collisions'):   -2455.0,
+    ('Collisions, Active Transport & Noise','Active Individuals'                   ):    1220.0,
+    ('Collisions, Active Transport & Noise','Noise','Auto VMT'                     ):      -0.0012,
+    ('Collisions, Active Transport & Noise','Noise','Truck VMT'                    ):      -0.0150,
     }
 
     def __init__(self, rundir, overwrite_config=None):
@@ -353,12 +353,6 @@ class RunResults:
         cat2            = 'Vehicle Ownership (Est. from Auto Trips)'
         daily_results[(cat1,cat2,'Total')] =total_autotrips*RunResults.ANNUALIZATION/RunResults.YEARLY_AUTO_TRIPS_PER_AUTO
 
-        # Noise
-        cat2            = 'Noise'
-        daily_results[(cat1,cat2,'Auto VMT')] = \
-            vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'],'VMT'].sum()
-        daily_results[(cat1,cat2,'Truck VMT')] = \
-            vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
         ######################################################################################
         cat1            = 'Air Pollutant'
         cat2            = 'PM2.5 (tons)'
@@ -388,7 +382,7 @@ class RunResults:
             - daily_results[(cat1,cat2,'VOC: Formaldehyde (metric tons)' )]
 
         ######################################################################################
-        cat1            = 'Collisions & Active Transport'
+        cat1            = 'Collisions, Active Transport & Noise'
         cat2            = 'Fatalies due to Collisions'
         daily_results[(cat1,cat2,'Motor Vehicle')] = vmt_byclass.loc[:,'Motor Vehicle Fatality'].sum()
         daily_results[(cat1,cat2,'Walk'         )] = vmt_byclass.loc[:,'Walk Fatality'         ].sum()
@@ -428,6 +422,13 @@ class RunResults:
         #       Wouldn't subtracting the the base give newly active population?
         daily_results[(cat1,cat2,'Total'  )] = avg_min_total * \
             (RunResults.PERCENT_POP_INACTIVE * RunResults.PROJECTED_2040_POPULATION) / RunResults.ACTIVE_MIN_REQUIREMENT
+
+        # Noise
+        cat2            = 'Noise'
+        daily_results[(cat1,cat2,'Auto VMT')] = \
+            vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'],'VMT'].sum()
+        daily_results[(cat1,cat2,'Truck VMT')] = \
+            vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
 
         idx = pd.MultiIndex.from_tuples(daily_results.keys(), 
                                         names=['category1','category2','variable_name'])
