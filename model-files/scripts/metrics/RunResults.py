@@ -493,6 +493,8 @@ class RunResults:
 
         workbook        = xlsxwriter.Workbook(BC_detail_workbook)
         bc_metrics      = self.writeBCWorksheet(workbook)
+        if self.base_dir:
+            self.writeBCWorksheet(workbook, scen_minus_baseline=False)
         workbook.close()
         print("Wrote %s" % BC_detail_workbook)
 
@@ -506,7 +508,34 @@ class RunResults:
             self.bc_metrics.to_csv(all_proj_filename, header=True, float_format='%.5f')
             print("Wrote %s" % all_proj_filename)
 
-    def writeBCWorksheet(self, workbook):
+    def writeBCWorksheet(self, workbook, scen_minus_baseline=True):
+        """
+        Writes a worksheet into the workbook.
+        If scen_minus_baseline, then it's the scenario - baseline.
+        Otherwise it's the baseline_minus_scen
+        """
+
+        worksheet = None
+        if not self.base_dir:
+            worksheet       = workbook.add_worksheet('baseline')
+            colA            = self
+            colA_header     = "Daily"
+        elif scen_minus_baseline:
+            colA            = self
+            colA_header     = "Daily Scenario"
+            colB            = self.base_results
+            colB_header     = "Daily Baseline"
+            worksheet       = workbook.add_worksheet('scenario-baseline')
+            diff_header     = "Scenario - Baseline"
+        else:
+            colA            = self.base_results
+            colA_header     = "Daily Baseline"
+            colB            = self
+            colB_header     = "Daily Scenario"
+            worksheet       = workbook.add_worksheet('baseline-scenario')
+            diff_header     = "Baseline - Scenario"
+        worksheet.protect()
+
         # these will be the daily and annual diffs, and monetized diffs
         # key = (category1, category2, variable name)
         bc_metrics      = collections.OrderedDict()
@@ -514,8 +543,6 @@ class RunResults:
         for key,val in self.config.iteritems():
             bc_metrics[(key,"","")] = val
 
-        worksheet       = workbook.add_worksheet('project')
-        worksheet.protect()
 
         # Notice row
         format_red      = workbook.add_format({'font_color':'red', 'bold':True})
@@ -608,11 +635,11 @@ class RunResults:
                                              'text_wrap':True,
                                              'align':'center'})
         worksheet.write(row,0,"Benefit/Cost",format_header)
-        worksheet.write(row,1,"Daily\nScenario" if self.base_dir else "Daily",format_header)
+        worksheet.write(row,1,colA_header,format_header)
         if self.base_dir:
-            worksheet.write(row,2,"Daily\nBaseline",format_header)
-            worksheet.write(row,3,"Daily\nScenario - Baseline",format_header)
-            worksheet.write(row,4,"Annual\nScenario - Baseline",format_header)
+            worksheet.write(row,2,colB_header,format_header)
+            worksheet.write(row,3,"Daily\n%s" % diff_header,format_header)
+            worksheet.write(row,4,"Annual\n%s" % diff_header,format_header)
             worksheet.write(row,6,"Benefit Valuation\n(per unit)",format_header)
             worksheet.write(row,8,"Annual\nBenefit ($2013)",format_header)
 
@@ -641,7 +668,7 @@ class RunResults:
         format_cat2_ben   = workbook.add_format({'num_format':'_($* #,##0_);_($* (#,##0);_($* "-"??_);_(@_)',
                                                  'bg_color':'#D9D9D9'})
 
-        for key,value in self.daily_results.iteritems():
+        for key,value in colA.daily_results.iteritems():
 
             # What's the valuation of this metric?
             valuation = None
@@ -681,11 +708,11 @@ class RunResults:
                 worksheet.write(row,0,cat2,format_cat2)
                 # Sum it
                 worksheet.write(row,1,
-                                '=SUM(%s)' % xl_range(row+1,1,row+len(self.daily_results[cat1][cat2]),1),
+                                '=SUM(%s)' % xl_range(row+1,1,row+len(colA.daily_results[cat1][cat2]),1),
                                 format_cat2_lil if (cat1,cat2) in self.lil_cats else format_cat2_big)
                 if self.base_dir:
                     worksheet.write(row,2, # base
-                                    '=SUM(%s)' % xl_range(row+1,2,row+len(self.daily_results[cat1][cat2]),2),
+                                    '=SUM(%s)' % xl_range(row+1,2,row+len(colB.daily_results[cat1][cat2]),2),
                                     format_cat2b_lil if (cat1,cat2) in self.lil_cats else format_cat2b_big)
 
                     if already_annual:
@@ -696,8 +723,8 @@ class RunResults:
                                         '=%s-%s' % (xl_rowcol_to_cell(row,1), xl_rowcol_to_cell(row,2)),
                                         format_cat2d_lil if (cat1,cat2) in self.lil_cats else format_cat2d_big)
     
-                        bc_metrics[(cat1,cat2,'Difference')] = self.daily_category_results[(cat1,cat2)] - \
-                                                               self.base_results.daily_category_results[(cat1,cat2)]
+                        bc_metrics[(cat1,cat2,'Difference')] = colA.daily_category_results[(cat1,cat2)] - \
+                                                               colB.daily_category_results[(cat1,cat2)]
                     else:
                         worksheet.write(row,3, # diff daily
                                         '=%s-%s' % (xl_rowcol_to_cell(row,1), xl_rowcol_to_cell(row,2)),
@@ -707,8 +734,8 @@ class RunResults:
                                         format_cat2d_lil if (cat1,cat2) in self.lil_cats else format_cat2d_big)
 
                         try:
-                            bc_metrics[(cat1,cat2,'Daily Difference')] = self.daily_category_results[(cat1,cat2)] - \
-                                                                         self.base_results.daily_category_results[(cat1,cat2)]
+                            bc_metrics[(cat1,cat2,'Daily Difference')] = colA.daily_category_results[(cat1,cat2)] - \
+                                                                         colB.daily_category_results[(cat1,cat2)]
                             bc_metrics[(cat1,cat2,'Annual Difference')] = RunResults.ANNUALIZATION * \
                                                                           bc_metrics[(cat1,cat2,'Daily Difference')]
                         except Exception as e:
@@ -723,7 +750,7 @@ class RunResults:
 
                     if valuation != None:
                         worksheet.write(row,8,
-                                        '=SUM(%s)' % xl_range(row+1,8,row+len(self.daily_results[cat1][cat2]),8),
+                                        '=SUM(%s)' % xl_range(row+1,8,row+len(colA.daily_results[cat1][cat2]),8),
                                         format_cat2_ben)
                 row += 1
 
@@ -733,15 +760,15 @@ class RunResults:
                             format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
             if self.base_dir:
                 worksheet.write(row,2, # base
-                                self.base_results.daily_results[cat1][cat2][key[2]],
+                                colB.daily_results[cat1][cat2][key[2]],
                                 format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
                 nominal_diff = 0
                 if already_annual:
                     worksheet.write(row,4, # diff annual
                                     '=%s-%s' % (xl_rowcol_to_cell(row,1), xl_rowcol_to_cell(row,2)),
                                     format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
-                    nominal_diff = self.daily_results[cat1][cat2][key[2]] - \
-                                   self.base_results.daily_results[cat1][cat2][key[2]]
+                    nominal_diff = colA.daily_results[cat1][cat2][key[2]] - \
+                                   colB.daily_results[cat1][cat2][key[2]]
                 else:
                     worksheet.write(row,3, # diff daily
                                     '=%s-%s' % (xl_rowcol_to_cell(row,1), xl_rowcol_to_cell(row,2)),
@@ -749,8 +776,8 @@ class RunResults:
                     worksheet.write(row,4, # diff annual
                                     '=%d*%s' % (RunResults.ANNUALIZATION, xl_rowcol_to_cell(row,3)),
                                     format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
-                    nominal_diff = RunResults.ANNUALIZATION * (self.daily_results[cat1][cat2][key[2]] - \
-                                                               self.base_results.daily_results[cat1][cat2][key[2]])
+                    nominal_diff = RunResults.ANNUALIZATION * (colA.daily_results[cat1][cat2][key[2]] - \
+                                                               colB.daily_results[cat1][cat2][key[2]])
 
                 if valuation != None:
                     worksheet.write(row,6, # diff annual
