@@ -39,7 +39,8 @@ class RunResults:
       'Capital Costs'         ,   # Capital Costs
       'Annual O&M Costs'      ,   # Operations & Maintenance costs
       'Farebox Recovery Ratio',   # What percentage of O&M are expected each year
-      'Life of Project'           # To annualize capital costs
+      'Life of Project'       ,   # To annualize capital costs
+      'Compare'                   # one of 'baseline-scenario' or 'scenario-baseline'
       ]
     UNITS = {
       'Capital Costs'                 :'millions of $2013',
@@ -493,13 +494,20 @@ class RunResults:
             print self.base_results.daily_category_results
 
         workbook        = xlsxwriter.Workbook(BC_detail_workbook)
-        bc_metrics      = self.writeBCWorksheet(workbook)
+        scen_minus_base = self.writeBCWorksheet(workbook)
+
         if self.base_dir:
-            self.writeBCWorksheet(workbook, scen_minus_baseline=False)
+            base_minus_scen = self.writeBCWorksheet(workbook, scen_minus_baseline=False)
         workbook.close()
         print("Wrote %s" % BC_detail_workbook)
 
         if self.base_dir:
+            bc_metrics = None
+            if self.config.loc['Compare'] == 'scenario-baseline':
+                bc_metrics = scen_minus_base
+            elif self.config.loc['Compare'] == 'baseline-scenario':
+                bc_metrics = base_minus_scen
+
             idx = pd.MultiIndex.from_tuples(bc_metrics.keys(), 
                                             names=['category1','category2','variable_name'])
             self.bc_metrics = pd.Series(bc_metrics, index=idx)
@@ -584,6 +592,12 @@ class RunResults:
             worksheet.write(row,1, self.base_dir, format_highlight)
             for col in range(2,7): worksheet.write(row,col,"",format_highlight)
         row += 1
+
+        # Comparison type
+        worksheet.write(row,0, 'Compare', format_label)
+        worksheet.write(row,1, self.config.loc['Compare'], format_highlight)
+        for col in range(2,7): worksheet.write(row,col,"",format_highlight)
+        row += 1        
 
         # Calculated from config
         format_highlight= workbook.add_format({'bg_color':'#FFFFC0'})
