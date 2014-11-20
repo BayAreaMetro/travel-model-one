@@ -478,7 +478,7 @@ class RunResults:
                 base_overwrite_config[key] = self.config.loc[key]
                 total_parking_cost_allocation += self.config.loc[key]
 
-            assert(total_parking_cost_allocation == 1.0)
+            assert(abs(total_parking_cost_allocation - 1.0) < 0.001)
 
             # pass the project mode for overwrite to base
             base_overwrite_config['Project Mode'] = self.config.loc['Project Mode']
