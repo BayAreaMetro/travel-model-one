@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     ALL_PROJECTS_DATA_FILENAME = "AllProjects_Data.csv"
     ALL_PROJECTS_DESC_FILENAME = "AllProjects_Desc.csv"
-    NUM_DESCRIPTION_FIELDS     = 23
+    NUM_DESCRIPTION_FIELDS     = 24
 
     all_projs_list = []
     proj_ids       = []
