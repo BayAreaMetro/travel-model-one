@@ -151,21 +151,21 @@ def config_shadowprice(iter, replacements):
     """
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
     if iter==1:
-        # 4 iterations, no input file
-        replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = \
-            r"\g<1>"        
+        # 4 iterations, no input file -- comment it out
+        replacements[filepath]["(\n)(#?)(UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = \
+            r"\g<1>#\g<3>\g<4>"        
         replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations[ \t]*=[ \t]*)(\S*)"] = \
             r"\g<1>4"
     elif iter==2:
         # update to 2 iterations and add input file
-        replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = \
-            r"\g<1>main/ShadowPricing_3.csv"        
+        replacements[filepath]["(\n)(#?)(UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = \
+            r"\g<1>\g<3>main/ShadowPricing_3.csv"        
         replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations[ \t]*=[ \t]*)(\S*)"] = \
             r"\g<1>2"
     elif iter==3:
         # update input file
-        replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = \
-            r"\g<1>main/ShadowPricing_5.csv"
+        replacements[filepath]["(\n)(#?)(UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = \
+            r"\g<1>\g<3>main/ShadowPricing_5.csv"
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = USAGE,
