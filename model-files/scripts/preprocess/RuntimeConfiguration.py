@@ -79,6 +79,7 @@ def config_project_dir(replacements):
     """
     project_dir = os.getcwd()
     project_dir = project_dir.replace("\\","/") # we want backwards slashes
+    project_dir = project_dir + "/"             # trailing backwards slash
 
     filepath    = os.path.join("CTRAMP","runtime","accessibilities.properties")
     replacements[filepath] = collections.OrderedDict()
