@@ -82,6 +82,11 @@ copy INPUT\warmstart\nonres\	nonres\
 
 : Pre-Process
 
+:: Runtime configuration: set project directory, auto operating cost, 
+:: and synthesized household/population files in the appropriate places
+python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
+if ERRORLEVEL 1 goto done
+
 :: Set the prices in the roadway network
 runtpp CTRAMP\scripts\preprocess\SetTolls.job
 if ERRORLEVEL 2 goto done
@@ -152,10 +157,9 @@ set PREV_WGT=0.00
 set SAMPLESHARE=0.15
 set SEED=0
 
-:: Set the usual workplace shadow pricing parameters
-copy CTRAMP\runtime\mtcTourBased-master.properties CTRAMP\runtime\mtcTourBased.properties
-echo. >> CTRAMP\runtime\mtcTourBased.properties
-echo UsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations = 4 >> CTRAMP\runtime\mtcTourBased.properties
+:: Runtime configuration: set the workplace shadow pricing parameters
+python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --iter %ITER%
+if ERRORLEVEL 1 goto done
 
 :: Call RunIteration batch file
 call CTRAMP\RunIteration.bat
@@ -178,11 +182,9 @@ set PREV_WGT=0.50
 set SAMPLESHARE=0.30
 set SEED=0
 
-:: Set the usual workplace shadow pricing parameters
-copy CTRAMP\runtime\mtcTourBased-master.properties CTRAMP\runtime\mtcTourBased.properties
-echo. >> CTRAMP\runtime\mtcTourBased.properties
-echo UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File          = main/ShadowPricing_3.csv >> CTRAMP\runtime\mtcTourBased.properties
-echo UsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations = 2 >> CTRAMP\runtime\mtcTourBased.properties
+:: Runtime configuration: set the workplace shadow pricing parameters
+python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --iter %ITER%
+if ERRORLEVEL 1 goto done
 
 :: Call RunIteration batch file
 call CTRAMP\RunIteration.bat
@@ -205,11 +207,9 @@ set PREV_WGT=0.67
 set SAMPLESHARE=1.00
 set SEED=0
 
-:: Set the usual workplace shadow pricing parameters
-copy CTRAMP\runtime\mtcTourBased-master.properties CTRAMP\runtime\mtcTourBased.properties
-echo.  >> CTRAMP\runtime\mtcTourBased.properties
-echo UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File          = main/ShadowPricing_5.csv >> CTRAMP\runtime\mtcTourBased.properties
-echo UsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations = 2 >> CTRAMP\runtime\mtcTourBased.properties
+:: Runtime configuration: set the workplace shadow pricing parameters
+python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --iter %ITER%
+if ERRORLEVEL 1 goto done
 
 :: Call RunIteration batch file
 call CTRAMP\RunIteration.bat
