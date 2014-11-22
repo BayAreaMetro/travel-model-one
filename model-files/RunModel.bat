@@ -87,6 +87,12 @@ copy INPUT\warmstart\nonres\	nonres\
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
 
+:: Prompt user to start java machines now that the project directory is set
+@echo off
+set /P c=Project Directory updated.  Please start java processes (main and nodes) and press Enter to continue...
+@echo on
+:: Don't care about the response
+
 :: Set the prices in the roadway network
 runtpp CTRAMP\scripts\preprocess\SetTolls.job
 if ERRORLEVEL 2 goto done
