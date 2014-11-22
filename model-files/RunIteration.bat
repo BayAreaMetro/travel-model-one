@@ -31,6 +31,10 @@ if %ITER%==0 goto hwyAssign
 runtpp CTRAMP\scripts\skims\HwySkims.job
 if ERRORLEVEL 2 goto done
 
+:: Fix intrazonals (SGR-code bug means negative addtl pavement costs results in bad intrazonals)
+runtpp CTRAMP\scripts\skims\HwySkims_fixIntrazonal.job
+if ERRORLEVEL 2 goto done
+
 :: Prepare the highway network for use by the transit network
 runtpp CTRAMP\scripts\skims\PrepHwyNet.job
 if ERRORLEVEL 2 goto done
