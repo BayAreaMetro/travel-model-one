@@ -175,4 +175,3 @@ endloop ; token_period
 Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
     printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
-; copy these to the over originals
