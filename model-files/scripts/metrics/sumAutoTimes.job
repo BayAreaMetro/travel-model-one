@@ -1,9 +1,10 @@
 *del metrics\auto_times.csv
 
 ; Create auto summary based on trips per day by income quartile and mode of:
-; - Average travel distance
-; - Average travel time 
+; - Average travel time in minutes
+; - Average travel distance in miles
 ; - Average travel cost (auto operating cost, including pavement costs) by mode and income quartile
+;   in year 2000 cents
 ;   NOTE this does NOT INCLUDE BRIDGE OR VALUE TOLLS
 ;
 

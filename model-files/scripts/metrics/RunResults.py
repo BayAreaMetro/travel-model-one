@@ -321,7 +321,7 @@ class RunResults:
 
         cat2            = 'Operating Costs'
         daily_results[(cat1,cat2,'Auto ($2000)' )] = \
-            0.01*auto_byclass.loc[['da','datoll','s2','s2toll','s3','s3toll'],'Total Cost'].sum()
+            0.01*auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Total Cost'].sum()
         daily_results[(cat1,cat2,'Truck ($2000)')] = \
             0.01*auto_byclass.loc['truck','Total Cost'].sum()
 
