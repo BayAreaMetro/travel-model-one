@@ -125,8 +125,8 @@ class RunResults:
     ('Travel Time','Walk/Bike (Hours)'                                         ):     -16.03,
     ('Travel Cost','VMT','Auto'                                                ):      -0.2688,
     ('Travel Cost','VMT','Truck'                                               ):      -0.3950,
-    ('Travel Cost','Operating Costs','Auto ($2000)'                            ):       1.35, # $1 in 2000 = $1.35 in 2013
-    ('Travel Cost','Operating Costs','Truck ($2000)'                           ):       1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Cost','Operating Costs','Auto ($2000)'                            ):      -1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Cost','Operating Costs','Truck ($2000)'                           ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Vehicle Ownership (Modeled)'                               ):   -6290.0,
     ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                  ):   -6290.0,
     ('Travel Cost','Parking Costs','Work Trips in San Francisco'               ):      -7.16,
