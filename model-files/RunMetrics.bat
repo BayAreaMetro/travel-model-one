@@ -107,6 +107,18 @@ if not exist metrics\transit_boards_miles.csv (
   call python "%CODE_DIR%\transit.py" trn\quickboards.xls
 )
 
+if not exist metrics\bus_opcost.csv (
+  rem Summarize bus operating costs from pavement
+  rem Input: trn\trnline[am|md|pm|ev|ea]_wlk_com_wlk.csv,
+  rem        INPUT\metrics\Transit Operator LSR VMT Estimates.xlsx,
+  rem        INPUT\sgr\PavementCosts.block
+  rem Output: metrics\bus_opcost.csv
+  call python "%CODE_DIR%\bus_opcost.py"
+)
+
+BUS_OPCOST_FILE  = os.path.join("INPUT","sgr","PavementCosts.block")
+)
+
 if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")
 python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
 
