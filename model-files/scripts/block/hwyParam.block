@@ -1,6 +1,6 @@
 
 AUTOOPCOST    = xx.xx     ; year 2000 cents per mile - set by RuntimeConfiguration.py
-TRUCKOPCOST   = 32.50     ; year 2000 cents per mile
+TRUCKOPCOST   = xx.xx     ; year 2000 cents per mile - set by RuntimeConfiguration.py
 VOT           = 15.0      ; year 2000 dollars per hour
 TRUCKVOT      = 30.0      ; year 2000 dollars per hour
 SR2COSTSHARE  = 1.75      ; scales toll cost for SR2 occupancy

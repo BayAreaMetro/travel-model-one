@@ -17,6 +17,9 @@ If no iteration is specified, then these include:
    + It will be propagated to CTRAMP\scripts\block\hwyParam.block,
                               CTRAMP\runtime\accessibilities.properties (new!),
                               CTRAMP\runtime\mtcTourBased.properties (new!)
+ * Truck Operating Cost
+   + Specify the value in INPUT\params.properties
+   + It will be propagated to CTRAMP\scripts\block\hwyParam.block
                               
 
 If an iteration is specified, then the following UsualWorkAndSchoolLocationChoice
@@ -142,6 +145,19 @@ def config_auto_opcost(replacements):
 
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
     replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % auto_operating_cost
+
+    # truck!
+    match           = re.search("\TruckOperatingCost[ \t]*=[ \t]*(\S*)[ \t]*", myfile_contents)
+    if match == None:
+        print "Couldn't find TruckOperatingCost in %s" % params_filename
+        sys.exit(2)
+
+    # it's a string
+    truck_operating_cost = match.group(1)
+
+    # put it into the CTRAMP\scripts\block\hwyParam.block
+    filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
+    replacements[filepath]["(\nTRUCKOPCOST[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % truck_operating_cost
 
 def config_shadowprice(iter, replacements):
     """
