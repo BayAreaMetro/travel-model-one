@@ -27,6 +27,7 @@ if __name__ == '__main__':
         if proj_file == ALL_PROJECTS_DATA_FILENAME: continue
         if proj_file == ALL_PROJECTS_DESC_FILENAME: continue
         if proj_file == "base.csv": continue
+        if proj_file[-4:] == ".twb": continue
 
         proj_series = pd.Series.from_csv(proj_file, index_col=[0,1,2], header=0)
         proj_id     = proj_series.loc['Project ID',numpy.NaN,numpy.NaN]
