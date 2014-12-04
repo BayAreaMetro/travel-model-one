@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<!--
+ A simple configuration file for the Log4j logging classes. Basic FILE and CONSOLE
+ Appenders are created. Also, debug logger output is sent to a separate DEBUG-FILE.
+ 
+-->
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+
+        </layout>        
+    </appender>
+
+
+    <appender name="FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event_mtx_32.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+<!-- The default logger will log info level to both CONSOLE and FILE -->
+    <root>
+        <level value="info"/>
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+        
+</log4j:configuration>
