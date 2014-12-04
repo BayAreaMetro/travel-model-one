@@ -116,9 +116,6 @@ if not exist metrics\bus_opcost.csv (
   call python "%CODE_DIR%\bus_opcost.py"
 )
 
-BUS_OPCOST_FILE  = os.path.join("INPUT","sgr","PavementCosts.block")
-)
-
 if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")
 python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
 
