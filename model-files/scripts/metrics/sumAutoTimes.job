@@ -24,31 +24,37 @@
    	token_time   = 'TIMEDA'
    	token_dist   = 'DISTDA'
    	token_pvcost = 'PVCOSTDA'
+    token_occ    = 1.0
    elseif (auto  = 2)  
    	token_auto   = 'datoll'
    	token_time   = 'TOLLTIMEDA'
    	token_dist   = 'TOLLDISTDA'
    	token_pvcost = 'TOLLPVCOSTDA'
+    token_occ    = 1.0
    elseif (auto  = 3)  
    	token_auto   = 'sr2'
    	token_time   = 'TIMES2'
    	token_dist   = 'DISTS2'
    	token_pvcost = 'PVCOSTS2'
+    token_occ    = 2.0
    elseif (auto  = 4)  
    	token_auto   = 'sr2toll'
    	token_time   = 'TOLLTIMES2'
    	token_dist   = 'TOLLDISTS2'
    	token_pvcost = 'TOLLPVCOSTS2'
+    token_occ    = 2.0
    elseif (auto  = 5)  
    	token_auto   = 'sr3'
     token_time   = 'TIMES3'
     token_dist   = 'DISTS3'
     token_pvcost = 'PVCOSTS3'
+    token_occ    = 3.5
    elseif (auto  = 6)  
    	token_auto   = 'sr3toll'
     token_time   = 'TOLLTIMES3'
     token_dist   = 'TOLLDISTS3'
     token_pvcost = 'TOLLPVCOSTS3'
+    token_occ    = 3.5
    endif
   ; Read Auto Operating Cost from Properties file
   Read File = "CTRAMP\scripts\block\hwyParam.block"
@@ -71,54 +77,67 @@
      FILEO PRINTO[1] = "metrics\auto_times_@token_inc@.csv",APPEND=T 
 
      ; Trips EA * Skims EA  
-      MW[1]   = mi.1.@token_auto@ * mi.6.@token_time@ 
-      MW[2]   = mi.1.@token_auto@ * mi.6.@token_dist@
-      MW[3]   = mi.1.@token_auto@ * (mi.6.@token_pvcost@ + (mi.6.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
+      MW[1]   =  mi.1.@token_auto@ * mi.6.@token_time@               ; Person minutes
+      MW[2]   = (mi.1.@token_auto@ * mi.6.@token_time@)/@token_occ@  ; Vehicle minutes
+      MW[3]   =  mi.1.@token_auto@ * mi.6.@token_dist@               ; Person miles
+      MW[4]   = (mi.1.@token_auto@ * mi.6.@token_dist@)/@token_occ@  ; Vehicle miles
+      MW[5]   = (mi.1.@token_auto@/@token_occ@) * (mi.6.@token_pvcost@ + (mi.6.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
       
-     ; Trips AM * Skims AM  
-      MW[4]   = mi.2.@token_auto@ * mi.7.@token_time@ 
-      MW[5]   = mi.2.@token_auto@ * mi.7.@token_dist@
-      MW[6]   = mi.2.@token_auto@ * (mi.7.@token_pvcost@ + (mi.7.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
+     ; Trips AM * Skims AM
+      MW[6]   =  mi.2.@token_auto@ * mi.7.@token_time@               ; Person minutes
+      MW[7]   = (mi.2.@token_auto@ * mi.7.@token_time@)/@token_occ@  ; Vehicle minutes
+      MW[8]   =  mi.2.@token_auto@ * mi.7.@token_dist@               ; Person miles
+      MW[9]   = (mi.2.@token_auto@ * mi.7.@token_dist@)/@token_occ@  ; Vehilce miles
+      MW[10]  = (mi.2.@token_auto@/@token_occ@) * (mi.7.@token_pvcost@ + (mi.7.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
  
-      ; Trips MD * Skims MD  
-       MW[7]   = mi.3.@token_auto@ * mi.8.@token_time@ 
-       MW[8]   = mi.3.@token_auto@ * mi.8.@token_dist@
-       MW[9]   = mi.3.@token_auto@ * (mi.8.@token_pvcost@ + (mi.8.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
+      ; Trips MD * Skims MD
+      MW[11]  =  mi.3.@token_auto@ * mi.8.@token_time@               ; Person minutes
+      MW[12]  = (mi.3.@token_auto@ * mi.8.@token_time@)/@token_occ@  ; Vehicle minutes
+      MW[13]  =  mi.3.@token_auto@ * mi.8.@token_dist@               ; Person miles
+      MW[14]  = (mi.3.@token_auto@ * mi.8.@token_dist@)/@token_occ@  ; Vehicle miles
+      MW[15]  = (mi.3.@token_auto@/@token_occ@) * (mi.8.@token_pvcost@ + (mi.8.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
 
-     ; Trips PM * Skims PM  
-      MW[10]   = mi.4.@token_auto@ * mi.9.@token_time@ 
-      MW[11]   = mi.4.@token_auto@ * mi.9.@token_dist@
-      MW[12]   = mi.4.@token_auto@ * (mi.9.@token_pvcost@ + (mi.9.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
+      ; Trips PM * Skims PM
+      MW[16]   =  mi.4.@token_auto@ * mi.9.@token_time@                ; Person minutes
+      MW[17]   = (mi.4.@token_auto@ * mi.9.@token_time@)/@token_occ@   ; Vehicle minutes
+      MW[18]   =  mi.4.@token_auto@ * mi.9.@token_dist@                ; Person miles
+      MW[19]   = (mi.4.@token_auto@ * mi.9.@token_dist@)/@token_occ@   ; Vehicle miles
+      MW[20]   = (mi.4.@token_auto@/@token_occ@) * (mi.9.@token_pvcost@ + (mi.9.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
 
-     ; Trips EV * Skims EV 
-      MW[13]   = mi.5.@token_auto@ * mi.10.@token_time@ 
-      MW[14]   = mi.5.@token_auto@ * mi.10.@token_dist@
-      MW[15]   = mi.5.@token_auto@ * (mi.10.@token_pvcost@ + (mi.10.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
+      ; Trips EV * Skims EV
+      MW[21]   =  mi.5.@token_auto@ * mi.10.@token_time@               ; Person minutes
+      MW[22]   = (mi.5.@token_auto@ * mi.10.@token_time@)/@token_occ@  ; Vehicle minutes
+      MW[23]   =  mi.5.@token_auto@ * mi.10.@token_dist@               ; Person miles
+      MW[24]   = (mi.5.@token_auto@ * mi.10.@token_dist@)/@token_occ@  ; Vehicle miles
+      MW[25]   = (mi.5.@token_auto@/@token_occ@) * (mi.10.@token_pvcost@ + (mi.10.@token_dist@ * @AUTOOPCOST@)) ; not including tolls
         
-     ; Compute Daily Trips, TripTime, TripDist, TripCost
-     MW[16] = mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
-     MW[17] = MW[1]+MW[4]+MW[7]+MW[10]+MW[13]  ; TripTime
-     MW[18] = MW[2]+MW[5]+MW[8]+MW[11]+MW[14]  ; TripDist
-     MW[19] = MW[3]+MW[6]+MW[9]+MW[12]+MW[15]  ; TripCost
+     ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost
+     MW[26] =  mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
+     MW[27] = (mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)/@token_occ@
+     MW[28] = MW[1]+MW[6] +MW[11]+MW[16]+MW[21]   ; Person minutes
+     MW[29] = MW[2]+MW[7] +MW[12]+MW[17]+MW[22]   ; Vehicle minutes
+     MW[30] = MW[3]+MW[8] +MW[13]+MW[18]+MW[23]   ; Person miles
+     MW[31] = MW[4]+MW[9] +MW[14]+MW[19]+MW[24]   ; Vehicle miles
+     MW[32] = MW[5]+MW[10]+MW[15]+MW[20]+MW[25]   ; Trip Cost
      
      JLOOP          
-      Daily_Trips = Daily_Trips + MW[16]
-      TripTime   = TripTime + MW[17]
-      TripDist   = TripDist + MW[18]
-      TripCost   = TripCost + MW[19]
+      Person_trips  = Person_trips  + MW[26]
+      Vehicle_trips = Vehicle_trips + MW[27]
+      Person_min    = Person_min    + MW[28]
+      Vehicle_min   = Vehicle_min   + MW[29]
+      Person_miles  = Person_miles  + MW[30]
+      Vehicle_miles = Vehicle_miles + MW[31]
+      Total_cost    = Total_cost    + MW[32]
      ENDJLOOP
     
-       Trips = Daily_Trips
-       if (Trips <>0)
-        Avg_time = TripTime/Trips
-        Avg_dist = TripDist/Trips
-        Avg_Cost = TripCost/Trips
-       Endif
       Mode   = '@token_auto@'
       Income = '@token_inc@'
       
-      if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=1 LIST="Income,Mode,Daily Trips,Avg Time,Avg Dist,Avg Cost"
-      if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Income, Mode, Trips(10.2L), Avg_time(10.2L), Avg_dist(10.2L), Avg_Cost(10.2L)
+      if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=1 LIST="Income,Mode,Daily Person Trips,Daily Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost"
+      if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Income, Mode, Person_trips(10.2L), Vehicle_trips(10.2L), 
+                                                            Person_min(10.2L),   Vehicle_min(10.2L),
+                                                            Person_miles(10.2L), Vehicle_miles(10.2L),
+                                                            Total_cost(10.2L)
     ENDRUN
   endloop
   EndDistributeMultistep
@@ -313,13 +332,10 @@ RUN PGM = MATRIX
     TripDist    = TripDist    + MW[33]
     TripCost    = TripCost    + MW[34]
   ENDJLOOP
- 
-  Trips = Daily_Trips
-  if (Trips <>0)
-    Avg_time = TripTime/Trips
-    Avg_dist = TripDist/Trips
-    Avg_Cost = TripCost/Trips
-  Endif
-   
-  if(I = 1454) PRINT PRINTO=1 CSV=T LIST= "na", "truck", Trips(10.2L), Avg_time(10.2L), Avg_dist(10.2L), Avg_Cost(10.2L)
+
+  ; "Income,Mode,Daily Person Trips,Daily Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost"
+  if(I = 1454) PRINT PRINTO=1 CSV=T LIST= "na", "truck", Daily_Trips(10.2L), Daily_Trips(10.2L),
+                                                         TripTime(10.2L),   TripTime(10.2L), 
+                                                         TripDist(10.2L),   TripDist(10.2L),
+                                                         TripCost(10.2L)
 ENDRUN

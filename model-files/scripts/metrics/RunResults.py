@@ -211,7 +211,6 @@ class RunResults:
         self.auto_times = \
             pd.read_table(os.path.join(self.rundir, "auto_times.csv"),
                           sep=",", index_col=[0,1])
-        self.auto_times['Total Cost'] = self.auto_times['Daily Trips']*self.auto_times['Avg Cost']
         print self.auto_times
 
         self.autos_owned = \
@@ -294,7 +293,7 @@ class RunResults:
         daily_results[(cat1,cat2,'Wait'               )] = transit_byclass.loc[:,'Init wait hours'].sum() + \
                                                      transit_byclass.loc[:,'Xfer wait hours'].sum()
         # Out-of-Vehicle ajustment
-        auto_person_trips = auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Daily Trips'].sum()
+        auto_person_trips = auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Daily Person Trips'].sum()
         # If this is base dir, ovtt adjustment comes from project
 
         if self.is_base_dir:
@@ -334,9 +333,9 @@ class RunResults:
 
         # Parking
         cat2            = 'Auto Trips'       # These are by person; change to vehicle
-        daily_results[(cat1,cat2,'SOV'  )] = auto_byclass.loc[['da' ,'datoll' ],'Daily Trips'].sum()
-        daily_results[(cat1,cat2,'HOV2' )] = auto_byclass.loc[['sr2','sr2toll'],'Daily Trips'].sum()/2.0
-        daily_results[(cat1,cat2,'HOV3+')] = auto_byclass.loc[['sr3','sr3toll'],'Daily Trips'].sum()/3.5
+        daily_results[(cat1,cat2,'SOV'  )] = auto_byclass.loc[['da' ,'datoll' ],'Daily Vehicle Trips'].sum()
+        daily_results[(cat1,cat2,'HOV2' )] = auto_byclass.loc[['sr2','sr2toll'],'Daily Vehicle Trips'].sum()
+        daily_results[(cat1,cat2,'HOV3+')] = auto_byclass.loc[['sr3','sr3toll'],'Daily Vehicle Trips'].sum()
         total_autotrips = daily_results[(cat1,cat2,'SOV')] + daily_results[(cat1,cat2,'HOV2')] + daily_results[(cat1,cat2,'HOV3+')]
 
         cat2            = 'Parking Costs'
