@@ -17,6 +17,9 @@ If no iteration is specified, then these include:
    + It will be propagated to CTRAMP\scripts\block\hwyParam.block,
                               CTRAMP\runtime\accessibilities.properties (new!),
                               CTRAMP\runtime\mtcTourBased.properties (new!)
+   + It will be propagated to CTRAMP\model\ModeChoice.xls,  (for costPerMile)
+                              CTRAMP\model\TripModeChoice.xls,
+                              CTRAMP\model\accessibility_utility.xls
  * Truck Operating Cost
    + Specify the value in INPUT\params.properties
    + It will be propagated to CTRAMP\scripts\block\hwyParam.block
@@ -44,6 +47,10 @@ import os
 import re
 import shutil
 import sys
+
+import xlrd
+import xlwt
+import xlutils.copy
 
 def replace_in_file(filepath, regex_dict):
     """
@@ -146,6 +153,9 @@ def config_auto_opcost(replacements):
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
     replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % auto_operating_cost
 
+    # put it into the UECs
+    config_uec(auto_operating_cost)
+
     # truck!
     match           = re.search("\TruckOperatingCost[ \t]*=[ \t]*(\S*)[ \t]*", myfile_contents)
     if match == None:
@@ -183,6 +193,27 @@ def config_shadowprice(iter, replacements):
         replacements[filepath]["(\n)(#?)(UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = \
             r"\g<1>\g<3>main/ShadowPricing_5.csv"
 
+def config_uec(auto_operating_cost):
+    auto_op_cost_float = float(auto_operating_cost)
+    for bookname in ["ModeChoice.xls","TripModeChoice.xls","accessibility_utility.xls"]:
+        filepath = os.path.join("CTRAMP","model",bookname)
+        shutil.move(filepath, "%s.original" % filepath)
+
+        print "Updating %s" % filepath
+        rb = xlrd.open_workbook("%s.original" % filepath, formatting_info=True, on_demand=True)
+        wb = xlutils.copy.copy(rb)
+        for sheet_num in range(rb.nsheets):
+            rs = rb.get_sheet(sheet_num)
+            for rownum in range(rs.nrows):
+                # print rs.cell(rownum,1)
+                if rs.cell(rownum,1).value=='costPerMile':
+                    print "  Sheet '%s': replacing costPerMile '%s' -> %.2f" % \
+                        (rs.name, rs.cell(rownum,4).value, auto_op_cost_float)
+                    wb.get_sheet(sheet_num).write(rownum,4,auto_op_cost_float,
+                                                  xlwt.easyxf("align: horiz left"))
+        wb.save(filepath)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = USAGE,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -205,4 +236,5 @@ if __name__ == '__main__':
     # Go ahead and make the replacements
     for filepath,regex_dict in replacements.iteritems():
         replace_in_file(filepath, regex_dict)
+
 
