@@ -3,7 +3,7 @@ cd ..
 mkdir logs
 
 rem ############  PARAMETERS  ############
-set JAVA_PATH=C:\Program Files\Java\jdk1.7.0_67
+set JAVA_PATH=C:\Program Files\Java\jdk1.7.0_71
 set GAWK_PATH=M:\UTIL\Gawk
 
 set RUNTIME=CTRAMP/runtime
