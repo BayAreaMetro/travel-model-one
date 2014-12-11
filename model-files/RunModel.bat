@@ -19,9 +19,6 @@
 :: The location of the 64-bit java development kit
 set JAVA_PATH=C:\Program Files\Java\jdk1.7.0_51
 
-:: The location of the 32-bit java runtime environment
-set JAVA_PATH_32=C:\Program Files (x86)\Java\jre6
-
 :: The location of the GAWK binary executable files
 set GAWK_PATH=M:\UTIL\Gawk
 
