@@ -15,10 +15,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: The location of the 64-bit java development kit
-set JAVA_PATH=C:\Program Files\Java\jdk1.7.0_51
-
-:: The location of the 32-bit java runtime environment
-set JAVA_PATH_32=C:\Program Files (x86)\Java\jre6
+set JAVA_PATH=C:\Program Files\Java\jdk1.7.0_71
 
 :: The location of the GAWK binary executable files
 set GAWK_PATH=M:\UTIL\Gawk
@@ -53,7 +50,7 @@ mkdir accessibilities
 echo STARTED ACCESSIBILITY RUN  %DATE% %TIME% >> logs\logsums.rpt 
 
 :: Execute the accessibility calculations
-call java -showversion -Xms18000m -Xmx18000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -DJAVA_HOME_32="%JAVA_PATH_32%" -DJAVA_32_PORT=1181 -Djppf.config=jppf-clientDistributed.properties -Djava.library.path=%RUNTIME% com.pb.mtc.ctramp.MtcAccessibilityLogsums accessibilities
+call java -showversion -Xms18000m -Xmx18000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Djppf.config=jppf-clientDistributed.properties -Djava.library.path=%RUNTIME% com.pb.mtc.ctramp.MtcAccessibilityLogsums accessibilities
 
 :: Moved the statically-named outputs to the accessibilities folder
 copy nonMandatoryAccessibities.csv accessibilities\nonMandatoryAccessibilities.csv

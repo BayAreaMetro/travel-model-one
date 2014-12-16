@@ -1,0 +1,323 @@
+<?xml version="1.0"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<!--
+ A simple configuration file for the Log4j logging classes. Basic FILE and CONSOLE
+ Appenders are created. Also, debug logger output is sent to a separate DEBUG-FILE.
+ 
+-->
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+
+        </layout>        
+    </appender>
+
+
+
+    <appender name="FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="TRACE-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-trace.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="DEBUG-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-debug.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+
+
+    <appender name="AO-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-ao.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="CDAP-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-cdap.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="TourDCMan-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-tourDcMan.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="TourDCNonMan-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-tourDcNonMan.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="TourMCMan-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-tourMcMan.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="TourMCNonMan-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-tourMcNonMan.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="TOD-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-tod.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="TourFreq-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-TourFreq.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="StopFreq-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-StopFreq.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="StopSoa-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-StopSoa.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="StopLoc-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-StopLoc.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="ParkLoc-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-ParkLoc.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="TripDepart-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-tripDepart.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+    
+
+    <appender name="TripMC-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="./logs/event-node2-tripMc.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+<!-- utility calculation trace logger statements will be sent to TRACE-FILE -->
+    <logger name="trace" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="TRACE-FILE"/>
+    </logger>
+
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="cmDebug" additivity="false">
+        <level value="debug"/>
+        <appender-ref ref="DEBUG-FILE"/>
+    </logger>
+
+
+
+
+
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="ao" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="AO-FILE"/>
+    </logger>
+
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="cdap" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="CDAP-FILE"/>
+    </logger>
+
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="tourDcMan" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="TourDCMan-FILE"/>
+    </logger>
+
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="tourDcNonMan" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="TourDCNonMan-FILE"/>
+    </logger>
+
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="tourMcMan" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="TourMCMan-FILE"/>
+    </logger>
+
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="tourMcNonMan" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="TourMCNonMan-FILE"/>
+    </logger>
+
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="todLogger" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="TOD-FILE"/>
+    </logger>
+
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="tourFreq" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="TourFreq-FILE"/>
+    </logger>
+
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="stopFreqLog" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="StopFreq-FILE"/>
+    </logger>
+
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="stopSoa" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="StopSoa-FILE"/>
+    </logger>
+
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="slcLogger" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="StopLoc-FILE"/>
+    </logger>
+
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="parkLocLog" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="ParkLoc-FILE"/>
+    </logger>
+
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="tripDepartLog" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="TripDepart-FILE"/>
+    </logger>
+    
+
+
+<!-- choice model debug logger statements will be sent to DEBUG-FILE-2 -->
+    <logger name="tripMcLog" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="TripMC-FILE"/>
+    </logger>
+
+
+
+<!-- Suppress annoying JXL warnings -->
+    <logger name="jxl.read.biff.WorkbookParser" additivity="false">
+        <level value="error"/>
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+
+
+
+<!-- The default logger will log info level to both CONSOLE and FILE -->
+    <root>
+        <level value="info"/>
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+        
+</log4j:configuration>

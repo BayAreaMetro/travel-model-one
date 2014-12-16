@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.7.0
+Created-By: 1.5.0_16-b02 (Sun Microsystems Inc.)
+JPPF-Version: 1.8
+JPPF-Build: 0619
+JPPF-BuildDate: 19-February-2009 08:37
+
