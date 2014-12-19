@@ -12,12 +12,12 @@ set ORIGINAL_RUNDIR=1
 
 IF %USERNAME%==lzorn (
   rem I AM SPECIAL
-  set CODE_DIR=C:\Users\lzorn\Documents\Travel Model One Utilities\CoreSummaries
+  set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one\model-files\scripts\core_summaries
   set R_HOME=C:\Program Files\R\R-3.1.1
   set R_USER=%USERNAME%
   set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.1
 ) ELSE (
-  set CODE_DIR=D:\files\GitHub\Travel-Model-One-Utilities\CoreSummaries
+  set CODE_DIR=D:\files\GitHub\travel-model-one\model-files\scripts\core_summaries
   set R_HOME=C:\Program Files\R\R-3.1.1
   set R_USER=%USERNAME%
   set R_LIBS_USER=C:\Users\%USERNAME%\Documents\R\win-library\3.0
