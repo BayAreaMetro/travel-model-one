@@ -10,24 +10,26 @@
 ; next day. Next the script loops through seven vehicle classes, three personal (drive alone, shared ride 2, and shared ride 3+)
 ; and four commercial (very small trucks, small trucks, medium trucks, and large trucks). 
 ;
-; The skims are based on the shortest generalized cost path; the generalized cost calculation makees the following
+; The skims are based on the shortest generalized cost path; the generalized cost calculation makes the following
 ; assumptions:
-;	(a) the automobile operating cost is 14.2 cents ($2000) per mile, which is based on a state-wide agreed 
-;	    upon approach (use EMFAC's implied fleetwide MPG combined with an agreed upon gas price);
-;	(b) the truck operating cost is 28.4 cents ($2000) per mile, which is assumed to be two times the
-;	    passenger vehicle operating cost;
-;	(c) the assumed personal vehicle value of time is $15 per hour ($2000); a value of time is needed to 
+;	     (a) automobile and truck operating cost is a combination of fuel costs and repair and maintenance (RM) costs.
+;           Additionally, these costs are comprised of two parts: the cost from driving on perfect pavement,
+;           plus the additional costs from driving on degraded pavement (pavement costs).  Both types of costs
+;           are added to the network by "AddPavementCosts.job" and the degraded pavement adjustment is dependent
+;           on the city in which the like resides.  Freeway links are assumed to have the regional average
+;           pavement quality.
+;       (b) the assumed personal vehicle value of time is $15 per hour ($2000); a value of time is needed to 
 ;           determine if the value toll path is reasonable and one should lean towards a high value, which will 
 ;           create a pay path, thus allowing the mode choice model the opportunity to evaluate it -- Vovsha 
 ;           recommends a value of time in the $6 to $22 ($2008) per hour range, which we are in;
-;	(d) the assumed commercial vehicle value of time is $30 per hour ($2000) -- Vovsha recommends $30 per hour
+;       (c) the assumed commercial vehicle value of time is $30 per hour ($2000) -- Vovsha recommends $30 per hour
 ;           ($2008) for light trucks and $60 per hour ($2008) for heavy trucks, we are in this range and, again,
 ;           the value of time is only used to create reasonable pay paths;
-;	(e) shared ride 2 vehicles share tolls, but not evenly, as some vehicles will contain two members from the
+;       (e) shared ride 2 vehicles share tolls, but not evenly, as some vehicles will contain two members from the
 ;           same household, so the toll is divided by 1.75 rather than by 2.00;
-;	(f) shared ride 3+ vehicles share tolls, but not evenly, as some vehicles will contain two members from the
+;       (f) shared ride 3+ vehicles share tolls, but not evenly, as some vehicles will contain two members from the
 ;           same household, so the toll is divided by 2.50 rather than 3.50, which is usually the assumed occupancy
-;	    of 3+ vehicles. 
+;           of 3+ vehicles. 
 ; All of these values are coded in the "hwyParam.block" file. 
 ;
 ; Input:  (1) A highway network containing the following fields: (a) CTIM, which is the congested time in minutes;
@@ -170,9 +172,10 @@ loop period = 1, 5
       ; a string token is used for each class
       if (class = 1)
          token_class = 'DA'
-         
+         opcost      = 'AUTOOPC'
+
          ; the generalized cost expression is the prefix + token_period + suffix
-         gencost_prefix = 'lw.gencost = lw.time + (0.6 / vot) * (lw.dist * (autoOpCost + lw.add_pave_cost_da) + li.TOLL'
+         gencost_prefix = 'lw.gencost = lw.time + (0.6 / vot) * (lw.dist*li.autoopc + li.TOLL'
          gencost_suffix = '_DA)'
          
          ; drive alone excluded from HOV 2 and 3+ facilities
@@ -182,9 +185,10 @@ loop period = 1, 5
       
       elseif (class = 2)
          token_class = 'S2'
+         opcost      = 'AUTOOPC'
          
          ; the generalized cost expression is the prefix + token_period + suffix
-         gencost_prefix = 'lw.gencost = lw.time + (0.6 / vot) * (lw.dist * (autoOpCost + lw.add_pave_cost_s2) + li.TOLL'
+         gencost_prefix = 'lw.gencost = lw.time + (0.6 / vot) * (lw.dist*li.autoopc + li.TOLL'
          gencost_suffix = '_S2 / sr2costShare)'
          
          ; shared ride 2 excluded from HOV 3+ facilities
@@ -193,9 +197,10 @@ loop period = 1, 5
       
       elseif (class = 3)
          token_class = 'S3'
+         opcost      = 'AUTOOPC'
          
          ; the generalized cost expression is the prefix + token_period + suffix
-         gencost_prefix = 'lw.gencost = lw.time + (0.6 / vot) * (lw.dist * (autoOpCost + lw.add_pave_cost_s3) + li.TOLL'
+         gencost_prefix = 'lw.gencost = lw.time + (0.6 / vot) * (lw.dist*li.autoopc + li.TOLL'
          gencost_suffix = '_S3 / sr3costShare)'
          
          ; shared ride 3+ not excluded from any facilities
@@ -206,9 +211,10 @@ loop period = 1, 5
          
       elseif (class = 4)
          token_class = 'VSM'
+         opcost      = 'SMTROPC'
          
          ; the generalized cost expression is the prefix + token_period + suffix
-         gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist * (truckOpCost + lw.add_pave_cost_vsm) + li.TOLL'
+         gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist*li.smtropc + li.TOLL'
          gencost_suffix = '_VSM)'
          
          ; very small trucks excluded from HOV 2 and 3+ facilities
@@ -217,9 +223,10 @@ loop period = 1, 5
       
       elseif (class = 5)
          token_class = 'SML'
+         opcost      = 'SMTROPC'
          
          ; the generalized cost expression is the prefix + token_period + suffix
-         gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist * (truckOpCost + lw.add_pave_cost_sml) + li.TOLL'
+         gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist*li.smtropc + li.TOLL'
          gencost_suffix = '_SML)'
          
          ; small trucks excluded from HOV 2 and 3+ facilities
@@ -228,9 +235,10 @@ loop period = 1, 5
       
       elseif (class = 6)
          token_class = 'MED'
+         opcost      = 'SMTROPC'
          
          ; the generalized cost expression is the prefix + token_period + suffix
-         gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist * (truckOpCost + lw.add_pave_cost_med) + li.TOLL'
+         gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist*li.smtropc + li.TOLL'
          gencost_suffix = '_MED)'
          
          ; medium trucks excluded from HOV 2 and 3+ facilities
@@ -239,9 +247,10 @@ loop period = 1, 5
          
       elseif (class = 7)
          token_class = 'LRG'
+         opcost      = 'LRTROPC'
          
          ; the generalized cost expression is the prefix + token_period + suffix
-         gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist * (truckOpCost + lw.add_pave_cost_lrg) + li.TOLL'
+         gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist*li.lrtropc + li.TOLL'
          gencost_suffix = '_LRG)'
          
          ; large trucks excluded from HOV 2, HOV 3+, and no truck facilities
@@ -294,7 +303,7 @@ loop period = 1, 5
             lw.tollclass = li.TOLLCLASS
 
             ; calculate the pavement cost variable to skim
-            lw.pave_cost = li.distance * li.ADD_PAVE_@token_class@
+            lw.pave_cost = li.distance * li.@opcost@_PAVE
           
             ; set the generalized cost, which is the combination of three tokens
             @gencost_prefix@@token_period@@gencost_suffix@

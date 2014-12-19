@@ -1,6 +1,28 @@
 
-AUTOOPCOST    = xx.xx     ; year 2000 cents per mile - set by RuntimeConfiguration.py
-TRUCKOPCOST   = xx.xx     ; year 2000 cents per mile - set by RuntimeConfiguration.py
+; set by RuntimeConfiguration.py -- AUTO
+AUTOOPC_PER_RM = xx.xx     ; perfect pavement opcost for R&M, year 2000 cents per mile
+AUTOOPC_PER_FU = xx.xx     ; perfect pavement opcost for fuel, year 2000 cents per mile
+AUTOOPC_FWY_RM = x.xxxx    ; freeway adjustment factor for R&M
+AUTOOPC_FWY_FU = x.xxxx    ; freeway adjustment factor for fuel
+
+; set by RuntimeConfiguration.py -- SMALL TRUCK
+SMTROPC_PER_RM = xx.xx     ; perfect pavement opcost for R&M, year 2000 cents per mile
+SMTROPC_PER_FU = xx.xx     ; perfect pavement opcost for fuel, year 2000 cents per mile
+SMTROPC_FWY_RM = x.xxxx    ; freeway adjustment factor for R&M
+SMTROPC_FWY_FU = x.xxxx    ; freeway adjustment factor for fuel
+
+; set by RuntimeConfiguration.py -- LARGE TRUCK
+LRTROPC_PER_RM = xx.xx     ; perfect pavement opcost for R&M, year 2000 cents per mile
+LRTROPC_PER_FU = xx.xx     ; perfect pavement opcost for fuel, year 2000 cents per mile
+LRTROPC_FWY_RM = x.xxxx    ; freeway adjustment factor for R&M
+LRTROPC_FWY_FU = x.xxxx    ; freeway adjustment factor for fuel
+
+; set by RuntimeConfiguration.py -- BUS
+BUSOPC_PER_RM  = xx.xx     ; perfect pavement opcost for R&M, year 2000 cents per mile
+BUSOPC_PER_FU  = xx.xx     ; perfect pavement opcost for fuel, year 2000 cents per mile
+BUSOPC_FWY_RM  = x.xxxx    ; freeway adjustment factor for R&M
+BUSOPC_FWY_FU  = x.xxxx    ; freeway adjustment factor for fuel
+
 VOT           = 15.0      ; year 2000 dollars per hour
 TRUCKVOT      = 30.0      ; year 2000 dollars per hour
 SR2COSTSHARE  = 1.75      ; scales toll cost for SR2 occupancy

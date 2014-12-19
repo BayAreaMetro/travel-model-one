@@ -28,17 +28,18 @@
 ; each of these travel types. 
 ;
 ; Input:  (A) A highway network containing the following fields: (a) DISTANCE (miles); (b) FT, which is the facility type
-; 	      a code which determines the links' free-flow speed, capacity, and volume/speed relationship; (c) TOLLCLASS,
-; 	      which is a code, less than FIRSTVALUE - 1 (see hwyParam.block) indicates the link is a bridge toll 
-;	      and a value higher than FIRSTVALUE indicates the link is a value toll; (d) OT, which is the observed
-;	      travel time for links immune to congestion (generally used to represent toll booth delay and centroid
-;	      connector travel time); (e) FFS,which is the free flow speed (in miles per hour); (f) TSIN, which is a 
-;	      code, a value of one indicates the link is immune to congestion and has a fixed time coded in the OT 
-;	      field; (g) CAPCLASS, which is a speed/capacity look-up code (see the "SpeedCapacity.block" file); and
-;	      (h) TOLLXX_CC, where XX is a two-character time-period code and CC is a two or three-character vehicle
-;	      class code, and the value is the dollar value of the toll to go through the link in year 2000 dollars;
-;         (i) add_pave_XX, where XX is a two- or three-character vehicle class, is a county-specific increase 
-;         in the vehicle operating cost relative to 2010 due to pavement degradation.
+;         a code which determines the links'' free-flow speed, capacity, and volume/speed relationship; (c) TOLLCLASS,
+;         which is a code, less than FIRSTVALUE - 1 (see hwyParam.block) indicates the link is a bridge toll 
+;         and a value higher than FIRSTVALUE indicates the link is a value toll; (d) OT, which is the observed
+;         travel time for links immune to congestion (generally used to represent toll booth delay and centroid
+;         connector travel time); (e) FFS,which is the free flow speed (in miles per hour); (f) TSIN, which is a 
+;         code, a value of one indicates the link is immune to congestion and has a fixed time coded in the OT 
+;         field; (g) CAPCLASS, which is a speed/capacity look-up code (see the "SpeedCapacity.block" file); and
+;         (h) TOLLXX_CC, where XX is a two-character time-period code and CC is a two or three-character vehicle
+;         class code, and the value is the dollar value of the toll to go through the link in year 2000 dollars;
+;         (i) XXXXOPC, where XXXX is a vehicle class (one of AUTO,SMTR,LRTR), and represents a city-specific
+;         operating cost in year 2000 dollars that includes pavement-degradation increases on fuel and repair &
+;         maintenance costs.
 ;
 ; Output: (A) Five loaded highway networks, one for each time period, containing the following data for each link:
 ;              (1)  V_1 - volume, in passenger car equivalents (if assigned again, volume would be labeled V_2);
@@ -60,22 +61,22 @@
 ;              (17) VT_1 and VXT_1, where X is 1 through 10, are the b-to-a volumes
 ;                              
 ;
-; Notes:  (1) Four types of commercial vehicle demand is estimated: very small, small, medium, and large commercial
-; 	      trucks.  Two classes of commercial trucks are assigned: (1) very small, small, and medium; and, (2)
-; 	      large trucks.  The characteristics of the small trucks (value of time, toll) is used in the assignment
-;	      of the very small, small, and medium truck class. 
-;	  (2) Facility type codes are as follows: (i) freeway-to-freeway ramp; (ii) freeway; (iii) expressway; (iv)
-;	      collector; (v) freeway ramp; (vi) centroid connector/dummy link; (vii) major arterial; (viii) metered
-;	      ramp; (ix) freeways with ITS treatments and Golden Gate Bridge; (x) expressways and arterials with
-;	      ITS treatments. 
-;	  (3) Area type codes are as follows: (0) core; (i) central business district; (ii) urban business district;
-;	      (iii) urban; (iv) suburban; (v) rural. 
-;	  (4) The capacity class is computed as ten times area type plus facility type. 
-;         (5) For v 0.4, return to Frank-Wolfe and use 64 threads
+; Notes: (1) Four types of commercial vehicle demand is estimated: very small, small, medium, and large commercial
+;            trucks.  Two classes of commercial trucks are assigned: (1) very small, small, and medium; and, (2)
+;            large trucks.  The characteristics of the small trucks (value of time, toll) is used in the assignment
+;            of the very small, small, and medium truck class. 
+;        (2) Facility type codes are as follows: (i) freeway-to-freeway ramp; (ii) freeway; (iii) expressway; (iv)
+;            collector; (v) freeway ramp; (vi) centroid connector/dummy link; (vii) major arterial; (viii) metered
+;            ramp; (ix) freeways with ITS treatments and Golden Gate Bridge; (x) expressways and arterials with
+;            ITS treatments.
+;        (3) Area type codes are as follows: (0) core; (i) central business district; (ii) urban business district;
+;            (iii) urban; (iv) suburban; (v) rural.
+;        (4) The capacity class is computed as ten times area type plus facility type. 
+;        (5) For v 0.4, return to Frank-Wolfe and use 64 threads
 ;
 ; See also: (1) CreateFiveHighwayNetworks.job, which creates the time-specific networks;
-;	    (2) SetTolls.job, which sets the time- and class-specific bridge and value tools;
-;       (3) AddPavementCost.job, which sets the pavement degradation cost.
+;           (2) SetTolls.job, which sets the time- and class-specific bridge and value tools;
+;           (3) AddPavementCost.job, which sets the pavement degradation cost.
 ;
 ; version:  Travel Model One (v 0.5)
 ; authors:  dto(2014 08 XX); dto (2014 01 23); dto (2011 12 13); dto (2010 08 10); gde (2009)
@@ -138,7 +139,10 @@ loop period = 1, 5
       token_maxiters = 'parameters maxiters = 50' 
   
    endif
-   
+
+   ; LMZ TEST REMOVEME
+   token_maxiters = 'parameters maxiters = 2' 
+
    ; distribute via cluster
    DistributeMultistep processid = 'CTRAMP', processNum = @period@, commpath = 'm:\commpath'
   
@@ -220,31 +224,22 @@ loop period = 1, 5
          ; which is area type * 10 + facility type
          lw.capclass = li.CAPCLASS
          
-         ; additional vehicle operating costs associated with pavement degradation
-         lw.add_pave_DA  = li.add_pave_DA
-         lw.add_pave_S2  = li.add_pave_S2
-         lw.add_pave_S3  = li.add_pave_S3
-         lw.add_pave_SML = li.add_pave_SML
-         lw.add_pave_LRG = li.add_pave_LRG
-      	
          ; set the input time to OT for fixed time links
          if (lw.tsin = 1)
             t0 = lw.ot
          endif
-
-         ; TODO lisa will test whether or not we need these apparently (see evidence below) pointless intermediate variables
       
 	     ; the setting of critical speeds and computation of the volume/delay function parameter is in the FreeFlowSpeed.block file
 	     read file = ctramp\scripts\block\FreeFlowSpeed.block
 	 
 	     ; compute the generalized cost for passenger vehicles
-         lw.gencost_da = lw.fft + (0.6/vot) * (lw.dist * (autoopcost + lw.add_pave_da) + li.TOLL@token_period@_DA)
-         lw.gencost_s2 = lw.fft + (0.6/vot) * (lw.dist * (autoopcost + lw.add_pave_s2) + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
-         lw.gencost_s3 = lw.fft + (0.6/vot) * (lw.dist * (autoopcost + lw.add_pave_s3) + li.TOLL@token_period@_S3 / sr3costshare)  + @token_hov_xfer_pen@
+         lw.gencost_da = lw.fft + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_DA)
+         lw.gencost_s2 = lw.fft + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
+         lw.gencost_s3 = lw.fft + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_S3 / sr3costshare)  + @token_hov_xfer_pen@
          
          ; compute the generalized cost for very small, small, and medium trucks (use small truck costs) and large trucks
-         lw.gencost_sml = lw.fft + (0.6/truckvot) * (lw.dist * (truckopcost + lw.add_pave_sml) + li.TOLL@token_period@_SML)
-         lw.gencost_lrg = lw.fft + (0.6/truckvot) * (lw.dist * (truckopcost + lw.add_pave_lrg) + li.TOLL@token_period@_LRG)
+         lw.gencost_sml = lw.fft + (0.6/truckvot) * (lw.dist*li.smtropc + li.TOLL@token_period@_SML)
+         lw.gencost_lrg = lw.fft + (0.6/truckvot) * (lw.dist*li.lrtropc + li.TOLL@token_period@_LRG)
          
          ; create the link exclusion classes -- HOV only (23), HOV 3+ only (3), no large trucks (4)                
          if (li.USE = 2,3)   addtogroup = 23 
@@ -311,12 +306,12 @@ loop period = 1, 5
          read file = ctramp\scripts\block\SpeedFlowCurve.block 
       
          ; set the generalized cost functions (same as before, only now we start with "time")
-         lw.gencost_da = time + (0.6/vot) * (lw.dist * (autoopcost + lw.add_pave_da) + li.TOLL@token_period@_DA)
-         lw.gencost_s2 = time + (0.6/vot) * (lw.dist * (autoopcost + lw.add_pave_s2) + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
-         lw.gencost_s3 = time + (0.6/vot) * (lw.dist * (autoopcost + lw.add_pave_s3) + li.TOLL@token_period@_S3 / sr3costshare) + @token_hov_xfer_pen@
+         lw.gencost_da = time + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_DA)
+         lw.gencost_s2 = time + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
+         lw.gencost_s3 = time + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_S3 / sr3costshare) + @token_hov_xfer_pen@
          
-         lw.gencost_sml = time + (0.6/truckvot) * (lw.dist * (truckopcost + lw.add_pave_sml) + li.TOLL@token_period@_SML)
-         lw.gencost_lrg = time + (0.6/truckvot) * (lw.dist * (truckopcost + lw.add_pave_lrg) + li.TOLL@token_period@_LRG)
+         lw.gencost_sml = time + (0.6/truckvot) * (lw.dist*li.smtropc + li.TOLL@token_period@_SML)
+         lw.gencost_lrg = time + (0.6/truckvot) * (lw.dist*li.smtropc + li.TOLL@token_period@_LRG)
          
       endphase
       

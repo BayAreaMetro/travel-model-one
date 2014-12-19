@@ -1,45 +1,63 @@
-; TODO: would the implementation be cleaner with a lookup?
 ; ----------------------------------------------------------------------------------------------------------------
 ;
 ; AddPavementCost.job
 ;
-; TP+ script to add a pavement cost variable to the network.  Costs are expressed as a percent increase or
-; decrease relative to year 2010 conditions and are segmented by county, facility type, and vehicle class.  
-; This price informs the route choice decisions embedded in the highway assignment routine, and this price is 
-; included in the cost skims. 
+; TP+ script to add pavement-cost adjustment variables to the network.  Costs are expressed as an adjustment
+; factor to either the R&M (Repair and Maintenance) cost per mile or the Fuel cost per mile relative to
+; a perfect-pavement cost per mile.  Cost adjustments are segmented by city, facility type, and vehicle class.  
+; This cost adjustment informs the route choice decisions embedded in the highway assignment routine, and 
+; this price is included in the cost skims. 
 ;
-; A factor labeled XX_YY_ZZZZ_PAVEMENT is multiplied by the AUTOOPCOST and the TRUCKOPCOST and stored for each
-; roadway link.  XX is a two letter county code; YY is a two digit facility type code (note that factors for 
-; freeway conditions are not included -- just local streets, using the programming sense of the work); and, 
-; ZZZZ is either AUTO, SMTR, or LRTR, depending on the vehicle class (VSM, SML, and MED trucks or SMTR).  The 
-; OPCOST parameters are stored in the hwyParam.block file and are expressed in units of year 2000 cents per mile.  
-; The resulting network variable, ADD_PAVE_AAA, where AAA is a two- or three-letter vehicle class code (see 
-; table below), is expressed in year 2000 cents per mile.  The vehicle classes are as follows:
-;      (1) drive alone, DA
-;      (2) shared ride 2, S2
-;      (3) shared ride 3+, S3
-;      (4) very small trucks, VSM
-;      (5) small trucks, SML
-;      (6) medium trucks, MED 
-;      (7) large (combination) trucks, LRG 
+; Cost adjustments are looked up in INPUT\sgr\city_opcost_adjustment.csv and are meant to represent pavement
+; quality.  For format of that file is: Cityid,    (corresponds to cityid in the network)
+;                                       Cityname,  (for debugging)
+;                                       Year,      (for debugging)
+;                                       Auto Repair & Maintenance Adjustment Factor,
+;                                       Auto Fuel Adjustment Factor,
+;                                       Small/Light Truck R&M Adjustment Factor,
+;                                       Small/Light Truck Fuel Adjustment Factor,
+;                                       Large Truck R&M Adjustment Factor,
+;                                       Large Truck Fuel Adjustment Factor,
+;                                       Bus R&M Adjustment Factor,
+;                                       Bus Fuel Adjustment Factor
+; 
 ;
-; Input:  (A) Five highway networks, one for each time period, containing the following fields: (a) GL (integer), 
-;             which is a county code, where 1 is San Francisco, 2 is San Mateo, 3 is Santa Clara, 4 is Alameda, 
-;             5 is Contra Costa, 6 is Solano, 7 is Napa, 8 is Sonoma, and 9 is Marin; (b) FT (integer), which 
-;             is the facility type, where 1 is freeway-to-freeway ramp, 2 is freeway, 3 is expressway, 4 is 
-;             collector, 5 is freeway ramp, 6 is centroid connector/dummy link, 7 is major arterial, 8 is 
-;             metered ramp, 9 is freeways with ITS treatments and Golden Gate Bridge, 9 expressways and 
-;             arterials with ITS treatments. 
+; A factor called XXX_rm_adjust and XXX_fu_adjust is looked up and stored for each roadway link.
+; XXX is one of auto, smtr(small truck), lrtr(large truck), and bus.  The lookup is based on the city and
+; stored for streets that are not freeways - so it is stored for facility types 3, 4, 6 and 7.
+; The adjustments are mulipliers for the perfect-road opcost, and so they are greater than or equal to 1.0.
+; Freeway links have adjustment factors set to 0.  Links with cities that are not in the lookups have
+; their adjustment factors set to -1 and cities without data have their adjustment factors set to -1.
+;  Both these special values will be handled in the skimming/assignment.
 ;
-; Output: (A) Five highway networks, one for each time period, containing the ADD_PAVE_AAAA variable.
+; Input:  (A) Five highway networks, one for each time period, containing the following fields:
+;             (a) GL (integer), which is a county code, where 1 is San Francisco, 2 is San Mateo, 3 is Santa Clara,
+;                 4 is Alameda, 5 is Contra Costa, 6 is Solano, 7 is Napa, 8 is Sonoma, and 9 is Marin; 
+;             (b) cityid (integer), which is a city code, where 1 is Alameda, 2 is Alamo, 3 is Albany, etc.;
+;             (c) FT (integer), which is the facility type, where 1 is freeway-to-freeway ramp, 2 is freeway,
+;                 3 is expressway, 4 is collector, 5 is freeway ramp, 6 is centroid connector/dummy link,
+;                 7 is major arterial, 8 is metered ramp, 9 is freeways with ITS treatments and Golden Gate Bridge,
+;                 9 expressways and arterials with ITS treatments. 
+;
+; Output: (A) Five highway networks, one for each time period, containing the following additional fields:
+;             (a) XXX_YY_PERFECT, where XXX is one of AUTO, SMTR (Small truck), LRTR (large truck), and BUS;
+;                 YY is one of RM (for Repair and Maintenance) and FU (for Fuel).  This is the opcost from
+;                 R&M or Fuel from a roadway in perfect condition, in 2000 cents per mile.
+;             (b) XXX_YY_ADJUST, which is the adjustment factor to the perfect opcost described in (a).
+;                 This value is 1.0 or greater and it is based on the city in which the link resides.
+;                 For freeway links, the value is zero.
+;             (c) XXXOPC, which is the total opcost.  This is the perfect condition opcost times the
+;                 adjustment factor, summed for both R&M and Fuel.  Units are 2000 cents per mile.
+;             (d) XXXOPC_PAVE, which is the total opcost just from the pavement not being perfect.
+;                 Units are 2000 cents per mile.
 ;
 ; Notes:  (1) 
 ;
 ; See also: (1) HwyAssign.job, which performs the highway assignment;
-;	    (2) HwySkims.job, which performs the highway skimming. 
+;           (2) HwySkims.job, which performs the highway skimming. 
 ;
 ; version:  Travel Model One (v 0.5)
-; authors:  dto (2014 08 12)
+; authors:  lmz (2014 12 17)
 ;
 ;
 ; ----------------------------------------------------------------------------------------------------------------
@@ -73,526 +91,116 @@ loop period = 1, 5
       neti = hwy\avgload@token_period@.net
       
       ; output a time-period-specific transit background network
-      neto = hwy\avgload@token_period@_temp_pavement.net
-      
-      read file = ctramp\scripts\block\hwyParam.block
-      
+      neto = hwy\avgload@token_period@_temp_pavement.net, exclude=AUTOOPC_PER_RM, AUTOOPC_PER_FU, AUTOOPC_FWY_RM, AUTOOPC_FWY_FU,
+                                                                  SMTROPC_PER_RM, SMTROPC_PER_FU, SMTROPC_FWY_RM, SMTROPC_FWY_FU,
+                                                                  LRTROPC_PER_RM, LRTROPC_PER_FU, LRTROPC_FWY_RM, LRTROPC_FWY_FU,                                                                  
+                                                                   BUSOPC_PER_RM,  BUSOPC_PER_FU,  BUSOPC_FWY_RM,  BUSOPC_FWY_FU,                                                                  
+                                                                  VOT, TRUCKVOT, SR2COSTSHARE, SR3COSTSHARE, TRKPCE, FIRSTVALUE
+
+      read file = ctramp\scripts\block\hwyparam.block
+            
       ; pavement cost adjustment parameters
-      read file = input\sgr\PavementCosts.block
+      lookup name=pave,
+        lookup[1] = 1, result = 4,  ; auto repair & maintenance adjustment
+        lookup[2] = 1, result = 5,  ; auto fuel adjustment
+        lookup[3] = 1, result = 6,  ; small truck repair & maintenance adjustment
+        lookup[4] = 1, result = 7,  ; small truck fuel adjustment
+        lookup[5] = 1, result = 8,  ; large truck repair & maintenance adjustment
+        lookup[6] = 1, result = 9,  ; large truck fuel adjustment
+        lookup[7] = 1, result = 10, ; bus repair & maintenance adjustment
+        lookup[8] = 1, result = 11, ; bus fuel adjustment
+        fail = -1,-1,-1,
+        interpolate = N,
+        file = INPUT\sgr\city_opcost_adjustment.csv
 
-      ADD_PAVE_DA  = 0
-      ADD_PAVE_S2  = 0
-      ADD_PAVE_S3  = 0
-      ADD_PAVE_VSM = 0
-      ADD_PAVE_SML = 0
-      ADD_PAVE_MED = 0
-      ADD_PAVE_LRG = 0
-      
-      ; San Francisco
-      if (GL = 1)
-      
-         if (FT = 3) 
-	 ; Expressway
-         
-            ADD_PAVE_DA   = AUTOOPCOST  * SF_03_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SF_03_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SF_03_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SF_03_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SF_03_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SF_03_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SF_03_LRTR_PAVE
-	    
-	   endif
+      ; perfect opcost is R&M opcost + Fuel opcost
+      autoopc_perfect = AUTOOPC_PER_RM + AUTOOPC_PER_FU
+      smtropc_perfect = SMTROPC_PER_RM + SMTROPC_PER_FU
+      lrtropc_perfect = LRTROPC_PER_RM + LRTROPC_PER_FU
+      busopc_perfect  =  BUSOPC_PER_RM +  BUSOPC_PER_FU
+      if ((FT == 3) || (FT == 4) || (FT == 6) || (FT == 7))
+        auto_rm_adjust = pave(1, cityid)
+        auto_fu_adjust = pave(2, cityid)
+        smtr_rm_adjust = pave(3, cityid)
+        smtr_fu_adjust = pave(4, cityid)
+        lrtr_rm_adjust = pave(5, cityid)
+        lrtr_fu_adjust = pave(6, cityid)
+        bus_rm_adjust  = pave(7, cityid)
+        bus_fu_adjust  = pave(8, cityid)
 
-	if (FT = 4)
-	; Collector
+        if ((auto_rm_adjust == -1) || (auto_fu_adjust == -1))
+           ; No data -- lookup county remainder
+           if     (gl==1)
+             _county_name   = 'San Francisco'
+             _county_cityid = 176
+           elseif (gl==2)
+             _county_name   = 'San Mateo'
+             _county_cityid = 177
+           elseif (gl==3)
+             _county_name   = 'Santa Clara'
+             _county_cityid = 178
+           elseif (gl==4)
+             _county_name   = 'Alameda'
+             _county_cityid = 172
+           elseif (gl==5)
+             _county_name   = 'Contra Costa'
+             _county_cityid = 173
+           elseif (gl==6)
+             _county_name   = 'Solano'
+             _county_cityid = 179
+           elseif (gl==7)
+             _county_name   = 'Napa'
+             _county_cityid = 175
+           elseif (gl==8)
+             _county_name   = 'Sonoma'
+             _county_cityid = 180
+           elseif (gl==9)
+             _county_name   = 'Marin'
+             _county_cityid = 174
+           elseif (gl==10) ; There are a few of these on the periphery.  Call them Contra Costa.
+             _county_name   = 'Periphery'
+             _county_cityid = 173
+           endif
+           print LIST="lookup failed for ",cityname," -- using lookup for ",_county_name
 
-	    ADD_PAVE_DA   = AUTOOPCOST  * SF_04_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SF_04_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SF_04_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SF_04_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SF_04_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SF_04_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SF_04_LRTR_PAVE
-
-	endif
-
-	if (FT = 6)
-	; Dummy Link
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * SF_06_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SF_06_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SF_06_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SF_06_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SF_06_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SF_06_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SF_06_LRTR_PAVE
-
-	endif
-
-	if (FT = 7)
-	; Major arterial
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * SF_07_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SF_07_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SF_07_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SF_07_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SF_07_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SF_07_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SF_07_LRTR_PAVE
-
+           auto_rm_adjust = pave(1, _county_cityid)
+           auto_fu_adjust = pave(2, _county_cityid)
+           smtr_rm_adjust = pave(3, _county_cityid)
+           smtr_fu_adjust = pave(4, _county_cityid)
+           lrtr_rm_adjust = pave(5, _county_cityid)
+           lrtr_fu_adjust = pave(6, _county_cityid)
+           bus_rm_adjust  = pave(7, _county_cityid)
+           bus_fu_adjust  = pave(8, _county_cityid)
         endif
-    endif
-     
-    ; San Mateo County
-    if (GL = 2)
+        ; opcost =  perfect condition R&M cost x non-perfect condition adjustment +
+        ;          perfect condition fuel cost x non-perfect condition ajustment
+        autoopc = (AUTOOPC_PER_RM*auto_rm_adjust) + (AUTOOPC_PER_FU*auto_fu_adjust)
+        smtropc = (SMTROPC_PER_RM*smtr_rm_adjust) + (SMTROPC_PER_FU*smtr_fu_adjust)
+        lrtropc = (LRTROPC_PER_RM*lrtr_rm_adjust) + (LRTROPC_PER_FU*lrtr_fu_adjust)
+        busopc  = ( BUSOPC_PER_RM* bus_rm_adjust) + ( BUSOPC_PER_FU* bus_fu_adjust)
+      else
+        ; Use freeway adjustment
+        ; Not setting the adjustment into the network so its obvious defaults are used
+        auto_rm_adjust = 0
+        auto_fu_adjust = 0
+        smtr_rm_adjust = 0
+        smtr_rm_adjust = 0
+        lrtr_rm_adjust = 0
+        lrtr_rm_adjust = 0
+        ; opcost =  perfect condition R&M cost x non-perfect condition adjustment +
+        ;          perfect condition fuel cost x non-perfect condition ajustment
+        autoopc = (AUTOOPC_PER_RM*AUTOOPC_FWY_RM) + (AUTOOPC_PER_FU*AUTOOPC_FWY_FU)
+        smtropc = (SMTROPC_PER_RM*SMTROPC_FWY_RM) + (SMTROPC_PER_FU*SMTROPC_FWY_FU)
+        lrtropc = (LRTROPC_PER_RM*LRTROPC_FWY_RM) + (LRTROPC_PER_FU*LRTROPC_FWY_FU)
+        busopc  = ( BUSOPC_PER_RM* BUSOPC_FWY_RM) + ( BUSOPC_PER_FU* BUSOPC_FWY_FU)
+      endif
+
+      ; the extra opcost from non-perfect pavement
+      autoopc_pave = autoopc-autoopc_perfect
+      smtropc_pave = smtropc-smtropc_perfect
+      lrtropc_pave = lrtropc-lrtropc_perfect
+      busopc_pave  =  busopc- busopc_perfect
 
-	if (FT = 3) 
-	 ; Expressway
-         
-            ADD_PAVE_DA   = AUTOOPCOST  * SM_03_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SM_03_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SM_03_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SM_03_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SM_03_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SM_03_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SM_03_LRTR_PAVE
-	    
-	endif
-
-	if (FT = 4)
-	; Collector
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * SM_04_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SM_04_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SM_04_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SM_04_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SM_04_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SM_04_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SM_04_LRTR_PAVE
-
-	endif
-
-	if (FT = 6)
-	; Dummy Link
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * SM_06_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SM_06_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SM_06_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SM_06_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SM_06_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SM_06_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SM_06_LRTR_PAVE
-
-	endif
-
-	if (FT = 7)
-	; Major arterial
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * SM_07_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SM_07_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SM_07_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SM_07_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SM_07_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SM_07_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SM_07_LRTR_PAVE
-
-        endif
-    endif
-
-    ; Santa Clara County
-    if (GL = 3)
-
-	if (FT = 3) 
-	 ; Expressway
-         
-            ADD_PAVE_DA   = AUTOOPCOST  * SC_03_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SC_03_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SC_03_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SC_03_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SC_03_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SC_03_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SC_03_LRTR_PAVE
-	    
-	  endif 
-
-	if (FT = 4)
-	; Collector
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * SC_04_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SC_04_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SC_04_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SC_04_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SC_04_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SC_04_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SC_04_LRTR_PAVE
-
-	endif
-
-	if (FT = 6)
-	; Dummy Link
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * SC_06_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SC_06_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SC_06_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SC_06_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SC_06_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SC_06_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SC_06_LRTR_PAVE
-
-	endif
-
-	if (FT = 7)
-	; Major arterial
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * SC_07_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SC_07_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SC_07_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SC_07_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SC_07_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SC_07_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SC_07_LRTR_PAVE
-
-        endif
-    endif	
-    
-    ; Alameda County	
-    if (GL = 4)
-
-	if (FT = 3) 
-	 ; Expressway
-         
-            ADD_PAVE_DA   = AUTOOPCOST  * AL_03_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * AL_03_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * AL_03_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * AL_03_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * AL_03_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * AL_03_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * AL_03_LRTR_PAVE
-	    
-	   endif
-
-	if (FT = 4)
-	; Collector
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * AL_04_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * AL_04_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * AL_04_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * AL_04_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * AL_04_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * AL_04_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * AL_04_LRTR_PAVE
-
-        endif
-
-	if (FT = 6)
-	; Dummy Link
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * AL_06_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * AL_06_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * AL_06_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * AL_06_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * AL_06_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * AL_06_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * AL_06_LRTR_PAVE
-
-	endif
-
-	if (FT = 7)
-	; Major arterial
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * AL_07_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * AL_07_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * AL_07_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * AL_07_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * AL_07_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * AL_07_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * AL_07_LRTR_PAVE
-
-        endif        
-  endif
-    
-    ; Contra Costa County	
-    if (GL = 5)
-
-	if (FT = 3) 
-	 ; Expressway
-         
-            ADD_PAVE_DA   = AUTOOPCOST  * CC_03_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * CC_03_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * CC_03_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * CC_03_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * CC_03_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * CC_03_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * CC_03_LRTR_PAVE
-	    
-	   endif
-
-	if (FT = 4)
-	; Collector
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * CC_04_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * CC_04_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * CC_04_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * CC_04_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * CC_04_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * CC_04_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * CC_04_LRTR_PAVE
-	
-	endif
-
-	if (FT = 6)
-	; Dummy Link
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * CC_06_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * CC_06_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * CC_06_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * CC_06_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * CC_06_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * CC_06_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * CC_06_LRTR_PAVE
-
-	endif
-
-	if (FT = 7)
-	; Major arterial
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * CC_07_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * CC_07_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * CC_07_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * CC_07_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * CC_07_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * CC_07_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * CC_07_LRTR_PAVE
-
-        endif  
-    endif
-      
-    ; Solano County	
-    if (GL = 6)
-
-	if (FT = 3) 
-	 ; Expressway
-         
-            ADD_PAVE_DA   = AUTOOPCOST  * SO_03_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SO_03_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SO_03_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SO_03_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SO_03_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SO_03_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SO_03_LRTR_PAVE
-	    
-	   endif
-
-	if (FT = 4)
-	; Collector
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * SO_04_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SO_04_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SO_04_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SO_04_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SO_04_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SO_04_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SO_04_LRTR_PAVE
-
-	endif
-
-	if (FT = 6)
-	; Dummy Link
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * SO_06_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SO_06_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SO_06_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SO_06_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SO_06_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SO_06_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SO_06_LRTR_PAVE
-
-	endif
-
-	if (FT = 7)
-	; Major arterial
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * SO_07_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SO_07_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SO_07_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SO_07_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SO_07_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SO_07_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SO_07_LRTR_PAVE
-
-        endif 
-    endif        
-
-    ; Napa	
-    if (GL = 7)
-
-	if (FT = 3) 
-	 ; Expressway
-         
-            ADD_PAVE_DA   = AUTOOPCOST  * NA_03_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * NA_03_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * NA_03_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * NA_03_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * NA_03_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * NA_03_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * NA_03_LRTR_PAVE
-	    
-	endif 
-
-	if (FT = 4)
-	; Collector
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * NA_04_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * NA_04_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * NA_04_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * NA_04_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * NA_04_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * NA_04_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * NA_04_LRTR_PAVE
-
-	endif
-
-	if (FT = 6)
-	; Dummy Link
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * NA_06_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * NA_06_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * NA_06_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * NA_06_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * NA_06_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * NA_06_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * NA_06_LRTR_PAVE
-
-	endif
-	
-	if (FT = 7)
-	; Major arterial
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * NA_07_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * NA_07_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * NA_07_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * NA_07_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * NA_07_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * NA_07_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * NA_07_LRTR_PAVE
-
-        endif  
-   endif
-
-    ; Sonoma	
-    if (GL = 8)
-
-	if (FT = 3) 
-	 ; Expressway
-         
-            ADD_PAVE_DA   = AUTOOPCOST  * SA_03_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SA_03_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SA_03_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SA_03_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SA_03_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SA_03_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SA_03_LRTR_PAVE
-	    
-	endif 
-
-	if (FT = 4)
-	; Collector
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * SA_04_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SA_04_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SA_04_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SA_04_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SA_04_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SA_04_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SA_04_LRTR_PAVE
-
-	endif
-
-	if (FT = 6)
-	; Dummy Link
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * SA_06_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SA_06_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SA_06_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SA_06_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SA_06_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SA_06_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SA_06_LRTR_PAVE
-
-	endif
-	
-	if (FT = 7)
-	; Major arterial
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * SA_07_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * SA_07_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * SA_07_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * SA_07_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * SA_07_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * SA_07_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * SA_07_LRTR_PAVE
-
-        endif  
-   endif
-
-
-    ; Marin
-    if (GL = 9)
-
-	if (FT = 3) 
-	 ; Expressway
-         
-            ADD_PAVE_DA   = AUTOOPCOST  * MA_03_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * MA_03_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * MA_03_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * MA_03_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * MA_03_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * MA_03_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * MA_03_LRTR_PAVE
-	    
-	endif 
-
-	if (FT = 4)
-	; Collector
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * MA_04_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * MA_04_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * MA_04_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * MA_04_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * MA_04_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * MA_04_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * MA_04_LRTR_PAVE
-
-	endif
-
-	if (FT = 6)
-	; Dummy Link
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * MA_06_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * MA_06_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * MA_06_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * MA_06_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * MA_06_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * MA_06_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * MA_06_LRTR_PAVE
-
-	endif
-	
-	if (FT = 7)
-	; Major arterial
-
-	    ADD_PAVE_DA   = AUTOOPCOST  * MA_07_AUTO_PAVE
-            ADD_PAVE_S2   = AUTOOPCOST  * MA_07_AUTO_PAVE
-            ADD_PAVE_S3   = AUTOOPCOST  * MA_07_AUTO_PAVE
-            ADD_PAVE_VSM  = TRUCKOPCOST * MA_07_SMTR_PAVE
-            ADD_PAVE_SML  = TRUCKOPCOST * MA_07_SMTR_PAVE
-            ADD_PAVE_MED  = TRUCKOPCOST * MA_07_SMTR_PAVE
-            ADD_PAVE_LRG  = TRUCKOPCOST * MA_07_LRTR_PAVE
-
-        endif  
-   endif
-	           
    endrun
    
    run pgm = network

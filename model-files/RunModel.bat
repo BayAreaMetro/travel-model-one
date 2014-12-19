@@ -67,8 +67,8 @@ copy INPUT\trn\transit_support\ trn\
 copy INPUT\landuse\             landuse\
 copy INPUT\popsyn\              popsyn\
 copy INPUT\nonres\              nonres\
-copy INPUT\warmstart\main\	main\
-copy INPUT\warmstart\nonres\	nonres\
+copy INPUT\warmstart\main\      main\
+copy INPUT\warmstart\nonres\    nonres\
 
 
 :: ------------------------------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
 if ERRORLEVEL 2 goto done
 
-:: Add additional pavement costs for state of good repair work
+:: Add pavement cost adjustment for state of good repair work
 runtpp CTRAMP\scripts\preprocess\AddPavementCost.job
 if ERRORLEVEL 2 goto done
 

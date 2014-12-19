@@ -29,7 +29,7 @@
 ;         (2)  Time-period-specific transit skimes (see TransitSkims.job) for each of access/egress combination
 ;         (3)  Non-motorized skim (see NonMotorizedSkims.job)
 ;         (4)  Zonal data file, which contains the TERMINAL variable, in minutes (highway terminal time)
-;         (5)  Highway parameters block, which contains AUTOOPCOST (automobile operating cost), SR2COSTSHARE (translates
+;         (5)  Highway parameters block, which contains SR2COSTSHARE (translates
 ;              carpool costs to individual costs), and SR3COSTSHARE. 
 ;
 ; Output: (1)  Time-period-specific time database, containing the origin-to-destination travel time for the following
@@ -221,14 +221,16 @@ loop period = 1, 5
                ; transit distance is not skimmed
                
                ; cost calculations (prices in year 2000 cents) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-               da_Cost     = mi.1.BTOLLDA                        + mi.1.DISTDA     * AUTOOPCOST
-               daToll_Cost = mi.1.TOLLBTOLLDA + mi.1.TOLLVTOLLDA + mi.1.TOLLDISTDA * AUTOOPCOST
+               ; note the BTOLL variable includes additional cost from imperfect pavement (for both Repair & Maintenance and fuel)
                
-               s2_Cost     = (mi.1.BTOLLS2                        + mi.1.DISTS2     * AUTOOPCOST)/SR2COSTSHARE
-               s2Toll_Cost = (mi.1.TOLLBTOLLS2 + mi.1.TOLLVTOLLS2 + mi.1.TOLLDISTS2 * AUTOOPCOST)/SR2COSTSHARE
+               da_Cost     = mi.1.BTOLLDA                        + mi.1.DISTDA     * (AUTOOPC_PER_RM+AUTOOPC_PER_FU)
+               daToll_Cost = mi.1.TOLLBTOLLDA + mi.1.TOLLVTOLLDA + mi.1.TOLLDISTDA * (AUTOOPC_PER_RM+AUTOOPC_PER_FU)
                
-               s3_Cost     = (mi.1.BTOLLS3                        + mi.1.DISTS3     * AUTOOPCOST)/SR3COSTSHARE
-               s3Toll_Cost = (mi.1.TOLLBTOLLS3 + mi.1.TOLLVTOLLS3 + mi.1.TOLLDISTS3 * AUTOOPCOST)/SR3COSTSHARE
+               s2_Cost     = (mi.1.BTOLLS2                        + mi.1.DISTS2     * (AUTOOPC_PER_RM+AUTOOPC_PER_FU))/SR2COSTSHARE
+               s2Toll_Cost = (mi.1.TOLLBTOLLS2 + mi.1.TOLLVTOLLS2 + mi.1.TOLLDISTS2 * (AUTOOPC_PER_RM+AUTOOPC_PER_FU))/SR2COSTSHARE
+               
+               s3_Cost     = (mi.1.BTOLLS3                        + mi.1.DISTS3     * (AUTOOPC_PER_RM+AUTOOPC_PER_FU))/SR3COSTSHARE
+               s3Toll_Cost = (mi.1.TOLLBTOLLS3 + mi.1.TOLLVTOLLS3 + mi.1.TOLLDISTS3 * (AUTOOPC_PER_RM+AUTOOPC_PER_FU))/SR3COSTSHARE
                
                ; bike is free
                ; walk is free
