@@ -137,7 +137,7 @@ def readCubeNetwork(filename):
     
     # clean up tempdir
     logger.info("Deleting %s" % tempdir)
-    shutil.rmtree(tempdir)
+    # shutil.rmtree(tempdir)
     
     return linestrings
     
@@ -244,7 +244,7 @@ def joinCubeLinksToShapes(cube_linestrings, shapefile_data):
 
 def writeCubeNetworkWithNewCols(cubenet_infilename, cube_linestrings, line_to_shapeidx, 
                                 shapefile_data, shp_fieldnames, shp_fieldtypes,
-                                cube_outfilename):
+                                cube_fieldnames, cube_outfilename):
     """
     Creates the cube network with the new columns.
     
@@ -279,8 +279,8 @@ def writeCubeNetworkWithNewCols(cubenet_infilename, cube_linestrings, line_to_sh
     script_filename = os.path.join(tempdir, CUBE_JOINCOLS_SCRIPT_NAME)
     cube_outfilename = os.path.abspath(cube_outfilename)
     varlist = ""
-    for sf_idx in range(len(shp_fieldnames)):
-        varlist = varlist + "," + shp_fieldnames[sf_idx]
+    for sf_idx in range(len(cube_fieldnames)):
+        varlist = varlist + "," + cube_fieldnames[sf_idx]
         if shp_fieldtypes[sf_idx][:3] == "str": varlist = varlist + "(C)"
         
     # write the script file
@@ -336,4 +336,4 @@ if __name__ == '__main__':
     
     writeCubeNetworkWithNewCols(CUBENET_INFILE, cube_linestrings, line_to_shapeidx, 
                                 shapefile_data, SHAPE_FIELDS, shp_fieldtypes,
-                                CUBENET_OUTFILE)
+                                CUBE_FIELDS, CUBENET_OUTFILE)
