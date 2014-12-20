@@ -109,9 +109,9 @@ if not exist metrics\transit_boards_miles.csv (
 
 if not exist metrics\bus_opcost.csv (
   rem Summarize bus operating costs from pavement
-  rem Input: trn\trnline[am|md|pm|ev|ea]_wlk_com_wlk.csv,
-  rem        INPUT\metrics\Transit Operator LSR VMT Estimates.xlsx,
-  rem        INPUT\sgr\PavementCosts.block
+  rem Input: trn\trnlink[am|md|pm|ev|ea]_wlk_com_wlk.dbf,
+  rem        hwy\avgloadAM.net,
+  rem        INPUT\params.properties,
   rem Output: metrics\bus_opcost.csv
   call python "%CODE_DIR%\bus_opcost.py"
 )
