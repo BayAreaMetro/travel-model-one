@@ -140,9 +140,6 @@ loop period = 1, 5
   
    endif
 
-   ; LMZ TEST REMOVEME
-   token_maxiters = 'parameters maxiters = 2' 
-
    ; distribute via cluster
    DistributeMultistep processid = 'CTRAMP', processNum = @period@, commpath = 'm:\commpath'
   
