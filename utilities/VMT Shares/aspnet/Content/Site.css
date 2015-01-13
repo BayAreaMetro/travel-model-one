@@ -591,6 +591,9 @@ tr.pager td {
     padding: 0 0.25em 0 0;
 }
 
+#map {
+    height: 250px;
+}
 
 /********************
 *   Mobile Styles   *

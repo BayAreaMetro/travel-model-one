@@ -14,6 +14,16 @@
         tazs_str = Request.Form["tazs"];
         // todo: check tazs_str
     }
+    else
+    {
+        // example
+        areaname = "Albany";
+        tazs_str = "1034,1035,1036,1037,1038,1039";
+    }
+}
+
+@section head {
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
 }
 
 @section featured {
@@ -22,29 +32,114 @@
         <hgroup class="title">
             <h1>@Page.Title.</h1>
         </hgroup>
-        <p>
-            Instructions!
-        </p>
     </div>
 </section>
 }
 
+<div id="map"></div>
+<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+@{ 
+    var dataFile = Server.MapPath("~/App_Data/mtc_taz_boundaries_1454_zone_system_simplify50pct.geojson");
+    string[] userData = null;
+    if (File.Exists(dataFile)) {
+        userData = File.ReadAllLines(dataFile);
+    }
+    string geojson_string = String.Join("\n", userData);
+}
+
+<script>
+    var unselected_taz_style= { "color": "#888888", "weight": 1, "opacity": 0.65 };
+    var selected_taz_style  = { "color": "#ff0000", "weight": 1, "opacity": 0.65 };
+    var tazs                = [@Html.Raw(geojson_string)];
+    var default_selected    = [@tazs_str];
+    var selected_tazs       = {};
+    for (idx in default_selected) { selected_tazs[default_selected[idx]] = 1; }
+
+    function taz_style(feature) {
+        if (selected_tazs[feature.properties.TAZ1454] == 1) { return selected_taz_style; }
+        return unselected_taz_style;
+    }
+
+    function toggle_select(taznum, layer) {
+        if (selected_tazs[taznum] == 1) {
+            // unselect it if it's selected
+            delete selected_tazs[taznum];
+            layer.setStyle(unselected_taz_style);
+        }
+        else {
+            // select it if it's unselected
+            selected_tazs[taznum] = 1;
+            layer.setStyle(selected_taz_style);
+        }
+        var tazlist_str = "";
+        for (var taz in selected_tazs) {
+            if (tazlist_str.length > 0) { tazlist_str = tazlist_str + ","; }
+            tazlist_str = tazlist_str + taz.toString();
+        }
+        document.getElementById('tazs_str').value = tazlist_str;
+    }
+
+    function taz_onEachFeature(feature, layer) {
+        // layer.bindPopup("<span>TAZ " + feature.properties.TAZ1454 +
+        //                 "<br />Selected: " + selected_tazs.has(feature.properties.TAZ1454) + "</span>");
+        layer.on('click', function (e) {
+            var layer = e.target;
+            toggle_select(feature.properties.TAZ1454, layer)
+        });
+    }
+
+    function zoomboxend(e) {
+        for (var idx = 0; idx < geo.getLayers().length; idx++) {
+            var layer = geo.getLayers()[idx];
+            if (e.boxZoomBounds.contains(layer.getBounds())) {
+                toggle_select(layer.feature.properties.TAZ1454, layer);
+            }
+        }
+    }
+
+    var map = L.map('map').setView([37.838, -122.29], 11);
+    L.tileLayer('https:////{s}.tiles.mapbox.com/v3/lmz.jni2k354/{z}/{x}/{y}.png', {
+        maxZoom: 20,
+        attribution: 'Map by <a href="http://mapbox.com">Mapbox</a>',
+        id: 'examples.map-i875mjb7'
+    }).addTo(map);
+    var geo = L.geoJson(tazs, { style: taz_style, onEachFeature: taz_onEachFeature });
+    geo.addTo(map);
+    map.on("boxzoomend", zoomboxend);
+
+</script>
+
 <form method="post">
-    <ol class="round">
-        <li class="one">
-            <label for="AreaName">Area Name:</label>
-            Example: 'Albany' <br />
-            <input type="text" name="areaname" value="@Request.Form["areaname"]" />
-        </li>
-        <li class="two">
-            <label for="AreaTAZs">TAZs of Interest:</label>
-            Example: '1034,1035,1036,1037,1038,1039' <br />
-            <input type="text" name="tazs" value="@Request.Form["tazs"]" />
-        </li>
-        <li class="three">
-            <input type="submit" value="Submit" class="submit" />
-        </li>
-    </ol>
+    <table>
+        <tr>
+            <td style="border:none">
+                <ol class="round">
+                    <li class="one">
+                        <label for="AreaName">Area Name:</label>
+                        Example: 'Albany' <br />
+                        <input type="text" name="areaname" value="@areaname" style="width: 150px" />
+                    </li>
+                </ol>
+            </td>
+            <td style="border:none">
+                <ol class="round">
+                    <li class="two">
+                        <label for="AreaTAZs">TAZs of Interest:</label>
+                        Select some on the map (click on a TAZ or shift-drag a rectangle to toggle selected status) or enter a list below.<br />
+                        Example: '1034,1035,1036,1037,1038,1039' <br />
+                        <input id="tazs_str" type="text" name="tazs" value="@tazs_str" style="width: 450px" />
+                    </li>
+                </ol>
+            </td>
+            <td style="border:none">
+                <ol class="round">
+                    <li class="three">
+                        <input type="submit" value="Submit" class="submit" />
+                    </li>
+                </ol>
+            </td>
+        </tr>
+    </table>
 </form>
 
 <table>

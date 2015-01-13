@@ -9,13 +9,14 @@
         <script src="~/Scripts/jquery-1.10.2.min.js"></script>
         <script src="~/Scripts/jquery-ui-1.10.3.js"></script>
         <script src="~/Scripts/modernizr-2.6.2.js"></script>
+        @RenderSection("head", required: false)
         <meta name="viewport" content="width=device-width" />
     </head>
     <body>
         <header>
             <div class="content-wrapper">
                 <div class="float-left">
-                    <p class="site-title"><a href="~/">your logo here</a></p>
+                    <p class="site-title"><a href="~/"><img src="~/Images/MTClogo.jpg" /></a></p>
                 </div>
                 <div class="float-right">
                     <section id="login">
