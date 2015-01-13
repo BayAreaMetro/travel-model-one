@@ -212,13 +212,13 @@ if __name__ == '__main__':
     # create a multi index for stacking
     model_df.set_index(['a','b','lanes'], inplace=True)
     # stack: so now we have a series with multiindex: a,b,lanes,varname
-    model_df = pandas.DataFrame({'volume': model_df.stack(5)})
+    model_df = pandas.DataFrame({'volume': model_df.stack()})
     # reset the index
     model_df.reset_index(inplace=True)
     # and rename it
     model_df.rename(columns={'level_3':'time_period'}, inplace=True)
     # remove extra chars: 'volAM_tot' => 'AM'
-    model_df['time_period'][model_df['time_period']!='Daily'] = model_df['time_period'].str[3:5]
+    model_df.loc[model_df['time_period']!='Daily','time_period'] = model_df['time_period'].str[3:5]
 
     if len(arg_pems_year) > 0:
         ############ read the pems data
@@ -283,25 +283,26 @@ if __name__ == '__main__':
         # stack the rest
         obs_df.set_index(['STATION','COUNTY','ROUTE','POSTMILE_INT','PM','DIR','LEG','DESCRIP'], inplace=True)
         # stack: so now we have a series with multiindex: of the above
-        obs_df = pandas.DataFrame({'volume': obs_df.stack(5)})
-        print obs_df
+        obs_df = pandas.DataFrame({'volume': obs_df.stack()})
 
         # reset the index
         obs_df.reset_index(inplace=True)
         # and rename it
         obs_df.rename(columns={'level_8':'time_period'}, inplace=True)
+
         # pull out the year as an integer
         obs_df['category'] = obs_df['time_period'].str[-2:]
-        obs_df['category'][obs_df['category'].str[0]=='0'] = '20'+ obs_df.category.map(str) + ' Observed'
-        obs_df['category'][obs_df['category'].str[0]=='9'] = '19'+ obs_df.category.map(str) + ' Observed'
-        obs_df['category'][obs_df['category']=='av'] = 'Average Observed'
+        obs_df.loc[obs_df['category'].str[0]=='0','category'] = '20'+ obs_df.category.map(str) + ' Observed'
+        obs_df.loc[obs_df['category'].str[0]=='1','category'] = '20'+ obs_df.category.map(str) + ' Observed'
+        obs_df.loc[obs_df['category'].str[0]=='9','category'] = '19'+ obs_df.category.map(str) + ' Observed'
+        obs_df.loc[obs_df['category']=='av','category'] = 'Average Observed'
 
         obs_df['time_period'] = obs_df['time_period'].str[4:-2]
         print obs_df['time_period'].value_counts()
-        obs_df['time_period'][obs_df['time_period']=='Tot24'     ] = 'Daily'
-        obs_df['time_period'][obs_df['time_period']=='Count4AMPk'] = 'AM'
-        obs_df['time_period'][obs_df['time_period']=='Count5Mid' ] = 'MD'
-        obs_df['time_period'][obs_df['time_period']=='Count4PMPk'] = 'PM'
+        obs_df.loc[obs_df['time_period']=='Tot24'     ,'time_period'] = 'Daily'
+        obs_df.loc[obs_df['time_period']=='Count4AMPk','time_period'] = 'AM'
+        obs_df.loc[obs_df['time_period']=='Count5Mid' ,'time_period'] = 'MD'
+        obs_df.loc[obs_df['time_period']=='Count4PMPk','time_period'] = 'PM'
         obs_df['lanes'] = None
 
         # model needs DESCRIP, STATION
@@ -332,7 +333,7 @@ if __name__ == '__main__':
     # create the joined version -- make the categories into columns
     obs_wide = obs_df[['STATION','COUNTY','ROUTE','POSTMILE_INT','PM','DIR','LEG','DESCRIP','time_period','category','volume']]
     # can't have NaNs in the index -- unstack() will error with a bogus thing about duplicate index values
-    obs_wide['STATION'].fillna(0, inplace=True)
+    obs_wide.loc[:,'STATION'].fillna(0, inplace=True)
     # this is the index
     obs_wide.set_index(['STATION','COUNTY','ROUTE','POSTMILE_INT','PM','DIR','LEG','DESCRIP','time_period','category'], inplace=True)
 
