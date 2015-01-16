@@ -1,7 +1,7 @@
 ::
 ::  Parameters (environment variables):
 ::    CODE_DIR    : Location of CoreSummaries directory with the R and python code
-::                  (e.g. C:\Users\lzorn\Documents\Travel Model One Utilities\CoreSummaries)
+::                  (e.g. C:\Users\lzorn\Documents\travel-model-one)
 ::    R_HOME      : Location of R (e.g. C:\Program Files\R\R-3.1.1)
 ::    R_USER      : User.  (e.g same value as %USERNAME%)
 ::    R_LIBS_USER : Location of R Libs (e.g. C:\Users\%R_USER%\Documents\R\win-library\3.1)
@@ -66,7 +66,7 @@ if %ITER% EQU 0 (
 set TARGET_DIR=C:\Users\lzorn\Documents\%RUN_NAME%
 
 :: Copy the inputs from the model run directory into the TARGET_DIR
-call "%CODE_DIR%\copyCoreSummariesInputs.bat"
+call "%CODE_DIR%\utilities\CoreSummaries\copyCoreSummariesInputs.bat"
 
 :: See if we're missing any summaries
 if not exist "%TARGET_DIR%\core_summaries" ( mkdir "%TARGET_DIR%\core_summaries" )
@@ -85,8 +85,10 @@ if %NEED_SUMMARY% GTR 0 (
   if exist CoreSummaries.html ( del CoreSummaries.html )
   
   rem No .Rprofile -- we set the environment variables here.
-  echo "%R_HOME%\bin\x64\Rscript.exe"
-  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\knit_CoreSummaries.R"
+  set OLD_CODE_DIR=%CODE_DIR%
+  set CODE_DIR=%CODE_DIR%\model-files\scripts\core_summaries
+  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\model-files\scripts\core_summaries\knit_CoreSummaries.R"
+  set CODE_DIR=%OLD_CODE_DIR%
   IF %ERRORLEVEL% GTR 0 goto done
   echo %DATE% %TIME% ...Done
   
@@ -102,7 +104,7 @@ echo.
 :: convert the summaries to tde for just this dir
 for %%X in ("%TARGET_DIR%\core_summaries\*.rdata") DO (
   if not exist "%TARGET_DIR%\core_summaries\%%~nX.tde" (
-    python "%CODE_DIR%\RdataToTableauExtract.py" "%TARGET_DIR%\core_summaries" "%TARGET_DIR%\core_summaries" %%~nxX
+    python "%CODE_DIR%\model-files\scripts\core_summaries\RdataToTableauExtract.py" "%TARGET_DIR%\core_summaries" "%TARGET_DIR%\core_summaries" %%~nxX
     if %ERRORLEVEL% GTR 0 goto done
     
     echo.
@@ -111,7 +113,7 @@ for %%X in ("%TARGET_DIR%\core_summaries\*.rdata") DO (
 
 :: convert the avgload5period.csv
 if not exist "%TARGET_DIR%\core_summaries\avgload5period.tde" (
-  python "%CODE_DIR%\csvToTableauExtract.py" "%TARGET_DIR%\hwy\iter%ITER%" "%TARGET_DIR%\core_summaries" avgload5period.csv
+  python "%CODE_DIR%\model-files\scripts\core_summaries\csvToTableauExtract.py" "%TARGET_DIR%\hwy\iter%ITER%" "%TARGET_DIR%\core_summaries" avgload5period.csv
   if %ERRORLEVEL% GTR 0 goto done
   
   echo.
@@ -122,11 +124,11 @@ if not exist "%TARGET_DIR%\core_summaries\trnline.tde" (
   FOR %%H in (EA AM MD PM EV) DO (
     FOR %%J in (loc lrf exp hvy com) DO (
       rem walk -> transit -> walk
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append "%TARGET_DIR%\trn" "%TARGET_DIR%\core_summaries" trnline%%H_wlk_%%J_wlk.csv
+      python "%CODE_DIR%\model-files\scripts\core_summaries\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\model-files\scripts\core_summaries\reference-transit-modes.csv" --append "%TARGET_DIR%\trn" "%TARGET_DIR%\core_summaries" trnline%%H_wlk_%%J_wlk.csv
       rem drive -> transit -> walk
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append "%TARGET_DIR%\trn" "%TARGET_DIR%\core_summaries" trnline%%H_drv_%%J_wlk.csv      
+      python "%CODE_DIR%\model-files\scripts\core_summaries\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\model-files\scripts\core_summaries\reference-transit-modes.csv" --append "%TARGET_DIR%\trn" "%TARGET_DIR%\core_summaries" trnline%%H_drv_%%J_wlk.csv      
       rem walk -> transit -> drive
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv"  --append "%TARGET_DIR%\trn" "%TARGET_DIR%\core_summaries" trnline%%H_wlk_%%J_drv.csv
+      python "%CODE_DIR%\model-files\scripts\core_summaries\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\model-files\scripts\core_summaries\reference-transit-modes.csv"  --append "%TARGET_DIR%\trn" "%TARGET_DIR%\core_summaries" trnline%%H_wlk_%%J_drv.csv
     )
   )
 )
