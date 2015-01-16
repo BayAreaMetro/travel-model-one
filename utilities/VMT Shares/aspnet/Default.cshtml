@@ -3,15 +3,17 @@
     Page.Title = "VMT 1 2 3";
 
     var db = Database.Open("VMTShares");  // references Web.config connectionString
-    var vmtQueryString = "EXEC [lzorn].[vmtshares] @tazlist=@0"; // call my stored procedure
+    var vmtQueryString = "EXEC [lzorn].[vmtshares] @tazlist=@0, @modelrun=@1"; // call my stored procedure
     var areaname = "";
     var tazs_str = "";
-    var year = 2010;
-    var runid = "2010_03_YYY";
+    var runid = "";
+    var year = "";
     if (IsPost)
     {
         areaname = Request.Form["areaname"];
         tazs_str = Request.Form["tazs"];
+        runid = Request.Form["runid"];
+        year = runid.Substring(0, 4);
         // todo: check tazs_str
     }
     else
@@ -19,6 +21,8 @@
         // example
         areaname = "Albany";
         tazs_str = "1034,1035,1036,1037,1038,1039";
+        runid = "2010_03_YYY";
+        year = runid.Substring(0, 4);
     }
 }
 
@@ -115,6 +119,12 @@
             <td style="border:none">
                 <ol class="round">
                     <li class="one">
+                        <label for="Year">Model Year:</label>
+                        <select name="runid">
+                            <option value="2005_03_YYY" @if (runid=="2005_03_YYY") { <text> selected</text> }>2005</option>
+                            <option value="2010_03_YYY" @if (runid=="2010_03_YYY") { <text> selected</text> }>2010</option>
+                        </select>
+                        <br /><br />
                         <label for="AreaName">Area Name:</label>
                         Example: 'Albany' <br />
                         <input type="text" name="areaname" value="@areaname" style="width: 150px" />
@@ -142,6 +152,12 @@
     </table>
 </form>
 
+@if (tazs_str.Length > 0)
+    {
+    <h1>@areaname</h1>
+    <h2>(Simulation Year @year; Simulation ID: @runid)</h2>
+}
+
 <table>
     <thead>
         <tr>
@@ -159,12 +175,11 @@
     </thead>
     @if (tazs_str.Length > 0)
     {
-        <h1>@areaname</h1>
-        <h2>(Simulation Year @year; Simulation ID: @runid)</h2>
+        try { 
         System.Globalization.NumberFormatInfo nfi = new System.Globalization.CultureInfo("en-US", false).NumberFormat;
         nfi.NumberDecimalDigits = 0;
 
-        foreach (var row in db.Query(vmtQueryString, tazs_str))
+        foreach (var row in db.Query(vmtQueryString, tazs_str, runid))
         {
             var pct_within = row.vmt_within / row.vmt_total;
             var pct_partial = row.vmt_partial / row.vmt_total;
@@ -193,6 +208,15 @@
                 <td class="number">@row.vmt_total.ToString("N", nfi)</td>
                 <td class="number">@pct_total.ToString("P1", System.Globalization.CultureInfo.InvariantCulture)</td>
             </tr>
+        } // end for each
+        }
+        catch (System.Data.SqlClient.SqlException ex)
+        {
+            <tr><td colspan="11" style="color:red">@ex.Message</td></tr>
+        }
+        catch (Exception ex)
+        {
+            <tr><td colspan="11">@ex.ToString()</td></tr>
         }
     }
 </table>
