@@ -32,6 +32,7 @@ The output of `AutoTripsVMT_perOrigDestHomeWork.csv` will be imported into this 
 ## Importing Data
 
 After creating the data files by running the *core_summaries* scripts, do the following to import to the SQL Server.
+
 1. Run "SQL Server Import and Export Wizard (64-bit)" (standalone program)
 2. Choose Source: Flat File Source
 3. Select csv, no mods to columns but delete unneeded columns
