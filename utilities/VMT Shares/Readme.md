@@ -1,7 +1,7 @@
 VMT Shares
 ==========
 
-The [core summaries][https://github.com/MetropolitanTransportationCommission/travel-model-one/tree/master/model-files/scripts/core_summaries] scripts now output some files relavant for VMT share analysis.
+The [core summaries](https://github.com/MetropolitanTransportationCommission/travel-model-one/tree/master/model-files/scripts/core_summaries) scripts now output some files relavant for VMT share analysis.
 
 The *aspnet* subdirectory contains an ASP.NET prototype for summarizing that data for arbitrary TAZ sets.  This analysis requires two different tables in a SQL Server database per model run.  In the following, `YYYY_MV_MVV` is the model run name.
 
