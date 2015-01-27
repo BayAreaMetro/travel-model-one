@@ -18,6 +18,10 @@ set ITER=0
 
 :: look these up?
 echo RUN_NAME=%RUN_NAME%
+if "%RUN_NAME%" == "2000_03_YYY" (
+  set ITER=3
+  set RUN_DIR=B:\Projects\2000_03_YYY.archived
+)
 if "%RUN_NAME%" == "2005_03_YYY" (
   set ITER=3
   set RUN_DIR=B:\Projects\2005_03_YYY.archived
@@ -33,9 +37,13 @@ if "%RUN_NAME%" == "2010_04_ZZZ" (
 )
 
 if "%RUN_NAME%" == "2020_03_116" (
-  :: use for testing -- short files
-  set ITER=1
+  set ITER=3
   set RUN_DIR=B:\Projects\2020_03_116.archived
+)
+
+if "%RUN_NAME%" == "2030_03_116" (
+  set ITER=3
+  set RUN_DIR=B:\Projects\2030_03_116.archived
 )
 
 if "%RUN_NAME%" == "2040_03_116" (
@@ -119,6 +127,7 @@ if not exist "%TARGET_DIR%\core_summaries\avgload5period.tde" (
   echo.
 )
 
+:trnline
 :: convert the transit files
 if not exist "%TARGET_DIR%\core_summaries\trnline.tde" (
   FOR %%H in (EA AM MD PM EV) DO (
