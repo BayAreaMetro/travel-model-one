@@ -87,6 +87,9 @@ if not exist "%COMBINED_DIR%\trnline.tde" (
   )
 )
 
+:: This takes way too long so skip it by default
+goto done
+
 if not exist "%COMBINED_DIR%\trnlink.tde" (
   FOR %%H in (EA AM MD PM EV) DO (
     FOR %%J in (loc lrf exp hvy com) DO (
@@ -102,6 +105,7 @@ if not exist "%COMBINED_DIR%\trnlink.tde" (
     )
   )
 )
+
 :done
 
 set PATH=%OLD_PATH%
