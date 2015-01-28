@@ -121,8 +121,11 @@
                     <li class="one">
                         <label for="Year">Model Year:</label>
                         <select name="runid">
-                            <option value="2005_03_YYY" @if (runid=="2005_03_YYY") { <text> selected</text> }>2005</option>
-                            <option value="2010_03_YYY" @if (runid=="2010_03_YYY") { <text> selected</text> }>2010</option>
+                            <option value="2005_03_YYY" @if (runid == "2005_03_YYY") { <text> selected</text> }>2005</option>
+                            <option value="2010_03_YYY" @if (runid == "2010_03_YYY") { <text> selected</text> }>2010</option>
+                            <option value="2020_03_116" @if (runid == "2020_03_116") { <text> selected</text> }>2020</option>
+                            <option value="2030_03_116" @if (runid == "2030_03_116") { <text> selected</text> }>2030</option>
+                            <option value="2040_03_116" @if (runid == "2040_03_116") { <text> selected</text> }>2040</option>
                         </select>
                         <br /><br />
                         <label for="AreaName">Area Name:</label>
