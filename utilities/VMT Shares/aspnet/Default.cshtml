@@ -195,6 +195,11 @@
         command.Parameters["@MODELRUN"].Value = runid;
         command.CommandTimeout = 0;
         var row = command.ExecuteReader();
+        var total_persons = 0;
+        var total_vmt_total = 0.0;
+        var total_vmt_within = 0.0;
+        var total_vmt_partial = 0.0;
+        var total_vmt_outside = 0.0;
         if (row.HasRows) {
             while (row.Read()) {
                 // return = live_in_area, work_in_area, persons, vmt_total, vmt_within, vmt_partial, vmt_outside
@@ -226,7 +231,24 @@
                 <td class="number">@row.GetDouble(3).ToString("N", nfi)</td>
                 <td class="number">@pct_total.ToString("P1", System.Globalization.CultureInfo.InvariantCulture)</td>
                 </tr>
+                total_persons += row.GetInt32(2);
+                total_vmt_total += row.GetDouble(3);
+                total_vmt_within += row.GetDouble(4);
+                total_vmt_partial += row.GetDouble(5);
+                total_vmt_outside += row.GetDouble(6);  
             } // end for each
+            <tr>
+            <td colspan="2">Total</td>
+            <td class="number">@total_persons.ToString("N",nfi)</td>
+            <td class="number">@total_vmt_within.ToString("N", nfi)</td>
+            <td></td>
+            <td class="number">@total_vmt_partial.ToString("N", nfi)</td>
+            <td></td>
+            <td class="number">@total_vmt_outside.ToString("N", nfi)</td>
+            <td></td>
+            <td class="number">@total_vmt_total.ToString("N", nfi)</td>
+            <td></td>
+            </tr>
         } else {
             <tr><td colspan="11" style="color:red">No rows returned</td></tr>
         }
