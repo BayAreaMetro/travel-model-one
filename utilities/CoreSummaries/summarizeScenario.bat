@@ -20,44 +20,53 @@ set ITER=0
 echo RUN_NAME=%RUN_NAME%
 if "%RUN_NAME%" == "2000_03_YYY" (
   set ITER=3
+  set SAMPLESHARE=1.0
   set RUN_DIR=B:\Projects\2000_03_YYY.archived
 )
 if "%RUN_NAME%" == "2005_03_YYY" (
   set ITER=3
+  set SAMPLESHARE=1.0
   set RUN_DIR=B:\Projects\2005_03_YYY.archived
 )
 
 if "%RUN_NAME%" == "2010_03_YYY" (
   set ITER=3
+  set SAMPLESHARE=1.0
   set RUN_DIR=B:\Projects\2010_03_YYY.archived
 )
 if "%RUN_NAME%" == "2010_04_ZZZ" (
   set ITER=3
+  set SAMPLESHARE=1.0
   set RUN_DIR=B:\Projects\%RUN_NAME%.archived
 )
 
 if "%RUN_NAME%" == "2020_03_116" (
   set ITER=3
+  set SAMPLESHARE=0.5
   set RUN_DIR=B:\Projects\2020_03_116.archived
 )
 
 if "%RUN_NAME%" == "2030_03_116" (
   set ITER=3
+  set SAMPLESHARE=0.5
   set RUN_DIR=B:\Projects\2030_03_116.archived
 )
 
 if "%RUN_NAME%" == "2040_03_116" (
   set ITER=3
+  set SAMPLESHARE=0.5
   set RUN_DIR=B:\Projects\2040_03_116.archived
 )
 
 if "%RUN_NAME%" EQU "2040_03_127" (
   set ITER=3
+  set SAMPLESHARE=0.5
   set RUN_DIR=B:\Projects\2040_03_127.archived
 )
 
 if "%RUN_NAME%" EQU "2040_03_129" (
   set ITER=3
+  set SAMPLESHARE=0.5
   set RUN_DIR=B:\Projects\2040_03_129.archived
 )
 
