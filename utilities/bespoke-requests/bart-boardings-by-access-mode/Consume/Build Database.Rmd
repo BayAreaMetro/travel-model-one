@@ -16,15 +16,6 @@ This script consumes Cube Voyager TRNBUILD link assignments and extracts BART bo
 #### Outputs
 1.  A CSV database of BART boardings by BART station, travel model scenario,  
 
-#### TODO
-1.  Add all data
-2.  Build tableau
-3.  QA/QC -- does it match the other sums?
-4.  Put Lisa's spur work in this directory
-
-#### ISSUES
-1. 
-
 ## Procedure
 
 #### Overhead
