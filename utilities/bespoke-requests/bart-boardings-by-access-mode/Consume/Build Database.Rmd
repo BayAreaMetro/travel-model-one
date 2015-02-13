@@ -1,0 +1,130 @@
+---
+title: "Build Database"
+author: "David Ory"
+output: 
+  html_document:
+    theme: cosmo
+    toc: yes
+---
+
+
+## Administration
+
+#### Purpose
+This script consumes Cube Voyager TRNBUILD link assignments and extracts BART boardings by BART station and access mode (walk or drive).  These are summaries from MTC's Travel Model One. 
+
+#### Outputs
+1.  A CSV database of BART boardings by BART station, travel model scenario,  
+
+#### TODO
+1.  Add all data
+2.  Build tableau
+3.  QA/QC -- does it match the other sums?
+4.  Put Lisa's spur work in this directory
+
+#### ISSUES
+1. 
+
+## Procedure
+
+#### Overhead
+```{r overhead, results = 'hide'}
+library(knitr)
+library(foreign)
+suppressMessages(library(dplyr))
+```
+
+```{r config, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
+
+#### Remote I/O locations
+```{r remote-io}
+D_INPUT  = "M:/Application/Model One/Value Parking Pricing Pilot/Scenarios/"
+D_OUTPUT = "M:/Application/Model One/Value Parking Pricing Pilot/Across Scenarios/"
+F_OUTPUT = paste(D_OUTPUT, "bart_boardings_by_access_mode.csv", sep = "") 
+
+F_SCENARIO_NAMES = "M:/Application/Model One/Value Parking Pricing Pilot/Scenarios/ScenarioKey.csv" 
+
+SCENARIO_ID_LIST = c("2015_04_138", "2015_04_139", "2015_04_140", "2015_04_141", "2015_04_142")
+PATH_DBF_LIST    = c("wlk_hvy_wlk.dbf", "drv_hvy_wlk.dbf", "wlk_hvy_drv.dbf",
+                     "wlk_com_wlk.dbf", "drv_com_wlk.dbf", "wlk_com_drv.dbf")
+TIME_PERIOD_LIST = c("EA", "AM", "MD", "PM", "EV")
+
+# BART station nodes file
+F_BART_STATION_NODES = "bart-station-nodes.csv"
+
+```
+
+#### Function to extract needed data as DBFs are read into memory
+```{r filter-function}
+Filter_Data <- function(input_df){
+  
+  output_df <- input_df %>%
+    select(A, B, MODE, AB_VOL) %>%
+    filter(MODE == 3 | MODE == 4 | MODE == 5) %>%
+    filter(AB_VOL > 0)
+  
+  output_df <- left_join(output_df, bart_nodes, by = c("B"))
+  
+  output_df <- output_df %>%
+    filter(!is.na(Station))
+  
+  return(output_df)
+  
+}
+
+```
+
+#### Data read and filter
+```{r data-read-filter}
+scenario_names <- read.table(file = F_SCENARIO_NAMES, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+bart_nodes <- read.table(file = F_BART_STATION_NODES, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+
+bart_nodes <- bart_nodes %>%
+  select(Station, B = Node)
+
+for (scenario_index in 1:length(SCENARIO_ID_LIST)) {
+  for (path_index in 1:length(PATH_DBF_LIST)) {
+    for (time_index in 1:length(TIME_PERIOD_LIST)) {
+      
+      input_file_name <- paste(D_INPUT, 
+                               SCENARIO_ID_LIST[scenario_index], 
+                               "/OUTPUT/trn/trnlink",  
+                               TIME_PERIOD_LIST[time_index], 
+                               "_",
+                               PATH_DBF_LIST[path_index], sep = "")
+      
+      input <- read.dbf(file = input_file_name, as.is = TRUE)
+      
+      filtered <- Filter_Data(input)
+      
+      filtered <- filtered %>%
+        mutate(path        = substr(PATH_DBF_LIST[path_index], 1, 11)) %>%
+        mutate(time_period = TIME_PERIOD_LIST[time_index]) %>%
+        mutate(src         = SCENARIO_ID_LIST[scenario_index])
+      
+      if (scenario_index == 1 & path_index == 1 & time_index == 1) {
+        data <- filtered
+        }
+      else {
+        data <- rbind(data, filtered)
+        }
+      
+      } # time period
+    } # path
+  } # scenario
+
+```
+
+#### Join the scenario names
+```{r joins}
+data <- left_join(data, scenario_names, by = c("src"))
+```
+
+#### Write to disk
+```{r write}
+write.csv(data, file = F_OUTPUT, row.names = FALSE, quote = F)
+```
+
+
