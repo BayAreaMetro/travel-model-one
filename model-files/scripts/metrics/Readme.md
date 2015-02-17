@@ -21,6 +21,45 @@ in `INPUT\metrics`:
     the share of their VMT on local streets & roads (vs highways), as well as
     how that local VMT is distributed by county
 
+### Example `BC_config.csv`
+
+An example baseline config:
+
+> Project ID,2010_05_XXX
+> Project Name,2010 Baseline
+> County,all
+> Project Type,not applicable
+> Project Mode,road
+> Capital Costs (millions of $2013),0
+> Annual O&M Costs (millions of $2013),0
+> Farebox Recovery Ratio,0
+> Life of Project (years),1
+> Compare,not applicable
+
+An example project config:
+
+> Project ID,2010_05_155
+> Project Name,2010 Oakland SGR
+> County,Alameda
+> Project Type,Pavement
+> Project Mode,road
+> Capital Costs (millions of $2013),0
+> Annual O&M Costs (millions of $2013),0
+> Farebox Recovery Ratio,0
+> Life of Project (years),1
+> percent parking cost incurred in San Francisco,0.5
+> percent parking cost incurred in Alameda,0.5
+> percent parking cost incurred in Contra Costa,0.0
+> percent parking cost incurred in Santa Clara,0.0
+> percent parking cost incurred in San Mateo,0.0
+> percent parking cost incurred in Marin,0.0
+> percent parking cost incurred in Solano,0.0
+> percent parking cost incurred in Sonoma,0.0
+> percent parking cost incurred in Napa,0.0
+> base_dir,M:\Projects\2010_05_XXX\metrics
+> Compare,scenario-baseline
+
+
 ## Output
 
 Intermediate COBRA metrics output can be found in the subdir `metrics` for the model run.
