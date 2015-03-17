@@ -155,7 +155,7 @@ for ab,row in data.iteritems():
 
 			# for this, we only care about ft=1 or ft=2 (freeway-to-freeway connectors, freeways)
 			# http://analytics.mtc.ca.gov/foswiki/Main/MasterNetworkLookupTables
-			if int( row[headers['ft']] ) <= 3:
+			if int( row[headers['ft']] ) < 3:
 				vcratio = "%.2f" % min(1.0, float(row[headers['vc'+period]]))
 				lanes   = int(row[headers['lanes']])
 				if lanes < 2: lanes = 2
