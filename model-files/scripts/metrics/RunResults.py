@@ -259,6 +259,7 @@ class RunResults:
         # we really want these by class -- ignore time periods and income levels
         vmt_byclass     = self.vmt_vht_metrics.sum(level='vehicle class') # vehicles, not people
         transit_byclass = self.transit_times_by_acc_mode_egr.sum(level='Mode')
+        transit_byaceg  = self.transit_times_by_acc_mode_egr.sum(level=['Access','Egress'])
         nonmot_byclass  = self.nonmot_times.sum(level='Mode')             # person trips
         auto_byclass    = self.auto_times.sum(level='Mode')               # person trips
 
@@ -292,15 +293,17 @@ class RunResults:
         daily_results[(cat1,cat2,'Drive Access+Egress')] = transit_byclass.loc[:,'Drive acc & egr hours'].sum()
         daily_results[(cat1,cat2,'Wait'               )] = transit_byclass.loc[:,'Init wait hours'].sum() + \
                                                      transit_byclass.loc[:,'Xfer wait hours'].sum()
-        # Out-of-Vehicle ajustment
-        auto_person_trips = auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Daily Person Trips'].sum()
+        # Out-of-Vehicle adjustment
+        auto_person_trips    = auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Daily Person Trips'].sum()
+        transit_person_trips = transit_byclass.loc[:,'Transit Trips'].sum()
         # If this is base dir, ovtt adjustment comes from project
-
         if self.is_base_dir:
             self.ovtt_adjustment = self.config.loc['ovtt_adjustment']
+
         elif self.config.loc['Project Mode'] in ['com','hvy','exp','lrf','loc']:
             self.ovtt_adjustment = transit_byclass.loc[self.config.loc['Project Mode'],'Out-of-vehicle hours'] / \
                                    transit_byclass.loc[self.config.loc['Project Mode'],'Transit Trips']
+
         elif self.config.loc['Project Mode'] == 'road':
             self.ovtt_adjustment = transit_byclass.loc[:,'Out-of-vehicle hours'].sum() / \
                                    transit_byclass.loc[:,'Transit Trips'].sum()
@@ -308,9 +311,17 @@ class RunResults:
             raise Exception("Invalid Project Mode:'%s'; Should be one of 'road','com','hvy','exp','lrf','loc'" % \
                             self.config.loc['Project Mode'])
 
-        daily_results[(cat1,cat2,'Ajustment for %s' % self.config.loc['Project Mode'])] = \
-            self.ovtt_adjustment * auto_person_trips
-                                   
+        # OVTT adjustment multiplier
+        if self.config.loc['Project Mode'] in ['com','hvy','exp','lrf','loc']:
+            # daily_results[(cat1,cat2,'Adjustment for %s: auto person trips' % self.config.loc['Project Mode'])] = auto_person_trips
+            daily_results[(cat1,cat2,'Adjustment for %s: auto person trips x avg OVTT in Scenario' % self.config.loc['Project Mode'])] = \
+                self.ovtt_adjustment * auto_person_trips
+
+        elif self.config.loc['Project Mode'] == 'road':
+            # daily_results[(cat1,cat2,'Adjustment for %s: transit person trips' % self.config.loc['Project Mode'])] = \
+            #     transit_person_trips
+            daily_results[(cat1,cat2,'Adjustment for %s: transit person trips x avg OVTT in Scenario' % self.config.loc['Project Mode'])] = \
+                self.ovtt_adjustment * transit_person_trips
 
         cat2            = 'Walk/Bike (Hours)'
         daily_results[(cat1,cat2,'Walk')] = nonmot_byclass.loc['Walk','Total Time (Hours)']
@@ -332,11 +343,15 @@ class RunResults:
         daily_results[(cat1,cat2,'Bus ($2000)')] = self.bus_opcost['opcost'].sum()
 
         # Parking
-        cat2            = 'Auto Trips'       # These are by person; change to vehicle
-        daily_results[(cat1,cat2,'SOV'  )] = auto_byclass.loc[['da' ,'datoll' ],'Daily Vehicle Trips'].sum()
-        daily_results[(cat1,cat2,'HOV2' )] = auto_byclass.loc[['sr2','sr2toll'],'Daily Vehicle Trips'].sum()
-        daily_results[(cat1,cat2,'HOV3+')] = auto_byclass.loc[['sr3','sr3toll'],'Daily Vehicle Trips'].sum()
-        total_autotrips = daily_results[(cat1,cat2,'SOV')] + daily_results[(cat1,cat2,'HOV2')] + daily_results[(cat1,cat2,'HOV3+')]
+        cat2            = 'Trips (Reference)'
+        daily_results[(cat1,cat2,'Vehicle trips: SOV'  )] = auto_byclass.loc[['da' ,'datoll' ],'Daily Vehicle Trips'].sum()
+        daily_results[(cat1,cat2,'Vehicle trips: HOV2' )] = auto_byclass.loc[['sr2','sr2toll'],'Daily Vehicle Trips'].sum()
+        daily_results[(cat1,cat2,'Vehicle trips: HOV3+')] = auto_byclass.loc[['sr3','sr3toll'],'Daily Vehicle Trips'].sum()
+        total_autotrips = daily_results[(cat1,cat2,'Vehicle trips: SOV')] + \
+                          daily_results[(cat1,cat2,'Vehicle trips: HOV2')] + \
+                          daily_results[(cat1,cat2,'Vehicle trips: HOV3+')]
+        daily_results[(cat1,cat2,'Drive+Transit Trips')] = transit_byaceg.loc[[('wlk','drv'),('drv','wlk')],'Transit Trips'].sum()
+        daily_results[(cat1,cat2,'Walk +Transit Trips')] = transit_byaceg.loc[('wlk','wlk'),'Transit Trips'].sum()
 
         cat2            = 'Parking Costs'
         try:
@@ -411,7 +426,7 @@ class RunResults:
         daily_results[(cat1,cat2,'Bike'   )] = nonmot_byclass.loc['Bike','Daily Trips']
         daily_results[(cat1,cat2,'Transit')] = transit_byclass.loc[:,'Transit Trips'].sum() # all transit trips
 
-        cat2         = 'Avg Minutes Active Tranport per Person'
+        cat2         = 'Avg Minutes Active Transport per Person'
         daily_results[(cat1,cat2,'Walk'   )] = nonmot_byclass.loc['Walk','Total Time (Hours)'] * 60.0 / RunResults.PROJECTED_2040_POPULATION
         daily_results[(cat1,cat2,'Bike'   )] = nonmot_byclass.loc['Bike','Total Time (Hours)'] * 60.0 / RunResults.PROJECTED_2040_POPULATION
         daily_results[(cat1,cat2,'Transit')] = (transit_byclass.loc[:,'Walk acc & egr hours'].sum() + \

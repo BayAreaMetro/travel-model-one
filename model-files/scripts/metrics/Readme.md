@@ -125,8 +125,13 @@ From the *Plan Bay Area Performance Assessment Report*:
 
 This can be configured to be based on a single transit mode (one of `com`, `hvy`,
 `exp`, `lrf`, or `loc`) or it can be configured to `road`, which means all transit
-modes are included.  The adjustment is the average out-of-vehicle time per trip
-(for that transit mode or modes) times the number of auto person trips.
+modes are included
+
+For transit modes, the adjustment is the change in auto trips times
+the average out-of-vehicle time per relevant transit trip in the scenario.
+
+For road, the adjustment is the change in transit trips times
+the average out-of-vehicle time per transit trip in the scenario.
 
 #### Walk/Bike (Hours)
 
@@ -151,6 +156,10 @@ to pavement condition) and they do not include bridge tolls.  See [sumAutoTimes.
 Bus operating costs are calculated by [bus_opcost.py](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/bus_opcost.py), which joins roadway
 attributes to link-based transit assignment data, and tallies up the VMT the associated
 costs with that VMT (from repair & maintenance and fuel expenditure).
+
+**Note:** This is different from previous versions of Cobra, where auto operating cost came directly
+from VMT.  The change is due to the fact that TM1 was updated to have operating costs be link-based,
+in order to include pavement quality effects.
 
 #### Auto Trips
 
