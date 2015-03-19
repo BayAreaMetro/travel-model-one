@@ -96,8 +96,8 @@ Hours of Delay per Vehicle Miles Traveled.  VMT on each *freeway* link is theref
 multiplied by this lookup to estimate the total Non-Recurring Hours of Delay.  Pulled
 from the hwy networks via [hwynet.py](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/hwynet.py).
 
-**TODO:** `nonRecurringDelayLookup.csv` is probably vehicle hours -- can we confirm?
-Do we want person hours?  Where did this file come from?
+Note: `nonRecurringDelayLookup.csv` is in vehicle hours but `RunResults.py`(https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/RunResults.py)
+transforms these to person hours for auto trips.  This is a *change* from the initial version of cobra.
 
 #### Transit In-Vehicle (Hours)
 
@@ -165,7 +165,7 @@ costs with that VMT (from repair & maintenance and fuel expenditure).
 from VMT.  The change is due to the fact that TM1 was updated to have operating costs be link-based,
 in order to include pavement quality effects.
 
-#### Auto Trips
+#### Trips
 
 This section is for **reference**, and doesn't have a monetized cost or benefit associated with it.
 
