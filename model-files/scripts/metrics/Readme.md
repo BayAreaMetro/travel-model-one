@@ -133,6 +133,10 @@ the average out-of-vehicle time per relevant transit trip in the scenario.
 For road, the adjustment is the change in transit trips times
 the average out-of-vehicle time per transit trip in the scenario.
 
+The idea here is that the change in trips of the opposite mode is a better proxy
+for the number of mode-switchers than change in trips for the mode itself, as
+the project mode's trips also includes induced travel.
+
 #### Walk/Bike (Hours)
 
 Walk and bike times are based on walk and bike distances transformed to times
