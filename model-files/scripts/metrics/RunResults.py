@@ -273,11 +273,13 @@ class RunResults:
         daily_results[(cat1,cat2,'HOV3+ (PHT)')] = vmt_byclass.loc[['S3','S3T'],'VHT'].sum()*3.5
         daily_results[(cat1,cat2,'Truck (VHT)')] = vmt_byclass.loc[['SM','SMT','HV','HVT'],'VHT'].sum()
 
-        # TODO: These are vehicle hours, I think.  Why not make them person hours?
+        # These are from vehicle hours -- make them person hours
         cat2            = 'Non-Recurring Freeway Delay (Hours)'
-        daily_results[(cat1,cat2,'Auto' )] = \
-            vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'],'Non-Recurring Freeway Delay'].sum()
-        daily_results[(cat1,cat2,'Truck')] = \
+        daily_results[(cat1,cat2,'Auto (Person Hours)')] = \
+            vmt_byclass.loc[['DA','DAT'],'Non-Recurring Freeway Delay'].sum()   +\
+            vmt_byclass.loc[['S2','S2T'],'Non-Recurring Freeway Delay'].sum()*2 +\
+            vmt_byclass.loc[['S3','S3T'],'Non-Recurring Freeway Delay'].sum()*3.5
+        daily_results[(cat1,cat2,'Truck (Vehicle Hours)')] = \
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'Non-Recurring Freeway Delay'].sum()
 
         cat2            = 'Transit In-Vehicle (Hours)'
