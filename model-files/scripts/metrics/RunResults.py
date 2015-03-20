@@ -131,7 +131,8 @@ class RunResults:
     ('Travel Cost','Operating Costs','Truck ($2000)'                           ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Bus ($2000)'                             ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Vehicle Ownership (Modeled)'                               ):   -6290.0,
-    ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                  ):   -6290.0,
+# Use modeled.  Est. from auto trips is for reference
+#   ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                  ):   -6290.0,
     ('Travel Cost','Parking Costs','Work Trips in San Francisco'               ):      -7.16,
     ('Travel Cost','Parking Costs','Work Trips in San Mateo'                   ):       0.00,
     ('Travel Cost','Parking Costs','Work Trips in Santa Clara'                 ):      -0.15,
@@ -588,14 +589,15 @@ class RunResults:
                              "DO NOT CHANGE THE WORKBOOK, CHANGE THE SCRIPT.",
                              format_red)
         # Info rows
-        format_label    = workbook.add_format({'align':'right','indent':1})
+        format_label    = workbook.add_format({'align':'right','indent':1, 'valign':'vcenter'})
         format_highlight= workbook.add_format({'bg_color':'yellow'})
+        format_highlight_file  = workbook.add_format({'bg_color':'yellow', 'font_size':8, 'text_wrap':True})
         format_highlight_money = workbook.add_format({'bg_color':'yellow',
                                                      'num_format':'_($* #,##0.0_);_($* (#,##0.0);_($* "-"_);_(@_)'})
 
         worksheet.write(1,0, "Project Run Dir", format_label)
-        worksheet.write(1,1, os.path.realpath(self.rundir), format_highlight)
-        for col in range(2,7): worksheet.write(1,col,"",format_highlight)
+        worksheet.merge_range(1,1,1,4, os.path.realpath(self.rundir), format_highlight_file)
+        worksheet.set_row(1,36.0)
 
         # Config-based rows
         row = 2
@@ -610,7 +612,7 @@ class RunResults:
 
             worksheet.write(row,1, val, 
                             format_highlight_money if string.find(key,'Costs') >= 0 else format_highlight)
-            for col in range(2,7): worksheet.write(row,col,"",format_highlight)
+            for col in range(2,5): worksheet.write(row,col,"",format_highlight)
 
             if unit: worksheet.write(row,2, '(%s)' % unit,format_highlight)
             row += 1
@@ -618,14 +620,14 @@ class RunResults:
         # Run directory
         if self.base_dir:
             worksheet.write(row,0, "Base Run Dir", format_label)
-            worksheet.write(row,1, self.base_dir, format_highlight)
-            for col in range(2,7): worksheet.write(row,col,"",format_highlight)
+            worksheet.merge_range(row,1,row,4, self.base_dir, format_highlight_file)
+            worksheet.set_row(row,36.0)
         row += 1
 
         # Comparison type
         worksheet.write(row,0, 'Compare', format_label)
         worksheet.write(row,1, self.config.loc['Compare'], format_highlight)
-        for col in range(2,7): worksheet.write(row,col,"",format_highlight)
+        for col in range(2,5): worksheet.write(row,col,"",format_highlight)
         row += 1        
 
         # Calculated from config
@@ -640,7 +642,7 @@ class RunResults:
                          xl_rowcol_to_cell(RunResults.REQUIRED_KEYS.index('Life of Project')+2,1)),
                          format_highlight_money)
         worksheet.write(row,2, '(%s)' % RunResults.UNITS['Annual Capital Costs'], format_highlight)
-        for col in range(3,7): worksheet.write(row,col,"",format_highlight)
+        for col in range(3,5): worksheet.write(row,col,"",format_highlight)
         bc_metrics[('Annual Capital Costs (%s)' % RunResults.UNITS['Annual Capital Costs'],"","")] = \
             float(self.config.loc['Capital Costs (%s)' % RunResults.UNITS['Capital Costs']]) / \
             float(self.config.loc['Life of Project (%s)' % RunResults.UNITS['Life of Project']])
@@ -654,7 +656,7 @@ class RunResults:
                          format_highlight_money)
         worksheet.write(row,2, '(%s)' % RunResults.UNITS['Annual O&M Costs not recovered'],
                         format_highlight)
-        for col in range(3,7): worksheet.write(row,col,"",format_highlight)
+        for col in range(3,5): worksheet.write(row,col,"",format_highlight)
         bc_metrics[('Annual O&M Costs not recovered (%s)' % RunResults.UNITS['Annual O&M Costs not recovered'],"","")] = \
             float(self.config.loc['Annual O&M Costs (%s)' % RunResults.UNITS['Annual O&M Costs']])* \
             (1.0-float(self.config.loc['Farebox Recovery Ratio']))
@@ -665,14 +667,16 @@ class RunResults:
         worksheet.write(row,1, '=%s+%s' %  (xl_rowcol_to_cell(row-2,1), xl_rowcol_to_cell(row-1,1)),
                         format_highlight_money)
         worksheet.write(row,2, '(%s)' % RunResults.UNITS['Net Annual Costs'], format_highlight)
-        for col in range(3,7): worksheet.write(row,col,"",format_highlight)
+        ANNUAL_COSTS_CELL = xl_rowcol_to_cell(row,1)
+        for col in range(3,5): worksheet.write(row,col,"",format_highlight)
         bc_metrics[('Net Annual Costs (%s)' % RunResults.UNITS['Net Annual Costs'],"","")] = \
             bc_metrics[('Annual Capital Costs (%s)' % RunResults.UNITS['Annual Capital Costs'],"","")] + \
-            bc_metrics[('Annual O&M Costs not recovered (%s)' % RunResults.UNITS['Annual O&M Costs not recovered'],"","")]        
+            bc_metrics[('Annual O&M Costs not recovered (%s)' % RunResults.UNITS['Annual O&M Costs not recovered'],"","")]
         row += 1
 
         # Header row
         row += 1 # space
+        TABLE_HEADER_ROW = row
         format_header = workbook.add_format({'bg_color':'#1F497D',
                                              'font_color':'white',
                                              'bold':True,
@@ -692,6 +696,7 @@ class RunResults:
         cat1 = None
         cat2 = None
         format_cat1     = workbook.add_format({'bold':True, 'bg_color':'#C5D9F1'})
+        format_cat1_sum = workbook.add_format({'bold':True, 'bg_color':'#C5D9F1', 'num_format':'_(\$* #,##0.0"M"_);_(\$* (#,##0.0"M");_(\$* "-"??_);_(@_)'})
         format_cat2     = workbook.add_format({'bold':True, 'indent':1, 'bg_color':'#D9D9D9'})
         format_cat2_big = workbook.add_format({'bg_color':'#92D050', 'num_format':'#,##0'})
         format_cat2_lil = workbook.add_format({'bg_color':'#92D050', 'num_format':'#,##0.000'})
@@ -711,6 +716,10 @@ class RunResults:
         format_ann_ben    = workbook.add_format({'num_format':'_($* #,##0_);_($* (#,##0);_($* "-"??_);_(@_)'})
         format_cat2_ben   = workbook.add_format({'num_format':'_($* #,##0_);_($* (#,##0);_($* "-"??_);_(@_)',
                                                  'bg_color':'#D9D9D9'})
+
+        # for cat1 sums (total benefits for cat1)
+        cat1_sums = collections.OrderedDict() # cell -> [cell1, cell2, cell3...]
+        cat1_cell = None
 
         for key,value in colA.daily_results.iteritems():
 
@@ -737,13 +746,19 @@ class RunResults:
                 worksheet.write(row,0,cat1,format_cat1)
                 worksheet.write(row,1,"",format_cat1)
                 if self.base_dir:
+                    if cat1_cell:
+                        worksheet.write(cat1_cell, 
+                                        '=SUM(%s)/1000000' % str(',').join(cat1_sums[cat1_cell]),
+                                        format_cat1_sum)
+                    cat1_cell = xl_rowcol_to_cell(row,8)
+                    cat1_sums[cat1_cell] = []
+
                     worksheet.write(row,2,"",format_cat1)
                     worksheet.write(row,3,"",format_cat1)
                     worksheet.write(row,4,"",format_cat1)
                     worksheet.write(row,5,"",format_cat1)
                     worksheet.write(row,6,"",format_cat1)
                     worksheet.write(row,7,"",format_cat1)
-                    worksheet.write(row,8,"",format_cat1)
                 row += 1
 
             # category two header
@@ -766,7 +781,7 @@ class RunResults:
                         worksheet.write(row,4, # diff annual
                                         '=%s-%s' % (xl_rowcol_to_cell(row,1), xl_rowcol_to_cell(row,2)),
                                         format_cat2d_lil if (cat1,cat2) in self.lil_cats else format_cat2d_big)
-    
+
                         bc_metrics[(cat1,cat2,'Difference')] = colA.daily_category_results[(cat1,cat2)] - \
                                                                colB.daily_category_results[(cat1,cat2)]
                     else:
@@ -790,12 +805,13 @@ class RunResults:
                             sys.exit()
 
 
-                    # worksheet.write(row,6, "", format_cat2d_lil)    
+                    # worksheet.write(row,6, "", format_cat2d_lil)
 
                     if valuation != None:
                         worksheet.write(row,8,
                                         '=SUM(%s)' % xl_range(row+1,8,row+len(colA.daily_results[cat1][cat2]),8),
                                         format_cat2_ben)
+                        cat1_sums[cat1_cell].append(xl_rowcol_to_cell(row,8))
                 row += 1
 
             # details
@@ -835,6 +851,32 @@ class RunResults:
                     bc_metrics[(cat1,cat2,'Annual Benefit ($2013)')] += valuation*nominal_diff
 
             row += 1
+
+        # The last cat1 sum
+        if self.base_dir:
+            if cat1_cell:
+                worksheet.write(cat1_cell, 
+                                '=SUM(%s)/1000000' % str(',').join(cat1_sums[cat1_cell]),
+                                format_cat1_sum)
+
+            # BENEFIT/COST
+            format_bc_header = workbook.add_format({'bg_color':'#92D050', 'align':'right','bold':True})
+            worksheet.write(TABLE_HEADER_ROW-4, 6, "Benefit"  ,format_bc_header)
+            worksheet.write(TABLE_HEADER_ROW-3, 6, "Cost"     ,format_bc_header)
+            worksheet.write(TABLE_HEADER_ROW-2, 6, "B/C Ratio",format_bc_header)
+
+            worksheet.write(TABLE_HEADER_ROW-4, 7, "",format_bc_header)
+            worksheet.write(TABLE_HEADER_ROW-3, 7, "",format_bc_header)
+            worksheet.write(TABLE_HEADER_ROW-2, 7, "",format_bc_header)
+
+            format_bc_money = workbook.add_format({'bg_color':'#92D050','bold':True,
+                                                  'num_format':'_(\$* #,##0.0"M"_);_(\$* (#,##0.0"M");_(\$* "-"??_);_(@_)'})
+            format_bc_ratio = workbook.add_format({'bg_color':'#92D050','bold':True,'num_format':'0.00'})
+            worksheet.write(TABLE_HEADER_ROW-4, 8, "=SUM(%s)" % str(",").join(cat1_sums.keys()), format_bc_money)
+            worksheet.write(TABLE_HEADER_ROW-3, 8, "=%s" % ANNUAL_COSTS_CELL, format_bc_money)
+            worksheet.write(TABLE_HEADER_ROW-2, 8, "=%s/%s" % (xl_rowcol_to_cell(TABLE_HEADER_ROW-4, 8),
+                                                                      xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 8)),
+                            format_bc_ratio)
 
         worksheet.set_column(0,0,40.0)
         worksheet.set_column(1,8,13.0)
