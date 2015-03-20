@@ -123,8 +123,9 @@ class RunResults:
     ('Travel Time','Transit In-Vehicle (Hours)'                                ):     -16.03,
     ('Travel Time','Transit Out-of-Vehicle (Hours)'                            ):     -35.266,
     ('Travel Time','Walk/Bike (Hours)'                                         ):     -16.03,
-    ('Travel Cost','VMT','Auto'                                                ):      -0.2688,
-    ('Travel Cost','VMT','Truck'                                               ):      -0.3950,
+#  This is for reference - Operating Costs are calculated directly
+#    ('Travel Cost','VMT','Auto'                                                ):      -0.2688,
+#    ('Travel Cost','VMT','Truck'                                               ):      -0.3950,
     ('Travel Cost','Operating Costs','Auto ($2000) - Households'               ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Auto ($2000) - IX/EX'                    ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Auto ($2000) - AirPax'                   ):      -1.35, # $1 in 2000 = $1.35 in 2013
@@ -334,7 +335,7 @@ class RunResults:
 
         ######################################################################################
         cat1            = 'Travel Cost'
-        cat2            = 'VMT'
+        cat2            = 'VMT (Reference)'
         daily_results[(cat1,cat2,'Auto' )] = \
             vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'],'VMT'].sum()
         daily_results[(cat1,cat2,'Truck')] = \
@@ -389,10 +390,10 @@ class RunResults:
         cat2            = 'PM2.5 (tons)'
         daily_results[(cat1,cat2,'PM2.5 Gasoline')] = \
             vmt_byclass.loc[:,'Gas_PM2.5'].sum()*RunResults.EMISSIONS_SCALEUP + \
-            (daily_results[('Travel Cost','VMT','Auto')]*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
+            (daily_results[('Travel Cost','VMT (Reference)','Auto')]*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
         daily_results[(cat1,cat2,'PM2.5 Diesel'  )] = \
             vmt_byclass.loc[:,'Diesel_PM2.5'].sum()*RunResults.EMISSIONS_SCALEUP + \
-            (daily_results[('Travel Cost','VMT','Truck')]*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
+            (daily_results[('Travel Cost','VMT (Reference)','Truck')]*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
 
         cat2            = 'CO2 (metric tons)'
         daily_results[(cat1,cat2,'CO2')] = vmt_byclass.loc[:,'CO2'  ].sum()
