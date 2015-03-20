@@ -118,14 +118,16 @@ class RunResults:
     BENEFIT_VALUATION           = {
     ('Travel Time','Auto/Truck (Hours)'                                        ):     -16.03,  # Auto
     ('Travel Time','Auto/Truck (Hours)','Truck (VHT)'                          ):     -26.24,  # Truck
-    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Auto'                ):     -16.03,
-    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck'               ):     -26.24,
+    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Auto (Person Hours)' ):     -16.03,
+    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck (Vehicle Hours)'):    -26.24,
     ('Travel Time','Transit In-Vehicle (Hours)'                                ):     -16.03,
     ('Travel Time','Transit Out-of-Vehicle (Hours)'                            ):     -35.266,
     ('Travel Time','Walk/Bike (Hours)'                                         ):     -16.03,
     ('Travel Cost','VMT','Auto'                                                ):      -0.2688,
     ('Travel Cost','VMT','Truck'                                               ):      -0.3950,
-    ('Travel Cost','Operating Costs','Auto ($2000)'                            ):      -1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Cost','Operating Costs','Auto ($2000) - Households'               ):      -1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Cost','Operating Costs','Auto ($2000) - IX/EX'                    ):      -1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Cost','Operating Costs','Auto ($2000) - AirPax'                   ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Truck ($2000)'                           ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Bus ($2000)'                             ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Vehicle Ownership (Modeled)'                               ):   -6290.0,
@@ -338,8 +340,12 @@ class RunResults:
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
 
         cat2            = 'Operating Costs'
-        daily_results[(cat1,cat2,'Auto ($2000)' )] = \
+        daily_results[(cat1,cat2,'Auto ($2000) - Households' )] = \
             0.01*auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Total Cost'].sum()
+        daily_results[(cat1,cat2,'Auto ($2000) - IX/EX' )] = \
+            0.01*auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix'],'Total Cost'].sum()
+        daily_results[(cat1,cat2,'Auto ($2000) - AirPax' )] = \
+            0.01*auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Total Cost'].sum()
         daily_results[(cat1,cat2,'Truck ($2000)')] = \
             0.01*auto_byclass.loc['truck','Total Cost'].sum()
         daily_results[(cat1,cat2,'Bus ($2000)')] = self.bus_opcost['opcost'].sum()

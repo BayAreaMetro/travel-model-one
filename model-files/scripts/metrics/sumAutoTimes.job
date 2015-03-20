@@ -8,64 +8,65 @@
 ;   NOTE this does NOT INCLUDE BRIDGE OR VALUE TOLLS
 ;
 
-; Loop thru time periods
-  loop inc = 1,4                     
-   if (inc = 1)  token_inc   = 'inc1'
-   if (inc = 2)  token_inc   = 'inc2'
-   if (inc = 3)  token_inc   = 'inc3'
-   if (inc = 4)  token_inc   = 'inc4'
+; Loop thru Auto modes
+loop auto = 1,6
+  if (auto  = 1)
+   token_auto   = 'da'
+   token_time   = 'TIMEDA'
+   token_dist   = 'DISTDA'
+   token_pvcost = 'PVCOSTDA'
+   token_occ    = 1.0
+  elseif (auto  = 2)
+   token_auto   = 'datoll'
+   token_time   = 'TOLLTIMEDA'
+   token_dist   = 'TOLLDISTDA'
+   token_pvcost = 'TOLLPVCOSTDA'
+   token_occ    = 1.0
+  elseif (auto  = 3)
+   token_auto   = 'sr2'
+   token_time   = 'TIMES2'
+   token_dist   = 'DISTS2'
+   token_pvcost = 'PVCOSTS2'
+   token_occ    = 2.0
+  elseif (auto  = 4)
+   token_auto   = 'sr2toll'
+   token_time   = 'TOLLTIMES2'
+   token_dist   = 'TOLLDISTS2'
+   token_pvcost = 'TOLLPVCOSTS2'
+   token_occ    = 2.0
+  elseif (auto  = 5)
+   token_auto   = 'sr3'
+   token_time   = 'TIMES3'
+   token_dist   = 'DISTS3'
+   token_pvcost = 'PVCOSTS3'
+   token_occ    = 3.5
+  elseif (auto  = 6)
+   token_auto   = 'sr3toll'
+   token_time   = 'TOLLTIMES3'
+   token_dist   = 'TOLLDISTS3'
+   token_pvcost = 'TOLLPVCOSTS3'
+   token_occ    = 3.5
+  endif
 
-  DistributeMultistep processid = 'ctramp', processNum = inc, commpath = 'm:\commpath'
+  DistributeMultistep processid = 'ctramp', processNum = auto, commpath = 'm:\commpath'
 
-; Loop thru Auto modes 
-  loop auto = 1,6
-   if (auto  = 1)  
-   	token_auto   = 'da'
-   	token_time   = 'TIMEDA'
-   	token_dist   = 'DISTDA'
-   	token_pvcost = 'PVCOSTDA'
-    token_occ    = 1.0
-   elseif (auto  = 2)  
-   	token_auto   = 'datoll'
-   	token_time   = 'TOLLTIMEDA'
-   	token_dist   = 'TOLLDISTDA'
-   	token_pvcost = 'TOLLPVCOSTDA'
-    token_occ    = 1.0
-   elseif (auto  = 3)  
-   	token_auto   = 'sr2'
-   	token_time   = 'TIMES2'
-   	token_dist   = 'DISTS2'
-   	token_pvcost = 'PVCOSTS2'
-    token_occ    = 2.0
-   elseif (auto  = 4)  
-   	token_auto   = 'sr2toll'
-   	token_time   = 'TOLLTIMES2'
-   	token_dist   = 'TOLLDISTS2'
-   	token_pvcost = 'TOLLPVCOSTS2'
-    token_occ    = 2.0
-   elseif (auto  = 5)  
-   	token_auto   = 'sr3'
-    token_time   = 'TIMES3'
-    token_dist   = 'DISTS3'
-    token_pvcost = 'PVCOSTS3'
-    token_occ    = 3.5
-   elseif (auto  = 6)  
-   	token_auto   = 'sr3toll'
-    token_time   = 'TOLLTIMES3'
-    token_dist   = 'TOLLDISTS3'
-    token_pvcost = 'TOLLPVCOSTS3'
-    token_occ    = 3.5
-   endif
+    ; Loop thru time periods
+    loop inc = 1,4
+    if (inc = 1)  token_inc   = 'inc1'
+    if (inc = 2)  token_inc   = 'inc2'
+    if (inc = 3)  token_inc   = 'inc3'
+    if (inc = 4)  token_inc   = 'inc4'
+
   ; Read Auto Operating Cost from Properties file
   Read File = "CTRAMP\scripts\block\hwyParam.block"
 
   RUN PGM = MATRIX
   ; Read person trips for an income quartile for all time periods
-     FILEI MATI[1] = "main\tripsEA@token_inc@.tpp"   
-     FILEI MATI[2] = "main\tripsAM@token_inc@.tpp"   
-     FILEI MATI[3] = "main\tripsMD@token_inc@.tpp"   
-     FILEI MATI[4] = "main\tripsPM@token_inc@.tpp"   
-     FILEI MATI[5] = "main\tripsEV@token_inc@.tpp"  
+     FILEI MATI[1] = "main\tripsEA@token_inc@.tpp"
+     FILEI MATI[2] = "main\tripsAM@token_inc@.tpp"
+     FILEI MATI[3] = "main\tripsMD@token_inc@.tpp"
+     FILEI MATI[4] = "main\tripsPM@token_inc@.tpp"
+     FILEI MATI[5] = "main\tripsEV@token_inc@.tpp"
   
   ; Read Highway Skims   
      FILEI MATI[6] = "skims\HWYSKMEA.tpp"
@@ -74,7 +75,7 @@
      FILEI MATI[9] = "skims\HWYSKMPM.tpp"
      FILEI MATI[10]= "skims\HWYSKMEV.tpp"
      
-     FILEO PRINTO[1] = "metrics\auto_times_@token_inc@.csv",APPEND=T 
+     FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T 
 
      ; Trips EA * Skims EA  
       MW[1]   =  mi.1.@token_auto@ * mi.6.@token_time@               ; Person minutes
@@ -139,22 +140,182 @@
                                                             Person_miles(10.2L), Vehicle_miles(10.2L),
                                                             Total_cost(10.2L)
     ENDRUN
-  endloop
+  endloop ; income loop
+
+  RUN PGM = MATRIX
+     ; Read internal/external travel demand - vehicle trips
+     FILEI MATI[1] = "nonres\tripsIxEA.tpp"
+     FILEI MATI[2] = "nonres\tripsIxAM.tpp"
+     FILEI MATI[3] = "nonres\tripsIxMD.tpp"
+     FILEI MATI[4] = "nonres\tripsIxPM.tpp"
+     FILEI MATI[5] = "nonres\tripsIxEV.tpp"
+
+     ; Read Highway Skims
+     FILEI MATI[6] = "skims\HWYSKMEA.tpp"
+     FILEI MATI[7] = "skims\HWYSKMAM.tpp"
+     FILEI MATI[8] = "skims\HWYSKMMD.tpp"
+     FILEI MATI[9] = "skims\HWYSKMPM.tpp"
+     FILEI MATI[10]= "skims\HWYSKMEV.tpp"
+
+     FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T
+
+     ; Trips EA * Skims EA
+      MW[1]   =  mi.1.@token_auto@ * mi.6.@token_time@ * @token_occ@ ; Person minutes
+      MW[2]   =  mi.1.@token_auto@ * mi.6.@token_time@               ; Vehicle minutes
+      MW[3]   =  mi.1.@token_auto@ * mi.6.@token_dist@ * @token_occ@ ; Person miles
+      MW[4]   =  mi.1.@token_auto@ * mi.6.@token_dist@               ; Vehicle miles
+      MW[5]   =  mi.1.@token_auto@ * (mi.6.@token_pvcost@ + (mi.6.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
+
+     ; Trips AM * Skims AM
+      MW[6]   =  mi.2.@token_auto@ * mi.7.@token_time@ * @token_occ@ ; Person minutes
+      MW[7]   =  mi.2.@token_auto@ * mi.7.@token_time@               ; Vehicle minutes
+      MW[8]   =  mi.2.@token_auto@ * mi.7.@token_dist@ * @token_occ@ ; Person miles
+      MW[9]   =  mi.2.@token_auto@ * mi.7.@token_dist@               ; Vehilce miles
+      MW[10]  =  mi.2.@token_auto@ * (mi.7.@token_pvcost@ + (mi.7.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
+
+      ; Trips MD * Skims MD
+      MW[11]  =  mi.3.@token_auto@ * mi.8.@token_time@ * @token_occ@ ; Person minutes
+      MW[12]  =  mi.3.@token_auto@ * mi.8.@token_time@               ; Vehicle minutes
+      MW[13]  =  mi.3.@token_auto@ * mi.8.@token_dist@ * @token_occ@ ; Person miles
+      MW[14]  =  mi.3.@token_auto@ * mi.8.@token_dist@               ; Vehicle miles
+      MW[15]  =  mi.3.@token_auto@ * (mi.8.@token_pvcost@ + (mi.8.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
+
+      ; Trips PM * Skims PM
+      MW[16]   =  mi.4.@token_auto@ * mi.9.@token_time@ * @token_occ@ ; Person minutes
+      MW[17]   =  mi.4.@token_auto@ * mi.9.@token_time@               ; Vehicle minutes
+      MW[18]   =  mi.4.@token_auto@ * mi.9.@token_dist@ * @token_occ@ ; Person miles
+      MW[19]   =  mi.4.@token_auto@ * mi.9.@token_dist@               ; Vehicle miles
+      MW[20]   =  mi.4.@token_auto@ * (mi.9.@token_pvcost@ + (mi.9.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
+
+      ; Trips EV * Skims EV
+      MW[21]   =  mi.5.@token_auto@ * mi.10.@token_time@ * @token_occ@ ; Person minutes
+      MW[22]   =  mi.5.@token_auto@ * mi.10.@token_time@               ; Vehicle minutes
+      MW[23]   =  mi.5.@token_auto@ * mi.10.@token_dist@ * @token_occ@ ; Person miles
+      MW[24]   =  mi.5.@token_auto@ * mi.10.@token_dist@               ; Vehicle miles
+      MW[25]   =  mi.5.@token_auto@ * (mi.10.@token_pvcost@ + (mi.10.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
+
+     ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost
+     MW[26] =  mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
+     MW[27] = (mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)/@token_occ@
+     MW[28] = MW[1]+MW[6] +MW[11]+MW[16]+MW[21]   ; Person minutes
+     MW[29] = MW[2]+MW[7] +MW[12]+MW[17]+MW[22]   ; Vehicle minutes
+     MW[30] = MW[3]+MW[8] +MW[13]+MW[18]+MW[23]   ; Person miles
+     MW[31] = MW[4]+MW[9] +MW[14]+MW[19]+MW[24]   ; Vehicle miles
+     MW[32] = MW[5]+MW[10]+MW[15]+MW[20]+MW[25]   ; Trip Cost
+
+     JLOOP
+      Person_trips  = Person_trips  + MW[26]
+      Vehicle_trips = Vehicle_trips + MW[27]
+      Person_min    = Person_min    + MW[28]
+      Vehicle_min   = Vehicle_min   + MW[29]
+      Person_miles  = Person_miles  + MW[30]
+      Vehicle_miles = Vehicle_miles + MW[31]
+      Total_cost    = Total_cost    + MW[32]
+     ENDJLOOP
+
+      Mode   = '@token_auto@' + '_ix'
+
+      if(I = 1454) PRINT PRINTO=1 CSV=T LIST= "na",   Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
+                                                            Person_min(10.2L),   Vehicle_min(10.2L),
+                                                            Person_miles(10.2L), Vehicle_miles(10.2L),
+                                                            Total_cost(10.2L)
+    ENDRUN
+
+  RUN PGM = MATRIX
+     ; Read air passenger travel demand - vehicle trips
+     FILEI MATI[1] = "nonres\tripsAirPaxEA.tpp"
+     FILEI MATI[2] = "nonres\tripsAirPaxAM.tpp"
+     FILEI MATI[3] = "nonres\tripsAirPaxMD.tpp"
+     FILEI MATI[4] = "nonres\tripsAirPaxPM.tpp"
+     FILEI MATI[5] = "nonres\tripsAirPaxEV.tpp"
+
+     ; Read Highway Skims
+     FILEI MATI[6] = "skims\HWYSKMEA.tpp"
+     FILEI MATI[7] = "skims\HWYSKMAM.tpp"
+     FILEI MATI[8] = "skims\HWYSKMMD.tpp"
+     FILEI MATI[9] = "skims\HWYSKMPM.tpp"
+     FILEI MATI[10]= "skims\HWYSKMEV.tpp"
+
+     FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T
+
+     ; Trips EA * Skims EA
+      MW[1]   =  mi.1.@token_auto@ * mi.6.@token_time@ * @token_occ@ ; Person minutes
+      MW[2]   =  mi.1.@token_auto@ * mi.6.@token_time@               ; Vehicle minutes
+      MW[3]   =  mi.1.@token_auto@ * mi.6.@token_dist@ * @token_occ@ ; Person miles
+      MW[4]   =  mi.1.@token_auto@ * mi.6.@token_dist@               ; Vehicle miles
+      MW[5]   =  mi.1.@token_auto@ * (mi.6.@token_pvcost@ + (mi.6.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
+
+     ; Trips AM * Skims AM
+      MW[6]   =  mi.2.@token_auto@ * mi.7.@token_time@ * @token_occ@ ; Person minutes
+      MW[7]   =  mi.2.@token_auto@ * mi.7.@token_time@               ; Vehicle minutes
+      MW[8]   =  mi.2.@token_auto@ * mi.7.@token_dist@ * @token_occ@ ; Person miles
+      MW[9]   =  mi.2.@token_auto@ * mi.7.@token_dist@               ; Vehilce miles
+      MW[10]  =  mi.2.@token_auto@ * (mi.7.@token_pvcost@ + (mi.7.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
+
+      ; Trips MD * Skims MD
+      MW[11]  =  mi.3.@token_auto@ * mi.8.@token_time@ * @token_occ@ ; Person minutes
+      MW[12]  =  mi.3.@token_auto@ * mi.8.@token_time@               ; Vehicle minutes
+      MW[13]  =  mi.3.@token_auto@ * mi.8.@token_dist@ * @token_occ@ ; Person miles
+      MW[14]  =  mi.3.@token_auto@ * mi.8.@token_dist@               ; Vehicle miles
+      MW[15]  =  mi.3.@token_auto@ * (mi.8.@token_pvcost@ + (mi.8.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
+
+      ; Trips PM * Skims PM
+      MW[16]   =  mi.4.@token_auto@ * mi.9.@token_time@ * @token_occ@ ; Person minutes
+      MW[17]   =  mi.4.@token_auto@ * mi.9.@token_time@               ; Vehicle minutes
+      MW[18]   =  mi.4.@token_auto@ * mi.9.@token_dist@ * @token_occ@ ; Person miles
+      MW[19]   =  mi.4.@token_auto@ * mi.9.@token_dist@               ; Vehicle miles
+      MW[20]   =  mi.4.@token_auto@ * (mi.9.@token_pvcost@ + (mi.9.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
+
+      ; Trips EV * Skims EV
+      MW[21]   =  mi.5.@token_auto@ * mi.10.@token_time@ * @token_occ@ ; Person minutes
+      MW[22]   =  mi.5.@token_auto@ * mi.10.@token_time@               ; Vehicle minutes
+      MW[23]   =  mi.5.@token_auto@ * mi.10.@token_dist@ * @token_occ@ ; Person miles
+      MW[24]   =  mi.5.@token_auto@ * mi.10.@token_dist@               ; Vehicle miles
+      MW[25]   =  mi.5.@token_auto@ * (mi.10.@token_pvcost@ + (mi.10.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
+
+     ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost
+     MW[26] =  mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
+     MW[27] = (mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)/@token_occ@
+     MW[28] = MW[1]+MW[6] +MW[11]+MW[16]+MW[21]   ; Person minutes
+     MW[29] = MW[2]+MW[7] +MW[12]+MW[17]+MW[22]   ; Vehicle minutes
+     MW[30] = MW[3]+MW[8] +MW[13]+MW[18]+MW[23]   ; Person miles
+     MW[31] = MW[4]+MW[9] +MW[14]+MW[19]+MW[24]   ; Vehicle miles
+     MW[32] = MW[5]+MW[10]+MW[15]+MW[20]+MW[25]   ; Trip Cost
+
+     JLOOP
+      Person_trips  = Person_trips  + MW[26]
+      Vehicle_trips = Vehicle_trips + MW[27]
+      Person_min    = Person_min    + MW[28]
+      Vehicle_min   = Vehicle_min   + MW[29]
+      Person_miles  = Person_miles  + MW[30]
+      Vehicle_miles = Vehicle_miles + MW[31]
+      Total_cost    = Total_cost    + MW[32]
+     ENDJLOOP
+
+      Mode   = '@token_auto@' + '_air'
+
+      if(I = 1454) PRINT PRINTO=1 CSV=T LIST= "na",   Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
+                                                            Person_min(10.2L),   Vehicle_min(10.2L),
+                                                            Person_miles(10.2L), Vehicle_miles(10.2L),
+                                                            Total_cost(10.2L)
+    ENDRUN
   EndDistributeMultistep
 
 endloop
 
 Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
-                 CTRAMP4.script.end,
+                 CTRAMP4.script.end, CTRAMP5.script.end, CTRAMP6.script.end,
            printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the income files into one
-* copy metrics\auto_times_inc1.csv+metrics\auto_times_inc2.csv+metrics\auto_times_inc3.csv+metrics\auto_times_inc4.csv metrics\auto_times.csv
+* copy metrics\auto_times_da.csv+metrics\auto_times_datoll.csv+metrics\auto_times_sr2.csv+metrics\auto_times_sr2toll.csv+metrics\auto_times_sr3.csv+metrics\auto_times_sr3toll.csv metrics\auto_times.csv
 ; delete the individual ones
-* del metrics\auto_times_inc1.csv
-* del metrics\auto_times_inc2.csv
-* del metrics\auto_times_inc3.csv
-* del metrics\auto_times_inc4.csv
+* del metrics\auto_times_da.csv
+* del metrics\auto_times_datoll.csv
+* del metrics\auto_times_sr2.csv
+* del metrics\auto_times_sr2toll.csv
+* del metrics\auto_times_sr3.csv
+* del metrics\auto_times_sr3toll.csv
 
 RUN PGM = MATRIX
   ; Read truck trips for all time periods
@@ -185,10 +346,10 @@ RUN PGM = MATRIX
             ( mi.1.struck * mi.6.distsml) +
             ( mi.1.mtruck * mi.6.distmed) +
             ( mi.1.ctruck * mi.6.distlrg)
-  MW[3]   = (mi.1.vstruck *(mi.6.pvcostvsm + (mi.6.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.1.struck *(mi.6.pvcostsml + (mi.6.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.1.mtruck *(mi.6.pvcostmed + (mi.6.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.1.ctruck *(mi.6.pvcostlrg + (mi.6.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU)))
+  MW[3]   = (mi.1.vstruck *(mi.6.pvcostvsm + (mi.6.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.1.struck *(mi.6.pvcostsml + (mi.6.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.1.mtruck *(mi.6.pvcostmed + (mi.6.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.1.ctruck *(mi.6.pvcostlrg + (mi.6.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
 
   ; TOLL Trips EA * Skims EA  
   MW[4]   = (mi.1.vstrucktoll *  mi.6.tolltimevsm) + 
@@ -199,10 +360,10 @@ RUN PGM = MATRIX
             ( mi.1.strucktoll *  mi.6.tolldistsml) +
             ( mi.1.mtrucktoll *  mi.6.tolldistmed) +
             ( mi.1.ctrucktoll *  mi.6.tolldistlrg)
-  MW[6]   = (mi.1.vstrucktoll * (mi.6.tollpvcostvsm + (mi.6.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.1.strucktoll * (mi.6.tollpvcostsml + (mi.6.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.1.mtrucktoll * (mi.6.tollpvcostmed + (mi.6.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.1.ctrucktoll * (mi.6.tollpvcostlrg + (mi.6.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU)))
+  MW[6]   = (mi.1.vstrucktoll * (mi.6.tollpvcostvsm + (mi.6.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.1.strucktoll * (mi.6.tollpvcostsml + (mi.6.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.1.mtrucktoll * (mi.6.tollpvcostmed + (mi.6.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.1.ctrucktoll * (mi.6.tollpvcostlrg + (mi.6.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
 
   ; Trips AM * Skims AM  
   MW[7]   = (mi.2.vstruck * mi.7.timevsm) + 
@@ -213,10 +374,10 @@ RUN PGM = MATRIX
             ( mi.2.struck * mi.7.distsml) +
             ( mi.2.mtruck * mi.7.distmed) +
             ( mi.2.ctruck * mi.7.distlrg)
-  MW[9]   = (mi.2.vstruck *(mi.7.pvcostvsm + (mi.7.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.2.struck *(mi.7.pvcostsml + (mi.7.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.2.mtruck *(mi.7.pvcostmed + (mi.7.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.2.ctruck *(mi.7.pvcostlrg + (mi.7.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU)))
+  MW[9]   = (mi.2.vstruck *(mi.7.pvcostvsm + (mi.7.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.2.struck *(mi.7.pvcostsml + (mi.7.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.2.mtruck *(mi.7.pvcostmed + (mi.7.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.2.ctruck *(mi.7.pvcostlrg + (mi.7.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
 
   ; TOLL Trips AM * Skims AM
   MW[10]  = (mi.2.vstrucktoll *  mi.7.tolltimevsm) + 
@@ -227,10 +388,10 @@ RUN PGM = MATRIX
             ( mi.2.strucktoll *  mi.7.tolldistsml) +
             ( mi.2.mtrucktoll *  mi.7.tolldistmed) +
             ( mi.2.ctrucktoll *  mi.7.tolldistlrg)
-  MW[12]  = (mi.2.vstrucktoll * (mi.7.tollpvcostvsm + (mi.7.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.2.strucktoll * (mi.7.tollpvcostsml + (mi.7.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.2.mtrucktoll * (mi.7.tollpvcostmed + (mi.7.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.2.ctrucktoll * (mi.7.tollpvcostlrg + (mi.7.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU)))
+  MW[12]  = (mi.2.vstrucktoll * (mi.7.tollpvcostvsm + (mi.7.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.2.strucktoll * (mi.7.tollpvcostsml + (mi.7.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.2.mtrucktoll * (mi.7.tollpvcostmed + (mi.7.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.2.ctrucktoll * (mi.7.tollpvcostlrg + (mi.7.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
 
   ; Trips MD * Skims MD
   MW[13]  = (mi.3.vstruck * mi.8.timevsm) + 
@@ -241,10 +402,10 @@ RUN PGM = MATRIX
             ( mi.3.struck * mi.8.distsml) +
             ( mi.3.mtruck * mi.8.distmed) +
             ( mi.3.ctruck * mi.8.distlrg)
-  MW[15]  = (mi.3.vstruck *(mi.8.pvcostvsm + (mi.8.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.3.struck *(mi.8.pvcostsml + (mi.8.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.3.mtruck *(mi.8.pvcostmed + (mi.8.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.3.ctruck *(mi.8.pvcostlrg + (mi.8.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU)))
+  MW[15]  = (mi.3.vstruck *(mi.8.pvcostvsm + (mi.8.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.3.struck *(mi.8.pvcostsml + (mi.8.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.3.mtruck *(mi.8.pvcostmed + (mi.8.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.3.ctruck *(mi.8.pvcostlrg + (mi.8.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
 
   ; TOLL Trips MD * Skims MD
   MW[16]  = (mi.3.vstrucktoll *  mi.8.tolltimevsm) + 
@@ -255,10 +416,10 @@ RUN PGM = MATRIX
             ( mi.3.strucktoll *  mi.8.tolldistsml) +
             ( mi.3.mtrucktoll *  mi.8.tolldistmed) +
             ( mi.3.ctrucktoll *  mi.8.tolldistlrg)
-  MW[18]  = (mi.3.vstrucktoll * (mi.8.tollpvcostvsm + (mi.8.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.3.strucktoll * (mi.8.tollpvcostsml + (mi.8.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.3.mtrucktoll * (mi.8.tollpvcostmed + (mi.8.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.3.ctrucktoll * (mi.8.tollpvcostlrg + (mi.8.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU)))
+  MW[18]  = (mi.3.vstrucktoll * (mi.8.tollpvcostvsm + (mi.8.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.3.strucktoll * (mi.8.tollpvcostsml + (mi.8.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.3.mtrucktoll * (mi.8.tollpvcostmed + (mi.8.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.3.ctrucktoll * (mi.8.tollpvcostlrg + (mi.8.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
 
   ; Trips PM * Skims PM
   MW[19]  = (mi.4.vstruck * mi.9.timevsm) + 
@@ -269,10 +430,10 @@ RUN PGM = MATRIX
             ( mi.4.struck * mi.9.distsml) +
             ( mi.4.mtruck * mi.9.distmed) +
             ( mi.4.ctruck * mi.9.distlrg)
-  MW[21]  = (mi.4.vstruck *(mi.9.pvcostvsm + (mi.9.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.4.struck *(mi.9.pvcostsml + (mi.9.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.4.mtruck *(mi.9.pvcostmed + (mi.9.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.4.ctruck *(mi.9.pvcostlrg + (mi.9.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU)))
+  MW[21]  = (mi.4.vstruck *(mi.9.pvcostvsm + (mi.9.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.4.struck *(mi.9.pvcostsml + (mi.9.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.4.mtruck *(mi.9.pvcostmed + (mi.9.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.4.ctruck *(mi.9.pvcostlrg + (mi.9.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
 
   ; TOLL Trips PM * Skims PM
   MW[22]  = (mi.4.vstrucktoll *  mi.9.tolltimevsm) + 
@@ -283,10 +444,10 @@ RUN PGM = MATRIX
             ( mi.4.strucktoll *  mi.9.tolldistsml) +
             ( mi.4.mtrucktoll *  mi.9.tolldistmed) +
             ( mi.4.ctrucktoll *  mi.9.tolldistlrg)
-  MW[24]  = (mi.4.vstrucktoll * (mi.9.tollpvcostvsm + (mi.9.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.4.strucktoll * (mi.9.tollpvcostsml + (mi.9.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.4.mtrucktoll * (mi.9.tollpvcostmed + (mi.9.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.4.ctrucktoll * (mi.9.tollpvcostlrg + (mi.9.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU)))
+  MW[24]  = (mi.4.vstrucktoll * (mi.9.tollpvcostvsm + (mi.9.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.4.strucktoll * (mi.9.tollpvcostsml + (mi.9.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.4.mtrucktoll * (mi.9.tollpvcostmed + (mi.9.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.4.ctrucktoll * (mi.9.tollpvcostlrg + (mi.9.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
 
   ; Trips EV * Skims EV
   MW[25]  = (mi.5.vstruck * mi.10.timevsm) + 
@@ -297,10 +458,10 @@ RUN PGM = MATRIX
             ( mi.5.struck * mi.10.distsml) +
             ( mi.5.mtruck * mi.10.distmed) +
             ( mi.5.ctruck * mi.10.distlrg)
-  MW[27]  = (mi.5.vstruck *(mi.10.pvcostvsm + (mi.10.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.5.struck *(mi.10.pvcostsml + (mi.10.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.5.mtruck *(mi.10.pvcostmed + (mi.10.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.5.ctruck *(mi.10.pvcostlrg + (mi.10.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU)))
+  MW[27]  = (mi.5.vstruck *(mi.10.pvcostvsm + (mi.10.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.5.struck *(mi.10.pvcostsml + (mi.10.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.5.mtruck *(mi.10.pvcostmed + (mi.10.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.5.ctruck *(mi.10.pvcostlrg + (mi.10.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
 
   ; TOLL Trips EV * Skims EV
   MW[28]  = (mi.5.vstrucktoll *  mi.10.tolltimevsm) + 
@@ -311,10 +472,10 @@ RUN PGM = MATRIX
             ( mi.5.strucktoll *  mi.10.tolldistsml) +
             ( mi.5.mtrucktoll *  mi.10.tolldistmed) +
             ( mi.5.ctrucktoll *  mi.10.tolldistlrg)
-  MW[30]  = (mi.5.vstrucktoll * (mi.10.tollpvcostvsm + (mi.10.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.5.strucktoll * (mi.10.tollpvcostsml + (mi.10.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.5.mtrucktoll * (mi.10.tollpvcostmed + (mi.10.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU))) +
-            ( mi.5.ctrucktoll * (mi.10.tollpvcostlrg + (mi.10.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU)))
+  MW[30]  = (mi.5.vstrucktoll * (mi.10.tollpvcostvsm + (mi.10.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.5.strucktoll * (mi.10.tollpvcostsml + (mi.10.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.5.mtrucktoll * (mi.10.tollpvcostmed + (mi.10.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
+            ( mi.5.ctrucktoll * (mi.10.tollpvcostlrg + (mi.10.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
  
   ; Compute Daily Trips, TripTime, TripDist, TripCost
   MW[31] = mi.1.vstruck + mi.1.struck + mi.1.mtruck + mi.1.ctruck +
