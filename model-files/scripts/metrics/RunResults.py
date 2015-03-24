@@ -920,5 +920,12 @@ if __name__ == '__main__':
     rr = RunResults(args.project_dir)
     rr.calculateDailyMetrics()
 
-    rr.calculateBenefitCosts(os.path.join(args.project_dir, "BC_%s.xlsx" % rr.config.loc['Project ID']),
-                             args.all_projects_dir)
+    workbook_name = "BC_%s.xlsx" % rr.config.loc['Project ID']
+    if not rr.is_base_dir and rr.config.loc['base_dir']:
+        print "BASE = ",rr.config.loc['base_dir']
+        base_str_re = re.compile("(19|20)[0-9][0-9]_05_[A-Za-z0-9]{3}")
+        base_match  = base_str_re.search(rr.config.loc['base_dir'])
+        if base_match:
+            print "base_match = [%s]" % base_match.group(0)
+            workbook_name = "BC_%s_base%s.xlsx" % (rr.config.loc['Project ID'], base_match.group(0))
+    rr.calculateBenefitCosts(os.path.join(args.project_dir, workbook_name), args.all_projects_dir)
