@@ -20,6 +20,7 @@ library(reshape2)
 # For RStudio, these can be set in the .Rprofile
 TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
 ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to read
+SAMPLESHARE  <- Sys.getenv("SAMPLESHARE") # Sampling
 
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
 
@@ -32,6 +33,7 @@ if (TEST) {
 
 stopifnot(nchar(TARGET_DIR  )>0)
 stopifnot(nchar(ITER        )>0)
+stopifnot(nchar(SAMPLESHARE )>0)
 
 # write results in TARGET_DIR/core_summaries
 if (!file.exists(file.path(TARGET_DIR,"core_summaries"))) {
@@ -41,9 +43,11 @@ if (!file.exists(file.path(TARGET_DIR,"core_summaries"))) {
 if (!file.exists(file.path(TARGET_DIR,"updated_output"))) {
   dir.create(file.path(TARGET_DIR,"updated_output"))
 }
+SAMPLESHARE <- as.numeric(SAMPLESHARE)
 
 cat("TARGET_DIR  = ",TARGET_DIR)
 cat("ITER        = ",ITER)
+cat("SAMPLESHARE = ",SAMPLESHARE)
 ```
 
 # Lookups
@@ -766,6 +770,9 @@ active_summary <- summarise(group_by(trips_by_person, taz, county_name, ptype, z
                             dtr_trip = mean(dtr_trip),
                             atHomeA  = mean(atHomeA))
 
+# scale by sampleshare
+active_summary$freq <- active_summary$freq / SAMPLESHARE
+
 write.table(active_summary, file.path(TARGET_DIR,"core_summaries","ActiveTransport.csv"), sep=",", row.names=FALSE)
 model_summary <- active_summary  # name it generically for rdata
 save(model_summary, file=file.path(TARGET_DIR,"core_summaries","ActiveTransport.rdata"))
@@ -776,6 +783,7 @@ remove(active_summary, trips_by_person)
 
 ```{r ActivityPatternSummary, error=FALSE}
 actpatt_summary <- summarise(group_by(persons, type, activity_pattern, imf_choice, inmf_choice, incQ_label), freq=n())
+actpatt_summary$freq <- actpatt_summary$freq / SAMPLESHARE
 write.table(actpatt_summary, file.path(TARGET_DIR,"core_summaries","ActivityPattern.csv"), sep=",", row.names=FALSE)
 model_summary <- actpatt_summary  # name it generically for rdata
 save(model_summary, file=file.path(TARGET_DIR,"core_summaries","ActivityPattern.rdata"))
@@ -788,6 +796,7 @@ remove(actpatt_summary)
 # summarise
 autoown_summary <- summarise(group_by(households, SD, COUNTY, county_name, autos, 
                                       incQ, incQ_label, walk_subzone, walk_subzone_label, workers, kidsNoDr), freq=n())
+autoown_summary$freq <- autoown_summary$freq / SAMPLESHARE
 write.table(autoown_summary, file.path(TARGET_DIR,"core_summaries","AutomobileOwnership.csv"), sep=",", row.names=FALSE)
 model_summary <- autoown_summary  # name it generically for rdata
 save(model_summary, file=file.path(TARGET_DIR,"core_summaries","AutomobileOwnership.rdata"))
@@ -923,6 +932,7 @@ commute_summary <- summarise(group_by(commute_tours, dest_COUNTY, dest_county_na
                              parking_cost = mean(parking_cost),
                              distance     = mean(distance),
                              cost_fail    = sum(cost_fail))
+commute_summary$freq <- commute_summary$freq / SAMPLESHARE
 write.table(commute_summary, file.path(TARGET_DIR,"core_summaries","CommuteByEmploymentLocation.csv"),
             sep=",", row.names=FALSE)
 model_summary <- commute_summary  # name it generically for rdata
@@ -942,6 +952,7 @@ commute_inc_summary_byjob <- summarise(group_by(commute_tours, dest_COUNTY, dest
                                        duration     = mean(time,    na.rm=TRUE),
                                        cost_fail    = sum(cost_fail),
                                        time_fail    = sum(time_fail))
+commute_inc_summary_byjob$freq <- commute_inc_summary_byjob$freq / SAMPLESHARE
 write.table(commute_inc_summary_byjob, 
             file.path(TARGET_DIR,"core_summaries","CommuteByIncomeJob.csv"), sep=",", row.names=FALSE)
 model_summary <- commute_inc_summary_byjob  # name it generically for rdata
@@ -963,6 +974,7 @@ commute_inc_summary_byres <- summarise(group_by(commute_tours, res_COUNTY, res_c
                                        duration     = mean(time,    na.rm=TRUE),
                                        cost_fail    = sum(cost_fail),
                                        time_fail    = sum(time_fail))
+commute_inc_summary_byres$freq <- commute_inc_summary_byres$freq / SAMPLESHARE
 write.table(commute_inc_summary_byres, 
             file.path(TARGET_DIR,"core_summaries","CommuteByIncomeHousehold.csv"), sep=",", row.names=FALSE)
 model_summary <- commute_inc_summary_byres  # name it generically for rdata
@@ -990,6 +1002,7 @@ journeytowork_summary <- summarise(group_by(work_locations,
                                             WorkLocation, workCOUNTY, work_county_name),
                                    freq   = n(),
                                    Income = mean(Income))
+journeytowork_summary$freq <- journeytowork_summary$freq / SAMPLESHARE
 write.table(journeytowork_summary,
             file.path(TARGET_DIR,"core_summaries","JourneyToWork.csv"), sep=",", row.names=FALSE)
 model_summary <- journeytowork_summary  # name it generically for rdata
@@ -1003,6 +1016,8 @@ timeofday_summary <- summarise(group_by(tours,SD,COUNTY,county_name,
                                         simple_purpose,tour_mode,start_hour,end_hour),
                                freq              = n(),
                                num_participants  = sum(num_participants))
+timeofday_summary$freq             <- timeofday_summary$freq / SAMPLESHARE
+timeofday_summary$num_participants <- timeofday_summary$num_participants / SAMPLESHARE
 write.table(timeofday_summary,
             file.path(TARGET_DIR,"core_summaries","TimeOfDay.csv"), sep=",", row.names=FALSE)
 model_summary <- timeofday_summary # name it generically for rdata
@@ -1031,6 +1046,7 @@ tripdist_summary          <- summarise(group_by(trips, autoSuff, autoSuff_label,
                                                 timeperiod_label, trip_mode, tour_purpose),
                                        freq         = n(),
                                        distance     = mean(distance))
+tripdist_summary$freq <- tripdist_summary$freq / SAMPLESHARE
 write.table(tripdist_summary,
             file.path(TARGET_DIR,"core_summaries","TripDistance.csv"), sep=",", row.names=FALSE)
 model_summary <- tripdist_summary # name it generically for rdata
@@ -1104,6 +1120,7 @@ travelcost_summary  <- summarise(group_by(costs_by_household, SD, COUNTY, county
                                  cost_fail       = sum(cost_fail),
                                  pcost_indiv     = mean(pcost_indiv),
                                  pcost_joint     = mean(pcost_joint))
+travelcost_summary$freq <- travelcost_summary$freq / SAMPLESHARE
 write.table(travelcost_summary,
             file.path(TARGET_DIR,"core_summaries","TravelCost.csv"), sep=",", row.names=FALSE)
 model_summary <- travelcost_summary # name it generically for rdata
@@ -1118,6 +1135,8 @@ triptime_summary <- summarise(group_by(trips, incQ, incQ_label, trip_mode, tour_
                               num_participants = sum(num_participants),
                               trvlTime         = mean(time),
                               time_fail        = sum(time_fail))
+triptime_summary$freq             <- triptime_summary$freq / SAMPLESHARE
+triptime_summary$num_participants <- triptime_summary$num_participants / SAMPLESHARE
 write.table(triptime_summary,
             file.path(TARGET_DIR,"core_summaries","PerTripTravelTime.csv"), sep=",", row.names=FALSE)
 model_summary <- triptime_summary # name it generically for rdata
@@ -1187,6 +1206,7 @@ vmt_summary      <- summarise(group_by(persons, COUNTY, county_name, taz,
                               vmt_indiv        = mean(vmt_indiv),
                               vmt_joint        = mean(vmt_joint),
                               vmt              = mean(vmt))
+vmt_summary$freq <- vmt_summary$freq / SAMPLESHARE
 write.table(vmt_summary,
             file.path(TARGET_DIR,"core_summaries","VehicleMilesTraveled.csv"), sep=",", row.names=FALSE)
 model_summary <- vmt_summary # name it generically for rdata
@@ -1222,15 +1242,15 @@ load(file=file.path(TARGET_DIR,"updated_output","trips.rdata"))
 auto_trips <- subset(trips, trip_mode<=6)
 remove(trips)
 auto_trips <- mutate(auto_trips,
-                     vmt_indiv=(num_participants==1)*(trip_mode==1)*distance +
+                     vmt_indiv=((num_participants==1)*(trip_mode==1)*distance +
                                (num_participants==1)*(trip_mode==2)*distance +
                                (num_participants==1)*(trip_mode==3)*(distance/2.0) +
                                (num_participants==1)*(trip_mode==4)*(distance/2.0) +
                                (num_participants==1)*(trip_mode==5)*(distance/3.25) +
-                               (num_participants==1)*(trip_mode==6)*(distance/3.25),
-                     vmt_joint=(num_participants>1)*(distance/num_participants),
-                     vmt=vmt_indiv+vmt_joint,
-                     trips=1)
+                               (num_participants==1)*(trip_mode==6)*(distance/3.25))/SAMPLESHARE,
+                     vmt_joint=(num_participants>1)*(distance/num_participants)/SAMPLESHARE,
+                     vmt=(vmt_indiv+vmt_joint)/SAMPLESHARE,
+                     trips=1.0/SAMPLESHARE)
 auto_trips <- select(auto_trips, hh_id, person_id, orig_taz, dest_taz, vmt, vmt_indiv, vmt_joint, trips)
 auto_trips <- left_join(auto_trips, select(vmt_persons, hh_id, person_id, taz, WorkLocation), 
                         by=c("hh_id","person_id"))
@@ -1251,6 +1271,7 @@ remove(auto_trips_odhw, model_summary)
 # that was trips/vmt - we also want persons
 person_hw_summary      <- summarise(group_by(vmt_persons, COUNTY, county_name, taz, WorkLocation),
                                     freq = n())
+person_hw_summary$freq <- person_hw_summary$freq / SAMPLESHARE
 write.table(person_hw_summary,
             file.path(TARGET_DIR,"core_summaries","AutoTripsVMT_personsHomeWork.csv"), sep=",", row.names=FALSE)
 model_summary <- person_hw_summary # name it generically for rdata

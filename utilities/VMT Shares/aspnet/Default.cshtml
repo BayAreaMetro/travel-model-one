@@ -1,0 +1,267 @@
+﻿@{
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "VMT 1 2 3";
+
+    var _conString = System.Configuration.ConfigurationManager.ConnectionStrings["VMTShares"].ToString();
+    var connection = new System.Data.SqlClient.SqlConnection(_conString);
+    connection.Open();
+
+    // var db = Database.Open("VMTShares");  // references Web.config connectionString
+
+    var areaname = "";
+    var tazs_str = "";
+    var runid = "";
+    var year = "";
+    if (IsPost)
+    {
+        areaname = Request.Form["areaname"];
+        tazs_str = Request.Form["tazs"];
+        runid = Request.Form["runid"];
+        year = runid.Substring(0, 4);
+        // todo: check tazs_str
+    }
+    else
+    {
+        // example
+        areaname = "Albany";
+        tazs_str = "1034,1035,1036,1037,1038,1039";
+        runid = "2010_03_YYY";
+        year = runid.Substring(0, 4);
+    }
+}
+
+@section head {
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+}
+
+@section featured {
+<section class="featured">
+    <div class="content-wrapper">
+        <hgroup class="title">
+            <h1>@Page.Title.</h1>
+        </hgroup>
+    </div>
+</section>
+}
+
+<div id="map"></div>
+<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+@{ 
+    var dataFile = Server.MapPath("~/App_Data/mtc_taz_boundaries_1454_zone_system_simplify50pct.geojson");
+    string[] userData = null;
+    if (File.Exists(dataFile)) {
+        userData = File.ReadAllLines(dataFile);
+    }
+    string geojson_string = String.Join("\n", userData);
+}
+
+<script>
+    var unselected_taz_style= { "color": "#888888", "weight": 1, "opacity": 0.65 };
+    var selected_taz_style  = { "color": "#ff0000", "weight": 1, "opacity": 0.65 };
+    var tazs                = [@Html.Raw(geojson_string)];
+    var default_selected    = [@tazs_str];
+    var selected_tazs       = {};
+    for (idx in default_selected) { selected_tazs[default_selected[idx]] = 1; }
+
+    function taz_style(feature) {
+        if (selected_tazs[feature.properties.TAZ1454] == 1) { return selected_taz_style; }
+        return unselected_taz_style;
+    }
+
+    function toggle_select(taznum, layer) {
+        if (selected_tazs[taznum] == 1) {
+            // unselect it if it's selected
+            delete selected_tazs[taznum];
+            layer.setStyle(unselected_taz_style);
+        }
+        else {
+            // select it if it's unselected
+            selected_tazs[taznum] = 1;
+            layer.setStyle(selected_taz_style);
+        }
+        var tazlist_str = "";
+        for (var taz in selected_tazs) {
+            if (tazlist_str.length > 0) { tazlist_str = tazlist_str + ","; }
+            tazlist_str = tazlist_str + taz.toString();
+        }
+        document.getElementById('tazs_str').value = tazlist_str;
+    }
+
+    function taz_onEachFeature(feature, layer) {
+        // layer.bindPopup("<span>TAZ " + feature.properties.TAZ1454 +
+        //                 "<br />Selected: " + selected_tazs.has(feature.properties.TAZ1454) + "</span>");
+        layer.on('click', function (e) {
+            var layer = e.target;
+            toggle_select(feature.properties.TAZ1454, layer)
+        });
+    }
+
+    function zoomboxend(e) {
+        for (var idx = 0; idx < geo.getLayers().length; idx++) {
+            var layer = geo.getLayers()[idx];
+            if (e.boxZoomBounds.contains(layer.getBounds())) {
+                toggle_select(layer.feature.properties.TAZ1454, layer);
+            }
+        }
+    }
+
+    var map = L.map('map').setView([37.838, -122.29], 11);
+    L.tileLayer('https:////{s}.tiles.mapbox.com/v3/lmz.jni2k354/{z}/{x}/{y}.png', {
+        maxZoom: 20,
+        attribution: 'Map by <a href="http://mapbox.com">Mapbox</a>',
+        id: 'examples.map-i875mjb7'
+    }).addTo(map);
+    var geo = L.geoJson(tazs, { style: taz_style, onEachFeature: taz_onEachFeature });
+    geo.addTo(map);
+    map.on("boxzoomend", zoomboxend);
+
+</script>
+
+<form method="post">
+    <table>
+        <tr>
+            <td style="border:none">
+                <ol class="round">
+                    <li class="one">
+                        <label for="Year">Model Year:</label>
+                        <select name="runid">
+                            <option value="2005_03_YYY" @if (runid == "2005_03_YYY") { <text> selected</text> }>2005</option>
+                            <option value="2010_03_YYY" @if (runid == "2010_03_YYY") { <text> selected</text> }>2010</option>
+                            <option value="2020_03_116" @if (runid == "2020_03_116") { <text> selected</text> }>2020</option>
+                            <option value="2030_03_116" @if (runid == "2030_03_116") { <text> selected</text> }>2030</option>
+                            <option value="2040_03_116" @if (runid == "2040_03_116") { <text> selected</text> }>2040</option>
+                        </select>
+                        <br /><br />
+                        <label for="AreaName">Area Name:</label>
+                        Example: 'Albany' <br />
+                        <input type="text" name="areaname" value="@areaname" style="width: 150px" />
+                    </li>
+                </ol>
+            </td>
+            <td style="border:none">
+                <ol class="round">
+                    <li class="two">
+                        <label for="AreaTAZs">TAZs of Interest:</label>
+                        Select some on the map (click on a TAZ or shift-drag a rectangle to toggle selected status) or enter a list below.<br />
+                        Example: '1034,1035,1036,1037,1038,1039' <br />
+                        <input id="tazs_str" type="text" name="tazs" value="@tazs_str" style="width: 450px" />
+                    </li>
+                </ol>
+            </td>
+            <td style="border:none">
+                <ol class="round">
+                    <li class="three">
+                        <input type="submit" value="Submit" class="submit" />
+                    </li>
+                </ol>
+            </td>
+        </tr>
+    </table>
+</form>
+
+@if (tazs_str.Length > 0)
+    {
+    <h1>@areaname</h1>
+    <h2>(Simulation Year @year; Simulation ID: @runid)</h2>
+}
+
+<table>
+    <thead>
+        <tr>
+            <th rowspan="2">Lives</th>
+            <th rowspan="2">Works</th>
+            <th rowspan="2">Persons</th>
+            <th colspan="8">Non-commercial Passenger Vehicle Miles Traveled</th>
+        </tr>
+        <tr>
+            <th colspan="2" style="width:100px">Entirely within</th>
+            <th colspan="2" style="width:100px">Partially in</th>
+            <th colspan="2" style="width:100px">Entirely outside</th>
+            <th colspan="2" style="width:100px">Total</th>
+        </tr>
+    </thead>
+    @if (tazs_str.Length > 0)
+    {
+        try { 
+        System.Globalization.NumberFormatInfo nfi = new System.Globalization.CultureInfo("en-US", false).NumberFormat;
+        nfi.NumberDecimalDigits = 0;
+
+        // foreach (var row in db.Query(vmtQueryString, tazs_str, runid))
+        var vmtQueryString = "EXEC [CAPVMT].[vmtshares] @tazlist=@TAZLIST, @modelrun=@MODELRUN"; // call my stored procedure            
+        var command = new System.Data.SqlClient.SqlCommand(vmtQueryString, connection);
+        command.Parameters.Add("@TAZLIST", System.Data.SqlDbType.NChar);
+        command.Parameters["@TAZLIST"].Value = tazs_str;
+        command.Parameters.Add("@MODELRUN", System.Data.SqlDbType.NChar);
+        command.Parameters["@MODELRUN"].Value = runid;
+        command.CommandTimeout = 0;
+        var row = command.ExecuteReader();
+        var total_persons = 0;
+        var total_vmt_total = 0.0;
+        var total_vmt_within = 0.0;
+        var total_vmt_partial = 0.0;
+        var total_vmt_outside = 0.0;
+        if (row.HasRows) {
+            while (row.Read()) {
+                // return = live_in_area, work_in_area, persons, vmt_total, vmt_within, vmt_partial, vmt_outside
+                //                0             1          2        3          4           5            6
+                var pct_within = row.GetDouble(4) / row.GetDouble(3);
+                var pct_partial = row.GetDouble(5) / row.GetDouble(3);
+                var pct_outside = row.GetDouble(6) / row.GetDouble(3);
+                var pct_total = 1.0;
+                <tr>
+                @if (row.GetInt32(0) == 1) {
+                  <td>Live in area</td>
+                } else {
+                  <td>Live out of area</td>
+                }
+                @if (row.GetInt32(1) == 1) {
+                  <td>Work in area</td>
+                } else if (row.GetInt32(1) == -1) {
+                  <td>Non-worker</td>
+                } else {
+                  <td>Work out of area</td>
+                }
+                <td class="number">@row.GetInt32(2).ToString("N", nfi)</td>
+                <td class="number">@row.GetDouble(4).ToString("N", nfi)</td>
+                <td class="number">@pct_within.ToString("P1", System.Globalization.CultureInfo.InvariantCulture)</td>
+                <td class="number">@row.GetDouble(5).ToString("N", nfi)</td>
+                <td class="number">@pct_partial.ToString("P1", System.Globalization.CultureInfo.InvariantCulture)</td>
+                <td class="number">@row.GetDouble(6).ToString("N", nfi)</td>
+                <td class="number">@pct_outside.ToString("P1", System.Globalization.CultureInfo.InvariantCulture)</td>
+                <td class="number">@row.GetDouble(3).ToString("N", nfi)</td>
+                <td class="number">@pct_total.ToString("P1", System.Globalization.CultureInfo.InvariantCulture)</td>
+                </tr>
+                total_persons += row.GetInt32(2);
+                total_vmt_total += row.GetDouble(3);
+                total_vmt_within += row.GetDouble(4);
+                total_vmt_partial += row.GetDouble(5);
+                total_vmt_outside += row.GetDouble(6);  
+            } // end for each
+            <tr>
+            <td colspan="2">Total</td>
+            <td class="number">@total_persons.ToString("N",nfi)</td>
+            <td class="number">@total_vmt_within.ToString("N", nfi)</td>
+            <td></td>
+            <td class="number">@total_vmt_partial.ToString("N", nfi)</td>
+            <td></td>
+            <td class="number">@total_vmt_outside.ToString("N", nfi)</td>
+            <td></td>
+            <td class="number">@total_vmt_total.ToString("N", nfi)</td>
+            <td></td>
+            </tr>
+        } else {
+            <tr><td colspan="11" style="color:red">No rows returned</td></tr>
+        }
+        row.Close();
+        connection.Close();
+        }
+        catch (System.Data.SqlClient.SqlException ex)
+        {
+            <tr><td colspan="11" style="color:red">@ex.Message</td></tr>
+        }
+        catch (Exception ex)
+        {
+            <tr><td colspan="11">@ex.ToString()</td></tr>
+        }
+        }
+</table>

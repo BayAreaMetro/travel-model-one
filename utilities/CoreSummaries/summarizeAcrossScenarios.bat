@@ -12,12 +12,12 @@ set ORIGINAL_RUNDIR=1
 
 IF %USERNAME%==lzorn (
   rem I AM SPECIAL
-  set CODE_DIR=C:\Users\lzorn\Documents\Travel Model One Utilities\CoreSummaries
+  set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one
   set R_HOME=C:\Program Files\R\R-3.1.1
   set R_USER=%USERNAME%
   set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.1
 ) ELSE (
-  set CODE_DIR=D:\files\GitHub\Travel-Model-One-Utilities\CoreSummaries
+  set CODE_DIR=D:\files\GitHub\travel-model-one
   set R_HOME=C:\Program Files\R\R-3.1.1
   set R_USER=%USERNAME%
   set R_LIBS_USER=C:\Users\%USERNAME%\Documents\R\win-library\3.0
@@ -87,6 +87,9 @@ if not exist "%COMBINED_DIR%\trnline.tde" (
   )
 )
 
+:: This takes way too long so skip it by default
+goto done
+
 if not exist "%COMBINED_DIR%\trnlink.tde" (
   FOR %%H in (EA AM MD PM EV) DO (
     FOR %%J in (loc lrf exp hvy com) DO (
@@ -102,6 +105,7 @@ if not exist "%COMBINED_DIR%\trnlink.tde" (
     )
   )
 )
+
 :done
 
 set PATH=%OLD_PATH%
