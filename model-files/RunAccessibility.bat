@@ -52,6 +52,12 @@ echo STARTED ACCESSIBILITY RUN  %DATE% %TIME% >> logs\logsums.rpt
 :: Execute the accessibility calculations
 call java -showversion -Xms18000m -Xmx18000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Djppf.config=jppf-clientDistributed.properties -Djava.library.path=%RUNTIME% com.pb.mtc.ctramp.MtcAccessibilityLogsums accessibilities
 
+if not exist nonMandatoryAccessibities.csv (
+  echo ERROR generating accessibilities
+  set ERRORLEVEL=2
+  goto done
+)
+
 :: Moved the statically-named outputs to the accessibilities folder
 copy nonMandatoryAccessibities.csv accessibilities\nonMandatoryAccessibilities.csv
 copy MandatoryAccessibities.csv accessibilities\mandatoryAccessibilities.csv
@@ -59,7 +65,26 @@ del *access*.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 3:  Done
+:: Step 3:  Accessibilities Markets
+::
+:: ------------------------------------------------------------------------------------------------------
+
+rem delete this just in case, so we don't move an old one by accident
+if exist AccessibilityMarkets.html ( del AccessibilityMarkets.html )
+
+set R_HOME=C:\Program Files\R\R-3.1.1
+set CODE_DIR=.\CTRAMP\scripts\core_summaries
+set TARGET_DIR=%CD%
+
+call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\knit_AccessibilityMarkets.R"
+IF %ERRORLEVEL% GTR 0 goto done
+
+move AccessibilityMarkets.html "%TARGET_DIR%\core_summaries"
+move AccessibilityMarkets.md "%TARGET_DIR%\core_summaries"
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 4:  Done
 ::
 :: ------------------------------------------------------------------------------------------------------
 
