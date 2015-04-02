@@ -17,6 +17,9 @@
 :: The location of the 64-bit java development kit
 set JAVA_PATH=C:\Program Files\Java\jdk1.7.0_71
 
+:: The location of the 32-bit java runtime environment
+set JAVA_PATH_32=C:\Program Files (x86)\Java\jre6
+
 :: The location of the GAWK binary executable files
 set GAWK_PATH=M:\UTIL\Gawk
 
@@ -50,8 +53,7 @@ mkdir accessibilities
 echo STARTED ACCESSIBILITY RUN  %DATE% %TIME% >> logs\logsums.rpt 
 
 :: Execute the accessibility calculations
-call java -showversion -Xms18000m -Xmx18000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Djppf.config=jppf-clientDistributed.properties -Djava.library.path=%RUNTIME% com.pb.mtc.ctramp.MtcAccessibilityLogsums accessibilities
-
+call java -showversion -Xms18000m -Xmx18000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -DJAVA_HOME_32="%JAVA_PATH_32%" -DJAVA_32_PORT=1181 -Djppf.config=jppf-clientDistributed.properties -Djava.library.path=%RUNTIME% com.pb.mtc.ctramp.MtcAccessibilityLogsums accessibilities
 if not exist nonMandatoryAccessibities.csv (
   echo ERROR generating accessibilities
   set ERRORLEVEL=2
@@ -75,6 +77,10 @@ if exist AccessibilityMarkets.html ( del AccessibilityMarkets.html )
 set R_HOME=C:\Program Files\R\R-3.1.1
 set CODE_DIR=.\CTRAMP\scripts\core_summaries
 set TARGET_DIR=%CD%
+
+:: Rename these to standard names
+copy %TARGET_DIR%\popsyn\hhFile.*.csv %TARGET_DIR%\popsyn\hhFile.csv
+copy %TARGET_DIR%\popsyn\personFile.*.csv %TARGET_DIR%\popsyn\personFile.csv
 
 call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\knit_AccessibilityMarkets.R"
 IF %ERRORLEVEL% GTR 0 goto done
