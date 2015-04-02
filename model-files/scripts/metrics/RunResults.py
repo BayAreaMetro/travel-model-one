@@ -60,6 +60,7 @@ class RunResults:
     PERCENT_POP_INACTIVE        = 0.62
     ACTIVE_MIN_REQUIREMENT      = 30
     ANNUALIZATION               = 300
+    WORK_ANNUALIZATION          = 250
 
     PERCENT_PARKING_NONHOME     = 0.5   # % of parking that occurs at a location other than one's home
     PERCENT_PARKING_WORK        = 0.5   # % of work-related trips on project route
@@ -112,10 +113,23 @@ class RunResults:
     ('Collisions, Active Transport & Noise','Active Individuals','Total'): True,
     }
 
+    # Already a diff -- don't diff. Default false.
+    ALREADY_DIFF = {
+    ('Travel Time & Cost (logsum hours)','logsumdiff x avg(Baseline persons, Scenario persons)'): True,
+    }
+
+    # default is ANNUALIZATION
+    ANNUALIZATION_FACTOR = {
+    ('Travel Time & Cost (logsum hours)',
+     'logsumdiff x avg(Baseline persons, Scenario persons)',
+     'Work & School'): WORK_ANNUALIZATION,
+    }
+
     # See 'Plan Bay Area Performance Assessment Report_FINAL.pdf'
     # Table 9: Benefit Valuations
     # Units in 2013 dollars
     BENEFIT_VALUATION           = {
+    ('Travel Time & Cost (logsum hours)','logsumdiff x avg(Baseline persons, Scenario persons)'): -16.03,
     ('Travel Time','Auto/Truck (Hours)'                                        ):     -16.03,  # Auto
     ('Travel Time','Auto/Truck (Hours)','Truck (VHT)'                          ):     -26.24,  # Truck
     ('Travel Time','Non-Recurring Freeway Delay (Hours)','Auto (Person Hours)' ):     -16.03,
@@ -179,12 +193,16 @@ class RunResults:
     overwrite_config : dict
         Pass overwrite config if this is a base scenario and we should use the
         project's parking costs and ovtt adjustment mode.
+
+    Read configuration and input data.
     """
         # read the configs
         self.rundir = os.path.abspath(rundir)
         config_file = os.path.join(rundir, "BC_config.csv")
         self.config = pd.Series.from_csv(config_file, header=None, index_col=0)
         self.config['Project Run Dir'] = self.rundir
+
+        self.base_results = None
 
         # Make sure required values are in the configuration
         print("Reading result csvs from '%s'" % self.rundir)
@@ -204,18 +222,18 @@ class RunResults:
         if overwrite_config:
             self.is_base_dir = True
             for key in overwrite_config.keys(): self.config[key] = overwrite_config[key]
-            print "OVERWRITE_CONFIG FOR BASE_DIR: ", self.config
+            print "OVERWRITE_CONFIG FOR BASE_DIR: "
+            print self.config
 
         elif 'base_dir' not in self.config.keys():
             self.is_base_dir = True
-            self.config['ovtt_adjustment'] = 0.0
 
         print("")
         # read the csvs
         self.auto_times = \
             pd.read_table(os.path.join(self.rundir, "auto_times.csv"),
                           sep=",", index_col=[0,1])
-        print self.auto_times
+        # print self.auto_times
 
         self.autos_owned = \
             pd.read_table(os.path.join(self.rundir, "autos_owned.csv"),
@@ -254,10 +272,88 @@ class RunResults:
                           sep=",", index_col=[0,1])
         # print self.transit_times_by_mode_income
 
+        for filename in ['mandatoryAccessibilities', 'nonMandatoryAccessibilities']:
+            accessibilities = \
+                pd.read_table(os.path.join(self.rundir, "..", "accessibilities", "%s.csv" % filename),
+                              sep=",")
+            accessibilities.drop('destChoiceAlt', axis=1, inplace=True)
+            accessibilities.set_index(['taz','subzone'], inplace=True)
+            # put 'lowInc_0_autos' etc are in a column not column headers
+            accessibilities = pd.DataFrame(accessibilities.stack())
+            accessibilities.reset_index(inplace=True)
+            # split the income/auto sufficiency column into two columns
+            incQ_autoSuff = accessibilities['level_2'].str.split('_', n=1).apply(pd.Series)
+            incQ_autoSuff.columns = ['incQ_label', 'autoSuff_label']
+            # add them back to the original dataframe
+            accessibilities = pd.concat([incQ_autoSuff, accessibilities], axis=1)
+            # remove the now extraneous 'level_2'
+            accessibilities.drop('level_2', axis=1, inplace=True)
+
+            if self.is_base_dir: col_prefix = 'base'
+            else:                col_prefix = 'scen'
+
+            accessibilities.rename(columns={0:'%s_dclogsum' % col_prefix,
+                                                 'subzone':'walk_subzone'},
+                                        inplace=True)
+            print filename
+            print accessibilities.head()
+
+            if filename == 'mandatoryAccessibilities':
+                self.mandatoryAccessibilities = accessibilities
+            elif filename == 'nonMandatoryAccessibilities':
+                self.nonmandatoryAccessibilities = accessibilities
+
+        self.accessibilityMarkets = \
+            pd.read_table(os.path.join(self.rundir, "..", "core_summaries", "AccessibilityMarkets.csv"),
+                          sep=",")
+
+        self.accessibilityMarkets.rename(columns={'num_persons':'%s_num_persons' % col_prefix,
+                                                  'num_workers':'%s_num_workers' % col_prefix,
+                                                  'num_workers_students':'%s_num_workers_students' % col_prefix},
+                                         inplace=True)
+        print "accessibilityMarkets"
+        print self.accessibilityMarkets.head()
+
+    def createBaseRunResults(self):
+        """
+        Create instance of RunResults representing the base, if applicable.
+        """
+        try:
+            self.base_dir     = self.config.loc['base_dir']
+        except:
+            # this is ok -- no base_dir specified
+            self.base_dir     = None
+
+        if self.base_dir:
+            # these are not ok - let exceptions raise
+            print("")
+            print("BASE:")
+            self.base_dir = os.path.realpath(self.base_dir)
+
+            # pass the parking config for overwrite
+            base_overwrite_config = {}
+            total_parking_cost_allocation = 0.0
+            for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
+                key = 'percent parking cost incurred in %s' % county
+                # convert to floats
+                self.config.loc[key] = float(self.config.loc[key])
+                base_overwrite_config[key] = self.config.loc[key]
+                total_parking_cost_allocation += self.config.loc[key]
+
+            assert(abs(total_parking_cost_allocation - 1.0) < 0.001)
+
+            # pass the project mode for overwrite to base
+            base_overwrite_config['Project Mode'] = self.config.loc['Project Mode']
+
+            print self.base_dir
+            print base_overwrite_config
+            self.base_results = RunResults(rundir = self.base_dir,
+                                           overwrite_config=base_overwrite_config)
+
     def calculateDailyMetrics(self):
         """
         Calculates the daily output metrics which will actually get used for the benefits/cost
-        analysis.     
+        analysis.
         """
 
         # we really want these by class -- ignore time periods and income levels
@@ -268,6 +364,77 @@ class RunResults:
         auto_byclass    = self.auto_times.sum(level='Mode')               # person trips
 
         daily_results   = collections.OrderedDict()
+        ######################################################################################
+        cat1            = 'Travel Time & Cost (logsum hours)'
+        cat2            = 'logsumdiff x avg(Baseline persons, Scenario persons)'
+        if self.base_results:
+            self.mandatoryAccessibilities = pd.merge(self.mandatoryAccessibilities,
+                                                     self.base_results.mandatoryAccessibilities,
+                                                    how='left')
+            self.mandatoryAccessibilities['diff_dclogsum'] = \
+                self.mandatoryAccessibilities.scen_dclogsum - self.mandatoryAccessibilities.base_dclogsum
+            self.mandatoryAccessibilities['logsum_diff_minutes'] = self.mandatoryAccessibilities.diff_dclogsum / 0.0134
+
+            self.nonmandatoryAccessibilities = pd.merge(self.nonmandatoryAccessibilities,
+                                                        self.base_results.nonmandatoryAccessibilities,
+                                                        how='left')
+            self.nonmandatoryAccessibilities['diff_dclogsum'] = \
+                self.nonmandatoryAccessibilities.scen_dclogsum - self.nonmandatoryAccessibilities.base_dclogsum
+            self.nonmandatoryAccessibilities['logsum_diff_minutes'] = self.nonmandatoryAccessibilities.diff_dclogsum / 0.0175
+
+
+            print "self.mandatoryAccessibilities"
+            print len(self.mandatoryAccessibilities)
+            print self.mandatoryAccessibilities.head()
+
+            print "self.nonmandatoryAccessibilities"
+            print len(self.nonmandatoryAccessibilities)
+            print self.nonmandatoryAccessibilities.head()
+
+            self.accessibilityMarkets = pd.merge(self.accessibilityMarkets,
+                                                 self.base_results.accessibilityMarkets,
+                                                 how='left')
+            print "self.accessibilityMarkets"
+            print len(self.accessibilityMarkets)
+            print self.accessibilityMarkets.head()
+
+            self.mandatoryAccess = pd.merge(self.mandatoryAccessibilities,
+                                            self.accessibilityMarkets,
+                                            how='left')
+            self.mandatoryAccess.fillna(0)
+            print "self.mandatoryAccess"
+            print len(self.mandatoryAccess)
+            print self.mandatoryAccess.head()
+
+            self.nonmandatoryAccess = pd.merge(self.nonmandatoryAccessibilities,
+                                               self.accessibilityMarkets,
+                                               how='left')
+            self.nonmandatoryAccess.fillna(0)
+            print "self.nonmandatoryAccess"
+            print len(self.nonmandatoryAccess)
+            print self.nonmandatoryAccess.head()
+
+            # rule of one-half
+            # to compare with AccessibilityDifference.csv -- workers only
+            test = self.mandatoryAccess.loc[(self.mandatoryAccess.base_num_workers > 0) &
+                                            (self.mandatoryAccess.scen_num_workers > 0), :]
+            test['base_weight_diff']      = test.base_num_workers*test.logsum_diff_minutes
+            test['scen_weight_diff']      = test.scen_num_workers*test.logsum_diff_minutes
+            test['consumer_surplus_diff'] = 0.5*test.base_weight_diff + 0.5*test.scen_weight_diff
+            test = test[['taz','logsum_diff_minutes','base_weight_diff','scen_weight_diff','consumer_surplus_diff']]
+            test = test.groupby(['taz']).sum()
+            test.to_csv(os.path.join(self.rundir,'AccessibilityDifference_workers.csv'), header=True, float_format='%.6f')
+
+            print "test"
+            print test
+
+            self.mandatoryAccess['CS diff work/school'] = \
+                (0.5*self.mandatoryAccess.base_num_workers_students + 0.5*self.mandatoryAccess.scen_num_workers_students) *self.mandatoryAccess.logsum_diff_minutes
+            daily_results[(cat1,cat2,'Work & School')] = self.mandatoryAccess['CS diff work/school'].sum()/60.0;
+
+            self.nonmandatoryAccess['CS diff all'] = \
+                (0.5*self.nonmandatoryAccess.base_num_persons + 0.5*self.nonmandatoryAccess.scen_num_persons)*self.nonmandatoryAccess.logsum_diff_minutes
+            daily_results[(cat1,cat2,'All')] = self.nonmandatoryAccess['CS diff all'].sum()/60.0;
 
         ######################################################################################
         cat1            = 'Travel Time'
@@ -304,7 +471,8 @@ class RunResults:
         transit_person_trips = transit_byclass.loc[:,'Transit Trips'].sum()
         # If this is base dir, ovtt adjustment comes from project
         if self.is_base_dir:
-            self.ovtt_adjustment = self.config.loc['ovtt_adjustment']
+            # self.ovtt_adjustment should already be set below
+            assert(self.ovtt_adjustment > 0)
 
         elif self.config.loc['Project Mode'] in ['com','hvy','exp','lrf','loc']:
             self.ovtt_adjustment = transit_byclass.loc[self.config.loc['Project Mode'],'Out-of-vehicle hours'] / \
@@ -316,6 +484,9 @@ class RunResults:
         else:
             raise Exception("Invalid Project Mode:'%s'; Should be one of 'road','com','hvy','exp','lrf','loc'" % \
                             self.config.loc['Project Mode'])
+        # tell the base
+        if self.base_results:
+            self.base_results.ovtt_adjustment = self.ovtt_adjustment
 
         # OVTT adjustment multiplier
         if self.config.loc['Project Mode'] in ['com','hvy','exp','lrf','loc']:
@@ -485,44 +656,6 @@ class RunResults:
         Writes a readable version into `BC_detail_workbook`, and flat csv series
         into a csv in `all_projects_dir` named [Project ID].csv.
         """
-        self.base_results = None
-
-        try:
-            self.base_dir     = self.config.loc['base_dir']
-        except:
-            # this is ok -- no base_dir specified
-            self.base_dir     = None
-
-        if self.base_dir:
-            # these are not ok - let exceptions raise
-            print("")
-            print("BASE:")
-            self.base_dir = os.path.realpath(self.base_dir)
-
-            # pass the parking config for overwrite
-            base_overwrite_config = {}
-            total_parking_cost_allocation = 0.0
-            for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
-                key = 'percent parking cost incurred in %s' % county
-                # convert to floats
-                self.config.loc[key] = float(self.config.loc[key])
-                base_overwrite_config[key] = self.config.loc[key]
-                total_parking_cost_allocation += self.config.loc[key]
-
-            assert(abs(total_parking_cost_allocation - 1.0) < 0.001)
-
-            # pass the project mode for overwrite to base
-            base_overwrite_config['Project Mode'] = self.config.loc['Project Mode']
-            # and the ovtt adjustment
-            base_overwrite_config['ovtt_adjustment'] = self.ovtt_adjustment
-            print self.base_dir
-            print base_overwrite_config
-            self.base_results = RunResults(rundir = self.base_dir, 
-                                           overwrite_config=base_overwrite_config)
-            self.base_results.calculateDailyMetrics()
-            print "base results----"
-            print self.base_results.config
-            print self.base_results.daily_category_results
 
         workbook        = xlsxwriter.Workbook(BC_detail_workbook)
         scen_minus_base = self.writeBCWorksheet(workbook)
@@ -629,7 +762,7 @@ class RunResults:
         worksheet.write(row,0, 'Compare', format_label)
         worksheet.write(row,1, self.config.loc['Compare'], format_highlight)
         for col in range(2,5): worksheet.write(row,col,"",format_highlight)
-        row += 1        
+        row += 1
 
         # Calculated from config
         format_highlight= workbook.add_format({'bg_color':'#FFFFC0'})
@@ -734,12 +867,21 @@ class RunResults:
                 # these are purely informational
                 print("Could not lookup benefit valuation for %s" % str(key))
 
+            # is this already a diff (e.g. no diff)
+            already_diff = False
+            if (key[0],key[1]) in RunResults.ALREADY_DIFF:
+                already_diff = RunResults.ALREADY_DIFF[(key[0],key[1])]
+
             # is this already annual?  (e.g. no daily -> annual transformation)
             already_annual = False
             if (key[0],key[1],key[2]) in RunResults.ALREADY_ANNUAL:
                 already_annual = RunResults.ALREADY_ANNUAL[(key[0],key[1],key[2])]
             elif (key[0],key[1]) in RunResults.ALREADY_ANNUAL:
                 already_annual = RunResults.ALREADY_ANNUAL[(key[0],key[1])]
+
+            annualization = RunResults.ANNUALIZATION
+            if (key[0],key[1],key[2]) in RunResults.ANNUALIZATION_FACTOR:
+                annualization = RunResults.ANNUALIZATION_FACTOR[(key[0],key[1],key[2])]
 
             # category one header
             if cat1 != key[0]:
@@ -767,43 +909,47 @@ class RunResults:
                 cat2 = key[1]
                 worksheet.write(row,0,cat2,format_cat2)
                 # Sum it
-                worksheet.write(row,1,
-                                '=SUM(%s)' % xl_range(row+1,1,row+len(colA.daily_results[cat1][cat2]),1),
-                                format_cat2_lil if (cat1,cat2) in self.lil_cats else format_cat2_big)
-                if self.base_dir:
-                    worksheet.write(row,2, # base
-                                    '=SUM(%s)' % xl_range(row+1,2,row+len(colB.daily_results[cat1][cat2]),2),
-                                    format_cat2b_lil if (cat1,cat2) in self.lil_cats else format_cat2b_big)
+                if not already_diff:
+                    worksheet.write(row,1,
+                                    '=SUM(%s)' % xl_range(row+1,1,row+len(colA.daily_results[cat1][cat2]),1),
+                                    format_cat2_lil if (cat1,cat2) in self.lil_cats else format_cat2_big)
 
-                    if already_annual:
+                if self.base_dir:
+                    if cat1 in colB.daily_results and cat2 in colB.daily_results[cat1]:
+                        worksheet.write(row,2, # base
+                                        '=SUM(%s)' % xl_range(row+1,2,row+len(colB.daily_results[cat1][cat2]),2),
+                                        format_cat2b_lil if (cat1,cat2) in self.lil_cats else format_cat2b_big)
+
+                    if already_annual and cat1 in colB.daily_results and cat2 in colB.daily_results[cat1]:
                         worksheet.write(row,3, # diff daily
                                         "",
                                         format_cat2d_lil if (cat1,cat2) in self.lil_cats else format_cat2d_big)
                         worksheet.write(row,4, # diff annual
-                                        '=%s-%s' % (xl_rowcol_to_cell(row,1), xl_rowcol_to_cell(row,2)),
+                                        '=SUM(%s)' % xl_range(row+1,4,row+len(colA.daily_results[cat1][cat2]),4),
                                         format_cat2d_lil if (cat1,cat2) in self.lil_cats else format_cat2d_big)
 
                         bc_metrics[(cat1,cat2,'Difference')] = colA.daily_category_results[(cat1,cat2)] - \
                                                                colB.daily_category_results[(cat1,cat2)]
                     else:
                         worksheet.write(row,3, # diff daily
-                                        '=%s-%s' % (xl_rowcol_to_cell(row,1), xl_rowcol_to_cell(row,2)),
+                                        '=SUM(%s)' % xl_range(row+1,3,row+len(colA.daily_results[cat1][cat2]),3),
                                         format_cat2d_lil if (cat1,cat2) in self.lil_cats else format_cat2d_big)
                         worksheet.write(row,4, # diff annual
-                                        '=%d*%s' % (RunResults.ANNUALIZATION, xl_rowcol_to_cell(row,3)),
+                                        '=SUM(%s)' % xl_range(row+1,4,row+len(colA.daily_results[cat1][cat2]),4),
                                         format_cat2d_lil if (cat1,cat2) in self.lil_cats else format_cat2d_big)
 
-                        try:
-                            bc_metrics[(cat1,cat2,'Daily Difference')] = colA.daily_category_results[(cat1,cat2)] - \
-                                                                         colB.daily_category_results[(cat1,cat2)]
-                            bc_metrics[(cat1,cat2,'Annual Difference')] = RunResults.ANNUALIZATION * \
-                                                                          bc_metrics[(cat1,cat2,'Daily Difference')]
-                        except Exception as e:
-                            print cat1, cat2
-                            print e
-                            # print self.daily_category_results[(cat1,cat2)]
-                            # print self.base_results.daily_category_results[(cat1,cat2)]
-                            sys.exit()
+                        if not already_diff:
+                            try:
+                                bc_metrics[(cat1,cat2,'Daily Difference')] = colA.daily_category_results[(cat1,cat2)] - \
+                                                                             colB.daily_category_results[(cat1,cat2)]
+                                bc_metrics[(cat1,cat2,'Annual Difference')] = annualization * \
+                                                                              bc_metrics[(cat1,cat2,'Daily Difference')]
+                            except Exception as e:
+                                print cat1, cat2
+                                print e
+                                # print self.daily_category_results[(cat1,cat2)]
+                                # print self.base_results.daily_category_results[(cat1,cat2)]
+                                sys.exit()
 
 
                     # worksheet.write(row,6, "", format_cat2d_lil)
@@ -817,13 +963,18 @@ class RunResults:
 
             # details
             worksheet.write(row,0,key[2],format_var)
-            worksheet.write(row,1,value,
+
+            worksheet.write(row,1 if not already_diff else 3,value,
                             format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
+
             if self.base_dir:
-                worksheet.write(row,2, # base
-                                colB.daily_results[cat1][cat2][key[2]],
-                                format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
-                nominal_diff = 0
+
+                if cat1 in colB.daily_results and cat2 in colB.daily_results[cat1]:
+                    worksheet.write(row,2, # base
+                                    colB.daily_results[cat1][cat2][key[2]],
+                                    format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
+                    nominal_diff = 0
+
                 if already_annual:
                     worksheet.write(row,4, # diff annual
                                     '=%s-%s' % (xl_rowcol_to_cell(row,1), xl_rowcol_to_cell(row,2)),
@@ -831,14 +982,19 @@ class RunResults:
                     nominal_diff = colA.daily_results[cat1][cat2][key[2]] - \
                                    colB.daily_results[cat1][cat2][key[2]]
                 else:
-                    worksheet.write(row,3, # diff daily
-                                    '=%s-%s' % (xl_rowcol_to_cell(row,1), xl_rowcol_to_cell(row,2)),
-                                    format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
+                    if not already_diff:
+                        worksheet.write(row,3, # diff daily
+                                        '=%s-%s' % (xl_rowcol_to_cell(row,1), xl_rowcol_to_cell(row,2)),
+                                        format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
+
                     worksheet.write(row,4, # diff annual
-                                    '=%d*%s' % (RunResults.ANNUALIZATION, xl_rowcol_to_cell(row,3)),
+                                    '=%d*%s' % (annualization, xl_rowcol_to_cell(row,3)),
                                     format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
-                    nominal_diff = RunResults.ANNUALIZATION * (colA.daily_results[cat1][cat2][key[2]] - \
-                                                               colB.daily_results[cat1][cat2][key[2]])
+                    if already_diff:
+                        nominal_diff = annualization * colA.daily_results[cat1][cat2][key[2]]
+                    else:
+                        nominal_diff = annualization * (colA.daily_results[cat1][cat2][key[2]] - \
+                                                        colB.daily_results[cat1][cat2][key[2]])
 
                 if valuation != None:
                     worksheet.write(row,6, # diff annual
@@ -918,7 +1074,10 @@ if __name__ == '__main__':
     args = parser.parse_args(sys.argv[1:])
 
     rr = RunResults(args.project_dir)
+    rr.createBaseRunResults()
+
     rr.calculateDailyMetrics()
+    if rr.base_results: rr.base_results.calculateDailyMetrics()
 
     workbook_name = "BC_%s.xlsx" % rr.config.loc['Project ID']
     if not rr.is_base_dir and rr.config.loc['base_dir']:
