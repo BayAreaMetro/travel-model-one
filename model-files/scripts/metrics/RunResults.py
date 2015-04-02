@@ -129,7 +129,7 @@ class RunResults:
     # Table 9: Benefit Valuations
     # Units in 2013 dollars
     BENEFIT_VALUATION           = {
-    ('Travel Time & Cost (logsum hours)','logsumdiff x avg(Baseline persons, Scenario persons)'): -16.03,
+    ('Travel Time & Cost (logsum hours)','logsumdiff x avg(Baseline persons, Scenario persons)'): 16.03,
     ('Travel Time','Auto/Truck (Hours)'                                        ):     -16.03,  # Auto
     ('Travel Time','Auto/Truck (Hours)','Truck (VHT)'                          ):     -26.24,  # Truck
     ('Travel Time','Non-Recurring Freeway Delay (Hours)','Auto (Person Hours)' ):     -16.03,
