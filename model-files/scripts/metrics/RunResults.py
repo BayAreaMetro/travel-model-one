@@ -471,9 +471,12 @@ class RunResults:
         transit_person_trips = transit_byclass.loc[:,'Transit Trips'].sum()
         # If this is base dir, ovtt adjustment comes from project
         if self.is_base_dir:
-            # self.ovtt_adjustment should already be set below
-            assert(self.ovtt_adjustment > 0)
-
+            # self.ovtt_adjustment should already be set below if we're using this as a base for a scenario
+            try:
+                print "ovtt_adjustment = ", self.ovtt_adjustment
+            except AttributeError:
+                self.ovtt_adjustment = 0
+            pass
         elif self.config.loc['Project Mode'] in ['com','hvy','exp','lrf','loc']:
             self.ovtt_adjustment = transit_byclass.loc[self.config.loc['Project Mode'],'Out-of-vehicle hours'] / \
                                    transit_byclass.loc[self.config.loc['Project Mode'],'Transit Trips']
