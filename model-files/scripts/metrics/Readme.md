@@ -80,6 +80,27 @@ This can be viewed in Tableau using [Cobra Tableau.twb](https://github.com/Metro
 
 ## Output Detail
 
+### Travel Time & Cost (logsum hours)
+
+This is an *experimental* measure based on the [Rule of one-half](http://en.wikipedia.org/wiki/Economic_surplus#Rule_of_one-half)
+as it applies to change in consumer surplus:
+
+Change in Consumer Surplus = 0.5(Q<sub>1</sub> + Q<sub>0</sub>)(P<sub>1</sub> - P<sub>0</sub>)
+
+where
+
+ * Q<sub>0</sub> and Q<sub>1</sub> are, respectively, the quantity demanded before and after a change in supply
+ * P<sub>0</sub> and P<sub>1</sub> are, respectively, the prices before and after a change in supply
+
+Thus, for CoBRA analysis, the scenario is the change in supply and the
+
+Change in Consumer Surplus = 0.5(T<sub>base</sub> + T<sub>scenario</sub>)(L<sub>scenario</sub> - L<sub>base</sub>)
+
+where
+
+ * T<sub>base</sub> and T<sub>scenario</sub> are, respectively, persons traveling in the base and scenario model runs
+ * L<sub>base</sub> and L<sub>scenario</sub> are, respectivley, the destination choice logsums transformed to person hours in the base and scenario model runs
+
 ### Travel Time
 
 #### Auto/Truck (Hours)
