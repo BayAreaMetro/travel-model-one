@@ -191,6 +191,9 @@ names(persons_summary)[names(persons_summary)=="freq"] <- "num_persons"
 acc_market_summary <- left_join(persons_summary, workers_summary)
 acc_market_summary <- left_join(acc_market_summary, workers_students_summary)
 
+# Make NAs zero
+acc_market_summary[is.na(acc_market_summary)] <- 0
+
 write.table(acc_market_summary, file.path(TARGET_DIR,"core_summaries","AccessibilityMarkets.csv"), sep=",", row.names=FALSE)
 model_summary <- acc_market_summary  # name it generically for rdata
 save(model_summary, file=file.path(TARGET_DIR,"core_summaries","AccessibilityMarkets.rdata"))
