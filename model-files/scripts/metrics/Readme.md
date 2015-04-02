@@ -99,7 +99,7 @@ Change in Consumer Surplus = 0.5(T<sub>base</sub> + T<sub>scenario</sub>)(L<sub>
 where
 
  * T<sub>base</sub> and T<sub>scenario</sub> are, respectively, persons traveling in the base and scenario model runs
- * L<sub>base</sub> and L<sub>scenario</sub> are, respectivley, the destination choice logsums transformed to person hours in the base and scenario model runs
+ * L<sub>base</sub> and L<sub>scenario</sub> are, respectively, the destination choice logsums transformed to person hours in the base and scenario model runs
 
 ### Travel Time
 
