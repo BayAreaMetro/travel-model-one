@@ -6,58 +6,50 @@
 ::
 :: lmz - Create version for PBAU (Plan Bay Area Update)
 ::
+:: This just pulls output into extractor\
+::
+:: See also CopyFilesToM.bat, which is meant to run afterwards
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :: Create the needed directories
 mkdir extractor
-mkdir extractor\INPUT
-mkdir extractor\OUTPUT
 
-:: Set the last iteration variable
-set last=3
-
-:: RunModel
-copy RunModel.bat extractor\RunModel.bat
-
-:: Input land use file and networks
-copy INPUT\params.properties extractor\INPUT
-copy landuse\tazData.csv extractor\INPUT\tazData.csv
-copy INPUT\hwy extractor\INPUT
-copy INPUT\trn extractor\INPUT
+:: Assume this is set already
+:: set ITER=3
 
 :: Highway assignment results
-copy hwy\iter3\avgload5period.net extractor\OUTPUT\avgload5period.net
-copy hwy\iter3\avgload5period.csv extractor\OUTPUT\avgload5period.csv
+copy hwy\iter%ITER%\avgload5period.net extractor\avgload5period.net
+copy hwy\iter%ITER%\avgload5period.csv extractor\avgload5period.csv
 
 :: Transit assignment results
-mkdir extractor\OUTPUT\trn
-copy trn\trnline*.csv extractor\OUTPUT\trn\trnline*.csv
-copy trn\trnlink*.dbf extractor\OUTPUT\trn\trnlink*.dbf
+mkdir extractor\trn
+copy trn\trnline*.csv extractor\trn\trnline*.csv
+copy trn\trnlink*.dbf extractor\trn\trnlink*.dbf
 
 :: Demand results
-:: copy main\householdData_%last%.csv extractor\householdData_%last%.csv 
-:: copy main\personData_%last%.csv extractor\personData_%last%.csv 
-:: copy main\indivTripData_%last%.csv extractor\indivTripData_%last%.csv 
-:: copy main\indivTourData_%last%.csv extractor\indivTourData_%last%.csv 
-:: copy main\jointTripData_%last%.csv extractor\jointTripData_%last%.csv 
-:: copy main\jointTourData_%last%.csv extractor\jointTourData_%last%.csv 
-:: copy main\wsLocResults_%last%.csv extractor\wsLocResults_%last%.csv 
+:: copy main\householdData_%ITER%.csv extractor\householdData_%ITER%.csv
+:: copy main\personData_%ITER%.csv    extractor\personData_%ITER%.csv
+:: copy main\indivTripData_%ITER%.csv extractor\indivTripData_%ITER%.csv
+:: copy main\indivTourData_%ITER%.csv extractor\indivTourData_%ITER%.csv
+:: copy main\jointTripData_%ITER%.csv extractor\jointTripData_%ITER%.csv
+:: copy main\jointTourData_%ITER%.csv extractor\jointTourData_%ITER%.csv
+:: copy main\wsLocResults_%ITER%.csv  extractor\wsLocResults_%ITER%.csv
 
 :: Report results
-copy logs\HwySkims.debug extractor\OUTPUT\HwySkims.debug
-copy logs\feedback.rpt extractor\OUTPUT\feedback.rpt
-copy logs\SpeedErrors.log extractor\OUTPUT\SpeedErrors.log
+copy logs\HwySkims.debug  extractor\HwySkims.debug
+copy logs\feedback.rpt    extractor\feedback.rpt
+copy logs\SpeedErrors.log extractor\SpeedErrors.log
 
 :: Skim databases
 :: copy database\*.csv extractor\skimDB\*.csv
 
 :: Trip tables
-mkdir extractor\OUTPUT\main
-copy main\tripsEA.tpp extractor\OUTPUT\main
-copy main\tripsAM.tpp extractor\OUTPUT\main
-copy main\tripsMD.tpp extractor\OUTPUT\main
-copy main\tripsPM.tpp extractor\OUTPUT\main
-copy main\tripsEV.tpp extractor\OUTPUT\main
+mkdir extractor\main
+copy main\tripsEA.tpp extractor\main
+copy main\tripsAM.tpp extractor\main
+copy main\tripsMD.tpp extractor\main
+copy main\tripsPM.tpp extractor\main
+copy main\tripsEV.tpp extractor\main
 
 :: copy skims\hwyskmEA.tpp extractor\emfac\hwyskmEA.tpp
 :: copy skims\hwyskmAM.tpp extractor\emfac\hwyskmAM.tpp
@@ -81,13 +73,15 @@ copy main\tripsEV.tpp extractor\OUTPUT\main
 :: copy CTRAMP\runtime\mtcTourBased.properties extractor\mtcTourBased.properties
 
 :: Accessibility files
-mkdir extractor\OUTPUT\accessibilities
-copy accessibilities\nonMandatoryAccessibilities.csv extractor\OUTPUT\accessibilities
-copy accessibilities\mandatoryAccessibilities.csv extractor\OUTPUT\accessibilities
-copy skims\accessibility.csv extractor\OUTPUT\accessibilities
+mkdir extractor\accessibilities
+copy accessibilities\nonMandatoryAccessibilities.csv extractor\accessibilities
+copy accessibilities\mandatoryAccessibilities.csv    extractor\accessibilities
+copy skims\accessibility.csv                         extractor\accessibilities
 
 :: metrics
-mkdir extractor\OUTPUT\metrics
-copy metrics extractor\OUTPUT\metrics
+mkdir extractor\metrics
+copy metrics extractor\metrics
 
-rem ExtractKeyFiles for PBAU Complete
+rem ExtractKeyFiles into extractor for PBAU Complete
+
+:done
