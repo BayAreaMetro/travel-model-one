@@ -327,6 +327,14 @@ del *.prn
 del *.script.*
 del *.script
 
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 16:  Extractor
+::
+:: ------------------------------------------------------------------------------------------------------
+call ExtractKeyFiles
+if ERRORLEVEL 2 goto done
+
 :: Success target and message
 :success
 ECHO FINISHED SUCCESSFULLY!
