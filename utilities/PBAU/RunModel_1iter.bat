@@ -96,6 +96,7 @@ if %ERRORLEVEL% EQU 0 goto done
 CTRAMP\runtime\pslist.exe \\satmodel4 java
 if %ERRORLEVEL% EQU 0 goto done
 
+if not exist satmodel.txt goto done
 set /p nothing= < satmodel.txt
 cd CTRAMP\runtime
 set RUNTIMEDIR=%CD%
