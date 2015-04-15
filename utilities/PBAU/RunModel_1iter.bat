@@ -108,26 +108,27 @@ set RUNTIMEDIR=%CD%
 :: For remote - it's more complicated.  PsExec starts a process that doesn't have access to M: or MAINMODELSHARE
 :: So we need to use a helper
 copy /Y psexec_helper.bat %TEMP%
+C:
 cd %TEMP%
 
 :: satmodel
 %RUNTIMEDIR%\PsExec.exe \\satmodel -u SATMODEL\MTCPB -p %nothing% -i 2 -c -f %TEMP%\psexec_helper.bat %RUNTIMEDIR% .\JavaOnly_runNode1.cmd
-CTRAMP\runtime\pslist.exe \\satmodel
+%RUNTIMEDIR%\pslist.exe \\satmodel
 if %ERRORLEVEL% NEQ 0 goto done
 
 :: satmodel2
 %RUNTIMEDIR%\PsExec.exe \\satmodel2 -u SATMODEL2\MTCPB -p %nothing% -i 2 -c -f %TEMP%\psexec_helper.bat %RUNTIMEDIR% .\JavaOnly_runNode2.cmd
-CTRAMP\runtime\pslist.exe \\satmodel2
+%RUNTIMEDIR%\pslist.exe \\satmodel2
 if %ERRORLEVEL% NEQ 0 goto done
 
 :: satmodel3
 %RUNTIMEDIR%\PsExec.exe \\satmodel3 -u SATMODEL3\MTCPB -p %nothing% -i 2 -c -f %TEMP%\psexec_helper.bat %RUNTIMEDIR% .\JavaOnly_runNode3.cmd
-CTRAMP\runtime\pslist.exe \\satmodel3
+%RUNTIMEDIR%\pslist.exe \\satmodel3
 if %ERRORLEVEL% NEQ 0 goto done
 
 :: satmodel4
 %RUNTIMEDIR%\PsExec.exe \\satmodel4 -u SATMODEL4\MTCPB -p %nothing% -i 2 -c -f %TEMP%\psexec_helper.bat %RUNTIMEDIR% .\JavaOnly_runNode4.cmd
-CTRAMP\runtime\pslist.exe \\satmodel4
+%RUNTIMEDIR%\pslist.exe \\satmodel4
 if %ERRORLEVEL% NEQ 0 goto done
 
 M:
