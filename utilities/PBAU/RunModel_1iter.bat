@@ -87,13 +87,13 @@ if ERRORLEVEL 1 goto done
 :: Make sure java isn't running already
 CTRAMP\runtime\pslist.exe java
 if %ERRORLEVEL% EQU 0 goto done
-CTRAMP\runtime\pslist.exe \\satmodel
+CTRAMP\runtime\pslist.exe \\satmodel java
 if %ERRORLEVEL% EQU 0 goto done
-CTRAMP\runtime\pslist.exe \\satmodel2
+CTRAMP\runtime\pslist.exe \\satmodel2 java
 if %ERRORLEVEL% EQU 0 goto done
-CTRAMP\runtime\pslist.exe \\satmodel3
+CTRAMP\runtime\pslist.exe \\satmodel3 java
 if %ERRORLEVEL% EQU 0 goto done
-CTRAMP\runtime\pslist.exe \\satmodel4
+CTRAMP\runtime\pslist.exe \\satmodel4 java
 if %ERRORLEVEL% EQU 0 goto done
 
 set /p nothing= < satmodel.txt
