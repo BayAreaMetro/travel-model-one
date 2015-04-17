@@ -4,11 +4,16 @@
 ::
 :: Required environment variables:
 :: * ITER=the iteration corresponding to the output for which we'll calculate metrics.
-set ITER=3
+::   This should already be set in RunModel.bat
 :: * SAMPLESHARE=the sampling used for this iteration
-set SAMPLESHARE=1.00
+::   This should already be set in RunModel.bat
 :: * ALL_PROJECT_METRICS_DIR=the location to collect all the metrics files from projects.
 ::   These will be rolled up into a single dashboard.
+::
+
+IF defined ITER (echo Using ITER=%ITER%) else (goto error)
+IF defined SAMPLESHARE (echo Using SAMPLESHARE=%SAMPLESHARE%) else (goto error)
+
 set ALL_PROJECT_METRICS_DIR=..\all_project_metrics
 :: * Location of R
 set R_HOME=C:\Program Files\R\R-3.1.1
