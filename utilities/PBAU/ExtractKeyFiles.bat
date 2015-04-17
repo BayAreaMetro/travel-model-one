@@ -77,6 +77,7 @@ mkdir extractor\accessibilities
 copy accessibilities\nonMandatoryAccessibilities.csv extractor\accessibilities
 copy accessibilities\mandatoryAccessibilities.csv    extractor\accessibilities
 copy skims\accessibility.csv                         extractor\accessibilities
+copy core_summaries\AccessibilityMarkets.*           extractor\accessibilities
 
 :: metrics
 mkdir extractor\metrics
