@@ -1,5 +1,5 @@
 *del metrics\auto_times_%SKIMTYPE%.csv
-
+SKIMTYPE = %SKIMTYPE%
 ; Create auto summary based on trips per day by income quartile and mode of:
 ; - Average travel time in minutes
 ; - Average travel distance in miles
@@ -69,11 +69,11 @@ loop auto = 1,6
      FILEI MATI[5] = "main\tripsEV@token_inc@.tpp"
   
   ; Read Highway Skims   
-     FILEI MATI[6] = "skims\HWYSKMEA_%SKIMTYPE%.tpp"
-     FILEI MATI[7] = "skims\HWYSKMAM_%SKIMTYPE%.tpp"
-     FILEI MATI[8] = "skims\HWYSKMMD_%SKIMTYPE%.tpp"
-     FILEI MATI[9] = "skims\HWYSKMPM_%SKIMTYPE%.tpp"
-     FILEI MATI[10]= "skims\HWYSKMEV_%SKIMTYPE%.tpp"
+     FILEI MATI[6] = "skims\HWYSKMEA_@SKIMTYPE@.tpp"
+     FILEI MATI[7] = "skims\HWYSKMAM_@SKIMTYPE@.tpp"
+     FILEI MATI[8] = "skims\HWYSKMMD_@SKIMTYPE@.tpp"
+     FILEI MATI[9] = "skims\HWYSKMPM_@SKIMTYPE@.tpp"
+     FILEI MATI[10]= "skims\HWYSKMEV_@SKIMTYPE@.tpp"
      
      FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T 
 
@@ -151,11 +151,11 @@ loop auto = 1,6
      FILEI MATI[5] = "nonres\tripsIxEV.tpp"
 
      ; Read Highway Skims
-     FILEI MATI[6] = "skims\HWYSKMEA_%SKIMTYPE%.tpp"
-     FILEI MATI[7] = "skims\HWYSKMAM_%SKIMTYPE%.tpp"
-     FILEI MATI[8] = "skims\HWYSKMMD_%SKIMTYPE%.tpp"
-     FILEI MATI[9] = "skims\HWYSKMPM_%SKIMTYPE%.tpp"
-     FILEI MATI[10]= "skims\HWYSKMEV_%SKIMTYPE%.tpp"
+     FILEI MATI[6] = "skims\HWYSKMEA_@SKIMTYPE@.tpp"
+     FILEI MATI[7] = "skims\HWYSKMAM_@SKIMTYPE@.tpp"
+     FILEI MATI[8] = "skims\HWYSKMMD_@SKIMTYPE@.tpp"
+     FILEI MATI[9] = "skims\HWYSKMPM_@SKIMTYPE@.tpp"
+     FILEI MATI[10]= "skims\HWYSKMEV_@SKIMTYPE@.tpp"
 
      FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T
 
@@ -230,11 +230,11 @@ loop auto = 1,6
      FILEI MATI[5] = "nonres\tripsAirPaxEV.tpp"
 
      ; Read Highway Skims
-     FILEI MATI[6] = "skims\HWYSKMEA_%SKIMTYPE%.tpp"
-     FILEI MATI[7] = "skims\HWYSKMAM_%SKIMTYPE%.tpp"
-     FILEI MATI[8] = "skims\HWYSKMMD_%SKIMTYPE%.tpp"
-     FILEI MATI[9] = "skims\HWYSKMPM_%SKIMTYPE%.tpp"
-     FILEI MATI[10]= "skims\HWYSKMEV_%SKIMTYPE%.tpp"
+     FILEI MATI[6] = "skims\HWYSKMEA_@SKIMTYPE@.tpp"
+     FILEI MATI[7] = "skims\HWYSKMAM_@SKIMTYPE@.tpp"
+     FILEI MATI[8] = "skims\HWYSKMMD_@SKIMTYPE@.tpp"
+     FILEI MATI[9] = "skims\HWYSKMPM_@SKIMTYPE@.tpp"
+     FILEI MATI[10]= "skims\HWYSKMEV_@SKIMTYPE@.tpp"
 
      FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T
 
@@ -326,16 +326,16 @@ RUN PGM = MATRIX
   FILEI MATI[5] = "nonres\tripstrkEV.tpp"  
   
   ; Read Highway Skims   
-  FILEI MATI[6] = "skims\COM_HWYSKIMEA_%SKIMTYPE%.tpp"
-  FILEI MATI[7] = "skims\COM_HWYSKIMAM_%SKIMTYPE%.tpp"
-  FILEI MATI[8] = "skims\COM_HWYSKIMMD_%SKIMTYPE%.tpp"
-  FILEI MATI[9] = "skims\COM_HWYSKIMPM_%SKIMTYPE%.tpp"
-  FILEI MATI[10]= "skims\COM_HWYSKIMEV_%SKIMTYPE%.tpp"
+  FILEI MATI[6] = "skims\COM_HWYSKIMEA_@SKIMTYPE@.tpp"
+  FILEI MATI[7] = "skims\COM_HWYSKIMAM_@SKIMTYPE@.tpp"
+  FILEI MATI[8] = "skims\COM_HWYSKIMMD_@SKIMTYPE@.tpp"
+  FILEI MATI[9] = "skims\COM_HWYSKIMPM_@SKIMTYPE@.tpp"
+  FILEI MATI[10]= "skims\COM_HWYSKIMEV_@SKIMTYPE@.tpp"
 
   ; Read Truck Operating Cost from Properties file
   Read File = "CTRAMP\scripts\block\hwyParam.block"
 
-  FILEO PRINTO[1] = "metrics\auto_times_%SKIMTYPE%.csv",APPEND=T 
+  FILEO PRINTO[1] = "metrics\auto_times_@SKIMTYPE@.csv",APPEND=T 
 
   ; Trips EA * Skims EA  
   MW[1]   = (mi.1.vstruck * mi.6.timevsm) + 
