@@ -1,5 +1,5 @@
 *del metrics\auto_times_%SKIMTYPE%.csv
-SKIMTYPE = %SKIMTYPE%
+SKIMTYPE = '%SKIMTYPE%'
 ; Create auto summary based on trips per day by income quartile and mode of:
 ; - Average travel time in minutes
 ; - Average travel distance in miles
