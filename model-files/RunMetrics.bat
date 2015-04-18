@@ -11,6 +11,9 @@
 ::   These will be rolled up into a single dashboard.
 ::
 
+:: Stamp the feedback report with the date and time of the model start
+echo STARTED METRICS RUN  %DATE% %TIME% >> logs\feedback.rpt
+
 IF defined ITER (echo Using ITER=%ITER%) else (goto error)
 IF defined SAMPLESHARE (echo Using SAMPLESHARE=%SAMPLESHARE%) else (goto error)
 
@@ -26,6 +29,7 @@ set TARGET_DIR=%CD%
 :: Required input file:  INPUT\metrics\BC_config.csv
 if not exist metrics (mkdir metrics)
 copy INPUT\metrics\BC_config.csv metrics
+
 
 if not exist metrics\autos_owned.csv (
   rem Tally auto ownership from household data
@@ -158,6 +162,7 @@ move *.PRN logs
 
 :success
 echo FINISHED METRICS SUCESSFULLY!
+echo ENDED METRICS RUN  %DATE% %TIME% >> logs\feedback.rpt
 
 :error
 echo ERRORLEVEL=%ERRORLEVEL%

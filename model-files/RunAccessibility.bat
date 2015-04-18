@@ -50,7 +50,7 @@ set HOST_IP_ADDRESS=192.168.1.200
 mkdir accessibilities
 
 :: Stamp the feedback report with the date and time of the model start
-echo STARTED ACCESSIBILITY RUN  %DATE% %TIME% >> logs\logsums.rpt 
+echo STARTED ACCESSIBILITY RUN  %DATE% %TIME% >> logs\feedback.rpt
 
 :: Execute the accessibility calculations
 call java -showversion -Xms18000m -Xmx18000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -DJAVA_HOME_32="%JAVA_PATH_32%" -DJAVA_32_PORT=1181 -Djppf.config=jppf-clientDistributed.properties -Djava.library.path=%RUNTIME% com.pb.mtc.ctramp.MtcAccessibilityLogsums accessibilities
@@ -97,7 +97,7 @@ move AccessibilityMarkets.md "%TARGET_DIR%\core_summaries"
 :: Success target and message
 :success
 ECHO FINISHED SUCCESSFULLY!
-echo ENDED ACCESSIBILITY RUN  %DATE% %TIME% >> logs\logsums.rpt
+echo ENDED ACCESSIBILITY RUN  %DATE% %TIME% >> logs\feedback.rpt
 
 :: Complete target and message
 :done

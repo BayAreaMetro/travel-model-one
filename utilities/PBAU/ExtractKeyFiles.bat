@@ -10,6 +10,7 @@
 ::
 :: See also CopyFilesToM.bat, which is meant to run afterwards
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+echo STARTED EXTRACTOR RUN  %DATE% %TIME% >> logs\feedback.rpt
 
 :: Create the needed directories
 mkdir extractor
@@ -83,6 +84,8 @@ copy core_summaries\AccessibilityMarkets.*           extractor\accessibilities
 mkdir extractor\metrics
 copy metrics extractor\metrics
 
-rem ExtractKeyFiles into extractor for PBAU Complete
+:success
+echo ExtractKeyFiles into extractor for PBAU Complete
+echo ENDED EXTRACTOR RUN  %DATE% %TIME% >> logs\feedback.rpt
 
 :done
