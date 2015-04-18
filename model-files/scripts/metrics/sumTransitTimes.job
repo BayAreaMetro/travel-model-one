@@ -10,7 +10,7 @@
 
 ;     Uses Transit trips * Transit skims (IVT and OVT)
 
-*del metrics\transit_times_by_acc_mode_egr.csv
+*del metrics\transit_times_by_acc_mode_egr_%SKIMTYPE%.csv
 
 ; Loop thru transit modes 
   loop path = 1,5   
@@ -61,11 +61,11 @@
       
       ; Read transit skims
       ; ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
-      FILEI MATI[6] = "skims\trnskmEA_@token_access@_@token_path@_@token_egress@.tpp"
-      FILEI MATI[7] = "skims\trnskmAM_@token_access@_@token_path@_@token_egress@.tpp"
-      FILEI MATI[8] = "skims\trnskmMD_@token_access@_@token_path@_@token_egress@.tpp"
-      FILEI MATI[9] = "skims\trnskmPM_@token_access@_@token_path@_@token_egress@.tpp"
-      FILEI MATI[10]= "skims\trnskmEV_@token_access@_@token_path@_@token_egress@.tpp"     
+      FILEI MATI[6] = "skims\trnskmEA_@token_access@_@token_path@_@token_egress@_%SKIMTYPE%.tpp"
+      FILEI MATI[7] = "skims\trnskmAM_@token_access@_@token_path@_@token_egress@_%SKIMTYPE%.tpp"
+      FILEI MATI[8] = "skims\trnskmMD_@token_access@_@token_path@_@token_egress@_%SKIMTYPE%.tpp"
+      FILEI MATI[9] = "skims\trnskmPM_@token_access@_@token_path@_@token_egress@_%SKIMTYPE%.tpp"
+      FILEI MATI[10]= "skims\trnskmEV_@token_access@_@token_path@_@token_egress@_%SKIMTYPE%.tpp"     
       
       FILEO PRINTO[1] = "metrics\transit_times_by_acc_mode_egr_@token_path@.csv", append=T
 
@@ -162,7 +162,7 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
            printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the path files into one
-* copy metrics\transit_times_by_acc_mode_egr_com.csv+metrics\transit_times_by_acc_mode_egr_hvy.csv+metrics\transit_times_by_acc_mode_egr_exp.csv+metrics\transit_times_by_acc_mode_egr_lrf.csv+metrics\transit_times_by_acc_mode_egr_loc.csv metrics\transit_times_by_acc_mode_egr.csv
+* copy metrics\transit_times_by_acc_mode_egr_com.csv+metrics\transit_times_by_acc_mode_egr_hvy.csv+metrics\transit_times_by_acc_mode_egr_exp.csv+metrics\transit_times_by_acc_mode_egr_lrf.csv+metrics\transit_times_by_acc_mode_egr_loc.csv metrics\transit_times_by_acc_mode_egr_%SKIMTYPE%.csv
 ; delete the individual ones
 * del metrics\transit_times_by_acc_mode_egr_com.csv
 * del metrics\transit_times_by_acc_mode_egr_hvy.csv
@@ -175,7 +175,7 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
 ; 1. Average travel time
 ; 2. Average travel cost
 
-*del metrics\transit_times_by_mode_income.csv
+*del metrics\transit_times_by_mode_income_%SKIMTYPE%.csv
 
 ; Loop thru transit modes 
   loop path = 1,5   
@@ -205,23 +205,23 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
      
    ; Read transit skims
      ; ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
-     FILEI MATI[6] = "skims\trnskmEA_wlk_@token_path@_wlk.tpp"
-     FILEI MATI[7] = "skims\trnskmAM_wlk_@token_path@_wlk.tpp"
-     FILEI MATI[8] = "skims\trnskmMD_wlk_@token_path@_wlk.tpp"
-     FILEI MATI[9] = "skims\trnskmPM_wlk_@token_path@_wlk.tpp"
-     FILEI MATI[10] = "skims\trnskmEV_wlk_@token_path@_wlk.tpp"
+     FILEI MATI[6]  = "skims\trnskmEA_wlk_@token_path@_wlk_%SKIMTYPE%.tpp"
+     FILEI MATI[7]  = "skims\trnskmAM_wlk_@token_path@_wlk_%SKIMTYPE%.tpp"
+     FILEI MATI[8]  = "skims\trnskmMD_wlk_@token_path@_wlk_%SKIMTYPE%.tpp"
+     FILEI MATI[9]  = "skims\trnskmPM_wlk_@token_path@_wlk_%SKIMTYPE%.tpp"
+     FILEI MATI[10] = "skims\trnskmEV_wlk_@token_path@_wlk_%SKIMTYPE%.tpp"
      
-     FILEI MATI[11] = "skims\trnskmEA_drv_@token_path@_wlk.tpp"
-     FILEI MATI[12] = "skims\trnskmAM_drv_@token_path@_wlk.tpp"
-     FILEI MATI[13] = "skims\trnskmMD_drv_@token_path@_wlk.tpp"
-     FILEI MATI[14] = "skims\trnskmPM_drv_@token_path@_wlk.tpp"
-     FILEI MATI[15] = "skims\trnskmEV_drv_@token_path@_wlk.tpp"
+     FILEI MATI[11] = "skims\trnskmEA_drv_@token_path@_wlk_%SKIMTYPE%.tpp"
+     FILEI MATI[12] = "skims\trnskmAM_drv_@token_path@_wlk_%SKIMTYPE%.tpp"
+     FILEI MATI[13] = "skims\trnskmMD_drv_@token_path@_wlk_%SKIMTYPE%.tpp"
+     FILEI MATI[14] = "skims\trnskmPM_drv_@token_path@_wlk_%SKIMTYPE%.tpp"
+     FILEI MATI[15] = "skims\trnskmEV_drv_@token_path@_wlk_%SKIMTYPE%.tpp"
 
-     FILEI MATI[16] = "skims\trnskmEA_wlk_@token_path@_drv.tpp"
-     FILEI MATI[17] = "skims\trnskmAM_wlk_@token_path@_drv.tpp"
-     FILEI MATI[18] = "skims\trnskmMD_wlk_@token_path@_drv.tpp"
-     FILEI MATI[19] = "skims\trnskmPM_wlk_@token_path@_drv.tpp"
-     FILEI MATI[20] = "skims\trnskmEV_wlk_@token_path@_wlk.tpp"     
+     FILEI MATI[16] = "skims\trnskmEA_wlk_@token_path@_drv_%SKIMTYPE%.tpp"
+     FILEI MATI[17] = "skims\trnskmAM_wlk_@token_path@_drv_%SKIMTYPE%.tpp"
+     FILEI MATI[18] = "skims\trnskmMD_wlk_@token_path@_drv_%SKIMTYPE%.tpp"
+     FILEI MATI[19] = "skims\trnskmPM_wlk_@token_path@_drv_%SKIMTYPE%.tpp"
+     FILEI MATI[20] = "skims\trnskmEV_wlk_@token_path@_drv_%SKIMTYPE%.tpp"
       
      FILEO PRINTO[1] = "metrics\transit_times_by_mode_income_@token_path@.csv",APPEND=T    
   
@@ -347,7 +347,7 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
            printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the path files into one
-* copy metrics\transit_times_by_mode_income_com.csv+metrics\transit_times_by_mode_income_hvy.csv+metrics\transit_times_by_mode_income_exp.csv+metrics\transit_times_by_mode_income_lrf.csv+metrics\transit_times_by_mode_income_loc.csv metrics\transit_times_by_mode_income.csv
+* copy metrics\transit_times_by_mode_income_com.csv+metrics\transit_times_by_mode_income_hvy.csv+metrics\transit_times_by_mode_income_exp.csv+metrics\transit_times_by_mode_income_lrf.csv+metrics\transit_times_by_mode_income_loc.csv metrics\transit_times_by_mode_income_%SKIMTYPE%.csv
 ; delete the individual ones
 * del metrics\transit_times_by_mode_income_com.csv
 * del metrics\transit_times_by_mode_income_hvy.csv

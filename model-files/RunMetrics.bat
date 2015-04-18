@@ -55,25 +55,54 @@ if not exist main\tripsEVinc1.tpp (
 
 if not exist metrics (mkdir metrics)
 
-if not exist metrics\transit_times_by_mode_income.csv (
+if not exist metrics\transit_times_by_mode_income_final.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
   rem Input : main\trips(EA|AM|MD|PM|EV)allinc.tpp, transit skims
-  rem Output: metrics\transit_times.csv
+  rem Output: metrics\transit_times_by_acc_mode_egr_final.csv,
+  rem         metrics\transit_times_by_mode_income_final.csv
+  set SKIMTYPE=final
   runtpp "%CODE_DIR%\sumTransitTimes.job"
   if ERRORLEVEL 2 goto error
 )
 
-if not exist metrics\auto_times.csv (
+if not exist metrics\transit_times_by_mode_income_iter%ITER%.csv (
+  rem Reads trip tables and skims and outputs tallies for trip attributes
+  rem Input : main\trips(EA|AM|MD|PM|EV)allinc.tpp, transit skims
+  rem Output: metrics\transit_times_by_acc_mode_egr_iter%ITER%.csv,
+  rem         metrics\transit_times_by_mode_income_iter%ITER%.csv
+  set SKIMTYPE=iter%ITER%
+  runtpp "%CODE_DIR%\sumTransitTimes.job"
+  if ERRORLEVEL 2 goto error
+
+  rem these are primary
+  copy metrics\transit_times_by_acc_mode_egr_iter%ITER%.csv  metrics\transit_times_by_acc_mode_egr.csv
+  copy metrics\transit_times_by_mode_income_iter%ITER%.csv   metrics\transit_times_by_mode_income.csv
+)
+
+if not exist metrics\auto_times_final.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
   rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp, hwy skims
-  rem Output: metrics\auto_times.csv
+  rem Output: metrics\auto_times_final.csv
+  set SKIMTYPE=final
   runtpp "%CODE_DIR%\sumAutoTimes.job"
   if ERRORLEVEL 2 goto error
 )
 
+if not exist metrics\auto_times_iter%ITER%.csv (
+  rem Reads trip tables and skims and outputs tallies for trip attributes
+  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp, hwy skims
+  rem Output: metrics\auto_times_iter%ITER%.csv
+  set SKIMTYPE=iter%ITER%
+  runtpp "%CODE_DIR%\sumAutoTimes.job"
+  if ERRORLEVEL 2 goto error
+
+  rem these are primary
+  copy metrics\auto_times_iter%ITER%.csv metrics\auto_times.csv
+)
+
 if not exist metrics\nonmot_times.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : trips(EA|AM|MD|PM|EV)inc[1-4].tpp, hwy skims
+  rem Input : trips(EA|AM|MD|PM|EV)inc[1-4].tpp, non-mot skims
   rem Output: metrics\nonmot_times.csv
   runtpp "%CODE_DIR%\sumNonmotTimes.job"
   if ERRORLEVEL 2 goto error

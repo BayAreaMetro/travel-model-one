@@ -227,6 +227,19 @@ if ERRORLEVEL 2 goto done
 ::
 :: ------------------------------------------------------------------------------------------------------
 
+:: Save the originals aside.  iterX means used for iterX core models
+FOR %%H in (EA AM MD PM EV) DO (
+
+  copy skims\HWYSKM%%H.tpp      skims\HWYSKM%%H_iter%ITER%.tpp
+  copy skims\COM_HWYSKIM%%H.tpp skims\COM_HWYSKIM%%H_iter%ITER%.tpp
+
+  FOR %%J in (loc lrf exp hvy com) DO (
+    copy skims\trnskm%%H_wlk_%%J_wlk.tpp skims\trnskm%%H_wlk_%%J_wlk_iter%ITER%.tpp
+    copy skims\trnskm%%H_drv_%%J_wlk.tpp skims\trnskm%%H_drv_%%J_wlk_iter%ITER%.tpp
+    copy skims\trnskm%%H_wlk_%%J_drv.tpp skims\trnskm%%H_wlk_%%J_drv_iter%ITER%.tpp
+  )
+)
+
 :: Create the automobile level-of-service matrices
 runtpp CTRAMP\scripts\skims\HwySkims.job
 if ERRORLEVEL 2 goto done
@@ -242,6 +255,26 @@ if ERRORLEVEL 2 goto done
 :: Create the public transport level-of-service matrices
 runtpp CTRAMP\scripts\skims\TransitSkims.job
 if ERRORLEVEL 2 goto done
+
+:: Rename the finals and copy the iterX version back to be consistent
+FOR %%H in (EA AM MD PM EV) DO (
+
+  move skims\HWYSKM%%H.tpp                 skims\HWYSKM%%H_final.tpp
+  move skims\COM_HWYSKIM%%H.tpp            skims\COM_HWYSKIM%%H_final.tpp
+
+  copy skims\HWYSKM%%H_iter%ITER%.tpp      skims\HWYSKM%%H.tpp
+  copy skims\COM_HWYSKIM%%H_iter%ITER%.tpp skims\COM_HWYSKIM%%H.tpp
+
+  FOR %%J in (loc lrf exp hvy com) DO (
+    move skims\trnskm%%H_wlk_%%J_wlk.tpp skims\trnskm%%H_wlk_%%J_wlk_final.tpp
+    move skims\trnskm%%H_drv_%%J_wlk.tpp skims\trnskm%%H_drv_%%J_wlk_final.tpp
+    move skims\trnskm%%H_wlk_%%J_drv.tpp skims\trnskm%%H_wlk_%%J_drv_final.tpp
+
+    copy skims\trnskm%%H_wlk_%%J_wlk_iter%ITER%.tpp skims\trnskm%%H_wlk_%%J_wlk.tpp
+    copy skims\trnskm%%H_drv_%%J_wlk_iter%ITER%.tpp skims\trnskm%%H_drv_%%J_wlk.tpp
+    copy skims\trnskm%%H_wlk_%%J_drv_iter%ITER%.tpp skims\trnskm%%H_wlk_%%J_drv.tpp
+  )
+)
 
 :: ------------------------------------------------------------------------------------------------------
 ::
