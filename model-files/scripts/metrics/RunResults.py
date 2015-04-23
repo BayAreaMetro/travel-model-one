@@ -368,6 +368,8 @@ class RunResults:
         cat1            = 'Travel Time & Cost (logsum hours)'
         cat2            = 'logsumdiff x avg(Baseline persons, Scenario persons)'
         if self.base_results:
+            # Take the difference and convert utils to minutes (k_ivt = 0.0134 k_mc_ls = 1.0 in access calcs);
+            # TODO: is k_mc_ls = 1.0?  DestinationChoice.cls has different values
             self.mandatoryAccessibilities = pd.merge(self.mandatoryAccessibilities,
                                                      self.base_results.mandatoryAccessibilities,
                                                     how='left')
@@ -375,6 +377,7 @@ class RunResults:
                 self.mandatoryAccessibilities.scen_dclogsum - self.mandatoryAccessibilities.base_dclogsum
             self.mandatoryAccessibilities['logsum_diff_minutes'] = self.mandatoryAccessibilities.diff_dclogsum / 0.0134
 
+            # This too
             self.nonmandatoryAccessibilities = pd.merge(self.nonmandatoryAccessibilities,
                                                         self.base_results.nonmandatoryAccessibilities,
                                                         how='left')
@@ -514,6 +517,8 @@ class RunResults:
             vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'],'VMT'].sum()
         daily_results[(cat1,cat2,'Truck')] = \
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
+        daily_results[(cat1,cat2,'Truck from Trips+Skims')] = \
+            auto_byclass.loc['truck','Vehicle Miles']
 
         cat2            = 'Operating Costs'
         daily_results[(cat1,cat2,'Auto ($2000) - Households' )] = \
@@ -534,6 +539,7 @@ class RunResults:
         total_autotrips = daily_results[(cat1,cat2,'Vehicle trips: SOV')] + \
                           daily_results[(cat1,cat2,'Vehicle trips: HOV2')] + \
                           daily_results[(cat1,cat2,'Vehicle trips: HOV3+')]
+        daily_results[(cat1,cat2,'Truck Trips')]         = auto_byclass.loc['truck', 'Daily Vehicle Trips']
         daily_results[(cat1,cat2,'Drive+Transit Trips')] = transit_byaceg.loc[[('wlk','drv'),('drv','wlk')],'Transit Trips'].sum()
         daily_results[(cat1,cat2,'Walk +Transit Trips')] = transit_byaceg.loc[('wlk','wlk'),'Transit Trips'].sum()
 
@@ -961,6 +967,7 @@ class RunResults:
                         worksheet.write(row,8,
                                         '=SUM(%s)' % xl_range(row+1,8,row+len(colA.daily_results[cat1][cat2]),8),
                                         format_cat2_ben)
+
                         cat1_sums[cat1_cell].append(xl_rowcol_to_cell(row,8))
                 row += 1
 
@@ -1032,7 +1039,7 @@ class RunResults:
             format_bc_money = workbook.add_format({'bg_color':'#92D050','bold':True,
                                                   'num_format':'_(\$* #,##0.0"M"_);_(\$* (#,##0.0"M");_(\$* "-"??_);_(@_)'})
             format_bc_ratio = workbook.add_format({'bg_color':'#92D050','bold':True,'num_format':'0.00'})
-            worksheet.write(TABLE_HEADER_ROW-4, 8, "=SUM(%s)" % str(",").join(cat1_sums.keys()), format_bc_money)
+            worksheet.write(TABLE_HEADER_ROW-4, 8, "=SUM(%s)" % str(",").join(cat1_sums.keys()[1:]), format_bc_money)  # skip first one = logsums
             worksheet.write(TABLE_HEADER_ROW-3, 8, "=%s" % ANNUAL_COSTS_CELL, format_bc_money)
             worksheet.write(TABLE_HEADER_ROW-2, 8, "=%s/%s" % (xl_rowcol_to_cell(TABLE_HEADER_ROW-4, 8),
                                                                       xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 8)),
