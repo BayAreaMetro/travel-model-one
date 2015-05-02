@@ -10,7 +10,23 @@
 :: * ALL_PROJECT_METRICS_DIR=the location to collect all the metrics files from projects.
 ::   These will be rolled up into a single dashboard.
 ::
-
+:: Input files (not including those in CTRAMP)
+:: * INPUT\metrics\BC_config.csv
+:: * INPUT\params.properties
+:: * main\householdData_%ITER%.csv
+:: * main\indivTripData_%ITER%.csv
+:: * main\jointTripData_%ITER%.csv
+:: * nonres\tripsIx(EA|AM|MD|PM|EV).tpp
+:: * nonres\tripsAirPax(EA|AM|MD|PM|EV).tpp
+:: * nonres\tripstrk(EA|AM|MD|PM|EV).tpp
+:: * skims\trnskm(EA|AM|MD|PM|EV)_(wlk|drv)_(com|hvy|exp|lrf|loc)_(wlk|drv).tpp
+:: * skims\HWYSKM(EA|AM|MD|PM|EV).tpp
+:: * skims\COM_HWYSKIM(EA|AM|MD|PM|EV).tpp
+:: * skims\nonmotskm.tpp
+:: * trn\trnlink[timperiod]_[acc]_[trnmode]_[egr].dbf
+:: * hwy\iter%ITER%\avgload5period.net
+:: * hwy\avgloadAM.net (just for bus op cost vars, nothing volume specific)
+::
 :: Stamp the feedback report with the date and time of the model start
 echo STARTED METRICS RUN  %DATE% %TIME% >> logs\feedback.rpt
 
@@ -59,54 +75,34 @@ if not exist main\tripsEVinc1.tpp (
 
 if not exist metrics (mkdir metrics)
 
-if not exist metrics\transit_times_by_mode_income_final.csv (
+if not exist metrics\transit_times_by_mode_income.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : main\trips(EA|AM|MD|PM|EV)allinc.tpp, transit skims
-  rem Output: metrics\transit_times_by_acc_mode_egr_final.csv,
-  rem         metrics\transit_times_by_mode_income_final.csv
-  set SKIMTYPE=final
+  rem Input : main\trips(EA|AM|MD|PM|EV)allinc.tpp,
+  rem         skims\trnskm(EA|AM|MD|PM|EV)_(wlk|drv)_(com|hvy|exp|lrf|loc)_(wlk|drv).tpp
+  rem Output: metrics\transit_times_by_acc_mode_egr.csv,
+  rem         metrics\transit_times_by_mode_income.csv
   runtpp "%CODE_DIR%\sumTransitTimes.job"
   if ERRORLEVEL 2 goto error
 )
 
-if not exist metrics\transit_times_by_mode_income_iter%ITER%.csv (
+if not exist metrics\auto_times.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : main\trips(EA|AM|MD|PM|EV)allinc.tpp, transit skims
-  rem Output: metrics\transit_times_by_acc_mode_egr_iter%ITER%.csv,
-  rem         metrics\transit_times_by_mode_income_iter%ITER%.csv
-  set SKIMTYPE=iter%ITER%
-  runtpp "%CODE_DIR%\sumTransitTimes.job"
-  if ERRORLEVEL 2 goto error
-
-  rem these are primary
-  copy metrics\transit_times_by_acc_mode_egr_iter%ITER%.csv  metrics\transit_times_by_acc_mode_egr.csv
-  copy metrics\transit_times_by_mode_income_iter%ITER%.csv   metrics\transit_times_by_mode_income.csv
-)
-
-if not exist metrics\auto_times_final.csv (
-  rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp, hwy skims
-  rem Output: metrics\auto_times_final.csv
-  set SKIMTYPE=final
+  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp
+  rem         nonres\tripsIx(EA|AM|MD|PM|EV).tpp
+  rem         nonres\tripsAirPax(EA|AM|MD|PM|EV).tpp
+  rem         nonres\tripstrk(EA|AM|MD|PM|EV).tpp
+  rem         skims\HWYSKM(EA|AM|MD|PM|EV).tpp
+  rem         skims\COM_HWYSKIM(EA|AM|MD|PM|EV).tpp
+  rem         CTRAMP\scripts\block\hwyParam.block
+  rem Output: metrics\auto_times.csv
   runtpp "%CODE_DIR%\sumAutoTimes.job"
   if ERRORLEVEL 2 goto error
-)
-
-if not exist metrics\auto_times_iter%ITER%.csv (
-  rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp, hwy skims
-  rem Output: metrics\auto_times_iter%ITER%.csv
-  set SKIMTYPE=iter%ITER%
-  runtpp "%CODE_DIR%\sumAutoTimes.job"
-  if ERRORLEVEL 2 goto error
-
-  rem these are primary
-  copy metrics\auto_times_iter%ITER%.csv metrics\auto_times.csv
 )
 
 if not exist metrics\nonmot_times.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : trips(EA|AM|MD|PM|EV)inc[1-4].tpp, non-mot skims
+  rem Input : trips(EA|AM|MD|PM|EV)inc[1-4].tpp
+  rem         skims\nonmotskm.tpp
   rem Output: metrics\nonmot_times.csv
   runtpp "%CODE_DIR%\sumNonmotTimes.job"
   if ERRORLEVEL 2 goto error
@@ -122,7 +118,7 @@ if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
 
 if not exist metrics\vmt_vht_metrics.csv (
   rem Summarize network links to vmt, vht, and other collision and emissions estimations
-  rem Input: hyw\iter%ITER%\avgload5period_vehclasses.csv
+  rem Input: hwy\iter%ITER%\avgload5period_vehclasses.csv
   rem Output: metrics\vmt_vht_metrics.csv
   call python "%CODE_DIR%\hwynet.py" hwy\iter%ITER%\avgload5period_vehclasses.csv
   IF ERRORLEVEL 2 goto error
