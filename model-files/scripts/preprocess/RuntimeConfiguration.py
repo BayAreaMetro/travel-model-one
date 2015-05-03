@@ -37,7 +37,9 @@ lines are set in CTRAMP\runtime\mtcTourBased.properties:
   Iteration 3:
     ShadowPrice.Input.File          = main/ShadowPricing_5.csv
     ShadowPricing.MaximumIterations = 2 
-
+  Iteration n:
+    ShadowPrice.Input.File          = main/ShadowPricing_2n-1.csv
+    ShadowPricing.MaximumIterations = 2 
 """
 
 import argparse
@@ -224,10 +226,10 @@ def config_shadowprice(iter, replacements):
             r"\g<1>\g<3>main/ShadowPricing_3.csv"        
         replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations[ \t]*=[ \t]*)(\S*)"] = \
             r"\g<1>2"
-    elif iter==3:
+    else:
         # update input file
         replacements[filepath]["(\n)(#?)(UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = \
-            r"\g<1>\g<3>main/ShadowPricing_5.csv"
+            r"\g<1>\g<3>main/ShadowPricing_%d.csv" % (2*iter-1)
 
 def config_uec(auto_operating_cost):
     auto_op_cost_float = float(auto_operating_cost)
@@ -256,7 +258,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--iter",
                         help="Iteration for which to configure.  If not specified, will configure for pre-run.",
-                        type=int, choices=[1,2,3])
+                        type=int, choices=[1,2,3,4,5])
 
     my_args = parser.parse_args()
     
