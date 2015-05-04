@@ -695,7 +695,7 @@ class RunResults:
                 bc_metrics = base_minus_scen
 
             idx = pd.MultiIndex.from_tuples(bc_metrics.keys(), 
-                                            names=['category1','category2','variable_name'])
+                                            names=['category1','category2','category3','variable_name'])
             self.bc_metrics = pd.Series(bc_metrics, index=idx)
             self.bc_metrics.name = 'values'
 
@@ -732,11 +732,11 @@ class RunResults:
         worksheet.protect()
 
         # these will be the daily and annual diffs, and monetized diffs
-        # key = (category1, category2, variable name)
+        # key = (category1, category2, category3, variable name)
         bc_metrics      = collections.OrderedDict()
         # put config in here first
         for key,val in self.config.iteritems():
-            bc_metrics[(key,"","")] = val
+            bc_metrics[(key,"","","")] = val
 
 
         # Notice row
@@ -799,7 +799,7 @@ class RunResults:
                          format_highlight_money)
         worksheet.write(row,2, '(%s)' % RunResults.UNITS['Annual Capital Costs'], format_highlight)
         for col in range(3,5): worksheet.write(row,col,"",format_highlight)
-        bc_metrics[('Annual Capital Costs (%s)' % RunResults.UNITS['Annual Capital Costs'],"","")] = \
+        bc_metrics[('Annual Capital Costs (%s)' % RunResults.UNITS['Annual Capital Costs'],"","","")] = \
             float(self.config.loc['Capital Costs (%s)' % RunResults.UNITS['Capital Costs']]) / \
             float(self.config.loc['Life of Project (%s)' % RunResults.UNITS['Life of Project']])
         row += 1
@@ -813,7 +813,7 @@ class RunResults:
         worksheet.write(row,2, '(%s)' % RunResults.UNITS['Annual O&M Costs not recovered'],
                         format_highlight)
         for col in range(3,5): worksheet.write(row,col,"",format_highlight)
-        bc_metrics[('Annual O&M Costs not recovered (%s)' % RunResults.UNITS['Annual O&M Costs not recovered'],"","")] = \
+        bc_metrics[('Annual O&M Costs not recovered (%s)' % RunResults.UNITS['Annual O&M Costs not recovered'],"","","")] = \
             float(self.config.loc['Annual O&M Costs (%s)' % RunResults.UNITS['Annual O&M Costs']])* \
             (1.0-float(self.config.loc['Farebox Recovery Ratio']))
         row += 1
@@ -825,9 +825,9 @@ class RunResults:
         worksheet.write(row,2, '(%s)' % RunResults.UNITS['Net Annual Costs'], format_highlight)
         ANNUAL_COSTS_CELL = xl_rowcol_to_cell(row,1)
         for col in range(3,5): worksheet.write(row,col,"",format_highlight)
-        bc_metrics[('Net Annual Costs (%s)' % RunResults.UNITS['Net Annual Costs'],"","")] = \
-            bc_metrics[('Annual Capital Costs (%s)' % RunResults.UNITS['Annual Capital Costs'],"","")] + \
-            bc_metrics[('Annual O&M Costs not recovered (%s)' % RunResults.UNITS['Annual O&M Costs not recovered'],"","")]
+        bc_metrics[('Net Annual Costs (%s)' % RunResults.UNITS['Net Annual Costs'],"","","")] = \
+            bc_metrics[('Annual Capital Costs (%s)' % RunResults.UNITS['Annual Capital Costs'],"","","")] + \
+            bc_metrics[('Annual O&M Costs not recovered (%s)' % RunResults.UNITS['Annual O&M Costs not recovered'],"","","")]
         row += 1
 
         # Header row
@@ -950,8 +950,6 @@ class RunResults:
                                         '=SUM(%s)' % xl_range(row+1,4,row+len(colA.daily_results[cat1][cat2]),4),
                                         format_cat2d_lil if (cat1,cat2) in self.lil_cats else format_cat2d_big)
 
-                        bc_metrics[(cat1,cat2,'Difference')] = colA.daily_category_results[(cat1,cat2)] - \
-                                                               colB.daily_category_results[(cat1,cat2)]
                     else:
                         worksheet.write(row,3, # diff daily
                                         '=SUM(%s)' % xl_range(row+1,3,row+len(colA.daily_results[cat1][cat2]),3),
@@ -959,20 +957,6 @@ class RunResults:
                         worksheet.write(row,4, # diff annual
                                         '=SUM(%s)' % xl_range(row+1,4,row+len(colA.daily_results[cat1][cat2]),4),
                                         format_cat2d_lil if (cat1,cat2) in self.lil_cats else format_cat2d_big)
-
-                        if not already_diff:
-                            try:
-                                bc_metrics[(cat1,cat2,'Daily Difference')] = colA.daily_category_results[(cat1,cat2)] - \
-                                                                             colB.daily_category_results[(cat1,cat2)]
-                                bc_metrics[(cat1,cat2,'Annual Difference')] = annualization * \
-                                                                              bc_metrics[(cat1,cat2,'Daily Difference')]
-                            except Exception as e:
-                                print cat1, cat2
-                                print e
-                                # print self.daily_category_results[(cat1,cat2)]
-                                # print self.base_results.daily_category_results[(cat1,cat2)]
-                                sys.exit()
-
 
                     # worksheet.write(row,6, "", format_cat2d_lil)
 
@@ -990,6 +974,11 @@ class RunResults:
             worksheet.write(row,1 if not already_diff else 3,value,
                             format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
 
+            if already_diff:
+                bc_metrics[(cat1,cat2,key[2],'Daily Difference')] = value
+            else:
+                bc_metrics[(cat1,cat2,key[2],colA_header)] = value
+
             if self.base_dir:
 
                 if cat1 in colB.daily_results and cat2 in colB.daily_results[cat1]:
@@ -997,6 +986,7 @@ class RunResults:
                                     colB.daily_results[cat1][cat2][key[2]],
                                     format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
                     nominal_diff = 0
+                    bc_metrics[(cat1,cat2,key[2],colB_header)] = colB.daily_results[cat1][cat2][key[2]]
 
                 if already_annual:
                     worksheet.write(row,4, # diff annual
@@ -1004,15 +994,21 @@ class RunResults:
                                     format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
                     nominal_diff = colA.daily_results[cat1][cat2][key[2]] - \
                                    colB.daily_results[cat1][cat2][key[2]]
+                    bc_metrics[(cat1,cat2,key[2],'Annual Difference')] = nominal_diff
                 else:
                     if not already_diff:
                         worksheet.write(row,3, # diff daily
                                         '=%s-%s' % (xl_rowcol_to_cell(row,1), xl_rowcol_to_cell(row,2)),
                                         format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
-
+                        bc_metrics[(cat1,cat2,key[2],'Daily Difference')] = colA.daily_results[cat1][cat2][key[2]] - \
+                                                                            colB.daily_results[cat1][cat2][key[2]]
+                        bc_metrics[(cat1,cat2,key[2],'Daily Percent Difference')] = bc_metrics[(cat1,cat2,key[2],'Daily Difference')] / \
+                                                                            colB.daily_results[cat1][cat2][key[2]]
                     worksheet.write(row,4, # diff annual
                                     '=%d*%s' % (annualization, xl_rowcol_to_cell(row,3)),
                                     format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
+                    bc_metrics[(cat1,cat2,key[2],'Annual Difference')] = annualization*bc_metrics[(cat1,cat2,key[2],'Daily Difference')]
+
                     if already_diff:
                         nominal_diff = annualization * colA.daily_results[cat1][cat2][key[2]]
                     else:
@@ -1026,9 +1022,7 @@ class RunResults:
                     worksheet.write(row,8, # annual benefit
                                     '=%s*%s' % (xl_rowcol_to_cell(row,4), xl_rowcol_to_cell(row,6)),
                                     format_ann_ben)
-                    if (cat1,cat2,'Annual Benefit ($2013)') not in bc_metrics:
-                        bc_metrics[(cat1,cat2,'Annual Benefit ($2013)')] = 0
-                    bc_metrics[(cat1,cat2,'Annual Benefit ($2013)')] += valuation*nominal_diff
+                    bc_metrics[(cat1,cat2,key[2],'Annual Benefit ($2013)')] = valuation*nominal_diff
 
             row += 1
 

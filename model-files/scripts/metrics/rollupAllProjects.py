@@ -35,9 +35,9 @@ if __name__ == '__main__':
         file_match  = FILE_STR_RE.search(proj_file)
         assert(file_match != None)
 
-        proj_series = pd.Series.from_csv(proj_file, index_col=[0,1,2], header=0)
-        proj_id     = proj_series.loc['Project ID',numpy.NaN,numpy.NaN]
-        compare_id  = proj_series.loc['Project Compare ID',numpy.NaN,numpy.NaN]
+        proj_series = pd.Series.from_csv(proj_file, index_col=[0,1,2,3], header=0)
+        proj_id     = proj_series.loc['Project ID',numpy.NaN,numpy.NaN,numpy.NaN]
+        compare_id  = proj_series.loc['Project Compare ID',numpy.NaN,numpy.NaN,numpy.NaN]
         assert(file_match.group(1) == proj_id)
         all_projs_list.append(proj_series)
         proj_ids.append(proj_id)
