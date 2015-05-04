@@ -299,9 +299,9 @@ for %%H in (EA AM MD PM EV) DO (
     copy skims\trnskm%%H_drv_%%G_wlk.tpp  skims\trnskm%%H_drv_%%G_wlk_iter%ITER%.tpp
     copy skims\trnskm%%H_wlk_%%G_drv.tpp  skims\trnskm%%H_wlk_%%G_drv_iter%ITER%.tpp
 
-    copy trn\trnlink%%H_wlk_%%H_wlk.dbf   trn\trnlink%%H_wlk_%%H_wlk_iter%ITER%.dbf
-    copy trn\trnlink%%H_drv_%%H_wlk.dbf   trn\trnlink%%H_drv_%%H_wlk_iter%ITER%.dbf
-    copy trn\trnlink%%H_wlk_%%H_drv.dbf   trn\trnlink%%H_wlk_%%H_drv_iter%ITER%.dbf
+    copy trn\trnlink%%H_wlk_%%G_wlk.dbf   trn\trnlink%%H_wlk_%%G_wlk_iter%ITER%.dbf
+    copy trn\trnlink%%H_drv_%%G_wlk.dbf   trn\trnlink%%H_drv_%%G_wlk_iter%ITER%.dbf
+    copy trn\trnlink%%H_wlk_%%G_drv.dbf   trn\trnlink%%H_wlk_%%G_drv_iter%ITER%.dbf
   )
   copy skims\HWYSKM%%H.tpp                skims\HWYSKM%%H_iter%ITER%.tpp
   copy skims\COM_HWYSKIM%%H.tpp           skims\COM_HWYSKIM%%H_iter%ITER%.tpp
