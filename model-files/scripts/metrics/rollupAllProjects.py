@@ -1,5 +1,4 @@
-import os
-import sys
+import os, re, sys
 
 import numpy
 import pandas as pd
@@ -17,10 +16,14 @@ if __name__ == '__main__':
 
     ALL_PROJECTS_DATA_FILENAME = "AllProjects_Data.csv"
     ALL_PROJECTS_DESC_FILENAME = "AllProjects_Desc.csv"
-    NUM_DESCRIPTION_FIELDS     = 24
+    NUM_DESCRIPTION_FIELDS     = 26
+    FILE_STR_RE = re.compile("BC_(.+)_base(.+).csv")
+
 
     all_projs_list = []
     proj_ids       = []
+    compare_ids    = []
+    base_ids       = []
     for proj_file in os.listdir("."):
 
         # skip this one, if it exists already
@@ -29,15 +32,21 @@ if __name__ == '__main__':
         if proj_file == "base.csv": continue
         if proj_file[-4:] == ".twb": continue
 
+        file_match  = FILE_STR_RE.search(proj_file)
+        assert(file_match != None)
+
         proj_series = pd.Series.from_csv(proj_file, index_col=[0,1,2], header=0)
         proj_id     = proj_series.loc['Project ID',numpy.NaN,numpy.NaN]
-        assert("%s.csv" % proj_id == proj_file)
+        compare_id  = proj_series.loc['Project Compare ID',numpy.NaN,numpy.NaN]
+        assert(file_match.group(1) == proj_id)
         all_projs_list.append(proj_series)
         proj_ids.append(proj_id)
+        compare_ids.append(compare_id)
+        base_ids.append(file_match.group(2))
 
     all_projs_dataframe = pd.concat(all_projs_list, axis=1, 
                                     join_axes=[all_projs_list[0].index],
-                                    names=proj_ids)
+                                    names=compare_ids)
     # all_projs_dataframe now has a 3-tuple MultiIndex for rows,
     # and the columns are the project ids
 
@@ -46,11 +55,12 @@ if __name__ == '__main__':
 
     # stack the rows -- that is, before the columns were the project ids, one col per project
     # convert it to rows -- so there's one value column, and a row per project id
-    all_projs_dataframe.columns = proj_ids
+    all_projs_dataframe.columns = compare_ids
     all_projs_dataframe = all_projs_dataframe.iloc[NUM_DESCRIPTION_FIELDS:,].stack()
+
     # Name the new column in the index 'Values'
     new_names = list(all_projs_dataframe.index.names)
-    new_names[-1] = 'Project ID'
+    new_names[-1] = 'Project Compare ID'
     all_projs_dataframe.index.names = new_names
     all_projs_dataframe.name = 'Values'
 

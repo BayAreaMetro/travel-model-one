@@ -657,15 +657,28 @@ class RunResults:
         self.daily_category_results = self.daily_results.sum(level=[0,1])
         print self.daily_category_results
 
-    def calculateBenefitCosts(self, BC_detail_workbook, all_projects_dir):
+    def calculateBenefitCosts(self, project_dir, all_projects_dir):
         """
         Compares the run results with those from the base results (if they exist),
         calculating the daily difference, annual difference, and annual benefits.
 
-        Writes a readable version into `BC_detail_workbook`, and flat csv series
+        Writes a pretty workbook into `project_dir`, and flat csv series
         into a csv in `all_projects_dir` named [Project ID].csv.
         """
+        workbook_name = "BC_%s.xlsx" % self.config.loc['Project ID']
+        csv_name      = "BC_%s.csv"  % self.config.loc['Project ID']
+        if not self.is_base_dir and self.config.loc['base_dir']:
+            print "BASE = ",self.config.loc['base_dir']
+            base_str_re = re.compile("(19|20)[0-9][0-9]_05_[A-Za-z0-9]{3}")
+            base_match  = base_str_re.search(self.config.loc['base_dir'])
+            if base_match:
+                self.config['Base Project ID'] = base_match.group(0)
+                self.config['Project Compare ID'] = "%s vs %s" % (self.config.loc['Project ID'], base_match.group(0))
+                # print "base_match = [%s]" % base_match.group(0)
+                workbook_name = "BC_%s_base%s.xlsx" % (self.config.loc['Project ID'], base_match.group(0))
+                csv_name      = "BC_%s_base%s.csv"  % (self.config.loc['Project ID'], base_match.group(0))
 
+        BC_detail_workbook = os.path.join(project_dir, workbook_name)
         workbook        = xlsxwriter.Workbook(BC_detail_workbook)
         scen_minus_base = self.writeBCWorksheet(workbook)
 
@@ -685,8 +698,8 @@ class RunResults:
                                             names=['category1','category2','variable_name'])
             self.bc_metrics = pd.Series(bc_metrics, index=idx)
             self.bc_metrics.name = 'values'
- 
-            all_proj_filename = os.path.join(all_projects_dir, "%s.csv" % self.config.loc['Project ID'])
+
+            all_proj_filename = os.path.join(all_projects_dir, csv_name)
             self.bc_metrics.to_csv(all_proj_filename, header=True, float_format='%.5f')
             print("Wrote %s" % all_proj_filename)
 
@@ -1089,12 +1102,4 @@ if __name__ == '__main__':
     rr.calculateDailyMetrics()
     if rr.base_results: rr.base_results.calculateDailyMetrics()
 
-    workbook_name = "BC_%s.xlsx" % rr.config.loc['Project ID']
-    if not rr.is_base_dir and rr.config.loc['base_dir']:
-        print "BASE = ",rr.config.loc['base_dir']
-        base_str_re = re.compile("(19|20)[0-9][0-9]_05_[A-Za-z0-9]{3}")
-        base_match  = base_str_re.search(rr.config.loc['base_dir'])
-        if base_match:
-            print "base_match = [%s]" % base_match.group(0)
-            workbook_name = "BC_%s_base%s.xlsx" % (rr.config.loc['Project ID'], base_match.group(0))
-    rr.calculateBenefitCosts(os.path.join(args.project_dir, workbook_name), args.all_projects_dir)
+    rr.calculateBenefitCosts(args.project_dir, args.all_projects_dir)
