@@ -13,7 +13,9 @@ pd.set_option('display.precision',10)
 
 USAGE = """
 
-  python RunResults project_metrics_dir all_projects_metrics_dir
+  python RunResults project_metrics_dir all_projects_metrics_dir [BC_config.csv]
+
+  Configuration filename is optional.  Otherwise will use project_metrics_dir/BC_config.csv
 
   Processes the run results in project_metrics_dir and outputs:
   * project_metrics_dir\BC_[Project ID].xlsx with run results summary
@@ -184,7 +186,7 @@ class RunResults:
     ('Collisions, Active Transport & Noise','Noise','Truck VMT'                    ):      -0.0150,
     }
 
-    def __init__(self, rundir, overwrite_config=None):
+    def __init__(self, rundir, bc_config='BC_config.csv', overwrite_config=None):
         """
     Parameters
     ----------
@@ -198,7 +200,7 @@ class RunResults:
     """
         # read the configs
         self.rundir = os.path.abspath(rundir)
-        config_file = os.path.join(rundir, "BC_config.csv")
+        config_file = os.path.join(rundir, bc_config)
         self.config = pd.Series.from_csv(config_file, header=None, index_col=0)
         self.config['Project Run Dir'] = self.rundir
 
@@ -669,7 +671,7 @@ class RunResults:
         csv_name      = "BC_%s.csv"  % self.config.loc['Project ID']
         if not self.is_base_dir and self.config.loc['base_dir']:
             print "BASE = ",self.config.loc['base_dir']
-            base_str_re = re.compile("(19|20)[0-9][0-9]_05_[A-Za-z0-9]{3}")
+            base_str_re = re.compile("(19|20)[0-9][0-9]_05_[A-Za-z0-9]{3}[^\\\]*")
             base_match  = base_str_re.search(self.config.loc['base_dir'])
             if base_match:
                 self.config['Base Project ID'] = base_match.group(0)
@@ -1088,9 +1090,12 @@ if __name__ == '__main__':
                         help="The directory with the run results csvs.")
     parser.add_argument('all_projects_dir',
                         help="The directory in which to write the Benefit/Cost summary Series")
+    parser.add_argument('BC_config',
+                        help="The configuration filename in project_dir",
+                        default='BC_config.csv')
     args = parser.parse_args(sys.argv[1:])
 
-    rr = RunResults(args.project_dir)
+    rr = RunResults(args.project_dir, args.BC_config)
     rr.createBaseRunResults()
 
     rr.calculateDailyMetrics()
