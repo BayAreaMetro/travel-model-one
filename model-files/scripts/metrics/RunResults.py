@@ -13,7 +13,7 @@ pd.set_option('display.precision',10)
 
 USAGE = """
 
-  python RunResults project_metrics_dir all_projects_metrics_dir [BC_config.csv]
+  python RunResults project_metrics_dir all_projects_metrics_dir [--bcconfig BC_config.csv]
 
   Configuration filename is optional.  Otherwise will use project_metrics_dir/BC_config.csv
 
@@ -1090,12 +1090,12 @@ if __name__ == '__main__':
                         help="The directory with the run results csvs.")
     parser.add_argument('all_projects_dir',
                         help="The directory in which to write the Benefit/Cost summary Series")
-    parser.add_argument('BC_config',
+    parser.add_argument('--bcconfig',
                         help="The configuration filename in project_dir",
-                        default='BC_config.csv')
+                        required=False, default='BC_config.csv')
     args = parser.parse_args(sys.argv[1:])
 
-    rr = RunResults(args.project_dir, args.BC_config)
+    rr = RunResults(args.project_dir, args.bcconfig)
     rr.createBaseRunResults()
 
     rr.calculateDailyMetrics()
