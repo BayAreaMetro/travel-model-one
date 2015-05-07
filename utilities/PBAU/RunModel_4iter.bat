@@ -332,6 +332,9 @@ if ERRORLEVEL 1 goto done
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
+:: This file is invalid - its from iter3.  Flush to make RunMetrics regenerate it.
+del main\tripsEVinc1.tpp
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 9: Kill processes
