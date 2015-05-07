@@ -278,6 +278,10 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\assign\TransitAssign.job
 if ERRORLEVEL 2 goto done
 
+:: use zero cost transters
+move CTRAMP\model\accessibility_utility.xls                  CTRAMP\model\accessibility_utility_original.xls
+copy CTRAMP\model\accessibility_utility_zeroCostTransfer.xls CTRAMP\model\accessibility_utility.xls
+
 call RunAccessibility
 if ERRORLEVEL 2 goto done
 
