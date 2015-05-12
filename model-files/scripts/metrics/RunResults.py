@@ -117,21 +117,21 @@ class RunResults:
 
     # Already a diff -- don't diff. Default false.
     ALREADY_DIFF = {
-    ('Travel Time & Cost (logsum hours)','logsumdiff x avg(Baseline persons, Scenario persons)'): True,
+    ('Travel Time & Cost (logsum hours)','Work & School'): True,
+    ('Travel Time & Cost (logsum hours)','All'          ): True,
     }
 
     # default is ANNUALIZATION
     ANNUALIZATION_FACTOR = {
-    ('Travel Time & Cost (logsum hours)',
-     'logsumdiff x avg(Baseline persons, Scenario persons)',
-     'Work & School'): WORK_ANNUALIZATION,
+    ('Travel Time & Cost (logsum hours)','Work & School'): WORK_ANNUALIZATION,
     }
 
     # See 'Plan Bay Area Performance Assessment Report_FINAL.pdf'
     # Table 9: Benefit Valuations
     # Units in 2013 dollars
     BENEFIT_VALUATION           = {
-    ('Travel Time & Cost (logsum hours)','logsumdiff x avg(Baseline persons, Scenario persons)'): 16.03,
+    ('Travel Time & Cost (logsum hours)','Work & School'                       ):      16.03,
+    ('Travel Time & Cost (logsum hours)','All'                                 ):      16.03,
     ('Travel Time','Auto/Truck (Hours)'                                        ):     -16.03,  # Auto
     ('Travel Time','Auto/Truck (Hours)','Truck (VHT)'                          ):     -26.24,  # Truck
     ('Travel Time','Non-Recurring Freeway Delay (Hours)','Auto (Person Hours)' ):     -16.03,
@@ -297,8 +297,6 @@ class RunResults:
             accessibilities.rename(columns={0:'%s_dclogsum' % col_prefix,
                                                  'subzone':'walk_subzone'},
                                         inplace=True)
-            print filename
-            print accessibilities.head()
 
             if filename == 'mandatoryAccessibilities':
                 self.mandatoryAccessibilities = accessibilities
@@ -313,8 +311,7 @@ class RunResults:
                                                   'num_workers':'%s_num_workers' % col_prefix,
                                                   'num_workers_students':'%s_num_workers_students' % col_prefix},
                                          inplace=True)
-        print "accessibilityMarkets"
-        print self.accessibilityMarkets.head()
+
 
     def createBaseRunResults(self):
         """
@@ -368,7 +365,6 @@ class RunResults:
         daily_results   = collections.OrderedDict()
         ######################################################################################
         cat1            = 'Travel Time & Cost (logsum hours)'
-        cat2            = 'logsumdiff x avg(Baseline persons, Scenario persons)'
         if self.base_results:
             # Take the difference and convert utils to minutes (k_ivt = 0.0134 k_mc_ls = 1.0 in access calcs);
             # TODO: is k_mc_ls = 1.0?  DestinationChoice.cls has different values
@@ -388,58 +384,60 @@ class RunResults:
             self.nonmandatoryAccessibilities['logsum_diff_minutes'] = self.nonmandatoryAccessibilities.diff_dclogsum / 0.0175
 
 
-            print "self.mandatoryAccessibilities"
-            print len(self.mandatoryAccessibilities)
-            print self.mandatoryAccessibilities.head()
+            # print "self.mandatoryAccessibilities"
+            # print len(self.mandatoryAccessibilities)
+            # print self.mandatoryAccessibilities.head()
 
-            print "self.nonmandatoryAccessibilities"
-            print len(self.nonmandatoryAccessibilities)
-            print self.nonmandatoryAccessibilities.head()
+            # print "self.nonmandatoryAccessibilities"
+            # print len(self.nonmandatoryAccessibilities)
+            # print self.nonmandatoryAccessibilities.head()
 
             self.accessibilityMarkets = pd.merge(self.accessibilityMarkets,
                                                  self.base_results.accessibilityMarkets,
                                                  how='left')
-            print "self.accessibilityMarkets"
-            print len(self.accessibilityMarkets)
-            print self.accessibilityMarkets.head()
+            # print "self.accessibilityMarkets"
+            # print len(self.accessibilityMarkets)
+            # print self.accessibilityMarkets.head()
 
             self.mandatoryAccess = pd.merge(self.mandatoryAccessibilities,
                                             self.accessibilityMarkets,
                                             how='left')
             self.mandatoryAccess.fillna(0)
-            print "self.mandatoryAccess"
-            print len(self.mandatoryAccess)
-            print self.mandatoryAccess.head()
+            # print "self.mandatoryAccess"
+            # print len(self.mandatoryAccess)
+            # print self.mandatoryAccess.head()
 
             self.nonmandatoryAccess = pd.merge(self.nonmandatoryAccessibilities,
                                                self.accessibilityMarkets,
                                                how='left')
             self.nonmandatoryAccess.fillna(0)
-            print "self.nonmandatoryAccess"
-            print len(self.nonmandatoryAccess)
-            print self.nonmandatoryAccess.head()
+            # print "self.nonmandatoryAccess"
+            # print len(self.nonmandatoryAccess)
+            # print self.nonmandatoryAccess.head()
 
             # rule of one-half
             # to compare with AccessibilityDifference.csv -- workers only
-            test = self.mandatoryAccess.loc[(self.mandatoryAccess.base_num_workers > 0) &
-                                            (self.mandatoryAccess.scen_num_workers > 0), :]
-            test['base_weight_diff']      = test.base_num_workers*test.logsum_diff_minutes
-            test['scen_weight_diff']      = test.scen_num_workers*test.logsum_diff_minutes
-            test['consumer_surplus_diff'] = 0.5*test.base_weight_diff + 0.5*test.scen_weight_diff
-            test = test[['taz','logsum_diff_minutes','base_weight_diff','scen_weight_diff','consumer_surplus_diff']]
-            test = test.groupby(['taz']).sum()
-            test.to_csv(os.path.join(self.rundir,'AccessibilityDifference_workers.csv'), header=True, float_format='%.6f')
+            # test = self.mandatoryAccess.loc[(self.mandatoryAccess.base_num_workers > 0) &
+            #                                 (self.mandatoryAccess.scen_num_workers > 0), :]
+            # test['base_weight_diff']      = test.base_num_workers*test.logsum_diff_minutes
+            # test['scen_weight_diff']      = test.scen_num_workers*test.logsum_diff_minutes
+            # test['consumer_surplus_diff'] = 0.5*test.base_weight_diff + 0.5*test.scen_weight_diff
+            # test = test[['taz','logsum_diff_minutes','base_weight_diff','scen_weight_diff','consumer_surplus_diff']]
+            # test = test.groupby(['taz']).sum()
+            # test.to_csv(os.path.join(self.rundir,'AccessibilityDifference_workers.csv'), header=True, float_format='%.6f')
 
-            print "test"
-            print test
-
+            cat2         = 'Work & School'
             self.mandatoryAccess['CS diff work/school'] = \
                 (0.5*self.mandatoryAccess.base_num_workers_students + 0.5*self.mandatoryAccess.scen_num_workers_students) *self.mandatoryAccess.logsum_diff_minutes
-            daily_results[(cat1,cat2,'Work & School')] = self.mandatoryAccess['CS diff work/school'].sum()/60.0;
+            for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
+                daily_results[(cat1,cat2,inclabel)] = self.mandatoryAccess.loc[self.mandatoryAccess.incQ_label==inclabel, 'CS diff work/school'].sum()/60.0;
 
+            cat2         = 'All'
             self.nonmandatoryAccess['CS diff all'] = \
                 (0.5*self.nonmandatoryAccess.base_num_persons + 0.5*self.nonmandatoryAccess.scen_num_persons)*self.nonmandatoryAccess.logsum_diff_minutes
-            daily_results[(cat1,cat2,'All')] = self.nonmandatoryAccess['CS diff all'].sum()/60.0;
+            for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
+                daily_results[(cat1,cat2,inclabel)] = self.nonmandatoryAccess.loc[self.mandatoryAccess.incQ_label==inclabel, 'CS diff all'].sum()/60.0;
+
 
         ######################################################################################
         cat1            = 'Travel Time'
@@ -498,15 +496,12 @@ class RunResults:
 
         # OVTT adjustment multiplier
         if self.config.loc['Project Mode'] in ['com','hvy','exp','lrf','loc']:
-            # daily_results[(cat1,cat2,'Adjustment for %s: auto person trips' % self.config.loc['Project Mode'])] = auto_person_trips
-            daily_results[(cat1,cat2,'Adjustment for %s: auto person trips x avg OVTT in Scenario' % self.config.loc['Project Mode'])] = \
-                self.ovtt_adjustment * auto_person_trips
+             # Adjustment for transit: auto person trips x avg OVTT in Scenario
+             daily_results[(cat1,cat2,'OVTT Adjustment')] = self.ovtt_adjustment * auto_person_trips
 
         elif self.config.loc['Project Mode'] == 'road':
-            # daily_results[(cat1,cat2,'Adjustment for %s: transit person trips' % self.config.loc['Project Mode'])] = \
-            #     transit_person_trips
-            daily_results[(cat1,cat2,'Adjustment for %s: transit person trips x avg OVTT in Scenario' % self.config.loc['Project Mode'])] = \
-                self.ovtt_adjustment * transit_person_trips
+            # Adjustment for road: transit person trips x avg OVTT in Scenario
+            daily_results[(cat1,cat2,'OVTT Adjustment')] = self.ovtt_adjustment * transit_person_trips
 
         cat2            = 'Walk/Bike (Hours)'
         daily_results[(cat1,cat2,'Walk')] = nonmot_byclass.loc['Walk','Total Time (Hours)']
@@ -906,6 +901,8 @@ class RunResults:
             annualization = RunResults.ANNUALIZATION
             if (key[0],key[1],key[2]) in RunResults.ANNUALIZATION_FACTOR:
                 annualization = RunResults.ANNUALIZATION_FACTOR[(key[0],key[1],key[2])]
+            elif (key[0],key[1]) in RunResults.ANNUALIZATION_FACTOR:
+                annualization = RunResults.ANNUALIZATION_FACTOR[(key[0],key[1])]
 
             # category one header
             if cat1 != key[0]:
