@@ -248,6 +248,47 @@ if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
+:: Step 7.1.1:  Run transit assignment and metrics for iter2 outputs
+::
+:: ------------------------------------------------------------------------------------------------------
+runtpp CTRAMP\scripts\assign\TransitAssign.job
+if ERRORLEVEL 2 goto done
+
+:: use zero cost transters
+move CTRAMP\model\accessibility_utility.xls                   CTRAMP\model\accessibility_utility_original.xls
+copy CTRAMP\model\accessibility_utility_zeroCostTransfers.xls CTRAMP\model\accessibility_utility.xls
+
+call RunAccessibility
+if ERRORLEVEL 2 goto done
+
+call RunMetrics
+if ERRORLEVEL 2 goto done
+
+:: save iter2 outputs
+move accessibilities accessibilities_iter%ITER%
+move core_summaries  core_summaries_iter%ITER%
+move metrics         metrics_iter%ITER%
+
+:: just in case -- save metrics inputs from this iteration
+for %%H in (EA AM MD PM EV) DO (
+  copy nonres\tripsIx%%H.tpp              nonres\tripsIx%%H_iter%ITER%.tpp
+  copy nonres\tripsAirPax%%H.tpp          nonres\tripsAirPax%%H_iter%ITER%.tpp
+  copy nonres\tripstrk%%H.tpp             nonres\tripstrk%%H_iter%ITER%.tpp
+  for %%G in (com hvy exp lrf loc) DO (
+    copy skims\trnskm%%H_wlk_%%G_wlk.tpp  skims\trnskm%%H_wlk_%%G_wlk_iter%ITER%.tpp
+    copy skims\trnskm%%H_drv_%%G_wlk.tpp  skims\trnskm%%H_drv_%%G_wlk_iter%ITER%.tpp
+    copy skims\trnskm%%H_wlk_%%G_drv.tpp  skims\trnskm%%H_wlk_%%G_drv_iter%ITER%.tpp
+
+    copy trn\trnlink%%H_wlk_%%G_wlk.dbf   trn\trnlink%%H_wlk_%%G_wlk_iter%ITER%.dbf
+    copy trn\trnlink%%H_drv_%%G_wlk.dbf   trn\trnlink%%H_drv_%%G_wlk_iter%ITER%.dbf
+    copy trn\trnlink%%H_wlk_%%G_drv.dbf   trn\trnlink%%H_wlk_%%G_drv_iter%ITER%.dbf
+  )
+  copy skims\HWYSKM%%H.tpp                skims\HWYSKM%%H_iter%ITER%.tpp
+  copy skims\COM_HWYSKIM%%H.tpp           skims\COM_HWYSKIM%%H_iter%ITER%.tpp
+)
+
+:: ------------------------------------------------------------------------------------------------------
+::
 :: Step 7.2:  Prepare for iteration 3 and execute RunIteration batch file
 ::
 :: ------------------------------------------------------------------------------------------------------
@@ -278,12 +319,11 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\assign\TransitAssign.job
 if ERRORLEVEL 2 goto done
 
-:: use zero cost transters
-move CTRAMP\model\accessibility_utility.xls                   CTRAMP\model\accessibility_utility_original.xls
-copy CTRAMP\model\accessibility_utility_zeroCostTransfers.xls CTRAMP\model\accessibility_utility.xls
-
 call RunAccessibility
 if ERRORLEVEL 2 goto done
+
+:: This file is invalid - its from iter2.  Flush to make RunMetrics regenerate it.
+del main\tripsEVinc1.tpp
 
 call RunMetrics
 if ERRORLEVEL 2 goto done
