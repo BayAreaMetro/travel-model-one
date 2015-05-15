@@ -269,23 +269,6 @@ move accessibilities accessibilities_iter%ITER%
 move core_summaries  core_summaries_iter%ITER%
 move metrics         metrics_iter%ITER%
 
-:: just in case -- save metrics inputs from this iteration
-for %%H in (EA AM MD PM EV) DO (
-  copy nonres\tripsIx%%H.tpp              nonres\tripsIx%%H_iter%ITER%.tpp
-  copy nonres\tripsAirPax%%H.tpp          nonres\tripsAirPax%%H_iter%ITER%.tpp
-  copy nonres\tripstrk%%H.tpp             nonres\tripstrk%%H_iter%ITER%.tpp
-  for %%G in (com hvy exp lrf loc) DO (
-    copy skims\trnskm%%H_wlk_%%G_wlk.tpp  skims\trnskm%%H_wlk_%%G_wlk_iter%ITER%.tpp
-    copy skims\trnskm%%H_drv_%%G_wlk.tpp  skims\trnskm%%H_drv_%%G_wlk_iter%ITER%.tpp
-    copy skims\trnskm%%H_wlk_%%G_drv.tpp  skims\trnskm%%H_wlk_%%G_drv_iter%ITER%.tpp
-
-    copy trn\trnlink%%H_wlk_%%G_wlk.dbf   trn\trnlink%%H_wlk_%%G_wlk_iter%ITER%.dbf
-    copy trn\trnlink%%H_drv_%%G_wlk.dbf   trn\trnlink%%H_drv_%%G_wlk_iter%ITER%.dbf
-    copy trn\trnlink%%H_wlk_%%G_drv.dbf   trn\trnlink%%H_wlk_%%G_drv_iter%ITER%.dbf
-  )
-  copy skims\HWYSKM%%H.tpp                skims\HWYSKM%%H_iter%ITER%.tpp
-  copy skims\COM_HWYSKIM%%H.tpp           skims\COM_HWYSKIM%%H_iter%ITER%.tpp
-)
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -333,24 +316,6 @@ move accessibilities accessibilities_iter%ITER%
 move core_summaries  core_summaries_iter%ITER%
 move metrics         metrics_iter%ITER%
 
-:: just in case -- save metrics inputs from this iteration
-for %%H in (EA AM MD PM EV) DO (
-  copy nonres\tripsIx%%H.tpp              nonres\tripsIx%%H_iter%ITER%.tpp
-  copy nonres\tripsAirPax%%H.tpp          nonres\tripsAirPax%%H_iter%ITER%.tpp
-  copy nonres\tripstrk%%H.tpp             nonres\tripstrk%%H_iter%ITER%.tpp
-  for %%G in (com hvy exp lrf loc) DO (
-    copy skims\trnskm%%H_wlk_%%G_wlk.tpp  skims\trnskm%%H_wlk_%%G_wlk_iter%ITER%.tpp
-    copy skims\trnskm%%H_drv_%%G_wlk.tpp  skims\trnskm%%H_drv_%%G_wlk_iter%ITER%.tpp
-    copy skims\trnskm%%H_wlk_%%G_drv.tpp  skims\trnskm%%H_wlk_%%G_drv_iter%ITER%.tpp
-
-    copy trn\trnlink%%H_wlk_%%G_wlk.dbf   trn\trnlink%%H_wlk_%%G_wlk_iter%ITER%.dbf
-    copy trn\trnlink%%H_drv_%%G_wlk.dbf   trn\trnlink%%H_drv_%%G_wlk_iter%ITER%.dbf
-    copy trn\trnlink%%H_wlk_%%G_drv.dbf   trn\trnlink%%H_wlk_%%G_drv_iter%ITER%.dbf
-  )
-  copy skims\HWYSKM%%H.tpp                skims\HWYSKM%%H_iter%ITER%.tpp
-  copy skims\COM_HWYSKIM%%H.tpp           skims\COM_HWYSKIM%%H_iter%ITER%.tpp
-)
-
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -363,8 +328,8 @@ for %%H in (EA AM MD PM EV) DO (
 :: Set the iteration parameters
 set ITER=4
 set PREV_ITER=3
-set WGT=0.33
-set PREV_WGT=0.67
+set WGT=0.25
+set PREV_WGT=0.75
 set SAMPLESHARE=0.50
 set SEED=0
 
