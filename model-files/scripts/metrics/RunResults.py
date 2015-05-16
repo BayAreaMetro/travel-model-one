@@ -18,8 +18,8 @@ USAGE = """
   Configuration filename is optional.  Otherwise will use project_metrics_dir/BC_config.csv
 
   Processes the run results in project_metrics_dir and outputs:
-  * project_metrics_dir\BC_[Project ID].xlsx with run results summary
-  * all_projects_metrics_dir\[Project ID].csv with a version for rolling up
+  * project_metrics_dir\BC_ProjectID[_BaseProjectID].xlsx with run results summary
+  * all_projects_metrics_dir\BC_ProjectID[_BaseProjectID].csv with a version for rolling up
 
 """
 
@@ -254,9 +254,9 @@ class RunResults:
                                        sep=",", index_col=[0,1])
         # print self.nonmot_times
 
-        # self.transit_boards_miles = \
-        #     pd.read_table(os.path.join(self.rundir, "transit_boards_miles.csv"),
-        #                   sep=",", index_col=0)
+        self.transit_boards_miles = \
+            pd.read_table(os.path.join(self.rundir, "transit_boards_miles.csv"),
+                          sep=",", index_col=0)
         # print self.transit_boards_miles
 
         self.bus_opcost = \
@@ -353,6 +353,11 @@ class RunResults:
         """
         Calculates the daily output metrics which will actually get used for the benefits/cost
         analysis.
+
+        Sets these into self.daily_results, a pandas.Series with a 3-level MultiIndex: category1, 
+          category2, variable_name.
+
+        Creates self.quick_summary results as well, a panda.Series with a simple string index.
         """
 
         # we really want these by class -- ignore time periods and income levels
@@ -363,6 +368,7 @@ class RunResults:
         auto_byclass    = self.auto_times.sum(level='Mode')               # person trips
 
         daily_results   = collections.OrderedDict()
+        quick_summary   = {}
         ######################################################################################
         cat1            = 'Travel Time & Cost (logsum hours)'
         if self.base_results:
@@ -446,6 +452,11 @@ class RunResults:
         daily_results[(cat1,cat2,'HOV2 (PHT)' )] = vmt_byclass.loc[['S2','S2T'],'VHT'].sum()*2
         daily_results[(cat1,cat2,'HOV3+ (PHT)')] = vmt_byclass.loc[['S3','S3T'],'VHT'].sum()*3.5
         daily_results[(cat1,cat2,'Truck (VHT)')] = vmt_byclass.loc[['SM','SMT','HV','HVT'],'VHT'].sum()
+        # quick summary
+        quick_summary['Vehicle hours traveled -- single occupant passenger vehicles']        = vmt_byclass.loc[['DA','DAT'],'VHT'].sum()
+        quick_summary['Vehicle hours traveled -- two occupant passenger vehicles'   ]        = vmt_byclass.loc[['S2','S2T'],'VHT'].sum()
+        quick_summary['Vehicle hours traveled -- three-or-more occupant passenger vehicles'] = vmt_byclass.loc[['S3','S3T'],'VHT'].sum()
+        quick_summary['Vehicle hours traveled -- commercial vehicles (raw)         ']        = vmt_byclass.loc[['SM','SMT','HV','HVT'],'VHT'].sum()
 
         # These are from vehicle hours -- make them person hours
         cat2            = 'Non-Recurring Freeway Delay (Hours)'
@@ -455,6 +466,11 @@ class RunResults:
             vmt_byclass.loc[['S3','S3T'],'Non-Recurring Freeway Delay'].sum()*3.5
         daily_results[(cat1,cat2,'Truck (Vehicle Hours)')] = \
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'Non-Recurring Freeway Delay'].sum()
+        # quick summary
+        quick_summary['Vehicle hours of non-recurring delay - passenger'       ]   = \
+            vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'], 'Non-Recurring Freeway Delay'].sum()
+        quick_summary['Vehicle hours of non-recurring delay - commercial (raw)']   = \
+            vmt_byclass.loc[['SM','SMT','HV','HVT'],            'Non-Recurring Freeway Delay'].sum()
 
         cat2            = 'Transit In-Vehicle (Hours)'
         daily_results[(cat1,cat2,'Local Bus'       )] = transit_byclass.loc['loc','In-vehicle hours']
@@ -462,6 +478,8 @@ class RunResults:
         daily_results[(cat1,cat2,'Express Bus'     )] = transit_byclass.loc['exp','In-vehicle hours']
         daily_results[(cat1,cat2,'Heavy Rail'      )] = transit_byclass.loc['hvy','In-vehicle hours']
         daily_results[(cat1,cat2,'Commuter Rail'   )] = transit_byclass.loc['com','In-vehicle hours']
+        quick_summary['Transit person hours of travel -- in-vehicle']     = transit_byclass.loc[:,'In-vehicle hours'    ].sum()
+        quick_summary['Transit person hours of travel -- out-of-vehicle'] = transit_byclass.loc[:,'Out-of-vehicle hours'].sum()
 
         cat2            = 'Transit Out-of-Vehicle (Hours)'
         daily_results[(cat1,cat2,'Walk Access+Egress' )] = transit_byclass.loc[:,'Walk acc & egr hours'].sum() + \
@@ -472,6 +490,8 @@ class RunResults:
         # Out-of-Vehicle adjustment
         auto_person_trips    = auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Daily Person Trips'].sum()
         transit_person_trips = transit_byclass.loc[:,'Transit Trips'].sum()
+        quick_summary['Transit person trips'] = transit_person_trips
+
         # If this is base dir, ovtt adjustment comes from project
         if self.is_base_dir:
             # self.ovtt_adjustment should already be set below if we're using this as a base for a scenario
@@ -516,6 +536,11 @@ class RunResults:
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
         daily_results[(cat1,cat2,'Truck from Trips+Skims')] = \
             auto_byclass.loc['truck','Vehicle Miles']
+        # quick summary
+        quick_summary['Vehicle miles traveled -- passenger vehicles'       ] = \
+            vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'],'VMT'].sum()
+        quick_summary['Vehicle miles traveled -- commercial vehicles (raw)'] = \
+            vmt_byclass.loc[['SM','SMT','HV','HVT'           ],'VMT'].sum()
 
         cat2            = 'Operating Costs'
         daily_results[(cat1,cat2,'Auto ($2000) - Households' )] = \
@@ -539,6 +564,9 @@ class RunResults:
         daily_results[(cat1,cat2,'Truck Trips')]         = auto_byclass.loc['truck', 'Daily Vehicle Trips']
         daily_results[(cat1,cat2,'Drive+Transit Trips')] = transit_byaceg.loc[[('wlk','drv'),('drv','wlk')],'Transit Trips'].sum()
         daily_results[(cat1,cat2,'Walk +Transit Trips')] = transit_byaceg.loc[('wlk','wlk'),'Transit Trips'].sum()
+        quick_summary['Person trips (total)'] = auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Daily Person Trips'].sum() + \
+                                                transit_byclass.loc[:,'Transit Trips'].sum() + \
+                                                nonmot_byclass.loc[:,'Daily Trips'].sum()
 
         cat2            = 'Parking Costs'
         try:
@@ -639,6 +667,9 @@ class RunResults:
         daily_results[(cat1,cat2,'Truck VMT')] = \
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
 
+        # A few quick summary numbers
+        quick_summary['Transit boardings'] = self.transit_boards_miles.loc[:,'Daily Boardings'].sum()
+
         idx = pd.MultiIndex.from_tuples(daily_results.keys(), 
                                         names=['category1','category2','variable_name'])
         self.daily_results = pd.Series(daily_results, index=idx)
@@ -652,7 +683,10 @@ class RunResults:
 
         # sum to categories
         self.daily_category_results = self.daily_results.sum(level=[0,1])
-        print self.daily_category_results
+        # print self.daily_category_results
+
+        self.quick_summary = pd.Series(quick_summary)
+        self.quick_summary = self.quick_summary.append(self.config)
 
     def calculateBenefitCosts(self, project_dir, all_projects_dir):
         """
@@ -1096,6 +1130,12 @@ if __name__ == '__main__':
     rr.createBaseRunResults()
 
     rr.calculateDailyMetrics()
+
+    # save the quick summary
+    quicksummary_csv = os.path.join(args.all_projects_dir, "quicksummary_%s.csv"  % rr.config.loc['Project ID'])
+    rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f')
+    print rr.quick_summary
+
     if rr.base_results: rr.base_results.calculateDailyMetrics()
 
     rr.calculateBenefitCosts(args.project_dir, args.all_projects_dir)

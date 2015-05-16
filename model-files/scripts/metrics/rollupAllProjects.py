@@ -16,6 +16,7 @@ if __name__ == '__main__':
 
     ALL_PROJECTS_DATA_FILENAME = "AllProjects_Data.csv"
     ALL_PROJECTS_DESC_FILENAME = "AllProjects_Desc.csv"
+    QUICKSUMMARY_FILENAME      = "QuickSummary.csv"
     NUM_DESCRIPTION_FIELDS     = 26
     FILE_STR_RE = re.compile("BC_(.+)_base(.+).csv")
 
@@ -24,13 +25,21 @@ if __name__ == '__main__':
     proj_ids       = []
     compare_ids    = []
     base_ids       = []
+    quicksummary_list = []
     for proj_file in os.listdir("."):
 
         # skip this one, if it exists already
-        if proj_file == ALL_PROJECTS_DATA_FILENAME: continue
-        if proj_file == ALL_PROJECTS_DESC_FILENAME: continue
+        if proj_file in [ALL_PROJECTS_DATA_FILENAME,
+                         ALL_PROJECTS_DESC_FILENAME,
+                         QUICKSUMMARY_FILENAME]:
+            continue
         if proj_file == "base.csv": continue
         if proj_file[-4:] == ".twb": continue
+
+        if proj_file[:13] == "quicksummary_":
+            qs_series = pd.Series.from_csv(proj_file, index_col=[0], header=None)
+            quicksummary_list.append(qs_series)
+            continue
 
         file_match  = FILE_STR_RE.search(proj_file)
         assert(file_match != None)
@@ -43,6 +52,10 @@ if __name__ == '__main__':
         proj_ids.append(proj_id)
         compare_ids.append(compare_id)
         base_ids.append(file_match.group(2))
+
+
+    qs_dataframe = pd.DataFrame(data=quicksummary_list,)
+    qs_dataframe.to_csv(QUICKSUMMARY_FILENAME, index=False)
 
     all_projs_dataframe = pd.concat(all_projs_list, axis=1, 
                                     join_axes=[all_projs_list[0].index],
