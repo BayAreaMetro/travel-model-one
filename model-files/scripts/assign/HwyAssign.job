@@ -84,6 +84,8 @@
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 
+read file = ctramp\scripts\block\HwyIntraStep.block
+
 ; do, more or less, the same assignment procedure for each time period
 loop period = 1, 5
   
@@ -95,7 +97,7 @@ loop period = 1, 5
       token_capfac = 'parameters capfac = 3'
       
       ; set the processors to be used for the intrastep multithreading
-      token_intrastep_processlist = '7-16'
+      token_intrastep_processlist = token_intrastep_processlist_EA
       
       ; switch to use time penalties for transfering to hov lane
       token_hov_xfer_pen = '0'
@@ -104,39 +106,39 @@ loop period = 1, 5
       token_relativegap = 'parameters relativegap = 0.003'
       
       ; set the maximum number of iterations
-      token_maxiters = 'parameters maxiters = 50'
+      token_maxiters = 'parameters maxiters = 100'
       
    elseif (period = 2)      
       token_period = 'AM'
       token_capfac = 'parameters capfac = 4'
-      token_intrastep_processlist = '17-32'
+      token_intrastep_processlist = token_intrastep_processlist_AM
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.0005'
-      token_maxiters = 'parameters maxiters = 300'
+      token_maxiters = 'parameters maxiters = 1000'
       
    elseif (period = 3)   
       token_period = 'MD'
       token_capfac = 'parameters capfac = 5'
-      token_intrastep_processlist = '33-48'
+      token_intrastep_processlist = token_intrastep_processlist_MD
       token_hov_xfer_pen = '0'
       token_relativegap = 'parameters relativegap = 0.0005'
-      token_maxiters = 'parameters maxiters = 300'      
+      token_maxiters = 'parameters maxiters = 1000'
   
    elseif (period = 4)   
       token_period = 'PM'
       token_capfac = 'parameters capfac = 4'
-      token_intrastep_processlist = '49-64'
+      token_intrastep_processlist = token_intrastep_processlist_PM
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.0005'
-      token_maxiters = 'parameters maxiters = 300'      
+      token_maxiters = 'parameters maxiters = 1000'
   
    elseif (period = 5) 
       token_period = 'EV'
       token_capfac = 'parameters capfac = 8'
-      token_intrastep_processlist = '6'
+      token_intrastep_processlist = token_intrastep_processlist_EV
       token_hov_xfer_pen = '0'
       token_relativegap = 'parameters relativegap = 0.003'
-      token_maxiters = 'parameters maxiters = 50' 
+      token_maxiters = 'parameters maxiters = 100'
   
    endif
 
@@ -167,7 +169,7 @@ loop period = 1, 5
       neto    = hwy\load@token_period@.net
     
       ; set the assignment paramters -- equilibrium assignment, frank-wolfe
-      parameters combine = equi;, enhance = 2            
+      parameters combine = equi, enhance = 2
       
       ; set the assignment parameters -- 1454 internal zones + 21 external zones
       parameters zones = 1475

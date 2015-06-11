@@ -25,18 +25,21 @@ set GAWK_PATH=M:\UTIL\Gawk
 :: The location of the RUNTPP executable from Citilabs
 set TPP_PATH=C:\Program Files (x86)\Citilabs\CubeVoyager
 
+:: The location of python
+set PYTHON_PATH=C:\Python27
+
 :: The location of the MTC.JAR file
 set RUNTIME=CTRAMP/runtime
 
 :: Add these variables to the PATH environment variable, moving the current path to the back
 set OLD_PATH=%PATH%
-set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%OLD_PATH%
+set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%PYTHON_PATH%;%OLD_PATH%
 
 ::  Set the Java classpath (locations where Java needs to find configuration and JAR files)
 set CLASSPATH=%RUNTIME%/config;%RUNTIME%;%RUNTIME%/config/jppf-2.4/jppf-2.4-admin-ui/lib/*;%RUNTIME%/mtc.jar
 
 ::  Set the IP address of the host machine which sends tasks to the client machines 
-set HOST_IP_ADDRESS=192.168.1.200
+set HOST_IP_ADDRESS=192.168.1.206
 
 
 :: ------------------------------------------------------------------------------------------------------
