@@ -141,15 +141,6 @@ if not exist metrics\transit_boards_miles.csv (
   call python "%CODE_DIR%\transit.py" trn\quickboards.xls
 )
 
-if not exist metrics\bus_opcost.csv (
-  rem Summarize bus operating costs from pavement
-  rem Input: trn\trnlink[am|md|pm|ev|ea]_wlk_com_wlk.dbf,
-  rem        hwy\avgloadAM.net,
-  rem        INPUT\params.properties,
-  rem Output: metrics\bus_opcost.csv
-  call python "%CODE_DIR%\bus_opcost.py"
-)
-
 if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")
 python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
 

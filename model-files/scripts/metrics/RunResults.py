@@ -146,7 +146,6 @@ class RunResults:
     ('Travel Cost','Operating Costs','Auto ($2000) - IX/EX'                    ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Auto ($2000) - AirPax'                   ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Truck ($2000)'                           ):      -1.35, # $1 in 2000 = $1.35 in 2013
-    ('Travel Cost','Operating Costs','Bus ($2000)'                             ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Vehicle Ownership (Modeled)'                               ):   -6290.0,
 # Use modeled.  Est. from auto trips is for reference
 #   ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                  ):   -6290.0,
@@ -258,11 +257,6 @@ class RunResults:
             pd.read_table(os.path.join(self.rundir, "transit_boards_miles.csv"),
                           sep=",", index_col=0)
         # print self.transit_boards_miles
-
-        self.bus_opcost = \
-            pd.read_table(os.path.join(self.rundir, "bus_opcost.csv"),
-                          sep=",", index_col=[0])
-        # print self.bus_opcost
 
         self.transit_times_by_acc_mode_egr = \
             pd.read_table(os.path.join(self.rundir, "transit_times_by_acc_mode_egr.csv"),
@@ -551,7 +545,6 @@ class RunResults:
             0.01*auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Total Cost'].sum()
         daily_results[(cat1,cat2,'Truck ($2000)')] = \
             0.01*auto_byclass.loc['truck','Total Cost'].sum()
-        daily_results[(cat1,cat2,'Bus ($2000)')] = self.bus_opcost['opcost'].sum()
 
         # Parking
         cat2            = 'Trips (Reference)'

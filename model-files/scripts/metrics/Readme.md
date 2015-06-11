@@ -174,13 +174,9 @@ This is just the sum of Vehicle Miles Traveled for autos and trucks, tallied by
 
 #### Operating Costs
 
-Operating costs for autos and buses come from roadway skims combined with trip tables.
+Operating costs for autos come from roadway skims combined with trip tables.
 They include pavement costs (repair & maintenance costs and fuel costs, adjusted according
 to pavement condition) and they do not include bridge tolls.  See [sumAutoTimes.job](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/sumAutoTimes.job)
-
-Bus operating costs are calculated by [bus_opcost.py](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/bus_opcost.py), which joins roadway
-attributes to link-based transit assignment data, and tallies up the VMT the associated
-costs with that VMT (from repair & maintenance and fuel expenditure).
 
 **Note:** This is different from previous versions of Cobra, where auto operating cost came directly
 from VMT.  The change is due to the fact that TM1 was updated to have operating costs be link-based,
