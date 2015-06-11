@@ -23,7 +23,23 @@ If no iteration is specified, then these include:
  * Truck Operating Cost
    + Specify the value in INPUT\params.properties
    + It will be propagated to CTRAMP\scripts\block\hwyParam.block
-                              
+ * Host IP - where the household manager, matrix manager and JPPF Server run
+   + Assumed to be the HOST_IP_ADDRESS in the environment
+   + Assumed that this script is running on this host IP (this is verified)
+   + It will be propagated to CTRAMP\runtime\JavaOnly_runMain.cmd
+                              CTRAMP\runtime\JavaOnly_runNode[0-4].cmd
+                              CTRAMP\runtime\config\jppf-clientDistributed.properties
+                              CTRAMP\runtime\config\jppf-clientLocal.properties
+                              CTRAMP\runtime\config\jppf-driver.properties
+                              CTRAMP\runtime\config\jppf-node[0-4].properties
+                              CTRAMP\runtime\mtcTourBased.properties
+ * Distribution
+   + Based on hostname.
+     * 'MODEL2-A', 'MODEL2-C','MODEL2-D': single machine setup with
+        48 Cube Voyager processes available
+        48 threads for accessibilities
+        24 threads for core
+     * 'MAINMODEL': multiple machine setup
 
 If an iteration is specified, then the following UsualWorkAndSchoolLocationChoice
 lines are set in CTRAMP\runtime\mtcTourBased.properties:
@@ -46,6 +62,7 @@ import glob
 import os
 import re
 import shutil
+import socket
 import sys
 
 import xlrd
@@ -72,7 +89,7 @@ def replace_in_file(filepath, regex_dict):
         (file_contents, numsubs) = re.subn(pattern,newstr,file_contents,flags=re.IGNORECASE)
         print "  Made %d sub for %s" % (numsubs, newstr)
         # Fail on failure
-        if numsubs != 1:
+        if numsubs < 1:
             print "  SUBSITUTION NOT MADE -- Fatal error"
             sys.exit(2)
 
@@ -169,6 +186,97 @@ def config_auto_opcost(replacements):
     filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
     replacements[filepath]["(\nTRUCKOPCOST[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % truck_operating_cost
 
+def config_host_ip(replacements):
+    """
+    See USAGE for details.
+
+    Replacements = { filepath -> regex_dict }
+    """
+    host_ip_address = os.environ['HOST_IP_ADDRESS']
+
+    # verify that the host IP address relevant to this machine
+    ips_here        = socket.gethostbyname_ex(socket.gethostname())[-1]
+    if host_ip_address not in ips_here:
+        print "FATAL: HOST_IP_ADDRESS %s does not match the IP addresses for this machine %s" % (host_ip_address, str(ips_here))
+        sys.exit(2)
+
+    # CTRAMP\runtime\JavaOnly_runMain.cmd and CTRAMP\runtime\JavaOnly_runNode*.cmd
+    filenames = ["JavaOnly_runMain.cmd"]
+    for nodenum in range(5): filenames.append("JavaOnly_runNode%d.cmd" % nodenum)
+    for filename in filenames:
+        filepath = os.path.join("CTRAMP","runtime",filename)
+        replacements[filepath]["(\nset HOST_IP=)(\S*)"] = r"\g<1>%s" % host_ip_address
+
+    # driver number
+    last_number = host_ip_address.split(".")[-1]
+    driver      = 'driver%s' % last_number
+    for filename in ['jppf-clientDistributed.properties','jppf-clientLocal.properties']:
+        filepath = os.path.join("CTRAMP","runtime","config",filename)
+        replacements[filepath]["(\njppf.drivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % driver
+        replacements[filepath]["(\n)(driver1\.)"] = r"\g<1>%s." % driver
+
+    # server host
+    filenames = ['jppf-clientDistributed.properties',
+                 'jppf-clientLocal.properties',
+                 'jppf-driver.properties']
+    for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
+    for filename in filenames:
+        filepath = os.path.join("CTRAMP","runtime","config",filename)
+        replacements[filepath]["(jppf.server.host[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
+
+    # management host
+    filepath = os.path.join("CTRAMP","runtime","config",'jppf-clientDistributed.properties')
+    replacements[filepath]["(jppf.management.host[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
+
+    # put it into mtcTourBased.properties
+    filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
+    replacements[filepath]["(\nRunModel.HouseholdServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
+    replacements[filepath]["(\nRunModel.MatrixServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
+
+def config_distribution(replacements):
+    """
+    See USAGE for details.
+
+    Replacements = { filepath -> regex_dict }
+    """
+    hostname = socket.gethostname()
+    if hostname == 'MAINMODEL':
+        # accessibilities
+        filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
+        replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>14"
+
+        # CORE
+        filenames = []
+        for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
+        for filename in filenames:
+            filepath = os.path.join("CTRAMP","runtime","config",filename)
+            replacements[filepath]["(\nprocessing.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>12"
+
+        # hwyassign
+        print "Copying HwyIntraStep_64.block to HwyIntraStep.block"
+        shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
+                     os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
+
+    elif hostname in ['MODEL2-A','MODEL2-C','MODEL2-D']:
+        # accessibilities: 48 logical processors
+        filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
+        replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
+        
+        # CORE: use half for JPPF nodes - 48 didn't seem to take
+        filenames = []
+        for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
+        for filename in filenames:
+            filepath = os.path.join("CTRAMP","runtime","config",filename)
+            replacements[filepath]["(\nprocessing.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>24"
+
+        # hwyassign
+        print "Copying HwyIntraStep_48.block to HwyIntraStep.block"
+        shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_48.block"),
+                     os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
+
+    else:
+        raise Exception("RuntimeConfiguration.py does not recognize hostname [%s] for distribution configuration" % hostname)
+
 def config_shadowprice(iter, replacements):
     """
     See USAGE for details.
@@ -213,7 +321,6 @@ def config_uec(auto_operating_cost):
                                                   xlwt.easyxf("align: horiz left"))
         wb.save(filepath)
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = USAGE,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -230,6 +337,8 @@ if __name__ == '__main__':
         config_project_dir(replacements)
         config_popsyn_files(replacements)
         config_auto_opcost(replacements)
+        config_host_ip(replacements)
+        config_distribution(replacements)
     else:
         config_shadowprice(my_args.iter, replacements)
 

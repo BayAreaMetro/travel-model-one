@@ -1,0 +1,7 @@
+
+; process allocation for machine configuration with 48 processes
+token_intrastep_processlist_EA = '6'
+token_intrastep_processlist_AM = '8-23'
+token_intrastep_processlist_MD = '24-30'
+token_intrastep_processlist_PM = '31-48'
+token_intrastep_processlist_EV = '7'
