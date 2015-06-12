@@ -77,7 +77,6 @@ del *access*.csv
 rem delete this just in case, so we don't move an old one by accident
 if exist AccessibilityMarkets.html ( del AccessibilityMarkets.html )
 
-set R_HOME=C:\Program Files\R\R-3.1.1
 set CODE_DIR=.\CTRAMP\scripts\core_summaries
 set TARGET_DIR=%CD%
 

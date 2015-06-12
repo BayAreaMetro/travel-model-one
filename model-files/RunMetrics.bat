@@ -34,8 +34,6 @@ IF defined ITER (echo Using ITER=%ITER%) else (goto error)
 IF defined SAMPLESHARE (echo Using SAMPLESHARE=%SAMPLESHARE%) else (goto error)
 
 set ALL_PROJECT_METRICS_DIR=..\all_project_metrics
-:: * Location of R
-set R_HOME=C:\Program Files\R\R-3.1.1
 
 :: Location of the metrics scripts
 set CODE_DIR=.\CTRAMP\scripts\metrics
