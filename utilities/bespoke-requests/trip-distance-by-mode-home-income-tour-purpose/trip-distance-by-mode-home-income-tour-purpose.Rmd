@@ -1,0 +1,101 @@
+---
+title: "Trip Distance by Mode, Home (county), Income, Tour Purpose"
+author: "David Ory"
+output: 
+  html_document:
+    theme: cosmo
+    toc: yes
+---
+
+
+## Administration
+
+#### Purpose
+Prepares a bespoke summary of travel model output.  Specifically, calculates the average trip length by travel mode, home, income quartile, and tour purpose. 
+
+#### Outputs
+1.  A CSV database with logical names.  
+
+## Procedure
+
+#### Overhead
+```{r overhead, results = 'hide'}
+library(knitr)
+suppressMessages(library(dplyr))
+```
+
+```{r config, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
+
+#### Mode look-up table
+```{r mode-lookup}
+LOOKUP_MODE <- data.frame(trip_mode = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18),
+                          mode_name = c("Drive alone - free", "Drive alone - pay", 
+                                        "Shared ride two - free", "Shared ride two - pay",
+                                        "Shared ride three - free", "Shared ride three - pay",
+                                        "Walk", "Bike",
+                                        "Walk  to local bus", "Walk to light rail or ferry", "Walk to express bus", 
+                                        "Walk to heavy rail", "Walk to commuter rail",
+                                        "Drive  to local bus", "Drive to light rail or ferry", "Drive to express bus", 
+                                        "Drive to heavy rail", "Drive to commuter rail"))
+PARAM_3P = 3.25
+
+SAMPLING_RATE = 1.00
+
+```
+
+
+#### Remote file locations
+```{r remote-dir}
+TARGET_DIR  <- "M:/Application/Model One/RTP2013/Scenarios/2010_03_YYY/OUTPUT/updated_output/"
+OUTPUT_DIR  <- "M:/Application/Model One/RTP2013/Scenarios/2010_03_YYY/OUTPUT/bespoke/"
+```
+
+#### Load, join, compute
+```{r data-manips}
+# Load
+load(paste(TARGET_DIR, "households.rdata", sep = ""))
+load(paste(TARGET_DIR, "trips.rdata", sep = ""))
+
+# Select and join
+households <- households %>%
+  select(hh_id, county_of_residence = county_name, income_yr2000dollars = incQ_label)
+
+trips <- trips %>%
+  select(hh_id, tour_purpose, distance, trip_mode)
+
+output <- left_join(trips, households, by = c("hh_id"))
+
+# Compute
+summarized <- output %>%
+  group_by(county_of_residence, income_yr2000dollars, tour_purpose, trip_mode) %>%
+  summarise(simulated_trips = n(), avg_distance = mean(distance))
+
+# Join the mode names
+summarized <- left_join(summarized, LOOKUP_MODE, by = c("trip_mode"))
+
+# Scale to reflect the simulation sample
+summarized <- summarized %>%
+  mutate(simulated_trips = simulated_trips / SAMPLING_RATE)
+
+# Compute VMT
+summarized <- summarized %>%
+  mutate(avg_vmt = 0.0) %>%
+  mutate(avg_vmt = ifelse(trip_mode == 1, avg_distance, avg_vmt)) %>%
+  mutate(avg_vmt = ifelse(trip_mode == 2, avg_distance, avg_vmt)) %>%
+  
+  mutate(avg_vmt = ifelse(trip_mode == 3, avg_distance/2.0, avg_vmt)) %>%
+  mutate(avg_vmt = ifelse(trip_mode == 4, avg_distance/2.0, avg_vmt)) %>%
+  
+  mutate(avg_vmt = ifelse(trip_mode == 5, avg_distance/PARAM_3P, avg_vmt)) %>%
+  mutate(avg_vmt = ifelse(trip_mode == 6, avg_distance/PARAM_3P, avg_vmt))
+
+```
+
+#### Write to disk
+```{r write-disk}
+F_OUTPUT = paste(OUTPUT_DIR, "trip-distance-by-mode-home-income-tour-purpose.csv", sep = "")
+write.csv(summarized, file = F_OUTPUT, row.names = FALSE, quote = F)
+```
+
