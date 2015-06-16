@@ -64,40 +64,17 @@ class RunResults:
     ANNUALIZATION               = 300
     WORK_ANNUALIZATION          = 250
 
-    PERCENT_PARKING_NONHOME     = 0.5   # % of parking that occurs at a location other than one's home
-    PERCENT_PARKING_WORK        = 0.5   # % of work-related trips on project route
-
-    # In 2013 dollars.  See
-    # J:\PROJECT\2013 RTP_SCS\Performance Assessment\Project Assessment (Apr 2012)\B-C Methodology\
-    #    Off-Model Benefits Calculator.xlsx
-    # Worksheet 'Parking Costs by County'
-    # From Final Report Table 9:
-    #   "For this benefit valuation, costs vary based on the average parking costs for each of 
-    #    the Bay Area counties, taking into account average trip durations, parking subsidy rates,
-    #    and hourly parking rates. The following per-trip parking cost savings were estimated for
-    #    each auto trip reduced by county:"
-    PARKING_COST_PER_TRIP_WORK = collections.OrderedDict([
-    ('San Francisco',7.16),
-    ('San Mateo'    ,0.0),
-    ('Santa Clara'  ,0.1),
-    ('Alameda'      ,0.5),
-    ('Contra Costa' ,0.0),
-    ('Solano'       ,0.0),
-    ('Napa'         ,0.0),
-    ('Sonoma'       ,0.0),
-    ('Marin'        ,0.0)
-    ])
-    PARKING_COST_PER_TRIP_NONWORK = collections.OrderedDict([
-    ('San Francisco',5.64),
-    ('San Mateo'    ,0.04),
-    ('Santa Clara'  ,0.33),
-    ('Alameda'      ,0.39),
-    ('Contra Costa' ,0.00),
-    ('Solano'       ,0.00),
-    ('Napa'         ,0.00),
-    ('Sonoma'       ,0.00),
-    ('Marin'        ,0.00)
-    ])
+    COUNTY_NUM_TO_NAME          = {
+       1:'San Francisco',
+       2:'San Mateo',
+       3:'Santa Clara',
+       4:'Alameda',
+       5:'Contra Costa',
+       6:'Solano',
+       7:'Napa',
+       8:'Sonoma',
+       9:'Marin'
+    }
 
     # From 'Plan Bay Area Performance Assessment Report_FINAL.pdf'
     # Model output only captured direct particulate matter emissions; emissions were
@@ -149,24 +126,24 @@ class RunResults:
     ('Travel Cost','Vehicle Ownership (Modeled)'                               ):   -6290.0,
 # Use modeled.  Est. from auto trips is for reference
 #   ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                  ):   -6290.0,
-    ('Travel Cost','Parking Costs','Work Trips in San Francisco'               ):      -7.16,
-    ('Travel Cost','Parking Costs','Work Trips in San Mateo'                   ):       0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Santa Clara'                 ):      -0.15,
-    ('Travel Cost','Parking Costs','Work Trips in Alameda'                     ):      -0.54,
-    ('Travel Cost','Parking Costs','Work Trips in Contra Costa'                ):       0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Solano'                      ):       0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Napa'                        ):       0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Sonoma'                      ):       0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Marin'                       ):       0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in San Francisco'           ):      -5.64,
-    ('Travel Cost','Parking Costs','Non-Work Trips in San Mateo'               ):      -0.04,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Santa Clara'             ):      -0.33,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Alameda'                 ):      -0.39,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Contra Costa'            ):       0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Solano'                  ):       0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Napa'                    ):       0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Sonoma'                  ):       0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Marin'                   ):       0.00,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to San Francisco'       ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to San Mateo'           ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Santa Clara'         ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Alameda'             ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Contra Costa'        ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Solano'              ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Napa'                ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Sonoma'              ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Marin'               ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to San Francisco'   ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to San Mateo'       ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Santa Clara'     ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Alameda'         ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Contra Costa'    ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Solano'          ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Napa'            ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Sonoma'          ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Marin'           ):      -1.35,
     ('Air Pollutant','PM2.5 (tons)','PM2.5 Gasoline'                           ): -487200.0,
     ('Air Pollutant','PM2.5 (tons)','PM2.5 Diesel'                             ): -490300.0,
     ('Air Pollutant','CO2 (metric tons)','CO2'                                 ):     -55.35,
@@ -193,7 +170,7 @@ class RunResults:
         The directory containing the raw output for the model run.
     overwrite_config : dict
         Pass overwrite config if this is a base scenario and we should use the
-        project's parking costs and ovtt adjustment mode.
+        project's ovtt adjustment mode.
 
     Read configuration and input data.
     """
@@ -242,6 +219,11 @@ class RunResults:
         self.autos_owned['total autos'] = self.autos_owned['households']*self.autos_owned['autos']
         self.autos_owned.set_index(['incQ','autos'],inplace=True)
         # print self.autos_owned
+
+        self.parking_costs = \
+            pd.read_table(os.path.join(self.rundir, "parking_costs.csv"),
+                          sep=",")
+        # print self.parking_costs.head()
 
         self.vmt_vht_metrics = \
             pd.read_table(os.path.join(self.rundir, "vmt_vht_metrics.csv"),
@@ -323,19 +305,8 @@ class RunResults:
             print("BASE:")
             self.base_dir = os.path.realpath(self.base_dir)
 
-            # pass the parking config for overwrite
-            base_overwrite_config = {}
-            total_parking_cost_allocation = 0.0
-            for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
-                key = 'percent parking cost incurred in %s' % county
-                # convert to floats
-                self.config.loc[key] = float(self.config.loc[key])
-                base_overwrite_config[key] = self.config.loc[key]
-                total_parking_cost_allocation += self.config.loc[key]
-
-            assert(abs(total_parking_cost_allocation - 1.0) < 0.001)
-
             # pass the project mode for overwrite to base
+            base_overwrite_config = {}
             base_overwrite_config['Project Mode'] = self.config.loc['Project Mode']
 
             print self.base_dir
@@ -562,18 +533,14 @@ class RunResults:
                                                 nonmot_byclass.loc[:,'Daily Trips'].sum()
 
         cat2            = 'Parking Costs'
-        try:
-            for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
-                daily_results[(cat1,cat2,'Work Trips in %s'     % county)] = total_autotrips * \
-                    RunResults.PERCENT_PARKING_NONHOME * RunResults.PERCENT_PARKING_WORK * \
-                    float(self.config.loc['percent parking cost incurred in %s' % county])
-            for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
-                daily_results[(cat1,cat2,'Non-Work Trips in %s' % county)] = total_autotrips * \
-                    RunResults.PERCENT_PARKING_NONHOME * (1.0-RunResults.PERCENT_PARKING_WORK) * \
-                    float(self.config.loc['percent parking cost incurred in %s' % county])
-        except:
-            # base dirs don't have parking costs
-            assert(self.is_base_dir)
+        for countynum,countyname in RunResults.COUNTY_NUM_TO_NAME.iteritems():
+            daily_results[(cat1,cat2,'($2000) Work Tours to %s'     % countyname)] = \
+                self.parking_costs.loc[(self.parking_costs.parking_category=='Work'    )&
+                                       (self.parking_costs.dest_county     ==countynum ),  'parking_cost'].sum()
+        for countynum,countyname in RunResults.COUNTY_NUM_TO_NAME.iteritems():
+            daily_results[(cat1,cat2,'($2000) Non-Work Tours to %s' % countyname)] = \
+                self.parking_costs.loc[(self.parking_costs.parking_category=='Non-Work')&
+                                       (self.parking_costs.dest_county     ==countynum ),  'parking_cost'].sum()
 
         # Vehicles Owned
         cat2            = 'Vehicle Ownership (Modeled)'

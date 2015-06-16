@@ -52,6 +52,15 @@ if not exist metrics\autos_owned.csv (
   python "%CODE_DIR%\tallyAutos.py"
 )
 
+if not exist metrics\parking_costs.csv (
+  rem Tally parking costs from tours, persons (for free parking choice)
+  rem and tazdata (for parking costs)
+  rem Input: main\indivTourData_%ITER%.csv, main\jointTourData_%ITER%.csv,
+  rem        personData_%ITER%.csv, landuse\tazData.csv
+  rem Output: metrics\parking_costs.csv
+  python "%CODE_DIR%\tallyParking.py"
+)
+
 if not exist main\indivTripDataIncome_%ITER%.csv (
   rem Attach income to individual trips.  Uses 2 processes.
   rem Input : main\householdData_%ITER%.csv,

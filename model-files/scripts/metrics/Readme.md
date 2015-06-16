@@ -50,15 +50,6 @@ Capital Costs (millions of $2013),0
 Annual O&M Costs (millions of $2013),0
 Farebox Recovery Ratio,0
 Life of Project (years),1
-percent parking cost incurred in San Francisco,0.5
-percent parking cost incurred in Alameda,0.5
-percent parking cost incurred in Contra Costa,0.0
-percent parking cost incurred in Santa Clara,0.0
-percent parking cost incurred in San Mateo,0.0
-percent parking cost incurred in Marin,0.0
-percent parking cost incurred in Solano,0.0
-percent parking cost incurred in Sonoma,0.0
-percent parking cost incurred in Napa,0.0
 base_dir,M:\Projects\2010_05_XXX\metrics
 Compare,scenario-baseline
 ```
@@ -188,11 +179,9 @@ This section is for **reference**, and doesn't have a monetized cost or benefit 
 
 #### Parking Costs
 
-Parking costs estimations are not very precise and they rely on the configuration to distinguish
-the percent parking cost incurred in XXX county.  Total auto trips are divided up into non-home trips
-which are split into work- and non-work trips and multiplied by the configured percent parking cost
-incurred in that county.  Each county has an average work and non-work parking cost to monetize
-the benefit/cost.
+Parking costs estimations are based on tours, with tour duration multiplied by the configured hourly parking cost (either PRKCST or OPRKCST; 
+see [tazdata](http://analytics.mtc.ca.gov/foswiki/Main/TazData) for more detail).  Additionally, some workers have subsidized work parking 
+(see `fp_choice` in [the Persons data](http://analytics.mtc.ca.gov/foswiki/Main/Person)).  See [tallyParking.py](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/tallyParking.py)
 
 #### Vehicle Ownership (Modeled)
 
