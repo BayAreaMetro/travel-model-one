@@ -41,15 +41,19 @@ LOOKUP_MODE <- data.frame(trip_mode = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,1
                                         "Drive to heavy rail", "Drive to commuter rail"))
 PARAM_3P = 3.25
 
-SAMPLING_RATE = 1.00
+# SAMPLING_RATE = 1.00
+SAMPLING_RATE = 0.500
 
 ```
 
 
 #### Remote file locations
 ```{r remote-dir}
-TARGET_DIR  <- "M:/Application/Model One/RTP2013/Scenarios/2010_03_YYY/OUTPUT/updated_output/"
-OUTPUT_DIR  <- "M:/Application/Model One/RTP2013/Scenarios/2010_03_YYY/OUTPUT/bespoke/"
+# TARGET_DIR  <- "M:/Application/Model One/RTP2013/Scenarios/2010_03_YYY/OUTPUT/updated_output/"
+# OUTPUT_DIR  <- "M:/Application/Model One/RTP2013/Scenarios/2010_03_YYY/OUTPUT/bespoke/"
+
+TARGET_DIR  <- "M:/Application/Model One/RTP2013/Scenarios/Round 05 -- Final/2040_03_116/OUTPUT/updated_output/"
+OUTPUT_DIR  <- "M:/Application/Model One/RTP2013/Scenarios/Round 05 -- Final/2040_03_116/OUTPUT/bespoke/"
 ```
 
 #### Load, join, compute
