@@ -11,13 +11,14 @@
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :: copy CTRAMP
-set CTRAMP_SRC=M:\temp\travel-model-one_v05\model-files
-robocopy /MIR %CTRAMP_SRC%\model           CTRAMP\model
-robocopy /MIR %CTRAMP_SRC%\runtime         CTRAMP\runtime
-robocopy /MIR %CTRAMP_SRC%\scripts         CTRAMP\scripts
-copy /Y %CTRAMP_SRC%\RunIteration.bat      CTRAMP
-copy /Y %CTRAMP_SRC%\RunAccessibility.bat  .
-copy /Y %CTRAMP_SRC%\RunMetrics.bat        .
+set CTRAMP_SRC=C:\Users\mtcpb\Documents\GitHub\travel-model-one-v05
+robocopy /MIR %CTRAMP_SRC%\model-files\model            CTRAMP\model
+robocopy /MIR %CTRAMP_SRC%\model-files\runtime          CTRAMP\runtime
+robocopy /MIR %CTRAMP_SRC%\model-files\scripts          CTRAMP\scripts
+copy /Y %CTRAMP_SRC%\model-files\RunIteration.bat       CTRAMP
+copy /Y %CTRAMP_SRC%\model-files\RunAccessibility.bat   .
+copy /Y %CTRAMP_SRC%\model-files\RunMetrics.bat         .
+copy /Y %CTRAMP_SRC%\utilities\PBAU\ExtractKeyFiles.bat .
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -30,6 +31,9 @@ set JAVA_PATH=C:\Program Files\Java\jdk1.7.0_71
 
 :: The location of the GAWK binary executable files
 set GAWK_PATH=M:\UTIL\Gawk
+
+:: The location of R
+set R_HOME=C:\Program Files\R\R-3.2.0
 
 :: The location of the RUNTPP executable from Citilabs
 set TPP_PATH=C:\Program Files (x86)\Citilabs\CubeVoyager
@@ -96,11 +100,24 @@ copy INPUT\warmstart\nonres\    nonres\
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
 
-:: Prompt user to start java machines now that the project directory is set
-@echo off
-set /P c=Project Directory updated.  Please start java processes (main and nodes) and press Enter to continue...
-@echo on
-:: Don't care about the response
+:: Make sure java isn't running already
+CTRAMP\runtime\pslist.exe java
+if %ERRORLEVEL% EQU 0 goto done
+
+cd CTRAMP\runtime
+set RUNTIMEDIR=%CD%
+
+:: Run the java processes locally and verify
+.\PsExec.exe JavaOnly_runMain.cmd
+.\PsExec.exe JavaOnly_runNode0.cmd
+.\pslist.exe java
+if %ERRORLEVEL% NEQ 0 goto done
+
+
+M:
+cd %RUNTIMEDIR%
+cd ..
+cd ..
 
 :: Set the prices in the roadway network
 runtpp CTRAMP\scripts\preprocess\SetTolls.job
@@ -210,6 +227,28 @@ if ERRORLEVEL 1 goto done
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 7.1.1:  Run transit assignment and metrics for iter2 outputs
+::
+:: ------------------------------------------------------------------------------------------------------
+runtpp CTRAMP\scripts\assign\TransitAssign.job
+if ERRORLEVEL 2 goto done
+
+call RunAccessibility
+if ERRORLEVEL 2 goto done
+
+call RunMetrics
+if ERRORLEVEL 2 goto done
+
+call ExtractKeyFiles
+if ERRORLEVEL 2 goto done
+
+:: save iter2 outputs
+move accessibilities accessibilities_iter%ITER%
+move core_summaries  core_summaries_iter%ITER%
+move metrics         metrics_iter%ITER%
+move extractor       extractor_iter%ITER%
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -297,6 +336,10 @@ if ERRORLEVEL 2 goto done
 :: Step 14:  Cobra Metrics
 ::
 :: ------------------------------------------------------------------------------------------------------
+
+:: These files are invalid (from iter2).  Flush to make RunMetrics regenerate it.
+del main\tripsEVinc1.tpp
+del trn\quickboards.xls
 
 call RunMetrics
 if ERRORLEVEL 2 goto done
