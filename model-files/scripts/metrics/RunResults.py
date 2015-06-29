@@ -110,9 +110,11 @@ class RunResults:
     ('Travel Time & Cost (logsum hours)','Work & School'                       ):      16.03,
     ('Travel Time & Cost (logsum hours)','All'                                 ):      16.03,
     ('Travel Time','Auto/Truck (Hours)'                                        ):     -16.03,  # Auto
-    ('Travel Time','Auto/Truck (Hours)','Truck (VHT)'                          ):     -26.24,  # Truck
+    ('Travel Time','Auto/Truck (Hours)','Truck (Computed VHT)'                 ):     -26.24,  # Truck
+    ('Travel Time','Auto/Truck (Hours)','Truck (Modeled VHT)'                  ):       0.00,  # Truck
     ('Travel Time','Non-Recurring Freeway Delay (Hours)','Auto (Person Hours)' ):     -16.03,
-    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck (Vehicle Hours)'):    -26.24,
+    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck (Computed VH)' ):     -26.24,
+    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck (Modeled VH)'  ):       0.00,
     ('Travel Time','Transit In-Vehicle (Hours)'                                ):     -16.03,
     ('Travel Time','Transit Out-of-Vehicle (Hours)'                            ):     -35.266,
     ('Travel Time','Walk/Bike (Hours)'                                         ):     -16.03,
@@ -122,7 +124,8 @@ class RunResults:
     ('Travel Cost','Operating Costs','Auto ($2000) - Households'               ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Auto ($2000) - IX/EX'                    ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Auto ($2000) - AirPax'                   ):      -1.35, # $1 in 2000 = $1.35 in 2013
-    ('Travel Cost','Operating Costs','Truck ($2000)'                           ):      -1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Cost','Operating Costs','Truck ($2000) - Computed'                ):      -1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Cost','Operating Costs','Truck ($2000) - Modeled'                 ):       0.00, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Vehicle Ownership (Modeled)'                               ):   -6290.0,
 # Use modeled.  Est. from auto trips is for reference
 #   ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                  ):   -6290.0,
@@ -159,7 +162,8 @@ class RunResults:
     ('Collisions, Active Transport & Noise','Property Damage Only (PDO) Collisions'):   -2455.0,
     ('Collisions, Active Transport & Noise','Active Individuals'                   ):    1220.0,
     ('Collisions, Active Transport & Noise','Noise','Auto VMT'                     ):      -0.0012,
-    ('Collisions, Active Transport & Noise','Noise','Truck VMT'                    ):      -0.0150,
+    ('Collisions, Active Transport & Noise','Noise','Truck VMT - Computed'         ):      -0.0150,
+    ('Collisions, Active Transport & Noise','Noise','Truck VMT - Modeled'          ):       0.0,
     }
 
     def __init__(self, rundir, bc_config='BC_config.csv', overwrite_config=None):
@@ -314,6 +318,60 @@ class RunResults:
             self.base_results = RunResults(rundir = self.base_dir,
                                            overwrite_config=base_overwrite_config)
 
+    def updateDailyMetrics(self):
+        """
+        Udates calculated metrics that depend on base results.
+        """
+        # apply incease in Auto hours to base truck hours
+        if not self.base_results: return
+
+        cat1            = 'Travel Time'
+        cat2            = 'Auto/Truck (Hours)'
+        auto_vht        = self.daily_results[cat1,cat2,'SOV (PHT)'  ] + \
+                          self.daily_results[cat1,cat2,'HOV2 (PHT)' ] + \
+                          self.daily_results[cat1,cat2,'HOV3+ (PHT)']
+        base_auto_vht   = self.base_results.daily_results[cat1,cat2,'SOV (PHT)'  ] + \
+                          self.base_results.daily_results[cat1,cat2,'HOV2 (PHT)' ] + \
+                          self.base_results.daily_results[cat1,cat2,'HOV3+ (PHT)']
+        base_truck_vht  = self.base_results.daily_results[cat1,cat2,'Truck (Computed VHT)']
+
+        pct_change_vht  = (auto_vht-base_auto_vht)/base_auto_vht
+        self.daily_results[cat1,cat2,'Truck (Computed VHT)'] = (1.0+pct_change_vht)*base_truck_vht
+
+        cat2            = 'Non-Recurring Freeway Delay (Hours)'
+        auto_nrfd       = self.daily_results[cat1,cat2,'Auto (Person Hours)']
+        base_auto_nrfd  = self.base_results.daily_results[cat1,cat2,'Auto (Person Hours)']
+        base_truck_nrfd = self.base_results.daily_results[cat1,cat2,'Truck (Computed VH)']
+
+        pct_change_nrfd = (auto_nrfd-base_auto_nrfd)/base_auto_nrfd
+        self.daily_results[cat1,cat2,'Truck (Computed VH)'] = (1.0+pct_change_nrfd)*base_truck_nrfd
+
+        cat1            = 'Travel Cost'
+        cat2            = 'VMT (Reference)'
+        auto_vmt        = self.daily_results[cat1,cat2,'Auto']
+        base_auto_vmt   = self.base_results.daily_results[cat1,cat2,'Auto']
+        base_truck_vmt  = self.base_results.daily_results[cat1,cat2,'Truck - Computed']
+
+        pct_change_vmt  = (auto_vmt-base_auto_vmt)/base_auto_vmt
+        self.daily_results[cat1,cat2,'Truck - Computed'] = (1.0+pct_change_vmt)*base_truck_vmt
+
+        # this is dependent on VMT so it also needs updating
+        cat1            = 'Air Pollutant'
+        cat2            = 'PM2.5 (tons)'
+        self.daily_results[cat1,cat2,'PM2.5 Diesel'] = \
+            self.vmt_vht_metrics.sum(level='vehicle class').loc[:,'Diesel_PM2.5'].sum()*RunResults.EMISSIONS_SCALEUP + \
+            (self.daily_results['Travel Cost','VMT (Reference)','Truck - Computed']*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
+
+        cat1            = 'Travel Cost'
+        cat2            = 'Operating Costs'
+        # base this on pct change auto vmt
+        base_truck_c    = self.base_results.daily_results[cat1,cat2,'Truck ($2000) - Computed']
+        self.daily_results[cat1,cat2,'Truck ($2000) - Computed'] = (1.0+pct_change_vmt)*base_truck_c
+
+        cat1            = 'Collisions, Active Transport & Noise'
+        cat2            = 'Noise'
+        self.daily_results[cat1,cat2,'Truck VMT - Computed'] = (1.0+pct_change_vmt)*base_truck_vmt
+
     def calculateDailyMetrics(self):
         """
         Calculates the daily output metrics which will actually get used for the benefits/cost
@@ -416,7 +474,10 @@ class RunResults:
         daily_results[(cat1,cat2,'SOV (PHT)'  )] = vmt_byclass.loc[['DA','DAT'],'VHT'].sum()
         daily_results[(cat1,cat2,'HOV2 (PHT)' )] = vmt_byclass.loc[['S2','S2T'],'VHT'].sum()*2
         daily_results[(cat1,cat2,'HOV3+ (PHT)')] = vmt_byclass.loc[['S3','S3T'],'VHT'].sum()*3.5
-        daily_results[(cat1,cat2,'Truck (VHT)')] = vmt_byclass.loc[['SM','SMT','HV','HVT'],'VHT'].sum()
+
+        # computed will get overwritten if base results
+        daily_results[(cat1,cat2,'Truck (Computed VHT)')] = vmt_byclass.loc[['SM','SMT','HV','HVT'],'VHT'].sum()
+        daily_results[(cat1,cat2,'Truck (Modeled VHT)' )] = vmt_byclass.loc[['SM','SMT','HV','HVT'],'VHT'].sum()
         # quick summary
         quick_summary['Vehicle hours traveled -- single occupant passenger vehicles']        = vmt_byclass.loc[['DA','DAT'],'VHT'].sum()
         quick_summary['Vehicle hours traveled -- two occupant passenger vehicles'   ]        = vmt_byclass.loc[['S2','S2T'],'VHT'].sum()
@@ -429,7 +490,11 @@ class RunResults:
             vmt_byclass.loc[['DA','DAT'],'Non-Recurring Freeway Delay'].sum()   +\
             vmt_byclass.loc[['S2','S2T'],'Non-Recurring Freeway Delay'].sum()*2 +\
             vmt_byclass.loc[['S3','S3T'],'Non-Recurring Freeway Delay'].sum()*3.5
-        daily_results[(cat1,cat2,'Truck (Vehicle Hours)')] = \
+
+        # computed will get overwritten if base results
+        daily_results[(cat1,cat2,'Truck (Computed VH)')] = \
+            vmt_byclass.loc[['SM','SMT','HV','HVT'],'Non-Recurring Freeway Delay'].sum()
+        daily_results[(cat1,cat2,'Truck (Modeled VH)')] = \
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'Non-Recurring Freeway Delay'].sum()
         # quick summary
         quick_summary['Vehicle hours of non-recurring delay - passenger'       ]   = \
@@ -497,7 +562,10 @@ class RunResults:
         cat2            = 'VMT (Reference)'
         daily_results[(cat1,cat2,'Auto' )] = \
             vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'],'VMT'].sum()
-        daily_results[(cat1,cat2,'Truck')] = \
+        # computed will get overwritten if base results
+        daily_results[(cat1,cat2,'Truck - Computed')] = \
+            vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
+        daily_results[(cat1,cat2,'Truck - Modeled')] = \
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
         daily_results[(cat1,cat2,'Truck from Trips+Skims')] = \
             auto_byclass.loc['truck','Vehicle Miles']
@@ -514,9 +582,12 @@ class RunResults:
             0.01*auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix'],'Total Cost'].sum()
         daily_results[(cat1,cat2,'Auto ($2000) - AirPax' )] = \
             0.01*auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Total Cost'].sum()
-        daily_results[(cat1,cat2,'Truck ($2000)')] = \
-            0.01*auto_byclass.loc['truck','Total Cost'].sum()
 
+        # computed will get overwritten if base results
+        daily_results[(cat1,cat2,'Truck ($2000) - Computed')] = \
+            0.01*auto_byclass.loc['truck','Total Cost'].sum()
+        daily_results[(cat1,cat2,'Truck ($2000) - Modeled')] = \
+            0.01*auto_byclass.loc['truck','Total Cost'].sum()
         # Parking
         cat2            = 'Trips (Reference)'
         daily_results[(cat1,cat2,'Vehicle trips: SOV'  )] = auto_byclass.loc[['da' ,'datoll' ],'Daily Vehicle Trips'].sum()
@@ -556,9 +627,10 @@ class RunResults:
         daily_results[(cat1,cat2,'PM2.5 Gasoline')] = \
             vmt_byclass.loc[:,'Gas_PM2.5'].sum()*RunResults.EMISSIONS_SCALEUP + \
             (daily_results[('Travel Cost','VMT (Reference)','Auto')]*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
+        # this will get updated if base results
         daily_results[(cat1,cat2,'PM2.5 Diesel'  )] = \
             vmt_byclass.loc[:,'Diesel_PM2.5'].sum()*RunResults.EMISSIONS_SCALEUP + \
-            (daily_results[('Travel Cost','VMT (Reference)','Truck')]*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
+            (daily_results[('Travel Cost','VMT (Reference)','Truck - Computed')]*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
 
         cat2            = 'CO2 (metric tons)'
         daily_results[(cat1,cat2,'CO2')] = vmt_byclass.loc[:,'CO2'  ].sum()
@@ -624,7 +696,10 @@ class RunResults:
         cat2            = 'Noise'
         daily_results[(cat1,cat2,'Auto VMT')] = \
             vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'],'VMT'].sum()
-        daily_results[(cat1,cat2,'Truck VMT')] = \
+        # computed will get overwritten if base results
+        daily_results[(cat1,cat2,'Truck VMT - Computed')] = \
+            vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
+        daily_results[(cat1,cat2,'Truck VMT - Modeled')] = \
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
 
         # A few quick summary numbers
@@ -1096,6 +1171,8 @@ if __name__ == '__main__':
     rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f')
     print rr.quick_summary
 
-    if rr.base_results: rr.base_results.calculateDailyMetrics()
+    if rr.base_results:
+        rr.base_results.calculateDailyMetrics()
+        rr.updateDailyMetrics()
 
     rr.calculateBenefitCosts(args.project_dir, args.all_projects_dir)
