@@ -113,7 +113,7 @@ loop period = 1, 5
       token_capfac = 'parameters capfac = 4'
       token_intrastep_processlist = token_intrastep_processlist_AM
       token_hov_xfer_pen = 'li.HOVXPEN'
-      token_relativegap = 'parameters relativegap = 0.00005'
+      token_relativegap = 'parameters relativegap = 0.0005'
       token_maxiters = 'parameters maxiters = 1000'
       
    elseif (period = 3)   
@@ -121,7 +121,7 @@ loop period = 1, 5
       token_capfac = 'parameters capfac = 5'
       token_intrastep_processlist = token_intrastep_processlist_MD
       token_hov_xfer_pen = '0'
-      token_relativegap = 'parameters relativegap = 0.00005'
+      token_relativegap = 'parameters relativegap = 0.0005'
       token_maxiters = 'parameters maxiters = 1000'
   
    elseif (period = 4)   
@@ -129,7 +129,7 @@ loop period = 1, 5
       token_capfac = 'parameters capfac = 4'
       token_intrastep_processlist = token_intrastep_processlist_PM
       token_hov_xfer_pen = 'li.HOVXPEN'
-      token_relativegap = 'parameters relativegap = 0.00005'
+      token_relativegap = 'parameters relativegap = 0.0005'
       token_maxiters = 'parameters maxiters = 1000'
   
    elseif (period = 5) 
