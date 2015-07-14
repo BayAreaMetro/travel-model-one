@@ -213,7 +213,7 @@ def config_host_ip(replacements):
     for filename in ['jppf-clientDistributed.properties','jppf-clientLocal.properties']:
         filepath = os.path.join("CTRAMP","runtime","config",filename)
         replacements[filepath]["(\njppf.drivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % driver
-        replacements[filepath]["(\n)(driver1\.)"] = r"\g<1>%s." % driver
+        replacements[filepath]["(\n)(driver[0-9]+\.)"] = r"\g<1>%s." % driver
 
     # server host
     filenames = ['jppf-clientDistributed.properties',
