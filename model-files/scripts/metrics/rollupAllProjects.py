@@ -17,7 +17,7 @@ if __name__ == '__main__':
     ALL_PROJECTS_DATA_FILENAME = "AllProjects_Data.csv"
     ALL_PROJECTS_DESC_FILENAME = "AllProjects_Desc.csv"
     QUICKSUMMARY_FILENAME      = "QuickSummary.csv"
-    NUM_DESCRIPTION_FIELDS     = 26
+    NUM_DESCRIPTION_FIELDS     = 17
     FILE_STR_RE = re.compile("BC_(.+)_base(.+).csv")
 
 

@@ -34,8 +34,6 @@ IF defined ITER (echo Using ITER=%ITER%) else (goto error)
 IF defined SAMPLESHARE (echo Using SAMPLESHARE=%SAMPLESHARE%) else (goto error)
 
 set ALL_PROJECT_METRICS_DIR=..\all_project_metrics
-:: * Location of R
-set R_HOME=C:\Program Files\R\R-3.1.1
 
 :: Location of the metrics scripts
 set CODE_DIR=.\CTRAMP\scripts\metrics
@@ -52,6 +50,15 @@ if not exist metrics\autos_owned.csv (
   rem Input: main\householdData_%ITER%.csv
   rem Output: metrics\autos_owned.csv
   python "%CODE_DIR%\tallyAutos.py"
+)
+
+if not exist metrics\parking_costs.csv (
+  rem Tally parking costs from tours, persons (for free parking choice)
+  rem and tazdata (for parking costs)
+  rem Input: main\indivTourData_%ITER%.csv, main\jointTourData_%ITER%.csv,
+  rem        personData_%ITER%.csv, landuse\tazData.csv
+  rem Output: metrics\parking_costs.csv
+  python "%CODE_DIR%\tallyParking.py"
 )
 
 if not exist main\indivTripDataIncome_%ITER%.csv (
@@ -139,15 +146,6 @@ if not exist metrics\transit_boards_miles.csv (
   rem Input: trn\quickboards.xls
   rem Output: metrics\transit_board_miles.csv
   call python "%CODE_DIR%\transit.py" trn\quickboards.xls
-)
-
-if not exist metrics\bus_opcost.csv (
-  rem Summarize bus operating costs from pavement
-  rem Input: trn\trnlink[am|md|pm|ev|ea]_wlk_com_wlk.dbf,
-  rem        hwy\avgloadAM.net,
-  rem        INPUT\params.properties,
-  rem Output: metrics\bus_opcost.csv
-  call python "%CODE_DIR%\bus_opcost.py"
 )
 
 if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")

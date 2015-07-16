@@ -64,40 +64,17 @@ class RunResults:
     ANNUALIZATION               = 300
     WORK_ANNUALIZATION          = 250
 
-    PERCENT_PARKING_NONHOME     = 0.5   # % of parking that occurs at a location other than one's home
-    PERCENT_PARKING_WORK        = 0.5   # % of work-related trips on project route
-
-    # In 2013 dollars.  See
-    # J:\PROJECT\2013 RTP_SCS\Performance Assessment\Project Assessment (Apr 2012)\B-C Methodology\
-    #    Off-Model Benefits Calculator.xlsx
-    # Worksheet 'Parking Costs by County'
-    # From Final Report Table 9:
-    #   "For this benefit valuation, costs vary based on the average parking costs for each of 
-    #    the Bay Area counties, taking into account average trip durations, parking subsidy rates,
-    #    and hourly parking rates. The following per-trip parking cost savings were estimated for
-    #    each auto trip reduced by county:"
-    PARKING_COST_PER_TRIP_WORK = collections.OrderedDict([
-    ('San Francisco',7.16),
-    ('San Mateo'    ,0.0),
-    ('Santa Clara'  ,0.1),
-    ('Alameda'      ,0.5),
-    ('Contra Costa' ,0.0),
-    ('Solano'       ,0.0),
-    ('Napa'         ,0.0),
-    ('Sonoma'       ,0.0),
-    ('Marin'        ,0.0)
-    ])
-    PARKING_COST_PER_TRIP_NONWORK = collections.OrderedDict([
-    ('San Francisco',5.64),
-    ('San Mateo'    ,0.04),
-    ('Santa Clara'  ,0.33),
-    ('Alameda'      ,0.39),
-    ('Contra Costa' ,0.00),
-    ('Solano'       ,0.00),
-    ('Napa'         ,0.00),
-    ('Sonoma'       ,0.00),
-    ('Marin'        ,0.00)
-    ])
+    COUNTY_NUM_TO_NAME          = {
+       1:'San Francisco',
+       2:'San Mateo',
+       3:'Santa Clara',
+       4:'Alameda',
+       5:'Contra Costa',
+       6:'Solano',
+       7:'Napa',
+       8:'Sonoma',
+       9:'Marin'
+    }
 
     # From 'Plan Bay Area Performance Assessment Report_FINAL.pdf'
     # Model output only captured direct particulate matter emissions; emissions were
@@ -133,9 +110,11 @@ class RunResults:
     ('Travel Time & Cost (logsum hours)','Work & School'                       ):      16.03,
     ('Travel Time & Cost (logsum hours)','All'                                 ):      16.03,
     ('Travel Time','Auto/Truck (Hours)'                                        ):     -16.03,  # Auto
-    ('Travel Time','Auto/Truck (Hours)','Truck (VHT)'                          ):     -26.24,  # Truck
+    ('Travel Time','Auto/Truck (Hours)','Truck (Computed VHT)'                 ):     -26.24,  # Truck
+    ('Travel Time','Auto/Truck (Hours)','Truck (Modeled VHT)'                  ):       0.00,  # Truck
     ('Travel Time','Non-Recurring Freeway Delay (Hours)','Auto (Person Hours)' ):     -16.03,
-    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck (Vehicle Hours)'):    -26.24,
+    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck (Computed VH)' ):     -26.24,
+    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck (Modeled VH)'  ):       0.00,
     ('Travel Time','Transit In-Vehicle (Hours)'                                ):     -16.03,
     ('Travel Time','Transit Out-of-Vehicle (Hours)'                            ):     -35.266,
     ('Travel Time','Walk/Bike (Hours)'                                         ):     -16.03,
@@ -145,29 +124,29 @@ class RunResults:
     ('Travel Cost','Operating Costs','Auto ($2000) - Households'               ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Auto ($2000) - IX/EX'                    ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Auto ($2000) - AirPax'                   ):      -1.35, # $1 in 2000 = $1.35 in 2013
-    ('Travel Cost','Operating Costs','Truck ($2000)'                           ):      -1.35, # $1 in 2000 = $1.35 in 2013
-    ('Travel Cost','Operating Costs','Bus ($2000)'                             ):      -1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Cost','Operating Costs','Truck ($2000) - Computed'                ):      -1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Cost','Operating Costs','Truck ($2000) - Modeled'                 ):       0.00, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Vehicle Ownership (Modeled)'                               ):   -6290.0,
 # Use modeled.  Est. from auto trips is for reference
 #   ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                  ):   -6290.0,
-    ('Travel Cost','Parking Costs','Work Trips in San Francisco'               ):      -7.16,
-    ('Travel Cost','Parking Costs','Work Trips in San Mateo'                   ):       0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Santa Clara'                 ):      -0.15,
-    ('Travel Cost','Parking Costs','Work Trips in Alameda'                     ):      -0.54,
-    ('Travel Cost','Parking Costs','Work Trips in Contra Costa'                ):       0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Solano'                      ):       0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Napa'                        ):       0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Sonoma'                      ):       0.00,
-    ('Travel Cost','Parking Costs','Work Trips in Marin'                       ):       0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in San Francisco'           ):      -5.64,
-    ('Travel Cost','Parking Costs','Non-Work Trips in San Mateo'               ):      -0.04,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Santa Clara'             ):      -0.33,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Alameda'                 ):      -0.39,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Contra Costa'            ):       0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Solano'                  ):       0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Napa'                    ):       0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Sonoma'                  ):       0.00,
-    ('Travel Cost','Parking Costs','Non-Work Trips in Marin'                   ):       0.00,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to San Francisco'       ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to San Mateo'           ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Santa Clara'         ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Alameda'             ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Contra Costa'        ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Solano'              ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Napa'                ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Sonoma'              ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Marin'               ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to San Francisco'   ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to San Mateo'       ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Santa Clara'     ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Alameda'         ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Contra Costa'    ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Solano'          ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Napa'            ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Sonoma'          ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Marin'           ):      -1.35,
     ('Air Pollutant','PM2.5 (tons)','PM2.5 Gasoline'                           ): -487200.0,
     ('Air Pollutant','PM2.5 (tons)','PM2.5 Diesel'                             ): -490300.0,
     ('Air Pollutant','CO2 (metric tons)','CO2'                                 ):     -55.35,
@@ -183,7 +162,8 @@ class RunResults:
     ('Collisions, Active Transport & Noise','Property Damage Only (PDO) Collisions'):   -2455.0,
     ('Collisions, Active Transport & Noise','Active Individuals'                   ):    1220.0,
     ('Collisions, Active Transport & Noise','Noise','Auto VMT'                     ):      -0.0012,
-    ('Collisions, Active Transport & Noise','Noise','Truck VMT'                    ):      -0.0150,
+    ('Collisions, Active Transport & Noise','Noise','Truck VMT - Computed'         ):      -0.0150,
+    ('Collisions, Active Transport & Noise','Noise','Truck VMT - Modeled'          ):       0.0,
     }
 
     def __init__(self, rundir, bc_config='BC_config.csv', overwrite_config=None):
@@ -194,7 +174,7 @@ class RunResults:
         The directory containing the raw output for the model run.
     overwrite_config : dict
         Pass overwrite config if this is a base scenario and we should use the
-        project's parking costs and ovtt adjustment mode.
+        project's ovtt adjustment mode.
 
     Read configuration and input data.
     """
@@ -244,6 +224,11 @@ class RunResults:
         self.autos_owned.set_index(['incQ','autos'],inplace=True)
         # print self.autos_owned
 
+        self.parking_costs = \
+            pd.read_table(os.path.join(self.rundir, "parking_costs.csv"),
+                          sep=",")
+        # print self.parking_costs.head()
+
         self.vmt_vht_metrics = \
             pd.read_table(os.path.join(self.rundir, "vmt_vht_metrics.csv"),
                           sep=",", index_col=[0,1])
@@ -258,11 +243,6 @@ class RunResults:
             pd.read_table(os.path.join(self.rundir, "transit_boards_miles.csv"),
                           sep=",", index_col=0)
         # print self.transit_boards_miles
-
-        self.bus_opcost = \
-            pd.read_table(os.path.join(self.rundir, "bus_opcost.csv"),
-                          sep=",", index_col=[0])
-        # print self.bus_opcost
 
         self.transit_times_by_acc_mode_egr = \
             pd.read_table(os.path.join(self.rundir, "transit_times_by_acc_mode_egr.csv"),
@@ -329,25 +309,68 @@ class RunResults:
             print("BASE:")
             self.base_dir = os.path.realpath(self.base_dir)
 
-            # pass the parking config for overwrite
-            base_overwrite_config = {}
-            total_parking_cost_allocation = 0.0
-            for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
-                key = 'percent parking cost incurred in %s' % county
-                # convert to floats
-                self.config.loc[key] = float(self.config.loc[key])
-                base_overwrite_config[key] = self.config.loc[key]
-                total_parking_cost_allocation += self.config.loc[key]
-
-            assert(abs(total_parking_cost_allocation - 1.0) < 0.001)
-
             # pass the project mode for overwrite to base
+            base_overwrite_config = {}
             base_overwrite_config['Project Mode'] = self.config.loc['Project Mode']
 
             print self.base_dir
             print base_overwrite_config
             self.base_results = RunResults(rundir = self.base_dir,
                                            overwrite_config=base_overwrite_config)
+
+    def updateDailyMetrics(self):
+        """
+        Udates calculated metrics that depend on base results.
+        """
+        # apply incease in Auto hours to base truck hours
+        if not self.base_results: return
+
+        cat1            = 'Travel Time'
+        cat2            = 'Auto/Truck (Hours)'
+        auto_vht        = self.daily_results[cat1,cat2,'SOV (PHT)'  ] + \
+                          self.daily_results[cat1,cat2,'HOV2 (PHT)' ] + \
+                          self.daily_results[cat1,cat2,'HOV3+ (PHT)']
+        base_auto_vht   = self.base_results.daily_results[cat1,cat2,'SOV (PHT)'  ] + \
+                          self.base_results.daily_results[cat1,cat2,'HOV2 (PHT)' ] + \
+                          self.base_results.daily_results[cat1,cat2,'HOV3+ (PHT)']
+        base_truck_vht  = self.base_results.daily_results[cat1,cat2,'Truck (Computed VHT)']
+
+        pct_change_vht  = (auto_vht-base_auto_vht)/base_auto_vht
+        self.daily_results[cat1,cat2,'Truck (Computed VHT)'] = (1.0+pct_change_vht)*base_truck_vht
+
+        cat2            = 'Non-Recurring Freeway Delay (Hours)'
+        auto_nrfd       = self.daily_results[cat1,cat2,'Auto (Person Hours)']
+        base_auto_nrfd  = self.base_results.daily_results[cat1,cat2,'Auto (Person Hours)']
+        base_truck_nrfd = self.base_results.daily_results[cat1,cat2,'Truck (Computed VH)']
+
+        pct_change_nrfd = (auto_nrfd-base_auto_nrfd)/base_auto_nrfd
+        self.daily_results[cat1,cat2,'Truck (Computed VH)'] = (1.0+pct_change_nrfd)*base_truck_nrfd
+
+        cat1            = 'Travel Cost'
+        cat2            = 'VMT (Reference)'
+        auto_vmt        = self.daily_results[cat1,cat2,'Auto']
+        base_auto_vmt   = self.base_results.daily_results[cat1,cat2,'Auto']
+        base_truck_vmt  = self.base_results.daily_results[cat1,cat2,'Truck - Computed']
+
+        pct_change_vmt  = (auto_vmt-base_auto_vmt)/base_auto_vmt
+        self.daily_results[cat1,cat2,'Truck - Computed'] = (1.0+pct_change_vmt)*base_truck_vmt
+
+        # this is dependent on VMT so it also needs updating
+        cat1            = 'Air Pollutant'
+        cat2            = 'PM2.5 (tons)'
+        self.daily_results[cat1,cat2,'PM2.5 Diesel'] = \
+            self.vmt_vht_metrics.sum(level='vehicle class').loc[:,'Diesel_PM2.5'].sum()*RunResults.EMISSIONS_SCALEUP + \
+            (self.daily_results['Travel Cost','VMT (Reference)','Truck - Computed']*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
+
+        cat1            = 'Travel Cost'
+        cat2            = 'Operating Costs'
+        # base this on pct change auto vmt
+        base_truck_c    = self.base_results.daily_results[cat1,cat2,'Truck ($2000) - Computed']
+        self.daily_results[cat1,cat2,'Truck ($2000) - Computed'] = (1.0+pct_change_vmt)*base_truck_c
+
+        cat1            = 'Collisions, Active Transport & Noise'
+        cat2            = 'Noise'
+        self.daily_results[cat1,cat2,'Truck VMT - Computed'] = (1.0+pct_change_vmt)*base_truck_vmt
 
     def calculateDailyMetrics(self):
         """
@@ -451,7 +474,10 @@ class RunResults:
         daily_results[(cat1,cat2,'SOV (PHT)'  )] = vmt_byclass.loc[['DA','DAT'],'VHT'].sum()
         daily_results[(cat1,cat2,'HOV2 (PHT)' )] = vmt_byclass.loc[['S2','S2T'],'VHT'].sum()*2
         daily_results[(cat1,cat2,'HOV3+ (PHT)')] = vmt_byclass.loc[['S3','S3T'],'VHT'].sum()*3.5
-        daily_results[(cat1,cat2,'Truck (VHT)')] = vmt_byclass.loc[['SM','SMT','HV','HVT'],'VHT'].sum()
+
+        # computed will get overwritten if base results
+        daily_results[(cat1,cat2,'Truck (Computed VHT)')] = vmt_byclass.loc[['SM','SMT','HV','HVT'],'VHT'].sum()
+        daily_results[(cat1,cat2,'Truck (Modeled VHT)' )] = vmt_byclass.loc[['SM','SMT','HV','HVT'],'VHT'].sum()
         # quick summary
         quick_summary['Vehicle hours traveled -- single occupant passenger vehicles']        = vmt_byclass.loc[['DA','DAT'],'VHT'].sum()
         quick_summary['Vehicle hours traveled -- two occupant passenger vehicles'   ]        = vmt_byclass.loc[['S2','S2T'],'VHT'].sum()
@@ -464,7 +490,11 @@ class RunResults:
             vmt_byclass.loc[['DA','DAT'],'Non-Recurring Freeway Delay'].sum()   +\
             vmt_byclass.loc[['S2','S2T'],'Non-Recurring Freeway Delay'].sum()*2 +\
             vmt_byclass.loc[['S3','S3T'],'Non-Recurring Freeway Delay'].sum()*3.5
-        daily_results[(cat1,cat2,'Truck (Vehicle Hours)')] = \
+
+        # computed will get overwritten if base results
+        daily_results[(cat1,cat2,'Truck (Computed VH)')] = \
+            vmt_byclass.loc[['SM','SMT','HV','HVT'],'Non-Recurring Freeway Delay'].sum()
+        daily_results[(cat1,cat2,'Truck (Modeled VH)')] = \
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'Non-Recurring Freeway Delay'].sum()
         # quick summary
         quick_summary['Vehicle hours of non-recurring delay - passenger'       ]   = \
@@ -532,7 +562,10 @@ class RunResults:
         cat2            = 'VMT (Reference)'
         daily_results[(cat1,cat2,'Auto' )] = \
             vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'],'VMT'].sum()
-        daily_results[(cat1,cat2,'Truck')] = \
+        # computed will get overwritten if base results
+        daily_results[(cat1,cat2,'Truck - Computed')] = \
+            vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
+        daily_results[(cat1,cat2,'Truck - Modeled')] = \
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
         daily_results[(cat1,cat2,'Truck from Trips+Skims')] = \
             auto_byclass.loc['truck','Vehicle Miles']
@@ -549,10 +582,12 @@ class RunResults:
             0.01*auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix'],'Total Cost'].sum()
         daily_results[(cat1,cat2,'Auto ($2000) - AirPax' )] = \
             0.01*auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Total Cost'].sum()
-        daily_results[(cat1,cat2,'Truck ($2000)')] = \
-            0.01*auto_byclass.loc['truck','Total Cost'].sum()
-        daily_results[(cat1,cat2,'Bus ($2000)')] = self.bus_opcost['opcost'].sum()
 
+        # computed will get overwritten if base results
+        daily_results[(cat1,cat2,'Truck ($2000) - Computed')] = \
+            0.01*auto_byclass.loc['truck','Total Cost'].sum()
+        daily_results[(cat1,cat2,'Truck ($2000) - Modeled')] = \
+            0.01*auto_byclass.loc['truck','Total Cost'].sum()
         # Parking
         cat2            = 'Trips (Reference)'
         daily_results[(cat1,cat2,'Vehicle trips: SOV'  )] = auto_byclass.loc[['da' ,'datoll' ],'Daily Vehicle Trips'].sum()
@@ -569,18 +604,14 @@ class RunResults:
                                                 nonmot_byclass.loc[:,'Daily Trips'].sum()
 
         cat2            = 'Parking Costs'
-        try:
-            for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
-                daily_results[(cat1,cat2,'Work Trips in %s'     % county)] = total_autotrips * \
-                    RunResults.PERCENT_PARKING_NONHOME * RunResults.PERCENT_PARKING_WORK * \
-                    float(self.config.loc['percent parking cost incurred in %s' % county])
-            for county in RunResults.PARKING_COST_PER_TRIP_WORK.keys():
-                daily_results[(cat1,cat2,'Non-Work Trips in %s' % county)] = total_autotrips * \
-                    RunResults.PERCENT_PARKING_NONHOME * (1.0-RunResults.PERCENT_PARKING_WORK) * \
-                    float(self.config.loc['percent parking cost incurred in %s' % county])
-        except:
-            # base dirs don't have parking costs
-            assert(self.is_base_dir)
+        for countynum,countyname in RunResults.COUNTY_NUM_TO_NAME.iteritems():
+            daily_results[(cat1,cat2,'($2000) Work Tours to %s'     % countyname)] = \
+                self.parking_costs.loc[(self.parking_costs.parking_category=='Work'    )&
+                                       (self.parking_costs.dest_county     ==countynum ),  'parking_cost'].sum()
+        for countynum,countyname in RunResults.COUNTY_NUM_TO_NAME.iteritems():
+            daily_results[(cat1,cat2,'($2000) Non-Work Tours to %s' % countyname)] = \
+                self.parking_costs.loc[(self.parking_costs.parking_category=='Non-Work')&
+                                       (self.parking_costs.dest_county     ==countynum ),  'parking_cost'].sum()
 
         # Vehicles Owned
         cat2            = 'Vehicle Ownership (Modeled)'
@@ -596,9 +627,10 @@ class RunResults:
         daily_results[(cat1,cat2,'PM2.5 Gasoline')] = \
             vmt_byclass.loc[:,'Gas_PM2.5'].sum()*RunResults.EMISSIONS_SCALEUP + \
             (daily_results[('Travel Cost','VMT (Reference)','Auto')]*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
+        # this will get updated if base results
         daily_results[(cat1,cat2,'PM2.5 Diesel'  )] = \
             vmt_byclass.loc[:,'Diesel_PM2.5'].sum()*RunResults.EMISSIONS_SCALEUP + \
-            (daily_results[('Travel Cost','VMT (Reference)','Truck')]*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
+            (daily_results[('Travel Cost','VMT (Reference)','Truck - Computed')]*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
 
         cat2            = 'CO2 (metric tons)'
         daily_results[(cat1,cat2,'CO2')] = vmt_byclass.loc[:,'CO2'  ].sum()
@@ -664,7 +696,10 @@ class RunResults:
         cat2            = 'Noise'
         daily_results[(cat1,cat2,'Auto VMT')] = \
             vmt_byclass.loc[['DA','DAT','S2','S2T','S3','S3T'],'VMT'].sum()
-        daily_results[(cat1,cat2,'Truck VMT')] = \
+        # computed will get overwritten if base results
+        daily_results[(cat1,cat2,'Truck VMT - Computed')] = \
+            vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
+        daily_results[(cat1,cat2,'Truck VMT - Modeled')] = \
             vmt_byclass.loc[['SM','SMT','HV','HVT'],'VMT'].sum()
 
         # A few quick summary numbers
@@ -1136,6 +1171,8 @@ if __name__ == '__main__':
     rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f')
     print rr.quick_summary
 
-    if rr.base_results: rr.base_results.calculateDailyMetrics()
+    if rr.base_results:
+        rr.base_results.calculateDailyMetrics()
+        rr.updateDailyMetrics()
 
     rr.calculateBenefitCosts(args.project_dir, args.all_projects_dir)

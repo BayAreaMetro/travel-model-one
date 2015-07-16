@@ -9,7 +9,6 @@
 setlocal enabledelayedexpansion
 
 :: Overhead
-set R_HOME=C:\Program Files\R\R-3.1.1
 rem Setting this causes mainmodel's R to be angry about knitr
 rem Set it for the rdata python script
 :: set R_USER=mtcpb

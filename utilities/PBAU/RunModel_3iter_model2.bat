@@ -10,6 +10,16 @@
 ::
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+:: copy CTRAMP
+set CTRAMP_SRC=C:\Users\mtcpb\Documents\GitHub\travel-model-one-v05
+robocopy /MIR %CTRAMP_SRC%\model-files\model            CTRAMP\model
+robocopy /MIR %CTRAMP_SRC%\model-files\runtime          CTRAMP\runtime
+robocopy /MIR %CTRAMP_SRC%\model-files\scripts          CTRAMP\scripts
+copy /Y %CTRAMP_SRC%\model-files\RunIteration.bat       CTRAMP
+copy /Y %CTRAMP_SRC%\model-files\RunAccessibility.bat   .
+copy /Y %CTRAMP_SRC%\model-files\RunMetrics.bat         .
+copy /Y %CTRAMP_SRC%\utilities\PBAU\ExtractKeyFiles.bat .
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 1:  Set the necessary path variables
@@ -42,7 +52,7 @@ set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%PYTHON_PATH%;%OLD
 set CLASSPATH=%RUNTIME%/config;%RUNTIME%;%RUNTIME%/config/jppf-2.4/jppf-2.4-admin-ui/lib/*;%RUNTIME%/mtc.jar
 
 ::  Set the IP address of the host machine which sends tasks to the client machines 
-set HOST_IP_ADDRESS=192.168.1.206
+set HOST_IP_ADDRESS=192.168.1.208
 
 
 :: ------------------------------------------------------------------------------------------------------
@@ -90,11 +100,24 @@ copy INPUT\warmstart\nonres\    nonres\
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
 
-:: Prompt user to start java machines now that the project directory is set
-@echo off
-set /P c=Project Directory updated.  Please start java processes (main and nodes) and press Enter to continue...
-@echo on
-:: Don't care about the response
+:: Make sure java isn't running already
+CTRAMP\runtime\pslist.exe java
+if %ERRORLEVEL% EQU 0 goto done
+
+cd CTRAMP\runtime
+set RUNTIMEDIR=%CD%
+
+:: Run the java processes locally and verify
+.\PsExec.exe JavaOnly_runMain.cmd
+.\PsExec.exe JavaOnly_runNode0.cmd
+.\pslist.exe java
+if %ERRORLEVEL% NEQ 0 goto done
+
+
+M:
+cd %RUNTIMEDIR%
+cd ..
+cd ..
 
 :: Set the prices in the roadway network
 runtpp CTRAMP\scripts\preprocess\SetTolls.job
@@ -193,7 +216,7 @@ set ITER=2
 set PREV_ITER=1
 set WGT=0.50
 set PREV_WGT=0.50
-set SAMPLESHARE=0.30
+set SAMPLESHARE=0.25
 set SEED=0
 
 :: Runtime configuration: set the workplace shadow pricing parameters
@@ -204,6 +227,28 @@ if ERRORLEVEL 1 goto done
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 7.1.1:  Run transit assignment and metrics for iter2 outputs
+::
+:: ------------------------------------------------------------------------------------------------------
+runtpp CTRAMP\scripts\assign\TransitAssign.job
+if ERRORLEVEL 2 goto done
+
+call RunAccessibility
+if ERRORLEVEL 2 goto done
+
+call RunMetrics
+if ERRORLEVEL 2 goto done
+
+call ExtractKeyFiles
+if ERRORLEVEL 2 goto done
+
+:: save iter2 outputs
+move accessibilities accessibilities_iter%ITER%
+move core_summaries  core_summaries_iter%ITER%
+move metrics         metrics_iter%ITER%
+move extractor       extractor_iter%ITER%
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -218,7 +263,7 @@ set ITER=3
 set PREV_ITER=2
 set WGT=0.33
 set PREV_WGT=0.67
-set SAMPLESHARE=1.00
+set SAMPLESHARE=0.50
 set SEED=0
 
 :: Runtime configuration: set the workplace shadow pricing parameters
@@ -229,6 +274,14 @@ if ERRORLEVEL 1 goto done
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
+
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 9.1: Kill java processes
+::
+:: ------------------------------------------------------------------------------------------------------
+CTRAMP\runtime\pskill.exe java
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -273,16 +326,20 @@ if ERRORLEVEL 2 goto done
 :: ------------------------------------------------------------------------------------------------------
 
 : core_summaries
-
-call RunCoreSummaries
-if ERRORLEVEL 2 goto done
-
+::
+:: call RunCoreSummaries
+:: if ERRORLEVEL 2 goto done
+::
 
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 14:  Cobra Metrics
 ::
 :: ------------------------------------------------------------------------------------------------------
+
+:: These files are invalid (from iter2).  Flush to make RunMetrics regenerate it.
+del main\tripsEVinc1.tpp
+del trn\quickboards.xls
 
 call RunMetrics
 if ERRORLEVEL 2 goto done
@@ -306,6 +363,14 @@ copy *.prn logs\*.prn
 del *.prn
 del *.script.*
 del *.script
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 16:  Extractor
+::
+:: ------------------------------------------------------------------------------------------------------
+call ExtractKeyFiles
+if ERRORLEVEL 2 goto done
 
 :: Success target and message
 :success

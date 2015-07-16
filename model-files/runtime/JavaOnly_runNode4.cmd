@@ -11,9 +11,9 @@ set OLD_PATH=%PATH%
 set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%OLD_PATH%
 set CLASSPATH=%RUNTIME%/config;%RUNTIME%;%RUNTIME%/config/jppf-2.4/jppf-2.4-admin-ui/lib/*;%RUNTIME%/mtc.jar
 
-set HOST_IP=192.168.1.200
+set HOST_IP=set_by_RuntimeConfiguration.py
 
 rem ############  JPPF DRIVER  ############
-start java -server -Xmx128m -Dlog4j.configuration=log4j-node4.xml -Djppf.config=jppf-node4.properties org.jppf.node.NodeLauncher
+start "Node 4" java -server -Xmx128m -Dlog4j.configuration=log4j-node4.xml -Djppf.config=jppf-node4.properties org.jppf.node.NodeLauncher
 
 set PATH=%OLD_PATH%
