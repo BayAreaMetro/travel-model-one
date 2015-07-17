@@ -1,0 +1,80 @@
+; debug bit
+token_period            = 'AM'
+token_debug_origin      = '725'
+token_debug_destination = '412'
+token_debug_filename    = 'skim_debug'
+
+run pgm = matrix
+
+   mati[1] = HWYSKM@token_period@.tpp
+   mati[2] = COM_HWYSKIM@token_period@.tpp
+   
+   MW[1] = mi.1.TOLLVTOLLDA
+   MW[2] = mi.1.TOLLVTOLLS2
+   MW[3] = mi.1.TOLLVTOLLS3
+
+   _vtoll_da  = _vtoll_da  + ROWCNT(1)
+   _vtoll_sr2 = _vtoll_sr2 + ROWCNT(2)
+   _vtoll_sr3 = _vtoll_sr3 + ROWCNT(3)
+
+   jloop
+
+      ; debug print
+      if (i = @token_debug_origin@ & j = @token_debug_destination@) 
+      
+         ; one header
+         ; if (@period@ = 1)
+         
+            list = 'Debug for origin zone ',@token_debug_origin@(5.0),'  and destination zone ',@token_debug_destination@(5.0),'.', file = @token_debug_filename@.@token_period@.txt
+            list = ' ', file = @token_debug_filename@.@token_period@.txt
+         
+            list = ' time period             class           path           time       distance    bridge toll addtl pavecost     value toll', file = @token_debug_filename@.@token_period@.txt
+            list = ' ----------- ----------------- -------------- -------------- -------------- -------------- -------------- --------------', file = @token_debug_filename@.@token_period@.txt
+         
+         ; break for everyone else
+         ; else
+         ;
+         ;   list = ' ----------- ----------------- -------------- -------------- -------------- -------------- --------------', file = @token_debug_filename@.@token_period@.txt 
+         ;
+         ;  endif
+         
+         list = '          @token_period@       drive alone           free', mi.1.TIMEDA(15.2),     mi.1.DISTDA(15.2),     mi.1.BTOLLDA(15),     mi.1.PVCOSTDA(15),     '            ---',    file = @token_debug_filename@.@token_period@.txt 
+         list = '          @token_period@       drive alone           toll', mi.1.TOLLTIMEDA(15.2), mi.1.TOLLDISTDA(15.2), mi.1.TOLLBTOLLDA(15), mi.1.TOLLPVCOSTDA(15), mi.1.TOLLVTOLLDA(15), file = @token_debug_filename@.@token_period@.txt
+         list = '          @token_period@     shared ride 2           free', mi.1.TIMES2(15.2),     mi.1.DISTS2(15.2),     mi.1.BTOLLS2(15),     mi.1.PVCOSTS2(15),     '            ---',    file = @token_debug_filename@.@token_period@.txt 
+         list = '          @token_period@     shared ride 2           toll', mi.1.TOLLTIMES2(15.2), mi.1.TOLLDISTS2(15.2), mi.1.TOLLBTOLLS2(15), mi.1.TOLLPVCOSTS2(15), mi.1.TOLLVTOLLS2(15), file = @token_debug_filename@.@token_period@.txt
+         list = '          @token_period@    shared ride 3+           free', mi.1.TIMES3(15.2),     mi.1.DISTS3(15.2),     mi.1.BTOLLS3(15),     mi.1.PVCOSTS3(15),     '            ---',    file = @token_debug_filename@.@token_period@.txt 
+         list = '          @token_period@    shared ride 3+           toll', mi.1.TOLLTIMES3(15.2), mi.1.TOLLDISTS3(15.2), mi.1.TOLLBTOLLS3(15), mi.1.TOLLPVCOSTS3(15), mi.1.TOLLVTOLLS3(15), file = @token_debug_filename@.@token_period@.txt
+         
+         list = '          @token_period@    very small trk           free', mi.2.TIMEVSM(15.2),     mi.2.DISTVSM(15.2),     mi.2.BTOLLVSM(15),     mi.2.PVCOSTVSM(15),     '            ---',     file = @token_debug_filename@.@token_period@.txt 
+         list = '          @token_period@    very small trk           toll', mi.2.TOLLTIMEVSM(15.2), mi.2.TOLLDISTVSM(15.2), mi.2.TOLLBTOLLVSM(15), mi.2.TOLLPVCOSTVSM(15), mi.2.TOLLVTOLLVSM(15), file = @token_debug_filename@.@token_period@.txt
+         list = '          @token_period@         small trk           free', mi.2.TIMESML(15.2),     mi.2.DISTSML(15.2),     mi.2.BTOLLSML(15),     mi.2.PVCOSTSML(15),     '            ---',     file = @token_debug_filename@.@token_period@.txt 
+         list = '          @token_period@         small trk           toll', mi.2.TOLLTIMESML(15.2), mi.2.TOLLDISTSML(15.2), mi.2.TOLLBTOLLSML(15), mi.2.TOLLPVCOSTSML(15), mi.2.TOLLVTOLLSML(15), file = @token_debug_filename@.@token_period@.txt
+         list = '          @token_period@        medium trk           free', mi.2.TIMEMED(15.2),     mi.2.DISTMED(15.2),     mi.2.BTOLLMED(15),     mi.2.PVCOSTMED(15),     '            ---',     file = @token_debug_filename@.@token_period@.txt 
+         list = '          @token_period@        medium trk           toll', mi.2.TOLLTIMEMED(15.2), mi.2.TOLLDISTMED(15.2), mi.2.TOLLBTOLLMED(15), mi.2.TOLLPVCOSTMED(15), mi.2.TOLLVTOLLMED(15), file = @token_debug_filename@.@token_period@.txt
+         list = '          @token_period@         large trk           free', mi.2.TIMELRG(15.2),     mi.2.DISTLRG(15.2),     mi.2.BTOLLLRG(15),     mi.2.PVCOSTLRG(15),     '            ---',     file = @token_debug_filename@.@token_period@.txt 
+         list = '          @token_period@         large trk           toll', mi.2.TOLLTIMELRG(15.2), mi.2.TOLLDISTLRG(15.2), mi.2.TOLLBTOLLLRG(15), mi.2.TOLLPVCOSTLRG(15), mi.2.TOLLVTOLLLRG(15), file = @token_debug_filename@.@token_period@.txt
+         
+      
+      endif
+      
+   endjloop
+   if (i=1475)
+     list = '', file = @token_debug_filename@.@token_period@.txt 
+     list = ' vtollda_nonzero, ', _vtoll_da, ', vtoll_sr2_nonzero, ', _vtoll_sr2, ', vtoll_sr3_nonzero, ', _vtoll_sr3,  file = @token_debug_filename@.@token_period@.txt 
+     list = '', file = @token_debug_filename@.@token_period@.txt 
+   endif
+endrun
+
+run pgm = network
+  neti = loadAM.net
+
+  phase=linkmerge
+    IF (LI.1.A=9175 & LI.1.B=10621)
+      list =   ' VOL_DA, '     , LI.1.V1_1, ', VOL_S2, ',     LI.1.V2_1, ', VOL_S3, ',     LI.1.V3_1, ', VOL_TRK, ',     LI.1.V5_1, ', VOL_LTRK, ',     LI.1.V6_1,
+              ', VOL_TOLLDA, ' , LI.1.V6_1, ', VOL_TOLLS2, ', LI.1.V7_1, ', VOL_TOLLS3, ', LI.1.V8_1, ', VOL_TOLLTRK, ', LI.1.V9_1, ', VOL_TOLLLTRK, ', LI.1.V10_1, 
+              ', VOL_TOT, ', LI.1.V_1, ', VC, ', LI.1.VC_1, file = @token_debug_filename@.@token_period@.txt, append=T
+      list = '', file = @token_debug_filename@.@token_period@.txt, append=T
+    ENDIF
+  endphase
+
+endrun

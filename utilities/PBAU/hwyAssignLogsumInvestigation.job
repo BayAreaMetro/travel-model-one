@@ -1,0 +1,543 @@
+;
+; Test variations on hwy assignment to investigate negative logsums issue we're seeing in Project Performance Assessment
+; testing.
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+input_dir          = '%INPUT_DIR%'
+token_period       = 'AM'
+token_capfac       = 'parameters capfac = 4'
+token_hov_xfer_pen = 'li.HOVXPEN'
+token_relativegap  = 'parameters relativegap = %RELGAP%'
+token_maxiters     = 'parameters maxiters = 1000'
+token_enhance      = ', enhance = %ENHANCE%'
+
+DistributeMultistep processid = 'CTRAMP', processNum = 1, commpath = 'm:\commpath'
+
+   run pgm = highway
+  
+      ; distribute via cluster
+      DistributeIntrastep processid = 'CTRAMP', processlist = 2-48, commpath = 'm:\commpath', saveprn = f
+    
+      ; time-specific input highway network
+      neti    = @input_dir@\hwy\avgload@token_period@.net
+      
+      ; household travel demand
+      mati[1] = @input_dir@\main\trips@token_period@.tpp
+      
+      ; internal/external travel demand
+      mati[2] = @input_dir@\nonres\tripsIx@token_period@.tpp 
+      
+      ; commercial travel demand
+      mati[3] = @input_dir@\nonres\tripsTrk@token_period@.tpp
+      
+      ; air passenger travel demand
+      mati[4] = @input_dir@\nonres\tripsAirPax@token_period@.tpp
+    
+      ; loaded time-specific highway network
+      neto    = load@token_period@.net
+    
+      ; set the assignment paramters -- equilibrium assignment, frank-wolfe
+      parameters combine = equi @token_enhance@
+      
+      ; set the assignment parameters -- 1454 internal zones + 21 external zones
+      parameters zones = 1475
+      
+      ; set the assignment parameters -- maximum number of iterations to 300
+      @token_maxiters@ 
+      
+      ; set the assignment parameters -- closure criteria (tighten up as runtime allows)
+      @token_relativegap@ 
+      
+      ; set the assignment parameters -- other closure criteria (do not use)
+      parameters gap = 0, aad = 0, raad = 0, rmse = 0
+    
+      ; set the number of hours in the assignment (see the loop tokens)
+      @token_capfac@ 
+    
+      ; hwyParam.bock contains variables used in the remainder of the script, particularly in the generalized cost expressions
+      read file = @input_dir@\ctramp\scripts\block\hwyparam.block
+      
+      ; read in the speed/capacity table
+      read file = @input_dir@\ctramp\scripts\block\SpeedCapacity_1hour.block 
+      
+      ; set the working variables
+      phase = linkread
+      
+         ; distance is used in the volume/delay functions and the generalized cost function
+         distance = li.DISTANCE
+         
+         ; facility type is used in the compuation of the volume/delay function parameter
+         linkclass = li.FT
+         
+         ; tollclass determines whether a link is only available to value toll payers
+         lw.tollclass = li.TOLLCLASS
+         
+         ; fixed time links (where TSIN = 1) are indifferent to congestion
+         lw.ot = li.OT
+         
+         ; free-flow speed is used in the volume/delay functions
+         lw.ffs = li.FFS
+         
+         ; free-flow time is a function of free-flow speed and distance and is used in the generalized cost function
+         lw.fft = (distance/lw.ffs) * 60 
+         
+         ; TSIN is a code, where 1 indicates the link has a fixed time and is immune to demand
+         lw.tsin = li.TSIN
+         
+         ; link capacity is a function of the number of lanes
+         lw.lanes = li.LANES
+         
+         ; the speed/capacity table and the computation of the volume/delay function parameter (see FreeFlowSpeed.block) uses the capacity class code
+         ; which is area type * 10 + facility type
+         lw.capclass = li.CAPCLASS
+         
+         ; set the input time to OT for fixed time links
+         if (lw.tsin = 1)
+            t0 = lw.ot
+         endif
+      
+         ; the setting of critical speeds and computation of the volume/delay function parameter is in the FreeFlowSpeed.block file
+         read file = @input_dir@\ctramp\scripts\block\FreeFlowSpeed.block
+     
+         ; compute the generalized cost for passenger vehicles
+         lw.gencost_da = lw.fft + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_DA)
+         lw.gencost_s2 = lw.fft + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
+         lw.gencost_s3 = lw.fft + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_S3 / sr3costshare)  + @token_hov_xfer_pen@
+         
+         ; compute the generalized cost for very small, small, and medium trucks (use small truck costs) and large trucks
+         lw.gencost_sml = lw.fft + (0.6/truckvot) * (lw.dist*li.smtropc + li.TOLL@token_period@_SML)
+         lw.gencost_lrg = lw.fft + (0.6/truckvot) * (lw.dist*li.lrtropc + li.TOLL@token_period@_LRG)
+         
+         ; create the link exclusion classes -- HOV only (23), HOV 3+ only (3), no large trucks (4)                
+         if (li.USE = 2,3)   addtogroup = 23 
+         if (li.USE = 3)     addtogroup = 3              
+         if (li.USE = 2,3,4) addtogroup = 4                            
+         
+         ; create the link exclusion classes -- value toll links for passenger vehicles
+         if (lw.tollclass >= firstvalue && li.TOLL@token_period@_DA > 0) addtogroup = 11
+         if (lw.tollclass >= firstvalue && li.TOLL@token_period@_S2 > 0) addtogroup = 12
+         if (lw.tollclass >= firstvalue && li.TOLL@token_period@_S3 > 0) addtogroup = 13
+         
+         ; create the link exclusion classes -- value toll links for commercial vehicles (use SML for very small, small, and medium)
+         if (lw.tollclass >= firstvalue && li.TOLL@token_period@_SML > 0) addtogroup = 14
+         if (lw.tollclass >= firstvalue && li.TOLL@token_period@_LRG > 0) addtogroup = 15
+    
+      endphase
+  
+      ; set the pathload parameters
+      phase = iloop
+      
+         ; no value toll paying classes firsth
+      
+         ; drive alone, no value toll, exclude drive alone value toll and HOV facilities, internal demand plus intra-regional demand plus air passenger demand
+         pathload path = lw.gencost_da, excludegrp = 11, 23, vol[1] = mi.1.da + mi.2.da + mi.4.da
+         
+         ; shared ride 2, no value toll, exclude sr2 value toll and HOV 3+ facilities, internal demand plus intra-regional demand plus air passenger demand
+         pathload path = lw.gencost_s2, excludegrp = 12, 3, vol[2] =  mi.1.sr2 / 2 + mi.2.sr2 + mi.4.sr2
+         
+         ; shared ride 3+, no value toll, exclude sr3 value toll facilities, internal demand plus intra-regional demand plus air passenger demand
+         pathload path = lw.gencost_s3, excludegrp = 13, vol[3] = mi.1.sr3 / 3.25 + mi.2.sr3 + mi.4.sr3
+         
+         ; very small, small, and medium trucks, no value toll, exclude small truck value toll facilities and HOV facilities
+         pathload path = lw.gencost_sml, excludegrp = 14, 23, vol[4] = mi.3.vstruck + mi.3.struck + mi.3.mtruck
+         
+         ; large trucks, no value toll, exclude large truck toll facilities, HOV facilities, and no commercial truck facilities 
+         pathload path = lw.gencost_lrg, excludegrp = 15, 23, 4, vol[5] = mi.3.ctruck
+         
+         ; value toll paying classes second
+         
+         ; drive alone, value toll paying, exclude HOV facilities, internal demand plus intra-regional demand plus air passenger demand
+         pathload path = lw.gencost_da, excludegrp = 23, vol[6] = mi.1.datoll + mi.2.datoll + mi.4.datoll
+         
+         ; shared ride 2, value toll paying, exclude HOV 3+ facilities, internal demand plus intra-regional demand plus air passenger demand
+         pathload path = lw.gencost_s2, excludegrp = 3, vol[7] = mi.1.sr2toll / 2 + mi.2.sr2toll + mi.4.sr2toll
+         
+         ; shared ride 3+, value toll paying, no exclusions, internal demand plus intra-regional demand plus air passenger demand
+         pathload path = lw.gencost_s3, vol[8] = mi.1.sr3toll / 3.25 + mi.2.sr3toll + mi.4.sr3toll
+         
+         ; very small, small, and medium trucks, value toll paying, excluded from HOV facilities, use the small truck generalized cost
+         pathload path = lw.gencost_sml, excludegrp = 23, vol[9]= mi.3.vstrucktoll + mi.3.strucktoll + mi.3.mtrucktoll
+         
+         ; large trucks, value toll paying, excluded from HOV facilities and no commercial truck facilities
+         pathload path = lw.gencost_lrg, excludegrp = 23, 4, vol[10] = mi.3.ctrucktoll
+
+      endphase  
+    
+      ; set adjust parameters (volume delay functions)
+      phase = adjust
+ 
+         ; very small, small, and medium trucks have a passenger car equivalent of, on average 1.0, large trucks see HwyParam.block for PCE
+         function v = vol[1] + vol[2] + vol[3] + vol[4] + trkpce*vol[5] + vol[6] + vol[7] + vol[8] + vol[9] + trkpce*vol[10]
+           
+         ; the volume delay functions are housed in the SpeedFlowCurve.block file
+         read file = @input_dir@\ctramp\scripts\block\SpeedFlowCurve.block 
+      
+         ; set the generalized cost functions (same as before, only now we start with "time")
+         lw.gencost_da = time + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_DA)
+         lw.gencost_s2 = time + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
+         lw.gencost_s3 = time + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_S3 / sr3costshare) + @token_hov_xfer_pen@
+         
+         lw.gencost_sml = time + (0.6/truckvot) * (lw.dist*li.smtropc + li.TOLL@token_period@_SML)
+         lw.gencost_lrg = time + (0.6/truckvot) * (lw.dist*li.smtropc + li.TOLL@token_period@_LRG)
+         
+      endphase
+      
+   endrun      
+  
+   EndDistributeMultistep
+  
+Wait4Files files = CTRAMP1.script.end, PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t
+
+
+; Now do the skimming so we can count the number of tollda
+token_debug_origin      = '725'
+token_debug_destination = '412'
+token_debug_filename    = 'skim_debug' 
+token_period            = 'AM'    
+  
+; do, more or less, the same skim procedure for each of seven classes of vehicles
+loop class = 1, 7
+
+   ; a string token is used for each class
+   if (class = 1)
+      token_class = 'DA'
+      opcost      = 'AUTOOPC'
+      intra       = '8-12'
+
+      ; the generalized cost expression is the prefix + token_period + suffix
+      gencost_prefix = 'lw.gencost = lw.time + (0.6 / vot) * (lw.dist*li.autoopc + li.TOLL'
+      gencost_suffix = '_DA)'
+      
+      ; drive alone excluded from HOV 2 and 3+ facilities
+      token_excludegrp_free = 'excludegrp = 23, 11,'
+      token_excludegrp_toll = 'excludegrp = 23,'
+       
+   
+   elseif (class = 2)
+      token_class = 'S2'
+      opcost      = 'AUTOOPC'
+      intra       = '13-17'
+      
+      ; the generalized cost expression is the prefix + token_period + suffix
+      gencost_prefix = 'lw.gencost = lw.time + (0.6 / vot) * (lw.dist*li.autoopc + li.TOLL'
+      gencost_suffix = '_S2 / sr2costShare)'
+      
+      ; shared ride 2 excluded from HOV 3+ facilities
+      token_excludegrp_free = 'excludegrp = 3, 11,'
+      token_excludegrp_toll = 'excludegrp = 3,'
+   
+   elseif (class = 3)
+      token_class = 'S3'
+      opcost      = 'AUTOOPC'
+      intra       = '18-22'
+
+      ; the generalized cost expression is the prefix + token_period + suffix
+      gencost_prefix = 'lw.gencost = lw.time + (0.6 / vot) * (lw.dist*li.autoopc + li.TOLL'
+      gencost_suffix = '_S3 / sr3costShare)'
+      
+      ; shared ride 3+ not excluded from any facilities
+      token_excludegrp_free = 'excludegrp = 11,'
+      token_excludegrp_toll = ' '
+
+      token_excludegrp = ' '
+      
+   elseif (class = 4)
+      token_class = 'VSM'
+      opcost      = 'SMTROPC'
+      intra       = '23-27'
+      
+      ; the generalized cost expression is the prefix + token_period + suffix
+      gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist*li.smtropc + li.TOLL'
+      gencost_suffix = '_VSM)'
+      
+      ; very small trucks excluded from HOV 2 and 3+ facilities
+      token_excludegrp_free = 'excludegrp = 23, 11,'
+      token_excludegrp_toll = 'excludegrp = 23,'
+   
+   elseif (class = 5)
+      token_class = 'SML'
+      opcost      = 'SMTROPC'
+      intra       = '28-32'
+      
+      ; the generalized cost expression is the prefix + token_period + suffix
+      gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist*li.smtropc + li.TOLL'
+      gencost_suffix = '_SML)'
+      
+      ; small trucks excluded from HOV 2 and 3+ facilities
+      token_excludegrp_free = 'excludegrp = 23, 11,'
+      token_excludegrp_toll = 'excludegrp = 23,'
+   
+   elseif (class = 6)
+      token_class = 'MED'
+      opcost      = 'SMTROPC'
+      intra       = '33-37'
+      
+      ; the generalized cost expression is the prefix + token_period + suffix
+      gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist*li.smtropc + li.TOLL'
+      gencost_suffix = '_MED)'
+      
+      ; medium trucks excluded from HOV 2 and 3+ facilities
+      token_excludegrp_free = 'excludegrp = 23, 11,'
+      token_excludegrp_toll = 'excludegrp = 23,'
+      
+   elseif (class = 7)
+      token_class = 'LRG'
+      opcost      = 'LRTROPC'
+      intra       = '38-42'
+      
+      ; the generalized cost expression is the prefix + token_period + suffix
+      gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist*li.lrtropc + li.TOLL'
+      gencost_suffix = '_LRG)'
+      
+      ; large trucks excluded from HOV 2, HOV 3+, and no truck facilities
+      token_excludegrp_free = 'excludegrp = 4, 11,'
+      token_excludegrp_toll = 'excludegrp = 4,'
+      
+   endif
+ 
+   DistributeMultistep processid = 'CTRAMP', processNum = @class@, commpath = 'm:\commpath'
+
+   run pgm = highway
+   
+      ; give each time of day additional processors to work with   
+      DistributeIntrastep processid = 'ctramp', processlist = @intra@, commpath = 'm:\commpath', saveprn = f
+  
+      ; a congested network is input
+      neti = load@token_period@.net
+      
+      ; each period-class combination gets a seven-table skim capturing the no value toll and toll paths
+      mato = @token_class@_@token_period@.tpp, combine = f, mo = 1-9, name = TIME@token_class@,
+                                                                                   DIST@token_class@,
+                                                                                   BTOLL@token_class@,
+                                                                                   PVCOST@token_class@,
+                                                                                   TOLLTIME@token_class@,
+                                                                                   TOLLDIST@token_class@,
+                                                                                   TOLLBTOLL@token_class@,
+                                                                                   TOLLPVCOST@token_class@,
+                                                                                   TOLLVTOLL@token_class@
+
+                                                
+      
+      ; block file containing highway parameters (see note above)
+      read file=@input_dir@\ctramp\scripts\block\hwyparam.block
+    
+      ; equilibrium assignment procedure with a single iteration for skims
+      parameters combine  = equi                     
+      parameters maxiters = 1    
+   
+      ; set the working variables
+      phase = linkread
+      
+         ; the time variable is congested time specific to each time period
+         lw.time = li.CTIM 
+         
+         ; distance is coded as "distance" in the networks
+         lw.dist = li.DISTANCE
+         
+         ; facility type is the linkclass (linkclass needs to be defined, but it's not used)
+          linkclass    = li.FT 
+
+          ; tollclass set to distinguish value tolls from bridge tolls
+         lw.tollclass = li.TOLLCLASS
+
+         ; calculate the pavement cost variable to skim
+         lw.pave_cost = li.distance * li.@opcost@_PAVE
+       
+         ; set the generalized cost, which is the combination of three tokens
+         @gencost_prefix@@token_period@@gencost_suffix@
+                  
+         ; reserve TOLL (= lw.tollclass) 1 through firstValue - 1 for bridge tolls; firstValue and up for value tolls
+         if (lw.tollclass >= firstValue)
+         
+            ; set the value tolls
+            lw.valuetoll_@token_class@  = li.TOLL@token_period@_@token_class@
+           
+         else            
+        
+            ; set the bridge tolls
+            lw.bridgetoll_@token_class@  = li.TOLL@token_period@_@token_class@   
+           
+         endif          
+           
+         ; the USE variable defines what type of vehicles can use the roadway
+        
+         ; Group 23 defines HOV 2 and 3+ facilities
+         if (li.USE = 2,3) addtogroup = 23    
+        
+         ; Group 3 defines HOV 3+ facilities
+         if (li.USE = 3) addtogroup = 3
+         
+         ; Group 4 defines facilities not available to trucks
+         if (li.USE = 2,3,4) addtogroup = 4
+                    
+         ; Group 11 defines the value toll links the non-value-toll-paying users are prohibited from using
+         if (lw.tollclass >= firstValue && li.TOLL@token_period@_@token_class@ > 0) addtogroup = 11
+         
+      endphase
+  
+      phase = iloop
+  
+         ; non-value toll paying path
+         pathload path = lw.gencost, @token_excludegrp_free@
+            mw[1] = pathtrace(lw.time),
+            mw[2] = pathtrace(lw.dist),
+            mw[3] = pathtrace(lw.bridgetoll_@token_class@) + pathtrace(lw.pave_cost),
+            mw[4] = pathtrace(lw.pave_cost)
+            
+         ; value toll paying path
+         pathload path = lw.gencost, @token_excludegrp_toll@
+            mw[5] = pathtrace(lw.time),
+            mw[6] = pathtrace(lw.dist),
+            mw[7] = pathtrace(lw.bridgetoll_@token_class@) + pathtrace(lw.pave_cost),
+            mw[8] = pathtrace(lw.pave_cost),
+            mw[9] = pathtrace(lw.valuetoll_@token_class@)
+            
+         ; compute time/distance intra-zonal values as 1/2 the nearest neighbor, tolls as zero
+         ; TODO: look at max bridge toll (plus pavement) intrazonal to make sure it's not weird
+         mw[1][i]  = rowmin(1) * 0.5
+         mw[2][i]  = rowmin(2) * 0.5
+         mw[3][i]  = rowmin(3) * 0.5
+         mw[4][i]  = rowmin(4) * 0.5
+         mw[5][i]  = rowmin(5) * 0.5
+         mw[6][i]  = rowmin(6) * 0.5
+         mw[7][i]  = rowmin(7) * 0.5
+         mw[8][i]  = rowmin(8) * 0.5
+         mw[9][i]  = 0.0
+           
+      endphase ; i loop 
+    
+   endrun
+   EndDistributeMultistep
+
+endloop ; token_class  
+  
+Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end,
+                   CTRAMP5.script.end, CTRAMP6.script.end, CTRAMP7.script.end, 
+                   PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t
+
+; combine the skims into two large tables per time period
+run pgm = matrix
+
+   ; give each period thread more threads to work with   
+   ;DistributeIntrastep processid = 'ctramp', processlist = 1-4, commpath = 'm:\commpath', saveprn = f
+   
+   ; drive alone skim
+   mati[1] = DA_@token_period@.tpp
+   
+   ; shared ride 2 skim
+   mati[2] = S2_@token_period@.tpp
+   
+   ; shared ride 3+ skim
+   mati[3] = S3_@token_period@.tpp
+   
+   ; very small trucks
+   mati[4] = VSM_@token_period@.tpp
+   
+   ; small trucks
+   mati[5] = SML_@token_period@.tpp
+   
+   ; medium trucks
+   mati[6] = MED_@token_period@.tpp
+   
+   ; large trucks
+   mati[7] = LRG_@token_period@.tpp
+   
+   ; passenger vehicle skims
+   mato[1] = HWYSKM@token_period@.tpp, mo = 1-27, name = TIMEDA,DISTDA,BTOLLDA,PVCOSTDA,
+                        TOLLTIMEDA,TOLLDISTDA,TOLLBTOLLDA,TOLLPVCOSTDA,TOLLVTOLLDA,
+                                                               TIMES2,DISTS2,BTOLLS2,PVCOSTS2,
+                                                               TOLLTIMES2,TOLLDISTS2,TOLLBTOLLS2,TOLLPVCOSTS2,TOLLVTOLLS2,
+                                                               TIMES3,DISTS3,BTOLLS3,PVCOSTS3,
+                                                               TOLLTIMES3,TOLLDISTS3,TOLLBTOLLS3,TOLLPVCOSTS3,TOLLVTOLLS3,
+   
+   ; commercial vehicle skims
+   mato[2] = COM_HWYSKIM@token_period@.tpp, mo = 28 - 63, name = TIMEVSM, DISTVSM, BTOLLVSM, PVCOSTVSM,
+                                                                       TOLLTIMEVSM, TOLLDISTVSM, TOLLBTOLLVSM, TOLLPVCOSTVSM, TOLLVTOLLVSM,
+                                                                       TIMESML, DISTSML, BTOLLSML, PVCOSTSML,
+                                                                       TOLLTIMESML, TOLLDISTSML, TOLLBTOLLSML, TOLLPVCOSTSML, TOLLVTOLLSML,
+                                                                       TIMEMED, DISTMED, BTOLLMED, PVCOSTMED,
+                                                                       TOLLTIMEMED, TOLLDISTMED, TOLLBTOLLMED, TOLLPVCOSTMED, TOLLVTOLLMED,
+                                                                       TIMELRG, DISTLRG, BTOLLLRG, PVCOSTLRG,
+                                                                       TOLLTIMELRG, TOLLDISTLRG, TOLLBTOLLLRG, TOLLPVCOSTLRG, TOLLVTOLLLRG
+   
+   ; drive alone
+   mw[1]   = mi.1.TIMEDA
+   mw[2]   = mi.1.DISTDA
+   mw[3]   = mi.1.BTOLLDA  
+   mw[4]   = mi.1.PVCOSTDA
+   mw[5]   = mi.1.TOLLTIMEDA
+   mw[6]   = mi.1.TOLLDISTDA
+   mw[7]   = mi.1.TOLLBTOLLDA
+   mw[8]   = mi.1.TOLLPVCOSTDA
+   mw[9]   = mi.1.TOLLVTOLLDA
+   
+   ; shared ride 2
+   mw[10]  = mi.2.TIMES2
+   mw[11]  = mi.2.DISTS2
+   mw[12]  = mi.2.BTOLLS2
+   mw[13]  = mi.2.PVCOSTS2
+   mw[14]  = mi.2.TOLLTIMES2
+   mw[15]  = mi.2.TOLLDISTS2
+   mw[16]  = mi.2.TOLLBTOLLS2
+   mw[17]  = mi.2.TOLLPVCOSTS2
+   mw[18]  = mi.2.TOLLVTOLLS2
+   
+   ; shared ride 3+
+   mw[19]  = mi.3.TIMES3
+   mw[20]  = mi.3.DISTS3
+   mw[21]  = mi.3.BTOLLS3
+   mw[22]  = mi.3.PVCOSTS3
+   mw[23]  = mi.3.TOLLTIMES3
+   mw[24]  = mi.3.TOLLDISTS3
+   mw[25]  = mi.3.TOLLBTOLLS3
+   mw[26]  = mi.3.TOLLPVCOSTS3
+   mw[27]  = mi.3.TOLLVTOLLS3
+   
+   ; very small trucks
+   mw[28]  = mi.4.TIMEVSM
+   mw[29]  = mi.4.DISTVSM
+   mw[30]  = mi.4.BTOLLVSM
+   mw[31]  = mi.4.PVCOSTVSM
+   mw[32]  = mi.4.TOLLTIMEVSM
+   mw[33]  = mi.4.TOLLDISTVSM
+   mw[34]  = mi.4.TOLLBTOLLVSM
+   mw[35]  = mi.4.TOLLPVCOSTVSM
+   mw[36]  = mi.4.TOLLVTOLLVSM
+   
+   ; small trucks
+   mw[37]  = mi.5.TIMESML
+   mw[38]  = mi.5.DISTSML
+   mw[39]  = mi.5.BTOLLSML
+   mw[40]  = mi.5.PVCOSTSML
+   mw[41]  = mi.5.TOLLTIMESML
+   mw[42]  = mi.5.TOLLDISTSML
+   mw[43]  = mi.5.TOLLBTOLLSML
+   mw[44]  = mi.5.TOLLPVCOSTSML
+   mw[45]  = mi.5.TOLLVTOLLSML
+   
+   ; medium trucks
+   mw[46]  = mi.6.TIMEMED
+   mw[47]  = mi.6.DISTMED
+   mw[48]  = mi.6.BTOLLMED
+   mw[49]  = mi.6.PVCOSTMED
+   mw[50]  = mi.6.TOLLTIMEMED
+   mw[51]  = mi.6.TOLLDISTMED
+   mw[52]  = mi.6.TOLLBTOLLMED
+   mw[53]  = mi.6.TOLLPVCOSTMED
+   mw[54]  = mi.6.TOLLVTOLLMED
+   
+   ; large trucks
+   mw[55]  = mi.7.TIMELRG
+   mw[56]  = mi.7.DISTLRG
+   mw[57]  = mi.7.BTOLLLRG
+   mw[58]  = mi.7.PVCOSTLRG
+   mw[59]  = mi.7.TOLLTIMELRG
+   mw[60]  = mi.7.TOLLDISTLRG
+   mw[61]  = mi.7.TOLLBTOLLLRG
+   mw[62]  = mi.7.TOLLPVCOSTLRG
+   mw[63]  = mi.7.TOLLVTOLLLRG
+   
+endrun
+
+
