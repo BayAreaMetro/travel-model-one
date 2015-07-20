@@ -13,10 +13,12 @@ token_maxiters     = 'parameters maxiters = 1000'
 token_enhance      = ', enhance = %ENHANCE%'
 if (%ENHANCE%=0)
   token_procnum    = 1
-  token_proclist   = 2-24
+  token_proclista  = 2
+  token_proclistb  = 24
 else
   token_procnum    = 25
-  token_proclist   = 26-48
+  token_proclista  = 26
+  token_proclistb  = 48
 endif
 
 DistributeMultistep processid = 'CTRAMP', processNum = @token_procnum@, commpath = 'm:\commpath'
@@ -24,7 +26,7 @@ DistributeMultistep processid = 'CTRAMP', processNum = @token_procnum@, commpath
    run pgm = highway
   
       ; distribute via cluster
-      DistributeIntrastep processid = 'CTRAMP', processlist = @token_proclist@, commpath = 'm:\commpath', saveprn = f
+      DistributeIntrastep processid = 'CTRAMP', processlist = @token_proclista@-@token_proclistb@, commpath = 'm:\commpath', saveprn = f
     
       ; time-specific input highway network
       neti    = @input_dir@\hwy\avgload@token_period@.net
@@ -39,7 +41,7 @@ DistributeMultistep processid = 'CTRAMP', processNum = @token_procnum@, commpath
       mati[3] = @input_dir@\INPUT\warmstart\nonres\tripsTrk@token_period@.tpp
       
       ; air passenger travel demand
-      mati[4] = @input_dir@\INPUT\warmstart\nonres\tripsAirPax@token_period@.tpp
+      mati[4] = @input_dir@\nonres\tripsAirPax@token_period@.tpp
     
       ; loaded time-specific highway network
       neto    = load@token_period@.net
