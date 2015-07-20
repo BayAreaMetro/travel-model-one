@@ -70,7 +70,7 @@ run pgm = network
 
   phase=linkmerge
     IF (LI.1.A=9175 & LI.1.B=10621)
-      list =   ' VOL_DA, '     , LI.1.V1_1, ', VOL_S2, ',     LI.1.V2_1, ', VOL_S3, ',     LI.1.V3_1, ', VOL_TRK, ',     LI.1.V5_1, ', VOL_LTRK, ',     LI.1.V6_1,
+      list =   ' VOL_DA, '     , LI.1.V1_1, ', VOL_S2, ',     LI.1.V2_1, ', VOL_S3, ',     LI.1.V3_1, ', VOL_TRK, ',     LI.1.V4_1, ', VOL_LTRK, ',     LI.1.V5_1,
               ', VOL_TOLLDA, ' , LI.1.V6_1, ', VOL_TOLLS2, ', LI.1.V7_1, ', VOL_TOLLS3, ', LI.1.V8_1, ', VOL_TOLLTRK, ', LI.1.V9_1, ', VOL_TOLLLTRK, ', LI.1.V10_1, 
               ', VOL_TOT, ', LI.1.V_1, ', VC, ', LI.1.VC_1, file = @token_debug_filename@.@token_period@.txt, append=T
       list = '', file = @token_debug_filename@.@token_period@.txt, append=T
