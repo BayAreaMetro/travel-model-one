@@ -9,30 +9,37 @@ token_period       = 'AM'
 token_capfac       = 'parameters capfac = 4'
 token_hov_xfer_pen = 'li.HOVXPEN'
 token_relativegap  = 'parameters relativegap = %RELGAP%'
-token_maxiters     = 'parameters maxiters = 1000'
+token_maxiters     = 'parameters maxiters = 1500'
 token_enhance      = ', enhance = %ENHANCE%'
+if (%ENHANCE%=0)
+  token_procnum    = 1
+  token_proclist   = 2-24
+else
+  token_procnum    = 25
+  token_proclist   = 26-48
+endif
 
-DistributeMultistep processid = 'CTRAMP', processNum = 1, commpath = 'm:\commpath'
+DistributeMultistep processid = 'CTRAMP', processNum = @token_procnum@, commpath = 'm:\commpath'
 
    run pgm = highway
   
       ; distribute via cluster
-      DistributeIntrastep processid = 'CTRAMP', processlist = 2-48, commpath = 'm:\commpath', saveprn = f
+      DistributeIntrastep processid = 'CTRAMP', processlist = @token_proclist@, commpath = 'm:\commpath', saveprn = f
     
       ; time-specific input highway network
       neti    = @input_dir@\hwy\avgload@token_period@.net
       
       ; household travel demand
-      mati[1] = @input_dir@\main\trips@token_period@.tpp
+      mati[1] = @input_dir@\INPUT\warmstart\main\trips@token_period@.tpp
       
       ; internal/external travel demand
-      mati[2] = @input_dir@\nonres\tripsIx@token_period@.tpp 
+      mati[2] = @input_dir@\INPUT\warmstart\nonres\tripsIx@token_period@.tpp 
       
       ; commercial travel demand
-      mati[3] = @input_dir@\nonres\tripsTrk@token_period@.tpp
+      mati[3] = @input_dir@\INPUT\warmstart\nonres\tripsTrk@token_period@.tpp
       
       ; air passenger travel demand
-      mati[4] = @input_dir@\nonres\tripsAirPax@token_period@.tpp
+      mati[4] = @input_dir@\INPUT\warmstart\nonres\tripsAirPax@token_period@.tpp
     
       ; loaded time-specific highway network
       neto    = load@token_period@.net
