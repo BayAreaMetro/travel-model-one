@@ -354,22 +354,14 @@ add_distance <- function(this_timeperiod, tours) {
   # rename columns for join
   names(distSkims)[names(distSkims)=="orig"] <- "orig_taz"  
   names(distSkims)[names(distSkims)=="dest"] <- "dest_taz"
-  
-  distSkims   <- mutate(distSkims,
-                        timeCode = this_timeperiod,
-                        da       = ifelse(da    == -999,0,da    ),
-                        daToll   = ifelse(daToll== -999,0,daToll),
-                        s2       = ifelse(s2    == -999,0,s2    ),
-                        s2Toll   = ifelse(s2Toll== -999,0,s2Toll),
-                        s3       = ifelse(s3    == -999,0,s3    ),
-                        s3Toll   = ifelse(s3Toll== -999,0,s3Toll),
-                        walk     = ifelse(walk  == -999,0,walk  ),
-                        bike     = ifelse(bike  == -999,0,bike ))
-  
+
+  # Set the time code
+  distSkims <- mutate(distSkims, timeCode = this_timeperiod)
+
   # Left join tours to the skims
   tours <- left_join(tours, distSkims, by=c("orig_taz","dest_taz","timeCode"))
   
-  # assign active value if we can to new column active2
+  # assign distance value if we can to new column distance2
   tours <- mutate(tours,
                   distance2=((timeCode==this_timeperiod)*(distance_mode==1)*da    ) +
                             ((timeCode==this_timeperiod)*(distance_mode==2)*daToll) +
@@ -382,6 +374,8 @@ add_distance <- function(this_timeperiod, tours) {
                             # Use the drive alone time as the distance for transit modes
                             ((timeCode==this_timeperiod)*(distance_mode>=9)*da    )
                   )
+
+  tours <- mutate(tours, distance2 = ifelse(distance2 == -999, 0, distance2))
   
   print(paste("For", this_timeperiod, "assigned", prettyNum(sum(!is.na(tours$distance2)),big.mark=","),
               "distances, with", prettyNum(sum(!is.na(tours$distance2)&(tours$distance2>0)),big.mark=","),
