@@ -1,5 +1,46 @@
 ; Now do the skimming so we can count the number of tollda
 token_period            = 'AM'    
+input_dir               = '%INPUT_DIR%'
+
+run pgm = network
+   
+      ; read in the loaded network from the current iteration
+      neti[1] = load@token_period@.net
+   
+      ; write out the average loaded network
+      neto = load@token_period@_renamed.net, exclude =  V_1, TIME_1, VC_1, CSPD_1, VDT_1, VHT_1, 
+                                         V1_1, V2_1, V3_1, V4_1, V5_1, V6_1, V7_1, V8_1, V9_1, V10_1,  
+                                         VT_1, V1T_1, V2T_1, V3T_1, V4T_1, V5T_1, V6T_1, V7T_1, V8T_1, V9T_1, V10T_1
+      
+      ; rename the assignment varaibles
+      vol      = V_1   
+      ctim     = TIME_1
+      vc       = VC_1  
+      cspd     = CSPD_1
+      vdt      = VDT_1 
+      vht      = VHT_1 
+      vol_da   = V1_1  
+      vol_s2   = V2_1  
+      vol_s3   = V3_1  
+      vol_sm   = V4_1  
+      vol_hv   = V5_1  
+      vol_daT  = V6_1  
+      vol_s2T  = V7_1  
+      vol_s3T  = V8_1  
+      vol_smT  = V9_1  
+      vol_hvT  = V10_1 
+      volT     = VT_1  
+      volT_da  = V1T_1 
+      volT_s2  = V2T_1 
+      volT_s3  = V3T_1 
+      volT_sm  = V4T_1 
+      volT_hv  = V5T_1 
+      volT_daT = V6T_1 
+      volT_s2T = V7T_1 
+      volT_s3T = V8T_1 
+      volT_smT = V9T_1 
+      volT_hvT = V10T_1  
+  endrun
   
 ; do, more or less, the same skim procedure for each of seven classes of vehicles
 loop class = 1, 7
@@ -109,7 +150,7 @@ loop class = 1, 7
       DistributeIntrastep processid = 'ctramp', processlist = @intra@, commpath = 'm:\commpath', saveprn = f
   
       ; a congested network is input
-      neti = load@token_period@.net
+      neti = load@token_period@_renamed.net
       
       ; each period-class combination gets a seven-table skim capturing the no value toll and toll paths
       mato = @token_class@_@token_period@.tpp, combine = f, mo = 1-9, name = TIME@token_class@,
@@ -349,7 +390,7 @@ endrun
 ; debug bit
 token_period            = 'AM'
 token_debug_origin      = '725'
-token_debug_destination = '412'
+token_debug_destination = '657'
 token_debug_filename    = 'skim_debug'
 
 run pgm = matrix
@@ -414,13 +455,13 @@ run pgm = matrix
 endrun
 
 run pgm = network
-  neti = loadAM.net
+  neti = load@token_period@_renamed.net
 
   phase=linkmerge
     IF (LI.1.A=9175 & LI.1.B=10621)
-      list =   ' VOL_DA, '     , LI.1.V1_1, ', VOL_S2, ',     LI.1.V2_1, ', VOL_S3, ',     LI.1.V3_1, ', VOL_TRK, ',     LI.1.V4_1, ', VOL_LTRK, ',     LI.1.V5_1,
-              ', VOL_TOLLDA, ' , LI.1.V6_1, ', VOL_TOLLS2, ', LI.1.V7_1, ', VOL_TOLLS3, ', LI.1.V8_1, ', VOL_TOLLTRK, ', LI.1.V9_1, ', VOL_TOLLLTRK, ', LI.1.V10_1, 
-              ', VOL_TOT, ', LI.1.V_1, ', VC, ', LI.1.VC_1, file = @token_debug_filename@.@token_period@.txt, append=T
+      list =   ' VOL_DA,  ', LI.1.VOL_DA, ', VOL_S2,  ', LI.1.VOL_S2,  ', VOL_S3,  ', LI.1.VOL_S3,  ', VOL_SM,  ', LI.1.VOL_SM,  ', VOL_HV,  ', LI.1.VOL_HV,
+              ', VOL_DAT, ', LI.1.VOL_DAT,', VOL_S2T, ', LI.1.VOL_S2T, ', VOL_S3T, ', LI.1.VOL_S3T, ', VOL_SMT, ', LI.1.VOL_SMT, ', VOL_HVT, ', LI.1.VOL_HVT, 
+              ', VOL,     ', LI.1.VOL,    ', VC, '     , LI.1.VC, file = @token_debug_filename@.@token_period@.txt, append=T
       list = '', file = @token_debug_filename@.@token_period@.txt, append=T
     ENDIF
   endphase
