@@ -9,7 +9,6 @@
 setlocal enabledelayedexpansion
 
 :: Overhead
-set PY_HOME=C:\Python27
 set R_HOME=C:\Program Files\R\R-3.1.1
 rem Setting this causes mainmodel's R to be angry about knitr
 rem Set it for the rdata python script
@@ -60,7 +59,7 @@ set R_USER=mtcpb
 :: convert the summaries to tde for just this dir
 for %%X in ("%TARGET_DIR%\core_summaries\*.rdata") DO (
   if not exist "%TARGET_DIR%\core_summaries\%%~nX.tde" (
-    %PY_HOME%\python "%CODE_DIR%\RdataToTableauExtract.py" "%TARGET_DIR%\core_summaries" "%TARGET_DIR%\core_summaries" %%~nxX
+    python "%CODE_DIR%\RdataToTableauExtract.py" "%TARGET_DIR%\core_summaries" "%TARGET_DIR%\core_summaries" %%~nxX
     if %ERRORLEVEL% GTR 0 goto done
     
     echo.
@@ -69,7 +68,7 @@ for %%X in ("%TARGET_DIR%\core_summaries\*.rdata") DO (
 
 :: convert the avgload5period.csv
 if not exist "%TARGET_DIR%\core_summaries\avgload5period.tde" (
-  %PY_HOME%\python "%CODE_DIR%\csvToTableauExtract.py" "%TARGET_DIR%\hwy\iter%ITER%" "%TARGET_DIR%\core_summaries" avgload5period.csv
+  python "%CODE_DIR%\csvToTableauExtract.py" "%TARGET_DIR%\hwy\iter%ITER%" "%TARGET_DIR%\core_summaries" avgload5period.csv
   if %ERRORLEVEL% GTR 0 goto done
   
   echo.
@@ -80,11 +79,11 @@ if not exist "%TARGET_DIR%\core_summaries\trnline.tde" (
   FOR %%H in (EA AM MD PM EV) DO (
     FOR %%J in (loc lrf exp hvy com) DO (
       rem walk -> transit -> walk
-      %PY_HOME%\python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append "%TARGET_DIR%\trn" "%TARGET_DIR%\core_summaries" trnline%%H_wlk_%%J_wlk.csv
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append "%TARGET_DIR%\trn" "%TARGET_DIR%\core_summaries" trnline%%H_wlk_%%J_wlk.csv
       rem drive -> transit -> walk
-      %PY_HOME%\python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append "%TARGET_DIR%\trn" "%TARGET_DIR%\core_summaries" trnline%%H_drv_%%J_wlk.csv      
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append "%TARGET_DIR%\trn" "%TARGET_DIR%\core_summaries" trnline%%H_drv_%%J_wlk.csv      
       rem walk -> transit -> drive
-      %PY_HOME%\python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv"  --append "%TARGET_DIR%\trn" "%TARGET_DIR%\core_summaries" trnline%%H_wlk_%%J_drv.csv
+      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv"  --append "%TARGET_DIR%\trn" "%TARGET_DIR%\core_summaries" trnline%%H_wlk_%%J_drv.csv
     )
   )
 )
