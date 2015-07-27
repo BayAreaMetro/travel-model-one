@@ -15,36 +15,42 @@ loop auto = 1,6
    token_time   = 'TIMEDA'
    token_dist   = 'DISTDA'
    token_pvcost = 'PVCOSTDA'
+   token_vtoll  = 'TOLLVTOLLDA'
    token_occ    = 1.0
   elseif (auto  = 2)
    token_auto   = 'datoll'
    token_time   = 'TOLLTIMEDA'
    token_dist   = 'TOLLDISTDA'
    token_pvcost = 'TOLLPVCOSTDA'
+   token_vtoll  = 'TOLLVTOLLDA'
    token_occ    = 1.0
   elseif (auto  = 3)
    token_auto   = 'sr2'
    token_time   = 'TIMES2'
    token_dist   = 'DISTS2'
    token_pvcost = 'PVCOSTS2'
+   token_vtoll  = 'TOLLVTOLLS2'
    token_occ    = 2.0
   elseif (auto  = 4)
    token_auto   = 'sr2toll'
    token_time   = 'TOLLTIMES2'
    token_dist   = 'TOLLDISTS2'
    token_pvcost = 'TOLLPVCOSTS2'
+   token_vtoll  = 'TOLLVTOLLS2'
    token_occ    = 2.0
   elseif (auto  = 5)
    token_auto   = 'sr3'
    token_time   = 'TIMES3'
    token_dist   = 'DISTS3'
    token_pvcost = 'PVCOSTS3'
+   token_vtoll  = 'TOLLVTOLLS3'
    token_occ    = 3.5
   elseif (auto  = 6)
    token_auto   = 'sr3toll'
    token_time   = 'TOLLTIMES3'
    token_dist   = 'TOLLDISTS3'
    token_pvcost = 'TOLLPVCOSTS3'
+   token_vtoll  = 'TOLLVTOLLS3'
    token_occ    = 3.5
   endif
 
@@ -120,7 +126,18 @@ loop auto = 1,6
      MW[30] = MW[3]+MW[8] +MW[13]+MW[18]+MW[23]   ; Person miles
      MW[31] = MW[4]+MW[9] +MW[14]+MW[19]+MW[24]   ; Vehicle miles
      MW[32] = MW[5]+MW[10]+MW[15]+MW[20]+MW[25]   ; Trip Cost
-     
+
+     IF (@auto@=2 || @auto@==4 || @auto@==6)
+       ; count non-zero paths in the AM
+       MW[41] = mi.7.@token_vtoll@
+       MW[42] = mi.8.@token_vtoll@
+       _vtoll_am_nonzero = _vtoll_am_nonzero  + ROWCNT(41)
+       _vtoll_md_nonzero = _vtoll_md_nonzero  + ROWCNT(42)
+     else
+       _vtoll_am_nonzero = 0
+       _vtoll_md_nonzero = 0
+     ENDIF
+
      JLOOP          
       Person_trips  = Person_trips  + MW[26]
       Vehicle_trips = Vehicle_trips + MW[27]
@@ -134,11 +151,12 @@ loop auto = 1,6
       Mode   = '@token_auto@'
       Income = '@token_inc@'
       
-      if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=1 LIST="Income,Mode,Daily Person Trips,Daily Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost"
+      if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=1 LIST="Income,Mode,Daily Person Trips,Daily Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost,VTOLL nonzero AM,VTOLL nonzero MD"
       if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Income, Mode, Person_trips(10.2L), Vehicle_trips(10.2L), 
                                                             Person_min(10.2L),   Vehicle_min(10.2L),
                                                             Person_miles(10.2L), Vehicle_miles(10.2L),
-                                                            Total_cost(10.2L)
+                                                            Total_cost(10.2L),
+                                                            _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L)
     ENDRUN
   endloop ; income loop
 

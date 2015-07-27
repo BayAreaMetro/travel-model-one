@@ -704,6 +704,12 @@ class RunResults:
 
         # A few quick summary numbers
         quick_summary['Transit boardings'] = self.transit_boards_miles.loc[:,'Daily Boardings'].sum()
+        quick_summary['VTOLL Paths in AM - datoll']  = self.auto_times.loc[('inc1','datoll' ),'VTOLL nonzero AM']
+        quick_summary['VTOLL Paths in AM - sr2toll'] = self.auto_times.loc[('inc1','sr2toll'),'VTOLL nonzero AM']
+        quick_summary['VTOLL Paths in AM - sr3toll'] = self.auto_times.loc[('inc1','sr3toll'),'VTOLL nonzero AM']
+        quick_summary['VTOLL Paths in MD - datoll']  = self.auto_times.loc[('inc1','datoll' ),'VTOLL nonzero MD']
+        quick_summary['VTOLL Paths in MD - sr2toll'] = self.auto_times.loc[('inc1','sr2toll'),'VTOLL nonzero MD']
+        quick_summary['VTOLL Paths in MD - sr3toll'] = self.auto_times.loc[('inc1','sr3toll'),'VTOLL nonzero MD']
 
         idx = pd.MultiIndex.from_tuples(daily_results.keys(), 
                                         names=['category1','category2','variable_name'])
