@@ -233,7 +233,7 @@ indiv_tours     <- mutate(indiv_tours, num_participants=1)
 # Add in County, Superdistrict, Parking Cost from TAZ Data for the tour destination
 indiv_tours     <- left_join(indiv_tours,
                              mutate(tazData, dest_taz=taz, dest_COUNTY=COUNTY, dest_county_name=county_name, 
-                                    dest_SD=SD, PRKCST, OPRKCST) %.% 
+                                    dest_SD=SD, PRKCST, OPRKCST) %>% 
                                select(dest_taz, dest_COUNTY, dest_county_name, dest_SD, PRKCST, OPRKCST),
                              by=c("dest_taz"))
 
@@ -261,7 +261,7 @@ joint_tours    <- left_join(joint_tours, select(households, hh_id, income, incQ,
 # Add in County, Superdistrict, Parking Cost from TAZ Data for the tour destination
 joint_tours     <- left_join(joint_tours,
                              mutate(tazData, dest_taz=taz, dest_COUNTY=COUNTY, dest_county_name=county_name, 
-                                    dest_SD=SD, PRKCST, OPRKCST) %.% 
+                                    dest_SD=SD, PRKCST, OPRKCST) %>% 
                                select(dest_taz, dest_COUNTY, dest_county_name, dest_SD, PRKCST, OPRKCST),
                              by=c("dest_taz"))
 
@@ -354,22 +354,14 @@ add_distance <- function(this_timeperiod, tours) {
   # rename columns for join
   names(distSkims)[names(distSkims)=="orig"] <- "orig_taz"  
   names(distSkims)[names(distSkims)=="dest"] <- "dest_taz"
-  
-  distSkims   <- mutate(distSkims,
-                        timeCode = this_timeperiod,
-                        da       = ifelse(da    == -999,0,da    ),
-                        daToll   = ifelse(daToll== -999,0,daToll),
-                        s2       = ifelse(s2    == -999,0,s2    ),
-                        s2Toll   = ifelse(s2Toll== -999,0,s2Toll),
-                        s3       = ifelse(s3    == -999,0,s3    ),
-                        s3Toll   = ifelse(s3Toll== -999,0,s3Toll),
-                        walk     = ifelse(walk  == -999,0,walk  ),
-                        bike     = ifelse(bike  == -999,0,bike ))
-  
+
+  # Set the time code
+  distSkims <- mutate(distSkims, timeCode = this_timeperiod)
+
   # Left join tours to the skims
   tours <- left_join(tours, distSkims, by=c("orig_taz","dest_taz","timeCode"))
   
-  # assign active value if we can to new column active2
+  # assign distance value if we can to new column distance2
   tours <- mutate(tours,
                   distance2=((timeCode==this_timeperiod)*(distance_mode==1)*da    ) +
                             ((timeCode==this_timeperiod)*(distance_mode==2)*daToll) +
@@ -382,6 +374,8 @@ add_distance <- function(this_timeperiod, tours) {
                             # Use the drive alone time as the distance for transit modes
                             ((timeCode==this_timeperiod)*(distance_mode>=9)*da    )
                   )
+
+  tours <- mutate(tours, distance2 = ifelse(distance2 == -999, 0, distance2))
   
   print(paste("For", this_timeperiod, "assigned", prettyNum(sum(!is.na(tours$distance2)),big.mark=","),
               "distances, with", prettyNum(sum(!is.na(tours$distance2)&(tours$distance2>0)),big.mark=","),
@@ -650,7 +644,7 @@ trips <- mutate(trips,
 trips <- left_join(trips, LOOKUP_TIMEPERIOD, by=c("timeCodeNum"))
 trips <- select(mutate(trips, timeCode=timeperiod_abbrev), -timeperiod_abbrev)
 trips <- left_join(trips,                   
-                   mutate(households, home_taz=taz) %.% 
+                   mutate(households, home_taz=taz) %>% 
                      select(hh_id, incQ, incQ_label, autoSuff, autoSuff_label,
                             home_taz, walk_subzone, walk_subzone_label),
                    by=c("hh_id"))
@@ -961,7 +955,7 @@ save(model_summary, file=file.path(TARGET_DIR,"core_summaries","CommuteByIncomeJ
 # The COUNTY and super district are by destination right now; add residence
 commute_tours   <- left_join(commute_tours,
                              mutate(tazData, orig_taz=taz, res_COUNTY=COUNTY, res_county_name=county_name, 
-                                    res_SD=SD) %.% 
+                                    res_SD=SD) %>% 
                                select(orig_taz, res_COUNTY, res_county_name, res_SD),
                              by=c("orig_taz"))
 commute_inc_summary_byres <- summarise(group_by(commute_tours, res_COUNTY, res_county_name, res_SD, orig_taz,
@@ -988,12 +982,12 @@ remove(commute_tours, commute_inc_summary_byjob, commute_inc_summary_byres)
 work_locations <- subset(mandatory_locations, WorkLocation != 0)
 # add home county
 work_locations <- left_join(work_locations, 
-                            mutate(tazData,HomeTAZ=taz, homeCOUNTY=COUNTY, home_county_name=county_name) %.% 
+                            mutate(tazData,HomeTAZ=taz, homeCOUNTY=COUNTY, home_county_name=county_name) %>% 
                               select(HomeTAZ,homeCOUNTY,home_county_name),
                             by=c("HomeTAZ"))
 # add work county
 work_locations <- left_join(work_locations, 
-                            mutate(tazData,WorkLocation=taz, workCOUNTY=COUNTY, work_county_name=county_name) %.% 
+                            mutate(tazData,WorkLocation=taz, workCOUNTY=COUNTY, work_county_name=county_name) %>% 
                               select(WorkLocation,workCOUNTY,work_county_name),
                             by=c("WorkLocation"))
 

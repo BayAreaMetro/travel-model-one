@@ -1,0 +1,107 @@
+---
+title: "Stanford Students and Workers"
+author: "David Ory"
+output: 
+  html_document:
+    theme: cosmo
+    toc: yes
+---
+
+
+## Administration
+
+#### Purpose
+Prepares a bespoke summary of travel model output.  Specifically, summarizes the home locations of simulated Stanford University workers and students in 2010 and 2040. 
+
+#### Outputs
+1.  A CSV database with logical names.  
+
+## Procedure
+
+#### Overhead
+```{r overhead, results = 'hide'}
+library(knitr)
+suppressMessages(library(dplyr))
+```
+
+```{r config, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
+
+#### Remote I/O
+```{r remote-io}
+TARGET_DIR_2010  <- "M:/Application/Model One/RTP2013/Scenarios/2010_03_YYY/OUTPUT/"
+TARGET_DIR_2040  <- "M:/Application/Model One/RTP2013/Scenarios/Round 05 -- Final/2040_03_116/OUTPUT/"
+
+SAMPLE_RATE_2010 = 1.00
+SAMPLE_RATE_2040 = 0.50
+
+OUTPUT_DIR <- "M:/Application/Model One/RTP2013/Scenarios/2010_03_YYY/OUTPUT/bespoke/"
+F_OUTPUT = paste(OUTPUT_DIR, "stanford-students-workers.csv", sep = "")
+
+```
+
+#### Define Summary Method
+```{r summary-method}
+Summarize_Stanford_Workers_Students <- function(target_dir, sample_rate) {
+  
+  # Load condensed person data for work location
+  load(paste(target_dir,"updated_output/", "persons.rdata", sep = ""))
+  
+  # Load work and school data for school location 
+  students <- read.table(file = paste(target_dir, "wsLocResults_3.csv", sep = ""), header=TRUE, sep=",")
+  
+  # Select Stanford (represented by TAZs 354, 355) workers, then students
+  workers <- persons %>%
+    select(person_id, WorkLocation, HomeTAZ = taz) %>%
+    filter((WorkLocation == 354) | (WorkLocation == 355))
+  
+  students <- students %>%
+    select(person_id = PersonID, SchoolLocation, HomeTAZ) %>%
+    filter((SchoolLocation == 354) | (SchoolLocation == 355))
+  
+  # Sum workers and students by TAZ
+  sum_workers <- workers %>%
+    group_by(HomeTAZ) %>%
+    summarise(workers = n())
+  
+  sum_students <- students %>%
+    group_by(HomeTAZ) %>%
+    summarise(students = n())
+  
+  # Combine workers and students and scale by the sampling rate
+  sum <- merge(sum_workers, sum_students, by = c("HomeTAZ"), all = TRUE)
+  
+  sum <- sum %>%
+    mutate(workers  = workers  / sample_rate) %>%
+    mutate(students = students / sample_rate)
+  
+  }
+
+```
+
+#### Apply the method for 2010, 2040
+```{r apply}
+# Apply for 2010
+sum_2010 <- Summarize_Stanford_Workers_Students(TARGET_DIR_2010, SAMPLE_RATE_2010)
+sum_2010 <- sum_2010 %>%
+  select(HomeTAZ, workers_2010 = workers, students_2010 = students)
+
+# Apply for 2040
+sum_2040 <- Summarize_Stanford_Workers_Students(TARGET_DIR_2040, SAMPLE_RATE_2040)
+sum_2040 <- sum_2040 %>%
+  select(HomeTAZ, workers_2040 = workers, students_2040 = students)
+
+sum_both <- merge(sum_2010, sum_2040, by = c("HomeTAZ"), all = TRUE)
+
+sum_both[is.na(sum_both)] <- 0
+
+sum(sum_both$workers_2010)
+sum(sum_both$workers_2040)
+
+sum(sum_both$students_2010)
+sum(sum_both$students_2040)
+
+write.csv(sum_both, file = F_OUTPUT, row.names = FALSE, quote = F)
+```
+

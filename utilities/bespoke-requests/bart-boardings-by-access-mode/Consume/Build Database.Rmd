@@ -14,7 +14,7 @@ output:
 This script consumes Cube Voyager TRNBUILD link assignments and extracts BART boardings by BART station and access mode (walk or drive).  These are summaries from MTC's Travel Model One. 
 
 #### Outputs
-1.  A CSV database of BART boardings by BART station, travel model scenario,  
+1.  A CSV database of BART boardings by BART station, travel model scenario, access mode, time of day, and model path.  
 
 ## Procedure
 
@@ -37,7 +37,7 @@ F_OUTPUT = paste(D_OUTPUT, "bart_boardings_by_access_mode.csv", sep = "")
 
 F_SCENARIO_NAMES = "M:/Application/Model One/Value Parking Pricing Pilot/Scenarios/ScenarioKey.csv" 
 
-SCENARIO_ID_LIST = c("2015_04_138", "2015_04_139", "2015_04_140", "2015_04_141", "2015_04_142")
+SCENARIO_ID_LIST = c("2015_04_137", "2015_04_138", "2015_04_139", "2015_04_140", "2015_04_141", "2015_04_142")
 PATH_DBF_LIST    = c("wlk_hvy_wlk.dbf", "drv_hvy_wlk.dbf", "wlk_hvy_drv.dbf",
                      "wlk_com_wlk.dbf", "drv_com_wlk.dbf", "wlk_com_drv.dbf")
 TIME_PERIOD_LIST = c("EA", "AM", "MD", "PM", "EV")
