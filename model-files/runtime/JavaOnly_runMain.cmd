@@ -8,8 +8,7 @@ set GAWK_PATH=M:\UTIL\Gawk
 set TPP_PATH=C:\Program Files (x86)\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI
 
 set RUNTIME=CTRAMP/runtime
-set OLD_PATH=%PATH%
-set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%OLD_PATH%
+set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin
 set CLASSPATH=%RUNTIME%/config;%RUNTIME%;%RUNTIME%/config/jppf-2.4/jppf-2.4-admin-ui/lib/*;%RUNTIME%/mtc.jar
 
 set HOST_IP=set_by_RuntimeConfiguration.py
@@ -22,5 +21,3 @@ start "Household Manager" java -Xms20000m -Xmx20000m -Dlog4j.configuration=log4j
 
 rem ############  Matrix MANAGER #########
 start "Matrix Manager" java -Xms14000m -Xmx14000m -Dlog4j.configuration=log4j_mtx.xml -Djava.library.path="CTRAMP/runtime" com.pb.models.ctramp.MatrixDataServer -hostname %HOST_IP%
-
-set PATH=%OLD_PATH%
