@@ -20,8 +20,8 @@ if __name__ == '__main__':
     nonmandatory_dfs = None
     for rundir in sys.argv[1:]:
         print "Reading %s" % rundir
-        mandatory_df    = pandas.read_table(os.path.join(rundir, "accessibilities", "mandatoryAccessibilities.csv"), sep=",")
-        nonmandatory_df = pandas.read_table(os.path.join(rundir, "accessibilities", "nonMandatoryAccessibilities.csv"), sep=",")
+        mandatory_df    = pandas.read_table(os.path.join(rundir, "OUTPUT/accessibilities", "mandatoryAccessibilities.csv"), sep=",")
+        nonmandatory_df = pandas.read_table(os.path.join(rundir, "OUTPUT/accessibilities", "nonMandatoryAccessibilities.csv"), sep=",")
 
         colnames = list(mandatory_df.columns.values)
         col_rename = {}
