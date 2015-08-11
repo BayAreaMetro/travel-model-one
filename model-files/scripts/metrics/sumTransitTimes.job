@@ -260,21 +260,21 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
    MW[35] = (mi.20.1 + mi.20.4 + mi.20.5 + mi.20.6 + mi.20.7 + mi.20.8)   
 
    ; Travel Cost
-   MW[41] = mi.06.10    
-   MW[42] = mi.07.10    
-   MW[43] = mi.08.10    
-   MW[44] = mi.09.10    
-   MW[45] = mi.10.10    
-   MW[46] = mi.11.10    
-   MW[47] = mi.12.10    
-   MW[48] = mi.13.10    
-   MW[49] = mi.14.10    
-   MW[50] = mi.15.10    
-   MW[51] = mi.16.10    
-   MW[52] = mi.17.10    
-   MW[53] = mi.18.10    
-   MW[54] = mi.19.10    
-   MW[55] = mi.20.10                                                  
+   MW[41] = mi.06.fare
+   MW[42] = mi.07.fare
+   MW[43] = mi.08.fare
+   MW[44] = mi.09.fare
+   MW[45] = mi.10.fare
+   MW[46] = mi.11.fare
+   MW[47] = mi.12.fare
+   MW[48] = mi.13.fare
+   MW[49] = mi.14.fare
+   MW[50] = mi.15.fare
+   MW[51] = mi.16.fare
+   MW[52] = mi.17.fare
+   MW[53] = mi.18.fare
+   MW[54] = mi.19.fare
+   MW[55] = mi.20.fare
                                   
     ; TOTAL TRIPS                                
     MW[16] = MW[1]+MW[2]+MW[3]+MW[4]+MW[5]+       
@@ -323,8 +323,8 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
     ENDJLOOP
     
       Trips = TTrips
-      Time  = triptime /100
-      Cost  = tripcost /100
+      Time  = triptime /100  ; minutes x 100 to minutes
+      Cost  = tripcost /100  ; convert from cents to dollars
       
       if(I = 1454) Avg_time = Time/Trips
       if(I = 1454) Avg_Cost = Cost/Trips
