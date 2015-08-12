@@ -309,19 +309,18 @@ add_cost <- function(this_timeperiod, input_trips_or_tours, reverse_od = FALSE) 
   
   # assign cost value if we can to new column cost2
   relevant <- relevant %>%
-    mutate(cost2 = 0.0) %>%
-    mutate(cost2 = ifelse(costMode == 1, da + cost2,     cost2)) %>%
-    mutate(cost2 = ifelse(costMode == 2, daToll + cost2, cost2)) %>%
-    mutate(cost2 = ifelse(costMode == 3, s2 + cost2,     cost2)) %>%
-    mutate(cost2 = ifelse(costMode == 4, s2Toll + cost2, cost2)) %>%
-    mutate(cost2 = ifelse(costMode == 5, s3 + cost2,     cost2)) %>%
-    mutate(cost2 = ifelse(costMode == 6, s3Toll + cost2, cost2)) %>%
-    mutate(cost2 = ifelse(costMode == 7, 0.0 + cost2,    cost2)) %>%
-    mutate(cost2 = ifelse(costMode == 8, 0.0 + cost2,    cost2)) %>%
-    mutate(cost2 = ifelse(costMode == 9, wTrnW + cost2,  cost2)) %>%
-    mutate(cost2 = ifelse((costMode == 10) & (1 - reverse_od), dTrnW + cost2, cost2)) %>%
-    mutate(cost2 = ifelse((costMode == 10) & (reverse_od), wTrnD + cost2, cost2)) %>%
-    mutate(cost2 = ifelse(costMode == 11, wTrnD + cost2, cost2))
+    mutate(cost2 = (costMode == 1) * da +
+             (costMode == 2) * daToll +
+             (costMode == 3) * s2 +
+             (costMode == 4) * s2Toll +
+             (costMode == 5) * s3 +
+             (costMode == 6) * s3Toll +
+             (costMode == 7) * 0.0 +
+             (costMode == 8) * 0.0 +
+             (costMode == 9) * wTrnW +
+             (costMode == 10) * (1 - reverse_od) * dTrnW +
+             (costMode == 10) * (reverse_od) * wTrnD +
+             (costMode == 11) * wTrnD)
              
   
   # re-code missing as zero and set a failure indicator
@@ -393,15 +392,16 @@ add_distance <- function(this_timeperiod, input_trips_or_tours) {
     mutate(distance2 = 0.0)
   
   relevant <- relevant %>%
-    mutate(distance2 = ifelse(distance_mode == 1, da + distance2,     distance2)) %>%
-    mutate(distance2 = ifelse(distance_mode == 2, daToll + distance2, distance2)) %>%
-    mutate(distance2 = ifelse(distance_mode == 3, s2 + distance2,     distance2)) %>%
-    mutate(distance2 = ifelse(distance_mode == 4, s2Toll + distance2, distance2)) %>%
-    mutate(distance2 = ifelse(distance_mode == 5, s3 + distance2,     distance2)) %>%
-    mutate(distance2 = ifelse(distance_mode == 6, s3Toll + distance2, distance2)) %>%
-    mutate(distance2 = ifelse(distance_mode == 7, walk + distance2,   distance2)) %>%
-    mutate(distance2 = ifelse(distance_mode == 8, bike + distance2,   distance2)) %>%
-    mutate(distance2 = ifelse(distance_mode >= 9, da + distance2,     distance2))
+    mutate(distance2 = (distance_mode == 1) * da +
+             (distance_mode == 2) * daToll +
+             (distance_mode == 3) * s2     +
+             (distance_mode == 4) * s2Toll +
+             (distance_mode == 5) * s3     +
+             (distance_mode == 6) * s3Toll +
+             (distance_mode == 7) * walk   +
+             (distance_mode == 8) * bike   +
+             (distance_mode >= 9) * da     )
+
 
   relevant <- relevant %>%
     mutate(distance2 = ifelse(distance2 < -990.0, 0, distance2))
@@ -472,19 +472,18 @@ add_time <- function(this_timeperiod, input_trips_or_tours, reverse_od=FALSE) {
   
   # assign the new time
   relevant <- relevant %>%
-    mutate(time2 = 0.0) %>%
-    mutate(time2 = ifelse(costMode == 1, da + time2,     time2)) %>%
-    mutate(time2 = ifelse(costMode == 2, daToll + time2, time2)) %>%
-    mutate(time2 = ifelse(costMode == 3, s2 + time2,     time2)) %>%
-    mutate(time2 = ifelse(costMode == 4, s2Toll + time2, time2)) %>%
-    mutate(time2 = ifelse(costMode == 5, s3 + time2,     time2)) %>%
-    mutate(time2 = ifelse(costMode == 6, s3Toll + time2, time2)) %>%
-    mutate(time2 = ifelse(costMode == 7, walk + time2,   time2)) %>%
-    mutate(time2 = ifelse(costMode == 8, bike + time2,   time2)) %>%
-    mutate(time2 = ifelse(costMode == 9, wTrnW + time2,  time2)) %>%
-    mutate(time2 = ifelse((costMode == 10) & (1 - reverse_od), dTrnW + time2, time2)) %>%
-    mutate(time2 = ifelse((costMode == 10) & (reverse_od),     wTrnD + time2, time2))
-  
+    mutate(time2 = (costMode == 1) * da +
+             (costMode == 2) * daToll +
+             (costMode == 3) * s2 +
+             (costMode == 4) * s2Toll +
+             (costMode == 5) * s3 +
+             (costMode == 6) * s3Toll +
+             (costMode == 7) * walk +
+             (costMode == 8) * bike +
+             (costMode == 9) * wTrnW +
+             (costMode == 10) * (1 - reverse_od) * dTrnW +
+             (costMode == 10) * (reverse_od) * wTrnD)
+    
   # re-code missing as zero and set a failure indicator
   relevant <- relevant %>%
     mutate(time2 = ifelse(time2 < -990, 0, time2)) %>%
@@ -549,12 +548,11 @@ add_active <- function(this_timeperiod, input_trips_or_tours) {
   
   # assign active2
   relevant <- relevant %>%
-    mutate(active2 = 0.0) %>%
-    mutate(active2 = ifelse(amode == 1, walk  + active2, active2)) %>%
-    mutate(active2 = ifelse(amode == 2, bike  + active2, active2)) %>%
-    mutate(active2 = ifelse(amode == 3, wTrnW + active2, active2)) %>%
-    mutate(active2 = ifelse(amode == 4, dTrnW + active2, active2)) %>%
-    mutate(active2 = ifelse(amode == 5, wTrnD + active2, active2))
+    mutate(active2 = (amode == 1) * walk + 
+             (amode == 2) * bike +
+             (amode == 3) * wTrnW +
+             (amode == 4) * dTrnW +
+             (amode == 5) * wTrnD)
   
   relevant <- relevant %>%
     mutate(active2 = ifelse(active2 < -990.0, 0, active2))
