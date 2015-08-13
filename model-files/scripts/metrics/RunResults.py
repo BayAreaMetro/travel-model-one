@@ -87,6 +87,7 @@ class RunResults:
 
     # Already annual -- don't annualize. Default false.
     ALREADY_ANNUAL = {
+    ('Travel Time & Cost','Vehicle Ownership (Modeled)'          ): True,
     ('Travel Cost','Vehicle Ownership (Modeled)'                 ): True,
     ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'    ): True,
     ('Collisions, Active Transport & Noise','Active Individuals','Total'): True,
@@ -94,21 +95,30 @@ class RunResults:
 
     # Already a diff -- don't diff. Default false.
     ALREADY_DIFF = {
-    ('Travel Time & Cost (logsum hours)','Work & School'): True,
-    ('Travel Time & Cost (logsum hours)','All'          ): True,
+    ('Travel Time & Cost','Logsum Hours - Mandatory Tours - Workers & Students'): True,
+    ('Travel Time & Cost','Logsum Hours - NonMandatory Tours - All people'     ): True,
     }
 
     # default is ANNUALIZATION
     ANNUALIZATION_FACTOR = {
-    ('Travel Time & Cost (logsum hours)','Work & School'): WORK_ANNUALIZATION,
+    ('Travel Time & Cost','Logsum Hours - Mandatory Tours - Workers & Students'): WORK_ANNUALIZATION,
     }
 
     # See 'Plan Bay Area Performance Assessment Report_FINAL.pdf'
     # Table 9: Benefit Valuations
     # Units in 2013 dollars
     BENEFIT_VALUATION           = {
-    ('Travel Time & Cost (logsum hours)','Work & School'                       ):      16.03,
-    ('Travel Time & Cost (logsum hours)','All'                                 ):      16.03,
+    ('Travel Time & Cost','Logsum Hours - Mandatory Tours - Workers & Students'       ):      16.03,
+    ('Travel Time & Cost','Logsum Hours - NonMandatory Tours - All people'            ):      16.03,
+    ('Travel Time & Cost','Societal Benefits'                                         ):       1.35,  # $1 in 2000 = $1.35 in 2013
+    ('Travel Time & Cost','Non-Recurring Freeway Delay (Hours)','Auto (Person Hours)' ):     -16.03, # duplicate of Travel Time
+    ('Travel Time & Cost','Non-Recurring Freeway Delay (Hours)','Truck (Computed VH)' ):     -26.24, # duplicate of Travel Time
+    ('Travel Time & Cost','Non-Household','Time - Truck (Computed VHT)'               ):     -26.24,  # Truck
+    ('Travel Time & Cost','Non-Household','Cost - Auto ($2000) - IX/EX'               ):      -1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Time & Cost','Non-Household','Cost - Auto ($2000) - AirPax'              ):      -1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Time & Cost','Non-Household','Cost - Truck ($2000) - Computed'           ):      -1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Time & Cost','Vehicle Ownership (Modeled)'                               ):   -6290.0,
+
     ('Travel Time','Auto/Truck (Hours)'                                        ):     -16.03,  # Auto
     ('Travel Time','Auto/Truck (Hours)','Truck (Computed VHT)'                 ):     -26.24,  # Truck
     ('Travel Time','Auto/Truck (Hours)','Truck (Modeled VHT)'                  ):       0.00,  # Truck
@@ -336,7 +346,8 @@ class RunResults:
         base_truck_vht  = self.base_results.daily_results[cat1,cat2,'Truck (Computed VHT)']
 
         pct_change_vht  = (auto_vht-base_auto_vht)/base_auto_vht
-        self.daily_results[cat1,cat2,'Truck (Computed VHT)'] = (1.0+pct_change_vht)*base_truck_vht
+        self.daily_results[                cat1,           cat2,       'Truck (Computed VHT)'] = (1.0+pct_change_vht)*base_truck_vht
+        self.daily_results['Travel Time & Cost','Non-Household','Time - Truck (Computed VHT)'] = (1.0+pct_change_vht)*base_truck_vht
 
         cat2            = 'Non-Recurring Freeway Delay (Hours)'
         auto_nrfd       = self.daily_results[cat1,cat2,'Auto (Person Hours)']
@@ -344,7 +355,8 @@ class RunResults:
         base_truck_nrfd = self.base_results.daily_results[cat1,cat2,'Truck (Computed VH)']
 
         pct_change_nrfd = (auto_nrfd-base_auto_nrfd)/base_auto_nrfd
-        self.daily_results[cat1,cat2,'Truck (Computed VH)'] = (1.0+pct_change_nrfd)*base_truck_nrfd
+        self.daily_results[                cat1,cat2,'Truck (Computed VH)'] = (1.0+pct_change_nrfd)*base_truck_nrfd
+        self.daily_results['Travel Time & Cost',cat2,'Truck (Computed VH)'] = (1.0+pct_change_nrfd)*base_truck_nrfd
 
         cat1            = 'Travel Cost'
         cat2            = 'VMT (Reference)'
@@ -366,7 +378,8 @@ class RunResults:
         cat2            = 'Operating Costs'
         # base this on pct change auto vmt
         base_truck_c    = self.base_results.daily_results[cat1,cat2,'Truck ($2000) - Computed']
-        self.daily_results[cat1,cat2,'Truck ($2000) - Computed'] = (1.0+pct_change_vmt)*base_truck_c
+        self.daily_results[                cat1,           cat2,       'Truck ($2000) - Computed'] = (1.0+pct_change_vmt)*base_truck_c
+        self.daily_results['Travel Time & Cost','Non-Household','Cost - Truck ($2000) - Computed'] = (1.0+pct_change_vmt)*base_truck_c
 
         cat1            = 'Collisions, Active Transport & Noise'
         cat2            = 'Noise'
@@ -393,7 +406,7 @@ class RunResults:
         daily_results   = collections.OrderedDict()
         quick_summary   = {}
         ######################################################################################
-        cat1            = 'Travel Time & Cost (logsum hours)'
+        cat1            = 'Travel Time & Cost'
         if self.base_results:
             # Take the difference and convert utils to minutes (k_ivt = 0.0134 k_mc_ls = 1.0 in access calcs);
             # TODO: is k_mc_ls = 1.0?  DestinationChoice.cls has different values
@@ -455,18 +468,43 @@ class RunResults:
             # test = test.groupby(['taz']).sum()
             # test.to_csv(os.path.join(self.rundir,'AccessibilityDifference_workers.csv'), header=True, float_format='%.6f')
 
-            cat2         = 'Work & School'
+            cat2         = 'Logsum Hours - Mandatory Tours - Workers & Students'
             self.mandatoryAccess['CS diff work/school'] = \
                 (0.5*self.mandatoryAccess.base_num_workers_students + 0.5*self.mandatoryAccess.scen_num_workers_students) *self.mandatoryAccess.logsum_diff_minutes
             for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
                 daily_results[(cat1,cat2,inclabel)] = self.mandatoryAccess.loc[self.mandatoryAccess.incQ_label==inclabel, 'CS diff work/school'].sum()/60.0;
 
-            cat2         = 'All'
+            cat2         = 'Logsum Hours - NonMandatory Tours - All people'
             self.nonmandatoryAccess['CS diff all'] = \
                 (0.5*self.nonmandatoryAccess.base_num_persons + 0.5*self.nonmandatoryAccess.scen_num_persons)*self.nonmandatoryAccess.logsum_diff_minutes
             for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
                 daily_results[(cat1,cat2,inclabel)] = self.nonmandatoryAccess.loc[self.mandatoryAccess.incQ_label==inclabel, 'CS diff all'].sum()/60.0;
 
+        cat2 = "Societal Benefits"
+        self.transit_times_by_mode_income["Total Cost"] = self.transit_times_by_mode_income["Daily Trips"]*self.transit_times_by_mode_income["Avg Cost"]
+        daily_results[(cat1,cat2,"Transit Fares ($2000)")] = self.transit_times_by_mode_income.loc[:,"Total Cost"].sum()
+        daily_results[(cat1,cat2,"Auto Households - Bridge Tolls ($2000)" )] = 0.01*auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Bridge Tolls'].sum()
+        daily_results[(cat1,cat2,"Auto Households - Value Tolls ($2000)"  )] = 0.01*auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Value Tolls'].sum()
+
+        # These are dupes from below but they're not in logsums
+        cat2            = 'Non-Recurring Freeway Delay (Hours)'
+        daily_results[(cat1,cat2,'Auto (Person Hours)')] = \
+            vmt_byclass.loc[['DA','DAT'],'Non-Recurring Freeway Delay'].sum()   +\
+            vmt_byclass.loc[['S2','S2T'],'Non-Recurring Freeway Delay'].sum()*2 +\
+            vmt_byclass.loc[['S3','S3T'],'Non-Recurring Freeway Delay'].sum()*3.5
+        daily_results[(cat1,cat2,'Truck (Computed VH)')] = \
+            vmt_byclass.loc[['SM','SMT','HV','HVT'],'Non-Recurring Freeway Delay'].sum()
+
+        cat2 = 'Non-Household'
+        daily_results[(cat1,cat2,'Time - Truck (Computed VHT)')] = vmt_byclass.loc[['SM','SMT','HV','HVT'],'VHT'].sum()
+        daily_results[(cat1,cat2,'Cost - Auto ($2000) - IX/EX' )] = \
+            0.01*auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix'],'Total Cost'].sum()
+        daily_results[(cat1,cat2,'Cost - Auto ($2000) - AirPax' )] = \
+            0.01*auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Total Cost'].sum()
+        daily_results[(cat1,cat2,'Cost - Truck ($2000) - Computed')] = 0.01*auto_byclass.loc['truck','Total Cost'].sum()
+
+        cat2            = 'Vehicle Ownership (Modeled)'
+        daily_results[(cat1,cat2,'Total')] = self.autos_owned['total autos'].sum()
 
         ######################################################################################
         cat1            = 'Travel Time'
