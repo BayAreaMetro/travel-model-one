@@ -28,6 +28,9 @@ if __name__ == '__main__':
     quicksummary_list = []
     for proj_file in os.listdir("."):
 
+        # skip if dir
+        if os.path.isdir(proj_file): continue
+
         # skip this one, if it exists already
         if proj_file in [ALL_PROJECTS_DATA_FILENAME,
                          ALL_PROJECTS_DESC_FILENAME,
