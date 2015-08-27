@@ -1,0 +1,56 @@
+---
+title: "Accessibility Market Segments"
+author: "David Ory"
+output: 
+  html_document:
+    theme: cosmo
+    toc: yes
+---
+
+
+## Administration
+
+#### Purpose
+Prepares a bespoke summary of travel model output.  Specifically, summarizes households by automobile suffficiency category and income quartile. 
+
+#### Outputs
+1.  A CSV database with logical names.  
+
+## Procedure
+
+#### Overhead
+```{r overhead, results = 'hide'}
+library(knitr)
+suppressMessages(library(dplyr))
+```
+
+```{r config, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
+
+#### Remote I/O
+```{r remote-io}
+TARGET_DIR  <- "M:/Application/Model One/RTP2013/Scenarios/2010_03_YYY/OUTPUT/"
+
+SAMPLE_RATE = 1.00
+
+OUTPUT_DIR <- "M:/Application/Model One/RTP2013/Scenarios/2010_03_YYY/OUTPUT/bespoke/"
+F_OUTPUT = paste(OUTPUT_DIR, "accessibility-market-segments.csv", sep = "")
+
+```
+
+#### Summaries
+```{r summaries}
+load(paste(TARGET_DIR, "updated_output/", "households.rdata", sep = ""))
+
+summary <- households %>%
+  group_by(autoSuff, autoSuff_label, incQ, incQ_label) %>%
+  summarise(households = n()/SAMPLE_RATE)
+
+```
+
+#### Write to disk
+```{r apply}
+write.csv(summary, file = F_OUTPUT, row.names = FALSE, quote = F)
+```
+
