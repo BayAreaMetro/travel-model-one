@@ -1,0 +1,137 @@
+---
+title: "Transit System Stats"
+author: "David Ory"
+output: 
+  html_document:
+    theme: cosmo
+    toc: yes
+---
+
+
+## Administration
+
+#### Purpose
+Summarizes transit system statistics for use with the state of good repair assessments across travel model simulations. 
+
+#### Outputs
+1.  A CSV database with logical names.
+
+## Procedure
+
+#### Overhead
+```{r overhead, results = 'hide'}
+library(knitr)
+suppressMessages(library(dplyr))
+library(stringr)
+```
+
+```{r config, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
+
+#### Remote I/O
+```{r remote-io}
+TARGET_DIR_ARRAY <- c("M:/Application/Model One/RTP2013/Scenarios/2000_03_YYY/OUTPUT/trn/",
+                      "M:/Application/Model One/RTP2013/Scenarios/2005_03_YYY/OUTPUT/trn/",
+                      "M:/Application/Model One/RTP2013/Scenarios/2010_03_YYY/OUTPUT/trn/",
+                      "M:/Application/Model One/RTP2013/Scenarios/Round 05 -- Final/2015_03_116/OUTPUT/trn/",
+                      "M:/Application/Model One/RTP2013/Scenarios/Round 05 -- Final/2040_03_116/OUTPUT/trn/"
+                      )
+
+OUTPUT_DIR <- "M:/Application/Model One/RTP2013/Scenarios/Round 05 -- Across Scenarios/bespoke/"
+F_OUTPUT = paste(OUTPUT_DIR, "transit-system-stats.csv", sep = "")
+
+```
+
+#### Parameters
+```{r parameters}
+YEAR_ARRAY <- c(2000, 2005, 2010, 2015, 2040)
+SCENARIO_ID_ARRAY <- c("2000_03_YYY", "2005_03_YYY", "2010_03_YYY", "2015_03_116", "2040_03_116")
+
+time_period = c("ea", "am", "md", "pm", "ev")
+hours = c(3, 4, 5, 4, 8)
+hours_in_periods_df <- data.frame(time_period, hours)
+hours_in_periods_df <- hours_in_periods_df %>%
+  mutate(time_period = paste(time_period))
+
+```
+
+
+#### Data reads
+```{r calculator-method}
+Compute_Transit_System_Statistics <- function(target_dir, year_int, scenario_id) {
+  
+  # read in the file
+  input_file_name <- paste(target_dir, "trnline.csv", sep = "")
+  input_df <- read.table(file = input_file_name, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+  
+  # passenger miles
+  passenger_miles <- sum(input_df$passenger.miles)
+  
+  # vehicle_miles
+  work_df <- input_df %>%
+    filter(path.id == "ea_wlk_com_wlk" | 
+             path.id == "am_wlk_com_wlk" | 
+             path.id == "md_wlk_com_wlk" | 
+             path.id == "pm_wlk_com_wlk" | 
+             path.id == "ev_wlk_com_wlk") %>%
+    mutate(route_speed = line.dist / line.time * 60) %>%
+    mutate(route_vehicles = ceiling(line.time / frequency)) %>%
+    mutate(route_vehicle_miles_per_hour = route_vehicles / route_speed) %>%
+    mutate(time_period = str_sub(path.id, start = 1L, end = 2L))
+  
+  work_df <- left_join(work_df, hours_in_periods_df, by = c("time_period"))
+  
+  work_df <- work_df %>%
+    mutate(route_vehicle_miles = route_vehicle_miles_per_hour * hours)
+  
+  revenue_vehicle_miles <- sum(work_df$route_vehicle_miles)
+  
+  # passenger miles weighted headway
+  passenger_miles_weighted_headway <- weighted.mean(input_df$passenger.miles, input_df$frequency)
+  
+  # passenger boardings
+  boardings <- sum(input_df$total.boardings)
+  
+  # route length
+  average_route_length <- mean(input_df$line.dist)
+  
+  # build and return a dataframe
+  return_df <- data.frame(year = c(year_int), 
+                          scenario_id = c(scenario_id), 
+                          passenger_miles = c(passenger_miles),
+                          revenue_vehicle_miles = c(revenue_vehicle_miles),
+                          passenger_miles_weighted_headway = c(passenger_miles_weighted_headway),
+                          boardings = c(boardings),
+                          average_unweighted_route_length = c(average_route_length))
+  
+  return(return_df)
+  
+  }
+
+
+```
+
+#### Run the method
+```{r run-the-method}
+output_df <- Compute_Transit_System_Statistics(TARGET_DIR_ARRAY[1], YEAR_ARRAY[1], SCENARIO_ID_ARRAY[1])
+for (i in 2:length(TARGET_DIR_ARRAY)){
+  
+  target_dir <- TARGET_DIR_ARRAY[i]
+  year_int <- YEAR_ARRAY[i]
+  scenario_id <- SCENARIO_ID_ARRAY[i]
+  
+  df <- Compute_Transit_System_Statistics(target_dir, year_int, scenario_id)
+  output_df <- rbind(output_df, df)
+  
+  }
+
+
+```
+
+#### Data writes
+```{r data-writes}
+write.csv(output_df, file = F_OUTPUT, row.names = FALSE, quote = F)
+```
+
+
