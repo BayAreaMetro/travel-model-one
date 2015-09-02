@@ -1,0 +1,96 @@
+---
+title: "Build Synthetic Population for "
+author: "David Ory"
+output: 
+  html_document:
+    theme: cosmo
+    toc: yes
+---
+
+
+## Administration
+
+#### Purpose
+Create a synthetic person file for use with the accessibility calculator. 
+
+#### Outputs
+1.  A CSV database of synthetic persons.  
+
+## Procedure
+
+#### Overhead
+```{r overhead, results = 'hide'}
+library(knitr)
+suppressMessages(library(dplyr))
+```
+
+```{r config, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
+
+#### Remote I/O
+```{r remote-io}
+OUTPUT_DIR <- "M:/Development/Travel Model One/_working/accessibility-in-activitysim/data/"
+F_OUTPUT = paste(OUTPUT_DIR, "synthetic-people-for-accessibility.csv", sep = "")
+
+```
+
+#### Parameters
+```{r parameters}
+NUMBER_TAZ      = 1454
+NUMBER_SUB_ZONE = 3
+
+AUTO_SUFF_ARRAY = c(0,1,2)
+INC_QUART_ARRAY = c(1,2,3,4)
+
+VOT_ARRAY = c(6.01, 8.81, 10.44, 12.88)
+
+```
+
+#### Build the data frame
+```{r build-it}
+home_taz_array  <- seq(from = 1, to = NUMBER_TAZ, by = 1)
+sub_zone_array  <- seq(from = 1, to = NUMBER_SUB_ZONE, by = 1)
+auto_suff_array <- AUTO_SUFF_ARRAY
+vot_array       <- VOT_ARRAY
+
+person_counter <- 1
+for (home_taz in 1:length(home_taz_array)) {
+  
+  for (sub_zone in 1:length(sub_zone_array)) {
+    
+    for (auto_suff in 1:length(auto_suff_array)) {
+      
+      for (vot in 1:length(vot_array)) {
+        
+        temp_df <- data.frame(person_id      = c(person_counter),
+                              home_taz       = c(home_taz_array[home_taz]),
+                              home_sub_zone  = c(sub_zone_array[sub_zone]),
+                              auto_suff_cat  = c(auto_suff_array[auto_suff]),
+                              income_segment = c(vot),
+                              value_of_time  = c(vot_array[vot])
+                              )
+        
+        if (home_taz == 1 & sub_zone == 1 & auto_suff == 1 & vot == 1) {
+          persons_df <- temp_df
+          
+          } else {
+            persons_df <- rbind(persons_df, temp_df)
+            
+            }
+        
+        person_counter <- person_counter + 1
+        
+        } # vot
+      } # auto_suff
+    } # sub_zone
+  } # home_taz
+
+```
+
+#### Write to disk
+```{r write}
+write.csv(persons_df, file = F_OUTPUT, row.names = FALSE, quote = F)
+
+```
+
