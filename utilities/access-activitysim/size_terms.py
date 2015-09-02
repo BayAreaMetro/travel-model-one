@@ -52,5 +52,5 @@ def destination_size_terms(land_use, size_terms):
     df = pd.DataFrame({key: size_term(land_use, row)
                       for key, row in size_terms.iterrows()},
                       index=land_use.index)
-    df.index.name = "TAZ"
+    df.index.name = "destination_taz"
     return df

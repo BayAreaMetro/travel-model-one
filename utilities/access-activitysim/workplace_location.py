@@ -36,7 +36,7 @@ def workplace_location_simulate(set_random_seed,
 
     # set the keys for this lookup - in this case there is a TAZ in the choosers
     # and a TAZ in the alternatives which get merged during interaction
-    skims.set_keys("TAZ", "TAZ_r")
+    skims.set_keys("home_taz", "destination_taz")
     # the skims will be available under the name "skims" for any @ expressions
     locals_d = {"skims": skims}
 
