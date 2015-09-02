@@ -1,9 +1,9 @@
 
-AUTOOPCOST    = xx.xx     ; year 2000 cents per mile - set by RuntimeConfiguration.py
-TRUCKOPCOST   = xx.xx     ; year 2000 cents per mile - set by RuntimeConfiguration.py
+AUTOOPCOST    = 23.10     ; year 2000 cents per mile
+TRUCKOPCOST   = 42.94     ; year 2000 cents per mile
 VOT           = 15.0      ; year 2000 dollars per hour
 TRUCKVOT      = 30.0      ; year 2000 dollars per hour
 SR2COSTSHARE  = 1.75      ; scales toll cost for SR2 occupancy
 SR3COSTSHARE  = 2.50      ; scales toll cost for SR3+ occupancy
 TRKPCE        = 2.0       ; passenger car equivalent for combo trucks
-FIRSTVALUE    = 11	      ; first value toll has a TOLL code of 11
+FIRSTVALUE    = 11	  ; first value toll has a TOLL code of 11

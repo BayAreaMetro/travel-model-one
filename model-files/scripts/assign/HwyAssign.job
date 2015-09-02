@@ -65,18 +65,15 @@
 ;	  (3) Area type codes are as follows: (0) core; (i) central business district; (ii) urban business district;
 ;	      (iii) urban; (iv) suburban; (v) rural. 
 ;	  (4) The capacity class is computed as ten times area type plus facility type. 
-;         (5) For v 0.4, return to Frank-Wolfe and use 64 threads
 ;
 ; See also: (1) CreateFiveHighwayNetworks.job, which creates the time-specific networks;
 ;	    (2) SetTolls.job, which sets the time- and class-specific bridge and value tools. 
 ;
-; version:  Travel Model One (v 0.4)
-; authors:  dto (2014 01 23); dto (2011 12 13); dto (2010 08 10); gde (2009)
+; version:  Travel Model One (v 0.3)
+; authors:  dto (2011 12 13); dto (2010 08 10); gde (2009)
 ;
 ;
 ; ----------------------------------------------------------------------------------------------------------------
-
-read file = ctramp\scripts\block\HwyIntraStep.block
 
 ; do, more or less, the same assignment procedure for each time period
 loop period = 1, 5
@@ -89,7 +86,7 @@ loop period = 1, 5
       token_capfac = 'parameters capfac = 3'
       
       ; set the processors to be used for the intrastep multithreading
-      token_intrastep_processlist = token_intrastep_processlist_EA
+      token_intrastep_processlist = '6'
       
       ; switch to use time penalties for transfering to hov lane
       token_hov_xfer_pen = '0'
@@ -98,39 +95,39 @@ loop period = 1, 5
       token_relativegap = 'parameters relativegap = 0.003'
       
       ; set the maximum number of iterations
-      token_maxiters = 'parameters maxiters = 100'
+      token_maxiters = 'parameters maxiters = 50'
       
    elseif (period = 2)      
       token_period = 'AM'
       token_capfac = 'parameters capfac = 4'
-      token_intrastep_processlist = token_intrastep_processlist_AM
+      token_intrastep_processlist = '7-11'
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.0005'
-      token_maxiters = 'parameters maxiters = 1000'
+      token_maxiters = 'parameters maxiters = 300'
       
    elseif (period = 3)   
       token_period = 'MD'
       token_capfac = 'parameters capfac = 5'
-      token_intrastep_processlist = token_intrastep_processlist_MD
+      token_intrastep_processlist = '12'
       token_hov_xfer_pen = '0'
-      token_relativegap = 'parameters relativegap = 0.0005'
-      token_maxiters = 'parameters maxiters = 1000'
+      token_relativegap = 'parameters relativegap = 0.003'
+      token_maxiters = 'parameters maxiters = 50'      
   
    elseif (period = 4)   
       token_period = 'PM'
       token_capfac = 'parameters capfac = 4'
-      token_intrastep_processlist = token_intrastep_processlist_PM
+      token_intrastep_processlist = '13-15'
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.0005'
-      token_maxiters = 'parameters maxiters = 1000'
+      token_maxiters = 'parameters maxiters = 300'      
   
    elseif (period = 5) 
       token_period = 'EV'
       token_capfac = 'parameters capfac = 8'
-      token_intrastep_processlist = token_intrastep_processlist_EV
+      token_intrastep_processlist = '16'
       token_hov_xfer_pen = '0'
       token_relativegap = 'parameters relativegap = 0.003'
-      token_maxiters = 'parameters maxiters = 100'
+      token_maxiters = 'parameters maxiters = 50' 
   
    endif
    
@@ -160,8 +157,8 @@ loop period = 1, 5
       ; loaded time-specific highway network
       neto    = hwy\load@token_period@.net
     
-      ; set the assignment paramters -- equilibrium assignment, frank-wolfe
-      parameters combine = equi, enhance = 2
+      ; set the assignment paramters -- equilibrium assignment, bi-conjugate
+      parameters combine = equi, enhance = 2            
       
       ; set the assignment parameters -- 1454 internal zones + 21 external zones
       parameters zones = 1475

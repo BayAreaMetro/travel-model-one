@@ -46,7 +46,6 @@
 ;
 ; Notes:  (1) The assigned volumes stored in the assignment variable names (e.g. V1_1) are used by the
 ;             AverageNetworkVolumes.job.
-;         (2) Made USE time-of-day specific in 26 June 2013 update
 ;
 ; See also: (1) CalculateSpeeds.job, which creates the input networks to this script.
 ;           (2) HwyAssign.job, which performs the time-period-specific highway assignments.
@@ -56,7 +55,7 @@
 ;               model execution iteration. 
 ;
 ; version:  Travel Model One
-; authors:  dto (2013 06 26; 2010 08 10); gde (2009)
+; authors:  dto (2010 08 10); gde (2009)
 ;
 ;
 ; ----------------------------------------------------------------------------------------------------------------
@@ -104,9 +103,6 @@ loop period = 1, 5
       
       ; set the v/c ratio
       vc@token_period@ = VC
-      
-      ; keep track of USE code by time of day
-      use@token_period@ = USE
       
       ; set the assignment-class-specific volumes: non-value-toll-paying classes
       vol@token_period@_da = VOL_DA                     
@@ -163,7 +159,7 @@ run pgm = hwynet
    neti[5] = hwy\iter@token_current_iteration@\x3avgloadEV.net
    
    ; output network includes time-period-specific and 24-hour volumes
-   neto = hwy\iter@token_current_iteration@\avgload5period.net, exclude = USE, VOL, CTIM, VC, CSPD, VDT, VHT,
+   neto = hwy\iter@token_current_iteration@\avgload5period.net, exclude = VOL, CTIM, VC, CSPD, VDT, VHT,
                                                                           VOL_DA, VOL_S2, VOL_S3, VOL_SM, VOL_HV,
                                                                           VOL_DAT, VOL_S2T, VOL_S3T, VOL_SMT, VOL_HVT,
                                                                           VOLT, VOLT_DA, VOLT_S2, VOLT_S3, VOLT_SM, VOLT_HV,

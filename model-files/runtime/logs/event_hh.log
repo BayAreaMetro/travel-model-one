@@ -1,0 +1,79 @@
+02-Dec-2011 15:43:47, INFO, Household Trace Set: [735606]
+02-Dec-2011 15:43:47, INFO, Household Trace Set: [735606]
+02-Dec-2011 15:43:48, INFO, reading popsyn household data file.
+02-Dec-2011 15:44:08, INFO, reading popsyn person data file.
+02-Dec-2011 15:44:37, INFO, mapping popsyn household and person data records to objects.
+02-Dec-2011 15:45:11, WARN, 260868 person records had their type changed.
+02-Dec-2011 15:45:11, INFO, Setting distributed values of time. 
+02-Dec-2011 15:45:14, INFO, Summary for person type: Student of driving age
+02-Dec-2011 15:45:14, INFO,  Age		Full-time worker	Part-time worker	    Not employed	    Under age 16	Grade or high school	College or higher	     Not student	
+02-Dec-2011 15:45:14, INFO,   0-5	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO,  6-15	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 16-18	               0	           65348	          139268	               0	          204616	               0	               0	
+02-Dec-2011 15:45:14, INFO, 19-24	               0	            3440	            4305	               0	            7745	               0	               0	
+02-Dec-2011 15:45:14, INFO, 25-44	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 45-64	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO,   65+	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, Summary for person type: University student
+02-Dec-2011 15:45:14, INFO,  Age		Full-time worker	Part-time worker	    Not employed	    Under age 16	Grade or high school	College or higher	     Not student	
+02-Dec-2011 15:45:14, INFO,   0-5	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO,  6-15	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 16-18	               0	           12423	           16602	               0	               0	           29025	               0	
+02-Dec-2011 15:45:14, INFO, 19-24	               0	           96942	           96070	               0	               0	          193012	               0	
+02-Dec-2011 15:45:14, INFO, 25-44	               0	           55242	           77684	               0	               0	          132926	               0	
+02-Dec-2011 15:45:14, INFO, 45-64	               0	           14114	           23332	               0	               0	           37446	               0	
+02-Dec-2011 15:45:14, INFO,   65+	               0	            1712	           10803	               0	               0	           12515	               0	
+02-Dec-2011 15:45:14, INFO, Summary for person type: Full-time worker
+02-Dec-2011 15:45:14, INFO,  Age		Full-time worker	Part-time worker	    Not employed	    Under age 16	Grade or high school	College or higher	     Not student	
+02-Dec-2011 15:45:14, INFO,   0-5	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO,  6-15	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 16-18	            7649	               0	               0	               0	               0	               0	            7649	
+02-Dec-2011 15:45:14, INFO, 19-24	          167689	               0	               0	               0	               0	               0	          167689	
+02-Dec-2011 15:45:14, INFO, 25-44	         1366855	               0	               0	               0	               0	               0	         1366855	
+02-Dec-2011 15:45:14, INFO, 45-64	          929463	               0	               0	               0	               0	               0	          929463	
+02-Dec-2011 15:45:14, INFO,   65+	           55378	               0	               0	               0	               0	               0	           55378	
+02-Dec-2011 15:45:14, INFO, Summary for person type: Child too young for school
+02-Dec-2011 15:45:14, INFO,  Age		Full-time worker	Part-time worker	    Not employed	    Under age 16	Grade or high school	College or higher	     Not student	
+02-Dec-2011 15:45:14, INFO,   0-5	               0	               0	               0	          489425	          163692	               0	          325733	
+02-Dec-2011 15:45:14, INFO,  6-15	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 16-18	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 19-24	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 25-44	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 45-64	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO,   65+	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, Summary for person type: Non-worker
+02-Dec-2011 15:45:14, INFO,  Age		Full-time worker	Part-time worker	    Not employed	    Under age 16	Grade or high school	College or higher	     Not student	
+02-Dec-2011 15:45:14, INFO,   0-5	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO,  6-15	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 16-18	               0	               0	           15426	               0	               0	               0	           15426	
+02-Dec-2011 15:45:14, INFO, 19-24	               0	               0	           89927	               0	               0	               0	           89927	
+02-Dec-2011 15:45:14, INFO, 25-44	               0	               0	          440540	               0	               0	               0	          440540	
+02-Dec-2011 15:45:14, INFO, 45-64	               0	               0	          463049	               0	               0	               0	          463049	
+02-Dec-2011 15:45:14, INFO,   65+	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, Summary for person type: Student of non-driving age
+02-Dec-2011 15:45:14, INFO,  Age		Full-time worker	Part-time worker	    Not employed	    Under age 16	Grade or high school	College or higher	     Not student	
+02-Dec-2011 15:45:14, INFO,   0-5	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO,  6-15	               0	               0	               0	          833773	          833669	             104	               0	
+02-Dec-2011 15:45:14, INFO, 16-18	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 19-24	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 25-44	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 45-64	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO,   65+	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, Summary for person type: Part-time worker
+02-Dec-2011 15:45:14, INFO,  Age		Full-time worker	Part-time worker	    Not employed	    Under age 16	Grade or high school	College or higher	     Not student	
+02-Dec-2011 15:45:14, INFO,   0-5	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO,  6-15	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 16-18	               0	           11534	               0	               0	               0	               0	           11534	
+02-Dec-2011 15:45:14, INFO, 19-24	               0	           80894	               0	               0	               0	               0	           80894	
+02-Dec-2011 15:45:14, INFO, 25-44	               0	          287591	               0	               0	               0	               0	          287591	
+02-Dec-2011 15:45:14, INFO, 45-64	               0	          227037	               0	               0	               0	               0	          227037	
+02-Dec-2011 15:45:14, INFO,   65+	               0	           70930	               0	               0	               0	               0	           70930	
+02-Dec-2011 15:45:14, INFO, Summary for person type: Retired
+02-Dec-2011 15:45:14, INFO,  Age		Full-time worker	Part-time worker	    Not employed	    Under age 16	Grade or high school	College or higher	     Not student	
+02-Dec-2011 15:45:14, INFO,   0-5	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO,  6-15	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 16-18	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 19-24	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 25-44	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO, 45-64	               0	               0	               0	               0	               0	               0	               0	
+02-Dec-2011 15:45:14, INFO,   65+	               0	               0	          597808	               0	               0	               0	          597808	

@@ -1,10 +1,12 @@
 ---
 title: "Core Summaries"
 author: "Lisa Zorn"
+date: "Friday, August 01, 2014"
 output:
   html_document:
     css: custom.css
     toc: yes
+# runtime: shiny
 ---
 
 # Initialization: Set the workspace and load needed libraries
@@ -231,7 +233,7 @@ indiv_tours     <- mutate(indiv_tours, num_participants=1)
 # Add in County, Superdistrict, Parking Cost from TAZ Data for the tour destination
 indiv_tours     <- left_join(indiv_tours,
                              mutate(tazData, dest_taz=taz, dest_COUNTY=COUNTY, dest_county_name=county_name, 
-                                    dest_SD=SD, PRKCST, OPRKCST) %>% 
+                                    dest_SD=SD, PRKCST, OPRKCST) %.% 
                                select(dest_taz, dest_COUNTY, dest_county_name, dest_SD, PRKCST, OPRKCST),
                              by=c("dest_taz"))
 
@@ -259,7 +261,7 @@ joint_tours    <- left_join(joint_tours, select(households, hh_id, income, incQ,
 # Add in County, Superdistrict, Parking Cost from TAZ Data for the tour destination
 joint_tours     <- left_join(joint_tours,
                              mutate(tazData, dest_taz=taz, dest_COUNTY=COUNTY, dest_county_name=county_name, 
-                                    dest_SD=SD, PRKCST, OPRKCST) %>% 
+                                    dest_SD=SD, PRKCST, OPRKCST) %.% 
                                select(dest_taz, dest_COUNTY, dest_county_name, dest_SD, PRKCST, OPRKCST),
                              by=c("dest_taz"))
 
@@ -282,80 +284,56 @@ taz as the dest, and it uses wTrnD cost rather than dTrnW.
 Tallies failed costs (expected cost but -999 found) in the field cost_fail
 
 ```{r addCostColumn}
-add_cost <- function(this_timeperiod, input_trips_or_tours, reverse_od = FALSE) {
+add_cost <- function(this_timeperiod, tours, reverse_od=FALSE) {
   
-  # separate the relevant and irrelevant tours/trips
-  relevant <- input_trips_or_tours %>%
-    filter(timeCode == this_timeperiod)
-  
-  irrelevant <- input_trips_or_tours %>%
-    filter(timeCode != this_timeperiod)
-  
-  # read in the relevant skim
-  skim_file <- file.path(TARGET_DIR,"database",paste0("CostSkimsDatabase",this_timeperiod,".csv"))
-  costSkims <- read.table(file = skim_file, header=TRUE, sep=",")
-  
-  # standardize column names, reversing if needed
+  costSkims   <- read.table(file = file.path(TARGET_DIR,"database",
+                                             paste0("CostSkimsDatabase",
+                                                    this_timeperiod,".csv")), 
+                            header=TRUE, sep=",")
+  # rename columns for join -- reversing if needed (return trip)
   if (reverse_od) {
-    costSkims <- costSkims %>%
-      rename(orig_taz = dest, dest_taz = orig)
+    names(costSkims)[names(costSkims)=="orig"] <- "dest_taz"  
+    names(costSkims)[names(costSkims)=="dest"] <- "orig_taz"    
   } else {
-      costSkims <- costSkims %>%
-        rename(orig_taz = orig, dest_taz = dest)
+    names(costSkims)[names(costSkims)=="orig"] <- "orig_taz"  
+    names(costSkims)[names(costSkims)=="dest"] <- "dest_taz"
   }
+  # don't recode -999 as 0 -- we'll deal with it after join
+  costSkims   <- mutate(costSkims,
+                        timeCode = this_timeperiod)
   
   # Left join tours to the skims
-  relevant <- left_join(relevant, costSkims, by=c("orig_taz","dest_taz"))
-  
-  # assign cost value if we can to new column cost2
-  relevant <- relevant %>%
-    mutate(cost2 = (costMode == 1) * da +
-             (costMode == 2) * daToll +
-             (costMode == 3) * s2 +
-             (costMode == 4) * s2Toll +
-             (costMode == 5) * s3 +
-             (costMode == 6) * s3Toll +
-             (costMode == 7) * 0.0 +
-             (costMode == 8) * 0.0 +
-             (costMode == 9) * wTrnW +
-             (costMode == 10) * (1 - reverse_od) * dTrnW +
-             (costMode == 10) * (reverse_od) * wTrnD +
-             (costMode == 11) * wTrnD)
-             
-  
-  # re-code missing as zero and set a failure indicator
-  relevant <- relevant %>%
-    mutate(cost2 = ifelse(cost2 < -990, 0, cost2)) %>%
-    mutate(cost_fail2 = ifelse(cost2 < -990 ,1 ,0))
-  
-  print(paste("For", 
-              this_timeperiod, 
-              "assigned", 
-              prettyNum(sum(!is.na(relevant$cost2)),big.mark=","),
-              "costs, with", 
-              prettyNum(sum(!is.na(relevant$cost2)&(relevant$cost2>0)),big.mark=","),
+  tours <- left_join(tours, costSkims, by=c("orig_taz","dest_taz","timeCode"))
+  # assign active value if we can to new column active2
+  tours <- mutate(tours,
+                  cost2=((timeCode==this_timeperiod)*(costMode==1)*da    ) +
+                        ((timeCode==this_timeperiod)*(costMode==2)*daToll) +
+                        ((timeCode==this_timeperiod)*(costMode==3)*s2    ) +
+                        ((timeCode==this_timeperiod)*(costMode==4)*s2Toll) +
+                        ((timeCode==this_timeperiod)*(costMode==5)*s3    ) +
+                        ((timeCode==this_timeperiod)*(costMode==6)*s3Toll) +
+                        ((timeCode==this_timeperiod)*(costMode==7)*0.0   ) +
+                        ((timeCode==this_timeperiod)*(costMode==8)*0.0   ) +
+                        ((timeCode==this_timeperiod)*(costMode==9)*wTrnW ) +
+                        ((timeCode==this_timeperiod)*(costMode==10)*(1-reverse_od)*dTrnW) +
+                        ((timeCode==this_timeperiod)*(costMode==10)*(reverse_od   *wTrnD)) +
+                        ((timeCode==this_timeperiod)*(costMode==11)*wTrnD)
+                  )
+
+  tours <- mutate(tours,
+                  cost_fail2 = ifelse(cost2==-999,1,0),    # tally the cost_fail
+                  cost2      = ifelse(cost2==-999,0,cost2) # reset the -999 to zero
+                  )
+      
+  print(paste("For", this_timeperiod, "assigned", prettyNum(sum(!is.na(tours$cost2)),big.mark=","),
+              "costs, with", prettyNum(sum(!is.na(tours$cost2)&(tours$cost2>0)),big.mark=","),
               "nonzero values"))
-  
-  # re-code na as zero
-  relevant$cost2[is.na(relevant$cost2)]           <- 0           
-  relevant$cost_fail2[is.na(relevant$cost_fail2)] <- 0           
-  
-  # set the cost variable
-  relevant <- relevant %>%
-    mutate(cost = cost + cost2) %>%
-    mutate(cost_fail = cost_fail + cost_fail2)
-
-  print(paste("  -> total nonzero costs:",
-              prettyNum(sum(relevant$cost!=0),big.mark=",")))
-  
-  # clean-up
-  relevant <- relevant %>%
-    select(-da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -wTrnW, -dTrnW, -wTrnD, -cost2, -cost_fail2)
-  
-  return_list <- rbind(relevant, irrelevant)
-  
-  return(return_list)
-
+  tours$cost2[is.na(tours$cost2)]           <- 0           # make the unassigned ones 0 for summing
+  tours$cost_fail2[is.na(tours$cost_fail2)] <- 0           # make the unassigned ones 0 for summing
+  tours <- mutate(tours, cost=cost+cost2,        # sum
+                         cost_fail=cost_fail+cost_fail2)
+  print(paste("  -> total nonzero costs:",prettyNum(sum(tours$cost!=0),big.mark=",")))
+  tours <- select(tours, -da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -wTrnW, -dTrnW, -wTrnD, -cost2, -cost_fail2) # rid new variables
 }
 ```
 
@@ -367,66 +345,51 @@ to the given tours data frame (note: this can be the trips data frame). Joining 
 time period based on the column `distance_mode`.
 
 ```{r addDistanceColumn}
-add_distance <- function(this_timeperiod, input_trips_or_tours) {
+add_distance <- function(this_timeperiod, tours) {
   
-  # separate the relevant and irrelevant tours/trips
-  relevant <- input_trips_or_tours %>%
-    filter(timeCode == this_timeperiod)
-  
-  irrelevant <- input_trips_or_tours %>%
-    filter(timeCode != this_timeperiod)
-  
-  # Read the relevant skim table
-  skim_file <- file.path(TARGET_DIR,"database",paste0("DistanceSkimsDatabase",this_timeperiod,".csv"))
-  distSkims <- read.table(file = skim_file, header=TRUE, sep=",")
-
+  distSkims   <- read.table(file = file.path(TARGET_DIR,"database",
+                                             paste0("DistanceSkimsDatabase",
+                                                    this_timeperiod,".csv")), 
+                            header=TRUE, sep=",")
   # rename columns for join
-  distSkims <- distSkims %>%
-    rename(orig_taz = orig, dest_taz = dest)
-
+  names(distSkims)[names(distSkims)=="orig"] <- "orig_taz"  
+  names(distSkims)[names(distSkims)=="dest"] <- "dest_taz"
+  
+  distSkims   <- mutate(distSkims,
+                        timeCode = this_timeperiod,
+                        da       = ifelse(da    == -999,0,da    ),
+                        daToll   = ifelse(daToll== -999,0,daToll),
+                        s2       = ifelse(s2    == -999,0,s2    ),
+                        s2Toll   = ifelse(s2Toll== -999,0,s2Toll),
+                        s3       = ifelse(s3    == -999,0,s3    ),
+                        s3Toll   = ifelse(s3Toll== -999,0,s3Toll),
+                        walk     = ifelse(walk  == -999,0,walk  ),
+                        bike     = ifelse(bike  == -999,0,bike ))
+  
   # Left join tours to the skims
-  relevant <- left_join(relevant, distSkims, by=c("orig_taz","dest_taz"))
+  tours <- left_join(tours, distSkims, by=c("orig_taz","dest_taz","timeCode"))
   
-  # Assign distance value
-  relevant <- relevant %>%
-    mutate(distance2 = 0.0)
+  # assign active value if we can to new column active2
+  tours <- mutate(tours,
+                  distance2=((timeCode==this_timeperiod)*(distance_mode==1)*da    ) +
+                            ((timeCode==this_timeperiod)*(distance_mode==2)*daToll) +
+                            ((timeCode==this_timeperiod)*(distance_mode==3)*s2    ) +
+                            ((timeCode==this_timeperiod)*(distance_mode==4)*s2Toll) +
+                            ((timeCode==this_timeperiod)*(distance_mode==5)*s3    ) +
+                            ((timeCode==this_timeperiod)*(distance_mode==6)*s3Toll) +
+                            ((timeCode==this_timeperiod)*(distance_mode==7)*walk  ) +
+                            ((timeCode==this_timeperiod)*(distance_mode==8)*bike  ) +
+                            # Use the drive alone time as the distance for transit modes
+                            ((timeCode==this_timeperiod)*(distance_mode>=9)*da    )
+                  )
   
-  relevant <- relevant %>%
-    mutate(distance2 = (distance_mode == 1) * da +
-             (distance_mode == 2) * daToll +
-             (distance_mode == 3) * s2     +
-             (distance_mode == 4) * s2Toll +
-             (distance_mode == 5) * s3     +
-             (distance_mode == 6) * s3Toll +
-             (distance_mode == 7) * walk   +
-             (distance_mode == 8) * bike   +
-             (distance_mode >= 9) * da     )
-
-
-  relevant <- relevant %>%
-    mutate(distance2 = ifelse(distance2 < -990.0, 0, distance2))
-  
-  print(paste("For", 
-              this_timeperiod, 
-              "assigned", 
-              prettyNum(sum(!is.na(relevant$distance2)),big.mark=","),
-              "distances, with",
-              prettyNum(sum(!is.na(relevant$distance2)&(relevant$distance2>0)),big.mark=","),
+  print(paste("For", this_timeperiod, "assigned", prettyNum(sum(!is.na(tours$distance2)),big.mark=","),
+              "distances, with", prettyNum(sum(!is.na(tours$distance2)&(tours$distance2>0)),big.mark=","),
               "nonzero values"))
-  
-  relevant$distance2[is.na(relevant$distance2)] <- 0         
-
-  relevant <- relevant %>%
-    mutate(distance = distance + distance2)
-  
-  print(paste("  -> total nonzero distances:",prettyNum(sum(relevant$distance!=0),big.mark=",")))
-  
-  relevant <- relevant %>%
-    select(-da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -walk, -bike, -distance2)
-  
-  return_list <- rbind(relevant, irrelevant)
-  
-  return(return_list)
+  tours$distance2[is.na(tours$distance2)] <- 0         # make the unassigned ones 0 for summing
+  tours <- mutate(tours, distance=distance+distance2)  # sum
+  print(paste("  -> total nonzero distances:",prettyNum(sum(tours$distance!=0),big.mark=",")))
+  tours <- select(tours, -da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -walk, -bike, -distance2) # rid new variables
 }
 ```
 
@@ -444,76 +407,55 @@ taz as the dest, and it uses wTrnD time rather than dTrnW.
 Tallies failed times (expected time but -999 found) in the field `time_fail`.
 
 ```{r addTimeColumn}
-add_time <- function(this_timeperiod, input_trips_or_tours, reverse_od=FALSE) {
+add_time <- function(this_timeperiod, tours, reverse_od=FALSE) {
   
-  # separate the relevant and irrelevant tours/trips
-  relevant <- input_trips_or_tours %>%
-    filter(timeCode == this_timeperiod)
-  
-  irrelevant <- input_trips_or_tours %>%
-    filter(timeCode != this_timeperiod)
-  
-  # read in the relevant skim
-  skim_file <- file.path(TARGET_DIR,"database", paste0("TimeSkimsDatabase", this_timeperiod,".csv"))
-  timeSkims   <- read.table(file = skim_file, header = TRUE, sep = ",")
-  
-  # standardize column names, reversing if needed
+  timeSkims   <- read.table(file = file.path(TARGET_DIR,"database",
+                                             paste0("TimeSkimsDatabase",
+                                                    this_timeperiod,".csv")), 
+                            header=TRUE, sep=",")
+  # rename columns for join -- reversing if needed (return trip)
   if (reverse_od) {
-    timeSkims <- timeSkims %>%
-      rename(orig_taz = dest, dest_taz = orig)
+    names(timeSkims)[names(timeSkims)=="orig"] <- "dest_taz"  
+    names(timeSkims)[names(timeSkims)=="dest"] <- "orig_taz"    
   } else {
-    timeSkims <- timeSkims %>%
-      rename(orig_taz = orig, dest_taz = dest)
+    names(timeSkims)[names(timeSkims)=="orig"] <- "orig_taz"  
+    names(timeSkims)[names(timeSkims)=="dest"] <- "dest_taz"
   }
+  # don't recode -999 as 0 -- we'll deal with it after join
+  timeSkims   <- mutate(timeSkims,
+                        timeCode = this_timeperiod)
   
+  # Left join tours to the skims
+  tours <- left_join(tours, timeSkims, by=c("orig_taz","dest_taz","timeCode"))
+  # assign time value if we can to new column time2
+  tours <- mutate(tours,
+                  time2=((timeCode==this_timeperiod)*(costMode==1)*da    ) +
+                        ((timeCode==this_timeperiod)*(costMode==2)*daToll) +
+                        ((timeCode==this_timeperiod)*(costMode==3)*s2    ) +
+                        ((timeCode==this_timeperiod)*(costMode==4)*s2Toll) +
+                        ((timeCode==this_timeperiod)*(costMode==5)*s3    ) +
+                        ((timeCode==this_timeperiod)*(costMode==6)*s3Toll) +
+                        ((timeCode==this_timeperiod)*(costMode==7)*walk  ) +
+                        ((timeCode==this_timeperiod)*(costMode==8)*bike  ) +
+                        ((timeCode==this_timeperiod)*(costMode==9)*wTrnW ) +
+                        ((timeCode==this_timeperiod)*(costMode==10)*(1-reverse_od)*dTrnW) +
+                        ((timeCode==this_timeperiod)*(costMode==10)*(reverse_od   *wTrnD))
+                  )
   
-  # join the skims and relevant trips/tours
-  relevant <- left_join(relevant, timeSkims, by=c("orig_taz","dest_taz"))
-  
-  # assign the new time
-  relevant <- relevant %>%
-    mutate(time2 = (costMode == 1) * da +
-             (costMode == 2) * daToll +
-             (costMode == 3) * s2 +
-             (costMode == 4) * s2Toll +
-             (costMode == 5) * s3 +
-             (costMode == 6) * s3Toll +
-             (costMode == 7) * walk +
-             (costMode == 8) * bike +
-             (costMode == 9) * wTrnW +
-             (costMode == 10) * (1 - reverse_od) * dTrnW +
-             (costMode == 10) * (reverse_od) * wTrnD)
-    
-  # re-code missing as zero and set a failure indicator
-  relevant <- relevant %>%
-    mutate(time2 = ifelse(time2 < -990, 0, time2)) %>%
-    mutate(time_fail2 = ifelse(time2 < -990 ,1 ,0)) 
-    
-  print(paste("For", 
-              this_timeperiod, 
-              "assigned", 
-              prettyNum(sum(!is.na(relevant$time2)),big.mark=","),
-              "times, with", 
-              prettyNum(sum(!is.na(relevant$time2)&(relevant$time2>0)),big.mark=","),
+  tours <- mutate(tours,
+                  time_fail2 = ifelse(time2==-999,1,0),    # tally the time_fail
+                  time2      = ifelse(time2==-999,0,time2) # reset the -999 to zero
+                  )
+      
+  print(paste("For", this_timeperiod, "assigned", prettyNum(sum(!is.na(tours$time2)),big.mark=","),
+              "times, with", prettyNum(sum(!is.na(tours$time2)&(tours$time2>0)),big.mark=","),
               "nonzero values"))
-  
-  # re-code na as zero
-  relevant$time2[is.na(relevant$time2)] <- 0  
-  relevant$time2[is.na(relevant$time_fail2)] <- 0
-  
-  # set the time variable
-  relevant <- relevant %>%
-    mutate(time = time + time2) %>%
-    mutate(time_fail = time_fail + time_fail2)
-  
-  print(paste("  -> total nonzero times:",prettyNum(sum(relevant$time!=0),big.mark=",")))
-  
-  relevant <- relevant %>%
-    select(-da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -walk, -bike, -wTrnW, -dTrnW, -wTrnD, -time2, -time_fail2)
-  
-  return_list <- rbind(relevant, irrelevant)
-  
-  return(return_list)
+  tours$time2[is.na(tours$time2)]           <- 0           # make the unassigned ones 0 for summing
+  tours$time_fail2[is.na(tours$time_fail2)] <- 0           # make the unassigned ones 0 for summing
+  tours <- mutate(tours, time=time+time2,        # sum
+                         time_fail=time_fail+time_fail2)
+  print(paste("  -> total nonzero times:",prettyNum(sum(tours$time!=0),big.mark=",")))
+  tours <- select(tours, -da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -walk, -bike, -wTrnW, -dTrnW, -wTrnD, -time2, -time_fail2) # rid new variables
 }
 ```
 
@@ -526,59 +468,40 @@ to the given trip data.frame (joining on the columns `orig_taz`, `dest_taz`, and
 Fills in values to the column `active` for the given time period.
 
 ```{r addActiveColumn}
-add_active <- function(this_timeperiod, input_trips_or_tours) {
-  
-  # separate the relevant and irrelevant tours/trips
-  relevant <- input_trips_or_tours %>%
-    filter(timeCode == this_timeperiod)
-  
-  irrelevant <- input_trips_or_tours %>%
-    filter(timeCode != this_timeperiod)
-  
-  # read in the relevant skim
-  skim_file <- file.path(TARGET_DIR,"database", paste0("ActiveTimeSkimsDatabase", this_timeperiod,".csv"))
-  activeSkims <- read.table(file = skim_file,header=TRUE, sep=",")
-  
-  # standarize column names
-  activeSkims <- activeSkims %>%
-    rename(orig_taz = orig, dest_taz = dest)
-  
-  # left join the skims
-  relevant <- left_join(relevant, activeSkims, by=c("orig_taz","dest_taz"))
-  
-  # assign active2
-  relevant <- relevant %>%
-    mutate(active2 = (amode == 1) * walk + 
-             (amode == 2) * bike +
-             (amode == 3) * wTrnW +
-             (amode == 4) * dTrnW +
-             (amode == 5) * wTrnD)
-  
-  relevant <- relevant %>%
-    mutate(active2 = ifelse(active2 < -990.0, 0, active2))
+add_active <- function(this_timeperiod, trips) {
 
-  print(paste("For", 
-              this_timeperiod, 
-              "assigned", 
-              prettyNum(sum(!is.na(relevant$active2)),big.mark=","),
-              "active times, with", 
-              prettyNum(sum(!is.na(relevant$active2)&(relevant$active2>0)),big.mark=","),
+  activeSkims <- read.table(file = file.path(TARGET_DIR,"database",
+                                             paste0("ActiveTimeSkimsDatabase",
+                                                    this_timeperiod,".csv")),
+                            header=TRUE, sep=",")
+  # rename columns for join
+  names(activeSkims)[names(activeSkims)=="orig"] <- "orig_taz"
+  names(activeSkims)[names(activeSkims)=="dest"] <- "dest_taz"
+  activeSkims <- mutate(activeSkims,
+                        timeCode = this_timeperiod,
+                        walk2    = (walk!=-999)*walk,
+                        bike2    = (bike!=-999)*bike,
+                        wTrnW2   = (wTrnW!=-999)*wTrnW,
+                        dTrnW2   = (dTrnW!=-999)*dTrnW,
+                        wTrnD2   = (wTrnD!=-999)*wTrnD)
+  
+  # left join trips to the skims
+  trips <- left_join(trips, activeSkims, by=c("orig_taz","dest_taz","timeCode"))
+  # assign active value if we can to new column active2
+  trips <- mutate(trips,
+                  active2=((timeCode==this_timeperiod)*(amode==1)*walk2) +
+                          ((timeCode==this_timeperiod)*(amode==2)*bike2) +
+                          ((timeCode==this_timeperiod)*(amode==3)*wTrnW2) +
+                          ((timeCode==this_timeperiod)*(amode==4)*dTrnW2) +
+                          ((timeCode==this_timeperiod)*(amode==5)*wTrnD2)
+                  )
+  print(paste("For", this_timeperiod, "assigned", prettyNum(sum(!is.na(trips$active2)),big.mark=","),
+              "active times, with", prettyNum(sum(!is.na(trips$active2)&(trips$active2>0)),big.mark=","),
               "nonzero values"))
-  
-  relevant$active2[is.na(relevant$active2)] <- 0  
-  
-  relevant <- relevant %>%
-    mutate(active = active + active2)
-  
-  print(paste("  -> total nonzero active times:",
-              prettyNum(sum(relevant$active!=0),big.mark=",")))
-  
-  relevant <- relevant %>%
-    select(-walk, -bike, -wTrnW, -dTrnW, -wTrnD, -active2)
-  
-  return_list <- rbind(relevant, irrelevant)
-  
-  return(return_list)
+  trips$active2[is.na(trips$active2)] <- 0           # make the unassigned ones 0 for summing
+  trips <- mutate(trips, active=active+active2)      # sum
+  print(paste("  -> total nonzero active times:",prettyNum(sum(trips$active!=0),big.mark=",")))
+  trips <- select(trips, -walk, -bike, -wTrnW, -dTrnW, -wTrnD, -walk2, -bike2, -wTrnW2, -dTrnW2, -wTrnD2, -active2) # rid new variables
 }
 ```
 # Trips
@@ -727,7 +650,7 @@ trips <- mutate(trips,
 trips <- left_join(trips, LOOKUP_TIMEPERIOD, by=c("timeCodeNum"))
 trips <- select(mutate(trips, timeCode=timeperiod_abbrev), -timeperiod_abbrev)
 trips <- left_join(trips,                   
-                   mutate(households, home_taz=taz) %>% 
+                   mutate(households, home_taz=taz) %.% 
                      select(hh_id, incQ, incQ_label, autoSuff, autoSuff_label,
                             home_taz, walk_subzone, walk_subzone_label),
                    by=c("hh_id"))
@@ -756,19 +679,17 @@ trips <- select(trips, -distance_mode)
 
 ```{r Trips_AddActiveColumn, error=FALSE}
 # code the Active Mode
-trips <- trips %>%
-  mutate(amode = 0) %>%
-  mutate(amode = ifelse(trip_mode == 7, 1, amode)) %>%
-  mutate(amode = ifelse(trip_mode == 8, 2, amode)) %>%
-  mutate(amode = ifelse((trip_mode >= 9) & (trip_mode <= 13), 3, amode)) %>%
-  mutate(amode = ifelse((trip_mode >= 14) & (trip_mode <= 18) & (orig_purpose == 'Home'), 4, amode)) %>%
-  mutate(amode = ifelse((trip_mode >= 14) & (trip_mode <= 18) & (dest_purpose == 'Home'), 5, amode)) %>%
-  mutate(wlk_trip = ifelse(amode == 1, 1, 0)) %>%
-  mutate(bik_trip = ifelse(amode == 2, 1, 0)) %>%
-  mutate(wtr_trip = ifelse(amode == 3, 1, 0)) %>%
-  mutate(dtr_trip = ifelse(amode == 4, 1, 0)) %>%
-  mutate(dtr_trip = ifelse(amode == 5, 1 + amode, 0)) %>%
-  mutate(active = 0.0)
+trips <- mutate(trips, 
+                amode=1*(trip_mode==7) +                                           # walk
+                      2*(trip_mode==8) +                                           # bike
+                      3*((trip_mode>=9)&(trip_mode<=13)) +                         # walk trn walk
+                      4*((trip_mode>=14)&(trip_mode<=18)&(orig_purpose=='Home')) + # drive trn walk
+                      5*((trip_mode>=14)&(trip_mode<=18)&(dest_purpose=='Home')),  # walk trn drive
+                wlk_trip=1*(amode==1),
+                bik_trip=1*(amode==2),
+                wtr_trip=1*(amode==3),
+                dtr_trip=1*(amode==4) + 1*(amode==5),
+                active=0)
 
 # go go gadget: Add active transportation time to trips
 for (timeperiod in LOOKUP_TIMEPERIOD$timeperiod_abbrev) {
@@ -779,17 +700,17 @@ trips <- tbl_df(trips)
 
 ## Add Travel Cost and Travel Time to Trips
 ```{r Trips_AddCostColumn, error=FALSE}
-trips <- trips %>%
-  mutate(costMode = 0) %>%
-  mutate(costMode = ifelse(trip_mode <= 8, trip_mode, costMode)) %>%
-  mutate(costMode = ifelse((trip_mode >= 9) & (trip_mode <=13), 9, costMode)) %>%
-  mutate(costMode = ifelse((trip_mode >= 14) & (orig_purpose == 'Home'), 10, costMode)) %>%
-  mutate(costMode = ifelse((trip_mode >= 14) & (dest_purpose == 'Home'), 11, costMode)) %>%
-  mutate(cost = 0) %>%
-  mutate(cost_fail = 0) %>%
-  mutate(time = 0) %>%
-  mutate(time_fail = 0)
-
+trips <- mutate(trips,
+                costMode  =(trip_mode<=8)*trip_mode +         # auto, walk, bike all in the skims
+                           # All walk to transit sub modes get best path walk to transit skim
+                           (trip_mode>=9)*(trip_mode<=13)*9 +
+                           # Drive to transit it from home
+                           (trip_mode>=14)*(orig_purpose=='Home')*10 +
+                           (trip_mode>=14)*(dest_purpose=='Home')*11,
+                cost      =0,
+                cost_fail =0,
+                time      =0,
+                time_fail =0)
 for (timeperiod in LOOKUP_TIMEPERIOD$timeperiod_abbrev) {
   trips <- add_cost(timeperiod, trips)
   trips <- add_time(timeperiod, trips)
@@ -1040,7 +961,7 @@ save(model_summary, file=file.path(TARGET_DIR,"core_summaries","CommuteByIncomeJ
 # The COUNTY and super district are by destination right now; add residence
 commute_tours   <- left_join(commute_tours,
                              mutate(tazData, orig_taz=taz, res_COUNTY=COUNTY, res_county_name=county_name, 
-                                    res_SD=SD) %>% 
+                                    res_SD=SD) %.% 
                                select(orig_taz, res_COUNTY, res_county_name, res_SD),
                              by=c("orig_taz"))
 commute_inc_summary_byres <- summarise(group_by(commute_tours, res_COUNTY, res_county_name, res_SD, orig_taz,
@@ -1067,12 +988,12 @@ remove(commute_tours, commute_inc_summary_byjob, commute_inc_summary_byres)
 work_locations <- subset(mandatory_locations, WorkLocation != 0)
 # add home county
 work_locations <- left_join(work_locations, 
-                            mutate(tazData,HomeTAZ=taz, homeCOUNTY=COUNTY, home_county_name=county_name) %>% 
+                            mutate(tazData,HomeTAZ=taz, homeCOUNTY=COUNTY, home_county_name=county_name) %.% 
                               select(HomeTAZ,homeCOUNTY,home_county_name),
                             by=c("HomeTAZ"))
 # add work county
 work_locations <- left_join(work_locations, 
-                            mutate(tazData,WorkLocation=taz, workCOUNTY=COUNTY, work_county_name=county_name) %>% 
+                            mutate(tazData,WorkLocation=taz, workCOUNTY=COUNTY, work_county_name=county_name) %.% 
                               select(WorkLocation,workCOUNTY,work_county_name),
                             by=c("WorkLocation"))
 

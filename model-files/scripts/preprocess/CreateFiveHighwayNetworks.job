@@ -27,7 +27,7 @@
 ;	    (3) PrepHwyNet.job, which creates transit background networks and uses PNROK
 ;
 ; version:  Travel Model One
-; authors:  dto (2014 02 04); dto (2010 08 10)
+; authors:  dto (2010 08 10)
 ;
 ;
 ; ----------------------------------------------------------------------------------------------------------------
@@ -45,7 +45,7 @@ loop period = 1, 5
    token_sanmateo_bridge_nopnr  = 'if ((a = 3642 & b = 3649) | (a = 3650 & b = 6381))  PNROK = 0'
    token_dumbarton_bridge_nopnr = 'if ((a = 3895 & b = 3896) | (a = 3880 & b = 5938))  PNROK = 0'
    token_antioch_bridge_nopnr   = '; allow park-and-ride'
-     
+  
    ; a two letter token is used for each time period
    if (period = 1)   
    
@@ -58,9 +58,6 @@ loop period = 1, 5
       token_golden_gate_nb_lanes = '2'
       token_golden_gate_sb_lanes = '4'
       
-      token_caldecott_wb_lanes   = '4'
-      token_caldecott_eb_lanes   = '2'
-      
       token_sterling_onramp = 'USE = 1'
       
       ; shared ride bridge delay by-pass links
@@ -69,7 +66,16 @@ loop period = 1, 5
       token_sanmateo_bridge_sr_bypass  = 'if (a = 11123 & b = 10183) delete'
       token_dumbarton_bridge_sr_bypass = 'if (a = 9894  & b = 9895)  delete'
       
-  
+      ; bridge toll fixed time delay links
+      token_benicia_bridge_delay   = '0' 
+      token_richmond_bridge_delay  = '0'
+      token_carquinez_bridge_delay = '0'
+      token_golden_bridge_delay    = '0'      
+      token_bay_bridge_delay       = '0'
+      token_sanmateo_bridge_delay  = '0'
+      token_dumbarton_bridge_delay = '0'
+      token_antioch_bridge_delay   = '0'
+      
    elseif (period = 2)   
       token_period = 'AM'
       
@@ -80,9 +86,6 @@ loop period = 1, 5
       token_golden_gate_nb_lanes = '2'
       token_golden_gate_sb_lanes = '4'
       
-      token_caldecott_wb_lanes   = '4'
-      token_caldecott_eb_lanes   = '2'
-      
       token_sterling_onramp = 'USE = 1'
       
       
@@ -91,8 +94,17 @@ loop period = 1, 5
       token_bay_bridge_sr_bypass       = '; do not delete the link'
       token_sanmateo_bridge_sr_bypass  = '; do not delete the link'
       token_dumbarton_bridge_sr_bypass = '; do not delete the link'
-  
-  
+      
+      ; bridge toll fixed time delay links
+      token_benicia_bridge_delay   = '0' 
+      token_richmond_bridge_delay  = '0'
+      token_carquinez_bridge_delay = '0'
+      token_golden_bridge_delay    = '5'
+      token_bay_bridge_delay       = '15'
+      token_sanmateo_bridge_delay  = '10'
+      token_dumbarton_bridge_delay = '15'
+      token_antioch_bridge_delay   = '0'
+      
    elseif (period = 3)   
       token_period = 'MD' 
       
@@ -103,9 +115,6 @@ loop period = 1, 5
       token_golden_gate_nb_lanes = '2'
       token_golden_gate_sb_lanes = '4'
       
-      token_caldecott_wb_lanes   = '2'
-      token_caldecott_eb_lanes   = '2'
-      
       token_sterling_onramp = 'USE = 1'
       
       ; shared ride bridge delay by-pass links
@@ -113,8 +122,17 @@ loop period = 1, 5
       token_bay_bridge_sr_bypass       = 'if (a = 9867  & b = 9869)  delete'
       token_sanmateo_bridge_sr_bypass  = 'if (a = 11123 & b = 10183) delete'
       token_dumbarton_bridge_sr_bypass = 'if (a = 9894  & b = 9895)  delete'
+      
+      ; bridge toll fixed time delay links
+      token_benicia_bridge_delay   = '0' 
+      token_richmond_bridge_delay  = '0'
+      token_carquinez_bridge_delay = '0'
+      token_golden_bridge_delay    = '0'
+      token_bay_bridge_delay       = '0'
+      token_sanmateo_bridge_delay  = '0'
+      token_dumbarton_bridge_delay = '0'
+      token_antioch_bridge_delay   = '0'  
 
-  
    elseif (period = 4)   
       token_period = 'PM'
       
@@ -125,9 +143,6 @@ loop period = 1, 5
       token_golden_gate_nb_lanes = '4'
       token_golden_gate_sb_lanes = '2'
       
-      token_caldecott_wb_lanes   = '2'
-      token_caldecott_eb_lanes   = '4'
-      
       token_sterling_onramp = 'USE = 3'
       
       
@@ -137,7 +152,16 @@ loop period = 1, 5
       token_sanmateo_bridge_sr_bypass  = '; do not delete the link'
       token_dumbarton_bridge_sr_bypass = '; do not delete the link'
       
-  
+      ; bridge toll fixed time delay links
+      token_benicia_bridge_delay   = '0' 
+      token_richmond_bridge_delay  = '5'
+      token_carquinez_bridge_delay = '5'
+      token_golden_bridge_delay    = '0'
+      token_bay_bridge_delay       = '5'
+      token_sanmateo_bridge_delay  = '5'
+      token_dumbarton_bridge_delay = '5'
+      token_antioch_bridge_delay   = '0'
+
    elseif (period = 5)   
       token_period = 'EV'
       
@@ -148,9 +172,6 @@ loop period = 1, 5
       token_golden_gate_nb_lanes = '4'
       token_golden_gate_sb_lanes = '2'
       
-      token_caldecott_wb_lanes   = '2'
-      token_caldecott_eb_lanes   = '4'
-      
       token_sterling_onramp = 'USE = 1'
       
       ; shared ride bridge delay by-pass links
@@ -158,8 +179,17 @@ loop period = 1, 5
       token_bay_bridge_sr_bypass       = 'if (a = 9867  & b = 9869)  delete'
       token_sanmateo_bridge_sr_bypass  = 'if (a = 11123 & b = 10183) delete'
       token_dumbarton_bridge_sr_bypass = 'if (a = 9894  & b = 9895)  delete'
-
       
+      ; bridge toll fixed time delay links
+      token_benicia_bridge_delay   = '0' 
+      token_richmond_bridge_delay  = '0'
+      token_carquinez_bridge_delay = '0'
+      token_golden_bridge_delay    = '0'
+      token_bay_bridge_delay       = '0'
+      token_sanmateo_bridge_delay  = '0'
+      token_dumbarton_bridge_delay = '0'
+      token_antioch_bridge_delay   = '0'
+       
    endif
    
    
@@ -189,7 +219,6 @@ loop period = 1, 5
       @token_dumbarton_bridge_nopnr@ 
       @token_antioch_bridge_nopnr@ 
       
-      
       ; golden gate bridge reversible lanes
       if (a = 7317 & b = 7315) LANES = @token_golden_gate_sb_lanes@
       if (a = 7339 & b = 7322) LANES = @token_golden_gate_sb_lanes@
@@ -203,38 +232,83 @@ loop period = 1, 5
       if (a = 7338 & b = 7318) LANES = @token_golden_gate_nb_lanes@
       if (a = 7318 & b = 7316) LANES = @token_golden_gate_nb_lanes@
       
-      ; caldecott tunnel reversible lanes 
-      if (a = 1854 & b = 2565) LANES = @token_caldecott_wb_lanes@
-      if (a = 2565 & b = 3021) LANES = @token_caldecott_wb_lanes@
-      
-      if (a = 3015 & b = 2566) LANES = @token_caldecott_eb_lanes@
-      if (a = 2566 & b = 1837) LANES = @token_caldecott_eb_lanes@
-      
       ; sterling on-ramp
       if (a = 7432 & b = 7017) @token_sterling_onramp@
       
       
       ; benecia martinez bridge (no shared ride by-pass link)
+      if (TOLLCLASS = 1)
+      
+         FFT  = @token_benicia_bridge_delay@
+         CTIM = @token_benicia_bridge_delay@
+         
+      endif
       
       ; carquinez bridge
       @token_carquinez_bridge_sr_bypass@
       
+      if (TOLLCLASS = 2)
+      
+         FFT  = @token_carquinez_bridge_delay@
+         CTIM = @token_carquinez_bridge_delay@
+      
+      endif
+      
       ; richmond san rafael bridge (no shared ride by-pass link)
+      if (TOLLCLASS = 3)
+      
+         FFT  = @token_richmond_bridge_delay@
+         CTIM = @token_richmond_bridge_delay@
+      
+      endif
       
       ; golden gate bridge (no shared ride by-pass link)
+      if (TOLLCLASS = 4)
+      
+         FFT  = @token_golden_bridge_delay@
+         CTIM = @token_golden_bridge_delay@
+      
+      endif
       
       ; bay bridge
       @token_bay_bridge_sr_bypass@ 
-            
+      
+      if (TOLLCLASS = 5) 
+         
+         FFT  = @token_bay_bridge_delay@
+         CTIM = @token_bay_bridge_delay@ 
+         
+      endif
+      
       ; san mateo bridge
       @token_sanmateo_bridge_sr_bypass@ 
-            
+      
+      if (TOLLCLASS = 6) 
+      
+         FFT  = @token_sanmateo_bridge_delay@
+         CTIM = @token_sanmateo_bridge_delay@
+      
+      endif
+      
       ; dumbarton bridge
       @token_dumbarton_bridge_sr_bypass@
-                  
+      
+      if (TOLLCLASS = 7)
+      
+         FFT  = @token_dumbarton_bridge_delay@
+         CTIM = @token_dumbarton_bridge_delay@
+         
+      endif
+      
+      
       ; antioch bridge (no shared ride by-pass link)
-            
-        
+      if (TOLLCLASS = 8)
+      
+         FFT  = @token_antioch_bridge_delay@
+         CTIM = @token_antioch_bridge_delay@
+      
+      endif
+                   
    endrun
    
 endloop ; token_period

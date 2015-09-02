@@ -15,16 +15,16 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: The location of the 64-bit java development kit
-set JAVA_PATH=C:\Program Files\Java\jdk1.7.0_71
-:: This is required by MtcAccessibilityLogsums below, which will try to start up a 32-bit matrix manager process
-:: However, if the matrix manager fails to start, it'll just read the matrices directly which is fine.
-set JAVA_PATH_32=C:\this_does_not_exit
+set JAVA_PATH=C:\Program Files\Java\jdk1.6.0_16
+
+:: The location of the 32-bit java runtime environment
+set JAVA_PATH_32=C:\Program Files (x86)\Java\jre6
 
 :: The location of the GAWK binary executable files
 set GAWK_PATH=M:\UTIL\Gawk
 
 :: The location of the RUNTPP executable from Citilabs
-set TPP_PATH=C:\Program Files (x86)\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI
+set TPP_PATH=C:\Program Files (x86)\Citilabs\CubeVoyager
 
 :: The location of the MTC.JAR file
 set RUNTIME=CTRAMP/runtime

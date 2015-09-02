@@ -17,29 +17,29 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: The location of the 64-bit java development kit
-set JAVA_PATH=C:\Program Files\Java\jdk1.7.0_71
+set JAVA_PATH=C:\Program Files\Java\jdk1.6.0_16
+
+:: The location of the 32-bit java runtime environment
+set JAVA_PATH_32=C:\Program Files (x86)\Java\jre6
 
 :: The location of the GAWK binary executable files
 set GAWK_PATH=M:\UTIL\Gawk
 
 :: The location of the RUNTPP executable from Citilabs
-set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files (x86)\Citilabs\CubeVoyager
-
-:: The location of python
-set PYTHON_PATH=C:\Python27
+set TPP_PATH=C:\Program Files (x86)\Citilabs\CubeVoyager
 
 :: The location of the MTC.JAR file
 set RUNTIME=CTRAMP/runtime
 
 :: Add these variables to the PATH environment variable, moving the current path to the back
 set OLD_PATH=%PATH%
-set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%PYTHON_PATH%;%OLD_PATH%
+set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%OLD_PATH%
 
 ::  Set the Java classpath (locations where Java needs to find configuration and JAR files)
 set CLASSPATH=%RUNTIME%/config;%RUNTIME%;%RUNTIME%/config/jppf-2.4/jppf-2.4-admin-ui/lib/*;%RUNTIME%/mtc.jar
 
 ::  Set the IP address of the host machine which sends tasks to the client machines 
-set HOST_IP_ADDRESS=192.168.1.206
+set HOST_IP_ADDRESS=192.168.1.200
 
 
 :: ------------------------------------------------------------------------------------------------------
@@ -81,17 +81,6 @@ copy INPUT\warmstart\nonres\	nonres\
 :: ------------------------------------------------------------------------------------------------------
 
 : Pre-Process
-
-:: Runtime configuration: set project directory, auto operating cost, 
-:: and synthesized household/population files in the appropriate places
-python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
-if ERRORLEVEL 1 goto done
-
-:: Prompt user to start java machines now that the project directory is set
-@echo off
-set /P c=Project Directory updated.  Please start java processes (main and nodes) and press Enter to continue...
-@echo on
-:: Don't care about the response
 
 :: Set the prices in the roadway network
 runtpp CTRAMP\scripts\preprocess\SetTolls.job
@@ -147,6 +136,7 @@ set PREV_WGT=0.00
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 7:  Prepare for iteration 1 and execute RunIteration batch file
@@ -163,9 +153,10 @@ set PREV_WGT=0.00
 set SAMPLESHARE=0.15
 set SEED=0
 
-:: Runtime configuration: set the workplace shadow pricing parameters
-python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --iter %ITER%
-if ERRORLEVEL 1 goto done
+:: Set the usual workplace shadow pricing parameters
+copy CTRAMP\runtime\mtcTourBased-master.properties CTRAMP\runtime\mtcTourBased.properties
+echo. >> CTRAMP\runtime\mtcTourBased.properties
+echo UsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations = 4 >> CTRAMP\runtime\mtcTourBased.properties
 
 :: Call RunIteration batch file
 call CTRAMP\RunIteration.bat
@@ -185,12 +176,14 @@ set ITER=2
 set PREV_ITER=1
 set WGT=0.50
 set PREV_WGT=0.50
-set SAMPLESHARE=0.30
+set SAMPLESHARE=0.25
 set SEED=0
 
-:: Runtime configuration: set the workplace shadow pricing parameters
-python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --iter %ITER%
-if ERRORLEVEL 1 goto done
+:: Set the usual workplace shadow pricing parameters
+copy CTRAMP\runtime\mtcTourBased-master.properties CTRAMP\runtime\mtcTourBased.properties
+echo. >> CTRAMP\runtime\mtcTourBased.properties
+echo UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File          = main/ShadowPricing_3.csv >> CTRAMP\runtime\mtcTourBased.properties
+echo UsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations = 2 >> CTRAMP\runtime\mtcTourBased.properties
 
 :: Call RunIteration batch file
 call CTRAMP\RunIteration.bat
@@ -210,12 +203,14 @@ set ITER=3
 set PREV_ITER=2
 set WGT=0.33
 set PREV_WGT=0.67
-set SAMPLESHARE=1.00
+set SAMPLESHARE=0.50
 set SEED=0
 
-:: Runtime configuration: set the workplace shadow pricing parameters
-python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --iter %ITER%
-if ERRORLEVEL 1 goto done
+:: Set the usual workplace shadow pricing parameters
+copy CTRAMP\runtime\mtcTourBased-master.properties CTRAMP\runtime\mtcTourBased.properties
+echo.  >> CTRAMP\runtime\mtcTourBased.properties
+echo UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File          = main/ShadowPricing_5.csv >> CTRAMP\runtime\mtcTourBased.properties
+echo UsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations = 2 >> CTRAMP\runtime\mtcTourBased.properties
 
 :: Call RunIteration batch file
 call CTRAMP\RunIteration.bat
@@ -258,25 +253,12 @@ call RunAccessibility
 if ERRORLEVEL 2 goto done
 
 
-:: ------------------------------------------------------------------------------------------------------
-::
-:: Step 13:  Core summaries
-::
-:: ------------------------------------------------------------------------------------------------------
-
-: core_summaries
-
-call RunCoreSummaries
-if ERRORLEVEL 2 goto done
-
-
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 14:  Directory clean up
+:: Step 13:  Directory clean up
 ::
 :: ------------------------------------------------------------------------------------------------------
-
 
 : cleanup
 

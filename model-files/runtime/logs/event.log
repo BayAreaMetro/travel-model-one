@@ -1,0 +1,51 @@
+02-Dec-2011 15:43:47, INFO, MTC Tour Based Model using CT-RAMP version 1.0.8.81, 22feb2011 build 2
+02-Dec-2011 15:43:47, INFO, -iteration 1.
+02-Dec-2011 15:43:47, INFO, -sampleRate 1.0000.
+02-Dec-2011 15:43:47, INFO, -sampleSeed 0.
+02-Dec-2011 15:43:47, INFO, starting tour based model.
+02-Dec-2011 15:43:47, INFO, HouseholdDataManager test: testRemote() method in com.pb.mtc.ctramp.MtcHouseholdDataManager called.
+02-Dec-2011 15:45:14, INFO, Running JPPF CtrampApplication.runModels().
+02-Dec-2011 15:45:18, INFO, local execution enabled with 6 processing threads
+02-Dec-2011 15:45:23, ERROR, 
+java.lang.NullPointerException
+	at org.jppf.client.JPPFMulticastReceiverThread.run(JPPFMulticastReceiverThread.java:77)
+	at java.lang.Thread.run(Unknown Source)
+02-Dec-2011 15:45:23, INFO, starting usual work and school location choice.
+02-Dec-2011 15:45:24, INFO, 
+02-Dec-2011 15:45:24, INFO, total origin locations by purpose and segment before any balancing, destination size adjustments, or shadow price scaling:
+02-Dec-2011 15:45:24, INFO,     work_low                :    366469.0
+02-Dec-2011 15:45:24, INFO,     work_med                :    711640.0
+02-Dec-2011 15:45:24, INFO,     work_high               :   1034108.0
+02-Dec-2011 15:45:24, INFO,     work_very high          :   1342128.0
+02-Dec-2011 15:45:24, INFO,     university              :    404924.0
+02-Dec-2011 15:45:24, INFO,     school_high             :    292871.0
+02-Dec-2011 15:45:24, INFO,     school_grade            :   1242584.0
+02-Dec-2011 15:45:24, INFO,     Total                   :   5394724.0
+02-Dec-2011 15:45:24, INFO, 
+02-Dec-2011 15:45:24, INFO, 
+02-Dec-2011 15:45:24, INFO, total destination choice size by purpose, segment before any balancing, destination choice size adjustments, or shadow price scaling:
+02-Dec-2011 15:45:24, INFO,     work_low                :    829204.6
+02-Dec-2011 15:45:24, INFO,     work_med                :    817954.6
+02-Dec-2011 15:45:24, INFO,     work_high               :    812465.1
+02-Dec-2011 15:45:24, INFO,     work_very high          :    815416.6
+02-Dec-2011 15:45:24, INFO,     university              :    223444.9
+02-Dec-2011 15:45:24, INFO,     school_high             :    313072.2
+02-Dec-2011 15:45:24, INFO,     school_grade            :   1327521.0
+02-Dec-2011 15:45:24, INFO,     Total                   :   5139078.9
+02-Dec-2011 15:45:24, INFO, 
+02-Dec-2011 15:45:24, INFO, 
+02-Dec-2011 15:45:24, INFO, total destination choice size by purpose, segment after destination choice size adjustments, after shadow price scaling:
+02-Dec-2011 15:45:24, INFO,     work_low                :    366469.0
+02-Dec-2011 15:45:24, INFO,     work_med                :    711640.0
+02-Dec-2011 15:45:24, INFO,     work_high               :   1034108.0
+02-Dec-2011 15:45:24, INFO,     work_very high          :   1342128.0
+02-Dec-2011 15:45:24, INFO,     university              :    404924.0
+02-Dec-2011 15:45:24, INFO,     school_high             :    292871.0
+02-Dec-2011 15:45:24, INFO,     school_grade            :   1242584.0
+02-Dec-2011 15:45:24, INFO,     Total                   :   5394724.0
+02-Dec-2011 15:45:24, INFO, 
+02-Dec-2011 15:45:25, INFO, start of shadow pricing iter 0, free memory = 583135048, total memory = 771686400
+02-Dec-2011 15:45:25, INFO, before creating tasks:  free memory = 583135048, total memory = 771686400
+02-Dec-2011 15:45:25, INFO, after creating tasks, free memory = 583135048, total memory = 771686400
+02-Dec-2011 15:45:25, INFO, client processing thread-thread-5: DestChoiceModelManager needs MatrixDataManager, MatrixDataServer connection test: testRemote() method in com.pb.models.ctramp.MatrixDataServer called.
+02-Dec-2011 15:45:25, INFO, setting up MANDATORY tour mode choice model.

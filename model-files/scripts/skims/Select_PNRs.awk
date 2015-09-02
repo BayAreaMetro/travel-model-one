@@ -1,24 +1,27 @@
-# usage: gawk -f Select_PNRs.awk [-v type=express_bus|light_rail|ferry|heavy_rail|commuter_rail|all|walk] [-v period=EA|AM|MD|PM|EV]  XX_Transit_suplinks.dat > XX_Transit_suplinks_MOD.dat
+# usage: gawk -f Select_PNRs.awk [-v type=amtrak|bart|bus|caltr|ferry|sclrt|all|walk] [-v period=EA|AM|MD|PM|EV]  XX_Transit_suplinks.dat > XX_Transit_suplinks_MOD.dat
 # default type: walk
 
 BEGIN{ 
   KEEP_PNRS=2
 		
     # determine which files to read PNRs from
-	if (type=="express_bus" || type=="all") {
-		pnrFiles["trn/express_bus.pnr"] = 1
+	if (type=="amtrak" || type=="all") {
+		pnrFiles["trn/amtrak.pnr"] = 1
 	}
-	if (type=="light_rail" || type=="all") {
-		pnrFiles["trn/light_rail.pnr"] = 1
+	if (type=="bart" || type=="all") {
+		pnrFiles["trn/bart.pnr"] = 1
+	}
+	if (type=="bus" || type=="all") {
+		pnrFiles["trn/bus.pnr"] = 1
+	}
+	if (type=="caltr" || type=="all") {
+		pnrFiles["trn/caltr.pnr"] = 1
 	}
 	if (type=="ferry" || type=="all") {
 		pnrFiles["trn/ferry.pnr"] = 1
 	}
-	if (type=="heavy_rail" || type=="all") {
-		pnrFiles["trn/heavy_rail.pnr"] = 1
-	}
-	if (type=="commuter_rail" || type=="all") {
-		pnrFiles["trn/commuter_rail.pnr"] = 1
+	if (type=="sclrt" || type=="all") {
+		pnrFiles["trn/sclrt.pnr"] = 1
 	}
 	if (type=="walk") {
 	    # keep all walk links   

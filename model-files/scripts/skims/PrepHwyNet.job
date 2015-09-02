@@ -167,12 +167,13 @@ loop period = 1, 5
       neti = trn\@token_period@_transit_background.net
    
       ; add the access links
-      linki[2] = trn\express_bus_neti_access_links.dat,   var = a, var = b, rev = 1
-      linki[3] = trn\light_rail_neti_access_links.dat,    var = a, var = b, rev = 1
-      linki[4] = trn\ferry_neti_access_links.dat,         var = a, var = b, rev = 1
-      linki[5] = trn\heavy_rail_neti_access_links.dat,    var = a, var = b, rev = 1
-      linki[6] = trn\commuter_rail_neti_access_links.dat, var = a, var = b, rev = 1
-
+      linki[2] = trn\amtrak_neti_access_links.dat,  var = a, var = b, rev = 1
+      linki[3] = trn\bart_neti_access_links.dat,    var = a, var = b, rev = 1
+      linki[4] = trn\caltr_neti_access_links.dat,   var = a, var = b, rev = 1
+      linki[5] = trn\sclrt_neti_access_links.dat,   var = a, var = b, rev = 1
+      linki[6] = trn\munimet_neti_access_links.dat, var = a, var = b, rev = 1
+      linki[7] = trn\ferry_neti_access_links.dat,   var = a, var = b, rev = 1
+      linki[8] = trn\bus_neti_access_links.dat,     var = a, var = b, rev = 1
    
       ; output a temporary network used in the BuildTransitNetworks.job script
       neto = trn\@token_period@_temporary_transit_background_accesslinks.net
@@ -186,11 +187,13 @@ loop period = 1, 5
       neti = trn\@token_period@_transit_background.net
       
       ; add the transit transfer links
-      linki[2] = trn\express_bus_neti_xfer_links.dat,   var = a, var = b, var = DISTANCE, rev = 1
-      linki[3] = trn\light_rail_neti_xfer_links.dat,    var = a, var = b, var = DISTANCE, rev = 1
-      linki[4] = trn\ferry_neti_xfer_links.dat,         var = a, var = b, var = DISTANCE, rev = 1 
-      linki[5] = trn\heavy_rail_neti_xfer_links.dat,    var = a, var = b, var = DISTANCE, rev = 1
-      linki[6] = trn\commuter_rail_neti_xfer_links.dat, var = a, var = b, var = DISTANCE, rev = 1
+      linki[2] = trn\amtrak_neti_xfer_links.dat,  var = a, var = b, var = DISTANCE, rev = 1
+      linki[3] = trn\bart_neti_xfer_links.dat,    var = a, var = b, var = DISTANCE, rev = 1
+      linki[4] = trn\caltr_neti_xfer_links.dat,   var = a, var = b, var = DISTANCE, rev = 1 
+      linki[5] = trn\sclrt_neti_xfer_links.dat,   var = a, var = b, var = DISTANCE, rev = 1
+      linki[6] = trn\munimet_neti_xfer_links.dat, var = a, var = b, var = DISTANCE, rev = 1
+      linki[7] = trn\ferry_neti_xfer_links.dat,   var = a, var = b, var = DISTANCE, rev = 1
+      linki[8] = trn\bus_neti_xfer_links.dat,     var = a, var = b, var = DISTANCE, rev = 1
       
       ; output a temporary network used in the BuildTransitNetworks.job script
       neto = trn\@token_period@_temporary_transit_background_transferlinks.net

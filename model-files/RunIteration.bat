@@ -39,8 +39,13 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\skims\BuildTransitNetworks.job
 if ERRORLEVEL 2 goto done
 
-:: Create the public transport level-of-service matrices
+:: Create the public transport level-of-service matrices (run again if Cube fails)
+call CTRAMP\RestartCubeCluster
+set again=0
 runtpp CTRAMP\scripts\skims\TransitSkims.job
+if ERRORLEVEL 4 set again=1
+if %again% equ 1 call CTRAMP\RestartCubeCluster
+if %again% equ 1 call runtpp CTRAMP\scripts\skims\TransitSkims_SingleNode.job
 if ERRORLEVEL 2 goto done
 
 :: Create accessibility measures for use by the automobile ownership sub-model
@@ -57,7 +62,7 @@ if ERRORLEVEL 2 goto done
 :core
 
 ::  Call the MtcTourBasedModel class
-java -showversion -Xmx6000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Djava.library.path=%RUNTIME% -Djppf.config=jppf-clientDistributed.properties com.pb.mtc.ctramp.MtcTourBasedModel mtcTourBased -iteration %ITER% -sampleRate %SAMPLESHARE% -sampleSeed %SEED%
+java -showversion -Xmx6000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -DJAVA_HOME_32="%JAVA_PATH_32%" -DJAVA_32_PORT=1181 -Djava.library.path=%RUNTIME% -Djppf.config=jppf-client.properties com.pb.mtc.ctramp.MtcTourBasedModel mtcTourBased -iteration %ITER% -sampleRate %SAMPLESHARE% -sampleSeed %SEED%
 if ERRORLEVEL 2 goto done
 
 

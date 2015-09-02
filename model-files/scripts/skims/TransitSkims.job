@@ -75,7 +75,7 @@
 ; See also: (1) PrepHwyNet.job -- computes the bus time as a function of the highway time 
 ;
 ; version:  Travel Model One
-; authors:  dto, be (2014 02 03); dto (2011 10 27); gde; sai (2009 04 15)
+; authors:  dto (2011 10 27); gde; sai (2009 04 15)
 ;
 ;
 ; ----------------------------------------------------------------------------------------------------------------
@@ -151,11 +151,12 @@
                
                ; drive access/egress links to this mode (';' means no)
                ; allow higher-class PNRs to be read in case of shared lots
-               token_drivelinks_express_bus   = ';'
-               token_drivelinks_light_rail    = ';'
-               token_drivelinks_ferry         = ';'
-               token_drivelinks_heavy_rail    = ';'
-               token_drivelinks_commuter_rail = ' '       
+               token_drivelinks_amtrak = ' '
+               token_drivelinks_caltr  = ' '
+               token_drivelinks_bart   = ';'
+               token_drivelinks_bus    = ';'
+               token_drivelinks_ferry  = ';'
+               token_drivelinks_sclrt  = ';'      
                
                ; KNR access links to local bus
                token_bus_acclinks_KNR = ';'
@@ -174,11 +175,12 @@
    
                ; drive access/egress links to this mode (';' means no)
                ; allow higher-class PNRs to be read in case of shared lots
-               token_drivelinks_express_bus   = ';'
-               token_drivelinks_light_rail    = ';'
-               token_drivelinks_ferry         = ';'
-               token_drivelinks_heavy_rail    = ' '
-               token_drivelinks_commuter_rail = ' '      
+               token_drivelinks_amtrak = ' '
+               token_drivelinks_caltr  = ' '
+               token_drivelinks_bart   = ' '
+               token_drivelinks_bus    = ';'
+               token_drivelinks_ferry  = ';'
+               token_drivelinks_sclrt  = ';'      
    
               ; KNR access links to local bus
                token_bus_acclinks_KNR = ';'
@@ -197,11 +199,12 @@
                
                ; drive access/egress links to this mode (';' means no)
                ; allow higher-class PNRs to be read in case of shared lots
-               token_drivelinks_express_bus   = ' '
-               token_drivelinks_light_rail    = ';'
-               token_drivelinks_ferry         = ';'
-               token_drivelinks_heavy_rail    = ' '
-               token_drivelinks_commuter_rail = ' '                 
+               token_drivelinks_amtrak = ' '
+               token_drivelinks_caltr  = ' '
+               token_drivelinks_bart   = ' '
+               token_drivelinks_bus    = ' '
+               token_drivelinks_ferry  = ';'
+               token_drivelinks_sclrt  = ';'                  
    
               ; KNR access links to local bus
                token_bus_acclinks_KNR = ';'
@@ -220,11 +223,12 @@
                
                ; drive access/egress links to this mode (';' means no)
                ; allow higher-class PNRs to be read in case of shared lots
-               token_drivelinks_express_bus   = ' '
-               token_drivelinks_light_rail    = ' '
-               token_drivelinks_ferry         = ' '
-               token_drivelinks_heavy_rail    = ' '
-               token_drivelinks_commuter_rail = ' '                   
+               token_drivelinks_amtrak = ' '
+               token_drivelinks_caltr  = ' '
+               token_drivelinks_bart   = ' '
+               token_drivelinks_bus    = ' '
+               token_drivelinks_ferry  = ' '
+               token_drivelinks_sclrt  = ' '                  
               
               ; KNR access links to local bus
                token_bus_acclinks_KNR = ';'
@@ -244,11 +248,12 @@
    
                ; drive access/egress links to this mode (';' means no)
                ; allow higher-class PNRs to be read in case of shared lots
-               token_drivelinks_express_bus   = ' '
-               token_drivelinks_light_rail    = ' '
-               token_drivelinks_ferry         = ' '
-               token_drivelinks_heavy_rail    = ' '
-               token_drivelinks_commuter_rail = ' '                   
+               token_drivelinks_amtrak = ' '
+               token_drivelinks_caltr  = ' '
+               token_drivelinks_bart   = ' '
+               token_drivelinks_bus    = ' '
+               token_drivelinks_ferry  = ' '
+               token_drivelinks_sclrt  = ' '                  
                 
               ; KNR access links to local bus
                token_bus_acclinks_KNR = ' '
@@ -295,11 +300,12 @@
                 read file = trn\@token_period@_transit_suplinks_walk.dat
                 
                 ; read in the generated drive access/egress links for this mode             
-                @token_drivelinks_express_bus@    read file = trn\@token_period@_transit_suplinks_express_bus.dat
-                @token_drivelinks_light_rail@     read file = trn\@token_period@_transit_suplinks_light_rail.dat
-                @token_drivelinks_ferry@          read file = trn\@token_period@_transit_suplinks_ferry.dat
-                @token_drivelinks_heavy_rail@     read file = trn\@token_period@_transit_suplinks_heavy_rail.dat
-                @token_drivelinks_commuter_rail@  read file = trn\@token_period@_transit_suplinks_commuter_rail.dat            
+                @token_drivelinks_amtrak@ READ FILE = trn\@TOKEN_PERIOD@_TRANSIT_SUPLINKS_AMTRAK.DAT
+                @token_drivelinks_caltr@  READ FILE = trn\@TOKEN_PERIOD@_TRANSIT_SUPLINKS_CALTR.DAT
+                @token_drivelinks_bart@   READ FILE = trn\@TOKEN_PERIOD@_TRANSIT_SUPLINKS_BART.DAT
+                @token_drivelinks_bus@    READ FILE = trn\@TOKEN_PERIOD@_TRANSIT_SUPLINKS_BUS.DAT
+                @token_drivelinks_ferry@  READ FILE = trn\@TOKEN_PERIOD@_TRANSIT_SUPLINKS_FERRY.DAT
+                @token_drivelinks_sclrt@  READ FILE = trn\@TOKEN_PERIOD@_TRANSIT_SUPLINKS_SCLRT.DAT             
                 
                 ; read in the generated KNR links for local bus
                 @token_bus_acclinks_KNR@    READ FILE = trn\@TOKEN_PERIOD@_BUS_ACCLINKS_KNR.DAT
