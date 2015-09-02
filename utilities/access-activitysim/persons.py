@@ -17,3 +17,10 @@ def persons_internal(store):
 @orca.table(cache=True)
 def persons(persons_internal):
     return persons_internal.to_frame()
+
+# this is the placeholder for all the columns to update after the
+# workplace location choice model
+@orca.table()
+def persons_workplace(persons):
+    return pd.DataFrame(index=persons.index)
+    
