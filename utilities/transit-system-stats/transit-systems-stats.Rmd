@@ -77,7 +77,7 @@ Compute_Transit_System_Statistics <- function(target_dir, year_int, scenario_id)
              path.id == "ev_wlk_com_wlk") %>%
     mutate(route_speed = line.dist / line.time * 60) %>%
     mutate(route_vehicles = ceiling(line.time / frequency)) %>%
-    mutate(route_vehicle_miles_per_hour = route_vehicles / route_speed) %>%
+    mutate(route_vehicle_miles_per_hour = route_vehicles * route_speed) %>%
     mutate(time_period = str_sub(path.id, start = 1L, end = 2L))
   
   work_df <- left_join(work_df, hours_in_periods_df, by = c("time_period"))
@@ -133,5 +133,4 @@ for (i in 2:length(TARGET_DIR_ARRAY)){
 ```{r data-writes}
 write.csv(output_df, file = F_OUTPUT, row.names = FALSE, quote = F)
 ```
-
 
