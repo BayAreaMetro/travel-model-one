@@ -155,8 +155,12 @@ Compute_Transit_Mode_Operator_Statistics <- function(target_dir, year_int, scena
   activity_sum <- activity_df %>%
     group_by(mode) %>%
     summarise(passenger_miles = sum(passenger_miles),
-              passenger_miles_weighted_headway = sum(passenger_miles * frequency)/sum(frequency),
+              pax_miles_times_freq_sum = sum(pax_miles_times_freq),
               boardings = sum(boardings))
+  
+  activity_sum <- activity_sum %>%
+    mutate(passenger_miles_weighted_headway = pax_miles_times_freq_sum / passenger_miles) %>%
+    select(-pax_miles_times_freq_sum)
   
   supply_sum <- supply_df %>%
     group_by(mode) %>%
