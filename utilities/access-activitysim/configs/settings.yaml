@@ -1,3 +1,12 @@
-store: mtc_asim.h5
+work_dir: M:/Development/Travel Model One/Accessibility/accessibility-activitysim/_working/data
+store_file_name: mtc_asim.h5
+
+random_seed: 0
+
+skim_dir: 2010_04_ZZZ
+am_hwy_skim_file_name: HWYSKMAM.omx
+am_trn_skim_file_name: trnskmam_wlk_trn_wlk.omx
+nonmot_skim_file_name: nonmotskm.omx 
+
 
 

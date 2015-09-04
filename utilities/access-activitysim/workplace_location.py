@@ -34,9 +34,10 @@ def workplace_location_simulate(set_random_seed,
     choosers = persons.to_frame()
     alternatives = destination_size_terms.to_frame()
 
-    # set the keys for this lookup - in this case there is a TAZ in the choosers
-    # and a TAZ in the alternatives which get merged during interaction
+    # set the keys for the skims: home_taz in the persons file is the origin and
+    # destination_taz in the size terms (the alternatives) is the destination
     skims.set_keys("home_taz", "destination_taz")
+
     # the skims will be available under the name "skims" for any @ expressions
     locals_d = {"skims": skims}
 
@@ -45,7 +46,7 @@ def workplace_location_simulate(set_random_seed,
                                            workplace_location_spec,
                                            skims=skims,
                                            locals_d=locals_d,
-                                           sample_size=50)
+                                           sample_size=100)
 
     choices = choices.reindex(persons.index)
 
