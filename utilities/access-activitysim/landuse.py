@@ -17,6 +17,18 @@ def topology(land_use):
 	return land_use.TOPOLOGY 
 
 @orca.column("land_use")
+def total_households(land_use):
+    return land_use.local.TOTHH
+
+@orca.column("land_use")
+def total_employment(land_use):
+    return land_use.local.TOTEMP
+
+@orca.column("land_use")
+def total_acres(land_use):
+    return land_use.local.TOTACRE
+
+@orca.column("land_use")
 def household_density(land_use):
     return land_use.total_households / land_use.total_acres
 

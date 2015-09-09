@@ -7,7 +7,6 @@ import yaml
 
 from activitysim import activitysim as asim
 from activitysim import skim as askim
-from .util.mode import _mode_choice_spec
 
 """
 Mode choice for work location choice here
@@ -21,6 +20,73 @@ orca.broadcast('persons', 'land_use', cast_index=True, onto_on='workplace_taz')
 @orca.table()
 def persons_merged(persons, land_use):
   return orca.merge_tables(persons.name, tables=[persons, land_use])
+
+# below is from .util.mode -- bring in here for now
+def _mode_choice_spec(mode_choice_spec_df, mode_choice_coeffs,
+                      mode_choice_settings):
+    """
+    Ok we have read in the spec - we need to do several things to reformat it
+    to the same style spec that all the other models have.
+
+    mode_choice_spec_df : DataFrame
+        This is the actual spec DataFrame, the same as all of the other spec
+        dataframes, except that 1) expressions can be prepended with a "$"
+        - see pre_process_expressions above 2) There is an Alternative column -
+        see expand_alternatives above and 3) there are assumed to be
+        expressions in the coefficient column which get evaluated by
+        evaluate_expression_list above
+    mode_choice_coeffs : DataFrame
+        This has the same columns as the spec (columns are assumed to be
+        independent segments of the model), and the coefficients (values) in
+        the spec DataFrame refer to values in the mode_choice_coeffs
+        DataFrame.  The mode_choice_coeffs DataFrame can also contain
+        expressions which refer to previous rows in the same column.  Is is
+        assumed that all values in mode_choice_coeffs can be cast to float
+        after running evaluate_expression_list, and that these floats are
+        substituted in multiple place in the mode_choice_spec_df.
+    mode_choice_settings : Dict, usually read from YAML
+        Has two values which are used.  One key in CONSTANTS which is used as
+        the scope for the evals which take place here and one that is
+        VARIABLE_TEMPLATES which is used as the scope for expressions in
+        mode_choice_spec_df which are prepended with "$"
+
+    Returns
+    -------
+    new_spec_df : DataFrame
+        A new spec DataFrame which is exactly like all of the other models.
+    """
+
+    constants = mode_choice_settings['CONSTANTS']
+    templates = mode_choice_settings['VARIABLE_TEMPLATES']
+    df = mode_choice_spec_df
+    index_name = df.index.name
+
+    # the expressions themselves can be prepended with a "$" in order to use
+    # model templates that are shared by several different expressions
+    df.index = pre_process_expressions(df.index, templates)
+    df.index.name = index_name
+
+    df = df.set_index('Alternative', append=True)
+
+    # for each segment - e.g. eatout vs social vs work vs ...
+    for col in df.columns:
+
+        # first the coeffs come as expressions that refer to previous cells
+        # as well as constants that come from the settings file
+        mode_choice_coeffs[col] = evaluate_expression_list(
+            mode_choice_coeffs[col],
+            constants=constants)
+
+        # then use the coeffs we just evaluated within the spec (they occur
+        # multiple times in the spec which is why they get stored uniquely
+        # in a different file
+        df[col] = evaluate_expression_list(
+            df[col],
+            mode_choice_coeffs[col].to_dict())
+
+    df = expand_alternatives(df)
+
+    return df
 
 @orca.injectable()
 def mode_choice_settings(configs_dir):
