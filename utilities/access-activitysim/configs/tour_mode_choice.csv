@@ -1,48 +1,35 @@
 Description,Expression,Alternative,work
-Drive alone - Unavailable,sov_available == False,DRIVE,-999
-Drive alone - Unavailable for zero auto households,auto_ownership == 0,DRIVE,-999
-Drive alone - Unavailable for persons less than 16,age < 16,DRIVE,-999
-Drive alone - Unavailable if didn't drive to work,work_tour_is_drive,DRIVE,-999
-Drive alone - In-vehicle time,$IN_N_OUT_EXPR.format(sk='SOV_TIME'),DRIVE,ivt
+Drive alone - Unavailable for zero auto households,auto_suff_cat == 0,DRIVE,-999
+Drive alone - In-vehicle time,2 * $IN_EXPR.format(sk='am_sov_time'),DRIVE,ivt
 Drive alone - Terminal time,$TERMINAL_TIME_EXPR,DRIVE,walktimeshort
-Drive alone - Operating cost ,$OPERATING_COST_EXPR.format(sk='SOV_DIST'),DRIVE,cost
-Drive alone - Parking cost ,daily_parking_cost,DRIVE,cost
-Drive alone - Bridge toll ,$IN_N_OUT_EXPR.format(sk='SOV_BTOLL'),DRIVE,cost
-Drive alone - Person is between 16 and 19 years old,age_16_to_19,DRIVE,age1619_da
-Walk - Time up to 2 miles,"min((DISTWALK+DISTWALK)*60/walkSpeed, walkThresh*2*60/walkSpeed)",WALK,walktimeshort
-Walk - Time beyond 2 of a miles,"max((DISTWALK+DISTWALK)*60/walkSpeed - walkThresh*2*60/walkSpeed, 0)",WALK,walktimelong
-Walk - Destination zone densityIndex,densityIndex,WALK,density_index
-Walk - Topology,destTopology,WALK,topology_walk
+Drive alone - Operating cost ,2 * $OPERATING_COST_EXPR.format(sk='am_sov_dist'),DRIVE,cost
+Drive alone - Parking cost ,$DAILY_PARKING_COST,DRIVE,cost
+Drive alone - Bridge toll ,$IN_EXPR.format(sk='am_sov_bridge'),DRIVE,cost
+Walk - Time up to 2 miles,"min((2 * $IN_EXPR.format(sk='walk_dist'))*60/WALK_SPEED, WALK_THRESH*2*60/WALK_SPEED)",WALK,walktimeshort
+Walk - Time beyond 2 of a miles,"max((2 * $IN_EXPR.format(sk='walk_dist'))*60/WALK_SPEED - WALK_THRESH*2*60/WALK_SPEED, 0)",WALK,walktimelong
+Walk - Destination zone density index,density_index,WALK,density_index
+Walk - Topology,topology,WALK,topology_walk
 Bike - Unavailable if didn't bike to work,,BIKE,-999
-Bike - Time up to 2 miles,"min((DISTBIKE+DISTBIKE)*60/bikeSpeed, bikeThresh*2*60/bikeSpeed)",BIKE,biketimeshort
-Bike - Time beyond 2 of a miles,"max((DISTBIKE+DISTBIKE)*60/bikeSpeed - bikeThresh*2*60/bikeSpeed, 0)",BIKE,biketimelong
-Bike - Destination zone densityIndex,densityIndex,BIKE,density_index
-Bike - Topology,destTopology,BIKE,topology_bike
-Walk to Commuter rail - Unavailable,walk_commuter_available == False,TRANSIT,-999
-Walk to Commuter rail - In-vehicle time,$IN_N_OUT_EXPR_DIV100.format(sk='WLK_COM_WLK_TOTIVT'),TRANSIT,ivt
-Walk to Commuter rail - In-vehicle time on commuter rail (incremental w/ ivt),$IN_N_OUT_EXPR_DIV100.format(sk='WLK_COM_WLK_KEYIVT'),TRANSIT,ivt_com-ivt
-Walk to Commuter rail - Short iwait time,"$SHORT_WAIT_EXPR.format(sk='WLK_COM_WLK_IWAIT', th='waitThresh')",TRANSIT,short_i_wait
-Walk to Commuter rail - Long iwait time,"$LONG_WAIT_EXPR.format(sk='WLK_COM_WLK_IWAIT', th='waitThresh')",TRANSIT,long_i_wait
-Walk to Commuter rail - transfer wait time,$IN_N_OUT_EXPR_DIV100.format(sk='WLK_COM_WLK_XWAIT'),TRANSIT,xwait
-Walk to Commuter rail - number of transfers,$TRANSFERS_EXPR.format(sk='WLK_COM_WLK_BOARDS'),TRANSIT,xfers_wlk
-Walk to Commuter rail - Walk access time,2 * origin_walk_time,TRANSIT,wacc
-Walk to Commuter rail - Walk egress time,2 * destination_walk_time,TRANSIT,wegr
-Walk to Commuter rail - Walk other time,$IN_N_OUT_EXPR_DIV100.format(sk='WLK_COM_WLK_WAUX'),TRANSIT,waux
-Walk to Commuter rail - Fare ,$IN_N_OUT_EXPR.format(sk='WLK_COM_WLK_FAR'),TRANSIT,cost
-Walk to Commuter rail - Destination zone densityIndex,dest_density_index,TRANSIT,density_index
-Walk to Commuter rail - Topology,dest_topology,TRANSIT,topology_trn
-Walk to Commuter rail - Person is less than 10 years old,age < 10,TRANSIT,age010_trn
+Bike - Time up to 2 miles,"min((2 * $IN_EXPR.format(sk='bike_dist'))*60/bikeSpeed, bikeThresh*2*60/bikeSpeed)",BIKE,biketimeshort
+Bike - Time beyond 2 of a miles,"max((2 * $IN_EXPR.format(sk='bike_dist'))*60/bikeSpeed - bikeThresh*2*60/bikeSpeed, 0)",BIKE,biketimelong
+Bike - Destination zone density index,density_index,BIKE,density_index
+Bike - Topology,topology,BIKE,topology_bike
+Walk to transit - In-vehicle time,2 * 1/100 * $IN_EXPR.format(sk='am_trn_ivt'),TRANSIT,ivt
+Walk to transit - Short iwait time,"$SHORT_WAIT_EXPR.format(sk='am_trn_wait', th='WAIT_THRESH')",TRANSIT,short_i_wait
+Walk to transit - Long iwait time,"$LONG_WAIT_EXPR.format(sk='am_trn_wait', th='WAIT_THRESH')",TRANSIT,long_i_wait
+Walk to transit - Walk access time,2 * origin_walk_time,TRANSIT,wacc
+Walk to transit - Walk egress time (TODO: change if destinations changed to sub-zones),2 * 0.333 / 3.00 * 60.0,TRANSIT,wegr
+Walk to transit - Fare ,2 * $IN_EXPR.format(sk='am_trn_fare'),TRANSIT,cost
+Walk to transit - Destination zone density index,density_index,TRANSIT,density_index
+Walk to transit - Topology,topology,TRANSIT,topology_trn
 Walk - Alternative-specific constant - Zero auto,1,WALK,5.767215561
 Walk - Alternative-specific constant - Auto deficient,1,WALK,2.401041643
 Walk - Alternative-specific constant - Auto sufficient,1,WALK,0.053265336
 Bike - Alternative-specific constant - Zero auto,1,BIKE,3.194008732
 Bike - Alternative-specific constant - Auto deficient,1,BIKE,0.253189685
 Bike - Alternative-specific constant - Auto sufficient,1,BIKE,-1.580023134
-Walk to Transit - Alternative-specific constant - Zero auto,1,"WALK_LOC,WALK_LRF,WALK_EXP,WALK_HVY,WALK_COM",5.035416445
-Walk to Transit - Alternative-specific constant - Auto deficient,1,"WALK_LOC,WALK_LRF,WALK_EXP,WALK_HVY,WALK_COM",0.653028572
-Walk to Transit - Alternative-specific constant - Auto sufficient,1,"WALK_LOC,WALK_LRF,WALK_EXP,WALK_HVY,WALK_COM",-0.89165065
-Walk to Transit - CBD dummy,1,"WALK_LOC,WALK_LRF,WALK_EXP,WALK_HVY,WALK_COM",0.804
-Drive to Transit  - CBD dummy,1,"DRIVE_LOC,DRIVE_LRF,DRIVE_EXP,DRIVE_HVY,DRIVE_COM",1.1
-# Walk not available for long distances,walk_available == False,WALK,-999
-# Bike not available for long distances,bike_available == False,BIKE,-999
-,,,
+Walk to Transit - Alternative-specific constant - Zero auto,1,TRANSIT,5.035416445
+Walk to Transit - Alternative-specific constant - Auto deficient,1,TRANSIT,0.653028572
+Walk to Transit - Alternative-specific constant - Auto sufficient,1,TRANSIT,-0.89165065
+Walk to Transit - CBD dummy,1,TRANSIT,0.804
+Drive to Transit  - CBD dummy,1,TRANSIT,1.1

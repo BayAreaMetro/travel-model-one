@@ -1,31 +1,23 @@
-NESTS:
-    AUTO:
-        DRIVEALONE:
-            - DRIVEALONEFREE
-            - DRIVEALONEPAY
-        SHAREDRIDE2:
-            - SHARED2FREE
-            - SHARED2PAY
-        SHAREDRIDE3:
-            - SHARED3FREE
-            - SHARED3PAY
-    NONMOTORIZED:
-        - WALK
-        - BIKE
-    TRANSIT:
-        WALKACCESS:
-            - WALK_LOC
-            - WALK_LRF
-            - WALK_EXP
-            - WALK_HVY
-            - WALK_COM
-        DRIVEACCESS:
-            - DRIVE_LOC
-            - DRIVE_LRF
-            - DRIVE_EXP
-            - DRIVE_HVY
-            - DRIVE_COM
+VARIABLE_TEMPLATES:
+    IN_EXPR: "@in_skims['{sk}']"
+    TERMINAL_TIME_EXPR: "2 * terminal_time"
+    OPERATING_COST_EXPR: "@COST_PER_MILE * (2 * in_skims['{sk}'])"
+    DAILY_PARKING_COST: "8 * hourly_parking_cost_for_workers"
+    SHORT_WAIT_EXPR: "@(in_skims['{sk}']/100).clip(upper={th})+
+                       (in_skims['{sk}']/100).clip(upper={th})"
+    LONG_WAIT_EXPR: "@(in_skims['{sk}']/100-{th}).clip(0)+
+                      (in_skims['{sk}']/100-{th}).clip(0)"
 
+CONSTANTS:
+    COST_PER_MILE: 18.48
+    WALK_THRESH: 1.50
+    WALK_SPEED: 3.00
+    WAIT_THRESH: 10.00
+
+
+
+
+# archive below here
 
 VARIABLE_TEMPLATES:
     TERMINAL_TIME_EXPR: "2 * terminal_time"

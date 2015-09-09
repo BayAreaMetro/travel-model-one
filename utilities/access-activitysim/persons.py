@@ -23,4 +23,14 @@ def persons(persons_internal):
 @orca.table()
 def persons_workplace(persons):
     return pd.DataFrame(index=persons.index)
+
+# set the short and long walk time based on the sub-zone
+@orca.column("persons")
+def origin_walk_time(persons)
+	return ((home_sub_zone == 0) * -999 + 
+		(home_sub_zone == 1) * 0.333 / 3.00 * 60.0 +
+		(home_sub_zone == 2) * 0.666 / 3.00 * 60.0)   
+
+
+
     
