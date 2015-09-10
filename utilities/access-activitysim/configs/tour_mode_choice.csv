@@ -1,25 +1,25 @@
 Description,Expression,Alternative,work
 Drive alone - Unavailable for zero auto households,auto_suff_cat == 0,DRIVE,-999
-Drive alone - In-vehicle time,2 * $IN_EXPR.format(sk='am_sov_time'),DRIVE,ivt
+#Drive alone - In-vehicle time,2 * $IN_EXPR.format(sk='am_sov_time'),DRIVE,ivt
 Drive alone - Terminal time,$TERMINAL_TIME_EXPR,DRIVE,walktimeshort
-Drive alone - Operating cost ,2 * $OPERATING_COST_EXPR.format(sk='am_sov_dist'),DRIVE,cost
-Drive alone - Parking cost ,$DAILY_PARKING_COST,DRIVE,cost
-Drive alone - Bridge toll ,$IN_EXPR.format(sk='am_sov_bridge'),DRIVE,cost
+#Drive alone - Operating cost ,2 * $OPERATING_COST_EXPR.format(sk='am_sov_dist') * 0.60 / $VALUE_OF_TIME,DRIVE,ivt
+#Drive alone - Parking cost ,($DAILY_PARKING_COST) * 0.60 / $VALUE_OF_TIME,DRIVE,ivt
+#Drive alone - Bridge toll, $IN_EXPR.format(sk='am_sov_bridge') * 0.60 / $VALUE_OF_TIME,DRIVE,ivt
 Walk - Time up to 2 miles,"min((2 * $IN_EXPR.format(sk='walk_dist'))*60/WALK_SPEED, WALK_THRESH*2*60/WALK_SPEED)",WALK,walktimeshort
 Walk - Time beyond 2 of a miles,"max((2 * $IN_EXPR.format(sk='walk_dist'))*60/WALK_SPEED - WALK_THRESH*2*60/WALK_SPEED, 0)",WALK,walktimelong
 Walk - Destination zone density index,density_index,WALK,density_index
 Walk - Topology,topology,WALK,topology_walk
 Bike - Unavailable if didn't bike to work,,BIKE,-999
-Bike - Time up to 2 miles,"min((2 * $IN_EXPR.format(sk='bike_dist'))*60/bikeSpeed, bikeThresh*2*60/bikeSpeed)",BIKE,biketimeshort
-Bike - Time beyond 2 of a miles,"max((2 * $IN_EXPR.format(sk='bike_dist'))*60/bikeSpeed - bikeThresh*2*60/bikeSpeed, 0)",BIKE,biketimelong
+Bike - Time up to 2 miles,"min((2 * $IN_EXPR.format(sk='bike_dist'))*60/BIKE_SPEED, BIKE_THRESH*2*60/BIKE_SPEED)",BIKE,biketimeshort
+Bike - Time beyond 2 of a miles,"max((2 * $IN_EXPR.format(sk='bike_dist'))*60/BIKE_SPEED - BIKE_THRESH*2*60/BIKE_SPEED, 0)",BIKE,biketimelong
 Bike - Destination zone density index,density_index,BIKE,density_index
 Bike - Topology,topology,BIKE,topology_bike
-Walk to transit - In-vehicle time,2 * 1/100 * $IN_EXPR.format(sk='am_trn_ivt'),TRANSIT,ivt
+#Walk to transit - In-vehicle time,2 * 1/100 * $IN_EXPR.format(sk='am_trn_ivt'),TRANSIT,ivt
 Walk to transit - Short iwait time,"$SHORT_WAIT_EXPR.format(sk='am_trn_wait', th='WAIT_THRESH')",TRANSIT,short_i_wait
 Walk to transit - Long iwait time,"$LONG_WAIT_EXPR.format(sk='am_trn_wait', th='WAIT_THRESH')",TRANSIT,long_i_wait
 Walk to transit - Walk access time,2 * origin_walk_time,TRANSIT,wacc
-Walk to transit - Walk egress time (TODO: change if destinations changed to sub-zones),2 * 0.333 / 3.00 * 60.0,TRANSIT,wegr
-Walk to transit - Fare ,2 * $IN_EXPR.format(sk='am_trn_fare'),TRANSIT,cost
+Walk to transit - Walk egress time,2 * 0.333 / 3.00 * 60.0,TRANSIT,wegr
+#Walk to transit - Fare ,2 * $IN_EXPR.format(sk='am_trn_fare') * 0.60 / $VALUE_OF_TIME,TRANSIT,ivt
 Walk to transit - Destination zone density index,density_index,TRANSIT,density_index
 Walk to transit - Topology,topology,TRANSIT,topology_trn
 Walk - Alternative-specific constant - Zero auto,1,WALK,5.767215561
@@ -31,5 +31,4 @@ Bike - Alternative-specific constant - Auto sufficient,1,BIKE,-1.580023134
 Walk to Transit - Alternative-specific constant - Zero auto,1,TRANSIT,5.035416445
 Walk to Transit - Alternative-specific constant - Auto deficient,1,TRANSIT,0.653028572
 Walk to Transit - Alternative-specific constant - Auto sufficient,1,TRANSIT,-0.89165065
-Walk to Transit - CBD dummy,1,TRANSIT,0.804
-Drive to Transit  - CBD dummy,1,TRANSIT,1.1
+

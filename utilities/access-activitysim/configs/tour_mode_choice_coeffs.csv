@@ -1,15 +1,9 @@
 Expression,work
 ivt,-0.0134
-ivt_lrt,0.90 * ivt
-ivt_ferry,0.80 * ivt
-ivt_exp,1.00 * ivt
-ivt_hvy,0.80 * ivt
-ivt_com,0.70 * ivt
 walktimeshort,2.00 * ivt
 walktimelong,10.00 * ivt
 biketimeshort,4.00 * ivt
 biketimelong,20.00 * ivt
-cost,(0.60 * ivt) / valueOfTime
 short_i_wait,2.00 * ivt
 long_i_wait,1.00 * ivt
 wacc,2.00 * ivt
@@ -17,7 +11,6 @@ wegr,2.00 * ivt
 waux,2.00 * ivt
 dtim,2.00 * ivt
 xwait,2.00 * ivt
-dacc_ratio,0
 xfers_wlk,10.00 * ivt
 xfers_drv,20.00 * ivt
 drvtrn_distpen_0,270.00 * ivt
@@ -26,8 +19,4 @@ topology_walk,15.00 * ivt
 topology_bike,20.00 * ivt
 topology_trn,2.20 * ivt
 density_index,0
-age1619_da,0
-age010_trn,0
-age16p_sr,0
-hhsize1_sr,54.82 * ivt
-hhsize2_sr,0
+

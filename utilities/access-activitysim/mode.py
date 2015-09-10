@@ -1,4 +1,6 @@
 import os
+import copy
+import string
 import yaml
 
 import orca
@@ -14,14 +16,14 @@ Mode choice for work location choice here
 
 # define the relationship between the persons data and the land use data 
 #   to get access to the destination-specific land use variables
-orca.broadcast('persons', 'land_use', cast_index=True, onto_on='workplace_taz')
+orca.broadcast('land_use', 'persons', cast_index=True, onto_on='workplace_taz')
 
-# merge the person and land use data
+# merge the person and land use data, including only the relevant columns
 @orca.table()
 def persons_merged(persons, land_use):
-  return orca.merge_tables(persons.name, tables=[persons, land_use])
+  return orca.merge_tables(persons.name, tables=[persons, land_use], columns = ['TERMINAL', 'PRKCST', 'TOPOLOGY', 'TOTHH', 'TOTEMP', 'TOTACRE'])
 
-# below is from .util.mode -- bring in here for now
+# _mode_choice_spec is from .util.mode -- bring in here for now
 def _mode_choice_spec(mode_choice_spec_df, mode_choice_coeffs,
                       mode_choice_settings):
     """
@@ -85,6 +87,103 @@ def _mode_choice_spec(mode_choice_spec_df, mode_choice_coeffs,
             mode_choice_coeffs[col].to_dict())
 
     df = expand_alternatives(df)
+
+    return df
+
+# pre_process_expressions is from .util.mode -- bring in here for now
+def pre_process_expressions(expressions, variable_templates):
+    """
+    This one is pretty simple - pass in a list of expressions which contain
+    references to templates and pass a dictionary of the templates themselves.
+    Strings will only be evaluated which are prepended with $.
+
+    Parameters
+    ----------
+    expressions : list of strs
+        These are the expressions that will be evaluated - generally these
+        contain templates that get passed below.  So will be something like
+        ['$SKIM_TEMPLATE.format(sk="AMPEAK")']
+    variable_templates : dict of templates
+        Will be passed as the scope of eval.  Keys are usually template names
+        and values are strings.  The dict could be something like
+        {'SKIM_TEMPLATE': 'skims[{sk}]'}
+
+    Returns
+    -------
+    expressions : list of strs
+        Each expression is evaluated with variable_templates in the scope and
+        the result is returned.
+    """
+    return [eval(e[1:], variable_templates) if e.startswith('$') else e for
+            e in expressions]
+
+# evaluate_expression_list is from .util.mode -- bring in here for now
+def evaluate_expression_list(expressions, constants):
+    """
+    Evaluate a list of expressions - each one can depend on the one before
+    it.  These are usually used for the coefficients which have relationships
+    to each other.  So ivt=.7 and then ivt_lr=ivt*.9.
+
+    Parameters
+    ----------
+    expressions : Series
+        Same as below except the values are accumulated from expression to
+        expression and there is no assumed "$" at the beginning.  This is a
+        Series because the index are the names of the expressions which are
+        used in subsequent evals - thus naming the expressions is required.
+        For better or worse, the expressions are assumed to evaluate to
+        floats and this is guaranteed by casting to float after eval-ing.
+    constants : dict
+        will be passed as the scope of eval - usually a separate set of
+        constants are passed in here
+
+    Returns
+    -------
+    expressions : Series
+
+    """
+    d = {}
+    # this could be a simple expression except that the dictionary
+    # is accumulating expressions - i.e. they're not all independent
+    # and must be evaluated in order
+    for k, v in expressions.iteritems():
+        # make sure it can be converted to a float
+        d[k] = float(eval(str(v), copy.copy(d), constants))
+    return pd.Series(d)
+
+# expand_alternatives is from .util.mode -- bring in here for now
+def expand_alternatives(df):
+    """
+    Alternatives are kept as a comma separated list.  At this stage we need
+    need to split them up so that there is only one alternative per row, and
+    where an expression is shared among alternatives, that row is copied
+    with each alternative alternative value (pun intended) substituted for
+    the alternative value for each row.  The DataFrame needs an Alternative
+    column which is a comma separated list of alternatives.  See the test for
+    an example.
+    """
+
+    # first split up the alts using string.split
+    alts = [string.split(s, ",") for s in df.reset_index()['Alternative']]
+
+    # this is the number of alternatives in each row
+    len_alts = [len(x) for x in alts]
+
+    # this repeats the locs for the number of alternatives in each row
+    ilocs = np.repeat(np.arange(len(df)), len_alts)
+
+    # grab the rows the right number of times (after setting a rowid)
+    df['Rowid'] = np.arange(len(df))
+    df = df.iloc[ilocs]
+
+    # now concat all the lists
+    new_alts = sum(alts, [])
+
+    df.reset_index("Alternative", inplace=True)
+    df["Alternative"] = new_alts
+    # rowid needs to bet set here - we're going to unstack this and we need
+    # a unique identifier to keep track of the rows during the unstack
+    df = df.set_index(['Rowid', 'Alternative'], append=True)
 
     return df
 
@@ -170,21 +269,20 @@ def get_segment_and_unstack(spec, segment):
 
 @orca.step()
 def mode_choice_simulate(persons_merged,
+                         skims,
                          mode_choice_spec,
-                         mode_choice_settings,
-                         skims, omx_file):
+                         mode_choice_settings):
 
-    persons = persons_merged.to_frame()
+    tours = persons_merged.to_frame()
 
     print mode_choice_spec.work
 
     # simulate decision for each person
     choices = _mode_choice_simulate(
-        persons,
+        tours,
         skims,
         get_segment_and_unstack(mode_choice_spec, 'work'),
-        mode_choice_settings['CONSTANTS'],
-        omx=omx_file)
+        mode_choice_settings['CONSTANTS'])
 
     print "Choices:\n", choices.value_counts()
     orca.add_column("persons", "mode", choices)

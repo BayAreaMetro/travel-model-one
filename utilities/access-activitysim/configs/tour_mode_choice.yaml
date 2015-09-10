@@ -3,70 +3,16 @@ VARIABLE_TEMPLATES:
     TERMINAL_TIME_EXPR: "2 * terminal_time"
     OPERATING_COST_EXPR: "@COST_PER_MILE * (2 * in_skims['{sk}'])"
     DAILY_PARKING_COST: "8 * hourly_parking_cost_for_workers"
-    SHORT_WAIT_EXPR: "@(in_skims['{sk}']/100).clip(upper={th})+
-                       (in_skims['{sk}']/100).clip(upper={th})"
-    LONG_WAIT_EXPR: "@(in_skims['{sk}']/100-{th}).clip(0)+
-                      (in_skims['{sk}']/100-{th}).clip(0)"
+    SHORT_WAIT_EXPR: "@(in_skims['{sk}']/100).clip(upper={th})+(in_skims['{sk}']/100).clip(upper={th})"
+    LONG_WAIT_EXPR: "@(in_skims['{sk}']/100-{th}).clip(0)+(in_skims['{sk}']/100-{th}).clip(0)"
+    VALUE_OF_TIME: "value_of_time"
 
 CONSTANTS:
     COST_PER_MILE: 18.48
     WALK_THRESH: 1.50
     WALK_SPEED: 3.00
     WAIT_THRESH: 10.00
+    BIKE_SPEED: 12.00
+    BIKE_THRESH: 6.00
 
 
-
-
-# archive below here
-
-VARIABLE_TEMPLATES:
-    TERMINAL_TIME_EXPR: "2 * terminal_time"
-    OPERATING_COST_EXPR: "@costPerMile * (out_skims['{sk}'] + in_skims['{sk}'])"
-    IN_N_OUT_EXPR: "@out_skims['{sk}'] + in_skims['{sk}']"
-    IN_N_OUT_EXPR_DIV100: "@out_skims['{sk}']/100 + in_skims['{sk}']/100"
-    UNAVAILABILITY_PARTY_2: "is_joint & (number_of_participants > 2)"
-    DAILY_PARKING_SHARE_2: "@df.daily_parking_cost / costShareSr2"
-    DAILY_PARKING_SHARE_3: "@df.daily_parking_cost / costShareSr3"
-    IN_N_OUT_SHARE_2: "@(out_skims['{sk}'] + in_skims['{sk}']) / costShareSr2"
-    IN_N_OUT_SHARE_3: "@(out_skims['{sk}'] + in_skims['{sk}']) / costShareSr3"
-    SHORT_WAIT_EXPR: "@(out_skims['{sk}']/100).clip(upper={th})+
-                       (in_skims['{sk}']/100).clip(upper={th})"
-    LONG_WAIT_EXPR: "@(out_skims['{sk}']/100-{th}).clip(0)+
-                      (in_skims['{sk}']/100-{th}).clip(0)"
-    TRANSFERS_EXPR: "@(out_skims['{sk}']-1).clip(0)+
-                      (in_skims['{sk}']-1).clip(0)"
-    IN_N_OUT_2SKIM_EXPR: "@out_skims['{sk1}'] + in_skims['{sk2}']"
-    IN_N_OUT_2SKIM_EXPR_DIV100: "@out_skims['{sk1}']/100 +
-                                  in_skims['{sk2}']/100"
-    SHORT_WAIT_2SKIM_EXPR: "@(out_skims['{sk1}']/100).clip(upper={th})+
-                             (in_skims['{sk2}']/100).clip(upper={th})"
-    LONG_WAIT_2SKIM_EXPR: "@(out_skims['{sk1}']/100-{th}).clip(0)+
-                            (in_skims['{sk2}']/100-{th}).clip(0)"
-    TRANSFERS_2SKIM_EXPR: "@(out_skims['{sk1}']-1).clip(0)+
-                            (in_skims['{sk2}']-1).clip(0)"
-    AUTO_COST_EXPR: "@(out_skims['{sk1}']+in_skims['{sk2}'])+
-                      ((out_skims['{sk1}']/100+in_skims['{sk2}']/100)
-                       *costPerMile)"
-    AUTO_ACCESS_RATIO_EXPR: "@(out_skims['{sk1}']/100+
-                               in_skims['{sk2}']/100)/
-                               (skims['DISTANCE']*2)"
-
-
-CONSTANTS:
-    valueOfTime: 8.00
-    costPerMile: 18.48
-    costShareSr2: 1.75
-    costShareSr3: 2.50
-    waitThresh: 10.00
-    walkThresh: 1.50
-    shortWalk: 0.333
-    longWalk: 0.667
-    walkSpeed: 3.00
-    bikeThresh: 6.00
-    bikeSpeed: 12.00
-    maxCbdAreaTypeThresh: 2
-    indivTour: 1.00000
-    upperEA: 5
-    upperAM: 10
-    upperMD: 15
-    upperPM: 19
