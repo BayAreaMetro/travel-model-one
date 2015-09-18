@@ -106,39 +106,36 @@ class RunResults:
 
     # See 'Plan Bay Area Performance Assessment Report_FINAL.pdf'
     # Table 9: Benefit Valuations
-    # Units in 2013 dollars
+    # Units in 2017 dollars
     BENEFIT_VALUATION           = {
-    ('Travel Time & Cost','Logsum Hours - Mandatory Tours - Workers & Students'       ):      16.03,
-    ('Travel Time & Cost','Logsum Hours - NonMandatory Tours - All people'            ):      16.03,
+    ('Travel Time & Cost','Logsum Hours - Mandatory Tours - Workers & Students'       ):      12.66,
+    ('Travel Time & Cost','Logsum Hours - NonMandatory Tours - All people'            ):      12.66,
     ('Travel Time & Cost','Societal Benefits'                                         ):       1.35,  # $1 in 2000 = $1.35 in 2013
-    ('Travel Time & Cost','Non-Recurring Freeway Delay (Hours)','Auto (Person Hours)' ):     -16.03, # duplicate of Travel Time
-    ('Travel Time & Cost','Non-Recurring Freeway Delay (Hours)','Truck (Computed VH)' ):     -26.24, # duplicate of Travel Time
-    ('Travel Time & Cost','Non-Household','Time - Truck (Computed VHT)'               ):     -26.24,  # Truck
+    ('Travel Time & Cost','Non-Recurring Freeway Delay (Hours)','Auto (Person Hours)' ):     -12.66, # duplicate of Travel Time
+    ('Travel Time & Cost','Non-Recurring Freeway Delay (Hours)','Truck (Computed VH)' ):     -33.69, # duplicate of Travel Time
+    ('Travel Time & Cost','Non-Household','Time - Truck (Computed VHT)'               ):     -33.69,  # Truck
     ('Travel Time & Cost','Non-Household','Cost - Auto ($2000) - IX/EX'               ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Time & Cost','Non-Household','Cost - Auto ($2000) - AirPax'              ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Time & Cost','Non-Household','Cost - Truck ($2000) - Computed'           ):      -1.35, # $1 in 2000 = $1.35 in 2013
-    ('Travel Time & Cost','Vehicle Ownership (Modeled)'                               ):   -6290.0,
+    ('Travel Time & Cost','Vehicle Ownership (Modeled)'                               ):   -3920.0,
 
-    ('Travel Time','Auto/Truck (Hours)'                                        ):     -16.03,  # Auto
-    ('Travel Time','Auto/Truck (Hours)','Truck (Computed VHT)'                 ):     -26.24,  # Truck
+    ('Travel Time','Auto/Truck (Hours)'                                        ):     -12.66,  # Auto
+    ('Travel Time','Auto/Truck (Hours)','Truck (Computed VHT)'                 ):     -33.69,  # Truck
     ('Travel Time','Auto/Truck (Hours)','Truck (Modeled VHT)'                  ):       0.00,  # Truck
-    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Auto (Person Hours)' ):     -16.03,
-    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck (Computed VH)' ):     -26.24,
+    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Auto (Person Hours)' ):     -12.66,
+    ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck (Computed VH)' ):     -33.69,
     ('Travel Time','Non-Recurring Freeway Delay (Hours)','Truck (Modeled VH)'  ):       0.00,
-    ('Travel Time','Transit In-Vehicle (Hours)'                                ):     -16.03,
-    ('Travel Time','Transit Out-of-Vehicle (Hours)'                            ):     -35.266,
-    ('Travel Time','Walk/Bike (Hours)'                                         ):     -16.03,
-#  This is for reference - Operating Costs are calculated directly
-#    ('Travel Cost','VMT','Auto'                                                ):      -0.2688,
-#    ('Travel Cost','VMT','Truck'                                               ):      -0.3950,
+    ('Travel Time','Transit In-Vehicle (Hours)'                                ):     -12.66,
+    ('Travel Time','Transit Out-of-Vehicle (Hours)'                            ):     -27.85,
+    ('Travel Time','Walk/Bike (Hours)'                                         ):     -12.66,
     ('Travel Cost','Operating Costs','Auto ($2000) - Households'               ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Auto ($2000) - IX/EX'                    ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Auto ($2000) - AirPax'                   ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Truck ($2000) - Computed'                ):      -1.35, # $1 in 2000 = $1.35 in 2013
     ('Travel Cost','Operating Costs','Truck ($2000) - Modeled'                 ):       0.00, # $1 in 2000 = $1.35 in 2013
-    ('Travel Cost','Vehicle Ownership (Modeled)'                               ):   -6290.0,
+    ('Travel Cost','Vehicle Ownership (Modeled)'                               ):   -3920.0,
 # Use modeled.  Est. from auto trips is for reference
-#   ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                  ):   -6290.0,
+#   ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                  ):   -3920.0,
     ('Travel Cost','Parking Costs','($2000) Work Tours to San Francisco'       ):      -1.35,
     ('Travel Cost','Parking Costs','($2000) Work Tours to San Mateo'           ):      -1.35,
     ('Travel Cost','Parking Costs','($2000) Work Tours to Santa Clara'         ):      -1.35,
@@ -157,23 +154,23 @@ class RunResults:
     ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Napa'            ):      -1.35,
     ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Sonoma'          ):      -1.35,
     ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Marin'           ):      -1.35,
-    ('Air Pollutant','PM2.5 (tons)','PM2.5 Gasoline'                           ): -487200.0,
-    ('Air Pollutant','PM2.5 (tons)','PM2.5 Diesel'                             ): -490300.0,
-    ('Air Pollutant','CO2 (metric tons)','CO2'                                 ):     -55.35,
-    ('Air Pollutant','Other','NOX (tons)'                                      ):   -7800.0,
-    ('Air Pollutant','Other','SO2 (tons)'                                      ):  -40500.0,
-    ('Air Pollutant','Other','VOC: Acetaldehyde (metric tons)'                 ):   -5700.0,
-    ('Air Pollutant','Other','VOC: Benzene (metric tons)'                      ):  -12800.0,
-    ('Air Pollutant','Other','VOC: 1,3-Butadiene (metric tons)'                ):  -32200.0,
-    ('Air Pollutant','Other','VOC: Formaldehyde (metric tons)'                 ):   -6400.0,
-    ('Air Pollutant','Other','All other VOC (metric tons)'                     ):   -5100.0,
-    ('Collisions, Active Transport & Noise','Fatalies due to Collisions'           ):-4590000.0,
-    ('Collisions, Active Transport & Noise','Injuries due to Collisions'           ):  -64000.0,
-    ('Collisions, Active Transport & Noise','Property Damage Only (PDO) Collisions'):   -2455.0,
-    ('Collisions, Active Transport & Noise','Active Individuals'                   ):    1220.0,
-    ('Collisions, Active Transport & Noise','Noise','Auto VMT'                     ):      -0.0012,
-    ('Collisions, Active Transport & Noise','Noise','Truck VMT - Computed'         ):      -0.0150,
-    ('Collisions, Active Transport & Noise','Noise','Truck VMT - Modeled'          ):       0.0,
+    ('Air Pollutant','PM2.5 (tons)','PM2.5 Gasoline'                           ): -658800.0,
+    ('Air Pollutant','PM2.5 (tons)','PM2.5 Diesel'                             ): -665400.0,
+    ('Air Pollutant','CO2 (metric tons)','CO2'                                 ):    -100.0,
+    ('Air Pollutant','Other','NOX (tons)'                                      ):   -6000.0,
+    ('Air Pollutant','Other','SO2 (tons)'                                      ):  -22200.0,
+    ('Air Pollutant','Other','VOC: Acetaldehyde (metric tons)'                 ):   -5100.0,
+    ('Air Pollutant','Other','VOC: Benzene (metric tons)'                      ):  -15200.0,
+    ('Air Pollutant','Other','VOC: 1,3-Butadiene (metric tons)'                ):  -42600.0,
+    ('Air Pollutant','Other','VOC: Formaldehyde (metric tons)'                 ):   -5900.0,
+    ('Air Pollutant','Other','All other VOC (metric tons)'                     ):   -4300.0,
+    ('Collisions, Active Transport & Noise','Fatalies due to Collisions'           ):-10800000.0,
+    ('Collisions, Active Transport & Noise','Injuries due to Collisions'           ):  -124000.0,
+    ('Collisions, Active Transport & Noise','Property Damage Only (PDO) Collisions'):    -4590.0,
+    ('Collisions, Active Transport & Noise','Active Individuals'                   ):     1340.0,
+    ('Collisions, Active Transport & Noise','Noise','Auto VMT'                     ):       -0.0013,
+    ('Collisions, Active Transport & Noise','Noise','Truck VMT - Computed'         ):       -0.0170,
+    ('Collisions, Active Transport & Noise','Noise','Truck VMT - Modeled'          ):        0.0,
     }
 
     def __init__(self, rundir, bc_config='BC_config.csv', overwrite_config=None):
