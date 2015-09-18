@@ -13,29 +13,29 @@
 ;                                       Cityname,  (for debugging)
 ;                                       Year,      (for debugging)
 ;                                       Arterial  facility Auto Repair & Maintenance Adjustment Factor,
-;                                       Arterial  facility Auto Fuel Adjustment Factor,
+;                                       Arterial  facility Auto              Fuel    Adjustment Factor,
+;                                       Arterial  facility Small/Light Truck R&M     Adjustment Factor,
+;                                       Arterial  facility Small/Light Truck Fuel    Adjustment Factor,
+;                                       Arterial  facility Large Truck       R&M     Adjustment Factor,
+;                                       Arterial  facility Large Truck       Fuel    Adjustment Factor,
+;                                       Arterial  facility Bus               R&M     Adjustment Factor,
+;                                       Arterial  facility Bus               Fuel    Adjustment Factor,
 ;                                       Collector facility Auto Repair & Maintenance Adjustment Factor,
-;                                       Collector facility Auto Fuel Adjustment Factor,
+;                                       Collector facility Auto              Fuel    Adjustment Factor,
+;                                       Collector facility Small/Light Truck R&M     Adjustment Factor,
+;                                       Collector facility Small/Light Truck Fuel    Adjustment Factor,
+;                                       Collector facility Large Truck       R&M     Adjustment Factor,
+;                                       Collector facility Large Truck       Fuel    Adjustment Factor,
+;                                       Collector facility Bus               R&M     Adjustment Factor,
+;                                       Collector facility Bus               Fuel    Adjustment Factor,
 ;                                       Local     facility Auto Repair & Maintenance Adjustment Factor,
-;                                       Local     facility Auto Fuel Adjustment Factor,
-;                                       Arterial  facility Small/Light Truck R&M Adjustment Factor,
-;                                       Arterial  facility Small/Light Truck Fuel Adjustment Factor,
-;                                       Collector facility Small/Light Truck R&M Adjustment Factor,
-;                                       Collector facility Small/Light Truck Fuel Adjustment Factor,
-;                                       Local     facility Small/Light Truck R&M Adjustment Factor,
-;                                       Local     facility Small/Light Truck Fuel Adjustment Factor,
-;                                       Arterial  facility Large Truck R&M Adjustment Factor,
-;                                       Arterial  facility Large Truck Fuel Adjustment Factor,
-;                                       Collector facility Large Truck R&M Adjustment Factor,
-;                                       Collector facility Large Truck Fuel Adjustment Factor,
-;                                       Local     facility Large Truck R&M Adjustment Factor,
-;                                       Local     facility Large Truck Fuel Adjustment Factor,
-;                                       Arterial  facility Bus R&M Adjustment Factor,
-;                                       Arterial  facility Bus Fuel Adjustment Factor
-;                                       Collector facility Bus R&M Adjustment Factor,
-;                                       Collector facility Bus Fuel Adjustment Factor
-;                                       Local     facility Bus R&M Adjustment Factor,
-;                                       Local     facility Bus Fuel Adjustment Factor
+;                                       Local     facility Auto              Fuel    Adjustment Factor,
+;                                       Local     facility Small/Light Truck R&M     Adjustment Factor,
+;                                       Local     facility Small/Light Truck Fuel    Adjustment Factor,
+;                                       Local     facility Large Truck       R&M     Adjustment Factor,
+;                                       Local     facility Large Truck       Fuel    Adjustment Factor,
+;                                       Local     facility Bus               R&M     Adjustment Factor,
+;                                       Local     facility Bus               Fuel    Adjustment Factor
 ;
 ;
 ; A factor called XXX_rm_adjust and XXX_fu_adjust is looked up and stored for each roadway link.
@@ -119,26 +119,26 @@ loop period = 1, 5
       lookup name=pave,
         lookup[1]  = 1, result = 4,  ; arterial  auto repair & maintenance adjustment
         lookup[2]  = 1, result = 5,  ; arterial  auto fuel adjustment
-        lookup[3]  = 1, result = 6,  ; collector auto repair & maintenance adjustment
-        lookup[4]  = 1, result = 7,  ; collector auto fuel adjustment
-        lookup[5]  = 1, result = 8,  ; local     auto repair & maintenance adjustment
-        lookup[6]  = 1, result = 9,  ; local     auto fuel adjustment
-        lookup[7]  = 1, result = 10, ; arterial  small truck repair & maintenance adjustment
-        lookup[8]  = 1, result = 11, ; arterial  small truck fuel adjustment
-        lookup[9]  = 1, result = 12, ; collector small truck repair & maintenance adjustment
-        lookup[10] = 1, result = 13, ; collector small truck fuel adjustment
-        lookup[11] = 1, result = 14, ; local     small truck repair & maintenance adjustment
-        lookup[12] = 1, result = 15, ; local     small truck fuel adjustment
-        lookup[13] = 1, result = 16, ; arterial  large truck repair & maintenance adjustment
-        lookup[14] = 1, result = 17, ; arterial  large truck fuel adjustment
-        lookup[15] = 1, result = 18, ; collector large truck repair & maintenance adjustment
-        lookup[16] = 1, result = 19, ; collector large truck fuel adjustment
-        lookup[17] = 1, result = 20, ; local     large truck repair & maintenance adjustment
-        lookup[18] = 1, result = 21, ; local     large truck fuel adjustment
-        lookup[19] = 1, result = 22, ; arterial  bus repair & maintenance adjustment
-        lookup[20] = 1, result = 23, ; arterial  bus fuel adjustment
-        lookup[21] = 1, result = 24, ; collector bus repair & maintenance adjustment
-        lookup[22] = 1, result = 25, ; collector bus fuel adjustment
+        lookup[3]  = 1, result = 6,  ; arterial  small truck repair & maintenance adjustment
+        lookup[4]  = 1, result = 7,  ; arterial  small truck fuel adjustment
+        lookup[5]  = 1, result = 8,  ; arterial  large truck repair & maintenance adjustment
+        lookup[6]  = 1, result = 9,  ; arterial  large truck fuel adjustment
+        lookup[7]  = 1, result = 10, ; arterial  bus repair & maintenance adjustment
+        lookup[8]  = 1, result = 11, ; arterial  bus fuel adjustment
+        lookup[9]  = 1, result = 12, ; collector auto repair & maintenance adjustment
+        lookup[10] = 1, result = 13, ; collector auto fuel adjustment
+        lookup[11] = 1, result = 14, ; collector small truck repair & maintenance adjustment
+        lookup[12] = 1, result = 15, ; collector small truck fuel adjustment
+        lookup[13] = 1, result = 16, ; collector large truck repair & maintenance adjustment
+        lookup[14] = 1, result = 17, ; collector large truck fuel adjustment
+        lookup[15] = 1, result = 18, ; collector bus repair & maintenance adjustment
+        lookup[16] = 1, result = 19, ; collector bus fuel adjustment
+        lookup[17] = 1, result = 20, ; local     auto repair & maintenance adjustment
+        lookup[18] = 1, result = 21, ; local     auto fuel adjustment
+        lookup[19] = 1, result = 22, ; local     small truck repair & maintenance adjustment
+        lookup[20] = 1, result = 23, ; local     small truck fuel adjustment
+        lookup[21] = 1, result = 24, ; local     large truck repair & maintenance adjustment
+        lookup[22] = 1, result = 25, ; local     large truck fuel adjustment
         lookup[23] = 1, result = 26, ; local     bus repair & maintenance adjustment
         lookup[24] = 1, result = 27, ; local     bus fuel adjustment
         fail = -1,-1,-1,
@@ -169,12 +169,12 @@ loop period = 1, 5
         ; expressway or major arterial - use arterial
         auto_rm_adjust = pave( 1, cityid)
         auto_fu_adjust = pave( 2, cityid)
-        smtr_rm_adjust = pave( 7, cityid)
-        smtr_fu_adjust = pave( 8, cityid)
-        lrtr_rm_adjust = pave(13, cityid)
-        lrtr_fu_adjust = pave(14, cityid)
-        bus_rm_adjust  = pave(19, cityid)
-        bus_fu_adjust  = pave(20, cityid)
+        smtr_rm_adjust = pave( 3, cityid)
+        smtr_fu_adjust = pave( 4, cityid)
+        lrtr_rm_adjust = pave( 5, cityid)
+        lrtr_fu_adjust = pave( 6, cityid)
+        bus_rm_adjust  = pave( 7, cityid)
+        bus_fu_adjust  = pave( 8, cityid)
 
         if ((auto_rm_adjust == -1) || (auto_fu_adjust == -1))
            ; No data -- lookup county remainder
@@ -213,12 +213,12 @@ loop period = 1, 5
 
            auto_rm_adjust = pave( 1, _county_cityid)
            auto_fu_adjust = pave( 2, _county_cityid)
-           smtr_rm_adjust = pave( 7, _county_cityid)
-           smtr_fu_adjust = pave( 8, _county_cityid)
-           lrtr_rm_adjust = pave(13, _county_cityid)
-           lrtr_fu_adjust = pave(14, _county_cityid)
-           bus_rm_adjust  = pave(19, _county_cityid)
-           bus_fu_adjust  = pave(20, _county_cityid)
+           smtr_rm_adjust = pave( 3, _county_cityid)
+           smtr_fu_adjust = pave( 4, _county_cityid)
+           lrtr_rm_adjust = pave( 5, _county_cityid)
+           lrtr_fu_adjust = pave( 6, _county_cityid)
+           bus_rm_adjust  = pave( 7, _county_cityid)
+           bus_fu_adjust  = pave( 8, _county_cityid)
         endif
         ; opcost =  perfect condition R&M cost x non-perfect condition adjustment +
         ;          perfect condition fuel cost x non-perfect condition ajustment
@@ -229,14 +229,14 @@ loop period = 1, 5
 
       elseif (FT == 4)
         ; collector
-        auto_rm_adjust = pave( 3, cityid)
-        auto_fu_adjust = pave( 4, cityid)
-        smtr_rm_adjust = pave( 9, cityid)
-        smtr_fu_adjust = pave(10, cityid)
-        lrtr_rm_adjust = pave(15, cityid)
-        lrtr_fu_adjust = pave(16, cityid)
-        bus_rm_adjust  = pave(21, cityid)
-        bus_fu_adjust  = pave(22, cityid)
+        auto_rm_adjust = pave( 9, cityid)
+        auto_fu_adjust = pave(10, cityid)
+        smtr_rm_adjust = pave(11, cityid)
+        smtr_fu_adjust = pave(12, cityid)
+        lrtr_rm_adjust = pave(13, cityid)
+        lrtr_fu_adjust = pave(14, cityid)
+        bus_rm_adjust  = pave(15, cityid)
+        bus_fu_adjust  = pave(16, cityid)
 
         if ((auto_rm_adjust == -1) || (auto_fu_adjust == -1))
            ; No data -- lookup county remainder
@@ -273,14 +273,14 @@ loop period = 1, 5
            endif
            print LIST="lookup failed for ",cityname," -- using lookup for ",_county_name
 
-           auto_rm_adjust = pave( 3, _county_cityid)
-           auto_fu_adjust = pave( 4, _county_cityid)
-           smtr_rm_adjust = pave( 9, _county_cityid)
-           smtr_fu_adjust = pave(10, _county_cityid)
-           lrtr_rm_adjust = pave(15, _county_cityid)
-           lrtr_fu_adjust = pave(16, _county_cityid)
-           bus_rm_adjust  = pave(21, _county_cityid)
-           bus_fu_adjust  = pave(22, _county_cityid)
+           auto_rm_adjust = pave( 9, _county_cityid)
+           auto_fu_adjust = pave(10, _county_cityid)
+           smtr_rm_adjust = pave(11, _county_cityid)
+           smtr_fu_adjust = pave(12, _county_cityid)
+           lrtr_rm_adjust = pave(13, _county_cityid)
+           lrtr_fu_adjust = pave(14, _county_cityid)
+           bus_rm_adjust  = pave(15, _county_cityid)
+           bus_fu_adjust  = pave(16, _county_cityid)
         endif
         ; opcost =  perfect condition R&M cost x non-perfect condition adjustment +
         ;          perfect condition fuel cost x non-perfect condition ajustment
@@ -290,13 +290,13 @@ loop period = 1, 5
         busopc  = ( BUSOPC_PER_RM* bus_rm_adjust) + ( BUSOPC_PER_FU* bus_fu_adjust)
 
       elseif (FT == 6)
-        ; collector
-        auto_rm_adjust = pave( 5, cityid)
-        auto_fu_adjust = pave( 6, cityid)
-        smtr_rm_adjust = pave(11, cityid)
-        smtr_fu_adjust = pave(12, cityid)
-        lrtr_rm_adjust = pave(17, cityid)
-        lrtr_fu_adjust = pave(18, cityid)
+        ; local
+        auto_rm_adjust = pave(17, cityid)
+        auto_fu_adjust = pave(18, cityid)
+        smtr_rm_adjust = pave(19, cityid)
+        smtr_fu_adjust = pave(20, cityid)
+        lrtr_rm_adjust = pave(21, cityid)
+        lrtr_fu_adjust = pave(22, cityid)
         bus_rm_adjust  = pave(23, cityid)
         bus_fu_adjust  = pave(24, cityid)
 
@@ -335,12 +335,12 @@ loop period = 1, 5
            endif
            print LIST="lookup failed for ",cityname," -- using lookup for ",_county_name
 
-           auto_rm_adjust = pave( 5, _county_cityid)
-           auto_fu_adjust = pave( 6, _county_cityid)
-           smtr_rm_adjust = pave(11, _county_cityid)
-           smtr_fu_adjust = pave(12, _county_cityid)
-           lrtr_rm_adjust = pave(17, _county_cityid)
-           lrtr_fu_adjust = pave(18, _county_cityid)
+           auto_rm_adjust = pave(17, _county_cityid)
+           auto_fu_adjust = pave(18, _county_cityid)
+           smtr_rm_adjust = pave(19, _county_cityid)
+           smtr_fu_adjust = pave(20, _county_cityid)
+           lrtr_rm_adjust = pave(21, _county_cityid)
+           lrtr_fu_adjust = pave(22, _county_cityid)
            bus_rm_adjust  = pave(23, _county_cityid)
            bus_fu_adjust  = pave(24, _county_cityid)
         endif
