@@ -45,12 +45,12 @@ class RunResults:
       'Compare'                   # one of 'baseline-scenario' or 'scenario-baseline'
       ]
     UNITS = {
-      'Capital Costs'                 :'millions of $2013',
-      'Annual O&M Costs'              :'millions of $2013',
+      'Capital Costs'                 :'millions of $2017',
+      'Annual O&M Costs'              :'millions of $2017',
       'Life of Project'               :'years',
-      'Annual Capital Costs'          :'millions of $2013',
-      'Annual O&M Costs not recovered':'millions of $2013',
-      'Net Annual Costs'              :'millions of $2013',
+      'Annual Capital Costs'          :'millions of $2017',
+      'Annual O&M Costs not recovered':'millions of $2017',
+      'Net Annual Costs'              :'millions of $2017',
     }
 
     # Do these ever change?  Should they go into BC_config.csv?
@@ -110,13 +110,13 @@ class RunResults:
     BENEFIT_VALUATION           = {
     ('Travel Time & Cost','Logsum Hours - Mandatory Tours - Workers & Students'       ):      12.66,
     ('Travel Time & Cost','Logsum Hours - NonMandatory Tours - All people'            ):      12.66,
-    ('Travel Time & Cost','Societal Benefits'                                         ):       1.35,  # $1 in 2000 = $1.35 in 2013
+    ('Travel Time & Cost','Societal Benefits'                                         ):       1.49,  # $1 in 2000 = $1.49 in 2017
     ('Travel Time & Cost','Non-Recurring Freeway Delay (Hours)','Auto (Person Hours)' ):     -12.66, # duplicate of Travel Time
     ('Travel Time & Cost','Non-Recurring Freeway Delay (Hours)','Truck (Computed VH)' ):     -33.69, # duplicate of Travel Time
     ('Travel Time & Cost','Non-Household','Time - Truck (Computed VHT)'               ):     -33.69,  # Truck
-    ('Travel Time & Cost','Non-Household','Cost - Auto ($2000) - IX/EX'               ):      -1.35, # $1 in 2000 = $1.35 in 2013
-    ('Travel Time & Cost','Non-Household','Cost - Auto ($2000) - AirPax'              ):      -1.35, # $1 in 2000 = $1.35 in 2013
-    ('Travel Time & Cost','Non-Household','Cost - Truck ($2000) - Computed'           ):      -1.35, # $1 in 2000 = $1.35 in 2013
+    ('Travel Time & Cost','Non-Household','Cost - Auto ($2000) - IX/EX'               ):      -1.49, # $1 in 2000 = $1.49 in 2017
+    ('Travel Time & Cost','Non-Household','Cost - Auto ($2000) - AirPax'              ):      -1.49, # $1 in 2000 = $1.49 in 2017
+    ('Travel Time & Cost','Non-Household','Cost - Truck ($2000) - Computed'           ):      -1.49, # $1 in 2000 = $1.49 in 2017
     ('Travel Time & Cost','Vehicle Ownership (Modeled)'                               ):   -3920.0,
 
     ('Travel Time','Auto/Truck (Hours)'                                        ):     -12.66,  # Auto
@@ -128,32 +128,32 @@ class RunResults:
     ('Travel Time','Transit In-Vehicle (Hours)'                                ):     -12.66,
     ('Travel Time','Transit Out-of-Vehicle (Hours)'                            ):     -27.85,
     ('Travel Time','Walk/Bike (Hours)'                                         ):     -12.66,
-    ('Travel Cost','Operating Costs','Auto ($2000) - Households'               ):      -1.35, # $1 in 2000 = $1.35 in 2013
-    ('Travel Cost','Operating Costs','Auto ($2000) - IX/EX'                    ):      -1.35, # $1 in 2000 = $1.35 in 2013
-    ('Travel Cost','Operating Costs','Auto ($2000) - AirPax'                   ):      -1.35, # $1 in 2000 = $1.35 in 2013
-    ('Travel Cost','Operating Costs','Truck ($2000) - Computed'                ):      -1.35, # $1 in 2000 = $1.35 in 2013
-    ('Travel Cost','Operating Costs','Truck ($2000) - Modeled'                 ):       0.00, # $1 in 2000 = $1.35 in 2013
+    ('Travel Cost','Operating Costs','Auto ($2000) - Households'               ):      -1.49, # $1 in 2000 = $1.49 in 2017
+    ('Travel Cost','Operating Costs','Auto ($2000) - IX/EX'                    ):      -1.49, # $1 in 2000 = $1.49 in 2017
+    ('Travel Cost','Operating Costs','Auto ($2000) - AirPax'                   ):      -1.49, # $1 in 2000 = $1.49 in 2017
+    ('Travel Cost','Operating Costs','Truck ($2000) - Computed'                ):      -1.49, # $1 in 2000 = $1.49 in 2017
+    ('Travel Cost','Operating Costs','Truck ($2000) - Modeled'                 ):       0.00, # $1 in 2000 = $1.49 in 2017
     ('Travel Cost','Vehicle Ownership (Modeled)'                               ):   -3920.0,
 # Use modeled.  Est. from auto trips is for reference
 #   ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'                  ):   -3920.0,
-    ('Travel Cost','Parking Costs','($2000) Work Tours to San Francisco'       ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Work Tours to San Mateo'           ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Work Tours to Santa Clara'         ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Work Tours to Alameda'             ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Work Tours to Contra Costa'        ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Work Tours to Solano'              ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Work Tours to Napa'                ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Work Tours to Sonoma'              ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Work Tours to Marin'               ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to San Francisco'   ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to San Mateo'       ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Santa Clara'     ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Alameda'         ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Contra Costa'    ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Solano'          ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Napa'            ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Sonoma'          ):      -1.35,
-    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Marin'           ):      -1.35,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to San Francisco'       ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to San Mateo'           ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Santa Clara'         ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Alameda'             ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Contra Costa'        ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Solano'              ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Napa'                ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Sonoma'              ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Work Tours to Marin'               ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to San Francisco'   ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to San Mateo'       ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Santa Clara'     ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Alameda'         ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Contra Costa'    ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Solano'          ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Napa'            ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Sonoma'          ):      -1.49,
+    ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Marin'           ):      -1.49,
     ('Air Pollutant','PM2.5 (tons)','PM2.5 Gasoline'                           ): -658800.0,
     ('Air Pollutant','PM2.5 (tons)','PM2.5 Diesel'                             ): -665400.0,
     ('Air Pollutant','CO2 (metric tons)','CO2'                                 ):    -100.0,
@@ -952,7 +952,7 @@ class RunResults:
             worksheet.write(row,3,"Daily\n%s" % diff_header,format_header)
             worksheet.write(row,4,"Annual\n%s" % diff_header,format_header)
             worksheet.write(row,6,"Benefit Valuation\n(per unit)",format_header)
-            worksheet.write(row,8,"Annual\nBenefit ($2013)",format_header)
+            worksheet.write(row,8,"Annual\nBenefit ($2017)",format_header)
 
         # Data rows
         row  += 1
@@ -1131,7 +1131,7 @@ class RunResults:
                     worksheet.write(row,8, # annual benefit
                                     '=%s*%s' % (xl_rowcol_to_cell(row,4), xl_rowcol_to_cell(row,6)),
                                     format_ann_ben)
-                    bc_metrics[(cat1,cat2,key[2],'Annual Benefit ($2013)')] = valuation*nominal_diff
+                    bc_metrics[(cat1,cat2,key[2],'Annual Benefit ($2017)')] = valuation*nominal_diff
 
             row += 1
 
