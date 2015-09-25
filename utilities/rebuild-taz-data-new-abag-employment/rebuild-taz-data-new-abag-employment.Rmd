@@ -31,7 +31,7 @@ knitr::opts_chunk$set(cache=TRUE)
 
 #### Remote I/O
 ```{r remote-io}
-F_NEW_EMPLOYMENT = "M:/Data/ABAGProjections/2015/2015 09 10 Revisions to historical/tazproportionrev_091015.csv"
+F_NEW_EMPLOYMENT = "M:/Data/ABAGProjections/2015/2015 09 10 Revisions to historical/tazproportionrev_092415_all_years.csv"
 
 F_2000_TAZ = "M:/Development/Travel Model One/Version 04/2000_04_XXX/OUTPUT/tazData.csv"
 
@@ -39,7 +39,7 @@ F_2005_TAZ = "M:/Development/Travel Model One/Version 04/2005_04_YYY/OUTPUT/tazD
 
 F_2010_TAZ = "M:/Development/Travel Model One/Version 04/2010_04_ZZZ/OUTPUT/tazData.csv"
 
-OUTPUT_DIR <- "M:/Application/Model One/Zonal Data/Revised Historical/2015 09 11/"
+OUTPUT_DIR <- "M:/Application/Model One/Zonal Data/Revised Historical/2015 09 25/"
 
 F_2000_OUTPUT = paste(OUTPUT_DIR, "tazData_2000.csv", sep = "")
 
@@ -82,6 +82,10 @@ abag_df <- abag_df %>%
   mutate(AGREMPN = round(AGREMPN)) %>%
   mutate(MWTEMPN = round(MWTEMPN))
 
+abag_2000_df <- abag_df %>%
+  filter(year == 2000) %>%
+  select(-year)
+
 abag_2005_df <- abag_df %>%
   filter(year == 2005) %>%
   select(-year)
@@ -93,7 +97,9 @@ abag_2010_df <- abag_df %>%
 # Prepare the TAZ data
 
 # 2000
-# TODO: pending ABAG update 
+taz_2000_out <- taz_2000_df %>%
+  select(-TOTEMP, -RETEMPN, -FPSEMPN, -HEREMPN, -OTHEMPN, -AGREMPN, -MWTEMPN)
+taz_2000_out <- left_join(taz_2000_out, abag_2000_df, by = c("ZONE"))
 
 # 2005
 taz_2005_out <- taz_2005_df %>%
@@ -110,15 +116,15 @@ taz_2010_out <- left_join(taz_2010_out, abag_2010_df, by = c("ZONE"))
 
 #### Data writes
 ```{r data-writes}
-# write.csv(taz_2000_out, file = F_2000_OUTPUT, row.names = FALSE, quote = F)
+write.csv(taz_2000_out, file = F_2000_OUTPUT, row.names = FALSE, quote = F)
 write.csv(taz_2005_out, file = F_2005_OUTPUT, row.names = FALSE, quote = F)
 write.csv(taz_2010_out, file = F_2010_OUTPUT, row.names = FALSE, quote = F)
 ```
 
 #### De-bug
 ```{r debug}
-#sum(taz_2000_out$TOTEMP)
-#sum(taz_2000_df$TOTEMP)
+sum(taz_2000_out$TOTEMP)
+sum(taz_2000_df$TOTEMP)
 
 sum(taz_2005_out$TOTEMP)
 sum(taz_2005_df$TOTEMP)
