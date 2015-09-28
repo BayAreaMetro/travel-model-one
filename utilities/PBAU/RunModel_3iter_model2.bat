@@ -35,8 +35,8 @@ set GAWK_PATH=M:\UTIL\Gawk
 :: The location of R
 set R_HOME=C:\Program Files\R\R-3.2.0
 
-:: The location of the RUNTPP executable from Citilabs
-set TPP_PATH=C:\Program Files (x86)\Citilabs\CubeVoyager
+:: The location of the RUNTPP executable from Citilabs - 64bit first
+set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files (x86)\Citilabs\CubeVoyager
 
 :: The location of python
 set PYTHON_PATH=C:\Python27
@@ -52,7 +52,7 @@ set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%PYTHON_PATH%;%OLD
 set CLASSPATH=%RUNTIME%/config;%RUNTIME%;%RUNTIME%/config/jppf-2.4/jppf-2.4-admin-ui/lib/*;%RUNTIME%/mtc.jar
 
 ::  Set the IP address of the host machine which sends tasks to the client machines 
-set HOST_IP_ADDRESS=192.168.1.208
+set HOST_IP_ADDRESS=192.168.1.207
 
 
 :: ------------------------------------------------------------------------------------------------------
