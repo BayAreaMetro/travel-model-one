@@ -46,18 +46,30 @@
          token_egress = 'drv'
       
       endif
-  
+
+    loop age = 1,3
+      if (age = 1)
+        token_suffix = 'allinc'
+        token_age    = 'all'
+      elseif (age = 2)
+        token_suffix = '_2074'
+        token_age    = '20-74'
+      elseif (age = 3)
+        token_suffix = '_2064'
+        token_age    = '20-64'
+      endif
+
     RUN PGM = MATRIX
       ; Read person trips 
       ; 1. da, 2. datoll, 3. sr2, 4. sr2toll, 5. sr3, 6. sr3toll, 7. walk, 8. bike, 
       ; 9. wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, 
       ; 14. drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
       ; 19. wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv      
-      FILEI MATI[1] = "main\tripsEAallinc.tpp"   
-      FILEI MATI[2] = "main\tripsAMallinc.tpp"   
-      FILEI MATI[3] = "main\tripsMDallinc.tpp"   
-      FILEI MATI[4] = "main\tripsPMallinc.tpp"   
-      FILEI MATI[5] = "main\tripsEVallinc.tpp" 
+      FILEI MATI[1] = "main\tripsEA@token_suffix@.tpp"
+      FILEI MATI[2] = "main\tripsAM@token_suffix@.tpp"
+      FILEI MATI[3] = "main\tripsMD@token_suffix@.tpp"
+      FILEI MATI[4] = "main\tripsPM@token_suffix@.tpp"
+      FILEI MATI[5] = "main\tripsEV@token_suffix@.tpp"
       
       ; Read transit skims
       ; ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
@@ -132,8 +144,8 @@
       ENDJLOOP
       
        Name = '@token_access@_@token_path@_@token_egress@'
-      if(I = 1 & @path@ = 1 & @accegg@ = 1)
-      	PRINT PRINTO=1 CSV=T LIST= "Access","Mode","Egress",
+      if(I = 1 & @path@ = 1 & @accegg@ = 1 & @age@ = 1)
+      	PRINT PRINTO=1 CSV=T LIST= "Age", "Access","Mode","Egress",
           "Transit Trips","In-vehicle hours","Out-of-vehicle hours","Init wait hours",
           "Xfer wait hours","Walk acc & egr hours",
           "Aux walk hours","Drive acc & egr hours"
@@ -146,12 +158,13 @@
       	accegr_hours  = accegr / 6000
       	waux_hours    = waux   / 6000
       	dtime_hours   = dtime  / 6000
-        PRINT PRINTO=1 CSV=T LIST= '@token_access@','@token_path@','@token_egress@',
+        PRINT PRINTO=1 CSV=T LIST= '@token_age@','@token_access@','@token_path@','@token_egress@',
           Trips,IVT_triphours,OVT_triphours,iwait_hours,
           xwait_hours,accegr_hours,
           waux_hours,dtime_hours
       endif
     ENDRUN
+endloop
 endloop
 
 EndDistributeMultistep 

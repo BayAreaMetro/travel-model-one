@@ -64,6 +64,14 @@ class RunResults:
     ANNUALIZATION               = 300
     WORK_ANNUALIZATION          = 250
 
+    # per 100000. Crude mortality rate.  For HEAT mortality calcs
+    BAY_AREA_MORTALITY_RATE_2074YRS = 340
+    BAY_AREA_MORTALITY_RATE_2064YRS = 232
+    WALKING_RELATIVE_RISK = 0.89
+    CYCLING_RELATIVE_RISK = 0.90
+    WALKING_REF_WEEKLY_MIN = 168
+    CYCLING_REF_WEEKLY_MIN = 100
+
     COUNTY_NUM_TO_NAME          = {
        1:'San Francisco',
        2:'San Mateo',
@@ -90,7 +98,9 @@ class RunResults:
     ('Travel Time & Cost','Vehicle Ownership (Modeled)'          ): True,
     ('Travel Cost','Vehicle Ownership (Modeled)'                 ): True,
     ('Travel Cost','Vehicle Ownership (Est. from Auto Trips)'    ): True,
-    ('Collisions, Active Transport & Noise','Active Individuals','Total'): True,
+    ('Collisions, Active Transport & Noise','Active Individuals (Morbidity)','Total'  ): True,
+    ('Collisions, Active Transport & Noise','Activity: Est Proportion Deaths Averted' ): True,
+    ('Collisions, Active Transport & Noise','Activity: Est Deaths Averted (Mortality)'): True,
     }
 
     # Already a diff -- don't diff. Default false.
@@ -164,13 +174,14 @@ class RunResults:
     ('Air Pollutant','Other','VOC: 1,3-Butadiene (metric tons)'                ):  -42600.0,
     ('Air Pollutant','Other','VOC: Formaldehyde (metric tons)'                 ):   -5900.0,
     ('Air Pollutant','Other','All other VOC (metric tons)'                     ):   -4300.0,
-    ('Collisions, Active Transport & Noise','Fatalies due to Collisions'           ):-10800000.0,
-    ('Collisions, Active Transport & Noise','Injuries due to Collisions'           ):  -124000.0,
-    ('Collisions, Active Transport & Noise','Property Damage Only (PDO) Collisions'):    -4590.0,
-    ('Collisions, Active Transport & Noise','Active Individuals'                   ):     1340.0,
-    ('Collisions, Active Transport & Noise','Noise','Auto VMT'                     ):       -0.0013,
-    ('Collisions, Active Transport & Noise','Noise','Truck VMT - Computed'         ):       -0.0170,
-    ('Collisions, Active Transport & Noise','Noise','Truck VMT - Modeled'          ):        0.0,
+    ('Collisions, Active Transport & Noise','Fatalies due to Collisions'              ):-10800000.0,
+    ('Collisions, Active Transport & Noise','Injuries due to Collisions'              ):  -124000.0,
+    ('Collisions, Active Transport & Noise','Property Damage Only (PDO) Collisions'   ):    -4590.0,
+    ('Collisions, Active Transport & Noise','Active Individuals (Morbidity)'          ):     1340.0,
+    ('Collisions, Active Transport & Noise','Activity: Est Deaths Averted (Mortality)'): 10800000.0,
+    ('Collisions, Active Transport & Noise','Noise','Auto VMT'                        ):       -0.0013,
+    ('Collisions, Active Transport & Noise','Noise','Truck VMT - Computed'            ):       -0.0170,
+    ('Collisions, Active Transport & Noise','Noise','Truck VMT - Modeled'             ):        0.0,
     }
 
     def __init__(self, rundir, bc_config='BC_config.csv', overwrite_config=None):
@@ -243,7 +254,7 @@ class RunResults:
 
         self.nonmot_times = \
             pd.read_table(os.path.join(self.rundir, "nonmot_times.csv"),
-                                       sep=",", index_col=[0,1])
+                                       sep=",", index_col=[0,1,2])
         # print self.nonmot_times
 
         self.transit_boards_miles = \
@@ -253,13 +264,16 @@ class RunResults:
 
         self.transit_times_by_acc_mode_egr = \
             pd.read_table(os.path.join(self.rundir, "transit_times_by_acc_mode_egr.csv"),
-                          sep=",", index_col=[0,1,2])
+                          sep=",", index_col=[0,1,2,3])
         # print self.transit_times_by_acc_mode_egr
 
         self.transit_times_by_mode_income = \
             pd.read_table(os.path.join(self.rundir, "transit_times_by_mode_income.csv"),
                           sep=",", index_col=[0,1])
         # print self.transit_times_by_mode_income
+
+        self.unique_active_travelers = pd.Series.from_csv(os.path.join(self.rundir, "unique_active_travelers.csv"))
+        print self.unique_active_travelers
 
         for filename in ['mandatoryAccessibilities', 'nonMandatoryAccessibilities']:
             accessibilities = \
@@ -395,10 +409,11 @@ class RunResults:
 
         # we really want these by class -- ignore time periods and income levels
         vmt_byclass     = self.vmt_vht_metrics.sum(level='vehicle class') # vehicles, not people
-        transit_byclass = self.transit_times_by_acc_mode_egr.sum(level='Mode')
-        transit_byaceg  = self.transit_times_by_acc_mode_egr.sum(level=['Access','Egress'])
-        nonmot_byclass  = self.nonmot_times.sum(level='Mode')             # person trips
+        transit_byclass = self.transit_times_by_acc_mode_egr.loc['all'].sum(level='Mode')
+        transit_byaceg  = self.transit_times_by_acc_mode_egr.loc['all'].sum(level=['Access','Egress'])
+        nonmot_byclass  = self.nonmot_times.loc['all'].sum(level='Mode')  # person trips
         auto_byclass    = self.auto_times.sum(level='Mode')               # person trips
+
 
         daily_results   = collections.OrderedDict()
         quick_summary   = {}
@@ -479,7 +494,7 @@ class RunResults:
 
         cat2 = "Societal Benefits"
         self.transit_times_by_mode_income["Total Cost"] = self.transit_times_by_mode_income["Daily Trips"]*self.transit_times_by_mode_income["Avg Cost"]
-        daily_results[(cat1,cat2,"Transit Fares ($2000)")] = self.transit_times_by_mode_income.loc[:,"Total Cost"].sum()
+        daily_results[(cat1,cat2,"Transit Fares ($2000)")] = self.transit_times_by_mode_income["Total Cost"].sum()
         daily_results[(cat1,cat2,"Auto Households - Bridge Tolls ($2000)" )] = 0.01*auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Bridge Tolls'].sum()
         daily_results[(cat1,cat2,"Auto Households - Value Tolls ($2000)"  )] = 0.01*auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Value Tolls'].sum()
 
@@ -717,7 +732,19 @@ class RunResults:
                         daily_results[(cat1,cat2,'Bike'   )] + \
                         daily_results[(cat1,cat2,'Transit')]
 
-        cat2         = 'Active Individuals'
+
+        cat2         = 'Avg Minutes Active Transport per Person'
+        active_cat2  = cat2
+        nonmot_byclass_2064  = self.nonmot_times.loc['20-64'].sum(level='Mode')  # person trips
+        nonmot_byclass_2074  = self.nonmot_times.loc['20-74'].sum(level='Mode')  # person trips
+        transit_byaceg_2074  = self.transit_times_by_acc_mode_egr.loc['20-74'].sum(level=['Access','Egress'])
+        print transit_byaceg_2074
+        daily_results[(cat1,cat2,'Bike (20-64yrs cyclists)'         )] = nonmot_byclass_2064.loc['Bike','Total Time (Hours)'] * 60.0 / self.unique_active_travelers['unique_cyclists_2064']
+        daily_results[(cat1,cat2,'Walk (20-74yrs walkers)'          )] = nonmot_byclass_2074.loc['Walk','Total Time (Hours)'] * 60.0 / self.unique_active_travelers['unique_walkers_2074' ]
+        daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')] = (transit_byaceg_2074.loc[:,'Walk acc & egr hours'].sum() + \
+                                                           transit_byaceg_2074.loc[:,'Aux walk hours'].sum()) * 60.0 / self.unique_active_travelers['unique_transiters_2074']
+
+        cat2         = 'Active Individuals (Morbidity)'
         # (active daily min per bay area person) * (inactive persons) = 
         #            total active daily min per day _by inactive persons_
         # Divide by active minute per day requirement to get "active people"
@@ -726,6 +753,19 @@ class RunResults:
         #       Wouldn't subtracting the the base give newly active population?
         daily_results[(cat1,cat2,'Total'  )] = avg_min_total * \
             (RunResults.PERCENT_POP_INACTIVE * RunResults.PROJECTED_2040_POPULATION) / RunResults.ACTIVE_MIN_REQUIREMENT
+
+        cat2         = 'Activity: Est Proportion Deaths Averted'
+        epda_cat2    = cat2
+        # Estimate of proportion of deaths prevented as a result of activity
+        # 5.0 is to make it weekly
+        daily_results[(cat1,cat2,'Bike (20-64yrs cyclists)'         )] = (daily_results[(cat1,active_cat2,'Bike (20-64yrs cyclists)'         )]*5.0/RunResults.CYCLING_REF_WEEKLY_MIN) * (1.0-RunResults.CYCLING_RELATIVE_RISK)
+        daily_results[(cat1,cat2,'Walk (20-74yrs walkers)'          )] = (daily_results[(cat1,active_cat2,'Walk (20-74yrs walkers)'          )]*5.0/RunResults.WALKING_REF_WEEKLY_MIN) * (1.0-RunResults.WALKING_RELATIVE_RISK)
+        daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')] = (daily_results[(cat1,active_cat2,'Transit (20-74yrs transit riders)')]*5.0/RunResults.WALKING_REF_WEEKLY_MIN) * (1.0-RunResults.WALKING_RELATIVE_RISK)
+
+        cat2         = 'Activity: Est Deaths Averted (Mortality)'
+        daily_results[(cat1,cat2,'Bike (20-64yrs cyclists)'         )] = daily_results[(cat1,epda_cat2,'Bike (20-64yrs cyclists)'         )]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2064YRS)/100000.0)*self.unique_active_travelers['unique_cyclists_2064'  ]
+        daily_results[(cat1,cat2,'Walk (20-74yrs walkers)'          )] = daily_results[(cat1,epda_cat2,'Walk (20-74yrs walkers)'          )]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2074YRS)/100000.0)*self.unique_active_travelers['unique_walkers_2074'   ]
+        daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')] = daily_results[(cat1,epda_cat2,'Transit (20-74yrs transit riders)')]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2074YRS)/100000.0)*self.unique_active_travelers['unique_transiters_2074']
 
         # Noise
         cat2            = 'Noise'

@@ -70,11 +70,25 @@ if not exist main\indivTripDataIncome_%ITER%.csv (
   IF ERRORLEVEL 2 goto error
 )
 
+if not exist main\tripsEVinc1.dat (
+  rem Convert trip tables into time/income/mode OD matrices
+  rem Input : main\(indiv|joint)TripDataIncome_%ITER%.csv
+  rem Output: main\trips(EA|AM|MD|PM|EV)inc[1-4].dat
+  rem         main\trips(EA|AM|MD|PM|EV)_2074.dat
+  rem         main\trips(EA|AM|MD|PM|EV)_2064.dat
+  rem         metrics\unique_active_travelers.csv
+  python counTrips.py
+  if ERRORLEVEL 2 goto error
+)
+
 if not exist main\tripsEVinc1.tpp (
   rem Convert trip tables into time/income/mode OD matrices
-  rem Input : main\(indiv|joint)TripDataIncome.csv
-  rem Output: main\(indiv|join)Trips(EA|AM|MD|PM|EV)inc[1-4].dat,
-  rem         main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp,
+  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].dat,
+  rem         main\trips(EA|AM|MD|PM|EV)_2074.dat,
+  rem         main\trips(EA|AM|MD|PM|EV)_2064.dat
+  rem Output: main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_2074.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_2064.tpp,
   rem         main\trips(EA|AM|MD|PM|EV)allinc.tpp
   runtpp "%CODE_DIR%\prepAssignIncome.job"
   IF ERRORLEVEL 2 goto error
@@ -109,6 +123,8 @@ if not exist metrics\auto_times.csv (
 if not exist metrics\nonmot_times.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
   rem Input : trips(EA|AM|MD|PM|EV)inc[1-4].tpp
+  rem         trips(EA|AM|MD|PM|EV)_2074.tpp
+  rem         trips(EA|AM|MD|PM|EV)_2064.tpp
   rem         skims\nonmotskm.tpp
   rem Output: metrics\nonmot_times.csv
   runtpp "%CODE_DIR%\sumNonmotTimes.job"
