@@ -77,7 +77,7 @@ if not exist main\tripsEVinc1.dat (
   rem         main\trips(EA|AM|MD|PM|EV)_2074.dat
   rem         main\trips(EA|AM|MD|PM|EV)_2064.dat
   rem         metrics\unique_active_travelers.csv
-  python counTrips.py
+  python "%CODE_DIR%\countTrips.py"
   if ERRORLEVEL 2 goto error
 )
 
