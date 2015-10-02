@@ -1,9 +1,9 @@
 
 RUN PGM=NETWORK
 
-  NETI[1] = "%NETI_FILE1%"
-  NETI[2] = "%NETI_FILE2%"
-  NETO    = COMPARE.net, exclude=DISTANCE ,
+  NETI[1] = "%Baseline_File%"
+  NETI[2] = "%Project_Dir%\%Project_File%"
+  NETO    = "%Project_Dir%\COMPARE.net", exclude=DISTANCE ,
                                  SPDCLASS ,
                                  CAPCLASS ,
                                  LANES    ,
@@ -24,7 +24,6 @@ RUN PGM=NETWORK
                                  HOT      ,
                                  TOLLCLASS,
                                  BRT      ,
-                                 METER    ,
                                  CITYID   ,
                                  CITYNAME
 
@@ -63,7 +62,7 @@ RUN PGM=NETWORK
     N1_HOT       = LI.1.HOT     
     N1_TOLLCLASS = LI.1.TOLLCLASS
     N1_BRT       = LI.1.BRT     
-    N1_METER     = LI.1.METER   
+;   N1_METER     = LI.1.METER   
     N1_CITYID    = LI.1.CITYID  
     N1_CITYNAME  = LI.1.CITYNAME
 
@@ -89,7 +88,7 @@ RUN PGM=NETWORK
     N2_HOT       = LI.2.HOT     
     N2_TOLLCLASS = LI.2.TOLLCLASS
     N2_BRT       = LI.2.BRT     
-    N2_METER     = LI.2.METER   
+;   N2_METER     = LI.2.METER   
     N2_CITYID    = LI.2.CITYID  
     N2_CITYNAME  = LI.2.CITYNAME
 
@@ -123,7 +122,7 @@ RUN PGM=NETWORK
       IF (LI.1.HOT        <> LI.2.HOT       ) MISMATCH = MISMATCH + 'HOT '
       IF (LI.1.TOLLCLASS  <> LI.2.TOLLCLASS ) MISMATCH = MISMATCH + 'TOLLCLASS '
       IF (LI.1.BRT        <> LI.2.BRT       ) MISMATCH = MISMATCH + 'BRT '
-      IF (LI.1.METER      <> LI.2.METER     ) MISMATCH = MISMATCH + 'METER '
+;     IF (LI.1.METER      <> LI.2.METER     ) MISMATCH = MISMATCH + 'METER '
   
       IF (LI.1.CITYID     <> LI.2.CITYID    ) MISMATCH = MISMATCH + 'CITYID '
       IF (LI.1.CITYNAME   <> LI.2.CITYNAME  ) MISMATCH = MISMATCH + 'CITYNAME '
@@ -156,7 +155,7 @@ RUN PGM=NETWORK
         print LIST="HOT       : ",LI.1.HOT       ," ", LI.2.HOT       
         print LIST="TOLLCLASS : ",LI.1.TOLLCLASS ," ", LI.2.TOLLCLASS 
         print LIST="BRT       : ",LI.1.BRT       ," ", LI.2.BRT       
-        print LIST="METER     : ",LI.1.METER     ," ", LI.2.METER     
+;       print LIST="METER     : ",LI.1.METER     ," ", LI.2.METER     
 
         print LIST="CITYID    : ",LI.1.CITYID    ," ", LI.2.CITYID    
         print LIST="CITYNAME  : ",LI.1.CITYNAME  ," ", LI.2.CITYNAME  
