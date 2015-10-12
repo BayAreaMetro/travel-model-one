@@ -101,6 +101,7 @@ python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
 
 :: Make sure java isn't running already
+copy /Y CTRAMP\runtime\pslist_exe.txt                   CTRAMP\runtime\pslist.exe
 CTRAMP\runtime\pslist.exe java
 if %ERRORLEVEL% EQU 0 goto done
 
@@ -108,6 +109,7 @@ cd CTRAMP\runtime
 set RUNTIMEDIR=%CD%
 
 :: Run the java processes locally and verify
+copy /Y PsExec_exe.txt PsExec.exe
 .\PsExec.exe JavaOnly_runMain.cmd
 .\PsExec.exe JavaOnly_runNode0.cmd
 .\pslist.exe java
@@ -281,6 +283,7 @@ if ERRORLEVEL 2 goto done
 :: Step 9.1: Kill java processes
 ::
 :: ------------------------------------------------------------------------------------------------------
+copy /Y CTRAMP\runtime\pskill_exe.txt                   CTRAMP\runtime\pskill.exe
 CTRAMP\runtime\pskill.exe java
 
 :: ------------------------------------------------------------------------------------------------------
