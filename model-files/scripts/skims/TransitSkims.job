@@ -52,8 +52,11 @@
 ;	  (7) Transit line files listed in the .block file above (.tpl files);
 ;	  (8) Numerous support link files that connect zones to transit stations via walking or bicycling (*transit_suplinks*.dat);
 ;	  (9) A .block file that lists commands to combine headways for all line-haul modes when the difference in path time
-;             is less than plus or minus five minutes (transit_combined_headways.block);
-;        (10) A .block file containing access- and egress-mode-specific transfer prohibitor tables (transferprohibitors*.block);  
+;	       is less than plus or minus five minutes (transit_combined_headways.block);
+;	 (10) A .block file containing access- and egress-mode-specific transfer prohibitor tables (transferprohibitors*.block);
+;	 (11) A .block file containing boarding penalties by mode code, in minutes (Boarding_Penalties_by_Mode_Code.block);
+;	 (12) A .block file containing in-vehicle penalties by mode code, in minutes per mile 
+;	      (Invehicle_Penalties_by_Mode_Code.block);
 ;
 ; Output: (A) A 16-table skim for each time-of-day, access/egress, and line-haul mode combination, containing the following:
 ;		 (1) Transit in-vehicle time, time (minutes x 100), ivt;
@@ -276,7 +279,10 @@
             endif
    
             run pgm = trnbuild
-                
+
+                ; path parameter: do not list all of the input
+                parameters listinput = F
+
                 ; use the highway network with the computed bus times 
                 filei neti  = trn\@token_period@_transit_background.net
                                       
@@ -322,9 +328,6 @@
                 ; path parameter: assumed walking speed is 3.0 miles per hour
                 parameters walkspeed = 3
                 
-                ; path parameter: do not list all of the input
-                parameters listinput = no
-                
                 ; path parameter: we do not use the route time coded in the line files; bus times are a function of highway times
                 parameters useruntime = n        
                 
@@ -358,8 +361,12 @@
                 
                 ; set the desired output
                 matrices name = ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtFerry, 
-                                dist_20,dist_21,dist_24,dist_28,dist_30,dist_33,dist_38,dist_42,dist_44,dist_46,dist_49,dist_52,dist_56,dist_60,dist_66,dist_68,
-                                dist_69,dist_70,dist_87,dist_110,dist_111,dist_120,dist_130,dist_133,
+                                dist_10,dist_11,dist_12,dist_13,dist_14,dist_15,dist_16,dist_17,dist_18,dist_19,
+                                dist_20,dist_21,dist_24,dist_28,dist_30,dist_33,dist_38,dist_40,dist_42,dist_44,
+                                dist_46,dist_49,dist_52,dist_55,dist_56,dist_58,dist_60,dist_63,dist_66,dist_68,
+                                dist_70,dist_80,dist_81,dist_82,dist_84,dist_86,dist_87,dist_88,dist_90,dist_91,
+                                dist_92,dist_93,dist_94,dist_100,dist_101,dist_102,dist_103,dist_104,dist_110,dist_111,
+                                dist_120,dist_121,dist_130,dist_131,dist_132,dist_133,dist_134,dist_135,dist_136,dist_137,
 
                                  
                          ; in-vehicle time for all transit modes, use TP+ code 1001    
@@ -413,54 +420,72 @@
                          ; capture the ferry in-vehicle time in order to distinguish between ferry paths and light rail paths in the light rail/ferry choice (modes 100 to 109)                  
                          mw[17] = time(100,101,102,103,104,105,106,107,108,109),
                          
-                         mw[18] = dist(20),
-			 
-			 mw[19] = dist(21),
-			 
-			 mw[20] = dist(24),
-			 
-			 mw[21] = dist(28),
-			 
-			 mw[22] = dist(30),
-			 
-			 mw[23] = dist(33),
-			 
-			 mw[24] = dist(38),
-			 
-			 mw[25] = dist(42),
-			 
-			 mw[26] = dist(44),
-			 
-			 mw[27] = dist(46),
-			 
-			 mw[28] = dist(49),
-			 
-			 mw[29] = dist(52),
-			 
-			 mw[30] = dist(56),
-			 
-			 mw[31] = dist(60),
-			 
-			 mw[32] = dist(66),
-			 
-			 mw[33] = dist(68),
-			 
-			 mw[34] = dist(69),
-			 
-			 mw[35] = dist(70),
-			 
-			 mw[36] = dist(87),
-			 
-			 mw[37] = dist(110),
-			 
-			 mw[38] = dist(111),
-			 
-			 mw[39] = dist(120),
-			 
-			 mw[40] = dist(130),
-			 
-			 mw[41] = dist(133)
-                         
+                         mw[18] = dist(10),
+                         mw[19] = dist(11),
+                         mw[20] = dist(12),
+                         mw[21] = dist(13),
+                         mw[22] = dist(14),
+                         mw[23] = dist(15),
+                         mw[24] = dist(16),
+                         mw[25] = dist(17),
+                         mw[26] = dist(18),
+                         mw[27] = dist(19),
+
+                         mw[28] = dist(20),
+                         mw[29] = dist(21),
+                         mw[30] = dist(24),
+                         mw[31] = dist(28),
+                         mw[32] = dist(30),
+                         mw[33] = dist(33),
+                         mw[34] = dist(38),
+                         mw[35] = dist(40),
+                         mw[36] = dist(42),
+                         mw[37] = dist(44),
+
+                         mw[38] = dist(46),
+                         mw[39] = dist(49),
+                         mw[40] = dist(52),
+                         mw[41] = dist(55),
+                         mw[42] = dist(56),
+                         mw[43] = dist(58),
+                         mw[44] = dist(60),
+                         mw[45] = dist(63),
+                         mw[46] = dist(66),
+                         mw[47] = dist(68),
+
+                         mw[48] = dist(70),
+                         mw[49] = dist(80),
+                         mw[50] = dist(81),
+                         mw[51] = dist(82),
+                         mw[52] = dist(84),
+                         mw[53] = dist(86),
+                         mw[54] = dist(87),
+                         mw[55] = dist(88),
+                         mw[56] = dist(90),
+                         mw[57] = dist(91),
+
+                         mw[58] = dist(92),
+                         mw[59] = dist(93),
+                         mw[60] = dist(94),
+                         mw[61] = dist(100),
+                         mw[62] = dist(101),
+                         mw[63] = dist(102),
+                         mw[64] = dist(103),
+                         mw[65] = dist(104),
+                         mw[66] = dist(110),
+                         mw[67] = dist(111),
+
+                         mw[68] = dist(120),
+                         mw[69] = dist(121),
+                         mw[70] = dist(130),
+                         mw[71] = dist(131),
+                         mw[72] = dist(132),
+                         mw[73] = dist(133),
+                         mw[74] = dist(134),
+                         mw[75] = dist(135),
+                         mw[76] = dist(136),
+                         mw[77] = dist(137)
+
                 ; trace a selection of o/d pairs for debugging
                 select trace=(i=@token_debug_origin@ && j=@token_debug_destination@)
                
@@ -476,144 +501,318 @@
                          
             ; read in boarding penalties
             read file = input\sgr\boarding_penalties_by_mode_code.block
-                         
             jloop
-            
-               _BoardCount = 0
-	       _BoardDelay = 0
-	       _FinalBoardDelay = 0
-	       
-	       if (mi.1.dist_30 > 0)
-	          _BoardDelay = _BoardDelay + _board_30
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_133 > 0)
-	          _BoardDelay = _BoardDelay + _board_133
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_120 > 0)
-	          _BoardDelay = _BoardDelay + _board_120
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_130 > 0)
-	          _BoardDelay = _BoardDelay + _board_130
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_42 > 0)
-	          _BoardDelay = _BoardDelay + _board_42
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_44 > 0)
-	          _BoardDelay = _BoardDelay + _board_44
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_52 > 0)
-	          _BoardDelay = _BoardDelay + _board_52
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_87 > 0)
-	          _BoardDelay = _BoardDelay + _board_87
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_33 > 0)
-	          _BoardDelay = _BoardDelay + _board_33
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_70 > 0)
-	          _BoardDelay = _BoardDelay + _board_70
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_60 > 0)
-	          _BoardDelay = _BoardDelay + _board_60
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_68 > 0)
-	          _BoardDelay = _BoardDelay + _board_68
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_24 > 0)
-	          _BoardDelay = _BoardDelay + _board_24
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_66 > 0)
-	          _BoardDelay = _BoardDelay + _board_66
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_20 > 0)
-	          _BoardDelay = _BoardDelay + _board_20
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_110 > 0)
-	          _BoardDelay = _BoardDelay + _board_110
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_21 > 0)
-	          _BoardDelay = _BoardDelay + _board_21
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_49 > 0)
-	          _BoardDelay = _BoardDelay + _board_49
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_69 > 0)
-	          _BoardDelay = _BoardDelay + _board_69
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_38 > 0)
-	          _BoardDelay = _BoardDelay + _board_38
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_56 > 0)
-	          _BoardDelay = _BoardDelay + _board_56
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_111 > 0)
-	          _BoardDelay = _BoardDelay + _board_111
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_28 > 0)
-	          _BoardDelay = _BoardDelay + _board_28
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
-	       if (mi.1.dist_46 > 0)
-	          _BoardDelay = _BoardDelay + _board_46
-	          _BoardCount = _BoardCount + 1
-	       endif
-	       
+              _BoardCount      = 0
+              _BoardDelay      = 0
+              _FinalBoardDelay = 0
 
-            endjloop
-            
-            ; adjust for multiple boardings on a single mode or for modes i have no data for
-	    if (_BoardCount > 0) _FinalBoardDelay = _BoardDelay + ((_BoardDelay/_BoardCount) * (mi.1.boards - _BoardCount))
-	    
-	    ; add the additional delay per boarding to the current wait time skim  
-	    mw[1] = _FinalBoardDelay
-                         
+         ; -----------------------------------------------
+         if (mi.1.dist_10 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_10)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_11 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_11)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_12 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_12)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_13 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_13)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_14 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_14)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_15 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_15)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_16 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_16)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_17 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_17)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_18 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_18)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_19 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_19)
+            _BoardCount = _BoardCount + 1
+         endif
+         ; -----------------------------------------------
+         if (mi.1.dist_20 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_20)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_21 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_21)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_24 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_24)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_28 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_28)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_30 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_30)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_33 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_33)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_38 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_38)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_40 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_40)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_42 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_42)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_44 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_44)
+            _BoardCount = _BoardCount + 1
+         endif
+         ; -----------------------------------------------
+         if (mi.1.dist_46 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_46)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_49 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_49)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_52 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_52)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_55 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_55)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_56 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_56)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_58 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_58)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_60 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_60)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_63 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_63)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_66 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_66)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_68 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_68)
+            _BoardCount = _BoardCount + 1
+         endif
+         ; -----------------------------------------------
+         if (mi.1.dist_70 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_70)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_80 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_80)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_81 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_81)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_82 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_82)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_84 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_84)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_86 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_86)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_87 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_87)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_88 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_88)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_90 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_90)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_91 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_91)
+            _BoardCount = _BoardCount + 1
+         endif
+         ; -----------------------------------------------
+         if (mi.1.dist_92 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_92)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_93 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_93)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_94 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_94)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_100 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_100)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_101 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_101)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_102 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_102)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_103 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_103)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_104 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_104)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_110 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_110)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_111 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_111)
+            _BoardCount = _BoardCount + 1
+         endif
+         ; -----------------------------------------------
+         if (mi.1.dist_120 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_120)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_121 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_121)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_130 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_130)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_131 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_131)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_132 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_132)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_133 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_133)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_134 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_134)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_135 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_135)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_136 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_136)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (mi.1.dist_137 > 0)
+            _BoardDelay = _BoardDelay + (100*_board_137)
+            _BoardCount = _BoardCount + 1
+         endif
+
+         if (_BoardCount > 0) _FinalBoardDelay = _BoardDelay + ((_BoardDelay/_BoardCount) * (mi.1.boards - _BoardCount))
+         mw[1] = _FinalBoardDelay
+
+         endjloop
          endrun
-         
+
          run pgm = matrix
          
             filei mati = skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@_temp.tpp
@@ -625,43 +824,77 @@
             read file = input\sgr\invehicle_penalties_by_mode_code.block
             
             jloop
-            
-               mw[1] = mi.1.dist_30  * _invehicle_30  +
-                       mi.1.dist_42  * _invehicle_42  +
-                       mi.1.dist_44  * _invehicle_44  +
-                       mi.1.dist_52  * _invehicle_52  +
-                       mi.1.dist_33  * _invehicle_33  +
-                       mi.1.dist_70  * _invehicle_70  +
-                       mi.1.dist_60  * _invehicle_60  +
-                       mi.1.dist_68  * _invehicle_68  +
-                       mi.1.dist_24  * _invehicle_24  +
-                       mi.1.dist_66  * _invehicle_66  +
+               ; local: 10-79
+               mw[1] = mi.1.dist_10  * _invehicle_10  +
+                       mi.1.dist_11  * _invehicle_11  +
+                       mi.1.dist_12  * _invehicle_12  +
+                       mi.1.dist_13  * _invehicle_13  +
+                       mi.1.dist_14  * _invehicle_14  +
+                       mi.1.dist_15  * _invehicle_15  +
+                       mi.1.dist_16  * _invehicle_16  +
+                       mi.1.dist_17  * _invehicle_17  +
+                       mi.1.dist_18  * _invehicle_18  +
+                       mi.1.dist_19  * _invehicle_19  +
                        mi.1.dist_20  * _invehicle_20  +
                        mi.1.dist_21  * _invehicle_21  +
-                       mi.1.dist_49  * _invehicle_49  +
-                       mi.1.dist_69  * _invehicle_69  +
+                       mi.1.dist_24  * _invehicle_24  +
+                       mi.1.dist_28  * _invehicle_28  +
+                       mi.1.dist_30  * _invehicle_30  +
+                       mi.1.dist_33  * _invehicle_33  +
                        mi.1.dist_38  * _invehicle_38  +
+                       mi.1.dist_40  * _invehicle_40  +
+                       mi.1.dist_42  * _invehicle_42  +
+                       mi.1.dist_44  * _invehicle_44  +
+                       mi.1.dist_46  * _invehicle_46  +
+                       mi.1.dist_49  * _invehicle_49  +
+                       mi.1.dist_52  * _invehicle_52  +
+                       mi.1.dist_55  * _invehicle_55  +
                        mi.1.dist_56  * _invehicle_56  +
-                       mi.1.dist_28  * _invehicle_28  + 
-                       mi.1.dist_46  * _invehicle_46
-                                     
-               mw[2] = mi.1.dist_87  * _invehicle_87
-                                     
+                       mi.1.dist_58  * _invehicle_58  +
+                       mi.1.dist_60  * _invehicle_60  +
+                       mi.1.dist_63  * _invehicle_63  +
+                       mi.1.dist_66  * _invehicle_66  +
+                       mi.1.dist_68  * _invehicle_68  +
+                       mi.1.dist_70  * _invehicle_70
+               ; express bus: 80-99
+               mw[2] = mi.1.dist_80  * _invehicle_80  +
+                       mi.1.dist_81  * _invehicle_81  +
+                       mi.1.dist_82  * _invehicle_82  +
+                       mi.1.dist_84  * _invehicle_84  +
+                       mi.1.dist_86  * _invehicle_86  +
+                       mi.1.dist_87  * _invehicle_87  +
+                       mi.1.dist_88  * _invehicle_88  +
+                       mi.1.dist_90  * _invehicle_90  +
+                       mi.1.dist_91  * _invehicle_91  +
+                       mi.1.dist_92  * _invehicle_92  +
+                       mi.1.dist_93  * _invehicle_93  +
+                       mi.1.dist_94  * _invehicle_94
+               ; light rail:    110 - 119
                mw[3] = mi.1.dist_110 * _invehicle_110 +
                        mi.1.dist_111 * _invehicle_111
-                                     
-               mw[4] = mi.1.dist_120 * _invehicle_120
-                                     
-               mw[5] = mi.1.dist_130 * _invehicle_130 + 
-                       mi.1.dist_133 * _invehicle_133
-                       
-               mw[6] = 0
-                                     
-               mw[7] = mw[1] + mw[2] + mw[3] + mw[4] + mw[5] + mw[6]                     
-                                     
-                                              
+               ; heavy rail: 120-129
+               mw[4] = mi.1.dist_120 * _invehicle_120 +
+                       mi.1.dist_121 * _invehicle_121
+               ; commuter rail: 130-139
+               mw[5] = mi.1.dist_130 * _invehicle_130 +
+                       mi.1.dist_131 * _invehicle_131 +
+                       mi.1.dist_132 * _invehicle_132 +
+                       mi.1.dist_133 * _invehicle_133 +
+                       mi.1.dist_134 * _invehicle_134 +
+                       mi.1.dist_135 * _invehicle_135 +
+                       mi.1.dist_136 * _invehicle_136 +
+                       mi.1.dist_137 * _invehicle_137
+               ; ferry service: 100 - 109
+               mw[6] = mi.1.dist_100 * _invehicle_100 +
+                       mi.1.dist_101 * _invehicle_101 +
+                       mi.1.dist_102 * _invehicle_102 +
+                       mi.1.dist_103 * _invehicle_103 +
+                       mi.1.dist_104 * _invehicle_104
+
+               mw[7] = mw[1] + mw[2] + mw[3] + mw[4] + mw[5] + mw[6]
+
             endjloop
-         
+
          endrun
          
          run pgm = matrix
