@@ -341,6 +341,7 @@ if ERRORLEVEL 2 goto done
 :: ------------------------------------------------------------------------------------------------------
 
 :: These files are invalid (from iter2).  Flush to make RunMetrics regenerate it.
+del main\tripsEVinc1.dat
 del main\tripsEVinc1.tpp
 del trn\quickboards.xls
 

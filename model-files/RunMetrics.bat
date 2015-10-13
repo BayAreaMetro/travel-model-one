@@ -70,6 +70,8 @@ if not exist main\indivTripDataIncome_%ITER%.csv (
   IF ERRORLEVEL 2 goto error
 )
 
+if not exist metrics (mkdir metrics)
+
 if not exist main\tripsEVinc1.dat (
   rem Convert trip tables into time/income/mode OD matrices
   rem Input : main\(indiv|joint)TripDataIncome_%ITER%.csv
@@ -93,8 +95,6 @@ if not exist main\tripsEVinc1.tpp (
   runtpp "%CODE_DIR%\prepAssignIncome.job"
   IF ERRORLEVEL 2 goto error
 )
-
-if not exist metrics (mkdir metrics)
 
 if not exist metrics\transit_times_by_mode_income.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
