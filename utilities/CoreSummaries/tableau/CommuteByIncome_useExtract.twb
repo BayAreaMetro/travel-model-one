@@ -6,7 +6,7 @@
   </preferences>
   <datasources>
     <datasource caption='CommuteByIncomeHousehold Extract' inline='true' name='C:\Users\lzorn\Documents\2010_04_ZZZ\summary\CommuteByIncomeHousehold.tde' version='8.3'>
-      <connection class='dataengine' dbname='M:\Application\Model One\Value Parking Pricing Pilot\Across Scenarios\Across Tableau\CommuteByIncomeHousehold.tde' schema='Extract' tablename='Extract'>
+      <connection class='dataengine' dbname='.\CommuteByIncomeHousehold.tde' schema='Extract' tablename='Extract'>
         <relation name='Extract (Extract.Extract)' table='[Extract].[Extract]' type='table' />
         <metadata-records>
           <metadata-record class='column'>
