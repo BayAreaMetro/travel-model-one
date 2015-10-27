@@ -1,0 +1,102 @@
+; extract-express-lane-data.job
+;
+; TP+ script to dump HOT prices, volumes, and volume/capacity ratios to a
+; CSV file.  The CSV file is pasted into OptimizeHotPrices.xlsx to generate
+; tables and summaries that make a crude attempt to find optimal HOT prices. 
+;
+; 2011 01 19 dto
+
+run pgm = network
+
+   neti = .\avgload5period.net
+   
+   phase = linkmerge
+   
+      if (_doOnce = 0)
+      
+         list = "       a,",
+                "       b,",
+                "tollclass,",
+                "distance,",
+                "tollea_da,",
+                "tollam_da,",
+                "tollmd_da,",
+                "tollpm_da,",
+                "tollev_da,",
+                "tollea_s2,",
+                "tollam_s2,",
+                "tollmd_s2,",
+                "tollpm_s2,",
+                "tollev_s2,",
+                "volea_dat,",
+                "volam_dat,",
+                "volmd_dat,",
+                "volpm_dat,",
+                "volev_dat,",
+                "volea_s2t,",
+                "volam_s2t,",
+                "volmd_s2t,",
+                "volpm_s2t,",
+                "volev_s2t,",
+                "volea_tot,",
+                "volam_tot,",
+                "volmd_tot,",
+                "volpm_tot,",
+                "volev_tot,",
+                "    vcEA,",
+                "    vcAM,",
+                "    vcMD,",
+                "    vcPM,",
+                "    vcEV",
+                file = express-lane-data.csv
+         
+         _doOnce = 1
+      
+      endif
+      
+      if (tollclass>10)
+   
+         list = A(8.0), ",",
+                B(8.0), ",",
+                TOLLCLASS(4.0),",",
+                DISTANCE(8.2), ",",
+                tollea_da(8.2),",",
+                tollam_da(8.2),",",
+                tollmd_da(8.2),",",
+                tollpm_da(8.2),",",
+                tollev_da(8.2),",",
+                tollea_s2(8.2),",",
+                tollam_s2(8.2),",",
+                tollmd_s2(8.2),",",
+                tollpm_s2(8.2),",",
+                tollev_s2(8.2),",",
+                volea_dat(10.2),",",
+                volam_dat(10.2),",",
+                volmd_dat(10.2),",",
+                volpm_dat(10.2),",",
+                volev_dat(10.2),",",
+                volea_s2t(10.2),",",
+                volam_s2t(10.2),",",
+                volmd_s2t(10.2),",",
+                volpm_s2t(10.2),",",
+                volev_s2t(10.2),",",
+                volea_tot(10.2),",",
+                volam_tot(10.2),",",
+                volmd_tot(10.2),",",
+                volpm_tot(10.2),",",
+                volev_tot(10.2),",",
+                vcEA(8.4),",",
+                vcAM(8.4),",",
+                vcMD(8.4),",",
+                vcPM(8.4),",",
+                vcEV(8.4),
+                file = express-lane-data.csv
+             
+      endif
+   
+   endphase
+   
+endrun
+
+     
+
