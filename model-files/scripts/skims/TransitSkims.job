@@ -500,7 +500,7 @@
                          
                          
             ; read in boarding penalties
-            read file = input\sgr\boarding_penalties_by_mode_code.block
+            read file = sgr\boarding_penalties_by_mode_code.block
             jloop
               _BoardCount      = 0
               _BoardDelay      = 0
@@ -821,7 +821,7 @@
                          name = loc_ivtt_delay, exp_ivtt_delay, lrt_ivtt_delay, hvy_ivtt_delay, com_ivtt_delay, fer_ivtt_delay, all_ivtt_delay     
                          
             ; read in boarding penalties
-            read file = input\sgr\invehicle_penalties_by_mode_code.block
+            read file = sgr\invehicle_penalties_by_mode_code.block
             
             jloop
                ; local: 10-79

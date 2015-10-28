@@ -8,7 +8,7 @@
 ; This cost adjustment informs the route choice decisions embedded in the highway assignment routine, and 
 ; this price is included in the cost skims. 
 ;
-; Cost adjustments are looked up in INPUT\sgr\city_opcost_adjustment.csv and are meant to represent pavement
+; Cost adjustments are looked up in sgr\city_opcost_adjustment.csv and are meant to represent pavement
 ; quality.  For format of that file is: Cityid,    (corresponds to cityid in the network)
 ;                                       Cityname,  (for debugging)
 ;                                       Year,      (for debugging)
@@ -143,7 +143,7 @@ loop period = 1, 5
         lookup[24] = 1, result = 27, ; local     bus fuel adjustment
         fail = -1,-1,-1,
         interpolate = N,
-        file = INPUT\sgr\city_opcost_adjustment.csv
+        file = sgr\city_opcost_adjustment.csv
 
       ; perfect opcost is R&M opcost + Fuel opcost
       autoopc_perfect = AUTOOPC_PER_RM + AUTOOPC_PER_FU

@@ -64,6 +64,7 @@ mkdir nonres
 mkdir main
 mkdir logs
 mkdir database
+mkdir sgr
 
 :: Stamp the feedback report with the date and time of the model start
 echo STARTED MODEL RUN  %DATE% %TIME% >> logs\feedback.rpt 
@@ -78,6 +79,7 @@ copy INPUT\popsyn\              popsyn\
 copy INPUT\nonres\              nonres\
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
+copy INPUT\sgr\                 sgr\
 
 
 :: ------------------------------------------------------------------------------------------------------
