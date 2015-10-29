@@ -33,8 +33,8 @@ knitr::opts_chunk$set(cache=TRUE)
 
 #### Parameters
 ```{r parameters}
-LOW_VC_THRESH = 0.40
-HIGH_VC_THRESH = 0.75
+LOW_VC_THRESH = 0.60
+HIGH_VC_THRESH = 0.80
 ```
 
 ```{r remote-io, include=FALSE}
