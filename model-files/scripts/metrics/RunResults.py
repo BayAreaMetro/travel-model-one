@@ -54,13 +54,8 @@ class RunResults:
     }
 
     # Do these ever change?  Should they go into BC_config.csv?
-    PROJECTED_2040_POPULATION   = 9299150
     YEARLY_AUTO_TRIPS_PER_AUTO  = 1583
 
-    AVERAGE_WALK_SPEED          = 3.0       # mph
-    AVERAGE_BIKE_SPEED          = 12.0      # mph
-    PERCENT_POP_INACTIVE        = 0.62
-    ACTIVE_MIN_REQUIREMENT      = 30
     ANNUALIZATION               = 300
     WORK_ANNUALIZATION          = 250
 
@@ -716,23 +711,6 @@ class RunResults:
         daily_results[(cat1,cat2,'Property Damage')] = vmt_byclass.loc[:,'Motor Vehicle Property'].sum()
 
         ######################################################################################
-        cat2         = 'Trips with Active Transportation'
-        # "Off-Model Benefits" -- see
-        # J:\PROJECT\2013 RTP_SCS\Performance Assessment\Project Assessment (Apr 2012)\B-C Methodology\Off-Model Benefits Calculator.xlsx
-        daily_results[(cat1,cat2,'Walk'   )] = nonmot_byclass.loc['Walk','Daily Trips']
-        daily_results[(cat1,cat2,'Bike'   )] = nonmot_byclass.loc['Bike','Daily Trips']
-        daily_results[(cat1,cat2,'Transit')] = transit_byclass.loc[:,'Transit Trips'].sum() # all transit trips
-
-        cat2         = 'Avg Minutes Active Transport per Person'
-        daily_results[(cat1,cat2,'Walk'   )] = nonmot_byclass.loc['Walk','Total Time (Hours)'] * 60.0 / RunResults.PROJECTED_2040_POPULATION
-        daily_results[(cat1,cat2,'Bike'   )] = nonmot_byclass.loc['Bike','Total Time (Hours)'] * 60.0 / RunResults.PROJECTED_2040_POPULATION
-        daily_results[(cat1,cat2,'Transit')] = (transit_byclass.loc[:,'Walk acc & egr hours'].sum() + \
-                                          transit_byclass.loc[:,'Aux walk hours'].sum()) * 60.0 / RunResults.PROJECTED_2040_POPULATION
-        avg_min_total = daily_results[(cat1,cat2,'Walk'   )] + \
-                        daily_results[(cat1,cat2,'Bike'   )] + \
-                        daily_results[(cat1,cat2,'Transit')]
-
-
         cat2         = 'Avg Minutes Active Transport per Person'
         active_cat2  = cat2
         nonmot_byclass_2064  = self.nonmot_times.loc['20-64'].sum(level='Mode')  # person trips
@@ -745,14 +723,8 @@ class RunResults:
                                                            transit_byaceg_2074.loc[:,'Aux walk hours'].sum()) * 60.0 / self.unique_active_travelers['unique_transiters_2074']
 
         cat2         = 'Active Individuals (Morbidity)'
-        # (active daily min per bay area person) * (inactive persons) = 
-        #            total active daily min per day _by inactive persons_
-        # Divide by active minute per day requirement to get "active people"
-        # TODO: Why multiply by inactive population?
-        #       Are we just removing the population that is assumed to be active anyway?
-        #       Wouldn't subtracting the the base give newly active population?
-        daily_results[(cat1,cat2,'Total'  )] = avg_min_total * \
-            (RunResults.PERCENT_POP_INACTIVE * RunResults.PROJECTED_2040_POPULATION) / RunResults.ACTIVE_MIN_REQUIREMENT
+        # Really these are active addults
+        daily_results[(cat1,cat2,'Total'  )] = self.unique_active_travelers['number_active_adults']
 
         cat2         = 'Activity: Est Proportion Deaths Averted'
         epda_cat2    = cat2

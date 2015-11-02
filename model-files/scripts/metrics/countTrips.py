@@ -1,5 +1,5 @@
 import collections, datetime, os, sys
-import pandas
+import numpy, pandas
 
 USATE = """
 
@@ -7,7 +7,9 @@ USATE = """
 
   Simple script that reads
 
-  * main/[indiv,joint]TripDataIncome_%ITER%.csv,
+  * main/[indiv,joint]TripDataIncome_%ITER%.csv and
+  * main/jointTourData_%ITER%.csv (for the person ids for joint trips)
+  * main/personData_%ITER%.csv (for person ages)
 
   and tallies the trips by timeperiod, income category and trip mode.  Outputs:
 
@@ -37,6 +39,99 @@ COLUMNS = ['orig_taz','dest_taz',
            'drv_loc_wlk', 'drv_lrf_wlk', 'drv_exp_wlk', 'drv_hvy_wlk', 'drv_com_wlk',
            'wlk_loc_drv', 'wlk_lrf_drv', 'wlk_exp_drv', 'wlk_hvy_drv', 'wlk_com_drv']
 
+ACTIVE_MINUTES_THRESHHOLD = 30
+
+def find_number_of_active_adults(trips_df):
+    """
+    For update on morbidity calculation:
+    Calculates the number of adults (18+ year olds) that have more than ACTIVE_MINUTES_THRESHHOLD
+    minutes of active travel per day and returns it.
+
+    Reads database\ActiveTimeSkimsDatabase[timeperiod].csv
+    """
+    # active adult trips -- filter out youths and driving trips
+    active_adult_trips_df = trips_df.loc[trips_df['age']>=18,
+                            ['hh_id','person_id','age','orig_taz','dest_taz','trip_mode_str','time_period','num_participants']].copy()
+
+    # map modes to simplified mode for skim
+    active_adult_trips_df.loc[:,'active_mode'] = active_adult_trips_df['trip_mode_str']
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='wlk_loc_wlk', 'active_mode'] = 'wTrnW'
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='wlk_lrf_wlk', 'active_mode'] = 'wTrnW'
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='wlk_exp_wlk', 'active_mode'] = 'wTrnW'
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='wlk_hvy_wlk', 'active_mode'] = 'wTrnW'
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='wlk_com_wlk', 'active_mode'] = 'wTrnW'
+
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='drv_loc_wlk', 'active_mode'] = 'dTrnW'
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='drv_lrf_wlk', 'active_mode'] = 'dTrnW'
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='drv_exp_wlk', 'active_mode'] = 'dTrnW'
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='drv_hvy_wlk', 'active_mode'] = 'dTrnW'
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='drv_com_wlk', 'active_mode'] = 'dTrnW'
+
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='wlk_loc_drv', 'active_mode'] = 'wTrnD'
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='wlk_lrf_drv', 'active_mode'] = 'wTrnD'
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='wlk_exp_drv', 'active_mode'] = 'wTrnD'
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='wlk_hvy_drv', 'active_mode'] = 'wTrnD'
+    active_adult_trips_df.loc[active_adult_trips_df['trip_mode_str']=='wlk_com_drv', 'active_mode'] = 'wTrnD'
+
+    active_adult_trips_df.loc[:,'active_minutes'] = 0.0
+
+    # print active_adult_trips_df['active_mode'].value_counts()
+    # print active_adult_trips_df['time_period'].value_counts()
+    active_adult_trips_df_len = len(active_adult_trips_df)
+
+    # figure out how many minutes of activity per trip: join with activeTimeSkims
+    for time_period in ['EA','AM','MD','PM','EV']:
+        filename = os.path.join("database", "ActiveTimeSkimsDatabase%s.csv" % time_period)
+        print "%s Reading %s" % (datetime.datetime.now().strftime("%x %X"), filename)
+        skim_df  = pandas.read_table(filename, sep=",")
+        skim_df.loc[:, 'time_period'] = time_period
+
+        for active_mode in ['walk','bike','wTrnW','dTrnW','wTrnD']:
+            # get the skim for this mode
+            skim_tp_df = skim_df.loc[:,['orig','dest','time_period',active_mode]]
+            skim_tp_df.loc[:,'active_mode']=active_mode
+            skim_tp_df.rename(columns={'orig':'orig_taz','dest':'dest_taz'}, inplace=True)
+
+            # join it, adding active_mode-named column
+            active_adult_trips_df = pandas.merge(left    =active_adult_trips_df,
+                                                 right   =skim_tp_df,
+                                                 on      =['orig_taz','dest_taz','time_period','active_mode'],
+                                                 how     ='left')
+            # set those minutes
+            active_adult_trips_df.loc[active_adult_trips_df[active_mode].notnull(), 'active_minutes'] = active_adult_trips_df[active_mode]
+            # drop the new column
+            active_adult_trips_df.drop(active_mode, axis=1, inplace=True)
+
+    # make sure we didn't lose anyone
+    assert(active_adult_trips_df_len == len(active_adult_trips_df))
+    # keep only the successful joins
+    active_adult_trips_df = active_adult_trips_df.loc[active_adult_trips_df['active_minutes']>0]
+    # see how many trips had failed joins
+    percent_fail = 100.0*len(active_adult_trips_df)/active_adult_trips_df_len
+    print "%s Have %d valid active times out of %d, or %.2f%% join successes" % \
+      (datetime.datetime.now().strftime("%x %X"),
+       len(active_adult_trips_df),
+       active_adult_trips_df_len,
+       percent_fail)
+
+    # each row is 1 trip
+    active_adult_trips_df['num_trips'] = 1
+    # count active minutes for people
+    active_counts_df = active_adult_trips_df[['hh_id','person_id','num_participants','num_trips','active_minutes']]\
+        .groupby(['hh_id','person_id'])\
+        .agg({'num_participants':numpy.mean, 'num_trips':numpy.sum, 'active_minutes':numpy.sum})
+    print active_counts_df.describe()
+
+    # filter to just active persons (above ACTIVE_MINUTES_THRESHHOLD)
+    active_counts_len = len(active_counts_df)
+    active_counts_df  = active_counts_df.loc[active_counts_df['active_minutes']>=ACTIVE_MINUTES_THRESHHOLD]
+    percent_active = 100.0*len(active_counts_df)/active_counts_len
+    print "%s Have %d active (above %d minutes threshold) out of %d total adults with active minutes, or %.2f%% very active" % \
+        (datetime.datetime.now().strftime("%x %X"),
+         len(active_counts_df), ACTIVE_MINUTES_THRESHHOLD,
+         active_counts_len, percent_active)
+    print active_counts_df.describe()
+    return active_counts_df['num_participants'].sum()
 
 def write_trips_by_od(trips_df, by_income_cat, outsuffix):
     """
@@ -214,6 +309,10 @@ if __name__ == '__main__':
                             left_on=['hh_id','person_num'],
                             right_on=['hh_id','person_num'])
 
+    travelers_dict = {}
+
+    travelers_dict['number_active_adults'] = find_number_of_active_adults(trips_df)
+
     # filter to 20-74 year olds for walking
     trips_df = trips_df.loc[(trips_df['age']>=20)&(trips_df['age']<=74)]
     print "%s Filtered to %d trips between 20-74 year olds" % \
@@ -222,7 +321,6 @@ if __name__ == '__main__':
     # write it
     write_trips_by_od(trips_df, by_income_cat=False, outsuffix="_2074")
 
-    travelers_dict = {}
 
     # unique persons who walk
     walking_2074 = trips_df.loc[trips_df['trip_mode_str']=='walk']
