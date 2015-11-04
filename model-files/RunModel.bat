@@ -23,7 +23,7 @@ set JAVA_PATH=C:\Program Files\Java\jdk1.7.0_71
 set GAWK_PATH=M:\UTIL\Gawk
 
 :: The location of the RUNTPP executable from Citilabs
-set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files (x86)\Citilabs\CubeVoyager
+set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI;C:\Program Files (x86)\Citilabs\CubeVoyager
 
 :: The location of python
 set PYTHON_PATH=C:\Python27
