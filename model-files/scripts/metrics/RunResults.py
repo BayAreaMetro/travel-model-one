@@ -83,10 +83,10 @@ class RunResults:
     # Model output only captured direct particulate matter emissions; emissions were
     # scaled up to account for particulate emissions from road dust and brake/tire
     # wear
-    EMISSIONS_SCALEUP           = 1.10231
-    PM25_MAGIC_A                = 0.007             # TODO: what is this?
-    PM25_MAGIC_B                = 0.01891           # TODO: what is this?
-    PM25_MAGIC_C                = 0.00000110231131  # TODO: what is this
+    METRIC_TONS_TO_US_TONS      = 1.10231           # Metric tons to US tons
+    PM25_WEAR                   = 0.007             # Grams of PM2.5 from braking/tire wear per vehicle mile
+    PM25_ROADDUST               = 0.01891           # Grams of PM2.5 from road dust per vehicle mile
+    GRAMS_TO_US_TONS            = 0.00000110231131  # Grams to US tons
 
     # Already annual -- don't annualize. Default false.
     ALREADY_ANNUAL = {
@@ -377,8 +377,8 @@ class RunResults:
         cat1            = 'Air Pollutant'
         cat2            = 'PM2.5 (tons)'
         self.daily_results[cat1,cat2,'PM2.5 Diesel'] = \
-            self.vmt_vht_metrics.sum(level='vehicle class').loc[:,'Diesel_PM2.5'].sum()*RunResults.EMISSIONS_SCALEUP + \
-            (self.daily_results['Travel Cost','VMT (Reference)','Truck - Computed']*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
+            self.vmt_vht_metrics.sum(level='vehicle class').loc[:,'Diesel_PM2.5'].sum()*RunResults.METRIC_TONS_TO_US_TONS + \
+            (self.daily_results['Travel Cost','VMT (Reference)','Truck - Computed']*(RunResults.PM25_WEAR+RunResults.PM25_ROADDUST)*RunResults.GRAMS_TO_US_TONS)
 
         cat1            = 'Travel Cost'
         cat2            = 'Operating Costs'
@@ -670,26 +670,26 @@ class RunResults:
         cat1            = 'Air Pollutant'
         cat2            = 'PM2.5 (tons)'
         daily_results[(cat1,cat2,'PM2.5 Gasoline')] = \
-            vmt_byclass.loc[:,'Gas_PM2.5'].sum()*RunResults.EMISSIONS_SCALEUP + \
-            (daily_results[('Travel Cost','VMT (Reference)','Auto')]*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
+            vmt_byclass.loc[:,'Gas_PM2.5'].sum()*RunResults.METRIC_TONS_TO_US_TONS + \
+            (daily_results[('Travel Cost','VMT (Reference)','Auto')]*(RunResults.PM25_WEAR+RunResults.PM25_ROADDUST)*RunResults.GRAMS_TO_US_TONS)
         # this will get updated if base results
         daily_results[(cat1,cat2,'PM2.5 Diesel'  )] = \
-            vmt_byclass.loc[:,'Diesel_PM2.5'].sum()*RunResults.EMISSIONS_SCALEUP + \
-            (daily_results[('Travel Cost','VMT (Reference)','Truck - Computed')]*(RunResults.PM25_MAGIC_A+RunResults.PM25_MAGIC_B)*RunResults.PM25_MAGIC_C)
+            vmt_byclass.loc[:,'Diesel_PM2.5'].sum()*RunResults.METRIC_TONS_TO_US_TONS + \
+            (daily_results[('Travel Cost','VMT (Reference)','Truck - Computed')]*(RunResults.PM25_WEAR+RunResults.PM25_ROADDUST)*RunResults.GRAMS_TO_US_TONS)
 
         cat2            = 'CO2 (metric tons)'
         daily_results[(cat1,cat2,'CO2')] = vmt_byclass.loc[:,'CO2'  ].sum()
 
         cat2            = 'Other'
-        daily_results[(cat1,cat2,'NOX (tons)')] = vmt_byclass.loc[:,'W_NOx'].sum()*RunResults.EMISSIONS_SCALEUP
-        daily_results[(cat1,cat2,'SO2 (tons)')] = vmt_byclass.loc[:,'SOx'  ].sum()*RunResults.EMISSIONS_SCALEUP
+        daily_results[(cat1,cat2,'NOX (tons)')] = vmt_byclass.loc[:,'W_NOx'].sum()*RunResults.METRIC_TONS_TO_US_TONS
+        daily_results[(cat1,cat2,'SO2 (tons)')] = vmt_byclass.loc[:,'SOx'  ].sum()*RunResults.METRIC_TONS_TO_US_TONS
 
         # http://en.wikipedia.org/wiki/Volatile_organic_compound
-        daily_results[(cat1,cat2,'VOC: Acetaldehyde (metric tons)' )] = vmt_byclass.loc[:,'Acetaldehyde'  ].sum()*RunResults.EMISSIONS_SCALEUP
-        daily_results[(cat1,cat2,'VOC: Benzene (metric tons)'      )] = vmt_byclass.loc[:,'Benzene'       ].sum()*RunResults.EMISSIONS_SCALEUP
-        daily_results[(cat1,cat2,'VOC: 1,3-Butadiene (metric tons)')] = vmt_byclass.loc[:,'Butadiene'     ].sum()*RunResults.EMISSIONS_SCALEUP
-        daily_results[(cat1,cat2,'VOC: Formaldehyde (metric tons)' )] = vmt_byclass.loc[:,'Formaldehyde'  ].sum()*RunResults.EMISSIONS_SCALEUP
-        daily_results[(cat1,cat2,'All other VOC (metric tons)'     )] = vmt_byclass.loc[:,'ROG'].sum()*RunResults.EMISSIONS_SCALEUP \
+        daily_results[(cat1,cat2,'VOC: Acetaldehyde (metric tons)' )] = vmt_byclass.loc[:,'Acetaldehyde'  ].sum()*RunResults.METRIC_TONS_TO_US_TONS
+        daily_results[(cat1,cat2,'VOC: Benzene (metric tons)'      )] = vmt_byclass.loc[:,'Benzene'       ].sum()*RunResults.METRIC_TONS_TO_US_TONS
+        daily_results[(cat1,cat2,'VOC: 1,3-Butadiene (metric tons)')] = vmt_byclass.loc[:,'Butadiene'     ].sum()*RunResults.METRIC_TONS_TO_US_TONS
+        daily_results[(cat1,cat2,'VOC: Formaldehyde (metric tons)' )] = vmt_byclass.loc[:,'Formaldehyde'  ].sum()*RunResults.METRIC_TONS_TO_US_TONS
+        daily_results[(cat1,cat2,'All other VOC (metric tons)'     )] = vmt_byclass.loc[:,'ROG'].sum()*RunResults.METRIC_TONS_TO_US_TONS \
             - daily_results[(cat1,cat2,'VOC: Acetaldehyde (metric tons)' )] \
             - daily_results[(cat1,cat2,'VOC: Benzene (metric tons)'      )] \
             - daily_results[(cat1,cat2,'VOC: 1,3-Butadiene (metric tons)')] \
