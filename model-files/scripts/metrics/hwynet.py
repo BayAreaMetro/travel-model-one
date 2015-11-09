@@ -13,12 +13,12 @@ USAGE = """
  -- Using nonRecurringDelayLookup.csv
   * Non-Recurring Freeway Delay: estimated delay experienced on freeway links that is non-recurring.
  -- Using collisionLookup.csv
-  * Motor Vehicle Fatality:
-  * Motor Vehicle Injury:
-  * Motor Vehicle Property:
-  * Walk Fatality:
-  * Walk Injury:
-  * Bike Fatality:
+  * Motor Vehicle Fatality
+  * Motor Vehicle Injury
+  * Motor Vehicle Property
+  * Walk Fatality
+  * Walk Injury
+  * Bike Fatality
   * Bike Injury
  -- Using emissionsLookup.csv
   * ROG
@@ -35,6 +35,8 @@ USAGE = """
   * Formaldehyde
   * TOG_exh
   * PM10
+  * PM10_wear
+  * PM2.5_wear
 """
 parser = optparse.OptionParser()
 (options,args) = parser.parse_args()
@@ -77,7 +79,7 @@ infile.close()
 # TODO: Units are collisions per 1,000,000 VMT?
 # Map headers -> index for this lokup and read lookup data
 collisionlookup = {} # key = (at,ft,lanes)
-infile        	= open(os.path.join(lookupdir,"collisionlookup.csv"))
+infile        	= open(os.path.join(lookupdir,"collisionLookup.csv"))
 reader          = csv.reader(infile)
 col_header_list = reader.next()
 col_headers     = {col_header_list[i]:i for i in range(len(col_header_list))}
@@ -89,7 +91,7 @@ collision_types = col_header_list[3:]
 infile.close()
 # print collisionlookup
 
-# TODO: Units are Metric Tons per 1,000,000 VMT?
+# Units are grams per mile (equivalent to metric tons per 1,000,000 VMT)
 emissionslookup = {} # key = (period,vclassgroup,speed)
 infile        	= open(os.path.join(lookupdir,"emissionsLookup.csv"))
 reader          = csv.reader(infile)
@@ -210,7 +212,7 @@ for period in periods:
 			for idx in range(len(emission_types)):
 				emission_tallies[idx] += vmt_emissions[(period,vclass,speed)] *\
 				                         float(emissionslookup[(period,vclassgroup[vclass],speed)][em_headers[emission_types[idx]]])
-		# emissionlookup in emissions per 1000000 VMT
+		# emissionlookup in grams per mile (equivalent to metric tons per 1000000 VMT)
 		for idx in range(len(emission_tallies)):
 			emission_tallies[idx] = emission_tallies[idx]/1000000.0
 

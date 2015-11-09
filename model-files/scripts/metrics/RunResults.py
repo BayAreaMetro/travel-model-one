@@ -84,8 +84,7 @@ class RunResults:
     # scaled up to account for particulate emissions from road dust and brake/tire
     # wear
     METRIC_TONS_TO_US_TONS      = 1.10231           # Metric tons to US tons
-    PM25_WEAR                   = 0.007             # Grams of PM2.5 from braking/tire wear per vehicle mile
-    PM25_ROADDUST               = 0.01891           # Grams of PM2.5 from road dust per vehicle mile
+    PM25_ROADDUST               = 0.01974           # Grams of PM2.5 from road dust per vehicle mile
     GRAMS_TO_US_TONS            = 0.00000110231131  # Grams to US tons
 
     # Already annual -- don't annualize. Default false.
@@ -159,8 +158,10 @@ class RunResults:
     ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Napa'            ):      -1.49,
     ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Sonoma'          ):      -1.49,
     ('Travel Cost','Parking Costs','($2000) Non-Work Tours to Marin'           ):      -1.49,
-    ('Air Pollutant','PM2.5 (tons)','PM2.5 Gasoline'                           ): -658800.0,
-    ('Air Pollutant','PM2.5 (tons)','PM2.5 Diesel'                             ): -665400.0,
+    ('Air Pollutant','PM2.5 (tons)','PM2.5 Tailpipe Gasoline'                  ): -658800.0,
+    ('Air Pollutant','PM2.5 (tons)','PM2.5 Tailpipe Diesel'                    ): -665400.0,
+    ('Air Pollutant','PM2.5 (tons)','PM2.5 Brake & Tire Wear'                  ): -658800.0,
+    ('Air Pollutant','PM2.5 (tons)','PM2.5 Road Dust'                          ): -658800.0,
     ('Air Pollutant','CO2 (metric tons)','CO2'                                 ):    -100.0,
     ('Air Pollutant','Other','NOX (tons)'                                      ):   -6000.0,
     ('Air Pollutant','Other','SO2 (tons)'                                      ):  -22200.0,
@@ -376,9 +377,9 @@ class RunResults:
         # this is dependent on VMT so it also needs updating
         cat1            = 'Air Pollutant'
         cat2            = 'PM2.5 (tons)'
-        self.daily_results[cat1,cat2,'PM2.5 Diesel'] = \
-            self.vmt_vht_metrics.sum(level='vehicle class').loc[:,'Diesel_PM2.5'].sum()*RunResults.METRIC_TONS_TO_US_TONS + \
-            (self.daily_results['Travel Cost','VMT (Reference)','Truck - Computed']*(RunResults.PM25_WEAR+RunResults.PM25_ROADDUST)*RunResults.GRAMS_TO_US_TONS)
+        self.daily_results[cat1,cat2,'PM2.5 Road Dust'] = \
+            (self.daily_results['Travel Cost','VMT (Reference)','Auto'            ] + \
+             self.daily_results['Travel Cost','VMT (Reference)','Truck - Computed'])*RunResults.PM25_ROADDUST*RunResults.GRAMS_TO_US_TONS
 
         cat1            = 'Travel Cost'
         cat2            = 'Operating Costs'
@@ -669,13 +670,18 @@ class RunResults:
         ######################################################################################
         cat1            = 'Air Pollutant'
         cat2            = 'PM2.5 (tons)'
-        daily_results[(cat1,cat2,'PM2.5 Gasoline')] = \
-            vmt_byclass.loc[:,'Gas_PM2.5'].sum()*RunResults.METRIC_TONS_TO_US_TONS + \
-            (daily_results[('Travel Cost','VMT (Reference)','Auto')]*(RunResults.PM25_WEAR+RunResults.PM25_ROADDUST)*RunResults.GRAMS_TO_US_TONS)
+        daily_results[(cat1,cat2,'PM2.5 Tailpipe Gasoline')] = \
+            vmt_byclass.loc[:,'Gas_PM2.5'].sum()*RunResults.METRIC_TONS_TO_US_TONS
+        daily_results[(cat1,cat2,'PM2.5 Tailpipe Diesel'  )] = \
+            vmt_byclass.loc[:,'Diesel_PM2.5'].sum()*RunResults.METRIC_TONS_TO_US_TONS
+
         # this will get updated if base results
-        daily_results[(cat1,cat2,'PM2.5 Diesel'  )] = \
-            vmt_byclass.loc[:,'Diesel_PM2.5'].sum()*RunResults.METRIC_TONS_TO_US_TONS + \
-            (daily_results[('Travel Cost','VMT (Reference)','Truck - Computed')]*(RunResults.PM25_WEAR+RunResults.PM25_ROADDUST)*RunResults.GRAMS_TO_US_TONS)
+        daily_results[(cat1,cat2,'PM2.5 Road Dust')] = \
+            (daily_results[('Travel Cost','VMT (Reference)','Auto'            )] + \
+             daily_results[('Travel Cost','VMT (Reference)','Truck - Computed')])*RunResults.PM25_ROADDUST*RunResults.GRAMS_TO_US_TONS
+
+        daily_results[(cat1,cat2,'PM2.5 Brake & Tire Wear')] = \
+            vmt_byclass.loc[:,'PM2.5_wear'].sum()*RunResults.METRIC_TONS_TO_US_TONS
 
         cat2            = 'CO2 (metric tons)'
         daily_results[(cat1,cat2,'CO2')] = vmt_byclass.loc[:,'CO2'  ].sum()

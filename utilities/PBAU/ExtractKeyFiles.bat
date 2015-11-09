@@ -19,8 +19,9 @@ mkdir extractor
 :: set ITER=3
 
 :: Highway assignment results
-copy hwy\iter%ITER%\avgload5period.net extractor\avgload5period.net
-copy hwy\iter%ITER%\avgload5period.csv extractor\avgload5period.csv
+copy hwy\iter%ITER%\avgload5period.net            extractor\avgload5period.net
+copy hwy\iter%ITER%\avgload5period.csv            extractor\avgload5period.csv
+copy hwy\iter%ITER%\avgload5period_vehclasses.csv extractor\avgload5period_vehclasses.csv
 
 :: Transit assignment results
 mkdir extractor\trn
