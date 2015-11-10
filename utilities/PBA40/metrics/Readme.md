@@ -65,9 +65,9 @@ Additionally, a (slightly user-unfriendly) text version of these outputs will be
 `..\all_project_metrics\[project_id].csv`.  The idea here is that a number of scenarios can
 be summarized into this directory, and then all of those results can get rolled up into a
 single set of files, `..\all_project_metrics\AllProjects_[Data,Desc].csv` by
-[rollupAllProjects.py](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/rollupAllProjects.py)
+[rollupAllProjects.py](rollupAllProjects.py)
 
-This can be viewed in Tableau using [Cobra Tableau.twb](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/Cobra%20Tableau.twb)
+This can be viewed in Tableau using [Cobra Tableau.twb](Cobra%20Tableau.twb)
 
 ## Output Detail
 
@@ -98,7 +98,7 @@ where
 
 These are a simple sum of the vehicle hours traveled summed across all roadway links.
 For autos, these are transformed to person hours traveled.  Pulled from the hwy networks
-via [hwynet.py](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/hwynet.py).
+via [hwynet.py](hwynet.py).
 
 #### Non-Recurring Freeway Delay (Hours)
 
@@ -106,22 +106,22 @@ One of the required inputs includes `INPUT\metrics\nonRecurringDelayLookup.csv`,
 mapping V/C ratio and number of lanes (2 or fewer, 3, or 4 or more) to Non-Recurring
 Hours of Delay per Vehicle Miles Traveled.  VMT on each *freeway* link is therefore
 multiplied by this lookup to estimate the total Non-Recurring Hours of Delay.  Pulled
-from the hwy networks via [hwynet.py](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/hwynet.py).
+from the hwy networks via [hwynet.py](hwynet.py).
 
-Note: `nonRecurringDelayLookup.csv` is in vehicle hours but `RunResults.py`(https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/RunResults.py)
+Note: `nonRecurringDelayLookup.csv` is in vehicle hours but [RunResults.py](RunResults.py)
 transforms these to person hours for auto trips.  This is a *change* from the initial version of cobra.
 
 #### Transit In-Vehicle (Hours)
 
 These are calculated by summing trips times the in-vehicle time for those trips, by
-mode.  Calculations are done in [sumTransitTimes.job](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/sumTransitTimes.job)
+mode.  Calculations are done in [sumTransitTimes.job](sumTransitTimes.job)
 
 #### Transit Out-of-Vehicle (Hours)
 
 Similarly, these are colcuated by summing trips times different out-of-vehicle times
 for these trips, by mode.  *Walk Access+Egress* includes auxiliary walk time.
 *Wait* times include initial wait and transfer wait.  Calculations are done in
-[sumTransitTimes.job](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/sumTransitTimes.job)
+[sumTransitTimes.job](sumTransitTimes.job)
 
 From the *Plan Bay Area Performance Assessment Report*:
 
@@ -153,21 +153,21 @@ the project mode's trips also includes induced travel.
 
 Walk and bike times are based on walk and bike distances transformed to times
 assuming a 3 mph walk speed and 12 mph bike speed.  See
-[sumNonmotTimes.job](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/sumNonmotTimes.job)
+[sumNonmotTimes.job](sumNonmotTimes.job)
 
 ### Travel Cost
 
 #### VMT
 
 This is just the sum of Vehicle Miles Traveled for autos and trucks, tallied by
-[hwynet.py](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/hwynet.py)
+[hwynet.py](hwynet.py)
 **This is redundant with Travel Time, above, and there is no need to include in Cost/Benefit sums.  It's included for reference.**
 
 #### Operating Costs
 
 Operating costs for autos come from roadway skims combined with trip tables.
 They include pavement costs (repair & maintenance costs and fuel costs, adjusted according
-to pavement condition) and they do not include bridge tolls.  See [sumAutoTimes.job](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/sumAutoTimes.job)
+to pavement condition) and they do not include bridge tolls.  See [sumAutoTimes.job](sumAutoTimes.job)
 
 **Note:** This is different from previous versions of Cobra, where auto operating cost came directly
 from VMT.  The change is due to the fact that TM1 was updated to have operating costs be link-based,
@@ -181,13 +181,13 @@ This section is for **reference**, and doesn't have a monetized cost or benefit 
 
 Parking costs estimations are based on tours, with tour duration multiplied by the configured hourly parking cost (either PRKCST or OPRKCST; 
 see [tazdata](http://analytics.mtc.ca.gov/foswiki/Main/TazData) for more detail).  Additionally, some workers have subsidized work parking 
-(see `fp_choice` in [the Persons data](http://analytics.mtc.ca.gov/foswiki/Main/Person)).  See [tallyParking.py](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/tallyParking.py)
+(see `fp_choice` in [the Persons data](http://analytics.mtc.ca.gov/foswiki/Main/Person)).  See [tallyParking.py](tallyParking.py)
 
 #### Vehicle Ownership (Modeled)
 
 This is the actual vehicle ownership tallied from the [households](http://analytics.mtc.ca.gov/foswiki/Main/Household)
 and calculated by the [Auto Ownership Model](http://analytics.mtc.ca.gov/foswiki/Main/ModelSchematic).
-Tallied by [tallyAutos.py](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/tallyAutos.py), this only makes sense if the Auto Ownership Model runs for
+Tallied by [tallyAutos.py](tallyAutos.py), this only makes sense if the Auto Ownership Model runs for
 the scenario, which was not true for Plan Bay Area 2013.  Thus, this is **new and only one Vehicle
 Ownership estimation should be used to calculated costs and benefits.**
 
@@ -206,7 +206,7 @@ This is a measure of fine particulates based on VMT from autos and from trucks.
 #### CO2 (metric tons)
 
 This is a measure of carbon dioxide emissions based on VMT, vehicle class, time period and vehicle speed.
-Tallied by [hwynet.py](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/hwynet.py),
+Tallied by [hwynet.py](hwynet.py),
 the lookup is specified in `INPUT\metrics\emissionsLookup.csv`.
 
 #### Other
@@ -221,19 +221,19 @@ specified in `INPUT\metrics\emissionsLookup.csv`.
 Fatalities due to collisions, injuries due to collisions and property damage due to collisions are
 estimated using a rate of collisions per VMT based on area type, facility type and number of lanes.
 These rates are specified in `INPUT\metrics\collisionLookup.csv` and tallied by
-[hwynet.py](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/hwynet.py).
+[hwynet.py](hwynet.py).
 
 #### Trips with Active Transportation
 
 Trips with active transportation are a tally of walk, bike and transit trips.
-These are for reference and they are tallied by [sumNonMotTimes.job](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/sumNonMotTimes.job) and
-[sumTransitTimes.job](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/sumTransitTimes.job)
+These are for reference and they are tallied by [sumNonMotTimes.job](sumNonMotTimes.job) and
+[sumTransitTimes.job](sumTransitTimes.job)
 
 #### Avg Minutes Active Tranport per Person
 
 This section is also for reference. It contains a tally of walk and bike times, tallied by
-[sumNonMotTimes.job](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/sumNonMotTimes.job), as well as walk time from transit trips (from access, egress
-and transfers) tallied by [sumTransitTimes.job](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/scripts/metrics/sumTransitTimes.job).  The times are summed and then averaged across the
+[sumNonMotTimes.job](sumNonMotTimes.job), as well as walk time from transit trips (from access, egress
+and transfers) tallied by [sumTransitTimes.job](sumTransitTimes.job).  The times are summed and then averaged across the
 projected population. **TODO: Make projected population configurable.**
 
 #### Active Individuals
