@@ -3,7 +3,7 @@
 Also known as COBRA metrics, this directoy consists of a set of scripts to calculate intermediate results
 for cost/benefit ratio analysis.
 
-Most of the files are run at the end of a model run via [RunMetrics.bat](https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/v05_sgr/model-files/RunMetrics.bat)
+Most of the files are run at the end of a model run via [RunMetrics.bat](RunMetrics.bat)
 
 ## Inputs & Configuration
 
@@ -46,8 +46,8 @@ Project Name,2010 Oakland SGR
 County,Alameda
 Project Type,Pavement
 Project Mode,road
-Capital Costs (millions of $2013),0
-Annual O&M Costs (millions of $2013),0
+Capital Costs (millions of $2017),0
+Annual O&M Costs (millions of $2017),0
 Farebox Recovery Ratio,0
 Life of Project (years),1
 base_dir,M:\Projects\2010_05_XXX\metrics
