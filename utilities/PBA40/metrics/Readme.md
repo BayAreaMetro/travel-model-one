@@ -3,7 +3,7 @@
 Also known as COBRA metrics, this directoy consists of a set of scripts to calculate intermediate results
 for cost/benefit ratio analysis.
 
-Most of the files are run at the end of a model run via [RunMetrics.bat](RunMetrics.bat)
+Most of the files are run at the end of a model run via [RunMetrics.bat](../RunMetrics.bat)
 
 ## Inputs & Configuration
 
