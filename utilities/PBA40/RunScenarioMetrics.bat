@@ -29,6 +29,9 @@ if not exist metrics (mkdir metrics)
 if not exist main\tripsEVinc1.dat (
   rem Convert trip tables into time/income/mode OD matrices
   rem Input : main\(indiv|joint)TripDataIncome_%ITER%.csv
+  rem         main\jointTourData_%ITER%.csv
+  rem         main\personData_%ITER%.csv
+  rem         database\ActiveTimeSkimsDatabase(EA|AM|MD|PM|EV).csv
   rem Output: main\trips(EA|AM|MD|PM|EV)inc[1-4].dat
   rem         main\trips(EA|AM|MD|PM|EV)_2074.dat
   rem         main\trips(EA|AM|MD|PM|EV)_2064.dat
@@ -73,3 +76,5 @@ if not exist metrics\auto_times.csv (
   runtpp "%CODE_DIR%\sumAutoTimes.job"
   if ERRORLEVEL 2 goto error
 )
+
+python "%CODE_DIR%\scenarioMetrics.py
