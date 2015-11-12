@@ -71,7 +71,9 @@ This can be viewed in Tableau using [Cobra Tableau.twb](Cobra%20Tableau.twb)
 
 ## Output Detail
 
-### Travel Time & Cost (logsum hours)
+### Travel Time & Cost
+
+#### Logsum Hours
 
 This is an *experimental* measure based on the [Rule of one-half](http://en.wikipedia.org/wiki/Economic_surplus#Rule_of_one-half)
 as it applies to change in consumer surplus:
@@ -91,6 +93,26 @@ where
 
  * T<sub>base</sub> and T<sub>scenario</sub> are, respectively, persons traveling in the base and scenario model runs
  * L<sub>base</sub> and L<sub>scenario</sub> are, respectively, the destination choice logsums transformed to person hours in the base and scenario model runs
+
+Mandatory and non-mandatory logsums are computed by [RunAccessibility.bat](../../../model-files/RunAccessibility.bat).
+Mandatory logsums use AM Peak period skims, and non-mandatory logsums use MD period skims.
+Mandatory logsums are applied to workers and students, and non-mandatory logsums are applied to all persons; these
+accessibility markets are tallied by [AccessibilityMarkets.Rmd](../../../model-files/scripts/core_summaries/AccessibilityMarkets.Rmd)
+
+#### Societal Benefits
+
+Since the logsums include costs as seen by the user (traveler), it includes things like fares
+and tolls which are transfers.
+
+Components:
+
+  * Transit Fares: trips x transit skims (calculated by [sumTransitTimes.job](sumTransitTimes.job))
+  * Auto Households - Bridge Tolls: trips x auto skims (calculated by [sumAutoTimes.job](sumAutoTimes.job))
+  * Auto Households - Value Tolls: trips x auto skims (calculated by [sumAutoTimes.job](sumAutoTimes.job))
+
+#### Non-Recurring Freeway Delay
+
+See [section below](#non-recurring-freeway-delay-hours), in the **Travel Time** section.
 
 ### Travel Time
 

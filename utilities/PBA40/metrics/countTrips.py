@@ -7,16 +7,26 @@ USATE = """
 
   Simple script that reads
 
-  * main/[indiv,joint]TripDataIncome_%ITER%.csv and
-  * main/jointTourData_%ITER%.csv (for the person ids for joint trips)
-  * main/personData_%ITER%.csv (for person ages)
+  * main\[indiv,joint]TripDataIncome_%ITER%.csv and
+  * main\jointTourData_%ITER%.csv (for the person ids for joint trips)
+  * main\personData_%ITER%.csv (for person ages)
+  * database\ActiveTimeSkimsDatabase[timeperiod].csv (for active times)
 
-  and tallies the trips by timeperiod, income category and trip mode.  Outputs:
+  and tallies the trips by timeperiod, income category and trip mode.
+  Household income is $2000; see http://analytics.mtc.ca.gov/foswiki/Main/Household
+  Income categories are as follows:
 
-  * main/trips[EA,AM,MD,PM,EV]inc[1,2,3,4].dat
-  * main/trips[EA,AM,MD,PM,EV]_2074.dat
-  * main/trips[EA,AM,MD,PM,EV]_2064.dat
-  * metrics/unique_active_travelers.csv
+  * inc1: income in [ 0k, 30k )
+  * inc2: income in [30k, 60k )
+  * inc3: income in [60k, 100k)
+  * inc4: income in [100k,    )
+
+  Outputs:
+
+  * main\trips[EA,AM,MD,PM,EV]inc[1,2,3,4].dat
+  * main\trips[EA,AM,MD,PM,EV]_2074.dat
+  * main\trips[EA,AM,MD,PM,EV]_2064.dat
+  * metrics\unique_active_travelers.csv
 
   The latter two .dat files are the same as the first but not split by income category,
   and filtered by age (20-74 year olds and 20-64 year olds, respectively) to be used for
@@ -249,10 +259,10 @@ if __name__ == '__main__':
 
     # set income category
     trips_df['income_cat'] = 0
-    trips_df.loc[                                   (trips_df['income']< 30000), 'income_cat'] = 1
+    trips_df.loc[                             (trips_df['income']< 30000), 'income_cat'] = 1
     trips_df.loc[(trips_df['income']>= 30000)&(trips_df['income']< 60000), 'income_cat'] = 2
     trips_df.loc[(trips_df['income']>= 60000)&(trips_df['income']<100000), 'income_cat'] = 3
-    trips_df.loc[(trips_df['income']>=100000)                                  , 'income_cat'] = 4
+    trips_df.loc[(trips_df['income']>=100000)                            , 'income_cat'] = 4
     assert(len(trips_df.loc[trips_df['income_cat']==0])==0)
 
     # write it
