@@ -3,13 +3,8 @@ cd ..
 mkdir logs
 
 rem ############  PARAMETERS  ############
-set JAVA_PATH=C:\Program Files\Java\jdk1.7.0_71
-set GAWK_PATH=M:\UTIL\Gawk
-set TPP_PATH=C:\Program Files (x86)\Citilabs\CubeVoyager
-
-set RUNTIME=CTRAMP/runtime
-set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin
-set CLASSPATH=%RUNTIME%/config;%RUNTIME%;%RUNTIME%/config/jppf-2.4/jppf-2.4-admin-ui/lib/*;%RUNTIME%/mtc.jar
+:: Set the path
+call CTRAMP\runtime\SetPath.bat
 
 set HOST_IP=set_by_RuntimeConfiguration.py
 
