@@ -62,7 +62,13 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     da time <= 30 minutes OR wTrnW time <= 45 minutes.
 
     Joining the dest TAZs to jobs, we find the number of jobs accessible from each TAZ
-    (within the travel time windows)
+    (within the travel time windows).
+
+    Adds the following keys to the metrics_dict:
+    * jobacc_acc_jobs_weighted_persons  : accessible jobs weighted by persons
+    * jobacc_total_jobs_weighted_persons: total jobs x total persons
+    * jobacc_accessible_job_share       : accessible job share = jobacc_acc_jobs_weighted_persons/jobacc_total_jobs_weighted_persons
+
     """
     print "Tallying access to jobs"
     traveltime_df = pandas.read_csv(os.path.join("database","TimeSkimsDatabaseAM.csv"),
@@ -97,13 +103,49 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
                                      left_index=True,         right_on="ZONE",
                                      how="left")
     accessiblejobs_df['TOTEMP_weighted'] = accessiblejobs_df['TOTEMP']*accessiblejobs_df['TOTPOP']
-    print accessiblejobs_df.head()
+    # print accessiblejobs_df.head()
+
     # numerator = accessible jobs weighted by persons
     #  e.g. sum over TAZs of (totpop at TAZ x totemp jobs accessible)
     # denominator = total jobs weighted by persons
     metrics_dict['jobacc_acc_jobs_weighted_persons']   = accessiblejobs_df['TOTEMP_weighted'].sum()
     metrics_dict['jobacc_total_jobs_weighted_persons'] = total_emp*total_pop
     metrics_dict['jobacc_accessible_job_share']        = float(metrics_dict['jobacc_acc_jobs_weighted_persons']) / float(metrics_dict['jobacc_total_jobs_weighted_persons'])
+
+def tally_goods_movement_delay(iteration, sampleshare, metrics_dict):
+    """
+    Reads in hwy\iter%ITER%\avgload5period_vehclasses.csv and calculates total truck vehicle hours of delay on
+    roadway links with regfreight != 0
+
+    Also tallys TOTPOP from landuse\tazdata.csv for per-capita delay calculation.
+
+    Adds the following keys to the metrics_dict:
+    * goods_delay_truck_vehicle_hours : total truck vehicle hours of delay on regfreight roadway links
+    * goods_delay_total_pop           : total persons
+    * goods_delay_truck_vhd_per_person: accessible job share = goods_delay_truck_vehicle_hours/goods_delay_total_pop
+    """
+    print "Tallying goods movement delay"
+    roadvols_df = pandas.read_csv(os.path.join("hwy","iter%d" % iteration, "avgload5period_vehclasses.csv"), sep=",")
+    tazdata_df  = pandas.read_csv(os.path.join("landuse", "tazData.csv"), sep=",")
+
+    # filter to just those with freight
+    roadvols_df = roadvols_df.loc[roadvols_df.regfreight != 0]
+
+    # calculate the truck vehicle hours of delay
+    total_truck_vehicle_hours_delay = 0
+    for timeperiod in ['EA','AM','MD','PM','EV']:
+        # truck vehicle-hours of delay
+        roadvols_df['vol%s_truck' % timeperiod] = roadvols_df['vol%s_sm'  % timeperiod] + \
+                                                  roadvols_df['vol%s_hv'  % timeperiod] + \
+                                                  roadvols_df['vol%s_smt' % timeperiod] + \
+                                                  roadvols_df['vol%s_hvt' % timeperiod]
+        roadvols_df['truck_vhd_%s' % timeperiod] = roadvols_df['vol%s_truck' % timeperiod]*(roadvols_df['ctim%s' % timeperiod] - roadvols_df['fft'])/60.0
+        total_truck_vehicle_hours_delay += roadvols_df['truck_vhd_%s' % timeperiod].sum()
+
+    # store it
+    metrics_dict['goods_delay_truck_vehicle_hours']  = total_truck_vehicle_hours_delay
+    metrics_dict['goods_delay_total_pop']            = tazdata_df['TOTPOP'].sum()
+    metrics_dict['goods_delay_truck_vhd_per_person'] = total_truck_vehicle_hours_delay/float(tazdata_df['TOTPOP'].sum())
 
 if __name__ == '__main__':
     pandas.set_option('display.width', 500)
@@ -113,6 +155,7 @@ if __name__ == '__main__':
     metrics_dict = {}
     tally_travel_cost(iteration, sampleshare, metrics_dict)
     tally_access_to_jobs(iteration, sampleshare, metrics_dict)
+    tally_goods_movement_delay(iteration, sampleshare, metrics_dict)
 
     for key in sorted(metrics_dict.keys()):
-        print "%35s => %f" % (key, metrics_dict[key])
+        print "%-35s => %f" % (key, metrics_dict[key])
