@@ -114,15 +114,15 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
 
 def tally_goods_movement_delay(iteration, sampleshare, metrics_dict):
     """
-    Reads in hwy\iter%ITER%\avgload5period_vehclasses.csv and calculates total truck vehicle hours of delay on
+    Reads in hwy\iter%ITER%\avgload5period_vehclasses.csv and calculates total vehicle hours of delay on
     roadway links with regfreight != 0
 
     Also tallys TOTPOP from landuse\tazdata.csv for per-capita delay calculation.
 
     Adds the following keys to the metrics_dict:
-    * goods_delay_truck_vehicle_hours : total truck vehicle hours of delay on regfreight roadway links
-    * goods_delay_total_pop           : total persons
-    * goods_delay_truck_vhd_per_person: accessible job share = goods_delay_truck_vehicle_hours/goods_delay_total_pop
+    * goods_delay_vehicle_hours : total vehicle hours of delay on regfreight roadway links
+    * goods_delay_total_pop     : total persons
+    * goods_delay_vhd_per_person: goods_delay_vehicle_hours/goods_delay_total_pop
     """
     print "Tallying goods movement delay"
     roadvols_df = pandas.read_csv(os.path.join("hwy","iter%d" % iteration, "avgload5period_vehclasses.csv"), sep=",")
@@ -131,21 +131,17 @@ def tally_goods_movement_delay(iteration, sampleshare, metrics_dict):
     # filter to just those with freight
     roadvols_df = roadvols_df.loc[roadvols_df.regfreight != 0]
 
-    # calculate the truck vehicle hours of delay
-    total_truck_vehicle_hours_delay = 0
+    # calculate the vehicle hours of delay
+    total_vehicle_hours_delay = 0
     for timeperiod in ['EA','AM','MD','PM','EV']:
-        # truck vehicle-hours of delay
-        roadvols_df['vol%s_truck' % timeperiod] = roadvols_df['vol%s_sm'  % timeperiod] + \
-                                                  roadvols_df['vol%s_hv'  % timeperiod] + \
-                                                  roadvols_df['vol%s_smt' % timeperiod] + \
-                                                  roadvols_df['vol%s_hvt' % timeperiod]
-        roadvols_df['truck_vhd_%s' % timeperiod] = roadvols_df['vol%s_truck' % timeperiod]*(roadvols_df['ctim%s' % timeperiod] - roadvols_df['fft'])/60.0
-        total_truck_vehicle_hours_delay += roadvols_df['truck_vhd_%s' % timeperiod].sum()
+        # vehicle-hours of delay
+        roadvols_df['vhd_%s' % timeperiod] = roadvols_df['vol%s_tot' % timeperiod]*(roadvols_df['ctim%s' % timeperiod] - roadvols_df['fft'])/60.0
+        total_vehicle_hours_delay += roadvols_df['vhd_%s' % timeperiod].sum()
 
     # store it
-    metrics_dict['goods_delay_truck_vehicle_hours']  = total_truck_vehicle_hours_delay
-    metrics_dict['goods_delay_total_pop']            = tazdata_df['TOTPOP'].sum()
-    metrics_dict['goods_delay_truck_vhd_per_person'] = total_truck_vehicle_hours_delay/float(tazdata_df['TOTPOP'].sum())
+    metrics_dict['goods_delay_vehicle_hours']  = total_vehicle_hours_delay
+    metrics_dict['goods_delay_total_pop']      = tazdata_df['TOTPOP'].sum()
+    metrics_dict['goods_delay_vhd_per_person'] = total_vehicle_hours_delay/float(tazdata_df['TOTPOP'].sum())
 
 if __name__ == '__main__':
     pandas.set_option('display.width', 500)
