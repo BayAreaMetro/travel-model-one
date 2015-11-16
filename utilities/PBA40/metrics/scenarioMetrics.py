@@ -14,7 +14,7 @@ USAGE = """
 
 """
 
-import os, sys
+import datetime, os, sys
 import numpy, pandas
 
 def tally_travel_cost(iteration, sampleshare, metrics_dict):
@@ -143,6 +143,39 @@ def tally_goods_movement_delay(iteration, sampleshare, metrics_dict):
     metrics_dict['goods_delay_total_pop']      = tazdata_df['TOTPOP'].sum()
     metrics_dict['goods_delay_vhd_per_person'] = total_vehicle_hours_delay/float(tazdata_df['TOTPOP'].sum())
 
+def tally_nonauto_mode_share(iteration, sampleshare, metrics_dict):
+    """
+    Tallies the non auto mode share for trips, by reading
+    main\indivTripData_%ITER%.csv and main\jointTripData_%ITER%.csv
+
+    Adds the following keys to the metrics_dict:
+    * nonauto_mode_share_nonauto_trips : total nonauto trips
+    * nonauto_mode_share_total_trips   : total trips
+    * nonauto_mode_share               : total nonauto trips / total trips
+
+    """
+    print "Tallying non auto mode share"
+
+    trips_df = None
+    for trip_type in ['indiv', 'joint']:
+        filename = os.path.join("main", "%sTripData_%d.csv" % (trip_type, iteration))
+        temp_trips_df = pandas.read_table(filename, sep=",")
+        print "  Read %d %s trips" % (len(temp_trips_df), trip_type)
+
+        if trip_type == 'indiv':
+            # each row is a trip; scale by sampleshare
+            temp_trips_df['num_participants'] = 1.0/sampleshare
+
+            trips_df = temp_trips_df
+        else:
+            # scale by sample share
+            temp_trips_df['num_participants'] = temp_trips_df['num_participants']/sampleshare
+            trips_df = pandas.concat([trips_df, temp_trips_df], axis=0)
+
+    metrics_dict['nonauto_mode_share_nonauto_trips'] = trips_df.loc[trips_df['trip_mode']>=7].num_participants.sum()
+    metrics_dict['nonauto_mode_share_total_trips']   = trips_df.num_participants.sum()
+    metrics_dict['nonauto_mode_share']               = float(metrics_dict['nonauto_mode_share_nonauto_trips'])/float(metrics_dict['nonauto_mode_share_total_trips'])
+
 if __name__ == '__main__':
     pandas.set_option('display.width', 500)
     iteration    = int(os.environ['ITER'])
@@ -152,6 +185,7 @@ if __name__ == '__main__':
     tally_travel_cost(iteration, sampleshare, metrics_dict)
     tally_access_to_jobs(iteration, sampleshare, metrics_dict)
     tally_goods_movement_delay(iteration, sampleshare, metrics_dict)
+    tally_nonauto_mode_share(iteration, sampleshare, metrics_dict)
 
     for key in sorted(metrics_dict.keys()):
         print "%-35s => %f" % (key, metrics_dict[key])
