@@ -798,10 +798,14 @@ class RunResults:
             base_match  = base_str_re.search(self.config.loc['base_dir'])
             if base_match:
                 self.config['Base Project ID'] = base_match.group(0)
-                self.config['Project Compare ID'] = "%s vs %s" % (self.config.loc['Project ID'], base_match.group(0))
-                # print "base_match = [%s]" % base_match.group(0)
-                workbook_name = "BC_%s_base%s.xlsx" % (self.config.loc['Project ID'], base_match.group(0))
-                csv_name      = "BC_%s_base%s.csv"  % (self.config.loc['Project ID'], base_match.group(0))
+            else:
+                # if it doesn't conform.... just part of the path
+                self.config['Base Project ID'] = self.config.loc['base_dir'].split("\\")[-3]
+
+            self.config['Project Compare ID'] = "%s vs %s" % (self.config.loc['Project ID'], self.config['Base Project ID'])
+            # print "base_match = [%s]" % base_match.group(0)
+            workbook_name = "BC_%s_base%s.xlsx" % (self.config.loc['Project ID'], self.config['Base Project ID'])
+            csv_name      = "BC_%s_base%s.csv"  % (self.config.loc['Project ID'], self.config['Base Project ID'])
 
         BC_detail_workbook = os.path.join(project_dir, workbook_name)
         workbook        = xlsxwriter.Workbook(BC_detail_workbook)
