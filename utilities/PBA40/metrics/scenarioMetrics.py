@@ -182,15 +182,15 @@ def tally_sgr_roads(iteration, sampleshare, metrics_dict):
     Also includes the cost component that's a result of pavement imperfection.
 
     Adds the following keys to the metrics_dict:
-    sgr_road_total_auto_cost_$2000     : total operating cost for autos in $2000
-    sgr_road_total_smtr_cost_$2000     : total operating cost for small trucks in $2000
-    sgr_road_total_lrtr_cost_$2000     : total operating cost for large trucks in $2000
-    sgr_road_pavement_auto_cost_$2000  : operating cost from imperfect pavement for autos in $2000
-    sgr_road_pavement_smtr_cost_$2000  : operating cost from imperfect pavement for small trucks in $2000
-    sgr_road_pavement_lrtr_cost_$2000  : operating cost from imperfect pavement for large trucks in $2000
-    sgr_road_vmt_auto                  : VMT by autos
-    sgr_road_vmt_smtr                  : VMT by small trucks
-    sgr_road_vmt_lrtr                  : VMT by large trucks
+    * sgr_road_total_auto_cost_$2000     : total operating cost for autos in $2000
+    * sgr_road_total_smtr_cost_$2000     : total operating cost for small trucks in $2000
+    * sgr_road_total_lrtr_cost_$2000     : total operating cost for large trucks in $2000
+    * sgr_road_pavement_auto_cost_$2000  : operating cost from imperfect pavement for autos in $2000
+    * sgr_road_pavement_smtr_cost_$2000  : operating cost from imperfect pavement for small trucks in $2000
+    * sgr_road_pavement_lrtr_cost_$2000  : operating cost from imperfect pavement for large trucks in $2000
+    * sgr_road_vmt_auto                  : VMT by autos
+    * sgr_road_vmt_smtr                  : VMT by small trucks
+    * sgr_road_vmt_lrtr                  : VMT by large trucks
 
     """
     print "Tallying SGR roads cost"
@@ -249,6 +249,21 @@ def tally_sgr_roads(iteration, sampleshare, metrics_dict):
     metrics_dict['sgr_road_vmt_smtr']                 = smtr_vmt
     metrics_dict['sgr_road_vmt_lrtr']                 = lrtr_vmt
 
+def tally_sgr_transit(iteration, sampleshare, metrics_dict):
+    """
+    Tallies the total person delay on transit from SGR
+
+    Adds the following keys to the metrics_dict:
+    * sgr_transit_total_person_hours_delay : total person hours of delay on transit
+    * sgr_transit_total_person_trips       : total person trips
+    * sgr_transit_delay_min_per_person_trip: (person hours of delay / person trips) * 60 min/hour
+    """
+    print "Tallying SGR transit delay"
+    delay_df = pandas.read_csv(os.path.join("metrics","transit_delay.csv"), sep=",")
+    metrics_dict['sgr_transit_total_person_hours_delay' ] = delay_df['Person Hours Delay'].sum()
+    metrics_dict['sgr_transit_total_person_trips'       ] = delay_df['Transit Trips'].sum()
+    metrics_dict['sgr_transit_delay_min_per_person_trip'] = 60.0*float(metrics_dict['sgr_transit_total_person_hours_delay'])/float(metrics_dict['sgr_transit_total_person_trips'])
+
 if __name__ == '__main__':
     pandas.set_option('display.width', 500)
     iteration    = int(os.environ['ITER'])
@@ -260,6 +275,20 @@ if __name__ == '__main__':
     tally_goods_movement_delay(iteration, sampleshare, metrics_dict)
     tally_nonauto_mode_share(iteration, sampleshare, metrics_dict)
     tally_sgr_roads(iteration, sampleshare, metrics_dict)
+    tally_sgr_transit(iteration, sampleshare, metrics_dict)
 
     for key in sorted(metrics_dict.keys()):
         print "%-35s => %f" % (key, metrics_dict[key])
+
+    out_series = pandas.Series(metrics_dict)
+    out_frame  = out_series.to_frame().reset_index()
+    out_frame.columns = ['variable_desc', 'value']
+
+    # add the run name... use the current dir
+    run_name = os.path.split(os.getcwd())[1]
+    out_frame['run_name'] = run_name
+    out_frame = out_frame[['run_name','variable_desc','value']]
+
+    out_filename = os.path.join("metrics","scenario_metrics.csv")
+    out_frame.to_csv(out_filename, header=False, float_format='%.5f', index=False)
+    print "Wrote %s" % out_filename

@@ -63,6 +63,16 @@ if not exist metrics\transit_times_by_mode_income.csv (
   if ERRORLEVEL 2 goto error
 )
 
+if not exist metrics\transit_delay.csv (
+  rem Reads trip tables and skims and outputs tallies for transit transit_delay
+  rem Input : main\trips(EA|AM|MD|PM|EV).tpp
+  rem         skims\trnskim(EA|AM|MD|PM|EV)_(wlk|drv)_(com|hvy|exp|lrf|loc)_(wlk|drv)_ivtt_delay.tpp
+  rem         skims\trnskim(EA|AM|MD|PM|EV)_(wlk|drv)_(com|hvy|exp|lrf|loc)_(wlk|drv)_board_delay.tpp
+  rem Output: metrics\transit_delay.csv
+  runtpp "%CODE_DIR%\sumTransitDelay.job"
+  if ERRORLEVEL 2 goto error
+)
+
 if not exist metrics\auto_times.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
   rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp
