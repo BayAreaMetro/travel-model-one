@@ -1,0 +1,83 @@
+---
+title: "Check Zonal Data"
+author: "David Ory"
+runtime: shiny
+output: 
+   html_document:
+      theme: cosmo
+      toc: yes
+---
+
+## Administration
+
+#### Purpose
+This script consumes TAZ data created by UrbanSim or ABAG and processed by the Java program MtcProcessAbagData.  The script adds a year to each file and spits out a single database for use in Tableau -- see check-zonal-data.twb in this directory.  
+
+#### Outputs
+1.  consolidate database
+
+## Procedure
+
+#### Overhead
+```{r overhead, results = 'hide', include=FALSE}
+library(knitr)
+suppressMessages(library(dplyr))
+```
+
+```{r config, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
+
+#### Remote I/O
+```{r remote-io, include=FALSE}
+F_WORKING_DIR = "M:/Application/Model One/Zonal Data/Plan Bay Area 2040/2015 11 23 UrbanSim Tests/"
+
+F_OUTPUT = paste(F_WORKING_DIR, "consolidated-taz.csv", sep = "") 
+```
+
+#### Data read method
+```{r data-read-method}
+Read_Data <- function(string_file_location, integer_year) {
+  
+  working_df <- read.table(file = string_file_location, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+  
+  working_df <- working_df %>%
+    mutate(year = integer_year)
+  
+  return(working_df)
+}
+
+```
+
+#### Data reads and concatenate
+```{r data-reads}
+working <- Read_Data(paste(F_WORKING_DIR, "tazData2010.csv", sep = ""), 2010)
+running <- working
+
+working <- Read_Data(paste(F_WORKING_DIR, "tazData2015.csv", sep = ""), 2015)
+running <- rbind(running, working)
+
+working <- Read_Data(paste(F_WORKING_DIR, "tazData2020.csv", sep = ""), 2020)
+running <- rbind(running, working)
+
+working <- Read_Data(paste(F_WORKING_DIR, "tazData2025.csv", sep = ""), 2025)
+running <- rbind(running, working)
+
+working <- Read_Data(paste(F_WORKING_DIR, "tazData2030.csv", sep = ""), 2030)
+running <- rbind(running, working)
+
+working <- Read_Data(paste(F_WORKING_DIR, "tazData2035.csv", sep = ""), 2035)
+running <- rbind(running, working)
+
+working <- Read_Data(paste(F_WORKING_DIR, "tazData2040.csv", sep = ""), 2040)
+running <- rbind(running, working)
+
+```
+
+
+#### Data write
+```{r data-write}
+write.csv(running, file = F_OUTPUT, row.names = FALSE, quote = F)
+
+```
+
