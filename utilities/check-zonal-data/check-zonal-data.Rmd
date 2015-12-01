@@ -30,7 +30,7 @@ knitr::opts_chunk$set(cache=TRUE)
 
 #### Remote I/O
 ```{r remote-io, include=FALSE}
-F_WORKING_DIR = "M:/Application/Model One/Zonal Data/Plan Bay Area 2040/2015 11 23 UrbanSim Tests/"
+F_WORKING_DIR = "M:/Application/Model One/Zonal Data/Plan Bay Area 2040/2015 11 30 UrbanSim Tests/"
 
 F_OUTPUT = paste(F_WORKING_DIR, "consolidated-taz.csv", sep = "") 
 ```
