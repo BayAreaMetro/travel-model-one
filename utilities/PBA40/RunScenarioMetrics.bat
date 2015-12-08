@@ -96,3 +96,5 @@ if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
 )
 
 python "%CODE_DIR%\scenarioMetrics.py
+
+:error
