@@ -281,10 +281,8 @@ class RunResults:
             accessibilities = pd.DataFrame(accessibilities.stack())
             accessibilities.reset_index(inplace=True)
             # split the income/auto sufficiency column into two columns
-            incQ_autoSuff = accessibilities['level_2'].str.split('_', n=1).apply(pd.Series)
-            incQ_autoSuff.columns = ['incQ_label', 'autoSuff_label']
-            # add them back to the original dataframe
-            accessibilities = pd.concat([incQ_autoSuff, accessibilities], axis=1)
+            accessibilities['incQ_label']     = accessibilities['level_2'].str.split('_',n=1).str.get(0)
+            accessibilities['autoSuff_label'] = accessibilities['level_2'].str.split('_',n=1).str.get(1)
             # remove the now extraneous 'level_2'
             accessibilities.drop('level_2', axis=1, inplace=True)
 
