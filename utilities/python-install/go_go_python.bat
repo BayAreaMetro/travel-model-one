@@ -34,4 +34,8 @@ pip install pandas-0.16.1-cp27-none-win_amd64.whl
 :: xlsxwriter
 pip install Xlsxwriter-0.7.3-py2.py3-none-any.whl
 
+::rpy2
+pip install rpy2-2.7.0-cp27-none-win_amd64.whl
 
+::pywin32
+pip install pywin32-219-cp27-none-win_amd64.whl
