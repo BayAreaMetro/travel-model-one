@@ -112,7 +112,7 @@ loop period = 1, 5
       delayfactor = 0.0
       
       ; buses travel on freeway-to-freeway connectors, freeways, and expressways at the same speed as automobiles
-      if (FT = 1 | FT = 2 | FT = 3)
+      if (FT = 1 | FT = 2 | FT = 3 | FT = 8)
       
          ; segment by area type to facility easy change in the future, if needed
          if (AT = 0) delayfactor = 0.0
