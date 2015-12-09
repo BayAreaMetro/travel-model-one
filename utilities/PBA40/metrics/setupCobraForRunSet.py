@@ -76,7 +76,7 @@ if __name__ == '__main__':
     cobra_config_df = pandas.read_excel(my_args.cobra_workbook, sheetname="BC_config")
     assert("Folder Name" in list(cobra_config_df.columns))
 
-    cobra_batch_lines = ['set COBRA_DIR="C:\\Users\\lzorn\\Documents\\travel-model-one-v05\\utilities\\PBA40\\metrics"',
+    cobra_batch_lines = ['set COBRA_DIR=%CD%',
                          "",
                          "mkdir %s" % ALL_METRICS_DIR]
 
@@ -94,13 +94,13 @@ if __name__ == '__main__':
         save_if_diffs(bc_config_lines, os.path.join(row[1]["Folder Name"], "BC_config.csv"))
         save_if_diffs(bc_config_lines, os.path.join(row[1]["Folder Name"], "OUTPUT", "metrics", "BC_config.csv"))
 
-        cobra_batch_lines.append("python %%COBRA_DIR%%\RunResults.py %-50s %s" % (os.path.join(row[1]["Folder Name"], "OUTPUT", "metrics"), ALL_METRICS_DIR))
+        cobra_batch_lines.append('python %%COBRA_DIR%%\RunResults.py "%s" %s' % (os.path.join(row[1]["Folder Name"], "OUTPUT", "metrics"), ALL_METRICS_DIR))
 
     # write the batch dir
     cobra_batch_lines.append("")
     cobra_batch_lines.append(":rollup")
     cobra_batch_lines.append("cd %s" % ALL_METRICS_DIR)
-    cobra_batch_lines.append("python %%COBRA_DIR%%\\rollupAllProjects.py" % ())
+    cobra_batch_lines.append('python "%%COBRA_DIR%%\\rollupAllProjects.py"' % ())
     cobra_batch_lines.append("cd ..")
     print "========================"
     batch_file = open(BATCH_FILE, "wb")
