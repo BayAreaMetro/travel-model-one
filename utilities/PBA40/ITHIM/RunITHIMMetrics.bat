@@ -115,12 +115,18 @@ if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
 
 if not exist metrics\vmt_vht_metrics.csv (
   rem Summarize network links to vmt, vht, and other collision and emissions estimations
-  rem Input: hwy\iter%ITER%\avgload5period_vehclasses.csv
+  rem Input:  hwy\iter%ITER%\avgload5period_vehclasses.csv
   rem Output: metrics\vmt_vht_metrics.csv
   call python "%CODE_DIR%\utilities\PBA40\metrics\hwynet.py" hwy\iter%ITER%\avgload5period_vehclasses.csv
   IF ERRORLEVEL 2 goto error
 )
 
-call python "%CODE_DIR%\utilities\PBA40\ITHIM\DistanceTraveledByFacilityType.py"
+if not exist metrics\ITHIM\DistanceTraveledByFacilityType_auto+truck.csv (
+  rem Summarizes distance traveled by facility type for autos and trucks, by person and vehicles
+  rem Input:  hwy\iter%ITER%\vgload5period_vehclasses.csv
+  rem Output: metrics\ITHIM\DistanceTraveledByFacilityType_auto+truck.csv
+  call python "%CODE_DIR%\utilities\PBA40\ITHIM\DistanceTraveledByFacilityType.py"
+  IF ERRORLEVEL 2 goto error
+)
 
 :error

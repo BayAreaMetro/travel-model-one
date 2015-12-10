@@ -3,6 +3,9 @@ USAGE = """
   Calculates auto and truck personal and vehicle distances traveled by facility type.
 
   * Reads hwy\iter%ITER%\avgload5period_vehclasses.csv
+  * Summarizes VMT by mode (auto_VMT, sm_med_truck_VMT, heavy_truck_VMT)
+  * Summarizes PMT by mode (car_driver_PMT, car_passenger_PMT, truck_driver_PMT)
+  * Outputs metrics\ITHIM\DistanceTraveledByFacilityType_auto+truck.csv
 
 """
 import os, sys
@@ -52,13 +55,11 @@ if __name__ == '__main__':
     loaded_net_df.loc[(loaded_net_df.vehclass=='s2')|(loaded_net_df.vehclass=='s2t'), 'car_passenger_PMT'] = loaded_net_df['auto_VMT']*1.0
     loaded_net_df.loc[(loaded_net_df.vehclass=='s3')|(loaded_net_df.vehclass=='s3t'), 'car_passenger_PMT'] = loaded_net_df['auto_VMT']*2.5
 
-    print loaded_net_df.loc[(loaded_net_df.volume>0)&(loaded_net_df.ft!=6),:].head(30)
-    print loaded_net_df.columns
-
     # groupby facility type
     loaded_ft_df = loaded_net_df[['ft','distance',
                                   'auto_VMT','sm_med_truck_VMT','heavy_truck_VMT',
                                   'car_driver_PMT','car_passenger_PMT','truck_driver_PMT']].groupby(['ft']).agg(numpy.sum)
-    loaded_ft_df.to_csv(os.path.join("metrics","ITHIM","DistanceTraveledByFacilityType_auto+truck.csv"))
-    # sum volumes -- these are vehicle volumes
-    # sum person volumes
+    outfile = os.path.join("metrics","ITHIM","DistanceTraveledByFacilityType_auto+truck.csv")
+    loaded_ft_df.to_csv(outfile)
+    print "Wrote %s" % outfile
+

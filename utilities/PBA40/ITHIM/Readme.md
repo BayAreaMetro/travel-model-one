@@ -37,9 +37,9 @@ No. |  Item Definition                                    | Units           | St
 
 * **10 - Personal travel distance by facility type** and **11 - Vehicle distance traveled (VMT) by facility type**
   are computed for **autos and trucks** using [net2csv_avgload5period.job](../metrics/net2csv_avgload5period.job)
-  to convert the network to CSV, and [DistanceTraveledByFacilityType.py].  The latter script tallies up PMT by
-  facility type for persons (car_driver, car_passenger, truck_driver) and VMT by facility type for vehicles
-  (auto, sm_med_truck, heavy_truck).
+  to convert the network to CSV, and [DistanceTraveledByFacilityType.py](DistanceTraveledByFacilityType.py).
+  The latter script tallies up PMT by facility type for persons (car_driver, car_passenger, truck_driver) and
+  VMT by facility type for vehicles (auto, sm_med_truck, heavy_truck).
 
   Since these numbers come from the network, non-resident trips such as internal/external trips and airport trips
   are included.
