@@ -137,4 +137,12 @@ if not exist metrics\ITHIM\DistanceTraveledByFacilityType_transit.csv (
   runtpp "%CODE_DIR%\utilities\PBA40\ITHIM\sumTransitDistance.job"
   IF ERRORLEVEL 2 goto error
 )
+
+if not exist metrics\ITHIM\DistanceTraveledByFacilityType_transitveh.csv (
+  rem Summarizes distance traveled by facility type for transit, by person miles
+  rem Input:  trn\trnline(EA|AM|MD|PM|EV)__(wlk|drv)_(com|hvy|exp|lrf|loc)_(wlk|drv).csv
+  rem Output: metrics\ITHIM\DistanceTraveledByFacilityType_transitveh.csv
+  call python "%CODE_DIR%\utilities\PBA40\ITHIM\DistanceTraveledByFacilityType_transitveh.py"
+  IF ERRORLEVEL 2 goto error
+)
 :error

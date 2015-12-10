@@ -22,34 +22,12 @@ No. |  Item Definition                                    | Units           | St
 
 [RunITHIMMetrics.bat](RunITHIMMetrics.bat) will produce these items as follows:
 
-* **1 - Per capita mean daily travel distance** and **2 - Per capita mean daily travel time** is produced by
-  [PerCapitaDailyTravelDistanceTime.Rmd](PerCapitaDailyTravelDistanceTime) for **car-driver, car-passenger, bus,
-  rail, walk and bicycle modes**.  This script uses the updated_output of
-  [CoreSummaries.Rmd](../../../model-files/scripts/core_summaries/CoreSummaries.Rmd).
+No(s).| Item Definition  | Output File | Notes | Scripts
+------|------------------|-------------|-------|---------
+1 & 2 | Per capita mean daily travel distance & time | =metrics\ITHIM\percapita_daily_dist_time.csv= | Includes car-driver, car-passenger, bus, rail, walk and bicycle modes only. <br>Since these numbers come from simulated persons and households, non-resident trips such as internal/external trips and airport trips aren't included.| Created by [PerCapitaDailyTravelDistanceTime.Rmd](PerCapitaDailyTravelDistanceTime); this script uses the updated_output of [CoreSummaries.Rmd](../../../model-files/scripts/core_summaries/CoreSummaries.Rmd).
+1 & 2 | Per capita mean daily travel distance & time | =metrics\auto_times.csv= | Use this (the last line) for trucks. <br>This is not segmented by age and sex, nor does it really know if multiple truck trips are driven by a single driver, so we can only infer **mean truck trip travel distance** and **mean truck trip travel time**. | Produced by [sumAutoTimes.job](../metrics/sumAutoTimes.job)
+10 & 11 |Personal & Vehicle travel distance by facility type | =metrics\ITHIM\DistanceTraveledByFacilityType_auto+truck.csv= | Includes auto and trucks only. <br>Personal categories are car_driver, car_passenger, truck_driver.  Vehicle categories are auto, sm_med_truck, heavy_truck. <br>Since these numbers come from the network, non-resident trips such as internal/external trips and airport trips are included.| Producted by [net2csv_avgload5period.job](../metrics/net2csv_avgload5period.job) to convert the network to CSV, and [DistanceTraveledByFacilityType.py](DistanceTraveledByFacilityType.py).
+10 |Personal travel distance by facility type | =metrics\nonmot_times.csv= | This doesn't actually have facility type, just total distance.  The TM1 network doesn't have enough detail to give meaningful walk and bike distances by facility types, nor does it have walk and bike route choice models. | Produced using [sumNonmotTimes.job](../metrics/sumNonmotTimes.job), which multiplies skims by trip tables.
+10 |Personal travel distance by facility type | =metrics\ITHIM\DistanceTraveledByFacilityType_transit.csv= | Includes person miles traveled on different facilities (local bus, light rail or ferry, express bus, heavy rail, commuter rail, drive, walk) by access, transit and egress modes. From transit skims x trip tables. | Computed using [sumTransitDistance.job](sumTransitDistance.job).
+11 | Vehicle travel distance by facility type | =metrics\ITHIM\DistanceTraveledByFacilityType_transitveh.csv= | Includes daily transit vehicle miles traveled for local bus, light rail or ferry, express bus, heavy rail, and commuter rail vehicles. | Computed using [DistanceTraveledByFacilityType_transitveh.py](DistanceTraveledByFacilityType_transitveh.py), which reads transit assignment output line files.
 
-  Since these numbers come from simulated persons and households, non-resident trips such as internal/external
-  trips and airport trips aren't included.
-
-* **1 - Per capita mean daily travel distance** and **2 - Per capita mean daily travel time** for **trucks**
-  is produced by [sumAutoTimes.job](../metrics/sumAutoTimes.job).  This is not segmented by age and sex,
-  nor does it really know if multiple truck trips are driven by a single driver, so these numbers are really
-  **mean truck trip travel distance** and **mean truck trip travel time**.
-
-* **10 - Personal travel distance by facility type** and **11 - Vehicle distance traveled (VMT) by facility type**
-  are computed for **autos and trucks** using [net2csv_avgload5period.job](../metrics/net2csv_avgload5period.job)
-  to convert the network to CSV, and [DistanceTraveledByFacilityType.py](DistanceTraveledByFacilityType.py).
-  The latter script tallies up PMT by facility type for persons (car_driver, car_passenger, truck_driver) and
-  VMT by facility type for vehicles (auto, sm_med_truck, heavy_truck).
-
-  Since these numbers come from the network, non-resident trips such as internal/external trips and airport trips
-  are included.
-
-* **10 - Personal travel distance by facility type** and **11 - Vehicle distance traveled (VMT) by facility type**
-  are computed for **bike and walk** using [sumNonmotTimes.job](../metrics/sumNonmotTimes.job).  These multiply
-  trip tables by skim distances assuming fixed walk and bike speeds.  These do not include breakdowns by facility
-  types because we don't have walk or bike route choice models and also because the TM1 network lacks detail to
-  make skimming facility types for these modes meaningful.
-
-* **10 - Personal travel distance by facility type** is computed for **transit** using
-  [sumTransitDistance.job](sumTransitDistance.job).  This multiplies transit
-  distance skims by transit trip tables.
