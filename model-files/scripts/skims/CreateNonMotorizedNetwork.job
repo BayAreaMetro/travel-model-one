@@ -11,7 +11,7 @@
 ; skimming procedures.
 ;
 ;
-; Input:  (1) A highway network containing the fields FT and DISTANCE, where FT 2 represents freeway links.
+; Input:  (1) A highway network containing the fields FT and DISTANCE, where FTs 2 and 8 represent freeway links.
 ;
 ; Output: (1) A highway network with the variables BIKEOK and WALKOK, in which a value of one in these variables
 ;             indicates bicycling or walking, respectively, is allowed on the link.  A value of zero indicates
@@ -36,9 +36,9 @@ run pgm = hwynet
    BIKEOK = 1
    WALKOK = 1
    
-   ; restrict access on all freeways (facility type is 2)
-   if (ft = 2) BIKEOK = 0
-   if (ft = 2) WALKOK = 0
+   ; restrict access on all freeways (facility type is 2 or 8)
+   if (ft = 2 | ft = 8) BIKEOK = 0
+   if (ft = 2 | ft = 8) WALKOK = 0
    
    ; allow bicycle access on the Golden Gate Bridge
    if (a = 7001  & b = 7325 ) BIKEOK = 1

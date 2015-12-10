@@ -1,0 +1,67 @@
+mode,mode_name,mode_category
+1,Walk access connector,Support
+2,Drive access connector,Support
+3,Stop-to-stop or stop-to-station transfer link,Support 
+4,Drive access funnel link,Support 
+5,Walk access funnel link,Support 
+6,Walk egress connector,Support
+7,Drive egress connector,Support 
+10,West Berkeley,Local
+11,Broadway Shuttle,Local 
+12,Emery Go Round,Local 
+13,Stanford Shuttles,Local 
+14,Caltrain Shuttles,Local 
+15,VTA Shuttles,Local
+16,Palo Alto/Menlo Park Shuttles,Local 
+17,Wheels ACE Shuttles,Local
+18,Amtrak Shuttles,Local
+19,San Leandro Links,Local 
+20,MUNI Cable Cars,Local 
+21,MUNI - Local,Local
+24,SamTrans - Local,Local 
+28,Santa Clara VTA - Local,Local 
+30,AC Transit - Local,Local
+33,WHEELS - Local,Local
+38,Union City Transit,Local 
+40,AirBART,Local
+42,County Connection (CCTA) - Local,Local 
+44,Tri-Delta,Local
+46,WestCAT - Local,Local 
+49,Vallejo Transit - Local,Local 
+52,Fairfield And Suisun Transit - Local,Local 
+55,American Canyon Transit,Local
+56,Vacaville City Coach,Local
+58,Benicia Breeze,Local
+60,VINE,Local
+63,Sonoma County Transit - Local,Local 
+66,Santa Rosa City Bus,Local
+68,Petaluma Transit,Local
+70,Golden Gate Transit - Local,Local 
+80,SamTrans - Express,Express
+81,Santa Clara VTA - Express,Express 
+82,Dumbarton Express,Express
+84,AC Transit - Transbay,Express 
+86,County Connection - Express,Express 
+87,Golden Gate Transit - Express San Francisco,Express
+88,Golden Gate Transit - Express Richmond,Express
+90,WestCAT - Express,Express
+91,Vallejo Transit - Express,Express
+92,Fairfield And Suisun Transit - Express,Express
+93,VINE - Express,Express
+100,East Bay Ferries,Ferry
+101,Golden Gate Ferry - Larkspur,Ferry
+102,Golden Gate Ferry - Sausalito,Ferry
+103,Tiburon Ferry,Ferry
+104,Vallejo Baylink Ferry,Ferry
+110,MUNI Metro,Light Rail
+111,Santa Clara VTA - LRT,Light Rail
+120,BART,Heavy Rail 
+121,Oakland Airport Connector,Heavy Rail
+130,Caltrain,Commuter Rail
+131,Amtrak - Capitol Corridor,Commuter Rail
+132,Amtrak - San Joaquin,Commuter Rail
+133,ACE,Commuter Rail
+134,Dumbarton Rail,Commuter Rail 
+135,SMART,Commuter Rail
+136,E-BART,Commuter Rail
+137,High-Speed Rail,Commuter Rail

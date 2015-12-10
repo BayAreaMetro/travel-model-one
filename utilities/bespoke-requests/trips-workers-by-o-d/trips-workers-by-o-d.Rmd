@@ -1,0 +1,102 @@
+---
+title: "Trips and Workers by Origin/Home and Destination/Work"
+author: "David Ory"
+output: 
+  html_document:
+    theme: cosmo
+    toc: yes
+---
+
+
+## Administration
+
+#### Purpose
+Prepares a bespoke summary of travel model output.  Specifically, summarizes all trips by origin/destination and all workers by home/work. 
+
+#### Outputs
+1.  A CSV database with logical names.  
+
+## Procedure
+
+#### Overhead
+```{r overhead, results = 'hide'}
+library(knitr)
+suppressMessages(library(dplyr))
+```
+
+```{r config, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
+
+#### Remote I/O
+```{r remote-io}
+TARGET_DIR  <- "M:/Application/Model One/RTP2013/Scenarios/Round 05 -- Final/2015_03_116/OUTPUT/"
+
+SAMPLE_RATE = 0.50
+
+OUTPUT_DIR <- "M:/Application/Model One/RTP2013/Scenarios/Round 05 -- Final/2015_03_116/OUTPUT/bespoke/"
+F_OUTPUT = paste(OUTPUT_DIR, "trips-workers-o-d.csv", sep = "")
+
+```
+
+#### Data reads
+```{r summaries}
+indiv_trips <- read.table(file = paste(TARGET_DIR, "indivTripData_3.csv", sep = ""), 
+                          header = TRUE, 
+                          sep = ",", 
+                          stringsAsFactors = FALSE)
+
+joint_trips <- read.table(file = paste(TARGET_DIR, "jointTripData_3.csv", sep = ""), 
+                          header = TRUE, 
+                          sep = ",", 
+                          stringsAsFactors = FALSE)
+
+indiv_tours <- read.table(file = paste(TARGET_DIR, "indivTourData_3.csv", sep = ""), 
+                          header = TRUE, 
+                          sep = ",", 
+                          stringsAsFactors = FALSE)
+
+```
+
+#### Data handling
+```{r handling}
+# Trips
+indiv_sum <- indiv_trips %>%
+  group_by(orig_taz, dest_taz) %>%
+  summarise(indiv_person_trips = n()/SAMPLE_RATE)
+
+joint_sum <- joint_trips %>%
+  group_by(orig_taz, dest_taz) %>%
+  summarise(joint_person_trips = sum(num_participants)/SAMPLE_RATE)
+
+summary <- merge(indiv_sum, joint_sum, by = c("orig_taz", "dest_taz"), all = TRUE)
+
+summary <- summary %>%
+  mutate(indiv_person_trips = ifelse(is.na(indiv_person_trips), 0, indiv_person_trips)) %>%
+  mutate(joint_person_trips = ifelse(is.na(joint_person_trips), 0, joint_person_trips)) %>%
+  mutate(person_trips = indiv_person_trips + joint_person_trips) %>%
+  select(orig_or_home_taz = orig_taz, dest_or_work_taz = dest_taz, person_trips)
+
+# Work tours
+table(indiv_tours$tour_purpose)
+tour_sum <- indiv_tours %>%
+  filter(tour_purpose == "work_low" | tour_purpose == "work_med" |
+           tour_purpose == "work_high" | tour_purpose == "work_very high" ) %>%
+  group_by(orig_taz, dest_taz) %>%
+  summarise(work_tours = n()/SAMPLE_RATE) %>%
+  ungroup() %>%
+  select(orig_or_home_taz = orig_taz, dest_or_work_taz = dest_taz, work_tours)
+
+summary <- merge(summary, tour_sum, by = c("orig_or_home_taz", "dest_or_work_taz"), all = TRUE)
+
+summary[is.na(summary)] <- 0
+
+sum(summary$work_tours)
+sum(summary$person_trips)
+
+```
+
+#### Write to disk
+```{r apply}
+write.csv(summary, file = F_OUTPUT, row.names = FALSE, quote = F)
+```
