@@ -125,7 +125,7 @@ if not exist metrics\ITHIM\DistanceTraveledByFacilityType_auto+truck.csv (
   rem Summarizes distance traveled by facility type for autos and trucks, by person and vehicles
   rem Input:  hwy\iter%ITER%\vgload5period_vehclasses.csv
   rem Output: metrics\ITHIM\DistanceTraveledByFacilityType_auto+truck.csv
-  call python "%CODE_DIR%\utilities\PBA40\ITHIM\DistanceTraveledByFacilityType.py"
+  call python "%CODE_DIR%\utilities\PBA40\ITHIM\DistanceTraveledByFacilityType_auto.py"
   IF ERRORLEVEL 2 goto error
 )
 
