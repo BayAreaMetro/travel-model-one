@@ -50,5 +50,6 @@ No. |  Item Definition                                    | Units           | St
   types because we don't have walk or bike route choice models and also because the TM1 network lacks detail to
   make skimming facility types for these modes meaningful.
 
-* **10 - Personal travel distance by facility type** and **11 - Vehicle distance traveled (VMT) by facility type**
-  are computed for *transit** using *TODO*.
+* **10 - Personal travel distance by facility type** is computed for **transit** using
+  [sumTransitDistance.job](sumTransitDistance.job).  This multiplies transit
+  distance skims by transit trip tables.

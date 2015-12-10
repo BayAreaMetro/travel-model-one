@@ -129,4 +129,12 @@ if not exist metrics\ITHIM\DistanceTraveledByFacilityType_auto+truck.csv (
   IF ERRORLEVEL 2 goto error
 )
 
+if not exist metrics\ITHIM\DistanceTraveledByFacilityType_transit.csv (
+  rem Summarizes distance traveled by facility type for transit, by person miles
+  rem Input:  main\trips(EA|AM|MD|PM|EV)allinc.tpp
+  rem         skims\trnskm(EA|AM|MD|PM|EV)__(wlk|drv)_(com|hvy|exp|lrf|loc)_(wlk|drv)_temp.tpp
+  rem Output: metrics\ITHIM\DistanceTraveledByFacilityType_transit.csv
+  runtpp "%CODE_DIR%\utilities\PBA40\ITHIM\sumTransitDistance.job"
+  IF ERRORLEVEL 2 goto error
+)
 :error
