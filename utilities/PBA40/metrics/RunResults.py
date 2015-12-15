@@ -121,6 +121,8 @@ class RunResults:
     ('Travel Time & Cost','Non-Household','Cost - Auto ($2000) - IX/EX'               ):      -1.49, # $1 in 2000 = $1.49 in 2017
     ('Travel Time & Cost','Non-Household','Cost - Auto ($2000) - AirPax'              ):      -1.49, # $1 in 2000 = $1.49 in 2017
     ('Travel Time & Cost','Non-Household','Cost - Truck ($2000) - Computed'           ):      -1.49, # $1 in 2000 = $1.49 in 2017
+    ('Travel Time & Cost','Non-Household','Time - Auto (PHT) - IX/EX'                 ):     -12.66,  # Auto
+    ('Travel Time & Cost','Non-Household','Time - Auto (PHT) - AirPax'                ):     -12.66,  # Auto
     ('Travel Time & Cost','Vehicle Ownership (Modeled)'                               ):   -3920.0,
 
     ('Travel Time','Auto/Truck (Hours)'                                        ):     -12.66,  # Auto
@@ -508,6 +510,11 @@ class RunResults:
         daily_results[(cat1,cat2,'Cost - Auto ($2000) - AirPax' )] = \
             0.01*auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Total Cost'].sum()
         daily_results[(cat1,cat2,'Cost - Truck ($2000) - Computed')] = 0.01*auto_byclass.loc['truck','Total Cost'].sum()
+
+        daily_results[(cat1,cat2,'Time - Auto (PHT) - IX/EX' )] = \
+            auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix'],'Person Minutes'].sum()/60.0
+        daily_results[(cat1,cat2,'Time - Auto (PHT) - AirPax' )] = \
+            auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Person Minutes'].sum()/60.0
 
         cat2            = 'Vehicle Ownership (Modeled)'
         daily_results[(cat1,cat2,'Total')] = self.autos_owned['total autos'].sum()

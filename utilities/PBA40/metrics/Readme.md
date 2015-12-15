@@ -120,7 +120,8 @@ See [section below](#non-recurring-freeway-delay-hours), in the **Travel Time** 
 
 These are a simple sum of the vehicle hours traveled summed across all roadway links.
 For autos, these are transformed to person hours traveled.  Pulled from the hwy networks
-via [hwynet.py](hwynet.py).
+via [hwynet.py](hwynet.py).  Since these come from networks, they include nonresident trips
+(intra-regional and air passenger trips).
 
 #### Non-Recurring Freeway Delay (Hours)
 
