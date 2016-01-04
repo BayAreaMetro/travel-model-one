@@ -123,6 +123,15 @@ if __name__ == '__main__':
     nonm_acc.loc[nonm_acc.walk_subzone==1, 'walk_subzone_label'] = "short_walk_transit"
     nonm_acc.loc[nonm_acc.walk_subzone==2, 'walk_subzone_label'] =  "long_walk_transit"
 
+    # write as is for tableau
+    mand_csv_tableau = os.path.join(my_args.run_dir, "OUTPUT", "metrics","mandatory_logsum_tableau.csv")
+    mand_acc.to_csv(mand_csv_tableau, index=False)
+    print "Wrote mandatory (tableau) csv to [%s]" % mand_csv_tableau
+
+    nonm_csv_tableau = os.path.join(my_args.run_dir, "OUTPUT", "metrics","nonMandatory_logsum_tableau.csv")
+    nonm_acc.to_csv(nonm_csv_tableau, index=False)
+    print "Wrote nonmatory (tableau) csv to [%s]" % nonm_csv_tableau
+
     # ok now we want to move walk_subzone, incQ_label, autoSuff_label to be row headers
     mand_pivot = pandas.pivot_table(mand_acc,
                                     values=['cs_hours','logsum_diff_minutes','avg_num_workers_students'],
