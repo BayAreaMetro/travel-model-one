@@ -1,0 +1,169 @@
+---
+title: "Compare Skims"
+author: "David Ory"
+output: 
+   html_document:
+      theme: cosmo
+      toc: yes
+---
+
+## Administration
+
+#### Purpose
+Compare two sets of skims to debug accessibility results. 
+
+#### Outputs
+1.  A data frame with differences greater than the threshold
+
+#### _TODO_
+1.  Seems to be working
+
+## Procedure
+
+#### Overhead
+```{r overhead, results = 'hide'}
+library(knitr)
+source("http://bioconductor.org/biocLite.R")
+biocLite("rhdf5")
+source("D:/files/GitHub/omx/api/r/OMX.R")
+library(reshape2)
+suppressMessages(library(dplyr))
+```
+
+```{r config, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
+
+#### Parameters
+```{r parameters}
+              
+SKIM_LIST = c("hwyskmAM.omx", "nonmotskm.omx", 
+              "trnskmAM_wlk_loc_wlk.omx", "trnskmAM_wlk_lrf_wlk.omx", 
+              "trnskmAM_wlk_exp_wlk.omx", "trnskmAM_wlk_hvy_wlk.omx","trnskmAM_wlk_com_wlk.omx",
+              "trnskmAM_drv_loc_wlk.omx", "trnskmAM_drv_lrf_wlk.omx", 
+              "trnskmAM_drv_exp_wlk.omx", "trnskmAM_drv_hvy_wlk.omx","trnskmAM_drv_com_wlk.omx",
+              "trnskmAM_wlk_loc_drv.omx", "trnskmAM_wlk_lrf_drv.omx", 
+              "trnskmAM_wlk_exp_drv.omx", "trnskmAM_wlk_hvy_drv.omx","trnskmAM_wlk_com_drv.omx")
+
+SELECT_ORIGIN = 1339
+
+PCT_DIFF_THRESHOLD = 20.0
+
+
+```
+
+
+#### Remote I/O
+```{r remote-io}
+BASE_DIR  = "M:/Application/Model One/RTP2017/Project Performance Assessment/Projects/Debug/2040_05_508/skims/"
+BUILD_DIR = "M:/Application/Model One/RTP2017/Project Performance Assessment/Projects/Debug/2040_05_508_104/skims/"
+
+```
+
+#### OMX to Dataframe Method
+```{r omx-dataframe-method}
+OMX_to_Dataframe <- function(input_skim_location, input_skim_table_name, input_skim_name) {
+  
+  matrix <- readMatrixOMX(input_skim_location, input_skim_table_name)
+  H5close()
+  
+  # set the dimensions as consecutive integers
+  dimensions <- dim(matrix)[1]
+  dimnames(matrix) <- list(sapply(c(1:dimensions), as.character),sapply(c(1:dimensions), as.character))
+  
+  # convert to dataframe and clean up
+  matrix_df <- as.data.frame(as.table(matrix))
+  output_df <- matrix_df %>%
+    select(orig = Var1, dest = Var2, value = Freq) %>%
+    mutate(orig = as.numeric(as.character(orig))) %>%
+    mutate(dest = as.numeric(as.character(dest))) %>%
+    mutate(skim_name = input_skim_name) %>%
+    mutate(skim_table = input_skim_table_name)
+  
+  return(output_df)  
+  
+}
+
+```
+
+#### Compare Skims Method
+```{r compare-skims-method}
+Compare_Skims <- function(input_base_df, input_build_df, input_select_origin, input_pct_diff_thresh) {
+  
+  base_work <- input_base_df %>%
+    filter(orig == input_select_origin) %>%
+    rename(base_value = value)
+  
+  build_work <- input_build_df %>%
+    filter(orig == input_select_origin) %>%
+    rename(build_value = value)
+  
+  comp_work <- left_join(base_work, build_work, by = c("skim_name", "skim_table", "orig", "dest"))
+  
+  comp_out <- comp_work %>%
+    mutate(abs_diff = build_value - base_value) %>%
+    mutate(pct_diff = 100.00) %>%
+    mutate(both_non_zero = (abs(base_value) > 0.0) * (abs(build_value) > 0.0)) %>%
+    mutate(both_zero = (abs(base_value) < 0.001) * (abs(build_value) < 0.001)) %>%
+    mutate(pct_diff = ifelse(both_non_zero, 100.0 * abs_diff / base_value, pct_diff)) %>%
+    mutate(pct_diff = ifelse(both_zero, 0.0, pct_diff)) %>%
+    filter(abs(pct_diff) > input_pct_diff_thresh) %>%
+    select(skim_name, skim_table, orig, dest, base_value, build_value, abs_diff, pct_diff)
+  
+  return(comp_out)
+  
+  
+  }
+
+```
+
+#### Execute for all Skims
+```{r execution}
+# create tally of comparisons data frame
+all_compare_df <- data.frame(skim_name = character(),
+                             skim_table = character(),
+                             orig = integer(),
+                             dest = integer(),
+                             base_value = numeric(),
+                             build_value = numeric(),
+                             both_non_zero = integer(),
+                             abs_diff = numeric(),
+                             pct_diff = numeric())
+
+for (skim in SKIM_LIST){
+  
+  base_skim  <- paste(BASE_DIR,  skim, sep = "")
+  build_skim <- paste(BUILD_DIR, skim, sep = "") 
+  
+  # get the skim table names (assume present in build)
+  base_details <- h5ls(base_skim)
+  base_table_names <- base_details %>%
+    filter(group == "/data")
+  table_name_list <- base_table_names$name
+  
+  for (table_name in table_name_list) {
+    
+    print(paste("Working on ", skim, " --> ", table_name, sep = ""))
+    
+    base_df    <- OMX_to_Dataframe(base_skim,  table_name, skim)
+    build_df   <- OMX_to_Dataframe(build_skim, table_name, skim) 
+    
+    compare_df <- Compare_Skims(base_df, build_df, SELECT_ORIGIN, PCT_DIFF_THRESHOLD) 
+    all_compare_df <- rbind(all_compare_df, compare_df)
+  }
+  
+}
+
+```
+
+#### Noodle results
+```{r noodle}
+
+table(all_compare_df$skim_table)
+
+transit <- all_compare_df_1339 %>%
+  filter(skim_table == "dtime")
+
+
+```
+
