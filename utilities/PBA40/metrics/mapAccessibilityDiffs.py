@@ -12,8 +12,10 @@ USAGE = """
   * Outputs [run_dir]\OUTPUT\metrics\CSmap_204_Streetcar.pdf with mandatory map using 0.5 std dev
 """
 import argparse, csv, datetime, os, shutil, sys, traceback
-import pandas
+import numpy, pandas
 
+NOISE_THRESHHOLD = 0.3
+NOISE_SHALLOW    = 0.05
 
 def read_accessibilities(proj_dir, mandatory, col_prefix):
     """
@@ -49,6 +51,96 @@ def read_markets(proj_dir, col_prefix):
                                'num_workers_students':'%s_num_workers_students' % col_prefix},
                       inplace=True)
     return acc_mar_df
+
+
+def create_map(proj_dir, CWD, pivot_df, mand_nonm, reduced_noise):
+    """
+    Uses arcpy to create the PDF map
+    """
+    import arcpy
+    print "Importing arcpy"
+    ARCPY_DIR = r"M:\Application\Model One\RTP2017\Project Performance Assessment\Projects\_Complete\logsummaps\arcpy"
+
+    mxd = arcpy.mapping.MapDocument(os.path.join(ARCPY_DIR, "ConsumerSurplus.mxd"))
+    df  = arcpy.mapping.ListDataFrames(mxd,"*")[0]
+
+    # update it to point to this project
+    mxd.findAndReplaceWorkspacePaths("203_Irvington", my_args.run_dir, False)
+
+    # get the Join Layer layer
+    cs_lyr = arcpy.mapping.ListLayers(mxd, "Join Layer", df)[0]
+
+    # we need to export the layer because we can't alter symbology on a joined layer
+    shp_out = os.path.join(ARCPY_DIR, "copies", "layer_%s.shp" % my_args.run_dir)
+    if arcpy.Exists(shp_out):
+        print "Exists [%s]" % shp_out
+        arcpy.Delete_management(shp_out)
+        print "Deleted [%s]" % shp_out
+    arcpy.CopyFeatures_management(cs_lyr, shp_out)
+    cs_lyr.visible = False
+
+    # now make the symbology layer point that that
+    symb_lyr = arcpy.mapping.ListLayers(mxd, "Consumer Surplus Hours", df)[0]
+    symb_lyr.replaceDataSource( os.path.join(ARCPY_DIR, "copies"), "SHAPEFILE_WORKSPACE", "layer_%s" % my_args.run_dir, False)
+    # symb_lyr.symbology.reclassify()
+    if not reduced_noise:
+        symb_lyr.symbology.valueField = "mandat_108"
+        colname = 'cs_hours'
+    else:
+        symb_lyr.symbology.valueField = "mandat_111"
+        colname = 'cs_hours_rn'
+    cs_mean = pivot_df.cs_hours_rn.mean()
+    cs_std  = pivot_df.cs_hours_rn.std()
+
+    symb_lyr.symbology.classBreakValues=[pivot_df[colname].min()-1.0,
+                                         cs_mean-2.75*cs_std,
+                                         cs_mean-2.25*cs_std,
+                                         cs_mean-1.75*cs_std,
+                                         cs_mean-1.25*cs_std,
+                                         cs_mean-0.75*cs_std,
+                                         cs_mean-0.25*cs_std,
+                                         cs_mean+0.25*cs_std,
+                                         cs_mean+0.75*cs_std,
+                                         cs_mean+1.25*cs_std,
+                                         cs_mean+1.75*cs_std,
+                                         cs_mean+2.25*cs_std,
+                                         cs_mean+2.75*cs_std,
+                                         pivot_df[colname].max()
+                                         ]
+    symb_lyr.symbology.classBreakLabels=["< 2.75 Std. Dev.",
+                                         "-2.75 - -2.25 Std. Dev.",
+                                         "-2.25 - -1.75 Std. Dev.",
+                                         "-1.75 - -1.25 Std. Dev.",
+                                         "-1.25 - -0.75 Std. Dev.",
+                                         "-0.75 - -0.25 Std. Dev.",
+                                         "-0.25 -  0.25 Std. Dev.",
+                                         " 0.25 -  0.75 Std. Dev.",
+                                         " 0.75 -  1.25 Std. Dev.",
+                                         " 1.25 -  1.75 Std. Dev.",
+                                         " 1.75 -  2.25 Std. Dev.",
+                                         " 2.25 -  2.75 Std. Dev.",
+                                         "> 2.75 Std. Dev."
+                                         ]
+
+    desc_str =    "Min:      {:9,.2f}".format(pivot_df[colname].min())
+    desc_str += "\nMean:     {:9,.2f}".format(cs_mean)
+    desc_str += "\nMax:      {:9,.2f}".format(pivot_df[colname].max())
+    desc_str += "\nStd.Dev.: {:9,.2f}".format(cs_std)
+    desc_str += "\nSum:      {:9,.2f}".format(pivot_df[colname].sum())
+    text_elm = arcpy.mapping.ListLayoutElements(mxd, "TEXT_ELEMENT")[0]
+    text_elm.text = desc_str
+
+    mxd.saveACopy(os.path.join(ARCPY_DIR, "copies", "ConsumerSurplus_%s.mxd" % my_args.run_dir))
+
+    pdffile = "CSmap_%s%s_%s.pdf" % (mand_nonm, "_%.2frn" % NOISE_THRESHHOLD if reduced_noise else "", my_args.run_dir)
+    print "Trying to write [%s]" % pdffile
+    arcpy.mapping.ExportToPDF(mxd, pdffile)
+
+    # move it
+    shutil.copy2(os.path.join(ARCPY_DIR, pdffile),
+                os.path.join(CWD, my_args.run_dir, "OUTPUT", "metrics"))
+    print "Wrote [%s]" % os.path.join(CWD, my_args.run_dir, "OUTPUT", "metrics", pdffile)
+    os.remove(os.path.join(ARCPY_DIR, pdffile))
 
 if __name__ == '__main__':
     pandas.set_option('display.width', 300)
@@ -107,6 +199,22 @@ if __name__ == '__main__':
     nonm_acc['logsum_diff']         = nonm_acc.scen_dclogsum - nonm_acc.base_dclogsum
     nonm_acc['logsum_diff_minutes'] = nonm_acc.logsum_diff / 0.0175
 
+    # reduce noise for logsum_diff_minutes
+    # This is because artifacts crop up in the logsum minutes which are just noise
+    # For example, if some TAZs previously had 39.9 minute drive access to transit in the baseline and cross over to 40.06 minutes
+    # of drive access; they could lose a drive-to-transit mode which would give them a small negative logsum difference, which is really
+    # not representative of an actual change in accessibility, but it can come up in the model and then get multiplied out by a large
+    # TAX population.
+    mand_ldm_max = mand_acc.logsum_diff_minutes.abs().max()
+    mand_acc['ldm_ratio'] = mand_acc.logsum_diff_minutes.abs()/mand_ldm_max    # how big is the magnitude compared to max magnitude?
+    mand_acc['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(mand_acc.ldm_ratio-NOISE_THRESHHOLD)/NOISE_SHALLOW))
+    mand_acc['ldm_rn']    = mand_acc.logsum_diff_minutes*mand_acc.ldm_mult
+
+    nonm_ldm_max = nonm_acc.logsum_diff_minutes.abs().max()
+    nonm_acc['ldm_ratio'] = nonm_acc.logsum_diff_minutes.abs()/nonm_ldm_max    # how big is the magnitude compared to max magnitude?
+    nonm_acc['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(nonm_acc.ldm_ratio-NOISE_THRESHHOLD)/NOISE_SHALLOW))
+    nonm_acc['ldm_rn']    = nonm_acc.logsum_diff_minutes*nonm_acc.ldm_mult
+
     # add market columns
     mand_acc      = pandas.merge(mand_acc, market[['taz','walk_subzone','incQ_label','autoSuff_label','avg_num_workers_students']], how='left')
     nonm_acc      = pandas.merge(nonm_acc, market[['taz','walk_subzone','incQ_label','autoSuff_label','avg_num_persons']],          how='left')
@@ -114,6 +222,10 @@ if __name__ == '__main__':
     # consumer surplus
     mand_acc['cs_hours'] = mand_acc.avg_num_workers_students * mand_acc.logsum_diff_minutes/60.0
     nonm_acc['cs_hours'] = nonm_acc.avg_num_persons          * nonm_acc.logsum_diff_minutes/60.0
+
+    # consumer surplus -- reduced noise
+    mand_acc['cs_hours_rn'] = mand_acc.avg_num_workers_students * mand_acc.ldm_rn/60.0
+    nonm_acc['cs_hours_rn'] = nonm_acc.avg_num_persons          * nonm_acc.ldm_rn/60.0
 
     # walk subzone label
     mand_acc['walk_subzone_label'] = '?'
@@ -137,112 +249,49 @@ if __name__ == '__main__':
 
     # ok now we want to move walk_subzone, incQ_label, autoSuff_label to be row headers
     mand_pivot = pandas.pivot_table(mand_acc,
-                                    values=['cs_hours','logsum_diff_minutes','avg_num_workers_students'],
+                                    values=['cs_hours','logsum_diff_minutes','avg_num_workers_students', 'ldm_rn','cs_hours_rn'],
                                     index=['taz'],
                                     columns=['walk_subzone_label','incQ_label','autoSuff_label'])
     mand_totals = mand_pivot.sum(axis=1, level=[0])
     # rename/flatten column names
     mand_pivot.columns = [' '.join(col).strip() for col in mand_pivot.columns.values]
     mand_pivot = pandas.merge(mand_pivot, mand_totals, left_index=True, right_index=True)
+
+    # remove the columns _rn disaggregate columns because it's too much. Keep only the taz sum
+    drop_cols = []
+    for col in mand_pivot.columns.values:
+        if col.startswith('ldm_rn ') or col.startswith('cs_hours_rn '): drop_cols.append(col)
+    mand_pivot.drop(drop_cols, axis=1, inplace=True)
+
     mand_csv = os.path.join(my_args.run_dir, "OUTPUT", "metrics","mandatory_logsum.csv")
     mand_pivot.to_csv(mand_csv)
     print "Wrote mandatory csv to [%s]" % mand_csv
 
     # ok now we want to move walk_subzone, incQ_label, autoSuff_label to be row headers
     nonm_pivot = pandas.pivot_table(nonm_acc,
-                                    values=['cs_hours','logsum_diff_minutes','avg_num_persons'],
+                                    values=['cs_hours','logsum_diff_minutes','avg_num_persons', 'ldm_rn','cs_hours_rn'],
                                     index=['taz'],
                                     columns=['walk_subzone_label','incQ_label','autoSuff_label'])
     nonm_totals = nonm_pivot.sum(axis=1, level=[0])
     # rename/flatten column names
     nonm_pivot.columns = [' '.join(col).strip() for col in nonm_pivot.columns.values]
     nonm_pivot = pandas.merge(nonm_pivot, nonm_totals, left_index=True, right_index=True)
+
+    # remove the columns _rn disaggregate columns because it's too much. Keep only the taz sum
+    drop_cols = []
+    for col in nonm_pivot.columns.values:
+        if col.startswith('ldm_rn ') or col.startswith('cs_hours_rn '): drop_cols.append(col)
+    nonm_pivot.drop(drop_cols, axis=1, inplace=True)
+
     nonm_csv = os.path.join(my_args.run_dir, "OUTPUT", "metrics","nonMandatory_logsum.csv")
     nonm_pivot.to_csv(nonm_csv)
     print "Wrote nonMandatory csv to [%s]" % nonm_csv
 
     try:
-        import arcpy
-        print "Importing arcpy"
-        ARCPY_DIR = r"M:\Application\Model One\RTP2017\Project Performance Assessment\Projects\_Complete\logsummaps\arcpy"
-
-        mxd = arcpy.mapping.MapDocument(os.path.join(ARCPY_DIR, "ConsumerSurplus.mxd"))
-        df  = arcpy.mapping.ListDataFrames(mxd,"*")[0]
-
-        # update it to point to this project
-        mxd.findAndReplaceWorkspacePaths("203_Irvington", my_args.run_dir, False)
-
-        # get the Join Layer layer
-        cs_lyr = arcpy.mapping.ListLayers(mxd, "Join Layer", df)[0]
-        print "layer name = [%s]" % cs_lyr.name
-        print "symbology  = [%s]" % cs_lyr.symbologyType
-
-        # we need to export the layer because we can't alter symbology on a joined layer
-        shp_out = os.path.join(ARCPY_DIR, "copies", "layer_%s.shp" % my_args.run_dir)
-        if arcpy.Exists(shp_out):
-            print "Exists [%s]" % shp_out
-            arcpy.Delete_management(shp_out)
-            print "Deleted [%s]" % shp_out
-        arcpy.CopyFeatures_management(cs_lyr, shp_out)
-        cs_lyr.visible = False
-
-        # now make the symbology layer point that that
-        symb_lyr = arcpy.mapping.ListLayers(mxd, "Consumer Surplus Hours", df)[0]
-        symb_lyr.replaceDataSource( os.path.join(ARCPY_DIR, "copies"), "SHAPEFILE_WORKSPACE", "layer_%s" % my_args.run_dir, False)
-        # symb_lyr.symbology.reclassify()
-        symb_lyr.symbology.valueField = "mandat_108"
-        cs_mean = mand_pivot.cs_hours.mean()
-        cs_std  = mand_pivot.cs_hours.std()
-        symb_lyr.symbology.classBreakValues=[mand_pivot.cs_hours.min()-1.0,
-                                             cs_mean-2.75*cs_std,
-                                             cs_mean-2.25*cs_std,
-                                             cs_mean-1.75*cs_std,
-                                             cs_mean-1.25*cs_std,
-                                             cs_mean-0.75*cs_std,
-                                             cs_mean-0.25*cs_std,
-                                             cs_mean+0.25*cs_std,
-                                             cs_mean+0.75*cs_std,
-                                             cs_mean+1.25*cs_std,
-                                             cs_mean+1.75*cs_std,
-                                             cs_mean+2.25*cs_std,
-                                             cs_mean+2.75*cs_std,
-                                             mand_pivot.cs_hours.max()
-                                             ]
-        symb_lyr.symbology.classBreakLabels=["< 2.75 Std. Dev.",
-                                             "-2.75 - -2.25 Std. Dev.",
-                                             "-2.25 - -1.75 Std. Dev.",
-                                             "-1.75 - -1.25 Std. Dev.",
-                                             "-1.25 - -0.75 Std. Dev.",
-                                             "-0.75 - -0.25 Std. Dev.",
-                                             "-0.25 -  0.25 Std. Dev.",
-                                             " 0.25 -  0.75 Std. Dev.",
-                                             " 0.75 -  1.25 Std. Dev.",
-                                             " 1.25 -  1.75 Std. Dev.",
-                                             " 1.75 -  2.25 Std. Dev.",
-                                             " 2.25 -  2.75 Std. Dev.",
-                                             "> 2.75 Std. Dev."
-                                             ]
-
-        desc_str =    "Min:      {:9,.2f}".format(mand_pivot.cs_hours.min())
-        desc_str += "\nMean:     {:9,.2f}".format(cs_mean)
-        desc_str += "\nMax:      {:9,.2f}".format(mand_pivot.cs_hours.max())
-        desc_str += "\nStd.Dev.: {:9,.2f}".format(cs_std)
-        desc_str += "\nSum:      {:9,.2f}".format(mand_pivot.cs_hours.sum())
-        text_elm = arcpy.mapping.ListLayoutElements(mxd, "TEXT_ELEMENT")[0]
-        text_elm.text = desc_str
-
-        mxd.saveACopy(os.path.join(ARCPY_DIR, "copies", "ConsumerSurplus_%s.mxd" % my_args.run_dir))
-
-        pdffile = "CSmap_%s.pdf" % my_args.run_dir
-        print "Trying to write [%s]" % pdffile
-        arcpy.mapping.ExportToPDF(mxd, pdffile)
-
-        # move it
-        print CWD
-        shutil.move(os.path.join(ARCPY_DIR, pdffile),
-                    os.path.join(CWD, my_args.run_dir, "OUTPUT", "metrics"))
-        print "Wrote [%s]" % os.path.join(CWD, my_args.run_dir, "OUTPUT", "metrics", pdffile)
-
+        create_map(my_args.run_dir, CWD, mand_pivot, "mandat", reduced_noise=False)
+        create_map(my_args.run_dir, CWD, mand_pivot, "mandat", reduced_noise=True)
+        create_map(my_args.run_dir, CWD, nonm_pivot, "nonMan", reduced_noise=False)
+        create_map(my_args.run_dir, CWD, nonm_pivot, "nonMan", reduced_noise=True)
     except:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback)
