@@ -89,8 +89,8 @@ def create_map(proj_dir, CWD, pivot_df, mand_nonm, reduced_noise):
     else:
         symb_lyr.symbology.valueField = "mandat_111"
         colname = 'cs_hours_rn'
-    cs_mean = pivot_df.cs_hours_rn.mean()
-    cs_std  = pivot_df.cs_hours_rn.std()
+    cs_mean = pivot_df[colname].mean()
+    cs_std  = pivot_df[colname].std()
 
     symb_lyr.symbology.classBreakValues=[pivot_df[colname].min()-1.0,
                                          cs_mean-2.75*cs_std,
