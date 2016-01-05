@@ -4,12 +4,14 @@ USAGE = """
 
   * Reads [run_dir]\OUTPUT\metrics\BC_config.csv to find the base_dir
   * Reads the accessibilities and accessibility markets for [run_dir] and base_dir
-  * Outputs into [run_dir]\OUTPUT\metrics a mandatoryAcc_[ID]_base[baseID].csv and
-                                         nonMandatoryAcc_[ID]_base[baseID].csv
-    for joining and mapping
-  * (someday) accessiblity_diffs_[ID]_base[baseID].pdf with maps
+  * Outputs into [run_dir]\OUTPUT\metrics a mandatory_logsum.csv,
+                                         nonNandatory_logsum.csv,
+                                    mandatory_logsum_tableau.csv,
+                                 nonMandatory_logsum_tableau.csv
+    for joining and mapping.  The second two are the same as the first two but unpivoted (tableau-style).
+  * Outputs [run_dir]\OUTPUT\metrics\CSmap_204_Streetcar.pdf with mandatory map using 0.5 std dev
 """
-import argparse, csv, datetime, os, sys
+import argparse, csv, datetime, os, shutil, sys, traceback
 import pandas
 
 
@@ -50,6 +52,7 @@ def read_markets(proj_dir, col_prefix):
 
 if __name__ == '__main__':
     pandas.set_option('display.width', 300)
+    CWD = os.getcwd()
 
     parser = argparse.ArgumentParser(description = USAGE,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -141,7 +144,7 @@ if __name__ == '__main__':
     # rename/flatten column names
     mand_pivot.columns = [' '.join(col).strip() for col in mand_pivot.columns.values]
     mand_pivot = pandas.merge(mand_pivot, mand_totals, left_index=True, right_index=True)
-    mand_csv = os.path.join(my_args.run_dir, "OUTPUT", "metrics","mandatory_logsum_%s_base%s.csv" % (my_args.run_dir, base_run_dir))
+    mand_csv = os.path.join(my_args.run_dir, "OUTPUT", "metrics","mandatory_logsum.csv")
     mand_pivot.to_csv(mand_csv)
     print "Wrote mandatory csv to [%s]" % mand_csv
 
@@ -154,6 +157,92 @@ if __name__ == '__main__':
     # rename/flatten column names
     nonm_pivot.columns = [' '.join(col).strip() for col in nonm_pivot.columns.values]
     nonm_pivot = pandas.merge(nonm_pivot, nonm_totals, left_index=True, right_index=True)
-    nonm_csv = os.path.join(my_args.run_dir, "OUTPUT", "metrics","nonMandatory_logsum_%s_base%s.csv" % (my_args.run_dir, base_run_dir))
+    nonm_csv = os.path.join(my_args.run_dir, "OUTPUT", "metrics","nonMandatory_logsum.csv")
     nonm_pivot.to_csv(nonm_csv)
     print "Wrote nonMandatory csv to [%s]" % nonm_csv
+
+    try:
+        import arcpy
+        print "Importing arcpy"
+        ARCPY_DIR = r"M:\Application\Model One\RTP2017\Project Performance Assessment\Projects\_Complete\logsummaps\arcpy"
+
+        mxd = arcpy.mapping.MapDocument(os.path.join(ARCPY_DIR, "ConsumerSurplus.mxd"))
+        df  = arcpy.mapping.ListDataFrames(mxd,"*")[0]
+
+        # update it to point to this project
+        mxd.findAndReplaceWorkspacePaths("203_Irvington", my_args.run_dir, False)
+
+        # get the Join Layer layer
+        cs_lyr = arcpy.mapping.ListLayers(mxd, "Join Layer", df)[0]
+        print "layer name = [%s]" % cs_lyr.name
+        print "symbology  = [%s]" % cs_lyr.symbologyType
+
+        # we need to export the layer because we can't alter symbology on a joined layer
+        shp_out = os.path.join(ARCPY_DIR, "copies", "layer_%s.shp" % my_args.run_dir)
+        if arcpy.Exists(shp_out):
+            print "Exists [%s]" % shp_out
+            arcpy.Delete_management(shp_out)
+            print "Deleted [%s]" % shp_out
+        arcpy.CopyFeatures_management(cs_lyr, shp_out)
+        cs_lyr.visible = False
+
+        # now make the symbology layer point that that
+        symb_lyr = arcpy.mapping.ListLayers(mxd, "Consumer Surplus Hours", df)[0]
+        symb_lyr.replaceDataSource( os.path.join(ARCPY_DIR, "copies"), "SHAPEFILE_WORKSPACE", "layer_%s" % my_args.run_dir, False)
+        # symb_lyr.symbology.reclassify()
+        symb_lyr.symbology.valueField = "mandat_108"
+        cs_mean = mand_pivot.cs_hours.mean()
+        cs_std  = mand_pivot.cs_hours.std()
+        symb_lyr.symbology.classBreakValues=[mand_pivot.cs_hours.min()-1.0,
+                                             cs_mean-2.75*cs_std,
+                                             cs_mean-2.25*cs_std,
+                                             cs_mean-1.75*cs_std,
+                                             cs_mean-1.25*cs_std,
+                                             cs_mean-0.75*cs_std,
+                                             cs_mean-0.25*cs_std,
+                                             cs_mean+0.25*cs_std,
+                                             cs_mean+0.75*cs_std,
+                                             cs_mean+1.25*cs_std,
+                                             cs_mean+1.75*cs_std,
+                                             cs_mean+2.25*cs_std,
+                                             cs_mean+2.75*cs_std,
+                                             mand_pivot.cs_hours.max()
+                                             ]
+        symb_lyr.symbology.classBreakLabels=["< 2.75 Std. Dev.",
+                                             "-2.75 - -2.25 Std. Dev.",
+                                             "-2.25 - -1.75 Std. Dev.",
+                                             "-1.75 - -1.25 Std. Dev.",
+                                             "-1.25 - -0.75 Std. Dev.",
+                                             "-0.75 - -0.25 Std. Dev.",
+                                             "-0.25 -  0.25 Std. Dev.",
+                                             " 0.25 -  0.75 Std. Dev.",
+                                             " 0.75 -  1.25 Std. Dev.",
+                                             " 1.25 -  1.75 Std. Dev.",
+                                             " 1.75 -  2.25 Std. Dev.",
+                                             " 2.25 -  2.75 Std. Dev.",
+                                             "> 2.75 Std. Dev."
+                                             ]
+
+        desc_str =    "Min:      {:9,.2f}".format(mand_pivot.cs_hours.min())
+        desc_str += "\nMean:     {:9,.2f}".format(cs_mean)
+        desc_str += "\nMax:      {:9,.2f}".format(mand_pivot.cs_hours.max())
+        desc_str += "\nStd.Dev.: {:9,.2f}".format(cs_std)
+        desc_str += "\nSum:      {:9,.2f}".format(mand_pivot.cs_hours.sum())
+        text_elm = arcpy.mapping.ListLayoutElements(mxd, "TEXT_ELEMENT")[0]
+        text_elm.text = desc_str
+
+        mxd.saveACopy(os.path.join(ARCPY_DIR, "copies", "ConsumerSurplus_%s.mxd" % my_args.run_dir))
+
+        pdffile = "CSmap_%s.pdf" % my_args.run_dir
+        print "Trying to write [%s]" % pdffile
+        arcpy.mapping.ExportToPDF(mxd, pdffile)
+
+        # move it
+        print CWD
+        shutil.move(os.path.join(ARCPY_DIR, pdffile),
+                    os.path.join(CWD, my_args.run_dir, "OUTPUT", "metrics"))
+        print "Wrote [%s]" % os.path.join(CWD, my_args.run_dir, "OUTPUT", "metrics", pdffile)
+
+    except:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback)
