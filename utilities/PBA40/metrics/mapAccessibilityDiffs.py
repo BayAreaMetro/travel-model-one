@@ -14,8 +14,9 @@ USAGE = """
 import argparse, csv, datetime, os, shutil, sys, traceback
 import numpy, pandas
 
-NOISE_THRESHHOLD = 0.1
-NOISE_SHALLOW    = 0.05
+# cliff effect mitigation
+CEM_THRESHHOLD = 0.1
+CEM_SHALLOW    = 0.05
 
 def read_accessibilities(proj_dir, mandatory, col_prefix):
     """
@@ -88,7 +89,7 @@ def create_map(proj_dir, CWD, pivot_df, mand_nonm, reduced_noise):
         colname = 'cs_hours'
     else:
         symb_lyr.symbology.valueField = "mandat_111"
-        colname = 'cs_hours_rn'
+        colname = 'cs_hours_cem'
     cs_mean = pivot_df[colname].mean()
     cs_std  = pivot_df[colname].std()
 
@@ -132,7 +133,7 @@ def create_map(proj_dir, CWD, pivot_df, mand_nonm, reduced_noise):
 
     mxd.saveACopy(os.path.join(ARCPY_DIR, "copies", "ConsumerSurplus_%s.mxd" % my_args.run_dir))
 
-    pdffile = "CSmap_%s%s_%s.pdf" % (mand_nonm, "_%.2frn" % NOISE_THRESHHOLD if reduced_noise else "", my_args.run_dir)
+    pdffile = "CSmap_%s%s_%s.pdf" % (mand_nonm, "_%.2frn" % CEM_THRESHHOLD if reduced_noise else "", my_args.run_dir)
     print "Trying to write [%s]" % pdffile
     arcpy.mapping.ExportToPDF(mxd, pdffile)
 
@@ -199,21 +200,16 @@ if __name__ == '__main__':
     nonm_acc['logsum_diff']         = nonm_acc.scen_dclogsum - nonm_acc.base_dclogsum
     nonm_acc['logsum_diff_minutes'] = nonm_acc.logsum_diff / 0.0175
 
-    # reduce noise for logsum_diff_minutes
-    # This is because artifacts crop up in the logsum minutes which are just noise
-    # For example, if some TAZs previously had 39.9 minute drive access to transit in the baseline and cross over to 40.06 minutes
-    # of drive access; they could lose a drive-to-transit mode which would give them a small negative logsum difference, which is really
-    # not representative of an actual change in accessibility, but it can come up in the model and then get multiplied out by a large
-    # TAX population.
+    # Cliff Effect Mitigation
     mand_ldm_max = mand_acc.logsum_diff_minutes.abs().max()
     mand_acc['ldm_ratio'] = mand_acc.logsum_diff_minutes.abs()/mand_ldm_max    # how big is the magnitude compared to max magnitude?
-    mand_acc['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(mand_acc.ldm_ratio-NOISE_THRESHHOLD)/NOISE_SHALLOW))
-    mand_acc['ldm_rn']    = mand_acc.logsum_diff_minutes*mand_acc.ldm_mult
+    mand_acc['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(mand_acc.ldm_ratio-CEM_THRESHHOLD)/CEM_SHALLOW))
+    mand_acc['ldm_cem']   = mand_acc.logsum_diff_minutes*mand_acc.ldm_mult
 
     nonm_ldm_max = nonm_acc.logsum_diff_minutes.abs().max()
     nonm_acc['ldm_ratio'] = nonm_acc.logsum_diff_minutes.abs()/nonm_ldm_max    # how big is the magnitude compared to max magnitude?
-    nonm_acc['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(nonm_acc.ldm_ratio-NOISE_THRESHHOLD)/NOISE_SHALLOW))
-    nonm_acc['ldm_rn']    = nonm_acc.logsum_diff_minutes*nonm_acc.ldm_mult
+    nonm_acc['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(nonm_acc.ldm_ratio-CEM_THRESHHOLD)/CEM_SHALLOW))
+    nonm_acc['ldm_cem']   = nonm_acc.logsum_diff_minutes*nonm_acc.ldm_mult
 
     # add market columns
     mand_acc      = pandas.merge(mand_acc, market[['taz','walk_subzone','incQ_label','autoSuff_label','avg_num_workers_students']], how='left')
@@ -224,8 +220,8 @@ if __name__ == '__main__':
     nonm_acc['cs_hours'] = nonm_acc.avg_num_persons          * nonm_acc.logsum_diff_minutes/60.0
 
     # consumer surplus -- reduced noise
-    mand_acc['cs_hours_rn'] = mand_acc.avg_num_workers_students * mand_acc.ldm_rn/60.0
-    nonm_acc['cs_hours_rn'] = nonm_acc.avg_num_persons          * nonm_acc.ldm_rn/60.0
+    mand_acc['cs_hours_cem'] = mand_acc.avg_num_workers_students * mand_acc.ldm_cem/60.0
+    nonm_acc['cs_hours_cem'] = nonm_acc.avg_num_persons          * nonm_acc.ldm_cem/60.0
 
     # walk subzone label
     mand_acc['walk_subzone_label'] = '?'
@@ -249,7 +245,7 @@ if __name__ == '__main__':
 
     # ok now we want to move walk_subzone, incQ_label, autoSuff_label to be row headers
     mand_pivot = pandas.pivot_table(mand_acc,
-                                    values=['cs_hours','logsum_diff_minutes','avg_num_workers_students', 'ldm_rn','cs_hours_rn'],
+                                    values=['cs_hours','logsum_diff_minutes','avg_num_workers_students', 'ldm_cem','cs_hours_cem'],
                                     index=['taz'],
                                     columns=['walk_subzone_label','incQ_label','autoSuff_label'])
     mand_totals = mand_pivot.sum(axis=1, level=[0])
@@ -257,10 +253,10 @@ if __name__ == '__main__':
     mand_pivot.columns = [' '.join(col).strip() for col in mand_pivot.columns.values]
     mand_pivot = pandas.merge(mand_pivot, mand_totals, left_index=True, right_index=True)
 
-    # remove the columns _rn disaggregate columns because it's too much. Keep only the taz sum
+    # remove the columns _cem disaggregate columns because it's too much. Keep only the taz sum
     drop_cols = []
     for col in mand_pivot.columns.values:
-        if col.startswith('ldm_rn ') or col.startswith('cs_hours_rn '): drop_cols.append(col)
+        if col.startswith('ldm_cem ') or col.startswith('cs_hours_cem '): drop_cols.append(col)
     mand_pivot.drop(drop_cols, axis=1, inplace=True)
 
     mand_csv = os.path.join(my_args.run_dir, "OUTPUT", "metrics","mandatory_logsum.csv")
@@ -269,7 +265,7 @@ if __name__ == '__main__':
 
     # ok now we want to move walk_subzone, incQ_label, autoSuff_label to be row headers
     nonm_pivot = pandas.pivot_table(nonm_acc,
-                                    values=['cs_hours','logsum_diff_minutes','avg_num_persons', 'ldm_rn','cs_hours_rn'],
+                                    values=['cs_hours','logsum_diff_minutes','avg_num_persons', 'ldm_cem','cs_hours_cem'],
                                     index=['taz'],
                                     columns=['walk_subzone_label','incQ_label','autoSuff_label'])
     nonm_totals = nonm_pivot.sum(axis=1, level=[0])
@@ -277,10 +273,10 @@ if __name__ == '__main__':
     nonm_pivot.columns = [' '.join(col).strip() for col in nonm_pivot.columns.values]
     nonm_pivot = pandas.merge(nonm_pivot, nonm_totals, left_index=True, right_index=True)
 
-    # remove the columns _rn disaggregate columns because it's too much. Keep only the taz sum
+    # remove the columns _cem disaggregate columns because it's too much. Keep only the taz sum
     drop_cols = []
     for col in nonm_pivot.columns.values:
-        if col.startswith('ldm_rn ') or col.startswith('cs_hours_rn '): drop_cols.append(col)
+        if col.startswith('ldm_cem ') or col.startswith('cs_hours_cem '): drop_cols.append(col)
     nonm_pivot.drop(drop_cols, axis=1, inplace=True)
 
     nonm_csv = os.path.join(my_args.run_dir, "OUTPUT", "metrics","nonMandatory_logsum.csv")
