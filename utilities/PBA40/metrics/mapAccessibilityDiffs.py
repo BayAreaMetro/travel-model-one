@@ -14,7 +14,7 @@ USAGE = """
 import argparse, csv, datetime, os, shutil, sys, traceback
 import numpy, pandas
 
-NOISE_THRESHHOLD = 0.3
+NOISE_THRESHHOLD = 0.1
 NOISE_SHALLOW    = 0.05
 
 def read_accessibilities(proj_dir, mandatory, col_prefix):
