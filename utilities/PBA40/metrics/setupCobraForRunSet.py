@@ -94,7 +94,7 @@ if __name__ == '__main__':
         save_if_diffs(bc_config_lines, os.path.join(row[1]["Folder Name"], "BC_config.csv"))
         save_if_diffs(bc_config_lines, os.path.join(row[1]["Folder Name"], "OUTPUT", "metrics", "BC_config.csv"))
 
-        cobra_batch_lines.append('python %%COBRA_DIR%%\RunResults.py "%s" %s' % (os.path.join(row[1]["Folder Name"], "OUTPUT", "metrics"), ALL_METRICS_DIR))
+        cobra_batch_lines.append('python "%%COBRA_DIR%%\RunResults.py" "%s" %s' % (os.path.join(row[1]["Folder Name"], "OUTPUT", "metrics"), ALL_METRICS_DIR))
 
     # write the batch dir
     cobra_batch_lines.append("")
