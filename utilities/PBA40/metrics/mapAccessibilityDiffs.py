@@ -15,7 +15,7 @@ import argparse, csv, datetime, os, shutil, sys, traceback
 import numpy, pandas
 
 # cliff effect mitigation
-CEM_THRESHHOLD = 0.1
+CEM_THRESHOLD = 0.1
 CEM_SHALLOW    = 0.05
 
 def read_accessibilities(proj_dir, mandatory, col_prefix):
@@ -133,7 +133,7 @@ def create_map(proj_dir, CWD, pivot_df, mand_nonm, reduced_noise):
 
     mxd.saveACopy(os.path.join(ARCPY_DIR, "copies", "ConsumerSurplus_%s.mxd" % my_args.run_dir))
 
-    pdffile = "CSmap_%s%s_%s.pdf" % (mand_nonm, "_%.2frn" % CEM_THRESHHOLD if reduced_noise else "", my_args.run_dir)
+    pdffile = "CSmap_%s%s_%s.pdf" % (mand_nonm, "_%.2frn" % CEM_THRESHOLD if reduced_noise else "", my_args.run_dir)
     print "Trying to write [%s]" % pdffile
     arcpy.mapping.ExportToPDF(mxd, pdffile)
 
@@ -203,12 +203,12 @@ if __name__ == '__main__':
     # Cliff Effect Mitigation
     mand_ldm_max = mand_acc.logsum_diff_minutes.abs().max()
     mand_acc['ldm_ratio'] = mand_acc.logsum_diff_minutes.abs()/mand_ldm_max    # how big is the magnitude compared to max magnitude?
-    mand_acc['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(mand_acc.ldm_ratio-CEM_THRESHHOLD)/CEM_SHALLOW))
+    mand_acc['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(mand_acc.ldm_ratio-CEM_THRESHOLD)/CEM_SHALLOW))
     mand_acc['ldm_cem']   = mand_acc.logsum_diff_minutes*mand_acc.ldm_mult
 
     nonm_ldm_max = nonm_acc.logsum_diff_minutes.abs().max()
     nonm_acc['ldm_ratio'] = nonm_acc.logsum_diff_minutes.abs()/nonm_ldm_max    # how big is the magnitude compared to max magnitude?
-    nonm_acc['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(nonm_acc.ldm_ratio-CEM_THRESHHOLD)/CEM_SHALLOW))
+    nonm_acc['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(nonm_acc.ldm_ratio-CEM_THRESHOLD)/CEM_SHALLOW))
     nonm_acc['ldm_cem']   = nonm_acc.logsum_diff_minutes*nonm_acc.ldm_mult
 
     # add market columns

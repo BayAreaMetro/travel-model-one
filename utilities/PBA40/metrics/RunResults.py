@@ -69,7 +69,7 @@ class RunResults:
     CYCLING_REF_WEEKLY_MIN = 100
 
     # logsum cliff effect mitigation
-    CEM_THRESHHOLD = 0.1
+    CEM_THRESHOLD = 0.1
     CEM_SHALLOW    = 0.05
 
     COUNTY_NUM_TO_NAME          = {
@@ -438,7 +438,7 @@ class RunResults:
             # Cliff Effect Mitigation
             mand_ldm_max = self.mandatoryAccessibilities.logsum_diff_minutes.abs().max()
             self.mandatoryAccessibilities['ldm_ratio'] = self.mandatoryAccessibilities.logsum_diff_minutes.abs()/mand_ldm_max    # how big is the magnitude compared to max magnitude?
-            self.mandatoryAccessibilities['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(self.mandatoryAccessibilities.ldm_ratio-RunResults.CEM_THRESHHOLD)/RunResults.CEM_SHALLOW))
+            self.mandatoryAccessibilities['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(self.mandatoryAccessibilities.ldm_ratio-RunResults.CEM_THRESHOLD)/RunResults.CEM_SHALLOW))
             self.mandatoryAccessibilities['ldm_cem']   = self.mandatoryAccessibilities.logsum_diff_minutes*self.mandatoryAccessibilities.ldm_mult
 
             # This too
@@ -452,7 +452,7 @@ class RunResults:
             # Cliff Effect Mitigation
             nonmm_ldm_max = self.nonmandatoryAccessibilities.logsum_diff_minutes.abs().max()
             self.nonmandatoryAccessibilities['ldm_ratio'] = self.nonmandatoryAccessibilities.logsum_diff_minutes.abs()/nonmm_ldm_max    # how big is the magnitude compared to max magnitude?
-            self.nonmandatoryAccessibilities['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(self.nonmandatoryAccessibilities.ldm_ratio-RunResults.CEM_THRESHHOLD)/RunResults.CEM_SHALLOW))
+            self.nonmandatoryAccessibilities['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(self.nonmandatoryAccessibilities.ldm_ratio-RunResults.CEM_THRESHOLD)/RunResults.CEM_SHALLOW))
             self.nonmandatoryAccessibilities['ldm_cem']   = self.nonmandatoryAccessibilities.logsum_diff_minutes*self.nonmandatoryAccessibilities.ldm_mult
 
             self.accessibilityMarkets = pd.merge(self.accessibilityMarkets,

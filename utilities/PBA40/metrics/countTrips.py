@@ -49,12 +49,12 @@ COLUMNS = ['orig_taz','dest_taz',
            'drv_loc_wlk', 'drv_lrf_wlk', 'drv_exp_wlk', 'drv_hvy_wlk', 'drv_com_wlk',
            'wlk_loc_drv', 'wlk_lrf_drv', 'wlk_exp_drv', 'wlk_hvy_drv', 'wlk_com_drv']
 
-ACTIVE_MINUTES_THRESHHOLD = 30
+ACTIVE_MINUTES_THRESHOLD = 30
 
 def find_number_of_active_adults(trips_df):
     """
     For update on morbidity calculation:
-    Calculates the number of adults (18+ year olds) that have more than ACTIVE_MINUTES_THRESHHOLD
+    Calculates the number of adults (18+ year olds) that have more than ACTIVE_MINUTES_THRESHOLD
     minutes of active travel per day and returns it.
 
     Reads database\ActiveTimeSkimsDatabase[timeperiod].csv
@@ -132,13 +132,13 @@ def find_number_of_active_adults(trips_df):
         .agg({'num_participants':numpy.mean, 'num_trips':numpy.sum, 'active_minutes':numpy.sum})
     print active_counts_df.describe()
 
-    # filter to just active persons (above ACTIVE_MINUTES_THRESHHOLD)
+    # filter to just active persons (above ACTIVE_MINUTES_THRESHOLD)
     active_counts_len = len(active_counts_df)
-    active_counts_df  = active_counts_df.loc[active_counts_df['active_minutes']>=ACTIVE_MINUTES_THRESHHOLD]
+    active_counts_df  = active_counts_df.loc[active_counts_df['active_minutes']>=ACTIVE_MINUTES_THRESHOLD]
     percent_active = 100.0*len(active_counts_df)/active_counts_len
     print "%s Have %d active (above %d minutes threshold) out of %d total adults with active minutes, or %.2f%% very active" % \
         (datetime.datetime.now().strftime("%x %X"),
-         len(active_counts_df), ACTIVE_MINUTES_THRESHHOLD,
+         len(active_counts_df), ACTIVE_MINUTES_THRESHOLD,
          active_counts_len, percent_active)
     print active_counts_df.describe()
     return active_counts_df['num_participants'].sum()
