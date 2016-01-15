@@ -99,6 +99,22 @@ Mandatory logsums use AM Peak period skims, and non-mandatory logsums use MD per
 Mandatory logsums are applied to workers and students, and non-mandatory logsums are applied to all persons; these
 accessibility markets are tallied by [AccessibilityMarkets.Rmd](../../../model-files/scripts/core_summaries/AccessibilityMarkets.Rmd)
 
+##### Cliff Effect Mitigation for logsum_diff_minutes
+
+Logsums are susceptible to cliff effects in path-finding because they reflect modes appearing/disappearing even if the utility
+of those modes aren't great.
+
+For example, if some TAZs previously had 39.9 minute drive access to transit in the baseline and cross over to 40.01 minutes
+of drive access; they could lose a drive-to-transit mode which would give them a small negative logsum difference, which is really
+not representative of an actual change in accessibility, but will affect the logsum and then get multiplied out by the
+TAZ population, which may be large.  The effect of this differs from model noise, because model noise will effect the Consumer Surplus
+both negativley and positively and roughly add up to zero, while the cliff effects can switch on in one direction and bias the
+Consumer Surplus in a nontrivial way (either positively or negatively).
+
+To mitigate this, we do the following process: For logsum diffs with a relative low absolute value magnitude (10% of the
+maximum absolute value logsum diff), we'll suppress these with a smooth dampening function.  This leaves the higher magnitude logsum
+differences alone but dampens out the small ones.
+
 #### Societal Benefits
 
 Since the logsums include costs as seen by the user (traveler), it includes things like fares

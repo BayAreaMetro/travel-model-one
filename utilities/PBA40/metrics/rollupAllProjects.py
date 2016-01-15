@@ -44,6 +44,8 @@ if __name__ == '__main__':
             quicksummary_list.append(qs_series)
             continue
 
+        if proj_file[-4:] != ".csv": continue
+
         file_match  = FILE_STR_RE.search(proj_file)
         assert(file_match != None)
 

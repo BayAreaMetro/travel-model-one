@@ -7,6 +7,7 @@ import string
 import sys
 
 import pandas as pd     # yay for DataFrames and Series!
+import numpy
 import xlsxwriter       # for writing workbooks -- formatting is better than openpyxl
 from xlsxwriter.utility import xl_range, xl_rowcol_to_cell
 pd.set_option('display.precision',10)
@@ -67,6 +68,10 @@ class RunResults:
     WALKING_REF_WEEKLY_MIN = 168
     CYCLING_REF_WEEKLY_MIN = 100
 
+    # logsum cliff effect mitigation
+    CEM_THRESHOLD = 0.1
+    CEM_SHALLOW    = 0.05
+
     COUNTY_NUM_TO_NAME          = {
        1:'San Francisco',
        2:'San Mateo',
@@ -99,8 +104,10 @@ class RunResults:
 
     # Already a diff -- don't diff. Default false.
     ALREADY_DIFF = {
-    ('Travel Time & Cost','Logsum Hours - Mandatory Tours - Workers & Students'): True,
-    ('Travel Time & Cost','Logsum Hours - NonMandatory Tours - All people'     ): True,
+    ('Travel Time & Cost (No Cliff Effect Mitigation)','Logsum Hours - Mandatory Tours - Workers & Students'): True,
+    ('Travel Time & Cost (No Cliff Effect Mitigation)','Logsum Hours - NonMandatory Tours - All people'     ): True,
+    ('Travel Time & Cost (Cliff Effect Mitigation)',   'Logsum Hours - Mandatory Tours - Workers & Students'): True,
+    ('Travel Time & Cost (Cliff Effect Mitigation)',   'Logsum Hours - NonMandatory Tours - All people'     ): True,
     }
 
     # default is ANNUALIZATION
@@ -112,8 +119,11 @@ class RunResults:
     # Table 9: Benefit Valuations
     # Units in 2017 dollars
     BENEFIT_VALUATION           = {
-    ('Travel Time & Cost','Logsum Hours - Mandatory Tours - Workers & Students'       ):      12.66,
-    ('Travel Time & Cost','Logsum Hours - NonMandatory Tours - All people'            ):      12.66,
+    ('Travel Time & Cost (No Cliff Effect Mitigation)','Logsum Hours - Mandatory Tours - Workers & Students'       ):      12.66,
+    ('Travel Time & Cost (No Cliff Effect Mitigation)','Logsum Hours - NonMandatory Tours - All people'            ):      12.66,
+    ('Travel Time & Cost (Cliff Effect Mitigation)',  'Logsum Hours - Mandatory Tours - Workers & Students'): 12.66,
+    ('Travel Time & Cost (Cliff Effect Mitigation)',  'Logsum Hours - NonMandatory Tours - All people'     ): 12.66,
+
     ('Travel Time & Cost','Societal Benefits'                                         ):       1.49,  # $1 in 2000 = $1.49 in 2017
     ('Travel Time & Cost','Non-Recurring Freeway Delay (Hours)','Auto (Person Hours)' ):     -12.66, # duplicate of Travel Time
     ('Travel Time & Cost','Non-Recurring Freeway Delay (Hours)','Truck (Computed VH)' ):     -33.69, # duplicate of Travel Time
@@ -271,7 +281,7 @@ class RunResults:
         # print self.transit_times_by_mode_income
 
         self.unique_active_travelers = pd.Series.from_csv(os.path.join(self.rundir, "unique_active_travelers.csv"))
-        print self.unique_active_travelers
+        # print self.unique_active_travelers
 
         for filename in ['mandatoryAccessibilities', 'nonMandatoryAccessibilities']:
             accessibilities = \
@@ -414,7 +424,6 @@ class RunResults:
         daily_results   = collections.OrderedDict()
         quick_summary   = {}
         ######################################################################################
-        cat1            = 'Travel Time & Cost'
         if self.base_results:
             # Take the difference and convert utils to minutes (k_ivt = 0.0134 k_mc_ls = 1.0 in access calcs);
             # TODO: is k_mc_ls = 1.0?  DestinationChoice.cls has different values
@@ -425,6 +434,13 @@ class RunResults:
                 self.mandatoryAccessibilities.scen_dclogsum - self.mandatoryAccessibilities.base_dclogsum
             self.mandatoryAccessibilities['logsum_diff_minutes'] = self.mandatoryAccessibilities.diff_dclogsum / 0.0134
 
+
+            # Cliff Effect Mitigation
+            mand_ldm_max = self.mandatoryAccessibilities.logsum_diff_minutes.abs().max()
+            self.mandatoryAccessibilities['ldm_ratio'] = self.mandatoryAccessibilities.logsum_diff_minutes.abs()/mand_ldm_max    # how big is the magnitude compared to max magnitude?
+            self.mandatoryAccessibilities['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(self.mandatoryAccessibilities.ldm_ratio-RunResults.CEM_THRESHOLD)/RunResults.CEM_SHALLOW))
+            self.mandatoryAccessibilities['ldm_cem']   = self.mandatoryAccessibilities.logsum_diff_minutes*self.mandatoryAccessibilities.ldm_mult
+
             # This too
             self.nonmandatoryAccessibilities = pd.merge(self.nonmandatoryAccessibilities,
                                                         self.base_results.nonmandatoryAccessibilities,
@@ -433,49 +449,42 @@ class RunResults:
                 self.nonmandatoryAccessibilities.scen_dclogsum - self.nonmandatoryAccessibilities.base_dclogsum
             self.nonmandatoryAccessibilities['logsum_diff_minutes'] = self.nonmandatoryAccessibilities.diff_dclogsum / 0.0175
 
-
-            # print "self.mandatoryAccessibilities"
-            # print len(self.mandatoryAccessibilities)
-            # print self.mandatoryAccessibilities.head()
-
-            # print "self.nonmandatoryAccessibilities"
-            # print len(self.nonmandatoryAccessibilities)
-            # print self.nonmandatoryAccessibilities.head()
+            # Cliff Effect Mitigation
+            nonmm_ldm_max = self.nonmandatoryAccessibilities.logsum_diff_minutes.abs().max()
+            self.nonmandatoryAccessibilities['ldm_ratio'] = self.nonmandatoryAccessibilities.logsum_diff_minutes.abs()/nonmm_ldm_max    # how big is the magnitude compared to max magnitude?
+            self.nonmandatoryAccessibilities['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(self.nonmandatoryAccessibilities.ldm_ratio-RunResults.CEM_THRESHOLD)/RunResults.CEM_SHALLOW))
+            self.nonmandatoryAccessibilities['ldm_cem']   = self.nonmandatoryAccessibilities.logsum_diff_minutes*self.nonmandatoryAccessibilities.ldm_mult
 
             self.accessibilityMarkets = pd.merge(self.accessibilityMarkets,
                                                  self.base_results.accessibilityMarkets,
                                                  how='left')
-            # print "self.accessibilityMarkets"
-            # print len(self.accessibilityMarkets)
-            # print self.accessibilityMarkets.head()
 
             self.mandatoryAccess = pd.merge(self.mandatoryAccessibilities,
                                             self.accessibilityMarkets,
                                             how='left')
             self.mandatoryAccess.fillna(0)
-            # print "self.mandatoryAccess"
-            # print len(self.mandatoryAccess)
-            # print self.mandatoryAccess.head()
 
             self.nonmandatoryAccess = pd.merge(self.nonmandatoryAccessibilities,
                                                self.accessibilityMarkets,
                                                how='left')
             self.nonmandatoryAccess.fillna(0)
-            # print "self.nonmandatoryAccess"
-            # print len(self.nonmandatoryAccess)
-            # print self.nonmandatoryAccess.head()
 
-            # rule of one-half
-            # to compare with AccessibilityDifference.csv -- workers only
-            # test = self.mandatoryAccess.loc[(self.mandatoryAccess.base_num_workers > 0) &
-            #                                 (self.mandatoryAccess.scen_num_workers > 0), :]
-            # test['base_weight_diff']      = test.base_num_workers*test.logsum_diff_minutes
-            # test['scen_weight_diff']      = test.scen_num_workers*test.logsum_diff_minutes
-            # test['consumer_surplus_diff'] = 0.5*test.base_weight_diff + 0.5*test.scen_weight_diff
-            # test = test[['taz','logsum_diff_minutes','base_weight_diff','scen_weight_diff','consumer_surplus_diff']]
-            # test = test.groupby(['taz']).sum()
-            # test.to_csv(os.path.join(self.rundir,'AccessibilityDifference_workers.csv'), header=True, float_format='%.6f')
+            # Cliff Effect Mitigated - rule of one-half
+            cat1         = 'Travel Time & Cost (Cliff Effect Mitigation)'
+            cat2         = 'Logsum Hours - Mandatory Tours - Workers & Students'
+            self.mandatoryAccess['CS diff work/school'] = \
+                (0.5*self.mandatoryAccess.base_num_workers_students + 0.5*self.mandatoryAccess.scen_num_workers_students) *self.mandatoryAccess.ldm_cem
+            for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
+                daily_results[(cat1,cat2,inclabel)] = self.mandatoryAccess.loc[self.mandatoryAccess.incQ_label==inclabel, 'CS diff work/school'].sum()/60.0;
 
+            cat2         = 'Logsum Hours - NonMandatory Tours - All people'
+            self.nonmandatoryAccess['CS diff all'] = \
+                (0.5*self.nonmandatoryAccess.base_num_persons + 0.5*self.nonmandatoryAccess.scen_num_persons)*self.nonmandatoryAccess.ldm_cem
+            for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
+                daily_results[(cat1,cat2,inclabel)] = self.nonmandatoryAccess.loc[self.mandatoryAccess.incQ_label==inclabel, 'CS diff all'].sum()/60.0;
+
+            # No Cliff Effect Mitigation - rule of one-half
+            cat1         = 'Travel Time & Cost (No Cliff Effect Mitigation)'
             cat2         = 'Logsum Hours - Mandatory Tours - Workers & Students'
             self.mandatoryAccess['CS diff work/school'] = \
                 (0.5*self.mandatoryAccess.base_num_workers_students + 0.5*self.mandatoryAccess.scen_num_workers_students) *self.mandatoryAccess.logsum_diff_minutes
@@ -488,6 +497,8 @@ class RunResults:
             for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
                 daily_results[(cat1,cat2,inclabel)] = self.nonmandatoryAccess.loc[self.mandatoryAccess.incQ_label==inclabel, 'CS diff all'].sum()/60.0;
 
+
+        cat1 = "Travel Time & Cost"
         cat2 = "Societal Benefits"
         self.transit_times_by_mode_income["Total Cost"] = self.transit_times_by_mode_income["Daily Trips"]*self.transit_times_by_mode_income["Avg Cost"]
         daily_results[(cat1,cat2,"Transit Fares ($2000)")] = self.transit_times_by_mode_income["Total Cost"].sum()
@@ -727,7 +738,7 @@ class RunResults:
         nonmot_byclass_2064  = self.nonmot_times.loc['20-64'].sum(level='Mode')  # person trips
         nonmot_byclass_2074  = self.nonmot_times.loc['20-74'].sum(level='Mode')  # person trips
         transit_byaceg_2074  = self.transit_times_by_acc_mode_egr.loc['20-74'].sum(level=['Access','Egress'])
-        print transit_byaceg_2074
+
         daily_results[(cat1,cat2,'Bike (20-64yrs cyclists)'         )] = nonmot_byclass_2064.loc['Bike','Total Time (Hours)'] * 60.0 / self.unique_active_travelers['unique_cyclists_2064']
         daily_results[(cat1,cat2,'Walk (20-74yrs walkers)'          )] = nonmot_byclass_2074.loc['Walk','Total Time (Hours)'] * 60.0 / self.unique_active_travelers['unique_walkers_2074' ]
         daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')] = (transit_byaceg_2074.loc[:,'Walk acc & egr hours'].sum() + \
@@ -799,7 +810,7 @@ class RunResults:
         csv_name      = "BC_%s.csv"  % self.config.loc['Project ID']
         if not self.is_base_dir and self.config.loc['base_dir']:
             print "BASE = ",self.config.loc['base_dir']
-            base_str_re = re.compile("(19|20)[0-9][0-9]_05_[A-Za-z0-9]{3}[^\\\]*")
+            base_str_re = re.compile("(19|20)[0-9][0-9]_05_[A-Za-z0-9]{3}[^\\\)]*")
             base_match  = base_str_re.search(self.config.loc['base_dir'])
             if base_match:
                 self.config['Base Project ID'] = base_match.group(0)
@@ -1071,6 +1082,9 @@ class RunResults:
                     worksheet.write(row,1,
                                     '=SUM(%s)' % xl_range(row+1,1,row+len(colA.daily_results[cat1][cat2]),1),
                                     format_cat2_lil if (cat1,cat2) in self.lil_cats else format_cat2_big)
+                else:
+                    worksheet.write(row,1,"",format_cat2)
+                    worksheet.write(row,2,"",format_cat2)
 
                 if self.base_dir:
                     if cat1 in colB.daily_results and cat2 in colB.daily_results[cat1]:
@@ -1170,29 +1184,48 @@ class RunResults:
                                 format_cat1_sum)
 
             # BENEFIT/COST
+            # labels
             format_bc_header = workbook.add_format({'bg_color':'#92D050', 'align':'right','bold':True})
             worksheet.write(TABLE_HEADER_ROW-4, 6, "Benefit"  ,format_bc_header)
             worksheet.write(TABLE_HEADER_ROW-3, 6, "Cost"     ,format_bc_header)
             worksheet.write(TABLE_HEADER_ROW-2, 6, "B/C Ratio",format_bc_header)
 
+            # space
             worksheet.write(TABLE_HEADER_ROW-4, 7, "",format_bc_header)
             worksheet.write(TABLE_HEADER_ROW-3, 7, "",format_bc_header)
             worksheet.write(TABLE_HEADER_ROW-2, 7, "",format_bc_header)
 
-            format_bc_money = workbook.add_format({'bg_color':'#92D050','bold':True,
-                                                  'num_format':'_(\$* #,##0.0"M"_);_(\$* (#,##0.0"M");_(\$* "-"??_);_(@_)'})
-            format_bc_ratio = workbook.add_format({'bg_color':'#92D050','bold':True,'num_format':'0.00'})
-            worksheet.write(TABLE_HEADER_ROW-4, 8, "=SUM(%s)" % str(",").join(cat1_sums.keys()[1:]), format_bc_money)  # skip first one = logsums
-            worksheet.write(TABLE_HEADER_ROW-3, 8, "=%s" % ANNUAL_COSTS_CELL, format_bc_money)
-            worksheet.write(TABLE_HEADER_ROW-2, 8, "=%s/%s" % (xl_rowcol_to_cell(TABLE_HEADER_ROW-4, 8),
-                                                                      xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 8)),
-                            format_bc_ratio)
+            for benefit_type in ['Logsum (CEM)', 'Logsum (No CEM)', 'PBA']:
+
+                # Logsums (No CEM)
+                sum_indices = cat1_sums.keys()
+                if benefit_type == 'Logsum (CEM)':
+                    # drop 1,3,4 = logsum no cem, travel time, travel cost
+                    sum_indices = [sum_indices[0]] + [sum_indices[2]] + sum_indices[5:]
+                    ben_col     = 8
+                elif benefit_type == 'Logsum (No CEM)':
+                    sum_indices = [sum_indices[1]] + [sum_indices[2]] + sum_indices[5:]
+                    ben_col     = 10
+                else:
+                    sum_indices = sum_indices[3:]
+                    ben_col     = 11
+
+                worksheet.write(TABLE_HEADER_ROW-5, ben_col, benefit_type, format_bc_header)
+
+                format_bc_money = workbook.add_format({'bg_color':'#92D050','bold':True,
+                                                      'num_format':'_(\$* #,##0.0"M"_);_(\$* (#,##0.0"M");_(\$* "-"??_);_(@_)'})
+                format_bc_ratio = workbook.add_format({'bg_color':'#92D050','bold':True,'num_format':'0.00'})
+                worksheet.write(TABLE_HEADER_ROW-4, ben_col, "=SUM(%s)" % str(",").join(sum_indices), format_bc_money)
+                worksheet.write(TABLE_HEADER_ROW-3, ben_col, "=%s" % ANNUAL_COSTS_CELL, format_bc_money)
+                worksheet.write(TABLE_HEADER_ROW-2, ben_col, "=%s/%s" % (xl_rowcol_to_cell(TABLE_HEADER_ROW-4, ben_col),
+                                                                         xl_rowcol_to_cell(TABLE_HEADER_ROW-3, ben_col)),
+                                format_bc_ratio)
+                worksheet.set_column(ben_col,ben_col,15.0)
 
         worksheet.set_column(0,0,40.0)
         worksheet.set_column(1,8,13.0)
         worksheet.set_column(5,5,2.0)
         worksheet.set_column(7,7,2.0)
-        worksheet.set_column(8,8,15.0)
         worksheet.set_column(9,9,2.0)
 
         # THIS IS COBRA
@@ -1209,7 +1242,6 @@ class RunResults:
         worksheet.write(2,11,"enefit" ,format_red)
         worksheet.write(3,11,"results" ,format_red)
         worksheet.write(4,11,"nalyzer" ,format_red)
-        worksheet.set_column(11,11,8.0)
         worksheet.set_column(12,12,15.0)
 
         worksheet.insert_image(2, 12, 
