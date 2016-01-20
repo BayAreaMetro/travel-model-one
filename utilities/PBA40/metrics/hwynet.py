@@ -166,7 +166,10 @@ for ab,row in data.iteritems():
 
 			# skip Dummy links
 			if int( row[headers['ft']]) != 6:
-				ft = min( int( row[headers['ft']] ), 4) 		# cap at 4
+				if int( row[headers['ft']] ) == 8:
+					ft = 2 # Managed freeway is like a freeway
+				else:
+					ft = min( int( row[headers['ft']] ), 4)     # cap at 4
 				at = max( int( row[headers['at']] ), 4) 		# min cap at 4
 				lanes = min( int( row[headers['lanes']]), 4) 	# cap at 4
 				vmt_collisions[(period,vclass,at,ft,lanes)] += _vmt
