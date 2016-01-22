@@ -199,6 +199,14 @@ if __name__ == '__main__':
             assert(create_time > MOD_TIME_CHECK)
             print "%s        is recent: %s" % (datetime.datetime.now().strftime("%x %X"), time.strftime("%x %X",create_time))
 
+            # copy it to extractor
+            split1 = os.path.split(model_file)
+            split2 = os.path.split(split1[0])
+            extractor_filename = os.path.join(model_full_dir, "extractor", split2[1], split1[1] )
+            print "%s        copying to %s" % (datetime.datetime.now().strftime("%x %X"), extractor_filename)
+            if not args.dryrun:
+                shutil.copy2(model_file, extractor_filename)
+
             # copy it over -- back up original
             new_filename = os.path.join(m_dir, "OUTPUT", os.path.split(filename)[0], os.path.split(model_file)[1])
             if os.path.exists(new_filename):
