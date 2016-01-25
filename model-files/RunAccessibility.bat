@@ -65,11 +65,8 @@ set TARGET_DIR=%CD%
 copy %TARGET_DIR%\popsyn\hhFile.*.csv %TARGET_DIR%\popsyn\hhFile.csv
 copy %TARGET_DIR%\popsyn\personFile.*.csv %TARGET_DIR%\popsyn\personFile.csv
 
-call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\knit_AccessibilityMarkets.R"
+call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\AccessibilityMarkets.R"
 IF %ERRORLEVEL% GTR 0 goto done
-
-move AccessibilityMarkets.html "%TARGET_DIR%\core_summaries"
-move AccessibilityMarkets.md "%TARGET_DIR%\core_summaries"
 
 :: ------------------------------------------------------------------------------------------------------
 ::

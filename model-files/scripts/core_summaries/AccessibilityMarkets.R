@@ -1,23 +1,13 @@
----
-title: "Accessibility Market"
-author: "Lisa Zorn"
-date: "Monday, March 30, 2015"
-output:
-  html_document:
-    css: custom.css
-    toc: yes
-# runtime: shiny
----
+# Accessibility Markets
 
-See `M:\Application\Model One\Summary Scripts\Special\AccessibilityMarkets.sas`
+# See `M:\Application\Model One\Summary Scripts\Special\AccessibilityMarkets.sas`
+#
+# Much of this is from `CoreSummaries.Rmd`, but this short version is necessary because
+# `CoreSummaries.Rmd` takes a while and won't always be run.
 
-Much of this is from `CoreSummaries.Rmd`, but this short version is necessary because
-`CoreSummaries.Rmd` takes a while and won't always be run.
+# Used by `metrics\RunResults.py`, the recoding of categories matches the accessibility column headers.
 
-Used by `metrics\RunResults.py`, the recoding of categories matches the accessibility column headers.
-
-# Initialization: Set the workspace and load needed libraries
-```{r Initialization, results='hold', error=FALSE}
+# Step 1: Initialization: Set the workspace and load needed libraries
 library(knitr)
 library(ggplot2)
 library(scales)
@@ -30,7 +20,6 @@ ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to re
 SAMPLESHARE  <- Sys.getenv("SAMPLESHARE") # Sampling
 
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
-
 stopifnot(nchar(TARGET_DIR  )>0)
 stopifnot(nchar(ITER        )>0)
 stopifnot(nchar(SAMPLESHARE )>0)
@@ -44,43 +33,34 @@ SAMPLESHARE <- as.numeric(SAMPLESHARE)
 cat("TARGET_DIR  = ",TARGET_DIR)
 cat("ITER        = ",ITER)
 cat("SAMPLESHARE = ",SAMPLESHARE)
-```
 
-# Lookups
+# Step 2: Lookups
 
-For walk_subzones, see http://analytics.mtc.ca.gov/foswiki/Main/Household
+# For walk_subzones, see http://analytics.mtc.ca.gov/foswiki/Main/Household
 
-```{r timeCodeDefinitions, error=FALSE}
 ######### walk subzones
 LOOKUP_WALK_SUBZONE  <- data.frame(walk_subzone=c(0,1,2),
                                    walk_subzone_label=c("Cannot walk to transit",
                                                         "Short-walk to transit",
                                                         "Long-walk to transit"))
 LOOKUP_WALK_SUBZONE$walk_subzone <- as.integer(LOOKUP_WALK_SUBZONE$walk_subzone)
-```
 
-# Household files
+# Step 3: Household files
 
 ## Read the household files and land use file
 
-There are two household files:
+# There are two household files:
 
- * the model input file from the synthesized household/population (http://analytics.mtc.ca.gov/foswiki/Main/PopSynHousehold)
- * the model output file (http://analytics.mtc.ca.gov/foswiki/Main/Household)
-
-```{r ReadHouseholds, error=FALSE}
+# * the model input file from the synthesized household/population (http://analytics.mtc.ca.gov/foswiki/Main/PopSynHousehold)
+# * the model output file (http://analytics.mtc.ca.gov/foswiki/Main/Household)
 input.pop.households <- read.table(file = file.path(TARGET_DIR,"popsyn","hhFile.csv"), 
                                    header=TRUE, sep=",")
 input.ct.households  <- read.table(file = file.path(TARGET_DIR,"main",paste0("householdData_",ITER,".csv")), 
                                    header=TRUE, sep = ",")
 
-```
-
 ## Join them
 
-Rename/drop some columns and join them on household id. Also join with tazData to get the super district and county.
-
-```{r JoinHouseholds, error=FALSE}
+# Rename/drop some columns and join them on household id. Also join with tazData to get the super district and county.
 input.pop.households <- select(input.pop.households, HHID, PERSONS, hworkers, huniv, hpresch, 
                                hschpred, hschdriv)
 input.ct.households  <- select(input.ct.households, -jtf_choice)
@@ -93,19 +73,16 @@ households <- inner_join(input.pop.households, input.ct.households, "hh_id")
 households <- tbl_df(households)
 # clean up
 remove(input.pop.households, input.ct.households)
-```
-
 
 ## Recode a few new variables
 
-Create the following new household variables:
-  * income quartiles (`incQ`)
-  * worker categories (`workers`)
-  * dummy for households with children that don't drive (`kidsNoDr`)
-  * auto sufficiency (`autoSuff`)
-  * walk subzone label (`walk_subzone_label`)
+# Create the following new household variables:
+#   * income quartiles (`incQ`)
+#   * worker categories (`workers`)
+#   * dummy for households with children that don't drive (`kidsNoDr`)
+#   * auto sufficiency (`autoSuff`)
+#   * walk subzone label (`walk_subzone_label`)
   
-```{r RecodeHouseholdVars, error=FALSE}
 # incQ are Income Quartiles
 LOOKUP_INCQ          <- data.frame(incQ=c(1,2,3,4),
                                    incQ_label=c("lowInc","medInc","highInc","veryHighInc"))
@@ -136,25 +113,19 @@ households    <- left_join(households, LOOKUP_AUTOSUFF, by=c("autoSuff"))
 
 # walk subzone label
 households    <- left_join(households, LOOKUP_WALK_SUBZONE, by=c("walk_subzone"))
-```
 
-# Person files
+# Step 4: Person files
 
-There are two person files:
+# There are two person files:
 
- * the model input file from the synthesized household/population (http://analytics.mtc.ca.gov/foswiki/Main/PopSynPerson)
- * the model output file (http://analytics.mtc.ca.gov/foswiki/Main/Person)
+#  * the model input file from the synthesized household/population (http://analytics.mtc.ca.gov/foswiki/Main/PopSynPerson)
+#  * the model output file (http://analytics.mtc.ca.gov/foswiki/Main/Person)
 
-## Read the person files
-```{r ReadPersons, error=FALSE}
-# input.pop.persons    <- read.table(file = file.path(TARGET_DIR,"popsyn","personFile.csv"),
-#                                   header=TRUE, sep=",")
+## Read the person file
 input.ct.persons     <- read.table(file = file.path(TARGET_DIR,"main",paste0("personData_",ITER,".csv")),
                                    header=TRUE, sep = ",")
-```
 
 ## Join them
-```{r JoinPersons, error=FALSE}
 persons              <- input.ct.persons
 # Get incQ from Households
 persons              <- left_join(persons, select(households, hh_id, incQ, incQ_label, 
@@ -164,11 +135,9 @@ persons              <- left_join(persons, select(households, hh_id, incQ, incQ_
 persons              <- tbl_df(persons)
 # clean up
 remove(input.ct.persons)
-```
+
 
 ## Accessibility Market Summaries
-
-```{r AccessibilityMarket, error=FALSE}
 # select workers only
 workers          <- subset(persons, (type=="Full-time worker"           |
                                     type=="Part-time worker"            ))
@@ -178,7 +147,7 @@ workers_students <- subset(persons, (type=="Full-time worker"           |
                                      type=="Student of non-driving age" |
                                      type=="Student of driving age"     ))
 
-# summarise
+# Step 5: summarise
 workers_summary          <- summarise(group_by(workers,
                                                taz, walk_subzone, walk_subzone_label,
                                                incQ, incQ_label, autoSuff, autoSuff_label), freq=n())
@@ -207,4 +176,4 @@ acc_market_summary[is.na(acc_market_summary)] <- 0
 write.table(acc_market_summary, file.path(TARGET_DIR,"core_summaries","AccessibilityMarkets.csv"), sep=",", row.names=FALSE)
 model_summary <- acc_market_summary  # name it generically for rdata
 save(model_summary, file=file.path(TARGET_DIR,"core_summaries","AccessibilityMarkets.rdata"))
-```
+
