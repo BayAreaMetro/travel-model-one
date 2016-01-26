@@ -9,9 +9,7 @@
 setlocal enabledelayedexpansion
 
 :: Overhead
-rem Setting this causes mainmodel's R to be angry about knitr
-rem Set it for the rdata python script
-:: set R_USER=mtcpb
+set R_USER=mtcpb
 set RDATA=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork PerTripTravelTime TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance VehicleMilesTraveled
 set CODE_DIR=.\CTRAMP\scripts\core_summaries
 
@@ -41,7 +39,7 @@ if %NEED_SUMMARY% GTR 0 (
   
   rem No .Rprofile -- we set the environment variables here.
   echo "%R_HOME%\bin\x64\Rscript.exe"
-  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\knit_CoreSummaries.R"
+  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\CoreSummaries.R"
   IF %ERRORLEVEL% GTR 0 goto done
   echo %DATE% %TIME% ...Done
   
