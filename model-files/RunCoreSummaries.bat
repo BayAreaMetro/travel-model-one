@@ -34,16 +34,11 @@ echo Missing %NEED_SUMMARY% summaries in %TARGET_DIR%\core_summaries
 if %NEED_SUMMARY% GTR 0 (
   echo %DATE% %TIME% Running summary script for %RUN_NAME%
   
-  rem delete this just in case, so we don't move an old one by accident
-  if exist CoreSummaries.html ( del CoreSummaries.html )
-  
   rem No .Rprofile -- we set the environment variables here.
   echo "%R_HOME%\bin\x64\Rscript.exe"
   call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\CoreSummaries.R"
   IF %ERRORLEVEL% GTR 0 goto done
   echo %DATE% %TIME% ...Done
-  
-  move CoreSummaries.html "%TARGET_DIR%\core_summaries"
   
   rem This will make all the tdes stale
   for %%X in (%RDATA%) DO (
@@ -52,7 +47,6 @@ if %NEED_SUMMARY% GTR 0 (
 )
 echo.
 
-set R_USER=mtcpb
 :: convert the summaries to tde for just this dir
 for %%X in ("%TARGET_DIR%\core_summaries\*.rdata") DO (
   if not exist "%TARGET_DIR%\core_summaries\%%~nX.tde" (

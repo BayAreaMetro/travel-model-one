@@ -2,7 +2,8 @@
 
 # Overhead
 ## Initialization: Set the workspace and load needed libraries
-library(knitr)
+.libPaths(Sys.getenv("R_LIB"))
+
 library(ggplot2)
 library(scales)
 library(dplyr)
