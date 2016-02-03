@@ -5,12 +5,12 @@ DESCRIPTION = """
 
   For each road SGR run:
 
-    1) Runs net2csv_agvload5period.job since the previous output is out of date
+    1) Runs net2csv_agvload5period.job if the previous output is out of date
        and doesn't contain bus opcosts; this updates hwy/iter3/avgload5period_vehclasses.csv.
 
-    2) Copies the updated file hwy/iter3/avgload5period_vehclasses.csv to extractor/
+    2) If updated, copies updated file hwy/iter3/avgload5period_vehclasses.csv to extractor/
 
-    3) Copies the updated file hwy/iter3/avgload5period_vehclasses.csv to the M: drive
+    3) If updated, copies the updated file hwy/iter3/avgload5period_vehclasses.csv to the M: drive
 
     4) Calculates bus operating cost by reading the transit assignment files
        (trn/trnlink[ea,am,md,pm,ev]_wlk_exp_wlk.csv) and joining them with the
@@ -21,7 +21,7 @@ DESCRIPTION = """
 
     6) Copies the outputfile metrics/bus_opcost.csv to the M: drive
 
-  At the end, write out combined outputfile to all_metrics/bus_opcost.csv
+  At the end, write out combined outputfile to all_metrics/bus_opcost.txt
   (distilled to just run dir).  Bus Operating Costs are in 2000 dollars.
 
 """
@@ -160,9 +160,10 @@ if __name__ == '__main__':
 
             # join to the roadway network
             trn_asgn_df = pandas.merge(left=trn_asgn_df, right=roadnet_df, how='left', left_on=['A','B'], right_on=['a','b'])
-            # busopc are in 2000 cents per mile. Convert these to 2000 dollars and multiply by bus runs
-            trn_asgn_df['total bus opcost'         ] = trn_asgn_df['bus runs'] * (0.01*trn_asgn_df['busopc']     ) * (trn_asgn_df['DIST']*0.01)
-            trn_asgn_df['total bus pavement opcost'] = trn_asgn_df['bus runs'] * (0.01*trn_asgn_df['busopc_pave']) * (trn_asgn_df['DIST']*0.01)
+            # busopc are in 2000 cents per mile. Convert these to 2000 dollars and multiply by bus runs to get daily,
+            # then by 300 to get annual, then by 1.49 to get 2017 dollars.
+            trn_asgn_df['total bus opcost'         ] = trn_asgn_df['bus runs'] * (0.01*trn_asgn_df['busopc']     ) * (trn_asgn_df['DIST']*0.01) * 300 * 1.49
+            trn_asgn_df['total bus pavement opcost'] = trn_asgn_df['bus runs'] * (0.01*trn_asgn_df['busopc_pave']) * (trn_asgn_df['DIST']*0.01) * 300 * 1.49
 
             # check join failures
             join_fail_miles = trn_asgn_df.loc[pandas.isnull(trn_asgn_df.busopc), 'bus miles'].sum()
@@ -211,5 +212,5 @@ if __name__ == '__main__':
     all_busopc_by_run = all_trn_busopc_df.groupby(['m_dir', 'model_dir'], as_index=False).agg({'total bus opcost':numpy.sum,
                                                                                                'total bus pavement opcost':numpy.sum,
                                                                                                'bus miles':numpy.sum})
-    all_busopc_by_run.to_csv(os.path.join("all_metrics","bus_opcost.csv"), index=False)
+    all_busopc_by_run.to_csv(os.path.join("all_metrics","bus_opcost.txt"), index=False)
     print "Wrote all_metrics/bus_opcost.csv"
