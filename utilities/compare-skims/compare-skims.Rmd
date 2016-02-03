@@ -25,7 +25,7 @@ Compare two sets of skims to debug accessibility results.
 library(knitr)
 source("http://bioconductor.org/biocLite.R")
 biocLite("rhdf5")
-source("D:/files/GitHub/omx/api/r/OMX.R")
+source("C:/Users/lzorn/Documents/omx/api/r/OMX.R")
 library(reshape2)
 suppressMessages(library(dplyr))
 ```
@@ -45,9 +45,9 @@ SKIM_LIST = c("hwyskmAM.omx", "nonmotskm.omx",
               "trnskmAM_wlk_loc_drv.omx", "trnskmAM_wlk_lrf_drv.omx", 
               "trnskmAM_wlk_exp_drv.omx", "trnskmAM_wlk_hvy_drv.omx","trnskmAM_wlk_com_drv.omx")
 
-SELECT_ORIGIN = 1339
+SELECT_ORIGIN = 991
 
-PCT_DIFF_THRESHOLD = 20.0
+PCT_DIFF_THRESHOLD = 0.10
 
 
 ```
@@ -55,8 +55,8 @@ PCT_DIFF_THRESHOLD = 20.0
 
 #### Remote I/O
 ```{r remote-io}
-BASE_DIR  = "M:/Application/Model One/RTP2017/Project Performance Assessment/Projects/Debug/2040_05_508/skims/"
-BUILD_DIR = "M:/Application/Model One/RTP2017/Project Performance Assessment/Projects/Debug/2040_05_508_104/skims/"
+BASE_DIR  = "M:/Application/Model One/RTP2017/Project Performance Assessment/Projects/Debug/2040_05_511/skims/"
+BUILD_DIR = "M:/Application/Model One/RTP2017/Project Performance Assessment/Projects/Debug/2040_05_511_205/skims/"
 
 ```
 
@@ -154,6 +154,7 @@ for (skim in SKIM_LIST){
   
 }
 
+write.table(all_compare_df, file.path(BUILD_DIR,"..","compare-skims.csv"), sep=",", row.names=FALSE)
 ```
 
 #### Noodle results
@@ -161,7 +162,7 @@ for (skim in SKIM_LIST){
 
 table(all_compare_df$skim_table)
 
-transit <- all_compare_df_1339 %>%
+transit <- all_compare_df %>%
   filter(skim_table == "dtime")
 
 
