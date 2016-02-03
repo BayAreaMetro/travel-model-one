@@ -11,7 +11,7 @@ IF defined ITER (echo Using ITER=%ITER%) else (goto error)
 IF defined SAMPLESHARE (echo Using SAMPLESHARE=%SAMPLESHARE%) else (goto error)
 
 :: Location of the metrics scripts
-::set CODE_DIR=.\CTRAMP\scripts\metrics
+set CODE_DIR=.\CTRAMP\scripts\metrics
 :: Location of the model files
 set TARGET_DIR=%CD%
 
