@@ -130,6 +130,17 @@ Components:
 
 See [section below](#non-recurring-freeway-delay-hours), in the **Travel Time** section.
 
+#### Non-Household
+
+Components:
+
+  * Time - Truck (Computed VHT)
+  * Cost - Auto ($2000) - IX/EX: See [Operating Costs section](#operating-costs)
+  * Cost - Auto ($2000) - AirPax: See [Operating Costs section](#operating-costs)
+  * Cost - Truck ($2000) - Computed: See [Operating Costs section](#operating-costs)
+  * Time - Auto (PHT) - IX/EX: Calculated using Internal/External trip tables and skims via [sumAutoTimes.job](sumAutoTimes.job)
+  * Time - Auto (PHT) - AirPax: Calculated using airport trip tables and skims via [sumAutoTimes.job](sumAutoTimes.job)
+
 ### Travel Time
 
 #### Auto/Truck (Hours)
@@ -207,6 +218,16 @@ This is just the sum of Vehicle Miles Traveled for autos and trucks, tallied by
 Operating costs for autos come from roadway skims combined with trip tables.
 They include pavement costs (repair & maintenance costs and fuel costs, adjusted according
 to pavement condition) and they do not include bridge tolls.  See [sumAutoTimes.job](sumAutoTimes.job)
+
+Internal/External trips (_IX/EX_) and airport trips (_AirPax_) have their own trip tables.
+
+_Truck - Computed_ - comes from truck volumes in the baseline network, scaled up by the increase in
+auto VMT, and multiplied by the truck operating cost for the roadway link.  (So this metric is calculated
+from the roadway network rather than from skims.)
+
+_Truck - Modeled_ is calculated similarly except the truck volumes for the scenario are used directly
+from the model.  This is just for comparison, but it's not used because we don't trust the modeled
+truck VMT sensitivity.
 
 **Note:** This is different from previous versions of Cobra, where auto operating cost came directly
 from VMT.  The change is due to the fact that TM1 was updated to have operating costs be link-based,

@@ -283,6 +283,48 @@ class RunResults:
         self.unique_active_travelers = pd.Series.from_csv(os.path.join(self.rundir, "unique_active_travelers.csv"))
         # print self.unique_active_travelers
 
+        # read roadway network for truck costs
+        roadway_read    = False
+
+        # on M
+        roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "avgload5period_vehclasses.csv"))
+        if os.path.exists(roadway_netfile):
+            self.roadways_df = pd.read_table(roadway_netfile, sep=",")
+            print "Read roadways from %s" % roadway_netfile
+            roadway_read = True
+
+        # on model machine for reading baseline
+        if not roadway_read:
+            roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "extractor", "avgload5period_vehclasses.csv"))
+            if os.path.exists(roadway_netfile):
+                self.roadways_df = pd.read_table(roadway_netfile, sep=",")
+                print "Read roadways from %s" % roadway_netfile
+                roadway_read = True
+
+        # on model machine for reading non-baseline
+        if not roadway_read:
+            if 'ITER' not in os.environ:
+                print "Could not find roadway network in %s" % roadway_netfile
+                print "So looking in hwy/iterX but ITER isn't in the environment."
+                sys.exit(2)
+
+            roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "hwy", "iter%s" % os.environ['ITER'], "avgload5period_vehclasses.csv"))
+            self.roadways_df = pd.read_table(roadway_netfile, sep=",")
+            print "Read roadways from %s" % roadway_netfile
+            roadway_read = True
+
+        # aggregate truck volumes
+        self.roadways_df['small truck volume'] = self.roadways_df.volEA_sm + self.roadways_df.volEA_smt + \
+                                                 self.roadways_df.volAM_sm + self.roadways_df.volAM_smt + \
+                                                 self.roadways_df.volMD_sm + self.roadways_df.volMD_smt + \
+                                                 self.roadways_df.volPM_sm + self.roadways_df.volPM_smt + \
+                                                 self.roadways_df.volEV_sm + self.roadways_df.volEV_smt
+        self.roadways_df['large truck volume'] = self.roadways_df.volEA_hv + self.roadways_df.volEA_hvt + \
+                                                 self.roadways_df.volAM_hv + self.roadways_df.volAM_hvt + \
+                                                 self.roadways_df.volMD_hv + self.roadways_df.volMD_hvt + \
+                                                 self.roadways_df.volPM_hv + self.roadways_df.volPM_hvt + \
+                                                 self.roadways_df.volEV_hv + self.roadways_df.volEV_hvt
+
         for filename in ['mandatoryAccessibilities', 'nonMandatoryAccessibilities']:
             accessibilities = \
                 pd.read_table(os.path.join(self.rundir, "..", "accessibilities", "%s.csv" % filename),
@@ -393,10 +435,18 @@ class RunResults:
 
         cat1            = 'Travel Cost'
         cat2            = 'Operating Costs'
-        # base this on pct change auto vmt
-        base_truck_c    = self.base_results.daily_results[cat1,cat2,'Truck ($2000) - Computed']
-        self.daily_results[                cat1,           cat2,       'Truck ($2000) - Computed'] = (1.0+pct_change_vmt)*base_truck_c
-        self.daily_results['Travel Time & Cost','Non-Household','Cost - Truck ($2000) - Computed'] = (1.0+pct_change_vmt)*base_truck_c
+        # override the truck vmt with base truck vmt, with pct change auto vmt applied
+        self.roadways_df = pd.merge(left=self.roadways_df,
+                                    right=self.base_results.roadways_df[['a','b','small truck volume','large truck volume']],
+                                    how='left', on=['a','b'], suffixes=(' scenario',' baseline'))
+        self.roadways_df['small truck volume'] = self.roadways_df['small truck volume baseline']*(1.0+pct_change_vmt)
+        self.roadways_df['large truck volume'] = self.roadways_df['large truck volume baseline']*(1.0+pct_change_vmt)
+        # calculate the new truck cost with these assumed truck VMTs
+        self.roadways_df['total truck cost']   = (self.roadways_df['small truck volume']*self.roadways_df['smtropc']*self.roadways_df['distance']*0.01) + \
+                                                 (self.roadways_df['large truck volume']*self.roadways_df['lrtropc']*self.roadways_df['distance']*0.01)
+
+        self.daily_results[                cat1,           cat2,       'Truck ($2000) - Computed'] = self.roadways_df['total truck cost'].sum()
+        self.daily_results['Travel Time & Cost','Non-Household','Cost - Truck ($2000) - Computed'] = self.roadways_df['total truck cost'].sum()
 
         cat1            = 'Collisions, Active Transport & Noise'
         cat2            = 'Noise'
@@ -520,7 +570,11 @@ class RunResults:
             0.01*auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix'],'Total Cost'].sum()
         daily_results[(cat1,cat2,'Cost - Auto ($2000) - AirPax' )] = \
             0.01*auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Total Cost'].sum()
-        daily_results[(cat1,cat2,'Cost - Truck ($2000) - Computed')] = 0.01*auto_byclass.loc['truck','Total Cost'].sum()
+        # get this from the roadway network.
+        # smtropc,lrtropc are total opcosts for trucks, in 2000 cents per mile
+        self.roadways_df['total truck cost'] = (self.roadways_df['small truck volume']*self.roadways_df['smtropc']*self.roadways_df['distance']*0.01) + \
+                                               (self.roadways_df['large truck volume']*self.roadways_df['lrtropc']*self.roadways_df['distance']*0.01)
+        daily_results[(cat1,cat2,'Cost - Truck ($2000) - Computed')] = self.roadways_df['total truck cost'].sum()
 
         daily_results[(cat1,cat2,'Time - Auto (PHT) - IX/EX' )] = \
             auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix'],'Person Minutes'].sum()/60.0
@@ -646,10 +700,9 @@ class RunResults:
             0.01*auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Total Cost'].sum()
 
         # computed will get overwritten if base results
-        daily_results[(cat1,cat2,'Truck ($2000) - Computed')] = \
-            0.01*auto_byclass.loc['truck','Total Cost'].sum()
-        daily_results[(cat1,cat2,'Truck ($2000) - Modeled')] = \
-            0.01*auto_byclass.loc['truck','Total Cost'].sum()
+        daily_results[(cat1,cat2,'Truck ($2000) - Computed')] = self.roadways_df['total truck cost'].sum()
+        daily_results[(cat1,cat2,'Truck ($2000) - Modeled')]  = self.roadways_df['total truck cost'].sum()
+
         # Parking
         cat2            = 'Trips (Reference)'
         daily_results[(cat1,cat2,'Vehicle trips: SOV'  )] = auto_byclass.loc[['da' ,'datoll' ],'Daily Vehicle Trips'].sum()
@@ -780,9 +833,11 @@ class RunResults:
         quick_summary['VTOLL Paths in MD - sr2toll'] = self.auto_times.loc[('inc1','sr2toll'),'VTOLL nonzero MD']
         quick_summary['VTOLL Paths in MD - sr3toll'] = self.auto_times.loc[('inc1','sr3toll'),'VTOLL nonzero MD']
 
-        for mode in ['com','hvy','exp','lrf','loc']:
-            quick_summary['trn %s Paths in AM' % mode] = transit_byclass.loc[mode,'AM path count'].sum()
-            quick_summary['trn %s Paths in MD' % mode] = transit_byclass.loc[mode,'MD path count'].sum()
+        # do this if we can but it's not mandatory
+        if 'AM path count' in transit_byclass.columns.values:
+            for mode in ['com','hvy','exp','lrf','loc']:
+                quick_summary['trn %s Paths in AM' % mode] = transit_byclass.loc[mode,'AM path count'].sum()
+                quick_summary['trn %s Paths in MD' % mode] = transit_byclass.loc[mode,'MD path count'].sum()
 
         idx = pd.MultiIndex.from_tuples(daily_results.keys(), 
                                         names=['category1','category2','variable_name'])
