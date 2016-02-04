@@ -780,6 +780,10 @@ class RunResults:
         quick_summary['VTOLL Paths in MD - sr2toll'] = self.auto_times.loc[('inc1','sr2toll'),'VTOLL nonzero MD']
         quick_summary['VTOLL Paths in MD - sr3toll'] = self.auto_times.loc[('inc1','sr3toll'),'VTOLL nonzero MD']
 
+        for mode in ['com','hvy','exp','lrf','loc']:
+            quick_summary['trn %s Paths in AM' % mode] = transit_byclass.loc[mode,'AM path count'].sum()
+            quick_summary['trn %s Paths in MD' % mode] = transit_byclass.loc[mode,'MD path count'].sum()
+
         idx = pd.MultiIndex.from_tuples(daily_results.keys(), 
                                         names=['category1','category2','variable_name'])
         self.daily_results = pd.Series(daily_results, index=idx)

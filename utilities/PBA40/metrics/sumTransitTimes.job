@@ -15,19 +15,26 @@
 ; Loop thru transit modes 
   loop path = 1,5   
     ; commuter rail or long-haul premium
-      if (path = 1)  token_path = 'com'
-         
+      if (path = 1)
+        token_path = 'com'
+        token_ivt  = 'ivtCOM'
     ; heavy rail or medium-haul premium
-      if (path = 2)  token_path = 'hvy'
-         
+      elseif (path = 2)
+        token_path = 'hvy'
+        token_ivt  = 'ivtHVY'
     ; express bus or medium-haul basic
-      if (path = 3)  token_path = 'exp'
-         
+      elseif (path = 3)
+        token_path = 'exp'
+        token_ivt  = 'ivtEXP'
     ; light rail (or ferry) or short-haul premium
-       if (path = 4) token_path = 'lrf'
-         
+      elseif (path = 4)
+        token_path = 'lrf'
+        token_ivt  = 'ivtLRF'
     ; local bus or short-haul basic
-       if (path = 5) token_path = 'loc'
+      elseif (path = 5)
+        token_path = 'loc'
+        token_ivt  = 'ivtLOC'
+      endif
 
  DistributeMultistep processid = 'ctramp', processNum = path, commpath = 'm:\commpath' 
 
@@ -91,7 +98,7 @@
       MW[104] = MW[1] * mi.6.waux       					 ; wauxTrips
       MW[105] = MW[1] * mi.6.dtime       					 ; dtimeTrips
 
-      ; EA Transit Trips 
+      ; AM Transit Trips 
       MW[4] = mi.2.@token_access@_@token_path@_@token_egress@            ; Trips
       MW[5] = MW[4] *  mi.7.ivt                                          ; IVTTrips
       MW[6] = MW[4] * (mi.7.wait+mi.7.wacc+mi.7.waux+mi.7.wegr+mi.7.dtime) ; OVTTrips     
@@ -100,9 +107,8 @@
       MW[203] = MW[4] * (mi.7.wacc+mi.7.wegr) 		 ; accegrTrips
       MW[204] = MW[4] * mi.7.waux        					 ; wauxTrips
       MW[205] = MW[4] * mi.7.dtime       					 ; dtimeTrips      
-      
-      
-      ; EA Transit Trips 
+
+      ; MD Transit Trips 
       MW[7] = mi.3.@token_access@_@token_path@_@token_egress@            ; Trips
       MW[8] = MW[7] *  mi.8.ivt                                          ; IVTTrips
       MW[9] = MW[7] * (mi.8.wait+mi.8.wacc+mi.8.waux+mi.8.wegr+mi.8.dtime) ; OVTTrips 
@@ -112,7 +118,7 @@
       MW[304] = MW[7] * mi.8.waux        					 ; wauxTrips
       MW[305] = MW[7] * mi.8.dtime       					 ; dtimeTrips 
 
-      ; EA Transit Trips 
+      ; PM Transit Trips 
       MW[10] = mi.4.@token_access@_@token_path@_@token_egress@           ; Trips
       MW[11] = MW[10] *  mi.9.ivt                                        ; IVTTrips
       MW[12] = MW[10] * (mi.9.wait+mi.9.wacc+mi.9.waux+mi.9.wegr+mi.9.dtime) ; OVTTrips
@@ -122,7 +128,7 @@
       MW[404] = MW[10] * mi.9.waux       					 ; wauxTrips
       MW[405] = MW[10] * mi.9.dtime      					 ; dtimeTrips 
 
-      ; EA Transit Trips 
+      ; EV Transit Trips 
       MW[13] = mi.5.@token_access@_@token_path@_@token_egress@           ; Trips
       MW[14] = MW[13] *  mi.10.ivt                                       ; IVTTrips
       MW[15] = MW[13] * (mi.10.wait+mi.10.wacc+mi.10.waux+mi.10.wegr+mi.10.dtime) ; OVTTrips     
@@ -142,13 +148,20 @@
       waux   = waux   + MW[104] + MW[204] + MW[304] + MW[404] + MW[504]
       dtime  = dtime  + MW[105] + MW[205] + MW[305] + MW[405] + MW[505]
       ENDJLOOP
-      
+
+      ; count paths
+      MW[600] = mi.7.@token_ivt@ ; AM ivt for primary submode
+      MW[601] = mi.8.@token_ivt@ ; MD ivt for primary submode
+      _pathcount_am = _pathcount_am + ROWCNT(600)
+      _pathcount_md = _pathcount_md + ROWCNT(601)
+
        Name = '@token_access@_@token_path@_@token_egress@'
       if(I = 1 & @path@ = 1 & @accegg@ = 1 & @age@ = 1)
       	PRINT PRINTO=1 CSV=T LIST= "Age", "Access","Mode","Egress",
           "Transit Trips","In-vehicle hours","Out-of-vehicle hours","Init wait hours",
           "Xfer wait hours","Walk acc & egr hours",
-          "Aux walk hours","Drive acc & egr hours"
+          "Aux walk hours","Drive acc & egr hours",
+          "AM path count","MD path count"
       endif
       if(I=1475)
         IVT_triphours = IVT    / 6000
@@ -161,7 +174,8 @@
         PRINT PRINTO=1 CSV=T LIST= '@token_age@','@token_access@','@token_path@','@token_egress@',
           Trips,IVT_triphours,OVT_triphours,iwait_hours,
           xwait_hours,accegr_hours,
-          waux_hours,dtime_hours
+          waux_hours,dtime_hours,
+          _pathcount_am, _pathcount_md
       endif
     ENDRUN
 endloop
