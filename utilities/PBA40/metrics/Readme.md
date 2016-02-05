@@ -52,7 +52,13 @@ Farebox Recovery Ratio,0
 Life of Project (years),1
 base_dir,M:\Projects\2010_05_XXX\metrics
 Compare,scenario-baseline
+Zero Logsum TAZs,"1-190"
 ```
+
+Note that the last line, `Zero Logsum TAZs` is _optional_ and should be used only when investigations have concluded
+that a modeling limitation is affecting the logsum diffs inappropriately.  (For example, inconsistencies in path finding
+weights and utility weights might cause logsums to decrease slightly even if all we're doing is increasing transit
+frequency.)  If it's used, a README file will be required to be present to explain why it's there.
 
 ## Output
 

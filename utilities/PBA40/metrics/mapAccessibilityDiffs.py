@@ -11,18 +11,19 @@ USAGE = """
     for joining and mapping.  The second two are the same as the first two but unpivoted (tableau-style).
   * Outputs [run_dir]\OUTPUT\metrics\CSmap_204_Streetcar.pdf with mandatory map using 0.5 std dev
 """
-import argparse, csv, datetime, os, shutil, sys, traceback
+import argparse, csv, datetime, os, re, shutil, sys, traceback
 import numpy, pandas
 
 # cliff effect mitigation
 CEM_THRESHOLD = 0.1
 CEM_SHALLOW    = 0.05
+INCLUDE_OUTPUT_DIR = True
 
 def read_accessibilities(proj_dir, mandatory, col_prefix):
     """
     Read the accessibilities and return them as a dataframe
     """
-    filename = os.path.join(proj_dir, "OUTPUT", "accessibilities",
+    filename = os.path.join(proj_dir, "OUTPUT" if INCLUDE_OUTPUT_DIR else "", "accessibilities",
                             "mandatoryAccessibilities.csv" if mandatory else "nonMandatoryAccessibilities.csv")
     acc_df   = pandas.read_table(filename, sep=",")
     acc_df.drop('destChoiceAlt', axis=1, inplace=True)
@@ -44,7 +45,7 @@ def read_markets(proj_dir, col_prefix):
     """
     Read the accessibility markets and return them as a dataframe
     """
-    filename   = os.path.join(proj_dir, "OUTPUT", "core_summaries", "AccessibilityMarkets.csv")
+    filename   = os.path.join(proj_dir, "OUTPUT" if INCLUDE_OUTPUT_DIR else "", "core_summaries", "AccessibilityMarkets.csv")
     acc_mar_df = pandas.read_table(filename, sep=",")
 
     acc_mar_df.rename(columns={'num_persons':'%s_num_persons' % col_prefix,
@@ -139,9 +140,32 @@ def create_map(proj_dir, CWD, pivot_df, mand_nonm, reduced_noise):
 
     # move it
     shutil.copy2(os.path.join(ARCPY_DIR, pdffile),
-                os.path.join(CWD, my_args.run_dir, "OUTPUT", "metrics"))
-    print "Wrote [%s]" % os.path.join(CWD, my_args.run_dir, "OUTPUT", "metrics", pdffile)
+                os.path.join(CWD, my_args.run_dir, "OUTPUT" if INCLUDE_OUTPUT_DIR else "", "metrics"))
+    print "Wrote [%s]" % os.path.join(CWD, my_args.run_dir, "OUTPUT" if INCLUDE_OUTPUT_DIR else "", "metrics", pdffile)
     os.remove(os.path.join(ARCPY_DIR, pdffile))
+
+
+def parseNumList(numlist_str):
+    """
+    Parses a number list of the format 1,4,6,10-14,23 into a list of numbers.
+
+    Used for Zero Logsum TAZs parsing
+    """
+    # Parse the taz list.
+    taz_list_strs = numlist_str.split(",")
+    # these should be either 123 or 1-123
+    taz_list = []
+    for taz_list_str in taz_list_strs:
+        taz_list_regex = re.compile(r"(\d+)(-(\d+))?")
+        match_obj = re.match(taz_list_regex, taz_list_str)
+        if match_obj.group(3) == None:
+            taz_list.append(int(match_obj.group(1)))
+        else:
+            taz = int(match_obj.group(1))
+            while taz <= int(match_obj.group(3)):
+                taz_list.append(taz)
+                taz += 1
+    return taz_list
 
 if __name__ == '__main__':
     pandas.set_option('display.width', 300)
@@ -154,7 +178,7 @@ if __name__ == '__main__':
 
     my_args = parser.parse_args()
 
-    config_filepath = os.path.join(my_args.run_dir, "OUTPUT","metrics","BC_config.csv")
+    config_filepath = os.path.join(my_args.run_dir, "OUTPUT" if INCLUDE_OUTPUT_DIR else "","metrics","BC_config.csv")
     if not os.path.exists(config_filepath):
         print "No config file at [%s]" % config_filepath
         raise
@@ -171,9 +195,14 @@ if __name__ == '__main__':
         print "This script only supports Compare=scenario-baseline right now."
         raise
 
+    zero_taz_list = []
+    if "Zero Logsum TAZs" in config:
+        zero_taz_list = parseNumList(config["Zero Logsum TAZs"])
+        print "Zeroing out logsum diffs for %s" % str(zero_taz_list)
+
     base_run_dir = config['base_dir']
     # strip off OUTPUT\metrics
-    base_run_dir = os.path.normpath(os.path.join(base_run_dir,"..",".."))
+    base_run_dir = os.path.normpath(os.path.join(base_run_dir,"..",".." if INCLUDE_OUTPUT_DIR else "."))
 
     # read the scenario and base accessibilities
     scen_mand_acc = read_accessibilities(my_args.run_dir, True,  "scen")
@@ -194,10 +223,14 @@ if __name__ == '__main__':
     # diff the logsums
     mand_acc      = pandas.merge(scen_mand_acc, base_mand_acc, how='left')
     mand_acc['logsum_diff']         = mand_acc.scen_dclogsum - mand_acc.base_dclogsum
+    # zero out negative diffs if directed
+    if len(zero_taz_list) > 0: mand_acc.loc[(mand_acc.taz.isin(zero_taz_list)) & (mand_acc.logsum_diff<0), 'logsum_diff'] = 0.0
     mand_acc['logsum_diff_minutes'] = mand_acc.logsum_diff / 0.0134
 
     nonm_acc      = pandas.merge(scen_nonm_acc, base_nonm_acc, how='left')
     nonm_acc['logsum_diff']         = nonm_acc.scen_dclogsum - nonm_acc.base_dclogsum
+    # zero out negative diffs if directed
+    if len(zero_taz_list) > 0: nonm_acc.loc[(nonm_acc.taz.isin(zero_taz_list)) & (nonm_acc.logsum_diff<0), 'logsum_diff'] = 0.0
     nonm_acc['logsum_diff_minutes'] = nonm_acc.logsum_diff / 0.0175
 
     # Cliff Effect Mitigation
@@ -235,11 +268,11 @@ if __name__ == '__main__':
     nonm_acc.loc[nonm_acc.walk_subzone==2, 'walk_subzone_label'] =  "long_walk_transit"
 
     # write as is for tableau
-    mand_csv_tableau = os.path.join(my_args.run_dir, "OUTPUT", "metrics","mandatory_logsum_tableau.csv")
+    mand_csv_tableau = os.path.join(my_args.run_dir, "OUTPUT" if INCLUDE_OUTPUT_DIR else "", "metrics","mandatory_logsum_tableau.csv")
     mand_acc.to_csv(mand_csv_tableau, index=False)
     print "Wrote mandatory (tableau) csv to [%s]" % mand_csv_tableau
 
-    nonm_csv_tableau = os.path.join(my_args.run_dir, "OUTPUT", "metrics","nonMandatory_logsum_tableau.csv")
+    nonm_csv_tableau = os.path.join(my_args.run_dir, "OUTPUT" if INCLUDE_OUTPUT_DIR else "", "metrics","nonMandatory_logsum_tableau.csv")
     nonm_acc.to_csv(nonm_csv_tableau, index=False)
     print "Wrote nonmatory (tableau) csv to [%s]" % nonm_csv_tableau
 
@@ -259,7 +292,7 @@ if __name__ == '__main__':
         if col.startswith('ldm_cem ') or col.startswith('cs_hours_cem '): drop_cols.append(col)
     mand_pivot.drop(drop_cols, axis=1, inplace=True)
 
-    mand_csv = os.path.join(my_args.run_dir, "OUTPUT", "metrics","mandatory_logsum.csv")
+    mand_csv = os.path.join(my_args.run_dir, "OUTPUT" if INCLUDE_OUTPUT_DIR else "", "metrics","mandatory_logsum.csv")
     mand_pivot.to_csv(mand_csv)
     print "Wrote mandatory csv to [%s]" % mand_csv
 
@@ -279,7 +312,7 @@ if __name__ == '__main__':
         if col.startswith('ldm_cem ') or col.startswith('cs_hours_cem '): drop_cols.append(col)
     nonm_pivot.drop(drop_cols, axis=1, inplace=True)
 
-    nonm_csv = os.path.join(my_args.run_dir, "OUTPUT", "metrics","nonMandatory_logsum.csv")
+    nonm_csv = os.path.join(my_args.run_dir, "OUTPUT" if INCLUDE_OUTPUT_DIR else "", "metrics","nonMandatory_logsum.csv")
     nonm_pivot.to_csv(nonm_csv)
     print "Wrote nonMandatory csv to [%s]" % nonm_csv
 

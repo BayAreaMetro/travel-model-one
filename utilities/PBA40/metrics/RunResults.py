@@ -452,6 +452,28 @@ class RunResults:
         cat2            = 'Noise'
         self.daily_results[cat1,cat2,'Truck VMT - Computed'] = (1.0+pct_change_vmt)*base_truck_vmt
 
+    def parseNumList(self, numlist_str):
+        """
+        Parses a number list of the format 1,4,6,10-14,23 into a list of numbers.
+
+        Used for Zero Logsum TAZs parsing
+        """
+        # Parse the taz list.
+        taz_list_strs = numlist_str.split(",")
+        # these should be either 123 or 1-123
+        taz_list = []
+        for taz_list_str in taz_list_strs:
+            taz_list_regex = re.compile(r"(\d+)(-(\d+))?")
+            match_obj = re.match(taz_list_regex, taz_list_str)
+            if match_obj.group(3) == None:
+                taz_list.append(int(match_obj.group(1)))
+            else:
+                taz = int(match_obj.group(1))
+                while taz <= int(match_obj.group(3)):
+                    taz_list.append(taz)
+                    taz += 1
+        return taz_list
+
     def calculateDailyMetrics(self):
         """
         Calculates the daily output metrics which will actually get used for the benefits/cost
@@ -475,6 +497,21 @@ class RunResults:
         quick_summary   = {}
         ######################################################################################
         if self.base_results:
+            zero_taz_list = []
+            if "Zero Logsum TAZs" in self.config:
+                # Require a readme about it
+                readme_file = os.path.join(self.rundir, "Zero Out Logsum Diff README.txt")
+                if not os.path.exists(readme_file):
+                    print "Readme file [%s] doesn't exist -- this is required to use this configuration option." % readme_file
+                    sys.exit(2)
+
+                if os.path.getsize(readme_file) < 200:
+                    print "Readme file [%s] is pretty short... It should have more detail about why you're doing this." % readme_file
+                    sys.exit(2)
+
+                zero_taz_list = self.parseNumList(self.config["Zero Logsum TAZs"])
+                print "Zeroing out diffs for tazs %s" % str(zero_taz_list)
+
             # Take the difference and convert utils to minutes (k_ivt = 0.0134 k_mc_ls = 1.0 in access calcs);
             # TODO: is k_mc_ls = 1.0?  DestinationChoice.cls has different values
             self.mandatoryAccessibilities = pd.merge(self.mandatoryAccessibilities,
@@ -482,6 +519,11 @@ class RunResults:
                                                     how='left')
             self.mandatoryAccessibilities['diff_dclogsum'] = \
                 self.mandatoryAccessibilities.scen_dclogsum - self.mandatoryAccessibilities.base_dclogsum
+
+            # zero out negative diffs if directed
+            if len(zero_taz_list) > 0:
+                self.mandatoryAccessibilities.loc[(self.mandatoryAccessibilities.taz.isin(zero_taz_list)) & (self.mandatoryAccessibilities.diff_dclogsum<0), 'diff_dclogsum'] = 0.0
+
             self.mandatoryAccessibilities['logsum_diff_minutes'] = self.mandatoryAccessibilities.diff_dclogsum / 0.0134
 
 
@@ -497,6 +539,11 @@ class RunResults:
                                                         how='left')
             self.nonmandatoryAccessibilities['diff_dclogsum'] = \
                 self.nonmandatoryAccessibilities.scen_dclogsum - self.nonmandatoryAccessibilities.base_dclogsum
+
+            # zero out negative diffs if directed
+            if len(zero_taz_list) > 0:
+                self.nonmandatoryAccessibilities.loc[(self.nonmandatoryAccessibilities.taz.isin(zero_taz_list)) & (self.nonmandatoryAccessibilities.diff_dclogsum<0), 'diff_dclogsum'] = 0.0
+
             self.nonmandatoryAccessibilities['logsum_diff_minutes'] = self.nonmandatoryAccessibilities.diff_dclogsum / 0.0175
 
             # Cliff Effect Mitigation
