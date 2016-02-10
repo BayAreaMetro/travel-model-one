@@ -21,12 +21,9 @@ if not exist updated_output\trips.rdata (
 
   set OLD_CODE_DIR=%CODE_DIR%
   set CODE_DIR=%CODE_DIR%\model-files\scripts\core_summaries
-  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\model-files\scripts\core_summaries\knit_CoreSummaries.R"
+  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\model-files\scripts\core_summaries\CoreSummaries.R"
   set CODE_DIR=%OLD_CODE_DIR%
   IF %ERRORLEVEL% GTR 0 goto error
-
-  move CoreSummaries.html core_summaries
-  move CoreSummaries.md   core_summaries
 
 )
 
@@ -34,7 +31,7 @@ if not exist metrics\ITHIM\percapita_daily_dist_time.csv (
   rem Input:  updated_output\trips.rdata
   rem         updated_output\persons.rdata
   rem Output: metrics\ITHIM\percapita_daily_dist_time.csv
-  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\utilities\PBA40\ITHIM\knit_PerCapitaDailyTravelDistanceTime.R"
+  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\utilities\PBA40\ITHIM\PerCapitaDailyTravelDistanceTime.R"
   IF %ERRORLEVEL% GTR 0 goto error
 
   move PerCapitaDailyTravelDistanceTime.html metrics\ITHIM

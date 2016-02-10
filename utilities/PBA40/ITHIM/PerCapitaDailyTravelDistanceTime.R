@@ -1,16 +1,6 @@
----
-title: "PerCapitaDailyTravelDistanceTime"
-author: "Lisa Zorn"
-date: "Friday, August 01, 2014"
-output:
-  html_document:
-    toc: yes
-# runtime: shiny
----
 
 # Initialization: Set the workspace and load needed libraries
-```{r Initialization, results='hold', error=FALSE}
-library(knitr)
+.libPaths(Sys.getenv("R_LIB"))
 library(plyr) # this must be first
 library(dplyr)
 library(reshape2)
@@ -19,15 +9,7 @@ library(reshape2)
 TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
 ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to read
 SAMPLESHARE  <- Sys.getenv("SAMPLESHARE") # Sampling
-
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
-
-# run test mode?  It's a short version
-TEST        <- FALSE
-if (TEST) {
-  TARGET_DIR  <- "C:/Users/lzorn/Documents/2020_03_116"
-  ITER        <- "1"
-}
 
 stopifnot(nchar(TARGET_DIR  )>0)
 stopifnot(nchar(ITER        )>0)
@@ -35,9 +17,9 @@ stopifnot(nchar(SAMPLESHARE )>0)
 
 SAMPLESHARE <- as.numeric(SAMPLESHARE)
 
-cat("TARGET_DIR  = ",TARGET_DIR)
-cat("ITER        = ",ITER)
-cat("SAMPLESHARE = ",SAMPLESHARE)
+cat("TARGET_DIR  = ",TARGET_DIR,"\n")
+cat("ITER        = ",ITER,"\n")
+cat("SAMPLESHARE = ",SAMPLESHARE,"\n")
 
 updated_trips = file.path(TARGET_DIR,"updated_output","trips.rdata")
 if (!file.exists(updated_trips)) {
@@ -50,10 +32,8 @@ if (!file.exists(updated_persons)) {
   stop(paste("Can't find file",updated_persons))
 }
 load(updated_persons)
-```
 
 # 1: Per Capita Mean Daily Travel Distance
-```{r PerCapitaMeanDailyTravelDistance, error=FALSE}
 
 # add mode groups: drive alone, shared ride 2, shared ride 3+, bus, rail, walk, bicycle
 trips <- mutate(trips, mode_group='?')
@@ -66,12 +46,12 @@ trips$mode_group[trips$trip_mode== 6] <- 'shared ride 3+'     # sr3 pay
 trips$mode_group[trips$trip_mode== 7] <- 'walk'               # walk
 trips$mode_group[trips$trip_mode== 8] <- 'bicycle'            # bike
 trips$mode_group[trips$trip_mode== 9] <- 'bus'                # walk to local bus
-trips$mode_group[trips$trip_mode==10] <- 'bus'                # walk to light rail or ferry
+trips$mode_group[trips$trip_mode==10] <- 'rail'               # walk to light rail or ferry
 trips$mode_group[trips$trip_mode==11] <- 'bus'                # walk to express bus
 trips$mode_group[trips$trip_mode==12] <- 'rail'               # walk to BART
 trips$mode_group[trips$trip_mode==13] <- 'rail'               # walk to commuter rail
 trips$mode_group[trips$trip_mode==14] <- 'bus'                # drive to local bus
-trips$mode_group[trips$trip_mode==15] <- 'bus'                # drive to light rail or ferry
+trips$mode_group[trips$trip_mode==15] <- 'rail'               # drive to light rail or ferry
 trips$mode_group[trips$trip_mode==16] <- 'bus'                # drive to express bus
 trips$mode_group[trips$trip_mode==17] <- 'rail'               # drive to BART
 trips$mode_group[trips$trip_mode==18] <- 'rail'               # drive to commuter rail
@@ -193,13 +173,13 @@ auto_dist_pers2 <- select(auto_dist_pers2, age_group, gender, car_driver, car_pa
 auto_time_pers2 <- select(auto_time_pers2, age_group, gender, car_driver, car_passenger)
 
 # back to original format
-auto_dist        <- rename(melt(auto_dist2),      c("variable"="ITHIM_mode","value"="sum_daily_distance"))
-auto_dist_pers   <- rename(melt(auto_dist_pers2), c("variable"="ITHIM_mode","value"="sum_daily_travelers"))
+auto_dist        <- rename(melt(auto_dist2),      ITHIM_mode=variable, sum_daily_distance=value)
+auto_dist_pers   <- rename(melt(auto_dist_pers2), ITHIM_mode=variable, sum_daily_travelers=value)
 auto_dist        <- left_join(auto_dist, auto_dist_pers)
 auto_dist        <- mutate(auto_dist, mean_daily_distance=ifelse(sum_daily_travelers==0,0,sum_daily_distance/sum_daily_travelers))
 
-auto_time        <- rename(melt(auto_time2),      c("variable"="ITHIM_mode","value"="sum_daily_time"))
-auto_time_pers   <- rename(melt(auto_time_pers2), c("variable"="ITHIM_mode","value"="sum_daily_travelers"))
+auto_time        <- rename(melt(auto_time2),      ITHIM_mode=variable, sum_daily_time=value)
+auto_time_pers   <- rename(melt(auto_time_pers2), ITHIM_mode=variable, sum_daily_travelers=value)
 auto_time        <- left_join(auto_time, auto_time_pers)
 auto_time        <- mutate(auto_time, mean_daily_time=ifelse(sum_daily_travelers==0,0,sum_daily_time/sum_daily_travelers))
 
@@ -216,7 +196,3 @@ percapita_summary_update <- rbind(percapita_summary_update, auto_dist_time)
 
 write.table(percapita_summary_update, file.path(TARGET_DIR,"metrics","ITHIM","percapita_daily_dist_time.csv"),
             sep=",", row.names=FALSE)
-
-```
-
-# 2: Per Capita Mean Daily Travel Time
