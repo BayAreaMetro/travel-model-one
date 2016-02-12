@@ -24,12 +24,21 @@ if not exist updated_output\trips.rdata (
   call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\model-files\scripts\core_summaries\CoreSummaries.R"
   set CODE_DIR=%OLD_CODE_DIR%
   IF %ERRORLEVEL% GTR 0 goto error
+)
 
+if not exist database\IthimSkimsDatabaseAM.csv (
+  rem Input:  skims\trnskm(EA|AM|MD|PM|EV)_wlk_trn_wlk.tpp
+  rem         skims\trnskm(EA|AM|MD|PM|EV)_wlk_trn_wlk_temp.tpp
+  rem         ctramp\scripts\block\hwyparam.block
+  rem Output: database\IthimSkimsDatabase(EA|AM|MD|PM|EV).csv
+  runtpp "%CODE_DIR%\utilities\PBA40\ITHIM\SkimsDatabaseITHIM.job"
+  IF ERRORLEVEL 2 goto error
 )
 
 if not exist metrics\ITHIM\percapita_daily_dist_time.csv (
   rem Input:  updated_output\trips.rdata
   rem         updated_output\persons.rdata
+  rem         database\IthimSkimsDatabase(EA|AM|MD|PM|EV).csv
   rem Output: metrics\ITHIM\percapita_daily_dist_time.csv
   call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\utilities\PBA40\ITHIM\PerCapitaDailyTravelDistanceTime.R"
   IF %ERRORLEVEL% GTR 0 goto error
