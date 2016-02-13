@@ -337,6 +337,17 @@ summary <- rbind(summary,
                  melt(auto_summary) %>% rename(Parameter=variable))
 
 
+####################  Population #################### 
+
+persons_summary <- dplyr::summarise(group_by(persons, age_group, gender),
+                                    'Population Forecasts'=n()) %>% mutate(Mode='all')
+driver_summary  <- dplyr::summarise(persons, 'Population Forecasts'=sum(possible_driver)) %>% 
+  mutate(Mode='car_driver', age_group='16+', gender='all')
+
+summary <- rbind(summary,
+                 melt(persons_summary) %>% rename(Parameter=variable),
+                 melt(driver_summary) %>% rename(Parameter=variable))
+
 ####################  4: Write it #################### 
 
 write.table(summary, file.path(TARGET_DIR,"metrics","ITHIM","percapita_daily_dist_time.csv"),
