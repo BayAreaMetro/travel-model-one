@@ -42,9 +42,6 @@ if not exist metrics\ITHIM\percapita_daily_dist_time.csv (
   rem Output: metrics\ITHIM\percapita_daily_dist_time.csv
   call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\utilities\PBA40\ITHIM\PerCapitaDailyTravelDistanceTime.R"
   IF %ERRORLEVEL% GTR 0 goto error
-
-  move PerCapitaDailyTravelDistanceTime.html metrics\ITHIM
-  move PerCapitaDailyTravelDistanceTime.md   metrics\ITHIM
 )
 
 if not exist main\indivTripDataIncome_%ITER%.csv (
