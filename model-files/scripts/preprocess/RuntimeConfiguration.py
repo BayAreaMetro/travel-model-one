@@ -39,7 +39,7 @@ If no iteration is specified, then these include:
         48 Cube Voyager processes available
         48 threads for accessibilities
         24 threads for core
-     * 'MAINMODEL': multiple machine setup
+     * 'mainmodel': multiple machine setup
 
 If an iteration is specified, then the following UsualWorkAndSchoolLocationChoice
 lines are set in CTRAMP\runtime\mtcTourBased.properties:
@@ -278,7 +278,7 @@ def config_distribution(replacements):
     Replacements = { filepath -> regex_dict }
     """
     hostname = socket.gethostname()
-    if hostname == 'MAINMODEL':
+    if hostname == 'mainmodel':
         # accessibilities
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>14"
@@ -369,7 +369,7 @@ def config_distribution(replacements):
     Replacements = { filepath -> regex_dict }
     """
     hostname = socket.gethostname()
-    if hostname == 'MAINMODEL':
+    if hostname == 'mainmodel':
         # accessibilities
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>14"
