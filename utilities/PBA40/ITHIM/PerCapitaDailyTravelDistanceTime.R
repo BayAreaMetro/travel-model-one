@@ -348,6 +348,16 @@ summary <- rbind(summary,
                  melt(persons_summary) %>% rename(Parameter=variable),
                  melt(driver_summary) %>% rename(Parameter=variable))
 
+####################  Units ####################
+
+summary$Units <- ""
+summary$Units[summary$Parameter=="Per Capita Mean Daily Travel Distance"] <- "miles"
+summary$Units[summary$Parameter=="Per Capita Mean Daily Travel Time"    ] <- "minutes"
+summary$Units[summary$Parameter=="Population Forecasts"                 ] <- "people"
+
+summary <- summary[c("age_group","gender","Mode","Units","Parameter","value")]
+summary <- summary[order(summary$Parameter),]
+
 ####################  4: Write it #################### 
 
 write.table(summary, file.path(TARGET_DIR,"metrics","ITHIM","percapita_daily_dist_time.csv"),
