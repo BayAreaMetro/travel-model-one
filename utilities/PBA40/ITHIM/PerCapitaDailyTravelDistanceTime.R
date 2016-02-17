@@ -209,9 +209,9 @@ trn_summary_bus  <- mutate(trn_summary_bus,  'Per Capita Mean Daily Travel Time'
 trn_summary_bus  <- mutate(trn_summary_bus,  'Per Capita Mean Daily Travel Distance'=sum_daily_distance/total_pop)
 
 trn_summary_rail <- select(trn_summary_rail, -sum_daily_time, -sum_daily_distance, -total_pop) %>%
-  mutate(age_group='all', gender='all')
+  mutate(age_group='', gender='')
 trn_summary_bus  <- select(trn_summary_bus,  -sum_daily_time, -sum_daily_distance, -total_pop) %>%
-  mutate(age_group='all', gender='all')
+  mutate(age_group='', gender='')
 
 summary <- rbind(summary,
                  melt(trn_summary_rail) %>% rename(Parameter=variable),
@@ -331,7 +331,7 @@ auto_summary <- mutate(auto_summary, 'Per Capita Mean Daily Travel Time'    =sum
 auto_summary <- mutate(auto_summary, 'Per Capita Mean Daily Travel Distance'=sum_daily_distance/total_pop)
 auto_summary <- rename(auto_summary, Mode=ITHIM_mode)
 auto_summary <- select(auto_summary, -sum_daily_travelers, -sum_daily_time, -sum_daily_distance, -total_pop)
-auto_summary <- mutate(auto_summary, age_group='all', gender='all')
+auto_summary <- mutate(auto_summary, age_group='', gender='')
 
 summary <- rbind(summary,
                  melt(auto_summary) %>% rename(Parameter=variable))
@@ -340,9 +340,9 @@ summary <- rbind(summary,
 ####################  Population #################### 
 
 persons_summary <- dplyr::summarise(group_by(persons, age_group, gender),
-                                    'Population Forecasts'=n()) %>% mutate(Mode='all')
+                                    'Population Forecasts'=n()) %>% mutate(Mode='')
 driver_summary  <- dplyr::summarise(persons, 'Population Forecasts'=sum(possible_driver)) %>% 
-  mutate(Mode='car_driver', age_group='16+', gender='all')
+  mutate(Mode='car_driver', age_group='16+', gender='')
 
 summary <- rbind(summary,
                  melt(persons_summary) %>% rename(Parameter=variable),

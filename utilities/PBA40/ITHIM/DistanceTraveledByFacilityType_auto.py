@@ -74,14 +74,13 @@ if __name__ == '__main__':
     vol_net_df.loc[(vol_net_df.vehclass=='da')|(vol_net_df.vehclass=='dat'), 'car_VMT'] = vol_net_df['distance']*vol_net_df['volume']
     vol_net_df.loc[(vol_net_df.vehclass=='s2')|(vol_net_df.vehclass=='s2t'), 'car_VMT'] = vol_net_df['distance']*vol_net_df['volume']
     vol_net_df.loc[(vol_net_df.vehclass=='s3')|(vol_net_df.vehclass=='s2t'), 'car_VMT'] = vol_net_df['distance']*vol_net_df['volume']
-    vol_net_df['sm_med_truck_VMT'] = 0
-    vol_net_df.loc[(vol_net_df.vehclass=='sm')|(vol_net_df.vehclass=='smt'), 'sm_med_truck_VMT'] = vol_net_df['distance']*vol_net_df['volume']
-    vol_net_df['heavy_truck_VMT'] = 0
-    vol_net_df.loc[(vol_net_df.vehclass=='hv')|(vol_net_df.vehclass=='hvt'), 'heavy_truck_VMT']  = vol_net_df['distance']*vol_net_df['volume']
+    vol_net_df['truck_VMT'] = 0
+    vol_net_df.loc[(vol_net_df.vehclass=='sm')|(vol_net_df.vehclass=='smt'), 'truck_VMT'] = vol_net_df['distance']*vol_net_df['volume']
+    vol_net_df.loc[(vol_net_df.vehclass=='hv')|(vol_net_df.vehclass=='hvt'), 'truck_VMT']  = vol_net_df['distance']*vol_net_df['volume']
 
     # each vehicle mile traveled has a driver
     vol_net_df['car_driver_PMT']    = vol_net_df['car_VMT']
-    vol_net_df['truck_driver_PMT']  = vol_net_df['sm_med_truck_VMT'] + vol_net_df['heavy_truck_VMT']
+    vol_net_df['truck_driver_PMT']  = vol_net_df['truck_VMT'] 
     # but s2 and s3 miles traveled have passengers
     vol_net_df['car_passenger_PMT'] = 0.0
     vol_net_df.loc[(vol_net_df.vehclass=='s2')|(vol_net_df.vehclass=='s2t'), 'car_passenger_PMT'] = vol_net_df['car_VMT']*1.0
@@ -103,7 +102,7 @@ if __name__ == '__main__':
 
     # groupby facility type
     loaded_ft_df = vol_net_df[['ITHIM_ft',
-                               'car_VMT','sm_med_truck_VMT','heavy_truck_VMT',
+                               'car_VMT','truck_VMT',
                                'car_driver_PMT','car_passenger_PMT','truck_driver_PMT',
                                'car_driver_PHT','car_passenger_PHT','truck_driver_PHT']].groupby(['ITHIM_ft']).agg(numpy.sum)
 
