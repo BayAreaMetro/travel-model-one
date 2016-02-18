@@ -8,6 +8,7 @@ USAGE = """
     * metrics\ITHIM\percapita_daily_dist_time.csv
     * metrics\ITHIM\DistanceTraveledByFacilityType_auto+truck.csv
     * metrics\ITHIM\DistanceTraveledByFacilityType_transit.csv
+    * metrics\ITHIM\emissions.csv
 
   * combines and write metrics\ITHIM\results.csv
 
@@ -20,6 +21,7 @@ FILES = [
     os.path.join("metrics","ITHIM","percapita_daily_dist_time.csv"),
     os.path.join("metrics","ITHIM","DistanceTraveledByFacilityType_auto+truck.csv"),
     os.path.join("metrics","ITHIM","DistanceTraveledByFacilityType_transit.csv"),
+    os.path.join("metrics","ITHIM","emissions.csv")
 ]
 
 if __name__ == '__main__':

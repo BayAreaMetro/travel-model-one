@@ -61,6 +61,14 @@ if not exist metrics\vmt_vht_metrics.csv (
   IF ERRORLEVEL 2 goto error
 )
 
+if not exist metrics\ITHIM\emissions.csv (
+  rem Reformats emissions for ITHIM
+  rem Input:  metrics\vmt_vht_metrics.csv
+  rem Output: metrics\ITHIM\emissions.csv
+  call python "%CODE_DIR%\utilities\PBA40\ITHIM\reformatEmissions.py"
+  IF ERRORLEVEL 2 goto error
+)
+
 if not exist metrics\ITHIM\DistanceTraveledByFacilityType_auto+truck.csv (
   rem Summarizes distance traveled by facility type for autos and trucks, by person and vehicles
   rem Input:  hwy\iter%ITER%\vgload5period_vehclasses.csv
