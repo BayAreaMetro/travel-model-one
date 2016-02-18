@@ -44,7 +44,7 @@ persons$age_group[(persons$age >= 5)&(persons$age <= 14)] <- ' 5-14'
 persons$age_group[(persons$age >=15)&(persons$age <= 29)] <- '15-29'
 persons$age_group[(persons$age >=30)&(persons$age <= 44)] <- '30-44'
 persons$age_group[(persons$age >=45)&(persons$age <= 59)] <- '45-59'
-persons$age_group[(persons$age >=60)&(persons$age <= 69)] <- '69-69'
+persons$age_group[(persons$age >=60)&(persons$age <= 69)] <- '60-69'
 persons$age_group[(persons$age >=70)&(persons$age <= 79)] <- '70-79'
 persons$age_group[(persons$age >=80)                    ] <- '80+'
 
@@ -74,10 +74,19 @@ daily_active_trips <- tbl_df(dplyr::summarise(active_trips_by_person_mode,
                                        daily_time=sum(active)))
 
 # sum -- denominator is not just people who make active trips
-percapita_active_summary  <- dplyr::summarise(group_by(daily_active_trips, age_group, gender, active_mode),
-                                              sum_daily_travelers = n(),
-                                              sum_daily_distance  = sum(daily_distance),
-                                              sum_daily_time      = sum(daily_time))
+percapita_active_summary  <- rbind(
+  dplyr::summarise(group_by(daily_active_trips, age_group, gender, active_mode),
+                            sum_daily_travelers = n(),
+                            sum_daily_distance  = sum(daily_distance),
+                            sum_daily_time      = sum(daily_time)),
+  
+  # non-age-sex-stratified version
+  dplyr::summarise(group_by(daily_active_trips, active_mode),
+                            sum_daily_travelers = n(),
+                            sum_daily_distance  = sum(daily_distance),
+                            sum_daily_time      = sum(daily_time)) %>% 
+    mutate(age_group="", gender=""))
+
 # these are from trips so they need to be scaled by sample share
 percapita_active_summary$sum_daily_travelers <- percapita_active_summary$sum_daily_travelers/SAMPLESHARE
 percapita_active_summary$sum_daily_distance  <- percapita_active_summary$sum_daily_distance /SAMPLESHARE
@@ -87,7 +96,10 @@ walk_summary <- percapita_active_summary[percapita_active_summary$active_mode ==
 bike_summary <- percapita_active_summary[percapita_active_summary$active_mode == 'bike',]
 
 # this one is from popsyn so it's not sampled
-person_age_sex_summary <- dplyr::summarise(group_by(persons, age_group, gender), total_pop=n())
+person_age_sex_summary <- rbind(
+  dplyr::summarise(group_by(persons, age_group, gender), total_pop=n()),
+  dplyr::summarise(persons, total_pop=n()) %>%
+    mutate(age_group="", gender=""))
 
 # join
 walk_summary <- join(walk_summary, person_age_sex_summary)
@@ -315,8 +327,7 @@ remove(sr2_dist, sr2_dist_pax, sr2_dist_pax_fraction,
        sr3_time, sr3_time_pax, sr3_time_pax_fraction)
 
 # total population of drivers and passengers
-persons = mutate(persons, 'possible_driver'=ifelse(age>=16,1,0))
-auto_summary <- mutate(auto_summary, total_pop=ifelse(ITHIM_mode=='car_driver', sum(persons$possible_driver), nrow(persons)))
+auto_summary <- mutate(auto_summary, total_pop=nrow(persons))
 
 # add drive to transit drive time and drive distance
 auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='car_driver'] <- 
@@ -339,14 +350,13 @@ summary <- rbind(summary,
 
 ####################  Population #################### 
 
-persons_summary <- dplyr::summarise(group_by(persons, age_group, gender),
-                                    'Population Forecasts'=n()) %>% mutate(Mode='')
-driver_summary  <- dplyr::summarise(persons, 'Population Forecasts'=sum(possible_driver)) %>% 
-  mutate(Mode='car_driver', age_group='16+', gender='')
+persons_summary <- rbind(
+  dplyr::summarise(group_by(persons, age_group, gender),
+                   'Population Forecasts'=n()) %>% mutate(Mode=''),
+  dplyr::summarise(persons, 'Population Forecasts'=n()) %>% mutate(Mode='', age_group='', gender=''))
 
 summary <- rbind(summary,
-                 melt(persons_summary) %>% rename(Parameter=variable),
-                 melt(driver_summary) %>% rename(Parameter=variable))
+                 melt(persons_summary) %>% rename(Parameter=variable))
 
 ####################  Units ####################
 
