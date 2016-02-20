@@ -30,6 +30,9 @@ if __name__ == '__main__':
             cols_to_keep.append("vol%s_%st" % (timeperiod, vehclass)) # toll
     loaded_net_df = loaded_net_df[cols_to_keep]
 
+    # filter out FT=10 since those are toll plazas and not real links
+    loaded_net_df = loaded_net_df.loc[loaded_net_df.ft != 10,]
+
     # transform FT to ITHIM FT
     # From M:\Application\ITHIM\2014.06.24_ITHIM_IntegrationManual_MTC.pdf
     ft_mapping = {

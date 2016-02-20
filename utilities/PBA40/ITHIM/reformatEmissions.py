@@ -34,9 +34,9 @@ if __name__ == '__main__':
     vmt_vht_metrics_df = vmt_vht_metrics_df.groupby(["vehicle class"]).sum()
 
     # only keep emissions
-    vmt_vht_metrics_df = vmt_vht_metrics_df[["ROG","S_NOx","SOx","W_NOx","CO2","Diesel_PM2.5","Gas_PM2.5","Diesel PM",
-                                             "Butadiene","Benzene","Acetaldehyde","Formaldehyde","TOG_exh","PM10","PM10_wear","PM2.5_wear"]]
-
+    vmt_vht_metrics_df.drop(['VMT', 'VHT', 'Hypothetical Freeflow Time', 'Non-Recurring Freeway Delay',
+                            'Motor Vehicle Fatality', 'Motor Vehicle Injury', 'Motor Vehicle Property',
+                            'Walk Fatality', 'Walk Injury', 'Bike Fatality', 'Bike Injury'], axis=1, inplace=True)
     vmt_vht_metrics_df = vmt_vht_metrics_df.unstack().reset_index()
     vmt_vht_metrics_df.rename(columns={"level_0":"Parameter", "vehicle class":"Mode", 0:"value"}, inplace=True)
     vmt_vht_metrics_df["Units"] = "metric tons"

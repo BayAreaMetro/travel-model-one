@@ -42,6 +42,9 @@ if __name__ == '__main__':
     loaded_net_df = loaded_net_df[['a','b','distance','ft']] # we only need a subset of columns
     print "  Read %s lines from %s" % (len(loaded_net_df), roadway_file)
 
+    # filter out FT=10 since those are toll plazas and not real links
+    loaded_net_df = loaded_net_df.loc[loaded_net_df.ft != 10,]
+
     # transform FT to ITHIM FT
     # From M:\Application\ITHIM\2014.06.24_ITHIM_IntegrationManual_MTC.pdf
     ft_mapping = {
@@ -134,11 +137,10 @@ if __name__ == '__main__':
     summary['Passenger Hours Traveled'] = summary['Passenger Minutes Traveled']/60.0
 
     # combine Mode Group + ITHIM_ft => Mode
-    summary['Mode'] = summary['Mode Group'] + str(" - ") + summary['ITHIM_ft']
+    summary['Mode'] = summary['Mode Group'].map(str) + str(" - ") + summary['ITHIM_ft'].map(str)
     summary.loc[summary.Mode=='rail - ', 'Mode'] = 'rail'
     summary.drop(['Mode Group','ITHIM_ft'], axis=1, inplace=True)
     summary = summary[['Mode','Vehicle Miles Traveled','Passenger Miles Traveled','Passenger Hours Traveled']]
-    print summary
 
     # unstack the modes
     summary = summary.set_index('Mode').unstack().reset_index()
