@@ -214,6 +214,14 @@ trn_summary_drive <- tbl_df(dplyr::summarise(transit_trips,
                                              sum_daily_time=sum(dtime))) %>% 
   mutate(Mode='drive to transit')
 
+# these are from trips so they need to be scaled by sample share
+trn_summary_rail$sum_daily_distance  <- trn_summary_rail$sum_daily_distance  /SAMPLESHARE
+trn_summary_rail$sum_daily_time      <- trn_summary_rail$sum_daily_time      /SAMPLESHARE
+trn_summary_bus$sum_daily_distance   <- trn_summary_bus$sum_daily_distance   /SAMPLESHARE
+trn_summary_bus$sum_daily_time       <- trn_summary_bus$sum_daily_time       /SAMPLESHARE
+trn_summary_drive$sum_daily_distance <- trn_summary_drive$sum_daily_distance /SAMPLESHARE
+trn_summary_drive$sum_daily_time     <- trn_summary_drive$sum_daily_time     /SAMPLESHARE
+
 # convert to final format
 trn_summary_rail <- mutate(trn_summary_rail, 'Per Capita Mean Daily Travel Time'    =sum_daily_time/total_pop)
 trn_summary_rail <- mutate(trn_summary_rail, 'Per Capita Mean Daily Travel Distance'=sum_daily_distance/total_pop)
