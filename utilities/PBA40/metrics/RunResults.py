@@ -11,6 +11,7 @@ import numpy
 import xlsxwriter       # for writing workbooks -- formatting is better than openpyxl
 from xlsxwriter.utility import xl_range, xl_rowcol_to_cell
 pd.set_option('display.precision',10)
+pd.set_option('display.width', 500)
 
 USAGE = """
 
@@ -497,8 +498,9 @@ class RunResults:
         quick_summary   = {}
         ######################################################################################
         if self.base_results:
-            zero_taz_list = []
-            if "Zero Logsum TAZs" in self.config:
+            zero_neg_taz_list = []
+            zero_taz_list     = []
+            if ("Zero Logsum TAZs" in self.config) or ("Zero Negative Logsum TAZs" in self.config):
                 # Require a readme about it
                 readme_file = os.path.join(self.rundir, "Zero Out Logsum Diff README.txt")
                 if not os.path.exists(readme_file):
@@ -509,8 +511,13 @@ class RunResults:
                     print "Readme file [%s] is pretty short... It should have more detail about why you're doing this." % readme_file
                     sys.exit(2)
 
-                zero_taz_list = self.parseNumList(self.config["Zero Logsum TAZs"])
-                print "Zeroing out diffs for tazs %s" % str(zero_taz_list)
+                if "Zero Negative Logsum TAZs" in self.config:
+                    zero_neg_taz_list = self.parseNumList(self.config["Zero Negative Logsum TAZs"])
+                    print "Zeroing out negative diffs for tazs %s" % str(zero_neg_taz_list)
+
+                if "Zero Logsum TAZs" in self.config:
+                    zero_taz_list = self.parseNumList(self.config["Zero Logsum TAZs"])
+                    print "Zeroing out diffs for tazs %s" % str(zero_taz_list)
 
             # Take the difference and convert utils to minutes (k_ivt = 0.0134 k_mc_ls = 1.0 in access calcs);
             # TODO: is k_mc_ls = 1.0?  DestinationChoice.cls has different values
@@ -521,16 +528,24 @@ class RunResults:
                 self.mandatoryAccessibilities.scen_dclogsum - self.mandatoryAccessibilities.base_dclogsum
 
             # zero out negative diffs if directed
+            if len(zero_neg_taz_list) > 0:
+                self.mandatoryAccessibilities.loc[(self.mandatoryAccessibilities.taz.isin(zero_neg_taz_list)) & (self.mandatoryAccessibilities.diff_dclogsum<0), 'diff_dclogsum'] = 0.0
+
+            # zero out diffs if directed
             if len(zero_taz_list) > 0:
-                self.mandatoryAccessibilities.loc[(self.mandatoryAccessibilities.taz.isin(zero_taz_list)) & (self.mandatoryAccessibilities.diff_dclogsum<0), 'diff_dclogsum'] = 0.0
+                self.mandatoryAccessibilities.loc[self.mandatoryAccessibilities.taz.isin(zero_taz_list), 'diff_dclogsum'] = 0.0
 
             self.mandatoryAccessibilities['logsum_diff_minutes'] = self.mandatoryAccessibilities.diff_dclogsum / 0.0134
 
 
             # Cliff Effect Mitigation
             mand_ldm_max = self.mandatoryAccessibilities.logsum_diff_minutes.abs().max()
-            self.mandatoryAccessibilities['ldm_ratio'] = self.mandatoryAccessibilities.logsum_diff_minutes.abs()/mand_ldm_max    # how big is the magnitude compared to max magnitude?
-            self.mandatoryAccessibilities['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(self.mandatoryAccessibilities.ldm_ratio-RunResults.CEM_THRESHOLD)/RunResults.CEM_SHALLOW))
+            if mand_ldm_max < 0.00001:
+                self.mandatoryAccessibilities['ldm_ratio'] = 1.0
+                self.mandatoryAccessibilities['ldm_mult' ] = 1.0
+            else:
+                self.mandatoryAccessibilities['ldm_ratio'] = self.mandatoryAccessibilities.logsum_diff_minutes.abs()/mand_ldm_max    # how big is the magnitude compared to max magnitude?
+                self.mandatoryAccessibilities['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(self.mandatoryAccessibilities.ldm_ratio-RunResults.CEM_THRESHOLD)/RunResults.CEM_SHALLOW))
             self.mandatoryAccessibilities['ldm_cem']   = self.mandatoryAccessibilities.logsum_diff_minutes*self.mandatoryAccessibilities.ldm_mult
 
             # This too
@@ -541,8 +556,12 @@ class RunResults:
                 self.nonmandatoryAccessibilities.scen_dclogsum - self.nonmandatoryAccessibilities.base_dclogsum
 
             # zero out negative diffs if directed
+            if len(zero_neg_taz_list) > 0:
+                self.nonmandatoryAccessibilities.loc[(self.nonmandatoryAccessibilities.taz.isin(zero_neg_taz_list)) & (self.nonmandatoryAccessibilities.diff_dclogsum<0), 'diff_dclogsum'] = 0.0
+
+            # zero out diffs if directed
             if len(zero_taz_list) > 0:
-                self.nonmandatoryAccessibilities.loc[(self.nonmandatoryAccessibilities.taz.isin(zero_taz_list)) & (self.nonmandatoryAccessibilities.diff_dclogsum<0), 'diff_dclogsum'] = 0.0
+                self.nonmandatoryAccessibilities.loc[self.nonmandatoryAccessibilities.taz.isin(zero_taz_list), 'diff_dclogsum'] = 0.0
 
             self.nonmandatoryAccessibilities['logsum_diff_minutes'] = self.nonmandatoryAccessibilities.diff_dclogsum / 0.0175
 
@@ -559,12 +578,12 @@ class RunResults:
             self.mandatoryAccess = pd.merge(self.mandatoryAccessibilities,
                                             self.accessibilityMarkets,
                                             how='left')
-            self.mandatoryAccess.fillna(0)
+            self.mandatoryAccess.fillna(0, inplace=True)
 
             self.nonmandatoryAccess = pd.merge(self.nonmandatoryAccessibilities,
                                                self.accessibilityMarkets,
                                                how='left')
-            self.nonmandatoryAccess.fillna(0)
+            self.nonmandatoryAccess.fillna(0, inplace=True)
 
             # Cliff Effect Mitigated - rule of one-half
             cat1         = 'Travel Time & Cost (Cliff Effect Mitigation)'
@@ -1227,8 +1246,11 @@ class RunResults:
             # details
             worksheet.write(row,0,key[2],format_var)
 
-            worksheet.write(row,1 if not already_diff else 3,value,
-                            format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
+            if numpy.isnan(value):
+                worksheet.write(row,1 if not already_diff else 3,"nan")
+            else:
+                worksheet.write(row,1 if not already_diff else 3,value,
+                                format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
 
             if already_diff:
                 bc_metrics[(cat1,cat2,key[2],'Daily Difference')] = value

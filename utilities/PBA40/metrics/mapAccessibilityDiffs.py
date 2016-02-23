@@ -195,10 +195,15 @@ if __name__ == '__main__':
         print "This script only supports Compare=scenario-baseline right now."
         raise
 
+    zero_neg_taz_list = []
     zero_taz_list = []
+    if "Zero Negative Logsum TAZs" in config:
+        zero_neg_taz_list = parseNumList(config["Zero Negative Logsum TAZs"])
+        print "Zeroing out negative diffs for tazs %s" % str(zero_neg_taz_list)
+
     if "Zero Logsum TAZs" in config:
         zero_taz_list = parseNumList(config["Zero Logsum TAZs"])
-        print "Zeroing out logsum diffs for %s" % str(zero_taz_list)
+        print "Zeroing out diffs for tazs %s" % str(zero_taz_list)
 
     base_run_dir = config['base_dir']
     # strip off OUTPUT\metrics
@@ -224,13 +229,15 @@ if __name__ == '__main__':
     mand_acc      = pandas.merge(scen_mand_acc, base_mand_acc, how='left')
     mand_acc['logsum_diff']         = mand_acc.scen_dclogsum - mand_acc.base_dclogsum
     # zero out negative diffs if directed
-    if len(zero_taz_list) > 0: mand_acc.loc[(mand_acc.taz.isin(zero_taz_list)) & (mand_acc.logsum_diff<0), 'logsum_diff'] = 0.0
+    if len(zero_neg_taz_list) > 0: mand_acc.loc[(mand_acc.taz.isin(zero_neg_taz_list)) & (mand_acc.logsum_diff<0), 'logsum_diff'] = 0.0
+    if len(zero_taz_list    ) > 0: mand_acc.loc[(mand_acc.taz.isin(zero_taz_list    ))                           , 'logsum_diff'] = 0.0
     mand_acc['logsum_diff_minutes'] = mand_acc.logsum_diff / 0.0134
 
     nonm_acc      = pandas.merge(scen_nonm_acc, base_nonm_acc, how='left')
     nonm_acc['logsum_diff']         = nonm_acc.scen_dclogsum - nonm_acc.base_dclogsum
     # zero out negative diffs if directed
-    if len(zero_taz_list) > 0: nonm_acc.loc[(nonm_acc.taz.isin(zero_taz_list)) & (nonm_acc.logsum_diff<0), 'logsum_diff'] = 0.0
+    if len(zero_neg_taz_list) > 0: mand_acc.loc[(nonm_acc.taz.isin(zero_neg_taz_list)) & (nonm_acc.logsum_diff<0), 'logsum_diff'] = 0.0
+    if len(zero_taz_list    ) > 0: mand_acc.loc[(nonm_acc.taz.isin(zero_taz_list    ))                           , 'logsum_diff'] = 0.0
     nonm_acc['logsum_diff_minutes'] = nonm_acc.logsum_diff / 0.0175
 
     # Cliff Effect Mitigation
