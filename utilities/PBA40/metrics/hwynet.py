@@ -155,9 +155,9 @@ for ab,row in data.iteritems():
 			hypfft[(period,vclass)] += float( row[headers[volname]] ) * \
 			                           float( row[headers['fft']]   ) / 60.0
 
-			# for this, we only care about ft=1 or ft=2 (freeway-to-freeway connectors, freeways)
+			# for this, we only care about ft=1 or ft=2 or ft==8 (freeway-to-freeway connectors, freeways, managed freeways)
 			# http://analytics.mtc.ca.gov/foswiki/Main/MasterNetworkLookupTables
-			if int( row[headers['ft']] ) < 3:
+			if int( row[headers['ft']] ) in [1,2,8]:
 				vcratio = "%.2f" % min(1.0, float(row[headers['vc'+period]]))
 				lanes   = int(row[headers['lanes']])
 				if lanes < 2: lanes = 2

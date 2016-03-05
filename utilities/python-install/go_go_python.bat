@@ -25,8 +25,8 @@ cd TDE-API-Python-64Bit\DataExtract-8300.15.0308.1149
 python setup.py install
 cd ..\..
 
-:: numpy
-pip install numpy-1.9.2+mkl-cp27-none-win_amd64.whl
+:: numpy (note: may need to uninstall prior version)
+pip install numpy-1.10.4+mkl-cp27-cp27m-win_amd64.whl
 
 :: pandas
 pip install pandas-0.16.1-cp27-none-win_amd64.whl
@@ -39,3 +39,10 @@ pip install rpy2-2.7.0-cp27-none-win_amd64.whl
 
 ::pywin32
 pip install pywin32-219-cp27-none-win_amd64.whl
+
+::pysal
+pip install PySAL-1.11.0-py2-none-any.whl
+
+::scipy
+pip install scipy-0.17.0-cp27-none-win_amd64.whl
+
