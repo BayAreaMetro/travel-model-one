@@ -15,7 +15,7 @@ DESCRIPTION = """
     4) Calculates bus operating cost by reading the transit assignment files
        (trn/trnlink[ea,am,md,pm,ev]_wlk_exp_wlk.csv) and joining them with the
        roadway network (hwy/iter3/avgload5period_vehclasses.csv); outputs
-       metrics/bus_opcost.csv
+       metrics/bus_opcost.csv (if it doesn't exist already)
 
     5) Copies the output file metrics/bus_opcost.csv to extractor/
 
@@ -48,16 +48,18 @@ MODEL_MACHINES_TO_MAPPED_DRIVES = {
 }
 
 ROAD_SGR_RUNS = [
-    ("2040_05_503_1401", "model2-a", "1401_LSRSGR_nofunding"          ),
-    ("2040_05_503_1402", "model2-a", "1402_LSRSGR_localfunding"       ),
-    ("2040_05_503_1403", "model2-b", "1403_LSRSGR_preservePCI"        ),
-    ("2040_05_503_1405", "model2-b", "1405_LSRSGR_localfunding_weight"),
-    ("2040_05_503_1406", "model2-b", "1406_LSRSGR_preservePCI_weight" ),
-    ("2040_05_503_1407", "model2-d", "1407_LSRSGR_idealPCI"           ),
-    ("2040_05_503_1408", "model2-d", "1408_LSRSGR_idealPCI_weight"    ),
-    ("2040_05_503_1501", "model2-a", "1501_Highway_nofunding"         ),
-    ("2040_05_503_1502", "model2-a", "1502_Highway_current"           ),
-    ("2040_05_503_1503", "model2-b", "1503_HighwaySGR_idealIRI"       ),
+    ("2040_05_503_1401",   "model2-a", "1401_LSRSGR_nofunding"          ),
+    ("2040_05_503_1402",   "model2-a", "1402_LSRSGR_localfunding"       ),
+    ("2040_05_503_1402_a", "model2-c", "1402_a_LSRSGR_localfunding"     ),
+    ("2040_05_503_1403",   "model2-b", "1403_LSRSGR_preservePCI"        ),
+    ("2040_05_503_1403_a", "model2-d", "1403_a_LSRSGR_preservePCI"      ),
+    ("2040_05_503_1405",   "model2-b", "1405_LSRSGR_localfunding_weight"),
+    ("2040_05_503_1406",   "model2-b", "1406_LSRSGR_preservePCI_weight" ),
+    ("2040_05_503_1407",   "model2-d", "1407_LSRSGR_idealPCI"           ),
+    ("2040_05_503_1408",   "model2-d", "1408_LSRSGR_idealPCI_weight"    ),
+    ("2040_05_503_1501",   "model2-a", "1501_Highway_nofunding"         ),
+    ("2040_05_503_1502",   "model2-a", "1502_Highway_current"           ),
+    ("2040_05_503_1503",   "model2-b", "1503_HighwaySGR_idealIRI"       ),
 ]
 
 def read_dbf(dbf_fullpath):
@@ -139,68 +141,76 @@ if __name__ == '__main__':
         roadnet_df = roadnet_df[['a','b','state','cityid','cityname','busopc','busopc_pave']]
 
         trn_busopc_df = 0
-        trn_busopc_df_init = False
-        for timeperiod_tuple in TIMEPERIODS:
 
-            timeperiod          = timeperiod_tuple[0]
-            timeperiod_duration = timeperiod_tuple[1]
-
-            # 4) calculate bus operating cost by reading the transit assignment files
-            trn_asgn_df = read_dbf(os.path.join(MODEL_MACHINES_TO_MAPPED_DRIVES[model_machine],
-                                                "Projects",model_machine_dir,"trn","trnlink%s_wlk_exp_wlk.dbf" % timeperiod))
-
-            # we only want bus lines
-            trn_asgn_df = trn_asgn_df.loc[(trn_asgn_df.MODE >= 10)&(trn_asgn_df.MODE<100)]
-
-            # FREQ minutes/1 bus
-            # => of runs = time period minutes x (1 bus/freq minutes)
-            # e.g. 3 hours x (60 min/hour) x (1 bus/30 min) = 6
-            trn_asgn_df['bus runs'] = timeperiod_duration*60/trn_asgn_df['FREQ']
-            trn_asgn_df['bus miles'] = trn_asgn_df['bus runs'] * trn_asgn_df['DIST']*0.01
-
-            # join to the roadway network
-            trn_asgn_df = pandas.merge(left=trn_asgn_df, right=roadnet_df, how='left', left_on=['A','B'], right_on=['a','b'])
-            # busopc are in 2000 cents per mile. Convert these to 2000 dollars and multiply by bus runs to get daily,
-            # then by 300 to get annual, then by 1.49 to get 2017 dollars.
-            trn_asgn_df['total bus opcost'         ] = trn_asgn_df['bus runs'] * (0.01*trn_asgn_df['busopc']     ) * (trn_asgn_df['DIST']*0.01) * 300 * 1.49
-            trn_asgn_df['total bus pavement opcost'] = trn_asgn_df['bus runs'] * (0.01*trn_asgn_df['busopc_pave']) * (trn_asgn_df['DIST']*0.01) * 300 * 1.49
-
-            # check join failures
-            join_fail_miles = trn_asgn_df.loc[pandas.isnull(trn_asgn_df.busopc), 'bus miles'].sum()
-            total_miles     = trn_asgn_df.loc[:,'bus miles'].sum()
-            print "  %s: %d bus miles failed to join out of %d => %.1f%%" % (timeperiod, join_fail_miles, total_miles, 100.0*join_fail_miles/total_miles)
-            # sum up Bus Miles Traveled, Bus Opcost, Bus Opcost from Pavement by mode
-
-            trn_by_mode = trn_asgn_df.groupby('MODE', as_index=False).agg({'total bus opcost':numpy.sum,
-                                                                           'total bus pavement opcost':numpy.sum,
-                                                                           'bus miles':numpy.sum})
-            trn_by_mode['timeperiod'] = timeperiod
-            trn_by_mode['m_dir']      = m_dir
-            trn_by_mode['model_dir']  = model_machine_dir
-            # print trn_by_mode.head()
-
-            if trn_busopc_df_init==False: # it doesn't like checking if a dataFrame is none
-                trn_busopc_df = trn_by_mode
-                trn_busopc_df_init = True
-            else:
-                trn_busopc_df = trn_busopc_df.append(trn_by_mode)
-            # print "Full table has length %d" % len(trn_busopc_df)
-
-        run_busopc_file = os.path.join(MODEL_MACHINES_TO_MAPPED_DRIVES[model_machine],
-                                       "Projects", model_machine_dir,"metrics","bus_opcost.csv")
-        print "  Writing file %s" % run_busopc_file
-        trn_busopc_df.to_csv(run_busopc_file,index=False)
-
-        # 5) Copies the output file metrics/bus_opcost.csv to extractor/
-        extractor_file = os.path.join(MODEL_MACHINES_TO_MAPPED_DRIVES[model_machine],
-                                      "Projects", model_machine_dir,"extractor","bus_opcost.csv")
-        print "  Copying to %s" % extractor_file
-        shutil.copy2(run_busopc_file, extractor_file)
-
-        # 6) Copies the outputfile metrics/bus_opcost.csv to the M: drive
         m_file = os.path.join(m_dir, "OUTPUT", "bus_opcost.csv")
-        print "  Copying to %s" % m_file
-        shutil.copy2(run_busopc_file, m_file)
+        # if the bus_opcost file exists, just read it
+        if os.path.exists(m_file):
+            trn_busopc_df = pandas.read_csv(m_file, sep=",")
+            print "  Read %s" % m_file
+
+        else:
+
+            trn_busopc_df_init = False
+            for timeperiod_tuple in TIMEPERIODS:
+    
+                timeperiod          = timeperiod_tuple[0]
+                timeperiod_duration = timeperiod_tuple[1]
+    
+                # 4) calculate bus operating cost by reading the transit assignment files
+                trn_asgn_df = read_dbf(os.path.join(MODEL_MACHINES_TO_MAPPED_DRIVES[model_machine],
+                                                    "Projects",model_machine_dir,"trn","trnlink%s_wlk_exp_wlk.dbf" % timeperiod))
+    
+                # we only want bus lines
+                trn_asgn_df = trn_asgn_df.loc[(trn_asgn_df.MODE >= 10)&(trn_asgn_df.MODE<100)]
+    
+                # FREQ minutes/1 bus
+                # => of runs = time period minutes x (1 bus/freq minutes)
+                # e.g. 3 hours x (60 min/hour) x (1 bus/30 min) = 6
+                trn_asgn_df['bus runs'] = timeperiod_duration*60/trn_asgn_df['FREQ']
+                trn_asgn_df['bus miles'] = trn_asgn_df['bus runs'] * trn_asgn_df['DIST']*0.01
+    
+                # join to the roadway network
+                trn_asgn_df = pandas.merge(left=trn_asgn_df, right=roadnet_df, how='left', left_on=['A','B'], right_on=['a','b'])
+                # busopc are in 2000 cents per mile. Convert these to 2000 dollars and multiply by bus runs to get daily,
+                # then by 300 to get annual, then by 1.49 to get 2017 dollars.
+                trn_asgn_df['total bus opcost'         ] = trn_asgn_df['bus runs'] * (0.01*trn_asgn_df['busopc']     ) * (trn_asgn_df['DIST']*0.01) * 300 * 1.49
+                trn_asgn_df['total bus pavement opcost'] = trn_asgn_df['bus runs'] * (0.01*trn_asgn_df['busopc_pave']) * (trn_asgn_df['DIST']*0.01) * 300 * 1.49
+    
+                # check join failures
+                join_fail_miles = trn_asgn_df.loc[pandas.isnull(trn_asgn_df.busopc), 'bus miles'].sum()
+                total_miles     = trn_asgn_df.loc[:,'bus miles'].sum()
+                print "  %s: %d bus miles failed to join out of %d => %.1f%%" % (timeperiod, join_fail_miles, total_miles, 100.0*join_fail_miles/total_miles)
+                # sum up Bus Miles Traveled, Bus Opcost, Bus Opcost from Pavement by mode
+    
+                trn_by_mode = trn_asgn_df.groupby('MODE', as_index=False).agg({'total bus opcost':numpy.sum,
+                                                                               'total bus pavement opcost':numpy.sum,
+                                                                               'bus miles':numpy.sum})
+                trn_by_mode['timeperiod'] = timeperiod
+                trn_by_mode['m_dir']      = m_dir
+                trn_by_mode['model_dir']  = model_machine_dir
+                # print trn_by_mode.head()
+    
+                if trn_busopc_df_init==False: # it doesn't like checking if a dataFrame is none
+                    trn_busopc_df = trn_by_mode
+                    trn_busopc_df_init = True
+                else:
+                    trn_busopc_df = trn_busopc_df.append(trn_by_mode)
+                # print "Full table has length %d" % len(trn_busopc_df)
+    
+            run_busopc_file = os.path.join(MODEL_MACHINES_TO_MAPPED_DRIVES[model_machine],
+                                           "Projects", model_machine_dir,"metrics","bus_opcost.csv")
+            print "  Writing file %s" % run_busopc_file
+            trn_busopc_df.to_csv(run_busopc_file,index=False)
+    
+            # 5) Copies the output file metrics/bus_opcost.csv to extractor/
+            extractor_file = os.path.join(MODEL_MACHINES_TO_MAPPED_DRIVES[model_machine],
+                                          "Projects", model_machine_dir,"extractor","bus_opcost.csv")
+            print "  Copying to %s" % extractor_file
+            shutil.copy2(run_busopc_file, extractor_file)
+    
+            # 6) Copies the outputfile metrics/bus_opcost.csv to the M: drive
+            print "  Copying to %s" % m_file
+            shutil.copy2(run_busopc_file, m_file)
 
         # append to all run bus opc dataframe
         if all_trn_busopc_init==False:
