@@ -82,6 +82,15 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     traveltime_df = traveltime_df.loc[(traveltime_df.wTrnW <=45)|(traveltime_df.da <=30)]
     print "  Out of %d O/D pairs, %d are accessible within 45 min wTrnW or 30 min da" % (len_traveltime_df, len(traveltime_df))
 
+    # separate the three disjoint sets
+    traveltime_df['trn_only'] = 0
+    traveltime_df['drv_only'] = 0
+    traveltime_df['trn_drv' ] = 0
+    traveltime_df.loc[ (traveltime_df.wTrnW <=45)&((traveltime_df.da  >30)|pandas.isnull(traveltime_df.da)), 'trn_only'] = 1
+    traveltime_df.loc[((traveltime_df.wTrnW > 45)|pandas.isnull(traveltime_df.wTrnW))&(traveltime_df.da <=30), 'drv_only'] = 1
+    traveltime_df.loc[ (traveltime_df.wTrnW <=45)&(traveltime_df.da <=30), 'trn_drv' ] = 1
+    assert(traveltime_df.trn_only.sum() + traveltime_df.drv_only.sum() + traveltime_df.trn_drv.sum() == len(traveltime_df))
+
     # destinations are jobs => find number of jobs accessible from each TAZ within the travel time windows
     tazdata_df = pandas.read_csv(os.path.join("landuse", "tazData.csv"), sep=",")
     tazdata_df = tazdata_df[['ZONE','TOTHH','TOTPOP','EMPRES','TOTEMP']]
@@ -92,25 +101,40 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
                                  left_on="dest",     right_on="ZONE",
                                  how="left")
     traveltime_df.drop('ZONE', axis=1, inplace=True)  # ZONE == dest
+    # make these total employment
+    traveltime_df.trn_only = traveltime_df.trn_only*traveltime_df.TOTEMP
+    traveltime_df.drv_only = traveltime_df.drv_only*traveltime_df.TOTEMP
+    traveltime_df.trn_drv  = traveltime_df.trn_drv *traveltime_df.TOTEMP
+    # print traveltime_df.head()
 
     # aggregate to origin
     traveltime_df_grouped = traveltime_df.groupby(['orig'])
-    accessiblejobs_df = traveltime_df_grouped.agg({'da':numpy.mean, 'wTrnW':numpy.mean, 'TOTEMP':numpy.sum})
+    accessiblejobs_df = traveltime_df_grouped.agg({'da':numpy.mean, 'wTrnW':numpy.mean,
+                                                  'TOTEMP':numpy.sum, 'trn_only':numpy.sum, 'drv_only':numpy.sum, 'trn_drv':numpy.sum})
     # print accessiblejobs_df.head()
 
     # join persons to origin
     accessiblejobs_df = pandas.merge(left=accessiblejobs_df, right=tazdata_df[['ZONE','TOTPOP']],
                                      left_index=True,         right_on="ZONE",
                                      how="left")
-    accessiblejobs_df['TOTEMP_weighted'] = accessiblejobs_df['TOTEMP']*accessiblejobs_df['TOTPOP']
+    accessiblejobs_df[  'TOTEMP_weighted'] = accessiblejobs_df[  'TOTEMP']*accessiblejobs_df['TOTPOP']
+    accessiblejobs_df['trn_only_weighted'] = accessiblejobs_df['trn_only']*accessiblejobs_df['TOTPOP']
+    accessiblejobs_df['drv_only_weighted'] = accessiblejobs_df['drv_only']*accessiblejobs_df['TOTPOP']
+    accessiblejobs_df[ 'trn_drv_weighted'] = accessiblejobs_df[ 'trn_drv']*accessiblejobs_df['TOTPOP']
     # print accessiblejobs_df.head()
 
     # numerator = accessible jobs weighted by persons
     #  e.g. sum over TAZs of (totpop at TAZ x totemp jobs accessible)
     # denominator = total jobs weighted by persons
-    metrics_dict['jobacc_acc_jobs_weighted_persons']   = accessiblejobs_df['TOTEMP_weighted'].sum()
-    metrics_dict['jobacc_total_jobs_weighted_persons'] = total_emp*total_pop
-    metrics_dict['jobacc_accessible_job_share']        = float(metrics_dict['jobacc_acc_jobs_weighted_persons']) / float(metrics_dict['jobacc_total_jobs_weighted_persons'])
+    metrics_dict['jobacc_acc_jobs_weighted_persons'         ]   = accessiblejobs_df[  'TOTEMP_weighted'].sum()
+    metrics_dict['jobacc_trn_only_acc_jobs_weighted_persons']   = accessiblejobs_df['trn_only_weighted'].sum()
+    metrics_dict['jobacc_drv_only_acc_jobs_weighted_persons']   = accessiblejobs_df['drv_only_weighted'].sum()
+    metrics_dict['jobacc_trn_drv_acc_jobs_weighted_persons' ]   = accessiblejobs_df[ 'trn_drv_weighted'].sum()
+    metrics_dict['jobacc_total_jobs_weighted_persons'       ] = total_emp*total_pop
+    metrics_dict['jobacc_accessible_job_share'              ]        = float(metrics_dict['jobacc_acc_jobs_weighted_persons'         ]) / float(metrics_dict['jobacc_total_jobs_weighted_persons'])
+    metrics_dict['jobacc_trn_only_acc_accessible_job_share' ]        = float(metrics_dict['jobacc_trn_only_acc_jobs_weighted_persons']) / float(metrics_dict['jobacc_total_jobs_weighted_persons'])
+    metrics_dict['jobacc_drv_only_acc_accessible_job_share' ]        = float(metrics_dict['jobacc_drv_only_acc_jobs_weighted_persons']) / float(metrics_dict['jobacc_total_jobs_weighted_persons'])
+    metrics_dict['jobacc_trn_drv_acc_accessible_job_share'  ]        = float(metrics_dict['jobacc_trn_drv_acc_jobs_weighted_persons' ]) / float(metrics_dict['jobacc_total_jobs_weighted_persons'])
 
 def tally_goods_movement_delay(iteration, sampleshare, metrics_dict):
     """

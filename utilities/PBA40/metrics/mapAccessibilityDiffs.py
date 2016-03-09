@@ -242,13 +242,21 @@ if __name__ == '__main__':
 
     # Cliff Effect Mitigation
     mand_ldm_max = mand_acc.logsum_diff_minutes.abs().max()
-    mand_acc['ldm_ratio'] = mand_acc.logsum_diff_minutes.abs()/mand_ldm_max    # how big is the magnitude compared to max magnitude?
-    mand_acc['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(mand_acc.ldm_ratio-CEM_THRESHOLD)/CEM_SHALLOW))
+    if mand_ldm_max < 0.00001:
+        mand_acc['ldm_ratio'] = 1.0
+        mand_acc['ldm_mult' ] = 1.0
+    else:
+        mand_acc['ldm_ratio'] = mand_acc.logsum_diff_minutes.abs()/mand_ldm_max    # how big is the magnitude compared to max magnitude?
+        mand_acc['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(mand_acc.ldm_ratio-CEM_THRESHOLD)/CEM_SHALLOW))
     mand_acc['ldm_cem']   = mand_acc.logsum_diff_minutes*mand_acc.ldm_mult
 
     nonm_ldm_max = nonm_acc.logsum_diff_minutes.abs().max()
-    nonm_acc['ldm_ratio'] = nonm_acc.logsum_diff_minutes.abs()/nonm_ldm_max    # how big is the magnitude compared to max magnitude?
-    nonm_acc['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(nonm_acc.ldm_ratio-CEM_THRESHOLD)/CEM_SHALLOW))
+    if nonm_ldm_max < 0.00001:
+        nonm_acc['ldm_ratio'] = 1.0
+        nonm_acc['ldm_mult' ] = 1.0
+    else:
+        nonm_acc['ldm_ratio'] = nonm_acc.logsum_diff_minutes.abs()/nonm_ldm_max    # how big is the magnitude compared to max magnitude?
+        nonm_acc['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(nonm_acc.ldm_ratio-CEM_THRESHOLD)/CEM_SHALLOW))
     nonm_acc['ldm_cem']   = nonm_acc.logsum_diff_minutes*nonm_acc.ldm_mult
 
     # add market columns
