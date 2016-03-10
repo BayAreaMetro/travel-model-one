@@ -89,7 +89,7 @@ def create_map(proj_dir, CWD, pivot_df, mand_nonm, reduced_noise):
         symb_lyr.symbology.valueField = "mandat_108"
         colname = 'cs_hours'
     else:
-        symb_lyr.symbology.valueField = "mandat_111"
+        symb_lyr.symbology.valueField = "mandat_112"
         colname = 'cs_hours_cem'
     cs_mean = pivot_df[colname].mean()
     cs_std  = pivot_df[colname].std()
