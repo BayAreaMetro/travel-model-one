@@ -37,9 +37,9 @@ if (!file.exists(file.path(TARGET_DIR,"updated_output"))) {
 }
 SAMPLESHARE <- as.numeric(SAMPLESHARE)
 
-cat("TARGET_DIR  = ",TARGET_DIR)
-cat("ITER        = ",ITER)
-cat("SAMPLESHARE = ",SAMPLESHARE)
+cat("TARGET_DIR  = ",TARGET_DIR, "\n")
+cat("ITER        = ",ITER,       "\n")
+cat("SAMPLESHARE = ",SAMPLESHARE,"\n")
 
 
 # Overhead
@@ -1249,7 +1249,7 @@ auto_trips <- mutate(auto_trips,
                                (num_participants==1)*(trip_mode==5)*(distance/3.25) +
                                (num_participants==1)*(trip_mode==6)*(distance/3.25))/SAMPLESHARE,
                      vmt_joint=(num_participants>1)*(distance/num_participants)/SAMPLESHARE,
-                     vmt=(vmt_indiv+vmt_joint)/SAMPLESHARE,
+                     vmt=(vmt_indiv+vmt_joint),
                      trips=1.0/SAMPLESHARE)
 auto_trips <- select(auto_trips, hh_id, person_id, orig_taz, dest_taz, vmt, vmt_indiv, vmt_joint, trips)
 auto_trips <- left_join(auto_trips, select(vmt_persons, hh_id, person_id, taz, WorkLocation), 
