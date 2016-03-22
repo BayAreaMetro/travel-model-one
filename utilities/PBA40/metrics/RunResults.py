@@ -520,7 +520,6 @@ class RunResults:
                     print "Zeroing out diffs for tazs %s" % str(zero_taz_list)
 
             # Take the difference and convert utils to minutes (k_ivt = 0.0134 k_mc_ls = 1.0 in access calcs);
-            # TODO: is k_mc_ls = 1.0?  DestinationChoice.cls has different values
             self.mandatoryAccessibilities = pd.merge(self.mandatoryAccessibilities,
                                                      self.base_results.mandatoryAccessibilities,
                                                     how='left')

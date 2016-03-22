@@ -302,7 +302,7 @@ These are for reference and they are tallied by [sumNonMotTimes.job](sumNonMotTi
 This section is also for reference. It contains a tally of walk and bike times, tallied by
 [sumNonMotTimes.job](sumNonMotTimes.job), as well as walk time from transit trips (from access, egress
 and transfers) tallied by [sumTransitTimes.job](sumTransitTimes.job).  The times are summed and then averaged across the
-projected population. **TODO: Make projected population configurable.**
+projected population.
 
 #### Active Individuals
 

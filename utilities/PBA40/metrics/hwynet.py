@@ -64,7 +64,7 @@ for row in reader:
 infile.close()
 # print headers
 
-# TODO: What are the units in this file?  Hours delay per VMT?  Minutes?
+# units: Hours delay per VMT
 # Map headers -> index for this lookup and read lookup data
 nrclookup       = {} # key = vcratio, as string, %.2f
 infile    		= open(os.path.join(lookupdir,"nonRecurringDelayLookup.csv"))
@@ -76,7 +76,7 @@ for row in reader:
 infile.close()
 # print nrclookup
 
-# TODO: Units are collisions per 1,000,000 VMT?
+# Units are collisions per 1,000,000 VMT
 # Map headers -> index for this lokup and read lookup data
 collisionlookup = {} # key = (at,ft,lanes)
 infile        	= open(os.path.join(lookupdir,"collisionLookup.csv"))
