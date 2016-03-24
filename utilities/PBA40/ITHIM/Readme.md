@@ -23,10 +23,11 @@ Model) for California.  They work as follows:
     output is produced by [net2csv_ avgload5period.job](../metrics/net2csv_avgload5period.job)
 * [DistanceTraveledByFacilityType_transit.py](DistanceTraveledByFacilityType_transit.py)
   * *What:* Summarizes the transit assignment output by joining to the network and summarizing bus miles by facility type.
-  * *Notes:* For vehicle travel distances and miles, transit is assumed to run throughout the time period (which may be over-counting for EV). 
+  * *Notes:* For vehicle travel distances and miles, transit is assumed to run throughout the time period (which may be over-counting for EV).
 * [rollupITHIM.py](rollupITHIM.py)
   * *What:* This rolls together the outputs from the other scripts into a single file, and adds columns so that the resulting output is the
     expected format.
+
 
 * [reformatEmissions.py](reformatEmissions.py)
   * *What:* This was to the emissions output for ITHIM, but it's not currently being used.
