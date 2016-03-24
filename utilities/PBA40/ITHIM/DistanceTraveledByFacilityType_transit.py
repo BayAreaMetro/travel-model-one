@@ -48,18 +48,19 @@ if __name__ == '__main__':
     # transform FT to ITHIM FT
     # From M:\Application\ITHIM\2014.06.24_ITHIM_IntegrationManual_MTC.pdf
     ft_mapping = {
-        1: "Freeway",   # Freeway-to-freeway connector
-        2: "Freeway",   # Freeway
-        3: "Freeway",   # Expressway
-        4: "Arterial",  # Collector
-        5: "Freeway",   # Freeway ramp
-        6: "Local",     # Dummy link
-        7: "Arterial",  # Major arterial
-        8: "Freeway",   # Managed freeway
+        1: "freeway",   # Freeway-to-freeway connector
+        2: "freeway",   # Freeway
+        3: "freeway",   # Expressway
+        4: "arterial",  # Collector
+        5: "freeway",   # Freeway ramp
+        6: "local",     # Dummy link
+        7: "arterial",  # Major arterial
+        8: "freeway",   # Managed freeway
         9: "unknown"    # Special facility
     }
-    loaded_net_df["ITHIM_ft"] = loaded_net_df["ft"]
-    loaded_net_df.replace({"ITHIM_ft":ft_mapping}, inplace=True)
+    # the ITHIM facility type is a strata
+    loaded_net_df["strata"] = loaded_net_df["ft"]
+    loaded_net_df.replace({"strata":ft_mapping}, inplace=True)
     loaded_net_df.rename(columns={'a':'A', 'b':'B'}, inplace=True)
     loaded_net_df.drop("ft", axis=1, inplace=True)
     # print loaded_net_df.head()
@@ -92,23 +93,23 @@ if __name__ == '__main__':
 
     # Recode Line-haul modes to ITHIM modes
     # Line-haul modes http://analytics.mtc.ca.gov/foswiki/Main/TransitNetworkCoding
-    trnlines_df['Mode Group'] = 'Non-Transit'
-    trnlines_df.loc[(trnlines_df.MODE >= 10)&(trnlines_df.MODE < 80), 'Mode Group'] = 'bus'    # Local bus
-    trnlines_df.loc[(trnlines_df.MODE >= 80)&(trnlines_df.MODE <100), 'Mode Group'] = 'bus'    # Express bus
-    trnlines_df.loc[(trnlines_df.MODE >=100)&(trnlines_df.MODE <110), 'Mode Group'] = 'rail'   # Ferry
-    trnlines_df.loc[(trnlines_df.MODE >=110)&(trnlines_df.MODE <120), 'Mode Group'] = 'rail'   # Light rail
-    trnlines_df.loc[(trnlines_df.MODE >=120)&(trnlines_df.MODE <130), 'Mode Group'] = 'rail'   # Heavy rail
-    trnlines_df.loc[(trnlines_df.MODE >=130)&(trnlines_df.MODE <140), 'Mode Group'] = 'rail'   # Commuter rail
+    trnlines_df['mode'] = 'Non-Transit'
+    trnlines_df.loc[(trnlines_df.MODE >= 10)&(trnlines_df.MODE < 80), 'mode'] = 'bus'    # Local bus
+    trnlines_df.loc[(trnlines_df.MODE >= 80)&(trnlines_df.MODE <100), 'mode'] = 'bus'    # Express bus
+    trnlines_df.loc[(trnlines_df.MODE >=100)&(trnlines_df.MODE <110), 'mode'] = 'rail'   # Ferry
+    trnlines_df.loc[(trnlines_df.MODE >=110)&(trnlines_df.MODE <120), 'mode'] = 'rail'   # Light rail
+    trnlines_df.loc[(trnlines_df.MODE >=120)&(trnlines_df.MODE <130), 'mode'] = 'rail'   # Heavy rail
+    trnlines_df.loc[(trnlines_df.MODE >=130)&(trnlines_df.MODE <140), 'mode'] = 'rail'   # Commuter rail
 
     # Lose the Non-transit modes (access, egres, transfers)
-    trnlines_df = trnlines_df.loc[trnlines_df['Mode Group'] != 'Non-Transit']
+    trnlines_df = trnlines_df.loc[trnlines_df['mode'] != 'Non-Transit']
 
     # print trnlines_df.head()
-    # print trnlines_df['Mode Group'].value_counts()
+    # print trnlines_df['mode'].value_counts()
 
     # aggregate across access/egress/submodes
     trnlines_df['count'] = 1 # to check we're aggregating correctly
-    trnlines_grouped_df = trnlines_df.groupby(['Mode Group','MODE','NAME','SEQ','A','B',
+    trnlines_grouped_df = trnlines_df.groupby(['mode','MODE','NAME','SEQ','A','B',
                                               'TimePeriod','TimePeriodDuration','TIME','DIST','FREQ']).agg({'AB_VOL':numpy.sum,
                                                                                                             'count':numpy.sum}).reset_index()
     # print "Counts: "
@@ -117,38 +118,32 @@ if __name__ == '__main__':
     # (minutes/timeperiod) x (1 run/freq mins) = runs/timeperiod
     trnlines_grouped_df['Vehicle Runs'            ] = 60.0 * trnlines_grouped_df['TimePeriodDuration'] / trnlines_grouped_df['FREQ']
     trnlines_grouped_df['Vehicle Miles Traveled'  ] = trnlines_grouped_df['Vehicle Runs'] * trnlines_grouped_df['DIST'] / 100.0
-    trnlines_grouped_df['Passenger Miles Traveled'] = trnlines_grouped_df['AB_VOL']       * trnlines_grouped_df['DIST'] / 100.0
-    trnlines_grouped_df['Passenger Minutes Traveled'] = trnlines_grouped_df['AB_VOL']     * trnlines_grouped_df['TIME'] / 100.0
 
     # join bus to roadway for facility type
     trnlines_grouped_df = pandas.merge(left=trnlines_grouped_df, right=loaded_net_df, how='left', on=['A','B'])
-    trnlines_grouped_df.loc[trnlines_grouped_df['Mode Group']=='rail', 'ITHIM_ft'] = "" # throw out ITHIM_ft for rail
+    trnlines_grouped_df.loc[trnlines_grouped_df['mode']=='rail', 'strata'] = "" # throw out strata for rail
     # print trnlines_grouped_df.sort("AB_VOL", ascending=False).head()
-    # print trnlines_grouped_df.ITHIM_ft.value_counts()
+    # print trnlines_grouped_df.strata.value_counts()
 
-    bus_count = len(trnlines_grouped_df.loc[(trnlines_grouped_df['Mode Group']=='bus'),])
-    ft_found  = len(trnlines_grouped_df.loc[(trnlines_grouped_df['Mode Group']=='bus')&(pandas.notnull(trnlines_grouped_df['ITHIM_ft'])),])
+    bus_count = len(trnlines_grouped_df.loc[(trnlines_grouped_df['mode']=='bus'),])
+    ft_found  = len(trnlines_grouped_df.loc[(trnlines_grouped_df['mode']=='bus')&(pandas.notnull(trnlines_grouped_df['strata'])),])
     print "Out of %d bus links, %d have a facilty type found (or %.2f%%)" % (bus_count, ft_found, 100.0*ft_found/bus_count)
+    # assign those to local since they're probably under-represented
+    trnlines_grouped_df.loc[(trnlines_grouped_df['mode']=='bus')&(pandas.isnull(trnlines_grouped_df['strata'])),'strata'] = "local"
 
     # summarize all the links!
-    summary = trnlines_grouped_df.groupby(['Mode Group','ITHIM_ft']).agg({'Vehicle Miles Traveled':numpy.sum,
-                                                                          'Passenger Miles Traveled':numpy.sum,
-                                                                          'Passenger Minutes Traveled':numpy.sum}).reset_index()
-    summary['Passenger Hours Traveled'] = summary['Passenger Minutes Traveled']/60.0
+    summary = trnlines_grouped_df.groupby(['mode','strata']).agg({'Vehicle Miles Traveled':numpy.sum}).reset_index()
+    summary = summary[['mode','strata','Vehicle Miles Traveled']]
 
-    # combine Mode Group + ITHIM_ft => Mode
-    summary['Mode'] = summary['Mode Group'].map(str) + str(" - ") + summary['ITHIM_ft'].map(str)
-    summary.loc[summary.Mode=='rail - ', 'Mode'] = 'rail'
-    summary.drop(['Mode Group','ITHIM_ft'], axis=1, inplace=True)
-    summary = summary[['Mode','Vehicle Miles Traveled','Passenger Miles Traveled','Passenger Hours Traveled']]
+    # drop rail - turns out we don't need it
+    summary = summary.loc[summary['mode']=='bus',]
 
     # unstack the modes
-    summary = summary.set_index('Mode').unstack().reset_index()
-    summary.rename(columns={"level_0":"Parameter", 0:"value"}, inplace=True)
+    summary = pandas.melt(summary, id_vars=['mode','strata'])
+    summary.rename(columns={"variable":"item_name", "value":"item_value"}, inplace=True)
 
     # add units
-    summary['Units'] = 'miles'
-    summary.loc[summary.Parameter=='Passenger Hours Traveled','Units'] = 'hours'
+    summary['units'] = 'miles'
 
     outfile = os.path.join("metrics","ITHIM","DistanceTraveledByFacilityType_transit.csv")
     summary.to_csv(outfile, index=False)

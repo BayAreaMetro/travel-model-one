@@ -86,16 +86,16 @@ bike_summary <- cbind(bike_summary, person_summary)
 # convert to final format
 walk_summary <- mutate(walk_summary, 'Per Capita Mean Daily Travel Time'    =sum_daily_time/total_pop)
 walk_summary <- mutate(walk_summary, 'Per Capita Mean Daily Travel Distance'=sum_daily_distance/total_pop)
-walk_summary <- rename(walk_summary, Mode=active_mode)
+walk_summary <- rename(walk_summary, mode=active_mode)
 walk_summary <- select(walk_summary, -sum_daily_travelers, -sum_daily_time, -sum_daily_distance, -total_pop)
 
 bike_summary <- mutate(bike_summary, 'Per Capita Mean Daily Travel Time'    =sum_daily_time/total_pop)
 bike_summary <- mutate(bike_summary, 'Per Capita Mean Daily Travel Distance'=sum_daily_distance/total_pop)
-bike_summary <- rename(bike_summary, Mode=active_mode)
+bike_summary <- rename(bike_summary, mode=active_mode)
 bike_summary <- select(bike_summary, -sum_daily_travelers, -sum_daily_time, -sum_daily_distance, -total_pop)
 
-summary <- rbind(melt(walk_summary) %>% rename(Parameter=variable),
-                 melt(bike_summary) %>% rename(Parameter=variable))
+summary <- rbind(melt(walk_summary) %>% rename(item_name=variable),
+                 melt(bike_summary) %>% rename(item_name=variable))
 
 remove(active_trips, active_trips_by_person_mode, daily_active_trips, percapita_active_summary, person_summary)
 
@@ -182,15 +182,15 @@ transit_trips <- add_ithim_skims('EV', transit_trips)
 trn_summary_rail <- tbl_df(dplyr::summarise(transit_trips,
                                             sum_daily_distance=sum(distR),
                                             sum_daily_time=sum(ivtR))) %>% 
-  mutate(Mode='rail', total_pop=nrow(persons))
+  mutate(mode='rail', total_pop=nrow(persons))
 trn_summary_bus  <- tbl_df(dplyr::summarise(transit_trips,
                                             sum_daily_distance=sum(distB),
                                             sum_daily_time=sum(ivtB))) %>%
-  mutate(Mode='bus', total_pop=nrow(persons))
+  mutate(mode='bus', total_pop=nrow(persons))
 trn_summary_drive <- tbl_df(dplyr::summarise(transit_trips,
                                              sum_daily_distance=sum(ddist),
                                              sum_daily_time=sum(dtime))) %>% 
-  mutate(Mode='drive to transit')
+  mutate(mode='drive to transit')
 
 # these are from trips so they need to be scaled by sample share
 trn_summary_rail$sum_daily_distance  <- trn_summary_rail$sum_daily_distance  /SAMPLESHARE
@@ -210,8 +210,8 @@ trn_summary_rail <- select(trn_summary_rail, -sum_daily_time, -sum_daily_distanc
 trn_summary_bus  <- select(trn_summary_bus,  -sum_daily_time, -sum_daily_distance, -total_pop)
 
 summary <- rbind(summary,
-                 melt(trn_summary_rail) %>% rename(Parameter=variable),
-                 melt(trn_summary_bus)  %>% rename(Parameter=variable))
+                 melt(trn_summary_rail) %>% rename(item_name=variable),
+                 melt(trn_summary_bus)  %>% rename(item_name=variable))
 
 remove(add_ithim_skims, transit_trips, trn_summary_bus, trn_summary_rail)
 # note: we'll use trn_summary_drive later
@@ -324,30 +324,31 @@ auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='auto (driver)'] <-
 # convert to final format
 auto_summary <- mutate(auto_summary, 'Per Capita Mean Daily Travel Time'    =sum_daily_time/total_pop)
 auto_summary <- mutate(auto_summary, 'Per Capita Mean Daily Travel Distance'=sum_daily_distance/total_pop)
-auto_summary <- rename(auto_summary, Mode=ITHIM_mode)
+auto_summary <- rename(auto_summary, mode=ITHIM_mode)
 auto_summary <- select(auto_summary, -sum_daily_travelers, -sum_daily_time, -sum_daily_distance, -total_pop)
 
 summary <- rbind(summary,
-                 melt(auto_summary) %>% rename(Parameter=variable))
+                 melt(auto_summary) %>% rename(item_name=variable))
 
 
 ####################  Population #################### 
 
 persons_summary <- dplyr::summarise(persons,
-                   'Population Forecasts (ABM)'=n()) %>% mutate(Mode='')
+                   'Population Forecasts (ABM)'=n()) %>% mutate(mode='')
 
 summary <- rbind(summary,
-                 melt(persons_summary) %>% rename(Parameter=variable))
+                 melt(persons_summary) %>% rename(item_name=variable))
 
 ####################  Units ####################
 
-summary$Units <- ""
-summary$Units[summary$Parameter=="Per Capita Mean Daily Travel Distance"] <- "miles"
-summary$Units[summary$Parameter=="Per Capita Mean Daily Travel Time"    ] <- "minutes"
-summary$Units[summary$Parameter=="Population Forecasts (ABM)"           ] <- "people"
+summary$units <- ""
+summary$units[summary$item_name=="Per Capita Mean Daily Travel Distance"] <- "miles"
+summary$units[summary$item_name=="Per Capita Mean Daily Travel Time"    ] <- "minutes"
+summary$units[summary$item_name=="Population Forecasts (ABM)"           ] <- "people"
 
-summary <- summary[c("Mode","Units","Parameter","value")]
-summary <- summary[order(summary$Parameter),]
+summary <- rename(summary, item_value=value)
+summary <- summary[c("mode","units","item_name","item_value")]
+summary <- summary[order(summary$item_name),]
 
 ####################  4: Write it #################### 
 

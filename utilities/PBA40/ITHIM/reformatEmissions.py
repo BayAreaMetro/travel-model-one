@@ -38,8 +38,8 @@ if __name__ == '__main__':
                             'Motor Vehicle Fatality', 'Motor Vehicle Injury', 'Motor Vehicle Property',
                             'Walk Fatality', 'Walk Injury', 'Bike Fatality', 'Bike Injury'], axis=1, inplace=True)
     vmt_vht_metrics_df = vmt_vht_metrics_df.unstack().reset_index()
-    vmt_vht_metrics_df.rename(columns={"level_0":"Parameter", "vehicle class":"Mode", 0:"value"}, inplace=True)
-    vmt_vht_metrics_df["Units"] = "metric tons"
+    vmt_vht_metrics_df.rename(columns={"level_0":"item_name", "vehicle class":"mode", 0:"item_value"}, inplace=True)
+    vmt_vht_metrics_df["units"] = "metric tons"
 
     outfile = os.path.join("metrics","ITHIM","emissions.csv")
     vmt_vht_metrics_df.to_csv(outfile, index=False)
