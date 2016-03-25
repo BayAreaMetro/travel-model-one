@@ -107,24 +107,34 @@ if __name__ == '__main__':
     pmt_pht_df["mode"     ] = pmt_pht_df["index"].str[:-4]
     pmt_pht_df.rename(columns={0:"item_value"}, inplace=True)
     pmt_pht_df.drop("index", axis=1, inplace=True)
+    pmt_pht_df["units"] = "miles"
 
     # groupby facility type for VMT only
     loaded_ft_df = vol_net_df[['ITHIM_ft','auto_VMT','truck_VMT']].groupby(['ITHIM_ft']).agg(numpy.sum)
 
     # reformat
     loaded_ft_df = loaded_ft_df.unstack().to_frame().reset_index()
-    loaded_ft_df.rename(columns={"level_0":"item_name", 0:"item_value", "ITHIM_ft":"strata"}, inplace=True)
+    loaded_ft_df.rename(columns={"level_0":"item_name", 0:"wt_n", "ITHIM_ft":"strata"}, inplace=True)
     loaded_ft_df["mode"]      = loaded_ft_df["item_name"].str[:-4]
     loaded_ft_df["item_name"] = loaded_ft_df["item_name"].str[-3:]
     loaded_ft_df.loc[loaded_ft_df["mode"]=="auto", "mode"] = "car"   # we prefer "car" here rather than "auto"
 
+    # add 10% to local car because of intra-zonal trips
+    loaded_ft_df.loc[(loaded_ft_df["mode"]=="car")&(loaded_ft_df["strata"]=="local"),"wt_n"] *= 1.1
+
+    # convert VMT to percentages by strata
+    loaded_ft_df.loc[loaded_ft_df.item_name=="VMT","item_name"] = "Proportion of Vehicle Miles by Mode and Facility Type"
+    loaded_ft_df["units"] = "dimensionless"
+    total_car_vmt   = loaded_ft_df.loc[loaded_ft_df["mode"]=="car",   "wt_n"].sum()
+    total_truck_vmt = loaded_ft_df.loc[loaded_ft_df["mode"]=="truck", "wt_n"].sum()
+    loaded_ft_df.loc[loaded_ft_df["mode"]=="car",   "item_value"] = loaded_ft_df["wt_n"]/total_car_vmt
+    loaded_ft_df.loc[loaded_ft_df["mode"]=="truck", "item_value"] = loaded_ft_df["wt_n"]/total_truck_vmt
+
     # put them together
     loaded_ft_df = loaded_ft_df.append(pmt_pht_df)
 
-    loaded_ft_df.loc[loaded_ft_df.item_name=="VMT","item_name"] = "Vehicle Miles Traveled"
     loaded_ft_df.loc[loaded_ft_df.item_name=="PMT","item_name"] = "Total PMT"
     loaded_ft_df.loc[loaded_ft_df.item_name=="PHT","item_name"] = "Total PHT"
-    loaded_ft_df["units"] = "miles"
     loaded_ft_df.loc[loaded_ft_df.item_name=="Total PHT","units"] = "hours"
 
     outfile = os.path.join("metrics","ITHIM","DistanceTraveledByFacilityType_auto+truck.csv")

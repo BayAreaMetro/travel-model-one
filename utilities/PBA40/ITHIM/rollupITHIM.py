@@ -27,12 +27,12 @@ FILES = [
 
 ITEM_IDS = pandas.DataFrame(
     columns=['item_id','item_name'],
-    data  =[['1'      ,'Per Capita Mean Daily Travel Time'    ],
-            ['3'      ,'Per Capita Mean Daily Travel Distance'],
-            ['18'     ,'Population Forecasts (ABM)'           ],
-            ['10.1'   ,'Total PMT'                            ],
-            ['10.2'   ,'Total PHT'                            ],
-            ['11'     ,'Vehicle Miles Traveled'               ]])
+    data  =[['1'      ,'Per Capita Mean Daily Travel Time'                    ],
+            ['3'      ,'Per Capita Mean Daily Travel Distance'                ],
+            ['18'     ,'Population Forecasts (ABM)'                           ],
+            ['10.1'   ,'Total PMT'                                            ],
+            ['10.2'   ,'Total PHT'                                            ],
+            ['11'     ,'Proportion of Vehicle Miles by Mode and Facility Type']])
 
 COLUMNS = ["scenid_itemid_mode_strata_age_sex",
            "query_id",
@@ -123,6 +123,9 @@ if __name__ == '__main__':
 
     # sort by numeric item_id
     all_results_df["numeric item_id"] = all_results_df["item_id"].astype(float)
+
+    # change freeway strata to highway
+    all_results_df.loc[all_results_df["strata"]=="freeway", "strata"] = "highway"
 
     # order the columns and sort by item_id them
     all_results_df = all_results_df.sort_values(by=["numeric item_id","mode","strata"])[COLUMNS]

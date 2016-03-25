@@ -140,10 +140,15 @@ if __name__ == '__main__':
 
     # unstack the modes
     summary = pandas.melt(summary, id_vars=['mode','strata'])
-    summary.rename(columns={"variable":"item_name", "value":"item_value"}, inplace=True)
+    summary.rename(columns={"variable":"item_name", "value":"wt_n"}, inplace=True)
+
+    # convert VMT to percentages by strata
+    total_bus_vmt = summary["wt_n"].sum()
+    summary["item_value"] = summary["wt_n"]/total_bus_vmt
+    summary.loc[summary["item_name"]=="Vehicle Miles Traveled", "item_name"] = "Proportion of Vehicle Miles by Mode and Facility Type"
 
     # add units
-    summary['units'] = 'miles'
+    summary['units'] = 'dimensionless'
 
     outfile = os.path.join("metrics","ITHIM","DistanceTraveledByFacilityType_transit.csv")
     summary.to_csv(outfile, index=False)
