@@ -20,10 +20,7 @@ if not exist updated_output\trips.rdata (
 
   if not exist core_summaries ( mkdir core_summaries )
 
-  set OLD_CODE_DIR=%CODE_DIR%
-  set CODE_DIR=%CODE_DIR%\model-files\scripts\core_summaries
   call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\model-files\scripts\core_summaries\CoreSummaries.R"
-  set CODE_DIR=%OLD_CODE_DIR%
   IF %ERRORLEVEL% GTR 0 goto error
 )
 
