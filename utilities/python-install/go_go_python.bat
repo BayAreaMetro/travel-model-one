@@ -29,7 +29,7 @@ cd ..\..
 pip install numpy-1.10.4+mkl-cp27-cp27m-win_amd64.whl
 
 :: pandas
-pip install pandas-0.16.1-cp27-none-win_amd64.whl
+pip install pandas-0.18.0-cp27-cp27m-win_amd64.whl
 
 :: xlsxwriter
 pip install Xlsxwriter-0.7.3-py2.py3-none-any.whl
