@@ -113,6 +113,9 @@ if __name__ == '__main__':
         if col not in have_cols:
             all_results_df[col] = None
 
+    # change freeway strata to highway
+    all_results_df.loc[all_results_df["strata"]=="freeway", "strata"] = "highway"
+
     # this one is special
     all_results_df["scenid_itemid_mode_strata_age_sex"] = all_results_df["scenario_id"].map(string_formatter) + "_" + \
                                                           all_results_df["item_id"].map(string_formatter)     + "_" + \
@@ -124,8 +127,6 @@ if __name__ == '__main__':
     # sort by numeric item_id
     all_results_df["numeric item_id"] = all_results_df["item_id"].astype(float)
 
-    # change freeway strata to highway
-    all_results_df.loc[all_results_df["strata"]=="freeway", "strata"] = "highway"
 
     # order the columns and sort by item_id them
     all_results_df = all_results_df.sort_values(by=["numeric item_id","mode","strata"])[COLUMNS]
