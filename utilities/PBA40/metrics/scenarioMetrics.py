@@ -196,9 +196,16 @@ def tally_nonauto_mode_share(iteration, sampleshare, metrics_dict):
             temp_trips_df['num_participants'] = temp_trips_df['num_participants']/sampleshare
             trips_df = pandas.concat([trips_df, temp_trips_df], axis=0)
 
+    metrics_dict['nonauto_mode_share_walk_trips'   ] = trips_df.loc[trips_df['trip_mode']==7].num_participants.sum()
+    metrics_dict['nonauto_mode_share_bike_trips'   ] = trips_df.loc[trips_df['trip_mode']==8].num_participants.sum()
+    metrics_dict['nonauto_mode_share_transit_trips'] = trips_df.loc[trips_df['trip_mode']>=9].num_participants.sum()
     metrics_dict['nonauto_mode_share_nonauto_trips'] = trips_df.loc[trips_df['trip_mode']>=7].num_participants.sum()
-    metrics_dict['nonauto_mode_share_total_trips']   = trips_df.num_participants.sum()
-    metrics_dict['nonauto_mode_share']               = float(metrics_dict['nonauto_mode_share_nonauto_trips'])/float(metrics_dict['nonauto_mode_share_total_trips'])
+    metrics_dict['nonauto_mode_share_total_trips'  ] = trips_df.num_participants.sum()
+
+    metrics_dict['nonauto_mode_share_walk'   ] = float(metrics_dict['nonauto_mode_share_walk_trips'   ])/float(metrics_dict['nonauto_mode_share_total_trips'])
+    metrics_dict['nonauto_mode_share_bike'   ] = float(metrics_dict['nonauto_mode_share_bike_trips'   ])/float(metrics_dict['nonauto_mode_share_total_trips'])
+    metrics_dict['nonauto_mode_share_transit'] = float(metrics_dict['nonauto_mode_share_transit_trips'])/float(metrics_dict['nonauto_mode_share_total_trips'])
+    metrics_dict['nonauto_mode_share'        ] = float(metrics_dict['nonauto_mode_share_nonauto_trips'])/float(metrics_dict['nonauto_mode_share_total_trips'])
 
 def tally_sgr_roads(iteration, sampleshare, metrics_dict):
     """
