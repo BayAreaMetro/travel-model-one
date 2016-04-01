@@ -192,6 +192,7 @@ loop period = 1, 5
       
       ; golden gate bridge reversible lanes
       if (a = 7317 & b = 7315) LANES = @token_golden_gate_sb_lanes@
+      if (a = 7315 & b = 7339) LANES = @token_golden_gate_sb_lanes@
       if (a = 7339 & b = 7322) LANES = @token_golden_gate_sb_lanes@
       if (a = 7322 & b = 7323) LANES = @token_golden_gate_sb_lanes@
       if (a = 7323 & b = 7001) LANES = @token_golden_gate_sb_lanes@
@@ -200,6 +201,7 @@ loop period = 1, 5
       if (a = 7324 & b = 7004) LANES = @token_golden_gate_nb_lanes@
       if (a = 7004 & b = 7320) LANES = @token_golden_gate_nb_lanes@
       if (a = 7320 & b = 7319) LANES = @token_golden_gate_nb_lanes@
+      if (a = 7319 & b = 7338) LANES = @token_golden_gate_nb_lanes@
       if (a = 7338 & b = 7318) LANES = @token_golden_gate_nb_lanes@
       if (a = 7318 & b = 7316) LANES = @token_golden_gate_nb_lanes@
       
