@@ -25,6 +25,7 @@ def tally_travel_cost(iteration, sampleshare, metrics_dict):
     total_auto_cost_inc[1-4] ($2000)
     total_auto_person_trips_inc[1-4]
     total_households_inc[1-4]
+    total_hh_inc_inc[1-4] ($2000)
     """
     print "Tallying travel costs"
     transit_df = pandas.read_csv(os.path.join("metrics","transit_times_by_mode_income.csv"),
@@ -39,7 +40,7 @@ def tally_travel_cost(iteration, sampleshare, metrics_dict):
                               sep=",", index_col=[0,1])
     auto_df = auto_df.sum(level='Income')
     for inc_level in range(1,5):
-        metrics_dict['total_auto_cost_inc%d'  % inc_level] = auto_df.loc['inc%d' % inc_level, ['Total Cost', 'Bridge Tolls', 'Value Tolls']].sum()
+        metrics_dict['total_auto_cost_inc%d'  % inc_level] = auto_df.loc['inc%d' % inc_level, ['Total Cost', 'Bridge Tolls', 'Value Tolls']].sum()/100  # cents -> dollars
         metrics_dict['total_auto_trips_inc%d' % inc_level] = auto_df.loc['inc%d' % inc_level, 'Daily Person Trips']
 
     # Count households from disaggregate output
@@ -55,6 +56,7 @@ def tally_travel_cost(iteration, sampleshare, metrics_dict):
 
     for inc_level in range(1,5):
         metrics_dict['total_households_inc%d' % inc_level] = household_df.loc[household_df.income_cat==inc_level, 'num_hhs'].sum()
+        metrics_dict['total_hh_inc_inc%d'     % inc_level] = household_df.loc[household_df.income_cat==inc_level, 'income' ].sum()
 
 def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     """
