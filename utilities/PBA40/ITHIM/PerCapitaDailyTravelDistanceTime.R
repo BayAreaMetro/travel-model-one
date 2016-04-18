@@ -28,13 +28,26 @@ if (!file.exists(updated_trips)) {
 load(updated_trips)
 # we only need some columns
 trips <- select(trips, hh_id, person_id, trip_mode, orig_purpose, dest_purpose, 
-                distance, time, amode, active, timeCode, orig_taz, dest_taz)
+                distance, time, amode, active, timeCode, orig_taz, dest_taz, incQ)
 
 # read popsyn persons rather than simulated because we need everyone, even if they don't travel
 persons <- tbl_df(read.table(file = file.path(TARGET_DIR,"popsyn","personFile.csv"),
                              header=TRUE, sep=","))
 persons <- select(persons, HHID, PERID, AGE) %>%
                   rename(hh_id=HHID, person_id=PERID, age=AGE)
+
+# read popsyn households and get the income
+households <- tbl_df(read.table(file = file.path(TARGET_DIR,"popsyn","hhFile.csv"),
+                                header=TRUE, sep=","))
+households <- select(households, HHID, HINC) %>% rename(hh_id=HHID, income=HINC)
+households <- mutate(households,
+                     incQ=1*(income<30000) + 
+                          2*((income>=30000)&(income<60000)) +
+                          3*((income>=60000)&(income<100000)) +
+                          4*(income>=100000)) %>% select(-income)
+# Now persons has incQ
+persons    <-left_join(persons, households)
+remove(households) # done with households
 
 #################### 1: Total Daily Travel Distance - Walk and Bike #################### 
 
@@ -53,9 +66,10 @@ active_trips <- mutate(active_trips, active_distance=ifelse(amode < 3, distance,
 active_trips <- left_join(active_trips, persons)
 
 # we want daily - so sum to person by mode_group
-active_trips_by_person_mode <- group_by(select(active_trips, hh_id, person_id, trip_mode, distance, time, 
+active_trips_by_person_mode <- group_by(select(active_trips, hh_id, person_id, incQ, trip_mode, distance, time, 
                                                active_mode, active, active_distance), 
-                                        hh_id, person_id, active_mode)
+                                        hh_id, person_id, incQ, active_mode)
+
 daily_active_trips <- tbl_df(dplyr::summarise(active_trips_by_person_mode,
                                        daily_trips=n(), 
                                        daily_distance=sum(active_distance),
@@ -63,10 +77,16 @@ daily_active_trips <- tbl_df(dplyr::summarise(active_trips_by_person_mode,
 
 # sum -- denominator is not just people who make active trips
 percapita_active_summary  <- 
-  dplyr::summarise(group_by(daily_active_trips, active_mode),
+  rbind(
+     dplyr::summarise(group_by(daily_active_trips, incQ, active_mode),
+                      sum_daily_travelers = n(),
+                      sum_daily_distance  = sum(daily_distance),
+                      sum_daily_time      = sum(daily_time)),
+      dplyr::summarise(group_by(daily_active_trips, active_mode),
                             sum_daily_travelers = n(),
                             sum_daily_distance  = sum(daily_distance),
-                            sum_daily_time      = sum(daily_time))
+                            sum_daily_time      = sum(daily_time)) %>% mutate(incQ=-1)
+  )
 
 # these are from trips so they need to be scaled by sample share
 percapita_active_summary$sum_daily_travelers <- percapita_active_summary$sum_daily_travelers/SAMPLESHARE
@@ -77,11 +97,14 @@ walk_summary <- percapita_active_summary[percapita_active_summary$active_mode ==
 bike_summary <- percapita_active_summary[percapita_active_summary$active_mode == 'bike',]
 
 # this one is from popsyn so it's not sampled
-person_summary <- dplyr::summarise(persons, total_pop=n())
+person_summary <- rbind(
+  dplyr::summarise(group_by(persons, incQ), total_pop=n()),
+  dplyr::summarise(persons, total_pop=n()) %>% mutate(incQ=-1)
+  )
 
 # join
-walk_summary <- cbind(walk_summary, person_summary)
-bike_summary <- cbind(bike_summary, person_summary)
+walk_summary <- left_join(walk_summary, person_summary)
+bike_summary <- left_join(bike_summary, person_summary)
 
 # convert to final format
 walk_summary <- mutate(walk_summary, 'Per Capita Mean Daily Travel Time'    =sum_daily_time/total_pop)
@@ -94,10 +117,10 @@ bike_summary <- mutate(bike_summary, 'Per Capita Mean Daily Travel Distance'=sum
 bike_summary <- rename(bike_summary, mode=active_mode)
 bike_summary <- select(bike_summary, -sum_daily_travelers, -sum_daily_time, -sum_daily_distance, -total_pop)
 
-summary <- rbind(melt(walk_summary) %>% rename(item_name=variable),
-                 melt(bike_summary) %>% rename(item_name=variable))
+summary <- rbind(melt(walk_summary,id.vars=c("mode","incQ")) %>% rename(item_name=variable),
+                 melt(bike_summary,id.vars=c("mode","incQ")) %>% rename(item_name=variable))
 
-remove(active_trips, active_trips_by_person_mode, daily_active_trips, percapita_active_summary, person_summary)
+remove(active_trips, active_trips_by_person_mode, daily_active_trips, percapita_active_summary)
 
 ####################  2: Total Daily Travel Distance - Transit #################### 
 
@@ -179,18 +202,37 @@ transit_trips <- add_ithim_skims('PM', transit_trips)
 transit_trips <- add_ithim_skims('EV', transit_trips)
 
 # summarise and add total population as denominators
-trn_summary_rail <- tbl_df(dplyr::summarise(transit_trips,
-                                            sum_daily_distance=sum(distR),
-                                            sum_daily_time=sum(ivtR))) %>% 
-  mutate(mode='rail', total_pop=nrow(persons))
-trn_summary_bus  <- tbl_df(dplyr::summarise(transit_trips,
-                                            sum_daily_distance=sum(distB),
-                                            sum_daily_time=sum(ivtB))) %>%
-  mutate(mode='bus', total_pop=nrow(persons))
-trn_summary_drive <- tbl_df(dplyr::summarise(transit_trips,
-                                             sum_daily_distance=sum(ddist),
-                                             sum_daily_time=sum(dtime))) %>% 
-  mutate(mode='drive to transit')
+trn_summary_rail <- tbl_df(
+  rbind(
+    dplyr::summarise(group_by(transit_trips, incQ),
+                     sum_daily_distance=sum(distR),
+                     sum_daily_time=sum(ivtR)) %>% mutate(mode='rail'),
+    dplyr::summarise(transit_trips,
+                     sum_daily_distance=sum(distR),
+                     sum_daily_time=sum(ivtR)) %>% mutate(mode='rail', incQ=-1)
+  ))
+trn_summary_rail <- left_join(trn_summary_rail, person_summary)
+
+trn_summary_bus  <- tbl_df(
+  rbind(
+    dplyr::summarise(group_by(transit_trips, incQ),
+                     sum_daily_distance=sum(distB),
+                     sum_daily_time=sum(ivtB)) %>%  mutate(mode='bus'),
+    dplyr::summarise(transit_trips,
+                     sum_daily_distance=sum(distB),
+                     sum_daily_time=sum(ivtB)) %>%  mutate(mode='bus', incQ=-1)
+  ))
+trn_summary_bus   <- left_join(trn_summary_bus, person_summary)
+
+trn_summary_drive <- tbl_df(
+  rbind(
+    dplyr::summarise(group_by(transit_trips, incQ),
+                     sum_daily_distance=sum(ddist),
+                     sum_daily_time=sum(dtime)) %>% mutate(mode='drive to transit'),
+    dplyr::summarise(transit_trips,
+                     sum_daily_distance=sum(ddist),
+                     sum_daily_time=sum(dtime)) %>% mutate(mode='drive to transit', incQ=-1)
+    ))
 
 # these are from trips so they need to be scaled by sample share
 trn_summary_rail$sum_daily_distance  <- trn_summary_rail$sum_daily_distance  /SAMPLESHARE
@@ -210,8 +252,8 @@ trn_summary_rail <- select(trn_summary_rail, -sum_daily_time, -sum_daily_distanc
 trn_summary_bus  <- select(trn_summary_bus,  -sum_daily_time, -sum_daily_distance, -total_pop)
 
 summary <- rbind(summary,
-                 melt(trn_summary_rail) %>% rename(item_name=variable),
-                 melt(trn_summary_bus)  %>% rename(item_name=variable))
+                 melt(trn_summary_rail,id.vars=c("mode","incQ")) %>% rename(item_name=variable),
+                 melt(trn_summary_bus, id.vars=c("mode","incQ"))  %>% rename(item_name=variable))
 
 remove(add_ithim_skims, transit_trips, trn_summary_bus, trn_summary_rail)
 # note: we'll use trn_summary_drive later
@@ -231,8 +273,8 @@ auto_trips$mode_group[auto_trips$trip_mode== 5] <- 'shared ride 3+'     # sr3
 auto_trips$mode_group[auto_trips$trip_mode== 6] <- 'shared ride 3+'     # sr3 pay
 
 # we want daily - so sum to person by mode_group
-auto_trips_by_person_mode <- group_by(select(auto_trips, hh_id, person_id, mode_group, distance, time), 
-                                      hh_id, person_id, mode_group)
+auto_trips_by_person_mode <- group_by(select(auto_trips, hh_id, person_id, incQ, mode_group, distance, time), 
+                                      hh_id, person_id, incQ, mode_group)
 
 auto_daily_trips <- tbl_df(dplyr::summarise(auto_trips_by_person_mode,
                                             daily_trips=n(), 
@@ -270,37 +312,44 @@ sr3_dist_pax_fraction <- ((2.5/3.5)*sr3_dist - sr2_dist_pax)/((2.5/3.5)*sr3_dist
 sr2_time_pax_fraction <- ((1.0/2.0)*sr2_time - sr2_time_pax)/((1.0/2.0)*sr2_time)
 sr3_time_pax_fraction <- ((2.5/3.5)*sr3_time - sr2_time_pax)/((2.5/3.5)*sr2_time)
 
-auto_summary  <- dplyr::summarise(group_by(auto_daily_trips, ITHIM_mode),
-                                  sum_daily_travelers = n(),
-                                  sum_daily_distance  = sum(daily_distance),
-                                  sum_daily_time      = sum(daily_time))
+auto_summary  <- rbind(
+  dplyr::summarise(group_by(auto_daily_trips, incQ, ITHIM_mode),
+                   sum_daily_travelers = n(),
+                   sum_daily_distance  = sum(daily_distance),
+                   sum_daily_time      = sum(daily_time)),
+  dplyr::summarise(group_by(auto_daily_trips, ITHIM_mode),
+                   sum_daily_travelers = n(),
+                   sum_daily_distance  = sum(daily_distance),
+                   sum_daily_time      = sum(daily_time)) %>% mutate(incQ=-1)
+  )
 # these are from trips so they need to be scaled by sample share
 auto_summary$sum_daily_travelers <- auto_summary$sum_daily_travelers/SAMPLESHARE
 auto_summary$sum_daily_distance  <- auto_summary$sum_daily_distance /SAMPLESHARE
 auto_summary$sum_daily_time      <- auto_summary$sum_daily_time     /SAMPLESHARE
 
-# allocate car-sr2 and car-sr3 distance and times to car-passenger
-auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='auto (passenger)'] <- 
-  auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='auto (passenger)'] +
-  auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='car_sr2']*sr2_dist_pax_fraction +
-  auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='car_sr3']*sr3_dist_pax_fraction
+for (inc_q in c(-1,1,2,3,4)) {
+  # allocate car-sr2 and car-sr3 distance and times to car-passenger
+  auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='auto (passenger)'&auto_summary$incQ==inc_q] <- 
+    auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='auto (passenger)'&auto_summary$incQ==inc_q] +
+    auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='car_sr2'&auto_summary$incQ==inc_q]*sr2_dist_pax_fraction +
+    auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='car_sr3'&auto_summary$incQ==inc_q]*sr3_dist_pax_fraction
 
-auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='auto (passenger)'] <- 
-  auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='auto (passenger)'] +
-  auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='car_sr2']*sr2_time_pax_fraction +
-  auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='car_sr3']*sr3_time_pax_fraction
+  auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='auto (passenger)'&auto_summary$incQ==inc_q] <- 
+    auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='auto (passenger)'&auto_summary$incQ==inc_q] +
+    auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='car_sr2'&auto_summary$incQ==inc_q]*sr2_time_pax_fraction +
+    auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='car_sr3'&auto_summary$incQ==inc_q]*sr3_time_pax_fraction
 
-# allocate car-sr2 and car-sr3 distance and times to car-driver
-auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='auto (driver)'] <- 
-  auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='auto (driver)'] +
-  auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='car_sr2']*(1.0-sr2_dist_pax_fraction) +
-  auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='car_sr3']*(1.0-sr3_dist_pax_fraction)
+  # allocate car-sr2 and car-sr3 distance and times to car-driver
+  auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='auto (driver)'&auto_summary$incQ==inc_q] <- 
+    auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='auto (driver)'&auto_summary$incQ==inc_q] +
+    auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='car_sr2'&auto_summary$incQ==inc_q]*(1.0-sr2_dist_pax_fraction) +
+    auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='car_sr3'&auto_summary$incQ==inc_q]*(1.0-sr3_dist_pax_fraction)
 
-auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='auto (driver)'] <- 
-  auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='auto (driver)'] +
-  auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='car_sr2']*(1.0-sr2_time_pax_fraction) +
-  auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='car_sr3']*(1.0-sr3_time_pax_fraction)
-
+  auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='auto (driver)'&auto_summary$incQ==inc_q] <- 
+    auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='auto (driver)'&auto_summary$incQ==inc_q] +
+    auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='car_sr2'&auto_summary$incQ==inc_q]*(1.0-sr2_time_pax_fraction) +
+    auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='car_sr3'&auto_summary$incQ==inc_q]*(1.0-sr3_time_pax_fraction)
+}
 # they're allocated - so drop sr2, sr3
 auto_summary <- auto_summary[auto_summary$ITHIM_mode!='car_sr2',]
 auto_summary <- auto_summary[auto_summary$ITHIM_mode!='car_sr3',]
@@ -311,33 +360,39 @@ remove(sr2_dist, sr2_dist_pax, sr2_dist_pax_fraction,
        sr3_time, sr3_time_pax, sr3_time_pax_fraction)
 
 # total population of drivers and passengers
-auto_summary <- mutate(auto_summary, total_pop=nrow(persons))
+auto_summary <- left_join(auto_summary, person_summary)
 
 # add drive to transit drive time and drive distance
-auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='auto (driver)'] <- 
-  auto_summary$sum_daily_distance[auto_summary$ITHIM_mode=='auto (driver)'] +
-  trn_summary_drive$sum_daily_distance
-auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='auto (driver)'] <- 
-  auto_summary$sum_daily_time[auto_summary$ITHIM_mode=='auto (driver)'] +
-  trn_summary_drive$sum_daily_time
+trn_summary_drive['ITHIM_mode'] <- 'auto (driver)'
+trn_summary_drive <- select(trn_summary_drive, -mode)
+
+auto_summary <- left_join(auto_summary, 
+                           rename(trn_summary_drive,
+                                  sum_daily_distance_trn=sum_daily_distance,
+                                  sum_daily_time_trn    =sum_daily_time),
+                           by=c("incQ","ITHIM_mode"))
+auto_summary[is.na(auto_summary)] <- 0
+auto_summary$sum_daily_distance <- auto_summary$sum_daily_distance + auto_summary$sum_daily_distance_trn
+auto_summary$sum_daily_time     <- auto_summary$sum_daily_time     + auto_summary$sum_daily_time_trn
+
 
 # convert to final format
 auto_summary <- mutate(auto_summary, 'Per Capita Mean Daily Travel Time'    =sum_daily_time/total_pop)
 auto_summary <- mutate(auto_summary, 'Per Capita Mean Daily Travel Distance'=sum_daily_distance/total_pop)
 auto_summary <- rename(auto_summary, mode=ITHIM_mode)
-auto_summary <- select(auto_summary, -sum_daily_travelers, -sum_daily_time, -sum_daily_distance, -total_pop)
+auto_summary <- select(auto_summary, -sum_daily_travelers, -sum_daily_time, -sum_daily_distance, -total_pop,
+                       -sum_daily_distance_trn, -sum_daily_time_trn)
 
 summary <- rbind(summary,
-                 melt(auto_summary) %>% rename(item_name=variable))
+                 melt(auto_summary, id.vars=c("mode","incQ")) %>% rename(item_name=variable))
 
 
 ####################  Population #################### 
 
-persons_summary <- dplyr::summarise(persons,
-                   'Population Forecasts (ABM)'=n()) %>% mutate(mode='')
+person_summary <- rename(person_summary, 'Population Forecasts (ABM)'=total_pop) %>% mutate(mode='')
 
 summary <- rbind(summary,
-                 melt(persons_summary) %>% rename(item_name=variable))
+                 melt(person_summary, id.vars=c("mode","incQ")) %>% rename(item_name=variable))
 
 ####################  Units ####################
 
@@ -347,7 +402,7 @@ summary$units[summary$item_name=="Per Capita Mean Daily Travel Time"    ] <- "mi
 summary$units[summary$item_name=="Population Forecasts (ABM)"           ] <- "people"
 
 summary <- rename(summary, item_value=value)
-summary <- summary[c("mode","units","item_name","item_value")]
+summary <- summary[c("incQ","mode","units","item_name","item_value")]
 summary <- summary[order(summary$item_name),]
 
 ####################  4: Write it #################### 

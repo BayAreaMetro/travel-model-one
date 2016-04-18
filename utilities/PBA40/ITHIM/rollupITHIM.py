@@ -124,13 +124,18 @@ if __name__ == '__main__':
                                                           all_results_df["age_group"].map(string_formatter)   + "_" + \
                                                           all_results_df["sex"].map(string_formatter)
 
-    # sort by numeric item_id
-    all_results_df["numeric item_id"] = all_results_df["item_id"].astype(float)
+    for incQ  in [-1,1,4]:
+      suffix = ""
+      if incQ > 0:
+        suffix = "_inc%d" % incQ
 
+      save_results = all_results_df[(all_results_df["incQ"] == incQ)|pandas.isnull(all_results_df["incQ"])]
+      # sort by numeric item_id
+      save_results["numeric item_id"] = save_results["item_id"].astype(float)
 
-    # order the columns and sort by item_id them
-    all_results_df = all_results_df.sort_values(by=["numeric item_id","mode","strata"])[COLUMNS]
+      # order the columns and sort by item_id them
+      save_results = save_results.sort_values(by=["numeric item_id","mode","strata"])[COLUMNS]
 
-    outfile = os.path.join("metrics","ITHIM","results.csv")
-    all_results_df.to_csv(outfile, index=False)
-    print "Wrote %s" % outfile
+      outfile = os.path.join("metrics","ITHIM","results%s.csv" % suffix)
+      save_results.to_csv(outfile, index=False)
+      print "Wrote %s" % outfile
