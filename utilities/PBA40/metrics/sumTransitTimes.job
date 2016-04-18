@@ -1,19 +1,35 @@
-; Transit trips and times by access / mode / egress
-; 1. Total Transit In-Vehicle 
-; 2. Total Out-of-Vehicle hours
-; 3. Out-of-vehicle hours
-; 4. Init wait hours
-; 5. Xfer wait hours
-; 6. Walk acc & egr hours
-; 7. Aux walk hours
-; 8. Drive acc & egr hours
+;
+; This script Uses Transit trips * Transit skims (IVT and OVT) and outputs:
+; metrics\transit_times_by_acc_mode_egr.csv with columns:
+;  * Age                   (all, 20-74, 20-64)
+;  * Access                (wlk, drv)
+;  * Mode                  (com, hvy, exp, lrf, loc)
+;  * Egress                (wlk, drv)
+;  * Transit Trips         (# of transit trips taken by relevant ppl)
+;  * In-vehicle hours      (# of in-vehicle hours taken by relevant ppl)
+;  * Out-of-vehicle hours  (# of out-of-vehicle hours taken by relevant ppl)
+;  * Init wait hours       (# of hours spent in the initial wait by relevant ppl)
+;  * Xfer wait hours       (# of hours spent in the transfer wait by relevant ppl)
+;  * Walk acc & egr hours  (# of hours spent in walk access and egress by relevant ppl)
+;  * Aux walk hours        (# of hours spent in auxiliary walk by relevant ppl)
+;  * Drive acc & egr hours (# of hours spent in drive access and egress by relevant ppl)
+;  * AM path count         (# of O-D paths that exist out of full matrix in AM)
+;  * MD path count         (# of O-D paths that exist out of full matrix in MD)
+;
+; Also outputs
+; metrics\transit_times_by_mode_income.csv with columns:
+;  * Income                (inc1, inc2, inc3, inc4)
+;  * Mode                  (com, hvy, exp, lrf, loc)
+;  * Daily Trips           (# of daily transit trips by relevant ppl)
+;  * Avg Time              (average travel time per transit trip by relevant ppl, in minutes)
+;  * Avg Cost              (average fare cost per transit trip by relevant ppl, in $2000 dollars)
+;
 
-;     Uses Transit trips * Transit skims (IVT and OVT)
 
 *del metrics\transit_times_by_acc_mode_egr.csv
 
-; Loop thru transit modes 
-  loop path = 1,5   
+; Loop thru transit modes
+  loop path = 1,5
     ; commuter rail or long-haul premium
       if (path = 1)
         token_path = 'com'
@@ -36,22 +52,22 @@
         token_ivt  = 'ivtLOC'
       endif
 
- DistributeMultistep processid = 'ctramp', processNum = path, commpath = 'm:\commpath' 
+ DistributeMultistep processid = 'ctramp', processNum = path, commpath = 'm:\commpath'
 
-; Loop thru access + egress modes 
- loop accegg = 1,3   
-      if (accegg = 1)         
+; Loop thru access + egress modes
+ loop accegg = 1,3
+      if (accegg = 1)
          token_access = 'wlk'
          token_egress = 'wlk'
 
-      elseif (accegg = 2)        
+      elseif (accegg = 2)
          token_access = 'drv'
          token_egress = 'wlk'
 
-      elseif (accegg = 3)       
+      elseif (accegg = 3)
          token_access = 'wlk'
          token_egress = 'drv'
-      
+
       endif
 
     loop age = 1,3
@@ -67,28 +83,28 @@
       endif
 
     RUN PGM = MATRIX
-      ; Read person trips 
-      ; 1. da, 2. datoll, 3. sr2, 4. sr2toll, 5. sr3, 6. sr3toll, 7. walk, 8. bike, 
-      ; 9. wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, 
+      ; Read person trips
+      ; 1. da, 2. datoll, 3. sr2, 4. sr2toll, 5. sr3, 6. sr3toll, 7. walk, 8. bike,
+      ; 9. wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
       ; 14. drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
-      ; 19. wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv      
+      ; 19. wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv
       FILEI MATI[1] = "main\tripsEA@token_suffix@.tpp"
       FILEI MATI[2] = "main\tripsAM@token_suffix@.tpp"
       FILEI MATI[3] = "main\tripsMD@token_suffix@.tpp"
       FILEI MATI[4] = "main\tripsPM@token_suffix@.tpp"
       FILEI MATI[5] = "main\tripsEV@token_suffix@.tpp"
-      
+
       ; Read transit skims
       ; ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
       FILEI MATI[6] = "skims\trnskmEA_@token_access@_@token_path@_@token_egress@.tpp"
       FILEI MATI[7] = "skims\trnskmAM_@token_access@_@token_path@_@token_egress@.tpp"
       FILEI MATI[8] = "skims\trnskmMD_@token_access@_@token_path@_@token_egress@.tpp"
       FILEI MATI[9] = "skims\trnskmPM_@token_access@_@token_path@_@token_egress@.tpp"
-      FILEI MATI[10]= "skims\trnskmEV_@token_access@_@token_path@_@token_egress@.tpp"     
-      
+      FILEI MATI[10]= "skims\trnskmEV_@token_access@_@token_path@_@token_egress@.tpp"
+
       FILEO PRINTO[1] = "metrics\transit_times_by_acc_mode_egr_@token_path@.csv", append=T
 
-      ; EA Transit Trips 
+      ; EA Transit Trips
       MW[1] = mi.1.@token_access@_@token_path@_@token_egress@            ; Trips
       MW[2] = MW[1] *  mi.6.ivt                                          ; IVTTrips
       MW[3] = MW[1] * (mi.6.wait+mi.6.wacc+mi.6.waux+mi.6.wegr+mi.6.dtime) ; OVTTrips
@@ -98,27 +114,27 @@
       MW[104] = MW[1] * mi.6.waux       					 ; wauxTrips
       MW[105] = MW[1] * mi.6.dtime       					 ; dtimeTrips
 
-      ; AM Transit Trips 
+      ; AM Transit Trips
       MW[4] = mi.2.@token_access@_@token_path@_@token_egress@            ; Trips
       MW[5] = MW[4] *  mi.7.ivt                                          ; IVTTrips
-      MW[6] = MW[4] * (mi.7.wait+mi.7.wacc+mi.7.waux+mi.7.wegr+mi.7.dtime) ; OVTTrips     
+      MW[6] = MW[4] * (mi.7.wait+mi.7.wacc+mi.7.waux+mi.7.wegr+mi.7.dtime) ; OVTTrips
       MW[201] = MW[4] * mi.7.iwait          			 ; iwaitTrips
       MW[202] = MW[4] * mi.7.xwait       					 ; xwaitTrips
       MW[203] = MW[4] * (mi.7.wacc+mi.7.wegr) 		 ; accegrTrips
       MW[204] = MW[4] * mi.7.waux        					 ; wauxTrips
-      MW[205] = MW[4] * mi.7.dtime       					 ; dtimeTrips      
+      MW[205] = MW[4] * mi.7.dtime       					 ; dtimeTrips
 
-      ; MD Transit Trips 
+      ; MD Transit Trips
       MW[7] = mi.3.@token_access@_@token_path@_@token_egress@            ; Trips
       MW[8] = MW[7] *  mi.8.ivt                                          ; IVTTrips
-      MW[9] = MW[7] * (mi.8.wait+mi.8.wacc+mi.8.waux+mi.8.wegr+mi.8.dtime) ; OVTTrips 
+      MW[9] = MW[7] * (mi.8.wait+mi.8.wacc+mi.8.waux+mi.8.wegr+mi.8.dtime) ; OVTTrips
       MW[301] = MW[7] * mi.8.iwait       					 ; iwaitTrips
       MW[302] = MW[7] * mi.8.xwait       					 ; xwaitTrips
       MW[303] = MW[7] * (mi.8.wacc+mi.8.wegr) 		 ; accegrTrips
       MW[304] = MW[7] * mi.8.waux        					 ; wauxTrips
-      MW[305] = MW[7] * mi.8.dtime       					 ; dtimeTrips 
+      MW[305] = MW[7] * mi.8.dtime       					 ; dtimeTrips
 
-      ; PM Transit Trips 
+      ; PM Transit Trips
       MW[10] = mi.4.@token_access@_@token_path@_@token_egress@           ; Trips
       MW[11] = MW[10] *  mi.9.ivt                                        ; IVTTrips
       MW[12] = MW[10] * (mi.9.wait+mi.9.wacc+mi.9.waux+mi.9.wegr+mi.9.dtime) ; OVTTrips
@@ -126,22 +142,22 @@
       MW[402] = MW[10] * mi.9.xwait      					 ; xwaitTrips
       MW[403] = MW[10] * (mi.9.wacc+mi.9.wegr) 		 ; accegrTrips
       MW[404] = MW[10] * mi.9.waux       					 ; wauxTrips
-      MW[405] = MW[10] * mi.9.dtime      					 ; dtimeTrips 
+      MW[405] = MW[10] * mi.9.dtime      					 ; dtimeTrips
 
-      ; EV Transit Trips 
+      ; EV Transit Trips
       MW[13] = mi.5.@token_access@_@token_path@_@token_egress@           ; Trips
       MW[14] = MW[13] *  mi.10.ivt                                       ; IVTTrips
-      MW[15] = MW[13] * (mi.10.wait+mi.10.wacc+mi.10.waux+mi.10.wegr+mi.10.dtime) ; OVTTrips     
+      MW[15] = MW[13] * (mi.10.wait+mi.10.wacc+mi.10.waux+mi.10.wegr+mi.10.dtime) ; OVTTrips
       MW[501] = MW[13] * mi.10.iwait       					 ; iwaitTrips
       MW[502] = MW[13] * mi.10.xwait       					 ; xwaitTrips
       MW[503] = MW[13] * (mi.10.wacc+mi.10.wegr)		 ; accegrTrips
       MW[504] = MW[13] * mi.10.waux       					 ; wauxTrips
-      MW[505] = MW[13] * mi.10.dtime       					 ; dtimeTrips 
-      
+      MW[505] = MW[13] * mi.10.dtime       					 ; dtimeTrips
+
       JLOOP
       Trips  = Trips  + MW[1]   + MW[4]   + MW[7]   + MW[10]  + MW[13]
       IVT    = IVT    + MW[2]   + MW[5]   + MW[8]   + MW[11]  + MW[14]
-      OVT    = OVT    + MW[3]   + MW[6]   + MW[9]   + MW[12]  + MW[15] 
+      OVT    = OVT    + MW[3]   + MW[6]   + MW[9]   + MW[12]  + MW[15]
       iwait  = iwait  + MW[101] + MW[201] + MW[301] + MW[401] + MW[501]
       xwait  = xwait  + MW[102] + MW[202] + MW[302] + MW[402] + MW[502]
       accegr = accegr + MW[103] + MW[203] + MW[303] + MW[403] + MW[503]
@@ -165,7 +181,7 @@
       endif
       if(I=1475)
         IVT_triphours = IVT    / 6000
-      	OVT_triphours = OVT    / 6000 
+      	OVT_triphours = OVT    / 6000
       	iwait_hours   = iwait  / 6000
       	xwait_hours   = xwait  / 6000
       	accegr_hours  = accegr / 6000
@@ -181,7 +197,7 @@
 endloop
 endloop
 
-EndDistributeMultistep 
+EndDistributeMultistep
 endloop
 
 Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
@@ -204,40 +220,40 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
 
 *del metrics\transit_times_by_mode_income.csv
 
-; Loop thru transit modes 
-  loop path = 1,5   
+; Loop thru transit modes
+  loop path = 1,5
     if (path = 1) token_path = 'com'
     if (path = 2) token_path = 'hvy'
     if (path = 3) token_path = 'exp'
     if (path = 4) token_path = 'lrf'
     if (path = 5) token_path = 'loc'
 
- DistributeMultistep processid = 'ctramp', processNum = path, commpath = 'm:\commpath'  
+ DistributeMultistep processid = 'ctramp', processNum = path, commpath = 'm:\commpath'
 
 ; Loop thru income quartiles
-  loop inc = 1,4                     
+  loop inc = 1,4
    if (inc = 1)  token_inc   = 'inc1'
    if (inc = 2)  token_inc   = 'inc2'
    if (inc = 3)  token_inc   = 'inc3'
    if (inc = 4)  token_inc   = 'inc4'
- 
+
   RUN PGM = MATRIX
   ; Read person trips for a transitmode for all time periods and Access+Egress combinations
   ; Sum them to get daily total transit trips by transitmode
-     FILEI MATI[1] = "main\tripsEA@token_inc@.tpp"   
-     FILEI MATI[2] = "main\tripsAM@token_inc@.tpp"   
-     FILEI MATI[3] = "main\tripsMD@token_inc@.tpp"   
-     FILEI MATI[4] = "main\tripsPM@token_inc@.tpp"   
-     FILEI MATI[5] = "main\tripsEV@token_inc@.tpp"   
-     
-   ; Read transit skims
+     FILEI MATI[1] = "main\tripsEA@token_inc@.tpp"
+     FILEI MATI[2] = "main\tripsAM@token_inc@.tpp"
+     FILEI MATI[3] = "main\tripsMD@token_inc@.tpp"
+     FILEI MATI[4] = "main\tripsPM@token_inc@.tpp"
+     FILEI MATI[5] = "main\tripsEV@token_inc@.tpp"
+
+     ; Read transit skims
      ; ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
      FILEI MATI[6]  = "skims\trnskmEA_wlk_@token_path@_wlk.tpp"
      FILEI MATI[7]  = "skims\trnskmAM_wlk_@token_path@_wlk.tpp"
      FILEI MATI[8]  = "skims\trnskmMD_wlk_@token_path@_wlk.tpp"
      FILEI MATI[9]  = "skims\trnskmPM_wlk_@token_path@_wlk.tpp"
      FILEI MATI[10] = "skims\trnskmEV_wlk_@token_path@_wlk.tpp"
-     
+
      FILEI MATI[11] = "skims\trnskmEA_drv_@token_path@_wlk.tpp"
      FILEI MATI[12] = "skims\trnskmAM_drv_@token_path@_wlk.tpp"
      FILEI MATI[13] = "skims\trnskmMD_drv_@token_path@_wlk.tpp"
@@ -249,42 +265,42 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
      FILEI MATI[18] = "skims\trnskmMD_wlk_@token_path@_drv.tpp"
      FILEI MATI[19] = "skims\trnskmPM_wlk_@token_path@_drv.tpp"
      FILEI MATI[20] = "skims\trnskmEV_wlk_@token_path@_drv.tpp"
-      
-     FILEO PRINTO[1] = "metrics\transit_times_by_mode_income_@token_path@.csv",APPEND=T    
-  
+
+     FILEO PRINTO[1] = "metrics\transit_times_by_mode_income_@token_path@.csv",APPEND=T
+
   ; Read Trips
-  MW[01] = mi.1.wlk_@token_path@_wlk                                    
-  MW[02] = mi.1.drv_@token_path@_wlk                                    
-  MW[03] = mi.1.wlk_@token_path@_drv                                    
-  MW[04] = mi.2.wlk_@token_path@_wlk                                    
-  MW[05] = mi.2.drv_@token_path@_wlk                                    
-  MW[06] = mi.2.wlk_@token_path@_drv                                    
-  MW[07] = mi.3.wlk_@token_path@_wlk                                    
-  MW[08] = mi.3.drv_@token_path@_wlk                                    
-  MW[09] = mi.3.wlk_@token_path@_drv                                    
-  MW[10] = mi.4.wlk_@token_path@_wlk                                    
-  MW[11] = mi.4.drv_@token_path@_wlk                                    
-  MW[12] = mi.4.wlk_@token_path@_drv                                    
-  MW[13] = mi.5.wlk_@token_path@_wlk                                    
-  MW[14] = mi.5.drv_@token_path@_wlk                                    
-  MW[15] = mi.5.wlk_@token_path@_drv  
-  
-  ; Travel Time   TODO: USE TABLE NAMES
-   MW[21] = (mi.06.1 + mi.06.4 + mi.06.5 + mi.06.6 + mi.06.7 + mi.06.8)   
-   MW[22] = (mi.07.1 + mi.07.4 + mi.07.5 + mi.07.6 + mi.07.7 + mi.07.8)   
-   MW[23] = (mi.08.1 + mi.08.4 + mi.08.5 + mi.08.6 + mi.08.7 + mi.08.8)   
-   MW[24] = (mi.09.1 + mi.09.4 + mi.09.5 + mi.09.6 + mi.09.7 + mi.09.8)   
-   MW[25] = (mi.10.1 + mi.10.4 + mi.10.5 + mi.10.6 + mi.10.7 + mi.10.8)   
-   MW[26] = (mi.11.1 + mi.11.4 + mi.11.5 + mi.11.6 + mi.11.7 + mi.11.8)      
-   MW[27] = (mi.12.1 + mi.12.4 + mi.12.5 + mi.12.6 + mi.12.7 + mi.12.8)   
-   MW[28] = (mi.13.1 + mi.13.4 + mi.13.5 + mi.13.6 + mi.13.7 + mi.13.8)   
-   MW[29] = (mi.14.1 + mi.14.4 + mi.14.5 + mi.14.6 + mi.14.7 + mi.14.8)   
-   MW[30] = (mi.15.1 + mi.15.4 + mi.15.5 + mi.15.6 + mi.15.7 + mi.15.8)   
-   MW[31] = (mi.16.1 + mi.16.4 + mi.16.5 + mi.16.6 + mi.16.7 + mi.16.8)   
-   MW[32] = (mi.17.1 + mi.17.4 + mi.17.5 + mi.17.6 + mi.17.7 + mi.17.8)   
-   MW[33] = (mi.18.1 + mi.18.4 + mi.18.5 + mi.18.6 + mi.18.7 + mi.18.8)   
-   MW[34] = (mi.19.1 + mi.19.4 + mi.19.5 + mi.19.6 + mi.19.7 + mi.19.8)      
-   MW[35] = (mi.20.1 + mi.20.4 + mi.20.5 + mi.20.6 + mi.20.7 + mi.20.8)   
+  MW[01] = mi.1.wlk_@token_path@_wlk
+  MW[02] = mi.1.drv_@token_path@_wlk
+  MW[03] = mi.1.wlk_@token_path@_drv
+  MW[04] = mi.2.wlk_@token_path@_wlk
+  MW[05] = mi.2.drv_@token_path@_wlk
+  MW[06] = mi.2.wlk_@token_path@_drv
+  MW[07] = mi.3.wlk_@token_path@_wlk
+  MW[08] = mi.3.drv_@token_path@_wlk
+  MW[09] = mi.3.wlk_@token_path@_drv
+  MW[10] = mi.4.wlk_@token_path@_wlk
+  MW[11] = mi.4.drv_@token_path@_wlk
+  MW[12] = mi.4.wlk_@token_path@_drv
+  MW[13] = mi.5.wlk_@token_path@_wlk
+  MW[14] = mi.5.drv_@token_path@_wlk
+  MW[15] = mi.5.wlk_@token_path@_drv
+
+  ; Travel Time
+   MW[21] = (mi.06.ivt + mi.06.wait + mi.06.wacc + mi.06.waux + mi.06.wegr + mi.06.dtime)
+   MW[22] = (mi.07.ivt + mi.07.wait + mi.07.wacc + mi.07.waux + mi.07.wegr + mi.07.dtime)
+   MW[23] = (mi.08.ivt + mi.08.wait + mi.08.wacc + mi.08.waux + mi.08.wegr + mi.08.dtime)
+   MW[24] = (mi.09.ivt + mi.09.wait + mi.09.wacc + mi.09.waux + mi.09.wegr + mi.09.dtime)
+   MW[25] = (mi.10.ivt + mi.10.wait + mi.10.wacc + mi.10.waux + mi.10.wegr + mi.10.dtime)
+   MW[26] = (mi.11.ivt + mi.11.wait + mi.11.wacc + mi.11.waux + mi.11.wegr + mi.11.dtime)
+   MW[27] = (mi.12.ivt + mi.12.wait + mi.12.wacc + mi.12.waux + mi.12.wegr + mi.12.dtime)
+   MW[28] = (mi.13.ivt + mi.13.wait + mi.13.wacc + mi.13.waux + mi.13.wegr + mi.13.dtime)
+   MW[29] = (mi.14.ivt + mi.14.wait + mi.14.wacc + mi.14.waux + mi.14.wegr + mi.14.dtime)
+   MW[30] = (mi.15.ivt + mi.15.wait + mi.15.wacc + mi.15.waux + mi.15.wegr + mi.15.dtime)
+   MW[31] = (mi.16.ivt + mi.16.wait + mi.16.wacc + mi.16.waux + mi.16.wegr + mi.16.dtime)
+   MW[32] = (mi.17.ivt + mi.17.wait + mi.17.wacc + mi.17.waux + mi.17.wegr + mi.17.dtime)
+   MW[33] = (mi.18.ivt + mi.18.wait + mi.18.wacc + mi.18.waux + mi.18.wegr + mi.18.dtime)
+   MW[34] = (mi.19.ivt + mi.19.wait + mi.19.wacc + mi.19.waux + mi.19.wegr + mi.19.dtime)
+   MW[35] = (mi.20.ivt + mi.20.wait + mi.20.wacc + mi.20.waux + mi.20.wegr + mi.20.dtime)
 
    ; Travel Cost
    MW[41] = mi.06.fare
@@ -302,15 +318,14 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
    MW[53] = mi.18.fare
    MW[54] = mi.19.fare
    MW[55] = mi.20.fare
-                                  
-    ; TOTAL TRIPS                                
-    MW[16] = MW[1]+MW[2]+MW[3]+MW[4]+MW[5]+       
-            MW[6]+MW[7]+MW[8]+MW[9]+MW[10]+      
-            MW[11]+MW[12]+MW[13]+MW[14]+MW[15]   
 
-     
-    ; TRIPS * TIME by PERIOD
-    MW[17] = MW[21] *  MW[01] +         
+   ; TOTAL TRIPS
+   MW[16] = MW[ 1]+MW[ 2]+MW[ 3]+MW[ 4]+MW[ 5]+
+            MW[ 6]+MW[ 7]+MW[ 8]+MW[ 9]+MW[10]+
+            MW[11]+MW[12]+MW[13]+MW[14]+MW[15]
+
+   ; TRIPS * TIME by PERIOD
+   MW[17] = MW[21] *  MW[01] +
             MW[22] *  MW[02] +
             MW[23] *  MW[03] +
             MW[24] *  MW[04] +
@@ -325,9 +340,9 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
             MW[33] *  MW[13] +
             MW[34] *  MW[14] +
             MW[35] *  MW[15]
-   
+
    ; TRIPS * COST by PERIOD
-    MW[18] = MW[41] *  MW[01] +         
+    MW[18] = MW[41] *  MW[01] +
             MW[42] *  MW[02] +
             MW[43] *  MW[03] +
             MW[44] *  MW[04] +
@@ -341,33 +356,33 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
             MW[52] *  MW[12] +
             MW[53] *  MW[13] +
             MW[54] *  MW[14] +
-            MW[55] *  MW[15] 
-   
+            MW[55] *  MW[15]
+
     JLOOP
       triptime = triptime + MW[17]
       tripcost = tripcost + MW[18]
-      TTrips   = TTrips   + MW[16]    
+      TTrips   = TTrips   + MW[16]
     ENDJLOOP
-    
+
       Trips = TTrips
       Time  = triptime /100  ; minutes x 100 to minutes
       Cost  = tripcost /100  ; convert from cents to dollars
-      
+
       if(I = 1454) Avg_time = Time/Trips
       if(I = 1454) Avg_Cost = Cost/Trips
-     
+
      Trips  = TTrips
      Mode   = '@token_path@'
      Income = '@token_inc@'
-     
+
      if(I = 1 & @inc@=1 & @path@ = 1) PRINT PRINTO=1 CSV=T LIST = "Income","Mode","Daily Trips","Avg Time", "Avg Cost"
-     if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Income,Mode,Trips,Avg_time,Avg_Cost 
+     if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Income,Mode,Trips,Avg_time,Avg_Cost
     ENDRUN
   endloop ; income
 
   EndDistributeMultistep
 
-endloop    
+endloop
 
 Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
                  CTRAMP4.script.end, CTRAMP5.script.end,
