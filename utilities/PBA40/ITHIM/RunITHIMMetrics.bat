@@ -42,6 +42,14 @@ if not exist metrics\ITHIM\percapita_daily_dist_time.csv (
   IF %ERRORLEVEL% GTR 0 goto error
 )
 
+if not exist metrics\ITHIM\PMT_PHTinc1.csv (
+  rem Input:  main\trips[EA,AM,MD,PM,EV]inc[1-4].tpp
+  rem         skims\HWYSKM[EA,AM,MD,PM,EV].tpp
+  rem Output: metrics\ITHIM\PMT_PHTinc[1-4].csv
+  runtpp "%CODE_DIR%\utilities\PBA40\ITHIM\PMT_PHT_byinc.job"
+  IF ERRORLEVEL 2 goto error
+)
+
 if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
   rem Export network to csv version (with vehicle class volume columns intact)
   rem Input : hwy\iter%ITER%\avgload5period.net

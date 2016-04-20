@@ -20,6 +20,9 @@ import pandas
 
 FILES = [
     os.path.join("metrics","ITHIM","percapita_daily_dist_time.csv"),
+    os.path.join("metrics","ITHIM","PMT_PHT.csv"),
+    os.path.join("metrics","ITHIM","PMT_PHTinc1.csv"),
+    os.path.join("metrics","ITHIM","PMT_PHTinc4.csv"),
     os.path.join("metrics","ITHIM","DistanceTraveledByFacilityType_auto+truck.csv"),
     os.path.join("metrics","ITHIM","DistanceTraveledByFacilityType_transit.csv"),
     # os.path.join("metrics","ITHIM","emissions.csv")

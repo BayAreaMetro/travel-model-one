@@ -81,34 +81,6 @@ if __name__ == '__main__':
     vol_net_df.loc[(vol_net_df.vehclass=='sm')|(vol_net_df.vehclass=='smt'), 'truck_VMT'] = vol_net_df['distance']*vol_net_df['volume']
     vol_net_df.loc[(vol_net_df.vehclass=='hv')|(vol_net_df.vehclass=='hvt'), 'truck_VMT']  = vol_net_df['distance']*vol_net_df['volume']
 
-    # each vehicle mile traveled has a driver
-    vol_net_df['auto (driver) PMT']    = vol_net_df['auto_VMT']
-
-    # but s2 and s3 miles traveled have passengers
-    vol_net_df['auto (passenger) PMT'] = 0.0
-    vol_net_df.loc[(vol_net_df.vehclass=='s2')|(vol_net_df.vehclass=='s2t'), 'auto (passenger) PMT'] = vol_net_df['auto_VMT']*1.0
-    vol_net_df.loc[(vol_net_df.vehclass=='s3')|(vol_net_df.vehclass=='s3t'), 'auto (passenger) PMT'] = vol_net_df['auto_VMT']*2.5
-
-    # person hours traveled
-    vol_net_df['auto (driver) PHT']   = 0
-    vol_net_df.loc[(vol_net_df.vehclass=='da')|(vol_net_df.vehclass=='dat'), 'auto (driver) PHT'] = vol_net_df['time']*vol_net_df['volume']/60.0
-    vol_net_df.loc[(vol_net_df.vehclass=='s2')|(vol_net_df.vehclass=='s2t'), 'auto (driver) PHT'] = vol_net_df['time']*vol_net_df['volume']/60.0
-    vol_net_df.loc[(vol_net_df.vehclass=='s3')|(vol_net_df.vehclass=='s2t'), 'auto (driver) PHT'] = vol_net_df['time']*vol_net_df['volume']/60.0
-
-    # but s2 and s3 miles traveled have passengers
-    vol_net_df['auto (passenger) PHT'] = 0.0
-    vol_net_df.loc[(vol_net_df.vehclass=='s2')|(vol_net_df.vehclass=='s2t'), 'auto (passenger) PHT'] = vol_net_df['auto (driver) PHT']*1.0
-    vol_net_df.loc[(vol_net_df.vehclass=='s3')|(vol_net_df.vehclass=='s3t'), 'auto (passenger) PHT'] = vol_net_df['auto (driver) PHT']*2.5
-
-    # PMT and PHT sum
-    pmt_pht_df   = pandas.DataFrame(vol_net_df[['auto (driver) PMT','auto (passenger) PMT',
-                                                'auto (driver) PHT','auto (passenger) PHT']].sum()).reset_index()
-    pmt_pht_df["item_name"] = pmt_pht_df['index'].str[-3:]
-    pmt_pht_df["mode"     ] = pmt_pht_df["index"].str[:-4]
-    pmt_pht_df.rename(columns={0:"item_value"}, inplace=True)
-    pmt_pht_df.drop("index", axis=1, inplace=True)
-    pmt_pht_df["units"] = "miles"
-
     # groupby facility type for VMT only
     loaded_ft_df = vol_net_df[['ITHIM_ft','auto_VMT','truck_VMT']].groupby(['ITHIM_ft']).agg(numpy.sum)
 
@@ -129,13 +101,6 @@ if __name__ == '__main__':
     total_truck_vmt = loaded_ft_df.loc[loaded_ft_df["mode"]=="truck", "wt_n"].sum()
     loaded_ft_df.loc[loaded_ft_df["mode"]=="car",   "item_value"] = loaded_ft_df["wt_n"]/total_car_vmt
     loaded_ft_df.loc[loaded_ft_df["mode"]=="truck", "item_value"] = loaded_ft_df["wt_n"]/total_truck_vmt
-
-    # put them together
-    loaded_ft_df = loaded_ft_df.append(pmt_pht_df)
-
-    loaded_ft_df.loc[loaded_ft_df.item_name=="PMT","item_name"] = "Total PMT"
-    loaded_ft_df.loc[loaded_ft_df.item_name=="PHT","item_name"] = "Total PHT"
-    loaded_ft_df.loc[loaded_ft_df.item_name=="Total PHT","units"] = "hours"
 
     outfile = os.path.join("metrics","ITHIM","DistanceTraveledByFacilityType_auto+truck.csv")
     loaded_ft_df.to_csv(outfile, index=False)
