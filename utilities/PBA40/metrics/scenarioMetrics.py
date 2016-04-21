@@ -130,7 +130,7 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     accessiblejobs_df[ 'trn_drv_weighted'] = accessiblejobs_df[ 'trn_drv']*accessiblejobs_df['TOTPOP']
     # print accessiblejobs_df.head()
 
-    for suffix in ["", "_coc"]:
+    for suffix in ["", "_coc","_noncoc"]:
 
         # restrict to suffix if necessary
         accjob_subset_df = accessiblejobs_df
@@ -138,6 +138,9 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
         if suffix == "_coc":
             accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_set"]==1]
             totalpop_subset  = tazdata_df.loc[tazdata_df["in_set"]==1, "TOTPOP"].sum()
+        elif suffix == "_noncoc":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_set"]==0]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["in_set"]==0, "TOTPOP"].sum()
 
         # numerator = accessible jobs weighted by persons
         #  e.g. sum over TAZs of (totpop at TAZ x totemp jobs accessible)
