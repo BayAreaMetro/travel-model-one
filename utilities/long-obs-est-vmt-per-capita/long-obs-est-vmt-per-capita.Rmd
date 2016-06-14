@@ -1,0 +1,188 @@
+---
+title: "Longitudinal Observed and Estimated VMT Per Capita"
+author: "David Ory"
+output: 
+   html_document:
+      theme: cosmo
+      toc: yes
+---
+
+## Administration
+
+#### Purpose
+This script consumes observed VMT per capita by travel analysis zone estimates from the 2000 and 2012/13 household travel surveys and simulated VMT per capita estimates from the travel model.  These data is put into a single output database that is handled in Tableau. 
+
+
+#### Outputs
+1.  Everything, early days
+
+#### _TODO_ 
+2. Push output data to box
+3. Add read me
+
+## Procedure
+
+#### Overhead
+```{r overhead, results = 'hide'}
+library(knitr)
+suppressMessages(library(dplyr))
+```
+
+```{r config, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
+
+#### Parameters
+```{r parameters}
+YEAR_2000_DETAIL = "2000_05_002"
+YEAR_2005_DETAIL = "2005_05_003"
+YEAR_2010_DETAIL = "2010_05_003"
+
+OBSERVED_CORRELATION_THRESHOLD = 30
+
+```
+
+
+#### Remote data locations
+```{r remote-io}
+F_OBSERVED_2000 = "M:/Data/HomeInterview/Longitudinal VMT per Capita/bats_2000.csv"
+F_OBSERVED_2013 = "M:/Data/HomeInterview/Longitudinal VMT per Capita/chts_2013.csv"
+
+F_ESTIMATED_2000 = "M:/Application/Model One/RTP2017/Scenarios/2000_05_002/OUTPUT/core_summaries/VehicleMilesTraveled.csv"
+F_ESTIMATED_2005 = "M:/Application/Model One/RTP2017/Scenarios/2005_05_003/OUTPUT/core_summaries/VehicleMilesTraveled.csv"
+F_ESTIMATED_2010 = "M:/Application/Model One/RTP2017/Scenarios/2010_05_003/OUTPUT/core_summaries/VehicleMilesTraveled.csv"
+
+F_TAZ_XY_COORDS = "~/GitHub/travel-model-one/utilities/taz-xy-coordinates/taz_nodes_WGS84.csv"
+
+F_OUTPUT = "M:/Data/HomeInterview/Longitudinal VMT per Capita/long-obs-est-vmt-per-capita.csv"
+
+```
+
+#### Data reads
+```{r data-reads}
+obs_2000 <- read.table(file = F_OBSERVED_2000, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+obs_2013 <- read.table(file = F_OBSERVED_2013, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+
+est_2000 <- read.table(file = F_ESTIMATED_2000, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+est_2005 <- read.table(file = F_ESTIMATED_2005, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+est_2010 <- read.table(file = F_ESTIMATED_2010, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+
+taz_xy <- read.table(file = F_TAZ_XY_COORDS, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+
+```
+
+#### Manipulate taz xy
+```{r manip-taz}
+taz_df <- taz_xy %>%
+  select(taz = N, latitude, longitude)
+```
+
+
+#### Manipulate observed
+```{r manip-obs}
+working_2000 <- obs_2000 %>%
+  mutate(year = 2000) %>%
+  mutate(detail = "BATS")
+
+working_2013 <- obs_2013 %>%
+  mutate(year = 2013) %>%
+  mutate(detail = "CHTS")
+
+working <- rbind(working_2000, working_2013)
+
+working_observed <- working %>%
+  select(year, 
+         detail, 
+         taz = TAZ, 
+         observed_persons = Unweighted.Persons, 
+         estimated_persons = Weighted.Persons, 
+         vmt = Weighted.VMT) %>%
+  mutate(estimated_persons = as.numeric(ifelse(estimated_persons == "-", NA, estimated_persons))) %>%
+  mutate(observed_persons = as.numeric(ifelse(observed_persons == "-", NA, observed_persons))) %>%
+  mutate(vmt = as.numeric(ifelse(vmt == "-", NA, vmt))) %>%
+  mutate(vmt_per_capita = ifelse(is.na(estimated_persons), NA, vmt / estimated_persons))
+
+remove(working_2000, working_2013, working)
+
+```
+
+#### Manipulate estimated
+```{r manip-est}
+working_2000 <- est_2000 %>%
+  mutate(year = 2000) %>%
+  mutate(detail = YEAR_2000_DETAIL)
+
+working_2005 <- est_2005 %>%
+  mutate(year = 2005) %>%
+  mutate(detail = YEAR_2005_DETAIL)
+
+working_2010 <- est_2010 %>%
+  mutate(year = 2010) %>%
+  mutate(detail = YEAR_2010_DETAIL)
+
+working <- rbind(working_2000, working_2005, working_2010)
+
+# file breaks avg vmt down by walk_subzone, person_type, and automobile sufficiency; need to aggregate back up to taz
+working_estimated <- working %>%
+  select(year, detail, taz, freq, vmt) %>%
+  group_by(year, detail, taz) %>%
+  summarise(estimated_persons = sum(freq), vmt = sum(freq * vmt)) %>%
+  mutate(observed_persons = NA) %>%
+  mutate(vmt_per_capita = ifelse(estimated_persons > 0L, vmt / estimated_persons, NA))
+
+remove(working_2000, working_2005, working_2010, working)
+  
+
+```
+
+#### Combine & Analyze
+```{r combine}
+outcome_df <- rbind(working_observed, working_estimated)
+
+# Check correlations
+# Year 2000
+observed <- outcome_df %>%
+  filter(detail == "BATS" & observed_persons > OBSERVED_CORRELATION_THRESHOLD) %>%
+  select(taz, observed_vmt_per_capita = vmt_per_capita)
+
+estimated <- outcome_df %>%
+  filter(detail == YEAR_2000_DETAIL) %>%
+  select(taz, estimated_vmt_per_capita = vmt_per_capita)
+
+correlation <- left_join(observed, estimated, by = c("taz"))
+
+correlation <- correlation %>%
+  filter(!is.na(observed_vmt_per_capita)) %>%
+  filter(!is.na(estimated_vmt_per_capita))
+
+cor(correlation$observed_vmt_per_capita, correlation$estimated_vmt_per_capita)
+
+# Year 2010ish
+observed <- outcome_df %>%
+  filter(detail == "CHTS" & observed_persons > OBSERVED_CORRELATION_THRESHOLD) %>%
+  select(taz, observed_vmt_per_capita = vmt_per_capita)
+
+estimated <- outcome_df %>%
+  filter(detail == YEAR_2010_DETAIL) %>%
+  select(taz, estimated_vmt_per_capita = vmt_per_capita)
+
+correlation <- left_join(observed, estimated, by = c("taz"))
+
+correlation <- correlation %>%
+  filter(!is.na(observed_vmt_per_capita)) %>%
+  filter(!is.na(estimated_vmt_per_capita))
+
+cor(correlation$observed_vmt_per_capita, correlation$estimated_vmt_per_capita)
+
+
+```
+
+#### Write to disk
+```{r data-writes}
+outcome_df <- left_join(outcome_df, taz_df, by = c("taz"))
+
+write.csv(outcome_df, file = F_OUTPUT, row.names = FALSE, quote = F)
+
+
+```
+
