@@ -5,8 +5,8 @@ The Metropolitan Transportation Commission (MTC) maintains a simulation model of
 The following model versions are available in the repository:
 
 1. Version 0.3 -- Mantained in branch `v03`.  For additional details, please see [here](http://analytics.mtc.ca.gov/foswiki/Main/Development). 
-2. Version 0.4 -- Mantained in branch `master`.  For additional details, please see [here](http://analytics.mtc.ca.gov/foswiki/Main/Development).
-3. Version 0.5 -- Mantained in branch `v05sgr`.  For additional details, please see [here](http://analytics.mtc.ca.gov/foswiki/Main/Development).
+2. Version 0.4 -- Mantained in branch `v04`.  For additional details, please see [here](http://analytics.mtc.ca.gov/foswiki/Main/Development).
+3. Version 0.5 -- Mantained in branch `master`.  For additional details, please see [here](http://analytics.mtc.ca.gov/foswiki/Main/Development).
 
 Any other branches are exploratory and not used in our planning work.      
 
