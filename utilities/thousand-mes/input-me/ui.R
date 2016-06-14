@@ -8,10 +8,10 @@ controls <- function(person_num) {
     
     textInput(paste0("name",person_num), label=paste("Person",person_num,"Name")),
     
-    sliderInput("age", "Age",
+    sliderInput(paste0("age",person_num), "Age",
                 min=0, max=100, value=40, step=1),
     
-    selectInput("relate", "Relationship to householder",
+    selectInput(paste0("relate",person_num), "Relationship to householder",
                 choices=c("Householder"                     = 1,
                           "Husband/wife"                    = 2,
                           "Natural born child"              = 3,
@@ -36,17 +36,18 @@ controls <- function(person_num) {
                           "Institutionalized GQ person"     = 22,
                           "Non-Institutionalized GQ person" = 23)),
     
-    selectInput("esr", "Employment Status",
+    selectInput(paste0("esr",person_num), "Employment Status",
                 choices=c("Under sixteen"                            = 0,
                           "Employed, at work"                        = 1,
                           "Employed, with a job but not at work"     = 2,
                           "Unemployed"                               = 3,
                           "Armed Forces, at work"                    = 4,
                           "Armed Forces, with a job but not at work" = 5,
-                          "Not in labor force"                       = 6),
+                          "Not in labor force"                       = 6,
+                          "Retired"                                  = 7), # this isn't an ESR option but added for ptype
                 selected=1),
     
-    selectInput("grade", "Grade of students or children under 3",
+    selectInput(paste0("grade",person_num), "Grade of students or children under 3",
                 choices=c("Not a student"                            = 0,
                           "Nursery school"                           = 1,
                           "Kindergarten"                             = 2,
@@ -56,17 +57,17 @@ controls <- function(person_num) {
                           "College undergraduate"                    = 6,
                           "Graduate or Professional School"          = 7)),
     
-    radioButtons("sex","Gender",
+    radioButtons(paste0("sex",person_num),"Gender",
                  choices=c("Male"   = 1,
                            "Female" = 2)),
     # keep this?
-    sliderInput("weeks", "Weeks worked in 1999",
+    sliderInput(paste0("weeks",person_num), "Weeks worked in 1999",
                 min=0, max=52, value=50, step=1),
     
-    sliderInput("hours","Hours worked per week in 1999",
+    sliderInput(paste0("hours",person_num),"Hours worked per week in 1999",
                 min=0, max=99, value=40, step=1),
     
-    selectInput("msp", "Marital Status",
+    selectInput(paste0("msp",person_num), "Marital Status",
                 choices=c("N/A" = 0,
                           "Now married, spouse present" = 1,
                           "Now married, spouse absent"  = 2,
@@ -76,8 +77,8 @@ controls <- function(person_num) {
                           "Never married"               = 6),
                 selected=1),
     
-    sliderInput("earns", "Personal Income (2016 dollars)",
-                min=0, max=1000000, value=60000, step=5000, sep=",", pre="$")
+    sliderInput(paste0("earns",person_num), "Personal Income (2015$)",
+                min=0, max=470000, value=60000, step=5000, sep=",", pre="$")
     
   )
 }
@@ -98,8 +99,12 @@ shinyUI(fluidPage(
       helpText( a("Click here to see corresponding Household Model Inputs",
                 href="http://analytics.mtc.ca.gov/foswiki/Main/PopSynHousehold")),
       inputPanel(
+           helpText( a("Click here for TAZ Geographies",
+                       href="http://analytics.mtc.ca.gov/foswiki/Main/TravelModelOneGeographies")),
            
-           sliderInput("hinc", "Household Income (2016 dollars)",
+           textInput("taz", label="Location (Travel Analysis Zone) of Household"),  
+
+           sliderInput("hinc", "Household Income (2015$)",
                        min=0, max=1000000, value=60000, step=5000, sep=",", pre="$"),
            
            sliderInput("persons", "Number of Persons",
