@@ -18,7 +18,6 @@ This script consumes observed VMT per worker by workplace travel analysis zone e
 
 #### _TODO_ 
 1. Bug checks 
-2. Push output data to box
 3. Add read me
 
 ## Procedure
@@ -62,7 +61,7 @@ F_TAZ_XY_COORDS = "~/GitHub/travel-model-one/utilities/taz-xy-coordinates/taz_no
 
 F_TAZ_COUNTY_CROSSWALK = "~/GitHub/travel-model-one/utilities/geographies/taz-superdistrict-county.csv"
 
-F_OUTPUT = "M:/Data/HomeInterview/Longitudinal VMT per Capita and per Worker/long-obs-est-vmt-per-worker.csv"
+F_OUTPUT = "~/../Box Sync/Share Data/observed-estimated-vmt/long-obs-est-vmt-per-worker.csv"
 
 ```
 

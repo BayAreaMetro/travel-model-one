@@ -8,7 +8,7 @@
   </preferences>
   <datasources>
     <datasource caption='long-obs-est-vmt-per-capita' inline='true' name='textscan.1vueseq0zfohkx112y1iq18qdc24' version='9.3'>
-      <connection class='textscan' directory='M:/Data/HomeInterview/Longitudinal VMT per Capita and per Worker' filename='long-obs-est-vmt-per-capita.csv' password='' server=''>
+      <connection class='textscan' directory='C:/Users/dory/Box Sync/Share Data/observed-estimated-vmt' filename='long-obs-est-vmt-per-capita.csv' password='' server=''>
         <relation name='long-obs-est-vmt-per-capita.csv' table='[long-obs-est-vmt-per-capita#csv]' type='table'>
           <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
             <column datatype='integer' name='year' ordinal='0' />
@@ -310,7 +310,7 @@
       <column-instance column='[detail]' derivation='None' name='[none:detail:nk]' pivot='key' type='nominal' />
       <column-instance column='[Calculation_520447255620231174]' derivation='Sum' name='[sum:Calculation_520447255620231174:qk]' pivot='key' type='quantitative' />
       <column-instance column='[Calculation_520447255620440071]' derivation='Sum' name='[sum:Calculation_520447255620440071:qk]' pivot='key' type='quantitative' />
-      <layout dim-ordering='alphabetic' dim-percentage='0.436904' measure-ordering='alphabetic' measure-percentage='0.563097' show-aliased-fields='true' show-structure='true' />
+      <layout dim-ordering='alphabetic' dim-percentage='0.439471' measure-ordering='alphabetic' measure-percentage='0.560529' show-aliased-fields='true' show-structure='true' />
       <style>
         <style-rule element='mark'>
           <encoding attr='color' field='[none:detail:nk]' type='palette'>
@@ -1229,7 +1229,7 @@
     </worksheet>
   </worksheets>
   <windows source-height='28'>
-    <window class='worksheet' name='county averages'>
+    <window class='worksheet' maximized='true' name='county averages'>
       <cards>
         <edge name='left'>
           <strip size='160'>
@@ -1438,7 +1438,7 @@
         </highlight>
       </viewpoint>
     </window>
-    <window class='worksheet' maximized='true' name='map'>
+    <window class='worksheet' name='map'>
       <cards>
         <edge name='left'>
           <strip size='160'>
