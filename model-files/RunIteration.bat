@@ -93,6 +93,9 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\nonres\TruckTollChoice.job
 if ERRORLEVEL 2 goto done
 
+:: Apply a transit submode choice model for transit trips to bay area HSR stations
+runtpp CTRAMP\scripts\nonres\HsrTransitSubmodeChoice.job
+if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::

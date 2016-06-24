@@ -602,6 +602,9 @@ loop period = 1, 5
       
       ; read in the joint trips fixed format file from step two
       filei mati[2] = main\jointtrips@token_period@.dat, pattern=ijm:v, fields=#1,2,0,3-26
+
+      ; read in the transit trips to/from bay area HSR stations
+      filei mati[3] = main\trips_transitHsr@token_period@.tpp
      
       ; write out a matrix that combines the individual and joint trips for assignment
       fileo mato[1] = main\trips@token_period@.tpp, mo = 1-23, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
@@ -638,49 +641,49 @@ loop period = 1, 5
       mw[8]  = (mi.1.8  + mi.2.8 ) * (1 / @token_sample_share@) 
       
       ; walk, local bus, walk
-      mw[9]  = (mi.1.9  + mi.2.9 ) * (1 / @token_sample_share@)
+      mw[9]  = (mi.1.9  + mi.2.9 ) * (1 / @token_sample_share@) + mi.3.wlk_loc_wlk
       
       ; walk, light rail/ferry, walk
-      mw[10] = (mi.1.10 + mi.2.10) * (1 / @token_sample_share@)
+      mw[10] = (mi.1.10 + mi.2.10) * (1 / @token_sample_share@) + mi.3.wlk_lrf_wlk
       
       ; walk, express bus, walk
-      mw[11] = (mi.1.11 + mi.2.11) * (1 / @token_sample_share@)
+      mw[11] = (mi.1.11 + mi.2.11) * (1 / @token_sample_share@) + mi.3.wlk_exp_wlk
       
       ; walk, heavy rail, walk
-      mw[12] = (mi.1.12 + mi.2.12) * (1 / @token_sample_share@) 
+      mw[12] = (mi.1.12 + mi.2.12) * (1 / @token_sample_share@) + mi.3.wlk_hvy_wlk
       
       ; walk, commuter rail, walk
-      mw[13] = (mi.1.13 + mi.2.13) * (1 / @token_sample_share@) 
+      mw[13] = (mi.1.13 + mi.2.13) * (1 / @token_sample_share@) + mi.3.wlk_com_wlk
       
       ; drive, local bus, walk
-      mw[14] = (mi.1.14 + mi.2.14) * (1 / @token_sample_share@)
+      mw[14] = (mi.1.14 + mi.2.14) * (1 / @token_sample_share@) + mi.3.drv_loc_wlk
       
       ; drive, light rail/ferry, walk
-      mw[15] = (mi.1.15 + mi.2.15) * (1 / @token_sample_share@) 
+      mw[15] = (mi.1.15 + mi.2.15) * (1 / @token_sample_share@) + mi.3.drv_lrf_wlk
       
       ; drive, express bus, walk
-      mw[16] = (mi.1.16 + mi.2.16) * (1 / @token_sample_share@) 
+      mw[16] = (mi.1.16 + mi.2.16) * (1 / @token_sample_share@) + mi.3.drv_exp_wlk
       
       ; drive, heavy rail, walk
-      mw[17] = (mi.1.17 + mi.2.17) * (1 / @token_sample_share@)
+      mw[17] = (mi.1.17 + mi.2.17) * (1 / @token_sample_share@) + mi.3.drv_hvy_wlk
       
       ; drive, commuter rail, walk
-      mw[18] = (mi.1.18 + mi.2.18) * (1 / @token_sample_share@)
+      mw[18] = (mi.1.18 + mi.2.18) * (1 / @token_sample_share@) + mi.3.drv_com_wlk
       
       ; walk, local bus, drive
-      mw[19] = (mi.1.19 + mi.2.19) * (1 / @token_sample_share@)
+      mw[19] = (mi.1.19 + mi.2.19) * (1 / @token_sample_share@) + mi.3.wlk_loc_drv
       
       ; walk, light rail/ferry, drive
-      mw[20] = (mi.1.20 + mi.2.20) * (1 / @token_sample_share@)
+      mw[20] = (mi.1.20 + mi.2.20) * (1 / @token_sample_share@) + mi.3.wlk_lrf_drv
       
       ; walk, express bus, drive
-      mw[21] = (mi.1.21 + mi.2.21) * (1 / @token_sample_share@) 
+      mw[21] = (mi.1.21 + mi.2.21) * (1 / @token_sample_share@) + mi.3.wlk_exp_drv
       
       ; walk, heavy rail, drive
-      mw[22] = (mi.1.22 + mi.2.22) * (1 / @token_sample_share@)
+      mw[22] = (mi.1.22 + mi.2.22) * (1 / @token_sample_share@) + mi.3.wlk_hvy_drv
       
       ; walk, commuter rail, drive
-      mw[23] = (mi.1.23 + mi.2.23) * (1 / @token_sample_share@)       
+      mw[23] = (mi.1.23 + mi.2.23) * (1 / @token_sample_share@) + mi.3.wlk_com_drv
     
    endrun
    

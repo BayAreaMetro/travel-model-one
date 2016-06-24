@@ -12,15 +12,15 @@
 ;
 ; Input:  (1) Time-period-specific origin/destination matrices of drive alone, shared ride 2, and share ride 3+ 
 ;             internal/external trip tables. 
-;	  (2) Skims providing the time and cost for value toll and non-value toll paths for each; the tables must
+;         (2) Skims providing the time and cost for value toll and non-value toll paths for each; the tables must
 ;             have the following names:
-;	         (a) Non-value-toll paying time: TIMEXXX;
+;                (a) Non-value-toll paying time: TIMEXXX;
 ;                (b) Non-value-toll distance: DISTXXX
-;	         (c) Non-value-toll bridge toll is: BTOLLXXX;
-;	         (d) Value-toll paying time is: TOLLTIMEXXX;
-;	         (e) Value-toll paying distance is: TOLLDISTXXX;
-;		 (f) Value-toll bridge toll is: TOLLBTOLLXXX;
-;		 (g) Value-toll value toll is: TOLLVTOLLXXX,
+;                (c) Non-value-toll bridge toll is: BTOLLXXX;
+;                (d) Value-toll paying time is: TOLLTIMEXXX;
+;                (e) Value-toll paying distance is: TOLLDISTXXX;
+;                (f) Value-toll bridge toll is: TOLLBTOLLXXX;
+;                (g) Value-toll value toll is: TOLLVTOLLXXX,
 ;             where XXX is DA, S2, or S3.
 ;
 ; Output: Five, six-table trip matrices, one for each time period.  Two tables for each vehicle class
@@ -28,16 +28,16 @@
 ;
 ; Notes:  (1)  TOLLCLASS is a code, 1 through 10 are reserved for bridges; 11 and up is reserved for value toll
 ;              facilities. 
-;	  (2)  All costs should be coded in year 2000 cents
+;         (2)  All costs should be coded in year 2000 cents
 ;         (3)  The in-vehicle time coefficient is taken from the work trip mode choice model. 
 ;
 ; See also: (1) HwySkims.job, which creates the level-of-service matrices for this analysis;
-;	    (2) SetTolls.job, which sets the tolls used by the skimming process;
-;	    (3) IxTimeOfDay.job, which uses diurnal factors to split the daily internal/external trip table to 
+;           (2) SetTolls.job, which sets the tolls used by the skimming process;
+;           (3) IxTimeOfDay.job, which uses diurnal factors to split the daily internal/external trip table to 
 ;               the five time periods used in assignment
 ;
 ; version:  Travel Model One
-; authors:  dto (2010 09 03); gde (2009)
+; authors:  lmz (2016 06 22); dto (2010 09 03); gde (2009)
 ;
 ;
 ; ----------------------------------------------------------------------------------------------------------------
@@ -96,14 +96,17 @@ loop period = 1,5
       ; drive alone
       if (class = 1) 
          token_class      = 'DA'
+         token_class_hsr  = 'DA'
          token_cost_share = '1.0'
       
       elseif (class = 2)
          token_class      = 'S2'
+         token_class_hsr  = 'SR2'
          token_cost_share = 'SR2COSTSHARE' 
          
       elseif (class = 3)
          token_class      = 'S3'
+         token_class_hsr  = 'SR2' ; not used
          token_cost_share = 'SR3COSTSHARE'
          
       endif
@@ -112,9 +115,12 @@ loop period = 1,5
   
          ; read in the time-period-specific IX trip tables
          filei mati[1] = nonres\tripsix@token_period@x.tpp
-      
+
+         ; read in the time-period-specifci HSR trip tables
+         filei mati[2] = nonres\tripsHsr@token_period@.tpp
+
          ; read in the time-period-specific IX skims
-         filei mati[2] = skims\hwyskm@token_period@.tpp
+         filei mati[3] = skims\hwyskm@token_period@.tpp
       
          ; write out the time-period-specific results
          fileo mato[1] = nonres\tripsIx@token_period@_@token_class@.tpp, mo = 1-2, name = free, toll
@@ -129,16 +135,21 @@ loop period = 1,5
          jloop
          
             ; set the input trips
-            inputTrips = mi.1.@token_class@
+            IF (@class@ < 3)
+              ; HSR trips only exist for DA and SR2
+              inputTrips = mi.1.@token_class@ + mi.2.@token_class_hsr@
+            ELSE
+              inputTrips = mi.1.@token_class@
+            ENDIF
             
             ; set the level-of-service variables -- no toll
-            noTollTime =  mi.2.TIME@token_class@[j]                  
-            noTollCost =  mi.2.DIST@token_class@[j] * (AUTOOPC_PER_RM+AUTOOPC_PER_FU) +  mi.2.BTOLL@token_class@[j]/@token_cost_share@
+            noTollTime =  mi.3.TIME@token_class@[j]                  
+            noTollCost =  mi.3.DIST@token_class@[j] * (AUTOOPC_PER_RM+AUTOOPC_PER_FU) +  mi.3.BTOLL@token_class@[j]/@token_cost_share@
             
             ; set the level-of-service variables -- toll
-            tollTime  =  mi.2.TOLLTIME@token_class@[j]                
-            tollCost  =  mi.2.TOLLDIST@token_class@[j] * (AUTOOPC_PER_RM+AUTOOPC_PER_FU) + mi.2.TOLLBTOLL@token_class@[j]/@token_cost_share@
-            tollValue =  mi.2.TOLLVTOLL@token_class@[j]/@token_cost_share@
+            tollTime  =  mi.3.TOLLTIME@token_class@[j]                
+            tollCost  =  mi.3.TOLLDIST@token_class@[j] * (AUTOOPC_PER_RM+AUTOOPC_PER_FU) + mi.3.TOLLBTOLL@token_class@[j]/@token_cost_share@
+            tollValue =  mi.3.TOLLVTOLL@token_class@[j]/@token_cost_share@
             
             ; initialize/reste the utility and exponential utility values
             utilityToll   = 0.0
