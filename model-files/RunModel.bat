@@ -28,7 +28,7 @@ set PROJECT_DIR2=%PROJECT_DIR:~0,-1%
 :: get the base dir only
 for %%f in (%PROJECT_DIR2%) do set myfolder=%%~nxf
 :: the first four characters are model year
-set MODEL_DIR=%myfolder:~0,4%
+set MODEL_YEAR=%myfolder:~0,4%
 
 :: ------------------------------------------------------------------------------------------------------
 ::
