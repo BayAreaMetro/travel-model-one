@@ -4,21 +4,34 @@
 ;
 ; TP+ script to determine transit submode choice for transit trips to and from Bay Area HSR stations.
 ;
-; Starting with input trip tables for 2025 (opening year for the Gilroy and San Jose stations), 2029 (opening
-; year for Millbrae and San Francisco stations), and 2040 (future modeled year), the script will assume zero
-; trips before the opening year for the relevant station and interpolate the number of trips afterwards.
+; Starting with the transit access and egress trips to Bay Area High Speed Rail stations,
+; the script uses the transit skims to allocate those trips to different transit submodes.
 ;
-; Input:   Trip tables representing trips to/from the four Bay Area HSR stations in 2025, 2029, and 2040, with the
-;          following four tables: (a) da. for drive alone, (b) sr2, for shared ride 2, (c) transit, and (d) walk.
+; A drive option is assumed to be available since HSR is an expensive mode, and thus trips to
+; HSR stations will also include the drive-transit-walk options, and trips from HSR stations will include
+; walk-transit-drive options.  A simple binary logit model (using just time and cost) is used to pick
+; between the best walk-transit option and the best drive-transit option.
 ;
-;          Additionally, the model year will be specified in the environment variable, MODEL_YEAR.
+; For simplicity, drive options to/from local bus, express bus and light rail/ferry are dropped when
+; there's a walk option since they are less likely to have parking.
 ;
-; Output:  Five, time-of-day-specific trip table matrices, each containing the following four tables: (a) da,
-;          for drive alone, (b) sr2, for shared ride 2, (c) transit, and (d) walk.
+; Note: This version drops transit trips to/from Bay Area HSR stations from origins and destinations
+; outside the Bay Area.
 ;
-; See also: (1) IxTollChoice.job, which applies a toll/no toll logit model for the auto trips and
-;               follows this script.
-;           (2) 
+; Input:   Trip tables representing transit trips to/from the Bay Area HSR stations,
+;          including trips to/from external zones: nonres\tripsHsr@time_period@.tpp, transit table.
+;
+;          Transit skims which include all transit submodes:
+;            skims\trnskm@time_period@_wlk_trn_wlk.tpp
+;            skims\trnskm@time_period@_drv_trn_wlk.tpp
+;            skims\trnskm@time_period@_wlk_trn_drv.tpp
+;
+; Output:  Trip tables representing transit trips to/from the Bay Area HSR stations split
+;          by transit submode.  The 15 tables are:
+;            [wlk|drv|_[loc|lrf|exp|hvy|com]_[wlk|drv]
+;
+; See also: (1) preprocess/HsrTripGeneration.job, which creates the input trip tables
+;           (2) assign/PrepAssign.job, which adds the output to the main trip tables
 ;
 ; version:  Travel Model One v0.6
 ; authors:  lmz (2016 06 21)
@@ -30,6 +43,11 @@ token_model_coefficient_in_vehicle = '-0.0220/0.72'
 
 ; set the cost coefficient, which is a function of the value of time in the highway parameter block
 token_model_coefficient_cost = '(_kIvtt / VOT) * 0.6'
+
+; debug
+token_debug_origin      = '14' ; San Francisco HSR TAZ
+token_debug_destination = '971'
+token_debug_filename    = 'logs\HsrTransitSubmodeChoice'
 
 ; Bay Area HSR TAZs
 Gilroy_TAZ = 707
@@ -74,6 +92,9 @@ loop tpnum=1,5
            drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
            wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv
 
+    ZONES=1454
+    PAGEHEIGHT=32767     ; preclude insertion of page headers
+
     jloop
       inputTrips = MI.1.transit
 
@@ -114,7 +135,6 @@ loop tpnum=1,5
         drv_ivt    = MI.3.ivt
         drv_ovt    = MI.3.wait + MI.3.dtime + MI.3.waux + MI.3.wegr
         drv_cost   = MI.3.fare + MI.3.ddist*(AUTOOPC_PER_RM+AUTOOPC_PER_FU)
-        drv_boards = MI.3.boards
 
         ; factor boardpen = 0, 15, 30, 45, 60
         if (MI.3.boards <= 1)
@@ -130,15 +150,15 @@ loop tpnum=1,5
         endif
 
         if     (MI.3.ivtCOM > 0)
-          drv_matnum = 5
+          drv_matnum = 10
         elseif (MI.3.ivtHVY > 0)
-          drv_matnum = 4
-        elseif (MI.3.ivtEXP > 0)
-          drv_matnum = 3
-        elseif (MI.3.ivtLRF > 0)
-          drv_matnum = 2
-        elseif (MI.3.ivtLOC > 0)
-          drv_matnum = 1
+          drv_matnum = 9
+        elseif ((MI.3.ivtEXP > 0) && (wlk_ivt = 0))  ; only if we have no walk option
+          drv_matnum = 8
+        elseif ((MI.3.ivtLRF > 0) && (wlk_ivt = 0))  ; only if we have no walk option
+          drv_matnum = 7
+        elseif ((MI.3.ivtLOC > 0) && (wlk_ivt = 0))  ; only if we have no walk option
+          drv_matnum = 6
         else
           drv_matnum = 0
         endif
@@ -149,7 +169,6 @@ loop tpnum=1,5
         drv_ivt    = MI.4.ivt
         drv_ovt    = MI.4.wait + MI.4.dtime + MI.4.waux + MI.4.wacc
         drv_cost   = MI.4.fare + MI.4.ddist*(AUTOOPC_PER_RM+AUTOOPC_PER_FU)
-        drv_boards = MI.4.boards
 
         ; factor boardpen = 0, 15, 30, 45, 60
         if (MI.4.boards <= 1)
@@ -165,15 +184,15 @@ loop tpnum=1,5
         endif
 
         if     (MI.4.ivtCOM > 0)
-          drv_matnum = 5
+          drv_matnum = 15
         elseif (MI.4.ivtHVY > 0)
-          drv_matnum = 4
-        elseif (MI.4.ivtEXP > 0)
-          drv_matnum = 3
-        elseif (MI.4.ivtLRF > 0)
-          drv_matnum = 2
-        elseif (MI.4.ivtLOC > 0)
-          drv_matnum = 1
+          drv_matnum = 14
+        elseif ((MI.4.ivtEXP > 0) && (wlk_ivt = 0))  ; only if we have no walk option
+          drv_matnum = 13
+        elseif ((MI.4.ivtLRF > 0) && (wlk_ivt = 0))  ; only if we have no walk option
+          drv_matnum = 12
+        elseif ((MI.4.ivtLOC > 0) && (wlk_ivt = 0))  ; only if we have no walk option
+          drv_matnum = 11
         else
           drv_matnum = 0
         endif
@@ -188,7 +207,7 @@ loop tpnum=1,5
       exp_drv = 0.0
 
       ; probability calculations
-      if (drv_ivt > 0.0 && inputTrips > 0.0)
+      if (drv_matnum > 0 && inputTrips > 0.0)
         if (wlk_ivt > 0.0)
           ; set the utility
           utility_wlk = _kIvtt*wlk_ivt + _kIvtt*wlk_boardpen + _kIvtt*2.0*wlk_ovt + _kCost*wlk_cost
@@ -220,7 +239,37 @@ loop tpnum=1,5
       if (wlk_matnum > 0) MW[wlk_matnum][j] = trips_wlk
       if (drv_matnum > 0) MW[drv_matnum][j] = trips_drv
 
+      ; dropped
+      if ((wlk_matnum = 0) && (trips_wlk > 0))
+        dropped = dropped + trips_wlk
+      endif
+
+      ; print out some debug information
+      if (i = @token_debug_origin@ & j = @token_debug_destination@)
+
+         ; one header
+         if (@tpnum@ = 1)
+
+            list = 'Debug for origin zone ',@token_debug_origin@(5.0),'  and destination zone ',@token_debug_destination@(5.0),'.', file = @token_debug_filename@.@time_period@.debug
+            list = ' ', file = @token_debug_filename@.@time_period@.debug
+
+            list = ' time path mat  ivt time  boardpen  ovt time      cost   utility      prob     trips', file = @token_debug_filename@.@time_period@.debug
+            list = ' ---- ---- --- --------- --------- --------- --------- --------- --------- ---------', file = @token_debug_filename@.@time_period@.debug
+
+         ; break for everyone else
+         else
+            list = ' ---- ---- --- --------- --------- --------- --------- --------- --------- ---------', file = @token_debug_filename@.@time_period@.debug
+         endif
+
+         list = '   @time_period@  wlk', wlk_matnum(4.0), wlk_ivt(10.2), wlk_boardpen(10.2), wlk_ovt(10.2), wlk_cost(10.2), utility_wlk(10.2), prob_wlk(10.4), mw[wlk_matnum][j](10.2), file = @token_debug_filename@.@time_period@.debug
+         list = '   @time_period@  drv', drv_matnum(4.0), drv_ivt(10.2), drv_boardpen(10.2), drv_ovt(10.2), drv_cost(10.2), utility_drv(10.2), prob_drv(10.4), mw[drv_matnum][j](10.2), file = @token_debug_filename@.@time_period@.debug
+
+      endif ; debug i/j if
+
     endjloop
+
+    if (i=ZONES) PRINT LIST='Dropped (no transit):',dropped(10.2)
+
   ENDRUN
 
   EndDistributeMultistep
@@ -228,3 +277,6 @@ endloop
 
 Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end,
            printfiles=merge, deldistribfiles=t, CheckReturnCode=t
+
+* copy @token_debug_filename@.EA.debug+@token_debug_filename@.AM.debug+@token_debug_filename@.MD.debug+@token_debug_filename@.PM.debug+@token_debug_filename@.EV.debug @token_debug_filename@.debug
+* del @token_debug_filename@.EA.debug @token_debug_filename@.AM.debug @token_debug_filename@.MD.debug @token_debug_filename@.PM.debug @token_debug_filename@.EV.debug

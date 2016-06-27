@@ -75,13 +75,14 @@ loop tpnum=1,5
       MW[8] = 100.0*(MI.1.walk    - (MW[4]*0.01*2025))
 
     else
-      ;        change in trips    change in years
+      ; (times 100 is to keep more precision)
+      ; 100 x slope:     change in trips          change in years
       MW[1] = 100.0*(MI.3.da      - MI.2.da     )/(2040 - 2029)
       MW[2] = 100.0*(MI.3.sr2     - MI.2.sr2    )/(2040 - 2029)
       MW[3] = 100.0*(MI.3.transit - MI.2.transit)/(2040 - 2029)
       MW[4] = 100.0*(MI.3.walk    - MI.2.walk   )/(2040 - 2029)
 
-      ;        trips -  m x year
+      ; 100 x y-intercept:  trips -       slope x year
       MW[5] = 100.0*(MI.2.da      - (MW[1]*0.01*2029))
       MW[6] = 100.0*(MI.2.sr2     - (MW[2]*0.01*2029))
       MW[7] = 100.0*(MI.2.transit - (MW[3]*0.01*2029))
