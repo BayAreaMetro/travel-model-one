@@ -77,19 +77,17 @@ def read_rdata(rdata_fullpath):
     """
     Returns the pandas DataFrame
     """
-    import pandas.rpy.common as com
-    from rpy2 import robjects as r
+    from rpy2.robjects import pandas2ri, r
+    pandas2ri.activate()
 
     # we want forward slashes for R
     rdata_fullpath_forR = rdata_fullpath.replace("\\", "/")
     print "Loading %s" % rdata_fullpath_forR
     
     # read in the data from the R session with python
-    r.r("load('%s')" % rdata_fullpath_forR)
+    r['load'](rdata_fullpath_forR)
     # check that it's there
-    # print "Dimensions are %s" % str(r.r('dim(model_summary)'))
-    
-    table_df = com.load_data('model_summary')
+    table_df = pandas2ri.ri2py(r['model_summary'])
 
     # fillna
     for col in table_df.columns:
