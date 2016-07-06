@@ -1019,31 +1019,7 @@ write.table(journeytowork_summary,
             file.path(TARGET_DIR,"core_summaries","JourneyToWork.csv"), sep=",", row.names=FALSE)
 model_summary <- journeytowork_summary  # name it generically for rdata
 save(model_summary, file=file.path(TARGET_DIR,"core_summaries","JourneyToWork.rdata"))
-remove(mandatory_locations, journeytowork_summary, model_summary)
-```
-
-##Journey to Work by Income Quartiles
-Requested by Alex.
-```{r JourneyToWorkByInc, error=FALSE}
-work_locations <- mutate(work_locations, incQ=1*(Income<30000) + 
-                                         2*((Income>=30000)&(Income<60000)) +
-                                         3*((Income>=60000)&(Income<100000)) +
-                                         4*(Income>=100000))
-work_locations <- left_join(work_locations, LOOKUP_INCQ, by=c("incQ"))
-
-journeytowork_byinc_summary <- summarise(group_by(work_locations,
-                                            homeCOUNTY, home_county_name, HomeTAZ,
-                                            WorkLocation, workCOUNTY, work_county_name,
-                                            incQ, incQ_label),
-                                   freq   = n(),
-                                   Income = mean(Income))
-journeytowork_byinc_summary$freq <- journeytowork_byinc_summary$freq / SAMPLESHARE
-write.table(journeytowork_byinc_summary,
-            file.path(TARGET_DIR,"core_summaries","JourneyToWork_byIncQ.csv"), sep=",", row.names=FALSE)
-model_summary <- journeytowork_byinc_summary  # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR,"core_summaries","JourneyToWork_byIncQ.rdata"))
-remove(work_locations, journeytowork_byinc_summary, model_summary)
-```
+remove(mandatory_locations, work_locations, journeytowork_summary, model_summary)
 
 ## Time of Day Summary
 timeofday_summary <- summarise(group_by(tours,SD,COUNTY,county_name,
