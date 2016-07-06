@@ -28,7 +28,9 @@
 ;
 ; Output:  Trip tables representing transit trips to/from the Bay Area HSR stations split
 ;          by transit submode.  The 15 tables are:
-;            [wlk|drv|_[loc|lrf|exp|hvy|com]_[wlk|drv]
+;             [wlk|drv|_[loc|lrf|exp|hvy|com]_[wlk|drv]
+;          Also outputs a csv per time period with the walk-trn/drv-trn/no-path split to/from
+;             each Bay Area HSR station.
 ;
 ; See also: (1) preprocess/HsrTripGeneration.job, which creates the input trip tables
 ;           (2) assign/PrepAssign.job, which adds the output to the main trip tables
@@ -94,6 +96,15 @@ loop tpnum=1,5
 
     ZONES=1454
     PAGEHEIGHT=32767     ; preclude insertion of page headers
+
+    ARRAY wlk_to_SanFra=ZONES, wlk_to_Millbr=ZONES, wlk_to_SanJos=ZONES, wlk_to_Gilroy=ZONES
+    ARRAY drv_to_SanFra=ZONES, drv_to_Millbr=ZONES, drv_to_SanJos=ZONES, drv_to_Gilroy=ZONES
+    ARRAY nan_to_SanFra=ZONES, nan_to_Millbr=ZONES, nan_to_SanJos=ZONES, nan_to_Gilroy=ZONES
+
+    ARRAY wlk_fr_SanFra=ZONES, wlk_fr_Millbr=ZONES, wlk_fr_SanJos=ZONES, wlk_fr_Gilroy=ZONES
+    ARRAY drv_fr_SanFra=ZONES, drv_fr_Millbr=ZONES, drv_fr_SanJos=ZONES, drv_fr_Gilroy=ZONES
+    ARRAY nan_fr_SanFra=ZONES, nan_fr_Millbr=ZONES, nan_fr_SanJos=ZONES, nan_fr_Gilroy=ZONES
+
 
     jloop
       inputTrips = MI.1.transit
@@ -244,6 +255,76 @@ loop tpnum=1,5
         dropped = dropped + trips_wlk
       endif
 
+      ; URGH since cube insists on writing these as scientific notation
+      if (trips_wlk < 0.001) trips_wlk = 0.0
+      if (trips_drv < 0.001) trips_drv = 0.0
+
+      ; record for summaries
+      if (j=@SanFra_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_to_SanFra[i] = trips_wlk
+        else
+          nan_to_SanFra[i] = trips_wlk
+        endif
+        drv_to_SanFra[i]   = trips_drv
+
+      elseif (j=@Millbr_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_to_Millbr[i] = trips_wlk
+        else
+          nan_to_Millbr[i] = trips_wlk
+        endif
+        drv_to_Millbr[i]   = trips_drv
+
+      elseif (j=@SanJos_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_to_SanJos[i] = trips_wlk
+        else
+          nan_to_SanJos[i] = trips_wlk
+        endif
+        drv_to_SanJos[i]   = trips_drv
+
+      elseif (j=@Gilroy_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_to_Gilroy[i] = trips_wlk
+        else
+          nan_to_Gilroy[i] = trips_wlk
+        endif
+        drv_to_Gilroy[i]   = trips_drv
+
+      elseif(i=@SanFra_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_fr_SanFra[j] = trips_wlk
+        else
+          nan_fr_SanFra[j] = trips_wlk
+        endif
+        drv_fr_SanFra[j]   = trips_drv
+
+      elseif(i=@Millbr_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_fr_Millbr[j] = trips_wlk
+        else
+          nan_fr_Millbr[j] = trips_wlk
+        endif
+        drv_fr_Millbr[j]   = trips_drv
+
+      elseif(i=@SanJos_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_fr_SanJos[j] = trips_wlk
+        else
+          nan_fr_SanJos[j] = trips_wlk
+        endif
+        drv_fr_SanJos[j]   = trips_drv
+
+      elseif(i=@Gilroy_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_fr_Gilroy[j] = trips_wlk
+        else
+          nan_fr_Gilroy[j] = trips_wlk
+        endif
+        drv_fr_Gilroy[j]   = trips_drv
+      endif
+
       ; print out some debug information
       if (i = @token_debug_origin@ & j = @token_debug_destination@)
 
@@ -268,7 +349,20 @@ loop tpnum=1,5
 
     endjloop
 
-    if (i=ZONES) PRINT LIST='Dropped (no transit):',dropped(10.2)
+    if (i=ZONES)
+      PRINT LIST='Dropped (no transit):',dropped(10.2)
+      print LIST='taz,wlk to SanFra,drv to SanFra,nan to SanFra,wlk to Millbr,drv to Millbr,nan to Millbr,wlk to SanJos,drv to SanJos,nan to SanJos,wlk to Gilroy,drv to Gilroy,nan to Gilroy,wlk fr SanFra,drv fr SanFra,nan fr SanFra,wlk fr Millbr,drv fr Millbr,nan fr Millbr,wlk fr SanJos,drv fr SanJos,nan fr SanJos,wlk fr Gilroy,drv fr Gilroy,nan fr Gilroy', file=nonres\HrsTransitSubmode_@time_period@.csv
+      loop taznum=1, ZONES
+        print csv=T, list=taznum(5.0LRS), wlk_to_SanFra[taznum](16.4LST), drv_to_SanFra[taznum](16.4LST), nan_to_SanFra[taznum](16.4LST),
+                                          wlk_to_Millbr[taznum](16.4LST), drv_to_Millbr[taznum](16.4LST), nan_to_Millbr[taznum](16.4LST),
+                                          wlk_to_SanJos[taznum](16.4LST), drv_to_SanJos[taznum](16.4LST), nan_to_SanJos[taznum](16.4LST),
+                                          wlk_to_Gilroy[taznum](16.4LST), drv_to_Gilroy[taznum](16.4LST), nan_to_Gilroy[taznum](16.4LST),
+                                          wlk_fr_SanFra[taznum](16.4LST), drv_fr_SanFra[taznum](16.4LST), nan_fr_SanFra[taznum](16.4LST),
+                                          wlk_fr_Millbr[taznum](16.4LST), drv_fr_Millbr[taznum](16.4LST), nan_fr_Millbr[taznum](16.4LST),
+                                          wlk_fr_SanJos[taznum](16.4LST), drv_fr_SanJos[taznum](16.4LST), nan_fr_SanJos[taznum](16.4LST),
+                                          wlk_fr_Gilroy[taznum](16.4LST), drv_fr_Gilroy[taznum](16.4LST), nan_fr_Gilroy[taznum](16.4LST), file=nonres\HrsTransitSubmode_@time_period@.csv
+      endloop
+    endif
 
   ENDRUN
 
