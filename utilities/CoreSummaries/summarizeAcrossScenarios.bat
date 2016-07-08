@@ -1,6 +1,8 @@
 @echo off
 setlocal enabledelayedexpansion
 
+set COMBINED_DIR=Across 2040s
+set RUN_NAME_SET=2040_05_512 2040_06_512
 
 :: Set to 1 if running from the original model run directory
 :: (e.g. subdirs = CTRAMP, database, hwy, INPUT, landuse, etc...)
