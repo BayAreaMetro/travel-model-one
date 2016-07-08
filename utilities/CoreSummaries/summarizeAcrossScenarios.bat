@@ -1,8 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
 
-set COMBINED_DIR=AcrossScenarios
-set RUN_NAME_SET=2010_04_ZZZ 2040_03_116 2040_03_127
 
 :: Set to 1 if running from the original model run directory
 :: (e.g. subdirs = CTRAMP, database, hwy, INPUT, landuse, etc...)
@@ -12,10 +10,10 @@ set ORIGINAL_RUNDIR=1
 
 IF %USERNAME%==lzorn (
   rem I AM SPECIAL
-  set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one
-  set R_HOME=C:\Program Files\R\R-3.1.1
+  set CODE_DIR=E:\temp\travel-model-one_v06\model-files\scripts\core_summaries
+  set R_HOME=C:\Program Files\R\R-3.2.3
   set R_USER=%USERNAME%
-  set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.1
+  set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.2
 ) ELSE (
   set CODE_DIR=D:\files\GitHub\travel-model-one
   set R_HOME=C:\Program Files\R\R-3.1.1
