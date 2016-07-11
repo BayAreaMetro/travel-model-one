@@ -245,7 +245,6 @@ if __name__ == '__main__':
                 
         # make sure the header is consistent
         header = [col.strip() for col in table_df.columns]
-        assert(header == old_colnames)
 
         csv_lines_read = 0
         tde_lines_written = 0
