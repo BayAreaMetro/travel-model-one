@@ -351,7 +351,7 @@ loop tpnum=1,5
 
     if (i=ZONES)
       PRINT LIST='Dropped (no transit):',dropped(10.2)
-      print LIST='taz,wlk to SanFra,drv to SanFra,nan to SanFra,wlk to Millbr,drv to Millbr,nan to Millbr,wlk to SanJos,drv to SanJos,nan to SanJos,wlk to Gilroy,drv to Gilroy,nan to Gilroy,wlk fr SanFra,drv fr SanFra,nan fr SanFra,wlk fr Millbr,drv fr Millbr,nan fr Millbr,wlk fr SanJos,drv fr SanJos,nan fr SanJos,wlk fr Gilroy,drv fr Gilroy,nan fr Gilroy', file=nonres\HrsTransitSubmode_@time_period@.csv
+      print LIST='taz,wlk to SanFra,drv to SanFra,nan to SanFra,wlk to Millbr,drv to Millbr,nan to Millbr,wlk to SanJos,drv to SanJos,nan to SanJos,wlk to Gilroy,drv to Gilroy,nan to Gilroy,wlk fr SanFra,drv fr SanFra,nan fr SanFra,wlk fr Millbr,drv fr Millbr,nan fr Millbr,wlk fr SanJos,drv fr SanJos,nan fr SanJos,wlk fr Gilroy,drv fr Gilroy,nan fr Gilroy', file=nonres\HsrTransitSubmode_@time_period@.csv
       loop taznum=1, ZONES
         print csv=T, list=taznum(5.0LRS), wlk_to_SanFra[taznum](16.4LST), drv_to_SanFra[taznum](16.4LST), nan_to_SanFra[taznum](16.4LST),
                                           wlk_to_Millbr[taznum](16.4LST), drv_to_Millbr[taznum](16.4LST), nan_to_Millbr[taznum](16.4LST),
@@ -360,7 +360,7 @@ loop tpnum=1,5
                                           wlk_fr_SanFra[taznum](16.4LST), drv_fr_SanFra[taznum](16.4LST), nan_fr_SanFra[taznum](16.4LST),
                                           wlk_fr_Millbr[taznum](16.4LST), drv_fr_Millbr[taznum](16.4LST), nan_fr_Millbr[taznum](16.4LST),
                                           wlk_fr_SanJos[taznum](16.4LST), drv_fr_SanJos[taznum](16.4LST), nan_fr_SanJos[taznum](16.4LST),
-                                          wlk_fr_Gilroy[taznum](16.4LST), drv_fr_Gilroy[taznum](16.4LST), nan_fr_Gilroy[taznum](16.4LST), file=nonres\HrsTransitSubmode_@time_period@.csv
+                                          wlk_fr_Gilroy[taznum](16.4LST), drv_fr_Gilroy[taznum](16.4LST), nan_fr_Gilroy[taznum](16.4LST), file=nonres\HsrTransitSubmode_@time_period@.csv
       endloop
     endif
 
