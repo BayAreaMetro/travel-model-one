@@ -12,7 +12,9 @@
 ;
 ; Input:  (1) Time-period-specific origin/destination matrices of drive alone, shared ride 2, and share ride 3+ 
 ;             internal/external trip tables. 
-;         (2) Skims providing the time and cost for value toll and non-value toll paths for each; the tables must
+;         (2) Time-period-specific origin/destination matrices of drive alone, shared ride 2 trip tables to and from
+;             bay area High Speed Rail stations.
+;         (3) Skims providing the time and cost for value toll and non-value toll paths for each; the tables must
 ;             have the following names:
 ;                (a) Non-value-toll paying time: TIMEXXX;
 ;                (b) Non-value-toll distance: DISTXXX

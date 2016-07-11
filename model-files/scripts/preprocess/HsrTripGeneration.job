@@ -19,7 +19,8 @@
 ;
 ; See also: (1) IxTollChoice.job, which applies a toll/no toll logit model for the auto trips and
 ;               follows this script.
-;           (2) 
+;           (2) HsrTransitSubmodeChoice.job, which chooses the transit submode for the transit trips and
+;               also follows.
 ;
 ; version:  Travel Model One v0.6
 ; authors:  lmz (2016 06 21)
