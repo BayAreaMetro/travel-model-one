@@ -91,7 +91,8 @@ shinyUI(fluidPage(
   
   fluidRow(
     verbatimTextOutput("error"),
-    verbatimTextOutput("status")
+    verbatimTextOutput("status"),
+    verbatimTextOutput("log")
   ),
   
   fluidRow(
@@ -103,9 +104,6 @@ shinyUI(fluidPage(
                        href="http://analytics.mtc.ca.gov/foswiki/Main/TravelModelOneGeographies")),
            
            textInput("taz", label="Location (Travel Analysis Zone) of Household"),  
-
-           sliderInput("hinc", "Household Income (2015$)",
-                       min=0, max=1000000, value=60000, step=5000, sep=",", pre="$"),
            
            sliderInput("persons", "Number of Persons",
                        min=1, max=12, value=2, step=1),
@@ -146,7 +144,8 @@ shinyUI(fluidPage(
                                  "Owned by you or someone in this household free and clear"            = 2,
                                  "Rented for cash rent"                                                = 3,
                                  "Occupied without payment of cash rent"                               = 4))
-        )
+        ),
+      actionButton("createModelFiles", "Create Model Files!")
     ),
     column(6, "Describe each person in your household", 
            helpText( a("Click here to see corresponding  Person Model Inputs",
@@ -168,9 +167,11 @@ shinyUI(fluidPage(
 
 
   fluidRow(
-    helpText("Household String"),
-    verbatimTextOutput("householdOutput"),
-    helpText("Person String"),
-    verbatimTextOutput("personOutput")
+    helpText("Names"),
+    tableOutput("name_table"),
+    helpText("Household Table"),
+    tableOutput('household_table'),
+    helpText("Person Table"),
+    tableOutput('person_table')
   )
 ))
