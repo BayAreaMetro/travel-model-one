@@ -1,4 +1,7 @@
 
+This directory contains the script and mapping needed to create TM1 input files from 
+HSR model output files.
+
 Files in this directory
 =======================
 
