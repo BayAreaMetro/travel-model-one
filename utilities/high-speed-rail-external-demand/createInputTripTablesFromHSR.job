@@ -1,0 +1,134 @@
+
+loop model_run = 1,3
+
+  if (model_run=1)
+    model_year = '2025'
+    model_dir  = '2025\R94_V2V'
+  elseif (model_run=2)
+    model_year = '2029'
+    model_dir  = '2029\R64_Ph1'
+  elseif (model_run=3)
+    model_year = '2040'
+    model_dir  = '2040\R63_Ph1'
+  endif
+
+  DistributeMultistep processid = 'ctramp', processNum = model_run, commpath = 'm:\commpath'
+  RUN PGM=MATRIX
+    filei mati[1] = 'M:\Development\Travel Model One\Version 06\_from High Speed Rail\Model Data\@model_dir@\Long Distance\acctrips_buscom.MAT'  ; business and commute
+    filei mati[2] = 'M:\Development\Travel Model One\Version 06\_from High Speed Rail\Model Data\@model_dir@\Long Distance\acctrips_recoth.MAT'  ; recreation and other
+
+    filei mati[3] = 'M:\Development\Travel Model One\Version 06\_from High Speed Rail\Model Data\@model_dir@\Long Distance\egrtrips_buscom.MAT'  ; business and commute
+    filei mati[4] = 'M:\Development\Travel Model One\Version 06\_from High Speed Rail\Model Data\@model_dir@\Long Distance\egrtrips_recoth.MAT'  ; recreation and other
+
+    fileo mato[1] = 'INPUT\nonres\tripsHsrEA_@model_year@.tpp', mo=11-14, name=da,sr2,transit,walk
+    fileo mato[2] = 'INPUT\nonres\tripsHsrAM_@model_year@.tpp', mo=21-24, name=da,sr2,transit,walk
+    fileo mato[3] = 'INPUT\nonres\tripsHsrMD_@model_year@.tpp', mo=31-34, name=da,sr2,transit,walk
+    fileo mato[4] = 'INPUT\nonres\tripsHsrPM_@model_year@.tpp', mo=41-44, name=da,sr2,transit,walk
+    fileo mato[5] = 'INPUT\nonres\tripsHsrEV_@model_year@.tpp', mo=51-54, name=da,sr2,transit,walk
+
+    ; for debugging
+    ; fileo mato[6] = 'tripsHsrAM_@model_year@_DEBUG.tpp', mo=61-68, name=da_acc,sr2_acc,transit_acc,walk_acc,da_egr,sr2_egr,transit_egr,walk_egr
+    ; fileo mato[7] = 'tripsHsrMD_@model_year@_DEBUG.tpp', mo=71-78, name=da_acc,sr2_acc,transit_acc,walk_acc,da_egr,sr2_egr,transit_egr,walk_egr
+    ; fileo mato[8] = 'tripsHsrPM_@model_year@_DEBUG.tpp', mo=81-88, name=da_acc,sr2_acc,transit_acc,walk_acc,da_egr,sr2_egr,transit_egr,walk_egr
+    ; fileo mato[9] = 'tripsHsrEV_@model_year@_DEBUG.tpp', mo=91-98, name=da_acc,sr2_acc,transit_acc,walk_acc,da_egr,sr2_egr,transit_egr,walk_egr
+
+    ; EA
+    MW[11] = 0
+    MW[12] = 0
+    MW[13] = 0
+    MW[14] = 0
+
+    AM_FRAC = 0.5           ; fraction of business & commuter trips in AM
+    PM_FRAC = 1.0 - AM_FRAC ; fraction of business & commuter trips in PM
+    MD_FRAC = 0.5           ; fraction of recreation & other  trips in MD
+    EV_FRAC = 1.0 - MD_FRAC ; fraction of recreation & other  trips in EV
+
+
+    ; access matrices (MI.1 and MI.2) are transposed because they are formatted with destination HSR as I
+    ; The transpose is done in preprocessing so now we want J=6701, 6702, 6704 and 6705 (Bay Area HSR stations)
+
+    JLOOP
+      IF (J=6701,6702,6704,6705)
+        ; AM
+        MW[61] = AM_FRAC*MI.1.BUS_PK.T + AM_FRAC*MI.1.BUS_RNT.T + AM_FRAC*MI.1.COM_PK.T + AM_FRAC*MI.1.COM_RNT.T ; da      = park, car rental
+        MW[62] = AM_FRAC*MI.1.BUS_DO.T + AM_FRAC*MI.1.BUS_TX.T  + AM_FRAC*MI.1.COM_DO.T + AM_FRAC*MI.1.COM_TX.T  ; sr2     = drop-off, taxi
+        MW[63] = AM_FRAC*MI.1.BUS_TRA.T                         + AM_FRAC*MI.1.COM_TRA.T                         ; transit = transit
+        MW[64] = AM_FRAC*MI.1.BUS_NM.T                          + AM_FRAC*MI.1.COM_NM.T                          ; walk    = walk
+
+        ; MD
+        MW[71] = MD_FRAC*MI.2.REC_PK.T + MD_FRAC*MI.2.REC_RNT.T + MD_FRAC*MI.2.OTH_PK.T + MD_FRAC*MI.2.OTH_RNT.T ; da      = park, car rental
+        MW[72] = MD_FRAC*MI.2.REC_DO.T + MD_FRAC*MI.2.REC_TX.T  + MD_FRAC*MI.2.OTH_DO.T + MD_FRAC*MI.2.OTH_TX.T  ; sr2     = drop-off, taxi
+        MW[73] = MD_FRAC*MI.2.REC_TRA.T                         + MD_FRAC*MI.2.OTH_TRA.T                         ; transit = transit
+        MW[74] = MD_FRAC*MI.2.REC_NM.T                          + MD_FRAC*MI.2.OTH_NM.T                          ; walk    = walk
+
+        ; PM
+        MW[81] = PM_FRAC*MI.1.BUS_PK.T + PM_FRAC*MI.1.BUS_RNT.T + PM_FRAC*MI.1.COM_PK.T + PM_FRAC*MI.1.COM_RNT.T ; da      = park, car rental
+        MW[82] = PM_FRAC*MI.1.BUS_DO.T + PM_FRAC*MI.1.BUS_TX.T  + PM_FRAC*MI.1.COM_DO.T + PM_FRAC*MI.1.COM_TX.T  ; sr2     = drop-off, taxi
+        MW[83] = PM_FRAC*MI.1.BUS_TRA.T                         + PM_FRAC*MI.1.COM_TRA.T                         ; transit = transit
+        MW[84] = PM_FRAC*MI.1.BUS_NM.T                          + PM_FRAC*MI.1.COM_NM.T                          ; walk    = walk
+
+        ; EV
+        MW[91] = EV_FRAC*MI.2.REC_PK.T + EV_FRAC*MI.2.REC_RNT.T + EV_FRAC*MI.2.OTH_PK.T + EV_FRAC*MI.2.OTH_RNT.T ; da      = park, car rental
+        MW[92] = EV_FRAC*MI.2.REC_DO.T + EV_FRAC*MI.2.REC_TX.T  + EV_FRAC*MI.2.OTH_DO.T + EV_FRAC*MI.2.OTH_TX.T  ; sr2     = drop-off, taxi
+        MW[93] = EV_FRAC*MI.2.REC_TRA.T                         + EV_FRAC*MI.2.OTH_TRA.T                         ; transit = transit
+        MW[94] = EV_FRAC*MI.2.REC_NM.T                          + EV_FRAC*MI.2.OTH_NM.T                          ; walk    = walk
+      ENDIF
+    ENDJLOOP
+
+    IF (I=6701,6702,6704,6705)
+      ; AM
+      MW[65] = AM_FRAC*MI.3.BUS_PK   + AM_FRAC*MI.3.BUS_RNT   + AM_FRAC*MI.3.COM_PK   + AM_FRAC*MI.3.COM_RNT   ; da      = park, car rental
+      MW[66] = AM_FRAC*MI.3.BUS_DO   + AM_FRAC*MI.3.BUS_TX    + AM_FRAC*MI.3.COM_DO   + AM_FRAC*MI.3.COM_TX    ; sr2     = drop-off, taxi
+      MW[67] = AM_FRAC*MI.3.BUS_TRA                           + AM_FRAC*MI.3.COM_TRA                           ; transit = transit
+      MW[68] = AM_FRAC*MI.3.BUS_NM                            + AM_FRAC*MI.3.COM_NM                            ; walk    = walk
+
+      ; MD
+      MW[75] = MD_FRAC*MI.4.REC_PK   + MD_FRAC*MI.4.REC_RNT   + MD_FRAC*MI.4.OTH_PK   + MD_FRAC*MI.4.OTH_RNT   ; da      = park, car rental
+      MW[76] = MD_FRAC*MI.4.REC_DO   + MD_FRAC*MI.4.REC_TX    + MD_FRAC*MI.4.OTH_DO   + MD_FRAC*MI.4.OTH_TX    ; sr2     = drop-off, taxi
+      MW[77] = MD_FRAC*MI.4.REC_TRA                           + MD_FRAC*MI.4.OTH_TRA                           ; transit = transit
+      MW[78] = MD_FRAC*MI.4.REC_NM                            + MD_FRAC*MI.4.OTH_NM                            ; walk    = walk
+
+      ; PM
+      MW[85] = PM_FRAC*MI.3.BUS_PK   + PM_FRAC*MI.3.BUS_RNT   + PM_FRAC*MI.3.COM_PK   + PM_FRAC*MI.3.COM_RNT   ; da      = park, car rental
+      MW[86] = PM_FRAC*MI.3.BUS_DO   + PM_FRAC*MI.3.BUS_TX    + PM_FRAC*MI.3.COM_DO   + PM_FRAC*MI.3.COM_TX    ; sr2     = drop-off, taxi
+      MW[87] = PM_FRAC*MI.3.BUS_TRA                           + PM_FRAC*MI.3.COM_TRA                           ; transit = transit
+      MW[88] = PM_FRAC*MI.3.BUS_NM                            + PM_FRAC*MI.1.COM_NM                            ; walk    = walk
+
+      ; EV
+      MW[95] = EV_FRAC*MI.4.REC_PK   + EV_FRAC*MI.4.REC_RNT   + EV_FRAC*MI.4.OTH_PK   + EV_FRAC*MI.4.OTH_RNT   ; da      = park, car rental
+      MW[96] = EV_FRAC*MI.4.REC_DO   + EV_FRAC*MI.4.REC_TX    + EV_FRAC*MI.4.OTH_DO   + EV_FRAC*MI.4.OTH_TX    ; sr2     = drop-off, taxi
+      MW[97] = EV_FRAC*MI.4.REC_TRA                           + EV_FRAC*MI.4.OTH_TRA                           ; transit = transit
+      MW[98] = EV_FRAC*MI.4.REC_NM                            + EV_FRAC*MI.4.OTH_NM                            ; walk    = walk
+    ENDIF
+
+    ; combine access & egress for AM
+    MW[21] = MW[61] + MW[65]
+    MW[22] = MW[62] + MW[66]
+    MW[23] = MW[63] + MW[67]
+    MW[24] = MW[64] + MW[68]
+
+    ; combine access & egress for MD
+    MW[31] = MW[71] + MW[75]
+    MW[32] = MW[72] + MW[76]
+    MW[33] = MW[73] + MW[77]
+    MW[34] = MW[74] + MW[78]
+
+    ; combine access & egress for PM
+    MW[41] = MW[81] + MW[85]
+    MW[42] = MW[82] + MW[86]
+    MW[43] = MW[83] + MW[87]
+    MW[44] = MW[84] + MW[88]
+
+    ; combine access & egress for EV
+    MW[51] = MW[91] + MW[95]
+    MW[52] = MW[92] + MW[96]
+    MW[53] = MW[93] + MW[97]
+    MW[54] = MW[94] + MW[98]
+
+    RENUMBER FILE=renumberHRSRtoTM1.csv, MISSINGZI=M, MISSINGZO=W
+
+  ENDRUN
+  EndDistributeMultistep
+endloop
+
+Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, printfiles = merge, deldistribfiles = t, CheckReturnCode = t
