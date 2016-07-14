@@ -30,6 +30,25 @@ for %%f in (%PROJECT_DIR2%) do set myfolder=%%~nxf
 :: the first four characters are model year
 set MODEL_YEAR=%myfolder:~0,4%
 
+:: MODEL YEAR ------------------------- make sure it's numeric --------------------------------
+set /a MODEL_YEAR_NUM=%MODEL_YEAR% 2>nul
+if %MODEL_YEAR_NUM%==%MODEL_YEAR% (
+  echo Numeric model year [%MODEL_YEAR%]
+) else (
+  echo Couldn't determine numeric model year from project dir [%PROJECT_DIR%]
+  echo Guessed [%MODEL_YEAR%]
+  exit /b 2
+)
+:: MODEL YEAR ------------------------- make sure it's in [2000,3000] -------------------------
+if %MODEL_YEAR% LSS 2000 (
+  echo Model year [%MODEL_YEAR%] is less than 2000
+  exit /b 2
+)
+if %MODEL_YEAR% GTR 3000 (
+  echo Model year [%MODEL_YEAR%] is greater than 3000
+  exit /b 2
+)
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 2:  Create the directory structure

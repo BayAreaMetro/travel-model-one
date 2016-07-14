@@ -220,6 +220,7 @@ if __name__ == '__main__':
         tail = ""
         while tail in ["", "trn", "iter3", "hwy", "OUTPUT"]:
             (src,tail) = os.path.split(src)      # remove one more dir from path (e.g. core_summaries)
+        print "tail=[%s] src=[%s]" % (tail,src)
         src = tail
         table_df['src'] = src
         print "  - src is [%s]" % src
@@ -245,6 +246,10 @@ if __name__ == '__main__':
                 
         # make sure the header is consistent
         header = [col.strip() for col in table_df.columns]
+        # if header != old_colnames:
+        #     print header
+        #     print old_colnames
+        # assert(header == old_colnames)
 
         csv_lines_read = 0
         tde_lines_written = 0
