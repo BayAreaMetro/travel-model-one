@@ -1,16 +1,9 @@
 library(shiny)
 
 # This is the model run we're starting with
-PIVOT_DIR  <- "D:/Projects/2010_05_003"
-POPSYN_DIR <- file.path(PIVOT_DIR, "INPUT", "popsyn")
 NROWS      <- 5
-STATUS     <- ""
-ERROR      <- ""
-HH_DF      <- ""
-PER_DF     <- ""
-LAST_HHID  <- 0
-LAST_PERID <- 0
-household_frame <= ""
+
+household_frame <- ""
 
 # reads the last n lines of the given file and returns them (as a vector of characters)
 # faster than other methods!
@@ -45,73 +38,83 @@ tailfile <- function(file, n) {
   tail(strsplit(text, "\\r\\n")[[1L]], n)
 }
 
-# read the last lines of the households file so we have the columns correct
-read_households <- function(POPSYN_DIR) {
-  # read the head of the household files
-  hhfiles <- list.files(POPSYN_DIR, pattern="hh.*csv", full.names=TRUE)
-  if (length(hhfiles) == 0) {
-    ERROR <<- paste0(ERROR,"No household files found in ",POPSYN_DIR,"\n")
-  }
-  else {
-    hhfile  <- hhfiles[1]
-    if (length(hhfiles) != 1) {
-      STATUS <<- paste0(STATUS,"Multiple hhfiles found. Using ", hhfile,"\n")
-    } else {
-      STATUS <<- paste0(STATUS,"Using ", hhfile,"\n")
-    }
-    # read the first NROWS rows
-    HH_DF <<- data.frame(read.table(hhfile, header=TRUE, sep=",", nrows=NROWS))
-    # read the last NROWS rows and prepend the column names header
-    last_part <- c( paste0(colnames(HH_DF), collapse=","),
-                    tailfile(hhfile, NROWS) )
-    # append the last NROWS to HH_DF
-    con    <- textConnection(last_part)
-    HH_DF <<- rbind(HH_DF, data.frame(read.csv(con)))
-    close(con)
-    print(HH_DF)
-  }
-}
-
-# read the last few lines of the persons file so we have the columns correct
-read_persons <- function(POPSYN_DIR) {
-  # read the head of the person file
-  perfiles <- list.files(POPSYN_DIR, pattern="person.*csv", full.names=TRUE)
-  if (length(perfiles) == 0) {
-    ERROR <<- paste0(ERROR,"No person files found in ",POPSYN_DIR,"\n")
-  }
-  else {
-    perfile  <- perfiles[1]
-    if (length(perfiles) != 1) {
-      STATUS <<- paste0(STATUS,"Multiple hhfiles found. Using ", perfile,"\n")
-    } else {
-      STATUS <<- paste0(STATUS,"Using ", perfile,"\n")
-    }
-    # read the first NROWS rows
-    PER_DF <<- data.frame(read.table(perfile, header=TRUE, sep=",", nrows=NROWS))
-    # read the last NROWS rows and prepend the columns header
-    last_part <- c( paste0(colnames(PER_DF), collapse=","),
-                    tailfile(perfile, NROWS) )
-    # append the last NROWS to PER_DF
-    con     <- textConnection(last_part)
-    PER_DF <<- rbind(PER_DF, data.frame(read.csv(con)))
-    close(con)
-    print(PER_DF)
-    LAST_HHID   <<- PER_DF$HHID[NROWS*2]
-    STATUS      <<- paste0(STATUS, "Household ID will be ",LAST_HHID+1,"\n")
-    LAST_PERID  <<- PER_DF$PERID[NROWS*2] + 1
-    STATUS      <<- paste0(STATUS, "Person ID will be ",LAST_PERID+1,"\n")
-  }
-}
-
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
 
   print("shinyServer")
-  STATUS <<- ""
-  read_households(POPSYN_DIR)
-  read_persons(POPSYN_DIR)
+  HHFILE     <- ""
+  PERFILE    <- ""
+  LAST_HHID  <- 0
+  LAST_PERID <- 0
+  HH_DF      <- ""
+  PER_DF     <- ""
+  CREATE_ERROR  <- ""
+  CREATE_STATUS <- ""
 
-  # this will execute when household variables are updated
+  # read the last lines of the households file so we have the columns correct
+  read_households_and_persons <- reactive({
+    status     <- ""
+    error      <- ""
+
+    popsyn_dir <- file.path(input$pivot_dir, "INPUT", "popsyn")
+    # read the head of the household files
+    hhfiles <- list.files(popsyn_dir, pattern="hh.*csv", full.names=TRUE)
+    if (length(hhfiles) == 0) {
+      error      <- paste0(error,"No household files found in ",popsyn_dir,"\n")
+    }
+    else {
+      HHFILE  <<- hhfiles[1]
+      if (length(hhfiles) != 1) {
+        status <- paste0(status,"Multiple hhfiles found. Using ", HHFILE,"\n")
+      } else {
+        status <- paste0(status,"Using ", HHFILE,"\n")
+      }
+      # read the first NROWS rows
+      HH_DF <<- data.frame(read.table(HHFILE, header=TRUE, sep=",", nrows=NROWS))
+      # read the last NROWS rows and prepend the column names header
+      last_part <- c( paste0(colnames(HH_DF), collapse=","),
+                      tailfile(HHFILE, NROWS) )
+      # append the last NROWS to HH_DF
+      con    <- textConnection(last_part)
+      HH_DF <<- rbind(HH_DF, data.frame(read.csv(con)))
+      close(con)
+      # print(HH_DF)
+    }
+    
+    # read the head of the person file
+    perfiles <- list.files(popsyn_dir, pattern="person.*csv", full.names=TRUE)
+    if (length(perfiles) == 0) {
+      error      <- paste0(error,"No person files found in ",popsyn_dir,"\n")
+    }
+    else {
+      PERFILE  <<- perfiles[1]
+      if (length(perfiles) != 1) {
+        status <- paste0(status,"Multiple hhfiles found. Using ", PERFILE,"\n")
+      } else {
+        status <- paste0(status,"Using ", PERFILE,"\n")
+      }
+      # read the first NROWS rows
+      PER_DF <<- data.frame(read.table(PERFILE, header=TRUE, sep=",", nrows=NROWS))
+      # read the last NROWS rows and prepend the columns header
+      last_part <- c( paste0(colnames(PER_DF), collapse=","),
+                      tailfile(PERFILE, NROWS) )
+      # append the last NROWS to PER_DF
+      con     <- textConnection(last_part)
+      PER_DF <<- rbind(PER_DF, data.frame(read.csv(con)))
+      close(con)
+      # print(PER_DF)
+      LAST_HHID   <<- PER_DF$HHID[NROWS*2]
+      status       <- paste0(status, "Household ID will be ",LAST_HHID+1,"\n")
+      LAST_PERID  <<- PER_DF$PERID[NROWS*2] + 1
+      status       <- paste0(status, "Person ID will be ",LAST_PERID+1,"\n")
+    }
+    
+    list(HH_DF, PER_DF, LAST_HHID, LAST_PERID, error, status)
+  })
+  
+
+  # This will execute when household variables are updated.
+  # Returns a list of (name_frame, household_frame, person_frame)
   household_data <- reactive({
     household_frame <- data.frame(HH_DF)
     person_frame    <- data.frame(PER_DF)
@@ -321,28 +324,137 @@ shinyServer(function(input, output) {
     # print(household_frame)
     # print(person_frame)
     
-    list(name_frame, household_frame, person_frame, "hi")
+    list(name_frame, household_frame, person_frame)
   })
   
-  create_model_files <- reactive({
-    validate(
-      need(input$taz != "", "Please enter a TAZ")
-    )
-    print(input$createModelFiles)
-    "bunnies"
+  have_required_fields <- reactive({
+    missing     <- 0
+    missing_msg <- ""
+    if (input$taz == "") {
+      missing <- missing + 1
+      missing_msg <- paste0(missing_msg, "Please enter the Location (TAZ) of the Household\n")
+    }
+    for (person_num in seq(from=1, to=input$persons, by=1)) {
+      person_name     <- input[[paste0("name",person_num)]]
+      if (person_name == "") {
+        missing <- missing + 1
+        missing_msg <- paste0(missing_msg, "Please enter the Person ",person_num," Name\n")
+      }
+    }
+    list(missing, missing_msg)
   })
-  print(ERROR)
-  print(STATUS)
-  output$error  <- renderText({ERROR})
   
-  output$log <- renderText({
-    STATUS
+  # returns (error, status)
+  preprocess <- reactive({
+    # returns (HH_DF, PER_DF, LAST_HHID, LAST_PERID, error, status)
+    hh_and_pers <- read_households_and_persons()
+    
+    # if an error, just return it
+    if (nchar(hh_and_pers[[5]])>0) {
+      list(hh_and_pers[[5]], hh_and_pers[[6]])
+    } 
+    # if we haven't said go yet, don't go
+    else if (input$go_button == 0) {
+      list(hh_and_pers[[5]], hh_and_pers[[6]])
+    }
+    # if we have, check required fields
+    else if (input$go_button > 0) {
+      missing <- have_required_fields()
+      list(missing[[2]], hh_and_pers[[6]])
+    }
   })
-  
+
+  output$error  <- renderText({
+    error_status <- preprocess()
+    paste0(error_status[[1]], CREATE_ERROR)
+  })
+
+
   output$status <- renderText({
-    hhdata <- household_data()
-    bunnies <- create_model_files()
-    bunnies
+    error_status <- preprocess()
+    paste0(error_status[[2]], CREATE_STATUS)
+  })
+  
+  output$model_dir <- renderUI({
+    # only guess it if it hasn't been set
+    textInput("model_dir",label="Model Directory",
+              value=paste0(input$pivot_dir,"_1000",input$name1,"s"))
+  })
+  
+  observeEvent(input$go_button, {
+    CREATE_ERROR  <<- ""
+    CREATE_STATUS <<- ""
+    error_status <- preprocess()
+    if (nchar(error_status[[1]])==0) {
+      print("Creating model files!")
+      if (dir.exists(input$model_dir)) {
+        CREATE_ERROR <<- paste0("Directory [",input$model_dir,"] already exists")
+      } else {
+        # create the directory
+        dir.create(input$model_dir, mode = "0777")
+        status         <- paste0("Created ",input$model_dir)
+        CREATE_STATUS <<- paste0("\n\n",status,"\n")
+        print(status)
+
+                # copy the input
+        pivot_input = file.path(input$pivot_dir, "INPUT")
+        model_input = file.path(input$model_dir, "INPUT")
+        file.copy(from=pivot_input, to=input$model_dir, recursive=TRUE, copy.mode=TRUE, copy.date=TRUE)
+        status         <- paste0("Copied ",pivot_input," to ",model_input)
+        CREATE_STATUS <<- paste0(CREATE_STATUS,status,"\n")
+        print(status)
+        
+        # write the name table
+        hhdata <- household_data()
+        name_file <- file.path(input$model_dir,"INPUT","popsyn","names.csv")
+        write.table(hhdata[[1]], file=name_file, quote=FALSE, sep=",")
+        status         <- paste0("Created ",name_file)
+        CREATE_STATUS <<- paste0(CREATE_STATUS,status,"\n")
+        print(status)
+        
+        # write the household table (append)
+        hh_file <- file.path(input$model_dir,"INPUT","popsyn",basename(HHFILE))
+        write.table(hhdata[[2]], file=hh_file, append=TRUE,quote=FALSE, sep=",", row.names=FALSE, col.names=FALSE)
+        status         <- paste0("Appended hh to ",hh_file)
+        CREATE_STATUS <<- paste0(CREATE_STATUS,status,"\n")
+        print(status)
+
+        # write the person table (append)
+        per_file <- file.path(input$model_dir,"INPUT","popsyn",basename(PERFILE))
+        write.table(hhdata[[3]], file=per_file, append=TRUE,quote=FALSE, sep=",", row.names=FALSE, col.names=FALSE)
+        status         <- paste0("Appended persons to ",per_file)
+        CREATE_STATUS <<- paste0(CREATE_STATUS,status,"\n")
+        print(status)
+
+        # copy CTRAMP
+        pivot_input = file.path(input$pivot_dir, "CTRAMP")
+        model_input = file.path(input$model_dir, "CTRAMP")
+        file.copy(from=pivot_input, to=input$model_dir, recursive=TRUE, copy.mode=TRUE, copy.date=TRUE)
+        status         <- paste0("Copied ",pivot_input," to ",model_input)
+        CREATE_STATUS <<- paste0(CREATE_STATUS,status,"\n")
+        print(status)
+
+        # copy runmodel
+        pivot_input = file.path(input$pivot_dir, "RunModel.bat")
+        model_input = file.path(input$model_dir, "RunModel.bat")
+        file.copy(from=pivot_input, to=input$model_dir, copy.mode=TRUE, copy.date=TRUE)
+        status         <- paste0("Copied ",pivot_input," to ",model_input)
+        CREATE_STATUS <<- paste0(CREATE_STATUS,status,"\n")
+        print(status)
+        
+        # copy runCoreSummaries
+        pivot_input = file.path(input$pivot_dir, "RunCoreSummaries.bat")
+        model_input = file.path(input$model_dir, "RunCoreSummaries.bat")
+        file.copy(from=pivot_input, to=input$model_dir, copy.mode=TRUE, copy.date=TRUE)
+        status         <- paste0("Copied ",pivot_input," to ",model_input)
+        CREATE_STATUS <<- paste0(CREATE_STATUS,status,"\n")
+        print(status)
+        
+        status         <- "Model is ready to run"
+        CREATE_STATUS <<- paste0(CREATE_STATUS,status,"\n")
+        print(status)
+      }
+    }
   })
   
   output$name_table <- renderTable({
@@ -363,4 +475,7 @@ shinyServer(function(input, output) {
   output$householdOutput <- renderText({
     "what's up"
   })
+  
+  outputOptions(output, "error", suspendWhenHidden=FALSE)
+  outputOptions(output, "status", suspendWhenHidden=FALSE)
 })
