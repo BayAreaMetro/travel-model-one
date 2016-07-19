@@ -98,12 +98,23 @@ shinyUI(fluidPage(
 
   fluidRow(
     column(6,
-      strong(style="font-size: 18px","Model Internals"),
+      strong(style="font-size: 18px","Model Parameters"),
       wellPanel(
         verticalLayout( # how do i make this full width of the columns?
           textInput("pivot_dir",label="Pivot Directory", width="100%", value="D:/Projects/2010_05_003"),
           uiOutput("model_dir"),
-          actionButton("go_button", "Create Model Files!")
+          fluidRow(
+            column(6,
+              selectInput("me_count", "Number of mes",
+                          choices=c("10"  = 10,
+                                    "100" = 100,
+                                    "500" = 500,
+                                    "1000" = 1000),
+                          selected=1000)),
+            column(6,
+                   helpText("This will be slow to proceed only after household and persons are set"),
+                   actionButton("go_button", "Create Model Files!"))
+          )
         )
       ),
 

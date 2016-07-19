@@ -118,7 +118,7 @@ shinyServer(function(input, output) {
   household_data <- reactive({
     household_frame <- data.frame(HH_DF)
     person_frame    <- data.frame(PER_DF)
-    name_frame      <- data.frame(HHID=c(LAST_HHID+1), PERID=c(LAST_PERID+1), person_name=c("tbd"), stringsAsFactors=FALSE)
+    name_frame      <- data.frame(HHID=c(1), PERID=c(1), person_name=c("tbd"), stringsAsFactors=FALSE)
     hh_inc          <- 0
     hhagecat        <- 1
     hworkers        <- 0
@@ -224,8 +224,8 @@ shinyServer(function(input, output) {
       if (padkid==1) { hadkids <- hadkids + 1 }
       
       person <- c(
-        LAST_HHID+1,                          # HID
-        LAST_PERID+person_num,                # PERID
+        1,                                    # HID
+        person_num,                           # PERID
         person_age,                           # AGE
         person_relate,                        # RELATE, relationship to householder
         person_esr -1*(person_esr==7),        # ESR, employment status
@@ -246,7 +246,7 @@ shinyServer(function(input, output) {
         padkid                                # padkid, person is adult kid living at home
       )
       person_frame[person_num,] <- as.integer(person)
-      name_frame[person_num,]   <- c(LAST_HHID+1, LAST_PERID+person_num, person_name)
+      name_frame[person_num,]   <- c(1, person_num, person_name)
     }
     
     # 1 - one-family house detached from any other house; 2 - duplex or apartment; 3 - mobile home, boat, RV, van, etc.
@@ -263,7 +263,7 @@ shinyServer(function(input, output) {
     if (input$tenure<=2) { hownrent <- 1 }
     
     household <- c(
-      LAST_HHID+1,                            # HHID
+      1,                                      # HHID
       strtoi(input[["taz"]]),                 # TAZ
       0,                                      # SERIALNO
       0,                                      # PUMA5
@@ -324,7 +324,30 @@ shinyServer(function(input, output) {
     # print(household_frame)
     # print(person_frame)
     
-    list(name_frame, household_frame, person_frame)
+    # duplicate names
+    name_expanded <- name_frame[rep(row.names(name_frame), input$me_count), 1:ncol(name_frame)]
+    name_expanded$PERID      <- (LAST_PERID+1):(LAST_PERID+nrow(name_expanded))
+    name_expanded$HHID       <- 1:nrow(name_expanded)
+    name_expanded$HHID       <- (name_expanded$HHID+1) %/% input$persons
+    name_expanded$HHID       <- name_expanded$HHID + LAST_HHID
+
+    # duplicate household
+    household_expanded <- household_frame[rep(row.names(household_frame), input$me_count), 1:ncol(household_frame)]
+    household_expanded$HHID  <- (LAST_HHID+1):(LAST_HHID+nrow(household_expanded))
+
+    # duplicate persons
+    person_expanded          <- person_frame[rep(row.names(person_frame), input$me_count), 1:ncol(person_frame)]
+    person_expanded$PERID    <- (LAST_PERID+1):(LAST_PERID+nrow(person_expanded))
+    person_expanded$HHID     <- 1:nrow(person_expanded)
+    person_expanded$HHID     <- (person_expanded$HHID+1) %/% input$persons
+    person_expanded$HHID     <- person_expanded$HHID + LAST_HHID
+    
+    # print(name_expanded)
+    # print(household_expanded)
+    # print(person_expanded)
+
+    list(name_frame,    household_frame,    person_frame,
+         name_expanded, household_expanded, person_expanded)
   })
   
   have_required_fields <- reactive({
@@ -378,7 +401,7 @@ shinyServer(function(input, output) {
   output$model_dir <- renderUI({
     # only guess it if it hasn't been set
     textInput("model_dir",label="Model Directory",
-              value=paste0(input$pivot_dir,"_1000",input$name1,"s"))
+              value=paste0(input$pivot_dir,"_",input$me_count,input$name1,"s"))
   })
   
   observeEvent(input$go_button, {
@@ -407,21 +430,21 @@ shinyServer(function(input, output) {
         # write the name table
         hhdata <- household_data()
         name_file <- file.path(input$model_dir,"INPUT","popsyn","names.csv")
-        write.table(hhdata[[1]], file=name_file, quote=FALSE, sep=",")
+        write.table(hhdata[[4]], file=name_file, quote=FALSE, sep=",", row.names=FALSE)
         status         <- paste0("Created ",name_file)
         CREATE_STATUS <<- paste0(CREATE_STATUS,status,"\n")
         print(status)
         
         # write the household table (append)
         hh_file <- file.path(input$model_dir,"INPUT","popsyn",basename(HHFILE))
-        write.table(hhdata[[2]], file=hh_file, append=TRUE,quote=FALSE, sep=",", row.names=FALSE, col.names=FALSE)
+        write.table(hhdata[[5]], file=hh_file, append=TRUE,quote=FALSE, sep=",", row.names=FALSE, col.names=FALSE)
         status         <- paste0("Appended hh to ",hh_file)
         CREATE_STATUS <<- paste0(CREATE_STATUS,status,"\n")
         print(status)
 
         # write the person table (append)
         per_file <- file.path(input$model_dir,"INPUT","popsyn",basename(PERFILE))
-        write.table(hhdata[[3]], file=per_file, append=TRUE,quote=FALSE, sep=",", row.names=FALSE, col.names=FALSE)
+        write.table(hhdata[[6]], file=per_file, append=TRUE,quote=FALSE, sep=",", row.names=FALSE, col.names=FALSE)
         status         <- paste0("Appended persons to ",per_file)
         CREATE_STATUS <<- paste0(CREATE_STATUS,status,"\n")
         print(status)
