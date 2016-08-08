@@ -13,34 +13,38 @@ library(reshape2)
 TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
 ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to read
 SAMPLESHARE  <- Sys.getenv("SAMPLESHARE") # Sampling
+JUST_MES     <- Sys.getenv("JUST_MES")    # Run for just-mes only?
 
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
-
-# run test mode?  It's a short version
-TEST        <- FALSE
-if (TEST) {
-  TARGET_DIR  <- "C:/Users/lzorn/Documents/2020_03_116"
-  ITER        <- "1"
-}
 
 stopifnot(nchar(TARGET_DIR  )>0)
 stopifnot(nchar(ITER        )>0)
 stopifnot(nchar(SAMPLESHARE )>0)
 
+if (JUST_MES=="1") {
+  MAIN_DIR    <- file.path(TARGET_DIR,"main",          "just_mes")
+  RESULTS_DIR <- file.path(TARGET_DIR,"core_summaries","just_mes")
+  UPDATED_DIR <- file.path(TARGET_DIR,"updated_output","just_mes")
+} else {
+  MAIN_DIR    <- file.path(TARGET_DIR,"main"           )
+  RESULTS_DIR <- file.path(TARGET_DIR,"core_summaries")
+  UPDATED_DIR <- file.path(TARGET_DIR,"updated_output")
+}
+
 # write results in TARGET_DIR/core_summaries
-if (!file.exists(file.path(TARGET_DIR,"core_summaries"))) {
-  dir.create(file.path(TARGET_DIR,"core_summaries"))
+if (!file.exists(RESULTS_DIR)) {
+  dir.create(RESULTS_DIR)
 }
 # write tables in TARGET_DIR/updated_output
-if (!file.exists(file.path(TARGET_DIR,"updated_output"))) {
-  dir.create(file.path(TARGET_DIR,"updated_output"))
+if (!file.exists(UPDATED_DIR)) {
+  dir.create(UPDATED_DIR)
 }
 SAMPLESHARE <- as.numeric(SAMPLESHARE)
 
 cat("TARGET_DIR  = ",TARGET_DIR, "\n")
 cat("ITER        = ",ITER,       "\n")
 cat("SAMPLESHARE = ",SAMPLESHARE,"\n")
-
+cat("JUST_MES    = ",JUST_MES,   "\n")
 
 # Overhead
 ## Lookups
@@ -99,9 +103,8 @@ names(tazData)[names(tazData)=="ZONE"] <- "taz"
 
 input.pop.households <- read.table(file = file.path(TARGET_DIR,"popsyn","hhFile.csv"), 
                                    header=TRUE, sep=",")
-input.ct.households  <- read.table(file = file.path(TARGET_DIR,"main",paste0("householdData_",ITER,".csv")), 
+input.ct.households  <- read.table(file = file.path(MAIN_DIR,paste0("householdData_",ITER,".csv")), 
                                    header=TRUE, sep = ",")
-
 
 ## Join them
 
@@ -109,7 +112,10 @@ input.ct.households  <- read.table(file = file.path(TARGET_DIR,"main",paste0("ho
 
 input.pop.households <- select(input.pop.households, HHID, PERSONS, hworkers, huniv, hpresch, 
                                hschpred, hschdriv)
-input.ct.households  <- select(input.ct.households, -jtf_choice)
+# drop random number fields
+input.ct.households  <- select(input.ct.households, -ao_rn, -fp_rn, -cdap_rn,
+  -imtf_rn, -imtod_rn, -immc_rn, -jtf_rn, -jtl_rn, -jtod_rn, -jmc_rn, -inmtf_rn, 
+  -inmtl_rn, -inmtod_rn, -inmmc_rn, -awf_rn, -awl_rn, -awtod_rn, -awmc_rn, -stf_rn, -stl_rn)
 
 # rename
 names(input.pop.households)[names(input.pop.households)=="HHID"] <- "hh_id"
@@ -171,7 +177,7 @@ households    <- left_join(households, LOOKUP_WALK_SUBZONE, by=c("walk_subzone")
 ## Read the person files
 input.pop.persons    <- read.table(file = file.path(TARGET_DIR,"popsyn","personFile.csv"),
                                    header=TRUE, sep=",")
-input.ct.persons     <- read.table(file = file.path(TARGET_DIR,"main",paste0("personData_",ITER,".csv")),
+input.ct.persons     <- read.table(file = file.path(MAIN_DIR,paste0("personData_",ITER,".csv")),
                                    header=TRUE, sep = ",")
 
 ## Join them
@@ -199,8 +205,7 @@ remove(input.pop.persons, input.ct.persons)
 
 # The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour
 
-indiv_tours     <- tbl_df(read.table(file=file.path(TARGET_DIR,"main",
-                                                    paste0("indivTourData_",ITER,".csv")), 
+indiv_tours     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("indivTourData_",ITER,".csv")), 
                                      header=TRUE, sep=","))
 
 # Add income from household table
@@ -227,8 +232,7 @@ indiv_tours   <- mutate(indiv_tours, parking_rate=ifelse((substr(tour_purpose,0,
 
 # The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/JointTour
 
-joint_tours    <- tbl_df(read.table(file=file.path(TARGET_DIR,"main",
-                                                   paste0("jointTourData_",ITER,".csv")), 
+joint_tours    <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTourData_",ITER,".csv")), 
                                     header=TRUE, sep=","))
 # Add Income from household table
 joint_tours    <- left_join(joint_tours, select(households, hh_id, income, incQ, incQ_label), by=c("hh_id"))
@@ -556,16 +560,14 @@ add_active <- function(this_timeperiod, input_trips_or_tours) {
 
 # The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip
 
-indiv_trips     <- read.table(file=file.path(TARGET_DIR,"main",
-                                             paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
+indiv_trips     <- read.table(file=file.path(MAIN_DIR, paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
 indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest_taz,
                           trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour)
 
 ## Data Reads: Joint Trips and recode a few variables
 
 # The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/JointTrip
-joint_trips     <- tbl_df(read.table(file=file.path(TARGET_DIR,"main",
-                                                    paste0("jointTripData_",ITER,".csv")), 
+joint_trips     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTripData_",ITER,".csv")), 
                                      header=TRUE, sep=","))
 joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz, trip_mode,
                           num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour)
@@ -750,8 +752,7 @@ trips <- tbl_df(trips)
 # Mandatory Locations
 
 # The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/MandatoryLocation
-mandatory_locations <- tbl_df(read.table(file=file.path(TARGET_DIR,"main",
-                                                        paste0("wsLocResults_",ITER,".csv")), 
+mandatory_locations <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")), 
                                          header=TRUE, sep=","))
 
 # Summaries
@@ -798,18 +799,18 @@ active_summary <- summarise(group_by(trips_by_person, taz, county_name, ptype, z
 # scale by sampleshare
 active_summary$freq <- active_summary$freq / SAMPLESHARE
 
-write.table(active_summary, file.path(TARGET_DIR,"core_summaries","ActiveTransport.csv"), sep=",", row.names=FALSE)
+write.table(active_summary, file.path(RESULTS_DIR,"ActiveTransport.csv"), sep=",", row.names=FALSE)
 model_summary <- active_summary  # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR,"core_summaries","ActiveTransport.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR,"ActiveTransport.rdata"))
 remove(active_summary, trips_by_person)
 
 ## Activity Pattern Summary
 
 actpatt_summary <- summarise(group_by(persons, type, activity_pattern, imf_choice, inmf_choice, incQ_label), freq=n())
 actpatt_summary$freq <- actpatt_summary$freq / SAMPLESHARE
-write.table(actpatt_summary, file.path(TARGET_DIR,"core_summaries","ActivityPattern.csv"), sep=",", row.names=FALSE)
+write.table(actpatt_summary, file.path(RESULTS_DIR,"ActivityPattern.csv"), sep=",", row.names=FALSE)
 model_summary <- actpatt_summary  # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR,"core_summaries","ActivityPattern.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR,"ActivityPattern.rdata"))
 remove(actpatt_summary)
 
 ## Auto Ownership Summaries
@@ -818,9 +819,9 @@ remove(actpatt_summary)
 autoown_summary <- summarise(group_by(households, SD, COUNTY, county_name, autos, 
                                       incQ, incQ_label, walk_subzone, walk_subzone_label, workers, kidsNoDr), freq=n())
 autoown_summary$freq <- autoown_summary$freq / SAMPLESHARE
-write.table(autoown_summary, file.path(TARGET_DIR,"core_summaries","AutomobileOwnership.csv"), sep=",", row.names=FALSE)
+write.table(autoown_summary, file.path(RESULTS_DIR,"AutomobileOwnership.csv"), sep=",", row.names=FALSE)
 model_summary <- autoown_summary  # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR,"core_summaries","AutomobileOwnership.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR,"AutomobileOwnership.rdata"))
 
 ### Auto Ownership Summary By County
 auto_labels <- c("Zero automobiles", "One automobile", "Two automobiles",
@@ -947,10 +948,10 @@ commute_summary <- summarise(group_by(commute_tours, dest_COUNTY, dest_county_na
                              distance     = mean(distance),
                              cost_fail    = sum(cost_fail))
 commute_summary$freq <- commute_summary$freq / SAMPLESHARE
-write.table(commute_summary, file.path(TARGET_DIR,"core_summaries","CommuteByEmploymentLocation.csv"),
+write.table(commute_summary, file.path(RESULTS_DIR,"CommuteByEmploymentLocation.csv"),
             sep=",", row.names=FALSE)
 model_summary <- commute_summary  # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR,"core_summaries","CommuteByEmploymentLocation.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR,"CommuteByEmploymentLocation.rdata"))
 remove(commute_summary)
 
 
@@ -966,10 +967,9 @@ commute_inc_summary_byjob <- summarise(group_by(commute_tours, dest_COUNTY, dest
                                        cost_fail    = sum(cost_fail),
                                        time_fail    = sum(time_fail))
 commute_inc_summary_byjob$freq <- commute_inc_summary_byjob$freq / SAMPLESHARE
-write.table(commute_inc_summary_byjob, 
-            file.path(TARGET_DIR,"core_summaries","CommuteByIncomeJob.csv"), sep=",", row.names=FALSE)
+write.table(commute_inc_summary_byjob, file.path(RESULTS_DIR,"CommuteByIncomeJob.csv"), sep=",", row.names=FALSE)
 model_summary <- commute_inc_summary_byjob  # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR,"core_summaries","CommuteByIncomeJob.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR,"CommuteByIncomeJob.rdata"))
 
 # The COUNTY and super district are by destination right now; add residence
 commute_tours   <- left_join(commute_tours,
@@ -988,10 +988,9 @@ commute_inc_summary_byres <- summarise(group_by(commute_tours, res_COUNTY, res_c
                                        cost_fail    = sum(cost_fail),
                                        time_fail    = sum(time_fail))
 commute_inc_summary_byres$freq <- commute_inc_summary_byres$freq / SAMPLESHARE
-write.table(commute_inc_summary_byres, 
-            file.path(TARGET_DIR,"core_summaries","CommuteByIncomeHousehold.csv"), sep=",", row.names=FALSE)
+write.table(commute_inc_summary_byres, file.path(RESULTS_DIR,"CommuteByIncomeHousehold.csv"), sep=",", row.names=FALSE)
 model_summary <- commute_inc_summary_byres  # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR,"core_summaries","CommuteByIncomeHousehold.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR,"CommuteByIncomeHousehold.rdata"))
 remove(commute_tours, commute_inc_summary_byjob, commute_inc_summary_byres)
 
 ## Journey To Work Summary
@@ -1016,9 +1015,9 @@ journeytowork_summary <- summarise(group_by(work_locations,
                                    Income = mean(Income))
 journeytowork_summary$freq <- journeytowork_summary$freq / SAMPLESHARE
 write.table(journeytowork_summary,
-            file.path(TARGET_DIR,"core_summaries","JourneyToWork.csv"), sep=",", row.names=FALSE)
+            file.path(RESULTS_DIR,"JourneyToWork.csv"), sep=",", row.names=FALSE)
 model_summary <- journeytowork_summary  # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR,"core_summaries","JourneyToWork.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR,"JourneyToWork.rdata"))
 remove(mandatory_locations, work_locations, journeytowork_summary, model_summary)
 
 ## Time of Day Summary
@@ -1029,9 +1028,9 @@ timeofday_summary <- summarise(group_by(tours,SD,COUNTY,county_name,
 timeofday_summary$freq             <- timeofday_summary$freq / SAMPLESHARE
 timeofday_summary$num_participants <- timeofday_summary$num_participants / SAMPLESHARE
 write.table(timeofday_summary,
-            file.path(TARGET_DIR,"core_summaries","TimeOfDay.csv"), sep=",", row.names=FALSE)
+            file.path(RESULTS_DIR,"TimeOfDay.csv"), sep=",", row.names=FALSE)
 model_summary <- timeofday_summary # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR, "core_summaries", "TimeOfDay.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR, "TimeOfDay.rdata"))
 
 # another table -- who's touring?
 persons_touring <- data.frame(hour=numeric(), simple_purpose=character(), persons_touring=numeric())
@@ -1042,11 +1041,9 @@ for (h in min(timeofday_summary$start_hour):max(timeofday_summary$end_hour)) {
   touring_at_hour <- mutate(touring_at_hour, hour=h)
   persons_touring <- rbind(persons_touring, touring_at_hour)
 }
-write.table(persons_touring,
-            file.path(TARGET_DIR,"core_summaries","TimeOfDay_personsTouring.csv"), 
-            sep=",", row.names=FALSE)
+write.table(persons_touring, file.path(RESULTS_DIR,"TimeOfDay_personsTouring.csv"), sep=",", row.names=FALSE)
 model_summary <- persons_touring
-save(model_summary, file=file.path(TARGET_DIR, "core_summaries", "TimeOfDay_personsTouring.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR, "TimeOfDay_personsTouring.rdata"))
 remove(timeofday_summary, persons_touring, h, touring_at_hour)
 
 
@@ -1056,14 +1053,14 @@ tripdist_summary          <- summarise(group_by(trips, autoSuff, autoSuff_label,
                                        freq         = n(),
                                        distance     = mean(distance))
 tripdist_summary$freq <- tripdist_summary$freq / SAMPLESHARE
-write.table(tripdist_summary,
-            file.path(TARGET_DIR,"core_summaries","TripDistance.csv"), sep=",", row.names=FALSE)
+write.table(tripdist_summary, file.path(RESULTS_DIR,"TripDistance.csv"), sep=",", row.names=FALSE)
 model_summary <- tripdist_summary # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR, "core_summaries", "TripDistance.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR, "TripDistance.rdata"))
 remove(tripdist_summary, model_summary)
 
 ## Cleanup and save persons
-save(persons, file=file.path(TARGET_DIR, "updated_output", "persons.rdata"))
+save(persons, file=file.path(UPDATED_DIR, "persons.rdata"))
+if (JUST_MES=="1") { write.table(persons, file=file.path(UPDATED_DIR, "persons.csv"), sep=",", row.names=FALSE) }
 remove(persons)
 
 ## Travel Cost Summary
@@ -1126,10 +1123,9 @@ travelcost_summary  <- summarise(group_by(costs_by_household, SD, COUNTY, county
                                  pcost_indiv     = mean(pcost_indiv),
                                  pcost_joint     = mean(pcost_joint))
 travelcost_summary$freq <- travelcost_summary$freq / SAMPLESHARE
-write.table(travelcost_summary,
-            file.path(TARGET_DIR,"core_summaries","TravelCost.csv"), sep=",", row.names=FALSE)
+write.table(travelcost_summary, file.path(RESULTS_DIR,"TravelCost.csv"), sep=",", row.names=FALSE)
 model_summary <- travelcost_summary # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR, "core_summaries", "TravelCost.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR, "TravelCost.rdata"))
 remove(costs_by_household,travelcost_summary,model_summary)
 
 ## Per Trip Travel Time Summary
@@ -1140,27 +1136,29 @@ triptime_summary <- summarise(group_by(trips, incQ, incQ_label, trip_mode, tour_
                               time_fail        = sum(time_fail))
 triptime_summary$freq             <- triptime_summary$freq / SAMPLESHARE
 triptime_summary$num_participants <- triptime_summary$num_participants / SAMPLESHARE
-write.table(triptime_summary,
-            file.path(TARGET_DIR,"core_summaries","PerTripTravelTime.csv"), sep=",", row.names=FALSE)
+write.table(triptime_summary, file.path(RESULTS_DIR,"PerTripTravelTime.csv"), sep=",", row.names=FALSE)
 model_summary <- triptime_summary # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR, "core_summaries", "PerTripTravelTime.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR, "PerTripTravelTime.rdata"))
 remove(triptime_summary, model_summary)
 
 ## Cleanup and save tours, trips and households
-save(trips, file=file.path(TARGET_DIR, "updated_output", "trips.rdata"))
+save(trips, file=file.path(UPDATED_DIR, "trips.rdata"))
+if (JUST_MES=="1") { write.table(trips, file=file.path(UPDATED_DIR, "trips.csv"), sep=",", row.names=FALSE) }
 remove(trips)
 
-save(tours, file=file.path(TARGET_DIR, "updated_output", "tours.rdata"))
+save(tours, file=file.path(UPDATED_DIR, "tours.rdata"))
+if (JUST_MES=="1") { write.table(tours, file=file.path(UPDATED_DIR, "tours.csv"), sep=",", row.names=FALSE) }
 remove(tours)
 
-save(households, file=file.path(TARGET_DIR, "updated_output", "households.rdata"))
+save(households, file=file.path(UPDATED_DIR, "households.rdata"))
+if (JUST_MES=="1") { write.table(households, file=file.path(UPDATED_DIR, "households.csv"), sep=",", row.names=FALSE) }
 remove(households)
 
 
 ## Vehicle Miles Traveled
 
 # maybe don't save/load but just keep it?  I started having memory problems though...
-load(file=file.path(TARGET_DIR,"updated_output","trips.rdata"))
+load(file=file.path(UPDATED_DIR,"trips.rdata"))
 auto_trips <- subset(trips, trip_mode<=6)
 remove(trips)
 
@@ -1181,7 +1179,7 @@ auto_trips_dcast <- tbl_df(dcast(auto_trips_melt, hh_id+person_id ~ variable, fu
 remove(auto_trips_melt)
 
 # add to persons so we get zero-vmt persons
-load(file=file.path(TARGET_DIR,"updated_output","persons.rdata"))
+load(file=file.path(UPDATED_DIR,"persons.rdata"))
 persons          <- left_join(persons, auto_trips_dcast, by=c("hh_id","person_id"))
 remove(auto_trips_dcast)
 persons$vmt_indiv[is.na(persons$vmt_indiv)] <- 0
@@ -1189,7 +1187,7 @@ persons$vmt_joint[is.na(persons$vmt_joint)] <- 0
 persons$vmt[is.na(persons$vmt)]             <- 0
 
 # add household vars
-load(file=file.path(TARGET_DIR,"updated_output","households.rdata"))
+load(file=file.path(UPDATED_DIR,"households.rdata"))
 persons          <- left_join(persons, select(households, hh_id, taz, COUNTY, county_name,
                                               walk_subzone, walk_subzone_label, 
                                               autoSuff, autoSuff_label),
@@ -1197,7 +1195,8 @@ persons          <- left_join(persons, select(households, hh_id, taz, COUNTY, co
 remove(households)
 
 # added new person vars so save it
-save(persons, file=file.path(TARGET_DIR, "updated_output", "persons.rdata"))
+save(persons, file=file.path(UPDATED_DIR, "persons.rdata"))
+if (JUST_MES=="1") { write.table(persons, file=file.path(UPDATED_DIR, "persons.csv"), sep=",", row.names=FALSE) }
 
 vmt_summary      <- summarise(group_by(persons, COUNTY, county_name, taz,
                                        walk_subzone, walk_subzone_label,
@@ -1208,15 +1207,13 @@ vmt_summary      <- summarise(group_by(persons, COUNTY, county_name, taz,
                               vmt_joint        = mean(vmt_joint),
                               vmt              = mean(vmt))
 vmt_summary$freq <- vmt_summary$freq / SAMPLESHARE
-write.table(vmt_summary,
-            file.path(TARGET_DIR,"core_summaries","VehicleMilesTraveled.csv"), sep=",", row.names=FALSE)
+write.table(vmt_summary, file.path(RESULTS_DIR,"VehicleMilesTraveled.csv"), sep=",", row.names=FALSE)
 model_summary <- vmt_summary # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR, "core_summaries", "VehicleMilesTraveled.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR, "VehicleMilesTraveled.rdata"))
 remove(vmt_summary, model_summary)
 
 # Vehicle Miles Travelef for Climate Action Plans Summary
-mandatory_locations <- tbl_df(read.table(file=file.path(TARGET_DIR,"main",
-                                                        paste0("wsLocResults_",ITER,".csv")), 
+mandatory_locations <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")), 
                                          header=TRUE, sep=","))
 # we only want work_locations to have hh_id, person_id, workLocation
 work_locations      <- subset(mandatory_locations, WorkLocation>0)
@@ -1225,11 +1222,12 @@ work_locations      <- mutate(work_locations, hh_id=HHID, person_id=PersonID)
 work_locations      <- select(work_locations, hh_id, person_id, WorkLocation)
 
 # attach it to persons
-load(file=file.path(TARGET_DIR, "updated_output", "persons.rdata"))
+load(file=file.path(UPDATED_DIR, "persons.rdata"))
 persons             <- left_join(persons, work_locations, by=c("hh_id", "person_id"))
 persons$WorkLocation[is.na(persons$WorkLocation)] <- 0    # change NA to 0
 # save, since we added something (WorkLocation)
-save(persons, file=file.path(TARGET_DIR, "updated_output", "persons.rdata"))
+save(persons, file=file.path(UPDATED_DIR, "persons.rdata"))
+if (JUST_MES=="1") { write.table(persons, file=file.path(UPDATED_DIR, "persons.csv"), sep=",", row.names=FALSE) }
 
 # we only care about very specific vars
 vmt_persons <- select(persons, hh_id, person_id, taz, COUNTY, county_name, WorkLocation)
@@ -1238,7 +1236,7 @@ remove(persons, work_locations)
 # we want: orig_taz, dest_taz, WorkLocation -> #persons, vmt
 
 # get the auto trips again
-load(file=file.path(TARGET_DIR,"updated_output","trips.rdata"))
+load(file=file.path(UPDATED_DIR,"trips.rdata"))
 auto_trips <- subset(trips, trip_mode<=6)
 remove(trips)
 auto_trips <- mutate(auto_trips,
@@ -1262,18 +1260,16 @@ auto_trips_odhw <- tbl_df(dcast(auto_trips_melt,orig_taz+dest_taz+taz+WorkLocati
 remove(auto_trips, auto_trips_melt)
 
 # save it
-write.table(auto_trips_odhw,
-            file.path(TARGET_DIR,"core_summaries","AutoTripsVMT_perOrigDestHomeWork.csv"), sep=",", row.names=FALSE)
+write.table(auto_trips_odhw, file.path(RESULTS_DIR,"AutoTripsVMT_perOrigDestHomeWork.csv"), sep=",", row.names=FALSE)
 model_summary <- auto_trips_odhw # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR, "core_summaries", "AutoTripsVMT_perOrigDestHomeWork.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR, "AutoTripsVMT_perOrigDestHomeWork.rdata"))
 remove(auto_trips_odhw, model_summary)
 
 # that was trips/vmt - we also want persons
 person_hw_summary      <- summarise(group_by(vmt_persons, COUNTY, county_name, taz, WorkLocation),
                                     freq = n())
 person_hw_summary$freq <- person_hw_summary$freq / SAMPLESHARE
-write.table(person_hw_summary,
-            file.path(TARGET_DIR,"core_summaries","AutoTripsVMT_personsHomeWork.csv"), sep=",", row.names=FALSE)
+write.table(person_hw_summary, file.path(RESULTS_DIR,"AutoTripsVMT_personsHomeWork.csv"), sep=",", row.names=FALSE)
 model_summary <- person_hw_summary # name it generically for rdata
-save(model_summary, file=file.path(TARGET_DIR, "core_summaries", "AutoTripsVMT_personsHomeWork.rdata"))
+save(model_summary, file=file.path(RESULTS_DIR, "AutoTripsVMT_personsHomeWork.rdata"))
 remove(person_hw_summary, model_summary)

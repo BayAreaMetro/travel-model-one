@@ -1,6 +1,6 @@
 
 USAGE = """
-python dataToTableauExtract.py [--append] [--timeperiod code] [--join join.csv] [--output output.tde] 
+python dataToTableauExtract.py [--append] [--timeperiod code] [--join join.csv] [--load table_name] [--output output.tde] 
   input_dir1 [input_dir2 input_dir3] output_dir summary.(rdata|dbf)
 
   + Pass --output output.tde to specify an output filename to use.  If none is specified,
@@ -10,6 +10,9 @@ python dataToTableauExtract.py [--append] [--timeperiod code] [--join join.csv] 
 
   + Pass --append if the data should be appended to the output tde.  If not passed and
     the file exists, the script will error
+
+  + Pass --load table_name if the a specific table name should be used.  Otherwise, will
+    load the table, 'model_summary'
 
 Loops through the input dirs (one is ok) and reads the summary.(rdata|dbf) within.
 Converts them into a Tableau Data Extract.
@@ -73,7 +76,7 @@ def read_scenario_key():
         print("Mapping src [%s] to Scenario [%s]" % (row['src'], row['Scenario']))
     return src_to_scenario
     
-def read_rdata(rdata_fullpath):
+def read_rdata(rdata_fullpath, table_name):
     """
     Returns the pandas DataFrame
     """
@@ -89,7 +92,7 @@ def read_rdata(rdata_fullpath):
     # check that it's there
     # print "Dimensions are %s" % str(r.r('dim(model_summary)'))
     
-    table_df = com.load_data('model_summary')
+    table_df = com.load_data(table_name)
 
     # fillna
     for col in table_df.columns:
@@ -177,12 +180,14 @@ def write_tde(table_df, tde_fullpath, arg_append):
     
 if __name__ == '__main__':
 
-    optlist, args = getopt.getopt(sys.argv[1:], "o:at:j:",['output=','append','timeperiod=','join='])
+    optlist, args = getopt.getopt(sys.argv[1:], "o:at:j:l:",
+        ['output=','append','timeperiod=','join=','load='])
 
     data_filename       = args[-1]
     arg_tde_filename    = None
     arg_append          = False
     arg_timeperiod      = None    
+    arg_load            = 'model_summary'
     arg_join            = []
     for opt,arg in optlist:
         if opt in ('-o', '--output'):
@@ -193,6 +198,8 @@ if __name__ == '__main__':
             arg_timeperiod = arg
         elif opt in ('-j', '--join'):
             arg_join.append(arg)
+        elif opt in ('-l', '--load'):
+            arg_load = arg
 
     if len(args) < 3:
         print USAGE
@@ -242,7 +249,7 @@ if __name__ == '__main__':
     for data_dirpath in args[:-2]:
         data_fullpath = os.path.join(data_dirpath, data_filename)
         if data_filename.endswith(".rdata"):
-            table_df = read_rdata(data_fullpath)
+            table_df = read_rdata(data_fullpath, arg_load)
         else:
             table_df = read_dbf(data_fullpath)
 
