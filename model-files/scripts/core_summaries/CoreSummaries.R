@@ -587,69 +587,94 @@ tours <- rbind(select(indiv_tours, -person_id, -person_num, -person_type, -atWor
                select(joint_tours, -tour_composition, -tour_participants))
 
 # done with this -- joint_tours will be used for unwinding joint trips and then released
-remove(indiv_tours)
+if (JUST_MES!="1") {
+  remove(indiv_tours)
+}
 
 # add residence TAZ info
 tours <- left_join(tours, select(households, hh_id, taz, SD, COUNTY, county_name),
                    by=c("hh_id"))
 
-# add simple_purpose
-tours <- mutate(tours, simple_purpose='non-work')
-tours$simple_purpose[tours$tour_purpose=='work_low'       ] <- 'work'
-tours$simple_purpose[tours$tour_purpose=='work_med'       ] <- 'work'
-tours$simple_purpose[tours$tour_purpose=='work_high'      ] <- 'work'
-tours$simple_purpose[tours$tour_purpose=='work_very high' ] <- 'work'
+# add simple_purpose, duration, parking cost to tours table
+add_tour_attrs <- function(ftours) {
+  # add simple_purpose
+  ftours <- mutate(ftours, simple_purpose='non-work')
+  ftours$simple_purpose[ftours$tour_purpose=='work_low'       ] <- 'work'
+  ftours$simple_purpose[ftours$tour_purpose=='work_med'       ] <- 'work'
+  ftours$simple_purpose[ftours$tour_purpose=='work_high'      ] <- 'work'
+  ftours$simple_purpose[ftours$tour_purpose=='work_very high' ] <- 'work'
 
-tours$simple_purpose[tours$tour_purpose=='school_grade'   ] <- 'school'
-tours$simple_purpose[tours$tour_purpose=='school_high'    ] <- 'school'
+  ftours$simple_purpose[ftours$tour_purpose=='school_grade'   ] <- 'school'
+  ftours$simple_purpose[ftours$tour_purpose=='school_high'    ] <- 'school'
 
-tours$simple_purpose[tours$tour_purpose=='university'     ] <- 'college'
+  ftours$simple_purpose[ftours$tour_purpose=='university'     ] <- 'college'
 
-tours$simple_purpose[tours$tour_purpose=='atwork_business'] <- 'at work'
-tours$simple_purpose[tours$tour_purpose=='atwork_eat'     ] <- 'at work'
-tours$simple_purpose[tours$tour_purpose=='atwork_maint'   ] <- 'at work'
+  ftours$simple_purpose[ftours$tour_purpose=='atwork_business'] <- 'at work'
+  ftours$simple_purpose[ftours$tour_purpose=='atwork_eat'     ] <- 'at work'
+  ftours$simple_purpose[ftours$tour_purpose=='atwork_maint'   ] <- 'at work'
 
-# Calculate the duration
-tours   <- mutate(tours, duration=end_hour-start_hour+0.5)
+  # Calculate the duration
+  ftours   <- mutate(ftours, duration=end_hour-start_hour+0.5)
 
-# Parking cost is based on tour duration
-tours   <- mutate(tours, parking_cost=parking_rate*duration)
-# Distribute costs across shared ride modes (same value used in skims, assignment) for indiv tours
-tours   <- mutate(tours, 
-                  parking_cost=ifelse((num_participants==1)&((tour_mode==3)|(tour_mode==4)),
-                                      parking_cost/1.75,parking_cost))
-tours   <- mutate(tours,
-                  parking_cost=ifelse((num_participants==1)&((tour_mode==5)|(tour_mode==6)),
-                                      parking_cost/2.50,parking_cost))
-# Set the transit parking cost to zero
-tours   <- mutate(tours, parking_cost=ifelse(tour_mode>6,0.0,parking_cost))
+  # Parking cost is based on tour duration
+  ftours   <- mutate(ftours, parking_cost=parking_rate*duration)
+  # Distribute costs across shared ride modes (same value used in skims, assignment) for indiv tours
+  ftours   <- mutate(ftours, 
+                     parking_cost=ifelse((num_participants==1)&((tour_mode==3)|(tour_mode==4)),
+                                        parking_cost/1.75,parking_cost))
+  ftours   <- mutate(ftours,
+                     parking_cost=ifelse((num_participants==1)&((tour_mode==5)|(tour_mode==6)),
+                                         parking_cost/2.50,parking_cost))
+  # Set the transit parking cost to zero
+  ftours   <- mutate(ftours, parking_cost=ifelse(tour_mode>6,0.0,parking_cost))
+  return(ftours)
+}
 
+tours <- add_tour_attrs(tours)
 
 ## Convert joint trips to joint person trips
 
-# Do this by getting the tour participants person ids from the joint_tours table, and unwinding it so that each joint trip
-# because a trip per partipant.
-
-# tour participants are person ids separated by spaces -- create a table of hh_id, person_num for them
-joint_tour_persons <- data.frame(hh_id=numeric(), tour_id=numeric(), person_num=numeric())
-# unwind particpants into table with cols hh_id, tour_id, person_num1, person_num2, ...
-participants   <- strsplit(as.character(joint_tours$tour_participants)," ")
-max_peeps      <- max(sapply(participants,length))
-participants   <- lapply(participants, function(X) c(X,rep(NA, max_peeps-length(X))))
-participants   <- data.frame(t(do.call(cbind, participants)))
-participants   <- mutate(participants, hh_id=joint_tours$hh_id, tour_id=joint_tours$tour_id)
-# melt the persons so they are each on their own row
-for (peep in 1:max_peeps) {
-  jtp <- melt(participants, id.var=c("hh_id","tour_id"), measure.vars=paste0("X",peep), na.rm=TRUE)
-  jtp <- mutate(jtp, person_num=value)
-  jtp <- select(jtp, hh_id, tour_id, person_num)
-  joint_tour_persons <- rbind(joint_tour_persons, jtp)
+# Getting the tour participants person nums from the joint_tours table, and unwind it so that each joint tour
+# becomes a row per partipant.  Returns table of person-tours, with columns hh_id, tour_id, person_num, person_id
+get_joint_tour_persons <- function(joint_tours, persons) {
+  # tour participants are person ids separated by spaces -- create a table of hh_id, person_num for them
+  joint_tour_persons <- data.frame(hh_id=numeric(), tour_id=numeric(), person_num=numeric())
+  # unwind particpants into table with cols hh_id, tour_id, person_num1, person_num2, ...
+  participants   <- strsplit(as.character(joint_tours$tour_participants)," ")
+  max_peeps      <- max(sapply(participants,length))
+  participants   <- lapply(participants, function(X) c(X,rep(NA, max_peeps-length(X))))
+  participants   <- data.frame(t(do.call(cbind, participants)))
+  participants   <- mutate(participants, hh_id=joint_tours$hh_id, tour_id=joint_tours$tour_id)
+  # melt the persons so they are each on their own row
+  for (peep in 1:max_peeps) {
+    jtp <- melt(participants, id.var=c("hh_id","tour_id"), measure.vars=paste0("X",peep), na.rm=TRUE)
+    jtp <- mutate(jtp, person_num=value)
+    jtp <- select(jtp, hh_id, tour_id, person_num)
+    joint_tour_persons <- rbind(joint_tour_persons, jtp)
+  }
+  joint_tour_persons <- transform(joint_tour_persons, person_num=as.numeric(person_num))
+  # sort by hh_id
+  joint_tour_persons <- joint_tour_persons[with(joint_tour_persons, order(hh_id, tour_id)),]
+  # merge with the persons to get the person_id
+  joint_tour_persons <- left_join(joint_tour_persons, select(persons, hh_id, person_num, person_id), by=c("hh_id","person_num"))
+  
+  return(joint_tour_persons)
 }
-joint_tour_persons <- transform(joint_tour_persons, person_num=as.numeric(person_num))
-# sort by hh_id
-joint_tour_persons <- joint_tour_persons[with(joint_tour_persons, order(hh_id, tour_id)),]
-# merge with the persons to get the person_id
-joint_tour_persons <- left_join(joint_tour_persons, persons, by=c("hh_id","person_num"))
+
+joint_tour_persons <- get_joint_tour_persons(joint_tours, persons)
+
+# create and write person-tours for just-mes
+if (JUST_MES=="1") {
+  joint_tours <- left_join(joint_tour_persons, joint_tours)
+  indiv_tours$tour_participants <- as.character(indiv_tours$person_num)
+  person_tours <- rbind(select(indiv_tours, -person_type, -atWork_freq, -fp_choice),
+                        select(joint_tours, -tour_composition))
+  person_tours <- add_tour_attrs(person_tours)
+  
+  save(person_tours, file=file.path(UPDATED_DIR, "person_tours.rdata"))
+  write.table(person_tours, file=file.path(UPDATED_DIR, "person_tours.csv"), sep=",", row.names=FALSE)
+  remove(indiv_tours, person_tours)
+}
 
 # attach persons to the joint_trips
 joint_person_trips <- inner_join(joint_trips, joint_tour_persons, by=c("hh_id", "tour_id"))
@@ -657,7 +682,7 @@ joint_person_trips <- inner_join(joint_trips, joint_tour_persons, by=c("hh_id", 
 joint_person_trips <- select(joint_person_trips, hh_id, person_id, tour_id, orig_taz, dest_taz, trip_mode,
                              num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour)
 # cleanup
-remove(peep,participants,max_peeps,jtp,joint_tours,joint_trips,joint_tour_persons)
+remove(joint_tours,joint_trips,joint_tour_persons)
 
 ## Combine Individual Trips and Joint Person Trips
 indiv_trips        <- mutate(indiv_trips,        num_participants=1)
