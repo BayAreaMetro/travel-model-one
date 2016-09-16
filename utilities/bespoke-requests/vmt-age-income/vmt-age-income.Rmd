@@ -1,0 +1,131 @@
+---
+title: "VMT per Capita by Age and Income"
+author: "David Ory"
+output: 
+  html_document:
+    theme: cosmo
+    toc: yes
+---
+
+
+## Administration
+
+#### Purpose
+Prepares a bespoke summary of travel model output.  Specifically, calculates vehicle miles traveled per capita by age and income category. 
+
+#### Outputs
+1.  A CSV database with logical names.  
+
+## Procedure
+
+#### Overhead
+```{r overhead, results = 'hide'}
+library(knitr)
+suppressMessages(library(dplyr))
+```
+
+```{r config, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
+
+#### Paramaters
+```{r parameters}
+SAMPLING_RATE = 1.00
+PARAM_3P = 3.25
+```
+
+#### Remote file locations
+```{r remote-dir}
+TARGET_DIR  <- "M:/Application/Model One/RTP2013/Scenarios/2010_03_YYY/OUTPUT/updated_output/"
+OUTPUT_DIR  <- "M:/Application/Model One/RTP2013/Scenarios/2010_03_YYY/OUTPUT/bespoke/"
+SCENARIO_NAME = "2010_03_YYY"
+
+#TARGET_DIR  <- "M:/Application/Model One/RTP2013/Scenarios/Round 05 -- Final/2040_03_116/OUTPUT/updated_output/"
+#OUTPUT_DIR  <- "M:/Application/Model One/RTP2013/Scenarios/Round 05 -- Final/2040_03_116/OUTPUT/bespoke/"
+#SCENARIO_NAME = "2040_03_116"
+
+```
+
+#### Load, join, compute
+```{r data-manips}
+# Load
+load(paste(TARGET_DIR, "households.rdata", sep = ""))
+load(paste(TARGET_DIR, "trips.rdata", sep = ""))
+load(paste(TARGET_DIR, "persons.rdata", sep = ""))
+
+# Select, compute cohorts, and join
+households <- households %>%
+  select(hh_id, income_yr2000dollars = income) %>%
+  mutate(income_yr2015dollars = income_yr2000dollars * 258.81 / 180.20) %>%
+  mutate(income_cohort = "Missing") %>%
+  mutate(income_cohort = ifelse(income_yr2015dollars <= 30000, "Less than $30k", income_cohort)) %>%
+  mutate(income_cohort = ifelse(income_yr2015dollars > 30000  & income_yr2015dollars <= 60000,  "$30 to 60k", income_cohort)) %>%
+  mutate(income_cohort = ifelse(income_yr2015dollars > 60000  & income_yr2015dollars <= 100000, "$60 to 100k", income_cohort)) %>%
+  mutate(income_cohort = ifelse(income_yr2015dollars > 100000 & income_yr2015dollars <= 150000, "$100 to 150k", income_cohort)) %>%
+  mutate(income_cohort = ifelse(income_yr2015dollars > 150000, "More than $150k", income_cohort))
+
+trips <- trips %>%
+  select(hh_id, person_id, distance, trip_mode) %>%
+  mutate(vmt = 0.0) %>%
+  mutate(vmt = ifelse(trip_mode == 1, distance, vmt)) %>%
+  mutate(vmt = ifelse(trip_mode == 2, distance, vmt)) %>%
+  mutate(vmt = ifelse(trip_mode == 3, distance/2.0, vmt)) %>%
+  mutate(vmt = ifelse(trip_mode == 4, distance/2.0, vmt)) %>%
+  mutate(vmt = ifelse(trip_mode == 5, distance/PARAM_3P, vmt)) %>%
+  mutate(vmt = ifelse(trip_mode == 6, distance/PARAM_3P, vmt)) %>%
+  mutate(person_trip = 1.0L) %>%
+  mutate(vehicle_trip = 0.0L) %>%
+  mutate(vehicle_trip = ifelse(trip_mode == 1, 1.0L, vehicle_trip)) %>%
+  mutate(vehicle_trip = ifelse(trip_mode == 2, 1.0L, vehicle_trip)) %>%
+  mutate(vehicle_trip = ifelse(trip_mode == 3, 1.0/2.0, vehicle_trip)) %>%
+  mutate(vehicle_trip = ifelse(trip_mode == 4, 1.0/2.0, vehicle_trip)) %>%
+  mutate(vehicle_trip = ifelse(trip_mode == 5, 1.0/PARAM_3P, vehicle_trip)) %>%
+  mutate(vehicle_trip = ifelse(trip_mode == 6, 1.0/PARAM_3P, vehicle_trip))
+
+persons <- persons %>%
+  select(hh_id, person_id, age) %>%
+  mutate(age_cohort = "65 plus") %>%
+  mutate(age_cohort = ifelse(age < 17, " 0 to 16", age_cohort)) %>%
+  mutate(age_cohort = ifelse(age >= 17 & age < 26, " 17 to 25", age_cohort)) %>%
+  mutate(age_cohort = ifelse(age >= 26 & age < 41, " 26 to 40", age_cohort)) %>%
+  mutate(age_cohort = ifelse(age >= 41 & age < 65, " 41 to 64", age_cohort))
+
+trips_joined <- left_join(trips, persons, by = c("hh_id", "person_id"))
+
+trips_joined <- left_join(trips_joined, households, by = c("hh_id"))
+
+persons_joined <- left_join(persons, households, by = c("hh_id"))
+
+# Summaries
+persons_cohort_df <- persons_joined %>%
+  group_by(age_cohort, income_cohort) %>%
+  summarise(persons_in_cohort = n())
+
+vmt_cohort_df <- trips_joined %>%
+  group_by(age_cohort, income_cohort) %>%
+  summarise(sum_vmt_cohort = sum(vmt), sum_person_trips_cohort = sum(person_trip), sum_vehicle_trips_cohort = sum(vehicle_trip))
+
+output <- left_join(persons_cohort_df, vmt_cohort_df, by = c("age_cohort", "income_cohort"))
+
+# Add scenario name and scale outputs by sampling rate
+output <- output %>%
+  mutate(scenario = SCENARIO_NAME) %>%
+  mutate(avg_vmt_cohort = sum_vmt_cohort / persons_in_cohort) %>%
+  mutate(persons_in_cohort = persons_in_cohort / SAMPLING_RATE) %>%
+  mutate(sum_vmt_cohort = sum_vmt_cohort / SAMPLING_RATE) %>%
+  mutate(sum_person_trips_cohort = sum_person_trips_cohort / SAMPLING_RATE) %>%
+  mutate(sum_vehicle_trips_cohort = sum_vehicle_trips_cohort / SAMPLING_RATE)
+
+sum(output$sum_vmt_cohort)
+sum(output$persons_in_cohort)
+
+
+```
+
+#### Write to disk
+```{r write-disk}
+F_OUTPUT = paste(OUTPUT_DIR, "vmt-income-age.csv", sep = "")
+write.csv(output, file = F_OUTPUT, row.names = FALSE, quote = F)
+```
+
+
