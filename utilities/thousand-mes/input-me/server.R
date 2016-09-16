@@ -105,7 +105,7 @@ shinyServer(function(input, output) {
       # print(PER_DF)
       LAST_HHID   <<- PER_DF$HHID[NROWS*2]
       status       <- paste0(status, "Household ID will be ",LAST_HHID+1,"\n")
-      LAST_PERID  <<- PER_DF$PERID[NROWS*2] + 1
+      LAST_PERID  <<- PER_DF$PERID[NROWS*2]
       status       <- paste0(status, "Person ID will be ",LAST_PERID+1,"\n")
     }
     
@@ -338,9 +338,9 @@ shinyServer(function(input, output) {
     # duplicate persons
     person_expanded          <- person_frame[rep(row.names(person_frame), input$me_count), 1:ncol(person_frame)]
     person_expanded$PERID    <- (LAST_PERID+1):(LAST_PERID+nrow(person_expanded))
-    person_expanded$HHID     <- 1:nrow(person_expanded)
-    person_expanded$HHID     <- (person_expanded$HHID+1) %/% input$persons
-    person_expanded$HHID     <- person_expanded$HHID + LAST_HHID
+    person_expanded$HHID     <- 1:nrow(person_expanded) -1
+    person_expanded$HHID     <- floor(person_expanded$HHID / input$persons)
+    person_expanded$HHID     <- person_expanded$HHID + LAST_HHID + 1
     
     # print(name_expanded)
     # print(household_expanded)
