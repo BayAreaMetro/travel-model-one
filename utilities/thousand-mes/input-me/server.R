@@ -327,9 +327,9 @@ shinyServer(function(input, output) {
     # duplicate names
     name_expanded <- name_frame[rep(row.names(name_frame), input$me_count), 1:ncol(name_frame)]
     name_expanded$PERID      <- (LAST_PERID+1):(LAST_PERID+nrow(name_expanded))
-    name_expanded$HHID       <- 1:nrow(name_expanded)
-    name_expanded$HHID       <- (name_expanded$HHID+1) %/% input$persons
-    name_expanded$HHID       <- name_expanded$HHID + LAST_HHID
+    name_expanded$HHID       <- 1:nrow(name_expanded) -1
+    name_expanded$HHID       <- floor(name_expanded$HHID / input$persons)
+    name_expanded$HHID       <- name_expanded$HHID + LAST_HHID + 1
 
     # duplicate household
     household_expanded <- household_frame[rep(row.names(household_frame), input$me_count), 1:ncol(household_frame)]
