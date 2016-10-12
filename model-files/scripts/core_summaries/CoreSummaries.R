@@ -207,6 +207,7 @@ remove(input.pop.persons, input.ct.persons)
 
 indiv_tours     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("indivTourData_",ITER,".csv")), 
                                      header=TRUE, sep=","))
+indiv_tours     <- mutate(indiv_tours, tour_id=paste0("i",tour_id))
 
 # Add income from household table
 indiv_tours     <- left_join(indiv_tours, select(households, hh_id, income, incQ, incQ_label), by=c("hh_id"))
@@ -234,6 +235,8 @@ indiv_tours   <- mutate(indiv_tours, parking_rate=ifelse((substr(tour_purpose,0,
 
 joint_tours    <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTourData_",ITER,".csv")), 
                                     header=TRUE, sep=","))
+joint_tours     <- mutate(joint_tours, tour_id=paste0("j",tour_id))
+
 # Add Income from household table
 joint_tours    <- left_join(joint_tours, select(households, hh_id, income, incQ, incQ_label), by=c("hh_id"))
 
@@ -562,7 +565,8 @@ add_active <- function(this_timeperiod, input_trips_or_tours) {
 
 indiv_trips     <- read.table(file=file.path(MAIN_DIR, paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
 indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest_taz,
-                          trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour)
+                          trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id) %>%
+                   mutate(tour_id = paste0("i",tour_id))
 
 ## Data Reads: Joint Trips and recode a few variables
 
@@ -570,7 +574,8 @@ indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest
 joint_trips     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTripData_",ITER,".csv")), 
                                      header=TRUE, sep=","))
 joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz, trip_mode,
-                          num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour)
+                          num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id) %>%
+                   mutate(tour_id = paste0("j",tour_id))
 
 print(paste("Read",prettyNum(nrow(joint_trips),big.mark=","),
             "joint trips or ",prettyNum(sum(joint_trips$num_participants),big.mark=","),
@@ -680,7 +685,7 @@ if (JUST_MES=="1") {
 joint_person_trips <- inner_join(joint_trips, joint_tour_persons, by=c("hh_id", "tour_id"))
 # select out person_num and the person table columns
 joint_person_trips <- select(joint_person_trips, hh_id, person_id, tour_id, orig_taz, dest_taz, trip_mode,
-                             num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour)
+                             num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id)
 # cleanup
 remove(joint_tours,joint_trips,joint_tour_persons)
 
@@ -1168,7 +1173,36 @@ remove(triptime_summary, model_summary)
 
 ## Cleanup and save tours, trips and households
 save(trips, file=file.path(UPDATED_DIR, "trips.rdata"))
-if (JUST_MES=="1") { write.table(trips, file=file.path(UPDATED_DIR, "trips.csv"), sep=",", row.names=FALSE) }
+if (JUST_MES=="1") { 
+  write.table(trips, file=file.path(UPDATED_DIR, "trips.csv"), sep=",", row.names=FALSE)
+  ## Need a version for mapping.  These are links, so we need to split into points.
+  ## No intermediate stop: rows with stop_id == -1
+  trips_dest_noint <- trips[ which(trips$stop_id==-1), ] %>%
+    mutate(stop_id=0) %>%
+    select(-orig_taz, -orig_purpose) %>%
+    rename(taz = dest_taz, purpose = dest_purpose)
+  trips_orig_noint <- trips[ which(trips$stop_id==-1), ] %>%
+    select(-dest_taz, -dest_purpose) %>%
+    rename(taz = orig_taz, purpose = orig_purpose)
+  ## Intermediate stops: rows with stop_id > 0
+  trips_orig_int <- trips[ which(trips$stop_id==0), ] %>%
+    mutate(stop_id=-1) %>%
+    select(-dest_taz, -dest_purpose) %>%
+    rename(taz= orig_taz, purpose = orig_purpose)
+  trips_dest_int <- trips[ which(trips$stop_id>=0), ] %>%
+    select(-orig_taz, -orig_purpose) %>%
+    rename(taz = dest_taz, purpose = dest_purpose)
+  # put them together and sort
+  trip_points <- rbind(trips_dest_noint, trips_orig_noint, trips_orig_int, trips_dest_int) %>%
+    select(-incQ,-incQ_label,-autoSuff,-autoSuff_label,-home_taz,-walk_subzone,-walk_subzone_label,
+           -ptype,-ptype_label,-amode,-wlk_trip,-bik_trip,-wtr_trip,-dtr_trip)
+  trip_points <- trip_points[order(trip_points$hh_id,
+                                   trip_points$person_id,
+                                   trip_points$tour_id,
+                                   trip_points$depart_hour,
+                                   trip_points$stop_id),]
+  write.table(trip_points, file=file.path(UPDATED_DIR, "trip_points.csv"), sep=",", row.names=FALSE)
+}
 remove(trips)
 
 save(tours, file=file.path(UPDATED_DIR, "tours.rdata"))
