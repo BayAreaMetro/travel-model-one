@@ -207,7 +207,7 @@ remove(input.pop.persons, input.ct.persons)
 
 indiv_tours     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("indivTourData_",ITER,".csv")), 
                                      header=TRUE, sep=","))
-indiv_tours     <- mutate(indiv_tours, tour_id=paste0("i",tour_id))
+indiv_tours     <- mutate(indiv_tours, tour_id=paste0("i",substr(tour_category,1,2),tour_id))
 
 # Add income from household table
 indiv_tours     <- left_join(indiv_tours, select(households, hh_id, income, incQ, incQ_label), by=c("hh_id"))
@@ -235,7 +235,7 @@ indiv_tours   <- mutate(indiv_tours, parking_rate=ifelse((substr(tour_purpose,0,
 
 joint_tours    <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTourData_",ITER,".csv")), 
                                     header=TRUE, sep=","))
-joint_tours     <- mutate(joint_tours, tour_id=paste0("j",tour_id))
+joint_tours     <- mutate(joint_tours, tour_id=paste0("j",substr(tour_category,1,2),tour_id))
 
 # Add Income from household table
 joint_tours    <- left_join(joint_tours, select(households, hh_id, income, incQ, incQ_label), by=c("hh_id"))
@@ -565,8 +565,8 @@ add_active <- function(this_timeperiod, input_trips_or_tours) {
 
 indiv_trips     <- read.table(file=file.path(MAIN_DIR, paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
 indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest_taz,
-                          trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id) %>%
-                   mutate(tour_id = paste0("i",tour_id))
+                          trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category) %>%
+                   mutate(tour_id = paste0("i",substr(tour_category,1,2),tour_id))
 
 ## Data Reads: Joint Trips and recode a few variables
 
@@ -574,8 +574,8 @@ indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest
 joint_trips     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTripData_",ITER,".csv")), 
                                      header=TRUE, sep=","))
 joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz, trip_mode,
-                          num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id) %>%
-                   mutate(tour_id = paste0("j",tour_id))
+                          num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category) %>%
+                   mutate(tour_id = paste0("j",substr(tour_category,1,2),tour_id))
 
 print(paste("Read",prettyNum(nrow(joint_trips),big.mark=","),
             "joint trips or ",prettyNum(sum(joint_trips$num_participants),big.mark=","),
@@ -690,7 +690,7 @@ joint_person_trips <- select(joint_person_trips, hh_id, person_id, tour_id, orig
 remove(joint_tours,joint_trips,joint_tour_persons)
 
 ## Combine Individual Trips and Joint Person Trips
-indiv_trips        <- mutate(indiv_trips,        num_participants=1)
+indiv_trips        <- mutate(indiv_trips,        num_participants=1) %>% select(-tour_category)
 trips <- tbl_df(rbind(indiv_trips, joint_person_trips))
 print(paste("Combined",prettyNum(nrow(indiv_trips),big.mark=","),
             "individual trips with",prettyNum(nrow(joint_person_trips),big.mark=","),
