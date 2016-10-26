@@ -182,8 +182,8 @@ shinyServer(function(input, output) {
       person_employed <- (person_esr==1)|(person_esr==2)|(person_esr==4)|(person_esr==5)
       pemploy         <- 1*(person_employed&(person_workhours>=35)) +
                          2*(person_employed&(person_workhours< 35)) +
-                         3*(person_esr>=6)                          +
-                         4*((person_esr==0)|(person_esr==3))
+                         3*((person_esr==3)|(person_esr==6))        +
+                         4*(person_esr==0)
       
 
       if ((person_esr == 1)|(person_esr==3)) {
@@ -201,7 +201,7 @@ shinyServer(function(input, output) {
                          3*( person_grade==0)
       ptype           <- 1*(pemploy==1) +
                          2*(pemploy==2) +
-                         4*(person_esr==6) +
+                         4*((person_esr==3)|(person_esr==6)) +
                          5*(person_esr==7)
       
       if (pstudent==2)                                     { ptype <- 3 }
