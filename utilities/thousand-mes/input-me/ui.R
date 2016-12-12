@@ -129,9 +129,9 @@ shinyUI(fluidPage(
           ),
           column(6,
             selectInput("unittype", "Housing Unit Type",
-                        choices=c("Housing unit"                     = 1,
-                                  "Institutional group quarters"     = 2,
-                                  "Non-institutional group quarters" = 3)),
+                        choices=c("Housing unit"                     = 0,
+                                  "Institutional group quarters"     = 1,
+                                  "Non-institutional group quarters" = 2)),
              sliderInput("noc", "Number of own children under 18 years in household",
                          min=0, max=12, value=1, step=1)
           )
