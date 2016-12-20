@@ -20,7 +20,7 @@
       </column>
     </datasource>
     <datasource caption='avgload5period Extract' inline='true' name='C:\Users\lzorn\Documents\2010_04_ZZZ\summary\avgload5period.tde' version='9.3'>
-      <connection class='dataengine' dbname='M:\Application\Model One\RTP2017\Scenarios\Across-Scenarios-2035-Round-08\avgload5period.tde' schema='Extract' tablename='Extract'>
+      <connection class='dataengine' dbname='.\avgload5period.tde' schema='Extract' tablename='Extract'>
         <relation name='Extract (Extract.Extract)' table='[Extract].[Extract]' type='table' />
         <metadata-records>
           <metadata-record class='column'>
