@@ -1,0 +1,278 @@
+---
+title: "Prepare Observed Transit Summaries"
+author: "David Ory"
+output:
+  html_document:
+    theme: cosmo
+    toc: yes
+---
+## Administration
+
+#### Purpose
+Create year 2015 (approximately) validation summaries using the on-board survey results and ridership changes from MTC's Transit Statistical Summaries.
+
+#### TODO
+1. Add in the line by line stuff for Muni, VTA, and AC Transit
+2. Add missing operators: Amtrak, Rio Vista, Emery-go-round, Stanford, others? See which mode codes we don't have matches for
+
+## Overhead
+
+#### Libraries
+```{r overhead}
+library(knitr)
+suppressMessages(library(dplyr))
+```
+
+#### Knitr config
+```{r config, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
+
+#### Parameters
+```{r parameters}
+
+
+```
+
+
+#### Remote file names
+```{r file-names}
+F_INPUT_LEGACY_RDATA   = "M:/Data/OnBoard/Data and Reports/_data Standardized/survey_legacy.RData"
+F_INPUT_STANDARD_RDATA = "M:/Data/OnBoard/Data and Reports/_data Standardized/survey_standard.RData"
+
+F_INPUT_MODE_CODES = "M:/Development/Travel Model One/Validation/Version 05/2015_06_002/mode_code_database.csv"
+
+F_INPUT_RIDERSHIP = "M:/Development/Travel Model One/Validation/Version 05/2015_06_002/ridership_database.csv"
+
+F_INPUT_ESTIMATED = "M:/Development/Travel Model One/Validation/Version 05/2015_06_002/trnline.csv"
+  
+F_OUTPUT = "M:/Development/Travel Model One/Validation/Version 05/2015_06_002/observed_and_estimated_ridership.csv"
+
+```
+
+#### Data reads
+```{r data-reads}
+mode_codes_df <- read.table(file = F_INPUT_MODE_CODES, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+
+ridership_df <- read.table(file = F_INPUT_RIDERSHIP, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+
+estimated_df <- read.table(file = F_INPUT_ESTIMATED, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+
+```
+
+#### Prepare estimated database
+```{r prepare-estimated}
+estimated_mode_code <- estimated_df %>%
+  rename(mode_code = mode) %>%
+  group_by(mode_code) %>%
+  summarise(estimated_boardings = sum(total.boardings)) %>%
+  ungroup()
+
+# TODO: create and append estimates by line when observed data is prepared
+
+```
+
+
+#### Prepare mode codes database
+```{r travel-model-codes}
+travel_model_codes <- mode_codes_df %>%
+  select(operator, technology, mode_code) %>%
+  filter(technology != "support")
+
+check_duplicates <- travel_model_codes %>%
+  group_by(operator, technology) %>%
+  summarize(count = n()) %>%
+  ungroup() %>%
+  mutate(duplicate = ifelse(count>1, TRUE, FALSE)) %>%
+  select(-count)
+
+travel_model_codes <- left_join(travel_model_codes, check_duplicates, by = c("operator", "technology"))
+
+remove(check_duplicates)
+```
+
+
+#### Prepare ridership database
+```{r ridership-adjust}
+ridership_adjust <- ridership_df %>%
+  filter(survey_year_ridership != "na") %>%
+  mutate(adjustment = as.numeric(year_2015_ridership) / as.numeric(survey_year_ridership))
+
+```
+
+
+#### Prepare on-board survey information
+```{r on-board-survey}
+load(F_INPUT_LEGACY_RDATA)
+load(F_INPUT_STANDARD_RDATA)
+
+survey.standard <- survey.standard %>%
+  select(-survey_time)
+
+survey_df <- rbind(survey.standard, survey.legacy)
+
+# Get rid of partial surveys, get weekdays, other clean-up
+survey_df <- survey_df %>%
+  filter(operator != "BART PRE-TEST") %>%
+  filter(operator != "SF Muni Early Tranche") %>%
+  mutate(operator = ifelse(operator == "Golden Gate Transit (bus)", "Golden Gate Transit", operator)) %>%
+  mutate(operator = ifelse(operator == "Golden Gate Transit (ferry)", "Golden Gate Transit", operator)) %>%
+  filter(weekpart == "WEEKDAY") %>%
+  rename(technology = survey_tech)
+
+# sum by operator and tech
+survey_operator_tech <- survey_df %>%
+  group_by(operator, technology) %>%
+  summarize(survey_boardings = sum(weight)) %>%
+  ungroup()
+
+# sum across tech
+survey_operator <- survey_operator_tech %>%
+  group_by(operator) %>%
+  summarize(count = n(), survey_boardings = sum(survey_boardings)) %>%
+  ungroup() %>%
+  filter(count > 1) %>%
+  mutate(technology = "all bus") %>%
+  select(-count)
+
+survey_sum <- rbind(survey_operator, survey_operator_tech)
+
+# join to ridership database
+survey_adjustments <- left_join(survey_sum, ridership_adjust, by = c("operator", "technology"))
+
+survey_adjustments <- survey_adjustments %>%
+  filter(!(is.na(adjustment))) %>%
+  select(operator, technology, adjustment)
+
+survey_oper_tech_adjustments <- survey_adjustments %>%
+  filter(technology != "all bus")
+
+survey_oper_adjustments <- survey_adjustments %>%
+  filter(technology == "all bus") %>%
+  select(-technology)
+
+# join adjustments back to survey-operator-technology summary
+first_oper_tech <- left_join(survey_operator_tech, survey_oper_tech_adjustments, by = c("operator", "technology"))
+
+then_just_oper <- first_oper_tech %>%
+  filter(is.na(adjustment)) %>%
+  select(-adjustment)
+
+first_oper_tech <- first_oper_tech %>%
+  filter(!(is.na(adjustment)))
+
+then_just_oper <- left_join(then_just_oper, survey_oper_adjustments, by = c("operator"))
+
+survey_adjusted <- rbind(first_oper_tech, then_just_oper)
+
+survey_adjusted <- survey_adjusted %>%
+  mutate(observed_boardings = survey_boardings * adjustment) %>%
+  select(operator, technology, observed_boardings)
+
+
+remove(first_oper_tech, survey_adjustments, survey_df, survey_oper_adjustments, survey_oper_tech_adjustments, survey_operator,
+       survey_operator_tech, survey_sum, survey.legacy, survey.standard, then_just_oper)
+```
+
+#### Use statistical summary ridership directly for non-surveyed routes
+```{r prep-stats-summary}
+stats_riders <- ridership_df %>%
+  filter(survey_year == "na") %>%
+  select(operator, technology, observed_boardings = year_2015_ridership)
+
+observed_ridership <- rbind(survey_adjusted, stats_riders)
+
+remove(survey_adjusted, stats_riders)
+```
+
+#### Merge travel model mode codes
+```{r deal-with-codes}
+
+# start with one to one
+easy_cases <- observed_ridership %>%
+  filter(technology != "all bus")
+
+easy_codes <- travel_model_codes %>%
+  filter(!(duplicate)) %>%
+  select(-duplicate)
+
+easy_cases <- left_join(easy_cases, easy_codes, by = c("operator", "technology"))
+
+easy_cases <- easy_cases %>%
+  filter(!(is.na(mode_code)))
+
+# now do cases where bus is aggregated, but other tech is not
+mixed_cases <- observed_ridership %>%
+  filter(technology == "all bus")
+  
+mixed_replicate_a <- mixed_cases %>%
+  mutate(technology = "local bus")
+
+mixed_replicate_b <- mixed_cases %>%
+  mutate(technology = "express bus") %>%
+  mutate(observed_boardings = 0.0)
+
+mixed_cases <- rbind(mixed_replicate_a, mixed_replicate_b)
+  
+mixed_codes <- travel_model_codes %>%
+  filter(technology == "local bus" | technology == "express bus") %>%
+  filter(duplicate) %>%
+  select(-duplicate)
+
+mixed_codes_count <- mixed_codes %>%
+  group_by(operator, technology) %>%
+  summarize(mode_code_count = n()) %>%
+  ungroup()
+  
+mixed_codes <- left_join(mixed_codes, mixed_codes_count, by = c("operator", "technology"))
+
+mixed_codes <- left_join(mixed_codes, mixed_cases, by = c("operator", "technology"))
+
+mixed_cases <- mixed_codes %>%
+  filter(!(is.na(observed_boardings))) %>%
+  mutate(observed_boardings = observed_boardings / mode_code_count) %>%
+  select(-mode_code_count)
+
+
+# now do the rest
+hard_codes_count <- travel_model_codes %>%
+  group_by(operator, technology) %>%
+  summarize(mode_code_count = n()) %>%
+  ungroup()
+  
+hard_codes <- left_join(travel_model_codes, hard_codes_count, by = c("operator", "technology"))
+
+hard_codes <- hard_codes %>%
+  select(operator, technology, mode_code, mode_code_count) %>%
+  filter(mode_code_count > 1)
+
+hard_cases <- observed_ridership %>%
+  filter(technology != "all bus")
+
+hard_cases <- left_join(hard_codes, hard_cases, by = c("operator", "technology"))
+
+hard_cases <- hard_cases %>%
+  filter(!(is.na(observed_boardings))) %>%
+  mutate(observed_boardings = observed_boardings / mode_code_count) %>%
+  select(-mode_code_count)
+
+all_cases <- rbind(easy_cases, mixed_cases, hard_cases)
+
+remove(hard_cases, hard_codes, hard_codes_count, mixed_cases, mixed_codes, mixed_codes_count, mixed_replicate_a, mixed_replicate_b, easy_cases, easy_codes)
+  
+```
+
+# TODO bring in estimates from 2010 for services not represented in statistical summary
+
+#### Write to disk
+```{r writes}
+all_index <- data.frame(mode_code = seq(1:300))
+
+output <- left_join(all_index, estimated_mode_code, by = c("mode_code"))
+
+output <- left_join(output, all_cases, by = c("mode_code"))
+
+write.csv(output, file = F_OUTPUT, row.names = FALSE, quote = TRUE)
+
+```
+
