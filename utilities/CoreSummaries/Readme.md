@@ -206,7 +206,6 @@ Sum(freq) = tours
 | county_name | County name of residence |
 | simple_purpose | Simple tour purpose, one of ('work', 'school', 'non-work', 'at-work', 'college') |
 | tour_mode | Tour mode.  See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour |
-
 | start_hour | Start hour for the tour, in [5,23] |
 | end_hour | End  hour for the tour, in [5,23] |
 | freq | Number of tours |

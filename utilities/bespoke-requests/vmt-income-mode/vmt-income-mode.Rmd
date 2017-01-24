@@ -1,0 +1,178 @@
+---
+title: "VMT by income and mode"
+author: "Lisa Zorn"
+output: 
+  html_document:
+    theme: cosmo
+    toc: yes
+---
+
+## Administration
+
+#### Purpose
+Prepares a bespoke summary of travel model output.  Specifically, summarizes all VMT (including the drive component of drive to transit,
+which requires reading ITHIM skims rather than just relying on simple skims for the transit trips) by income and mode.
+
+### Outputs
+1. A CSV database3 with logical names.
+
+## Procedure
+
+#### Overhead
+```{r overhead, results = 'hide'}
+library(knitr)
+suppressMessages(library(dplyr))
+```
+
+```{r config, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
+
+#### Paramaters
+```{r parameters}
+SAMPLING_RATE = 0.50
+```
+
+#### Remote file locations
+```{r remote-dir}
+MODEL_DIR   <- "D:/Projects/2040_06_695"
+TARGET_DIR  <- MODEL_DIR
+OUTPUT_DIR  <- "M:/Application/Model One/RTP2017/Scenarios/2040_06_695/OUTPUT/bespoke"
+SCENARIO_NAME = "2040_06_695"
+```
+
+### Load, join, compute
+```{r data-manips}
+# Load person trips
+load(file.path(MODEL_DIR, "updated_output","trips.rdata"))
+
+# We only need some columns: trip_mode, orig_taz, dest_taz, timeCode, incQ, incQ_label, distance, num_participants
+trips <- select(trips,
+                trip_mode, orig_taz, dest_taz, timeCode, incQ, incQ_label, distance, num_participants, orig_purpose)
+
+# We only want those with VMT - so drive or drive to transit
+auto_trips <- subset(trips, trip_mode<=6)
+dtrn_trips <- subset(trips, trip_mode>=14)
+
+# Sum VMT for auto trips by splitting joint person miles traveled into vehicle miles traveled
+auto_trips <- mutate(auto_trips,
+                     vmt_indiv=(num_participants==1)*(trip_mode==1)*distance +
+                               (num_participants==1)*(trip_mode==2)*distance +
+                               (num_participants==1)*(trip_mode==3)*(distance/2.0) +
+                               (num_participants==1)*(trip_mode==4)*(distance/2.0) +
+                               (num_participants==1)*(trip_mode==5)*(distance/3.25) +
+                               (num_participants==1)*(trip_mode==6)*(distance/3.25),
+                     vmt_joint=(num_participants>1)*(distance/num_participants),
+                     vmt=vmt_indiv+vmt_joint,
+                     vehicle_trips = (num_participants==1)*(trip_mode==1)*1.0 +
+                                     (num_participants==1)*(trip_mode==2)*1.0 +
+                                     (num_participants==1)*(trip_mode==3)*(1.0/2.0) +
+                                     (num_participants==1)*(trip_mode==4)*(1.0/2.0) +
+                                     (num_participants==1)*(trip_mode==5)*(1.0/3.25) +
+                                     (num_participants==1)*(trip_mode==6)*(1.0/3.25) +
+                                     (num_participants>1)*(1.0/num_participants))
+auto_vmt <- summarise(group_by(auto_trips, incQ, incQ_label, trip_mode),
+                      person_trips  = n(),
+                      vehicle_trips = sum(vehicle_trips),
+                      vmt           = sum(vmt))
+
+
+# For transit, we need to join to ITHIM skims since they have drive distances
+# This is from utilities\PBA40\ITHIM\PerCapitaDailyTravelDistanceTime.R
+add_ithim_skims <- function(this_timeperiod, input_trips) {
+  # separate the relevant and irrelevant tours/trips
+  relevant   <- input_trips %>% filter(timeCode == this_timeperiod)
+  irrelevant <- input_trips %>% filter(timeCode != this_timeperiod)
+  
+  # read in the relevant skim
+  skim_file   <- file.path(TARGET_DIR,"database",paste0("IthimSkimsDatabase",this_timeperiod,".csv"))
+  ithim_skims <- read.table(file=skim_file, header=TRUE, sep=",")
+  # standardize column names
+  ithim_skims <- ithim_skims %>% rename(orig_taz=orig, dest_taz=dest)
+  
+  # Left join tours to the skims
+  relevant <- left_join(relevant, ithim_skims, by=c("orig_taz","dest_taz"))
+  # assign values if we can
+  relevant <- relevant %>% 
+    mutate(ivtB=(trn_mode=='wTrnW')*ivtB_wTrnW +
+                (trn_mode=='dTrnW')*ivtB_dTrnW +
+                (trn_mode=='wTrnD')*ivtB_wTrnD) %>%
+    mutate(ivtR=(trn_mode=='wTrnW')*ivtR_wTrnW +
+                (trn_mode=='dTrnW')*ivtR_dTrnW +
+                (trn_mode=='wTrnD')*ivtR_wTrnD) %>%
+    mutate(distB=(trn_mode=='wTrnW')*distB_wTrnW +
+                 (trn_mode=='dTrnW')*distB_dTrnW +
+                 (trn_mode=='wTrnD')*distB_wTrnD) %>%
+    mutate(distR=(trn_mode=='wTrnW')*distR_wTrnW +
+                 (trn_mode=='dTrnW')*distR_dTrnW +
+                 (trn_mode=='wTrnD')*distR_wTrnD) %>%
+    mutate(ddist=(trn_mode=='dTrnW')*ddist_dTrnW +
+                 (trn_mode=='wTrnD')*ddist_wTrnD) %>%
+    mutate(dtime=(trn_mode=='dTrnW')*dtime_dTrnW +
+                 (trn_mode=='wTrnD')*dtime_wTrnD)
+  
+  # re-code missing as zero
+  relevant <- relevant %>%
+    mutate(ivtB = ifelse(ivtB < -990, 0, ivtB)) %>%
+    mutate(ivtR = ifelse(ivtR < -990, 0, ivtR)) %>%
+    mutate(distB = ifelse(distB < -990, 0, distB)) %>%
+    mutate(distR = ifelse(distR < -990, 0, distR)) %>%
+    mutate(ddist = ifelse(ddist < -990, 0, distB)) %>%
+    mutate(dtime = ifelse(dtime < -990, 0, distR)) %>%
+    mutate(ivt_trn  = ivtB+ivtR) %>%
+    mutate(dist_trn = distB + distR)
+
+  print(paste("For", 
+              this_timeperiod, 
+              "assigned", 
+              prettyNum(sum(!is.na(relevant$ivt_trn)),big.mark=","),
+              "ivts and ",
+              prettyNum(sum(!is.na(relevant$dist_trn)),big.mark=","),
+              "dists"))
+  
+  print(paste("  -> Total zero ivts:",
+              prettyNum(sum(relevant$ivt_trn==0),big.mark=",")))
+  print(paste("  -> Total zero dists:",
+              prettyNum(sum(relevant$dist_trn==0),big.mark=",")))
+  # clean-up
+  relevant <- relevant %>% select(-walk_wTrnW,-ivtB_wTrnW,-ivtR_wTrnW,-wait_wTrnW,-distB_wTrnW,-distR_wTrnW,
+                                  -walk_wTrnD,-ivtB_wTrnD,-ivtR_wTrnD,-wait_wTrnD,-distB_wTrnD,-distR_wTrnD,-dtime_wTrnD,-ddist_wTrnD,
+                                  -walk_dTrnW,-ivtB_dTrnW,-ivtR_dTrnW,-wait_dTrnW,-distB_dTrnW,-distR_dTrnW,-dtime_dTrnW,-ddist_dTrnW)
+  
+  return_list <- rbind(relevant, irrelevant)
+  return(return_list)
+}
+
+# Some trips are drive-transit-walk and some are walk-transit-drive depending on the origin purpose
+dtrn_trips <- mutate(dtrn_trips, trn_mode = ifelse(orig_purpose=='Home', 'dTrnW','wTrnD')) %>%
+              mutate(vehicle_trips = (num_participants==1)*1.0 +
+                                     (num_participants>1)*(1.0/num_participants))
+
+# add the drive distance from the ITHIM skims
+dtrn_trips <- mutate(dtrn_trips, ivtB=0, ivtR=0, distB=0, distR=0, ddist=0, dtime=0, ivt_trn=0, dist_trn=0)
+dtrn_trips <- add_ithim_skims('EA', dtrn_trips)
+dtrn_trips <- add_ithim_skims('AM', dtrn_trips)
+dtrn_trips <- add_ithim_skims('MD', dtrn_trips)
+dtrn_trips <- add_ithim_skims('PM', dtrn_trips)
+dtrn_trips <- add_ithim_skims('EV', dtrn_trips)
+dtrn_trips <- mutate(dtrn_trips, vmt=vehicle_trips*ddist)
+
+dtrn_vmt <- summarise(group_by(dtrn_trips, incQ, incQ_label, trip_mode),
+                      person_trips  = n(),
+                      vehicle_trips = sum(vehicle_trips),
+                      vmt           = sum(vmt))
+
+all_vmt <- rbind(auto_vmt, dtrn_vmt)
+# sampling rate affects all
+all_vmt <- all_vmt %>%
+  mutate(person_trips  = person_trips / SAMPLING_RATE,
+         vehicle_trips = vehicle_trips / SAMPLING_RATE,
+         vmt           = vmt / SAMPLING_RATE)
+```
+
+#### Write to disk
+```{r write-disk}
+F_OUTPUT = file.path(OUTPUT_DIR, "vmt-income-mode.csv")
+write.csv(all_vmt, file = F_OUTPUT, row.names = FALSE, quote = F)
+```
+
