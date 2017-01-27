@@ -1229,13 +1229,23 @@ auto_trips <- mutate(auto_trips,
                                (num_participants==1)*(trip_mode==5)*(distance/3.25) +
                                (num_participants==1)*(trip_mode==6)*(distance/3.25),
                      vmt_joint=(num_participants>1)*(distance/num_participants),
-                     vmt=vmt_indiv+vmt_joint)
+                     vmt=vmt_indiv+vmt_joint,
+                     person_trips=1,
+                     vehicle_trips =((num_participants==1)*(trip_mode==1)*1.0 +
+                                     (num_participants==1)*(trip_mode==2)*1.0 +
+                                     (num_participants==1)*(trip_mode==3)*(1.0/2.0) +
+                                     (num_participants==1)*(trip_mode==4)*(1.0/2.0) +
+                                     (num_participants==1)*(trip_mode==5)*(1.0/3.25) +
+                                     (num_participants==1)*(trip_mode==6)*(1.0/3.25) +
+                                     (num_participants>1)*(1.0/num_participants)))
 
 # sum them to hh_id, person_id
-auto_trips_melt  <- tbl_df(melt(select(auto_trips, hh_id, person_id, vmt_indiv, vmt_joint, vmt), 
-                           id.vars=c("hh_id", "person_id")))
-auto_trips_dcast <- tbl_df(dcast(auto_trips_melt, hh_id+person_id ~ variable, fun.aggregate=sum))
-remove(auto_trips_melt)
+auto_trips_dcast <- summarise(group_by(auto_trips, hh_id, person_id),
+                              vmt_indiv    = sum(vmt_indiv),
+                              vmt_joint    = sum(vmt_joint),
+                              vmt          = sum(vmt),
+                              person_trips = sum(person_trips),
+                              vehicle_trips= sum(vehicle_trips))
 
 # add to persons so we get zero-vmt persons
 load(file=file.path(UPDATED_DIR,"persons.rdata"))
@@ -1244,10 +1254,12 @@ remove(auto_trips_dcast)
 persons$vmt_indiv[is.na(persons$vmt_indiv)] <- 0
 persons$vmt_joint[is.na(persons$vmt_joint)] <- 0
 persons$vmt[is.na(persons$vmt)]             <- 0
+persons$person_trips[is.na(persons$person_trips)]   <- 0
+persons$vehicle_trips[is.na(persons$vehicle_trips)] <- 0
 
 # add household vars
 load(file=file.path(UPDATED_DIR,"households.rdata"))
-persons          <- left_join(persons, select(households, hh_id, taz, COUNTY, county_name,
+persons          <- left_join(persons, select(households, hh_id, taz, COUNTY, county_name, SD,
                                               walk_subzone, walk_subzone_label, 
                                               autoSuff, autoSuff_label),
                               by=c("hh_id"))
@@ -1257,18 +1269,40 @@ remove(households)
 save(persons, file=file.path(UPDATED_DIR, "persons.rdata"))
 if (JUST_MES=="1") { write.table(persons, file=file.path(UPDATED_DIR, "persons.csv"), sep=",", row.names=FALSE) }
 
-vmt_summary      <- summarise(group_by(persons, COUNTY, county_name, taz,
+vmt_summary      <- summarise(group_by(persons, COUNTY, county_name, SD, taz,
                                        walk_subzone, walk_subzone_label,
                                        ptype, ptype_label,
                                        autoSuff, autoSuff_label),
                               freq             = n(),
                               vmt_indiv        = mean(vmt_indiv),
                               vmt_joint        = mean(vmt_joint),
-                              vmt              = mean(vmt))
-vmt_summary$freq <- vmt_summary$freq / SAMPLESHARE
+                              vmt              = mean(vmt),
+                              person_trips     = sum(person_trips),
+                              vehicle_trips    = sum(vehicle_trips))
+vmt_summary$freq          <- vmt_summary$freq / SAMPLESHARE
+vmt_summary$person_trips  <- vmt_summary$person_trips / SAMPLESHARE
+vmt_summary$vehicle_trips <- vmt_summary$vehicle_trips / SAMPLESHARE
 write.table(vmt_summary, file.path(RESULTS_DIR,"VehicleMilesTraveled.csv"), sep=",", row.names=FALSE)
 model_summary <- vmt_summary # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR, "VehicleMilesTraveled.rdata"))
+remove(vmt_summary, model_summary)
+
+## by household; remove ptype
+vmt_summary      <- summarise(group_by(persons, COUNTY, county_name, SD, taz,
+                                       walk_subzone, walk_subzone_label,
+                                       autoSuff, autoSuff_label),
+                              freq             = n_distinct(hh_id),
+                              vmt_indiv        = mean(vmt_indiv),
+                              vmt_joint        = mean(vmt_joint),
+                              vmt              = mean(vmt),
+                              person_trips     = sum(person_trips),
+                              vehicle_trips    = sum(vehicle_trips))
+vmt_summary$freq          <- vmt_summary$freq / SAMPLESHARE
+vmt_summary$person_trips  <- vmt_summary$person_trips / SAMPLESHARE
+vmt_summary$vehicle_trips <- vmt_summary$vehicle_trips / SAMPLESHARE
+write.table(vmt_summary, file.path(RESULTS_DIR,"VehicleMilesTraveled_households.csv"), sep=",", row.names=FALSE)
+model_summary <- vmt_summary # name it generically for rdata
+save(model_summary, file=file.path(RESULTS_DIR, "VehicleMilesTraveled_households.rdata"))
 remove(vmt_summary, model_summary)
 
 # Vehicle Miles Travelef for Climate Action Plans Summary
@@ -1307,16 +1341,27 @@ auto_trips <- mutate(auto_trips,
                                (num_participants==1)*(trip_mode==6)*(distance/3.25))/SAMPLESHARE,
                      vmt_joint=(num_participants>1)*(distance/num_participants)/SAMPLESHARE,
                      vmt=(vmt_indiv+vmt_joint),
-                     trips=1.0/SAMPLESHARE)
-auto_trips <- select(auto_trips, hh_id, person_id, orig_taz, dest_taz, vmt, vmt_indiv, vmt_joint, trips)
+                     trips=1.0/SAMPLESHARE,
+                     vehicle_trips =((num_participants==1)*(trip_mode==1)*1.0 +
+                                     (num_participants==1)*(trip_mode==2)*1.0 +
+                                     (num_participants==1)*(trip_mode==3)*(1.0/2.0) +
+                                     (num_participants==1)*(trip_mode==4)*(1.0/2.0) +
+                                     (num_participants==1)*(trip_mode==5)*(1.0/3.25) +
+                                     (num_participants==1)*(trip_mode==6)*(1.0/3.25) +
+                                     (num_participants>1)*(1.0/num_participants))/SAMPLESHARE)
+auto_trips <- select(auto_trips, hh_id, person_id, orig_taz, dest_taz, vmt, vmt_indiv, vmt_joint, trips, vehicle_trips)
 auto_trips <- left_join(auto_trips, select(vmt_persons, hh_id, person_id, taz, WorkLocation), 
                         by=c("hh_id","person_id"))
 
 # sum them to origin, destination, taz, WorkLocation
-auto_trips_melt  <- tbl_df(melt(select(auto_trips, -hh_id,-person_id),
-                           id.vars=c("orig_taz", "dest_taz", "taz", "WorkLocation")))
-auto_trips_odhw <- tbl_df(dcast(auto_trips_melt,orig_taz+dest_taz+taz+WorkLocation ~ variable, fun.aggregate=sum))
-remove(auto_trips, auto_trips_melt)
+auto_trips_odhw <- summarise(group_by(auto_trips, orig_taz, dest_taz, taz, WorkLocation),
+                             vmt_indiv     = sum(vmt_indiv),
+                             vmt_joint     = sum(vmt_joint),
+                             vmt           = sum(vmt),
+                             trips         = sum(trips),
+                             vehicle_trips = sum(vehicle_trips))
+remove(auto_trips)
+
 
 # save it
 write.table(auto_trips_odhw, file.path(RESULTS_DIR,"AutoTripsVMT_perOrigDestHomeWork.csv"), sep=",", row.names=FALSE)

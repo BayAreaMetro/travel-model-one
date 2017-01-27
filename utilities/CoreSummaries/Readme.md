@@ -112,7 +112,8 @@ Automobile trips for VMT summing.  Sum(trips) = total auto trips for an average 
 | vmt | VMT for the trips, a sum of `vmt_indiv` and `vmt_joint` |
 | vmt_indiv	| VMT from individual trips |
 | vmt_joint | VMT from joint trips |
-| trips | Number of trips |
+| trips | Number of (person) trips |
+| vehicle_trips | Number of vehicle trips |
 
 #### AutoTripsVMT_personsHomeWork
 Automobile trips by person.  Sum(freq) = population
@@ -264,6 +265,7 @@ Auto vehicle miles traveled summed to persons. Sum(freq) = population
 |-------------|-------------|
 | COUNTY | County code of residence |
 | county_name | County name of residence |
+| SD | Superdistrict of residence |
 | taz | TAZ of residence |
 | walk_subzone | Walk to transit sub-zone.  One of 0,1, or 2.  See http://analytics.mtc.ca.gov/foswiki/Main/Household |
 | walk_subzone_label | String version of `walk_subzone` |
@@ -272,10 +274,16 @@ Auto vehicle miles traveled summed to persons. Sum(freq) = population
 | autoSuff | Auto sufficiency code, one of [0,1,2] |
 | autoSuff_label | Auto sufficiency label, one of ('Zero automobiles','Automobiles < workers','Automobiles >= workers') |
 | freq | Number of persons |
-| vmt_indiv | VMT from individual trips |
-| vmt_joint	| VMT from joing trips |
-| vmt | Total VMT |
+| vmt_indiv | Mean VMT from individual trips |
+| vmt_joint	| Mean VMT from joing trips |
+| vmt | Mean VMT |
+| person_trips | Total person Trips |
+| vehicle_trips | Total vehicle Trips |
 
+### VehicleMilesTraveled_households
+
+Auto vehicle miles traveled summed to households.
+Same columns as VehicleMilesTraveled but Sum(freq) = households and no ptype columns.
 
 #### Additional Output Tables
 It also outputs updated `.rdata` versions of the Trip, Tours, Persons and Households table, 
