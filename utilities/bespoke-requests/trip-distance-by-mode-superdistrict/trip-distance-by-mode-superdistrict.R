@@ -1,35 +1,34 @@
----
-title: "Trip Distance by Mode, Tour Purpose, Origin Superdistrict, Destination Superdistrict"
-author: "David Ory"
-output: 
-  html_document:
-    theme: cosmo
-    toc: yes
----
-
-
+# ---
+# title: "Trip Distance by Mode, Tour Purpose, Origin Superdistrict, Destination Superdistrict"
+# author: "David Ory"
+# output: 
+#   html_document:
+#     theme: cosmo
+#     toc: yes
+# ---
+# 
 ## Administration
 
 #### Purpose
-Prepares a bespoke summary of travel model output.  Specifically, calculates the average trip length by travel mode, tour purpose, origin superdistrict, and destination superdistrict. 
+# Prepares a bespoke summary of travel model output.  Specifically, calculates the average trip length by travel mode, tour purpose, origin superdistrict, and destination superdistrict. 
 
 #### Outputs
-1.  A CSV database with logical names.  
+# 1.  A CSV file with the following columns:
+#    * trip_mode - Trip mode number
+#    * mode_name - Trip mode string
+#    * tour_purpose - Tour purpose (see http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip)
+#    * orig_sd - Trip origin superdistrict
+#    * dest_sd - Trip destination superdistrict
+#    * simulated trips - Number of trips simulated in the model run
+#    * estimated trips - Total estimated number of trips in the model run (so simulated expanded by sampling weight)
+#    * mean_distance - Mean distance for the trips in this category
 
 ## Procedure
 
 #### Overhead
-```{r overhead, results = 'hide'}
-library(knitr)
-suppressMessages(library(dplyr))
-```
-
-```{r config, include=FALSE}
-knitr::opts_chunk$set(cache=TRUE)
-```
+library(dplyr)
 
 #### Mode look-up table
-```{r mode-lookup}
 LOOKUP_MODE <- data.frame(trip_mode = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18),
                           mode_name = c("Drive alone - free", "Drive alone - pay", 
                                         "Shared ride two - free", "Shared ride two - pay",
@@ -40,25 +39,25 @@ LOOKUP_MODE <- data.frame(trip_mode = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,1
                                         "Drive  to local bus", "Drive to light rail or ferry", "Drive to express bus", 
                                         "Drive to heavy rail", "Drive to commuter rail"))
 
-# SAMPLING_RATE = 1.00
 SAMPLING_RATE = 0.500
 
-```
-
-
 #### Remote file locations
-```{r remote-dir}
-TARGET_DIR  <- "M:/Application/Model One/RTP2017/Scenarios/2040_06_694/OUTPUT/"
-OUTPUT_DIR  <- "M:/Application/Model One/RTP2017/Scenarios/2040_06_694/OUTPUT/bespoke/"
 
-```
+# this should be set by caller
+MODEL_DIR   <- Sys.getenv("MODEL_DIR")
+TARGET_DIR  <- file.path("M:/Application/Model One/RTP2017/Scenarios",MODEL_DIR,"OUTPUT")
+OUTPUT_DIR  <- file.path("M:/Application/Model One/RTP2017/Scenarios",MODEL_DIR,"OUTPUT","bespoke")
 
+cat("MODEL_DIR     = ",MODEL_DIR, "\n")
+cat("TARGET_DIR    = ",TARGET_DIR, "\n")
+cat("OUTPUT_DIR    = ",OUTPUT_DIR, "\n")
+cat("SAMPLING_RATE = ",SAMPLING_RATE,"\n")
 
-#### Load, join, compute
-```{r data-manips}
 # Load
-load(paste(TARGET_DIR, "updated_output/", "trips.rdata", sep = ""))
-zonal_df <- read.table(file = paste(TARGET_DIR, "tazData.csv", sep = ""), header=TRUE, sep=",")
+cat("TARGET_DIR    = ",TARGET_DIR, "\n")
+
+load(file.path(TARGET_DIR, "updated_output", "trips.rdata"))
+zonal_df <- read.table(file = file.path(TARGET_DIR, "tazData.csv"), header=TRUE, sep=",")
 
 # Select and join
 working <- trips %>%
@@ -84,12 +83,10 @@ summarized <- summarized %>%
   mutate(estimated_trips = simulated_trips / SAMPLING_RATE) %>%
   select(trip_mode, mode_name, tour_purpose, orig_sd, dest_sd, simulated_trips, estimated_trips, mean_distance)
 
-```
-
 #### Write to disk
-```{r write-disk}
-F_OUTPUT = paste(OUTPUT_DIR, "trip-distance-by-mode-superdistrict.csv", sep = "")
+if (!file.exists(OUTPUT_DIR)) {
+  dir.create(OUTPUT_DIR)
+}
+F_OUTPUT = file.path(OUTPUT_DIR, "trip-distance-by-mode-superdistrict.csv")
 write.csv(summarized, file = F_OUTPUT, row.names = FALSE, quote = F)
-```
-
 
