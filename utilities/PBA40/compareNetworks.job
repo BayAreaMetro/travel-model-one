@@ -106,8 +106,8 @@ RUN PGM=NETWORK
       IF (LI.1.TSIN       <> LI.2.TSIN      ) MISMATCH = MISMATCH + 'TSIN '
       IF (LI.1.GL         <> LI.2.GL        ) MISMATCH = MISMATCH + 'GL '
       IF (LI.1.USE        <> LI.2.USE       ) MISMATCH = MISMATCH + 'USE '
-      IF (LI.1.OT         <> LI.2.OT        ) MISMATCH = MISMATCH + 'OT '
-  
+      IF (ABS(LI.1.OT    - LI.2.OT) > 0.001 ) MISMATCH = MISMATCH + 'OT '
+
       IF (LI.1.CAP        <> LI.2.CAP       ) MISMATCH = MISMATCH + 'CAP '
       IF (LI.1.AT         <> LI.2.AT        ) MISMATCH = MISMATCH + 'AT '
       IF (LI.1.FT         <> LI.2.FT        ) MISMATCH = MISMATCH + 'FT '
