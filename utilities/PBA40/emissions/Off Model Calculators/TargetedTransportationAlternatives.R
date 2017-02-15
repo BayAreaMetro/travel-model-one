@@ -1,5 +1,5 @@
 #
-# This R script distills the model outputs into the versions used by ICF calculator: "Targeted Transportation Alternatives v3.xlsx"
+# This R script distills the model outputs into the versions used by ICF calculator: "Targeted Transportation Alternatives v4.xlsx"
 #
 
 library(dplyr)
@@ -76,35 +76,19 @@ summary_df <- left_join(tazdata_summary_df, tripdist_summary_df)
 summary_df <- summary_df[,c("year","category","directory",
                             "total_households","total_jobs","avg_trip_length","avg_trip_length_work_da")]
 
-summary_melted_df <- melt(summary_df, id.vars=c("year","category","directory"))
 # columns are: year, category, directory, variable, value
+summary_melted_df <- melt(summary_df, id.vars=c("year","category","directory"))
 
-summary_alt_df <- data.frame()
-ALTERNATIVES <- c("No Project", "Proposed Plan", "Big Cities", "Main Streets", "EEJ")
-for (alternative in ALTERNATIVES) {
-  
-  # select the past year and the alternative
-  alt_df <- summary_melted_df[ (summary_melted_df$category==alternative)|(summary_melted_df$category=="Past year"), ]
-  # rename value column to the alternative
-  colnames(alt_df)[colnames(alt_df)=="value"] <- alternative
-  # drop category and directory-- it's in the column name
-  alt_df <- select(alt_df, -category, -directory)
-  
-  if (nrow(summary_alt_df)==0) { 
-    summary_alt_df <- alt_df
-  }
-  else {
-    summary_alt_df <- left_join(summary_alt_df, alt_df)
-  }
-}
-remove(alternative, alt_df)
+# add index column for vlookup
+summary_melted_df <- mutate(summary_melted_df,
+                            index = paste0(year,"-",category,"-",variable))
+summary_melted_df <- summary_melted_df[order(summary_melted_df$index),
+                                       c("index","year","category","directory","variable","value")]
 
-# reorder by year
-summary_alt_df <- summary_alt_df[ order(summary_alt_df$year),]
+# prepend note
+prepend_note = paste0("Output by ",SCRIPT," on ",format(Sys.time(), "%a %b %d %H:%M:%S %Y"))
+write(prepend_note, file=OUTPUT_FILE, append=FALSE)
 
 # output
-write.table(summary_alt_df, OUTPUT_FILE, sep=",", row.names=FALSE)
+write.table(summary_melted_df, OUTPUT_FILE, sep=",", row.names=FALSE, append=TRUE)
 
-# append note
-append_note = paste0("\n\nOutput by ",SCRIPT," on ",format(Sys.time(), "%a %b %d %H:%M:%S %Y\n"))
-write(append_note, file=OUTPUT_FILE, append=TRUE)
