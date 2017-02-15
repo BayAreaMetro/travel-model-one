@@ -129,6 +129,14 @@ tripdist_sd_summary_df <- tripdist_sd_summary_df %>%
   mutate(avg_trips_per_employee = (da_modeshare_of_commute+sr_modeshare_of_commute/K_AVG_CARPOOL_OCC)*2.0,
          avg_trips_per_employee_capped = avg_trips_per_employee*(1+K_TRIPCAP_FROM_MTNVIEW))
 
+# this is special -- keep 2035 supderdistrict 9 row (Mountain View)
+tripdist_sd_summary_df_2035_sd9 <- tripdist_sd_summary_df[ (tripdist_sd_summary_df$directory=="2035_06_694")&
+                                                           (tripdist_sd_summary_df$dest_sd==9), 
+                                                           c("year","category","directory",
+                                                             "da_modeshare_of_commute","sr_modeshare_of_commute")] %>%
+  rename(da_modeshare_of_commute_sd9=da_modeshare_of_commute,
+         sr_modeshare_of_commute_sd9=sr_modeshare_of_commute)
+
 # we only want these columns
 tripdist_sd_summary_df <- select(tripdist_sd_summary_df,
                                  year, directory, category, dest_sd, 
@@ -161,6 +169,10 @@ summary_df <- summarise(group_by(tazdata_df, year, category, directory),
 # columns are: year, category, directory, variable, value
 summary_melted_df <- melt(summary_df, id.vars=c("year","category","directory"))
 
+# add special mountain view mode shares
+tripdist_melted_df <- melt(tripdist_sd_summary_df_2035_sd9, id.vars=c("year","category","directory"))
+summary_melted_df  <- rbind(summary_melted_df, tripdist_melted_df)
+  
 # add index column for vlookup
 summary_melted_df <- mutate(summary_melted_df,
                             index = paste0(year,"-",category,"-",variable))
