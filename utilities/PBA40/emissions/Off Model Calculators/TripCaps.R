@@ -1,12 +1,12 @@
 #
-# This R script distills the model outputs into the versions used by ICF calculator: "Trip caps v6.xlsx"
+# This R script distills the model outputs into the versions used by ICF calculator: "Trip caps v8.xlsx"
 #
 
 library(dplyr)
 library(reshape2)
 
 MODEL_DATA_BASE_DIR <-"M:/Application/Model One/RTP2017/Scenarios"
-OUTPUT_FILE         <-"C:/Users/lzorn/Box Sync/ICF Calculators/Model Data - Trip Caps.csv"
+OUTPUT_FILE         <-"C:/Users/lzorn/Box Sync/ICF Calculators/Model Data/Model Data - Trip Caps.csv"
 
 # this is the currently running script
 SCRIPT                <- (function() {attr(body(sys.function()), "srcfile")})()$filename
@@ -21,10 +21,10 @@ K_ONLY_URBSUBURB  <- TRUE   # Trip caps apply only in urban/suburban areas
 K_ONLY_COMMGROWTH <- TRUE   # Trip caps apply only in areas that experience growth in zoned commercial space
 
 # Effectiveness of programs
-K_TRIPCAP_FROM_MTNVIEW <- -0.299602425  # Change in average trips per day per employee due to trip caps, based on Mountain View
+K_TRIPCAP_FROM_MTNVIEW <- -0.396971007  # Change in average trips per day per employee due to trip caps, based on Mountain View
 K_COMPLIANCE           <-  1.0          # Assumed compliance with trip caps in areas where they are applicable
 K_WORKDAYS_PER_YR      <- 250           # Workdays per year 
-K_AVG_CARPOOL_OCC      <- 2.4651168424  # Average carpool occupancy
+K_AVG_CARPOOL_OCC      <- 2.581396053   # Average carpool occupancy
 
 # Read tazdata
 TAZDATA_FIELDS <- c("ZONE", "SD", "COUNTY", "TOTEMP", "TOTHH", "CIACRE", "AREATYPE") # only care about these fields
@@ -56,8 +56,7 @@ tazdata_df <- mutate(tazdata_df,
                      empcenter_2015=(TOTEMP_2015>TOTHH_2015),                # 2015 employment > households
                      urbsuburb_2015=((AREATYPE_2015==3)|(AREATYPE_2015==4)), # 2015 areatype is 3 (urban) or 4 (suburban)
                      commgrowth    =(CIACRE_diff_from_2015>0))               # growth in commercial/industrial acres from 2015
-# QUESTION: it looks like the empcenter calculation is REVERSED for some 2020 TAZ
-                     
+
 # if the tripcap criteria are on, then they're required to be 1 to apply them.
 tazdata_df <- mutate(tazdata_df,
                      apply_tripcap_bool= ((!K_ONLY_EMPCENTER )|empcenter_2015)&
@@ -81,7 +80,6 @@ for (i in 1:nrow(model_runs)) {
 remove(i, tripdist_file, tripdist_file_df)
 
 # calculate carpool occupancy.  tripdist is person trips
-# QUESTION: This is a more consistent with model calculations for carpool occupancy; should we use this?
 tripdist_sr2015_df <- tripdist_df[ (tripdist_df$year==2015)&(substr(tripdist_df$mode_name,1,11)=="Shared ride"), ]
 tripdist_sr2015_df <- mutate(tripdist_sr2015_df,
                              carpool_occ = (substr(mode_name,1,15)=="Shared ride two"  )*2.0 +
@@ -94,22 +92,16 @@ cat(paste("new carpool occ:",K_AVG_CARPOOL_OCC_NEW))
 
 # trip-distance-by-mode-superdistrict rollups
 # tour_purpose and trip_mode coding: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip
-# QUESTION: why is commute (for Trip Caps v5) = work_ and school_grade?  why not school_high and university?
 tripdist_df <- mutate(tripdist_df,
                       total_distance = mean_distance*estimated_trips,
                       work_trip      = substr(tour_purpose,1,5)=="work_",
-                      school_grade   = (tour_purpose=="school_grade"),
                       drive_alone    = substr(mode_name,1,11)=="Drive alone",
                       shared_ride    = substr(mode_name,1,11)=="Shared ride") %>%
-               mutate(total_distance_commute_drive  = total_distance*(work_trip|school_grade)*(drive_alone|shared_ride),
-                      estimated_trips_commute_drive = estimated_trips*(work_trip|school_grade)*(drive_alone|shared_ride),
-                      estimated_trips_commute       = estimated_trips*(work_trip|school_grade),
-                      estimated_trips_commute_da    = estimated_trips*(work_trip|school_grade)*drive_alone,
-                      estimated_trips_commute_sr    = estimated_trips*(work_trip|school_grade)*shared_ride)
-# QUESTION: why is shared ride 3 pay not included in average driving trip distance?
-# I think these are wrong but putting them in to return results consistent with spreadsheet
-tripdist_df[ tripdist_df$mode_name=="Shared ride three - pay", "total_distance_commute_drive" ] = 0
-tripdist_df[ tripdist_df$mode_name=="Shared ride three - pay", "estimated_trips_commute_drive"] = 0
+               mutate(total_distance_commute_drive  = total_distance*work_trip*(drive_alone|shared_ride),
+                      estimated_trips_commute_drive = estimated_trips*work_trip*(drive_alone|shared_ride),
+                      estimated_trips_commute       = estimated_trips*work_trip,
+                      estimated_trips_commute_da    = estimated_trips*work_trip*drive_alone,
+                      estimated_trips_commute_sr    = estimated_trips*work_trip*shared_ride)
 
 # For Trip Caps v5: need drive alone mode share of commute trips by destination superdistrict
 #                        shared ride mode share of commute trips by destination superdistrict
@@ -129,8 +121,8 @@ tripdist_sd_summary_df <- tripdist_sd_summary_df %>%
   mutate(avg_trips_per_employee = (da_modeshare_of_commute+sr_modeshare_of_commute/K_AVG_CARPOOL_OCC)*2.0,
          avg_trips_per_employee_capped = avg_trips_per_employee*(1+K_TRIPCAP_FROM_MTNVIEW))
 
-# this is special -- keep 2035 supderdistrict 9 row (Mountain View)
-tripdist_sd_summary_df_2035_sd9 <- tripdist_sd_summary_df[ (tripdist_sd_summary_df$directory=="2035_06_694")&
+# this is special -- keep 2015 supderdistrict 9 row (Mountain View)
+tripdist_sd_summary_df_2035_sd9 <- tripdist_sd_summary_df[ (tripdist_sd_summary_df$directory=="2015_06_002")&
                                                            (tripdist_sd_summary_df$dest_sd==9), 
                                                            c("year","category","directory",
                                                              "da_modeshare_of_commute","sr_modeshare_of_commute")] %>%
