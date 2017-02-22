@@ -93,7 +93,7 @@ muni_model_names <- estimated_df %>%
 #### Prepare mode codes database
 ```{r travel-model-codes}
 travel_model_codes <- mode_codes_df %>%
-  select(operator, technology, mode_code) %>%
+  select(model_name, operator, technology, mode_code) %>%
   filter(technology != "support")
 
 check_duplicates <- travel_model_codes %>%
@@ -224,7 +224,7 @@ easy_cases <- observed_ridership %>%
 
 easy_codes <- travel_model_codes %>%
   filter(!(duplicate)) %>%
-  select(-duplicate)
+  select(-duplicate, -model_name)
 
 easy_cases <- left_join(easy_cases, easy_codes, by = c("operator", "technology"))
 
@@ -238,7 +238,7 @@ mixed_cases <- observed_ridership %>%
   
 mixed_codes <- travel_model_codes %>%
   filter(technology == "local bus" | technology == "express bus") %>%
-  select(-duplicate, -technology)
+  select(-duplicate, -technology, -model_name)
 
 mixed_codes_count <- mixed_codes %>%
   group_by(operator) %>%
@@ -303,6 +303,12 @@ find_missing <- output %>%
 # 19 - San Leandro Links
 
 # remove(all_index, all_cases, find_missing)
+
+# drop the ones where everything is NA but mode_code
+output <- output %>% filter(!is.na(estimated_boardings) | !is.na(observed_boardings) | !is.na(operator) | !is.na(technology) )
+
+# integerize observed boardings
+output$observed_boardings <- as.integer(output$observed_boardings)
 ```
 
 
