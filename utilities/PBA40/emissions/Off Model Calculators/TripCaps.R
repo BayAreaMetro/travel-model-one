@@ -18,7 +18,7 @@ model_runs            <- read.table(file.path(dirname(SCRIPT),"..","ModelRuns.cs
 # Criteria for applying trip caps
 K_ONLY_EMPCENTER  <- TRUE   # Trip caps apply only in employment centers (areas with more jobs than households)
 K_ONLY_URBSUBURB  <- TRUE   # Trip caps apply only in urban/suburban areas
-K_ONLY_COMMGROWTH <- TRUE   # Trip caps apply only in areas that experience growth in zoned commercial space
+K_ONLY_COMMGROWTH <- FALSE   # Trip caps apply only in areas that experience growth in zoned commercial space
 
 # Effectiveness of programs
 K_TRIPCAP_FROM_MTNVIEW <- -0.396971007  # Change in average trips per day per employee due to trip caps, based on Mountain View
