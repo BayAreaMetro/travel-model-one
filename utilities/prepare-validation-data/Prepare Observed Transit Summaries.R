@@ -26,8 +26,10 @@ F_INPUT_RIDERSHIP = "M:/Development/Travel Model One/Validation/Version 05/2015_
 F_INPUT_ESTIMATED = "M:/Development/Travel Model One/Validation/Version 05/2015_06_002/trnline.csv"
 
 F_INPUT_MUNI_APC = "M:/Data/Transit/Muni APC Through Time/consolidated-database.csv"
-  
-F_OUTPUT = "M:/Development/Travel Model One/Validation/Version 05/2015_06_002/observed_and_estimated_ridership.csv"
+
+F_OUTPUT_DIR      = "M:/Development/Travel Model One/Validation/Version 05/2015_06_002"
+F_OUTPUT_OBS_EST  = "observed_and_estimated_ridership.csv"
+F_OUTPUT_MUNI_OBS = "muni_observed.csv"
 
 
 #### Data reads
@@ -35,9 +37,8 @@ mode_codes_df <- read.table(file = F_INPUT_MODE_CODES, header = TRUE, sep = ",",
 
 ridership_df <- read.table(file = F_INPUT_RIDERSHIP, header = TRUE, sep = ",", stringsAsFactors = FALSE)
 
+# estimated_df has columns name, mode (number), total.boardings, ...
 estimated_df <- read.table(file = F_INPUT_ESTIMATED, header = TRUE, sep = ",", stringsAsFactors = FALSE)
-
-muni_apc_df <- read.table(file = F_INPUT_MUNI_APC, header = TRUE, sep = ",", stringsAsFactors = FALSE)
 
 #### Prepare estimated database
 estimated_mode_code <- estimated_df %>%
@@ -50,6 +51,9 @@ estimated_mode_code <- estimated_df %>%
 # TODO fix in coding
 estimated_mode_code <- estimated_mode_code %>%
   mutate(mode_code = ifelse(mode_code == 85, 30, mode_code))
+
+# add other fields
+estimated_mode_code <- left_join(estimated_mode_code, mode_codes_df)
 
 # TODO: create and append estimates by line when observed data is prepared
 
@@ -64,36 +68,35 @@ muni_model_names <- estimated_df %>%
 
 #### Prepare mode codes database
 travel_model_codes <- mode_codes_df %>%
-  select(model_name, operator, technology, mode_code) %>%
   filter(technology != "support")
 
-check_duplicates <- travel_model_codes %>%
-  group_by(operator, technology) %>%
-  summarize(count = n()) %>%
-  ungroup() %>%
-  mutate(duplicate = ifelse(count>1, TRUE, FALSE)) %>%
-  select(-count)
+# Add column, op_tech_count that's the count of (operator, technology)
+count_codes <- summarize(group_by(travel_model_codes, operator, technology),
+                         op_tech_count = n()) %>% ungroup()
 
-travel_model_codes <- left_join(travel_model_codes, check_duplicates, by = c("operator", "technology"))
+travel_model_codes <- left_join(travel_model_codes, count_codes, by = c("operator", "technology"))
 
-remove(check_duplicates)
+remove(count_codes)
 
 
 #### Prepare ridership database
+
+# adjustment factor to adjust ridership from survey year to 2015
 ridership_adjust <- ridership_df %>%
   filter(survey_year_ridership != "na") %>%
   mutate(adjustment = as.numeric(year_2015_ridership) / as.numeric(survey_year_ridership))
-
-
 
 #### Prepare on-board survey information
 load(F_INPUT_LEGACY_RDATA)
 load(F_INPUT_STANDARD_RDATA)
 
+# remove this column since it's not in legacy data so it causes the rbind to error
 survey.standard <- survey.standard %>%
   select(-survey_time)
 
-survey_df <- rbind(survey.standard, survey.legacy)
+# put the survey data together and keep only the columns we care about
+survey_df <- rbind(survey.standard, survey.legacy) %>%
+  select(operator, weekpart, survey_tech, survey_year, day_part, route, weight)
 
 # Get rid of partial surveys, get weekdays, other clean-up
 survey_df <- survey_df %>%
@@ -110,8 +113,10 @@ survey_operator_tech <- survey_df %>%
   summarize(survey_boardings = sum(weight)) %>%
   ungroup()
 
-# sum across tech
-survey_operator <- survey_operator_tech %>%
+# sum for all buses
+survey_operator_allbus <- survey_operator_tech[ substr(survey_operator_tech$technology,
+                                                       nchar(survey_operator_tech$technology)-3,
+                                                       nchar(survey_operator_tech$technology)) == " bus", ] %>%
   group_by(operator) %>%
   summarize(count = n(), survey_boardings = sum(survey_boardings)) %>%
   ungroup() %>%
@@ -119,33 +124,34 @@ survey_operator <- survey_operator_tech %>%
   mutate(technology = "all bus") %>%
   select(-count)
 
-survey_sum <- rbind(survey_operator, survey_operator_tech)
+survey_sum <- rbind(survey_operator_allbus, survey_operator_tech)
+# sort it
+survey_sum <- survey_sum[order(survey_sum$operator),]
 
 # join to ridership database
 survey_adjustments <- left_join(survey_sum, ridership_adjust, by = c("operator", "technology"))
 
+# these are the adjustments we'll make to the survey summary
 survey_adjustments <- survey_adjustments %>%
   filter(!(is.na(adjustment))) %>%
   select(operator, technology, adjustment)
 
-survey_oper_tech_adjustments <- survey_adjustments %>%
-  filter(technology != "all bus")
+# join adjustments back to survey-operator-technology summary -- join on operator and technology
+# this fails on technology which is only represented as allbus in survey_adjustments
+first_oper_tech <- left_join(survey_operator_tech, survey_adjustments, by = c("operator", "technology"))
 
-survey_oper_adjustments <- survey_adjustments %>%
-  filter(technology == "all bus") %>%
-  select(-technology)
-
-# join adjustments back to survey-operator-technology summary
-first_oper_tech <- left_join(survey_operator_tech, survey_oper_tech_adjustments, by = c("operator", "technology"))
-
+# these still need the adjustment -- join on tech="all bus"
 then_just_oper <- first_oper_tech %>%
   filter(is.na(adjustment)) %>%
-  select(-adjustment)
+  select(-adjustment) %>%
+  mutate(join_tech="all bus")
 
+# these already have the adjustment factor
 first_oper_tech <- first_oper_tech %>%
   filter(!(is.na(adjustment)))
 
-then_just_oper <- left_join(then_just_oper, survey_oper_adjustments, by = c("operator"))
+# get the adjustment factor for these using the all_bus factors
+then_just_oper <- left_join(then_just_oper, survey_adjustments, by = c("operator"="operator", "join_tech"="technology")) %>% select(-join_tech)
 
 survey_adjusted <- rbind(first_oper_tech, then_just_oper)
 
@@ -153,8 +159,7 @@ survey_adjusted <- survey_adjusted %>%
   mutate(observed_boardings = survey_boardings * adjustment) %>%
   select(operator, technology, observed_boardings)
 
-
-remove(first_oper_tech, survey_adjustments, survey_df, survey_oper_adjustments, survey_oper_tech_adjustments, survey_operator,
+remove(first_oper_tech, survey_adjustments, survey_df, survey_operator_allbus,
        survey_operator_tech, survey_sum, survey.legacy, survey.standard, then_just_oper)
 
 
@@ -167,7 +172,75 @@ observed_ridership <- rbind(survey_adjusted, stats_riders)
 
 remove(survey_adjusted, stats_riders)
 
+# observed_ridership has operator, technology, observed_boardings
+# where technology == "all bus" in some cases
+
+#### Add travel model mode codes to observed ridership
+
+# join will fail on tech="all bus"
+observed_mode_code <- left_join(observed_ridership, travel_model_codes,
+                                by = c("operator", "technology"))
+
+# for those with more than one, divide observed ridership evenly amongst the travel submodes
+# TODO: this is not a great assumption and could be better informed
+observed_mode_code <- mutate(observed_mode_code,
+                             observed_boardings = ifelse(is.na(op_tech_count),observed_boardings,observed_boardings/op_tech_count))
+
+# fix join failed cases -- assuming all bus == express bus + local bus
+all_bus_cases <- observed_mode_code %>%
+  filter(is.na(mode_code)) %>%                     # join fail
+  filter(technology=="all bus") %>%                # we can only fix this
+  select(operator, observed_boardings)             # reset to the non-null columns, drop all bus technology since it's not helpful
+
+bus_codes <- travel_model_codes %>% filter(technology == "local bus" | technology == "express bus")
+
+# add count
+bus_codes <- left_join(bus_codes, summarize(group_by(bus_codes, operator), bus_op_count=n()) %>% ungroup())
+
+all_bus_cases <- left_join(all_bus_cases,
+                           bus_codes,
+                           by=c("operator"))
+# for those with more than one, divide observed ridership amongst the travel submodes
+# TODO: this is not a great assumption and could be better informed
+all_bus_cases <- mutate(all_bus_cases,
+                        observed_boardings = observed_boardings/bus_op_count)
+
+# put them back together
+observed_mode_code <- rbind(observed_mode_code,
+                            select(all_bus_cases, -bus_op_count))
+remove(bus_codes,all_bus_cases)
+
+#### Find modes for which we have estimates, but nothing observed
+output <- left_join(estimated_mode_code, observed_mode_code)
+
+find_missing <- output %>%
+  filter(!(is.na(estimated_boardings))) %>%
+  filter(is.na(observed_boardings))
+
+# Okay with these missing:
+# 10 - West Berkeley
+# 11 - Broadway Shuttle
+# 14 - Caltrain Shuttle
+# 16 - Palo Alto/Menlo Park Shuttles
+# 19 - San Leandro Links
+print("No observed boardings")
+print(find_missing)
+remove(find_missing)
+
+# drop the ones where everything is NA but mode_code
+output <- output %>% filter(!is.na(estimated_boardings) | !is.na(observed_boardings) | !is.na(operator) | !is.na(technology) )
+
+# integerize observed boardings
+output$observed_boardings <- as.integer(output$observed_boardings)
+# reorder columns
+output <- output[c("mode_code","operator","technology","mode_name","observed_boardings","estimated_boardings")]
+
+#### Write to disk
+write.csv(output, file = file.path(F_OUTPUT_DIR, F_OUTPUT_OBS_EST), row.names = FALSE, quote = TRUE)
+
 #### Muni observed by route from APC
+muni_apc_df <- read.table(file = F_INPUT_MUNI_APC, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+
 muni_observed <- muni_apc_df %>%
   mutate(start_year = year(as.Date(start_date, format = "%Y-%m-%d"))) %>%
   filter(start_year == 2015) %>%
@@ -176,104 +249,4 @@ muni_observed <- muni_apc_df %>%
   summarise(boardings = sum(boardings)) %>%
   ungroup()
 
-
-
-#### Merge travel model mode codes
-
-# start with one to one
-easy_cases <- observed_ridership %>%
-  filter(technology != "all bus")
-
-easy_codes <- travel_model_codes %>%
-  filter(!(duplicate)) %>%
-  select(-duplicate, -model_name)
-
-easy_cases <- left_join(easy_cases, easy_codes, by = c("operator", "technology"))
-
-easy_cases <- easy_cases %>%
-  filter(!(is.na(mode_code)))
-
-# now do cases where bus is aggregated, but other tech is not
-mixed_cases <- observed_ridership %>%
-  filter(technology == "all bus") %>%
-  select(-technology)
-  
-mixed_codes <- travel_model_codes %>%
-  filter(technology == "local bus" | technology == "express bus") %>%
-  select(-duplicate, -technology, -model_name)
-
-mixed_codes_count <- mixed_codes %>%
-  group_by(operator) %>%
-  summarize(mode_code_count = n()) %>%
-  ungroup()
-  
-mixed_codes <- left_join(mixed_codes, mixed_codes_count, by = c("operator"))
-
-mixed_codes <- left_join(mixed_codes, mixed_cases, by = c("operator"))
-
-mixed_cases <- mixed_codes %>%
-  filter(!(is.na(observed_boardings))) %>%
-  mutate(observed_boardings = observed_boardings / mode_code_count) %>%
-  select(-mode_code_count) %>%
-  mutate(technology = "all bus")
-
-# now do the rest
-hard_codes_count <- travel_model_codes %>%
-  group_by(operator, technology) %>%
-  summarize(mode_code_count = n()) %>%
-  ungroup()
-  
-hard_codes <- left_join(travel_model_codes, hard_codes_count, by = c("operator", "technology"))
-
-hard_codes <- hard_codes %>%
-  select(operator, technology, mode_code, mode_code_count) %>%
-  filter(mode_code_count > 1)
-
-hard_cases <- observed_ridership %>%
-  filter(technology != "all bus")
-
-hard_cases <- left_join(hard_codes, hard_cases, by = c("operator", "technology"))
-
-hard_cases <- hard_cases %>%
-  filter(!(is.na(observed_boardings))) %>%
-  mutate(observed_boardings = observed_boardings / mode_code_count) %>%
-  select(-mode_code_count)
-
-all_cases <- rbind(easy_cases, mixed_cases, hard_cases)
-
-remove(hard_cases, hard_codes, hard_codes_count, mixed_cases, mixed_codes, mixed_codes_count, easy_cases, easy_codes)
-
-
-#### Find modes for which we have estimates, but nothing observed
-all_index <- data.frame(mode_code = seq(1:300))
-
-output <- left_join(all_index, estimated_mode_code, by = c("mode_code"))
-
-output <- left_join(output, all_cases, by = c("mode_code"))
-
-find_missing <- output %>%
-  filter(!(is.na(estimated_boardings))) %>%
-  filter(is.na(operator))
-
-# Okay with these missing:
-# 10 - West Berkeley
-# 11 - Broadway Shuttle
-# 14 - Caltrain Shuttle
-# 16 - Palo Alto/Menlo Park Shuttles
-# 19 - San Leandro Links
-
-# remove(all_index, all_cases, find_missing)
-
-# drop the ones where everything is NA but mode_code
-output <- output %>% filter(!is.na(estimated_boardings) | !is.na(observed_boardings) | !is.na(operator) | !is.na(technology) )
-
-# integerize observed boardings
-output$observed_boardings <- as.integer(output$observed_boardings)
-# reorder columns
-# output <- output[c("mode_code","operator","technology","observed_boardings","estimated_boardings")]
-
-
-
-#### Write to disk
-write.csv(output, file = F_OUTPUT, row.names = FALSE, quote = TRUE)
-
+write.csv(muni_observed, file = file.path(F_OUTPUT_DIR, F_OUTPUT_MUNI_OBS), row.names = FALSE, quote = TRUE)
