@@ -23,7 +23,6 @@ K_ONLY_COMMGROWTH <- FALSE   # Trip caps apply only in areas that experience gro
 # Effectiveness of programs
 K_TRIPCAP_FROM_MTNVIEW <- -0.396971007  # Change in average trips per day per employee due to trip caps, based on Mountain View
 K_COMPLIANCE           <-  1.0          # Assumed compliance with trip caps in areas where they are applicable
-K_WORKDAYS_PER_YR      <- 250           # Workdays per year 
 K_AVG_CARPOOL_OCC      <- 2.581396053   # Average carpool occupancy
 
 # Read tazdata
@@ -144,19 +143,19 @@ tazdata_df <- left_join(tazdata_df,
 
 # apply the tripcap to get trip reductions
 tazdata_df <- mutate(tazdata_df,
-                     annual_vehtrip_reduction = apply_tripcap_compliance*TOTEMP_diff_from_2015*(avg_trips_per_employee-avg_trips_per_employee_capped)*K_WORKDAYS_PER_YR,
-                     annual_VMT_reduction = annual_vehtrip_reduction*avg_commute_drive_distance)
+                     daily_vehtrip_reduction = apply_tripcap_compliance*TOTEMP_diff_from_2015*(avg_trips_per_employee-avg_trips_per_employee_capped),
+                     daily_VMT_reduction = daily_vehtrip_reduction*avg_commute_drive_distance)
 
 # check
 test <- tazdata_df[ tazdata_df$directory=="2020_06_694",]
-sum(test$annual_vehtrip_reduction)
-sum(test$annual_VMT_reduction)
+sum(test$daily_vehtrip_reduction)
+sum(test$daily_VMT_reduction)
 
 
 # keep only the columns we want
 summary_df <- summarise(group_by(tazdata_df, year, category, directory),
-                        annual_vehtrip_reduction = sum(annual_vehtrip_reduction),
-                        annual_VMT_reduction     = sum(annual_VMT_reduction))
+                        daily_vehtrip_reduction = sum(daily_vehtrip_reduction),
+                        daily_VMT_reduction     = sum(daily_VMT_reduction))
 
 # columns are: year, category, directory, variable, value
 summary_melted_df <- melt(summary_df, id.vars=c("year","category","directory"))
@@ -180,8 +179,7 @@ prepend_note <- paste0("K_ONLY_EMPCENTER,"      ,K_ONLY_EMPCENTER,      "\n",
                        "K_ONLY_COMMGROWTH,"     ,K_ONLY_COMMGROWTH,     "\n",
                        "K_TRIPCAP_FROM_MTNVIEW,",K_TRIPCAP_FROM_MTNVIEW,"\n",
                        "K_COMPLIANCE,"          ,K_COMPLIANCE,          "\n",
-                       "K_AVG_CARPOOL_OCC,"     ,K_AVG_CARPOOL_OCC,     "\n",
-                       "K_WORKDAYS_PER_YR,"     ,K_WORKDAYS_PER_YR)
+                       "K_AVG_CARPOOL_OCC,"     ,K_AVG_CARPOOL_OCC)
 write(prepend_note, file=OUTPUT_FILE, append=TRUE)
 
 # output
