@@ -295,8 +295,11 @@ def writeCubeNetworkWithNewCols(cubenet_infilename, cube_linestrings, line_to_sh
 
     # clean up tempdir
     logger.info("Deleting %s" % tempdir)
-    shutil.rmtree(tempdir)
-    
+    try:
+        shutil.rmtree(tempdir)
+    except:
+        logger.info("Couldn't delete tempdir")
+
 if __name__ == '__main__':
     logger = logging.getLogger('attachShapeToNetwork')
     consolehandler = logging.StreamHandler()
