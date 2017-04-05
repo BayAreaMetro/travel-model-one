@@ -8,11 +8,10 @@ setlocal enabledelayedexpansion
 
 set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-v05
 set COUNTY_FILE=M:\Development\Travel Model One\Version 05\Adding City to Master Network\Cityshapes\Counties_NAD_1983_UTM_Zone_10N.shp
-set MODEL_DIRS=2015_06_002 2040_06_690 2040_06_694 2040_06_691 2040_06_693 2040_06_696 2020_06_694 2035_06_694
+::set MODEL_DIRS=2015_06_002 2040_06_690 2040_06_694 2040_06_691 2040_06_693 2040_06_696 2020_06_694 2035_06_694
+set MODEL_DIRS=2035_06_697 2040_06_697
 
 call "%CODE_DIR%\model-files\runtime\SetPath.bat"
-
-goto combine1
 
 for %%H in (%MODEL_DIRS%) DO (
   set MODEL_DIR=%%H
@@ -30,8 +29,8 @@ for %%H in (%MODEL_DIRS%) DO (
 )
 
 :combine1
-set COMBINED_DIR=Across-Alternatives-2040-Round-12
-set RUN_NAME_SET=2015_06_002 2040_06_690 2040_06_694 2040_06_691 2040_06_693 2040_06_696
+set COMBINED_DIR=Across-Alternatives-2040-Round-13
+set RUN_NAME_SET=2015_06_002 2040_06_690 2040_06_694 2040_06_691 2040_06_693 2040_06_697
 
 :: Convert the avgload5period.csv
 set HWYFILE_DIRS=%RUN_NAME_SET: =\OUTPUT %
@@ -43,6 +42,8 @@ copy /Y %COMBINED_DIR%\ScenarioKey.csv .
 if not exist "%COMBINED_DIR%\avgload5period_wcounty.tde" (
   python "%CODE_DIR%\model-files\scripts\core_summaries\csvToTableauExtract.py" %HWYFILE_DIRS% "%COMBINED_DIR%" avgload5period_wcounty.csv
 )
+
+goto done
 
 :combine2
 set COMBINED_DIR=Across-Alternatives-Round-12-Proposed-Plan

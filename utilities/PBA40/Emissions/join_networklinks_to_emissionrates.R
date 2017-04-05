@@ -13,13 +13,13 @@ network_csv_files <- c("2015.csv",
                        "2040_690.csv",
                        "2040_691.csv",
                        "2040_693.csv",
-                       "2040_696.csv")
+                       "2040_697.csv")
 
 # city county lookup file
 CITY_COUNTY_FILE <- "City-County_Lookup.csv"
 
 # and writes the file
-OUTPUT_FILE <- "CARE-melt-wEmissions_2.10.17.csv"
+OUTPUT_FILE <- "CARE-melt-wEmissions_4.4.17.csv"
 
 # all files are expected to be here (note R's preference for slashes)
 if (Sys.getenv("RSTUDIO_USER_IDENTITY") == "lzorn") {
