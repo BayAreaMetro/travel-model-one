@@ -32,7 +32,8 @@ Outputs summary.tde (named the same as the input file but with tde as the suffix
 # rpy2 requires R_HOME to be set (I used C:\Program Files\R\R-3.1.1)
 #      and R_USER to be set (I used lzorn)
 import csv
-import dataextract as tde
+from tableausdk import *
+import tableausdk.Extract as tde
 import pandas
 import getopt
 import os
@@ -43,12 +44,12 @@ from datetime import datetime
 # Define type maps
 # Caveat: I am not including all of the possibilities here
 fieldMap = { 
-    'float64' :     tde.Type.DOUBLE,
-    'float32' :     tde.Type.DOUBLE,
-    'int64' :       tde.Type.DOUBLE,
-    'int32' :       tde.Type.DOUBLE,
-    'object':       tde.Type.UNICODE_STRING,
-    'bool' :        tde.Type.BOOLEAN
+    'float64' :     Type.DOUBLE,
+    'float32' :     Type.DOUBLE,
+    'int64' :       Type.DOUBLE,
+    'int32' :       Type.DOUBLE,
+    'object':       Type.UNICODE_STRING,
+    'bool' :        Type.BOOLEAN
 }
 
 def read_scenario_key():
@@ -110,12 +111,15 @@ def read_dbf(dbf_fullpath):
     """
     Returns the pandas DataFrame
     """
-    import pysal
-    dbfin = pysal.open(dbf_fullpath)
-    vars = dbfin.header
-    data = dict([(var, dbfin.by_col(var)) for var in vars])
+    # import pysal
+    # dbfin = pysal.open(dbf_fullpath)
+    # vars = dbfin.header
+    # data = dict([(var, dbfin.by_col(var)) for var in vars])
 
-    table_df = pandas.DataFrame(data)
+    # table_df = pandas.DataFrame(data)
+    import simpledbf
+    dbf = simpledbf.Dbf5(dbf_fullpath)
+    table_df = dbf.to_dataframe()
 
     print "Read %d lines from %s" % (len(table_df), dbf_fullpath)
 
