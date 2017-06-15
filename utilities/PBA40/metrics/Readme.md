@@ -1,7 +1,6 @@
 # Metrics
 
-Also known as COBRA metrics, this directoy consists of a set of scripts to calculate intermediate results
-for cost/benefit ratio analysis.
+Also known as COBRA (COst Benefits Results Analyzer) metrics, this directoy consists of a set of scripts to calculate intermediate results for cost/benefit ratio analysis.
 
 Most of the files are run at the end of a model run via [RunMetrics.bat](../RunMetrics.bat)
 
@@ -83,7 +82,7 @@ This can be viewed in Tableau using [Cobra Tableau.twb](Cobra%20Tableau.twb)
 
 #### Logsum Hours
 
-This is an *experimental* measure based on the [Rule of one-half](http://en.wikipedia.org/wiki/Economic_surplus#Rule_of_one-half)
+This is a measure based on the [Rule of one-half](http://en.wikipedia.org/wiki/Economic_surplus#Rule_of_one-half)
 as it applies to change in consumer surplus:
 
 Change in Consumer Surplus = 0.5(Q<sub>1</sub> + Q<sub>0</sub>)(P<sub>1</sub> - P<sub>0</sub>)
@@ -134,9 +133,16 @@ Components:
   * Auto Households - Bridge Tolls: trips x auto skims (calculated by [sumAutoTimes.job](sumAutoTimes.job))
   * Auto Households - Value Tolls: trips x auto skims (calculated by [sumAutoTimes.job](sumAutoTimes.job))
 
-#### Non-Recurring Freeway Delay
+#### Non-Recurring Freeway Delay (Hours)
 
-See [section below](#non-recurring-freeway-delay-hours), in the **Travel Time** section.
+One of the required inputs includes `INPUT\metrics\nonRecurringDelayLookup.csv`, which is a lookup
+mapping V/C ratio and number of lanes (2 or fewer, 3, or 4 or more) to Non-Recurring
+Hours of Delay per Vehicle Miles Traveled.  VMT on each *freeway* link is therefore
+multiplied by this lookup to estimate the total Non-Recurring Hours of Delay.  Pulled
+from the hwy networks via [hwynet.py](hwynet.py).
+
+Note: `nonRecurringDelayLookup.csv` is in vehicle hours but [RunResults.py](RunResults.py)
+transforms these to person hours for auto trips.  This is a *change* from the initial version of cobra.
 
 #### Non-Household
 
@@ -151,6 +157,8 @@ Components:
 
 ### Travel Time
 
+This section is legacy and has been replaced with the methodology in **Travel Time & Cost**, above.
+
 #### Auto/Truck (Hours)
 
 These are a simple sum of the vehicle hours traveled summed across all roadway links.
@@ -158,16 +166,9 @@ For autos, these are transformed to person hours traveled.  Pulled from the hwy 
 via [hwynet.py](hwynet.py).  Since these come from networks, they include nonresident trips
 (intra-regional and air passenger trips).
 
-#### Non-Recurring Freeway Delay (Hours)
+#### Non-Recurring Freeway Delay 
 
-One of the required inputs includes `INPUT\metrics\nonRecurringDelayLookup.csv`, which is a lookup
-mapping V/C ratio and number of lanes (2 or fewer, 3, or 4 or more) to Non-Recurring
-Hours of Delay per Vehicle Miles Traveled.  VMT on each *freeway* link is therefore
-multiplied by this lookup to estimate the total Non-Recurring Hours of Delay.  Pulled
-from the hwy networks via [hwynet.py](hwynet.py).
-
-Note: `nonRecurringDelayLookup.csv` is in vehicle hours but [RunResults.py](RunResults.py)
-transforms these to person hours for auto trips.  This is a *change* from the initial version of cobra.
+See [section above](#non-recurring-freeway-delay-hours), in the **Travel Time & Cost** section.
 
 #### Transit In-Vehicle (Hours)
 
@@ -214,6 +215,8 @@ assuming a 3 mph walk speed and 12 mph bike speed.  See
 [sumNonmotTimes.job](sumNonmotTimes.job)
 
 ### Travel Cost
+
+This section is legacy and has been replaced with the methodology in **Travel Time & Cost**, above.
 
 #### VMT
 
