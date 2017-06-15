@@ -4,6 +4,18 @@ Also known as COBRA (COst Benefits Results Analyzer) metrics, this directoy cons
 
 Most of the files are run at the end of a model run via [RunMetrics.bat](../RunMetrics.bat)
 
+## Table of Contents
+  * [Inputs & Configuration](#inputs--configuration)
+    * [Example `BC_config.csv`](#example-bc_configcsv)
+  * [Output](#output)
+  * [Output Detail](#output-detail)
+    * [Travel Time & Cost](#travel-time--cost)
+    * [Travel Time (Legacy)](#travel-time-legacy)
+    * [Travel Cost (Legacy)](#travel-cost-legacy)
+    * [Air Pollutant](#air-pollutant)
+    * [Collisions, Active Transport & Noise](#collisions-active-transport--noise)
+    
+    
 ## Inputs & Configuration
 
 In addition to reading model output (of course), metrics require a few additional inputs
@@ -155,9 +167,9 @@ Components:
   * Time - Auto (PHT) - IX/EX: Calculated using Internal/External trip tables and skims via [sumAutoTimes.job](sumAutoTimes.job)
   * Time - Auto (PHT) - AirPax: Calculated using airport trip tables and skims via [sumAutoTimes.job](sumAutoTimes.job)
 
-### Travel Time
+### Travel Time (Legacy)
 
-This section is legacy and has been replaced with the methodology in **Travel Time & Cost**, above.
+:exclamation: This section is legacy and has been replaced with the methodology in **Travel Time & Cost**, above.
 
 #### Auto/Truck (Hours)
 
@@ -214,9 +226,9 @@ Walk and bike times are based on walk and bike distances transformed to times
 assuming a 3 mph walk speed and 12 mph bike speed.  See
 [sumNonmotTimes.job](sumNonmotTimes.job)
 
-### Travel Cost
+### Travel Cost (Legacy)
 
-This section is legacy and has been replaced with the methodology in **Travel Time & Cost**, above.
+:exclamation: This section is legacy and has been replaced with the methodology in **Travel Time & Cost**, above.
 
 #### VMT
 
