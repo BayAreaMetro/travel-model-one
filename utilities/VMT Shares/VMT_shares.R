@@ -27,7 +27,7 @@ print(head(vmt_hwlocs))
 #
 TAZ_SET_DEF    <- "M:/Data/Priority Development Areas/TAZ_intersect_PDAs.xlsx"
 taz_set_df     <- read.xlsx(TAZ_SET_DEF, sheetIndex=1, stringsAsFactors=FALSE)
-INDEX_COL      <- "name"
+INDEX_COL      <- "joinkey"
 TAZ_COL        <- "TAZ1454"
 PERCENT_COL    <- "INT_over_TAZ"
 
