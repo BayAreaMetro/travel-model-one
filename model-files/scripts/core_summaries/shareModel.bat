@@ -8,8 +8,8 @@ set R_LIB=C:/Users/mtcpb/Documents/R/win-library/3.2
 
 set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-v05\model-files
 set BOX_DIR=C:\Users\lzorn\Box\Share Data\plan-bay-area-2040
-set MODEL_ID=2010_06_003
-set MODEL_DIR=D:\Projects\2010_06_003
+set MODEL_ID=2015_06_002
+set MODEL_DIR=A:\Projects\2015_06_002
 set ZIPPER=C:\Program Files\7-Zip\7z.exe
 set ITER=3
 
@@ -29,16 +29,16 @@ rem main
 if not exist "%BOX_DIR%\%MODEL_ID%\householdData.zip"  ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\householdData.zip" "%MODEL_DIR%\main\householdData_%ITER%.csv")
 if not exist "%BOX_DIR%\%MODEL_ID%\personData.zip"     ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\personData.zip"    "%MODEL_DIR%\main\personData_%ITER%.csv")
 if not exist "%BOX_DIR%\%MODEL_ID%\wsLocResults.zip"   ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\wsLocResults.zip"  "%MODEL_DIR%\main\wsLocResults_%ITER%.csv")
-if not exist "%BOX_DIR%\%MODEL_ID%\indivTourData.zip"  ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\indivTourData.zip" "%MODEL_DIR%\mainindivTourData_%ITER%.csv")
-if not exist "%BOX_DIR%\%MODEL_ID%\indivTripData.zip"  ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\indivTripData.zip" "%MODEL_DIR%\mainindivTripData_%ITER%.csv")
-if not exist "%BOX_DIR%\%MODEL_ID%\jointTourData.zip"  ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\jointTourData.zip" "%MODEL_DIR%\mainjointTourData_%ITER%.csv")
-if not exist "%BOX_DIR%\%MODEL_ID%\jointTripData.zip"  ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\jointTripData.zip" "%MODEL_DIR%\mainjointTripData_%ITER%.csv")
+if not exist "%BOX_DIR%\%MODEL_ID%\indivTourData.zip"  ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\indivTourData.zip" "%MODEL_DIR%\main\indivTourData_%ITER%.csv")
+if not exist "%BOX_DIR%\%MODEL_ID%\indivTripData.zip"  ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\indivTripData.zip" "%MODEL_DIR%\main\indivTripData_%ITER%.csv")
+if not exist "%BOX_DIR%\%MODEL_ID%\jointTourData.zip"  ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\jointTourData.zip" "%MODEL_DIR%\main\jointTourData_%ITER%.csv")
+if not exist "%BOX_DIR%\%MODEL_ID%\jointTripData.zip"  ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\jointTripData.zip" "%MODEL_DIR%\main\jointTripData_%ITER%.csv")
 
 rem database
 
 if not exist "%BOX_DIR%\%MODEL_ID%\SimpleTimeSkims.zip"     ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\SimpleTimeSkims.zip"     "%MODEL_DIR%\database\TimeSkimsDatabase*.csv")
-if not exist "%BOX_DIR%\%MODEL_ID%\SimpleDistanceSkims.zip" ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\SimpleDistanceSkims.zip" "%MODEL_DIR%\database\TimeDistanceDatabase*.csv")
-if not exist "%BOX_DIR%\%MODEL_ID%\SimpleCostSkims.zip"     ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\SimpleCostSkims.zip"     "%MODEL_DIR%\database\TimeCostDatabase*.csv")
+if not exist "%BOX_DIR%\%MODEL_ID%\SimpleDistanceSkims.zip" ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\SimpleDistanceSkims.zip" "%MODEL_DIR%\database\DistanceSkimDatabase*.csv")
+if not exist "%BOX_DIR%\%MODEL_ID%\SimpleCostSkims.zip"     ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\SimpleCostSkims.zip"     "%MODEL_DIR%\database\CostSkimDatabase*.csv")
 
 rem loaded roadway
 if not exist "%BOX_DIR%\%MODEL_ID%\avgload5period.zip"      ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\avgload5period.zip"  "%MODEL_DIR%\hwy\iter%ITER%\avgload5period.net" "%MODEL_DIR%\hwy\iter%ITER%\avgload5period.csv" "%MODEL_DIR%\hwy\iter%ITER%\avgload5period.shp" "%MODEL_DIR%\hwy\iter%ITER%\avgload5period.shx" "%MODEL_DIR%\hwy\iter%ITER%\avgload5period.dbf")
