@@ -37,8 +37,8 @@ if not exist "%BOX_DIR%\%MODEL_ID%\jointTripData.zip"  ("%ZIPPER%" a "%BOX_DIR%\
 rem database
 
 if not exist "%BOX_DIR%\%MODEL_ID%\SimpleTimeSkims.zip"     ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\SimpleTimeSkims.zip"     "%MODEL_DIR%\database\TimeSkimsDatabase*.csv")
-if not exist "%BOX_DIR%\%MODEL_ID%\SimpleDistanceSkims.zip" ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\SimpleDistanceSkims.zip" "%MODEL_DIR%\database\DistanceSkimDatabase*.csv")
-if not exist "%BOX_DIR%\%MODEL_ID%\SimpleCostSkims.zip"     ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\SimpleCostSkims.zip"     "%MODEL_DIR%\database\CostSkimDatabase*.csv")
+if not exist "%BOX_DIR%\%MODEL_ID%\SimpleDistanceSkims.zip" ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\SimpleDistanceSkims.zip" "%MODEL_DIR%\database\DistanceSkimsDatabase*.csv")
+if not exist "%BOX_DIR%\%MODEL_ID%\SimpleCostSkims.zip"     ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\SimpleCostSkims.zip"     "%MODEL_DIR%\database\CostSkimsDatabase*.csv")
 
 rem loaded roadway
 if not exist "%BOX_DIR%\%MODEL_ID%\avgload5period.zip"      ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\avgload5period.zip"  "%MODEL_DIR%\hwy\iter%ITER%\avgload5period.net" "%MODEL_DIR%\hwy\iter%ITER%\avgload5period.csv" "%MODEL_DIR%\hwy\iter%ITER%\avgload5period.shp" "%MODEL_DIR%\hwy\iter%ITER%\avgload5period.shx" "%MODEL_DIR%\hwy\iter%ITER%\avgload5period.dbf")
