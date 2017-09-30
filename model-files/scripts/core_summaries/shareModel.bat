@@ -19,8 +19,8 @@ rem ==== INPUTS =======
 
 if not exist "%BOX_DIR%\%MODEL_ID%\tazData.csv" (copy /Y "%MODEL_DIR%\INPUT\landuse\tazData.csv" "%BOX_DIR%\%MODEL_ID%\tazData.csv")
 
-if not exist "%BOX_DIR%\%MODEL_ID%\householdData.zip" ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\householdData.zip" "%MODEL_DIR%\INPUT\popsyn\hhFile*.csv")
-if not exist "%BOX_DIR%\%MODEL_ID%\personData.zip"    ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\personData.zip"    "%MODEL_DIR%\INPUT\popsyn\personFile*.csv")
+if not exist "%BOX_DIR%\%MODEL_ID%\PopSynHousehold.zip" ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\PopSynHousehold.zip" "%MODEL_DIR%\INPUT\popsyn\hhFile*.csv")
+if not exist "%BOX_DIR%\%MODEL_ID%\PopSynPerson.zip"    ("%ZIPPER%" a "%BOX_DIR%\%MODEL_ID%\PopSynPerson.zip"    "%MODEL_DIR%\INPUT\popsyn\personFile*.csv")
 
 rem ==== OUTPUTS =======
 
