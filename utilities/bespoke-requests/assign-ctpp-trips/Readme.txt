@@ -1,1 +1,5 @@
-Script to assign CTPP trip list.
+The Census Transportation Planning Package (CTPP) provides small-area data relating to the journey to work. The most recent CTPP data come from the 2006-2010 five-year tabulation, which provides home-to-work flows from the Bay Area home census tract (origin) to the Bay Area work census tract (destination). There are 1588 tracts in the Bay Area, which were summarized to fit the MTC travel model 1454 transportation analysis zones (TAZ). The resulting commuter "matrix" was then processed through the travel model. The travel model algorithm assigns these trips to network travel links, which may include a bridge or bridges. The resultant bridge volumes were then summed and analyzed by mode (drive alone vs. carpool) and by four categories of household income.  
+
+The CTPP data download site is here: http://data5.ctpp.transportation.org/ctpp/Browse/browsetables.aspx
+
+The table number is B303201, and all 1588x1588 Bay Area tract-to-tract flows for this table were included in the download. Only non-zero flows were retained in the commuter matrix attached here.
