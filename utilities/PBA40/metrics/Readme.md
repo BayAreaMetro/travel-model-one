@@ -1,10 +1,21 @@
 # Metrics
 
-Also known as COBRA metrics, this directoy consists of a set of scripts to calculate intermediate results
-for cost/benefit ratio analysis.
+Also known as COBRA (COst Benefits Results Analyzer) metrics, this directoy consists of a set of scripts to calculate intermediate results for cost/benefit ratio analysis.
 
 Most of the files are run at the end of a model run via [RunMetrics.bat](../RunMetrics.bat)
 
+## Table of Contents
+  * [Inputs & Configuration](#inputs--configuration)
+    * [Example `BC_config.csv`](#example-bc_configcsv)
+  * [Output](#output)
+  * [Output Detail](#output-detail)
+    * [Travel Time & Cost](#travel-time--cost)
+    * [Travel Time (Legacy)](#travel-time-legacy)
+    * [Travel Cost (Legacy)](#travel-cost-legacy)
+    * [Air Pollutant](#air-pollutant)
+    * [Collisions, Active Transport & Noise](#collisions-active-transport--noise)
+    
+    
 ## Inputs & Configuration
 
 In addition to reading model output (of course), metrics require a few additional inputs
@@ -83,7 +94,7 @@ This can be viewed in Tableau using [Cobra Tableau.twb](Cobra%20Tableau.twb)
 
 #### Logsum Hours
 
-This is an *experimental* measure based on the [Rule of one-half](http://en.wikipedia.org/wiki/Economic_surplus#Rule_of_one-half)
+This is a measure based on the [Rule of one-half](http://en.wikipedia.org/wiki/Economic_surplus#Rule_of_one-half)
 as it applies to change in consumer surplus:
 
 Change in Consumer Surplus = 0.5(Q<sub>1</sub> + Q<sub>0</sub>)(P<sub>1</sub> - P<sub>0</sub>)
@@ -134,9 +145,16 @@ Components:
   * Auto Households - Bridge Tolls: trips x auto skims (calculated by [sumAutoTimes.job](sumAutoTimes.job))
   * Auto Households - Value Tolls: trips x auto skims (calculated by [sumAutoTimes.job](sumAutoTimes.job))
 
-#### Non-Recurring Freeway Delay
+#### Non-Recurring Freeway Delay (Hours)
 
-See [section below](#non-recurring-freeway-delay-hours), in the **Travel Time** section.
+One of the required inputs includes `INPUT\metrics\nonRecurringDelayLookup.csv`, which is a lookup
+mapping V/C ratio and number of lanes (2 or fewer, 3, or 4 or more) to Non-Recurring
+Hours of Delay per Vehicle Miles Traveled.  VMT on each *freeway* link is therefore
+multiplied by this lookup to estimate the total Non-Recurring Hours of Delay.  Pulled
+from the hwy networks via [hwynet.py](hwynet.py).
+
+Note: `nonRecurringDelayLookup.csv` is in vehicle hours but [RunResults.py](RunResults.py)
+transforms these to person hours for auto trips.  This is a *change* from the initial version of cobra.
 
 #### Non-Household
 
@@ -149,7 +167,9 @@ Components:
   * Time - Auto (PHT) - IX/EX: Calculated using Internal/External trip tables and skims via [sumAutoTimes.job](sumAutoTimes.job)
   * Time - Auto (PHT) - AirPax: Calculated using airport trip tables and skims via [sumAutoTimes.job](sumAutoTimes.job)
 
-### Travel Time
+### Travel Time (Legacy)
+
+:exclamation: This section is legacy and has been replaced with the methodology in **Travel Time & Cost**, above.
 
 #### Auto/Truck (Hours)
 
@@ -158,16 +178,9 @@ For autos, these are transformed to person hours traveled.  Pulled from the hwy 
 via [hwynet.py](hwynet.py).  Since these come from networks, they include nonresident trips
 (intra-regional and air passenger trips).
 
-#### Non-Recurring Freeway Delay (Hours)
+#### Non-Recurring Freeway Delay 
 
-One of the required inputs includes `INPUT\metrics\nonRecurringDelayLookup.csv`, which is a lookup
-mapping V/C ratio and number of lanes (2 or fewer, 3, or 4 or more) to Non-Recurring
-Hours of Delay per Vehicle Miles Traveled.  VMT on each *freeway* link is therefore
-multiplied by this lookup to estimate the total Non-Recurring Hours of Delay.  Pulled
-from the hwy networks via [hwynet.py](hwynet.py).
-
-Note: `nonRecurringDelayLookup.csv` is in vehicle hours but [RunResults.py](RunResults.py)
-transforms these to person hours for auto trips.  This is a *change* from the initial version of cobra.
+See [section above](#non-recurring-freeway-delay-hours), in the **Travel Time & Cost** section.
 
 #### Transit In-Vehicle (Hours)
 
@@ -213,7 +226,9 @@ Walk and bike times are based on walk and bike distances transformed to times
 assuming a 3 mph walk speed and 12 mph bike speed.  See
 [sumNonmotTimes.job](sumNonmotTimes.job)
 
-### Travel Cost
+### Travel Cost (Legacy)
+
+:exclamation: This section is legacy and has been replaced with the methodology in **Travel Time & Cost**, above.
 
 #### VMT
 
