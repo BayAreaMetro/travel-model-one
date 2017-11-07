@@ -95,7 +95,6 @@ if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
   IF ERRORLEVEL 2 goto error
 )
 
-copy INPUT\metrics\CommunitiesOfConcern.csv metrics
-python "%CODE_DIR%\scenarioMetrics.py"
+python "%CODE_DIR%\scenarioMetrics.py
 
 :error

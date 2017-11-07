@@ -8,7 +8,7 @@
   </preferences>
   <datasources>
     <datasource caption='AutomobileOwnership Extract' inline='true' name='C:\Users\lzorn\Documents\2010_04_ZZZ\summary\AutomobileOwnership.tde' version='9.0'>
-      <connection class='dataengine' dbname='.\AutomobileOwnership.tde' schema='Extract' tablename='Extract'>
+      <connection class='dataengine' dbname='M:\Application\Model One\RTP2017\Scenarios\Across-Plan-Bay-Area\AutomobileOwnership.tde' schema='Extract' tablename='Extract'>
         <relation name='Extract (Extract.Extract)' table='[Extract].[Extract]' type='table' />
         <metadata-records>
           <metadata-record class='column'>

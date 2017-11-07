@@ -1,6 +1,6 @@
 
 USAGE = """
-python dataToTableauExtract.py [--append] [--timeperiod code] [--join join.csv] [--load table_name] [--output output.tde] 
+python dataToTableauExtract.py [--append] [--timeperiod code] [--join join.csv] [--output output.tde] 
   input_dir1 [input_dir2 input_dir3] output_dir summary.(rdata|dbf)
 
   + Pass --output output.tde to specify an output filename to use.  If none is specified,
@@ -10,9 +10,6 @@ python dataToTableauExtract.py [--append] [--timeperiod code] [--join join.csv] 
 
   + Pass --append if the data should be appended to the output tde.  If not passed and
     the file exists, the script will error
-
-  + Pass --load table_name if the a specific table name should be used.  Otherwise, will
-    load the table, 'model_summary'
 
 Loops through the input dirs (one is ok) and reads the summary.(rdata|dbf) within.
 Converts them into a Tableau Data Extract.
@@ -32,8 +29,7 @@ Outputs summary.tde (named the same as the input file but with tde as the suffix
 # rpy2 requires R_HOME to be set (I used C:\Program Files\R\R-3.1.1)
 #      and R_USER to be set (I used lzorn)
 import csv
-from tableausdk import *
-import tableausdk.Extract as tde
+import dataextract as tde
 import pandas
 import getopt
 import os
@@ -44,12 +40,12 @@ from datetime import datetime
 # Define type maps
 # Caveat: I am not including all of the possibilities here
 fieldMap = { 
-    'float64' :     Type.DOUBLE,
-    'float32' :     Type.DOUBLE,
-    'int64' :       Type.DOUBLE,
-    'int32' :       Type.DOUBLE,
-    'object':       Type.UNICODE_STRING,
-    'bool' :        Type.BOOLEAN
+    'float64' :     tde.Type.DOUBLE,
+    'float32' :     tde.Type.DOUBLE,
+    'int64' :       tde.Type.DOUBLE,
+    'int32' :       tde.Type.DOUBLE,
+    'object':       tde.Type.UNICODE_STRING,
+    'bool' :        tde.Type.BOOLEAN
 }
 
 def read_scenario_key():
@@ -77,7 +73,7 @@ def read_scenario_key():
         print("Mapping src [%s] to Scenario [%s]" % (row['src'], row['Scenario']))
     return src_to_scenario
     
-def read_rdata(rdata_fullpath, table_name):
+def read_rdata(rdata_fullpath):
     """
     Returns the pandas DataFrame
     """
@@ -109,15 +105,12 @@ def read_dbf(dbf_fullpath):
     """
     Returns the pandas DataFrame
     """
-    # import pysal
-    # dbfin = pysal.open(dbf_fullpath)
-    # vars = dbfin.header
-    # data = dict([(var, dbfin.by_col(var)) for var in vars])
+    import pysal
+    dbfin = pysal.open(dbf_fullpath)
+    vars = dbfin.header
+    data = dict([(var, dbfin.by_col(var)) for var in vars])
 
-    # table_df = pandas.DataFrame(data)
-    import simpledbf
-    dbf = simpledbf.Dbf5(dbf_fullpath)
-    table_df = dbf.to_dataframe()
+    table_df = pandas.DataFrame(data)
 
     print "Read %d lines from %s" % (len(table_df), dbf_fullpath)
 
@@ -182,14 +175,12 @@ def write_tde(table_df, tde_fullpath, arg_append):
     
 if __name__ == '__main__':
 
-    optlist, args = getopt.getopt(sys.argv[1:], "o:at:j:l:",
-        ['output=','append','timeperiod=','join=','load='])
+    optlist, args = getopt.getopt(sys.argv[1:], "o:at:j:",['output=','append','timeperiod=','join='])
 
     data_filename       = args[-1]
     arg_tde_filename    = None
     arg_append          = False
     arg_timeperiod      = None    
-    arg_load            = 'model_summary'
     arg_join            = []
     for opt,arg in optlist:
         if opt in ('-o', '--output'):
@@ -200,8 +191,6 @@ if __name__ == '__main__':
             arg_timeperiod = arg
         elif opt in ('-j', '--join'):
             arg_join.append(arg)
-        elif opt in ('-l', '--load'):
-            arg_load = arg
 
     if len(args) < 3:
         print USAGE
@@ -251,7 +240,7 @@ if __name__ == '__main__':
     for data_dirpath in args[:-2]:
         data_fullpath = os.path.join(data_dirpath, data_filename)
         if data_filename.endswith(".rdata"):
-            table_df = read_rdata(data_fullpath, arg_load)
+            table_df = read_rdata(data_fullpath)
         else:
             table_df = read_dbf(data_fullpath)
 
