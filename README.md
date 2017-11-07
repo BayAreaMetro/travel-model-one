@@ -9,7 +9,8 @@ The following model versions are available in the repository:
 3. Version 0.5 -- Mantained in branch `master`.  For additional details, please see [here](http://analytics.mtc.ca.gov/foswiki/Main/Development).
 3. Version 0.6 -- Mantained in branch `v06`.  For additional details, please see [here](http://analytics.mtc.ca.gov/foswiki/Main/Development).
 
-Any other branches are exploratory and not used in our planning work.      
+For additional details about the different versions, please see [here](http://analytics.mtc.ca.gov/foswiki/Main/Development)
+Any other branches are exploratory and not used in our planning work.
 
 Please find a detailed User's Guide [here](http://analytics.mtc.ca.gov/foswiki/Main/UsersGuide). 
 

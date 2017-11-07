@@ -1,0 +1,376 @@
+;----------------------------------------------------------------------------------------------------------------
+;
+; HsrTransitSubmodeChoice.job
+;
+; TP+ script to determine transit submode choice for transit trips to and from Bay Area HSR stations.
+;
+; Starting with the transit access and egress trips to Bay Area High Speed Rail stations,
+; the script uses the transit skims to allocate those trips to different transit submodes.
+;
+; A drive option is assumed to be available since HSR is an expensive mode, and thus trips to
+; HSR stations will also include the drive-transit-walk options, and trips from HSR stations will include
+; walk-transit-drive options.  A simple binary logit model (using just time and cost) is used to pick
+; between the best walk-transit option and the best drive-transit option.
+;
+; For simplicity, drive options to/from local bus, express bus and light rail/ferry are dropped when
+; there's a walk option since they are less likely to have parking.
+;
+; Note: This version drops transit trips to/from Bay Area HSR stations from origins and destinations
+; outside the Bay Area.
+;
+; Input:   Trip tables representing transit trips to/from the Bay Area HSR stations,
+;          including trips to/from external zones: nonres\tripsHsr@time_period@.tpp, transit table.
+;
+;          Transit skims which include all transit submodes:
+;            skims\trnskm@time_period@_wlk_trn_wlk.tpp
+;            skims\trnskm@time_period@_drv_trn_wlk.tpp
+;            skims\trnskm@time_period@_wlk_trn_drv.tpp
+;
+; Output:  Trip tables representing transit trips to/from the Bay Area HSR stations split
+;          by transit submode.  The 15 tables are:
+;             [wlk|drv|_[loc|lrf|exp|hvy|com]_[wlk|drv]
+;          Also outputs a csv per time period with the walk-trn/drv-trn/no-path split to/from
+;             each Bay Area HSR station.
+;
+; See also: (1) preprocess/HsrTripGeneration.job, which creates the input trip tables
+;           (2) assign/PrepAssign.job, which adds the output to the main trip tables
+;
+; version:  Travel Model One v0.6
+; authors:  lmz (2016 06 21)
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; set the time coefficient
+token_model_coefficient_in_vehicle = '-0.0220/0.72'
+
+; set the cost coefficient, which is a function of the value of time in the highway parameter block
+token_model_coefficient_cost = '(_kIvtt / VOT) * 0.6'
+
+; debug
+token_debug_origin      = '14' ; San Francisco HSR TAZ
+token_debug_destination = '971'
+token_debug_filename    = 'logs\HsrTransitSubmodeChoice'
+
+; Bay Area HSR TAZs
+Gilroy_TAZ = 707
+SanJos_TAZ = 538
+Millbr_TAZ = 240
+SanFra_TAZ =  14
+
+loop tpnum=1,5
+
+  if (tpnum=1)
+    time_period = 'EA'
+  elseif (tpnum=2)
+    time_period = 'AM'
+  elseif (tpnum=3)
+    time_period = 'MD'
+  elseif (tpnum=4)
+    time_period = 'PM'
+  elseif (tpnum=5)
+    time_period = 'EV'
+  endif
+
+  DistributeMultistep processid = 'ctramp', processNum = tpnum, commpath = 'm:\commpath'
+
+  RUN PGM=MATRIX
+    ; These are the trips
+    filei mati[1] = 'nonres\tripsHsr@time_period@.tpp'  ; name=da,sr2,transit,walk
+
+    ; skims
+    filei mati[2] = 'skims\trnskm@time_period@_wlk_trn_wlk.tpp'
+    filei mati[3] = 'skims\trnskm@time_period@_drv_trn_wlk.tpp'
+    filei mati[4] = 'skims\trnskm@time_period@_wlk_trn_drv.tpp'
+
+    ; read in the highway assignment parameter block for VOT, AUTOOPC
+    read file = ctramp\scripts\block\hwyparam.block
+
+    ; set universal variables
+    _kIvtt = @token_model_coefficient_in_vehicle@
+    _kCost = @token_model_coefficient_cost@
+
+    fileo mato[1] = 'main\trips_transitHsr@time_period@.tpp', mo=1-15,
+      name=wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
+           drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
+           wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv
+
+    ZONES=1454
+    PAGEHEIGHT=32767     ; preclude insertion of page headers
+
+    ARRAY wlk_to_SanFra=ZONES, wlk_to_Millbr=ZONES, wlk_to_SanJos=ZONES, wlk_to_Gilroy=ZONES
+    ARRAY drv_to_SanFra=ZONES, drv_to_Millbr=ZONES, drv_to_SanJos=ZONES, drv_to_Gilroy=ZONES
+    ARRAY nan_to_SanFra=ZONES, nan_to_Millbr=ZONES, nan_to_SanJos=ZONES, nan_to_Gilroy=ZONES
+
+    ARRAY wlk_fr_SanFra=ZONES, wlk_fr_Millbr=ZONES, wlk_fr_SanJos=ZONES, wlk_fr_Gilroy=ZONES
+    ARRAY drv_fr_SanFra=ZONES, drv_fr_Millbr=ZONES, drv_fr_SanJos=ZONES, drv_fr_Gilroy=ZONES
+    ARRAY nan_fr_SanFra=ZONES, nan_fr_Millbr=ZONES, nan_fr_SanJos=ZONES, nan_fr_Gilroy=ZONES
+
+
+    jloop
+      inputTrips = MI.1.transit
+
+      ; set the level-of-service variables -- walk-transit-walk
+      wlk_ivt    = MI.2.ivt
+      wlk_ovt    = MI.2.wait + MI.2.wacc + MI.2.waux + MI.2.wegr
+      wlk_cost   = MI.2.fare
+      ; factor boardpen = 0, 5, 10, 15, 60
+      if (MI.2.boards <= 1)
+        wlk_boardpen = 0
+      elseif (MI.2.boards <= 2)
+        wlk_boardpen = 5
+      elseif (MI.2.boards <= 3)
+        wlk_boardpen = 10
+      elseif (MI.2.boards <= 4)
+        wlk_boardpen = 15
+      else
+        wlk_boardpen = 60
+      endif
+
+      if     (MI.2.ivtCOM > 0)
+        wlk_matnum = 5
+      elseif (MI.2.ivtHVY > 0)
+        wlk_matnum = 4
+      elseif (MI.2.ivtEXP > 0)
+        wlk_matnum = 3
+      elseif (MI.2.ivtLRF > 0)
+        wlk_matnum = 2
+      elseif (MI.2.ivtLOC > 0)
+        wlk_matnum = 1
+      else
+        wlk_matnum = 0
+      endif
+
+      if (j=@SanFra_TAZ@, @Millbr_TAZ@, @SanJos_TAZ@, @Gilroy_TAZ@)
+
+        ; if destination is HSR station, drive option is drv-trn-wlk
+        drv_ivt    = MI.3.ivt
+        drv_ovt    = MI.3.wait + MI.3.dtime + MI.3.waux + MI.3.wegr
+        drv_cost   = MI.3.fare + MI.3.ddist*(AUTOOPC_PER_RM+AUTOOPC_PER_FU)
+
+        ; factor boardpen = 0, 15, 30, 45, 60
+        if (MI.3.boards <= 1)
+          drv_boardpen = 0
+        elseif (MI.3.boards <= 2)
+          drv_boardpen = 15
+        elseif (MI.3.boards <= 3)
+          drv_boardpen = 30
+        elseif (MI.3.boards <= 4)
+          drv_boardpen = 45
+        else
+          drv_boardpen = 60
+        endif
+
+        if     (MI.3.ivtCOM > 0)
+          drv_matnum = 10
+        elseif (MI.3.ivtHVY > 0)
+          drv_matnum = 9
+        elseif ((MI.3.ivtEXP > 0) && (wlk_ivt = 0))  ; only if we have no walk option
+          drv_matnum = 8
+        elseif ((MI.3.ivtLRF > 0) && (wlk_ivt = 0))  ; only if we have no walk option
+          drv_matnum = 7
+        elseif ((MI.3.ivtLOC > 0) && (wlk_ivt = 0))  ; only if we have no walk option
+          drv_matnum = 6
+        else
+          drv_matnum = 0
+        endif
+
+        elseif (i=@SanFra_TAZ@, @Millbr_TAZ@, @SanJos_TAZ@, @Gilroy_TAZ@)
+
+        ; if origin is HSR station, drive option is wlk-trn-drv
+        drv_ivt    = MI.4.ivt
+        drv_ovt    = MI.4.wait + MI.4.dtime + MI.4.waux + MI.4.wacc
+        drv_cost   = MI.4.fare + MI.4.ddist*(AUTOOPC_PER_RM+AUTOOPC_PER_FU)
+
+        ; factor boardpen = 0, 15, 30, 45, 60
+        if (MI.4.boards <= 1)
+          drv_boardpen = 0
+        elseif (MI.4.boards <= 2)
+          drv_boardpen = 15
+        elseif (MI.4.boards <= 3)
+          drv_boardpen = 30
+        elseif (MI.4.boards <= 4)
+          drv_boardpen = 45
+        else
+          drv_boardpen = 60
+        endif
+
+        if     (MI.4.ivtCOM > 0)
+          drv_matnum = 15
+        elseif (MI.4.ivtHVY > 0)
+          drv_matnum = 14
+        elseif ((MI.4.ivtEXP > 0) && (wlk_ivt = 0))  ; only if we have no walk option
+          drv_matnum = 13
+        elseif ((MI.4.ivtLRF > 0) && (wlk_ivt = 0))  ; only if we have no walk option
+          drv_matnum = 12
+        elseif ((MI.4.ivtLOC > 0) && (wlk_ivt = 0))  ; only if we have no walk option
+          drv_matnum = 11
+        else
+          drv_matnum = 0
+        endif
+
+      endif
+
+      ; initialize/reste the utility and exponential utility values
+      utility_wlk = 0.0
+      utility_drv = 0.0
+
+      exp_wlk = 0.0
+      exp_drv = 0.0
+
+      ; probability calculations
+      if (drv_matnum > 0 && inputTrips > 0.0)
+        if (wlk_ivt > 0.0)
+          ; set the utility
+          utility_wlk = _kIvtt*wlk_ivt + _kIvtt*wlk_boardpen + _kIvtt*2.0*wlk_ovt + _kCost*wlk_cost
+          utility_drv = _kIvtt*drv_ivt + _kIvtt*drv_boardpen + _kIvtt*2.0*drv_ovt + _kCost*drv_cost
+
+          ; compute the exponentiated utility
+          exp_wlk = exp(utility_wlk)
+          exp_drv = exp(utility_drv)
+
+          ; compute the probability
+          prob_wlk = exp_wlk/(exp_wlk + exp_drv)
+          prob_drv = 1.0 - prob_wlk
+        else
+          prob_wlk = 0.0
+          prob_drv = 1.0
+        endif
+
+      else
+        prob_wlk = 1.0
+        prob_drv = 0.0
+
+      endif
+
+      ; apply the probabilities to the input trips
+      trips_wlk = prob_wlk * inputTrips
+      trips_drv = prob_drv * inputTrips
+
+      ; add the values to the output matrices
+      if (wlk_matnum > 0) MW[wlk_matnum][j] = trips_wlk
+      if (drv_matnum > 0) MW[drv_matnum][j] = trips_drv
+
+      ; dropped
+      if ((wlk_matnum = 0) && (trips_wlk > 0))
+        dropped = dropped + trips_wlk
+      endif
+
+      ; URGH since cube insists on writing these as scientific notation
+      if (trips_wlk < 0.001) trips_wlk = 0.0
+      if (trips_drv < 0.001) trips_drv = 0.0
+
+      ; record for summaries
+      if (j=@SanFra_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_to_SanFra[i] = trips_wlk
+        else
+          nan_to_SanFra[i] = trips_wlk
+        endif
+        drv_to_SanFra[i]   = trips_drv
+
+      elseif (j=@Millbr_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_to_Millbr[i] = trips_wlk
+        else
+          nan_to_Millbr[i] = trips_wlk
+        endif
+        drv_to_Millbr[i]   = trips_drv
+
+      elseif (j=@SanJos_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_to_SanJos[i] = trips_wlk
+        else
+          nan_to_SanJos[i] = trips_wlk
+        endif
+        drv_to_SanJos[i]   = trips_drv
+
+      elseif (j=@Gilroy_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_to_Gilroy[i] = trips_wlk
+        else
+          nan_to_Gilroy[i] = trips_wlk
+        endif
+        drv_to_Gilroy[i]   = trips_drv
+
+      elseif(i=@SanFra_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_fr_SanFra[j] = trips_wlk
+        else
+          nan_fr_SanFra[j] = trips_wlk
+        endif
+        drv_fr_SanFra[j]   = trips_drv
+
+      elseif(i=@Millbr_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_fr_Millbr[j] = trips_wlk
+        else
+          nan_fr_Millbr[j] = trips_wlk
+        endif
+        drv_fr_Millbr[j]   = trips_drv
+
+      elseif(i=@SanJos_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_fr_SanJos[j] = trips_wlk
+        else
+          nan_fr_SanJos[j] = trips_wlk
+        endif
+        drv_fr_SanJos[j]   = trips_drv
+
+      elseif(i=@Gilroy_TAZ@)
+        if (wlk_matnum > 0)
+          wlk_fr_Gilroy[j] = trips_wlk
+        else
+          nan_fr_Gilroy[j] = trips_wlk
+        endif
+        drv_fr_Gilroy[j]   = trips_drv
+      endif
+
+      ; print out some debug information
+      if (i = @token_debug_origin@ & j = @token_debug_destination@)
+
+         ; one header
+         if (@tpnum@ = 1)
+
+            list = 'Debug for origin zone ',@token_debug_origin@(5.0),'  and destination zone ',@token_debug_destination@(5.0),'.', file = @token_debug_filename@.@time_period@.debug
+            list = ' ', file = @token_debug_filename@.@time_period@.debug
+
+            list = ' time path mat  ivt time  boardpen  ovt time      cost   utility      prob     trips', file = @token_debug_filename@.@time_period@.debug
+            list = ' ---- ---- --- --------- --------- --------- --------- --------- --------- ---------', file = @token_debug_filename@.@time_period@.debug
+
+         ; break for everyone else
+         else
+            list = ' ---- ---- --- --------- --------- --------- --------- --------- --------- ---------', file = @token_debug_filename@.@time_period@.debug
+         endif
+
+         list = '   @time_period@  wlk', wlk_matnum(4.0), wlk_ivt(10.2), wlk_boardpen(10.2), wlk_ovt(10.2), wlk_cost(10.2), utility_wlk(10.2), prob_wlk(10.4), mw[wlk_matnum][j](10.2), file = @token_debug_filename@.@time_period@.debug
+         list = '   @time_period@  drv', drv_matnum(4.0), drv_ivt(10.2), drv_boardpen(10.2), drv_ovt(10.2), drv_cost(10.2), utility_drv(10.2), prob_drv(10.4), mw[drv_matnum][j](10.2), file = @token_debug_filename@.@time_period@.debug
+
+      endif ; debug i/j if
+
+    endjloop
+
+    if (i=ZONES)
+      PRINT LIST='Dropped (no transit):',dropped(10.2)
+      print LIST='taz,wlk to SanFra,drv to SanFra,nan to SanFra,wlk to Millbr,drv to Millbr,nan to Millbr,wlk to SanJos,drv to SanJos,nan to SanJos,wlk to Gilroy,drv to Gilroy,nan to Gilroy,wlk fr SanFra,drv fr SanFra,nan fr SanFra,wlk fr Millbr,drv fr Millbr,nan fr Millbr,wlk fr SanJos,drv fr SanJos,nan fr SanJos,wlk fr Gilroy,drv fr Gilroy,nan fr Gilroy', file=nonres\HsrTransitSubmode_@time_period@.csv
+      loop taznum=1, ZONES
+        print csv=T, list=taznum(5.0LRS), wlk_to_SanFra[taznum](16.4LST), drv_to_SanFra[taznum](16.4LST), nan_to_SanFra[taznum](16.4LST),
+                                          wlk_to_Millbr[taznum](16.4LST), drv_to_Millbr[taznum](16.4LST), nan_to_Millbr[taznum](16.4LST),
+                                          wlk_to_SanJos[taznum](16.4LST), drv_to_SanJos[taznum](16.4LST), nan_to_SanJos[taznum](16.4LST),
+                                          wlk_to_Gilroy[taznum](16.4LST), drv_to_Gilroy[taznum](16.4LST), nan_to_Gilroy[taznum](16.4LST),
+                                          wlk_fr_SanFra[taznum](16.4LST), drv_fr_SanFra[taznum](16.4LST), nan_fr_SanFra[taznum](16.4LST),
+                                          wlk_fr_Millbr[taznum](16.4LST), drv_fr_Millbr[taznum](16.4LST), nan_fr_Millbr[taznum](16.4LST),
+                                          wlk_fr_SanJos[taznum](16.4LST), drv_fr_SanJos[taznum](16.4LST), nan_fr_SanJos[taznum](16.4LST),
+                                          wlk_fr_Gilroy[taznum](16.4LST), drv_fr_Gilroy[taznum](16.4LST), nan_fr_Gilroy[taznum](16.4LST), file=nonres\HsrTransitSubmode_@time_period@.csv
+      endloop
+    endif
+
+  ENDRUN
+
+  EndDistributeMultistep
+endloop
+
+Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end,
+           printfiles=merge, deldistribfiles=t, CheckReturnCode=t
+
+* copy @token_debug_filename@.EA.debug+@token_debug_filename@.AM.debug+@token_debug_filename@.MD.debug+@token_debug_filename@.PM.debug+@token_debug_filename@.EV.debug @token_debug_filename@.debug
+* del @token_debug_filename@.EA.debug @token_debug_filename@.AM.debug @token_debug_filename@.MD.debug @token_debug_filename@.PM.debug @token_debug_filename@.EV.debug

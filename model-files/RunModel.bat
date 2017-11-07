@@ -22,6 +22,32 @@ call CTRAMP\runtime\SetPath.bat
 ::  Set the IP address of the host machine which sends tasks to the client machines 
 set HOST_IP_ADDRESS=192.168.1.206
 
+:: Figure out the model year
+set PROJECT_DIR=%~p0
+set PROJECT_DIR2=%PROJECT_DIR:~0,-1%
+:: get the base dir only
+for %%f in (%PROJECT_DIR2%) do set myfolder=%%~nxf
+:: the first four characters are model year
+set MODEL_YEAR=%myfolder:~0,4%
+
+:: MODEL YEAR ------------------------- make sure it's numeric --------------------------------
+set /a MODEL_YEAR_NUM=%MODEL_YEAR% 2>nul
+if %MODEL_YEAR_NUM%==%MODEL_YEAR% (
+  echo Numeric model year [%MODEL_YEAR%]
+) else (
+  echo Couldn't determine numeric model year from project dir [%PROJECT_DIR%]
+  echo Guessed [%MODEL_YEAR%]
+  exit /b 2
+)
+:: MODEL YEAR ------------------------- make sure it's in [2000,3000] -------------------------
+if %MODEL_YEAR% LSS 2000 (
+  echo Model year [%MODEL_YEAR%] is less than 2000
+  exit /b 2
+)
+if %MODEL_YEAR% GTR 3000 (
+  echo Model year [%MODEL_YEAR%] is greater than 3000
+  exit /b 2
+)
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -92,7 +118,9 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\preprocess\AddPavementCost.job
 if ERRORLEVEL 2 goto done
 
-
+:: Create HSR trip tables to/from Bay Area stations
+runtpp CTRAMP\scripts\preprocess\HsrTripGeneration.job
+if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
