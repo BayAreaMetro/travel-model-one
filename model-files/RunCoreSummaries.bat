@@ -1,12 +1,10 @@
-::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-:: RunCoreSummaries.bat
 ::
-:: MS-DOS batch file to run core summaries scripts to process output of MTC travel model. 
+::  Parameters (environment variables):
+::   RUN_NAME    : run name (e.g. 2010_04_ZZZ).  Often part of RUN_DIR. Used for TARGET_DIR.
 ::
-:: lmz (2014 11 12)
+::  Uses the RUN_NAME to set ITER, RUN_DIR, POPSYN_HH, POPSYN_PERS, RUN_DESC
+::  (Todo: Should these be in a better location?  Like M:\Application\Model One\Model Run Directory.xlsx?
 ::
-::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 :: @echo off
 setlocal enabledelayedexpansion
 

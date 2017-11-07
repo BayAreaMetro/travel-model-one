@@ -58,11 +58,6 @@
          <!-- Moonrise Kingdom -->
          <!-- Coming Soon -->
          <!-- http://wesandersonpalettes.tumblr.com/post/79956897654/coming-soon#notes  -->
-         <!-- 8D9876 = 141,152,118 --> 
-         <!-- CBB345 = 203,179,69  --> 
-         <!-- 609F80 = 96,159,128  --> 
-         <!-- 4B574D = 75,87,77    --> 
-         <!-- AF420A = 175,66,10   --> 
          <color-palette name="Wes Moonrise Kingdom 0" type="regular" >
             <color>#8D9876</color>
             <color>#CBB345</color>

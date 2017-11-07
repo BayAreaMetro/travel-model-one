@@ -1,9 +1,9 @@
 
 RUN PGM=NETWORK
 
-  NETI[1] = "%NET1%"
-  NETI[2] = "%NET2%"
-  NETO    = "COMPARE.net", exclude=DISTANCE ,
+  NETI[1] = "%Baseline_File%"
+  NETI[2] = "%Project_Dir%\%Project_File%"
+  NETO    = "%Project_Dir%\COMPARE.net", exclude=DISTANCE ,
                                  SPDCLASS ,
                                  CAPCLASS ,
                                  LANES    ,
@@ -47,7 +47,7 @@ RUN PGM=NETWORK
     N1_LANES     = LI.1.LANES   
     N1_TSIN      = LI.1.TSIN    
     N1_GL        = LI.1.GL      
-    ; temp N1_USE       = LI.1.USE     
+    N1_USE       = LI.1.USE     
     N1_OT        = LI.1.OT      
     N1_CAP       = LI.1.CAP     
     N1_AT        = LI.1.AT      
@@ -73,7 +73,7 @@ RUN PGM=NETWORK
     N2_LANES     = LI.2.LANES   
     N2_TSIN      = LI.2.TSIN    
     N2_GL        = LI.2.GL      
-    ; temp N2_USE       = LI.2.USE     
+    N2_USE       = LI.2.USE     
     N2_OT        = LI.2.OT      
     N2_CAP       = LI.2.CAP     
     N2_AT        = LI.2.AT      
@@ -105,9 +105,9 @@ RUN PGM=NETWORK
       IF (LI.1.LANES      <> LI.2.LANES     ) MISMATCH = MISMATCH + 'LANES '
       IF (LI.1.TSIN       <> LI.2.TSIN      ) MISMATCH = MISMATCH + 'TSIN '
       IF (LI.1.GL         <> LI.2.GL        ) MISMATCH = MISMATCH + 'GL '
-      ; temp IF (LI.1.USE        <> LI.2.USE       ) MISMATCH = MISMATCH + 'USE '
-      IF (ABS(LI.1.OT    - LI.2.OT) > 0.001 ) MISMATCH = MISMATCH + 'OT '
-
+      IF (LI.1.USE        <> LI.2.USE       ) MISMATCH = MISMATCH + 'USE '
+      IF (LI.1.OT         <> LI.2.OT        ) MISMATCH = MISMATCH + 'OT '
+  
       IF (LI.1.CAP        <> LI.2.CAP       ) MISMATCH = MISMATCH + 'CAP '
       IF (LI.1.AT         <> LI.2.AT        ) MISMATCH = MISMATCH + 'AT '
       IF (LI.1.FT         <> LI.2.FT        ) MISMATCH = MISMATCH + 'FT '
@@ -138,7 +138,7 @@ RUN PGM=NETWORK
         print LIST="LANES     : ",LI.1.LANES     ," ", LI.2.LANES     
         print LIST="TSIN      : ",LI.1.TSIN      ," ", LI.2.TSIN      
         print LIST="GL        : ",LI.1.GL        ," ", LI.2.GL        
-        ; temp print LIST="USE       : ",LI.1.USE       ," ", LI.2.USE       
+        print LIST="USE       : ",LI.1.USE       ," ", LI.2.USE       
         print LIST="OT        : ",LI.1.OT        ," ", LI.2.OT        
 
         print LIST="CAP       : ",LI.1.CAP       ," ", LI.2.CAP       
