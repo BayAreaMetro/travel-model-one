@@ -1,0 +1,24 @@
+;**********************************************************************************
+; C:\MasterNetworkRTP2025\RTP2040\RTP2040_Base.job : 1st jobstream used
+;    -- Dec 1, 2010 --
+;**********************************************************************************
+run pgm=hwynet
+  
+  
+  neti=C:\MasterNetworkRTP2025\MASTER_NETWORK_August9_2010.NET
+  neto=C:\MasterNetworkRTP2025\MASTER_NETWORK_December1_2010.NET
+  
+  
+  
+    laneRTP2040Base=lane35TIP2011Pr
+    FTRTP2040Base=FT35TIP2011Pr
+    TOSRTP2040Base=TOS35TIP2011Pr
+    HOTRTP204Base=HOT35TIP2011Pr
+    SIGRTP2040Base=SIG35TIP2011Pr
+    USERTP2040Base=USE35TIP2011Pr
+    Tclass2040Base=0
+  
+  
+    
+endrun
+;******************************************************************************

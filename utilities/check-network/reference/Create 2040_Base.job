@@ -1,0 +1,24 @@
+;******************************************************************************
+; C:\MasterNetworkRTP2025\RTP2040\Create 2040_bas1 Network  : 3rd Jobstream run
+;    -- December 7, 2010 --
+;******************************************************************************
+run pgm=hwynet
+  
+  neti="C:\MasterNetworkRTP2025\MASTER_NETWORK_December22_2010.NET"
+  neto="C:\MasterNetworkRTP2025\RTP2040\RTP2040base\Year2040_bas1_NETWORK_December22_2010_w.NET",
+  	include=a,b,distance,spdclass,capclass,Lanes,TSIN,GL,TOLLCLASS,USE,OT,CAP,AT,FT,SIGCOR,
+		TOS,HOT,AUX,YEAR,FFS,FFT,FT2000,ROUTENUM
+                 
+  lanes=laneRTP2040bas1
+  FT=FTRTP2040Base
+  TOS=TOSRTP2040Base
+  HOT=HOTRTP2040Base
+  SIGCOR=SIGRTP2040Base
+  USE=USERTP2040Base
+  TollClass=Tclass2040Base
+  
+  
+    
+  If (Lanes=0) DELETE 
+endrun
+;******************************************************************************
