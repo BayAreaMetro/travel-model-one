@@ -3,9 +3,9 @@
 
 This directory contains the scripts relevant to checking networks and doing final network coding.
 
-Use *pre_roadway_network.bat* to create **_INPUT\hwy\freeflow.net_** from **_INPUT\hwy\source\descriptive_name.net_**.
+Use [*pre_roadway_network.bat*](prep_roadway_network.bat) to create **_INPUT\hwy\freeflow.net_** from **_INPUT\hwy\source\descriptive_name.net_**.
 
-Use *build_transit_network.bat* to check the transit networks in **_INPUT\trn_** (with **_INPUT\hwy_**)
+Use [*build_transit_network.bat*](build_transit_network.bat) to check the transit networks in **_INPUT\trn_** (with **_INPUT\hwy_**)
 
 ## Directory Structure
 
