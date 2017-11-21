@@ -4,17 +4,18 @@
 ::
 :: 2015 07 22 dto
 
+
 :: Location of travel-model-one local repo (probably including this dir)
 set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-master
 :: Location of INPUT and CTRAMP directory.
-set MODEL_DIR=M:\Application\Model One\STIP2017\2040_06_lmz
+set MODEL_DIR=M:\Application\Model One\STIP2017\2040_06_700
 
 :: this is where we'll do this work
 set TRN_CHECK_DIR=%MODEL_DIR%\INPUT\trn_check
 
 :: Path details
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files (x86)\Citilabs\CubeVoyager
-set GAWK_PATH=D:\files\Gawk\bin
+set GAWK_PATH=M:\Software\Gawk\bin
 SET PATH=%TPP_PATH%;%GAWK_PATH%;%PATH%
 
 :: Step 0: create the trn check dir and go to it
@@ -27,6 +28,7 @@ cd "%TRN_CHECK_DIR%"
 mkdir trn
 mkdir hwy
 mkdir skims
+mkdir sgr
 mkdir logs
 
 copy "%MODEL_DIR%\INPUT\trn\transit_lines\"   trn\
@@ -34,6 +36,7 @@ copy "%MODEL_DIR%\INPUT\trn\transit_fares\"   trn\
 copy "%MODEL_DIR%\INPUT\trn\transit_support\" trn\
 
 copy "%MODEL_DIR%\INPUT\hwy\freeflow.net"     hwy\
+copy "%MODEL_DIR%\INPUT\sgr"                  sgr\
 
 :: Step 2: build the transit network
 
@@ -57,7 +60,13 @@ if ERRORLEVEL 2 goto done
 ::   Input: hwy\withTolls.net
 ::  Output: hwy\avgload[EA,AM,MD,PM,EV].net
 :: Summary: Creates time-of-day-specific networks
-runtpp "%CODE_DIR%\model-files\scripts\preprocess\CreateFiveHighwayNetworks.job"
+:: == use input version if available ==
+if exist "%MODEL_DIR%\CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job" (
+  runtpp "%MODEL_DIR%\CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job"
+)
+else (
+  runtpp "%CODE_DIR%\model-files\scripts\preprocess\CreateFiveHighwayNetworks.job"
+)
 if ERRORLEVEL 2 goto done
 
 ::   Input: hwy\avgload[EA,AM,MD,PM,EV].net
@@ -71,6 +80,13 @@ if ERRORLEVEL 2 goto done
 runtpp "%CODE_DIR%\model-files\scripts\skims\PrepHwyNet.job"
 if ERRORLEVEL 2 goto done
 
+if not exist "%TRN_CHECK_DIR%\ctramp\scripts\skims" (mkdir "%TRN_CHECK_DIR%\ctramp\scripts\skims")
+if not exist "%TRN_CHECK_DIR%\ctramp\scripts\skims\reverselinks.awk" (
+  copy "%CODE_DIR%\model-files\scripts\skims\reverselinks.awk" "%TRN_CHECK_DIR%\ctramp\scripts\skims\reverselinks.awk"
+)
+if not exist "%TRN_CHECK_DIR%\ctramp\scripts\skims\select_pnrs.awk" (
+  copy "%CODE_DIR%\model-files\scripts\skims\select_pnrs.awk" "%TRN_CHECK_DIR%\ctramp\scripts\skims\select_pnrs.awk"
+)
 ::   Input: trn\[EA,AM,MD,PM,EV]_temporary_transit_background_accesslinks.net
 ::          trn\[EA,AM,MD,PM,EV]_temporary_transit_background_transferlinks.net
 ::          trn\[light_rail,ferry,heavy_rail,commuter_rail].zac
@@ -88,7 +104,14 @@ if ERRORLEVEL 2 goto done
 runtpp "%CODE_DIR%\model-files\scripts\skims\BuildTransitNetworks.job"
 if ERRORLEVEL 2 goto done
 
+:here
 :: Summary: Create the public transport level-of-service matrices (run again if Cube fails)
+if not exist "%TRN_CHECK_DIR%\ctramp\scripts\block" (mkdir "%TRN_CHECK_DIR%\ctramp\scripts\block")
+for %%A in (transit_combined_headways.block transferprohibitors_wlk_trn_wlk.block transferprohibitors_drv_trn_wlk.block transferprohibitors_wlk_trn_drv.block) do (
+  if not exist "%TRN_CHECK_DIR%\ctramp\scripts\block\%%A" (
+    copy "%CODE_DIR%\model-files\scripts\block\%%A" "%TRN_CHECK_DIR%\ctramp\scripts\block\%%A"
+  )
+)
 start Cluster M:\COMMPATH\CTRAMP 1-16 Start
 runtpp "%CODE_DIR%\model-files\scripts\skims\TransitSkims.job"
 if ERRORLEVEL 2 goto done
