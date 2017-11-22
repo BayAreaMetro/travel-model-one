@@ -8,7 +8,9 @@
 :: Location of travel-model-one local repo (probably including this dir)
 set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-master
 :: Location of INPUT and CTRAMP directory.
-set MODEL_DIR=M:\Application\Model One\STIP2017\2040_06_700
+set MODEL_DIR=M:\Application\Model One\STIP2017\2040_06_700_CC050028_680SbHov
+:: Location of BASE MODEL_DIR
+set MODEL_BASE_DIR=M:\Application\Model One\STIP2017\2040_06_700
 
 :: this is where we'll do this work
 set TRN_CHECK_DIR=%MODEL_DIR%\INPUT\trn_check
@@ -36,7 +38,13 @@ copy "%MODEL_DIR%\INPUT\trn\transit_fares\"   trn\
 copy "%MODEL_DIR%\INPUT\trn\transit_support\" trn\
 
 copy "%MODEL_DIR%\INPUT\hwy\freeflow.net"     hwy\
-copy "%MODEL_DIR%\INPUT\sgr"                  sgr\
+
+if exist "%MODEL_BASE_DIR%\INPUT\sgr" (
+  copy /Y "%MODEL_BASE_DIR%\INPUT\sgr"        sgr\
+)
+if exist "%MODEL_DIR%\INPUT\sgr" (
+  copy /Y "%MODEL_DIR%\INPUT\sgr"             sgr\
+)
 
 :: Step 2: build the transit network
 
