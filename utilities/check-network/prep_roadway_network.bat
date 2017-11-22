@@ -7,10 +7,13 @@
 
 :: Location of travel-model-one local repo (probably including this dir)
 set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-master
+
 :: Location of INPUT and CTRAMP directory.
-set MODEL_DIR=M:\Application\Model One\STIP2017\2040_06_lmz
+:: set MODEL_DIR=M:\Application\Model One\STIP2017\2040_06_700_CC130046_680SR4Int
+
 :: Name of the input roadway network, in %MODEL_DIR%\INPUT\hwy\source
-set ROADWAY_FILE=2015_STIP_Base.net
+:: set ROADWAY_FILE=680_4.net
+
 :: City shape file
 set CITYSHAPE_FILE=M:\Development\Travel Model One\Version 05\Adding City to Master Network\Cityshapes\PBA_Cities_NAD_1983_UTM_Zone_10N.shp
 
