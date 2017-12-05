@@ -19,12 +19,18 @@ set CITYSHAPE_FILE=M:\Development\Travel Model One\Version 05\Adding City to Mas
 
 cd %MODEL_DIR%\INPUT
 
+:: USES LOCAL VERSION OF SCRIPT IF IT EXISTS
 ::   Input: %MODEL_DIR%\INPUT\hwy\source\%ROADWAY_FILE%
 ::  Output: %MODEL_DIR%\INPUT\hwy\source\1_withCapclass.net
 :: Summary: Sets capacities and free flow speeds and times for network links
 ::          Based on columns AT, FT, TOS, SIGCOR, TSIN, TOLLCLASS, OT
 ::          Updates columns: CAPCLASS, SPDCLASS, FFS, FFT, CAP, OT
-runtpp "%CODE_DIR%\utilities\check-network\set_capclass.job"
+if exist set_capclass.job (
+  echo Running local set_capclass.job
+  runtpp set_capclass.job
+) else (
+  runtpp "%CODE_DIR%\utilities\check-network\set_capclass.job"
+)
 if ERRORLEVEL 2 goto done
 
 :: save this for the next script
