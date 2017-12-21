@@ -1,0 +1,1053 @@
+<?xml version='1.0' encoding='utf-8' ?>
+
+<!-- build 10400.17.1103.1137                               -->
+<workbook source-build='10.4.1 (10400.17.1103.1137)' source-platform='win' version='10.4' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <preferences>
+    <preference name='ui.encoding.shelf.height' value='24' />
+    <preference name='ui.shelf.height' value='26' />
+  </preferences>
+  <style-theme name='clean' />
+  <datasources>
+    <datasource caption='bart_boardings_by_access_mode' inline='true' name='textscan.42048.419857175926' version='10.4'>
+      <connection class='federated' prefer-ind-semantics='true'>
+        <named-connections>
+          <named-connection caption='bart_boardings_by_access_mode' name='textscan.42048.419857175926leaf'>
+            <connection class='textscan' directory='//mtcarchives/cloudmodels1/Archived Applications/Travel Model One/Value Parking Pricing Pilot/Across Scenarios' filename='bart_boardings_by_access_mode.csv' password='' server='' />
+          </named-connection>
+        </named-connections>
+        <relation connection='textscan.42048.419857175926leaf' name='bart_boardings_by_access_mode#csv' table='[bart_boardings_by_access_mode#csv]' type='table'>
+          <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
+            <column datatype='string' name='src' ordinal='0' />
+            <column datatype='integer' name='B' ordinal='1' />
+            <column datatype='integer' name='A' ordinal='2' />
+            <column datatype='integer' name='MODE' ordinal='3' />
+            <column datatype='integer' name='AB_VOL' ordinal='4' />
+            <column datatype='string' name='Station' ordinal='5' />
+            <column datatype='string' name='path' ordinal='6' />
+            <column datatype='string' name='time_period' ordinal='7' />
+            <column datatype='string' name='Scenario' ordinal='8' />
+            <column datatype='string' name='F10' ordinal='9' />
+          </columns>
+        </relation>
+        <metadata-records>
+          <metadata-record class='column'>
+            <remote-name>src</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[src]</local-name>
+            <parent-name>[bart_boardings_by_access_mode#csv]</parent-name>
+            <remote-alias>src</remote-alias>
+            <ordinal>0</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>B</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[B]</local-name>
+            <parent-name>[bart_boardings_by_access_mode#csv]</parent-name>
+            <remote-alias>B</remote-alias>
+            <ordinal>1</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;sint64&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>A</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[A]</local-name>
+            <parent-name>[bart_boardings_by_access_mode#csv]</parent-name>
+            <remote-alias>A</remote-alias>
+            <ordinal>2</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;sint64&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>MODE</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[MODE]</local-name>
+            <parent-name>[bart_boardings_by_access_mode#csv]</parent-name>
+            <remote-alias>MODE</remote-alias>
+            <ordinal>3</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;sint64&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>AB_VOL</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[AB_VOL]</local-name>
+            <parent-name>[bart_boardings_by_access_mode#csv]</parent-name>
+            <remote-alias>AB_VOL</remote-alias>
+            <ordinal>4</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;sint64&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>Station</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[Station]</local-name>
+            <parent-name>[bart_boardings_by_access_mode#csv]</parent-name>
+            <remote-alias>Station</remote-alias>
+            <ordinal>5</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>path</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[path]</local-name>
+            <parent-name>[bart_boardings_by_access_mode#csv]</parent-name>
+            <remote-alias>path</remote-alias>
+            <ordinal>6</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>time_period</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[time_period]</local-name>
+            <parent-name>[bart_boardings_by_access_mode#csv]</parent-name>
+            <remote-alias>time_period</remote-alias>
+            <ordinal>7</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>Scenario</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[Scenario]</local-name>
+            <parent-name>[bart_boardings_by_access_mode#csv]</parent-name>
+            <remote-alias>Scenario</remote-alias>
+            <ordinal>8</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>F10</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[F10]</local-name>
+            <parent-name>[bart_boardings_by_access_mode#csv]</parent-name>
+            <remote-alias>F10</remote-alias>
+            <ordinal>9</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <attributes>
+              <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+              <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>8</attribute>
+              <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='capability'>
+            <remote-name />
+            <remote-type>0</remote-type>
+            <parent-name>[bart_boardings_by_access_mode#csv]</parent-name>
+            <remote-alias />
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='character-set'>&quot;UTF-8&quot;</attribute>
+              <attribute datatype='string' name='collation'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='field-delimiter'>&quot;,&quot;</attribute>
+              <attribute datatype='string' name='header-row'>&quot;true&quot;</attribute>
+              <attribute datatype='string' name='locale'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='single-char'>&quot;&quot;</attribute>
+            </attributes>
+          </metadata-record>
+        </metadata-records>
+      </connection>
+      <aliases enabled='yes' />
+      <column caption='Ab Vol' datatype='integer' name='[AB_VOL]' role='measure' type='quantitative' />
+      <column aggregation='Sum' caption='Key Stations' datatype='integer' name='[Calculation_1720213103457326]' role='dimension' type='ordinal'>
+        <calculation class='tableau' formula='CASE [Station]&#13;&#10;WHEN &quot;Ashby&quot; THEN 1&#13;&#10;WHEN &quot;Bay Fair&quot; THEN 1&#13;&#10;WHEN &quot;Coliseum/Oakland Airport&quot; THEN 1&#13;&#10;WHEN &quot;El Cerrito Plaza&quot; THEN 1&#13;&#10;WHEN &quot;Lafayette&quot; THEN 1&#13;&#10;WHEN &quot;North Berkeley&quot; THEN 1&#13;&#10;WHEN &quot;Orinda&quot; THEN 1&#13;&#10;WHEN &quot;San Leandro&quot; THEN 1&#13;&#10;WHEN &quot;West Oakland&quot; THEN 1&#13;&#10;ELSE 0&#13;&#10;END' scope-isolation='false' />
+      </column>
+      <column caption='Scenario' datatype='string' name='[F10]' role='dimension' type='nominal' />
+      <column aggregation='Sum' caption='Access Mode' datatype='integer' name='[MODE]' role='dimension' type='ordinal'>
+        <aliases>
+          <alias key='3' value='Transfer' />
+          <alias key='4' value='Drive' />
+          <alias key='5' value='Walk' />
+        </aliases>
+      </column>
+      <column datatype='integer' name='[Number of Records]' role='measure' type='quantitative' user:auto-column='numrec'>
+        <calculation class='tableau' formula='1' />
+      </column>
+      <column caption='Year and version' datatype='string' name='[Scenario]' role='dimension' type='nominal' />
+      <column caption='Path' datatype='string' name='[path]' role='dimension' type='nominal' />
+      <column caption='Src' datatype='string' name='[src]' role='dimension' type='nominal' />
+      <column caption='Time Period' datatype='string' name='[time_period]' role='dimension' type='nominal' />
+      <column-instance column='[F10]' derivation='None' name='[none:F10:nk]' pivot='key' type='nominal' />
+      <column-instance column='[MODE]' derivation='None' name='[none:MODE:ok]' pivot='key' type='ordinal' />
+      <extract count='-1' enabled='true' units='records'>
+        <connection class='dataengine' dbname='//mtcarchives/cloudmodels1/Archived Applications/Travel Model One/Value Parking Pricing Pilot/Across Scenarios/bart_boardings_by_access_mode.tde' schema='Extract' tablename='Extract' update-time=''>
+          <relation name='Extract' table='[Extract].[Extract]' type='table' />
+          <calculations>
+            <calculation column='[Calculation_1720213103457326]' formula='CASE [Station]&#13;&#10;WHEN &quot;Ashby&quot; THEN 1&#13;&#10;WHEN &quot;Bay Fair&quot; THEN 1&#13;&#10;WHEN &quot;Coliseum/Oakland Airport&quot; THEN 1&#13;&#10;WHEN &quot;El Cerrito Plaza&quot; THEN 1&#13;&#10;WHEN &quot;Lafayette&quot; THEN 1&#13;&#10;WHEN &quot;North Berkeley&quot; THEN 1&#13;&#10;WHEN &quot;Orinda&quot; THEN 1&#13;&#10;WHEN &quot;San Leandro&quot; THEN 1&#13;&#10;WHEN &quot;West Oakland&quot; THEN 1&#13;&#10;ELSE 0&#13;&#10;END' />
+            <calculation column='[Number of Records]' formula='1' />
+          </calculations>
+          <metadata-records>
+            <metadata-record class='column'>
+              <remote-name>AB_VOL</remote-name>
+              <remote-type>2</remote-type>
+              <local-name>[AB_VOL]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>AB_VOL</remote-alias>
+              <ordinal>0</ordinal>
+              <family>bart_boardings_by_access_mode#csv</family>
+              <local-type>integer</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>1172</approx-count>
+              <contains-null>false</contains-null>
+              <statistics>
+                <statistic aggregation='Sum' datatype='real'>1887052.0</statistic>
+                <statistic aggregation='Avg' datatype='real'>240.75682572084716</statistic>
+                <statistic aggregation='Min' datatype='integer'>1</statistic>
+                <statistic aggregation='Max' datatype='integer'>10150</statistic>
+                <statistic aggregation='Stdev' datatype='real'>646.49677725797983</statistic>
+                <statistic aggregation='StdevP' datatype='real'>646.45553475994677</statistic>
+                <statistic aggregation='Var' datatype='real'>417958.08300495392</statistic>
+                <statistic aggregation='VarP' datatype='real'>417904.75842176878</statistic>
+                <statistic aggregation='Count' datatype='integer'>7838</statistic>
+                <statistic aggregation='SumXSqr' datatype='real'>3729858146.0</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>2</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>8</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;sint16&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>A</remote-name>
+              <remote-type>2</remote-type>
+              <local-name>[A]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>A</remote-alias>
+              <ordinal>1</ordinal>
+              <family>bart_boardings_by_access_mode#csv</family>
+              <local-type>integer</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>193</approx-count>
+              <contains-null>false</contains-null>
+              <statistics>
+                <statistic aggregation='Sum' datatype='real'>73388989.0</statistic>
+                <statistic aggregation='Avg' datatype='real'>9363.2290125031905</statistic>
+                <statistic aggregation='Min' datatype='integer'>1616</statistic>
+                <statistic aggregation='Max' datatype='integer'>15092</statistic>
+                <statistic aggregation='Stdev' datatype='real'>5035.4631542681263</statistic>
+                <statistic aggregation='StdevP' datatype='real'>5035.1419228458817</statistic>
+                <statistic aggregation='Var' datatype='real'>25355889.177991904</statistic>
+                <statistic aggregation='VarP' datatype='real'>25352654.183200121</statistic>
+                <statistic aggregation='Count' datatype='integer'>7838</statistic>
+                <statistic aggregation='SumXSqr' datatype='real'>885872014491.0</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (comparable)'>true</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;array&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>2</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>7</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;sint16&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>B</remote-name>
+              <remote-type>2</remote-type>
+              <local-name>[B]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>B</remote-alias>
+              <ordinal>2</ordinal>
+              <family>bart_boardings_by_access_mode#csv</family>
+              <local-type>integer</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>44</approx-count>
+              <contains-null>false</contains-null>
+              <statistics>
+                <statistic aggregation='Sum' datatype='real'>121660735.0</statistic>
+                <statistic aggregation='Avg' datatype='real'>15521.910563919368</statistic>
+                <statistic aggregation='Min' datatype='integer'>15501</statistic>
+                <statistic aggregation='Max' datatype='integer'>15544</statistic>
+                <statistic aggregation='Stdev' datatype='real'>12.390638383070108</statistic>
+                <statistic aggregation='StdevP' datatype='real'>12.389847936934693</statistic>
+                <statistic aggregation='Var' datatype='real'>153.5279195400102</statistic>
+                <statistic aggregation='VarP' datatype='real'>153.50833190036488</statistic>
+                <statistic aggregation='Count' datatype='integer'>7838</statistic>
+                <statistic aggregation='SumXSqr' datatype='real'>1888408251009.0</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (comparable)'>true</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;array&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>2</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>6</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;sint16&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>F10</remote-name>
+              <remote-type>129</remote-type>
+              <local-name>[F10]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>F10</remote-alias>
+              <ordinal>3</ordinal>
+              <family>bart_boardings_by_access_mode#csv</family>
+              <local-type>string</local-type>
+              <aggregation>Count</aggregation>
+              <approx-count>6</approx-count>
+              <scale>1</scale>
+              <width>1073741823</width>
+              <contains-null>false</contains-null>
+              <collation flag='0' name='LEN_RUS' />
+              <statistics>
+                <statistic aggregation='Min' datatype='string'>&quot;Baseline&quot;</statistic>
+                <statistic aggregation='Max' datatype='string'>&quot;Baseline + No drive access at Key Stations&quot;</statistic>
+                <statistic aggregation='Count' datatype='integer'>7838</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (comparable)'>true</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>2</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>MODE</remote-name>
+              <remote-type>16</remote-type>
+              <local-name>[MODE]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>MODE</remote-alias>
+              <ordinal>4</ordinal>
+              <family>bart_boardings_by_access_mode#csv</family>
+              <local-type>integer</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>3</approx-count>
+              <contains-null>false</contains-null>
+              <statistics>
+                <statistic aggregation='Sum' datatype='real'>29839.0</statistic>
+                <statistic aggregation='Avg' datatype='real'>3.806966062771115</statistic>
+                <statistic aggregation='Min' datatype='integer'>3</statistic>
+                <statistic aggregation='Max' datatype='integer'>5</statistic>
+                <statistic aggregation='Stdev' datatype='real'>0.92164227355842332</statistic>
+                <statistic aggregation='StdevP' datatype='real'>0.92158347847855371</statistic>
+                <statistic aggregation='Var' datatype='real'>0.84942448040993968</statistic>
+                <statistic aggregation='VarP' datatype='real'>0.84931610780463096</statistic>
+                <statistic aggregation='Count' datatype='integer'>7838</statistic>
+                <statistic aggregation='Median' datatype='integer'>3</statistic>
+                <statistic aggregation='SumXSqr' datatype='real'>120253.0</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='string' name='DebugRemoteMetadata (ordered)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>1</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>0</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;sint8&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>Number of Records</remote-name>
+              <remote-type>16</remote-type>
+              <local-name>[Number of Records]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>Number of Records</remote-alias>
+              <ordinal>5</ordinal>
+              <local-type>integer</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>1</approx-count>
+              <contains-null>false</contains-null>
+              <statistics>
+                <statistic aggregation='Sum' datatype='real'>7838.0</statistic>
+                <statistic aggregation='Avg' datatype='real'>1.0</statistic>
+                <statistic aggregation='Min' datatype='integer'>1</statistic>
+                <statistic aggregation='Max' datatype='integer'>1</statistic>
+                <statistic aggregation='Stdev' datatype='real'>0.0</statistic>
+                <statistic aggregation='StdevP' datatype='real'>0.0</statistic>
+                <statistic aggregation='Var' datatype='real'>0.0</statistic>
+                <statistic aggregation='VarP' datatype='real'>0.0</statistic>
+                <statistic aggregation='Count' datatype='integer'>7838</statistic>
+                <statistic aggregation='Median' datatype='integer'>1</statistic>
+                <statistic aggregation='SumXSqr' datatype='real'>7838.0</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='string' name='DebugRemoteMetadata (ordered)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>1</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;sint8&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>Scenario</remote-name>
+              <remote-type>129</remote-type>
+              <local-name>[Scenario]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>Scenario</remote-alias>
+              <ordinal>6</ordinal>
+              <family>bart_boardings_by_access_mode#csv</family>
+              <local-type>string</local-type>
+              <aggregation>Count</aggregation>
+              <approx-count>1</approx-count>
+              <scale>1</scale>
+              <width>1073741823</width>
+              <contains-null>false</contains-null>
+              <collation flag='0' name='LEN_RUS' />
+              <statistics>
+                <statistic aggregation='Min' datatype='string'>&quot;Year 2015 (v 0.4)&quot;</statistic>
+                <statistic aggregation='Max' datatype='string'>&quot;Year 2015 (v 0.4)&quot;</statistic>
+                <statistic aggregation='Count' datatype='integer'>7838</statistic>
+                <statistic aggregation='Median' datatype='string'>&quot;Year 2015 (v 0.4)&quot;</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (comparable)'>true</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (ordered)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>Station</remote-name>
+              <remote-type>129</remote-type>
+              <local-name>[Station]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>Station</remote-alias>
+              <ordinal>7</ordinal>
+              <family>bart_boardings_by_access_mode#csv</family>
+              <local-type>string</local-type>
+              <aggregation>Count</aggregation>
+              <approx-count>44</approx-count>
+              <scale>1</scale>
+              <width>1073741823</width>
+              <contains-null>false</contains-null>
+              <collation flag='0' name='LEN_RUS' />
+              <statistics>
+                <statistic aggregation='Min' datatype='string'>&quot;12th St./Oakland City Center&quot;</statistic>
+                <statistic aggregation='Max' datatype='string'>&quot;West Oakland&quot;</statistic>
+                <statistic aggregation='Count' datatype='integer'>7838</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (comparable)'>true</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>5</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>2</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>path</remote-name>
+              <remote-type>129</remote-type>
+              <local-name>[path]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>path</remote-alias>
+              <ordinal>8</ordinal>
+              <family>bart_boardings_by_access_mode#csv</family>
+              <local-type>string</local-type>
+              <aggregation>Count</aggregation>
+              <approx-count>6</approx-count>
+              <scale>1</scale>
+              <width>1073741823</width>
+              <contains-null>false</contains-null>
+              <collation flag='0' name='LEN_RUS' />
+              <statistics>
+                <statistic aggregation='Min' datatype='string'>&quot;drv_com_wlk&quot;</statistic>
+                <statistic aggregation='Max' datatype='string'>&quot;wlk_hvy_wlk&quot;</statistic>
+                <statistic aggregation='Count' datatype='integer'>7838</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (comparable)'>true</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>3</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>src</remote-name>
+              <remote-type>129</remote-type>
+              <local-name>[src]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>src</remote-alias>
+              <ordinal>9</ordinal>
+              <family>bart_boardings_by_access_mode#csv</family>
+              <local-type>string</local-type>
+              <aggregation>Count</aggregation>
+              <approx-count>6</approx-count>
+              <scale>1</scale>
+              <width>1073741823</width>
+              <contains-null>false</contains-null>
+              <collation flag='0' name='LEN_RUS' />
+              <statistics>
+                <statistic aggregation='Min' datatype='string'>&quot;2015_04_137&quot;</statistic>
+                <statistic aggregation='Max' datatype='string'>&quot;2015_04_142&quot;</statistic>
+                <statistic aggregation='Count' datatype='integer'>7838</statistic>
+                <statistic aggregation='Median' datatype='string'>&quot;2015_04_139&quot;</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (comparable)'>true</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>4</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>time_period</remote-name>
+              <remote-type>129</remote-type>
+              <local-name>[time_period]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>time_period</remote-alias>
+              <ordinal>10</ordinal>
+              <family>bart_boardings_by_access_mode#csv</family>
+              <local-type>string</local-type>
+              <aggregation>Count</aggregation>
+              <approx-count>5</approx-count>
+              <scale>1</scale>
+              <width>1073741823</width>
+              <contains-null>false</contains-null>
+              <collation flag='0' name='LEN_RUS' />
+              <statistics>
+                <statistic aggregation='Min' datatype='string'>&quot;AM&quot;</statistic>
+                <statistic aggregation='Max' datatype='string'>&quot;PM&quot;</statistic>
+                <statistic aggregation='Count' datatype='integer'>7838</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='string' name='DebugRemoteCollation'>&quot;en_US&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (comparable)'>true</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (compression)'>&quot;heap&quot;</attribute>
+                <attribute datatype='boolean' name='DebugRemoteMetadata (distinct)'>true</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>4294967292</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (sort-position)'>1</attribute>
+                <attribute datatype='string' name='DebugRemoteMetadata (sort-sense)'>&quot;asc&quot;</attribute>
+                <attribute datatype='integer' name='DebugRemoteMetadata (storagewidth)'>1</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;str&quot;</attribute>
+              </attributes>
+            </metadata-record>
+            <metadata-record class='column'>
+              <remote-name>Calculation_1720213103457326</remote-name>
+              <remote-type>16</remote-type>
+              <local-name>[Calculation_1720213103457326]</local-name>
+              <parent-name>[Extract]</parent-name>
+              <remote-alias>Calculation_1720213103457326</remote-alias>
+              <local-type>integer</local-type>
+              <aggregation>Sum</aggregation>
+              <approx-count>2</approx-count>
+              <contains-null>false</contains-null>
+              <statistics>
+                <statistic aggregation='Sum' datatype='real'>1169.0</statistic>
+                <statistic aggregation='Avg' datatype='real'>0.14914519009951518</statistic>
+                <statistic aggregation='Min' datatype='integer'>0</statistic>
+                <statistic aggregation='Max' datatype='integer'>1</statistic>
+                <statistic aggregation='Stdev' datatype='real'>0.35625425598216504</statistic>
+                <statistic aggregation='StdevP' datatype='real'>0.35623152916283907</statistic>
+                <statistic aggregation='Var' datatype='real'>0.12691709490540598</statistic>
+                <statistic aggregation='VarP' datatype='real'>0.12690090236969467</statistic>
+                <statistic aggregation='Count' datatype='integer'>7838</statistic>
+                <statistic aggregation='SumXSqr' datatype='real'>1169.0</statistic>
+              </statistics>
+              <attributes>
+                <attribute datatype='integer' name='DebugRemoteMetadata (size)'>1</attribute>
+                <attribute datatype='string' name='DebugRemoteType'>&quot;sint8&quot;</attribute>
+              </attributes>
+            </metadata-record>
+          </metadata-records>
+        </connection>
+      </extract>
+      <layout dim-ordering='alphabetic' dim-percentage='0.546448' measure-ordering='alphabetic' measure-percentage='0.453552' show-structure='true' />
+      <semantic-values>
+        <semantic-value key='[Country].[Name]' value='&quot;United States&quot;' />
+      </semantic-values>
+      <default-sorts>
+        <sort class='manual' column='[none:F10:nk]' direction='ASC'>
+          <dictionary>
+            <bucket>&quot;Baseline - Current BART Prices&quot;</bucket>
+            <bucket>&quot;Baseline&quot;</bucket>
+            <bucket>&quot;Baseline + $3 fee at Key Stations&quot;</bucket>
+            <bucket>&quot;Baseline + $6 fee at Key Stations&quot;</bucket>
+            <bucket>&quot;Baseline + No drive access at Key Stations&quot;</bucket>
+            <bucket>&quot;Baseline + Housing at Key Stations&quot;</bucket>
+          </dictionary>
+        </sort>
+        <sort class='manual' column='[none:MODE:ok]' direction='ASC'>
+          <dictionary>
+            <bucket>5</bucket>
+            <bucket>4</bucket>
+          </dictionary>
+        </sort>
+      </default-sorts>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Access.N'>
+      <layout-options>
+        <title>
+          <formatted-text>
+            <run bold='false' fontname='Arial' fontsize='20' italic='true'>BART Boardings by Access Mode, Scenario</run>
+          </formatted-text>
+        </title>
+      </layout-options>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='bart_boardings_by_access_mode' name='textscan.42048.419857175926' />
+          </datasources>
+          <datasource-dependencies datasource='textscan.42048.419857175926'>
+            <column caption='Ab Vol' datatype='integer' name='[AB_VOL]' role='measure' type='quantitative' />
+            <column caption='Scenario' datatype='string' name='[F10]' role='dimension' type='nominal' />
+            <column aggregation='Sum' caption='Access Mode' datatype='integer' name='[MODE]' role='dimension' type='ordinal'>
+              <aliases>
+                <alias key='3' value='Transfer' />
+                <alias key='4' value='Drive' />
+                <alias key='5' value='Walk' />
+              </aliases>
+            </column>
+            <column datatype='string' name='[Station]' role='dimension' type='nominal' />
+            <column-instance column='[F10]' derivation='None' name='[none:F10:nk]' pivot='key' type='nominal' />
+            <column-instance column='[MODE]' derivation='None' name='[none:MODE:ok]' pivot='key' type='ordinal' />
+            <column-instance column='[Station]' derivation='None' name='[none:Station:nk]' pivot='key' type='nominal' />
+            <column-instance column='[AB_VOL]' derivation='Sum' name='[sum:AB_VOL:qk]' pivot='key' type='quantitative' />
+          </datasource-dependencies>
+          <filter class='categorical' column='[textscan.42048.419857175926].[none:Station:nk]'>
+            <groupfilter function='union' user:ui-domain='relevant' user:ui-enumeration='inclusive' user:ui-marker='enumerate'>
+              <groupfilter function='member' level='[none:Station:nk]' member='&quot;Bay Fair&quot;' />
+              <groupfilter function='member' level='[none:Station:nk]' member='&quot;Lafayette&quot;' />
+              <groupfilter function='member' level='[none:Station:nk]' member='&quot;Orinda&quot;' />
+              <groupfilter function='member' level='[none:Station:nk]' member='&quot;West Oakland&quot;' />
+            </groupfilter>
+          </filter>
+          <slices>
+            <column>[textscan.42048.419857175926].[none:Station:nk]</column>
+          </slices>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='cell'>
+            <format attr='width' field='[textscan.42048.419857175926].[none:F10:nk]' value='123' />
+            <format attr='height' field='[textscan.42048.419857175926].[none:Station:nk]' value='54' />
+            <format attr='width' field='[textscan.42048.419857175926].[none:MODE:ok]' value='71' />
+            <format attr='height' field='[textscan.42048.419857175926].[none:MODE:ok]' value='44' />
+            <format attr='font-style' data-class='total' value='italic' />
+            <format attr='color' data-class='total' value='#4f6e8d' />
+            <format attr='color' data-class='subtotal' value='#906800' />
+            <format attr='font-style' data-class='subtotal' value='italic' />
+          </style-rule>
+          <style-rule element='header'>
+            <format attr='height' field='[textscan.42048.419857175926].[none:F10:nk]' value='84' />
+            <format attr='width' field='[textscan.42048.419857175926].[none:Station:nk]' value='248' />
+            <format attr='font-style' data-class='total' value='italic' />
+            <format attr='color' data-class='total' value='#4f6e8d' />
+            <format attr='font-style' data-class='subtotal' value='italic' />
+            <format attr='color' data-class='subtotal' value='#906800' />
+            <format attr='width' field='[textscan.42048.419857175926].[none:MODE:ok]' value='76' />
+          </style-rule>
+          <style-rule element='worksheet'>
+            <format attr='font-size' value='12' />
+          </style-rule>
+          <style-rule element='title'>
+            <format attr='font-size' value='12' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-disallow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Automatic' />
+            <encodings>
+              <text column='[textscan.42048.419857175926].[sum:AB_VOL:qk]' />
+            </encodings>
+            <customized-tooltip>
+              <formatted-text />
+            </customized-tooltip>
+            <style>
+              <style-rule element='mark'>
+                <format attr='mark-labels-show' value='true' />
+              </style-rule>
+              <style-rule element='pane'>
+                <format attr='minwidth' value='-1' />
+                <format attr='maxwidth' value='-1' />
+                <format attr='minheight' value='-1' />
+                <format attr='maxheight' value='-1' />
+              </style-rule>
+            </style>
+          </pane>
+        </panes>
+        <rows total='true'>([textscan.42048.419857175926].[none:Station:nk] / [textscan.42048.419857175926].[none:MODE:ok])</rows>
+        <cols>[textscan.42048.419857175926].[none:F10:nk]</cols>
+        <subtotals>
+          <column>[textscan.42048.419857175926].[none:Station:nk]</column>
+        </subtotals>
+        <percentages enabled='false' mode='column-in-pane' />
+      </table>
+    </worksheet>
+    <worksheet name='Access.PCT'>
+      <layout-options>
+        <title>
+          <formatted-text>
+            <run bold='false' fontname='Arial' fontsize='20' italic='true'>Share of BART Boardings by Access Mode</run>
+          </formatted-text>
+        </title>
+      </layout-options>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='bart_boardings_by_access_mode' name='textscan.42048.419857175926' />
+          </datasources>
+          <datasource-dependencies datasource='textscan.42048.419857175926'>
+            <column caption='Ab Vol' datatype='integer' name='[AB_VOL]' role='measure' type='quantitative' />
+            <column caption='Scenario' datatype='string' name='[F10]' role='dimension' type='nominal' />
+            <column aggregation='Sum' caption='Access Mode' datatype='integer' name='[MODE]' role='dimension' type='ordinal'>
+              <aliases>
+                <alias key='3' value='Transfer' />
+                <alias key='4' value='Drive' />
+                <alias key='5' value='Walk' />
+              </aliases>
+            </column>
+            <column datatype='string' name='[Station]' role='dimension' type='nominal' />
+            <column-instance column='[F10]' derivation='None' name='[none:F10:nk]' pivot='key' type='nominal' />
+            <column-instance column='[MODE]' derivation='None' name='[none:MODE:ok]' pivot='key' type='ordinal' />
+            <column-instance column='[Station]' derivation='None' name='[none:Station:nk]' pivot='key' type='nominal' />
+            <column-instance column='[AB_VOL]' derivation='Sum' name='[pcto:sum:AB_VOL:qk:3]' pivot='key' type='quantitative'>
+              <table-calc ordering-type='ColumnInPane' type='PctTotal' />
+            </column-instance>
+          </datasource-dependencies>
+          <filter class='categorical' column='[textscan.42048.419857175926].[none:Station:nk]'>
+            <groupfilter function='union' user:ui-domain='relevant' user:ui-enumeration='inclusive' user:ui-marker='enumerate'>
+              <groupfilter function='member' level='[none:Station:nk]' member='&quot;Ashby&quot;' />
+              <groupfilter function='member' level='[none:Station:nk]' member='&quot;Bay Fair&quot;' />
+              <groupfilter function='member' level='[none:Station:nk]' member='&quot;Coliseum/Oakland Airport&quot;' />
+              <groupfilter function='member' level='[none:Station:nk]' member='&quot;Hayward&quot;' />
+            </groupfilter>
+          </filter>
+          <slices>
+            <column>[textscan.42048.419857175926].[none:Station:nk]</column>
+          </slices>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='cell'>
+            <format attr='width' field='[textscan.42048.419857175926].[none:F10:nk]' value='123' />
+            <format attr='height' field='[textscan.42048.419857175926].[none:Station:nk]' value='54' />
+            <format attr='width' field='[textscan.42048.419857175926].[none:MODE:ok]' value='71' />
+            <format attr='height' field='[textscan.42048.419857175926].[none:MODE:ok]' value='44' />
+            <format attr='font-style' data-class='total' value='italic' />
+            <format attr='color' data-class='total' value='#4f6e8d' />
+            <format attr='color' data-class='subtotal' value='#906800' />
+            <format attr='font-style' data-class='subtotal' value='italic' />
+            <format attr='text-format' field='[textscan.42048.419857175926].[pcto:sum:AB_VOL:qk:3]' value='p0.0%' />
+          </style-rule>
+          <style-rule element='header'>
+            <format attr='height' field='[textscan.42048.419857175926].[none:F10:nk]' value='84' />
+            <format attr='width' field='[textscan.42048.419857175926].[none:Station:nk]' value='248' />
+            <format attr='font-style' data-class='total' value='italic' />
+            <format attr='color' data-class='total' value='#4f6e8d' />
+            <format attr='font-style' data-class='subtotal' value='italic' />
+            <format attr='color' data-class='subtotal' value='#906800' />
+          </style-rule>
+          <style-rule element='worksheet'>
+            <format attr='font-size' value='12' />
+          </style-rule>
+          <style-rule element='title'>
+            <format attr='font-size' value='12' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-disallow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Automatic' />
+            <encodings>
+              <text column='[textscan.42048.419857175926].[pcto:sum:AB_VOL:qk:3]' />
+            </encodings>
+            <customized-tooltip>
+              <formatted-text />
+            </customized-tooltip>
+            <style>
+              <style-rule element='mark'>
+                <format attr='mark-labels-show' value='true' />
+              </style-rule>
+              <style-rule element='pane'>
+                <format attr='minwidth' value='-1' />
+                <format attr='maxwidth' value='-1' />
+                <format attr='minheight' value='-1' />
+                <format attr='maxheight' value='-1' />
+              </style-rule>
+            </style>
+          </pane>
+        </panes>
+        <rows total='true'>([textscan.42048.419857175926].[none:Station:nk] / [textscan.42048.419857175926].[none:MODE:ok])</rows>
+        <cols>[textscan.42048.419857175926].[none:F10:nk]</cols>
+        <subtotals>
+          <column>[textscan.42048.419857175926].[none:F10:nk]</column>
+        </subtotals>
+        <percentages enabled='true' mode='column-in-pane' />
+      </table>
+    </worksheet>
+    <worksheet name='Sum'>
+      <layout-options>
+        <title>
+          <formatted-text>
+            <run bold='false' fontname='Arial' fontsize='20' italic='true'>BART Boardings (excluding transfers within BART) by Scenario</run>
+          </formatted-text>
+        </title>
+      </layout-options>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='bart_boardings_by_access_mode' name='textscan.42048.419857175926' />
+          </datasources>
+          <datasource-dependencies datasource='textscan.42048.419857175926'>
+            <column caption='Ab Vol' datatype='integer' name='[AB_VOL]' role='measure' type='quantitative' />
+            <column caption='Scenario' datatype='string' name='[F10]' role='dimension' type='nominal' />
+            <column aggregation='Sum' caption='Access Mode' datatype='integer' name='[MODE]' role='dimension' type='ordinal'>
+              <aliases>
+                <alias key='3' value='Transfer' />
+                <alias key='4' value='Drive' />
+                <alias key='5' value='Walk' />
+              </aliases>
+            </column>
+            <column-instance column='[F10]' derivation='None' name='[none:F10:nk]' pivot='key' type='nominal' />
+            <column-instance column='[MODE]' derivation='None' name='[none:MODE:ok]' pivot='key' type='ordinal' />
+            <column-instance column='[AB_VOL]' derivation='Sum' name='[sum:AB_VOL:qk]' pivot='key' type='quantitative' />
+          </datasource-dependencies>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='cell'>
+            <format attr='width' field='[textscan.42048.419857175926].[none:F10:nk]' value='123' />
+            <format attr='font-style' data-class='total' value='italic' />
+            <format attr='color' data-class='total' value='#4f6e8d' />
+            <format attr='color' data-class='subtotal' value='#906800' />
+            <format attr='font-style' data-class='subtotal' value='italic' />
+            <format attr='height' value='51' />
+          </style-rule>
+          <style-rule element='header'>
+            <format attr='height' field='[textscan.42048.419857175926].[none:F10:nk]' value='84' />
+            <format attr='font-style' data-class='total' value='italic' />
+            <format attr='color' data-class='total' value='#4f6e8d' />
+            <format attr='font-style' data-class='subtotal' value='italic' />
+            <format attr='color' data-class='subtotal' value='#906800' />
+          </style-rule>
+          <style-rule element='worksheet'>
+            <format attr='font-size' value='12' />
+          </style-rule>
+          <style-rule element='title'>
+            <format attr='font-size' value='12' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-disallow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Automatic' />
+            <encodings>
+              <text column='[textscan.42048.419857175926].[sum:AB_VOL:qk]' />
+            </encodings>
+            <customized-tooltip>
+              <formatted-text />
+            </customized-tooltip>
+            <style>
+              <style-rule element='mark'>
+                <format attr='mark-labels-show' value='true' />
+              </style-rule>
+              <style-rule element='pane'>
+                <format attr='minwidth' value='-1' />
+                <format attr='maxwidth' value='-1' />
+                <format attr='minheight' value='-1' />
+                <format attr='maxheight' value='-1' />
+              </style-rule>
+            </style>
+          </pane>
+        </panes>
+        <rows total='true'>[textscan.42048.419857175926].[none:MODE:ok]</rows>
+        <cols>[textscan.42048.419857175926].[none:F10:nk]</cols>
+        <subtotals>
+          <column>[textscan.42048.419857175926].[none:F10:nk]</column>
+        </subtotals>
+      </table>
+    </worksheet>
+  </worksheets>
+  <windows source-height='30'>
+    <window class='worksheet' maximized='true' name='Sum'>
+      <cards>
+        <edge name='left'>
+          <strip size='160'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='92'>
+            <card type='title' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <geo-search-visibility value='1' />
+      </viewpoint>
+    </window>
+    <window class='worksheet' name='Access.N'>
+      <cards>
+        <edge name='left'>
+          <strip size='160'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+          </strip>
+          <strip size='229'>
+            <card param='[textscan.42048.419857175926].[none:Station:nk]' type='filter' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='76'>
+            <card type='title' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <geo-search-visibility value='1' />
+      </viewpoint>
+    </window>
+    <window class='worksheet' name='Access.PCT'>
+      <cards>
+        <edge name='left'>
+          <strip size='160'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+          </strip>
+          <strip size='229'>
+            <card param='[textscan.42048.419857175926].[none:Station:nk]' type='filter' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='78'>
+            <card type='title' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <geo-search-visibility value='1' />
+      </viewpoint>
+    </window>
+  </windows>
+</workbook>
