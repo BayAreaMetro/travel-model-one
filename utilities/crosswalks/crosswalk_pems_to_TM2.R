@@ -14,15 +14,16 @@ library(tibble)
 library(plyr)
 library(dplyr)
 library(reshape)
+library(foreign)
 
-BOX_PEMS_DIR   <- "~/../Box/Share Data/pems-typical-weekday"  # Box Drive default
+BOX_PEMS_DIR   <- "~/../Box/Modeling and Surveys/Share Data/pems-typical-weekday"  # Box Drive default
 PEMS_DATA_FILE <- "pems_period.csv"
 
 CROSSWALK_DIR  <- "M:/Crosswalks/PeMSStations_TM2network"
 TM2_NETWORK    <- "tm2_freeways_WGS84" # See readme for how this is derived
 
 # output files
-CROSSWALK_FILE <- "crosswalk_v2.csv"
+CROSSWALK_FILE <- "crosswalk_v2"  # will output csv and dbf
 PEMS_LOCS_FILE <- "pems_locs"
 PEMS_LOCS_WITH_CROSSWALK <- "pems_locs_with_crosswalk"
 
@@ -62,6 +63,7 @@ summary(route_links)
 route_links$type <- ""
 route_links$type[ route_links$FT == 1 ] <- "FF"  # freeway-to-freeway
 route_links$type[ route_links$FT == 2 ] <- "ML"  # freeway - mainline
+route_links$type[ route_links$FT == 3 ] <- "ML"  # expressway - mainline
 route_links$type[ (route_links$FT == 2)&((route_links$USECLASS==2)|(route_links$USECLASS==3)) ] <- "HV" # HOV
 route_links$type[ (route_links$FT==5) ] = "RA"   # generic ramp
 route_links$type[ (route_links$FT==5)&(route_links$RAMP==1)] = "FR" # Off-ramp
@@ -71,7 +73,7 @@ route_links$type <- factor(route_links$type)
 summary(route_links)
 
 # find route and direction from the NAME
-pat                   <- "(US-|CA-|I-)(\\d+)\\s*([EWNS])*"
+pat                   <- "(US-|CA-|I-)(\\d+)\\s*([EWNS])*(Byp)?"
 does_match            <- grepl(pat,route_links$NAME)
 route_links$route     <- sub(pattern=pat, replacement="\\2", x=route_links$NAME, perl=TRUE)
 route_links$direction <- sub(pattern=pat, replacement="\\3", x=route_links$NAME, perl=TRUE)
@@ -79,12 +81,44 @@ route_links$direction <- sub(pattern=pat, replacement="\\3", x=route_links$NAME,
 route_links$route[     does_match==FALSE ] <- NA
 route_links$direction[ does_match==FALSE ] <- NA
 route_links$direction[ route_links$direction==""] <- NA
+
+# special for 87
+route_links$route     <- ifelse(route_links$NAME=="Guadalupe Fwy N", "87", route_links$route)
+route_links$direction <- ifelse(route_links$NAME=="Guadalupe Fwy N",  "N", route_links$direction)
+route_links$route     <- ifelse(route_links$NAME=="Guadalupe Fwy S", "87", route_links$route)
+route_links$direction <- ifelse(route_links$NAME=="Guadalupe Fwy S",  "S", route_links$direction)
+route_links$route     <- ifelse(route_links$NAME=="Guadalupe Pkwy",  "87", route_links$route)
+
+# associate routes with known directions
+route_dirs <- unique(as.data.frame( route_links[ which(!is.na(route_links$route) & !is.na(route_links$direction)), c("route","direction")] ))
+route_dirs$dir_choice <- ifelse((route_dirs$direction=="E"|route_dirs$direction=="W"),"EW","NS")
+route_dirs <- unique(select(route_dirs, "route","dir_choice"))
+
+# hack: these aren't included
+route_dirs <- unique(rbind(route_dirs, c("9","NS"), c("35","NS"), c("25","NS"), c("116","EW"), c("128","EW"), c("77","EW"), c("82","NS")))
+
+# these have routes but no direction - try to impute
+route_links           <- merge(route_links, route_dirs, by.x="route", by.y="route")
+route_links$xdiff     <- route_links$X2 - route_links$X1
+route_links$ydiff     <- route_links$Y2 - route_links$Y1
+route_links$impute_ew <- ifelse(route_links$xdiff > 0, "E","W")
+route_links$impute_ns <- ifelse(route_links$ydiff > 0, "N","S")
+route_links$impute_dir<- ifelse(route_links$dir_choice=="EW",route_links$impute_ew,route_links$impute_ns)
+route_links$direction <- ifelse(is.na(route_links$direction), route_links$impute_dir, route_links$direction)
+
+print("Routes without direction:")
+no_dir <- route_links[ which(!is.na(route_links$route) & is.na(route_links$direction)), ]
+print(paste(nrow(no_dir),"rows"))
+# print(route_links[ which(!is.na(route_links$route) & is.na(route_links$direction)), c("NAME","route","direction","dir_choice","impute_ew","xdiff","impute_ns","ydiff")])
+
 # make these factors, and routes are numeric
 route_links$route     <- factor(as.numeric(route_links$route))
 route_links$direction <- factor(route_links$direction)
 
 # these are the non-matching
-# route_links$NAME[ does_match==FALSE]
+print("Routes without number:")
+no_num <- route_links[ which(is.na(route_links$route)), ]
+print(sort(unique(no_num$NAME)))
 
 # set A_B
 route_links$A_B <- paste0(route_links$A,"_",route_links$B)
@@ -144,16 +178,24 @@ xwalk <- select(xwalk, station, district, route, direction, type, latitude, long
 # for joins
 xwalk <- mutate(xwalk, A_B=paste0(A,"_",B))
 
+# summarize how many pems ids join to a single link
+mult_pems <- group_by(xwalk, A_B) %>% summarise(pemsonlink=n())
+xwalk     <- left_join(xwalk, mult_pems)
+
 # write it
-write.csv(xwalk,   file.path(CROSSWALK_DIR, CROSSWALK_FILE), row.names=FALSE, quote=FALSE)
-print(paste0("Wrote crosswalk: ",file.path(CROSSWALK_DIR, CROSSWALK_FILE)))
+write.csv(xwalk, file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,".csv")), row.names=FALSE, quote=FALSE)
+print(paste("Wrote crosswalk:",file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,".csv"))))
+
+write.dbf(xwalk, file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,".dbf")), factor2char=TRUE)
+print(paste("Wrote crosswalk:",file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,".dbf"))))
 
 # write pems_loc joined with xwalk as shapefile
-pems_df            <- left_join(pems_df, xwalk)
-pems_locs$A        <- pems_df$A
-pems_locs$B        <- pems_df$B
-pems_locs$A_B      <- pems_df$A_B
-pems_locs$distlink <- pems_df$distlink
+pems_df              <- left_join(pems_df, xwalk)
+pems_locs$A          <- pems_df$A
+pems_locs$B          <- pems_df$B
+pems_locs$A_B        <- pems_df$A_B
+pems_locs$distlink   <- pems_df$distlink
+pems_locs$pemsonlink <- pems_df$pemsonlink
 
 writeOGR(obj=pems_locs, dsn=file.path(CROSSWALK_DIR, "shapefiles"), layer=PEMS_LOCS_WITH_CROSSWALK, driver="ESRI Shapefile")
 print(paste0("Wrote PEMS locations with crosswalk: ",file.path(CROSSWALK_DIR, "shapefiles", PEMS_LOCS_WITH_CROSSWALK),".shp"))
