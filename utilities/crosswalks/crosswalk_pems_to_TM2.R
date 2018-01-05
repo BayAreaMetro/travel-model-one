@@ -83,11 +83,36 @@ route_links$direction[ does_match==FALSE ] <- NA
 route_links$direction[ route_links$direction==""] <- NA
 
 # special for 87
-route_links$route     <- ifelse(route_links$NAME=="Guadalupe Fwy N", "87", route_links$route)
-route_links$direction <- ifelse(route_links$NAME=="Guadalupe Fwy N",  "N", route_links$direction)
-route_links$route     <- ifelse(route_links$NAME=="Guadalupe Fwy S", "87", route_links$route)
-route_links$direction <- ifelse(route_links$NAME=="Guadalupe Fwy S",  "S", route_links$direction)
-route_links$route     <- ifelse(route_links$NAME=="Guadalupe Pkwy",  "87", route_links$route)
+route_links[ which(route_links$NAME=="Guadalupe Fwy N"), "route"    ] <- "87"
+route_links[ which(route_links$NAME=="Guadalupe Fwy N"), "direction"] <- "N"
+route_links[ which(route_links$NAME=="Guadalupe Fwy S"), "route"    ] <- "87"
+route_links[ which(route_links$NAME=="Guadalupe Fwy S"), "direction"] <- "S"
+route_links[ which(route_links$NAME=="Guadalupe Pkwy" ), "route"    ] <- "87"
+
+# special for 37,12
+route_links[ which(route_links$NAME=="Sears Point Rd" ), "route" ] <- "37"
+route_links[ which(route_links$NAME=="Marine World Pk"), "route" ] <- "37"
+route_links[ which(route_links$NAME=="Jameson Canyon" ), "route" ] <- "12"
+
+# Links in this box marked as I-580 are also I-80 and PeMS uses I-80
+# "The section of the Eastshore Freeway between the MacArthur Maze and the 580 (Hoffman) split between Albany is a wrong-way
+# concurrency where the northbound direction is signed as I-80 East and I-580 West, while the southbound direction is signed
+# as westbound I-80 and eastbound I-580. This segment suffers from severe traffic congestion during rush hour due to the merger
+# of three freeways (I-80, I-580, and I-880) at the MacArthur Maze.
+levels(route_links$NAME) <- c(levels(route_links$NAME), "I-580 E/I-80 W", "I-580 W/I-80 E")
+
+# Southbound: I-580 E => I-80 W.  28 links with Y1 in [37.840, 37.887]
+route_links[ which((route_links$NAME=="I-580 E")&(route_links$Y1>=37.840)&(route_links$Y1<=37.887)), "NAME"] <-  "I-580 E/I-80 W"
+print(paste("Found ",nrow( route_links[which(route_links$NAME == "I-580 E/I-80 W"),]),"links for I-580 E/I-80 W"))
+# Northbound: I-580 W => I-80 E.  32 links with Y1 in [37.836, 37.884]
+route_links[ which((route_links$NAME=="I-580 W")&(route_links$Y1>=37.836)&(route_links$Y1<=37.884)), "NAME"] <- "I-580 W/I-80 E"
+print(paste("Found ",nrow( route_links[which(route_links$NAME == "I-580 W/I-80 E"),]),"links for I-580 W/I-80 E"))
+
+route_links[ which(route_links$NAME=="I-580 E/I-80 W"), "route"    ] <- "80"
+route_links[ which(route_links$NAME=="I-580 E/I-80 W"), "direction"] <- "W"
+route_links[ which(route_links$NAME=="I-580 W/I-80 E"), "route"    ] <- "80"
+route_links[ which(route_links$NAME=="I-580 W/I-80 E"), "direction"] <- "E"
+
 
 # associate routes with known directions
 route_dirs <- unique(as.data.frame( route_links[ which(!is.na(route_links$route) & !is.na(route_links$direction)), c("route","direction")] ))
