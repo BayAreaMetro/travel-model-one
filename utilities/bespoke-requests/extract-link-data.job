@@ -9,7 +9,7 @@ run pgm = network
   filei neti[1]   = "%NET_FILE%"
   filei linki[2]  = "%LINK_INPUT%"  ; use a DBF for this.
   fileo printo[1] = "%LINK_OUTPUT%" APPEND=T
-  fileo neto      = ""
+  fileo neto      = "%NET_OUTPUT%"  ; subset of network with project links
 
   merge record = TRUE
 
