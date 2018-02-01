@@ -2,8 +2,15 @@
 
 library(foreign)
 
-F_INPUT  = "input.csv"
-F_OUTPUT = "output.dbf"
+F_INPUT   <- Sys.getenv("F_INPUT")  # The location of the input and output file
+F_OUTPUT  <- Sys.getenv("F_OUTPUT")
+
+# switch slashes around
+F_INPUT   <- gsub("\\\\","/",F_INPUT)
+F_OUTPUT  <- gsub("\\\\","/",F_OUTPUT)
+
+print(paste0("F_INPUT  = [",F_INPUT, "]\n"))
+print(paste0("F_OUTPUT = [",F_OUTPUT,"]\n"))
 
 data_df <- read.table(file = F_INPUT, header = TRUE, sep = ",", stringsAsFactors = FALSE)
 
