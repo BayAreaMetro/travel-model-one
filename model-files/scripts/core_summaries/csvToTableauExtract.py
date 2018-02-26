@@ -1,5 +1,5 @@
 USAGE = """
-python csvToTableauExtract.py [--header "colname1,colname2,..."] [--output output.tde] [--join join.csv] [--append]
+python csvToTableauExtract.py (modified to latest Tableau python API as of 2/15/18) [--header "colname1,colname2,..."] [--output output.tde] [--join join.csv] [--append]
   input_dir1 [input_dir2 input_dir3] output_dir summary.csv
 
   + Pass --header "colname1,colname2,..." to include column names if they're not included
@@ -27,19 +27,22 @@ Also uses pandas.DataFrame.fillna() to replace NAs with zero, since Tableau does
 """
 import csv, datetime, itertools, getopt, os, sys
 import pandas
-import dataextract as tde
+from tableausdk import * 
+from tableausdk.Extract import * 
+
+ExtractAPI.initialize()
 
 # create a dict for the field maps
 # Define type maps
 # Caveat: I am not including all of the possibilities here
 fieldMap = { 
-    'float64' :     tde.Type.DOUBLE,
-    'float32' :     tde.Type.DOUBLE,
-    'int64' :       tde.Type.DOUBLE,
-    'int32' :       tde.Type.DOUBLE,
-    'object':       tde.Type.UNICODE_STRING,
-    'bool' :        tde.Type.BOOLEAN
-}
+     'float64' :     Type.DOUBLE,
+     'float32' :     Type.DOUBLE,
+     'int64' :       Type.DOUBLE,
+     'int32' :       Type.DOUBLE,
+     'object':       Type.UNICODE_STRING,
+     'bool' :        Type.BOOLEAN
+ }
 
 unwind_timeperiods = {'cspdEA':['cspd','EA'],
                       'cspdAM':['cspd','AM'],
@@ -147,7 +150,8 @@ if __name__ == '__main__':
         tde_filename = csv_filename.replace(".csv", ".tde")    
     # print "Will write to [%s]" % os.path.join(tde_dirpath, tde_filename)
     # print
-    
+  
+  
     # Step 1: Create the Extract file and open the csv
     tde_fullpath = os.path.join(tde_dirpath, tde_filename)
     # if the file doesn't exist, revoke the append
@@ -156,7 +160,7 @@ if __name__ == '__main__':
         arg_append = False
     if not arg_append and os.path.isfile(tde_fullpath):
         os.remove(tde_fullpath)    
-    tdefile = tde.Extract(tde_fullpath)
+    new_extract = Extract(tde_fullpath)
 
     # Define the columns by the first csv
     table_df = pandas.read_csv(os.path.join(csv_dirpaths[0], csv_filename), names=arg_header)
@@ -165,7 +169,7 @@ if __name__ == '__main__':
         table_df = pandas.merge(table_df, join_df, how='left')
 
     # Step 2: Create the tableDef
-    tableDef = tde.TableDefinition()
+    table_definition = TableDefinition()
     old_colnames = []
     colnames_to_types = {}
     new_colnames_to_idx = {}
@@ -187,16 +191,16 @@ if __name__ == '__main__':
         new_colnames_to_idx[new_colname] = len(new_colnames_to_idx)
         # figure out data type
         colnames_to_types[new_colname] = fieldMap[str(dtype)]
-        tableDef.addColumn(new_colname, colnames_to_types[new_colname])
+        table_definition.addColumn(new_colname, colnames_to_types[new_colname])
 
     if unwinding:
         # add the time period column
-        tableDef.addColumn("timeperiod", tde.Type.UNICODE_STRING)
+        table_definition.addColumn("timeperiod", Type.UNICODE_STRING)
         new_colnames_to_idx["timeperiod"] = len(new_colnames_to_idx)
     # add the src column
-    tableDef.addColumn("src", tde.Type.UNICODE_STRING)
+    table_definition.addColumn("src", Type.UNICODE_STRING)
     new_colnames_to_idx["src"] = len(new_colnames_to_idx)
-    tableDef.addColumn("Scenario", tde.Type.UNICODE_STRING)
+    table_definition.addColumn("Scenario", Type.UNICODE_STRING)
     new_colnames_to_idx["Scenario"] = len(new_colnames_to_idx)
     
     # print "old_colnames = %s" % str(old_colnames)
@@ -205,13 +209,13 @@ if __name__ == '__main__':
     
     # Step 3: Creat the table in the image of the tableDef
     if arg_append:
-        table = tdefile.openTable('Extract')
+        new_table = new_extract.openTable('Extract')
     else:
-        table = tdefile.addTable('Extract', tableDef)
+        new_table = new_extract.addTable('Extract', table_definition)
 
     # Step 4: Loop through the csv grab all the data, put it into rows
     # and insert the rows in the table
-    newrow = tde.Row(tableDef)
+    new_row = Row(table_definition)
     for csv_dirpath in csv_dirpaths:
         csv_fullpath = os.path.join(csv_dirpath, csv_filename)
 
@@ -270,12 +274,12 @@ if __name__ == '__main__':
                         col_idx = new_colnames_to_idx[colname]
 
                         try:
-                            if colnames_to_types[colname] == tde.Type.UNICODE_STRING:
-                                newrow.setString(col_idx, str(line[orig_colname]))
-                            elif colnames_to_types[colname] == tde.Type.INTEGER:
-                                newrow.setInteger(col_idx, int(line[orig_colname]))
-                            elif colnames_to_types[colname] == tde.Type.DOUBLE:
-                                newrow.setDouble(col_idx, float(line[orig_colname]))
+                            if colnames_to_types[colname] == Type.UNICODE_STRING:
+                                new_row.setString(col_idx, str(line[orig_colname]))
+                            elif colnames_to_types[colname] == Type.INTEGER:
+                                new_row.setInteger(col_idx, int(line[orig_colname]))
+                            elif colnames_to_types[colname] == Type.DOUBLE:
+                                new_row.setDouble(col_idx, float(line[orig_colname]))
                             else:
                                 raise
                         except:
@@ -289,20 +293,22 @@ if __name__ == '__main__':
                         col_tp      = unwind_timeperiods[colname][1]
                         col_idx     = new_colnames_to_idx[new_colname]
                         if col_tp == timeperiod:
-                            newrow.setDouble(col_idx, float(line[orig_colname]))
+                            new_row.setDouble(col_idx, float(line[orig_colname]))
 
                 if unwinding:
                     # and the time period
-                    newrow.setString(new_colnames_to_idx["timeperiod"], timeperiod)
+                    new_row.setString(new_colnames_to_idx["timeperiod"], timeperiod)
                 # and the src
-                newrow.setString(new_colnames_to_idx["src"], src)
-                newrow.setString(new_colnames_to_idx["Scenario"], scenario)
-                table.insert(newrow)
+                new_row.setString(new_colnames_to_idx["src"], src)
+                new_row.setString(new_colnames_to_idx["Scenario"], scenario)
+                new_table.insert(new_row)
                 
                 tde_lines_written += 1
         
         print "Read  %6d rows from %s" % (csv_lines_read, csv_fullpath)
         
     # Step 5: Close the tde
-    tdefile.close()
+    new_extract.close()
     print "Wrote %6d rows to   %s" % (tde_lines_written, tde_fullpath)
+	
+ExtractAPI.cleanup()	
