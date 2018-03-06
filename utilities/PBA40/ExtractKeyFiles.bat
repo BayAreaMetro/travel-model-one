@@ -44,7 +44,8 @@ copy logs\feedback.rpt    extractor\feedback.rpt
 copy logs\SpeedErrors.log extractor\SpeedErrors.log
 
 :: Skim databases
-:: copy database\*.csv extractor\skimDB\*.csv
+mkdir extractor\skimDB
+copy database\*.csv extractor\skimDB\*.csv
 
 :: Trip tables
 mkdir extractor\main
@@ -80,13 +81,20 @@ mkdir extractor\accessibilities
 copy accessibilities\nonMandatoryAccessibilities.csv extractor\accessibilities
 copy accessibilities\mandatoryAccessibilities.csv    extractor\accessibilities
 copy skims\accessibility.csv                         extractor\accessibilities
-
+:: Core summaries
 mkdir extractor\core_summaries
 copy core_summaries\AccessibilityMarkets.*           extractor\core_summaries
+copy core_summaries\*.* extractor\core_summaries
+mkdir extractor\updated_output
+copy updated_output\*.* extractor\updated_output
 
 :: metrics
 mkdir extractor\metrics
 copy metrics extractor\metrics
+if exist metrics\ITHIM (
+  mkdir extractor\metrics\ITHIM
+  copy metrics\ITHIM\*.* extractor\metrics\ITHIM
+)
 
 :success
 echo ExtractKeyFiles into extractor for PBAU Complete

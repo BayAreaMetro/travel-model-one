@@ -6,7 +6,7 @@ library(dplyr)
 library(reshape2)
 
 MODEL_DATA_BASE_DIR <-"M:/Application/Model One/RTP2017/Scenarios"
-OUTPUT_FILE         <-"C:/Users/lzorn/Box Sync/ICF Calculators/Model Data/Model Data - Trip Caps.csv"
+OUTPUT_FILE         <-"C:/Users/lzorn/Box/ICF Calculators/Model Data/Model Data - Trip Caps.csv"
 
 # this is the currently running script
 SCRIPT                <- (function() {attr(body(sys.function()), "srcfile")})()$filename

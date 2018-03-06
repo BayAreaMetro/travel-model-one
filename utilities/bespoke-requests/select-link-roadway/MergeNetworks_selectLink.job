@@ -1,5 +1,4 @@
-token_link = '%SELECT_LINK%'
-
+token_link_file = '%SELECT_LINK_FILE%'
 
 ; step one: create time-period-specific networks with readable variable names
 loop period = 1, 5
@@ -28,10 +27,10 @@ loop period = 1, 5
    run pgm = network
    
       ; read in the time-period-specific assigned and averaged (over iterations) network (see CalculateSpeeds.job)
-      neti[1] = "hwy\selectlink\load@token_period@_selectlink_@token_link@.net"
+      neti[1] = "hwy\selectlink\load@token_period@_selectlink_@token_link_file@.net"
       
       ; write out the network that will be used to create level-of-service matrices for the next iteration (see HwySkims.job)
-      neto = "hwy\selectlink\load@token_period@_selectlink_@token_link@_renamedvars.net", exclude=V_1,TIME_1,VC_1,CSPD_1,VDT_1,VHT_1,
+      neto = "hwy\selectlink\load@token_period@_selectlink_@token_link_file@_renamedvars.net", exclude=V_1,TIME_1,VC_1,CSPD_1,VDT_1,VHT_1,
                                                                                        V1_1,V2_1,V3_1,V4_1,V5_1,V6_1,V7_1,V8_1,V9_1,V10_1,
                                                                                        V11_1,V12_1,V13_1,V14_1,V15_1,V16_1,V17_1,V18_1,V19_1,V20_1,
                                                                                        VT_1,
@@ -98,14 +97,14 @@ endloop
 run pgm = hwynet
 
    ; read in the time-period-specific assigned and averaged (over iterations) networks (see CalculateSpeeds.job)
-   neti[1] = "hwy\selectlink\loadEA_selectlink_@token_link@_renamedvars.net"
-   neti[2] = "hwy\selectlink\loadAM_selectlink_@token_link@_renamedvars.net"
-   neti[3] = "hwy\selectlink\loadMD_selectlink_@token_link@_renamedvars.net"
-   neti[4] = "hwy\selectlink\loadPM_selectlink_@token_link@_renamedvars.net"
-   neti[5] = "hwy\selectlink\loadEV_selectlink_@token_link@_renamedvars.net"
+   neti[1] = "hwy\selectlink\loadEA_selectlink_@token_link_file@_renamedvars.net"
+   neti[2] = "hwy\selectlink\loadAM_selectlink_@token_link_file@_renamedvars.net"
+   neti[3] = "hwy\selectlink\loadMD_selectlink_@token_link_file@_renamedvars.net"
+   neti[4] = "hwy\selectlink\loadPM_selectlink_@token_link_file@_renamedvars.net"
+   neti[5] = "hwy\selectlink\loadEV_selectlink_@token_link_file@_renamedvars.net"
    
    ; output network includes time-period-specific and 24-hour volumes
-   neto = "hwy\selectlink\load_selectlink_@token_link@.net", exclude = USE, VOL, CTIM, VC, CSPD, VDT, VHT,
+   neto = "hwy\selectlink\load_selectlink_@token_link_file@.net", exclude = USE, VOL, CTIM, VC, CSPD, VDT, VHT,
                                                                         VOL_DA, VOL_S2, VOL_S3, VOL_SM, VOL_HV,
                                                                         VOL_DAT, VOL_S2T, VOL_S3T, VOL_SMT, VOL_HVT,
                                                                         VOLT, VOLT_DA, VOLT_S2, VOLT_S3, VOLT_SM, VOLT_HV,
@@ -150,4 +149,4 @@ run pgm = hwynet
 
 endrun
 
-*del hwy\selectlink\loadEA_selectlink_@token_link@_renamedvars.net hwy\selectlink\loadAM_selectlink_@token_link@_renamedvars.net hwy\selectlink\loadMD_selectlink_@token_link@_renamedvars.net hwy\selectlink\loadPM_selectlink_@token_link@_renamedvars.net hwy\selectlink\loadEV_selectlink_@token_link@_renamedvars.net
+*del hwy\selectlink\loadEA_selectlink_@token_link_file@_renamedvars.net hwy\selectlink\loadAM_selectlink_@token_link_file@_renamedvars.net hwy\selectlink\loadMD_selectlink_@token_link_file@_renamedvars.net hwy\selectlink\loadPM_selectlink_@token_link_file@_renamedvars.net hwy\selectlink\loadEV_selectlink_@token_link_file@_renamedvars.net

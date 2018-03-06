@@ -10,6 +10,7 @@ library(dplyr)
 #
 network_csv_files <- c("2015.csv",
                        "2040_694.csv",
+                       "2040_694_Amd1.csv",  # This is M:\Application\Model One\RTP2017\Scenarios\2040_06_694_Amd1\OUTPUT\avgload5period_dbfto.csv
                        "2040_690.csv",
                        "2040_691.csv",
                        "2040_693.csv",
@@ -19,11 +20,11 @@ network_csv_files <- c("2015.csv",
 CITY_COUNTY_FILE <- "City-County_Lookup.csv"
 
 # and writes the file
-OUTPUT_FILE <- "CARE-melt-wEmissions_4.4.17.csv"
+OUTPUT_FILE <- "CARE-melt-wEmissions_20180221.csv"
 
 # all files are expected to be here (note R's preference for slashes)
 if (Sys.getenv("RSTUDIO_USER_IDENTITY") == "lzorn") {
-  BASE_DIR <- "C:/Users/lzorn/Box Sync/CARE Communities/CARE-Data"
+  BASE_DIR <- "C:/Users/lzorn/Box/CARE Communities/CARE-Data"
 } else {
   BASE_DIR <- "~/Desktop/CARE-Data_R"
 }
@@ -32,6 +33,9 @@ city_county_df <- read.table(file.path(BASE_DIR, CITY_COUNTY_FILE), header=TRUE,
 
 # loop through each network file
 all_networks_df <- data.frame()
+# keep this for 2040_Amd1 - to grab the CARE,RES,COMM columns so we don't have to do it in qgis
+network_2040    <- data.frame()
+
 for (network_csv_file in network_csv_files) {
   
   # read the network file
@@ -39,10 +43,20 @@ for (network_csv_file in network_csv_files) {
   cat(paste0("Reading [",network_fullpath_file,"]\n"))
   network_df <- read.table(network_fullpath_file, header=TRUE, sep=",", stringsAsFactors=FALSE)
   
+  if (network_csv_file=="2040_694.csv") {
+    network_2040 <- select(network_df, "LINKID","CARE","RES","COMM")
+  } else if (network_csv_file=="2040_694_Amd1.csv") {
+    network_df$LINKID <- paste0(as.character(network_df$A), "_", as.character(network_df$B))
+    network_df$ALT    <- "2040 Proposed Plan Amd1"
+    network_df <- left_join(network_df, network_2040)
+    print(paste("Joined",network_csv_file,"with 2040_694.csv"))
+  }
+  
   # note which file it came from
   network_df$scenario_str <- substr(network_csv_file,0,nchar(network_csv_file)-4)
   # and the year
   network_df$year <- strtoi(substr(network_csv_file,0,4))
+  # print(colnames(network_df))
   # add to all networks
   all_networks_df <- rbind(all_networks_df, network_df)
 }

@@ -7,21 +7,30 @@
 
 :: Location of travel-model-one local repo (probably including this dir)
 set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-master
+
 :: Location of INPUT and CTRAMP directory.
-set MODEL_DIR=M:\Application\Model One\STIP2017\2040_06_lmz
+:: set MODEL_DIR=M:\Application\Model One\STIP2017\2040_06_700_CC130046_680SR4Int
+
 :: Name of the input roadway network, in %MODEL_DIR%\INPUT\hwy\source
-set ROADWAY_FILE=2015_STIP_Base.net
+:: set ROADWAY_FILE=680_4.net
+
 :: City shape file
 set CITYSHAPE_FILE=M:\Development\Travel Model One\Version 05\Adding City to Master Network\Cityshapes\PBA_Cities_NAD_1983_UTM_Zone_10N.shp
 
 cd %MODEL_DIR%\INPUT
 
+:: USES LOCAL VERSION OF SCRIPT IF IT EXISTS
 ::   Input: %MODEL_DIR%\INPUT\hwy\source\%ROADWAY_FILE%
 ::  Output: %MODEL_DIR%\INPUT\hwy\source\1_withCapclass.net
 :: Summary: Sets capacities and free flow speeds and times for network links
 ::          Based on columns AT, FT, TOS, SIGCOR, TSIN, TOLLCLASS, OT
 ::          Updates columns: CAPCLASS, SPDCLASS, FFS, FFT, CAP, OT
-runtpp "%CODE_DIR%\utilities\check-network\set_capclass.job"
+if exist set_capclass.job (
+  echo Running local set_capclass.job
+  runtpp set_capclass.job
+) else (
+  runtpp "%CODE_DIR%\utilities\check-network\set_capclass.job"
+)
 if ERRORLEVEL 2 goto done
 
 :: save this for the next script

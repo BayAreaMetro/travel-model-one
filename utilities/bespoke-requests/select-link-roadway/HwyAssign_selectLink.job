@@ -86,6 +86,7 @@
 
 read file = ctramp\scripts\block\HwyIntraStep.block
 token_link = '%SELECT_LINK%'
+token_link_file = '%SELECT_LINK_FILE%'
 
 ; do, more or less, the same assignment procedure for each time period
 loop period = 1, 5
@@ -167,8 +168,8 @@ loop period = 1, 5
       mati[4] = nonres\tripsAirPax@token_period@.tpp
     
       ; loaded time-specific highway network
-      neto    = "hwy\selectlink\load@token_period@_selectlink_@token_link@.net"
-      mato    = "hwy\selectlink\load@token_period@_selectlink_@token_link@.mat", MO=1-10, NAME=vol_da,vol_s2,vol_s3,vol_sm,vol_hv,vol_daT,vol_s2T,vol_s3T,vol_smT,vol_hvT
+      neto    = "hwy\selectlink\load@token_period@_selectlink_@token_link_file@.net"
+      mato    = "hwy\selectlink\load@token_period@_selectlink_@token_link_file@.mat", MO=1-10, NAME=vol_da,vol_s2,vol_s3,vol_sm,vol_hv,vol_daT,vol_s2T,vol_s3T,vol_smT,vol_hvT
     
       ; set the assignment paramters -- equilibrium assignment, frank-wolfe
       parameters combine = equi; , enhance = 2
@@ -329,8 +330,8 @@ loop period = 1, 5
    endrun      
   
   run PGM=matrix
-   filei mati="hwy\selectlink\load@token_period@_selectlink_@token_link@.mat"
-   fileo printo[1]="hwy\selectlink\load@token_period@_selectlink_@token_link@.txt"
+   filei mati="hwy\selectlink\load@token_period@_selectlink_@token_link_file@.mat"
+   fileo printo[1]="hwy\selectlink\load@token_period@_selectlink_@token_link_file@.txt"
 
    fillmw mw[1]=mi.1.1(10)
    MW[11] = MW[1]+MW[2]+MW[3]+MW[4]+MW[5]+MW[6]+MW[7]+MW[8]+MW[9]+MW[10]
