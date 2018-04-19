@@ -1,33 +1,37 @@
-@echo off
+
+@echo on
 setlocal enabledelayedexpansion
 
-set COMBINED_DIR=Across 2040s
-set RUN_NAME_SET=2040_05_512 2040_06_512
+set COMBINED_DIR=Across-Alternatives-Round-14-Proposed-Plan-Amd1
+set RUN_NAME_SET=2015_06_002 2020_06_694 2035_06_694_Amd1 2040_06_694_Amd1
+
+copy %COMBINED_DIR%\ScenarioKey.csv ScenarioKey.csv
 
 :: Set to 1 if running from the original model run directory
 :: (e.g. subdirs = CTRAMP, database, hwy, INPUT, landuse, etc...)
 :: Set to 0 if if running from from results directory
 :: (e.g. M:\Application\, subdirs=INPUT,OUTPUT)
-set ORIGINAL_RUNDIR=1
+set ORIGINAL_RUNDIR=0
 
 IF %USERNAME%==lzorn (
   rem I AM SPECIAL
-  set CODE_DIR=E:\temp\travel-model-one_v06\model-files\scripts\core_summaries
+  set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-master\model-files\scripts\core_summaries
   set R_HOME=C:\Program Files\R\R-3.2.3
   set R_USER=%USERNAME%
   set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.2
 ) ELSE (
-  set CODE_DIR=D:\files\GitHub\travel-model-one
-  set R_HOME=C:\Program Files\R\R-3.1.1
+  set CODE_DIR=C:\Users\dory\Documents\GitHub\travel-model-one\model-files\scripts\core_summaries
+  set R_HOME=C:\Program Files\R\R-3.3.1
   set R_USER=%USERNAME%
-  set R_LIBS_USER=C:\Users\%USERNAME%\Documents\R\win-library\3.0
+  set R_LIBS_USER=C:\Users\%USERNAME%\Documents\R\win-library\3.3
 )
 
 :: save these
 set OLD_PATH=%PATH%
 set PATH=%CODE_DIR%;%PATH%
 
-set RDATA=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork PerTripTravelTime TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance VehicleMilesTraveled
+:: set RDATA=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork PerTripTravelTime TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance VehicleMilesTraveled
+set RDATA=AutomobileOwnership CommuteByIncomeHousehold PerTripTravelTime TripDistance VehicleMilesTraveled
 
 :: Create the Tablea Data Extracts covering all scenarios
 :: First, create the summary dirs list
@@ -72,24 +76,23 @@ echo Reading trnline*.csv files from TRNFILE_DIRS=
 echo   [%TRNFILE_DIRS%]
 
 if not exist "%COMBINED_DIR%\trnline.tde" (
-  FOR %%H in (EA AM MD PM EV) DO (
+FOR %%H in (EA AM MD PM EV) DO (
     FOR %%J in (loc lrf exp hvy com) DO (
       rem walk -> transit -> walk
       python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append %TRNFILE_DIRS% "%COMBINED_DIR%" trnline%%H_wlk_%%J_wlk.csv
-      IF ERRORLEVEL 1 goto done
+      IF %ERRORLEVEL% GTR 0 goto done
       rem drive -> transit -> walk
       python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append %TRNFILE_DIRS% "%COMBINED_DIR%" trnline%%H_drv_%%J_wlk.csv      
-      IF ERRORLEVEL 1 goto done
+      IF %ERRORLEVEL% GTR 0 goto done
       rem walk -> transit -> drive
       python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv"  --append %TRNFILE_DIRS% "%COMBINED_DIR%" trnline%%H_wlk_%%J_drv.csv
-      IF ERRORLEVEL 1 goto done
+      IF %ERRORLEVEL% GTR 0 goto done
     )
   )
 )
 
 :: This takes way too long so skip it by default
 goto done
-
 if not exist "%COMBINED_DIR%\trnlink.tde" (
   FOR %%H in (EA AM MD PM EV) DO (
     FOR %%J in (loc lrf exp hvy com) DO (
@@ -105,7 +108,6 @@ if not exist "%COMBINED_DIR%\trnlink.tde" (
     )
   )
 )
-
 :done
 
 set PATH=%OLD_PATH%
