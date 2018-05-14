@@ -91,7 +91,6 @@ FOR %%H in (EA AM MD PM EV) DO (
   )
 )
 
-:: This takes way too long so skip it by default
 goto done
 if not exist "%COMBINED_DIR%\trnlink.tde" (
   FOR %%H in (EA AM MD PM EV) DO (
