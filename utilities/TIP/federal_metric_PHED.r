@@ -28,8 +28,14 @@
 # set file paths
 ##################################
 
-Scenario <- "M:/Application/Model One/RTP2017/Scenarios/2030_06_694_Amd1"
-PHED_output_file <- "M:/Application/Model One/TIP2019/Excessive_delay/PHED.csv"
+Scenario <- "M:/Application/Model One/TIP2019/Scenarios/2020_06_701"
+PHED_output_file <- "M:/Application/Model One/TIP2019/Scenarios/2020_06_701/OUTPUT/metrics/federal_metric_PHED.csv"
+
+SFOakUAlinks_txt <-"M:/Application/Model One/TIP2019/Scenarios/2020_06_701/LinksInSFOakUA_2020.txt"
+SJUAlinks_txt <-"M:/Application/Model One/TIP2019/Scenarios/2020_06_701/LinksInSJUA_2020.txt"
+
+SFOakUAtaz_txt <-"M:/Application/Model One/TIP2019/Excessive_delay/SFOakUA_706TAZ.txt"
+SJUAtaz_txt <- "M:/Application/Model One/TIP2019/Excessive_delay/SJUA_336TAZ.txt"
 
 ##################################
 # Calculations for cars and trucks
@@ -37,50 +43,50 @@ PHED_output_file <- "M:/Application/Model One/TIP2019/Excessive_delay/PHED.csv"
 
 # read the standard output avgload5period_vehclasses.csv from a scenario
 file_cars_n_trucks <- paste(Scenario, "/OUTPUT/avgload5period_vehclasses.csv", sep="")
-HwyData <- read.csv(file=file_cars_n_trucks, header=TRUE, sep=",")
+RoadwayData <- read.csv(file=file_cars_n_trucks, header=TRUE, sep=",")
 
 # check number of rows in the dataset
-nrow(HwyData)
+nrow(RoadwayData)
 
 # keep cases where facility type does not equal to 6
-HwyData <- subset(HwyData, ft!=6)
-nrow(HwyData)
+RoadwayData <- subset(RoadwayData, ft!=6)
+nrow(RoadwayData)
 
 # add a column to show 60 percent of posted speed
-HwyData$ffs60pc <- HwyData$ffs*0.6
+RoadwayData$ffs60pc <- RoadwayData$ffs*0.6
 
 # determine threshold speed
-HwyData$threshold_speed <- pmax(HwyData$ffs60pc, 20)
+RoadwayData$threshold_speed <- pmax(RoadwayData$ffs60pc, 20)
 
 # determine threshold time (in minutes)
-HwyData$threshold_time <- HwyData$distance/HwyData$threshold_speed*60
+RoadwayData$threshold_time <- RoadwayData$distance/RoadwayData$threshold_speed*60
 
 #------
 # analysis by time period
 #------
 
 # determine if the link is below threshold in a certain time period
-HwyData$below_thresholdAM <- ifelse(HwyData$cspdAM<HwyData$threshold_speed, 1, 0)
-HwyData$below_thresholdPM <- ifelse(HwyData$cspdPM<HwyData$threshold_speed, 1, 0)
+RoadwayData$below_thresholdAM <- ifelse(RoadwayData$cspdAM<RoadwayData$threshold_speed, 1, 0)
+RoadwayData$below_thresholdPM <- ifelse(RoadwayData$cspdPM<RoadwayData$threshold_speed, 1, 0)
 
 # congested travel time (ctim) - threshold_time
-HwyData$timediffAM <- HwyData$ctimAM - HwyData$threshold_time
-HwyData$timediffPM <- HwyData$ctimPM - HwyData$threshold_time
+RoadwayData$timediffAM <- RoadwayData$ctimAM - RoadwayData$threshold_time
+RoadwayData$timediffPM <- RoadwayData$ctimPM - RoadwayData$threshold_time
 
 # excessive delay by link in minutes
-HwyData$delayAM = HwyData$below_thresholdAM * HwyData$timediffAM
-HwyData$delayPM = HwyData$below_thresholdPM * HwyData$timediffPM
+RoadwayData$delayAM = RoadwayData$below_thresholdAM * RoadwayData$timediffAM
+RoadwayData$delayPM = RoadwayData$below_thresholdPM * RoadwayData$timediffPM
 
 # excessive delay taking volume into account
-HwyData$delayXvolAM = HwyData$delayAM * (HwyData$volAM_da * 1 + HwyData$volAM_s2 * 2 + HwyData$volAM_s3 * 3 + HwyData$volAM_sm * 1 + HwyData$volAM_hv * 1
-			+ HwyData$volAM_dat * 1 + HwyData$volAM_s2t * 2 + HwyData$volAM_s3t * 3 + HwyData$volAM_smt * 1 + HwyData$volAM_hvt * 1)
+RoadwayData$delayXvolAM = RoadwayData$delayAM * (RoadwayData$volAM_da * 1 + RoadwayData$volAM_s2 * 2 + RoadwayData$volAM_s3 * 3 + RoadwayData$volAM_sm * 1 + RoadwayData$volAM_hv * 1
+			+ RoadwayData$volAM_dat * 1 + RoadwayData$volAM_s2t * 2 + RoadwayData$volAM_s3t * 3 + RoadwayData$volAM_smt * 1 + RoadwayData$volAM_hvt * 1)
 
-HwyData$delayXvolPM = HwyData$delayPM * (HwyData$volPM_da * 1 + HwyData$volPM_s2 * 2 + HwyData$volPM_s3 * 3 + HwyData$volPM_sm * 1 + HwyData$volPM_hv * 1
-			+ HwyData$volPM_dat * 1 + HwyData$volPM_s2t * 2 + HwyData$volPM_s3t * 3 + HwyData$volPM_smt * 1 + HwyData$volPM_hvt * 1)
+RoadwayData$delayXvolPM = RoadwayData$delayPM * (RoadwayData$volPM_da * 1 + RoadwayData$volPM_s2 * 2 + RoadwayData$volPM_s3 * 3 + RoadwayData$volPM_sm * 1 + RoadwayData$volPM_hv * 1
+			+ RoadwayData$volPM_dat * 1 + RoadwayData$volPM_s2t * 2 + RoadwayData$volPM_s3t * 3 + RoadwayData$volPM_smt * 1 + RoadwayData$volPM_hvt * 1)
 
 # total excessive delay in hours - cars and trucks
-sum(HwyData$delayXvolAM)/60
-sum(HwyData$delayXvolPM)/60
+sum(RoadwayData$delayXvolAM)/60
+sum(RoadwayData$delayXvolPM)/60
 
 ##################################
 # Calculate for delay on buses
@@ -190,43 +196,92 @@ BusData15FilesAM$bus_vol <- rowSums(BusData15FilesAM[,-1:-2])
 BusData15FilesPM$bus_vol <- rowSums(BusData15FilesPM[,-1:-2])
 
 # write out a file to check
-write.csv(BusData15FilesAM, file="M:/Application/Model One/TIP2019/Excessive_delay/temp_outfile_am.csv")
-write.csv(BusData15FilesAM, file="M:/Application/Model One/TIP2019/Excessive_delay/temp_outfile_pm.csv")
+# write.csv(BusData15FilesAM, file="M:/Application/Model One/TIP2019/Excessive_delay/temp_outfile_am.csv")
+# write.csv(BusData15FilesAM, file="M:/Application/Model One/TIP2019/Excessive_delay/temp_outfile_pm.csv")
 
 # -------
-# merge the bus volume to the HwyFile
+# merge the bus volume to the RoadwayFile
 # ------
-HwyBusDataAM <- left_join(HwyData, BusData15FilesAM, by = c("a" = "A", "b" = "B"))
-HwyBusDataPM <- left_join(HwyData, BusData15FilesPM, by = c("a" = "A", "b" = "B"))
+RoadwayBusDataAM <- left_join(RoadwayData, BusData15FilesAM, by = c("a" = "A", "b" = "B"))
+RoadwayBusDataPM <- left_join(RoadwayData, BusData15FilesPM, by = c("a" = "A", "b" = "B"))
 
 # fill in the NAs after the left join
-HwyBusDataAM$bus_vol[is.na(HwyBusDataAM$bus_vol)] <- 0
-HwyBusDataPM$bus_vol[is.na(HwyBusDataPM$bus_vol)] <- 0
+RoadwayBusDataAM$bus_vol[is.na(RoadwayBusDataAM$bus_vol)] <- 0
+RoadwayBusDataPM$bus_vol[is.na(RoadwayBusDataPM$bus_vol)] <- 0
 
-HwyBusDataAM$delayXbus_vol <- HwyBusDataAM$delayAM * HwyBusDataAM$bus_vol
-HwyBusDataPM$delayXbus_vol <- HwyBusDataPM$delayPM *HwyBusDataPM$ bus_vol
+RoadwayBusDataAM$delayXbus_vol <- RoadwayBusDataAM$delayAM * RoadwayBusDataAM$bus_vol
+RoadwayBusDataPM$delayXbus_vol <- RoadwayBusDataPM$delayPM *RoadwayBusDataPM$ bus_vol
 
 # total excessive delay in hours - bus only
-sum(HwyBusDataAM$delayXbus_vol)/60
-sum(HwyBusDataPM$delayXbus_vol)/60
+sum(RoadwayBusDataAM$delayXbus_vol)/60
+sum(RoadwayBusDataPM$delayXbus_vol)/60
 
 # total excessive delay in hours - car, bus, and trucks
-(sum(HwyBusDataAM$delayXvolAM) + sum(HwyBusDataAM$delayXbus_vol))/60
-(sum(HwyBusDataPM$delayXvolPM) + sum(HwyBusDataPM$delayXbus_vol))/60
+(sum(RoadwayBusDataAM$delayXvolAM) + sum(RoadwayBusDataAM$delayXbus_vol))/60
+(sum(RoadwayBusDataPM$delayXvolPM) + sum(RoadwayBusDataPM$delayXbus_vol))/60
+
+
+##################################
+# Add geographic definitions
+##################################
+
+# Read the geographic defintions
+SFOakUA_links <- read.csv(file=SFOakUAlinks_txt, header=TRUE, sep=",")
+SJUA_links <- read.csv(file=SJUAlinks_txt, header=TRUE, sep=",")
+
+SFOakUA_links <- select(SFOakUA_links, A, B, DISTANCE)
+SJUA_links <- select(SJUA_links, A, B, DISTANCE)
+
+# merge files indicating links that lie within the two urbanized areas respectively
+SFOakUA_RoadwayBusDataAM <- left_join(RoadwayBusDataAM, SFOakUA_links, by = c("a" = "A", "b" = "B"))
+SFOakUA_RoadwayBusDataPM <- left_join(RoadwayBusDataPM, SFOakUA_links, by = c("a" = "A", "b" = "B"))
+
+SJUA_RoadwayBusDataAM <- left_join(RoadwayBusDataAM, SJUA_links, by = c("a" = "A", "b" = "B"))
+SJUA_RoadwayBusDataPM <- left_join(RoadwayBusDataPM, SJUA_links, by = c("a" = "A", "b" = "B"))
+
+# filter out the irrelevant links
+SFOakUA_RoadwayBusDataAM <- filter(SFOakUA_RoadwayBusDataAM, !is.na(DISTANCE))
+SFOakUA_RoadwayBusDataPM <- filter(SFOakUA_RoadwayBusDataPM, !is.na(DISTANCE))
+
+SJUA_RoadwayBusDataAM <- filter(SJUA_RoadwayBusDataAM, !is.na(DISTANCE))
+SJUA_RoadwayBusDataPM <- filter(SJUA_RoadwayBusDataPM, !is.na(DISTANCE))
 
 ##################################
 # Calculate population
 ##################################
 
-# read the activity pattern file to get total population
-file_population <- paste(Scenario, "/OUTPUT/core_summaries/ActivityPattern.csv", sep="")
-ActivityData <- read.csv(file=file_population, header=TRUE, sep=",")
-totpop <- sum(ActivityData$freq)
-totpop
+# read the VMT file to get total population
+file_population <- paste(Scenario, "/OUTPUT/core_summaries/AutoTripsVMT_personsHomeWork.csv", sep="")
+VMTData <- read.csv(file=file_population, header=TRUE, sep=",")
+totpop_BayArea <- sum(VMTData$freq)
+totpop_BayArea
 
-# total excessive delay *per person* in hours - car, bus, and trucks
-sum(HwyBusDataAM$delayXvolAM + HwyBusDataAM$delayXbus_vol)/60/totpop
-sum(HwyBusDataPM$delayXvolPM + HwyBusDataPM$delayXbus_vol)/60/totpop
+# read files indicating tazs that lie within the two urbanized areas respectively
+SFOakUA_TAZ <- read.csv(file=SFOakUAtaz_txt, header=TRUE, sep=",")
+SJUA_TAZ <- read.csv(file=SJUAtaz_txt, header=TRUE, sep=",")
+
+# merge the files
+VMTData_SFOakUA <- left_join(VMTData,SFOakUA_TAZ, by = c("taz" = "TAZ1454"))
+VMTData_SJUA <- left_join(VMTData,SJUA_TAZ, by = c("taz" = "TAZ1454"))
+
+# filter out the irrelevant zones
+VMTData_SFOakUA <- filter(VMTData_SFOakUA, !is.na(FID))
+VMTData_SJUA <- filter(VMTData_SJUA, !is.na(FID))
+
+# calculate total population by UA
+SFOakUA_totpop <- sum(VMTData_SFOakUA$freq)
+SJUA_totpop <- sum(VMTData_SJUA$freq) 
+
+# display total population by UA
+SFOakUA_totpop
+SJUA_totpop 
+
+# total excessive delay *per person* in hours - car, bus, and trucks (per day)
+SFOakUA_AM <-sum(SFOakUA_RoadwayBusDataAM$delayXvolAM + SFOakUA_RoadwayBusDataAM$delayXbus_vol)/60/SFOakUA_totpop
+SFOakUA_PM <-sum(SFOakUA_RoadwayBusDataPM$delayXvolPM + SFOakUA_RoadwayBusDataPM$delayXbus_vol)/60/SFOakUA_totpop
+
+SJUA_AM <- sum(SJUA_RoadwayBusDataAM$delayXvolAM + SJUA_RoadwayBusDataAM$delayXbus_vol)/60/SJUA_totpop
+SJUA_PM <- sum(SJUA_RoadwayBusDataPM$delayXvolPM + SJUA_RoadwayBusDataPM$delayXbus_vol)/60/SJUA_totpop
 
 
 ##################################
@@ -237,9 +292,15 @@ sum(HwyBusDataPM$delayXvolPM + HwyBusDataPM$delayXbus_vol)/60/totpop
 # although 52*7 = 364 and the maximum number of days in a year is 366, so the max number of weekday in a year can be 262
 
 # total excessive delay *per person* in hours - car, bus, and trucks - annualized
-PHED <- (sum(HwyBusDataAM$delayXvolAM + HwyBusDataAM$delayXbus_vol)/60/totpop + sum(HwyBusDataPM$delayXvolPM + HwyBusDataPM$delayXbus_vol)/60/totpop)* 260
-PHED
+PHED_SFOakUA <- (SFOakUA_AM + SFOakUA_PM)* 260
+PHED_SJUA <- (SJUA_AM + SJUA_PM)* 260
+
+PHED_SFOakUA
+PHED_SJUA
+
+PHED <- data.frame(PHED_SFOakUA, PHED_SJUA)
 
 # write out the results
 # Annual Hours of Peak Hour Excessive Delay (PHED) Per Capita
-write.csv(PHED, file=(PHED_output_file))
+write.table(PHED, file=(PHED_output_file), sep = ",", row.names=FALSE, col.names=TRUE)
+
