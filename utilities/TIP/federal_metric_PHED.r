@@ -18,9 +18,6 @@
 
 # Excessive delay is calculated for three modes - car (drive alone, shared by two, and shared by 3+), trucks (small and medium, and heavy vehicles), and buses.
 
-# relevant script for transit:
-# https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/PBA40/metrics/bus_opcost.py
-
 ########################################################################################
 
 
@@ -28,11 +25,11 @@
 # set file paths
 ##################################
 
-Scenario <- "M:/Application/Model One/TIP2019/Scenarios/2020_06_701"
-PHED_output_file <- "M:/Application/Model One/TIP2019/Scenarios/2020_06_701/OUTPUT/metrics/federal_metric_PHED.csv"
+Scenario <- "M:/Application/Model One/TIP2019/Scenarios/2030_06_701"
+PHED_output_file <- "M:/Application/Model One/TIP2019/Scenarios/2030_06_701/OUTPUT/metrics/federal_metric_PHED_2030_06_701.csv"
 
-SFOakUAlinks_txt <-"M:/Application/Model One/TIP2019/Scenarios/2020_06_701/LinksInSFOakUA_2020.txt"
-SJUAlinks_txt <-"M:/Application/Model One/TIP2019/Scenarios/2020_06_701/LinksInSJUA_2020.txt"
+SFOakUAlinks_txt <-"M:/Application/Model One/TIP2019/Excessive_delay/LinksInSFOakUA_2020n2022.txt"
+SJUAlinks_txt <-"M:/Application/Model One/TIP2019/Excessive_delay/LinksInSJUA_2020n2022.txt"
 
 SFOakUAtaz_txt <-"M:/Application/Model One/TIP2019/Excessive_delay/SFOakUA_706TAZ.txt"
 SJUAtaz_txt <- "M:/Application/Model One/TIP2019/Excessive_delay/SJUA_336TAZ.txt"
@@ -210,7 +207,7 @@ RoadwayBusDataAM$bus_vol[is.na(RoadwayBusDataAM$bus_vol)] <- 0
 RoadwayBusDataPM$bus_vol[is.na(RoadwayBusDataPM$bus_vol)] <- 0
 
 RoadwayBusDataAM$delayXbus_vol <- RoadwayBusDataAM$delayAM * RoadwayBusDataAM$bus_vol
-RoadwayBusDataPM$delayXbus_vol <- RoadwayBusDataPM$delayPM *RoadwayBusDataPM$ bus_vol
+RoadwayBusDataPM$delayXbus_vol <- RoadwayBusDataPM$delayPM * RoadwayBusDataPM$bus_vol
 
 # total excessive delay in hours - bus only
 sum(RoadwayBusDataAM$delayXbus_vol)/60
@@ -270,11 +267,11 @@ VMTData_SJUA <- filter(VMTData_SJUA, !is.na(FID))
 
 # calculate total population by UA
 SFOakUA_totpop <- sum(VMTData_SFOakUA$freq)
-SJUA_totpop <- sum(VMTData_SJUA$freq) 
+SJUA_totpop <- sum(VMTData_SJUA$freq)
 
 # display total population by UA
 SFOakUA_totpop
-SJUA_totpop 
+SJUA_totpop
 
 # total excessive delay *per person* in hours - car, bus, and trucks (per day)
 SFOakUA_AM <-sum(SFOakUA_RoadwayBusDataAM$delayXvolAM + SFOakUA_RoadwayBusDataAM$delayXbus_vol)/60/SFOakUA_totpop
@@ -287,7 +284,7 @@ SJUA_PM <- sum(SJUA_RoadwayBusDataPM$delayXvolPM + SJUA_RoadwayBusDataPM$delayXb
 ##################################
 # Annualize the results
 ##################################
-# assume 260 days 
+# assume 260 days
 # 52 weeks * 5 weekdays per week = 260 days
 # although 52*7 = 364 and the maximum number of days in a year is 366, so the max number of weekday in a year can be 262
 
@@ -303,4 +300,3 @@ PHED <- data.frame(PHED_SFOakUA, PHED_SJUA)
 # write out the results
 # Annual Hours of Peak Hour Excessive Delay (PHED) Per Capita
 write.table(PHED, file=(PHED_output_file), sep = ",", row.names=FALSE, col.names=TRUE)
-
