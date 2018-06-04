@@ -17,6 +17,11 @@ set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-master
 :: City shape file
 set CITYSHAPE_FILE=M:\Development\Travel Model One\Version 05\Adding City to Master Network\Cityshapes\PBA_Cities_NAD_1983_UTM_Zone_10N.shp
 
+set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files (x86)\Citilabs\CubeVoyager
+set GAWK_PATH=M:\Software\Gawk\bin
+SET PATH=%TPP_PATH%;%GAWK_PATH%;%PATH% 
+
+
 cd %MODEL_DIR%\INPUT
 
 :: USES LOCAL VERSION OF SCRIPT IF IT EXISTS
