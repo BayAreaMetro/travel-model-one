@@ -4,10 +4,11 @@ The Metropolitan Transportation Commission (MTC) maintains a simulation model of
 ## Model Versions
 The following model versions are available in the repository:
 
-1. Version 0.3 -- Mantained in branch [`v03`](https://github.com/BayAreaMetro/travel-model-one/tree/v03).  For additional details, please see [here](https://github.com/BayAreaMetro/modeling-website/wiki/Development). 
-2. Version 0.4 -- Mantained in branch [`v04`](https://github.com/BayAreaMetro/travel-model-one/tree/v04).  For additional details, please see [here](https://github.com/BayAreaMetro/modeling-website/wiki/Development).
-3. Version 0.5 -- Mantained in branch [`v05`](https://github.com/BayAreaMetro/travel-model-one/tree/v05).  For additional details, please see [here](https://github.com/BayAreaMetro/modeling-website/wiki/Development).
-3. Version 0.6 -- Mantained in branch [`master`](https://github.com/BayAreaMetro/travel-model-one/tree/master).  For additional details, please see [here](https://github.com/BayAreaMetro/modeling-website/wiki/Development).
+1. Version 0.3 -- Maintained in branch [`v03`](https://github.com/BayAreaMetro/travel-model-one/tree/v03).
+2. Version 0.4 -- Maintained in branch [`v04`](https://github.com/BayAreaMetro/travel-model-one/tree/v04).
+3. Version 0.5 -- Maintained in branch [`v05`](https://github.com/BayAreaMetro/travel-model-one/tree/v05).
+3. Version 0.6 -- Maintained in branch [`v06`](https://github.com/BayAreaMetro/travel-model-one/tree/v06).
+4. Version 1.5 -- Maintained in branch [`master`](https://github.com/BayAreaMetro/travel-model-one/tree/master).
 
 For additional details about the different versions, please see [here](https://github.com/BayAreaMetro/modeling-website/wiki/Development)
 Any other branches are exploratory and not used in our planning work.
