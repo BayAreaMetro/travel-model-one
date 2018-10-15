@@ -12,30 +12,29 @@
 
 # Libraries
 library(lubridate)
+library(openxlsx)
 library(dplyr)
 
 #### Remote file names
 
-F_INPUT_LEGACY_RDATA   = "M:/Data/OnBoard/Data and Reports/_data Standardized/survey_legacy.RData"
-F_INPUT_STANDARD_RDATA = "M:/Data/OnBoard/Data and Reports/_data Standardized/survey_standard.RData"
+F_INPUT_SURVEY_DIR     = "M:/Data/OnBoard/Data and Reports/_data Standardized"
+F_INPUT_LEGACY_RDATA   = file.path(F_INPUT_SURVEY_DIR, "survey_legacy.RData")
+F_INPUT_STANDARD_RDATA = file.path(F_INPUT_SURVEY_DIR, "survey_standard.RData")
 
-F_INPUT_MODE_CODES = "M:/Development/Travel Model One/Validation/Version 05/2015_06_002/mode_code_database.csv"
+F_VALIDATION_DIR       = "M:/Development/Travel Model One/Validation/Version 05/2015_06_002"
+F_INPUT_RIDERSHIP      = "M:/Data/Transit/2015 Ridership/transit ridership growth database.xlsx"
+F_INPUT_ESTIMATED      = file.path(F_VALIDATION_DIR, "trnline.csv")
 
-F_INPUT_RIDERSHIP = "M:/Development/Travel Model One/Validation/Version 05/2015_06_002/ridership_database.csv"
+F_INPUT_MUNI_APC       = "M:/Data/Transit/Muni APC Through Time/consolidated-database.csv"
 
-F_INPUT_ESTIMATED = "M:/Development/Travel Model One/Validation/Version 05/2015_06_002/trnline.csv"
-
-F_INPUT_MUNI_APC = "M:/Data/Transit/Muni APC Through Time/consolidated-database.csv"
-
-F_OUTPUT_DIR      = "M:/Development/Travel Model One/Validation/Version 05/2015_06_002"
-F_OUTPUT_OBS_EST  = "observed_and_estimated_ridership.csv"
-F_OUTPUT_MUNI_OBS = "muni_observed.csv"
+F_OUTPUT_DIR          = F_VALIDATION_DIR
+F_OUTPUT_OBS_EST      = "observed_and_estimated_ridership.csv"
+F_OUTPUT_MUNI_OBS     = "muni_observed.csv"
 
 
 #### Data reads
-mode_codes_df <- read.table(file = F_INPUT_MODE_CODES, header = TRUE, sep = ",", stringsAsFactors = FALSE)
-
-ridership_df <- read.table(file = F_INPUT_RIDERSHIP, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+mode_codes_df <- read.xlsx(F_INPUT_RIDERSHIP, sheet="mode code database", colNames=TRUE)
+ridership_df  <- read.xlsx(F_INPUT_RIDERSHIP, sheet="ridership database", colNames=TRUE)
 
 # estimated_df has columns name, mode (number), total.boardings, ...
 estimated_df <- read.table(file = F_INPUT_ESTIMATED, header = TRUE, sep = ",", stringsAsFactors = FALSE)
@@ -211,7 +210,7 @@ observed_mode_code <- rbind(observed_mode_code,
 remove(bus_codes,all_bus_cases)
 
 #### Find modes for which we have estimates, but nothing observed
-output <- left_join(estimated_mode_code, observed_mode_code)
+output <- full_join(estimated_mode_code, observed_mode_code)
 
 find_missing <- output %>%
   filter(!(is.na(estimated_boardings))) %>%
