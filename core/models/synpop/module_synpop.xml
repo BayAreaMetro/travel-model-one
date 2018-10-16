@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="module_synpop" default="compile.module.synpop">
+  <dirname property="module.synpop.basedir" file="${ant.file.module_synpop}"/>
+  
+  <property name="module.jdk.home.synpop" value="${project.jdk.home}"/>
+  <property name="module.jdk.classpath.synpop" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.synpop" value="${compiler.args}"/>
+  
+  <property name="synpop.output.dir" value="${module.synpop.basedir}/build/classes"/>
+  <property name="synpop.testoutput.dir" value="${module.synpop.basedir}/build/classes"/>
+  
+  <path id="synpop.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="synpop.module.classpath">
+    <path refid="${module.jdk.classpath.synpop}"/>
+    <pathelement location="${common-base.output.dir}"/>
+    <pathelement location="${module.synpop.basedir}/../../third-party/logging-log4j-1.2.9/log4j-1.2.9.jar"/>
+    <pathelement location="${reference.output.dir}"/>
+    <pathelement location="${censusdata.output.dir}"/>
+    <pathelement location="${common-daf-v2.output.dir}"/>
+    <pathelement location="${utils.output.dir}"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.synpop"/>
+  
+  <patternset id="excluded.from.compilation.synpop">
+    <patternset refid="excluded.from.module.synpop"/>
+    <patternset refid="compiler.excluded"/>
+  </patternset>
+  
+  <path id="synpop.module.sourcepath">
+    <dirset dir="${module.synpop.basedir}">
+      <include name="src/java"/>
+    </dirset>
+  </path>
+  
+  
+  <!-- Import module build files -->
+	<import file="${basedir}/../../cmf/common-base/module_common-base.xml"/>
+    <import file="${basedir}/../../cmf/common-daf-v2/module_common-daf-v2.xml"/>
+    <import file="${basedir}/../../models/reference/module_reference.xml"/>
+    <import file="${basedir}/../../models/utils/module_utils.xml"/>
+    <import file="${basedir}/../../models/censusdata/module_censusdata.xml"/>
+
+  <target name="compile.module.synpop" depends="compile.module.common-base, compile.module.reference, compile.module.common-daf-v2, compile.module.utils, compile.module.censusdata" description="compile module synpop production classes">
+    <mkdir dir="${synpop.output.dir}"/>
+    <javac destdir="${synpop.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.synpop}/bin/javac">
+      <compilerarg line="${compiler.args.synpop}"/>
+      <bootclasspath refid="synpop.module.bootclasspath"/>
+      <classpath refid="synpop.module.classpath"/>
+      <src refid="synpop.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.synpop"/>
+    </javac>
+    <copy todir="${synpop.output.dir}">
+      <fileset dir="${module.synpop.basedir}/src/java">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+        <patternset refid="excluded.from.compilation.synpop"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="clean.module.synpop" description="cleanup module">
+    <delete dir="${synpop.output.dir}"/>
+    <delete dir="${synpop.testoutput.dir}"/>
+  </target>
+</project>

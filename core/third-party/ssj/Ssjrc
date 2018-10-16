@@ -1,0 +1,17 @@
+#!/bin/tcsh
+
+if ( ! $?SSJHOME ) then
+    echo "You must set SSJHOME before calling this script."
+    exit
+endif
+
+if ( ! $?CLASSPATH ) then
+    setenv CLASSPATH
+endif
+if ( ! $?LD_LIBRARY_PATH ) then
+    setenv LD_LIBRARY_PATH
+endif
+
+setenv LD_LIBRARY_PATH $SSJHOME/lib:$LD_LIBRARY_PATH
+setenv CLASSPATH .:$SSJHOME/lib/ssj.jar:$SSJHOME/lib/colt.jar:$CLASSPATH
+alias cdssj 'cd $SSJHOME/\!*'

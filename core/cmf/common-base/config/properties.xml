@@ -1,0 +1,63 @@
+<!-- Common Ant properties -->
+
+
+<!-- Access values defined in the environment -->
+<property environment="env"/>
+
+<!-- Load user specific properties first -->
+<property name="user.properties.file" location="${user.home}/.build.properties"/>
+
+<!-- Load local properties from file -->
+<property file="build.properties"/>
+
+
+<!-- Directory properties -->
+<property name="repository.dir" location="${env.REPOSITORY_DIR}"/>
+<property name="projects.dir" location="${env.REPOSITORY_DIR}/projects"/>
+<property name="models.dir" location="${env.REPOSITORY_DIR}/models"/>
+<property name="cmf.dir" location="${env.REPOSITORY_DIR}/cmf"/>
+<property name="thirdParty.dir" location="${env.REPOSITORY_DIR}/third-party"/>
+<property name="root.dir" location="${basedir}"/>
+<property name="build.dir" location="build"/>
+<property name="build.classes.dir" location="build/classes"/>
+<property name="lib.dir" location="lib"/>
+<property name="release.dir" location="release"/>
+<property name="src.dir" location="src/java"/>
+
+<!-- Java properties -->
+<property name="debug" value="on"/>
+<property name="optimize" value="off"/>
+<property name="deprecation" value="off"/>
+<property name="minMem" value="256"/>
+<property name="maxMem" value="256"/>
+<property name="args" value=""/>
+<property name="jvmargs" value=""/>
+<property name="logFile" value="basic_log4j.xml"/>
+
+<!-- Project properties -->
+<property name="common-base.dir" location="${cmf.dir}/common-base"/>
+<property name="common-assign.dir" location="${cmf.dir}/common-assign"/>
+<property name="common-daf-v1.dir" location="${cmf.dir}/common-daf-v1"/>
+<property name="common-daf-v2.dir" location="${cmf.dir}/common-daf-v2"/>
+<property name="common-daf-v3.dir" location="${cmf.dir}/common-daf-v3"/>
+<property name="benchmark-assign.dir" location="${cmf.dir}/benchmark-assign"/>
+<property name="jakarta-commons.dir" location="${thirdParty.dir}/jakarta-commons"/>
+<property name="log4j.dir" location="${thirdParty.dir}/logging-log4j-1.2.9"/>
+<property name="calibrator.dir" location="${models.dir}/calibrator"/>
+<property name="pecas.dir" location="${models.dir}/pecas"/>
+<property name="tlumip.dir" location="${projects.dir}/tlumip"/>
+<property name="dafapps.dir" location="${cmf.dir}/dafapps"/>
+<property name="censusdata.dir" location="${models.dir}/censusdata"/>
+<property name="synpop.dir" location="${models.dir}/synpop"/>
+<property name="utils.dir" location="${models.dir}/utils"/>
+<property name="rctc.dir" location="${projects.dir}/rctc"/>
+<property name="pasaat.dir" location="${models.dir}/pasaat"/>
+<property name="pasaat_swim.dir" location="${models.dir}/pasaat_swim"/>
+<property name="reference.dir" location="${models.dir}/reference"/>
+<property name="sawdust.dir" location="${env.REPOSITORY_DIR}/sawdust"/>
+<property name="osmp.models.dir" location="${env.REPOSITORY_DIR}/osmp_models"/>
+<property name="osmp.pasaat.dir" location="${osmp.models.dir}/pasaat"/>
+<property name="osmp.synpop.dir" location="${osmp.models.dir}/synpop"/>
+<property name="jppf.dir" location="${thirdParty.dir}/jppf-2.4"/>
+<property name="ctrampIf.dir" location="${models.dir}/ctrampIf"/>
+<property name="ssj.dir" location="${thirdParty.dir}/ssj"/>

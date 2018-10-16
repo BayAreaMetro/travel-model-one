@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<!--
+ A simple configuration file for the Log4j logging classes. Basic FILE and CONSOLE
+ Appenders are created. Also, debug logger output is sent to a separate DEBUG-FILE.
+-->
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+<!-- Configure the console and file appenders -->
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss:SSS}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="event.log"/>
+        <param name="Append" value="true"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss:SSS}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+<!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+<!-- Configures the performance timer log file -->
+<!--
+    <appender name="PERFORMANCE-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="event-performance.log"/>
+        <param name="Append" value="true"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%m%n"/>
+        </layout>
+    </appender>
+
+
+    <logger name="performance" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="PERFORMANCE-FILE"/>
+    </logger>
+-->
+
+<!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+<!-- Configures the debug log file -->
+    <appender name="DEBUG-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="event-debug.log"/>
+        <param name="Append" value="true"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss:SSS}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+<!-- "debug" logger statements will be sent to DEBUG-FILE -->
+    <logger name="debug" additivity="false">
+        <level value="debug"/>
+        <appender-ref ref="DEBUG-FILE"/>
+    </logger>
+
+
+<!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+<!-- Configures the root/default logger -->
+<!-- The default logger will log all levels (debug and above) and above to both CONSOLE and FILE -->
+<!-- Logging level order is: debug -> info -> warn -> error -> fatal -->
+    <root>
+        <level value="debug"/>
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+        
+</log4j:configuration>

@@ -1,0 +1,114 @@
+<!-- Ant targets -->
+
+
+<!-- ********************************************************* -->
+<!-- Display targets supported in this build file -->
+<target name="usage">
+    <echo message=""/>
+    <echo message=" ${ant.project.name} targets:"/>
+    <echo message=""/>
+    <echo message=" 'ant all' - run clean, init, build, release"/>
+    <echo message=" 'ant clean' - remove build directory"/>
+    <echo message=" 'ant build' - compile the project"/>
+    <echo message=" 'ant release' - build a set of jar files for release"/>
+    <echo message=" 'ant runclass' - run a class in a new Java VM"/>
+    <echo message="      eg. ant runclass -Dclass=com.pb.common.logging.LoggerTest'"/>
+    <echo message=""/>
+</target>
+
+
+<!-- ********************************************************* -->
+<!-- Prepare to compile the project -->
+<target name="all" depends="clean,init,build,release">
+</target>
+
+
+<!-- ********************************************************* -->
+<!-- Clean up the build directory -->
+<target name="clean">
+
+    <echo message="------------${build.classes.dir}"/>
+    <delete dir="${build.classes.dir}"/>
+    <!-- <delete dir="${release.dir}"/> -->
+</target>
+
+
+<!-- ********************************************************* -->
+<!-- Initialize -->
+<target name="init">
+    <echo message="****** Building ${ant.project.name}"/>
+    <tstamp/>
+
+<!--
+    <fail message="REPOSITORY_DIR environment variable not set" unless="${repository.dir}"/>
+-->
+    <property name="build.classes.missing" value="false"/>
+
+    <!-- Create classes dir if it doesn't exist -->
+    <condition property="build.classes.missing" value="true">
+      <not>
+        <available file="${build.classes.dir}" type="dir"/>
+      </not>
+    </condition>
+
+    <antcall target="makedir" inheritall="true"/>
+</target>
+
+
+<!-- ********************************************************* -->
+<!-- Create the build directory if it doesn't exist -->
+<target name="makedir" if="build.classes.missing">
+    <mkdir dir="${build.classes.dir}" />
+</target>
+
+
+<!-- ********************************************************* -->
+<!-- Compile: pre-build is defined in main script -->
+<target name="build" depends="init,pre-build">
+
+    <javac srcdir="${src.dir}"
+        destdir="${build.classes.dir}" 
+        includes="**/*" 
+        debug="${debug}"
+        optimize="${optimize}" 
+        deprecation="${deprecation}">
+        <classpath refid="compile.classpath"/>
+    </javac>
+</target>
+
+
+<!-- ********************************************************* -->
+<!-- Make a jar file with all classes and zip files combined -->
+<target name="makejar" depends="">
+
+    <mkdir dir="${release.dir}"/>
+    <delete file="${release.dir}/${ant.project.name}.jar"/>
+
+    <jar update="true" destfile="${release.dir}/${ant.project.name}.jar">
+
+        <fileset dir="${build.classes.dir}"/>
+        <zipgroupfileset dir="${basedir}" includes="lib/*.zip,lib/*.jar"/>
+    </jar>
+</target>
+
+
+<!-- ********************************************************* -->
+<!-- Run a class in the same VM as Ant -->
+<target name="runclass">
+    <echo message="Running ${class}"/>
+
+    <java classname="${class}" fork="yes">
+        <jvmarg value="-Xms${minMem}m"/>
+        <jvmarg value="-Xmx${maxMem}m"/>
+        <jvmarg value="-Djava.util.logging.config.file=${logFile}"/>
+
+        <jvmarg value="${jvmargs}"/>
+        <arg line="${args}"/>
+
+        <classpath refid="compile.classpath"/>
+    </java>
+</target>
+
+<!--
+<jvmarg value="-Xrunhprof:cpu=samples,file=log.txt,depth=3"/> 
+-->

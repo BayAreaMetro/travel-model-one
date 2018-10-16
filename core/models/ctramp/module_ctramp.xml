@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="module_ctramp" default="compile.module.ctramp">
+  <dirname property="module.ctramp.basedir" file="${ant.file.module_ctramp}"/>
+  
+  <property name="module.jdk.home.ctramp" value="${project.jdk.home}"/>
+  <property name="module.jdk.classpath.ctramp" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.ctramp" value="${compiler.args}"/>
+  
+  <property name="ctramp.output.dir" value="${module.ctramp.basedir}/build/classes"/>
+  <property name="ctramp.testoutput.dir" value="${module.ctramp.basedir}/build/classes"/>
+  
+  <path id="ctramp.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="ctramp.module.classpath">
+    <path refid="${module.jdk.classpath.ctramp}"/>
+    <pathelement location="${common-base.output.dir}"/>
+    <pathelement location="${module.ctramp.basedir}/../../third-party/logging-log4j-1.2.9/log4j-1.2.9.jar"/>
+    <pathelement location="${module.ctramp.basedir}/../../cmf/common-base/lib/cajo.jar"/>
+    <pathelement location="${module.ctramp.basedir}/../../cmf/common-base/lib/dxml.jar"/>
+    <pathelement location="${module.ctramp.basedir}/../../cmf/common-base/lib/dx.jar"/>
+    <pathelement location="${module.common-base.basedir}/../../third-party/jexcelapi/jxl.jar"/>
+    <!-- <pathelement location="${module.common-base.basedir}/lib/jxl.jar"/> -->
+    <pathelement location="${module.ctramp.basedir}/../../cmf/common-base/lib/junit-4.1.jar"/>
+    <pathelement location="${module.ctramp.basedir}/../../third-party/sqlitejdbc/*"/>
+    <pathelement location="${module.ctramp.basedir}/../../third-party/jppf-2.4/JPPF/build/jppf-common.jar"/>
+    <pathelement location="${module.ctramp.basedir}/../../third-party/jppf-2.4/JPPF/build/jppf-common-node.jar"/>
+    <pathelement location="${module.ctramp.basedir}/../../third-party/jppf-2.4/JPPF/build/jppf-client.jar"/>
+    <pathelement location="${module.ctramp.basedir}/../../third-party/jppf-2.4/JPPF/build/jppf-server.jar"/>
+    <pathelement location="${synpop.output.dir}"/>
+    <!-- <pathelement location="${module.ctramp.basedir}/../../cmf/common-daf-rpc/lib/xmlrpc-3.0-all.jar"/> -->
+  </path>
+  
+  
+  <patternset id="excluded.from.module.ctramp"/>
+  
+  <patternset id="excluded.from.compilation.ctramp">
+    <patternset refid="excluded.from.module.ctramp"/>
+    <patternset refid="compiler.excluded"/>
+  </patternset>
+  
+  <path id="ctramp.module.sourcepath">
+    <dirset dir="${module.ctramp.basedir}">
+      <include name="src/java"/>
+    </dirset>
+  </path>
+  
+  
+  <!-- Import module build files -->
+  <import file="${basedir}/../../cmf/common-base/module_common-base.xml"/>
+
+  <target name="compile.module.ctramp" depends="compile.module.common-base" description="compile module ctramp production classes">
+    <mkdir dir="${ctramp.output.dir}"/>
+    <javac destdir="${ctramp.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.ctramp}/bin/javac">
+      <compilerarg line="${compiler.args.ctramp}"/>
+      <bootclasspath refid="ctramp.module.bootclasspath"/>
+      <classpath refid="ctramp.module.classpath"/>
+      <src refid="ctramp.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.ctramp"/>
+    </javac>
+    <copy todir="${ctramp.output.dir}">
+      <fileset dir="${module.ctramp.basedir}/src/java">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+        <patternset refid="excluded.from.compilation.ctramp"/>
+      </fileset>
+    </copy>
+  </target>
+  
+
+  <target name="clean.module.ctramp" description="cleanup module">
+    <delete dir="${ctramp.output.dir}"/>
+    <delete dir="${ctramp.testoutput.dir}"/>
+  </target>
+</project>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="lib" path="jca-client/build/lib/jppf-j2ee-client.jar"/>
+	<classpathentry kind="lib" path="jca-client/build/lib/jppf-jca.jar"/>
+	<classpathentry kind="lib" path="jca-client/lib/commons-logging-1.1.jar"/>
+	<classpathentry kind="lib" path="JPPF/build/jppf-admin-src.jar"/>
+	<classpathentry kind="lib" path="JPPF/build/jppf-admin.jar"/>
+	<classpathentry kind="lib" path="JPPF/build/jppf-client-src.jar"/>
+	<classpathentry kind="lib" path="JPPF/build/jppf-client.jar"/>
+	<classpathentry kind="lib" path="JPPF/build/jppf-common-node-src.jar"/>
+	<classpathentry kind="lib" path="JPPF/build/jppf-common-node.jar"/>
+	<classpathentry kind="lib" path="JPPF/build/jppf-common-src.jar"/>
+	<classpathentry kind="lib" path="JPPF/build/jppf-common.jar"/>
+	<classpathentry kind="lib" path="JPPF/build/jppf-demo-src.jar"/>
+	<classpathentry kind="lib" path="JPPF/build/jppf-demo.jar"/>
+	<classpathentry kind="lib" path="JPPF/build/jppf-logging-formatter.jar"/>
+	<classpathentry kind="lib" path="JPPF/build/jppf-server-src.jar"/>
+	<classpathentry kind="lib" path="JPPF/build/jppf-server.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/Groovy/groovy-all-1.6.5.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/Hazelcast/hazelcast.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/J2EE/geronimo-j2ee-connector_1.5_spec-2.0.0.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/java2html_50/java2html.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/JFreeChart/jcommon-1.0.15.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/JFreeChart/jfreechart-1.0.12.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/JGoodies/looks-2.2.2.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/JUnit/junit-3.8.2.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/JUnit/junit-4.8.2.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/log4j/log4j-1.2.15.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/MigLayout/miglayout-3.7-swing.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/Rhino/js.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/slf4j/slf4j-api-1.6.1.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/slf4j/slf4j-jdk14-1.6.1.jar"/>
+	<classpathentry kind="lib" path="JPPF/lib/slf4j/slf4j-log4j12-1.6.1.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="output" path="server/classes"/>
+</classpath>

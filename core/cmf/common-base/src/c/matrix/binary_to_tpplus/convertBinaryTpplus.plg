@@ -1,0 +1,53 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: convertBinaryTpplus - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\hicksji\LOCALS~1\Temp\RSP1DE.tmp" with contents
+[
+/nologo /Zp1 /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"Release/convertBinaryTpplus.pch" /YX /Fo"Release/" /Fd"Release/" /FD /c 
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\binary_to_tpplus\binaryToTpp.c"
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\binary_to_tpplus\convert_hwy_binaries.c"
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\binary_to_tpplus\convert_nonmotor_binaries.c"
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\binary_to_tpplus\convert_transit_binaries.c"
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\binary_to_tpplus\convertBinaryTpplus.c"
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\binary_to_tpplus\tppClose.c"
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\binary_to_tpplus\tppInitDllNative.c"
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\binary_to_tpplus\tppWrite.c"
+]
+Creating command line "cl.exe @C:\DOCUME~1\hicksji\LOCALS~1\Temp\RSP1DE.tmp" 
+Creating temporary file "C:\DOCUME~1\hicksji\LOCALS~1\Temp\RSP1DF.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:no /pdb:"Release/convertBinaryTpplus.pdb" /machine:I386 /out:"Release/convertBinaryTpplus.exe" 
+".\Release\binaryToTpp.obj"
+".\Release\convert_hwy_binaries.obj"
+".\Release\convert_nonmotor_binaries.obj"
+".\Release\convert_transit_binaries.obj"
+".\Release\convertBinaryTpplus.obj"
+".\Release\tppClose.obj"
+".\Release\tppInitDllNative.obj"
+".\Release\tppWrite.obj"
+]
+Creating command line "link.exe @C:\DOCUME~1\hicksji\LOCALS~1\Temp\RSP1DF.tmp"
+<h3>Output Window</h3>
+Compiling...
+binaryToTpp.c
+convert_hwy_binaries.c
+convert_nonmotor_binaries.c
+convert_transit_binaries.c
+convertBinaryTpplus.c
+tppClose.c
+tppInitDllNative.c
+tppWrite.c
+Linking...
+
+
+
+<h3>Results</h3>
+convertBinaryTpplus.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

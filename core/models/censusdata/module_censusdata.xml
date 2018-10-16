@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="module_censusdata" default="compile.module.censusdata">
+  <dirname property="module.censusdata.basedir" file="${ant.file.module_censusdata}"/>
+  
+  <property name="module.jdk.home.censusdata" value="${project.jdk.home}"/>
+  <property name="module.jdk.classpath.censusdata" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.censusdata" value="${compiler.args}"/>
+  
+  <property name="censusdata.output.dir" value="${module.censusdata.basedir}/build/classes"/>
+  <property name="censusdata.testoutput.dir" value="${module.censusdata.basedir}/build/classes"/>
+  
+  <path id="censusdata.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="censusdata.module.classpath">
+    <path refid="${module.jdk.classpath.censusdata}"/>
+    <pathelement location="${common-base.output.dir}"/>
+    <pathelement location="${module.censusdata.basedir}/../../third-party/logging-log4j-1.2.9/log4j-1.2.9.jar"/>
+    <pathelement location="${module.censusdata.basedir}/../../cmf/common-base/lib/jxl.jar"/>
+    <pathelement location="${reference.output.dir}"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.censusdata"/>
+  
+  <patternset id="excluded.from.compilation.censusdata">
+    <patternset refid="excluded.from.module.censusdata"/>
+    <patternset refid="compiler.excluded"/>
+  </patternset>
+  
+  <path id="censusdata.module.sourcepath">
+    <dirset dir="${module.censusdata.basedir}">
+      <include name="src/java"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.censusdata" depends="compile.module.common-base, compile.module.reference" description="compile module censusdata production classes">
+    <mkdir dir="${censusdata.output.dir}"/>
+    <javac destdir="${censusdata.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.censusdata}/bin/javac">
+      <compilerarg line="${compiler.args.censusdata}"/>
+      <bootclasspath refid="censusdata.module.bootclasspath"/>
+      <classpath refid="censusdata.module.classpath"/>
+      <src refid="censusdata.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.censusdata"/>
+    </javac>
+    <copy todir="${censusdata.output.dir}">
+      <fileset dir="${module.censusdata.basedir}/src/java">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+        <patternset refid="excluded.from.compilation.censusdata"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="clean.module.censusdata" description="cleanup module">
+    <delete dir="${censusdata.output.dir}"/>
+    <delete dir="${censusdata.testoutput.dir}"/>
+  </target>
+</project>

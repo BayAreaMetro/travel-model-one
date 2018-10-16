@@ -1,0 +1,162 @@
+SSJ Installation Manual
+=======================
+
+1. Requirements
+==================================
+
+SSJ requires a Java 2 Virtual Machine.
+
+-----------------------
+The Colt library is used by a few SSJ classes. The library, its source
+code and documentation, can be downloaded for free from its home page.
+The colt.jar archive is already included in the SSJ distribution and it
+must be in the CLASSPATH environment variable.
+
+
+-----------------------
+The Blas library is based on public domain LINPACK routines.
+It was translated from FORTRAN to Java by Steve Verrill at
+    USDA Forest Products Laboratory
+    1 Gifford Pinchot Drive
+    Madison, Wisconsin, USA.
+This software is also in the public domain and is included in the 
+SSJ distribution as the Blas.jar archive. It is used only in the
+probdist package to compute maximum likelihood estimators.
+
+
+-----------------------
+The optimization package of Steve Verrill includes Java translations of the 
+MINPACK nonlinear least squares routines as well as UNCMIN routines for
+unconstrained optimization. They were translated from FORTRAN to Java by 
+Steve Verrill and are in the public domain. They are included in the SSJ
+distribution as the optimization.jar archive. It is used only in the 
+probdist package to compute maximum likelihood estimators.
+
+
+-----------------------
+The (url="http://www.jfree.org/jfreechart/") JFreeChart library is
+used by the SSJ package charts to draw curves, histograms
+and different kinds of plots. JFreeChart is copyrighted under the
+(url="http://www.gnu.org/licenses/lgpl.html")  GNU LGPL License.
+It is included in the SSJ distribution as the jfreechart-1.0.10.jar
+and the jcommon-1.0.13.jar.
+
+
+-----------------------
+The UNURAN library is used by the classes UnuranContinuous, UnuranDiscrete and
+UnuranEmpirical in the package called randvar. It can be downloaded for free at
+http://statistik.wu-wien.ac.at/unuran/.
+Downloading, compiling and installing UNURAN is optional. It is required only
+if SSJ must be rebuilt. However, the UNURAN documentation is required to use
+the SSJ UNURAN interface efficiently.
+
+
+
+2. Unpacking 
+-------------
+Unpack the ZIP file to any location, this will create a ssj subdirectory
+containing all files of the distribution.
+
+For Linux/Unix, use the command 
+   unzip ssj-<DATE>.zip
+
+Under Windows, WinZip can be used to unpack the distribution.
+
+After the ssj zip file is extracted, the ssj subdirectory will contain
+the following files and directories.
+
+   lib - SSJ JAR file and shared libraries
+      ssj.jar - SSJ JAR archive containing all classes
+      colt.jar - Colt JAR archive containing all Colt classes
+      libssjutil.so - Linux shared library for the Chrono
+      ssjutil.dll - Windows shared library for the Chrono
+      librandvar.so - Linux shared library for UNURAN
+      randvar.dll - Windows shared library for UNURAN
+      event-1.6.5.jar
+      interpreter-1.6.8.jar
+      language-1.6.7.jar
+      logger-1.6.4.jar
+      Blas.jar - linear_algebra JAR archive containing some LINPACK routines
+      optimization.jar - optimization JAR archive containing some MINPACK
+                         and UNCMIN routines
+      jfreechart-1.0.10.jar - JFreeChart library for charts
+      jcommon-1.0.13.jar - useful to JFreeChart
+
+   doc - Documentation
+      html - HTML format
+      pdf - PDF format
+   examples - Some simulation examples in Java
+   README.txt - readme file
+   INSTALL.txt - Installation manual
+   Ssjrc - C-Shell initialization script
+   Ssj.sh - Bourne shell initialization script
+   Ssj.bat - Windows initialization script
+
+
+3. Setup the environment
+------------------------
+To use SSJ, the ssj.jar and the colt.jar must be part of the CLASSPATH
+environment variable. The ssj, Colt, and other JAR files JAR files are
+located in the lib subdirectory of the package. The class path in the 
+MANIFEST includes all other jar files in the lib subdirectory.
+
+For the native methods (Chrono and UNURAN support) to work properly, the
+library path must include the lib subdirectory of the SSJ package. 
+GlobalCPUTimeChrono is the only class of SSJ that is programmed directly
+in C. It measures the CPU time used by a program. Under UNIX/Linux, this
+can be done by modifying the LD_LIBRARY_PATH variable whereas under 
+Windows, it is done by modifying the PATH environment variable. The 
+procedure used to modify environment variables depends on the operating
+system.  For convenience, scripts are available to setup the environment
+for the user. The SSJHOME environment must be set prior to calling the
+setup script.
+
+Commands (for C-shell) :
+   setenv SSJHOME <path to SSJ>
+   source $SSJHOME/Ssjrc
+
+Commands (for Bourne shell) :
+   export SSJHOME=<path to SSJ>
+   . $SSJHOME/Ssj.sh
+
+Commands (for DOS/Windows) :
+   set SSJHOME=<path to SSJ>
+   call %SSJHOME%\Ssj.bat
+
+Here, <path to SSJ> must be replaced by the absolute path to the
+unpacked ssj subdirectory.  The command lines should be added to an
+appropriate startup script for convenience.
+
+Under Windows 2000/XP, there is no startup file.  If the user uses the
+Ssj.bat convenience script, he must call it manually every time he
+opens a new DOS prompt.  Alternatively, the user can set the
+environment variables manually.  The user must right-click on the
+My Computer icon on the desktop, select Properties, access the
+Advanced tab and click on the Environment Variables button.  Under
+Windows, the paths are separated using semicolons in the CLASSPATH and
+PATH variables.  The CLASSPATH must contain the full path and filename
+to ssj.jar and colt.jar whereas the PATH variable
+contains only the location of the lib subdirectory of SSJ.
+
+Note: Some Java Integrated Development Environments (IDEs) such as
+JCreator do not use the standard CLASSPATH environment variable.
+These environments must be notified about the location of
+colt.jar and ssj.jar manually. The procedure used to set these 
+parameters can be found
+in the documentation of the specific Java IDE.  If the ssj.jar cannot
+be located, the SSJ programs will not compile or not execute properly.
+
+
+Documentation
+============
+SSJ is bundled with documentation in PDF and HTML formats. It can be
+found in the SSJHOME/doc directory. The html subdirectory contains
+the HTML version processed using Javadoc. It allows to find classes
+and methods documentation easily, but it is difficult to print and
+some information is missing. The PDF documentation, stored in the pdf
+subdirectory, can be easily printed, it is the most complete
+documentation, but method descriptions are not accessible through
+hyperlinks.
+
+The examples subdirectory contains examples of simulation programs
+using SSJ and can be a useful tool to learn SSJ.

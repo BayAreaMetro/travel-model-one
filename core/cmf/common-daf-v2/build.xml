@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<!DOCTYPE project [
+	<!ENTITY properties SYSTEM "file:../common-base/config/properties.xml">
+	<!ENTITY targets SYSTEM "file:../common-base/config/targets.xml">
+]>
+
+<project name="common-daf-v2" default="usage" basedir=".">
+	&properties;
+    &targets;
+
+    <!-- ********************************************************* -->
+    <!-- Setup the classpath -->
+    <path id="compile.classpath">
+        <pathelement location="${common-base.dir}/build/classes"/>
+        <pathelement path="${build.classes.dir};${basedir}/config"/>
+        
+        <fileset dir="${common-base.dir}">
+            <include name="**/lib/*.jar"/>
+            <include name="**/lib/*.zip"/>
+        </fileset>
+
+        <fileset dir="${thirdParty.dir}">
+            <include name="**/logging-log4j-1.2.9/*.jar"/>
+         </fileset>
+    </path>
+
+
+    <!-- ********************************************************* -->
+    <!-- Compile depedencies -->
+    <target name="pre-build">
+        <ant dir="${common-base.dir}" target="build" inheritAll="false"/>
+    </target>
+
+
+    <!-- ********************************************************* -->
+    <!-- Create a set of jar files for release -->
+    <target name="release" depends="makejar">
+        <copy file="${common-base.dir}/release/common-base.jar" todir="${release.dir}"/>
+        <copy file="${thirdParty.dir}/logging-log4j-1.2.9/log4j-1.2.9.jar" todir="${release.dir}"/>
+    </target>
+
+
+</project>

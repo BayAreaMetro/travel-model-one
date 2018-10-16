@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/java"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ctramp"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/common-base"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/synpop"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ssj"/>
+	<classpathentry kind="lib" path="/ssj/lib/ssj.jar"/>
+	<classpathentry kind="output" path="build/classes"/>
+</classpath>

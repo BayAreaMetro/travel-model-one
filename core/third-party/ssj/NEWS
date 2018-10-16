@@ -1,0 +1,490 @@
+==========================================================================
+What is new in version SSJ-2.5
+--------------------------------
+
+- package randvar
+   * New classes: ExponentialInverseFromDensityGen, NormalInverseFromDensityGen,
+                  FNoncentralGen, HypoExponentialGen, StudentNoncentralGen,
+                  ConstantGen
+
+- package hups
+   * New class: RandomStart
+   * HaltonSequence: new methods: addFaureLemieuxPermutations, setStart
+   * RadicalInverse: new methods: radicalInverseInteger, radicalInverseLong,
+                     getFaureLemieuxPermutation
+
+- package charts
+   * New classes: PPPlot, QQPlot
+   * New constructors in classes YListChart and YListSeriesCollection
+
+- package probdist
+   * New classes: HypoExponentialDist, HypoExponentialDistQuick,
+                  ConstantIntDist, ConstantDist
+   * Class KolmogorovSmirnovDistQuick: better approximations for cdf, barF
+
+- package stat
+   * New class: TallyHistogram
+
+- package util
+   * New class: Systeme
+   * New package: util.io
+   * DMatrix: new methods exp for matrix exponential
+   * Num: new methods sumKahan, erfcInv.
+
+- package gof
+   * GofStat: new methods:  chi2(OutcomeCategoriesChi2, int[]),
+         andersonDarling(double[]), kolmogorovSmirnov(double[]),
+
+
+
+==========================================================================
+What is new in version SSJ-2.4
+--------------------------------
+
+- package probdist
+   * New class: BernoulliDist
+   * NegativeBinomialDist: new methods getMLE1, getInstanceFromMLE1.
+   * TriangularDist: new methods getMLE, getInstanceFromMLE.
+   * GammaDist: more precise inverseF for small u.
+
+- package randvar
+   * The class Pearson5Gen has been renamed InverseGammaGen.
+   * New class: BernoulliGen
+
+- package rng
+   * MT19937: correction in the initialization.
+
+- package util
+   * Misc: new method evalPoly.
+   * RootFinder: new method bisection.
+
+
+
+==========================================================================
+What is new in version SSJ-2.3
+--------------------------------
+
+- package probdist
+   * TruncatedDist: bug corrections.
+   * BetaSymmetricalDist: more precise barF in the tail.
+   * New classes: StudentDist, StudentDistQuick, InverseGammaDist.
+       The old class StudentDist has been renamed StudentDistQuick, and
+       a new StudentDist has been added.
+   * The class Pearson5Dist has been renamed InverseGammaDist.
+   * KolmogorovSmirnovDistQuick: better versions of cdf and barF.
+
+- package randvar
+   * New classes InverseGammaGen
+
+- package util
+   * Num: news methods lnBeta, expBesselK1, erfInv.
+
+
+
+==========================================================================
+What is new in version SSJ-2.2
+--------------------------------
+
+- new package functionfit
+   * Provides basic tools for curve fitting, polynomial interpolation,
+     least square fit and spline interpolation.
+
+- package probdist
+   * New classes InverseDistFromDensity, GumbelDist, FrechetDist.
+   * KolmogorovSmirnovDistQuick: more precise versions of cdf and barF.
+   * CauchyDist: more precise versions of cdf and barF in the tails.
+   * StudentDist: more precise versions of cdf and barF in the tails.
+
+- package randvar
+   * New classes InverseFromDensityGen, GumbelGen, FrechetGen.
+
+- package randvarmulti
+   * New class IIDMultivariateGen.tex
+
+- package gof
+   * New class KernelDensity.
+
+- package hups
+   * SobolSequence: new constructor reading its parameters from a file.
+   * PointSet: new methods formatPoints, formatPointsBase.
+
+- package functions
+   * MathFunctionUtil: new methods gaussLobatto.
+
+- package util
+   * Corrections in BatchSort
+   * Num: new methods gcd.
+   * PrintfFormat: new method formatBase.
+
+
+
+==========================================================================
+What is new in version SSJ-2.1.3
+--------------------------------
+
+  The HTML doc was incomplete for some class methods in SSJ-2.1.2 due to
+  the automatic Latex to HTML translator eating some of the text.
+
+
+
+==========================================================================
+What is new in version SSJ-2.1.2
+--------------------------------
+
+- package util
+   * New interfaces MultiDimComparable, MultiDimSort
+
+   * New classes SplitSort, OneDimSort, BatchSort, MultiDimComparator
+     DoubleArrayComparator.
+
+   * New methods in class Num: harmonic, harmonic2, bernoulliPoly.
+
+- package simevents
+   * Events can now be scheduled with different priorities in the event lists.
+
+- package hups
+   * New class EmptyRandomization
+
+   * Removed subdirectory dataF2w and all its parameters files. The files have
+     been removed also from the ssj.jar archive. (See class F2wStructure).
+     The files are now stored at address
+          http://www.iro.umontreal.ca/~simardr/ssj-1/dataF2w/.
+
+- package stochprocess
+   * New class OrnsteinUhlenbeckProcess. The old class by the same name
+     has been renamed OrnsteinUhlenbeckProcessEuler.
+
+   * New class CIRProcess. The old class by the same name has been renamed
+     CIRProcessEuler.
+
+- package probdist
+   * ChiSquareDist: corrections in the far tails of methods cdf and barF.
+
+
+
+==========================================================================
+What is new in version SSJ-2.1.1
+--------------------------------
+
+- package charts
+   * New constructors in each *Chart classes and in the related *SeriesCollection
+     classes, that take an additionnal argument (int numPoints).
+
+- package gof
+   * Bug correction in GofStat.chi2(IntArrayList data, ....)
+     The number of categories was not always returned correctly in m[0].
+
+- package probdistmulti
+   * Bug correction in NegativeMultinomialDist.getMaximumLikelihoodEstimate:
+     sometimes did not converge to the right values.
+
+- package util
+   * New class DMatrix
+
+
+
+==========================================================================
+What is new in version SSJ-2.1
+--------------------------------
+
+- new package charts
+   * Allows the creation of charts and graphics, either on screen or in
+     Latex format.
+
+- new package stochprocess
+   * Provides classes to define stochastic processes and to simulate their
+     sample paths.
+
+- package rng
+   * Correction of the setSeed and setPackageSeed methods in LFSR113 and
+     LFSR258, which did not accept all valid seeds.
+
+   * RandomPermutation: added methods to shuffle parts of arrays.
+
+- package probdist
+   * New classes AndersonDarlingDist, AndersonDarlingDistQuick,
+     CramerVonMisesDist, KolmogorovSmirnovPlusDist, KolmogorovSmirnovDist,
+     KolmogorovSmirnovDistQuick, WatsonGDist, WatsonUDist,
+     NormalInverseGaussianDist, RayleighDist, PowerDist, NakagamiDist,
+     FoldedNormalDist, HalfNormalDist.
+
+   * New classes ExponentialDistFromMean, GammaDistFromMoments,
+     LognormalDistFromMoments, ChiSquareNoncentralDist.
+
+   * Bug correction in HypergeometricDist. Combinations sometimes
+     overflowed for large values of parameters.
+
+   * Bug correction in BinomialDist: overflow for some large n and small p.
+
+   * BetaDist: computation of mean and variance for arbitrary [a, b].
+
+   * InverseGaussianDist:  new method inverseF
+
+- package randvar
+   * Added constructors, in each class, that do not need a distribution as
+     argument but take instead the parameters determining the distribution.
+
+   * New classes ChiSquareNoncentralGen, ChiSquareNoncentralGamGen,
+     ChiSquareNoncentralPoisGen, JohnsonSBGen, JohnsonSUGen,
+     InverseGaussianGen, InverseGaussianMSHGen, NormalInverseGaussianGen,
+     NormalInverseGaussianIGGen, RayleighGen, PowerGen, NakagamiGen,
+     FoldedNormalGen, HalfNormalGen.
+
+- package randvarmulti
+   * Removed class RandomMultiVariateGen: it has been replaced by
+     RandomMultivariateGen.
+
+   * Deprecated class MultiNormalGen: it has been replaced by
+     MultinormalCholeskyGen, which has been thinned.
+
+   * New class MultinormalGen, mother of all Multinormal*Gen.
+   * New class MultinormalPCAGen.
+
+- package hups
+   * New classes LMScrambleShift, RandomShift, SMScrambleShift,
+     PointSetRandomization.
+
+   * PointSet: new methods getStream, setStream.
+
+- package gof
+   * In class GofFormat, new methods drawDensity, drawCdf.
+   * In class FBar, improved methods to compute the complementary distributions.
+   * In class FDist, improved methods to compute the distribution functions.
+
+- package util
+   * Num: new methods (complementary) error functions erf, erfc. Ratio of
+     2 gamma functions gammaRatioHalf.
+
+
+
+==========================================================================
+What is new in version SSJ-2.0
+--------------------------------
+
+SSJ-2.0 works ONLY WITH JDK-1.5 (and later versions of Java), and will not work
+with JDK-1.4 or earlier versions of Java.
+
+- new package functions
+   * Used to create function objects and to pass an arbitrary function of one
+     variable as argument to another function.
+
+- package util
+   * New classes ClassFinder, Introspection, TimeUnit, NameConflictException,
+     TransformingList, SystemTimeChrono, ThreadCPUTimeChrono, AbstractChrono,
+     GlobalCPUTimeChrono, MultivariateFunction, RatioFunction.
+
+   * Removed class MathFunction; it is replaced by the new package functions.
+
+   * New methods in JDBCManager, TextDataReader.
+
+- package rng
+   * New interface CloneableRandomStream. All RNG's are now cloneable.
+
+   * All RNG's are now serializable.
+
+   * New class RandomPermutation.
+
+   * New class MRG32k3aL. Same generator as MRG32k3a;
+     implementation with type long.
+
+   * Bug correction in initialization of F2NL607.
+
+- package stat
+   * New class ObservationListener.
+
+   * new package stat.list
+     Provides support for lists of statistical probes.
+
+   * Tally: new methods confidenceIntervalVarianceChi2, formatCIVarianceChi2.
+
+   * TallyStore: the method getArray has been renamed getDoubleArrayList. The
+     new method getArray returns a double[].
+   * TallyStore: new method quickSort.
+
+
+- package simevents
+   * It is now possible to carry many simulations simultaneously with simulator
+     objects and the new Simulator class.
+
+   * New classes ListWithStat, ContinuousState, Simulator.
+
+- package simprocs
+   * New classes ProcessSimulator, SSJInterpretationOracle, DSOLProcessSimulator,
+        ThreadProcessSimulator
+
+- package gof
+   * New method GofStat.chi2Equal.
+
+- package probdist
+   * Bug corrections and improvements in some *Dist.getMaximumLikelihoodEstimate
+
+   * Improvements of some distributions far in the tails.
+
+   * Added getParams and toString methods in all probability classes.
+
+   * All methods getMaximumLikelihoodEstimate have been renamed getMLE.
+     The old methods are still there but deprecated.
+
+- package randvar
+   * The generator NegativeBinomialGen now takes a real as its parameter n.
+     The old NegativeBinomialGen with integer n has been renamed as the new
+     class PascalGen.
+
+- package randvarmulti
+   * Class MultiNormalGen has been renamed MultinormalCholeskyGen.
+   * Class RandomMultiVariateGen has been renamed RandomMultivariateGen.
+
+
+
+==========================================================================
+
+Update to JDK-1.5 for future versions of SSJ
+
+==========================================================================
+What is new in version SSJ-1.2
+--------------------------------
+
+- new package probdistmulti
+     For multivariate probability distributions.
+
+- new package randvarmulti
+     For multivariate non-uniform random number generators.
+
+- package probdist
+   * Removed the two-dimensionnal distributions BiNormalDist, BiNormalGenzDist,
+     ContinuousDistribution2Dim, BiNormalDonnellyDist, BivariateTDist and
+     moved them to package probdistmulti. The BivariateTDist distribution has
+     been renamed BiStudentDist.
+
+   * New methods getMean, getVariance and getStandardDeviation to get the mean,
+     the variance and the standard deviation for probability distributions.
+
+   * New methods getMaximumLikelihoodEstimate and getInstanceFromMLE that imple-
+     ment the maximum likelihood estimator for most probability distributions.
+
+   * New probability distributions: UniformIntDist, FatigueLifeDist, PascalDist,
+     FisherFDist, HyperbolicSecantDist, InverseGaussianDist, LoglogisticDist,
+     Pearson5Dist, Pearson6Dist.
+
+   * The distribution NegativeBinomialDist now takes a double instead of an int
+     as its first parameter; the distribution with an integer as first
+     parameter is now called PascalDist (it is the former NegativeBinomialDist).
+
+   * New methods in DistributionFactory.
+
+- package randvar
+   * New non-uniform random number generators: UniformIntGen, FatigueLifeGen,
+     FisherFGen, HyperbolicSecantGen, InverseGaussianGen, LoglogisticGen,
+     Pearson5Gen, Pearson6Gen.
+
+   * New class RandomVariateGenWithCache: caches random values for more
+     efficiency when using common random numbers.
+
+   * The generator NegativeBinomialConvolutionGen has been renamed
+     PascalConvolutionGen.
+
+- package rng
+   * New classes RandomStreamWithCache, which caches random values for more
+     efficiency, and TruncatedRandomStream, which generates uniform random
+     numbers in a subinterval of [0, 1].
+
+- package util
+   * New classes TextDataReader (reads data from text files), JDBCManager (
+     interface for accessing a database), MathFunction (to pass an arbitrary
+     function as argument to another) and Misc (miscellaneous functions).
+
+   * New RootFinder class to solve one-dimensional non-linear equations.
+
+   * New methods Num.digamma, Num.trigamma, Num.tetragamma: the logarithmic
+     derivatives of the Gamma function. Added Num.evalChebyStar for the
+     evaluation of shifted Chebychev polynomials.
+
+   * New methods PrintfFormat.formatWithError to print real intervals.
+
+
+
+==========================================================================
+What is new in version SSJ-1.1.9
+
+- package util
+  Added Num.log1p(x) for better accuracy of log(1 + x) at small x.
+
+- package randvar
+  Added the classes BetaSymmetricalPolarGen and BetaSymmetricalBestGen
+    that generate symmetrical Beta variates.
+
+- package rng
+  Provided a faster method to jump the the next substreams in all the WELL*
+  generators and in the F2NL607 generator.
+
+- package probdist
+  * Replaced all functions Math.log(1+x) by Num.log1p(x) for better accuracy.
+
+  * Corrected LogarithmicDist:
+       the probabilities were not always computed correctly.
+
+  * Corrected a bug in BinomialDist:
+       the method inverseF(u) had a bug for n = 1.
+
+  * Added the bivariate normal distribution:
+       classes BiNormalDist, BiNormalDonnellyDist and BiNormalGenzDist
+
+  * Added the bivariate t distribution:
+       class BivariateTDist.
+
+  * Added the Brent-Dekker method to compute the inverse distribution function
+    for an arbitrary continuous probability function.
+
+- package hups
+  * Changed the constructors in class NiedXingSequenceBase2. The old 3
+    arguments constructor has been eliminated and the 4 arguments constructor
+    of the previous version has become the 3 arguments constructor
+    of the new version. This gives the correct generating matrices for the
+    Niederreiter-Xing sequence; the old 3 arguments constructor used
+    the transposed generating matrices.
+
+  * Correction in NiedXingSequenceBase2 and in NiedSequenceBase2 and in
+    DigitalNetBase2FromFile: did not work correctly for number of bits = w < 31.
+
+
+
+==========================================================================
+What is new in version SSJ-1.1.8
+--------------------------------
+
+- package rng
+   LFSR113, LFSR258:
+    programmed a faster method nextInt
+
+- package gof
+   FBar, FDist:
+    added a better approximation for the Anderson-Darling distribution.
+
+- package probdist
+   BetaSymmetricalDist:
+    added a much faster inverse distribution for parameter alpha > 1.
+
+   BetaDist:
+    corrected a bug that gave the wrong values for the CDF for some
+    range of parameters.
+
+   BinomialDist, PoissonDist,
+    ExponentialDist, JohnsonSUDist, ParetoDist, WeibullDist:
+    added a better approximation in the tails of the distributions.
+
+   GammaDist: added a better approximation for large alpha.
+
+   Corrected a bug in DiscreteDistribution: the inverseF function was
+   not correct for cdf(x) > 0.5.
+
+   Made a correction in EmpiricalDist: the barF function.
+
+- package randvar
+   BetaStratifiedRejectionGen  object always returned 0.
+    Bug correction
+
+   GammaRejectionLoglogisticGen object went into infinite loop.
+    Bug correction
+
+- package util
+   class ChronoSingleThread has been added.

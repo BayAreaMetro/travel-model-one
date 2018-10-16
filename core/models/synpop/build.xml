@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<!DOCTYPE project [
+	<!ENTITY properties SYSTEM "file:../../cmf/common-base/config/properties.xml">
+<!ENTITY targets SYSTEM "file:../../cmf/common-base/config/targets.xml">
+]>
+
+<project name="synpop" default="all" basedir=".">
+	&properties;
+    &targets;
+
+    <!-- ********************************************************* -->
+	<!-- Setup the classpath -->
+	<path id="compile.classpath">
+		<pathelement location="${common-base.dir}/build/classes" />
+        <pathelement location ="${censusdata.dir}/build/classes"/>
+		<pathelement location ="${utils.dir}/build/classes"/>
+		<pathelement location ="${common-daf-v2.dir}/build/classes"/>
+
+        <fileset dir="${common-base.dir}">
+			<include name="**/lib/*.jar" />
+			<include name="**/lib/*.zip" />
+		</fileset>
+
+		<fileset dir="${thirdParty.dir}">
+			<include name="**/logging-log4j-1.2.9/*.jar" />
+		</fileset>
+
+	</path>
+
+
+	<!-- ********************************************************* -->
+	<!-- Compile depedencies -->
+	<target name="pre-build">
+		<ant dir="${common-base.dir}" target="build" inheritAll="false" />
+        <ant dir="${censusdata.dir}" target="build" inheritAll="false"/>
+		<ant dir="${utils.dir}" target="build" inheritAll="false"/>
+        <ant dir="${common-daf-v2.dir}" target="build" inheritAll="false"/>
+    </target>
+
+
+	<!-- ********************************************************* -->
+	<!-- Create a set of jar files for release -->
+	<target name="release" depends="makejar">
+		<copy file="${common-base.dir}/release/common-base.jar" todir="${release.dir}" />
+        <copy file="${censusdata.dir}/release/censusdata.jar" todir="${release.dir}"/>
+        <copy file="${thirdParty.dir}/logging-log4j-1.2.9/log4j-1.2.9.jar" todir="${release.dir}"/>
+    </target>
+
+</project>

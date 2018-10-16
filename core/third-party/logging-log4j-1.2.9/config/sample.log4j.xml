@@ -1,0 +1,137 @@
+<?xml version="1.0"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+    <!-- BEGIN APPENDER: CONSOLE APPENDER (stdout) -->
+    <appender name="stdout" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.TTCCLayout"/>
+    </appender>
+    <!-- Above is one of the simpler configurations for an appender: the -->
+    <!-- classname of the appender and the layout used by it.  Note that -->
+    <!-- not all appenders require layouts, but those that do are given -->
+    <!-- their information through use of the layout tag and it's class -->
+    <!-- attribute. -->
+
+    <!-- BEGIN APPENDER: SOCKET APPENDER (socketLogger) -->
+    <!-- Note: if you don't have anything configured to accept the events -->
+    <!-- from the socketLogger appender, you'll see an exception on program -->
+    <!-- startup (to console), and occasional status messages (to console) -->
+    <!-- on whether the log4j system has managed to connect to the specified -->
+    <!-- socket.. -->
+    <appender name="socketLogger" class="org.apache.log4j.SocketAppender">
+        <param name="RemoteHost" value="localhost"/>
+        <param name="Port" value="4445"/>
+        <param name="LocationInfo" value="true"/>
+    </appender>
+    <!-- Note that a SocketAppender doesn't use a layout, and so that tag -->
+    <!-- isn't used, here.  It does, however, use information other -->
+    <!-- than the layout.  Instead of having arbitrarily named tags, -->
+    <!-- however, you'll note that there are multiple "param" tags for -->
+    <!-- the necessary information.  Note that certain pieces of -->
+    <!-- information are placed within tags created specifically for -->
+    <!-- that data (like layout), while others aren't (like RemoteHost). -->
+    <!-- Check the log4j.dtd file for additional information on what -->
+    <!-- those other tags could be (it's actually pretty nicely commented!), -->
+    <!-- if you want, but most of the time you'll probably just be using -->
+    <!-- layout and param.  Filter is another one you might find useful, -->
+    <!-- and it's included rather like a layout (i.e. a filter tag).  -->
+
+    <!-- BEGIN APPENDER: ROLLING FILE APPENDER (rolling) -->
+    <appender name="rolling" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="example.log"/>
+        <param name="MaxFileSize" value="100KB"/>
+        <param name="MaxBackupIndex" value="1"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                    value="%d %-5p %-17c{2} (%30F:%L) %3x - %m%n"/>
+        </layout>
+    </appender>
+    <!-- Notice, in the RollingFileAppender example, that the layout used -->
+    <!-- requires information (unlike the previous TTCCLayout).  Just like -->
+    <!-- the appender tag, the layout tag can contain param tags within -->
+    <!-- it to pass information along to the layout itself.  Unlike the -->
+    <!-- appender, param is the only type of tag that can be placed within -->
+    <!-- a layout tag. -->
+
+    <!-- BEGIN APPENDER: LogFactor5 APPENDER (lf5) -->
+    <!-- LogFactor5 is a Swing window that directly receives logging -->
+    <!-- messages and displays them. It offers filtering, searching etc. -->
+    <!-- similar to Chainsaw or Lumbermill but you don't have to use a -->
+    <!-- socket appender so it should be faster when the logging display -->
+    <!-- is on the same machine as the program issuing messages. -->
+    <appender name="lf5" class="org.apache.log4j.lf5.LF5Appender">
+        <param name="MaxNumberOfRecords" value="1000"/>
+    </appender>
+
+    <appender class="org.apache.log4j.FileAppender" name="xml">
+        <param name="File" value="example_xml.log"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.xml.XMLLayout"/>
+    </appender>
+    <!-- Chainsaw, a logging-viewing tool included with log4j, is capable -->
+    <!-- of not only accepting active information from a socket (see -->
+    <!-- socketLogger), but can also load an XML file formatted using -->
+    <!-- the XMLLayout.  Send information to both and XMLLayout and to -->
+    <!-- a socket on which Chainsaw is running, and you can watch chainsaw -->
+    <!-- now, and then look at the data in it again later. -->
+
+    <appender name="lf5Rolling" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="example_lf5.log"/>
+        <param name="MaxBackupIndex" value="5"/>
+        <param name="MaxFileSize" value="100KB"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                    value="[slf5s.start]%d{DATE}[slf5s.DATE]%n  %p[slf5s.PRIORITY]%n%x[slf5s.NDC]%n%t[slf5s.THREAD]%n%c[slf5s.CATEGORY]%n  %l[slf5s.LOCATION]%n%m[slf5s.MESSAGE]%n%n"/>
+        </layout>
+    </appender>
+    <!-- LogFactor5 is also capable of loading information from file, -->
+    <!-- although the formatting isn't nearly as simple (to configure) -->
+    <!-- as the stored file for Chainsaw.  Unfortunately, there appears -->
+    <!-- to be no _simple_ way to configure for this file format (yet) -->
+
+    <logger name="com.johnmunsch">
+        <level value="debug"/>
+        <appender-ref ref="socketLogger"/>
+    </logger>
+
+    <logger name="com.johnmunsch.stuff">
+        <level value="warn"/>
+    </logger>
+
+    <logger name="com.johnmunsch.otherstuff" additivity="false">
+        <level value="warn"/>
+        <appender-ref ref="xml"/>
+    </logger>
+    <!-- The previous three 'logger' tags demonstrate three things.  First, -->
+    <!-- the addition of a new appender to what is already in use by the -->
+    <!-- levels below (defined in root).  The socketLogger will be used in -->
+    <!-- addition to the rolling. -->
+    <!-- Second, the logger named "com.johnmunsch.stuff" and all loggers -->
+    <!-- beyond that point will only operate at a level of 'warn' instead -->
+    <!-- of 'debug', as was defined previously (both in root and -->
+    <!-- com.johnmunsch). -->
+    <!-- Third, the logger named "com.johnmunsch.otherstuff" will no longer -->
+    <!-- pay attention to any previous levels (i.e. com.johnmunsch) when -->
+    <!-- deciding what should be logged, and to where, and will only log -->
+    <!-- at warning level or above, and only to the xml appender. -->
+
+    <!-- The 'root' tag in the xml file has the same purpose as the -->
+    <!-- log4j.rootCategory entry in the example - to define the -->
+    <!-- appenders attached to the root logger/category and to set -->
+    <!-- the level of logging done at the root level. -->
+    <root>
+        <level value="debug"/>
+        <appender-ref ref="rolling"/>
+    </root>
+    <!-- Multiple appender-ref tags can be used to have multiple appenders -->
+    <!-- attached to the root.  Also, note that the 'level' tag could -->
+    <!-- (in older log4j) have been 'priority', instead.  Additionally, the -->
+    <!-- 'priority' or 'level' tag could override the class used for -->
+    <!-- that purpose, though there's rarely any reason to use that -->
+    <!-- capacity.  For more information on that, check the appropriate -->
+    <!-- documentation.  -->
+    <!-- As to the 'appender-ref' tag(s), each tag defines an appender to -->
+    <!-- which the logged data should be sent... -->
+
+</log4j:configuration>

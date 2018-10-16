@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="module_mtc" default="compile.module.mtc">
+  <dirname property="module.mtc.basedir" file="${ant.file.module_mtc}"/>
+  
+  <property name="module.jdk.home.mtc" value="${project.jdk.home}"/>
+  <property name="module.jdk.classpath.mtc" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.mtc" value="${compiler.args}"/>
+  
+  <property name="mtc.output.dir" value="${module.mtc.basedir}/build/classes"/>
+  
+  <path id="mtc.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="mtc.module.classpath">
+    <path refid="${module.jdk.classpath.mtc}"/>
+    <pathelement location="${common-base.output.dir}"/>
+    <pathelement location="${logging-log4j-1.2.9.output.dir}"/>
+    <pathelement location="${module.mtc.basedir}/../../third-party/logging-log4j-1.2.9/log4j-1.2.9.jar"/>
+    <pathelement location="${module.mtc.basedir}/../../third-party/ssj/lib/ssj.jar"/>
+    <pathelement location="${module.mtc.basedir}/../../cmf/common-base/lib/junit.jar"/>
+    <pathelement location="${module.mtc.basedir}/../../cmf/common-base/lib/or124.jar"/>
+    <pathelement location="${module.common-base.basedir}/../../third-party/jexcelapi/jxl.jar"/>
+    <!-- <pathelement location="${module.common-base.basedir}/lib/jxl.jar"/> -->
+    <pathelement location="${module.mtc.basedir}/../../cmf/common-base/lib/xml4j.jar"/>
+    <pathelement location="${module.mtc.basedir}/../../cmf/common-base/lib/mysql-connector-java-3.0.10-stable-bin.jar"/>
+    <pathelement location="${module.mtc.basedir}/../../cmf/common-base/lib/dx.jar"/>
+    <pathelement location="${module.mtc.basedir}/../../cmf/common-base/lib/jds.jar"/>
+    <pathelement location="${module.mtc.basedir}/../../cmf/common-base/lib/cajo.jar"/>
+    <pathelement location="${module.mtc.basedir}/../../cmf/common-base/lib/dxml.jar"/>
+    <pathelement location="${utils.output.dir}"/>
+    <pathelement location="${reference.output.dir}"/>
+    <pathelement location="${censusdata.output.dir}"/>
+  	<pathelement location="${synpop.output.dir}"/>
+  	<pathelement location="${ctramp.output.dir}"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.mtc"/>
+  
+  <patternset id="excluded.from.compilation.mtc">
+    <patternset refid="excluded.from.module.mtc"/>
+  </patternset>
+  
+  <path id="mtc.module.sourcepath">
+    <dirset dir="${module.mtc.basedir}">
+      <include name="src/java"/>
+    </dirset>
+  </path>
+
+  <target name="compile.module.mtc" description="compile module mtc classes">
+    <mkdir dir="${mtc.output.dir}"/>
+    <javac destdir="${mtc.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.mtc}/bin/javac">
+      <compilerarg line="${compiler.args.mtc}"/>
+      <bootclasspath refid="mtc.module.bootclasspath"/>
+      <classpath refid="mtc.module.classpath"/>
+      <src refid="mtc.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.mtc"/>
+    </javac>
+    <copy todir="${mtc.output.dir}">
+      <fileset dir="${module.mtc.basedir}/src/java">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+        <patternset refid="excluded.from.compilation.mtc"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="clean.module.mtc" description="cleanup module">
+    <delete dir="${mtc.output.dir}"/>
+  </target>
+</project>

@@ -1,0 +1,56 @@
+<project name="cvsdiff" default="style" basedir=".">
+
+    <!-- Change the following properties for your usage:
+    
+        1. cvs.username
+        2. cvs.package
+        3. start.tag
+        4. end.tag
+    
+        The generated XML and HTML files will be stored in your %TEMP% directory.
+    -->    
+        
+    <property environment="env"/>
+
+    <!-- CVS VALUES -->
+    <property name="root.dir" value="${env.TEMP}"/>
+    <property name="cvs.username" value="theier"/>
+    <property name="cvs.host" value="k3834dsf.dev.schwab.com"/>
+    <property name="cvs.root" value=":pserver:${cvs.username}@k3834dsf.dev.schwab.com:/usr/local/cvsroot"/>
+    <property name="cvs.passfile" value="/.cvspass"/>
+    <property name="cvs.dir" value="${root.dir}"/>
+    <property name="cvs.package" value="sim_projects/frameworks"/>
+
+    <!-- DIFF FILE VALUES -->
+    <property name="tagdiff.file" value="${env.TEMP}/tagdiff.xml"/>
+    <property name="styled.file" value="${env.TEMP}/tagdiff.html"/>
+    
+    <!-- SET CVS TAGS HERE -->
+    <property name="start.tag" value="FW_6-2-0"/>
+    <property name="end.tag" value="FW_6-3-0"/>
+
+    
+    <target name="tagdiff">
+        <cvstagdiff cvsRoot="${cvs.root}"
+                passfile="${cvs.passfile}"
+                destfile="${tagdiff.file}"
+                package="${cvs.package}"
+                startTag="${start.tag}"
+                endTag="${end.tag}"/>    
+    </target>
+
+
+    <target name="style" depends="tagdiff">
+        <delete file="${styled.file}"/>
+
+        <xslt in="${tagdiff.file}"
+              out="${styled.file}"
+              style="${ant.home}/etc/tagdiff.xsl">
+              
+            <param name="title" expression="TAG Comparison"/>
+            <param name="module" expression="${cvs.package}"/>
+            <param name="cvsweb" expression="http://k3834dsf.dev.schwab.com/viewcvs.cgi/"/>
+        </xslt>
+    </target>
+    
+</project>

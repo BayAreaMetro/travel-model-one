@@ -1,0 +1,36 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: msvcMath - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\hicksji\LOCALS~1\Temp\RSPBA.tmp" with contents
+[
+/nologo /G5 /ML /W3 /GX /Ox /Ot /Og /Oi /I "c:\jdk1.4.2\include" /I "c:\jdk1.4.2\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MSVCMATH_EXPORTS" /Fp"Release/msvcMath.pch" /YX /Fo"Release/" /Fd"Release/" /FD /c 
+"C:\jim\Util\svn_workspace\cmf\common-base\src\c\math\expNative.c"
+"C:\jim\Util\svn_workspace\cmf\common-base\src\c\math\logNative.c"
+]
+Creating command line "cl.exe @C:\DOCUME~1\hicksji\LOCALS~1\Temp\RSPBA.tmp" 
+Creating temporary file "C:\DOCUME~1\hicksji\LOCALS~1\Temp\RSPBB.tmp" with contents
+[
+mkl_c.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /pdb:"Release/msvcMath.pdb" /machine:I386 /out:"Release/msvcMath.dll" /implib:"Release/msvcMath.lib" /libpath:"C:\Program Files\Intel\MKL70\ia32\lib" 
+".\Release\expNative.obj"
+".\Release\logNative.obj"
+]
+Creating command line "link.exe @C:\DOCUME~1\hicksji\LOCALS~1\Temp\RSPBB.tmp"
+<h3>Output Window</h3>
+Compiling...
+expNative.c
+logNative.c
+Linking...
+   Creating library Release/msvcMath.lib and object Release/msvcMath.exp
+
+
+
+<h3>Results</h3>
+msvcMath.dll - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

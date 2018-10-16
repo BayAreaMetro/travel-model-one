@@ -1,0 +1,63 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: tppio_native - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\Jim\LOCALS~1\Temp\RSP1E.tmp" with contents
+[
+/nologo /Zp1 /ML /W3 /GX /O2 /I "c:\program files\java\jdk1.6.0_05\include" /I "c:\program files\java\jdk1.6.0_05\include\win32" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "TPPIO_NATIVE_EXPORTS" /Fp"Release/tppio_native.pch" /YX /Fo"Release/" /Fd"Release/" /FD /c 
+"C:\jim\util\svn_workspace\cmf\common-base\src\c\matrix\tpplus_native_dll\tppGetNumberOfRows.c"
+"C:\jim\util\svn_workspace\cmf\common-base\src\c\matrix\tpplus_native_dll\tppGetNumberOfRowsNative.c"
+"C:\jim\util\svn_workspace\cmf\common-base\src\c\matrix\tpplus_native_dll\tppGetNumberOfTables.c"
+"C:\jim\util\svn_workspace\cmf\common-base\src\c\matrix\tpplus_native_dll\tppGetNumberOfTablesNative.c"
+"C:\jim\util\svn_workspace\cmf\common-base\src\c\matrix\tpplus_native_dll\tppGetTableName.c"
+"C:\jim\util\svn_workspace\cmf\common-base\src\c\matrix\tpplus_native_dll\tppGetTableNameNative.c"
+"C:\jim\util\svn_workspace\cmf\common-base\src\c\matrix\tpplus_native_dll\tppInitDllNative.c"
+"C:\jim\util\svn_workspace\cmf\common-base\src\c\matrix\tpplus_native_dll\tppReadTable.c"
+"C:\jim\util\svn_workspace\cmf\common-base\src\c\matrix\tpplus_native_dll\tppReadTableNative.c"
+"C:\jim\util\svn_workspace\cmf\common-base\src\c\matrix\tpplus_native_dll\tppWrite.c"
+"C:\jim\util\svn_workspace\cmf\common-base\src\c\matrix\tpplus_native_dll\tppWriteNative.c"
+]
+Creating command line "cl.exe @C:\DOCUME~1\Jim\LOCALS~1\Temp\RSP1E.tmp" 
+Creating temporary file "C:\DOCUME~1\Jim\LOCALS~1\Temp\RSP1F.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /pdb:"Release/tppioNative.pdb" /machine:I386 /out:"release\tppioNative.dll" /implib:"Release/tppioNative.lib" 
+".\Release\tppGetNumberOfRows.obj"
+".\Release\tppGetNumberOfRowsNative.obj"
+".\Release\tppGetNumberOfTables.obj"
+".\Release\tppGetNumberOfTablesNative.obj"
+".\Release\tppGetTableName.obj"
+".\Release\tppGetTableNameNative.obj"
+".\Release\tppInitDllNative.obj"
+".\Release\tppReadTable.obj"
+".\Release\tppReadTableNative.obj"
+".\Release\tppWrite.obj"
+".\Release\tppWriteNative.obj"
+]
+Creating command line "link.exe @C:\DOCUME~1\Jim\LOCALS~1\Temp\RSP1F.tmp"
+<h3>Output Window</h3>
+Compiling...
+tppGetNumberOfRows.c
+tppGetNumberOfRowsNative.c
+tppGetNumberOfTables.c
+tppGetNumberOfTablesNative.c
+tppGetTableName.c
+tppGetTableNameNative.c
+tppInitDllNative.c
+tppReadTable.c
+tppReadTableNative.c
+tppWrite.c
+tppWriteNative.c
+Linking...
+   Creating library Release/tppioNative.lib and object Release/tppioNative.exp
+
+
+
+<h3>Results</h3>
+tppioNative.dll - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

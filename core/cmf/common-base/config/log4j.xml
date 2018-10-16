@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<!--
+ A simple configuration file for the Log4j logging classes. Basic FILE and CONSOLE
+ Appenders are created.
+ 
+ Two additional sections can be uncommented to provide additional logging features. 
+-->
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss:SSS}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+
+    <appender name="FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="event.log"/>
+        <param name="Append" value="true"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd-MMM-yyyy HH:mm:ss:SSS}, %p, %m%n"/>
+        </layout>        
+    </appender>
+
+<!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+<!-- Configures the performance timer log file -->
+    <appender name="PERFORMANCE-FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="event-performance.log"/>
+        <param name="Append" value="true"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%m%n"/>
+        </layout>
+    </appender>
+
+
+    <logger name="performance" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="PERFORMANCE-FILE"/>
+    </logger>
+
+
+<!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+<!-- Uncomment this section to show all log statements in a Swing Window. This
+     appender is slow but can be helpful for development purposes.
+
+    <appender name="WINDOW" class="org.apache.log4j.lf5.LF5Appender">
+        <param name="MaxNumberOfRecords" value="1000"/>
+    </appender>
+
+
+    <logger name="com.pb">
+        <level value="debug"/>
+        <appender-ref ref="WINDOW"/>
+    </logger>
+-->
+
+<!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+<!-- Uncomment this section to send log statements to a remote server.
+   
+    <appender name="REMOTE" class="org.apache.log4j.net.SocketAppender">
+        <param name="RemoteHost" value="localhost"/>
+        <param name="Port" value="7001"/>
+        <param name="LocationInfo" value="true"/>
+    </appender>
+    
+
+    <logger name="com.pb">
+        <level value="debug"/>
+        <appender-ref ref="REMOTE"/>
+    </logger>
+-->
+
+<!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+<!-- This is a basic configuration of the RollingFileAppender. Note, the FileAppender
+     configured above will automatically append but not roll a file over.
+   
+    <appender name="ROLLING" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="event.log"/>
+        <param name="MaxFileSize" value="100KB"/>
+        <param name="MaxBackupIndex" value="1"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d %-5p %-17c{2} (%30F:%L) %3x - %m%n"/>
+        </layout>
+    </appender>
+-->
+
+<!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+<!-- Configures the root/default logger -->
+<!-- The default logger will log all levels (debug and above) and above to both CONSOLE and FILE -->
+<!-- Logging level order is: debug -> info -> warn -> error -> fatal -->
+    <root>
+        <level value="info"/>
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+        
+</log4j:configuration>

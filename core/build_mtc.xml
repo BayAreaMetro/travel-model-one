@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="mtc" default="all">
+  
+  <property environment="env"/>
+  <property file="build.properties"/>
+
+  <!-- Uncomment the following property if no tests compilation is needed -->
+  <!-- 
+  <property name="skip.tests" value="true"/>
+   -->
+  
+  <!-- Compiler options -->
+  <property name="compiler.debug" value="on"/>
+  <property name="compiler.generate.no.warnings" value="off"/>
+  <property name="compiler.args" value=""/>
+  <property name="compiler.max.memory" value="256m"/>
+
+  <patternset id="compiler.excluded"/>
+  <patternset id="compiler.resources">
+    <include name="**/?*.properties"/>
+    <include name="**/?*.xml"/>
+    <include name="**/?*.gif"/>
+    <include name="**/?*.png"/>
+    <include name="**/?*.jpeg"/>
+    <include name="**/?*.jpg"/>
+    <include name="**/?*.html"/>
+    <include name="**/?*.dtd"/>
+    <include name="**/?*.tld"/>
+  </patternset>
+
+  <!-- JDK definitions -->
+  <property name="jdk.home" value="${env.JAVA_HOME}"/>
+
+  <path id="jdk.classpath">
+    <fileset dir="${jdk.home}">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <!-- project.jdk values used in module build files -->
+  <property name="project.jdk.home" value="${jdk.home}"/>
+  <property name="project.jdk.classpath" value="jdk.classpath"/>
+
+  
+
+  <!-- Import module build files -->
+  <import file="${basedir}/../../cmf/common-base/module_common-base.xml"/>
+	
+  <import file="${basedir}/../../models/utils/module_utils.xml"/>
+	
+  <import file="${basedir}/../../models/reference/module_reference.xml"/>
+	
+  <import file="${basedir}/../../models/censusdata/module_censusdata.xml"/>
+  
+  <import file="${basedir}/../../cmf/common-daf-v2/module_common-daf-v2.xml"/>
+	
+  <import file="${basedir}/../../models/synpop/module_synpop.xml"/>
+  
+  <import file="${basedir}/../../models/ctramp/module_ctramp.xml"/>
+  
+  <import file="${basedir}/../mtc/module_mtc.xml" />
+  
+  
+
+
+    <!-- Perform build initialization in this target -->
+  <target name="init" description="Build initialization">
+    <echo message="***** JAVA_HOME=${jdk.home}"/>
+  </target>
+  
+  <target name="clean" depends="clean.module.common-base, clean.module.utils, clean.module.reference, clean.module.censusdata, clean.module.synpop, clean.module.ctramp, clean.module.mtc" description="cleanup all"/>
+  
+  <target name="compile" depends="init, clean, compile.module.common-base, compile.module.utils, compile.module.reference, compile.module.censusdata, compile.module.synpop, compile.module.ctramp, compile.module.mtc" description="build all source files"/>
+
+  <target name="all" depends="init, clean, compile, makejar, release" description="clean, build all source and make jar file"/>
+
+  <!-- Release directory is in the current directory -->
+  <property name="jar.dir" value="${basedir}/../${ant.project.name}/release"/>
+
+  <!-- Create a Jar file with all zip/jar files unpacked -->
+  <target name="makejar" depends="init">
+    <tstamp/>
+    <mkdir dir="${jar.dir}"/>
+    <delete file="${jar.dir}/${ant.project.name}.jar"/>
+    <jar destfile="${jar.dir}/${ant.project.name}.jar">
+
+        <zipgroupfileset dir="${basedir}/../../cmf/common-base/lib" includes="*.zip,*.jar" excludes="jxl.jar"/>
+        <zipgroupfileset dir="${basedir}/../../third-party/logging-log4j-1.2.9" includes="log4j-1.2.9.jar"/>
+        <!-- <zipgroupfileset dir="${basedir}/../../third-party/jppf-1.8/jppf-1.8-gui/lib" includes="*.jar"/> -->
+        <zipgroupfileset dir="${basedir}/../../third-party/sqlitejdbc" includes="sqlitejdbc*.jar"/>
+        <zipgroupfileset dir="${basedir}/../../third-party/jexcelapi" includes="jxl.jar"/>
+        <zipgroupfileset dir="${basedir}/../../third-party/ssj/lib" includes="ssj.jar"/>
+        
+        <fileset dir="${basedir}/../../cmf/common-base/build/classes">
+          <include name="**/*.class"/>
+        </fileset>
+        <fileset dir="${basedir}/../../models/utils/build/classes">
+          <include name="**/*.class"/>
+        </fileset>
+        <fileset dir="${basedir}/../../models/reference/build/classes">
+          <include name="**/*.class"/>
+        </fileset>
+        <fileset dir="${basedir}/../../models/censusdata/build/classes">
+          <include name="**/*.class"/>
+        </fileset>
+        <fileset dir="${basedir}/../../models/synpop/build/classes">
+          <include name="**/*.class"/>
+    	</fileset>
+    	<fileset dir="${basedir}/../../models/ctramp/build/classes">
+          <include name="**/*.class"/>
+    	</fileset>
+        <fileset dir="${basedir}/../mtc/build/classes">
+          <include name="**/*.class"/>
+        </fileset>
+
+    </jar>
+  </target>
+
+    <target name="release" depends="makejar">
+
+        <!-- copy dependencies to release directory -->
+        <!-- no dependencies yet, but I'm reserving this spot -->
+
+    </target>
+
+</project>

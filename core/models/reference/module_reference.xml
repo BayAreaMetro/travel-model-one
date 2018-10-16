@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="module_reference" default="compile.module.reference">
+  <dirname property="module.reference.basedir" file="${ant.file.module_reference}"/>
+  
+  <property name="module.jdk.home.reference" value="${project.jdk.home}"/>
+  <property name="module.jdk.classpath.reference" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.reference" value="${compiler.args}"/>
+  
+  <property name="reference.output.dir" value="${module.reference.basedir}/build/classes"/>
+  <property name="reference.testoutput.dir" value="${module.reference.basedir}/build/classes"/>
+  
+  <path id="reference.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="reference.module.classpath">
+    <path refid="${module.jdk.classpath.reference}"/>
+    <pathelement location="${common-base.output.dir}"/>
+    <pathelement location="${module.reference.basedir}/../../third-party/logging-log4j-1.2.9/log4j-1.2.9.jar"/>
+      <pathelement location="${module.reference.basedir}/../../cmf/common-base/lib/junit-4.1.jar"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.reference"/>
+  
+  <patternset id="excluded.from.compilation.reference">
+    <patternset refid="excluded.from.module.reference"/>
+    <patternset refid="compiler.excluded"/>
+  </patternset>
+  
+  <path id="reference.module.sourcepath">
+    <dirset dir="${module.reference.basedir}">
+      <include name="src/java"/>
+    </dirset>
+  </path>
+  
+  
+  <!-- Import module build files -->
+  <import file="${basedir}/../../cmf/common-base/module_common-base.xml"/>
+
+  <target name="compile.module.reference" depends="compile.module.common-base" description="compile module reference production classes">
+    <mkdir dir="${reference.output.dir}"/>
+    <javac destdir="${reference.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.reference}/bin/javac">
+      <compilerarg line="${compiler.args.reference}"/>
+      <bootclasspath refid="reference.module.bootclasspath"/>
+      <classpath refid="reference.module.classpath"/>
+      <src refid="reference.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.reference"/>
+    </javac>
+    <copy todir="${reference.output.dir}">
+      <fileset dir="${module.reference.basedir}/src/java">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+        <patternset refid="excluded.from.compilation.reference"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="clean.module.reference" description="cleanup module">
+    <delete dir="${reference.output.dir}"/>
+    <delete dir="${reference.testoutput.dir}"/>
+  </target>
+</project>

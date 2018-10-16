@@ -1,0 +1,50 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: convertTpplusBinary - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\hicksji\LOCALS~1\Temp\RSP1E4.tmp" with contents
+[
+/nologo /Zp1 /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"Release/convertTpplusBinary.pch" /YX /Fo"Release/" /Fd"Release/" /FD /c 
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\tpplus_to_binary\convertTpplusBinary.c"
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\tpplus_to_binary\tppGetNumberOfRows.c"
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\tpplus_to_binary\tppGetNumberOfTables.c"
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\tpplus_to_binary\tppInitDllNative.c"
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\tpplus_to_binary\tppReadRand.c"
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\tpplus_to_binary\tppReadSeq.c"
+"C:\jim\Util\workspace3.0m4\common-base\src\c\matrix\tpplus_to_binary\tppToBinary.c"
+]
+Creating command line "cl.exe @C:\DOCUME~1\hicksji\LOCALS~1\Temp\RSP1E4.tmp" 
+Creating temporary file "C:\DOCUME~1\hicksji\LOCALS~1\Temp\RSP1E5.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:no /pdb:"Release/convertTpplusBinary.pdb" /machine:I386 /out:"Release/convertTpplusBinary.exe" 
+".\Release\convertTpplusBinary.obj"
+".\Release\tppGetNumberOfRows.obj"
+".\Release\tppGetNumberOfTables.obj"
+".\Release\tppInitDllNative.obj"
+".\Release\tppReadRand.obj"
+".\Release\tppReadSeq.obj"
+".\Release\tppToBinary.obj"
+]
+Creating command line "link.exe @C:\DOCUME~1\hicksji\LOCALS~1\Temp\RSP1E5.tmp"
+<h3>Output Window</h3>
+Compiling...
+convertTpplusBinary.c
+tppGetNumberOfRows.c
+tppGetNumberOfTables.c
+tppInitDllNative.c
+tppReadRand.c
+tppReadSeq.c
+tppToBinary.c
+Linking...
+
+
+
+<h3>Results</h3>
+convertTpplusBinary.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

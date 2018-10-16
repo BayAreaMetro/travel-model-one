@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="module_utils" default="compile.module.utils">
+  <dirname property="module.utils.basedir" file="${ant.file.module_utils}"/>
+  
+  <property name="module.jdk.home.utils" value="${project.jdk.home}"/>
+  <property name="module.jdk.classpath.utils" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.utils" value="${compiler.args}"/>
+  
+  <property name="utils.output.dir" value="${module.utils.basedir}/build/classes"/>
+  <property name="utils.testoutput.dir" value="${module.utils.basedir}/build/classes"/>
+  
+  <path id="utils.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="utils.module.classpath">
+    <path refid="${module.jdk.classpath.utils}"/>
+    <pathelement location="${common-base.output.dir}"/>
+    <pathelement location="${module.utils.basedir}/../../third-party/logging-log4j-1.2.9/log4j-1.2.9.jar"/>
+    <pathelement location="${module.utils.basedir}/../../cmf/common-base/lib/junit-4.1.jar"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.utils"/>
+  
+  <patternset id="excluded.from.compilation.utils">
+    <patternset refid="excluded.from.module.utils"/>
+    <patternset refid="compiler.excluded"/>
+  </patternset>
+  
+  <path id="utils.module.sourcepath">
+    <dirset dir="${module.utils.basedir}">
+      <include name="src/java"/>
+    </dirset>
+  </path>
+
+
+  
+  <!-- Import module build files -->
+  <import file="${basedir}/../../cmf/common-base/module_common-base.xml"/>
+
+  <target name="compile.module.utils" depends="compile.module.common-base" description="compile module util production classes">
+    <mkdir dir="${utils.output.dir}"/>
+    <javac destdir="${utils.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.utils}/bin/javac">
+      <compilerarg line="${compiler.args.utils}"/>
+      <bootclasspath refid="utils.module.bootclasspath"/>
+      <classpath refid="utils.module.classpath"/>
+      <src refid="utils.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.utils"/>
+    </javac>
+    <copy todir="${utils.output.dir}">
+      <fileset dir="${module.utils.basedir}/src/java">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+        <patternset refid="excluded.from.compilation.utils"/>
+      </fileset>
+    </copy>
+  </target>
+
+
+  
+  <target name="clean.module.utils" description="cleanup module">
+    <delete dir="${utils.output.dir}"/>
+    <delete dir="${utils.testoutput.dir}"/>
+  </target>
+</project>

@@ -1,0 +1,731 @@
+From:	Guo, Jessica Y. <guojy@pbworld.com>
+Sent:	Wednesday, December 10, 2014 5:04 PM
+To:	Lisa Zorn
+Cc:	David Ory; Freedman, Joel
+Subject:	RE: Syntax for using properties tokens in UECs?
+
+The latest change (between 12/8/2014 and 12/10/2014) does not affect model results.  In the event if 
+the inappropriate hashmap lookup did occur, the model run would have crashed (it would not be able to 
+retrieve the size term needed for the SOA model for certain activity segments).  This error case was 
+encountered, and subsequently addressed, only very recently when the run on a new setup for the ARC 
+model crashed.  The fact that such runtime exception was never encountered during past runs of the 
+MTC model suggests that the error did not take place.  And since the fix is targeted at only handling the 
+error case, other paths through the code would not be affected.  
+
+The enhancements made to the SOA model to improve computational efficiency could presumably 
+change the model results if the feature is turned on (so that the ‘Generic’ utility function is applied 
+instead of the purpose-specific utility function).  But when the feature is turned off (by setting the 
+property StopLocationSoa.useGenericSOAModel to “0,0,0,0,0,0,0,0,0,0,0,0,0,0”), the original purpose-
+specific utility functions will be applied and the results will therefore be identical to what’s produced by 
+the JAR prior to the SOA enhancement.  Even with the feature turned on, our evaluation for the ARC 
+implementation indicated minimal changes in the overall trip distance distributions while the 
+computational performance gain was significant.  
+
+Jessica
+
+Jessica Guo, PhD, CAP  
+Supervising Planner, Systems Analysis 
+Parsons Brinckerhoff  
+400 SW Sixth Avenue, Suite 802 
+Portland, OR 97204 
+503-478-2342 (office) 
+512-771-4663 (cell) 
+guojy@pbworld.com 
+www.pbworld.com
+
+From: Lisa Zorn [mailto:lzorn@mtc.ca.gov]  
+Sent: Wednesday, December 10, 2014 4:22 PM 
+To: Guo, Jessica Y. 
+Cc: David Ory; Freedman, Joel 
+Subject: RE: Syntax for using properties tokens in UECs?
+
+Thank you.  Is there a changelog of what’s in this version compared to what we had before?
+Are these changes expected to have no effect on model results?
+-Lisa
+
+From: Guo, Jessica Y. [mailto:guojy@pbworld.com]  
+Sent: Wednesday, December 10, 2014 3:04 PM 
+To: Lisa Zorn 
+Cc: David Ory; Freedman, Joel 
+Subject: RE: Syntax for using properties tokens in UECs?
+
+Hi Lisa,
+
+It seems that the MTC model setup on github is missing the pieces needed to work with the enhanced 
+SOA model.
+
+Via this link please download the 5 files that will need to be updated: 
+https://ftp.pbworld.com/GetFile.aspx?fn=2004691754.zip
+
+Properties File
+The following was added to the “mtcTourBased-master.properties” file (line 142):
+StopLocationSoa.useGenericSOAModel=1,1,1,1,1,1,0,0,0,0,0,0,0,0
+
+UEC
+A new sheet labeled as “Generic” was added to “StopDestinationChoiceAlternativeSample.xls”
+
+Source Code
+“StopDestinationSampleOfAlternativesModel.java” and 
+“StopDestinationSampleOfAlternativesModelGeneric.java” to go into 
+\models\ctramp\src\java\com\pb\models\ctramp\jppf\
+I took the opportunity to update these classes again (from the version sent on Monday) to incorporate 
+the bug fix that was recently implemented in the ctramp code branch for the ARC implementation.  This 
+fix is more of a preventive measure to better handle potentially inappropriate hashmap lookups.  
+
+New JAR
+The JAR file has been rebuilt with the two updated java files. 
+
+Hopefully these updates will get the model going on your end.  
+
+Thanks,
+
+Jessica
+
+Jessica Guo, PhD, CAP 
+Supervising Planner, Systems Analysis
+Parsons Brinckerhoff 
+400 SW Sixth Avenue, Suite 802
+Portland, OR 97204
+503-478-2342 (office)
+512-771-4663 (cell)
+guojy@pbworld.com
+www.pbworld.com
+
+-----Original Message----- 
+From: Lisa Zorn [mailto:lzorn@mtc.ca.gov]  
+Sent: Tuesday, December 09, 2014 1:32 PM 
+To: Guo, Jessica Y.; Freedman, Joel 
+Cc: Hicks, Jim 
+Subject: RE: Syntax for using properties tokens in UECs?
+
+Hi Jessica!
+
+Our properties files are here:
+https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/master/model-
+files/runtime/mtcTourBased.properties
+https://github.com/MetropolitanTransportationCommission/travel-model-one/blob/master/model-
+files/runtime/accessibilities.properties
+
+Thanks!  And thanks for sending the download!
+
+-----Original Message-----
+From: Guo, Jessica Y. [mailto:guojy@pbworld.com] 
+Sent: Tuesday, December 09, 2014 1:11 PM
+To: Lisa Zorn; Freedman, Joel
+Cc: Hicks, Jim
+Subject: RE: Syntax for using properties tokens in UECs?
+
+Yes, " StopLocationSoa.useGenericSOAModel" is a newer feature.  Can you please send me the property 
+file that you use?  I'll check what else might need to be included.
+
+Jessica
+
+Jessica Guo, PhD, CAP 
+Supervising Planner, Systems Analysis
+Parsons Brinckerhoff 
+400 SW Sixth Avenue, Suite 802
+Portland, OR 97204
+503-478-2342 (office)
+512-771-4663 (cell)
+guojy@pbworld.com
+www.pbworld.com
+
+-----Original Message-----
+From: Lisa Zorn [mailto:lzorn@mtc.ca.gov] 
+Sent: Tuesday, December 09, 2014 11:20 AM
+To: Freedman, Joel; Guo, Jessica Y.
+Cc: Hicks, Jim
+Subject: RE: Syntax for using properties tokens in UECs?
+
+It got further this time, yay!  It looks like it's looking for the StopLocationSoa.useGenericSOAModel 
+property.
+Is that new?  What should it be to return the same results?  Are there lots of diffs in this jar?
+
+08-Dec-2014 21:39:03, ERROR, Exception caught creating/submitting/receiving 
+HouseholdChoiceModelsTaskJppf.
+java.lang.RuntimeException
+        at com.pb.common.util.PropertyMap.getBooleanArrayFromPropertyMap(PropertyMap.java:183)
+        at 
+com.pb.models.ctramp.jppf.StopDestinationSampleOfAlternativesModelGeneric.<init>(StopDestination
+SampleOfAlternativesModelGeneric.java:74)
+        at 
+com.pb.models.ctramp.jppf.StopLocationModeChoiceModel.setupStopLocationChoiceModels(StopLoca
+tionModeChoiceModel.java:164)
+        at 
+com.pb.models.ctramp.jppf.StopLocationModeChoiceModel.<init>(StopLocationModeChoiceModel.java
+:124)
+        at 
+com.pb.models.ctramp.jppf.HouseholdChoiceModels.setupModels(HouseholdChoiceModels.java:238)
+        at com.pb.models.ctramp.jppf.HouseholdChoiceModels.<init>(HouseholdChoiceModels.java:99)
+        at 
+com.pb.models.ctramp.jppf.HouseholdChoiceModelsManager.getHouseholdChoiceModelsObject(Hous
+eholdChoiceModelsManager.java:118)
+        at 
+com.pb.models.ctramp.jppf.HouseholdChoiceModelsTaskJppf.run(HouseholdChoiceModelsTaskJppf.jav
+a:84)
+        at org.jppf.server.node.NodeTaskWrapper.run(NodeTaskWrapper.java:96)
+        at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:471)
+        at java.util.concurrent.FutureTask.run(FutureTask.java:262)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+       at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+        at java.lang.Thread.run(Thread.java:745)
+
+-----Original Message-----
+From: Freedman, Joel [mailto:Freedman@pbworld.com] 
+Sent: Tuesday, December 09, 2014 9:59 AM
+To: Guo, Jessica Y.; Lisa Zorn
+Cc: Hicks, Jim
+Subject: RE: Syntax for using properties tokens in UECs?
+
+Hi Lisa, if it doesn't work can you give me access to the MTC cluster via remote desktop so I can trouble-
+shoot?
+
+Thanks,
+-Joel
+
+Joel Freedman
+Principal Professional Consultant, Systems Analysis Parsons Brinckerhoff
+400 SW Sixth Avenue, Suite 802
+Portland, OR 97204
+503-478-2344 (office)
+
+freedman@pbworld.com
+
+www.pbworld.com
+
+
+-----Original Message-----
+From: Guo, Jessica Y. 
+Sent: Monday, December 08, 2014 4:02 PM
+To: Lisa Zorn
+Cc: Freedman, Joel; Hicks, Jim
+Subject: RE: Syntax for using properties tokens in UECs?
+
+Hi Lisa,
+
+The MTC source code, Ant build file, and compiled JARs are available at the following FTP link:
+https://ftp.pbworld.com/GetFile.aspx?fn=856990180.zip
+
+My re-build is under projects/mtc/release/mtc.jar - please give it a try.  We will also test the JAR on our 
+end.    
+
+Thanks,
+
+Jessica
+
+Jessica Guo, PhD, CAP
+Supervising Planner, Systems Analysis
+Parsons Brinckerhoff
+400 SW Sixth Avenue, Suite 802
+Portland, OR 97204
+503-478-2342 (office)
+512-771-4663 (cell)
+guojy@pbworld.com
+www.pbworld.com
+
+
+-----Original Message-----
+From: Freedman, Joel
+Sent: Monday, December 08, 2014 10:29 AM
+To: Lisa Zorn; Hicks, Jim
+Cc: Guo, Jessica Y.
+Subject: RE: Syntax for using properties tokens in UECs?
+
+Hi Jessica, can you please check to make sure that the UEC change that Jim made to the SANDAG project 
+in which the user can specify an environment variable in a UEC model page is also present in the MTC 
+version, and zip up and send Lisa all the source code consistent with the latest MTC build? 
+
+Thanks,
+-Joel
+
+Joel Freedman
+Principal Professional Consultant, Systems Analysis Parsons Brinckerhoff
+400 SW Sixth Avenue, Suite 802
+Portland, OR 97204
+503-478-2344 (office)
+
+freedman@pbworld.com
+
+www.pbworld.com
+
+-----Original Message-----
+From: Lisa Zorn [mailto:lzorn@mtc.ca.gov]
+Sent: Monday, December 08, 2014 10:24 AM
+To: Freedman, Joel; Hicks, Jim
+Cc: Guo, Jessica Y.
+Subject: RE: Syntax for using properties tokens in UECs?
+
+Hi Joel!
+I updated our java version (to 1.7.0_71, which is the oldest one for which I could find a jdk installer) and 
+I'm still getting the same exception.
+Could I get a copy of the source code that was compiled into this mtc.jar?
+Thanks!
+-Lisa
+
+-----Original Message-----
+From: Freedman, Joel [mailto:Freedman@pbworld.com]
+Sent: Friday, November 21, 2014 7:41 PM
+To: Lisa Zorn; Hicks, Jim
+Cc: Guo, Jessica Y.
+Subject: RE: Syntax for using properties tokens in UECs?
+
+Also make sure that your ct ramp environment variable for java points to the right version.
+
+Thanks,
+-Joel
+
+Joel Freedman
+Principal Professional Consultant, Systems Analysis Parsons Brinckerhoff
+400 SW Sixth Avenue, Suite 802
+Portland, OR 97204
+503-478-2344 (office)
+
+freedman@pbworld.com
+
+www.pbworld.com
+
+
+-----Original Message-----
+From: Freedman, Joel
+Sent: Friday, November 21, 2014 7:40 PM
+To: 'Lisa Zorn'; Hicks, Jim
+Cc: Guo, Jessica Y.
+Subject: RE: Syntax for using properties tokens in UECs?
+
+Hi Lisa, I compiled the jar using java 1.7.0_65. That might be the cause of the error, I am not sure. To be 
+safe, please close all java processes and update your JRE on all machines that you are running CTRAMP 
+to this version, and re-launch all processes. Let me know if you get the same error.
+
+Thanks,
+-Joel
+
+Joel Freedman
+Principal Professional Consultant, Systems Analysis Parsons Brinckerhoff
+400 SW Sixth Avenue, Suite 802
+Portland, OR 97204
+503-478-2344 (office)
+
+freedman@pbworld.com
+
+www.pbworld.com
+
+-----Original Message-----
+From: Lisa Zorn [mailto:lzorn@mtc.ca.gov]
+Sent: Friday, November 21, 2014 5:19 PM
+To: Freedman, Joel; Hicks, Jim
+Cc: Guo, Jessica Y.
+Subject: RE: Syntax for using properties tokens in UECs?
+
+Looks like 1.7.0:
+
+java version "1.7.0_51"
+Java(TM) SE Runtime Environment (build 1.7.0_51-b13) Java HotSpot(TM) 64-Bit Server VM (build 24.51-
+b03, mixed mode)
+
+-----Original Message-----
+From: Freedman, Joel [mailto:Freedman@pbworld.com]
+Sent: Friday, November 21, 2014 5:10 PM
+To: Lisa Zorn; Hicks, Jim
+Cc: Guo, Jessica Y.
+Subject: RE: Syntax for using properties tokens in UECs?
+
+What version of java are you running?
+
+
+Sent via the Samsung GALAXY S(r) 5, an AT&T 4G LTE smartphone
+
+
+-------- Original message --------
+From: Lisa Zorn <lzorn@mtc.ca.gov>
+Date:11/21/2014 4:51 PM (GMT-08:00)
+To: "Freedman, Joel" <Freedman@pbworld.com>, "Hicks, Jim" <HicksJi@pbworld.com>
+Cc: "Guo, Jessica Y." <guojy@pbworld.com>
+Subject: RE: Syntax for using properties tokens in UECs?
+
+Hi Joel -
+Thank you!  I subbed in the jar file and now I'm getting this cryptic message...
+
+21-Nov-2014 16:43:25, INFO, MTC Tour Based Model using CT-RAMP version 1.0.8.81, 22feb2011 build 2
+21-Nov-2014 16:43:26, INFO, -iteration 1.
+21-Nov-2014 16:43:26, INFO, -sampleRate 0.1500.
+21-Nov-2014 16:43:26, INFO, -sampleSeed 0.
+21-Nov-2014 16:43:26, INFO, starting tour based model.
+21-Nov-2014 16:43:27, INFO, HouseholdDataManager test: testRemote() method in 
+com.pb.mtc.ctramp.MtcHouseholdDataManager called.
+21-Nov-2014 16:44:26, ERROR, InvocationTargetException exception making RMI method call.
+21-Nov-2014 16:44:26, ERROR, connectString = 
+//192.168.1.200:1132/com.pb.mtc.ctramp.MtcHouseholdDataManager.setupHouseholdDataManager().
+21-Nov-2014 16:44:26, ERROR, name = setupHouseholdDataManager().
+java.lang.reflect.InvocationTargetException
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:606)
+        at gnu.cajo.invoke.Remote.invoke(Unknown Source)
+        at gnu.cajo.invoke.Remote.invoke(Unknown Source)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:606)
+        at sun.rmi.server.UnicastServerRef.dispatch(UnicastServerRef.java:322)
+        at sun.rmi.transport.Transport$1.run(Transport.java:177)
+        at sun.rmi.transport.Transport$1.run(Transport.java:174)
+        at java.security.AccessController.doPrivileged(Native Method)
+        at sun.rmi.transport.Transport.serviceCall(Transport.java:173)
+        at sun.rmi.transport.tcp.TCPTransport.handleMessages(TCPTransport.java:556)
+        at sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run0(TCPTransport.java:811)
+        at sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run(TCPTransport.java:670)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+        at java.lang.Thread.run(Thread.java:744)
+        at sun.rmi.transport.StreamRemoteCall.exceptionReceivedFromServer(StreamRemoteCall.java:275)
+        at sun.rmi.transport.StreamRemoteCall.executeCall(StreamRemoteCall.java:252)
+        at sun.rmi.server.UnicastRef.invoke(UnicastRef.java:161)
+        at gnu.cajo.invoke.Remote_Stub.invoke(Unknown Source)
+        at gnu.cajo.invoke.Remote.invoke(Unknown Source)
+        at com.pb.models.ctramp.UtilRmi.method(UtilRmi.java:114)
+        at 
+com.pb.models.ctramp.HouseholdDataManagerRmi.setupHouseholdDataManager(HouseholdDataMan
+agerRmi.java:38)
+        at com.pb.mtc.ctramp.MtcTourBasedModel.runTourBasedModel(MtcTourBasedModel.java:170)
+        at com.pb.mtc.ctramp.MtcTourBasedModel.main(MtcTourBasedModel.java:284)
+Caused by: java.lang.NoSuchMethodError: com.pb.models.ctramp.Household.initializeWindows()V
+        at 
+com.pb.mtc.ctramp.MtcHouseholdDataManager.mapTablesToHouseholdObjects(MtcHouseholdDataMa
+nager.java:162)
+        at 
+com.pb.models.ctramp.HouseholdDataManager.setupHouseholdDataManager(HouseholdDataManager
+.java:213)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:606)
+        at gnu.cajo.invoke.Remote.invoke(Unknown Source)
+        at gnu.cajo.invoke.Remote.invoke(Unknown Source)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:606)
+        at sun.rmi.server.UnicastServerRef.dispatch(UnicastServerRef.java:322)
+        at sun.rmi.transport.Transport$1.run(Transport.java:177)
+        at sun.rmi.transport.Transport$1.run(Transport.java:174)
+        at java.security.AccessController.doPrivileged(Native Method)
+        at sun.rmi.transport.Transport.serviceCall(Transport.java:173)
+        at sun.rmi.transport.tcp.TCPTransport.handleMessages(TCPTransport.java:556)
+        at sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run0(TCPTransport.java:811)
+        at sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run(TCPTransport.java:670)
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+        at java.lang.Thread.run(Thread.java:744)
+21-Nov-2014 16:44:29, ERROR, exception caught running ctramp model components -- exiting.
+java.lang.RuntimeException
+        at com.pb.models.ctramp.UtilRmi.method(UtilRmi.java:123)
+        at 
+com.pb.models.ctramp.HouseholdDataManagerRmi.setupHouseholdDataManager(HouseholdDataMan
+agerRmi.java:38)
+        at com.pb.mtc.ctramp.MtcTourBasedModel.runTourBasedModel(MtcTourBasedModel.java:170)
+        at com.pb.mtc.ctramp.MtcTourBasedModel.main(MtcTourBasedModel.java:284)
+21-Nov-2014 16:44:29, ERROR, RuntimeException caught in 
+com.pb.mtc.ctramp.TourBasedModel.main() -- exiting.
+java.lang.RuntimeException
+        at com.pb.mtc.ctramp.MtcTourBasedModel.runTourBasedModel(MtcTourBasedModel.java:203)
+        at com.pb.mtc.ctramp.MtcTourBasedModel.main(MtcTourBasedModel.java:284)
+
+From: Freedman, Joel [mailto:Freedman@pbworld.com]
+Sent: Friday, November 21, 2014 4:36 PM
+To: Lisa Zorn; Hicks, Jim
+Cc: Guo, Jessica Y.
+Subject: RE: Syntax for using properties tokens in UECs?
+
+
+Hi Lisa,
+
+You've set everything up correctly, so I think you maybe aren't using the latest version of the code. I 
+have compiled the latest code that's been checked into subversion and created a jar file which you can 
+download here<https://ftp.pbworld.com/GetFile.aspx?fn=1959534045.zip>.
+
+
+
+Please let me know if this works or not.
+
+
+
+Thanks,
+
+-Joel
+
+
+
+Joel Freedman
+
+Principal Professional Consultant, Systems Analysis
+
+Parsons Brinckerhoff
+
+400 SW Sixth Avenue, Suite 802
+
+Portland, OR 97204
+
+503-478-2344 (office)
+
+
+
+freedman@pbworld.com<mailto:freedman@pbworld.com>
+
+
+
+www.pbworld.com<http://www.pbworld.com>
+
+
+
+
+
+-----Original Message-----
+From: Lisa Zorn [mailto:lzorn@mtc.ca.gov]
+Sent: Friday, November 21, 2014 4:25 PM
+To: Freedman, Joel; Hicks, Jim
+Subject: RE: Syntax for using properties tokens in UECs?
+
+
+
+Hi Joel --
+
+Hmm, my test is failing with a parse error, pasted below at the bottom of this email.
+
+
+
+I've attached an image of the UEC and the properties file as well.
+
+
+
+Is it possible that we're not using a recent enough version of the code?  It does print this at the 
+beginning:
+
+21-Nov-2014 14:51:22, INFO, MTC Tour Based Model using CT-RAMP version 1.0.8.81, 22feb2011 build 2
+
+
+
+The source code I see laying about is dated 7/25/2013 (for the Expression.java file and the 
+UtilityExpressionCalculator.java file), but Dave notes that he doesn't compile it anyhow so it's not clear 
+that the binaries we have match the source.  I glanced at the Expression.java and nothing jumped out at 
+me for handling the %propvar% expression, but I didn't scrutinize very closely.  Do you know when these 
+changes went in?  Could we get a recent binary?
+
+
+
+Thank you!
+
+-Lisa
+
+
+
+Runtime exception:
+
+21-Nov-2014 15:01:54, INFO, after getting results, free memory = 1315082888, total memory = 
+1542979584
+
+java.lang.RuntimeException: Parsing error in expression[58]: costPerMile=%Auto.Operating.Cost%
+
+        at 
+com.pb.common.newmodel.UtilityExpressionCalculator.parseExpressions(UtilityExpressionCalculator.jav
+a:298)
+
+        at 
+com.pb.common.newmodel.UtilityExpressionCalculator.<init>(UtilityExpressionCalculator.java:215)
+
+        at com.pb.common.newmodel.ChoiceModelApplication.<init>(ChoiceModelApplication.java:55)
+
+        at 
+com.pb.models.ctramp.jppf.ModeChoiceModel.setupModeChoiceModelApplicationArray(ModeChoice
+Model.java:109)
+
+        at com.pb.models.ctramp.jppf.ModeChoiceModel.<init>(ModeChoiceModel.java:60)
+
+        at 
+com.pb.models.ctramp.jppf.MandatoryDestChoiceModel.setupDestChoiceModelArrays(MandatoryDest
+ChoiceModel.java:115)
+
+        at 
+com.pb.models.ctramp.jppf.MandatoryDestChoiceModel.<init>(MandatoryDestChoiceModel.java:99)
+
+        at 
+com.pb.models.ctramp.jppf.DestChoiceModelManager.createDestChoiceModelObject(DestChoiceMode
+lManager.java:174)
+
+        at 
+com.pb.models.ctramp.jppf.DestChoiceModelManager.getDcModelObject(DestChoiceModelManager.ja
+va:144)
+
+        at com.pb.models.ctramp.jppf.LocationChoiceTaskJppf.run(LocationChoiceTaskJppf.java:112)
+
+        at org.jppf.server.node.NodeTaskWrapper.run(NodeTaskWrapper.java:96)
+
+        at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:471)
+
+        at java.util.concurrent.FutureTask.run(FutureTask.java:262)
+
+        at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+
+        at java.lang.Thread.run(Thread.java:744)
+
+Caused by: java.lang.RuntimeException: getIndexValue, could not calculate index: Auto.Operating.Cost
+
+        at 
+com.pb.common.newmodel.UtilityExpressionCalculator.getIndexValue(UtilityExpressionCalculator.java:
+1961)
+
+        at com.pb.common.calculator.Expression.find_varIndex(Expression.java:960)
+
+        at com.pb.common.calculator.Expression.parse(Expression.java:241)
+
+        at 
+com.pb.common.newmodel.UtilityExpressionCalculator.parseExpressions(UtilityExpressionCalculator.jav
+a:295)
+
+
+
+-----Original Message-----
+
+From: Freedman, Joel [mailto:Freedman@pbworld.com]
+
+Sent: Friday, November 14, 2014 1:21 PM
+
+To: Lisa Zorn; Hicks, Jim
+
+Subject: RE: Syntax for using properties tokens in UECs?
+
+
+
+Hi Lisa, it is simple. Just set the token on the property file, for example:
+
+auto.operating.cost=19.5
+
+
+
+Then in the uec set a user-defined token  such as aoc by referncing the value in the property file in the 
+variable field:
+
+
+
+%auto.operating.cost%
+
+
+
+Note that the property file tokens can only be referred to in the variable field. Otherwise it works the 
+same way as the tokens on the data page.
+
+
+
+Let me know if you have any other questions.
+
+
+
+-joel
+
+
+
+
+
+Sent via the Samsung GALAXY S(r) 5, an AT&T 4G LTE smartphone
+
+
+
+
+
+-------- Original message --------
+
+From: Lisa Zorn <lzorn@mtc.ca.gov<mailto:lzorn@mtc.ca.gov>>
+
+Date:11/14/2014 11:48 AM (GMT-08:00)
+
+To: "Freedman, Joel" <Freedman@pbworld.com<mailto:Freedman@pbworld.com>>, "Hicks, Brenda 
+M." <Hicks@pbworld.com<mailto:Hicks@pbworld.com>>
+
+Cc:
+
+Subject: Syntax for using properties tokens in UECs?
+
+
+
+Hi Joel & Jim -
+
+
+
+Dave said that recent updates to CTRAMP have made it so that UECs can just references tokens from 
+.properties files. (We'd like to move things like auto operating costs out of the UECs so they can be in 
+one spot for a run.) What's the syntax for referencing the properties in the UECs?
+
+
+
+Thanks!
+
+-Lisa
+
+
+
+______________________________________________________________________
+
+NOTICE: This communication and any attachments ("this message") may contain confidential 
+information for the sole use of the intended recipient(s). Any unauthorized use, disclosure, viewing, 
+copying, alteration, dissemination or distribution of, or reliance on this message is strictly prohibited. If 
+you have received this message in error, or you are not an authorized recipient, please notify the sender 
+immediately by replying to this message, delete this message and all copies from your e-mail system and 
+destroy any printed copies.
+
+______________________________________________________________________
+NOTICE: This communication and any attachments ("this message") may contain confidential 
+information for the sole use of the intended recipient(s). Any unauthorized use, disclosure, viewing, 
+copying, alteration, dissemination or distribution of, or reliance on this message is strictly prohibited. If 
+you have received this message in error, or you are not an authorized recipient, please notify the sender 
+immediately by replying to this message, delete this message and all copies from your e-mail system and 
+destroy any printed copies.
+
+______________________________________________________________________
+NOTICE: This communication and any attachments ("this message") may contain confidential 
+information for the sole use of the intended recipient(s). Any unauthorized use, disclosure, viewing, 
+copying, alteration, dissemination or distribution of, or reliance on this message is strictly prohibited. If 
+you have received this message in error, or you are not an authorized recipient, please notify the sender 
+immediately by replying to this message, delete this message and all copies from your e-mail system and 
+destroy any printed copies.
+
+______________________________________________________________________
+NOTICE: This communication and any attachments ("this message") may contain confidential 
+information for the sole use of the intended recipient(s). Any unauthorized use, disclosure, viewing, 
+copying, alteration, dissemination or distribution of, or reliance on this message is strictly prohibited. If 
+you have received this message in error, or you are not an authorized recipient, please notify the sender 
+immediately by replying to this message, delete this message and all copies from your e-mail system and 
+destroy any printed copies.
+
+______________________________________________________________________
+NOTICE: This communication and any attachments ("this message") may contain confidential 
+information for the sole use of the intended recipient(s). Any unauthorized use, disclosure, viewing, 
+copying, alteration, dissemination or distribution of, or reliance on this message is strictly prohibited. If 
+you have received this message in error, or you are not an authorized recipient, please notify the sender 
+immediately by replying to this message, delete this message and all copies from your e-mail system and 
+destroy any printed copies.
+
+______________________________________________________________________
+NOTICE: This communication and any attachments ("this message") may contain confidential 
+information for the sole use of the intended recipient(s). Any unauthorized use, disclosure, viewing, 
+copying, alteration, dissemination or distribution of, or reliance on this message is strictly prohibited. If 
+you have received this message in error, or you are not an authorized recipient, please notify the sender 
+immediately by replying to this message, delete this message and all copies from your e-mail system and 
+destroy any printed copies.
+ 
+______________________________________________________________________ 
+NOTICE: This communication and any attachments ("this message") may contain confidential 
+information for the sole use of the intended recipient(s). Any unauthorized use, disclosure, 
+viewing, copying, alteration, dissemination or distribution of, or reliance on this message is 
+strictly prohibited. If you have received this message in error, or you are not an authorized 
+recipient, please notify the sender immediately by replying to this message, delete this message 
+and all copies from your e-mail system and destroy any printed copies.
+ 
+______________________________________________________________________ 
+NOTICE: This communication and any attachments ("this message") may contain confidential 
+information for the sole use of the intended recipient(s). Any unauthorized use, disclosure, 
+viewing, copying, alteration, dissemination or distribution of, or reliance on this message is 
+strictly prohibited. If you have received this message in error, or you are not an authorized 
+recipient, please notify the sender immediately by replying to this message, delete this message 
+and all copies from your e-mail system and destroy any printed copies.

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="module_common-daf-v2" default="compile.module.common-daf-v2">
+  <dirname property="module.common-daf-v2.basedir" file="${ant.file.module_common-daf-v2}"/>
+  
+  <property name="module.jdk.home.common-daf-v2" value="${project.jdk.home}"/>
+  <property name="module.jdk.classpath.common-daf-v2" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.common-daf-v2" value="${compiler.args}"/>
+  
+  <property name="common-daf-v2.output.dir" value="${module.common-daf-v2.basedir}/build/classes"/>
+  <property name="common-daf-v2.testoutput.dir" value="${module.common-daf-v2.basedir}/build/classes"/>
+  
+  <path id="common-daf-v2.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="common-daf-v2.module.classpath">
+    <path refid="${module.jdk.classpath.common-daf-v2}"/>
+    <pathelement location="${common-base.output.dir}"/>
+    <pathelement location="${module.common-daf-v2.basedir}/../../third-party/logging-log4j-1.2.9/log4j-1.2.9.jar"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.common-daf-v2"/>
+  
+  <patternset id="excluded.from.compilation.common-daf-v2">
+    <patternset refid="excluded.from.module.common-daf-v2"/>
+    <patternset refid="compiler.excluded"/>
+  </patternset>
+  
+  <path id="common-daf-v2.module.sourcepath">
+    <dirset dir="${module.common-daf-v2.basedir}">
+      <include name="src/java"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.common-daf-v2" depends="compile.module.common-base" description="compile module common-daf-v2 production classes">
+    <mkdir dir="${common-daf-v2.output.dir}"/>
+    <javac destdir="${common-daf-v2.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.common-daf-v2}/bin/javac">
+      <compilerarg line="${compiler.args.common-daf-v2}"/>
+      <bootclasspath refid="common-daf-v2.module.bootclasspath"/>
+      <classpath refid="common-daf-v2.module.classpath"/>
+      <src refid="common-daf-v2.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.common-daf-v2"/>
+    </javac>
+    <copy todir="${common-daf-v2.output.dir}">
+      <fileset dir="${module.common-daf-v2.basedir}/src/java">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+        <patternset refid="excluded.from.compilation.common-daf-v2"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="clean.module.common-daf-v2" description="cleanup module">
+    <delete dir="${common-daf-v2.output.dir}"/>
+    <delete dir="${common-daf-v2.testoutput.dir}"/>
+  </target>
+</project>

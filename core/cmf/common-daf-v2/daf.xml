@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+
+<project name="common-base" default="usage" basedir=".">
+
+    <!-- Access values defined in the environment -->
+    <property environment="env"/>
+
+    <!-- Load local properties from file -->
+    <property file="build.properties"/>
+
+
+    <!-- ********************************************************* -->
+    <!-- Setup the classpath -->
+    <path id="run.classpath">
+        <pathelement path="${env.BASEDIR}/common-base/build/classes;${env.BASEDIR}/common-daf-v2/build/classes;${env.BASEDIR}/tlumip/build/classes;${env.CONFIGDIR}"/>
+        <fileset dir="${env.BASEDIR}/common-base">
+            <include name="**/lib/*.jar"/>
+            <include name="**/lib/*.zip"/>
+        </fileset>
+    </path>
+
+
+    <!-- ********************************************************* -->
+    <target name="echo">
+        <echo message="LOGFILE=${env.LOGFILE}"/>
+        <echo message="BASEDIR=${env.BASEDIR}"/>
+        <echo message="CONFIGDIR=${env.CONFIGDIR}"/>
+        <echo message="nodeName=${nodeName}"/>
+        <echo message="appName=${appName}"/>
+    </target>
+
+
+    <!-- ********************************************************* -->
+    <!-- Run a class in the same VM as Ant -->
+    <target name="startCluster" depends="echo">
+        <java classname="com.pb.common.daf.admin.CommandProcessor" fork="yes">
+            <jvmarg value="-Djava.util.logging.config.file=${env.LOGFILE}"/>
+            <arg line="-startCluster"/>
+            <classpath refid="run.classpath"/>
+        </java>
+    </target>
+
+
+    <!-- ********************************************************* -->
+    <!-- Run a class in the same VM as Ant -->
+    <target name="startApplication" depends="echo">
+
+    <java classname="com.pb.common.daf.admin.CommandProcessor" fork="yes">
+        <jvmarg value="-Xmx1200m"/>
+        <jvmarg value="-Djava.util.logging.config.file=${env.LOGFILE}"/>
+        <arg line="-startApplication"/>
+        <arg line="${appName}"/>
+        <classpath refid="run.classpath"/>
+    </java>
+    </target>
+
+
+    <!-- ********************************************************* -->
+    <!-- Run a class in the same VM as Ant -->
+    <target name="stopApplication" depends="echo">
+
+    <java classname="com.pb.common.daf.admin.CommandProcessor" fork="yes">
+        <jvmarg value="-Djava.util.logging.config.file=${env.LOGFILE}"/>
+        <arg line="-stopApplication"/>
+        <arg line="${appName}"/>
+        <classpath refid="run.classpath"/>
+    </java>
+    </target>
+
+
+    <!-- ********************************************************* -->
+    <!-- Run a class in the same VM as Ant -->
+    <target name="startNode" depends="echo">
+
+    <java classname="com.pb.common.daf.admin.StartNode" fork="yes">
+        <jvmarg value="-Xmx1200m"/>
+        <jvmarg value="-Djava.util.logging.config.file=${env.LOGFILE}"/>
+        <jvmarg value="-DnodeName=${nodeName}"/>
+        <classpath refid="run.classpath"/>
+    </java>
+    </target>
+
+
+</project>

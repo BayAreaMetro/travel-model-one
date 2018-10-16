@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/java"/>
+	<classpathentry exported="true" kind="lib" path="lib/dx.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/dxml.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/jds.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/mysql-connector-java-3.0.10-stable-bin.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/or124.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/xml4j.jar"/>
+	<classpathentry exported="true" kind="src" path="/logging-log4j-1.2.9"/>
+	<classpathentry exported="true" kind="lib" path="lib/junit-4.1.jar"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="config"/>
+	<classpathentry exported="true" kind="lib" path="lib/javadbf-0.4.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/cajo.jar"/>
+	<classpathentry kind="lib" path="C:/Development_MTC/third-party/crowbar/crowbar.jar"/>
+	<classpathentry kind="lib" path="C:/Development_MTC/third-party/jexcelapi/jxl.jar"/>
+	<classpathentry kind="lib" path="C:/Development_MTC/third-party/transcad/transcadMatrix.jar"/>
+	<classpathentry kind="lib" path="C:/Development_MTC/cmf/common-base/lib/jna-4.0.0.jar"/>
+	<classpathentry kind="output" path="build/classes"/>
+</classpath>

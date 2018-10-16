@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/java"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/censusdata"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/common-base"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/utils"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/common-daf-v2"/>
+	<classpathentry kind="output" path="build/classes"/>
+</classpath>
