@@ -15,7 +15,6 @@
         
         <fileset dir="${thirdParty.dir}">
             <include name="**/logging-log4j-1.2.9/*.jar"/>
-            <include name="**/transcad/*.jar"/>
             <include name="**/jexcelapi/*.jar"/>
             <include name="**/crowbar/*.jar"/>
        </fileset>
@@ -39,7 +38,6 @@
     <!-- Create a set of jar files for release -->
     <target name="release" depends="makejar">
         <copy file="${thirdParty.dir}/logging-log4j-1.2.9/log4j-1.2.9.jar" todir="${release.dir}"/>
-        <copy file="${thirdParty.dir}/transcad/transcadMatrix.jar" todir="${release.dir}"/>
     </target>
 
 </project>

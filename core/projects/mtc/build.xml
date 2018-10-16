@@ -25,6 +25,7 @@
     
         <fileset dir="${thirdParty.dir}">
             <include name="**/logging-log4j-1.2.9/*.jar"/>
+            <include name="**/ssj/lib/ssj.jar"/>
         </fileset>
 
 

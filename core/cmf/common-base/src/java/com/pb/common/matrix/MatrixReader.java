@@ -73,7 +73,8 @@ public abstract class MatrixReader {
             reader = new TpplusMatrixReader64( file ); // replacing TpplusMatrixReader, which uses the 32bit reader
         }
         else if  (type.equals(MatrixType.TRANSCAD)) {
-                reader = new TranscadMatrixReader( file );
+            // reader = new TranscadMatrixReader( file );
+            throw new RuntimeException("TRANSCAD not supported");
         }
         else if (type.equals(MatrixType.D311)) {
             reader = new Emme2311MatrixReader(file);

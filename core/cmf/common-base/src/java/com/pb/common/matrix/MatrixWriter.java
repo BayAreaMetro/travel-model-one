@@ -84,7 +84,8 @@ public abstract class MatrixWriter {
         }
         else
             if  (type.equals(MatrixType.TRANSCAD)) {
-                writer = new TranscadMatrixWriter( file );
+                // writer = new TranscadMatrixWriter( file );
+                throw new RuntimeException("TRANSCAD not supported");
             }
         else
         if (type.equals(MatrixType.CSV)) {

@@ -48,13 +48,14 @@ public abstract class DiskBasedMatrix {
 		DiskBasedMatrix matrix;
 
 		if (type.equals(MatrixType.TRANSCAD)) {
-			matrix = new TranscadMatrix(file);
+			// matrix = new TranscadMatrix(file);
+            throw new RuntimeException("TRANSCAD not supported");
 		} else {
 			throw new MatrixException(MatrixException.INVALID_TYPE + ", " + type);
 		}
 
-		matrix.type = type;
-		return matrix;
+		// matrix.type = type;
+		// return matrix;
 	}
 
 	/**
@@ -96,13 +97,14 @@ public abstract class DiskBasedMatrix {
 		DiskBasedMatrix matrix;
 
 		if (type.equals(MatrixType.TRANSCAD)) {
-			matrix = new TranscadMatrix(file, fileLabel, matrixLabels, rowIds, colIds);
+			// matrix = new TranscadMatrix(file, fileLabel, matrixLabels, rowIds, colIds);
+            throw new RuntimeException("TRANSCAD not supported");
 		} else {
 			throw new MatrixException(MatrixException.INVALID_TYPE + ", " + type);
 		}
 
-		matrix.type = type;
-		return matrix;
+		// matrix.type = type;
+		// return matrix;
 	}
 	
 	
