@@ -90,7 +90,7 @@ loop period = 1,5
    endif
   
    ; distribute via cluster
-   DistributeMultistep processid="ctramp",processnum=@period@, commpath='m:\commpath'
+   DistributeMultistep processid="ctramp",processnum=@period@, commpath='X:\commpath'
    
    ; loop through each vehicle class 
    loop class = 1,3

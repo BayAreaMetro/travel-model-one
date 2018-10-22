@@ -34,7 +34,7 @@
 run pgm = highway    
     
    ; use cluster over four threads
-   distributeintrastep processid = 'ctramp', processlist = 1-4, commpath = 'm:\commpath', saveprn = f
+   distributeintrastep processid = 'ctramp', processlist = 1-4, commpath = 'X:\commpath', saveprn = f
     
    ; input network, which needs WALKOK, BIKEOK, and DISTANCE
    neti = hwy\nonMotorized.net

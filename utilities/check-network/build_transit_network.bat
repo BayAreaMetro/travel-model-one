@@ -122,7 +122,7 @@ for %%A in (transit_combined_headways.block transferprohibitors_wlk_trn_wlk.bloc
     copy "%CODE_DIR%\model-files\scripts\block\%%A" "%TRN_CHECK_DIR%\ctramp\scripts\block\%%A"
   )
 )
-start Cluster M:\COMMPATH\CTRAMP 1-16 Start
+start Cluster X:\commpath\CTRAMP 1-16 Start
 runtpp "%CODE_DIR%\model-files\scripts\skims\TransitSkims.job"
 if ERRORLEVEL 2 goto done
 

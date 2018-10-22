@@ -24,7 +24,7 @@ loop period = 1, 5
    endif
    
    ; do each time of day as a separate process
-   DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = 'm:\commpath'
+   DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = 'X:\commpath'
    
    ; do, more or less, the same skim procedure for each of seven classes of vehicles
    loop class = 1, 3
@@ -73,7 +73,7 @@ loop period = 1, 5
       run pgm = highway
       
          ; give each time of day two additional processors to work with   
-         ;DistributeIntrastep processid = 'ctramp', processlist = 1-4, commpath = 'm:\commpath', saveprn = f
+         ;DistributeIntrastep processid = 'ctramp', processlist = 1-4, commpath = 'X:\commpath', saveprn = f
      
          ; a congested network is input
          neti = hwy\iter2\avgload@token_period@.net
@@ -217,7 +217,7 @@ loop period = 1, 5
    run pgm = matrix
    
       ; give each period thread more threads to work with   
-      ;DistributeIntrastep processid = 'ctramp', processlist = 1-4, commpath = 'm:\commpath', saveprn = f
+      ;DistributeIntrastep processid = 'ctramp', processlist = 1-4, commpath = 'X:\commpath', saveprn = f
       
       ; drive alone skim
       mati[1] = skims\DA_@token_period@_ITHIM.tpp

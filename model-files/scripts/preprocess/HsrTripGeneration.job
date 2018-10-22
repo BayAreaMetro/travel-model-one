@@ -42,7 +42,7 @@ loop tpnum=1,5
     time_period = 'EV'
   endif
 
-  DistributeMultistep processid = 'ctramp', processNum = tpnum, commpath = 'm:\commpath'
+  DistributeMultistep processid = 'ctramp', processNum = tpnum, commpath = 'X:\commpath'
 
   RUN PGM=MATRIX
     filei mati[1] = 'INPUT\nonres\tripsHsr@time_period@_2025.tpp'

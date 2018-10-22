@@ -10,7 +10,7 @@ loop path = 1,5
   if (path = 4) token_path = 'lrf'  ; light rail (or ferry) or short-haul premium
   if (path = 5) token_path = 'loc'  ; local bus or short-haul basic
 
-  DistributeMultistep processid = 'ctramp', processNum = path, commpath = 'm:\commpath' 
+  DistributeMultistep processid = 'ctramp', processNum = path, commpath = 'X:\commpath' 
     loop accegg = 1,3
       if (accegg = 1)
          token_access = 'wlk'

@@ -140,7 +140,7 @@
          counter = 3 * (period - 1) + accegg
 	             
 	 ; distribute the tasks
-         DistributeMultistep processid = "ctramp", processnum = counter,  commpath = 'm:\commpath'
+         DistributeMultistep processid = "ctramp", processnum = counter,  commpath = 'X:\commpath'
       
          ; line haul loop
          loop path = 1,6

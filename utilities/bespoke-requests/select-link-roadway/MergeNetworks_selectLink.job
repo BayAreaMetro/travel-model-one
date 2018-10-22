@@ -22,7 +22,7 @@ loop period = 1, 5
    endif
    
    ; disable distribution: process is faster without the distribution overhead
-  ; DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = 'm:\commpath'
+  ; DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = 'X:\commpath'
    
    run pgm = network
    

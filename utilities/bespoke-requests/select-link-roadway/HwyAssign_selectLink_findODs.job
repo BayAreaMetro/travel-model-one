@@ -15,12 +15,12 @@ loop period = 2,2
       token_maxiters = 'parameters maxiters = 1000'
 
    ; distribute via cluster
-   DistributeMultistep processid = 'CTRAMP', processNum = @period@, commpath = 'm:\commpath'
+   DistributeMultistep processid = 'CTRAMP', processNum = @period@, commpath = 'X:\commpath'
   
    run pgm = highway
   
       ; distribute via cluster
-      DistributeIntrastep processid = 'CTRAMP', processlist = @token_intrastep_processlist@, commpath = 'm:\commpath', saveprn = f
+      DistributeIntrastep processid = 'CTRAMP', processlist = @token_intrastep_processlist@, commpath = 'X:\commpath', saveprn = f
     
       ; time-specific input highway network
       neti    = hwy\avgload@token_period@.net
