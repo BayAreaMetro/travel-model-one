@@ -50,8 +50,8 @@ MODEL_FILE          = "avgload5period.csv"
 SHARE_DATA          = os.path.join(os.environ["USERPROFILE"], "Box", "Modeling and Surveys", "Development", "Share Data")
 PEMS_FILE           = os.path.join(SHARE_DATA, "pems-typical-weekday", "pems_period.csv")
 CALTRANS_FILE       = os.path.join(SHARE_DATA, "caltrans-typical-weekday", "typical-weekday-counts.csv")
-PEMS_TDE_FILE       = "Roadways to PeMS"
-CALTRANS_TDE_FILE   = "Roadways to Caltrans"
+PEMS_OUTPUT_FILE    = "Roadways to PeMS"
+CALTRANS_OUTPUT_FILE= "Roadways to Caltrans"
 
 MODEL_COLUMNS       = ['a','b','lanes','volEA_tot','volAM_tot','volMD_tot','volPM_tot','volEV_tot']
 PEMS_COLUMNS        = ['station','route','direction','time_period','lanes','avg_flow','latitude','longitude','year']
@@ -150,6 +150,9 @@ if __name__ == '__main__':
         print USAGE
         print "No PeMS year nor CalTrans count year argument specified."
         sys.exit()
+    if args.caltrans_year and args.pems_year:
+        print USAGE
+        print "Please specify pems_year OR caltrans_year but not both"
     print(args)
 
     ############ read the mapping first
@@ -157,10 +160,10 @@ if __name__ == '__main__':
     tde_file   = None
     if args.pems_year:
         mapping_df = pandas.read_csv(PEMS_MAP_FILE)
-        tde_file   = PEMS_TDE_FILE
+        tde_file   = PEMS_OUTPUT_FILE
     else:
         mapping_df = pandas.read_csv(CALTRANS_MAP_FILE)
-        tde_file   = CALTRANS_TDE_FILE
+        tde_file   = CALTRANS_OUTPUT_FILE
 
     # strip the column names
     col_rename = {}
@@ -180,7 +183,7 @@ if __name__ == '__main__':
     model_df = model_df[MODEL_COLUMNS]
 
     # for caltrans, lets make a daily column
-    if len(args.caltrans_year) > 0:
+    if args.caltrans_year:
         model_df['Daily'] = model_df[['volEA_tot','volAM_tot','volMD_tot','volPM_tot','volEV_tot']].sum(axis=1)
 
     # create a multi index for stacking
@@ -210,8 +213,8 @@ if __name__ == '__main__':
     
         # get just the location information
         pems_location_df = obs_df[['station','route','direction','latitude','longitude']]
-        # move NA lat,long to the end... but if the stationn moves, this is kind of silly  
-        pems_location_df = pems_location_df.sort(columns=['latitude','longitude'])
+        # move NA lat,long to the end... but if the station moves, this is kind of silly
+        pems_location_df = pems_location_df.sort_values(by=['latitude','longitude'])
         pems_location_df.drop_duplicates(subset='station', inplace=True)
         # add it to the mapping
         mapping_df = pandas.merge(left=mapping_df, right=pems_location_df, how='left')
@@ -219,7 +222,35 @@ if __name__ == '__main__':
         # create missing cols in PeMS
         obs_df['HOV'] = -1
         obs_df.rename(columns={'avg_flow':'volume', 'year':'category'}, inplace=True)
+        #        station  route direction time_period  lanes        volume   latitude   longitude  category  HOV
+        # 43474   400001    101         N          AM      5  23462.250000  37.364085 -121.901149      2014   -1
+        # 43475   400001    101         N          EA      5   7549.107143  37.364085 -121.901149      2014   -1
+        # 43476   400001    101         N          EV      5   9162.789474  37.364085 -121.901149      2014   -1
+        # 43477   400001    101         N          MD      5  18982.450000  37.364085 -121.901149      2014   -1
+        # 43478   400001    101         N          PM      5  11771.904762  37.364085 -121.901149      2014   -1
+
+        # year  ROUTE COUNTY  POSTMILE_INT   PM LEG DIR  STATION                         DESCRIP time_period          2014          2015          2016
+        # 0        12    NAP           2.0  2.3   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L          AM   2916.882353   3117.661017   3187.650000
+        # 1        12    NAP           2.0  2.3   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L       Daily  18502.722816  19655.098480  20310.676923
+        # 2        12    NAP           2.0  2.3   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L          EA    310.941176    336.203390    351.200000
         obs_df['category'] = obs_df.category.map(str) + ' Observed'
+
+        # want to bring category into columns
+        obs_wide = pandas.pivot_table(obs_df, values="volume", index=["station","route","direction","latitude","longitude","HOV","lanes","time_period"], columns="category")
+        obs_wide["Average Observed"] = obs_wide.mean(axis=1)  # this will not include NaNs or missing vals so it handles them correctly
+
+        # print(obs_wide.head(10))
+        # category  station  route direction   latitude   longitude  HOV  lanes time_period  2014 Observed  2015 Observed  2016 Observed  Average Observed
+        # 0          400001    101         N  37.364085 -121.901149   -1      5          AM   23462.250000   22879.842857   22948.736111      23096.942989
+        # 1          400001    101         N  37.364085 -121.901149   -1      5          EA    7549.107143    8072.062500    8537.581081       8052.916908
+        # 2          400001    101         N  37.364085 -121.901149   -1      5          EV    9162.789474    9398.333333    9323.211268       9294.778025
+        # 3          400001    101         N  37.364085 -121.901149   -1      5          MD   18982.450000   20523.112903   20314.888889      19940.150597
+        # 4          400001    101         N  37.364085 -121.901149   -1      5          PM   11771.904762   11821.074627   11488.750000      11693.909796
+        # 5          400002    101         S  37.584097 -122.328465   -1      5          AM   25756.980769            NaN            NaN      25756.980769
+        # 6          400002    101         S  37.584097 -122.328465   -1      5          EA    4034.363636            NaN            NaN       4034.363636
+        # 7          400002    101         S  37.584097 -122.328465   -1      5          EV   26445.960000            NaN            NaN      26445.960000
+        # 8          400002    101         S  37.584097 -122.328465   -1      5          MD   32385.192308            NaN            NaN      32385.192308
+        # 9          400002    101         S  37.584097 -122.328465   -1      5          PM   29027.529412            NaN            NaN      29027.529412
     else:
         obs_df = pandas.read_csv(CALTRANS_FILE)
         # make columns conform to previous version and to model data
@@ -290,18 +321,22 @@ if __name__ == '__main__':
     print "Obsrv columns: ", sorted(obs_df.columns.values.tolist())
     # followed by the observed
     table_df = model_final_df.append(obs_df)
-    # write_tde(table_df, "%s.tde" % tde_file, arg_append=False)
+    write_tde(table_df, "%s.tde" % tde_file, arg_append=False)
+    table_df.to_csv("%s.csv" % tde_file, index=False)
 
-    # CALTRANS - want a "wide" version, with a column for obsy1, obsy2, obsy3, modeled
-    # PeMS - we're done
-    if args.pems_year:
-        sys.exit(0)
+    # want a "wide" version, with a column for obsy1, obsy2, obsy3, modeled
 
-    model_wide = model_final_df[['a','b','COUNTY','ROUTE','POSTMILE_INT','DIR','LEG','lanes','time_period','volume']].copy()
+    if args.caltrans_year:
+        index_cols = ['COUNTY','ROUTE','POSTMILE_INT','DIR','LEG','lanes','time_period']
+    else:
+        index_cols = ["station","route","direction","latitude","longitude","HOV","lanes","time_period"]
+
+    model_wide = model_final_df[index_cols + ["a","b","volume"]].copy()
     model_wide.rename(columns={"volume":"{} Modeled".format(args.model_year)}, inplace=True)
 
     obs_wide.reset_index(inplace=True)
-    table_wide = pandas.merge(left=model_wide, right=obs_wide, how='outer', on=["COUNTY","ROUTE","POSTMILE_INT","DIR","LEG","time_period"])
+    table_wide = pandas.merge(left=model_wide, right=obs_wide, how='outer', on=index_cols)
 
 
     write_tde(table_wide, "%s_wide.tde" % tde_file, arg_append=False)
+    table_wide.to_csv("%s_wide.csv" % tde_file, index=False)
