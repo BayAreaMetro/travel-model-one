@@ -6,6 +6,9 @@
 # based on crosswalk type, route number and direction (e.g. mainline 101 N) and location.
 #
 # lmz 2017.08.18
+#
+# TODO: deprecate this in favor of combined script, crosswalk_pems_to_TM.R
+#
 
 library(sp)
 library(rgdal)
