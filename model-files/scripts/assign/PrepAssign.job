@@ -182,7 +182,7 @@ loop period = 1, 5
    endif 
    
    ; do each time of day as a separate process
-   DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = 'm:\commpath'
+   DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = 'x:\commpath'
    
    
    ; step one: convert individual trip list to an origin/destination list
