@@ -20,7 +20,7 @@ library(foreign)
 
 BOX_PEMS_DIR   <- "~/../Box/Modeling and Surveys/Development/Share Data/pems-typical-weekday"  # Box Drive default
 PEMS_DATA_FILE <- "pems_period.csv"
-TM_VERSION     <- "TM1"
+TM_VERSION     <- "TM1" # set to TM1 or TM2
 
 CROSSWALK_DIR  <- paste0("M:/Crosswalks/PeMSStations_",TM_VERSION,"network")
 TM_NETWORK     <- paste0(TM_VERSION,"_freeways_WGS84") # See readme for how this is derived
@@ -32,6 +32,7 @@ PEMS_YEARS     <- c(2014,2015,2016)    # select pems stations with data for thes
 CROSSWALK_FILE <- "crosswalk"  # will output csv and dbf
 PEMS_LOCS_FILE <- "pems_locs"
 PEMS_LOCS_WITH_CROSSWALK <- "pems_locs_with_crosswalk"
+TM_LINKS_WITH_PEMS_LOCS  <- "TM_links_with_pems"
 
 ############# PEMS data processing first
 
@@ -46,6 +47,9 @@ pems_df        <- mutate(pems_df, key=paste(station, district, route, direction)
 
 # remove the ones without coords
 pems_df        <- pems_df[!(is.na(pems_df$longitude)) | !(is.na(pems_df$latitude)),]
+
+# remove the ones that are freeway-to-freeway ramps for now since we don't label these with route/dir
+pems_df        <- filter(pems_df, type != "FF")
 
 # select only the most recent key, so if it moves over time, we only want the most recent lat/lon
 # hopefully not many do this
@@ -75,6 +79,7 @@ if (TM_VERSION == "TM1") {
   route_links$type[ route_links$FT ==  1 ] <- "FF"  # freeway-to-freeway
   route_links$type[ route_links$FT ==  2 ] <- "ML"  # freeway - mainline
   route_links$type[ route_links$FT ==  3 ] <- "ML"  # expressway - mainline
+  route_links$type[ route_links$FT ==  7 ] <- "ML"  # arterial (e.g. when 101 goes through SF)
   route_links$type[ route_links$FT ==  8 ] <- "ML"  # Managed Freeway
   route_links$type[ route_links$FT == 10 ] <- "ML"  # Toll plaza
   route_links$type[ (route_links$USE==2)|(route_links$USE==3) ] <- "HV" # HOV
@@ -242,10 +247,10 @@ mult_pems <- group_by(xwalk, A_B) %>% summarise(pemsonlink=n())
 xwalk     <- left_join(xwalk, mult_pems)
 
 # write it
-write.csv(xwalk, file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,".csv")), row.names=FALSE, quote=FALSE)
+write.csv(xwalk, file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,"_",VALIDATION_YEAR,".csv")), row.names=FALSE, quote=FALSE)
 print(paste("Wrote crosswalk:",file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,".csv"))))
 
-write.dbf(xwalk, file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,".dbf")), factor2char=TRUE)
+write.dbf(xwalk, file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,"_",VALIDATION_YEAR,".dbf")), factor2char=TRUE)
 print(paste("Wrote crosswalk:",file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,".dbf"))))
 
 # write pems_loc joined with xwalk as shapefile
@@ -259,4 +264,37 @@ pems_locs$pemsonlink <- pems_df$pemsonlink
 writeOGR(obj=pems_locs, dsn=file.path(CROSSWALK_DIR, "shapefiles"), layer=paste0(PEMS_LOCS_WITH_CROSSWALK,"_",VALIDATION_YEAR), driver="ESRI Shapefile")
 print(paste0("Wrote PEMS locations with crosswalk: ",file.path(CROSSWALK_DIR, "shapefiles", paste0(PEMS_LOCS_WITH_CROSSWALK,"_",VALIDATION_YEAR,".shp"))))
 
+# write links joined with pems as shapefile
+
+# reference: http://www.nickeubank.com/wp-content/uploads/2015/10/RGIS2_MergingSpatialData_part1_Joins.html#spatial-non-spatial
+
+# keeps only route_links associated with pems stations
+# and duplicates if they match to multiple pems locations
+route_links_with_pems <- merge(route_links, xwalk, by.x="A_B", by.y="A_B", 
+                               all.x=FALSE,
+                               duplicateGeoms=TRUE, suffixes=c("", " pems"))
+
+# iterate over the rows in route_links_with_pems
+lines_list <- list()
+for (i in 1:nrow(route_links_with_pems@data)) {
+  coord     <- coordinates(route_links_with_pems[i,])[[1]][[1]]
+  pems_loc  <- c(route_links_with_pems@data[i,]$longitude,
+                 route_links_with_pems@data[i,]$latitude)
+  new_coord <- matrix(NA, nrow=4, ncol=2)
+  new_coord[1,] <- pems_loc  # PEMS
+  new_coord[2,] <- coord[1,] # A
+  new_coord[3,] <- coord[2,] # B
+  new_coord[4,] <- pems_loc  # PEMS
+  
+  # create a new line
+  my_line  <- Line(new_coord)
+  my_lines <- Lines(list(my_line), ID=rownames(route_links_with_pems@data)[i])
+  lines_list[[i]] <- my_lines
+}
+
+sp_lines = SpatialLines(lines_list)
+sp_lines_df = SpatialLinesDataFrame(sp_lines, data=route_links_with_pems@data)
+writeOGR(obj=sp_lines_df, dsn=file.path(CROSSWALK_DIR, "shapefiles"), 
+         layer=paste0(TM_LINKS_WITH_PEMS_LOCS,"_",VALIDATION_YEAR),
+         driver="ESRI Shapefile")
 

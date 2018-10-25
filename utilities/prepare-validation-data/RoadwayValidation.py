@@ -44,7 +44,8 @@ import argparse, os, sys
 import numpy, pandas
 import dataextract as tde
 
-PEMS_MAP_FILE       = "model_to_pems.csv"
+TM_HOV_TO_GP_FILE   = "M:\Crosswalks\PeMSStations_TM1network\hov_to_gp_links.csv"
+PEMS_MAP_FILE       = "M:\Crosswalks\PeMSStations_TM1network\crosswalk_2015.csv"
 CALTRANS_MAP_FILE   = "model_to_caltrans.csv"
 MODEL_FILE          = "avgload5period.csv"
 SHARE_DATA          = os.path.join(os.environ["USERPROFILE"], "Box", "Modeling and Surveys", "Development", "Share Data")
@@ -56,7 +57,7 @@ CALTRANS_OUTPUT_FILE= "Roadways to Caltrans"
 MODEL_COLUMNS       = ['a','b','lanes','volEA_tot','volAM_tot','volMD_tot','volPM_tot','volEV_tot']
 PEMS_COLUMNS        = ['station','route','direction','time_period','lanes','avg_flow','latitude','longitude','year']
 
-fieldMap = { 
+fieldMap = {
     'float64' :     tde.Type.DOUBLE,
     'float32' :     tde.Type.DOUBLE,
     'int64' :       tde.Type.DOUBLE,
@@ -165,12 +166,6 @@ if __name__ == '__main__':
         mapping_df = pandas.read_csv(CALTRANS_MAP_FILE)
         tde_file   = CALTRANS_OUTPUT_FILE
 
-    # strip the column names
-    col_rename = {}
-    for colname in mapping_df.columns.values.tolist(): col_rename[colname] = colname.strip()
-    mapping_df.rename(columns=col_rename, inplace=True)
-    # print mapping_df.head()
-
     ############ read the model data
     model_df = pandas.read_csv(MODEL_FILE)
 
@@ -182,52 +177,85 @@ if __name__ == '__main__':
     # select only the columns we want
     model_df = model_df[MODEL_COLUMNS]
 
-    # for caltrans, lets make a daily column
-    if args.caltrans_year:
-        model_df['Daily'] = model_df[['volEA_tot','volAM_tot','volMD_tot','volPM_tot','volEV_tot']].sum(axis=1)
+    # add a daily column
+    model_df['Daily'] = model_df[['volEA_tot','volAM_tot','volMD_tot','volPM_tot','volEV_tot']].sum(axis=1)
+
+    # the model data has a, b, lanes, vol*
+    # but some of these links are HOV links and the volums should be summed to the same link as the non-hov link
+    # read the hov -> gp mapping
+    model_hov_to_gp_df = pandas.read_csv(TM_HOV_TO_GP_FILE)
+    # keep only those where we succeeded finding GP for now
+    model_hov_to_gp_df = model_hov_to_gp_df.loc[ model_hov_to_gp_df.A_B_GP != "NA_NA"]
+    # print(model_hov_to_gp_df.head())
+    #        A      B  LANES  USE  FT  ROUTENUM ROUTEDIR    A_GP    B_GP         A_B     A_B_GP
+    # 10  8900   8901      1    3   2       880        S  3400.0  3399.0   8900_8901  3400_3399
+    # 12  8903   8904      1    3   2       880        S  3396.0  3416.0   8903_8904  3396_3416
+    # 13  8904   8905      1    3   2       880        S  3416.0  3606.0   8904_8905  3416_3606
+    # 14  8905  20229      1    3   2       880        S  3606.0  3603.0  8905_20229  3606_3603
+    # 15  8907  20231      1    3   2       880        S  3601.0  3640.0  8907_20231  3601_3640
+
+    # join the model data to the hov -> gp mapping
+    model_df = pandas.merge(left   =model_df,  right   =model_hov_to_gp_df[["A","B","LANES","USE","A_GP","B_GP"]],
+                            left_on=["a","b"], right_on=["A","B"],
+                            how    ="left")
+    # print("model_df hov links head\n{}".format(model_df.loc[ pandas.notnull(model_df.A_GP)].head()))
+    # set those to HOV true and set the a,b to the GP versions
+    model_df["sep_HOV"] = False
+    model_df.loc[ pandas.notnull(model_df.A_GP), "sep_HOV"] = True
+    model_df.loc[ pandas.notnull(model_df.A_GP), "a"      ] = model_df.A_GP
+    model_df.loc[ pandas.notnull(model_df.A_GP), "b"      ] = model_df.B_GP
+    # drop other cols and make a,b back into int
+    model_df = model_df[ MODEL_COLUMNS + ["Daily", "sep_HOV"]]
+    model_df["a"] = model_df["a"].astype(int)
+    model_df["b"] = model_df["b"].astype(int)
+    # now a,b isn't unique so group
+    model_df["link_count"] = 1
+    model_df = model_df.groupby(["a","b"]).agg(sum).reset_index()
+    print("model_df head\n{}".format(model_df.loc[model_df.link_count>1].head()))
 
     # create a multi index for stacking
-    model_df.set_index(['a','b','lanes'], inplace=True)
+    model_df.set_index(['a','b','lanes','sep_HOV','link_count'], inplace=True)
     # stack: so now we have a series with multiindex: a,b,lanes,varname
     model_df = pandas.DataFrame({'volume': model_df.stack()})
     # reset the index
     model_df.reset_index(inplace=True)
     # and rename it
-    model_df.rename(columns={'level_3':'time_period'}, inplace=True)
+    model_df.rename(columns={'level_5':'time_period'}, inplace=True)
     # remove extra chars: 'volAM_tot' => 'AM'
     model_df.loc[model_df['time_period']!='Daily','time_period'] = model_df['time_period'].str[3:5]
+    print("model_df head\n{}".format(model_df.head(12)))
 
     if args.pems_year:
         ############ read the pems data
         obs_df = pandas.read_csv(PEMS_FILE, na_values='NA')
-    
-        # strip the column names
-        col_rename = {}
-        for colname in obs_df.columns.values.tolist(): col_rename[colname] = colname.strip()
-        obs_df.rename(columns=col_rename, inplace=True)
-    
+
         # select only the columns we want
         obs_df = obs_df[PEMS_COLUMNS]
         # select only the years in question
-        obs_df = obs_df[ obs_df['year'].isin(args.pems_year)]
-    
-        # get just the location information
-        pems_location_df = obs_df[['station','route','direction','latitude','longitude']]
-        # move NA lat,long to the end... but if the station moves, this is kind of silly
-        pems_location_df = pems_location_df.sort_values(by=['latitude','longitude'])
-        pems_location_df.drop_duplicates(subset='station', inplace=True)
-        # add it to the mapping
-        mapping_df = pandas.merge(left=mapping_df, right=pems_location_df, how='left')
+        obs_df = obs_df[ obs_df['year'].isin(args.pems_year)].reset_index(drop=True)
 
         # create missing cols in PeMS
-        obs_df['HOV'] = -1
         obs_df.rename(columns={'avg_flow':'volume', 'year':'category'}, inplace=True)
-        #        station  route direction time_period  lanes        volume   latitude   longitude  category  HOV
-        # 43474   400001    101         N          AM      5  23462.250000  37.364085 -121.901149      2014   -1
-        # 43475   400001    101         N          EA      5   7549.107143  37.364085 -121.901149      2014   -1
-        # 43476   400001    101         N          EV      5   9162.789474  37.364085 -121.901149      2014   -1
-        # 43477   400001    101         N          MD      5  18982.450000  37.364085 -121.901149      2014   -1
-        # 43478   400001    101         N          PM      5  11771.904762  37.364085 -121.901149      2014   -1
+        print("obs_df len={} head\n{}".format(len(obs_df), obs_df.head(22)))
+        #    station  route direction time_period  lanes        volume   latitude   longitude  category
+        # 0   400001    101         N          AM      5  23462.250000  37.364085 -121.901149      2014
+        # 1   400001    101         N          EA      5   7549.107143  37.364085 -121.901149      2014
+        # 2   400001    101         N          EV      5   9162.789474  37.364085 -121.901149      2014
+        # 3   400001    101         N          MD      5  18982.450000  37.364085 -121.901149      2014
+        # 4   400001    101         N          PM      5  11771.904762  37.364085 -121.901149      2014
+
+        obs_daily_df = obs_df.groupby(["station","route","direction","lanes","category","longitude","latitude"]).aggregate({"time_period":"count","volume":"sum"})
+        obs_daily_df.reset_index(inplace=True)
+        assert(len(obs_daily_df.loc[obs_daily_df.time_period>5])==0)
+        # drop those with fewer than 5 time periods
+        obs_daily_df = obs_daily_df.loc[ obs_daily_df.time_period == 5 ]
+        assert( len(obs_daily_df.loc[obs_daily_df.time_period!=5])==0 )
+        # add these
+        obs_daily_df["time_period"] = "Daily"
+        obs_df = pandas.concat([obs_df, obs_daily_df], axis="index")
+        obs_df.sort_values(by=["station","route","direction","lanes","category","time_period"], inplace=True)
+        obs_df.reset_index(drop=True, inplace=True)
+        print("obs_df len={} head\n{}".format(len(obs_df), obs_df.head(22)))
 
         # year  ROUTE COUNTY  POSTMILE_INT   PM LEG DIR  STATION                         DESCRIP time_period          2014          2015          2016
         # 0        12    NAP           2.0  2.3   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L          AM   2916.882353   3117.661017   3187.650000
@@ -236,21 +264,21 @@ if __name__ == '__main__':
         obs_df['category'] = obs_df.category.map(str) + ' Observed'
 
         # want to bring category into columns
-        obs_wide = pandas.pivot_table(obs_df, values="volume", index=["station","route","direction","latitude","longitude","HOV","lanes","time_period"], columns="category")
+        obs_wide = pandas.pivot_table(obs_df, values="volume", index=["station","route","direction","latitude","longitude","lanes","time_period"], columns="category")
         obs_wide["Average Observed"] = obs_wide.mean(axis=1)  # this will not include NaNs or missing vals so it handles them correctly
 
-        # print(obs_wide.head(10))
-        # category  station  route direction   latitude   longitude  HOV  lanes time_period  2014 Observed  2015 Observed  2016 Observed  Average Observed
-        # 0          400001    101         N  37.364085 -121.901149   -1      5          AM   23462.250000   22879.842857   22948.736111      23096.942989
-        # 1          400001    101         N  37.364085 -121.901149   -1      5          EA    7549.107143    8072.062500    8537.581081       8052.916908
-        # 2          400001    101         N  37.364085 -121.901149   -1      5          EV    9162.789474    9398.333333    9323.211268       9294.778025
-        # 3          400001    101         N  37.364085 -121.901149   -1      5          MD   18982.450000   20523.112903   20314.888889      19940.150597
-        # 4          400001    101         N  37.364085 -121.901149   -1      5          PM   11771.904762   11821.074627   11488.750000      11693.909796
-        # 5          400002    101         S  37.584097 -122.328465   -1      5          AM   25756.980769            NaN            NaN      25756.980769
-        # 6          400002    101         S  37.584097 -122.328465   -1      5          EA    4034.363636            NaN            NaN       4034.363636
-        # 7          400002    101         S  37.584097 -122.328465   -1      5          EV   26445.960000            NaN            NaN      26445.960000
-        # 8          400002    101         S  37.584097 -122.328465   -1      5          MD   32385.192308            NaN            NaN      32385.192308
-        # 9          400002    101         S  37.584097 -122.328465   -1      5          PM   29027.529412            NaN            NaN      29027.529412
+        print("obs_wide head\n{}".format(obs_wide.head(10)))
+        # category  station  route direction   latitude   longitude lanes time_period  2014 Observed  2015 Observed  2016 Observed  Average Observed
+        # 0          400001    101         N  37.364085 -121.901149     5          AM   23462.250000   22879.842857   22948.736111      23096.942989
+        # 1          400001    101         N  37.364085 -121.901149     5          EA    7549.107143    8072.062500    8537.581081       8052.916908
+        # 2          400001    101         N  37.364085 -121.901149     5          EV    9162.789474    9398.333333    9323.211268       9294.778025
+        # 3          400001    101         N  37.364085 -121.901149     5          MD   18982.450000   20523.112903   20314.888889      19940.150597
+        # 4          400001    101         N  37.364085 -121.901149     5          PM   11771.904762   11821.074627   11488.750000      11693.909796
+        # 5          400002    101         S  37.584097 -122.328465     5          AM   25756.980769            NaN            NaN      25756.980769
+        # 6          400002    101         S  37.584097 -122.328465     5          EA    4034.363636            NaN            NaN       4034.363636
+        # 7          400002    101         S  37.584097 -122.328465     5          EV   26445.960000            NaN            NaN      26445.960000
+        # 8          400002    101         S  37.584097 -122.328465     5          MD   32385.192308            NaN            NaN      32385.192308
+        # 9          400002    101         S  37.584097 -122.328465     5          PM   29027.529412            NaN            NaN      29027.529412
     else:
         obs_df = pandas.read_csv(CALTRANS_FILE)
         # make columns conform to previous version and to model data
@@ -314,8 +342,31 @@ if __name__ == '__main__':
     obs_df['b'] = -1
 
     # create the final stacked table -- first the model information
+    mapping_df.rename(columns={"A":"a", "B":"b"}, inplace=True)
+    # print("mapping_df head\n{}".format(mapping_df.head()))
+    #    station  district  route direction type   latitude   longitude     a     b  distlink        A_B
+    # 0   400001         4    101         N   ML  37.364085 -121.901149  5716  5690  0.000855  5716_5690
+    # 1   400006         4    880         S   ML  37.605003 -122.065542  3715  3712  0.001245  3715_3712
+    # 2   400007         4    101         N   ML  37.586936 -122.337721  6315  6409  0.001026  6315_6409
+    # 3   400009         4     80         W   ML  37.864883 -122.303345  2512  2509  0.000422  2512_2509
+    # 4   400010         4    101         N   ML  37.629765 -122.402365  6554  6567  0.000303  6554_6567
     model_final_df = pandas.merge(left=mapping_df, right=model_df, how='inner')
     model_final_df['category'] = '%d Modeled' % args.model_year
+    # print("model_final_df head\n{}".format(model_final_df.head(12)))
+    # model_final_df head
+    #     station  district  route direction type   latitude   longitude     a     b  distlink        A_B  lanes  sep_HOV  link_count time_period    volume      category
+    # 0    400001         4    101         N   ML  37.364085 -121.901149  5716  5690  0.000855  5716_5690    4.0     True           2          EA   4316.77  2015 Modeled
+    # 1    400001         4    101         N   ML  37.364085 -121.901149  5716  5690  0.000855  5716_5690    4.0     True           2          AM  23606.98  2015 Modeled
+    # 2    400001         4    101         N   ML  37.364085 -121.901149  5716  5690  0.000855  5716_5690    4.0     True           2          MD  18513.31  2015 Modeled
+    # 3    400001         4    101         N   ML  37.364085 -121.901149  5716  5690  0.000855  5716_5690    4.0     True           2          PM  12764.99  2015 Modeled
+    # 4    400001         4    101         N   ML  37.364085 -121.901149  5716  5690  0.000855  5716_5690    4.0     True           2          EV   5765.52  2015 Modeled
+    # 5    400001         4    101         N   ML  37.364085 -121.901149  5716  5690  0.000855  5716_5690    4.0     True           2       Daily  64967.57  2015 Modeled
+    # 6    400006         4    880         S   ML  37.605003 -122.065542  3715  3712  0.001245  3715_3712    4.0     True           2          EA   5642.29  2015 Modeled
+    # 7    400006         4    880         S   ML  37.605003 -122.065542  3715  3712  0.001245  3715_3712    4.0     True           2          AM  25418.81  2015 Modeled
+    # 8    400006         4    880         S   ML  37.605003 -122.065542  3715  3712  0.001245  3715_3712    4.0     True           2          MD  23771.06  2015 Modeled
+    # 9    400006         4    880         S   ML  37.605003 -122.065542  3715  3712  0.001245  3715_3712    4.0     True           2          PM  24153.04  2015 Modeled
+    # 10   400006         4    880         S   ML  37.605003 -122.065542  3715  3712  0.001245  3715_3712    4.0     True           2          EV  18160.92  2015 Modeled
+    # 11   400006         4    880         S   ML  37.605003 -122.065542  3715  3712  0.001245  3715_3712    4.0     True           2       Daily  97146.12  2015 Modeled
 
     print "Model columns: ", sorted(model_final_df.columns.values.tolist())
     print "Obsrv columns: ", sorted(obs_df.columns.values.tolist())
@@ -327,15 +378,15 @@ if __name__ == '__main__':
     # want a "wide" version, with a column for obsy1, obsy2, obsy3, modeled
 
     if args.caltrans_year:
-        index_cols = ['COUNTY','ROUTE','POSTMILE_INT','DIR','LEG','lanes','time_period']
+        index_cols = ['COUNTY','ROUTE','POSTMILE_INT','DIR','LEG','time_period']
     else:
-        index_cols = ["station","route","direction","latitude","longitude","HOV","lanes","time_period"]
+        index_cols = ["station","route","direction","latitude","longitude","time_period"]
 
-    model_wide = model_final_df[index_cols + ["a","b","volume"]].copy()
-    model_wide.rename(columns={"volume":"{} Modeled".format(args.model_year)}, inplace=True)
+    model_wide = model_final_df[index_cols + ["a","b","lanes","volume"]].copy()
+    model_wide.rename(columns={"volume":"{} Modeled".format(args.model_year), "lanes":"Lanes Modeled"}, inplace=True)
 
     obs_wide.reset_index(inplace=True)
-    table_wide = pandas.merge(left=model_wide, right=obs_wide, how='outer', on=index_cols)
+    table_wide = pandas.merge(left=model_wide, right=obs_wide, how='inner', on=index_cols)
 
 
     write_tde(table_wide, "%s_wide.tde" % tde_file, arg_append=False)
