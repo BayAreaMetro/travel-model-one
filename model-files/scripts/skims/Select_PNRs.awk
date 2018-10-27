@@ -6,19 +6,19 @@ BEGIN{
 		
     # determine which files to read PNRs from
 	if (type=="express_bus" || type=="all") {
-		pnrFiles["trn/express_bus.pnr"] = 1
+		pnrFiles["trn/transitLines_express_bus.pnr"] = 1
 	}
 	if (type=="light_rail" || type=="all") {
-		pnrFiles["trn/light_rail.pnr"] = 1
+		pnrFiles["trn/transitLines_light_rail.pnr"] = 1
 	}
 	if (type=="ferry" || type=="all") {
-		pnrFiles["trn/ferry.pnr"] = 1
+		pnrFiles["trn/transitLines_ferry.pnr"] = 1
 	}
 	if (type=="heavy_rail" || type=="all") {
-		pnrFiles["trn/heavy_rail.pnr"] = 1
+		pnrFiles["trn/transitLines_heavy_rail.pnr"] = 1
 	}
 	if (type=="commuter_rail" || type=="all") {
-		pnrFiles["trn/commuter_rail.pnr"] = 1
+		pnrFiles["trn/transitLines_commuter_rail.pnr"] = 1
 	}
 	if (type=="walk") {
 	    # keep all walk links   
@@ -41,6 +41,7 @@ BEGIN{
 		linkFile="trn/EV_Transit_suplinks.dat"
 	}
 	
+	print " " > "/dev/stderr"
 	# create an array with the PNRs
 	# PNR[node number] => 1    
 	numPNRs=0

@@ -31,7 +31,7 @@
 ;              (v) DISTANCE, coded in miles. 
 ;
 ;	  (2)  Access link files, which connect transit-only infrastructure to the highway network;  these files
-;              contain only an A-node and a B-node, where the A-node is on the highway network and the B-node is
+;         contain only an A-node and a B-node, where the A-node is on the highway network and the B-node is
 ;	       a walk-access-funnel link, meaning all walk-access links enter the transit-only infrastructure
 ;	       via this node, which allows for easier accounting of walk access usage. 
 ;
@@ -92,10 +92,7 @@ loop period = 1, 5
    
       ; use the same highway network used in the skimming
       neti[1] = hwy\avgload@token_period@.net
-      
-      ; read in the transit-only nodes that are used by the links in the subsequent job stream steps
-      nodei[2] = trn\transit_support_nodes.dat var = n,x,y  
-      
+
       ; output a time-period-specific transit background network
       neto = trn\@token_period@_transit_background.net
       
@@ -167,13 +164,8 @@ loop period = 1, 5
       neti = trn\@token_period@_transit_background.net
    
       ; add the access links
-      linki[2] = trn\express_bus_neti_access_links.dat,   var = a, var = b, rev = 1
-      linki[3] = trn\light_rail_neti_access_links.dat,    var = a, var = b, rev = 1
-      linki[4] = trn\ferry_neti_access_links.dat,         var = a, var = b, rev = 1
-      linki[5] = trn\heavy_rail_neti_access_links.dat,    var = a, var = b, rev = 1
-      linki[6] = trn\commuter_rail_neti_access_links.dat, var = a, var = b, rev = 1
+      linki[2] = trn\transitLines.access,   var = a, var = b, rev = 1
 
-   
       ; output a temporary network used in the BuildTransitNetworks.job script
       neto = trn\@token_period@_temporary_transit_background_accesslinks.net
       
@@ -186,12 +178,8 @@ loop period = 1, 5
       neti = trn\@token_period@_transit_background.net
       
       ; add the transit transfer links
-      linki[2] = trn\express_bus_neti_xfer_links.dat,   var = a, var = b, var = DISTANCE, rev = 1
-      linki[3] = trn\light_rail_neti_xfer_links.dat,    var = a, var = b, var = DISTANCE, rev = 1
-      linki[4] = trn\ferry_neti_xfer_links.dat,         var = a, var = b, var = DISTANCE, rev = 1 
-      linki[5] = trn\heavy_rail_neti_xfer_links.dat,    var = a, var = b, var = DISTANCE, rev = 1
-      linki[6] = trn\commuter_rail_neti_xfer_links.dat, var = a, var = b, var = DISTANCE, rev = 1
-      
+      linki[2] = trn\transitLines.xfer,   var = a, var = b, var = DISTANCE, rev = 1
+
       ; output a temporary network used in the BuildTransitNetworks.job script
       neto = trn\@token_period@_temporary_transit_background_transferlinks.net
        

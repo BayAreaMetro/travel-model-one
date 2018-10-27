@@ -133,16 +133,14 @@ loop period = 1, 5
          mode = 1
       	
       ; read in the funnel links
-      read file = trn\light_rail.zac
-      read file = trn\ferry.zac
-      read file = trn\heavy_rail.zac
-      read file = trn\commuter_rail.zac
-      
+      read file = trn\transitLines.zac
+
       ; additional hand-coded walk access links (many will be generated, creating warning messages)
       read file = trn\walk_access.sup
 
       ; read in the transit stop locations in the line files
-      read file = trn\transit_lines.block       
+      read  file = trn\transitLines.link
+      read  file = trn\transitLines.lin
 
    endrun   
 
@@ -192,20 +190,19 @@ loop period = 1, 5
       pnr mode = 2  lotmode = 4  oneway = y  maxtime = 40  global = y
       
       ; read in the pnr nodes      
-      read file = trn\express_bus.pnr
-      read file = trn\light_rail.pnr
-      read file = trn\ferry.pnr
-      read file = trn\heavy_rail.pnr
-      read file = trn\commuter_rail.pnr
-      
-      
+      read file = trn\transitLines_express_bus.pnr
+      read file = trn\transitLines_light_rail.pnr
+      read file = trn\transitLines_ferry.pnr
+      read file = trn\transitLines_heavy_rail.pnr
+      read file = trn\transitLines_commuter_rail.pnr
+
       ; trnbuild requires that we read in some transit lines, though we're building
       ; drive access links to funnel nodes, so no reading of lines are necessary
       ; a dummy read is entered here to placate trnbuild, and muni lines are chosen
       ; to avoid numerous errors for long run times caused by the PNR_TIME values, which
       ; are artificially increased to prevent PNR over bridges
-      read file = trn\muni_local.tpl        
-      
+      read file = trn\transitLines.link
+      read file = trn\transitLines.lin
    endrun   
    
    
@@ -269,8 +266,8 @@ loop period = 1, 5
       read file = trn\@token_period@_drive_egrlinks.dat     
    
       ; read in the transit stop locations in the line files
-      read file = trn\transit_lines.block                                    
-         
+      read  file = trn\transitLines.link
+      read  file = trn\transitLines.lin
    endrun
    
    ; step 5: select two best park and ride locations for each mode and create the support links that are used in skimming/assignment  

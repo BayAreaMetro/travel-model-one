@@ -6,7 +6,7 @@
 
 
 :: Location of travel-model-one local repo (probably including this dir)
-set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-master
+set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-transit
 
 :: Location of INPUT and CTRAMP directory.
 :: set MODEL_DIR=M:\Application\Model One\STIP2017\2040_06_700_CC130046_680SR4Int
@@ -35,9 +35,9 @@ mkdir skims
 mkdir sgr
 mkdir logs
 
-copy "%MODEL_DIR%\INPUT\trn\transit_lines\"   trn\
-copy "%MODEL_DIR%\INPUT\trn\transit_fares\"   trn\
-copy "%MODEL_DIR%\INPUT\trn\transit_support\" trn\
+copy "%MODEL_DIR%\INPUT\trn"   trn\
+copy "%MODEL_DIR%\INPUT\trn"   trn\
+copy "%MODEL_DIR%\INPUT\trn" trn\
 
 copy "%MODEL_DIR%\INPUT\hwy\freeflow.net"     hwy\
 
@@ -96,6 +96,9 @@ if not exist "%TRN_CHECK_DIR%\ctramp\scripts\skims\reverselinks.awk" (
 )
 if not exist "%TRN_CHECK_DIR%\ctramp\scripts\skims\select_pnrs.awk" (
   copy "%CODE_DIR%\model-files\scripts\skims\select_pnrs.awk" "%TRN_CHECK_DIR%\ctramp\scripts\skims\select_pnrs.awk"
+)
+if not exist "%TRN_CHECK_DIR%\ctramp\scripts\skims\createLocalBusKNRs.awk" (
+  copy "%CODE_DIR%\model-files\scripts\skims\createLocalBusKNRs.awk" "%TRN_CHECK_DIR%\ctramp\scripts\skims\createLocalBusKNRs.awk"
 )
 ::   Input: trn\[EA,AM,MD,PM,EV]_temporary_transit_background_accesslinks.net
 ::          trn\[EA,AM,MD,PM,EV]_temporary_transit_background_transferlinks.net
