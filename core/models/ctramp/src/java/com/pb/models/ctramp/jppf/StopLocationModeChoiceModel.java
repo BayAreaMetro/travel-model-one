@@ -68,7 +68,7 @@ public class StopLocationModeChoiceModel implements Serializable {
     private static final String TOUR_HOUR_COLUMN_HEADING =            "TourHour";
     private static final String TRIP_INDEX_COLUMN_HEADING =           "TripIndex";
     
-    private StopDestinationSampleOfAlternativesModelGeneric dcSoaModel = null;
+    private StopDestinationSampleOfAlternativesModel dcSoaModel = null;
     private StopDestChoiceSize dcSizeModel = null;
 
     private int[] sampleValues;
@@ -160,8 +160,8 @@ public class StopLocationModeChoiceModel implements Serializable {
 
         
         dcSizeModel = new StopDestChoiceSize(propertyMap,tazDataManager,modelStructure);
-//        dcSoaModel = new StopDestinationSampleOfAlternativesModel(propertyMap,tazDataManager,dcSizeModel,modelStructure,dmuFactory);
-        dcSoaModel = new StopDestinationSampleOfAlternativesModelGeneric(propertyMap,tazDataManager,dcSizeModel,modelStructure,dmuFactory);
+        dcSoaModel = new StopDestinationSampleOfAlternativesModel(propertyMap,tazDataManager,dcSizeModel,modelStructure,dmuFactory);
+        // dcSoaModel = new StopDestinationSampleOfAlternativesModelGeneric(propertyMap,tazDataManager,dcSizeModel,modelStructure,dmuFactory);
 
         sampleValues = new int[dcSoaModel.getSampleOfAlternativesSampleSize()];
         
