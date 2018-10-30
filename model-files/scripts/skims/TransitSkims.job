@@ -298,8 +298,9 @@
                 hwytime = BUS_TIME
                 
                 ; read the transit line and link files
-                read file = trn\transit_lines.block             
-                
+                read file = trn\transitLines.link             
+                read file = trn\transitLines.lin             
+
                 ; read in the generated walk support links
                 read file = trn\@token_period@_transit_suplinks_walk.dat
                 
