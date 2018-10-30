@@ -75,9 +75,7 @@ echo STARTED MODEL RUN  %DATE% %TIME% >> logs\feedback.rpt
 
 :: Move the input files, which are not accessed by the model, to the working directories
 copy INPUT\hwy\                 hwy\
-copy INPUT\trn\transit_lines\   trn\
-copy INPUT\trn\transit_fares\   trn\ 
-copy INPUT\trn\transit_support\ trn\
+copy INPUT\trn\                 trn\
 copy INPUT\landuse\             landuse\
 copy INPUT\popsyn\              popsyn\
 copy INPUT\nonres\              nonres\
