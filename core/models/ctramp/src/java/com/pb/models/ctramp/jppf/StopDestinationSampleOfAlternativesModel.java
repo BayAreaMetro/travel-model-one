@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import com.pb.common.calculator.VariableTable;
 import com.pb.common.newmodel.ChoiceModelApplication;
@@ -94,7 +95,8 @@ public class StopDestinationSampleOfAlternativesModel implements Serializable {
         uecPageMap.put(ModelStructure.OTH_DISCR_PURPOSE_NAME,SOA_OTH_DISC_UEC_MODEL_PAGE);
         uecPageMap.put(ModelStructure.AT_WORK_PURPOSE_NAME,SOA_AT_WORK_UEC_MODEL_PAGE);
 
-        lookupIndexMap = new HashMap<String,Integer>();
+        // make this ordered by keys as they are put in for getMainAndSubPurposeFromLookupIndex() to work consistently
+        lookupIndexMap = new LinkedHashMap<String,Integer>();
         lookupIndexMap.put(ModelStructure.WORK_PURPOSE_NAME,SOA_WORK_STOP_PURPOSE_INDEX);
         lookupIndexMap.put(ModelStructure.UNIVERSITY_PURPOSE_NAME,SOA_WORK_STOP_PURPOSE_INDEX);
         lookupIndexMap.put(ModelStructure.SCHOOL_PURPOSE_NAME,SOA_WORK_STOP_PURPOSE_INDEX);
