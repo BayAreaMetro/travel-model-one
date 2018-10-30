@@ -306,8 +306,12 @@ public class HouseholdChoiceModels implements Serializable {
             logger.error( "RuntimeException setting up HouseholdChoiceModels." );
             logger.error( "Models setup = " + lastModel );
             logger.error( "", e );
-            
-            throw e; 
+
+            StackTraceElement[] s = e.getStackTrace();
+            for(StackTraceElement ste : s){
+                logger.error("\tat " + ste);
+            }
+            throw e;
         }
         
 
