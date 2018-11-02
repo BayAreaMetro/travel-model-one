@@ -52,10 +52,10 @@ lines are set in CTRAMP\runtime\mtcTourBased.properties:
     ShadowPricing.MaximumIterations = 2
   Iteration 3:
     ShadowPrice.Input.File          = main/ShadowPricing_5.csv
-    ShadowPricing.MaximumIterations = 2 
+    ShadowPricing.MaximumIterations = 2
   Iteration n:
     ShadowPrice.Input.File          = main/ShadowPricing_2n-1.csv
-    ShadowPricing.MaximumIterations = 2 
+    ShadowPricing.MaximumIterations = 2
 """
 
 import argparse
@@ -224,6 +224,35 @@ def config_auto_opcost(replacements):
     replacements[filepath]["(\nBUSOPC_FWY_RM[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % bus_opc_adjust_rm
     replacements[filepath]["(\nBUSOPC_FWY_FU[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % bus_opc_adjust_fuel
 
+
+    # AV impacts on road capacity - represented by adjusting passenger car equivalents (PCEs) by facility type
+    av_pcefac_ft01   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT01"))
+    av_pcefac_ft02   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT02"))
+    av_pcefac_ft03   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT03"))
+    av_pcefac_ft04   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT04"))
+    av_pcefac_ft05   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT05"))
+    av_pcefac_ft06   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT06"))
+    av_pcefac_ft07   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT07"))
+    av_pcefac_ft08   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT08"))
+    av_pcefac_ft09   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT09"))
+    av_pcefac_ft10   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT10"))
+
+    sharing   = float(get_property(params_filename, myfile_contents, "Sharing_Preferences"))
+
+    # put the av pce factors into the CTRAMP\scripts\block\hwyParam.block
+    replacements[filepath]["(\nAV_PCE_FT01[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft01
+    replacements[filepath]["(\nAV_PCE_FT02[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft02
+    replacements[filepath]["(\nAV_PCE_FT03[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft03
+    replacements[filepath]["(\nAV_PCE_FT04[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft04
+    replacements[filepath]["(\nAV_PCE_FT05[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft05
+    replacements[filepath]["(\nAV_PCE_FT06[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft06
+    replacements[filepath]["(\nAV_PCE_FT07[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft07
+    replacements[filepath]["(\nAV_PCE_FT08[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft08
+    replacements[filepath]["(\nAV_PCE_FT09[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft09
+    replacements[filepath]["(\nAV_PCE_FT10[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft10
+
+    replacements[filepath]["(\nSharingPref[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % sharing
+
 def config_host_ip(replacements):
     """
     See USAGE for details.
@@ -299,7 +328,7 @@ def config_distribution(replacements):
         # accessibilities: 48 logical processors
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
-        
+
         # CORE: use half for JPPF nodes - 48 didn't seem to take
         filenames = []
         for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
@@ -390,7 +419,7 @@ def config_distribution(replacements):
         # accessibilities: 48 logical processors
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
-        
+
         # CORE: use half for JPPF nodes - 48 didn't seem to take
         filenames = []
         for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
@@ -416,13 +445,13 @@ def config_shadowprice(iter, replacements):
     if iter==1:
         # 4 iterations, no input file -- comment it out
         replacements[filepath]["(\n)(#?)(UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = \
-            r"\g<1>#\g<3>\g<4>"        
+            r"\g<1>#\g<3>\g<4>"
         replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations[ \t]*=[ \t]*)(\S*)"] = \
             r"\g<1>4"
     elif iter==2:
         # update to 2 iterations and add input file
         replacements[filepath]["(\n)(#?)(UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = \
-            r"\g<1>\g<3>main/ShadowPricing_3.csv"        
+            r"\g<1>\g<3>main/ShadowPricing_3.csv"
         replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations[ \t]*=[ \t]*)(\S*)"] = \
             r"\g<1>2"
     else:
@@ -459,7 +488,7 @@ if __name__ == '__main__':
                         type=int, choices=[1,2,3,4,5])
 
     my_args = parser.parse_args()
-    
+
     # Figure out the replacements we need to make
     replacements = collections.defaultdict(collections.OrderedDict)
     if my_args.iter == None:
@@ -474,5 +503,3 @@ if __name__ == '__main__':
     # Go ahead and make the replacements
     for filepath,regex_dict in replacements.iteritems():
         replace_in_file(filepath, regex_dict)
-
-
