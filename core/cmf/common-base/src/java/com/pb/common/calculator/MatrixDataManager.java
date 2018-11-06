@@ -183,6 +183,9 @@ public class MatrixDataManager implements Serializable {
                 String fileName = matrixEntry.fileName;
                 logger.fatal( String.format( "%-10s %s", matrixName, fileName) );
             }
+            for (StackTraceElement ste : e.getStackTrace()) {
+                    logger.fatal(ste);
+            }
             throw (e);
         }
         addMatrixCollections(matrixEntries, collapsedMap);
