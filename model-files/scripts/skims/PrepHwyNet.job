@@ -91,10 +91,10 @@ loop period = 1, 5
    run pgm = network
    
       ; use the same highway network used in the skimming
-      neti[1] = hwy\avgload@token_period@.net
+      neti[1] = "%MODEL_DIR%\hwy\avgload@token_period@.net"
 
       ; output a time-period-specific transit background network
-      neto = trn\@token_period@_transit_background.net
+      neto = @token_period@_transit_background.net
       
       ; set the park-and-ride time to the highway time, except the bridges which the park-and-ride paths ignore
       if (PNROK=1)
@@ -146,7 +146,7 @@ loop period = 1, 5
         
            CSPD = @token_minimum_speed@
            CTIM = li.1.DISTANCE / (CSPD/60.0)
-           list = "cspd@token_period@ below threshold of @token_minimum_speed@ mph for link:  ", a(8.0), "-", b(8.0), file = logs\SpeedErrors.log
+           list = "cspd@token_period@ below threshold of @token_minimum_speed@ mph for link:  ", a(8.0), "-", b(8.0), file = "%MODEL_DIR%\logs\SpeedErrors.log"
                
         endif
             
@@ -161,13 +161,13 @@ loop period = 1, 5
    run pgm = network
    
       ; use the input network created by the previous step
-      neti = trn\@token_period@_transit_background.net
+      neti = @token_period@_transit_background.net
    
       ; add the access links
-      linki[2] = trn\transitLines.access,   var = a, var = b, rev = 1
+      linki[2] = "%MODEL_DIR%\trn\transitLines.access",   var = a, var = b, rev = 1
 
       ; output a temporary network used in the BuildTransitNetworks.job script
-      neto = trn\@token_period@_temporary_transit_background_accesslinks.net
+      neto = @token_period@_temporary_transit_background_accesslinks.net
       
    endrun
 
@@ -175,13 +175,13 @@ loop period = 1, 5
    run pgm=network
    
       ; use the input network created by the previous step
-      neti = trn\@token_period@_transit_background.net
+      neti = @token_period@_transit_background.net
       
       ; add the transit transfer links
-      linki[2] = trn\transitLines.xfer,   var = a, var = b, var = DISTANCE, rev = 1
+      linki[2] = "%MODEL_DIR%\trn\transitLines.xfer",   var = a, var = b, var = DISTANCE, rev = 1
 
       ; output a temporary network used in the BuildTransitNetworks.job script
-      neto = trn\@token_period@_temporary_transit_background_transferlinks.net
+      neto = @token_period@_temporary_transit_background_transferlinks.net
        
    endrun
    

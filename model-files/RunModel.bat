@@ -26,6 +26,7 @@ if %computername%==MODEL2-C set HOST_IP_ADDRESS=192.168.1.208
 if %computername%==MODEL2-D set HOST_IP_ADDRESS=192.168.1.209
 
 :: Figure out the model year
+set MODEL_DIR=%CD%
 set PROJECT_DIR=%~p0
 set PROJECT_DIR2=%PROJECT_DIR:~0,-1%
 :: get the base dir only
@@ -51,6 +52,13 @@ if %MODEL_YEAR% GTR 3000 (
   echo Model year [%MODEL_YEAR%] is greater than 3000
   exit /b 2
 )
+
+:: --------TrnAssignment Setup
+:: CHAMP has dwell  configured for buses (local and premium)
+:: CHAMP has access configured for for everything
+set COMPLEXMODES_DWELL=21 24 27 28 30 70 80 81 83 84 87 88
+set COMPLEXMODES_ACCESS=21 24 27 28 30 70 80 81 83 84 87 88 110 120 130
+set MAXITERATIONS=3
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -131,6 +139,11 @@ if ERRORLEVEL 2 goto done
 
 :: Build the skim tables
 runtpp CTRAMP\scripts\skims\NonMotorizedSkims.job
+if ERRORLEVEL 2 goto done
+
+:: Step 4.5: Build initial transit files
+set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\transitDwellAccess.py NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 if ERRORLEVEL 2 goto done
 
 

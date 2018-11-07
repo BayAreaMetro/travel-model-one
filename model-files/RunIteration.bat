@@ -125,6 +125,12 @@ if %ITER% GTR 0 (
 runtpp CTRAMP\scripts\assign\HwyAssign.job
 if ERRORLEVEL 2 goto done
 
+:: if we're running with transit crowding, need to run interim assignments
+:trnAssign
+:: copy a local version for easier restarting
+copy C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\trnAssign.bat trnAssign_iter%ITER%.bat
+call trnAssign_iter%ITER%.bat
+if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
