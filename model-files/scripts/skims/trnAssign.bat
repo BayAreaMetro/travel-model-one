@@ -10,6 +10,10 @@ set MAXTRNITERS=30
 set MAXPATHTIME=240
 set PCT=%%
 
+:: AverageNetworkVolumes.job uses PREV_ITER=1 for ITER=1
+set PREV_TRN_ITER=%PREV_ITER%
+IF %ITER% EQU 1 SET PREV_TRN_ITER=0
+
 set ALLTRIPMODES=wlk_com_wlk drv_com_wlk wlk_com_drv wlk_hvy_wlk drv_hvy_wlk wlk_hvy_drv wlk_lrf_wlk drv_lrf_wlk wlk_lrf_drv wlk_exp_wlk drv_exp_wlk wlk_exp_drv wlk_loc_wlk drv_loc_wlk wlk_loc_drv
 set ALLTOURMODES=wlk_trn_wlk drv_trn_wlk wlk_trn_drv
 IF NOT DEFINED TRNFASTERTHANFREEFLOW (set TRNFASTERTHANFREEFLOW=0)
@@ -49,7 +53,7 @@ IF NOT %ITER% EQU POSTPROC (
   )
   :: otherwise go from where the previous iteration left off
   IF %ITER% GTR 0 (
-    FOR %%H in (%ALLTIMEPERIODS%) DO copy /y ..\TransitAssignment.iter%PREVITER%\transit%%H.lin transit%%H_0.lin
+    FOR %%H in (%ALLTIMEPERIODS%) DO copy /y ..\TransitAssignment.iter%PREV_TRN_ITER%\transit%%H.lin transit%%H_0.lin
   )
 )
 FOR %%H in (%ALLTIMEPERIODS%) DO copy /y transit%%H_0.lin transit%%H.lin
@@ -183,11 +187,11 @@ echo Done transit assignment; LastIters are %LASTITER_AM%, %LASTITER_MD%, %LASTI
 :copyup
 :: for core
 FOR %%A in (%ALLTRIPMODES% %ALLTOURMODES%) DO (
-  copy /y trnskmea_%%A.avg.iter%LASTITER_EA%.tpp ..\trnskmea_%%A.tpp
-  copy /y trnskmam_%%A.avg.iter%LASTITER_AM%.tpp ..\trnskmam_%%A.tpp
-  copy /y trnskmmd_%%A.avg.iter%LASTITER_MD%.tpp ..\trnskmmd_%%A.tpp
-  copy /y trnskmpm_%%A.avg.iter%LASTITER_PM%.tpp ..\trnskmpm_%%A.tpp
-  copy /y trnskmev_%%A.avg.iter%LASTITER_EV%.tpp ..\trnskmev_%%A.tpp
+  copy /y trnskmea_%%A.avg.iter%LASTITER_EA%.tpp ..\..\skims\trnskmea_%%A.tpp
+  copy /y trnskmam_%%A.avg.iter%LASTITER_AM%.tpp ..\..\skims\trnskmam_%%A.tpp
+  copy /y trnskmmd_%%A.avg.iter%LASTITER_MD%.tpp ..\..\skims\trnskmmd_%%A.tpp
+  copy /y trnskmpm_%%A.avg.iter%LASTITER_PM%.tpp ..\..\skims\trnskmpm_%%A.tpp
+  copy /y trnskmev_%%A.avg.iter%LASTITER_EV%.tpp ..\..\skims\trnskmev_%%A.tpp
 )
  
 :: copy the latest transit assignment dbf into the parent dir
