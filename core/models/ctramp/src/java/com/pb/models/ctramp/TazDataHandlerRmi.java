@@ -213,6 +213,11 @@ public class TazDataHandlerRmi implements TazDataIf, Serializable {
         return (Integer)remote.method( "getZoneIsRural", objArray);
     }
 
+    public float getPopEmpPerSqMi(int taz) {
+        Object[] objArray = { taz };
+        return (Float)remote.method( "getPopEmpPerSqMi", objArray);
+    }
+
 
     public float[] getPkAutoRetailAccessibity() {
         Object[] objArray = {};

@@ -63,6 +63,12 @@ public class TazDataHandler implements TazDataIf, Serializable {
     private static final String ZONE_DATA_PARKLNG_FIELD_NAME = "parkLong";
     private static final String ZONE_DATA_PROPFREE_FIELD_NAME = "PropFree";
     private static final String ZONE_DATA_PARKRATE_FIELD_NAME = "ParkRate";
+    
+    
+    private static final String ZONE_DATA_TOTPOP_FIELD_NAME = "TOTPOP";
+    private static final String ZONE_DATA_TOTEMP_FIELD_NAME = "TOTEMP";
+    private static final String ZONE_DATA_TOTACRES_FIELD_NAME = "TOTACRE";
+    
 
     private static final String ACCESSIBILITIES_FILE_ZONE_FIELD_NAME = "taz";
     private static final String ACCESSIBILITIES_PEAK_AUTO_RETAIL_FIELD_NAME = "autoPeakRetail";
@@ -107,6 +113,8 @@ public class TazDataHandler implements TazDataIf, Serializable {
     private float[] opTransitTotal;
     private float[] nonMotorizedRetail;
     private float[] nonMotorizedTotal;
+    
+    private float[] popEmpSqMile;
 
     protected String tazDataZoneFieldName = "";
     protected String tazDataDistFieldName= "";
@@ -211,6 +219,9 @@ public class TazDataHandler implements TazDataIf, Serializable {
 
 
         readZonalAccessibilitiesFile (zonalAccessibilityFileName);
+        
+        //for TNC/Taxi wait times
+        calculatePopEmpSqMi();
     }
 
 
@@ -761,6 +772,38 @@ public class TazDataHandler implements TazDataIf, Serializable {
     	
     	return tazs;
     	
+    }
+    
+    /**
+     * For TAXI/TNC wait times; currently calculated based on pop,emp,acre fields in TAZ file. Does not
+     * use a floating zone calculation, which is probably OK for now, since TM1 is zone-based.
+     * 
+     */
+    private void calculatePopEmpSqMi(){
+    	
+    	popEmpSqMile = new float[NUM_ZONES+1];
+        
+    	for (int i=1; i <= zoneDataTable.getRowCount(); i++) {
+            int taz = (int) zoneDataTable.getValueAt(i, ZONE_DATA_ZONE_FIELD_NAME);
+            double pop = zoneDataTable.getValueAt(i, ZONE_DATA_TOTPOP_FIELD_NAME);
+            double emp = zoneDataTable.getValueAt(i, ZONE_DATA_TOTEMP_FIELD_NAME);
+            double acres = zoneDataTable.getValueAt(i, ZONE_DATA_TOTACRES_FIELD_NAME);
+            
+            //factor to convert acres to sq. miles = 0.0015625
+            popEmpSqMile[taz] = (float) ((pop+emp)/(acres * 0.0015625));
+        }
+    	
+    }
+    
+    /**
+     * Get population + employment per square mile for TAZ.
+     * 
+     * @param taz
+     * @return
+     */
+    public float getPopEmpPerSqMi(int taz){
+
+    	return popEmpSqMile[taz];
     }
    
     

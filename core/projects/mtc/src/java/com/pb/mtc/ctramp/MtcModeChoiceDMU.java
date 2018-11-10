@@ -122,7 +122,7 @@ public class MtcModeChoiceDMU extends ModeChoiceDMU {
     public int getPAnalyst(){
     	return person.getPAnalyst();
     }
-
+    
 
     // private methods
 
@@ -222,6 +222,17 @@ public class MtcModeChoiceDMU extends ModeChoiceDMU {
         // guojy: added for M. Gucwa's research on automated vehicles
         methodIndexMap.put( "getHAnalyst", 27 );
         methodIndexMap.put( "getPAnalyst", 28 );
+        
+        methodIndexMap.put( "getOrigTaxiWaitTime", 30);
+        methodIndexMap.put( "getDestTaxiWaitTime", 31);
+        methodIndexMap.put( "getOrigTNCWaitTime", 32);
+        methodIndexMap.put( "getDestTNCWaitTime", 33);
+        methodIndexMap.put( "getUseOwnedAV", 34);
+              
+        
+        
+        
+        
 
     }
     
@@ -262,6 +273,14 @@ public class MtcModeChoiceDMU extends ModeChoiceDMU {
             // guojy: added for M. Gucwa's research on automated vehicles
             case 27: return getHAnalyst();
             case 28: return getPAnalyst();
+            
+            case 30: return getTaxiWaitTimeOrig();
+            case 31: return getTaxiWaitTimeDest();
+            case 32: return getTNCWaitTimeOrig();
+            case 33: return getTNCWaitTimeDest();
+            case 34: return getUseOwnedAV();
+
+            
 
             default:
                 logger.error("method number = "+variableIndex+" not found");

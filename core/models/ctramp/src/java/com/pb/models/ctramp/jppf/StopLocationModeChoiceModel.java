@@ -14,6 +14,7 @@ import com.pb.models.ctramp.Person;
 import com.pb.models.ctramp.Stop;
 import com.pb.models.ctramp.StopDestChoiceSize;
 import com.pb.models.ctramp.StopLocationDMU;
+import com.pb.models.ctramp.TNCAndTaxiWaitTimeCalculator;
 import com.pb.models.ctramp.TazDataIf;
 import com.pb.models.ctramp.Tour;
 import com.pb.models.ctramp.TripModeChoiceDMU;
@@ -106,6 +107,8 @@ public class StopLocationModeChoiceModel implements Serializable {
     private long[] mcTime  = new long[2];
     private long[] plcTime = new long[2];
     private long[][] hhTimes = new long[7][2];
+    
+    private TNCAndTaxiWaitTimeCalculator tncTaxiWaitTimeCalculator;
     
     /**
      * Constructor that will be used to set up the ChoiceModelApplications for each
@@ -207,6 +210,10 @@ public class StopLocationModeChoiceModel implements Serializable {
             i = it.next();
             mcChoiceModelApplication[i] = new ChoiceModelApplication( uecFileName, i, UEC_DATA_PAGE, propertyMap, (VariableTable)tripModeChoiceDmuObj );
         }
+        
+        tncTaxiWaitTimeCalculator = new TNCAndTaxiWaitTimeCalculator();
+        tncTaxiWaitTimeCalculator.createWaitTimeDistributions(propertyMap);
+
     }
 
     
@@ -415,6 +422,23 @@ public class StopLocationModeChoiceModel implements Serializable {
                 tripModeChoiceDmuObj.setStopObjectIsLast( i == stops.length - 1 ? 1 : 0 );
                 tripModeChoiceDmuObj.setIntStopParkRate( 0 );
                 
+                float popEmpDenOrig = (float) tazDataManager.getPopEmpPerSqMi(origin);
+                float TNCWaitTimeOrig=0;
+                float TaxiWaitTimeOrig=0;
+                
+                if(household!=null){
+                    Random hhRandom = household.getHhRandom();
+                    double rnum = hhRandom.nextDouble();
+                    TNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromTNCWaitTimeDistribution(rnum, popEmpDenOrig);
+                    TaxiWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromTaxiWaitTimeDistribution(rnum, popEmpDenOrig);
+                   }else{
+                    TNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.getMeanTNCWaitTime( popEmpDenOrig);
+                    TaxiWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.getMeanTaxiWaitTime( popEmpDenOrig);
+                }
+
+                tripModeChoiceDmuObj.setWaitTimeTaxi(TaxiWaitTimeOrig);
+                tripModeChoiceDmuObj.setWaitTimeTNC(TNCWaitTimeOrig);
+                            
                 int zone = -1;
                 int subzone = -1;
                 int choice = -1;

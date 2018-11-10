@@ -60,6 +60,9 @@ public class Household implements java.io.Serializable {
     private byte maxHoursAvailableAdult;
     private byte maxHoursAvailableChild;
     
+    private short humanVehicles;
+    private short autonomousVehicles;
+    
 
     // guojy: added for M. Gucwa's research on automated vehicles
     private int hAnalyst; 
@@ -1487,6 +1490,26 @@ public class Household implements java.io.Serializable {
     // guojy: added for M. Gucwa's research on automated vehicles
 	public void setHAnalyst(int hAnalyst) {
 		this.hAnalyst = hAnalyst;
+	}
+
+
+	public short getHumanVehicles() {
+		return humanVehicles;
+	}
+
+
+	public void setHumanVehicles(short humanVehicles) {
+		this.humanVehicles = humanVehicles;
+	}
+
+
+	public short getAutonomousVehicles() {
+		return autonomousVehicles;
+	}
+
+
+	public void setAutonomousVehicles(short autonomousVehicles) {
+		this.autonomousVehicles = autonomousVehicles;
 	}
 
 

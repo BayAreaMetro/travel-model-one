@@ -52,6 +52,9 @@ public class AutoOwnershipChoiceModel {
     int[] hhsByAutoOwnership;
 
     int numAlts;
+    private int[]                              totalAutosByAlt;
+    private int[]                              automatedVehiclesByAlt;
+    private int[]                              humanVehiclesByAlt;
 
 
     public AutoOwnershipChoiceModel(String uecFileName, ResourceBundle resourceBundle, ModelStructure modelStructure){
@@ -118,7 +121,12 @@ public class AutoOwnershipChoiceModel {
             Household household = householdArray[i];
             short chosen = getAutoOwnershipChoice(household);
 
+            int AVs = automatedVehiclesByAlt[chosen-1];
+            int HVs = humanVehiclesByAlt[chosen-1];
+           
             household.setAutoOwnershipModelResult(chosen);
+            household.setAutonomousVehicles((short)AVs);
+            household.setHumanVehicles((short)HVs);
 
             // track the results
             hhsByAutoOwnership[chosen]++;
@@ -230,11 +238,16 @@ public class AutoOwnershipChoiceModel {
 
 
         // set the travel times from home to chosen work and school locations
-        double workTimeSavings = getWorkTourAutoTimeSavings( hhObj );        
+        double[] workTimeArray = getWorkTourAutoTimeSavings( hhObj );   
+        double workTimeSavings =    workTimeArray[0];
+        double workTime = workTimeArray[1];
+        
         double schoolDriveTimeSavings = getSchoolDriveTourAutoTimeSavings( hhObj );        
-        double schoolNonDriveTimeSavings = getSchoolNonDriveTourAutoTimeSavings( hhObj );        
+        double schoolNonDriveTimeSavings = getSchoolNonDriveTourAutoTimeSavings( hhObj );      
+        
         
         aoDmuObject.setWorkTourAutoTimeSavings( workTimeSavings );
+        aoDmuObject.setWorkTourAutoTime(workTime);
         aoDmuObject.setSchoolDriveTourAutoTimeSavings( schoolDriveTimeSavings );
         aoDmuObject.setSchoolNonDriveTourAutoTimeSavings( schoolNonDriveTimeSavings );
 
@@ -271,9 +284,17 @@ public class AutoOwnershipChoiceModel {
     }
 
     
-    private double getWorkTourAutoTimeSavings( Household hhObj ) {
+    /**
+     * Returns double array, first element is totalAutoSavingsRatio and second element is total auto time across all workers.
+     * 
+     * @param hhObj
+     * @return
+     */
+    private double[] getWorkTourAutoTimeSavings( Household hhObj ) {
 
         double totalAutoSavingsRatio = 0.0;
+        double workAutoTime = 0.0;
+        double[] returnArray = new double[2];
         
         TimeDMU timeDmuObject = new TimeDMU ();
         int[] availability = new int[2];
@@ -308,10 +329,12 @@ public class AutoOwnershipChoiceModel {
             double autoSavingsRatio = ( autoSavings < 120 ? autoSavings/120.0 : 1.0 );
 
             totalAutoSavingsRatio += autoSavingsRatio;
+            workAutoTime += auto[0];
 
         }
-    
-        return totalAutoSavingsRatio;
+        returnArray[0] = totalAutoSavingsRatio;
+        returnArray[1] = workAutoTime;
+        return returnArray;
 
     }
     
@@ -404,5 +427,51 @@ public class AutoOwnershipChoiceModel {
         return totalAutoSavingsRatio;
 
     }
+    /**
+     * This is a helper method that iterates through the alternative names
+     * in the auto ownership UEC and searches through each name to collect 
+     * the total number of autos (in the first position of the name character
+     * array), the number of AVs for the alternative (preceded by the "AV" substring) 
+     * and the number of CVs for the alternative (preceded by the "CV" substring). The
+     * results are stored in the arrays:
+     * 
+     *  totalAutosByAlt
+     *  automatedVehiclesByAlt
+     *  humanVehiclesByAlt
+     *  
+     * @param alternativeNames The array of alternative names.
+     */
+    private void calculateAlternativeArrays(String[] alternativeNames){
+    	
+    	totalAutosByAlt = new int[alternativeNames.length];
+	    automatedVehiclesByAlt = new int[alternativeNames.length];
+	    humanVehiclesByAlt = new int[alternativeNames.length];
+   	
+    	
+    	//iterate thru names
+    	for(int i = 0; i < alternativeNames.length;++i){
+    		
+    		String altName = alternativeNames[i];
+    		
+    		//find the number of cars; first element of name (e.g. 0_CARS)
+    		int autos = new Integer(altName.substring(0,1)).intValue();
+    		int AVs=0;
+    		int HVs=0;
+    		int AVPosition = altName.indexOf("AV");
+    		if(AVPosition>=0)
+    			AVs = new Integer(altName.substring(AVPosition-1, AVPosition)).intValue();
+    		int HVPosition = altName.indexOf("HV");
+    		if(HVPosition>=0)
+    			HVs = new Integer(altName.substring(HVPosition-1, HVPosition)).intValue();
+    		
+    		totalAutosByAlt[i] = autos;
+    	    automatedVehiclesByAlt[i] = AVs;
+    	    humanVehiclesByAlt[i] = HVs;
+   		
+    	}
+    	
+    }
+    
+
 
 }

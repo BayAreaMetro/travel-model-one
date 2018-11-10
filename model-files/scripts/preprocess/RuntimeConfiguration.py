@@ -35,7 +35,7 @@ If no iteration is specified, then these include:
                               CTRAMP\runtime\mtcTourBased.properties
  * Distribution
    + Based on hostname.
-     * 'MODEL2-A', 'MODEL2-C','MODEL2-D': single machine setup with
+     * 'MODEL2-A', 'MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02': single machine setup with
         48 Cube Voyager processes available
         48 threads for accessibilities
         24 threads for core
@@ -142,6 +142,79 @@ def config_popsyn_files(replacements):
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
     replacements[filepath]["(\nPopulationSynthesizer.InputToCTRAMP.HouseholdFile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % hhfile
     replacements[filepath]["(\nPopulationSynthesizer.InputToCTRAMP.PersonFile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % perfile
+
+def config_mobility_params(replacements):
+    """
+    See USAGE for details.
+
+    Replacements = { filepath -> regex_dict }
+    """
+    params_filename = os.path.join("INPUT", "params.properties")
+    myfile          = open( params_filename, 'r' )
+    myfile_contents = myfile.read()
+    myfile.close()
+    # get parameters
+    # Mobility.AV.Share = 0.0
+    # Mobility.AV.ProbabilityBoost.AutosLTDrivers = 1.2
+    # Mobility.AV.ProbabilityBoost.AutosGEDrivers = 1.1
+    # Mobility.AV.IVTFactor = 0.5
+    # Mobility.AV.ParkingCostFactor = 0.0
+    # Mobility.AV.CostPerMileFactor = 0.5
+    # Mobility.AV.TerminalTimeFactor = 0.0
+    # 
+    # taxi.baseFare = 2.20
+    # taxi.costPerMile = 2.30
+    # taxi.costPerMinute = 0.10
+    # TNC.baseFare = 2.20
+    # TNC.costPerMile = 1.33
+    # TNC.costPerMinute = 0.24
+    # TNC.costMinimum = 7.20
+    # 
+    # TNC.waitTime.mean =  10.3, 8.5,  8.4, 6.3, 4.7
+    # TNC.waitTime.sd =     4.1, 4.1,  4.1, 4.1, 4.1
+    # Taxi.waitTime.mean = 26.5, 17.3,13.3, 9.5, 5.5
+    # Taxi.waitTime.sd =    6.4,  6.4, 6.4, 6.4, 6.4
+    #
+    avShare   = float(get_property(params_filename, myfile_contents, "Mobility.AV.Share"))
+    pBoostAutosLTDrivers = float(get_property(params_filename, myfile_contents, "Mobility.AV.ProbabilityBoost.AutosLTDrivers"))
+    pBoostAutosGEDrivers = float(get_property(params_filename, myfile_contents, "Mobility.AV.ProbabilityBoost.AutosGEDrivers"))
+    avIVTFactor  = float(get_property(params_filename, myfile_contents, "Mobility.AV.IVTFactor")) 
+    avparkCostFactor  = float(get_property(params_filename, myfile_contents, "Mobility.AV.ParkingCostFactor")) 
+    avCPMFactor = float(get_property(params_filename, myfile_contents, "Mobility.AV.CostPerMileFactor"))  
+    avTermTimeFactor = float(get_property(params_filename, myfile_contents, "Mobility.AV.TerminalTimeFactor"))  
+
+    taxiBaseFare = float(get_property(params_filename, myfile_contents, "taxi.baseFare")) 
+    taxiCPMile = float(get_property(params_filename, myfile_contents, "taxi.costPerMile")) 
+    taxiCPMin = float(get_property(params_filename, myfile_contents, "taxi.costPerMinute")) 
+    tncBaseFare = float(get_property(params_filename, myfile_contents, "TNC.baseFare")) 
+    tncCPMile = float(get_property(params_filename, myfile_contents, "TNC.costPerMile")) 
+    tncCPMin = float(get_property(params_filename, myfile_contents, "TNC.costPerMinute"))     
+    tncMinCost = float(get_property(params_filename, myfile_contents, "TNC.costMinimum"))  
+
+    tncMeanWaitTime = get_property(params_filename, myfile_contents, "TNC.waitTime.mean") 
+    tncSDWaitTime = get_property(params_filename, myfile_contents, "TNC.waitTime.sd")
+    taxiMeanWaitTime = get_property(params_filename, myfile_contents, "Taxi.waitTime.mean")     
+    taxiSDWaitTime = get_property(params_filename, myfile_contents, "Taxi.waitTime.sd")
+
+    filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
+    replacements[filepath]["(\nMobility.AV.Share[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avShare
+    replacements[filepath]["(\nMobility.AV.ProbabilityBoost.AutosLTDrivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % pBoostAutosLTDrivers
+    replacements[filepath]["(\nMobility.AV.ProbabilityBoost.AutosGEDrivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % pBoostAutosGEDrivers
+    replacements[filepath]["(\nMobility.AV.IVTFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avIVTFactor
+    replacements[filepath]["(\nMobility.AV.ParkingCostFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avparkCostFactor
+    replacements[filepath]["(\nMobility.AV.CostPerMileFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avCPMFactor
+    replacements[filepath]["(\nMobility.AV.TerminalTimeFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avTermTimeFactor
+    replacements[filepath]["(\ntaxi.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiBaseFare
+    replacements[filepath]["(\ntaxi.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiCPMile
+    replacements[filepath]["(\ntaxi.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiCPMin
+    replacements[filepath]["(\nTNC.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncBaseFare
+    replacements[filepath]["(\nTNC.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncCPMile
+    replacements[filepath]["(\nTNC.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncCPMin
+    replacements[filepath]["(\nTNC.costMinimum[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncMinCost
+    replacements[filepath]["(\nTNC.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % tncMeanWaitTime
+    replacements[filepath]["(\nTNC.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =    r"\g<1>%s" % tncSDWaitTime
+    replacements[filepath]["(\nTaxi.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % taxiMeanWaitTime
+    replacements[filepath]["(\nTaxi.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =   r"\g<1>%s" % taxiSDWaitTime
 
 def get_property(properties_file_name, properties_file_contents, propname):
     """
@@ -324,7 +397,7 @@ def config_distribution(replacements):
         shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
-    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D']:
+    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02']:
         # accessibilities: 48 logical processors
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
@@ -415,7 +488,7 @@ def config_distribution(replacements):
         shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
-    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D']:
+    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02']:
         # accessibilities: 48 logical processors
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
@@ -494,6 +567,7 @@ if __name__ == '__main__':
     if my_args.iter == None:
         config_project_dir(replacements)
         config_popsyn_files(replacements)
+        config_mobility_params(replacements)
         config_auto_opcost(replacements)
         config_host_ip(replacements)
         config_distribution(replacements)

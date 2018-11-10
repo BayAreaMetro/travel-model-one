@@ -29,6 +29,9 @@ public class TripModeChoiceDMU implements Serializable, VariableTable {
     protected int stopIsFirst;
     protected int stopIsLast;
     
+    protected float waitTimeTaxi;
+    protected float waitTimeTNC;
+    
 
     private ModelStructure modelStructure;
     
@@ -308,10 +311,34 @@ public class TripModeChoiceDMU implements Serializable, VariableTable {
         return methodIndexMap.get(variableName);
     }
 
+    public int getUseOwnedAV(){
+    	
+    	if(tour==null)
+    		return 0;
+    	
+    	return (tour.getUseOwnedAV() ? 1: 0);
+    }
 
 
 
-    public int getAssignmentIndexValue(String variableName) {
+
+    public float getWaitTimeTaxi() {
+		return waitTimeTaxi;
+	}
+
+	public void setWaitTimeTaxi(float waitTimeTaxi) {
+		this.waitTimeTaxi = waitTimeTaxi;
+	}
+
+	public float getWaitTimeTNC() {
+		return waitTimeTNC;
+	}
+
+	public void setWaitTimeTNC(float waitTimeTNC) {
+		this.waitTimeTNC = waitTimeTNC;
+	}
+
+	public int getAssignmentIndexValue(String variableName) {
         throw new UnsupportedOperationException();
     }
 

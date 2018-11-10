@@ -18,13 +18,17 @@ public class ModeChoiceDMU implements Serializable, VariableTable {
     protected Tour workTour;
     protected Person person;
     protected Household hh;
-    protected IndexValues dmuIndex;
+    public IndexValues dmuIndex;
 
     // these attributes are used for accessibility logsum utility calculations where a tour object does not exist
     protected int origSubzone;
     protected int destSubzone;
     protected double accessibilityValueOfTime;
-
+    
+    protected float taxiWaitTimeOrig;
+    protected float taxiWaitTimeDest;
+    protected float TNCWaitTimeOrig;
+    protected float TNCWaitTimeDest;
     
     private ModelStructure modelStructure;
     
@@ -425,5 +429,63 @@ public class ModeChoiceDMU implements Serializable, VariableTable {
     public void setValue(int variableIndex, double variableValue) {
         throw new UnsupportedOperationException();
     }
+
+
+
+	public float getTaxiWaitTimeOrig() {
+		return taxiWaitTimeOrig;
+	}
+
+
+
+	public void setTaxiWaitTimeOrig(float taxiWaitTimeOrig) {
+		this.taxiWaitTimeOrig = taxiWaitTimeOrig;
+	}
+
+
+
+	public float getTaxiWaitTimeDest() {
+		return taxiWaitTimeDest;
+	}
+
+
+
+	public void setTaxiWaitTimeDest(float taxiWaitTimeDest) {
+		this.taxiWaitTimeDest = taxiWaitTimeDest;
+	}
+
+
+
+	public float getTNCWaitTimeOrig() {
+		return TNCWaitTimeOrig;
+	}
+
+
+
+	public void setTNCWaitTimeOrig(float tNCWaitTimeOrig) {
+		TNCWaitTimeOrig = tNCWaitTimeOrig;
+	}
+
+
+
+	public float getTNCWaitTimeDest() {
+		return TNCWaitTimeDest;
+	}
+
+
+
+	public void setTNCWaitTimeDest(float tNCWaitTimeDest) {
+		TNCWaitTimeDest = tNCWaitTimeDest;
+	}
+	
+    public int getUseOwnedAV(){
+    	
+    	if(tour==null)
+    		return 0;
+    	
+    	return (tour.getUseOwnedAV() ? 1: 0);
+    }
+
+
     
 }

@@ -44,6 +44,8 @@ public class Tour implements java.io.Serializable {
     private byte departPeriod;
     private byte arrivePeriod;
     private int parentTourId; //for at-work subtours
+    
+    private boolean useOwnedAV;
 
  	// this constructor used for individual mandatory tour creation
     public Tour( Person perObj, int tourId ) {
@@ -558,6 +560,14 @@ public class Tour implements java.io.Serializable {
     public float[] getTourModalProbabilities() {
         return tourModalProbabilities;
     }
+
+	public boolean getUseOwnedAV() {
+		return useOwnedAV;
+	}
+
+	public void setUseOwnedAV(boolean useOwnedAV) {
+		this.useOwnedAV = useOwnedAV;
+	}
 
     
 }

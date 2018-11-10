@@ -275,6 +275,12 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
         // guojy: added for M. Gucwa's research on automated vehicles
         methodIndexMap.put( "getHAnalyst", 36 );
         methodIndexMap.put( "getPAnalyst", 37 );
+        methodIndexMap.put("getWaitTimeTaxi", 38);
+        methodIndexMap.put("getWaitTimeTNC", 39);
+        methodIndexMap.put("getUseOwnedAV", 40);
+        		
+        
+        
     }
     
         
@@ -321,6 +327,10 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
             // guojy: added for M. Gucwa's research on automated vehicles
             case 36: return getHAnalyst();
             case 37: return getPAnalyst();
+            case 38: return getWaitTimeTaxi();
+            case 39: return getWaitTimeTNC();
+            case 40: return getUseOwnedAV();
+
 
             default:
                 logger.error("method number = "+variableIndex+" not found");
