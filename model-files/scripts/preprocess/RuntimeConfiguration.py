@@ -17,7 +17,7 @@ If no iteration is specified, then these include:
    + It will be propagated to CTRAMP\scripts\block\hwyParam.block,
                               CTRAMP\runtime\accessibilities.properties (new!),
                               CTRAMP\runtime\mtcTourBased.properties (new!)
-   + It will be propagated to CTRAMP\model\ModeChoice.xls,  (for costPerMile)
+   + It will be propagated to CTRAMP\model\ModeChoice.xls,  (for costPerMile and AV IVT multiplier)
                               CTRAMP\model\TripModeChoice.xls,
                               CTRAMP\model\accessibility_utility.xls
  * Truck Operating Cost (plus RM, Fuel breakdown)
@@ -183,8 +183,11 @@ def config_auto_opcost(replacements):
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
     replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc_perfect
 
+    # AV impacts on perceived in-vehicle travel time
+    av_ivt_factor   = float(get_property(params_filename, myfile_contents, "AV_IVT_FAC"))
+
     # put it into the UECs
-    config_uec("%.2f" % auto_opc_perfect)
+    config_uec("%.2f" % auto_opc_perfect,"%.2f" % av_ivt_factor)
 
     # auto operating cost freeway adjustments
     auto_opc_adjust_rm   = get_property(params_filename, myfile_contents, "AutoOpCost_fwyadj_RM")
@@ -459,8 +462,9 @@ def config_shadowprice(iter, replacements):
         replacements[filepath]["(\n)(#?)(UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = \
             r"\g<1>\g<3>main/ShadowPricing_%d.csv" % (2*iter-1)
 
-def config_uec(auto_operating_cost):
+def config_uec(auto_operating_cost, av_ivtt_factor):
     auto_op_cost_float = float(auto_operating_cost)
+    av_ivt_factor_float = float(av_ivtt_factor)
     for bookname in ["ModeChoice.xls","TripModeChoice.xls","accessibility_utility.xls"]:
         filepath = os.path.join("CTRAMP","model",bookname)
         shutil.move(filepath, "%s.original" % filepath)
@@ -477,6 +481,12 @@ def config_uec(auto_operating_cost):
                         (rs.name, rs.cell(rownum,4).value, auto_op_cost_float)
                     wb.get_sheet(sheet_num).write(rownum,4,auto_op_cost_float,
                                                   xlwt.easyxf("align: horiz left"))
+                if rs.cell(rownum,1).value=='c_ivt':
+                    print "  Sheet '%s': replacing c_ivt '%s' -> %.2f" % \
+                        (rs.name, rs.cell(rownum,4).value, rs.cell(rownum,4).value*av_ivt_factor_float)
+                    wb.get_sheet(sheet_num).write(rownum,4,rs.cell(rownum,4).value*av_ivt_factor_float,
+                                                  xlwt.easyxf("align: horiz left"))
+
         wb.save(filepath)
 
 if __name__ == '__main__':
