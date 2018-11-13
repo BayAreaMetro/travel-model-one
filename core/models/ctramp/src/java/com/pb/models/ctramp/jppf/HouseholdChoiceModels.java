@@ -492,6 +492,7 @@ public class HouseholdChoiceModels implements Serializable {
         if ( runIndividualMandatoryTourFrequencyModel ) {
             long check = System.nanoTime();
             imtfModel.applyModel( hhObject );
+            tvtcModel.applyModelToMandatoryTours(hhObject);
             imtfTime += ( System.nanoTime() - check );
         }
         
@@ -510,6 +511,7 @@ public class HouseholdChoiceModels implements Serializable {
         if ( runJointTourFrequencyModel ) {
             long check = System.nanoTime();
             jtfModel.applyModel( hhObject );
+            tvtcModel.applyModelToJointTours(hhObject);
             jtfTime += ( System.nanoTime() - check );
         }
         
@@ -534,6 +536,7 @@ public class HouseholdChoiceModels implements Serializable {
         if ( runIndividualNonMandatoryTourFrequencyModel ) {
             long check = System.nanoTime();
             inmtfModel.applyModel( hhObject );
+            tvtcModel.applyModelToNonMandatoryTours(hhObject);
             inmtfTime += ( System.nanoTime() - check );
         }
         
@@ -558,6 +561,7 @@ public class HouseholdChoiceModels implements Serializable {
         if ( runAtWorkSubtourFrequencyModel ) {
             long check = System.nanoTime();
             awfModel.applyModel( hhObject );
+            tvtcModel.applyModelToAtWorkSubTours(hhObject);
             awtfTime += ( System.nanoTime() - check );
         }
         

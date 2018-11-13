@@ -36,6 +36,10 @@ public class HouseholdAutoOwnershipModel implements Serializable {
 
     UtilityExpressionCalculator[] timeUec;
 
+    private int[]                              totalAutosByAlt;
+    private int[]                              automatedVehiclesByAlt;
+    private int[]                              humanVehiclesByAlt;
+    String[] alternativeNames;
 
 
     public HouseholdAutoOwnershipModel( HashMap<String, String> propertyMap, CtrampDmuFactoryIf dmuFactory ) {
@@ -70,6 +74,9 @@ public class HouseholdAutoOwnershipModel implements Serializable {
         timeUec[0] = new UtilityExpressionCalculator(new File(autoOwnershipUecFile), AUTO_MODEL_SHEET, AO_DATA_SHEET, propertyMap, (VariableTable)timeDmu );
         timeUec[1] = new UtilityExpressionCalculator(new File(autoOwnershipUecFile), TRANSIT_MODEL_SHEET, AO_DATA_SHEET, propertyMap, (VariableTable)timeDmu );
         timeUec[2] = new UtilityExpressionCalculator(new File(autoOwnershipUecFile), WALK_MODEL_SHEET, AO_DATA_SHEET, propertyMap, (VariableTable)timeDmu );
+        
+        alternativeNames = aoModel.getAlternativeNames();
+        calculateAlternativeArrays(alternativeNames);
 
     }
 
@@ -80,7 +87,12 @@ public class HouseholdAutoOwnershipModel implements Serializable {
             hhObject.logHouseholdObject( "Pre AO Household " + hhObject.getHhId() + " Object", aoLogger );
         
         int chosen = getAutoOwnershipChoice( hhObject );
-        hhObject.setAutoOwnershipModelResult((short)chosen);
+        int autos = totalAutosByAlt[chosen-1];
+        int AVs = automatedVehiclesByAlt[chosen-1];
+        int HVs = humanVehiclesByAlt[chosen-1];
+        hhObject.setHhAutos(autos);
+        hhObject.setAutonomousVehicles((short) AVs);
+        hhObject.setHumanVehicles((short) HVs);
 
     }
     
@@ -93,14 +105,16 @@ public class HouseholdAutoOwnershipModel implements Serializable {
 
 
         // set the travel times from home to chosen work and school locations
-        double workTimeSavings = getWorkTourAutoTimeSavings( hhObj );        
+        double[] returnArray = getWorkTourAutoTimeSavings( hhObj ); 
+        double workTimeSavings =   returnArray[0];
+        double workTime = returnArray[1];
         double schoolDriveTimeSavings = getSchoolDriveTourAutoTimeSavings( hhObj );        
         double schoolNonDriveTimeSavings = getSchoolNonDriveTourAutoTimeSavings( hhObj );        
         
         aoDmuObject.setWorkTourAutoTimeSavings( workTimeSavings );
+        aoDmuObject.setWorkTourAutoTime(workTime);
         aoDmuObject.setSchoolDriveTourAutoTimeSavings( schoolDriveTimeSavings );
         aoDmuObject.setSchoolNonDriveTourAutoTimeSavings( schoolNonDriveTimeSavings );
-
 
         // compute utilities and choose auto ownership alternative.
         aoModel.computeUtilities ( aoDmuObject, aoDmuObject.getDmuIndexValues() );
@@ -108,8 +122,6 @@ public class HouseholdAutoOwnershipModel implements Serializable {
         Random hhRandom = hhObj.getHhRandom();
         int randomCount = hhObj.getHhRandomCount();
         double rn = hhRandom.nextDouble();
-
-        
 
         // if the choice model has at least one available alternative, make choice.
         int chosenAlt;
@@ -134,7 +146,7 @@ public class HouseholdAutoOwnershipModel implements Serializable {
             double cumProb = 0.0;
             for( int k=0; k < aoModel.getNumberOfAlternatives(); k++ ) {
                 cumProb += probabilities[k];
-                aoLogger.info(String.format("%-20s%18.6e%18.6e%18.6e", k + " autos", utilities[k], probabilities[k], cumProb ) );
+                aoLogger.info(String.format("%-20s%18.6e%18.6e%18.6e", alternativeNames[k], utilities[k], probabilities[k], cumProb ) );
             }
 
             aoLogger.info(" ");
@@ -160,10 +172,15 @@ public class HouseholdAutoOwnershipModel implements Serializable {
 
     }
 
-    
-    private double getWorkTourAutoTimeSavings( Household hhObj ) {
+    /**
+     * Returns array of 2 elements [workAutoTimeSavingsRatio, workAutoTime]
+     * @param hhObj
+     * @return
+     */
+    private double[] getWorkTourAutoTimeSavings( Household hhObj ) {
 
         double totalAutoSavingsRatio = 0.0;
+        double workAutoTime = 0.0;
         
         TimeDMU timeDmuObject = new TimeDMU ();
         int[] availability = new int[2];
@@ -201,7 +218,8 @@ public class HouseholdAutoOwnershipModel implements Serializable {
             // set auto savings to be minimum of walk and transit time minus auto time
             double autoSavings = minWalkTransit - auto[0];
             double autoSavingsRatio = ( autoSavings < 120 ? autoSavings/120.0 : 1.0 );
-
+            workAutoTime += auto[0];
+            
             totalAutoSavingsRatio += autoSavingsRatio;
 
             if ( debugFlag ) {
@@ -212,9 +230,8 @@ public class HouseholdAutoOwnershipModel implements Serializable {
             }
             
         }
-    
-        return totalAutoSavingsRatio;
-
+        double[] returnArray =  {totalAutoSavingsRatio,workAutoTime};
+        return returnArray;
     }
     
     
@@ -314,6 +331,50 @@ public class HouseholdAutoOwnershipModel implements Serializable {
         return totalAutoSavingsRatio;
 
     }
-    
+    /**
+     * This is a helper method that iterates through the alternative names
+     * in the auto ownership UEC and searches through each name to collect 
+     * the total number of autos (in the first position of the name character
+     * array), the number of AVs for the alternative (preceded by the "AV" substring) 
+     * and the number of CVs for the alternative (preceded by the "CV" substring). The
+     * results are stored in the arrays:
+     * 
+     *  totalAutosByAlt
+     *  automatedVehiclesByAlt
+     *  conventionalVehiclesByAlt
+     *  
+     * @param alternativeNames The array of alternative names.
+     */
+    private void calculateAlternativeArrays(String[] alternativeNames){
+    	
+    	totalAutosByAlt = new int[alternativeNames.length];
+	    automatedVehiclesByAlt = new int[alternativeNames.length];
+	    humanVehiclesByAlt = new int[alternativeNames.length];
+   	
+    	
+    	//iterate thru names
+    	for(int i = 0; i < alternativeNames.length;++i){
+    		
+    		String altName = alternativeNames[i];
+    		
+    		//find the number of cars; first element of name (e.g. 0_CARS)
+    		int autos = new Integer(altName.substring(0,1)).intValue();
+    		int AVs=0;
+    		int HVs=0;
+    		int AVPosition = altName.indexOf("AV");
+    		if(AVPosition>=0)
+    			AVs = new Integer(altName.substring(AVPosition-1, AVPosition)).intValue();
+    		int HVPosition = altName.indexOf("HV");
+    		if(HVPosition>=0)
+    			HVs = new Integer(altName.substring(HVPosition-1, HVPosition)).intValue();
+    		
+    		totalAutosByAlt[i] = autos;
+    	    automatedVehiclesByAlt[i] = AVs;
+    	    humanVehiclesByAlt[i] = HVs;
+   		
+    	}
+    	
+    }
+
 
 }

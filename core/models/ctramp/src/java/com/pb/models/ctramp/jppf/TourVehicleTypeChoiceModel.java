@@ -19,6 +19,7 @@ public class TourVehicleTypeChoiceModel
     float probabilityBoostAutosLTDrivers = 0;
     float probabilityBoostAutosGEDrivers = 0;
     
+    private transient Logger tourFreq = Logger.getLogger("tourFreq");
 
     public TourVehicleTypeChoiceModel(HashMap<String, String> rbMap)
     {
@@ -49,12 +50,29 @@ public class TourVehicleTypeChoiceModel
     	float numberOfCVs = (float) hhObj.getHumanVehicles();
     	float numberOfDrivers = (float) hhObj.getDrivers();
     	float totalVehicles = numberOfAVs + numberOfCVs;
-    	float probability = numberOfAVs/totalVehicles;
+    	float origProbability = numberOfAVs/totalVehicles;
+    	float probability=0;
+    	float probabilityBoost=(float)1.0;
     	if(totalVehicles<numberOfDrivers)
-    		probability = probability * probabilityBoostAutosLTDrivers;
+    		probabilityBoost =  probabilityBoostAutosLTDrivers;
     	else
-    		probability = probability * probabilityBoostAutosGEDrivers;
+    		probabilityBoost =  probabilityBoostAutosGEDrivers;
 
+    	probability = origProbability * probabilityBoost;
+    	
+        // write info to log file
+        if ( hhObj.getDebugChoiceModels() ) {
+
+       	 	tourFreq.info("Number of AVs:     "+numberOfAVs);
+       	 	tourFreq.info("Number of HVs:     "+numberOfCVs);
+       	 	tourFreq.info("Number of Drivers: "+numberOfDrivers);
+      	 	tourFreq.info("Total Vehicles:    "+totalVehicles);
+      	 	tourFreq.info("Orig Probability:  "+origProbability);
+      	 	tourFreq.info("Probabilty Boost:  "+probabilityBoost);
+      	 	tourFreq.info("Final Probability: "+probability);
+
+        }
+    	
     	return probability;
     }
     
@@ -66,9 +84,23 @@ public class TourVehicleTypeChoiceModel
 
     public void applyModelToMandatoryTours(Household hhObj)
     {
-    	
+        // write info to log file
+        if ( hhObj.getDebugChoiceModels() ) {
+        	tourFreq.info("");
+        	tourFreq.info("***************************************************************");
+       	 	tourFreq.info("Calculating probability for AV availability for mandatory tours");
+           	tourFreq.info("*********");
+        }
     	double probability  = calculateProbability(hhObj);
-    		
+    	
+        // write info to log file
+        if ( hhObj.getDebugChoiceModels() ) {
+        	tourFreq.info("");
+           	tourFreq.info("***************************************************************");
+        }
+  	
+    	
+    	
     	for(Person p : hhObj.getPersons()){
     		
     		if(p==null)
