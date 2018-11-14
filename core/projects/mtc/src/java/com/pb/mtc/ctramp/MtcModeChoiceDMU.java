@@ -223,13 +223,13 @@ public class MtcModeChoiceDMU extends ModeChoiceDMU {
         methodIndexMap.put( "getHAnalyst", 27 );
         methodIndexMap.put( "getPAnalyst", 28 );
         
-        methodIndexMap.put( "getOrigTaxiWaitTime", 29 );
-        methodIndexMap.put( "getDestTaxiWaitTime", 30 );
-        methodIndexMap.put( "getOrigSingleTNCWaitTime", 31 );
-        methodIndexMap.put( "getDestSingleTNCWaitTime", 32 );
-        methodIndexMap.put( "getOrigSharedTNCWaitTime", 33 );
-        methodIndexMap.put( "getDestSharedTNCWaitTime", 34 );
-        methodIndexMap.put( "getUseOwnedAV", 35);
+        methodIndexMap.put( "getOrigTaxiWaitTime", 30 );
+        methodIndexMap.put( "getDestTaxiWaitTime", 31 );
+        methodIndexMap.put( "getOrigSingleTNCWaitTime", 32 );
+        methodIndexMap.put( "getDestSingleTNCWaitTime", 33 );
+        methodIndexMap.put( "getOrigSharedTNCWaitTime", 34 );
+        methodIndexMap.put( "getDestSharedTNCWaitTime", 35 );
+        methodIndexMap.put( "getUseOwnedAV", 36);
               
       }
     
