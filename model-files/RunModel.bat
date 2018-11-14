@@ -245,19 +245,6 @@ if ERRORLEVEL 1 goto done
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
-
-:: ------------------------------------------------------------------------------------------------------
-::
-:: Step 10:  Assign transit trips to the transit network
-::
-:: ------------------------------------------------------------------------------------------------------
-
-: trnAssign
-
-runtpp CTRAMP\scripts\assign\TransitAssign.job
-if ERRORLEVEL 2 goto done
-
-
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 11:  Build simplified skim databases
