@@ -13,17 +13,13 @@ public class TNCAndTaxiWaitTimeCalculator {
     private static Logger           logger   = Logger.getLogger(TNCAndTaxiWaitTimeCalculator.class);
 
 	private float[] startPopEmpPerSqMi;
-	private float[] taxiWaitTimeMean;
-	private float[] TNCWaitTimeMean;
-	private float[] taxiWaitTimeSD;
-	private float[] TNCWaitTimeSD;
 	
-	private LognormalDist[] TNCWaitTimeDistribution;
+	private LognormalDist[] TNCSingleWaitTimeDistribution;
+	private LognormalDist[] TNCSharedWaitTimeDistribution;
 	private LognormalDist[] TaxiWaitTimeDistribution;
-	float[] meanTNCWaitTime ;
+	float[] meanTNCSingleWaitTime ;
+	float[] meanTNCSharedWaitTime ;
 	float[] meanTaxiWaitTime ;
-
-
 	
     /**
      * Constructor; doesn't do anything (call @createTimeDistributions method next)
@@ -48,8 +44,11 @@ public class TNCAndTaxiWaitTimeCalculator {
 	public void createWaitTimeDistributions(HashMap<String, String> propertyMap){
 		
 		//read properties
-		meanTNCWaitTime = Util.getFloatArrayFromPropertyMap(propertyMap, "TNC.waitTime.mean");
-		float[] sdTNCWaitTime = Util.getFloatArrayFromPropertyMap(propertyMap, "TNC.waitTime.sd");
+		meanTNCSingleWaitTime = Util.getFloatArrayFromPropertyMap(propertyMap, "TNC.single.waitTime.mean");
+		float[] sdTNCSingleWaitTime = Util.getFloatArrayFromPropertyMap(propertyMap, "TNC.single.waitTime.sd");
+
+		meanTNCSharedWaitTime = Util.getFloatArrayFromPropertyMap(propertyMap, "TNC.shared.waitTime.mean");
+		float[] sdTNCSharedWaitTime = Util.getFloatArrayFromPropertyMap(propertyMap, "TNC.shared.waitTime.sd");
 
 		meanTaxiWaitTime = Util.getFloatArrayFromPropertyMap(propertyMap, "Taxi.waitTime.mean");
 		float[] sdTaxiWaitTime = Util.getFloatArrayFromPropertyMap(propertyMap, "Taxi.waitTime.sd");
@@ -57,18 +56,24 @@ public class TNCAndTaxiWaitTimeCalculator {
 		startPopEmpPerSqMi = Util.getFloatArrayFromPropertyMap(propertyMap, "WaitTimeDistribution.EndPopEmpPerSqMi");
 		
 		// create the distribution arrays
-		TNCWaitTimeDistribution = new LognormalDist[startPopEmpPerSqMi.length];
+		TNCSingleWaitTimeDistribution = new LognormalDist[startPopEmpPerSqMi.length];
+		TNCSharedWaitTimeDistribution = new LognormalDist[startPopEmpPerSqMi.length];
 		TaxiWaitTimeDistribution = new LognormalDist[startPopEmpPerSqMi.length];
 
 		//iterate through area types
 		for(int i = 0; i< startPopEmpPerSqMi.length;++i){
 			
 			// calculate the location and scale parameters from the mean and standard deviations
-			double locationTNCWaitTime = calculateLocation(meanTNCWaitTime[i], sdTNCWaitTime[i]);
-			double scaleTNCWaitTime = calculateScale(meanTNCWaitTime[i], sdTNCWaitTime[i]);
+			double locationTNCSingleWaitTime = calculateLocation(meanTNCSingleWaitTime[i], sdTNCSingleWaitTime[i]);
+			double scaleTNCSingleWaitTime = calculateScale(meanTNCSingleWaitTime[i], sdTNCSingleWaitTime[i]);
+
+
+			double locationTNCSharedWaitTime = calculateLocation(meanTNCSharedWaitTime[i], sdTNCSharedWaitTime[i]);
+			double scaleTNCSharedWaitTime = calculateScale(meanTNCSharedWaitTime[i], sdTNCSharedWaitTime[i]);
 
 			// create the TNC wait time distribution for this area type
-			TNCWaitTimeDistribution[i] = new LognormalDist(locationTNCWaitTime, scaleTNCWaitTime); 
+			TNCSingleWaitTimeDistribution[i] = new LognormalDist(locationTNCSingleWaitTime, scaleTNCSingleWaitTime); 
+			TNCSharedWaitTimeDistribution[i] = new LognormalDist(locationTNCSharedWaitTime, scaleTNCSharedWaitTime); 
 			
 			double locationTaxiWaitTime = calculateLocation(meanTaxiWaitTime[i], sdTaxiWaitTime[i]);
 			double scaleTaxiWaitTime = calculateScale(meanTaxiWaitTime[i], sdTaxiWaitTime[i]);
@@ -124,26 +129,46 @@ public class TNCAndTaxiWaitTimeCalculator {
 	}
 
 	/**
-	 * Sample from the TNC wait time distribution and return the wait time.
+	 * Sample from the Single TNC wait time distribution and return the wait time.
 	 * @param rnum A unit-distributed random number.
 	 * @param popEmpPerSqMi The population plus employment divided by square miles
 	 * @return The sampled TNC wait time.
 	 */
-	public double sampleFromTNCWaitTimeDistribution(double rnum, double popEmpPerSqMi){
+	public double sampleFromSingleTNCWaitTimeDistribution(double rnum, double popEmpPerSqMi){
 		
 		for(int i = 0; i < startPopEmpPerSqMi.length;++i){
 			
 			if(popEmpPerSqMi <startPopEmpPerSqMi[i]){
-				return TNCWaitTimeDistribution[i].inverseF(rnum);
+				return TNCSingleWaitTimeDistribution[i].inverseF(rnum);
 			}
 		}
 		
-		logger.error("Error: Attempting to find TNC wait time for out-of-range population and employment density"+ popEmpPerSqMi);
-		logger.error("Error: Throwing runtime exception from TNCAndTaxiWaitTimeCalculator.getTNCWaitTime method");
+		logger.error("Error: Attempting to find Single TNC wait time for out-of-range population and employment density"+ popEmpPerSqMi);
+		logger.error("Error: Throwing runtime exception from TNCAndTaxiWaitTimeCalculator.getSingleTNCWaitTime method");
 		throw new RuntimeException();
 		
 	}
 	
+	/**
+	 * Sample from the Shared TNC wait time distribution and return the wait time.
+	 * @param rnum A unit-distributed random number.
+	 * @param popEmpPerSqMi The population plus employment divided by square miles
+	 * @return The sampled TNC wait time.
+	 */
+	public double sampleFromSharedTNCWaitTimeDistribution(double rnum, double popEmpPerSqMi){
+		
+		for(int i = 0; i < startPopEmpPerSqMi.length;++i){
+			
+			if(popEmpPerSqMi <startPopEmpPerSqMi[i]){
+				return TNCSharedWaitTimeDistribution[i].inverseF(rnum);
+			}
+		}
+		
+		logger.error("Error: Attempting to find Shared TNC wait time for out-of-range population and employment density"+ popEmpPerSqMi);
+		logger.error("Error: Throwing runtime exception from TNCAndTaxiWaitTimeCalculator.getSharedTNCWaitTime method");
+		throw new RuntimeException();
+		
+	}
 	
 
 	/**
@@ -190,26 +215,49 @@ public class TNCAndTaxiWaitTimeCalculator {
 	}
 	
 	/**
-	 * Get the mean TNC wait time for the density. This method would be used in the case that
+	 * Get the mean Single TNC wait time for the density. This method would be used in the case that
 	 * there is no household or person object to use for a random number draw.
 	 * 
 	 * @param popEmpPerSqMi The population plus employment divided by square miles
 	 * @return The mean TNC wait time.
 	 */
-	public double getMeanTNCWaitTime( double popEmpPerSqMi){
+	public double getMeanSingleTNCWaitTime( double popEmpPerSqMi){
 		
 		for(int i = 0; i < startPopEmpPerSqMi.length;++i){
 			
 			if(popEmpPerSqMi <startPopEmpPerSqMi[i]){
-				return meanTNCWaitTime[i];
+				return meanTNCSingleWaitTime[i];
 			}
 		}
 		
-		logger.error("Error: Attempting to find mean TNC wait time for out-of-range population and employment density"+ popEmpPerSqMi);
-		logger.error("Error: Throwing runtime exception from TNCAndTaxiWaitTimeCalculator.getMeanTNCWaitTime method");
+		logger.error("Error: Attempting to find mean Single TNC wait time for out-of-range population and employment density"+ popEmpPerSqMi);
+		logger.error("Error: Throwing runtime exception from TNCAndTaxiWaitTimeCalculator.getMeanSingleTNCWaitTime method");
 		throw new RuntimeException();
 		
 	}
+	
+	/**
+	 * Get the mean Shared TNC wait time for the density. This method would be used in the case that
+	 * there is no household or person object to use for a random number draw.
+	 * 
+	 * @param popEmpPerSqMi The population plus employment divided by square miles
+	 * @return The mean TNC wait time.
+	 */
+	public double getMeanSharedTNCWaitTime( double popEmpPerSqMi){
+		
+		for(int i = 0; i < startPopEmpPerSqMi.length;++i){
+			
+			if(popEmpPerSqMi <startPopEmpPerSqMi[i]){
+				return meanTNCSharedWaitTime[i];
+			}
+		}
+		
+		logger.error("Error: Attempting to find mean Shared TNC wait time for out-of-range population and employment density"+ popEmpPerSqMi);
+		logger.error("Error: Throwing runtime exception from TNCAndTaxiWaitTimeCalculator.getMeanSharedTNCWaitTime method");
+		throw new RuntimeException();
+		
+	}
+
 
 	
 }

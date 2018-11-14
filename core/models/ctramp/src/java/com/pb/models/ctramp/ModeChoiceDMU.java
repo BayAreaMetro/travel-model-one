@@ -25,10 +25,12 @@ public class ModeChoiceDMU implements Serializable, VariableTable {
     protected int destSubzone;
     protected double accessibilityValueOfTime;
     
-    protected float taxiWaitTimeOrig;
-    protected float taxiWaitTimeDest;
-    protected float TNCWaitTimeOrig;
-    protected float TNCWaitTimeDest;
+    protected float origTaxiWaitTime;
+    protected float destTaxiWaitTime;
+    protected float origSingleTNCWaitTime;
+    protected float destSingleTNCWaitTime;
+    protected float origSharedTNCWaitTime;
+    protected float destSharedTNCWaitTime;
     
     private ModelStructure modelStructure;
     
@@ -431,52 +433,6 @@ public class ModeChoiceDMU implements Serializable, VariableTable {
     }
 
 
-
-	public float getTaxiWaitTimeOrig() {
-		return taxiWaitTimeOrig;
-	}
-
-
-
-	public void setTaxiWaitTimeOrig(float taxiWaitTimeOrig) {
-		this.taxiWaitTimeOrig = taxiWaitTimeOrig;
-	}
-
-
-
-	public float getTaxiWaitTimeDest() {
-		return taxiWaitTimeDest;
-	}
-
-
-
-	public void setTaxiWaitTimeDest(float taxiWaitTimeDest) {
-		this.taxiWaitTimeDest = taxiWaitTimeDest;
-	}
-
-
-
-	public float getTNCWaitTimeOrig() {
-		return TNCWaitTimeOrig;
-	}
-
-
-
-	public void setTNCWaitTimeOrig(float tNCWaitTimeOrig) {
-		TNCWaitTimeOrig = tNCWaitTimeOrig;
-	}
-
-
-
-	public float getTNCWaitTimeDest() {
-		return TNCWaitTimeDest;
-	}
-
-
-
-	public void setTNCWaitTimeDest(float tNCWaitTimeDest) {
-		TNCWaitTimeDest = tNCWaitTimeDest;
-	}
 	
     public int getUseOwnedAV(){
     	
@@ -485,6 +441,78 @@ public class ModeChoiceDMU implements Serializable, VariableTable {
     	
     	return (tour.getUseOwnedAV() ? 1: 0);
     }
+
+
+
+	public float getOrigTaxiWaitTime() {
+		return origTaxiWaitTime;
+	}
+
+
+
+	public void setOrigTaxiWaitTime(float origTaxiWaitTime) {
+		this.origTaxiWaitTime = origTaxiWaitTime;
+	}
+
+
+
+	public float getDestTaxiWaitTime() {
+		return destTaxiWaitTime;
+	}
+
+
+
+	public void setDestTaxiWaitTime(float destTaxiWaitTime) {
+		this.destTaxiWaitTime = destTaxiWaitTime;
+	}
+
+
+
+	public float getOrigSingleTNCWaitTime() {
+		return origSingleTNCWaitTime;
+	}
+
+
+
+	public void setOrigSingleTNCWaitTime(float origSingleTNCWaitTime) {
+		this.origSingleTNCWaitTime = origSingleTNCWaitTime;
+	}
+
+
+
+	public float getDestSingleTNCWaitTime() {
+		return destSingleTNCWaitTime;
+	}
+
+
+
+	public void setDestSingleTNCWaitTime(float destSingleTNCWaitTime) {
+		this.destSingleTNCWaitTime = destSingleTNCWaitTime;
+	}
+
+
+
+	public float getOrigSharedTNCWaitTime() {
+		return origSharedTNCWaitTime;
+	}
+
+
+
+	public void setOrigSharedTNCWaitTime(float origSharedTNCWaitTime) {
+		this.origSharedTNCWaitTime = origSharedTNCWaitTime;
+	}
+
+
+
+	public float getDestSharedTNCWaitTime() {
+		return destSharedTNCWaitTime;
+	}
+
+
+
+	public void setDestSharedTNCWaitTime(float destSharedTNCWaitTime) {
+		this.destSharedTNCWaitTime = destSharedTNCWaitTime;
+	}
 
 
     

@@ -17,7 +17,7 @@ If no iteration is specified, then these include:
    + It will be propagated to CTRAMP\scripts\block\hwyParam.block,
                               CTRAMP\runtime\accessibilities.properties (new!),
                               CTRAMP\runtime\mtcTourBased.properties (new!)
-   + It will be propagated to CTRAMP\model\ModeChoice.xls,  (for costPerMile and AV IVT multiplier)
+   + It will be propagated to CTRAMP\model\ModeChoice.xls,  (for costPerMile)
                               CTRAMP\model\TripModeChoice.xls,
                               CTRAMP\model\accessibility_utility.xls
  * Truck Operating Cost (plus RM, Fuel breakdown)
@@ -161,20 +161,29 @@ def config_mobility_params(replacements):
     # Mobility.AV.ParkingCostFactor = 0.0
     # Mobility.AV.CostPerMileFactor = 0.5
     # Mobility.AV.TerminalTimeFactor = 0.0
+    # Mobility.TNC.shared.IVTFactor = 1.2
+
+    # TNC.single.baseFare = 2.20
+    # TNC.single.costPerMile = 1.33
+    # TNC.single.costPerMinute = 0.24
+    # TNC.single.costMinimum = 7.20
     # 
-    # taxi.baseFare = 2.20
-    # taxi.costPerMile = 2.30
-    # taxi.costPerMinute = 0.10
-    # TNC.baseFare = 2.20
-    # TNC.costPerMile = 1.33
-    # TNC.costPerMinute = 0.24
-    # TNC.costMinimum = 7.20
+    # # use lower costs
+    # TNC.shared.baseFare = 2.20
+    # TNC.shared.costPerMile = 1.33
+    # TNC.shared.costPerMinute = 0.24
+    # TNC.shared.costMinimum = 7.20
+    #  
+    # #Note: the following comma-separated value properties cannot have spaces between them, or else the RuntimeConfiguration.py code won't work
+    # TNC.single.waitTime.mean =  10.3,8.5,8.4,6.3,4.7
+    # TNC.single.waitTime.sd =     4.1,4.1,4.1,4.1,4.1
     # 
-    # TNC.waitTime.mean =  10.3, 8.5,  8.4, 6.3, 4.7
-    # TNC.waitTime.sd =     4.1, 4.1,  4.1, 4.1, 4.1
-    # Taxi.waitTime.mean = 26.5, 17.3,13.3, 9.5, 5.5
-    # Taxi.waitTime.sd =    6.4,  6.4, 6.4, 6.4, 6.4
+    # TNC.shared.waitTime.mean =  15.0,15.0,11.0,8.0,7.0
+    # TNC.shared.waitTime.sd =     4.1,4.1,4.1,4.1,4.1
     #
+    # Taxi.waitTime.mean = 26.5,17.3,13.3,9.5,5.5 
+    # Taxi.waitTime.sd =    6.4,6.4,6.4,6.4,6.4
+    
     avShare   = float(get_property(params_filename, myfile_contents, "Mobility.AV.Share"))
     pBoostAutosLTDrivers = float(get_property(params_filename, myfile_contents, "Mobility.AV.ProbabilityBoost.AutosLTDrivers"))
     pBoostAutosGEDrivers = float(get_property(params_filename, myfile_contents, "Mobility.AV.ProbabilityBoost.AutosGEDrivers"))
@@ -182,17 +191,28 @@ def config_mobility_params(replacements):
     avparkCostFactor  = float(get_property(params_filename, myfile_contents, "Mobility.AV.ParkingCostFactor")) 
     avCPMFactor = float(get_property(params_filename, myfile_contents, "Mobility.AV.CostPerMileFactor"))  
     avTermTimeFactor = float(get_property(params_filename, myfile_contents, "Mobility.AV.TerminalTimeFactor"))  
+    tncIVTFactor = avTermTimeFactor = float(get_property(params_filename, myfile_contents, "Mobility.TNC.shared.IVTFactor"))
 
     taxiBaseFare = float(get_property(params_filename, myfile_contents, "taxi.baseFare")) 
     taxiCPMile = float(get_property(params_filename, myfile_contents, "taxi.costPerMile")) 
     taxiCPMin = float(get_property(params_filename, myfile_contents, "taxi.costPerMinute")) 
-    tncBaseFare = float(get_property(params_filename, myfile_contents, "TNC.baseFare")) 
-    tncCPMile = float(get_property(params_filename, myfile_contents, "TNC.costPerMile")) 
-    tncCPMin = float(get_property(params_filename, myfile_contents, "TNC.costPerMinute"))     
-    tncMinCost = float(get_property(params_filename, myfile_contents, "TNC.costMinimum"))  
+    
+    tncSingleBaseFare = float(get_property(params_filename, myfile_contents, "TNC.single.baseFare")) 
+    tncSingleCPMile = float(get_property(params_filename, myfile_contents, "TNC.single.costPerMile")) 
+    tncSingleCPMin = float(get_property(params_filename, myfile_contents, "TNC.single.costPerMinute"))     
+    tncSingleMinCost = float(get_property(params_filename, myfile_contents, "TNC.single.costMinimum"))  
 
-    tncMeanWaitTime = get_property(params_filename, myfile_contents, "TNC.waitTime.mean") 
-    tncSDWaitTime = get_property(params_filename, myfile_contents, "TNC.waitTime.sd")
+    tncSharedBaseFare = float(get_property(params_filename, myfile_contents, "TNC.shared.baseFare")) 
+    tncSharedCPMile = float(get_property(params_filename, myfile_contents, "TNC.shared.costPerMile")) 
+    tncSharedCPMin = float(get_property(params_filename, myfile_contents, "TNC.shared.costPerMinute"))     
+    tncSharedMinCost = float(get_property(params_filename, myfile_contents, "TNC.shared.costMinimum"))  
+
+    tncSingleMeanWaitTime = get_property(params_filename, myfile_contents, "TNC.single.waitTime.mean") 
+    tncSingleSDWaitTime = get_property(params_filename, myfile_contents, "TNC.single.waitTime.sd")
+
+    tncSharedMeanWaitTime = get_property(params_filename, myfile_contents, "TNC.shared.waitTime.mean") 
+    tncSharedSDWaitTime = get_property(params_filename, myfile_contents, "TNC.shared.waitTime.sd")
+    
     taxiMeanWaitTime = get_property(params_filename, myfile_contents, "Taxi.waitTime.mean")     
     taxiSDWaitTime = get_property(params_filename, myfile_contents, "Taxi.waitTime.sd")
 
@@ -204,15 +224,29 @@ def config_mobility_params(replacements):
     replacements[filepath]["(\nMobility.AV.ParkingCostFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avparkCostFactor
     replacements[filepath]["(\nMobility.AV.CostPerMileFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avCPMFactor
     replacements[filepath]["(\nMobility.AV.TerminalTimeFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avTermTimeFactor
+    replacements[filepath]["(\nMobility.TNC.shared.IVTFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncIVTFactor
+
+    
     replacements[filepath]["(\ntaxi.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiBaseFare
     replacements[filepath]["(\ntaxi.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiCPMile
     replacements[filepath]["(\ntaxi.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiCPMin
-    replacements[filepath]["(\nTNC.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncBaseFare
-    replacements[filepath]["(\nTNC.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncCPMile
-    replacements[filepath]["(\nTNC.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncCPMin
-    replacements[filepath]["(\nTNC.costMinimum[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncMinCost
-    replacements[filepath]["(\nTNC.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % tncMeanWaitTime
-    replacements[filepath]["(\nTNC.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =    r"\g<1>%s" % tncSDWaitTime
+    
+    replacements[filepath]["(\nTNC.single.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleBaseFare
+    replacements[filepath]["(\nTNC.single.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleCPMile
+    replacements[filepath]["(\nTNC.single.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleCPMin
+    replacements[filepath]["(\nTNC.single.costMinimum[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleMinCost
+    
+    replacements[filepath]["(\nTNC.shared.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedBaseFare
+    replacements[filepath]["(\nTNC.shared.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedCPMile
+    replacements[filepath]["(\nTNC.shared.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedCPMin
+    replacements[filepath]["(\nTNC.shared.costMinimum[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedMinCost
+    
+    replacements[filepath]["(\nTNC.single.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % tncSingleMeanWaitTime
+    replacements[filepath]["(\nTNC.single.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =    r"\g<1>%s" % tncSingleSDWaitTime
+
+    replacements[filepath]["(\nTNC.shared.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % tncSharedMeanWaitTime
+    replacements[filepath]["(\nTNC.shared.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =    r"\g<1>%s" % tncSharedSDWaitTime
+    
     replacements[filepath]["(\nTaxi.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % taxiMeanWaitTime
     replacements[filepath]["(\nTaxi.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =   r"\g<1>%s" % taxiSDWaitTime
 
@@ -256,11 +290,8 @@ def config_auto_opcost(replacements):
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
     replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc_perfect
 
-    # AV impacts on perceived in-vehicle travel time
-    av_ivt_factor   = float(get_property(params_filename, myfile_contents, "AV_IVT_FAC"))
-
     # put it into the UECs
-    config_uec("%.2f" % auto_opc_perfect,"%.2f" % av_ivt_factor)
+    config_uec("%.2f" % auto_opc_perfect)
 
     # auto operating cost freeway adjustments
     auto_opc_adjust_rm   = get_property(params_filename, myfile_contents, "AutoOpCost_fwyadj_RM")
@@ -535,9 +566,8 @@ def config_shadowprice(iter, replacements):
         replacements[filepath]["(\n)(#?)(UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = \
             r"\g<1>\g<3>main/ShadowPricing_%d.csv" % (2*iter-1)
 
-def config_uec(auto_operating_cost, av_ivtt_factor):
+def config_uec(auto_operating_cost):
     auto_op_cost_float = float(auto_operating_cost)
-    av_ivt_factor_float = float(av_ivtt_factor)
     for bookname in ["ModeChoice.xls","TripModeChoice.xls","accessibility_utility.xls"]:
         filepath = os.path.join("CTRAMP","model",bookname)
         shutil.move(filepath, "%s.original" % filepath)
@@ -554,12 +584,6 @@ def config_uec(auto_operating_cost, av_ivtt_factor):
                         (rs.name, rs.cell(rownum,4).value, auto_op_cost_float)
                     wb.get_sheet(sheet_num).write(rownum,4,auto_op_cost_float,
                                                   xlwt.easyxf("align: horiz left"))
-                if rs.cell(rownum,1).value=='c_ivt':
-                    print "  Sheet '%s': replacing c_ivt '%s' -> %.2f" % \
-                        (rs.name, rs.cell(rownum,4).value, rs.cell(rownum,4).value*av_ivt_factor_float)
-                    wb.get_sheet(sheet_num).write(rownum,4,rs.cell(rownum,4).value*av_ivt_factor_float,
-                                                  xlwt.easyxf("align: horiz left"))
-
         wb.save(filepath)
 
 if __name__ == '__main__':

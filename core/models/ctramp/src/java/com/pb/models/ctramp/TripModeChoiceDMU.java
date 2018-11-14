@@ -30,7 +30,8 @@ public class TripModeChoiceDMU implements Serializable, VariableTable {
     protected int stopIsLast;
     
     protected float waitTimeTaxi;
-    protected float waitTimeTNC;
+    protected float waitTimeSingleTNC;
+    protected float waitTimeSharedTNC;
     
 
     private ModelStructure modelStructure;
@@ -330,12 +331,20 @@ public class TripModeChoiceDMU implements Serializable, VariableTable {
 		this.waitTimeTaxi = waitTimeTaxi;
 	}
 
-	public float getWaitTimeTNC() {
-		return waitTimeTNC;
+	public float getWaitTimeSingleTNC() {
+		return waitTimeSingleTNC;
 	}
 
-	public void setWaitTimeTNC(float waitTimeTNC) {
-		this.waitTimeTNC = waitTimeTNC;
+	public void setWaitTimeSingleTNC(float waitTimeSingleTNC) {
+		this.waitTimeSingleTNC = waitTimeSingleTNC;
+	}
+
+	public float getWaitTimeSharedTNC() {
+		return waitTimeSharedTNC;
+	}
+
+	public void setWaitTimeSharedTNC(float waitTimeSharedTNC) {
+		this.waitTimeSharedTNC = waitTimeSharedTNC;
 	}
 
 	public int getAssignmentIndexValue(String variableName) {

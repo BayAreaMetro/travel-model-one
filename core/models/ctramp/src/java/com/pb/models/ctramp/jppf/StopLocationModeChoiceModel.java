@@ -423,22 +423,26 @@ public class StopLocationModeChoiceModel implements Serializable {
                 tripModeChoiceDmuObj.setIntStopParkRate( 0 );
                 
                 float popEmpDenOrig = (float) tazDataManager.getPopEmpPerSqMi(origin);
-                float TNCWaitTimeOrig=0;
-                float TaxiWaitTimeOrig=0;
+                float waitTimeSingleTNC=0;
+                float waitTimeSharedTNC=0;
+                float waitTimeTaxi=0;
                 
                 if(household!=null){
                     Random hhRandom = household.getHhRandom();
                     double rnum = hhRandom.nextDouble();
-                    TNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromTNCWaitTimeDistribution(rnum, popEmpDenOrig);
-                    TaxiWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromTaxiWaitTimeDistribution(rnum, popEmpDenOrig);
+                    waitTimeSingleTNC = (float) tncTaxiWaitTimeCalculator.sampleFromSingleTNCWaitTimeDistribution(rnum, popEmpDenOrig);
+                    waitTimeSharedTNC = (float) tncTaxiWaitTimeCalculator.sampleFromSharedTNCWaitTimeDistribution(rnum, popEmpDenOrig);
+                    waitTimeTaxi = (float) tncTaxiWaitTimeCalculator.sampleFromTaxiWaitTimeDistribution(rnum, popEmpDenOrig);
                    }else{
-                    TNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.getMeanTNCWaitTime( popEmpDenOrig);
-                    TaxiWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.getMeanTaxiWaitTime( popEmpDenOrig);
+                	waitTimeSingleTNC = (float) tncTaxiWaitTimeCalculator.getMeanSingleTNCWaitTime( popEmpDenOrig);
+                	waitTimeSharedTNC = (float) tncTaxiWaitTimeCalculator.getMeanSharedTNCWaitTime( popEmpDenOrig);
+                	waitTimeTaxi = (float) tncTaxiWaitTimeCalculator.getMeanTaxiWaitTime( popEmpDenOrig);
                 }
 
-                tripModeChoiceDmuObj.setWaitTimeTaxi(TaxiWaitTimeOrig);
-                tripModeChoiceDmuObj.setWaitTimeTNC(TNCWaitTimeOrig);
-                            
+                tripModeChoiceDmuObj.setWaitTimeSingleTNC(waitTimeSingleTNC);
+                tripModeChoiceDmuObj.setWaitTimeSharedTNC(waitTimeSharedTNC);
+                tripModeChoiceDmuObj.setWaitTimeTaxi(waitTimeTaxi);
+                             
                 int zone = -1;
                 int subzone = -1;
                 int choice = -1;

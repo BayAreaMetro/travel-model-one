@@ -223,18 +223,15 @@ public class MtcModeChoiceDMU extends ModeChoiceDMU {
         methodIndexMap.put( "getHAnalyst", 27 );
         methodIndexMap.put( "getPAnalyst", 28 );
         
-        methodIndexMap.put( "getOrigTaxiWaitTime", 30);
-        methodIndexMap.put( "getDestTaxiWaitTime", 31);
-        methodIndexMap.put( "getOrigTNCWaitTime", 32);
-        methodIndexMap.put( "getDestTNCWaitTime", 33);
-        methodIndexMap.put( "getUseOwnedAV", 34);
+        methodIndexMap.put( "getOrigTaxiWaitTime", 29 );
+        methodIndexMap.put( "getDestTaxiWaitTime", 30 );
+        methodIndexMap.put( "getOrigSingleTNCWaitTime", 31 );
+        methodIndexMap.put( "getDestSingleTNCWaitTime", 32 );
+        methodIndexMap.put( "getOrigSharedTNCWaitTime", 33 );
+        methodIndexMap.put( "getDestSharedTNCWaitTime", 34 );
+        methodIndexMap.put( "getUseOwnedAV", 35);
               
-        
-        
-        
-        
-
-    }
+      }
     
         
     public double getValueForIndex(int variableIndex, int arrayIndex) {
@@ -274,11 +271,13 @@ public class MtcModeChoiceDMU extends ModeChoiceDMU {
             case 27: return getHAnalyst();
             case 28: return getPAnalyst();
             
-            case 30: return getTaxiWaitTimeOrig();
-            case 31: return getTaxiWaitTimeDest();
-            case 32: return getTNCWaitTimeOrig();
-            case 33: return getTNCWaitTimeDest();
-            case 34: return getUseOwnedAV();
+            case 30: return getOrigTaxiWaitTime();
+            case 31: return getDestTaxiWaitTime();
+            case 32: return getOrigSingleTNCWaitTime();
+            case 33: return getDestSingleTNCWaitTime();
+            case 34: return getOrigSharedTNCWaitTime();
+            case 35: return getDestSharedTNCWaitTime();
+            case 36: return getUseOwnedAV();
 
             
 
