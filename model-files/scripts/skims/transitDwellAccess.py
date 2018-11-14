@@ -459,7 +459,7 @@ if __name__ == '__main__':
     # No PHT condition must mean we're using volume conditions so use the MSA'd
     # assignment we already have
     if PHTDiffCond==0:
-        curRouteFileName       = os.path.join(curSubdir, "SFALLMSA"+timeperiod+".dbf")
+        curRouteFileName       = os.path.join(curSubdir, "trnlink{}_ALLMSA.dbf".format(timeperiod))
     else:
         curRouteFileName       = None
 

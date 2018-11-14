@@ -9,6 +9,7 @@ set TRNASSIGNMODE=NORMAL
 set MAXTRNITERS=30
 set MAXPATHTIME=240
 set PCT=%%
+set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
 
 :: AverageNetworkVolumes.job uses PREV_ITER=1 for ITER=1
 set PREV_TRN_ITER=%PREV_ITER%
@@ -106,10 +107,14 @@ IF %KEEP_ASGN_DBFS% EQU 1 (
 :routelinkMSA
 :: For the final iteration, MSA our link volumes and use that to check for convergence
 if %ITER% EQU %MAXITERATIONS% (
-    echo START   routelinkMSA       SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
-    
-    call dispatch routeLinkMSA.jset
-    if ERRORLEVEL 2 goto donetrnassign
+  echo START   routelinkMSA       SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
+
+  python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\routeLinkMSA.py EA %TRNASSIGNITER% %VOLDIFFCOND%
+  python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\routeLinkMSA.py AM %TRNASSIGNITER% %VOLDIFFCOND%
+  python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\routeLinkMSA.py MD %TRNASSIGNITER% %VOLDIFFCOND%
+  python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\routeLinkMSA.py PM %TRNASSIGNITER% %VOLDIFFCOND%
+  python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\routeLinkMSA.py EV %TRNASSIGNITER% %VOLDIFFCOND%
+
 )
 
 :modifyDwellAccess
@@ -120,7 +125,6 @@ if %TRNASSIGNITER% EQU 0 (
   echo trnAssignIter,timeperiod,mode,PHT,pctPHTdiff,RMSE_IVTT,RMSE_TOTT,AvgPaths,CurrPaths,CurrBoards,PathsFromBoth,PathsFromIter,PathsFromAvg,PHTCriteriaMet > PHT_total.csv
 )
 
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
 set "lock=%temp%\wait%random%.lock"
 
 :: Launch processes asynchronously, with stream 9 redirected to a lock file.
@@ -132,7 +136,7 @@ start "" 9>"%lock%4" python C:\Users\mtcpb\Documents\GitHub\travel-model-one-tra
 start "" 9>"%lock%5" python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EV %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 
 :Wait for both processes to finish (wait until lock files are no longer locked)
-1>nul 2>nul ping /n 2 ::1
+1>nul 2>nul timeout /t 1 /nobreak
 for %%N in (1 2 3 4 5) do (
   (call ) 9>"%lock%%%N" || goto :Wait
 ) 2>nul
@@ -196,11 +200,11 @@ FOR %%A in (%ALLTRIPMODES% %ALLTOURMODES%) DO (
  
 :: copy the latest transit assignment dbf into the parent dir
 if %ITER% EQU %MAXITERATIONS% (
-  copy .\%LASTSUBDIR_EA%\trnlinkEA_ALL.dbf ..
-  copy .\%LASTSUBDIR_AM%\trnlinkAM_ALL.dbf ..
-  copy .\%LASTSUBDIR_MD%\trnlinkMD_ALL.dbf ..
-  copy .\%LASTSUBDIR_PM%\trnlinkPM_ALL.dbf ..
-  copy .\%LASTSUBDIR_EV%\trnlinkEV_ALL.dbf ..
+  copy .\%LASTSUBDIR_EA%\trnlinkEA_ALLMSA.dbf ..
+  copy .\%LASTSUBDIR_AM%\trnlinkAM_ALLMSA.dbf ..
+  copy .\%LASTSUBDIR_MD%\trnlinkMD_ALLMSA.dbf ..
+  copy .\%LASTSUBDIR_PM%\trnlinkPM_ALLMSA.dbf ..
+  copy .\%LASTSUBDIR_EV%\trnlinkEV_ALLMSA.dbf ..
 )
 
 :donedone
