@@ -14,8 +14,8 @@ USAGE = """
 python transitDwellAccess.py [POSTPROC|NORMAL] [extraDelayFile|NoExtraDelay] [Simple]|[Complex AM|MD|PM|EV|EA trnAssignIter phtdiffcond maxiters]
   complexDwell dmode1 dmode2 .. dmodeN complexAccess amode1 amode2 ... amode3
 
-  For Simple mode, this just demuxes the muni.lin file into the timeperiod-specific versions, and
-    assigns simple dwell delays based on the mode, outputs transitOriginal[timeperiods].lin  
+  For Simple mode, this just demuxes the transitLines into the timeperiod-specific versions, and
+    assigns simple dwell delays based on the mode, outputs transitOriginal[timeperiods].lin
     Additionally outputs transitVehicleVolsOnLink[timeperiod].dbf for assignment to the roadway network,
     with A,B,AB,TRNVEHVOL attributes.
   An optional *extraDelayFile* can be passed in for Simple mode, a .csv file with columns:
