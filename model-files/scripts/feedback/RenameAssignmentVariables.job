@@ -11,7 +11,7 @@
 ; for each of the following time periods: (a) early AM, 3 am to 6 am; (b) AM peak period, 6 am to 10 am; (c) midday,
 ; 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; and, (e) evening, 7 pm to 3 am.  
 ;
-; Ten vehicle classes are tracked in each assignment, with value-toll-eligible and not-value-toll-eligible classes
+; Thirteen vehicle classes are tracked in each assignment, with value-toll-eligible and not-value-toll-eligible classes
 ; as follows:
 ;      (1) drive alone, no value toll (da)
 ;      (2) shared ride 2, no value toll (s2)
@@ -23,14 +23,18 @@
 ;      (8) shared ride 3+, value toll eligible (s3T)
 ;      (9) very small, small, and medium trucks, value toll eligible (smT)
 ;     (10) large trucks, value toll eligible (hvT)
+;     (11) DA AV TNC
+;     (12) S2 AV TNC
+;     (13) S3 AV TNC
+;
 ;
 ; Input:  (1) A highway network containing the following fields: (a) V_1, which is the total a-to-b link volume, in 
 ;         units of equivalent passenger vehicles; (b) VC_1, which is the volume to capacity ratio; (c) TIME_1, which 
 ;         is the congested travel time in minutes; (d) CSPD_1, which is the congested travel speed in miles per hour;
 ;         (e) VDT_1, which is the vehicle-distance traveled, in miles; (f) VHT_1, which is the vehicle hours traveled,
-;         in hours; (g) VX_1, which is the a-to-b link volume for vehicles in class X, where X is 1 to 10; (h) VT_1, 
+;         in hours; (g) VX_1, which is the a-to-b link volume for vehicles in class X, where X is 1 to 13; (h) VT_1, 
 ;         which is the total b-to-a link volume for two-way links only; and, (e) VXT_1, which is the b-to-a link volume
-;         for vehicles in class X, where X is 1 to 10.  One such network is input for each of the five time of day periods. 
+;         for vehicles in class X, where X is 1 to 13.  One such network is input for each of the five time of day periods. 
 ;
 ; Output: (1) A highway network for each time period with the following fields: (a) VOL, which is the total a-to-b link
 ;         volume, in units of equivalent passenger vehicles; (b) VC, which is the volume to capacity ratio; (c) CTIM, which 
@@ -47,7 +51,7 @@
 ;	    (2) AverageNetworkVolumes.job, which averages the volumes from this and previous iterations. 
 ;
 ; version:  Travel Model One
-; authors:  dto (2010 08 09); gde (2009)
+; authors:  dto (2010 08 09); gde (2009) ; jef 2018
 ;
 ;
 ; ----------------------------------------------------------------------------------------------------------------
@@ -83,8 +87,8 @@ loop period = 1, 5
   	
       ; write out the average loaded network
       neto = hwy\iter@token_current_iteration@\load@token_period@_renamed.net, exclude =  V_1, TIME_1, VC_1, CSPD_1, VDT_1, VHT_1, 
-      											  V1_1, V2_1, V3_1, V4_1, V5_1, V6_1, V7_1, V8_1, V9_1, V10_1,  
-      											  VT_1, V1T_1, V2T_1, V3T_1, V4T_1, V5T_1, V6T_1, V7T_1, V8T_1, V9T_1, V10T_1
+      											  V1_1, V2_1, V3_1, V4_1, V5_1, V6_1, V7_1, V8_1, V9_1, V10_1, V11_1, V12_1, V13_1,  
+      											  VT_1, V1T_1, V2T_1, V3T_1, V4T_1, V5T_1, V6T_1, V7T_1, V8T_1, V9T_1, V10T_1, V11T_1, V12T_1, V13T_1
       
       ; rename the assignment varaibles
       vol      = V_1   
@@ -103,6 +107,9 @@ loop period = 1, 5
       vol_s3T  = V8_1  
       vol_smT  = V9_1  
       vol_hvT  = V10_1 
+      vol_daav = V11_1
+      vol_s2av = V12_1
+      vol_s3av = V13_1
       volT     = VT_1  
       volT_da  = V1T_1 
       volT_s2  = V2T_1 
@@ -114,6 +121,10 @@ loop period = 1, 5
       volT_s3T = V8T_1 
       volT_smT = V9T_1 
       volT_hvT = V10T_1
+      volT_daav = V11T_1
+      volT_s2av = V12T_1
+      volT_s3av = V13T_1
+      
   	
       
   		    

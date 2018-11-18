@@ -10,7 +10,7 @@
 ; following time periods: (a) early AM, 3 am to 6 am; (b) AM peak period, 6 am to 10 am; (c) midday, 10 am to 3 pm;
 ; (d) PM peak period, 3 pm to 7 pm; and, (e) evening, 7 pm to 3 am.
 ;
-; Ten vehicle classes are tracked in each assignment, with value-toll-eligible and not-value-toll-eligible classes
+; Thirteen vehicle classes are tracked in each assignment, with value-toll-eligible and not-value-toll-eligible classes
 ; as follows:
 ;      (1) drive alone, no value toll
 ;      (2) shared ride 2, no value toll
@@ -22,6 +22,10 @@
 ;      (8) shared ride 3+, value toll eligible
 ;      (9) very small, small, and medium trucks, value toll eligible
 ;     (10) large trucks, value toll eligible
+;     (11) DA AV and TNC (value toll eligible)
+;     (12) S2 AV and TNC (value toll eligible)
+;     (13) S3+ AV and TNC (value toll eligible)
+;
 ;
 ; Four types of trips are assigned, as follows: (a) personal, inter-regional travel; (b) personal, intra-regional
 ; travel; (c) commercial travel; and, (d) air passenger travel.  Separate trip tables are read in by the script for
@@ -293,6 +297,15 @@ loop period = 1, 5
          ; large trucks, value toll paying, excluded from HOV facilities and no commercial truck facilities
          pathload path = lw.gencost_lrg, excludegrp = 23, 4, vol[10] = mi.3.ctrucktoll
 
+         ; drive alone AV TNC, value toll paying, exclude HOV facilities
+         pathload path = lw.gencost_da, excludegrp = 23, vol[11] = mi.1.da_avtnc
+
+         ; shared ride 2, value toll paying, exclude HOV 3+ facilities
+         pathload path = lw.gencost_s2, excludegrp = 3, vol[12] = mi.1.s2_avtnc / 2
+
+         ; shared ride 3+, value toll paying, no exclusions
+         pathload path = lw.gencost_s3, vol[13] = mi.1.s3_avtnc / 3.25
+
       endphase
 
       ; set adjust parameters (volume delay functions)
@@ -311,7 +324,7 @@ loop period = 1, 5
          IF (LI.FT = 10) AV_PCE = AV_PCE_FT10
 
          ; very small, small, and medium trucks have a passenger car equivalent of, on average 1.0, large trucks see HwyParam.block for PCE
-         function v = (vol[1] + vol[2] + vol[3] + vol[4] + trkpce*vol[5] + vol[6] + vol[7] + vol[8] + vol[9] + trkpce*vol[10])* AV_PCE
+         function v = (vol[1] + vol[2] + vol[3] + vol[4] + trkpce*vol[5] + vol[6] + vol[7] + vol[8] + vol[9] + trkpce*vol[10] + (vol[11] + vol[12] + vol[13])* AV_PCE)
 
          ; the volume delay functions are housed in the SpeedFlowCurve.block file
          read file = ctramp\scripts\block\SpeedFlowCurve.block

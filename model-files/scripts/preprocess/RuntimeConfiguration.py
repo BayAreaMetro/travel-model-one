@@ -183,6 +183,20 @@ def config_mobility_params(replacements):
     #
     # Taxi.waitTime.mean = 26.5,17.3,13.3,9.5,5.5 
     # Taxi.waitTime.sd =    6.4,6.4,6.4,6.4,6.4
+    #
+    # Taxi.da.share = 0.0
+    # Taxi.s2.share = 0.9
+    # Taxi.s3.share = 0.1
+    #
+    # TNC.single.da.share = 0.0
+    # TNC.single.s2.share = 0.8
+    # TNC.single.s3.share = 0.2
+    #
+    # TNC.shared.da.share = 0.0
+    # TNC.shared.s2.share = 0.3
+    # TNC.shared.s3.share = 0.7
+    
+    
     
     avShare   = float(get_property(params_filename, myfile_contents, "Mobility.AV.Share"))
     pBoostAutosLTDrivers = float(get_property(params_filename, myfile_contents, "Mobility.AV.ProbabilityBoost.AutosLTDrivers"))
@@ -214,7 +228,20 @@ def config_mobility_params(replacements):
     tncSharedSDWaitTime = get_property(params_filename, myfile_contents, "TNC.shared.waitTime.sd")
     
     taxiMeanWaitTime = get_property(params_filename, myfile_contents, "Taxi.waitTime.mean")     
-    taxiSDWaitTime = get_property(params_filename, myfile_contents, "Taxi.waitTime.sd")
+    taxiSDWaitTime = get_property(params_filename, myfile_contents, "Taxi.waitTime.sd")         
+    
+    
+    taxiDaShare = float(get_property(params_filename, myfile_contents, "Taxi.da.share"))
+    taxiS2Share = float(get_property(params_filename, myfile_contents, "Taxi.s2.share"))
+    taxiS3Share = float(get_property(params_filename, myfile_contents, "Taxi.s3.share"))
+                       
+    tncSingleDaShare = float(get_property(params_filename, myfile_contents, "TNC.single.da.share"))
+    tncSingleS2Share = float(get_property(params_filename, myfile_contents, "TNC.single.s2.share"))
+    tncSingleS3Share = float(get_property(params_filename, myfile_contents, "TNC.single.s3.share"))
+                       
+    tncSharedDaShare = float(get_property(params_filename, myfile_contents, "TNC.shared.da.share"))
+    tncSharedS2Share = float(get_property(params_filename, myfile_contents, "TNC.shared.s2.share"))
+    tncSharedS3Share = float(get_property(params_filename, myfile_contents, "TNC.shared.s3.share"))
 
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
     replacements[filepath]["(\nMobility.AV.Share[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avShare
@@ -249,6 +276,12 @@ def config_mobility_params(replacements):
     
     replacements[filepath]["(\nTaxi.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % taxiMeanWaitTime
     replacements[filepath]["(\nTaxi.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =   r"\g<1>%s" % taxiSDWaitTime
+
+    occ_file  = open("taxi_tnc_occ_factors.csv", "w")
+    occ_file.write('1,%5.2f,%5.2f,%5.2f\n' % (taxiDaShare,taxiS2Share,taxiS3Share))
+    occ_file.write('2,%5.2f,%5.2f,%5.2f\n' % (tncSingleDaShare,tncSingleS2Share,tncSingleS3Share))  
+    occ_file.write('3,%5.2f,%5.2f,%5.2f\n' % (tncSharedDaShare,tncSharedS2Share,tncSharedS3Share)) 
+    occ_file.close() 
 
 def get_property(properties_file_name, properties_file_contents, propname):
     """

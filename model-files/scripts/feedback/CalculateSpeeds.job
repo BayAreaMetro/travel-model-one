@@ -173,8 +173,21 @@ loop period = 1,5
       ; compute the speeds with the volume delay curves
       phase = adjust
       
-         ; total volume includes each of the 10 classes
-         function v = li.v1_1 + li.v2_1 + li.v3_1 + li.v4_1 + trkpce * li.v5_1 + li.v6_1 + li.v7_1 + li.v8_1 + li.v9_1 + trkpce * li.v10_1
+         ; AV impacts on roadway capacity - represented by adjusting the PCE
+         IF (LI.FT = 1) AV_PCE = AV_PCE_FT01
+         IF (LI.FT = 2) AV_PCE = AV_PCE_FT02
+         IF (LI.FT = 3) AV_PCE = AV_PCE_FT03
+         IF (LI.FT = 4) AV_PCE = AV_PCE_FT04
+         IF (LI.FT = 5) AV_PCE = AV_PCE_FT05
+         IF (LI.FT = 6) AV_PCE = AV_PCE_FT06
+         IF (LI.FT = 7) AV_PCE = AV_PCE_FT07
+         IF (LI.FT = 8) AV_PCE = AV_PCE_FT08
+         IF (LI.FT = 9) AV_PCE = AV_PCE_FT09
+         IF (LI.FT = 10) AV_PCE = AV_PCE_FT10
+
+      
+         ; total volume includes each of the 13 classes
+         function v = li.v1_1 + li.v2_1 + li.v3_1 + li.v4_1 + trkpce * li.v5_1 + li.v6_1 + li.v7_1 + li.v8_1 + li.v9_1 + trkpce * li.v10_1 + (li.v11_1 + li.v12_1 + li.v13_1) * AV_PCE
                  
          ; the volume delay functions are housed in the SpeedFlowCurve.block file
          read file = ctramp\scripts\block\SpeedFlowCurve.block 
@@ -194,8 +207,8 @@ loop period = 1,5
           
       ; output network with averaged speeds, excluding the dummy assignment results from AverageNetworkVolumes and from step 1 of this script   
       neto = hwy\iter@token_current_iteration@\avgload@token_period@.net, 
-             exclude = V_1, VC_1, V1_1, V2_1, V3_1, V4_1, V5_1, V6_1, V7_1, V8_1, V9_1, V10_1,  
-                       VT_1, V1T_1, V2T_1, V3T_1, V4T_1, V5T_1, V6T_1, V7T_1, V8T_1, V9T_1, V10T_1,
+             exclude = V_1, VC_1, V1_1, V2_1, V3_1, V4_1, V5_1, V6_1, V7_1, V8_1, V9_1, V10_1, V11_1, V12_1, V13_1,  
+                       VT_1, V1T_1, V2T_1, V3T_1, V4T_1, V5T_1, V6T_1, V7T_1, V8T_1, V9T_1, V10T_1, V11T_1, V12T_1, V13T_1,
                        V_2, TIME_2, VC_2, CSPD_2, VDT_2, VHT_2, V20_2, VT_2, V20T_2
       
       ; shift the key information to the renamed variables (see RenameAssignmentVariables.job), as expected by TestNetworkConvergence script
