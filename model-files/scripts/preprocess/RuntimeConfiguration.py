@@ -278,9 +278,9 @@ def config_mobility_params(replacements):
     replacements[filepath]["(\nTaxi.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =   r"\g<1>%s" % taxiSDWaitTime
 
     occ_file  = open("taxi_tnc_occ_factors.csv", "w")
-    occ_file.write('1,%5.2f,%5.2f,%5.2f\n' % (taxiDaShare,taxiS2Share,taxiS3Share))
-    occ_file.write('2,%5.2f,%5.2f,%5.2f\n' % (tncSingleDaShare,tncSingleS2Share,tncSingleS3Share))  
-    occ_file.write('3,%5.2f,%5.2f,%5.2f\n' % (tncSharedDaShare,tncSharedS2Share,tncSharedS3Share)) 
+    occ_file.write('1,%5.2f,%5.2f,%5.2f\n' % (taxiDaShare,tncSingleDaShare,tncSharedDaShare))
+    occ_file.write('2,%5.2f,%5.2f,%5.2f\n' % (taxiS2Share,tncSingleS2Share,tncSharedS2Share))  
+    occ_file.write('3,%5.2f,%5.2f,%5.2f\n' % (taxiS3Share,tncSingleS3Share,tncSharedS3Share)) 
     occ_file.close() 
 
 def get_property(properties_file_name, properties_file_contents, propname):
