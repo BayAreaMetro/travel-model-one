@@ -104,6 +104,10 @@ copy INPUT\sgr\                 sgr\
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
 
+:: Set the prices in the roadway network (convert csv to dbf first)
+python CTRAMP\scripts\preprocess\csvToDbf.py hwy\tolls.csv hwy\tolls.dbf
+IF ERRORLEVEL 1 goto done
+
 :: Set the prices in the roadway network
 runtpp CTRAMP\scripts\preprocess\SetTolls.job
 if ERRORLEVEL 2 goto done
