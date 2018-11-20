@@ -549,9 +549,9 @@ loop period = 1,5
               _PHT = _PMT/60.0
               _RMSE_IVTT = SQRT(_RMSE_IVTT/_CURRPATHS)
               _RMSE_TOTT = SQRT(_RMSE_TOTT/_CURRPATHS)
-              PRINT CSV=T PRINTO=1 LIST = '@token_trnassigniter@', '@token_period@', '@token_access@_@token_path@_@token_egress@', _PHT(12.3),
-                  _RMSE_IVTT(12.3), _RMSE_TOTT(12.3), _AVGPATHS(12.0), _CURRPATHS(12.0), _CURRBOARDS(12.3),
-                  _BOTH(12.0), _ITERONLY(12.0), _AVGONLY(12.0)
+              PRINT CSV=T PRINTO=1 LIST = '@token_trnassigniter@', '@token_period@', '@token_access@_@token_path@_@token_egress@', _PHT(12.3LRS),
+                  _RMSE_IVTT(12.3LRS), _RMSE_TOTT(12.3LRS), _AVGPATHS(12.0LRS), _CURRPATHS(12.0LRS), _CURRBOARDS(12.3LRS),
+                  _BOTH(12.0LRS), _ITERONLY(12.0LRS), _AVGONLY(12.0LRS)
             ENDIF
         ENDRUN
         
