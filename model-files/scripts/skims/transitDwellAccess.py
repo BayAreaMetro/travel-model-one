@@ -70,7 +70,7 @@ def updateLinesOfInterest(timeperiod, trnAssignIter, complexAccessModes, current
     comp_modes_re   = "^({})_".format(comp_modes_str)
     for line in currentNet.line(re.compile(comp_modes_re)):
         
-        if line.getFreq(timeperiod)==0.0: continue
+        if line.getFreq(timeperiod,Network.MODEL_TYPE_TM1)==0.0: continue
         
         for nodeIdx in range(len(line.n)-1):
             node = line.n[nodeIdx]
