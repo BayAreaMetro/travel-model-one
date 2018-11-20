@@ -30,7 +30,7 @@ python transitDwellAccess.py [POSTPROC|NORMAL] [extraDelayFile|NoExtraDelay] [Si
   - trnmode1 trnmode2 ... are the transit modes for complex delay
 """
 
-def updateLinesOfInterest(timeperiod, trnAssignIter, currentTad, currentNet):
+def updateLinesOfInterest(timeperiod, trnAssignIter, complexAccessModes, currentTad, currentNet):
     """ 
     Reads and updates a linesOfInterest[timeperiod].csv file to include
     volumes and if boardings are disallowed for easy graphing.
@@ -64,8 +64,11 @@ def updateLinesOfInterest(timeperiod, trnAssignIter, currentTad, currentNet):
     linesOfInterest[0].insert(volIdx,"vol%d" % (trnAssignIter))
     linesOfInterest[0].append("noboard%d" % (trnAssignIter))
     
-    # update cols
-    for line in currentNet.line(re.compile("^MUN")):
+    # update cols -- everything in COMPLEXMODES_ACCESS
+    comp_modes_strs = list("{}".format(x) for x in complexAccessModes)
+    comp_modes_str  = str("|").join(comp_modes_strs)
+    comp_modes_re   = "^({})_".format(comp_modes_str)
+    for line in currentNet.line(re.compile(comp_modes_re)):
         
         if line.getFreq(timeperiod)==0.0: continue
         
@@ -494,7 +497,7 @@ if __name__ == '__main__':
         subtractExtraDelayToNet(extraDelayMapping, currentNet, timeperiod)
     
     # report on lines of interest - note that it does not have extraDelay
-    updateLinesOfInterest(timeperiod, trnAssignIter, currentTad=tad, currentNet=currentNet)
+    updateLinesOfInterest(timeperiod, trnAssignIter, complexAccessModes, currentTad=tad, currentNet=currentNet)
     
     if not criteriaMet:
         originalNet.addDelay(timeperiod=timeperiod, 
