@@ -109,11 +109,11 @@ IF %KEEP_ASGN_DBFS% EQU 1 (
 if %ITER% EQU %MAXITERATIONS% (
   echo START   routelinkMSA       SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
 
-  python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\routeLinkMSA.py EA %TRNASSIGNITER% %VOLDIFFCOND%
-  python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\routeLinkMSA.py AM %TRNASSIGNITER% %VOLDIFFCOND%
-  python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\routeLinkMSA.py MD %TRNASSIGNITER% %VOLDIFFCOND%
-  python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\routeLinkMSA.py PM %TRNASSIGNITER% %VOLDIFFCOND%
-  python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\routeLinkMSA.py EV %TRNASSIGNITER% %VOLDIFFCOND%
+  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py EA %TRNASSIGNITER% %VOLDIFFCOND%
+  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py AM %TRNASSIGNITER% %VOLDIFFCOND%
+  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py MD %TRNASSIGNITER% %VOLDIFFCOND%
+  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py PM %TRNASSIGNITER% %VOLDIFFCOND%
+  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py EV %TRNASSIGNITER% %VOLDIFFCOND%
 
 )
 
@@ -129,11 +129,11 @@ set "lock=%temp%\wait%random%.lock"
 
 :: Launch processes asynchronously, with stream 9 redirected to a lock file.
 :: The lock file will remain locked until the script ends.
-start "" 9>"%lock%1" python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EA %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-start "" 9>"%lock%2" python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex AM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-start "" 9>"%lock%3" python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex MD %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-start "" 9>"%lock%4" python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex PM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-start "" 9>"%lock%5" python C:\Users\mtcpb\Documents\GitHub\travel-model-one-transit\model-files\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EV %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+start "" 9>"%lock%1" python ..\..\CTRAMP\model-files\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EA %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+start "" 9>"%lock%2" python ..\..\CTRAMP\model-files\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex AM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+start "" 9>"%lock%3" python ..\..\CTRAMP\model-files\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex MD %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+start "" 9>"%lock%4" python ..\..\CTRAMP\model-files\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex PM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+start "" 9>"%lock%5" python ..\..\CTRAMP\model-files\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EV %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 
 :Wait for both processes to finish (wait until lock files are no longer locked)
 1>nul 2>nul timeout /t 1 /nobreak
