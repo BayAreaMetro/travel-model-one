@@ -45,6 +45,7 @@ public class HouseholdChoiceModels implements Serializable {
     private HouseholdFreeParkingModel fpModel;
     private HouseholdCoordinatedDailyActivityPatternModel cdapModel;
     private HouseholdIndividualMandatoryTourFrequencyModel imtfModel;
+    private TourVehicleTypeChoiceModel tvtcModel;
     private ModeChoiceModel immcModel;
     private HouseholdIndividualMandatoryTourDepartureAndDurationTime imtodModel;
     private JointTourModels jtfModel;
@@ -157,11 +158,12 @@ public class HouseholdChoiceModels implements Serializable {
             
             if ( runIndividualMandatoryTourFrequencyModel ) {
                 imtfModel = new HouseholdIndividualMandatoryTourFrequencyModel( propertyMap, tazDataManager, modelStructure, dmuFactory );
-                if ( measureObjectSizes ) logger.info ( "IMTF size:   " + ObjectUtil.checkObjectSize( imtfModel ) );
+                tvtcModel = new TourVehicleTypeChoiceModel(propertyMap);
+                if ( measureObjectSizes ) logger.info ( "IMTF and TVTC size:   " + (ObjectUtil.checkObjectSize( imtfModel )+ ObjectUtil.checkObjectSize( tvtcModel )) );
             }
                 
             if ( runMandatoryTourModeChoiceModel || runMandatoryTourDepartureTimeAndDurationModel ){
-                immcModel = new ModeChoiceModel( propertyMap, modelStructure, ModelStructure.MANDATORY_CATEGORY, dmuFactory );
+                immcModel = new ModeChoiceModel( propertyMap, modelStructure, ModelStructure.MANDATORY_CATEGORY, dmuFactory, tazDataManager );
                 if ( measureObjectSizes ) logger.info ( "IMMC size:   " + ObjectUtil.checkObjectSize( immcModel ) );
             }
                 
@@ -177,7 +179,7 @@ public class HouseholdChoiceModels implements Serializable {
             }
                 
             if ( runJointTourModeChoiceModel || runJointTourLocationChoiceModel || runJointTourDepartureTimeAndDurationModel ){
-                jmcModel = new ModeChoiceModel( propertyMap, modelStructure, ModelStructure.JOINT_NON_MANDATORY_CATEGORY, dmuFactory );
+                jmcModel = new ModeChoiceModel( propertyMap, modelStructure, ModelStructure.JOINT_NON_MANDATORY_CATEGORY, dmuFactory,tazDataManager );
                 if ( measureObjectSizes ) logger.info ( "JMC size:    " + ObjectUtil.checkObjectSize( jmcModel ) );
             }
             if ( runJointTourLocationChoiceModel ){
@@ -196,7 +198,7 @@ public class HouseholdChoiceModels implements Serializable {
                 if ( measureObjectSizes ) logger.info ( "INMTF size:  " + ObjectUtil.checkObjectSize( inmtfModel ) );
             }
             if ( runIndividualNonMandatoryTourModeChoiceModel || runIndividualNonMandatoryTourLocationChoiceModel || runIndividualNonMandatoryTourDepartureTimeAndDurationModel){
-                inmmcModel = new ModeChoiceModel( propertyMap, modelStructure, ModelStructure.INDIVIDUAL_NON_MANDATORY_CATEGORY, dmuFactory );
+                inmmcModel = new ModeChoiceModel( propertyMap, modelStructure, ModelStructure.INDIVIDUAL_NON_MANDATORY_CATEGORY, dmuFactory, tazDataManager );
                 if ( measureObjectSizes ) logger.info ( "INMMC size:  " + ObjectUtil.checkObjectSize( inmmcModel ) );
             }
             if ( runIndividualNonMandatoryTourLocationChoiceModel ){
@@ -215,7 +217,7 @@ public class HouseholdChoiceModels implements Serializable {
                 if ( measureObjectSizes ) logger.info ( "AWF size:    " + ObjectUtil.checkObjectSize( awfModel ) );
             }
             if ( runAtWorkSubtourModeChoiceModel ||  runAtWorkSubtourLocationChoiceModel ||  runAtWorkSubtourDepartureTimeAndDurationModel ){
-                awmcModel = new ModeChoiceModel( propertyMap, modelStructure, ModelStructure.AT_WORK_CATEGORY, dmuFactory );
+                awmcModel = new ModeChoiceModel( propertyMap, modelStructure, ModelStructure.AT_WORK_CATEGORY, dmuFactory, tazDataManager );
                 if ( measureObjectSizes ) logger.info ( "AWMC size:   " + ObjectUtil.checkObjectSize( awmcModel ) );
             }
             if ( runAtWorkSubtourLocationChoiceModel ){
@@ -398,8 +400,10 @@ public class HouseholdChoiceModels implements Serializable {
         if ( runCoordinatedDailyActivityPatternModel )
             cdapModel.applyModel( hhObject );
         
-        if ( runIndividualMandatoryTourFrequencyModel )
+        if ( runIndividualMandatoryTourFrequencyModel ){
             imtfModel.applyModel( hhObject );
+            tvtcModel.applyModelToMandatoryTours(hhObject);
+        }
         
         if ( runMandatoryTourDepartureTimeAndDurationModel )
             imtodModel.applyModel( hhObject );
@@ -407,8 +411,10 @@ public class HouseholdChoiceModels implements Serializable {
         if ( runMandatoryTourModeChoiceModel )
             immcModel.applyModel( hhObject );
         
-        if ( runJointTourFrequencyModel )
+        if ( runJointTourFrequencyModel ){
             jtfModel.applyModel( hhObject );
+            tvtcModel.applyModelToJointTours(hhObject);
+        }
         
         if ( runJointTourLocationChoiceModel )
             jlcModel.applyModel( hhObject );
@@ -419,8 +425,10 @@ public class HouseholdChoiceModels implements Serializable {
         if ( runJointTourModeChoiceModel )
             jmcModel.applyModel( hhObject );
         
-        if ( runIndividualNonMandatoryTourFrequencyModel )
+        if ( runIndividualNonMandatoryTourFrequencyModel ){
             inmtfModel.applyModel( hhObject );
+            tvtcModel.applyModelToNonMandatoryTours(hhObject);
+        }
         
         if ( runIndividualNonMandatoryTourLocationChoiceModel )
             inmlcModel.applyModel( hhObject );
@@ -431,8 +439,10 @@ public class HouseholdChoiceModels implements Serializable {
         if ( runIndividualNonMandatoryTourModeChoiceModel )
             inmmcModel.applyModel( hhObject );
         
-        if ( runAtWorkSubtourFrequencyModel )
+        if ( runAtWorkSubtourFrequencyModel ){
             awfModel.applyModel( hhObject );
+            tvtcModel.applyModelToAtWorkSubTours(hhObject);
+        }
         
         if ( runAtWorkSubtourLocationChoiceModel )
             awlcModel.applyModel( hhObject );
@@ -482,6 +492,7 @@ public class HouseholdChoiceModels implements Serializable {
         if ( runIndividualMandatoryTourFrequencyModel ) {
             long check = System.nanoTime();
             imtfModel.applyModel( hhObject );
+            tvtcModel.applyModelToMandatoryTours(hhObject);
             imtfTime += ( System.nanoTime() - check );
         }
         
@@ -500,6 +511,7 @@ public class HouseholdChoiceModels implements Serializable {
         if ( runJointTourFrequencyModel ) {
             long check = System.nanoTime();
             jtfModel.applyModel( hhObject );
+            tvtcModel.applyModelToJointTours(hhObject);
             jtfTime += ( System.nanoTime() - check );
         }
         
@@ -524,6 +536,7 @@ public class HouseholdChoiceModels implements Serializable {
         if ( runIndividualNonMandatoryTourFrequencyModel ) {
             long check = System.nanoTime();
             inmtfModel.applyModel( hhObject );
+            tvtcModel.applyModelToNonMandatoryTours(hhObject);
             inmtfTime += ( System.nanoTime() - check );
         }
         
@@ -548,6 +561,7 @@ public class HouseholdChoiceModels implements Serializable {
         if ( runAtWorkSubtourFrequencyModel ) {
             long check = System.nanoTime();
             awfModel.applyModel( hhObject );
+            tvtcModel.applyModelToAtWorkSubTours(hhObject);
             awtfTime += ( System.nanoTime() - check );
         }
         

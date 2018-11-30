@@ -19,6 +19,7 @@ public class AutoOwnershipChoiceDMU implements Serializable, VariableTable {
     private IndexValues dmuIndex;
 
     private double workTourAutoTimeSavings;
+    private double workTourAutoTime;
     private double schoolDriveTourAutoTimeSavings;
     private double schoolNonDriveTourAutoTimeSavings;
 
@@ -92,11 +93,19 @@ public class AutoOwnershipChoiceDMU implements Serializable, VariableTable {
         workTourAutoTimeSavings = value;
     }
     
+    public void setWorkTourAutoTime( double value ) {
+        workTourAutoTime = value;
+    }
+
+    
     public double getWorkTourAutoTimeSavings() {
         return workTourAutoTimeSavings;
     }
     
-    public void setSchoolDriveTourAutoTimeSavings( double value ) {
+    public double getWorkTourAutoTime() {
+        return workTourAutoTime;
+    }
+   public void setSchoolDriveTourAutoTimeSavings( double value ) {
         schoolDriveTourAutoTimeSavings = value;
     }
     

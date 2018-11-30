@@ -64,6 +64,16 @@ public class MtcAutoOwnershipChoiceDMU extends AutoOwnershipChoiceDMU {
 	    return numPersons25to34;
 	}
 
+	public int getNumPersAge65Plus() {
+		Person[] persons = hh.getPersons(); 
+	    int numPersons65Plus = 0;
+	    for (int i=1; i < persons.length; i++) {
+	        if ( persons[i].getAge() >= 65)
+	        	numPersons65Plus ++;
+	    }
+	    return numPersons65Plus;
+	}
+
     public float getDensityIndex(){
         int zone = hh.getHhTaz(); 
         int index = zoneTableRow[zone] - 1;
@@ -95,6 +105,10 @@ public class MtcAutoOwnershipChoiceDMU extends AutoOwnershipChoiceDMU {
         methodIndexMap.put( "getDensityIndex", 14 );
         // guojy: added for M. Gucwa's research on automated vehicles
         methodIndexMap.put( "getHAnalyst", 15 );
+        methodIndexMap.put( "getNumPersAge65Plus", 16); 
+        methodIndexMap.put( "getWorkTourAutoTime",17);
+        
+        
      }
     
     
@@ -119,6 +133,8 @@ public class MtcAutoOwnershipChoiceDMU extends AutoOwnershipChoiceDMU {
             case 14: return getDensityIndex();
             // guojy: added for M. Gucwa's research on automated vehicles
             case 15: return getHAnalyst();
+            case 16: return getNumPersAge65Plus();
+            case 17: return getWorkTourAutoTime();
 
             default:
                 logger.error("method number = "+variableIndex+" not found");

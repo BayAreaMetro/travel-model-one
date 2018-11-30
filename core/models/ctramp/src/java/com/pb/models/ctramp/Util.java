@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.StringTokenizer;
+
 import org.apache.log4j.Logger;
 
 public class Util
@@ -51,6 +52,20 @@ public class Util
         }
     }
 
+    public static float getFloatValueFromPropertyMap(HashMap<String, String> rbMap, String key)
+    {
+        String value = rbMap.get(key);
+        if (value != null)
+        {
+            return Float.parseFloat(value);
+        } else
+        {
+            logger.error("property file key: " + key
+                    + " missing.  No float value can be determined.");
+            throw new RuntimeException();
+        }
+    }
+ 
     public static int[] getIntegerArrayFromPropertyMap(HashMap<String, String> rbMap, String key)
     {
 
@@ -87,5 +102,14 @@ public class Util
         return returnArray;
 
     }
+    
+    public static float[] getFloatArrayFromPropertyMap(HashMap<String, String> rbMap, String key) {
+        String[] values = getStringValueFromPropertyMap(rbMap,key).split(",");
+        float[] array = new float[values.length];
+        for (int i = 0; i < array.length; i++)
+        	array[i] = Float.parseFloat(values[i]);
+        return array;
+    }
+
 
 }

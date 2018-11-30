@@ -290,6 +290,8 @@ public class HouseholdDataWriter {
         data.add("awmc_rn");
         data.add("stf_rn");
         data.add("stl_rn");
+        data.add("humanVehicles");
+        data.add("autonomousVehicles");
 
         return data;
     }
@@ -306,6 +308,8 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.TEXT);
+        data.add(SqliteDataTypes.INTEGER);
+        data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.INTEGER);
@@ -364,6 +368,9 @@ public class HouseholdDataWriter {
         data.add(string(hh.getAwmcRandomCount()));
         data.add(string(hh.getStfRandomCount()));
         data.add(string(hh.getStlRandomCount()));
+        data.add(string(hh.getHumanVehicles()));
+        data.add(string(hh.getAutonomousVehicles()));
+        
         return data;
     }
 
@@ -434,6 +441,7 @@ public class HouseholdDataWriter {
        data.add("atWork_freq");
        data.add("num_ob_stops");
        data.add("num_ib_stops");
+       data.add("avAvailable");
        
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -468,6 +476,7 @@ public class HouseholdDataWriter {
        data.add("tour_mode");
        data.add("num_ob_stops");
        data.add("num_ib_stops");
+       data.add("avAvailable");
        
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -494,6 +503,7 @@ public class HouseholdDataWriter {
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.TEXT);
        data.add(SqliteDataTypes.TEXT);
+       data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.INTEGER);
@@ -537,7 +547,8 @@ public class HouseholdDataWriter {
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.INTEGER);
-       
+       data.add(SqliteDataTypes.INTEGER);
+      
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
            for ( int i=1; i <= numModeAlts; i++ ) {
@@ -572,6 +583,7 @@ public class HouseholdDataWriter {
        data.add(string(t.getSubtourFreqChoice()));
        data.add(string( t.getNumOutboundStops() == 0 ? 0 : t.getNumOutboundStops()) );
        data.add(string( t.getNumInboundStops() == 0 ? 0 : t.getNumInboundStops()) );
+       data.add(string( t.getUseOwnedAV() ? 1 : 0) );
        
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -608,7 +620,8 @@ public class HouseholdDataWriter {
        data.add(string(t.getTourModeChoice()));
        data.add(string( t.getNumOutboundStops() == 0 ? 0 : t.getNumOutboundStops()) );
        data.add(string( t.getNumInboundStops() == 0 ? 0 : t.getNumInboundStops()) );
-       
+       data.add(string( t.getUseOwnedAV() ? 1 : 0) );
+
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
            float[] utils = t.getTourModalUtilities();
@@ -700,6 +713,7 @@ public class HouseholdDataWriter {
         data.add("trip_mode");
         data.add("tour_mode");
         data.add("tour_category");
+        data.add("avAvailable");
         return data;
     }
 
@@ -722,6 +736,7 @@ public class HouseholdDataWriter {
         data.add("num_participants");
         data.add("tour_mode");
         data.add("tour_category");
+        data.add("avAvailable");
         return data;
     }
 
@@ -799,6 +814,7 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.TEXT);
+        data.add(SqliteDataTypes.INTEGER);
         return data;
     }
 
@@ -821,6 +837,7 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.TEXT);
+        data.add(SqliteDataTypes.INTEGER);
         return data;
     }
 
@@ -889,7 +906,7 @@ public class HouseholdDataWriter {
        data.add(string(s.getMode()));
        data.add(string(t.getTourModeChoice()));
        data.add(string(ModelStructure.TOUR_CATEGORY_LABELS[t.getTourCategoryIndex()]));
-       
+       data.add(string( t.getUseOwnedAV() ? 1 : 0) );
        return data;
    }
 
@@ -969,7 +986,8 @@ public class HouseholdDataWriter {
        data.add(string(participants.length));
        data.add(string(t.getTourModeChoice()));
        data.add(string(ModelStructure.TOUR_CATEGORY_LABELS[t.getTourCategoryIndex()]));
-       
+       data.add(string( t.getUseOwnedAV() ? 1 : 0) );
+      
        return data;
    }
 
@@ -1016,7 +1034,8 @@ public class HouseholdDataWriter {
        data.add(string(t.getTourModeChoice()));
        data.add(string(t.getTourModeChoice()));
        data.add(string(ModelStructure.TOUR_CATEGORY_LABELS[t.getTourCategoryIndex()]));
-       
+       data.add(string( t.getUseOwnedAV() ? 1 : 0) );
+
        return data;
    }
 
@@ -1072,7 +1091,8 @@ public class HouseholdDataWriter {
        data.add(string(participants.length));
        data.add(string(t.getTourModeChoice()));
        data.add(string(ModelStructure.TOUR_CATEGORY_LABELS[t.getTourCategoryIndex()]));
-       
+       data.add(string( t.getUseOwnedAV() ? 1 : 0) );
+
        return data;
    }
 

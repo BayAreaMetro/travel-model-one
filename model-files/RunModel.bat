@@ -24,6 +24,11 @@ if %computername%==MODEL2-A set HOST_IP_ADDRESS=192.168.1.206
 if %computername%==MODEL2-B set HOST_IP_ADDRESS=192.168.1.207
 if %computername%==MODEL2-C set HOST_IP_ADDRESS=192.168.1.208
 if %computername%==MODEL2-D set HOST_IP_ADDRESS=192.168.1.209
+if %computername%==PORMDLPPW01 set HOST_IP_ADDRESS=172.24.0.101
+if %computername%==PORMDLPPW02 set HOST_IP_ADDRESS=172.24.0.102
+
+:: AV SCENARIO
+SET AV_SCENARIO=0
 
 :: Figure out the model year
 set MODEL_DIR=%CD%
@@ -104,6 +109,10 @@ copy INPUT\sgr\                 sgr\
 :: and synthesized household/population files in the appropriate places
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
+
+:: Set the prices in the roadway network (convert csv to dbf first)
+python CTRAMP\scripts\preprocess\csvToDbf.py hwy\tolls.csv hwy\tolls.dbf
+IF ERRORLEVEL 1 goto done
 
 :: Set the prices in the roadway network
 runtpp CTRAMP\scripts\preprocess\SetTolls.job

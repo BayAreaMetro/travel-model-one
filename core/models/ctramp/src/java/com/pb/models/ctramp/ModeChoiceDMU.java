@@ -18,13 +18,19 @@ public class ModeChoiceDMU implements Serializable, VariableTable {
     protected Tour workTour;
     protected Person person;
     protected Household hh;
-    protected IndexValues dmuIndex;
+    public IndexValues dmuIndex;
 
     // these attributes are used for accessibility logsum utility calculations where a tour object does not exist
     protected int origSubzone;
     protected int destSubzone;
     protected double accessibilityValueOfTime;
-
+    
+    protected float origTaxiWaitTime;
+    protected float destTaxiWaitTime;
+    protected float origSingleTNCWaitTime;
+    protected float destSingleTNCWaitTime;
+    protected float origSharedTNCWaitTime;
+    protected float destSharedTNCWaitTime;
     
     private ModelStructure modelStructure;
     
@@ -425,5 +431,89 @@ public class ModeChoiceDMU implements Serializable, VariableTable {
     public void setValue(int variableIndex, double variableValue) {
         throw new UnsupportedOperationException();
     }
+
+
+	
+    public int getUseOwnedAV(){
+    	
+    	if(tour==null)
+    		return 0;
+    	
+    	return (tour.getUseOwnedAV() ? 1: 0);
+    }
+
+
+
+	public float getOrigTaxiWaitTime() {
+		return origTaxiWaitTime;
+	}
+
+
+
+	public void setOrigTaxiWaitTime(float origTaxiWaitTime) {
+		this.origTaxiWaitTime = origTaxiWaitTime;
+	}
+
+
+
+	public float getDestTaxiWaitTime() {
+		return destTaxiWaitTime;
+	}
+
+
+
+	public void setDestTaxiWaitTime(float destTaxiWaitTime) {
+		this.destTaxiWaitTime = destTaxiWaitTime;
+	}
+
+
+
+	public float getOrigSingleTNCWaitTime() {
+		return origSingleTNCWaitTime;
+	}
+
+
+
+	public void setOrigSingleTNCWaitTime(float origSingleTNCWaitTime) {
+		this.origSingleTNCWaitTime = origSingleTNCWaitTime;
+	}
+
+
+
+	public float getDestSingleTNCWaitTime() {
+		return destSingleTNCWaitTime;
+	}
+
+
+
+	public void setDestSingleTNCWaitTime(float destSingleTNCWaitTime) {
+		this.destSingleTNCWaitTime = destSingleTNCWaitTime;
+	}
+
+
+
+	public float getOrigSharedTNCWaitTime() {
+		return origSharedTNCWaitTime;
+	}
+
+
+
+	public void setOrigSharedTNCWaitTime(float origSharedTNCWaitTime) {
+		this.origSharedTNCWaitTime = origSharedTNCWaitTime;
+	}
+
+
+
+	public float getDestSharedTNCWaitTime() {
+		return destSharedTNCWaitTime;
+	}
+
+
+
+	public void setDestSharedTNCWaitTime(float destSharedTNCWaitTime) {
+		this.destSharedTNCWaitTime = destSharedTNCWaitTime;
+	}
+
+
     
 }

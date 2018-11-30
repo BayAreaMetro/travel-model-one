@@ -29,6 +29,7 @@
     <pathelement location="${module.ctramp.basedir}/../../third-party/jppf-2.4/JPPF/build/jppf-common-node.jar"/>
     <pathelement location="${module.ctramp.basedir}/../../third-party/jppf-2.4/JPPF/build/jppf-client.jar"/>
     <pathelement location="${module.ctramp.basedir}/../../third-party/jppf-2.4/JPPF/build/jppf-server.jar"/>
+    <pathelement location="${module.ctramp.basedir}/../../third-party/ssj/lib/ssj.jar"/>
     <pathelement location="${synpop.output.dir}"/>
     <!-- <pathelement location="${module.ctramp.basedir}/../../cmf/common-daf-rpc/lib/xmlrpc-3.0-all.jar"/> -->
   </path>

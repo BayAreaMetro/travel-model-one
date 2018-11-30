@@ -11,7 +11,13 @@ import com.pb.models.ctramp.Household;
 import com.pb.models.ctramp.ModeChoiceDMU;
 import com.pb.models.ctramp.ModelStructure;
 import com.pb.models.ctramp.Person;
+import com.pb.models.ctramp.TNCAndTaxiWaitTimeCalculator;
+import com.pb.models.ctramp.TazDataIf;
 import com.pb.models.ctramp.Tour;
+
+
+
+
 //
 import org.apache.log4j.Logger;
 
@@ -45,19 +51,30 @@ public class ModeChoiceModel implements Serializable {
     private long cmUecTime;
     private long cmOtherTime;
     private long mcLsTotalTime;
-    
-    public ModeChoiceModel( HashMap<String, String> propertyMap, ModelStructure modelStructure, String tourCategory, CtrampDmuFactoryIf dmuFactory ){
+    //added for TNC and Taxi modes
+    TNCAndTaxiWaitTimeCalculator tncTaxiWaitTimeCalculator = null;
+    protected TazDataIf tazDataManager;
+
+
+    public ModeChoiceModel( HashMap<String, String> propertyMap, ModelStructure modelStructure, String tourCategory, CtrampDmuFactoryIf dmuFactory, TazDataIf tazDataManager ){
 
         this.tourCategory =  tourCategory;
         mcDmuObject = dmuFactory.getModeChoiceDMU();
         setupModeChoiceModelApplicationArray( propertyMap, modelStructure, tourCategory );
+        
+        tncTaxiWaitTimeCalculator = new TNCAndTaxiWaitTimeCalculator();
+        tncTaxiWaitTimeCalculator.createWaitTimeDistributions(propertyMap);
+        this.tazDataManager = tazDataManager;
     }
 
-    public ModeChoiceModel( HashMap<String, String> propertyMap, ModelStructure modelStructure, String tourCategory, ModeChoiceDMU mcDmuObject ){
+    public ModeChoiceModel( HashMap<String, String> propertyMap, ModelStructure modelStructure, String tourCategory, ModeChoiceDMU mcDmuObject, TazDataIf tazDataManager ){
 
         this.tourCategory =  tourCategory;
         this.mcDmuObject = mcDmuObject;
         setupModeChoiceModelApplicationArray( propertyMap, modelStructure, tourCategory );
+        tncTaxiWaitTimeCalculator = new TNCAndTaxiWaitTimeCalculator();
+        tncTaxiWaitTimeCalculator.createWaitTimeDistributions(propertyMap);
+        this.tazDataManager = tazDataManager;
     }
 
 
@@ -139,7 +156,41 @@ public class ModeChoiceModel implements Serializable {
         int modelIndex = purposeModelIndexMap.get( purposeName );
 
         Household household = mcDmuObject.getHouseholdObject();
+        float SingleTNCWaitTimeOrig = 0;
+        float SingleTNCWaitTimeDest = 0;
+        float SharedTNCWaitTimeOrig = 0;
+        float SharedTNCWaitTimeDest = 0;
+        float TaxiWaitTimeOrig = 0;
+        float TaxiWaitTimeDest = 0;
+        int oTaz = mcDmuObject.dmuIndex.getOriginZone();
+        int dTaz = mcDmuObject.dmuIndex.getDestZone();
+        float popEmpDenOrig = tazDataManager.getPopEmpPerSqMi(oTaz);
+        float popEmpDenDest = tazDataManager.getPopEmpPerSqMi(dTaz);
+        
+        if(household!=null){
+            Random hhRandom = household.getHhRandom();
+            double rnum = hhRandom.nextDouble();
+            SingleTNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromSingleTNCWaitTimeDistribution(rnum, popEmpDenOrig);
+            SingleTNCWaitTimeDest = (float) tncTaxiWaitTimeCalculator.sampleFromSingleTNCWaitTimeDistribution(rnum, popEmpDenDest);
+            SharedTNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromSharedTNCWaitTimeDistribution(rnum, popEmpDenOrig);
+            SharedTNCWaitTimeDest = (float) tncTaxiWaitTimeCalculator.sampleFromSharedTNCWaitTimeDistribution(rnum, popEmpDenDest);
+            TaxiWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromTaxiWaitTimeDistribution(rnum, popEmpDenOrig);
+            TaxiWaitTimeDest = (float) tncTaxiWaitTimeCalculator.sampleFromTaxiWaitTimeDistribution(rnum, popEmpDenDest);
+        }else{
+            SingleTNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.getMeanSingleTNCWaitTime( popEmpDenOrig);
+            SingleTNCWaitTimeDest = (float) tncTaxiWaitTimeCalculator.getMeanSingleTNCWaitTime( popEmpDenDest);
+            SharedTNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.getMeanSharedTNCWaitTime( popEmpDenOrig);
+            SharedTNCWaitTimeDest = (float) tncTaxiWaitTimeCalculator.getMeanSharedTNCWaitTime( popEmpDenDest);
+            TaxiWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.getMeanTaxiWaitTime( popEmpDenOrig);
+            TaxiWaitTimeDest = (float) tncTaxiWaitTimeCalculator.getMeanTaxiWaitTime(popEmpDenDest);
+        }
 
+        mcDmuObject.setOrigTaxiWaitTime(TaxiWaitTimeOrig);
+        mcDmuObject.setDestTaxiWaitTime(TaxiWaitTimeDest);
+        mcDmuObject.setOrigSingleTNCWaitTime(SingleTNCWaitTimeOrig);
+        mcDmuObject.setDestSingleTNCWaitTime(SingleTNCWaitTimeDest);
+        mcDmuObject.setOrigSharedTNCWaitTime(SharedTNCWaitTimeOrig);
+        mcDmuObject.setDestSharedTNCWaitTime(SharedTNCWaitTimeDest);
         
         // log headers to traceLogger
         if ( household.getDebugChoiceModels() ) {
@@ -193,8 +244,41 @@ public class ModeChoiceModel implements Serializable {
         int modelIndex = purposeModelIndexMap.get( purposeName );
 
         Household household = mcDmuObject.getHouseholdObject();
-
+        float SingleTNCWaitTimeOrig = 0;
+        float SingleTNCWaitTimeDest = 0;
+        float SharedTNCWaitTimeOrig = 0;
+        float SharedTNCWaitTimeDest = 0;
+        float TaxiWaitTimeOrig = 0;
+        float TaxiWaitTimeDest = 0;
+        int oTaz = mcDmuObject.dmuIndex.getOriginZone();
+        int dTaz = mcDmuObject.dmuIndex.getDestZone();
+        float popEmpDenOrig = tazDataManager.getPopEmpPerSqMi(oTaz);
+        float popEmpDenDest = tazDataManager.getPopEmpPerSqMi(dTaz);
         
+        if(household!=null){
+            Random hhRandom = household.getHhRandom();
+            double rnum = hhRandom.nextDouble();
+            SingleTNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromSingleTNCWaitTimeDistribution(rnum, popEmpDenOrig);
+            SingleTNCWaitTimeDest = (float) tncTaxiWaitTimeCalculator.sampleFromSingleTNCWaitTimeDistribution(rnum, popEmpDenDest);
+            SharedTNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromSharedTNCWaitTimeDistribution(rnum, popEmpDenOrig);
+            SharedTNCWaitTimeDest = (float) tncTaxiWaitTimeCalculator.sampleFromSharedTNCWaitTimeDistribution(rnum, popEmpDenDest);
+            TaxiWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromTaxiWaitTimeDistribution(rnum, popEmpDenOrig);
+            TaxiWaitTimeDest = (float) tncTaxiWaitTimeCalculator.sampleFromTaxiWaitTimeDistribution(rnum, popEmpDenDest);
+        }else{
+            SingleTNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.getMeanSingleTNCWaitTime( popEmpDenOrig);
+            SingleTNCWaitTimeDest = (float) tncTaxiWaitTimeCalculator.getMeanSingleTNCWaitTime( popEmpDenDest);
+            SharedTNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.getMeanSharedTNCWaitTime( popEmpDenOrig);
+            SharedTNCWaitTimeDest = (float) tncTaxiWaitTimeCalculator.getMeanSharedTNCWaitTime( popEmpDenDest);
+            TaxiWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.getMeanTaxiWaitTime( popEmpDenOrig);
+            TaxiWaitTimeDest = (float) tncTaxiWaitTimeCalculator.getMeanTaxiWaitTime(popEmpDenDest);
+        }
+
+        mcDmuObject.setOrigTaxiWaitTime(TaxiWaitTimeOrig);
+        mcDmuObject.setDestTaxiWaitTime(TaxiWaitTimeDest);
+        mcDmuObject.setOrigSingleTNCWaitTime(SingleTNCWaitTimeOrig);
+        mcDmuObject.setDestSingleTNCWaitTime(SingleTNCWaitTimeDest);
+        mcDmuObject.setOrigSharedTNCWaitTime(SharedTNCWaitTimeOrig);
+        mcDmuObject.setDestSharedTNCWaitTime(SharedTNCWaitTimeDest);        
         // log headers to traceLogger
         if ( household.getDebugChoiceModels() ) {
             mcModel[modelIndex].choiceModelUtilityTraceLoggerHeading( "", "" );
@@ -443,6 +527,42 @@ public class ModeChoiceModel implements Serializable {
         mcDmuObject.setDmuIndexValues( household.getHhId(), tour.getTourOrigTaz(), tour.getTourDestTaz() );
         mcDmuObject.setTourStartHour( tour.getTourStartHour() );
         mcDmuObject.setTourEndHour( tour.getTourEndHour() );
+        
+        float SingleTNCWaitTimeOrig = 0;
+        float SingleTNCWaitTimeDest = 0;
+        float SharedTNCWaitTimeOrig = 0;
+        float SharedTNCWaitTimeDest = 0;
+        float TaxiWaitTimeOrig = 0;
+        float TaxiWaitTimeDest = 0;
+        int oTaz = mcDmuObject.dmuIndex.getOriginZone();
+        int dTaz = mcDmuObject.dmuIndex.getDestZone();
+        float popEmpDenOrig = tazDataManager.getPopEmpPerSqMi(oTaz);
+        float popEmpDenDest = tazDataManager.getPopEmpPerSqMi(dTaz);
+        
+        if(household!=null){
+            Random hhRandom = household.getHhRandom();
+            double rnum = hhRandom.nextDouble();
+            SingleTNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromSingleTNCWaitTimeDistribution(rnum, popEmpDenOrig);
+            SingleTNCWaitTimeDest = (float) tncTaxiWaitTimeCalculator.sampleFromSingleTNCWaitTimeDistribution(rnum, popEmpDenDest);
+            SharedTNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromSharedTNCWaitTimeDistribution(rnum, popEmpDenOrig);
+            SharedTNCWaitTimeDest = (float) tncTaxiWaitTimeCalculator.sampleFromSharedTNCWaitTimeDistribution(rnum, popEmpDenDest);
+            TaxiWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromTaxiWaitTimeDistribution(rnum, popEmpDenOrig);
+            TaxiWaitTimeDest = (float) tncTaxiWaitTimeCalculator.sampleFromTaxiWaitTimeDistribution(rnum, popEmpDenDest);
+        }else{
+            SingleTNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.getMeanSingleTNCWaitTime( popEmpDenOrig);
+            SingleTNCWaitTimeDest = (float) tncTaxiWaitTimeCalculator.getMeanSingleTNCWaitTime( popEmpDenDest);
+            SharedTNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.getMeanSharedTNCWaitTime( popEmpDenOrig);
+            SharedTNCWaitTimeDest = (float) tncTaxiWaitTimeCalculator.getMeanSharedTNCWaitTime( popEmpDenDest);
+            TaxiWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.getMeanTaxiWaitTime( popEmpDenOrig);
+            TaxiWaitTimeDest = (float) tncTaxiWaitTimeCalculator.getMeanTaxiWaitTime(popEmpDenDest);
+        }
+
+        mcDmuObject.setOrigTaxiWaitTime(TaxiWaitTimeOrig);
+        mcDmuObject.setDestTaxiWaitTime(TaxiWaitTimeDest);
+        mcDmuObject.setOrigSingleTNCWaitTime(SingleTNCWaitTimeOrig);
+        mcDmuObject.setDestSingleTNCWaitTime(SingleTNCWaitTimeDest);
+        mcDmuObject.setOrigSharedTNCWaitTime(SharedTNCWaitTimeOrig);
+        mcDmuObject.setDestSharedTNCWaitTime(SharedTNCWaitTimeDest);
         
         if (tourCategory.equalsIgnoreCase(ModelStructure.AT_WORK_CATEGORY)) {
         	ArrayList<Tour> workTourList = person.getListOfWorkTours();

@@ -112,7 +112,7 @@ public class MandatoryDestChoiceModel implements Serializable {
 
         
         // create the mode choice model
-        mcModel = new ModeChoiceModel( propertyMap, modelStructure, tourCategory, mcDmuObject );
+        mcModel = new ModeChoiceModel( propertyMap, modelStructure, tourCategory, mcDmuObject, tazDataManager );
 //        filterCount = new long[mcModel.getFilterCount().length][mcModel.getFilterCount()[0].length];
 //        expressionCount = new long[mcModel.getExpressionCount().length][mcModel.getExpressionCount()[0].length];
 //        coeffCount = new long[mcModel.getCoeffCount().length][mcModel.getCoeffCount()[0].length];

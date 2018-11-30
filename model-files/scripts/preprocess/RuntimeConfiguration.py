@@ -35,7 +35,7 @@ If no iteration is specified, then these include:
                               CTRAMP\runtime\mtcTourBased.properties
  * Distribution
    + Based on hostname.
-     * 'MODEL2-A', 'MODEL2-C','MODEL2-D': single machine setup with
+     * 'MODEL2-A', 'MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02': single machine setup with
         48 Cube Voyager processes available
         48 threads for accessibilities
         24 threads for core
@@ -142,6 +142,146 @@ def config_popsyn_files(replacements):
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
     replacements[filepath]["(\nPopulationSynthesizer.InputToCTRAMP.HouseholdFile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % hhfile
     replacements[filepath]["(\nPopulationSynthesizer.InputToCTRAMP.PersonFile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % perfile
+
+def config_mobility_params(replacements):
+    """
+    See USAGE for details.
+
+    Replacements = { filepath -> regex_dict }
+    """
+    params_filename = os.path.join("INPUT", "params.properties")
+    myfile          = open( params_filename, 'r' )
+    myfile_contents = myfile.read()
+    myfile.close()
+    # get parameters
+    # Mobility.AV.Share = 0.0
+    # Mobility.AV.ProbabilityBoost.AutosLTDrivers = 1.2
+    # Mobility.AV.ProbabilityBoost.AutosGEDrivers = 1.1
+    # Mobility.AV.IVTFactor = 0.5
+    # Mobility.AV.ParkingCostFactor = 0.0
+    # Mobility.AV.CostPerMileFactor = 0.5
+    # Mobility.AV.TerminalTimeFactor = 0.0
+    # Mobility.TNC.shared.IVTFactor = 1.2
+
+    # TNC.single.baseFare = 2.20
+    # TNC.single.costPerMile = 1.33
+    # TNC.single.costPerMinute = 0.24
+    # TNC.single.costMinimum = 7.20
+    # 
+    # # use lower costs
+    # TNC.shared.baseFare = 2.20
+    # TNC.shared.costPerMile = 1.33
+    # TNC.shared.costPerMinute = 0.24
+    # TNC.shared.costMinimum = 7.20
+    #  
+    # #Note: the following comma-separated value properties cannot have spaces between them, or else the RuntimeConfiguration.py code won't work
+    # TNC.single.waitTime.mean =  10.3,8.5,8.4,6.3,4.7
+    # TNC.single.waitTime.sd =     4.1,4.1,4.1,4.1,4.1
+    # 
+    # TNC.shared.waitTime.mean =  15.0,15.0,11.0,8.0,7.0
+    # TNC.shared.waitTime.sd =     4.1,4.1,4.1,4.1,4.1
+    #
+    # Taxi.waitTime.mean = 26.5,17.3,13.3,9.5,5.5 
+    # Taxi.waitTime.sd =    6.4,6.4,6.4,6.4,6.4
+    #
+    # Taxi.da.share = 0.0
+    # Taxi.s2.share = 0.9
+    # Taxi.s3.share = 0.1
+    #
+    # TNC.single.da.share = 0.0
+    # TNC.single.s2.share = 0.8
+    # TNC.single.s3.share = 0.2
+    #
+    # TNC.shared.da.share = 0.0
+    # TNC.shared.s2.share = 0.3
+    # TNC.shared.s3.share = 0.7
+    
+    
+    
+    avShare   = float(get_property(params_filename, myfile_contents, "Mobility.AV.Share"))
+    pBoostAutosLTDrivers = float(get_property(params_filename, myfile_contents, "Mobility.AV.ProbabilityBoost.AutosLTDrivers"))
+    pBoostAutosGEDrivers = float(get_property(params_filename, myfile_contents, "Mobility.AV.ProbabilityBoost.AutosGEDrivers"))
+    avIVTFactor  = float(get_property(params_filename, myfile_contents, "Mobility.AV.IVTFactor")) 
+    avparkCostFactor  = float(get_property(params_filename, myfile_contents, "Mobility.AV.ParkingCostFactor")) 
+    avCPMFactor = float(get_property(params_filename, myfile_contents, "Mobility.AV.CostPerMileFactor"))  
+    avTermTimeFactor = float(get_property(params_filename, myfile_contents, "Mobility.AV.TerminalTimeFactor"))  
+    tncIVTFactor = avTermTimeFactor = float(get_property(params_filename, myfile_contents, "Mobility.TNC.shared.IVTFactor"))
+
+    taxiBaseFare = float(get_property(params_filename, myfile_contents, "taxi.baseFare")) 
+    taxiCPMile = float(get_property(params_filename, myfile_contents, "taxi.costPerMile")) 
+    taxiCPMin = float(get_property(params_filename, myfile_contents, "taxi.costPerMinute")) 
+    
+    tncSingleBaseFare = float(get_property(params_filename, myfile_contents, "TNC.single.baseFare")) 
+    tncSingleCPMile = float(get_property(params_filename, myfile_contents, "TNC.single.costPerMile")) 
+    tncSingleCPMin = float(get_property(params_filename, myfile_contents, "TNC.single.costPerMinute"))     
+    tncSingleMinCost = float(get_property(params_filename, myfile_contents, "TNC.single.costMinimum"))  
+
+    tncSharedBaseFare = float(get_property(params_filename, myfile_contents, "TNC.shared.baseFare")) 
+    tncSharedCPMile = float(get_property(params_filename, myfile_contents, "TNC.shared.costPerMile")) 
+    tncSharedCPMin = float(get_property(params_filename, myfile_contents, "TNC.shared.costPerMinute"))     
+    tncSharedMinCost = float(get_property(params_filename, myfile_contents, "TNC.shared.costMinimum"))  
+
+    tncSingleMeanWaitTime = get_property(params_filename, myfile_contents, "TNC.single.waitTime.mean") 
+    tncSingleSDWaitTime = get_property(params_filename, myfile_contents, "TNC.single.waitTime.sd")
+
+    tncSharedMeanWaitTime = get_property(params_filename, myfile_contents, "TNC.shared.waitTime.mean") 
+    tncSharedSDWaitTime = get_property(params_filename, myfile_contents, "TNC.shared.waitTime.sd")
+    
+    taxiMeanWaitTime = get_property(params_filename, myfile_contents, "Taxi.waitTime.mean")     
+    taxiSDWaitTime = get_property(params_filename, myfile_contents, "Taxi.waitTime.sd")         
+    
+    
+    taxiDaShare = float(get_property(params_filename, myfile_contents, "Taxi.da.share"))
+    taxiS2Share = float(get_property(params_filename, myfile_contents, "Taxi.s2.share"))
+    taxiS3Share = float(get_property(params_filename, myfile_contents, "Taxi.s3.share"))
+                       
+    tncSingleDaShare = float(get_property(params_filename, myfile_contents, "TNC.single.da.share"))
+    tncSingleS2Share = float(get_property(params_filename, myfile_contents, "TNC.single.s2.share"))
+    tncSingleS3Share = float(get_property(params_filename, myfile_contents, "TNC.single.s3.share"))
+                       
+    tncSharedDaShare = float(get_property(params_filename, myfile_contents, "TNC.shared.da.share"))
+    tncSharedS2Share = float(get_property(params_filename, myfile_contents, "TNC.shared.s2.share"))
+    tncSharedS3Share = float(get_property(params_filename, myfile_contents, "TNC.shared.s3.share"))
+
+    filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
+    replacements[filepath]["(\nMobility.AV.Share[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avShare
+    replacements[filepath]["(\nMobility.AV.ProbabilityBoost.AutosLTDrivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % pBoostAutosLTDrivers
+    replacements[filepath]["(\nMobility.AV.ProbabilityBoost.AutosGEDrivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % pBoostAutosGEDrivers
+    replacements[filepath]["(\nMobility.AV.IVTFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avIVTFactor
+    replacements[filepath]["(\nMobility.AV.ParkingCostFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avparkCostFactor
+    replacements[filepath]["(\nMobility.AV.CostPerMileFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avCPMFactor
+    replacements[filepath]["(\nMobility.AV.TerminalTimeFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avTermTimeFactor
+    replacements[filepath]["(\nMobility.TNC.shared.IVTFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncIVTFactor
+
+    
+    replacements[filepath]["(\ntaxi.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiBaseFare
+    replacements[filepath]["(\ntaxi.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiCPMile
+    replacements[filepath]["(\ntaxi.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiCPMin
+    
+    replacements[filepath]["(\nTNC.single.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleBaseFare
+    replacements[filepath]["(\nTNC.single.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleCPMile
+    replacements[filepath]["(\nTNC.single.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleCPMin
+    replacements[filepath]["(\nTNC.single.costMinimum[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleMinCost
+    
+    replacements[filepath]["(\nTNC.shared.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedBaseFare
+    replacements[filepath]["(\nTNC.shared.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedCPMile
+    replacements[filepath]["(\nTNC.shared.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedCPMin
+    replacements[filepath]["(\nTNC.shared.costMinimum[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedMinCost
+    
+    replacements[filepath]["(\nTNC.single.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % tncSingleMeanWaitTime
+    replacements[filepath]["(\nTNC.single.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =    r"\g<1>%s" % tncSingleSDWaitTime
+
+    replacements[filepath]["(\nTNC.shared.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % tncSharedMeanWaitTime
+    replacements[filepath]["(\nTNC.shared.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =    r"\g<1>%s" % tncSharedSDWaitTime
+    
+    replacements[filepath]["(\nTaxi.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % taxiMeanWaitTime
+    replacements[filepath]["(\nTaxi.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =   r"\g<1>%s" % taxiSDWaitTime
+
+    occ_file  = open("taxi_tnc_occ_factors.csv", "w")
+    occ_file.write('1,%5.2f,%5.2f,%5.2f\n' % (taxiDaShare,tncSingleDaShare,tncSharedDaShare))
+    occ_file.write('2,%5.2f,%5.2f,%5.2f\n' % (taxiS2Share,tncSingleS2Share,tncSharedS2Share))  
+    occ_file.write('3,%5.2f,%5.2f,%5.2f\n' % (taxiS3Share,tncSingleS3Share,tncSharedS3Share)) 
+    occ_file.close() 
 
 def get_property(properties_file_name, properties_file_contents, propname):
     """
@@ -324,7 +464,7 @@ def config_distribution(replacements):
         shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
-    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D']:
+    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02']:
         # accessibilities: 48 logical processors
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
@@ -415,7 +555,7 @@ def config_distribution(replacements):
         shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
-    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D']:
+    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02']:
         # accessibilities: 48 logical processors
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
@@ -494,6 +634,7 @@ if __name__ == '__main__':
     if my_args.iter == None:
         config_project_dir(replacements)
         config_popsyn_files(replacements)
+        config_mobility_params(replacements)
         config_auto_opcost(replacements)
         config_host_ip(replacements)
         config_distribution(replacements)
