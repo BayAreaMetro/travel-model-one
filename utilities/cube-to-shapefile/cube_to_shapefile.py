@@ -57,56 +57,86 @@ TRN_OPERATORS = collections.OrderedDict([
     ("_other" ,              []),  # this will get filled in with operators not covered already
 ])
 
-# from transitFactors_SET*.fac
-# hardcoding this into here isn't ideal
-# todo: read fac file?
-MODE_TO_FARESYSTEM = {
-    12 : 1,
-    13 : 1,
-    20 : 2,
-    21 : 3,
-    24 : 4,
-    28 : 5,
-    30 : 6,
-    17 : 7,
-    38 : 8,
-    40 : 9,
-    42 : 10,
-    44 : 11,
-    46 : 12,
-    49 : 13,
-    52 : 14,
-    53 : 15,
-    55 : 16,
-    56 : 17,
-    58 : 18,
-    60 : 19,
-    63 : 20,
-    66 : 21,
-    68 : 22,
-    70 : 23,
-    71 : 24,
-    80 : 25,
-    81 : 26,
-    82 : 27,
-    84 : 28,
-    86 : 29,
-    87 : 30,
-    90 : 31,
-    91 : 32,
-    92 : 33,
-    93 : 34,
-    100: 35,
-    101: 36,
-    103: 37,
-    104: 38,
-    110: 39,
-    111: 40,
-    120: 41,
-    130: 42,
-    131: 43,
-    133: 44,
-    134: 45
+MODE_NUM_TO_NAME = {
+    # number: name (https://github.com/BayAreaMetro/modeling-website/wiki/TransitModes)
+    # Support
+    1  :"Walk access connector",
+    2  :"Drive access connector",
+    3  :"Stop-to-stop or stop-to-station transfer link",
+    4  :"Drive access funnel link",
+    5  :"Walk access funnel link",
+    6  :"Walk egress connector",
+    7  :"Drive egress connector",
+    # Local Bus
+    10 :"West Berkeley",    
+    11 :"Broadway Shuttle",
+    12 :"Emery Go Round",
+    13 :"Stanford Shuttles",
+    14 :"Caltrain Shuttles",
+    15 :"VTA Shuttles",
+    16 :"Palo Alto/Menlo Park Shuttles",
+    17 :"Wheels ACE Shuttles",
+    18 :"Amtrak Shuttles",
+    19 :"San Leandro Links",
+    20 :"MUNI Cable Cars",
+    21 :"MUNI Local",
+    24 :"SamTrans Local",
+    27 :"Santa Clara VTA Community bus",
+    28 :"Santa Clara VTA Local",
+    30 :"AC Transit Local",
+    33 :"WHEELS Local",
+    38 :"Union City Transit ",
+    40 :"AirBART",
+    42 :"County Connection (CCTA) Local",
+    44 :"Tri-Delta",
+    46 :"WestCAT Local",
+    49 :"Vallejo Transit Local",
+    52 :"Fairfield And Suisun Transit Local",
+    55 :"American Canyon Transit",
+    56 :"Vacaville City Coach",
+    58 :"Benicia Breeze",
+    60 :"VINE Local",
+    63 :"Sonoma County Transit Local",
+    66 :"Santa Rosa City Bus",
+    68 :"Petaluma Transit",
+    70 :"Golden Gate Transit Local",
+    # Express Bus
+    80 :"SamTrans Express",
+    81 :"Santa Clara VTA Express",
+    82 :"Dumbarton Express",
+    83 :"AC Transit Transbay",
+    84 :"AC Transit Transbay",
+    86 :"County Connection Express",
+    87 :"Golden Gate Transit Express San Francisco",
+    88 :"Golden Gate Transit Express Richmond",
+    90 :"WestCAT Express",
+    91 :"Vallejo Transit Express",
+    92 :"Fairfield And Suisun Transit Express",
+    93 :"VINE Express",
+    94 :"SMART Temporary Express",
+    95 :"VINE Express",
+    # Ferry
+    100:"East Bay Ferries",
+    101:"Golden Gate Ferry - Larkspur",
+    102:"Golden Gate Ferry - Sausalito",
+    103:"Tiburon Ferry",
+    104:"Vallejo Baylink Ferry",
+    105:"South City Ferry",
+    # Light Rail
+    110:"MUNI Metro",
+    111:"Santa Clara VTA LRT",
+    # Heavy Rail
+    120:"BART",
+    121:"Oakland Airport Connector",
+    # Commuter Rail
+    130:"Caltrain",
+    131:"Amtrak - Capitol Corridor",
+    132:"Amtrak - San Joaquin",
+    133:"ACE",
+    134:"Dumbarton Rail",
+    135:"SMART",
+    136:"E-BART",
+    137:"High-Speed Rail"
 }
 
 def runCubeScript(workingdir, script_filename, script_env):
@@ -221,8 +251,8 @@ if __name__ == '__main__':
     arcpy.env.workspace = WORKING_DIR
 
     # define the spatial reference
-    # http://spatialreference.org/ref/esri/nad-1983-stateplane-california-vi-fips-0406-feet/
-    sr = arcpy.SpatialReference(102646)
+    # http://spatialreference.org/ref/epsg/nad83-utm-zone-10n/
+    sr = arcpy.SpatialReference(26910)
     arcpy.DefineProjection_management(NODE_SHPFILE, sr)
     arcpy.DefineProjection_management(LINK_SHPFILE, sr)
 
@@ -247,7 +277,7 @@ if __name__ == '__main__':
         "A", "A_X", "A_Y", "A_STATION",
         "B", "B_X", "B_Y", "B_STATION",
         "NAME"    ,        "NAME_SET"  ,
-        "MODE"    ,        "MODE_TYPE" ,
+        "MODE"    ,        "MODE_NAME" ,  "MODE_TYPE",
         "OPERATOR",        "OPERATOR_T",
         "SEATCAP" ,        "CRUSHCAP"  ,
         # assume these are additive
@@ -268,12 +298,13 @@ if __name__ == '__main__':
         arcpy.CreateFeatureclass_management(WORKING_DIR, TRN_LINES_SHPFILE.format(operator_file), "POLYLINE")
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "NAME",       "TEXT", field_length=25)
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "NAME_SET",   "TEXT", field_length=25)
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "HEADWAY_EA", "FLOAT")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "HEADWAY_AM", "FLOAT")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "HEADWAY_MD", "FLOAT")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "HEADWAY_PM", "FLOAT")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "HEADWAY_EV", "FLOAT")
+        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FREQ_EA",    "FLOAT")
+        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FREQ_AM",    "FLOAT")
+        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FREQ_MD",    "FLOAT")
+        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FREQ_PM",    "FLOAT")
+        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FREQ_EV",     "FLOAT")
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "MODE",       "SHORT")
+        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "MODE_NAME",  "TEXT", field_length=40)
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "MODE_TYPE",  "TEXT", field_length=15)
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "OPERATOR_T", "TEXT", field_length=40)
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "VEHICLETYP", "SHORT")
@@ -281,8 +312,6 @@ if __name__ == '__main__':
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "SEATCAP",    "SHORT")
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "CRUSHCAP",   "SHORT")
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "OPERATOR",   "SHORT")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FARESTRUCT", "TEXT", field_length=12)
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "IBOARDFARE", "FLOAT")
         # helpful additional fields
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FIRST_N",    "LONG")
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FIRST_NAME", "TEXT", field_length=40)
@@ -293,9 +322,9 @@ if __name__ == '__main__':
         arcpy.DefineProjection_management(TRN_LINES_SHPFILE.format(operator_file), sr)
 
         line_cursor[operator_file] = arcpy.da.InsertCursor(TRN_LINES_SHPFILE.format(operator_file), ["NAME", "NAME_SET", "SHAPE@",
-                                   "HEADWAY_EA", "HEADWAY_AM", "HEADWAY_MD", "HEADWAY_PM", "HEADWAY_EV",
-                                   "MODE", "MODE_TYPE", "OPERATOR_T", "VEHICLETYP", "VTYPE_NAME", "SEATCAP", "CRUSHCAP",
-                                   "OPERATOR", "FARESTRUCT", "IBOARDFARE",
+                                   "FREQ_EA", "FREQ_AM", "FREQ_MD", "FREQ_PM", "FREQ_EV",
+                                   "MODE", "MODE_NAME", "MODE_TYPE", "OPERATOR_T", "VEHICLETYP", "VTYPE_NAME", "SEATCAP", "CRUSHCAP",
+                                   "OPERATOR",
                                    "FIRST_N", "FIRST_NAME", "LAST_N", "LAST_NAME", "N_OR_S", "E_OR_W"])
 
         # create the links shapefile
@@ -321,18 +350,17 @@ if __name__ == '__main__':
         arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "IS_STOP",  "SHORT")
         # from node attributes http://bayareametro.github.io/travel-model-two/input/#node-attributes
         # PNR attributes are for TAPs so not included here
-        arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "FAREZONE",  "SHORT")
         arcpy.DefineProjection_management(TRN_STOPS_SHPFILE.format(operator_file), sr)
 
         stop_cursor[operator_file] = arcpy.da.InsertCursor(TRN_STOPS_SHPFILE.format(operator_file),
-                                                           ["NAME", "SHAPE@", "STATION", "N", "SEQ", "IS_STOP", "FAREZONE"])
+                                                           ["NAME", "SHAPE@", "STATION", "N", "SEQ", "IS_STOP"])
     # print(operator_to_file)
 
     # read the node points
     nodes_array = arcpy.da.TableToNumPyArray(in_table="{}.DBF".format(NODE_SHPFILE[:-4]),
-                                             field_names=["N","X","Y","FAREZONE"])
+                                             field_names=["N","X","Y"])
     node_dicts = {}
-    for node_field in ["X","Y","FAREZONE"]:
+    for node_field in ["X","Y"]:
         node_dicts[node_field] = dict(zip(nodes_array["N"].tolist(), nodes_array[node_field].tolist()))
 
     # read the stop information, if there is any
@@ -346,8 +374,8 @@ if __name__ == '__main__':
                                     stop_info_dict["Station"]))
 
     (trn_file_base, trn_file_name) = os.path.split(args.linefile)
-    trn_net = Wrangler.TransitNetwork(modelType="TravelModelTwo", modelVersion=1.0,
-                                      basenetworkpath=trn_file_base, isTiered=True, networkName=trn_file_name[:-4])
+    trn_net = Wrangler.TransitNetwork(modelType="TravelModelOne", modelVersion=1.5)
+    trn_net.parseFile(fullfile=args.linefile)
     logging.info("Read trn_net: {}".format(trn_net))
 
     # build lines and links
@@ -369,9 +397,9 @@ if __name__ == '__main__':
         last_n           = -1
         last_station     = ""
         seq              = 1
-        op_txt           = line.attr['USERA1'].strip('\""')
+        op_txt           = "op_txt_none" # line.attr['USERA1'].strip('\""')
 
-        vtype_num  = int(line.attr['VEHICLETYPE'])
+        vtype_num  = 0 # int(line.attr['VEHICLETYPE'])
         vtype_name = ""
         seatcap    = 0
         crushcap   = 0
@@ -409,6 +437,23 @@ if __name__ == '__main__':
             is_stop = 1 if node.isStop() else 0
             nntime = -999
             if "NNTIME" in node.attr: nntime = float(node.attr["NNTIME"])
+            mode_name = "unknown_mode"
+            if int(line.attr['MODE']) in MODE_NUM_TO_NAME:
+                mode_name = MODE_NUM_TO_NAME[int(line.attr['MODE'])]
+
+            mode_type = "Commuter Rail"
+            if int(line.attr['MODE']) < 10:
+                mode_type = "Support"
+            elif int(line.attr['MODE']) < 80:
+                mode_type = "Local Bus"
+            elif int(line.attr['MODE']) < 100:
+                mode_type = "Express Bus"
+            elif int(line.attr['MODE']) < 110:
+                mode_type = "Ferry"
+            elif int(line.attr['MODE']) < 120:
+                mode_type = "Light Rail"
+            elif int(line.attr['MODE']) < 130:
+                mode_type = "Heavy Rail"
 
             if first_n < 0:
                 first_n    = n
@@ -424,7 +469,7 @@ if __name__ == '__main__':
             point = arcpy.Point( node_dicts["X"][n], node_dicts["Y"][n] )
 
             # start at 0 for stops
-            stop_cursor[operator_file].insertRow([line.name, point, station, n, seq-0, is_stop, node_dicts["FAREZONE"][n]])
+            stop_cursor[operator_file].insertRow([line.name, point, station, n, seq-0, is_stop])
             stop_count += 1
 
             # add to line array
@@ -443,14 +488,14 @@ if __name__ == '__main__':
                 link_rows.append( [last_n, last_point[0],      last_point[1],      last_name,
                                    n,      node_dicts["X"][n], node_dicts["Y"][n], station,
                                    line.name, name_set,
-                                   line.attr['MODE'], line.attr['USERA2'].strip('\""'), # mode type
-                                   line.attr['OPERATOR'], op_txt,
+                                   line.attr['MODE'], mode_name, mode_type,
+                                   0, op_txt, # line.attr['OPERATOR'], op_txt,
                                    seatcap, crushcap,
-                                   TIMEPERIOD_DURATIONS["EA"]*60.0/float(line.attr['HEADWAY[1]']) if float(line.attr['HEADWAY[1]'])>0 else 0,
-                                   TIMEPERIOD_DURATIONS["AM"]*60.0/float(line.attr['HEADWAY[2]']) if float(line.attr['HEADWAY[2]'])>0 else 0,
-                                   TIMEPERIOD_DURATIONS["MD"]*60.0/float(line.attr['HEADWAY[3]']) if float(line.attr['HEADWAY[3]'])>0 else 0,
-                                   TIMEPERIOD_DURATIONS["PM"]*60.0/float(line.attr['HEADWAY[4]']) if float(line.attr['HEADWAY[4]'])>0 else 0,
-                                   TIMEPERIOD_DURATIONS["EV"]*60.0/float(line.attr['HEADWAY[5]']) if float(line.attr['HEADWAY[5]'])>0 else 0
+                                   TIMEPERIOD_DURATIONS["EA"]*60.0/float(line.attr['FREQ[1]']) if float(line.attr['FREQ[1]'])>0 else 0,
+                                   TIMEPERIOD_DURATIONS["AM"]*60.0/float(line.attr['FREQ[2]']) if float(line.attr['FREQ[2]'])>0 else 0,
+                                   TIMEPERIOD_DURATIONS["MD"]*60.0/float(line.attr['FREQ[3]']) if float(line.attr['FREQ[3]'])>0 else 0,
+                                   TIMEPERIOD_DURATIONS["PM"]*60.0/float(line.attr['FREQ[4]']) if float(line.attr['FREQ[4]'])>0 else 0,
+                                   TIMEPERIOD_DURATIONS["EV"]*60.0/float(line.attr['FREQ[5]']) if float(line.attr['FREQ[5]'])>0 else 0
                                 ])
                 link_count += 1
                 link_point_array.removeAll()
@@ -472,34 +517,19 @@ if __name__ == '__main__':
             link_point_array.removeAll()
 
 
-        farestruct = ""
-        iboardfare = 0
-        # TM2 mode to faresystem correspondence above
-        mode_num = int(line.attr['MODE'])
-        if mode_num in MODE_TO_FARESYSTEM:
-            faresystem_num = MODE_TO_FARESYSTEM[mode_num]
-            if faresystem_num in trn_net.faresystems:
-                faresystem = trn_net.faresystems[faresystem_num]
-                if "STRUCTURE"  in faresystem: farestruct = faresystem["STRUCTURE"]
-                if farestruct.upper()=="FLAT" and "IBOARDFARE" in faresystem: iboardfare = float(faresystem["IBOARDFARE"])
-        else:
-            Wrangler.WranglerLogger.warn("No faresystem for mode {}".format(mode_num))
-
         pline_shape = arcpy.Polyline(line_point_array)
 
         line_cursor[operator_file].insertRow([line.name, name_set, pline_shape,
-                                              float(line.attr['HEADWAY[1]']),
-                                              float(line.attr['HEADWAY[2]']),
-                                              float(line.attr['HEADWAY[3]']),
-                                              float(line.attr['HEADWAY[4]']),
-                                              float(line.attr['HEADWAY[5]']),
-                                              line.attr['MODE'],
-                                              line.attr['USERA2'].strip('\""'), # mode type
+                                              float(line.attr['FREQ[1]']),
+                                              float(line.attr['FREQ[2]']),
+                                              float(line.attr['FREQ[3]']),
+                                              float(line.attr['FREQ[4]']),
+                                              float(line.attr['FREQ[5]']),
+                                              line.attr['MODE'], mode_name, mode_type,
                                               op_txt, # operator
-                                              line.attr['VEHICLETYPE'],
+                                              0, # line.attr['VEHICLETYPE'],
                                               vtype_name, seatcap, crushcap,
-                                              line.attr['OPERATOR'],
-                                              farestruct, iboardfare,
+                                              0, # line.attr['OPERATOR'],
                                               first_n, first_name,
                                               last_n,  last_name,
                                               "N" if last_point[1] > first_point[1] else "S",
@@ -534,8 +564,8 @@ if __name__ == '__main__':
     links_df["CRSHCAP_PM"] = links_df["CRUSHCAP"]*links_df["TRIPS_PM"]
     links_df["CRSHCAP_EV"] = links_df["CRUSHCAP"]*links_df["TRIPS_EV"]
 
-    # aggregate by A,B,MODE,MODE_TYPE,OPERATOR,OPERATOR_T,NAME_SET
-    links_df_GB = links_df.groupby(by=["A","B","A_STATION","B_STATION","NAME_SET","MODE","MODE_TYPE","OPERATOR","OPERATOR_T"])
+    # aggregate by A,B,MODE,MODE_NAME,OPERATOR,OPERATOR_T,NAME_SET
+    links_df_GB = links_df.groupby(by=["A","B","A_STATION","B_STATION","NAME_SET","MODE","MODE_NAME","MODE_TYPE","OPERATOR","OPERATOR_T"])
     links_df    = links_df_GB.agg({"A_X":"first", "A_Y":"first", "B_X":"first", "B_Y":"first", "LINE_COUNT":"sum",
                                    "TRIPS_EA"  :"sum","TRIPS_AM"  :"sum","TRIPS_MD"  :"sum","TRIPS_PM"  :"sum","TRIPS_EV"  :"sum",
                                    "SEATCAP_EA":"sum","SEATCAP_AM":"sum","SEATCAP_MD":"sum","SEATCAP_PM":"sum","SEATCAP_EV":"sum",
@@ -552,6 +582,7 @@ if __name__ == '__main__':
     arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "B_STATION", "TEXT", field_length=40)
     arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "NAME_SET",  "TEXT", field_length=25)
     arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "MODE",      "SHORT")
+    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "MODE_NAME", "TEXT", field_length=40)
     arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "MODE_TYPE", "TEXT", field_length=15)
     arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "OPERATOR",  "SHORT")
     arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "OPERATOR_T","TEXT", field_length=40)
