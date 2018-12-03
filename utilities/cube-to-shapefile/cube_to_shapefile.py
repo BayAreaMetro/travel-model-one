@@ -37,106 +37,86 @@ TIMEPERIOD_DURATIONS = collections.OrderedDict([
     ("EV",8.0)
 ])
 
-TRN_OPERATORS = collections.OrderedDict([
-    # filename_append       # list of operator text
-    ("_SF_Muni",             ["San Francisco MUNI"]),
-    ("_SC_VTA",              ["Santa Clara VTA"]),
-    ("_AC_Transit",          ["AC Transit", "AC Transbay"]),
-    ("_SM_SamTrans",         ["samTrans"]),
-    ("_SC_Transit",          ["Sonoma County Transit"]),
-    ("_CC_CountyConnection", ["The County Connection"]),
-    ("_GG_Transit",          ["Golden Gate Transit", "Golden Gate Ferry"]),
-    ("_WestCAT",             ["WestCAT"]),
-    ("_WHEELS",              ["WHEELS"]),
-    ("_Stanford",            ["Stanford Marguerite Shuttle"]),
-    ("_TriDelta",            ["TriDelta Transit"]),
-    ("_Caltrain",            ["Caltrain"]),
-    ("_BART",                ["BART"]),
-    ("_ferry",               ["Alameda Harbor Bay Ferry", "Alameda/Oakland Ferry","Angel Island - Tiburon Ferry",
-                              "Oakland/South SSF Ferry", "South SF/Oakland Ferry", "Vallejo Baylink Ferry"]),
-    ("_other" ,              []),  # this will get filled in with operators not covered already
-])
-
 MODE_NUM_TO_NAME = {
-    # number: name (https://github.com/BayAreaMetro/modeling-website/wiki/TransitModes)
+    # number: [name, operator] (https://github.com/BayAreaMetro/modeling-website/wiki/TransitModes)
     # Support
-    1  :"Walk access connector",
-    2  :"Drive access connector",
-    3  :"Stop-to-stop or stop-to-station transfer link",
-    4  :"Drive access funnel link",
-    5  :"Walk access funnel link",
-    6  :"Walk egress connector",
-    7  :"Drive egress connector",
+    1  :["Walk access connector",                           "NA"],
+    2  :["Drive access connector",                          "NA"],
+    3  :["Stop-to-stop or stop-to-station transfer link",   "NA"],
+    4  :["Drive access funnel link",                        "NA"],
+    5  :["Walk access funnel link",                         "NA"],
+    6  :["Walk egress connector",                           "NA"],
+    7  :["Drive egress connector",                          "NA"],
     # Local Bus
-    10 :"West Berkeley",    
-    11 :"Broadway Shuttle",
-    12 :"Emery Go Round",
-    13 :"Stanford Shuttles",
-    14 :"Caltrain Shuttles",
-    15 :"VTA Shuttles",
-    16 :"Palo Alto/Menlo Park Shuttles",
-    17 :"Wheels ACE Shuttles",
-    18 :"Amtrak Shuttles",
-    19 :"San Leandro Links",
-    20 :"MUNI Cable Cars",
-    21 :"MUNI Local",
-    24 :"SamTrans Local",
-    27 :"Santa Clara VTA Community bus",
-    28 :"Santa Clara VTA Local",
-    30 :"AC Transit Local",
-    33 :"WHEELS Local",
-    38 :"Union City Transit ",
-    40 :"AirBART",
-    42 :"County Connection (CCTA) Local",
-    44 :"Tri-Delta",
-    46 :"WestCAT Local",
-    49 :"Vallejo Transit Local",
-    52 :"Fairfield And Suisun Transit Local",
-    55 :"American Canyon Transit",
-    56 :"Vacaville City Coach",
-    58 :"Benicia Breeze",
-    60 :"VINE Local",
-    63 :"Sonoma County Transit Local",
-    66 :"Santa Rosa City Bus",
-    68 :"Petaluma Transit",
-    70 :"Golden Gate Transit Local",
+    10 :["West Berkeley",                             "Other"      ],
+    11 :["Broadway Shuttle",                          "Other"      ],
+    12 :["Emery Go Round",                            "Other"      ],
+    13 :["Stanford Shuttles",                         "Other"      ],
+    14 :["Caltrain Shuttles",                         "Other"      ],
+    15 :["VTA Shuttles",                              "Other"      ],
+    16 :["Palo Alto/Menlo Park Shuttles",             "Other"      ],
+    17 :["Wheels ACE Shuttles",                       "Other"      ],
+    18 :["Amtrak Shuttles",                           "Other"      ],
+    19 :["San Leandro Links",                         "Other"      ],
+    20 :["MUNI Cable Cars",                           "SF_Muni"    ],
+    21 :["MUNI Local",                                "SF_Muni"    ],
+    24 :["SamTrans Local",                            "SM_SamTrans"],
+    27 :["Santa Clara VTA Community bus",             "SC_VTA"     ],
+    28 :["Santa Clara VTA Local",                     "SC_VTA"     ],
+    30 :["AC Transit Local",                          "AC_Transit" ],
+    33 :["WHEELS Local",                              "Other"      ],
+    38 :["Union City Transit ",                       "Other"      ],
+    40 :["AirBART",                                   "Other"      ],
+    42 :["County Connection (CCTA) Local",            "Other"      ],
+    44 :["Tri-Delta",                                 "Other"      ],
+    46 :["WestCAT Local",                             "Other"      ],
+    49 :["Vallejo Transit Local",                     "Other"      ],
+    52 :["Fairfield And Suisun Transit Local",        "Other"      ],
+    55 :["American Canyon Transit",                   "Other"      ],
+    56 :["Vacaville City Coach",                      "Other"      ],
+    58 :["Benicia Breeze",                            "Other"      ],
+    60 :["VINE Local",                                "Other"      ],
+    63 :["Sonoma County Transit Local",               "Other"      ],
+    66 :["Santa Rosa City Bus",                       "Other"      ],
+    68 :["Petaluma Transit",                          "Other"      ],
+    70 :["Golden Gate Transit Local",                 "GG_Transit" ],
     # Express Bus
-    80 :"SamTrans Express",
-    81 :"Santa Clara VTA Express",
-    82 :"Dumbarton Express",
-    83 :"AC Transit Transbay",
-    84 :"AC Transit Transbay",
-    86 :"County Connection Express",
-    87 :"Golden Gate Transit Express San Francisco",
-    88 :"Golden Gate Transit Express Richmond",
-    90 :"WestCAT Express",
-    91 :"Vallejo Transit Express",
-    92 :"Fairfield And Suisun Transit Express",
-    93 :"VINE Express",
-    94 :"SMART Temporary Express",
-    95 :"VINE Express",
+    80 :["SamTrans Express",                          "SM_SamTrans"],
+    81 :["Santa Clara VTA Express",                   "SC_VTA"     ],
+    82 :["Dumbarton Express",                         "Other"      ],
+    83 :["AC Transit Transbay",                       "AC_Transit" ],
+    84 :["AC Transit Transbay",                       "AC_Transit" ],
+    86 :["County Connection Express",                 "Other"      ],
+    87 :["Golden Gate Transit Express San Francisco", "GG_Transit" ],
+    88 :["Golden Gate Transit Express Richmond",      "GG_Transit" ],
+    90 :["WestCAT Express",                           "Other"      ],
+    91 :["Vallejo Transit Express",                   "Other"      ],
+    92 :["Fairfield And Suisun Transit Express",      "Other"      ],
+    93 :["VINE Express",                              "Other"      ],
+    94 :["SMART Temporary Express",                   "Other"      ],
+    95 :["VINE Express",                              "Other"      ],
     # Ferry
-    100:"East Bay Ferries",
-    101:"Golden Gate Ferry - Larkspur",
-    102:"Golden Gate Ferry - Sausalito",
-    103:"Tiburon Ferry",
-    104:"Vallejo Baylink Ferry",
-    105:"South City Ferry",
+    100:["East Bay Ferries",                          "Other"      ],
+    101:["Golden Gate Ferry - Larkspur",              "GG_Transit" ],
+    102:["Golden Gate Ferry - Sausalito",             "GG_Transit" ],
+    103:["Tiburon Ferry",                             "Other"      ],
+    104:["Vallejo Baylink Ferry",                     "Other"      ],
+    105:["South City Ferry",                          "Other"      ],
     # Light Rail
-    110:"MUNI Metro",
-    111:"Santa Clara VTA LRT",
+    110:["MUNI Metro",                                "SF_Muni"    ],
+    111:["Santa Clara VTA LRT",                       "SC_VTA"     ],
     # Heavy Rail
-    120:"BART",
-    121:"Oakland Airport Connector",
+    120:["BART",                                      "BART"       ],
+    121:["Oakland Airport Connector",                 "BART"       ],
     # Commuter Rail
-    130:"Caltrain",
-    131:"Amtrak - Capitol Corridor",
-    132:"Amtrak - San Joaquin",
-    133:"ACE",
-    134:"Dumbarton Rail",
-    135:"SMART",
-    136:"E-BART",
-    137:"High-Speed Rail"
+    130:["Caltrain",                                  "Caltrain"   ],
+    131:["Amtrak - Capitol Corridor",                 "Other"      ],
+    132:["Amtrak - San Joaquin",                      "Other"      ],
+    133:["ACE",                                       "Other"      ],
+    134:["Dumbarton Rail",                            "Other"      ],
+    135:["SMART",                                     "Other"      ],
+    136:["E-BART",                                    "BART"       ],
+    137:["High-Speed Rail"                            "Other"      ],
 }
 
 def runCubeScript(workingdir, script_filename, script_env):
@@ -263,7 +243,8 @@ if __name__ == '__main__':
 
     operator_files = [""]
     if args.by_operator:
-        operator_files = list(TRN_OPERATORS.keys())
+        operator_files = set(x[1] for x in MODE_NUM_TO_NAME.values())
+
 
     # store cursors here
     line_cursor      = {}
@@ -278,16 +259,13 @@ if __name__ == '__main__':
         "B", "B_X", "B_Y", "B_STATION",
         "NAME"    ,        "NAME_SET"  ,
         "MODE"    ,        "MODE_NAME" ,  "MODE_TYPE",
-        "OPERATOR",        "OPERATOR_T",
+        "OPERATOR_T",
         "SEATCAP" ,        "CRUSHCAP"  ,
         # assume these are additive
         "TRIPS_EA", "TRIPS_AM", "TRIPS_MD", "TRIPS_PM", "TRIPS_EV"
     ]
 
     for operator_file in operator_files:
-        if args.by_operator:
-            for op_txt in TRN_OPERATORS[operator_file]:
-                operator_to_file[op_txt] = operator_file
 
         # delete shapefiles if one exists already
         arcpy.Delete_management(TRN_LINES_SHPFILE.format(operator_file))
@@ -306,12 +284,11 @@ if __name__ == '__main__':
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "MODE",       "SHORT")
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "MODE_NAME",  "TEXT", field_length=40)
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "MODE_TYPE",  "TEXT", field_length=15)
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "OPERATOR_T", "TEXT", field_length=40)
+        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "OPERATOR_T", "TEXT", field_length=15)
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "VEHICLETYP", "SHORT")
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "VTYPE_NAME", "TEXT", field_length=40)
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "SEATCAP",    "SHORT")
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "CRUSHCAP",   "SHORT")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "OPERATOR",   "SHORT")
         # helpful additional fields
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FIRST_N",    "LONG")
         arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FIRST_NAME", "TEXT", field_length=40)
@@ -324,7 +301,6 @@ if __name__ == '__main__':
         line_cursor[operator_file] = arcpy.da.InsertCursor(TRN_LINES_SHPFILE.format(operator_file), ["NAME", "NAME_SET", "SHAPE@",
                                    "FREQ_EA", "FREQ_AM", "FREQ_MD", "FREQ_PM", "FREQ_EV",
                                    "MODE", "MODE_NAME", "MODE_TYPE", "OPERATOR_T", "VEHICLETYP", "VTYPE_NAME", "SEATCAP", "CRUSHCAP",
-                                   "OPERATOR",
                                    "FIRST_N", "FIRST_NAME", "LAST_N", "LAST_NAME", "N_OR_S", "E_OR_W"])
 
         # create the links shapefile
@@ -397,7 +373,26 @@ if __name__ == '__main__':
         last_n           = -1
         last_station     = ""
         seq              = 1
-        op_txt           = "op_txt_none" # line.attr['USERA1'].strip('\""')
+        op_txt           = "unknown_op"
+        mode_name        = "unknown_mode"
+        if int(line.attr['MODE']) in MODE_NUM_TO_NAME:
+            mode_name = MODE_NUM_TO_NAME[int(line.attr['MODE'])][0]
+            op_txt    = MODE_NUM_TO_NAME[int(line.attr['MODE'])][1]
+
+        mode_type = "Commuter Rail"
+        if int(line.attr['MODE']) < 10:
+            mode_type = "Support"
+        elif int(line.attr['MODE']) < 80:
+            mode_type = "Local Bus"
+        elif int(line.attr['MODE']) < 100:
+            mode_type = "Express Bus"
+        elif int(line.attr['MODE']) < 110:
+            mode_type = "Ferry"
+        elif int(line.attr['MODE']) < 120:
+            mode_type = "Light Rail"
+        elif int(line.attr['MODE']) < 130:
+            mode_type = "Heavy Rail"
+
 
         vtype_num  = 0 # int(line.attr['VEHICLETYPE'])
         vtype_name = ""
@@ -411,13 +406,8 @@ if __name__ == '__main__':
 
         if not args.by_operator:
             operator_file = ""
-        elif op_txt in operator_to_file:
-            operator_file = operator_to_file[op_txt]
         else:
-            operator_file = "_other"
-            operator_to_file[op_txt] = operator_file
-            if op_txt not in TRN_OPERATORS[operator_file]:
-                TRN_OPERATORS[operator_file].append(op_txt)
+            operator_file = "_{}".format(op_txt)
 
         logging.info("Adding line {:4}/{:4} {:25} operator {:40} to operator_file [{}]".format(
               line_count+1,total_line_count,
@@ -437,23 +427,7 @@ if __name__ == '__main__':
             is_stop = 1 if node.isStop() else 0
             nntime = -999
             if "NNTIME" in node.attr: nntime = float(node.attr["NNTIME"])
-            mode_name = "unknown_mode"
-            if int(line.attr['MODE']) in MODE_NUM_TO_NAME:
-                mode_name = MODE_NUM_TO_NAME[int(line.attr['MODE'])]
 
-            mode_type = "Commuter Rail"
-            if int(line.attr['MODE']) < 10:
-                mode_type = "Support"
-            elif int(line.attr['MODE']) < 80:
-                mode_type = "Local Bus"
-            elif int(line.attr['MODE']) < 100:
-                mode_type = "Express Bus"
-            elif int(line.attr['MODE']) < 110:
-                mode_type = "Ferry"
-            elif int(line.attr['MODE']) < 120:
-                mode_type = "Light Rail"
-            elif int(line.attr['MODE']) < 130:
-                mode_type = "Heavy Rail"
 
             if first_n < 0:
                 first_n    = n
@@ -488,8 +462,7 @@ if __name__ == '__main__':
                 link_rows.append( [last_n, last_point[0],      last_point[1],      last_name,
                                    n,      node_dicts["X"][n], node_dicts["Y"][n], station,
                                    line.name, name_set,
-                                   line.attr['MODE'], mode_name, mode_type,
-                                   0, op_txt, # line.attr['OPERATOR'], op_txt,
+                                   line.attr['MODE'], mode_name, mode_type, op_txt, 
                                    seatcap, crushcap,
                                    TIMEPERIOD_DURATIONS["EA"]*60.0/float(line.attr['FREQ[1]']) if float(line.attr['FREQ[1]'])>0 else 0,
                                    TIMEPERIOD_DURATIONS["AM"]*60.0/float(line.attr['FREQ[2]']) if float(line.attr['FREQ[2]'])>0 else 0,
@@ -529,7 +502,6 @@ if __name__ == '__main__':
                                               op_txt, # operator
                                               0, # line.attr['VEHICLETYPE'],
                                               vtype_name, seatcap, crushcap,
-                                              0, # line.attr['OPERATOR'],
                                               first_n, first_name,
                                               last_n,  last_name,
                                               "N" if last_point[1] > first_point[1] else "S",
@@ -564,8 +536,8 @@ if __name__ == '__main__':
     links_df["CRSHCAP_PM"] = links_df["CRUSHCAP"]*links_df["TRIPS_PM"]
     links_df["CRSHCAP_EV"] = links_df["CRUSHCAP"]*links_df["TRIPS_EV"]
 
-    # aggregate by A,B,MODE,MODE_NAME,OPERATOR,OPERATOR_T,NAME_SET
-    links_df_GB = links_df.groupby(by=["A","B","A_STATION","B_STATION","NAME_SET","MODE","MODE_NAME","MODE_TYPE","OPERATOR","OPERATOR_T"])
+    # aggregate by A,B,MODE,MODE_NAME,MODE_TYPE,OPERATOR_T,NAME_SET
+    links_df_GB = links_df.groupby(by=["A","B","A_STATION","B_STATION","NAME_SET","MODE","MODE_NAME","MODE_TYPE","OPERATOR_T"])
     links_df    = links_df_GB.agg({"A_X":"first", "A_Y":"first", "B_X":"first", "B_Y":"first", "LINE_COUNT":"sum",
                                    "TRIPS_EA"  :"sum","TRIPS_AM"  :"sum","TRIPS_MD"  :"sum","TRIPS_PM"  :"sum","TRIPS_EV"  :"sum",
                                    "SEATCAP_EA":"sum","SEATCAP_AM":"sum","SEATCAP_MD":"sum","SEATCAP_PM":"sum","SEATCAP_EV":"sum",
@@ -584,7 +556,6 @@ if __name__ == '__main__':
     arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "MODE",      "SHORT")
     arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "MODE_NAME", "TEXT", field_length=40)
     arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "MODE_TYPE", "TEXT", field_length=15)
-    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "OPERATOR",  "SHORT")
     arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "OPERATOR_T","TEXT", field_length=40)
     arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "LINE_COUNT","SHORT")
     arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "ROUTE_A_B", "TEXT", field_length=40)
