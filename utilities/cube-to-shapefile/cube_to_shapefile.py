@@ -4,8 +4,13 @@ Create shapefile of Cube network, roadway and transit.
 
 Requires arcpy, so may need to use arcgis version of python
 
- e.g. set PATH=C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3
-      python cube_to_shapefile.py roadway.net
+ e.g. set PATH=C:\\Program Files\\ArcGIS\\Pro\\bin\\Python\envs\\arcgispro-py3
+
+      python cube_to_shapefile.py
+        --trn_stop_info "M:\\Application\Model One\\Networks\\TM1_2015_Base_Network\\Node Description.xls"
+        --linefile F:\\Projects\\2015_TM150_calib3\\trn\\transitOriginalAM.lin
+        --loadvol_dir F:\\Projects\\2015_TM150_calib3\\trn
+        F:\\Projects\\2015_TM150_calib3\\INPUT\\hwy\\freeflow.net
 
  It saves all output to the current working directory.
  The roadway network is: network_nodes.shp and network_links.shp
@@ -168,30 +173,34 @@ def rename_fields(input_feature, output_feature, old_to_new):
     arcpy.Merge_management(input_feature, output_feature, field_mappings)
     return output_feature
 
-def get_name_set(line_name):
+def get_name_set(line_name, mode_type):
     """
     Generalizes line name to a name set for aggregation.
     """
-    # BART is special since it has Rs in the name (e.g ORANGE)
-    line_group_pattern_bart   = re.compile(r"^(120)_([_A-Z]+?)((R|[0-9]+)?)$")
-    # this one takes these substrings and classifies them as suffices
-    line_group_pattern_suffix = re.compile(r"([A-Z0-9]+)_(.+?(?=EB|WB|SB|NB|IN|OUT|R|S|N|AM|PM|Lim))(EB|WB|SB|NB|IN|OUT|R|S|N|AM|PM|Lim)?(.*?)")
-    # this is the simple version if there is no suffix
-    line_group_pattern_simple = re.compile(r"([A-Z0-9]+)_(.*)()")
-
     prefix  = None
     primary = None
     suffix  = None
 
-    match_obj = re.match(line_group_pattern_bart, line_name)
-    if match_obj == None:
-        match_obj = re.match(line_group_pattern_suffix, line_name)
-    if match_obj == None:
+    # Commuter rail and heavy rail are special -- just aggregate to a single route
+    if mode_type in ["Commuter Rail", "Heavy Rail"]:
+        line_group_pattern_simple = re.compile(r"([A-Z0-9]+)_(.*)()")
         match_obj = re.match(line_group_pattern_simple, line_name)
+        prefix    = match_obj.group(1)
+        primary   = "all"
 
-    prefix  = match_obj.group(1)
-    primary = match_obj.group(2)
-    suffix  = match_obj.group(3)
+    else:
+        # this one takes these substrings and classifies them as suffices
+        line_group_pattern_suffix = re.compile(r"([A-Z0-9]+)_(.+?(?=EB|WB|SB|NB|IN|OUT|R|S|N|AM|PM|Lim|-))(EB|WB|SB|NB|IN|OUT|R|S|N|AM|PM|Lim|-)?(.*?)")
+        # this is the simple version if there is no suffix
+        line_group_pattern_simple = re.compile(r"([A-Z0-9]+)_(.*)()")
+
+        match_obj = re.match(line_group_pattern_suffix, line_name)
+        if match_obj == None:
+            match_obj = re.match(line_group_pattern_simple, line_name)
+
+        prefix  = match_obj.group(1)
+        primary = match_obj.group(2)
+        suffix  = match_obj.group(3)
 
     logging.debug("get_name_set: {:25}  [{}] [{}] [{}]".format(line_name, prefix, primary, suffix))
     return "{}_{}".format(prefix, primary)
@@ -222,7 +231,7 @@ if __name__ == '__main__':
     parser.add_argument("netfile",  metavar="network.net", help="Cube input roadway network file")
     parser.add_argument("--linefile", metavar="transit.lin", help="Cube input transit line file", required=False)
     parser.add_argument("--by_operator", action="store_true", help="Split transit lines by operator")
-    parser.add_argument("--trn_stop_info", metavar="transit_stops.csv", help="CSV with extra transit stop information")
+    parser.add_argument("--trn_stop_info", metavar="transit_stops.xlsx", help="Workbook with extra transit stop information")
     parser.add_argument("--loadvol_dir", help="Directory with loaded volume files for joining")
     args = parser.parse_args()
     # print(args)
@@ -376,7 +385,7 @@ if __name__ == '__main__':
 
         # create the stops shapefile
         arcpy.CreateFeatureclass_management(WORKING_DIR, TRN_STOPS_SHPFILE.format(operator_file), "POINT")
-        arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "NAME",     "TEXT", field_length=25)
+        arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "LINE_NAME","TEXT", field_length=25)
         arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "STATION",  "TEXT", field_length=40)
         arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "N",        "LONG")
         arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "SEQ",      "SHORT")
@@ -385,7 +394,7 @@ if __name__ == '__main__':
         # PNR attributes are for TAPs so not included here
         arcpy.DefineProjection_management(TRN_STOPS_SHPFILE.format(operator_file), sr)
 
-        TRN_STOPS_FIELDS = ["NAME", "SHAPE@", "STATION", "N", "SEQ", "IS_STOP"]
+        TRN_STOPS_FIELDS = ["LINE_NAME","SHAPE@", "STATION", "N", "SEQ", "IS_STOP"]
 
         if args.loadvol_dir:
             for timeperiod in TIMEPERIOD_DURATIONS.keys():
@@ -410,12 +419,14 @@ if __name__ == '__main__':
     # read the stop information, if there is any
     stops_to_station = {}
     if args.trn_stop_info:
-        stop_info_df = pandas.read_csv(args.trn_stop_info)
+        stop_info_df = pandas.read_excel(args.trn_stop_info, header=None, names=["Node", "Station"])
         logging.info("Read {} lines from {}".format(len(stop_info_df), args.trn_stop_info))
+
         # only want node numbers and names
-        stop_info_dict = stop_info_df[["TM2 Node","Station"]].to_dict(orient='list')
-        stops_to_station = dict(zip(stop_info_dict["TM2 Node"],
+        stop_info_dict = stop_info_df[["Node","Station"]].to_dict(orient='list')
+        stops_to_station = dict(zip(stop_info_dict["Node"],
                                     stop_info_dict["Station"]))
+        logging.debug("stops_to_station: {}".format(stops_to_station))
 
     (trn_file_base, trn_file_name) = os.path.split(args.linefile)
     trn_net = Wrangler.TransitNetwork(modelType="TravelModelOne", modelVersion=1.5)
@@ -454,15 +465,17 @@ if __name__ == '__main__':
             reverse_lines.append(rev_line)
     all_lines.extend(reverse_lines)
 
+    # sort the lines by the line name
+    def get_line_name(line):
+        return line.name
+
+    all_lines.sort(key=get_line_name)
+
     total_line_count = len(all_lines)
 
     for line in all_lines:
-        # figure out the name set
-        name_set  = get_name_set(line.name)
-
         line_point_array = arcpy.Array()
         link_point_array = arcpy.Array()
-        last_station     = ""
         op_txt           = "unknown_op"
         mode_name        = "unknown_mode"
         if int(line.attr['MODE']) in MODE_NUM_TO_NAME:
@@ -485,25 +498,28 @@ if __name__ == '__main__':
         elif int(line.attr['MODE']) < 130:
             mode_type = "Heavy Rail"
 
+        # figure out the name set
+        name_set  = get_name_set(line.name, mode_type)
+
         if not args.by_operator:
             operator_file = ""
         else:
             operator_file = "_{}".format(op_txt)
 
-        logging.info("Adding line {:4}/{:4} {:25} operator {:40} to operator_file [{}]".format(
+        logging.info("Adding line {:4}/{:4} {:15} set {:15} operator {:15} to operator_file [{}]".format(
               line_count+1,total_line_count,
-              line.name, op_txt, operator_file))
+              line.name, name_set, op_txt, operator_file))
         # for attr_key in line.attr: print(attr_key, line.attr[attr_key])
 
         # keep information about first and last nodes
         first_n     = -1
-        first_name  = None
+        first_name  = "not_set"
         first_point = None
         second_n    = -1
         last_n      = -1
-        last_name   = None
+        last_station= "not_set"
         last_point  = None
-        last_is_stop= None
+        last_is_stop= True
         seq         = 1
         stop_b_row  = None
 
@@ -581,7 +597,7 @@ if __name__ == '__main__':
                 link_cursor[operator_file].insertRow(link_row)
                 # save the link data for aggregation
                 link_rows_item = [
-                    last_n, last_point[0],      last_point[1],      last_name,
+                    last_n, last_point[0],      last_point[1],      last_station,
                     n,      node_dicts["X"][n], node_dicts["Y"][n], station,
                     line.name, name_set,
                     line.attr['MODE'], mode_name, mode_type, op_txt,
@@ -605,9 +621,9 @@ if __name__ == '__main__':
                 link_point_array.removeAll()
                 link_point_array.add(point)
 
-            last_n     = n
-            last_name  = station
-            last_point = (node_dicts["X"][n], node_dicts["Y"][n])
+            last_n       = n
+            last_station = station
+            last_point   = (node_dicts["X"][n], node_dicts["Y"][n])
             last_is_stop = is_stop
 
             seq += 1
@@ -629,7 +645,7 @@ if __name__ == '__main__':
             line.attr['MODE'], mode_name, mode_type,
             op_txt, # operator
             first_n, first_name,
-            last_n,  last_name,
+            last_n,  last_station,
             "N" if last_point[1] > first_point[1] else "S",
             "E" if last_point[0] > first_point[0] else "W"
         ]
