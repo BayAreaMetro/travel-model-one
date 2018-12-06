@@ -23,7 +23,7 @@ F_INPUT_STANDARD_RDATA = file.path(F_INPUT_SURVEY_DIR, "survey_standard.RData")
 
 F_VALIDATION_DIR       = "M:/Development/Travel Model One/Validation/Version 05/2015_06_002"
 F_INPUT_RIDERSHIP      = "M:/Data/Transit/2015 Ridership/transit ridership growth database.xlsx"
-F_INPUT_ESTIMATED      = file.path(F_VALIDATION_DIR, "trnline.csv")
+F_INPUT_ESTIMATED      = "M:/Application/Model One/RTP2017/Scenarios/2015_06_002/OUTPUT/trn/trnline.csv"
 
 F_INPUT_MUNI_APC       = "M:/Data/Transit/Muni APC Through Time/consolidated-database.csv"
 
@@ -39,17 +39,16 @@ ridership_df  <- read.xlsx(F_INPUT_RIDERSHIP, sheet="ridership database", colNam
 # estimated_df has columns name, mode (number), total.boardings, ...
 estimated_df <- read.table(file = F_INPUT_ESTIMATED, header = TRUE, sep = ",", stringsAsFactors = FALSE)
 
+# manually recode 85 to 30 for now
+# TODO fix in coding
+estimated_df <- mutate(estimated_df, mode = ifelse(mode==85, 30, mode))
+
 #### Prepare estimated database
 estimated_mode_code <- estimated_df %>%
   rename(mode_code = mode) %>%
   group_by(mode_code) %>%
   summarise(estimated_boardings = sum(total.boardings)) %>%
   ungroup()
-
-# manually recode 85 to 30 for now
-# TODO fix in coding
-estimated_mode_code <- estimated_mode_code %>%
-  mutate(mode_code = ifelse(mode_code == 85, 30, mode_code))
 
 # add other fields
 estimated_mode_code <- left_join(estimated_mode_code, mode_codes_df)
