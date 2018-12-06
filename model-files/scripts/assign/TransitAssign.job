@@ -123,6 +123,8 @@
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 
+token_model_dir = '%MODEL_DIR%'
+
 ; time period loop
 loop period = 1, 5
 
@@ -202,9 +204,9 @@ loop period = 1, 5
             ; drive access/egress links to this mode (';' means no)
             ; allow higher-class PNRs to be read in case of shared lots
             token_drivelinks_express_bus   = ';'
-	    token_drivelinks_light_rail    = ';'
-	    token_drivelinks_ferry         = ';'
-	    token_drivelinks_heavy_rail    = ' '
+            token_drivelinks_light_rail    = ';'
+            token_drivelinks_ferry         = ';'
+            token_drivelinks_heavy_rail    = ' '
             token_drivelinks_commuter_rail = ' ' 
             
             ; no KNR access links to local bus
@@ -226,9 +228,9 @@ loop period = 1, 5
             ; drive access/egress links to this mode (';' means no)
             ; allow higher-class PNRs to be read in case of shared lots
             token_drivelinks_express_bus   = ' '
-	    token_drivelinks_light_rail    = ';'
-	    token_drivelinks_ferry         = ';'
-	    token_drivelinks_heavy_rail    = ' '
+            token_drivelinks_light_rail    = ';'
+            token_drivelinks_ferry         = ';'
+            token_drivelinks_heavy_rail    = ' '
             token_drivelinks_commuter_rail = ' ' 
             
             ; KNR access links to local bus
@@ -251,9 +253,9 @@ loop period = 1, 5
             ; drive access/egress links to this mode (';' means no)
             ; allow higher-class PNRs to be read in case of shared lots
             token_drivelinks_express_bus   = ' '
-	    token_drivelinks_light_rail    = ' '
-	    token_drivelinks_ferry         = ' '
-	    token_drivelinks_heavy_rail    = ' '
+            token_drivelinks_light_rail    = ' '
+            token_drivelinks_ferry         = ' '
+            token_drivelinks_heavy_rail    = ' '
             token_drivelinks_commuter_rail = ' ' 
             
             ; no KNR access links to local bus
@@ -275,9 +277,9 @@ loop period = 1, 5
             ; drive access/egress links to this mode (';' means no)
             ; allow higher-class PNRs to be read in case of shared lots
             token_drivelinks_express_bus   = ' '
-	    token_drivelinks_light_rail    = ' '
-	    token_drivelinks_ferry         = ' '
-	    token_drivelinks_heavy_rail    = ' '
+            token_drivelinks_light_rail    = ' '
+            token_drivelinks_ferry         = ' '
+            token_drivelinks_heavy_rail    = ' '
             token_drivelinks_commuter_rail = ' ' 
             
             ; KNR access links to local bus
@@ -305,41 +307,47 @@ loop period = 1, 5
          run pgm = trnbuild
              
              ; use the highway network with the computed bus times 
-             filei neti = trn\@token_period@_transit_background.net
+             filei neti = @token_period@_transit_background.net
              
              ; read in the 23-table matrix created by prepAssign.job (see header for content details)
-             filei mati = main\trips@token_period@.tpp
+             filei mati = "@token_model_dir@\main\trips@token_period@.tpp"
              
+             ; path parameter: do not list (write out) all of the subsequent input
+             parameters listinput = no
+
              ; read in the fare matrices
-	     read file = trn\transit_faremat.block
-	     read file = trn\farelinks.far
-             read file = trn\xfare.far
+             read file = "@token_model_dir@\trn\transit_faremat.block"
+             read file = "@token_model_dir@\trn\farelinks.far"
+             read file = "@token_model_dir@\trn\xfare.far"
         
              ; output the link volumes          
-             fileo linko = trn\trnlink@token_period@_@token_access@_@token_path@_@token_egress@.dbf
-             
+             fileo linko = trnlink@token_period@_@token_access@_@token_path@_@token_egress@.dbf
+             fileo linkvolo = trnlink@token_period@_@token_access@_@token_path@_@token_egress@.csv, format = csv
+
              ; output the line volumes
              fileo linevolo = trn\trnline@token_period@_@token_access@_@token_path@_@token_egress@.csv,
                                       id = @token_period@_@token_access@_@token_path@_@token_egress@, format = csv  
      
              ; the bus times are based on those computed in the highway network
              hwytime = BUS_TIME
+
              
              ; read the transit line and link files
-             read file = trn\transit_lines.block             
+             read file = "@token_model_dir@\trn\transitLines.link"
+             read file = transit@token_period@.lin        
              
              ; read in the generated support links
-             read file = trn\@token_period@_transit_suplinks_walk.dat
+             read file = @token_period@_transit_suplinks_walk.dat
              
              ; read in the generated drive access/egress links for this mode             
-             @token_drivelinks_express_bus@    read file = trn\@token_period@_transit_suplinks_express_bus.dat
-             @token_drivelinks_light_rail@     read file = trn\@token_period@_transit_suplinks_light_rail.dat
-             @token_drivelinks_ferry@          read file = trn\@token_period@_transit_suplinks_ferry.dat
-             @token_drivelinks_heavy_rail@     read file = trn\@token_period@_transit_suplinks_heavy_rail.dat
-             @token_drivelinks_commuter_rail@  read file = trn\@token_period@_transit_suplinks_commuter_rail.dat  
+             @token_drivelinks_express_bus@    read file = @token_period@_transit_suplinks_express_bus.dat
+             @token_drivelinks_light_rail@     read file = @token_period@_transit_suplinks_light_rail.dat
+             @token_drivelinks_ferry@          read file = @token_period@_transit_suplinks_ferry.dat
+             @token_drivelinks_heavy_rail@     read file = @token_period@_transit_suplinks_heavy_rail.dat
+             @token_drivelinks_commuter_rail@  read file = @token_period@_transit_suplinks_commuter_rail.dat  
              
              ; read in the generated KNR links for local bus
-             @token_bus_acclinks_KNR@    READ FILE = trn\@TOKEN_PERIOD@_BUS_ACCLINKS_KNR.DAT
+             @token_bus_acclinks_KNR@    READ FILE = @token_period@_bus_acclinks_KNR.DAT
              
              ; set the service headways
              freqperiod = @period@
@@ -356,8 +364,6 @@ loop period = 1, 5
              ; path parameter: assumed walking speed is 3.0 miles per hour
              parameters walkspeed = 3.0
              
-             ; path parameter: do not list all of the input
-             parameters listinput = no
              
              ; path parameter: we do not use the route time coded in the line files; bus times are a function of highway times
              parameters useruntime = n        
@@ -385,10 +391,10 @@ loop period = 1, 5
              @token_modefac@
                                         
              ; combine paths if runtimes differ by less than 5 minutes
-             read file = ctramp\scripts\block\transit_combined_headways.block
+             read file = "@token_model_dir@\ctramp\scripts\block\transit_combined_headways.block"
              
              ; read in the transfer prohibitors file
-             read file = ctramp\scripts\block\transferprohibitors_@token_access@_trn_@token_egress@.block
+             read file = "@token_model_dir@\ctramp\scripts\block\transferprohibitors_@token_access@_trn_@token_egress@.block"
                                                 
              ; specify the table to assign from the demand matrix
              trips matrix = mi.1.@token_access@_@token_path@_@token_egress@,  assign = true

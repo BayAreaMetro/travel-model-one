@@ -77,13 +77,13 @@ loop period = 1, 5
    run pgm = trnbuild
 
       ; input is created by PrepHwyNet.job and contains the access neti links
-      filei neti = trn\@token_period@_temporary_transit_background_accesslinks.net
+      filei neti = @token_period@_temporary_transit_background_accesslinks.net
        
       ; output walk access links in in TP+ link file format
-      fileo linko = trn\@token_period@_walk_links.dbf 
+      fileo linko = @token_period@_walk_links.dbf 
        
       ; output the walk access links in support link format to be read in by the transit assignment
-      fileo supporto = trn\@token_period@_walk_acclinks.dat, oneway = n, fixed = y, modes = 1-9
+      fileo supporto = @token_period@_walk_acclinks.dat, oneway = n, fixed = y, modes = 1-9
       
       ; set the highway time to be the bus time computed in PrepHwyNet.job
       hwytime = BUS_TIME     
@@ -133,16 +133,14 @@ loop period = 1, 5
          mode = 1
       	
       ; read in the funnel links
-      read file = trn\light_rail.zac
-      read file = trn\ferry.zac
-      read file = trn\heavy_rail.zac
-      read file = trn\commuter_rail.zac
-      
+      read file = "%MODEL_DIR%\trn\transitLines.zac"
+
       ; additional hand-coded walk access links (many will be generated, creating warning messages)
-      read file = trn\walk_access.sup
+      read file = "%MODEL_DIR%\trn\walk_access.sup"
 
       ; read in the transit stop locations in the line files
-      read file = trn\transit_lines.block       
+      read  file = "%MODEL_DIR%\trn\transitLines.link"
+      read  file = transit@token_period@.lin
 
    endrun   
 
@@ -150,13 +148,13 @@ loop period = 1, 5
    run pgm = trnbuild
    
       ; input is created by PrepHwyNet.job and contains the access neti links
-      filei neti = trn\@token_period@_temporary_transit_background_accesslinks.net
+      filei neti = @token_period@_temporary_transit_background_accesslinks.net
       
       ; output drive access links in in TP+ link file format
-      fileo linko    = trn\@token_period@_drive_links.dbf  
+      fileo linko    = @token_period@_drive_links.dbf  
       
-      ; output the walk access links in support link format to be read in by the transit assignment
-      fileo supporto = trn\@token_period@_drive_acclinks.dat, oneway = n, fixed = y, modes = 1-9
+      ; output the drive access links in support link format to be read in by the transit assignment
+      fileo supporto = @token_period@_drive_acclinks.dat, oneway = n, fixed = y, modes = 1-9
       
       ; set the highway time to be the park-and-ride time computed in PrepHwyNet.job
       hwytime = PNR_TIME
@@ -192,39 +190,38 @@ loop period = 1, 5
       pnr mode = 2  lotmode = 4  oneway = y  maxtime = 40  global = y
       
       ; read in the pnr nodes      
-      read file = trn\express_bus.pnr
-      read file = trn\light_rail.pnr
-      read file = trn\ferry.pnr
-      read file = trn\heavy_rail.pnr
-      read file = trn\commuter_rail.pnr
-      
-      
+      read file = "%MODEL_DIR%\trn\transitLines_express_bus.pnr"
+      read file = "%MODEL_DIR%\trn\transitLines_light_rail.pnr"
+      read file = "%MODEL_DIR%\trn\transitLines_ferry.pnr"
+      read file = "%MODEL_DIR%\trn\transitLines_heavy_rail.pnr"
+      read file = "%MODEL_DIR%\trn\transitLines_commuter_rail.pnr"
+
       ; trnbuild requires that we read in some transit lines, though we're building
       ; drive access links to funnel nodes, so no reading of lines are necessary
       ; a dummy read is entered here to placate trnbuild, and muni lines are chosen
       ; to avoid numerous errors for long run times caused by the PNR_TIME values, which
       ; are artificially increased to prevent PNR over bridges
-      read file = trn\muni_local.tpl        
-      
+      read file = "%MODEL_DIR%\trn\transitLines.link"
+      read file = "%MODEL_DIR%\trn\transitLines.lin"
    endrun   
    
    
    ; step 3: use a gawk script to reverse the access links to turn them into egress links   
-   *gawk -f ctramp\scripts\skims\reverselinks.awk trn\@token_period@_walk_acclinks.dat > trn\@token_period@_walk_egrlinks.dat
-   *gawk -f ctramp\scripts\skims\reverselinks.awk trn\@token_period@_drive_acclinks.dat > trn\@token_period@_drive_egrlinks.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\reverselinks.awk" @token_period@_walk_acclinks.dat > @token_period@_walk_egrlinks.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\reverselinks.awk" @token_period@_drive_acclinks.dat > @token_period@_drive_egrlinks.dat
    
      
    ; step 4: build transfer links and combine with access and egress links
    run pgm = trnbuild
    
       ; input is created by PrepHwyNet.job and contains the transfer neti links
-      filei neti = trn\@token_period@_temporary_transit_background_transferlinks.net
+      filei neti = @token_period@_temporary_transit_background_transferlinks.net
       
       ; output transfer links along with the access and egress links in in TP+ link file format
-      fileo linko = trn\@token_period@_transit_links.dbf
+      fileo linko = @token_period@_transit_links.dbf
       
       ; output the transfer links along with the access and egress links in support link format to be read in by the transit assignment
-      FILEO supporto = trn\@token_period@_transit_suplinks.dat, oneway = n, fixed = y, modes = 1-9
+      FILEO supporto = @token_period@_transit_suplinks.dat, oneway = n, fixed = y, modes = 1-9
    
       ; set the highway time to be the bus time computed in PrepHwyNet.job
       hwytime = BUS_TIME    
@@ -263,26 +260,26 @@ loop period = 1, 5
       xfergen mode = 3, maxdist = 9*75, 70*75, 20*75, 20*75, 10*75, 10*75
       
       ; read in walk/drive access and walk egress link files created in the preceeding steps in their script
-      read file = trn\@token_period@_walk_acclinks.dat     
-      read file = trn\@token_period@_walk_egrlinks.dat     
-      read file = trn\@token_period@_drive_acclinks.dat     
-      read file = trn\@token_period@_drive_egrlinks.dat     
+      read file = @token_period@_walk_acclinks.dat     
+      read file = @token_period@_walk_egrlinks.dat     
+      read file = @token_period@_drive_acclinks.dat     
+      read file = @token_period@_drive_egrlinks.dat     
    
       ; read in the transit stop locations in the line files
-      read file = trn\transit_lines.block                                    
-         
+      read  file = "%MODEL_DIR%\trn\transitLines.link"
+      read  file = transit@token_period@.lin
    endrun
    
    ; step 5: select two best park and ride locations for each mode and create the support links that are used in skimming/assignment  
-   *gawk -f ctramp\scripts\skims\select_pnrs.awk -v type=walk          -v period=@token_period@ trn\@token_period@_transit_suplinks.dat > trn\@token_period@_transit_suplinks_walk.dat
-   *gawk -f ctramp\scripts\skims\select_pnrs.awk -v type=express_bus   -v period=@token_period@ trn\@token_period@_transit_suplinks.dat > trn\@token_period@_transit_suplinks_express_bus.dat
-   *gawk -f ctramp\scripts\skims\select_pnrs.awk -v type=light_rail    -v period=@token_period@ trn\@token_period@_transit_suplinks.dat > trn\@token_period@_transit_suplinks_light_rail.dat
-   *gawk -f ctramp\scripts\skims\select_pnrs.awk -v type=ferry         -v period=@token_period@ trn\@token_period@_transit_suplinks.dat > trn\@token_period@_transit_suplinks_ferry.dat
-   *gawk -f ctramp\scripts\skims\select_pnrs.awk -v type=heavy_rail    -v period=@token_period@ trn\@token_period@_transit_suplinks.dat > trn\@token_period@_transit_suplinks_heavy_rail.dat
-   *gawk -f ctramp\scripts\skims\select_pnrs.awk -v type=commuter_rail -v period=@token_period@ trn\@token_period@_transit_suplinks.dat > trn\@token_period@_transit_suplinks_commuter_rail.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=walk          -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_walk.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=express_bus   -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_express_bus.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=light_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_light_rail.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=ferry         -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_ferry.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=heavy_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_heavy_rail.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=commuter_rail -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_commuter_rail.dat
    
    ; step 6: create KNR access links for local bus from walk access links
-   *gawk -f ctramp\scripts\skims\createLocalBusKNRs.awk trn\@token_period@_transit_suplinks_walk.dat > trn\@token_period@_bus_acclinks_KNR.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\createLocalBusKNRs.awk" @token_period@_transit_suplinks_walk.dat > @token_period@_bus_acclinks_KNR.dat
    
    ; EndDistributeMultistep
            

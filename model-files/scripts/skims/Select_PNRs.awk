@@ -6,19 +6,19 @@ BEGIN{
 		
     # determine which files to read PNRs from
 	if (type=="express_bus" || type=="all") {
-		pnrFiles["trn/express_bus.pnr"] = 1
+		pnrFiles["../transitLines_express_bus.pnr"] = 1
 	}
 	if (type=="light_rail" || type=="all") {
-		pnrFiles["trn/light_rail.pnr"] = 1
+		pnrFiles["../transitLines_light_rail.pnr"] = 1
 	}
 	if (type=="ferry" || type=="all") {
-		pnrFiles["trn/ferry.pnr"] = 1
+		pnrFiles["../transitLines_ferry.pnr"] = 1
 	}
 	if (type=="heavy_rail" || type=="all") {
-		pnrFiles["trn/heavy_rail.pnr"] = 1
+		pnrFiles["../transitLines_heavy_rail.pnr"] = 1
 	}
 	if (type=="commuter_rail" || type=="all") {
-		pnrFiles["trn/commuter_rail.pnr"] = 1
+		pnrFiles["../transitLines_commuter_rail.pnr"] = 1
 	}
 	if (type=="walk") {
 	    # keep all walk links   
@@ -26,21 +26,22 @@ BEGIN{
 	
 	# determine which period to read distances from
 	if (period=="EA" || period=="ea") {
-		linkFile="trn/EA_Transit_suplinks.dat"
+		linkFile="EA_Transit_suplinks.dat"
 	}
 	if (period=="AM" || period=="am") {
-		linkFile="trn/AM_Transit_suplinks.dat"
+		linkFile="AM_Transit_suplinks.dat"
 	}
 	if (period=="MD" || period=="md") {
-		linkFile="trn/MD_Transit_suplinks.dat"
+		linkFile="MD_Transit_suplinks.dat"
 	}
 	if (period=="PM" || period=="pm") {
-		linkFile="trn/PM_Transit_suplinks.dat"
+		linkFile="PM_Transit_suplinks.dat"
 	}
 	if (period=="EV" || period=="ev") {
-		linkFile="trn/EV_Transit_suplinks.dat"
+		linkFile="EV_Transit_suplinks.dat"
 	}
 	
+	print " " > "/dev/stderr"
 	# create an array with the PNRs
 	# PNR[node number] => 1    
 	numPNRs=0

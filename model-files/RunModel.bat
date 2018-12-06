@@ -31,6 +31,7 @@ if %computername%==PORMDLPPW02 set HOST_IP_ADDRESS=172.24.0.102
 SET AV_SCENARIO=0
 
 :: Figure out the model year
+set MODEL_DIR=%CD%
 set PROJECT_DIR=%~p0
 set PROJECT_DIR2=%PROJECT_DIR:~0,-1%
 :: get the base dir only
@@ -57,6 +58,13 @@ if %MODEL_YEAR% GTR 3000 (
   exit /b 2
 )
 
+:: --------TrnAssignment Setup
+:: CHAMP has dwell  configured for buses (local and premium)
+:: CHAMP has access configured for for everything
+set COMPLEXMODES_DWELL=21 24 27 28 30 70 80 81 83 84 87 88
+set COMPLEXMODES_ACCESS=21 24 27 28 30 70 80 81 83 84 87 88 110 120 130
+set MAXITERATIONS=3
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 2:  Create the directory structure
@@ -80,9 +88,7 @@ echo STARTED MODEL RUN  %DATE% %TIME% >> logs\feedback.rpt
 
 :: Move the input files, which are not accessed by the model, to the working directories
 copy INPUT\hwy\                 hwy\
-copy INPUT\trn\transit_lines\   trn\
-copy INPUT\trn\transit_fares\   trn\ 
-copy INPUT\trn\transit_support\ trn\
+copy INPUT\trn\                 trn\
 copy INPUT\landuse\             landuse\
 copy INPUT\popsyn\              popsyn\
 copy INPUT\nonres\              nonres\
@@ -142,6 +148,11 @@ if ERRORLEVEL 2 goto done
 
 :: Build the skim tables
 runtpp CTRAMP\scripts\skims\NonMotorizedSkims.job
+if ERRORLEVEL 2 goto done
+
+:: Step 4.5: Build initial transit files
+set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+python CTRAMP\scripts\skims\transitDwellAccess.py NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 if ERRORLEVEL 2 goto done
 
 
@@ -242,19 +253,6 @@ if ERRORLEVEL 1 goto done
 :: Call RunIteration batch file
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
-
-
-:: ------------------------------------------------------------------------------------------------------
-::
-:: Step 10:  Assign transit trips to the transit network
-::
-:: ------------------------------------------------------------------------------------------------------
-
-: trnAssign
-
-runtpp CTRAMP\scripts\assign\TransitAssign.job
-if ERRORLEVEL 2 goto done
-
 
 :: ------------------------------------------------------------------------------------------------------
 ::

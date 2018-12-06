@@ -6,16 +6,16 @@
 
 
 :: Location of travel-model-one local repo (probably including this dir)
-set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-master
+set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-transit
 
 :: Location of INPUT and CTRAMP directory.
-:: set MODEL_DIR=M:\Application\Model One\STIP2017\2040_06_700_CC130046_680SR4Int
+set MODEL_TOP_DIR=E:\Projects\2015_TM150_calib1
 
 :: Location of BASE MODEL_DIR
 :: set MODEL_BASE_DIR=M:\Application\Model One\STIP2017\2040_06_700
 
 :: this is where we'll do this work
-set TRN_CHECK_DIR=%MODEL_DIR%\INPUT\trn_check
+set TRN_CHECK_DIR=%MODEL_TOP_DIR%\INPUT\trn_check
 
 :: Path details
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files (x86)\Citilabs\CubeVoyager
@@ -28,24 +28,26 @@ if not exist "%TRN_CHECK_DIR%" (
 )
 cd "%TRN_CHECK_DIR%"
 
+:: used by BuildTransitNetworks.job
+set MODEL_DIR=%TRN_CHECK_DIR%
+
 :: Step 1: bring in the working transit network and highway network
 mkdir trn
 mkdir hwy
+mkdir main
 mkdir skims
 mkdir sgr
 mkdir logs
 
-copy "%MODEL_DIR%\INPUT\trn\transit_lines\"   trn\
-copy "%MODEL_DIR%\INPUT\trn\transit_fares\"   trn\
-copy "%MODEL_DIR%\INPUT\trn\transit_support\" trn\
-
-copy "%MODEL_DIR%\INPUT\hwy\freeflow.net"     hwy\
+copy "%MODEL_TOP_DIR%\INPUT\trn"                  trn\
+copy "%MODEL_TOP_DIR%\INPUT\hwy\freeflow.net"     hwy\
+copy "%MODEL_TOP_DIR%\INPUT\warmstart\main\*"     main\
 
 if exist "%MODEL_BASE_DIR%\INPUT\sgr" (
   copy /Y "%MODEL_BASE_DIR%\INPUT\sgr"        sgr\
 )
-if exist "%MODEL_DIR%\INPUT\sgr" (
-  copy /Y "%MODEL_DIR%\INPUT\sgr"             sgr\
+if exist "%MODEL_TOP_DIR%\INPUT\sgr" (
+  copy /Y "%MODEL_TOP_DIR%\INPUT\sgr"             sgr\
 )
 
 :: Step 2: build the transit network
@@ -56,7 +58,7 @@ if exist "%MODEL_DIR%\INPUT\sgr" (
 :: Summary: Sets the prices in the roadway network
 ::          Based on columns TOLLCLASS, DISTANCE
 ::          Updates columns: TOLL[EA,AM,MD,PM,EV]_[DA,S2,S3,VSM,SML,MED,LRG]
-runtpp "%MODEL_DIR%\CTRAMP\scripts\preprocess\SetTolls.job"
+runtpp "%MODEL_TOP_DIR%\CTRAMP\scripts\preprocess\SetTolls.job"
 if ERRORLEVEL 2 goto done
 
 ::   Input: hwy\withTolls.net
@@ -71,8 +73,8 @@ if ERRORLEVEL 2 goto done
 ::  Output: hwy\avgload[EA,AM,MD,PM,EV].net
 :: Summary: Creates time-of-day-specific networks
 :: == use input version if available ==
-if exist "%MODEL_DIR%\CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job" (
-  runtpp "%MODEL_DIR%\CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job"
+if exist "%MODEL_TOP_DIR%\CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job" (
+  runtpp "%MODEL_TOP_DIR%\CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job"
 )
 else (
   runtpp "%CODE_DIR%\model-files\scripts\preprocess\CreateFiveHighwayNetworks.job"
@@ -97,6 +99,20 @@ if not exist "%TRN_CHECK_DIR%\ctramp\scripts\skims\reverselinks.awk" (
 if not exist "%TRN_CHECK_DIR%\ctramp\scripts\skims\select_pnrs.awk" (
   copy "%CODE_DIR%\model-files\scripts\skims\select_pnrs.awk" "%TRN_CHECK_DIR%\ctramp\scripts\skims\select_pnrs.awk"
 )
+if not exist "%TRN_CHECK_DIR%\ctramp\scripts\skims\createLocalBusKNRs.awk" (
+  copy "%CODE_DIR%\model-files\scripts\skims\createLocalBusKNRs.awk" "%TRN_CHECK_DIR%\ctramp\scripts\skims\createLocalBusKNRs.awk"
+)
+
+set COMPLEXMODES_DWELL=21 24 27 28 30 70 80 81 83 84 87 88
+set COMPLEXMODES_ACCESS=21 24 27 28 30 70 80 81 83 84 87 88 110 120 130
+python "%CODE_DIR%\model-files\scripts\skims\transitDwellAccess.py" NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+
+copy /y trn\transitOriginalEA.lin transitEA.lin
+copy /y trn\transitOriginalAM.lin transitAM.lin
+copy /y trn\transitOriginalMD.lin transitMD.lin
+copy /y trn\transitOriginalPM.lin transitPM.lin
+copy /y trn\transitOriginalEV.lin transitEV.lin
+
 ::   Input: trn\[EA,AM,MD,PM,EV]_temporary_transit_background_accesslinks.net
 ::          trn\[EA,AM,MD,PM,EV]_temporary_transit_background_transferlinks.net
 ::          trn\[light_rail,ferry,heavy_rail,commuter_rail].zac
@@ -122,6 +138,10 @@ for %%A in (transit_combined_headways.block transferprohibitors_wlk_trn_wlk.bloc
     copy "%CODE_DIR%\model-files\scripts\block\%%A" "%TRN_CHECK_DIR%\ctramp\scripts\block\%%A"
   )
 )
+
+set TRNASSIGNITER=0
+set PREVTRNASSIGNITER=NEG1
+
 start Cluster X:\commpath\CTRAMP 1-16 Start
 runtpp "%CODE_DIR%\model-files\scripts\skims\TransitSkims.job"
 if ERRORLEVEL 2 goto done

@@ -31,17 +31,8 @@ if %ITER%==0 goto hwyAssign
 runtpp CTRAMP\scripts\skims\HwySkims.job
 if ERRORLEVEL 2 goto done
 
-:: Prepare the highway network for use by the transit network
-runtpp CTRAMP\scripts\skims\PrepHwyNet.job
-if ERRORLEVEL 2 goto done
+:: No need to build transit skims here; they were built by the previous assignment
 
-:: Create the transit networks
-runtpp CTRAMP\scripts\skims\BuildTransitNetworks.job
-if ERRORLEVEL 2 goto done
-
-:: Create the public transport level-of-service matrices
-runtpp CTRAMP\scripts\skims\TransitSkims.job
-if ERRORLEVEL 2 goto done
 
 :: Create accessibility measures for use by the automobile ownership sub-model
 runtpp CTRAMP\scripts\skims\Accessibility.job
@@ -125,6 +116,12 @@ if %ITER% GTR 0 (
 runtpp CTRAMP\scripts\assign\HwyAssign.job
 if ERRORLEVEL 2 goto done
 
+:: if we're running with transit crowding, need to run interim assignments
+:trnAssign
+:: copy a local version for easier restarting
+copy CTRAMP\scripts\skims\trnAssign.bat trnAssign_iter%ITER%.bat
+call trnAssign_iter%ITER%.bat
+if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
