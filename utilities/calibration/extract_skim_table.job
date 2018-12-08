@@ -1,0 +1,9 @@
+; Extract a single skim table into a text file of condensed form
+;
+run PGM=MATRIX
+  filei mati[1] = "%MODEL_DIR%\skims\%SKIMFILE%.tpp"
+  fileo mato[1] = "%SKIMFILE%_%TABLE%.csv", FORMAT=TXT, DELIMITER=",", PATTERN=IJ:MV, MO=1
+
+  MW[1] = MI.1.%TABLE%
+
+endrun
