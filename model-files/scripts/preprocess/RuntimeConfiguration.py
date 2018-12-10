@@ -23,6 +23,9 @@ If no iteration is specified, then these include:
  * Truck Operating Cost (plus RM, Fuel breakdown)
    + Specify the value in INPUT\params.properties
    + It will be propagated to CTRAMP\scripts\block\hwyParam.block
+ * Telecommute constant
+   + It will be propagated to CTRAMP\model\CoordinatedDailyActivityPattern.xls
+
  * Host IP - where the household manager, matrix manager and JPPF Server run
    + Assumed to be the HOST_IP_ADDRESS in the environment
    + Assumed that this script is running on this host IP (this is verified)
@@ -167,21 +170,21 @@ def config_mobility_params(replacements):
     # TNC.single.costPerMile = 1.33
     # TNC.single.costPerMinute = 0.24
     # TNC.single.costMinimum = 7.20
-    # 
+    #
     # # use lower costs
     # TNC.shared.baseFare = 2.20
     # TNC.shared.costPerMile = 1.33
     # TNC.shared.costPerMinute = 0.24
     # TNC.shared.costMinimum = 7.20
-    #  
+    #
     # #Note: the following comma-separated value properties cannot have spaces between them, or else the RuntimeConfiguration.py code won't work
     # TNC.single.waitTime.mean =  10.3,8.5,8.4,6.3,4.7
     # TNC.single.waitTime.sd =     4.1,4.1,4.1,4.1,4.1
-    # 
+    #
     # TNC.shared.waitTime.mean =  15.0,15.0,11.0,8.0,7.0
     # TNC.shared.waitTime.sd =     4.1,4.1,4.1,4.1,4.1
     #
-    # Taxi.waitTime.mean = 26.5,17.3,13.3,9.5,5.5 
+    # Taxi.waitTime.mean = 26.5,17.3,13.3,9.5,5.5
     # Taxi.waitTime.sd =    6.4,6.4,6.4,6.4,6.4
     #
     # Taxi.da.share = 0.0
@@ -195,50 +198,50 @@ def config_mobility_params(replacements):
     # TNC.shared.da.share = 0.0
     # TNC.shared.s2.share = 0.3
     # TNC.shared.s3.share = 0.7
-    
-    
-    
+
+
+
     avShare   = float(get_property(params_filename, myfile_contents, "Mobility.AV.Share"))
     pBoostAutosLTDrivers = float(get_property(params_filename, myfile_contents, "Mobility.AV.ProbabilityBoost.AutosLTDrivers"))
     pBoostAutosGEDrivers = float(get_property(params_filename, myfile_contents, "Mobility.AV.ProbabilityBoost.AutosGEDrivers"))
-    avIVTFactor  = float(get_property(params_filename, myfile_contents, "Mobility.AV.IVTFactor")) 
-    avparkCostFactor  = float(get_property(params_filename, myfile_contents, "Mobility.AV.ParkingCostFactor")) 
-    avCPMFactor = float(get_property(params_filename, myfile_contents, "Mobility.AV.CostPerMileFactor"))  
-    avTermTimeFactor = float(get_property(params_filename, myfile_contents, "Mobility.AV.TerminalTimeFactor"))  
+    avIVTFactor  = float(get_property(params_filename, myfile_contents, "Mobility.AV.IVTFactor"))
+    avparkCostFactor  = float(get_property(params_filename, myfile_contents, "Mobility.AV.ParkingCostFactor"))
+    avCPMFactor = float(get_property(params_filename, myfile_contents, "Mobility.AV.CostPerMileFactor"))
+    avTermTimeFactor = float(get_property(params_filename, myfile_contents, "Mobility.AV.TerminalTimeFactor"))
     tncIVTFactor = avTermTimeFactor = float(get_property(params_filename, myfile_contents, "Mobility.TNC.shared.IVTFactor"))
 
-    taxiBaseFare = float(get_property(params_filename, myfile_contents, "taxi.baseFare")) 
-    taxiCPMile = float(get_property(params_filename, myfile_contents, "taxi.costPerMile")) 
-    taxiCPMin = float(get_property(params_filename, myfile_contents, "taxi.costPerMinute")) 
-    
-    tncSingleBaseFare = float(get_property(params_filename, myfile_contents, "TNC.single.baseFare")) 
-    tncSingleCPMile = float(get_property(params_filename, myfile_contents, "TNC.single.costPerMile")) 
-    tncSingleCPMin = float(get_property(params_filename, myfile_contents, "TNC.single.costPerMinute"))     
-    tncSingleMinCost = float(get_property(params_filename, myfile_contents, "TNC.single.costMinimum"))  
+    taxiBaseFare = float(get_property(params_filename, myfile_contents, "taxi.baseFare"))
+    taxiCPMile = float(get_property(params_filename, myfile_contents, "taxi.costPerMile"))
+    taxiCPMin = float(get_property(params_filename, myfile_contents, "taxi.costPerMinute"))
 
-    tncSharedBaseFare = float(get_property(params_filename, myfile_contents, "TNC.shared.baseFare")) 
-    tncSharedCPMile = float(get_property(params_filename, myfile_contents, "TNC.shared.costPerMile")) 
-    tncSharedCPMin = float(get_property(params_filename, myfile_contents, "TNC.shared.costPerMinute"))     
-    tncSharedMinCost = float(get_property(params_filename, myfile_contents, "TNC.shared.costMinimum"))  
+    tncSingleBaseFare = float(get_property(params_filename, myfile_contents, "TNC.single.baseFare"))
+    tncSingleCPMile = float(get_property(params_filename, myfile_contents, "TNC.single.costPerMile"))
+    tncSingleCPMin = float(get_property(params_filename, myfile_contents, "TNC.single.costPerMinute"))
+    tncSingleMinCost = float(get_property(params_filename, myfile_contents, "TNC.single.costMinimum"))
 
-    tncSingleMeanWaitTime = get_property(params_filename, myfile_contents, "TNC.single.waitTime.mean") 
+    tncSharedBaseFare = float(get_property(params_filename, myfile_contents, "TNC.shared.baseFare"))
+    tncSharedCPMile = float(get_property(params_filename, myfile_contents, "TNC.shared.costPerMile"))
+    tncSharedCPMin = float(get_property(params_filename, myfile_contents, "TNC.shared.costPerMinute"))
+    tncSharedMinCost = float(get_property(params_filename, myfile_contents, "TNC.shared.costMinimum"))
+
+    tncSingleMeanWaitTime = get_property(params_filename, myfile_contents, "TNC.single.waitTime.mean")
     tncSingleSDWaitTime = get_property(params_filename, myfile_contents, "TNC.single.waitTime.sd")
 
-    tncSharedMeanWaitTime = get_property(params_filename, myfile_contents, "TNC.shared.waitTime.mean") 
+    tncSharedMeanWaitTime = get_property(params_filename, myfile_contents, "TNC.shared.waitTime.mean")
     tncSharedSDWaitTime = get_property(params_filename, myfile_contents, "TNC.shared.waitTime.sd")
-    
-    taxiMeanWaitTime = get_property(params_filename, myfile_contents, "Taxi.waitTime.mean")     
-    taxiSDWaitTime = get_property(params_filename, myfile_contents, "Taxi.waitTime.sd")         
-    
-    
+
+    taxiMeanWaitTime = get_property(params_filename, myfile_contents, "Taxi.waitTime.mean")
+    taxiSDWaitTime = get_property(params_filename, myfile_contents, "Taxi.waitTime.sd")
+
+
     taxiDaShare = float(get_property(params_filename, myfile_contents, "Taxi.da.share"))
     taxiS2Share = float(get_property(params_filename, myfile_contents, "Taxi.s2.share"))
     taxiS3Share = float(get_property(params_filename, myfile_contents, "Taxi.s3.share"))
-                       
+
     tncSingleDaShare = float(get_property(params_filename, myfile_contents, "TNC.single.da.share"))
     tncSingleS2Share = float(get_property(params_filename, myfile_contents, "TNC.single.s2.share"))
     tncSingleS3Share = float(get_property(params_filename, myfile_contents, "TNC.single.s3.share"))
-                       
+
     tncSharedDaShare = float(get_property(params_filename, myfile_contents, "TNC.shared.da.share"))
     tncSharedS2Share = float(get_property(params_filename, myfile_contents, "TNC.shared.s2.share"))
     tncSharedS3Share = float(get_property(params_filename, myfile_contents, "TNC.shared.s3.share"))
@@ -253,35 +256,35 @@ def config_mobility_params(replacements):
     replacements[filepath]["(\nMobility.AV.TerminalTimeFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avTermTimeFactor
     replacements[filepath]["(\nMobility.TNC.shared.IVTFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncIVTFactor
 
-    
+
     replacements[filepath]["(\ntaxi.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiBaseFare
     replacements[filepath]["(\ntaxi.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiCPMile
     replacements[filepath]["(\ntaxi.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiCPMin
-    
+
     replacements[filepath]["(\nTNC.single.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleBaseFare
     replacements[filepath]["(\nTNC.single.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleCPMile
     replacements[filepath]["(\nTNC.single.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleCPMin
     replacements[filepath]["(\nTNC.single.costMinimum[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleMinCost
-    
+
     replacements[filepath]["(\nTNC.shared.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedBaseFare
     replacements[filepath]["(\nTNC.shared.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedCPMile
     replacements[filepath]["(\nTNC.shared.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedCPMin
     replacements[filepath]["(\nTNC.shared.costMinimum[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedMinCost
-    
+
     replacements[filepath]["(\nTNC.single.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % tncSingleMeanWaitTime
     replacements[filepath]["(\nTNC.single.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =    r"\g<1>%s" % tncSingleSDWaitTime
 
     replacements[filepath]["(\nTNC.shared.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % tncSharedMeanWaitTime
     replacements[filepath]["(\nTNC.shared.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =    r"\g<1>%s" % tncSharedSDWaitTime
-    
+
     replacements[filepath]["(\nTaxi.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % taxiMeanWaitTime
     replacements[filepath]["(\nTaxi.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =   r"\g<1>%s" % taxiSDWaitTime
 
     occ_file  = open("taxi_tnc_occ_factors.csv", "w")
     occ_file.write('1,%5.2f,%5.2f,%5.2f\n' % (taxiDaShare,tncSingleDaShare,tncSharedDaShare))
-    occ_file.write('2,%5.2f,%5.2f,%5.2f\n' % (taxiS2Share,tncSingleS2Share,tncSharedS2Share))  
-    occ_file.write('3,%5.2f,%5.2f,%5.2f\n' % (taxiS3Share,tncSingleS3Share,tncSharedS3Share)) 
-    occ_file.close() 
+    occ_file.write('2,%5.2f,%5.2f,%5.2f\n' % (taxiS2Share,tncSingleS2Share,tncSharedS2Share))
+    occ_file.write('3,%5.2f,%5.2f,%5.2f\n' % (taxiS3Share,tncSingleS3Share,tncSharedS3Share))
+    occ_file.close()
 
 def get_property(properties_file_name, properties_file_contents, propname):
     """
@@ -326,6 +329,7 @@ def config_auto_opcost(replacements):
     # put it into the UECs
     config_uec("%.2f" % auto_opc_perfect)
 
+
     # auto operating cost freeway adjustments
     auto_opc_adjust_rm   = get_property(params_filename, myfile_contents, "AutoOpCost_fwyadj_RM")
     auto_opc_adjust_fuel = get_property(params_filename, myfile_contents, "AutoOpCost_fwyadj_Fuel")
@@ -363,7 +367,6 @@ def config_auto_opcost(replacements):
     replacements[filepath]["(\nBUSOPC_PER_FU[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % bus_opc_perfect_fuel
     replacements[filepath]["(\nBUSOPC_FWY_RM[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % bus_opc_adjust_rm
     replacements[filepath]["(\nBUSOPC_FWY_FU[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % bus_opc_adjust_fuel
-
 
     # AV impacts on road capacity - represented by adjusting passenger car equivalents (PCEs) by facility type
     av_pcefac_ft01   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT01"))
@@ -618,6 +621,41 @@ def config_uec(auto_operating_cost):
                     wb.get_sheet(sheet_num).write(rownum,4,auto_op_cost_float,
                                                   xlwt.easyxf("align: horiz left"))
         wb.save(filepath)
+
+
+# find the properties file
+params_filename = os.path.join("INPUT", "params.properties")
+myfile          = open( params_filename, 'r' )
+myfile_contents = myfile.read()
+myfile.close()
+
+# read the telecommute constant from the properties file
+TelecommuteConstant = float(get_property(params_filename, myfile_contents, "Telecommute_constant"))
+
+# define a function to put the telecommute constant into the Coordinated Daily Activity Pattern excel file
+def config_cdap(TelecommutingAdjustment):
+    TelecommutingAdjustment_float = float(TelecommutingAdjustment)
+    for bookname in ["CoordinatedDailyActivityPattern.xls"]:
+        filepath = os.path.join("CTRAMP","model",bookname)
+        shutil.move(filepath, "%s.original" % filepath)
+
+        print "Updating %s" % filepath
+        rb = xlrd.open_workbook("%s.original" % filepath, formatting_info=True, on_demand=True)
+        wb = xlutils.copy.copy(rb)
+        for sheet_num in range(rb.nsheets):
+            rs = rb.get_sheet(sheet_num)
+            for rownum in range(rs.nrows):
+                # print rs.cell(rownum,1)
+                if rs.cell(rownum,2).value=='Simulate telecommuting by reducing mandatory patterns':
+                    print "  Sheet '%s': replacing telecommute constant '%s' -> %.2f" % \
+                        (rs.name, rs.cell(rownum,6).value, TelecommutingAdjustment_float)
+                    wb.get_sheet(sheet_num).write(rownum,6, TelecommutingAdjustment_float,
+                                                            xlwt.easyxf("align: horiz right"))
+        wb.save(filepath)
+
+# put the telecommute constant into the Coordinated Daily Activity Pattern excel file
+config_cdap("%.2f" % TelecommuteConstant)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = USAGE,
