@@ -208,7 +208,7 @@ def config_mobility_params(replacements):
     avparkCostFactor  = float(get_property(params_filename, myfile_contents, "Mobility.AV.ParkingCostFactor"))
     avCPMFactor = float(get_property(params_filename, myfile_contents, "Mobility.AV.CostPerMileFactor"))
     avTermTimeFactor = float(get_property(params_filename, myfile_contents, "Mobility.AV.TerminalTimeFactor"))
-    tncIVTFactor = avTermTimeFactor = float(get_property(params_filename, myfile_contents, "Mobility.TNC.shared.IVTFactor"))
+    tncIVTFactor = float(get_property(params_filename, myfile_contents, "Mobility.TNC.shared.IVTFactor"))
 
     taxiBaseFare = float(get_property(params_filename, myfile_contents, "taxi.baseFare"))
     taxiCPMile = float(get_property(params_filename, myfile_contents, "taxi.costPerMile"))
