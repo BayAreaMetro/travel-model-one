@@ -58,12 +58,18 @@ if %MODEL_YEAR% GTR 3000 (
   exit /b 2
 )
 
-:: --------TrnAssignment Setup
+set MAXITERATIONS=3
+:: --------TrnAssignment Setup -- Standard Configuration
 :: CHAMP has dwell  configured for buses (local and premium)
 :: CHAMP has access configured for for everything
-set COMPLEXMODES_DWELL=21 24 27 28 30 70 80 81 83 84 87 88
-set COMPLEXMODES_ACCESS=21 24 27 28 30 70 80 81 83 84 87 88 110 120 130
-set MAXITERATIONS=3
+:: set COMPLEXMODES_DWELL=21 24 27 28 30 70 80 81 83 84 87 88
+:: set COMPLEXMODES_ACCESS=21 24 27 28 30 70 80 81 83 84 87 88 110 120 130
+:: set MAXTRNITERS=30
+
+:: --------TrnAssignment Setup -- Fast Configuratoin
+set COMPLEXMODES_DWELL=
+set COMPLEXMODES_ACCESS=
+set MAXTRNITERS=3
 
 :: ------------------------------------------------------------------------------------------------------
 ::
