@@ -2,7 +2,7 @@
 :: Utility to set the path.  Used in RunModel as well as RunMain and RunNodeX. 
 
 :: The location of the 64-bit java development kit
-set JAVA_PATH=C:\Program Files\Java\jdk1.7.0_71
+set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
 
 :: The location of the GAWK binary executable files
 set GAWK_PATH=X:\UTIL\Gawk
