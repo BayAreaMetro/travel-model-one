@@ -6,6 +6,7 @@ set PREVTRNASSIGNITER=NEG1
 set PHTDIFFCOND=0.0001
 set VOLDIFFCOND=0.005
 set TRNASSIGNMODE=NORMAL
+set TOTMAXTRNITERS=30
 set MAXPATHTIME=240
 set PCT=%%
 set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
@@ -58,8 +59,13 @@ IF NOT %ITER% EQU POSTPROC (
 )
 FOR %%H in (%ALLTIMEPERIODS%) DO copy /y transit%%H_0.lin transit%%H.lin
 
-:: for initial assign, keep it short
-IF %ITER% EQU 0 (set MAXTRNITERS=4)
+:: for fast config, only do 1
+:: for standard config, keep it short for initial assign
+if "%TRNCONFIG%"=="FAST" (set MAXTRNITERS=1)
+if "%TRNCONFIG%"=="STANDARD" (
+  set MAXTRNITERS=%TOTMAXTRNITERS%
+  IF %ITER% EQU 0 (set MAXTRNITERS=4)
+)
 IF %ITER% EQU POSTPROC (set TRNASSIGNMODE=POSTPROC)
 IF %ITER% EQU %MAXITERATIONS% (set PHTDIFFCOND=0)
 

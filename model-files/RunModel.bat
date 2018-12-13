@@ -62,14 +62,14 @@ set MAXITERATIONS=3
 :: --------TrnAssignment Setup -- Standard Configuration
 :: CHAMP has dwell  configured for buses (local and premium)
 :: CHAMP has access configured for for everything
+:: set TRNCONFIG=STANDARD
 :: set COMPLEXMODES_DWELL=21 24 27 28 30 70 80 81 83 84 87 88
 :: set COMPLEXMODES_ACCESS=21 24 27 28 30 70 80 81 83 84 87 88 110 120 130
-:: set MAXTRNITERS=30
 
-:: --------TrnAssignment Setup -- Fast Configuratoin
+:: --------TrnAssignment Setup -- Fast Configuration
+set TRNCONFIG=FAST
 set COMPLEXMODES_DWELL=
 set COMPLEXMODES_ACCESS=
-set MAXTRNITERS=3
 
 :: ------------------------------------------------------------------------------------------------------
 ::
