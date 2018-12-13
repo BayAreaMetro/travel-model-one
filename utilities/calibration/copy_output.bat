@@ -7,14 +7,14 @@ set SAMPLESHARE=0.20
 mkdir "%TARGET_DIR%"
 cd "%TARGET_DIR%"
 
-goto export_skims
-
 mkdir OUTPUT\main
 copy %MODEL_DIR%\main\aoResults.csv            OUTPUT\main
 copy %MODEL_DIR%\main\wsLocResults_%ITER%.csv  OUTPUT\main
 copy %MODEL_DIR%\main\cdapResults.csv          OUTPUT\main
 copy %MODEL_DIR%\main\indivTourData_%ITER%.csv OUTPUT\main
 copy %MODEL_DIR%\main\jointTourData_%ITER%.csv OUTPUT\main
+copy %MODEL_DIR%\main\indivTripData_%ITER%.csv OUTPUT\main
+copy %MODEL_DIR%\main\jointTripData_%ITER%.csv OUTPUT\main
 
 :export_skims
 
@@ -39,12 +39,11 @@ FOR %%H in (EA AM MD PM EV) DO (
 
 cd ..\..
 
-goto done
-
 mkdir OUTPUT\calibration
 Rscript --vanilla "%CODE_DIR%\01_usual_work_school_location_TM.R"
 Rscript --vanilla "%CODE_DIR%\02_auto_ownership_TM.R"
 Rscript --vanilla "%CODE_DIR%\04_daily_activity_pattern_TM.R"
 Rscript --vanilla "%CODE_DIR%\11_tour_mode_choice_TM.R"
+Rscript --vanilla "%CODE_DIR%\14_trip_mode_choice_TM.R"
 
 :done
