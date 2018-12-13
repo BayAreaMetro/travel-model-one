@@ -1,3 +1,5 @@
+SETLOCAL EnableDelayedExpansion
+
 set MODEL_DIR=A:\TM150_Calibration\2015_TM150_calib5
 set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.5.0\2015_TM150_calib5
 set CODE_DIR=X:\travel-model-one-calibration\utilities\calibration
@@ -30,11 +32,11 @@ if not exist %SKIMFILE%_%TABLE%.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
 set TABLE=ivtFerry
 FOR %%H in (EA AM MD PM EV) DO (
    set SKIMFILE=trnskm%%H_wlk_lrf_drv
-   if not exist %SKIMFILE%_%TABLE%.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
+   if not exist !SKIMFILE!_%TABLE%.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
    set SKIMFILE=trnskm%%H_drv_lrf_wlk
-   if not exist %SKIMFILE%_%TABLE%.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
+   if not exist !SKIMFILE!_%TABLE%.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
    set SKIMFILE=trnskm%%H_wlk_lrf_wlk
-   if not exist %SKIMFILE%_%TABLE%.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
+   if not exist !SKIMFILE!_%TABLE%.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
 )
 
 cd ..\..
