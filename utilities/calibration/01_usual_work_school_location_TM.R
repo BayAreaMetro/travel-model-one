@@ -55,10 +55,15 @@ wsloc_county  <- mutate(wsloc_county, num_pers=num_pers/SAMPLESHARE)
 
 wsloc_county_spread <- spread(wsloc_county, key=Work_county_name, value=num_pers)
 
+# fillNA
+wsloc_county_spread[is.na(wsloc_county_spread)] <- 0
+
 # save it
 write.table(wsloc_county_spread, file.path(OUTPUT_DIR,"01_usual_work_school_location_TM_county.csv"), sep=",", row.names=FALSE)
 cat("Wrote ",file.path(OUTPUT_DIR,"01_usual_work_school_location_TM_county.csv\n"))
 
+
+avg_trip_lengths <- data.frame(county=character(), trip_type=character(), mean_trip_length=double(), stringsAsFactors = FALSE)
 
 # trip length frequency distribution
 for (trip_type in c("work","univ","school")) {
@@ -75,6 +80,7 @@ for (trip_type in c("work","univ","school")) {
                          select=c(Home_county_name, StudentCategory, HomeTAZ, SchoolLocation))
     trip_dists <- left_join(trip_dists, rename(dist_skim, HomeTAZ=OTAZ, SchoolLocation=DTAZ))
   }
+  
   trip_tlfd  <- data.frame(distbin=seq(1,150,by=1))
 
   # by county
@@ -87,6 +93,8 @@ for (trip_type in c("work","univ","school")) {
     county_trip_tlfd  <- mutate(county_trip_tlfd, county_total=county_total/SAMPLESHARE) # divide by SAMPLESHARE
     colnames(county_trip_tlfd)[colnames(county_trip_tlfd)=="county_total"] <- substring(county,4)
     trip_tlfd <- left_join(trip_tlfd, county_trip_tlfd)
+    
+    avg_trip_lengths[nrow(avg_trip_lengths)+1,]=list(substring(county,4),trip_type,mean(county_trip_dists$DISTDA))
   }
 
   # total
@@ -96,6 +104,8 @@ for (trip_type in c("work","univ","school")) {
   total_trip_tlfd  <- mutate(total_trip_tlfd, Total=Total/SAMPLESHARE) # divide by SAMPLESHARE
   trip_tlfd        <- left_join(trip_tlfd, total_trip_tlfd)
 
+  avg_trip_lengths[nrow(avg_trip_lengths)+1,]=list("Total",trip_type,mean(county_trip_dists$DISTDA))
+  
   # want columns: distbin, counties in alpha order, then Total
   col_order <- c("distbin", sort(substring(LOOKUP_COUNTY$county_name,4)), "Total")
   trip_tlfd <- trip_tlfd[col_order]
@@ -105,3 +115,12 @@ for (trip_type in c("work","univ","school")) {
   write.table(trip_tlfd, outfile, sep=",", row.names=FALSE)
   cat("Wrote ",outfile,"\n")
 }
+
+# move trip types to columns and reorder
+avg_triplen_spread <- spread(avg_trip_lengths, key=trip_type, value=mean_trip_length)
+avg_triplen_spread <- avg_triplen_spread[c("county","work","univ","school")]
+
+# save average trip lengths
+outfile <- file.path(OUTPUT_DIR, paste0("01_usual_work_school_location_TM_avgtriplen.csv"))
+write.table(avg_triplen_spread, outfile, sep=",", row.names=FALSE)
+cat("Wrote ",outfile,"\n")
