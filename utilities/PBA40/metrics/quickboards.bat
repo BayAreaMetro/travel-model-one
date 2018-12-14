@@ -13,4 +13,4 @@
 ::Summary=    [t|f] true/false to generate line-level summary (true)\
 
 @echo off
-java -Xms64m -Xmx512m -cp CTRAMP\runtime\quickboards.jar org.sfcta.quickboards.QuickBoards %1 %2
+java -Xms64m -Xmx512m -cp CTRAMP\runtime\quickboards.jar;CTRAMP\runtime\sfcta.jar org.sfcta.quickboards.QuickBoards %1 %2
