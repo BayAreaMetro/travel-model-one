@@ -5,7 +5,7 @@
 set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
 
 :: The location of the GAWK binary executable files
-set GAWK_PATH=X:\UTIL\Gawk
+set GAWK_PATH=M:\UTIL\Gawk
 
 :: The location of R and R libraries
 set R_HOME=C:\Program Files\R\R-3.2.3
