@@ -36,7 +36,7 @@ tazData              <- read.table(file=file.path(TARGET_DIR,"INPUT","landuse","
 
 ao_results           <- read.table(file=file.path(TARGET_DIR,"OUTPUT","main","aoResults.csv"), header=TRUE, sep=",")
 
-stopifnot(nrow(input.pop.households) == nrow(ao_results))
+# stopifnot(nrow(input.pop.households) == nrow(ao_results))
 
 # add TAZ, PERSONS
 ao_results <- left_join(ao_results, input.pop.households)
@@ -46,7 +46,7 @@ ao_results <- left_join(ao_results, rename(select(tazData, ZONE, COUNTY), TAZ=ZO
 # summarize to (county, Auto Ownership)
 ao_county  <- group_by(ao_results, COUNTY, county_name, AO) %>% summarise(num_hh=n())
 # divide by SAMPLESHARE
-ao_county  <- mutate(ao_county, AO=AO/SAMPLESHARE)
+ao_county  <- mutate(ao_county, num_hh=num_hh/SAMPLESHARE)
 
 ao_county_spread <- spread(ao_county, key=AO, value=num_hh)
 
