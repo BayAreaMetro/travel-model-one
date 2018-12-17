@@ -49,9 +49,9 @@ cat("JUST_MES    = ",JUST_MES,   "\n")
 # Overhead
 ## Lookups
 
-# For time periods, see http://analytics.mtc.ca.gov/foswiki/Main/TimePeriods
-# For counties, see http://analytics.mtc.ca.gov/foswiki/Main/TazData
-# For walk_subzones, see http://analytics.mtc.ca.gov/foswiki/Main/Household
+# For time periods, see https://github.com/BayAreaMetro/modeling-website/wiki/TimePeriods
+# For counties, see https://github.com/BayAreaMetro/modeling-website/wiki/TazData
+# For walk_subzones, see https://github.com/BayAreaMetro/modeling-website/wiki/Household
 
 ######### time periods 
 LOOKUP_TIMEPERIOD    <- data.frame(timeCodeNum=c(1,2,3,4,5),
@@ -85,7 +85,7 @@ LOOKUP_PTYPE$ptype   <- as.integer(LOOKUP_PTYPE$ptype)
 
 # Data Reads: Land Use
 
-# The land use file: http://analytics.mtc.ca.gov/foswiki/Main/TazData
+# The land use file: https://github.com/BayAreaMetro/modeling-website/wiki/TazData
 tazData           <- read.table(file=file.path(TARGET_DIR,"landuse","tazData.csv"), header=TRUE, sep=",")
 tazData           <- select(tazData, ZONE, SD, COUNTY, PRKCST, OPRKCST)
 tazData           <- left_join(tazData, LOOKUP_COUNTY, by=c("COUNTY"))
@@ -98,8 +98,8 @@ names(tazData)[names(tazData)=="ZONE"] <- "taz"
 
 # There are two household files:
 
-# * the model input file from the synthesized household/population (http://analytics.mtc.ca.gov/foswiki/Main/PopSynHousehold)
-# * the model output file (http://analytics.mtc.ca.gov/foswiki/Main/Household)
+# * the model input file from the synthesized household/population (https://github.com/BayAreaMetro/modeling-website/wiki/PopSynHousehold)
+# * the model output file (https://github.com/BayAreaMetro/modeling-website/wiki/Household)
 
 input.pop.households <- read.table(file = file.path(TARGET_DIR,"popsyn","hhFile.csv"), 
                                    header=TRUE, sep=",")
@@ -110,8 +110,6 @@ input.ct.households  <- read.table(file = file.path(MAIN_DIR,paste0("householdDa
 
 # Rename/drop some columns and join them on household id. Also join with tazData to get the super district and county.
 
-input.pop.households <- select(input.pop.households, HHID, PERSONS, hworkers, huniv, hpresch, 
-                               hschpred, hschdriv)
 # drop random number fields
 input.ct.households  <- select(input.ct.households, -ao_rn, -fp_rn, -cdap_rn,
   -imtf_rn, -imtod_rn, -immc_rn, -jtf_rn, -jtl_rn, -jtod_rn, -jmc_rn, -inmtf_rn, 
@@ -152,10 +150,6 @@ households    <- left_join(households, LOOKUP_INCQ, by=c("incQ"))
 households    <- mutate(households, workers=4*(hworkers>=4) + hworkers*(hworkers<4))
 WORKER_LABELS <- c("Zero", "One", "Two", "Three", "Four or more")
 
-# kidsNoDr is 1 if the household has children in the househole that don't drive
-# (either pre-school age or school age)
-households    <- mutate(households, kidsNoDr=(hpresch>=1)|(hschpred>=1))
-
 # auto sufficiency
 LOOKUP_AUTOSUFF          <- data.frame(autoSuff=c(0,1,2),
                                 autoSuff_label=c("Zero automobiles","Automobiles < workers","Automobiles >= workers"))
@@ -171,8 +165,8 @@ households    <- left_join(households, LOOKUP_WALK_SUBZONE, by=c("walk_subzone")
 # Data Reads: Person files
 
 # There are two person files:
-# * the model input file from the synthesized household/population (http://analytics.mtc.ca.gov/foswiki/Main/PopSynPerson)
-# * the model output file (http://analytics.mtc.ca.gov/foswiki/Main/Person)
+# * the model input file from the synthesized household/population (https://github.com/BayAreaMetro/modeling-website/wiki/PopSynPerson)
+# * the model output file (https://github.com/BayAreaMetro/modeling-website/wiki/Person)
 
 ## Read the person files
 input.pop.persons    <- read.table(file = file.path(TARGET_DIR,"popsyn","personFile.csv"),
@@ -199,11 +193,18 @@ persons              <- tbl_df(persons)
 # clean up
 remove(input.pop.persons, input.ct.persons)
 
+# kidsNoDr is 1 if the household has children in the household that don't drive (pre-school age or school age)
+# calculate for persons and transfer to households as a binary
+persons              <- mutate(persons, kidsNoDr=ifelse((ptype==7)|(ptype==8),1,0))
+kidsNoDr_hhlds       <- summarise(group_by(select(persons, hh_id, kidsNoDr), hh_id), kidsNoDr=max(kidsNoDr))
+households           <- left_join(households, kidsNoDr_hhlds)
+remove(kidsNoDr_hhlds)
+
 # Tours
 
 ## Read Individual Tours
 
-# The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour
+# The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour
 
 indiv_tours     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("indivTourData_",ITER,".csv")), 
                                      header=TRUE, sep=","))
@@ -231,7 +232,7 @@ indiv_tours   <- mutate(indiv_tours, parking_rate=ifelse((substr(tour_purpose,0,
 
 ## Data Reads: Joint Tours
 
-# The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/JointTour
+# The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/JointTour
 
 joint_tours    <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTourData_",ITER,".csv")), 
                                     header=TRUE, sep=","))
@@ -561,7 +562,7 @@ add_active <- function(this_timeperiod, input_trips_or_tours) {
 
 ## Read Individual Trips and recode a few variables
 
-# The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip
+# The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip
 
 indiv_trips     <- read.table(file=file.path(MAIN_DIR, paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
 indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest_taz,
@@ -570,7 +571,7 @@ indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest
 
 ## Data Reads: Joint Trips and recode a few variables
 
-# The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/JointTrip
+# The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip
 joint_trips     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTripData_",ITER,".csv")), 
                                      header=TRUE, sep=","))
 joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz, trip_mode,
@@ -781,7 +782,7 @@ trips <- tbl_df(trips)
 
 # Mandatory Locations
 
-# The fields are documented here: http://analytics.mtc.ca.gov/foswiki/Main/MandatoryLocation
+# The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/MandatoryLocation
 mandatory_locations <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")), 
                                          header=TRUE, sep=","))
 

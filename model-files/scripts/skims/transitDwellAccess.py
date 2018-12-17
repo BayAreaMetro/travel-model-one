@@ -444,7 +444,7 @@ if __name__ == '__main__':
         criteriaMet = (trnAssignIter>=maxTrnAssignIter) or checkMSAcriteriaMet(timeperiod, trnAssignIter)
         
     # MINIMUM iterations = 4
-    if trnAssignIter < 4:
+    if (len(complexDwellModes)>0 or len(complexAccessModes)>0) and trnAssignIter < 4:
         criteriaMet = False
         
     # Update stats and logs and such, and write a new network file *if not criteriaMet*
