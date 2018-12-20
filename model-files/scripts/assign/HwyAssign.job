@@ -236,13 +236,13 @@ loop period = 1, 5
 	     read file = ctramp\scripts\block\FreeFlowSpeed.block
 
 	     ; compute the generalized cost for passenger vehicles
-         lw.gencost_da = lw.fft + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_DA)
-         lw.gencost_s2 = lw.fft + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
-         lw.gencost_s3 = lw.fft + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_S3 / sr3costshare)  + @token_hov_xfer_pen@
+         lw.gencost_da = lw.fft + (0.6/vot) * (lw.dist*AUTOOPC + li.TOLL@token_period@_DA)
+         lw.gencost_s2 = lw.fft + (0.6/vot) * (lw.dist*AUTOOPC + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
+         lw.gencost_s3 = lw.fft + (0.6/vot) * (lw.dist*AUTOOPC + li.TOLL@token_period@_S3 / sr3costshare)  + @token_hov_xfer_pen@
 
          ; compute the generalized cost for very small, small, and medium trucks (use small truck costs) and large trucks
-         lw.gencost_sml = lw.fft + (0.6/truckvot) * (lw.dist*li.smtropc + li.TOLL@token_period@_SML)
-         lw.gencost_lrg = lw.fft + (0.6/truckvot) * (lw.dist*li.lrtropc + li.TOLL@token_period@_LRG)
+         lw.gencost_sml = lw.fft + (0.6/truckvot) * (lw.dist*SMTROPC + li.TOLL@token_period@_SML)
+         lw.gencost_lrg = lw.fft + (0.6/truckvot) * (lw.dist*LRTROPC + li.TOLL@token_period@_LRG)
 
          ; create the link exclusion classes -- HOV only (23), HOV 3+ only (3), no large trucks (4)
          if (li.USE = 2,3)   addtogroup = 23
@@ -330,12 +330,12 @@ loop period = 1, 5
          read file = ctramp\scripts\block\SpeedFlowCurve.block
 
          ; set the generalized cost functions (same as before, only now we start with "time")
-         lw.gencost_da = time + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_DA)
-         lw.gencost_s2 = time + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
-         lw.gencost_s3 = time + (0.6/vot) * (lw.dist*li.autoopc + li.TOLL@token_period@_S3 / sr3costshare) + @token_hov_xfer_pen@
+         lw.gencost_da = time + (0.6/vot) * (lw.dist*AUTOOPC + li.TOLL@token_period@_DA)
+         lw.gencost_s2 = time + (0.6/vot) * (lw.dist*AUTOOPC + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
+         lw.gencost_s3 = time + (0.6/vot) * (lw.dist*AUTOOPC + li.TOLL@token_period@_S3 / sr3costshare) + @token_hov_xfer_pen@
 
-         lw.gencost_sml = time + (0.6/truckvot) * (lw.dist*li.smtropc + li.TOLL@token_period@_SML)
-         lw.gencost_lrg = time + (0.6/truckvot) * (lw.dist*li.smtropc + li.TOLL@token_period@_LRG)
+         lw.gencost_sml = time + (0.6/truckvot) * (lw.dist*SMTROPC + li.TOLL@token_period@_SML)
+         lw.gencost_lrg = time + (0.6/truckvot) * (lw.dist*LRTROPC + li.TOLL@token_period@_LRG)
 
       endphase
 

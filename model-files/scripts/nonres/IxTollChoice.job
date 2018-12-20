@@ -146,11 +146,11 @@ loop period = 1,5
             
             ; set the level-of-service variables -- no toll
             noTollTime =  mi.3.TIME@token_class@[j]                  
-            noTollCost =  mi.3.DIST@token_class@[j] * (AUTOOPC_PER_RM+AUTOOPC_PER_FU) +  mi.3.BTOLL@token_class@[j]/@token_cost_share@
+            noTollCost =  mi.3.DIST@token_class@[j]*AUTOOPC +  mi.3.BTOLL@token_class@[j]/@token_cost_share@
             
             ; set the level-of-service variables -- toll
             tollTime  =  mi.3.TOLLTIME@token_class@[j]                
-            tollCost  =  mi.3.TOLLDIST@token_class@[j] * (AUTOOPC_PER_RM+AUTOOPC_PER_FU) + mi.3.TOLLBTOLL@token_class@[j]/@token_cost_share@
+            tollCost  =  mi.3.TOLLDIST@token_class@[j]*AUTOOPC + mi.3.TOLLBTOLL@token_class@[j]/@token_cost_share@
             tollValue =  mi.3.TOLLVTOLL@token_class@[j]/@token_cost_share@
             
             ; initialize/reste the utility and exponential utility values
