@@ -255,6 +255,10 @@ if __name__ == '__main__':
     trips_df.loc[(trips_df['trip_mode']==16)&(trips_df['inbound']==1), 'trip_mode_str'] = 'wlk_exp_drv'
     trips_df.loc[(trips_df['trip_mode']==17)&(trips_df['inbound']==1), 'trip_mode_str'] = 'wlk_hvy_drv'
     trips_df.loc[(trips_df['trip_mode']==18)&(trips_df['inbound']==1), 'trip_mode_str'] = 'wlk_com_drv'
+
+    trips_df.loc[(trips_df['trip_mode']==19), 'trip_mode_str'] = 'taxi'
+    trips_df.loc[(trips_df['trip_mode']==20), 'trip_mode_str'] = 'tnc'
+    trips_df.loc[(trips_df['trip_mode']==21), 'trip_mode_str'] = 'tnc_shared'
     assert(len(trips_df.loc[trips_df['trip_mode_str']=="unknown"])==0)
 
     # set income category
