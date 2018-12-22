@@ -8,7 +8,6 @@
 # Used by `metrics\RunResults.py`, the recoding of categories matches the accessibility column headers.
 
 # Step 1: Initialization: Set the workspace and load needed libraries
-library(knitr)
 library(ggplot2)
 library(scales)
 library(dplyr)
@@ -61,8 +60,7 @@ input.ct.households  <- read.table(file = file.path(TARGET_DIR,"main",paste0("ho
 ## Join them
 
 # Rename/drop some columns and join them on household id. Also join with tazData to get the super district and county.
-input.pop.households <- select(input.pop.households, HHID, PERSONS, hworkers, huniv, hpresch, 
-                               hschpred, hschdriv)
+input.pop.households <- select(input.pop.households, HHID, PERSONS, hworkers)
 input.ct.households  <- select(input.ct.households, -jtf_choice)
 
 # rename
@@ -97,10 +95,6 @@ households    <- left_join(households, LOOKUP_INCQ, by=c("incQ"))
 # workers are hworkers capped at 4
 households    <- mutate(households, workers=4*(hworkers>=4) + hworkers*(hworkers<4))
 WORKER_LABELS <- c("Zero", "One", "Two", "Three", "Four or more")
-
-# kidsNoDr is 1 if the household has children in the househole that don't drive
-# (either pre-school age or school age)
-households    <- mutate(households, kidsNoDr=(hpresch>=1)|(hschpred>=1))
 
 # auto sufficiency
 LOOKUP_AUTOSUFF          <- data.frame(autoSuff=c(0,1,2),
