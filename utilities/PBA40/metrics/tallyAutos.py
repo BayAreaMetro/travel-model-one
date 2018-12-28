@@ -23,10 +23,10 @@ if __name__ == '__main__':
 
     # by income
     households['incQ'] = 0
-    households['incQ'][ households['income'] < 30000] = 1
-    households['incQ'][ (households['income'] >= 30000)&(households['income'] < 60000) ] = 2
-    households['incQ'][ (households['income'] >= 60000)&(households['income'] < 100000) ] = 3
-    households['incQ'][ households['income'] >= 100000 ] = 4
+    households.loc[                                  households['income'] <  30000, 'incQ'] = 1
+    households.loc[ (households['income'] >= 30000)&(households['income'] <  60000),'incQ'] = 2
+    households.loc[ (households['income'] >= 60000)&(households['income'] < 100000),'incQ'] = 3
+    households.loc[  households['income'] >= 100000                                ,'incQ'] = 4
 
     # group by income quartiles
     households_by_incQ = households.groupby('incQ')

@@ -165,7 +165,7 @@ for ab,row in data.iteritems():
 				vmt_vcl[(period,vclass,vcratio,lanes)] += _vmt
 
 			# skip Dummy links
-			if int( row[headers['ft']]) != 6:
+			if int( row[headers['ft']]) != 6 and int(row[headers['lanes']]) > 0:
 				if int( row[headers['ft']] ) == 8:
 					ft = 2 # Managed freeway is like a freeway
 				else:

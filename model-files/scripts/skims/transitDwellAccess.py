@@ -27,7 +27,8 @@ python transitDwellAccess.py [POSTPROC|NORMAL] [extraDelayFile|NoExtraDelay] [Si
   - phtdiffcond is the conditional (relative gap) for PHT; pass 0 if no check 
     (in which case, msa volume are used instead)
   - maxiters is the maximum number of transit assignment iterations we'll go to
-  - trnmode1 trnmode2 ... are the transit modes for complex delay
+  - dmode1 dmode2 ... are the transit modes for complex delay.  May be "None".
+  - amode1 amode2 ... are the transit modes for access modifications.  May be "None"
 """
 
 def updateLinesOfInterest(timeperiod, trnAssignIter, complexAccessModes, currentTad, currentNet):
@@ -313,15 +314,24 @@ if __name__ == '__main__':
         
     complexDwellModes = sys.argv[complexArgnum+1:]
     complexAccessModes = []
+    noDwellModes = False
     for idx in range(len(complexDwellModes)):
         if complexDwellModes[idx].lower() == "complexaccess":
              complexAccessModes = complexDwellModes[idx+1:]
              complexDwellModes  = complexDwellModes[:idx]
              break
+        elif complexDwellModes[idx].lower() == "none":
+            noDwellModes = True  # save for later; we need to preserve index
         else:
             complexDwellModes[idx] = int(complexDwellModes[idx])
-    for idx in range(len(complexAccessModes)):
-        complexAccessModes[idx] = int(complexAccessModes[idx])
+
+    if noDwellModes: complexDwellModes = []
+
+    if len(complexAccessModes)==1 and complexAccessModes[0].lower() == "none":
+        complexAccessModes = []
+    else:
+        for idx in range(len(complexAccessModes)):
+            complexAccessModes[idx] = int(complexAccessModes[idx])
     
     if runmode == "Simple":
 
@@ -434,7 +444,7 @@ if __name__ == '__main__':
         criteriaMet = (trnAssignIter>=maxTrnAssignIter) or checkMSAcriteriaMet(timeperiod, trnAssignIter)
         
     # MINIMUM iterations = 4
-    if trnAssignIter < 4:
+    if (len(complexDwellModes)>0 or len(complexAccessModes)>0) and trnAssignIter < 4:
         criteriaMet = False
         
     # Update stats and logs and such, and write a new network file *if not criteriaMet*

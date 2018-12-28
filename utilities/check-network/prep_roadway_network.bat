@@ -6,7 +6,7 @@
 
 
 :: Location of travel-model-one local repo (probably including this dir)
-set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-master
+set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one
 
 :: Location of INPUT and CTRAMP directory.
 :: set MODEL_DIR=M:\Application\Model One\STIP2017\2040_06_700_CC130046_680SR4Int
@@ -22,24 +22,14 @@ set GAWK_PATH=M:\Software\Gawk\bin
 SET PATH=%TPP_PATH%;%GAWK_PATH%;%PATH% 
 
 
-cd %MODEL_DIR%\INPUT
+cd %MODEL_DIR%
 
-:: USES LOCAL VERSION OF SCRIPT IF IT EXISTS
-::   Input: %MODEL_DIR%\INPUT\hwy\source\%ROADWAY_FILE%
-::  Output: %MODEL_DIR%\INPUT\hwy\source\1_withCapclass.net
-:: Summary: Sets capacities and free flow speeds and times for network links
-::          Based on columns AT, FT, TOS, SIGCOR, TSIN, TOLLCLASS, OT
-::          Updates columns: CAPCLASS, SPDCLASS, FFS, FFT, CAP, OT
-if exist set_capclass.job (
-  echo Running local set_capclass.job
-  runtpp set_capclass.job
-) else (
-  runtpp "%CODE_DIR%\utilities\check-network\set_capclass.job"
-)
-if ERRORLEVEL 2 goto done
+mkdir hwy
+copy INPUT\hwy\* hwy
 
-:: save this for the next script
-copy hwy\source\1_withCapclass.net hwy\freeflow.net
+:: Set the prices in the roadway network (convert csv to dbf first)
+python "%CODE_DIR%\model-files\scripts\preprocess\csvToDbf.py" hwy\tolls.csv hwy\tolls.dbf
+IF ERRORLEVEL 1 goto done
 
 :: Assumes this script is an input
 ::   Input: hwy\freeflow.net
@@ -47,7 +37,7 @@ copy hwy\source\1_withCapclass.net hwy\freeflow.net
 :: Summary: Sets the prices in the roadway network
 ::          Based on columns TOLLCLASS, DISTANCE
 ::          Updates columns: TOLL[EA,AM,MD,PM,EV]_[DA,S2,S3,VSM,SML,MED,LRG]
-runtpp "%MODEL_DIR%\CTRAMP\scripts\preprocess\SetTolls.job"
+runtpp "%CODE_DIR%\model-files\scripts\preprocess\SetTolls.job"
 if ERRORLEVEL 2 goto done
 
 :: name this more clearly and keep in source

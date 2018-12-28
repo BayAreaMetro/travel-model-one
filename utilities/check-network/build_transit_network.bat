@@ -6,10 +6,10 @@
 
 
 :: Location of travel-model-one local repo (probably including this dir)
-set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-transit
+set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one
 
 :: Location of INPUT and CTRAMP directory.
-set MODEL_TOP_DIR=E:\Projects\2015_TM150_calib1
+set MODEL_TOP_DIR=C:\Users\lzorn\Documents\scratch\net_test
 
 :: Location of BASE MODEL_DIR
 :: set MODEL_BASE_DIR=M:\Application\Model One\STIP2017\2040_06_700
@@ -41,16 +41,15 @@ mkdir logs
 
 copy "%MODEL_TOP_DIR%\INPUT\trn"                  trn\
 copy "%MODEL_TOP_DIR%\INPUT\hwy\freeflow.net"     hwy\
+copy "%MODEL_TOP_DIR%\INPUT\hwy\tolls.csv"        hwy\
 copy "%MODEL_TOP_DIR%\INPUT\warmstart\main\*"     main\
-
-if exist "%MODEL_BASE_DIR%\INPUT\sgr" (
-  copy /Y "%MODEL_BASE_DIR%\INPUT\sgr"        sgr\
-)
-if exist "%MODEL_TOP_DIR%\INPUT\sgr" (
-  copy /Y "%MODEL_TOP_DIR%\INPUT\sgr"             sgr\
-)
+robocopy /MIR "%MODEL_TOP_DIR%\CTRAMP"            CTRAMP
 
 :: Step 2: build the transit network
+
+:: Set the prices in the roadway network (convert csv to dbf first)
+python "%CODE_DIR%\model-files\scripts\preprocess\csvToDbf.py" hwy\tolls.csv hwy\tolls.dbf
+IF ERRORLEVEL 1 goto done
 
 :: == Assumes this script is an input ==
 ::   Input: hwy\freeflow.net
@@ -58,7 +57,7 @@ if exist "%MODEL_TOP_DIR%\INPUT\sgr" (
 :: Summary: Sets the prices in the roadway network
 ::          Based on columns TOLLCLASS, DISTANCE
 ::          Updates columns: TOLL[EA,AM,MD,PM,EV]_[DA,S2,S3,VSM,SML,MED,LRG]
-runtpp "%MODEL_TOP_DIR%\CTRAMP\scripts\preprocess\SetTolls.job"
+runtpp "%CODE_DIR%\model-files\scripts\preprocess\SetTolls.job"
 if ERRORLEVEL 2 goto done
 
 ::   Input: hwy\withTolls.net
@@ -76,7 +75,7 @@ if ERRORLEVEL 2 goto done
 if exist "%MODEL_TOP_DIR%\CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job" (
   runtpp "%MODEL_TOP_DIR%\CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job"
 )
-else (
+if not exist "%MODEL_TOP_DIR%\CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job" (
   runtpp "%CODE_DIR%\model-files\scripts\preprocess\CreateFiveHighwayNetworks.job"
 )
 if ERRORLEVEL 2 goto done

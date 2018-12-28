@@ -159,7 +159,7 @@ loop period = 1,5
       read file = ctramp\scripts\block\FreeFlowSpeed.block 
       
       ; compute the generalized cost for passenger vehicles (we are not building paths, so only a dummy is required)
-      lw.gencost_da = lw.fft + (0.6/vot) * (lw.dist * li.autoopc + li.TOLL@token_period@_DA)   
+      lw.gencost_da = lw.fft + (0.6/vot) * (lw.dist*AUTOOPC + li.TOLL@token_period@_DA)   
 
       endphase
       
@@ -193,7 +193,7 @@ loop period = 1,5
          read file = ctramp\scripts\block\SpeedFlowCurve.block 
             
          ; set the generalized cost functions (we are not building paths, so only a dummy is required)
-         lw.gencost_da = time + (0.6/vot) * (lw.dist * li.autoopc + li.TOLL@token_period@_DA)   
+         lw.gencost_da = time + (0.6/vot) * (lw.dist*AUTOOPC + li.TOLL@token_period@_DA)   
             
       endphase
       
