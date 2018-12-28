@@ -57,6 +57,7 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
     // this method gets called by MtcTourBasedModel, if the HouseholdDataManagerIf instance is an MtcHouseholdDataManager object.
     public void mapTablesToHouseholdObjects( String inputHouseholdFileName, String inputPersonFileName, ModelStructure modelStructure, TazDataIf tazDataManager ) {
         setupHouseholdDataManager( modelStructure, tazDataManager, inputHouseholdFileName, inputPersonFileName );
+        logger.info("HH Array has "+fullHhArray.length+ " elements");
     }
     
     
@@ -90,6 +91,7 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
 
 
         fullHhArray = null;
+        logger.info("Sampling households with sampleRate "+sampleRate);
 
         int numHouseholdsInSample = (int)( hhTable.getRowCount() * sampleRate );
         Household[] hhArray = new Household[numHouseholdsInSample];
@@ -208,7 +210,7 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
             
             int persNum = 1;
             for ( int p=personHhStart[hhid]; p <= personHhEnd[hhid]; p++ ) {
-                
+            	
                 // get the Person object for this person data to be stored in
                 int persId = (int)personTable.getValueAt( p, personTable.getColumnPosition( PERSON_PERSON_ID_FIELD_NAME ) );
                 Person person = hh.getPerson ( persNum++ );
@@ -301,14 +303,16 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
             
 
         fullHhArray = hhArray;
+        logger.info("Read "+fullHhArray.length+" households");
 
         //for ( int i=0; i < hhArray.length; i++ )
         //    logger.info( "i=" + i + ", id=" + hhArray[i].getHhId() + ", taz=" + hhArray[i].getHhTaz() + ", hhIndexArray[hhid]=" + hhIndexArray[hhArray[i].getHhId()] );
             
-        logger.warn ( invalidPersonTypeCount + " person records had their type changed.");
+        logger.warn ( invalidPersonTypeCount + " person records had their person type changed.");
 
         logger.info("Setting distributed values of time. "); 
         setDistributedValuesOfTime(); 
+        logger.info("Done setting distributed values of time");
         
     }
 
@@ -350,7 +354,7 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
     			else person.setValueOfTime((float) hhValueOfTime);     			
     		}
     	}
-    }
+     }
     
     
     /**

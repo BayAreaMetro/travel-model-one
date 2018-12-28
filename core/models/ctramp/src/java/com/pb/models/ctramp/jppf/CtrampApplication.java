@@ -222,7 +222,7 @@ public class CtrampApplication implements Serializable {
      public static final String PROPERTIES_SCHEDULING_FIRST_TIME_PERIOD = "Scheduling.FirstTimePeriod";
 
      static final String PROPERTIES_RESTART_WITH_HOUSEHOLD_SERVER = "RunModel.RestartWithHhServer";
-     static final String PROPERTIES_REREAD_MATRIX_DATA_ON_RESTART = "RunModel.RereadMatrixDataOnRestart"; 
+     public static final String PROPERTIES_REREAD_MATRIX_DATA_ON_RESTART = "RunModel.RereadMatrixDataOnRestart"; 
      
      static final String PROPERTIES_HOUSEHOLD_DISK_OBJECT_FILE_NAME = "Households.disk.object.base.name";
      static final String PROPERTIES_HOUSEHOLD_DISK_OBJECT_KEY = "Read.HouseholdDiskObjectFile";

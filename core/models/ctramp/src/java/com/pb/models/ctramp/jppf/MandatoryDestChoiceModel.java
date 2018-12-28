@@ -15,6 +15,7 @@ import com.pb.models.ctramp.DestChoiceDMU;
 import com.pb.models.ctramp.DestChoiceSize;
 import com.pb.models.ctramp.Household;
 import com.pb.models.ctramp.Person;
+import com.pb.models.ctramp.TNCAndTaxiWaitTimeCalculator;
 import com.pb.models.ctramp.Tour;
 import com.pb.models.ctramp.jppf.DestinationSampleOfAlternativesModel;
 import com.pb.models.ctramp.ModeChoiceDMU;
@@ -75,8 +76,10 @@ public class MandatoryDestChoiceModel implements Serializable {
     private long cmOtherTime;
     private long lsTotalTime;
     
+    TNCAndTaxiWaitTimeCalculator tncTaxiWaitTimeCalculator = null;
+    TazDataIf tazDataManager = null;
+    TourVehicleTypeChoiceModel vehicleTypeChoiceModel = null;
     
-
     public MandatoryDestChoiceModel( int index, HashMap<String, String> propertyMap, ModelStructure modelStructure, String tourCategory, TazDataIf tazDataManager, DestChoiceSize dcSizeObj, String dcUecFileName, String soaUecFile, int soaSampleSize, String modeChoiceUecFile, CtrampDmuFactoryIf dmuFactory ){
 
     	// set the model structure and the tour purpose list
@@ -94,12 +97,17 @@ public class MandatoryDestChoiceModel implements Serializable {
         dcDmuObject.setDestChoiceSize(dcSizeObj);
         dcSoaDmuObject.setDestChoiceSizeObject(dcSizeObj);
         
+        this.tazDataManager = tazDataManager;
         
         // create an array of ChoiceModelApplication objects for each choice purpose
         setupDestChoiceModelArrays( propertyMap, dcUecFileName, modeChoiceUecFile, soaUecFile, soaSampleSize, dcSizeObj, tazDataManager );
     	
         shadowPricingIteration = 0;
         
+        tncTaxiWaitTimeCalculator = new TNCAndTaxiWaitTimeCalculator();
+        tncTaxiWaitTimeCalculator.createWaitTimeDistributions(propertyMap);
+
+        vehicleTypeChoiceModel = new TourVehicleTypeChoiceModel(propertyMap);
     }
 
 
@@ -263,6 +271,7 @@ public class MandatoryDestChoiceModel implements Serializable {
                 purposeIndex = modelStructure.getDcModelPurposeIndex( purposeName );
 
                 int chosen = -1; 
+                double dcLogsum = -99;
                 try {
 
                     int homeTaz = hh.getHhTaz();
@@ -278,10 +287,29 @@ public class MandatoryDestChoiceModel implements Serializable {
                     dcDmuObject.setHouseholdObject( hh );
                     dcDmuObject.setPersonObject( p );
                     dcDmuObject.setDmuIndexValues( hh.getHhId(), homeTaz, origTaz, 0 );
-
-                    // get the work location alternative chosen from the sample
-                    chosen =  selectLocationFromSampleOfAlternatives( dcDmuObject, dcSoaDmuObject, mcDmuObject, null, p, purposeName, purposeIndex, ++choiceNum );
                     
+                    Random hhRandom = hh.getHhRandom();
+                    double rnum = hhRandom.nextDouble();
+                    float popEmpDenOrig = tazDataManager.getPopEmpPerSqMi(origTaz);
+                    float singleTNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromSingleTNCWaitTimeDistribution(rnum, popEmpDenOrig);
+                    float sharedTNCWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromSharedTNCWaitTimeDistribution(rnum, popEmpDenOrig);
+                    float taxiWaitTimeOrig = (float) tncTaxiWaitTimeCalculator.sampleFromTaxiWaitTimeDistribution(rnum, popEmpDenOrig);
+
+                    mcDmuObject.setOrigTaxiWaitTime(taxiWaitTimeOrig);
+                    mcDmuObject.setOrigSingleTNCWaitTime(singleTNCWaitTimeOrig);
+                    mcDmuObject.setOrigSharedTNCWaitTime(sharedTNCWaitTimeOrig);
+
+                    rnum = hhRandom.nextDouble();
+                    double avProbability = vehicleTypeChoiceModel.calculateProbability(hh);
+                    boolean avAvailable = (rnum<avProbability) ? true : false;
+                    mcDmuObject.getTourObject().setUseOwnedAV(avAvailable);
+                   	
+                    
+                    // get the work location alternative chosen from the sample
+                    
+                    double[] result =  selectLocationFromSampleOfAlternatives( dcDmuObject, dcSoaDmuObject, mcDmuObject, null, p, purposeName, purposeIndex, ++choiceNum );
+                    chosen = (int) result[0];
+                    dcLogsum = result[1];
                 }
                 catch (RuntimeException e) {
                     logger.fatal( String.format("Exception caught in dcModel selecting work or school location for i=%d, hh.hhid=%d, person i=%d, in %s choice, purposeIndex=%d, purposeName=%s", i, hh.getHhId(), i, tourCategory, purposeIndex, purposeName ) );
@@ -295,19 +323,21 @@ public class MandatoryDestChoiceModel implements Serializable {
                 int chosenShrtWlk = chosen - (chosenDestAlt-1)*numberOfSubzones - 1;
 
                 
-                
                 // set chosen values in person object - university and school are saved as school locations
                 if ( modelStructure.getDcModelPurposeIsWorkPurpose( purposeName ) ) {
                     p.setWorkLoc( chosenDestAlt );
                     p.setWorkLocSubzone( chosenShrtWlk );
+                    p.setWorkLocationLogsum((float)dcLogsum);
                 }
                 else if ( modelStructure.getDcModelPurposeIsSchoolPurpose( purposeName ) ) {
                     p.setSchoolLoc( chosenDestAlt );
                     p.setSchoolLocSubzone( chosenShrtWlk );
+                    p.setSchoolLocationLogsum((float)dcLogsum);
                 }
                 else if ( modelStructure.getDcModelPurposeIsUniversityPurpose( purposeName ) ) {
                     p.setSchoolLoc( chosenDestAlt );
                     p.setSchoolLocSubzone( chosenShrtWlk );
+                    p.setSchoolLocationLogsum((float)dcLogsum);
                 }
 
             }
@@ -318,10 +348,19 @@ public class MandatoryDestChoiceModel implements Serializable {
     }
 
 
-    
-
-
-    private int selectLocationFromSampleOfAlternatives( DestChoiceDMU dcDmuObject, DcSoaDMU dcSoaDmuObject, ModeChoiceDMU mcDmuObject, Tour tour, Person person, String purposeName, int purposeIndex, int choiceNum ) {
+    /**
+     * Select the chosen TAZ\Subzone from the sampled alternatives and return it along with the logsum.
+     * @param dcDmuObject
+     * @param dcSoaDmuObject
+     * @param mcDmuObject
+     * @param tour
+     * @param person
+     * @param purposeName
+     * @param purposeIndex
+     * @param choiceNum
+     * @return An array whose first element is the chosen alternative and second element is the logsum.
+     */
+    private double[] selectLocationFromSampleOfAlternatives( DestChoiceDMU dcDmuObject, DcSoaDMU dcSoaDmuObject, ModeChoiceDMU mcDmuObject, Tour tour, Person person, String purposeName, int purposeIndex, int choiceNum ) {
 
         int uecIndex = modelStructure.getDcUecIndexForPurpose( purposeName );
         
@@ -425,6 +464,15 @@ public class MandatoryDestChoiceModel implements Serializable {
             mcDmuObject.setTourEndHour( tourEnd );
             mcDmuObject.setDmuIndexValues( household.getHhId(), origTaz, d );
 
+            Random hhRandom = mcDmuObject.getHouseholdObject().getHhRandom();
+            double rnum = hhRandom.nextDouble();
+            float popEmpDenDest = tazDataManager.getPopEmpPerSqMi(d);
+            float singleTNCWaitTimeDest = (float) tncTaxiWaitTimeCalculator.sampleFromSingleTNCWaitTimeDistribution(rnum, popEmpDenDest);
+            float sharedTNCWaitTimeDest = (float) tncTaxiWaitTimeCalculator.sampleFromSharedTNCWaitTimeDistribution(rnum, popEmpDenDest);
+            float taxiWaitTimeDest = (float) tncTaxiWaitTimeCalculator.sampleFromTaxiWaitTimeDistribution(rnum, popEmpDenDest);
+            mcDmuObject.setDestTaxiWaitTime(taxiWaitTimeDest);
+            mcDmuObject.setDestSingleTNCWaitTime(singleTNCWaitTimeDest);
+            mcDmuObject.setDestSharedTNCWaitTime(sharedTNCWaitTimeDest);
             
             if ( household.getDebugChoiceModels() ) {
                 household.logTourObject( loggingHeader, modelLogger, person, mcDmuObject.getTourObject() );
@@ -489,6 +537,7 @@ public class MandatoryDestChoiceModel implements Serializable {
         
         // compute destination choice proportions and choose alternative
         dcModel[uecIndex].computeUtilities ( dcDmuObject, dcDmuObject.getDmuIndexValues(), destAltsAvailable, destAltsSample );
+        double dcLogsum = dcModel[uecIndex].getLogsum();
         
         Random hhRandom = household.getHhRandom();
         int randomCount = household.getHhRandomCount();
@@ -565,7 +614,9 @@ public class MandatoryDestChoiceModel implements Serializable {
 
         }
 
-        return chosen;
+        double[] result = {(double) chosen, dcLogsum};
+        
+        return result;
 
     }
     

@@ -159,7 +159,7 @@ public class HouseholdChoiceModels implements Serializable {
             if ( runIndividualMandatoryTourFrequencyModel ) {
                 imtfModel = new HouseholdIndividualMandatoryTourFrequencyModel( propertyMap, tazDataManager, modelStructure, dmuFactory );
                 tvtcModel = new TourVehicleTypeChoiceModel(propertyMap);
-                if ( measureObjectSizes ) logger.info ( "IMTF and TVTC size:   " + (ObjectUtil.checkObjectSize( imtfModel )+ ObjectUtil.checkObjectSize( tvtcModel )) );
+                if ( measureObjectSizes ) logger.info ( "IMTF and TVTC size:   " + (ObjectUtil.checkObjectSize( imtfModel )) );
             }
                 
             if ( runMandatoryTourModeChoiceModel || runMandatoryTourDepartureTimeAndDurationModel ){
@@ -667,11 +667,6 @@ public class HouseholdChoiceModels implements Serializable {
     		}
     	}
 
-    	if (runJointTourLocationChoiceModel) {
-    		if (!runJointTourFrequencyModel) {
-    			throw new RuntimeException("If running jointTourLocationChoiceModel, jointTourFrequencyModel must also be true."); 
-    		}
-    	}
     	
     	if (runIndividualNonMandatoryTourDepartureTimeAndDurationModel) {
     		if (!runIndividualNonMandatoryTourFrequencyModel) {
@@ -682,13 +677,7 @@ public class HouseholdChoiceModels implements Serializable {
     		}
     	}
 
-    	if (runIndividualNonMandatoryTourLocationChoiceModel) {
-    		if (!runIndividualNonMandatoryTourFrequencyModel) {
-    			throw new RuntimeException("If running individualNonMandatoryLocationChoiceModel, individualNonMandatoryTourFrequencyModel must also be true."); 
-    		}
-     	}
-
-    	if (runAtWorkSubtourDepartureTimeAndDurationModel) {
+       	if (runAtWorkSubtourDepartureTimeAndDurationModel) {
     		if (!runAtWorkSubtourFrequencyModel) {
     			throw new RuntimeException("If running atWorkSubtourDepartureTimeAndDurationModel, atWorkSubtourFrequencyModel must also be true."); 
     		}
@@ -697,11 +686,6 @@ public class HouseholdChoiceModels implements Serializable {
     		}
     	}
 
-    	if (runAtWorkSubtourLocationChoiceModel) {
-    		if (!runAtWorkSubtourFrequencyModel) {
-    			throw new RuntimeException("If running atWorkSubtourLocationChoiceModel, atWorkSubtourFrequencyModel must also be true."); 
-    		}
-    	}
     }
     
     public int getModelIndex(){

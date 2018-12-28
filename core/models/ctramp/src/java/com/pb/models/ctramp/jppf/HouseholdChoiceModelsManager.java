@@ -116,8 +116,8 @@ public class HouseholdChoiceModelsManager implements Serializable {
             // create choice model object
             //hhChoiceModels = new HouseholdChoiceModels( ++modelIndex, restartModelString, propertyMap, tazDataManager, modelStructure, dmuFactory, jointProbabilitiesCache, jointCumProbabilitiesCache, indivNonManProbabilitiesCache, indivNonManCumProbabilitiesCache, atWorkProbabilitiesCache, atWorkCumProbabilitiesCache );
             hhChoiceModels = new HouseholdChoiceModels( ++modelIndex, restartModelString, propertyMap, tazDataManager, modelStructure, dmuFactory );
-            long size = 0;
-            size = ObjectUtil.sizeOf( hhChoiceModels );
+//            long size = 0;
+//            size = ObjectUtil.sizeOf( hhChoiceModels );
 //            try {
 //                size = ObjectUtil.checkObjectSize( hhChoiceModels );
 //            }
@@ -125,7 +125,7 @@ public class HouseholdChoiceModelsManager implements Serializable {
 //                // TODO Auto-generated catch block
 //                e.printStackTrace();
 //            }
-            message = String.format( "created hhChoiceModels=%d, task=%d, thread=%s, size=%d MB.", modelIndex, taskIndex, Thread.currentThread().getName(), (size/(1024*1024))  );
+            message = String.format( "created hhChoiceModels=%d, task=%d, thread=%s", modelIndex, taskIndex, Thread.currentThread().getName()  );
         }
         else {
             hhChoiceModels = modelQueue.remove();
