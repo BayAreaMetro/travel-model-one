@@ -275,11 +275,13 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
         // guojy: added for M. Gucwa's research on automated vehicles
         methodIndexMap.put( "getHAnalyst", 36 );
         methodIndexMap.put( "getPAnalyst", 37 );
+        // TM1.5: tnc/taxi/AV
         methodIndexMap.put("getWaitTimeTaxi", 38);
         methodIndexMap.put("getWaitTimeSingleTNC", 39);
         methodIndexMap.put("getWaitTimeSharedTNC", 40);
         methodIndexMap.put("getUseOwnedAV", 41);
-        		
+        methodIndexMap.put("getTourModeIsRideHail", 42 );
+
         
         
     }
@@ -328,10 +330,12 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
             // guojy: added for M. Gucwa's research on automated vehicles
             case 36: return getHAnalyst();
             case 37: return getPAnalyst();
+            // TM1.5: tnc/taxi/AV
             case 38: return getWaitTimeTaxi();
             case 39: return getWaitTimeSingleTNC();
             case 40: return getWaitTimeSharedTNC();
             case 41: return getUseOwnedAV();
+            case 42: return getTourModeIsRideHail();
 
 
             default:
