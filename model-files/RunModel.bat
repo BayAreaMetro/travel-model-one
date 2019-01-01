@@ -27,6 +27,8 @@ if %computername%==MODEL2-D set HOST_IP_ADDRESS=192.168.1.209
 if %computername%==PORMDLPPW01 set HOST_IP_ADDRESS=172.24.0.101
 if %computername%==PORMDLPPW02 set HOST_IP_ADDRESS=172.24.0.102
 
+:: PBA50, CleanAndGreen, BackToTheFuture, or RisingTidesFallingFortunes
+set FUTURE=PBA50
 :: AV SCENARIO
 SET AV_SCENARIO=0
 

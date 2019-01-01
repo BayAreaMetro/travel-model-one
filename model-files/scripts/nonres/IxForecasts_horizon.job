@@ -1,0 +1,323 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; IxForecasts.job
+;
+; TP+ script to create a daily matrix that includes internal/external, external/internal, and external/external
+; passenger vehicle travel (based on Census 2000 journey-to-work flows).  These trip tables are based on total 
+; traffic counts, which include trucks, but trucks are not explicitly segmented from passenger vehicles.  This 
+; short-coming is a hold-over from BAYCAST and will be addressed in the next model update.
+;
+; The row and column totals are taken from count station data provided by Caltrans.  The BAYCAST 2006 IX matrix is
+; used as the base matrix and scaled to match forecast year growth assumptions. The script generates estimates 
+; for the following forecast years: 2005, 2010, 2015, 2020, 2025, 2030, 2035, and 2040.  The growth rates were 
+; discussed with neighboring MPOs as part of the SB 375 target setting process. 
+;
+; Input:  (1)  Station-specific assumed growth rates and commute shares for each forecast year
+;              (the lack of external/external movements through the region allows simple factoring of cells
+;              without re-balancing) (ixex_config.dbf)
+;         (2)  An input base matrix derived from the Census journey-to-work data (ixDaily2006x4.may2208.mat)
+;         (3)  Environment variables: %MODEL_YEAR% (e.g. 2015, 2035, 2050, etc) and
+;                                     %FUTURE% (one of PBA50, CleanAndGreen, BackToTheFuture, or RisingTidesFallingFortunes)
+;
+; Output: (1) Four-table, forecast-year specific trip tables containing internal/external, external/internal, and 
+;             external/external vehicle (xxx or person xxx) travel. Also outputs intermediate versions for 2005 and 2015.
+;
+; Notes:  (1)
+;
+; See also: (1) IxTimeOfDay.job, which applies diurnal factors to convert this P/A matrix to an time-period-specific
+;               O/D matrix.
+;
+; version:  Travel Model One
+; authors:  dto (2010 12 30), lmz (2018 12 31)
+;
+; ----------------------------------------------------------------------------------------------------------------
+token_future = '%FUTURE%'
+FIRST_EXT_ZONE = 1455
+
+; This is from the original IxForecasts.job
+; Step 1: Establish 2005 as the base year, making a handful of adjustments to BAYCAST RVAL06 numbers
+run pgm = matrix
+
+   ; Begin with Chuck's BAYCAST matrix
+   mati = nonres\ixDaily2006x4.may2208.mat
+   
+   ; Write out a year-specific matrix
+   mato = nonres\ixDaily2005.tpp, mo = 1-4, name = ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
+   
+   ; Write out totals
+   reco = nonres\ixDaily2005_totals.dbf, fields=EXT_ZONE(5.0), PROD(12.4), ATTR(12.4)
+   
+   ; summarize by external production and attraction zones - daily total
+   ARRAY prod_tot=21, attr_tot=21
+
+   jloop
+
+      ; Default value is the 2006 value
+      mw[1] = mi.1.IX_Daily_DA
+      mw[2] = mi.1.IX_Daily_SR2
+      mw[3] = mi.1.IX_Daily_SR3
+   
+      ; Apply gateway-specific adjustments based on chats with SJCOG, SACOG, and review of counts    
+      ;   - I-505, Solano/Yolo
+      if (i == 1460 || j == 1460)
+      
+         mw[1] = mi.1.IX_Daily_DA  * 1.020228
+         mw[2] = mi.1.IX_Daily_SR2 * 1.020228
+         mw[3] = mi.1.IX_Daily_SR3 * 1.020228
+      
+      endif
+      
+      ;   - I-80, Solano/Yolo
+      if (i == 1462 || j == 1462)
+      
+         mw[1] = mi.1.IX_Daily_DA  * 1.242555
+         mw[2] = mi.1.IX_Daily_SR2 * 1.242555
+         mw[3] = mi.1.IX_Daily_SR3 * 1.242555
+      
+      endif
+      
+      ;   - CA 12, Solano/Sacramento
+      if (i == 1463 || j == 1463)
+      
+         mw[1] = mi.1.IX_Daily_DA  * 0.848518
+         mw[2] = mi.1.IX_Daily_SR2 * 0.848518
+         mw[3] = mi.1.IX_Daily_SR3 * 0.848515
+      
+      endif
+            
+      ;   - CA 4, Contra Costa/San Joaquin
+      if (i == 1465 || j == 1465)
+      
+         mw[1] = mi.1.IX_Daily_DA  * 1.673817
+         mw[2] = mi.1.IX_Daily_SR2 * 1.673817
+         mw[3] = mi.1.IX_Daily_SR3 * 1.673817
+      
+      endif
+      
+      ; Sum the working matrices to form the total
+      mw[4] = mw[1] + mw[2] + mw[3]
+      IF (J>1454) attr_tot[J-@FIRST_EXT_ZONE@] = attr_tot[J-@FIRST_EXT_ZONE@] + Mw[4]
+
+   endjloop
+   
+   IF (I>1454) prod_tot[I-@FIRST_EXT_ZONE@] = prod_tot[I-@FIRST_EXT_ZONE@] + ROWSUM(4)
+
+   ; write production/attraction totals to the log file and dbf
+   IF (I==ZONES)
+     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,1475
+       print LIST="For external zone ",EXT_ZONE, " production: ", prod_tot[EXT_ZONE-@FIRST_EXT_ZONE@], " attraction: ", attr_tot[EXT_ZONE-@FIRST_EXT_ZONE@]
+
+       RO.EXT_ZONE = EXT_ZONE
+       RO.PROD     = prod_tot[EXT_ZONE-@FIRST_EXT_ZONE@]
+       RO.ATTR     = attr_tot[EXT_ZONE-@FIRST_EXT_ZONE@]
+       write RECO=1
+     ENDLOOP
+   ENDIF
+
+endrun
+
+; Step 2: Create 2015 using PBA50 assumptions: no commute growth, linear non-commute growth
+run pgm = matrix
+
+   ; Begin with 2005 base year matrix established above
+   mati = nonres\ixDaily2005.tpp
+   
+   ; Write out a year-specific matrix
+   mato = nonres\ixDaily2015.tpp, mo = 1-4, name = ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
+
+   ; Write out totals
+   reco = nonres\ixDaily2015_totals.dbf, fields=EXT_ZONE(5.0), PROD(12.4), ATTR(12.4)
+
+   ; Also read the totals from 2005 calculated in previous step
+   filei lookupi[1] = nonres\ixDaily2005_totals.dbf
+
+   ; And assumptions from Box\Horizon and Plan Bay Area 2050\Futures Planning\Modeling Characteristics\Interregional Volume Assumptions\Interregional Volumes v2.xlsx
+   filei lookupi[2] = nonres\ixex_config.dbf
+
+   lookup lookupi=1, name=totals_2005,
+     lookup[1]=EXT_ZONE, result=PROD,  ; productions
+     lookup[2]=EXT_ZONE, result=ATTR   ; attractions
+
+   lookup lookupi=2, name=growth,
+     lookup[1]=EXT_ZONE, result=comm_share,
+     lookup[2]=EXT_ZONE, result=slope
+
+   ; summarize by external production and attraction zones - daily total
+   ARRAY factor=21, prod_tot=21, attr_tot=21
+
+   IF (I==1)
+     ; first, figure out desired daily total
+     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,1475
+       prod_total_2005 = totals_2005(1,EXT_ZONE)
+       attr_total_2005 = totals_2005(2,EXT_ZONE)
+
+       ; assumptions
+       commute_share   = growth(1,EXT_ZONE)
+       slope           = growth(2,EXT_ZONE)
+
+       ; figure out 2015 desired total -- grow the non-commute share by the slope
+       total_2005 = prod_total_2005 + attr_total_2005
+       total_2015 = total_2005 + (2015-2005)*(1.0-commute_share)*slope
+       if (total_2005 == 0)
+         factor[EXT_ZONE-@FIRST_EXT_ZONE@] = 1.0
+       else
+         factor[EXT_ZONE-@FIRST_EXT_ZONE@] = total_2015/total_2005
+       endif
+
+       PRINT LIST="2005: For external zone ",EXT_ZONE, " prod_2005: ", prod_total_2005, " attr_2005: ", attr_total_2005, 
+         " commute share: ", commute_share, " slope: ", slope,
+         " total_2005: ", total_2005, " total_2015: ", total_2015, " => factor: ",factor[EXT_ZONE-@FIRST_EXT_ZONE@]
+
+     ENDLOOP
+   ENDIF
+
+   jloop
+   
+      ; Apply gateway-specific adjustment factors (no X/X trips mean the gateways act independently)
+      if (I >= @FIRST_EXT_ZONE@)
+         mw[1] = mi.1.IX_Daily_DA  * factor[I-@FIRST_EXT_ZONE@]
+         mw[2] = mi.1.IX_Daily_SR2 * factor[I-@FIRST_EXT_ZONE@]
+         mw[3] = mi.1.IX_Daily_SR3 * factor[I-@FIRST_EXT_ZONE@]
+      elseif (J >= @FIRST_EXT_ZONE@)
+         mw[1] = mi.1.IX_Daily_DA  * factor[J-@FIRST_EXT_ZONE@]
+         mw[2] = mi.1.IX_Daily_SR2 * factor[J-@FIRST_EXT_ZONE@]
+         mw[3] = mi.1.IX_Daily_SR3 * factor[J-@FIRST_EXT_ZONE@]
+      endif
+
+      ; Sum the working matrices to form the total
+      mw[4] = mw[1] + mw[2] + mw[3]
+      IF (J>1454) attr_tot[J-@FIRST_EXT_ZONE@] = attr_tot[J-@FIRST_EXT_ZONE@] + Mw[4]
+
+   endjloop
+   
+   IF (I>1454) prod_tot[I-@FIRST_EXT_ZONE@] = prod_tot[I-@FIRST_EXT_ZONE@] + ROWSUM(4)
+
+   ; write production/attraction totals to the log file and dbf
+   IF (I==ZONES)
+     print LIST="-----RESULTS-----"
+     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,1475
+       total = prod_tot[EXT_ZONE-@FIRST_EXT_ZONE@] + attr_tot[EXT_ZONE-@FIRST_EXT_ZONE@]
+       print LIST="For external zone ",EXT_ZONE, " production: ", prod_tot[EXT_ZONE-@FIRST_EXT_ZONE@], " attraction: ", attr_tot[EXT_ZONE-@FIRST_EXT_ZONE@], " total: ", total
+       
+       RO.EXT_ZONE = EXT_ZONE
+       RO.PROD     = prod_tot[EXT_ZONE-@FIRST_EXT_ZONE@]
+       RO.ATTR     = attr_tot[EXT_ZONE-@FIRST_EXT_ZONE@]
+       write RECO=1
+     ENDLOOP
+   ENDIF
+   
+endrun
+
+; Step 3: Create MODEL_YEAR table using assumption for FUTURE
+run pgm = matrix
+
+   ; Begin with 2005 base year matrix established above
+   mati = nonres\ixDaily2015.tpp
+   
+   ; Write out a year-specific matrix
+   mato = nonres\ixDailyx4.tpp, mo = 1-4, name = ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
+
+   ; Also read the totals from 2015 calculated in previous step
+   filei lookupi[1] = nonres\ixDaily2015_totals.dbf
+
+   ; And assumptions from Box\Horizon and Plan Bay Area 2050\Futures Planning\Modeling Characteristics\Interregional Volume Assumptions\Interregional Volumes v2.xlsx
+   filei lookupi[2] = nonres\ixex_config.dbf
+
+   lookup lookupi=1, name=totals_2015,
+     lookup[1]=EXT_ZONE, result=PROD,  ; productions
+     lookup[2]=EXT_ZONE, result=ATTR   ; attractions
+
+   lookup lookupi=2, name=growth,
+     lookup[1]=EXT_ZONE, result=comm_share,
+     lookup[2]=EXT_ZONE, result=slope
+
+   ; summarize by external production and attraction zones - daily total
+   ARRAY factor=21, prod_tot=21, attr_tot=21
+
+   IF (I==1)
+
+     ; first, figure out desired daily total
+     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,1475
+       prod_total_2015 = totals_2015(1,EXT_ZONE)
+       attr_total_2015 = totals_2015(2,EXT_ZONE)
+
+       ; assumptions
+       commute_share   = growth(1,EXT_ZONE)
+       slope           = growth(2,EXT_ZONE)
+       total_2015      = prod_total_2015 + attr_total_2015
+       year_delta      = %MODEL_YEAR%-2015
+
+       ; figure out 2015 desired total -- this is future-dependent
+       IF ('@token_future@'=='PBA50')
+
+         IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--PBA50--%MODEL_YEAR%--  Non-commute share grows based on slope for ",year_delta," years"
+         total_modyear = total_2015 + year_delta*(1.0-commute_share)*slope
+
+       ELSEIF ('@token_future@'=='CleanAndGreen')
+
+         IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--CleanAndGreen--%MODEL_YEAR%--  No growth"
+         total_modyear = total_2015
+
+       ELSEIF ('@token_future@'=='BackToTheFuture')
+
+         IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--BackToTheFuture--%MODEL_YEAR%--  Total share grows based on slope for ",year_delta," years, plus 50% for gateways to south and east"
+         if (EXT_ZONE >= 1459 & EXT_ZONE <= 1471)
+           total_modyear = total_2015 + year_delta*slope*1.5
+         else
+           total_modyear = total_2015 + year_delta*slope
+         endif
+
+       ELSEIF ('@token_future@'=='RisingTidesFallingFortunes')
+
+         IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--RisingTidesFallingFortunes--%MODEL_YEAR%--  Total share grows based on slope for ",year_delta," years"
+         total_modyear = total_2015 + year_delta*slope
+
+       ELSE
+         print LIST="Do not understand token_future @token_future@"
+         ABORT MSG="Do not understand token_future @token_future@"
+       ENDIF
+
+       if (total_2015 == 0)
+         factor[EXT_ZONE-@FIRST_EXT_ZONE@] = 1.0
+       else
+         factor[EXT_ZONE-@FIRST_EXT_ZONE@] = total_modyear/total_2015
+       endif
+
+       PRINT LIST="For external zone ",EXT_ZONE, " prod_2015: ", prod_total_2015, " attr_2015: ", attr_total_2015, 
+         " commute share: ", commute_share, " slope: ", slope,
+         " total 2015: ", total_2015, " total model_year: ", total_modyear, " => factor: ",factor[EXT_ZONE-@FIRST_EXT_ZONE@]
+
+     ENDLOOP
+   ENDIF
+
+   jloop
+   
+      ; Apply gateway-specific adjustment factors (no X/X trips mean the gateways act independently)
+      if (I >= @FIRST_EXT_ZONE@)
+         mw[1] = mi.1.IX_Daily_DA  * factor[I-@FIRST_EXT_ZONE@]
+         mw[2] = mi.1.IX_Daily_SR2 * factor[I-@FIRST_EXT_ZONE@]
+         mw[3] = mi.1.IX_Daily_SR3 * factor[I-@FIRST_EXT_ZONE@]
+      elseif (J >= @FIRST_EXT_ZONE@)
+         mw[1] = mi.1.IX_Daily_DA  * factor[J-@FIRST_EXT_ZONE@]
+         mw[2] = mi.1.IX_Daily_SR2 * factor[J-@FIRST_EXT_ZONE@]
+         mw[3] = mi.1.IX_Daily_SR3 * factor[J-@FIRST_EXT_ZONE@]
+      endif
+
+      ; Sum the working matrices to form the total
+      mw[4] = mw[1] + mw[2] + mw[3]
+      IF (J>1454) attr_tot[J-@FIRST_EXT_ZONE@] = attr_tot[J-@FIRST_EXT_ZONE@] + Mw[4]
+
+   endjloop
+   
+   IF (I>1454) prod_tot[I-@FIRST_EXT_ZONE@] = prod_tot[I-@FIRST_EXT_ZONE@] + ROWSUM(4)
+
+   ; write production/attraction totals to the log file and dbf
+   IF (I==ZONES)
+     print LIST="-----RESULTS-----"
+     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,1475
+       total = prod_tot[EXT_ZONE-@FIRST_EXT_ZONE@] + attr_tot[EXT_ZONE-@FIRST_EXT_ZONE@]
+       print LIST="For external zone ",EXT_ZONE, " production: ", prod_tot[EXT_ZONE-@FIRST_EXT_ZONE@], " attraction: ", attr_tot[EXT_ZONE-@FIRST_EXT_ZONE@], " total: ", total
+     ENDLOOP
+   ENDIF
+   
+endrun

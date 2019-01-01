@@ -70,6 +70,10 @@ if ERRORLEVEL 2 goto done
 
 :nonres
 
+:: Create production/attraction tables based on growth assumptions
+runtpp CTRAMP\scripts\IxForecasts_horizon.job
+if ERRORLEVEL 2 goto done
+
 :: Apply diurnal factors to the fixed internal/external demand matrices
 runtpp CTRAMP\scripts\nonres\IxTimeOfDay.job
 if ERRORLEVEL 2 goto done
