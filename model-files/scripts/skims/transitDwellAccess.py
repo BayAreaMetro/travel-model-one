@@ -177,6 +177,9 @@ def updatePHT(timeperiod, trnAssignIter, maxTrnAssignIter, PHTDiffCond):
                                                              RMSEivtt, RMSEtott, 
                                                              avgpaths, currpaths, boards,
                                                              pathFromBoth, pathFromIter, pathFromAvg))
+        # in case we're only running this one
+        if trnAssignIter==maxTrnAssignIter: criteriaMet = True
+
     # otherwise -- Check convergence
     else:
         # print PHT
