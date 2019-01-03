@@ -199,7 +199,7 @@ def config_mobility_params(replacements):
     # TNC.shared.s2.share = 0.3
     # TNC.shared.s3.share = 0.7
 
-
+    SharingPrefFactor  = float(get_property(params_filename, myfile_contents, "Sharing_Preferences_factor"))
 
     avShare   = float(get_property(params_filename, myfile_contents, "Mobility.AV.Share"))
     pBoostAutosLTDrivers = float(get_property(params_filename, myfile_contents, "Mobility.AV.ProbabilityBoost.AutosLTDrivers"))
@@ -247,6 +247,9 @@ def config_mobility_params(replacements):
     tncSharedS3Share = float(get_property(params_filename, myfile_contents, "TNC.shared.s3.share"))
 
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
+
+    replacements[filepath]["(\Sharing_Preferences_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % SharingPrefFactor
+
     replacements[filepath]["(\nMobility.AV.Share[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avShare
     replacements[filepath]["(\nMobility.AV.ProbabilityBoost.AutosLTDrivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % pBoostAutosLTDrivers
     replacements[filepath]["(\nMobility.AV.ProbabilityBoost.AutosGEDrivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % pBoostAutosGEDrivers
@@ -349,8 +352,6 @@ def config_auto_opcost(replacements):
     av_pcefac_ft09   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT09"))
     av_pcefac_ft10   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT10"))
 
-    sharing   = float(get_property(params_filename, myfile_contents, "Sharing_Preferences"))
-
     # put the av pce factors into the CTRAMP\scripts\block\hwyParam.block
     replacements[filepath]["(\nAV_PCE_FT01[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft01
     replacements[filepath]["(\nAV_PCE_FT02[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft02
@@ -363,7 +364,6 @@ def config_auto_opcost(replacements):
     replacements[filepath]["(\nAV_PCE_FT09[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft09
     replacements[filepath]["(\nAV_PCE_FT10[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft10
 
-    replacements[filepath]["(\nSharingPref[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % sharing
 
 def config_host_ip(replacements):
     """
