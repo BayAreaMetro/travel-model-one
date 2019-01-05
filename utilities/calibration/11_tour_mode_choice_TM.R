@@ -1,10 +1,18 @@
 library(dplyr)
 library(tidyr)
+options(java.parameters = "-Xmx8000m")  # xlsx uses java and can run out of memory
+library(xlsx)
 
 # For RStudio, these can be set in the .Rprofile
 TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
 ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to read
 SAMPLESHARE  <- Sys.getenv("SAMPLESHARE") # Sampling
+
+WORKBOOK       <- "M:\\Development\\Travel Model One\\Calibration\\Version 1.5.0\\11 Tour Mode Choice\\11_TourModeChoice.xlsx"
+WORKBOOK_BLANK <- gsub(".xlsx","_blank.xlsx",WORKBOOK)
+WORKBOOK_TEMP  <- gsub(".xlsx","_temp.xlsx", WORKBOOK)
+calib_workbook <- loadWorkbook(file=WORKBOOK_BLANK)
+calib_sheets   <- getSheets(calib_workbook)
 
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
 OUTPUT_DIR   <- file.path(TARGET_DIR, "OUTPUT", "calibration")
@@ -89,6 +97,9 @@ tour_summary_spread[is.na(tour_summary_spread)] <- 0
 outfile <- file.path(OUTPUT_DIR, paste0("11_tour_mode_choice_TM.csv"))
 write.table(tour_summary_spread, outfile, sep=",", row.names=FALSE)
 cat("Wrote ",outfile,"\n")
+
+addDataFrame(as.data.frame(tour_summary_spread), calib_sheets$modeldata, startRow=2, startColumn=1, row.names=FALSE)
+
 
 # transit submode summary
 # Want submode: Local, LRT-Walk, LRT-Drive, Ferry-Walk, Ferry-Drive, Express, HeavyRail, CommRail
@@ -176,3 +187,9 @@ trn_tour_summary_spread[is.na(trn_tour_summary_spread)] <- 0
 outfile <- file.path(OUTPUT_DIR, paste0("11_tour_mode_choice_trnsubmode_TM.csv"))
 write.table(trn_tour_summary_spread, outfile, sep=",", row.names=FALSE)
 cat("Wrote ",outfile,"\n")
+
+addDataFrame(as.data.frame(trn_tour_summary_spread), calib_sheets$modeldata, startRow=2, startColumn=11, row.names=FALSE)
+
+saveWorkbook(calib_workbook, WORKBOOK_TEMP)
+forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
+cat("Wrote ",WORKBOOK,"\n")

@@ -1,10 +1,18 @@
 library(dplyr)
 library(tidyr)
+options(java.parameters = "-Xmx8000m")  # xlsx uses java and can run out of memory
+library(xlsx)
 
 # For RStudio, these can be set in the .Rprofile
 TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
 ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to read
 SAMPLESHARE  <- Sys.getenv("SAMPLESHARE") # Sampling
+
+WORKBOOK       <- "M:\\Development\\Travel Model One\\Calibration\\Version 1.5.0\\15 Trip Mode Choice\\15_TripModeChoice.xlsx"
+WORKBOOK_BLANK <- gsub(".xlsx","_blank.xlsx",WORKBOOK)
+WORKBOOK_TEMP  <- gsub(".xlsx","_temp.xlsx", WORKBOOK)
+calib_workbook <- loadWorkbook(file=WORKBOOK_BLANK)
+calib_sheets   <- getSheets(calib_workbook)
 
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
 OUTPUT_DIR   <- file.path(TARGET_DIR, "OUTPUT", "calibration")
@@ -86,7 +94,9 @@ LRF_drive_in <- left_join(LRF_drive_in, subset(ferry_skim, subset=submode=="wlk_
 LRF_trip_results <- rbind(LRF_walk, LRF_drive_out, LRF_drive_in)
 
 trip_results <- rbind(nonLRF_trip_results, LRF_trip_results)
-stopifnot(n_trip_results == nrow(trip_results))
+cat("n_trip_results = ",n_trip_results,"\n")
+cat("nrow(trip_results) = ",nrow(trip_results),"\n")
+# stopifnot(n_trip_results == nrow(trip_results))
 
 # create special trip mode for ferry
 trip_results <- mutate(trip_results, trip_mode=ifelse(ferryAvailable==1,-trip_mode,trip_mode))
@@ -101,3 +111,9 @@ trip_summary <- group_by(trip_results, indiv_joint, tour_purpose, tour_mode, tri
 outfile <- file.path(OUTPUT_DIR, paste0("15_trip_mode_choice_TM.csv"))
 write.table(trip_summary, outfile, sep=",", row.names=FALSE)
 cat("Wrote ",outfile,"\n")
+
+addDataFrame(as.data.frame(trip_summary), calib_sheets$modeldata, startRow=2, startColumn=1, row.names=FALSE)
+
+saveWorkbook(calib_workbook, WORKBOOK_TEMP)
+forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
+cat("Wrote ",WORKBOOK,"\n")

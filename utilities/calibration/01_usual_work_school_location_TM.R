@@ -1,12 +1,21 @@
 library(dplyr)
 library(tidyr)
+options(java.parameters = "-Xmx8000m")  # xlsx uses java and can run out of memory
+library(xlsx)
 
 # For RStudio, these can be set in the .Rprofile
 TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
 ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to read
 SAMPLESHARE  <- Sys.getenv("SAMPLESHARE") # Sampling
 
+WORKBOOK       <- "M:\\Development\\Travel Model One\\Calibration\\Version 1.5.0\\01 Usual Work and School Location\\01_UsualWorkAndSchoolLocation.xlsx"
+WORKBOOK_BLANK <- gsub(".xlsx","_blank.xlsx",WORKBOOK)
+WORKBOOK_TEMP  <- gsub(".xlsx","_temp.xlsx", WORKBOOK)
+calib_workbook <- loadWorkbook(file=WORKBOOK_BLANK)
+calib_sheets   <- getSheets(calib_workbook)
+
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
+WORKBOOK     <- gsub("\\\\","/",WORKBOOK  ) # switch slashes around
 OUTPUT_DIR   <- file.path(TARGET_DIR, "OUTPUT", "calibration")
 if (!file.exists(OUTPUT_DIR)) { dir.create(OUTPUT_DIR) }
 
@@ -61,12 +70,13 @@ wsloc_county_spread[is.na(wsloc_county_spread)] <- 0
 # save it
 write.table(wsloc_county_spread, file.path(OUTPUT_DIR,"01_usual_work_school_location_TM_county.csv"), sep=",", row.names=FALSE)
 cat("Wrote ",file.path(OUTPUT_DIR,"01_usual_work_school_location_TM_county.csv\n"))
-
+addDataFrame(as.data.frame(wsloc_county_spread), calib_sheets$modeldata, startRow=4, startColumn=1, row.names=FALSE)
 
 avg_trip_lengths <- data.frame(county=character(), trip_type=character(), mean_trip_length=double(), stringsAsFactors = FALSE)
 
 # trip length frequency distribution
 for (trip_type in c("work","univ","school")) {
+  col = 1
   if (trip_type == "work") {
     trip_dists <- subset(wsloc_results, subset=WorkLocation>0,
                          select=c(Home_county_name, EmploymentCategory, HomeTAZ, WorkLocation))
@@ -75,10 +85,12 @@ for (trip_type in c("work","univ","school")) {
     trip_dists <- subset(wsloc_results, subset=(SchoolLocation>0)&(StudentCategory=="College or higher"),
                          select=c(Home_county_name, StudentCategory, HomeTAZ, SchoolLocation))
     trip_dists <- left_join(trip_dists, rename(dist_skim, HomeTAZ=OTAZ, SchoolLocation=DTAZ))
+    col = 14
   } else if (trip_type == "school") {
     trip_dists <- subset(wsloc_results, subset=(SchoolLocation>0)&(StudentCategory=="Grade or high school"),
                          select=c(Home_county_name, StudentCategory, HomeTAZ, SchoolLocation))
     trip_dists <- left_join(trip_dists, rename(dist_skim, HomeTAZ=OTAZ, SchoolLocation=DTAZ))
+    col = 27
   }
   
   trip_tlfd  <- data.frame(distbin=seq(1,150,by=1))
@@ -114,7 +126,10 @@ for (trip_type in c("work","univ","school")) {
   outfile <- file.path(OUTPUT_DIR, paste0("01_usual_work_school_location_TM_",trip_type,"_TLFD.csv"))
   write.table(trip_tlfd, outfile, sep=",", row.names=FALSE)
   cat("Wrote ",outfile,"\n")
+  addDataFrame(as.data.frame(trip_tlfd), calib_sheets$modeldata, startRow=19, startColumn=col, row.names=FALSE)
 }
+
+remove(dist_skim)
 
 # move trip types to columns and reorder
 avg_triplen_spread <- spread(avg_trip_lengths, key=trip_type, value=mean_trip_length)
@@ -124,3 +139,8 @@ avg_triplen_spread <- avg_triplen_spread[c("county","work","univ","school")]
 outfile <- file.path(OUTPUT_DIR, paste0("01_usual_work_school_location_TM_avgtriplen.csv"))
 write.table(avg_triplen_spread, outfile, sep=",", row.names=FALSE)
 cat("Wrote ",outfile,"\n")
+addDataFrame(as.data.frame(avg_triplen_spread), calib_sheets$modeldata, startRow=4, startColumn=14, row.names=FALSE)
+
+saveWorkbook(calib_workbook, WORKBOOK_TEMP)
+forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
+cat("Wrote ",WORKBOOK,"\n")
