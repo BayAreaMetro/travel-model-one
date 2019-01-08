@@ -18,27 +18,39 @@ copy %MODEL_DIR%\main\jointTourData_%ITER%.csv OUTPUT\main
 copy %MODEL_DIR%\main\indivTripData_%ITER%.csv OUTPUT\main
 copy %MODEL_DIR%\main\jointTripData_%ITER%.csv OUTPUT\main
 
-:export_skims
-
 mkdir OUTPUT\skims
 cd OUTPUT\skims
+
+:export_skims
+
 set TIMEPERIOD=MD
 set TABLE=DISTDA
 
 set SKIMFILE=HWYSKM%TIMEPERIOD%
 if not exist %SKIMFILE%_%TABLE%.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
 
+set TABLE=TIMEDA
+if not exist %SKIMFILE%_%TABLE%.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
+
 :: ferry skims
 set TABLE=ivtFerry
 FOR %%H in (EA AM MD PM EV) DO (
    set SKIMFILE=trnskm%%H_wlk_lrf_drv
-   if not exist !SKIMFILE!_%TABLE%.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
+   if not exist !SKIMFILE!_!TABLE!.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
    set SKIMFILE=trnskm%%H_drv_lrf_wlk
-   if not exist !SKIMFILE!_%TABLE%.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
+   if not exist !SKIMFILE!_!TABLE!.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
    set SKIMFILE=trnskm%%H_wlk_lrf_wlk
-   if not exist !SKIMFILE!_%TABLE%.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
+   if not exist !SKIMFILE!_!TABLE!.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
 )
 
+::  TRNSKMMD_WLK_TRN_WLK.tpp
+set SKIMFILE=TRNSKMMD_WLK_TRN_WLK
+for %%H in (IVT IWAIT WACC WEGR) DO (
+  set TABLE=%%H
+  if not exist !SKIMFILE!_!TABLE!.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
+)
+
+if not exist skim_OD_districts.csv  Rscript --vanilla "%CODE_DIR%\skim_district_summary.R"
 cd ..\..
 
 mkdir OUTPUT\calibration
