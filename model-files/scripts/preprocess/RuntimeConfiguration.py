@@ -59,6 +59,7 @@ lines are set in CTRAMP\runtime\mtcTourBased.properties:
   Iteration n:
     ShadowPrice.Input.File          = main/ShadowPricing_2n-1.csv
     ShadowPricing.MaximumIterations = 2
+  logsums: same as Iteration 3
 """
 
 import argparse
@@ -102,6 +103,26 @@ def replace_in_file(filepath, regex_dict):
     # write the result
     myfile = open(filepath, 'w')
     myfile.write(file_contents)
+    myfile.close()
+
+def append_to_file(filepath, append_str):
+    """
+    Copies `filepath` to `filepath.original`
+    Opens `filepath.original` and reads it, writing a new version to `filepath`.
+    The new version is the same as the old, with the lines in append_dict added
+    """
+    shutil.move(filepath, "%s.original" % filepath)
+    print "Updating %s" % filepath
+
+    # read the contents
+    myfile = open("%s.original" % filepath, 'r')
+    file_contents = myfile.read()
+    myfile.close()
+
+    # write the result
+    myfile = open(filepath, 'w')
+    myfile.write(file_contents)
+    myfile.write(append_str)
     myfile.close()
 
 def config_project_dir(replacements):
@@ -368,6 +389,56 @@ def config_auto_opcost(replacements):
 
     replacements[filepath]["(\nZPV_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % zpv
 
+def config_logsums(replacements, append):
+    filepath = os.path.join("CTRAMP","runtime","logsums.properties")
+
+    # households and persons        
+    replacements[filepath]["(\nPopulationSynthesizer.InputToCTRAMP.HouseholdFile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % "logsums/accessibilities_dummy_households.csv"
+    replacements[filepath]["(\nPopulationSynthesizer.InputToCTRAMP.PersonFile[ \t]*=[ \t]*)(\S*)"]    = r"\g<1>%s" % "logsums/accessibilities_dummy_persons.csv"
+
+    # turn off some submodels
+    replacements[filepath]["(\nRunModel.AutoOwnership[ \t]*=[ \t]*)(\S*)"]                                      = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.FreeParking[ \t]*=[ \t]*)(\S*)"]                                        = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.CoordinatedDailyActivityPattern[ \t]*=[ \t]*)(\S*)"]                    = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.IndividualMandatoryTourFrequency[ \t]*=[ \t]*)(\S*)"]                   = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.MandatoryTourDepartureTimeAndDuration[ \t]*=[ \t]*)(\S*)"]              = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.MandatoryTourModeChoice[ \t]*=[ \t]*)(\S*)"]                            = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.JointTourFrequency[ \t]*=[ \t]*)(\S*)"]                                 = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.JointTourLocationChoice[ \t]*=[ \t]*)(\S*)"]                            = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.JointTourDepartureTimeAndDuration[ \t]*=[ \t]*)(\S*)"]                  = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.JointTourModeChoice[ \t]*=[ \t]*)(\S*)"]                                = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.IndividualNonMandatoryTourFrequency[ \t]*=[ \t]*)(\S*)"]                = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.IndividualNonMandatoryTourDepartureTimeAndDuration[ \t]*=[ \t]*)(\S*)"] = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.IndividualNonMandatoryTourModeChoice[ \t]*=[ \t]*)(\S*)"]               = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.AtWorkSubTourFrequency[ \t]*=[ \t]*)(\S*)"]                             = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.AtWorkSubTourDepartureTimeAndDuration[ \t]*=[ \t]*)(\S*)"]              = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.AtWorkSubTourModeChoice[ \t]*=[ \t]*)(\S*)"]                            = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.StopFrequency[ \t]*=[ \t]*)(\S*)"]                                      = r"\g<1>false"
+    replacements[filepath]["(\nRunModel.StopLocation[ \t]*=[ \t]*)(\S*)"]                                       = r"\g<1>false"
+
+    # sample size
+    replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"]         = r"\g<1>1000"
+    replacements[filepath]["(\nJointTourLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"]                  = r"\g<1>1000"
+    replacements[filepath]["(\nIndividualNonMandatoryTourLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"] = r"\g<1>1000"
+    replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"]         = r"\g<1>1000"
+    replacements[filepath]["(\nAtWorkSubtourLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"]             = r"\g<1>1000"
+
+    replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = r"\g<1>main/ShadowPricing_7.csv"
+    replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations[ \t]*=[ \t]*)(\S*)"] = r"\g<1>1"
+
+    replacements[filepath]["(\nResults.HouseholdDataFile[ \t]*=[ \t]*)(\S*)"]     = r"\g<1>logsums/householdData.csv"
+    replacements[filepath]["(\nResults.PersonDataFile[ \t]*=[ \t]*)(\S*)"]        = r"\g<1>logsums/personData.csv"
+    replacements[filepath]["(\nResults.IndivTourDataFile[ \t]*=[ \t]*)(\S*)"]     = r"\g<1>logsums/indivTourData.csv"
+    replacements[filepath]["(\nResults.JointTourDataFile[ \t]*=[ \t]*)(\S*)"]     = r"\g<1>logsums/jointTourData.csv"
+    replacements[filepath]["(\nResults.IndivTripDataFile[ \t]*=[ \t]*)(\S*)"]     = r"\g<1>logsums/indivTripData.csv"
+    replacements[filepath]["(\nResults.JointTripDataFile[ \t]*=[ \t]*)(\S*)"]     = r"\g<1>logsums/jointTripData.csv"
+    replacements[filepath]["(\nResults.WriteDataToDatabase[ \t]*=[ \t]*)(\S*)"]   = r"\g<1>false"
+
+    append[filepath] = "\n#-- Logsum input files for recreating skipped model choices\n" + \
+                       "Accessibilities.HouseholdDataFile = logsums/accessibilities_dummy_model_households.csv\n" + \
+                       "Accessibilities.PersonDataFile = logsums/accessibilities_dummy_model_persons.csv\n" + \
+                       "Accessibilities.IndivTourDataFile = logsums/accessibilities_dummy_indivTours.csv\n"
+
 def config_host_ip(replacements):
     """
     See USAGE for details.
@@ -594,19 +665,18 @@ def config_uec(auto_operating_cost):
                                                   xlwt.easyxf("align: horiz left"))
         wb.save(filepath)
 
-
-# find the properties file
-params_filename = os.path.join("INPUT", "params.properties")
-myfile          = open( params_filename, 'r' )
-myfile_contents = myfile.read()
-myfile.close()
-
-# read the telecommute constant from the properties file
-TelecommuteConstant = float(get_property(params_filename, myfile_contents, "Telecommute_constant"))
-
 # define a function to put the telecommute constant into the Coordinated Daily Activity Pattern excel file
-def config_cdap(TelecommutingAdjustment):
-    TelecommutingAdjustment_float = float(TelecommutingAdjustment)
+def config_cdap():
+
+    # find the properties file
+    params_filename = os.path.join("INPUT", "params.properties")
+    myfile          = open( params_filename, 'r' )
+    myfile_contents = myfile.read()
+    myfile.close()
+
+    # read the telecommute constant from the properties file
+    TelecommuteConstant = float(get_property(params_filename, myfile_contents, "Telecommute_constant"))
+
     for bookname in ["CoordinatedDailyActivityPattern.xls"]:
         filepath = os.path.join("CTRAMP","model",bookname)
         shutil.move(filepath, "%s.original" % filepath)
@@ -620,13 +690,9 @@ def config_cdap(TelecommutingAdjustment):
                 # print rs.cell(rownum,1)
                 if rs.cell(rownum,2).value=='Simulate telecommuting by reducing mandatory patterns':
                     print "  Sheet '%s': replacing telecommute constant '%s' -> %.2f" % \
-                        (rs.name, rs.cell(rownum,6).value, TelecommutingAdjustment_float)
-                    wb.get_sheet(sheet_num).write(rownum,6, TelecommutingAdjustment_float,
-                                                            xlwt.easyxf("align: horiz right"))
+                        (rs.name, rs.cell(rownum,6).value, TelecommuteConstant)
+                    wb.get_sheet(sheet_num).write(rownum,6, TelecommuteConstant, xlwt.easyxf("align: horiz right"))
         wb.save(filepath)
-
-# put the telecommute constant into the Coordinated Daily Activity Pattern excel file
-config_cdap("%.2f" % TelecommuteConstant)
 
 
 if __name__ == '__main__':
@@ -636,21 +702,34 @@ if __name__ == '__main__':
     parser.add_argument("--iter",
                         help="Iteration for which to configure.  If not specified, will configure for pre-run.",
                         type=int, choices=[1,2,3,4,5])
+    parser.add_argument("--logsums", help="Configure for logsums.", action='store_true')
 
     my_args = parser.parse_args()
 
     # Figure out the replacements we need to make
     replacements = collections.defaultdict(collections.OrderedDict)
-    if my_args.iter == None:
+    append       = collections.defaultdict(collections.OrderedDict)
+    if my_args.logsums:
+        # copy properties file to logsums file
+        shutil.copyfile(os.path.join("CTRAMP","runtime","mtcTourBased.properties"),
+                        os.path.join("CTRAMP","runtime","logsums.properties"))
+        config_logsums(replacements, append)
+    elif my_args.iter == None:
         config_project_dir(replacements)
         config_popsyn_files(replacements)
         config_mobility_params(replacements)
         config_auto_opcost(replacements)
         config_host_ip(replacements)
         config_distribution(replacements)
+        config_cdap()
     else:
         config_shadowprice(my_args.iter, replacements)
 
     # Go ahead and make the replacements
     for filepath,regex_dict in replacements.iteritems():
         replace_in_file(filepath, regex_dict)
+
+    # append
+    for filepath,append_str in append.iteritems():
+        append_to_file(filepath, append_str)
+

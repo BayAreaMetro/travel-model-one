@@ -89,6 +89,7 @@ mkdir nonres
 mkdir main
 mkdir logs
 mkdir database
+mkdir logsums
 
 :: Stamp the feedback report with the date and time of the model start
 echo STARTED MODEL RUN  %DATE% %TIME% >> logs\feedback.rpt 
@@ -101,7 +102,7 @@ copy INPUT\popsyn\              popsyn\
 copy INPUT\nonres\              nonres\
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
-
+copy INPUT\logsums              logsums\
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -256,6 +257,9 @@ if ERRORLEVEL 1 goto done
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
+:: Shut down java
+C:\Windows\SysWOW64\taskkill /f /im "java.exe"
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 11:  Build simplified skim databases
@@ -276,9 +280,11 @@ if ERRORLEVEL 2 goto done
 
 : logsums
 
-call RunAccessibility
-if ERRORLEVEL 2 goto done
+:: call RunAccessibility
+:: if ERRORLEVEL 2 goto done
 
+call RunLogsums
+if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
