@@ -223,14 +223,14 @@ loop period = 1, 5
                ; cost calculations (prices in year 2000 cents) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                ; note the BTOLL variable includes additional cost from imperfect pavement (for both Repair & Maintenance and fuel)
                
-               da_Cost     = mi.1.BTOLLDA                        + mi.1.DISTDA     * (AUTOOPC_PER_RM+AUTOOPC_PER_FU)
-               daToll_Cost = mi.1.TOLLBTOLLDA + mi.1.TOLLVTOLLDA + mi.1.TOLLDISTDA * (AUTOOPC_PER_RM+AUTOOPC_PER_FU)
+               da_Cost     = mi.1.BTOLLDA                        + mi.1.DISTDA     *AUTOOPC
+               daToll_Cost = mi.1.TOLLBTOLLDA + mi.1.TOLLVTOLLDA + mi.1.TOLLDISTDA *AUTOOPC
                
-               s2_Cost     = (mi.1.BTOLLS2                        + mi.1.DISTS2     * (AUTOOPC_PER_RM+AUTOOPC_PER_FU))/SR2COSTSHARE
-               s2Toll_Cost = (mi.1.TOLLBTOLLS2 + mi.1.TOLLVTOLLS2 + mi.1.TOLLDISTS2 * (AUTOOPC_PER_RM+AUTOOPC_PER_FU))/SR2COSTSHARE
+               s2_Cost     = (mi.1.BTOLLS2                        + mi.1.DISTS2     *AUTOOPC)/SR2COSTSHARE
+               s2Toll_Cost = (mi.1.TOLLBTOLLS2 + mi.1.TOLLVTOLLS2 + mi.1.TOLLDISTS2 *AUTOOPC)/SR2COSTSHARE
                
-               s3_Cost     = (mi.1.BTOLLS3                        + mi.1.DISTS3     * (AUTOOPC_PER_RM+AUTOOPC_PER_FU))/SR3COSTSHARE
-               s3Toll_Cost = (mi.1.TOLLBTOLLS3 + mi.1.TOLLVTOLLS3 + mi.1.TOLLDISTS3 * (AUTOOPC_PER_RM+AUTOOPC_PER_FU))/SR3COSTSHARE
+               s3_Cost     = (mi.1.BTOLLS3                        + mi.1.DISTS3     *AUTOOPC)/SR3COSTSHARE
+               s3Toll_Cost = (mi.1.TOLLBTOLLS3 + mi.1.TOLLVTOLLS3 + mi.1.TOLLDISTS3 *AUTOOPC)/SR3COSTSHARE
                
                ; bike is free
                ; walk is free

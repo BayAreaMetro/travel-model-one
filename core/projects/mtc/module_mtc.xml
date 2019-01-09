@@ -22,6 +22,10 @@
     <pathelement location="${module.mtc.basedir}/../../cmf/common-base/lib/junit.jar"/>
     <pathelement location="${module.mtc.basedir}/../../cmf/common-base/lib/or124.jar"/>
     <pathelement location="${module.common-base.basedir}/../../third-party/jexcelapi/jxl.jar"/>
+  	<pathelement location="${module.mtc.basedir}/../../third-party/jppf-2.4/JPPF/build/jppf-admin.jar"/>
+  	<pathelement location="${module.mtc.basedir}/../../third-party/jppf-2.4/JPPF/build/jppf-client.jar"/>
+  	<pathelement location="${module.mtc.basedir}/../../third-party/jppf-2.4/JPPF/build/jppf-common.jar"/>
+  	<pathelement location="${module.mtc.basedir}/../../third-party/jppf-2.4/JPPF/build/jppf-common-node.jar"/>
     <!-- <pathelement location="${module.common-base.basedir}/lib/jxl.jar"/> -->
     <pathelement location="${module.mtc.basedir}/../../cmf/common-base/lib/xml4j.jar"/>
     <pathelement location="${module.mtc.basedir}/../../cmf/common-base/lib/mysql-connector-java-3.0.10-stable-bin.jar"/>

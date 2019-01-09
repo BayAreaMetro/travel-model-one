@@ -300,12 +300,15 @@ public class ChoiceModelApplication implements java.io.Serializable {
         return lm;
     }
 
-    /*
-     * calculate utilities and update utilities and availabilities in the logit model
+    /**
+     * 
+     * Calculate utilities and update utilities and availabilities in the logit model
      * passed in using the deafults - all alternatives initially available and in the
      * sample
+     * 
+     * @return The logsum
      */
-    public void computeUtilities(Object dmuObject, IndexValues index)
+    public double computeUtilities(Object dmuObject, IndexValues index)
     {
 
         double[] utilities = null;
@@ -344,6 +347,8 @@ public class ChoiceModelApplication implements java.io.Serializable {
         root.calculateProbabilities();
 
         otherCount = System.nanoTime() - check2;
+        
+        return rootLogsum;
     }
 
     /*

@@ -17,7 +17,6 @@ loop auto = 1,6
    token_auto   = 'da'
    token_time   = 'TIMEDA'
    token_dist   = 'DISTDA'
-   token_pvcost = 'PVCOSTDA'
    token_btoll  = 'BTOLLDA'
    token_vtoll  = 'TOLLVTOLLDA'
    token_occ    = 1.0
@@ -25,7 +24,6 @@ loop auto = 1,6
    token_auto   = 'datoll'
    token_time   = 'TOLLTIMEDA'
    token_dist   = 'TOLLDISTDA'
-   token_pvcost = 'TOLLPVCOSTDA'
    token_btoll  = 'TOLLBTOLLDA'
    token_vtoll  = 'TOLLVTOLLDA'
    token_occ    = 1.0
@@ -33,7 +31,6 @@ loop auto = 1,6
    token_auto   = 'sr2'
    token_time   = 'TIMES2'
    token_dist   = 'DISTS2'
-   token_pvcost = 'PVCOSTS2'
    token_btoll  = 'BTOLLS2'
    token_vtoll  = 'TOLLVTOLLS2'
    token_occ    = 2.0
@@ -41,7 +38,6 @@ loop auto = 1,6
    token_auto   = 'sr2toll'
    token_time   = 'TOLLTIMES2'
    token_dist   = 'TOLLDISTS2'
-   token_pvcost = 'TOLLPVCOSTS2'
    token_btoll  = 'TOLLBTOLLS2'
    token_vtoll  = 'TOLLVTOLLS2'
    token_occ    = 2.0
@@ -49,7 +45,6 @@ loop auto = 1,6
    token_auto   = 'sr3'
    token_time   = 'TIMES3'
    token_dist   = 'DISTS3'
-   token_pvcost = 'PVCOSTS3'
    token_btoll  = 'BTOLLS3'
    token_vtoll  = 'TOLLVTOLLS3'
    token_occ    = 3.5
@@ -57,7 +52,6 @@ loop auto = 1,6
    token_auto   = 'sr3toll'
    token_time   = 'TOLLTIMES3'
    token_dist   = 'TOLLDISTS3'
-   token_pvcost = 'TOLLPVCOSTS3'
    token_btoll  = 'TOLLBTOLLS3'
    token_vtoll  = 'TOLLVTOLLS3'
    token_occ    = 3.5
@@ -97,45 +91,45 @@ loop auto = 1,6
       MW[2]   = (mi.1.@token_auto@ * mi.6.@token_time@)/@token_occ@  ; Vehicle minutes
       MW[3]   =  mi.1.@token_auto@ * mi.6.@token_dist@               ; Person miles
       MW[4]   = (mi.1.@token_auto@ * mi.6.@token_dist@)/@token_occ@  ; Vehicle miles
-      MW[5]   = (mi.1.@token_auto@/@token_occ@) * (mi.6.@token_pvcost@ + (mi.6.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[6]   = (mi.1.@token_auto@/@token_occ@) * (mi.6.@token_btoll@  -  mi.6.@token_pvcost@) ; Bridge tolls
-      MW[7]   = (mi.1.@token_auto@/@token_occ@) *  mi.6.@token_vtoll@                          ; Value tolls
+      MW[5]   = (mi.1.@token_auto@/@token_occ@) * (mi.6.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[6]   = (mi.1.@token_auto@/@token_occ@) *  mi.6.@token_btoll@             ; Bridge tolls
+      MW[7]   = (mi.1.@token_auto@/@token_occ@) *  mi.6.@token_vtoll@             ; Value tolls
       
      ; Trips AM * Skims AM
       MW[8]   =  mi.2.@token_auto@ * mi.7.@token_time@               ; Person minutes
       MW[9]   = (mi.2.@token_auto@ * mi.7.@token_time@)/@token_occ@  ; Vehicle minutes
       MW[10]  =  mi.2.@token_auto@ * mi.7.@token_dist@               ; Person miles
       MW[11]  = (mi.2.@token_auto@ * mi.7.@token_dist@)/@token_occ@  ; Vehilce miles
-      MW[12]  = (mi.2.@token_auto@/@token_occ@) * (mi.7.@token_pvcost@ + (mi.7.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[13]  = (mi.2.@token_auto@/@token_occ@) * (mi.7.@token_btoll@  -  mi.7.@token_pvcost@) ; Bridge tolls
-      MW[14]  = (mi.2.@token_auto@/@token_occ@) *  mi.7.@token_vtoll@                          ; Value tolls
+      MW[12]  = (mi.2.@token_auto@/@token_occ@) * (mi.7.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[13]  = (mi.2.@token_auto@/@token_occ@) *  mi.7.@token_btoll@             ; Bridge tolls
+      MW[14]  = (mi.2.@token_auto@/@token_occ@) *  mi.7.@token_vtoll@             ; Value tolls
 
       ; Trips MD * Skims MD
       MW[15]  =  mi.3.@token_auto@ * mi.8.@token_time@               ; Person minutes
       MW[16]  = (mi.3.@token_auto@ * mi.8.@token_time@)/@token_occ@  ; Vehicle minutes
       MW[17]  =  mi.3.@token_auto@ * mi.8.@token_dist@               ; Person miles
       MW[18]  = (mi.3.@token_auto@ * mi.8.@token_dist@)/@token_occ@  ; Vehicle miles
-      MW[19]  = (mi.3.@token_auto@/@token_occ@) * (mi.8.@token_pvcost@ + (mi.8.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[20]  = (mi.3.@token_auto@/@token_occ@) * (mi.8.@token_btoll@  -  mi.8.@token_pvcost@) ; Bridge tolls
-      MW[21]  = (mi.3.@token_auto@/@token_occ@) *  mi.8.@token_vtoll@                          ; Value tolls
+      MW[19]  = (mi.3.@token_auto@/@token_occ@) * (mi.8.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[20]  = (mi.3.@token_auto@/@token_occ@) *  mi.8.@token_btoll@             ; Bridge tolls
+      MW[21]  = (mi.3.@token_auto@/@token_occ@) *  mi.8.@token_vtoll@             ; Value tolls
 
       ; Trips PM * Skims PM
       MW[22]   =  mi.4.@token_auto@ * mi.9.@token_time@                ; Person minutes
       MW[23]   = (mi.4.@token_auto@ * mi.9.@token_time@)/@token_occ@   ; Vehicle minutes
       MW[24]   =  mi.4.@token_auto@ * mi.9.@token_dist@                ; Person miles
       MW[25]   = (mi.4.@token_auto@ * mi.9.@token_dist@)/@token_occ@   ; Vehicle miles
-      MW[26]   = (mi.4.@token_auto@/@token_occ@) * (mi.9.@token_pvcost@ + (mi.9.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[27]   = (mi.4.@token_auto@/@token_occ@) * (mi.9.@token_btoll@  -  mi.9.@token_pvcost@) ; Bridge tolls
-      MW[28]   = (mi.4.@token_auto@/@token_occ@) *  mi.9.@token_vtoll@                          ; Value tolls
+      MW[26]   = (mi.4.@token_auto@/@token_occ@) * (mi.9.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[27]   = (mi.4.@token_auto@/@token_occ@) *  mi.9.@token_btoll@             ; Bridge tolls
+      MW[28]   = (mi.4.@token_auto@/@token_occ@) *  mi.9.@token_vtoll@             ; Value tolls
 
       ; Trips EV * Skims EV
       MW[29]   =  mi.5.@token_auto@ * mi.10.@token_time@               ; Person minutes
       MW[30]   = (mi.5.@token_auto@ * mi.10.@token_time@)/@token_occ@  ; Vehicle minutes
       MW[31]   =  mi.5.@token_auto@ * mi.10.@token_dist@               ; Person miles
       MW[32]   = (mi.5.@token_auto@ * mi.10.@token_dist@)/@token_occ@  ; Vehicle miles
-      MW[33]   = (mi.5.@token_auto@/@token_occ@) * (mi.10.@token_pvcost@ + (mi.10.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[34]   = (mi.5.@token_auto@/@token_occ@) * (mi.10.@token_btoll@  -  mi.10.@token_pvcost@) ; Bridge tolls
-      MW[35]   = (mi.5.@token_auto@/@token_occ@) *  mi.10.@token_vtoll@                           ; Value tolls
+      MW[33]   = (mi.5.@token_auto@/@token_occ@) * (mi.10.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[34]   = (mi.5.@token_auto@/@token_occ@) *  mi.10.@token_btoll@             ; Bridge tolls
+      MW[35]   = (mi.5.@token_auto@/@token_occ@) *  mi.10.@token_vtoll@             ; Value tolls
 
      ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
      MW[36] =  mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
@@ -207,45 +201,45 @@ loop auto = 1,6
       MW[2]   =  mi.1.@token_auto@ * mi.6.@token_time@               ; Vehicle minutes
       MW[3]   =  mi.1.@token_auto@ * mi.6.@token_dist@ * @token_occ@ ; Person miles
       MW[4]   =  mi.1.@token_auto@ * mi.6.@token_dist@               ; Vehicle miles
-      MW[5]   =  mi.1.@token_auto@ * (mi.6.@token_pvcost@ + (mi.6.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[6]   =  mi.1.@token_auto@ * (mi.6.@token_btoll@  -  mi.6.@token_pvcost@) ; Bridge tolls
-      MW[7]   =  mi.1.@token_auto@ *  mi.6.@token_vtoll@                          ; Value tolls
+      MW[5]   =  mi.1.@token_auto@ * (mi.6.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[6]   =  mi.1.@token_auto@ *  mi.6.@token_btoll@             ; Bridge tolls
+      MW[7]   =  mi.1.@token_auto@ *  mi.6.@token_vtoll@             ; Value tolls
 
      ; Trips AM * Skims AM
       MW[8]   =  mi.2.@token_auto@ * mi.7.@token_time@ * @token_occ@ ; Person minutes
       MW[9]   =  mi.2.@token_auto@ * mi.7.@token_time@               ; Vehicle minutes
       MW[10]  =  mi.2.@token_auto@ * mi.7.@token_dist@ * @token_occ@ ; Person miles
       MW[11]  =  mi.2.@token_auto@ * mi.7.@token_dist@               ; Vehilce miles
-      MW[12]  =  mi.2.@token_auto@ * (mi.7.@token_pvcost@ + (mi.7.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[13]  =  mi.2.@token_auto@ * (mi.7.@token_btoll@  -  mi.7.@token_pvcost@) ; Bridge tolls
-      MW[14]  =  mi.2.@token_auto@ *  mi.7.@token_vtoll@                          ; Value tolls
+      MW[12]  =  mi.2.@token_auto@ * (mi.7.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[13]  =  mi.2.@token_auto@ *  mi.7.@token_btoll@             ; Bridge tolls
+      MW[14]  =  mi.2.@token_auto@ *  mi.7.@token_vtoll@             ; Value tolls
 
       ; Trips MD * Skims MD
       MW[15]  =  mi.3.@token_auto@ * mi.8.@token_time@ * @token_occ@ ; Person minutes
       MW[16]  =  mi.3.@token_auto@ * mi.8.@token_time@               ; Vehicle minutes
       MW[17]  =  mi.3.@token_auto@ * mi.8.@token_dist@ * @token_occ@ ; Person miles
       MW[18]  =  mi.3.@token_auto@ * mi.8.@token_dist@               ; Vehicle miles
-      MW[19]  =  mi.3.@token_auto@ * (mi.8.@token_pvcost@ + (mi.8.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[20]  =  mi.3.@token_auto@ * (mi.8.@token_btoll@  -  mi.8.@token_pvcost@) ; Bridge tolls
-      MW[21]  =  mi.3.@token_auto@ *  mi.8.@token_vtoll@                          ; Value tolls
+      MW[19]  =  mi.3.@token_auto@ * (mi.8.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[20]  =  mi.3.@token_auto@ *  mi.8.@token_btoll@             ; Bridge tolls
+      MW[21]  =  mi.3.@token_auto@ *  mi.8.@token_vtoll@             ; Value tolls
 
       ; Trips PM * Skims PM
       MW[22]  =  mi.4.@token_auto@ * mi.9.@token_time@ * @token_occ@ ; Person minutes
       MW[23]  =  mi.4.@token_auto@ * mi.9.@token_time@               ; Vehicle minutes
       MW[24]  =  mi.4.@token_auto@ * mi.9.@token_dist@ * @token_occ@ ; Person miles
       MW[25]  =  mi.4.@token_auto@ * mi.9.@token_dist@               ; Vehicle miles
-      MW[26]  =  mi.4.@token_auto@ * (mi.9.@token_pvcost@ + (mi.9.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[27]  =  mi.4.@token_auto@ * (mi.9.@token_btoll@  -  mi.9.@token_pvcost@) ; Bridge tolls
-      MW[28]  =  mi.4.@token_auto@ *  mi.9.@token_vtoll@                          ; Value tolls
+      MW[26]  =  mi.4.@token_auto@ * (mi.9.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[27]  =  mi.4.@token_auto@ *  mi.9.@token_btoll@             ; Bridge tolls
+      MW[28]  =  mi.4.@token_auto@ *  mi.9.@token_vtoll@             ; Value tolls
 
       ; Trips EV * Skims EV
       MW[29]  =  mi.5.@token_auto@ * mi.10.@token_time@ * @token_occ@ ; Person minutes
       MW[30]  =  mi.5.@token_auto@ * mi.10.@token_time@               ; Vehicle minutes
       MW[31]  =  mi.5.@token_auto@ * mi.10.@token_dist@ * @token_occ@ ; Person miles
       MW[32]  =  mi.5.@token_auto@ * mi.10.@token_dist@               ; Vehicle miles
-      MW[33]  =  mi.5.@token_auto@ * (mi.10.@token_pvcost@ + (mi.10.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[34]  =  mi.5.@token_auto@ * (mi.10.@token_btoll@  -  mi.10.@token_pvcost@) ; Bridge tolls
-      MW[35]  =  mi.5.@token_auto@ *  mi.10.@token_vtoll@                           ; Value tolls
+      MW[33]  =  mi.5.@token_auto@ * (mi.10.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[34]  =  mi.5.@token_auto@ *  mi.10.@token_btoll@             ; Bridge tolls
+      MW[35]  =  mi.5.@token_auto@ *  mi.10.@token_vtoll@             ; Value tolls
 
      ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
      MW[36] =  mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
@@ -306,45 +300,45 @@ loop auto = 1,6
       MW[2]   =  mi.1.@token_auto@ * mi.6.@token_time@               ; Vehicle minutes
       MW[3]   =  mi.1.@token_auto@ * mi.6.@token_dist@ * @token_occ@ ; Person miles
       MW[4]   =  mi.1.@token_auto@ * mi.6.@token_dist@               ; Vehicle miles
-      MW[5]   =  mi.1.@token_auto@ * (mi.6.@token_pvcost@ + (mi.6.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[6]   =  mi.1.@token_auto@ * (mi.6.@token_btoll@  -  mi.6.@token_pvcost@) ; Bridge tolls
-      MW[7]   =  mi.1.@token_auto@ *  mi.6.@token_vtoll@                          ; Value tolls
+      MW[5]   =  mi.1.@token_auto@ * (mi.6.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[6]   =  mi.1.@token_auto@ *  mi.6.@token_btoll@             ; Bridge tolls
+      MW[7]   =  mi.1.@token_auto@ *  mi.6.@token_vtoll@             ; Value tolls
 
      ; Trips AM * Skims AM
       MW[8]   =  mi.2.@token_auto@ * mi.7.@token_time@ * @token_occ@ ; Person minutes
       MW[9]   =  mi.2.@token_auto@ * mi.7.@token_time@               ; Vehicle minutes
       MW[10]  =  mi.2.@token_auto@ * mi.7.@token_dist@ * @token_occ@ ; Person miles
       MW[11]  =  mi.2.@token_auto@ * mi.7.@token_dist@               ; Vehilce miles
-      MW[12]  =  mi.2.@token_auto@ * (mi.7.@token_pvcost@ + (mi.7.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[13]  =  mi.2.@token_auto@ * (mi.7.@token_btoll@  -  mi.7.@token_pvcost@) ; Bridge tolls
-      MW[14]  =  mi.2.@token_auto@ *  mi.7.@token_vtoll@                          ; Value tolls
+      MW[12]  =  mi.2.@token_auto@ * (mi.7.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[13]  =  mi.2.@token_auto@ *  mi.7.@token_btoll@             ; Bridge tolls
+      MW[14]  =  mi.2.@token_auto@ *  mi.7.@token_vtoll@             ; Value tolls
 
       ; Trips MD * Skims MD
       MW[15]  =  mi.3.@token_auto@ * mi.8.@token_time@ * @token_occ@ ; Person minutes
       MW[16]  =  mi.3.@token_auto@ * mi.8.@token_time@               ; Vehicle minutes
       MW[17]  =  mi.3.@token_auto@ * mi.8.@token_dist@ * @token_occ@ ; Person miles
       MW[18]  =  mi.3.@token_auto@ * mi.8.@token_dist@               ; Vehicle miles
-      MW[19]  =  mi.3.@token_auto@ * (mi.8.@token_pvcost@ + (mi.8.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[20]  =  mi.3.@token_auto@ * (mi.8.@token_btoll@  -  mi.8.@token_pvcost@) ; Bridge tolls
-      MW[21]  =  mi.3.@token_auto@ *  mi.8.@token_vtoll@                          ; Value tolls
+      MW[19]  =  mi.3.@token_auto@ * (mi.8.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[20]  =  mi.3.@token_auto@ *  mi.8.@token_btoll@             ; Bridge tolls
+      MW[21]  =  mi.3.@token_auto@ *  mi.8.@token_vtoll@             ; Value tolls
 
       ; Trips PM * Skims PM
       MW[22]   =  mi.4.@token_auto@ * mi.9.@token_time@ * @token_occ@ ; Person minutes
       MW[23]   =  mi.4.@token_auto@ * mi.9.@token_time@               ; Vehicle minutes
       MW[24]   =  mi.4.@token_auto@ * mi.9.@token_dist@ * @token_occ@ ; Person miles
       MW[25]   =  mi.4.@token_auto@ * mi.9.@token_dist@               ; Vehicle miles
-      MW[26]   =  mi.4.@token_auto@ * (mi.9.@token_pvcost@ + (mi.9.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[27]   =  mi.4.@token_auto@ * (mi.9.@token_btoll@  -  mi.9.@token_pvcost@) ; Bridge tolls
-      MW[28]   =  mi.4.@token_auto@ *  mi.9.@token_vtoll@                          ; Value tolls
+      MW[26]   =  mi.4.@token_auto@ * (mi.9.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[27]   =  mi.4.@token_auto@ *  mi.9.@token_btoll@             ; Bridge tolls
+      MW[28]   =  mi.4.@token_auto@ *  mi.9.@token_vtoll@             ; Value tolls
 
       ; Trips EV * Skims EV
       MW[29]   =  mi.5.@token_auto@ * mi.10.@token_time@ * @token_occ@ ; Person minutes
       MW[30]   =  mi.5.@token_auto@ * mi.10.@token_time@               ; Vehicle minutes
       MW[31]   =  mi.5.@token_auto@ * mi.10.@token_dist@ * @token_occ@ ; Person miles
       MW[32]   =  mi.5.@token_auto@ * mi.10.@token_dist@               ; Vehicle miles
-      MW[33]   =  mi.5.@token_auto@ * (mi.10.@token_pvcost@ + (mi.10.@token_dist@ * (@AUTOOPC_PER_RM@+@AUTOOPC_PER_FU@))) ; not including tolls
-      MW[34]   =  mi.5.@token_auto@ * (mi.10.@token_btoll@  -  mi.10.@token_pvcost@) ; Bridge tolls
-      MW[35]   =  mi.5.@token_auto@ *  mi.10.@token_vtoll@                           ; Value tolls
+      MW[33]   =  mi.5.@token_auto@ * (mi.10.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[34]   =  mi.5.@token_auto@ *  mi.10.@token_btoll@             ; Bridge tolls
+      MW[35]   =  mi.5.@token_auto@ *  mi.10.@token_vtoll@             ; Value tolls
 
      ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
      MW[36] =  mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
@@ -429,14 +423,14 @@ RUN PGM = MATRIX
             ( mi.1.struck * mi.6.distsml) +
             ( mi.1.mtruck * mi.6.distmed) +
             ( mi.1.ctruck * mi.6.distlrg)
-  MW[3]   = (mi.1.vstruck *(mi.6.pvcostvsm + (mi.6.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.1.struck *(mi.6.pvcostsml + (mi.6.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.1.mtruck *(mi.6.pvcostmed + (mi.6.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.1.ctruck *(mi.6.pvcostlrg + (mi.6.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
-  MW[4]   = (mi.1.vstruck *(mi.6.btollvsm - mi.6.pvcostvsm)) +
-            ( mi.1.struck *(mi.6.btollsml - mi.6.pvcostsml)) +
-            ( mi.1.mtruck *(mi.6.btollmed - mi.6.pvcostmed)) +
-            ( mi.1.ctruck *(mi.6.btolllrg - mi.6.pvcostlrg)) ; Bridge tolls
+  MW[3]   = (mi.1.vstruck *(mi.6.distvsm * SMTROPC)) +
+            ( mi.1.struck *(mi.6.distsml * SMTROPC)) +
+            ( mi.1.mtruck *(mi.6.distmed * SMTROPC)) +
+            ( mi.1.ctruck *(mi.6.distlrg * LRTROPC))
+  MW[4]   = (mi.1.vstruck * mi.6.btollvsm) +
+            ( mi.1.struck * mi.6.btollsml) +
+            ( mi.1.mtruck * mi.6.btollmed) +
+            ( mi.1.ctruck * mi.6.btolllrg) ; Bridge tolls
 
   ; TOLL Trips EA * Skims EA  
   MW[5]   = (mi.1.vstrucktoll *  mi.6.tolltimevsm) + 
@@ -447,14 +441,14 @@ RUN PGM = MATRIX
             ( mi.1.strucktoll *  mi.6.tolldistsml) +
             ( mi.1.mtrucktoll *  mi.6.tolldistmed) +
             ( mi.1.ctrucktoll *  mi.6.tolldistlrg)
-  MW[7]   = (mi.1.vstrucktoll * (mi.6.tollpvcostvsm + (mi.6.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.1.strucktoll * (mi.6.tollpvcostsml + (mi.6.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.1.mtrucktoll * (mi.6.tollpvcostmed + (mi.6.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.1.ctrucktoll * (mi.6.tollpvcostlrg + (mi.6.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
-  MW[8]   = (mi.1.vstrucktoll * (mi.6.tollbtollvsm - mi.6.tollpvcostvsm)) +
-            ( mi.1.strucktoll * (mi.6.tollbtollsml - mi.6.tollpvcostsml)) +
-            ( mi.1.mtrucktoll * (mi.6.tollbtollmed - mi.6.tollpvcostmed)) +
-            ( mi.1.ctrucktoll * (mi.6.tollbtolllrg - mi.6.tollpvcostlrg)) ; Bridge tolls
+  MW[7]   = (mi.1.vstrucktoll * (mi.6.tolldistvsm * SMTROPC)) +
+            ( mi.1.strucktoll * (mi.6.tolldistsml * SMTROPC)) +
+            ( mi.1.mtrucktoll * (mi.6.tolldistmed * SMTROPC)) +
+            ( mi.1.ctrucktoll * (mi.6.tolldistlrg * LRTROPC))
+  MW[8]   = (mi.1.vstrucktoll * mi.6.tollbtollvsm) +
+            ( mi.1.strucktoll * mi.6.tollbtollsml) +
+            ( mi.1.mtrucktoll * mi.6.tollbtollmed) +
+            ( mi.1.ctrucktoll * mi.6.tollbtolllrg) ; Bridge tolls
   MW[9]   = (mi.1.vstrucktoll * mi.6.tollvtollvsm) +
             ( mi.1.strucktoll * mi.6.tollvtollsml) +
             ( mi.1.mtrucktoll * mi.6.tollvtollmed) +
@@ -469,14 +463,14 @@ RUN PGM = MATRIX
             ( mi.2.struck * mi.7.distsml) +
             ( mi.2.mtruck * mi.7.distmed) +
             ( mi.2.ctruck * mi.7.distlrg)
-  MW[12]  = (mi.2.vstruck *(mi.7.pvcostvsm + (mi.7.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.2.struck *(mi.7.pvcostsml + (mi.7.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.2.mtruck *(mi.7.pvcostmed + (mi.7.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.2.ctruck *(mi.7.pvcostlrg + (mi.7.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
-  MW[13]  = (mi.2.vstruck *(mi.7.btollvsm - mi.7.pvcostvsm)) +
-            ( mi.2.struck *(mi.7.btollsml - mi.7.pvcostsml)) +
-            ( mi.2.mtruck *(mi.7.btollmed - mi.7.pvcostmed)) +
-            ( mi.2.ctruck *(mi.7.btolllrg - mi.7.pvcostlrg)) ; Bridge tolls
+  MW[12]  = (mi.2.vstruck *(mi.7.distvsm * SMTROPC)) +
+            ( mi.2.struck *(mi.7.distsml * SMTROPC)) +
+            ( mi.2.mtruck *(mi.7.distmed * SMTROPC)) +
+            ( mi.2.ctruck *(mi.7.distlrg * LRTROPC))
+  MW[13]  = (mi.2.vstruck * mi.7.btollvsm) +
+            ( mi.2.struck * mi.7.btollsml) +
+            ( mi.2.mtruck * mi.7.btollmed) +
+            ( mi.2.ctruck * mi.7.btolllrg) ; Bridge tolls
 
   ; TOLL Trips AM * Skims AM
   MW[14]  = (mi.2.vstrucktoll *  mi.7.tolltimevsm) + 
@@ -487,14 +481,14 @@ RUN PGM = MATRIX
             ( mi.2.strucktoll *  mi.7.tolldistsml) +
             ( mi.2.mtrucktoll *  mi.7.tolldistmed) +
             ( mi.2.ctrucktoll *  mi.7.tolldistlrg)
-  MW[16]  = (mi.2.vstrucktoll * (mi.7.tollpvcostvsm + (mi.7.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.2.strucktoll * (mi.7.tollpvcostsml + (mi.7.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.2.mtrucktoll * (mi.7.tollpvcostmed + (mi.7.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.2.ctrucktoll * (mi.7.tollpvcostlrg + (mi.7.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
-  MW[17]  = (mi.2.vstrucktoll * (mi.7.tollbtollvsm - mi.7.tollpvcostvsm)) +
-            ( mi.2.strucktoll * (mi.7.tollbtollsml - mi.7.tollpvcostsml)) +
-            ( mi.2.mtrucktoll * (mi.7.tollbtollmed - mi.7.tollpvcostmed)) +
-            ( mi.2.ctrucktoll * (mi.7.tollbtolllrg - mi.7.tollpvcostlrg)) ; Bridge tolls
+  MW[16]  = (mi.2.vstrucktoll * (mi.7.tolldistvsm * SMTROPC)) +
+            ( mi.2.strucktoll * (mi.7.tolldistsml * SMTROPC)) +
+            ( mi.2.mtrucktoll * (mi.7.tolldistmed * SMTROPC)) +
+            ( mi.2.ctrucktoll * (mi.7.tolldistlrg * LRTROPC))
+  MW[17]  = (mi.2.vstrucktoll * mi.7.tollbtollvsm) +
+            ( mi.2.strucktoll * mi.7.tollbtollsml) +
+            ( mi.2.mtrucktoll * mi.7.tollbtollmed) +
+            ( mi.2.ctrucktoll * mi.7.tollbtolllrg) ; Bridge tolls
   MW[18]  = (mi.2.vstrucktoll * mi.7.tollvtollvsm) +
             ( mi.2.strucktoll * mi.7.tollvtollsml) +
             ( mi.2.mtrucktoll * mi.7.tollvtollmed) +
@@ -509,14 +503,14 @@ RUN PGM = MATRIX
             ( mi.3.struck * mi.8.distsml) +
             ( mi.3.mtruck * mi.8.distmed) +
             ( mi.3.ctruck * mi.8.distlrg)
-  MW[21]  = (mi.3.vstruck *(mi.8.pvcostvsm + (mi.8.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.3.struck *(mi.8.pvcostsml + (mi.8.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.3.mtruck *(mi.8.pvcostmed + (mi.8.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.3.ctruck *(mi.8.pvcostlrg + (mi.8.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
-  MW[22]  = (mi.3.vstruck *(mi.8.btollvsm - mi.8.pvcostvsm)) +
-            ( mi.3.struck *(mi.8.btollsml - mi.8.pvcostsml)) +
-            ( mi.3.mtruck *(mi.8.btollmed - mi.8.pvcostmed)) +
-            ( mi.3.ctruck *(mi.8.btolllrg - mi.8.pvcostlrg)) ; Bridge tolls
+  MW[21]  = (mi.3.vstruck *(mi.8.distvsm * SMTROPC)) +
+            ( mi.3.struck *(mi.8.distsml * SMTROPC)) +
+            ( mi.3.mtruck *(mi.8.distmed * SMTROPC)) +
+            ( mi.3.ctruck *(mi.8.distlrg * LRTROPC))
+  MW[22]  = (mi.3.vstruck * mi.8.btollvsm) +
+            ( mi.3.struck * mi.8.btollsml) +
+            ( mi.3.mtruck * mi.8.btollmed) +
+            ( mi.3.ctruck * mi.8.btolllrg) ; Bridge tolls
 
   ; TOLL Trips MD * Skims MD
   MW[23]  = (mi.3.vstrucktoll *  mi.8.tolltimevsm) + 
@@ -527,14 +521,14 @@ RUN PGM = MATRIX
             ( mi.3.strucktoll *  mi.8.tolldistsml) +
             ( mi.3.mtrucktoll *  mi.8.tolldistmed) +
             ( mi.3.ctrucktoll *  mi.8.tolldistlrg)
-  MW[25]  = (mi.3.vstrucktoll * (mi.8.tollpvcostvsm + (mi.8.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.3.strucktoll * (mi.8.tollpvcostsml + (mi.8.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.3.mtrucktoll * (mi.8.tollpvcostmed + (mi.8.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.3.ctrucktoll * (mi.8.tollpvcostlrg + (mi.8.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
-  MW[26]  = (mi.3.vstrucktoll * (mi.8.tollbtollvsm - mi.8.tollpvcostvsm)) +
-            ( mi.3.strucktoll * (mi.8.tollbtollsml - mi.8.tollpvcostsml)) +
-            ( mi.3.mtrucktoll * (mi.8.tollbtollmed - mi.8.tollpvcostmed)) +
-            ( mi.3.ctrucktoll * (mi.8.tollbtolllrg - mi.8.tollpvcostlrg)) ; Bridge tolls
+  MW[25]  = (mi.3.vstrucktoll * (mi.8.tolldistvsm * SMTROPC)) +
+            ( mi.3.strucktoll * (mi.8.tolldistsml * SMTROPC)) +
+            ( mi.3.mtrucktoll * (mi.8.tolldistmed * SMTROPC)) +
+            ( mi.3.ctrucktoll * (mi.8.tolldistlrg * LRTROPC))
+  MW[26]  = (mi.3.vstrucktoll *  mi.8.tollbtollvsm) +
+            ( mi.3.strucktoll *  mi.8.tollbtollsml) +
+            ( mi.3.mtrucktoll *  mi.8.tollbtollmed) +
+            ( mi.3.ctrucktoll *  mi.8.tollbtolllrg) ; Bridge tolls
   MW[27]  = (mi.3.vstrucktoll * mi.8.tollvtollvsm) +
             ( mi.3.strucktoll * mi.8.tollvtollsml) +
             ( mi.3.mtrucktoll * mi.8.tollvtollmed) +
@@ -549,14 +543,14 @@ RUN PGM = MATRIX
             ( mi.4.struck * mi.9.distsml) +
             ( mi.4.mtruck * mi.9.distmed) +
             ( mi.4.ctruck * mi.9.distlrg)
-  MW[30]  = (mi.4.vstruck *(mi.9.pvcostvsm + (mi.9.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.4.struck *(mi.9.pvcostsml + (mi.9.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.4.mtruck *(mi.9.pvcostmed + (mi.9.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.4.ctruck *(mi.9.pvcostlrg + (mi.9.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
-  MW[31]  = (mi.4.vstruck *(mi.9.btollvsm - mi.9.pvcostvsm)) +
-            ( mi.4.struck *(mi.9.btollsml - mi.9.pvcostsml)) +
-            ( mi.4.mtruck *(mi.9.btollmed - mi.9.pvcostmed)) +
-            ( mi.4.ctruck *(mi.9.btolllrg - mi.9.pvcostlrg)) ; Bridge tolls
+  MW[30]  = (mi.4.vstruck *(mi.9.distvsm * SMTROPC)) +
+            ( mi.4.struck *(mi.9.distsml * SMTROPC)) +
+            ( mi.4.mtruck *(mi.9.distmed * SMTROPC)) +
+            ( mi.4.ctruck *(mi.9.distlrg * LRTROPC))
+  MW[31]  = (mi.4.vstruck * mi.9.btollvsm) +
+            ( mi.4.struck * mi.9.btollsml) +
+            ( mi.4.mtruck * mi.9.btollmed) +
+            ( mi.4.ctruck * mi.9.btolllrg) ; Bridge tolls
 
   ; TOLL Trips PM * Skims PM
   MW[32]  = (mi.4.vstrucktoll *  mi.9.tolltimevsm) + 
@@ -567,14 +561,14 @@ RUN PGM = MATRIX
             ( mi.4.strucktoll *  mi.9.tolldistsml) +
             ( mi.4.mtrucktoll *  mi.9.tolldistmed) +
             ( mi.4.ctrucktoll *  mi.9.tolldistlrg)
-  MW[34]  = (mi.4.vstrucktoll * (mi.9.tollpvcostvsm + (mi.9.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.4.strucktoll * (mi.9.tollpvcostsml + (mi.9.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.4.mtrucktoll * (mi.9.tollpvcostmed + (mi.9.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.4.ctrucktoll * (mi.9.tollpvcostlrg + (mi.9.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
-  MW[35]  = (mi.4.vstrucktoll * (mi.9.tollbtollvsm - mi.9.tollpvcostvsm)) +
-            ( mi.4.strucktoll * (mi.9.tollbtollsml - mi.9.tollpvcostsml)) +
-            ( mi.4.mtrucktoll * (mi.9.tollbtollmed - mi.9.tollpvcostmed)) +
-            ( mi.4.ctrucktoll * (mi.9.tollbtolllrg - mi.9.tollpvcostlrg)) ; Bridge tolls
+  MW[34]  = (mi.4.vstrucktoll * (mi.9.tolldistvsm * SMTROPC)) +
+            ( mi.4.strucktoll * (mi.9.tolldistsml * SMTROPC)) +
+            ( mi.4.mtrucktoll * (mi.9.tolldistmed * SMTROPC)) +
+            ( mi.4.ctrucktoll * (mi.9.tolldistlrg * LRTROPC))
+  MW[35]  = (mi.4.vstrucktoll * mi.9.tollbtollvsm) +
+            ( mi.4.strucktoll * mi.9.tollbtollsml) +
+            ( mi.4.mtrucktoll * mi.9.tollbtollmed) +
+            ( mi.4.ctrucktoll * mi.9.tollbtolllrg) ; Bridge tolls
   MW[36]  = (mi.4.vstrucktoll * mi.9.tollvtollvsm) +
             ( mi.4.strucktoll * mi.9.tollvtollsml) +
             ( mi.4.mtrucktoll * mi.9.tollvtollmed) +
@@ -589,14 +583,14 @@ RUN PGM = MATRIX
             ( mi.5.struck * mi.10.distsml) +
             ( mi.5.mtruck * mi.10.distmed) +
             ( mi.5.ctruck * mi.10.distlrg)
-  MW[39]  = (mi.5.vstruck *(mi.10.pvcostvsm + (mi.10.distvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.5.struck *(mi.10.pvcostsml + (mi.10.distsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.5.mtruck *(mi.10.pvcostmed + (mi.10.distmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.5.ctruck *(mi.10.pvcostlrg + (mi.10.distlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
-  MW[40]  = (mi.5.vstruck *(mi.10.btollvsm - mi.10.pvcostvsm)) +
-            ( mi.5.struck *(mi.10.btollsml - mi.10.pvcostsml)) +
-            ( mi.5.mtruck *(mi.10.btollmed - mi.10.pvcostmed)) +
-            ( mi.5.ctruck *(mi.10.btolllrg - mi.10.pvcostlrg)) ; Bridge tolls
+  MW[39]  = (mi.5.vstruck *(mi.10.distvsm * SMTROPC)) +
+            ( mi.5.struck *(mi.10.distsml * SMTROPC)) +
+            ( mi.5.mtruck *(mi.10.distmed * SMTROPC)) +
+            ( mi.5.ctruck *(mi.10.distlrg * LRTROPC))
+  MW[40]  = (mi.5.vstruck * mi.10.btollvsm) +
+            ( mi.5.struck * mi.10.btollsml) +
+            ( mi.5.mtruck * mi.10.btollmed) +
+            ( mi.5.ctruck * mi.10.btolllrg) ; Bridge tolls
 
   ; TOLL Trips EV * Skims EV
   MW[41]  = (mi.5.vstrucktoll *  mi.10.tolltimevsm) + 
@@ -607,14 +601,14 @@ RUN PGM = MATRIX
             ( mi.5.strucktoll *  mi.10.tolldistsml) +
             ( mi.5.mtrucktoll *  mi.10.tolldistmed) +
             ( mi.5.ctrucktoll *  mi.10.tolldistlrg)
-  MW[43]  = (mi.5.vstrucktoll * (mi.10.tollpvcostvsm + (mi.10.tolldistvsm * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.5.strucktoll * (mi.10.tollpvcostsml + (mi.10.tolldistsml * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.5.mtrucktoll * (mi.10.tollpvcostmed + (mi.10.tolldistmed * (SMTROPC_PER_RM+SMTROPC_PER_FU)))) +
-            ( mi.5.ctrucktoll * (mi.10.tollpvcostlrg + (mi.10.tolldistlrg * (LRTROPC_PER_RM+LRTROPC_PER_FU))))
-  MW[44]  = (mi.5.vstrucktoll * (mi.10.tollbtollvsm - mi.10.tollpvcostvsm)) +
-            ( mi.5.strucktoll * (mi.10.tollbtollsml - mi.10.tollpvcostsml)) +
-            ( mi.5.mtrucktoll * (mi.10.tollbtollmed - mi.10.tollpvcostmed)) +
-            ( mi.5.ctrucktoll * (mi.10.tollbtolllrg - mi.10.tollpvcostlrg)) ; Bridge tolls
+  MW[43]  = (mi.5.vstrucktoll * (mi.10.tolldistvsm * SMTROPC)) +
+            ( mi.5.strucktoll * (mi.10.tolldistsml * SMTROPC)) +
+            ( mi.5.mtrucktoll * (mi.10.tolldistmed * SMTROPC)) +
+            ( mi.5.ctrucktoll * (mi.10.tolldistlrg * LRTROPC))
+  MW[44]  = (mi.5.vstrucktoll * mi.10.tollbtollvsm) +
+            ( mi.5.strucktoll * mi.10.tollbtollsml) +
+            ( mi.5.mtrucktoll * mi.10.tollbtollmed) +
+            ( mi.5.ctrucktoll * mi.10.tollbtolllrg) ; Bridge tolls
   MW[45]  = (mi.5.vstrucktoll * mi.10.tollvtollvsm) +
             ( mi.5.strucktoll * mi.10.tollvtollsml) +
             ( mi.5.mtrucktoll * mi.10.tollvtollmed) +

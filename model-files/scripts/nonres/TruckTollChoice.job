@@ -91,22 +91,22 @@ loop period = 1,5
       if (class = 1) 
          token_table = 'vstruck'
          token_class = 'VSM'
-         token_opcost= '(SMTROPC_PER_RM+SMTROPC_PER_FU)'
+         token_opcost= 'SMTROPC'
    
       elseif (class = 2)
          token_table = 'struck'
          token_class = 'SML'
-         token_opcost= '(SMTROPC_PER_RM+SMTROPC_PER_FU)'
+         token_opcost= 'SMTROPC'
          
       elseif (class = 3)
          token_table = 'mtruck'
          token_class = 'MED'
-         token_opcost= '(SMTROPC_PER_RM+SMTROPC_PER_FU)'
+         token_opcost= 'SMTROPC'
          
       elseif (class = 4)
          token_table = 'ctruck'
          token_class = 'LRG'
-         token_opcost= '(LRTROPC_PER_RM+LRTROPC_PER_FU)'
+         token_opcost= 'LRTROPC'
       
       endif
    

@@ -32,6 +32,7 @@ public class Tour implements java.io.Serializable {
     private byte tourMode;
     private byte subtourFreqChoice;
     private short tourParkTaz;
+    private float destinationChoiceLogsum;
     
     private float[] tourModalProbabilities;
     private float[] tourModalUtilities;
@@ -567,6 +568,14 @@ public class Tour implements java.io.Serializable {
 
 	public void setUseOwnedAV(boolean useOwnedAV) {
 		this.useOwnedAV = useOwnedAV;
+	}
+
+	public float getDestinationChoiceLogsum() {
+		return destinationChoiceLogsum;
+	}
+
+	public void setDestinationChoiceLogsum(float destinationChoiceLogsum) {
+		this.destinationChoiceLogsum = destinationChoiceLogsum;
 	}
 
     

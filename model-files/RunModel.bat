@@ -27,6 +27,8 @@ if %computername%==MODEL2-D set HOST_IP_ADDRESS=192.168.1.209
 if %computername%==PORMDLPPW01 set HOST_IP_ADDRESS=172.24.0.101
 if %computername%==PORMDLPPW02 set HOST_IP_ADDRESS=172.24.0.102
 
+:: PBA50, CleanAndGreen, BackToTheFuture, or RisingTidesFallingFortunes
+set FUTURE=PBA50
 :: AV SCENARIO
 SET AV_SCENARIO=0
 
@@ -87,7 +89,6 @@ mkdir nonres
 mkdir main
 mkdir logs
 mkdir database
-mkdir sgr
 
 :: Stamp the feedback report with the date and time of the model start
 echo STARTED MODEL RUN  %DATE% %TIME% >> logs\feedback.rpt 
@@ -100,7 +101,6 @@ copy INPUT\popsyn\              popsyn\
 copy INPUT\nonres\              nonres\
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
-copy INPUT\sgr\                 sgr\
 
 
 :: ------------------------------------------------------------------------------------------------------
@@ -130,10 +130,6 @@ if ERRORLEVEL 2 goto done
 
 :: Create time-of-day-specific 
 runtpp CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
-if ERRORLEVEL 2 goto done
-
-:: Add pavement cost adjustment for state of good repair work
-runtpp CTRAMP\scripts\preprocess\AddPavementCost.job
 if ERRORLEVEL 2 goto done
 
 :: Create HSR trip tables to/from Bay Area stations

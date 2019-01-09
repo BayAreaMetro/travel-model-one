@@ -145,7 +145,7 @@ loop tpnum=1,5
         ; if destination is HSR station, drive option is drv-trn-wlk
         drv_ivt    = MI.3.ivt
         drv_ovt    = MI.3.wait + MI.3.dtime + MI.3.waux + MI.3.wegr
-        drv_cost   = MI.3.fare + MI.3.ddist*(AUTOOPC_PER_RM+AUTOOPC_PER_FU)
+        drv_cost   = MI.3.fare + MI.3.ddist*AUTOOPC
 
         ; factor boardpen = 0, 15, 30, 45, 60
         if (MI.3.boards <= 1)
@@ -179,7 +179,7 @@ loop tpnum=1,5
         ; if origin is HSR station, drive option is wlk-trn-drv
         drv_ivt    = MI.4.ivt
         drv_ovt    = MI.4.wait + MI.4.dtime + MI.4.waux + MI.4.wacc
-        drv_cost   = MI.4.fare + MI.4.ddist*(AUTOOPC_PER_RM+AUTOOPC_PER_FU)
+        drv_cost   = MI.4.fare + MI.4.ddist*AUTOOPC
 
         ; factor boardpen = 0, 15, 30, 45, 60
         if (MI.4.boards <= 1)

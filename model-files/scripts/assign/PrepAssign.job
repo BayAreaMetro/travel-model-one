@@ -705,10 +705,10 @@ loop period = 1, 5
    run pgm = matrix
      
       ; read in the individual trips fixed format file from step one
-      filei mati[1] = main\IndivTrips@token_period@.dat, pattern = ijm:v, fields = #1,2,0,3-26
+      filei mati[1] = main\IndivTrips@token_period@.dat, pattern = ijm:v, fields = #1,2,0,3-32
       
       ; read in the joint trips fixed format file from step two
-      filei mati[2] = main\jointtrips@token_period@.dat, pattern=ijm:v, fields=#1,2,0,3-26
+      filei mati[2] = main\jointtrips@token_period@.dat, pattern=ijm:v, fields=#1,2,0,3-32
 
       ; read in the transit trips to/from bay area HSR stations
       filei mati[3] = main\trips_transitHsr@token_period@.tpp
@@ -732,7 +732,7 @@ loop period = 1, 5
 		lookup[2]=1, result=3,      ; (occ,single_tnc)
 		lookup[3]=1, result=4       ; (occ,shared_tnc)
 	
-     
+                list=Y                      ; echo the lookup table to the standard printo file
      
       zones = @token_zones@                
     

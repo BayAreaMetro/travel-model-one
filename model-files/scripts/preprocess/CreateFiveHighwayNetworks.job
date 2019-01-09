@@ -58,9 +58,6 @@ loop period = 1, 5
       token_golden_gate_nb_lanes = '2'
       token_golden_gate_sb_lanes = '4'
       
-      token_caldecott_wb_lanes   = '4'
-      token_caldecott_eb_lanes   = '2'
-      
       token_sterling_onramp = 'USE = 1'
       
       ; shared ride bridge delay by-pass links
@@ -80,11 +77,7 @@ loop period = 1, 5
       token_golden_gate_nb_lanes = '2'
       token_golden_gate_sb_lanes = '4'
       
-      token_caldecott_wb_lanes   = '4'
-      token_caldecott_eb_lanes   = '2'
-      
       token_sterling_onramp = 'USE = 1'
-      
       
       ; shared ride bridge delay by-pass links
       token_carquinez_bridge_sr_bypass = '; do not delete the link'
@@ -102,9 +95,6 @@ loop period = 1, 5
       ; reversible infrastructure
       token_golden_gate_nb_lanes = '2'
       token_golden_gate_sb_lanes = '4'
-      
-      token_caldecott_wb_lanes   = '2'
-      token_caldecott_eb_lanes   = '2'
       
       token_sterling_onramp = 'USE = 1'
       
@@ -125,11 +115,7 @@ loop period = 1, 5
       token_golden_gate_nb_lanes = '4'
       token_golden_gate_sb_lanes = '2'
       
-      token_caldecott_wb_lanes   = '2'
-      token_caldecott_eb_lanes   = '4'
-      
       token_sterling_onramp = 'USE = 3'
-      
       
       ; shared ride bridge delay by-pass links
       token_carquinez_bridge_sr_bypass = '; do not delete the link'
@@ -147,9 +133,6 @@ loop period = 1, 5
       ; reversible infrastructure
       token_golden_gate_nb_lanes = '4'
       token_golden_gate_sb_lanes = '2'
-      
-      token_caldecott_wb_lanes   = '2'
-      token_caldecott_eb_lanes   = '4'
       
       token_sterling_onramp = 'USE = 1'
       
@@ -204,13 +187,6 @@ loop period = 1, 5
       if (a = 7319 & b = 7338) LANES = @token_golden_gate_nb_lanes@
       if (a = 7338 & b = 7318) LANES = @token_golden_gate_nb_lanes@
       if (a = 7318 & b = 7316) LANES = @token_golden_gate_nb_lanes@
-      
-      ; caldecott tunnel reversible lanes 
-      if (a = 1854 & b = 2565) LANES = @token_caldecott_wb_lanes@
-      if (a = 2565 & b = 3021) LANES = @token_caldecott_wb_lanes@
-      
-      if (a = 3015 & b = 2566) LANES = @token_caldecott_eb_lanes@
-      if (a = 2566 & b = 1837) LANES = @token_caldecott_eb_lanes@
       
       ; sterling on-ramp
       if (a = 7432 & b = 7017) @token_sterling_onramp@

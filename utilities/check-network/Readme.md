@@ -25,6 +25,8 @@ M:\Application\Model One\STIP2017\2040_06_XXX\ = use this for MODEL_DIR
     trn_check\                  = used for checking transit
   CTRAMP\
     scripts\
+      block\
+        hwyparam.block          = file with values filled in (e.g. from RuntimeConfiguration.py)
       preprocess\
         SetTolls.JOB            = file with bridge and express lane tolls.  Otherwise, github version is used (which is probably wrong!)
 ```

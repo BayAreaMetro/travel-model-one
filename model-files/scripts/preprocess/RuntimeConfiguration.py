@@ -199,7 +199,7 @@ def config_mobility_params(replacements):
     # TNC.shared.s2.share = 0.3
     # TNC.shared.s3.share = 0.7
 
-
+    SharingPrefFactor  = float(get_property(params_filename, myfile_contents, "Sharing_Preferences_factor"))
 
     avShare   = float(get_property(params_filename, myfile_contents, "Mobility.AV.Share"))
     pBoostAutosLTDrivers = float(get_property(params_filename, myfile_contents, "Mobility.AV.ProbabilityBoost.AutosLTDrivers"))
@@ -247,6 +247,9 @@ def config_mobility_params(replacements):
     tncSharedS3Share = float(get_property(params_filename, myfile_contents, "TNC.shared.s3.share"))
 
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
+
+    replacements[filepath]["(\Sharing_Preferences_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % SharingPrefFactor
+
     replacements[filepath]["(\nMobility.AV.Share[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avShare
     replacements[filepath]["(\nMobility.AV.ProbabilityBoost.AutosLTDrivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % pBoostAutosLTDrivers
     replacements[filepath]["(\nMobility.AV.ProbabilityBoost.AutosGEDrivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % pBoostAutosGEDrivers
@@ -309,64 +312,33 @@ def config_auto_opcost(replacements):
     myfile_contents = myfile.read()
     myfile.close()
 
-    auto_opc_perfect_rm   = float(get_property(params_filename, myfile_contents, "AutoOpCost_perfect_RM"))
-    auto_opc_perfect_fuel = float(get_property(params_filename, myfile_contents, "AutoOpCost_perfect_Fuel"))
+    auto_opc        = float(get_property(params_filename, myfile_contents, "AutoOpCost"))
 
     # put them into the CTRAMP\scripts\block\hwyParam.block
     filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
-    replacements[filepath]["(\nAUTOOPC_PER_RM[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc_perfect_rm
-    replacements[filepath]["(\nAUTOOPC_PER_FU[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc_perfect_fuel
-
-    # total auto operating cost on perfect pavement
-    auto_opc_perfect = auto_opc_perfect_rm + auto_opc_perfect_fuel
+    replacements[filepath]["(\nAUTOOPC[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc
 
     filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
-    replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc_perfect
+    replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc
 
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
-    replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc_perfect
+    replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc
 
     # put it into the UECs
-    config_uec("%.2f" % auto_opc_perfect)
-
-
-    # auto operating cost freeway adjustments
-    auto_opc_adjust_rm   = get_property(params_filename, myfile_contents, "AutoOpCost_fwyadj_RM")
-    auto_opc_adjust_fuel = get_property(params_filename, myfile_contents, "AutoOpCost_fwyadj_Fuel")
-
-    filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
-    replacements[filepath]["(\nAUTOOPC_FWY_RM[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % auto_opc_adjust_rm
-    replacements[filepath]["(\nAUTOOPC_FWY_FU[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % auto_opc_adjust_fuel
+    config_uec("%.2f" % auto_opc)
 
     # small truck
-    smtr_opc_perfect_rm   = get_property(params_filename, myfile_contents, "SmTruckOpCost_perfect_RM")
-    smtr_opc_perfect_fuel = get_property(params_filename, myfile_contents, "SmTruckOpCost_perfect_Fuel")
-    smtr_opc_adjust_rm    = get_property(params_filename, myfile_contents, "SmTruckOpCost_fwyadj_RM")
-    smtr_opc_adjust_fuel  = get_property(params_filename, myfile_contents, "SmTruckOpCost_fwyadj_Fuel")
-    replacements[filepath]["(\nSMTROPC_PER_RM[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % smtr_opc_perfect_rm
-    replacements[filepath]["(\nSMTROPC_PER_FU[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % smtr_opc_perfect_fuel
-    replacements[filepath]["(\nSMTROPC_FWY_RM[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % smtr_opc_adjust_rm
-    replacements[filepath]["(\nSMTROPC_FWY_FU[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % smtr_opc_adjust_fuel
+    filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
+    smtr_opc        = get_property(params_filename, myfile_contents, "SmTruckOpCost")
+    replacements[filepath]["(\nSMTROPC[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % smtr_opc
 
     # large truck
-    lrtr_opc_perfect_rm   = get_property(params_filename, myfile_contents, "LrTruckOpCost_perfect_RM")
-    lrtr_opc_perfect_fuel = get_property(params_filename, myfile_contents, "LrTruckOpCost_perfect_Fuel")
-    lrtr_opc_adjust_rm    = get_property(params_filename, myfile_contents, "LrTruckOpCost_fwyadj_RM")
-    lrtr_opc_adjust_fuel  = get_property(params_filename, myfile_contents, "LrTruckOpCost_fwyadj_Fuel")
-    replacements[filepath]["(\nLRTROPC_PER_RM[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % lrtr_opc_perfect_rm
-    replacements[filepath]["(\nLRTROPC_PER_FU[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % lrtr_opc_perfect_fuel
-    replacements[filepath]["(\nLRTROPC_FWY_RM[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % lrtr_opc_adjust_rm
-    replacements[filepath]["(\nLRTROPC_FWY_FU[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % lrtr_opc_adjust_fuel
+    lrtr_opc        = get_property(params_filename, myfile_contents, "LrTruckOpCost")
+    replacements[filepath]["(\nLRTROPC[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % lrtr_opc
 
     # bus
-    bus_opc_perfect_rm   = get_property(params_filename, myfile_contents, "BusOpCost_perfect_RM")
-    bus_opc_perfect_fuel = get_property(params_filename, myfile_contents, "BusOpCost_perfect_Fuel")
-    bus_opc_adjust_rm    = get_property(params_filename, myfile_contents, "BusOpCost_fwyadj_RM")
-    bus_opc_adjust_fuel  = get_property(params_filename, myfile_contents, "BusOpCost_fwyadj_Fuel")
-    replacements[filepath]["(\nBUSOPC_PER_RM[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % bus_opc_perfect_rm
-    replacements[filepath]["(\nBUSOPC_PER_FU[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % bus_opc_perfect_fuel
-    replacements[filepath]["(\nBUSOPC_FWY_RM[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % bus_opc_adjust_rm
-    replacements[filepath]["(\nBUSOPC_FWY_FU[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % bus_opc_adjust_fuel
+    bus_opc         = get_property(params_filename, myfile_contents, "BusOpCost")
+    replacements[filepath]["(\nBUSOPC[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % bus_opc
 
     # AV impacts on road capacity - represented by adjusting passenger car equivalents (PCEs) by facility type
     av_pcefac_ft01   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT01"))
@@ -380,7 +352,7 @@ def config_auto_opcost(replacements):
     av_pcefac_ft09   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT09"))
     av_pcefac_ft10   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT10"))
 
-    sharing   = float(get_property(params_filename, myfile_contents, "Sharing_Preferences"))
+    zpv   = float(get_property(params_filename, myfile_contents, "ZPV_fac"))
 
     # put the av pce factors into the CTRAMP\scripts\block\hwyParam.block
     replacements[filepath]["(\nAV_PCE_FT01[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft01
@@ -394,7 +366,7 @@ def config_auto_opcost(replacements):
     replacements[filepath]["(\nAV_PCE_FT09[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft09
     replacements[filepath]["(\nAV_PCE_FT10[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft10
 
-    replacements[filepath]["(\nSharingPref[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % sharing
+    replacements[filepath]["(\nZPV_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % zpv
 
 def config_host_ip(replacements):
     """

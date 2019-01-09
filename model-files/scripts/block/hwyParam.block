@@ -1,27 +1,9 @@
 
-; set by RuntimeConfiguration.py -- AUTO
-AUTOOPC_PER_RM = xx.xx     ; perfect pavement opcost for R&M, year 2000 cents per mile
-AUTOOPC_PER_FU = xx.xx     ; perfect pavement opcost for fuel, year 2000 cents per mile
-AUTOOPC_FWY_RM = x.xxxx    ; freeway adjustment factor for R&M
-AUTOOPC_FWY_FU = x.xxxx    ; freeway adjustment factor for fuel
-
-; set by RuntimeConfiguration.py -- SMALL TRUCK
-SMTROPC_PER_RM = xx.xx     ; perfect pavement opcost for R&M, year 2000 cents per mile
-SMTROPC_PER_FU = xx.xx     ; perfect pavement opcost for fuel, year 2000 cents per mile
-SMTROPC_FWY_RM = x.xxxx    ; freeway adjustment factor for R&M
-SMTROPC_FWY_FU = x.xxxx    ; freeway adjustment factor for fuel
-
-; set by RuntimeConfiguration.py -- LARGE TRUCK
-LRTROPC_PER_RM = xx.xx     ; perfect pavement opcost for R&M, year 2000 cents per mile
-LRTROPC_PER_FU = xx.xx     ; perfect pavement opcost for fuel, year 2000 cents per mile
-LRTROPC_FWY_RM = x.xxxx    ; freeway adjustment factor for R&M
-LRTROPC_FWY_FU = x.xxxx    ; freeway adjustment factor for fuel
-
-; set by RuntimeConfiguration.py -- BUS
-BUSOPC_PER_RM  = xx.xx     ; perfect pavement opcost for R&M, year 2000 cents per mile
-BUSOPC_PER_FU  = xx.xx     ; perfect pavement opcost for fuel, year 2000 cents per mile
-BUSOPC_FWY_RM  = x.xxxx    ; freeway adjustment factor for R&M
-BUSOPC_FWY_FU  = x.xxxx    ; freeway adjustment factor for fuel
+; set by RuntimeConfiguration.py
+AUTOOPC = xx.xx     ; AUTO,        year 2000 cents per mile
+SMTROPC = xx.xx     ; SMALL TRUCK, year 2000 cents per mile
+LRTROPC = xx.xx     ; LARGE TRUCK, year 2000 cents per mile
+BUSOPC  = xx.xx     ; BUS,         year 2000 cents per mile
 
 VOT           = 15.0      ; year 2000 dollars per hour
 TRUCKVOT      = 30.0      ; year 2000 dollars per hour
@@ -42,5 +24,5 @@ AV_PCE_FT08  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenari
 AV_PCE_FT09  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeways with ITS treatments and Golden Gate Bridge
 AV_PCE_FT10  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = expressways and arterials with ITS treatments
 
-; set by RuntimeConfiguration.py -- Sharing preferences
-SharingPref  = xx.xx     ; a factor between 0 to 1
+; set by RuntimeConfiguration.py -- Zero Passenger Vehicles
+ZPV_factor  = xx.xx     ; a factor between 0 to 1

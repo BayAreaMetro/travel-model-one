@@ -186,6 +186,7 @@ public class HouseholdSubTourDestChoiceModel implements Serializable {
                 purposeIndex = tour.getTourPurposeIndex();
                 
                 int chosen = -1;
+                float dcLogsum = -99;
                 try {
 
                     int homeTaz = hh.getHhTaz();
@@ -218,7 +219,9 @@ public class HouseholdSubTourDestChoiceModel implements Serializable {
 
                     
                     // get the tour location alternative chosen from the sample
-                    chosen =  selectLocationFromSampleOfAlternatives( dcDmuObject, dcSoaDmuObject, mcDmuObject, tour, p, purposeName, purposeIndex, ++choiceNum );
+                    double[] returnArray =  selectLocationFromSampleOfAlternatives( dcDmuObject, dcSoaDmuObject, mcDmuObject, tour, p, purposeName, purposeIndex, ++choiceNum );
+                    chosen = (int) returnArray[0];
+                    dcLogsum = (float) returnArray[1];
 
                 }
                 catch (RuntimeException e) {
@@ -235,6 +238,7 @@ public class HouseholdSubTourDestChoiceModel implements Serializable {
                 // set chosen values in tour object
                 tour.setTourDestTaz( chosenDestAlt );
                 tour.setTourDestWalkSubzone( chosenShrtWlk );
+                tour.setDestinationChoiceLogsum(dcLogsum);
 
                 tour.setTourStartHour( 0 );
                 tour.setTourEndHour( 0 );
@@ -252,7 +256,21 @@ public class HouseholdSubTourDestChoiceModel implements Serializable {
     
 
 
-    private int selectLocationFromSampleOfAlternatives( DestChoiceDMU dcDmuObject, DcSoaDMU dcSoaDmuObject, ModeChoiceDMU mcDmuObject, Tour tour, Person person, String purposeName, int purposeIndex, int choiceNum ) {
+    /**
+     * Select the zone\subzone combination from the sample of alternatives. Returns the selected
+     * chosen alternative number and the logsum in an array.
+	 *
+     * @param dcDmuObject
+     * @param dcSoaDmuObject
+     * @param mcDmuObject
+     * @param tour
+     * @param person
+     * @param purposeName
+     * @param purposeIndex
+     * @param choiceNum
+     * @return
+     */
+    private double[] selectLocationFromSampleOfAlternatives( DestChoiceDMU dcDmuObject, DcSoaDMU dcSoaDmuObject, ModeChoiceDMU mcDmuObject, Tour tour, Person person, String purposeName, int purposeIndex, int choiceNum ) {
 
         int uecIndex = modelStructure.getDcUecIndexForPurpose( purposeName );
         
@@ -366,7 +384,8 @@ public class HouseholdSubTourDestChoiceModel implements Serializable {
         
         // compute destination choice proportions and choose alternative
         dcModel[uecIndex].computeUtilities ( dcDmuObject, dcDmuObject.getDmuIndexValues(), destAltsAvailable, destAltsSample );
-        
+        double dcLogsum = dcModel[uecIndex].getLogsum();
+
         Random hhRandom = household.getHhRandom();
         int randomCount = household.getHhRandomCount();
         double rn = hhRandom.nextDouble();
@@ -437,8 +456,8 @@ public class HouseholdSubTourDestChoiceModel implements Serializable {
 
         }
 
-
-        return chosen;
+        double[] returnArray = {(double) chosen, dcLogsum};
+        return returnArray;
 
     }
     

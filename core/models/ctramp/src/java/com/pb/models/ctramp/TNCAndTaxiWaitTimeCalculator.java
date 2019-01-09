@@ -1,5 +1,6 @@
 package com.pb.models.ctramp;
 
+import java.io.Serializable;
 import java.util.HashMap;
 
 import org.apache.log4j.Logger;
@@ -8,7 +9,7 @@ import umontreal.iro.lecuyer.probdist.LognormalDist;
 
 
 
-public class TNCAndTaxiWaitTimeCalculator {
+public class TNCAndTaxiWaitTimeCalculator  implements Serializable{
 
     private static Logger           logger   = Logger.getLogger(TNCAndTaxiWaitTimeCalculator.class);
 

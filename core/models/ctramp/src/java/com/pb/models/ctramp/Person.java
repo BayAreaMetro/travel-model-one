@@ -62,6 +62,9 @@ public class Person implements java.io.Serializable {
     private byte workLocationPurposeIndex;
     private byte universityLocationPurposeIndex;
     private byte schoolLocationPurposeIndex;
+    
+    private float workLocationLogsum;
+    private float schoolLocationLogsum;
 
     private byte freeParkingAvailable;
     
@@ -410,6 +413,8 @@ public class Person implements java.io.Serializable {
 
             tempTour.setTourDestTaz(workLoc);
             tempTour.setTourDestWalkSubzone(workLocSubzone);
+            
+            tempTour.setDestinationChoiceLogsum(workLocationLogsum);
 
             tempTour.setTourPurpose( tourPurpose );
 
@@ -459,6 +464,8 @@ public class Person implements java.io.Serializable {
     		
     		tempTour.setTourDestTaz(schoolLoc);
     		tempTour.setTourDestWalkSubzone(schoolLocSubzone);
+    		
+    		tempTour.setDestinationChoiceLogsum(schoolLocationLogsum);
 
             tempTour.setTourPurpose( tourPurpose );
 
@@ -1534,6 +1541,25 @@ public class Person implements java.io.Serializable {
 
 	public void setPersPecasOcc(int PecasOcc) {
 		this.persPecasOcc = (byte) PecasOcc;
+	}
+
+	public float getWorkLocationLogsum() {
+		return workLocationLogsum;
+	}
+
+
+	public void setWorkLocationLogsum(float workLocationLogsum) {
+		this.workLocationLogsum = workLocationLogsum;
+	}
+
+
+	public float getSchoolLocationLogsum() {
+		return schoolLocationLogsum;
+	}
+
+
+	public void setSchoolLocationLogsum(float schoolLocationLogsum) {
+		this.schoolLocationLogsum = schoolLocationLogsum;
 	}
 
 	public enum EmployStatus {

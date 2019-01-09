@@ -216,7 +216,7 @@ public class UsualWorkSchoolLocationChoiceModel implements Serializable {
         if ( PACKET_SIZE == 0 )
             PACKET_SIZE = householdDataManager.getNumHouseholds();
 
-
+        logger.info("UsualWorkSchoolLocationChoiceModel packet size: "+PACKET_SIZE);
     
         
         // set current iteration either to 0, or if a previously written shadow price file is specified,
@@ -315,6 +315,7 @@ public class UsualWorkSchoolLocationChoiceModel implements Serializable {
             catch (Exception e)
             {
                 e.printStackTrace();
+                throw new RuntimeException(e);
             }
 
             logger.info( "after results returned, free memory = " + Runtime.getRuntime().freeMemory() + ", total memory = " + Runtime.getRuntime().totalMemory() );

@@ -266,7 +266,9 @@ public class HouseholdDataWriter {
         data.add("walk_subzone");
         data.add("income");
         data.add("autos");
+        data.add("cdap_pattern");
         data.add("jtf_choice");
+        data.add("jtf_pattern");
         data.add("size");
         data.add("workers");
         data.add("auto_suff");
@@ -304,7 +306,9 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.INTEGER);
+        data.add(SqliteDataTypes.TEXT);
         data.add(SqliteDataTypes.INTEGER);
+        data.add(SqliteDataTypes.TEXT);
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.TEXT);
@@ -344,7 +348,9 @@ public class HouseholdDataWriter {
         data.add(string(hh.getHhWalkSubzone()));
         data.add(string(hh.getIncomeInDollars()));
         data.add(string(hh.getAutoOwnershipModelResult()));
+        data.add(hh.getCoordinatedDailyActivityPattern());
         data.add(string(hh.getJointTourFreqChosenAlt()));
+        data.add(hh.getJointTourFreqChosenAltName());
         data.add(string(hh.getSize()));
         data.add(string(hh.getWorkers()));
         data.add(suff);
@@ -387,6 +393,8 @@ public class HouseholdDataWriter {
         data.add("activity_pattern");
         data.add("imf_choice");
         data.add("inmf_choice");
+        data.add("workDCLogsum");
+        data.add("schoolDCLogsum");
         return data;
     }
 
@@ -403,6 +411,8 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.TEXT);
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.INTEGER);
+        data.add(SqliteDataTypes.REAL); 
+        data.add(SqliteDataTypes.REAL); 
         return data;
     }
 
@@ -419,6 +429,8 @@ public class HouseholdDataWriter {
         data.add(string(p.getCdapActivity()));
         data.add(string(p.getImtfChoice()));
         data.add(string(p.getInmtfChoice()));
+        data.add(string(p.getWorkLocationLogsum()));
+        data.add(string(p.getSchoolLocationLogsum()));
         return data;
     }
 
@@ -442,6 +454,7 @@ public class HouseholdDataWriter {
        data.add("num_ob_stops");
        data.add("num_ib_stops");
        data.add("avAvailable");
+       data.add("dcLogsum");
        
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -477,6 +490,7 @@ public class HouseholdDataWriter {
        data.add("num_ob_stops");
        data.add("num_ib_stops");
        data.add("avAvailable");
+       data.add("dcLogsum");
        
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -515,6 +529,7 @@ public class HouseholdDataWriter {
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.INTEGER);
+       data.add(SqliteDataTypes.REAL);
        
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -548,6 +563,7 @@ public class HouseholdDataWriter {
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.INTEGER);
+       data.add(SqliteDataTypes.REAL);
       
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -584,6 +600,7 @@ public class HouseholdDataWriter {
        data.add(string( t.getNumOutboundStops() == 0 ? 0 : t.getNumOutboundStops()) );
        data.add(string( t.getNumInboundStops() == 0 ? 0 : t.getNumInboundStops()) );
        data.add(string( t.getUseOwnedAV() ? 1 : 0) );
+       data.add(string(t.getDestinationChoiceLogsum()));
        
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -621,6 +638,7 @@ public class HouseholdDataWriter {
        data.add(string( t.getNumOutboundStops() == 0 ? 0 : t.getNumOutboundStops()) );
        data.add(string( t.getNumInboundStops() == 0 ? 0 : t.getNumInboundStops()) );
        data.add(string( t.getUseOwnedAV() ? 1 : 0) );
+       data.add(string(t.getDestinationChoiceLogsum()));
 
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();

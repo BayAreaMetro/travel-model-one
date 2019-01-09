@@ -62,11 +62,15 @@ IF NOT %ITER% EQU POSTPROC (
     )
   )
 )
-FOR %%H in (%ALLTIMEPERIODS%) DO copy /y transit%%H_0.lin transit%%H.lin
+FOR %%H in (%ALLTIMEPERIODS%) DO (
+  copy /y transit%%H_0.lin transit%%H.lin
+  set LASTITER_%%H=0
+  set LASTSUBDIR_%%H=Subdir0
+)
 
 :: for fast config, only do 1
 :: for standard config, keep it short for initial assign
-if "%TRNCONFIG%"=="FAST" (set MAXTRNITERS=1)
+if "%TRNCONFIG%"=="FAST" (set MAXTRNITERS=0)
 if "%TRNCONFIG%"=="STANDARD" (
   set MAXTRNITERS=%TOTMAXTRNITERS%
   IF %ITER% EQU 0 (set MAXTRNITERS=4)

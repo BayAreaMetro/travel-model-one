@@ -1586,6 +1586,8 @@ public abstract class HouseholdDataManager implements HouseholdDataManagerIf, Se
 
         summaryResults = new HashMap<String, HashMap<String,int[]>>();
 
+        logger.info("Logging household results");
+        logger.info("Logging "+hhs.length+" households");
         for(int i=0; i < hhs.length; ++i){
 
             Household household = hhs[i];
