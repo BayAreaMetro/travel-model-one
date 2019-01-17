@@ -107,7 +107,29 @@ if (SUBMODEL=="UsualWorkAndSchoolLocation") {
 
   CALIB_WORKBOOK <- file.path(CALIB_DIR, "15 Trip Mode Choice", "15_TripModeChoice.xlsx")
   UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.0 version", "TripModeChoice.xls")
-  
+
+  # sheet, column, startRow, endRow
+  COPY_SRC <- list("work"      =c( "constants", 7,   3,  36),
+                   "university"=c( "constants",15,   3,  36),
+                   "school"    =c( "constants",23,   3,  36),
+                   "escort"    =c( "constants",31,   3,  36), # indiv maint, indiv
+                   "shopping"  =c( "constants",31,   3,  62), # indiv maint, joint
+                   "eatout"    =c( "constants",39,   3,  62), # indiv disc, joint
+                   "othmaint"  =c( "constants",31,   3,  62), # indiv maint, joint
+                   "social"    =c( "constants",39,   3,  62), # indiv disc, joint
+                   "othdiscr"  =c( "constants",39,   3,  62), # indiv disc
+                   "workbased" =c( "constants",47,   3,  36)) # at work
+
+  COPY_DST <- list("work"      =c(      "Work", 5, 507, 540),
+                   "university"=c("University", 5, 510, 543),
+                   "school"    =c(    "School", 5, 510, 543),
+                   "escort"    =c(    "Escort", 5, 510, 543),
+                   "shopping"  =c(  "Shopping", 5, 510, 569),
+                   "eatout"    =c(    "EatOut", 5, 510, 569),
+                   "othmaint"  =c(  "OthMaint", 5, 510, 569),
+                   "social"    =c(    "Social", 5, 510, 569),
+                   "othdiscr"  =c(  "OthDiscr", 5, 510, 569),
+                   "workbased" =c( "WorkBased", 5, 509, 542))
 } else {
   stop(paste0("Don't understand SUBMODEL [",SUBMODEL,"]"))
 }
