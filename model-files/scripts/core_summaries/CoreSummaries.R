@@ -87,6 +87,7 @@ LOOKUP_PTYPE$ptype   <- as.integer(LOOKUP_PTYPE$ptype)
 
 # The land use file: https://github.com/BayAreaMetro/modeling-website/wiki/TazData
 tazData           <- read.table(file=file.path(TARGET_DIR,"landuse","tazData.csv"), header=TRUE, sep=",")
+names(tazData)    <- toupper(names(tazData))
 tazData           <- select(tazData, ZONE, SD, COUNTY, PRKCST, OPRKCST)
 tazData           <- left_join(tazData, LOOKUP_COUNTY, by=c("COUNTY"))
 names(tazData)[names(tazData)=="ZONE"] <- "taz"

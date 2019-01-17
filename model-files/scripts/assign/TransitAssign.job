@@ -325,7 +325,7 @@ loop period = 1, 5
              fileo linkvolo = trnlink@token_period@_@token_access@_@token_path@_@token_egress@.csv, format = csv
 
              ; output the line volumes
-             fileo linevolo = trn\trnline@token_period@_@token_access@_@token_path@_@token_egress@.csv,
+             fileo linevolo = trnline@token_period@_@token_access@_@token_path@_@token_egress@.csv,
                                       id = @token_period@_@token_access@_@token_path@_@token_egress@, format = csv  
      
              ; the bus times are based on those computed in the highway network

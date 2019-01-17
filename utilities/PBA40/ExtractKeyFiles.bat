@@ -30,13 +30,13 @@ copy trn\trnlink*.dbf    extractor\trn\trnlink*.dbf
 copy trn\quickboards.xls extractor\trn\quickboards.xls
 
 :: Demand results
-:: copy main\householdData_%ITER%.csv extractor\householdData_%ITER%.csv
-:: copy main\personData_%ITER%.csv    extractor\personData_%ITER%.csv
-:: copy main\indivTripData_%ITER%.csv extractor\indivTripData_%ITER%.csv
-:: copy main\indivTourData_%ITER%.csv extractor\indivTourData_%ITER%.csv
-:: copy main\jointTripData_%ITER%.csv extractor\jointTripData_%ITER%.csv
-:: copy main\jointTourData_%ITER%.csv extractor\jointTourData_%ITER%.csv
-:: copy main\wsLocResults_%ITER%.csv  extractor\wsLocResults_%ITER%.csv
+copy main\householdData_%ITER%.csv extractor\householdData_%ITER%.csv
+copy main\personData_%ITER%.csv    extractor\personData_%ITER%.csv
+copy main\indivTripData_%ITER%.csv extractor\indivTripData_%ITER%.csv
+copy main\indivTourData_%ITER%.csv extractor\indivTourData_%ITER%.csv
+copy main\jointTripData_%ITER%.csv extractor\jointTripData_%ITER%.csv
+copy main\jointTourData_%ITER%.csv extractor\jointTourData_%ITER%.csv
+copy main\wsLocResults_%ITER%.csv  extractor\wsLocResults_%ITER%.csv
 
 :: Report results
 copy logs\HwySkims.debug  extractor\HwySkims.debug
@@ -74,13 +74,27 @@ copy main\tripsEV.tpp extractor\main
 :: copy nonres\tripsTrkEV.tpp extractor\emfac\tripsTrkEV.tpp
 
 :: Save the control file
-:: copy CTRAMP\runtime\mtcTourBased.properties extractor\mtcTourBased.properties
+copy CTRAMP\runtime\mtcTourBased.properties extractor\mtcTourBased.properties
+copy CTRAMP\runtime\mtcTourBased.properties extractor\logsums.properties
 
 :: Accessibility files
 mkdir extractor\accessibilities
 copy accessibilities\nonMandatoryAccessibilities.csv extractor\accessibilities
 copy accessibilities\mandatoryAccessibilities.csv    extractor\accessibilities
 copy skims\accessibility.csv                         extractor\accessibilities
+
+:: Accessibility files
+mkdir extractor\logsums
+copy logsums\householdData_%ITER%.csv                extractor\logsums
+copy logsums\personData_%ITER%.csv                   extractor\logsums
+copy logsums\indivTripData_%ITER%.csv                extractor\logsums
+copy logsums\indivTourData_%ITER%.csv                extractor\logsums
+copy logsums\wsLocResults_%ITER%.csv                 extractor\logsums
+copy logsums\shopDCLogsum.csv                        extractor\logsums
+copy logsums\tour_shopDCLogsum.csv                   extractor\logsums
+copy logsums\workDCLogsum.csv                        extractor\logsums
+copy logsums\person_workDCLogsum.csv                 extractor\logsums
+
 :: Core summaries
 mkdir extractor\core_summaries
 copy core_summaries\AccessibilityMarkets.*           extractor\core_summaries

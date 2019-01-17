@@ -28,6 +28,7 @@ if __name__ == '__main__':
 
     ############ Read tazdata ############
     tazdata       = pandas.read_table(os.path.join("landuse", "tazData.csv"), sep=",", index_col=[0])
+    tazdata.columns = tazdata.columns.str.upper()
     tazdata       = tazdata[['COUNTY','PRKCST','OPRKCST']]
     # print tazdata.head()
 
