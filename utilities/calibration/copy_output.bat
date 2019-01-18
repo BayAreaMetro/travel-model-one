@@ -1,10 +1,10 @@
 SETLOCAL EnableDelayedExpansion
 
-set MODEL_DIR=A:\TM150_Calibration\2015_TM150_calib6
-set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.5.0\2015_TM150_calib6
+set MODEL_DIR=A:\TM150_Calibration\2015_TM150_calib7
+set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.5.0\2015_TM150_calib7
 set CODE_DIR=X:\travel-model-one-calibration\utilities\calibration
 set ITER=1
-set SAMPLESHARE=0.20
+set SAMPLESHARE=0.2
 
 mkdir "%TARGET_DIR%"
 cd "%TARGET_DIR%"
