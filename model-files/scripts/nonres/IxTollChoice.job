@@ -163,7 +163,7 @@ loop period = 1,5
             ; probability calculations
             if (tollValue > 0.0 && inputTrips > 0.0)
             
-               if (noTollTime > 0.0)                
+               if (noTollTime > 0.0 && noTollTime < 1000000)                
               
                   ; set the utility
                   utilityNoToll = _kIvtt * noTollTime + _kCost * noTollCost
