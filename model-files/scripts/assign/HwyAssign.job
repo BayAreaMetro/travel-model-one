@@ -263,7 +263,7 @@ loop period = 1, 5
       ; set the pathload parameters
       phase = iloop
 
-         ; no value toll paying classes firsth
+         ; no value toll paying classes first
 
          ; drive alone, no value toll, exclude drive alone value toll and HOV facilities, internal demand plus intra-regional demand plus air passenger demand
          pathload path = lw.gencost_da, excludegrp = 11, 23, vol[1] = mi.1.da + mi.2.da + mi.4.da
@@ -298,13 +298,13 @@ loop period = 1, 5
          pathload path = lw.gencost_lrg, excludegrp = 23, 4, vol[10] = mi.3.ctrucktoll
 
          ; drive alone AV TNC, value toll paying, exclude HOV facilities
-         pathload path = lw.gencost_da, excludegrp = 23, vol[11] = mi.1.da_avtnc
+         pathload path = lw.gencost_da, excludegrp = 23, vol[11] = mi.1.da_tnc + mi.1.da_av
 
          ; shared ride 2, value toll paying, exclude HOV 3+ facilities
-         pathload path = lw.gencost_s2, excludegrp = 3, vol[12] = mi.1.s2_avtnc / 2
+         pathload path = lw.gencost_s2, excludegrp = 3, vol[12] = (mi.1.s2_tnc + mi.1.s2_av) / 2
 
          ; shared ride 3+, value toll paying, no exclusions
-         pathload path = lw.gencost_s3, vol[13] = mi.1.s3_avtnc / 3.25
+         pathload path = lw.gencost_s3, vol[13] = (mi.1.s3_tnc + mi.1.s3_av)/ 3.25
 
       endphase
 

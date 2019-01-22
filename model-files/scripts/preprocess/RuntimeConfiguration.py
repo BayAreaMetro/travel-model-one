@@ -373,9 +373,12 @@ def config_auto_opcost(replacements):
     av_pcefac_ft09   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT09"))
     av_pcefac_ft10   = float(get_property(params_filename, myfile_contents, "AV_PCE_FAC_FT10"))
 
-    zpv   = float(get_property(params_filename, myfile_contents, "ZPV_fac"))
+    OwnedAV_zpv   = float(get_property(params_filename, myfile_contents, "OwnedAV_ZPV_fac"))
+    TNC_zpv   = float(get_property(params_filename, myfile_contents, "TNC_ZPV_fac"))
+
 
     # put the av pce factors into the CTRAMP\scripts\block\hwyParam.block
+    filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
     replacements[filepath]["(\nAV_PCE_FT01[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft01
     replacements[filepath]["(\nAV_PCE_FT02[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft02
     replacements[filepath]["(\nAV_PCE_FT03[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft03
@@ -387,7 +390,9 @@ def config_auto_opcost(replacements):
     replacements[filepath]["(\nAV_PCE_FT09[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft09
     replacements[filepath]["(\nAV_PCE_FT10[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % av_pcefac_ft10
 
-    replacements[filepath]["(\nZPV_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % zpv
+    replacements[filepath]["(\nOwnedAV_ZPV_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % OwnedAV_zpv
+    replacements[filepath]["(\nTNC_ZPV_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % TNC_zpv
+
 
 def config_logsums(replacements, append):
     filepath = os.path.join("CTRAMP","runtime","logsums.properties")
