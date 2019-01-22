@@ -144,7 +144,7 @@ public class TpplusMatrixReader64 extends MatrixReader {
                     logger.info("No tpplus64 matrix in " + file.getPath() + " with name " + tableName 
                                 + " so reading matrix 1");
                 } else {
-                    logger.fatal("ERROR attempting to read tpplus64 matrix " + file.getPath()); 
+                    logger.fatal(Thread.currentThread().getName() + "ERROR attempting to read tpplus64 matrix " + file.getPath() + " : " + tableName); 
                     throw new MatrixException(MatrixException.INVALID_TABLE_NAME + " " + tableName); 
                 }
             }        
