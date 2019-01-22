@@ -1,5 +1,5 @@
 USAGE = """
-python csvToTableauExtract.py (modified to latest Tableau python API as of 2/15/18) [--header "colname1,colname2,..."] [--output output.tde] [--join join.csv] [--append]
+python csvToTableauExtract.py [--header "colname1,colname2,..."] [--output output.tde] [--join join.csv] [--append]
   input_dir1 [input_dir2 input_dir3] output_dir summary.csv
 
   + Pass --header "colname1,colname2,..." to include column names if they're not included
@@ -23,6 +23,8 @@ add another human readable column name.  (e.g. if '2010_04_ZZZ\blah' is an input
 then the mapping needs to map '2010_04_ZZZ' to a scenario name.)
 
 Also uses pandas.DataFrame.fillna() to replace NAs with zero, since Tableau doesn't like them.
+
+Modified to latest Tableau python API as of 2/15/18
 
 """
 import csv, datetime, itertools, getopt, os, sys

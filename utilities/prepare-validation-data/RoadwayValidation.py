@@ -48,7 +48,7 @@ TM_HOV_TO_GP_FILE   = "M:\Crosswalks\PeMSStations_TM1network\hov_to_gp_links.csv
 PEMS_MAP_FILE       = "M:\Crosswalks\PeMSStations_TM1network\crosswalk_2015.csv"
 CALTRANS_MAP_FILE   = "model_to_caltrans.csv"
 MODEL_FILE          = "avgload5period.csv"
-SHARE_DATA          = os.path.join(os.environ["USERPROFILE"], "Box", "Modeling and Surveys", "Development", "Share Data")
+SHARE_DATA          = os.path.join(os.environ["USERPROFILE"], "Box", "Modeling and Surveys", "Share Data")
 PEMS_FILE           = os.path.join(SHARE_DATA, "pems-typical-weekday", "pems_period.csv")
 CALTRANS_FILE       = os.path.join(SHARE_DATA, "caltrans-typical-weekday", "typical-weekday-counts.csv")
 PEMS_OUTPUT_FILE    = "Roadways to PeMS"
@@ -227,7 +227,7 @@ if __name__ == '__main__':
 
     if args.pems_year:
         ############ read the pems data
-        obs_df = pandas.read_csv(PEMS_FILE, na_values='NA')
+        obs_df = pandas.read_csv(PEMS_FILE, na_values='NA', engine='python')
 
         # select only the columns we want
         obs_df = obs_df[PEMS_COLUMNS]

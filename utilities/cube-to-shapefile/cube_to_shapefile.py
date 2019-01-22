@@ -4,7 +4,7 @@ Create shapefile of Cube network, roadway and transit.
 
 Requires arcpy, so may need to use arcgis version of python
 
- e.g. set PATH=C:\\Program Files\\ArcGIS\\Pro\\bin\\Python\envs\\arcgispro-py3
+ e.g. set PATH=C:\\Program Files\\ArcGIS\\Pro\\bin\\Python\\envs\\arcgispro-py3
 
       python cube_to_shapefile.py
         --trn_stop_info "M:\\Application\Model One\\Networks\\TM1_2015_Base_Network\\Node Description.xls"
