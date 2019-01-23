@@ -107,6 +107,9 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     traveltime_df.trn_only = traveltime_df.trn_only*traveltime_df.TOTEMP
     traveltime_df.drv_only = traveltime_df.drv_only*traveltime_df.TOTEMP
     traveltime_df.trn_drv  = traveltime_df.trn_drv *traveltime_df.TOTEMP
+    # make these numeric
+    traveltime_df["da"   ] = pandas.to_numeric(traveltime_df["da"   ])
+    traveltime_df["wTrnW"] = pandas.to_numeric(traveltime_df["wTrnW"])
     # print traveltime_df.head()
 
     # aggregate to origin
@@ -226,35 +229,27 @@ def tally_nonauto_mode_share(iteration, sampleshare, metrics_dict):
     metrics_dict['nonauto_mode_share_transit'] = float(metrics_dict['nonauto_mode_share_transit_trips'])/float(metrics_dict['nonauto_mode_share_total_trips'])
     metrics_dict['nonauto_mode_share'        ] = float(metrics_dict['nonauto_mode_share_nonauto_trips'])/float(metrics_dict['nonauto_mode_share_total_trips'])
 
-def tally_sgr_roads(iteration, sampleshare, metrics_dict):
+def tally_road_cost_vmt(iteration, sampleshare, metrics_dict):
     """
     Tallies the operating cost from driving for autos, small trucks and large trucks, as well as the total VMT.
-    Also includes the cost component that's a result of pavement imperfection.
 
     Adds the following keys to the metrics_dict:
-    * sgr_road_total_auto_cost_$2000     : total operating cost for autos in $2000
-    * sgr_road_total_smtr_cost_$2000     : total operating cost for small trucks in $2000
-    * sgr_road_total_lrtr_cost_$2000     : total operating cost for large trucks in $2000
-    * sgr_road_pavement_auto_cost_$2000  : operating cost from imperfect pavement for autos in $2000
-    * sgr_road_pavement_smtr_cost_$2000  : operating cost from imperfect pavement for small trucks in $2000
-    * sgr_road_pavement_lrtr_cost_$2000  : operating cost from imperfect pavement for large trucks in $2000
-    * sgr_road_vmt_auto                  : VMT by autos
-    * sgr_road_vmt_smtr                  : VMT by small trucks
-    * sgr_road_vmt_lrtr                  : VMT by large trucks
+    * road_total_auto_cost_$2000     : total operating cost for autos in $2000
+    * road_total_smtr_cost_$2000     : total operating cost for small trucks in $2000
+    * road_total_lrtr_cost_$2000     : total operating cost for large trucks in $2000
+    * road_vmt_auto                  : VMT by autos
+    * road_vmt_smtr                  : VMT by small trucks
+    * road_vmt_lrtr                  : VMT by large trucks
 
     """
-    print "Tallying SGR roads cost"
+    print "Tallying roads cost and vmt"
     roadvols_df = pandas.read_csv(os.path.join("hwy","iter%d" % iteration, "avgload5period_vehclasses.csv"), sep=",")
     # [auto,smtr,lrtr]opc      = total opcost for autos, small trucks and large trucks in 2000 cents per mile
-    # [auto,smtr,lrtr]opc_pave = opcost just from pavement imperfection in 2000 cents per mile
 
     # keep sums
-    sgr_road_total_auto_cost    = 0
-    sgr_road_total_smtr_cost    = 0
-    sgr_road_total_lrtr_cost    = 0
-    sgr_road_pavement_auto_cost = 0
-    sgr_road_pavement_smtr_cost = 0
-    sgr_road_pavement_lrtr_cost = 0
+    road_total_auto_cost    = 0
+    road_total_smtr_cost    = 0
+    road_total_lrtr_cost    = 0
     auto_vmt = 0
     smtr_vmt = 0
     lrtr_vmt = 0
@@ -268,51 +263,28 @@ def tally_sgr_roads(iteration, sampleshare, metrics_dict):
         roadvols_df['vmt%s_smtr' % timeperiod] = roadvols_df['distance']*(roadvols_df['vol%s_sm' % timeperiod]+roadvols_df['vol%s_smt' % timeperiod])
         roadvols_df['vmt%s_lrtr' % timeperiod] = roadvols_df['distance']*(roadvols_df['vol%s_hv' % timeperiod]+roadvols_df['vol%s_hvt' % timeperiod])
 
-        # auto opcost in $2000 - total + pavement-based
+        # auto opcost in $2000
         roadvols_df['autoopc_2000$_%s'      % timeperiod] = 0.01*roadvols_df['autoopc'     ]*roadvols_df['vmt%s_auto' % timeperiod]
-        roadvols_df['autoopc_2000$_%s_pave' % timeperiod] = 0.01*roadvols_df['autoopc_pave']*roadvols_df['vmt%s_auto' % timeperiod]
-        # small truck opcost in $2000 - total + pavement-based
+        # small truck opcost in $2000
         roadvols_df['smtropc_2000$_%s'      % timeperiod] = 0.01*roadvols_df['smtropc'     ]*roadvols_df['vmt%s_smtr' % timeperiod]
-        roadvols_df['smtropc_2000$_%s_pave' % timeperiod] = 0.01*roadvols_df['smtropc_pave']*roadvols_df['vmt%s_smtr' % timeperiod]
-        # large truck opcost in $2000 - total + pavement-based
+        # large truck opcost in $2000
         roadvols_df['lrtropc_2000$_%s'      % timeperiod] = 0.01*roadvols_df['lrtropc'     ]*roadvols_df['vmt%s_lrtr' % timeperiod]
-        roadvols_df['lrtropc_2000$_%s_pave' % timeperiod] = 0.01*roadvols_df['lrtropc_pave']*roadvols_df['vmt%s_lrtr' % timeperiod]
 
-        sgr_road_total_auto_cost    += roadvols_df['autoopc_2000$_%s'      % timeperiod].sum()
-        sgr_road_total_smtr_cost    += roadvols_df['smtropc_2000$_%s'      % timeperiod].sum()
-        sgr_road_total_lrtr_cost    += roadvols_df['lrtropc_2000$_%s'      % timeperiod].sum()
-        sgr_road_pavement_auto_cost += roadvols_df['autoopc_2000$_%s_pave' % timeperiod].sum()
-        sgr_road_pavement_smtr_cost += roadvols_df['smtropc_2000$_%s_pave' % timeperiod].sum()
-        sgr_road_pavement_lrtr_cost += roadvols_df['lrtropc_2000$_%s_pave' % timeperiod].sum()
+        road_total_auto_cost    += roadvols_df['autoopc_2000$_%s'      % timeperiod].sum()
+        road_total_smtr_cost    += roadvols_df['smtropc_2000$_%s'      % timeperiod].sum()
+        road_total_lrtr_cost    += roadvols_df['lrtropc_2000$_%s'      % timeperiod].sum()
         auto_vmt += roadvols_df['vmt%s_auto' % timeperiod].sum()
         smtr_vmt += roadvols_df['vmt%s_smtr' % timeperiod].sum()
         lrtr_vmt += roadvols_df['vmt%s_lrtr' % timeperiod].sum()
 
     # return it
-    metrics_dict['sgr_road_total_auto_cost_$2000']    = sgr_road_total_auto_cost
-    metrics_dict['sgr_road_total_smtr_cost_$2000']    = sgr_road_total_smtr_cost
-    metrics_dict['sgr_road_total_lrtr_cost_$2000']    = sgr_road_total_lrtr_cost
-    metrics_dict['sgr_road_pavement_auto_cost_$2000'] = sgr_road_pavement_auto_cost
-    metrics_dict['sgr_road_pavement_smtr_cost_$2000'] = sgr_road_pavement_smtr_cost
-    metrics_dict['sgr_road_pavement_lrtr_cost_$2000'] = sgr_road_pavement_lrtr_cost
-    metrics_dict['sgr_road_vmt_auto']                 = auto_vmt
-    metrics_dict['sgr_road_vmt_smtr']                 = smtr_vmt
-    metrics_dict['sgr_road_vmt_lrtr']                 = lrtr_vmt
+    metrics_dict['road_total_auto_cost_$2000']    = road_total_auto_cost
+    metrics_dict['road_total_smtr_cost_$2000']    = road_total_smtr_cost
+    metrics_dict['road_total_lrtr_cost_$2000']    = road_total_lrtr_cost
+    metrics_dict['road_vmt_auto']                 = auto_vmt
+    metrics_dict['road_vmt_smtr']                 = smtr_vmt
+    metrics_dict['road_vmt_lrtr']                 = lrtr_vmt
 
-def tally_sgr_transit(iteration, sampleshare, metrics_dict):
-    """
-    Tallies the total person delay on transit from SGR
-
-    Adds the following keys to the metrics_dict:
-    * sgr_transit_total_person_hours_delay : total person hours of delay on transit
-    * sgr_transit_total_person_trips       : total person trips
-    * sgr_transit_delay_min_per_person_trip: (person hours of delay / person trips) * 60 min/hour
-    """
-    print "Tallying SGR transit delay"
-    delay_df = pandas.read_csv(os.path.join("metrics","transit_delay.csv"), sep=",")
-    metrics_dict['sgr_transit_total_person_hours_delay' ] = delay_df['Person Hours Delay'].sum()
-    metrics_dict['sgr_transit_total_person_trips'       ] = delay_df['Transit Trips'].sum()
-    metrics_dict['sgr_transit_delay_min_per_person_trip'] = 60.0*float(metrics_dict['sgr_transit_total_person_hours_delay'])/float(metrics_dict['sgr_transit_total_person_trips'])
 
 if __name__ == '__main__':
     pandas.set_option('display.width', 500)
@@ -324,8 +296,7 @@ if __name__ == '__main__':
     tally_access_to_jobs(iteration, sampleshare, metrics_dict)
     tally_goods_movement_delay(iteration, sampleshare, metrics_dict)
     tally_nonauto_mode_share(iteration, sampleshare, metrics_dict)
-    tally_sgr_roads(iteration, sampleshare, metrics_dict)
-    tally_sgr_transit(iteration, sampleshare, metrics_dict)
+    tally_road_cost_vmt(iteration, sampleshare, metrics_dict)
 
     for key in sorted(metrics_dict.keys()):
         print "%-35s => %f" % (key, metrics_dict[key])
