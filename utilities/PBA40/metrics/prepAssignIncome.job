@@ -22,7 +22,7 @@
        token_period = 'EV'
      endif
 
-  DistributeMultistep processid = 'ctramp', processNum = period, commpath = 'X:\commpath'
+  DistributeMultistep processid = 'ctramp', processNum = period, commpath = '%COMMPATH%'
 
   loop income = 1, 6
 

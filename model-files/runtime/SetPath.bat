@@ -1,6 +1,9 @@
 :: SetPath.bat
 :: Utility to set the path.  Used in RunModel as well as RunMain and RunNodeX. 
 
+:: The commpath
+SET COMMPATH=X:\COMMPATH
+
 :: The location of the 64-bit java development kit
 set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
 

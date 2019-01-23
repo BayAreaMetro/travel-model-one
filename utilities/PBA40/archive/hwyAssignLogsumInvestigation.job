@@ -21,12 +21,12 @@ else
   token_proclistb  = 48
 endif
 
-DistributeMultistep processid = 'CTRAMP', processNum = @token_procnum@, commpath = 'X:\commpath'
+DistributeMultistep processid = 'CTRAMP', processNum = @token_procnum@, commpath = '%COMMPATH%'
 
    run pgm = highway
   
       ; distribute via cluster
-      DistributeIntrastep processid = 'CTRAMP', processlist = @token_proclista@-@token_proclistb@, commpath = 'X:\commpath', saveprn = f
+      DistributeIntrastep processid = 'CTRAMP', processlist = @token_proclista@-@token_proclistb@, commpath = '%COMMPATH%', saveprn = f
     
       ; time-specific input highway network
       neti    = @input_dir@\hwy\avgload@token_period@.net

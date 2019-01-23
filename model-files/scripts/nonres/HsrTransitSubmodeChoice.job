@@ -71,7 +71,7 @@ loop tpnum=1,5
     time_period = 'EV'
   endif
 
-  DistributeMultistep processid = 'ctramp', processNum = tpnum, commpath = 'X:\commpath'
+  DistributeMultistep processid = 'ctramp', processNum = tpnum, commpath = '%COMMPATH%'
 
   RUN PGM=MATRIX
     ; These are the trips

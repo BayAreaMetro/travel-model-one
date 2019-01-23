@@ -51,7 +51,7 @@ token_number_of_internal_zones = 1454
 run pgm = matrix
 
    ; distribute via cluster
-   DistributeIntrastep processid = 'CTRAMP', processlist = 1-2, commpath = 'X:\commpath', saveprn = f
+   DistributeIntrastep processid = 'CTRAMP', processlist = 1-2, commpath = '%COMMPATH%', saveprn = f
 
    ; read in the AM peak period commercial skims
    filei mati[1] = skims\com_hwyskimAM.tpp
