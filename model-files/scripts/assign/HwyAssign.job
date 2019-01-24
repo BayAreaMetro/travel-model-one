@@ -70,9 +70,8 @@
 ;            large trucks.  The characteristics of the small trucks (value of time, toll) is used in the assignment
 ;            of the very small, small, and medium truck class.
 ;        (2) Facility type codes are as follows: (i) freeway-to-freeway ramp; (ii) freeway; (iii) expressway; (iv)
-;            collector; (v) freeway ramp; (vi) centroid connector/dummy link; (vii) major arterial; (viii) metered
-;            ramp; (ix) freeways with ITS treatments and Golden Gate Bridge; (x) expressways and arterials with
-;            ITS treatments.
+;            collector; (v) freeway ramp; (vi) centroid connector/dummy link; (vii) major arterial; (viii) managed
+;            freeway; (ix) special facility; (x) toll plaza
 ;        (3) Area type codes are as follows: (0) core; (i) central business district; (ii) urban business district;
 ;            (iii) urban; (iv) suburban; (v) rural.
 ;        (4) The capacity class is computed as ten times area type plus facility type.
