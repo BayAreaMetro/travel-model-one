@@ -8,6 +8,7 @@ TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
 ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to read
 SAMPLESHARE  <- Sys.getenv("SAMPLESHARE") # Sampling
 
+TAZ_SD_FILE    <- "X:\\travel-model-one-calibration\\utilities\\geographies\\taz-superdistrict-county.csv"
 WORKBOOK       <- "M:\\Development\\Travel Model One\\Calibration\\Version 1.5.0\\11 Tour Mode Choice\\11_TourModeChoice.xlsx"
 WORKBOOK_BLANK <- gsub(".xlsx","_blank.xlsx",WORKBOOK)
 WORKBOOK_TEMP  <- gsub(".xlsx","_temp.xlsx", WORKBOOK)
@@ -15,6 +16,7 @@ calib_workbook <- loadWorkbook(file=WORKBOOK_BLANK)
 calib_sheets   <- getSheets(calib_workbook)
 
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
+TAZ_SD_FILE  <- gsub("\\\\","/",TAZ_SD_FILE) # switch slashes around
 OUTPUT_DIR   <- file.path(TARGET_DIR, "OUTPUT", "calibration")
 if (!file.exists(OUTPUT_DIR)) { dir.create(OUTPUT_DIR) }
 
@@ -189,6 +191,64 @@ write.table(trn_tour_summary_spread, outfile, sep=",", row.names=FALSE)
 cat("Wrote ",outfile,"\n")
 
 addDataFrame(as.data.frame(trn_tour_summary_spread), calib_sheets$modeldata, startRow=2, startColumn=11, row.names=FALSE)
+
+# transit tours by purpose, trn submode, district-to-district
+# combine back Ferry-Drive and Ferry-Walk, LRT-Drive, LRT-Walk
+transit_tour_results <- transit_tour_results %>%
+  mutate(trn_submode=if_else(trn_submode=="Ferry-Drive","Ferry",trn_submode)) %>%
+  mutate(trn_submode=if_else(trn_submode=="Ferry-Walk", "Ferry",trn_submode)) %>%
+  mutate(trn_submode=if_else(trn_submode=="LRT-Drive",  "LRT",  trn_submode)) %>%
+  mutate(trn_submode=if_else(trn_submode=="LRT-Walk",   "LRT",  trn_submode))
+
+# combine purposes
+transit_tour_results <- mutate(transit_tour_results,
+  simple_purpose=case_when(tour_purpose=="atwork_business" ~ "atwork",
+                           tour_purpose=="atwork_eat"      ~ "atwork",
+                           tour_purpose=="atwork_maint"    ~ "atwork",
+                           tour_purpose=="eatout"          ~ "ind_disc",
+                           tour_purpose=="escort_kids"     ~ "ind_maint",
+                           tour_purpose=="escort_no kids"  ~ "ind_maint",
+                           tour_purpose=="othdiscr"        ~ "ind_disc",
+                           tour_purpose=="othmaint"        ~ "ind_maint",
+                           tour_purpose=="school_grade"    ~ "school",
+                           tour_purpose=="school_high"     ~ "school",
+                           tour_purpose=="shopping"        ~ "ind_maint",
+                           tour_purpose=="social"          ~ "ind_disc",
+                           tour_purpose=="university"      ~ "university",
+                           tour_purpose=="work_high"       ~ "work",
+                           tour_purpose=="work_low"        ~ "work",
+                           tour_purpose=="work_med"        ~ "work",
+                           tour_purpose=="work_very high"  ~ "work"))
+
+# add superdistrict for orig, dest
+taz_sd <- read.table(file = TAZ_SD_FILE, header=TRUE, sep=",")
+transit_tour_results <- left_join(transit_tour_results, 
+                                  select(taz_sd, ZONE, SD_NAME) %>% rename(orig_taz=ZONE, orig_SD=SD_NAME))
+transit_tour_results <- left_join(transit_tour_results, 
+                                  select(taz_sd, ZONE, SD_NAME) %>% rename(dest_taz=ZONE, dest_SD=SD_NAME))
+
+transit_tour_results <- rbind(transit_tour_results,
+                              data.frame(transit_tour_results) %>% mutate(simple_purpose="Total"), # all purposes
+                              data.frame(transit_tour_results) %>% mutate(trn_submode="Total"),    # all submodes
+                              data.frame(transit_tour_results) %>% mutate(simple_purpose="Total",  # both
+                                                                          trn_submode="Total")
+                              )
+
+trn_tour_summary <- group_by(transit_tour_results, simple_purpose, trn_submode, orig_SD, dest_SD) %>% 
+  summarise(num_tours=sum(num_participants)) %>%
+  mutate(num_tours=num_tours/SAMPLESHARE)
+
+trn_tour_summary <- as.data.frame(trn_tour_summary) %>% 
+  mutate(key=paste(trn_submode, orig_SD, dest_SD, simple_purpose, sep="-"))
+
+trn_tour_summary <- trn_tour_summary[c("key","trn_submode","orig_SD","dest_SD","simple_purpose","num_tours")]
+
+# save it
+outfile <- file.path(OUTPUT_DIR, paste0("11_tour_mode_choice_trn_ODdist_TM.csv"))
+write.table(trn_tour_summary, outfile, sep=",", row.names=FALSE)
+cat("Wrote ",outfile,"\n")
+
+addDataFrame(trn_tour_summary, calib_sheets$modeldata, startRow=2, startColumn=19, row.names=FALSE)
 
 saveWorkbook(calib_workbook, WORKBOOK_TEMP)
 forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
