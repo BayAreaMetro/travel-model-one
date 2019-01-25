@@ -8,10 +8,9 @@
 # Used by `metrics\RunResults.py`, the recoding of categories matches the accessibility column headers.
 
 # Step 1: Initialization: Set the workspace and load needed libraries
-library(ggplot2)
-library(scales)
+.libPaths(Sys.getenv("R_LIB"))
+
 library(dplyr)
-library(reshape2)
 
 # For RStudio, these can be set in the .Rprofile
 TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
@@ -29,9 +28,9 @@ if (!file.exists(file.path(TARGET_DIR,"core_summaries"))) {
 }
 SAMPLESHARE <- as.numeric(SAMPLESHARE)
 
-cat("TARGET_DIR  = ",TARGET_DIR)
-cat("ITER        = ",ITER)
-cat("SAMPLESHARE = ",SAMPLESHARE)
+print(paste0("TARGET_DIR  = ",TARGET_DIR))
+print(paste0("ITER        = ",ITER))
+print(paste0("SAMPLESHARE = ",SAMPLESHARE))
 
 # Step 2: Lookups
 
@@ -63,6 +62,11 @@ input.ct.households  <- read.table(file = file.path(TARGET_DIR,"main",paste0("ho
 input.pop.households <- select(input.pop.households, HHID, PERSONS, hworkers)
 input.ct.households  <- select(input.ct.households, -jtf_choice)
 
+# in case households aren't numeric - make the columns numeric
+for(i in names(input.pop.households)){
+  input.pop.households[[i]] <- as.numeric(input.pop.households[[i]])
+}
+
 # rename
 names(input.pop.households)[names(input.pop.households)=="HHID"] <- "hh_id"
 
@@ -80,6 +84,7 @@ remove(input.pop.households, input.ct.households)
 #   * dummy for households with children that don't drive (`kidsNoDr`)
 #   * auto sufficiency (`autoSuff`)
 #   * walk subzone label (`walk_subzone_label`)
+#   * has Autonomous Vehicles (`hasAV`)
   
 # incQ are Income Quartiles
 LOOKUP_INCQ          <- data.frame(incQ=c(1,2,3,4),
@@ -108,6 +113,9 @@ households    <- left_join(households, LOOKUP_AUTOSUFF, by=c("autoSuff"))
 # walk subzone label
 households    <- left_join(households, LOOKUP_WALK_SUBZONE, by=c("walk_subzone"))
 
+# has Autonomous Vehicles
+households    <- mutate(households, hasAV=ifelse(autonomousVehicles>0,1,0))
+
 # Step 4: Person files
 
 # There are two person files:
@@ -123,7 +131,7 @@ input.ct.persons     <- read.table(file = file.path(TARGET_DIR,"main",paste0("pe
 persons              <- input.ct.persons
 # Get incQ from Households
 persons              <- left_join(persons, select(households, hh_id, incQ, incQ_label, 
-                                                  taz, autoSuff, autoSuff_label, walk_subzone, walk_subzone_label), by=c("hh_id"))
+                                                  taz, autoSuff, autoSuff_label, hasAV, walk_subzone, walk_subzone_label), by=c("hh_id"))
 
 # wrap as a d data frame tbl so it's nicer for printing
 persons              <- tbl_df(persons)
@@ -144,17 +152,17 @@ workers_students <- subset(persons, (type=="Full-time worker"           |
 # Step 5: summarise
 workers_summary          <- summarise(group_by(workers,
                                                taz, walk_subzone, walk_subzone_label,
-                                               incQ, incQ_label, autoSuff, autoSuff_label), freq=n())
+                                               incQ, incQ_label, autoSuff, autoSuff_label, hasAV), freq=n())
 workers_summary$freq     <- workers_summary$freq / SAMPLESHARE
 
 workers_students_summary <- summarise(group_by(workers_students,
                                                taz, walk_subzone, walk_subzone_label,
-                                               incQ, incQ_label, autoSuff, autoSuff_label), freq=n())
+                                               incQ, incQ_label, autoSuff, autoSuff_label, hasAV), freq=n())
 workers_students_summary$freq <- workers_students_summary$freq / SAMPLESHARE
 
 persons_summary          <- summarise(group_by(persons,
                                                taz, walk_subzone, walk_subzone_label,
-                                               incQ, incQ_label, autoSuff, autoSuff_label), freq=n())
+                                               incQ, incQ_label, autoSuff, autoSuff_label, hasAV), freq=n())
 persons_summary$freq     <- persons_summary$freq / SAMPLESHARE
 
 names(workers_summary)[names(workers_summary)=="freq"] <- "num_workers"

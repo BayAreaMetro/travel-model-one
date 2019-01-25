@@ -8,7 +8,7 @@
 :: jef (2018 12 26)
 ::
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+echo on
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 1:  Set the necessary path variables
@@ -36,22 +36,51 @@ if ERRORLEVEL 1 goto done
 ::
 :: ------------------------------------------------------------------------------------------------------
 
-:: Stamp the feedback report with the date and time of the model start
-echo STARTED LOGSUMS RUN  %DATE% %TIME% >> logs\feedback.rpt
+if not exist logsums\indivTripData_%ITER%.csv (
 
-rem run matrix manager, household manager and jppf driver
-cd CTRAMP\runtime
-call javaOnly_runMain.cmd 
+  echo STARTED LOGSUMS RUN  %DATE% %TIME% >> logs\feedback.rpt
 
-rem run jppf node
-cd CTRAMP\runtime
-call javaOnly_runNode0.cmd
+  rem run matrix manager, household manager and jppf driver
+  cd CTRAMP\runtime
+  call javaOnly_runMain.cmd 
 
-:: Execute the accessibility calculations
-java -showversion -Xmx6000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Djava.library.path=%RUNTIME% -Djppf.config=jppf-clientDistributed.properties -Djava.library.path=%RUNTIME% com.pb.mtc.ctramp.MTCCreateLogsums logsums
+  rem run jppf node
+  cd CTRAMP\runtime
+  call javaOnly_runNode0.cmd
 
-:: shut down java
-C:\Windows\SysWOW64\taskkill /f /im "java.exe"
+  rem Execute the accessibility calculations
+  java -showversion -Xmx6000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Djava.library.path=%RUNTIME% -Djppf.config=jppf-clientDistributed.properties -Djava.library.path=%RUNTIME% com.pb.mtc.ctramp.MTCCreateLogsums logsums
+
+  rem shut down java
+  C:\Windows\SysWOW64\taskkill /f /im "java.exe"
+)
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 3: Reformat logsums
+::
+:: ------------------------------------------------------------------------------------------------------
+
+set TARGET_DIR=%CD%
+if not exist logsums\mandatoryAccessibilities.csv (
+  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla ".\CTRAMP\scripts\core_summaries\logsumJoiner.R"
+  IF %ERRORLEVEL% GTR 0 goto done
+)
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 4:  Accessibilities Markets
+::
+:: ------------------------------------------------------------------------------------------------------
+
+if not exist core_summaries\AccessibilityMarkets.csv (
+  rem Rename these to standard names
+  if not exist %TARGET_DIR%\popsyn\hhFile.csv     ( copy %TARGET_DIR%\popsyn\hhFile.*.csv %TARGET_DIR%\popsyn\hhFile.csv )
+  if not exist %TARGET_DIR%\popsyn\personFile.csv ( copy %TARGET_DIR%\popsyn\personFile.*.csv %TARGET_DIR%\popsyn\personFile.csv )
+
+  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla ".\CTRAMP\scripts\core_summaries\AccessibilityMarkets.R"
+  IF %ERRORLEVEL% GTR 0 goto done
+)
 
 :: Complete target and message
 :done

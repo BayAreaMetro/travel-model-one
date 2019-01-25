@@ -8,10 +8,10 @@
 
 
 # For RStudio, these can be set in the .Rprofile
-MODEL_DIR   <- Sys.getenv("MODEL_DIR")  # The location of the input file
+MODEL_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input file
 MODEL_DIR   <- gsub("\\\\","/",MODEL_DIR) # switch slashes around
 COL_NAMES   <- c("name","mode","owner","frequency","line time","line dist","total boardings","passenger miles","passenger hours","path id")
-ITER        <- "3"
+ITER        <- Sys.getenv("ITER")
 
 # this is required
 stopifnot(nchar(MODEL_DIR  )>0)

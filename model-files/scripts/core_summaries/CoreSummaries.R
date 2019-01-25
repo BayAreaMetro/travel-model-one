@@ -4,7 +4,6 @@
 ## Initialization: Set the workspace and load needed libraries
 .libPaths(Sys.getenv("R_LIB"))
 
-library(ggplot2)
 library(scales)
 library(dplyr)
 library(reshape2)
