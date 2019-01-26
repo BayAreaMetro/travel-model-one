@@ -57,7 +57,7 @@ loop auto = 1,6
    token_occ    = 3.5
   endif
 
-  DistributeMultistep processid = 'ctramp', processNum = auto, commpath = 'X:\commpath'
+  DistributeMultistep processid = 'ctramp', processNum = auto, commpath = '%COMMPATH%'
 
     ; Loop thru time periods
     loop inc = 1,4

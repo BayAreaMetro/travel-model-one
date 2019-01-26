@@ -9,7 +9,7 @@ loop inc = 1,6
    if (inc = 5)  token_inc   = '_2074'
    if (inc = 6)  token_inc   = '_2064'
    
-   DistributeMultistep processid = 'ctramp', processNum = inc, commpath = 'X:\commpath'   
+   DistributeMultistep processid = 'ctramp', processNum = inc, commpath = '%COMMPATH%'   
    RUN PGM = MATRIX
   ; Read person trips for a transitmode for all time periods and Access+Egress combinations
   ; Sum them to get daily total transit trips by transitmode

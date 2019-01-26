@@ -4,7 +4,6 @@
 ## Initialization: Set the workspace and load needed libraries
 .libPaths(Sys.getenv("R_LIB"))
 
-library(ggplot2)
 library(scales)
 library(dplyr)
 library(reshape2)
@@ -116,6 +115,11 @@ input.ct.households  <- select(input.ct.households, -ao_rn, -fp_rn, -cdap_rn,
   -imtf_rn, -imtod_rn, -immc_rn, -jtf_rn, -jtl_rn, -jtod_rn, -jmc_rn, -inmtf_rn, 
   -inmtl_rn, -inmtod_rn, -inmmc_rn, -awf_rn, -awl_rn, -awtod_rn, -awmc_rn, -stf_rn, -stl_rn)
 
+# in case households aren't numeric - make the columns numeric
+for(i in names(input.pop.households)){
+  input.pop.households[[i]] <- as.numeric(input.pop.households[[i]])
+}
+
 # rename
 names(input.pop.households)[names(input.pop.households)=="HHID"] <- "hh_id"
 
@@ -180,6 +184,11 @@ input.ct.persons     <- read.table(file = file.path(MAIN_DIR,paste0("personData_
 # Rename
 names(input.pop.persons)[names(input.pop.persons)=="HHID"] <- "hh_id"
 names(input.pop.persons)[names(input.pop.persons)=="PERID"] <- "person_id"
+
+# in case households aren't numeric - make the columns numeric
+for(i in names(input.pop.persons)){
+  input.pop.persons[[i]] <- as.numeric(input.pop.persons[[i]])
+}
 
 # Inner join so persons must be present in both.  So only simulated persons stay.
 persons              <- inner_join(input.pop.persons, input.ct.persons, by=c("hh_id", "person_id"))

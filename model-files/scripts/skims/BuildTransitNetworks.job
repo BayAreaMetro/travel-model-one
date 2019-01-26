@@ -71,7 +71,7 @@ loop period = 1, 5
    
    ; distribute the tasks
    ; calling GAWK doesn't appear to work when distributed.  Is the PATH different???
-   ; DistributeMultistep processid = "ctramp", processnum = @period@,  commpath = 'X:\commpath'
+   ; DistributeMultistep processid = "ctramp", processnum = @period@,  commpath = '%COMMPATH%'
                               
    ; step 1: build walk access links
    run pgm = trnbuild

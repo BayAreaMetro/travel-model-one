@@ -21,9 +21,9 @@ F_INPUT_SURVEY_DIR     = "M:/Data/OnBoard/Data and Reports/_data Standardized"
 F_INPUT_LEGACY_RDATA   = file.path(F_INPUT_SURVEY_DIR, "survey_legacy.RData")
 F_INPUT_STANDARD_RDATA = file.path(F_INPUT_SURVEY_DIR, "survey_standard.RData")
 
-F_VALIDATION_DIR       = "M:/Development/Travel Model One/Validation/Version 05/2015_06_002"
+F_VALIDATION_DIR       = "M:/Development/Travel Model One/Validation/Version 1.5.0 calib8"
 F_INPUT_RIDERSHIP      = "M:/Data/Transit/2015 Ridership/transit ridership growth database.xlsx"
-F_INPUT_ESTIMATED      = "M:/Application/Model One/RTP2017/Scenarios/2015_06_002/OUTPUT/trn/trnline.csv"
+F_INPUT_ESTIMATED      = "M:/Application/Model One/RTP2021/Scenarios/2015_TM150_calib8/OUTPUT/trn/trnline.csv"
 
 F_INPUT_MUNI_APC       = "M:/Data/Transit/Muni APC Through Time/consolidated-database.csv"
 

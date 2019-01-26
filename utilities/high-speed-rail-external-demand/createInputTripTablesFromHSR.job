@@ -12,7 +12,7 @@ loop model_run = 1,3
     model_dir  = '2040\R63_Ph1'
   endif
 
-  DistributeMultistep processid = 'ctramp', processNum = model_run, commpath = 'X:\commpath'
+  DistributeMultistep processid = 'ctramp', processNum = model_run, commpath = '%COMMPATH%'
   RUN PGM=MATRIX
     filei mati[1] = 'M:\Development\Travel Model One\Version 06\_from High Speed Rail\Model Data\@model_dir@\Long Distance\acctrips_buscom.MAT'  ; business and commute
     filei mati[2] = 'M:\Development\Travel Model One\Version 06\_from High Speed Rail\Model Data\@model_dir@\Long Distance\acctrips_recoth.MAT'  ; recreation and other

@@ -83,24 +83,26 @@ copy accessibilities\nonMandatoryAccessibilities.csv extractor\accessibilities
 copy accessibilities\mandatoryAccessibilities.csv    extractor\accessibilities
 copy skims\accessibility.csv                         extractor\accessibilities
 
-:: Accessibility files
+:: Accessibility files - model results
 mkdir extractor\logsums
 copy logsums\householdData_%ITER%.csv                extractor\logsums
 copy logsums\personData_%ITER%.csv                   extractor\logsums
 copy logsums\indivTripData_%ITER%.csv                extractor\logsums
 copy logsums\indivTourData_%ITER%.csv                extractor\logsums
 copy logsums\wsLocResults_%ITER%.csv                 extractor\logsums
+:: summaries from logsumJoiner
 copy logsums\shopDCLogsum.csv                        extractor\logsums
 copy logsums\tour_shopDCLogsum.csv                   extractor\logsums
 copy logsums\workDCLogsum.csv                        extractor\logsums
 copy logsums\person_workDCLogsum.csv                 extractor\logsums
+copy logsums\mandatoryAccessibilities.csv            extractor\logsums
+copy logsums\nonMandatoryAccessibilities.csv         extractor\logsums
 
 :: Core summaries
 mkdir extractor\core_summaries
-copy core_summaries\AccessibilityMarkets.*           extractor\core_summaries
-copy core_summaries\*.* extractor\core_summaries
+copy core_summaries\*.*                              extractor\core_summaries
 mkdir extractor\updated_output
-copy updated_output\*.* extractor\updated_output
+copy updated_output\*.*                              extractor\updated_output
 
 :: metrics
 mkdir extractor\metrics

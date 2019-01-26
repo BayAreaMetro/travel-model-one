@@ -25,7 +25,7 @@ loop inc=1,5
     token_val = '-1'
   endif
 
-  DistributeMultistep processid = 'ctramp', processNum = inc, commpath = 'X:\commpath'
+  DistributeMultistep processid = 'ctramp', processNum = inc, commpath = '%COMMPATH%'
   run pgm = MATRIX
      ; Read person trips for an income quartile for all time periods
      FILEI MATI[1] = "main\tripsEA@token_inc@tpp"

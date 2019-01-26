@@ -25,4 +25,5 @@ AV_PCE_FT09  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenari
 AV_PCE_FT10  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = expressways and arterials with ITS treatments
 
 ; set by RuntimeConfiguration.py -- Zero Passenger Vehicles
-ZPV_factor  = xx.xx     ; a factor between 0 to 1
+OwnedAV_ZPV_factor  = xx.xx     ; a factor between 0 to 1
+TNC_ZPV_factor  = xx.xx     ; a factor between 0 to 1

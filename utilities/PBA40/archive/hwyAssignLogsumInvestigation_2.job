@@ -142,12 +142,12 @@ loop class = 1, 7
       
    endif
  
-   DistributeMultistep processid = 'CTRAMP', processNum = @class@, commpath = 'X:\commpath'
+   DistributeMultistep processid = 'CTRAMP', processNum = @class@, commpath = '%COMMPATH%'
 
    run pgm = highway
    
       ; give each time of day additional processors to work with   
-      DistributeIntrastep processid = 'ctramp', processlist = @intra@, commpath = 'X:\commpath', saveprn = f
+      DistributeIntrastep processid = 'ctramp', processlist = @intra@, commpath = '%COMMPATH%', saveprn = f
   
       ; a congested network is input
       neti = load@token_period@_renamed.net
@@ -266,7 +266,7 @@ Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, C
 run pgm = matrix
 
    ; give each period thread more threads to work with   
-   ;DistributeIntrastep processid = 'ctramp', processlist = 1-4, commpath = 'X:\commpath', saveprn = f
+   ;DistributeIntrastep processid = 'ctramp', processlist = 1-4, commpath = '%COMMPATH%', saveprn = f
    
    ; drive alone skim
    mati[1] = DA_@token_period@.tpp

@@ -8,9 +8,10 @@
 
 
 # For RStudio, these can be set in the .Rprofile
-MODEL_DIR   <- Sys.getenv("MODEL_DIR")  # The location of the input files
+MODEL_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input file
 MODEL_DIR   <- gsub("\\\\","/",MODEL_DIR) # switch slashes around
 COL_NAMES   <- c("name","mode","owner","frequency","line time","line dist","total boardings","passenger miles","passenger hours","path id")
+ITER        <- Sys.getenv("ITER")
 
 # this is required
 stopifnot(nchar(MODEL_DIR  )>0)
@@ -22,21 +23,21 @@ for (timeperiod in c("ea","am","md","pm","ev")) {
     
     # wlk wlk
     filename <- paste0("trnline",timeperiod,"_wlk_",submode,"_wlk.csv")
-    fullfile <- file.path(MODEL_DIR, "trn", filename)
+    fullfile <- file.path(MODEL_DIR, "trn", paste0("TransitAssignment.iter",ITER), filename)
     trndata  <- read.csv(file=fullfile, col.names=COL_NAMES, header=FALSE, sep=",", check.names=FALSE)
     all_trndata <- rbind(all_trndata, trndata)
     print(paste("Read ",fullfile))
     
     # drv wlk
     filename <- paste0("trnline",timeperiod,"_drv_",submode,"_wlk.csv")
-    fullfile <- file.path(MODEL_DIR, "trn", filename)
+    fullfile <- file.path(MODEL_DIR, "trn", paste0("TransitAssignment.iter",ITER), filename)
     trndata  <- read.csv(file=fullfile, col.names=COL_NAMES, header=FALSE, sep=",", check.names=FALSE)
     all_trndata <- rbind(all_trndata, trndata)
     print(paste("Read ",fullfile))
     
     # wlk drv
     filename <- paste0("trnline",timeperiod,"_wlk_",submode,"_drv.csv")
-    fullfile <- file.path(MODEL_DIR, "trn", filename)
+    fullfile <- file.path(MODEL_DIR, "trn", paste0("TransitAssignment.iter",ITER), filename)
     trndata  <- read.csv(file=fullfile, col.names=COL_NAMES, header=FALSE, sep=",", check.names=FALSE)
     all_trndata <- rbind(all_trndata, trndata)
     print(paste("Read ",fullfile))
