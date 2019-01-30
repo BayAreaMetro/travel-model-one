@@ -60,18 +60,19 @@ joint_trip_results   <- read.table(file=file.path(TARGET_DIR,"OUTPUT","main",pas
 trip_results <- rbind(indiv_trip_results, joint_trip_results)
 n_trip_results <- nrow(trip_results)
 
+# add time period to trip results
+trip_results <- mutate(trip_results,
+                       timeperiod = case_when(depart_hour <=  5 ~ "EA",
+                                              depart_hour <= 10 ~ "AM",
+                                              depart_hour <= 15 ~ "MD",
+                                              depart_hour <= 19 ~ "PM",
+                                              depart_hour  > 19 ~ "EV"))
 
 # split into Light-Rail/Ferry and non Light Rail Ferry to check if ferry avaiable for light rail/ferry
 LRF_trip_results    <- subset(trip_results, (trip_mode==10)|(trip_mode==15))
 nonLRF_trip_results <- subset(trip_results, (trip_mode!=10)&(trip_mode!=15)) %>% mutate(ferryAvailable=0)
 
 # to distinguish between LRT and Ferry, we need to look at availability
-LRF_trip_results     <- mutate(LRF_trip_results,
-                               timeperiod = case_when(depart_hour <=  5 ~ "EA",
-                                                      depart_hour <= 10 ~ "AM",
-                                                      depart_hour <= 15 ~ "MD",
-                                                      depart_hour <= 19 ~ "PM",
-                                                      depart_hour  > 19 ~ "EV"))
 LRF_walk      <- subset(LRF_trip_results, subset=trip_mode==10)
 LRF_drive_out <- subset(LRF_trip_results, subset=(trip_mode==15)&(inbound==0))
 LRF_drive_in  <- subset(LRF_trip_results, subset=(trip_mode==15)&(inbound==1))
@@ -81,17 +82,17 @@ LRF_drive_in  <- subset(LRF_trip_results, subset=(trip_mode==15)&(inbound==1))
 LRF_walk <- left_join(LRF_walk, subset(ferry_skim, subset=submode=="wlk_lrf_wlk"),
                       by=c("orig_taz"="OTAZ", "dest_taz"="DTAZ", "timeperiod"="timeperiod") ) %>% 
   mutate(ferryAvailable=ifelse(is.na(ivtFerry),0,1)) %>%
-  select(-ivtFerry, -submode, -timeperiod)
+  select(-ivtFerry, -submode)
 
 LRF_drive_out <- left_join(LRF_drive_out, subset(ferry_skim, subset=submode=="drv_lrf_wlk"),
                       by=c("orig_taz"="OTAZ", "dest_taz"="DTAZ", "timeperiod"="timeperiod") ) %>% 
   mutate(ferryAvailable=ifelse(is.na(ivtFerry),0,1)) %>%
-  select(-ivtFerry, -submode, -timeperiod)
+  select(-ivtFerry, -submode)
 
 LRF_drive_in <- left_join(LRF_drive_in, subset(ferry_skim, subset=submode=="wlk_lrf_drv"),
                       by=c("orig_taz"="OTAZ", "dest_taz"="DTAZ", "timeperiod"="timeperiod") ) %>% 
   mutate(ferryAvailable=ifelse(is.na(ivtFerry),0,1)) %>%
-  select(-ivtFerry, -submode, -timeperiod)
+  select(-ivtFerry, -submode)
 
 LRF_trip_results <- rbind(LRF_walk, LRF_drive_out, LRF_drive_in)
 
@@ -129,6 +130,38 @@ transit_trip_results  <- subset(trip_results, subset=((trip_mode<0)|((trip_mode>
                                trip_mode==16 ~ "Express",
                                trip_mode==17 ~ "HeavyRail",
                                trip_mode==18 ~ "CommRail"))
+transit_trip_results$acc = "Not Set"
+transit_trip_results$egr = "Not Set"
+
+# wlk wlk
+transit_trip_results$acc[which((transit_trip_results$trip_mode>=9)&(transit_trip_results$trip_mode<=13))] <- "wlk"
+transit_trip_results$egr[which((transit_trip_results$trip_mode>=9)&(transit_trip_results$trip_mode<=13))] <- "wlk"
+transit_trip_results$acc[which(transit_trip_results$trip_mode==-10)] <- "wlk"
+transit_trip_results$egr[which(transit_trip_results$trip_mode==-10)] <- "wlk"
+
+# outbound: drv wlk
+transit_trip_results$acc[which((transit_trip_results$inbound==0)&
+                                 (transit_trip_results$trip_mode>=14)&
+                                 (transit_trip_results$trip_mode<=18))]  <- "drv"
+transit_trip_results$egr[which((transit_trip_results$inbound==0)&
+                                 (transit_trip_results$trip_mode>=14)&
+                                 (transit_trip_results$trip_mode<=18))]  <- "wlk"
+transit_trip_results$acc[which((transit_trip_results$inbound==0)&
+                                 (transit_trip_results$trip_mode==-15))] <- "drv"
+transit_trip_results$egr[which((transit_trip_results$inbound==0)&
+                                 (transit_trip_results$trip_mode==-15))] <- "wlk"
+
+# inbound: wlk drv
+transit_trip_results$acc[which((transit_trip_results$inbound==1)&
+                                 (transit_trip_results$trip_mode>=14)&
+                                 (transit_trip_results$trip_mode<=18))]  <- "wlk"
+transit_trip_results$egr[which((transit_trip_results$inbound==1)&
+                                 (transit_trip_results$trip_mode>=14)&
+                                 (transit_trip_results$trip_mode<=18))]  <- "drv"
+transit_trip_results$acc[which((transit_trip_results$inbound==1)&
+                                 (transit_trip_results$trip_mode==-15))] <- "wlk"
+transit_trip_results$egr[which((transit_trip_results$inbound==1)&
+                                 (transit_trip_results$trip_mode==-15))] <- "drv"
 
 # combine purposes
 transit_trip_results <- mutate(transit_trip_results,
@@ -150,6 +183,62 @@ transit_trip_results <- mutate(transit_trip_results,
                                  tour_purpose=="work_low"        ~ "work",
                                  tour_purpose=="work_med"        ~ "work",
                                  tour_purpose=="work_very high"  ~ "work"))
+
+# add boards
+transit_trip_results$num_boards <- NA
+table <- "boards"
+print(paste("Have ", nrow(subset(transit_trip_results, !is.na(transit_trip_results$num_boards))),
+            "boards counts of",nrow(transit_trip_results)))
+
+for (timeperiod in c("EA","AM","MD", "PM", "EV")) {
+  for (trn_submode in c("Local","Express","LRT","Ferry","CommRail","HeavyRail")) {
+    submode <- case_when(trn_submode=="Local"    ~ "loc",
+                         trn_submode=="Express"  ~ "exp",
+                         trn_submode=="LRT"      ~ "lrf",
+                         trn_submode=="Ferry"    ~ "lrf",
+                         trn_submode=="CommRail" ~ "com",
+                         trn_submode=="HeavyRail"~ "hvy")
+    for (acc_egr in c("wlk_wlk","drv_wlk","wlk_drv")) {
+      acc <- substr(acc_egr,0,3)
+      egr <- substr(acc_egr,5,7)
+      
+      file_name <- paste0("trnskm",timeperiod,"_",acc,"_",submode,"_",egr,"_",table,".csv")
+      skim_table <- read.table(file=file.path(TARGET_DIR, "OUTPUT", "skims", file_name),
+                               header=FALSE, col.names=c("orig_taz","dest_taz","ones",table), sep=",") %>% 
+      select(-ones) %>%
+      mutate(timeperiod=timeperiod, trn_submode=trn_submode,acc=acc,egr=egr)
+      # print(paste("Read ",file_name))
+      # print(head(skim_table))
+      transit_trip_results <- left_join(transit_trip_results, skim_table,
+                                        by = c("orig_taz", "dest_taz", "timeperiod", "trn_submode", "acc", "egr"))
+      # set num_boards
+      transit_trip_results <- mutate(transit_trip_results, 
+                                     num_boards=ifelse(!is.na(boards),boards,num_boards))
+      
+      transit_trip_results <- select(transit_trip_results, -boards)
+      board_num_count      <- nrow(subset(transit_trip_results, !is.na(transit_trip_results$num_boards)))
+      print(paste("=> Have board counts for", sprintf("%.1f%%", 100*board_num_count/nrow(transit_trip_results))))
+    }
+  }
+}
+missing_boards <- subset(transit_trip_results, is.na(transit_trip_results$num_boards))
+print(paste("Have ",nrow(missing_boards),"rows without board counts"))
+
+# group by trn_submode, num_boards and spread
+transit_boards_summary <- group_by(subset(transit_trip_results, !is.na(transit_trip_results$num_boards)),
+                                   trn_submode, num_boards) %>%
+  summarise(num_trips=sum(num_participants)) %>%
+  mutate(num_trips=num_trips/SAMPLESHARE) %>% spread(trn_submode, num_trips)
+transit_boards_summary <- as.data.frame(transit_boards_summary)
+transit_boards_summary <- transit_boards_summary[c("num_boards","Local","Express","LRT","Ferry","CommRail","HeavyRail")]
+
+# save it
+outfile <- file.path(OUTPUT_DIR, paste0("15_trip_mode_choice_trn_boards_TM.csv"))
+write.table(transit_boards_summary, outfile, sep=",", row.names=FALSE)
+cat("Wrote ",outfile,"\n")
+
+addDataFrame(transit_boards_summary, calib_sheets$modeldata, startRow=2, startColumn=17, row.names=FALSE)
+
 
 # add superdistrict for orig, dest
 taz_sd <- read.table(file = TAZ_SD_FILE, header=TRUE, sep=",")

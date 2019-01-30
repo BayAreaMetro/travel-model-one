@@ -50,6 +50,19 @@ for %%H in (IVT IWAIT WACC WEGR) DO (
   if not exist !SKIMFILE!_!TABLE!.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
 )
 
+:: boards
+set TABLE=boards
+FOR %%H in (EA AM MD PM EV) DO (
+  FOR %%G in (loc exp lrf com hvy) DO (
+    set SKIMFILE=trnskm%%H_wlk_%%G_drv
+    if not exist !SKIMFILE!_!TABLE!.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
+    set SKIMFILE=trnskm%%H_drv_%%G_wlk
+    if not exist !SKIMFILE!_!TABLE!.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
+    set SKIMFILE=trnskm%%H_wlk_%%G_wlk
+    if not exist !SKIMFILE!_!TABLE!.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
+  )
+)
+
 if not exist skim_OD_districts.csv  Rscript --vanilla "%CODE_DIR%\skim_district_summary.R"
 cd ..\..
 
