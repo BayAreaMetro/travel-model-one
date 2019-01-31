@@ -401,7 +401,7 @@ endloop ; year
 */
 
 ; step 3: build matrices for five year intervals by interpolating between the year 2007 and the year 2035 trip tables
-loop fYear = 1,5
+loop fYear = 1,7
 
    if (fYear = 1) 
    
@@ -427,22 +427,32 @@ loop fYear = 1,5
    
       token_year  = '2040b'
       token_scale = '(2040 - 2007)/(2035 - 2007)'
-      
+
+   elseif (fYear = 6)
+   
+      token_year  = '2045b'
+      token_scale = '(2045 - 2007)/(2035 - 2007)'
+
+   elseif (fYear = 7)
+   
+      token_year  = '2050b'
+      token_scale = '(2050 - 2007)/(2035 - 2007)'
+
    endif
    
    run pgm = matrix
    
-      filei mati[1]  = 2007_tripsAirPaxEA.tpp
-      filei mati[2]  = 2007_tripsAirPaxAM.tpp
-      filei mati[3]  = 2007_tripsAirPaxMD.tpp
-      filei mati[4]  = 2007_tripsAirPaxPM.tpp
-      filei mati[5]  = 2007_tripsAirPaxEV.tpp
+      filei mati[1]  = 2007\2007_tripsAirPaxEA.tpp
+      filei mati[2]  = 2007\2007_tripsAirPaxAM.tpp
+      filei mati[3]  = 2007\2007_tripsAirPaxMD.tpp
+      filei mati[4]  = 2007\2007_tripsAirPaxPM.tpp
+      filei mati[5]  = 2007\2007_tripsAirPaxEV.tpp
       
-      filei mati[6]  = 2035b_tripsAirPaxEA.tpp
-      filei mati[7]  = 2035b_tripsAirPaxAM.tpp
-      filei mati[8]  = 2035b_tripsAirPaxMD.tpp
-      filei mati[9]  = 2035b_tripsAirPaxPM.tpp
-      filei mati[10] = 2035b_tripsAirPaxEV.tpp
+      filei mati[6]  = 2035\2035b_tripsAirPaxEA.tpp
+      filei mati[7]  = 2035\2035b_tripsAirPaxAM.tpp
+      filei mati[8]  = 2035\2035b_tripsAirPaxMD.tpp
+      filei mati[9]  = 2035\2035b_tripsAirPaxPM.tpp
+      filei mati[10] = 2035\2035b_tripsAirPaxEV.tpp
    
       fileo mato[1] = @token_year@_tripsAirPaxEA.tpp, mo =  1- 6, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
       fileo mato[2] = @token_year@_tripsAirPaxAM.tpp, mo =  7-12, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
