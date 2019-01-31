@@ -310,6 +310,10 @@ def config_mobility_params(replacements):
     occ_file.write('3,%5.2f,%5.2f,%5.2f\n' % (taxiS3Share,tncSingleS3Share,tncSharedS3Share))
     occ_file.close()
 
+    # Pass the model year to mtcTourBased.properties
+    modelyear = os.environ['MODEL_YEAR']
+    replacements[filepath]["(\nMODEL_YEAR[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % modelyear
+
 def get_property(properties_file_name, properties_file_contents, propname):
     """
     Return the string for this property.
