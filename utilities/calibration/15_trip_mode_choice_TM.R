@@ -224,13 +224,36 @@ for (timeperiod in c("EA","AM","MD", "PM", "EV")) {
 missing_boards <- subset(transit_trip_results, is.na(transit_trip_results$num_boards))
 print(paste("Have ",nrow(missing_boards),"rows without board counts"))
 
-# group by trn_submode, num_boards and spread
+# want walk access&egress, drive access or egress
+transit_trip_results <- mutate(transit_trip_results, acc_egr=ifelse((acc=="drv")|(egr=="drv"),"2_Drive","1_Walk"))
+
+# plus a Total category
+transit_trip_results <- rbind(transit_trip_results,
+                              mutate(transit_trip_results, acc_egr="0_Total"))
+
+# group by trn_submode, acc_egr, num_boards and spread
 transit_boards_summary <- group_by(subset(transit_trip_results, !is.na(transit_trip_results$num_boards)),
-                                   trn_submode, num_boards) %>%
+                                   trn_submode, acc_egr, num_boards) %>%
   summarise(num_trips=sum(num_participants)) %>%
-  mutate(num_trips=num_trips/SAMPLESHARE) %>% spread(trn_submode, num_trips)
+  mutate(num_trips=num_trips/SAMPLESHARE)
+
+# assuming no 5- and 6-boards
 transit_boards_summary <- as.data.frame(transit_boards_summary)
-transit_boards_summary <- transit_boards_summary[c("num_boards","Local","Express","LRT","Ferry","CommRail","HeavyRail")]
+if (nrow(subset(transit_boards_summary, num_boards==5)) == 0) {
+  transit_boards_summary <- add_row(transit_boards_summary, trn_submode="CommRail", acc_egr="0_Total", num_boards=5, num_trips=0)
+  transit_boards_summary <- add_row(transit_boards_summary, trn_submode="CommRail", acc_egr="1_Walk",  num_boards=5, num_trips=0)
+  transit_boards_summary <- add_row(transit_boards_summary, trn_submode="CommRail", acc_egr="2_Drive", num_boards=5, num_trips=0)
+}
+if (nrow(subset(transit_boards_summary, num_boards==6)) == 0) {
+  transit_boards_summary <- add_row(transit_boards_summary, trn_submode="CommRail", acc_egr="0_Total", num_boards=6, num_trips=0)
+  transit_boards_summary <- add_row(transit_boards_summary, trn_submode="CommRail", acc_egr="1_Walk",  num_boards=6, num_trips=0)
+  transit_boards_summary <- add_row(transit_boards_summary, trn_submode="CommRail", acc_egr="2_Drive", num_boards=6, num_trips=0)
+}
+
+transit_boards_summary <- spread(transit_boards_summary, trn_submode, num_trips)
+transit_boards_summary <- as.data.frame(transit_boards_summary) %>% 
+  replace_na(list("Local"=0, "Express"=0,"Ferry"=0,"LRT"=0,"CommRail"=0,"HeavyRail"=0))
+transit_boards_summary <- transit_boards_summary[c("num_boards","Local","Express","Ferry","LRT","CommRail","HeavyRail", "acc_egr")]
 
 # save it
 outfile <- file.path(OUTPUT_DIR, paste0("15_trip_mode_choice_trn_boards_TM.csv"))
