@@ -248,17 +248,17 @@ run pgm = matrix
        year_delta      = %MODEL_YEAR%-2015
 
        ; figure out 2015 desired total -- this is future-dependent
-       IF ('@token_future@'=='PBA50')
+       IF ('%FUTURE%'='PBA50')
 
          IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--PBA50--%MODEL_YEAR%--  Non-commute share grows based on slope for ",year_delta," years"
          total_modyear = total_2015 + year_delta*(1.0-commute_share)*slope
 
-       ELSEIF ('@token_future@'=='CleanAndGreen')
+       ELSEIF ('%FUTURE%'=='CleanAndGreen')
 
          IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--CleanAndGreen--%MODEL_YEAR%--  No growth"
          total_modyear = total_2015
 
-       ELSEIF ('@token_future@'=='BackToTheFuture')
+       ELSEIF ('%FUTURE%'='BackToTheFuture')
 
          IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--BackToTheFuture--%MODEL_YEAR%--  Total share grows based on slope for ",year_delta," years, plus 50% for gateways to south and east"
          if (EXT_ZONE >= 1459 & EXT_ZONE <= 1471)
@@ -267,7 +267,7 @@ run pgm = matrix
            total_modyear = total_2015 + year_delta*slope
          endif
 
-       ELSEIF ('@token_future@'=='RisingTidesFallingFortunes')
+       ELSEIF ('%FUTURE%'='RisingTidesFallingFortunes')
 
          IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--RisingTidesFallingFortunes--%MODEL_YEAR%--  Total share grows based on slope for ",year_delta," years"
          total_modyear = total_2015 + year_delta*slope
