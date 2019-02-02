@@ -15,12 +15,15 @@
 ; assumed to be sr3).  The shared ride van, hotel shuttle, and charter bus modes are assumed to have no deadhead travel. 
 ; The return escort trip is included, as are the deadhead limo and taxi trips. 
 ;
-; The scripts reads in DBF files created from Mr. Gosling's Excel files, then creates a Cube matrix for each of the
-; DBF file.  Next, a highway-assignment ready matrix file is creating for each time-of-day interval.  Here, we 
-; assume that no air passengers use HOT lanes (probably not exactly true in certain future year scenarios, but the 
-; assumption is made here as a simplification).  Simple linear interpolations are used to estimate vehicle demand in
-; years other than 2007 and 2035, including 2015, 2020, 2025, 2030, and 2040.  The 2007 table is used for years 2000,
-; 2005, and 2010.
+;
+; The script reads in DBF files crated from Mr. Gosling's Excel files for 2007 and 2035, and uses a simple linear
+; interpolation to create versions for years other than 2007 and 2035, including 2015, 2020, 2025, 2030, 2040,
+; 2045 and 2050.
+;
+; These DBFs are then converted into Cube matrices, with optional variants accounting for airport closures and diverting
+; trips to alternative airports for Horizon Future scenarios.  Finally, a highway-assignment ready matrix file is
+; created for each time-of-day interval.  Here, we assume that no air passengers use HOT lanes (probably not exactly
+; true in certain future year scenarios, but the assumption is made here as a simplification).
 ;
 ; Transit travel to the airports is not included in these vehicle trip tables.
 ;
@@ -65,342 +68,11 @@
 ;
 ;
 ; ----------------------------------------------------------------------------------------------------------------
-
-/*
-
-; step 1: read in each of the year 2007 and 2035 files from Geoff Gosling and convert to Cube matrices
-loop year = 1,2
-
-   if (year = 1) token_year = '2007'
-   if (year = 2) token_year = '2035b'
-   
-   loop airport = 1,3
-   
-      if (airport = 1) token_airport = 'SFO'
-      if (airport = 2) token_airport = 'OAK'
-      if (airport = 3) token_airport = 'SJC'
-   
-      loop toFrom = 1,2
-      
-         if (toFrom = 1) token_toFrom = 'to'
-         if (toFrom = 2) token_toFrom = 'from'
-         
-         
-         run pgm = matrix
-         
-            filei mati[1] = .\GoslingSummaries\@token_year@_@token_toFrom@@token_airport@.DBF, pattern = IJM:V, fields = Orig,Dest,0,
-             			        EA_Es_DA,EA_Es_S2,EA_Es_S3,EA_Pk_DA,EA_Pk_S2,EA_Pk_S3,EA_Rn_DA,EA_Rn_S2,EA_Rn_S3,EA_Tx_DA,EA_Tx_S2,EA_Tx_S3,EA_Li_DA,EA_Li_S2,EA_Li_S3,EA_Vn_S3,EA_Ht_S3,EA_Ch_S3,
-                                        AM_Es_DA,AM_Es_S2,AM_Es_S3,AM_Pk_DA,AM_Pk_S2,AM_Pk_S3,AM_Rn_DA,AM_Rn_S2,AM_Rn_S3,AM_Tx_DA,AM_Tx_S2,AM_Tx_S3,AM_Li_DA,AM_Li_S2,AM_Li_S3,AM_Vn_S3,AM_Ht_S3,AM_Ch_S3,
-                                        MD_Es_DA,MD_Es_S2,MD_Es_S3,MD_Pk_DA,MD_Pk_S2,MD_Pk_S3,MD_Rn_DA,MD_Rn_S2,MD_Rn_S3,MD_Tx_DA,MD_Tx_S2,MD_Tx_S3,MD_Li_DA,MD_Li_S2,MD_Li_S3,MD_Vn_S3,MD_Ht_S3,MD_Ch_S3,
-                                        PM_Es_DA,PM_Es_S2,PM_Es_S3,PM_Pk_DA,PM_Pk_S2,PM_Pk_S3,PM_Rn_DA,PM_Rn_S2,PM_Rn_S3,PM_Tx_DA,PM_Tx_S2,PM_Tx_S3,PM_Li_DA,PM_Li_S2,PM_Li_S3,PM_Vn_S3,PM_Ht_S3,PM_Ch_S3,
-                                        EV_Es_DA,EV_Es_S2,EV_Es_S3,EV_Pk_DA,EV_Pk_S2,EV_Pk_S3,EV_Rn_DA,EV_Rn_S2,EV_Rn_S3,EV_Tx_DA,EV_Tx_S2,EV_Tx_S3,EV_Li_DA,EV_Li_S2,EV_Li_S3,EV_Vn_S3,EV_Ht_S3,EV_Ch_S3
-         
-                          
-            fileo mato = @token_year@_@token_toFrom@@token_airport@.mtx, mo = 1-90, name = 
-            	         EA_Escort_DA,EA_Escort_S2,EA_Escort_S3,EA_Park_DA,EA_Park_S2,EA_Park_S3,EA_Rent_DA,EA_Rent_S2,EA_Rent_S3,EA_Taxi_DA,EA_Taxi_S2,EA_Taxi_S3,EA_Limo_DA,EA_Limo_S2,EA_Limo_S3,EA_Van_S3,EA_Hotel_S3,EA_Chart_S3,
-                         AM_Escort_DA,AM_Escort_S2,AM_Escort_S3,AM_Park_DA,AM_Park_S2,AM_Park_S3,AM_Rent_DA,AM_Rent_S2,AM_Rent_S3,AM_Taxi_DA,AM_Taxi_S2,AM_Taxi_S3,AM_Limo_DA,AM_Limo_S2,AM_Limo_S3,AM_Van_S3,AM_Hotel_S3,AM_Chart_S3,
-                         MD_Escort_DA,MD_Escort_S2,MD_Escort_S3,MD_Park_DA,MD_Park_S2,MD_Park_S3,MD_Rent_DA,MD_Rent_S2,MD_Rent_S3,MD_Taxi_DA,MD_Taxi_S2,MD_Taxi_S3,MD_Limo_DA,MD_Limo_S2,MD_Limo_S3,MD_Van_S3,MD_Hotel_S3,MD_Chart_S3,
-                         PM_Escort_DA,PM_Escort_S2,PM_Escort_S3,PM_Park_DA,PM_Park_S2,PM_Park_S3,PM_Rent_DA,PM_Rent_S2,PM_Rent_S3,PM_Taxi_DA,PM_Taxi_S2,PM_Taxi_S3,PM_Limo_DA,PM_Limo_S2,PM_Limo_S3,PM_Van_S3,PM_Hotel_S3,PM_Chart_S3,
-                         EV_Escort_DA,EV_Escort_S2,EV_Escort_S3,EV_Park_DA,EV_Park_S2,EV_Park_S3,EV_Rent_DA,EV_Rent_S2,EV_Rent_S3,EV_Taxi_DA,EV_Taxi_S2,EV_Taxi_S3,EV_Limo_DA,EV_Limo_S2,EV_Limo_S3,EV_Van_S3,EV_Hotel_S3,EV_Chart_S3
-         
-            zones = 1454
-            
-            mw[1]  = mi.1.1
-            mw[2]  = mi.1.2
-            mw[3]  = mi.1.3
-            mw[4]  = mi.1.4
-            mw[5]  = mi.1.5
-            mw[6]  = mi.1.6
-            mw[7]  = mi.1.7
-            mw[8]  = mi.1.8
-            mw[9]  = mi.1.9
-            mw[10] = mi.1.10
-            mw[11] = mi.1.11
-            mw[12] = mi.1.12
-            mw[13] = mi.1.13
-            mw[14] = mi.1.14
-            mw[15] = mi.1.15
-            mw[16] = mi.1.16
-            mw[17] = mi.1.17
-            mw[18] = mi.1.18
-            mw[19] = mi.1.19
-            mw[20] = mi.1.20
-            mw[21] = mi.1.21
-            mw[22] = mi.1.22
-            mw[23] = mi.1.23
-            mw[24] = mi.1.24
-            mw[25] = mi.1.25
-            mw[26] = mi.1.26
-            mw[27] = mi.1.27
-            mw[28] = mi.1.28
-            mw[29] = mi.1.29
-            mw[30] = mi.1.30
-            mw[31] = mi.1.31
-            mw[32] = mi.1.32
-            mw[33] = mi.1.33
-            mw[34] = mi.1.34
-            mw[35] = mi.1.35
-            mw[36] = mi.1.36
-            mw[37] = mi.1.37
-            mw[38] = mi.1.38
-            mw[39] = mi.1.39
-            mw[40] = mi.1.40
-            mw[41] = mi.1.41
-            mw[42] = mi.1.42
-            mw[43] = mi.1.43
-            mw[44] = mi.1.44
-            mw[45] = mi.1.45
-            mw[46] = mi.1.46
-            mw[47] = mi.1.47
-            mw[48] = mi.1.48
-            mw[49] = mi.1.49
-            mw[50] = mi.1.50
-            mw[51] = mi.1.51
-            mw[52] = mi.1.52
-            mw[53] = mi.1.53
-            mw[54] = mi.1.54
-            mw[55] = mi.1.55
-            mw[56] = mi.1.56
-            mw[57] = mi.1.57
-            mw[58] = mi.1.58
-            mw[59] = mi.1.59
-            mw[60] = mi.1.60
-            mw[61] = mi.1.61
-            mw[62] = mi.1.62
-            mw[63] = mi.1.63
-            mw[64] = mi.1.64
-            mw[65] = mi.1.65
-            mw[66] = mi.1.66
-            mw[67] = mi.1.67
-            mw[68] = mi.1.68
-            mw[69] = mi.1.69
-            mw[70] = mi.1.70
-            mw[71] = mi.1.71
-            mw[72] = mi.1.72
-            mw[73] = mi.1.73
-            mw[74] = mi.1.74
-            mw[75] = mi.1.75
-            mw[76] = mi.1.76
-            mw[77] = mi.1.77
-            mw[78] = mi.1.78
-            mw[79] = mi.1.79
-            mw[80] = mi.1.80
-            mw[81] = mi.1.81
-            mw[82] = mi.1.82
-            mw[83] = mi.1.83
-            mw[84] = mi.1.84
-            mw[85] = mi.1.85
-            mw[86] = mi.1.86
-            mw[87] = mi.1.87
-            mw[88] = mi.1.88
-            mw[89] = mi.1.89
-            mw[90] = mi.1.90
-            
-         
-         endrun
-   
-      
-      endloop ; toFrom
-      
-   endloop ; airport
-   
-   
-   ; step 2: build time-of-day- and vehicle-occupancy-specific year 2007 and 2035 trip tables for assignment
-   run pgm = matrix
-   
-      filei mati[1] = @token_year@_toSFO.mtx
-      filei mati[2] = @token_year@_fromSFO.mtx
-      
-      filei mati[3] = @token_year@_toOAK.mtx
-      filei mati[4] = @token_year@_fromOAK.mtx
-      
-      filei mati[5] = @token_year@_toSJC.mtx
-      filei mati[6] = @token_year@_fromSJC.mtx
-      
-      fileo mato[1] = @token_year@_tripsAirPaxEA.tpp, mo =  1- 6, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
-      fileo mato[2] = @token_year@_tripsAirPaxAM.tpp, mo =  7-12, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
-      fileo mato[3] = @token_year@_tripsAirPaxMD.tpp, mo = 13-18, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
-      fileo mato[4] = @token_year@_tripsAirPaxPM.tpp, mo = 19-24, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
-      fileo mato[5] = @token_year@_tripsAirPaxEV.tpp, mo = 25-30, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
-         
-      ; combine early AM trips by occupancy ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      ;   - drive alone free
-      mw[1] = mi.1.EA_Escort_DA + mi.1.EA_Park_DA + mi.1.EA_Rent_DA + mi.1.EA_Taxi_DA + mi.1.EA_Limo_DA +
-              mi.2.EA_Escort_DA + mi.2.EA_Park_DA + mi.2.EA_Rent_DA + mi.2.EA_Taxi_DA + mi.2.EA_Limo_DA +
-              mi.3.EA_Escort_DA + mi.3.EA_Park_DA + mi.3.EA_Rent_DA + mi.3.EA_Taxi_DA + mi.3.EA_Limo_DA + 
-              mi.4.EA_Escort_DA + mi.4.EA_Park_DA + mi.4.EA_Rent_DA + mi.4.EA_Taxi_DA + mi.4.EA_Limo_DA +
-              mi.5.EA_Escort_DA + mi.5.EA_Park_DA + mi.5.EA_Rent_DA + mi.5.EA_Taxi_DA + mi.5.EA_Limo_DA +
-              mi.6.EA_Escort_DA + mi.6.EA_Park_DA + mi.6.EA_Rent_DA + mi.6.EA_Taxi_DA + mi.6.EA_Limo_DA
-              
-      ;   - shared ride 2 free
-      mw[2] = mi.1.EA_Escort_S2 + mi.1.EA_Park_S2 + mi.1.EA_Rent_S2 + mi.1.EA_Taxi_S2 + mi.1.EA_Limo_S2 +
-              mi.2.EA_Escort_S2 + mi.2.EA_Park_S2 + mi.2.EA_Rent_S2 + mi.2.EA_Taxi_S2 + mi.2.EA_Limo_S2 +
-              mi.3.EA_Escort_S2 + mi.3.EA_Park_S2 + mi.3.EA_Rent_S2 + mi.3.EA_Taxi_S2 + mi.3.EA_Limo_S2 +
-              mi.4.EA_Escort_S2 + mi.4.EA_Park_S2 + mi.4.EA_Rent_S2 + mi.4.EA_Taxi_S2 + mi.4.EA_Limo_S2 +
-              mi.5.EA_Escort_S2 + mi.5.EA_Park_S2 + mi.5.EA_Rent_S2 + mi.5.EA_Taxi_S2 + mi.5.EA_Limo_S2 +
-              mi.6.EA_Escort_S2 + mi.6.EA_Park_S2 + mi.6.EA_Rent_S2 + mi.6.EA_Taxi_S2 + mi.6.EA_Limo_S2
-              
-      ;   - shared ride 3 free
-      mw[3] = mi.1.EA_Escort_S3 + mi.1.EA_Park_S3 + mi.1.EA_Rent_S3 + mi.1.EA_Taxi_S3 + mi.1.EA_Limo_S3 + mi.1.EA_Van_S3 + mi.1.EA_Hotel_S3 + mi.1.EA_Chart_S3 +
-              mi.2.EA_Escort_S3 + mi.2.EA_Park_S3 + mi.2.EA_Rent_S3 + mi.2.EA_Taxi_S3 + mi.2.EA_Limo_S3 + mi.2.EA_Van_S3 + mi.2.EA_Hotel_S3 + mi.2.EA_Chart_S3 +
-              mi.3.EA_Escort_S3 + mi.3.EA_Park_S3 + mi.3.EA_Rent_S3 + mi.3.EA_Taxi_S3 + mi.3.EA_Limo_S3 + mi.3.EA_Van_S3 + mi.3.EA_Hotel_S3 + mi.3.EA_Chart_S3 +
-              mi.4.EA_Escort_S3 + mi.4.EA_Park_S3 + mi.4.EA_Rent_S3 + mi.4.EA_Taxi_S3 + mi.4.EA_Limo_S3 + mi.4.EA_Van_S3 + mi.4.EA_Hotel_S3 + mi.4.EA_Chart_S3 +
-              mi.5.EA_Escort_S3 + mi.5.EA_Park_S3 + mi.5.EA_Rent_S3 + mi.5.EA_Taxi_S3 + mi.5.EA_Limo_S3 + mi.5.EA_Van_S3 + mi.5.EA_Hotel_S3 + mi.5.EA_Chart_S3 +
-              mi.6.EA_Escort_S3 + mi.6.EA_Park_S3 + mi.6.EA_Rent_S3 + mi.6.EA_Taxi_S3 + mi.6.EA_Limo_S3 + mi.6.EA_Van_S3 + mi.6.EA_Hotel_S3 + mi.6.EA_Chart_S3
-   
-      ;   - drive alone toll (assume no trips pay HOT fee)
-      mw[4] = 0
-      
-      ;   - shared ride 2 toll (assume no trips pay HOT fee)
-      mw[5] = 0
-      
-      ;   - shared ride 3 toll (assume no trips pay HOT fee)
-      mw[6] = 0
-      
-      ; combine AM peak trips by occupancy ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      ;   - drive alone free
-      mw[7] = mi.1.AM_Escort_DA + mi.1.AM_Park_DA + mi.1.AM_Rent_DA + mi.1.AM_Taxi_DA + mi.1.AM_Limo_DA +
-              mi.2.AM_Escort_DA + mi.2.AM_Park_DA + mi.2.AM_Rent_DA + mi.2.AM_Taxi_DA + mi.2.AM_Limo_DA +
-              mi.3.AM_Escort_DA + mi.3.AM_Park_DA + mi.3.AM_Rent_DA + mi.3.AM_Taxi_DA + mi.3.AM_Limo_DA + 
-              mi.4.AM_Escort_DA + mi.4.AM_Park_DA + mi.4.AM_Rent_DA + mi.4.AM_Taxi_DA + mi.4.AM_Limo_DA +
-              mi.5.AM_Escort_DA + mi.5.AM_Park_DA + mi.5.AM_Rent_DA + mi.5.AM_Taxi_DA + mi.5.AM_Limo_DA +
-              mi.6.AM_Escort_DA + mi.6.AM_Park_DA + mi.6.AM_Rent_DA + mi.6.AM_Taxi_DA + mi.6.AM_Limo_DA
-              
-      ;   - shared ride 2 free
-      mw[8] = mi.1.AM_Escort_S2 + mi.1.AM_Park_S2 + mi.1.AM_Rent_S2 + mi.1.AM_Taxi_S2 + mi.1.AM_Limo_S2 +
-              mi.2.AM_Escort_S2 + mi.2.AM_Park_S2 + mi.2.AM_Rent_S2 + mi.2.AM_Taxi_S2 + mi.2.AM_Limo_S2 +
-              mi.3.AM_Escort_S2 + mi.3.AM_Park_S2 + mi.3.AM_Rent_S2 + mi.3.AM_Taxi_S2 + mi.3.AM_Limo_S2 +
-              mi.4.AM_Escort_S2 + mi.4.AM_Park_S2 + mi.4.AM_Rent_S2 + mi.4.AM_Taxi_S2 + mi.4.AM_Limo_S2 +
-              mi.5.AM_Escort_S2 + mi.5.AM_Park_S2 + mi.5.AM_Rent_S2 + mi.5.AM_Taxi_S2 + mi.5.AM_Limo_S2 +
-              mi.6.AM_Escort_S2 + mi.6.AM_Park_S2 + mi.6.AM_Rent_S2 + mi.6.AM_Taxi_S2 + mi.6.AM_Limo_S2
-              
-      ;   - shared ride 3 free
-      mw[9] = mi.1.AM_Escort_S3 + mi.1.AM_Park_S3 + mi.1.AM_Rent_S3 + mi.1.AM_Taxi_S3 + mi.1.AM_Limo_S3 + mi.1.AM_Van_S3 + mi.1.AM_Hotel_S3 + mi.1.AM_Chart_S3 +
-              mi.2.AM_Escort_S3 + mi.2.AM_Park_S3 + mi.2.AM_Rent_S3 + mi.2.AM_Taxi_S3 + mi.2.AM_Limo_S3 + mi.2.AM_Van_S3 + mi.2.AM_Hotel_S3 + mi.2.AM_Chart_S3 +
-              mi.3.AM_Escort_S3 + mi.3.AM_Park_S3 + mi.3.AM_Rent_S3 + mi.3.AM_Taxi_S3 + mi.3.AM_Limo_S3 + mi.3.AM_Van_S3 + mi.3.AM_Hotel_S3 + mi.3.AM_Chart_S3 +
-              mi.4.AM_Escort_S3 + mi.4.AM_Park_S3 + mi.4.AM_Rent_S3 + mi.4.AM_Taxi_S3 + mi.4.AM_Limo_S3 + mi.4.AM_Van_S3 + mi.4.AM_Hotel_S3 + mi.4.AM_Chart_S3 +
-              mi.5.AM_Escort_S3 + mi.5.AM_Park_S3 + mi.5.AM_Rent_S3 + mi.5.AM_Taxi_S3 + mi.5.AM_Limo_S3 + mi.5.AM_Van_S3 + mi.5.AM_Hotel_S3 + mi.5.AM_Chart_S3 +
-              mi.6.AM_Escort_S3 + mi.6.AM_Park_S3 + mi.6.AM_Rent_S3 + mi.6.AM_Taxi_S3 + mi.6.AM_Limo_S3 + mi.6.AM_Van_S3 + mi.6.AM_Hotel_S3 + mi.6.AM_Chart_S3
-   
-      ;   - drive alone toll (assume no trips pay HOT fee)
-      mw[10] = 0
-      
-      ;   - shared ride 2 toll (assume no trips pay HOT fee)
-      mw[11] = 0
-      
-      ;   - shared ride 3 toll (assume no trips pay HOT fee)
-      mw[12] = 0
-      
-      ; combine midday trips by occupancy ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      ;   - drive alone free
-      mw[13] = mi.1.MD_Escort_DA + mi.1.MD_Park_DA + mi.1.MD_Rent_DA + mi.1.MD_Taxi_DA + mi.1.MD_Limo_DA +
-               mi.2.MD_Escort_DA + mi.2.MD_Park_DA + mi.2.MD_Rent_DA + mi.2.MD_Taxi_DA + mi.2.MD_Limo_DA +
-               mi.3.MD_Escort_DA + mi.3.MD_Park_DA + mi.3.MD_Rent_DA + mi.3.MD_Taxi_DA + mi.3.MD_Limo_DA + 
-               mi.4.MD_Escort_DA + mi.4.MD_Park_DA + mi.4.MD_Rent_DA + mi.4.MD_Taxi_DA + mi.4.MD_Limo_DA +
-               mi.5.MD_Escort_DA + mi.5.MD_Park_DA + mi.5.MD_Rent_DA + mi.5.MD_Taxi_DA + mi.5.MD_Limo_DA +
-               mi.6.MD_Escort_DA + mi.6.MD_Park_DA + mi.6.MD_Rent_DA + mi.6.MD_Taxi_DA + mi.6.MD_Limo_DA
-              
-      ;   - shared ride 2 free
-      mw[14] = mi.1.MD_Escort_S2 + mi.1.MD_Park_S2 + mi.1.MD_Rent_S2 + mi.1.MD_Taxi_S2 + mi.1.MD_Limo_S2 +
-               mi.2.MD_Escort_S2 + mi.2.MD_Park_S2 + mi.2.MD_Rent_S2 + mi.2.MD_Taxi_S2 + mi.2.MD_Limo_S2 +
-               mi.3.MD_Escort_S2 + mi.3.MD_Park_S2 + mi.3.MD_Rent_S2 + mi.3.MD_Taxi_S2 + mi.3.MD_Limo_S2 +
-               mi.4.MD_Escort_S2 + mi.4.MD_Park_S2 + mi.4.MD_Rent_S2 + mi.4.MD_Taxi_S2 + mi.4.MD_Limo_S2 +
-               mi.5.MD_Escort_S2 + mi.5.MD_Park_S2 + mi.5.MD_Rent_S2 + mi.5.MD_Taxi_S2 + mi.5.MD_Limo_S2 +
-               mi.6.MD_Escort_S2 + mi.6.MD_Park_S2 + mi.6.MD_Rent_S2 + mi.6.MD_Taxi_S2 + mi.6.MD_Limo_S2
-              
-      ;   - shared ride 3 free
-      mw[15] = mi.1.MD_Escort_S3 + mi.1.MD_Park_S3 + mi.1.MD_Rent_S3 + mi.1.MD_Taxi_S3 + mi.1.MD_Limo_S3 + mi.1.MD_Van_S3 + mi.1.MD_Hotel_S3 + mi.1.MD_Chart_S3 +
-               mi.2.MD_Escort_S3 + mi.2.MD_Park_S3 + mi.2.MD_Rent_S3 + mi.2.MD_Taxi_S3 + mi.2.MD_Limo_S3 + mi.2.MD_Van_S3 + mi.2.MD_Hotel_S3 + mi.2.MD_Chart_S3 +
-               mi.3.MD_Escort_S3 + mi.3.MD_Park_S3 + mi.3.MD_Rent_S3 + mi.3.MD_Taxi_S3 + mi.3.MD_Limo_S3 + mi.3.MD_Van_S3 + mi.3.MD_Hotel_S3 + mi.3.MD_Chart_S3 +
-               mi.4.MD_Escort_S3 + mi.4.MD_Park_S3 + mi.4.MD_Rent_S3 + mi.4.MD_Taxi_S3 + mi.4.MD_Limo_S3 + mi.4.MD_Van_S3 + mi.4.MD_Hotel_S3 + mi.4.MD_Chart_S3 +
-               mi.5.MD_Escort_S3 + mi.5.MD_Park_S3 + mi.5.MD_Rent_S3 + mi.5.MD_Taxi_S3 + mi.5.MD_Limo_S3 + mi.5.MD_Van_S3 + mi.5.MD_Hotel_S3 + mi.5.MD_Chart_S3 +
-               mi.6.MD_Escort_S3 + mi.6.MD_Park_S3 + mi.6.MD_Rent_S3 + mi.6.MD_Taxi_S3 + mi.6.MD_Limo_S3 + mi.6.MD_Van_S3 + mi.6.MD_Hotel_S3 + mi.6.MD_Chart_S3
-   
-      ;   - drive alone toll (assume no trips pay HOT fee)
-      mw[16] = 0
-      
-      ;   - shared ride 2 toll (assume no trips pay HOT fee)
-      mw[17] = 0
-      
-      ;   - shared ride 3 toll (assume no trips pay HOT fee)
-      mw[18] = 0
-      
-      ; combine PM peak trips by occupancy ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      ;   - drive alone free
-      mw[19] = mi.1.PM_Escort_DA + mi.1.PM_Park_DA + mi.1.PM_Rent_DA + mi.1.PM_Taxi_DA + mi.1.PM_Limo_DA +
-               mi.2.PM_Escort_DA + mi.2.PM_Park_DA + mi.2.PM_Rent_DA + mi.2.PM_Taxi_DA + mi.2.PM_Limo_DA +
-               mi.3.PM_Escort_DA + mi.3.PM_Park_DA + mi.3.PM_Rent_DA + mi.3.PM_Taxi_DA + mi.3.PM_Limo_DA + 
-               mi.4.PM_Escort_DA + mi.4.PM_Park_DA + mi.4.PM_Rent_DA + mi.4.PM_Taxi_DA + mi.4.PM_Limo_DA +
-               mi.5.PM_Escort_DA + mi.5.PM_Park_DA + mi.5.PM_Rent_DA + mi.5.PM_Taxi_DA + mi.5.PM_Limo_DA +
-               mi.6.PM_Escort_DA + mi.6.PM_Park_DA + mi.6.PM_Rent_DA + mi.6.PM_Taxi_DA + mi.6.PM_Limo_DA
-              
-      ;   - shared ride 2 free
-      mw[20] = mi.1.PM_Escort_S2 + mi.1.PM_Park_S2 + mi.1.PM_Rent_S2 + mi.1.PM_Taxi_S2 + mi.1.PM_Limo_S2 +
-               mi.2.PM_Escort_S2 + mi.2.PM_Park_S2 + mi.2.PM_Rent_S2 + mi.2.PM_Taxi_S2 + mi.2.PM_Limo_S2 +
-               mi.3.PM_Escort_S2 + mi.3.PM_Park_S2 + mi.3.PM_Rent_S2 + mi.3.PM_Taxi_S2 + mi.3.PM_Limo_S2 +
-               mi.4.PM_Escort_S2 + mi.4.PM_Park_S2 + mi.4.PM_Rent_S2 + mi.4.PM_Taxi_S2 + mi.4.PM_Limo_S2 +
-               mi.5.PM_Escort_S2 + mi.5.PM_Park_S2 + mi.5.PM_Rent_S2 + mi.5.PM_Taxi_S2 + mi.5.PM_Limo_S2 +
-               mi.6.PM_Escort_S2 + mi.6.PM_Park_S2 + mi.6.PM_Rent_S2 + mi.6.PM_Taxi_S2 + mi.6.PM_Limo_S2
-              
-      ;   - shared ride 3 free
-      mw[21] = mi.1.PM_Escort_S3 + mi.1.PM_Park_S3 + mi.1.PM_Rent_S3 + mi.1.PM_Taxi_S3 + mi.1.PM_Limo_S3 + mi.1.PM_Van_S3 + mi.1.PM_Hotel_S3 + mi.1.PM_Chart_S3 +
-               mi.2.PM_Escort_S3 + mi.2.PM_Park_S3 + mi.2.PM_Rent_S3 + mi.2.PM_Taxi_S3 + mi.2.PM_Limo_S3 + mi.2.PM_Van_S3 + mi.2.PM_Hotel_S3 + mi.2.PM_Chart_S3 +
-               mi.3.PM_Escort_S3 + mi.3.PM_Park_S3 + mi.3.PM_Rent_S3 + mi.3.PM_Taxi_S3 + mi.3.PM_Limo_S3 + mi.3.PM_Van_S3 + mi.3.PM_Hotel_S3 + mi.3.PM_Chart_S3 +
-               mi.4.PM_Escort_S3 + mi.4.PM_Park_S3 + mi.4.PM_Rent_S3 + mi.4.PM_Taxi_S3 + mi.4.PM_Limo_S3 + mi.4.PM_Van_S3 + mi.4.PM_Hotel_S3 + mi.4.PM_Chart_S3 +
-               mi.5.PM_Escort_S3 + mi.5.PM_Park_S3 + mi.5.PM_Rent_S3 + mi.5.PM_Taxi_S3 + mi.5.PM_Limo_S3 + mi.5.PM_Van_S3 + mi.5.PM_Hotel_S3 + mi.5.PM_Chart_S3 +
-               mi.6.PM_Escort_S3 + mi.6.PM_Park_S3 + mi.6.PM_Rent_S3 + mi.6.PM_Taxi_S3 + mi.6.PM_Limo_S3 + mi.6.PM_Van_S3 + mi.6.PM_Hotel_S3 + mi.6.PM_Chart_S3
-   
-      ;   - drive alone toll (assume no trips pay HOT fee)
-      mw[22] = 0
-      
-      ;   - shared ride 2 toll (assume no trips pay HOT fee)
-      mw[23] = 0
-      
-      ;   - shared ride 3 toll (assume no trips pay HOT fee)
-      mw[24] = 0
-      
-      ; combine evening trips by occupancy ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      ;   - drive alone free
-      mw[25] = mi.1.EV_Escort_DA + mi.1.EV_Park_DA + mi.1.EV_Rent_DA + mi.1.EV_Taxi_DA + mi.1.EV_Limo_DA +
-               mi.2.EV_Escort_DA + mi.2.EV_Park_DA + mi.2.EV_Rent_DA + mi.2.EV_Taxi_DA + mi.2.EV_Limo_DA +
-               mi.3.EV_Escort_DA + mi.3.EV_Park_DA + mi.3.EV_Rent_DA + mi.3.EV_Taxi_DA + mi.3.EV_Limo_DA + 
-               mi.4.EV_Escort_DA + mi.4.EV_Park_DA + mi.4.EV_Rent_DA + mi.4.EV_Taxi_DA + mi.4.EV_Limo_DA +
-               mi.5.EV_Escort_DA + mi.5.EV_Park_DA + mi.5.EV_Rent_DA + mi.5.EV_Taxi_DA + mi.5.EV_Limo_DA +
-               mi.6.EV_Escort_DA + mi.6.EV_Park_DA + mi.6.EV_Rent_DA + mi.6.EV_Taxi_DA + mi.6.EV_Limo_DA
-              
-      ;   - shared ride 2 free
-      mw[26] = mi.1.EV_Escort_S2 + mi.1.EV_Park_S2 + mi.1.EV_Rent_S2 + mi.1.EV_Taxi_S2 + mi.1.EV_Limo_S2 +
-               mi.2.EV_Escort_S2 + mi.2.EV_Park_S2 + mi.2.EV_Rent_S2 + mi.2.EV_Taxi_S2 + mi.2.EV_Limo_S2 +
-               mi.3.EV_Escort_S2 + mi.3.EV_Park_S2 + mi.3.EV_Rent_S2 + mi.3.EV_Taxi_S2 + mi.3.EV_Limo_S2 +
-               mi.4.EV_Escort_S2 + mi.4.EV_Park_S2 + mi.4.EV_Rent_S2 + mi.4.EV_Taxi_S2 + mi.4.EV_Limo_S2 +
-               mi.5.EV_Escort_S2 + mi.5.EV_Park_S2 + mi.5.EV_Rent_S2 + mi.5.EV_Taxi_S2 + mi.5.EV_Limo_S2 +
-               mi.6.EV_Escort_S2 + mi.6.EV_Park_S2 + mi.6.EV_Rent_S2 + mi.6.EV_Taxi_S2 + mi.6.EV_Limo_S2
-              
-      ;   - shared ride 3 free
-      mw[27] = mi.1.EV_Escort_S3 + mi.1.EV_Park_S3 + mi.1.EV_Rent_S3 + mi.1.EV_Taxi_S3 + mi.1.EV_Limo_S3 + mi.1.EV_Van_S3 + mi.1.EV_Hotel_S3 + mi.1.EV_Chart_S3 +
-               mi.2.EV_Escort_S3 + mi.2.EV_Park_S3 + mi.2.EV_Rent_S3 + mi.2.EV_Taxi_S3 + mi.2.EV_Limo_S3 + mi.2.EV_Van_S3 + mi.2.EV_Hotel_S3 + mi.2.EV_Chart_S3 +
-               mi.3.EV_Escort_S3 + mi.3.EV_Park_S3 + mi.3.EV_Rent_S3 + mi.3.EV_Taxi_S3 + mi.3.EV_Limo_S3 + mi.3.EV_Van_S3 + mi.3.EV_Hotel_S3 + mi.3.EV_Chart_S3 +
-               mi.4.EV_Escort_S3 + mi.4.EV_Park_S3 + mi.4.EV_Rent_S3 + mi.4.EV_Taxi_S3 + mi.4.EV_Limo_S3 + mi.4.EV_Van_S3 + mi.4.EV_Hotel_S3 + mi.4.EV_Chart_S3 +
-               mi.5.EV_Escort_S3 + mi.5.EV_Park_S3 + mi.5.EV_Rent_S3 + mi.5.EV_Taxi_S3 + mi.5.EV_Limo_S3 + mi.5.EV_Van_S3 + mi.5.EV_Hotel_S3 + mi.5.EV_Chart_S3 +
-               mi.6.EV_Escort_S3 + mi.6.EV_Park_S3 + mi.6.EV_Rent_S3 + mi.6.EV_Taxi_S3 + mi.6.EV_Limo_S3 + mi.6.EV_Van_S3 + mi.6.EV_Hotel_S3 + mi.6.EV_Chart_S3
-   
-      ;   - drive alone toll (assume no trips pay HOT fee)
-      mw[28] = 0
-      
-      ;   - shared ride 2 toll (assume no trips pay HOT fee)
-      mw[29] = 0
-      
-      ;   - shared ride 3 toll (assume no trips pay HOT fee)
-      mw[30] = 0
-      
-   
-   endrun
-   
-endloop ; year
-
-*/
-
-; step 3: build matrices for five year intervals by interpolating between the year 2007 and the year 2035 trip tables
+; STEP 1
+; The script reads in DBF files crated from Mr. Gosling's Excel files for 2007 and 2035, and uses a simple linear
+; interpolation to create versions for years other than 2007 and 2035, including 2015, 2020, 2025, 2030, 2040,
+; 2045 and 2050.
+; ----------------------------------------------------------------------------------------------------------------
 loop fYear = 1,7
 
    if (fYear = 1) 
@@ -439,75 +111,525 @@ loop fYear = 1,7
       token_scale = '(2050 - 2007)/(2035 - 2007)'
 
    endif
+
+   loop airport = 1,3
    
-   run pgm = matrix
-   
-      filei mati[1]  = 2007\2007_tripsAirPaxEA.tpp
-      filei mati[2]  = 2007\2007_tripsAirPaxAM.tpp
-      filei mati[3]  = 2007\2007_tripsAirPaxMD.tpp
-      filei mati[4]  = 2007\2007_tripsAirPaxPM.tpp
-      filei mati[5]  = 2007\2007_tripsAirPaxEV.tpp
+      if (airport = 1)
+         token_airport = 'SFO'
+         airport_taz   = '239'
+      endif
+
+      if (airport = 2)
+         token_airport = 'OAK'
+         airport_taz   = '874'
+      endif
+
+      if (airport = 3)
+         token_airport = 'SJC'
+         airport_taz   = '434'
+      endif
+
+      loop toFrom = 1,2
       
-      filei mati[6]  = 2035\2035b_tripsAirPaxEA.tpp
-      filei mati[7]  = 2035\2035b_tripsAirPaxAM.tpp
-      filei mati[8]  = 2035\2035b_tripsAirPaxMD.tpp
-      filei mati[9]  = 2035\2035b_tripsAirPaxPM.tpp
-      filei mati[10] = 2035\2035b_tripsAirPaxEV.tpp
-   
-      fileo mato[1] = @token_year@_tripsAirPaxEA.tpp, mo =  1- 6, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
-      fileo mato[2] = @token_year@_tripsAirPaxAM.tpp, mo =  7-12, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
-      fileo mato[3] = @token_year@_tripsAirPaxMD.tpp, mo = 13-18, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
-      fileo mato[4] = @token_year@_tripsAirPaxPM.tpp, mo = 19-24, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
-      fileo mato[5] = @token_year@_tripsAirPaxEV.tpp, mo = 25-30, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
-      
-      jloop
-      
-         ; early AM
-         mw[1]  = mi.1.DA[j]      + @token_scale@ * (mi.6.DA[j]       - mi.1.DA[j]     )
-         mw[2]  = mi.1.SR2[j]     + @token_scale@ * (mi.6.SR2[j]      - mi.1.SR2[j]    )
-         mw[3]  = mi.1.SR3[j]     + @token_scale@ * (mi.6.SR3[j]      - mi.1.SR3[j]    )
-         mw[4]  = mi.1.DATOLL[j]  + @token_scale@ * (mi.6.DATOLL[j]   - mi.1.DATOLL[j] )
-         mw[5]  = mi.1.SR2TOLL[j] + @token_scale@ * (mi.6.SR2TOLL[j]  - mi.1.SR2TOLL[j])
-         mw[6]  = mi.1.SR3TOLL[j] + @token_scale@ * (mi.6.SR3TOLL[j]  - mi.1.SR3TOLL[j])
+         if (toFrom = 1) token_toFrom = 'to'
+         if (toFrom = 2) token_toFrom = 'from'
+
+         run pgm = matrix
          
-         ; AM peak
-         mw[7]  = mi.2.DA[j]      + @token_scale@ * (mi.7.DA[j]       - mi.2.DA[j]     )
-         mw[8]  = mi.2.SR2[j]     + @token_scale@ * (mi.7.SR2[j]      - mi.2.SR2[j]    )
-         mw[9]  = mi.2.SR3[j]     + @token_scale@ * (mi.7.SR3[j]      - mi.2.SR3[j]    )
-         mw[10] = mi.2.DATOLL[j]  + @token_scale@ * (mi.7.DATOLL[j]   - mi.2.DATOLL[j] )
-         mw[11] = mi.2.SR2TOLL[j] + @token_scale@ * (mi.7.SR2TOLL[j]  - mi.2.SR2TOLL[j])
-         mw[12] = mi.2.SR3TOLL[j] + @token_scale@ * (mi.7.SR3TOLL[j]  - mi.2.SR3TOLL[j])
-         							      
-         ; midday
-         mw[13] = mi.3.DA[j]      + @token_scale@ * (mi.8.DA[j]       - mi.3.DA[j]     )
-         mw[14] = mi.3.SR2[j]     + @token_scale@ * (mi.8.SR2[j]      - mi.3.SR2[j]    )
-         mw[15] = mi.3.SR3[j]     + @token_scale@ * (mi.8.SR3[j]      - mi.3.SR3[j]    )
-         mw[16] = mi.3.DATOLL[j]  + @token_scale@ * (mi.8.DATOLL[j]   - mi.3.DATOLL[j] )
-         mw[17] = mi.3.SR2TOLL[j] + @token_scale@ * (mi.8.SR2TOLL[j]  - mi.3.SR2TOLL[j])
-         mw[18] = mi.3.SR3TOLL[j] + @token_scale@ * (mi.8.SR3TOLL[j]  - mi.3.SR3TOLL[j])
-         							      
-         ; PM peak
-         mw[19] = mi.4.DA[j]      + @token_scale@ * (mi.9.DA[j]       - mi.4.DA[j]     )
-         mw[20] = mi.4.SR2[j]     + @token_scale@ * (mi.9.SR2[j]      - mi.4.SR2[j]    )
-         mw[21] = mi.4.SR3[j]     + @token_scale@ * (mi.9.SR3[j]      - mi.4.SR3[j]    )
-         mw[22] = mi.4.DATOLL[j]  + @token_scale@ * (mi.9.DATOLL[j]   - mi.4.DATOLL[j] )
-         mw[23] = mi.4.SR2TOLL[j] + @token_scale@ * (mi.9.SR2TOLL[j]  - mi.4.SR2TOLL[j])
-         mw[24] = mi.4.SR3TOLL[j] + @token_scale@ * (mi.9.SR3TOLL[j]  - mi.4.SR3TOLL[j])
+            filei RECI   = .\GoslingSummaries\2007_@token_toFrom@@token_airport@.dbf
+            filei DBI[2] = .\GoslingSummaries\2035b_@token_toFrom@@token_airport@.dbf
+
+            fileo RECO[1] = .\GoslingScaled\@token_year@_@token_toFrom@@token_airport@.dbf, fields=RECI.ALLFIELDS
+
+            ; read 1 record from DBI[2]
+            x = DBIReadNext(2,1)
+
+            print list=x, DI.2.ORIG, DI.2.DEST, RI.ORIG, RI.DEST
+
+            IF (DI.2.ORIG != RI.ORIG) ABORT MSG = "MISMATCH ORIG records in 2007 vs 2035b Gosling DBF Input"
+            IF (DI.2.DEST != RI.DEST) ABORT MSG = "MISMATCH DEST records in 2007 vs 2035b Gosling DBF Input"
+
+            RO.ORIG = RI.ORIG
+            RO.DEST = RI.DEST
+
+            ; Early AM
+            RO.EA_ES_DA = RI.EA_ES_DA + @token_scale@*(DI.2.EA_ES_DA - RI.EA_ES_DA)
+            RO.EA_ES_S2 = RI.EA_ES_S2 + @token_scale@*(DI.2.EA_ES_S2 - RI.EA_ES_S2)
+            RO.EA_ES_S3 = RI.EA_ES_S3 + @token_scale@*(DI.2.EA_ES_S3 - RI.EA_ES_S3)
+            RO.EA_PK_DA = RI.EA_PK_DA + @token_scale@*(DI.2.EA_PK_DA - RI.EA_PK_DA)
+            RO.EA_PK_S2 = RI.EA_PK_S2 + @token_scale@*(DI.2.EA_PK_S2 - RI.EA_PK_S2)
+            RO.EA_PK_S3 = RI.EA_PK_S3 + @token_scale@*(DI.2.EA_PK_S3 - RI.EA_PK_S3)
+            RO.EA_RN_DA = RI.EA_RN_DA + @token_scale@*(DI.2.EA_RN_DA - RI.EA_RN_DA)
+            RO.EA_RN_S2 = RI.EA_RN_S2 + @token_scale@*(DI.2.EA_RN_S2 - RI.EA_RN_S2)
+            RO.EA_RN_S3 = RI.EA_RN_S3 + @token_scale@*(DI.2.EA_RN_S3 - RI.EA_RN_S3)
+            RO.EA_TX_DA = RI.EA_TX_DA + @token_scale@*(DI.2.EA_TX_DA - RI.EA_TX_DA)
+            RO.EA_TX_S2 = RI.EA_TX_S2 + @token_scale@*(DI.2.EA_TX_S2 - RI.EA_TX_S2)
+            RO.EA_TX_S3 = RI.EA_TX_S3 + @token_scale@*(DI.2.EA_TX_S3 - RI.EA_TX_S3)
+            RO.EA_LI_DA = RI.EA_LI_DA + @token_scale@*(DI.2.EA_LI_DA - RI.EA_LI_DA)
+            RO.EA_LI_S2 = RI.EA_LI_S2 + @token_scale@*(DI.2.EA_LI_S2 - RI.EA_LI_S2)
+            RO.EA_LI_S3 = RI.EA_LI_S3 + @token_scale@*(DI.2.EA_LI_S3 - RI.EA_LI_S3)
+            RO.EA_VN_S3 = RI.EA_VN_S3 + @token_scale@*(DI.2.EA_VN_S3 - RI.EA_VN_S3)
+            RO.EA_HT_S3 = RI.EA_HT_S3 + @token_scale@*(DI.2.EA_HT_S3 - RI.EA_HT_S3)
+            RO.EA_CH_S3 = RI.EA_CH_S3 + @token_scale@*(DI.2.EA_CH_S3 - RI.EA_CH_S3)
+
+            ; AM
+            RO.AM_ES_DA = RI.AM_ES_DA + @token_scale@*(DI.2.AM_ES_DA - RI.AM_ES_DA)
+            RO.AM_ES_S2 = RI.AM_ES_S2 + @token_scale@*(DI.2.AM_ES_S2 - RI.AM_ES_S2)
+            RO.AM_ES_S3 = RI.AM_ES_S3 + @token_scale@*(DI.2.AM_ES_S3 - RI.AM_ES_S3)
+            RO.AM_PK_DA = RI.AM_PK_DA + @token_scale@*(DI.2.AM_PK_DA - RI.AM_PK_DA)
+            RO.AM_PK_S2 = RI.AM_PK_S2 + @token_scale@*(DI.2.AM_PK_S2 - RI.AM_PK_S2)
+            RO.AM_PK_S3 = RI.AM_PK_S3 + @token_scale@*(DI.2.AM_PK_S3 - RI.AM_PK_S3)
+            RO.AM_RN_DA = RI.AM_RN_DA + @token_scale@*(DI.2.AM_RN_DA - RI.AM_RN_DA)
+            RO.AM_RN_S2 = RI.AM_RN_S2 + @token_scale@*(DI.2.AM_RN_S2 - RI.AM_RN_S2)
+            RO.AM_RN_S3 = RI.AM_RN_S3 + @token_scale@*(DI.2.AM_RN_S3 - RI.AM_RN_S3)
+            RO.AM_TX_DA = RI.AM_TX_DA + @token_scale@*(DI.2.AM_TX_DA - RI.AM_TX_DA)
+            RO.AM_TX_S2 = RI.AM_TX_S2 + @token_scale@*(DI.2.AM_TX_S2 - RI.AM_TX_S2)
+            RO.AM_TX_S3 = RI.AM_TX_S3 + @token_scale@*(DI.2.AM_TX_S3 - RI.AM_TX_S3)
+            RO.AM_LI_DA = RI.AM_LI_DA + @token_scale@*(DI.2.AM_LI_DA - RI.AM_LI_DA)
+            RO.AM_LI_S2 = RI.AM_LI_S2 + @token_scale@*(DI.2.AM_LI_S2 - RI.AM_LI_S2)
+            RO.AM_LI_S3 = RI.AM_LI_S3 + @token_scale@*(DI.2.AM_LI_S3 - RI.AM_LI_S3)
+            RO.AM_VN_S3 = RI.AM_VN_S3 + @token_scale@*(DI.2.AM_VN_S3 - RI.AM_VN_S3)
+            RO.AM_HT_S3 = RI.AM_HT_S3 + @token_scale@*(DI.2.AM_HT_S3 - RI.AM_HT_S3)
+            RO.AM_CH_S3 = RI.AM_CH_S3 + @token_scale@*(DI.2.AM_CH_S3 - RI.AM_CH_S3)
+
+            ; Midday
+            RO.MD_ES_DA = RI.MD_ES_DA + @token_scale@*(DI.2.MD_ES_DA - RI.MD_ES_DA)
+            RO.MD_ES_S2 = RI.MD_ES_S2 + @token_scale@*(DI.2.MD_ES_S2 - RI.MD_ES_S2)
+            RO.MD_ES_S3 = RI.MD_ES_S3 + @token_scale@*(DI.2.MD_ES_S3 - RI.MD_ES_S3)
+            RO.MD_PK_DA = RI.MD_PK_DA + @token_scale@*(DI.2.MD_PK_DA - RI.MD_PK_DA)
+            RO.MD_PK_S2 = RI.MD_PK_S2 + @token_scale@*(DI.2.MD_PK_S2 - RI.MD_PK_S2)
+            RO.MD_PK_S3 = RI.MD_PK_S3 + @token_scale@*(DI.2.MD_PK_S3 - RI.MD_PK_S3)
+            RO.MD_RN_DA = RI.MD_RN_DA + @token_scale@*(DI.2.MD_RN_DA - RI.MD_RN_DA)
+            RO.MD_RN_S2 = RI.MD_RN_S2 + @token_scale@*(DI.2.MD_RN_S2 - RI.MD_RN_S2)
+            RO.MD_RN_S3 = RI.MD_RN_S3 + @token_scale@*(DI.2.MD_RN_S3 - RI.MD_RN_S3)
+            RO.MD_TX_DA = RI.MD_TX_DA + @token_scale@*(DI.2.MD_TX_DA - RI.MD_TX_DA)
+            RO.MD_TX_S2 = RI.MD_TX_S2 + @token_scale@*(DI.2.MD_TX_S2 - RI.MD_TX_S2)
+            RO.MD_TX_S3 = RI.MD_TX_S3 + @token_scale@*(DI.2.MD_TX_S3 - RI.MD_TX_S3)
+            RO.MD_LI_DA = RI.MD_LI_DA + @token_scale@*(DI.2.MD_LI_DA - RI.MD_LI_DA)
+            RO.MD_LI_S2 = RI.MD_LI_S2 + @token_scale@*(DI.2.MD_LI_S2 - RI.MD_LI_S2)
+            RO.MD_LI_S3 = RI.MD_LI_S3 + @token_scale@*(DI.2.MD_LI_S3 - RI.MD_LI_S3)
+            RO.MD_VN_S3 = RI.MD_VN_S3 + @token_scale@*(DI.2.MD_VN_S3 - RI.MD_VN_S3)
+            RO.MD_HT_S3 = RI.MD_HT_S3 + @token_scale@*(DI.2.MD_HT_S3 - RI.MD_HT_S3)
+            RO.MD_CH_S3 = RI.MD_CH_S3 + @token_scale@*(DI.2.MD_CH_S3 - RI.MD_CH_S3)
+
+            ; PM
+            RO.PM_ES_DA = RI.PM_ES_DA + @token_scale@*(DI.2.PM_ES_DA - RI.PM_ES_DA)
+            RO.PM_ES_S2 = RI.PM_ES_S2 + @token_scale@*(DI.2.PM_ES_S2 - RI.PM_ES_S2)
+            RO.PM_ES_S3 = RI.PM_ES_S3 + @token_scale@*(DI.2.PM_ES_S3 - RI.PM_ES_S3)
+            RO.PM_PK_DA = RI.PM_PK_DA + @token_scale@*(DI.2.PM_PK_DA - RI.PM_PK_DA)
+            RO.PM_PK_S2 = RI.PM_PK_S2 + @token_scale@*(DI.2.PM_PK_S2 - RI.PM_PK_S2)
+            RO.PM_PK_S3 = RI.PM_PK_S3 + @token_scale@*(DI.2.PM_PK_S3 - RI.PM_PK_S3)
+            RO.PM_RN_DA = RI.PM_RN_DA + @token_scale@*(DI.2.PM_RN_DA - RI.PM_RN_DA)
+            RO.PM_RN_S2 = RI.PM_RN_S2 + @token_scale@*(DI.2.PM_RN_S2 - RI.PM_RN_S2)
+            RO.PM_RN_S3 = RI.PM_RN_S3 + @token_scale@*(DI.2.PM_RN_S3 - RI.PM_RN_S3)
+            RO.PM_TX_DA = RI.PM_TX_DA + @token_scale@*(DI.2.PM_TX_DA - RI.PM_TX_DA)
+            RO.PM_TX_S2 = RI.PM_TX_S2 + @token_scale@*(DI.2.PM_TX_S2 - RI.PM_TX_S2)
+            RO.PM_TX_S3 = RI.PM_TX_S3 + @token_scale@*(DI.2.PM_TX_S3 - RI.PM_TX_S3)
+            RO.PM_LI_DA = RI.PM_LI_DA + @token_scale@*(DI.2.PM_LI_DA - RI.PM_LI_DA)
+            RO.PM_LI_S2 = RI.PM_LI_S2 + @token_scale@*(DI.2.PM_LI_S2 - RI.PM_LI_S2)
+            RO.PM_LI_S3 = RI.PM_LI_S3 + @token_scale@*(DI.2.PM_LI_S3 - RI.PM_LI_S3)
+            RO.PM_VN_S3 = RI.PM_VN_S3 + @token_scale@*(DI.2.PM_VN_S3 - RI.PM_VN_S3)
+            RO.PM_HT_S3 = RI.PM_HT_S3 + @token_scale@*(DI.2.PM_HT_S3 - RI.PM_HT_S3)
+            RO.PM_CH_S3 = RI.PM_CH_S3 + @token_scale@*(DI.2.PM_CH_S3 - RI.PM_CH_S3)
+
+            ; EV
+            RO.EV_ES_DA = RI.EV_ES_DA + @token_scale@*(DI.2.EV_ES_DA - RI.EV_ES_DA)
+            RO.EV_ES_S2 = RI.EV_ES_S2 + @token_scale@*(DI.2.EV_ES_S2 - RI.EV_ES_S2)
+            RO.EV_ES_S3 = RI.EV_ES_S3 + @token_scale@*(DI.2.EV_ES_S3 - RI.EV_ES_S3)
+            RO.EV_PK_DA = RI.EV_PK_DA + @token_scale@*(DI.2.EV_PK_DA - RI.EV_PK_DA)
+            RO.EV_PK_S2 = RI.EV_PK_S2 + @token_scale@*(DI.2.EV_PK_S2 - RI.EV_PK_S2)
+            RO.EV_PK_S3 = RI.EV_PK_S3 + @token_scale@*(DI.2.EV_PK_S3 - RI.EV_PK_S3)
+            RO.EV_RN_DA = RI.EV_RN_DA + @token_scale@*(DI.2.EV_RN_DA - RI.EV_RN_DA)
+            RO.EV_RN_S2 = RI.EV_RN_S2 + @token_scale@*(DI.2.EV_RN_S2 - RI.EV_RN_S2)
+            RO.EV_RN_S3 = RI.EV_RN_S3 + @token_scale@*(DI.2.EV_RN_S3 - RI.EV_RN_S3)
+            RO.EV_TX_DA = RI.EV_TX_DA + @token_scale@*(DI.2.EV_TX_DA - RI.EV_TX_DA)
+            RO.EV_TX_S2 = RI.EV_TX_S2 + @token_scale@*(DI.2.EV_TX_S2 - RI.EV_TX_S2)
+            RO.EV_TX_S3 = RI.EV_TX_S3 + @token_scale@*(DI.2.EV_TX_S3 - RI.EV_TX_S3)
+            RO.EV_LI_DA = RI.EV_LI_DA + @token_scale@*(DI.2.EV_LI_DA - RI.EV_LI_DA)
+            RO.EV_LI_S2 = RI.EV_LI_S2 + @token_scale@*(DI.2.EV_LI_S2 - RI.EV_LI_S2)
+            RO.EV_LI_S3 = RI.EV_LI_S3 + @token_scale@*(DI.2.EV_LI_S3 - RI.EV_LI_S3)
+            RO.EV_VN_S3 = RI.EV_VN_S3 + @token_scale@*(DI.2.EV_VN_S3 - RI.EV_VN_S3)
+            RO.EV_HT_S3 = RI.EV_HT_S3 + @token_scale@*(DI.2.EV_HT_S3 - RI.EV_HT_S3)
+            RO.EV_CH_S3 = RI.EV_CH_S3 + @token_scale@*(DI.2.EV_CH_S3 - RI.EV_CH_S3)
+
+            WRITE RECO=1
+
+         endrun
+
+      endloop ; toFrom
+
+      ; ----------------------------------------------------------------------------------------------------------------
+      ; STEP 2
+      ; These DBFs are then converted into Cube matrices, with optional variants accounting for airport closures and
+      ; diverting trips to alternative airports for Horizon Future scenarios.  
+      ; ----------------------------------------------------------------------------------------------------------------
+      run pgm = matrix
          
-         ; evening
-         mw[25] = mi.5.DA[j]      + @token_scale@ * (mi.10.DA[j]      - mi.5.DA[j]     )
-         mw[26] = mi.5.SR2[j]     + @token_scale@ * (mi.10.SR2[j]     - mi.5.SR2[j]    )
-         mw[27] = mi.5.SR3[j]     + @token_scale@ * (mi.10.SR3[j]     - mi.5.SR3[j]    )
-         mw[28] = mi.5.DATOLL[j]  + @token_scale@ * (mi.10.DATOLL[j]  - mi.5.DATOLL[j] )
-         mw[29] = mi.5.SR2TOLL[j] + @token_scale@ * (mi.10.SR2TOLL[j] - mi.5.SR2TOLL[j])
-         mw[30] = mi.5.SR3TOLL[j] + @token_scale@ * (mi.10.SR3TOLL[j] - mi.5.SR3TOLL[j])
+         filei ZDATI[1] = .\GoslingScaled\@token_year@_to@token_airport@.dbf,   Z=ORIG
+         filei ZDATI[2] = .\GoslingScaled\@token_year@_from@token_airport@.dbf, Z=DEST
+
+         fileo mato[1] = @token_year@_to@token_airport@.tpp, mo = 1-90, name = 
+            EA_Escort_DA,EA_Escort_S2,EA_Escort_S3,EA_Park_DA,EA_Park_S2,EA_Park_S3,EA_Rent_DA,EA_Rent_S2,EA_Rent_S3,EA_Taxi_DA,EA_Taxi_S2,EA_Taxi_S3,EA_Limo_DA,EA_Limo_S2,EA_Limo_S3,EA_Van_S3,EA_Hotel_S3,EA_Chart_S3,
+            AM_Escort_DA,AM_Escort_S2,AM_Escort_S3,AM_Park_DA,AM_Park_S2,AM_Park_S3,AM_Rent_DA,AM_Rent_S2,AM_Rent_S3,AM_Taxi_DA,AM_Taxi_S2,AM_Taxi_S3,AM_Limo_DA,AM_Limo_S2,AM_Limo_S3,AM_Van_S3,AM_Hotel_S3,AM_Chart_S3,
+            MD_Escort_DA,MD_Escort_S2,MD_Escort_S3,MD_Park_DA,MD_Park_S2,MD_Park_S3,MD_Rent_DA,MD_Rent_S2,MD_Rent_S3,MD_Taxi_DA,MD_Taxi_S2,MD_Taxi_S3,MD_Limo_DA,MD_Limo_S2,MD_Limo_S3,MD_Van_S3,MD_Hotel_S3,MD_Chart_S3,
+            PM_Escort_DA,PM_Escort_S2,PM_Escort_S3,PM_Park_DA,PM_Park_S2,PM_Park_S3,PM_Rent_DA,PM_Rent_S2,PM_Rent_S3,PM_Taxi_DA,PM_Taxi_S2,PM_Taxi_S3,PM_Limo_DA,PM_Limo_S2,PM_Limo_S3,PM_Van_S3,PM_Hotel_S3,PM_Chart_S3,
+            EV_Escort_DA,EV_Escort_S2,EV_Escort_S3,EV_Park_DA,EV_Park_S2,EV_Park_S3,EV_Rent_DA,EV_Rent_S2,EV_Rent_S3,EV_Taxi_DA,EV_Taxi_S2,EV_Taxi_S3,EV_Limo_DA,EV_Limo_S2,EV_Limo_S3,EV_Van_S3,EV_Hotel_S3,EV_Chart_S3
+
+         ; note this is the transpose
+         fileo mato[2] = @token_year@_from@token_airport@_t.tpp, mo = 101-190, name = 
+            EA_Escort_DA,EA_Escort_S2,EA_Escort_S3,EA_Park_DA,EA_Park_S2,EA_Park_S3,EA_Rent_DA,EA_Rent_S2,EA_Rent_S3,EA_Taxi_DA,EA_Taxi_S2,EA_Taxi_S3,EA_Limo_DA,EA_Limo_S2,EA_Limo_S3,EA_Van_S3,EA_Hotel_S3,EA_Chart_S3,
+            AM_Escort_DA,AM_Escort_S2,AM_Escort_S3,AM_Park_DA,AM_Park_S2,AM_Park_S3,AM_Rent_DA,AM_Rent_S2,AM_Rent_S3,AM_Taxi_DA,AM_Taxi_S2,AM_Taxi_S3,AM_Limo_DA,AM_Limo_S2,AM_Limo_S3,AM_Van_S3,AM_Hotel_S3,AM_Chart_S3,
+            MD_Escort_DA,MD_Escort_S2,MD_Escort_S3,MD_Park_DA,MD_Park_S2,MD_Park_S3,MD_Rent_DA,MD_Rent_S2,MD_Rent_S3,MD_Taxi_DA,MD_Taxi_S2,MD_Taxi_S3,MD_Limo_DA,MD_Limo_S2,MD_Limo_S3,MD_Van_S3,MD_Hotel_S3,MD_Chart_S3,
+            PM_Escort_DA,PM_Escort_S2,PM_Escort_S3,PM_Park_DA,PM_Park_S2,PM_Park_S3,PM_Rent_DA,PM_Rent_S2,PM_Rent_S3,PM_Taxi_DA,PM_Taxi_S2,PM_Taxi_S3,PM_Limo_DA,PM_Limo_S2,PM_Limo_S3,PM_Van_S3,PM_Hotel_S3,PM_Chart_S3,
+            EV_Escort_DA,EV_Escort_S2,EV_Escort_S3,EV_Park_DA,EV_Park_S2,EV_Park_S3,EV_Rent_DA,EV_Rent_S2,EV_Rent_S3,EV_Taxi_DA,EV_Taxi_S2,EV_Taxi_S3,EV_Limo_DA,EV_Limo_S2,EV_Limo_S3,EV_Van_S3,EV_Hotel_S3,EV_Chart_S3
+
+         zones = 1454
+
+         ; destination is @airport_taz@
+
+         ; ==================== EA ====================
+         ; Escort
+         MW[  1] = ZI.1.EA_ES_DA INCLUDE=@airport_taz@
+         MW[  2] = ZI.1.EA_ES_S2 INCLUDE=@airport_taz@
+         MW[  3] = ZI.1.EA_ES_S3 INCLUDE=@airport_taz@
+         ; Park
+         MW[  4] = ZI.1.EA_PK_DA INCLUDE=@airport_taz@
+         MW[  5] = ZI.1.EA_PK_S2 INCLUDE=@airport_taz@
+         MW[  6] = ZI.1.EA_PK_S3 INCLUDE=@airport_taz@
+         ; Rent
+         MW[  7] = ZI.1.EA_RN_DA INCLUDE=@airport_taz@
+         MW[  8] = ZI.1.EA_RN_S2 INCLUDE=@airport_taz@
+         MW[  9] = ZI.1.EA_RN_S3 INCLUDE=@airport_taz@
+         ; Taxi
+         MW[ 10] = ZI.1.EA_TX_DA INCLUDE=@airport_taz@
+         MW[ 11] = ZI.1.EA_TX_S2 INCLUDE=@airport_taz@
+         MW[ 12] = ZI.1.EA_TX_S3 INCLUDE=@airport_taz@
+         ; Limo
+         MW[ 13] = ZI.1.EA_LI_DA INCLUDE=@airport_taz@
+         MW[ 14] = ZI.1.EA_LI_S2 INCLUDE=@airport_taz@
+         MW[ 15] = ZI.1.EA_LI_S3 INCLUDE=@airport_taz@
+         ; Van
+         MW[ 16] = ZI.1.EA_VN_S3 INCLUDE=@airport_taz@
+         ; Hotel
+         MW[ 17] = ZI.1.EA_HT_S3 INCLUDE=@airport_taz@
+         ; Charter
+         MW[ 18] = ZI.1.EA_CH_S3 INCLUDE=@airport_taz@
+
+         ; ==================== AM ====================
+         ; Escort
+         MW[ 19] = ZI.1.AM_ES_DA INCLUDE=@airport_taz@
+         MW[ 20] = ZI.1.AM_ES_S2 INCLUDE=@airport_taz@
+         MW[ 21] = ZI.1.AM_ES_S3 INCLUDE=@airport_taz@
+         ; Park
+         MW[ 22] = ZI.1.AM_PK_DA INCLUDE=@airport_taz@
+         MW[ 23] = ZI.1.AM_PK_S2 INCLUDE=@airport_taz@
+         MW[ 24] = ZI.1.AM_PK_S3 INCLUDE=@airport_taz@
+         ; Rent
+         MW[ 25] = ZI.1.AM_RN_DA INCLUDE=@airport_taz@
+         MW[ 26] = ZI.1.AM_RN_S2 INCLUDE=@airport_taz@
+         MW[ 27] = ZI.1.AM_RN_S3 INCLUDE=@airport_taz@
+         ; Taxi
+         MW[ 28] = ZI.1.AM_TX_DA INCLUDE=@airport_taz@
+         MW[ 29] = ZI.1.AM_TX_S2 INCLUDE=@airport_taz@
+         MW[ 30] = ZI.1.AM_TX_S3 INCLUDE=@airport_taz@
+         ; Limo
+         MW[ 31] = ZI.1.AM_LI_DA INCLUDE=@airport_taz@
+         MW[ 32] = ZI.1.AM_LI_S2 INCLUDE=@airport_taz@
+         MW[ 33] = ZI.1.AM_LI_S3 INCLUDE=@airport_taz@
+         ; Van
+         MW[ 34] = ZI.1.AM_VN_S3 INCLUDE=@airport_taz@
+         ; Hotel
+         MW[ 35] = ZI.1.AM_HT_S3 INCLUDE=@airport_taz@
+         ; Charter
+         MW[ 36] = ZI.1.AM_CH_S3 INCLUDE=@airport_taz@
+
+         ; ==================== MD ====================
+         ; Escort
+         MW[ 37] = ZI.1.MD_ES_DA INCLUDE=@airport_taz@
+         MW[ 38] = ZI.1.MD_ES_S2 INCLUDE=@airport_taz@
+         MW[ 39] = ZI.1.MD_ES_S3 INCLUDE=@airport_taz@
+         ; Park
+         MW[ 40] = ZI.1.MD_PK_DA INCLUDE=@airport_taz@
+         MW[ 41] = ZI.1.MD_PK_S2 INCLUDE=@airport_taz@
+         MW[ 42] = ZI.1.MD_PK_S3 INCLUDE=@airport_taz@
+         ; Rent
+         MW[ 43] = ZI.1.MD_RN_DA INCLUDE=@airport_taz@
+         MW[ 44] = ZI.1.MD_RN_S2 INCLUDE=@airport_taz@
+         MW[ 45] = ZI.1.MD_RN_S3 INCLUDE=@airport_taz@
+         ; Taxi
+         MW[ 46] = ZI.1.MD_TX_DA INCLUDE=@airport_taz@
+         MW[ 47] = ZI.1.MD_TX_S2 INCLUDE=@airport_taz@
+         MW[ 48] = ZI.1.MD_TX_S3 INCLUDE=@airport_taz@
+         ; Limo
+         MW[ 49] = ZI.1.MD_LI_DA INCLUDE=@airport_taz@
+         MW[ 50] = ZI.1.MD_LI_S2 INCLUDE=@airport_taz@
+         MW[ 51] = ZI.1.MD_LI_S3 INCLUDE=@airport_taz@
+         ; Van
+         MW[ 52] = ZI.1.MD_VN_S3 INCLUDE=@airport_taz@
+         ; Hotel
+         MW[ 53] = ZI.1.MD_HT_S3 INCLUDE=@airport_taz@
+         ; Charter
+         MW[ 54] = ZI.1.MD_CH_S3 INCLUDE=@airport_taz@
+
+         ; ==================== PM ====================
+         ; Escort
+         MW[ 55] = ZI.1.PM_ES_DA INCLUDE=@airport_taz@
+         MW[ 56] = ZI.1.PM_ES_S2 INCLUDE=@airport_taz@
+         MW[ 57] = ZI.1.PM_ES_S3 INCLUDE=@airport_taz@
+         ; Park
+         MW[ 58] = ZI.1.PM_PK_DA INCLUDE=@airport_taz@
+         MW[ 59] = ZI.1.PM_PK_S2 INCLUDE=@airport_taz@
+         MW[ 60] = ZI.1.PM_PK_S3 INCLUDE=@airport_taz@
+         ; Rent
+         MW[ 61] = ZI.1.PM_RN_DA INCLUDE=@airport_taz@
+         MW[ 62] = ZI.1.PM_RN_S2 INCLUDE=@airport_taz@
+         MW[ 63] = ZI.1.PM_RN_S3 INCLUDE=@airport_taz@
+         ; Taxi
+         MW[ 64] = ZI.1.PM_TX_DA INCLUDE=@airport_taz@
+         MW[ 65] = ZI.1.PM_TX_S2 INCLUDE=@airport_taz@
+         MW[ 66] = ZI.1.PM_TX_S3 INCLUDE=@airport_taz@
+         ; Limo
+         MW[ 67] = ZI.1.PM_LI_DA INCLUDE=@airport_taz@
+         MW[ 68] = ZI.1.PM_LI_S2 INCLUDE=@airport_taz@
+         MW[ 69] = ZI.1.PM_LI_S3 INCLUDE=@airport_taz@
+         ; Van
+         MW[ 70] = ZI.1.PM_VN_S3 INCLUDE=@airport_taz@
+         ; Hotel
+         MW[ 71] = ZI.1.PM_HT_S3 INCLUDE=@airport_taz@
+         ; Charter
+         MW[ 72] = ZI.1.PM_CH_S3 INCLUDE=@airport_taz@
+
+         ; ==================== EV ====================
+         ; Escort
+         MW[ 73] = ZI.1.EV_ES_DA INCLUDE=@airport_taz@
+         MW[ 74] = ZI.1.EV_ES_S2 INCLUDE=@airport_taz@
+         MW[ 75] = ZI.1.EV_ES_S3 INCLUDE=@airport_taz@
+         ; Park
+         MW[ 76] = ZI.1.EV_PK_DA INCLUDE=@airport_taz@
+         MW[ 77] = ZI.1.EV_PK_S2 INCLUDE=@airport_taz@
+         MW[ 78] = ZI.1.EV_PK_S3 INCLUDE=@airport_taz@
+         ; Rent
+         MW[ 79] = ZI.1.EV_RN_DA INCLUDE=@airport_taz@
+         MW[ 80] = ZI.1.EV_RN_S2 INCLUDE=@airport_taz@
+         MW[ 81] = ZI.1.EV_RN_S3 INCLUDE=@airport_taz@
+         ; Taxi
+         MW[ 82] = ZI.1.EV_TX_DA INCLUDE=@airport_taz@
+         MW[ 83] = ZI.1.EV_TX_S2 INCLUDE=@airport_taz@
+         MW[ 84] = ZI.1.EV_TX_S3 INCLUDE=@airport_taz@
+         ; Limo
+         MW[ 85] = ZI.1.EV_LI_DA INCLUDE=@airport_taz@
+         MW[ 86] = ZI.1.EV_LI_S2 INCLUDE=@airport_taz@
+         MW[ 87] = ZI.1.EV_LI_S3 INCLUDE=@airport_taz@
+         ; Van
+         MW[ 88] = ZI.1.EV_VN_S3 INCLUDE=@airport_taz@
+         ; Hotel
+         MW[ 89] = ZI.1.EV_HT_S3 INCLUDE=@airport_taz@
+         ; Charter
+         MW[ 90] = ZI.1.EV_CH_S3 INCLUDE=@airport_taz@
+
+         ; ==================== EA ====================
+         ; Escort
+         MW[101] = ZI.2.EA_ES_DA INCLUDE=@airport_taz@
+         MW[102] = ZI.2.EA_ES_S2 INCLUDE=@airport_taz@
+         MW[103] = ZI.2.EA_ES_S3 INCLUDE=@airport_taz@
+         ; Park
+         MW[104] = ZI.2.EA_PK_DA INCLUDE=@airport_taz@
+         MW[105] = ZI.2.EA_PK_S2 INCLUDE=@airport_taz@
+         MW[106] = ZI.2.EA_PK_S3 INCLUDE=@airport_taz@
+         ; Rent
+         MW[107] = ZI.2.EA_RN_DA INCLUDE=@airport_taz@
+         MW[108] = ZI.2.EA_RN_S2 INCLUDE=@airport_taz@
+         MW[109] = ZI.2.EA_RN_S3 INCLUDE=@airport_taz@
+         ; Taxi
+         MW[110] = ZI.2.EA_TX_DA INCLUDE=@airport_taz@
+         MW[111] = ZI.2.EA_TX_S2 INCLUDE=@airport_taz@
+         MW[112] = ZI.2.EA_TX_S3 INCLUDE=@airport_taz@
+         ; Limo
+         MW[113] = ZI.2.EA_LI_DA INCLUDE=@airport_taz@
+         MW[114] = ZI.2.EA_LI_S2 INCLUDE=@airport_taz@
+         MW[115] = ZI.2.EA_LI_S3 INCLUDE=@airport_taz@
+         ; Van
+         MW[116] = ZI.2.EA_VN_S3 INCLUDE=@airport_taz@
+         ; Hotel
+         MW[117] = ZI.2.EA_HT_S3 INCLUDE=@airport_taz@
+         ; Charter
+         MW[118] = ZI.2.EA_CH_S3 INCLUDE=@airport_taz@
+
+         ; ==================== AM ====================
+         ; Escort
+         MW[119] = ZI.2.AM_ES_DA INCLUDE=@airport_taz@
+         MW[120] = ZI.2.AM_ES_S2 INCLUDE=@airport_taz@
+         MW[121] = ZI.2.AM_ES_S3 INCLUDE=@airport_taz@
+         ; Park
+         MW[122] = ZI.2.AM_PK_DA INCLUDE=@airport_taz@
+         MW[123] = ZI.2.AM_PK_S2 INCLUDE=@airport_taz@
+         MW[124] = ZI.2.AM_PK_S3 INCLUDE=@airport_taz@
+         ; Rent
+         MW[125] = ZI.2.AM_RN_DA INCLUDE=@airport_taz@
+         MW[126] = ZI.2.AM_RN_S2 INCLUDE=@airport_taz@
+         MW[127] = ZI.2.AM_RN_S3 INCLUDE=@airport_taz@
+         ; Taxi
+         MW[128] = ZI.2.AM_TX_DA INCLUDE=@airport_taz@
+         MW[129] = ZI.2.AM_TX_S2 INCLUDE=@airport_taz@
+         MW[130] = ZI.2.AM_TX_S3 INCLUDE=@airport_taz@
+         ; Limo
+         MW[131] = ZI.2.AM_LI_DA INCLUDE=@airport_taz@
+         MW[132] = ZI.2.AM_LI_S2 INCLUDE=@airport_taz@
+         MW[133] = ZI.2.AM_LI_S3 INCLUDE=@airport_taz@
+         ; Van
+         MW[134] = ZI.2.AM_VN_S3 INCLUDE=@airport_taz@
+         ; Hotel
+         MW[135] = ZI.2.AM_HT_S3 INCLUDE=@airport_taz@
+         ; Charter
+         MW[136] = ZI.2.AM_CH_S3 INCLUDE=@airport_taz@
+
+         ; ==================== MD ====================
+         ; Escort
+         MW[137] = ZI.2.MD_ES_DA INCLUDE=@airport_taz@
+         MW[138] = ZI.2.MD_ES_S2 INCLUDE=@airport_taz@
+         MW[139] = ZI.2.MD_ES_S3 INCLUDE=@airport_taz@
+         ; Park
+         MW[140] = ZI.2.MD_PK_DA INCLUDE=@airport_taz@
+         MW[141] = ZI.2.MD_PK_S2 INCLUDE=@airport_taz@
+         MW[142] = ZI.2.MD_PK_S3 INCLUDE=@airport_taz@
+         ; Rent
+         MW[143] = ZI.2.MD_RN_DA INCLUDE=@airport_taz@
+         MW[144] = ZI.2.MD_RN_S2 INCLUDE=@airport_taz@
+         MW[145] = ZI.2.MD_RN_S3 INCLUDE=@airport_taz@
+         ; Taxi
+         MW[146] = ZI.2.MD_TX_DA INCLUDE=@airport_taz@
+         MW[147] = ZI.2.MD_TX_S2 INCLUDE=@airport_taz@
+         MW[148] = ZI.2.MD_TX_S3 INCLUDE=@airport_taz@
+         ; Limo
+         MW[149] = ZI.2.MD_LI_DA INCLUDE=@airport_taz@
+         MW[150] = ZI.2.MD_LI_S2 INCLUDE=@airport_taz@
+         MW[151] = ZI.2.MD_LI_S3 INCLUDE=@airport_taz@
+         ; Van
+         MW[152] = ZI.2.MD_VN_S3 INCLUDE=@airport_taz@
+         ; Hotel
+         MW[153] = ZI.2.MD_HT_S3 INCLUDE=@airport_taz@
+         ; Charter
+         MW[154] = ZI.2.MD_CH_S3 INCLUDE=@airport_taz@
+
+         ; ==================== PM ====================
+         ; Escort
+         MW[155] = ZI.2.PM_ES_DA INCLUDE=@airport_taz@
+         MW[156] = ZI.2.PM_ES_S2 INCLUDE=@airport_taz@
+         MW[157] = ZI.2.PM_ES_S3 INCLUDE=@airport_taz@
+         ; Park
+         MW[158] = ZI.2.PM_PK_DA INCLUDE=@airport_taz@
+         MW[159] = ZI.2.PM_PK_S2 INCLUDE=@airport_taz@
+         MW[160] = ZI.2.PM_PK_S3 INCLUDE=@airport_taz@
+         ; Rent
+         MW[161] = ZI.2.PM_RN_DA INCLUDE=@airport_taz@
+         MW[162] = ZI.2.PM_RN_S2 INCLUDE=@airport_taz@
+         MW[163] = ZI.2.PM_RN_S3 INCLUDE=@airport_taz@
+         ; Taxi
+         MW[164] = ZI.2.PM_TX_DA INCLUDE=@airport_taz@
+         MW[165] = ZI.2.PM_TX_S2 INCLUDE=@airport_taz@
+         MW[166] = ZI.2.PM_TX_S3 INCLUDE=@airport_taz@
+         ; Limo
+         MW[167] = ZI.2.PM_LI_DA INCLUDE=@airport_taz@
+         MW[168] = ZI.2.PM_LI_S2 INCLUDE=@airport_taz@
+         MW[169] = ZI.2.PM_LI_S3 INCLUDE=@airport_taz@
+         ; Van
+         MW[170] = ZI.2.PM_VN_S3 INCLUDE=@airport_taz@
+         ; Hotel
+         MW[171] = ZI.2.PM_HT_S3 INCLUDE=@airport_taz@
+         ; Charter
+         MW[172] = ZI.2.PM_CH_S3 INCLUDE=@airport_taz@
+
+         ; ==================== EV ====================
+         ; Escort
+         MW[173] = ZI.2.EV_ES_DA INCLUDE=@airport_taz@
+         MW[174] = ZI.2.EV_ES_S2 INCLUDE=@airport_taz@
+         MW[175] = ZI.2.EV_ES_S3 INCLUDE=@airport_taz@
+         ; Park
+         MW[176] = ZI.2.EV_PK_DA INCLUDE=@airport_taz@
+         MW[177] = ZI.2.EV_PK_S2 INCLUDE=@airport_taz@
+         MW[178] = ZI.2.EV_PK_S3 INCLUDE=@airport_taz@
+         ; Rent
+         MW[179] = ZI.2.EV_RN_DA INCLUDE=@airport_taz@
+         MW[180] = ZI.2.EV_RN_S2 INCLUDE=@airport_taz@
+         MW[181] = ZI.2.EV_RN_S3 INCLUDE=@airport_taz@
+         ; Taxi
+         MW[182] = ZI.2.EV_TX_DA INCLUDE=@airport_taz@
+         MW[183] = ZI.2.EV_TX_S2 INCLUDE=@airport_taz@
+         MW[184] = ZI.2.EV_TX_S3 INCLUDE=@airport_taz@
+         ; Limo
+         MW[185] = ZI.2.EV_LI_DA INCLUDE=@airport_taz@
+         MW[186] = ZI.2.EV_LI_S2 INCLUDE=@airport_taz@
+         MW[187] = ZI.2.EV_LI_S3 INCLUDE=@airport_taz@
+         ; Van
+         MW[188] = ZI.2.EV_VN_S3 INCLUDE=@airport_taz@
+         ; Hotel
+         MW[189] = ZI.2.EV_HT_S3 INCLUDE=@airport_taz@
+         ; Charter
+         MW[190] = ZI.2.EV_CH_S3 INCLUDE=@airport_taz@
+
+      endrun
+
+   endloop ; airport
+
+   ; ----------------------------------------------------------------------------------------------------------------
+   ; STEP 3  
+   ; Finally, a highway-assignment ready matrix file is created for each time-of-day interval.
+   ; ----------------------------------------------------------------------------------------------------------------
+   loop timeperiod = 1,5
+      if (timeperiod = 1) token_tp = 'EA'
+      if (timeperiod = 2) token_tp = 'AM'
+      if (timeperiod = 3) token_tp = 'MD'
+      if (timeperiod = 4) token_tp = 'MD'
+      if (timeperiod = 5) token_tp = 'PM'
+
+      run pgm = matrix
+   
+         filei mati[1] = @token_year@_toSFO.tpp
+         filei mati[2] = @token_year@_fromSFO_t.tpp
       
-      endjloop
+         filei mati[3] = @token_year@_toOAK.tpp
+         filei mati[4] = @token_year@_fromOAK_t.tpp
+      
+         filei mati[5] = @token_year@_toSJC.tpp
+         filei mati[6] = @token_year@_fromSJC_t.tpp
+      
+         fileo mato[1] = @token_year@_tripsAirPax@token_tp@.tpp, mo =  1- 6, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
+         
+        ; combine trips by occupancy ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ;   - drive alone free
+        mw[1] = mi.1.@token_tp@_Escort_DA   + mi.1.@token_tp@_Park_DA   + mi.1.@token_tp@_Rent_DA   + mi.1.@token_tp@_Taxi_DA   + mi.1.@token_tp@_Limo_DA   +
+                mi.2.@token_tp@_Escort_DA.T + mi.2.@token_tp@_Park_DA.T + mi.2.@token_tp@_Rent_DA.T + mi.2.@token_tp@_Taxi_DA.T + mi.2.@token_tp@_Limo_DA.T +
+                mi.3.@token_tp@_Escort_DA   + mi.3.@token_tp@_Park_DA   + mi.3.@token_tp@_Rent_DA   + mi.3.@token_tp@_Taxi_DA   + mi.3.@token_tp@_Limo_DA   + 
+                mi.4.@token_tp@_Escort_DA.T + mi.4.@token_tp@_Park_DA.T + mi.4.@token_tp@_Rent_DA.T + mi.4.@token_tp@_Taxi_DA.T + mi.4.@token_tp@_Limo_DA.T +
+                mi.5.@token_tp@_Escort_DA   + mi.5.@token_tp@_Park_DA   + mi.5.@token_tp@_Rent_DA   + mi.5.@token_tp@_Taxi_DA   + mi.5.@token_tp@_Limo_DA   +
+                mi.6.@token_tp@_Escort_DA.T + mi.6.@token_tp@_Park_DA.T + mi.6.@token_tp@_Rent_DA.T + mi.6.@token_tp@_Taxi_DA.T + mi.6.@token_tp@_Limo_DA.T
+              
+        ;   - shared ride 2 free
+        mw[2] = mi.1.@token_tp@_Escort_S2   + mi.1.@token_tp@_Park_S2   + mi.1.@token_tp@_Rent_S2   + mi.1.@token_tp@_Taxi_S2   + mi.1.@token_tp@_Limo_S2   +
+                mi.2.@token_tp@_Escort_S2.T + mi.2.@token_tp@_Park_S2.T + mi.2.@token_tp@_Rent_S2.T + mi.2.@token_tp@_Taxi_S2.T + mi.2.@token_tp@_Limo_S2.T +
+                mi.3.@token_tp@_Escort_S2   + mi.3.@token_tp@_Park_S2   + mi.3.@token_tp@_Rent_S2   + mi.3.@token_tp@_Taxi_S2   + mi.3.@token_tp@_Limo_S2   +
+                mi.4.@token_tp@_Escort_S2.T + mi.4.@token_tp@_Park_S2.T + mi.4.@token_tp@_Rent_S2.T + mi.4.@token_tp@_Taxi_S2.T + mi.4.@token_tp@_Limo_S2.T +
+                mi.5.@token_tp@_Escort_S2   + mi.5.@token_tp@_Park_S2   + mi.5.@token_tp@_Rent_S2   + mi.5.@token_tp@_Taxi_S2   + mi.5.@token_tp@_Limo_S2   +
+                mi.6.@token_tp@_Escort_S2.T + mi.6.@token_tp@_Park_S2.T + mi.6.@token_tp@_Rent_S2.T + mi.6.@token_tp@_Taxi_S2.T + mi.6.@token_tp@_Limo_S2.T
+              
+         ;   - shared ride 3 free
+         mw[3] = mi.1.@token_tp@_Escort_S3   + mi.1.@token_tp@_Park_S3   + mi.1.@token_tp@_Rent_S3   + mi.1.@token_tp@_Taxi_S3   + mi.1.@token_tp@_Limo_S3   + mi.1.@token_tp@_Van_S3   + mi.1.@token_tp@_Hotel_S3   + mi.1.@token_tp@_Chart_S3   +
+                 mi.2.@token_tp@_Escort_S3.T + mi.2.@token_tp@_Park_S3.T + mi.2.@token_tp@_Rent_S3.T + mi.2.@token_tp@_Taxi_S3.T + mi.2.@token_tp@_Limo_S3.T + mi.2.@token_tp@_Van_S3.T + mi.2.@token_tp@_Hotel_S3.T + mi.2.@token_tp@_Chart_S3.T +
+                 mi.3.@token_tp@_Escort_S3   + mi.3.@token_tp@_Park_S3   + mi.3.@token_tp@_Rent_S3   + mi.3.@token_tp@_Taxi_S3   + mi.3.@token_tp@_Limo_S3   + mi.3.@token_tp@_Van_S3   + mi.3.@token_tp@_Hotel_S3   + mi.3.@token_tp@_Chart_S3   +
+                 mi.4.@token_tp@_Escort_S3.T + mi.4.@token_tp@_Park_S3.T + mi.4.@token_tp@_Rent_S3.T + mi.4.@token_tp@_Taxi_S3.T + mi.4.@token_tp@_Limo_S3.T + mi.4.@token_tp@_Van_S3.T + mi.4.@token_tp@_Hotel_S3.T + mi.4.@token_tp@_Chart_S3.T +
+                 mi.5.@token_tp@_Escort_S3   + mi.5.@token_tp@_Park_S3   + mi.5.@token_tp@_Rent_S3   + mi.5.@token_tp@_Taxi_S3   + mi.5.@token_tp@_Limo_S3   + mi.5.@token_tp@_Van_S3   + mi.5.@token_tp@_Hotel_S3   + mi.5.@token_tp@_Chart_S3   +
+                 mi.6.@token_tp@_Escort_S3.T + mi.6.@token_tp@_Park_S3.T + mi.6.@token_tp@_Rent_S3.T + mi.6.@token_tp@_Taxi_S3.T + mi.6.@token_tp@_Limo_S3.T + mi.6.@token_tp@_Van_S3.T + mi.6.@token_tp@_Hotel_S3.T + mi.6.@token_tp@_Chart_S3.T
    
-   endrun
-   
+        ;   - drive alone toll (assume no trips pay HOT fee)
+        mw[4] = 0
+      
+        ;   - shared ride 2 toll (assume no trips pay HOT fee)
+        mw[5] = 0
+      
+        ;   - shared ride 3 toll (assume no trips pay HOT fee)
+        mw[6] = 0
+      
+      endrun
+   endloop ; timeperiod
 
 endloop ; fYear
-
-
-
