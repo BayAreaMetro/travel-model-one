@@ -68,9 +68,8 @@
 ;         (C) Origin/destination fare files listed in the .block file above (.far files);
 ;	  (D) A .far file setting fares to links as necessary to account for all the odd fares in the bay area (Farelinks.far);
 ;	  (E) A .far file setting the transfer fares for all the 139 by 139 modal interchanges (xfare.far);
-;         (F) A .block file listing all of the transit line files (transit_lines.block);
-;         (G) Transit line files listed in the .block file above (.tpl files);
-;	  (H) Numerous support link files that connect zones to transit stations via walking or bicycling (*transit_suplinks*.dat);
+;     (F) A transit line file and a transit link file
+;	  (G) Numerous support link files that connect zones to transit stations via walking or bicycling (*transit_suplinks*.dat);
 ;	  (I) A .block file that lists commands to combine headways for all line-haul modes when the difference in path time
 ;             is less than plus or minus five minutes (transit_combined_headways.block);
 ;         (J) A .block file containing access- and egress-mode-specific transfer prohibitor tables (transferprohibitors*.block);
@@ -374,9 +373,9 @@ loop period = 1, 5
              ; path parameter: the maximum perceived path time for a single route is 4 hours or 240 minutes
              parameters maxpathtime = 240
              
-             ; perceived time factors: first boarding is free; second, third, and fourth boarding adds five perceived minutes; 
+             ; perceived time factors: first boarding is free; second, third, and fourth boarding adds fiftenn perceived minutes; 
              ; discourage more than four transfers with a 60 minute penalty
-             factor boardpen = 0, 5, 10, 15, 60
+             factor boardpen = 0, 15, 30, 45, 60
 
              ; perceived time factors: initial wait time is equivalent to 2.8 minutes of ride time for modes 10 through 255  
              factor iwaitfac[10] = 246 * 2.8
