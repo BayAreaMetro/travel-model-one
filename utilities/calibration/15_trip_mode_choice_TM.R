@@ -191,13 +191,13 @@ print(paste("Have ", nrow(subset(transit_trip_results, !is.na(transit_trip_resul
             "boards counts of",nrow(transit_trip_results)))
 
 for (timeperiod in c("EA","AM","MD", "PM", "EV")) {
-  for (trn_submode in c("Local","Express","LRT","Ferry","CommRail","HeavyRail")) {
+  for (trn_submode in c("Local","Express","LRT","Ferry","HeavyRail","CommRail")) {
     submode <- case_when(trn_submode=="Local"    ~ "loc",
                          trn_submode=="Express"  ~ "exp",
                          trn_submode=="LRT"      ~ "lrf",
                          trn_submode=="Ferry"    ~ "lrf",
-                         trn_submode=="CommRail" ~ "com",
-                         trn_submode=="HeavyRail"~ "hvy")
+                         trn_submode=="HeavyRail"~ "hvy",
+                         trn_submode=="CommRail" ~ "com")
     for (acc_egr in c("wlk_wlk","drv_wlk","wlk_drv")) {
       acc <- substr(acc_egr,0,3)
       egr <- substr(acc_egr,5,7)
@@ -253,7 +253,7 @@ if (nrow(subset(transit_boards_summary, num_boards==6)) == 0) {
 transit_boards_summary <- spread(transit_boards_summary, trn_submode, num_trips)
 transit_boards_summary <- as.data.frame(transit_boards_summary) %>% 
   replace_na(list("Local"=0, "Express"=0,"Ferry"=0,"LRT"=0,"CommRail"=0,"HeavyRail"=0))
-transit_boards_summary <- transit_boards_summary[c("num_boards","Local","Express","Ferry","LRT","CommRail","HeavyRail", "acc_egr")]
+transit_boards_summary <- transit_boards_summary[c("num_boards","Local","Express","Ferry","LRT","HeavyRail","CommRail","acc_egr")]
 
 # save it
 outfile <- file.path(OUTPUT_DIR, paste0("15_trip_mode_choice_trn_boards_TM.csv"))
