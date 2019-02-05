@@ -114,7 +114,10 @@ outfile <- file.path(OUTPUT_DIR, paste0("15_trip_mode_choice_TM.csv"))
 write.table(trip_summary, outfile, sep=",", row.names=FALSE)
 cat("Wrote ",outfile,"\n")
 
+# save it (along with source label) to calibration workbook
 addDataFrame(as.data.frame(trip_summary), calib_sheets$modeldata, startRow=2, startColumn=1, row.names=FALSE)
+source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=1:1), colIndex=1:1 )
+setCellValue(source_cell[[1]], paste("Source: ",outfile))
 
 # transit district-to-district
 transit_trip_results  <- subset(trip_results, subset=((trip_mode<0)|((trip_mode>=9)&(trip_mode<=18)))) %>%
@@ -228,11 +231,11 @@ print(paste("Have ",nrow(missing_boards),"rows without board counts"))
 transit_trip_results <- mutate(transit_trip_results, acc_egr=ifelse((acc=="drv")|(egr=="drv"),"2_Drive","1_Walk"))
 
 # plus a Total category
-transit_trip_results <- rbind(transit_trip_results,
+transit_board_results <- rbind(transit_trip_results,
                               mutate(transit_trip_results, acc_egr="0_Total"))
 
 # group by trn_submode, acc_egr, num_boards and spread
-transit_boards_summary <- group_by(subset(transit_trip_results, !is.na(transit_trip_results$num_boards)),
+transit_boards_summary <- group_by(subset(transit_board_results, !is.na(transit_board_results$num_boards)),
                                    trn_submode, acc_egr, num_boards) %>%
   summarise(num_trips=sum(num_participants)) %>%
   mutate(num_trips=num_trips/SAMPLESHARE)
@@ -260,8 +263,10 @@ outfile <- file.path(OUTPUT_DIR, paste0("15_trip_mode_choice_trn_boards_TM.csv")
 write.table(transit_boards_summary, outfile, sep=",", row.names=FALSE)
 cat("Wrote ",outfile,"\n")
 
+# save it (along with source label) to calibration workbook
 addDataFrame(transit_boards_summary, calib_sheets$modeldata, startRow=2, startColumn=17, row.names=FALSE)
-
+source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=1:1), colIndex=17:17 )
+setCellValue(source_cell[[1]], paste("Source: ",outfile))
 
 # add superdistrict for orig, dest
 taz_sd <- read.table(file = TAZ_SD_FILE, header=TRUE, sep=",")
@@ -291,7 +296,10 @@ outfile <- file.path(OUTPUT_DIR, paste0("15_trip_mode_choice_trn_ODdist_TM.csv")
 write.table(trn_trip_summary, outfile, sep=",", row.names=FALSE)
 cat("Wrote ",outfile,"\n")
 
+# save it (along with source label) to calibration workbook
 addDataFrame(trn_trip_summary, calib_sheets$modeldata, startRow=2, startColumn=10, row.names=FALSE)
+source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=1:1), colIndex=10:10 )
+setCellValue(source_cell[[1]], paste("Source: ",outfile))
 
 saveWorkbook(calib_workbook, WORKBOOK_TEMP)
 forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
