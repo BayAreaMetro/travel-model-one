@@ -1,7 +1,7 @@
 SETLOCAL EnableDelayedExpansion
 
-set MODEL_DIR=A:\TM150_Calibration\2015_TM150_calib8
-set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.5.0\2015_TM150_calib8
+set MODEL_DIR=A:\TM150_Calibration\2015_TM150_calib9
+set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.5.0\2015_TM150_calib9
 set CODE_DIR=X:\travel-model-one-calibration\utilities\calibration
 set ITER=1
 set SAMPLESHARE=0.2
@@ -52,6 +52,19 @@ for %%H in (IVT IWAIT WACC WEGR) DO (
 
 :: boards
 set TABLE=boards
+FOR %%H in (EA AM MD PM EV) DO (
+  FOR %%G in (loc exp lrf com hvy) DO (
+    set SKIMFILE=trnskm%%H_wlk_%%G_drv
+    if not exist !SKIMFILE!_!TABLE!.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
+    set SKIMFILE=trnskm%%H_drv_%%G_wlk
+    if not exist !SKIMFILE!_!TABLE!.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
+    set SKIMFILE=trnskm%%H_wlk_%%G_wlk
+    if not exist !SKIMFILE!_!TABLE!.csv  runtpp "%CODE_DIR%\extract_skim_table.job"
+  )
+)
+
+:: firstMode
+set TABLE=firstMode
 FOR %%H in (EA AM MD PM EV) DO (
   FOR %%G in (loc exp lrf com hvy) DO (
     set SKIMFILE=trnskm%%H_wlk_%%G_drv

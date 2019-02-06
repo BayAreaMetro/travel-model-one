@@ -187,9 +187,9 @@ transit_trip_results <- mutate(transit_trip_results,
                                  tour_purpose=="work_med"        ~ "work",
                                  tour_purpose=="work_very high"  ~ "work"))
 
-# add boards
+# add boards and first transit mode
 transit_trip_results$num_boards <- NA
-table <- "boards"
+transit_trip_results$first_trn_mode <- NA
 print(paste("Have ", nrow(subset(transit_trip_results, !is.na(transit_trip_results$num_boards))),
             "boards counts of",nrow(transit_trip_results)))
 
@@ -205,58 +205,68 @@ for (timeperiod in c("EA","AM","MD", "PM", "EV")) {
       acc <- substr(acc_egr,0,3)
       egr <- substr(acc_egr,5,7)
       
-      file_name <- paste0("trnskm",timeperiod,"_",acc,"_",submode,"_",egr,"_",table,".csv")
-      skim_table <- read.table(file=file.path(TARGET_DIR, "OUTPUT", "skims", file_name),
-                               header=FALSE, col.names=c("orig_taz","dest_taz","ones",table), sep=",") %>% 
-      select(-ones) %>%
-      mutate(timeperiod=timeperiod, trn_submode=trn_submode,acc=acc,egr=egr)
-      # print(paste("Read ",file_name))
-      # print(head(skim_table))
-      transit_trip_results <- left_join(transit_trip_results, skim_table,
-                                        by = c("orig_taz", "dest_taz", "timeperiod", "trn_submode", "acc", "egr"))
-      # set num_boards
-      transit_trip_results <- mutate(transit_trip_results, 
-                                     num_boards=ifelse(!is.na(boards),boards,num_boards))
-      
-      transit_trip_results <- select(transit_trip_results, -boards)
-      board_num_count      <- nrow(subset(transit_trip_results, !is.na(transit_trip_results$num_boards)))
-      print(paste("=> Have board counts for", sprintf("%.1f%%", 100*board_num_count/nrow(transit_trip_results))))
-    }
-  }
-}
+      for (table in c("boards","firstMode")) {
+        file_name <- paste0("trnskm",timeperiod,"_",acc,"_",submode,"_",egr,"_",table,".csv")
+        skim_table <- read.table(file=file.path(TARGET_DIR, "OUTPUT", "skims", file_name),
+                                 header=FALSE, col.names=c("orig_taz","dest_taz","ones",table), sep=",") %>% 
+          select(-ones) %>%
+          mutate(timeperiod=timeperiod, trn_submode=trn_submode,acc=acc,egr=egr)
+        # print(paste("Read ",file_name))
+        # print(head(skim_table))
+        transit_trip_results <- left_join(transit_trip_results, skim_table,
+                                          by = c("orig_taz", "dest_taz", "timeperiod", "trn_submode", "acc", "egr"))
+        if (table=="boards") {
+          # set num_boards
+          transit_trip_results <- mutate(transit_trip_results, 
+                                         num_boards=ifelse(!is.na(boards),boards,num_boards))
+          transit_trip_results <- select(transit_trip_results, -boards)
+
+          board_num_count      <- nrow(subset(transit_trip_results, !is.na(transit_trip_results$num_boards)))
+          print(paste("=> Have board counts for", sprintf("%.1f%%", 100*board_num_count/nrow(transit_trip_results))))
+        } else {
+          # set num_boards
+          transit_trip_results <- mutate(transit_trip_results, 
+                                         first_trn_mode=ifelse(!is.na(firstMode),firstMode,first_trn_mode))
+          transit_trip_results <- select(transit_trip_results, -firstMode)
+
+          first_mode_num_count <- nrow(subset(transit_trip_results, !is.na(transit_trip_results$first_trn_mode)))
+          # print(paste("=> Have first mode counts for", sprintf("%.1f%%", 100*first_mode_num_count/nrow(transit_trip_results))))
+        }
+
+      } # end for (table in c("boards","firstMode"))
+    } # end for (acc_egr in c("wlk_wlk","drv_wlk","wlk_drv"))
+  } # end for (trn_submode in c("Local","Express","LRT","Ferry","HeavyRail","CommRail"))
+} # end for (timeperiod in c("EA","AM","MD", "PM", "EV"))
+
 missing_boards <- subset(transit_trip_results, is.na(transit_trip_results$num_boards))
 print(paste("Have ",nrow(missing_boards),"rows without board counts"))
 
-# want walk access&egress, drive access or egress
-transit_trip_results <- mutate(transit_trip_results, acc_egr=ifelse((acc=="drv")|(egr=="drv"),"2_Drive","1_Walk"))
+missing_first_mode <- subset(transit_trip_results, is.na(transit_trip_results$first_trn_mode))
+print(paste("Have ",nrow(missing_first_mode),"rows without first mode counts"))
 
-# plus a Total category
-transit_board_results <- rbind(transit_trip_results,
-                              mutate(transit_trip_results, acc_egr="0_Total"))
+# group line haul mode
+transit_trip_results <- mutate(transit_trip_results,
+                               first_trn_mode_type=case_when(
+                                 ( first_trn_mode < 80) ~ "Local",
+                                 ((first_trn_mode>= 80)&(first_trn_mode<100)) ~ "Express",
+                                 ((first_trn_mode>=100)&(first_trn_mode<110)) ~ "Ferry",
+                                 ((first_trn_mode>=110)&(first_trn_mode<120)) ~ "LRT",
+                                 ((first_trn_mode>=120)&(first_trn_mode<130)) ~ "HeavyRail",
+                                 ((first_trn_mode>=130)&(first_trn_mode<140)) ~ "CommRail",
+                                 (is.na(first_trn_mode)) ~ "Unknown"))
 
 # group by trn_submode, acc_egr, num_boards and spread
-transit_boards_summary <- group_by(subset(transit_board_results, !is.na(transit_board_results$num_boards)),
-                                   trn_submode, acc_egr, num_boards) %>%
+transit_boards_summary <- group_by(subset(transit_trip_results, !is.na(transit_trip_results$num_boards)),
+                                   trn_submode, acc, egr, first_trn_mode_type, num_boards) %>%
   summarise(num_trips=sum(num_participants)) %>%
   mutate(num_trips=num_trips/SAMPLESHARE)
 
-# assuming no 5- and 6-boards
-transit_boards_summary <- as.data.frame(transit_boards_summary)
-if (nrow(subset(transit_boards_summary, num_boards==5)) == 0) {
-  transit_boards_summary <- add_row(transit_boards_summary, trn_submode="CommRail", acc_egr="0_Total", num_boards=5, num_trips=0)
-  transit_boards_summary <- add_row(transit_boards_summary, trn_submode="CommRail", acc_egr="1_Walk",  num_boards=5, num_trips=0)
-  transit_boards_summary <- add_row(transit_boards_summary, trn_submode="CommRail", acc_egr="2_Drive", num_boards=5, num_trips=0)
-}
-if (nrow(subset(transit_boards_summary, num_boards==6)) == 0) {
-  transit_boards_summary <- add_row(transit_boards_summary, trn_submode="CommRail", acc_egr="0_Total", num_boards=6, num_trips=0)
-  transit_boards_summary <- add_row(transit_boards_summary, trn_submode="CommRail", acc_egr="1_Walk",  num_boards=6, num_trips=0)
-  transit_boards_summary <- add_row(transit_boards_summary, trn_submode="CommRail", acc_egr="2_Drive", num_boards=6, num_trips=0)
-}
 
 transit_boards_summary <- spread(transit_boards_summary, trn_submode, num_trips)
 transit_boards_summary <- as.data.frame(transit_boards_summary) %>% 
   replace_na(list("Local"=0, "Express"=0,"Ferry"=0,"LRT"=0,"CommRail"=0,"HeavyRail"=0))
-transit_boards_summary <- transit_boards_summary[c("num_boards","Local","Express","Ferry","LRT","HeavyRail","CommRail","acc_egr")]
+transit_boards_summary <- transit_boards_summary[c("acc","egr","first_trn_mode_type","num_boards",
+                                                   "Local","Express","Ferry","LRT","HeavyRail","CommRail")]
 
 # save it
 outfile <- file.path(OUTPUT_DIR, paste0("15_trip_mode_choice_trn_boards_TM.csv"))
