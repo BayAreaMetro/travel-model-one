@@ -24,9 +24,9 @@ stopifnot(nchar(SAMPLESHARE )>0)
 
 SAMPLESHARE <- as.numeric(SAMPLESHARE)
 
-cat("TARGET_DIR  = ",TARGET_DIR, "\n")
-cat("ITER        = ",ITER,       "\n")
-cat("SAMPLESHARE = ",SAMPLESHARE,"\n")
+print(paste0("TARGET_DIR  = ",TARGET_DIR ))
+print(paste0("ITER        = ",ITER       ))
+print(paste0("SAMPLESHARE = ",SAMPLESHARE))
 
 ######### counties
 LOOKUP_COUNTY        <- data.frame(COUNTY=c(1,2,3,4,5,6,7,8,9),
@@ -59,10 +59,15 @@ ao_county  <- mutate(ao_county, num_hh=num_hh/SAMPLESHARE)
 ao_county_spread <- spread(ao_county, key=AO, value=num_hh)
 
 # save it
-write.table(ao_county_spread, file.path(OUTPUT_DIR,"02_auto_ownership_TM.csv"), sep=",", row.names=FALSE)
-cat("Wrote ",file.path(OUTPUT_DIR,"02_auto_ownership_TM.csv\n"))
+outfile <- file.path(OUTPUT_DIR,"02_auto_ownership_TM.csv")
+write.table(ao_county_spread, outfile, sep=",", row.names=FALSE)
+print(paste("Wrote",outfile))
+
+# save it (along with source label) to calibration workbook
 addDataFrame(as.data.frame(ao_county_spread), calib_sheets$modeldata, startRow=3, startColumn=1, row.names=FALSE)
+source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=1:1), colIndex=1:1 )
+setCellValue(source_cell[[1]], paste("Source: ",outfile))
 
 saveWorkbook(calib_workbook, WORKBOOK_TEMP)
 forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
-cat("Wrote ",WORKBOOK,"\n")
+print(paste("Wrote",WORKBOOK))

@@ -199,4 +199,4 @@ for (name in names(COPY_SRC)) {
 
 saveWorkbook(uec_workbook, UEC_DST_WORKBOOK)
 #forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
-cat("Wrote ",UEC_DST_WORKBOOK,"\n")
+print(paste("Wrote",UEC_DST_WORKBOOK))

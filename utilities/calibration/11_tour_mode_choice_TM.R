@@ -26,9 +26,9 @@ stopifnot(nchar(SAMPLESHARE )>0)
 
 SAMPLESHARE <- as.numeric(SAMPLESHARE)
 
-cat("TARGET_DIR  = ",TARGET_DIR, "\n")
-cat("ITER        = ",ITER,       "\n")
-cat("SAMPLESHARE = ",SAMPLESHARE,"\n")
+print(paste0("TARGET_DIR  = ",TARGET_DIR ))
+print(paste0("ITER        = ",ITER       ))
+print(paste0("SAMPLESHARE = ",SAMPLESHARE))
 
 input.pop.households <- read.table(file = file.path(TARGET_DIR,"INPUT","popsyn","hhFile.calib.2015.csv"),
                                    header=TRUE, sep=",") %>%
@@ -98,10 +98,12 @@ tour_summary_spread[is.na(tour_summary_spread)] <- 0
 # save it
 outfile <- file.path(OUTPUT_DIR, paste0("11_tour_mode_choice_TM.csv"))
 write.table(tour_summary_spread, outfile, sep=",", row.names=FALSE)
-cat("Wrote ",outfile,"\n")
+print(paste("Wrote",outfile))
 
+# save it (along with source label) to calibration workbook
 addDataFrame(as.data.frame(tour_summary_spread), calib_sheets$modeldata, startRow=2, startColumn=1, row.names=FALSE)
-
+source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=1:1), colIndex=1:1 )
+setCellValue(source_cell[[1]], paste("Source: ",outfile))
 
 # transit submode summary
 # Want submode: Local, LRT-Walk, LRT-Drive, Ferry-Walk, Ferry-Drive, Express, HeavyRail, CommRail
@@ -188,9 +190,12 @@ trn_tour_summary_spread[is.na(trn_tour_summary_spread)] <- 0
 # save it
 outfile <- file.path(OUTPUT_DIR, paste0("11_tour_mode_choice_trnsubmode_TM.csv"))
 write.table(trn_tour_summary_spread, outfile, sep=",", row.names=FALSE)
-cat("Wrote ",outfile,"\n")
+print(paste("Wrote ",outfile))
 
+# save it (along with source label) to calibration workbook
 addDataFrame(as.data.frame(trn_tour_summary_spread), calib_sheets$modeldata, startRow=2, startColumn=11, row.names=FALSE)
+source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=1:1), colIndex=11:11 )
+setCellValue(source_cell[[1]], paste("Source: ",outfile))
 
 # transit tours by purpose, trn submode, district-to-district
 # combine back Ferry-Drive and Ferry-Walk, LRT-Drive, LRT-Walk
@@ -246,10 +251,13 @@ trn_tour_summary <- trn_tour_summary[c("key","trn_submode","orig_SD","dest_SD","
 # save it
 outfile <- file.path(OUTPUT_DIR, paste0("11_tour_mode_choice_trn_ODdist_TM.csv"))
 write.table(trn_tour_summary, outfile, sep=",", row.names=FALSE)
-cat("Wrote ",outfile,"\n")
+print(paste("Wrote ",outfile))
 
+# save it (along with source label) to calibration workbook
 addDataFrame(trn_tour_summary, calib_sheets$modeldata, startRow=2, startColumn=19, row.names=FALSE)
+source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=1:1), colIndex=19:19 )
+setCellValue(source_cell[[1]], paste("Source: ",outfile))
 
 saveWorkbook(calib_workbook, WORKBOOK_TEMP)
 forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
-cat("Wrote ",WORKBOOK,"\n")
+print(paste("Wrote",WORKBOOK))

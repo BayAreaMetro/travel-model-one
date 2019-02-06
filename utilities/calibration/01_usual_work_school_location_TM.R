@@ -25,9 +25,9 @@ stopifnot(nchar(SAMPLESHARE )>0)
 
 SAMPLESHARE <- as.numeric(SAMPLESHARE)
 
-cat("TARGET_DIR  = ",TARGET_DIR, "\n")
-cat("ITER        = ",ITER,       "\n")
-cat("SAMPLESHARE = ",SAMPLESHARE,"\n")
+print(paste0("TARGET_DIR  = ",TARGET_DIR ))
+print(paste0("ITER        = ",ITER       ))
+print(paste0("SAMPLESHARE = ",SAMPLESHARE))
 
 ######### counties
 LOOKUP_COUNTY        <- data.frame(COUNTY=c(1,2,3,4,5,6,7,8,9),
@@ -68,9 +68,14 @@ wsloc_county_spread <- spread(wsloc_county, key=Work_county_name, value=num_pers
 wsloc_county_spread[is.na(wsloc_county_spread)] <- 0
 
 # save it
-write.table(wsloc_county_spread, file.path(OUTPUT_DIR,"01_usual_work_school_location_TM_county.csv"), sep=",", row.names=FALSE)
-cat("Wrote ",file.path(OUTPUT_DIR,"01_usual_work_school_location_TM_county.csv\n"))
+outfile <- file.path(OUTPUT_DIR,"01_usual_work_school_location_TM_county.csv")
+write.table(wsloc_county_spread, outfile, sep=",", row.names=FALSE)
+print(paste("Wrote",outfile))
+
+# save it (along with source label) to calibration workbook
 addDataFrame(as.data.frame(wsloc_county_spread), calib_sheets$modeldata, startRow=4, startColumn=1, row.names=FALSE)
+source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=1:1), colIndex=1:1 )
+setCellValue(source_cell[[1]], paste("Source: ",outfile))
 
 avg_trip_lengths <- data.frame(county=character(), trip_type=character(), mean_trip_length=double(), stringsAsFactors = FALSE)
 
@@ -125,8 +130,12 @@ for (trip_type in c("work","univ","school")) {
   # save it
   outfile <- file.path(OUTPUT_DIR, paste0("01_usual_work_school_location_TM_",trip_type,"_TLFD.csv"))
   write.table(trip_tlfd, outfile, sep=",", row.names=FALSE)
-  cat("Wrote ",outfile,"\n")
+  print(paste("Wrote",outfile))
+
+  # save it (along with source label) to calibration workbook
   addDataFrame(as.data.frame(trip_tlfd), calib_sheets$modeldata, startRow=19, startColumn=col, row.names=FALSE)
+  source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=17:17), colIndex=col:col )
+  setCellValue(source_cell[[1]], paste("Source: ",outfile))
 }
 
 remove(dist_skim)
@@ -138,9 +147,13 @@ avg_triplen_spread <- avg_triplen_spread[c("county","work","univ","school")]
 # save average trip lengths
 outfile <- file.path(OUTPUT_DIR, paste0("01_usual_work_school_location_TM_avgtriplen.csv"))
 write.table(avg_triplen_spread, outfile, sep=",", row.names=FALSE)
-cat("Wrote ",outfile,"\n")
+print(paste("Wrote",outfile))
+
+# save it (along with source label) to calibration workbook
 addDataFrame(as.data.frame(avg_triplen_spread), calib_sheets$modeldata, startRow=4, startColumn=14, row.names=FALSE)
+source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=3:3), colIndex=14:14 )
+setCellValue(source_cell[[1]], paste("Source: ",outfile))
 
 saveWorkbook(calib_workbook, WORKBOOK_TEMP)
 forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
-cat("Wrote ",WORKBOOK,"\n")
+print(paste("Wrote",WORKBOOK))
