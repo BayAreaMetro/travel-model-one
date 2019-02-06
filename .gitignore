@@ -5,3 +5,5 @@ core/cmf/**/build
 core/models/**/build
 core/projects/**/build
 **/.svn
+model-files/model/ModeChoice.xls
+model-files/model/TripModeChoice.xls
