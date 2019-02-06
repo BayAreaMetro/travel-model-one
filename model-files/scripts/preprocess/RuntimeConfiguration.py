@@ -337,7 +337,10 @@ def config_auto_opcost(replacements):
     myfile_contents = myfile.read()
     myfile.close()
 
-    auto_opc        = float(get_property(params_filename, myfile_contents, "AutoOpCost"))
+    auto_opc               = float(get_property(params_filename, myfile_contents, "AutoOpCost"))
+    adjustmentTaxi             = float(get_property(params_filename, myfile_contents, "Adjust_Taxi"))
+    adjustmentTNCsingle        = float(get_property(params_filename, myfile_contents, "Adjust_TNCsingle"))
+    adjustmentTNCshared        = float(get_property(params_filename, myfile_contents, "Adjust_TNCshared"))
 
     # put them into the CTRAMP\scripts\block\hwyParam.block
     filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
@@ -351,6 +354,7 @@ def config_auto_opcost(replacements):
 
     # put it into the UECs
     config_uec("%.2f" % auto_opc)
+    config_modechoice_uec("%.2f" % adjustmentTaxi, "%.2f" % adjustmentTNCsingle, "%.2f" % adjustmentTNCshared)
 
     # small truck
     filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
@@ -401,7 +405,7 @@ def config_auto_opcost(replacements):
 def config_logsums(replacements, append):
     filepath = os.path.join("CTRAMP","runtime","logsums.properties")
 
-    # households and persons        
+    # households and persons
     replacements[filepath]["(\nPopulationSynthesizer.InputToCTRAMP.HouseholdFile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % "logsums/accessibilities_dummy_households.csv"
     replacements[filepath]["(\nPopulationSynthesizer.InputToCTRAMP.PersonFile[ \t]*=[ \t]*)(\S*)"]    = r"\g<1>%s" % "logsums/accessibilities_dummy_persons.csv"
 
@@ -674,6 +678,42 @@ def config_uec(auto_operating_cost):
                                                   xlwt.easyxf("align: horiz left"))
         wb.save(filepath)
 
+def config_modechoice_uec(adjTaxi, adjTNCsingle, adjTNCshared):
+
+    adjust_taxi_float = float(adjTaxi)
+    adjust_tncsingle_float = float(adjTNCsingle)
+    adjust_tncshared_float = float(adjTNCshared)
+
+    for bookname in ["ModeChoice.xls","TripModeChoice.xls"]:
+        filepath = os.path.join("CTRAMP","model",bookname)
+        shutil.move(filepath, "%s.original" % filepath)
+
+        print "Updating %s" % filepath
+        rb = xlrd.open_workbook("%s.original" % filepath, formatting_info=True, on_demand=True)
+        wb = xlutils.copy.copy(rb)
+        for sheet_num in range(rb.nsheets):
+            rs = rb.get_sheet(sheet_num)
+            for rownum in range(rs.nrows):
+                # print rs.cell(rownum,1)
+                if rs.cell(rownum,1).value=='AdjustTaxi':
+                    print "  Sheet '%s': replacing AdjustTaxi '%s' -> %.2f" % \
+                        (rs.name, rs.cell(rownum,4).value, adjust_taxi_float)
+                    wb.get_sheet(sheet_num).write(rownum,4,adjust_taxi_float,
+                                                  xlwt.easyxf("align: horiz left"))
+                if rs.cell(rownum,1).value=='AdjustTNCsingle':
+                    print "  Sheet '%s': replacing AdjustTNCsingle '%s' -> %.2f" % \
+                        (rs.name, rs.cell(rownum,4).value, adjust_tncsingle_float)
+                    wb.get_sheet(sheet_num).write(rownum,4,adjust_tncsingle_float,
+                                                  xlwt.easyxf("align: horiz left"))
+                if rs.cell(rownum,1).value=='AdjustTNCshared':
+                    print "  Sheet '%s': replacing AdjustTNCshared '%s' -> %.2f" % \
+                        (rs.name, rs.cell(rownum,4).value, adjust_tncshared_float)
+                    wb.get_sheet(sheet_num).write(rownum,4,adjust_tncshared_float,
+                                                  xlwt.easyxf("align: horiz left"))
+
+        wb.save(filepath)
+
+
 # define a function to put the telecommute constant into the Coordinated Daily Activity Pattern excel file
 def config_cdap():
 
@@ -741,4 +781,3 @@ if __name__ == '__main__':
     # append
     for filepath,append_str in append.iteritems():
         append_to_file(filepath, append_str)
-
