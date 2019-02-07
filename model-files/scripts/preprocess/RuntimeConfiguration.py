@@ -680,11 +680,15 @@ def config_uec(auto_operating_cost):
 
 def config_modechoice_uec(adjTaxi, adjTNCsingle, adjTNCshared):
 
-    adjust_taxi_float = float(adjTaxi)
+    adjust_taxi_float      = float(adjTaxi)
     adjust_tncsingle_float = float(adjTNCsingle)
     adjust_tncshared_float = float(adjTNCshared)
 
-    for bookname in ["ModeChoice.xls","TripModeChoice.xls"]:
+    adjust_taxi_float_half      = float(adjTaxi)*0.5
+    adjust_tncsingle_float_half = float(adjTNCsingle)*0.5
+    adjust_tncshared_float_half = float(adjTNCshared)*0.5
+
+    for bookname in ["ModeChoice.xls"]:
         filepath = os.path.join("CTRAMP","model",bookname)
         shutil.move(filepath, "%s.original" % filepath)
 
@@ -709,6 +713,33 @@ def config_modechoice_uec(adjTaxi, adjTNCsingle, adjTNCshared):
                     print "  Sheet '%s': replacing AdjustTNCshared '%s' -> %.2f" % \
                         (rs.name, rs.cell(rownum,4).value, adjust_tncshared_float)
                     wb.get_sheet(sheet_num).write(rownum,4,adjust_tncshared_float,
+                                                  xlwt.easyxf("align: horiz left"))
+
+    for bookname in ["TripModeChoice.xls"]:
+        filepath = os.path.join("CTRAMP","model",bookname)
+        shutil.move(filepath, "%s.original" % filepath)
+
+        print "Updating %s" % filepath
+        rb = xlrd.open_workbook("%s.original" % filepath, formatting_info=True, on_demand=True)
+        wb = xlutils.copy.copy(rb)
+        for sheet_num in range(rb.nsheets):
+            rs = rb.get_sheet(sheet_num)
+            for rownum in range(rs.nrows):
+                # print rs.cell(rownum,1)
+                if rs.cell(rownum,1).value=='AdjustTaxi':
+                    print "  Sheet '%s': replacing AdjustTaxi '%s' -> %.2f" % \
+                        (rs.name, rs.cell(rownum,4).value, adjust_taxi_float_half)
+                    wb.get_sheet(sheet_num).write(rownum,4,adjust_taxi_float_half,
+                                                  xlwt.easyxf("align: horiz left"))
+                if rs.cell(rownum,1).value=='AdjustTNCsingle':
+                    print "  Sheet '%s': replacing AdjustTNCsingle '%s' -> %.2f" % \
+                        (rs.name, rs.cell(rownum,4).value, adjust_tncsingle_float_half)
+                    wb.get_sheet(sheet_num).write(rownum,4,adjust_tncsingle_float_half,
+                                                  xlwt.easyxf("align: horiz left"))
+                if rs.cell(rownum,1).value=='AdjustTNCshared':
+                    print "  Sheet '%s': replacing AdjustTNCshared '%s' -> %.2f" % \
+                        (rs.name, rs.cell(rownum,4).value, adjust_tncshared_float_half)
+                    wb.get_sheet(sheet_num).write(rownum,4,adjust_tncshared_float_half,
                                                   xlwt.easyxf("align: horiz left"))
 
         wb.save(filepath)
