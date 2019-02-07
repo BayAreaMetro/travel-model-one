@@ -206,6 +206,9 @@ RUN PGM=HWYNET
      TOLLPM_LRG = ROUND(TOLLS(37,_fac_index)*100*DISTANCE)
      TOLLEV_LRG = ROUND(TOLLS(38,_fac_index)*100*DISTANCE)
 
+     ; Express lane test: force DA tolls to be non-zero in AM,PM
+     IF (TOLLAM_DA = 0) TOLLAM_DA = ROUND(0.03*100*DISTANCE)
+     IF (TOLLPM_DA = 0) TOLLPM_DA = ROUND(0.03*100*DISTANCE)
    ENDIF
 
 ENDRUN
