@@ -30,13 +30,13 @@ copy trn\TransitAssignment.iter3\trnlink*.dbf    extractor\trn\trnlink*.dbf
 copy trn\quickboards.xls extractor\trn\quickboards.xls
 
 :: Demand results
-copy main\householdData_%ITER%.csv extractor\householdData_%ITER%.csv
-copy main\personData_%ITER%.csv    extractor\personData_%ITER%.csv
-copy main\indivTripData_%ITER%.csv extractor\indivTripData_%ITER%.csv
-copy main\indivTourData_%ITER%.csv extractor\indivTourData_%ITER%.csv
-copy main\jointTripData_%ITER%.csv extractor\jointTripData_%ITER%.csv
-copy main\jointTourData_%ITER%.csv extractor\jointTourData_%ITER%.csv
-copy main\wsLocResults_%ITER%.csv  extractor\wsLocResults_%ITER%.csv
+copy main\householdData_%ITER%.csv extractor\main\householdData_%ITER%.csv
+copy main\personData_%ITER%.csv    extractor\main\personData_%ITER%.csv
+copy main\indivTripData_%ITER%.csv extractor\main\indivTripData_%ITER%.csv
+copy main\indivTourData_%ITER%.csv extractor\main\indivTourData_%ITER%.csv
+copy main\jointTripData_%ITER%.csv extractor\main\jointTripData_%ITER%.csv
+copy main\jointTourData_%ITER%.csv extractor\main\jointTourData_%ITER%.csv
+copy main\wsLocResults_%ITER%.csv  extractor\main\wsLocResults_%ITER%.csv
 
 :: Report results
 copy logs\HwySkims.debug  extractor\HwySkims.debug
