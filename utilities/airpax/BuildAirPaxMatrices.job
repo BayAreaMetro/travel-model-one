@@ -20,13 +20,25 @@
 ; interpolation to create versions for years other than 2007 and 2035, including 2015, 2020, 2025, 2030, 2040,
 ; 2045 and 2050.
 ;
-; These DBFs are then converted into Cube matrices, with optional variants accounting for airport closures and diverting
+; These DBFs are then converted into Cube matrices, with optional variants* accounting for airport closures and diverting
 ; trips to alternative airports for Horizon Future scenarios.  Finally, a highway-assignment ready matrix file is
 ; created for each time-of-day interval.  Here, we assume that no air passengers use HOT lanes (probably not exactly
 ; true in certain future year scenarios, but the assumption is made here as a simplification).
 ;
 ; Transit travel to the airports is not included in these vehicle trip tables.
 ;
+; 
+; *optional variants:
+; if CLOSURES=SFO
+;               35% passengers go to OAK (TAZ 874)
+;               35% passengers go to SJC (TAZ 434)
+;                5% passengers go to STS (Sonoma County, TAZ 1358)
+;               25% passengers go to SMF (Sacramento, 1462)
+;
+; IF CLOSURES=SFO_OAK 
+;               50% passengers to SJC (TAZ 434))
+;                5% passengers to STS (Sonoma County, TAZ 1358)
+;               45% passengers to SMF (Sacramento)
 ;
 ; Input:  (A)  Year-, access/egress-, and airport-specific database file with 90 columns of data for each TAZ.  There
 ;              are 18 columns for each time-of-day interval as follows:
@@ -66,49 +78,59 @@
 ; version:  Travel Model One (v 0.3)
 ; authors:  dto (2011 12 14)
 ;
-;
+
+; one of 'NONE', 'SFO', 'SFO_OAK'
+token_closures = '%CLOSURES%'
+*mkdir closures_%CLOSURES%
+*mkdir closures_%CLOSURES%\intermediate
+
 ; ----------------------------------------------------------------------------------------------------------------
 ; STEP 1
 ; The script reads in DBF files crated from Mr. Gosling's Excel files for 2007 and 2035, and uses a simple linear
 ; interpolation to create versions for years other than 2007 and 2035, including 2015, 2020, 2025, 2030, 2040,
 ; 2045 and 2050.
 ; ----------------------------------------------------------------------------------------------------------------
-loop fYear = 1,7
+loop fYear = 1,8
 
    if (fYear = 1) 
    
       token_year  = '2015b'
-      token_scale = '(2015 - 2007)/(2035 - 2007)'
+      token_scale = '(2015.0 - 2007.0)/(2035.0 - 2007.0)'
       
    elseif (fYear = 2)
    
       token_year  = '2020b'
-      token_scale = '(2020 - 2007)/(2035 - 2007)'
+      token_scale = '(2020.0 - 2007.0)/(2035.0 - 2007.0)'
       
    elseif (fYear = 3)
    
       token_year  = '2025b'
-      token_scale = '(2025 - 2007)/(2035 - 2007)'
+      token_scale = '(2025.0 - 2007.0)/(2035 - 2007.0)'
       
    elseif (fYear = 4)
    
       token_year  = '2030b'
-      token_scale = '(2030 - 2007)/(2035 - 2007)'
+      token_scale = '(2030.0 - 2007.0)/(2035.0 - 2007.0)'
       
    elseif (fYear = 5)
    
-      token_year  = '2040b'
-      token_scale = '(2040 - 2007)/(2035 - 2007)'
+      token_year  = '2035b'
+      token_scale = '(2035.0 - 2007.0)/(2035.0 - 2007.0)'
 
    elseif (fYear = 6)
    
-      token_year  = '2045b'
-      token_scale = '(2045 - 2007)/(2035 - 2007)'
+      token_year  = '2040b'
+      token_scale = '(2040.0 - 2007.0)/(2035.0 - 2007.0)'
 
    elseif (fYear = 7)
    
+      token_year  = '2045b'
+      token_scale = '(2045.0 - 2007.0)/(2035.0 - 2007.0)'
+
+   elseif (fYear = 8)
+   
       token_year  = '2050b'
-      token_scale = '(2050 - 2007)/(2035 - 2007)'
+      token_scale = '(2050.0 - 2007.0)/(2035.0 - 2007.0)'
 
    endif
 
@@ -116,17 +138,90 @@ loop fYear = 1,7
    
       if (airport = 1)
          token_airport = 'SFO'
-         airport_taz   = '239'
+         airport_taz_1 = '239'
+         airport_pct_1 = '1.0'
+
+         ; no diversions
+         airport_taz_2 = '1'
+         airport_pct_2 = '0.0'
+         airport_taz_3 = '1'
+         airport_pct_3 = '0.0'
+         airport_taz_4 = '1'
+         airport_pct_4 = '0.0'
+
+         if (('SFO'='%CLOSURES%') && ('%CLOSURES%'='SFO'))
+            ;  35% passengers go to OAK (TAZ 874)
+            airport_taz_1 = '874'
+            airport_pct_1 = '0.35'
+
+            ;  35% passengers go to SJC (TAZ 434)
+            airport_taz_2 = '434'
+            airport_pct_2 = '0.35'
+
+            ;   5% passengers go to STS (Sonoma County, TAZ 1358)
+            airport_taz_3 = '1358'
+            airport_pct_3 = '0.05'
+
+            ;  25% passengers go to SMF (Sacramento, TAZ 1462)
+            airport_taz_4 = '1462'
+            airport_pct_4 = '0.25'
+
+         elseif (('SFO_OAK'='%CLOSURES%') && ('%CLOSURES%'='SFO_OAK'))
+            ;  50% passengers to SJC (TAZ 434)
+            airport_taz_1 = '434'
+            airport_pct_1 = '0.50'
+
+            ;   5% passengers to STS (Sonoma County, TAZ 1358)
+            airport_taz_2 = '1358'
+            airport_pct_2 = '0.05'
+
+            ;  45% passengers to SMF (Sacramento, TAZ 1462)
+            airport_taz_3 = '1462'
+            airport_pct_3 = '0.45'
+         endif
+
       endif
 
       if (airport = 2)
          token_airport = 'OAK'
-         airport_taz   = '874'
+         airport_taz_1 = '874'
+         airport_pct_1 = '1.0'
+
+         ; no diversions
+         airport_taz_2 = '1'
+         airport_pct_2 = '0.0'
+         airport_taz_3 = '1'
+         airport_pct_3 = '0.0'
+         airport_taz_4 = '1'
+         airport_pct_4 = '0.0'
+
+         if (('SFO_OAK'='%CLOSURES%') && ('%CLOSURES%'='SFO_OAK'))
+            ;  50% passengers to SJC (TAZ 434)
+            airport_taz_1 = '434'
+            airport_pct_1 = '0.50'
+
+            ;   5% passengers to STS (Sonoma County, TAZ 1358)
+            airport_taz_2 = '1358'
+            airport_pct_2 = '0.05'
+
+            ;  45% passengers to SMF (Sacramento, TAZ 1462)
+            airport_taz_3 = '1462'
+            airport_pct_3 = '0.45'
+         endif
       endif
 
       if (airport = 3)
          token_airport = 'SJC'
-         airport_taz   = '434'
+         airport_taz_1 = '434'
+         airport_pct_1 = '1.0'
+
+         ; no diversions
+         airport_taz_2 = '1'
+         airport_pct_2 = '0.0'
+         airport_taz_3 = '1'
+         airport_pct_3 = '0.0'
+         airport_taz_4 = '1'
+         airport_pct_4 = '0.0'
       endif
 
       loop toFrom = 1,2
@@ -144,7 +239,7 @@ loop fYear = 1,7
             ; read 1 record from DBI[2]
             x = DBIReadNext(2,1)
 
-            print list=x, DI.2.ORIG, DI.2.DEST, RI.ORIG, RI.DEST
+            ; print list=x, DI.2.ORIG, DI.2.DEST, RI.ORIG, RI.DEST
 
             IF (DI.2.ORIG != RI.ORIG) ABORT MSG = "MISMATCH ORIG records in 2007 vs 2035b Gosling DBF Input"
             IF (DI.2.DEST != RI.DEST) ABORT MSG = "MISMATCH DEST records in 2007 vs 2035b Gosling DBF Input"
@@ -258,342 +353,348 @@ loop fYear = 1,7
 
       endloop ; toFrom
 
-      ; ----------------------------------------------------------------------------------------------------------------
-      ; STEP 2
-      ; These DBFs are then converted into Cube matrices, with optional variants accounting for airport closures and
-      ; diverting trips to alternative airports for Horizon Future scenarios.  
-      ; ----------------------------------------------------------------------------------------------------------------
-      run pgm = matrix
-         
-         filei ZDATI[1] = .\GoslingScaled\@token_year@_to@token_airport@.dbf,   Z=ORIG
-         filei ZDATI[2] = .\GoslingScaled\@token_year@_from@token_airport@.dbf, Z=DEST
+      loop timeperiod = 1,5
+         if (timeperiod = 1) token_tp = 'EA'
+         if (timeperiod = 2) token_tp = 'AM'
+         if (timeperiod = 3) token_tp = 'MD'
+         if (timeperiod = 4) token_tp = 'PM'
+         if (timeperiod = 5) token_tp = 'EV'
 
-         fileo mato[1] = @token_year@_to@token_airport@.tpp, mo = 1-90, name = 
-            EA_Escort_DA,EA_Escort_S2,EA_Escort_S3,EA_Park_DA,EA_Park_S2,EA_Park_S3,EA_Rent_DA,EA_Rent_S2,EA_Rent_S3,EA_Taxi_DA,EA_Taxi_S2,EA_Taxi_S3,EA_Limo_DA,EA_Limo_S2,EA_Limo_S3,EA_Van_S3,EA_Hotel_S3,EA_Chart_S3,
-            AM_Escort_DA,AM_Escort_S2,AM_Escort_S3,AM_Park_DA,AM_Park_S2,AM_Park_S3,AM_Rent_DA,AM_Rent_S2,AM_Rent_S3,AM_Taxi_DA,AM_Taxi_S2,AM_Taxi_S3,AM_Limo_DA,AM_Limo_S2,AM_Limo_S3,AM_Van_S3,AM_Hotel_S3,AM_Chart_S3,
-            MD_Escort_DA,MD_Escort_S2,MD_Escort_S3,MD_Park_DA,MD_Park_S2,MD_Park_S3,MD_Rent_DA,MD_Rent_S2,MD_Rent_S3,MD_Taxi_DA,MD_Taxi_S2,MD_Taxi_S3,MD_Limo_DA,MD_Limo_S2,MD_Limo_S3,MD_Van_S3,MD_Hotel_S3,MD_Chart_S3,
-            PM_Escort_DA,PM_Escort_S2,PM_Escort_S3,PM_Park_DA,PM_Park_S2,PM_Park_S3,PM_Rent_DA,PM_Rent_S2,PM_Rent_S3,PM_Taxi_DA,PM_Taxi_S2,PM_Taxi_S3,PM_Limo_DA,PM_Limo_S2,PM_Limo_S3,PM_Van_S3,PM_Hotel_S3,PM_Chart_S3,
-            EV_Escort_DA,EV_Escort_S2,EV_Escort_S3,EV_Park_DA,EV_Park_S2,EV_Park_S3,EV_Rent_DA,EV_Rent_S2,EV_Rent_S3,EV_Taxi_DA,EV_Taxi_S2,EV_Taxi_S3,EV_Limo_DA,EV_Limo_S2,EV_Limo_S3,EV_Van_S3,EV_Hotel_S3,EV_Chart_S3
+         ; ----------------------------------------------------------------------------------------------------------------
+         ; STEP 2
+         ; These DBFs are then converted into Cube matrices, with optional variants accounting for airport closures and
+         ; diverting trips to alternative airports for Horizon Future scenarios.  
+         ; ----------------------------------------------------------------------------------------------------------------
+         run pgm = matrix
+            
+            filei ZDATI[1] = .\GoslingScaled\@token_year@_to@token_airport@.dbf,   Z=ORIG
+            filei ZDATI[2] = .\GoslingScaled\@token_year@_from@token_airport@.dbf, Z=DEST
+   
+            fileo mato[1] = closures_@token_closures@\intermediate\@token_year@_to@token_airport@_@token_tp@.tpp, mo = 1-18, name = 
+               @token_tp@_Escort_DA,@token_tp@_Escort_S2,@token_tp@_Escort_S3,
+               @token_tp@_Park_DA,  @token_tp@_Park_S2,  @token_tp@_Park_S3,
+               @token_tp@_Rent_DA,  @token_tp@_Rent_S2,  @token_tp@_Rent_S3,
+               @token_tp@_Taxi_DA,  @token_tp@_Taxi_S2,  @token_tp@_Taxi_S3,
+               @token_tp@_Limo_DA,  @token_tp@_Limo_S2,  @token_tp@_Limo_S3,
+               @token_tp@_Van_S3,
+               @token_tp@_Hotel_S3,
+               @token_tp@_Chart_S3
 
-         ; note this is the transpose
-         fileo mato[2] = @token_year@_from@token_airport@_t.tpp, mo = 101-190, name = 
-            EA_Escort_DA,EA_Escort_S2,EA_Escort_S3,EA_Park_DA,EA_Park_S2,EA_Park_S3,EA_Rent_DA,EA_Rent_S2,EA_Rent_S3,EA_Taxi_DA,EA_Taxi_S2,EA_Taxi_S3,EA_Limo_DA,EA_Limo_S2,EA_Limo_S3,EA_Van_S3,EA_Hotel_S3,EA_Chart_S3,
-            AM_Escort_DA,AM_Escort_S2,AM_Escort_S3,AM_Park_DA,AM_Park_S2,AM_Park_S3,AM_Rent_DA,AM_Rent_S2,AM_Rent_S3,AM_Taxi_DA,AM_Taxi_S2,AM_Taxi_S3,AM_Limo_DA,AM_Limo_S2,AM_Limo_S3,AM_Van_S3,AM_Hotel_S3,AM_Chart_S3,
-            MD_Escort_DA,MD_Escort_S2,MD_Escort_S3,MD_Park_DA,MD_Park_S2,MD_Park_S3,MD_Rent_DA,MD_Rent_S2,MD_Rent_S3,MD_Taxi_DA,MD_Taxi_S2,MD_Taxi_S3,MD_Limo_DA,MD_Limo_S2,MD_Limo_S3,MD_Van_S3,MD_Hotel_S3,MD_Chart_S3,
-            PM_Escort_DA,PM_Escort_S2,PM_Escort_S3,PM_Park_DA,PM_Park_S2,PM_Park_S3,PM_Rent_DA,PM_Rent_S2,PM_Rent_S3,PM_Taxi_DA,PM_Taxi_S2,PM_Taxi_S3,PM_Limo_DA,PM_Limo_S2,PM_Limo_S3,PM_Van_S3,PM_Hotel_S3,PM_Chart_S3,
-            EV_Escort_DA,EV_Escort_S2,EV_Escort_S3,EV_Park_DA,EV_Park_S2,EV_Park_S3,EV_Rent_DA,EV_Rent_S2,EV_Rent_S3,EV_Taxi_DA,EV_Taxi_S2,EV_Taxi_S3,EV_Limo_DA,EV_Limo_S2,EV_Limo_S3,EV_Van_S3,EV_Hotel_S3,EV_Chart_S3
+            ; note this is the transpose
+            fileo mato[2] = closures_@token_closures@\intermediate\@token_year@_from@token_airport@_t_@token_tp@.tpp, mo = 101-118, name = 
+               @token_tp@_Escort_DA,@token_tp@_Escort_S2,@token_tp@_Escort_S3,
+               @token_tp@_Park_DA,  @token_tp@_Park_S2,  @token_tp@_Park_S3,
+               @token_tp@_Rent_DA,  @token_tp@_Rent_S2,  @token_tp@_Rent_S3,
+               @token_tp@_Taxi_DA,  @token_tp@_Taxi_S2,  @token_tp@_Taxi_S3,
+               @token_tp@_Limo_DA,  @token_tp@_Limo_S2,  @token_tp@_Limo_S3,
+               @token_tp@_Van_S3,
+               @token_tp@_Hotel_S3,
+               @token_tp@_Chart_S3
 
-         zones = 1454
+            zones = 1475
+   
+            ; ======== destination is @airport_taz_1@ ============
+   
+            ; Escort
+            MW[ 21] = ZI.1.@token_tp@_ES_DA*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[ 22] = ZI.1.@token_tp@_ES_S2*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[ 23] = ZI.1.@token_tp@_ES_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            ; Park
+            MW[ 24] = ZI.1.@token_tp@_PK_DA*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[ 25] = ZI.1.@token_tp@_PK_S2*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[ 26] = ZI.1.@token_tp@_PK_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            ; Rent
+            MW[ 27] = ZI.1.@token_tp@_RN_DA*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[ 28] = ZI.1.@token_tp@_RN_S2*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[ 29] = ZI.1.@token_tp@_RN_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            ; Taxi
+            MW[ 30] = ZI.1.@token_tp@_TX_DA*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[ 31] = ZI.1.@token_tp@_TX_S2*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[ 32] = ZI.1.@token_tp@_TX_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            ; Limo
+            MW[ 33] = ZI.1.@token_tp@_LI_DA*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[ 34] = ZI.1.@token_tp@_LI_S2*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[ 35] = ZI.1.@token_tp@_LI_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            ; Van
+            MW[ 36] = ZI.1.@token_tp@_VN_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            ; Hotel
+            MW[ 37] = ZI.1.@token_tp@_HT_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            ; Charter
+            MW[ 38] = ZI.1.@token_tp@_CH_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+   
+            ; ======== destination is @airport_taz_2@ ============
 
-         ; destination is @airport_taz@
+            ; Escort
+            MW[ 41] = ZI.1.@token_tp@_ES_DA*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[ 42] = ZI.1.@token_tp@_ES_S2*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[ 43] = ZI.1.@token_tp@_ES_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            ; Park
+            MW[ 44] = ZI.1.@token_tp@_PK_DA*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[ 45] = ZI.1.@token_tp@_PK_S2*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[ 46] = ZI.1.@token_tp@_PK_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            ; Rent
+            MW[ 47] = ZI.1.@token_tp@_RN_DA*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[ 48] = ZI.1.@token_tp@_RN_S2*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[ 49] = ZI.1.@token_tp@_RN_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            ; Taxi
+            MW[ 40] = ZI.1.@token_tp@_TX_DA*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[ 41] = ZI.1.@token_tp@_TX_S2*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[ 42] = ZI.1.@token_tp@_TX_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            ; Limo
+            MW[ 43] = ZI.1.@token_tp@_LI_DA*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[ 44] = ZI.1.@token_tp@_LI_S2*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[ 45] = ZI.1.@token_tp@_LI_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            ; Van
+            MW[ 46] = ZI.1.@token_tp@_VN_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            ; Hotel
+            MW[ 47] = ZI.1.@token_tp@_HT_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            ; Charter
+            MW[ 48] = ZI.1.@token_tp@_CH_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
 
-         ; ==================== EA ====================
-         ; Escort
-         MW[  1] = ZI.1.EA_ES_DA INCLUDE=@airport_taz@
-         MW[  2] = ZI.1.EA_ES_S2 INCLUDE=@airport_taz@
-         MW[  3] = ZI.1.EA_ES_S3 INCLUDE=@airport_taz@
-         ; Park
-         MW[  4] = ZI.1.EA_PK_DA INCLUDE=@airport_taz@
-         MW[  5] = ZI.1.EA_PK_S2 INCLUDE=@airport_taz@
-         MW[  6] = ZI.1.EA_PK_S3 INCLUDE=@airport_taz@
-         ; Rent
-         MW[  7] = ZI.1.EA_RN_DA INCLUDE=@airport_taz@
-         MW[  8] = ZI.1.EA_RN_S2 INCLUDE=@airport_taz@
-         MW[  9] = ZI.1.EA_RN_S3 INCLUDE=@airport_taz@
-         ; Taxi
-         MW[ 10] = ZI.1.EA_TX_DA INCLUDE=@airport_taz@
-         MW[ 11] = ZI.1.EA_TX_S2 INCLUDE=@airport_taz@
-         MW[ 12] = ZI.1.EA_TX_S3 INCLUDE=@airport_taz@
-         ; Limo
-         MW[ 13] = ZI.1.EA_LI_DA INCLUDE=@airport_taz@
-         MW[ 14] = ZI.1.EA_LI_S2 INCLUDE=@airport_taz@
-         MW[ 15] = ZI.1.EA_LI_S3 INCLUDE=@airport_taz@
-         ; Van
-         MW[ 16] = ZI.1.EA_VN_S3 INCLUDE=@airport_taz@
-         ; Hotel
-         MW[ 17] = ZI.1.EA_HT_S3 INCLUDE=@airport_taz@
-         ; Charter
-         MW[ 18] = ZI.1.EA_CH_S3 INCLUDE=@airport_taz@
+            ; ======== destination is @airport_taz_3@ ============
 
-         ; ==================== AM ====================
-         ; Escort
-         MW[ 19] = ZI.1.AM_ES_DA INCLUDE=@airport_taz@
-         MW[ 20] = ZI.1.AM_ES_S2 INCLUDE=@airport_taz@
-         MW[ 21] = ZI.1.AM_ES_S3 INCLUDE=@airport_taz@
-         ; Park
-         MW[ 22] = ZI.1.AM_PK_DA INCLUDE=@airport_taz@
-         MW[ 23] = ZI.1.AM_PK_S2 INCLUDE=@airport_taz@
-         MW[ 24] = ZI.1.AM_PK_S3 INCLUDE=@airport_taz@
-         ; Rent
-         MW[ 25] = ZI.1.AM_RN_DA INCLUDE=@airport_taz@
-         MW[ 26] = ZI.1.AM_RN_S2 INCLUDE=@airport_taz@
-         MW[ 27] = ZI.1.AM_RN_S3 INCLUDE=@airport_taz@
-         ; Taxi
-         MW[ 28] = ZI.1.AM_TX_DA INCLUDE=@airport_taz@
-         MW[ 29] = ZI.1.AM_TX_S2 INCLUDE=@airport_taz@
-         MW[ 30] = ZI.1.AM_TX_S3 INCLUDE=@airport_taz@
-         ; Limo
-         MW[ 31] = ZI.1.AM_LI_DA INCLUDE=@airport_taz@
-         MW[ 32] = ZI.1.AM_LI_S2 INCLUDE=@airport_taz@
-         MW[ 33] = ZI.1.AM_LI_S3 INCLUDE=@airport_taz@
-         ; Van
-         MW[ 34] = ZI.1.AM_VN_S3 INCLUDE=@airport_taz@
-         ; Hotel
-         MW[ 35] = ZI.1.AM_HT_S3 INCLUDE=@airport_taz@
-         ; Charter
-         MW[ 36] = ZI.1.AM_CH_S3 INCLUDE=@airport_taz@
+            ; Escort
+            MW[ 61] = ZI.1.@token_tp@_ES_DA*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[ 62] = ZI.1.@token_tp@_ES_S2*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[ 63] = ZI.1.@token_tp@_ES_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            ; Park
+            MW[ 64] = ZI.1.@token_tp@_PK_DA*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[ 65] = ZI.1.@token_tp@_PK_S2*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[ 66] = ZI.1.@token_tp@_PK_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            ; Rent
+            MW[ 67] = ZI.1.@token_tp@_RN_DA*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[ 68] = ZI.1.@token_tp@_RN_S2*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[ 69] = ZI.1.@token_tp@_RN_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            ; Taxi
+            MW[ 70] = ZI.1.@token_tp@_TX_DA*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[ 71] = ZI.1.@token_tp@_TX_S2*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[ 72] = ZI.1.@token_tp@_TX_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            ; Limo
+            MW[ 73] = ZI.1.@token_tp@_LI_DA*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[ 74] = ZI.1.@token_tp@_LI_S2*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[ 75] = ZI.1.@token_tp@_LI_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            ; Van
+            MW[ 76] = ZI.1.@token_tp@_VN_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            ; Hotel
+            MW[ 77] = ZI.1.@token_tp@_HT_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            ; Charter
+            MW[ 78] = ZI.1.@token_tp@_CH_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+           
+            ; ======== destination is @airport_taz_4@ ============
 
-         ; ==================== MD ====================
-         ; Escort
-         MW[ 37] = ZI.1.MD_ES_DA INCLUDE=@airport_taz@
-         MW[ 38] = ZI.1.MD_ES_S2 INCLUDE=@airport_taz@
-         MW[ 39] = ZI.1.MD_ES_S3 INCLUDE=@airport_taz@
-         ; Park
-         MW[ 40] = ZI.1.MD_PK_DA INCLUDE=@airport_taz@
-         MW[ 41] = ZI.1.MD_PK_S2 INCLUDE=@airport_taz@
-         MW[ 42] = ZI.1.MD_PK_S3 INCLUDE=@airport_taz@
-         ; Rent
-         MW[ 43] = ZI.1.MD_RN_DA INCLUDE=@airport_taz@
-         MW[ 44] = ZI.1.MD_RN_S2 INCLUDE=@airport_taz@
-         MW[ 45] = ZI.1.MD_RN_S3 INCLUDE=@airport_taz@
-         ; Taxi
-         MW[ 46] = ZI.1.MD_TX_DA INCLUDE=@airport_taz@
-         MW[ 47] = ZI.1.MD_TX_S2 INCLUDE=@airport_taz@
-         MW[ 48] = ZI.1.MD_TX_S3 INCLUDE=@airport_taz@
-         ; Limo
-         MW[ 49] = ZI.1.MD_LI_DA INCLUDE=@airport_taz@
-         MW[ 50] = ZI.1.MD_LI_S2 INCLUDE=@airport_taz@
-         MW[ 51] = ZI.1.MD_LI_S3 INCLUDE=@airport_taz@
-         ; Van
-         MW[ 52] = ZI.1.MD_VN_S3 INCLUDE=@airport_taz@
-         ; Hotel
-         MW[ 53] = ZI.1.MD_HT_S3 INCLUDE=@airport_taz@
-         ; Charter
-         MW[ 54] = ZI.1.MD_CH_S3 INCLUDE=@airport_taz@
+            ; Escort
+            MW[ 81] = ZI.1.@token_tp@_ES_DA*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[ 82] = ZI.1.@token_tp@_ES_S2*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[ 83] = ZI.1.@token_tp@_ES_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            ; Park
+            MW[ 84] = ZI.1.@token_tp@_PK_DA*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[ 85] = ZI.1.@token_tp@_PK_S2*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[ 86] = ZI.1.@token_tp@_PK_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            ; Rent
+            MW[ 87] = ZI.1.@token_tp@_RN_DA*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[ 88] = ZI.1.@token_tp@_RN_S2*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[ 89] = ZI.1.@token_tp@_RN_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            ; Taxi
+            MW[ 90] = ZI.1.@token_tp@_TX_DA*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[ 91] = ZI.1.@token_tp@_TX_S2*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[ 92] = ZI.1.@token_tp@_TX_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            ; Limo
+            MW[ 93] = ZI.1.@token_tp@_LI_DA*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[ 94] = ZI.1.@token_tp@_LI_S2*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[ 95] = ZI.1.@token_tp@_LI_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            ; Van
+            MW[ 96] = ZI.1.@token_tp@_VN_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            ; Hotel
+            MW[ 97] = ZI.1.@token_tp@_HT_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            ; Charter
+            MW[ 98] = ZI.1.@token_tp@_CH_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
 
-         ; ==================== PM ====================
-         ; Escort
-         MW[ 55] = ZI.1.PM_ES_DA INCLUDE=@airport_taz@
-         MW[ 56] = ZI.1.PM_ES_S2 INCLUDE=@airport_taz@
-         MW[ 57] = ZI.1.PM_ES_S3 INCLUDE=@airport_taz@
-         ; Park
-         MW[ 58] = ZI.1.PM_PK_DA INCLUDE=@airport_taz@
-         MW[ 59] = ZI.1.PM_PK_S2 INCLUDE=@airport_taz@
-         MW[ 60] = ZI.1.PM_PK_S3 INCLUDE=@airport_taz@
-         ; Rent
-         MW[ 61] = ZI.1.PM_RN_DA INCLUDE=@airport_taz@
-         MW[ 62] = ZI.1.PM_RN_S2 INCLUDE=@airport_taz@
-         MW[ 63] = ZI.1.PM_RN_S3 INCLUDE=@airport_taz@
-         ; Taxi
-         MW[ 64] = ZI.1.PM_TX_DA INCLUDE=@airport_taz@
-         MW[ 65] = ZI.1.PM_TX_S2 INCLUDE=@airport_taz@
-         MW[ 66] = ZI.1.PM_TX_S3 INCLUDE=@airport_taz@
-         ; Limo
-         MW[ 67] = ZI.1.PM_LI_DA INCLUDE=@airport_taz@
-         MW[ 68] = ZI.1.PM_LI_S2 INCLUDE=@airport_taz@
-         MW[ 69] = ZI.1.PM_LI_S3 INCLUDE=@airport_taz@
-         ; Van
-         MW[ 70] = ZI.1.PM_VN_S3 INCLUDE=@airport_taz@
-         ; Hotel
-         MW[ 71] = ZI.1.PM_HT_S3 INCLUDE=@airport_taz@
-         ; Charter
-         MW[ 72] = ZI.1.PM_CH_S3 INCLUDE=@airport_taz@
+            ; put it together
+            MW[  1] = MW[ 21] + MW[ 41] + MW[ 61] + MW[ 81]
+            MW[  2] = MW[ 22] + MW[ 42] + MW[ 62] + MW[ 82]
+            MW[  3] = MW[ 23] + MW[ 43] + MW[ 63] + MW[ 83]
+            MW[  4] = MW[ 24] + MW[ 44] + MW[ 64] + MW[ 84]
+            MW[  5] = MW[ 25] + MW[ 45] + MW[ 65] + MW[ 85]
+            MW[  6] = MW[ 26] + MW[ 46] + MW[ 66] + MW[ 86]
+            MW[  7] = MW[ 27] + MW[ 47] + MW[ 67] + MW[ 87]
+            MW[  8] = MW[ 28] + MW[ 48] + MW[ 68] + MW[ 88]
+            MW[  9] = MW[ 29] + MW[ 49] + MW[ 69] + MW[ 89]
+            MW[ 10] = MW[ 30] + MW[ 50] + MW[ 70] + MW[ 90]
+            MW[ 11] = MW[ 31] + MW[ 51] + MW[ 71] + MW[ 91]
+            MW[ 12] = MW[ 32] + MW[ 52] + MW[ 72] + MW[ 92]
+            MW[ 13] = MW[ 33] + MW[ 53] + MW[ 73] + MW[ 93]
+            MW[ 14] = MW[ 34] + MW[ 54] + MW[ 74] + MW[ 94]
+            MW[ 15] = MW[ 35] + MW[ 55] + MW[ 75] + MW[ 95]
+            MW[ 16] = MW[ 36] + MW[ 56] + MW[ 76] + MW[ 96]
+            MW[ 17] = MW[ 37] + MW[ 57] + MW[ 77] + MW[ 97]
+            MW[ 18] = MW[ 38] + MW[ 58] + MW[ 78] + MW[ 98]
 
-         ; ==================== EV ====================
-         ; Escort
-         MW[ 73] = ZI.1.EV_ES_DA INCLUDE=@airport_taz@
-         MW[ 74] = ZI.1.EV_ES_S2 INCLUDE=@airport_taz@
-         MW[ 75] = ZI.1.EV_ES_S3 INCLUDE=@airport_taz@
-         ; Park
-         MW[ 76] = ZI.1.EV_PK_DA INCLUDE=@airport_taz@
-         MW[ 77] = ZI.1.EV_PK_S2 INCLUDE=@airport_taz@
-         MW[ 78] = ZI.1.EV_PK_S3 INCLUDE=@airport_taz@
-         ; Rent
-         MW[ 79] = ZI.1.EV_RN_DA INCLUDE=@airport_taz@
-         MW[ 80] = ZI.1.EV_RN_S2 INCLUDE=@airport_taz@
-         MW[ 81] = ZI.1.EV_RN_S3 INCLUDE=@airport_taz@
-         ; Taxi
-         MW[ 82] = ZI.1.EV_TX_DA INCLUDE=@airport_taz@
-         MW[ 83] = ZI.1.EV_TX_S2 INCLUDE=@airport_taz@
-         MW[ 84] = ZI.1.EV_TX_S3 INCLUDE=@airport_taz@
-         ; Limo
-         MW[ 85] = ZI.1.EV_LI_DA INCLUDE=@airport_taz@
-         MW[ 86] = ZI.1.EV_LI_S2 INCLUDE=@airport_taz@
-         MW[ 87] = ZI.1.EV_LI_S3 INCLUDE=@airport_taz@
-         ; Van
-         MW[ 88] = ZI.1.EV_VN_S3 INCLUDE=@airport_taz@
-         ; Hotel
-         MW[ 89] = ZI.1.EV_HT_S3 INCLUDE=@airport_taz@
-         ; Charter
-         MW[ 90] = ZI.1.EV_CH_S3 INCLUDE=@airport_taz@
+            ; ======== destination is @airport_taz_1@ ============
+   
+            ; Escort
+            MW[121] = ZI.2.@token_tp@_ES_DA*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[122] = ZI.2.@token_tp@_ES_S2*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[123] = ZI.2.@token_tp@_ES_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            ; Park
+            MW[124] = ZI.2.@token_tp@_PK_DA*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[125] = ZI.2.@token_tp@_PK_S2*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[126] = ZI.2.@token_tp@_PK_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            ; Rent
+            MW[127] = ZI.2.@token_tp@_RN_DA*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[128] = ZI.2.@token_tp@_RN_S2*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[129] = ZI.2.@token_tp@_RN_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            ; Taxi
+            MW[130] = ZI.2.@token_tp@_TX_DA*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[131] = ZI.2.@token_tp@_TX_S2*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[132] = ZI.2.@token_tp@_TX_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            ; Limo
+            MW[133] = ZI.2.@token_tp@_LI_DA*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[134] = ZI.2.@token_tp@_LI_S2*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            MW[135] = ZI.2.@token_tp@_LI_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            ; Van
+            MW[136] = ZI.2.@token_tp@_VN_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            ; Hotel
+            MW[137] = ZI.2.@token_tp@_HT_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+            ; Charter
+            MW[138] = ZI.2.@token_tp@_CH_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
+   
+            ; ======== destination is @airport_taz_2@ ============
 
-         ; ==================== EA ====================
-         ; Escort
-         MW[101] = ZI.2.EA_ES_DA INCLUDE=@airport_taz@
-         MW[102] = ZI.2.EA_ES_S2 INCLUDE=@airport_taz@
-         MW[103] = ZI.2.EA_ES_S3 INCLUDE=@airport_taz@
-         ; Park
-         MW[104] = ZI.2.EA_PK_DA INCLUDE=@airport_taz@
-         MW[105] = ZI.2.EA_PK_S2 INCLUDE=@airport_taz@
-         MW[106] = ZI.2.EA_PK_S3 INCLUDE=@airport_taz@
-         ; Rent
-         MW[107] = ZI.2.EA_RN_DA INCLUDE=@airport_taz@
-         MW[108] = ZI.2.EA_RN_S2 INCLUDE=@airport_taz@
-         MW[109] = ZI.2.EA_RN_S3 INCLUDE=@airport_taz@
-         ; Taxi
-         MW[110] = ZI.2.EA_TX_DA INCLUDE=@airport_taz@
-         MW[111] = ZI.2.EA_TX_S2 INCLUDE=@airport_taz@
-         MW[112] = ZI.2.EA_TX_S3 INCLUDE=@airport_taz@
-         ; Limo
-         MW[113] = ZI.2.EA_LI_DA INCLUDE=@airport_taz@
-         MW[114] = ZI.2.EA_LI_S2 INCLUDE=@airport_taz@
-         MW[115] = ZI.2.EA_LI_S3 INCLUDE=@airport_taz@
-         ; Van
-         MW[116] = ZI.2.EA_VN_S3 INCLUDE=@airport_taz@
-         ; Hotel
-         MW[117] = ZI.2.EA_HT_S3 INCLUDE=@airport_taz@
-         ; Charter
-         MW[118] = ZI.2.EA_CH_S3 INCLUDE=@airport_taz@
+            ; Escort
+            MW[141] = ZI.2.@token_tp@_ES_DA*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[142] = ZI.2.@token_tp@_ES_S2*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[143] = ZI.2.@token_tp@_ES_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            ; Park
+            MW[144] = ZI.2.@token_tp@_PK_DA*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[145] = ZI.2.@token_tp@_PK_S2*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[146] = ZI.2.@token_tp@_PK_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            ; Rent
+            MW[147] = ZI.2.@token_tp@_RN_DA*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[148] = ZI.2.@token_tp@_RN_S2*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[149] = ZI.2.@token_tp@_RN_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            ; Taxi
+            MW[140] = ZI.2.@token_tp@_TX_DA*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[141] = ZI.2.@token_tp@_TX_S2*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[142] = ZI.2.@token_tp@_TX_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            ; Limo
+            MW[143] = ZI.2.@token_tp@_LI_DA*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[144] = ZI.2.@token_tp@_LI_S2*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            MW[145] = ZI.2.@token_tp@_LI_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            ; Van
+            MW[146] = ZI.2.@token_tp@_VN_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            ; Hotel
+            MW[147] = ZI.2.@token_tp@_HT_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
+            ; Charter
+            MW[148] = ZI.2.@token_tp@_CH_S3*@airport_pct_2@ INCLUDE=@airport_taz_2@
 
-         ; ==================== AM ====================
-         ; Escort
-         MW[119] = ZI.2.AM_ES_DA INCLUDE=@airport_taz@
-         MW[120] = ZI.2.AM_ES_S2 INCLUDE=@airport_taz@
-         MW[121] = ZI.2.AM_ES_S3 INCLUDE=@airport_taz@
-         ; Park
-         MW[122] = ZI.2.AM_PK_DA INCLUDE=@airport_taz@
-         MW[123] = ZI.2.AM_PK_S2 INCLUDE=@airport_taz@
-         MW[124] = ZI.2.AM_PK_S3 INCLUDE=@airport_taz@
-         ; Rent
-         MW[125] = ZI.2.AM_RN_DA INCLUDE=@airport_taz@
-         MW[126] = ZI.2.AM_RN_S2 INCLUDE=@airport_taz@
-         MW[127] = ZI.2.AM_RN_S3 INCLUDE=@airport_taz@
-         ; Taxi
-         MW[128] = ZI.2.AM_TX_DA INCLUDE=@airport_taz@
-         MW[129] = ZI.2.AM_TX_S2 INCLUDE=@airport_taz@
-         MW[130] = ZI.2.AM_TX_S3 INCLUDE=@airport_taz@
-         ; Limo
-         MW[131] = ZI.2.AM_LI_DA INCLUDE=@airport_taz@
-         MW[132] = ZI.2.AM_LI_S2 INCLUDE=@airport_taz@
-         MW[133] = ZI.2.AM_LI_S3 INCLUDE=@airport_taz@
-         ; Van
-         MW[134] = ZI.2.AM_VN_S3 INCLUDE=@airport_taz@
-         ; Hotel
-         MW[135] = ZI.2.AM_HT_S3 INCLUDE=@airport_taz@
-         ; Charter
-         MW[136] = ZI.2.AM_CH_S3 INCLUDE=@airport_taz@
+            ; ======== destination is @airport_taz_3@ ============
 
-         ; ==================== MD ====================
-         ; Escort
-         MW[137] = ZI.2.MD_ES_DA INCLUDE=@airport_taz@
-         MW[138] = ZI.2.MD_ES_S2 INCLUDE=@airport_taz@
-         MW[139] = ZI.2.MD_ES_S3 INCLUDE=@airport_taz@
-         ; Park
-         MW[140] = ZI.2.MD_PK_DA INCLUDE=@airport_taz@
-         MW[141] = ZI.2.MD_PK_S2 INCLUDE=@airport_taz@
-         MW[142] = ZI.2.MD_PK_S3 INCLUDE=@airport_taz@
-         ; Rent
-         MW[143] = ZI.2.MD_RN_DA INCLUDE=@airport_taz@
-         MW[144] = ZI.2.MD_RN_S2 INCLUDE=@airport_taz@
-         MW[145] = ZI.2.MD_RN_S3 INCLUDE=@airport_taz@
-         ; Taxi
-         MW[146] = ZI.2.MD_TX_DA INCLUDE=@airport_taz@
-         MW[147] = ZI.2.MD_TX_S2 INCLUDE=@airport_taz@
-         MW[148] = ZI.2.MD_TX_S3 INCLUDE=@airport_taz@
-         ; Limo
-         MW[149] = ZI.2.MD_LI_DA INCLUDE=@airport_taz@
-         MW[150] = ZI.2.MD_LI_S2 INCLUDE=@airport_taz@
-         MW[151] = ZI.2.MD_LI_S3 INCLUDE=@airport_taz@
-         ; Van
-         MW[152] = ZI.2.MD_VN_S3 INCLUDE=@airport_taz@
-         ; Hotel
-         MW[153] = ZI.2.MD_HT_S3 INCLUDE=@airport_taz@
-         ; Charter
-         MW[154] = ZI.2.MD_CH_S3 INCLUDE=@airport_taz@
+            ; Escort
+            MW[161] = ZI.2.@token_tp@_ES_DA*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[162] = ZI.2.@token_tp@_ES_S2*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[163] = ZI.2.@token_tp@_ES_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            ; Park
+            MW[164] = ZI.2.@token_tp@_PK_DA*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[165] = ZI.2.@token_tp@_PK_S2*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[166] = ZI.2.@token_tp@_PK_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            ; Rent
+            MW[167] = ZI.2.@token_tp@_RN_DA*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[168] = ZI.2.@token_tp@_RN_S2*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[169] = ZI.2.@token_tp@_RN_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            ; Taxi
+            MW[170] = ZI.2.@token_tp@_TX_DA*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[171] = ZI.2.@token_tp@_TX_S2*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[172] = ZI.2.@token_tp@_TX_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            ; Limo
+            MW[173] = ZI.2.@token_tp@_LI_DA*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[174] = ZI.2.@token_tp@_LI_S2*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            MW[175] = ZI.2.@token_tp@_LI_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            ; Van
+            MW[176] = ZI.2.@token_tp@_VN_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            ; Hotel
+            MW[177] = ZI.2.@token_tp@_HT_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+            ; Charter
+            MW[178] = ZI.2.@token_tp@_CH_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
+           
+            ; ======== destination is @airport_taz_4@ ============
 
-         ; ==================== PM ====================
-         ; Escort
-         MW[155] = ZI.2.PM_ES_DA INCLUDE=@airport_taz@
-         MW[156] = ZI.2.PM_ES_S2 INCLUDE=@airport_taz@
-         MW[157] = ZI.2.PM_ES_S3 INCLUDE=@airport_taz@
-         ; Park
-         MW[158] = ZI.2.PM_PK_DA INCLUDE=@airport_taz@
-         MW[159] = ZI.2.PM_PK_S2 INCLUDE=@airport_taz@
-         MW[160] = ZI.2.PM_PK_S3 INCLUDE=@airport_taz@
-         ; Rent
-         MW[161] = ZI.2.PM_RN_DA INCLUDE=@airport_taz@
-         MW[162] = ZI.2.PM_RN_S2 INCLUDE=@airport_taz@
-         MW[163] = ZI.2.PM_RN_S3 INCLUDE=@airport_taz@
-         ; Taxi
-         MW[164] = ZI.2.PM_TX_DA INCLUDE=@airport_taz@
-         MW[165] = ZI.2.PM_TX_S2 INCLUDE=@airport_taz@
-         MW[166] = ZI.2.PM_TX_S3 INCLUDE=@airport_taz@
-         ; Limo
-         MW[167] = ZI.2.PM_LI_DA INCLUDE=@airport_taz@
-         MW[168] = ZI.2.PM_LI_S2 INCLUDE=@airport_taz@
-         MW[169] = ZI.2.PM_LI_S3 INCLUDE=@airport_taz@
-         ; Van
-         MW[170] = ZI.2.PM_VN_S3 INCLUDE=@airport_taz@
-         ; Hotel
-         MW[171] = ZI.2.PM_HT_S3 INCLUDE=@airport_taz@
-         ; Charter
-         MW[172] = ZI.2.PM_CH_S3 INCLUDE=@airport_taz@
+            ; Escort
+            MW[181] = ZI.2.@token_tp@_ES_DA*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[182] = ZI.2.@token_tp@_ES_S2*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[183] = ZI.2.@token_tp@_ES_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            ; Park
+            MW[184] = ZI.2.@token_tp@_PK_DA*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[185] = ZI.2.@token_tp@_PK_S2*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[186] = ZI.2.@token_tp@_PK_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            ; Rent
+            MW[187] = ZI.2.@token_tp@_RN_DA*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[188] = ZI.2.@token_tp@_RN_S2*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[189] = ZI.2.@token_tp@_RN_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            ; Taxi
+            MW[190] = ZI.2.@token_tp@_TX_DA*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[191] = ZI.2.@token_tp@_TX_S2*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[192] = ZI.2.@token_tp@_TX_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            ; Limo
+            MW[193] = ZI.2.@token_tp@_LI_DA*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[194] = ZI.2.@token_tp@_LI_S2*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            MW[195] = ZI.2.@token_tp@_LI_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            ; Van
+            MW[196] = ZI.2.@token_tp@_VN_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            ; Hotel
+            MW[197] = ZI.2.@token_tp@_HT_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
+            ; Charter
+            MW[198] = ZI.2.@token_tp@_CH_S3*@airport_pct_4@ INCLUDE=@airport_taz_4@
 
-         ; ==================== EV ====================
-         ; Escort
-         MW[173] = ZI.2.EV_ES_DA INCLUDE=@airport_taz@
-         MW[174] = ZI.2.EV_ES_S2 INCLUDE=@airport_taz@
-         MW[175] = ZI.2.EV_ES_S3 INCLUDE=@airport_taz@
-         ; Park
-         MW[176] = ZI.2.EV_PK_DA INCLUDE=@airport_taz@
-         MW[177] = ZI.2.EV_PK_S2 INCLUDE=@airport_taz@
-         MW[178] = ZI.2.EV_PK_S3 INCLUDE=@airport_taz@
-         ; Rent
-         MW[179] = ZI.2.EV_RN_DA INCLUDE=@airport_taz@
-         MW[180] = ZI.2.EV_RN_S2 INCLUDE=@airport_taz@
-         MW[181] = ZI.2.EV_RN_S3 INCLUDE=@airport_taz@
-         ; Taxi
-         MW[182] = ZI.2.EV_TX_DA INCLUDE=@airport_taz@
-         MW[183] = ZI.2.EV_TX_S2 INCLUDE=@airport_taz@
-         MW[184] = ZI.2.EV_TX_S3 INCLUDE=@airport_taz@
-         ; Limo
-         MW[185] = ZI.2.EV_LI_DA INCLUDE=@airport_taz@
-         MW[186] = ZI.2.EV_LI_S2 INCLUDE=@airport_taz@
-         MW[187] = ZI.2.EV_LI_S3 INCLUDE=@airport_taz@
-         ; Van
-         MW[188] = ZI.2.EV_VN_S3 INCLUDE=@airport_taz@
-         ; Hotel
-         MW[189] = ZI.2.EV_HT_S3 INCLUDE=@airport_taz@
-         ; Charter
-         MW[190] = ZI.2.EV_CH_S3 INCLUDE=@airport_taz@
-
-      endrun
+            ; put it together
+            MW[101] = MW[121] + MW[141] + MW[161] + MW[181]
+            MW[102] = MW[122] + MW[142] + MW[162] + MW[182]
+            MW[103] = MW[123] + MW[143] + MW[163] + MW[183]
+            MW[104] = MW[124] + MW[144] + MW[164] + MW[184]
+            MW[105] = MW[125] + MW[145] + MW[165] + MW[185]
+            MW[106] = MW[126] + MW[146] + MW[166] + MW[186]
+            MW[107] = MW[127] + MW[147] + MW[167] + MW[187]
+            MW[108] = MW[128] + MW[148] + MW[168] + MW[188]
+            MW[109] = MW[129] + MW[149] + MW[169] + MW[189]
+            MW[110] = MW[130] + MW[150] + MW[170] + MW[190]
+            MW[111] = MW[131] + MW[151] + MW[171] + MW[191]
+            MW[112] = MW[132] + MW[152] + MW[172] + MW[192]
+            MW[113] = MW[133] + MW[153] + MW[173] + MW[193]
+            MW[114] = MW[134] + MW[154] + MW[174] + MW[194]
+            MW[115] = MW[135] + MW[155] + MW[175] + MW[195]
+            MW[116] = MW[136] + MW[156] + MW[176] + MW[196]
+            MW[117] = MW[137] + MW[157] + MW[177] + MW[197]
+            MW[118] = MW[138] + MW[158] + MW[178] + MW[198]
+   
+         endrun
+   
+      endloop ; timeperiod
 
    endloop ; airport
 
-   ; ----------------------------------------------------------------------------------------------------------------
-   ; STEP 3  
-   ; Finally, a highway-assignment ready matrix file is created for each time-of-day interval.
-   ; ----------------------------------------------------------------------------------------------------------------
    loop timeperiod = 1,5
       if (timeperiod = 1) token_tp = 'EA'
       if (timeperiod = 2) token_tp = 'AM'
       if (timeperiod = 3) token_tp = 'MD'
-      if (timeperiod = 4) token_tp = 'MD'
-      if (timeperiod = 5) token_tp = 'PM'
+      if (timeperiod = 4) token_tp = 'PM'
+      if (timeperiod = 5) token_tp = 'EV'
+
+      ; ----------------------------------------------------------------------------------------------------------------
+      ; STEP 3  
+      ; Finally, a highway-assignment ready matrix file is created for each time-of-day interval.
+      ; ----------------------------------------------------------------------------------------------------------------
 
       run pgm = matrix
    
-         filei mati[1] = @token_year@_toSFO.tpp
-         filei mati[2] = @token_year@_fromSFO_t.tpp
+         filei mati[1] = closures_@token_closures@\intermediate\@token_year@_toSFO_@token_tp@.tpp
+         filei mati[2] = closures_@token_closures@\intermediate\@token_year@_fromSFO_t_@token_tp@.tpp
       
-         filei mati[3] = @token_year@_toOAK.tpp
-         filei mati[4] = @token_year@_fromOAK_t.tpp
+         filei mati[3] = closures_@token_closures@\intermediate\@token_year@_toOAK_@token_tp@.tpp
+         filei mati[4] = closures_@token_closures@\intermediate\@token_year@_fromOAK_t_@token_tp@.tpp
       
-         filei mati[5] = @token_year@_toSJC.tpp
-         filei mati[6] = @token_year@_fromSJC_t.tpp
+         filei mati[5] = closures_@token_closures@\intermediate\@token_year@_toSJC_@token_tp@.tpp
+         filei mati[6] = closures_@token_closures@\intermediate\@token_year@_fromSJC_t_@token_tp@.tpp
       
-         fileo mato[1] = @token_year@_tripsAirPax@token_tp@.tpp, mo =  1- 6, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
+         fileo mato[1] = closures_@token_closures@\@token_year@_tripsAirPax@token_tp@.tpp, mo =  1- 6, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
          
         ; combine trips by occupancy ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ;   - drive alone free
