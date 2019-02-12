@@ -120,28 +120,11 @@ if %ITER% GTR 0 (
 runtpp CTRAMP\scripts\assign\HwyAssign.job
 if ERRORLEVEL 2 goto done
 
-:: if we're running with transit crowding, need to run interim assignments
-:: if we're running with fast configuration, only need to run for iteration 0 and MAXITERATIONS
-:: YES I know it's ugly but windows CMD is ugly :(
-:trnAssign
+:trnAssignSkim
 :: copy a local version for easier restarting
-if "%TRNCONFIG%"=="FAST" (
-  if %ITER%==0 (
-    copy CTRAMP\scripts\skims\trnAssign.bat trnAssign_iter%ITER%.bat
-    call trnAssign_iter%ITER%.bat
-    if ERRORLEVEL 2 goto done
-  )
-  if %ITER%==%MAXITERATIONS% (
-    copy CTRAMP\scripts\skims\trnAssign.bat trnAssign_iter%ITER%.bat
-    call trnAssign_iter%ITER%.bat
-    if ERRORLEVEL 2 goto done
-  )
-)
-if "%TRNCONFIG%"=="STANDARD" (
-  copy CTRAMP\scripts\skims\trnAssign.bat trnAssign_iter%ITER%.bat
-  call trnAssign_iter%ITER%.bat
-  if ERRORLEVEL 2 goto done
-)
+copy CTRAMP\scripts\skims\trnAssign.bat trnAssign_iter%ITER%.bat
+call trnAssign_iter%ITER%.bat
+if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
