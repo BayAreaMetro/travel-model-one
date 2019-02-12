@@ -277,6 +277,15 @@ addDataFrame(transit_boards_summary, calib_sheets$modeldata, startRow=2, startCo
 source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=1:1), colIndex=17:17 )
 setCellValue(source_cell[[1]], paste("Source: ",outfile))
 
+# write out summary of boards/ODs for debugging
+debug_trip_summary <- group_by(transit_trip_results, acc, trn_submode, egr, first_trn_mode, orig_taz, dest_taz, num_boards) %>% 
+  summarise(num_trips=sum(num_participants)) %>%
+  mutate(num_trips=num_trips/SAMPLESHARE)
+# save it
+outfile <- file.path(OUTPUT_DIR, paste0("15_trip_mode_choice_trn_odtaz_boards_TM.csv"))
+write.table(debug_trip_summary, outfile, sep=",", row.names=FALSE)
+print(paste("Wrote",outfile))
+
 # add superdistrict for orig, dest
 taz_sd <- read.table(file = TAZ_SD_FILE, header=TRUE, sep=",")
 transit_trip_results <- left_join(transit_trip_results, 
@@ -288,8 +297,7 @@ transit_trip_results <- rbind(transit_trip_results,
                       data.frame(transit_trip_results) %>% mutate(simple_purpose="Total"), # all purposes
                       data.frame(transit_trip_results) %>% mutate(trn_submode="Total"),    # all submodes
                       data.frame(transit_trip_results) %>% mutate(simple_purpose="Total",  # both
-                                                                  trn_submode="Total")
-)
+                                                                  trn_submode="Total"))
 
 trn_trip_summary <- group_by(transit_trip_results, simple_purpose, trn_submode, orig_SD, dest_SD) %>% 
   summarise(num_trips=sum(num_participants)) %>%
