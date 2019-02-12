@@ -44,14 +44,15 @@
      run pgm = matrix
 
         ; read in the individual trips fixed format file from countTrips.py
-        filei mati[1] = main\trips@token_period@@suffix@.dat, pattern = ijm:v, fields = #1,2,0,3-26
+        filei mati[1] = main\trips@token_period@@suffix@.dat, pattern = ijm:v, fields = #1,2,0,3-32
 
         ; write out a matrix that combines the individual and joint trips for assignment
-        fileo mato[1] = main\trips@token_period@@suffix@.tpp, mo = 1-23, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
-                                                                     walk, bike, 
-                                                                     wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, 
+        fileo mato[1] = main\trips@token_period_no_zpv_@suffix@.tpp, mo = 1-29, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+                                                                     walk, bike,
+                                                                     wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
                                                                      drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
-                                                                     wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv 
+                                                                     wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
+                                                                     taxi, tnc_single, tnc_shared, da_av, s2_av, s3_av
         zones = @token_zones@
 
         mw[1]  = mi.1.1  ; - drive alone, no value toll
@@ -77,27 +78,36 @@
         mw[21] = mi.1.21 ; walk, express bus, drive
         mw[22] = mi.1.22 ; walk, heavy rail, drive
         mw[23] = mi.1.23 ; walk, commuter rail, drive
+        mw[24] = mi.1.24 ; taxi
+        mw[25] = mi.1.25 ; tnc, single-party
+        mw[26] = mi.1.26 ; tnc, shared
+        mw[27] = mi.1.27 ; drive alone, av
+        mw[28] = mi.1.28 ; shared ride 2, av
+        mw[29] = mi.1.29 ; shared ride 3+, av
      endrun
 
   endloop ; income loop
-  
+
   ; step four: combine the income-specific matrices
      run pgm = matrix
-  
-  			filei mati[1] = main\trips@token_period@inc1.tpp
-  			filei mati[2] = main\trips@token_period@inc2.tpp
-  			filei mati[3] = main\trips@token_period@inc3.tpp
-  			filei mati[4] = main\trips@token_period@inc4.tpp
-  			
+
+  			filei mati[1] = main\trips@token_period@_no_zpv_inc1.tpp
+  			filei mati[2] = main\trips@token_period@_no_zpv_inc2.tpp
+  			filei mati[3] = main\trips@token_period@_no_zpv_inc3.tpp
+  			filei mati[4] = main\trips@token_period@_no_zpv_inc4.tpp
+
   			 ; write out a matrix that combines the individual and joint trips for assignment
-        fileo mato[1] = main\trips@token_period@allinc.tpp, mo = 1-23, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
-                                                                     walk, bike, 
-                                                                     wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, 
+        fileo mato[1] = main\trips@token_period@allinc.tpp, mo = 1-29, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+                                                                     walk, bike,
+                                                                     wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
                                                                      drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
-                                                                     wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv
-  	
-  	zones = @token_zones@ 
-  	
+                                                                     wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
+                                                                     taxi, tnc_single, tnc_shared,
+                                                                     da_av, sr2_av, sr3_av
+
+
+  	zones = @token_zones@
+
   			mw[1] = mi.1.1 + mi.2.1 + mi.3.1 + mi.4.1
   			mw[2] = mi.1.2 + mi.2.2 + mi.3.2 + mi.4.2
   			mw[3] = mi.1.3 + mi.2.3 + mi.3.3 + mi.4.3
@@ -121,13 +131,18 @@
   			mw[21] = mi.1.21 + mi.2.21 + mi.3.21 + mi.4.21
   			mw[22] = mi.1.22 + mi.2.22 + mi.3.22 + mi.4.22
   			mw[23] = mi.1.23 + mi.2.23 + mi.3.23 + mi.4.23
-  
+    		mw[24] = mi.1.24 + mi.2.24 + mi.3.24 + mi.4.24
+  			mw[25] = mi.1.25 + mi.2.25 + mi.3.25 + mi.4.25
+  			mw[26] = mi.1.26 + mi.2.26 + mi.3.26 + mi.4.26
+  			mw[27] = mi.1.27 + mi.2.27 + mi.3.27 + mi.4.27
+  			mw[28] = mi.1.28 + mi.2.28 + mi.3.28 + mi.4.28
+  			mw[29] = mi.1.29 + mi.2.29 + mi.3.29 + mi.4.29
   	endrun
-  
+
     EndDistributeMultistep
-  
-  
+
+
   endloop ; time period loop
-  
+
   Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end,
   		             printfiles = merge, deldistribfiles = t, CheckReturnCode = t
