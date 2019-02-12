@@ -152,8 +152,12 @@ loop period = 1, 5
             
       endif
 
-      ; compute bus time      
-      BUS_TIME = CTIM + delayfactor * DISTANCE
+      ; compute bus time
+      IF (BRT = 1)
+        BUS_TIME = FFT
+      ELSE
+        BUS_TIME = CTIM + delayfactor * DISTANCE
+      ENDIF
       
    endrun   
    

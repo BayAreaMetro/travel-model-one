@@ -2,15 +2,16 @@
    run pgm = matrix
      
       ; read in the warm start matrices by time period
-      filei mati[1] = M:\Projects\2015_06_701_TestNewCode\INPUT\warmstart\main\trips%timeperiod%.tpp
+      filei mati[1] = A:\TM150_Calibration\2015_TM150_calib8_full\main\trips%timeperiod%.tpp
       
       ; write out a matrix that includes the old warm start matrices and append three new ones in the end
-      fileo mato[1] = M:\Projects\create_warmstart\trips%timeperiod%.tpp, mo = 1-26, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
-                                                                   walk, bike, 
-                                                                   wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, 
-                                                                   drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
-                                                                   wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
-                                                                   da_avtnc, s2_avtnc, s3_avtnc 
+      fileo mato[1] = "C:\Users\lzorn\Box\Modeling and Surveys\Development\Travel Model 1.5\Model_inputs\2015\warmstart\main\trips%timeperiod%.tpp", mo = 1-29,
+         name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+                walk, bike, 
+                wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, 
+                drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
+                wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
+                da_tnc, s2_tnc, s3_tnc, da_av, s2_av, s3_av
                     
      
     
@@ -84,14 +85,14 @@
       ; walk, commuter rail, drive
       mw[23] = mi.1.23
       
-      ; da          single tnc                                  shared tnc                           and da avs
+      ; da_tnc, s2_tnc, s3_tnc
       mw[24] =  0
-      
-       ; s2          single tnc                                  shared tnc                          and s2 avs
       mw[25] =  0
-
-      ; s3          single tnc                                  shared tnc                           and s3 avs
       mw[26] =  0
-   
+      ; da_av, s2_av, s3_av
+      mw[27] =  0
+      mw[28] =  0
+      mw[29] =  0
+
    endrun
    

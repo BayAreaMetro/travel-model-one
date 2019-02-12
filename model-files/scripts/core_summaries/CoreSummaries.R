@@ -868,37 +868,6 @@ save(model_summary, file=file.path(RESULTS_DIR,"AutomobileOwnership.rdata"))
 auto_labels <- c("Zero automobiles", "One automobile", "Two automobiles",
                  "Three automobiles", "Four or more automobiles")
 
-# by County
-autoown_summary_county <- summarise(group_by(autoown_summary, COUNTY, county_name, autos), freq=sum(freq))
-ggplot(autoown_summary_county, aes(x=as.factor(COUNTY), y=freq, fill=as.factor(autos))) +
-  geom_bar(stat="identity", position="fill") +
-  scale_y_continuous(labels=percent, breaks=seq(0,1,0.1)) +
-  scale_x_discrete(labels=LOOKUP_COUNTY$county_name) +
-  xlab("County of Residence") + 
-  ylab("Share of Households") +
-  ggtitle("Households by Automobile Ownership and County of Residence") +
-  scale_fill_discrete(name="", 
-                      breaks=c(4,3,2,1,0), 
-                      labels=rev(auto_labels))
-remove(autoown_summary_county)
-
-### Auto Ownership Summary By Workers
-
-# by Workers
-autoown_summary_workers <- summarise(group_by(autoown_summary, workers, autos), freq=sum(freq))
-
-ggplot(autoown_summary_workers, aes(x=as.factor(workers), y=freq, fill=as.factor(autos))) +
-  geom_bar(stat="identity", position="fill") +
-  scale_y_continuous(labels=percent, breaks=seq(0,1,0.1)) +
-  scale_x_discrete(labels=WORKER_LABELS) +
-  xlab("Workers in the Household") + 
-  ylab("Share of Households") +
-  ggtitle("Households by Automobile Ownership and Number of Workers") +
-  scale_fill_discrete(name="", 
-                      breaks=c(4,3,2,1,0), 
-                      labels=rev(auto_labels))
-remove(autoown_summary, autoown_summary_workers)
-
 ## Commute By Employment Location Summaries
 commute_tours   <- select(tours, hh_id, orig_taz, dest_taz, dest_COUNTY, dest_county_name, dest_SD,
                           tour_purpose, start_hour, end_hour, tour_mode, income, incQ, incQ_label, parking_cost)

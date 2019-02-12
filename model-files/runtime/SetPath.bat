@@ -8,11 +8,11 @@ SET COMMPATH=X:\COMMPATH
 set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
 
 :: The location of the GAWK binary executable files
-set GAWK_PATH=M:\UTIL\Gawk
+set GAWK_PATH=X:\UTIL\Gawk
 
 :: The location of R and R libraries
-set R_HOME=C:\Program Files\R\R-3.2.3
-set R_LIB=C:/Users/mtcpb/Documents/R/win-library/3.2
+set R_HOME=C:\Program Files\R\R-3.5.2
+set R_LIB=C:/Users/mtcpb/Documents/R/win-library/3.5
 
 :: The location of the RUNTPP executable from Citilabs
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI;C:\Program Files (x86)\Citilabs\CubeVoyager
