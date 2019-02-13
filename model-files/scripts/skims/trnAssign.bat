@@ -54,12 +54,7 @@ IF NOT %ITER% EQU POSTPROC (
   )
   :: otherwise go from where the previous iteration left off
   IF %ITER% GTR 0 (
-    if "%TRNCONFIG%"=="FAST" (
-      FOR %%H in (%ALLTIMEPERIODS%) DO copy /y ..\TransitAssignment.iter0\transit%%H.lin transit%%H_0.lin
-    )
-    if "%TRNCONFIG%"=="STANDARD" (
-      FOR %%H in (%ALLTIMEPERIODS%) DO copy /y ..\TransitAssignment.iter%PREV_TRN_ITER%\transit%%H.lin transit%%H_0.lin
-    )
+    FOR %%H in (%ALLTIMEPERIODS%) DO copy /y ..\TransitAssignment.iter%PREV_TRN_ITER%\transit%%H.lin transit%%H_0.lin
   )
 )
 FOR %%H in (%ALLTIMEPERIODS%) DO (
