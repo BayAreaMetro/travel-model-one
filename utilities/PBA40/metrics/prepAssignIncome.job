@@ -86,6 +86,30 @@
         mw[29] = mi.1.29 ; shared ride 3+, av
      endrun
 
+
+     ; create zero passenger trip matrices
+     run pgm = matrix
+
+     	 filei mati[1] = main\trips@token_period@_no_zpv_@suffix@.tpp
+
+       ; write out a matrix that is a transpose and a fraction of the original trip matrix (for TNCs and AVs, 5 modes only)
+       fileo mato[1] = main\trips@token_period@_zpv_@suffix@.tpp, mo = 1-5, name = tnc_single, tnc_shared,
+                                                                        da_av, sr2_av, sr3_av
+
+     	 zones = @token_zones@
+
+       ; hwyParam.bock contains the values of the zero passenger vehicle factor (zpv)
+       read file = ctramp\scripts\block\hwyparam.block
+
+         mw[1] = mi.1.25.t * TNC_ZPV_factor ; tnc, single-party
+         mw[2] = mi.1.26.t * TNC_ZPV_factor ; tnc, shared
+         mw[3] = mi.1.27.t * OwnedAV_ZPV_factor ; drive alone, av
+         mw[4] = mi.1.28.t * OwnedAV_ZPV_factor ; shared ride 2, av
+         mw[5] = mi.1.29.t * OwnedAV_ZPV_factor ; shared ride 3+, av
+
+     endrun
+
+
   endloop ; income loop
 
   ; step four: combine the income-specific matrices

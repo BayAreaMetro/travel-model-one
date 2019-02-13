@@ -57,10 +57,10 @@ loop auto = 1,12
    token_occ    = 3.5
   elseif (auto  = 7)
    token_auto   = 'taxi'
-   token_time   = 'TOLLTIMEDA'
-   token_dist   = 'TOLLDISTDA'
-   token_btoll  = 'TOLLBTOLLDA'
-   token_vtoll  = 'TOLLVTOLLDA'
+   token_time   = 'TOLLTIMEs2'
+   token_dist   = 'TOLLDISTS2'
+   token_btoll  = 'TOLLBTOLLS2'
+   token_vtoll  = 'TOLLVTOLLS2'
    token_occ    = 1.15
   elseif (auto  = 8)
    token_auto   = 'tnc_single'
@@ -76,21 +76,21 @@ loop auto = 1,12
    token_btoll  = 'TOLLBTOLLS3'
    token_vtoll  = 'TOLLVTOLLS3'
    token_occ    = 3.5
-  elseif (auto  = 7)
+  elseif (auto  = 10)
    token_auto   = 'da_av'
    token_time   = 'TOLLTIMEDA'
    token_dist   = 'TOLLDISTDA'
    token_btoll  = 'TOLLBTOLLDA'
    token_vtoll  = 'TOLLVTOLLDA'
    token_occ    = 1.0
-  elseif (auto  = 8)
+  elseif (auto  = 11)
    token_auto   = 's2_av'
    token_time   = 'TOLLTIMES2'
    token_dist   = 'TOLLDISTS2'
    token_btoll  = 'TOLLBTOLLS2'
    token_vtoll  = 'TOLLVTOLLS2'
    token_occ    = 2.0
-  elseif (auto  = 9)
+  elseif (auto  = 12)
    token_auto   = 's3_av'
    token_time   = 'TOLLTIMES3'
    token_dist   = 'TOLLDISTS3'
@@ -127,11 +127,11 @@ loop auto = 1,12
      FILEI MATI[10]= "skims\HWYSKMEV.tpp"
 
   ; Read zpv trips for an income quartile for all time periods
-     FILEI MATI[11] = "main\tripsEA_zpv@token_inc@.tpp"
-     FILEI MATI[12] = "main\tripsAM_zpv@token_inc@.tpp"
-     FILEI MATI[13] = "main\tripsMD_zpv@token_inc@.tpp"
-     FILEI MATI[14] = "main\tripsPM_zpv@token_inc@.tpp"
-     FILEI MATI[15] = "main\tripsEV_zpv@token_inc@.tpp"
+     FILEI MATI[11] = "main\tripsEA_zpv_@token_inc@.tpp"
+     FILEI MATI[12] = "main\tripsAM_zpv_@token_inc@.tpp"
+     FILEI MATI[13] = "main\tripsMD_zpv_@token_inc@.tpp"
+     FILEI MATI[14] = "main\tripsPM_zpv_@token_inc@.tpp"
+     FILEI MATI[15] = "main\tripsEV_zpv_@token_inc@.tpp"
 
   ; Specify output file
      FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T
@@ -146,9 +146,10 @@ loop auto = 1,12
       MW[7]   = (mi.1.@token_auto@/@token_occ@) *  mi.6.@token_vtoll@             ; Value tolls
 
     ; EA, zpv only relevant to TNCs and AVs
-     IF (@auto@>6)
+     IF (@auto@>7)
       MW[47]   = (mi.11.@token_auto@ * mi.6.@token_time@)  ; Vehicle minutes zpv
       MW[48]   = (mi.11.@token_auto@ * mi.6.@token_dist@)  ; Vehicle miles zpv
+     ENDIF
 
      ; Trips AM * Skims AM
       MW[8]   =  mi.2.@token_auto@ * mi.7.@token_time@               ; Person minutes
@@ -160,10 +161,10 @@ loop auto = 1,12
       MW[14]  = (mi.2.@token_auto@/@token_occ@) *  mi.7.@token_vtoll@             ; Value tolls
 
       ; AM, zpv only relevant to TNCs and AVs
-       IF (@auto@>6)
+       IF (@auto@>7)
         MW[49]   = (mi.12.@token_auto@ * mi.7.@token_time@)  ; Vehicle minutes zpv
         MW[50]   = (mi.12.@token_auto@ * mi.7.@token_dist@)  ; Vehicle miles zpv
-
+       ENDIF
 
       ; Trips MD * Skims MD
       MW[15]  =  mi.3.@token_auto@ * mi.8.@token_time@               ; Person minutes
@@ -175,9 +176,10 @@ loop auto = 1,12
       MW[21]  = (mi.3.@token_auto@/@token_occ@) *  mi.8.@token_vtoll@             ; Value tolls
 
       ; MD, zpv only relevant to TNCs and AVs
-       IF (@auto@>6)
+       IF (@auto@>7)
         MW[51]   = (mi.13.@token_auto@ * mi.8.@token_time@)  ; Vehicle minutes zpv
         MW[52]   = (mi.13.@token_auto@ * mi.8.@token_dist@)  ; Vehicle miles zpv
+      ENDIF
 
       ; Trips PM * Skims PM
       MW[22]   =  mi.4.@token_auto@ * mi.9.@token_time@                ; Person minutes
@@ -189,9 +191,10 @@ loop auto = 1,12
       MW[28]   = (mi.4.@token_auto@/@token_occ@) *  mi.9.@token_vtoll@             ; Value tolls
 
       ; PM, zpv only relevant to TNCs and AVs
-       IF (@auto@>6)
+       IF (@auto@>7)
         MW[53]   = (mi.14.@token_auto@ * mi.9.@token_time@)  ; Vehicle minutes zpv
         MW[54]   = (mi.14.@token_auto@ * mi.9.@token_dist@)  ; Vehicle miles zpv
+       ENDIF
 
       ; Trips EV * Skims EV
       MW[29]   =  mi.5.@token_auto@ * mi.10.@token_time@               ; Person minutes
@@ -203,9 +206,10 @@ loop auto = 1,12
       MW[35]   = (mi.5.@token_auto@/@token_occ@) *  mi.10.@token_vtoll@             ; Value tolls
 
       ; EV, zpv only relevant to TNCs and AVs
-       IF (@auto@>6)
+       IF (@auto@>7)
         MW[55]   = (mi.15.@token_auto@ * mi.10.@token_time@)  ; Vehicle minutes zpv
         MW[56]   = (mi.15.@token_auto@ * mi.10.@token_dist@)  ; Vehicle miles zpv
+       ENDIF
 
      ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
      MW[36] =  mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
