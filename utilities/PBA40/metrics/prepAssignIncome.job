@@ -47,7 +47,7 @@
         filei mati[1] = main\trips@token_period@@suffix@.dat, pattern = ijm:v, fields = #1,2,0,3-32
 
         ; write out a matrix that combines the individual and joint trips for assignment
-        fileo mato[1] = main\trips@token_period_no_zpv_@suffix@.tpp, mo = 1-29, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+        fileo mato[1] = main\trips@token_period@_no_zpv_@suffix@.tpp, mo = 1-29, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                                                                      walk, bike,
                                                                      wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
                                                                      drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
