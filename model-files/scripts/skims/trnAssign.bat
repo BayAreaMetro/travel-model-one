@@ -198,13 +198,16 @@ if ERRORLEVEL 2 goto donedone
 echo Done transit assignment; LastIters are %LASTITER_AM%, %LASTITER_MD%, %LASTITER_PM%, %LASTITER_EV%, %LASTITER_EA%
 
 :copyup
+
 :: for core
-FOR %%A in (%ALLTRIPMODES% %ALLTOURMODES%) DO (
-  copy /y trnskmea_%%A.avg.iter%LASTITER_EA%.tpp ..\..\skims\trnskmea_%%A.tpp
-  copy /y trnskmam_%%A.avg.iter%LASTITER_AM%.tpp ..\..\skims\trnskmam_%%A.tpp
-  copy /y trnskmmd_%%A.avg.iter%LASTITER_MD%.tpp ..\..\skims\trnskmmd_%%A.tpp
-  copy /y trnskmpm_%%A.avg.iter%LASTITER_PM%.tpp ..\..\skims\trnskmpm_%%A.tpp
-  copy /y trnskmev_%%A.avg.iter%LASTITER_EV%.tpp ..\..\skims\trnskmev_%%A.tpp
+if %ITER% NEQ %MAXITERTIONS% (
+  FOR %%A in (%ALLTRIPMODES% %ALLTOURMODES%) DO (
+    copy /y trnskmea_%%A.avg.iter%LASTITER_EA%.tpp ..\..\skims\trnskmea_%%A.tpp
+    copy /y trnskmam_%%A.avg.iter%LASTITER_AM%.tpp ..\..\skims\trnskmam_%%A.tpp
+    copy /y trnskmmd_%%A.avg.iter%LASTITER_MD%.tpp ..\..\skims\trnskmmd_%%A.tpp
+    copy /y trnskmpm_%%A.avg.iter%LASTITER_PM%.tpp ..\..\skims\trnskmpm_%%A.tpp
+    copy /y trnskmev_%%A.avg.iter%LASTITER_EV%.tpp ..\..\skims\trnskmev_%%A.tpp
+  )
 )
  
 :: copy the latest transit assignment dbf into the parent dir
