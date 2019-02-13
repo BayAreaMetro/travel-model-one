@@ -200,7 +200,7 @@ echo Done transit assignment; LastIters are %LASTITER_AM%, %LASTITER_MD%, %LASTI
 :copyup
 
 :: for core
-if %ITER% NEQ %MAXITERTIONS% (
+if %ITER% NEQ %MAXITERATIONS% (
   FOR %%A in (%ALLTRIPMODES% %ALLTOURMODES%) DO (
     copy /y trnskmea_%%A.avg.iter%LASTITER_EA%.tpp ..\..\skims\trnskmea_%%A.tpp
     copy /y trnskmam_%%A.avg.iter%LASTITER_AM%.tpp ..\..\skims\trnskmam_%%A.tpp
