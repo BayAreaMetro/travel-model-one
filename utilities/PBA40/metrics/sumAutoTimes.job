@@ -468,7 +468,7 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
            printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the income files into one
-* copy metrics\auto_times_da.csv+metrics\auto_times_datoll.csv+metrics\auto_times_sr2.csv+metrics\auto_times_sr2toll.csv+metrics\auto_times_sr3.csv+metrics\auto_times_sr3toll.csv+metrics\auto_times_taxi.csv+metrics\auto_times_tnc_single.csv+metrics\auto_times_tnc_shared.csv+metrics\auto_times_da_av.csv+metrics\auto_times_sr2_av.csv+metrics\auto_times_sr3_av.csv metrics\auto_times.csv
+* copy metrics\auto_times_da.csv+metrics\auto_times_datoll.csv+metrics\auto_times_sr2.csv+metrics\auto_times_sr2toll.csv+metrics\auto_times_sr3.csv+metrics\auto_times_sr3toll.csv+metrics\auto_times_taxi.csv+metrics\auto_times_tnc_single.csv+metrics\auto_times_tnc_shared.csv+metrics\auto_times_da_av.csv+metrics\auto_times_s2_av.csv+metrics\auto_times_s3_av.csv metrics\auto_times.csv
 ; delete the individual ones
 ;* del metrics\auto_times_da.csv
 ;* del metrics\auto_times_datoll.csv
