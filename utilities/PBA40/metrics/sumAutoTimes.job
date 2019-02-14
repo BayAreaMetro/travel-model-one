@@ -259,7 +259,8 @@ loop auto = 1,12
     ENDRUN
   endloop ; income loop
 
-  RUN PGM = MATRIX
+  IF (auto<=6)
+   RUN PGM = MATRIX
      ; Read internal/external travel demand - vehicle trips
      FILEI MATI[1] = "nonres\tripsIxEA.tpp"
      FILEI MATI[2] = "nonres\tripsIxAM.tpp"
@@ -358,7 +359,7 @@ loop auto = 1,12
                                                             Bridge_tolls(10.2L), Value_tolls(10.2L)
     ENDRUN
 
-  RUN PGM = MATRIX
+   RUN PGM = MATRIX
      ; Read air passenger travel demand - vehicle trips
      FILEI MATI[1] = "nonres\tripsAirPaxEA.tpp"
      FILEI MATI[2] = "nonres\tripsAirPaxAM.tpp"
@@ -456,6 +457,8 @@ loop auto = 1,12
                                                             "na","na",
                                                             Bridge_tolls(10.2L), Value_tolls(10.2L)
     ENDRUN
+  ENDIF ; for the first six auto modes
+
   EndDistributeMultistep
 
 endloop
@@ -465,14 +468,14 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
            printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the income files into one
-* copy metrics\auto_times_da.csv+metrics\auto_times_datoll.csv+metrics\auto_times_sr2.csv+metrics\auto_times_sr2toll.csv+metrics\auto_times_sr3.csv+metrics\auto_times_sr3toll.csv metrics\auto_times.csv
+* copy metrics\auto_times_da.csv+metrics\auto_times_datoll.csv+metrics\auto_times_sr2.csv+metrics\auto_times_sr2toll.csv+metrics\auto_times_sr3.csv+metrics\auto_times_sr3toll.csv+metrics\auto_times_taxi.csv+metrics\auto_times_tnc_single.csv+metrics\auto_times_tnc_shared.csv+metrics\auto_times_da_av.csv+metrics\auto_times_sr2_av.csv+metrics\auto_times_sr3_av.csv metrics\auto_times.csv
 ; delete the individual ones
-* del metrics\auto_times_da.csv
-* del metrics\auto_times_datoll.csv
-* del metrics\auto_times_sr2.csv
-* del metrics\auto_times_sr2toll.csv
-* del metrics\auto_times_sr3.csv
-* del metrics\auto_times_sr3toll.csv
+;* del metrics\auto_times_da.csv
+;* del metrics\auto_times_datoll.csv
+;* del metrics\auto_times_sr2.csv
+;* del metrics\auto_times_sr2toll.csv
+;* del metrics\auto_times_sr3.csv
+;* del metrics\auto_times_sr3toll.csv
 
 RUN PGM = MATRIX
   ; Read truck trips for all time periods
