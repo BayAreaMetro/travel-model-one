@@ -10,6 +10,7 @@ set TOTMAXTRNITERS=30
 set MAXPATHTIME=240
 set PCT=%%
 set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+set TRN_ERRORLEVEL=0
 
 :: AverageNetworkVolumes.job uses PREV_ITER=1 for ITER=1
 set PREV_TRN_ITER=%PREV_ITER%
@@ -77,11 +78,17 @@ echo START TRNASSIGN BuildTransitNetworks %DATE% %TIME% >> ..\..\logs\feedback.r
 
 :: Prepare the highway network for use by the transit network
 runtpp ..\..\CTRAMP\scripts\skims\PrepHwyNet.job
-if ERRORLEVEL 2 goto donedone
+if ERRORLEVEL 2 (
+  set TRN_ERRORLEVEL=2
+  goto donedone
+)
 
 :: Create the transit networks
 runtpp ..\..\CTRAMP\scripts\skims\BuildTransitNetworks.job
-if ERRORLEVEL 2 goto donedone
+if ERRORLEVEL 2 (
+  set TRN_ERRORLEVEL=2
+  goto donedone
+)
 
 
 ::============================== BEGIN LOOP ==============================
@@ -92,10 +99,16 @@ echo START TRNASSIGN            SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\l
 
 :: Assign the transit trips to the transit network
 runtpp ..\..\CTRAMP\scripts\assign\TransitAssign.job
-if ERRORLEVEL 2 goto donedone
+if ERRORLEVEL 2 (
+  set TRN_ERRORLEVEL=2
+  goto donedone
+)
 :: And skim
 runtpp ..\..\CTRAMP\scripts\skims\TransitSkims.job
-if ERRORLEVEL 2 goto donedone
+if ERRORLEVEL 2 (
+  set TRN_ERRORLEVEL=2
+  goto donedone
+)
 
 :: RUNNING OUT OF SPACE - delete this from the recycle bin too
 set THISDIR=%cd:X:\=X:\Recycle Bin\%
@@ -222,3 +235,5 @@ if %ITER% EQU %MAXITERATIONS% (
 :donedone
 cd ..
 cd ..
+:: pass on errorlevel
+EXIT /B %TRN_ERRORLEVEL%
