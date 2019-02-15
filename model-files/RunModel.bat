@@ -29,8 +29,6 @@ if %computername%==PORMDLPPW02 set HOST_IP_ADDRESS=172.24.0.102
 
 :: PBA50, CleanAndGreen, BackToTheFuture, or RisingTidesFallingFortunes
 set FUTURE=PBA50
-:: AV SCENARIO
-SET AV_SCENARIO=0
 
 :: Figure out the model year
 set MODEL_DIR=%CD%

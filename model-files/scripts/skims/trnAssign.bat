@@ -10,6 +10,7 @@ set TOTMAXTRNITERS=30
 set MAXPATHTIME=240
 set PCT=%%
 set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+set TRN_ERRORLEVEL=0
 
 :: AverageNetworkVolumes.job uses PREV_ITER=1 for ITER=1
 set PREV_TRN_ITER=%PREV_ITER%
@@ -77,11 +78,17 @@ echo START TRNASSIGN BuildTransitNetworks %DATE% %TIME% >> ..\..\logs\feedback.r
 
 :: Prepare the highway network for use by the transit network
 runtpp ..\..\CTRAMP\scripts\skims\PrepHwyNet.job
-if ERRORLEVEL 2 goto donedone
+if ERRORLEVEL 2 (
+  set TRN_ERRORLEVEL=2
+  goto donedone
+)
 
 :: Create the transit networks
 runtpp ..\..\CTRAMP\scripts\skims\BuildTransitNetworks.job
-if ERRORLEVEL 2 goto donedone
+if ERRORLEVEL 2 (
+  set TRN_ERRORLEVEL=2
+  goto donedone
+)
 
 
 ::============================== BEGIN LOOP ==============================
@@ -92,10 +99,16 @@ echo START TRNASSIGN            SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\l
 
 :: Assign the transit trips to the transit network
 runtpp ..\..\CTRAMP\scripts\assign\TransitAssign.job
-if ERRORLEVEL 2 goto donedone
+if ERRORLEVEL 2 (
+  set TRN_ERRORLEVEL=2
+  goto donedone
+)
 :: And skim
 runtpp ..\..\CTRAMP\scripts\skims\TransitSkims.job
-if ERRORLEVEL 2 goto donedone
+if ERRORLEVEL 2 (
+  set TRN_ERRORLEVEL=2
+  goto donedone
+)
 
 :: RUNNING OUT OF SPACE - delete this from the recycle bin too
 set THISDIR=%cd:X:\=X:\Recycle Bin\%
@@ -198,13 +211,16 @@ if ERRORLEVEL 2 goto donedone
 echo Done transit assignment; LastIters are %LASTITER_AM%, %LASTITER_MD%, %LASTITER_PM%, %LASTITER_EV%, %LASTITER_EA%
 
 :copyup
+
 :: for core
-FOR %%A in (%ALLTRIPMODES% %ALLTOURMODES%) DO (
-  copy /y trnskmea_%%A.avg.iter%LASTITER_EA%.tpp ..\..\skims\trnskmea_%%A.tpp
-  copy /y trnskmam_%%A.avg.iter%LASTITER_AM%.tpp ..\..\skims\trnskmam_%%A.tpp
-  copy /y trnskmmd_%%A.avg.iter%LASTITER_MD%.tpp ..\..\skims\trnskmmd_%%A.tpp
-  copy /y trnskmpm_%%A.avg.iter%LASTITER_PM%.tpp ..\..\skims\trnskmpm_%%A.tpp
-  copy /y trnskmev_%%A.avg.iter%LASTITER_EV%.tpp ..\..\skims\trnskmev_%%A.tpp
+if %ITER% NEQ %MAXITERATIONS% (
+  FOR %%A in (%ALLTRIPMODES% %ALLTOURMODES%) DO (
+    copy /y trnskmea_%%A.avg.iter%LASTITER_EA%.tpp ..\..\skims\trnskmea_%%A.tpp
+    copy /y trnskmam_%%A.avg.iter%LASTITER_AM%.tpp ..\..\skims\trnskmam_%%A.tpp
+    copy /y trnskmmd_%%A.avg.iter%LASTITER_MD%.tpp ..\..\skims\trnskmmd_%%A.tpp
+    copy /y trnskmpm_%%A.avg.iter%LASTITER_PM%.tpp ..\..\skims\trnskmpm_%%A.tpp
+    copy /y trnskmev_%%A.avg.iter%LASTITER_EV%.tpp ..\..\skims\trnskmev_%%A.tpp
+  )
 )
  
 :: copy the latest transit assignment dbf into the parent dir
@@ -219,3 +235,5 @@ if %ITER% EQU %MAXITERATIONS% (
 :donedone
 cd ..
 cd ..
+:: pass on errorlevel
+EXIT /B %TRN_ERRORLEVEL%
