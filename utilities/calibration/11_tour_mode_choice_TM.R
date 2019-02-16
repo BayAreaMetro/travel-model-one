@@ -40,10 +40,11 @@ table      <- "ivtFerry"
 ferry_skim <- data.frame()
 for (timeperiod in c("EA","AM","MD", "PM", "EV")) {
   for (submode in c("wlk_lrf_wlk","drv_lrf_wlk","wlk_lrf_drv")) {
-    skim_table <- read.table(file=file.path(TARGET_DIR, "OUTPUT", "skims", paste0("trnskm",timeperiod,"_",submode,"_",table,".csv")),
-                             header=FALSE, col.names=c("OTAZ","DTAZ","ones",table), sep=",") %>% 
-      select(-ones) %>%
-      mutate(timeperiod=timeperiod, submode=submode)
+    skim_table <- read.table(file=file.path(TARGET_DIR, "OUTPUT", "skims", paste0("trnskm",timeperiod,"_",submode,".csv")),
+                             header=TRUE, sep=",") %>% 
+      mutate(timeperiod=timeperiod, submode=submode) %>%
+      rename(OTAZ=orig, DTAZ=dest) %>%
+      select(OTAZ, DTAZ, timeperiod, submode, table)
     ferry_skim <- rbind(ferry_skim, skim_table)
   }
 }
@@ -141,12 +142,12 @@ LRF_drive <- subset(LRF_tour_results, subset=tour_mode==15)
 # check ferry availability - outbound
 LRF_walk <- left_join(LRF_walk, subset(ferry_skim, subset=submode=="wlk_lrf_wlk"),
                       by=c("orig_taz"="OTAZ", "dest_taz"="DTAZ", "outPeriod"="timeperiod") ) %>% 
-  mutate(outFerryAvailable=ifelse(is.na(ivtFerry),0,1)) %>%
+  mutate(outFerryAvailable=ifelse(ivtFerry>0,1,0)) %>%
   select(-ivtFerry, -submode)
 # check ferry availability - inbound
 LRF_walk <- left_join(LRF_walk, subset(ferry_skim, subset=submode=="wlk_lrf_wlk"),
                       by=c("orig_taz"="DTAZ", "dest_taz"="OTAZ", "inPeriod"="timeperiod") ) %>% 
-  mutate(inFerryAvailable=ifelse(is.na(ivtFerry),0,1)) %>%
+  mutate(inFerryAvailable=ifelse(ivtFerry>0,1,0)) %>%
   select(-ivtFerry, -submode)
 
 LRF_walk <- mutate(LRF_walk, ferryAvailable=ifelse((inFerryAvailable==1)&(outFerryAvailable==1),1,0)) %>% 
@@ -157,12 +158,12 @@ LRF_walk <- mutate(LRF_walk, ferryAvailable=ifelse((inFerryAvailable==1)&(outFer
 # check ferry availability - outbound
 LRF_drive <- left_join(LRF_drive, subset(ferry_skim, subset=submode=="drv_lrf_wlk"),
                       by=c("orig_taz"="OTAZ", "dest_taz"="DTAZ", "outPeriod"="timeperiod") ) %>% 
-  mutate(outFerryAvailable=ifelse(is.na(ivtFerry),0,1)) %>%
+  mutate(outFerryAvailable=ifelse(ivtFerry>0,1,0)) %>%
   select(-ivtFerry, -submode)
 # check ferry availability - inbound
 LRF_drive <- left_join(LRF_drive, subset(ferry_skim, subset=submode=="wlk_lrf_drv"),
                       by=c("orig_taz"="DTAZ", "dest_taz"="OTAZ", "inPeriod"="timeperiod") ) %>% 
-  mutate(inFerryAvailable=ifelse(is.na(ivtFerry),0,1)) %>%
+  mutate(inFerryAvailable=ifelse(ivtFerry>0,1,0)) %>%
   select(-ivtFerry, -submode)
 
 LRF_drive <- mutate(LRF_drive, ferryAvailable=ifelse((inFerryAvailable==1)&(outFerryAvailable==1),1,0)) %>% 
