@@ -44,15 +44,16 @@
      run pgm = matrix
 
         ; read in the individual trips fixed format file from countTrips.py
-        filei mati[1] = main\trips@token_period@@suffix@.dat, pattern = ijm:v, fields = #1,2,0,3-32
+        filei mati[1] = main\trips@token_period@@suffix@.dat, pattern = ijm:v, fields = #1,2,0,3-35
 
         ; write out a matrix that combines the individual and joint trips for assignment
-        fileo mato[1] = main\trips@token_period@_no_zpv_@suffix@.tpp, mo = 1-29, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+        fileo mato[1] = main\trips@token_period@_no_zpv_@suffix@.tpp, mo = 1-32, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                                                                      walk, bike,
                                                                      wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
                                                                      drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
                                                                      wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
-                                                                     taxi, tnc_single, tnc_shared, da_av, s2_av, s3_av
+                                                                     taxi, tnc_single, tnc_shared,
+                                                                     da_av_notoll, da_av_toll, s2_av_notoll, s2_av_toll, s3_av_notoll, s3_av_toll
         zones = @token_zones@
 
         mw[1]  = mi.1.1  ; - drive alone, no value toll
@@ -81,9 +82,12 @@
         mw[24] = mi.1.24 ; taxi
         mw[25] = mi.1.25 ; tnc, single-party
         mw[26] = mi.1.26 ; tnc, shared
-        mw[27] = mi.1.27 ; drive alone, av
-        mw[28] = mi.1.28 ; shared ride 2, av
-        mw[29] = mi.1.29 ; shared ride 3+, av
+        mw[27] = mi.1.27 ; drive alone, av, no toll
+        mw[28] = mi.1.27 ; drive alone, av, toll
+        mw[29] = mi.1.28 ; shared ride 2, av, no toll
+        mw[30] = mi.1.28 ; shared ride 2, av, toll
+        mw[31] = mi.1.29 ; shared ride 3+, av, no toll
+        mw[32] = mi.1.29 ; shared ride 3+, av, toll
      endrun
 
 
@@ -93,12 +97,13 @@
      	 filei mati[1] = main\trips@token_period@_no_zpv_@suffix@.tpp
 
        ; write out a matrix that is a transpose and a fraction of the original trip matrix (for TNCs and AVs, 5 modes only)
-       fileo mato[1] = main\trips@token_period@_zpv_@suffix@.tpp, mo = 1-29, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+       fileo mato[1] = main\trips@token_period@_zpv_@suffix@.tpp, mo = 1-32, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                                                                     walk, bike,
                                                                     wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
                                                                     drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
                                                                     wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
-                                                                    taxi, tnc_single, tnc_shared, da_av, s2_av, s3_av
+                                                                    taxi, tnc_single, tnc_shared,
+                                                                    da_av_notoll, da_av_toll, s2_av_notoll, s2_av_toll, s3_av_notoll, s3_av_toll
      	 zones = @token_zones@
 
        ; hwyParam.bock contains the values of the zero passenger vehicle factor (zpv)
@@ -130,9 +135,12 @@
          mw[24] = 0 ; taxi
          mw[25] = mi.1.25.t * TNC_ZPV_factor ; tnc, single-party
          mw[26] = mi.1.26.t * TNC_ZPV_factor ; tnc, shared
-         mw[27] = mi.1.27.t * OwnedAV_ZPV_factor ; drive alone, av
-         mw[28] = mi.1.28.t * OwnedAV_ZPV_factor ; shared ride 2, av
-         mw[29] = mi.1.29.t * OwnedAV_ZPV_factor ; shared ride 3+, av
+         mw[27] = mi.1.27.t * OwnedAV_ZPV_factor ; drive alone, av, no toll
+         mw[28] = mi.1.28.t * OwnedAV_ZPV_factor ; drive alone, av, toll
+         mw[29] = mi.1.29.t * OwnedAV_ZPV_factor ; shared ride 2, av, no toll
+         mw[30] = mi.1.30.t * OwnedAV_ZPV_factor ; shared ride 2, av, toll
+         mw[31] = mi.1.31.t * OwnedAV_ZPV_factor ; shared ride 3+, av, no toll
+         mw[32] = mi.1.32.t * OwnedAV_ZPV_factor ; shared ride 3+, av, toll
 
      endrun
 
@@ -148,13 +156,13 @@
   			filei mati[4] = main\trips@token_period@_no_zpv_inc4.tpp
 
   			 ; write out a matrix that combines the individual and joint trips for assignment
-        fileo mato[1] = main\trips@token_period@allinc.tpp, mo = 1-29, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+        fileo mato[1] = main\trips@token_period@allinc.tpp, mo = 1-32, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                                                                      walk, bike,
                                                                      wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
                                                                      drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
                                                                      wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
                                                                      taxi, tnc_single, tnc_shared,
-                                                                     da_av, sr2_av, sr3_av
+                                                                     da_av_notoll, da_av_toll, sr2_av_notoll, sr2_av_toll, sr3_av_notoll, sr3_av_toll
 
 
   	zones = @token_zones@
@@ -188,6 +196,9 @@
   			mw[27] = mi.1.27 + mi.2.27 + mi.3.27 + mi.4.27
   			mw[28] = mi.1.28 + mi.2.28 + mi.3.28 + mi.4.28
   			mw[29] = mi.1.29 + mi.2.29 + mi.3.29 + mi.4.29
+  			mw[30] = mi.1.30 + mi.2.30 + mi.3.30 + mi.4.30
+  			mw[31] = mi.1.31 + mi.2.31 + mi.3.31 + mi.4.31
+  			mw[32] = mi.1.32 + mi.2.32 + mi.3.32 + mi.4.32
   	endrun
 
     EndDistributeMultistep
