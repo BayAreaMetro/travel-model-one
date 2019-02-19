@@ -56,7 +56,7 @@
 ;              (18) tour_category - Type of tour (MANDATORY, INDIVIDUAL_NON_MANDATORY,AT_WORK)
 ;              (19) avAvailable - new for TM1.5 indicating whether an autonomous vehicle is available for trips on tour
 ;
-;         (A) A trip list for joint travel with the following data fields:
+;         (B) A trip list for joint travel with the following data fields:
 ;              (1)  hh_id - same as above
 ;              (2)  tour_id - same as above
 ;              (3)  stop_id - same as above
@@ -83,15 +83,17 @@
 ;              (16) tour_mode - which is not necessarily the travel mode -- same codes as for trip mode.
 ;              (17) tour_category - Type of tour (JOINT_NON_MANDATORY)
 ;              (18) avAvailable - new for TM1.5 indicating whether an autonomous vehicle is available for trips on tour
+;         (C) configuration parameter file, ctramp\scripts\block\hwyparam.block, containing:
+;              (1)  Zero passenger vehicle factor for TNC trips
+;              (2)  Zero passenger vehicle factor for owned autonomous vehicle trips
 ;
-;
-; Output: (A) Five time-period-specific trip tables with the following values in each table:
+; Output: (A) Five time-period-specific person trip tables, main\trips(EA|AM|MD|PM|EV).tpp, with the following values in each table:
 ;              (1)  Drive alone, no value toll
-;              (2)  Drive alone, value toll
+;              (2)  Drive alone, value toll (includes taxi)
 ;              (3)  Shared ride 2, no value toll
-;              (4)  Shared ride 2, value toll
+;              (4)  Shared ride 2, value toll (includes taxi)
 ;              (5)  Shared ride 3+, no value toll
-;              (6)  Shared ride 3+, value toll
+;              (6)  Shared ride 3+, value toll (includes taxi)
 ;              (7)  Walk
 ;              (8)  Bicycle
 ;              (9)  Walk, local bus, walk
@@ -109,6 +111,12 @@
 ;              (21) Walk, express bus, drive
 ;              (22) Walk, heavy rail, drive
 ;              (23) Walk, commuter rail, drive
+;              (24) Drive alone,    TNC (includes zero-passenger deadheading trips)
+;              (25) Shared ride 2,  TNC (includes zero-passenger deadheading trips)
+;              (26) Shared ride 3+, TNC (includes zero-passenger deadheading trips)
+;              (27) Drive alone,    owned autonomous vehicles (includes zero-passenger deadheading trips)
+;              (28) Shared ride 2,  owned autonomous vehicles (includes zero-passenger deadheading trips)
+;              (29) Shared ride 3+, owned autonomous vehicles (includes zero-passenger deadheading trips)
 ;
 ; Notes:  (1)
 ;
@@ -615,34 +623,34 @@ loop period = 1, 5
 
          ; - TNC single
          elseif (ri.trip_mode = 20)
-            single_tnc[od_position] = single_tnc[od_position] + 1
+            single_tnc[od_position] = single_tnc[od_position] + ri.num_participants
 
         elseif (ri.trip_mode = 21)
-            shared_tnc[od_position] = shared_tnc[od_position] + 1
+            shared_tnc[od_position] = shared_tnc[od_position] + ri.num_participants
 
          ; - drive alone, no value toll
          elseif ((ri.trip_mode = 1) & (ri.av_available = 1))
-            da_av[od_position] = da_av[od_position] + 1
+            da_av[od_position] = da_av[od_position] + ri.num_participants
 
          ; - drive alone, value toll
          elseif ((ri.trip_mode = 2) & (ri.av_available = 1))
-            da_av[od_position] = da_av[od_position] + 1
+            da_av[od_position] = da_av[od_position] + ri.num_participants
 
          ; - shared ride 2, no value toll
          elseif ((ri.trip_mode = 3) & (ri.av_available = 1))
-            s2_av[od_position] = s2_av[od_position] + 1
+            s2_av[od_position] = s2_av[od_position] + ri.num_participants
 
          ; - shared ride 2, value toll
          elseif ((ri.trip_mode = 4) & (ri.av_available = 1))
-            s2_av[od_position] = s2_av[od_position] + 1
+            s2_av[od_position] = s2_av[od_position] + ri.num_participants
 
          ; - shared ride 3 or more, no value toll
          elseif ((ri.trip_mode = 5) & (ri.av_available = 1))
-            s3_av[od_position] = s3_av[od_position] + 1
+            s3_av[od_position] = s3_av[od_position] + ri.num_participants
 
          ; - shared ride 3 or more, value toll
          elseif ((ri.trip_mode = 6) & (ri.av_available = 1))
-            s3_av[od_position] = s3_av[od_position] + 1
+            s3_av[od_position] = s3_av[od_position] + ri.num_participants
 
          endif ; trip mode if
 
