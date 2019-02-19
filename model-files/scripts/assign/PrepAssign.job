@@ -838,19 +838,14 @@ loop period = 1, 5
    run pgm = matrix
 
       filei mati[1] = main\trips@token_period@_no_zpv.tpp
-      fileo mato[1] = main\trips@token_period@_zpv.tpp, mo=1-6, name=da_tnc, s2_tnc, s3_tnc, da_av, s2_av, s3_av
+      fileo mato[1] = main\trips@token_period@_zpv.tpp, mo=1-2, name=zpv_tnc, zpv_av
 
       ; hwyParam.bock contains variables used in the remainder of the script, particularly in the zero passenger vehicle factor (zpv)
       read file = ctramp\scripts\block\hwyparam.block
 
-      ; transpose the matrix x ZPV factor
-      mw[1] = mi.1.da_tnc.t*TNC_ZPV_factor
-      mw[2] = mi.1.s2_tnc.t*TNC_ZPV_factor
-      mw[3] = mi.1.s3_tnc.t*TNC_ZPV_factor
-
-      mw[4] = mi.1.da_av.t*OwnedAV_ZPV_factor
-      mw[5] = mi.1.s2_av.t*OwnedAV_ZPV_factor
-      mw[6] = mi.1.s3_av.t*OwnedAV_ZPV_factor
+      ; transpose the matrix and divide by occupancy to get vehicle trips, then multiply by ZPV factor
+      mw[1] = (mi.1.da_tnc.t + (mi.1.s2_tnc.t/2.0) + (mi.1.s3_tnc.t/3.25))*TNC_ZPV_factor
+      mw[2] = (mi.1.da_av.t  + (mi.1.s2_av.t /2.0) + (mi.1.s3_av.t /3.25))*OwnedAV_ZPV_factor
    endrun
 
    ; step five: add the zero passenger trips
@@ -890,12 +885,12 @@ loop period = 1, 5
       mw[21] = mi.1.wlk_exp_drv
       mw[22] = mi.1.wlk_hvy_drv
       mw[23] = mi.1.wlk_com_drv
-      mw[24] = mi.1.da_tnc       + mi.2.da_tnc
-      mw[25] = mi.1.s2_tnc       + mi.2.s2_tnc
-      mw[26] = mi.1.s3_tnc       + mi.2.s3_tnc
-      mw[27] = mi.1.da_av        + mi.2.da_av
-      mw[28] = mi.1.s2_av        + mi.2.s2_av
-      mw[29] = mi.1.s3_av        + mi.2.s3_av
+      mw[24] = mi.1.da_tnc       + mi.2.zpv_tnc
+      mw[25] = mi.1.s2_tnc
+      mw[26] = mi.1.s3_tnc
+      mw[27] = mi.1.da_av        + mi.2.zpv_av
+      mw[28] = mi.1.s2_av
+      mw[29] = mi.1.s3_av
 
     endrun
 
