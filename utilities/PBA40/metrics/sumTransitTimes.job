@@ -75,10 +75,10 @@
         token_suffix = 'allinc'
         token_age    = 'all'
       elseif (age = 2)
-        token_suffix = '_2074'
+        token_suffix = '_no_zpv__2074'
         token_age    = '20-74'
       elseif (age = 3)
-        token_suffix = '_2064'
+        token_suffix = '_no_zpv__2064'
         token_age    = '20-64'
       endif
 
@@ -232,10 +232,10 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
 
 ; Loop thru income quartiles
   loop inc = 1,4
-   if (inc = 1)  token_inc   = 'inc1'
-   if (inc = 2)  token_inc   = 'inc2'
-   if (inc = 3)  token_inc   = 'inc3'
-   if (inc = 4)  token_inc   = 'inc4'
+   if (inc = 1)  token_inc   = '_no_zpv_inc1'
+   if (inc = 2)  token_inc   = '_no_zpv_inc2'
+   if (inc = 3)  token_inc   = '_no_zpv_inc3'
+   if (inc = 4)  token_inc   = '_no_zpv_inc4'
 
   RUN PGM = MATRIX
   ; Read person trips for a transitmode for all time periods and Access+Egress combinations

@@ -86,14 +86,14 @@ if not exist main\tripsEVinc1.dat (
   if ERRORLEVEL 2 goto error
 )
 
-if not exist main\tripsEVinc1.tpp (
+if not exist main\tripsAMallinc.tpp (
   rem Convert trip tables into time/income/mode OD matrices
   rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].dat,
   rem         main\trips(EA|AM|MD|PM|EV)_2074.dat,
   rem         main\trips(EA|AM|MD|PM|EV)_2064.dat
-  rem Output: main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp,
-  rem         main\trips(EA|AM|MD|PM|EV)_2074.tpp,
-  rem         main\trips(EA|AM|MD|PM|EV)_2064.tpp,
+  rem Output: main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4].tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_2074.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_2064.tpp,
   rem         main\trips(EA|AM|MD|PM|EV)allinc.tpp
   runtpp "%CODE_DIR%\prepAssignIncome.job"
   IF ERRORLEVEL 2 goto error
@@ -102,6 +102,9 @@ if not exist main\tripsEVinc1.tpp (
 if not exist metrics\transit_times_by_mode_income.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
   rem Input : main\trips(EA|AM|MD|PM|EV)allinc.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,
   rem         skims\trnskm(EA|AM|MD|PM|EV)_(wlk|drv)_(com|hvy|exp|lrf|loc)_(wlk|drv).tpp
   rem Output: metrics\transit_times_by_acc_mode_egr.csv,
   rem         metrics\transit_times_by_mode_income.csv
@@ -111,7 +114,7 @@ if not exist metrics\transit_times_by_mode_income.csv (
 
 if not exist metrics\auto_times.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp
+  rem Input : main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4].tpp
   rem         nonres\tripsIx(EA|AM|MD|PM|EV).tpp
   rem         nonres\tripsAirPax(EA|AM|MD|PM|EV).tpp
   rem         nonres\tripstrk(EA|AM|MD|PM|EV).tpp
@@ -125,9 +128,9 @@ if not exist metrics\auto_times.csv (
 
 if not exist metrics\nonmot_times.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : trips(EA|AM|MD|PM|EV)inc[1-4].tpp
-  rem         trips(EA|AM|MD|PM|EV)_2074.tpp
-  rem         trips(EA|AM|MD|PM|EV)_2064.tpp
+  rem Input : trips(EA|AM|MD|PM|EV)_no_zpv_inc[1-4].tpp
+  rem         trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp
+  rem         trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp
   rem         skims\nonmotskm.tpp
   rem Output: metrics\nonmot_times.csv
   runtpp "%CODE_DIR%\sumNonmotTimes.job"
