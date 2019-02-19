@@ -26,8 +26,8 @@ copy hwy\iter%ITER%\avgload5period_vehclasses.csv extractor\avgload5period_vehcl
 :: Transit assignment results
 mkdir extractor\trn
 copy trn\TransitAssignment.iter3\trnline*.csv    extractor\trn\trnline*.csv
-copy trn\TransitAssignment.iter3\trnlink*.dbf    extractor\trn\trnlink*.dbf
-copy trn\quickboards.xls extractor\trn\quickboards.xls
+copy trn\trnlink*.dbf                            extractor\trn\trnlink*.dbf
+copy trn\quickboards.xls                         extractor\trn\quickboards.xls
 
 :: Demand results
 copy main\householdData_%ITER%.csv extractor\main\householdData_%ITER%.csv
