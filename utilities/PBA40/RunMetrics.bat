@@ -86,22 +86,22 @@ if not exist main\tripsEVinc1.dat (
   if ERRORLEVEL 2 goto error
 )
 
-if not exist main\tripsAMallinc.tpp (
-  rem Convert trip tables into time/income/mode OD matrices
+if not exist main\tripsAM_no_zpv_allinc.tpp (
+  rem Convert person trip tables into time/income/mode OD person trip matrices
   rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].dat,
   rem         main\trips(EA|AM|MD|PM|EV)_2074.dat,
   rem         main\trips(EA|AM|MD|PM|EV)_2064.dat
   rem Output: main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4].tpp,
-  rem         main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_2074.tpp,
-  rem         main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_2064.tpp,
-  rem         main\trips(EA|AM|MD|PM|EV)allinc.tpp
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv_allinc.tpp
   runtpp "%CODE_DIR%\prepAssignIncome.job"
   IF ERRORLEVEL 2 goto error
 )
 
 if not exist metrics\transit_times_by_mode_income.csv (
-  rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : main\trips(EA|AM|MD|PM|EV)allinc.tpp,
+  rem Reads person trip tables and skims and outputs tallies for trip attributes
+  rem Input : main\trips(EA|AM|MD|PM|EV)_no_zpv_allinc.tpp,
   rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp,
   rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,
   rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,

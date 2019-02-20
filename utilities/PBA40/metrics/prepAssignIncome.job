@@ -46,7 +46,7 @@
         ; read in the individual trips fixed format file from countTrips.py
         filei mati[1] = main\trips@token_period@@suffix@.dat, pattern = ijm:v, fields = #1,2,0,3-35
 
-        ; write out a matrix that combines the individual and joint trips for assignment
+        ; write out a matrix that combines the individual and joint trips
         fileo mato[1] = main\trips@token_period@_no_zpv_@suffix@.tpp, mo = 1-32, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                                                                      walk, bike,
                                                                      wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
@@ -83,65 +83,39 @@
         mw[25] = mi.1.25 ; tnc, single-party
         mw[26] = mi.1.26 ; tnc, shared
         mw[27] = mi.1.27 ; drive alone, av, no toll
-        mw[28] = mi.1.27 ; drive alone, av, toll
-        mw[29] = mi.1.28 ; shared ride 2, av, no toll
-        mw[30] = mi.1.28 ; shared ride 2, av, toll
-        mw[31] = mi.1.29 ; shared ride 3+, av, no toll
-        mw[32] = mi.1.29 ; shared ride 3+, av, toll
+        mw[28] = mi.1.28 ; drive alone, av, toll
+        mw[29] = mi.1.29 ; shared ride 2, av, no toll
+        mw[30] = mi.1.30 ; shared ride 2, av, toll
+        mw[31] = mi.1.31 ; shared ride 3+, av, no toll
+        mw[32] = mi.1.32 ; shared ride 3+, av, toll
      endrun
 
+     ; the last part only makes sense for incomes, not age groups
+     if (income>4) continue
 
      ; create zero passenger trip matrices
      run pgm = matrix
 
      	 filei mati[1] = main\trips@token_period@_no_zpv_@suffix@.tpp
 
-       ; write out a matrix that is a transpose and a fraction of the original trip matrix (for TNCs and AVs, 5 modes only)
-       fileo mato[1] = main\trips@token_period@_zpv_@suffix@.tpp, mo = 1-32, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
-                                                                    walk, bike,
-                                                                    wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
-                                                                    drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
-                                                                    wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
-                                                                    taxi, tnc_single, tnc_shared,
-                                                                    da_av_notoll, da_av_toll, s2_av_notoll, s2_av_toll, s3_av_notoll, s3_av_toll
+       ; transpose the matrix and divide by occupancy to get vehicle trips, then multiply by ZPV factor
+       ; 
+       ; Note: we're not doing this for TNC trips because they when they're ZPV, they don't belong to any person or household
+       ; so we should use the trips\@token_period@_zpv.tpp zpv_tnc matrix for that
+       ;
+       fileo mato[1] = main\trips@token_period@_zpv_@suffix@.tpp, mo = 1, name = zpv_av
      	 zones = @token_zones@
 
        ; hwyParam.bock contains the values of the zero passenger vehicle factor (zpv)
        read file = ctramp\scripts\block\hwyparam.block
 
-         mw[1]  = 0  ; - drive alone, no value toll
-         mw[2]  = 0  ; - drive alone, value toll
-         mw[3]  = 0  ; - shared ride 2, no value toll
-         mw[4]  = 0  ; - shared ride 2, value toll
-         mw[5]  = 0  ; - shared ride 3+, no value toll
-         mw[6]  = 0  ; shared ride 3+, value toll
-         mw[7]  = 0  ; walk
-         mw[8]  = 0  ; bicycle
-         mw[9]  = 0  ; walk, local bus, walk
-         mw[10] = 0 ; walk, light rail/ferry, walk
-         mw[11] = 0 ; walk, express bus, walk
-         mw[12] = 0 ; walk, heavy rail, walk
-         mw[13] = 0 ; walk, commuter rail, walk
-         mw[14] = 0 ; drive, local bus, walk
-         mw[15] = 0 ; drive, light rail/ferry, walk
-         mw[16] = 0 ; drive, express bus, walk
-         mw[17] = 0 ; drive, heavy rail, walk
-         mw[18] = 0 ; drive, commuter rail, walk
-         mw[19] = 0 ; walk, local bus, drive
-         mw[20] = 0 ; walk, light rail/ferry, drive
-         mw[21] = 0 ; walk, express bus, drive
-         mw[22] = 0 ; walk, heavy rail, drive
-         mw[23] = 0 ; walk, commuter rail, drive
-         mw[24] = 0 ; taxi
-         mw[25] = mi.1.25.t * TNC_ZPV_factor ; tnc, single-party
-         mw[26] = mi.1.26.t * TNC_ZPV_factor ; tnc, shared
-         mw[27] = mi.1.27.t * OwnedAV_ZPV_factor ; drive alone, av, no toll
-         mw[28] = mi.1.28.t * OwnedAV_ZPV_factor ; drive alone, av, toll
-         mw[29] = mi.1.29.t * OwnedAV_ZPV_factor ; shared ride 2, av, no toll
-         mw[30] = mi.1.30.t * OwnedAV_ZPV_factor ; shared ride 2, av, toll
-         mw[31] = mi.1.31.t * OwnedAV_ZPV_factor ; shared ride 3+, av, no toll
-         mw[32] = mi.1.32.t * OwnedAV_ZPV_factor ; shared ride 3+, av, toll
-
+      ; transpose the matrix and divide by occupancy to get vehicle trips, then multiply by ZPV factor
+       mw[1] = (mi.1.da_av_notoll.t        + 
+                mi.1.da_av_toll.t          +
+                (mi.1.s2_av_notoll.t/2.0 ) +
+                (mi.1.s2_av_toll.t  /2.0 ) +
+                (mi.1.s3_av_notoll.t/3.25) +
+                (mi.1.s3_av_toll.t  /3.25))*OwnedAV_ZPV_factor
      endrun
 
 
@@ -155,8 +129,8 @@
   			filei mati[3] = main\trips@token_period@_no_zpv_inc3.tpp
   			filei mati[4] = main\trips@token_period@_no_zpv_inc4.tpp
 
-  			 ; write out a matrix that combines the individual and joint trips for assignment
-        fileo mato[1] = main\trips@token_period@allinc.tpp, mo = 1-32, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+  			; write out a matrix that combines the individual and joint trips for assignment
+        fileo mato[1] = main\trips@token_period@_no_zpv_allinc.tpp, mo = 1-32, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                                                                      walk, bike,
                                                                      wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
                                                                      drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
