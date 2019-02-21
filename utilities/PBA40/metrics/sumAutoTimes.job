@@ -120,6 +120,29 @@ loop auto = 1,15
    token_occ    = 3.5
   endif
 
+  ; find no access zones
+  RUN PGM=MATRIX
+    FILEI MATI[1]   = "skims\HWYSKMAM.tpp"
+    FILEO RECO[1]   = "skims\unconnected_zones.dbf", FIELDS=ZONE(5.0), UNCONNECTED(3.0)
+
+    MW[1] = MI.1.DISTDA
+    IF (ROWMIN(1) == 500000)
+      RO.ZONE = I
+      RO.UNCONNECTED = 1
+      WRITE RECO=1
+    ENDIF
+  ENDRUN
+
+  ; Convert to has access matrix -- all ones if has access
+  RUN PGM=MATRIX
+    FILEI ZDATI[1] = "skims\unconnected_zones.dbf"
+    FILEO MATO[1]  = "skims\connected_zones.tpp", MO=1, NAME=CONNECTED
+    ZONES=1475
+
+    MW[1] = 1
+    IF (ZI.1.UNCONNECTED=1) MW[1] = 0
+  ENDRUN
+
   DistributeMultistep processid = 'ctramp', processNum = auto, commpath = '%COMMPATH%'
 
     ; Loop thru time periods
@@ -235,7 +258,7 @@ loop auto = 1,15
       Income = '@token_inc@'
 
       if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=1 LIST="Income,Mode,Daily Person Trips,Daily Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost,VTOLL nonzero AM,VTOLL nonzero MD,Bridge Tolls,Value Tolls"
-      if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Income, Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
+      if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= Income, Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
                                                             Person_min(10.2L),   Vehicle_min(10.2L),
                                                             Person_miles(10.2L), Vehicle_miles(10.2L),
                                                             Total_cost(10.2L),
@@ -336,7 +359,7 @@ loop auto = 1,15
       Mode   = 'owned_zpv'
       Income = '@token_inc@'
 
-      if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Income, Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
+      if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= Income, Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
                                                             Person_min(10.2L),   Vehicle_min(10.2L),
                                                             Person_miles(10.2L), Vehicle_miles(10.2L),
                                                             Total_cost(10.2L),
@@ -363,6 +386,9 @@ loop auto = 1,15
      FILEI MATI[8] = "skims\HWYSKMMD.tpp"
      FILEI MATI[9] = "skims\HWYSKMPM.tpp"
      FILEI MATI[10]= "skims\HWYSKMEV.tpp"
+
+     ; don't use unconnected zones
+     FILEI MATI[11] = "skims\connected_zones.tpp"
 
      FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T
 
@@ -412,15 +438,18 @@ loop auto = 1,15
       MW[35]  =  mi.5.@token_auto@ *  mi.10.@token_vtoll@             ; Value tolls
 
      ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
-     MW[36] =  mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
-     MW[37] = (mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)/@token_occ@
-     MW[38] = MW[1] + MW[8]  + MW[15] + MW[22] + MW[29]   ; Person minutes
-     MW[39] = MW[2] + MW[9]  + MW[16] + MW[23] + MW[30]   ; Vehicle minutes
-     MW[40] = MW[3] + MW[10] + MW[17] + MW[24] + MW[31]   ; Person miles
-     MW[41] = MW[4] + MW[11] + MW[18] + MW[25] + MW[32]   ; Vehicle miles
-     MW[42] = MW[5] + MW[12] + MW[19] + MW[26] + MW[33]   ; Trip Cost
-     MW[43] = MW[6] + MW[13] + MW[20] + MW[27] + MW[34]   ; Bridge Tolls
-     MW[44] = MW[7] + MW[14] + MW[21] + MW[28] + MW[35]   ; Value Tolls
+     ;
+     ; NOTE that the zones may be unconnected, resulting in huge skim values, so we need to exclude those here
+
+     MW[36] = mi.11.connected*mi.11.connected.t*( mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)
+     MW[37] = mi.11.connected*mi.11.connected.t*((mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)/@token_occ@)
+     MW[38] = mi.11.connected*mi.11.connected.t*(MW[1] + MW[8]  + MW[15] + MW[22] + MW[29])   ; Person minutes
+     MW[39] = mi.11.connected*mi.11.connected.t*(MW[2] + MW[9]  + MW[16] + MW[23] + MW[30])   ; Vehicle minutes
+     MW[40] = mi.11.connected*mi.11.connected.t*(MW[3] + MW[10] + MW[17] + MW[24] + MW[31])   ; Person miles
+     MW[41] = mi.11.connected*mi.11.connected.t*(MW[4] + MW[11] + MW[18] + MW[25] + MW[32])   ; Vehicle miles
+     MW[42] = mi.11.connected*mi.11.connected.t*(MW[5] + MW[12] + MW[19] + MW[26] + MW[33])   ; Trip Cost
+     MW[43] = mi.11.connected*mi.11.connected.t*(MW[6] + MW[13] + MW[20] + MW[27] + MW[34])   ; Bridge Tolls
+     MW[44] = mi.11.connected*mi.11.connected.t*(MW[7] + MW[14] + MW[21] + MW[28] + MW[35])   ; Value Tolls
 
      IF (@auto@=2 || @auto@==4 || @auto@==6)
        ; only for tolls
@@ -440,7 +469,7 @@ loop auto = 1,15
 
       Mode   = '@token_auto@' + '_ix'
 
-      if(I = 1454) PRINT PRINTO=1 CSV=T LIST= "na",   Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
+      if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= "na",   Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
                                                             Person_min(10.2L),   Vehicle_min(10.2L),
                                                             Person_miles(10.2L), Vehicle_miles(10.2L),
                                                             Total_cost(10.2L),
@@ -462,6 +491,8 @@ loop auto = 1,15
      FILEI MATI[8] = "skims\HWYSKMMD.tpp"
      FILEI MATI[9] = "skims\HWYSKMPM.tpp"
      FILEI MATI[10]= "skims\HWYSKMEV.tpp"
+
+     FILEI MATI[11] = "skims\connected_zones.tpp"
 
      FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T
 
@@ -511,15 +542,18 @@ loop auto = 1,15
       MW[35]   =  mi.5.@token_auto@ *  mi.10.@token_vtoll@             ; Value tolls
 
      ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
-     MW[36] =  mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
-     MW[37] = (mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)/@token_occ@
-     MW[38] = MW[1] + MW[8]  + MW[15] + MW[22] + MW[29]   ; Person minutes
-     MW[39] = MW[2] + MW[9]  + MW[16] + MW[23] + MW[30]   ; Vehicle minutes
-     MW[40] = MW[3] + MW[10] + MW[17] + MW[24] + MW[31]   ; Person miles
-     MW[41] = MW[4] + MW[11] + MW[18] + MW[25] + MW[32]   ; Vehicle miles
-     MW[42] = MW[5] + MW[12] + MW[19] + MW[26] + MW[33]   ; Trip Cost
-     MW[43] = MW[6] + MW[13] + MW[20] + MW[27] + MW[34]   ; Bridge Tolls
-     MW[44] = MW[7] + MW[14] + MW[21] + MW[28] + MW[35]   ; Value Tolls
+     ;
+     ; NOTE that the zones may be unconnected, resulting in huge skim values, so we need to exclude those here
+
+     MW[36] = mi.11.connected*mi.11.connected.t*( mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)
+     MW[37] = mi.11.connected*mi.11.connected.t*((mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)/@token_occ@)
+     MW[38] = mi.11.connected*mi.11.connected.t*(MW[1] + MW[8]  + MW[15] + MW[22] + MW[29])   ; Person minutes
+     MW[39] = mi.11.connected*mi.11.connected.t*(MW[2] + MW[9]  + MW[16] + MW[23] + MW[30])   ; Vehicle minutes
+     MW[40] = mi.11.connected*mi.11.connected.t*(MW[3] + MW[10] + MW[17] + MW[24] + MW[31])   ; Person miles
+     MW[41] = mi.11.connected*mi.11.connected.t*(MW[4] + MW[11] + MW[18] + MW[25] + MW[32])   ; Vehicle miles
+     MW[42] = mi.11.connected*mi.11.connected.t*(MW[5] + MW[12] + MW[19] + MW[26] + MW[33])   ; Trip Cost
+     MW[43] = mi.11.connected*mi.11.connected.t*(MW[6] + MW[13] + MW[20] + MW[27] + MW[34])   ; Bridge Tolls
+     MW[44] = mi.11.connected*mi.11.connected.t*(MW[7] + MW[14] + MW[21] + MW[28] + MW[35])   ; Value Tolls
 
      IF (@auto@==2 || @auto@==4 || @auto@==6)
        ; only for tolls
@@ -539,7 +573,7 @@ loop auto = 1,15
 
       Mode   = '@token_auto@' + '_air'
 
-      if(I = 1454) PRINT PRINTO=1 CSV=T LIST= "na",   Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
+      if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= "na",   Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
                                                             Person_min(10.2L),   Vehicle_min(10.2L),
                                                             Person_miles(10.2L), Vehicle_miles(10.2L),
                                                             Total_cost(10.2L),
@@ -652,7 +686,7 @@ RUN PGM = MATRIX
   Mode   = 'zpv_tnc'
   Income = 'na'
 
-  if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Income, Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
+  if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= Income, Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
                                           Person_min(10.2L),   Vehicle_min(10.2L),
                                           Person_miles(10.2L), Vehicle_miles(10.2L),
                                           Total_cost(10.2L),
@@ -674,6 +708,8 @@ RUN PGM = MATRIX
   FILEI MATI[8] = "skims\COM_HWYSKIMMD.tpp"
   FILEI MATI[9] = "skims\COM_HWYSKIMPM.tpp"
   FILEI MATI[10]= "skims\COM_HWYSKIMEV.tpp"
+
+  FILEI MATI[11] = "skims\connected_zones.tpp"
 
   ; Read Truck Operating Cost from Properties file
   Read File = "CTRAMP\scripts\block\hwyParam.block"
@@ -881,16 +917,19 @@ RUN PGM = MATRIX
             ( mi.5.ctrucktoll * mi.10.tollvtolllrg) ; Value tolls
 
   ; Compute Daily Trips, TripTime, TripDist, TripCost, BridgeToll, ValueToll
-  MW[46] = mi.1.vstruck + mi.1.struck + mi.1.mtruck + mi.1.ctruck +
+  ;
+  ; NOTE that the zones may be unconnected, resulting in huge skim values, so we need to exclude those here
+  MW[46] = mi.11.connected*mi.11.connected.t*
+          (mi.1.vstruck + mi.1.struck + mi.1.mtruck + mi.1.ctruck +
            mi.2.vstruck + mi.2.struck + mi.2.mtruck + mi.2.ctruck +
            mi.3.vstruck + mi.3.struck + mi.3.mtruck + mi.3.ctruck +
            mi.4.vstruck + mi.4.struck + mi.4.mtruck + mi.4.ctruck +
-           mi.5.vstruck + mi.5.struck + mi.5.mtruck + mi.5.ctruck
-  MW[47] = MW[1] + MW[5] + MW[10] + MW[14] + MW[19] + MW[23] + MW[28] + MW[32] + MW[37] + MW[41] ; TripTime
-  MW[48] = MW[2] + MW[6] + MW[11] + MW[15] + MW[20] + MW[24] + MW[29] + MW[33] + MW[38] + Mw[42] ; TripDist
-  MW[49] = MW[3] + MW[7] + MW[12] + MW[16] + MW[21] + MW[25] + MW[30] + MW[34] + MW[39] + MW[43] ; TripCost
-  MW[50] = MW[4] + MW[8] + MW[13] + MW[17] + MW[22] + MW[26] + MW[31] + MW[35] + MW[40] + MW[44] ; BridgeToll
-  MW[51] =         MW[9]          + MW[18]          + MW[27]          + MW[36]          + MW[45] ; ValueToll
+           mi.5.vstruck + mi.5.struck + mi.5.mtruck + mi.5.ctruck)
+  MW[47] = mi.11.connected*mi.11.connected.t*(MW[1] + MW[5] + MW[10] + MW[14] + MW[19] + MW[23] + MW[28] + MW[32] + MW[37] + MW[41]) ; TripTime
+  MW[48] = mi.11.connected*mi.11.connected.t*(MW[2] + MW[6] + MW[11] + MW[15] + MW[20] + MW[24] + MW[29] + MW[33] + MW[38] + Mw[42]) ; TripDist
+  MW[49] = mi.11.connected*mi.11.connected.t*(MW[3] + MW[7] + MW[12] + MW[16] + MW[21] + MW[25] + MW[30] + MW[34] + MW[39] + MW[43]) ; TripCost
+  MW[50] = mi.11.connected*mi.11.connected.t*(MW[4] + MW[8] + MW[13] + MW[17] + MW[22] + MW[26] + MW[31] + MW[35] + MW[40] + MW[44]) ; BridgeToll
+  MW[51] = mi.11.connected*mi.11.connected.t*(        MW[9]          + MW[18]          + MW[27]          + MW[36]          + MW[45]) ; ValueToll
 
   Daily_Trips   = Daily_Trips   + ROWSUM(46)
   TripTime      = TripTime      + ROWSUM(47)
@@ -900,7 +939,7 @@ RUN PGM = MATRIX
   Value_tolls   = Value_tolls   + ROWSUM(51)
 
   ; "Income,Mode,Daily Person Trips,Daily Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost"
-  if(I = 1454) PRINT PRINTO=1 CSV=T LIST= "na", "truck", Daily_Trips(10.2L), Daily_Trips(10.2L),
+  if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= "na", "truck", Daily_Trips(10.2L), Daily_Trips(10.2L),
                                                          TripTime(10.2L),   TripTime(10.2L),
                                                          TripDist(10.2L),   TripDist(10.2L),
                                                          TripCost(10.2L),
