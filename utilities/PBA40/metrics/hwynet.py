@@ -1,4 +1,4 @@
-import csv, itertools, optparse, os, sys
+import argparse, itertools, optparse, os, sys
 import numpy, pandas
 
 USAGE = """
@@ -42,10 +42,12 @@ USAGE = """
 pandas.options.display.width = 1000
 pandas.options.display.max_columns = 100
 
-parser = optparse.OptionParser()
-(options,args) = parser.parse_args()
+parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
+parser.add_argument("--filter", metavar="lookup_filter", help="Filter keyword for lookup files", required=True)
+parser.add_argument("net_csv",  metavar="avgload5period_vehclasses.csv", help="Loaded network export with vehicle classes")
 
-datafile            = args[0]
+args = parser.parse_args()
+datafile            = args.net_csv
 lookupdir           = os.path.join( "INPUT","metrics" )
 vmt_vht_outputfile  = os.path.join("metrics", "vmt_vht_metrics.csv")
 vclasses            = ['DA',  'S2',  'S3', 'SM', 'HV',
@@ -61,7 +63,8 @@ periods             = ['EA','AM','MD','PM','EV']
 
 # Read the link data
 link_df = pandas.read_csv(datafile)
-print("Read {} links from {}".format(len(link_df), datafile))
+num_links = len(link_df)
+print("Read {} links from {}".format(num_links, datafile))
 id_fields    = ['a','b']
 fields       = ['distance','lanes','at','ft','fft']
 
@@ -88,6 +91,7 @@ for tp_field in ['cspd{}','vol{}_tot','vc{}','ctim{}']:
 link_tp_df = pandas.merge(how='left', left=link_tp_df, right=link_df[id_fields + fields], on=id_fields)
 print("Melted to timeperiods: {} rows".format(len(link_tp_df)))
 print(link_tp_df.head())
+assert(len(link_tp_df) == len(periods)*num_links)
 
 # unstack so that timeperiods and vehicle classes are a column
 # first create a variable name decoder DF with timeperiod, vclass, variable
@@ -107,16 +111,25 @@ link_tp_vehclass_df = pandas.merge(how='left', left=link_tp_vehclass_df, right=t
 link_tp_vehclass_df = link_tp_vehclass_df.rename(columns={'value':'vol'}).drop(columns='variable')
 print("Melted to timeperiods x vehclasses: {} rows".format(len(link_tp_vehclass_df)))
 print(link_tp_vehclass_df.head())
+assert(len(link_tp_vehclass_df) == len(vclasses)*len(periods)*num_links)
 
 # units: Hours delay per VMT
 # Map headers -> index for this lookup and read lookup data
 nrc_file = os.path.join(lookupdir,"nonRecurringDelayLookup.csv")
-nrclookup_df = pandas.read_csv(nrc_file, dtype={'vcratio':str}).set_index('vcratio')
+nrclookup_df = pandas.read_csv(nrc_file, dtype={'vcratio':str})
+# filter by given filter
+nrclookup_df = nrclookup_df.loc[ nrclookup_df['filter'] == args.filter ].copy()
+if len(nrclookup_df) == 0:
+  print("No nonRecurringDelay lookups for {} found".format(args.filter))
+  sys.exit(2)
+nrclookup_df.drop(columns=['filter'],inplace=True)
 
 # transform so columns are: vcratio (str), lanes_24(int), nrcdelay (float)
+nrclookup_df.set_index('vcratio',inplace=True)
 nrclookup_df.rename(columns={'2lanes':2, '3lanes':3, '4lanes':4}, inplace=True)
 nrclookup_df = nrclookup_df.stack().reset_index().rename(columns={'level_1':'lanes_24',0:'nrcdelay'})
-print("Read {}:\n{}".format(nrc_file, nrclookup_df.head()))
+print(nrclookup_df.head())
+print("Read {} and filtered by {}:\n{}".format(nrc_file, args.filter, nrclookup_df.head()))
 
 # Units are collisions per 1,000,000 VMT
 # Map headers -> index for this lokup and read lookup data
@@ -125,8 +138,14 @@ collisionlookup_df = pandas.read_csv(collision_file)
 collision_types = list(collisionlookup_df.columns.values)
 collision_types.remove('ft')
 collision_types.remove('at')
-collision_types.remove('lanes')
-print("Read {}:\n{}".format(collision_file, collisionlookup_df.head()))
+collision_types.remove('filter')
+# filter by given filter
+collisionlookup_df = collisionlookup_df.loc[ collisionlookup_df['filter'] == args.filter ].copy()
+if len(collisionlookup_df) == 0:
+  print("No collisions lookups for {} found".format(args.filter))
+  sys.exit(2)
+collisionlookup_df.drop(columns=['filter'],inplace=True)
+print("Read {} and filtered by {}:\n{}".format(collision_file, args.filter, collisionlookup_df.head()))
 
 # Units are grams per mile (equivalent to metric tons per 1,000,000 VMT)
 emission_file = os.path.join(lookupdir,"emissionsLookup.csv")
@@ -135,7 +154,15 @@ emission_types = list(emissionslookup_df.columns.values)
 emission_types.remove('period')
 emission_types.remove('vclassgroup')
 emission_types.remove('speed')
-print("Read {}:\n{}".format(emission_file, emissionslookup_df.head()))
+emission_types.remove('filter')
+# filter by given filter
+emissionslookup_df = emissionslookup_df.loc[ emissionslookup_df['filter'] == args.filter ].copy()
+if len(emissionslookup_df) == 0:
+  print("No emission lookups for {} found".format(args.filter))
+  sys.exit(2)
+emissionslookup_df.drop(columns=['filter'],inplace=True)
+print("Read {} and filtered by {}:\n{}".format(emission_file, args.filter, emissionslookup_df.head()))
+
 # Add link x timeperiod columns
 
 # lanes_24 is lanes but capped in [2,4]
@@ -152,25 +179,25 @@ link_tp_df['vcratio'] = link_tp_df['vcratio'].map('{:,.2f}'.format) # convert to
 link_tp_df = pandas.merge(left    = link_tp_df,
                           right   = nrclookup_df,
                           on      = ['vcratio', 'lanes_24']).rename(columns={'nrcdelay':'nrcdelay_pervmt'})
-# print("a link_tp_df:\n{}".format(link_tp_df.head()))
+print("a link_tp_df len {}:\n{}".format(len(link_tp_df), link_tp_df.head()))
+assert(len(link_tp_df) == len(periods)*num_links)
 
 # for collision lookup
 link_tp_df['collision_ft'] = link_tp_df['ft']
+link_tp_df.loc[ link_tp_df.ft == 1,          'collision_ft'] =  2 # Freeway-to-freeway connector is like a freeway
 link_tp_df.loc[ link_tp_df.ft == 8,          'collision_ft'] =  2 # managed freeway is like a freeway
 link_tp_df.loc[ link_tp_df.ft == 6,          'collision_ft'] = -1 # skip dummy links
 link_tp_df.loc[ link_tp_df.lanes <= 0,       'collision_ft'] = -1 # or those with lanes <= 0
 link_tp_df.loc[ link_tp_df.collision_ft > 4, 'collision_ft'] = 4 # cap at 4
 
-link_tp_df['collision_lanes'] = link_tp_df['lanes']
-link_tp_df.loc[ link_tp_df.collision_lanes > 4, 'collision_lanes'] = 4   # cap at 4
-
 link_tp_df['collision_at'] = link_tp_df['at']
 link_tp_df.loc[ link_tp_df.collision_at < 4, 'collision_at' ]  = 4 # min cap at 4
 
 link_tp_df = pandas.merge(how='left', left=link_tp_df, 
-                          right=collisionlookup_df.rename(columns={'ft':'collision_ft','at':'collision_at','lanes':'collision_lanes'}), 
-                          on=['collision_ft','collision_lanes','collision_at'])
-# print("b link_tp_df:\n{}".format(link_tp_df.head()))
+                          right=collisionlookup_df.rename(columns={'ft':'collision_ft','at':'collision_at'}), 
+                          on=['collision_ft','collision_at'])
+print("b link_tp_df len {}:\n{}".format(len(link_tp_df), link_tp_df.head()))
+assert(len(link_tp_df) == len(periods)*num_links)
 
 # for emission lookup
 link_tp_df["speed"] = link_tp_df['cspd'].apply(numpy.int64)
@@ -189,7 +216,7 @@ link_tp_vehclass_df['hypfft'] = link_tp_vehclass_df['vol'] * link_tp_vehclass_df
 link_tp_vehclass_df['nrcdelay'] = link_tp_vehclass_df['nrcdelay_pervmt']*link_tp_vehclass_df['vmt']
 # so zero out non-freeway
 link_tp_vehclass_df.loc[ ~link_tp_vehclass_df.ft.isin([1,2,8]), 'nrcdelay'] = 0.0
-# print("c link_tp_vehclass_df:\n{}".format(link_tp_vehclass_df.head()))
+print("c link_tp_vehclass_df len {}:\n{}".format(len(link_tp_vehclass_df), link_tp_vehclass_df.head()))
 
 # collisionlookup in collisions per 1000000 VMT
 for collision_type in collision_types:
@@ -210,8 +237,7 @@ link_tp_vehclass_df = pandas.merge(how='left', left=link_tp_vehclass_df,
 for emission_type in emission_types:
     link_tp_vehclass_df[emission_type] = link_tp_vehclass_df[emission_type]*link_tp_vehclass_df['vmt']
 
-#print("d link_tp_vehclass_df:\n{}".format(link_tp_vehclass_df.head()))
-#print(len(link_tp_vehclass_df))
+print("d link_tp_vehclass_df len {}:\n{}".format(len(link_tp_vehclass_df), link_tp_vehclass_df.head()))
 
 aggregate_dict = {'vmt'     :'sum',
                   'vht'     :'sum',
