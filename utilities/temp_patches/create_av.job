@@ -1,0 +1,29 @@
+; set the sample share as a TP+ token
+token_sample_share = '%SAMPLESHARE%'
+
+; do, more or less, the same procedure for each time period
+loop period = 1, 5
+
+   ; a two letter token is used for each time period
+   if (period = 1) token_period = 'EA'
+   if (period = 2) token_period = 'AM'
+   if (period = 3) token_period = 'MD'
+   if (period = 4) token_period = 'PM'
+   if (period = 5) token_period = 'EV'
+
+   *move main\trips@token_period@_zpv.tpp main\trips@token_period@_zpv_original.tpp
+
+   ; step four: create zero passenger trips
+   run pgm = matrix
+
+      filei mati[1] = main\trips@token_period@_no_zpv.tpp
+      fileo mato[1] = main\trips@token_period@_zpv.tpp, mo=1-2, name=zpv_tnc, zpv_av
+
+      ; hwyParam.bock contains variables used in the remainder of the script, particularly in the zero passenger vehicle factor (zpv)
+      read file = ctramp\scripts\block\hwyparam.block
+
+      ; transpose the matrix and divide by occupancy to get vehicle trips, then multiply by ZPV factor
+      mw[1] = (mi.1.da_tnc.t + (mi.1.s2_tnc.t/2.0) + (mi.1.s3_tnc.t/3.25))*TNC_ZPV_factor
+      mw[2] = (mi.1.da_av.t  + (mi.1.s2_av.t /2.0) + (mi.1.s3_av.t /3.25))*OwnedAV_ZPV_factor
+   endrun
+endloop
