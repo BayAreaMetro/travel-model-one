@@ -410,13 +410,14 @@ class RunResults:
         if not self.base_results: return
 
         cat1            = 'Travel Time Stats (for reference only)'
-        cat2            = 'Auto/Truck (Hours)'
+        cat2            = 'Auto Hours (Person Hours)'
         auto_vht        = self.daily_results[cat1,cat2,'SOV (PHT)'  ] + \
                           self.daily_results[cat1,cat2,'HOV2 (PHT)' ] + \
                           self.daily_results[cat1,cat2,'HOV3+ (PHT)']
         base_auto_vht   = self.base_results.daily_results[cat1,cat2,'SOV (PHT)'  ] + \
                           self.base_results.daily_results[cat1,cat2,'HOV2 (PHT)' ] + \
                           self.base_results.daily_results[cat1,cat2,'HOV3+ (PHT)']
+        cat2            = 'Truck Hours'                         
         base_truck_vht  = self.base_results.daily_results[cat1,cat2,'Truck (Computed VHT)']
 
         pct_change_vht  = (auto_vht-base_auto_vht)/base_auto_vht
@@ -433,9 +434,9 @@ class RunResults:
         self.daily_results['Other Transportation Benefits','Travel Time Reliability (Non-Recurring Freeway Delay) (Hours)','Truck (Computed VH)'] = (1.0+pct_change_nrfd)*base_truck_nrfd
 
         cat1            = 'Travel Cost (for reference only)'
-        cat2            = 'VMT (Reference)'
-        auto_vmt        = self.daily_results[cat1,cat2,'Auto']
-        base_auto_vmt   = self.base_results.daily_results[cat1,cat2,'Auto']
+        cat2            = 'VMT by class'
+        auto_vmt        = self.daily_results[cat1,cat2,'Auto non-AV'] + self.daily_results[(cat1,cat2,'Auto AV' )] 
+        base_auto_vmt   = self.base_results.daily_results[cat1,cat2,'Auto non-AV'] + self.base_results.daily_results[cat1,cat2,'Auto AV']
         base_truck_vmt  = self.base_results.daily_results[cat1,cat2,'Truck - Computed']
 
         pct_change_vmt  = (auto_vmt-base_auto_vmt)/base_auto_vmt
@@ -449,7 +450,7 @@ class RunResults:
         #     self.daily_results['Travel Cost (for reference only)','VMT (Reference)','Truck - Computed'])*RunResults.PM25_ROADDUST*RunResults.GRAMS_TO_US_TONS
 
         cat1            = 'Travel Cost (for reference only)'
-        cat2            = 'Operating Costs'
+        cat2            = 'Operating Costs ($2000)'
         # override the truck vmt with base truck vmt, with pct change auto vmt applied
         self.roadways_df = pd.merge(left=self.roadways_df,
                                     right=self.base_results.roadways_df[['a','b','small truck volume','large truck volume']],
@@ -460,7 +461,7 @@ class RunResults:
         self.roadways_df['total truck cost']   = (self.roadways_df['small truck volume']*self.roadways_df['smtropc']*self.roadways_df['distance']*0.01) + \
                                                  (self.roadways_df['large truck volume']*self.roadways_df['lrtropc']*self.roadways_df['distance']*0.01)
 
-        self.daily_results[                cat1,           cat2,       'Truck ($2000) - Computed'] = self.roadways_df['total truck cost'].sum()
+        self.daily_results[                cat1,           cat2,       'Truck - Computed'] = self.roadways_df['total truck cost'].sum()
         self.daily_results['Accessibility Benefits (other)','Non-Household','Cost - Truck ($2000) - Computed'] = self.roadways_df['total truck cost'].sum()
 
         cat1            = 'Health Benefits'
@@ -710,7 +711,7 @@ class RunResults:
                       - self.crowding_df.loc[self.crowding_df['SYSTEM'] == "AC Transit Transbay", 'ivtt'].sum()
             
         daily_results[(cat1,cat2,'Other')] = self.crowding_df['effective_ivtt_metrolinx_max2pt5'].sum() - self.crowding_df['ivtt'].sum() \
-                          -  (daily_results[(cat1,cat2,'BART')] + daily_results[(cat1,cat2,'SF Muni')] + daily_results[(cat1,cat2,'Caltrain')]+ \
+                          -  (daily_results[(cat1,cat2,'BART (incl eBART)')] + daily_results[(cat1,cat2,'SF Muni')] + daily_results[(cat1,cat2,'Caltrain')]+ \
                               daily_results[(cat1,cat2,'VTA LRT')] + daily_results[(cat1,cat2,'AC Transit Transbay')])
 
         cat2            = 'Vehicle Ownership (Modeled)'
@@ -843,11 +844,14 @@ class RunResults:
 
         ######################################################################################
         cat1            = 'Travel Time Stats (for reference only)'
-        cat2            = 'Auto/Truck (Hours)'
+
+
+        cat2            = 'Auto Hours (Person Hours)'
         daily_results[(cat1,cat2,'SOV (PHT)'  )] = vmt_byclass.loc[['da','dat','daav'],'VHT'].sum()
         daily_results[(cat1,cat2,'HOV2 (PHT)' )] = vmt_byclass.loc[['s2','s2t','s2av'],'VHT'].sum()*2
         daily_results[(cat1,cat2,'HOV3+ (PHT)')] = vmt_byclass.loc[['s3','s3t','s3av'],'VHT'].sum()*3.5
 
+        cat2            = 'Truck Hours'
         # computed will get overwritten if base results
         daily_results[(cat1,cat2,'Truck (Computed VHT)')] = vmt_byclass.loc[['sm','smt','hv','hvt'],'VHT'].sum()
         daily_results[(cat1,cat2,'Truck (Modeled VHT)' )] = vmt_byclass.loc[['sm','smt','hv','hvt'],'VHT'].sum()
@@ -874,6 +878,7 @@ class RunResults:
             vmt_byclass.loc[['da','dat','s2','s2t','s3','s3t','daav','s2av','s3av'], 'Non-Recurring Freeway Delay'].sum()
         quick_summary['Vehicle hours of non-recurring delay - commercial (raw)']   = \
             vmt_byclass.loc[['sm','smt','hv','hvt'],            'Non-Recurring Freeway Delay'].sum()
+
 
         cat2            = 'Transit In-Vehicle (Hours)'
         daily_results[(cat1,cat2,'Local Bus'       )] = transit_byclass.loc['loc','In-vehicle hours']
@@ -942,34 +947,70 @@ class RunResults:
 
         cat1            = 'Travel Cost (for reference only)'
 
-        cat2            = 'VMT (Reference)'
-        daily_results[(cat1,cat2,'Auto' )] = \
-            vmt_byclass.loc[['da','dat','s2','s2t','s3','s3t'],'VMT'].sum()
+        cat2            = 'VMT by class'
+        daily_results[(cat1,cat2,'Auto non-AV' )]           = vmt_byclass.loc[['da','dat','s2','s2t','s3','s3t'],'VMT'].sum()
+        daily_results[(cat1,cat2,'Auto AV' )]               = vmt_byclass.loc[['daav','s2av','s3av'],'VMT'].sum()        
         # computed will get overwritten if base results
-        daily_results[(cat1,cat2,'Truck - Computed')] = \
-            vmt_byclass.loc[['sm','smt','hv','hvt'],'VMT'].sum()
-        daily_results[(cat1,cat2,'Truck - Modeled')] = \
-            vmt_byclass.loc[['sm','smt','hv','hvt'],'VMT'].sum()
-        daily_results[(cat1,cat2,'Truck from Trips+Skims')] = \
-            auto_byclass.loc['truck','Vehicle Miles']
+        daily_results[(cat1,cat2,'Truck - Computed')]       = vmt_byclass.loc[['sm','smt','hv','hvt'],'VMT'].sum()
+        daily_results[(cat1,cat2,'Truck - Modeled')]        = vmt_byclass.loc[['sm','smt','hv','hvt'],'VMT'].sum()
+        daily_results[(cat1,cat2,'Truck from Trips+Skims')] = auto_byclass.loc['truck','Vehicle Miles']
         # quick summary
-        quick_summary['Vehicle miles traveled -- passenger vehicles'       ] = \
-            vmt_byclass.loc[['da','dat','s2','s2t','s3','s3t'],'VMT'].sum()
-        quick_summary['Vehicle miles traveled -- commercial vehicles (raw)'] = \
-            vmt_byclass.loc[['sm','smt','hv','hvt'           ],'VMT'].sum()
+        quick_summary['VMT -- passenger non-AV vehicles']   = vmt_byclass.loc[['da','dat','s2','s2t','s3','s3t'],'VMT'].sum()
+        quick_summary['VMT -- passenger AV vehicles']       = vmt_byclass.loc[['daav','s2av','s3av'],'VMT'].sum() 
+        quick_summary['Vehicle miles traveled -- commercial vehicles (raw)'] = vmt_byclass.loc[['sm','smt','hv','hvt'],'VMT'].sum()
 
 
-        cat2            = 'Trips (Reference)'
-        daily_results[(cat1,cat2,'Vehicle trips: SOV'  )] = auto_byclass.loc[['da' ,'datoll' ],'Daily Vehicle Trips'].sum()
-        daily_results[(cat1,cat2,'Vehicle trips: HOV2' )] = auto_byclass.loc[['sr2','sr2toll'],'Daily Vehicle Trips'].sum()
-        daily_results[(cat1,cat2,'Vehicle trips: HOV3+')] = auto_byclass.loc[['sr3','sr3toll'],'Daily Vehicle Trips'].sum()
-        total_autotrips = daily_results[(cat1,cat2,'Vehicle trips: SOV')] + \
-                          daily_results[(cat1,cat2,'Vehicle trips: HOV2')] + \
-                          daily_results[(cat1,cat2,'Vehicle trips: HOV3+')]
-        daily_results[(cat1,cat2,'Truck Trips')]         = auto_byclass.loc['truck', 'Daily Vehicle Trips']
-        daily_results[(cat1,cat2,'Drive+Transit Trips')] = transit_byaceg.loc[[('wlk','drv'),('drv','wlk')],'Transit Trips'].sum()
-        daily_results[(cat1,cat2,'Walk +Transit Trips')] = transit_byaceg.loc[('wlk','wlk'),'Transit Trips'].sum()
-        quick_summary['Person trips (total)'] = auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Daily Person Trips'].sum() + \
+        cat2            = 'VMT by mode'
+        daily_results[(cat1,cat2,'Auto SOV'  )] = auto_byclass.loc[['da' ,'datoll', 'da_av_toll', 'da_av_notoll',\
+                                                                    'da_ix','datoll_ix','da_air','datoll_air'],'Vehicle Miles'].sum()
+        daily_results[(cat1,cat2,'Auto HOV2' )] = auto_byclass.loc[['sr2','sr2toll', 's2_av_toll', 's2_av_notoll',\
+                                                                     'sr2_ix','sr2toll_ix', 'sr2_air','sr2toll_air'],'Vehicle Miles'].sum()
+        daily_results[(cat1,cat2,'Auto HOV3+')] = auto_byclass.loc[['sr3','sr3toll', 's3_av_toll', 's3_av_notoll'\
+                                                                     'sr3_ix','sr3toll_ix', 'sr3_air','sr3toll_air'],'Vehicle Miles'].sum()
+        daily_results[(cat1,cat2,'Auto TNC/Taxi')] = auto_byclass.loc[['tnc_single', 'tnc_shared', 'taxi'],'Vehicle Miles'].sum()
+        daily_results[(cat1,cat2,'Auto ZOV')] = auto_byclass.loc[['owned_zpv', 'zpv_tnc'],'Vehicle Miles'].sum()
+        daily_results[(cat1,cat2,'Truck')] = auto_byclass.loc['truck','Vehicle Miles'].sum()
+
+        total_autoVMT = daily_results[(cat1,cat2,'Auto SOV')] + \
+                          daily_results[(cat1,cat2,'Auto HOV2')] + \
+                          daily_results[(cat1,cat2,'Auto HOV3+')] + \
+                          daily_results[(cat1,cat2,'Auto TNC/Taxi')] + \
+                          daily_results[(cat1,cat2,'Auto ZOV')]
+        total_VMT = total_autoVMT + daily_results[(cat1,cat2,'Truck')]
+
+
+        cat2            = 'Trips by mode'
+        daily_results[(cat1,cat2,'Auto SOV'  )] = auto_byclass.loc[['da' ,'datoll', 'da_av_toll', 'da_av_notoll',\
+                                                                    'da_ix','datoll_ix','da_air','datoll_air'],'Daily Vehicle Trips'].sum()
+        daily_results[(cat1,cat2,'Auto HOV2' )] = auto_byclass.loc[['sr2','sr2toll', 's2_av_toll', 's2_av_notoll',\
+                                                                     'sr2_ix','sr2toll_ix', 'sr2_air','sr2toll_air'],'Daily Vehicle Trips'].sum()
+        daily_results[(cat1,cat2,'Auto HOV3+')] = auto_byclass.loc[['sr3','sr3toll', 's3_av_toll', 's3_av_notoll',\
+                                                                     'sr3_ix','sr3toll_ix', 'sr3_air','sr3toll_air'],'Daily Vehicle Trips'].sum()
+        daily_results[(cat1,cat2,'Auto TNC/Taxi')] = auto_byclass.loc[['tnc_single', 'tnc_shared', 'taxi'],'Daily Vehicle Trips'].sum()
+        daily_results[(cat1,cat2,'Auto ZOV')] = auto_byclass.loc[['owned_zpv', 'zpv_tnc'],'Daily Vehicle Trips'].sum()
+        daily_results[(cat1,cat2,'Transit (Drive) Trips')] = transit_byaceg.loc[[('wlk','drv'),('drv','wlk')],'Transit Trips'].sum()
+        daily_results[(cat1,cat2,'Transit (Walk) Trips')] = transit_byaceg.loc[('wlk','wlk'),'Transit Trips'].sum() 
+        daily_results[(cat1,cat2,'Walk')] = nonmot_byclass.loc['Walk','Daily Trips']
+        daily_results[(cat1,cat2,'Bike')] = nonmot_byclass.loc['Bike','Daily Trips']
+
+        total_autotrips = daily_results[(cat1,cat2,'Auto SOV')] + \
+                          daily_results[(cat1,cat2,'Auto HOV2')] + \
+                          daily_results[(cat1,cat2,'Auto HOV3+')] + \
+                          daily_results[(cat1,cat2,'Auto TNC/Taxi')] + \
+                          daily_results[(cat1,cat2,'Auto ZOV')]        
+        total_transittrips = daily_results[(cat1,cat2,'Transit (Drive) Trips')] + \
+                          daily_results[(cat1,cat2,'Transit (Walk) Trips')]
+        total_walktrips = daily_results[(cat1,cat2,'Walk')] 
+        total_biketrips = daily_results[(cat1,cat2,'Bike')] 
+
+        #daily_results[(cat1,cat2,'Truck')] = auto_byclass.loc['truck','Daily Vehicle Trips'].sum()
+
+        quick_summary['Person trips (total)'] = auto_byclass.loc[['da' ,'datoll', 'da_av_toll', 'da_av_notoll', \
+                                                                    'da_ix','datoll_ix','da_air','datoll_air', \
+                                                                    'sr2','sr2toll', 's2_av_toll', 's2_av_notoll', \
+                                                                    'sr2_ix','sr2toll_ix', 'sr2_air','sr2toll_air', \
+                                                                    'sr3','sr3toll', 's3_av_toll', 's3_av_notoll', \
+                                                                    'sr3_ix','sr3toll_ix', 'sr3_air','sr3toll_air'],'Daily Person Trips'].sum() + \
                                                 transit_byclass.loc[:,'Transit Trips'].sum() + \
                                                 nonmot_byclass.loc[:,'Daily Trips'].sum()
 
@@ -982,21 +1023,28 @@ class RunResults:
         daily_results[(cat1,cat2,'Total')] =total_autotrips*RunResults.ANNUALIZATION/RunResults.YEARLY_AUTO_TRIPS_PER_AUTO
 
 
-        cat2            = 'Operating Costs'
-        daily_results[(cat1,cat2,'Auto ($2000) - Households' )] = \
-            0.01*auto_byclass.loc[['da','datoll','sr2','sr2toll','sr3','sr3toll'],'Total Cost'].sum()
-        daily_results[(cat1,cat2,'Auto ($2000) - IX/EX' )] = \
+        cat2            = 'Operating Costs ($2000)'
+        daily_results[(cat1,cat2,'Auto Households' )] = \
+            0.01*auto_byclass.loc[['da','datoll','da_av_toll', 'da_av_notoll',\
+                                    'sr2','sr2toll','s2_av_toll', 's2_av_notoll'\
+                                    'sr3','sr3toll', 's3_av_toll', 's3_av_notoll'],'Total Cost'].sum()
+        daily_results[(cat1,cat2,'Auto Households ZOV' )] = \
+            0.01*auto_byclass.loc['owned_zpv','Total Cost'].sum()   
+        daily_results[(cat1,cat2,'Auto IX/EX' )] = \
             0.01*auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix'],'Total Cost'].sum()
-        daily_results[(cat1,cat2,'Auto ($2000) - AirPax' )] = \
+        daily_results[(cat1,cat2,'Auto AirPax' )] = \
             0.01*auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Total Cost'].sum()
+        daily_results[(cat1,cat2,'Auto TNC/Taxi' )] = \
+            0.01*auto_byclass.loc[['tnc_single', 'tnc_shared', 'taxi'],'Total Cost'].sum()
+        daily_results[(cat1,cat2,'Auto TNC/Taxi ZOV' )] = \
+            0.01*auto_byclass.loc['zpv_tnc', 'Total Cost'].sum()   
 
         # computed will get overwritten if base results
-        daily_results[(cat1,cat2,'Truck ($2000) - Computed')] = self.roadways_df['total truck cost'].sum()
-        daily_results[(cat1,cat2,'Truck ($2000) - Modeled')]  = self.roadways_df['total truck cost'].sum()
+        daily_results[(cat1,cat2,'Truck - Computed')] = self.roadways_df['total truck cost'].sum()
+        daily_results[(cat1,cat2,'Truck - Modeled')]  = self.roadways_df['total truck cost'].sum()
 
 
         # Parking
-
         cat2            = 'Parking Costs'
         for countynum,countyname in RunResults.COUNTY_NUM_TO_NAME.iteritems():
             daily_results[(cat1,cat2,'($2000) Work Tours to %s'     % countyname)] = \
@@ -1007,16 +1055,26 @@ class RunResults:
                 self.parking_costs.loc[(self.parking_costs.parking_category=='Non-Work')&
                                        (self.parking_costs.dest_county     ==countynum ),  'parking_cost'].sum()
 
-        
-        cat2            = 'Transit Crowding reference (Crowding Penalty Hours)'
-        with open('C:/Users/ATapase/Box/Horizon and Plan Bay Area 2050/Project Performance/5_Cobra/Test Runs/3_Test Runs Caltrain/transitsystems.csv', 'rb') as systems:
-            reader = csv.reader(systems)
-            systems_list = list(reader)
 
-        for system in systems_list:
+        # Transit Crowding
+
+        cat2            = 'Transit Crowding Penalty Hours'
+
+        transit_systems = ['BART', 'EBART','Oakland Airport Connector', 'Caltrain',  'SMART', 'SF MUNI', 'SF Muni Metro',  'SF Muni Local', 'SF Muni Cable Car' ,\
+                            'AC Transit Transbay', 'AC Transit Local','AC Transit', 'VTA LRT', 'VTA Express', 'VTA Local', 'SamTrans', 'SamTrans Local', 'Dumbarton Express',\
+                           'Golden Gate Transit Expre','Golden Gate Transit Local', 'County Connection Local', 'WestCAT Express','WestCAT Local',\
+                           'Vallejo Transit Express' , 'Fairfield and Suisun Tran', 'County Connection Express', 'Wheels Local', 'Tri Delta Transit',\
+                            'VINE Express', 'VINE Local','American Canyon',\
+                           'Sonoma County Transit',  'Petaluma Transit','Santa Rosa City Bus', 'Vallejo Transit', 'Union City Transit', 'SMART Temporary Express', \
+                            'VTA Community Bus', 'San Leandro Links','VTA Shuttle', 'Palo Alto & Menlo Park Sh','Stanford Shuttle', 'Caltrain Shuttle', \
+                            'Berkeley','Broadway Shuttle'  'Emery Go Round', \
+                            'High Speed Rail',  'ACE', 'Amtrak Capitol Corridor', \
+                            'Vallejo Baylink Ferry', 'East Bay Ferries', 'Golden Gate Ferry - Sausa', 'Golden Gate Ferry - Larks', 'Tiburon Ferry']
+
+        for system in transit_systems:
         # crowding penalty = effective ivtt with crowding multiplier minus actual ivtt
-            daily_results[(cat1,cat2,system[0])] = self.crowding_df.loc[self.crowding_df['SYSTEM'] == system[0], 'effective_ivtt_metrolinx_max2pt5'].sum() \
-                                              - self.crowding_df.loc[self.crowding_df['SYSTEM'] == system[0], 'ivtt'].sum() \
+            daily_results[(cat1,cat2,system)] = self.crowding_df.loc[self.crowding_df['SYSTEM'] == system, 'effective_ivtt_metrolinx_max2pt5'].sum() \
+                                              - self.crowding_df.loc[self.crowding_df['SYSTEM'] == system, 'ivtt'].sum() \
                                           
         
         ##########################################################################
@@ -1024,12 +1082,12 @@ class RunResults:
 
         # A few quick summary numbers
         quick_summary['Transit boardings'] = self.transit_boards_miles.loc[:,'Daily Boardings'].sum()
-        quick_summary['VTOLL Paths in AM - datoll']  = self.auto_times.loc[('inc1','datoll' ),'VTOLL nonzero AM']
-        quick_summary['VTOLL Paths in AM - sr2toll'] = self.auto_times.loc[('inc1','sr2toll'),'VTOLL nonzero AM']
-        quick_summary['VTOLL Paths in AM - sr3toll'] = self.auto_times.loc[('inc1','sr3toll'),'VTOLL nonzero AM']
-        quick_summary['VTOLL Paths in MD - datoll']  = self.auto_times.loc[('inc1','datoll' ),'VTOLL nonzero MD']
-        quick_summary['VTOLL Paths in MD - sr2toll'] = self.auto_times.loc[('inc1','sr2toll'),'VTOLL nonzero MD']
-        quick_summary['VTOLL Paths in MD - sr3toll'] = self.auto_times.loc[('inc1','sr3toll'),'VTOLL nonzero MD']
+        quick_summary['VTOLL Paths in AM - datoll']  = self.auto_times.loc[('inc1',['datoll','da_av_toll']),'VTOLL nonzero AM']
+        quick_summary['VTOLL Paths in AM - sr2toll'] = self.auto_times.loc[('inc1',['sr2toll','s2_av_toll']),'VTOLL nonzero AM']
+        quick_summary['VTOLL Paths in AM - sr3toll'] = self.auto_times.loc[('inc1',['sr3toll','s2_av_toll']),'VTOLL nonzero AM']
+        quick_summary['VTOLL Paths in MD - datoll']  = self.auto_times.loc[('inc1',['datoll','da_av_toll']),'VTOLL nonzero MD']
+        quick_summary['VTOLL Paths in MD - sr2toll'] = self.auto_times.loc[('inc1',['sr2toll','s2_av_toll']),'VTOLL nonzero MD']
+        quick_summary['VTOLL Paths in MD - sr3toll'] = self.auto_times.loc[('inc1',['sr3toll','s2_av_toll']),'VTOLL nonzero MD']
 
         # do this if we can but it's not mandatory
         if 'AM path count' in transit_byclass.columns.values:
@@ -1227,6 +1285,7 @@ class RunResults:
                                                  'bg_color':'#D9D9D9'})
         format_bc_header = workbook.add_format({'bg_color':'#92D050', 'align':'right','bold':True})
         format_bc_header_left = workbook.add_format({'bg_color':'#92D050', 'align':'left','bold':True})
+        format_bc_header_center = workbook.add_format({'bg_color':'#92D050', 'align':'center','bold':True})
 
         format_bc_money = workbook.add_format({'bg_color':'#92D050','bold':True,
                                                 'num_format':'_(\$* #,##0.0"M"_);_(\$* (#,##0.0"M");_(\$* "-"??_);_(@_)'})
@@ -1237,7 +1296,7 @@ class RunResults:
         format_equitypop = workbook.add_format({'bg_color':'#92D050','bold':True,
                                                 'num_format':'_(* #,##0.0"M"_);_(* (#,##0.0"M");_(* "-"??_);_(@_)'})
         format_equityben = workbook.add_format({'bg_color':'#92D050','bold':True, 'num_format':'_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'})
-        format_equitypct = workbook.add_format({'bg_color':'#FCD5B4','bold':True, 'num_format':'0%'})
+        format_equitypct = workbook.add_format({'bg_color':'#FCD5B4','bold':True, 'align':'center', 'num_format':'0%'})
 
         # for cat1 sums (total benefits for cat1)
         cat1_sums = collections.OrderedDict() # cell -> [cell1, cell2, cell3...]
@@ -1511,13 +1570,13 @@ class RunResults:
             pct_lowinc = float(population_lowinc) / population_total
             pct_medinc = float(population_lowinc+population_medinc) / population_total
             
-            worksheet.write(TABLE_HEADER_ROW-5,0, "Equity Score", format_bc_header_left)
+            worksheet.write(TABLE_HEADER_ROW-5,0, "Equity Score Calculation", format_bc_header_left)
             worksheet.write(TABLE_HEADER_ROW-4,0, "Total Population", format_bc_header_left)
             worksheet.write(TABLE_HEADER_ROW-3,0, "Avg Accessibility Benefit per Individual", format_bc_header_left)
 
-            worksheet.write(TABLE_HEADER_ROW-5,1, "LowInc", format_bc_header_left)
-            worksheet.write(TABLE_HEADER_ROW-5,2, "Low&MedInc", format_bc_header_left)
-            worksheet.write(TABLE_HEADER_ROW-5,3, "Overall Avg", format_bc_header_left)
+            worksheet.write(TABLE_HEADER_ROW-5,1, "LowInc", format_bc_header_center)
+            worksheet.write(TABLE_HEADER_ROW-5,2, "Low&MedInc", format_bc_header_center)
+            worksheet.write(TABLE_HEADER_ROW-5,3, "All", format_bc_header_center)
 
             worksheet.write(TABLE_HEADER_ROW-4,1, float(population_lowinc)/1000000, format_equitypop)
             worksheet.write(TABLE_HEADER_ROW-4,2, float(population_lowinc+population_medinc)/1000000, format_equitypop)
@@ -1528,11 +1587,11 @@ class RunResults:
             worksheet.write(TABLE_HEADER_ROW-3,3, '=(I18+I23) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-4, 3), format_equityben)
             
             worksheet.write(TABLE_HEADER_ROW-2,0, 'Low/med income individuals would receive', format_equity)
-            worksheet.write(TABLE_HEADER_ROW-2,1, '=%s/%s'%(xl_rowcol_to_cell(TABLE_HEADER_ROW-4, 2),xl_rowcol_to_cell(TABLE_HEADER_ROW-4, 3)), format_equitypct)
-            worksheet.write(TABLE_HEADER_ROW-2,2, 'of what the average', format_equity) 
-            worksheet.write(TABLE_HEADER_ROW-2,3, None, format_equity) 
-            worksheet.write(TABLE_HEADER_ROW-1,0, 'Bay Area individual would receive in accessibility $ benefits.', format_equity) 
-            for col in range(1,5):
+            worksheet.write(TABLE_HEADER_ROW-2,1, '=%s/%s'%(xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 2),xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 3)), format_equitypct)
+            worksheet.write(TABLE_HEADER_ROW-2,2, 'of what the', format_equity) 
+            #worksheet.write(TABLE_HEADER_ROW-2,3, None, format_equity) 
+            worksheet.write(TABLE_HEADER_ROW-1,0, 'average Bay Area individual would receive in accessibility $ benefits.', format_equity) 
+            for col in range(1,3):
                 worksheet.write(TABLE_HEADER_ROW-1,col, None, format_equity) 
             
 
