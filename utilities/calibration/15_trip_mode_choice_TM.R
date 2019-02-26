@@ -270,8 +270,8 @@ write.table(transit_boards_summary, outfile, sep=",", row.names=FALSE)
 print(paste("Wrote",outfile))
 
 # save it (along with source label) to calibration workbook
-addDataFrame(transit_boards_summary, calib_sheets$modeldata, startRow=2, startColumn=17, row.names=FALSE)
-source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=1:1), colIndex=17:17 )
+addDataFrame(transit_boards_summary, calib_sheets$modeldata, startRow=2, startColumn=18, row.names=FALSE)
+source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=1:1), colIndex=18:18 )
 setCellValue(source_cell[[1]], paste("Source: ",outfile))
 
 # write out summary of boards/ODs for debugging
@@ -290,20 +290,35 @@ transit_trip_results <- left_join(transit_trip_results,
 transit_trip_results <- left_join(transit_trip_results, 
                           select(taz_sd, ZONE, SD_NAME) %>% rename(dest_taz=ZONE, dest_SD=SD_NAME))
 
-transit_trip_results <- rbind(transit_trip_results,
-                      data.frame(transit_trip_results) %>% mutate(simple_purpose="Total"), # all purposes
-                      data.frame(transit_trip_results) %>% mutate(trn_submode="Total"),    # all submodes
-                      data.frame(transit_trip_results) %>% mutate(simple_purpose="Total",  # both
-                                                                  trn_submode="Total"))
+transit_trip_results <- mutate(transit_trip_results,
+                        trn_access_mode=if_else((acc=="wlk")&(egr=="wlk"),"walk","drive"))
 
-trn_trip_summary <- group_by(transit_trip_results, simple_purpose, trn_submode, orig_SD, dest_SD) %>% 
+transit_trip_results_copy <- data.frame(transit_trip_results)
+
+transit_trip_results <- rbind(
+  transit_trip_results_copy,
+  transit_trip_results_copy %>% mutate(simple_purpose ="Total"), # all purposes
+  transit_trip_results_copy %>% mutate(trn_submode    ="Total"), # all submodes
+  transit_trip_results_copy %>% mutate(trn_access_mode="Total"), # access modes
+  transit_trip_results_copy %>% mutate(simple_purpose ="Total",  # p+s
+                                       trn_submode    ="Total"),
+  transit_trip_results_copy %>% mutate(simple_purpose ="Total",  # p+a
+                                       trn_access_mode="Total"),
+  transit_trip_results_copy %>% mutate(trn_submode    ="Total",  # s+a
+                                       trn_access_mode="Total"),
+  transit_trip_results_copy %>% mutate(simple_purpose ="Total",  # p+s+a
+                                       trn_submode    ="Total",  
+                                       trn_access_mode="Total"))
+
+
+trn_trip_summary <- group_by(transit_trip_results, simple_purpose, trn_access_mode, trn_submode, orig_SD, dest_SD) %>% 
   summarise(num_trips=sum(num_participants)) %>%
   mutate(num_trips=num_trips/SAMPLESHARE)
 
 trn_trip_summary <- as.data.frame(trn_trip_summary) %>% 
-  mutate(key=paste(trn_submode, orig_SD, dest_SD, simple_purpose, sep="-"))
+  mutate(key=paste(trn_access_mode, trn_submode, orig_SD, dest_SD, simple_purpose, sep="-"))
 
-trn_trip_summary <- trn_trip_summary[c("key","trn_submode","orig_SD","dest_SD","simple_purpose","num_trips")]
+trn_trip_summary <- trn_trip_summary[c("key","trn_access_mode","trn_submode","orig_SD","dest_SD","simple_purpose","num_trips")]
 
 # save it
 outfile <- file.path(OUTPUT_DIR, paste0("15_trip_mode_choice_trn_ODdist_TM.csv"))

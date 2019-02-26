@@ -205,6 +205,9 @@ transit_tour_results <- transit_tour_results %>%
   mutate(trn_submode=if_else(trn_submode=="Ferry-Walk", "Ferry",trn_submode)) %>%
   mutate(trn_submode=if_else(trn_submode=="LRT-Drive",  "LRT",  trn_submode)) %>%
   mutate(trn_submode=if_else(trn_submode=="LRT-Walk",   "LRT",  trn_submode))
+# add trn_access_mode
+transit_tour_results <- mutate(transit_tour_results,
+                               trn_access_mode=if_else(tour_mode<=13,"walk","drive"))
 
 # combine purposes
 transit_tour_results <- mutate(transit_tour_results,
@@ -233,21 +236,30 @@ transit_tour_results <- left_join(transit_tour_results,
 transit_tour_results <- left_join(transit_tour_results, 
                                   select(taz_sd, ZONE, SD_NAME) %>% rename(dest_taz=ZONE, dest_SD=SD_NAME))
 
-transit_tour_results <- rbind(transit_tour_results,
-                              data.frame(transit_tour_results) %>% mutate(simple_purpose="Total"), # all purposes
-                              data.frame(transit_tour_results) %>% mutate(trn_submode="Total"),    # all submodes
-                              data.frame(transit_tour_results) %>% mutate(simple_purpose="Total",  # both
-                                                                          trn_submode="Total")
+transit_tour_results_copy <- data.frame(transit_tour_results)
+transit_tour_results <- rbind(transit_tour_results_copy,
+                              data.frame(transit_tour_results_copy) %>% mutate(simple_purpose ="Total"), # all purposes
+                              data.frame(transit_tour_results_copy) %>% mutate(trn_submode    ="Total"), # all submodes
+                              data.frame(transit_tour_results_copy) %>% mutate(trn_access_mode="Total"), # all access modes
+                              data.frame(transit_tour_results_copy) %>% mutate(simple_purpose ="Total",  # p+s
+                                                                               trn_submode    ="Total"),
+                              data.frame(transit_tour_results_copy) %>% mutate(simple_purpose ="Total",  # p+a
+                                                                               trn_access_mode="Total"),
+                              data.frame(transit_tour_results_copy) %>% mutate(trn_submode    ="Total",  # s+a
+                                                                               trn_access_mode="Total"),
+                              data.frame(transit_tour_results_copy) %>% mutate(simple_purpose ="Total",  # p+s+a
+                                                                               trn_submode    ="Total",  
+                                                                               trn_access_mode="Total")
                               )
 
-trn_tour_summary <- group_by(transit_tour_results, simple_purpose, trn_submode, orig_SD, dest_SD) %>% 
+trn_tour_summary <- group_by(transit_tour_results, simple_purpose, trn_access_mode, trn_submode, orig_SD, dest_SD) %>% 
   summarise(num_tours=sum(num_participants)) %>%
   mutate(num_tours=num_tours/SAMPLESHARE)
 
 trn_tour_summary <- as.data.frame(trn_tour_summary) %>% 
-  mutate(key=paste(trn_submode, orig_SD, dest_SD, simple_purpose, sep="-"))
+  mutate(key=paste(trn_access_mode, trn_submode, orig_SD, dest_SD, simple_purpose, sep="-"))
 
-trn_tour_summary <- trn_tour_summary[c("key","trn_submode","orig_SD","dest_SD","simple_purpose","num_tours")]
+trn_tour_summary <- trn_tour_summary[c("key", "trn_access_mode","trn_submode","orig_SD","dest_SD","simple_purpose","num_tours")]
 
 # save it
 outfile <- file.path(OUTPUT_DIR, paste0("11_tour_mode_choice_trn_ODdist_TM.csv"))
