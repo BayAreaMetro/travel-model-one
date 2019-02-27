@@ -683,17 +683,17 @@ def config_uec(auto_operating_cost, adjTaxi, adjTNCsingle, adjTNCshared):
                 # print rs.cell(rownum,1)
                 trip_half = 0.5 if bookname == "TripModeChoice.xls" else 1.0
 
-                if rs.cell(rownum,1).value=='AdjustTaxi':
+                if rs.cell(rownum,2).value=='Exogenous adjustment - taxi':
                     print "  Sheet '%s': replacing AdjustTaxi '%s' -> %.2f" % \
                         (rs.name, rs.cell(rownum,4).value, adjTaxi*trip_half)
                     wb.get_sheet(sheet_num).write(rownum,4,adjTaxi*trip_half, xlwt.easyxf("align: horiz left"))
 
-                if rs.cell(rownum,1).value=='AdjustTNCsingle':
+                if rs.cell(rownum,2).value=='Exogenous adjustment - tnc single':
                     print "  Sheet '%s': replacing AdjustTNCsingle '%s' -> %.2f" % \
                         (rs.name, rs.cell(rownum,4).value, adjTNCsingle*trip_half)
                     wb.get_sheet(sheet_num).write(rownum,4,adjTNCsingle*trip_half, xlwt.easyxf("align: horiz left"))
 
-                if rs.cell(rownum,1).value=='AdjustTNCshared':
+                if rs.cell(rownum,2).value=='Exogenous adjustment - tnc shared':
                     print "  Sheet '%s': replacing AdjustTNCshared '%s' -> %.2f" % \
                         (rs.name, rs.cell(rownum,4).value, adjTNCshared*trip_half)
                     wb.get_sheet(sheet_num).write(rownum,4,adjTNCshared*trip_half, xlwt.easyxf("align: horiz left"))
