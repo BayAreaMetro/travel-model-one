@@ -44,6 +44,7 @@ pandas.options.display.max_columns = 100
 
 parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
 parser.add_argument("--filter", metavar="lookup_filter", help="Filter keyword for lookup files", required=True)
+parser.add_argument("--year",   metavar="year", help="Filter keyword for lookup files", required=True, type=int)
 parser.add_argument("net_csv",  metavar="avgload5period_vehclasses.csv", help="Loaded network export with vehicle classes")
 
 args = parser.parse_args()
@@ -118,18 +119,19 @@ assert(len(link_tp_vehclass_df) == len(vclasses)*len(periods)*num_links)
 nrc_file = os.path.join(lookupdir,"nonRecurringDelayLookup.csv")
 nrclookup_df = pandas.read_csv(nrc_file, dtype={'vcratio':str})
 # filter by given filter
-nrclookup_df = nrclookup_df.loc[ nrclookup_df['filter'] == args.filter ].copy()
+nrclookup_df = nrclookup_df.loc[ (nrclookup_df['filter'] == args.filter)&
+                                 (nrclookup_df['year']   == args.year  ) ].copy()
 if len(nrclookup_df) == 0:
   print("No nonRecurringDelay lookups for {} found".format(args.filter))
   sys.exit(2)
-nrclookup_df.drop(columns=['filter'],inplace=True)
+nrclookup_df.drop(columns=['filter','year'],inplace=True)
 
 # transform so columns are: vcratio (str), lanes_24(int), nrcdelay (float)
 nrclookup_df.set_index('vcratio',inplace=True)
 nrclookup_df.rename(columns={'2lanes':2, '3lanes':3, '4lanes':4}, inplace=True)
 nrclookup_df = nrclookup_df.stack().reset_index().rename(columns={'level_1':'lanes_24',0:'nrcdelay'})
 print(nrclookup_df.head())
-print("Read {} and filtered by {}:\n{}".format(nrc_file, args.filter, nrclookup_df.head()))
+print("Read {} and filtered by {} and year {}:\n{}".format(nrc_file, args.filter, args.year, nrclookup_df.head()))
 
 # Units are collisions per 1,000,000 VMT
 # Map headers -> index for this lokup and read lookup data
@@ -139,13 +141,15 @@ collision_types = list(collisionlookup_df.columns.values)
 collision_types.remove('ft')
 collision_types.remove('at')
 collision_types.remove('filter')
+collision_types.remove('year')
 # filter by given filter
-collisionlookup_df = collisionlookup_df.loc[ collisionlookup_df['filter'] == args.filter ].copy()
+collisionlookup_df = collisionlookup_df.loc[ (collisionlookup_df['filter'] == args.filter)&
+                                             (collisionlookup_df['year'  ] == args.year  ) ].copy()
 if len(collisionlookup_df) == 0:
   print("No collisions lookups for {} found".format(args.filter))
   sys.exit(2)
-collisionlookup_df.drop(columns=['filter'],inplace=True)
-print("Read {} and filtered by {}:\n{}".format(collision_file, args.filter, collisionlookup_df.head()))
+collisionlookup_df.drop(columns=['filter','year'],inplace=True)
+print("Read {} and filtered by {} and year {}:\n{}".format(collision_file, args.filter, args.year, collisionlookup_df.head()))
 
 # Units are grams per mile (equivalent to metric tons per 1,000,000 VMT)
 emission_file = os.path.join(lookupdir,"emissionsLookup.csv")
@@ -155,13 +159,15 @@ emission_types.remove('period')
 emission_types.remove('vclassgroup')
 emission_types.remove('speed')
 emission_types.remove('filter')
+emission_types.remove('year')
 # filter by given filter
-emissionslookup_df = emissionslookup_df.loc[ emissionslookup_df['filter'] == args.filter ].copy()
+emissionslookup_df = emissionslookup_df.loc[ (emissionslookup_df['filter'] == args.filter)&
+                                             (emissionslookup_df['year'  ] == args.year  ) ].copy()
 if len(emissionslookup_df) == 0:
   print("No emission lookups for {} found".format(args.filter))
   sys.exit(2)
-emissionslookup_df.drop(columns=['filter'],inplace=True)
-print("Read {} and filtered by {}:\n{}".format(emission_file, args.filter, emissionslookup_df.head()))
+emissionslookup_df.drop(columns=['filter','year'],inplace=True)
+print("Read {} and filtered by {} and year {}:\n{}".format(emission_file, args.filter, args.year, emissionslookup_df.head()))
 
 # Add link x timeperiod columns
 
@@ -233,6 +239,9 @@ assert(len(null_vclassgroup) == 0)
 
 link_tp_vehclass_df = pandas.merge(how='left', left=link_tp_vehclass_df,
                                    right=emissionslookup_df.rename(columns={'period':'timeperiod'}))
+# verify merging with lookup didn't change the number of links/vclass/periods
+assert(len(link_tp_vehclass_df) == len(vclasses)*len(periods)*num_links)
+
 # emissionlookup in grams per mile (equivalent to metric tons per 1000000 VMT)
 for emission_type in emission_types:
     link_tp_vehclass_df[emission_type] = link_tp_vehclass_df[emission_type]*link_tp_vehclass_df['vmt']
