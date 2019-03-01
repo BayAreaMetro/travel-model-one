@@ -36,6 +36,10 @@ for (timeperiod in c("ea","am","md","pm","ev")) {
 
         # this one is long, so drop those with is.na(AB_VOL)
         trndata  <- trndata[ which(is.na(trndata$AB_VOL)==FALSE),]
+        if (nrow(trndata) == 0) {
+            print(paste("No rows with volume in", fullfile))
+            next
+        }
         trndata$source <- filename
         all_trnlink_data <- rbind(all_trnlink_data, trndata)
         print(paste("Read ",fullfile))
