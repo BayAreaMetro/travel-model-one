@@ -131,10 +131,10 @@ loop period = 1, 5
    counter = 0
    
    ; set a list of origins to trace (comma-separated)
-   token_debug_origin_list = '1,14,861,894,1074'
+   token_debug_origin_list = '240'
         
    ; set a list of destinations to trace (comma-separated)
-   token_debug_destination_list = '1,56,860,874,918,1080'
+   token_debug_destination_list = '22'
 
    if (period = 1)   
       token_period   = 'ea'
@@ -192,7 +192,7 @@ loop period = 1, 5
             
             ; mode-specific perceived time factors
             ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
-            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.5, 10*1.5,  10*1.5,   10*1.5,   10*1.0' 
+            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.1,   10*1.0' 
             
             ; three-letter path name
             token_path = 'com'
@@ -216,7 +216,7 @@ loop period = 1, 5
             
             ; mode-specific perceived time factors
             ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
-            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.5, 10*1.5,  10*1.5,   10*1.0,   10*1.5'
+            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.0,   10*1.5'
             
             ; three-letter path name
             token_path = 'hvy'
@@ -239,7 +239,7 @@ loop period = 1, 5
             token_skipmodes = 'skipmodes =  130-139,120-139'
             
             ; mode-specific perceived time factors
-	    ;                        support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
+            ;                        support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
             token_modefac = 'modefac = 9*2.0,  70*1.5,  20*1.0, 10*1.5,  10*1.5,   10*1.5,   10*1.5'
             
             ; three-letter path name
@@ -370,18 +370,18 @@ loop period = 1, 5
              ; path parameter: the maximum path time for a single route is 3 hours or 180 minutes
              parameters maxruntime = 180
              
-             ; path parameter: the maximum perceived path time for a single route is 4 hours or 240 minutes
-             parameters maxpathtime = 240
+             ; path parameter: the maximum perceived path time for a single route is 5 hours or 300 minutes
+             parameters maxpathtime = 300
              
              ; perceived time factors: first boarding is free; second, third, and fourth boarding adds fiftenn perceived minutes; 
              ; discourage more than four transfers with a 60 minute penalty
              factor boardpen = 0, 15, 30, 45, 60
 
              ; perceived time factors: initial wait time is equivalent to 2.8 minutes of ride time for modes 10 through 255  
-             factor iwaitfac[10] = 246 * 2.8
+             factor iwaitfac = 9*0, 130*2.8
              
              ; perceived time factors: transfer wait time is equivalent to 2.8 minutes of ride time for modes 1 through 255
-             factor xwaitfac = 255 * 2.8             
+             factor xwaitfac = 139*2.8             
              
              ; use token_skipmodes to remove modes from the network per the hierarchy
              @token_skipmodes@
@@ -424,6 +424,6 @@ loop period = 1, 5
    	              ctramp13.script.end, 
    	              ctramp14.script.end, 
    	              ctramp15.script.end,                
-           printfiles = merge, DelDistribFiles = t, CheckReturnCode = t
+           printfiles = save, DelDistribFiles = t, CheckReturnCode = t
 
 endloop ; time of day  

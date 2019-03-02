@@ -89,9 +89,9 @@ counter = 0
 loop period = 1,5
 
   ; set a debug origin
-  token_debug_origin = '342'
+  token_debug_origin = '240,277,378'
   ; set a debug destination
-  token_debug_destination = '1'
+  token_debug_destination = '22,100,106,109,240,968,971'
   ; set a debug filename prefix
   token_debug_filename = 'TransitSkims'
 
@@ -142,7 +142,7 @@ loop period = 1,5
           
           ; mode-specific perceived time factors
           ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
-          token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.5, 10*1.5,  10*1.5,   10*1.5,   10*1.0'      
+          token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.1,   10*1.0'      
           
           ; drive access/egress links to this mode (';' means no)
           ; allow higher-class PNRs to be read in case of shared lots
@@ -165,7 +165,7 @@ loop period = 1,5
 
           ; mode-specific perceived time factors
           ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
-          token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.5, 10*1.5,  10*1.5,   10*1.0,   10*1.5'
+          token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.0,   10*1.5'
 
           ; drive access/egress links to this mode (';' means no)
           ; allow higher-class PNRs to be read in case of shared lots
@@ -319,18 +319,18 @@ loop period = 1,5
           ; path parameter: the maximum path time for a single route is 3 hours or 180 minutes
           parameters maxruntime = 180
 
-          ; path parameter: the maximum perceived path time for a single route is 4 hours or 240 minutes
-          parameters maxpathtime = 240
+          ; path parameter: the maximum perceived path time for a single route is 5 hours or 300 minutes
+          parameters maxpathtime = 300
 
           ; perceived time factors: first boarding is free; second, third, and fourth boarding adds five perceived minutes; 
           ; discourage more than four transfers with a 60 minute penalty
           @token_boardpen@
 
           ; perceived time factors: initial wait time is equivalent to 2.0 minutes of ride time for modes 10 through 255  
-          factor iwaitfac[10] = 246 * 2.0
+          factor iwaitfac = 9*0, 130*2.0
 
           ; perceived time factors: transfer wait time is equivalent to 2.0 minutes of ride time for modes 1 through 255 (xxx why not same as above xxx)
-          factor xwaitfac = 255 * 2.0
+          factor xwaitfac = 139*2.0
 
           ; perceived time factors: use token_skipmodes to remove modes from the network per the hierarchy
           @token_skipmodes@
@@ -598,7 +598,7 @@ endloop ; time period loop
 wait4files files = ctramp1.script.end,  ctramp2.script.end,  ctramp3.script.end,  ctramp4.script.end,  ctramp5.script.end,
                    ctramp6.script.end,  ctramp7.script.end,  ctramp8.script.end,  ctramp9.script.end,  ctramp10.script.end,
                    ctramp11.script.end, ctramp12.script.end, ctramp13.script.end, ctramp14.script.end, ctramp15.script.end, 
-          printfiles = merge, DelDistribFiles = t, CheckReturnCode = t
+          printfiles = save, DelDistribFiles = t, CheckReturnCode = t
                    
 
 ; combine all the debug output
