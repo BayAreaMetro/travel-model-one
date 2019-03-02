@@ -1,8 +1,17 @@
 ;-----Combine headways -----------------------------------------------------
+
+; "To make this combination decision, the program looks first at the differences in total times
+; (the line vs. best line). If the difference does not exceed the MAXDIFF value for the mode, the lines
+; will be combined. If the difference exceeds MAXDIFF, and there is an IF selection for the mode, the
+; IF is evaluated. IF selections result in either a true or false value. If the result is true, the line
+; will be combined with the best line; if it is false, the line is deleted from consideration at this node.
+; If the difference exceeds MAXDIFF and there is no IF, the line is deleted. "
+
 ; Combine lines for headway calculation if time is within 5 min of
 ;  "best" line- This is used directly from WASHCOG
-    COMBINE MAXDIFF[10]=246*20.0
-    COMBINE if[10]  = ((RUN-MINRUN) >=-1 && (RUN-MINRUN) <=1)
+COMBINE MAXDIFF = 9*0, 130*20.0
+COMBINE MAXDIFF[130] = 10  ; Caltrain -- don't combine baby bullets with slow lines if they're significantly slower
+    COMBINE if[10]  = ((RUN-MINRUN) >=-5 && (RUN-MINRUN) <=5)
     COMBINE if[11]  = ((RUN-MINRUN) >=-5 && (RUN-MINRUN) <=5)
     COMBINE if[12]  = ((RUN-MINRUN) >=-5 && (RUN-MINRUN) <=5)
     COMBINE if[13]  = ((RUN-MINRUN) >=-5 && (RUN-MINRUN) <=5)
@@ -133,3 +142,10 @@
     COMBINE if[138] = ((RUN-MINRUN) >=-5 && (RUN-MINRUN) <=5)
     COMBINE if[139] = ((RUN-MINRUN) >=-5 && (RUN-MINRUN) <=5)
 
+; Millbrae transfer point
+factor MAXWAITTIME=5, NODES=13661,15543
+
+; Caltrain schedules can have long gaps for some stations which can result in no commuter rail
+; path being found at all as other modes get used instead.  Try to overcome this, but not so
+; aggressively as to make the model insensitive to frequency improvements
+factor IWAITMAX[130] = 25
