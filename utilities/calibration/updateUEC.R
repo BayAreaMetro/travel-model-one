@@ -200,3 +200,10 @@ for (name in names(COPY_SRC)) {
 saveWorkbook(uec_workbook, UEC_DST_WORKBOOK)
 #forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
 print(paste("Wrote",UEC_DST_WORKBOOK))
+
+BOX_DIR <- "C:\\Users\\lzorn\\Box\\Modeling and Surveys\\Development\\Travel Model 1.5\\Calibration\\workbooks"
+BOX_DIR  <- gsub("\\\\","/",BOX_DIR) # switch slashes around
+
+CALIB_WORKBOOK_NO_VERS <- gsub(paste0("_",VERSION,".xlsx"),".xlsx",basename(CALIB_WORKBOOK))
+print(paste("Copying",CALIB_WORKBOOK,"to",file.path(BOX_DIR, CALIB_WORKBOOK_NO_VERS)))
+file.copy(from=CALIB_WORKBOOK, to=file.path(BOX_DIR, CALIB_WORKBOOK_NO_VERS), overwrite=TRUE, copy.date=TRUE)
