@@ -81,17 +81,17 @@ LRF_drive_in  <- subset(LRF_trip_results, subset=(trip_mode==15)&(inbound==1))
 # check ferry availability
 LRF_walk <- left_join(LRF_walk, subset(ferry_skim, subset=submode=="wlk_lrf_wlk"),
                       by=c("orig_taz"="OTAZ", "dest_taz"="DTAZ", "timeperiod"="timeperiod") ) %>% 
-  mutate(ferryAvailable=ifelse(ivtFerry>0,0,1)) %>%
+  mutate(ferryAvailable=ifelse(ivtFerry>0,1,0)) %>%
   select(-ivtFerry, -submode)
 
 LRF_drive_out <- left_join(LRF_drive_out, subset(ferry_skim, subset=submode=="drv_lrf_wlk"),
                       by=c("orig_taz"="OTAZ", "dest_taz"="DTAZ", "timeperiod"="timeperiod") ) %>% 
-  mutate(ferryAvailable=ifelse(ivtFerry>0,0,1)) %>%
+  mutate(ferryAvailable=ifelse(ivtFerry>0,1,0)) %>%
   select(-ivtFerry, -submode)
 
 LRF_drive_in <- left_join(LRF_drive_in, subset(ferry_skim, subset=submode=="wlk_lrf_drv"),
                       by=c("orig_taz"="OTAZ", "dest_taz"="DTAZ", "timeperiod"="timeperiod") ) %>% 
-  mutate(ferryAvailable=ifelse(ivtFerry>0,0,1)) %>%
+  mutate(ferryAvailable=ifelse(ivtFerry>0,1,0)) %>%
   select(-ivtFerry, -submode)
 
 LRF_trip_results <- rbind(LRF_walk, LRF_drive_out, LRF_drive_in)
