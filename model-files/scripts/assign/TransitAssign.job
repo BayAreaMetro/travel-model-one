@@ -159,15 +159,15 @@ loop period = 1, 5
       if (accegg = 1)         
          token_access = 'wlk'
          token_egress = 'wlk'      
-
+         token_boardpen = 'factor boardpen = 0, 15, 30, 45, 60'
       elseif (accegg = 2)        
          token_access = 'drv'
          token_egress = 'wlk'    
-
+         token_boardpen = 'factor boardpen = 0, 20, 40, 50, 60'
       elseif (accegg = 3)       
          token_access = 'wlk'
          token_egress = 'drv'       
-
+         token_boardpen = 'factor boardpen = 0, 20, 40, 50, 60'
       endif
    
       ; line haul loop
@@ -375,7 +375,7 @@ loop period = 1, 5
              
              ; perceived time factors: first boarding is free; second, third, and fourth boarding adds fiftenn perceived minutes; 
              ; discourage more than four transfers with a 60 minute penalty
-             factor boardpen = 0, 15, 30, 45, 60
+             @token_boardpen@
 
              ; perceived time factors: initial wait time is equivalent to 2.8 minutes of ride time for modes 10 through 255  
              factor iwaitfac = 9*0, 130*2.8
