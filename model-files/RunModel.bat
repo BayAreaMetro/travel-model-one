@@ -321,6 +321,10 @@ if ERRORLEVEL 2 goto done
 :: ------------------------------------------------------------------------------------------------------
 
 
+:: Extract key files
+call extractkeyfiles
+c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
+
 : cleanup
 
 :: Put the PATH back the way you found it
