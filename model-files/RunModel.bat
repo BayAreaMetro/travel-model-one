@@ -58,6 +58,44 @@ if %MODEL_YEAR% GTR 3000 (
   exit /b 2
 )
 
+set FUTURE_ABBR=%myfolder:~15,2%
+echo FUTURE SHORT NAME = %FUTURE_ABBR%
+set FUTURE=X
+echo FUTURE TEMPORARY LONG NAME = X
+
+:: FUTURE ------------------------- make sure FUTURE_ABBR is one of the three [RT,CG,BF] -------------------------
+:: The long names are: PBA50, CleanAndGreen, BackToTheFuture, or RisingTidesFallingFortunes
+
+
+echo off
+if %FUTURE_ABBR%==RT (
+  set FUTURE=RisingTidesFallingFortunes
+)
+
+echo off
+if %FUTURE_ABBR%==CG (
+   set FUTURE=CleanAndGreen
+)
+
+echo off
+if %FUTURE_ABBR%==BF (
+  set FUTURE=BackToTheFuture
+)
+
+echo on
+echo FUTURE LONG NAME = %FUTURE%
+
+echo off
+if %FUTURE%==X (
+  echo on
+  echo Couldn't determine FUTURE name.
+  echo Make sure the name of the project folder conform to the naming convention.
+  exit /b 2
+)
+
+echo on
+echo turn echo back on
+
 set MAXITERATIONS=3
 :: --------TrnAssignment Setup -- Standard Configuration
 :: CHAMP has dwell  configured for buses (local and premium)
