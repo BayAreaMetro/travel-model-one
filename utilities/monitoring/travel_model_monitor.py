@@ -173,19 +173,19 @@ if __name__ == '__main__':
                 msg += "Initial state -- "
 
             if state_dict["STATE"] == STATE_NoStatusFile:
-                msg += "No status file -- setup Task Scheduler?"
+                msg += ":frowning: No status file -- setup Task Scheduler?"
 
             elif state_dict["STATE"] == STATE_InvalidStatusFile:
-                msg += "Invalid status file.  Error: {}".format(state_dict["error"])
+                msg += ":frowning: Invalid status file.  Error: {}".format(state_dict["error"])
 
             elif state_dict["STATE"] == STATE_StaleStatusFile:
-                msg += state_dict["error"]
+                msg += ":disappointed: " + state_dict["error"]
 
             elif state_dict["STATE"] == STATE_NoModelsRunning:
-                msg += "No model is running as of {}".format(state_dict["status_time"])
+                msg += ":exclamation: No model is running as of {}".format(state_dict["status_time"])
 
             elif state_dict["STATE"] == STATE_ModelRunning:
-                msg += "Model appears to be :woman-running: as of {}. *{}* has {} children: {}".format(
+                msg += ":white_check_mark: Model appears to be :woman-running: as of {}. *{}* has {} children: {}".format(
                             state_dict["status_time"],  state_dict["main_window_title"],
                             state_dict["num_children"], state_dict["child_procs"])
             # post the message
