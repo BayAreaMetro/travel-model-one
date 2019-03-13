@@ -23,7 +23,7 @@ print(paste0("VERSION  = ",VERSION))
 if (SUBMODEL=="UsualWorkAndSchoolLocation") {
 
   CALIB_WORKBOOK   <- file.path(CALIB_DIR, "01 Usual Work and School Location", "01_UsualWorkAndSchoolLocation.xlsx")
-  UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.0 version", "DestinationChoice.xls")
+  UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.0 version", "DestinationChoice_TM1.xls")
   
   # sheet, column, startRow, endRow
   COPY_SRC <- list("work"       =c("calibration", 4, 4, 8),
@@ -41,7 +41,7 @@ if (SUBMODEL=="UsualWorkAndSchoolLocation") {
 } else if (SUBMODEL=="AutomobileOwnership") {
 
   CALIB_WORKBOOK <- file.path(CALIB_DIR, "02 Automobile Ownership", "02_AutoOwnership.xlsx")
-  UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.0 version", "AutoOwnership.xls")
+  UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.0 version", "AutoOwnership_TM1.xls")
 
   # sheet, column, startRow, endRow
   COPY_SRC <- list("1_car_a"   =c("calibration", 4, 18, 19),
@@ -78,35 +78,57 @@ if (SUBMODEL=="UsualWorkAndSchoolLocation") {
 } else if (SUBMODEL=="TourModeChoice") {
 
   CALIB_WORKBOOK <- file.path(CALIB_DIR, "11 Tour Mode Choice", "11_TourModeChoice.xlsx")
-  UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.0 version", "ModeChoice.xls")
+  UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.0 version", "ModeChoice_TM1.xls")
 
   # sheet, column, startRow, endRow
-  COPY_SRC <- list("work"      =c( "constants", 4,   3,  64),
-                   "university"=c( "constants", 8,   3,  64),
-                   "school"    =c( "constants",12,   3,  64),
-                   "escort"    =c( "constants",16,   3,  64),
-                   "shopping"  =c( "constants",20,   3,  64),
-                   "eatout"    =c( "constants",24,   3,  64),
-                   "othmaint"  =c( "constants",28,   3,  64),
-                   "social"    =c( "constants",32,   3,  64),
-                   "othdiscr"  =c( "constants",36,   3,  64),
-                   "workbased" =c( "constants",40,   3,  64))
+  COPY_SRC <- list("work"          =c( "constants", 4,   3,  64),
+                   "university"    =c( "constants", 8,   3,  64),
+                   "school"        =c( "constants",12,   3,  64),
+                   "escort"        =c( "constants",16,   3,  64),
+                   "shopping"      =c( "constants",20,   3,  64),
+                   "eatout"        =c( "constants",24,   3,  64),
+                   "othmaint"      =c( "constants",28,   3,  64),
+                   "social"        =c( "constants",32,   3,  64),
+                   "othdiscr"      =c( "constants",36,   3,  64),
+                   "workbased"     =c( "constants",40,   3,  64),
 
-  COPY_DST <- list("work"      =c(      "Work", 5, 404, 465),
-                   "university"=c("University", 5, 404, 465),
-                   "school"    =c(    "School", 5, 404, 465),
-                   "escort"    =c(    "Escort", 5, 404, 465),
-                   "shopping"  =c(  "Shopping", 5, 404, 465),
-                   "eatout"    =c(    "EatOut", 5, 404, 465),
-                   "othmaint"  =c(  "OthMaint", 5, 404, 465),
-                   "social"    =c(    "Social", 5, 404, 465),
-                   "othdiscr"  =c(  "OthDiscr", 5, 404, 465),
-                   "workbased" =c( "WorkBased", 5, 407, 468))
+                   "cbd_work"      =c(    "CBD_SF", 9,   3,   6),
+                   "cbd_university"=c(    "CBD_SF", 9,   7,  10),
+                   "cbd_school"    =c(    "CBD_SF", 9,  11,  14),
+                   "cbd_escort"    =c(    "CBD_SF", 9,  15,  18),
+                   "cbd_shopping"  =c(    "CBD_SF", 9,  15,  18),
+                   "cbd_eatout"    =c(    "CBD_SF", 9,  19,  22),
+                   "cbd_othmaint"  =c(    "CBD_SF", 9,  15,  18),
+                   "cbd_social"    =c(    "CBD_SF", 9,  19,  22),
+                   "cbd_othdiscr"  =c(    "CBD_SF", 9,  19,  22),
+                   "cbd_workbased" =c(    "CBD_SF", 9,  23,  26))
+
+  COPY_DST <- list("work"          =c(      "Work", 5, 405, 466),
+                   "university"    =c("University", 5, 405, 466),
+                   "school"        =c(    "School", 5, 405, 466),
+                   "escort"        =c(    "Escort", 5, 405, 466),
+                   "shopping"      =c(  "Shopping", 5, 405, 466),
+                   "eatout"        =c(    "EatOut", 5, 405, 466),
+                   "othmaint"      =c(  "OthMaint", 5, 405, 466),
+                   "social"        =c(    "Social", 5, 405, 466),
+                   "othdiscr"      =c(  "OthDiscr", 5, 405, 466),
+                   "workbased"     =c( "WorkBased", 5, 408, 469),
+
+                   "cbd_work"      =c(      "Work", 5, 467, 470),
+                   "cbd_university"=c("University", 5, 467, 470),
+                   "cbd_school"    =c(    "School", 5, 467, 470),
+                   "cbd_escort"    =c(    "Escort", 5, 467, 470),
+                   "cbd_shopping"  =c(  "Shopping", 5, 467, 470),
+                   "cbd_eatout"    =c(    "EatOut", 5, 467, 470),
+                   "cbd_othmaint"  =c(  "OthMaint", 5, 467, 470),
+                   "cbd_social"    =c(    "Social", 5, 467, 470),
+                   "cbd_othdiscr"  =c(  "OthDiscr", 5, 467, 470),
+                   "cbd_workbased" =c( "WorkBased", 5, 470, 474))
   
 } else if (SUBMODEL=="TripModeChoice") {
 
   CALIB_WORKBOOK <- file.path(CALIB_DIR, "15 Trip Mode Choice", "15_TripModeChoice.xlsx")
-  UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.0 version", "TripModeChoice.xls")
+  UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.0 version", "TripModeChoice_TM1.xls")
 
   # sheet, column, startRow, endRow
   COPY_SRC <- list("work"      =c( "constants", 7,   3,  36),
@@ -137,7 +159,7 @@ if (SUBMODEL=="UsualWorkAndSchoolLocation") {
 # use the right version
 CALIB_WORKBOOK <- gsub(".xlsx",paste0("_",VERSION,".xlsx"),CALIB_WORKBOOK)
 UEC_DST_WORKBOOK <- gsub("TM1.0 version/","",UEC_SRC_WORKBOOK)
-# UEC_DST_WORKBOOK <- gsub(".xls", "_temp.xls", UEC_DST_WORKBOOK)
+UEC_DST_WORKBOOK <- gsub("_TM1","",UEC_DST_WORKBOOK)
 
 print(paste0("CALIB_WORKBOOK   = ",CALIB_WORKBOOK))
 print(paste0("UEC_SRC_WORKBOOK = ",UEC_SRC_WORKBOOK))
