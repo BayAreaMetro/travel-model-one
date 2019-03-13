@@ -127,6 +127,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument("--no_slack", action="store_true", help="Don't post to slack")
+    parser.add_argument("--quiet_startup", action="store_true", help="Skip the startup messages -- assume it was just running")
     args = parser.parse_args()
 
     if args.no_slack:
@@ -137,8 +138,11 @@ if __name__ == '__main__':
         f.close()
         print("Read slack webhook URL: {}".format(SLACK_WEBHOOK_URL))
 
-    msg = "Travel Model Monitor Starting on {}".format(os.environ["COMPUTERNAME"])
-    post_message(msg)
+    if args.quiet_startup:
+        pass #  ssssh
+    else:
+        msg = "Travel Model Monitor Starting on {}".format(os.environ["COMPUTERNAME"])
+        post_message(msg)
 
     # keep the machine states here
     machine_state_dict = {}
@@ -154,6 +158,12 @@ if __name__ == '__main__':
             # if it didn't change state, don't report -- just save update
             if state_dict["STATE"] == machine_state_dict[machine_name]["STATE"]:
                 print("=> No state change")
+                machine_state_dict[machine_name] = state_dict
+                continue
+
+            # if quiet startup and it changed state from initial -- just save update
+            if args.quiet_startup and (machine_state_dict[machine_name]["STATE"] == STATE_Uninitialized):
+                print("=> Quiet startup")
                 machine_state_dict[machine_name] = state_dict
                 continue
 
@@ -175,7 +185,7 @@ if __name__ == '__main__':
                 msg += "No model is running as of {}".format(state_dict["status_time"])
 
             elif state_dict["STATE"] == STATE_ModelRunning:
-                msg += "Model appears to be running as of {}.  MainWindowTitle {} has {} children: {}".format(
+                msg += "Model appears to be :woman-running: as of {}. *{}* has {} children: {}".format(
                             state_dict["status_time"],  state_dict["main_window_title"],
                             state_dict["num_children"], state_dict["child_procs"])
             # post the message

@@ -3,7 +3,7 @@ Experimental setup for monitoring Travel Model runs
 On Modeling Machine
 ===================
 
-Create a task in Task Scheduler to run the [check_for_RunModel.ps1](check_for_RunModel.ps1) powershell script
+Create a task in [Task Scheduler](https://docs.microsoft.com/en-us/windows/desktop/taskschd/task-scheduler-start-page) to run the [check_for_RunModel.ps1](check_for_RunModel.ps1) powershell script
 
 * General
   * Name: Check for RunModel

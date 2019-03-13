@@ -27,10 +27,10 @@ date > $my_drive\UTIL\RunModelStatus.txt
 #
 
 # print the process information
-Get-Process -Name cmd | where {$_.mainWindowTitle -match "(test|run|resume|calibrate)model(.bat)?$"} | Format-List -Property Id,Name,CPU,mainWindowTitle >> $my_drive\UTIL\RunModelStatus.txt
+Get-Process -Name cmd | where {$_.mainWindowTitle -match "(test|run|resume|calibrate)model([0-9]?)(.bat)?$"} | Format-List -Property Id,Name,CPU,mainWindowTitle >> $my_drive\UTIL\RunModelStatus.txt
 
 # lets look up the children
-$p = Get-Process -Name cmd | where {$_.mainWindowTitle -match "(test|run|calibrate)model(.bat)?$"}
+$p = Get-Process -Name cmd | where {$_.mainWindowTitle -match "(test|run|resume|calibrate)model([0-9]?)(.bat)?$"}
 if ($p.Count -ne 1) {
   exit
 }
