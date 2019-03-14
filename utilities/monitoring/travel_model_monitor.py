@@ -66,6 +66,11 @@ def check_model_status(machine):
     # skip blanks
     while ((len(status_lines) > 0) and status_lines[0]==""): status_lines.pop(0)
 
+    if len(status_lines) == 0:
+        return_dict["STATE"] = STATE_InvalidStatusFile
+        return_dict["error"] = "Unexpected end of file (no date)"
+        return return_dict
+
     # first, expect date, e.g. Wednesday, March 13, 2019 12:30:00 PM
     status_time_str = status_lines.pop(0)
     try:
@@ -154,6 +159,12 @@ if __name__ == '__main__':
         print("Awake @ {}".format(datetime.datetime.now()))
         for machine_name in MODEL_MACHINES.keys():
             state_dict = check_model_status(machine_name)
+
+            # this may be a race condition, reading the file before it's written -- wait and try again
+            if state_dict["STATE"] == STATE_InvalidStatusFile:
+                print("Invalid status file -- trying again")
+                time.sleep(30)
+                state_dict = check_model_status(machine_name)
 
             # if it didn't change state, don't report -- just save update
             if state_dict["STATE"] == machine_state_dict[machine_name]["STATE"]:
