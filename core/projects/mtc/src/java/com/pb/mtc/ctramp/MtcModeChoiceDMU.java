@@ -230,7 +230,7 @@ public class MtcModeChoiceDMU extends ModeChoiceDMU {
         methodIndexMap.put( "getOrigSharedTNCWaitTime", 34 );
         methodIndexMap.put( "getDestSharedTNCWaitTime", 35 );
         methodIndexMap.put( "getUseOwnedAV", 36);
-              
+        methodIndexMap.put( "getOrigCounty", 37);
       }
     
         
@@ -278,7 +278,7 @@ public class MtcModeChoiceDMU extends ModeChoiceDMU {
             case 34: return getOrigSharedTNCWaitTime();
             case 35: return getDestSharedTNCWaitTime();
             case 36: return getUseOwnedAV();
-
+            case 37: return getOrigCounty();
             
 
             default:

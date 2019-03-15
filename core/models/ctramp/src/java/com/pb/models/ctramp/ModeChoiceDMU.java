@@ -23,6 +23,7 @@ public class ModeChoiceDMU implements Serializable, VariableTable {
     // these attributes are used for accessibility logsum utility calculations where a tour object does not exist
     protected int origSubzone;
     protected int destSubzone;
+    protected int origCounty;
     protected double accessibilityValueOfTime;
     
     protected float origTaxiWaitTime;
@@ -393,6 +394,15 @@ public class ModeChoiceDMU implements Serializable, VariableTable {
         destSubzone = subzone;
     }
 
+    public float getOrigCounty() {
+        return origCounty;
+    }
+
+    public void setOrigCounty(int origCounty) {
+        this.origCounty = origCounty;
+    }
+    
+    
     public void setAccessibilityValueOfTime( double valueOfTime ) {
         accessibilityValueOfTime = valueOfTime;
     }
@@ -514,6 +524,4 @@ public class ModeChoiceDMU implements Serializable, VariableTable {
 		this.destSharedTNCWaitTime = destSharedTNCWaitTime;
 	}
 
-
-    
 }

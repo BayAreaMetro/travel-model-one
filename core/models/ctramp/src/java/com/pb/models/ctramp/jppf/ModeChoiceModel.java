@@ -191,6 +191,7 @@ public class ModeChoiceModel implements Serializable {
         mcDmuObject.setDestSingleTNCWaitTime(SingleTNCWaitTimeDest);
         mcDmuObject.setOrigSharedTNCWaitTime(SharedTNCWaitTimeOrig);
         mcDmuObject.setDestSharedTNCWaitTime(SharedTNCWaitTimeDest);
+        mcDmuObject.setOrigCounty(tazDataManager.getZoneCounty(oTaz));
         
         // log headers to traceLogger
         if ( household.getDebugChoiceModels() ) {
@@ -279,6 +280,8 @@ public class ModeChoiceModel implements Serializable {
         mcDmuObject.setDestSingleTNCWaitTime(SingleTNCWaitTimeDest);
         mcDmuObject.setOrigSharedTNCWaitTime(SharedTNCWaitTimeOrig);
         mcDmuObject.setDestSharedTNCWaitTime(SharedTNCWaitTimeDest);        
+        mcDmuObject.setOrigCounty(tazDataManager.getZoneCounty(oTaz));
+
         // log headers to traceLogger
         if ( household.getDebugChoiceModels() ) {
             mcModel[modelIndex].choiceModelUtilityTraceLoggerHeading( "", "" );
@@ -563,7 +566,8 @@ public class ModeChoiceModel implements Serializable {
         mcDmuObject.setDestSingleTNCWaitTime(SingleTNCWaitTimeDest);
         mcDmuObject.setOrigSharedTNCWaitTime(SharedTNCWaitTimeOrig);
         mcDmuObject.setDestSharedTNCWaitTime(SharedTNCWaitTimeDest);
-        
+        mcDmuObject.setOrigCounty(tazDataManager.getZoneCounty(oTaz));
+
         if (tourCategory.equalsIgnoreCase(ModelStructure.AT_WORK_CATEGORY)) {
         	ArrayList<Tour> workTourList = person.getListOfWorkTours();
             int workTourIndex = tour.getWorkTourIndexFromSubtourId( tour.getTourId() );
