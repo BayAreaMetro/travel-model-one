@@ -92,38 +92,38 @@ if (SUBMODEL=="UsualWorkAndSchoolLocation") {
                    "othdiscr"      =c( "constants",36,   3,  64),
                    "workbased"     =c( "constants",40,   3,  64),
 
-                   "cbd_work"      =c(    "CBD_SF", 9,   3,   6),
-                   "cbd_university"=c(    "CBD_SF", 9,   7,  10),
-                   "cbd_school"    =c(    "CBD_SF", 9,  11,  14),
-                   "cbd_escort"    =c(    "CBD_SF", 9,  15,  18),
-                   "cbd_shopping"  =c(    "CBD_SF", 9,  15,  18),
-                   "cbd_eatout"    =c(    "CBD_SF", 9,  19,  22),
-                   "cbd_othmaint"  =c(    "CBD_SF", 9,  15,  18),
-                   "cbd_social"    =c(    "CBD_SF", 9,  19,  22),
-                   "cbd_othdiscr"  =c(    "CBD_SF", 9,  19,  22),
-                   "cbd_workbased" =c(    "CBD_SF", 9,  23,  26))
+                   "cbd_work"      =c(    "CBD_SF", 9,   3,   8),
+                   "cbd_university"=c(    "CBD_SF", 9,   9,  14),
+                   "cbd_school"    =c(    "CBD_SF", 9,  15,  20),
+                   "cbd_escort"    =c(    "CBD_SF", 9,  21,  26),
+                   "cbd_shopping"  =c(    "CBD_SF", 9,  21,  26),
+                   "cbd_eatout"    =c(    "CBD_SF", 9,  27,  32),
+                   "cbd_othmaint"  =c(    "CBD_SF", 9,  21,  26),
+                   "cbd_social"    =c(    "CBD_SF", 9,  27,  32),
+                   "cbd_othdiscr"  =c(    "CBD_SF", 9,  27,  32),
+                   "cbd_workbased" =c(    "CBD_SF", 9,  33,  38))
 
-  COPY_DST <- list("work"          =c(      "Work", 5, 405, 466),
-                   "university"    =c("University", 5, 405, 466),
-                   "school"        =c(    "School", 5, 405, 466),
-                   "escort"        =c(    "Escort", 5, 405, 466),
-                   "shopping"      =c(  "Shopping", 5, 405, 466),
-                   "eatout"        =c(    "EatOut", 5, 405, 466),
-                   "othmaint"      =c(  "OthMaint", 5, 405, 466),
-                   "social"        =c(    "Social", 5, 405, 466),
-                   "othdiscr"      =c(  "OthDiscr", 5, 405, 466),
-                   "workbased"     =c( "WorkBased", 5, 408, 469),
+  COPY_DST <- list("work"          =c(      "Work", 5, 406, 467),
+                   "university"    =c("University", 5, 406, 467),
+                   "school"        =c(    "School", 5, 406, 467),
+                   "escort"        =c(    "Escort", 5, 406, 467),
+                   "shopping"      =c(  "Shopping", 5, 406, 467),
+                   "eatout"        =c(    "EatOut", 5, 406, 467),
+                   "othmaint"      =c(  "OthMaint", 5, 406, 467),
+                   "social"        =c(    "Social", 5, 406, 467),
+                   "othdiscr"      =c(  "OthDiscr", 5, 406, 467),
+                   "workbased"     =c( "WorkBased", 5, 409, 470),
 
-                   "cbd_work"      =c(      "Work", 5, 467, 470),
-                   "cbd_university"=c("University", 5, 467, 470),
-                   "cbd_school"    =c(    "School", 5, 467, 470),
-                   "cbd_escort"    =c(    "Escort", 5, 467, 470),
-                   "cbd_shopping"  =c(  "Shopping", 5, 467, 470),
-                   "cbd_eatout"    =c(    "EatOut", 5, 467, 470),
-                   "cbd_othmaint"  =c(  "OthMaint", 5, 467, 470),
-                   "cbd_social"    =c(    "Social", 5, 467, 470),
-                   "cbd_othdiscr"  =c(  "OthDiscr", 5, 467, 470),
-                   "cbd_workbased" =c( "WorkBased", 5, 470, 474))
+                   "cbd_work"      =c(      "Work", 5, 468, 473),
+                   "cbd_university"=c("University", 5, 468, 473),
+                   "cbd_school"    =c(    "School", 5, 468, 473),
+                   "cbd_escort"    =c(    "Escort", 5, 468, 473),
+                   "cbd_shopping"  =c(  "Shopping", 5, 468, 473),
+                   "cbd_eatout"    =c(    "EatOut", 5, 468, 473),
+                   "cbd_othmaint"  =c(  "OthMaint", 5, 468, 473),
+                   "cbd_social"    =c(    "Social", 5, 468, 473),
+                   "cbd_othdiscr"  =c(  "OthDiscr", 5, 468, 473),
+                   "cbd_workbased" =c( "WorkBased", 5, 471, 476))
   
 } else if (SUBMODEL=="TripModeChoice") {
 
@@ -189,6 +189,10 @@ for (name in names(COPY_SRC)) {
                       startRow=calib_start_row, endRow=calib_end_row,
                       header=FALSE, colClasses=c("numeric"))
   print(data)
+  # error out if any NA
+  if (any(is.na(data))) {
+    stop("Data contains NA")
+  }
   
   for (copynum in 1:(length(COPY_DST[[name]])/4)) {
     print(paste0("Copying set ",copynum))
