@@ -7,6 +7,8 @@
 ::   This should already be set in RunModel.bat
 :: * SAMPLESHARE=the sampling used for this iteration
 ::   This should already be set in RunModel.bat
+:: * MODEL_YEAR=the year the model represents.  Used by hwynet.py to lookup relevant emissions,
+::   collisions and non-recurring delay factors.
 :: * ALL_PROJECT_METRICS_DIR=the location to collect all the metrics files from projects.
 ::   These will be rolled up into a single dashboard.
 ::
@@ -32,6 +34,7 @@ echo STARTED METRICS RUN  %DATE% %TIME% >> logs\feedback.rpt
 
 IF defined ITER (echo Using ITER=%ITER%) else (goto error)
 IF defined SAMPLESHARE (echo Using SAMPLESHARE=%SAMPLESHARE%) else (goto error)
+IF defined MODEL_YEAR (echo Using MODEL_YEAR=%MODEL_YEAR%) else (goto error)
 
 set ALL_PROJECT_METRICS_DIR=..\all_project_metrics
 
@@ -86,22 +89,25 @@ if not exist main\tripsEVinc1.dat (
   if ERRORLEVEL 2 goto error
 )
 
-if not exist main\tripsEVinc1.tpp (
-  rem Convert trip tables into time/income/mode OD matrices
+if not exist main\tripsAM_no_zpv_allinc.tpp (
+  rem Convert person trip tables into time/income/mode OD person trip matrices
   rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].dat,
   rem         main\trips(EA|AM|MD|PM|EV)_2074.dat,
   rem         main\trips(EA|AM|MD|PM|EV)_2064.dat
-  rem Output: main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp,
-  rem         main\trips(EA|AM|MD|PM|EV)_2074.tpp,
-  rem         main\trips(EA|AM|MD|PM|EV)_2064.tpp,
-  rem         main\trips(EA|AM|MD|PM|EV)allinc.tpp
+  rem Output: main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4].tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv_allinc.tpp
   runtpp "%CODE_DIR%\prepAssignIncome.job"
   IF ERRORLEVEL 2 goto error
 )
 
 if not exist metrics\transit_times_by_mode_income.csv (
-  rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : main\trips(EA|AM|MD|PM|EV)allinc.tpp,
+  rem Reads person trip tables and skims and outputs tallies for trip attributes
+  rem Input : main\trips(EA|AM|MD|PM|EV)_no_zpv_allinc.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,
+  rem         main\trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp,
   rem         skims\trnskm(EA|AM|MD|PM|EV)_(wlk|drv)_(com|hvy|exp|lrf|loc)_(wlk|drv).tpp
   rem Output: metrics\transit_times_by_acc_mode_egr.csv,
   rem         metrics\transit_times_by_mode_income.csv
@@ -111,7 +117,7 @@ if not exist metrics\transit_times_by_mode_income.csv (
 
 if not exist metrics\auto_times.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp
+  rem Input : main\trips(EA|AM|MD|PM|EV)(_no)?_zpv_inc[1-4].tpp
   rem         nonres\tripsIx(EA|AM|MD|PM|EV).tpp
   rem         nonres\tripsAirPax(EA|AM|MD|PM|EV).tpp
   rem         nonres\tripstrk(EA|AM|MD|PM|EV).tpp
@@ -125,9 +131,9 @@ if not exist metrics\auto_times.csv (
 
 if not exist metrics\nonmot_times.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : trips(EA|AM|MD|PM|EV)inc[1-4].tpp
-  rem         trips(EA|AM|MD|PM|EV)_2074.tpp
-  rem         trips(EA|AM|MD|PM|EV)_2064.tpp
+  rem Input : trips(EA|AM|MD|PM|EV)_no_zpv_inc[1-4].tpp
+  rem         trips(EA|AM|MD|PM|EV)_no_zpv__2074.tpp
+  rem         trips(EA|AM|MD|PM|EV)_no_zpv__2064.tpp
   rem         skims\nonmotskm.tpp
   rem Output: metrics\nonmot_times.csv
   runtpp "%CODE_DIR%\sumNonmotTimes.job"
@@ -146,7 +152,7 @@ if not exist metrics\vmt_vht_metrics.csv (
   rem Summarize network links to vmt, vht, and other collision and emissions estimations
   rem Input: hwy\iter%ITER%\avgload5period_vehclasses.csv
   rem Output: metrics\vmt_vht_metrics.csv
-  call python "%CODE_DIR%\hwynet.py" hwy\iter%ITER%\avgload5period_vehclasses.csv
+  call python "%CODE_DIR%\hwynet.py" --filter %FUTURE% --year %MODEL_YEAR% hwy\iter%ITER%\avgload5period_vehclasses.csv
   IF ERRORLEVEL 2 goto error
 )
 

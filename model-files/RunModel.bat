@@ -20,15 +20,13 @@
 call CTRAMP\runtime\SetPath.bat
 
 ::  Set the IP address of the host machine which sends tasks to the client machines 
-if %computername%==MODEL2-A set HOST_IP_ADDRESS=192.168.1.206
-if %computername%==MODEL2-B set HOST_IP_ADDRESS=192.168.1.207
-if %computername%==MODEL2-C set HOST_IP_ADDRESS=192.168.1.208
-if %computername%==MODEL2-D set HOST_IP_ADDRESS=192.168.1.209
-if %computername%==PORMDLPPW01 set HOST_IP_ADDRESS=172.24.0.101
-if %computername%==PORMDLPPW02 set HOST_IP_ADDRESS=172.24.0.102
-
-:: PBA50, CleanAndGreen, BackToTheFuture, or RisingTidesFallingFortunes
-set FUTURE=PBA50
+if %computername%==MODEL2-A            set HOST_IP_ADDRESS=192.168.1.206
+if %computername%==MODEL2-B            set HOST_IP_ADDRESS=192.168.1.207
+if %computername%==MODEL2-C            set HOST_IP_ADDRESS=192.168.1.208
+if %computername%==MODEL2-D            set HOST_IP_ADDRESS=192.168.1.209
+if %computername%==PORMDLPPW01         set HOST_IP_ADDRESS=172.24.0.101
+if %computername%==PORMDLPPW02         set HOST_IP_ADDRESS=172.24.0.102
+if %computername%==WIN-FK0E96C8BNI     set HOST_IP_ADDRESS=10.0.0.154
 
 :: Figure out the model year
 set MODEL_DIR=%CD%
@@ -57,6 +55,44 @@ if %MODEL_YEAR% GTR 3000 (
   echo Model year [%MODEL_YEAR%] is greater than 3000
   exit /b 2
 )
+
+set FUTURE_ABBR=%myfolder:~15,2%
+echo FUTURE SHORT NAME = %FUTURE_ABBR%
+set FUTURE=X
+echo FUTURE TEMPORARY LONG NAME = X
+
+:: FUTURE ------------------------- make sure FUTURE_ABBR is one of the three [RT,CG,BF] -------------------------
+:: The long names are: PBA50, CleanAndGreen, BackToTheFuture, or RisingTidesFallingFortunes
+
+
+echo off
+if %FUTURE_ABBR%==RT (
+  set FUTURE=RisingTidesFallingFortunes
+)
+
+echo off
+if %FUTURE_ABBR%==CG (
+   set FUTURE=CleanAndGreen
+)
+
+echo off
+if %FUTURE_ABBR%==BF (
+  set FUTURE=BackToTheFuture
+)
+
+echo on
+echo FUTURE LONG NAME = %FUTURE%
+
+echo off
+if %FUTURE%==X (
+  echo on
+  echo Couldn't determine FUTURE name.
+  echo Make sure the name of the project folder conform to the naming convention.
+  exit /b 2
+)
+
+echo on
+echo turn echo back on
 
 set MAXITERATIONS=3
 :: --------TrnAssignment Setup -- Standard Configuration
@@ -320,6 +356,10 @@ if ERRORLEVEL 2 goto done
 ::
 :: ------------------------------------------------------------------------------------------------------
 
+
+:: Extract key files
+call extractkeyfiles
+c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
 
 : cleanup
 

@@ -31,10 +31,10 @@ run pgm = network
                 "cap",
                 "ffs",
                 "fft",
-                "autoopc", "autoopc_pave",
-                "smtropc", "smtropc_pave",
-                "lrtropc", "lrtropc_pave",
-                "busopc",  "busopc_pave",
+                "autoopc",
+                "smtropc",
+                "lrtropc",
+                "busopc",
                 "cspdEA",
                 "cspdAM",
                 "cspdMD",
@@ -65,6 +65,9 @@ run pgm = network
                 "volEA_s3t",   "volAM_s3t",   "volMD_s3t",   "volPM_s3t",   "volEV_s3t",
                 "volEA_smt",   "volAM_smt",   "volMD_smt",   "volPM_smt",   "volEV_smt",
                 "volEA_hvt",   "volAM_hvt",   "volMD_hvt",   "volPM_hvt",   "volEV_hvt",
+                "volEA_daav",  "volAM_daav",  "volMD_daav",  "volPM_daav",  "volEV_daav",
+                "volEA_s2av",  "volAM_s2av",  "volMD_s2av",  "volPM_s2av",  "volEV_s2av",
+                "volEA_s3av",  "volAM_s3av",  "volMD_s3av",  "volPM_s3av",  "volEV_s3av",
                 printo=1
          
          _doOnce = 1
@@ -85,10 +88,10 @@ run pgm = network
              CAP(8.0L),
              FFS(8.2L),
              FFT(8.2L),
-             AUTOOPC(8.4L),  AUTOOPC_PAVE(8.4L),
-             SMTROPC(8.4L),  SMTROPC_PAVE(8.4L),
-             LRTROPC(8.4L),  LRTROPC_PAVE(8.4L),
-             BUSOPC(8.4L),   BUSOPC_PAVE(8.4L),
+             AUTOOPC(8.4L),
+             SMTROPC(8.4L),
+             LRTROPC(8.4L),
+             BUSOPC(8.4L),
              cspdEA(8.2L),
              cspdAM(8.2L),
              cspdMD(8.2L),
@@ -119,6 +122,9 @@ run pgm = network
              volEA_s3t(12.2L), volAM_s3t(12.2L), volMD_s3t(12.2L), volPM_s3t(12.2L), volEV_s3t(12.2L),
              volEA_smt(12.2L), volAM_smt(12.2L), volMD_smt(12.2L), volPM_smt(12.2L), volEV_smt(12.2L),
              volEA_hvt(12.2L), volAM_hvt(12.2L), volMD_hvt(12.2L), volPM_hvt(12.2L), volEV_hvt(12.2L),
+             volEA_daav(12.2L),volAM_daav(12.2L),volMD_daav(12.2L),volPM_daav(12.2L),volEV_daav(12.2L),
+             volEA_s2av(12.2L),volAM_s2av(12.2L),volMD_s2av(12.2L),volPM_s2av(12.2L),volEV_s2av(12.2L),
+             volEA_s3av(12.2L),volAM_s3av(12.2L),volMD_s3av(12.2L),volPM_s3av(12.2L),volEV_s3av(12.2L),
              printo=1
    
    endphase

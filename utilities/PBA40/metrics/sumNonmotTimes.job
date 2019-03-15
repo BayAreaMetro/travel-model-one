@@ -2,12 +2,12 @@
 ; 3. Walk and Bike Daily Trips by Income
 ; 5. Wlak and Bike Travel Time by Income
 loop inc = 1,6
-   if (inc = 1)  token_inc   = 'inc1'
-   if (inc = 2)  token_inc   = 'inc2'
-   if (inc = 3)  token_inc   = 'inc3'
-   if (inc = 4)  token_inc   = 'inc4'
-   if (inc = 5)  token_inc   = '_2074'
-   if (inc = 6)  token_inc   = '_2064'
+   if (inc = 1)  token_inc   = '_no_zpv_inc1'
+   if (inc = 2)  token_inc   = '_no_zpv_inc2'
+   if (inc = 3)  token_inc   = '_no_zpv_inc3'
+   if (inc = 4)  token_inc   = '_no_zpv_inc4'
+   if (inc = 5)  token_inc   = '_no_zpv__2074'
+   if (inc = 6)  token_inc   = '_no_zpv__2064'
    
    DistributeMultistep processid = 'ctramp', processNum = inc, commpath = '%COMMPATH%'   
    RUN PGM = MATRIX
@@ -21,7 +21,7 @@ loop inc = 1,6
      
      FILEI MATI[6] = "skims\nonmotskm.tpp" 
      
-     FILEO PRINTO[1] = "metrics\nonmot_times_@token_inc@.csv",APPEND=T 
+     FILEO PRINTO[1] = "metrics\nonmot_times@token_inc@.csv",APPEND=T 
      
      ; Daily Walk Trips
      MW[1] = mi.1.walk + mi.2.walk + mi.3.walk + mi.4.walk + mi.5.walk
@@ -65,20 +65,21 @@ loop inc = 1,6
      AvgBikeDist = bike_tripdist/bike_trips
      AvgBikeTime = bike_triptime/bike_trips * 60
 
-     if (('@token_inc@'='inc1')||('@token_inc@'='inc2')||('@token_inc@'='inc3')||('@token_inc@'='inc4'))
-       Income = '@token_inc@'
-       Age    = 'all'
-     elseif ('@token_inc@'='_2074')
-       Income = 'all'
-       Age    = '20-74'
-     elseif ('@token_inc@'='_2064')
-       Income = 'all'
-       Age    = '20-64'
+     if(I = 1 & @inc@=1) PRINT PRINTO=1 CSV=T LIST= "Age","Income","Mode","Daily Trips","Total Time (Hours)","Total Dist","Avg Time (Min)", "Avg Dist"
+     if(I = 1454)
+       if (('@token_inc@'='_no_zpv_inc1')||('@token_inc@'='_no_zpv_inc2')||('@token_inc@'='_no_zpv_inc3')||(  '@token_inc@'='_no_zpv_inc4'))
+         Income = SubStr('@token_inc@',9,4)
+         Age    = 'all'
+       elseif ('@token_inc@'='_no_zpv__2074')
+         Income = 'all'
+         Age    = '20-74'
+       elseif ('@token_inc@'='_no_zpv__2064')
+         Income = 'all'
+         Age    = '20-64'
+       endif
+       PRINT PRINTO=1 CSV=T LIST= Age,Income,"Walk",walk_trips,walk_triptime,walk_tripdist,AvgWalkTime,AvgWalkDist
+       PRINT PRINTO=1 CSV=T LIST= Age,Income,"Bike",bike_trips,bike_triptime,bike_tripdist,AvgBikeTime,AvgBikeDist
      endif
-
-          if(I = 1 & @inc@=1) PRINT PRINTO=1 CSV=T LIST= "Age","Income","Mode","Daily Trips","Total Time (Hours)","Total Dist","Avg Time (Min)", "Avg Dist"
-          if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Age,Income,"Walk",walk_trips,walk_triptime,walk_tripdist,AvgWalkTime,AvgWalkDist
-          if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Age,Income,"Bike",bike_trips,bike_triptime,bike_tripdist,AvgBikeTime,AvgBikeDist
    ENDRUN
    EndDistributeMultistep
 
@@ -89,11 +90,11 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
            printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the income files into one
-* copy metrics\nonmot_times_inc1.csv+metrics\nonmot_times_inc2.csv+metrics\nonmot_times_inc3.csv+metrics\nonmot_times_inc4.csv+metrics\nonmot_times__2074.csv+metrics\nonmot_times__2064.csv metrics\nonmot_times.csv
+* copy metrics\nonmot_times_no_zpv_inc1.csv+metrics\nonmot_times_no_zpv_inc2.csv+metrics\nonmot_times_no_zpv_inc3.csv+metrics\nonmot_times_no_zpv_inc4.csv+metrics\nonmot_times_no_zpv__2074.csv+metrics\nonmot_times_no_zpv__2064.csv metrics\nonmot_times.csv
 ; delete the individual ones
-* del metrics\nonmot_times_inc1.csv
-* del metrics\nonmot_times_inc2.csv
-* del metrics\nonmot_times_inc3.csv
-* del metrics\nonmot_times_inc4.csv
-* del metrics\nonmot_times__2074.csv
-* del metrics\nonmot_times__2064.csv
+* del metrics\nonmot_times_no_zpv_inc1.csv
+* del metrics\nonmot_times_no_zpv_inc2.csv
+* del metrics\nonmot_times_no_zpv_inc3.csv
+* del metrics\nonmot_times_no_zpv_inc4.csv
+* del metrics\nonmot_times_no_zpv__2074.csv
+* del metrics\nonmot_times_no_zpv__2064.csv

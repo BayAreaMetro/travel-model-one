@@ -39,10 +39,10 @@ USATE = """
   Note: this script DOES factor the trips by SAMPLESHARE.
 """
 
-# note that there are 29 modes and they are a hybrid of tour modes and those used in assignment
+# note that there are 32 modes and they are a hybrid of tour modes and those used in assignment
 # they include all 21 tour and trip modes in here  (https://github.com/BayAreaMetro/modeling-website/wiki/TravelModes#tour-and-trip-modes)
 # plus 'wlk_loc_drv', 'wlk_lrf_drv', 'wlk_exp_drv', 'wlk_hvy_drv', 'wlk_com_drv'
-# and 'da_av', 'sr2_av', 'sr3_av'
+# and 'da_av_notoll', 'da_av_toll', 'sr2_av_notoll','sr2_av_toll', 'sr3_av_notoll', 'sr3_av_toll'
 COLUMNS = ['orig_taz','dest_taz',
            'da',       'da_toll',
            'sr2',      'sr2_toll',
@@ -52,7 +52,7 @@ COLUMNS = ['orig_taz','dest_taz',
            'drv_loc_wlk', 'drv_lrf_wlk', 'drv_exp_wlk', 'drv_hvy_wlk', 'drv_com_wlk',
            'wlk_loc_drv', 'wlk_lrf_drv', 'wlk_exp_drv', 'wlk_hvy_drv', 'wlk_com_drv',
            'taxi', 'tnc', 'tnc_shared',
-           'da_av', 'sr2_av', 'sr3_av']
+           'da_av_notoll', 'da_av_toll',  'sr2_av_notoll',  'sr2_av_toll', 'sr3_av_notoll', 'sr3_av_toll']
 
 ACTIVE_MINUTES_THRESHOLD = 30
 
@@ -235,11 +235,11 @@ if __name__ == '__main__':
 
     # set mode string
     trips_df['trip_mode_str'] = "unknown"
-    trips_df.loc[(trips_df['trip_mode']== 1), 'trip_mode_str'] = 'da'
+    trips_df.loc[(trips_df['trip_mode']== 1)&(trips_df['avAvailable']==0), 'trip_mode_str'] = 'da'
     trips_df.loc[(trips_df['trip_mode']== 2)&(trips_df['avAvailable']==0), 'trip_mode_str'] = 'da_toll'
-    trips_df.loc[(trips_df['trip_mode']== 3), 'trip_mode_str'] = 'sr2'
+    trips_df.loc[(trips_df['trip_mode']== 3)&(trips_df['avAvailable']==0), 'trip_mode_str'] = 'sr2'
     trips_df.loc[(trips_df['trip_mode']== 4)&(trips_df['avAvailable']==0), 'trip_mode_str'] = 'sr2_toll'
-    trips_df.loc[(trips_df['trip_mode']== 5), 'trip_mode_str'] = 'sr3'
+    trips_df.loc[(trips_df['trip_mode']== 5)&(trips_df['avAvailable']==0), 'trip_mode_str'] = 'sr3'
     trips_df.loc[(trips_df['trip_mode']== 6)&(trips_df['avAvailable']==0), 'trip_mode_str'] = 'sr3_toll'
     trips_df.loc[(trips_df['trip_mode']== 7), 'trip_mode_str'] = 'walk'
     trips_df.loc[(trips_df['trip_mode']== 8), 'trip_mode_str'] = 'bike'
@@ -265,9 +265,12 @@ if __name__ == '__main__':
     trips_df.loc[(trips_df['trip_mode']==20), 'trip_mode_str'] = 'tnc'
     trips_df.loc[(trips_df['trip_mode']==21), 'trip_mode_str'] = 'tnc_shared'
 
-    trips_df.loc[(trips_df['trip_mode']==2)&(trips_df['avAvailable']==1), 'trip_mode_str'] = 'da_av'
-    trips_df.loc[(trips_df['trip_mode']==4)&(trips_df['avAvailable']==1), 'trip_mode_str'] = 'sr2_av'
-    trips_df.loc[(trips_df['trip_mode']==6)&(trips_df['avAvailable']==1), 'trip_mode_str'] = 'sr3_av'
+    trips_df.loc[(trips_df['trip_mode']== 1)&(trips_df['avAvailable']==1), 'trip_mode_str'] = 'da_av_notoll'
+    trips_df.loc[(trips_df['trip_mode']== 2)&(trips_df['avAvailable']==1), 'trip_mode_str'] = 'da_av_toll'
+    trips_df.loc[(trips_df['trip_mode']== 3)&(trips_df['avAvailable']==1), 'trip_mode_str'] = 'sr2_av_notoll'
+    trips_df.loc[(trips_df['trip_mode']== 4)&(trips_df['avAvailable']==1), 'trip_mode_str'] = 'sr2_av_toll'
+    trips_df.loc[(trips_df['trip_mode']== 5)&(trips_df['avAvailable']==1), 'trip_mode_str'] = 'sr3_av_notoll'
+    trips_df.loc[(trips_df['trip_mode']== 6)&(trips_df['avAvailable']==1), 'trip_mode_str'] = 'sr3_av_toll'
 
     assert(len(trips_df.loc[trips_df['trip_mode_str']=="unknown"])==0)
 
