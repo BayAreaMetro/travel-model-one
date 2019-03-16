@@ -473,7 +473,8 @@ public class MandatoryDestChoiceModel implements Serializable {
             mcDmuObject.setDestTaxiWaitTime(taxiWaitTimeDest);
             mcDmuObject.setDestSingleTNCWaitTime(singleTNCWaitTimeDest);
             mcDmuObject.setDestSharedTNCWaitTime(sharedTNCWaitTimeDest);
-            
+            mcDmuObject.setOrigCounty(tazDataManager.getZoneCounty(origTaz));
+
             if ( household.getDebugChoiceModels() ) {
                 household.logTourObject( loggingHeader, modelLogger, person, mcDmuObject.getTourObject() );
             }

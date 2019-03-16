@@ -1,6 +1,3 @@
-; TODO
-; 1. update documentation
-; 2. test
 ; ----------------------------------------------------------------------------------------------------------------
 ;
 ; TransitSkims.job
@@ -48,16 +45,12 @@
 ;	  (3) Origin/destination fare files listed in the .block file above (.far files);
 ;	  (4) A .far file setting fares to links as necessary to account for all the odd fares in the bay area (Farelinks.far);
 ;	  (5) A .far file setting the transfer fares for all the 139 by 139 modal interchanges (xfare.far);
-;	  (6) A .block file listing all of the transit line files (transit_lines.block);
-;	  (7) Transit line files listed in the .block file above (.tpl files);
-;	  (8) Numerous support link files that connect zones to transit stations via walking or bicycling (*transit_suplinks*.dat);
-;	  (9) A .block file that lists commands to combine headways for all line-haul modes when the difference in path time
+;	  (6) A transit line file and transit link file
+;	  (7) Numerous support link files that connect zones to transit stations via walking or bicycling (*transit_suplinks*.dat);
+;	  (8) A .block file that lists commands to combine headways for all line-haul modes when the difference in path time
 ;	       is less than plus or minus five minutes (transit_combined_headways.block);
-;	 (10) A .block file containing access- and egress-mode-specific transfer prohibitor tables (transferprohibitors*.block);
-;	 (11) A .block file containing boarding penalties by mode code, in minutes (Boarding_Penalties_by_Mode_Code.block);
-;	 (12) A .block file containing in-vehicle penalties by mode code, in minutes per mile 
-;	      (Invehicle_Penalties_by_Mode_Code.block);
-;
+;	  (9) A .block file containing access- and egress-mode-specific transfer prohibitor tables (transferprohibitors*.block);
+
 ; Output: (A) A 16-table skim for each time-of-day, access/egress, and line-haul mode combination, containing the following:
 ;		 (1) Transit in-vehicle time, time (minutes x 100), ivt;
 ;		 (2) Initial wait time, time (minutes x 100), iwait;
@@ -96,9 +89,9 @@ counter = 0
 loop period = 1,5
 
   ; set a debug origin
-  token_debug_origin = '342'
+  token_debug_origin = '64,240,277,378,967,1449'
   ; set a debug destination
-  token_debug_destination = '1'
+  token_debug_destination = '22,100,106,109,240,968,971'
   ; set a debug filename prefix
   token_debug_filename = 'TransitSkims'
 
@@ -120,15 +113,15 @@ loop period = 1,5
     if (accegg = 1)         
       token_access = 'wlk'
       token_egress = 'wlk'
-      token_boardpen = 'factor boardpen = 0, 5, 10, 15, 60'
+      token_boardpen = 'factor boardpen = 0, 20, 45, 50, 60'
     elseif (accegg = 2)        
       token_access = 'drv'
       token_egress = 'wlk'
-      token_boardpen = 'factor boardpen = 0, 15, 30, 45, 60'
+      token_boardpen = 'factor boardpen = 0, 30, 45, 50, 60'
     elseif (accegg = 3)       
       token_access = 'wlk'
       token_egress = 'drv'
-      token_boardpen = 'factor boardpen = 0, 15, 30, 45, 60'
+      token_boardpen = 'factor boardpen = 0, 30, 45, 50, 60'
     endif
       
     counter = 3 * (period - 1) + accegg
@@ -149,7 +142,7 @@ loop period = 1,5
           
           ; mode-specific perceived time factors
           ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
-          token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.5, 10*1.5,  10*1.5,   10*1.5,   10*1.0'      
+          token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.1,   10*1.0'      
           
           ; drive access/egress links to this mode (';' means no)
           ; allow higher-class PNRs to be read in case of shared lots
@@ -172,7 +165,7 @@ loop period = 1,5
 
           ; mode-specific perceived time factors
           ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
-          token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.5, 10*1.5,  10*1.5,   10*1.0,   10*1.5'
+          token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.0,   10*1.5'
 
           ; drive access/egress links to this mode (';' means no)
           ; allow higher-class PNRs to be read in case of shared lots
@@ -326,18 +319,18 @@ loop period = 1,5
           ; path parameter: the maximum path time for a single route is 3 hours or 180 minutes
           parameters maxruntime = 180
 
-          ; path parameter: the maximum perceived path time for a single route is 4 hours or 240 minutes
-          parameters maxpathtime = 240
+          ; path parameter: the maximum perceived path time for a single route is 5 hours or 300 minutes
+          parameters maxpathtime = 300
 
           ; perceived time factors: first boarding is free; second, third, and fourth boarding adds five perceived minutes; 
           ; discourage more than four transfers with a 60 minute penalty
           @token_boardpen@
 
           ; perceived time factors: initial wait time is equivalent to 2.0 minutes of ride time for modes 10 through 255  
-          factor iwaitfac[10] = 246 * 2.0
+          factor iwaitfac = 9*0, 130*2.0
 
           ; perceived time factors: transfer wait time is equivalent to 2.0 minutes of ride time for modes 1 through 255 (xxx why not same as above xxx)
-          factor xwaitfac = 255 * 2.0
+          factor xwaitfac = 139*2.0
 
           ; perceived time factors: use token_skipmodes to remove modes from the network per the hierarchy
           @token_skipmodes@
@@ -354,7 +347,7 @@ loop period = 1,5
           ; set the desired output
           matrices name = ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards,
                           ivtLOC,  ivtLRF,  ivtEXP,  ivtHVY,  ivtCOM,  ivtFerry,  ivtMUNILoc, ivtMUNIMet,
-                          distLOC, distLRF, distEXP, distHVY, distCOM, distFerry,
+                          distLOC, distLRF, distEXP, distHVY, distCOM, distFerry, firstMode,
             ; in-vehicle time for all transit modes, use TP+ code 1001    
             mw[1]  = time(1001),
             ; initial wait time, use TP+ code 'iwait'
@@ -404,7 +397,9 @@ loop period = 1,5
             ; commuter rail distance (modes 130 through 139)
             mw[24] = dist(130,131,132,133,134,135,136,137,138,139),
             ; capture the ferry distance in order to distinguish between ferry paths and light rail paths in the light rail/ferry choice (modes 100 to 109)
-            mw[25] = dist(100,101,102,103,104,105,106,107,108,109)
+            mw[25] = dist(100,101,102,103,104,105,106,107,108,109),
+            ; first transit mode
+            mw[26] = modet1
 
           ; trace a selection of o/d pairs for debugging
           select trace=(i=@token_debug_origin@ && j=@token_debug_destination@)            
@@ -419,10 +414,10 @@ loop period = 1,5
             FILEI MATI[2]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.iter@token_trnassigniter@.tpp  ; current travel times +
             FILEI MATI[3]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.avg.iter@token_prevtrnassigniter@.tpp ; bring in averaged travel times
         
-            FILEO MATO[1]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.avg.iter@token_trnassigniter@.tpp, MO=1-25,
+            FILEO MATO[1]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.avg.iter@token_trnassigniter@.tpp, MO=1-26,
                           NAME=ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards,
                                ivtLOC,  ivtLRF,  ivtEXP,  ivtHVY,  ivtCOM,  ivtFerry,  ivtMUNILoc, ivtMUNIMet,
-                               distLOC, distLRF, distEXP, distHVY, distCOM, distFerry,
+                               distLOC, distLRF, distEXP, distHVY, distCOM, distFerry, firstMode
         
             FILEO PRINTO[1]=PHT_total_trnskm@token_period@_@token_access@_@token_path@_@token_egress@.csv, APPEND=T
 
@@ -466,6 +461,7 @@ loop period = 1,5
                 MW[23] =(MI.2.distHVY   *LAMBDA)+((1-LAMBDA)*MI.3.distHVY   )
                 MW[24] =(MI.2.distCOM   *LAMBDA)+((1-LAMBDA)*MI.3.distCOM   )
                 MW[25] =(MI.2.distFerry *LAMBDA)+((1-LAMBDA)*MI.3.distFerry )
+                MW[26] =(MI.2.firstMode *LAMBDA)+((1-LAMBDA)*MI.3.firstMode )
                 _BOTH = _BOTH+1
               ELSEIF (MI.2.@token_ivt@>0)
                 MW[1 ] =MI.2.ivt
@@ -493,6 +489,7 @@ loop period = 1,5
                 MW[23] =MI.2.distHVY  
                 MW[24] =MI.2.distCOM  
                 MW[25] =MI.2.distFerry
+                MW[26] =MI.2.firstMode
                 _ITERONLY = _ITERONLY+1
               ELSEIF (MI.3.@token_ivt@>0)
                 MW[1 ] =MI.3.ivt      
@@ -520,6 +517,7 @@ loop period = 1,5
                 MW[23] =MI.3.distHVY  
                 MW[24] =MI.3.distCOM  
                 MW[25] =MI.3.distFerry
+                MW[26] =MI.3.firstMode
                 _AVGONLY = _AVGONLY+1
               ENDIF
         
@@ -600,7 +598,7 @@ endloop ; time period loop
 wait4files files = ctramp1.script.end,  ctramp2.script.end,  ctramp3.script.end,  ctramp4.script.end,  ctramp5.script.end,
                    ctramp6.script.end,  ctramp7.script.end,  ctramp8.script.end,  ctramp9.script.end,  ctramp10.script.end,
                    ctramp11.script.end, ctramp12.script.end, ctramp13.script.end, ctramp14.script.end, ctramp15.script.end, 
-          printfiles = merge, DelDistribFiles = t, CheckReturnCode = t
+          printfiles = save, DelDistribFiles = t, CheckReturnCode = t
                    
 
 ; combine all the debug output

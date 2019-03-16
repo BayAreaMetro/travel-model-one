@@ -143,7 +143,8 @@ public class MtcModelStructure extends ModelStructure {
     public static final int[] WALK_PREMIUM_ALTS = { 10, 11, 12, 13 };
     public static final int[] DRIVE_TRANSIT_ALTS = { 14, 15, 16, 17, 18 };
     public static final int[] SCHOOL_BUS_ALTS = {};
-    public static final int MAXIMUM_TOUR_MODE_ALT_INDEX = 20;
+    public static final int[] RIDE_HAIL_ALTS = {19, 20, 21};
+    public static final int MAXIMUM_TOUR_MODE_ALT_INDEX = 21;
 
     public static final int NUM_INCOME_CATEGORIES = 4; 
     
@@ -513,7 +514,16 @@ public class MtcModelStructure extends ModelStructure {
         return false;
     }
 
-
+    public boolean getTourModeIsRideHail( int tourMode ) {
+        boolean returnValue = false;
+        for ( int i=0; i < RIDE_HAIL_ALTS.length; i++ ) {
+            if ( RIDE_HAIL_ALTS[i] == tourMode ) {
+                returnValue = true;
+                break;
+            }
+        }
+        return returnValue;
+    }
 
     
     private int createPurposeIndexMaps( String purposeName, String[] segmentNames, int index, String categoryString ) {

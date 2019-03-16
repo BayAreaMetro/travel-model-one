@@ -284,6 +284,11 @@ public class TripModeChoiceDMU implements Serializable, VariableTable {
         return tourModeIsWalk ? 1 : 0;
     }
 
+    public int getTourModeIsRideHail() {
+        boolean tourModeIsRideHail = modelStructure.getTourModeIsRideHail( tour.getTourModeChoice() );
+        return tourModeIsRideHail ? 1 : 0;
+    }
+
     public int getTourMode() {
         return tour.getTourModeChoice();
     }

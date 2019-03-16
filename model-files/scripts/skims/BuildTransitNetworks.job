@@ -126,8 +126,8 @@ loop period = 1, 5
          ; build up to 30 access links total (30 is the maximum parameter value)
          maxlinks = 30,
       	
-         ; set the maximum distance to be .75 miles
-         maxdist = 9*75, 70*75, 20*75, 20*75, 10*75, 10*75,
+         ; set the maximum distance to be .75 miles, 1.1 miles for express bus and above
+         maxdist = 9*75, 70*75, 20*110, 20*110, 10*110, 10*110,
       	
          ; generate walk access or mode 1 links
          mode = 1

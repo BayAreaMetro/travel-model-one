@@ -20,7 +20,8 @@ public interface TazDataIf {
     public int getZoneIsUrban( int taz );
     public int getZoneIsSuburban( int taz );
     public int getZoneIsRural( int taz );
-    
+    public int getZoneCounty( int taz );
+
     public float getPopEmpPerSqMi(int taz);
 
     public float[] getPkAutoRetailAccessibity();
