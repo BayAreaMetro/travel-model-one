@@ -688,21 +688,22 @@ def config_uec(auto_operating_cost, adjTaxi, adjTNCsingle, adjTNCshared):
                 trip_half = 0.5 if bookname == "TripModeChoice.xls" else 1.0
 
                 # only join tours; individual are calibrated
-                if rs.cell(rownum,2).value in ['Taxi - Alternative-specific constant - Zero auto - Joint Tours',
-                                               'Taxi - Alternative-specific constant - Auto deficient - Joint Tours',
-                                               'Taxi - Alternative-specific constant - Auto sufficient - Joint Tours']:
+                col3_val_str = str(rs.cell(rownum,3).value)
+                if col3_val_str in ['Taxi - Alternative-specific constant - Zero auto - Joint Tours',
+                                    'Taxi - Alternative-specific constant - Auto deficient - Joint Tours',
+                                    'Taxi - Alternative-specific constant - Auto sufficient - Joint Tours']:
                     print "  Sheet '%s': replacing AdjustTaxi '%s' -> %.2f" % \
                         (rs.name, rs.cell(rownum,4).value, adjTaxi*trip_half)
                     wb.get_sheet(sheet_num).write(rownum,4,adjTaxi*trip_half, xlwt.easyxf("align: horiz left"))
 
                 # both individual and joint tours, for different auto "sufficiency" levels
-                if rs.cell(rownum,2).value.startswith('TNC-Single - Alternative-specific constant'):
+                if col3_val_str.startswith('TNC-Single - Alternative-specific constant'):
                     print "  Sheet '%s': replacing AdjustTNCsingle '%s' -> %.2f" % \
                         (rs.name, rs.cell(rownum,4).value, adjTNCsingle*trip_half)
                     wb.get_sheet(sheet_num).write(rownum,4,adjTNCsingle*trip_half, xlwt.easyxf("align: horiz left"))
 
                 # both individual and joint tours, for different auto "sufficiency" levels
-                if rs.cell(rownum,2).value.startswith('TNC-Shared - Alternative-specific constant'):
+                if col3_val_str.startswith('TNC-Shared - Alternative-specific constant'):
                     print "  Sheet '%s': replacing AdjustTNCshared '%s' -> %.2f" % \
                         (rs.name, rs.cell(rownum,4).value, adjTNCshared*trip_half)
                     wb.get_sheet(sheet_num).write(rownum,4,adjTNCshared*trip_half, xlwt.easyxf("align: horiz left"))
