@@ -220,6 +220,8 @@ def config_mobility_params(replacements):
     # TNC.shared.s2.share = 0.3
     # TNC.shared.s3.share = 0.7
 
+    modelYear = int(os.environ["MODEL_YEAR"])
+
     SharingPrefFactor  = float(get_property(params_filename, myfile_contents, "Sharing_Preferences_factor"))
 
     avShare   = float(get_property(params_filename, myfile_contents, "Mobility.AV.Share"))
@@ -268,6 +270,8 @@ def config_mobility_params(replacements):
     tncSharedS3Share = float(get_property(params_filename, myfile_contents, "TNC.shared.s3.share"))
 
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
+
+    replacements[filepath]["(\Model_Year[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d" % modelYear
 
     replacements[filepath]["(\Sharing_Preferences_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % SharingPrefFactor
 
