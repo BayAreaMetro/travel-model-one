@@ -115,6 +115,11 @@ def check_model_status(machine):
     # skip blanks
     while ((len(status_lines) > 0) and status_lines[0]==""): status_lines.pop(0)
 
+    if len(status_lines) == 0:
+        return_dict["STATE"] = STATE_InvalidStatusFile
+        return_dict["error"] = "Unexpected end of file (no num_children)"
+        return return_dict
+
     num_children_str = status_lines.pop(0)
     num_children     = int(num_children_str)
     child_procs      = status_lines[:num_children]
