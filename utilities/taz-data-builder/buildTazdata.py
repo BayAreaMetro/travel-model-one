@@ -259,12 +259,8 @@ if __name__ == '__main__':
     #     if colname not in list(tazdata_df.columns.values):
     #         print("Column {} missing".format(colname))
 
-    # TODO: I think we'll delete this but for now, this replicates the old functionality
-    if "AREATYPE" in list(tazdata_df.columns.values):
-        tazdata_df.drop(columns=["AREATYPE"], inplace=True)
-
     # finally pull a few columns directly
-    baseyear_copy_cols = ["DISTRICT","AREATYPE","TOPOLOGY","ZERO"]
+    baseyear_copy_cols = ["DISTRICT","TOPOLOGY","ZERO"]
     tazdata_df = pandas.merge(left=tazdata_df, right=baseyear_tazdata_df[["ZONE"]+baseyear_copy_cols], how="left", on="ZONE")
     tazdata_df = tazdata_df[baseyear_tazdata_cols]
 
