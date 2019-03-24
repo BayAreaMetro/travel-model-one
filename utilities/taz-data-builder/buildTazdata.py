@@ -9,7 +9,7 @@ USAGE = r"""
   1) create parking costs
   2) creates school enrollment
   3) calculates terminal time
-  4) copies columns DISTRICT, AREATYPE, TOPOLOGY, ZERO from baseyear (2000) tazdata
+  4) copies columns DISTRICT, TOPOLOGY, ZERO from baseyear (2000) tazdata
 
   More documentation for each of the three steps inline.
 
@@ -201,13 +201,16 @@ def createParkingCostDataSet(baseyear_tazdata_df, tazdata_df):
     baseyear_tazdata_df["employmentDensity_baseyear"] = 0.0
     baseyear_tazdata_df.loc[ baseyear_tazdata_df["CIACRE"] > 0, "employmentDensity_baseyear" ] = baseyear_tazdata_df["TOTEMP"]/baseyear_tazdata_df["CIACRE"]
 
+    # if these are set, clear them since we'll set them
+    if "PRKCST" in list(tazdata_df.columns.values):
+        tazdata_df.drop(columns=["PRKCST","OPRKCST"], inplace=True)
+
     # compute the ratio of densities between the base year and the forecast year
     tazdata_df = pandas.merge(left=tazdata_df, right=baseyear_tazdata_df[["ZONE","employmentDensity_baseyear","PRKCST","OPRKCST"]], how="left", on="ZONE")
     tazdata_df["employmentDensityRatio"] = 0.0
     tazdata_df.loc[ tazdata_df["employmentDensity_baseyear"] > 0, "employmentDensityRatio" ] = tazdata_df["employmentDensity"]/tazdata_df["employmentDensity_baseyear"]
     # do not allow decreasing parking costs
     tazdata_df.loc[ tazdata_df["employmentDensityRatio"] <1.0,  "employmentDensityRatio" ] = 1.0
-
 
     tazdata_df["PRKCST"]  = tazdata_df["PRKCST"]*tazdata_df["employmentDensityRatio"]
     tazdata_df["OPRKCST"] = tazdata_df["OPRKCST"]*tazdata_df["employmentDensityRatio"]
@@ -261,6 +264,9 @@ if __name__ == '__main__':
 
     # finally pull a few columns directly
     baseyear_copy_cols = ["DISTRICT","TOPOLOGY","ZERO"]
+    for col in baseyear_copy_cols:
+        if col in list(tazdata_df.columns.values): tazdata_df.drop(columns=[col], inplace=True)
+
     tazdata_df = pandas.merge(left=tazdata_df, right=baseyear_tazdata_df[["ZONE"]+baseyear_copy_cols], how="left", on="ZONE")
     tazdata_df = tazdata_df[baseyear_tazdata_cols]
 
