@@ -4,7 +4,7 @@ options(java.parameters = "-Xmx8000m")  # xlsx uses java and can run out of memo
 library(xlsx)
 
 CALIB_DIR  <- "M:\\Development\\Travel Model One\\Calibration\\Version 1.5.0"
-UEC_DIR    <- "X:\\travel-model-one-calibration\\model-files\\model"
+UEC_DIR    <- "X:\\travel-model-one-master\\model-files\\model"
 CALIB_DIR  <- gsub("\\\\","/",CALIB_DIR) # switch slashes around
 UEC_DIR    <- gsub("\\\\","/",UEC_DIR)   # switch slashes around
 
