@@ -8,7 +8,7 @@ TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
 ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to read
 SAMPLESHARE  <- Sys.getenv("SAMPLESHARE") # Sampling
 
-TAZ_SD_FILE    <- "X:\\travel-model-one-calibration\\utilities\\geographies\\taz-superdistrict-county.csv"
+TAZ_SD_FILE    <- "X:\\travel-model-one-master\\utilities\\geographies\\taz-superdistrict-county.csv"
 WORKBOOK       <- "M:\\Development\\Travel Model One\\Calibration\\Version 1.5.0\\11 Tour Mode Choice\\11_TourModeChoice.xlsx"
 WORKBOOK_BLANK <- gsub(".xlsx","_blank.xlsx",WORKBOOK)
 WORKBOOK_TEMP  <- gsub(".xlsx","_temp.xlsx", WORKBOOK)
