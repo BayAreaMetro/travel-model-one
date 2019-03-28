@@ -228,9 +228,16 @@ loop tpnum=1,5
           exp_wlk = exp(utility_wlk)
           exp_drv = exp(utility_drv)
 
-          ; compute the probability
-          prob_wlk = exp_wlk/(exp_wlk + exp_drv)
-          prob_drv = 1.0 - prob_wlk
+          ; this can happen if the ivt is too high -- avoid div by zero errors
+          if ((exp_wlk + exp_drv)==0)
+            prob_wlk = 1.0
+            prob_drv = 0.0
+          else
+            ; compute the probability
+            prob_wlk = exp_wlk/(exp_wlk + exp_drv)
+            prob_drv = 1.0 - prob_wlk
+          endif
+
         else
           prob_wlk = 0.0
           prob_drv = 1.0
