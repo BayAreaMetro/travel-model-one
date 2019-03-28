@@ -734,14 +734,11 @@ loop period = 1, 5
                                                                    wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
                                                                    da_tnc, s2_tnc, s3_tnc, da_av, s2_av, s3_av
 
-
-     		; load lookup values for factoring taxi and TNC modes
-		lookup lookupi=1, name=occ_factors,
-		lookup[1]=1, result=2,      ; (occ,taxi)
-		lookup[2]=1, result=3,      ; (occ,single_tnc)
-		lookup[3]=1, result=4       ; (occ,shared_tnc)
-
-                list=Y                      ; echo the lookup table to the standard printo file
+     ; load lookup values for factoring taxi and TNC modes
+    lookup lookupi=1, LIST=y, name=occ_factors,
+      lookup[1]=1, result=2,      ; (occ,taxi)
+      lookup[2]=1, result=3,      ; (occ,single_tnc)
+      lookup[3]=1, result=4       ; (occ,shared_tnc)
 
       zones = @token_zones@
 
@@ -750,19 +747,19 @@ loop period = 1, 5
       mw[1]  = (mi.1.1  + mi.2.1 ) * (1 / @token_sample_share@)
 
       ; - drive alone, value toll (add taxi trips factored by occupancy percentage)
-      mw[2]  = (mi.1.2  + mi.2.2 + (mi.1.24 + mi.2.24) * occ_factors(2, 1)) * (1 / @token_sample_share@)
+      mw[2]  = (mi.1.2  + mi.2.2 + (mi.1.24 + mi.2.24) * occ_factors(1, 1)) * (1 / @token_sample_share@)
 
       ; - shared ride 2, no value toll
       mw[3]  = (mi.1.3  + mi.2.3 ) * (1 / @token_sample_share@)
 
       ; - shared ride 2, value toll, taxi
-      mw[4]  = (mi.1.4  + mi.2.4  + (mi.1.24 + mi.2.24) * occ_factors(2, 2) ) * (1 / @token_sample_share@)
+      mw[4]  = (mi.1.4  + mi.2.4  + (mi.1.24 + mi.2.24) * occ_factors(1, 2) ) * (1 / @token_sample_share@)
 
       ; - shared ride 3+, no value toll
       mw[5]  = (mi.1.5  + mi.2.5 ) * (1 / @token_sample_share@)
 
       ; shared ride 3+, value toll, taxi
-      mw[6]  = (mi.1.6  + mi.2.6  + (mi.1.24 + mi.2.24) * occ_factors(2, 3) ) * (1 / @token_sample_share@)
+      mw[6]  = (mi.1.6  + mi.2.6  + (mi.1.24 + mi.2.24) * occ_factors(1, 3) ) * (1 / @token_sample_share@)
 
       ; walk
       mw[7]  = (mi.1.7  + mi.2.7 ) * (1 / @token_sample_share@)
@@ -816,13 +813,13 @@ loop period = 1, 5
       mw[23] = (mi.1.23 + mi.2.23) * (1 / @token_sample_share@) + mi.3.wlk_com_drv
 
       ; da_tnc          single tnc                                  shared tnc
-      mw[24] =  ((mi.1.25 + mi.2.25) * occ_factors(3, 1) + (mi.1.26 + mi.2.26) * occ_factors(4, 1)) * (1 / @token_sample_share@)
+      mw[24] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 1) + (mi.1.26 + mi.2.26) * occ_factors(3, 1)) * (1 / @token_sample_share@)
 
        ; s2_tnc          single tnc                                  shared tnc
-      mw[25] =  ((mi.1.25 + mi.2.25) * occ_factors(3, 2) + (mi.1.26 + mi.2.26) * occ_factors(4, 2)) * (1 / @token_sample_share@)
+      mw[25] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 2) + (mi.1.26 + mi.2.26) * occ_factors(3, 2)) * (1 / @token_sample_share@)
 
       ; s3_tnc          single tnc                                  shared tnc
-      mw[26] =  ((mi.1.25 + mi.2.25) * occ_factors(3, 3) + (mi.1.26 + mi.2.26) * occ_factors(4, 3)) * (1 / @token_sample_share@)
+      mw[26] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 3) + (mi.1.26 + mi.2.26) * occ_factors(3, 3)) * (1 / @token_sample_share@)
 
       ; da_av
       mw[27] =  (mi.1.27+mi.2.27) * (1 / @token_sample_share@)
