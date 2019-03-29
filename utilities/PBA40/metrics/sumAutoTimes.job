@@ -11,6 +11,29 @@
 ;   in year 2000 cents
 ;
 
+; find no access zones
+RUN PGM=MATRIX
+  FILEI MATI[1]   = "skims\HWYSKMAM.tpp"
+  FILEO RECO[1]   = "skims\unconnected_zones.dbf", FIELDS=ZONE(5.0), UNCONNECTED(3.0)
+
+  MW[1] = MI.1.DISTDA
+  IF (ROWMIN(1) == 500000)
+    RO.ZONE = I
+    RO.UNCONNECTED = 1
+    WRITE RECO=1
+  ENDIF
+ENDRUN
+
+; Convert to has access matrix -- all ones if has access
+RUN PGM=MATRIX
+  FILEI ZDATI[1] = "skims\unconnected_zones.dbf"
+  FILEO MATO[1]  = "skims\connected_zones.tpp", MO=1, NAME=CONNECTED
+  ZONES=1475
+
+  MW[1] = 1
+  IF (ZI.1.UNCONNECTED=1) MW[1] = 0
+ENDRUN
+
 
 ; Loop thru Auto modes
 loop auto = 1,15
@@ -106,29 +129,6 @@ loop auto = 1,15
    token_btoll  = 'TOLLBTOLLS3'
    token_vtoll  = 'TOLLVTOLLS3'
   endif
-
-  ; find no access zones
-  RUN PGM=MATRIX
-    FILEI MATI[1]   = "skims\HWYSKMAM.tpp"
-    FILEO RECO[1]   = "skims\unconnected_zones.dbf", FIELDS=ZONE(5.0), UNCONNECTED(3.0)
-
-    MW[1] = MI.1.DISTDA
-    IF (ROWMIN(1) == 500000)
-      RO.ZONE = I
-      RO.UNCONNECTED = 1
-      WRITE RECO=1
-    ENDIF
-  ENDRUN
-
-  ; Convert to has access matrix -- all ones if has access
-  RUN PGM=MATRIX
-    FILEI ZDATI[1] = "skims\unconnected_zones.dbf"
-    FILEO MATO[1]  = "skims\connected_zones.tpp", MO=1, NAME=CONNECTED
-    ZONES=1475
-
-    MW[1] = 1
-    IF (ZI.1.UNCONNECTED=1) MW[1] = 0
-  ENDRUN
 
   DistributeMultistep processid = 'ctramp', processNum = auto, commpath = '%COMMPATH%'
 
