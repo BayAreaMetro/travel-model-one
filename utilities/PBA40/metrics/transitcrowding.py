@@ -20,15 +20,36 @@ from pandas import DataFrame
 
 # import seat capacities from lookup file and create dictionary with key:value as vehicletype:seatedcapacity
 # this transitSeatCap.csv file should be placed in the working directory with all the project runs and runresults.py
-with open('transitSeatCap.csv', mode='r') as infile:
+with open('TransitSeatCap.csv', mode='r') as infile:
     reader = csv.reader(infile)
     next(reader)
     transit_seatcap = {rows[0]:float(rows[3]) for rows in reader}
 
+'''
+# Making list of base folders
+folder_base_list = [i for i in os.listdir('.') if '2050' in i]
+
+# Making list of project folders
+project_folders = []
+folder_project_list = []
+for folder in project_folders:
+    os.chdir(os.path.join(os.getcwd(), folder))
+    folder_project_list.extend([(folder + '/' + i) for i in os.listdir('.') if '2050' in i])
+    os.chdir('..')
+
+# Combined list of folders in which to run transitcrowding.py
+folder_list =  folder_project_list + folder_base_list
+
+
+
+# Iterating through each folder in which to create crowding metrics csv
+for folder in folder_list:
+'''    
+#os.chdir(os.path.join(os.getcwd(), folder, 'OUTPUT','trn'))
 # get transit model output files for five time periods
 os.chdir(os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT','trn'))
 file_list = [i for i in os.listdir('.') if 'ALLMSA.dbf' in i]
-  
+
 
 # calculate effective ivtt that includes crowding penalty, for each transportation link for each time period
 
@@ -39,26 +60,33 @@ for file in file_list:
     table = DBF(file, load=True)
     period = file[7:9]       # name of time period is in the file name
 
-    table.field_names += [u'period',u'seatcap', u'period_seatcap', u'load_seatcap', u'ivtt',\
+    table.field_names += [u'period',u'seatcap', u'period_seatcap', u'load_seatcap', u'ivtt_hours',\
                             u'crowdingfactor_ukdft', u'crowdingfactor_metrolinx', u'crowdingfactor_metrolinx_max2pt5', \
-                             u'effective_ivtt_ukdft', u'effective_ivtt_metrolinx', u'effective_ivtt_metrolinx_max2pt5']                            
-
-    #(table,['A','B','TIME','MODE','FREQ','PLOT','COLOR','STOP_A','STOP_B','DIST','NAME','SEQ OWNER','AB','ABNAMESEQ', \
-     # 'FULLNAME','SYSTEM','GROUP','AB_BRDA','AB_XITA','AB_BRDB','AB_XITB', 'BA_BRDA','BA_XITA','BA_BRDB','BA_XITB'])
-
+                             u'effective_ivtt_ukdft', u'effective_ivtt_metrolinx', u'effective_ivtt_metrolinx_max2pt5', \
+                             u'crowding_penalty_hrs_ukdft', u'crowding_penalty_hrs_metrolinx', u'crowding_penalty_hrs_metrolinx_max2pt5']                            
 
     for record in table:
 
+        veh_type_updated = record.get('VEHTYPE')
+        
+        # manually updating some vehicle types
+        if record.get('SYSTEM') == 'AC Transit':
+            veh_type_updated = 'AC Plus Bus'
+        if "30_1AC" in record.get('NAME'):
+            veh_type_updated = 'Motor Articulated Bus'
+        if "522VTA" in record.get('NAME'):
+            veh_type_updated = 'Motor Articulated Bus'
+
         ab_vol = record.get('AB_VOL')
-        seat_cap = transit_seatcap.get(record.get('VEHTYPE'))                   # sourcing seated capacity imported from lookup file
-        period_seatcap = record.get('PERIODCAP')/record.get('VEHCAP')*seat_cap  # total seated capacity in time period
-        load_seatcap = ab_vol/period_seatcap                                    # load over time period
-        ivtt = ab_vol*record.get('TIME')/100/60                         # number of trips * time per trip
+        seat_cap = transit_seatcap.get(veh_type_updated)                           # sourcing seated capacity imported from lookup file
+        period_seatcap = record.get('PERIODCAP')/record.get('VEHCAP')*seat_cap    # total seated capacity in time period
+        load_seatcap = ab_vol/period_seatcap                                      # load over time period
+        ivtt_hours = ab_vol*record.get('TIME')/100/60                                # number of trips * time per trip
         record.update({u'period':period})
         record.update({u'seatcap':seat_cap})
         record.update({u'period_seatcap':period_seatcap})
         record.update({u'load_seatcap':load_seatcap})
-        record.update({u'ivtt':ivtt})
+        record.update({u'ivtt_hours':ivtt_hours})
 
         # setting default crowding factors
         cf_metrolinx = 1
@@ -97,9 +125,14 @@ for file in file_list:
             cf_ukdft = ((period_seatcap*sit) + ((ab_vol-period_seatcap)*stand)) / ab_vol
 
         # calculating effective ivtt = ivtt * crowding factor
-        effective_ivtt_ukdft = ivtt * cf_ukdft
-        effective_ivtt_metrolinx = ivtt * cf_metrolinx
-        effective_ivtt_metrolinx_max2pt5 = ivtt * cf_metrolinx_max2pt5
+        effective_ivtt_ukdft = ivtt_hours * cf_ukdft
+        effective_ivtt_metrolinx = ivtt_hours * cf_metrolinx
+        effective_ivtt_metrolinx_max2pt5 = ivtt_hours * cf_metrolinx_max2pt5
+
+        crowding_penalty_ukdft = effective_ivtt_ukdft - ivtt_hours
+        crowding_penalty_metrolinx = effective_ivtt_metrolinx - ivtt_hours
+        crowding_penalty_metrolinx_max2pt5 = effective_ivtt_metrolinx_max2pt5 - ivtt_hours
+               
 
         record.update({u'crowdingfactor_ukdft':cf_ukdft})
         record.update({u'crowdingfactor_metrolinx':cf_metrolinx})
@@ -108,30 +141,38 @@ for file in file_list:
         record.update({u'effective_ivtt_ukdft':effective_ivtt_ukdft})
         record.update({u'effective_ivtt_metrolinx':effective_ivtt_metrolinx})
         record.update({u'effective_ivtt_metrolinx_max2pt5':effective_ivtt_metrolinx_max2pt5})
-           
+
+        record.update({u'crowding_penalty_hrs_ukdft':crowding_penalty_ukdft})
+        record.update({u'crowding_penalty_hrs_metrolinx':crowding_penalty_metrolinx})
+        record.update({u'crowding_penalty_hrs_metrolinx_max2pt5':crowding_penalty_metrolinx_max2pt5})
+
         list_rows.append(list(record.values()))
 
 
-# writing file with all columns into output\metrics folder of the project
-os.chdir("..")
+os.chdir(os.path.join("..", '..'))
 df_crowding = pd.DataFrame(list_rows)
-transit_crowding_filename = os.path.join(os.getcwd(), "metrics", "transit_crowding_complete.csv")
+df_crowding.columns = table.field_names
+
+
+# writing file with all columns into output\metrics folder of the project
+#'''
+transit_crowding_filename = os.path.join(os.getcwd(), 'OUTPUT', 'metrics', "transit_crowding_complete.csv")
 df_crowding.to_csv(transit_crowding_filename, header=True, index=False)
-
-print("Wrote transit_crowding_complete.csv into %s/OUTPUT/metrics folder"%(sys.argv[1]))
-
-# deleting unnecessary columns to reduce file size
-for l in list_rows:
-    del l[0:16]
-    del l[1:16]
-    del l[2:5]
-    del l[3:6]
+print("Wrote transit_crowding_complete.csv into %s/OUTPUT/metrics folder"%sys.argv[1])
+#'''
 
 # writing file into essential columns output\metrics folder of the project
-df_crowding = pd.DataFrame(list_rows,columns = ['SYSTEM','period','ivtt','effective_ivtt_ukdft','effective_ivtt_metrolinx', 'effective_ivtt_metrolinx_max2pt5'])
-transit_crowding_filename = os.path.join(os.getcwd(), "metrics", "transit_crowding.csv")
-df_crowding.to_csv(transit_crowding_filename, header=True, index=False)
+df_crowding2 = df_crowding[['NAME', 'SYSTEM', 'period', 'ivtt_hours',\
+            'effective_ivtt_ukdft','effective_ivtt_metrolinx', 'effective_ivtt_metrolinx_max2pt5',\
+            'crowding_penalty_hrs_ukdft', 'crowding_penalty_hrs_metrolinx', 'crowding_penalty_hrs_metrolinx_max2pt5']]
+transit_crowding_filename = os.path.join(os.getcwd(),  'OUTPUT', 'metrics', "transit_crowding.csv")
+df_crowding2.to_csv(transit_crowding_filename, header=True, index=False)
 
+print("Wrote transit_crowding.csv into %s/OUTPUT/metrics folder"%sys.argv[1])
 
-print("Wrote transit_crowding.csv into %s/OUTPUT/metrics folder"%(sys.argv[1]))
-
+'''
+if '/' in folder:
+    os.chdir(os.path.join("..", '..'))
+else:
+    os.chdir('..')        
+'''

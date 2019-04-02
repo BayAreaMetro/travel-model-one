@@ -11,6 +11,7 @@ from collections import OrderedDict, defaultdict
 import pandas as pd     # yay for DataFrames and Series!
 import numpy
 import math
+import xlwings as xl
 import xlsxwriter       # for writing workbooks -- formatting is better than openpyxl
 from xlsxwriter.utility import xl_range, xl_rowcol_to_cell
 pd.set_option('display.precision',10)
@@ -89,15 +90,18 @@ class RunResults:
     # Model output only captured direct particulate matter emissions; emissions were
     # scaled up to account for particulate emissions from road dust and brake/tire
     # wear
-    METRIC_TONS_TO_US_TONS      = 1.10231           # Metric tons to US tons
-    PM25_ROADDUST               = 0.01974           # Grams of PM2.5 from road dust per vehicle mile
+    METRIC_TONS_TO_US_TONS      = 1.10231            # Metric tons to US tons
+    PM25_ROADDUST               = 0.018522           # Grams of PM2.5 from road dust per vehicle mile
+                                                     # Source: CARB - Section 7.  ARB Miscellaneous Processes Methodologies
+                                                     #         Paved Road Dust [Revised and updated, March 2018]
+                                                     #         https://www.arb.ca.gov/ei/areasrc/fullpdf/full7-9_2018.pdf
     GRAMS_TO_US_TONS            = 0.00000110231131  # Grams to US tons
 
     # Already annual -- don't annualize. Default false.
     ALREADY_ANNUAL = {
-    ('Other Transportation Benefits','Vehicle Ownership (Modeled)'          ): True,
-    ('Travel Cost (for reference only)','Vehicle Ownership (Modeled)'                 ): True,
-    ('Travel Cost (for reference only)','Vehicle Ownership (Est. from Auto Trips)'    ): True,
+    ('Other Transportation Benefits','Vehicle Ownership'          ): True,
+    ('Other Travel Metrics (for reference only)','Vehicle Ownership (Modeled)'                 ): True,
+    ('Other Travel Metrics (for reference only)','Vehicle Ownership (Est. from Auto Trips)'    ): True,
     ('Environmental Benefits','Natural Land (acres)'  ): True,
     ('Health Benefits','Active Individuals (Morbidity)','Total'  ): True,
     ('Health Benefits','Activity: Est Proportion Deaths Averted' ): True,
@@ -136,23 +140,22 @@ class RunResults:
     Read configuration and input data.
     """
         # read the configs
-        self.rundir = os.path.abspath(rundir)
-        #config_file = os.path.join(rundir, bc_config)
-        #self.config = pd.Series.from_csv(config_file, header=None, index_col=0)
-        
+        self.rundir = os.path.join(os.path.abspath(rundir), 'OUTPUT', 'metrics')
         # if this is a baseline run, then read from configs_base sheet of master input file
         # else this is a project run, then read from configs_projects sheet of master input file
-        if "PPA" in rundir:
-            df = pd.read_excel('PPAMasterInput.xlsx', sheet_name='configs_base', header=0)            
-            project_folder_name = rundir.split('\\OUTPUT')[0]
-            project_folder_name = project_folder_name.split('\\')[-1]
-            self.config = df[['Folder',project_folder_name]].set_index(['Folder']).iloc[:,0]
+        #if 'CaltrainMod_00' not in rundir:  #for RTFF
+        if rundir[-3] == '_':
+            configs_df = pd.read_excel('PPAMasterInput.xlsx', sheet_name='configs_base', header=0)     
         else:
-            df = pd.read_excel('PPAMasterInput.xlsx', sheet_name='configs_projects', header=0)
-            project_folder_name = rundir.split('\\OUTPUT')[0]
-            self.config = df[['Folder',project_folder_name]].set_index(['Folder']).iloc[:,0]
+            configs_df = pd.read_excel('PPAMasterInput.xlsx', sheet_name='configs_projects', header=0)
+            configs_df.insert(0,'Folder','')
+            configs_df['Folder'] =  configs_df[['Foldername - Project', 'Foldername - Future']].apply(lambda x: '\\'.join(x), axis=1)
+            configs_df.drop(['Foldername - Project', 'Foldername - Future'], axis=1)
+        configs_df = configs_df.T
+        configs_df.columns = configs_df.iloc[0]
+        configs_df = configs_df[1:]
+        self.config = configs_df[[rundir]].iloc[:,0]
         self.config['Project Run Dir'] = self.rundir
-
 
         # read the Benefit Valuations depending on future
         # See RAWG Dec 2018'Plan Bay Area Performance Assessment Report_FINAL.pdf'
@@ -160,8 +163,8 @@ class RunResults:
         # Units in 2017 dollars
         # this sets it into the format {('cat1','cat2','cat3'):[val0,val1,val2,val3]} where vals are base, CAG, RTFF, BTTF
 
-        df = pd.read_excel('PPAMasterInput.xlsx', sheet_name='valuations', header=0)
-        self.BENEFIT_VALUATION = df.set_index(['Benefit Category 1','Benefit Category 2','Benefit Category 3']).T.to_dict('list')
+        valuations_df = pd.read_excel('PPAMasterInput.xlsx', sheet_name='valuations', header=0)
+        self.BENEFIT_VALUATION = valuations_df.set_index(['Benefit Category 1','Benefit Category 2','Benefit Category 3']).T.to_dict('list')
 
         # dict with 3-tuple keys and some have a 3rd val of "NAN"
         old_keys = self.BENEFIT_VALUATION.keys()
@@ -278,22 +281,17 @@ class RunResults:
             new_header = df_collisions_SWITRS.iloc[0] #grab the first row for the header
             df_collisions_SWITRS = df_collisions_SWITRS[1:] #take the data less the header row
             df_collisions_SWITRS.columns = new_header
-            df_collisions_SWITRS = df_collisions_SWITRS[df_collisions_SWITRS['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
-            try:
-                self.collisions_switrs = df_collisions_SWITRS.to_dict('records', into=OrderedDict)[0]
-            except:
-                # this is okay, CRF-based collision reduction is not applicable to this project
-                self.collisions_switrs = None
+            df_collisions_SWITRS2 = df_collisions_SWITRS[df_collisions_SWITRS['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
+            if df_collisions_SWITRS2.shape[0] == 0:
+                df_collisions_SWITRS2 = df_collisions_SWITRS[df_collisions_SWITRS['project_id'] == 0]
+            self.collisions_switrs = df_collisions_SWITRS.to_dict('records', into=OrderedDict)[0]
 
             # Natural Land
             df_natural_land = pd.read_excel('PPAMasterInput.xlsx', sheet_name='natural_land', header=0)
-            df_natural_land = df_natural_land[df_natural_land['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
-            try:
-                self.natural_land = df_natural_land.to_dict('records', into=OrderedDict)[0]
-            except:
-                # this is okay, CRF-based collision reduction is not applicable to this project
-                self.natural_land = None
-
+            df_natural_land2 = df_natural_land[df_natural_land['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
+            if df_natural_land2.shape[0] == 0:
+                df_natural_land2 = df_natural_land[df_natural_land['project_id'] == 0]
+            self.natural_land = df_natural_land.to_dict('records', into=OrderedDict)[0]
 
         # read roadway network for truck costs
         roadway_read    = False
@@ -302,7 +300,7 @@ class RunResults:
         roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "avgload5period_vehclasses.csv"))
         if os.path.exists(roadway_netfile):
             self.roadways_df = pd.read_table(roadway_netfile, sep=",")
-            print "Read roadways from %s" % roadway_netfile
+            #print "Read roadways from %s" % roadway_netfile
             roadway_read = True
 
         # on model machine for reading baseline
@@ -391,14 +389,14 @@ class RunResults:
             # these are not ok - let exceptions raise
             print("")
             print("BASE:")
-            self.base_dir = os.path.realpath(self.base_dir)
+            #self.base_dir = os.path.realpath(self.base_dir)
 
             # pass the project mode for overwrite to base
             base_overwrite_config = {}
             base_overwrite_config['Project Mode'] = self.config.loc['Project Mode']
 
             print self.base_dir
-            print base_overwrite_config
+            #print base_overwrite_config
             self.base_results = RunResults(rundir = self.base_dir,
                                            overwrite_config=base_overwrite_config)
 
@@ -433,7 +431,11 @@ class RunResults:
         self.daily_results[                cat1,cat2,'Truck (Computed VH)'] = (1.0+pct_change_nrfd)*base_truck_nrfd
         self.daily_results['Other Transportation Benefits','Travel Time Reliability (Non-Recurring Freeway Delay) (Hours)','Truck (Computed VH)'] = (1.0+pct_change_nrfd)*base_truck_nrfd
 
-        cat1            = 'Travel Cost (for reference only)'
+
+        ################
+
+        cat1            = 'Other Travel Metrics (for reference only)'
+
         cat2            = 'VMT by class'
         auto_vmt        = self.daily_results[cat1,cat2,'Auto non-AV'] + self.daily_results[(cat1,cat2,'Auto AV' )] 
         base_auto_vmt   = self.base_results.daily_results[cat1,cat2,'Auto non-AV'] + self.base_results.daily_results[cat1,cat2,'Auto AV']
@@ -441,15 +443,26 @@ class RunResults:
 
         pct_change_vmt  = (auto_vmt-base_auto_vmt)/base_auto_vmt
         self.daily_results[cat1,cat2,'Truck - Computed'] = (1.0+pct_change_vmt)*base_truck_vmt
+        
+        vmt_trucks = self.quick_summary['VMT -- trucks']
+        vmt_total = self.quick_summary['VMT -- all vehicles']
+        self.quick_summary['VMT -- trucks'] = (1.0+pct_change_vmt)*base_truck_vmt
+        self.quick_summary['VMT -- all vehicles'] = vmt_total - vmt_trucks + ((1.0+pct_change_vmt)*base_truck_vmt)
+
+        ################
 
         # this is dependent on VMT so it also needs updating
         cat1            = 'Health Benefits'
         cat2            = 'PM2.5 (tons)'
-        self.daily_results[cat1,cat2,'PM2.5 Road Dust'] = 0
-        #    (self.daily_results['Travel Cost (for reference only)','VMT (Reference)','Auto'            ] + \
-        #     self.daily_results['Travel Cost (for reference only)','VMT (Reference)','Truck - Computed'])*RunResults.PM25_ROADDUST*RunResults.GRAMS_TO_US_TONS
+        self.daily_results[cat1,cat2,'PM2.5 Road Dust'] = \
+             (self.daily_results['Other Travel Metrics (for reference only)','VMT by class','Auto non-AV'] + \
+              self.daily_results['Other Travel Metrics (for reference only)','VMT by class','Auto AV'] +\
+              self.daily_results['Other Travel Metrics (for reference only)','VMT by class','Truck - Computed']) * \
+                    RunResults.PM25_ROADDUST*RunResults.GRAMS_TO_US_TONS
 
-        cat1            = 'Travel Cost (for reference only)'
+        ################
+
+        cat1            = 'Other Travel Metrics (for reference only)'
         cat2            = 'Operating Costs ($2000)'
         # override the truck vmt with base truck vmt, with pct change auto vmt applied
         self.roadways_df = pd.merge(left=self.roadways_df,
@@ -467,6 +480,7 @@ class RunResults:
         cat1            = 'Health Benefits'
         cat2            = 'Noise'
         self.daily_results[cat1,cat2,'Truck VMT - Computed'] = (1.0+pct_change_vmt)*base_truck_vmt
+
 
     def parseNumList(self, numlist_str):
         """
@@ -638,7 +652,13 @@ class RunResults:
         cat1 = "Accessibility Benefits (other)"
 
         cat2 = 'Non-Household'
+
+        daily_results[(cat1,cat2,'Time - Auto (PHT) - IX/EX' )] = \
+            auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix'],'Person Minutes'].sum()/60.0
+        daily_results[(cat1,cat2,'Time - Auto (PHT) - AirPax' )] = \
+            auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Person Minutes'].sum()/60.0
         daily_results[(cat1,cat2,'Time - Truck (Computed VHT)')] = vmt_byclass.loc[['sm','smt','hv','hvt'],'VHT'].sum()
+
         daily_results[(cat1,cat2,'Cost - Auto ($2000) - IX/EX' )] = \
             0.01*auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix'],'Total Cost'].sum()
         daily_results[(cat1,cat2,'Cost - Auto ($2000) - AirPax' )] = \
@@ -649,10 +669,6 @@ class RunResults:
                                                (self.roadways_df['large truck volume']*self.roadways_df['lrtropc']*self.roadways_df['distance']*0.01)
         daily_results[(cat1,cat2,'Cost - Truck ($2000) - Computed')] = self.roadways_df['total truck cost'].sum()
 
-        daily_results[(cat1,cat2,'Time - Auto (PHT) - IX/EX' )] = \
-            auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix'],'Person Minutes'].sum()/60.0
-        daily_results[(cat1,cat2,'Time - Auto (PHT) - AirPax' )] = \
-            auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Person Minutes'].sum()/60.0
 
 
         cat2 = "Adding Back Societal Transfers"
@@ -683,38 +699,55 @@ class RunResults:
         daily_results[(cat1,cat2,'Truck (Computed VH)')] = \
             vmt_byclass.loc[['sm','smt','hv','hvt'],'Non-Recurring Freeway Delay'].sum()
 
+
         cat2            = 'Transit Crowding (Crowding Penalty Hours)'
         # crowding penalty = effective ivtt with crowding multiplier minus actual ivtt
         daily_results[(cat1,cat2,'BART (incl eBART)')] = self.crowding_df.loc[self.crowding_df['SYSTEM'] == "BART", 'effective_ivtt_metrolinx_max2pt5'].sum() \
-                                          - self.crowding_df.loc[self.crowding_df['SYSTEM'] == "BART", 'ivtt'].sum() \
+                                          - self.crowding_df.loc[self.crowding_df['SYSTEM'] == "BART", 'ivtt_hours'].sum() \
                                           + self.crowding_df.loc[self.crowding_df['SYSTEM'] == "EBART", 'effective_ivtt_metrolinx_max2pt5'].sum() \
-                                          - self.crowding_df.loc[self.crowding_df['SYSTEM'] == "EBART", 'ivtt'].sum() 
+                                          - self.crowding_df.loc[self.crowding_df['SYSTEM'] == "EBART", 'ivtt_hours'].sum() 
                                           
         daily_results[(cat1,cat2,'Caltrain')] = self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Caltrain", 'effective_ivtt_metrolinx_max2pt5'].sum() \
-                                             -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Caltrain", 'ivtt'].sum()
+                                             -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Caltrain", 'ivtt_hours'].sum()
 
         daily_results[(cat1,cat2,'SF Muni')] = self.crowding_df.loc[self.crowding_df['SYSTEM'] == "SF MUNI", 'effective_ivtt_metrolinx_max2pt5'].sum() \
-                                            -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "SF MUNI", 'ivtt'].sum() \
+                                            -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "SF MUNI", 'ivtt_hours'].sum() \
                                             +  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "SF Muni Cable Car", 'effective_ivtt_metrolinx_max2pt5'].sum() \
-                                            -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "SF Muni Cable Car", 'ivtt'].sum()  \
+                                            -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "SF Muni Cable Car", 'ivtt_hours'].sum()  \
                                             +  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "SF Muni Local", 'effective_ivtt_metrolinx_max2pt5'].sum() \
-                                            -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "SF Muni Local", 'ivtt'].sum() \
+                                            -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "SF Muni Local", 'ivtt_hours'].sum() \
                                             +  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "SF Muni Metro", 'effective_ivtt_metrolinx_max2pt5'].sum() \
-                                            -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "SF Muni Metro", 'ivtt'].sum() \
+                                            -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "SF Muni Metro", 'ivtt_hours'].sum() \
 
         daily_results[(cat1,cat2,'VTA LRT')] = self.crowding_df.loc[self.crowding_df['SYSTEM'] == "VTA LRT", 'effective_ivtt_metrolinx_max2pt5'].sum() \
-                                             - self.crowding_df.loc[self.crowding_df['SYSTEM'] == "VTA LRT", 'ivtt'].sum()
+                                             - self.crowding_df.loc[self.crowding_df['SYSTEM'] == "VTA LRT", 'ivtt_hours'].sum()
 
 
-        daily_results[(cat1,cat2,'AC Transit Transbay')] = \
-                        self.crowding_df.loc[self.crowding_df['SYSTEM'] == "AC Transit Transbay", 'effective_ivtt_metrolinx_max2pt5'].sum() \
-                      - self.crowding_df.loc[self.crowding_df['SYSTEM'] == "AC Transit Transbay", 'ivtt'].sum()
+        daily_results[(cat1,cat2,'AC Transit')] = \
+                        self.crowding_df.loc[self.crowding_df['SYSTEM'] == "AC Transit", 'effective_ivtt_metrolinx_max2pt5'].sum() \
+                      - self.crowding_df.loc[self.crowding_df['SYSTEM'] == "AC Transit", 'ivtt_hours'].sum()
             
-        daily_results[(cat1,cat2,'Other')] = self.crowding_df['effective_ivtt_metrolinx_max2pt5'].sum() - self.crowding_df['ivtt'].sum() \
-                          -  (daily_results[(cat1,cat2,'BART (incl eBART)')] + daily_results[(cat1,cat2,'SF Muni')] + daily_results[(cat1,cat2,'Caltrain')]+ \
-                              daily_results[(cat1,cat2,'VTA LRT')] + daily_results[(cat1,cat2,'AC Transit Transbay')])
+        daily_results[(cat1,cat2,'Other')] = \
+                             self.crowding_df['effective_ivtt_metrolinx_max2pt5'].sum() - self.crowding_df['ivtt_hours'].sum() \
+                          - daily_results[(cat1,cat2,'BART (incl eBART)')] \
+                          - daily_results[(cat1,cat2,'SF Muni')] \
+                          - daily_results[(cat1,cat2,'Caltrain')] \
+                          - daily_results[(cat1,cat2,'VTA LRT')] \
+                          - daily_results[(cat1,cat2,'AC Transit')] \
+                          - (self.crowding_df.loc[self.crowding_df['SYSTEM'] == "VTA Shuttle", 'effective_ivtt_metrolinx_max2pt5'].sum() \
+                                            -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "VTA Shuttle", 'ivtt_hours'].sum()) \
+                          - (self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Broadway Shuttle", 'effective_ivtt_metrolinx_max2pt5'].sum() \
+                                            -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Broadway Shuttle", 'ivtt_hours'].sum()) \
+                          - (self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Caltrain Shuttle", 'effective_ivtt_metrolinx_max2pt5'].sum() \
+                                            -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Caltrain Shuttle", 'ivtt_hours'].sum()) \
+                          - (self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Stanford Shuttle", 'effective_ivtt_metrolinx_max2pt5'].sum() \
+                                            -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Stanford Shuttle", 'ivtt_hours'].sum()) \
+                          - (self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Emery Go Round", 'effective_ivtt_metrolinx_max2pt5'].sum() \
+                                            -  self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Emery Go Round", 'ivtt_hours'].sum())                                                                                                                  
+                            # above formula removes all free shuttles from transit crowding calculation
 
-        cat2            = 'Vehicle Ownership (Modeled)'
+
+        cat2            = 'Vehicle Ownership'
         daily_results[(cat1,cat2,'Total')] = self.autos_owned['total autos'].sum()
 
  
@@ -733,6 +766,7 @@ class RunResults:
             daily_results[(cat1,cat2,'Agricultural Land')] = self.natural_land.get('agricultural land (acres)')
 
         ######################################################################################
+        
         cat1            = "Safety Benefits"
 
 
@@ -774,9 +808,14 @@ class RunResults:
             vmt_byclass.loc[:,'Diesel_PM2.5'].sum()*RunResults.METRIC_TONS_TO_US_TONS
 
         # this will get updated if base results
-        daily_results[(cat1,cat2,'PM2.5 Road Dust')] = 0
+        #daily_results[(cat1,cat2,'PM2.5 Road Dust')] = 0
         #            (vmt_byclass.loc[['da','dat','s2','s2t','s3','s3t','daav','s2av','s3av'],'VMT'].sum() + \
         #     vmt_byclass.loc[['sm','smt','hv','hvt'],'VMT'].sum()) * RunResults.PM25_ROADDUST*RunResults.GRAMS_TO_US_TONS
+
+        daily_results[cat1,cat2,'PM2.5 Road Dust'] = (vmt_byclass.loc[['da','dat','s2','s2t','s3','s3t'],'VMT'].sum() + \
+                                                      vmt_byclass.loc[['daav','s2av','s3av'],'VMT'].sum()      +\
+                                                      vmt_byclass.loc[['sm','smt','hv','hvt'],'VMT'].sum()) * \
+                                                         RunResults.PM25_ROADDUST*RunResults.GRAMS_TO_US_TONS
 
         daily_results[(cat1,cat2,'PM2.5 Brake & Tire Wear')] = \
             vmt_byclass.loc[:,'PM2.5_wear'].sum()*RunResults.METRIC_TONS_TO_US_TONS
@@ -837,8 +876,6 @@ class RunResults:
         # computed will get overwritten if base results
         daily_results[(cat1,cat2,'Truck VMT - Computed')] = \
             vmt_byclass.loc[['sm','smt','hv','hvt'],'VMT'].sum()
-        daily_results[(cat1,cat2,'Truck VMT - Modeled')] = \
-            vmt_byclass.loc[['sm','smt','hv','hvt'],'VMT'].sum()
 
 
 
@@ -850,16 +887,24 @@ class RunResults:
         daily_results[(cat1,cat2,'SOV (PHT)'  )] = vmt_byclass.loc[['da','dat','daav'],'VHT'].sum()
         daily_results[(cat1,cat2,'HOV2 (PHT)' )] = vmt_byclass.loc[['s2','s2t','s2av'],'VHT'].sum()*2
         daily_results[(cat1,cat2,'HOV3+ (PHT)')] = vmt_byclass.loc[['s3','s3t','s3av'],'VHT'].sum()*3.5
+        
+        quick_summary['Auto SOV Hours (Person Hours)'] = vmt_byclass.loc[['da','dat','daav'],'VHT'].sum()
+        quick_summary['Auto HOV2 Hours (Person Hours)'] = vmt_byclass.loc[['s2','s2t','s2av'],'VHT'].sum()*2
+        quick_summary['Auto HOV3 Hours (Person Hours)'] = vmt_byclass.loc[['s3','s3t','s3av'],'VHT'].sum()*3.5
+        quick_summary['Auto Hours (Person Hours)'] = vmt_byclass.loc[['da','dat','daav'],'VHT'].sum() + \
+                                                     vmt_byclass.loc[['s2','s2t','s2av'],'VHT'].sum()*2 + \
+                                                     vmt_byclass.loc[['s3','s3t','s3av'],'VHT'].sum()*3.5
 
         cat2            = 'Truck Hours'
         # computed will get overwritten if base results
         daily_results[(cat1,cat2,'Truck (Computed VHT)')] = vmt_byclass.loc[['sm','smt','hv','hvt'],'VHT'].sum()
         daily_results[(cat1,cat2,'Truck (Modeled VHT)' )] = vmt_byclass.loc[['sm','smt','hv','hvt'],'VHT'].sum()
         # quick summary
-        quick_summary['Vehicle hours traveled -- single occupant passenger vehicles']        = vmt_byclass.loc[['da','dat','daav'],'VHT'].sum()
-        quick_summary['Vehicle hours traveled -- two occupant passenger vehicles'   ]        = vmt_byclass.loc[['s2','s2t','s2av'],'VHT'].sum()
-        quick_summary['Vehicle hours traveled -- three-or-more occupant passenger vehicles'] = vmt_byclass.loc[['s3','s3t','s3av'],'VHT'].sum()
-        quick_summary['Vehicle hours traveled -- commercial vehicles (raw)         ']        = vmt_byclass.loc[['sm','smt','hv','hvt'],'VHT'].sum()
+        quick_summary['Vehicle Hours traveled -- SOV']        = vmt_byclass.loc[['da','dat','daav'],'VHT'].sum()
+        quick_summary['Vehicle Hours traveled -- HOV2']        = vmt_byclass.loc[['s2','s2t','s2av'],'VHT'].sum()
+        quick_summary['Vehicle Hours traveled -- HOV3'] =        vmt_byclass.loc[['s3','s3t','s3av'],'VHT'].sum()
+        quick_summary['Vehicle Hours traveled -- Trucks']        = vmt_byclass.loc[['sm','smt','hv','hvt'],'VHT'].sum()
+
 
         # These are from vehicle hours -- make them person hours
         cat2            = 'Non-Recurring Freeway Delay (Hours)'
@@ -897,8 +942,6 @@ class RunResults:
                                                      transit_byclass.loc[:,'Xfer wait hours'].sum()
     
 
-        ########################### CHECK THIS #####################################
-        print("***********************CHECK OVTT ADJUSTMENT*********************")
         # Out-of-Vehicle adjustment
         auto_person_trips    = auto_byclass.loc[['da','datoll','da_av_toll', 'da_av_notoll',\
                                                 'sr2','sr2toll','s2_av_toll', 's2_av_notoll',\
@@ -943,21 +986,21 @@ class RunResults:
 
 
 
-        ######################################################################################
-
-        cat1            = 'Travel Cost (for reference only)'
+        cat1            = 'Other Travel Metrics (for reference only)'
 
         cat2            = 'VMT by class'
         daily_results[(cat1,cat2,'Auto non-AV' )]           = vmt_byclass.loc[['da','dat','s2','s2t','s3','s3t'],'VMT'].sum()
         daily_results[(cat1,cat2,'Auto AV' )]               = vmt_byclass.loc[['daav','s2av','s3av'],'VMT'].sum()        
         # computed will get overwritten if base results
         daily_results[(cat1,cat2,'Truck - Computed')]       = vmt_byclass.loc[['sm','smt','hv','hvt'],'VMT'].sum()
-        daily_results[(cat1,cat2,'Truck - Modeled')]        = vmt_byclass.loc[['sm','smt','hv','hvt'],'VMT'].sum()
-        daily_results[(cat1,cat2,'Truck from Trips+Skims')] = auto_byclass.loc['truck','Vehicle Miles']
+        #daily_results[(cat1,cat2,'Truck - Modeled')]        = vmt_byclass.loc[['sm','smt','hv','hvt'],'VMT'].sum()
+        #daily_results[(cat1,cat2,'Truck from Trips+Skims')] = auto_byclass.loc['truck','Vehicle Miles']
         # quick summary
         quick_summary['VMT -- passenger non-AV vehicles']   = vmt_byclass.loc[['da','dat','s2','s2t','s3','s3t'],'VMT'].sum()
         quick_summary['VMT -- passenger AV vehicles']       = vmt_byclass.loc[['daav','s2av','s3av'],'VMT'].sum() 
-        quick_summary['Vehicle miles traveled -- commercial vehicles (raw)'] = vmt_byclass.loc[['sm','smt','hv','hvt'],'VMT'].sum()
+        quick_summary['VMT -- passenger all vehicles']       = vmt_byclass.loc[['da','dat','s2','s2t','s3','s3t','daav','s2av','s3av'],'VMT'].sum() 
+        quick_summary['VMT -- trucks'] = vmt_byclass.loc[['sm','smt','hv','hvt'],'VMT'].sum()
+        quick_summary['VMT -- all vehicles'] = vmt_byclass.loc[['da','dat','s2','s2t','s3','s3t','daav','s2av','s3av','sm','smt','hv','hvt'],'VMT'].sum() 
 
 
         cat2            = 'VMT by mode'
@@ -965,11 +1008,15 @@ class RunResults:
                                                                     'da_ix','datoll_ix','da_air','datoll_air'],'Vehicle Miles'].sum()
         daily_results[(cat1,cat2,'Auto HOV2' )] = auto_byclass.loc[['sr2','sr2toll', 's2_av_toll', 's2_av_notoll',\
                                                                      'sr2_ix','sr2toll_ix', 'sr2_air','sr2toll_air'],'Vehicle Miles'].sum()
-        daily_results[(cat1,cat2,'Auto HOV3+')] = auto_byclass.loc[['sr3','sr3toll', 's3_av_toll', 's3_av_notoll'\
+        daily_results[(cat1,cat2,'Auto HOV3+')] = auto_byclass.loc[['sr3','sr3toll', 's3_av_toll', 's3_av_notoll',\
                                                                      'sr3_ix','sr3toll_ix', 'sr3_air','sr3toll_air'],'Vehicle Miles'].sum()
         daily_results[(cat1,cat2,'Auto TNC/Taxi')] = auto_byclass.loc[['tnc_single', 'tnc_shared', 'taxi'],'Vehicle Miles'].sum()
         daily_results[(cat1,cat2,'Auto ZOV')] = auto_byclass.loc[['owned_zpv', 'zpv_tnc'],'Vehicle Miles'].sum()
         daily_results[(cat1,cat2,'Truck')] = auto_byclass.loc['truck','Vehicle Miles'].sum()
+
+        quick_summary['VMT -- TNC']   = auto_byclass.loc[['tnc_single', 'tnc_shared'],'Vehicle Miles'].sum()
+        quick_summary['VMT -- ZOV']       = auto_byclass.loc[['owned_zpv', 'zpv_tnc'],'Vehicle Miles'].sum() 
+
 
         total_autoVMT = daily_results[(cat1,cat2,'Auto SOV')] + \
                           daily_results[(cat1,cat2,'Auto HOV2')] + \
@@ -979,19 +1026,43 @@ class RunResults:
         total_VMT = total_autoVMT + daily_results[(cat1,cat2,'Truck')]
 
 
-        cat2            = 'Trips by mode'
+        cat2            = 'Vehicle Trips by mode (incl. IX and Air)'
         daily_results[(cat1,cat2,'Auto SOV'  )] = auto_byclass.loc[['da' ,'datoll', 'da_av_toll', 'da_av_notoll',\
                                                                     'da_ix','datoll_ix','da_air','datoll_air'],'Daily Vehicle Trips'].sum()
         daily_results[(cat1,cat2,'Auto HOV2' )] = auto_byclass.loc[['sr2','sr2toll', 's2_av_toll', 's2_av_notoll',\
-                                                                     'sr2_ix','sr2toll_ix', 'sr2_air','sr2toll_air'],'Daily Vehicle Trips'].sum()
+                                                                     'sr2_ix','sr2toll_ix','sr2_air','sr2toll_air'],'Daily Vehicle Trips'].sum()
         daily_results[(cat1,cat2,'Auto HOV3+')] = auto_byclass.loc[['sr3','sr3toll', 's3_av_toll', 's3_av_notoll',\
                                                                      'sr3_ix','sr3toll_ix', 'sr3_air','sr3toll_air'],'Daily Vehicle Trips'].sum()
         daily_results[(cat1,cat2,'Auto TNC/Taxi')] = auto_byclass.loc[['tnc_single', 'tnc_shared', 'taxi'],'Daily Vehicle Trips'].sum()
         daily_results[(cat1,cat2,'Auto ZOV')] = auto_byclass.loc[['owned_zpv', 'zpv_tnc'],'Daily Vehicle Trips'].sum()
+        #daily_results[(cat1,cat2,'Transit (Drive) Trips')] = transit_byaceg.loc[[('wlk','drv'),('drv','wlk')],'Transit Trips'].sum()
+        #daily_results[(cat1,cat2,'Transit (Walk) Trips')] = transit_byaceg.loc[('wlk','wlk'),'Transit Trips'].sum() 
+        #daily_results[(cat1,cat2,'Walk')] = nonmot_byclass.loc['Walk','Daily Trips']
+        #daily_results[(cat1,cat2,'Bike')] = nonmot_byclass.loc['Bike','Daily Trips']
+
+        cat2            = 'Non-Household Vehicle Trips'
+        daily_results[(cat1,cat2,'Interregional IX/EX' )] = auto_byclass.loc[['da_ix','datoll_ix',\
+                                                                     'sr2_ix','sr2toll_ix', 'sr3_ix','sr3toll_ix'],'Daily Vehicle Trips'].sum()
+        daily_results[(cat1,cat2,'Airport'  )] = auto_byclass.loc[['da_air','datoll_air',\
+                                                                    'sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Daily Vehicle Trips'].sum()
+        daily_results[(cat1,cat2,'Truck'  )] = auto_byclass.loc[['truck'],'Daily Vehicle Trips'].sum()
+
+
+        cat2            = 'Person Trips by mode (all trips)'
+        daily_results[(cat1,cat2,'Auto SOV'  )] = auto_byclass.loc[['da' ,'datoll', 'da_av_toll', 'da_av_notoll',\
+                                                                    'da_ix','datoll_ix','da_air','datoll_air'],'Daily Person Trips'].sum()
+        daily_results[(cat1,cat2,'Auto HOV2' )] = auto_byclass.loc[['sr2','sr2toll', 's2_av_toll', 's2_av_notoll',\
+                                                                     'sr2_ix','sr2toll_ix','sr2_air','sr2toll_air'],'Daily Person Trips'].sum()
+        daily_results[(cat1,cat2,'Auto HOV3+')] = auto_byclass.loc[['sr3','sr3toll', 's3_av_toll', 's3_av_notoll',\
+                                                                    'sr3_ix','sr3toll_ix', 'sr3_air','sr3toll_air'],'Daily Person Trips'].sum()
+        daily_results[(cat1,cat2,'Auto TNC/Taxi')] = auto_byclass.loc[['tnc_single', 'tnc_shared', 'taxi'],'Daily Person Trips'].sum()
+        daily_results[(cat1,cat2,'Auto ZOV')] = auto_byclass.loc[['owned_zpv', 'zpv_tnc'],'Daily Person Trips'].sum()
         daily_results[(cat1,cat2,'Transit (Drive) Trips')] = transit_byaceg.loc[[('wlk','drv'),('drv','wlk')],'Transit Trips'].sum()
         daily_results[(cat1,cat2,'Transit (Walk) Trips')] = transit_byaceg.loc[('wlk','wlk'),'Transit Trips'].sum() 
         daily_results[(cat1,cat2,'Walk')] = nonmot_byclass.loc['Walk','Daily Trips']
         daily_results[(cat1,cat2,'Bike')] = nonmot_byclass.loc['Bike','Daily Trips']
+
+
 
         total_autotrips = daily_results[(cat1,cat2,'Auto SOV')] + \
                           daily_results[(cat1,cat2,'Auto HOV2')] + \
@@ -1014,9 +1085,12 @@ class RunResults:
                                                 transit_byclass.loc[:,'Transit Trips'].sum() + \
                                                 nonmot_byclass.loc[:,'Daily Trips'].sum()
 
+
+
         # Vehicles Owned
         cat2            = 'Vehicle Ownership (Modeled)'
         daily_results[(cat1,cat2,'Total')] = self.autos_owned['total autos'].sum()
+        quick_summary['Vehicle Ownership'] = self.autos_owned['total autos'].sum()
 
         # Vehicles Owned - estimated from auto trips
         cat2            = 'Vehicle Ownership (Est. from Auto Trips)'
@@ -1037,11 +1111,11 @@ class RunResults:
         daily_results[(cat1,cat2,'Auto TNC/Taxi' )] = \
             0.01*auto_byclass.loc[['tnc_single', 'tnc_shared', 'taxi'],'Total Cost'].sum()
         daily_results[(cat1,cat2,'Auto TNC/Taxi ZOV' )] = \
-            0.01*auto_byclass.loc['zpv_tnc', 'Total Cost'].sum()   
+            max(0.01*auto_byclass.loc['zpv_tnc', 'Total Cost'].sum(),1)
 
         # computed will get overwritten if base results
         daily_results[(cat1,cat2,'Truck - Computed')] = self.roadways_df['total truck cost'].sum()
-        daily_results[(cat1,cat2,'Truck - Modeled')]  = self.roadways_df['total truck cost'].sum()
+        #daily_results[(cat1,cat2,'Truck - Modeled')]  = self.roadways_df['total truck cost'].sum()
 
 
         # Parking
@@ -1060,21 +1134,24 @@ class RunResults:
 
         cat2            = 'Transit Crowding Penalty Hours'
 
-        transit_systems = ['BART', 'EBART','Oakland Airport Connector', 'Caltrain',  'SMART', 'SF MUNI', 'SF Muni Metro',  'SF Muni Local', 'SF Muni Cable Car' ,\
-                            'AC Transit Transbay', 'AC Transit Local','AC Transit', 'VTA LRT', 'VTA Express', 'VTA Local', 'SamTrans', 'SamTrans Local', 'Dumbarton Express',\
+        transit_systems = ['BART', 'EBART','Oakland Airport Connector', 'Caltrain',  'SMART',\
+                             'SF MUNI', 'SF Muni Metro',  'SF Muni Local', 'SF Muni Cable Car' ,\
+                            'AC Transit Transbay', 'AC Transit Local','AC Transit', \
+                            'VTA LRT', 'VTA Express', 'VTA Local', 'SamTrans', 'SamTrans Local', 'Dumbarton Express',\
                            'Golden Gate Transit Expre','Golden Gate Transit Local', 'County Connection Local', 'WestCAT Express','WestCAT Local',\
                            'Vallejo Transit Express' , 'Fairfield and Suisun Tran', 'County Connection Express', 'Wheels Local', 'Tri Delta Transit',\
                             'VINE Express', 'VINE Local','American Canyon',\
-                           'Sonoma County Transit',  'Petaluma Transit','Santa Rosa City Bus', 'Vallejo Transit', 'Union City Transit', 'SMART Temporary Express', \
-                            'VTA Community Bus', 'San Leandro Links','VTA Shuttle', 'Palo Alto & Menlo Park Sh','Stanford Shuttle', 'Caltrain Shuttle', \
-                            'Berkeley','Broadway Shuttle'  'Emery Go Round', \
+                           'Sonoma County Transit',  'Petaluma Transit','Santa Rosa City Bus', 'Vallejo Transit',\
+                            'Union City Transit', 'SMART Temporary Express', \
+                            'VTA Community Bus', 'San Leandro Links', 'Palo Alto & Menlo Park Sh',\
+                            #'Berkeley','VTA Shuttle','Broadway Shuttle'  'Emery Go Round', 'Stanford Shuttle', 'Caltrain Shuttle', \
                             'High Speed Rail',  'ACE', 'Amtrak Capitol Corridor', \
                             'Vallejo Baylink Ferry', 'East Bay Ferries', 'Golden Gate Ferry - Sausa', 'Golden Gate Ferry - Larks', 'Tiburon Ferry']
 
         for system in transit_systems:
         # crowding penalty = effective ivtt with crowding multiplier minus actual ivtt
             daily_results[(cat1,cat2,system)] = self.crowding_df.loc[self.crowding_df['SYSTEM'] == system, 'effective_ivtt_metrolinx_max2pt5'].sum() \
-                                              - self.crowding_df.loc[self.crowding_df['SYSTEM'] == system, 'ivtt'].sum() \
+                                              - self.crowding_df.loc[self.crowding_df['SYSTEM'] == system, 'ivtt_hours'].sum() \
                                           
         
         ##########################################################################
@@ -1082,12 +1159,22 @@ class RunResults:
 
         # A few quick summary numbers
         quick_summary['Transit boardings'] = self.transit_boards_miles.loc[:,'Daily Boardings'].sum()
-        quick_summary['VTOLL Paths in AM - datoll']  = self.auto_times.loc[('inc1',['datoll','da_av_toll']),'VTOLL nonzero AM']
-        quick_summary['VTOLL Paths in AM - sr2toll'] = self.auto_times.loc[('inc1',['sr2toll','s2_av_toll']),'VTOLL nonzero AM']
-        quick_summary['VTOLL Paths in AM - sr3toll'] = self.auto_times.loc[('inc1',['sr3toll','s2_av_toll']),'VTOLL nonzero AM']
-        quick_summary['VTOLL Paths in MD - datoll']  = self.auto_times.loc[('inc1',['datoll','da_av_toll']),'VTOLL nonzero MD']
-        quick_summary['VTOLL Paths in MD - sr2toll'] = self.auto_times.loc[('inc1',['sr2toll','s2_av_toll']),'VTOLL nonzero MD']
-        quick_summary['VTOLL Paths in MD - sr3toll'] = self.auto_times.loc[('inc1',['sr3toll','s2_av_toll']),'VTOLL nonzero MD']
+        quick_summary['BART boardings'] = self.transit_boards_miles.loc['hvy','Daily Boardings'].sum()
+
+
+        quick_summary['VTOLL Paths in AM - datoll']  = (float(self.auto_times.loc[('inc1','datoll'),'VTOLL nonzero AM']) +  \
+                                                            float(self.auto_times.loc[('inc1','da_av_toll'),'VTOLL nonzero AM']) ) * 4
+        quick_summary['VTOLL Paths in AM - sr2toll']  = (float(self.auto_times.loc[('inc1','sr2toll'),'VTOLL nonzero AM']) +  \
+                                                            float(self.auto_times.loc[('inc1','s2_av_toll'),'VTOLL nonzero AM']) ) * 4
+        quick_summary['VTOLL Paths in AM - sr3toll']  = (float(self.auto_times.loc[('inc1','sr3toll'),'VTOLL nonzero AM']) +  \
+                                                            float(self.auto_times.loc[('inc1','s3_av_toll'),'VTOLL nonzero AM']) ) * 4
+        quick_summary['VTOLL Paths in MD - datoll']  = (float(self.auto_times.loc[('inc1','datoll'),'VTOLL nonzero MD']) +  \
+                                                            float(self.auto_times.loc[('inc1','da_av_toll'),'VTOLL nonzero MD']) ) * 4
+        quick_summary['VTOLL Paths in MD - sr2toll']  = (float(self.auto_times.loc[('inc1','sr2toll'),'VTOLL nonzero MD']) +  \
+                                                            float(self.auto_times.loc[('inc1','s2_av_toll'),'VTOLL nonzero MD']) ) * 4
+        quick_summary['VTOLL Paths in MD - sr3toll']  = (float(self.auto_times.loc[('inc1','sr3toll'),'VTOLL nonzero MD']) +  \
+                                                            float(self.auto_times.loc[('inc1','s3_av_toll'),'VTOLL nonzero MD']) ) * 4
+
 
         # do this if we can but it's not mandatory
         if 'AM path count' in transit_byclass.columns.values:
@@ -1132,7 +1219,7 @@ class RunResults:
                 self.config['Base Project ID'] = base_match.group(0)
             else:
                 # if it doesn't conform.... just part of the path
-                self.config['Base Project ID'] = self.config.loc['base_dir'].split("\\")[-3]
+                self.config['Base Project ID'] = self.config.loc['base_dir']
 
             self.config['Project Compare ID'] = "%s vs %s" % (self.config.loc['Project ID'], self.config['Base Project ID'])
             # print "base_match = [%s]" % base_match.group(0)
@@ -1150,10 +1237,16 @@ class RunResults:
             if self.config.loc['Compare'] == 'baseline-scenario':
                 base_minus_scen = self.writeBCWorksheet(workbook, scen_minus_baseline=False)
         workbook.close()
-        print("Wrote %s" % BC_detail_workbook)
+        print("Wrote %s" % BC_detail_workbook)    
+
+ 
+
+        # writing simple csv file with all bc metrics
 
         if self.base_dir:
             bc_metrics = None
+            
+            #PBA2040 bc_metrics
             if self.config.loc['Compare'] == 'scenario-baseline':
                 bc_metrics = scen_minus_base
             elif self.config.loc['Compare'] == 'baseline-scenario':
@@ -1162,9 +1255,78 @@ class RunResults:
             idx = pd.MultiIndex.from_tuples(bc_metrics.keys(), 
                                             names=['category1','category2','category3','variable_name'])
             self.bc_metrics = pd.Series(bc_metrics, index=idx)
-            self.bc_metrics.name = 'values'
+            
 
-            all_proj_filename = os.path.join(all_projects_dir, csv_name)
+            #############################################
+            # Note: All code below until the next row of #s is dependent on position of cells in the worksheet.
+            #       If cell positions are changed in the functions that create the worksheet, the following code
+            #       will have to be adapted accordingly.
+
+            # Getting Lifecycle values from just created workbook
+            # Need to first open and save the workbook so all formulas get calculated
+            app = xl.App(visible=False)
+            book = app.books.open(BC_detail_workbook)
+            book.save()
+            app.kill()
+            df_lifecycleben = pd.read_excel(BC_detail_workbook, sheet_name='benefit_streams', header=None)
+            df_lifecycleben =  df_lifecycleben.drop(df_lifecycleben.index[[0,1,2,3,4]])
+            df_lifecycleben = df_lifecycleben[[0,1,2,4]]
+            df_lifecycleben.insert(3, 'variable', 'Lifecycle Benefits 2060 (2019$)')
+            df_lifecycleben.columns = ['category1', 'category2','category3','variable_name','values']
+            df_lifecycleben = df_lifecycleben.set_index(['category1', 'category2','category3','variable_name'])
+            lifecycle_ben = df_lifecycleben.T.iloc[0]
+            self.bc_metrics = self.bc_metrics.append(lifecycle_ben)
+
+
+            # Getting highest level b/c metrics from just created b/c workbook
+            bc_overall_tuples = [('bc_overall', 'Horizon Year', 'bc_overall','Total Horizon Yr Benefit (2019$)'),\
+                                  ('bc_overall', 'Horizon Year', 'bc_overall','Total Horizon Yr Cost (2019$)'),\
+                                  ('bc_overall', 'Horizon Year', 'bc_overall', 'B/C Ratio'),\
+                                  ('bc_overall', '2060', 'bc_overall','Total Lifecycle Benefit (2019$)'),\
+                                  ('bc_overall', '2060', 'bc_overall', 'Total Lifecycle Cost (2019$)'),\
+                                  ('bc_overall', '2060', 'bc_overall', 'B/C Ratio'),\
+                                  ('bc_overall', '2080', 'bc_overall','Total Lifecycle Benefit (2019$)'),\
+                                  ('bc_overall', '2080', 'bc_overall', 'Total Lifecycle Cost (2019$)'),\
+                                  ('bc_overall', '2080', 'bc_overall', 'B/C Ratio'),\
+                                  ('bc_overall', 'Equity', 'bc_overall','Equity Score')]
+            idx = pd.MultiIndex.from_tuples(bc_overall_tuples, names=['category1','category2','category3','variable_name'])
+            df_bc = pd.read_excel(BC_detail_workbook, sheet_name='scenario-baseline', header=None)
+            bc_overall_array = numpy.asarray([df_bc.iloc[12,8], df_bc.iloc[13,8], df_bc.iloc[14,8],\
+                                    df_bc.iloc[12,10], df_bc.iloc[13,10], df_bc.iloc[14,10],\
+                                    df_bc.iloc[12,12], df_bc.iloc[13,12], df_bc.iloc[14,12],\
+                                    df_bc.iloc[11,1]])       # these are the cell locations of all higher level b/c metrics
+            bc_overall = pd.Series(bc_overall_array, index=idx)
+            self.bc_metrics = self.bc_metrics.append(bc_overall)
+
+            # Getting high level costs from just created b/c workbook
+            costs_tuples = [('costs', 'Lifecycle Costs', '2025-60','Initial Capital'),\
+                            ('costs', 'Lifecycle Costs', '2025-60','O&M'),\
+                            ('costs', 'Lifecycle Costs', '2025-60','Rehab + Replacement'),\
+                            ('costs', 'Lifecycle Costs', '2025-60','Residual Value'),\
+                            ('costs', 'Lifecycle Costs', '2025-80','Initial Capital'),\
+                            ('costs', 'Lifecycle Costs', '2025-80','O&M'),\
+                            ('costs', 'Lifecycle Costs', '2025-80','Rehab + Replacement'),\
+                            ('costs', 'Lifecycle Costs', '2025-80','Residual Value'),\
+                            ('costs', 'Lifecycle Costs detailed', '2025-60','Rehab'),\
+                            ('costs', 'Lifecycle Costs detailed', '2025-60','Replacement'),\
+                            ('costs', 'Lifecycle Costs detailed', '2025-80','Rehab'),\
+                            ('costs', 'Lifecycle Costs detailed', '2025-80','Replacement'),\
+                            ('costs', 'Annualized Costs', '2050','Capital'),\
+                            ('costs', 'Annualized Costs', '2050','O&M')]
+            idx = pd.MultiIndex.from_tuples(costs_tuples, names=['category1','category2','category3','variable_name'])
+            df_costs = pd.read_excel(BC_detail_workbook, sheet_name='cost_streams', header=None)
+            costs_array = numpy.asarray([df_costs.iloc[2,5], df_costs.iloc[3,5], df_costs.iloc[1,9], df_costs.iloc[2,9],\
+                                         df_costs.iloc[2,6], df_costs.iloc[3,6], df_costs.iloc[1,10], df_costs.iloc[2,10],\
+                                         df_costs.iloc[1,13], df_costs.iloc[2,13], df_costs.iloc[1,14], df_costs.iloc[2,14],\
+                                         df_costs.iloc[2,4], df_costs.iloc[3,4]])       # these are the cell locations of all higher level b/c metrics
+            costs = pd.Series(costs_array, index=idx)
+            self.bc_metrics = self.bc_metrics.append(costs)
+
+            #################################################
+
+
+            self.bc_metrics.name = 'values'
+            all_proj_filename = os.path.join(os.getcwd(),all_projects_dir, csv_name)
             self.bc_metrics.to_csv(all_proj_filename, header=True, float_format='%.5f')
             print("Wrote %s" % all_proj_filename)
 
@@ -1235,12 +1397,12 @@ class RunResults:
         # Run directory
         if self.base_dir:
             worksheet.write(row,0, "Base Run Dir", format_label)
-            worksheet.merge_range(row,1,row,4, self.base_dir, format_highlight_file)
+            worksheet.merge_range(row,1,row,4, os.path.realpath(self.base_dir), format_highlight_file)
             worksheet.set_row(row,36.0)
 
 
         # Header row
-        row += 6 # space
+        row += 7 # space
         TABLE_HEADER_ROW = row
         format_header = workbook.add_format({'bg_color':'#1F497D',
                                              'font_color':'white',
@@ -1263,7 +1425,7 @@ class RunResults:
         cat1 = None
         cat2 = None
         format_cat1     = workbook.add_format({'bold':True, 'bg_color':'#C5D9F1'})
-        format_cat1_sum = workbook.add_format({'bold':True, 'bg_color':'#C5D9F1', 'num_format':'_(\$* #,##0.0"M"_);_(\$* (#,##0.0"M");_(\$* "-"??_);_(@_)'})
+        format_cat1_sum = workbook.add_format({'bold':True, 'bg_color':'#C5D9F1', 'num_format':'_(\$* #,##0"M"_);_(\$* (#,##0"M");_(\$* "-"??_);_(@_)'})
         format_cat2     = workbook.add_format({'bold':True, 'indent':1, 'bg_color':'#D9D9D9'})
         format_cat2_big = workbook.add_format({'bg_color':'#92D050', 'num_format':'#,##0'})
         format_cat2_lil = workbook.add_format({'bg_color':'#92D050', 'num_format':'#,##0.000'})
@@ -1288,15 +1450,17 @@ class RunResults:
         format_bc_header_center = workbook.add_format({'bg_color':'#92D050', 'align':'center','bold':True})
 
         format_bc_money = workbook.add_format({'bg_color':'#92D050','bold':True,
-                                                'num_format':'_(\$* #,##0.0"M"_);_(\$* (#,##0.0"M");_(\$* "-"??_);_(@_)'})
+                                                'num_format':'_(\$* #,##0"M"_);_(\$* (#,##0"M");_(\$* "-"??_);_(@_)'})
         format_bc_ratio = workbook.add_format({'bg_color':'#92D050','bold':True,'num_format':'0.00'})
         
         format_equity = workbook.add_format({'bg_color':'#92D050', 'bold':True})
         format_equityscore = workbook.add_format({'bg_color':'#92D050','bold':True,'num_format':'0%'})
-        format_equitypop = workbook.add_format({'bg_color':'#92D050','bold':True,
-                                                'num_format':'_(* #,##0.0"M"_);_(* (#,##0.0"M");_(* "-"??_);_(@_)'})
-        format_equityben = workbook.add_format({'bg_color':'#92D050','bold':True, 'num_format':'_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'})
-        format_equitypct = workbook.add_format({'bg_color':'#FCD5B4','bold':True, 'align':'center', 'num_format':'0%'})
+        format_equity_headers = workbook.add_format({'bg_color':'#D9D9D9', 'align':'left','bold':True})
+        format_equity_headers_center = workbook.add_format({'bg_color':'#D9D9D9', 'align':'center','bold':True})
+        #'bg_color':'#92D050'
+        format_equitypop = workbook.add_format({'bg_color':'#D9D9D9','num_format':'_(* #,##0.0"M"_);_(* (#,##0.0"M");_(* "-"??_);_(@_)'})
+        format_equityben = workbook.add_format({'bg_color':'#D9D9D9','num_format':'_($* #,##0.00_);_($* (#,##0.00);_($* "-"??_);_(@_)'})
+        format_equitypct = workbook.add_format({'bg_color':'#92D050','bold':True, 'align':'center', 'num_format':'0%'})
 
         # for cat1 sums (total benefits for cat1)
         cat1_sums = collections.OrderedDict() # cell -> [cell1, cell2, cell3...]
@@ -1350,21 +1514,22 @@ class RunResults:
                 worksheet.write(row,0,cat1,format_cat1)
                 worksheet.write(row,1,"",format_cat1)
                 if self.base_dir:
-                    if cat1_cell:
+
+                    if (cat1_cell) and ("for reference only" not in cat1):
                         worksheet.write(cat1_cell, 
                                         '=SUM(%s)/1000000' % str(',').join(cat1_sums[cat1_cell]),
                                         format_cat1_sum)
                     cat1_cell = xl_rowcol_to_cell(row,8)
                     cat1_sums[cat1_cell] = []
                     
-                    if cat1_cellPV1:
+                    if (cat1_cellPV1) and ("for reference only" not in cat1):
                         worksheet.write(cat1_cellPV1, 
                                         '=SUM(%s)/1000000' % str(',').join(cat1_sumsPV1[cat1_cellPV1]),
                                         format_cat1_sum)
                     cat1_cellPV1 = xl_rowcol_to_cell(row,10)
                     cat1_sumsPV1[cat1_cellPV1] = []
 
-                    if cat1_cellPV2:
+                    if (cat1_cellPV2) and ("for reference only" not in cat1):
                         worksheet.write(cat1_cellPV2, 
                                         '=SUM(%s)/1000000' % str(',').join(cat1_sumsPV2[cat1_cellPV2]),
                                         format_cat1_sum)
@@ -1374,11 +1539,15 @@ class RunResults:
                     worksheet.write(row,2,"",format_cat1)
                     worksheet.write(row,3,"",format_cat1)
                     worksheet.write(row,4,"",format_cat1)
-                    worksheet.write(row,5,"",format_cat1)
-                    worksheet.write(row,6,"",format_cat1)
-                    worksheet.write(row,7,"",format_cat1)
-                    worksheet.write(row,9,"",format_cat1)
-                    worksheet.write(row,11,"",format_cat1)
+                    if ("for reference only" not in cat1):
+                        worksheet.write(row,5,"",format_cat1)
+                        worksheet.write(row,6,"",format_cat1)
+                        worksheet.write(row,7,"",format_cat1)
+                        worksheet.write(row,9,"",format_cat1)
+                        worksheet.write(row,11,"",format_cat1)
+                        cat1_cell_last       = cat1_cell
+                        cat1_cellPV1_last    = cat1_cellPV1
+                        cat1_cellPV2_last    = cat1_cellPV2
                 row += 1
 
             # category two header
@@ -1493,6 +1662,7 @@ class RunResults:
                                                                             colB.daily_results[cat1][cat2][key[2]]
                         bc_metrics[(cat1,cat2,key[2],'Daily Percent Difference')] = bc_metrics[(cat1,cat2,key[2],'Daily Difference')] / \
                                                                             colB.daily_results[cat1][cat2][key[2]]
+
                     worksheet.write(row,4, # diff annual
                                     '=%d*%s' % (annualization, xl_rowcol_to_cell(row,3)),
                                     format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
@@ -1560,55 +1730,61 @@ class RunResults:
                                         '=benefit_streams!%s' %bc_metrics_annual_benefit.get([(key[0],key[1],key[2],'NPV2025-80cell')][0]),
                                         format_ann_ben)
             row+=1
-
+        
 
         # Equity Score
         if self.base_dir:
             population_lowinc = self.accessibilityMarkets.loc[self.accessibilityMarkets['incQ_label'] == "lowInc", 'scen_num_persons'].sum()
             population_medinc = self.accessibilityMarkets.loc[self.accessibilityMarkets['incQ_label'] == "medInc", 'scen_num_persons'].sum()
+            population_highinc = self.accessibilityMarkets.loc[self.accessibilityMarkets['incQ_label'] == "highInc", 'scen_num_persons'].sum()
+            population_veryhighinc = self.accessibilityMarkets.loc[self.accessibilityMarkets['incQ_label'] == "veryHighInc", 'scen_num_persons'].sum()
             population_total = self.accessibilityMarkets['scen_num_persons'].sum()
             pct_lowinc = float(population_lowinc) / population_total
             pct_medinc = float(population_lowinc+population_medinc) / population_total
             
-            worksheet.write(TABLE_HEADER_ROW-5,0, "Equity Score Calculation", format_bc_header_left)
-            worksheet.write(TABLE_HEADER_ROW-4,0, "Total Population", format_bc_header_left)
-            worksheet.write(TABLE_HEADER_ROW-3,0, "Avg Accessibility Benefit per Individual", format_bc_header_left)
+            worksheet.write(TABLE_HEADER_ROW-4,0, "Equity Score Calculation", format_equity_headers)
+            worksheet.write(TABLE_HEADER_ROW-3,0, "Total Population", format_equity_headers)
+            worksheet.write(TABLE_HEADER_ROW-2,0, "Avg Accessibility Benefit per Individual", format_equity_headers)
 
-            worksheet.write(TABLE_HEADER_ROW-5,1, "LowInc", format_bc_header_center)
-            worksheet.write(TABLE_HEADER_ROW-5,2, "Low&MedInc", format_bc_header_center)
-            worksheet.write(TABLE_HEADER_ROW-5,3, "All", format_bc_header_center)
+            worksheet.write(TABLE_HEADER_ROW-4,1, "LowInc", format_equity_headers_center)
+            worksheet.write(TABLE_HEADER_ROW-4,2, "MedInc", format_equity_headers_center)
+            worksheet.write(TABLE_HEADER_ROW-4,3, "HighInc", format_equity_headers_center)
+            worksheet.write(TABLE_HEADER_ROW-4,4, "VeryHighInc", format_equity_headers_center)
 
-            worksheet.write(TABLE_HEADER_ROW-4,1, float(population_lowinc)/1000000, format_equitypop)
-            worksheet.write(TABLE_HEADER_ROW-4,2, float(population_lowinc+population_medinc)/1000000, format_equitypop)
-            worksheet.write(TABLE_HEADER_ROW-4,3, float(population_total)/1000000, format_equitypop)
+            worksheet.write(TABLE_HEADER_ROW-3,1, float(population_lowinc)/1000000, format_equitypop)
+            worksheet.write(TABLE_HEADER_ROW-3,2, float(population_medinc)/1000000, format_equitypop)
+            worksheet.write(TABLE_HEADER_ROW-3,3, float(population_highinc)/1000000, format_equitypop)
+            worksheet.write(TABLE_HEADER_ROW-3,4, float(population_veryhighinc)/1000000, format_equitypop)
             
-            worksheet.write(TABLE_HEADER_ROW-3,1, '=(I19+I24) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-4, 1), format_equityben)
-            worksheet.write(TABLE_HEADER_ROW-3,2, '=(I19+I20+I24+I25) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-4, 2), format_equityben)
-            worksheet.write(TABLE_HEADER_ROW-3,3, '=(I18+I23) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-4, 3), format_equityben)
+            worksheet.write(TABLE_HEADER_ROW-2,1, '=(I19+I24) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 1), format_equityben)
+            worksheet.write(TABLE_HEADER_ROW-2,2, '=(I20+I25) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 2), format_equityben)
+            worksheet.write(TABLE_HEADER_ROW-2,3, '=(I21+I26) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 3), format_equityben)
+            worksheet.write(TABLE_HEADER_ROW-2,4, '=(I22+I27) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 4), format_equityben)
             
-            worksheet.write(TABLE_HEADER_ROW-2,0, 'Low/med income individuals would receive', format_equity)
-            worksheet.write(TABLE_HEADER_ROW-2,1, '=%s/%s'%(xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 2),xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 3)), format_equitypct)
-            worksheet.write(TABLE_HEADER_ROW-2,2, 'of what the', format_equity) 
-            #worksheet.write(TABLE_HEADER_ROW-2,3, None, format_equity) 
-            worksheet.write(TABLE_HEADER_ROW-1,0, 'average Bay Area individual would receive in accessibility $ benefits.', format_equity) 
-            for col in range(1,3):
-                worksheet.write(TABLE_HEADER_ROW-1,col, None, format_equity) 
+            worksheet.write(TABLE_HEADER_ROW-5,0, 'Equity Score', format_bc_header_left)
+            worksheet.write(TABLE_HEADER_ROW-5,1, '=(%s+%s)/sum(%s:%s)'%(xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4)), format_equitypct)
             
+        # Summing up for total benefits
 
-        # Summing up for total benefits - The last cat1 sum
         if self.base_dir:
-            if cat1_cell:
-                worksheet.write(cat1_cell, 
-                                '=SUM(%s)/1000000' % str(',').join(cat1_sums[cat1_cell]),
+            
+            # Calculate the last cat1 sum    
+            if cat1_cell_last:
+                worksheet.write(cat1_cell_last, 
+                                '=SUM(%s)/1000000' % str(',').join(cat1_sums[cat1_cell_last]),
                                 format_cat1_sum)
-            if cat1_cellPV1:
-                worksheet.write(cat1_cellPV1, 
-                                '=SUM(%s)/1000000' % str(',').join(cat1_sumsPV1[cat1_cellPV1]),
+            if cat1_cellPV1_last:
+                worksheet.write(cat1_cellPV1_last, 
+                                '=SUM(%s)/1000000' % str(',').join(cat1_sumsPV1[cat1_cellPV1_last]),
                                 format_cat1_sum)
-            if cat1_cellPV2:
-                worksheet.write(cat1_cellPV2, 
-                                '=SUM(%s)/1000000' % str(',').join(cat1_sumsPV2[cat1_cellPV2]),
+            if cat1_cellPV2_last:
+                worksheet.write(cat1_cellPV2_last, 
+                                '=SUM(%s)/1000000' % str(',').join(cat1_sumsPV2[cat1_cellPV2_last]),
                                 format_cat1_sum)
+            
 
             # BENEFIT/COST
             # labels
@@ -1629,7 +1805,7 @@ class RunResults:
             sum_indices = [sum_indices[0]] + sum_indices[2:7]
             sum_indices_PV1 = [sum_indices_PV1[0]] + sum_indices_PV1[2:7]
             sum_indices_PV2 = [sum_indices_PV2[0]] + sum_indices_PV2[2:7]
- 
+            
             worksheet.write(TABLE_HEADER_ROW-5, 8, 'Horizon Year', format_bc_header_left)
             worksheet.write(TABLE_HEADER_ROW-5, 10, 'NPV 2025-60', format_bc_header_left)
             worksheet.write(TABLE_HEADER_ROW-5, 12, 'NPV 2025-80', format_bc_header_left)
@@ -1640,16 +1816,16 @@ class RunResults:
             worksheet.write(TABLE_HEADER_ROW-4, 12, "=SUM(%s)" % str(",").join(sum_indices_PV2), format_bc_money)
 
             # getting costs
-            worksheet.write(TABLE_HEADER_ROW-3, 8, "=cost_streams!E3/1000000", format_bc_money)
-            worksheet.write(TABLE_HEADER_ROW-3, 10, "=cost_streams!F3/1000000", format_bc_money)  
-            worksheet.write(TABLE_HEADER_ROW-3, 12, "=cost_streams!G3/1000000", format_bc_money)
- 
+            worksheet.write(TABLE_HEADER_ROW-3, 8, "=cost_streams!E2/1000000", format_bc_money)
+            worksheet.write(TABLE_HEADER_ROW-3, 10, "=cost_streams!F2/1000000", format_bc_money)  
+            worksheet.write(TABLE_HEADER_ROW-3, 12, "=cost_streams!G2/1000000", format_bc_money)
+            
  
             # calculating b/c ratio
             for col in [8,10,12]:
                 worksheet.write(TABLE_HEADER_ROW-2, col, "=%s/%s" % (xl_rowcol_to_cell(TABLE_HEADER_ROW-4, col),
                                                                     xl_rowcol_to_cell(TABLE_HEADER_ROW-3, col)), format_bc_ratio)
-
+            
         worksheet.set_column(0,0,40.0)
         worksheet.set_column(1,8,13.0)
         worksheet.set_column(5,5,2.0)
@@ -1661,21 +1837,21 @@ class RunResults:
 
         # THIS IS COBRA
         format_red      = workbook.add_format({'font_color':'white','bg_color':'#C0504D','align':'right','bold':True})
-        for row in range(1,9):
+        for row in range(2,10):
             for col in range(9,13):
                 worksheet.write(row,col,"",format_red)
-        worksheet.write(1,9,"co",format_red)
-        worksheet.write(2,9,"b" ,format_red)
-        worksheet.write(3,9,"r" ,format_red)
-        worksheet.write(4,9,"a" ,format_red)
+        worksheet.write(4,11,"co",format_red)
+        worksheet.write(5,11,"b" ,format_red)
+        worksheet.write(6,11,"r" ,format_red)
+        worksheet.write(7,11,"a" ,format_red)
         format_red      = workbook.add_format({'font_color':'white','bg_color':'#C0504D'})
-        worksheet.write(1,10,"st",format_red)
-        worksheet.write(2,10,"enefit" ,format_red)
-        worksheet.write(3,10,"results" ,format_red)
-        worksheet.write(4,10,"nalyzer" ,format_red)
+        worksheet.write(4,12,"st",format_red)
+        worksheet.write(5,12,"enefit" ,format_red)
+        worksheet.write(6,12,"results" ,format_red)
+        worksheet.write(7,12,"nalyzer" ,format_red)
 
 
-        worksheet.insert_image(2, 12, 
+        worksheet.insert_image(3, 10, 
                                os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                             "King-cobra.png"),
                                {'x_scale':0.1, 'y_scale':0.1})
@@ -1907,7 +2083,7 @@ class RunResults:
 
         worksheet.set_column(0,1,20.0)
         worksheet.set_column(2,2,10.0)
-        worksheet.set_column(3,6,15.0)
+        worksheet.set_column(3,6,20.0)
         worksheet.set_column(7,62,15.0)
         worksheet.set_column(63,64,20.0)
 
@@ -2031,7 +2207,6 @@ class RunResults:
                     while col_2060<=42:                                    # to be able to calculate remaining asset value at 2060
                         col_2060+=asset_life_value                 
                     # Remaining asset value: initial cost * (1 - (years of life remaining/asset life))          
-                    # note: avg annual rehab when accounting for the rehab payment schedule is ~ 1.9% of initial investment cost         
                     worksheet.write(row, 63, '=%s * %i/%s' %(xl_rowcol_to_cell(row,3), col_2060-42, xl_rowcol_to_cell(row,2)), format_remainder)       
                     worksheet.write(row, 64, '=%s * %i/%s' %(xl_rowcol_to_cell(row,3), col_2080-62, xl_rowcol_to_cell(row,2)), format_remainder)     
                       
@@ -2043,7 +2218,7 @@ class RunResults:
 
 
 
-        # Residual value
+        # Residual value row - the last row
         worksheet.write(row, 0, "Residual Value")
         worksheet.write(row, 1, "n/a")
         worksheet.write(row, 2, "n/a", format_na)
@@ -2054,7 +2229,7 @@ class RunResults:
         row+=1
     
 
-        # Calculating NPVs
+        # Calculating NPVs for each cost line
         for row_num in range(TABLE_HEADER_ROW+1,row-1):
             worksheet.write(row_num, 5, '=NPV(%s,%s:%s)' %(xl_rowcol_to_cell(DISCOUNT_RATE_ROW,1), xl_rowcol_to_cell(row_num,7), xl_rowcol_to_cell(row_num,42)), format_totals)
             worksheet.write(row_num, 6, '=NPV(%s,%s:%s)' %(xl_rowcol_to_cell(DISCOUNT_RATE_ROW,1), xl_rowcol_to_cell(row_num,7), xl_rowcol_to_cell(row_num,62)), format_totals)                
@@ -2066,50 +2241,49 @@ class RunResults:
         
         format_total_num = workbook.add_format({'bg_color':'#92D050','bold':True, 'num_format':'_($* #,##0_);_($* (#,##0);_($* "-"??_);_(@_)'})
         format_total = workbook.add_format({'bg_color':'#92D050','bold':True})
+        
+        worksheet.write(0, 4, 'Annualized', format_total)
+        worksheet.write(0, 5, 'PV (2025-60)', format_total)
+        worksheet.write(0, 6, 'PV (2025-80)', format_total)
+        worksheet.write(1, 3, 'Total Cost (2019$)', format_total)
+        worksheet.write(2, 3, 'Initial Capital Cost (2019$)', format_total)
+        worksheet.write(3, 3, 'O&M (2019$)', format_total)
+        
+        worksheet.write(1, 4, '=sum(%s:%s) - %s' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,4), xl_rowcol_to_cell(row-2,4), xl_rowcol_to_cell(row-1,4)), format_total_num) 
+        worksheet.write(1, 5, '=sum(%s:%s) - %s' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,5), xl_rowcol_to_cell(row-2,5), xl_rowcol_to_cell(row-1,5)), format_total_num) 
+        worksheet.write(1, 6, '=sum(%s:%s) - %s' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,6), xl_rowcol_to_cell(row-2,6), xl_rowcol_to_cell(row-1,6)), format_total_num) 
+        worksheet.write(2, 4, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,4), xl_rowcol_to_cell(TABLE_HEADER_ROW+17,4)), format_total_num) 
+        worksheet.write(2, 5, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,5), xl_rowcol_to_cell(TABLE_HEADER_ROW+17,5)), format_total_num) 
+        worksheet.write(2, 6, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,6), xl_rowcol_to_cell(TABLE_HEADER_ROW+17,6)), format_total_num) 
+        worksheet.write(3, 4, '=%s' %xl_rowcol_to_cell(TABLE_HEADER_ROW+18,4), format_total_num) 
+        worksheet.write(3, 5, '=%s' %xl_rowcol_to_cell(TABLE_HEADER_ROW+18,5), format_total_num) 
+        worksheet.write(3, 6, '=%s' %xl_rowcol_to_cell(TABLE_HEADER_ROW+18,6), format_total_num) 
+        
+        
+        worksheet.write(0, 9, 'PV (2025-60)', format_total)
+        worksheet.write(0, 10, 'PV (2025-80)', format_total)
+        worksheet.write(1, 8, 'Rehab+Replacement Cost (2019$)', format_total)
+        worksheet.write(2, 8, 'Residual Value (2019$)', format_total)
+        worksheet.write(1, 9, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+19,5), xl_rowcol_to_cell(row-2,5)), format_total_num) 
+        worksheet.write(1, 10, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+19,6), xl_rowcol_to_cell(row-2,6)), format_total_num) 
+        worksheet.write(2, 9, '=%s' %xl_rowcol_to_cell(row-1,5), format_total_num) 
+        worksheet.write(2, 10, '=%s' %xl_rowcol_to_cell(row-1,6), format_total_num) 
 
-        worksheet.write(0, 4, 'Total Cost (2019$)', format_total)
-        worksheet.write(1, 4, 'Annualized', format_total)
-        worksheet.write(1, 5, 'PV (2025-60)', format_total)
-        worksheet.write(1, 6, 'PV (2025-80)', format_total)
 
-        worksheet.write(2, 4, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,4), xl_rowcol_to_cell(row-1,4)), format_total_num) 
-        worksheet.write(2, 5, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,5), xl_rowcol_to_cell(row-1,5)), format_total_num) 
-        worksheet.write(2, 6, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,6), xl_rowcol_to_cell(row-1,6)), format_total_num) 
-
+        worksheet.write(0, 13, 'PV (2025-60)', format_total)
+        worksheet.write(0, 14, 'PV (2025-80)', format_total)
+        worksheet.write(1, 12, 'Rehab Cost (2019$)', format_total)
+        worksheet.write(2, 12, 'Replacement Cost (2019$)', format_total)
+        worksheet.write(1, 13, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+19,5), xl_rowcol_to_cell(TABLE_HEADER_ROW+20,5)), format_total_num) 
+        worksheet.write(1, 14, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+19,6), xl_rowcol_to_cell(TABLE_HEADER_ROW+20,6)), format_total_num) 
+        worksheet.write(2, 13, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+21,5), xl_rowcol_to_cell(row-2,5)), format_total_num) 
+        worksheet.write(2, 14, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+21,6), xl_rowcol_to_cell(row-2,6)), format_total_num) 
+        
 
         print("Wrote the cost streams worksheet")
         worksheet.freeze_panes(5,7)
 
         return imp_years
-
-
-'''
-            elif key in asset_life.keys():
-                worksheet.write(row, 0, "Capital Cost")
-                worksheet.write(row, 1, key)                   # asset category
-                worksheet.write(row, 2, asset_life.get(key))   # asset life
-                worksheet.write(row, 3, val)                   # cost input
-                i=6
-                while i<(6+imp_years):
-                    worksheet.write(row, i, '=%s/%s)' %(xl_rowcol_to_cell(row,3), %(xl_rowcol_to_cell(0,2))))
-                    i+=1
-                for j in range(i,61):
-                    worksheet.write(row, j, 0)
-            else:             # elif key=="op_cost_annual"
-                worksheet.write(row, 0, "O&M Cost (annual)")
-                worksheet.write(row, 1, "n/a")
-                worksheet.write(row, 2, "n/a")
-                worksheet.write(row, 3, val)
-                i=6
-                while i<(6+imp_years):
-                    worksheet.write(row, i, 0)
-                    i+=1
-                for j in range(i,61):
-                    worksheet.write(row, j, '=%s' %(xl_rowcol_to_cell(row,3)))
-            row+=1
-
-'''
-
 
     
 
@@ -2131,13 +2305,13 @@ if __name__ == '__main__':
 
     rr.calculateDailyMetrics()
 
-    # save the quick summary
-    #quicksummary_csv = os.path.join(args.all_projects_dir, "quicksummary_%s.csv"  % rr.config.loc['Project ID'])
-    #rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f')
-    #print rr.quick_summary
-
     if rr.base_results:
         rr.base_results.calculateDailyMetrics()
         rr.updateDailyMetrics()
+
+    # save the quick summary
+    quicksummary_csv = os.path.join(os.getcwd(),args.all_projects_dir, "quicksummary_%s.csv"  % rr.config.loc['Project ID'])
+    rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f')
+    #print rr.quick_summary
 
     rr.calculateBenefitCosts(args.project_dir, args.all_projects_dir)
