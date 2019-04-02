@@ -8,11 +8,17 @@
 :: Location of travel-model-one local repo (probably including this dir)
 set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one
 
-:: Location of INPUT and CTRAMP directory.
+:: Location of INPUT and CTRAMP directory and where this test will run
 set MODEL_TOP_DIR=C:\Users\lzorn\Documents\scratch\net_test
 
 :: Location of BASE MODEL_DIR
-:: set MODEL_BASE_DIR=M:\Application\Model One\STIP2017\2040_06_700
+set MODEL_BASE_DIR=\\MODEL2-C\Model2C-Share\Projects\2050_TM151_PPA_CG_00
+
+:: copy in INPUT and CTRAMP
+c:\windows\system32\Robocopy.exe /E "%MODEL_BASE_DIR%\INPUT" "%MODEL_TOP_DIR%\INPUT"
+c:\windows\system32\Robocopy.exe /E "%CODE_DIR%\model-files" "%MODEL_TOP_DIR%\CTRAMP"
+:: copy in custom CTRAMP
+copy /y "%MODEL_BASE_DIR%\CTRAMP\scripts\block\hwyparam.block"  "%MODEL_TOP_DIR%\CTRAMP\scripts\block"
 
 :: this is where we'll do this work
 set TRN_CHECK_DIR=%MODEL_TOP_DIR%\INPUT\trn_check
@@ -36,7 +42,6 @@ mkdir trn
 mkdir hwy
 mkdir main
 mkdir skims
-mkdir sgr
 mkdir logs
 
 copy "%MODEL_TOP_DIR%\INPUT\trn"                  trn\
@@ -102,8 +107,11 @@ if not exist "%TRN_CHECK_DIR%\ctramp\scripts\skims\createLocalBusKNRs.awk" (
   copy "%CODE_DIR%\model-files\scripts\skims\createLocalBusKNRs.awk" "%TRN_CHECK_DIR%\ctramp\scripts\skims\createLocalBusKNRs.awk"
 )
 
-set COMPLEXMODES_DWELL=21 24 27 28 30 70 80 81 83 84 87 88
-set COMPLEXMODES_ACCESS=21 24 27 28 30 70 80 81 83 84 87 88 110 120 130
+:: --------TrnAssignment Setup -- Fast Configuration
+:: NOTE the blank ones should have a space
+set TRNCONFIG=FAST
+set COMPLEXMODES_DWELL= 
+set COMPLEXMODES_ACCESS= 
 python "%CODE_DIR%\model-files\scripts\skims\transitDwellAccess.py" NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 
 copy /y trn\transitOriginalEA.lin transitEA.lin
@@ -141,7 +149,11 @@ for %%A in (transit_combined_headways.block transferprohibitors_wlk_trn_wlk.bloc
 set TRNASSIGNITER=0
 set PREVTRNASSIGNITER=NEG1
 
-start Cluster X:\commpath\CTRAMP 1-16 Start
+start Cluster "%MODEL_TOP_DIR%\CTRAMP" 1-16 Start
+set COMMPATH=%MODEL_TOP_DIR%
+:: give it a few seconds
+timeout 5
+
 runtpp "%CODE_DIR%\model-files\scripts\skims\TransitSkims.job"
 if ERRORLEVEL 2 goto done
 

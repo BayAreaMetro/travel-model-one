@@ -220,7 +220,14 @@ def config_mobility_params(replacements):
     # TNC.shared.s2.share = 0.3
     # TNC.shared.s3.share = 0.7
 
+    modelYear = int(os.environ["MODEL_YEAR"])
+
     SharingPrefFactor  = float(get_property(params_filename, myfile_contents, "Sharing_Preferences_factor"))
+
+    Adjust_TNCsingle_TourMode = float(get_property(params_filename, myfile_contents, "Adjust_TNCsingle_TourMode"))
+    Adjust_TNCshared_TourMode = float(get_property(params_filename, myfile_contents, "Adjust_TNCshared_TourMode"))
+    Adjust_TNCsingle_TripMode = float(get_property(params_filename, myfile_contents, "Adjust_TNCsingle_TripMode"))
+    Adjust_TNCshared_TripMode = float(get_property(params_filename, myfile_contents, "Adjust_TNCshared_TripMode"))
 
     avShare   = float(get_property(params_filename, myfile_contents, "Mobility.AV.Share"))
     pBoostAutosLTDrivers = float(get_property(params_filename, myfile_contents, "Mobility.AV.ProbabilityBoost.AutosLTDrivers"))
@@ -269,7 +276,14 @@ def config_mobility_params(replacements):
 
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
 
-    replacements[filepath]["(\Sharing_Preferences_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % SharingPrefFactor
+    replacements[filepath]["(\nModel_Year[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d" % modelYear
+
+    replacements[filepath]["(\nSharing_Preferences_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % SharingPrefFactor
+
+    replacements[filepath]["(\nAdjust_TNCsingle_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCsingle_TourMode
+    replacements[filepath]["(\nAdjust_TNCshared_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCshared_TourMode
+    replacements[filepath]["(\nAdjust_TNCsingle_TripMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCsingle_TripMode
+    replacements[filepath]["(\nAdjust_TNCshared_TripMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCshared_TripMode
 
     replacements[filepath]["(\nMobility.AV.Share[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avShare
     replacements[filepath]["(\nMobility.AV.ProbabilityBoost.AutosLTDrivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % pBoostAutosLTDrivers
@@ -338,9 +352,6 @@ def config_auto_opcost(replacements):
     myfile.close()
 
     auto_opc               = float(get_property(params_filename, myfile_contents, "AutoOpCost"))
-    adjustmentTaxi         = float(get_property(params_filename, myfile_contents, "Adjust_Taxi"))
-    adjustmentTNCsingle    = float(get_property(params_filename, myfile_contents, "Adjust_TNCsingle"))
-    adjustmentTNCshared    = float(get_property(params_filename, myfile_contents, "Adjust_TNCshared"))
 
     # put them into the CTRAMP\scripts\block\hwyParam.block
     filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
@@ -353,7 +364,7 @@ def config_auto_opcost(replacements):
     replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc
 
     # put it into the UECs
-    config_uec("%.2f" % auto_opc, adjustmentTaxi, adjustmentTNCsingle, adjustmentTNCshared)
+    config_uec("%.2f" % auto_opc)
 
     # small truck
     filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
@@ -657,12 +668,8 @@ def config_shadowprice(iter, replacements):
         replacements[filepath]["(\n)(#?)(UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = \
             r"\g<1>\g<3>main/ShadowPricing_%d.csv" % (2*iter-1)
 
-def config_uec(auto_operating_cost, adjTaxi, adjTNCsingle, adjTNCshared):
+def config_uec(auto_operating_cost):
     auto_op_cost_float = float(auto_operating_cost)
-
-    adjust_taxi_half      = adjTaxi*0.5
-    adjust_tncsingle_half = adjTNCsingle*0.5
-    adjust_tncshared_half = adjTNCshared*0.5
 
     for bookname in ["ModeChoice.xls","TripModeChoice.xls","accessibility_utility.xls"]:
         filepath = os.path.join("CTRAMP","model",bookname)
@@ -681,22 +688,6 @@ def config_uec(auto_operating_cost, adjTaxi, adjTNCsingle, adjTNCshared):
                     wb.get_sheet(sheet_num).write(rownum,4,auto_op_cost_float,
                                                   xlwt.easyxf("align: horiz left"))
                 # print rs.cell(rownum,1)
-                trip_half = 0.5 if bookname == "TripModeChoice.xls" else 1.0
-
-                if rs.cell(rownum,1).value=='AdjustTaxi':
-                    print "  Sheet '%s': replacing AdjustTaxi '%s' -> %.2f" % \
-                        (rs.name, rs.cell(rownum,4).value, adjTaxi*trip_half)
-                    wb.get_sheet(sheet_num).write(rownum,4,adjTaxi*trip_half, xlwt.easyxf("align: horiz left"))
-
-                if rs.cell(rownum,1).value=='AdjustTNCsingle':
-                    print "  Sheet '%s': replacing AdjustTNCsingle '%s' -> %.2f" % \
-                        (rs.name, rs.cell(rownum,4).value, adjTNCsingle*trip_half)
-                    wb.get_sheet(sheet_num).write(rownum,4,adjTNCsingle*trip_half, xlwt.easyxf("align: horiz left"))
-
-                if rs.cell(rownum,1).value=='AdjustTNCshared':
-                    print "  Sheet '%s': replacing AdjustTNCshared '%s' -> %.2f" % \
-                        (rs.name, rs.cell(rownum,4).value, adjTNCshared*trip_half)
-                    wb.get_sheet(sheet_num).write(rownum,4,adjTNCshared*trip_half, xlwt.easyxf("align: horiz left"))
 
         wb.save(filepath)
 

@@ -68,9 +68,8 @@
 ;         (C) Origin/destination fare files listed in the .block file above (.far files);
 ;	  (D) A .far file setting fares to links as necessary to account for all the odd fares in the bay area (Farelinks.far);
 ;	  (E) A .far file setting the transfer fares for all the 139 by 139 modal interchanges (xfare.far);
-;         (F) A .block file listing all of the transit line files (transit_lines.block);
-;         (G) Transit line files listed in the .block file above (.tpl files);
-;	  (H) Numerous support link files that connect zones to transit stations via walking or bicycling (*transit_suplinks*.dat);
+;     (F) A transit line file and a transit link file
+;	  (G) Numerous support link files that connect zones to transit stations via walking or bicycling (*transit_suplinks*.dat);
 ;	  (I) A .block file that lists commands to combine headways for all line-haul modes when the difference in path time
 ;             is less than plus or minus five minutes (transit_combined_headways.block);
 ;         (J) A .block file containing access- and egress-mode-specific transfer prohibitor tables (transferprohibitors*.block);
@@ -132,10 +131,10 @@ loop period = 1, 5
    counter = 0
    
    ; set a list of origins to trace (comma-separated)
-   token_debug_origin_list = '1,14,861,894,1074'
+   token_debug_origin_list = '240'
         
    ; set a list of destinations to trace (comma-separated)
-   token_debug_destination_list = '1,56,860,874,918,1080'
+   token_debug_destination_list = '22'
 
    if (period = 1)   
       token_period   = 'ea'
@@ -160,15 +159,15 @@ loop period = 1, 5
       if (accegg = 1)         
          token_access = 'wlk'
          token_egress = 'wlk'      
-
+         token_boardpen = 'factor boardpen = 0, 20, 45, 50, 60'
       elseif (accegg = 2)        
          token_access = 'drv'
          token_egress = 'wlk'    
-
+         token_boardpen = 'factor boardpen = 0, 30, 45, 50, 60'
       elseif (accegg = 3)       
          token_access = 'wlk'
          token_egress = 'drv'       
-
+         token_boardpen = 'factor boardpen = 0, 30, 45, 50, 60'
       endif
    
       ; line haul loop
@@ -193,7 +192,7 @@ loop period = 1, 5
             
             ; mode-specific perceived time factors
             ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
-            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.5, 10*1.5,  10*1.5,   10*1.5,   10*1.0' 
+            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.1,   10*1.0' 
             
             ; three-letter path name
             token_path = 'com'
@@ -217,7 +216,7 @@ loop period = 1, 5
             
             ; mode-specific perceived time factors
             ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
-            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.5, 10*1.5,  10*1.5,   10*1.0,   10*1.5'
+            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.0,   10*1.5'
             
             ; three-letter path name
             token_path = 'hvy'
@@ -240,7 +239,7 @@ loop period = 1, 5
             token_skipmodes = 'skipmodes =  130-139,120-139'
             
             ; mode-specific perceived time factors
-	    ;                        support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
+            ;                        support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
             token_modefac = 'modefac = 9*2.0,  70*1.5,  20*1.0, 10*1.5,  10*1.5,   10*1.5,   10*1.5'
             
             ; three-letter path name
@@ -371,18 +370,18 @@ loop period = 1, 5
              ; path parameter: the maximum path time for a single route is 3 hours or 180 minutes
              parameters maxruntime = 180
              
-             ; path parameter: the maximum perceived path time for a single route is 4 hours or 240 minutes
-             parameters maxpathtime = 240
+             ; path parameter: the maximum perceived path time for a single route is 5 hours or 300 minutes
+             parameters maxpathtime = 300
              
-             ; perceived time factors: first boarding is free; second, third, and fourth boarding adds five perceived minutes; 
+             ; perceived time factors: first boarding is free; second, third, and fourth boarding adds fiftenn perceived minutes; 
              ; discourage more than four transfers with a 60 minute penalty
-             factor boardpen = 0, 5, 10, 15, 60
+             @token_boardpen@
 
              ; perceived time factors: initial wait time is equivalent to 2.8 minutes of ride time for modes 10 through 255  
-             factor iwaitfac[10] = 246 * 2.8
+             factor iwaitfac = 9*0, 130*2.8
              
              ; perceived time factors: transfer wait time is equivalent to 2.8 minutes of ride time for modes 1 through 255
-             factor xwaitfac = 255 * 2.8             
+             factor xwaitfac = 139*2.8             
              
              ; use token_skipmodes to remove modes from the network per the hierarchy
              @token_skipmodes@
@@ -425,6 +424,6 @@ loop period = 1, 5
    	              ctramp13.script.end, 
    	              ctramp14.script.end, 
    	              ctramp15.script.end,                
-           printfiles = merge, DelDistribFiles = t, CheckReturnCode = t
+           printfiles = save, DelDistribFiles = t, CheckReturnCode = t
 
 endloop ; time of day  

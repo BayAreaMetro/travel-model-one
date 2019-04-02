@@ -16,11 +16,11 @@ stopifnot(nchar(SAMPLESHARE )>0)
 
 SAMPLESHARE <- as.numeric(SAMPLESHARE)
 
-cat("TARGET_DIR  = ",TARGET_DIR, "\n")
-cat("ITER        = ",ITER,       "\n")
-cat("SAMPLESHARE = ",SAMPLESHARE,"\n")
+print(paste0("TARGET_DIR  = ",TARGET_DIR ))
+print(paste0("ITER        = ",ITER       ))
+print(paste0("SAMPLESHARE = ",SAMPLESHARE))
 
-cdap_results         <- read.table(file=file.path(TARGET_DIR,"OUTPUT","main","cdapResults.csv"), header=TRUE, sep=",")
+cdap_results <- read.table(file=file.path(TARGET_DIR,"OUTPUT","main","cdapResults.csv"), header=TRUE, sep=",")
 
 # summarize to (county, Auto Ownership)
 cdap_ptype  <- group_by(cdap_results, PersonType, ActivityString) %>% summarise(num_pers=n())
@@ -32,4 +32,4 @@ cdap_ptype_spread <- spread(cdap_ptype, key=ActivityString, value=num_pers)
 # save it
 outfile <- file.path(OUTPUT_DIR, paste0("04_daily_activity_pattern_TM.csv"))
 write.table(cdap_ptype_spread, outfile, sep=",", row.names=FALSE)
-cat("Wrote ",outfile,"\n")
+print(paste("Wrote",outfile))

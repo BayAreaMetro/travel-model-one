@@ -1,7 +1,7 @@
 ;TO     = 1,2,3,4,5,6,7,8,9,10  
 NOX[1]  = Y,Y,Y,Y,N,Y,Y,Y,Y,255*N; Mode 1  Centroid to walk aux rail nodes/bus stops - Walk access connectors                
 NOX[2]  = Y,Y,Y,Y,Y,Y,Y,Y,Y,255*Y; Mode 2  Centroid to drive aux nodes (PNRs) - Drive access connectors                      
-NOX[3]  = Y,Y,N,Y,Y,Y,Y,Y,Y,255*N; Mode 3  Transit-to-transit Walk connectors - Stop-to-Stop and Stop-to-Station Aux nodes   
+NOX[3]  = Y,Y,Y,Y,Y,Y,Y,Y,Y,255*N; Mode 3  Transit-to-transit Walk connectors - Stop-to-Stop and Stop-to-Station Aux nodes   
 NOX[4]  = Y,Y,Y,Y,Y,Y,N,Y,Y,255*Y; Mode 4  Drive Aux node (PNRs) to station platform - Drive access walk funnel (lot) links  
 NOX[5]  = Y,Y,Y,Y,Y,Y,Y,Y,Y,255*N; Mode 5  Walk Aux node to station platform - Walk access walk funnel links                 
 NOX[6]  = Y,Y,Y,Y,Y,Y,Y,Y,Y,255*Y; Mode 6  walk aux rail nodes/bus stops to centroid - Walk egress connectors                

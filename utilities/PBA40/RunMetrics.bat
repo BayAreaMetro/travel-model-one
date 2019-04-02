@@ -7,6 +7,8 @@
 ::   This should already be set in RunModel.bat
 :: * SAMPLESHARE=the sampling used for this iteration
 ::   This should already be set in RunModel.bat
+:: * MODEL_YEAR=the year the model represents.  Used by hwynet.py to lookup relevant emissions,
+::   collisions and non-recurring delay factors.
 :: * ALL_PROJECT_METRICS_DIR=the location to collect all the metrics files from projects.
 ::   These will be rolled up into a single dashboard.
 ::
@@ -32,6 +34,7 @@ echo STARTED METRICS RUN  %DATE% %TIME% >> logs\feedback.rpt
 
 IF defined ITER (echo Using ITER=%ITER%) else (goto error)
 IF defined SAMPLESHARE (echo Using SAMPLESHARE=%SAMPLESHARE%) else (goto error)
+IF defined MODEL_YEAR (echo Using MODEL_YEAR=%MODEL_YEAR%) else (goto error)
 
 set ALL_PROJECT_METRICS_DIR=..\all_project_metrics
 
@@ -149,7 +152,7 @@ if not exist metrics\vmt_vht_metrics.csv (
   rem Summarize network links to vmt, vht, and other collision and emissions estimations
   rem Input: hwy\iter%ITER%\avgload5period_vehclasses.csv
   rem Output: metrics\vmt_vht_metrics.csv
-  call python "%CODE_DIR%\hwynet.py" --filter %FUTURE% hwy\iter%ITER%\avgload5period_vehclasses.csv
+  call python "%CODE_DIR%\hwynet.py" --filter %FUTURE% --year %MODEL_YEAR% hwy\iter%ITER%\avgload5period_vehclasses.csv
   IF ERRORLEVEL 2 goto error
 )
 

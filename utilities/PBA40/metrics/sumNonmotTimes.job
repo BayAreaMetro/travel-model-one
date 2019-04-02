@@ -65,20 +65,21 @@ loop inc = 1,6
      AvgBikeDist = bike_tripdist/bike_trips
      AvgBikeTime = bike_triptime/bike_trips * 60
 
-     if (('@token_inc@'='inc1')||('@token_inc@'='inc2')||('@token_inc@'='inc3')||('@token_inc@'='inc4'))
-       Income = '@token_inc@'
-       Age    = 'all'
-     elseif ('@token_inc@'='_2074')
-       Income = 'all'
-       Age    = '20-74'
-     elseif ('@token_inc@'='_2064')
-       Income = 'all'
-       Age    = '20-64'
+     if(I = 1 & @inc@=1) PRINT PRINTO=1 CSV=T LIST= "Age","Income","Mode","Daily Trips","Total Time (Hours)","Total Dist","Avg Time (Min)", "Avg Dist"
+     if(I = 1454)
+       if (('@token_inc@'='_no_zpv_inc1')||('@token_inc@'='_no_zpv_inc2')||('@token_inc@'='_no_zpv_inc3')||(  '@token_inc@'='_no_zpv_inc4'))
+         Income = SubStr('@token_inc@',9,4)
+         Age    = 'all'
+       elseif ('@token_inc@'='_no_zpv__2074')
+         Income = 'all'
+         Age    = '20-74'
+       elseif ('@token_inc@'='_no_zpv__2064')
+         Income = 'all'
+         Age    = '20-64'
+       endif
+       PRINT PRINTO=1 CSV=T LIST= Age,Income,"Walk",walk_trips,walk_triptime,walk_tripdist,AvgWalkTime,AvgWalkDist
+       PRINT PRINTO=1 CSV=T LIST= Age,Income,"Bike",bike_trips,bike_triptime,bike_tripdist,AvgBikeTime,AvgBikeDist
      endif
-
-          if(I = 1 & @inc@=1) PRINT PRINTO=1 CSV=T LIST= "Age","Income","Mode","Daily Trips","Total Time (Hours)","Total Dist","Avg Time (Min)", "Avg Dist"
-          if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Age,Income,"Walk",walk_trips,walk_triptime,walk_tripdist,AvgWalkTime,AvgWalkDist
-          if(I = 1454) PRINT PRINTO=1 CSV=T LIST= Age,Income,"Bike",bike_trips,bike_triptime,bike_tripdist,AvgBikeTime,AvgBikeDist
    ENDRUN
    EndDistributeMultistep
 

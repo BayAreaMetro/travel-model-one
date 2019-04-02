@@ -174,8 +174,10 @@ public abstract class ModelStructure implements Serializable {
     abstract public boolean getTourModeIsTransit( int tourMode );
     abstract public boolean getTourModeIsDriveTransit( int tourMode );
     abstract public boolean getTourModeIsSchoolBus( int tourMode );
+    abstract public boolean getTourModeIsRideHail( int tourMode );
 
     abstract public boolean getTripModeIsSovOrHov( int tripMode );
+
 
     abstract public double[][] getCdap6PlusProps();
 
