@@ -1,0 +1,64 @@
+VEHTYPE,100%Capacity,85%Capacity,seatcap
+10 Car BART,1110,944,550
+10 Car BART RENOVATED,1120,952,550
+5 Car BART,555,471,275
+5 Car BART RENOVATED,473,402,275
+7 Car BART,777,660,385
+7 Car BART RENOVATED,784,666,385
+8 Car BART,888,754,550
+8 Car BART RENOVATED,900,765,550
+8.5 Car BART,943,801,468
+8.5 Car BART RENOVATED,952,809,468
+9 Car BART,999,849,495
+9 Car BART RENOVATED,1011,859,495
+AC Plus Bus,50,42,57
+AC Plus Bus TI,65,55,57
+AC Standard Bus,40,34,37
+Cable Car,63,53,29
+Caltrain,1502,552,681
+Caltrain PCEP,1502,552,681
+Caltrain PCBB,1502,552,681
+Caltrain PCBB 8 car,1841,1565,756
+Caltrain PCBB 10 car,2301,1956,945
+Ferry,400,340,400
+Ferry GGT,450,382,450
+Ferry Vallejo,275,233,275
+Ferry small,250,212,250
+HSR,450,382,450
+LRV1,119,101,60
+LRV2,238,202,120
+LRV2.5,298,253,150
+LRV3,357,303,180
+LRV4,476,404,240
+Motor Articulated Bus,94,79,56
+Motor Articulated Bus ALLDOOR,94,79,56
+Motor Articulated Bus ALLDOOR LOWFLOOR,94,79,56
+Motor Bus Mix of Standard and Artics,80,68,48
+Motor Bus Mix of Standard and Artics ALLDOOR,80,68,48
+Motor Bus Mix of Standard and Artics ALLDOOR LOWFLOOR,80,68,48
+Motor Small Bus,45,38,25
+Motor Small Bus ALLDOOR,45,38,25
+Motor Small Bus ALLDOOR LOWFLOOR,45,38,25
+Motor Standard Bus,63,53,39
+Motor Standard Bus ALLDOOR,63,53,39
+Motor Standard Bus ALLDOOR LOWFLOOR,63,53,39
+SamTrans Plus Bus,75,63,57
+SamTrans Standard Bus,60,51,40
+Streetcar,70,59,30
+Trolley Articulated Bus,94,79,56
+Trolley Articulated Bus ALLDOOR,94,79,56
+Trolley Articulated Bus ALLDOOR LOWFLOOR,94,79,56
+Trolley Standard Bus,63,53,39
+Trolley Standard Bus ALLDOOR,63,53,39
+Trolley Standard Bus ALLDOOR LOWFLOOR,63,53,39
+Unknown Train,800,680,800
+VTA LRT1,171,145,66
+VTA LRT2,342,290,132
+VTA LRT3,513,436,198
+Van,25,21,18
+VanTI,28,23,18
+eBart,400,340,208
+eBart 1 car,200,170,104
+eBart 2 car,400,340,208
+SMART 2 car,318,270,158
+OAC,89,76,76
