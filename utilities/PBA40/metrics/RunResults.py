@@ -144,13 +144,13 @@ class RunResults:
         # if this is a baseline run, then read from configs_base sheet of master input file
         # else this is a project run, then read from configs_projects sheet of master input file
         #if 'CaltrainMod_00' not in rundir:  #for RTFF
-        if rundir[-3] == '_':
-            configs_df = pd.read_excel('PPAMasterInput.xlsx', sheet_name='configs_base', header=0)     
-        else:
+        if len(rundir) > 22:
             configs_df = pd.read_excel('PPAMasterInput.xlsx', sheet_name='configs_projects', header=0)
             configs_df.insert(0,'Folder','')
             configs_df['Folder'] =  configs_df[['Foldername - Project', 'Foldername - Future']].apply(lambda x: '\\'.join(x), axis=1)
             configs_df.drop(['Foldername - Project', 'Foldername - Future'], axis=1)
+        else:
+            configs_df = pd.read_excel('PPAMasterInput.xlsx', sheet_name='configs_base', header=0)     
         configs_df = configs_df.T
         configs_df.columns = configs_df.iloc[0]
         configs_df = configs_df[1:]
