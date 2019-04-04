@@ -1992,8 +1992,8 @@ class RunResults:
             worksheet.write(row, 2, key[2])
             worksheet.write(row, 3, val, format_2060)
             #formulas to calculate present values of each benefit
-            worksheet.write(row, 4, '=NPV(%s,%s:%s)' %(xl_rowcol_to_cell(DISCOUNT_RATE_ROW,1), xl_rowcol_to_cell(row,7), xl_rowcol_to_cell(row,41)), format_npv)
-            worksheet.write(row, 5, '=NPV(%s,%s:%s)' %(xl_rowcol_to_cell(DISCOUNT_RATE_ROW,1), xl_rowcol_to_cell(row,7), xl_rowcol_to_cell(row,61)), format_npv)
+            worksheet.write(row, 4, '=NPV(%s,%s:%s)' %(xl_rowcol_to_cell(DISCOUNT_RATE_ROW,1), xl_rowcol_to_cell(row,6), xl_rowcol_to_cell(row,41)), format_npv)
+            worksheet.write(row, 5, '=NPV(%s,%s:%s)' %(xl_rowcol_to_cell(DISCOUNT_RATE_ROW,1), xl_rowcol_to_cell(row,6), xl_rowcol_to_cell(row,61)), format_npv)
             
             #remembering the cell location of the NPV for each benefit item
             bc_metrics_withNPV[(key[0],key[1],key[2],'NPV2025-60cell')] = xl_rowcol_to_cell(row,4)
@@ -2040,6 +2040,9 @@ class RunResults:
         format_2060   = workbook.add_format({'num_format':'_($* #,##0_);_($* (#,##0);_($* "-"??_);_(@_)', 'bg_color':'#D9D9D9', 'bold':True})
         format_remainder   = workbook.add_format({'num_format':'_($* #,##0_);_($* (#,##0);_($* "-"??_);_(@_)', 'bg_color':'#D9D9D9', 'bold':True})
         format_basicstats = workbook.add_format({'bg_color':'#FFFFC0', 'bold':True})
+        format_total_num = workbook.add_format({'bg_color':'#92D050','bold':True, 'num_format':'_($* #,##0_);_($* (#,##0);_($* "-"??_);_(@_)'})
+        format_total_num_M = workbook.add_format({'bg_color':'#92D050','bold':True, 'num_format':'_(\$* #,##0"M"_);_(\$* (#,##0"M");_(\$* "-"??_);_(@_)'})
+        format_total = workbook.add_format({'bg_color':'#92D050','bold':True})  
 
         # create worksheet for streams
         worksheet=None       
@@ -2098,24 +2101,24 @@ class RunResults:
                 worksheet.write(row, 1, key)                   # asset category
                 worksheet.write(row, 2, asset_life_value)      # asset life
                 worksheet.write(row, 3, val, format_input)     # cost input
-                if key == "Soft Costs":                       # note: this is done for Soft Costs just so we can compare with PBA40
-                    worksheet.write(row, 4, '=%s/20' %xl_rowcol_to_cell(row,3), format_remainder) 
-                else:
-                    worksheet.write(row, 4, '=%s/%s' %(xl_rowcol_to_cell(row,3), (xl_rowcol_to_cell(row,2))), format_remainder)  
+                worksheet.write(row, 4, '=%s/%s' %(xl_rowcol_to_cell(row,3), (xl_rowcol_to_cell(row,2))), format_remainder)  
                 i=7
                 while i<(7+imp_years):
                     worksheet.write(row, i, '=%s/%s' %(xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(IMP_YEAR_ROW,1)), format_2060 if (i in [42,62]) else format_costs)
                     i+=1
+                while i<=62:                                                 # filling in empty cells with 0
+                    worksheet.write(row, i, 0, format_2060 if (i in [42,62]) else format_costs)
+                    i+=1
                 row+=1
-            elif key=="O&M Cost (annual 2019$)":                           # if key is operating cost
+            elif key=="O&M Cost (annual 2019$)":                              # if key is operating cost
                 worksheet.write(row, 0, "O&M Cost (annual)")
                 worksheet.write(row, 1, "n/a")
                 worksheet.write(row, 2, "n/a", format_na)
-                worksheet.write(row, 3, val, format_input)     # cost input
+                worksheet.write(row, 3, val, format_input)                    # cost input
                 worksheet.write(row, 4, '=%s' %(xl_rowcol_to_cell(row,3)), format_remainder)  
                 i=7
-                while i<(7+imp_years):
-                    worksheet.write(row, i, 0, format_costs)
+                while i<(7+imp_years):                                        # filling in empty cells with 0
+                    worksheet.write(row, i, 0, format_2060 if (i in [42,62]) else format_costs)
                     i+=1
                 for j in range(i,63):
                     worksheet.write(row, j, '=%s' %(xl_rowcol_to_cell(row,3)), format_2060 if (j in [42,62]) else format_costs)
@@ -2137,19 +2140,35 @@ class RunResults:
                 worksheet.write(row, 2, "n/a", format_na)
                 worksheet.write(row, 3, val, format_input)                   # cost input
                 worksheet.write(row, 4, 0, format_remainder)
+                i=7
+                while i<(7+imp_years+4):                        # filling in empty cells with 0
+                    worksheet.write(row, i, 0, format_2060 if (i in [42,62]) else format_costs)
+                    i+=1
                 i = 7 + imp_years + 4           # Rehab costs: 10% of initial investment cost at year 5
                 j=1                             #              20% of initial investment cost at year 10
                 while i<=62:                     #              30% of initial investment cost at year 20        
                     if j==1:
                         worksheet.write(row, i, '=%s*0.1' %(xl_rowcol_to_cell(row,3)), format_2060 if (i in [42,62]) else format_costs)
+                        col=i+1
+                        while col<(i+5) and col<=62:            # filling in empty cells with 0
+                            worksheet.write(row, col, 0, format_2060 if (col in [42,62]) else format_costs)
+                            col+=1
                         j=2
                         i+=5
                     elif j==2:
                         worksheet.write(row, i, '=%s*0.2' %(xl_rowcol_to_cell(row,3)), format_2060 if (i in [42,62]) else format_costs)   
+                        col=i+1
+                        while col<(i+10) and col<=62:           # filling in empty cells with 0
+                            worksheet.write(row, col, 0, format_2060 if (col in [42,62]) else format_costs)
+                            col+=1
                         j=3                   
                         i+=10
                     elif j==3:
                         worksheet.write(row, i, '=%s*0.3' %(xl_rowcol_to_cell(row,3)), format_2060 if (i in [42,62]) else format_costs)   
+                        col=i+1
+                        while col<(i+5) and col<=62:            # filling in empty cells with 0
+                            worksheet.write(row, col, 0, format_2060 if (col in [42,62]) else format_costs)
+                            col+=1
                         j=1                   
                         i+=5
                 # Remaining asset value: initial cost*(1 - (avg annual rehab / discount rate))    
@@ -2158,57 +2177,37 @@ class RunResults:
                 worksheet.write(row, 64, '=%s - (0.026*%s/%s)' %(xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(1,1)), format_remainder)       
                 row+=1    
 
-            elif key == "Road - Structures":
-                worksheet.write(row, 0, "Rehab Cost")
-                worksheet.write(row, 1, key)                   # asset category
-                worksheet.write(row, 2, "n/a", format_na)
-                worksheet.write(row, 3, val, format_input)                   # cost input
-                worksheet.write(row, 4, 0, format_remainder)
-                i = 7 + imp_years + 4           # Rehab costs: 20% of initial investment cost at year 5
-                j=1                             #              20% of initial investment cost at year 15
-                while i<=62:                     #              30% of initial investment cost at year 35
-                    if j==1:
-                        worksheet.write(row, i, '=%s*0.2' %(xl_rowcol_to_cell(row,3)), format_2060 if (i in [42,62])  else format_costs)
-                        j=2
-                        i+=10
-                    elif j==2:
-                        worksheet.write(row, i, '=%s*0.2' %(xl_rowcol_to_cell(row,3)), format_2060 if (i in [42,62]) else format_costs)   
-                        j=3                   
-                        i+=20
-                    elif j==3:
-                        worksheet.write(row, i, '=%s*0.3' %(xl_rowcol_to_cell(row,3)), format_2060 if (i in [42,62]) else format_costs)   
-                        j=1                   
-                        i+=5        
-                # Remaining asset value: initial cost - (avg annual rehab / discount rate)           
-                # note: avg annual rehab when accounting for the rehab payment schedule is ~ 1.9% of initial investment cost         
-                worksheet.write(row, 63, '=%s - (0.019*%s/%s)' %(xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(1,1)), format_remainder)       
-                worksheet.write(row, 64, '=%s - (0.019*%s/%s)' %(xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(1,1)), format_remainder)       
-                row+=1    
-
-            elif key in self.asset_life.keys():                       # if key is Capital costs apart from Road pavement/structures
+            elif key in self.asset_life.keys():                             # if key is Capital costs apart from Road pavement
                 asset_life_value = self.asset_life.get(key)
                 worksheet.write(row, 0, "Replacement Cost")
-                worksheet.write(row, 1, key)                   # asset category
-                worksheet.write(row, 2, asset_life_value)      # asset life 
+                worksheet.write(row, 1, key)                                 # asset category
+                worksheet.write(row, 2, asset_life_value)                    # asset life 
                 worksheet.write(row, 3, val, format_input)                   # cost input
                 worksheet.write(row, 4, 0, format_remainder)
-
-                if key == "Soft Costs":                        # note: this is done for Soft Costs since asset life is 0
-                    worksheet.write(row, 63, 0, format_remainder)       
-                    worksheet.write(row, 64, 0, format_remainder)
-                else:
-                    col_2080 = 7 + imp_years + asset_life_value - 1       # Replacement cost = initial cost every turnover of asset life
-                    col_2060 = col_2080
-                    i=0
-                    while col_2080<=62:                                    # calculating replacement costs until 2080
-                        worksheet.write(row, col_2080, '=%s' %(xl_rowcol_to_cell(row,3)), format_2060 if (col_2080 in [42,62]) else format_costs)                
-                        col_2080+=asset_life_value
-                        i=1                     
-                    while col_2060<=42:                                    # to be able to calculate remaining asset value at 2060
-                        col_2060+=asset_life_value                 
-                    # Remaining asset value: initial cost * (1 - (years of life remaining/asset life))          
-                    worksheet.write(row, 63, '=%s * %i/%s' %(xl_rowcol_to_cell(row,3), col_2060-42, xl_rowcol_to_cell(row,2)), format_remainder)       
-                    worksheet.write(row, 64, '=%s * %i/%s' %(xl_rowcol_to_cell(row,3), col_2080-62, xl_rowcol_to_cell(row,2)), format_remainder)     
+                i=7
+                while i<(7 + imp_years + asset_life_value - 1) and i<=62:              # filling in empty cells with 0
+                    worksheet.write(row, i, 0, format_2060 if (i in [42,62]) else format_costs)
+                    i+=1
+                #if key == "Soft Costs":                                     # note: this is done for Soft Costs since asset life is 0
+                #    worksheet.write(row, 63, 0, format_remainder)       
+                #    worksheet.write(row, 64, 0, format_remainder)
+                
+                col_2080 = 7 + imp_years + asset_life_value - 1              # Replacement cost = initial cost every turnover of asset life
+                col_2060 = col_2080
+                i=0
+                while col_2080<=62:                                           # calculating replacement costs until 2080
+                    worksheet.write(row, col_2080, '=%s' %(xl_rowcol_to_cell(row,3)), format_2060 if (col_2080 in [42,62]) else format_costs)                
+                    col=col_2080+1
+                    while col<(col_2080+asset_life_value) and col<=62:            # filling in empty cells with 0
+                        worksheet.write(row, col, 0, format_2060 if (col in [42,62]) else format_costs)
+                        col+=1
+                    col_2080+=asset_life_value
+                    i=1                     
+                while col_2060<=42:                                           # to be able to calculate remaining asset value at 2060
+                    col_2060+=asset_life_value                 
+                # Remaining asset value: initial cost * (1 - (years of life remaining/asset life))          
+                worksheet.write(row, 63, '=%s * %i/%s' %(xl_rowcol_to_cell(row,3), col_2060-42, xl_rowcol_to_cell(row,2)), format_remainder)       
+                worksheet.write(row, 64, '=%s * %i/%s' %(xl_rowcol_to_cell(row,3), col_2080-62, xl_rowcol_to_cell(row,2)), format_remainder)     
                       
                 row+=1    
 
@@ -2239,9 +2238,7 @@ class RunResults:
         
         # Calculating total costs
         
-        format_total_num = workbook.add_format({'bg_color':'#92D050','bold':True, 'num_format':'_($* #,##0_);_($* (#,##0);_($* "-"??_);_(@_)'})
-        format_total = workbook.add_format({'bg_color':'#92D050','bold':True})
-        
+      
         worksheet.write(0, 4, 'Annualized', format_total)
         worksheet.write(0, 5, 'PV (2025-60)', format_total)
         worksheet.write(0, 6, 'PV (2025-80)', format_total)
@@ -2249,41 +2246,43 @@ class RunResults:
         worksheet.write(2, 3, 'Initial Capital Cost (2019$)', format_total)
         worksheet.write(3, 3, 'O&M (2019$)', format_total)
         
+        # Total cost
         worksheet.write(1, 4, '=sum(%s:%s) - %s' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,4), xl_rowcol_to_cell(row-2,4), xl_rowcol_to_cell(row-1,4)), format_total_num) 
         worksheet.write(1, 5, '=sum(%s:%s) - %s' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,5), xl_rowcol_to_cell(row-2,5), xl_rowcol_to_cell(row-1,5)), format_total_num) 
         worksheet.write(1, 6, '=sum(%s:%s) - %s' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,6), xl_rowcol_to_cell(row-2,6), xl_rowcol_to_cell(row-1,6)), format_total_num) 
-        worksheet.write(2, 4, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,4), xl_rowcol_to_cell(TABLE_HEADER_ROW+17,4)), format_total_num) 
-        worksheet.write(2, 5, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,5), xl_rowcol_to_cell(TABLE_HEADER_ROW+17,5)), format_total_num) 
-        worksheet.write(2, 6, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,6), xl_rowcol_to_cell(TABLE_HEADER_ROW+17,6)), format_total_num) 
-        worksheet.write(3, 4, '=%s' %xl_rowcol_to_cell(TABLE_HEADER_ROW+18,4), format_total_num) 
-        worksheet.write(3, 5, '=%s' %xl_rowcol_to_cell(TABLE_HEADER_ROW+18,5), format_total_num) 
-        worksheet.write(3, 6, '=%s' %xl_rowcol_to_cell(TABLE_HEADER_ROW+18,6), format_total_num) 
         
+        # Initial Cap Cost totals
+        worksheet.write(2, 4, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,4), xl_rowcol_to_cell(TABLE_HEADER_ROW+20,4)), format_total_num) 
+        worksheet.write(2, 5, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,5), xl_rowcol_to_cell(TABLE_HEADER_ROW+20,5)), format_total_num) 
+        worksheet.write(2, 6, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,6), xl_rowcol_to_cell(TABLE_HEADER_ROW+20,6)), format_total_num) 
         
+        # O&M Cost totals
+        worksheet.write(3, 4, '=%s' %xl_rowcol_to_cell(TABLE_HEADER_ROW+21,4), format_total_num) 
+        worksheet.write(3, 5, '=%s' %xl_rowcol_to_cell(TABLE_HEADER_ROW+21,5), format_total_num) 
+        worksheet.write(3, 6, '=%s' %xl_rowcol_to_cell(TABLE_HEADER_ROW+21,6), format_total_num) 
+        
+        # Rehab, Replacement and Residual Costs
         worksheet.write(0, 9, 'PV (2025-60)', format_total)
         worksheet.write(0, 10, 'PV (2025-80)', format_total)
         worksheet.write(1, 8, 'Rehab+Replacement Cost (2019$)', format_total)
         worksheet.write(2, 8, 'Residual Value (2019$)', format_total)
-        worksheet.write(1, 9, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+19,5), xl_rowcol_to_cell(row-2,5)), format_total_num) 
-        worksheet.write(1, 10, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+19,6), xl_rowcol_to_cell(row-2,6)), format_total_num) 
+        worksheet.write(1, 9, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+22,5), xl_rowcol_to_cell(row-2,5)), format_total_num) 
+        worksheet.write(1, 10, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+22,6), xl_rowcol_to_cell(row-2,6)), format_total_num) 
         worksheet.write(2, 9, '=%s' %xl_rowcol_to_cell(row-1,5), format_total_num) 
         worksheet.write(2, 10, '=%s' %xl_rowcol_to_cell(row-1,6), format_total_num) 
 
-
-        worksheet.write(0, 13, 'PV (2025-60)', format_total)
-        worksheet.write(0, 14, 'PV (2025-80)', format_total)
-        worksheet.write(1, 12, 'Rehab Cost (2019$)', format_total)
-        worksheet.write(2, 12, 'Replacement Cost (2019$)', format_total)
-        worksheet.write(1, 13, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+19,5), xl_rowcol_to_cell(TABLE_HEADER_ROW+20,5)), format_total_num) 
-        worksheet.write(1, 14, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+19,6), xl_rowcol_to_cell(TABLE_HEADER_ROW+20,6)), format_total_num) 
-        worksheet.write(2, 13, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+21,5), xl_rowcol_to_cell(row-2,5)), format_total_num) 
-        worksheet.write(2, 14, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+21,6), xl_rowcol_to_cell(row-2,6)), format_total_num) 
+        # YOE$ Costs that were inputs from sponsor/Arup
+        worksheet.write(0, 13, 'Input Costs YOE$', format_total)
+        worksheet.write(1, 12, 'Capital', format_total)
+        worksheet.write(2, 12, 'O&M', format_total)
+        worksheet.write(1, 13, '=sum(%s:%s)/1000000' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,3), xl_rowcol_to_cell(TABLE_HEADER_ROW+20,3)), format_total_num_M) 
+        worksheet.write(2, 13, '=%s/1000000' %xl_rowcol_to_cell(TABLE_HEADER_ROW+21,3), format_total_num_M) 
         
 
         print("Wrote the cost streams worksheet")
         worksheet.freeze_panes(5,7)
 
-        return imp_years
+        return int(imp_years)
 
     
 
