@@ -125,7 +125,7 @@ def append_to_file(filepath, append_str):
     myfile.write(append_str)
     myfile.close()
 
-def config_project_dir(replacements):
+def config_project_dir(for_logsums, replacements):
     """
     See USAGE for details.
 
@@ -142,6 +142,9 @@ def config_project_dir(replacements):
     replacements[filepath]["(\nProject.Directory[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % project_dir
 
     filepath    = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
+    replacements[filepath]["(\nProject.Directory[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % project_dir
+
+    filepath    = os.path.join("CTRAMP","runtime","logsums.properties")
     replacements[filepath]["(\nProject.Directory[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % project_dir
 
 def config_popsyn_files(replacements):
@@ -462,7 +465,7 @@ def config_logsums(replacements, append):
                        "Accessibilities.PersonDataFile = logsums/accessibilities_dummy_model_persons.csv\n" + \
                        "Accessibilities.IndivTourDataFile = logsums/accessibilities_dummy_indivTours.csv\n"
 
-def config_host_ip(replacements):
+def config_host_ip(for_logsums, replacements):
     """
     See USAGE for details.
 
@@ -489,7 +492,7 @@ def config_host_ip(replacements):
     for filename in ['jppf-clientDistributed.properties','jppf-clientLocal.properties']:
         filepath = os.path.join("CTRAMP","runtime","config",filename)
         replacements[filepath]["(\njppf.drivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % driver
-        replacements[filepath]["(\n)(driver1\.)"] = r"\g<1>%s." % driver
+        replacements[filepath]["(\n)(driver[0-9]+\.)"] = r"\g<1>%s." % driver
 
     # server host
     filenames = ['jppf-clientDistributed.properties',
@@ -504,10 +507,17 @@ def config_host_ip(replacements):
     filepath = os.path.join("CTRAMP","runtime","config",'jppf-clientDistributed.properties')
     replacements[filepath]["(jppf.management.host[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
 
-    # put it into mtcTourBased.properties
-    filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
-    replacements[filepath]["(\nRunModel.HouseholdServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
-    replacements[filepath]["(\nRunModel.MatrixServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
+    # put it into mtcTourBased.properties or logsums.properties
+    if for_logsums:
+        # do for logsums.properties
+        filepath = os.path.join("CTRAMP","runtime","logsums.properties")
+        replacements[filepath]["(\nRunModel.HouseholdServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
+        replacements[filepath]["(\nRunModel.MatrixServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
+
+    else:
+        filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
+        replacements[filepath]["(\nRunModel.HouseholdServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
+        replacements[filepath]["(\nRunModel.MatrixServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
 
 def config_distribution(replacements):
     """
@@ -552,53 +562,6 @@ def config_distribution(replacements):
 
     else:
         raise Exception("RuntimeConfiguration.py does not recognize hostname [%s] for distribution configuration" % hostname)
-
-def config_host_ip(replacements):
-    """
-    See USAGE for details.
-
-    Replacements = { filepath -> regex_dict }
-    """
-    host_ip_address = os.environ['HOST_IP_ADDRESS']
-
-    # verify that the host IP address relevant to this machine
-    ips_here        = socket.gethostbyname_ex(socket.gethostname())[-1]
-    if host_ip_address not in ips_here:
-        print "FATAL: HOST_IP_ADDRESS %s does not match the IP addresses for this machine %s" % (host_ip_address, str(ips_here))
-        sys.exit(2)
-
-    # CTRAMP\runtime\JavaOnly_runMain.cmd and CTRAMP\runtime\JavaOnly_runNode*.cmd
-    filenames = ["JavaOnly_runMain.cmd"]
-    for nodenum in range(5): filenames.append("JavaOnly_runNode%d.cmd" % nodenum)
-    for filename in filenames:
-        filepath = os.path.join("CTRAMP","runtime",filename)
-        replacements[filepath]["(\nset HOST_IP=)(\S*)"] = r"\g<1>%s" % host_ip_address
-
-    # driver number
-    last_number = host_ip_address.split(".")[-1]
-    driver      = 'driver%s' % last_number
-    for filename in ['jppf-clientDistributed.properties','jppf-clientLocal.properties']:
-        filepath = os.path.join("CTRAMP","runtime","config",filename)
-        replacements[filepath]["(\njppf.drivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % driver
-        replacements[filepath]["(\n)(driver[0-9]+\.)"] = r"\g<1>%s." % driver
-
-    # server host
-    filenames = ['jppf-clientDistributed.properties',
-                 'jppf-clientLocal.properties',
-                 'jppf-driver.properties']
-    for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
-    for filename in filenames:
-        filepath = os.path.join("CTRAMP","runtime","config",filename)
-        replacements[filepath]["(jppf.server.host[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
-
-    # management host
-    filepath = os.path.join("CTRAMP","runtime","config",'jppf-clientDistributed.properties')
-    replacements[filepath]["(jppf.management.host[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
-
-    # put it into mtcTourBased.properties
-    filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
-    replacements[filepath]["(\nRunModel.HouseholdServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
-    replacements[filepath]["(\nRunModel.MatrixServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
 
 def config_distribution(replacements):
     """
@@ -737,16 +700,19 @@ if __name__ == '__main__':
     replacements = collections.defaultdict(collections.OrderedDict)
     append       = collections.defaultdict(collections.OrderedDict)
     if my_args.logsums:
+       # reconfigure host ip places so logsums doesn't nec need to be run on same machine as model core
+        config_host_ip(True, replacements)
+        config_project_dir(True, replacements)
         # copy properties file to logsums file
         shutil.copyfile(os.path.join("CTRAMP","runtime","mtcTourBased.properties"),
                         os.path.join("CTRAMP","runtime","logsums.properties"))
         config_logsums(replacements, append)
     elif my_args.iter == None:
-        config_project_dir(replacements)
+        config_project_dir(False, replacements)
         config_popsyn_files(replacements)
         config_mobility_params(replacements)
         config_auto_opcost(replacements)
-        config_host_ip(replacements)
+        config_host_ip(False, replacements)
         config_distribution(replacements)
         config_cdap()
     else:
