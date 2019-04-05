@@ -121,7 +121,13 @@ def check_model_status(machine):
         return return_dict
 
     num_children_str = status_lines.pop(0)
-    num_children     = int(num_children_str)
+    try:
+        num_children = int(num_children_str)
+    except:
+        return_dict["STATE"] = STATE_InvalidStatusFile
+        return_dict["error"] = "Couldn't parse num children time from {}".format(num_children_str)
+        return return_dict
+
     child_procs      = status_lines[:num_children]
     status_lines     = status_lines[num_children:]
 
