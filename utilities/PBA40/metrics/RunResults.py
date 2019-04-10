@@ -1335,8 +1335,8 @@ class RunResults:
                             ('costs', 'Annualized Costs', '2050','O&M')]
             idx = pd.MultiIndex.from_tuples(costs_tuples, names=['category1','category2','category3','variable_name'])
             df_costs = pd.read_excel(BC_detail_workbook, sheet_name='cost_streams', header=None)
-            costs_array = numpy.asarray([df_costs.iloc[2,5], df_costs.iloc[3,5], df_costs.iloc[1,9], df_costs.iloc[2,9],\
-                                         df_costs.iloc[2,6], df_costs.iloc[3,6], df_costs.iloc[1,10], df_costs.iloc[2,10],\
+            costs_array = numpy.asarray([df_costs.iloc[2,5], df_costs.iloc[3,5], df_costs.iloc[1,9], -df_costs.iloc[2,9],\
+                                         df_costs.iloc[2,6], df_costs.iloc[3,6], df_costs.iloc[1,10], -df_costs.iloc[2,10],\
                                          df_costs.iloc[1,13], df_costs.iloc[2,13], df_costs.iloc[1,14], df_costs.iloc[2,14],\
                                          df_costs.iloc[2,4], df_costs.iloc[3,4]])       # these are the cell locations of all higher level b/c metrics
             costs = pd.Series(costs_array, index=idx)

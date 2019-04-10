@@ -106,31 +106,33 @@ if not os.path.exists(dir_population):
 # writing logsum diff files by market segment for tableau
 logsums_work_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Market Segments',  "person_workDCLogsum.csv")
 logsums_work_df.to_csv(logsums_work_filename, header=True, index=False)
-print("Wrote person_workDCLogsum.csv into %s" %dir_segments)
+print("Wrote person_workDCLogsum.csv into %s" %dir_segments.split('Projects')[1])
 logsums_shop_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Market Segments',  "tour_shopDCLogsum.csv")
 logsums_shop_df.to_csv(logsums_shop_filename, header=True, index=False)
-print("Wrote tour_shopDCLogsum.csv into %s" %dir_segments)
+print("Wrote tour_shopDCLogsum.csv into %s" %dir_segments.split('Projects')[1])
 
 
 # writing logsum diff files for full population for tableau
 logsums_pop_work_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Population',  "person_workDCLogsum.csv")
 logsums_pop_work_df.to_csv(logsums_pop_work_filename, header=True, index=False)
-print("Wrote person_workDCLogsum.csv into %s" %dir_population)
+print("Wrote person_workDCLogsum.csv into %s" %dir_population.split('Projects')[1])
 logsums_pop_shop_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Population',  "tour_shopDCLogsum.csv")
 logsums_pop_shop_df.to_csv(logsums_pop_shop_filename, header=True, index=False)
-print("Wrote tour_shopDCLogsum.csv into %s" %dir_population)
+print("Wrote tour_shopDCLogsum.csv into %s" %dir_population.split('Projects')[1])
 
 
 
 # copying the tableau workbooks into these folders, which will source data from the just created csv files
 
-tableau_segments_filename ='Logsum_map_marketsegments.twb'
-tableau_segments = os.path.join(os.getcwd(),'..','..','..','Mock Futures','Logsum_sidebyside',tableau_segments_filename)
+tableau_segments_template ='Logsum_map_marketsegments.twb'
+tableau_segments = os.path.join(os.getcwd(),'..','..','..','Mock Futures','Logsum_sidebyside',tableau_segments_template)
+tableau_segments_filename = 'Logsum_map_marketsegments_' + proj_name + '.twb'
 copyfile(tableau_segments, os.path.join(dir_segments, tableau_segments_filename))
-print("Copied tableau workbook into %s" %dir_segments )
+print("Copied tableau workbook for market segments into %s" %dir_segments.split('Projects')[1])
 
 
-tableau_pop_filename ='Logsum_map_population.twb'
-tableau_pop = os.path.join(os.getcwd(),'..','..','..','Mock Futures','Logsum_sidebyside',tableau_pop_filename)
+tableau_pop_template ='Logsum_map_population.twb'
+tableau_pop = os.path.join(os.getcwd(),'..','..','..','Mock Futures','Logsum_sidebyside',tableau_pop_template)
+tableau_pop_filename = 'Logsum_map_population_' + proj_name + '.twb'
 copyfile(tableau_pop, os.path.join(dir_population, tableau_pop_filename))
-print("Copied tableau workbook into %s" %dir_population)
+print("Copied tableau workbook for full population into %s" %dir_population.split('Projects')[1])
