@@ -738,7 +738,8 @@ if __name__ == '__main__':
 
     # add support links since they're not added above
     support_df = trnlink_df.reset_index(drop=False)
-    support_df = support_df.loc[ support_df["mode"]<10]
+    if len(support_df) > 0:
+        support_df = support_df.loc[ support_df["mode"]<10]
 
     support_recs = support_df.to_dict(orient="records")
     for support_link in support_recs:

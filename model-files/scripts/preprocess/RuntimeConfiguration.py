@@ -125,7 +125,7 @@ def append_to_file(filepath, append_str):
     myfile.write(append_str)
     myfile.close()
 
-def config_project_dir(replacements):
+def config_project_dir(for_logsums, replacements):
     """
     See USAGE for details.
 
@@ -142,6 +142,9 @@ def config_project_dir(replacements):
     replacements[filepath]["(\nProject.Directory[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % project_dir
 
     filepath    = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
+    replacements[filepath]["(\nProject.Directory[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % project_dir
+
+    filepath    = os.path.join("CTRAMP","runtime","logsums.properties")
     replacements[filepath]["(\nProject.Directory[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % project_dir
 
 def config_popsyn_files(replacements):
@@ -167,7 +170,7 @@ def config_popsyn_files(replacements):
     replacements[filepath]["(\nPopulationSynthesizer.InputToCTRAMP.HouseholdFile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % hhfile
     replacements[filepath]["(\nPopulationSynthesizer.InputToCTRAMP.PersonFile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % perfile
 
-def config_mobility_params(replacements):
+def config_mobility_params(for_logsums, replacements):
     """
     See USAGE for details.
 
@@ -274,6 +277,7 @@ def config_mobility_params(replacements):
     tncSharedS2Share = float(get_property(params_filename, myfile_contents, "TNC.shared.s2.share"))
     tncSharedS3Share = float(get_property(params_filename, myfile_contents, "TNC.shared.s3.share"))
 
+    # Pass the data to logsums.properties
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
 
     replacements[filepath]["(\nModel_Year[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d" % modelYear
@@ -324,7 +328,60 @@ def config_mobility_params(replacements):
     occ_file.write('3,%5.2f,%5.2f,%5.2f\n' % (taxiS3Share,tncSingleS3Share,tncSharedS3Share))
     occ_file.close()
 
-    # Pass the model year to mtcTourBased.properties
+    modelyear = os.environ['MODEL_YEAR']
+    replacements[filepath]["(\nMODEL_YEAR[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % modelyear
+
+    # Pass the data to logsums.properties
+    filepath = os.path.join("CTRAMP","runtime","logsums.properties")
+
+    replacements[filepath]["(\nModel_Year[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d" % modelYear
+
+    replacements[filepath]["(\nSharing_Preferences_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % SharingPrefFactor
+
+    replacements[filepath]["(\nAdjust_TNCsingle_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCsingle_TourMode
+    replacements[filepath]["(\nAdjust_TNCshared_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCshared_TourMode
+    replacements[filepath]["(\nAdjust_TNCsingle_TripMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCsingle_TripMode
+    replacements[filepath]["(\nAdjust_TNCshared_TripMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCshared_TripMode
+
+    replacements[filepath]["(\nMobility.AV.Share[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avShare
+    replacements[filepath]["(\nMobility.AV.ProbabilityBoost.AutosLTDrivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % pBoostAutosLTDrivers
+    replacements[filepath]["(\nMobility.AV.ProbabilityBoost.AutosGEDrivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % pBoostAutosGEDrivers
+    replacements[filepath]["(\nMobility.AV.IVTFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avIVTFactor
+    replacements[filepath]["(\nMobility.AV.ParkingCostFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avparkCostFactor
+    replacements[filepath]["(\nMobility.AV.CostPerMileFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avCPMFactor
+    replacements[filepath]["(\nMobility.AV.TerminalTimeFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % avTermTimeFactor
+    replacements[filepath]["(\nMobility.TNC.shared.IVTFactor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncIVTFactor
+
+
+    replacements[filepath]["(\ntaxi.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiBaseFare
+    replacements[filepath]["(\ntaxi.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiCPMile
+    replacements[filepath]["(\ntaxi.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % taxiCPMin
+
+    replacements[filepath]["(\nTNC.single.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleBaseFare
+    replacements[filepath]["(\nTNC.single.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleCPMile
+    replacements[filepath]["(\nTNC.single.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleCPMin
+    replacements[filepath]["(\nTNC.single.costMinimum[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSingleMinCost
+
+    replacements[filepath]["(\nTNC.shared.baseFare[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedBaseFare
+    replacements[filepath]["(\nTNC.shared.costPerMile[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedCPMile
+    replacements[filepath]["(\nTNC.shared.costPerMinute[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedCPMin
+    replacements[filepath]["(\nTNC.shared.costMinimum[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % tncSharedMinCost
+
+    replacements[filepath]["(\nTNC.single.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % tncSingleMeanWaitTime
+    replacements[filepath]["(\nTNC.single.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =    r"\g<1>%s" % tncSingleSDWaitTime
+
+    replacements[filepath]["(\nTNC.shared.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % tncSharedMeanWaitTime
+    replacements[filepath]["(\nTNC.shared.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =    r"\g<1>%s" % tncSharedSDWaitTime
+
+    replacements[filepath]["(\nTaxi.waitTime.mean[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % taxiMeanWaitTime
+    replacements[filepath]["(\nTaxi.waitTime.sd[ \t]*=[ \t]*)(\S*)"] =   r"\g<1>%s" % taxiSDWaitTime
+
+    occ_file  = open("taxi_tnc_occ_factors.csv", "w")
+    occ_file.write('1,%5.2f,%5.2f,%5.2f\n' % (taxiDaShare,tncSingleDaShare,tncSharedDaShare))
+    occ_file.write('2,%5.2f,%5.2f,%5.2f\n' % (taxiS2Share,tncSingleS2Share,tncSharedS2Share))
+    occ_file.write('3,%5.2f,%5.2f,%5.2f\n' % (taxiS3Share,tncSingleS3Share,tncSharedS3Share))
+    occ_file.close()
+
     modelyear = os.environ['MODEL_YEAR']
     replacements[filepath]["(\nMODEL_YEAR[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % modelyear
 
@@ -339,7 +396,7 @@ def get_property(properties_file_name, properties_file_contents, propname):
         sys.exit(2)
     return match.group(1)
 
-def config_auto_opcost(replacements):
+def config_auto_opcost(for_logsums, replacements):
     """
     See USAGE for details.
 
@@ -361,6 +418,9 @@ def config_auto_opcost(replacements):
     replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc
 
     filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
+    replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc
+
+    filepath = os.path.join("CTRAMP","runtime","logsums.properties")
     replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc
 
     # put it into the UECs
@@ -462,7 +522,7 @@ def config_logsums(replacements, append):
                        "Accessibilities.PersonDataFile = logsums/accessibilities_dummy_model_persons.csv\n" + \
                        "Accessibilities.IndivTourDataFile = logsums/accessibilities_dummy_indivTours.csv\n"
 
-def config_host_ip(replacements):
+def config_host_ip(for_logsums, replacements):
     """
     See USAGE for details.
 
@@ -489,7 +549,7 @@ def config_host_ip(replacements):
     for filename in ['jppf-clientDistributed.properties','jppf-clientLocal.properties']:
         filepath = os.path.join("CTRAMP","runtime","config",filename)
         replacements[filepath]["(\njppf.drivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % driver
-        replacements[filepath]["(\n)(driver1\.)"] = r"\g<1>%s." % driver
+        replacements[filepath]["(\n)(driver[0-9]+\.)"] = r"\g<1>%s." % driver
 
     # server host
     filenames = ['jppf-clientDistributed.properties',
@@ -504,10 +564,17 @@ def config_host_ip(replacements):
     filepath = os.path.join("CTRAMP","runtime","config",'jppf-clientDistributed.properties')
     replacements[filepath]["(jppf.management.host[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
 
-    # put it into mtcTourBased.properties
-    filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
-    replacements[filepath]["(\nRunModel.HouseholdServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
-    replacements[filepath]["(\nRunModel.MatrixServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
+    # put it into mtcTourBased.properties or logsums.properties
+    if for_logsums:
+        # do for logsums.properties
+        filepath = os.path.join("CTRAMP","runtime","logsums.properties")
+        replacements[filepath]["(\nRunModel.HouseholdServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
+        replacements[filepath]["(\nRunModel.MatrixServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
+
+    else:
+        filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
+        replacements[filepath]["(\nRunModel.HouseholdServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
+        replacements[filepath]["(\nRunModel.MatrixServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
 
 def config_distribution(replacements):
     """
@@ -552,53 +619,6 @@ def config_distribution(replacements):
 
     else:
         raise Exception("RuntimeConfiguration.py does not recognize hostname [%s] for distribution configuration" % hostname)
-
-def config_host_ip(replacements):
-    """
-    See USAGE for details.
-
-    Replacements = { filepath -> regex_dict }
-    """
-    host_ip_address = os.environ['HOST_IP_ADDRESS']
-
-    # verify that the host IP address relevant to this machine
-    ips_here        = socket.gethostbyname_ex(socket.gethostname())[-1]
-    if host_ip_address not in ips_here:
-        print "FATAL: HOST_IP_ADDRESS %s does not match the IP addresses for this machine %s" % (host_ip_address, str(ips_here))
-        sys.exit(2)
-
-    # CTRAMP\runtime\JavaOnly_runMain.cmd and CTRAMP\runtime\JavaOnly_runNode*.cmd
-    filenames = ["JavaOnly_runMain.cmd"]
-    for nodenum in range(5): filenames.append("JavaOnly_runNode%d.cmd" % nodenum)
-    for filename in filenames:
-        filepath = os.path.join("CTRAMP","runtime",filename)
-        replacements[filepath]["(\nset HOST_IP=)(\S*)"] = r"\g<1>%s" % host_ip_address
-
-    # driver number
-    last_number = host_ip_address.split(".")[-1]
-    driver      = 'driver%s' % last_number
-    for filename in ['jppf-clientDistributed.properties','jppf-clientLocal.properties']:
-        filepath = os.path.join("CTRAMP","runtime","config",filename)
-        replacements[filepath]["(\njppf.drivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % driver
-        replacements[filepath]["(\n)(driver[0-9]+\.)"] = r"\g<1>%s." % driver
-
-    # server host
-    filenames = ['jppf-clientDistributed.properties',
-                 'jppf-clientLocal.properties',
-                 'jppf-driver.properties']
-    for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
-    for filename in filenames:
-        filepath = os.path.join("CTRAMP","runtime","config",filename)
-        replacements[filepath]["(jppf.server.host[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
-
-    # management host
-    filepath = os.path.join("CTRAMP","runtime","config",'jppf-clientDistributed.properties')
-    replacements[filepath]["(jppf.management.host[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
-
-    # put it into mtcTourBased.properties
-    filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
-    replacements[filepath]["(\nRunModel.HouseholdServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
-    replacements[filepath]["(\nRunModel.MatrixServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
 
 def config_distribution(replacements):
     """
@@ -737,16 +757,21 @@ if __name__ == '__main__':
     replacements = collections.defaultdict(collections.OrderedDict)
     append       = collections.defaultdict(collections.OrderedDict)
     if my_args.logsums:
+       # reconfigure host ip places so logsums doesn't nec need to be run on same machine as model core
+        config_host_ip(True, replacements)
+        config_project_dir(True, replacements)
         # copy properties file to logsums file
         shutil.copyfile(os.path.join("CTRAMP","runtime","mtcTourBased.properties"),
                         os.path.join("CTRAMP","runtime","logsums.properties"))
         config_logsums(replacements, append)
+        config_mobility_params(True, replacements)
+        config_auto_opcost(True, replacements)
     elif my_args.iter == None:
-        config_project_dir(replacements)
+        config_project_dir(False, replacements)
         config_popsyn_files(replacements)
-        config_mobility_params(replacements)
-        config_auto_opcost(replacements)
-        config_host_ip(replacements)
+        config_mobility_params(False, replacements)
+        config_auto_opcost(False, replacements)
+        config_host_ip(False, replacements)
         config_distribution(replacements)
         config_cdap()
     else:

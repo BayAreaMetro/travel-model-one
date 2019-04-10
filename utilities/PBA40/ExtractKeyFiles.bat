@@ -44,8 +44,8 @@ copy logs\feedback.rpt    extractor\feedback.rpt
 copy logs\SpeedErrors.log extractor\SpeedErrors.log
 
 :: Skim databases
-mkdir extractor\skimDB
-copy database\*.csv extractor\skimDB\*.csv
+:: mkdir extractor\skimDB
+:: copy database\*.csv extractor\skimDB\*.csv
 
 :: Trip tables
 mkdir extractor\main

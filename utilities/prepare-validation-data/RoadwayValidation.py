@@ -54,7 +54,7 @@ CALTRANS_FILE       = os.path.join(SHARE_DATA, "caltrans-typical-weekday", "typi
 PEMS_OUTPUT_FILE    = "Roadways to PeMS"
 CALTRANS_OUTPUT_FILE= "Roadways to Caltrans"
 
-MODEL_COLUMNS       = ['a','b','lanes','volEA_tot','volAM_tot','volMD_tot','volPM_tot','volEV_tot']
+MODEL_COLUMNS       = ['a','b','ft','at','lanes','volEA_tot','volAM_tot','volMD_tot','volPM_tot','volEV_tot']
 PEMS_COLUMNS        = ['station','route','direction','time_period','lanes','avg_flow','latitude','longitude','year']
 
 fieldMap = {
@@ -210,17 +210,19 @@ if __name__ == '__main__':
     model_df["b"] = model_df["b"].astype(int)
     # now a,b isn't unique so group
     model_df["link_count"] = 1
-    model_df = model_df.groupby(["a","b"]).agg(sum).reset_index()
+    model_df = model_df.groupby(["a","b","at","ft"]).agg(sum).reset_index()
     print("model_df head\n{}".format(model_df.loc[model_df.link_count>1].head()))
 
     # create a multi index for stacking
-    model_df.set_index(['a','b','lanes','sep_HOV','link_count'], inplace=True)
+    model_df.set_index(['a','b','ft','at','lanes','sep_HOV','link_count'], inplace=True)
     # stack: so now we have a series with multiindex: a,b,lanes,varname
     model_df = pandas.DataFrame({'volume': model_df.stack()})
     # reset the index
     model_df.reset_index(inplace=True)
+    print("model_df head\n{}".format(model_df.head(12)))
+
     # and rename it
-    model_df.rename(columns={'level_5':'time_period'}, inplace=True)
+    model_df.rename(columns={'level_7':'time_period'}, inplace=True)
     # remove extra chars: 'volAM_tot' => 'AM'
     model_df.loc[model_df['time_period']!='Daily','time_period'] = model_df['time_period'].str[3:5]
     print("model_df head\n{}".format(model_df.head(12)))
@@ -382,10 +384,16 @@ if __name__ == '__main__':
     else:
         index_cols = ["station","route","direction","latitude","longitude","time_period"]
 
-    model_wide = model_final_df[index_cols + ["a","b","lanes","volume"]].copy()
+    model_wide = model_final_df[index_cols + ["a","b","ft","at","lanes","volume"]].copy()
     model_wide.rename(columns={"volume":"{} Modeled".format(args.model_year), "lanes":"Lanes Modeled"}, inplace=True)
 
     obs_wide.reset_index(inplace=True)
+    print "model_wide: "
+    print model_wide.head()
+    print "obs_wide: "
+    print obs_wide.head()
+    print model_wide['at'].value_counts()
+
     table_wide = pandas.merge(left=model_wide, right=obs_wide, how='inner', on=index_cols)
 
 
