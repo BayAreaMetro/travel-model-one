@@ -61,6 +61,7 @@ class RunResults:
 
     ANNUALIZATION               = 300
     WORK_ANNUALIZATION          = 250
+    DISCOUNT_RATE               = 0.04
 
     # per 100000. Crude mortality rate.  For HEAT mortality calcs    ##### AT CHECK THIS
     BAY_AREA_MORTALITY_RATE_2074YRS = 340
@@ -1176,6 +1177,24 @@ class RunResults:
                                                             float(self.auto_times.loc[('inc1','s3_av_toll'),'VTOLL nonzero MD']) ) * 4
 
 
+
+
+        quick_summary['Peak volume AM Bay Bridge'] = self.roadways_df.loc[(self.roadways_df['a'] == 2783) & (self.roadways_df['b'] ==6972), 'volAM_tot'].sum()
+        quick_summary['Peak volume AM Mid-Bay Bridge'] = self.roadways_df.loc[(self.roadways_df['a'] == 10947) & (self.roadways_df['b'] ==10951), 'volAM_tot'].sum() + \
+                                                    self.roadways_df.loc[(self.roadways_df['a'] == 10948) & (self.roadways_df['b'] ==10952), 'volAM_tot'].sum()
+        quick_summary['Peak volume AM San Mateo Bridge'] = self.roadways_df.loc[(self.roadways_df['a'] == 3650)  & (self.roadways_df['b'] ==6381), 'volAM_tot'].sum()
+        quick_summary['Peak volume AM Golden Gate Bridge'] = self.roadways_df.loc[(self.roadways_df['a'] == 7339) & (self.roadways_df['b'] ==7322), 'volAM_tot'].sum()
+
+
+        quick_summary['Boardings - BART']    = self.crowding_df.loc[self.crowding_df['SYSTEM'] == "BART", 'AB_BRDA'].sum() \
+                                                + self.crowding_df.loc[self.crowding_df['SYSTEM'] == "EBART", 'AB_BRDA'].sum() 
+        quick_summary['Boardings - Caltrain']    = self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Caltrain", 'AB_BRDA'].sum() 
+        quick_summary['Boardings - Reg Rail']    = self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Caltrain", 'AB_BRDA'].sum() \
+                                                + self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Amtrak Capitol Corridor", 'AB_BRDA'].sum()  
+        quick_summary['Boardings - AC Transit Transbay']    = self.crowding_df.loc[self.crowding_df['SYSTEM'] == "AC Transit", 'AB_BRDA'].sum() 
+    
+
+
         # do this if we can but it's not mandatory
         if 'AM path count' in transit_byclass.columns.values:
             for mode in ['com','hvy','exp','lrf','loc']:
@@ -1187,6 +1206,7 @@ class RunResults:
         self.daily_results = pd.Series(daily_results, index=idx)
 
         # figure out the small cat2s
+
         self.lil_cats = {}
         grouped = self.daily_results.groupby(level=['category1','category2'])
         for name,group in grouped:
@@ -1956,7 +1976,7 @@ class RunResults:
             worksheet.write(row,col,'',format_basicstats) 
         row+=1
         worksheet.write(row,0,'Discount rate', format_basicstats)
-        worksheet.write(row,1, 0.04, format_basicstats)
+        worksheet.write(row,1, RunResults.DISCOUNT_RATE, format_basicstats)
         DISCOUNT_RATE_ROW = row
         row+=1
         worksheet.write(row,0,'All costs are in 2019$', format_basicstats)
@@ -2061,7 +2081,7 @@ class RunResults:
         IMP_YEAR_ROW = row
         row+=1
         worksheet.write(row,0,'Discount rate', format_basicstats)
-        worksheet.write(row,1, 0.04, format_basicstats)
+        worksheet.write(row,1, RunResults.DISCOUNT_RATE, format_basicstats)
         DISCOUNT_RATE_ROW = row
         row+=1
         worksheet.write(row,0,'All costs are in 2019$', format_basicstats)
@@ -2176,6 +2196,50 @@ class RunResults:
                 worksheet.write(row, 63, '=%s - (0.026*%s/%s)' %(xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(1,1)), format_remainder)       
                 worksheet.write(row, 64, '=%s - (0.026*%s/%s)' %(xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(1,1)), format_remainder)       
                 row+=1    
+
+            elif key == "Road - Structures":
+                worksheet.write(row, 0, "Rehab Cost")
+                worksheet.write(row, 1, key)                   # asset category
+                worksheet.write(row, 2, "n/a", format_na)
+                worksheet.write(row, 3, val, format_input)                   # cost input
+                worksheet.write(row, 4, 0, format_remainder)
+                i=7
+                while i<(7+imp_years+4):                        # filling in empty cells with 0
+                    worksheet.write(row, i, 0, format_2060 if (i in [42,62]) else format_costs)
+                    i+=1
+                i = 7 + imp_years + 4           # Rehab costs: 20% of initial investment cost at year 5
+                j=1                             #              20% of initial investment cost at year 15
+                while i<=62:                     #              30% of initial investment cost at year 35
+                    if j==1:
+                        worksheet.write(row, i, '=%s*0.2' %(xl_rowcol_to_cell(row,3)), format_2060 if (i in [42,62])  else format_costs)
+                        col=i+1
+                        while col<(i+10) and col<=62:         # filling in empty cells with 0
+                            worksheet.write(row, col, 0, format_2060 if (col in [42,62]) else format_costs)
+                            col+=1
+                        j=2
+                        i+=10
+                    elif j==2:
+                        worksheet.write(row, i, '=%s*0.2' %(xl_rowcol_to_cell(row,3)), format_2060 if (i in [42,62]) else format_costs)   
+                        col=i+1
+                        while col<(i+20) and col<=62:          # filling in empty cells with 0
+                            worksheet.write(row, col, 0, format_2060 if (col in [42,62]) else format_costs)
+                            col+=1
+                        j=3                   
+                        i+=20
+                    elif j==3:
+                        worksheet.write(row, i, '=%s*0.3' %(xl_rowcol_to_cell(row,3)), format_2060 if (i in [42,62]) else format_costs)   
+                        col=i+1
+                        while col<(i+5) and col<=62:            # filling in empty cells with 0
+                            worksheet.write(row, col, 0, format_2060 if (col in [42,62]) else format_costs)
+                            col+=1
+                        j=1                   
+                        i+=5        
+                # Remaining asset value: initial cost - (avg annual rehab / discount rate)           
+                # note: avg annual rehab when accounting for the rehab payment schedule is ~ 1.9% of initial investment cost         
+                worksheet.write(row, 63, '=%s - (0.019*%s/%s)' %(xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(1,1)), format_remainder)       
+                worksheet.write(row, 64, '=%s - (0.019*%s/%s)' %(xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(row,3), xl_rowcol_to_cell(1,1)), format_remainder)       
+                row+=1
+
 
             elif key in self.asset_life.keys():                             # if key is Capital costs apart from Road pavement
                 asset_life_value = self.asset_life.get(key)
@@ -2309,7 +2373,11 @@ if __name__ == '__main__':
         rr.updateDailyMetrics()
 
     # save the quick summary
-    quicksummary_csv = os.path.join(os.getcwd(),args.all_projects_dir, "quicksummary_%s.csv"  % rr.config.loc['Project ID'])
+    if rr.base_dir:
+        quicksummary_csv = os.path.join(os.getcwd(),args.all_projects_dir, "quicksummary_%s_base%s.csv"  % (rr.config.loc['Project ID'], rr.config.loc['base_dir']))
+    else:
+        quicksummary_csv = os.path.join(os.getcwd(),args.all_projects_dir, "quicksummary_base%s.csv"  % rr.config.loc['Project ID'])
+
     rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f')
     #print rr.quick_summary
 
