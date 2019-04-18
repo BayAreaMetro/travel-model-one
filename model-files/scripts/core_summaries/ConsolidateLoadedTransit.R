@@ -33,6 +33,7 @@ for (timeperiod in c("ea","am","md","pm","ev")) {
         filename <- paste0("trnlink",timeperiod,"_",acc_egr[1],"_",submode,"_",acc_egr[2],".csv")
         fullfile <- file.path(MODEL_DIR, "trn", paste0("TransitAssignment.iter",ITER), filename)
         trndata  <- read.csv(file=fullfile, col.names=LINK_COL_NAMES, header=FALSE, sep=",", check.names=FALSE)
+        trndata$timeperiod <- timeperiod
 
         # this one is long, so drop those with is.na(AB_VOL)
         trndata  <- trndata[ which(is.na(trndata$AB_VOL)==FALSE),]
@@ -50,8 +51,45 @@ for (timeperiod in c("ea","am","md","pm","ev")) {
 # write it
 outfile <- file.path(MODEL_DIR, "trn", "trnline.csv")
 write.csv(all_trnline_data, file=outfile, row.names=FALSE, quote=FALSE)
-print(paste("Wrote ",outfile))
+print(paste("Wrote",outfile))
 
 outfile <- file.path(MODEL_DIR, "trn", "trnlink.csv")
 write.csv(all_trnlink_data, file=outfile, row.names=FALSE, quote=FALSE)
-print(paste("Wrote ",outfile))
+print(paste("Wrote",outfile))
+
+library(foreign)
+
+# split into timeperiods and write dbfs for quickboards
+for (my_tp in c("ea","am","md","pm","ev")) {
+    trndata_tp <- subset(all_trnlink_data, timeperiod == my_tp)
+
+    trndata_tp$TIME  <- as.integer(trndata_tp$time*100)
+    trndata_tp$DIST  <- as.integer(trndata_tp$distance*100)
+    trndata_tp$FREQ  <- 10.0 # todo - get from dbf?
+    trndata_tp$SEQ   <- 1    # todo - get from dbf?
+    trndata_tp[ which(trndata_tp$mode < 10), "SEQ"] <- 0  # make it zero for support links
+    trndata_tp$SEQ   <- as.integer(trndata_tp$SEQ)
+    trndata_tp$COLOR <- as.integer(0)
+    trndata_tp$OWNER <- as.character(trndata_tp$owner)
+
+    colnames(trndata_tp)[colnames(trndata_tp)=="mode"  ] <- "MODE"
+    colnames(trndata_tp)[colnames(trndata_tp)=="plot"  ] <- "PLOT"
+    colnames(trndata_tp)[colnames(trndata_tp)=="stopA" ] <- "STOP_A"
+    colnames(trndata_tp)[colnames(trndata_tp)=="stopB" ] <- "STOP_B"
+    colnames(trndata_tp)[colnames(trndata_tp)=="name"  ] <- "NAME"
+
+    # fill blanks with zero
+    cols <- c("AB_VOL","AB_BRDA","AB_XITA","AB_BRDB","AB_XITB")
+    trndata_tp[cols][is.na(trndata_tp[cols])] <- 0
+
+    # print(colnames(trndata_tp))
+    trndata_tp <- trndata_tp[c("A","B","TIME","MODE","FREQ","PLOT","COLOR",
+                               "STOP_A","STOP_B","DIST","NAME","SEQ","OWNER",
+                               "AB_VOL","AB_BRDA","AB_XITA","AB_BRDB","AB_XITB")]
+
+    print(str(trndata_tp))
+
+    outfile <- file.path(MODEL_DIR, "trn", paste0("trnlink", my_tp,"_withSupport.dbf"))
+    write.dbf(trndata_tp, file=outfile)
+    print(paste("Wrote", outfile))
+}
