@@ -76,6 +76,20 @@ for file in file_list:
             veh_type_updated = 'Motor Articulated Bus'
         if "522VTA" in record.get('NAME'):
             veh_type_updated = 'Motor Articulated Bus'
+        if "120_EBART" in record.get('NAME') and (record.get('period')=='AM' or record.get('period')=='PM'): :
+            veh_type_updated = 'eBart 2 car'
+        if "120_EBART" in record.get('NAME') and (record.get('period')!='AM' and record.get('period')!='PM'): :
+            veh_type_updated = 'eBart 1 car'
+
+        # updating vehicle types for Crossings projects     
+        if "130_RR" in record.get('NAME'):
+            veh_type_updated = 'Caltrain PCBB 10 car'
+        if record.get('VEHTYPE')=='8 Car BART' and (record.get('period')=='AM' or record.get('period')=='PM'): 
+            veh_type_updated = '10 Car BART RENOVATED'
+        if record.get('VEHTYPE')=='8 Car BART' and (record.get('period')!='AM' and record.get('period')!='PM'): 
+            veh_type_updated = '5 Car BART RENOVATED'
+            
+
 
         ab_vol = record.get('AB_VOL')
         seat_cap = transit_seatcap.get(veh_type_updated)                           # sourcing seated capacity imported from lookup file
@@ -154,6 +168,7 @@ df_crowding = pd.DataFrame(list_rows)
 df_crowding.columns = table.field_names
 
 
+
 # writing file with all columns into output\metrics folder of the project
 #'''
 transit_crowding_filename = os.path.join(os.getcwd(), 'OUTPUT', 'metrics', "transit_crowding_complete.csv")
@@ -162,7 +177,7 @@ print("Wrote transit_crowding_complete.csv into %s/OUTPUT/metrics folder"%sys.ar
 #'''
 
 # writing file into essential columns output\metrics folder of the project
-df_crowding2 = df_crowding[['NAME', 'SYSTEM', 'period', 'ivtt_hours',\
+df_crowding2 = df_crowding[['NAME', 'SYSTEM', 'AB_BRDA', 'period', 'ivtt_hours',\
             'effective_ivtt_ukdft','effective_ivtt_metrolinx', 'effective_ivtt_metrolinx_max2pt5',\
             'crowding_penalty_hrs_ukdft', 'crowding_penalty_hrs_metrolinx', 'crowding_penalty_hrs_metrolinx_max2pt5']]
 transit_crowding_filename = os.path.join(os.getcwd(),  'OUTPUT', 'metrics', "transit_crowding.csv")
