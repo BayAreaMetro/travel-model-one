@@ -1,3 +1,5 @@
+REM this is the command to generate shapefiles for a particular project
+
 :: run this from [M_DIR]\OUTPUT\shapefile
 :: e.g. M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects\1_Crossings3\2050_TM151_PPA_RT_01_1_Crossings3_00\OUTPUT\shapefile
 
