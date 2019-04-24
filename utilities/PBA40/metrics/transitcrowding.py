@@ -60,7 +60,7 @@ for file in file_list:
     table = DBF(file, load=True)
     period = file[7:9]       # name of time period is in the file name
 
-    table.field_names += [u'period',u'seatcap', u'period_seatcap', u'load_seatcap', u'ivtt_hours',\
+    table.field_names += [u'period', u'veh_type_updated', u'seatcap', u'period_seatcap', u'load_seatcap', u'ivtt_hours',\
                             u'crowdingfactor_ukdft', u'crowdingfactor_metrolinx', u'crowdingfactor_metrolinx_max2pt5', \
                              u'effective_ivtt_ukdft', u'effective_ivtt_metrolinx', u'effective_ivtt_metrolinx_max2pt5', \
                              u'crowding_penalty_hrs_ukdft', u'crowding_penalty_hrs_metrolinx', u'crowding_penalty_hrs_metrolinx_max2pt5']                            
@@ -76,17 +76,17 @@ for file in file_list:
             veh_type_updated = 'Motor Articulated Bus'
         if "522VTA" in record.get('NAME'):
             veh_type_updated = 'Motor Articulated Bus'
-        if "120_EBART" in record.get('NAME') and (record.get('period')=='AM' or record.get('period')=='PM'): :
+        if "120_EBART" in record.get('NAME') and (period=='AM' or period=='PM'):
             veh_type_updated = 'eBart 2 car'
-        if "120_EBART" in record.get('NAME') and (record.get('period')!='AM' and record.get('period')!='PM'): :
+        if "120_EBART" in record.get('NAME') and (period!='AM' and period!='PM'):
             veh_type_updated = 'eBart 1 car'
 
         # updating vehicle types for Crossings projects     
         if "130_RR" in record.get('NAME'):
             veh_type_updated = 'Caltrain PCBB 10 car'
-        if record.get('VEHTYPE')=='8 Car BART' and (record.get('period')=='AM' or record.get('period')=='PM'): 
+        if veh_type_updated=='8 Car BART' and (period=='AM' or period=='PM'): 
             veh_type_updated = '10 Car BART RENOVATED'
-        if record.get('VEHTYPE')=='8 Car BART' and (record.get('period')!='AM' and record.get('period')!='PM'): 
+        if veh_type_updated=='8 Car BART' and (period!='AM' and period!='PM'): 
             veh_type_updated = '5 Car BART RENOVATED'
             
 
@@ -97,6 +97,7 @@ for file in file_list:
         load_seatcap = ab_vol/period_seatcap                                      # load over time period
         ivtt_hours = ab_vol*record.get('TIME')/100/60                                # number of trips * time per trip
         record.update({u'period':period})
+        record.update({u'veh_type_updated':veh_type_updated})
         record.update({u'seatcap':seat_cap})
         record.update({u'period_seatcap':period_seatcap})
         record.update({u'load_seatcap':load_seatcap})
