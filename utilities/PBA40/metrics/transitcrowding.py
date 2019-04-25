@@ -35,19 +35,19 @@ LOG_FILE = "transit_crowding.log"
 
 PSEUDO_LINE_MAPPING = {
     # baseline
-    "120_OR_YEL"  :("120_ORANGE-","120_YELLOW-"),
-    "120_OR_YER"  :("120_YELLOW$","120_ORANGE$"),
+    "120_OR_YEL"  :("120_ORANGE-","120_YELLOW[-89]$"), # Orange/Richmond - MacArthur - Yellow/SFO
+    "120_OR_YER"  :("120_YELLOW[1]?$","120_ORANGE$"), # Yellow/SFO - MacArthur - Orange/Richmond
     # crossings
-    "120_BL_PS"   :("120_BLUE-",  "120_GREEN-" ),
-    "120_BL_PSR"  :("120_GREEN$", "120_BLUE$"  ),
-    "120_GREEN_BL":("120_GREEN-", "120_BLUE-"  ),
-    "120_GREEN_BR":("120_BLUE$",  "120_GREEN$" ),
-    "120_GRN"     :("120_ORANGE$","120_NEW-"   ),
-    "120_GRN_R"   :("120_NEW$",   "120_ORANGE-"),
-    "120_NEW_PS"  :("120_NEW$",   "120_YELLOW-"),
-    "120_NEW_PSR" :("120_YELLOW$","120_NEW-"   ),
-    "120_RED_YEL" :("120_ORANGE-","120_YELLOW-"),
-    "120_RED_YER" :("120_YELLOW$","120_ORANGE$"),
+    "120_BL_PS"   :("120_BLUE-",  "120_GREEN-" ), # Blue/DublinPleasanton - San Antonio - Green/Millbrae
+    "120_BL_PSR"  :("120_GREEN$", "120_BLUE$"  ), # Green/Millbrae - San Antonio - Blue/DublinPleasanton
+    "120_GREEN_BL":("120_GREEN-", "120_BLUE-"  ), # Green/BerryessaFremont - SanAntonio - Blue/Millbrae
+    "120_GREEN_BR":("120_BLUE$",  "120_GREEN$" ), # Blue/MillBrae - San Antonio - Green/BerryessaFremont
+    "120_GRN"     :("120_ORANGE$","120_NEW-"   ), # Orange/BerryessaFremont - San Antonio - New/Millbrae
+    "120_GRN_R"   :("120_NEW$",   "120_ORANGE-"), # New/Millbrae - San Antonio - Orange/BerryessaFremont
+    "120_NEW_PS"  :("120_NEW$",   "120_YELLOW-"), # New/Pittsburg - MacArthur - Yellow/Millbrae (*)
+    "120_NEW_PSR" :("120_YELLOW$","120_NEW-"   ), # Yellow/Millbrae - MacArthur - New/Pittsburg (*)
+    "120_RED_YEL" :("120_ORANGE-","120_YELLOW-"), # Orange/Richmond - MacArthur - Yellow/Millbrae
+    "120_RED_YER" :("120_YELLOW$","120_ORANGE$"), # Yellow/Millbrae - MacArthur - Orange/Richmond
 }
 
 def find_pseudo_lines(trn_link_df):
@@ -164,9 +164,10 @@ def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
         # check that we found actual links for every pseudo link
         pseudo_link_with_missing_actual = match_agg_df.loc[match_agg_df["NAME"] < 1].reset_index()
         if len(pseudo_link_with_missing_actual) > 0:
-            # let one link slide
+            # let a few link slide
             if len(pseudo_link_with_missing_actual) <= 5:
-                logging.warn("Pseudo links found with no corresponding actual link:\n{}".format(pseudo_link_with_missing_actual))
+                logging.warn("{} Pseudo links found with no corresponding actual link:\n{}".format(
+                             len(pseudo_link_with_missing_actual), pseudo_link_with_missing_actual))
             else:
                 logging.fatal("TODO: NAME count < 0 shouldn't happen")
                 sys.exit()
@@ -176,10 +177,15 @@ def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
 
         # check that the actual links have the same runs per hour as the pseudo links
         mismatch_run_per_hr = match_agg_df.loc[ match_agg_df["run_per_hr"] != pseudo_run_per_hr].reset_index()
+        mismatch_run_per_hr["run_per_hr_diff"] = mismatch_run_per_hr["run_per_hr"] - pseudo_run_per_hr
         if len(mismatch_run_per_hr) > 0:
-            # let one link slide
+            # let a few links slide
             if len(mismatch_run_per_hr) <= 5:
-                logging.warn("Pseudo links found with mismatching run per hour:\n{}".format(mismatch_run_per_hr))
+                logging.warn("{} Pseudo links found with mismatching run per hour:\n{}".format(
+                             len(mismatch_run_per_hr), mismatch_run_per_hr))
+            # more in EA, EV
+            elif period in ["EA","EV"]:
+                logging.warn("{} Pseudo links found with mismatching run per hour:\n{}".format(len(mismatch_run_per_hr), mismatch_run_per_hr))
             else:
                 logging.fatal("Mismatch run_per_hr between pseudo line and matching line\n{}".format(mismatch_run_per_hr))
                 sys.exit()
@@ -196,7 +202,6 @@ def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
 
         # drop the links that are right_only -- those are errors that we're ignoring
         trn_link_df = trn_link_df.loc[ trn_link_df["_merge"] != "right_only" ]
-        
         # done with the pseudo line for this time period -- remove it, and go back to original columns
         trn_link_df = trn_link_df.loc[(trn_link_df["NAME"]!=pseudo_line_name)|(trn_link_df["period"]!=period), orig_cols]
 
