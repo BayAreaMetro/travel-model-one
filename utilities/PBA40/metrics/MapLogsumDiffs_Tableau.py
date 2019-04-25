@@ -17,6 +17,11 @@ USAGE = """
   Creates csvs with logsums for baseline and project at individual level and total population by market segment
   Creates tableau workbooks that reads these csvs (by copying over tableau workbooks from M:\Application\Model One\Mock Futures\Logsum_sidebyside)
 
+  Outputs:
+  Logsum_map_marketsegments.twb represents "raw" logsums
+  Logsum_map_population.twb represents "consumer surplus" (?) but it's not calculated using rule of one-half
+
+
 """
 
 proj_name = sys.argv[1].split('\\')[1]
@@ -34,12 +39,12 @@ logsums_work_df_base = pd.read_table(os.path.join(os.getcwd(), baseid, 'OUTPUT',
 logsums_shop_df_base = pd.read_table(os.path.join(os.getcwd(), baseid, 'OUTPUT', 'logsums', "tour_shopDCLogsum.csv"), sep=",")
 
 # creating logsums df by market segment for tableau
-logsums_work_df['workDCLogsum 2015'] =   logsums_work_df_base['workDCLogsum']
-logsums_work_df['workDCLogsum 2050'] = 	logsums_work_df['workDCLogsum']
+logsums_work_df['workDCLogsum_base_noCEM'] =   logsums_work_df_base['workDCLogsum']
+logsums_work_df['workDCLogsum_proj_noCEM'] = 	logsums_work_df['workDCLogsum']
 logsums_work_df = logsums_work_df.drop('workDCLogsum', 1)
 
-logsums_shop_df['dcLogsum 2015'] =   logsums_shop_df_base['dcLogsum']
-logsums_shop_df['dcLogsum 2050'] = 	logsums_shop_df['dcLogsum']
+logsums_shop_df['dcLogsum_base_noCEM'] =   logsums_shop_df_base['dcLogsum']
+logsums_shop_df['dcLogsum_proj_noCEM'] = 	logsums_shop_df['dcLogsum']
 logsums_shop_df = logsums_shop_df.drop('dcLogsum', 1)
 
 
@@ -76,18 +81,18 @@ logsums_pop_shop_df['id'] = logsums_pop_shop_df['taz'].map(str) + '_' + logsums_
 # merging market populations with logsums, and multiplying
 
 logsums_pop_work_df = pd.merge(logsums_pop_work_df, markets_df, on = 'id', how = 'left')
-logsums_pop_work_df['workDCLogsum_pop 2015'] = logsums_pop_work_df['workDCLogsum 2015'] * logsums_pop_work_df['work_base'] 
-logsums_pop_work_df['workDCLogsum_pop 2050'] = logsums_pop_work_df['workDCLogsum 2050'] * logsums_pop_work_df['work_proj'] 
-logsums_pop_work_df['workDCLogsum 2015'] = logsums_pop_work_df['workDCLogsum_pop 2015'] 
-logsums_pop_work_df['workDCLogsum 2050'] = logsums_pop_work_df['workDCLogsum_pop 2050']
-logsums_pop_work_df = logsums_pop_work_df.drop(['id','workDCLogsum_pop 2015','workDCLogsum_pop 2050','work_proj','work_base','shop_proj','shop_base'], 1)
+logsums_pop_work_df['workDCLogsum_pop base'] = logsums_pop_work_df['workDCLogsum_base_noCEM'] * logsums_pop_work_df['work_base']
+logsums_pop_work_df['workDCLogsum_pop proj'] = logsums_pop_work_df['workDCLogsum_proj_noCEM'] * logsums_pop_work_df['work_proj']
+logsums_pop_work_df['workDCLogsum_base_noCEM'] = logsums_pop_work_df['workDCLogsum_pop base']
+logsums_pop_work_df['workDCLogsum_proj_noCEM'] = logsums_pop_work_df['workDCLogsum_pop proj']
+logsums_pop_work_df = logsums_pop_work_df.drop(['id','workDCLogsum_pop base','workDCLogsum_pop proj','work_proj','work_base','shop_proj','shop_base'], 1)
 
 logsums_pop_shop_df = pd.merge(logsums_pop_shop_df, markets_df, on = 'id', how = 'left')
-logsums_pop_shop_df['dcLogsum_pop 2015'] = logsums_pop_shop_df['dcLogsum 2015'] * logsums_pop_shop_df['shop_base'] 
-logsums_pop_shop_df['dcLogsum_pop 2050'] = logsums_pop_shop_df['dcLogsum 2050'] * logsums_pop_shop_df['shop_proj'] 
-logsums_pop_shop_df['dcLogsum 2015'] = logsums_pop_shop_df['dcLogsum_pop 2015'] 
-logsums_pop_shop_df['dcLogsum 2050'] = logsums_pop_shop_df['dcLogsum_pop 2050']
-logsums_pop_shop_df = logsums_pop_shop_df.drop(['id','dcLogsum_pop 2015','dcLogsum_pop 2050','work_proj','work_base','shop_proj','shop_base'], 1)
+logsums_pop_shop_df['dcLogsum_pop base'] = logsums_pop_shop_df['dcLogsum_base_noCEM'] * logsums_pop_shop_df['shop_base']
+logsums_pop_shop_df['dcLogsum_pop proj'] = logsums_pop_shop_df['dcLogsum_proj_noCEM'] * logsums_pop_shop_df['shop_proj']
+logsums_pop_shop_df['dcLogsum_base_noCEM'] = logsums_pop_shop_df['dcLogsum_pop base']
+logsums_pop_shop_df['dcLogsum_proj_noCEM'] = logsums_pop_shop_df['dcLogsum_pop proj']
+logsums_pop_shop_df = logsums_pop_shop_df.drop(['id','dcLogsum_pop base','dcLogsum_pop proj','work_proj','work_base','shop_proj','shop_base'], 1)
 
 
 
@@ -106,33 +111,33 @@ if not os.path.exists(dir_population):
 # writing logsum diff files by market segment for tableau
 logsums_work_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Market Segments',  "person_workDCLogsum.csv")
 logsums_work_df.to_csv(logsums_work_filename, header=True, index=False)
-print("Wrote person_workDCLogsum.csv into %s" %dir_segments.split('Projects')[1])
+print("Wrote person_workDCLogsum.csv into " + dir_segments)
 logsums_shop_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Market Segments',  "tour_shopDCLogsum.csv")
 logsums_shop_df.to_csv(logsums_shop_filename, header=True, index=False)
-print("Wrote tour_shopDCLogsum.csv into %s" %dir_segments.split('Projects')[1])
+print("Wrote tour_shopDCLogsum.csv into " + dir_segments)
 
 
 # writing logsum diff files for full population for tableau
 logsums_pop_work_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Population',  "person_workDCLogsum.csv")
 logsums_pop_work_df.to_csv(logsums_pop_work_filename, header=True, index=False)
-print("Wrote person_workDCLogsum.csv into %s" %dir_population.split('Projects')[1])
+print("Wrote person_workDCLogsum.csv into " + dir_population)
 logsums_pop_shop_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Population',  "tour_shopDCLogsum.csv")
 logsums_pop_shop_df.to_csv(logsums_pop_shop_filename, header=True, index=False)
-print("Wrote tour_shopDCLogsum.csv into %s" %dir_population.split('Projects')[1])
+print("Wrote tour_shopDCLogsum.csv into " + dir_population)
 
 
 
 # copying the tableau workbooks into these folders, which will source data from the just created csv files
 
 tableau_segments_template ='Logsum_map_marketsegments.twb'
-tableau_segments = os.path.join(os.getcwd(),'..','..','..','Mock Futures','Logsum_sidebyside',tableau_segments_template)
+tableau_segments = "M:\\Application\\Model One\\Mock Futures\\Logsum_sidebyside\\" + tableau_segments_template
 tableau_segments_filename = 'Logsum_map_marketsegments_' + proj_name + '.twb'
 copyfile(tableau_segments, os.path.join(dir_segments, tableau_segments_filename))
-print("Copied tableau workbook for market segments into %s" %dir_segments.split('Projects')[1])
+print("Copied tableau workbook for market segments into " + dir_segments)
 
 
 tableau_pop_template ='Logsum_map_population.twb'
-tableau_pop = os.path.join(os.getcwd(),'..','..','..','Mock Futures','Logsum_sidebyside',tableau_pop_template)
+tableau_pop = "M:\\Application\\Model One\\Mock Futures\\Logsum_sidebyside\\" + tableau_pop_template
 tableau_pop_filename = 'Logsum_map_population_' + proj_name + '.twb'
 copyfile(tableau_pop, os.path.join(dir_population, tableau_pop_filename))
-print("Copied tableau workbook for full population into %s" %dir_population.split('Projects')[1])
+print("Copied tableau workbook for full population into " + dir_population)
