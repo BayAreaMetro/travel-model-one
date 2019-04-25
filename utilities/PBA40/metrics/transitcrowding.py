@@ -43,7 +43,7 @@ PSEUDO_LINE_MAPPING = {
     "120_GREEN_BL":("120_GREEN-", "120_BLUE-"  ),
     "120_GREEN_BR":("120_BLUE$",  "120_GREEN$" ),
     "120_GRN"     :("120_ORANGE$","120_NEW-"   ),
-    "120_GRN_R"   :("120_NEW$",   "120_ORANGE$"),
+    "120_GRN_R"   :("120_NEW$",   "120_ORANGE-"),
     "120_NEW_PS"  :("120_NEW$",   "120_YELLOW-"),
     "120_NEW_PSR" :("120_YELLOW$","120_NEW-"   ),
     "120_RED_YEL" :("120_ORANGE-","120_YELLOW-"),
@@ -134,6 +134,7 @@ def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
         pseudo_line_df["name_re"] = ""
         pseudo_line_df.loc[ pseudo_line_df["SEQ"] <= seq_last_board, "name_re"] = start_line_re
         pseudo_line_df.loc[ pseudo_line_df["SEQ"] >= seq_first_exit, "name_re"] = end_line_re
+        pseudo_line_df.sort_values(by="SEQ", inplace=True)
         logging.debug("\n{}".format(pseudo_line_df))
 
         # create column that contains start_line_re if name matches, end_line_re if name matches, "" otherwise
@@ -143,42 +144,59 @@ def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
         
         # join it on the pseudo line
         trn_link_df = pd.merge(left     =trn_link_df,
-                               right    =pseudo_line_df[["period","run_per_hr","name_re","A","B","AB_BRDA","AB_XITB","AB_VOL"]],
+                               right    =pseudo_line_df[["period","run_per_hr","name_re","A","B","SEQ","AB_BRDA","AB_XITB","AB_VOL"]],
                                on       =["period","name_re","A","B"],
-                               how      ="left",
+                               how      ="outer",
                                suffixes =["","_pseudo"],
                                indicator=True)
 
-        logging.debug("BEFORE\n{}".format( trn_link_df.loc[trn_link_df["_merge"]=="both",
+        debug_df = trn_link_df.loc[trn_link_df["_merge"] != "left_only",
               ["NAME","period","SEQ","FREQ","run_per_hr","A","B","AB_BRDA","AB_XITB","AB_VOL",
-               "run_per_hr_pseudo","AB_BRDA_pseudo","AB_XITB_pseudo","AB_VOL_pseudo","_merge"]]))
+               "run_per_hr_pseudo","SEQ_pseudo","AB_BRDA_pseudo","AB_XITB_pseudo","AB_VOL_pseudo","_merge"]].sort_values(by="SEQ_pseudo")
+        logging.debug("BEFORE\n{}".format(debug_df))
 
         # count the matches for each link
-        match_group = trn_link_df.loc[trn_link_df["_merge"]=="both"].groupby(["A","B"])
+        match_group = trn_link_df.loc[ trn_link_df["_merge"] != "left_only" ].groupby(["A","B"])
         match_agg_df = match_group.agg({"NAME":"count", "run_per_hr":"sum"})
-        match_agg_df["mismatch run_per_hr"] = match_agg_df["run_per_hr"] != pseudo_run_per_hr
 
         logging.debug("match_agg_df:\n{}".format(match_agg_df))
-        if match_agg_df["NAME"].min() != 1:
-            logging.fatal("TODO: NAME count < 0 shouldn't happen")
-            sys.exit()
+
+        # check that we found actual links for every pseudo link
+        pseudo_link_with_missing_actual = match_agg_df.loc[match_agg_df["NAME"] < 1].reset_index()
+        if len(pseudo_link_with_missing_actual) > 0:
+            # let one link slide
+            if len(pseudo_link_with_missing_actual) <= 5:
+                logging.warn("Pseudo links found with no corresponding actual link:\n{}".format(pseudo_link_with_missing_actual))
+            else:
+                logging.fatal("TODO: NAME count < 0 shouldn't happen")
+                sys.exit()
         if match_agg_df["NAME"].max() != 1:
             logging.fatal("TODO: NAME count > 1 not implemented")
             sys.exit()
-        # verify that the run_per_hr matches pseudo line
-        if match_agg_df["mismatch run_per_hr"].any():
-            logging.fatal("Mismatch run_per_hr between pseudo line and matching line")
-            sys.exit()
+
+        # check that the actual links have the same runs per hour as the pseudo links
+        mismatch_run_per_hr = match_agg_df.loc[ match_agg_df["run_per_hr"] != pseudo_run_per_hr].reset_index()
+        if len(mismatch_run_per_hr) > 0:
+            # let one link slide
+            if len(mismatch_run_per_hr) <= 5:
+                logging.warn("Pseudo links found with mismatching run per hour:\n{}".format(mismatch_run_per_hr))
+            else:
+                logging.fatal("Mismatch run_per_hr between pseudo line and matching line\n{}".format(mismatch_run_per_hr))
+                sys.exit()
 
         # add psuedo line boards, exits and volums to other line
         trn_link_df.loc[trn_link_df["_merge"]=="both", "AB_BRDA"] = trn_link_df["AB_BRDA"] + trn_link_df["AB_BRDA_pseudo"]
         trn_link_df.loc[trn_link_df["_merge"]=="both", "AB_XITB"] = trn_link_df["AB_XITB"] + trn_link_df["AB_XITB_pseudo"]
         trn_link_df.loc[trn_link_df["_merge"]=="both", "AB_VOL" ] = trn_link_df["AB_VOL" ] + trn_link_df["AB_VOL_pseudo" ]
 
-        logging.debug("AFTER\n{}".format( trn_link_df.loc[trn_link_df["_merge"]=="both",
+        debug_df = trn_link_df.loc[trn_link_df["_merge"] != "left_only",
               ["NAME","period","SEQ","FREQ","run_per_hr","A","B","AB_BRDA","AB_XITB","AB_VOL",
-               "run_per_hr_pseudo","AB_BRDA_pseudo","AB_XITB_pseudo","AB_VOL_pseudo","_merge"]]))
+               "run_per_hr_pseudo","SEQ_pseudo","AB_BRDA_pseudo","AB_XITB_pseudo","AB_VOL_pseudo","_merge"]].sort_values(by="SEQ_pseudo")
+        logging.debug("AFTER\n{}".format(debug_df))
 
+        # drop the links that are right_only -- those are errors that we're ignoring
+        trn_link_df = trn_link_df.loc[ trn_link_df["_merge"] != "right_only" ]
+        
         # done with the pseudo line for this time period -- remove it, and go back to original columns
         trn_link_df = trn_link_df.loc[(trn_link_df["NAME"]!=pseudo_line_name)|(trn_link_df["period"]!=period), orig_cols]
 
