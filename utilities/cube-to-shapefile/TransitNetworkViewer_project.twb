@@ -17,7 +17,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='network_trn_links' name='ogrdirect.1udb0hu1iar89y197gr1r0mmiywv'>
-            <connection class='ogrdirect' directory='C:/Users/ATapase/Documents/GitHub/travel-model-one/utilities/cube-to-shapefile' filename='network_trn_links.shp' ogr-grid-shift-folder='C:\Program Files\Tableau\Tableau 2018.3\local\proj4' password='' server='' tablename='' workgroup-auth-mode='as-is' />
+            <connection class='ogrdirect' directory='' filename='network_trn_links.shp' ogr-grid-shift-folder='C:\Program Files\Tableau\Tableau 2018.3\local\proj4' password='' server='' tablename='' workgroup-auth-mode='as-is' />
           </named-connection>
         </named-connections>
         <relation join='left' type='join'>
@@ -279,7 +279,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='network_trn_route_links' name='ogrdirect.02vpcjh0etqrn619r33nl0r78ptx'>
-            <connection class='ogrdirect' directory='C:/Users/ATapase/Documents/GitHub/travel-model-one/utilities/cube-to-shapefile' filename='network_trn_route_links.shp' ogr-grid-shift-folder='C:\Program Files\Tableau\Tableau 2018.3\local\proj4' password='' server='' tablename='' workgroup-auth-mode='as-is' />
+            <connection class='ogrdirect' directory='' filename='network_trn_route_links.shp' ogr-grid-shift-folder='C:\Program Files\Tableau\Tableau 2018.3\local\proj4' password='' server='' tablename='' workgroup-auth-mode='as-is' />
           </named-connection>
         </named-connections>
         <relation connection='ogrdirect.02vpcjh0etqrn619r33nl0r78ptx' name='network_trn_route_links.shp' table='[network_trn_route_links.shp]' type='table'>
@@ -726,7 +726,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='network_trn_stops' name='ogrdirect.0zoyv130t6ciaq1fkjc5w18547ht'>
-            <connection class='ogrdirect' directory='C:/Users/ATapase/Documents/GitHub/travel-model-one/utilities/cube-to-shapefile' filename='network_trn_stops.shp' ogr-grid-shift-folder='C:\Program Files\Tableau\Tableau 2018.3\local\proj4' password='' server='' tablename='' workgroup-auth-mode='as-is' />
+            <connection class='ogrdirect' directory='' filename='network_trn_stops.shp' ogr-grid-shift-folder='C:\Program Files\Tableau\Tableau 2018.3\local\proj4' password='' server='' tablename='' workgroup-auth-mode='as-is' />
           </named-connection>
         </named-connections>
         <relation join='left' type='join'>
