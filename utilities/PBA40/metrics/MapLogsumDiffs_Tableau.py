@@ -109,19 +109,19 @@ if not os.path.exists(dir_population):
 
 
 # writing logsum diff files by market segment for tableau
-logsums_work_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Market Segments',  "person_workDCLogsum.csv")
+logsums_work_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Market Segments',  "person_workDCLogsum_compare.csv")
 logsums_work_df.to_csv(logsums_work_filename, header=True, index=False)
 print("Wrote person_workDCLogsum.csv into " + dir_segments)
-logsums_shop_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Market Segments',  "tour_shopDCLogsum.csv")
+logsums_shop_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Market Segments',  "tour_shopDCLogsum_compare.csv")
 logsums_shop_df.to_csv(logsums_shop_filename, header=True, index=False)
 print("Wrote tour_shopDCLogsum.csv into " + dir_segments)
 
 
 # writing logsum diff files for full population for tableau
-logsums_pop_work_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Population',  "person_workDCLogsum.csv")
+logsums_pop_work_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Population',  "person_workDCLogsum_cs_compare.csv")
 logsums_pop_work_df.to_csv(logsums_pop_work_filename, header=True, index=False)
 print("Wrote person_workDCLogsum.csv into " + dir_population)
-logsums_pop_shop_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Population',  "tour_shopDCLogsum.csv")
+logsums_pop_shop_filename = os.path.join(os.getcwd(), sys.argv[1],'logsum_diff_map', 'Population',  "tour_shopDCLogsum_cs_compare.csv")
 logsums_pop_shop_df.to_csv(logsums_pop_shop_filename, header=True, index=False)
 print("Wrote tour_shopDCLogsum.csv into " + dir_population)
 
