@@ -37,7 +37,7 @@ PSEUDO_LINE_MAPPING = {
     # baseline
     "120_OR_YEL"  :("120_ORANGE-","120_YELLOW[-89]$"), # Orange/Richmond - MacArthur - Yellow/SFO
     "120_OR_YER"  :("120_YELLOW[1]?$","120_ORANGE$"), # Yellow/SFO - MacArthur - Orange/Richmond
-    # crossings
+    # crossings 3
     "120_BL_PS"   :("120_BLUE-",  "120_GREEN-" ), # Blue/DublinPleasanton - San Antonio - Green/Millbrae
     "120_BL_PSR"  :("120_GREEN$", "120_BLUE$"  ), # Green/Millbrae - San Antonio - Blue/DublinPleasanton
     "120_GREEN_BL":("120_GREEN-", "120_BLUE-"  ), # Green/BerryessaFremont - SanAntonio - Blue/Millbrae
@@ -48,6 +48,9 @@ PSEUDO_LINE_MAPPING = {
     "120_NEW_PSR" :("120_YELLOW$","120_NEW-"   ), # Yellow/Millbrae - MacArthur - New/Pittsburg (*)
     "120_RED_YEL" :("120_ORANGE-","120_YELLOW-"), # Orange/Richmond - MacArthur - Yellow/Millbrae
     "120_RED_YER" :("120_YELLOW$","120_ORANGE$"), # Yellow/Millbrae - MacArthur - Orange/Richmond
+    # crossings 4
+    "130_RR_PSEU" :("130_RR_SACR$", "130_RR_F_EXP-", 14648), # RR_Sacr/Martinez - Jack London - Fremont (along easy bay)
+    "130_RR_PSEUR":("130_RR_F_EXP$","130_RR_SACR-",  14648), # reverse
 }
 
 def find_pseudo_lines(trn_link_df):
@@ -69,7 +72,7 @@ def find_pseudo_lines(trn_link_df):
     pseudo_lines = []
 
     for group_id, line in line_group:
-        if group_id[0] != 120: continue # BART only
+        if group_id[0] not in [120, 130]: continue # BART, regional rail only
         if len(line) < 3: continue      # pseudo lines must have board + transfer + exit  
 
         seq_last_board = line["seq_brda"].max()
@@ -125,6 +128,16 @@ def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
               pseudo_line_name, period, pseudo_run_per_hr, seq_last_board, seq_first_exit))
         logging.info("  Start line regex: {}".format(start_line_re))
         logging.info("  End line regex: {}".format(end_line_re))
+
+        # Multiple possible transfer stops -- see if one is specified
+        if seq_last_board < seq_first_exit-1:
+            if len(PSEUDO_LINE_MAPPING[pseudo_line_name])>2:
+                transfer_stop = PSEUDO_LINE_MAPPING[pseudo_line_name][2]
+                seq_last_board = pseudo_line_df.loc[ pseudo_line_df["B"]==transfer_stop].iloc[0]["SEQ"]
+                seq_first_exit = pseudo_line_df.loc[ pseudo_line_df["A"]==transfer_stop].iloc[0]["SEQ"]
+                logging.debug("Multiple possible transfer stops; PSEUDO_LINE_MAPPING lookup used to determine last board {}/first exit {}".format(seq_last_board, seq_first_exit))
+            else:
+                logging.fatal("Multiple possible transfer stops; specify the transfer stop in PSEUDO_LINE_MAPPING")
 
         # preparing for join -- everybody gets off at transfer point and on at transfer point
         pseudo_line_df.loc[ pseudo_line_df["SEQ"] == seq_last_board, "AB_XITB" ] = pseudo_line_df["AB_VOL"]
