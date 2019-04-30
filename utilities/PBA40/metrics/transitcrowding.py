@@ -1,10 +1,6 @@
-import os
-from dbfread import DBF
-import dbf
-import simpledbf
-import argparse, copy, csv, logging, sys
+import argparse, copy, csv, logging, os, sys
 import pandas as pd
-from pandas import DataFrame
+import simpledbf
 
 USAGE="""
 
@@ -22,7 +18,7 @@ transitcrowding.py is run with the proj folder as an argument. eg:
 projects root dir\python transitcrowding.py 1_CaltrainMod\\2050_TM150_BF_00_1_CaltrainMod_00
 
 Input:
-* TransitSeatCap.csv, containing VEHTYPE and seatcap
+* TransitSeatCap.csv, containing VEHTYPE, seatcap and standcap
 
 Output:
 * [project_dir]\\OUTPUT\\metrics\\transit_crowding_complete.csv
@@ -248,7 +244,8 @@ if __name__ == '__main__':
     # import seat capacities from lookup file
     seatcap_file = "TransitSeatCap.csv"
     transit_seatcap_df = pd.read_csv(seatcap_file)
-    transit_seatcap_df.rename(columns={"VEHTYPE":"veh_type_updated"},inplace=True)
+    transit_seatcap_df.columns=transit_seatcap_df.columns.str.replace('%','pct')
+    transit_seatcap_df.rename(columns={"VEHTYPE":"veh_type_updated", "100pctCapacity":"standcap"},inplace=True)
     logging.info("Read {}\n{}".format(seatcap_file, transit_seatcap_df.head()))
 
     # read the transit files
@@ -296,12 +293,14 @@ if __name__ == '__main__':
 
     # merge with seatcap on updated vehicle type
     all_trn_df = pd.merge(left   = all_trn_df,
-                          right  = transit_seatcap_df[["veh_type_updated","seatcap"]],
+                          right  = transit_seatcap_df[["veh_type_updated","seatcap","standcap"]],
                           on     = "veh_type_updated",
                           how    = "left")
-    all_trn_df["period_seatcap"] = all_trn_df["PERIODCAP"]/all_trn_df["VEHCAP"]*all_trn_df["seatcap"] # total seated capacity in time period
-    all_trn_df["load_seatcap"]   = all_trn_df["AB_VOL"]/all_trn_df["period_seatcap"]                  # load over time period
-    all_trn_df["ivtt_hours"]     = all_trn_df["AB_VOL"]*(all_trn_df["TIME"]/100)/60                   # number of trips * time per trip
+    all_trn_df["period_seatcap"] = all_trn_df["PERIODCAP"]/all_trn_df["VEHCAP"]*all_trn_df["seatcap"]  # total seated capacity in time period
+    all_trn_df["period_standcap"]= all_trn_df["PERIODCAP"]/all_trn_df["VEHCAP"]*all_trn_df["standcap"] # total seated capacity in time period
+    all_trn_df["load_seatcap"]   = all_trn_df["AB_VOL"]/all_trn_df["period_seatcap"]                   # seated load over time period
+    all_trn_df["load_standcap"]  = all_trn_df["AB_VOL"]/all_trn_df["period_standcap"]                  # standing load over time period
+    all_trn_df["ivtt_hours"]     = all_trn_df["AB_VOL"]*(all_trn_df["TIME"]/100)/60                    # number of trips * time per trip
 
     # setting default crowding factors
     
@@ -347,6 +346,10 @@ if __name__ == '__main__':
 
     # drop these to be consistent with previous output
     # all_trn_df.drop(columns=["veh_type_updated", "vol_minus_seatcap"], inplace=True)
+
+    # sort by mode, line name, time period, sequence
+    all_trn_df = all_trn_df.astype(dtype={"MODE":"int16","PLOT":"int16","COLOR":"int16","STOP_A":"int16","STOP_B":"int16","SEQ":"int16"})
+    all_trn_df.sort_values(by=["MODE","NAME","period","SEQ"], inplace=True)
 
     # writing file with all columns into output\metrics folder of the project
     transit_crowding_filename = os.path.join(my_args.project_dir, 'OUTPUT', 'metrics', "transit_crowding_complete.csv")
