@@ -218,6 +218,8 @@ def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
 
 
 if __name__ == '__main__':
+    pd.options.display.width = 500
+    pd.options.display.max_rows = 1000
 
     parser = argparse.ArgumentParser(description = USAGE,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -259,6 +261,9 @@ if __name__ == '__main__':
         # print(trn_df.head())
         all_trn_df = pd.concat([all_trn_df, trn_df])
     logging.info("Read {} total links".format(len(all_trn_df)))
+
+    # drop columns we won't be updating/using so they don't cause confusion
+    all_trn_df.drop(columns=["AB_XITA","AB_BRDB","BA_VOL","BA_BRDA","BA_XITA","BA_BRDB","BA_XITB"], inplace=True)
 
     # sort by mode, line name, time period, sequence
     all_trn_df.sort_values(by=["MODE","NAME","period","SEQ"], inplace=True)
