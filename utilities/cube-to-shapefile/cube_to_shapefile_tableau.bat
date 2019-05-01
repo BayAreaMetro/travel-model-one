@@ -48,11 +48,11 @@ for /d %%x in (
 			mkdir shapefile
 			cd shapefile
 			set PATH=C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3;C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3\Scripts
-			python \\mainmodel\MainModelShare\travel-model-one-master\utilities\cube-to-shapefile\cube_to_shapefile.py --linefile ..\..\INPUT\trn\transitLines.lin --trn_stop_info "M:\Application\Model One\Networks\TM1_2015_Base_Network\Node Description.xls" --loadvol_dir ..\trn ..\avgload5period.net
+			python \\mainmodel\MainModelShare\travel-model-one-master\utilities\cube-to-shapefile\cube_to_shapefile.py --linefile ..\..\trn\transitLines.lin --trn_stop_info "M:\Application\Model One\Networks\TM1_2015_Base_Network\Node Description.xls" --loadvol_dir ..\trn --transit_crowding ..\metrics\transit_crowding_complete.csv ..\avgload5period.net
 			echo Copying TransitNetworkViewer.twb to the folder...
 			if not x%%x:\==%%x (
 				FOR /f "tokens=1,2 delims=\ " %%a IN ("%%x") do (
-					copy /y "\\mainmodel\MainModelShare\travel-model-one-master\utilities\cube-to-shapefile\TransitNetworkViewer_project.twb" ^
+					copy /y "\\mainmodel\MainModelShare\travel-model-one-master\utilities\cube-to-shapefile\TransitNetworkViewer.twb" ^
 							"TransitNetworkViewer_%%b.twb")
 			) else (
 				copy /y "\\mainmodel\MainModelShare\travel-model-one-master\utilities\cube-to-shapefile\TransitNetworkViewer.twb" "TransitNetworkViewer_%%x.twb"
