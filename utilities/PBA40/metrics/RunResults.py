@@ -207,7 +207,7 @@ class RunResults:
         if overwrite_config:
             self.is_base_dir = True
             for key in overwrite_config.keys(): self.config[key] = overwrite_config[key]
-            print "OVERWRITE_CONFIG FOR BASE_DIR: "
+            print ("OVERWRITE_CONFIG FOR BASE_DIR: ")
             print self.config
 
         elif 'base_dir' not in self.config.keys():
@@ -282,17 +282,29 @@ class RunResults:
             new_header = df_collisions_SWITRS.iloc[0] #grab the first row for the header
             df_collisions_SWITRS = df_collisions_SWITRS[1:] #take the data less the header row
             df_collisions_SWITRS.columns = new_header
+
             df_collisions_SWITRS2 = df_collisions_SWITRS[df_collisions_SWITRS['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
             if df_collisions_SWITRS2.shape[0] == 0:
                 df_collisions_SWITRS2 = df_collisions_SWITRS[df_collisions_SWITRS['project_id'] == 0]
-            self.collisions_switrs = df_collisions_SWITRS.to_dict('records', into=OrderedDict)[0]
+            self.collisions_switrs = df_collisions_SWITRS2.to_dict('records', into=OrderedDict)[0]
+
 
             # Natural Land
             df_natural_land = pd.read_excel('PPAMasterInput.xlsx', sheet_name='natural_land', header=0)
             df_natural_land2 = df_natural_land[df_natural_land['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
             if df_natural_land2.shape[0] == 0:
                 df_natural_land2 = df_natural_land[df_natural_land['project_id'] == 0]
-            self.natural_land = df_natural_land.to_dict('records', into=OrderedDict)[0]
+            self.natural_land = df_natural_land2.to_dict('records', into=OrderedDict)[0]
+
+            # Guiding Principles
+            df_gp = pd.read_excel('PPAMasterInput.xlsx', sheet_name='guiding_principles', header=0)
+            df_gp2 = df_gp[df_gp['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
+            if df_gp2.shape[0] == 0:
+                df_gp2 = df_gp[df_gp['project_id'] == 0]
+            df_gp2 = df_gp2.drop(['project_id'], axis=1)
+            self.gp = df_gp2.to_dict('records', into=OrderedDict)[0]
+
+            
 
         # read roadway network for truck costs
         roadway_read    = False
@@ -1257,7 +1269,7 @@ class RunResults:
             if self.config.loc['Compare'] == 'baseline-scenario':
                 base_minus_scen = self.writeBCWorksheet(workbook, scen_minus_baseline=False)
         workbook.close()
-        print("Wrote %s" % BC_detail_workbook)    
+        print("Wrote the BC workbook %s" % BC_detail_workbook)    
 
  
 
@@ -1287,6 +1299,7 @@ class RunResults:
             app = xl.App(visible=False)
             book = app.books.open(BC_detail_workbook)
             book.save()
+            book.close()
             app.kill()
             df_lifecycleben = pd.read_excel(BC_detail_workbook, sheet_name='benefit_streams', header=None)
             df_lifecycleben =  df_lifecycleben.drop(df_lifecycleben.index[[0,1,2,3,4]])
@@ -1327,28 +1340,40 @@ class RunResults:
                             ('costs', 'Lifecycle Costs', '2025-80','O&M'),\
                             ('costs', 'Lifecycle Costs', '2025-80','Rehab + Replacement'),\
                             ('costs', 'Lifecycle Costs', '2025-80','Residual Value'),\
-                            ('costs', 'Lifecycle Costs detailed', '2025-60','Rehab'),\
-                            ('costs', 'Lifecycle Costs detailed', '2025-60','Replacement'),\
-                            ('costs', 'Lifecycle Costs detailed', '2025-80','Rehab'),\
-                            ('costs', 'Lifecycle Costs detailed', '2025-80','Replacement'),\
+                            ('costs', 'YOE Costs', '2019$','Capital'),\
+                            ('costs', 'YOE Costs', '2019$','O&M'),\
                             ('costs', 'Annualized Costs', '2050','Capital'),\
                             ('costs', 'Annualized Costs', '2050','O&M')]
             idx = pd.MultiIndex.from_tuples(costs_tuples, names=['category1','category2','category3','variable_name'])
             df_costs = pd.read_excel(BC_detail_workbook, sheet_name='cost_streams', header=None)
             costs_array = numpy.asarray([df_costs.iloc[2,5], df_costs.iloc[3,5], df_costs.iloc[1,9], -df_costs.iloc[2,9],\
                                          df_costs.iloc[2,6], df_costs.iloc[3,6], df_costs.iloc[1,10], -df_costs.iloc[2,10],\
-                                         df_costs.iloc[1,13], df_costs.iloc[2,13], df_costs.iloc[1,14], df_costs.iloc[2,14],\
+                                         df_costs.iloc[1,13], df_costs.iloc[2,13],\
                                          df_costs.iloc[2,4], df_costs.iloc[3,4]])       # these are the cell locations of all higher level b/c metrics
             costs = pd.Series(costs_array, index=idx)
             self.bc_metrics = self.bc_metrics.append(costs)
 
             #################################################
 
+            gp_tuples = [('Guiding Principles', 'Meets', 'All','All'),\
+                         ('Guiding Principles', 'Does Not Support','All', 'All'),\
+                         ('Guiding Principles', 'Principle', 'Score (0/1)', 'Affordable'),\
+                         ('Guiding Principles', 'Principle', 'Score (0/1)', 'Connected'),\
+                         ('Guiding Principles', 'Principle', 'Score (0/1)', 'Diverse'),\
+                         ('Guiding Principles', 'Principle', 'Score (0/1)', 'Healthy'),\
+                         ('Guiding Principles', 'Principle', 'Score (0/1)', 'Vibrant')]
+            idx = pd.MultiIndex.from_tuples(gp_tuples, names=['category1','category2','category3','variable_name'])
+            gp_array = numpy.asarray(list(self.gp.values()))
+            gp = pd.Series(gp_array, index=idx)
+            self.bc_metrics = self.bc_metrics.append(gp)
+
+
+            #################################################
 
             self.bc_metrics.name = 'values'
-            all_proj_filename = os.path.join(os.getcwd(),all_projects_dir, csv_name)
+            all_proj_filename = os.path.join(os.getcwd(), all_projects_dir, csv_name)
             self.bc_metrics.to_csv(all_proj_filename, header=True, float_format='%.5f')
-            print("Wrote %s" % all_proj_filename)
+            print("Wrote the bc metrics csv %s" % csv_name)
 
     def writeBCWorksheet(self, workbook, scen_minus_baseline=True):
         """
@@ -1680,8 +1705,11 @@ class RunResults:
                                         format_val_lil if (cat1,cat2) in self.lil_cats else format_val_big)
                         bc_metrics[(cat1,cat2,key[2],'Daily Difference')] = colA.daily_results[cat1][cat2][key[2]] - \
                                                                             colB.daily_results[cat1][cat2][key[2]]
-                        bc_metrics[(cat1,cat2,key[2],'Daily Percent Difference')] = bc_metrics[(cat1,cat2,key[2],'Daily Difference')] / \
+                        if colB.daily_results[cat1][cat2][key[2]] != 0:
+                            bc_metrics[(cat1,cat2,key[2],'Daily Percent Difference')] = bc_metrics[(cat1,cat2,key[2],'Daily Difference')] / \
                                                                             colB.daily_results[cat1][cat2][key[2]]
+                        else:
+                            bc_metrics[(cat1,cat2,key[2],'Daily Percent Difference')] = 0
 
                     worksheet.write(row,4, # diff annual
                                     '=%d*%s' % (annualization, xl_rowcol_to_cell(row,3)),
@@ -1852,8 +1880,10 @@ class RunResults:
         worksheet.set_column(7,7,2.0)
         worksheet.set_column(9,9,2.0)
         worksheet.set_column(11,11,2.0)
-        worksheet.set_column(10,10,15.0)
-        worksheet.set_column(12,12,15.0)
+        
+        worksheet.set_column(8,8,15.0)
+        worksheet.set_column(10,10,18.0)
+        worksheet.set_column(12,12,18.0)
 
         # THIS IS COBRA
         format_red      = workbook.add_format({'font_color':'white','bg_color':'#C0504D','align':'right','bold':True})
