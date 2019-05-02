@@ -986,6 +986,8 @@ if __name__ == '__main__':
     link_rows_cols = ["SHAPE@"] + link_rows_cols + ["LINE_COUNT", "ROUTE_A_B"]
     if LOADVOL_DIR:
         link_rows_cols.extend(["LOAD_EA","LOAD_AM","LOAD_MD","LOAD_PM","LOAD_EV"])
+        if TRANSIT_CROWDING_FILE:
+            link_rows_cols.extend(["LOADSE_EA","LOADSE_AM","LOADSE_MD","LOADSE_PM","LOADSE_EV"])
     # create cursor
     link_cursor = arcpy.da.InsertCursor(TRN_ROUTE_LINKS_SHPFILE, link_rows_cols)
     ab_array    = arcpy.Array()
