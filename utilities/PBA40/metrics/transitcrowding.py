@@ -244,7 +244,7 @@ if __name__ == '__main__':
     logging.info("Args: {}".format(my_args))
 
     # import seat capacities from lookup file
-    seatcap_file = "\\mainmodel\MainModelShare\\travel-model-one-master\utilities\PBA40\metrics\TransitSeatCap.csv"
+    seatcap_file = "\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\transitSeatCap.csv"
     transit_seatcap_df = pd.read_csv(seatcap_file)
     transit_seatcap_df.columns=transit_seatcap_df.columns.str.replace('%','pct')
     transit_seatcap_df.rename(columns={"VEHTYPE":"veh_type_updated", "100pctCapacity":"standcap"},inplace=True)
