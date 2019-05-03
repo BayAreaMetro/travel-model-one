@@ -1371,8 +1371,8 @@ class RunResults:
             self.bc_metrics.to_csv(all_proj_filename, header=True, float_format='%.5f')
             print("Wrote the bc metrics csv %s" % csv_name)
 
-            copyfile(BC_detail_workbook, os.path.join(project_folder_name,"..","..","all_projects_bc_workbooks", workbook_name))
-            print("Copied BC workbook into all_projects_bc_workbooks directory")
+        copyfile(BC_detail_workbook, os.path.join(project_folder_name,"..","..","all_projects_bc_workbooks", workbook_name))
+        print("Copied BC workbook into all_projects_bc_workbooks directory")
 
 
     def writeBCWorksheet(self, workbook, scen_minus_baseline=True):
