@@ -10,7 +10,7 @@ from shutil import copyfile
 
 USAGE = """
 
-  python MapLogsumDiffs_Tableau.py 1_Crossings3\2050_TM151_PPA_RT_00_1_Crossings3_01
+  python \\mainmodel\MainModelShare\travel-model-one-master\utilities\PBA40\metrics\MapLogsumDiffs_Tableau.py 1_Crossings3\2050_TM151_PPA_RT_00_1_Crossings3_01
 
   Reads logsums (work and shop) by market segment for project and base  (sources baseID from PPAMasterInput).
   Reads population by market segment.
@@ -23,7 +23,6 @@ USAGE = """
 
 
 """
-
 proj_name = sys.argv[1].split('\\')[1]
 
 # reading logsums by market segment for project
@@ -32,8 +31,7 @@ logsums_work_df = pd.read_table(os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT',
 logsums_shop_df = pd.read_table(os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "tour_shopDCLogsum.csv"), sep=",")
 
 # reading logsums by market segment for corresponding base
-configs_df = pd.read_excel('PPAMasterInput.xlsx', sheet_name='configs_projects', header=0)
-baseid = configs_df.loc[(configs_df['Foldername - Future'] == proj_name), 'base_dir'].iloc[0]
+baseid = proj_name[0:20]
 print("Baseline project is %s" %baseid)
 logsums_work_df_base = pd.read_table(os.path.join(os.getcwd(), baseid, 'OUTPUT', 'logsums', "person_workDCLogsum.csv"), sep=",")
 logsums_shop_df_base = pd.read_table(os.path.join(os.getcwd(), baseid, 'OUTPUT', 'logsums', "tour_shopDCLogsum.csv"), sep=",")

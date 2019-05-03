@@ -140,18 +140,20 @@ class RunResults:
 
     Read configuration and input data.
     """
+        self.ppa_master_input = "\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\PPAMasterInput.xlsx"
+
         # read the configs
         self.rundir = os.path.join(os.path.abspath(rundir), 'OUTPUT', 'metrics')
         # if this is a baseline run, then read from configs_base sheet of master input file
         # else this is a project run, then read from configs_projects sheet of master input file
         #if 'CaltrainMod_00' not in rundir:  #for RTFF
         if len(rundir) > 22:
-            configs_df = pd.read_excel('PPAMasterInput.xlsx', sheet_name='configs_projects', header=0)
+            configs_df = pd.read_excel(self.ppa_master_input, sheet_name='configs_projects', header=0)
             configs_df.insert(0,'Folder','')
             configs_df['Folder'] =  configs_df[['Foldername - Project', 'Foldername - Future']].apply(lambda x: '\\'.join(x), axis=1)
             configs_df.drop(['Foldername - Project', 'Foldername - Future'], axis=1)
         else:
-            configs_df = pd.read_excel('PPAMasterInput.xlsx', sheet_name='configs_base', header=0)     
+            configs_df = pd.read_excel(self.ppa_master_input, sheet_name='configs_base', header=0)     
         configs_df = configs_df.T
         configs_df.columns = configs_df.iloc[0]
         configs_df = configs_df[1:]
@@ -164,7 +166,7 @@ class RunResults:
         # Units in 2017 dollars
         # this sets it into the format {('cat1','cat2','cat3'):[val0,val1,val2,val3]} where vals are base, CAG, RTFF, BTTF
 
-        valuations_df = pd.read_excel('PPAMasterInput.xlsx', sheet_name='valuations', header=0)
+        valuations_df = pd.read_excel(self.ppa_master_input, sheet_name='valuations', header=0)
         self.BENEFIT_VALUATION = valuations_df.set_index(['Benefit Category 1','Benefit Category 2','Benefit Category 3']).T.to_dict('list')
 
         # dict with 3-tuple keys and some have a 3rd val of "NAN"
@@ -269,16 +271,16 @@ class RunResults:
         if 'base_dir' in self.config.keys():       
             
             # Project costs
-            df_costs = pd.read_excel('PPAMasterInput.xlsx', sheet_name='project_costs', header=0)
+            df_costs = pd.read_excel(self.ppa_master_input, sheet_name='project_costs', header=0)
             df_costs = df_costs[df_costs['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
             self.proj_costs = df_costs.to_dict('records', into=OrderedDict)[0]
  
             # asset life
-            df_asset_life =  pd.read_excel('PPAMasterInput.xlsx', sheet_name='asset_life', header=0)
+            df_asset_life =  pd.read_excel(self.ppa_master_input, sheet_name='asset_life', header=0)
             self.asset_life = df_asset_life.set_index(['asset_class']).T.to_dict('records', into=OrderedDict)[0]
   
             # CRF-related collisions
-            df_collisions_SWITRS = pd.read_excel('PPAMasterInput.xlsx', sheet_name='collisions_switrs', header=0)
+            df_collisions_SWITRS = pd.read_excel(self.ppa_master_input, sheet_name='collisions_switrs', header=0)
             new_header = df_collisions_SWITRS.iloc[0] #grab the first row for the header
             df_collisions_SWITRS = df_collisions_SWITRS[1:] #take the data less the header row
             df_collisions_SWITRS.columns = new_header
@@ -290,14 +292,14 @@ class RunResults:
 
 
             # Natural Land
-            df_natural_land = pd.read_excel('PPAMasterInput.xlsx', sheet_name='natural_land', header=0)
+            df_natural_land = pd.read_excel(self.ppa_master_input, sheet_name='natural_land', header=0)
             df_natural_land2 = df_natural_land[df_natural_land['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
             if df_natural_land2.shape[0] == 0:
                 df_natural_land2 = df_natural_land[df_natural_land['project_id'] == 0]
             self.natural_land = df_natural_land2.to_dict('records', into=OrderedDict)[0]
 
             # Guiding Principles
-            df_gp = pd.read_excel('PPAMasterInput.xlsx', sheet_name='guiding_principles', header=0)
+            df_gp = pd.read_excel(self.ppa_master_input, sheet_name='guiding_principles', header=0)
             df_gp2 = df_gp[df_gp['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
             if df_gp2.shape[0] == 0:
                 df_gp2 = df_gp[df_gp['project_id'] == 0]
@@ -1911,7 +1913,7 @@ class RunResults:
     def writeProxiesWorksheet(self, workbook):
 
         # Reading proxies from master input file
-        df_proxies = pd.read_excel('PPAMasterInput.xlsx', sheet_name='stream_proxies', header=0)
+        df_proxies = pd.read_excel(self.ppa_master_input, sheet_name='stream_proxies', header=0)
         df_proxies = df_proxies.loc[df_proxies['Future']==self.config.loc['Future']]
         df_proxies = df_proxies.loc[(df_proxies['Project Type']==self.config.loc['Project Type']) | (df_proxies['Project Type']=="All")]
         df_proxies = df_proxies.drop(['Future', 'Project Type', 'Base2015', 'Base2030', 'Base2050'], axis=1)
