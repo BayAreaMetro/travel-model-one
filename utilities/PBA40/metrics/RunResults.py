@@ -7,6 +7,7 @@ import string
 import sys
 import csv
 from collections import OrderedDict, defaultdict
+from shutil import copyfile
 
 import pandas as pd     # yay for DataFrames and Series!
 import numpy
@@ -19,7 +20,7 @@ pd.set_option('display.width', 500)
 
 USAGE = """
 
-  python RunResults project_metrics_dir all_projects_metrics_dir [--bcconfig BC_config.csv]
+  python RunResults all_projects_metrics_dir [--bcconfig BC_config.csv]
 
   Configuration filename is optional.  Otherwise will use project_metrics_dir/BC_config.csv
 
@@ -27,14 +28,8 @@ USAGE = """
   * project_metrics_dir\BC_ProjectID[_BaseProjectID].xlsx with run results summary
   * all_projects_metrics_dir\BC_ProjectID[_BaseProjectID].csv with a version for rolling up
 
+  python \\mainmodel\MainModelShare\travel-model-one-master\utilities\PBA40\metrics\RunResults.py 1_Crossings1\2050_TM151_PPA_RT_02_1_Crossings1_03 all_projects_metrics
 
-  cd C:\Users\ATapase\Box\Horizon and Plan Bay Area 2050\Project Performance\5_Cobra\Test Runs\2_Test Run copy
-
-
-  python RunResults_AT.py 207_SanPablo\OUTPUT\metrics all_projects_metrics_dir
-
-
-  python RunResults.py 207_SanPablo\OUTPUT\metrics all_projects_metrics_dir
 
 """
 
@@ -1264,7 +1259,6 @@ class RunResults:
         BC_detail_workbook = os.path.join(project_folder_name, workbook_name)
         workbook        = xlsxwriter.Workbook(BC_detail_workbook)
 
-
         scen_minus_base = self.writeBCWorksheet(workbook)
 
         if self.base_dir:
@@ -1376,6 +1370,10 @@ class RunResults:
             all_proj_filename = os.path.join(os.getcwd(), all_projects_dir, csv_name)
             self.bc_metrics.to_csv(all_proj_filename, header=True, float_format='%.5f')
             print("Wrote the bc metrics csv %s" % csv_name)
+
+            copyfile(BC_detail_workbook, os.path.join(project_folder_name,"..","..","all_projects_bc_workbooks", workbook_name))
+            print("Copied BC workbook into all_projects_bc_workbooks directory")
+
 
     def writeBCWorksheet(self, workbook, scen_minus_baseline=True):
         """
