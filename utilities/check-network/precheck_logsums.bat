@@ -14,15 +14,21 @@
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 0: set file location and folder structure
+:: Before running precheck - user input
 ::
 :: ------------------------------------------------------------------------------------------------------
 
 :: Location of BASE MODEL_DIR full run
-set MODEL_BASE_DIR=\\MODEL2-D\Model2D-Share\Projects\2050_TM151_PPA_RT_01
+set MODEL_BASE_DIR=\\model2-b\Model2B-Share\Projects\2050_TM151_PPA_BF_02
 
 :: The location of the project (hwy and trn) to be QA-ed
-set PROJ_DIR=M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects\1_Crossings4\2050_TM151_PPA_RT_01_1_Crossings4_02
+set PROJ_DIR=M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Crossings\1_Crossings7\2050_TM151_PPA_BF_02_1_Crossings7_02
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 0: set file location and folder structure
+::
+:: ------------------------------------------------------------------------------------------------------
 
 :: The location in which we're running the PRECHECK (shortmodel)
 set MODEL_DIR=%CD%
