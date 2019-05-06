@@ -4,7 +4,8 @@
 ::
 :: Utility to generate preliminary skims and logsum diff maps prior to full model run
 :: Designed to be run on one of the old modeling machines (mainmodel or a satmodel machine)
-:: in \\mainmodel\MainModelShare\Projects_precheck\[model_run_id]
+:: in \\mainmodel\MainModelShare\Projects_precheck\[project_group]\[model_run_id]
+:: e.g. \\mainmodel\MainModelShare\Projects_precheck\2402_SJC_PeopleMover\2050_TM151_PPA_RT_04_2402_SJC_PeopleMover_00
 ::
 :: the Tableau can be viewed in the directory, logsum_diff_map stored in the project directory
 :: 
@@ -19,10 +20,10 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: Location of BASE MODEL_DIR full run
-set MODEL_BASE_DIR=\\model2-b\Model2B-Share\Projects\2050_TM151_PPA_BF_02
+set MODEL_BASE_DIR=\\model2-a\Model2A-Share\Projects\2050_TM151_PPA_RT_04
 
 :: The location of the project (hwy and trn) to be QA-ed
-set PROJ_DIR=M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Crossings\1_Crossings7\2050_TM151_PPA_BF_02_1_Crossings7_02
+set PROJ_DIR=M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects\2402_SJC_PeopleMover\2050_TM151_PPA_RT_04_2402_SJC_PeopleMover_00
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -36,7 +37,7 @@ set MODEL_DIR=%CD%
 :: Use this for COMMPATH
 mkdir COMMPATH
 set COMMPATH=%CD%\COMMPATH
-:: start Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide
+"C:\Program Files\Citilabs\CubeVoyager\Cluster" "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 :: this is where the results will be saved
 set LOGSUMS_CHECK_DIR=%PROJ_DIR%\logsum_precheck
@@ -348,7 +349,7 @@ rem Victory
 rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:: start Cluster "%COMMPATH%\CTRAMP" 1-48 Close
+"C:\Program Files\Citilabs\CubeVoyager\Cluster" "%COMMPATH%\CTRAMP" 1-48 Close Exit
 
 :: ------------------------------------------------------------------------------------------------------
 :: Step 7:  mapping
