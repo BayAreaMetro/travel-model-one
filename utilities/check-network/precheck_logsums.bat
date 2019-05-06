@@ -6,6 +6,8 @@
 :: Designed to be run on one of the old modeling machines (mainmodel or a satmodel machine)
 :: in \\mainmodel\MainModelShare\Projects_precheck\[model_run_id]
 ::
+:: the Tableau can be viewed in the directory, logsum_diff_map stored in the project directory
+:: 
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :: add goto here if resuming
@@ -17,10 +19,10 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: Location of BASE MODEL_DIR full run
-set MODEL_BASE_DIR=\\MODEL2-A\Model2A-Share\Projects\2050_TM151_PPA_CG_01
+set MODEL_BASE_DIR=\\MODEL2-D\Model2D-Share\Projects\2050_TM151_PPA_RT_01
 
 :: The location of the project (hwy and trn) to be QA-ed
-set PROJ_DIR=M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects\1_Crossings3\2050_TM151_PPA_CG_01_1_Crossings3_03
+set PROJ_DIR=M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects\1_Crossings4\2050_TM151_PPA_RT_01_1_Crossings4_02
 
 :: The location in which we're running the PRECHECK (shortmodel)
 set MODEL_DIR=%CD%
@@ -28,7 +30,7 @@ set MODEL_DIR=%CD%
 :: Use this for COMMPATH
 mkdir COMMPATH
 set COMMPATH=%CD%\COMMPATH
-start Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide
+:: start Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide
 
 :: this is where the results will be saved
 set LOGSUMS_CHECK_DIR=%PROJ_DIR%\logsum_precheck
@@ -68,9 +70,8 @@ copy /y "\\mainmodel\MainModelShare\travel-model-one-master\model-files\scripts\
 :: Figure out the model year
 :: used by logsums.properties
 set PROJECT_DIR=%CD%
-set PROJECT_DIR2=%PROJECT_DIR:~0,-1%
-:: get the base dir only
-for %%f in (%PROJECT_DIR2%) do set myfolder=%%~nxf
+:: get the directory name
+for %%f in (%PROJECT_DIR%) do set myfolder=%%~nxf
 :: the first four characters are model year
 set MODEL_YEAR=%myfolder:~0,4%
 
@@ -341,7 +342,61 @@ rem Victory
 rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rem ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-start Cluster "%COMMPATH%\CTRAMP" 1-48 Close
+:: start Cluster "%COMMPATH%\CTRAMP" 1-48 Close
+
+:: ------------------------------------------------------------------------------------------------------
+:: Step 7:  mapping
+:: ------------------------------------------------------------------------------------------------------
+
+:: copy relevant files to the subdirectories in the directory OUTPUT 
+mkdir OUTPUT
+cd OUTPUT
+mkdir logsums
+mkdir core_summaries
+cd ..
+copy "logsums\person_workDCLogsum.csv" OUTPUT\logsums\person_workDCLogsum.csv
+copy "logsums\tour_shopDCLogsum.csv" OUTPUT\logsums\tour_shopDCLogsum.csv
+copy "core_summaries\AccessibilityMarkets.csv" OUTPUT\core_summaries\AccessibilityMarkets.csv
+
+
+:: also copy relevant files from the base run
+:: Figure out the name of the base run
+for %%f in (%MODEL_BASE_DIR%) do set basefolder=%%~nxf
+:: create a base run directory at the "Projects_precheck" level and put the two logsum files and one accessibility file in the right structure
+cd ../..
+mkdir %basefolder%
+cd %basefolder%
+mkdir OUTPUT
+cd OUTPUT
+mkdir logsums
+mkdir core_summaries
+copy "%MODEL_BASE_DIR%\extractor\logsums\person_workDCLogsum.csv"               logsums\person_workDCLogsum.csv
+copy "%MODEL_BASE_DIR%\extractor\logsums\tour_shopDCLogsum.csv"                 logsums\tour_shopDCLogsum.csv
+copy "%MODEL_BASE_DIR%\extractor\core_summaries\AccessibilityMarkets.csv"       core_summaries\AccessibilityMarkets.csv
+
+:: Figure out the name of the network project
+cd %project_dir%
+cd ..
+set NETWORK_PROJ_DIR=%CD%
+for %%f in (%NETWORK_PROJ_DIR%) do set networkproj=%%~nxf
+
+:: check if the mapping script exist in the metrics folder
+:: if not, get it from the master version of Travel Model 1.5
+if exist %project_dir%\CTRAMP\scripts\metrics\MapLogsumDiffs_Tableau.py (
+    rem MapLogsumDiffs_Tableau.py exists in the metrics folder
+) else (
+    rem MapLogsumDiffs_Tableau.py not in the metrics folder
+    copy \\mainmodel\MainModelShare\travel-model-one-master\utilities\PBA40\metrics\MapLogsumDiffs_Tableau.py %project_dir%\CTRAMP\scripts\metrics\MapLogsumDiffs_Tableau.py
+)
+
+:: from "Projects_precheck" level, run the mapping script 
+cd ..
+python %project_dir%\CTRAMP\scripts\metrics\MapLogsumDiffs_Tableau.py %networkproj%\%myfolder%
+
+:: delete the "population" folder in the logsum_diff_map directory, because it's not calculated using rule of half
+cd %project_dir%\logsum_diff_map
+rmdir /s /q "population"
+cd %project_dir%
 
 :end
 :: Last Step:  Stamp the time of completion to the feedback report file
