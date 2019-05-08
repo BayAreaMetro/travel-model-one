@@ -258,7 +258,7 @@ class RunResults:
         # print self.unique_active_travelers
 
         self.crowding_df = pd.read_csv(os.path.join(self.rundir, "transit_crowding.csv"))
-
+        self.crowding_complete_df = pd.read_csv(os.path.join(self.rundir, "transit_crowding_complete.csv"))
 
         #####################################
 
@@ -1188,19 +1188,34 @@ class RunResults:
 
 
 
-        quick_summary['Peak volume AM Bay Bridge'] = self.roadways_df.loc[(self.roadways_df['a'] == 2783) & (self.roadways_df['b'] ==6972), 'volAM_tot'].sum()
-        quick_summary['Peak volume AM Mid-Bay Bridge'] = self.roadways_df.loc[(self.roadways_df['a'] == 10947) & (self.roadways_df['b'] ==10951), 'volAM_tot'].sum() + \
-                                                    self.roadways_df.loc[(self.roadways_df['a'] == 10948) & (self.roadways_df['b'] ==10952), 'volAM_tot'].sum()
-        quick_summary['Peak volume AM San Mateo Bridge'] = self.roadways_df.loc[(self.roadways_df['a'] == 3650)  & (self.roadways_df['b'] ==6381), 'volAM_tot'].sum()
-        quick_summary['Peak volume AM Golden Gate Bridge'] = self.roadways_df.loc[(self.roadways_df['a'] == 7339) & (self.roadways_df['b'] ==7322), 'volAM_tot'].sum()
+        quick_summary['Peak Vehicle Volume AM Bay Bridge'] =            self.roadways_df.loc[(self.roadways_df['a'] == 2783) & (self.roadways_df['b'] ==6972), 'volAM_tot'].sum()
+        quick_summary['Peak Vehicle Volume AM Southern Crossing'] =     self.roadways_df.loc[(self.roadways_df['a'] == 10821) & (self.roadways_df['b'] ==10815), 'volAM_tot'].sum()
+        quick_summary['Peak Vehicle Volume AM Mid-Bay Bridge'] =        self.roadways_df.loc[(self.roadways_df['a'] == 10947) & (self.roadways_df['b'] ==10951), 'volAM_tot'].sum() \
+                                                                + self.roadways_df.loc[(self.roadways_df['a'] == 10948) & (self.roadways_df['b'] ==10952), 'volAM_tot'].sum()
+        quick_summary['Peak Vehicle Volume AM San Mateo Bridge'] =      self.roadways_df.loc[(self.roadways_df['a'] == 3650)  & (self.roadways_df['b'] ==6381), 'volAM_tot'].sum()
+        quick_summary['Peak Vehicle Volume AM Golden Gate Bridge'] =    self.roadways_df.loc[(self.roadways_df['a'] == 7339) & (self.roadways_df['b'] ==7322), 'volAM_tot'].sum()
 
 
-        quick_summary['Boardings - BART']    = self.crowding_df.loc[self.crowding_df['SYSTEM'] == "BART", 'AB_BRDA'].sum() \
-                                                + self.crowding_df.loc[self.crowding_df['SYSTEM'] == "EBART", 'AB_BRDA'].sum() 
-        quick_summary['Boardings - Caltrain']    = self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Caltrain", 'AB_BRDA'].sum() 
-        quick_summary['Boardings - Reg Rail']    = self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Caltrain", 'AB_BRDA'].sum() \
-                                                + self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Amtrak Capitol Corridor", 'AB_BRDA'].sum()  
-        quick_summary['Boardings - AC Transit Transbay']    = self.crowding_df.loc[self.crowding_df['SYSTEM'] == "AC Transit", 'AB_BRDA'].sum() 
+        quick_summary['Peak Transbay Ridership AM BART Tunnel 1'] =     self.crowding_complete_df.loc[(self.crowding_complete_df['A'] == 15510) & (self.crowding_complete_df['B'] == 15511) &
+                                                                  (self.crowding_complete_df['period'] == "AM"),   'AB_VOL'].sum() 
+        quick_summary['Peak Transbay Ridership AM BART Tunnel 2'] =     max(self.crowding_complete_df.loc[(self.crowding_complete_df['A'] == 15553) & (self.crowding_complete_df['B'] == 15554) &\
+                                                                   (self.crowding_complete_df['period'] == "AM"),   'AB_VOL'].sum() , \
+                                                                self.crowding_complete_df.loc[(self.crowding_complete_df['A'] == 15553) & (self.crowding_complete_df['B'] == 15556) &\
+                                                                   (self.crowding_complete_df['period'] == "AM"),   'AB_VOL'].sum() , \
+                                                                self.crowding_complete_df.loc[(self.crowding_complete_df['A'] == 15553) & (self.crowding_complete_df['B'] == 20755) &\
+                                                                   (self.crowding_complete_df['period'] == "AM"),   'AB_VOL'].sum() )
+        quick_summary['Peak Transbay Ridership AM Reg Rail Tunnel'] =   self.crowding_complete_df.loc[(self.crowding_complete_df['A'] == 14648) & (self.crowding_complete_df['B'] == 13654) &\
+                                                                  (self.crowding_complete_df['period'] == "AM"),   'AB_VOL'].sum() 
+        quick_summary['Peak Transbay Ridership AM AC Transit Bay Bridge'] =   self.crowding_complete_df.loc[(self.crowding_complete_df['A'] == 2783) & (self.crowding_complete_df['B'] == 6972) &\
+                                                                  (self.crowding_complete_df['period'] == "AM"),   'AB_VOL'].sum() 
+
+
+        quick_summary['Daily Boardings - BART']    =              self.crowding_df.loc[self.crowding_df['SYSTEM'] == "BART", 'AB_BRDA'].sum() \
+                                                             + self.crowding_df.loc[self.crowding_df['SYSTEM'] == "EBART", 'AB_BRDA'].sum() 
+        quick_summary['Daily Boardings - Caltrain']    =          self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Caltrain", 'AB_BRDA'].sum() 
+        quick_summary['Daily Boardings - Reg Rail']    =          self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Caltrain", 'AB_BRDA'].sum() \
+                                                            + self.crowding_df.loc[self.crowding_df['SYSTEM'] == "Amtrak Capitol Corridor", 'AB_BRDA'].sum()  
+        quick_summary['Daily Boardings - AC Transit Transbay']  = self.crowding_df.loc[self.crowding_df['SYSTEM'] == "AC Transit", 'AB_BRDA'].sum() 
     
 
 
