@@ -147,24 +147,11 @@ if %TRNASSIGNITER% EQU 0 (
   echo trnAssignIter,timeperiod,mode,PHT,pctPHTdiff,RMSE_IVTT,RMSE_TOTT,AvgPaths,CurrPaths,CurrBoards,PathsFromBoth,PathsFromIter,PathsFromAvg,PHTCriteriaMet > PHT_total.csv
 )
 
-set "lock=%temp%\wait%random%.lock"
-
-:: Launch processes asynchronously, with stream 9 redirected to a lock file.
-:: The lock file will remain locked until the script ends.
-start "" 9>"%lock%1" python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EA %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-start "" 9>"%lock%2" python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex AM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-start "" 9>"%lock%3" python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex MD %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-start "" 9>"%lock%4" python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex PM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-start "" 9>"%lock%5" python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EV %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-
-:Wait for both processes to finish (wait until lock files are no longer locked)
-1>nul 2>nul timeout /t 1 /nobreak
-for %%N in (1 2 3 4 5) do (
-  (call ) 9>"%lock%%%N" || goto :Wait
-) 2>nul
-
-::delete the lock files
-del "%lock%*"
+python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EA %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex AM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex MD %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex PM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EV %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 
 echo DONE    transitDwellAccess SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
 
