@@ -22,6 +22,7 @@ USAGE = """
 
 
   This script reads "\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\PPAMasterInput.xlsx"
+  It also reads transit_crowding.csv. i.e. Prior to running this script, TransitCrowding.py needs to be executed.
 
   It calculates the project_metrics_dir and produces:
   * project_metrics_dir\BC_ProjectID[_BaseProjectID].xlsx with run results summary
@@ -29,8 +30,7 @@ USAGE = """
   * logsum diff maps in \OUTPUT\logsums\logsum_diff.twb
 
   Run the script from the "M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects" folder, where the baseline runs are saved.
-  python \\mainmodel\MainModelShare\travel-model-one-master\utilities\PBA40\metrics\RunResults.py 1_Crossings1\2050_TM151_PPA_RT_02_1_Crossings1_03 all_projects_bc_workbooks
-  python C:\Users\ftsang\Documents\GitHub\travel-model-one\utilities\PBA40\metrics\RunResults.py 1_Crossings6\2050_TM151_PPA_CG_01_1_Crossings6_00 all_projects_bc_workbooks
+  example: python \\mainmodel\MainModelShare\travel-model-one-master\utilities\PBA40\metrics\RunResults.py 1_Crossings1\2050_TM151_PPA_RT_02_1_Crossings1_03 all_projects_bc_workbooks
 
 
 """
@@ -593,6 +593,7 @@ class RunResults:
             # print out the mandatory logsum diff, with cem, to a csv file
             mandatory_logsums_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "logsum_diff_mandatory_cem.csv")
             self.mandatoryAccessibilities.to_csv(mandatory_logsums_filename)
+            print("Wrote mandatory logsums diff into "+mandatory_logsums_filename)
 
             # copy Tableau template into the project folder for mapping
             tableau_template="\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\logsum_diff.twb"
@@ -624,6 +625,7 @@ class RunResults:
             # print out the nonmandatory logsum diff, with cem, to a csv file
             nonmandatory_logsums_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "logsum_diff_nonmandatory_cem.csv")
             self.nonmandatoryAccessibilities.to_csv(nonmandatory_logsums_filename)
+            print("Wrote non-mandatory logsums diff into "+nonmandatory_logsums_filename)
 
             self.accessibilityMarkets = pd.merge(self.accessibilityMarkets,
                                                  self.base_results.accessibilityMarkets,
