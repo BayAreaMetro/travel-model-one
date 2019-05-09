@@ -590,15 +590,6 @@ class RunResults:
                 self.mandatoryAccessibilities['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(self.mandatoryAccessibilities.ldm_ratio-RunResults.CEM_THRESHOLD)/RunResults.CEM_SHALLOW))
             self.mandatoryAccessibilities['ldm_cem']   = self.mandatoryAccessibilities.logsum_diff_minutes*self.mandatoryAccessibilities.ldm_mult
 
-            # print out the mandatory logsum diff, with cem, to a csv file
-            mandatory_logsums_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "logsum_diff_mandatory_cem.csv")
-            self.mandatoryAccessibilities.to_csv(mandatory_logsums_filename)
-            print("Wrote mandatory logsums diff into "+mandatory_logsums_filename)
-
-            # copy Tableau template into the project folder for mapping
-            tableau_template="\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\logsum_diff.twb"
-            copyfile(tableau_template, os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', 'logsum_diff.twb'))
-
             # This too
             self.nonmandatoryAccessibilities = pd.merge(self.nonmandatoryAccessibilities,
                                                         self.base_results.nonmandatoryAccessibilities,
@@ -622,11 +613,7 @@ class RunResults:
             self.nonmandatoryAccessibilities['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(self.nonmandatoryAccessibilities.ldm_ratio-RunResults.CEM_THRESHOLD)/RunResults.CEM_SHALLOW))
             self.nonmandatoryAccessibilities['ldm_cem']   = self.nonmandatoryAccessibilities.logsum_diff_minutes*self.nonmandatoryAccessibilities.ldm_mult
 
-            # print out the nonmandatory logsum diff, with cem, to a csv file
-            nonmandatory_logsums_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "logsum_diff_nonmandatory_cem.csv")
-            self.nonmandatoryAccessibilities.to_csv(nonmandatory_logsums_filename)
-            print("Wrote non-mandatory logsums diff into "+nonmandatory_logsums_filename)
-
+            # merge accessbiity markets data
             self.accessibilityMarkets = pd.merge(self.accessibilityMarkets,
                                                  self.base_results.accessibilityMarkets,
                                                  how='left')
@@ -682,6 +669,12 @@ class RunResults:
             nonmandatory_cs_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "cs_nonmandatory_noCEM.csv")
             self.mandatoryAccess.to_csv(mandatory_cs_filename)
             self.nonmandatoryAccess.to_csv(nonmandatory_cs_filename)
+
+            # copy Tableau templates into the project folder for mapping
+            logsums_tableau_template="\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\logsum_diff.twb"
+            copyfile(logsums_tableau_template, os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', 'logsum_diff.twb'))
+            cs_tableau_template="\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\consumer_surplus.twb"
+            copyfile(cs_tableau_template, os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', 'consumer_surplus.twb'))
 
         ##########################################################################################
 
