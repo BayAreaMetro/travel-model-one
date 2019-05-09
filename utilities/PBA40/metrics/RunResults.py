@@ -656,6 +656,12 @@ class RunResults:
             for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
                 daily_results[(cat1,cat2,inclabel)] = self.nonmandatoryAccess.loc[self.mandatoryAccess.incQ_label==inclabel, 'CS diff all'].sum()/60.0;
 
+            # print out changes in consumer surplus for mandatory tours, with cem, to csv files
+            mandatory_cs_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "cs_mandatory_CEM.csv")
+            nonmandatory_cs_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "cs_nonmandatory_CEM.csv")
+            self.mandatoryAccess.to_csv(mandatory_cs_filename)
+            self.nonmandatoryAccess.to_csv(nonmandatory_cs_filename)
+
             # No Cliff Effect Mitigation - rule of one-half
             cat1         = 'Accessibility Benefits (household-based) (no CEM)'
             cat2         = 'Logsum Hours - Mandatory Tours - Workers & Students'
@@ -671,7 +677,11 @@ class RunResults:
             for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
                 daily_results[(cat1,cat2,inclabel)] = self.nonmandatoryAccess.loc[self.mandatoryAccess.incQ_label==inclabel, 'CS diff all'].sum()/60.0;
 
-
+            # print out changes in consumer surplus for mandatory tours, with no cem, to csv files
+            mandatory_cs_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "cs_mandatory_noCEM.csv")
+            nonmandatory_cs_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "cs_nonmandatory_noCEM.csv")
+            self.mandatoryAccess.to_csv(mandatory_cs_filename)
+            self.nonmandatoryAccess.to_csv(nonmandatory_cs_filename)
 
         ##########################################################################################
 
