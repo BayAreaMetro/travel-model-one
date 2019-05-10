@@ -671,10 +671,11 @@ class RunResults:
             self.nonmandatoryAccess.to_csv(nonmandatory_cs_filename)
 
             # copy Tableau templates into the project folder for mapping
+            proj_name = sys.argv[1].split('\\')[1]
             logsums_tableau_template="\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\logsum_diff.twb"
-            copyfile(logsums_tableau_template, os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', 'logsum_diff.twb'))
+            copyfile(logsums_tableau_template, os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', 'logsum_diff_' + proj_name + '.twb'))
             cs_tableau_template="\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\consumer_surplus.twb"
-            copyfile(cs_tableau_template, os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', 'consumer_surplus.twb'))
+            copyfile(cs_tableau_template, os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', 'consumer_surplus_' + proj_name + '.twb'))
 
         ##########################################################################################
 
