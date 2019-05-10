@@ -247,6 +247,7 @@ if %computername%==PORMDLPPW01 set HOST_IP_ADDRESS=172.24.0.101
 if %computername%==PORMDLPPW02 set HOST_IP_ADDRESS=172.24.0.102
 if %computername%==MAINMODEL set HOST_IP_ADDRESS=192.168.1.200
 if %computername%==SATMODEL set HOST_IP_ADDRESS=192.168.1.201
+if %computername%==SATMODEL4 set HOST_IP_ADDRESS=192.168.1.205
 
 :: copy in params.properties
 :: used by runtimeconfiguration.py and then by logsums java processes
@@ -259,6 +260,14 @@ copy "%MODEL_BASE_DIR%\main\ShadowPricing_7.csv"     main\ShadowPricing_7.csv
 
 :: create logsums.properties
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --logsums
+if ERRORLEVEL 1 goto done
+
+:: List unconnected zones in skims\unconnected_zones.dbf
+runtpp CTRAMP\scripts\skims\FindNoAccessZones.job
+if ERRORLEVEL 2 goto done
+
+:: Filter out households in those unconnected zones
+python CTRAMP\scripts\preprocess\filterUnconnectedDummyHouseholds.py
 if ERRORLEVEL 1 goto done
 
 :: ------------------------------------------------------------------------------------------------------
