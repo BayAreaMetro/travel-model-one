@@ -506,8 +506,10 @@ def config_logsums(replacements, append):
     replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"]         = r"\g<1>1000"
     replacements[filepath]["(\nAtWorkSubtourLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"]             = r"\g<1>1000"
 
-    replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"] = r"\g<1>main/ShadowPricing_7.csv"
+    replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"]          = r"\g<1>main/ShadowPricing_7.csv"
     replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations[ \t]*=[ \t]*)(\S*)"] = r"\g<1>1"
+    replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPricing.OutputFile[ \t]*=[ \t]*)(\S*)"]        = r"\g<1>logsums/ShadowPricing.csv"
+    replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.SizeTerms.OutputFile[ \t]*=[ \t]*)(\S*)"]            = r"\g<1>logsums/DestinationChoiceSizeTerms.csv"
 
     replacements[filepath]["(\nResults.HouseholdDataFile[ \t]*=[ \t]*)(\S*)"]     = r"\g<1>logsums/householdData.csv"
     replacements[filepath]["(\nResults.PersonDataFile[ \t]*=[ \t]*)(\S*)"]        = r"\g<1>logsums/personData.csv"
