@@ -408,7 +408,7 @@ public class MTCCreateLogsums {
 	        
 	    ResourceBundle rb = null;
 
-	    logger.info( String.format( "Generating Logsums from MTC Tour Based Model using CT-RAMP version %s, 22feb2011 build %s", CtrampApplication.VERSION, 2 ) );
+	    logger.info( String.format( "Generating Logsums from MTC Tour Based Model using CT-RAMP version %s, 2019may7 build %s", CtrampApplication.VERSION, 2 ) );
 	        
 	    if ( args.length == 0 ) {
 	    	logger.error( String.format( "no properties file base name (without .properties extension) was specified as an argument." ) );
