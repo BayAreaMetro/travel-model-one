@@ -896,10 +896,18 @@ if __name__ == '__main__':
                     support_link["mode"], mode_name, mode_type]
         link_row.extend([support_link[  "AB_VOL_ea"],support_link[  "AB_VOL_am"],support_link[  "AB_VOL_md"],support_link[  "AB_VOL_pm"],support_link[  "AB_VOL_ev"]])
         link_row.extend([0,0,0,0,0]) # LOAD
+        if TRANSIT_CROWDING_FILE: link_row.extend([0,0,0,0,0]) # LOADSE
         link_row.extend([support_link["distance_ea"],support_link["distance_am"],support_link["distance_md"],support_link["distance_pm"],support_link["distance_ev"]])
         link_row.extend([support_link[    "time_ea"],support_link[    "time_am"],support_link[    "time_md"],support_link[    "time_pm"],support_link[    "time_ev"]])
 
-        link_cursor[operator_file].insertRow(link_row)
+        try:
+            link_cursor[operator_file].insertRow(link_row)
+        except:
+            print("Exception occurred: ",sys.exc_info()[0])
+            print("link_row={}".format(link_row))
+            print("TRN_LINKS_FIELDS={}".format(TRN_LINKS_FIELDS))
+            sys.exit(2)
+
 
     del stop_cursor
     logging.info("Wrote {} stops to {}".format(stop_count, TRN_STOPS_SHPFILE))
