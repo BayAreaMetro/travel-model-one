@@ -1325,7 +1325,8 @@ class RunResults:
             #       If cell positions are changed in the functions that create the worksheet, the following code
             #       will have to be adapted accordingly.
 
-            # Getting Lifecycle values from just created workbook
+            # Getting key B/C metrics from just created workbook
+            
             # Need to first open and save the workbook so all formulas get calculated
             app = xl.App(visible=False)
             book = app.books.open(BC_detail_workbook)
@@ -1333,24 +1334,36 @@ class RunResults:
             book.close()
             app.kill()
             df_lifecycleben = pd.read_excel(BC_detail_workbook, sheet_name='benefit_streams', header=None)
-            df_lifecycleben =  df_lifecycleben.drop(df_lifecycleben.index[[0,1,2,3,4]])
-            df_lifecycleben = df_lifecycleben[[0,1,2,4]]
-            df_lifecycleben.insert(3, 'variable', 'Lifecycle Benefits 2060 (2019$)')
-            df_lifecycleben.columns = ['category1', 'category2','category3','variable_name','values']
-            df_lifecycleben = df_lifecycleben.set_index(['category1', 'category2','category3','variable_name'])
-            lifecycle_ben = df_lifecycleben.T.iloc[0]
+
+            # Getting 2060 Lifecycle benefits by category
+            df_lifecycleben_2060 = df_lifecycleben
+            df_lifecycleben_2060 =  df_lifecycleben_2060.drop(df_lifecycleben_2060.index[[0,1,2,3,4]])
+            df_lifecycleben_2060 = df_lifecycleben_2060[[0,1,2,4]]
+            df_lifecycleben_2060.insert(3, 'variable', 'Lifecycle Benefits 2060 (PV 2019$)')
+            df_lifecycleben_2060.columns = ['category1', 'category2','category3','variable_name','values']
+            df_lifecycleben_2060 = df_lifecycleben_2060.set_index(['category1', 'category2','category3','variable_name'])
+            lifecycle_ben = df_lifecycleben_2060.T.iloc[0]
             self.bc_metrics = self.bc_metrics.append(lifecycle_ben)
 
+            # Getting 2080 Lifecycle benefits by category
+            df_lifecycleben_2080 = df_lifecycleben
+            df_lifecycleben_2080 =  df_lifecycleben_2080.drop(df_lifecycleben_2080.index[[0,1,2,3,4]])
+            df_lifecycleben_2080 = df_lifecycleben_2080[[0,1,2,5]]
+            df_lifecycleben_2080.insert(3, 'variable', 'Lifecycle Benefits 2080 (PV 2019$)')
+            df_lifecycleben_2080.columns = ['category1', 'category2','category3','variable_name','values']
+            df_lifecycleben_2080 = df_lifecycleben_2080.set_index(['category1', 'category2','category3','variable_name'])
+            lifecycle_ben = df_lifecycleben_2080.T.iloc[0]
+            self.bc_metrics = self.bc_metrics.append(lifecycle_ben)
 
-            # Getting highest level b/c metrics from just created b/c workbook
+            # Getting highest level b/c metrics for the project
             bc_overall_tuples = [('bc_overall', 'Horizon Year', 'bc_overall','Total Horizon Yr Benefit (2019$)'),\
                                   ('bc_overall', 'Horizon Year', 'bc_overall','Total Horizon Yr Cost (2019$)'),\
                                   ('bc_overall', 'Horizon Year', 'bc_overall', 'B/C Ratio'),\
-                                  ('bc_overall', '2060', 'bc_overall','Total Lifecycle Benefit (2019$)'),\
-                                  ('bc_overall', '2060', 'bc_overall', 'Total Lifecycle Cost (2019$)'),\
+                                  ('bc_overall', '2060', 'bc_overall','Total Lifecycle Benefit (PV 2019$)'),\
+                                  ('bc_overall', '2060', 'bc_overall', 'Total Lifecycle Cost (PV 2019$)'),\
                                   ('bc_overall', '2060', 'bc_overall', 'B/C Ratio'),\
-                                  ('bc_overall', '2080', 'bc_overall','Total Lifecycle Benefit (2019$)'),\
-                                  ('bc_overall', '2080', 'bc_overall', 'Total Lifecycle Cost (2019$)'),\
+                                  ('bc_overall', '2080', 'bc_overall','Total Lifecycle Benefit (PV 2019$)'),\
+                                  ('bc_overall', '2080', 'bc_overall', 'Total Lifecycle Cost (PV 2019$)'),\
                                   ('bc_overall', '2080', 'bc_overall', 'B/C Ratio'),\
                                   ('bc_overall', 'Equity', 'bc_overall','Equity Score')]
             idx = pd.MultiIndex.from_tuples(bc_overall_tuples, names=['category1','category2','category3','variable_name'])
@@ -1363,18 +1376,18 @@ class RunResults:
             self.bc_metrics = self.bc_metrics.append(bc_overall)
 
             # Getting high level costs from just created b/c workbook
-            costs_tuples = [('costs', 'Lifecycle Costs', '2025-60','Initial Capital'),\
-                            ('costs', 'Lifecycle Costs', '2025-60','O&M'),\
-                            ('costs', 'Lifecycle Costs', '2025-60','Rehab + Replacement'),\
-                            ('costs', 'Lifecycle Costs', '2025-60','Residual Value'),\
-                            ('costs', 'Lifecycle Costs', '2025-80','Initial Capital'),\
-                            ('costs', 'Lifecycle Costs', '2025-80','O&M'),\
-                            ('costs', 'Lifecycle Costs', '2025-80','Rehab + Replacement'),\
-                            ('costs', 'Lifecycle Costs', '2025-80','Residual Value'),\
-                            ('costs', 'YOE Costs', '2019$','Capital'),\
-                            ('costs', 'YOE Costs', '2019$','O&M'),\
-                            ('costs', 'Annualized Costs', '2050','Capital'),\
-                            ('costs', 'Annualized Costs', '2050','O&M')]
+            costs_tuples = [('costs', 'Lifecycle Costs (PV 2019$)', '2025-60','Initial Capital'),\
+                            ('costs', 'Lifecycle Costs (PV 2019$)', '2025-60','O&M'),\
+                            ('costs', 'Lifecycle Costs (PV 2019$)', '2025-60','Rehab + Replacement'),\
+                            ('costs', 'Lifecycle Costs (PV 2019$)', '2025-60','Residual Value'),\
+                            ('costs', 'Lifecycle Costs (PV 2019$)', '2025-80','Initial Capital'),\
+                            ('costs', 'Lifecycle Costs (PV 2019$)', '2025-80','O&M'),\
+                            ('costs', 'Lifecycle Costs (PV 2019$)', '2025-80','Rehab + Replacement'),\
+                            ('costs', 'Lifecycle Costs (PV 2019$)', '2025-80','Residual Value'),\
+                            ('costs', 'Project Costs (2019$)', '2019$','Initial Capital'),\
+                            ('costs', 'Project Costs (2019$)', '2019$','Annual O&M'),\
+                            ('costs', 'Annualized Costs (2019$)', '2050','Capital'),\
+                            ('costs', 'Annualized Costs (2019$)', '2050','O&M')]
             idx = pd.MultiIndex.from_tuples(costs_tuples, names=['category1','category2','category3','variable_name'])
             df_costs = pd.read_excel(BC_detail_workbook, sheet_name='cost_streams', header=None)
             costs_array = numpy.asarray([df_costs.iloc[2,5], df_costs.iloc[3,5], df_costs.iloc[1,9], -df_costs.iloc[2,9],\
@@ -2400,12 +2413,12 @@ class RunResults:
         worksheet.write(2, 9, '=%s' %xl_rowcol_to_cell(row-1,5), format_total_num)
         worksheet.write(2, 10, '=%s' %xl_rowcol_to_cell(row-1,6), format_total_num)
 
-        # YOE$ Costs that were inputs from sponsor/Arup
-        worksheet.write(0, 13, 'Input Costs YOE$', format_total)
-        worksheet.write(1, 12, 'Capital', format_total)
-        worksheet.write(2, 12, 'O&M', format_total)
-        worksheet.write(1, 13, '=sum(%s:%s)/1000000' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,3), xl_rowcol_to_cell(TABLE_HEADER_ROW+20,3)), format_total_num_M)
-        worksheet.write(2, 13, '=%s/1000000' %xl_rowcol_to_cell(TABLE_HEADER_ROW+21,3), format_total_num_M)
+        # Costs that were inputs from sponsor/Arup
+        worksheet.write(0, 13, 'Input Costs', format_total)
+        worksheet.write(1, 12, 'Initial Capital', format_total)
+        worksheet.write(2, 12, 'Annual O&M', format_total)
+        worksheet.write(1, 13, '=sum(%s:%s)' %(xl_rowcol_to_cell(TABLE_HEADER_ROW+1,3), xl_rowcol_to_cell(TABLE_HEADER_ROW+20,3)), format_total_num)
+        worksheet.write(2, 13, '=%s' %xl_rowcol_to_cell(TABLE_HEADER_ROW+21,3), format_total_num)
 
 
         print("Wrote the cost streams worksheet")
