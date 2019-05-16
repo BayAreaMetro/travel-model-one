@@ -500,11 +500,10 @@ def config_logsums(replacements, append):
     replacements[filepath]["(\nRunModel.StopLocation[ \t]*=[ \t]*)(\S*)"]                                       = r"\g<1>false"
 
     # sample size
-    replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"]         = r"\g<1>1000"
-    replacements[filepath]["(\nJointTourLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"]                  = r"\g<1>1000"
-    replacements[filepath]["(\nIndividualNonMandatoryTourLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"] = r"\g<1>1000"
-    replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"]         = r"\g<1>1000"
-    replacements[filepath]["(\nAtWorkSubtourLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"]             = r"\g<1>1000"
+    replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"]         = r"\g<1>4362"
+    replacements[filepath]["(\nJointTourLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"]                  = r"\g<1>30"
+    replacements[filepath]["(\nIndividualNonMandatoryTourLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"] = r"\g<1>4362"
+    replacements[filepath]["(\nAtWorkSubtourLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"]              = r"\g<1>30"
 
     replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"]          = r"\g<1>main/ShadowPricing_7.csv"
     replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations[ \t]*=[ \t]*)(\S*)"] = r"\g<1>1"
