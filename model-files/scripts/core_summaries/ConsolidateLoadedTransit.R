@@ -6,6 +6,9 @@
 ## Initialization: Set the workspace and load needed libraries
 .libPaths(Sys.getenv("R_LIB"))
 
+library(foreign)
+library(dplyr)
+
 # For RStudio, these can be set in the .Rprofile
 MODEL_DIR        <- Sys.getenv("TARGET_DIR")  # The location of the input file
 MODEL_DIR        <- gsub("\\\\","/",MODEL_DIR) # switch slashes around
@@ -18,8 +21,25 @@ stopifnot(nchar(MODEL_DIR  )>0)
 
 all_trnline_data <- data.frame()
 all_trnlink_data <- data.frame()
+trnlink_dbf_data <- data.frame()
 
 for (timeperiod in c("ea","am","md","pm","ev")) {
+  # read the input dbfs
+  filename <- paste0("trnlink",timeperiod,"_ALLMSA.dbf")
+  fullfile <- file.path(MODEL_DIR, "trn", filename)
+  trndata  <- read.dbf(file=fullfile, as.is=TRUE)
+  trndata$timeperiod <- timeperiod
+
+  # this one is long, so drop those with is.na(AB_VOL)
+  trndata  <- trndata[ which(is.na(trndata$AB_VOL)==FALSE),]
+  if (nrow(trndata) == 0) {
+    print(paste("No rows with volume in", fullfile))
+    next
+  }
+  trndata$source <- filename
+  trnlink_dbf_data <- rbind(trnlink_dbf_data, trndata)
+  print(paste("Read ",fullfile))
+
   for (submode in c("loc","lrf","exp","hvy","com")) {
     for (acc_egr in list( c("wlk","wlk"), c("drv","wlk"), c("wlk","drv"))) {
         # line file
@@ -57,39 +77,68 @@ outfile <- file.path(MODEL_DIR, "trn", "trnlink.csv")
 write.csv(all_trnlink_data, file=outfile, row.names=FALSE, quote=FALSE)
 print(paste("Wrote",outfile))
 
-library(foreign)
-
 # split into timeperiods and write dbfs for quickboards
 for (my_tp in c("ea","am","md","pm","ev")) {
-    trndata_tp <- subset(all_trnlink_data, timeperiod == my_tp)
+    # columns: A, B, TIME, MODE, FREQ, PLOT, COLOR, STOP_A, STOP_B, DIST, NAME, SEQ, OWNER, AB, ABNAMESEQ, 
+    # FULLNAME, SYSTEM, GROUP, VEHTYPE, VEHCAP, PERIODCAP, LOAD, 
+    # AB_VOL, AB_BRDA, AB_XITA, AB_BRDB, AB_XITB,
+    # BA_VOL, BA_BRDA, BA_XITA, BA_BRDB, BA_XITB, timeperiod, source
+    trndata_tp <- subset(trnlink_dbf_data, timeperiod == my_tp)
+    # columns: A, B, time, mode, plot, stopA, stopB, distance, name, owner,
+    # AB_VOL, AB_BRDA, AB_XITA, AB_BRDB, AB_XITB,
+    # BA_VOL, BA_BRDA, BA_XITA, BA_BRDB, BA_XITB, prn, timeperiod, source
+    supdata_tp <- subset(all_trnlink_data, (timeperiod == my_tp) & (mode < 10))
+    # print(head(trndata_tp))
+    # print(head(supdata_tp))
 
-    trndata_tp$TIME  <- as.integer(trndata_tp$time*100)
-    trndata_tp$DIST  <- as.integer(trndata_tp$distance*100)
-    trndata_tp$FREQ  <- 10.0 # todo - get from dbf?
-    trndata_tp$SEQ   <- 1    # todo - get from dbf?
-    trndata_tp[ which(trndata_tp$mode < 10), "SEQ"] <- 0  # make it zero for support links
-    trndata_tp$SEQ   <- as.integer(trndata_tp$SEQ)
-    trndata_tp$COLOR <- as.integer(0)
-    trndata_tp$OWNER <- as.character(trndata_tp$owner)
+    # set support link fields
+    supdata_tp$TIME  <- as.integer(supdata_tp$time*100)
+    supdata_tp$DIST  <- as.integer(supdata_tp$distance*100)
+    supdata_tp$FREQ  <- 0.0
+    supdata_tp$SEQ   <- as.integer(0)
+    supdata_tp$COLOR <- as.integer(0)
+    supdata_tp$OWNER <- as.character(supdata_tp$owner)
 
-    colnames(trndata_tp)[colnames(trndata_tp)=="mode"  ] <- "MODE"
-    colnames(trndata_tp)[colnames(trndata_tp)=="plot"  ] <- "PLOT"
-    colnames(trndata_tp)[colnames(trndata_tp)=="stopA" ] <- "STOP_A"
-    colnames(trndata_tp)[colnames(trndata_tp)=="stopB" ] <- "STOP_B"
-    colnames(trndata_tp)[colnames(trndata_tp)=="name"  ] <- "NAME"
+    colnames(supdata_tp)[colnames(supdata_tp)=="mode"  ] <- "MODE"
+    colnames(supdata_tp)[colnames(supdata_tp)=="plot"  ] <- "PLOT"
+    colnames(supdata_tp)[colnames(supdata_tp)=="stopA" ] <- "STOP_A"
+    colnames(supdata_tp)[colnames(supdata_tp)=="stopB" ] <- "STOP_B"
+    colnames(supdata_tp)[colnames(supdata_tp)=="name"  ] <- "NAME"
 
     # fill blanks with zero
     cols <- c("AB_VOL","AB_BRDA","AB_XITA","AB_BRDB","AB_XITB")
-    trndata_tp[cols][is.na(trndata_tp[cols])] <- 0
+    supdata_tp[cols][is.na(supdata_tp[cols])] <- 0
+
+    supdata_tp <- group_by(supdata_tp, A, B, MODE) %>% 
+        summarise(TIME   =first(TIME),  FREQ   =first(FREQ),   PLOT   =first(PLOT),  COLOR  =first(COLOR),
+                  STOP_A =first(STOP_A),STOP_B =first(STOP_B), DIST   =first(DIST),  NAME   =first(NAME),  SEQ =first(SEQ),     OWNER  =first(OWNER),
+                  AB_VOL =sum(AB_VOL),  AB_BRDA=sum(AB_BRDA),  AB_XITA=sum(AB_XITA), AB_BRDB=sum(AB_BRDB), AB_XITB=sum(AB_XITB))
+    supdata_tp$NAME <- as.character(supdata_tp$NAME)
+
+    trndata_tp <- trndata_tp[c("A","B","TIME","MODE","FREQ","PLOT","COLOR",
+                               "STOP_A","STOP_B","DIST","NAME","SEQ","OWNER",
+                               "AB_VOL","AB_BRDA","AB_XITA","AB_BRDB","AB_XITB")]
+
+    # print("supdata_tp!!")
+    # print(head(supdata_tp))
+    # print(str(supdata_tp))
+
+    # print("trndata_tp!!")
+    # print(head(trndata_tp))
+    # print(str(trndata_tp))
+
+    # put trndata and supdata together
+    trndata_tp <- bind_rows(supdata_tp, trndata_tp)
+    # print(head(trndata_tp))
 
     # print(colnames(trndata_tp))
     trndata_tp <- trndata_tp[c("A","B","TIME","MODE","FREQ","PLOT","COLOR",
                                "STOP_A","STOP_B","DIST","NAME","SEQ","OWNER",
                                "AB_VOL","AB_BRDA","AB_XITA","AB_BRDB","AB_XITB")]
 
-    print(str(trndata_tp))
+    # print(str(trndata_tp))
 
     outfile <- file.path(MODEL_DIR, "trn", paste0("trnlink", my_tp,"_withSupport.dbf"))
-    write.dbf(trndata_tp, file=outfile)
+    write.dbf(as.data.frame(trndata_tp), file=outfile)
     print(paste("Wrote", outfile))
 }
