@@ -77,8 +77,8 @@ Activity pattern summary of persons.  Sum(freq) = population
 |-------------|-------------|
 | type | Person type string.  One of ("Full-time worker"; "Part-time worker"; "University student"; "Nonworker"; "Retired"; "Student of non-driving age"; "Student of driving age"; "Child too young for school") |
 | activity_pattern | Daily activity pattern category.  One of 'H' for home, 'M' for mandatory, or 'N' for non-mandatory. |
-| imf_choice | Individual mandatory tour frequency .  See http://analytics.mtc.ca.gov/foswiki/Main/Person |
-| inmf_choice | Individual non-mandatory tour frequency. See http://analytics.mtc.ca.gov/foswiki/Main/Person |
+| imf_choice | Individual mandatory tour frequency .  See https://github.com/BayAreaMetro/modeling-website/wiki/Person |
+| inmf_choice | Individual non-mandatory tour frequency. See https://github.com/BayAreaMetro/modeling-website/wiki/Person |
 | incQ_label | Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k') |
 | freq | Frequency of persons |
 
@@ -87,13 +87,13 @@ Automobile Ownership summary of households.  Sum(freq) = households
 
 | Column Name | Description |
 |-------------|-------------|
-| SD | Superdistrict geographical designation of residence. See http://analytics.mtc.ca.gov/foswiki/Main/TazData |
-| COUNTY | County code of residence.  See http://analytics.mtc.ca.gov/foswiki/Main/TazData |
+| SD | Superdistrict geographical designation of residence. See https://github.com/BayAreaMetro/modeling-website/wiki/TazData |
+| COUNTY | County code of residence.  See https://github.com/BayAreaMetro/modeling-website/wiki/TazData |
 | county_name	| County name of residence. |
 | autos | Number of autos in the household, from 0 to 4 |
 | incQ	| Income quartile, from 1 to 4 |
 | incQ_label | Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k') |
-| walk_subzone | Walk to transit sub-zone.  One of 0,1, or 2.  See http://analytics.mtc.ca.gov/foswiki/Main/Household |
+| walk_subzone | Walk to transit sub-zone.  One of 0,1, or 2.  See https://github.com/BayAreaMetro/modeling-website/wiki/Household |
 | walk_subzone_label | String version of `walk_subzone` |
 | workers | Number of workers in the household |
 | kidsNoDr| Boolean; True iff the household has children in the househole that don't drive
@@ -134,10 +134,10 @@ Commute characteristics by employment location.  Sum(freq) = commute tours
 | dest_COUNTY | County code of work commute destination |
 | dest_county_name | County name of work commute destination |
 | dest_SD	| Superdistrict of work commute destination |
-| tour_mode	| Work tour mode.  See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour |
+| tour_mode	| Work tour mode.  See https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour |
 | freq | Number of commute tours |
 | totCost	| Total round-trip out of pocket costs in $2000.  Sum of `cost` and `parking_cost`. |
-| cost | See http://analytics.mtc.ca.gov/foswiki/Main/SimpleSkims#Cost for what's included |
+| cost | See https://github.com/BayAreaMetro/modeling-website/wiki/SimpleSkims#cost-skims for what's included |
 | parking_cost | Parking costs |
 | distance | Distance of commute |
 | cost_fail | Commute tours for which the cost lookup failed |
@@ -151,12 +151,12 @@ Commute characteristics by household location. Sum(freq) = commute tours
 | res_county_name | County name of residence |
 | res_SD | Superdistrict of residence |
 | orig_taz | Origin TAZ |
-| tour_mode | Work tour mode.  See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour |
+| tour_mode | Work tour mode.  See https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour |
 | incQ	| Income quartile |
 | incQ_label | Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k') |
 | freq | Number of commute tours.
 | totCost  | Total round-trip out of pocket costs in $2000.  Sum of `cost` and `parking_cost`. |
-| cost | See http://analytics.mtc.ca.gov/foswiki/Main/SimpleSkims#Cost for what's included |
+| cost | See https://github.com/BayAreaMetro/modeling-website/wiki/SimpleSkims#cost-skims for what's included |
 | parking_cost | Parking costs |
 | distance | Distance of commute |
 | duration	| Duration of commute |
@@ -190,8 +190,8 @@ Sum(freq) = trips
 |-------------|-------------|
 | incQ | Income quartile |
 | incQ_label | Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k') |
-| trip_mode | Trip mode. See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip |
-| tour_purpose | Tour purpose for the trip.  See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour |
+| trip_mode | Trip mode. See https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip |
+| tour_purpose | Tour purpose for the trip.  See https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour |
 | freq | Number of trips |
 | num_participants | Number of participants for these trips |
 | trvlTime | Average travel time |
@@ -206,7 +206,7 @@ Sum(freq) = tours
 | COUNTY | County of residence |
 | county_name | County name of residence |
 | simple_purpose | Simple tour purpose, one of ('work', 'school', 'non-work', 'at-work', 'college') |
-| tour_mode | Tour mode.  See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour |
+| tour_mode | Tour mode.  See https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour |
 | start_hour | Start hour for the tour, in [5,23] |
 | end_hour | End  hour for the tour, in [5,23] |
 | freq | Number of tours |
@@ -253,8 +253,8 @@ Distance summaries for trips.  Sum(freq) = trips
 | incQ_label | Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k') |
 | timeCode | Time period of trip, one of ('AM','MD','PM','EV','EA') |
 | timeperiod_label | Time period label, one of ('AM Peak', 'Midday', 'PM Peak', 'Evening', 'Early AM') |
-| trip_mode | Trip mode. See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTrip |
-| tour_purpose | Tour purpose for the trip.  See http://analytics.mtc.ca.gov/foswiki/Main/IndividualTour |
+| trip_mode | Trip mode. See https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip |
+| tour_purpose | Tour purpose for the trip.  See https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour |
 | freq | Number of trips |
 | distance | Total trip distance |
 
@@ -267,7 +267,7 @@ Auto vehicle miles traveled summed to persons. Sum(freq) = population
 | county_name | County name of residence |
 | SD | Superdistrict of residence |
 | taz | TAZ of residence |
-| walk_subzone | Walk to transit sub-zone.  One of 0,1, or 2.  See http://analytics.mtc.ca.gov/foswiki/Main/Household |
+| walk_subzone | Walk to transit sub-zone.  One of 0,1, or 2.  See https://github.com/BayAreaMetro/modeling-website/wiki/Household |
 | walk_subzone_label | String version of `walk_subzone` |
 | ptype | Person type. (1:"Full-time worker"; 2:"Part-time worker"; 3:"University student"; 4:"Nonworker"; 5:"Retired"; 6:"Student of non-driving age"; 7:"Student of driving age"; 8:"Child too young for school" |
 | ptype_label	| Person type label from 'ptype' |
