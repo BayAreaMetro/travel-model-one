@@ -1852,10 +1852,10 @@ class RunResults:
             worksheet.write(TABLE_HEADER_ROW-3,3, float(population_highinc)/1000000, format_equitypop)
             worksheet.write(TABLE_HEADER_ROW-3,4, float(population_veryhighinc)/1000000, format_equitypop)
 
-            worksheet.write(TABLE_HEADER_ROW-2,1, '=(I19+I24) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 1), format_equityben)
-            worksheet.write(TABLE_HEADER_ROW-2,2, '=(I20+I25) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 2), format_equityben)
-            worksheet.write(TABLE_HEADER_ROW-2,3, '=(I21+I26) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 3), format_equityben)
-            worksheet.write(TABLE_HEADER_ROW-2,4, '=(I22+I27) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 4), format_equityben)
+            worksheet.write(TABLE_HEADER_ROW-2,1, '=(I20+I25) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 1), format_equityben)
+            worksheet.write(TABLE_HEADER_ROW-2,2, '=(I21+I26) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 2), format_equityben)
+            worksheet.write(TABLE_HEADER_ROW-2,3, '=(I22+I27) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 3), format_equityben)
+            worksheet.write(TABLE_HEADER_ROW-2,4, '=(I23+I28) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 4), format_equityben)
 
             worksheet.write(TABLE_HEADER_ROW-5,0, 'Equity Score', format_bc_header_left)
             worksheet.write(TABLE_HEADER_ROW-5,1, '=(%s+%s)/sum(%s:%s)'%(xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
