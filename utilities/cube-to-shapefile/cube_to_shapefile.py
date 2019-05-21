@@ -507,12 +507,13 @@ if __name__ == '__main__':
         arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "A_STATION","TEXT", field_length=40)
         arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "B_STATION","TEXT", field_length=40)
         arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "SEQ",     "SHORT")
+        arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "NAMESEQAB", "TEXT", field_length=50) # for joining
         arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "MODE",      "SHORT")
         arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "MODE_NAME", "TEXT", field_length=40)
         arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "MODE_TYPE", "TEXT", field_length=25)
         arcpy.DefineProjection_management(TRN_LINKS_SHPFILE.format(operator_file), sr)
 
-        TRN_LINKS_FIELDS = ["NAME", "SHAPE@", "A", "B", "A_STATION","B_STATION", "SEQ", "MODE", "MODE_NAME", "MODE_TYPE"]
+        TRN_LINKS_FIELDS = ["NAME", "SHAPE@", "A", "B", "A_STATION","B_STATION", "SEQ", "NAMESEQAB", "MODE", "MODE_NAME", "MODE_TYPE"]
 
         if LOADVOL_DIR:
             for timeperiod in TIMEPERIOD_DURATIONS.keys():
@@ -748,7 +749,9 @@ if __name__ == '__main__':
 
             if link_point_array.count > 1:
                 plink_shape = arcpy.Polyline(link_point_array)
-                link_row = [line.name, plink_shape, last_n, n, last_station, station, seq-1, mode_num, mode_name, mode_type]
+                nameseqab   = "{} {} {} {}".format(line.name, seq-1, last_n, n)
+
+                link_row = [line.name, plink_shape, last_n, n, last_station, station, seq-1, nameseqab, mode_num, mode_name, mode_type]
                 # add stop A (last stop)
                 stop_row = [line.name, arcpy.Point(last_point[0], last_point[1]), last_station, last_n, seq-1, last_is_stop]
                 
@@ -891,8 +894,10 @@ if __name__ == '__main__':
         link_point_array.add(point_a)
         link_point_array.add(point_b)
 
+        nameseqab   = "{} {} {} {}".format(support_link["name"], -1, support_link["A"], support_link["B"])
+
         link_row = [support_link["name"], arcpy.Polyline(link_point_array),
-                    support_link["A"], support_link["B"], station_a, station_b, -1, # seq
+                    support_link["A"], support_link["B"], station_a, station_b, -1, nameseqab, # seq, nameseqab
                     support_link["mode"], mode_name, mode_type]
         link_row.extend([support_link[  "AB_VOL_ea"],support_link[  "AB_VOL_am"],support_link[  "AB_VOL_md"],support_link[  "AB_VOL_pm"],support_link[  "AB_VOL_ev"]])
         link_row.extend([0,0,0,0,0]) # LOAD
