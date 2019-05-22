@@ -649,6 +649,14 @@ class RunResults:
             self.mandatoryAccess.to_csv(mandatory_cs_filename)
             self.nonmandatoryAccess.to_csv(nonmandatory_cs_filename)
 
+            # sum up mandataory and non mandatory consumer surplus
+            self.bothAccess = pd.merge(left=self.mandatoryAccess,
+                                            right=self.nonmandatoryAccess,
+                                            how='outer', on=['taz','walk_subzone', 'incQ_label', 'autoSuff_label', 'hasAV'], suffixes=('_man','_nonman'))
+            self.bothAccess['CS diff sum'] = self.bothAccess['CS diff work/school'] + self.bothAccess['CS diff all']
+            both_cs_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "cs_both_CEM.csv")
+            self.bothAccess.to_csv(both_cs_filename)
+
             # No Cliff Effect Mitigation - rule of one-half
             cat1         = 'Accessibility Benefits (household-based) (no CEM)'
             cat2         = 'Logsum Hours - Mandatory Tours - Workers & Students'
@@ -669,6 +677,14 @@ class RunResults:
             nonmandatory_cs_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "cs_nonmandatory_noCEM.csv")
             self.mandatoryAccess.to_csv(mandatory_cs_filename)
             self.nonmandatoryAccess.to_csv(nonmandatory_cs_filename)
+
+            # sum up mandataory and non mandatory consumer surplus
+            self.bothAccess = pd.merge(left=self.mandatoryAccess,
+                                            right=self.nonmandatoryAccess,
+                                            how='outer', on=['taz','walk_subzone', 'incQ_label', 'autoSuff_label', 'hasAV'], suffixes=('_man','_nonman'))
+            self.bothAccess['CS diff sum'] = self.bothAccess['CS diff work/school'] + self.bothAccess['CS diff all']
+            both_cs_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "cs_both_noCEM.csv")
+            self.bothAccess.to_csv(both_cs_filename)
 
             # copy Tableau templates into the project folder for mapping
             proj_name = sys.argv[1].split('\\')[1]
@@ -1326,7 +1342,7 @@ class RunResults:
             #       will have to be adapted accordingly.
 
             # Getting key B/C metrics from just created workbook
-            
+
             # Need to first open and save the workbook so all formulas get calculated
             app = xl.App(visible=False)
             book = app.books.open(BC_detail_workbook)
