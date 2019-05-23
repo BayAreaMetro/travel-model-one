@@ -24,9 +24,8 @@ MODEL_MACHINES = collections.OrderedDict([
 ])
 
 # on shared M or L drive -- this serves as the "index"
-MODEL_DIRS_PATH     = "L:\\RTP2021_PPA\\Projects"
-
-LOG_FILE            = "crawl_model_dirs.log"
+MODEL_DIRS_PATH_DEFAULT  = "L:\\RTP2021_PPA\\Projects"
+LOG_FILE                 = "crawl_model_dirs.log"
 
 # regex for run_id
 # e.g. ('2050_TM151_PPA_RT_04', '2050', '151', '_RT', 'RT', '04', '_2300_CaltrainDTX_00', '2300_CaltrainDTX_00')
@@ -61,7 +60,7 @@ def run_command(workingdir, command, script_env):
     logging.info("  Received {} from [{}]".format(retcode, command))
     return retcode
 
-def find_model_dirs():
+def find_model_dirs(model_dirs_path):
     """
     Returns dictionary with the following:
 
@@ -70,14 +69,14 @@ def find_model_dirs():
                 'baseline_id'  : run_id of baseline, extracted from the run_id (e.g. '2050_TM151_PPA_CG_04')
               }
     """
-    logging.info("Finding model directories in {}".format(MODEL_DIRS_PATH))
+    logging.info("Finding model directories in {}".format(model_dirs_path))
     model_run_dict = {}
 
-    model_dirs = os.listdir(MODEL_DIRS_PATH)
+    model_dirs = os.listdir(model_dirs_path)
     model_dirs.sort()
 
     for model_dir in model_dirs:
-        model_dir_path = os.path.join(MODEL_DIRS_PATH, model_dir)
+        model_dir_path = os.path.join(model_dirs_path, model_dir)
         logging.debug("model_dir={}".format(model_dir))
 
         m = RUN_ID_RE.match(model_dir)
@@ -356,6 +355,7 @@ def find_mismatch_trnbuild(model_run_dict):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
+    parser.add_argument("--model_dirs_path", help="Model directory path. e.g. L:\\RTP2021_PPA\\Projects", default="L:\\RTP2021_PPA\\Projects")
     args = parser.parse_args()
 
     # create logger
@@ -367,13 +367,13 @@ if __name__ == '__main__':
     ch.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     logger.addHandler(ch)
     # file handler
-    fh = logging.FileHandler(LOG_FILE, mode='w')
+    fh = logging.FileHandler(os.path.join(args.model_dirs_path, LOG_FILE), mode='w')
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     logger.addHandler(fh)
 
     # create the model run dictionary with initial keys "ML_dir" and "baseline_id"
-    model_run_dict = find_model_dirs()
+    model_run_dict = find_model_dirs(args.model_dirs_path)
 
     # add the "model_run_dir"
     find_model_server_dirs(model_run_dict)
