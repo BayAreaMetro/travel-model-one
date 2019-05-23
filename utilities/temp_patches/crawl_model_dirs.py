@@ -10,13 +10,17 @@ USAGE = """
 
 """
 
-import argparse, collections, filecmp, glob, logging, os, re, sys, time
+import argparse, collections, filecmp, glob, logging, os, re, shutil, subprocess, sys, time
 
 MODEL_MACHINES = collections.OrderedDict([
     ('model2-a','\\\\model2-a\\Model2A-Share\\Projects'),
     ('model2-b','\\\\model2-b\\Model2B-Share\\Projects'),
     ('model2-c','\\\\model2-c\\Model2C-Share\\Projects'),
     ('model2-d','\\\\model2-d\\Model2D-Share\\Projects'),
+    #('model2-a',r'A:\Projects'),
+    #('model2-b',r'B:\Projects'),
+    #('model2-c',r'F:\Projects'),
+    #('model2-d',r'D:\Projects'),
 ])
 
 # on shared M or L drive -- this serves as the "index"
@@ -30,6 +34,32 @@ RUN_ID_RE           = re.compile(r"((\d\d\d\d)_TM(\d\d\d)_PPA(_(BF|CG|RT))?_(\d\
 
 # 'model_run_dir': path to model run on model2-x 
 #                                 (e.g. '\\\\MODEL2-B\\Model2B-Share\\Projects\\2050_TM151_PPA_CG_04_2202_BART_DMU_Brentwood_00')
+
+def run_command(workingdir, command, script_env):
+    """
+    Given command in the workingdir specified.
+    Returns the return code.
+    """
+    logging.debug("run_command with workingdir={}".format(workingdir))
+    logging.debug("                    command={}".format(command))
+    logging.debug("                 script_env={}".format(script_env))
+    # run it
+    proc = subprocess.Popen(command, cwd=workingdir, env=script_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    for line in proc.stdout:
+        line_str = line.decode("utf-8")
+        line_str = line_str.strip('\r\n')
+        logging.debug("  stdout: {0}".format(line_str))
+    for line in proc.stderr:
+        line_str = line.decode("utf-8")
+        line_str = line_str.strip('\r\n')
+        logging.debug("  stderr: {0}".format(line_str))
+    retcode = proc.wait()
+
+    if retcode != 0:
+        raise Exception("Received {}; Failed to run command [{}]".format(retcode, command))
+    logging.info("  Received {} from [{}]".format(retcode, command))
+    return retcode
 
 def find_model_dirs():
     """
@@ -137,6 +167,72 @@ def find_bad_quickboards(model_run_dict):
 
     logging.info("Found {:4} runs with bad_quickboards".format(counts["bad_quickboards"]))
 
+def fix_bad_quickboards(model_run_dict):
+    """
+    Companion to find_bad_quickboards() -- fixes them by:
+    1) Copying updated ConsolidateLoadedTransit.R script into model run CTRAMP
+    2) Running it
+    3) Running quickboards.bat
+    4) Copying updated files into M/L
+    """
+    logging.info("Fixing bad quickboards")
+    FIXED_SCRIPT = "\\\\mainmodel\MainModelShare\\travel-model-one-1.5.1.1\\model-files\\scripts\\core_summaries\\ConsolidateLoadedTransit.R"
+    fixed_count = 0
+
+    for run_id in model_run_dict.keys():
+        if "bad_quickboards" not in model_run_dict[run_id]: continue
+        if model_run_dict[run_id]["bad_quickboards"] != True: continue
+
+        logging.debug("Fixing {} with model_run_dir {}".format(run_id, model_run_dict[run_id]["model_run_dir"]))
+        logging.debug("  Copying and running fixed ConsolidateLoadedTransit.R script")
+
+        shutil.copy(FIXED_SCRIPT, os.path.join(model_run_dict[run_id]["model_run_dir"], "CTRAMP", "scripts", "core_summaries"))
+        # run it
+        script_env = {}
+        script_env["SystemRoot"] = r"C:\WINDOWS"
+        script_env["TARGET_DIR"] = model_run_dict[run_id]["model_run_dir"]
+        script_env["ITER"]       = "3"
+        script_env["R_LIB"]      = r"C:\Users\lzorn\Documents\R\win-library\3.5"
+        ret_code = run_command(command   =[r"C:\Program Files\R\R-3.5.1\bin\x64\Rscript.exe", '--vanilla', r".\CTRAMP\scripts\core_summaries\ConsolidateLoadedTransit.R"],
+                               workingdir=model_run_dict[run_id]["model_run_dir"],
+                               script_env=script_env)
+        if ret_code != 0:
+            logging.warn("  Received non-zero return code: {}".format(ret_code))
+            continue
+
+        # run quickboards
+        logging.debug("  Running quickboards")
+        script_env["PATH"] = r"C:\Program Files\Java\jdk1.8.0_181\bin"
+        ret_code = run_command(command   =[os.path.join(model_run_dict[run_id]["model_run_dir"], "CTRAMP", "scripts", "metrics", "quickboards.bat"),
+                                                        r".\CTRAMP\scripts\metrics\quickboards.ctl"],
+                               workingdir=model_run_dict[run_id]["model_run_dir"],
+                               script_env=script_env)
+        if ret_code != 0:
+            logging.warn("  Received non-zero return code: {}".format(ret_code))
+            continue
+        # move aside old quickboards
+        shutil.move(os.path.join(model_run_dict[run_id]["model_run_dir"], "trn","quickboards.xls"),
+                    os.path.join(model_run_dict[run_id]["model_run_dir"], "trn","quickboards_bad.xls"))
+        # move fixed quickboards into place
+        shutil.move(os.path.join(model_run_dict[run_id]["model_run_dir"], "quickboards.xls"),
+                    os.path.join(model_run_dict[run_id]["model_run_dir"], "trn","quickboards.xls"))
+        # move aside old quickboards on ML
+        shutil.move(os.path.join(model_run_dict[run_id]["ML_dir"], "OUTPUT", "trn", "quickboards.xls"),
+                    os.path.join(model_run_dict[run_id]["ML_dir"], "OUTPUT", "trn", "quickboards_bad.xls"))
+        # copy fixed quickboards into place
+        shutil.copy(os.path.join(model_run_dict[run_id]["model_run_dir"], "trn","quickboards.xls"),
+                    os.path.join(model_run_dict[run_id]["ML_dir"], "OUTPUT", "trn", "quickboards.xls"))
+
+        # plus dbfs
+        for timeperiod in ["ea","am","md","pm","ev"]:
+            # delete the bad ones
+            os.remove(os.path.join(model_run_dict[run_id]["ML_dir"], "OUTPUT", "trn", "trnlink{}_withSupport.dbf".format(timeperiod)))
+
+            shutil.copy(os.path.join(model_run_dict[run_id]["model_run_dir"], "trn", "trnlink{}_withSupport.dbf".format(timeperiod)),
+                        os.path.join(model_run_dict[run_id]["ML_dir"], "OUTPUT", "trn"))
+        fixed_count += 1
+
+    logging.info("Fixed {} bad_quickboards".format(fixed_count))
 
 def find_bad_ouput(model_run_dict):
     """
@@ -284,6 +380,7 @@ if __name__ == '__main__':
 
     # add "bad_quickbards"
     find_bad_quickboards(model_run_dict)
+    fix_bad_quickboards(model_run_dict)
 
     # add "bad_output"
     find_bad_ouput(model_run_dict)
