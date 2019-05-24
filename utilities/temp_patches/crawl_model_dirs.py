@@ -118,7 +118,8 @@ def find_model_server_dirs(model_run_dict):
     RENAMED = {                   # model machine name  => ML/index
         "2050_TM151_PPA_RT_01_1_Crossings4_plus2fare_00": "2050_TM151_PPA_RT_01_1_Crossings4_05",
         "2050_TM151_PPA_CG_01_1_Crossings4_plus2fare_01": "2050_TM151_PPA_CG_01_1_Crossings4_05",
-        "2050_TM151_PPA_BF_01_1_Crossings4_plus2fare_00": "2050_TM151_PPA_BF_01_1_Crossings4_05"
+        "2050_TM151_PPA_BF_01_1_Crossings4_plus2fare_00": "2050_TM151_PPA_BF_01_1_Crossings4_05",
+        "2050_TM151_PPA_BF_00_1_Crossings6_01"          : "2050_TM151_PPA_BF_01_1_Crossings6_01", # named incorrectly on model machine
     }
     for machine in MODEL_MACHINES.keys():
         machine_path = MODEL_MACHINES[machine]
