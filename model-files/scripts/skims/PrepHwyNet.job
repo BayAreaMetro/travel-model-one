@@ -128,7 +128,7 @@ loop period = 1, 5
       endif
       
       ; no congestion for BRT facilities (two-levels)
-      if (BRT = 1) delayfactor = 0.00
+      if (BRT = 1) delayfactor = delayfactor
       if (BRT = 2) delayfactor = 0.50 * delayfactor
       
       ; log and fix very slow speeds that will give TRNBUILD difficulty in building transit paths
@@ -159,7 +159,7 @@ loop period = 1, 5
 
       ; compute bus time
       IF (BRT = 1)
-        BUS_TIME = FFT
+        BUS_TIME = FFT  + delayfactor * DISTANCE
       ELSE
         BUS_TIME = CTIM + delayfactor * DISTANCE
       ENDIF
