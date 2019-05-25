@@ -158,7 +158,7 @@ loop period = 1, 5
       IF (BRT = 1)
         BUS_TIME = FFT  + delayfactor * DISTANCE
       ELSEIF (BRT = 2)
-        BUS_TIME = FFT  + delayfactor * DISTANCE * 0.5
+        BUS_TIME = CTIM + delayfactor * DISTANCE * 0.5
       ELSE
         BUS_TIME = CTIM + delayfactor * DISTANCE
       ENDIF
