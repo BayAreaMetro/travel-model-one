@@ -30,7 +30,7 @@ USAGE = """
   * logsum diff maps in \OUTPUT\logsums\logsum_diff.twb
 
   Run the script from the "M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects" folder, where the baseline runs are saved.
-  example: python \\mainmodel\MainModelShare\travel-model-one-master\utilities\PBA40\metrics\RunResults.py 1_Crossings1\2050_TM151_PPA_RT_02_1_Crossings1_03 all_projects_bc_workbooks
+  example: python \\mainmodel\MainModelShare\\travel-model-one-master\utilities\PBA40\metrics\RunResults.py 1_Crossings1\\2050_TM151_PPA_RT_02_1_Crossings1_03 all_projects_bc_workbooks
 
 
 """
@@ -125,7 +125,7 @@ class RunResults:
 
 
 
-    def __init__(self, rundir, bc_config='BC_config.csv', overwrite_config=None):
+    def __init__(self, rundir, overwrite_config=None):
         """
     Parameters
     ----------
@@ -2452,12 +2452,9 @@ if __name__ == '__main__':
                         help="The directory with the run results csvs.")
     parser.add_argument('all_projects_dir',
                         help="The directory in which to write the Benefit/Cost summary Series")
-    parser.add_argument('--bcconfig',
-                        help="The configuration filename in project_dir",
-                        required=False, default='BC_config.csv')
     args = parser.parse_args(sys.argv[1:])
 
-    rr = RunResults(args.project_dir, args.bcconfig)
+    rr = RunResults(args.project_dir)
     rr.createBaseRunResults()
 
     rr.calculateDailyMetrics()
