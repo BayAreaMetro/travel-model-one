@@ -12,6 +12,11 @@ set PCT=%%
 set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
 set TRN_ERRORLEVEL=0
 
+:: 32bit vs 64bit runtpp for transit
+:: default to 32bit
+set USE_RUNTPP=C:\Program Files (x86)\Citilabs\CubeVoyager\RUNTPP.EXE
+if %TRN_RUNTPP_64BIT% EQU 1 (set USE_RUNTPP=C:\Program Files\Citilabs\CubeVoyager\RUNTPP.EXE)
+
 :: AverageNetworkVolumes.job uses PREV_ITER=1 for ITER=1
 set PREV_TRN_ITER=%PREV_ITER%
 IF %ITER% EQU 1 SET PREV_TRN_ITER=0
@@ -77,14 +82,14 @@ IF %ITER% EQU %MAXITERATIONS% (set PHTDIFFCOND=0)
 echo START TRNASSIGN BuildTransitNetworks %DATE% %TIME% >> ..\..\logs\feedback.rpt
 
 :: Prepare the highway network for use by the transit network
-runtpp ..\..\CTRAMP\scripts\skims\PrepHwyNet.job
+"%USE_RUNTPP%" ..\..\CTRAMP\scripts\skims\PrepHwyNet.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
 )
 
 :: Create the transit networks
-runtpp ..\..\CTRAMP\scripts\skims\BuildTransitNetworks.job
+"%USE_RUNTPP%" ..\..\CTRAMP\scripts\skims\BuildTransitNetworks.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
@@ -98,13 +103,13 @@ echo START TRNASSIGN            SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\l
 :transitSubAssign
 
 :: Assign the transit trips to the transit network
-runtpp ..\..\CTRAMP\scripts\assign\TransitAssign.job
+"%USE_RUNTPP%" ..\..\CTRAMP\scripts\assign\TransitAssign.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
 )
 :: And skim
-runtpp ..\..\CTRAMP\scripts\skims\TransitSkims.job
+"%USE_RUNTPP%" ..\..\CTRAMP\scripts\skims\TransitSkims.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
