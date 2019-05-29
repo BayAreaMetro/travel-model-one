@@ -412,7 +412,7 @@
       <column caption='Base Num Workers Students' datatype='real' name='[base_num_workers_students]' role='measure' type='quantitative' />
       <column caption='Cem' datatype='boolean' name='[cem]' role='dimension' type='nominal' />
       <column caption='Diff Dclogsum' datatype='real' name='[diff_dclogsum]' role='measure' type='quantitative' />
-      <column caption='Has AV' datatype='integer' name='[hasAV]' role='measure' type='quantitative' />
+      <column aggregation='Sum' caption='Has AV' datatype='integer' name='[hasAV]' role='dimension' type='ordinal' />
       <column caption='incQ label' datatype='string' name='[incQ_label]' role='dimension' type='nominal' />
       <column caption='Ldm Cem' datatype='real' name='[ldm_cem]' role='measure' type='quantitative' />
       <column caption='Ldm Mult' datatype='real' name='[ldm_mult]' role='measure' type='quantitative' />
@@ -425,7 +425,7 @@
       <column caption='Scen Num Workers Students' datatype='real' name='[scen_num_workers_students]' role='measure' type='quantitative' />
       <column caption='Taz' datatype='integer' name='[taz]' role='measure' type='quantitative' />
       <column aggregation='Sum' caption='Walk Subzone' datatype='integer' name='[walk_subzone]' role='dimension' type='ordinal' />
-      <layout dim-ordering='alphabetic' dim-percentage='0.20765' measure-ordering='alphabetic' measure-percentage='0.79235' show-structure='true' />
+      <layout dim-ordering='alphabetic' dim-percentage='0.196721' measure-ordering='alphabetic' measure-percentage='0.803279' show-structure='true' />
       <semantic-values>
         <semantic-value key='[Country].[Name]' value='&quot;United States&quot;' />
       </semantic-values>
@@ -461,11 +461,13 @@
             <column caption='autoSuff label' datatype='string' name='[autoSuff_label]' role='dimension' type='nominal' />
             <column caption='Cem' datatype='boolean' name='[cem]' role='dimension' type='nominal' />
             <column-instance column='[Geometry]' derivation='Collect' name='[clct:Geometry:nk]' pivot='key' type='nominal' />
+            <column aggregation='Sum' caption='Has AV' datatype='integer' name='[hasAV]' role='dimension' type='ordinal' />
             <column caption='incQ label' datatype='string' name='[incQ_label]' role='dimension' type='nominal' />
             <column caption='Mandatory' datatype='boolean' name='[mandatory]' role='dimension' type='nominal' />
             <column-instance column='[SUPERD]' derivation='None' name='[none:SUPERD:qk]' pivot='key' type='quantitative' />
             <column-instance column='[autoSuff_label]' derivation='None' name='[none:autoSuff_label:nk]' pivot='key' type='nominal' />
             <column-instance column='[cem]' derivation='None' name='[none:cem:nk]' pivot='key' type='nominal' />
+            <column-instance column='[hasAV]' derivation='None' name='[none:hasAV:ok]' pivot='key' type='ordinal' />
             <column-instance column='[incQ_label]' derivation='None' name='[none:incQ_label:nk]' pivot='key' type='nominal' />
             <column-instance column='[mandatory]' derivation='None' name='[none:mandatory:nk]' pivot='key' type='nominal' />
             <column-instance column='[taz]' derivation='None' name='[none:taz:qk]' pivot='key' type='quantitative' />
@@ -480,6 +482,9 @@
           </filter>
           <filter class='categorical' column='[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:cem:nk]'>
             <groupfilter function='member' level='[none:cem:nk]' member='true' user:ui-domain='relevant' user:ui-enumeration='inclusive' user:ui-marker='enumerate' />
+          </filter>
+          <filter class='categorical' column='[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:hasAV:ok]'>
+            <groupfilter function='level-members' level='[none:hasAV:ok]' user:ui-enumeration='all' user:ui-marker='enumerate' />
           </filter>
           <filter class='categorical' column='[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:incQ_label:nk]'>
             <groupfilter function='level-members' level='[none:incQ_label:nk]' user:ui-enumeration='all' user:ui-marker='enumerate' />
@@ -496,6 +501,7 @@
             <column>[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:autoSuff_label:nk]</column>
             <column>[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:incQ_label:nk]</column>
             <column>[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:walk_subzone:ok]</column>
+            <column>[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:hasAV:ok]</column>
           </slices>
           <aggregation value='true' />
         </view>
@@ -684,6 +690,7 @@
             <card mode='radiolist' param='[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:mandatory:nk]' type='filter' values='relevant' />
             <card mode='radiolist' param='[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:walk_subzone:ok]' type='filter' />
             <card mode='radiolist' param='[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:autoSuff_label:nk]' type='filter' />
+            <card mode='radiolist' param='[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:hasAV:ok]' type='filter' />
             <card mode='radiolist' param='[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:incQ_label:nk]' type='filter' />
           </strip>
         </edge>
@@ -710,6 +717,7 @@
           <color-one-way>
             <field>[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:autoSuff_label:nk]</field>
             <field>[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:cem:nk]</field>
+            <field>[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:hasAV:ok]</field>
             <field>[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:incQ_label:nk]</field>
             <field>[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:mandatory:nk]</field>
             <field>[federated.13xmcuo07qhh3p12rnnsu199eot5 (copy)].[none:walk_subzone:ok]</field>
