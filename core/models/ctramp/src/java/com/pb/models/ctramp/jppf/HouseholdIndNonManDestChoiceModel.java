@@ -58,6 +58,7 @@ public class HouseholdIndNonManDestChoiceModel implements Serializable {
     private ChoiceModelApplication dcModel[];
 
     private int numberOfSubzones;
+    private int numberOfZones;
 
     private int modelIndex;
 
@@ -100,7 +101,7 @@ public class HouseholdIndNonManDestChoiceModel implements Serializable {
 
 
         numberOfSubzones = tazDataManager.getNumberOfSubZones();
-
+        numberOfZones    = tazDataManager.getNumberOfZones();
         
 
         dcDmuObject = dmuFactory.getDestChoiceDMU();        
@@ -321,8 +322,8 @@ public class HouseholdIndNonManDestChoiceModel implements Serializable {
 
             mcDmuObject.setDmuIndexValues( household.getHhId(), origTaz, d );
 
-            
-            if ( household.getDebugChoiceModels() ) {
+            // Only log if we're doing a sample
+            if ( household.getDebugChoiceModels() && (numAlts < numberOfSubzones*numberOfZones) ) {
                 household.logTourObject( loggingHeader + ", sample " + i , modelLogger, person, mcDmuObject.getTourObject() );
             }
             
