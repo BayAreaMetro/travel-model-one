@@ -114,6 +114,14 @@ def find_model_server_dirs(model_run_dict):
     """
     Given a model run_dict with run_ids as keys, sets the "model_run_dir" to the location of the run on one of the model servers if it can be found
     """
+   
+    RENAMED = {                   # model machine name  => ML/index
+        "2050_TM151_PPA_RT_01_1_Crossings4_plus2fare_00": "2050_TM151_PPA_RT_01_1_Crossings4_05",
+        "2050_TM151_PPA_CG_01_1_Crossings4_plus2fare_01": "2050_TM151_PPA_CG_01_1_Crossings4_05",
+        "2050_TM151_PPA_BF_01_1_Crossings4_plus2fare_00": "2050_TM151_PPA_BF_01_1_Crossings4_05",
+        "2050_TM151_PPA_BF_00_1_Crossings6_01"          : "2050_TM151_PPA_BF_01_1_Crossings6_01", # named incorrectly on model machine
+        "2050_TM151_PPA_CG_04_2_WETA_NetExpansion_00"   : "2050_TM151_PPA_CG_04_2601_WETA_NetExpansion_00",  # named incorrectly on model machine
+    }
     for machine in MODEL_MACHINES.keys():
         machine_path = MODEL_MACHINES[machine]
 
@@ -121,21 +129,37 @@ def find_model_server_dirs(model_run_dict):
 
         # iterate through the directories to see if one matches
         project_dirs = os.listdir(machine_path)
+        project_dirs.sort(reverse=True)
 
         for project_dir in project_dirs:
 
+            # lookup in our M/L index array
+            # some were renamed so account for that
+            if project_dir in RENAMED.keys():
+                index_project_dir = RENAMED[project_dir]
+            else:
+                index_project_dir = project_dir
+
             # if it's not one of ours, don't care
-            if project_dir not in model_run_dict.keys(): continue
+            if index_project_dir not in model_run_dict.keys():
+                # there are some cases where they were renamed
+                # e.g. baseline01 runs were renamed to baseline02 on ML
+                (index_project_dir, subs) = re.subn(r"(\d\d\d\d_TM\d\d\d_PPA_[BCR][FGT])_01_(.+)", r"\1_02_\2", project_dir)
+                if subs == 0: continue
+
+                logging.debug(" Didn't find project_dir {} in keys; trying {}".format(project_dir, index_project_dir))
+                if index_project_dir not in model_run_dict.keys(): continue
+                logging.debug(" ==> found it")
 
             model_run_dir = os.path.join(machine_path, project_dir)
 
             # check if it's already set
-            if "model_run_dir" in model_run_dict[project_dir]:
-                logging.warn("Found model run dir {} but it's already set: {}".format(model_run_dir, model_run_dict[project_dir]["model_run_dir"]))
+            if "model_run_dir" in model_run_dict[index_project_dir]:
+                logging.warn("Found model run dir {} but it's already set: {}".format(model_run_dir, model_run_dict[index_project_dir]["model_run_dir"]))
 
             else:
                 # set it
-                model_run_dict[project_dir]["model_run_dir"] = model_run_dir
+                model_run_dict[index_project_dir]["model_run_dir"] = model_run_dir
 
 def find_bad_quickboards(model_run_dict):
     """

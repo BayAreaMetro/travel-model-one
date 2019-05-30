@@ -246,46 +246,56 @@ public class DestinationSampleOfAlternativesModel implements Serializable {
         }
         
         
-        
-
-        
-        Random hhRandom = hhObj.getHhRandom();
-        int rnCount = hhObj.getHhRandomCount();
-        // when household.getHhRandom() was applied, the random count was incremented, assuming a random number would be drawn right away.
-        // so let's decrement by 1, then increment the count each time a random number is actually drawn in this method.
-        rnCount --;
-        
-        // select sampleSize alternatives based on probabilitiesList[origTaz], and count frequency of alternatives chosen.
-        // final sample may include duplicate alternative selections.
-        for (int i=0; i < sampleSize; i++) {
-            
-            double rn = hhRandom.nextDouble();
-            rnCount++;
-
-            int chosenAlt = -1;
-            if ( tour != null && tour.getTourCategoryIsAtWork() )
-                chosenAlt = choiceModel[purposeIndex].getChoiceIndexFromCumProbabilities( subtourCumProbabilitiesCache[purposeIndex], rn );
-            else
-                chosenAlt = choiceModel[purposeIndex].getChoiceIndexFromCumProbabilities( cumProbabilitiesCache[purposeIndex], rn );
-            
-            // write choice model alternative info to log file
-            if ( hhObj.getDebugChoiceModels () ) {
-                choiceModel[purposeIndex].logSelectionInfo ( String.format("%s Sample Of Alternatives Choice for dmuSegment=%d", purposeName, origTaz), String.format("HHID=%d, rn=%.8f, rnCount=%d", hhObj.getHhId(), rn, (rnCount+i) ), rn, chosenAlt );
+        // if the sample size matches numDcAlts, choose all alternatives
+        // e.g. for logsums calculations
+        int numDcAlts = this.tazDataManager.getNumberOfZones()*this.tazDataManager.getNumberOfSubZones();
+        if (sampleSize == numDcAlts) {
+            for (int chosenAlt=1; chosenAlt <= numDcAlts; chosenAlt++) {
+                altFreqMap.put(chosenAlt, 1);
             }
-            
-            
-            int freq = 0;
-            if ( altFreqMap.containsKey(chosenAlt) )
-                freq = altFreqMap.get( chosenAlt );
-            altFreqMap.put(chosenAlt, (freq + 1) );
-            
+
+            if ( hhObj.getDebugChoiceModels() ) {
+                logger.info(String.format("Choosing all alts for DcSoa for HHID=%d person=%d", hhObj.getHhId(), person.getPersonNum()));
+            }
         }
+        else {
 
-        // sampleSize random number draws were made from the Random object for the current household,
-        // so update the count in the hh's Random.
-        hhObj.setHhRandomCount( rnCount );
+            Random hhRandom = hhObj.getHhRandom();
+            int rnCount = hhObj.getHhRandomCount();
+            // when household.getHhRandom() was applied, the random count was incremented, assuming a random number would be drawn right away.
+            // so let's decrement by 1, then increment the count each time a random number is actually drawn in this method.
+            rnCount --;
 
+            // select sampleSize alternatives based on probabilitiesList[origTaz], and count frequency of alternatives chosen.
+            // final sample may include duplicate alternative selections.
+            for (int i=0; i < sampleSize; i++) {
+                
+                double rn = hhRandom.nextDouble();
+                rnCount++;
+    
+                int chosenAlt = -1;
+                if ( tour != null && tour.getTourCategoryIsAtWork() )
+                    chosenAlt = choiceModel[purposeIndex].getChoiceIndexFromCumProbabilities( subtourCumProbabilitiesCache[purposeIndex], rn );
+                else
+                    chosenAlt = choiceModel[purposeIndex].getChoiceIndexFromCumProbabilities( cumProbabilitiesCache[purposeIndex], rn );
+                
+                // write choice model alternative info to log file
+                if ( hhObj.getDebugChoiceModels () ) {
+                    choiceModel[purposeIndex].logSelectionInfo ( String.format("%s Sample Of Alternatives Choice for dmuSegment=%d", purposeName, origTaz), String.format("HHID=%d, rn=%.8f, rnCount=%d", hhObj.getHhId(), rn, (rnCount+i) ), rn, chosenAlt );
+                }
+                
+                
+                int freq = 0;
+                if ( altFreqMap.containsKey(chosenAlt) )
+                    freq = altFreqMap.get( chosenAlt );
+                altFreqMap.put(chosenAlt, (freq + 1) );
+                
+            }
 
+            // sampleSize random number draws were made from the Random object for the current household,
+            // so update the count in the hh's Random.
+            hhObj.setHhRandomCount( rnCount );
+        }
         
         // create arrays of the unique chosen alternatives and the frequency with which those alternatives were chosen.
         numUniqueAlts = altFreqMap.size();

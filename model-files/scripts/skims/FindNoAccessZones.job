@@ -1,0 +1,14 @@
+;
+; find no access zones
+;
+RUN PGM=MATRIX
+  FILEI MATI[1]   = "skims\HWYSKMAM.tpp"
+  FILEO RECO[1]   = "skims\unconnected_zones.dbf", FIELDS=ZONE(5.0), NOCONNECT(3.0)
+
+  MW[1] = MI.1.DISTDA
+  IF (ROWMIN(1) == 500000)
+    RO.ZONE = I
+    RO.NOCONNECT = 1
+    WRITE RECO=1
+  ENDIF
+ENDRUN

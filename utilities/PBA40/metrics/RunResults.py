@@ -18,6 +18,7 @@ from xlsxwriter.utility import xl_range, xl_rowcol_to_cell
 pd.set_option('display.precision',10)
 pd.set_option('display.width', 500)
 
+
 USAGE = """
 
 
@@ -30,7 +31,7 @@ USAGE = """
   * logsum diff maps in \OUTPUT\logsums\logsum_diff.twb
 
   Run the script from the "M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects" folder, where the baseline runs are saved.
-  example: python \\mainmodel\MainModelShare\travel-model-one-master\utilities\PBA40\metrics\RunResults.py 1_Crossings1\2050_TM151_PPA_RT_02_1_Crossings1_03 all_projects_bc_workbooks
+  example: python \\mainmodel\MainModelShare\\travel-model-one-master\utilities\PBA40\metrics\RunResults.py 1_Crossings1\\2050_TM151_PPA_RT_02_1_Crossings1_03 all_projects_bc_workbooks
 
 
 """
@@ -41,7 +42,7 @@ class RunResults:
     the benefits/costs results from comparing two runs.
     """
 
-    # Required keys for each project in the BC_config.csv
+    # Required keys for each project
     REQUIRED_KEYS = [
       'Project ID'  ,  # String identifier for the project
       'Project Name',  # Descriptive name for the project
@@ -53,7 +54,7 @@ class RunResults:
       ]
 
 
-    # Do these ever change?  Should they go into BC_config.csv?
+    # Do these ever change?
     YEARLY_AUTO_TRIPS_PER_AUTO  = 1583
 
     ANNUALIZATION               = 300
@@ -125,7 +126,7 @@ class RunResults:
 
 
 
-    def __init__(self, rundir, bc_config='BC_config.csv', overwrite_config=None):
+    def __init__(self, rundir, overwrite_config=None):
         """
     Parameters
     ----------
@@ -256,7 +257,7 @@ class RunResults:
                           sep=",", index_col=[0,1])
         # print self.transit_times_by_mode_income
 
-        self.unique_active_travelers = pd.Series.from_csv(os.path.join(self.rundir, "unique_active_travelers.csv"))
+        self.unique_active_travelers = pd.read_csv(os.path.join(self.rundir, "unique_active_travelers.csv"),index_col=0, header=None, squeeze=True)
         # print self.unique_active_travelers
 
         self.crowding_df = pd.read_csv(os.path.join(self.rundir, "transit_crowding.csv"))
@@ -516,6 +517,179 @@ class RunResults:
                     taz += 1
         return taz_list
 
+    @staticmethod
+    def calculateConsumerSurplus(config,                      daily_results,
+                                 mandatoryAccessibilities,    base_mandatoryAccessibilities,
+                                 nonmandatoryAccessibilities, base_nonmandatoryAccessibilities,
+                                 accessibilityMarkets,        base_accessibilityMarkets,
+                                 debug_dir):
+        """
+        Static method for calculating consumer surplus.
+        Done as a static method so it can be used by this script as well as by other scripts (e.g. mapAccessibilitydiffs.py)
+
+        config is used for 'Zero Logsum TAZs' -- and if it's configured, 'Project Run Dir'
+
+        If debug_dir is specified, this also writes a debug file, consumer_surplus.csv, to debug_dir
+        And copies the tableau workbook, consumer_surplus_RUNID.twb to debug_dir, where RUNID = config['Foldername - Future'].twb
+        Specify include_output_dir=False to drop OUTPUT from the directory
+
+
+        Returns:
+            - mandatoryAccessibilities    with new columns: diff_dclogsum, logsum_diff_minutes, ldm_ratio, ldm_mult, ldm_cem
+            - nonMandatoryAccessibilities with new columns: diff_dclogsum, logsum_diff_minutes, ldm_ratio, ldm_mult, ldm_cem
+            - mandatoryAccess
+            - nonmandatoryAccess
+        """
+        # print("mandatoryAccessibilities length {}, head():\n{}".format(len(mandatoryAccessibilities), mandatoryAccessibilities.head()))
+        # print("base_mandatoryAccessibilities length {}, head():\n{}".format(len(base_mandatoryAccessibilities), base_mandatoryAccessibilities.head()))
+        # print("nonmandatoryAccessibilities length {}, head():\n{}".format(len(nonmandatoryAccessibilities), nonmandatoryAccessibilities.head()))
+        # print("base_nonmandatoryAccessibilities length {}, head():\n{}".format(len(base_nonmandatoryAccessibilities), base_nonmandatoryAccessibilities.head()))
+        # print("accessibilityMarkets length {}, head():\n{}".format(len(accessibilityMarkets), accessibilityMarkets.head()))
+        # print("base_accessibilityMarkets length {}, head():\n{}".format(len(base_accessibilityMarkets), base_accessibilityMarkets.head()))
+
+        zero_neg_taz_list = []
+        zero_taz_list     = []
+        if ("Zero Logsum TAZs" in config) or ("Zero Negative Logsum TAZs" in config):
+            # Require a readme about it
+            readme_file = os.path.join(config['Project Run Dir'], "Zero Out Logsum Diff README.txt")
+            if not os.path.exists(readme_file):
+                print "Readme file [%s] doesn't exist -- this is required to use this configuration option." % readme_file
+                sys.exit(2)
+
+            if os.path.getsize(readme_file) < 200:
+                print "Readme file [%s] is pretty short... It should have more detail about why you're doing this." % readme_file
+                sys.exit(2)
+
+            if "Zero Negative Logsum TAZs" in config:
+                zero_neg_taz_list = self.parseNumList(self.config["Zero Negative Logsum TAZs"])
+                print "Zeroing out negative diffs for tazs %s" % str(zero_neg_taz_list)
+
+            if "Zero Logsum TAZs" in config:
+                zero_taz_list = self.parseNumList(config["Zero Logsum TAZs"])
+                print "Zeroing out diffs for tazs %s" % str(zero_taz_list)
+
+        # Take the difference and convert utils to minutes (k_ivt = 0.0134 k_mc_ls = 1.0 in access calcs);
+        # TODO: is k_mc_ls = 1.0?  DestinationChoice.cls has different values
+        mandatoryAccessibilities = pd.merge(mandatoryAccessibilities,
+                                            base_mandatoryAccessibilities,
+                                            how='left')
+        mandatoryAccessibilities['diff_dclogsum'] = mandatoryAccessibilities['scen_dclogsum'] - mandatoryAccessibilities['base_dclogsum']
+
+        # zero out negative diffs if directed
+        if len(zero_neg_taz_list) > 0:
+            mandatoryAccessibilities.loc[(mandatoryAccessibilities.taz.isin(zero_neg_taz_list)) & (mandatoryAccessibilities.diff_dclogsum<0), 'diff_dclogsum'] = 0.0
+
+        # zero out diffs if directed
+        if len(zero_taz_list) > 0:
+            mandatoryAccessibilities.loc[mandatoryAccessibilities.taz.isin(zero_taz_list), 'diff_dclogsum'] = 0.0
+
+        mandatoryAccessibilities['logsum_diff_minutes'] = mandatoryAccessibilities.diff_dclogsum / 0.0134
+
+        # Cliff Effect Mitigation
+        mand_ldm_max = mandatoryAccessibilities.logsum_diff_minutes.abs().max()
+        if mand_ldm_max < 0.00001:
+            mandatoryAccessibilities['ldm_ratio'] = 1.0
+            mandatoryAccessibilities['ldm_mult' ] = 1.0
+        else:
+            mandatoryAccessibilities['ldm_ratio'] = mandatoryAccessibilities['logsum_diff_minutes'].abs()/mand_ldm_max    # how big is the magnitude compared to max magnitude?
+            mandatoryAccessibilities['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(mandatoryAccessibilities['ldm_ratio']-RunResults.CEM_THRESHOLD)/RunResults.CEM_SHALLOW))
+            mandatoryAccessibilities['ldm_cem']   = mandatoryAccessibilities['logsum_diff_minutes']*mandatoryAccessibilities['ldm_mult']
+
+        # This too
+        nonmandatoryAccessibilities = pd.merge(nonmandatoryAccessibilities,
+                                               base_nonmandatoryAccessibilities,
+                                               how='left')
+        nonmandatoryAccessibilities['diff_dclogsum'] = \
+                nonmandatoryAccessibilities['scen_dclogsum'] - nonmandatoryAccessibilities['base_dclogsum']
+
+        # zero out negative diffs if directed
+        if len(zero_neg_taz_list) > 0:
+            nonmandatoryAccessibilities.loc[(nonmandatoryAccessibilities.taz.isin(zero_neg_taz_list)) & (nonmandatoryAccessibilities.diff_dclogsum<0), 'diff_dclogsum'] = 0.0
+
+        # zero out diffs if directed
+        if len(zero_taz_list) > 0:
+            nonmandatoryAccessibilities.loc[nonmandatoryAccessibilities.taz.isin(zero_taz_list), 'diff_dclogsum'] = 0.0
+
+        nonmandatoryAccessibilities['logsum_diff_minutes'] = nonmandatoryAccessibilities['diff_dclogsum'] / 0.0175
+
+        # Cliff Effect Mitigation
+        nonmm_ldm_max = nonmandatoryAccessibilities['logsum_diff_minutes'].abs().max()
+        nonmandatoryAccessibilities['ldm_ratio'] = nonmandatoryAccessibilities['logsum_diff_minutes'].abs()/nonmm_ldm_max    # how big is the magnitude compared to max magnitude?
+        nonmandatoryAccessibilities['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(nonmandatoryAccessibilities['ldm_ratio']-RunResults.CEM_THRESHOLD)/RunResults.CEM_SHALLOW))
+        nonmandatoryAccessibilities['ldm_cem']   = nonmandatoryAccessibilities['logsum_diff_minutes']*nonmandatoryAccessibilities['ldm_mult']
+
+        # merge scenario + base accessbiity markets data
+        accessibilityMarkets = pd.merge(accessibilityMarkets, base_accessibilityMarkets, how='left')
+
+        mandatoryAccess = pd.merge(mandatoryAccessibilities, accessibilityMarkets, how='left')
+        mandatoryAccess.fillna(0, inplace=True)
+
+        nonmandatoryAccess = pd.merge(nonmandatoryAccessibilities, accessibilityMarkets, how='left')
+        nonmandatoryAccess.fillna(0, inplace=True)
+
+        # Cliff Effect Mitigated - rule of one-half
+        cat1 = 'Accessibility Benefits (household-based) (with CEM)'
+        cat2 = 'Logsum Hours - Mandatory Tours - Workers & Students'
+        mandatoryAccess['CS diff work/school'] = \
+            (0.5*mandatoryAccess.base_num_workers_students + 0.5*mandatoryAccess.scen_num_workers_students) *mandatoryAccess.ldm_cem
+        for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
+            daily_results[(cat1,cat2,inclabel)] = mandatoryAccess.loc[mandatoryAccess.incQ_label==inclabel, 'CS diff work/school'].sum()/60.0;
+
+        cat2 = 'Logsum Hours - NonMandatory Tours - All people'
+        nonmandatoryAccess['CS diff all'] = \
+            (0.5*nonmandatoryAccess.base_num_persons + 0.5*nonmandatoryAccess.scen_num_persons)*nonmandatoryAccess.ldm_cem
+        for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
+            daily_results[(cat1,cat2,inclabel)] = nonmandatoryAccess.loc[mandatoryAccess.incQ_label==inclabel, 'CS diff all'].sum()/60.0;
+
+        # create dataframe for debugging -- with mandatory and nonmandatory logsums and CS
+        mandatoryAccess["mandatory"] = True
+        nonmandatoryAccess["mandatory"] = False
+        debug_cem_df = pd.concat(objs=[mandatoryAccess.rename(columns={'CS diff work/school':'CS diff min'}), 
+                                       nonmandatoryAccess.rename(columns={'CS diff all':'CS diff min'})], axis="index", sort=True)
+        debug_cem_df["cem"] = True
+
+        # No Cliff Effect Mitigation - rule of one-half
+        cat1 = 'Accessibility Benefits (household-based) (no CEM)'
+        cat2 = 'Logsum Hours - Mandatory Tours - Workers & Students'
+        mandatoryAccess['CS diff work/school'] = \
+            (0.5*mandatoryAccess.base_num_workers_students + 0.5*mandatoryAccess.scen_num_workers_students)*mandatoryAccess.logsum_diff_minutes
+        for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
+            daily_results[(cat1,cat2,inclabel)] = mandatoryAccess.loc[mandatoryAccess.incQ_label==inclabel, 'CS diff work/school'].sum()/60.0;
+
+        cat2 = 'Logsum Hours - NonMandatory Tours - All people'
+        nonmandatoryAccess['CS diff all'] = \
+            (0.5*nonmandatoryAccess.base_num_persons + 0.5*nonmandatoryAccess.scen_num_persons)*nonmandatoryAccess.logsum_diff_minutes
+        for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
+            daily_results[(cat1,cat2,inclabel)] = nonmandatoryAccess.loc[mandatoryAccess.incQ_label==inclabel, 'CS diff all'].sum()/60.0;
+
+        # create dataframe for debugging -- with mandatory and nonmandatory logsums and CS
+        debug_nocem_df = pd.concat(objs=[mandatoryAccess.rename(columns={'CS diff work/school':'CS diff min'}), 
+                                         nonmandatoryAccess.rename(columns={'CS diff all':'CS diff min'})], axis="index", sort=True)
+        debug_nocem_df["cem"] = True
+        debug_nocem_df["cem"] = False
+
+        if debug_dir:
+            # prepare the debug info
+            debug_df = pd.concat(objs=[debug_cem_df, debug_nocem_df], axis="index", sort=True)
+            debug_df['CS diff hours'] = debug_df['CS diff min']/60.0
+
+            # drop columns that are redundant (but missing data) -- incQ_label and walk_subzone should be used
+            debug_df.drop(columns=['incQ','walk_subzone_label'], inplace=True)
+
+            # write it
+            debug_filename = os.path.join(debug_dir, "consumer_surplus.csv")
+            debug_df.to_csv(debug_filename, index=False)
+            print("Wrote {}".format(debug_filename))
+
+            # copy Tableau template into the project folder for mapping
+            cs_tableau_filename = os.path.join(debug_dir, "consumer_surplus_{}.twb".format(config['Foldername - Future']))
+            cs_tableau_template="\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\consumer_surplus.twb"
+            copyfile(cs_tableau_template, cs_tableau_filename)
+            print("Copied file to {}".format(cs_tableau_filename))
+
+        return (mandatoryAccessibilities, nonmandatoryAccessibilities,
+                mandatoryAccess,          nonmandatoryAccess)
+
     def calculateDailyMetrics(self):
         """
         Calculates the daily output metrics which will actually get used for the benefits/cost
@@ -540,159 +714,12 @@ class RunResults:
         quick_summary   = {}
         ######################################################################################
         if self.base_results:
-            zero_neg_taz_list = []
-            zero_taz_list     = []
-            if ("Zero Logsum TAZs" in self.config) or ("Zero Negative Logsum TAZs" in self.config):
-                # Require a readme about it
-                readme_file = os.path.join(self.rundir, "Zero Out Logsum Diff README.txt")
-                if not os.path.exists(readme_file):
-                    print "Readme file [%s] doesn't exist -- this is required to use this configuration option." % readme_file
-                    sys.exit(2)
-
-                if os.path.getsize(readme_file) < 200:
-                    print "Readme file [%s] is pretty short... It should have more detail about why you're doing this." % readme_file
-                    sys.exit(2)
-
-                if "Zero Negative Logsum TAZs" in self.config:
-                    zero_neg_taz_list = self.parseNumList(self.config["Zero Negative Logsum TAZs"])
-                    print "Zeroing out negative diffs for tazs %s" % str(zero_neg_taz_list)
-
-                if "Zero Logsum TAZs" in self.config:
-                    zero_taz_list = self.parseNumList(self.config["Zero Logsum TAZs"])
-                    print "Zeroing out diffs for tazs %s" % str(zero_taz_list)
-
-            # Take the difference and convert utils to minutes (k_ivt = 0.0134 k_mc_ls = 1.0 in access calcs);
-            # TODO: is k_mc_ls = 1.0?  DestinationChoice.cls has different values
-            self.mandatoryAccessibilities = pd.merge(self.mandatoryAccessibilities,
-                                                     self.base_results.mandatoryAccessibilities,
-                                                    how='left')
-            self.mandatoryAccessibilities['diff_dclogsum'] = \
-                self.mandatoryAccessibilities.scen_dclogsum - self.mandatoryAccessibilities.base_dclogsum
-
-            # zero out negative diffs if directed
-            if len(zero_neg_taz_list) > 0:
-                self.mandatoryAccessibilities.loc[(self.mandatoryAccessibilities.taz.isin(zero_neg_taz_list)) & (self.mandatoryAccessibilities.diff_dclogsum<0), 'diff_dclogsum'] = 0.0
-
-            # zero out diffs if directed
-            if len(zero_taz_list) > 0:
-                self.mandatoryAccessibilities.loc[self.mandatoryAccessibilities.taz.isin(zero_taz_list), 'diff_dclogsum'] = 0.0
-
-            self.mandatoryAccessibilities['logsum_diff_minutes'] = self.mandatoryAccessibilities.diff_dclogsum / 0.0134
-
-
-            # Cliff Effect Mitigation
-            mand_ldm_max = self.mandatoryAccessibilities.logsum_diff_minutes.abs().max()
-            if mand_ldm_max < 0.00001:
-                self.mandatoryAccessibilities['ldm_ratio'] = 1.0
-                self.mandatoryAccessibilities['ldm_mult' ] = 1.0
-            else:
-                self.mandatoryAccessibilities['ldm_ratio'] = self.mandatoryAccessibilities.logsum_diff_minutes.abs()/mand_ldm_max    # how big is the magnitude compared to max magnitude?
-                self.mandatoryAccessibilities['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(self.mandatoryAccessibilities.ldm_ratio-RunResults.CEM_THRESHOLD)/RunResults.CEM_SHALLOW))
-            self.mandatoryAccessibilities['ldm_cem']   = self.mandatoryAccessibilities.logsum_diff_minutes*self.mandatoryAccessibilities.ldm_mult
-
-            # This too
-            self.nonmandatoryAccessibilities = pd.merge(self.nonmandatoryAccessibilities,
-                                                        self.base_results.nonmandatoryAccessibilities,
-                                                        how='left')
-            self.nonmandatoryAccessibilities['diff_dclogsum'] = \
-                self.nonmandatoryAccessibilities.scen_dclogsum - self.nonmandatoryAccessibilities.base_dclogsum
-
-            # zero out negative diffs if directed
-            if len(zero_neg_taz_list) > 0:
-                self.nonmandatoryAccessibilities.loc[(self.nonmandatoryAccessibilities.taz.isin(zero_neg_taz_list)) & (self.nonmandatoryAccessibilities.diff_dclogsum<0), 'diff_dclogsum'] = 0.0
-
-            # zero out diffs if directed
-            if len(zero_taz_list) > 0:
-                self.nonmandatoryAccessibilities.loc[self.nonmandatoryAccessibilities.taz.isin(zero_taz_list), 'diff_dclogsum'] = 0.0
-
-            self.nonmandatoryAccessibilities['logsum_diff_minutes'] = self.nonmandatoryAccessibilities.diff_dclogsum / 0.0175
-
-            # Cliff Effect Mitigation
-            nonmm_ldm_max = self.nonmandatoryAccessibilities.logsum_diff_minutes.abs().max()
-            self.nonmandatoryAccessibilities['ldm_ratio'] = self.nonmandatoryAccessibilities.logsum_diff_minutes.abs()/nonmm_ldm_max    # how big is the magnitude compared to max magnitude?
-            self.nonmandatoryAccessibilities['ldm_mult' ] = 1.0/(1.0+numpy.exp(-(self.nonmandatoryAccessibilities.ldm_ratio-RunResults.CEM_THRESHOLD)/RunResults.CEM_SHALLOW))
-            self.nonmandatoryAccessibilities['ldm_cem']   = self.nonmandatoryAccessibilities.logsum_diff_minutes*self.nonmandatoryAccessibilities.ldm_mult
-
-            # merge accessbiity markets data
-            self.accessibilityMarkets = pd.merge(self.accessibilityMarkets,
-                                                 self.base_results.accessibilityMarkets,
-                                                 how='left')
-
-            self.mandatoryAccess = pd.merge(self.mandatoryAccessibilities,
-                                            self.accessibilityMarkets,
-                                            how='left')
-
-            self.mandatoryAccess.fillna(0, inplace=True)
-
-            self.nonmandatoryAccess = pd.merge(self.nonmandatoryAccessibilities,
-                                               self.accessibilityMarkets,
-                                               how='left')
-            self.nonmandatoryAccess.fillna(0, inplace=True)
-
-            # Cliff Effect Mitigated - rule of one-half
-            cat1         = 'Accessibility Benefits (household-based) (with CEM)'
-            cat2         = 'Logsum Hours - Mandatory Tours - Workers & Students'
-            self.mandatoryAccess['CS diff work/school'] = \
-                (0.5*self.mandatoryAccess.base_num_workers_students + 0.5*self.mandatoryAccess.scen_num_workers_students) *self.mandatoryAccess.ldm_cem
-            for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
-                daily_results[(cat1,cat2,inclabel)] = self.mandatoryAccess.loc[self.mandatoryAccess.incQ_label==inclabel, 'CS diff work/school'].sum()/60.0;
-
-            cat2         = 'Logsum Hours - NonMandatory Tours - All people'
-            self.nonmandatoryAccess['CS diff all'] = \
-                (0.5*self.nonmandatoryAccess.base_num_persons + 0.5*self.nonmandatoryAccess.scen_num_persons)*self.nonmandatoryAccess.ldm_cem
-            for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
-                daily_results[(cat1,cat2,inclabel)] = self.nonmandatoryAccess.loc[self.mandatoryAccess.incQ_label==inclabel, 'CS diff all'].sum()/60.0;
-
-            # print out changes in consumer surplus for mandatory tours, with cem, to csv files
-            mandatory_cs_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "cs_mandatory_CEM.csv")
-            nonmandatory_cs_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "cs_nonmandatory_CEM.csv")
-            self.mandatoryAccess.to_csv(mandatory_cs_filename)
-            self.nonmandatoryAccess.to_csv(nonmandatory_cs_filename)
-
-            # sum up mandataory and non mandatory consumer surplus
-            self.bothAccess = pd.merge(left=self.mandatoryAccess,
-                                            right=self.nonmandatoryAccess,
-                                            how='outer', on=['taz','walk_subzone', 'incQ_label', 'autoSuff_label', 'hasAV'], suffixes=('_man','_nonman'))
-            self.bothAccess['CS diff sum'] = self.bothAccess['CS diff work/school'] + self.bothAccess['CS diff all']
-            both_cs_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "cs_both_CEM.csv")
-            self.bothAccess.to_csv(both_cs_filename)
-
-            # No Cliff Effect Mitigation - rule of one-half
-            cat1         = 'Accessibility Benefits (household-based) (no CEM)'
-            cat2         = 'Logsum Hours - Mandatory Tours - Workers & Students'
-            self.mandatoryAccess['CS diff work/school'] = \
-                (0.5*self.mandatoryAccess.base_num_workers_students + 0.5*self.mandatoryAccess.scen_num_workers_students) *self.mandatoryAccess.logsum_diff_minutes
-            for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
-                daily_results[(cat1,cat2,inclabel)] = self.mandatoryAccess.loc[self.mandatoryAccess.incQ_label==inclabel, 'CS diff work/school'].sum()/60.0;
-
-
-            cat2         = 'Logsum Hours - NonMandatory Tours - All people'
-            self.nonmandatoryAccess['CS diff all'] = \
-                (0.5*self.nonmandatoryAccess.base_num_persons + 0.5*self.nonmandatoryAccess.scen_num_persons)*self.nonmandatoryAccess.logsum_diff_minutes
-            for inclabel in ['lowInc','medInc','highInc','veryHighInc']:
-                daily_results[(cat1,cat2,inclabel)] = self.nonmandatoryAccess.loc[self.mandatoryAccess.incQ_label==inclabel, 'CS diff all'].sum()/60.0;
-
-            # print out changes in consumer surplus for mandatory tours, with no cem, to csv files
-            mandatory_cs_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "cs_mandatory_noCEM.csv")
-            nonmandatory_cs_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "cs_nonmandatory_noCEM.csv")
-            self.mandatoryAccess.to_csv(mandatory_cs_filename)
-            self.nonmandatoryAccess.to_csv(nonmandatory_cs_filename)
-
-            # sum up mandataory and non mandatory consumer surplus
-            self.bothAccess = pd.merge(left=self.mandatoryAccess,
-                                            right=self.nonmandatoryAccess,
-                                            how='outer', on=['taz','walk_subzone', 'incQ_label', 'autoSuff_label', 'hasAV'], suffixes=('_man','_nonman'))
-            self.bothAccess['CS diff sum'] = self.bothAccess['CS diff work/school'] + self.bothAccess['CS diff all']
-            both_cs_filename = os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', "cs_both_noCEM.csv")
-            self.bothAccess.to_csv(both_cs_filename)
-
-            # copy Tableau templates into the project folder for mapping
-            proj_name = sys.argv[1].split('\\')[1]
-            logsums_tableau_template="\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\logsum_diff.twb"
-            copyfile(logsums_tableau_template, os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', 'logsum_diff_' + proj_name + '.twb'))
-            cs_tableau_template="\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\consumer_surplus.twb"
-            copyfile(cs_tableau_template, os.path.join(os.getcwd(), sys.argv[1], 'OUTPUT', 'logsums', 'consumer_surplus_' + proj_name + '.twb'))
-
+            (self.mandatoryAccessibilities, self.nonMandatoryAccessibilities, self.mandatoryAccess, self.nonmandatoryAccess) = \
+                RunResults.calculateConsumerSurplus(self.config,                      daily_results,
+                                                    self.mandatoryAccessibilities,    self.base_results.mandatoryAccessibilities,
+                                                    self.nonmandatoryAccessibilities, self.base_results.nonmandatoryAccessibilities,
+                                                    self.accessibilityMarkets,        self.base_results.accessibilityMarkets,
+                                                    debug_dir=os.path.join(self.config['Project Run Dir'], "..", "logsums"))  # project run dir includes is run_dir\OUTPUT\metrics
         ##########################################################################################
 
         cat1 = "Accessibility Benefits (other)"
@@ -1144,6 +1171,7 @@ class RunResults:
 
 
         cat2            = 'Operating Costs ($2000)'
+        print(auto_byclass)
         daily_results[(cat1,cat2,'Auto Households' )] = \
             0.01*auto_byclass.loc[['da','datoll','da_av_toll', 'da_av_notoll',\
                                     'sr2','sr2toll','s2_av_toll', 's2_av_notoll'\
@@ -2452,12 +2480,9 @@ if __name__ == '__main__':
                         help="The directory with the run results csvs.")
     parser.add_argument('all_projects_dir',
                         help="The directory in which to write the Benefit/Cost summary Series")
-    parser.add_argument('--bcconfig',
-                        help="The configuration filename in project_dir",
-                        required=False, default='BC_config.csv')
     args = parser.parse_args(sys.argv[1:])
 
-    rr = RunResults(args.project_dir, args.bcconfig)
+    rr = RunResults(args.project_dir)
     rr.createBaseRunResults()
 
     rr.calculateDailyMetrics()

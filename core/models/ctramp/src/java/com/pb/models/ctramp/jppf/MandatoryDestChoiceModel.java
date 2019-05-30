@@ -475,7 +475,8 @@ public class MandatoryDestChoiceModel implements Serializable {
             mcDmuObject.setDestSharedTNCWaitTime(sharedTNCWaitTimeDest);
             mcDmuObject.setOrigCounty(tazDataManager.getZoneCounty(origTaz));
 
-            if ( household.getDebugChoiceModels() ) {
+            // Only log if we're doing a sample
+            if ( household.getDebugChoiceModels() && (numAlts < numberOfSubzones*tazDataManager.getNumberOfZones()) ) {
                 household.logTourObject( loggingHeader, modelLogger, person, mcDmuObject.getTourObject() );
             }
             
