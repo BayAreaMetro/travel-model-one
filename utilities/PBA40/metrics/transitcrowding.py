@@ -278,6 +278,9 @@ if __name__ == '__main__':
     all_trn_df["veh_type_updated"] = all_trn_df["VEHTYPE"]
     all_trn_df.loc[ all_trn_df["SYSTEM"]=="AC Transit",         "veh_type_updated"] = "AC Plus Bus"
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_1AC"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_BRT"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_40"),  "veh_type_updated"] = "Motor Bus Mix of Standard and Artics"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_57"),  "veh_type_updated"] = "Motor Bus Mix of Standard and Artics"
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("522VTA"),  "veh_type_updated"] = "Motor Articulated Bus"
 
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("120_EBART"), "veh_type_updated"] = "eBart 1 car"
