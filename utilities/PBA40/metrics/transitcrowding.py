@@ -31,8 +31,8 @@ LOG_FILE = "transit_crowding.log"
 
 PSEUDO_LINE_MAPPING = {
     # baseline
-    "120_OR_YEL"  :("120_ORANGE-","120_YELLOW[-89W]$"), # Orange/Richmond - MacArthur - Yellow/SFO
-    "120_OR_YER"  :("120_YELLOW[13E]?$","120_ORANGE$"), # Yellow/SFO - MacArthur - Orange/Richmond
+    "120_OR_YEL"  :("120_ORANGE[-A]$","120_YELLOW[-89W]$"), # Orange/Richmond - MacArthur - Yellow/SFO
+    "120_OR_YER"  :("120_YELLOW[13E]?$","120_ORANGE(A-)?$"), # Yellow/SFO - MacArthur - Orange/Richmond
     # crossings 3
     "120_BL_PS"   :("120_BLUE-",  "120_GREEN-" ), # Blue/DublinPleasanton - San Antonio - Green/Millbrae
     "120_BL_PSR"  :("120_GREEN$", "120_BLUE$"  ), # Green/Millbrae - San Antonio - Blue/DublinPleasanton
