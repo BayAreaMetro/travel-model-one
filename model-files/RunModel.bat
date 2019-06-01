@@ -19,6 +19,9 @@
 :: Set the path
 call CTRAMP\runtime\SetPath.bat
 
+:: Start the cube cluster
+Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
+
 ::  Set the IP address of the host machine which sends tasks to the client machines 
 if %computername%==MODEL2-A            set HOST_IP_ADDRESS=192.168.1.206
 if %computername%==MODEL2-B            set HOST_IP_ADDRESS=192.168.1.207
@@ -27,6 +30,10 @@ if %computername%==MODEL2-D            set HOST_IP_ADDRESS=192.168.1.209
 if %computername%==PORMDLPPW01         set HOST_IP_ADDRESS=172.24.0.101
 if %computername%==PORMDLPPW02         set HOST_IP_ADDRESS=172.24.0.102
 if %computername%==WIN-FK0E96C8BNI     set HOST_IP_ADDRESS=10.0.0.154
+if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.70
+
+:: for AWS, this will be "WIN-"
+SET computer_prefix=%computername:~0,4%
 
 :: Figure out the model year
 set MODEL_DIR=%CD%
@@ -93,6 +100,10 @@ if %FUTURE%==X (
 
 echo on
 echo turn echo back on
+
+if "%COMPUTER_PREFIX%" == "WIN-" (
+  python "CTRAMP\scripts\notify_slack.py" "Starting %MODEL_DIR%"
+)
 
 set MAXITERATIONS=3
 :: --------TrnAssignment Setup -- Standard Configuration
@@ -242,7 +253,6 @@ if ERRORLEVEL 1 goto done
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
-
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 8:  Prepare for iteration 2 and execute RunIteration batch file
@@ -347,8 +357,8 @@ if ERRORLEVEL 2 goto done
 ::
 :: ------------------------------------------------------------------------------------------------------
 
-call RunScenarioMetrics
-if ERRORLEVEL 2 goto done
+::call RunScenarioMetrics
+::if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -369,6 +379,9 @@ set PATH=%OLD_PATH%
 :: Move all the TP+ printouts to the \logs folder
 copy *.prn logs\*.prn
 
+:: Close the cube cluster
+Cluster "%COMMPATH%\CTRAMP" 1-48 Close Exit
+
 :: Delete all the temporary TP+ printouts and cluster files
 del *.prn
 del *.script.*
@@ -377,6 +390,14 @@ del *.script
 :: Success target and message
 :success
 ECHO FINISHED SUCCESSFULLY!
+
+if "%COMPUTER_PREFIX%" == "WIN-" (
+  python "CTRAMP\scripts\notify_slack.py" "Finished %MODEL_DIR%"
+
+  rem go up a directory and sync model folder to s3
+  cd ..
+  aws sync s3 %PROJECT_DIR% s3:\\travel-model-runs\%PROJECT_DIR%
+)
 
 :: Complete target and message
 :done

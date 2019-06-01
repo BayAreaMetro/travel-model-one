@@ -5,7 +5,7 @@ Notify slack of model run status
 """
 
 import argparse, os, socket, sys
-import requests
+import json,requests
 
 def post_message(message):
     """
@@ -13,11 +13,12 @@ def post_message(message):
     Also prints to console
     """
     headers  = { 'Content-type':'application/json'}
-    data     = '{"text":"' + message + '"}'
+    data     = { "text": message }
     if SLACK_WEBHOOK_URL:
-        response = requests.post(SLACK_WEBHOOK_URL, headers=headers, data=data)
+        response = requests.post(SLACK_WEBHOOK_URL, headers=headers, json=data)
 
     print("*** {}".format(message))
+    print("response: {}".format(response))
     print("")
 
 if __name__ == '__main__':
@@ -31,7 +32,7 @@ if __name__ == '__main__':
         SLACK_WEBHOOK_URL_FILE = "M:\Software\Slack\TravelModel_SlackWebhook.txt"
         print("Running on mtc host; using {}".format(SLACK_WEBHOOK_URL_FILE))
     else:
-        SLACK_WEBHOOK_URL_FILE = "D:\TravelModel_SlackWebhook.txt"
+        SLACK_WEBHOOK_URL_FILE = "C:\Software\Slack\TravelModel_SlackWebhook.txt"
         print("Running on non-mtc host; using {}".format(SLACK_WEBHOOK_URL_FILE))
 
     SLACK_WEBHOOK_URL      = None # will be read

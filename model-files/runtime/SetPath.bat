@@ -3,16 +3,25 @@
 
 :: The commpath
 SET COMMPATH=X:\COMMPATH
+if "%COMPUTER_PREFIX%" == "WIN-" (
+  SET COMMPATH=D:\COMMPATH
+)
 
 :: The location of the 64-bit java development kit
 set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
 
 :: The location of the GAWK binary executable files
 set GAWK_PATH=X:\UTIL\Gawk
+if "%COMPUTER_PREFIX%" == "WIN-" (
+  set GAWK_PATH=C:\Software\Gawk
+)
 
 :: The location of R and R libraries
 set R_HOME=C:\Program Files\R\R-3.5.2
 set R_LIB=C:/Users/mtcpb/Documents/R/win-library/3.5
+if "%COMPUTER_PREFIX%" == "WIN-" (
+  set R_LIB=C:/Users/Administrator/Documents/R/win-library/3.5
+)
 
 :: The location of the RUNTPP executable from Citilabs
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI
