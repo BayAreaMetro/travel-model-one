@@ -393,7 +393,7 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 
   rem go up a directory and sync model folder to s3
   cd ..
-  aws sync s3 %PROJECT_DIR% s3:\\travel-model-runs\%PROJECT_DIR%
+  aws sync s3 %myfolder% s3://travel-model-runs/%myfolder%
 )
 
 :: Complete target and message
