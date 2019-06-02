@@ -373,9 +373,6 @@ c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
 
 : cleanup
 
-:: Put the PATH back the way you found it
-set PATH=%OLD_PATH%
-
 :: Move all the TP+ printouts to the \logs folder
 copy *.prn logs\*.prn
 
