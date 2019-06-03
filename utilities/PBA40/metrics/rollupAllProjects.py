@@ -24,8 +24,8 @@ for file in bcmetrics_file_list:
     df_metrics = pd.concat([df_metrics, df], axis=0)
 
 
-df_metrics.to_csv("AllProjects_metrics.csv", header=True, index=False)
-print ("Successfully wrote AllProjects_metrics.csv to \\all_projects_metrics_dir")
+df_metrics.to_csv("AllProjects_bc_metrics.csv", header=True, index=False)
+print ("Successfully wrote AllProjects_bc_metrics.csv to \\all_projects_metrics_dir")
 
 
 ############ rolling up all quick summaries
