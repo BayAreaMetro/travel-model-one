@@ -188,4 +188,8 @@ del hwy\iter%ITER%\x*.net
 
 echo FINISHED ITERATION %ITER%  %DATE% %TIME% >> logs\feedback.rpt 
 
+if "%COMPUTER_PREFIX%" == "WIN-" (
+   python "CTRAMP\scripts\notify_slack.py" "Finished iteration %ITER% in %MODEL_DIR%"
+)
+
 :done
