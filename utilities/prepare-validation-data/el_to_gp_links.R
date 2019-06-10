@@ -1,5 +1,5 @@
 #
-# adapted from HOV to GP link
+# adapted from HOV to GP links
 #
 
 library(foreign) # read dbf from shapefile since we're already making one for this process
@@ -7,10 +7,10 @@ library(dplyr)
 
 
 TM_VERSION      <- "" # set to TM1 or TM2 or nothing in other uses
-CROSSWALK_DIR   <- paste0("M:/Application/Model One/Mock Futures/Express_Lane_length_correction/","Full Express Lane Buildout/OUTPUT")
-TM_NETWORK      <- file.path(CROSSWALK_DIR, "shapefiles", "network_links.dbf")
-OUTPUT_DBF      <- "hov_to_gp_links.dbf"
-OUTPUT_CSV      <- "hov_to_gp_links.csv"
+INPUT_DIR       <- "L:/RTP2021_PPA/Projects/2050_TM151_PPA_BF_05/INPUT"
+TM_NETWORK      <- file.path(INPUT_DIR, "shapefiles", "network_links.dbf")
+OUTPUT_DBF      <- "el_to_gp_links.dbf"
+OUTPUT_CSV      <- "el_to_gp_links.csv"
 
 network_df      <- read.dbf(TM_NETWORK, as.is=TRUE) %>% select(A,B,LANES,USE,FT,TOLLCLASS,ROUTENUM,ROUTEDIR,DISTANCE)
 
@@ -44,5 +44,5 @@ hov_links_df <- left_join(hov_links_df, select(hov_group1_df, A,B,A_GP,B_GP, DIS
 #### output for looking at these
 hov_links_df <- mutate(hov_links_df, A_B=paste0(A,"_",B), A_B_GP=paste0(A_GP,"_",B_GP))
 
-write.dbf(hov_links_df, file.path(CROSSWALK_DIR,OUTPUT_DBF))
-write.csv(hov_links_df, file.path(CROSSWALK_DIR,OUTPUT_CSV), row.names = FALSE)
+write.dbf(hov_links_df, file.path(INPUT_DIR,OUTPUT_DBF))
+write.csv(hov_links_df, file.path(INPUT_DIR,OUTPUT_CSV), row.names = FALSE)
