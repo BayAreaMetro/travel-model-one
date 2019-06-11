@@ -147,6 +147,7 @@ class RunResults:
         #if 'CaltrainMod_00' not in rundir:  #for RTFF
         if len(rundir) > 22:
             configs_df = pd.read_excel(self.ppa_master_input, sheet_name='configs_projects', header=0)
+            configs_df = configs_df.drop(['Base Model', 'Base ID', 'Future', 'Iteration'], axis=1)
             configs_df.insert(0,'Folder','')
             configs_df['Folder'] =  configs_df[['Foldername - Project', 'Foldername - Future']].apply(lambda x: '\\'.join(x), axis=1)
             configs_df.drop(['Foldername - Project', 'Foldername - Future'], axis=1)
@@ -270,6 +271,7 @@ class RunResults:
 
             # Project costs
             df_costs = pd.read_excel(self.ppa_master_input, sheet_name='project_costs', header=0)
+            df_costs = df_costs.drop(['Project Name'], axis=1)
             df_costs = df_costs[df_costs['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
             self.proj_costs = df_costs.to_dict('records', into=OrderedDict)[0]
 
@@ -282,6 +284,7 @@ class RunResults:
             new_header = df_collisions_SWITRS.iloc[0] #grab the first row for the header
             df_collisions_SWITRS = df_collisions_SWITRS[1:] #take the data less the header row
             df_collisions_SWITRS.columns = new_header
+            df_collisions_SWITRS = df_collisions_SWITRS.drop(['Project Name'], axis=1)
 
             df_collisions_SWITRS2 = df_collisions_SWITRS[df_collisions_SWITRS['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
             if df_collisions_SWITRS2.shape[0] == 0:
@@ -291,6 +294,7 @@ class RunResults:
 
             # Natural Land
             df_natural_land = pd.read_excel(self.ppa_master_input, sheet_name='natural_land', header=0)
+            df_natural_land = df_natural_land.drop(['Project Name'], axis=1)
             df_natural_land2 = df_natural_land[df_natural_land['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
             if df_natural_land2.shape[0] == 0:
                 df_natural_land2 = df_natural_land[df_natural_land['project_id'] == 0]
@@ -298,6 +302,7 @@ class RunResults:
 
             # Guiding Principles
             df_gp = pd.read_excel(self.ppa_master_input, sheet_name='guiding_principles', header=0)
+            df_gp = df_gp.drop(['Project Name'], axis=1)
             df_gp2 = df_gp[df_gp['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
             if df_gp2.shape[0] == 0:
                 df_gp2 = df_gp[df_gp['project_id'] == 0]
