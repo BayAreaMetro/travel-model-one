@@ -12,7 +12,7 @@ TM_NETWORK      <- file.path(INPUT_DIR, "shapefiles", "network_links.dbf")
 OUTPUT_DBF      <- "el_to_gp_links.dbf"
 OUTPUT_CSV      <- "el_to_gp_links.csv"
 
-network_df      <- read.dbf(TM_NETWORK, as.is=TRUE) %>% select(A,B,LANES,USE,FT,TOLLCLASS,ROUTENUM,ROUTEDIR,DISTANCE)
+network_df      <- read.dbf(TM_NETWORK, as.is=TRUE) %>% select(A,B,LANES,USE,FT,TOLLCLASS,ROUTENUM,ROUTEDIR,DISTANCE,PROJ)
 
 hov_links_df    <-  filter(network_df, TOLLCLASS>9 )
 gp_links_df     <- filter(network_df, USE==1 & (FT<=3 | FT==5 | FT==8 | FT==10))
