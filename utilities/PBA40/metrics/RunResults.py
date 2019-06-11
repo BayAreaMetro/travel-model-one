@@ -147,7 +147,7 @@ class RunResults:
         #if 'CaltrainMod_00' not in rundir:  #for RTFF
         if len(rundir) > 22:
             configs_df = pd.read_excel(self.ppa_master_input, sheet_name='configs_projects', header=0)
-            configs_df = configs_df.drop(['Base Model', 'Base ID', 'Future', 'Iteration'], axis=1)
+            configs_df = configs_df.drop(['Base Model', 'Base ID', 'Future Run', 'Iteration'], axis=1)
             configs_df.insert(0,'Folder','')
             configs_df['Folder'] =  configs_df[['Foldername - Project', 'Foldername - Future']].apply(lambda x: '\\'.join(x), axis=1)
             configs_df.drop(['Foldername - Project', 'Foldername - Future'], axis=1)
