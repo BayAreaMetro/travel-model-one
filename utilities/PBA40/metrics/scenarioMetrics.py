@@ -33,8 +33,8 @@ def tally_travel_cost(iteration, sampleshare, metrics_dict):
     transit_df['Total Cost'] = transit_df['Daily Trips']*transit_df['Avg Cost']
     transit_df = transit_df.sum(level='Income')
     for inc_level in range(1,5):
-        metrics_dict['total_transit_fares_inc%d' % inc_level] = transit_df.loc['inc%d' % inc_level, 'Total Cost']
-        metrics_dict['total_transit_trips_inc%d' % inc_level] = transit_df.loc['inc%d' % inc_level, 'Daily Trips']
+        metrics_dict['total_transit_fares_inc%d' % inc_level] = transit_df.loc['_no_zpv_inc%d' % inc_level, 'Total Cost']
+        metrics_dict['total_transit_trips_inc%d' % inc_level] = transit_df.loc['_no_zpv_inc%d' % inc_level, 'Daily Trips']
 
     auto_df = pandas.read_csv(os.path.join("metrics","auto_times.csv"),
                               sep=",", index_col=[0,1])
