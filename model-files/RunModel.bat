@@ -357,8 +357,8 @@ if ERRORLEVEL 2 goto done
 ::
 :: ------------------------------------------------------------------------------------------------------
 
-::call RunScenarioMetrics
-::if ERRORLEVEL 2 goto done
+call RunScenarioMetrics
+if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
