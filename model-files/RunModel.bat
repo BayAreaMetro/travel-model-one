@@ -394,6 +394,10 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
   rem go up a directory and sync model folder to s3
   cd ..
   "C:\Program Files\Amazon\AWSCLI\aws" s3 sync %myfolder% s3://travel-model-runs/%myfolder%
+
+  rem shutdown
+  python "CTRAMP\scripts\notify_slack.py" "Finished %MODEL_DIR% - shutting down"
+  C:\Windows\System32\shutdown.exe /s
 )
 
 :: Complete target and message
