@@ -19,7 +19,7 @@ bcmetrics_file_list = [i for i in os.listdir('.') if 'BC_' in i]
 # loop through each project file in the list, and add relevant data to the dataframe
 for file in bcmetrics_file_list:
     df = pd.read_csv(file)
-    df['Project'] = df.loc[df['category1']=='Project','values'].item()
+    df['Project'] = df.loc[6,'values']
     df['Future'] = df.loc[8,'values']
     df['ProjectID'] = df.loc[2,'values']
     df['BaseID'] = df.loc[9,'values']
