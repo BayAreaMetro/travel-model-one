@@ -22,6 +22,7 @@ copy /Y "%GITHUB_DIR%\model-files\RunIteration.bat"                        CTRAM
 copy /Y "%GITHUB_DIR%\model-files\RunLogsums.bat"                          .
 copy /Y "%GITHUB_DIR%\model-files\RunCoreSummaries.bat"                    .
 copy /Y "%GITHUB_DIR%\utilities\PBA40\RunMetrics.bat"                      .
+copy /Y "%GITHUB_DIR%\utilities\PBA40\RunScenarioMetrics.bat"              .
 copy /Y "%GITHUB_DIR%\utilities\PBA40\ExtractKeyFiles.bat"                 .
 
 if "%COMPUTER_PREFIX%" == "WIN-" (copy "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"  "CTRAMP\scripts\notify_slack.py")
