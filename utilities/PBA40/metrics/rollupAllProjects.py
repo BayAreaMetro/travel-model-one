@@ -1,7 +1,7 @@
 import os
 import csv
 import pandas as pd
-from pandas import DataFrame
+#from pandas import qs_dataframe
 
 
 #os.chdir(os.path.join(os.getcwd(), 'all_projects_metrics_dir'))
@@ -9,17 +9,21 @@ from pandas import DataFrame
 
 ############ rolling up all bc_metrics
 
-# get transit model output files for five time periods
-bcmetrics_file_list = [i for i in os.listdir('.') if 'BC_' in i]
+
+# create empty dataframe with essential columns
 df_metrics = pd.DataFrame(columns=[u'category1', u'category2', u'category3', u'variable_name', u'values', u'Project', u'Future', u'ProjectID', u'BaseID'])
 
+# create a list of the bcmetrics.csv for all projects in the folder 
+bcmetrics_file_list = [i for i in os.listdir('.') if 'BC_' in i]
+
+# loop through each project file in the list, and add relevant data to the dataframe
 for file in bcmetrics_file_list:
     df = pd.read_csv(file)
-    df['Project'] = df.loc[3,'values']
-    df['Future'] = df.loc[7,'values']
+    df['Project'] = df.loc[6,'values']
+    df['Future'] = df.loc[8,'values']
     df['ProjectID'] = df.loc[2,'values']
-    df['BaseID'] = df.loc[8,'values']
-    drop_index = list(range(0,13))
+    df['BaseID'] = df.loc[9,'values']
+    drop_index = list(range(0,14))
     df = df.drop(drop_index,axis="rows")
     df_metrics = pd.concat([df_metrics, df], axis=0)
 

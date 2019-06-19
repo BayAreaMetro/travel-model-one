@@ -68,7 +68,7 @@ def find_pseudo_lines(trn_link_df):
     pseudo_lines = []
 
     for group_id, line in line_group:
-        if group_id[0] not in [120, 130]: continue # BART only    NOTE: if running for Crossings, include 130 for regional rail
+        if group_id[0] not in [120]: continue   #  ie do this only for BART and Reg Rail
         if len(line) < 3: continue      # pseudo lines must have board + transfer + exit  
 
         seq_last_board = line["seq_brda"].max()
