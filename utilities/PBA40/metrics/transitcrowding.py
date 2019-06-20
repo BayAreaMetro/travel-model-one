@@ -40,10 +40,10 @@ PSEUDO_LINE_MAPPING = {
     "120_GREEN_BR":("120_BLUE$",  "120_GREEN$" ), # Blue/MillBrae - San Antonio - Green/BerryessaFremont
     "120_GRN"     :("120_ORANGE$","120_NEW-"   ), # Orange/BerryessaFremont - San Antonio - New/Millbrae
     "120_GRN_R"   :("120_NEW$",   "120_ORANGE-"), # New/Millbrae - San Antonio - Orange/BerryessaFremont
-    "120_NEW_PS"  :("120_NEW$",   "120_YELLOW-"), # New/Pittsburg - MacArthur - Yellow/Millbrae (*)
-    "120_NEW_PSR" :("120_YELLOW$","120_NEW-"   ), # Yellow/Millbrae - MacArthur - New/Pittsburg (*)
-    "120_RED_YEL" :("120_ORANGE-","120_YELLOW-"), # Orange/Richmond - MacArthur - Yellow/Millbrae
-    "120_RED_YER" :("120_YELLOW$","120_ORANGE$"), # Yellow/Millbrae - MacArthur - Orange/Richmond
+    "120_NEW_PS"  :("120_NEW$",   "120_YELLOWW"), # New/Pittsburg - MacArthur - Yellow/Millbrae (*)
+    "120_NEW_PSR" :("120_YELLOWE","120_NEW-"   ), # Yellow/Millbrae - MacArthur - New/Pittsburg (*)
+    "120_RED_YEL" :("120_ORANGE-","120_YELLOWW"), # Orange/Richmond - MacArthur - Yellow/Millbrae
+    "120_RED_YER" :("120_YELLOWE","120_ORANGE$"), # Yellow/Millbrae - MacArthur - Orange/Richmond
     # crossings 4
     "130_RR_PSEU" :("130_RR_SACR$", "130_RR_F_EXP-", 14648), # RR_Sacr/Martinez - Jack London - Fremont (along easy bay)
     "130_RR_PSEUR":("130_RR_F_EXP$","130_RR_SACR-",  14648), # reverse
