@@ -28,6 +28,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     hostname = socket.getfqdn()
+    instance = os.environ['INSTANCE']
     if hostname.endswith(".mtc.ca.gov"):
         SLACK_WEBHOOK_URL_FILE = "M:\Software\Slack\TravelModel_SlackWebhook.txt"
         print("Running on mtc host; using {}".format(SLACK_WEBHOOK_URL_FILE))
@@ -41,5 +42,5 @@ if __name__ == '__main__':
     f.close()
     print("Read slack webhook URL: {}".format(SLACK_WEBHOOK_URL))
 
-    post_message("{}: {}".format(hostname, args.message))
+    post_message("*{}*: {}".format(instance, args.message))
     # that's all
