@@ -3,25 +3,43 @@
 # summarize the speed of express lanes and their corresponding general purpose lanes
 # and calculate new tolls
 #
+# can be run by the batch script, RunTollCalibration.bat:
+# call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\calibrate_el_tolls.R"
+#
+# can be run stand alone as well, but users need to define:
+# ITER, PROJECT_DIR, UNLOADED_NETWORK_DBF, BRIDGE_TOLLS_CSV
+#
 #############################################################
 
 library(foreign) # read dbf from shapefile
 library(dplyr)
 
-# remove all variables from the r environment
-rm(list=ls())
+ITER <- Sys.getenv("ITER")        # The iteration of model outputs to be read
+ITER <- as.numeric(ITER)
 
-# the loaded network
-# note direction of the slash
-PROJECT_DIR           <- "//model2-b/Model2B-Share/Projects/2050_TM151_PPA_BF_06_TollCalibration_00"
-LOADED_NETWORK_CSV    <- file.path(PROJECT_DIR, "hwy", "iter4","avgload5period.csv")
-UNLOADED_NETWORK_DBF  <- file.path("L:/RTP2021_PPA/Projects/2050_TM151_PPA_BF_06/INPUT/shapefiles", "network_links.dbf") # from cube_to_shapefile.py
+# specify the loaded network, unloaded network and other inputs
+PROJECT_DIR           <- Sys.getenv("PROJECT_DIR")
+PROJECT_DIR           <- gsub("\\\\","/",PROJECT_DIR) # switch slashes around
+LOADED_NETWORK_CSV    <- file.path(PROJECT_DIR, "hwy", paste0("iter",ITER),"avgload5period.csv")
+UNLOADED_NETWORK_DBF  <- Sys.getenv("UNLOADED_NETWORK_DBF") # from cube_to_shapefile.py
+UNLOADED_NETWORK_DBF  <- gsub("\\\\","/",UNLOADED_NETWORK_DBF) # switch slashes around
 TOLLS_CSV             <- file.path(PROJECT_DIR, "hwy", "tolls.csv")
-BRIDGE_TOLLS_CSV      <- "M:/Application/Model One/NetworkProjects/Bridge_Toll_Updates/tolls_2050.csv"
+BRIDGE_TOLLS_CSV      <- Sys.getenv("BRIDGE_TOLLS_CSV")
+BRIDGE_TOLLS_CSV      <- gsub("\\\\","/",BRIDGE_TOLLS_CSV) # switch slashes around
 
-OUTPUT_LINK_SPD_CSV             <- "el_gp_link_speed_iter5.csv"
-OUTPUT_AVG_SPD_CSV              <- "el_gp_avg_speed_iter5.csv"
-OUTPUT_NEW_TOLLS_CSV            <- "tolls_iter5.csv"
+# specify the following instead, if run as a stand alone script
+# rm(list=ls()) # remove all variables from the r environment
+# ITER <- 4
+# PROJECT_DIR           <- "//model2-b/Model2B-Share/Projects/2050_TM151_PPA_BF_06_TollCalibration_00" # note direction of the slash
+# LOADED_NETWORK_CSV    <- file.path(PROJECT_DIR, "hwy", ITER,"avgload5period.csv")
+# UNLOADED_NETWORK_DBF  <- file.path("L:/RTP2021_PPA/Projects/2050_TM151_PPA_BF_06/INPUT/shapefiles", "network_links.dbf") # from cube_to_shapefile.py
+# TOLLS_CSV             <- file.path(PROJECT_DIR, "hwy", "tolls.csv")
+# BRIDGE_TOLLS_CSV      <- "M:/Application/Model One/NetworkProjects/Bridge_Toll_Updates/tolls_2050.csv"
+
+# specify the names of the outputs
+OUTPUT_LINK_SPD_CSV             <- paste0("el_gp_link_speed_iter",ITER,".csv")
+OUTPUT_AVG_SPD_CSV              <- paste0("el_gp_avg_speed_iter",ITER,".csv")
+OUTPUT_NEW_TOLLS_CSV            <- paste0("tolls_iter",ITER+1,".csv")
 
 unloaded_network_df      <- read.dbf(UNLOADED_NETWORK_DBF, as.is=TRUE) %>% select(A,B,USE,FT,TOLLCLASS)
 
@@ -84,7 +102,7 @@ el_gp_loaded_df <- el_gp_loaded_df %>% arrange(TOLLCLASS)
 el_gp_loaded_nan_df <- na.omit(el_gp_loaded_df)
 
 #############################################################
-# summarize average speed at facility level
+# summarize average speed at facility level and determine scenario
 #############################################################
 
 el_gp_summary_df <- el_gp_loaded_nan_df %>%
@@ -135,7 +153,7 @@ el_gp_summary_df <- el_gp_summary_df %>%
                                                                 TRUE                                                                         ~ "Undefined"))
 
 #############################################################
-# merge in the existing toll rates
+# merge in the existing toll rates and determine toll adjustment
 #############################################################
 toll_rates_df          <- read.csv(file=TOLLS_CSV, header=TRUE, sep=",")
 toll_rates_df          <- toll_rates_df  %>% select(tollclass, facility_name, tollam_da, tollmd_da, tollpm_da)
@@ -145,22 +163,22 @@ el_gp_summary_df <- el_gp_summary_df %>% left_join(toll_rates_df,
 
 # determine new toll rates
 el_gp_summary_df <- el_gp_summary_df %>%
-                                    mutate(tollam_da_new = case_when(Case_AM == "Case1 - raise tolls"         ~ tollam_da + round(((45 - avgspeed_AM)/100), digits=2),
-                                                                      Case_AM == "Case2 - drop tolls"         ~ pmax((round(tollam_da - ((avgspeed_AM - 45)/100), digits=2)), 0.03),
+                                    mutate(tollam_da_new = case_when(Case_AM == "Case1 - raise tolls"         ~ tollam_da + round(((45 - avgspeed_AM)/100), digits=2)*2,
+                                                                      Case_AM == "Case2 - drop tolls"         ~ pmax((round(tollam_da - ((avgspeed_AM - 45)/100), digits=2)*2), 0.03),
                                                                      Case_AM == "Case3 - ok"                  ~ tollam_da,
                                                                      Case_AM == "Case4 - drop tolls slightly" ~ pmax((tollam_da - round((avgspeed_AM - avgspeed_AM_GP)/100/2, digits=2)), 0.03),
                                                                      Case_AM == "Case5 - set to min"          ~ 0.03))
 
 el_gp_summary_df <- el_gp_summary_df %>%
-                                    mutate(tollmd_da_new = case_when(Case_MD == "Case1 - raise tolls"          ~ tollmd_da + round(((45 - avgspeed_MD)/100), digits=2),
-                                                                     Case_MD == "Case2 - drop tolls"           ~ pmax((round(tollmd_da - ((avgspeed_MD - 45)/100), digits=2)), 0.03),
+                                    mutate(tollmd_da_new = case_when(Case_MD == "Case1 - raise tolls"          ~ tollmd_da + round(((45 - avgspeed_MD)/100), digits=2)*2,
+                                                                     Case_MD == "Case2 - drop tolls"           ~ pmax((round(tollmd_da - ((avgspeed_MD - 45)/100), digits=2)*2), 0.03),
                                                                      Case_MD == "Case3 - ok"                   ~ tollmd_da,
                                                                      Case_MD == "Case4 - drop tolls slightly"  ~ pmax((tollmd_da - round((avgspeed_MD - avgspeed_MD_GP)/100/2, digits=2)), 0.03),
                                                                      Case_MD == "Case5 - set to min"           ~ 0.03))
 
 el_gp_summary_df <- el_gp_summary_df %>%
-                                    mutate(tollpm_da_new = case_when(Case_PM == "Case1 - raise tolls"          ~ tollpm_da + round(((45 - avgspeed_PM)/100), digits=2),
-                                                                     Case_PM == "Case2 - drop tolls"           ~ pmax((round(tollpm_da - ((avgspeed_PM - 45)/100), digits=2)), 0.03),
+                                    mutate(tollpm_da_new = case_when(Case_PM == "Case1 - raise tolls"          ~ tollpm_da + round(((45 - avgspeed_PM)/100), digits=2)*2,
+                                                                     Case_PM == "Case2 - drop tolls"           ~ pmax((round(tollpm_da - ((avgspeed_PM - 45)/100), digits=2)*2), 0.03),
                                                                      Case_PM == "Case3 - ok"                   ~ tollpm_da,
                                                                      Case_PM == "Case4 - drop tolls slightly"  ~ pmax((tollpm_da - round((avgspeed_PM - avgspeed_PM_GP)/100/2, digits=2)), 0.03),
                                                                      Case_PM == "Case5 - set to min"           ~ 0.03))
