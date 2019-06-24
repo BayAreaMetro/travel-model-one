@@ -202,9 +202,9 @@ tolls_new_df <- tolls_new_df  %>%
                                      tollpm_da = tollpm_da_new,
                                      tollev_da = 0,
                                      tollea_s2 = 0,
-                                     tollam_s2 = tollam_da_new/2,
-                                     tollmd_s2 = tollmd_da_new/2,
-                                     tollpm_s2 = tollmd_da_new/2,
+                                     tollam_s2 = 0,
+                                     tollmd_s2 = 0,
+                                     tollpm_s2 = 0,
                                      tollev_s2 = 0,
                                      tollea_s3 = 0,
                                      tollam_s3 = 0,
@@ -233,6 +233,23 @@ tolls_new_df <- tolls_new_df  %>%
                                      tollev_lrg = 0)
 
 
+# add s2 tolls for selected facilities
+
+# facility name                                                             toll class
+# I-880 - Hegenberger Rd to US 101 - Westbound						                     15
+# I-880 - Hegenberger Rd to US 101 - Eastbound						                     16
+# US 101 - I-880 to Embarcadero Rd (San Mateo county line) - Northbound	       19
+# US 101 - I-880 to Embarcadero Rd (San Mateo county line) - Southbound	       20
+# SR-237 - VTA - Westbound										                                 31
+# SR-237 - VTA - Eastbound										                                 32
+# US 101 - Whipple Ave to Alanna Rd (SF county line) - Northbound		           54
+# US 101 - Whipple Ave to Alanna Rd (SF county line) - Southbound		           55
+
+tolls_new_df <- tolls_new_df  %>%
+                              mutate(tollam_s2 = replace(tollam_s2, (tollclass==15 | tollclass==16 | tollclass==19 | tollclass==20 | tollclass==31 | tollclass==32 | tollclass==54 | tollclass==55), tollam_da_new/2),
+                                     tollmd_s2 = replace(tollmd_s2, (tollclass==15 | tollclass==16 | tollclass==19 | tollclass==20 | tollclass==31 | tollclass==32 | tollclass==54 | tollclass==55), tollmd_da_new/2),
+                                     tollpm_s2 = replace(tollpm_s2, (tollclass==15 | tollclass==16 | tollclass==19 | tollclass==20 | tollclass==31 | tollclass==32 | tollclass==54 | tollclass==55), tollpm_da_new/2))
+
 tolls_new_df <- tolls_new_df  %>% select(-c(TOLLCLASS, tollam_da_new, tollmd_da_new, tollpm_da_new))
 
 # append the new toll rates to the first half of the toll.csv file containing the bridge tolls
@@ -251,4 +268,4 @@ write.csv(el_gp_summary_df, file.path(PROJECT_DIR, OUTPUT_AVG_SPD_CSV), row.name
 # output a new tolls.csv
 write.csv(bridge_el_tolls_df, file.path(PROJECT_DIR, "hwy", OUTPUT_NEW_TOLLS_CSV), row.names = FALSE)
 # if running this script on a project directory on L, change the path for the output tolls to the following.
-# write.csv(bridge_el_tolls_df, file.path(PROJECT_DIR, "INPUT", "hwy", OUTPUT_NEW_TOLLS_CSV), row.names = FALSE)
+#write.csv(bridge_el_tolls_df, file.path(PROJECT_DIR, "INPUT", "hwy", OUTPUT_NEW_TOLLS_CSV), row.names = FALSE)
