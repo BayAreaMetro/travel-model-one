@@ -1,71 +1,61 @@
-#########################################################################
-# Caluating VMT per capita by place of residence and place of work
-#########################################################################
-
-
-# Caluating vmt
-#########################################################################
-load("M:/Application/Model One/RTP2017/Scenarios/2015_06_002/OUTPUT/core_summaries/AutoTripsVMT_perOrigDestHomeWork.rdata")
-
-# to see what's in the file
-head(model_summary)
-
-# if dplyr not installed, type install.packages("dplyr")
-
 library(dplyr)
 
-#group_by
-# %>%, hit control shift m, to get piping
-# by place of residence
-total_vmt_by_residence = model_summary %>%
-   group_by(taz) %>%
-   summarise(total_vmt = sum(vmt))
-
-# export to csv
-# note / direction
-write.csv(total_vmt_by_residence, "M:/Application/Model One/VMT_maps/total_vmt_by_residence.csv")
-
-# by place of work
-total_vmt_by_workplace = model_summary %>%
-   group_by(WorkLocation) %>%
-   summarise(total_vmt = sum(vmt))
-
-# export to csv
-# note / direction
-write.csv(total_vmt_by_workplace, "M:/Application/Model One/VMT_maps/total_vmt_by_workplace.csv")
-
-# Caluating population
 #########################################################################
-
-load("M:/Application/Model One/RTP2017/Scenarios/2015_06_002/OUTPUT/core_summaries/AutoTripsVMT_personsHomeWork.rdata")
-head(model_summary)
-
-# by place of residence
-total_pop_by_residence = model_summary %>%
-   group_by(taz) %>%
-   summarise(total_pop = sum(freq))
-
-# export to csv
-# note / direction
-write.csv(total_pop_by_residence, "M:/Application/Model One/VMT_maps/total_pop_by_residence.csv")
-
-# by place of work
-total_pop_by_workplace = model_summary %>%
-   group_by(WorkLocation) %>%
-   summarise(total_pop = sum(freq))
-
-# export to csv
-# note / direction
-write.csv(total_pop_by_workplace, "M:/Application/Model One/VMT_maps/total_pop_by_workplace.csv")
-
-# link the tables and calculate vmt per capita
+# Calculates VMT per capita by place of residence and place of work
+# for VMT Maps on arcgis online
+# RTP 2013:
+#   VMT by Place of Residence: 
+#     https://mtc.maps.arcgis.com/home/item.html?id=5b11f6b61be344cdb13ffd5eacfba5eb (feature layer)
+#     https://mtc.maps.arcgis.com/home/item.html?id=034f499840964a979a1572a25ac07681 (web map)
+#   VMT by Place of Work:
+#     https://mtc.maps.arcgis.com/home/item.html?id=24b46bec2e794a90b4aaba335b60c3bc (feature layer)
+#     https://mtc.maps.arcgis.com/home/item.html?id=ece1f7085d2c4985b29d4953b63d94bb (web map)
+#
+# RTP 2017:
+#   VMT by Place of Residence:
+#     https://mtc.maps.arcgis.com/home/item.html?id=6d25504c0fde416a995d52c62a5d9e4c (feature layer)
+#     https://mtc.maps.arcgis.com/home/item.html?id=2bddae2c822146a7a8e98892a6d4ee2f (web map)
+#   VMT by Place of Work:
+#     https://mtc.maps.arcgis.com/home/item.html?id=5264fa93cf7648469221d1405f6a3174 (feature layer)
+#     https://mtc.maps.arcgis.com/home/item.html?id=6253e74fca1d463c92c15011a12a4a69 (web map)
 #########################################################################
-vmt_pop_by_residence = merge(total_vmt_by_residence, total_pop_by_residence, by="taz")
-vmt_pop_by_residence$vmtpercapita = vmt_pop_by_residence$total_vmt / vmt_pop_by_residence$total_pop
-write.csv(vmt_pop_by_residence, "M:/Application/Model One/VMT_maps/vmt_pop_by_residence.csv")
+RTP        <- 2017
+RTP_DIR    <- paste0("M:/Application/Model One/RTP",RTP)
+if (RTP==2013) { SCEN_DIR <- file.path(RTP_DIR, "Scenarios","Round 05 -- Final")}
+if (RTP==2017) { SCEN_DIR <- file.path(RTP_DIR, "Scenarios") }
 
-vmt_pop_by_workplace = merge(total_vmt_by_workplace, total_pop_by_workplace, by="WorkLocation")
-vmt_pop_by_workplace$vmtpercapita = vmt_pop_by_workplace$total_vmt / vmt_pop_by_workplace$total_pop
-write.csv(vmt_pop_by_workplace, "M:/Application/Model One/VMT_maps/vmt_pop_by_workplace.csv")
+OUTPUT_DIR <- file.path(RTP_DIR, "VMT per capita or worker")
 
-# shape file was downloaded from: https://mtc.maps.arcgis.com/home/item.html?id=57e4e331d2a042938760cc9397218ad0
+if (RTP==2013) {
+  # MODEL_RUN_IDS <- c("2020_03_116", "2030_03_116", "2040_03_116")
+  # 2040 is the only one with core_summaires
+  MODEL_RUN_IDS <- c("2040_03_116")
+} else if (RTP==2017) {
+  MODEL_RUN_IDS <- c("2015_06_002", "2020_06_694", "2030_06_694", "2040_06_694_Amd1")
+}
+
+for (MODEL_RUN_ID in MODEL_RUN_IDS) {
+  load(file.path(SCEN_DIR,MODEL_RUN_ID,"OUTPUT","core_summaries","AutoTripsVMT_perOrigDestHomeWork.rdata"))
+
+  # sum vmt to residence and work location
+  total_vmt_by_residence <- model_summary %>% group_by(taz) %>% summarise(total_vmt = sum(vmt))
+  total_vmt_by_workplace <- model_summary %>% group_by(WorkLocation) %>% summarise(total_vmt = sum(vmt))
+  
+  load(file.path(SCEN_DIR,MODEL_RUN_ID,"OUTPUT","core_summaries","AutoTripsVMT_personsHomeWork.rdata"))
+
+  # sum population to residence and work location
+  total_pop_by_residence <- model_summary %>% group_by(taz) %>% summarise(total_pop = sum(freq))
+  total_pop_by_workplace <- model_summary %>% group_by(WorkLocation) %>% summarise(total_pop = sum(freq))
+  
+  # join it up
+  vmt_pop_by_residence <- merge(total_vmt_by_residence, total_pop_by_residence, by="taz", all=TRUE) %>%
+    mutate(vmtpercapita=total_vmt/total_pop)
+
+  vmt_pop_by_workplace <- merge(total_vmt_by_workplace, total_pop_by_workplace, by="WorkLocation", all=TRUE) %>%
+    mutate(vmtperworker=total_vmt/total_pop)
+  
+  # write it
+  write.csv(vmt_pop_by_residence, file.path(OUTPUT_DIR, paste0("Home_",MODEL_RUN_ID,".csv")), row.names=FALSE)
+  write.csv(vmt_pop_by_workplace, file.path(OUTPUT_DIR, paste0("Work_",MODEL_RUN_ID,".csv")), row.names=FALSE)
+}
+
