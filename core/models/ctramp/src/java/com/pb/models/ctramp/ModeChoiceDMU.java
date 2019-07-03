@@ -343,7 +343,9 @@ public class ModeChoiceDMU implements Serializable, VariableTable {
         return hh.getChild16plus();
     }
 
-    
+    public int getHhIncomeInDollars(){
+        return hh.getIncomeInDollars();
+    }
     
     
     

@@ -56,7 +56,11 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
     public int getWorkers() {
         return hh.getWorkers();
     }
-    
+
+    public int getHhIncomeInDollars(){
+        return hh.getIncomeInDollars();
+    }
+
     public float getTourDuration(){
     	float duration = tour.getTourEndHour() - tour.getTourStartHour();
     	return duration; 
@@ -281,7 +285,7 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
         methodIndexMap.put("getWaitTimeSharedTNC", 40);
         methodIndexMap.put("getUseOwnedAV", 41);
         methodIndexMap.put("getTourModeIsRideHail", 42 );
-
+        methodIndexMap.put("getHhIncomeInDollars", 43);
         
         
     }
@@ -336,7 +340,7 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
             case 40: return getWaitTimeSharedTNC();
             case 41: return getUseOwnedAV();
             case 42: return getTourModeIsRideHail();
-
+            case 43: return getHhIncomeInDollars();
 
             default:
                 logger.error("method number = "+variableIndex+" not found");
