@@ -138,7 +138,7 @@ class RunResults:
 
     Read configuration and input data.
     """
-        self.ppa_master_input = "\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\PPAMasterInput.xlsx"
+        self.ppa_master_input = "L:\\RTP2021_PPA\\Projects\\PPAMasterInput.xlsx"
 
         # read the configs
         self.rundir = os.path.join(os.path.abspath(rundir), 'OUTPUT', 'metrics')
@@ -933,6 +933,8 @@ class RunResults:
         cat2         = 'Active Individuals (Morbidity)'
         # Really these are active addults
         daily_results[(cat1,cat2,'Total'  )] = self.unique_active_travelers['number_active_adults']
+
+
 
         cat2         = 'Activity: Est Proportion Deaths Averted'
         epda_cat2    = cat2
