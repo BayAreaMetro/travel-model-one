@@ -211,7 +211,7 @@ run pgm = matrix
      trOpTime = trOpTime_od + trOpTime_do
      
      ; compute the decay function for off-peak transit accessibility if a round trip path is available (zero otherwise)
-     if(trOpTime>0)
+     if(trOpTime_od>0 && trOpTime_do > 0)
      
         trOpRetail = retailEmp * exp(_kTran * trOpTime)
         trOpTotal  = totalEmp  * exp(_kTran * trOpTime)
