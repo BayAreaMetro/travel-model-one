@@ -3,10 +3,11 @@
 :: precheck_network
 ::
 :: Utility to generate preliminary skims prior to full model run (subset of precheck_logsums.bat)
-:: Designed to be run on a model2-[abcd] machine in a project subdir
-:: e.g. L:\RTP2021_PPA\Projects\2308_Valley_Link\2050_TM151_PPA_RT_07_2308_Valley_Link_01\network_precheck
+:: 
+:: Designed to be run on a model2-[abcd] machine copying files and running within PRECHECK_DIR
+:: (e.g. E:\Model2C-Share\Projects_precheck\2050_TM151_PPA_RT_07_2308_Valley_Link_01)
 ::
-:: the Tableau can be viewed in the directory, logsum_diff_map stored in the project directory
+:: Running the script from the command line one level above that, e.g. E:\Model2C-Share\Projects_precheck
 :: 
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 @echo on
@@ -19,13 +20,18 @@
 ::
 :: ------------------------------------------------------------------------------------------------------
 
+:: The location of the precheck
+set PRECHECK_DIR=E:\Model2C-Share\Projects_precheck\2050_TM151_PPA_RT_07_2308_Valley_Link_01
+
+:: transit skim tracing
+set TOKEN_DEBUG_ORIGIN=715,720,721,728,729,730,732
+set TOKEN_DEBUG_DESTINATION=1,15,538,742,776,783,968
 
 :: Location of BASE MODEL_DIR full run
 set MODEL_BASE_DIR=\\MODEL2-C\Model2C-Share\Projects\2050_TM151_PPA_RT_07
 
 :: The location of the project (hwy and trn) to be QA-ed
 set PROJ_DIR=L:\RTP2021_PPA\Projects\2308_Valley_Link\2050_TM151_PPA_RT_07_2308_Valley_Link_01
-
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -35,8 +41,8 @@ set PROJ_DIR=L:\RTP2021_PPA\Projects\2308_Valley_Link\2050_TM151_PPA_RT_07_2308_
 
 :: The location in which we're running the PRECHECK (shortmodel)
 :: e.g. %PROJ_DIR%\precheck
-mkdir "%PROJ_DIR%\network_precheck"
-cd "%PROJ_DIR%\network_precheck"
+mkdir "%PRECHECK_DIR%"
+cd "%PRECHECK_DIR%"
 set MODEL_DIR=%CD%
 
 :: Use this for COMMPATH
@@ -76,7 +82,11 @@ timeout 5
 
 :: go fewer iterations to save time
 C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command "(gc CTRAMP\scripts\assign\HwyAssign.job) -replace 'parameters maxiters = 1000', 'parameters maxiters = 100' | Out-File -encoding ASCII CTRAMP\scripts\assign\HwyAssign.job"
-
+:: for transit, trace %TOKEN_DEBUG_ORIGIN% and %TOKEN_DEBUG_DESTINATION%
+C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command "(gc CTRAMP\scripts\skims\TransitSkims.job) -replace \"token_debug_origin = '64,240,277,378,967,1449'\", \"token_debug_origin = '%TOKEN_DEBUG_ORIGIN%'\" | Out-File -encoding ASCII CTRAMP\scripts\skims\TransitSkims.job"
+IF ERRORLEVEL 1 goto done
+C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command "(gc CTRAMP\scripts\skims\TransitSkims.job) -replace \"token_debug_destination = '22,100,106,109,240,968,971'\", \"token_debug_destination = '%TOKEN_DEBUG_DESTINATION%'\" | Out-File -encoding ASCII CTRAMP\scripts\skims\TransitSkims.job"
+IF ERRORLEVEL 1 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
