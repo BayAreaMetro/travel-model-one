@@ -1,10 +1,10 @@
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
-:: toll rate calibration
-:: runs hwyassign, generate loaded network (avgload5period.csv), and determine new toll rates
+:: Toll rate calibration
+:: This batch script runs hwyassign, generates loaded network (avgload5period.csv), and determines new toll rates
 ::
-:: can be run from a project directory in model2-a, b, c, d
-:: e.g. E:\Model2B-Share\Projects\2050_TM151_PPA_BF_06_TollCalibration_00
+:: Copy this batch script from GitHub\travel-model-one\utilities\check-network to a local project directory and run
+:: e.g. on model2-a, b, c, d, E:\Model2B-Share\Projects\2050_TM151_PPA_BF_06_TollCalibration_00
 :: 
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -14,19 +14,24 @@
 ::
 :: ------------------------------------------------------------------------------------------------------
 
+:: to run highway assignment only, enter 1 below; 
+:: to run highway assigment + skimming + core, enter 0 below
+set hwyassignONLY=0
+
 :: set iteration number, starting from 4 as we assume this is a continuation of a "normal" model run
 set ITER=4
 set PREV_ITER=3
+set MODEL_YEAR=2050
 
 if %ITER%==4 (
-    :: Location of BASE MODEL_DIR full run
-    set MODEL_BASE_DIR=\\model2-d\Model2D-Share\Projects\2050_TM151_PPA_BF_06
+    :: Location of the base run directory - the full run is needed because it has the CTRAMP directory
+    set MODEL_BASE_DIR=L:\RTP2021_PPA\Projects_onAWS\2050_TM151_PPA_BF_07
 )
 
 :: Name and location of the new tolls.csv
-:: set TOLL_FILE=L:\RTP2021_PPA\Projects\2050_TM151_PPA_BF_06\INPUT\hwy\tolls_iterX.csv
+set TOLL_FILE=L:\RTP2021_PPA\Projects\2050_TM151_PPA_BF_07\INPUT\hwy\tolls_iter4.csv
 :: set TOLL_FILE=E:\Model2B-Share\Projects\2050_TM151_PPA_BF_06_TollCalibration_00\hwy\tolls_iter4.csv
-set TOLL_FILE=%cd%\hwy\tolls_iter%ITER%.csv
+:: set TOLL_FILE=%cd%\hwy\tolls_iter%ITER%.csv
 
 :: -------------------------------------------------
 :: Before running - user input (part 2)
@@ -34,7 +39,7 @@ set TOLL_FILE=%cd%\hwy\tolls_iter%ITER%.csv
 :: -------------------------------------------------
 
 :: Unloaded network dbf, generated from cube_to_shapefile.py
-set UNLOADED_NETWORK_DBF=L:\RTP2021_PPA\Projects\2050_TM151_PPA_BF_06\INPUT\shapefiles\network_links.dbf
+set UNLOADED_NETWORK_DBF=L:\RTP2021_PPA\Projects\2050_TM151_PPA_baselines_before07\2050_TM151_PPA_BF_06\INPUT\shapefiles\network_links.dbf
 
 :: The file containing the bridge tolls (i.e. the first half of toll.csv)
 SET BRIDGE_TOLLS_CSV=M:\Application\Model One\NetworkProjects\Bridge_Toll_Updates\tolls_2050.csv
@@ -208,6 +213,7 @@ del hwy\iter%ITER%\x*.net
 :: Step 5: summarise EL and GP speeds, and generate a new toll file for the next iteration
 ::
 :: ------------------------------------------------------------------------------------------------------
+:newtoll
 
 :: The location of R and R libraries
 set R_HOME=C:\Program Files\R\R-3.5.2
@@ -217,3 +223,131 @@ set R_LIB=C:/Users/mtcpb/Documents/R/win-library/3.5
 set PROJECT_DIR=%cd%
 
 call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\calibrate_el_tolls.R"
+
+
+if hwyassignONLY==1 goto end
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 6: Build highway skims
+::
+:: ------------------------------------------------------------------------------------------------------
+
+:skims
+
+
+if %ITER%==4 (
+    mkdir skims
+    c:\windows\system32\Robocopy.exe /E "%MODEL_BASE_DIR%\skims" skims
+)
+
+:: Create the automobile level-of-service matrices
+runtpp CTRAMP\scripts\skims\HwySkims.job
+if ERRORLEVEL 2 goto done
+
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 7: run core i.e. execute the choice models using CT-RAMP java code
+::
+:: ------------------------------------------------------------------------------------------------------
+
+:: ------------------------------------------
+:: Step 7a: Set the paths
+:: ------------------------------------------
+:: including the location of the 64-bit java development kit
+:: set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
+call CTRAMP\runtime\SetPath.bat
+:: but overwrite the commpath setting
+set COMMPATH=%CD%\COMMPATH
+
+::  Set the IP address of the host machine which sends tasks to the client machines 
+if %computername%==MODEL2-A set HOST_IP_ADDRESS=192.168.1.206
+if %computername%==MODEL2-B set HOST_IP_ADDRESS=192.168.1.207
+if %computername%==MODEL2-C set HOST_IP_ADDRESS=192.168.1.208
+if %computername%==MODEL2-D set HOST_IP_ADDRESS=192.168.1.209
+if %computername%==PORMDLPPW01 set HOST_IP_ADDRESS=172.24.0.101
+if %computername%==PORMDLPPW02 set HOST_IP_ADDRESS=172.24.0.102
+if %computername%==MAINMODEL set HOST_IP_ADDRESS=192.168.1.200
+if %computername%==SATMODEL set HOST_IP_ADDRESS=192.168.1.201
+if %computername%==SATMODEL4 set HOST_IP_ADDRESS=192.168.1.205
+
+:: copy in params.properties
+:: used by runtimeconfiguration.py
+if %ITER%==4 (
+    mkdir INPUT
+    copy "%MODEL_BASE_DIR%\INPUT\params.properties"  INPUT\params.properties
+)
+
+
+:: copy in household and population data (and land use)
+if %ITER%==4 (
+
+    mkdir popsyn
+    copy "%MODEL_BASE_DIR%\popsyn\hhFile.csv"         popsyn\hhFile.csv
+    copy "%MODEL_BASE_DIR%\popsyn\personFile.csv"     popsyn\personFile.csv
+
+    :: also need to copy popsyn to INPUT
+    mkdir INPUT\popsyn
+    copy "%MODEL_BASE_DIR%\popsyn\hhFile.csv"         INPUT\popsyn\hhFile.csv
+    copy "%MODEL_BASE_DIR%\popsyn\personFile.csv"     INPUT\popsyn\personFile.csv
+
+    mkdir landuse
+    c:\windows\system32\Robocopy.exe /E "%MODEL_BASE_DIR%\landuse" landuse
+)
+
+:: copy in shadow price from base - double check that this step is necessary
+:: used by core java processes
+copy "%MODEL_BASE_DIR%\main\ShadowPricing_5.csv"     main\ShadowPricing_5.csv
+
+
+:: Runtime configuration: set project directory, auto operating cost, 
+:: and synthesized household/population files in the appropriate places
+python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
+if ERRORLEVEL 1 goto done
+
+:: ------------------------------------------
+:: Step 7b:  Execute Java
+:: ------------------------------------------
+
+:: Set the iteration parameters
+set SAMPLESHARE=0.15
+set SEED=0
+
+
+:core
+
+rem run matrix manager, household manager and jppf driver
+cd CTRAMP\runtime
+call javaOnly_runMain.cmd 
+
+rem run jppf node
+cd CTRAMP\runtime
+call javaOnly_runNode0.cmd
+
+::  Call the MtcTourBasedModel class
+java -showversion -Xmx6000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Djava.library.path=%RUNTIME% -Djppf.config=jppf-clientDistributed.properties com.pb.mtc.ctramp.MtcTourBasedModel mtcTourBased -iteration %ITER% -sampleRate %SAMPLESHARE% -sampleSeed %SEED%
+if ERRORLEVEL 2 goto done
+
+call C:\Windows\SysWOW64\taskkill /f /im "java.exe"
+
+:: ------------------------------------------
+:: Step 7c:  prepare for the next assignment
+:: ------------------------------------------
+
+if %ITER%==4 (
+    copy "%MODEL_BASE_DIR%\main\trips_transitHsr??.tpp"         main\
+)
+
+
+:: after executing demand models, translate the trip lists to demand matrices
+runtpp CTRAMP\scripts\assign\PrepAssign.job
+if ERRORLEVEL 2 goto done
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: the end
+::
+:: ------------------------------------------------------------------------------------------------------
+:end
+:done
