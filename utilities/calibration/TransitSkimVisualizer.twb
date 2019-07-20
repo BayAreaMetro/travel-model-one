@@ -475,7 +475,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='AM Express LRF' name='textscan.0wf5b631j5uqhq199n8g91053ix6'>
-            <connection class='textscan' directory='M:/Development/Travel Model One/Calibration/Version 1.5.0/2015_TM150_calib10/OUTPUT/skims' filename='trnskmam_drv_lrf_wlk.csv' password='' server='' workgroup-auth-mode='as-is' />
+            <connection class='textscan' directory='.' filename='trnskmam_drv_lrf_wlk.csv' password='' server='' workgroup-auth-mode='as-is' />
           </named-connection>
           <named-connection caption='bayarea_rtaz1454_rev1_WGS84' name='ogrdirect.0jqrrxu0pby8ds1dcwdfz0114w81'>
             <connection class='ogrdirect' directory='X:/travel-model-one-master/utilities/geographies' filename='bayarea_rtaz1454_rev1_WGS84.shp' ogr-grid-shift-folder='C:\Program Files\Tableau\Tableau 2018.3\local\proj4' password='' server='' tablename='' workgroup-auth-mode='as-is' />
@@ -1343,7 +1343,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='AM Local' name='textscan.1b1c8fs0vpj81113dzsjz1pad3sj'>
-            <connection class='textscan' directory='M:/Development/Travel Model One/Calibration/Version 1.5.0/2015_TM150_calib10/OUTPUT/skims' filename='trnskmam_wlk_loc_wlk.csv' password='' server='' workgroup-auth-mode='as-is' />
+            <connection class='textscan' directory='.' filename='trnskmam_wlk_loc_wlk.csv' password='' server='' workgroup-auth-mode='as-is' />
           </named-connection>
           <named-connection caption='bayarea_rtaz1454_rev1_WGS84' name='ogrdirect.1pch6c81r1v9zg177a9db0waz6xf'>
             <connection class='ogrdirect' directory='X:/travel-model-one-master/utilities/geographies' filename='bayarea_rtaz1454_rev1_WGS84.shp' ogr-grid-shift-folder='C:\Program Files\Tableau\Tableau 2018.3\local\proj4' password='' server='' tablename='' workgroup-auth-mode='as-is' />
@@ -2102,7 +2102,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='AM_com' name='textscan.0fst46t0ah0ah6176dpc408a0mu9'>
-            <connection class='textscan' directory='M:/Development/Travel Model One/Calibration/Version 1.5.0/2015_TM150_calib10/OUTPUT/skims' filename='trnskmam_drv_com_wlk.csv' password='' server='' workgroup-auth-mode='as-is' />
+            <connection class='textscan' directory='.' filename='trnskmam_drv_com_wlk.csv' password='' server='' workgroup-auth-mode='as-is' />
           </named-connection>
           <named-connection caption='bayarea_rtaz1454_rev1_WGS84' name='ogrdirect.1huvrhy1vqe1yr19l47sv1nam5xn'>
             <connection class='ogrdirect' directory='X:/travel-model-one-master/utilities/geographies' filename='bayarea_rtaz1454_rev1_WGS84.shp' ogr-grid-shift-folder='C:\Program Files\Tableau\Tableau 2018.3\local\proj4' password='' server='' tablename='' workgroup-auth-mode='as-is' />
