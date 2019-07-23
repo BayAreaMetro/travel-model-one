@@ -1,37 +1,33 @@
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
 :: Toll rate calibration
-:: This batch script runs hwyassign, generates loaded network (avgload5period.csv), and determines new toll rates
+:: This batch script runs hwyassign, generates loaded network (avgload5period.csv), and determines new toll rates (via calibrate_el_tolls.R)
 ::
-:: Copy this batch script from GitHub\travel-model-one\utilities\check-network to a local project directory and run
+:: Copy this batch script from GitHub\travel-model-one\utilities\check-network to a local project directory
 :: e.g. on model2-a, b, c, d, E:\Model2B-Share\Projects\2050_TM151_PPA_BF_06_TollCalibration_00
 :: 
+:: This batch script is called by the wrapper batch file - CalibrateTolls.bat
+::
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Before running - user input
+:: User input (moved to wrapper batch file - CalibrateTolls.bat)
 ::
 :: ------------------------------------------------------------------------------------------------------
 
 :: to run highway assignment only, enter 1 below; 
 :: to run highway assigment + skimming + core, enter 0 below
-set hwyassignONLY=0
+:: set hwyassignONLY=0
 
 :: set iteration number, starting from 4 as we assume this is a continuation of a "normal" model run
-set ITER=4
-set PREV_ITER=3
-set MODEL_YEAR=2050
+:: set ITER=5
+:: set MODEL_YEAR=2050
 
-if %ITER%==4 (
+:: if %ITER%==4 (
     :: Location of the base run directory - the full run is needed because it has the CTRAMP directory
-    set MODEL_BASE_DIR=L:\RTP2021_PPA\Projects_onAWS\2050_TM151_PPA_BF_07
-)
-
-:: Name and location of the new tolls.csv
-set TOLL_FILE=L:\RTP2021_PPA\Projects\2050_TM151_PPA_BF_07\INPUT\hwy\tolls_iter4.csv
-:: set TOLL_FILE=E:\Model2B-Share\Projects\2050_TM151_PPA_BF_06_TollCalibration_00\hwy\tolls_iter4.csv
-:: set TOLL_FILE=%cd%\hwy\tolls_iter%ITER%.csv
+::    set MODEL_BASE_DIR=L:\RTP2021_PPA\Projects_onAWS\2050_TM151_PPA_BF_07
+:: )
 
 :: -------------------------------------------------
 :: Before running - user input (part 2)
@@ -39,11 +35,23 @@ set TOLL_FILE=L:\RTP2021_PPA\Projects\2050_TM151_PPA_BF_07\INPUT\hwy\tolls_iter4
 :: -------------------------------------------------
 
 :: Unloaded network dbf, generated from cube_to_shapefile.py
-set UNLOADED_NETWORK_DBF=L:\RTP2021_PPA\Projects\2050_TM151_PPA_baselines_before07\2050_TM151_PPA_BF_06\INPUT\shapefiles\network_links.dbf
+:: set UNLOADED_NETWORK_DBF=L:\RTP2021_PPA\Projects\2050_TM151_PPA_baselines_before07\2050_TM151_PPA_BF_06\INPUT\shapefiles\network_links.dbf
 
 :: The file containing the bridge tolls (i.e. the first half of toll.csv)
-SET BRIDGE_TOLLS_CSV=M:\Application\Model One\NetworkProjects\Bridge_Toll_Updates\tolls_2050.csv
+:: SET BRIDGE_TOLLS_CSV=M:\Application\Model One\NetworkProjects\Bridge_Toll_Updates\tolls_2050.csv
 
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Name and location of the tolls.csv to be used
+::
+:: ------------------------------------------------------------------------------------------------------
+
+if %ITER% NEQ 4 (
+    set TOLL_FILE=%cd%\hwy\tolls_iter%ITER%.csv
+)
+
+:: if it's iteration 4, this path is specified in CalibrateTolls.bat
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -155,7 +163,7 @@ echo FINISHED HIGHWAY ASSIGNMENT  %DATE% %TIME% >> logs\feedback.rpt
 
 :feedback
 
-
+set /a PREV_ITER=%ITER%-1
 set WGT=0.33
 set PREV_WGT=0.67
 
