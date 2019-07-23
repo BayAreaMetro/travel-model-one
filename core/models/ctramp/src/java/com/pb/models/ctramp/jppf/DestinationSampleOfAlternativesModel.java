@@ -252,6 +252,7 @@ public class DestinationSampleOfAlternativesModel implements Serializable {
         if (sampleSize == numDcAlts) {
             for (int chosenAlt=1; chosenAlt <= numDcAlts; chosenAlt++) {
                 altFreqMap.put(chosenAlt, 1);
+                probabilitiesCache[purposeIndex][chosenAlt-1] = 1.0; // no correction
             }
 
             if ( hhObj.getDebugChoiceModels() ) {

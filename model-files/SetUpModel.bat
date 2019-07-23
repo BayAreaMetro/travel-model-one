@@ -37,6 +37,9 @@ c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\popsyn"       
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\warmstart"                     INPUT\warmstart
 copy /Y "%MODEL_SETUP_BASE_DIR%\INPUT\params.properties"                                         INPUT\params.properties
 
+:: copy over ShadowPricing file from baseline
+copy /Y "%MODEL_SETUP_BASE_DIR%\OUTPUT\main\ShadowPricing_7.csv"                                 INPUT\logsums
+
 :: copy over project specific inputs
 set MODEL_SETUP_DIR=M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects\2202_BART_DMU_Brentwood\2050_TM151_PPA_CG_04_2202_BART_DMU_Brentwood_00
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_DIR%\hwy"                           INPUT\hwy

@@ -448,7 +448,8 @@ def config_logsums(replacements, append):
     replacements[filepath]["(\nIndividualNonMandatoryTourLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"] = r"\g<1>4362"
     replacements[filepath]["(\nAtWorkSubtourLocationChoice.SampleOfAlternatives.SampleSize[ \t]*=[ \t]*)(\S*)"]              = r"\g<1>30"
 
-    replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"]          = r"\g<1>main/ShadowPricing_7.csv"
+    # use logsums from base run
+    replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File[ \t]*=[ \t]*)(\S*)"]          = r"\g<1>logsums/ShadowPricing_7.csv"
     replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPricing.MaximumIterations[ \t]*=[ \t]*)(\S*)"] = r"\g<1>1"
     replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.ShadowPricing.OutputFile[ \t]*=[ \t]*)(\S*)"]        = r"\g<1>logsums/ShadowPricing.csv"
     replacements[filepath]["(\nUsualWorkAndSchoolLocationChoice.SizeTerms.OutputFile[ \t]*=[ \t]*)(\S*)"]            = r"\g<1>logsums/DestinationChoiceSizeTerms.csv"

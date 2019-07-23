@@ -28,6 +28,12 @@ if %computername%==PORMDLPPW02 set HOST_IP_ADDRESS=172.24.0.102
 if %computername%==SATMODEL set HOST_IP_ADDRESS=192.168.1.201
 if %computername%==SATMODEL4 set HOST_IP_ADDRESS=192.168.1.205
 
+:: ShadowPricing should come from baseline run, copied into logsums by SetUpModel.bat
+:: If it's not there, this is a baseline
+if not exist logsums\ShadowPricing_7.csv (
+  copy main\ShadowPricing_7.csv logsums\shadowPricing_7.csv
+)
+
 :: create logsums.properties
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --logsums
 if ERRORLEVEL 1 goto done

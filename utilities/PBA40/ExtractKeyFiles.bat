@@ -56,6 +56,7 @@ copy main\tripsAM.tpp extractor\main
 copy main\tripsMD.tpp extractor\main
 copy main\tripsPM.tpp extractor\main
 copy main\tripsEV.tpp extractor\main
+copy main\ShadowPricing_7.csv extractor\main
 
 mkdir extractor\nonres
 copy nonres\ixDaily2015.tpp extractor\nonres

@@ -51,7 +51,8 @@ def read_markets(proj_dir, col_prefix, include_output_dir):
     return acc_mar_df
 
 if __name__ == '__main__':
-    pandas.set_option('display.width', 300)
+    pandas.options.display.width = 1000
+    pandas.options.display.max_columns = 100
     CWD = os.getcwd()
 
     parser = argparse.ArgumentParser(description = USAGE,
