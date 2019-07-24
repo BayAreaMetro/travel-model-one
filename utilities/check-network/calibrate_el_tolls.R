@@ -245,10 +245,24 @@ tolls_new_df <- tolls_new_df  %>%
 # US 101 - Whipple Ave to Alanna Rd (SF county line) - Northbound		           54
 # US 101 - Whipple Ave to Alanna Rd (SF county line) - Southbound		           55
 
+
 tolls_new_df <- tolls_new_df  %>%
-                              mutate(tollam_s2 = replace(tollam_s2, (tollclass==15 | tollclass==16 | tollclass==19 | tollclass==20 | tollclass==31 | tollclass==32 | tollclass==54 | tollclass==55), tollam_da_new/2),
-                                     tollmd_s2 = replace(tollmd_s2, (tollclass==15 | tollclass==16 | tollclass==19 | tollclass==20 | tollclass==31 | tollclass==32 | tollclass==54 | tollclass==55), tollmd_da_new/2),
-                                     tollpm_s2 = replace(tollpm_s2, (tollclass==15 | tollclass==16 | tollclass==19 | tollclass==20 | tollclass==31 | tollclass==32 | tollclass==54 | tollclass==55), tollpm_da_new/2))
+                             mutate(tollam_s2 = ifelse((tollclass==15 | tollclass==16 | tollclass==19 | tollclass==20 | tollclass==31 | tollclass==32 | tollclass==54 | tollclass==55), tollam_da_new/2, 0))
+
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollmd_s2 = ifelse((tollclass==15 | tollclass==16 | tollclass==19 | tollclass==20 | tollclass==31 | tollclass==32 | tollclass==54 | tollclass==55), tollmd_da_new/2, 0))
+
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollpm_s2 = ifelse((tollclass==15 | tollclass==16 | tollclass==19 | tollclass==20 | tollclass==31 | tollclass==32 | tollclass==54 | tollclass==55), tollpm_da_new/2, 0))
+
+# add s2 tolls if the drive alone toll is greater than $1 (in 2000$)
+
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollam_s2 = ifelse(tollam_da_new>1, tollam_da_new/2, tollam_s2))
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollmd_s2 = ifelse(tollmd_da_new>1, tollmd_da_new/2, tollmd_s2))
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollpm_s2 = ifelse(tollpm_da_new>1, tollpm_da_new/2, tollpm_s2))
 
 tolls_new_df <- tolls_new_df  %>% select(-c(TOLLCLASS, tollam_da_new, tollmd_da_new, tollpm_da_new))
 
