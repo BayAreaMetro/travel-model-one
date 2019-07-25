@@ -777,8 +777,8 @@ trips <- trips %>%
   mutate(costMode = 0) %>%
   mutate(costMode = ifelse(trip_mode <= 8, trip_mode, costMode)) %>%
   mutate(costMode = ifelse((trip_mode >= 9) & (trip_mode <=13), 9, costMode)) %>%
-  mutate(costMode = ifelse((trip_mode >= 14) & (orig_purpose == 'Home'), 10, costMode)) %>%
-  mutate(costMode = ifelse((trip_mode >= 14) & (dest_purpose == 'Home'), 11, costMode)) %>%
+  mutate(costMode = ifelse((trip_mode >= 14) & (trip_mode <=18) & (orig_purpose == 'Home'), 10, costMode)) %>%
+  mutate(costMode = ifelse((trip_mode >= 14) & (trip_mode <=18) & (dest_purpose == 'Home'), 11, costMode)) %>%
   mutate(cost = 0) %>%
   mutate(cost_fail = 0) %>%
   mutate(time = 0) %>%
@@ -888,7 +888,7 @@ commute_tours   <- mutate(commute_tours,
                                      (tour_mode>=9)*(tour_mode<=13)*9 +
                                      # All drive transit walk sub modes get the best path
                                      # drive transit walk skim (tours start at home)
-                                     (tour_mode>=14)*10,
+                                     (tour_mode>=14)*(tour_mode<=18)*10,
                           timeCodeHwNum=(start_hour<6)*1 +                  # EA
                                         (start_hour>5)*(start_hour<10)*2 +  # AM
                                         (start_hour>9)*(start_hour<15)*3 +  # MD
