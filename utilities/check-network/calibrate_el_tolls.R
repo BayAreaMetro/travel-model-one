@@ -282,4 +282,4 @@ write.csv(el_gp_summary_df, file.path(PROJECT_DIR, OUTPUT_AVG_SPD_CSV), row.name
 # output a new tolls.csv
 write.csv(bridge_el_tolls_df, file.path(PROJECT_DIR, "hwy", OUTPUT_NEW_TOLLS_CSV), row.names = FALSE)
 # if running this script on a project directory on L, change the path for the output tolls to the following.
-#write.csv(bridge_el_tolls_df, file.path(PROJECT_DIR, "INPUT", "hwy", OUTPUT_NEW_TOLLS_CSV), row.names = FALSE)
+#write.csv(bridge_el_tolls_df, file.path(PROJECT_DIR, OUTPUT_NEW_TOLLS_CSV), row.names = FALSE)
