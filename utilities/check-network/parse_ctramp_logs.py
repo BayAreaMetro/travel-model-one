@@ -20,7 +20,7 @@ USAGE = r"""
 
 """
 
-import argparse, re, sys
+import argparse, re, os, shutil, sys
 import numpy, pandas
 
 NUM_TAZ      = 1454
@@ -45,12 +45,14 @@ TOTAL_UTIL_RE_TXT     = "(\s+(([\.\-0-9]+e[+-]\d\d)|NaN|Infinity))"
 TOTAL_UTILITY_RE_TXT  = "(Alt Utility)" + TOTAL_UTIL_RE_TXT*NUM_DEST_ALT
 TOTAL_UTILITY_RE      = re.compile("{}{}".format(DATE_LOG_TYPE_RE_TXT, TOTAL_UTILITY_RE_TXT))
 
-def read_destination_choice_lines(file_object, type_str, purpose, hh, persnum, ptype, tournum):
+def read_destination_choice_lines(file_object, type_str, purpose, hh, persnum, ptype, tournum, base_or_build, log_file):
     """
     Read the destination choice utilities from the file_object
-    Saves as destchoice_[type_str]_hh[hh]_pers[persnum].csv
+    Saves as destchoice_[type_str]_hh[hh]_pers[persnum]/[base_or_build]_utilities.csv
+    Also copies log file into that directory as backup
     """
-    output_filename = "destchoice_{}_hh{}_pers{}.csv".format(type_str, hh, persnum)
+    output_dir      = "destchoice_{}_hh{}_pers{}".format(type_str, hh, persnum)
+    output_filename = "{}_utilities.csv".format(base_or_build)
     # from DestinationChoice.xls UEC, Work
     ROW_NAMES = {
         1 : "token, num dest choice segments",
@@ -202,8 +204,16 @@ def read_destination_choice_lines(file_object, type_str, purpose, hh, persnum, p
 
     df = pandas.DataFrame.from_records(row_alt_dicts)
     print("head: \n{}".format(df.head()))
-    df.to_csv(output_filename, index=False)
-    print("Wrote {}".format(output_filename))
+    try:
+        os.mkdir(output_dir)
+    except:
+        pass
+    df.to_csv(os.path.join(output_dir,output_filename), index=False)
+    print("Wrote {}".format(os.path.join(output_dir,output_filename)))
+
+    # copy source log file
+    shutil.copyfile(log_file, os.path.join(output_dir, log_file))
+    print("Copied {} to {}".format(log_file, output_dir))
 
     return lines_read + utils_read
 
@@ -212,6 +222,7 @@ if __name__ == '__main__':
     pandas.options.display.max_columns = 100
 
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
+    parser.add_argument("base_or_build",  choices=["base","build"], help="For output file name")
     parser.add_argument("log_file",  metavar="event-node0-something.log", help="Log file to parse")
 
     args = parser.parse_args()
@@ -242,7 +253,7 @@ if __name__ == '__main__':
             print("Found Usual Work Location Choice info for purose={} hh={} persnum={} ptype={} tournum={}".format(purpose, hh, persnum, ptype, tournum))
 
             # read the rest of the relevant lines
-            lines_read += read_destination_choice_lines(log_fo, "UsualWorkLocChoice", purpose, hh, persnum, ptype, tournum)
+            lines_read += read_destination_choice_lines(log_fo, "UsualWorkLocChoice", purpose, hh, persnum, ptype, tournum, args.base_or_build, args.log_file)
 
         else:
             match = line_re.match(line)
