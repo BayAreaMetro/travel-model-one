@@ -13,6 +13,7 @@
 
 library(foreign) # read dbf from shapefile
 library(dplyr)
+library(readxl)
 
 ITER <- Sys.getenv("ITER")        # The iteration of model outputs to be read
 ITER <- as.numeric(ITER)
@@ -235,25 +236,22 @@ tolls_new_df <- tolls_new_df  %>%
 
 # add s2 tolls for selected facilities
 
-# facility name                                                             toll class
-# I-880 - Hegenberger Rd to US 101 - Westbound						                     15
-# I-880 - Hegenberger Rd to US 101 - Eastbound						                     16
-# US 101 - I-880 to Embarcadero Rd (San Mateo county line) - Northbound	       19
-# US 101 - I-880 to Embarcadero Rd (San Mateo county line) - Southbound	       20
-# SR-237 - VTA - Westbound										                                 31
-# SR-237 - VTA - Eastbound										                                 32
-# US 101 - Whipple Ave to Alanna Rd (SF county line) - Northbound		           54
-# US 101 - Whipple Ave to Alanna Rd (SF county line) - Southbound		           55
+TOLL_DESIGNATIONS_XLSX <- "M:/Application/Model One/Networks/TOLLCLASS Designations.xlsx"
+TOLL_DESIGNATIONS_DF <- read_excel(TOLL_DESIGNATIONS_XLSX, sheet = "revised 070319")
+TOLL_DESIGNATIONS_DF <- TOLL_DESIGNATIONS_DF %>%
+                                             select(tollclass,s2toll_mandatory)
 
+tolls_new_df <- left_join(tolls_new_df, TOLL_DESIGNATIONS_DF, by=c("tollclass"="tollclass"))
 
 tolls_new_df <- tolls_new_df  %>%
-                             mutate(tollam_s2 = ifelse((tollclass==15 | tollclass==16 | tollclass==19 | tollclass==20 | tollclass==31 | tollclass==32 | tollclass==54 | tollclass==55), tollam_da_new/2, 0))
-
+                             mutate(tollam_s2 = case_when(s2toll_mandatory=="Yes" ~ tollam_da_new/2,
+                                                          TRUE ~ 0))
 tolls_new_df <- tolls_new_df  %>%
-                             mutate(tollmd_s2 = ifelse((tollclass==15 | tollclass==16 | tollclass==19 | tollclass==20 | tollclass==31 | tollclass==32 | tollclass==54 | tollclass==55), tollmd_da_new/2, 0))
-
+                             mutate(tollmd_s2 = case_when(s2toll_mandatory=="Yes" ~ tollmd_da_new/2,
+                                                          TRUE ~ 0))
 tolls_new_df <- tolls_new_df  %>%
-                             mutate(tollpm_s2 = ifelse((tollclass==15 | tollclass==16 | tollclass==19 | tollclass==20 | tollclass==31 | tollclass==32 | tollclass==54 | tollclass==55), tollpm_da_new/2, 0))
+                             mutate(tollpm_s2 = case_when(s2toll_mandatory=="Yes" ~ tollpm_da_new/2,
+                                                          TRUE ~ 0))
 
 # add s2 tolls if the drive alone toll is greater than $1 (in 2000$)
 
@@ -264,7 +262,7 @@ tolls_new_df <- tolls_new_df  %>%
 tolls_new_df <- tolls_new_df  %>%
                              mutate(tollpm_s2 = ifelse(tollpm_da_new>1, tollpm_da_new/2, tollpm_s2))
 
-tolls_new_df <- tolls_new_df  %>% select(-c(TOLLCLASS, tollam_da_new, tollmd_da_new, tollpm_da_new))
+tolls_new_df <- tolls_new_df  %>% select(-c(TOLLCLASS, tollam_da_new, tollmd_da_new, tollpm_da_new, s2toll_mandatory))
 
 # append the new toll rates to the first half of the toll.csv file containing the bridge tolls
 bridge_tolls_df    <- read.csv(file=BRIDGE_TOLLS_CSV, header=TRUE, sep=",")
