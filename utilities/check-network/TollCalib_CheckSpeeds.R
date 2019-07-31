@@ -27,6 +27,8 @@ UNLOADED_NETWORK_DBF  <- gsub("\\\\","/",UNLOADED_NETWORK_DBF) # switch slashes 
 TOLLS_CSV             <- file.path(PROJECT_DIR, "hwy", "tolls.csv")
 BRIDGE_TOLLS_CSV      <- Sys.getenv("BRIDGE_TOLLS_CSV")
 BRIDGE_TOLLS_CSV      <- gsub("\\\\","/",BRIDGE_TOLLS_CSV) # switch slashes around
+TOLL_DESIGNATIONS_XLSX <- Sys.getenv("TOLL_DESIGNATIONS_XLSX")
+TOLL_DESIGNATIONS_XLSX <- gsub("\\\\","/",TOLL_DESIGNATIONS_XLSX) # switch slashes around
 
 # specify the following instead, if run as a stand alone script
 # rm(list=ls()) # remove all variables from the r environment
@@ -36,6 +38,7 @@ BRIDGE_TOLLS_CSV      <- gsub("\\\\","/",BRIDGE_TOLLS_CSV) # switch slashes arou
 # UNLOADED_NETWORK_DBF  <- file.path("L:/RTP2021_PPA/Projects/2050_TM151_PPA_BF_06/INPUT/shapefiles", "network_links.dbf") # from cube_to_shapefile.py
 # TOLLS_CSV             <- file.path(PROJECT_DIR, "INPUT", "hwy", "tolls.csv")
 # BRIDGE_TOLLS_CSV      <- "M:/Application/Model One/NetworkProjects/Bridge_Toll_Updates/tolls_2050.csv"
+# TOLL_DESIGNATIONS_XLSX <- "M:/Application/Model One/Networks/TOLLCLASS Designations.xlsx"
 # if running this script on a project directory on L, you'll also need to change the path for the tolls.csv output in the end.
 
 # specify the names of the outputs
@@ -236,7 +239,6 @@ tolls_new_df <- tolls_new_df  %>%
 
 # add s2 tolls for selected facilities
 
-TOLL_DESIGNATIONS_XLSX <- "M:/Application/Model One/Networks/TOLLCLASS Designations.xlsx"
 TOLL_DESIGNATIONS_DF <- read_excel(TOLL_DESIGNATIONS_XLSX, sheet = "revised 070319")
 TOLL_DESIGNATIONS_DF <- TOLL_DESIGNATIONS_DF %>%
                                              select(tollclass,s2toll_mandatory)

@@ -40,6 +40,9 @@
 :: The file containing the bridge tolls (i.e. the first half of toll.csv)
 :: SET BRIDGE_TOLLS_CSV=M:\Application\Model One\NetworkProjects\Bridge_Toll_Updates\tolls_2050.csv
 
+:: The file indicating which facilities have mandatory s2 tolls
+:: set TOLL_DESIGNATIONS_XLSX= M:\Application\Model One\Networks\TOLLCLASS Designations.xlsx
+
 
 :: ------------------------------------------------------------------------------------------------------
 ::

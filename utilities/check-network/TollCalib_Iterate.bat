@@ -33,6 +33,9 @@ set UNLOADED_NETWORK_DBF=L:\RTP2021_PPA\Projects\2050_TM151_PPA_baselines_before
 :: The file containing the bridge tolls (i.e. the first half of toll.csv), also needed for the R script that determine toll adjustment
 SET BRIDGE_TOLLS_CSV=M:\Application\Model One\NetworkProjects\Bridge_Toll_Updates\tolls_2050.csv
 
+:: The file indicating which facilities have mandatory s2 tolls
+set TOLL_DESIGNATIONS_XLSX= M:\Application\Model One\Networks\TOLLCLASS Designations.xlsx
+
 :: -------------------------------------------------
 :: For iteration 5+
 :: -------------------------------------------------
