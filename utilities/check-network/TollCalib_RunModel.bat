@@ -1,4 +1,4 @@
-TollCalib_CheckSpeeds::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
 :: Toll rate calibration
 :: This batch script runs hwyassign, generates loaded network (avgload5period.csv), and determines new toll rates (via TollCalib_CheckSpeeds.R)
