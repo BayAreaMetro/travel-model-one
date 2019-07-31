@@ -3,8 +3,8 @@
 # summarize the speed of express lanes and their corresponding general purpose lanes
 # and calculate new tolls
 #
-# can be run by the batch script, RunTollCalibration.bat:
-# call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\calibrate_el_tolls.R"
+# can be run by the batch script, TollCalib_RunModel.bat:
+# call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\TollCalib_CheckSpeeds.R"
 #
 # can be run stand alone as well, but users need to define:
 # ITER, PROJECT_DIR, UNLOADED_NETWORK_DBF, BRIDGE_TOLLS_CSV

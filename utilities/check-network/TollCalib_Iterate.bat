@@ -1,6 +1,6 @@
 :: ------------------------------------------------------------------------------------------------------
 :: 
-:: This batch file calls runtollcalibration.bat multiple times
+:: This batch file calls TollCalib_RunModel.bat multiple times
 ::
 :: ------------------------------------------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ SET BRIDGE_TOLLS_CSV=M:\Application\Model One\NetworkProjects\Bridge_Toll_Update
 :: For iteration 5+
 :: -------------------------------------------------
 set ITER=6
-call RunTollCalibration
+call TollCalib_RunModel
 
 set ITER=7
-call RunTollCalibration
+call TollCalib_RunModel

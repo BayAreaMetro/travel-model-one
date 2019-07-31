@@ -1,18 +1,18 @@
-::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+TollCalib_CheckSpeeds::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
 :: Toll rate calibration
-:: This batch script runs hwyassign, generates loaded network (avgload5period.csv), and determines new toll rates (via calibrate_el_tolls.R)
+:: This batch script runs hwyassign, generates loaded network (avgload5period.csv), and determines new toll rates (via TollCalib_CheckSpeeds.R)
 ::
 :: Copy this batch script from GitHub\travel-model-one\utilities\check-network to a local project directory
 :: e.g. on model2-a, b, c, d, E:\Model2B-Share\Projects\2050_TM151_PPA_BF_06_TollCalibration_00
 :: 
-:: This batch script is called by the wrapper batch file - CalibrateTolls.bat
+:: This batch script is called by the wrapper batch file - TollCalib_Iterate.bat
 ::
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: User input (moved to wrapper batch file - CalibrateTolls.bat)
+:: User input (moved to wrapper batch file - TollCalib_Iterate.bat)
 ::
 :: ------------------------------------------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ if %ITER% NEQ 4 (
     set TOLL_FILE=%cd%\hwy\tolls_iter%ITER%.csv
 )
 
-:: if it's iteration 4, this path is specified in CalibrateTolls.bat
+:: if it's iteration 4, this path is specified in TollCalib_Iterate.bat
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -230,7 +230,7 @@ set R_LIB=C:/Users/mtcpb/Documents/R/win-library/3.5
 :: System variables to be passed to the R code
 set PROJECT_DIR=%cd%
 
-call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\calibrate_el_tolls.R"
+call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\TollCalib_CheckSpeeds.R"
 
 
 if hwyassignONLY==1 goto end
