@@ -38,6 +38,7 @@ c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\warmstart"    
 copy /Y "%MODEL_SETUP_BASE_DIR%\INPUT\params.properties"                                         INPUT\params.properties
 
 :: copy over ShadowPricing file from baseline
+:: needed for all project runs; not needed for baseline runs
 copy /Y "%MODEL_SETUP_BASE_DIR%\OUTPUT\main\ShadowPricing_7.csv"                                 INPUT\logsums
 
 :: copy over project specific inputs
