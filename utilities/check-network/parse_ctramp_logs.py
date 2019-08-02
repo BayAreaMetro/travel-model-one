@@ -31,7 +31,7 @@ NUM_DEST_ALT = NUM_TAZ*NUM_SUBZONES
 DATE_LOG_TYPE_RE_TXT  = "^(\d\d-\w\w\w-\d\d\d\d \d\d:\d\d:\d\d, INFO, )"
 
 # marks the start of what we're looking for in the work location choice log
-USUAL_WORK_LOC_RE_TXT = "(Utility Expressions for Usual Location Choice Model for[:] Purpose=(\w+) for HH=(\d+), PersonNum=(\d+), PersonType=([ A-Za-z\-]+), TourNum=(\d+))"
+USUAL_WORK_LOC_RE_TXT = "(Utility Expressions for Usual Location Choice Model for[:] Purpose=([ A-Za-z\-_]+) for HH=(\d+), PersonNum=(\d+), PersonType=([ A-Za-z\-]+), TourNum=(\d+))"
 
 # utility expression for one term - coefficient x variable
 UTILITY_RE_TXT        = "(\s+([\.\-0-9]+) [*]\s+(([\.\-0-9]+e[+-]\d\d)|NaN|Infinity))"
