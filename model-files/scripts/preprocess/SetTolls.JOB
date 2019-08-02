@@ -13,7 +13,7 @@
 ; Oakland Bay Bridge; (6) San Mateo Bridge; (7) Dumbarton Bridge; (8) Antioch Bridge.  TOLLCLASS codes nine and ten
 ; are reserved for testing new Bridges.
 ;
-; TOLLCLASS codes 11 and above (please see hwyParam.block which denotes this value) are reserved for so-called "value
+; TOLLCLASS codes 31 and above (please see hwyParam.block which denotes this value) are reserved for so-called "value
 ; toll" facilities, which are currently used to model high-occupancy toll (HOT) lanes.  These variables can be used
 ; to toll specific links (each link with a different toll needs a different TOLLCLASS code).
 ;
@@ -42,7 +42,7 @@
 ;         representing one of the five time periods and YY is the path in question, be it drive alone, shared
 ;         ride 2 or 3+, or very small, small, medium, or large (combination) trucks.
 ;
-; See also: (1) hwyParam.block, which stores the "firstValue" variable denoting 11 as the first value toll.
+; See also: (1) hwyParam.block, which stores the "firstValue" variable denoting 31 as the first value toll.
 ;
 ; version:  Travel Model 1.5
 ; authors:  dto (2010 08 10); gde (2009 03 12); crf (2013 07); wkft (2018 11)
@@ -102,6 +102,7 @@ RUN PGM=HWYNET
      lookup[36]=FAC_INDEX, result=TOLLMD_LRG,
      lookup[37]=FAC_INDEX, result=TOLLPM_LRG,
      lookup[38]=FAC_INDEX, result=TOLLEV_LRG,
+     lookup[39]=FAC_INDEX, result=TOLL_FLAT,  ; if 1, flat toll, otherwise, per mile toll
      fail[1]=0,
      fail[2]=0,
      fail[3]=0,                  ; set toll to zero if not found in table
@@ -114,7 +115,9 @@ RUN PGM=HWYNET
 
    ; apply the bridge tolls
 
-   if (TOLLCLASS > 0 && TOLLCLASS < FIRSTVALUE)
+   TOLL_FLAT = TOLLS(39,_fac_index)
+
+   if (TOLL_FLAT == 1)
 
      TOLLEA_DA = TOLLS( 4,_fac_index)*100
      TOLLAM_DA = TOLLS( 5,_fac_index)*100
@@ -160,9 +163,9 @@ RUN PGM=HWYNET
 
    ENDIF
 
-   ; apply the express lane tolls
+   ; apply the per-mile tolls - e.g. express lanes
 
-   IF (TOLLCLASS >= FIRSTVALUE)
+   IF (TOLL_FLAT == 0)
 
      TOLLEA_DA = ROUND(TOLLS( 4,_fac_index)*100*DISTANCE)
      TOLLAM_DA = ROUND(TOLLS( 5,_fac_index)*100*DISTANCE)
