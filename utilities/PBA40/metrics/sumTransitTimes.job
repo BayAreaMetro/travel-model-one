@@ -248,25 +248,30 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
 
      ; Read transit skims
      ; ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
+     
      FILEI MATI[6]  = "skims\trnskmEA_wlk_@token_path@_wlk.tpp"
-     FILEI MATI[7]  = "skims\trnskmAM_wlk_@token_path@_wlk.tpp"
-     FILEI MATI[8]  = "skims\trnskmMD_wlk_@token_path@_wlk.tpp"
-     FILEI MATI[9]  = "skims\trnskmPM_wlk_@token_path@_wlk.tpp"
-     FILEI MATI[10] = "skims\trnskmEV_wlk_@token_path@_wlk.tpp"
+     FILEI MATI[7]  = "skims\trnskmEA_drv_@token_path@_wlk.tpp"
+     FILEI MATI[8]  = "skims\trnskmEA_wlk_@token_path@_drv.tpp"
 
-     FILEI MATI[11] = "skims\trnskmEA_drv_@token_path@_wlk.tpp"
-     FILEI MATI[12] = "skims\trnskmAM_drv_@token_path@_wlk.tpp"
+     FILEI MATI[9]  = "skims\trnskmAM_wlk_@token_path@_wlk.tpp"
+     FILEI MATI[10] = "skims\trnskmAM_drv_@token_path@_wlk.tpp"
+     FILEI MATI[11] = "skims\trnskmAM_wlk_@token_path@_drv.tpp"
+
+     FILEI MATI[12] = "skims\trnskmMD_wlk_@token_path@_wlk.tpp"
      FILEI MATI[13] = "skims\trnskmMD_drv_@token_path@_wlk.tpp"
-     FILEI MATI[14] = "skims\trnskmPM_drv_@token_path@_wlk.tpp"
-     FILEI MATI[15] = "skims\trnskmEV_drv_@token_path@_wlk.tpp"
+     FILEI MATI[14] = "skims\trnskmMD_wlk_@token_path@_drv.tpp"
 
-     FILEI MATI[16] = "skims\trnskmEA_wlk_@token_path@_drv.tpp"
-     FILEI MATI[17] = "skims\trnskmAM_wlk_@token_path@_drv.tpp"
-     FILEI MATI[18] = "skims\trnskmMD_wlk_@token_path@_drv.tpp"
-     FILEI MATI[19] = "skims\trnskmPM_wlk_@token_path@_drv.tpp"
+     FILEI MATI[15] = "skims\trnskmPM_wlk_@token_path@_wlk.tpp"
+     FILEI MATI[16] = "skims\trnskmPM_drv_@token_path@_wlk.tpp"
+     FILEI MATI[17] = "skims\trnskmPM_wlk_@token_path@_drv.tpp"
+
+     FILEI MATI[18] = "skims\trnskmEV_wlk_@token_path@_wlk.tpp"
+     FILEI MATI[19] = "skims\trnskmEV_drv_@token_path@_wlk.tpp"
      FILEI MATI[20] = "skims\trnskmEV_wlk_@token_path@_drv.tpp"
 
+
      FILEO PRINTO[1] = "metrics\transit_times_by_mode_income_@token_path@.csv",APPEND=T
+     FILEO PRINTO[2] = "metrics\debugM16M18_@token_path@.csv",APPEND=T
 
   ; Read Trips
   MW[01] = mi.1.wlk_@token_path@_wlk
@@ -362,7 +367,13 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
       triptime = triptime + MW[17]
       tripcost = tripcost + MW[18]
       TTrips   = TTrips   + MW[16]
+
+      ;debug
+      if (MW[16]>0) PRINT PRINTO=2 CSV=T LIST=i, j, MW[16], MW[18]
+
     ENDJLOOP
+
+
 
       Trips = TTrips
       Time  = triptime /100  ; minutes x 100 to minutes
