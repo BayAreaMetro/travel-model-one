@@ -53,3 +53,12 @@ call TollCalib_RunModel
 
 set ITER=7
 call TollCalib_RunModel
+
+set ITER=8
+call TollCalib_RunModel
+
+set ITER=9
+call TollCalib_RunModel
+
+set ITER=10
+call TollCalib_RunModel
