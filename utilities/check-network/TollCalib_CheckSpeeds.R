@@ -266,6 +266,10 @@ tolls_new_df <- tolls_new_df  %>%
 
 tolls_new_df <- tolls_new_df  %>% select(-c(TOLLCLASS, tollam_da_new, tollmd_da_new, tollpm_da_new, s2toll_mandatory))
 
+
+# make "toll_flat" equals to zero if it is an express lane
+tolls_new_df <- tolls_new_df  %>% mutate(toll_flat=0)
+
 # append the new toll rates to the first half of the toll.csv file containing the bridge tolls
 bridge_tolls_df    <- read.csv(file=BRIDGE_TOLLS_CSV, header=TRUE, sep=",")
 bridge_el_tolls_df <- bind_rows(bridge_tolls_df, tolls_new_df)
