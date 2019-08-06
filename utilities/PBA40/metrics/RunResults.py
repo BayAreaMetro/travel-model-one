@@ -762,6 +762,9 @@ class RunResults:
                                                                                'sr2','sr2toll','s2_av_toll', 's2_av_notoll',\
                                                                                 'sr3','sr3toll','s3_av_toll', 's3_av_notoll',\
                                                                                 'taxi', 'tnc_shared', 'tnc_single', 'zpv_tnc'],'Value Tolls'].sum()
+        quick_summary['Transit Fares (2019$)'] = daily_results[(cat1,cat2,"Transit Fares ($2000)")] * 1.6    
+        quick_summary['Auto HHs - Bridge Tolls (2019$)'] = daily_results[(cat1,cat2,"Auto Households - Bridge Tolls ($2000)" )] * 1.6  
+        quick_summary['Auto HHs - Value Tolls (2019$)'] = daily_results[(cat1,cat2,"Auto Households - Value Tolls ($2000)"  )] * 1.6  
 
 
         ######################################################################################
@@ -1260,17 +1263,29 @@ class RunResults:
 
 
         quick_summary['Peak Vehicle Volume AM Bay Bridge'] =            self.roadways_df.loc[(self.roadways_df['a'] == 2783) & (self.roadways_df['b'] ==6972), 'volAM_tot'].sum()
+        quick_summary['Peak Vehicle Volume AM San Mateo Bridge'] =      self.roadways_df.loc[(self.roadways_df['a'] == 3650)  & (self.roadways_df['b'] ==6381), 'volAM_tot'].sum()
+        quick_summary['Peak Vehicle Volume AM Dumbarton Bridge'] =      self.roadways_df.loc[(self.roadways_df['a'] == 3880)  & (self.roadways_df['b'] ==5938), 'volAM_tot'].sum()
+        quick_summary['Peak Vehicle Volume AM Golden Gate Bridge'] =    self.roadways_df.loc[(self.roadways_df['a'] == 7339) & (self.roadways_df['b'] ==7322), 'volAM_tot'].sum()
+        quick_summary['Peak Vehicle Volume AM Rich SanRaf Bridge'] =    self.roadways_df.loc[(self.roadways_df['a'] == 2358)  & (self.roadways_df['b'] ==2342), 'volAM_tot'].sum()
+
+        quick_summary['Peak Vehicle Volume AM Carquinez Bridge'] =    self.roadways_df.loc[(self.roadways_df['a'] == 11634) & (self.roadways_df['b'] ==2179), 'volAM_tot'].sum()
+                                                                    + self.roadways_df.loc[(self.roadways_df['a'] == 9285)  & (self.roadways_df['b'] ==9225), 'volAM_tot'].sum()
+
+        quick_summary['Peak Vehicle Volume AM Benicia Bridge'] =    self.roadways_df.loc[(self.roadways_df['a'] == 2131) & (self.roadways_df['b'] ==2136), 'volAM_tot'].sum()
+
+        quick_summary['Peak Vehicle Volume AM Antioch Bridge'] =    self.roadways_df.loc[(self.roadways_df['a'] == 1621) & (self.roadways_df['b'] ==1674), 'volAM_tot'].sum()
+
+        quick_summary['Peak Vehicle Volume AM SR237'] =                 self.roadways_df.loc[(self.roadways_df['a'] == 5862)  & (self.roadways_df['b'] ==5869), 'volAM_tot'].sum() \
+                                                                    + self.roadways_df.loc[(self.roadways_df['a'] == 20198)  & (self.roadways_df['b'] ==9048), 'volAM_tot'].sum()
         quick_summary['Peak Vehicle Volume AM Southern Crossing'] =     self.roadways_df.loc[(self.roadways_df['a'] == 10821) & (self.roadways_df['b'] ==10815), 'volAM_tot'].sum()
         quick_summary['Peak Vehicle Volume AM Mid-Bay Bridge'] =        self.roadways_df.loc[(self.roadways_df['a'] == 10947) & (self.roadways_df['b'] ==10951), 'volAM_tot'].sum() \
                                                                      + self.roadways_df.loc[(self.roadways_df['a'] == 10948) & (self.roadways_df['b'] ==10952), 'volAM_tot'].sum()
-        quick_summary['Peak Vehicle Volume AM San Mateo Bridge'] =      self.roadways_df.loc[(self.roadways_df['a'] == 3650)  & (self.roadways_df['b'] ==6381), 'volAM_tot'].sum()
-        quick_summary['Peak Vehicle Volume AM Dumbarton Bridge'] =      self.roadways_df.loc[(self.roadways_df['a'] == 3880)  & (self.roadways_df['b'] ==5938), 'volAM_tot'].sum()
-        quick_summary['Peak Vehicle Volume AM SR237'] =                 self.roadways_df.loc[(self.roadways_df['a'] == 5862)  & (self.roadways_df['b'] ==5869), 'volAM_tot'].sum() \
-                                                                    + self.roadways_df.loc[(self.roadways_df['a'] == 20198)  & (self.roadways_df['b'] ==9048), 'volAM_tot'].sum()
-        quick_summary['Peak Vehicle Volume AM Golden Gate Bridge'] =    self.roadways_df.loc[(self.roadways_df['a'] == 7339) & (self.roadways_df['b'] ==7322), 'volAM_tot'].sum()
+ 
 
 
         quick_summary['Peak Transbay Ridership AM BART Tunnel 1'] =     self.crowding_complete_df.loc[(self.crowding_complete_df['A'] == 15510) & (self.crowding_complete_df['B'] == 15511) &
+                                                                  (self.crowding_complete_df['period'] == "AM"),   'AB_VOL'].sum()
+        quick_summary['Peak Transbay Ridership AM AC Transit Bay Bridge'] =   self.crowding_complete_df.loc[(self.crowding_complete_df['A'] == 2783) & (self.crowding_complete_df['B'] == 6972) &\
                                                                   (self.crowding_complete_df['period'] == "AM"),   'AB_VOL'].sum()
         quick_summary['Peak Transbay Ridership AM BART Tunnel 2'] =     max(self.crowding_complete_df.loc[(self.crowding_complete_df['A'] == 15553) & (self.crowding_complete_df['B'] == 15554) &\
                                                                    (self.crowding_complete_df['period'] == "AM"),   'AB_VOL'].sum() , \
@@ -1280,8 +1295,7 @@ class RunResults:
                                                                    (self.crowding_complete_df['period'] == "AM"),   'AB_VOL'].sum() )
         quick_summary['Peak Transbay Ridership AM Reg Rail Tunnel'] =   self.crowding_complete_df.loc[(self.crowding_complete_df['A'] == 14648) & (self.crowding_complete_df['B'] == 13654) &\
                                                                   (self.crowding_complete_df['period'] == "AM"),   'AB_VOL'].sum()
-        quick_summary['Peak Transbay Ridership AM AC Transit Bay Bridge'] =   self.crowding_complete_df.loc[(self.crowding_complete_df['A'] == 2783) & (self.crowding_complete_df['B'] == 6972) &\
-                                                                  (self.crowding_complete_df['period'] == "AM"),   'AB_VOL'].sum()
+
 
 
         quick_summary['Daily Boardings - BART']    =              self.crowding_df.loc[self.crowding_df['SYSTEM'] == "BART", 'AB_BRDA'].sum() \
