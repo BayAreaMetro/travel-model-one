@@ -1267,14 +1267,10 @@ class RunResults:
         quick_summary['Peak Vehicle Volume AM Dumbarton Bridge'] =      self.roadways_df.loc[(self.roadways_df['a'] == 3880)  & (self.roadways_df['b'] ==5938), 'volAM_tot'].sum()
         quick_summary['Peak Vehicle Volume AM Golden Gate Bridge'] =    self.roadways_df.loc[(self.roadways_df['a'] == 7339) & (self.roadways_df['b'] ==7322), 'volAM_tot'].sum()
         quick_summary['Peak Vehicle Volume AM Rich SanRaf Bridge'] =    self.roadways_df.loc[(self.roadways_df['a'] == 2358)  & (self.roadways_df['b'] ==2342), 'volAM_tot'].sum()
-
-        quick_summary['Peak Vehicle Volume AM Carquinez Bridge'] =    self.roadways_df.loc[(self.roadways_df['a'] == 11634) & (self.roadways_df['b'] ==2179), 'volAM_tot'].sum()
+        quick_summary['Peak Vehicle Volume AM Carquinez Bridge'] =    self.roadways_df.loc[(self.roadways_df['a'] == 11634) & (self.roadways_df['b'] ==2179), 'volAM_tot'].sum() \
                                                                     + self.roadways_df.loc[(self.roadways_df['a'] == 9285)  & (self.roadways_df['b'] ==9225), 'volAM_tot'].sum()
-
         quick_summary['Peak Vehicle Volume AM Benicia Bridge'] =    self.roadways_df.loc[(self.roadways_df['a'] == 2131) & (self.roadways_df['b'] ==2136), 'volAM_tot'].sum()
-
         quick_summary['Peak Vehicle Volume AM Antioch Bridge'] =    self.roadways_df.loc[(self.roadways_df['a'] == 1621) & (self.roadways_df['b'] ==1674), 'volAM_tot'].sum()
-
         quick_summary['Peak Vehicle Volume AM SR237'] =                 self.roadways_df.loc[(self.roadways_df['a'] == 5862)  & (self.roadways_df['b'] ==5869), 'volAM_tot'].sum() \
                                                                     + self.roadways_df.loc[(self.roadways_df['a'] == 20198)  & (self.roadways_df['b'] ==9048), 'volAM_tot'].sum()
         quick_summary['Peak Vehicle Volume AM Southern Crossing'] =     self.roadways_df.loc[(self.roadways_df['a'] == 10821) & (self.roadways_df['b'] ==10815), 'volAM_tot'].sum()
