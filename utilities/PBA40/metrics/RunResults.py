@@ -762,9 +762,25 @@ class RunResults:
                                                                                'sr2','sr2toll','s2_av_toll', 's2_av_notoll',\
                                                                                 'sr3','sr3toll','s3_av_toll', 's3_av_notoll',\
                                                                                 'taxi', 'tnc_shared', 'tnc_single', 'zpv_tnc'],'Value Tolls'].sum()
+        
+        bridge_tolls_nonhh =  0.01*auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix', \
+                                                     'da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air','truck'],'Bridge Tolls'].sum()
+        value_tolls_nonhh =  0.01*auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix', \
+                                                     'da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air','truck'],'Value Tolls'].sum()
+
+
+        quick_summary['Transit Fares (2000$)'] = daily_results[(cat1,cat2,"Transit Fares ($2000)")]
         quick_summary['Transit Fares (2019$)'] = daily_results[(cat1,cat2,"Transit Fares ($2000)")] * 1.6    
-        quick_summary['Auto HHs - Bridge Tolls (2019$)'] = daily_results[(cat1,cat2,"Auto Households - Bridge Tolls ($2000)" )] * 1.6  
-        quick_summary['Auto HHs - Value Tolls (2019$)'] = daily_results[(cat1,cat2,"Auto Households - Value Tolls ($2000)"  )] * 1.6  
+        
+        quick_summary['Bridge Tolls (2000$): Auto HH'] = daily_results[(cat1,cat2,"Auto Households - Bridge Tolls ($2000)" )] 
+        quick_summary['Bridge Tolls (2000$): Total'] = quick_summary['Bridge Tolls (2000$): Auto HH'] + bridge_tolls_nonhh
+        quick_summary['Bridge Tolls (2019$): Auto HH'] = quick_summary['Bridge Tolls (2000$): Auto HH'] * 1.6 
+        quick_summary['Bridge Tolls (2019$): Total'] = quick_summary['Bridge Tolls (2000$): Total'] * 1.6  
+
+        quick_summary['Value Tolls (2000$): Auto HH'] = daily_results[(cat1,cat2,"Auto Households - Value Tolls ($2000)"  )] 
+        quick_summary['Value Tolls (2000$): Total'] = daily_results[(cat1,cat2,"Auto Households - Value Tolls ($2000)"  )] + value_tolls_nonhh
+        quick_summary['Value Tolls (2019$): Auto HH'] =  quick_summary['Value Tolls (2000$): Auto HH'] * 1.6  
+        quick_summary['Value Tolls (2019$): Total'] = quick_summary['Value Tolls (2000$): Total'] * 1.6  
 
 
         ######################################################################################
