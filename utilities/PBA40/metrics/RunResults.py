@@ -1103,18 +1103,30 @@ class RunResults:
 
 
         cat2            = 'VMT by mode'
-        daily_results[(cat1,cat2,'Auto SOV'  )] = auto_byclass.loc[['da' ,'datoll', 'da_av_toll', 'da_av_notoll',\
+        daily_results[(cat1,cat2,'Auto SOV'  )]         = auto_byclass.loc[['da' ,'datoll', 'da_av_toll', 'da_av_notoll',\
                                                                     'da_ix','datoll_ix','da_air','datoll_air'],'Vehicle Miles'].sum()
-        daily_results[(cat1,cat2,'Auto HOV2' )] = auto_byclass.loc[['sr2','sr2toll', 's2_av_toll', 's2_av_notoll',\
+        daily_results[(cat1,cat2,'Auto HOV2' )]         = auto_byclass.loc[['sr2','sr2toll', 's2_av_toll', 's2_av_notoll',\
                                                                      'sr2_ix','sr2toll_ix', 'sr2_air','sr2toll_air'],'Vehicle Miles'].sum()
-        daily_results[(cat1,cat2,'Auto HOV3+')] = auto_byclass.loc[['sr3','sr3toll', 's3_av_toll', 's3_av_notoll',\
+        daily_results[(cat1,cat2,'Auto HOV3+')]         = auto_byclass.loc[['sr3','sr3toll', 's3_av_toll', 's3_av_notoll',\
                                                                      'sr3_ix','sr3toll_ix', 'sr3_air','sr3toll_air'],'Vehicle Miles'].sum()
-        daily_results[(cat1,cat2,'Auto TNC/Taxi')] = auto_byclass.loc[['tnc_single', 'tnc_shared', 'taxi'],'Vehicle Miles'].sum()
-        daily_results[(cat1,cat2,'Auto ZOV')] = auto_byclass.loc[['owned_zpv', 'zpv_tnc'],'Vehicle Miles'].sum()
-        daily_results[(cat1,cat2,'Truck')] = auto_byclass.loc['truck','Vehicle Miles'].sum()
+        daily_results[(cat1,cat2,'Auto ZOV')]           = auto_byclass.loc[['owned_zpv'],'Vehicle Miles'].sum()
+        daily_results[(cat1,cat2,'Auto TNC/Taxi')]      = auto_byclass.loc[['tnc_single', 'tnc_shared', 'taxi'],'Vehicle Miles'].sum()
+        daily_results[(cat1,cat2,'Auto TNC/Taxi ZOV')]  = auto_byclass.loc[['zpv_tnc'],'Vehicle Miles'].sum()
+        daily_results[(cat1,cat2,'Truck')]              = auto_byclass.loc['truck','Vehicle Miles'].sum()
 
-        quick_summary['VMT -- TNC']   = auto_byclass.loc[['tnc_single', 'tnc_shared'],'Vehicle Miles'].sum()
-        quick_summary['VMT -- ZOV']       = auto_byclass.loc[['owned_zpv', 'zpv_tnc'],'Vehicle Miles'].sum()
+
+        quick_summary['VMT -- Auto SOV']                = daily_results[(cat1,cat2,'Auto SOV'  )]
+        quick_summary['VMT -- Auto HOV2']               = daily_results[(cat1,cat2,'Auto HOV2' )]   
+        quick_summary['VMT -- Auto HOV3+']              = daily_results[(cat1,cat2,'Auto HOV3+')] 
+        quick_summary['VMT -- Auto ZOV']                = daily_results[(cat1,cat2,'Auto ZOV')]
+        quick_summary['VMT -- Auto Total']              = daily_results[(cat1,cat2,'Auto SOV'  )] + daily_results[(cat1,cat2,'Auto HOV2' )] \
+                                                            + daily_results[(cat1,cat2,'Auto HOV3+')]  +  daily_results[(cat1,cat2,'Auto ZOV')]
+
+        quick_summary['VMT -- TNC non-ZOV']             = auto_byclass.loc[['tnc_single', 'tnc_shared'],'Vehicle Miles'].sum()
+        quick_summary['VMT -- TNC ZOV']                 = auto_byclass.loc[['zpv_tnc'],'Vehicle Miles'].sum()
+        quick_summary['VMT -- TNC Total']               = auto_byclass.loc[['tnc_single', 'tnc_shared','zpv_tnc'],'Vehicle Miles'].sum()
+
+        quick_summary['VMT -- ZOV Total']               = auto_byclass.loc[['owned_zpv', 'zpv_tnc'],'Vehicle Miles'].sum()
 
 
         total_autoVMT = daily_results[(cat1,cat2,'Auto SOV')] + \
