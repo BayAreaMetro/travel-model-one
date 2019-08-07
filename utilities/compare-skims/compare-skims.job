@@ -1,0 +1,292 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+;  compare-skims for a given origin for two runs.
+;
+;  Uses the following environment variables:
+;    BASE_SKIM_DIR
+;    BUILD_SKIM_DIR
+;    ORIGIN_TAZ
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+token_base_skim_dir = '%BASE_SKIM_DIR%'
+token_build_skim_dir = '%BUILD_SKIM_DIR%'
+token_origin_taz = '%ORIGIN_TAZ%'
+
+; walk speed should be set to the same value as in the mode choice UEC
+token_walk_speed =  3.00
+
+; bicycle speed should be set to the same value as in the mode choice UEC
+token_bike_speed = 12.00
+
+; only print the S2ta for internal to internal flows
+token_internal_zones = 1454
+
+; dump time-period-specific S2tabases
+loop period = 1, 5
+  
+   ; a two letter token is used for each time period
+   if (period = 1)   
+      token_period = 'EA'   
+  
+   elseif (period = 2)   
+      token_period = 'AM'    
+  
+   elseif (period = 3)   
+      token_period = 'MD'    
+  
+   elseif (period = 4)   
+      token_period = 'PM'
+  
+   elseif (period = 5)   
+      token_period = 'EV'
+      
+   endif
+   
+   ; do each time of S2y as a separate process
+   DistributeMultistep processid = 'ctramp', processNum = period, commpath = '%COMMPATH%'
+     
+   ; total travel time by mode
+   run pgm = matrix
+
+      ;----------------------- BASE -----------------------      
+      filei mati[1]  = "@token_base_skim_dir@\hwyskm@token_period@.tpp"              ; highway skim
+      filei mati[2]  = "@token_base_skim_dir@\nonmotskm.tpp"                         ; non-motorized skim
+
+      filei mati[3]  = "@token_base_skim_dir@\trnskm@token_period@_wlk_com_wlk.tpp"  ; wlk-com-wlk
+      filei mati[4]  = "@token_base_skim_dir@\trnskm@token_period@_drv_com_wlk.tpp"  ; drv-com-wlk
+      filei mati[5]  = "@token_base_skim_dir@\trnskm@token_period@_wlk_com_drv.tpp"  ; wlk-com-drv
+
+      filei mati[6]  = "@token_base_skim_dir@\trnskm@token_period@_wlk_hvy_wlk.tpp"  ; wlk-hvy-wlk
+      filei mati[7]  = "@token_base_skim_dir@\trnskm@token_period@_drv_hvy_wlk.tpp"  ; drv-hvy-wlk
+      filei mati[8]  = "@token_base_skim_dir@\trnskm@token_period@_wlk_hvy_drv.tpp"  ; wlk-hvy-drv
+
+      ;----------------------- BUILD -----------------------
+      filei mati[11] = "@token_build_skim_dir@\hwyskm@token_period@.tpp"              ; highway skim
+      filei mati[12] = "@token_build_skim_dir@\nonmotskm.tpp"                         ; non-motorized skim
+
+      filei mati[13] = "@token_build_skim_dir@\trnskm@token_period@_wlk_com_wlk.tpp"  ; wlk-com-wlk
+      filei mati[14] = "@token_build_skim_dir@\trnskm@token_period@_drv_com_wlk.tpp"  ; drv-com-wlk
+      filei mati[15] = "@token_build_skim_dir@\trnskm@token_period@_wlk_com_drv.tpp"  ; wlk-com-drv
+
+      filei mati[16] = "@token_build_skim_dir@\trnskm@token_period@_wlk_hvy_wlk.tpp"  ; wlk-hvy-wlk
+      filei mati[17] = "@token_build_skim_dir@\trnskm@token_period@_drv_hvy_wlk.tpp"  ; drv-hvy-wlk
+      filei mati[18] = "@token_build_skim_dir@\trnskm@token_period@_wlk_hvy_drv.tpp"  ; wlk-hvy-drv
+
+      fileo printo[1] = base_build_skims_@token_period@.csv
+
+      IF (i==@token_origin_taz@)
+        JLOOP
+          IF (J <= 1454)
+            ; mode, variable, base, build
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DA",     "TIME" , MI.1.TIMEDA,      MI.11.TIMEDA
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DA",     "DIST" , MI.1.DISTDA,      MI.11.DISTDA
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DA",     "BTOLL", MI.1.BTOLLDA,     MI.11.BTOLLDA
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DATOLL", "TIME" , MI.1.TOLLTIMEDA,  MI.11.TOLLTIMEDA
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DATOLL", "DIST" , MI.1.TOLLDISTDA,  MI.11.TOLLDISTDA
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DATOLL", "BTOLL", MI.1.TOLLBTOLLDA, MI.11.TOLLBTOLLDA
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DATOLL", "VTOLL", MI.1.TOLLVTOLLDA, MI.11.TOLLVTOLLDA
+  
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "S2",     "TIME" , MI.1.TIMES2,      MI.11.TIMES2
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "S2",     "DIST" , MI.1.DISTS2,      MI.11.DISTS2
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "S2",     "BTOLL", MI.1.BTOLLS2,     MI.11.BTOLLS2
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "S2TOLL", "TIME" , MI.1.TOLLTIMES2,  MI.11.TOLLTIMES2
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "S2TOLL", "DIST" , MI.1.TOLLDISTS2,  MI.11.TOLLDISTS2
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "S2TOLL", "BTOLL", MI.1.TOLLBTOLLS2, MI.11.TOLLBTOLLS2
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "S2TOLL", "VTOLL", MI.1.TOLLVTOLLS2, MI.11.TOLLVTOLLS2
+  
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "S3",     "TIME" , MI.1.TIMES2,      MI.11.TIMES2
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "S3",     "DIST" , MI.1.DISTS2,      MI.11.DISTS2
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "S3",     "BTOLL", MI.1.BTOLLS2,     MI.11.BTOLLS2
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "S3TOLL", "TIME" , MI.1.TOLLTIMES2,  MI.11.TOLLTIMES2
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "S3TOLL", "DIST" , MI.1.TOLLDISTS2,  MI.11.TOLLDISTS2
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "S3TOLL", "BTOLL", MI.1.TOLLBTOLLS2, MI.11.TOLLBTOLLS2
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "S3TOLL", "VTOLL", MI.1.TOLLVTOLLS2, MI.11.TOLLVTOLLS2
+  
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WALK",   "DIST" , MI.2.DISTWALK,    MI.12.DISTWALK
+            print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "BIKE",   "DIST" , MI.2.DISTBIKE,    MI.12.DISTBIKE
+  
+            if ((MI.3.IVT > 0) || (MI.13.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_WLK", "IVT"  , MI.3.IVT,    MI.13.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_WLK", "FARE" , MI.3.FARE,   MI.13.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_WLK", "WAIT" , MI.3.WAIT,   MI.13.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_WLK", "WAUX" , MI.3.WAUX,   MI.13.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_WLK", "DTIME", MI.3.DTIME,  MI.13.DTIME
+            endif
+  
+            if ((MI.4.IVT > 0) || (MI.14.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_COM_WLK", "IVT"  , MI.4.IVT,    MI.14.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_COM_WLK", "FARE" , MI.4.FARE,   MI.14.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_COM_WLK", "WAIT" , MI.4.WAIT,   MI.14.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_COM_WLK", "WAUX" , MI.4.WAUX,   MI.14.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_COM_WLK", "DTIME", MI.4.DTIME,  MI.14.DTIME
+            endif
+  
+            if ((MI.5.IVT > 0) || (MI.15.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_DRV", "IVT"  , MI.5.IVT,    MI.15.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_DRV", "FARE" , MI.5.FARE,   MI.15.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_DRV", "WAIT" , MI.5.WAIT,   MI.15.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_DRV", "WAUX" , MI.5.WAUX,   MI.15.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_DRV", "DTIME", MI.5.DTIME,  MI.15.DTIME
+            endif
+  
+            if ((MI.6.IVT > 0) || (MI.16.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_WLK", "IVT"  , MI.6.IVT,    MI.16.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_WLK", "FARE" , MI.6.FARE,   MI.16.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_WLK", "WAIT" , MI.6.WAIT,   MI.16.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_WLK", "WAUX" , MI.6.WAUX,   MI.16.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_WLK", "DTIME", MI.6.DTIME,  MI.16.DTIME
+            endif
+  
+            if ((MI.7.IVT > 0) || (MI.17.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_HVY_WLK", "IVT"  , MI.7.IVT,    MI.17.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_HVY_WLK", "FARE" , MI.7.FARE,   MI.17.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_HVY_WLK", "WAIT" , MI.7.WAIT,   MI.17.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_HVY_WLK", "WAUX" , MI.7.WAUX,   MI.17.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_HVY_WLK", "DTIME", MI.7.DTIME,  MI.17.DTIME
+            endif
+  
+            if ((MI.8.IVT > 0) || (MI.18.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_DRV", "IVT"  , MI.8.IVT,    MI.18.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_DRV", "FARE" , MI.8.FARE,   MI.18.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_DRV", "WAIT" , MI.8.WAIT,   MI.18.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_DRV", "WAUX" , MI.8.WAUX,   MI.18.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_DRV", "DTIME", MI.8.DTIME,  MI.18.DTIME
+            endif
+
+          ENDIF ; J < 1454
+        ENDJLOOP
+      ENDIF
+
+   endrun
+
+
+   ; total travel time by mode
+   run pgm = matrix
+
+      ;----------------------- BASE -----------------------      
+      filei mati[1]  = "@token_base_skim_dir@\trnskm@token_period@_wlk_exp_wlk.tpp"  ; wlk-exp-wlk
+      filei mati[2]  = "@token_base_skim_dir@\trnskm@token_period@_drv_exp_wlk.tpp"  ; drv-exp-wlk
+      filei mati[3]  = "@token_base_skim_dir@\trnskm@token_period@_wlk_exp_drv.tpp"  ; wlk-exp-drv
+
+      filei mati[4]  = "@token_base_skim_dir@\trnskm@token_period@_wlk_lrf_wlk.tpp"  ; wlk-lrf-wlk
+      filei mati[5]  = "@token_base_skim_dir@\trnskm@token_period@_drv_lrf_wlk.tpp"  ; drv-lrf-wlk
+      filei mati[6]  = "@token_base_skim_dir@\trnskm@token_period@_wlk_lrf_drv.tpp"  ; wlk-lrf-drv
+
+      filei mati[7]  = "@token_base_skim_dir@\trnskm@token_period@_wlk_loc_wlk.tpp"  ; wlk-loc-wlk
+      filei mati[8]  = "@token_base_skim_dir@\trnskm@token_period@_drv_loc_wlk.tpp"  ; drv-loc-wlk
+      filei mati[9]  = "@token_base_skim_dir@\trnskm@token_period@_wlk_loc_drv.tpp"  ; wlk-loc-drv
+
+      ;----------------------- BUILD -----------------------
+      filei mati[11]  = "@token_build_skim_dir@\trnskm@token_period@_wlk_exp_wlk.tpp"  ; wlk-exp-wlk
+      filei mati[12]  = "@token_build_skim_dir@\trnskm@token_period@_drv_exp_wlk.tpp"  ; drv-exp-wlk
+      filei mati[13]  = "@token_build_skim_dir@\trnskm@token_period@_wlk_exp_drv.tpp"  ; wlk-exp-drv
+
+      filei mati[14]  = "@token_build_skim_dir@\trnskm@token_period@_wlk_lrf_wlk.tpp"  ; wlk-lrf-wlk
+      filei mati[15]  = "@token_build_skim_dir@\trnskm@token_period@_drv_lrf_wlk.tpp"  ; drv-lrf-wlk
+      filei mati[16]  = "@token_build_skim_dir@\trnskm@token_period@_wlk_lrf_drv.tpp"  ; wlk-lrf-drv
+
+      filei mati[17]  = "@token_build_skim_dir@\trnskm@token_period@_wlk_loc_wlk.tpp"  ; wlk-loc-wlk
+      filei mati[18]  = "@token_build_skim_dir@\trnskm@token_period@_drv_loc_wlk.tpp"  ; drv-loc-wlk
+      filei mati[19]  = "@token_build_skim_dir@\trnskm@token_period@_wlk_loc_drv.tpp"  ; wlk-loc-drv
+
+      fileo printo[1] = base_build_skims_@token_period@.csv, APPEND=T
+
+      IF (i==@token_origin_taz@)
+        JLOOP
+          IF (J <= 1454)
+            ; mode, variable, base, build
+            if ((MI.1.IVT > 0) || (MI.11.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_WLK", "IVT"  , MI.3.IVT,    MI.13.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_WLK", "FARE" , MI.3.FARE,   MI.13.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_WLK", "WAIT" , MI.3.WAIT,   MI.13.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_WLK", "WAUX" , MI.3.WAUX,   MI.13.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_WLK", "DTIME", MI.3.DTIME,  MI.13.DTIME
+            endif
+
+            if ((MI.2.IVT > 0) || (MI.12.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_EXP_WLK", "IVT"  , MI.3.IVT,    MI.13.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_EXP_WLK", "FARE" , MI.3.FARE,   MI.13.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_EXP_WLK", "WAIT" , MI.3.WAIT,   MI.13.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_EXP_WLK", "WAUX" , MI.3.WAUX,   MI.13.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_EXP_WLK", "DTIME", MI.3.DTIME,  MI.13.DTIME
+            endif
+  
+            if ((MI.3.IVT > 0) || (MI.13.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_DRV", "IVT"  , MI.3.IVT,    MI.13.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_DRV", "FARE" , MI.3.FARE,   MI.13.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_DRV", "WAIT" , MI.3.WAIT,   MI.13.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_DRV", "WAUX" , MI.3.WAUX,   MI.13.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_DRV", "DTIME", MI.3.DTIME,  MI.13.DTIME
+            endif
+  
+            if ((MI.4.IVT > 0) || (MI.14.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_WLK", "IVT"  , MI.4.IVT,    MI.14.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_WLK", "FARE" , MI.4.FARE,   MI.14.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_WLK", "WAIT" , MI.4.WAIT,   MI.14.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_WLK", "WAUX" , MI.4.WAUX,   MI.14.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_WLK", "DTIME", MI.4.DTIME,  MI.14.DTIME
+            endif
+  
+            if ((MI.5.IVT > 0) || (MI.15.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LRF_WLK", "IVT"  , MI.5.IVT,    MI.15.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LRF_WLK", "FARE" , MI.5.FARE,   MI.15.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LRF_WLK", "WAIT" , MI.5.WAIT,   MI.15.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LRF_WLK", "WAUX" , MI.5.WAUX,   MI.15.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LRF_WLK", "DTIME", MI.5.DTIME,  MI.15.DTIME
+            endif
+  
+            if ((MI.6.IVT > 0) || (MI.16.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_DRV", "IVT"  , MI.6.IVT,    MI.16.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_DRV", "FARE" , MI.6.FARE,   MI.16.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_DRV", "WAIT" , MI.6.WAIT,   MI.16.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_DRV", "WAUX" , MI.6.WAUX,   MI.16.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_DRV", "DTIME", MI.6.DTIME,  MI.16.DTIME
+            endif
+  
+            if ((MI.7.IVT > 0) || (MI.17.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_WLK", "IVT"  , MI.7.IVT,    MI.17.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_WLK", "FARE" , MI.7.FARE,   MI.17.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_WLK", "WAIT" , MI.7.WAIT,   MI.17.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_WLK", "WAUX" , MI.7.WAUX,   MI.17.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_WLK", "DTIME", MI.7.DTIME,  MI.17.DTIME
+            endif
+  
+            if ((MI.8.IVT > 0) || (MI.18.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LOC_WLK", "IVT"  , MI.8.IVT,    MI.18.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LOC_WLK", "FARE" , MI.8.FARE,   MI.18.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LOC_WLK", "WAIT" , MI.8.WAIT,   MI.18.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LOC_WLK", "WAUX" , MI.8.WAUX,   MI.18.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LOC_WLK", "DTIME", MI.8.DTIME,  MI.18.DTIME
+            endif
+
+            if ((MI.9.IVT > 0) || (MI.19.IVT > 0))
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_WLK", "IVT"  , MI.8.IVT,    MI.18.IVT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_WLK", "FARE" , MI.8.FARE,   MI.18.FARE
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_WLK", "WAIT" , MI.8.WAIT,   MI.18.WAIT
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_WLK", "WAUX" , MI.8.WAUX,   MI.18.WAUX
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_WLK", "DTIME", MI.8.DTIME,  MI.18.DTIME
+            endif
+          ENDIF ; J < 1454
+        ENDJLOOP
+      ENDIF
+
+   endrun
+
+   
+   EndDistributeMultistep
+
+endloop ; token_period
+
+Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
+          printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+           
+
+; add header
+*echo orig,dest,timeperiod,mode,variable,base,build > base_build_skims.csv
+*type base_build_skims_EA.csv >> base_build_skims.csv
+*type base_build_skims_AM.csv >> base_build_skims.csv
+*type base_build_skims_MD.csv >> base_build_skims.csv
+*type base_build_skims_PM.csv >> base_build_skims.csv
+*type base_build_skims_EV.csv >> base_build_skims.csv
+*del base_build_skims_EA.csv base_build_skims_AM.csv base_build_skims_MD.csv base_build_skims_PM.csv base_build_skims_EV.csv

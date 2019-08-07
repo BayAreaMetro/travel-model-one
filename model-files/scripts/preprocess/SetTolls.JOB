@@ -165,7 +165,7 @@ RUN PGM=HWYNET
 
    ; apply the per-mile tolls - e.g. express lanes
 
-   IF (TOLL_FLAT == 0)
+   IF ((TOLLCLASS > 0) && (TOLL_FLAT == 0))
 
      TOLLEA_DA = ROUND(TOLLS( 4,_fac_index)*100*DISTANCE)
      TOLLAM_DA = ROUND(TOLLS( 5,_fac_index)*100*DISTANCE)
