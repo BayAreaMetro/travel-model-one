@@ -442,8 +442,6 @@ public class MandatoryDestChoiceModel implements Serializable {
         String loggingHeader = "";
         if ( household.getDebugChoiceModels() ) {
             choiceModelDescription = String.format ( "Tour Mode Choice Logsum calculation for %s Location Choice", purposeName );
-            decisionMakerLabel = String.format ( "HH=%d, PersonNum=%d, PersonType=%s", household.getHhId(), person.getPersonNum(), person.getPersonType() );
-            loggingHeader = String.format( "%s    %s", choiceModelDescription, decisionMakerLabel );
         }        
         
         
@@ -453,7 +451,8 @@ public class MandatoryDestChoiceModel implements Serializable {
 
             int d = (finalSample[i]-1)/numberOfSubzones + 1;
             int w = finalSample[i] - (d-1)*numberOfSubzones - 1;
-            
+            decisionMakerLabel = String.format ( "HH=%d, PersonNum=%d, PersonType=%s, destTaz=%d destWalkSubzone=%d", household.getHhId(), person.getPersonNum(), person.getPersonType(), d, w);
+            loggingHeader = String.format( "%s    %s", choiceModelDescription, decisionMakerLabel);
             
             // set the zone, walk subzone, start and end time values for the mcDmuObject and calculate the logsum.
             mcDmuObject.setTourOrigTaz( origTaz );
