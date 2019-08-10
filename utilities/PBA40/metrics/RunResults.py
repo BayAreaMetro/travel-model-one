@@ -22,7 +22,7 @@ pd.set_option('display.width', 500)
 USAGE = """
 
 
-  This script reads "\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\PPAMasterInput.xlsx"
+  This script reads "L:\\RTP2021_PPA\\Projects\\PPAMasterInput.xlsx"
   It also reads transit_crowding.csv. i.e. Prior to running this script, TransitCrowding.py needs to be executed.
 
   It calculates the project_metrics_dir and produces:
@@ -30,8 +30,8 @@ USAGE = """
   * all_projects_metrics_dir\BC_ProjectID[_BaseProjectID].csv with a version for rolling up
   * logsum diff maps in \OUTPUT\logsums\logsum_diff.twb
 
-  Run the script from the "M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects" folder, where the baseline runs are saved.
-  example: python \\mainmodel\MainModelShare\\travel-model-one-master\utilities\PBA40\metrics\RunResults.py 1_Crossings1\\2050_TM151_PPA_RT_02_1_Crossings1_03 all_projects_bc_workbooks
+  Run the script from the "L:\\RTP2021_PPA\\Projects" folder, where the baseline runs are saved.
+  example: python \\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\RunResults.py 1_Crossings1\\2050_TM151_PPA_RT_02_1_Crossings1_03 all_projects_bc_workbooks
 
 
 """
@@ -500,18 +500,21 @@ class RunResults:
         self.daily_results[cat1,cat2,'Truck VMT - Computed'] = (1.0+pct_change_vmt)*base_truck_vmt
 
 
-    def parseNumList(self, numlist_str):
+    @staticmethod
+    def parseNumList(numlist_str):
         """
         Parses a number list of the format 1,4,6,10-14,23 into a list of numbers.
 
         Used for Zero Logsum TAZs parsing
         """
+        if numlist_str in ["","nan"]: return []
+
         # Parse the taz list.
         taz_list_strs = numlist_str.split(",")
         # these should be either 123 or 1-123
         taz_list = []
         for taz_list_str in taz_list_strs:
-            taz_list_regex = re.compile(r"(\d+)(-(\d+))?")
+            taz_list_regex = re.compile(r"[ ]*(\d+)(-(\d+))?")
             match_obj = re.match(taz_list_regex, taz_list_str)
             if match_obj.group(3) == None:
                 taz_list.append(int(match_obj.group(1)))
@@ -555,22 +558,13 @@ class RunResults:
         zero_neg_taz_list = []
         zero_taz_list     = []
         if ("Zero Logsum TAZs" in config) or ("Zero Negative Logsum TAZs" in config):
-            # Require a readme about it
-            readme_file = os.path.join(config['Project Run Dir'], "Zero Out Logsum Diff README.txt")
-            if not os.path.exists(readme_file):
-                print "Readme file [%s] doesn't exist -- this is required to use this configuration option." % readme_file
-                sys.exit(2)
-
-            if os.path.getsize(readme_file) < 200:
-                print "Readme file [%s] is pretty short... It should have more detail about why you're doing this." % readme_file
-                sys.exit(2)
 
             if "Zero Negative Logsum TAZs" in config:
-                zero_neg_taz_list = self.parseNumList(self.config["Zero Negative Logsum TAZs"])
+                zero_neg_taz_list = RunResults.parseNumList(str(config["Zero Negative Logsum TAZs"]))
                 print "Zeroing out negative diffs for tazs %s" % str(zero_neg_taz_list)
 
             if "Zero Logsum TAZs" in config:
-                zero_taz_list = self.parseNumList(config["Zero Logsum TAZs"])
+                zero_taz_list = RunResults.parseNumList(str(config["Zero Logsum TAZs"]))
                 print "Zeroing out diffs for tazs %s" % str(zero_taz_list)
 
         # Take the difference and convert utils to minutes (k_ivt = 0.0134 k_mc_ls = 1.0 in access calcs);
