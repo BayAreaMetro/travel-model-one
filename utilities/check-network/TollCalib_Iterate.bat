@@ -37,8 +37,53 @@ SET BRIDGE_TOLLS_CSV=M:\Application\Model One\NetworkProjects\Bridge_Toll_Update
 set TOLL_DESIGNATIONS_XLSX=M:\Application\Model One\Networks\TOLLCLASS Designations.xlsx
 
 :: -------------------------------------------------
+:: check that all the paths are valid
+:: -------------------------------------------------
+
+if exist %MODEL_BASE_DIR% (
+    rem goto runiter4
+    echo file exists!
+) else (
+    rem goto end
+    echo file missing!
+)
+
+if exist %TOLL_FILE% (
+    rem goto runiter4
+    echo file exists!
+) else (
+    rem goto end
+    echo file missing!
+)
+
+if exist %UNLOADED_NETWORK_DBF% (
+    rem goto runiter4
+    echo file exists!
+) else (
+    rem goto end
+    echo file missing!
+)
+
+if exist %BRIDGE_TOLLS_CSV% (
+    rem goto runiter4
+    echo file exists!
+) else (
+    rem goto end
+    echo file missing!
+)
+
+if exist %TOLL_DESIGNATIONS_XLSX% (
+    rem goto runiter4
+    echo file exists!
+) else (
+    rem goto end
+    echo file missing!
+)
+
+:: -------------------------------------------------
 :: Run iteration 4
 :: -------------------------------------------------
+:runiter4
 
 call TollCalib_RunModel
 
@@ -62,3 +107,9 @@ call TollCalib_RunModel
 
 set ITER=10
 call TollCalib_RunModel
+
+:: -------------------------------------------------
+:: end process if any of the input files are missing
+:: -------------------------------------------------
+:end
+
