@@ -38,10 +38,13 @@ python X:\travel-model-one-master\utilities\taz-data-builder\buildTazdata.py taz
 
 :: to convert csv to dbf
 :: ---
-set R_HOME="C:\Program Files\R\R-3.4.4\bin"
+set R_HOME=C:\Program Files\R\R-3.4.4\bin
+IF %USERNAME%==lzorn (
+  set R_HOME=C:\Program Files\R\R-3.5.1\bin
+)
 set F_INPUT=tazData.csv
 Set F_OUTPUT=tazData.dbf
-%R_HOME%\Rscript.exe X:\travel-model-one-master\utilities\taz-data-csv-to-dbf\taz-data-csv-to-dbf.R
+"%R_HOME%\Rscript.exe" X:\travel-model-one-master\utilities\taz-data-csv-to-dbf\taz-data-csv-to-dbf.R
 
 :: also need to copy the walk access file
 :: which hasn't change since 2010
