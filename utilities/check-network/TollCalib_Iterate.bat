@@ -47,43 +47,38 @@ set TOLL_DESIGNATIONS_XLSX=M:\Application\Model One\Networks\TOLLCLASS Designati
 :: -------------------------------------------------
 
 if exist %MODEL_BASE_DIR% (
-    rem goto runiter4
-    echo file exists!
+    echo base run directory exists!
 ) else (
-    rem goto end
     echo file missing!
+    goto end
 )
 
 if exist %TOLL_FILE% (
-    rem goto runiter4
-    echo file exists!
+    echo toll file exists!
 ) else (
-    rem goto end
     echo file missing!
+    goto end
 )
 
 if exist %UNLOADED_NETWORK_DBF% (
-    rem goto runiter4
-    echo file exists!
+    echo unloaded network exists!
 ) else (
-    rem goto end
     echo file missing!
+    goto end
 )
 
 if exist %BRIDGE_TOLLS_CSV% (
-    rem goto runiter4
-    echo file exists!
+    echo bridge toll file exists!
 ) else (
-    rem goto end
     echo file missing!
+    goto end
 )
 
 if exist %TOLL_DESIGNATIONS_XLSX% (
-    rem goto runiter4
-    echo file exists!
+    echo toll designation excel file exists!
 ) else (
-    rem goto end
     echo file missing!
+    goto end
 )
 
 :: also check if it's being run on AWS
