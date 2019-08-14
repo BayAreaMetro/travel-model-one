@@ -296,10 +296,8 @@ public class HouseholdIndNonManDestChoiceModel implements Serializable {
 
         Logger modelLogger = dcNonManLogger;
         String choiceModelDescription = String.format ( "Individual Non-Mandatory Tour Mode Choice Logsum calculation for %s Location Choice", purposeName );
-        String decisionMakerLabel = String.format ( "HH=%d, PersonNum=%d, PersonType=%s, TourId=%d", household.getHhId(), person.getPersonNum(), person.getPersonType(), tour.getTourId() );
-        String loggingHeader = String.format( "%s for %s", choiceModelDescription, decisionMakerLabel );
-        
-        
+        String decisionMakerLabel = "";
+        String loggingHeader = "";        
         
         int[] sampleValues = new int[numUniqueAltsInSample+1];
         
@@ -311,7 +309,9 @@ public class HouseholdIndNonManDestChoiceModel implements Serializable {
             
             int d = (finalSample[i]-1)/numberOfSubzones + 1;
             int w = finalSample[i] - (d-1)*numberOfSubzones - 1;
-            
+            decisionMakerLabel = String.format ( "HH=%d, PersonNum=%d, PersonType=%s, TourId=%d, destTaz=%d destWalkSubzone=%d", household.getHhId(), person.getPersonNum(), person.getPersonType(), tour.getTourId(), d, w);
+            loggingHeader = String.format( "%s for %s", choiceModelDescription, decisionMakerLabel );
+        
             // dmuIndex values have already been set, but we need to change the destination zone value, so first get the set values and chenge the one index.
             IndexValues indexValues = mcDmuObject.getDmuIndexValues();
             int origTaz = indexValues.getOriginZone();
