@@ -233,7 +233,11 @@ set R_LIB=C:/Users/mtcpb/Documents/R/win-library/3.5
 :: System variables to be passed to the R code
 set PROJECT_DIR=%cd%
 
-call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\TollCalib_CheckSpeeds.R"
+if "%COMPUTER_PREFIX%" == "WIN-" (
+    call "%R_HOME%\bin\x64\Rscript.exe" "\\tsclient\X\travel-model-one-master\utilities\check-network\TollCalib_CheckSpeeds.R"
+) else (
+    call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\TollCalib_CheckSpeeds.R"
+)
 
 
 if hwyassignONLY==1 goto end

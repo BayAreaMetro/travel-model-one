@@ -5,6 +5,12 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: -------------------------------------------------
+:: If on AWS, HOST_IP_ADDRESS has to be set manually
+:: it's the “private IP address” on the wallpaper
+:: -------------------------------------------------
+if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.69
+
+:: -------------------------------------------------
 :: If toll calibration is run for the first time (usually iteration 4)
 :: -------------------------------------------------
 
@@ -80,6 +86,10 @@ if exist %TOLL_DESIGNATIONS_XLSX% (
     echo file missing!
 )
 
+:: also check if it's being run on AWS
+:: if so, this will be "WIN-"
+SET computer_prefix=%computername:~0,4%
+
 :: -------------------------------------------------
 :: Run iteration 4
 :: -------------------------------------------------
@@ -107,6 +117,25 @@ call TollCalib_RunModel
 
 set ITER=10
 call TollCalib_RunModel
+
+
+:: -------------------------------------------------
+:: If it's an AWS machine, shut down the machine automatically when done
+:: -------------------------------------------------
+
+
+if "%COMPUTER_PREFIX%" == "WIN-" (
+  python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%*"
+
+  rem go up a directory and sync model folder to s3
+  cd ..
+  "C:\Program Files\Amazon\AWSCLI\aws" s3 sync %myfolder% s3://travel-model-runs/%myfolder%
+
+  rem shutdown
+  python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%* - shutting down"
+  C:\Windows\System32\shutdown.exe /s
+)
+
 
 :: -------------------------------------------------
 :: end process if any of the input files are missing
