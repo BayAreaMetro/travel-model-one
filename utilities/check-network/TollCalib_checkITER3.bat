@@ -17,7 +17,7 @@ SET BRIDGE_TOLLS_CSV=\\tsclient\M\Application\Model One\NetworkProjects\Bridge_T
 :: The file indicating which facilities have mandatory s2 tolls
 set TOLL_DESIGNATIONS_XLSX=\\tsclient\M\Application\Model One\Networks\TOLLCLASS Designations.xlsx
 
+:: set R location
 set R_HOME=C:\Program Files\R\R-3.5.2
-:: set R_LIB=C:/Users/mtcpb/Documents/R/win-library/3.5
 
 call "%R_HOME%\bin\x64\Rscript.exe" "\\tsclient\X\travel-model-one-master\utilities\check-network\TollCalib_CheckSpeeds.R"
