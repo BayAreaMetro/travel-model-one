@@ -1,0 +1,398 @@
+;
+; Version of HwySkims.job that writes paths
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+token_period = '%PERIOD%'
+
+if (token_period='EA')
+  period = 1
+elseif (token_period='AM')
+  period = 2
+elseif (token_period='MD')
+  period = 3
+elseif (token_period='PM')
+  period = 4
+elseif (token_period='EV')
+  period = 5
+endif
+   
+   ; do each time of day as a separate process
+   DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = '%COMMPATH%'
+   
+   ; do, more or less, the same skim procedure for each of seven classes of vehicles
+   loop class = 1, 7
+   
+      ; a string token is used for each class
+      if (class = 1)
+         token_class = 'DA'
+         opcost      = 'AUTOOPC'
+
+         ; the generalized cost expression is the prefix + token_period + suffix
+         gencost_prefix = 'lw.gencost = lw.time + (0.6 / vot) * (lw.dist*AUTOOPC + li.TOLL'
+         gencost_suffix = '_DA)'
+         
+         ; drive alone excluded from HOV 2 and 3+ facilities
+         token_excludegrp_free = 'excludegrp = 23, 11,'
+         token_excludegrp_toll = 'excludegrp = 23,'
+          
+      
+      elseif (class = 2)
+         token_class = 'S2'
+         opcost      = 'AUTOOPC'
+         
+         ; the generalized cost expression is the prefix + token_period + suffix
+         gencost_prefix = 'lw.gencost = lw.time + (0.6 / vot) * (lw.dist*AUTOOPC + li.TOLL'
+         gencost_suffix = '_S2 / sr2costShare)'
+         
+         ; shared ride 2 excluded from HOV 3+ facilities
+         token_excludegrp_free = 'excludegrp = 3, 11,'
+	 token_excludegrp_toll = 'excludegrp = 3,'
+      
+      elseif (class = 3)
+         token_class = 'S3'
+         opcost      = 'AUTOOPC'
+         
+         ; the generalized cost expression is the prefix + token_period + suffix
+         gencost_prefix = 'lw.gencost = lw.time + (0.6 / vot) * (lw.dist*AUTOOPC + li.TOLL'
+         gencost_suffix = '_S3 / sr3costShare)'
+         
+         ; shared ride 3+ not excluded from any facilities
+         token_excludegrp_free = 'excludegrp = 11,'
+	 token_excludegrp_toll = ' '
+
+         token_excludegrp = ' '
+         
+      elseif (class = 4)
+         token_class = 'VSM'
+         opcost      = 'SMTROPC'
+         
+         ; the generalized cost expression is the prefix + token_period + suffix
+         gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist*SMTROPC + li.TOLL'
+         gencost_suffix = '_VSM)'
+         
+         ; very small trucks excluded from HOV 2 and 3+ facilities
+         token_excludegrp_free = 'excludegrp = 23, 11,'
+	 token_excludegrp_toll = 'excludegrp = 23,'
+      
+      elseif (class = 5)
+         token_class = 'SML'
+         opcost      = 'SMTROPC'
+         
+         ; the generalized cost expression is the prefix + token_period + suffix
+         gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist*SMTROPC + li.TOLL'
+         gencost_suffix = '_SML)'
+         
+         ; small trucks excluded from HOV 2 and 3+ facilities
+         token_excludegrp_free = 'excludegrp = 23, 11,'
+	 token_excludegrp_toll = 'excludegrp = 23,'
+      
+      elseif (class = 6)
+         token_class = 'MED'
+         opcost      = 'SMTROPC'
+         
+         ; the generalized cost expression is the prefix + token_period + suffix
+         gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist*SMTROPC + li.TOLL'
+         gencost_suffix = '_MED)'
+         
+         ; medium trucks excluded from HOV 2 and 3+ facilities
+         token_excludegrp_free = 'excludegrp = 23, 11,'
+	 token_excludegrp_toll = 'excludegrp = 23,'
+         
+      elseif (class = 7)
+         token_class = 'LRG'
+         opcost      = 'LRTROPC'
+         
+         ; the generalized cost expression is the prefix + token_period + suffix
+         gencost_prefix = 'lw.gencost = lw.time + (0.6 / truckVot) * (lw.dist*LRTROPC + li.TOLL'
+         gencost_suffix = '_LRG)'
+         
+         ; large trucks excluded from HOV 2, HOV 3+, and no truck facilities
+         token_excludegrp_free = 'excludegrp = 4, 11,'
+	 token_excludegrp_toll = 'excludegrp = 4,'
+         
+      endif
+    
+      run pgm = highway
+      
+         ; give each time of day two additional processors to work with   
+         ;DistributeIntrastep processid = 'ctramp', processlist = 1-4, commpath = '%COMMPATH%', saveprn = f
+     
+         ; a congested network is input
+         neti = hwy\iter2\avgload@token_period@.net
+         
+         ; each period-class combination gets a seven-table skim capturing the no value toll and toll paths
+         mato = skims\@token_class@_@token_period@_patho.tpp, combine = f, mo = 1-7, name = TIME@token_class@,
+                                                                                            DIST@token_class@,
+                                                                                            BTOLL@token_class@,
+                                                                                            TOLLTIME@token_class@,
+                                                                                            TOLLDIST@token_class@,
+                                                                                            TOLLBTOLL@token_class@,
+                                                                                            TOLLVTOLL@token_class@
+
+         fileo patho[1] = skims\hwy_paths_@token_class@_@token_period@.pth                                                   
+         
+         ; block file containing highway parameters (see note above)
+         read file=ctramp\scripts\block\hwyparam.block
+       
+         ; equilibrium assignment procedure with a single iteration for skims
+         parameters combine  = equi                     
+         parameters maxiters = 1    
+      
+         ; set the working variables
+         phase = linkread
+         
+            ; the time variable is congested time specific to each time period
+            lw.time = li.CTIM 
+            
+            ; distance is coded as "distance" in the networks
+            lw.dist = li.DISTANCE
+            
+            ; facility type is the linkclass (linkclass needs to be defined, but it's not used)
+       	    linkclass    = li.FT 
+
+       	    ; tollclass set to distinguish value tolls from bridge tolls
+            lw.tollclass = li.TOLLCLASS
+
+          
+            ; set the generalized cost, which is the combination of three tokens
+            @gencost_prefix@@token_period@@gencost_suffix@
+                     
+            ; reserve TOLL (= lw.tollclass) 1 through firstValue - 1 for bridge tolls; firstValue and up for value tolls
+            if (lw.tollclass >= firstValue)
+            
+               ; set the value tolls
+               lw.valuetoll_@token_class@  = li.TOLL@token_period@_@token_class@
+              
+            else            
+           
+               ; set the bridge tolls
+               lw.bridgetoll_@token_class@  = li.TOLL@token_period@_@token_class@   
+              
+            endif          
+              
+            ; the USE variable defines what type of vehicles can use the roadway
+           
+            ; Group 23 defines HOV 2 and 3+ facilities
+            if (li.USE = 2,3) addtogroup = 23    
+           
+            ; Group 3 defines HOV 3+ facilities
+            if (li.USE = 3) addtogroup = 3
+            
+            ; Group 4 defines facilities not available to trucks
+            if (li.USE = 2,3,4) addtogroup = 4
+                       
+            ; Group 11 defines the value toll links the non-value-toll-paying users are prohibited from using
+            if (lw.tollclass >= firstValue && li.TOLL@token_period@_@token_class@ > 0) addtogroup = 11
+            
+         endphase
+     
+         phase = iloop
+     
+            ; non-value toll paying path
+            pathload path = lw.gencost, @token_excludegrp_free@
+               mw[1] = pathtrace(lw.time),
+               mw[2] = pathtrace(lw.dist),
+               mw[3] = pathtrace(lw.bridgetoll_@token_class@), 
+               PATHO=1  NAME=FREE_PATH  INCLUDECOSTS=T  ALLJ=T             
+            ; value toll paying path
+            pathload path = lw.gencost, @token_excludegrp_toll@
+               mw[4] = pathtrace(lw.time),
+               mw[5] = pathtrace(lw.dist),
+               mw[6] = pathtrace(lw.bridgetoll_@token_class@),
+               mw[7] = pathtrace(lw.valuetoll_@token_class@),
+               PATHO=1  NAME=TOLL_PATH  INCLUDECOSTS=T  ALLJ=T             
+               
+            ; compute time/distance intra-zonal values as 1/2 the nearest neighbor, tolls as zero
+            ; TODO: look at max bridge toll (plus pavement) intrazonal to make sure it's not weird
+            mw[1][i]  = rowmin(1) * 0.5
+            mw[2][i]  = rowmin(2) * 0.5
+            mw[3][i]  = rowmin(3) * 0.5
+            mw[4][i]  = rowmin(4) * 0.5
+            mw[5][i]  = rowmin(5) * 0.5
+            mw[6][i]  = rowmin(6) * 0.5
+            mw[7][i]  = 0.0
+              
+         endphase ; i loop 
+       
+      endrun
+
+   endloop ; token_class  
+  
+   ; combine the skims into two large tables per time period
+   run pgm = matrix
+   
+      ; give each period thread more threads to work with   
+      ;DistributeIntrastep processid = 'ctramp', processlist = 1-4, commpath = '%COMMPATH%', saveprn = f
+      
+      ; drive alone skim
+      mati[1] = skims\DA_@token_period@_patho.tpp
+      
+      ; shared ride 2 skim
+      mati[2] = skims\S2_@token_period@_patho.tpp
+      
+      ; shared ride 3+ skim
+      mati[3] = skims\S3_@token_period@_patho.tpp
+      
+      ; very small trucks
+      mati[4] = skims\VSM_@token_period@_patho.tpp
+      
+      ; small trucks
+      mati[5] = skims\SML_@token_period@_patho.tpp
+      
+      ; medium trucks
+      mati[6] = skims\MED_@token_period@_patho.tpp
+      
+      ; large trucks
+      mati[7] = skims\LRG_@token_period@_patho.tpp
+      
+      ; passenger vehicle skims
+      mato[1] = skims\HWYSKM@token_period@_patho.tpp, mo = 1-21, name = TIMEDA,DISTDA,BTOLLDA,
+                                                                  TOLLTIMEDA,TOLLDISTDA,TOLLBTOLLDA,TOLLVTOLLDA,
+                                                                  TIMES2,DISTS2,BTOLLS2,
+                                                                  TOLLTIMES2,TOLLDISTS2,TOLLBTOLLS2,TOLLVTOLLS2,
+                                                                  TIMES3,DISTS3,BTOLLS3,
+                                                                  TOLLTIMES3,TOLLDISTS3,TOLLBTOLLS3,TOLLVTOLLS3
+      
+      ; commercial vehicle skims
+      mato[2] = skims\COM_HWYSKIM@token_period@_patho.tpp, mo = 22 - 49, name = TIMEVSM, DISTVSM, BTOLLVSM,
+                                                                          TOLLTIMEVSM, TOLLDISTVSM, TOLLBTOLLVSM, TOLLVTOLLVSM,
+                                                                          TIMESML, DISTSML, BTOLLSML,
+                                                                          TOLLTIMESML, TOLLDISTSML, TOLLBTOLLSML, TOLLVTOLLSML,
+                                                                          TIMEMED, DISTMED, BTOLLMED,
+                                                                          TOLLTIMEMED, TOLLDISTMED, TOLLBTOLLMED, TOLLVTOLLMED,
+                                                                          TIMELRG, DISTLRG, BTOLLLRG,
+                                                                          TOLLTIMELRG, TOLLDISTLRG, TOLLBTOLLLRG, TOLLVTOLLLRG
+      
+      ; drive alone
+      mw[1]   = mi.1.TIMEDA
+      mw[2]   = mi.1.DISTDA
+      mw[3]   = mi.1.BTOLLDA	
+      mw[4]   = mi.1.TOLLTIMEDA
+      mw[5]   = mi.1.TOLLDISTDA
+      mw[6]   = mi.1.TOLLBTOLLDA
+      mw[7]   = mi.1.TOLLVTOLLDA
+      
+      ; shared ride 2
+      mw[8]   = mi.2.TIMES2
+      mw[9]   = mi.2.DISTS2
+      mw[10]  = mi.2.BTOLLS2
+      mw[11]  = mi.2.TOLLTIMES2
+      mw[12]  = mi.2.TOLLDISTS2
+      mw[13]  = mi.2.TOLLBTOLLS2
+      mw[14]  = mi.2.TOLLVTOLLS2
+      
+      ; shared ride 3+
+      mw[15]  = mi.3.TIMES3
+      mw[16]  = mi.3.DISTS3
+      mw[17]  = mi.3.BTOLLS3
+      mw[18]  = mi.3.TOLLTIMES3
+      mw[19]  = mi.3.TOLLDISTS3
+      mw[20]  = mi.3.TOLLBTOLLS3
+      mw[21]  = mi.3.TOLLVTOLLS3
+      
+      ; very small trucks
+      mw[22]  = mi.4.TIMEVSM
+      mw[23]  = mi.4.DISTVSM
+      mw[24]  = mi.4.BTOLLVSM
+      mw[25]  = mi.4.TOLLTIMEVSM
+      mw[26]  = mi.4.TOLLDISTVSM
+      mw[27]  = mi.4.TOLLBTOLLVSM
+      mw[28]  = mi.4.TOLLVTOLLVSM
+      
+      ; small trucks
+      mw[29]  = mi.5.TIMESML
+      mw[30]  = mi.5.DISTSML
+      mw[31]  = mi.5.BTOLLSML
+      mw[32]  = mi.5.TOLLTIMESML
+      mw[33]  = mi.5.TOLLDISTSML
+      mw[34]  = mi.5.TOLLBTOLLSML
+      mw[35]  = mi.5.TOLLVTOLLSML
+      
+      ; medium trucks
+      mw[36]  = mi.6.TIMEMED
+      mw[37]  = mi.6.DISTMED
+      mw[38]  = mi.6.BTOLLMED
+      mw[39]  = mi.6.TOLLTIMEMED
+      mw[40]  = mi.6.TOLLDISTMED
+      mw[41]  = mi.6.TOLLBTOLLMED
+      mw[42]  = mi.6.TOLLVTOLLMED
+      
+      ; large trucks
+      mw[43]  = mi.7.TIMELRG
+      mw[44]  = mi.7.DISTLRG
+      mw[45]  = mi.7.BTOLLLRG
+      mw[46]  = mi.7.TOLLTIMELRG
+      mw[47]  = mi.7.TOLLDISTLRG
+      mw[48]  = mi.7.TOLLBTOLLLRG
+      mw[49]  = mi.7.TOLLVTOLLLRG
+      
+   endrun
+   
+;   ; debug bit
+;   run pgm = matrix
+;   
+;      mati[1] = skims\HWYSKM@token_period@_patho.tpp
+;      mati[2] = skims\COM_HWYSKIM@token_period@_patho.tpp
+;      
+;      jloop
+;      
+;         ; debug print
+;         if (i = @token_debug_origin@ & j = @token_debug_destination@) 
+;         
+;            ; one header
+;            if (@period@ = 1)
+;            
+;               list = 'Debug for origin zone ',@token_debug_origin@(5.0),'  and destination zone ',@token_debug_destination@(5.0),'.', file = @token_debug_filename@.@token_period@.debug
+;               list = ' ', file = @token_debug_filename@.@token_period@.debug
+;            
+;               list = ' time period             class           path           time       distance	   bridge toll	    value toll', file = @token_debug_filename@.@token_period@.debug
+;               list = ' ----------- ----------------- -------------- -------------- -------------- -------------- --------------', file = @token_debug_filename@.@token_period@.debug
+;            
+;            ; break for everyone else
+;            else
+;            
+;               list = ' ----------- ----------------- -------------- -------------- -------------- -------------- --------------', file = @token_debug_filename@.@token_period@.debug 
+;            
+;            endif
+;            
+;            list = '          @token_period@       drive alone           free', mi.1.TIMEDA(15.2),     mi.1.DISTDA(15.2),     mi.1.BTOLLDA(15),     '            ---',    file = @token_debug_filename@.@token_period@.debug 
+;            list = '          @token_period@       drive alone           toll', mi.1.TOLLTIMEDA(15.2), mi.1.TOLLDISTDA(15.2), mi.1.TOLLBTOLLDA(15), mi.1.TOLLVTOLLS2(15), file = @token_debug_filename@.@token_period@.debug
+;            list = '          @token_period@     shared ride 2           free', mi.1.TIMES2(15.2),     mi.1.DISTS2(15.2),     mi.1.BTOLLS2(15),     '            ---',    file = @token_debug_filename@.@token_period@.debug 
+;            list = '          @token_period@     shared ride 2           toll', mi.1.TOLLTIMES2(15.2), mi.1.TOLLDISTS2(15.2), mi.1.TOLLBTOLLS2(15), mi.1.TOLLVTOLLS2(15), file = @token_debug_filename@.@token_period@.debug
+;            list = '          @token_period@    shared ride 3+           free', mi.1.TIMES3(15.2),     mi.1.DISTS3(15.2),     mi.1.BTOLLS3(15),     '            ---',    file = @token_debug_filename@.@token_period@.debug 
+;            list = '          @token_period@    shared ride 3+           toll', mi.1.TOLLTIMES3(15.2), mi.1.TOLLDISTS3(15.2), mi.1.TOLLBTOLLS3(15), mi.1.TOLLVTOLLS3(15), file = @token_debug_filename@.@token_period@.debug
+;            
+;            list = '          @token_period@    very small trk           free', mi.2.TIMEVSM(15.2),     mi.2.DISTVSM(15.2),     mi.2.BTOLLVSM(15),     '            ---',     file = @token_debug_filename@.@token_period@.debug 
+;            list = '          @token_period@    very small trk           toll', mi.2.TOLLTIMEVSM(15.2), mi.2.TOLLDISTVSM(15.2), mi.2.TOLLBTOLLVSM(15), mi.2.TOLLVTOLLVSM(15), file = @token_debug_filename@.@token_period@.debug
+;            list = '          @token_period@         small trk           free', mi.2.TIMESML(15.2),     mi.2.DISTSML(15.2),     mi.2.BTOLLSML(15),     '            ---',     file = @token_debug_filename@.@token_period@.debug 
+;            list = '          @token_period@         small trk           toll', mi.2.TOLLTIMESML(15.2), mi.2.TOLLDISTSML(15.2), mi.2.TOLLBTOLLSML(15), mi.2.TOLLVTOLLSML(15), file = @token_debug_filename@.@token_period@.debug
+;            list = '          @token_period@        medium trk           free', mi.2.TIMEMED(15.2),     mi.2.DISTMED(15.2),     mi.2.BTOLLMED(15),     '            ---',     file = @token_debug_filename@.@token_period@.debug 
+;            list = '          @token_period@        medium trk           toll', mi.2.TOLLTIMEMED(15.2), mi.2.TOLLDISTMED(15.2), mi.2.TOLLBTOLLMED(15), mi.2.TOLLVTOLLMED(15), file = @token_debug_filename@.@token_period@.debug
+;            list = '          @token_period@         large trk           free', mi.2.TIMELRG(15.2),     mi.2.DISTLRG(15.2),     mi.2.BTOLLLRG(15),     '            ---',     file = @token_debug_filename@.@token_period@.debug 
+;            list = '          @token_period@         large trk           toll', mi.2.TOLLTIMELRG(15.2), mi.2.TOLLDISTLRG(15.2), mi.2.TOLLBTOLLLRG(15), mi.2.TOLLVTOLLLRG(15), file = @token_debug_filename@.@token_period@.debug
+;            
+;         
+;         endif
+;      
+;      endjloop
+;   
+;   endrun
+   
+   EndDistributeMultistep
+
+; endloop ; token_period
+
+Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+           
+; combine and delete the debug files
+; * copy @token_debug_filename@.EA.debug+@token_debug_filename@.AM.debug+@token_debug_filename@.MD.debug+@token_debug_filename@.PM.debug+@token_debug_filename@.EV.debug @token_debug_filename@.debug
+; * del @token_debug_filename@.EA.debug
+; * del @token_debug_filename@.AM.debug
+; * del @token_debug_filename@.MD.debug
+; * del @token_debug_filename@.PM.debug
+; * del @token_debug_filename@.EV.debug
+
+
+
