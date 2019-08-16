@@ -30,8 +30,10 @@ SSD_df=(AvgSpeedIter0_df.subtract(AvgSpeedIter1_df)).pow(2)
 
 # Add all elemnts in the matrix
 Totalmat = SSD_df.values.sum()
-#Totalmat = 20
-#print(Totalmat)
+
+count_row = AvgSpeedIter0_df.shape[0]
+
+#NormTotalmat = Totalmat/count_row
 
 s = open("Results.txt","a+")
 s.write("\nSSD for iterations %s - %s = %s" %(iter0,iter1,Totalmat))
