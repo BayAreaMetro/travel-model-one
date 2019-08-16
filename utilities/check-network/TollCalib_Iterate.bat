@@ -23,6 +23,9 @@ set MODEL_BASE_DIR=L:\RTP2021_PPA\Projects_onAWS\2050_TM151_PPA_RT_09
 :: Name and location of the tolls.csv to be used
 set TOLL_FILE=L:\RTP2021_PPA\Projects\2050_TM151_PPA_RT_09\tolls_iter4.csv
 
+:: Location of the output folder "tollcalib_iter"
+set L_DIR=TOLL_FILE=L:\RTP2021_PPA\Projects\2050_TM151_PPA_RT_09\OUTPUT
+
 :: -------------------------------------------------
 :: User input for all iterations
 :: -------------------------------------------------

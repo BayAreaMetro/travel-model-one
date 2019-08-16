@@ -228,7 +228,6 @@ del hwy\iter%ITER%\x*.net
 
 :: The location of R and R libraries
 set R_HOME=C:\Program Files\R\R-3.5.2
-set R_LIB=C:/Users/mtcpb/Documents/R/win-library/3.5
 
 :: System variables to be passed to the R code
 set PROJECT_DIR=%cd%
@@ -239,6 +238,11 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
     call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\TollCalib_CheckSpeeds.R"
 )
 
+:: copy the output back to L
+if %ITER%==4 (
+    mkdir tollcalib_iter
+)
+copy el_gp_avg_speed_iter%ITER%.csv %L_DIR%\tollcalib_iter\el_gp_avg_speed_iter%ITER%.csv
 
 if hwyassignONLY==1 goto end
 
