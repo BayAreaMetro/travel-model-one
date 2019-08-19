@@ -18,13 +18,13 @@ if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.69
 set ITER=4
 
 :: Location of the base run directory - the full run is needed because it needs the CTRAMP directory
-set MODEL_BASE_DIR=L:\RTP2021_PPA\Projects_onAWS\2050_TM151_PPA_RT_09
+set MODEL_BASE_DIR=D:\Projects\2050_TM151_PPA_RT_11_3000_ExpLanes_preCalib_01
 
 :: Name and location of the tolls.csv to be used
-set TOLL_FILE=L:\RTP2021_PPA\Projects\2050_TM151_PPA_RT_09\tolls_iter4.csv
+set TOLL_FILE=%MODEL_BASE_DIR%\tolls_iter4.csv
 
 :: Location of the output folder "tollcalib_iter"
-set L_DIR=TOLL_FILE=L:\RTP2021_PPA\Projects\2050_TM151_PPA_RT_09\OUTPUT
+set L_DIR=\\tsclient\L\RTP2021_PPA\Projects\3000_ExpLanes_Calib\2050_TM151_PPA_RT_11_3000_EXPLanes_Calib_01
 
 :: -------------------------------------------------
 :: User input for all iterations
@@ -123,14 +123,7 @@ call TollCalib_RunModel
 
 
 if "%COMPUTER_PREFIX%" == "WIN-" (
-  python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%*"
-
-  rem go up a directory and sync model folder to s3
-  cd ..
-  "C:\Program Files\Amazon\AWSCLI\aws" s3 sync %myfolder% s3://travel-model-runs/%myfolder%
-
   rem shutdown
-  python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%* - shutting down"
   C:\Windows\System32\shutdown.exe /s
 )
 

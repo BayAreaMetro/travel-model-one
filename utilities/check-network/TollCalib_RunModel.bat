@@ -240,7 +240,7 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 
 :: copy the output back to L
 if %ITER%==4 (
-    mkdir tollcalib_iter
+    mkdir %L_DIR%\tollcalib_iter
 )
 copy el_gp_avg_speed_iter%ITER%.csv %L_DIR%\tollcalib_iter\el_gp_avg_speed_iter%ITER%.csv
 
