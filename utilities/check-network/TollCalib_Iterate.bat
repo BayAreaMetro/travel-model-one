@@ -21,7 +21,7 @@ set ITER=4
 set MODEL_BASE_DIR=D:\Projects\2050_TM151_PPA_RT_11_3000_ExpLanes_preCalib_01
 
 :: Name and location of the tolls.csv to be used
-set TOLL_FILE=%MODEL_BASE_DIR%\tolls_iter4.csv
+set TOLL_FILE=%MODEL_BASE_DIR%\hwy\tolls_iter4.csv
 
 :: Location of the output folder "tollcalib_iter"
 set L_DIR=\\tsclient\L\RTP2021_PPA\Projects\3000_ExpLanes_Calib\2050_TM151_PPA_RT_11_3000_EXPLanes_Calib_01
@@ -37,13 +37,13 @@ set MODEL_YEAR=2050
 
 
 :: Unloaded network dbf, generated from cube_to_shapefile.py, needed for the R script that determine toll adjustment 
-set UNLOADED_NETWORK_DBF=L:\RTP2021_PPA\Projects\2050_TM151_PPA_RT_09\OUTPUT\shapefiles\network_links.dbf
+set UNLOADED_NETWORK_DBF=D:\Projects\2050_TM151_PPA_RT_11_3000_ExpLanes_TollCalib_01\TollCalib_input\shapefiles\network_links.dbf
 
 :: The file containing the bridge tolls (i.e. the first half of toll.csv), also needed for the R script that determine toll adjustment
-SET BRIDGE_TOLLS_CSV=M:\Application\Model One\NetworkProjects\Bridge_Toll_Updates\tolls_2050.csv
+SET BRIDGE_TOLLS_CSV=D:\Projects\2050_TM151_PPA_RT_11_3000_ExpLanes_TollCalib_01\TollCalib_input\Bridge_Toll_Updates_2_2pct\tolls_2050.csv
 
 :: The file indicating which facilities have mandatory s2 tolls
-set TOLL_DESIGNATIONS_XLSX=M:\Application\Model One\Networks\TOLLCLASS Designations.xlsx
+set TOLL_DESIGNATIONS_XLSX=D:\Projects\2050_TM151_PPA_RT_11_3000_ExpLanes_TollCalib_01\TollCalib_input\TOLLCLASS_Designations.xlsx
 
 :: -------------------------------------------------
 :: check that all the paths are valid
@@ -52,35 +52,35 @@ set TOLL_DESIGNATIONS_XLSX=M:\Application\Model One\Networks\TOLLCLASS Designati
 if exist %MODEL_BASE_DIR% (
     echo base run directory exists!
 ) else (
-    echo file missing!
+    echo base run directory missing!
     goto end
 )
 
 if exist %TOLL_FILE% (
     echo toll file exists!
 ) else (
-    echo file missing!
+    echo toll file missing!
     goto end
 )
 
 if exist %UNLOADED_NETWORK_DBF% (
     echo unloaded network exists!
 ) else (
-    echo file missing!
+    echo unloaded network missing!
     goto end
 )
 
 if exist %BRIDGE_TOLLS_CSV% (
     echo bridge toll file exists!
 ) else (
-    echo file missing!
+    echo bridge toll file missing!
     goto end
 )
 
 if exist %TOLL_DESIGNATIONS_XLSX% (
     echo toll designation excel file exists!
 ) else (
-    echo file missing!
+    echo toll designation excel file missing!
     goto end
 )
 
