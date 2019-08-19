@@ -6,7 +6,8 @@
 ; first, that walking and bicycling is possible on every non-freeway link in the Bay Area and, second, allowances
 ; are made for the freeways -- the Golden Gate, Dumbarton, and Antioch Bridges -- that do allow walking and 
 ; bicycling.  The script assumes freeways are coded as facility type two and that the links explicitly listed 
-; below represent the Golden Gate, Dumbarton and Antioch Bridges.  This script can be modified to represent 
+; below represent the Golden Gate, Dumbarton and Antioch Bridges. The East span of the Bay Bridge from Oakland to
+; Treasure Island is also included; this facility opened fully in 2016.  This script can be modified to represent 
 ; changes in the bicycling and/or walking environment.  Please see the script NonMotorizedSkims.job for the 
 ; skimming procedures.
 ;
@@ -143,5 +144,33 @@ run pgm = hwynet
    if (a = 5922 & b = 5939 ) WALKOK = 1
    if (a = 5938 & b = 5921 ) WALKOK = 1
    if (a = 5939 & b = 3895 ) WALKOK = 1
+
+   ; allow bicycle access on Bay Bridge East span (opened 2016)   
+   if (a = 2788 & b = 2786 ) BIKEOK = 1
+   if (a = 2786 & b = 2803 ) BIKEOK = 1
+   if (a = 2803 & b = 2783 ) BIKEOK = 1
+   if (a = 2783 & b = 6972 ) BIKEOK = 1
+   if (a = 6972 & b = 6968 ) BIKEOK = 1
+   if (a = 6968 & b = 6970 ) BIKEOK = 1
+   if (a = 6968 & b = 20506 ) BIKEOK = 1
+   if (a = 20506 & b = 6970 ) BIKEOK = 1
+   if (a = 6971 & b = 6969 ) BIKEOK = 1
+   if (a = 6969 & b = 6973 ) BIKEOK = 1
+   if (a = 6973 & b = 2784 ) BIKEOK = 1
+   if (a = 2784 & b = 2802 ) BIKEOK = 1
+   if (a = 2802 & b = 2787 ) BIKEOK = 1
+
+   ; allow walk access on Bay Bridge East span (opened 2016)  
+   if (a = 2788 & b = 2786 ) WALKOK = 1
+   if (a = 2786 & b = 2803 ) WALKOK = 1
+   if (a = 2803 & b = 2783 ) WALKOK = 1
+   if (a = 2783 & b = 6972 ) WALKOK = 1
+   if (a = 6972 & b = 6968 ) WALKOK = 1
+   if (a = 6968 & b = 6970 ) WALKOK = 1
+   if (a = 6971 & b = 6969 ) WALKOK = 1
+   if (a = 6969 & b = 6973 ) WALKOK = 1
+   if (a = 6973 & b = 2784 ) WALKOK = 1
+   if (a = 2784 & b = 2802 ) WALKOK = 1
+   if (a = 2802 & b = 2787 ) WALKOK = 1
         
 endrun
