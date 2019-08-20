@@ -4,7 +4,8 @@
 
 set ITER=3
 
-:: Location of the base run directory - the full run is needed because it needs the CTRAMP directory
+:: Location of the base run directory
+:: Either the directory with the full run, or the directory with the extracted outputs
 set PROJECT_DIR=D:\Projects\2050_TM151_PPA_RT_11_3000_ExpLanes_preCalib_01
 
 :: Unloaded network dbf, generated from cube_to_shapefile.py, needed for the R script that determine toll adjustment 

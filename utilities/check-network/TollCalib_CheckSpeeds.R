@@ -18,13 +18,31 @@ library(readxl)
 ITER <- Sys.getenv("ITER")        # The iteration of model outputs to be read
 ITER <- as.numeric(ITER)
 
+#############################################################
 # specify the loaded network, unloaded network and other inputs
+#############################################################
+
 PROJECT_DIR           <- Sys.getenv("PROJECT_DIR")
 PROJECT_DIR           <- gsub("\\\\","/",PROJECT_DIR) # switch slashes around
-LOADED_NETWORK_CSV    <- file.path(PROJECT_DIR, "hwy", paste0("iter",ITER),"avgload5period.csv")
+
+# for the loaded network, use different path for full runs and extracted output folders
+if (dir.exists(file.path(PROJECT_DIR, "hwy"))) {
+    LOADED_NETWORK_CSV    <- file.path(PROJECT_DIR, "hwy", paste0("iter",ITER),"avgload5period.csv")
+} else {
+    LOADED_NETWORK_CSV    <- file.path(PROJECT_DIR, "OUTPUT","avgload5period.csv")
+}
+
 UNLOADED_NETWORK_DBF  <- Sys.getenv("UNLOADED_NETWORK_DBF") # from cube_to_shapefile.py
 UNLOADED_NETWORK_DBF  <- gsub("\\\\","/",UNLOADED_NETWORK_DBF) # switch slashes around
-TOLLS_CSV             <- file.path(PROJECT_DIR, "hwy", "tolls.csv")
+
+
+# for the toll file, use different path for full runs and extracted output folders
+if (dir.exists(file.path(PROJECT_DIR, "hwy"))) {
+    TOLLS_CSV             <- file.path(PROJECT_DIR, "hwy", "tolls.csv")
+} else {
+    TOLLS_CSV             <- file.path(PROJECT_DIR, "INPUT", "hwy", "tolls.csv")
+}
+
 BRIDGE_TOLLS_CSV      <- Sys.getenv("BRIDGE_TOLLS_CSV")
 BRIDGE_TOLLS_CSV      <- gsub("\\\\","/",BRIDGE_TOLLS_CSV) # switch slashes around
 TOLL_DESIGNATIONS_XLSX <- Sys.getenv("TOLL_DESIGNATIONS_XLSX")
@@ -277,13 +295,48 @@ bridge_el_tolls_df <- bind_rows(bridge_tolls_df, tolls_new_df)
 #############################################################
 # output
 #############################################################
-# output link level data to csv
-write.csv(el_gp_loaded_df, file.path(PROJECT_DIR, OUTPUT_LINK_SPD_CSV), row.names = FALSE)
 
-# output facility level summary to csv
-write.csv(el_gp_summary_df, file.path(PROJECT_DIR, OUTPUT_AVG_SPD_CSV), row.names = FALSE)
 
-# output a new tolls.csv
-write.csv(bridge_el_tolls_df, file.path(PROJECT_DIR, "hwy", OUTPUT_NEW_TOLLS_CSV), row.names = FALSE)
-# if running this script on a project directory on L, change the path for the output tolls to the following.
-#write.csv(bridge_el_tolls_df, file.path(PROJECT_DIR, OUTPUT_NEW_TOLLS_CSV), row.names = FALSE)
+# if it is running on a full model run
+if (dir.exists(file.path(PROJECT_DIR, "hwy"))) {
+
+    # check if the folder "tollcalib_iter" exists, if not create one
+    if (dir.exists(file.path(PROJECT_DIR, "tollcalib_iter"))) {
+        # do nothing
+    } else {
+       dir.create(file.path(PROJECT_DIR, "tollcalib_iter"))
+    }
+
+
+    # output link level data to csv
+    write.csv(el_gp_loaded_df, file.path(PROJECT_DIR, "tollcalib_iter", OUTPUT_LINK_SPD_CSV), row.names = FALSE)
+
+    # output facility level summary to csv
+    write.csv(el_gp_summary_df, file.path(PROJECT_DIR, "tollcalib_iter", OUTPUT_AVG_SPD_CSV), row.names = FALSE)
+
+    # output a new tolls.csv
+    write.csv(bridge_el_tolls_df, file.path(PROJECT_DIR, "hwy", OUTPUT_NEW_TOLLS_CSV), row.names = FALSE)
+
+
+# if it is running on an extracted output folder
+} else {
+
+
+    # check if the folder "tollcalib_iter" exists, if not create one
+    if (dir.exists(file.path(PROJECT_DIR, "OUTPUT", "tollcalib_iter"))) {
+        # do nothing
+    } else {
+       dir.create(file.path(PROJECT_DIR, "OUTPUT", "tollcalib_iter"))
+    }
+
+
+    # output link level data to csv
+    write.csv(el_gp_loaded_df, file.path(PROJECT_DIR, "OUTPUT", "tollcalib_iter", OUTPUT_LINK_SPD_CSV), row.names = FALSE)
+
+    # output facility level summary to csv
+    write.csv(el_gp_summary_df, file.path(PROJECT_DIR, "OUTPUT", "tollcalib_iter", OUTPUT_AVG_SPD_CSV), row.names = FALSE)
+
+    # output a new tolls.csv
+    write.csv(bridge_el_tolls_df, file.path(PROJECT_DIR, "OUTPUT", "tollcalib_iter", OUTPUT_NEW_TOLLS_CSV), row.names = FALSE)
+}
+
