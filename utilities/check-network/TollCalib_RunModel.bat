@@ -242,7 +242,9 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 if %ITER%==4 (
     mkdir %L_DIR%\tollcalib_iter
 )
-copy el_gp_avg_speed_iter%ITER%.csv %L_DIR%\tollcalib_iter\el_gp_avg_speed_iter%ITER%.csv
+copy tollcalib_iter\el_gp_avg_speed_iter%ITER%.csv %L_DIR%\tollcalib_iter\el_gp_avg_speed_iter%ITER%.csv
+set /a NEXT_ITER=%ITER%+1
+copy hwy\tolls_iter%NEXT_ITER%.csv %L_DIR%\tollcalib_iter\tolls_iter%NEXT_ITER%.csv
 
 if hwyassignONLY==1 goto end
 

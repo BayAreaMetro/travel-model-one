@@ -12,6 +12,7 @@ if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.69
 
 :: -------------------------------------------------
 :: If toll calibration is run for the first time (usually iteration 4)
+:: (Or, in case we need to continue toll calibration after the machine is shut down, then enter the next iteration number below and edit the TOLL_FILE location)
 :: -------------------------------------------------
 
 :: set iteration number, starting from 4 as we assume this is a continuation of a "normal" model run
