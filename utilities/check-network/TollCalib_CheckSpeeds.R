@@ -143,36 +143,36 @@ el_gp_summary_df <- el_gp_loaded_nan_df %>%
 
 # Determine scenarios:
 #        EL_speed	   GP_speed
-# Case1	  <=45	        any	        EL too slow. Need to increase toll
-# Case2	  >=45	        <=40	      GP too slow. Need to decrease toll (but still keep EL speed above 45 mph)
-# Case3	  45-60	        40-60	      OK, as long as EL speed > GP speed in AM, MD and PM.  If not, need to increase toll.
+# Case1	  <=48	        any	        EL too slow. Need to increase toll
+# Case2	  >=48	        <=40	      GP too slow. Need to decrease toll (but still keep EL speed above 48 mph)
+# Case3	  48-60	        40-60	      OK, as long as EL speed > GP speed in AM, MD and PM.  If not, need to increase toll.
 # Case4	  >60	          40-60	      GP a bit slow. Maybe decrease toll, depend on how large the difference is.
-# Case5	  >45	          >60	        Set toll to minimum
+# Case5	  >48	          >60	        Set toll to minimum
 
 #AM
 el_gp_summary_df <- el_gp_summary_df %>%
                                      mutate(Case_AM = case_when(avgspeed_AM_GP>60                                                            ~ "Case5 - set to min",
                                                                 avgspeed_AM>60                      & avgspeed_AM_GP>40 & avgspeed_AM_GP<=60 ~ "Case4 - drop tolls slightly",
-                                                                avgspeed_AM>45 & avgspeed_AM<=60    & avgspeed_AM_GP>40 & avgspeed_AM_GP<=60 ~ "Case3 - ok",
-                                                                avgspeed_AM>45                      & avgspeed_AM_GP<=40                     ~ "Case2 - drop tolls",
-                                                                avgspeed_AM<=45                                                              ~ "Case1 - raise tolls",
+                                                                avgspeed_AM>48 & avgspeed_AM<=60    & avgspeed_AM_GP>40 & avgspeed_AM_GP<=60 ~ "Case3 - ok",
+                                                                avgspeed_AM>48                      & avgspeed_AM_GP<=40                     ~ "Case2 - drop tolls",
+                                                                avgspeed_AM<=48                                                              ~ "Case1 - raise tolls",
                                                                 TRUE                                                                         ~ "Undefined"))
 
 #MD
 el_gp_summary_df <- el_gp_summary_df %>%
                                      mutate(Case_MD = case_when(avgspeed_MD_GP>60                                                            ~ "Case5 - set to min",
                                                                 avgspeed_MD>60                      & avgspeed_MD_GP>40 & avgspeed_MD_GP<=60 ~ "Case4 - drop tolls slightly",
-                                                                avgspeed_MD>45 & avgspeed_MD<=60    & avgspeed_MD_GP>40 & avgspeed_MD_GP<=60 ~ "Case3 - ok",
-                                                                avgspeed_MD>45                      & avgspeed_MD_GP<=40                     ~ "Case2 - drop tolls",
-                                                                avgspeed_MD<=45                                                              ~ "Case1 - raise tolls",
+                                                                avgspeed_MD>48 & avgspeed_MD<=60    & avgspeed_MD_GP>40 & avgspeed_MD_GP<=60 ~ "Case3 - ok",
+                                                                avgspeed_MD>48                      & avgspeed_MD_GP<=40                     ~ "Case2 - drop tolls",
+                                                                avgspeed_MD<=48                                                              ~ "Case1 - raise tolls",
                                                                 TRUE                                                                         ~ "Undefined"))
 #PM
 el_gp_summary_df <- el_gp_summary_df %>%
                                      mutate(Case_PM = case_when(avgspeed_PM_GP>60                                                            ~ "Case5 - set to min",
                                                                 avgspeed_PM>60                      & avgspeed_PM_GP>40 & avgspeed_PM_GP<=60 ~ "Case4 - drop tolls slightly",
-                                                                avgspeed_PM>45 & avgspeed_PM<=60    & avgspeed_PM_GP>40 & avgspeed_PM_GP<=60 ~ "Case3 - ok",
-                                                                avgspeed_PM>45                      & avgspeed_PM_GP<=40                     ~ "Case2 - drop tolls",
-                                                                avgspeed_PM<=45                                                              ~ "Case1 - raise tolls",
+                                                                avgspeed_PM>48 & avgspeed_PM<=60    & avgspeed_PM_GP>40 & avgspeed_PM_GP<=60 ~ "Case3 - ok",
+                                                                avgspeed_PM>48                      & avgspeed_PM_GP<=40                     ~ "Case2 - drop tolls",
+                                                                avgspeed_PM<=48                                                              ~ "Case1 - raise tolls",
                                                                 TRUE                                                                         ~ "Undefined"))
 
 #############################################################
@@ -187,21 +187,21 @@ el_gp_summary_df <- el_gp_summary_df %>% left_join(toll_rates_df,
 # determine new toll rates
 el_gp_summary_df <- el_gp_summary_df %>%
                                     mutate(tollam_da_new = case_when(Case_AM == "Case1 - raise tolls"         ~ tollam_da + round(((60 - avgspeed_AM)/100), digits=2),
-                                                                     Case_AM == "Case2 - drop tolls"          ~ pmax((tollam_da - round((avgspeed_AM - 45)/100*2, digits=2)), 0.03),
+                                                                     Case_AM == "Case2 - drop tolls"          ~ pmax((tollam_da - round((avgspeed_AM - 48)/100*2, digits=2)), 0.03),
                                                                      Case_AM == "Case3 - ok"                  ~ tollam_da,
                                                                      Case_AM == "Case4 - drop tolls slightly" ~ pmax((tollam_da - round((avgspeed_AM - avgspeed_AM_GP)/100/2, digits=2)), 0.03),
                                                                      Case_AM == "Case5 - set to min"          ~ 0.03))
 
 el_gp_summary_df <- el_gp_summary_df %>%
                                     mutate(tollmd_da_new = case_when(Case_MD == "Case1 - raise tolls"          ~ tollmd_da + round(((60 - avgspeed_MD)/100), digits=2),
-                                                                     Case_MD == "Case2 - drop tolls"           ~ pmax((tollmd_da - round((avgspeed_MD - 45)/100*2, digits=2)), 0.03),
+                                                                     Case_MD == "Case2 - drop tolls"           ~ pmax((tollmd_da - round((avgspeed_MD - 48)/100*2, digits=2)), 0.03),
                                                                      Case_MD == "Case3 - ok"                   ~ tollmd_da,
                                                                      Case_MD == "Case4 - drop tolls slightly"  ~ pmax((tollmd_da - round((avgspeed_MD - avgspeed_MD_GP)/100/2, digits=2)), 0.03),
                                                                      Case_MD == "Case5 - set to min"           ~ 0.03))
 
 el_gp_summary_df <- el_gp_summary_df %>%
                                     mutate(tollpm_da_new = case_when(Case_PM == "Case1 - raise tolls"          ~ tollpm_da + round(((60 - avgspeed_PM)/100), digits=2),
-                                                                     Case_PM == "Case2 - drop tolls"           ~ pmax((tollpm_da - round((avgspeed_PM - 45)/100*2, digits=2)), 0.03),
+                                                                     Case_PM == "Case2 - drop tolls"           ~ pmax((tollpm_da - round((avgspeed_PM - 48)/100*2, digits=2)), 0.03),
                                                                      Case_PM == "Case3 - ok"                   ~ tollpm_da,
                                                                      Case_PM == "Case4 - drop tolls slightly"  ~ pmax((tollpm_da - round((avgspeed_PM - avgspeed_PM_GP)/100/2, digits=2)), 0.03),
                                                                      Case_PM == "Case5 - set to min"           ~ 0.03))
@@ -339,4 +339,3 @@ if (dir.exists(file.path(PROJECT_DIR, "hwy"))) {
     # output a new tolls.csv
     write.csv(bridge_el_tolls_df, file.path(PROJECT_DIR, "OUTPUT", "tollcalib_iter", OUTPUT_NEW_TOLLS_CSV), row.names = FALSE)
 }
-
