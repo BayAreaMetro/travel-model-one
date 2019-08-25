@@ -5,42 +5,52 @@ REM Note: This needs to be run from a machine that has arcpy and access to mainm
 
 @echo off
 
-cd M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects
+cd L:\RTP2021_PPA\Crossings
 
 for /d %%x in (
-				2050_TM151_PPA_RT_02
-				2050_TM151_PPA_CG_02
-				2050_TM151_PPA_BF_02
-				1_Crossings1\2050_TM151_PPA_RT_01_1_Crossings1_02
-				1_Crossings1\2050_TM151_PPA_CG_01_1_Crossings1_02
-				1_Crossings1\2050_TM151_PPA_BF_01_1_Crossings1_02
-				1_Crossings2\2050_TM151_PPA_RT_01_1_Crossings2_00
-				1_Crossings2\2050_TM151_PPA_CG_01_1_Crossings2_00
-				1_Crossings2\2050_TM151_PPA_BF_01_1_Crossings2_00
-				1_Crossings3\2050_TM151_PPA_RT_01_1_Crossings3_01
-				1_Crossings3\2050_TM151_PPA_CG_01_1_Crossings3_03
-				1_Crossings3\2050_TM151_PPA_BF_01_1_Crossings3_02
-				1_Crossings4\2050_TM151_PPA_RT_01_1_Crossings4_00
-				1_Crossings4\2050_TM151_PPA_CG_01_1_Crossings4_01
-				1_Crossings4\2050_TM151_PPA_BF_01_1_Crossings4_01
-				1_Crossings4\2050_TM151_PPA_CG_01_1_Crossings4_05
-				1_Crossings4\2050_TM151_PPA_BF_01_1_Crossings4_05
-				1_Crossings5\2050_TM151_PPA_RT_00_1_Crossings5_00
-				1_Crossings5\2050_TM151_PPA_CG_00_1_Crossings5_00
-				1_Crossings5\2050_TM151_PPA_BF_00_1_Crossings5_00
-				1_Crossings6\2050_TM151_PPA_RT_01_1_Crossings6_00
-				1_Crossings6\2050_TM151_PPA_CG_01_1_Crossings6_00
-				1_Crossings6\2050_TM151_PPA_BF_00_1_Crossings6_00
-				1_Crossings7\2050_TM151_PPA_RT_01_1_Crossings7_01
-				1_Crossings7\2050_TM151_PPA_CG_01_1_Crossings7_01
-				1_Crossings7\2050_TM151_PPA_BF_01_1_Crossings7_01
+
+				1_Crossings1\2050_TM151_PPA_RT_07_1_Crossings1_00
+				1_Crossings1\2050_TM151_PPA_CG_07_1_Crossings1_01
+				1_Crossings1\2050_TM151_PPA_BF_07_1_Crossings1_01
+
+				1_Crossings2\2050_TM151_PPA_RT_07_1_Crossings2_00
+				1_Crossings2\2050_TM151_PPA_CG_07_1_Crossings2_00
+				1_Crossings2\2050_TM151_PPA_BF_07_1_Crossings2_00
+
+				1_Crossings3\2050_TM151_PPA_RT_07_1_Crossings3_01
+				1_Crossings3\2050_TM151_PPA_CG_07_1_Crossings3_00
+				1_Crossings3\2050_TM151_PPA_BF_07_1_Crossings3_00
+
+				1_Crossings4\2050_TM151_PPA_RT_07_1_Crossings4_01
+				1_Crossings4\2050_TM151_PPA_CG_07_1_Crossings4_00
+				1_Crossings4\2050_TM151_PPA_BF_07_1_Crossings4_00
+
+				1_Crossings4\2050_TM151_PPA_RT_07_1_Crossings4_05
+				1_Crossings4\2050_TM151_PPA_CG_07_1_Crossings4_06
+				1_Crossings4\2050_TM151_PPA_BF_07_1_Crossings4_06
+
+				1_Crossings5\2050_TM151_PPA_RT_07_1_Crossings5_00
+				1_Crossings5\2050_TM151_PPA_CG_07_1_Crossings5_00
+				1_Crossings5\2050_TM151_PPA_BF_07_1_Crossings5_00
+
+				1_Crossings6\2050_TM151_PPA_RT_07_1_Crossings6_00
+				1_Crossings6\2050_TM151_PPA_CG_07_1_Crossings6_00
+				1_Crossings6\2050_TM151_PPA_BF_07_1_Crossings6_00
+
+				1_Crossings7\2050_TM151_PPA_RT_07_1_Crossings7_01
+				1_Crossings7\2050_TM151_PPA_CG_07_1_Crossings7_00
+				1_Crossings7\2050_TM151_PPA_BF_07_1_Crossings7_00
 				)	do (
 		echo ==================================================================
 		echo ==================================================================
 		echo Running cube_to_shapefile for %%x...
 		echo ==================================================================
 		echo ==================================================================
+		
+		timeout 3
+
 		cd %%x\OUTPUT
+
 
 		if exist shapefile (
 			echo Shapefile folder already exists for %%x
