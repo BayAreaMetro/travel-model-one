@@ -174,7 +174,7 @@ public class MatrixDataManager implements Serializable {
             addMatrices(matrixMap);
         }
         catch (RuntimeException e) {
-            logger.fatal( "Exception caught adding matrices to matrixMap in MatrixDataManager" );
+            logger.fatal( "Exception (c) caught adding matrices to matrixMap in MatrixDataManager", e);
             logger.fatal( "contents of matrixMap:" );
             for (Iterator<String> it = matrixMap.keySet().iterator(); it
                     .hasNext();) {
@@ -244,7 +244,14 @@ public class MatrixDataManager implements Serializable {
         for (DataEntry matrixEntry : matrixMap.values()) {
 
             String name = matrixEntry.name;
-            Matrix matrix = getMatrix(matrixEntry);
+            Matrix matrix = null;
+            try {
+                matrix = getMatrix(matrixEntry);
+            }
+            catch (Exception e) {
+                logger.fatal("Exception caught trying to getMatrix(" + name + "): ",e);
+                throw e;
+            }
             if ( matrix == null) {
                 RuntimeException e = new RuntimeException();
                 logger.error( "MatrixDataManager received a null matrix object for " + name, e );

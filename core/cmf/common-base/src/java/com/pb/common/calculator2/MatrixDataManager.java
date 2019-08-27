@@ -145,7 +145,7 @@ public class MatrixDataManager implements Serializable {
             addMatrices(matrixMap);
         }
         catch (RuntimeException e) {
-            logger.fatal( "Exception caught adding matrices to matrixMap in MatrixDataManager" );
+            logger.fatal( "Exception (c2) caught adding matrices to matrixMap in MatrixDataManager", e);
             logger.fatal( "contents of matrixMap:" );
             for ( Iterator it = matrixMap.keySet().iterator(); it.hasNext(); ) {
                 String matrixName = (String) it.next();

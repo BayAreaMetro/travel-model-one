@@ -123,17 +123,6 @@ public class HouseholdAutoOwnershipModel implements Serializable {
         int randomCount = hhObj.getHhRandomCount();
         double rn = hhRandom.nextDouble();
 
-        // if the choice model has at least one available alternative, make choice.
-        int chosenAlt;
-        if ( aoModel.getAvailabilityCount() > 0 ) {
-            chosenAlt = aoModel.getChoiceResult( rn );
-        }
-        else {
-            logger.error ( String.format( "Exception caught for HHID=%d, no available auto ownership alternatives to choose from in choiceModelApplication.", hhObj.getHhId() ) );
-            throw new RuntimeException();
-        }
-
-
         // write choice model alternative info to log file
         if ( hhObj.getDebugChoiceModels() ) {
 
@@ -148,6 +137,21 @@ public class HouseholdAutoOwnershipModel implements Serializable {
                 cumProb += probabilities[k];
                 aoLogger.info(String.format("%-20s%18.6e%18.6e%18.6e", alternativeNames[k], utilities[k], probabilities[k], cumProb ) );
             }
+        }
+
+        // if the choice model has at least one available alternative, make choice.
+        int chosenAlt;
+        if ( aoModel.getAvailabilityCount() > 0 ) {
+            chosenAlt = aoModel.getChoiceResult( rn );
+        }
+        else {
+            logger.error ( String.format( "Exception caught for HHID=%d, no available auto ownership alternatives to choose from in choiceModelApplication.", hhObj.getHhId() ) );
+            throw new RuntimeException();
+        }
+
+
+        // write choice model alternative info to log file
+        if ( hhObj.getDebugChoiceModels() ) {
 
             aoLogger.info(" ");
             aoLogger.info( String.format("Choice: %s, with rn=%.8f, randomCount=%d", chosenAlt, rn, randomCount ) );
@@ -223,9 +227,8 @@ public class HouseholdAutoOwnershipModel implements Serializable {
             totalAutoSavingsRatio += autoSavingsRatio;
 
             if ( debugFlag ) {
-            	aoLogger.info( "Debug for hhid=" + hhObj.getHhId() + ", personNum=" + i );
-            	aoLogger.info( "auto=" + auto + ", transit=" + transit + ", walk=" + walk );
-            	aoLogger.info( "auto=" + auto + ", transit=" + transit + ", walk=" + walk );
+            	aoLogger.info( "Debug for hhid=" + hhObj.getHhId() + ", personNum=" + i + ", getUsualWorkLocation=" + person.getUsualWorkLocation() );
+            	aoLogger.info( "auto[0]=" + auto[0] + ", transit[0] =" + transit[0]  + ", walk=[0]" + walk[0] );
             	aoLogger.info( "minWalkTransit=" + minWalkTransit + ", autoSavings=" + autoSavings + ", autoSavingsRatio=" + autoSavingsRatio + ", totalAutoSavingsRatio=" + totalAutoSavingsRatio );
             }
             

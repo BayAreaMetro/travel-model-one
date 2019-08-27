@@ -323,7 +323,8 @@ public class LogitModel implements Alternative, Serializable {
             
         }
 
-        logger.error("Could not choose alternative.");
+        Exception e = new Exception();
+        logger.error("Could not choose alternative.", e);
         logger.error("Discrete Choice model random number: " + rnum);
         logger.error("Discrete Choice model cummulative probability: " + sum);
         return null;

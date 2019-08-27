@@ -17,6 +17,8 @@ import org.jppf.task.storage.DataProvider;
 
 
 public class HouseholdChoiceModelsTaskJppf extends JPPFTask {
+
+    private static final Logger logger = Logger.getLogger(HouseholdChoiceModelsTaskJppf.class);
 	
     private transient HashMap<String, String> propertyMap;
     private transient MatrixDataServerIf ms;
@@ -31,8 +33,6 @@ public class HouseholdChoiceModelsTaskJppf extends JPPFTask {
     private int taskIndex;
     
     private boolean runWithTiming;
-
-    
     
     public HouseholdChoiceModelsTaskJppf( int taskIndex, int startIndex, int endIndex ) {
 
@@ -48,7 +48,6 @@ public class HouseholdChoiceModelsTaskJppf extends JPPFTask {
 
         long startTime = System.nanoTime();
         
-        Logger logger = Logger.getLogger( "HouseholdChoiceModelsTaskJppf" );
 
         String threadName = null;
         try {
