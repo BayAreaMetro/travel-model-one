@@ -1280,6 +1280,16 @@ class RunResults:
                                        (self.parking_costs.dest_county     ==countynum ),  'parking_cost'].sum()
 
 
+        # Transit Boardings
+
+        cat2            = 'Transit Boardings'
+
+        daily_results[(cat1,cat2,"BART")] = self.transit_boards_miles.loc['hvy','Daily Boardings'].sum()
+        daily_results[(cat1,cat2,"Commuter Rail")] = self.transit_boards_miles.loc['com','Daily Boardings'].sum()
+        daily_results[(cat1,cat2,"Light Rail / Ferry")] = self.transit_boards_miles.loc['lrf','Daily Boardings'].sum()
+        daily_results[(cat1,cat2,"Express Bus")] = self.transit_boards_miles.loc['exp','Daily Boardings'].sum()
+        daily_results[(cat1,cat2,"Local Bus")] = self.transit_boards_miles.loc['loc','Daily Boardings'].sum()
+
         # Transit Crowding
 
         cat2            = 'Transit Crowding Penalty Hours'
