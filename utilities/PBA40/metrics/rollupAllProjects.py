@@ -21,7 +21,7 @@ for file in bcmetrics_file_list:
     df = pd.read_csv(file)
     df['Project'] = df.loc[4,'values']
     df['Future'] = df.loc[8,'values']
-    df['ProjectID'] = df.loc[2,'values']
+    df['ProjectID'] = df.loc[3,'values']
     df['BaseID'] = df.loc[9,'values']
     drop_index = list(range(0,14))
     df = df.drop(drop_index,axis="rows")
