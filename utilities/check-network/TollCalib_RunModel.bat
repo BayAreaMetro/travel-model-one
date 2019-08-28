@@ -233,9 +233,11 @@ set R_HOME=C:\Program Files\R\R-3.5.2
 set PROJECT_DIR=%cd%
 
 if "%COMPUTER_PREFIX%" == "WIN-" (
-    call "%R_HOME%\bin\x64\Rscript.exe" "\\tsclient\X\travel-model-one-master\utilities\check-network\TollCalib_CheckSpeeds.R"
+    call "%R_HOME%\bin\x64\Rscript.exe" TollCalib_CheckSpeeds.R
+    python TollCalib_stop.py
 ) else (
     call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\TollCalib_CheckSpeeds.R"
+    python "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\TollCalib_stop.py"
 )
 
 :: copy the output back to L
@@ -243,6 +245,7 @@ if %ITER%==4 (
     mkdir %L_DIR%\tollcalib_iter
 )
 copy tollcalib_iter\el_gp_avg_speed_iter%ITER%.csv %L_DIR%\tollcalib_iter\el_gp_avg_speed_iter%ITER%.csv
+copy tollcalib_iter\el_gp_summary_ALL.csv %L_DIR%\tollcalib_iter\el_gp_summary_ALL.csv
 set /a NEXT_ITER=%ITER%+1
 copy hwy\tolls_iter%NEXT_ITER%.csv %L_DIR%\tollcalib_iter\tolls_iter%NEXT_ITER%.csv
 

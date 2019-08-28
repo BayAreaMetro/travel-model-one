@@ -7,7 +7,7 @@
 # call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\TollCalib_CheckSpeeds.R"
 #
 # can be run stand alone as well, but users need to define:
-# ITER, PROJECT_DIR, UNLOADED_NETWORK_DBF, BRIDGE_TOLLS_CSV
+# ITER, PROJECT_DIR, UNLOADED_NETWORK_DBF
 #
 #############################################################
 
@@ -43,8 +43,7 @@ if (dir.exists(file.path(PROJECT_DIR, "hwy"))) {
     TOLLS_CSV             <- file.path(PROJECT_DIR, "INPUT", "hwy", "tolls.csv")
 }
 
-BRIDGE_TOLLS_CSV      <- Sys.getenv("BRIDGE_TOLLS_CSV")
-BRIDGE_TOLLS_CSV      <- gsub("\\\\","/",BRIDGE_TOLLS_CSV) # switch slashes around
+
 TOLL_DESIGNATIONS_XLSX <- Sys.getenv("TOLL_DESIGNATIONS_XLSX")
 TOLL_DESIGNATIONS_XLSX <- gsub("\\\\","/",TOLL_DESIGNATIONS_XLSX) # switch slashes around
 
@@ -55,7 +54,6 @@ TOLL_DESIGNATIONS_XLSX <- gsub("\\\\","/",TOLL_DESIGNATIONS_XLSX) # switch slash
 # LOADED_NETWORK_CSV    <- file.path(PROJECT_DIR, "OUTPUT","avgload5period.csv")
 # UNLOADED_NETWORK_DBF  <- file.path("L:/RTP2021_PPA/Projects/2050_TM151_PPA_BF_06/INPUT/shapefiles", "network_links.dbf") # from cube_to_shapefile.py
 # TOLLS_CSV             <- file.path(PROJECT_DIR, "INPUT", "hwy", "tolls.csv")
-# BRIDGE_TOLLS_CSV      <- "M:/Application/Model One/NetworkProjects/Bridge_Toll_Updates/tolls_2050.csv"
 # TOLL_DESIGNATIONS_XLSX <- "M:/Application/Model One/Networks/TOLLCLASS Designations.xlsx"
 # if running this script on a project directory on L, you'll also need to change the path for the tolls.csv output in the end.
 
@@ -289,7 +287,8 @@ tolls_new_df <- tolls_new_df  %>% select(-c(TOLLCLASS, tollam_da_new, tollmd_da_
 tolls_new_df <- tolls_new_df  %>% mutate(toll_flat=0)
 
 # append the new toll rates to the first half of the toll.csv file containing the bridge tolls
-bridge_tolls_df    <- read.csv(file=BRIDGE_TOLLS_CSV, header=TRUE, sep=",")
+bridge_tolls_df    <- read.csv(file=TOLLS_CSV, header=TRUE, sep=",")
+bridge_tolls_df    <- filter(bridge_tolls_df, tollclass<=9)
 bridge_el_tolls_df <- bind_rows(bridge_tolls_df, tolls_new_df)
 
 #############################################################
@@ -317,6 +316,8 @@ if (dir.exists(file.path(PROJECT_DIR, "hwy"))) {
     # output a new tolls.csv
     write.csv(bridge_el_tolls_df, file.path(PROJECT_DIR, "hwy", OUTPUT_NEW_TOLLS_CSV), row.names = FALSE)
 
+    # file path of the all iteration summary
+    EL_GP_SUMMARY_ALL_CSV = file.path(PROJECT_DIR, "tollcalib_iter", "el_gp_summary_ALL.csv")
 
 # if it is running on an extracted output folder
 } else {
@@ -338,4 +339,21 @@ if (dir.exists(file.path(PROJECT_DIR, "hwy"))) {
 
     # output a new tolls.csv
     write.csv(bridge_el_tolls_df, file.path(PROJECT_DIR, "OUTPUT", "tollcalib_iter", OUTPUT_NEW_TOLLS_CSV), row.names = FALSE)
+
+    # file path of the all iteration summary
+    EL_GP_SUMMARY_ALL_CSV = file.path(PROJECT_DIR, "OUTPUT", "tollcalib_iter", "el_gp_summary_ALL.csv")
 }
+
+
+# accumulate the speed summary from all iterations in one big file for visualization
+
+el_gp_summary_df <- el_gp_summary_df %>% mutate(iter_num = paste0("iter",ITER))
+
+if (file.exists(EL_GP_SUMMARY_ALL_CSV)) {
+     el_gp_summary_ALL_df <- read.csv(file=EL_GP_SUMMARY_ALL_CSV, header=TRUE, sep=",")
+     el_gp_summary_ALL_df <- bind_rows(el_gp_summary_ALL_df, el_gp_summary_df)
+} else {
+     el_gp_summary_ALL_df <- el_gp_summary_df
+}
+
+write.csv(el_gp_summary_ALL_df, file.path(EL_GP_SUMMARY_ALL_CSV), row.names = FALSE)
