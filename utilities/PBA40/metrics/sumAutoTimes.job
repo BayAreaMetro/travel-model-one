@@ -238,8 +238,8 @@ loop auto = 1,15
       MW[35]   = (mi.5.@token_auto@/_occupancy) *  mi.10.@token_vtoll@             ; Value tolls
 
      ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
-     MW[36] =  mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
-     MW[37] = (mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)/_occupancy
+     MW[36] = (mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)*_occupancy
+     MW[37] = (mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)
      MW[38] = MW[1] + MW[8]  + MW[15] + MW[22] + MW[29]   ; Person minutes
      MW[39] = MW[2] + MW[9]  + MW[16] + MW[23] + MW[30]   ; Vehicle minutes
      MW[40] = MW[3] + MW[10] + MW[17] + MW[24] + MW[31]   ; Person miles
