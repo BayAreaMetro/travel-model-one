@@ -1,7 +1,8 @@
 rem -------------------------------------
 rem
-rem This batch file copy the inputs and scripts needed for toll calibration. 
-rem It takes two user inputs, whereas the scripts are copied from travel-model-one-master on the X drive.
+rem This batch file copies the inputs and scripts needed for toll calibration. 
+rem It requires two user inputs (re. network_links.dbf and TOLLCLASS_Designations.xlsx)
+rem Scripts are copied from travel-model-one-master on the X drive.
 rem 
 rem -------------------------------------
 
@@ -10,14 +11,14 @@ rem need user inputs here
 rem -------------------------------------
 
 rem where is network_links.dbf?
-set UNLOADED_NETWORK_DBF= \\tsclient\L\RTP2021_PPA\Projects\6000_ReX_Calib\2050_TM151_PPA_BF_11_6000_ReX_Calib_01\shapefiles\network_links.dbf
+set UNLOADED_NETWORK_DBF= \\tsclient\L\RTP2021_PPA\Projects\6000_ReX_Calib\2050_TM151_PPA_RT_11_6000_ReX_Calib_03\shapefiles\network_links.dbf
 
 rem where is TOLLCLASS Designations.xlsx?
 rem (this file indicates which facilities have mandatory s2 tolls)
-set TOLL_DESIGNATIONS_XLSX= \\tsclient\L\RTP2021_PPA\Projects\6000_ReX_Calib\2050_TM151_PPA_BF_11_6000_ReX_Calib_01\tollcalib_iter\TOLLCLASS_Designations.xlsx
+set TOLL_DESIGNATIONS_XLSX= \\tsclient\L\RTP2021_PPA\Projects\6000_ReX_Calib\TOLLCLASS_Designations.xlsx
 
 
-rem copy the three toll calibration inputs 
+rem copy the two toll calibration inputs 
 rem -------------------------------------
 mkdir tollcalib_iter
 

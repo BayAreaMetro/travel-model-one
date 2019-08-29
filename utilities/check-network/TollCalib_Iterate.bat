@@ -8,30 +8,25 @@
 :: If on AWS, HOST_IP_ADDRESS has to be set manually
 :: it's the “private IP address” on the wallpaper
 :: -------------------------------------------------
-if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.93
+if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.70
 
 :: -------------------------------------------------
-:: If toll calibration is run for the first time (usually iteration 4)
-:: (Or, in case we need to continue toll calibration after the machine is shut down, then enter the next iteration number below and edit the TOLL_FILE location)
+:: User input needed here
+:: if toll calibration is run for the first time, set iter to 4
+:: (alternatively, in case we need to continue toll calibration after the machine is restarted, enter the next iteration number below and edit the TOLL_FILE location)
 :: -------------------------------------------------
 
 :: set iteration number, starting from 4 as we assume this is a continuation of a "normal" model run
 set ITER=4
 
 :: Location of the base run directory - the full run is needed because it needs the CTRAMP directory
-set MODEL_BASE_DIR=D:\Projects\2050_TM151_PPA_BF_11_6000_ReX_PreCalib_01
+set MODEL_BASE_DIR=D:\Projects\2050_TM151_PPA_RT_11_6000_ReX_PreCalib_03
 
 :: Name and location of the tolls.csv to be used
 set TOLL_FILE=%MODEL_BASE_DIR%\hwy\tolls_iter4.csv
 
 :: Location of the output folder "tollcalib_iter" on the L drive
-set L_DIR=\\tsclient\L\RTP2021_PPA\Projects\6000_ReX_Calib\2050_TM151_PPA_BF_11_6000_ReX_Calib_01
-
-:: Unloaded network dbf, generated from cube_to_shapefile.py, needed for the R script that determine toll adjustment 
-set UNLOADED_NETWORK_DBF=D:\Projects\2050_TM151_PPA_BF_11_6000_ReX_TollCalib_01\tollcalib_iter\network_links.dbf
-
-:: The file indicating which facilities have mandatory s2 tolls, needed for the R script that determine toll adjustment 
-set TOLL_DESIGNATIONS_XLSX=D:\Projects\2050_TM151_PPA_BF_11_6000_ReX_TollCalib_01\tollcalib_iter\TOLLCLASS_Designations.xlsx
+set L_DIR=\\tsclient\L\RTP2021_PPA\Projects\6000_ReX_Calib\2050_TM151_PPA_RT_11_6000_ReX_Calib_03
 
 :: to run highway assignment only, enter 1 below; 
 :: to run highway assigment + skimming + core, enter 0 below
@@ -41,6 +36,14 @@ set MODEL_YEAR=2050
 :: -------------------------------------------------
 :: check that all the paths are valid
 :: -------------------------------------------------
+
+:: Unloaded network dbf, generated from cube_to_shapefile.py, needed for the R script that determine toll adjustment 
+set UNLOADED_NETWORK_DBF=tollcalib_iter\network_links.dbf
+
+:: The file indicating which facilities have mandatory s2 tolls, needed for the R script that determine toll adjustment 
+set TOLL_DESIGNATIONS_XLSX=tollcalib_iter\TOLLCLASS_Designations.xlsx
+
+
 
 if exist %MODEL_BASE_DIR% (
     echo base run directory exists!
