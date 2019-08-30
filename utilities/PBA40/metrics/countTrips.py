@@ -1,7 +1,7 @@
 import collections, datetime, os, sys
 import numpy, pandas
 
-USATE = """
+USAGE = """
 
   python countTrips.py
 
