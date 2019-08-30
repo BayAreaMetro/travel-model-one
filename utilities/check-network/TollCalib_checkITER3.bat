@@ -11,7 +11,8 @@ set ITER=3
 set PROJECT_DIR=D:\Projects\2050_TM151_PPA_RT_11_6000_ReX_PreCalib_03
 
 
-:: the rest doesn't require user inputs
+:: the rest doesn't require user inputs if TollCalib_setup.bat is run
+:: otherwise user may need to specify the locations of UNLOADED_NETWORK_DBF and TOLL_DESIGNATIONS_XLSX
 
 :: Unloaded network dbf, generated from cube_to_shapefile.py, needed for the R script that determine toll adjustment 
 :: (okay to borrow it from a different Future as long as we're sure the unloaded network is the same across Futures)
