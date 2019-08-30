@@ -156,11 +156,11 @@ loop period = 1, 5
       ; compute bus time
       ; no congestion for BRT facilities (two-levels)
       IF (BRT = 1)
-        BUS_TIME = FFT  + delayfactor * DISTANCE
+        BUS_TIME = FFT  + (delayfactor * DISTANCE * 0.5)
       ELSEIF (BRT = 2)
-        BUS_TIME = CTIM + delayfactor * DISTANCE * 0.5
+        BUS_TIME = CTIM + (delayfactor * DISTANCE * 0.5)
       ELSE
-        BUS_TIME = CTIM + delayfactor * DISTANCE
+        BUS_TIME = CTIM + (delayfactor * DISTANCE)
       ENDIF
       
    endrun   
