@@ -8,7 +8,7 @@
 SET computer_prefix=%computername:~0,4%
 
 :: copy over CTRAMP
-set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-1.5.1.5
+set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-1.5.1.7
 mkdir CTRAMP\model
 mkdir CTRAMP\runtime
 mkdir CTRAMP\scripts
@@ -28,7 +28,7 @@ copy /Y "%GITHUB_DIR%\utilities\PBA40\ExtractKeyFiles.bat"                 .
 if "%COMPUTER_PREFIX%" == "WIN-" (copy "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"  "CTRAMP\scripts\notify_slack.py")
 
 :: copy over INPUTs from baseline
-set MODEL_SETUP_BASE_DIR=M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects\2050_TM151_PPA_CG_04
+set MODEL_SETUP_BASE_DIR=M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects\2050_TM151_PPA_CG_11
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\landuse"                       INPUT\landuse
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\logsums"                       INPUT\logsums
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\metrics"                       INPUT\metrics
@@ -42,7 +42,7 @@ copy /Y "%MODEL_SETUP_BASE_DIR%\INPUT\params.properties"                        
 copy /Y "%MODEL_SETUP_BASE_DIR%\OUTPUT\main\ShadowPricing_7.csv"                                 INPUT\logsums
 
 :: copy over project specific inputs
-set MODEL_SETUP_DIR=M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects\2202_BART_DMU_Brentwood\2050_TM151_PPA_CG_04_2202_BART_DMU_Brentwood_00
+set MODEL_SETUP_DIR=M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects\2202_BART_DMU_Brentwood\2050_TM151_PPA_CG_11_666_Project
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_DIR%\hwy"                           INPUT\hwy
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_DIR%\trn"                           INPUT\trn
 
