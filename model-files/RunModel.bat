@@ -398,10 +398,14 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
   rem go up a directory and sync model folder to s3
   cd ..
   "C:\Program Files\Amazon\AWSCLI\aws" s3 sync %myfolder% s3://travel-model-runs/%myfolder%
+  cd %myfolder%
 
   rem shutdown
   python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%* - shutting down"
   C:\Windows\System32\shutdown.exe /s
+
+  rem shutdown takes a while so goto done
+  goto donedone
 )
 
 :: Complete target and message
@@ -413,3 +417,4 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
   python "CTRAMP\scripts\notify_slack.py" ":exclamation: Error in *%MODEL_DIR%*"
 )
 
+:donedone
