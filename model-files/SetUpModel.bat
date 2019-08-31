@@ -25,7 +25,8 @@ copy /Y "%GITHUB_DIR%\utilities\PBA40\RunMetrics.bat"                      .
 copy /Y "%GITHUB_DIR%\utilities\PBA40\RunScenarioMetrics.bat"              .
 copy /Y "%GITHUB_DIR%\utilities\PBA40\ExtractKeyFiles.bat"                 .
 
-if "%COMPUTER_PREFIX%" == "WIN-" (copy "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"  "CTRAMP\scripts\notify_slack.py")
+if "%COMPUTER_PREFIX%" == "WIN-"    (copy "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"  "CTRAMP\scripts\notify_slack.py")
+if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.33
 
 :: copy over INPUTs from baseline
 set MODEL_SETUP_BASE_DIR=M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects\2050_TM151_PPA_CG_11
