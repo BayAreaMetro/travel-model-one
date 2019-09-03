@@ -727,9 +727,10 @@ class RunResults:
 
         daily_results[(cat1,cat2,'Time - Auto (PHT) - IX/EX' )] = \
             auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix'],'Person Minutes'].sum()/60.0
-        #daily_results[(cat1,cat2,'Time - Auto (PHT) - AirPax' )] = \
-        #    auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Person Minutes'].sum()/60.0
+        daily_results[(cat1,cat2,'Time - Auto (PHT) - AirPax' )] = \
+            auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Person Minutes'].sum()/60.0
         
+        '''
         ##############
         # hardcode time airpax until bug is figured out
         if self.config.loc['Future'] in ['RTFF']:
@@ -740,7 +741,8 @@ class RunResults:
             time_airpax = 365867.0475
         daily_results[(cat1,cat2,'Time - Auto (PHT) - AirPax' )] = time_airpax
         ##############
-
+        '''
+        
         daily_results[(cat1,cat2,'Time - Truck (Computed VHT)')] = vmt_byclass.loc[['sm','smt','hv','hvt'],'VHT'].sum()
 
         daily_results[(cat1,cat2,'Cost - Auto ($2000) - IX/EX' )] = \
