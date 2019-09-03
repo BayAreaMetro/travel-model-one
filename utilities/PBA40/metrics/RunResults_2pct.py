@@ -59,7 +59,7 @@ class RunResults:
 
     ANNUALIZATION               = 300
     WORK_ANNUALIZATION          = 250
-    DISCOUNT_RATE               = 0.02
+    DISCOUNT_RATE               = 0.03
 
     # per 100000. Crude mortality rate.  For HEAT mortality calcs    ##### AT CHECK THIS
     BAY_AREA_MORTALITY_RATE_2074YRS = 340
