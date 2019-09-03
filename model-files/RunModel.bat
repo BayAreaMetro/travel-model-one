@@ -30,7 +30,8 @@ if %computername%==MODEL2-D            set HOST_IP_ADDRESS=192.168.1.209
 if %computername%==PORMDLPPW01         set HOST_IP_ADDRESS=172.24.0.101
 if %computername%==PORMDLPPW02         set HOST_IP_ADDRESS=172.24.0.102
 if %computername%==WIN-FK0E96C8BNI     set HOST_IP_ADDRESS=10.0.0.154
-if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.70
+rem if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.70
+rem for aws machines, HOST_IP_ADDRESS is set in SetUpModel.bat
 
 :: for AWS, this will be "WIN-"
 SET computer_prefix=%computername:~0,4%
