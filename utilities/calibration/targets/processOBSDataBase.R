@@ -1,6 +1,10 @@
 #######################################################
 ### Script to summarize MTC OBS Database
 ### Author: Binny M Paul, binny.mathewpaul@rsginc.com
+###
+### Modified: bmp, Sep 2019, use PopSim weighted OBS Dataset
+###           OBS_Dir must contain the PopSim weighted dataset - OBS_PopulationSim_Weights.csv
+###
 #######################################################
 oldw <- getOption("warn")
 options(warn = -1)
@@ -19,14 +23,15 @@ geography = "maz_v1_0"
 
 # User Inputs
 if (Sys.getenv("USERNAME") == "binny.paul") {
-  USERPROFILE   <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
-  BOX_DEV       <- file.path(USERPROFILE, "Box Sync")
+  #USERPROFILE   <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
+  BOX_DEV       <- file.path("E:/user/binny.paul/Box Sync - Copy")
   BOX_TM2       <- file.path(BOX_DEV,     "Travel Model Two Development")
   BOX_TM1.5     <- file.path(BOX_DEV,     "Travel Model 1.5")
   OBS_Dir       <- file.path(BOX_DEV,     "Survey_Database_122717")
   OBS_Anc_Dir   <- file.path(BOX_TM2,     "Observed Data", "Transit", "Onboard Survey", "Data")
   Targets_Dir   <- file.path(BOX_TM2,     "Observed Data", "Transit", "Scaled Transit Ridership Targets")
   OutDir        <- file.path(BOX_TM2,     "Observed Data", "Transit", "Onboard Survey", paste0("CalibrationSummaries_", geography))
+  OutDir        <- "E:/projects/clients/mtc/TM_1_5/CalibrationSummaries_maz_v1_0"
   OutDir_TM1.5  <- file.path(BOX_TM1.5,   "Calibration", "data", "ReweightedOBS")
   if (geography == "maz_v1_0") {
     geogXWalkDir  <- file.path(BOX_TM2, "Observed Data",   "CHTS Processing", "Trip End Geocodes maz_v1_0")
@@ -53,7 +58,7 @@ if (Sys.getenv("USERNAME") == "binny.paul") {
   mazDataDir    <- "E:/projects/clients/mtc/2015_calibration/landuse"
 }
 
-load(file.path(OBS_Dir,     "survey.rdata"))
+#load(file.path(OBS_Dir,     "survey.rdata"))
 load(file.path(OBS_Anc_Dir, "ancillary_variables.rdata"))
 xwalk              <- read.csv(file.path(geogXWalkDir, "geographicCWalk.csv"      ), as.is = T)
 xwalk_SDist        <- read.csv(districtDef, as.is = T)
@@ -79,14 +84,16 @@ SD_SDNAME <- taz15_SD %>%
   group_by(SD) %>%
   distinct()
 
-# consider only weekday records
-OBS <- survey[!(survey$day_of_the_week %in% c("SATURDAY", "SUNDAY")),]
+# Read the PopSim weighted OBS dataset
+OBS <- read.csv(file.path(OBS_Dir, "OBS_PopulationSim_Weights.csv"), as.is = T)
+
+# rename fields as needed
+names(OBS)[names(OBS)=="SURVEY_MODE"] <- "survey_tech"
+
 OBS_ancillary <- ancillary_df
 remove(survey)
 remove(ancillary_df)
 
-summary(OBS$orig_taz)
-summary(OBS$dest_taz)
 
 # Process data for calibration targets preparation
 OBS$work_before <- OBS_ancillary$at_work_prior_to_orig_purp[match(OBS$Unique_ID, OBS_ancillary$Unique_ID)]
@@ -112,83 +119,83 @@ OBS$school_after[OBS$school_after=="not at school after surveyed trip"] <- 'N'
 OBS$school_after[OBS$school_after=="not relevant"] <- 'NA'
 
 
-#Aggregate tour purposes
-OBS <- OBS %>%
-  mutate(agg_tour_purp = -9) %>% 
-  # 1[Work]: work, work-related
-  mutate(agg_tour_purp = ifelse(agg_tour_purp == -9 & (tour_purp == 'work' | tour_purp == 'work-related'), 1, agg_tour_purp)) %>% 
-  # 2[University]: university, college
-  mutate(agg_tour_purp = ifelse(agg_tour_purp == -9 & (tour_purp == 'university' | tour_purp == 'college'), 2, agg_tour_purp)) %>% 
-  # 3[School]: school, grade school, high school
-  mutate(agg_tour_purp = ifelse(agg_tour_purp == -9 & (tour_purp == 'school' | tour_purp == 'high school' | tour_purp == 'grade school'), 3, agg_tour_purp)) %>% 
-  # 4[Maintenance]: escorting, shopping, other maintenace
-  mutate(agg_tour_purp = ifelse(agg_tour_purp == -9 & (tour_purp == 'escorting' | tour_purp == 'shopping' | tour_purp == 'other maintenance'), 4, agg_tour_purp)) %>% 
-  # 5[Discretionary]: social recreation, eat out, discretionary
-  mutate(agg_tour_purp = ifelse(agg_tour_purp == -9 & (tour_purp == 'social recreation' | tour_purp == 'eat out' | tour_purp == 'other discretionary'), 5, agg_tour_purp)) %>% 
-  # 6[At-work]: At work
-  mutate(agg_tour_purp = ifelse(agg_tour_purp == -9 & (tour_purp == 'at work'), 6, agg_tour_purp))
+# #Aggregate tour purposes
+# OBS <- OBS %>%
+#   mutate(agg_tour_purp = -9) %>% 
+#   # 1[Work]: work, work-related
+#   mutate(agg_tour_purp = ifelse(agg_tour_purp == -9 & (tour_purp == 'work' | tour_purp == 'work-related'), 1, agg_tour_purp)) %>% 
+#   # 2[University]: university, college
+#   mutate(agg_tour_purp = ifelse(agg_tour_purp == -9 & (tour_purp == 'university' | tour_purp == 'college'), 2, agg_tour_purp)) %>% 
+#   # 3[School]: school, grade school, high school
+#   mutate(agg_tour_purp = ifelse(agg_tour_purp == -9 & (tour_purp == 'school' | tour_purp == 'high school' | tour_purp == 'grade school'), 3, agg_tour_purp)) %>% 
+#   # 4[Maintenance]: escorting, shopping, other maintenace
+#   mutate(agg_tour_purp = ifelse(agg_tour_purp == -9 & (tour_purp == 'escorting' | tour_purp == 'shopping' | tour_purp == 'other maintenance'), 4, agg_tour_purp)) %>% 
+#   # 5[Discretionary]: social recreation, eat out, discretionary
+#   mutate(agg_tour_purp = ifelse(agg_tour_purp == -9 & (tour_purp == 'social recreation' | tour_purp == 'eat out' | tour_purp == 'other discretionary'), 5, agg_tour_purp)) %>% 
+#   # 6[At-work]: At work
+#   mutate(agg_tour_purp = ifelse(agg_tour_purp == -9 & (tour_purp == 'at work'), 6, agg_tour_purp))
 
 
-# Tour access/egress mode
-
-# replace bike access mode with pnr
-OBS$access_mode[OBS$access_mode=="bike"] <- 'pnr'
-OBS$egress_mode[OBS$egress_mode=="bike"] <- 'pnr'
-OBS$access_mode[OBS$access_mode=="bie"] <- 'pnr'
-OBS$egress_mode[OBS$egress_mode=="bie"] <- 'pnr'
-
-# Code missing access/egress mode
-
-OBS$access_mode[OBS$access_mode=="."] <- "missing"
-OBS$egress_mode[OBS$egress_mode=="."] <- "missing"
-
-OBS <- OBS %>%
-  mutate(access_mode = ifelse(is.na(access_mode), "missing", access_mode))
-operator_access_mode <- xtabs(trip_weight~operator+access_mode, data = OBS[OBS$access_mode!="missing", ])
-operator_access_mode <- data.frame(operator_access_mode)
-molten <- melt(operator_access_mode, id = c("operator", "access_mode"))
-operator_access_mode <- dcast(molten, operator~access_mode, sum)
-operator_access_mode$tot <- operator_access_mode$walk+operator_access_mode$knr+operator_access_mode$pnr
-operator_access_mode$w <- operator_access_mode$walk/operator_access_mode$tot
-operator_access_mode$k <- operator_access_mode$knr/operator_access_mode$tot
-operator_access_mode$p <- operator_access_mode$pnr/operator_access_mode$tot
-operator_access_mode$c1 <- operator_access_mode$w
-operator_access_mode$c2 <- operator_access_mode$w+operator_access_mode$k
-
-returnAccessMode <- function(op)
-{
-  c1 <- operator_access_mode$c1[operator_access_mode$operator==op]
-  c2 <- operator_access_mode$c2[operator_access_mode$operator==op]
-  r <- runif(1)
-  return(ifelse(r<c1, "walk", ifelse(r<c2, "knr", "pnr")))
-}
-
-OBS$access_mode[OBS$access_mode=="missing"] <- sapply(as.character(OBS$operator[OBS$access_mode=="missing"]),function(x) {returnAccessMode(x)} )
-
-#-------------------------------------------------------------------------------------
-
-OBS <- OBS %>%
-  mutate(egress_mode = ifelse(is.na(egress_mode), "missing", egress_mode))
-operator_egress_mode <- xtabs(trip_weight~operator+egress_mode, data = OBS[OBS$egress_mode!="missing", ])
-operator_egress_mode <- data.frame(operator_egress_mode)
-molten <- melt(operator_egress_mode, id = c("operator", "egress_mode"))
-operator_egress_mode <- dcast(molten, operator~egress_mode, sum)
-operator_egress_mode$tot <- operator_egress_mode$walk+operator_egress_mode$knr+operator_egress_mode$pnr
-operator_egress_mode$w <- operator_egress_mode$walk/operator_egress_mode$tot
-operator_egress_mode$k <- operator_egress_mode$knr/operator_egress_mode$tot
-operator_egress_mode$p <- operator_egress_mode$pnr/operator_egress_mode$tot
-operator_egress_mode$c1 <- operator_egress_mode$w
-operator_egress_mode$c2 <- operator_egress_mode$w+operator_egress_mode$k
-
-returnEgressMode <- function(op)
-{
-  c1 <- operator_egress_mode$c1[operator_egress_mode$operator==op]
-  c2 <- operator_egress_mode$c2[operator_egress_mode$operator==op]
-  r <- runif(1)
-  return(ifelse(r<c1, "walk", ifelse(r<c2, "knr", "pnr")))
-}
-
-OBS$egress_mode[OBS$egress_mode=="missing"] <- sapply(as.character(OBS$operator[OBS$egress_mode=="missing"]),function(x) {returnEgressMode(x)} )
+# # Tour access/egress mode
+# 
+# # replace bike access mode with pnr
+# OBS$access_mode[OBS$access_mode=="bike"] <- 'pnr'
+# OBS$egress_mode[OBS$egress_mode=="bike"] <- 'pnr'
+# OBS$access_mode[OBS$access_mode=="bie"] <- 'pnr'
+# OBS$egress_mode[OBS$egress_mode=="bie"] <- 'pnr'
+# 
+# # Code missing access/egress mode
+# 
+# OBS$access_mode[OBS$access_mode=="."] <- "missing"
+# OBS$egress_mode[OBS$egress_mode=="."] <- "missing"
+# 
+# OBS <- OBS %>%
+#   mutate(access_mode = ifelse(is.na(access_mode), "missing", access_mode))
+# operator_access_mode <- xtabs(trip_weight~operator+access_mode, data = OBS[OBS$access_mode!="missing", ])
+# operator_access_mode <- data.frame(operator_access_mode)
+# molten <- melt(operator_access_mode, id = c("operator", "access_mode"))
+# operator_access_mode <- dcast(molten, operator~access_mode, sum)
+# operator_access_mode$tot <- operator_access_mode$walk+operator_access_mode$knr+operator_access_mode$pnr
+# operator_access_mode$w <- operator_access_mode$walk/operator_access_mode$tot
+# operator_access_mode$k <- operator_access_mode$knr/operator_access_mode$tot
+# operator_access_mode$p <- operator_access_mode$pnr/operator_access_mode$tot
+# operator_access_mode$c1 <- operator_access_mode$w
+# operator_access_mode$c2 <- operator_access_mode$w+operator_access_mode$k
+# 
+# returnAccessMode <- function(op)
+# {
+#   c1 <- operator_access_mode$c1[operator_access_mode$operator==op]
+#   c2 <- operator_access_mode$c2[operator_access_mode$operator==op]
+#   r <- runif(1)
+#   return(ifelse(r<c1, "walk", ifelse(r<c2, "knr", "pnr")))
+# }
+# 
+# OBS$access_mode[OBS$access_mode=="missing"] <- sapply(as.character(OBS$operator[OBS$access_mode=="missing"]),function(x) {returnAccessMode(x)} )
+# 
+# #-------------------------------------------------------------------------------------
+# 
+# OBS <- OBS %>%
+#   mutate(egress_mode = ifelse(is.na(egress_mode), "missing", egress_mode))
+# operator_egress_mode <- xtabs(trip_weight~operator+egress_mode, data = OBS[OBS$egress_mode!="missing", ])
+# operator_egress_mode <- data.frame(operator_egress_mode)
+# molten <- melt(operator_egress_mode, id = c("operator", "egress_mode"))
+# operator_egress_mode <- dcast(molten, operator~egress_mode, sum)
+# operator_egress_mode$tot <- operator_egress_mode$walk+operator_egress_mode$knr+operator_egress_mode$pnr
+# operator_egress_mode$w <- operator_egress_mode$walk/operator_egress_mode$tot
+# operator_egress_mode$k <- operator_egress_mode$knr/operator_egress_mode$tot
+# operator_egress_mode$p <- operator_egress_mode$pnr/operator_egress_mode$tot
+# operator_egress_mode$c1 <- operator_egress_mode$w
+# operator_egress_mode$c2 <- operator_egress_mode$w+operator_egress_mode$k
+# 
+# returnEgressMode <- function(op)
+# {
+#   c1 <- operator_egress_mode$c1[operator_egress_mode$operator==op]
+#   c2 <- operator_egress_mode$c2[operator_egress_mode$operator==op]
+#   r <- runif(1)
+#   return(ifelse(r<c1, "walk", ifelse(r<c2, "knr", "pnr")))
+# }
+# 
+# OBS$egress_mode[OBS$egress_mode=="missing"] <- sapply(as.character(OBS$operator[OBS$egress_mode=="missing"]),function(x) {returnEgressMode(x)} )
 
 #-------------------------------------------------------------------------------------
 
@@ -220,29 +227,29 @@ OBS <- OBS %>%
 OBS <- OBS %>%
   mutate(trip_mode = paste(tour_access_mode, "-", survey_tech, "-", operator, sep = ""))
 
-# Code missing auto sufficiency
-OBS <- OBS %>%
-  mutate(auto_suff = ifelse(is.na(auto_suff), "missing", auto_suff))
-operator_autoSuff <- xtabs(trip_weight~operator+auto_suff, data = OBS[OBS$auto_suff!="missing", ])
-operator_autoSuff <- data.frame(operator_autoSuff)
-molten <- melt(operator_autoSuff, id = c("operator", "auto_suff"))
-operator_autoSuff <- dcast(molten, operator~auto_suff, sum)
-operator_autoSuff$tot <- operator_autoSuff$`zero autos`+operator_autoSuff$`auto sufficient`+operator_autoSuff$`auto negotiating`
-operator_autoSuff$as1 <- operator_autoSuff$`zero autos`/operator_autoSuff$tot
-operator_autoSuff$as2 <- operator_autoSuff$`auto negotiating`/operator_autoSuff$tot
-operator_autoSuff$as3 <- operator_autoSuff$`auto sufficient`/operator_autoSuff$tot
-operator_autoSuff$c1 <- operator_autoSuff$as1
-operator_autoSuff$c2 <- operator_autoSuff$as1+operator_autoSuff$as2
-
-returnAS <- function(op)
-{
-  c1 <- operator_autoSuff$c1[operator_autoSuff$operator==op]
-  c2 <- operator_autoSuff$c2[operator_autoSuff$operator==op]
-  r <- runif(1)
-  return(ifelse(r<c1, "zero autos", ifelse(r<c2, "auto negotiating", "auto sufficient")))
-}
-
-OBS$auto_suff[OBS$auto_suff=="missing" | OBS$auto_suff=="Missing"] <- sapply(as.character(OBS$operator[OBS$auto_suff=="missing" | OBS$auto_suff=="Missing"]),function(x) {returnAS(x)} )
+# # Code missing auto sufficiency
+# OBS <- OBS %>%
+#   mutate(auto_suff = ifelse(is.na(auto_suff), "missing", auto_suff))
+# operator_autoSuff <- xtabs(trip_weight~operator+auto_suff, data = OBS[OBS$auto_suff!="missing", ])
+# operator_autoSuff <- data.frame(operator_autoSuff)
+# molten <- melt(operator_autoSuff, id = c("operator", "auto_suff"))
+# operator_autoSuff <- dcast(molten, operator~auto_suff, sum)
+# operator_autoSuff$tot <- operator_autoSuff$`zero autos`+operator_autoSuff$`auto sufficient`+operator_autoSuff$`auto negotiating`
+# operator_autoSuff$as1 <- operator_autoSuff$`zero autos`/operator_autoSuff$tot
+# operator_autoSuff$as2 <- operator_autoSuff$`auto negotiating`/operator_autoSuff$tot
+# operator_autoSuff$as3 <- operator_autoSuff$`auto sufficient`/operator_autoSuff$tot
+# operator_autoSuff$c1 <- operator_autoSuff$as1
+# operator_autoSuff$c2 <- operator_autoSuff$as1+operator_autoSuff$as2
+# 
+# returnAS <- function(op)
+# {
+#   c1 <- operator_autoSuff$c1[operator_autoSuff$operator==op]
+#   c2 <- operator_autoSuff$c2[operator_autoSuff$operator==op]
+#   r <- runif(1)
+#   return(ifelse(r<c1, "zero autos", ifelse(r<c2, "auto negotiating", "auto sufficient")))
+# }
+# 
+# OBS$auto_suff[OBS$auto_suff=="missing" | OBS$auto_suff=="Missing"] <- sapply(as.character(OBS$operator[OBS$auto_suff=="missing" | OBS$auto_suff=="Missing"]),function(x) {returnAS(x)} )
 
 # trip mode check
 OBS$trip_mode_check <- paste(OBS$tour_access_mode, OBS$survey_tech, OBS$operator, sep = "-")
@@ -258,7 +265,7 @@ OBS <- OBS[OBS$agg_tour_purp>0,]
 
 OBS_collapsed <- data.frame()
 for (i in 1:6){
-  t <- xtabs(trip_weight~trip_mode+auto_suff, data = OBS[OBS$agg_tour_purp==i,])
+  t <- xtabs(final_tripWeight_2015~trip_mode+auto_suff, data = OBS[OBS$agg_tour_purp==i,])
   t <- data.frame(t, stringsAsFactors = F)
   t[] <- lapply(t, function(x) if (is.factor(x)) as.character(x) else {x})
   t$purpose <- i
@@ -268,7 +275,7 @@ colnames(OBS_collapsed) <- c("tripMode", "autoSuff", "trips", "tourPurpose")
 
 temp <- data.frame()
 for (i in 1:6){
-  t <- xtabs(weight~trip_mode+auto_suff, data = OBS[OBS$agg_tour_purp==i,])
+  t <- xtabs(final_boardWeight_2015~trip_mode+auto_suff, data = OBS[OBS$agg_tour_purp==i,])
   t <- data.frame(t, stringsAsFactors = F)
   t[] <- lapply(t, function(x) if (is.factor(x)) as.character(x) else {x})
   t$purpose <- i
@@ -467,33 +474,34 @@ OBS$accessMode <- OBS$tour_access_mode   ## tour access mode
 OBS$accessMode[OBS$accessMode=="Walk"] <- "walk"
 OBS$accessMode[OBS$accessMode=="PNR"] <- "pnr"
 OBS$accessMode[OBS$accessMode=="KNR"] <- "knr"
-OBS$operator[OBS$operator=="Tri"] <- "Tri-Delta"
 
-# Edit operator names to show local and express bus
-OBS$operator[OBS$operator=="AC Transit" & OBS$survey_tech=="local bus"] <- "AC Transit [LOCAL]"
-OBS$operator[OBS$operator=="AC Transit" & OBS$survey_tech=="express bus"] <- "AC Transit [EXPRESS]"
-
-OBS$operator[OBS$operator=="County Connection" & OBS$survey_tech=="local bus"] <- "County Connection [LOCAL]"
-OBS$operator[OBS$operator=="County Connection" & OBS$survey_tech=="express bus"] <- "County Connection [EXPRESS]"
-
-OBS$operator[OBS$operator=="Golden Gate Transit (bus)" & OBS$survey_tech=="local bus"] <- "Golden Gate Transit [LOCAL]"
-OBS$operator[OBS$operator=="Golden Gate Transit (bus)" & OBS$survey_tech=="express bus"] <- "Golden Gate Transit [EXPRESS]"
-
-OBS$operator[OBS$operator=="Napa Vine" & OBS$survey_tech=="local bus"] <- "Napa Vine [LOCAL]"
-OBS$operator[OBS$operator=="Napa Vine" & OBS$survey_tech=="express bus"] <- "Napa Vine [EXPRESS]"
-
-OBS$operator[OBS$operator=="SamTrans" & OBS$survey_tech=="local bus"] <- "SamTrans [LOCAL]"
-OBS$operator[OBS$operator=="SamTrans" & OBS$survey_tech=="express bus"] <- "SamTrans [EXPRESS]"
-
-OBS$operator[OBS$operator=="SF Muni" & OBS$survey_tech=="local bus"] <- "SF Muni [LOCAL]"
-OBS$operator[OBS$operator=="SF Muni" & OBS$survey_tech=="light rail"] <- "SF Muni [LRT]"
-
-OBS$operator[OBS$operator=="VTA" & OBS$survey_tech=="local bus"] <- "VTA [LOCAL]"
-OBS$operator[OBS$operator=="VTA" & OBS$survey_tech=="express bus"] <- "VTA [EXPRESS]"
-OBS$operator[OBS$operator=="VTA" & OBS$survey_tech=="light rail"] <- "VTA [LRT]"
-
-## copy technology from the targets database
-OBS <- merge(x=OBS, y=boarding_targets[boarding_targets$surveyed==1,c("operator","technology")], by="operator", all.x = TRUE)
+# OBS$operator[OBS$operator=="Tri"] <- "Tri-Delta"
+# 
+# # Edit operator names to show local and express bus
+# OBS$operator[OBS$operator=="AC Transit" & OBS$survey_tech=="local bus"] <- "AC Transit [LOCAL]"
+# OBS$operator[OBS$operator=="AC Transit" & OBS$survey_tech=="express bus"] <- "AC Transit [EXPRESS]"
+# 
+# OBS$operator[OBS$operator=="County Connection" & OBS$survey_tech=="local bus"] <- "County Connection [LOCAL]"
+# OBS$operator[OBS$operator=="County Connection" & OBS$survey_tech=="express bus"] <- "County Connection [EXPRESS]"
+# 
+# OBS$operator[OBS$operator=="Golden Gate Transit (bus)" & OBS$survey_tech=="local bus"] <- "Golden Gate Transit [LOCAL]"
+# OBS$operator[OBS$operator=="Golden Gate Transit (bus)" & OBS$survey_tech=="express bus"] <- "Golden Gate Transit [EXPRESS]"
+# 
+# OBS$operator[OBS$operator=="Napa Vine" & OBS$survey_tech=="local bus"] <- "Napa Vine [LOCAL]"
+# OBS$operator[OBS$operator=="Napa Vine" & OBS$survey_tech=="express bus"] <- "Napa Vine [EXPRESS]"
+# 
+# OBS$operator[OBS$operator=="SamTrans" & OBS$survey_tech=="local bus"] <- "SamTrans [LOCAL]"
+# OBS$operator[OBS$operator=="SamTrans" & OBS$survey_tech=="express bus"] <- "SamTrans [EXPRESS]"
+# 
+# OBS$operator[OBS$operator=="SF Muni" & OBS$survey_tech=="local bus"] <- "SF Muni [LOCAL]"
+# OBS$operator[OBS$operator=="SF Muni" & OBS$survey_tech=="light rail"] <- "SF Muni [LRT]"
+# 
+# OBS$operator[OBS$operator=="VTA" & OBS$survey_tech=="local bus"] <- "VTA [LOCAL]"
+# OBS$operator[OBS$operator=="VTA" & OBS$survey_tech=="express bus"] <- "VTA [EXPRESS]"
+# OBS$operator[OBS$operator=="VTA" & OBS$survey_tech=="light rail"] <- "VTA [LRT]"
+# 
+# ## copy technology from the targets database
+# OBS <- merge(x=OBS, y=boarding_targets[boarding_targets$surveyed==1,c("operator","technology")], by="operator", all.x = TRUE)
 
 ## remove records with missing purpose, those were not included in the mode choice targets calculations
 OBS <- OBS[OBS$agg_tour_purp!=-9,]
@@ -501,61 +509,61 @@ OBS$tourPurpose <- OBS$agg_tour_purp
 
 OBS$autoSuff <- OBS$auto_suff
 
-## Scale up weight fields to match observed boardings of surveyed operators
-## For unsurveyed operators, scale up in proportion to guessed O-D distribution
-## -------------------------------------------------------------------------------
+# ## Scale up weight fields to match observed boardings of surveyed operators
+# ## For unsurveyed operators, scale up in proportion to guessed O-D distribution
+# ## -------------------------------------------------------------------------------
+# 
+# # compute original OBS trip and board totals by operator, purpose, access mode and auto suff
+# OBS_collapsed_original_boards <- aggregate(cbind(weight)~operator+tourPurpose+accessMode+autoSuff, data = OBS, sum)
+# OBS_collapsed_original_boards$key <- paste(OBS_collapsed_original_boards$operator,
+#                                            OBS_collapsed_original_boards$tourPurpose,
+#                                     OBS_collapsed_original_boards$accessMode,
+#                                     OBS_collapsed_original_boards$autoSuff, sep = "-")
+# 
+# OBS_collapsed_original_trips <- aggregate(cbind(trip_weight)~operator+tourPurpose+accessMode+autoSuff, data = OBS, sum)
+# OBS_collapsed_original_trips$key <- paste(OBS_collapsed_original_trips$operator, 
+#                                           OBS_collapsed_original_trips$tourPurpose,
+#                                            OBS_collapsed_original_trips$accessMode,
+#                                            OBS_collapsed_original_trips$autoSuff, sep = "-")
+# 
+# unified_collapsed <- merge(x=unified_collapsed, y=boarding_targets[boarding_targets$surveyed==1,c("operator","technology")], by="operator", all.x = TRUE)
+# surveyed_collapsed_operator_boards <- aggregate(cbind(boardWeight_2015)~operator+tourPurpose+accessMode+autoSuff, data = unified_collapsed, sum)
+# surveyed_collapsed_operator_trips <- aggregate(cbind(tripWeight_2015)~operator+tourPurpose+accessMode+autoSuff, data = unified_collapsed, sum)
+# 
+# surveyed_collapsed_operator_boards$key <- paste(surveyed_collapsed_operator_boards$operator, 
+#                                                   surveyed_collapsed_operator_boards$tourPurpose,
+#                                                   surveyed_collapsed_operator_boards$accessMode,
+#                                                   surveyed_collapsed_operator_boards$autoSuff, sep = "-")
+# surveyed_collapsed_operator_trips$key <- paste(surveyed_collapsed_operator_trips$operator,
+#                                                  surveyed_collapsed_operator_trips$tourPurpose,
+#                                                  surveyed_collapsed_operator_trips$accessMode,
+#                                                  surveyed_collapsed_operator_trips$autoSuff, sep = "-")
+# 
+# OBS$key <- paste(OBS$operator,
+#                  OBS$tourPurpose,
+#                  OBS$accessMode,
+#                  OBS$autoSuff, sep = "-")
+# 
+# OBS_expFac <- surveyed_collapsed_operator_boards
+# OBS_expFac$tripWeight_2015 <- surveyed_collapsed_operator_trips$tripWeight_2015[match(OBS_expFac$key, surveyed_collapsed_operator_trips$key)]
+# 
+# OBS_expFac$weight <- OBS_collapsed_original_boards$weight[match(OBS_expFac$key, OBS_collapsed_original_boards$key)]
+# OBS_expFac$trip_weight <- OBS_collapsed_original_trips$trip_weight[match(OBS_expFac$key, OBS_collapsed_original_trips$key)]
+# 
+# OBS_expFac[is.na(OBS_expFac)] <- 0
+# 
+# OBS_expFac$board_expFac <- OBS_expFac$boardWeight_2015/OBS_expFac$weight
+# OBS_expFac$trip_expFac <- OBS_expFac$tripWeight_2015/OBS_expFac$trip_weight
+# 
+# 
+# OBS$board_expFac <- OBS_expFac$board_expFac[match(OBS$key, OBS_expFac$key)]
+# OBS$trip_expFac <- OBS_expFac$trip_expFac[match(OBS$key, OBS_expFac$key)]
+# 
+# OBS$trip_weight2015 <- OBS$trip_weight * OBS$trip_expFac
+# OBS$board_weight2015 <- OBS$weight * OBS$board_expFac
 
-# compute original OBS trip and board totals by operator, purpose, access mode and auto suff
-OBS_collapsed_original_boards <- aggregate(cbind(weight)~operator+tourPurpose+accessMode+autoSuff, data = OBS, sum)
-OBS_collapsed_original_boards$key <- paste(OBS_collapsed_original_boards$operator,
-                                           OBS_collapsed_original_boards$tourPurpose,
-                                    OBS_collapsed_original_boards$accessMode,
-                                    OBS_collapsed_original_boards$autoSuff, sep = "-")
-
-OBS_collapsed_original_trips <- aggregate(cbind(trip_weight)~operator+tourPurpose+accessMode+autoSuff, data = OBS, sum)
-OBS_collapsed_original_trips$key <- paste(OBS_collapsed_original_trips$operator, 
-                                          OBS_collapsed_original_trips$tourPurpose,
-                                           OBS_collapsed_original_trips$accessMode,
-                                           OBS_collapsed_original_trips$autoSuff, sep = "-")
-
-unified_collapsed <- merge(x=unified_collapsed, y=boarding_targets[boarding_targets$surveyed==1,c("operator","technology")], by="operator", all.x = TRUE)
-surveyed_collapsed_operator_boards <- aggregate(cbind(boardWeight_2015)~operator+tourPurpose+accessMode+autoSuff, data = unified_collapsed, sum)
-surveyed_collapsed_operator_trips <- aggregate(cbind(tripWeight_2015)~operator+tourPurpose+accessMode+autoSuff, data = unified_collapsed, sum)
-
-surveyed_collapsed_operator_boards$key <- paste(surveyed_collapsed_operator_boards$operator, 
-                                                  surveyed_collapsed_operator_boards$tourPurpose,
-                                                  surveyed_collapsed_operator_boards$accessMode,
-                                                  surveyed_collapsed_operator_boards$autoSuff, sep = "-")
-surveyed_collapsed_operator_trips$key <- paste(surveyed_collapsed_operator_trips$operator,
-                                                 surveyed_collapsed_operator_trips$tourPurpose,
-                                                 surveyed_collapsed_operator_trips$accessMode,
-                                                 surveyed_collapsed_operator_trips$autoSuff, sep = "-")
-
-OBS$key <- paste(OBS$operator,
-                 OBS$tourPurpose,
-                 OBS$accessMode,
-                 OBS$autoSuff, sep = "-")
-
-OBS_expFac <- surveyed_collapsed_operator_boards
-OBS_expFac$tripWeight_2015 <- surveyed_collapsed_operator_trips$tripWeight_2015[match(OBS_expFac$key, surveyed_collapsed_operator_trips$key)]
-
-OBS_expFac$weight <- OBS_collapsed_original_boards$weight[match(OBS_expFac$key, OBS_collapsed_original_boards$key)]
-OBS_expFac$trip_weight <- OBS_collapsed_original_trips$trip_weight[match(OBS_expFac$key, OBS_collapsed_original_trips$key)]
-
-OBS_expFac[is.na(OBS_expFac)] <- 0
-
-OBS_expFac$board_expFac <- OBS_expFac$boardWeight_2015/OBS_expFac$weight
-OBS_expFac$trip_expFac <- OBS_expFac$tripWeight_2015/OBS_expFac$trip_weight
-
-
-OBS$board_expFac <- OBS_expFac$board_expFac[match(OBS$key, OBS_expFac$key)]
-OBS$trip_expFac <- OBS_expFac$trip_expFac[match(OBS$key, OBS_expFac$key)]
-
-OBS$trip_weight2015 <- OBS$trip_weight * OBS$trip_expFac
-OBS$board_weight2015 <- OBS$weight * OBS$board_expFac
 
 ## Add dummy records for un-surveyed operators
-
 # copy agency name same as operator name [Update wherever necessary]
 unsurveyed_targets$operator <- unsurveyed_targets$Agency_Name
 unsurveyed_targets$operator[unsurveyed_targets$operator=='Amtrak San Joaquins'] <- 'Amtrak San Joaquin'
@@ -645,13 +653,13 @@ colnames(OBS_unsurveyed) <- colnames(OBS)
 
 ## Add known fields to dummy records representing boards/trips from unsurveyed operators
 # existing fields
-OBS_unsurveyed$operator         <- dummy_unsurveyed$operator
-OBS_unsurveyed$technology       <- dummy_unsurveyed$technology
-OBS_unsurveyed$tourPurpose      <- dummy_unsurveyed$tourPurpose
-OBS_unsurveyed$accessMode       <- dummy_unsurveyed$accessMode
-OBS_unsurveyed$autoSuff         <- dummy_unsurveyed$autoSuff
-OBS_unsurveyed$board_weight2015 <- dummy_unsurveyed$board_weight2015
-OBS_unsurveyed$trip_weight2015  <- dummy_unsurveyed$trip_weight2015
+OBS_unsurveyed$operator               <- dummy_unsurveyed$operator
+OBS_unsurveyed$technology             <- dummy_unsurveyed$technology
+OBS_unsurveyed$tourPurpose            <- dummy_unsurveyed$tourPurpose
+OBS_unsurveyed$accessMode             <- dummy_unsurveyed$accessMode
+OBS_unsurveyed$autoSuff               <- dummy_unsurveyed$autoSuff
+OBS_unsurveyed$final_boardWeight_2015 <- dummy_unsurveyed$board_weight2015
+OBS_unsurveyed$final_tripWeight_2015  <- dummy_unsurveyed$trip_weight2015
 
 OBS_unsurveyed$agg_tour_purp    <- OBS_unsurveyed$tourPurpose
 OBS_unsurveyed$tour_access_mode <- OBS_unsurveyed$accessMode
@@ -659,13 +667,21 @@ OBS_unsurveyed$auto_suff        <- OBS_unsurveyed$autoSuff
 OBS_unsurveyed$boardings        <- 1
 
 # recode existing fields for seamleass processing
-OBS_unsurveyed$survey_tech[OBS_unsurveyed$technology=='LB'] <- 'local bus'
-OBS_unsurveyed$survey_tech[OBS_unsurveyed$technology=='EB'] <- 'express bus'
-OBS_unsurveyed$survey_tech[OBS_unsurveyed$technology=='LR'] <- 'light rail'
-OBS_unsurveyed$survey_tech[OBS_unsurveyed$technology=='Ferry'] <- 'ferry'
-OBS_unsurveyed$survey_tech[OBS_unsurveyed$technology=='HR'] <- 'heavy rail'
-OBS_unsurveyed$survey_tech[OBS_unsurveyed$technology=='CR'] <- 'commuter rail'
+OBS_unsurveyed$survey_tech[OBS_unsurveyed$technology=='LB'] <- 'LB'
+OBS_unsurveyed$survey_tech[OBS_unsurveyed$technology=='EB'] <- 'EB'
+OBS_unsurveyed$survey_tech[OBS_unsurveyed$technology=='LR'] <- 'LR'
+OBS_unsurveyed$survey_tech[OBS_unsurveyed$technology=='Ferry'] <- 'FR'
+OBS_unsurveyed$survey_tech[OBS_unsurveyed$technology=='HR'] <- 'HR'
+OBS_unsurveyed$survey_tech[OBS_unsurveyed$technology=='CR'] <- 'CR'
 
+# recode path_line_haul same as survey_tech
+OBS_unsurveyed$path_line_haul <- OBS_unsurveyed$survey_tech
+OBS_unsurveyed$path_line_haul[OBS_unsurveyed$path_line_haul=="commuter rail"] <- "COM"
+OBS_unsurveyed$path_line_haul[OBS_unsurveyed$path_line_haul=="express bus"] <- "EXP"
+OBS_unsurveyed$path_line_haul[OBS_unsurveyed$path_line_haul=="ferry"] <- "LRF"
+OBS_unsurveyed$path_line_haul[OBS_unsurveyed$path_line_haul=="light rail"] <- "LRF"
+OBS_unsurveyed$path_line_haul[OBS_unsurveyed$path_line_haul=="heavy rail"] <- "HVY"
+OBS_unsurveyed$path_line_haul[OBS_unsurveyed$path_line_haul=="local bus"] <- "LOC"
 
 # new fields
 OBS_unsurveyed$surveyed <- 0
@@ -699,18 +715,19 @@ OBS <- rbind(OBS, OBS_unsurveyed)
 ## ----------------------------------------------
 
 #check final expanded boardings by operators
-obs_operator_totals_check <- aggregate(OBS$board_weight2015, by = list(operator = OBS$operator), sum)
+obs_operator_totals_check <- aggregate(OBS$final_boardWeight_2015, by = list(operator = OBS$operator), sum)
 obs_operator_totals_check <- data.frame(obs_operator_totals_check)
 colnames(obs_operator_totals_check) <- c("operator", "board_weight2015")
 obs_operator_totals_check$targetBoardings <- boarding_targets$targets2015[match(obs_operator_totals_check$operator, boarding_targets$operator)]
 obs_operator_totals_check
 
 #check final expanded boardings by technology
-obs_tech_totals_check <- aggregate(OBS$board_weight2015, by = list(technology = OBS$technology), sum)
+obs_tech_totals_check <- aggregate(OBS$final_boardWeight_2015, by = list(technology = OBS$technology), sum)
 obs_tech_totals_check <- data.frame(obs_tech_totals_check)
 colnames(obs_tech_totals_check) <- c("technology", "board_weight2015")
 boarding_targets_tech <- aggregate(boarding_targets$targets2015, by = list(technology = boarding_targets$technology), sum)
 boarding_targets_tech <- data.frame(boarding_targets_tech)
+boarding_targets_tech$technology[boarding_targets_tech$technology=="Ferry"] <- "FR"
 colnames(boarding_targets_tech) <- c("technology", "targets2015")
 obs_tech_totals_check$targetBoardings <- boarding_targets_tech$targets2015[match(obs_tech_totals_check$technology, boarding_targets_tech$technology)]
 obs_tech_totals_check
@@ -723,88 +740,88 @@ OBS$tourtype[OBS$agg_tour_purp %in% c(1,2,3)] <- "Mandatory"
 OBS$tourtype[OBS$agg_tour_purp %in% c(4,5,6)] <- "Non-Mandatory"
 
 
-operator = c("ACE",               "AC TRANSIT",        "AIR BART",         "AMTRAK",              "BART",             
-             "CALTRAIN",          "COUNTY CONNECTION", "FAIRFIELD-SUISUN", "GOLDEN GATE TRANSIT", "GOLDEN GATE FERRY", 
-             "MARIN TRANSIT",     "MUNI",              "NAPA VINE",        "RIO-VISTA",           "SAMTRANS",
-             "SANTA ROSA CITYBUS","SF BAY FERRY",      "SOLTRANS",          "TRI-DELTA",          "UNION CITY",          
-             "WESTCAT",           "VTA",               "OTHER",             "PRIVATE SHUTTLE",  "OTHER AGENCY",        
-             "BLUE GOLD FERRY", "None")
-
-technology = c("commuter rail", "local bus", "local bus", "commuter rail", "heavy rail", 
-               "commuter rail", "local bus", "local bus", "express bus",   "ferry",      
-               "local bus",     "local bus", "local bus", "local bus",     "local bus",
-               "local bus",     "ferry",     "local bus", "local bus",     "local bus",     
-               "local bus",     "local bus", "local bus", "local bus",     "local bus",     
-               "ferry", "None")
-
-opTechXWalk <- data.frame(operator, technology)
-
-OBS$transfer_from_tech <- opTechXWalk$technology[match(OBS$transfer_from, opTechXWalk$operator)]
-OBS$transfer_to_tech <- opTechXWalk$technology[match(OBS$transfer_to, opTechXWalk$operator)]
-
-# Code Mode Set Type
-OBS <- OBS %>%
-  mutate(usedLB = ifelse(first_board_tech=="local bus" 
-                         | transfer_from_tech=="local bus"
-                         | survey_tech=="local bus"
-                         | transfer_to_tech=="local bus"
-                         | last_alight_tech=="local bus",1,0)) %>%
-  mutate(usedCR = ifelse(first_board_tech=="commuter rail" 
-                         | transfer_from_tech=="commuter rail"
-                         | survey_tech=="commuter rail"
-                         | transfer_to_tech=="commuter rail"
-                         | last_alight_tech=="commuter rail",1,0)) %>%
-  mutate(usedHR = ifelse(first_board_tech=="heavy rail" 
-                         | transfer_from_tech=="heavy rail"
-                         | survey_tech=="heavy rail"
-                         | transfer_to_tech=="heavy rail"
-                         | last_alight_tech=="heavy rail",1,0)) %>%
-  mutate(usedEB = ifelse(first_board_tech=="express bus" 
-                         | transfer_from_tech=="express bus"
-                         | survey_tech=="express bus"
-                         | transfer_to_tech=="express bus"
-                         | last_alight_tech=="express bus",1,0)) %>%
-  mutate(usedLR = ifelse(first_board_tech=="light rail" 
-                         | transfer_from_tech=="light rail"
-                         | survey_tech=="light rail"
-                         | transfer_to_tech=="light rail"
-                         | last_alight_tech=="light rail",1,0)) %>%
-  mutate(usedFR = ifelse(first_board_tech=="ferry" 
-                         | transfer_from_tech=="ferry"
-                         | survey_tech=="ferry"
-                         | transfer_to_tech=="ferry"
-                         | last_alight_tech=="ferry",1,0))
-
-# recode used fields based on path line haul code
-OBS$usedLB[is.na(OBS$usedLB)] <- 0
-OBS$usedEB[is.na(OBS$usedEB)] <- 0
-OBS$usedLR[is.na(OBS$usedLR)] <- 0
-OBS$usedFR[is.na(OBS$usedFR)] <- 0
-OBS$usedHR[is.na(OBS$usedHR)] <- 0
-OBS$usedCR[is.na(OBS$usedCR)] <- 0
-
-OBS$usedTotal <- OBS$usedLB+OBS$usedEB+OBS$usedLR+OBS$usedFR+OBS$usedHR+OBS$usedCR
-
-OBS$usedLB[OBS$usedTotal==0 & OBS$path_line_haul=="LOC"] <- 1
-OBS$usedEB[OBS$usedTotal==0 & OBS$path_line_haul=="EXP"] <- 1
-OBS$usedLR[OBS$usedTotal==0 & OBS$path_line_haul=="LRF"] <- 1
-OBS$usedHR[OBS$usedTotal==0 & OBS$path_line_haul=="HVY"] <- 1
-OBS$usedCR[OBS$usedTotal==0 & OBS$path_line_haul=="COM"] <- 1
-
-OBS$usedTotal <- OBS$usedLB+OBS$usedEB+OBS$usedLR+OBS$usedFR+OBS$usedHR+OBS$usedCR
-
-
+# operator = c("ACE",               "AC TRANSIT",        "AIR BART",         "AMTRAK",              "BART",             
+#              "CALTRAIN",          "COUNTY CONNECTION", "FAIRFIELD-SUISUN", "GOLDEN GATE TRANSIT", "GOLDEN GATE FERRY", 
+#              "MARIN TRANSIT",     "MUNI",              "NAPA VINE",        "RIO-VISTA",           "SAMTRANS",
+#              "SANTA ROSA CITYBUS","SF BAY FERRY",      "SOLTRANS",          "TRI-DELTA",          "UNION CITY",          
+#              "WESTCAT",           "VTA",               "OTHER",             "PRIVATE SHUTTLE",  "OTHER AGENCY",        
+#              "BLUE GOLD FERRY", "None")
+# 
+# technology = c("commuter rail", "local bus", "local bus", "commuter rail", "heavy rail", 
+#                "commuter rail", "local bus", "local bus", "express bus",   "ferry",      
+#                "local bus",     "local bus", "local bus", "local bus",     "local bus",
+#                "local bus",     "ferry",     "local bus", "local bus",     "local bus",     
+#                "local bus",     "local bus", "local bus", "local bus",     "local bus",     
+#                "ferry", "None")
+# 
+# opTechXWalk <- data.frame(operator, technology)
+# 
+# OBS$transfer_from_tech <- opTechXWalk$technology[match(OBS$transfer_from, opTechXWalk$operator)]
+# OBS$transfer_to_tech <- opTechXWalk$technology[match(OBS$transfer_to, opTechXWalk$operator)]
+# 
+# # Code Mode Set Type
+# OBS <- OBS %>%
+#   mutate(usedLB = ifelse(first_board_tech=="local bus" 
+#                          | transfer_from_tech=="local bus"
+#                          | survey_tech=="local bus"
+#                          | transfer_to_tech=="local bus"
+#                          | last_alight_tech=="local bus",1,0)) %>%
+#   mutate(usedCR = ifelse(first_board_tech=="commuter rail" 
+#                          | transfer_from_tech=="commuter rail"
+#                          | survey_tech=="commuter rail"
+#                          | transfer_to_tech=="commuter rail"
+#                          | last_alight_tech=="commuter rail",1,0)) %>%
+#   mutate(usedHR = ifelse(first_board_tech=="heavy rail" 
+#                          | transfer_from_tech=="heavy rail"
+#                          | survey_tech=="heavy rail"
+#                          | transfer_to_tech=="heavy rail"
+#                          | last_alight_tech=="heavy rail",1,0)) %>%
+#   mutate(usedEB = ifelse(first_board_tech=="express bus" 
+#                          | transfer_from_tech=="express bus"
+#                          | survey_tech=="express bus"
+#                          | transfer_to_tech=="express bus"
+#                          | last_alight_tech=="express bus",1,0)) %>%
+#   mutate(usedLR = ifelse(first_board_tech=="light rail" 
+#                          | transfer_from_tech=="light rail"
+#                          | survey_tech=="light rail"
+#                          | transfer_to_tech=="light rail"
+#                          | last_alight_tech=="light rail",1,0)) %>%
+#   mutate(usedFR = ifelse(first_board_tech=="ferry" 
+#                          | transfer_from_tech=="ferry"
+#                          | survey_tech=="ferry"
+#                          | transfer_to_tech=="ferry"
+#                          | last_alight_tech=="ferry",1,0))
+# 
+# # recode used fields based on path line haul code
+# OBS$usedLB[is.na(OBS$usedLB)] <- 0
+# OBS$usedEB[is.na(OBS$usedEB)] <- 0
+# OBS$usedLR[is.na(OBS$usedLR)] <- 0
+# OBS$usedFR[is.na(OBS$usedFR)] <- 0
+# OBS$usedHR[is.na(OBS$usedHR)] <- 0
+# OBS$usedCR[is.na(OBS$usedCR)] <- 0
+# 
+# OBS$usedTotal <- OBS$usedLB+OBS$usedEB+OBS$usedLR+OBS$usedFR+OBS$usedHR+OBS$usedCR
+# 
+# OBS$usedLB[OBS$usedTotal==0 & OBS$path_line_haul=="LOC"] <- 1
+# OBS$usedEB[OBS$usedTotal==0 & OBS$path_line_haul=="EXP"] <- 1
+# OBS$usedLR[OBS$usedTotal==0 & OBS$path_line_haul=="LRF"] <- 1
+# OBS$usedHR[OBS$usedTotal==0 & OBS$path_line_haul=="HVY"] <- 1
+# OBS$usedCR[OBS$usedTotal==0 & OBS$path_line_haul=="COM"] <- 1
+# 
+# OBS$usedTotal <- OBS$usedLB+OBS$usedEB+OBS$usedLR+OBS$usedFR+OBS$usedHR+OBS$usedCR
+# 
+# 
 OBS <- OBS %>%
   mutate(setType = ifelse(usedLB==1 & usedCR==0 & usedHR==0 & usedEB==0 & usedLR==0 & usedFR==0, "LOC", "None")) %>%
   mutate(setType = ifelse(usedLB==0 & (usedCR + usedHR + usedEB + usedLR + usedFR > 0), "PRE", setType)) %>%
   mutate(setType = ifelse(usedLB==1 & (usedCR + usedHR + usedEB + usedLR + usedFR > 0), "MIX", setType))
 
-OBS$BEST_MODE <- "LB"
-OBS$BEST_MODE[OBS$usedEB==1] <- "EB"
-OBS$BEST_MODE[OBS$usedFR==1] <- "FR"
-OBS$BEST_MODE[OBS$usedLR==1] <- "LR"
-OBS$BEST_MODE[OBS$usedHR==1] <- "HR"
-OBS$BEST_MODE[OBS$usedCR==1] <- "CR"
+# OBS$BEST_MODE <- "LB"
+# OBS$BEST_MODE[OBS$usedEB==1] <- "EB"
+# OBS$BEST_MODE[OBS$usedFR==1] <- "FR"
+# OBS$BEST_MODE[OBS$usedLR==1] <- "LR"
+# OBS$BEST_MODE[OBS$usedHR==1] <- "HR"
+# OBS$BEST_MODE[OBS$usedCR==1] <- "CR"
 
 
 ### Create all TM2 summaries using data from surveyed operators
@@ -855,53 +872,53 @@ OBS$dest_park[is.na(OBS$dest_park)] <- 0
 
 
 #  % of PNR trips to parking constraint zones
-percentPNR <- sum(OBS$trip_weight2015[OBS$accessType=='pnr' & OBS$dest_park==1 & !is.na(OBS$dest_maz)])/
-  sum(OBS$trip_weight2015[OBS$accessType=='pnr' & !is.na(OBS$dest_maz)]) * 100
+percentPNR <- sum(OBS$final_tripWeight_2015[OBS$accessType=='pnr' & OBS$dest_park==1 & !is.na(OBS$dest_maz)])/
+  sum(OBS$final_tripWeight_2015[OBS$accessType=='pnr' & !is.na(OBS$dest_maz)]) * 100
 cat("Percent of PNR trips to parking constraint zones", percentPNR)
 
 write.table("percentPNR", file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",")
 write.table(percentPNR,   file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 
 #  setType X accessType
-set_access <- xtabs(trip_weight2015~setType+accessType, data = OBS)
+set_access <- xtabs(final_tripWeight_2015~setType+accessType, data = OBS)
 
 write.table("set_access", file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 write.table(set_access,   file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 
 #  Transfers X setType
-transfer_set <- xtabs(trip_weight2015~nTransfers+setType, data = OBS)
+transfer_set <- xtabs(final_tripWeight_2015~nTransfers+setType, data = OBS)
 write.table("transfer_set", file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 write.table(transfer_set,   file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 
 ## Calculate transfer rates by period, accessType and setType
-transfer_data <- aggregate(cbind(board_weight2015, trip_weight2015)~period, data = OBS, sum, na.rm = TRUE)
+transfer_data <- aggregate(cbind(final_boardWeight_2015, final_tripWeight_2015)~period, data = OBS, sum, na.rm = TRUE)
 transfer_data <- transfer_data %>%
-  mutate(transfer_rate = board_weight2015/trip_weight2015) 
+  mutate(transfer_rate = final_boardWeight_2015/final_tripWeight_2015) 
 write.table("transfer_period", file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 write.table(transfer_data,     file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 
 
-transfer_data <- aggregate(cbind(board_weight2015, trip_weight2015)~accessType, data = OBS, sum, na.rm = TRUE)
+transfer_data <- aggregate(cbind(final_boardWeight_2015, final_tripWeight_2015)~accessType, data = OBS, sum, na.rm = TRUE)
 transfer_data <- transfer_data %>%
-  mutate(transfer_rate = board_weight2015/trip_weight2015) 
+  mutate(transfer_rate = final_boardWeight_2015/final_tripWeight_2015) 
 write.table("transfer_accessType", file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 write.table(transfer_data,         file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 
 
-transfer_data <- aggregate(cbind(board_weight2015, trip_weight2015)~setType, data = OBS, sum, na.rm = TRUE)
+transfer_data <- aggregate(cbind(final_boardWeight_2015, final_tripWeight_2015)~setType, data = OBS, sum, na.rm = TRUE)
 transfer_data <- transfer_data %>%
-  mutate(transfer_rate = board_weight2015/trip_weight2015) 
+  mutate(transfer_rate = final_boardWeight_2015/final_tripWeight_2015) 
 write.table("transfer_setType", file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 write.table(transfer_data,      file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 
 #  Transfers X accessType
-transfer_set <- xtabs(trip_weight2015~nTransfers+accessType, data = OBS)
+transfer_set <- xtabs(final_tripWeight_2015~nTransfers+accessType, data = OBS)
 write.table("transfer_set", file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 write.table(transfer_set,   file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 
-transfer_data <- aggregate(cbind(board_weight2015, trip_weight2015)~accessType + setType, data = OBS, sum, na.rm = TRUE)
+transfer_data <- aggregate(cbind(final_boardWeight_2015, final_tripWeight_2015)~accessType + setType, data = OBS, sum, na.rm = TRUE)
 transfer_data <- transfer_data %>%
-  mutate(transfer_rate = board_weight2015/trip_weight2015) 
+  mutate(transfer_rate = final_boardWeight_2015/final_tripWeight_2015) 
 write.table("transfer_accessType_setType", file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 write.table(transfer_data,                 file.path(OutDir, "OBS_TransitSummaries.csv"), sep = ",", append = T)
 
@@ -916,7 +933,7 @@ distBinCat10 <- data.frame(distbin10 = seq(1,21, by=1))
 
 
 # compute TLFDs by district and total
-tlfd_transit <- ddply(OBS[!is.na(OBS$distbin),c("accessType", "distbin", "trip_weight2015")], c("accessType", "distbin"), summarise, transit = sum(trip_weight2015))
+tlfd_transit <- ddply(OBS[!is.na(OBS$distbin),c("accessType", "distbin", "final_tripWeight_2015")], c("accessType", "distbin"), summarise, transit = sum(final_tripWeight_2015))
 tlfd_transit <- cast(tlfd_transit, distbin~accessType, value = "transit", sum)
 tlfd_transit$Total <- rowSums(tlfd_transit[,!colnames(tlfd_transit) %in% c("distbin")])
 tlfd_transit_df <- merge(x = distBinCat, y = tlfd_transit, by = "distbin", all.x = TRUE)
@@ -925,7 +942,9 @@ tlfd_transit_df[is.na(tlfd_transit_df)] <- 0
 write.csv(tlfd_transit_df, file.path(OutDir, "transitTLFD.csv"), row.names = F)
 
 # compute TLFDs by district and total for BEST_MODE == CR
-tlfd_transit <- ddply(OBS[!is.na(OBS$distbin) & OBS$BEST_MODE=="CR",c("accessType", "distbin", "trip_weight2015")], c("accessType", "distbin"), summarise, transit = sum(trip_weight2015))
+OBS$distbin <- cut(OBS$SKIMDIST, breaks = c(seq(0,75, by=1), 9999), labels = F, right = F)
+distBinCat <- data.frame(distbin = seq(1,76, by=1))
+tlfd_transit <- ddply(OBS[!is.na(OBS$distbin) & OBS$BEST_MODE=="CR",c("accessType", "distbin", "final_tripWeight_2015")], c("accessType", "distbin"), summarise, transit = sum(final_tripWeight_2015))
 tlfd_transit <- cast(tlfd_transit, distbin~accessType, value = "transit", sum)
 tlfd_transit$Total <- rowSums(tlfd_transit[,!colnames(tlfd_transit) %in% c("distbin")])
 tlfd_transit_df <- merge(x = distBinCat, y = tlfd_transit, by = "distbin", all.x = TRUE)
@@ -934,7 +953,7 @@ tlfd_transit_df[is.na(tlfd_transit_df)] <- 0
 write.csv(tlfd_transit_df, file.path(OutDir, "transitTLFD_CR.csv"), row.names = F)
 
 # compute TLFDs by 10ths of mile
-tlfd_transit <- ddply(OBS[!is.na(OBS$distbin10),c("accessType", "distbin10", "trip_weight2015")], c("accessType", "distbin10"), summarise, transit = sum(trip_weight2015))
+tlfd_transit <- ddply(OBS[!is.na(OBS$distbin10),c("accessType", "distbin10", "final_tripWeight_2015")], c("accessType", "distbin10"), summarise, transit = sum(final_tripWeight_2015))
 tlfd_transit <- cast(tlfd_transit, distbin10~accessType, value = "transit", sum)
 tlfd_transit$Total <- rowSums(tlfd_transit[,!colnames(tlfd_transit) %in% c("distbin10")])
 tlfd_transit_df <- merge(x = distBinCat10, y = tlfd_transit, by = "distbin10", all.x = TRUE)
@@ -948,9 +967,9 @@ write.csv(tlfd_transit_df, file.path(OutDir, "transitTLFD10.csv"), row.names = F
 trips_transit <- OBS[OBS$agg_tour_purp>0,]
 trips_transit <- trips_transit[!is.na(trips_transit$OCOUNTY) & !is.na(trips_transit$DCOUNTY), ]
 
-trips_transit <- data.table(trips_transit[,c("OCOUNTY", "DCOUNTY", "accessType", "tourtype", "trip_weight2015")])
+trips_transit <- data.table(trips_transit[,c("OCOUNTY", "DCOUNTY", "accessType", "tourtype", "final_tripWeight_2015")])
 
-trips_transit_summary <- trips_transit[, .(count = sum(trip_weight2015)), by = list(OCOUNTY, DCOUNTY, accessType, tourtype)]
+trips_transit_summary <- trips_transit[, .(count = sum(final_tripWeight_2015)), by = list(OCOUNTY, DCOUNTY, accessType, tourtype)]
 trips_transit_summary_total <- data.table(trips_transit_summary[,c("OCOUNTY", "DCOUNTY", "accessType", "count")])
 trips_transit_summary_total <- trips_transit_summary_total[, (tot = sum(count)), by = list(OCOUNTY, DCOUNTY, accessType)]
 trips_transit_summary_total$tourtype <- "Total"
@@ -972,9 +991,9 @@ write.table(trips_transit_summary, file.path(OutDir, "trips_transit_summary.csv"
 trips_transit <- OBS[OBS$agg_tour_purp>0,]
 trips_transit <- trips_transit[!is.na(trips_transit$ODISTRICT) & !is.na(trips_transit$DDISTRICT), ]
 
-trips_transit <- data.table(trips_transit[,c("ODISTRICT", "DDISTRICT", "accessType", "tourtype", "trip_weight2015")])
+trips_transit <- data.table(trips_transit[,c("ODISTRICT", "DDISTRICT", "accessType", "tourtype", "final_tripWeight_2015")])
 
-trips_transit_summary <- trips_transit[, .(count = sum(trip_weight2015)), by = list(ODISTRICT, DDISTRICT, accessType, tourtype)]
+trips_transit_summary <- trips_transit[, .(count = sum(final_tripWeight_2015)), by = list(ODISTRICT, DDISTRICT, accessType, tourtype)]
 trips_transit_summary_total <- data.table(trips_transit_summary[,c("ODISTRICT", "DDISTRICT", "accessType", "count")])
 trips_transit_summary_total <- trips_transit_summary_total[, (tot = sum(count)), by = list(ODISTRICT, DDISTRICT, accessType)]
 trips_transit_summary_total$tourtype <- "Total"
@@ -996,15 +1015,15 @@ tripsLOS <- OBS
 names(tripsLOS)[names(tripsLOS)=="ODISTRICT"] <- "OSDIST"
 names(tripsLOS)[names(tripsLOS)=="DDISTRICT"] <- "DSDIST"
 
-tot_trips <- sum(tripsLOS$trip_weight2015)
+tot_trips <- sum(tripsLOS$final_tripWeight_2015)
 
 tripsLOS <- tripsLOS[!is.na(tripsLOS$OSDIST) & !is.na(tripsLOS$DSDIST),]
 
-dt_tripsLOS <- data.table(tripsLOS[,c("OSDIST","DSDIST","access_mode","BEST_MODE","usedLB","usedEB","usedFR","usedLR","usedHR","usedCR", "trip_weight2015")])
+dt_tripsLOS <- data.table(tripsLOS[,c("OSDIST","DSDIST","access_mode","BEST_MODE","usedLB","usedEB","usedFR","usedLR","usedHR","usedCR", "final_tripWeight_2015")])
 
 # line haul mode summary
 
-trips_transit_summary_best <- dt_tripsLOS[, .(count = sum(trip_weight2015)), by = list(OSDIST, DSDIST, access_mode, BEST_MODE)]
+trips_transit_summary_best <- dt_tripsLOS[, .(count = sum(final_tripWeight_2015)), by = list(OSDIST, DSDIST, access_mode, BEST_MODE)]
 trips_transit_summary_best_total <- data.table(trips_transit_summary_best[,c("OSDIST", "DSDIST", "access_mode", "count")])
 trips_transit_summary_best_total <- trips_transit_summary_best_total[, (tot = sum(count)), by = list(OSDIST, DSDIST, access_mode)]
 trips_transit_summary_best_total$BEST_MODE <- "Total"
@@ -1021,17 +1040,17 @@ write.table(trips_transit_summary_best, file.path(OutDir,"trips_transit_summary_
 
 # used mode summary
 
-trips_transit_summary_LB <- dt_tripsLOS[, .(freq = sum(usedLB*trip_weight2015)), by = list(OSDIST, DSDIST, access_mode)]
+trips_transit_summary_LB <- dt_tripsLOS[, .(freq = sum(usedLB*final_tripWeight_2015)), by = list(OSDIST, DSDIST, access_mode)]
 trips_transit_summary_LB$used_mode <- "LB"
-trips_transit_summary_EB <- dt_tripsLOS[, .(freq = sum(usedEB*trip_weight2015)), by = list(OSDIST, DSDIST, access_mode)]
+trips_transit_summary_EB <- dt_tripsLOS[, .(freq = sum(usedEB*final_tripWeight_2015)), by = list(OSDIST, DSDIST, access_mode)]
 trips_transit_summary_EB$used_mode <- "EB"
-trips_transit_summary_FR <- dt_tripsLOS[, .(freq = sum(usedFR*trip_weight2015)), by = list(OSDIST, DSDIST, access_mode)]
+trips_transit_summary_FR <- dt_tripsLOS[, .(freq = sum(usedFR*final_tripWeight_2015)), by = list(OSDIST, DSDIST, access_mode)]
 trips_transit_summary_FR$used_mode <- "FR"
-trips_transit_summary_LR <- dt_tripsLOS[, .(freq = sum(usedLR*trip_weight2015)), by = list(OSDIST, DSDIST, access_mode)]
+trips_transit_summary_LR <- dt_tripsLOS[, .(freq = sum(usedLR*final_tripWeight_2015)), by = list(OSDIST, DSDIST, access_mode)]
 trips_transit_summary_LR$used_mode <- "LR"
-trips_transit_summary_HR <- dt_tripsLOS[, .(freq = sum(usedHR*trip_weight2015)), by = list(OSDIST, DSDIST, access_mode)]
+trips_transit_summary_HR <- dt_tripsLOS[, .(freq = sum(usedHR*final_tripWeight_2015)), by = list(OSDIST, DSDIST, access_mode)]
 trips_transit_summary_HR$used_mode <- "HR"
-trips_transit_summary_CR <- dt_tripsLOS[, .(freq = sum(usedCR*trip_weight2015)), by = list(OSDIST, DSDIST, access_mode)]
+trips_transit_summary_CR <- dt_tripsLOS[, .(freq = sum(usedCR*final_tripWeight_2015)), by = list(OSDIST, DSDIST, access_mode)]
 trips_transit_summary_CR$used_mode <- "CR"
 
 trips_transit_summary_used <- rbind(trips_transit_summary_LB, 
@@ -1080,9 +1099,9 @@ trips_transit$ODISTRICT <- trips_transit$ODISTRICT_PA
 trips_transit$DDISTRICT <- trips_transit$DDISTRICT_PA
 
 trips_transit <- trips_transit[!is.na(trips_transit$ODISTRICT) & !is.na(trips_transit$DDISTRICT), ]
-trips_transit <- data.table(trips_transit[,c("ODISTRICT", "DDISTRICT", "accessType", "tourtype", "trip_weight2015")])
+trips_transit <- data.table(trips_transit[,c("ODISTRICT", "DDISTRICT", "accessType", "tourtype", "final_tripWeight_2015")])
 
-trips_transit_summary <- trips_transit[, .(count = sum(trip_weight2015)), by = list(ODISTRICT, DDISTRICT, accessType, tourtype)]
+trips_transit_summary <- trips_transit[, .(count = sum(final_tripWeight_2015)), by = list(ODISTRICT, DDISTRICT, accessType, tourtype)]
 trips_transit_summary_total <- data.table(trips_transit_summary[,c("ODISTRICT", "DDISTRICT", "accessType", "count")])
 trips_transit_summary_total <- trips_transit_summary_total[, (tot = sum(count)), by = list(ODISTRICT, DDISTRICT, accessType)]
 trips_transit_summary_total$tourtype <- "Total"
@@ -1115,12 +1134,12 @@ tripsLOS$DDISTRICT <- tripsLOS$DDISTRICT_PA
 names(tripsLOS)[names(tripsLOS)=="ODISTRICT"] <- "OSDIST"
 names(tripsLOS)[names(tripsLOS)=="DDISTRICT"] <- "DSDIST"
 
-tot_trips <- sum(tripsLOS$trip_weight2015)
+tot_trips <- sum(tripsLOS$final_tripWeight_2015)
 tripsLOS <- tripsLOS[!is.na(tripsLOS$OSDIST) & !is.na(tripsLOS$DSDIST),]
-dt_tripsLOS <- data.table(tripsLOS[,c("OSDIST","DSDIST","access_mode","BEST_MODE","usedLB","usedEB","usedFR","usedLR","usedHR","usedCR", "trip_weight2015")])
+dt_tripsLOS <- data.table(tripsLOS[,c("OSDIST","DSDIST","access_mode","BEST_MODE","usedLB","usedEB","usedFR","usedLR","usedHR","usedCR", "final_tripWeight_2015")])
 
 # line haul mode summary
-trips_transit_summary_best <- dt_tripsLOS[, .(count = sum(trip_weight2015)), by = list(OSDIST, DSDIST, access_mode, BEST_MODE)]
+trips_transit_summary_best <- dt_tripsLOS[, .(count = sum(final_tripWeight_2015)), by = list(OSDIST, DSDIST, access_mode, BEST_MODE)]
 trips_transit_summary_best_total <- data.table(trips_transit_summary_best[,c("OSDIST", "DSDIST", "access_mode", "count")])
 trips_transit_summary_best_total <- trips_transit_summary_best_total[, (tot = sum(count)), by = list(OSDIST, DSDIST, access_mode)]
 trips_transit_summary_best_total$BEST_MODE <- "Total"
@@ -1137,17 +1156,17 @@ write.table(trips_transit_summary_best, file.path(OutDir,"trips_transit_summary_
 
 # used mode summary
 
-trips_transit_summary_LB <- dt_tripsLOS[, .(freq = sum(usedLB*trip_weight2015)), by = list(OSDIST, DSDIST, access_mode)]
+trips_transit_summary_LB <- dt_tripsLOS[, .(freq = sum(usedLB*final_tripWeight_2015)), by = list(OSDIST, DSDIST, access_mode)]
 trips_transit_summary_LB$used_mode <- "LB"
-trips_transit_summary_EB <- dt_tripsLOS[, .(freq = sum(usedEB*trip_weight2015)), by = list(OSDIST, DSDIST, access_mode)]
+trips_transit_summary_EB <- dt_tripsLOS[, .(freq = sum(usedEB*final_tripWeight_2015)), by = list(OSDIST, DSDIST, access_mode)]
 trips_transit_summary_EB$used_mode <- "EB"
-trips_transit_summary_FR <- dt_tripsLOS[, .(freq = sum(usedFR*trip_weight2015)), by = list(OSDIST, DSDIST, access_mode)]
+trips_transit_summary_FR <- dt_tripsLOS[, .(freq = sum(usedFR*final_tripWeight_2015)), by = list(OSDIST, DSDIST, access_mode)]
 trips_transit_summary_FR$used_mode <- "FR"
-trips_transit_summary_LR <- dt_tripsLOS[, .(freq = sum(usedLR*trip_weight2015)), by = list(OSDIST, DSDIST, access_mode)]
+trips_transit_summary_LR <- dt_tripsLOS[, .(freq = sum(usedLR*final_tripWeight_2015)), by = list(OSDIST, DSDIST, access_mode)]
 trips_transit_summary_LR$used_mode <- "LR"
-trips_transit_summary_HR <- dt_tripsLOS[, .(freq = sum(usedHR*trip_weight2015)), by = list(OSDIST, DSDIST, access_mode)]
+trips_transit_summary_HR <- dt_tripsLOS[, .(freq = sum(usedHR*final_tripWeight_2015)), by = list(OSDIST, DSDIST, access_mode)]
 trips_transit_summary_HR$used_mode <- "HR"
-trips_transit_summary_CR <- dt_tripsLOS[, .(freq = sum(usedCR*trip_weight2015)), by = list(OSDIST, DSDIST, access_mode)]
+trips_transit_summary_CR <- dt_tripsLOS[, .(freq = sum(usedCR*final_tripWeight_2015)), by = list(OSDIST, DSDIST, access_mode)]
 trips_transit_summary_CR$used_mode <- "CR"
 
 trips_transit_summary_used <- rbind(trips_transit_summary_LB, 
@@ -1174,15 +1193,22 @@ trips_transit_summary_used <- trips_transit_summary_used[,c("OSDIST","DSDIST","a
 write.table(trips_transit_summary_used, file.path(OutDir,"trips_transit_summary_used_S_PA.csv"), sep = ",", row.names = F)
 
 
-
-# Export weighted and processed OBS
-#####################################
-
 # remove trips with missing purose
 OBS <- OBS_original
 OBS <- OBS[OBS$agg_tour_purp>0,]
 
-# Fields "trip_weight2015" and "board_weight2015" represents weights matching 2015 boardings
+# Export mode choice targets for TM1.5
+#########################################
+all_collapsed_technology_trips_tm15 <- data.frame(xtabs(final_tripWeight_2015~BEST_MODE+tourPurpose+accessMode+autoSuff, data = OBS))
+colnames(all_collapsed_technology_trips_tm15) <- colnames(all_collapsed_technology_trips)
+
+write.csv(all_collapsed_technology_trips_tm15, file.path(OutDir, "transit_trip_targets_technology_tm1.5.csv"), row.names = FALSE)
+
+# Export weighted and processed OBS
+#####################################
+
+
+# Fields "final_tripWeight_2015" and "final_boardWeight_2015" represents weights matching 2015 boardings
 # data for surveyed and unsurveyed operators
 write.csv(OBS, paste(OutDir_TM1.5,"OBS_processed_weighted.csv", sep = "//"), row.names = F)
 
