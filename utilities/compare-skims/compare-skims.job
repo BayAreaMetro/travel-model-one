@@ -112,6 +112,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_WLK", "WAIT" , MI.3.WAIT,   MI.13.WAIT,  (MI.13.WAIT  - MI.3.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_WLK", "WAUX" , MI.3.WAUX,   MI.13.WAUX,  (MI.13.WAUX  - MI.3.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_WLK", "DTIME", MI.3.DTIME,  MI.13.DTIME, (MI.13.DTIME - MI.3.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_WLK", "BOARDS",MI.3.BOARDS, MI.13.BOARDS,(MI.13.BOARDS- MI.3.BOARDS)
             endif
   
             if ((MI.4.IVT > 0) || (MI.14.IVT > 0))
@@ -120,6 +121,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_COM_WLK", "WAIT" , MI.4.WAIT,   MI.14.WAIT,  (MI.14.WAIT  - MI.4.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_COM_WLK", "WAUX" , MI.4.WAUX,   MI.14.WAUX,  (MI.14.WAUX  - MI.4.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_COM_WLK", "DTIME", MI.4.DTIME,  MI.14.DTIME, (MI.14.DTIME - MI.4.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_COM_WLK", "BOARDS",MI.4.BOARDS, MI.14.BOARDS,(MI.14.BOARDS- MI.4.BOARDS)
             endif
   
             if ((MI.5.IVT > 0) || (MI.15.IVT > 0))
@@ -128,6 +130,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_DRV", "WAIT" , MI.5.WAIT,   MI.15.WAIT,  (MI.15.WAIT  - MI.5.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_DRV", "WAUX" , MI.5.WAUX,   MI.15.WAUX,  (MI.15.WAUX  - MI.5.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_DRV", "DTIME", MI.5.DTIME,  MI.15.DTIME, (MI.15.DTIME - MI.5.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_COM_DRV", "BOARDS",MI.5.BOARDS, MI.15.BOARDS,(MI.15.BOARDS- MI.5.BOARDS)
             endif
   
             if ((MI.6.IVT > 0) || (MI.16.IVT > 0))
@@ -136,6 +139,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_WLK", "WAIT" , MI.6.WAIT,   MI.16.WAIT,  (MI.16.WAIT  - MI.6.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_WLK", "WAUX" , MI.6.WAUX,   MI.16.WAUX,  (MI.16.WAUX  - MI.6.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_WLK", "DTIME", MI.6.DTIME,  MI.16.DTIME, (MI.16.DTIME - MI.6.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_WLK", "BOARDS",MI.6.BOARDS, MI.16.BOARDS,(MI.16.BOARDS- MI.6.BOARDS)
             endif
   
             if ((MI.7.IVT > 0) || (MI.17.IVT > 0))
@@ -144,6 +148,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_HVY_WLK", "WAIT" , MI.7.WAIT,   MI.17.WAIT,  (MI.17.WAIT  - MI.7.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_HVY_WLK", "WAUX" , MI.7.WAUX,   MI.17.WAUX,  (MI.17.WAUX  - MI.7.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_HVY_WLK", "DTIME", MI.7.DTIME,  MI.17.DTIME, (MI.17.DTIME - MI.7.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_HVY_WLK", "BOARDS",MI.7.BOARDS, MI.17.BOARDS,(MI.17.BOARDS- MI.7.BOARDS)
             endif
   
             if ((MI.8.IVT > 0) || (MI.18.IVT > 0))
@@ -152,6 +157,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_DRV", "WAIT" , MI.8.WAIT,   MI.18.WAIT,  (MI.18.WAIT  - MI.8.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_DRV", "WAUX" , MI.8.WAUX,   MI.18.WAUX,  (MI.18.WAUX  - MI.8.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_DRV", "DTIME", MI.8.DTIME,  MI.18.DTIME, (MI.18.DTIME - MI.8.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_HVY_DRV", "BOARDS",MI.8.BOARDS, MI.18.BOARDS,(MI.18.BOARDS- MI.8.BOARDS)
             endif
 
           ENDIF ; J < 1454
@@ -202,6 +208,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_WLK", "WAIT" , MI.1.WAIT,   MI.11.WAIT,  (MI.11.WAIT  - MI.1.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_WLK", "WAUX" , MI.1.WAUX,   MI.11.WAUX,  (MI.11.WAUX  - MI.1.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_WLK", "DTIME", MI.1.DTIME,  MI.11.DTIME, (MI.11.DTIME - MI.1.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_WLK", "BOARDS",MI.1.BOARDS, MI.11.BOARDS,(MI.11.BOARDS- MI.1.BOARDS)
             endif
 
             if ((MI.2.IVT > 0) || (MI.12.IVT > 0))
@@ -210,6 +217,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_EXP_WLK", "WAIT" , MI.2.WAIT,   MI.12.WAIT,  (MI.12.WAIT  - MI.2.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_EXP_WLK", "WAUX" , MI.2.WAUX,   MI.12.WAUX,  (MI.12.WAUX  - MI.2.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_EXP_WLK", "DTIME", MI.2.DTIME,  MI.12.DTIME, (MI.12.DTIME - MI.2.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_EXP_WLK", "BOARDS",MI.2.BOARDS, MI.12.BOARDS,(MI.12.BOARDS- MI.2.BOARDS)
             endif
   
             if ((MI.3.IVT > 0) || (MI.13.IVT > 0))
@@ -218,6 +226,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_DRV", "WAIT" , MI.3.WAIT,   MI.13.WAIT,  (MI.13.WAIT  - MI.3.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_DRV", "WAUX" , MI.3.WAUX,   MI.13.WAUX,  (MI.13.WAUX  - MI.3.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_DRV", "DTIME", MI.3.DTIME,  MI.13.DTIME, (MI.13.DTIME - MI.3.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_EXP_DRV", "BOARDS",MI.3.BOARDS, MI.13.BOARDS,(MI.13.BOARDS- MI.3.BOARDS)
             endif
   
             if ((MI.4.IVT > 0) || (MI.14.IVT > 0))
@@ -226,6 +235,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_WLK", "WAIT" , MI.4.WAIT,   MI.14.WAIT,  (MI.14.WAIT  - MI.4.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_WLK", "WAUX" , MI.4.WAUX,   MI.14.WAUX,  (MI.14.WAUX  - MI.4.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_WLK", "DTIME", MI.4.DTIME,  MI.14.DTIME, (MI.14.DTIME - MI.4.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_WLK", "BOARDS",MI.4.BOARDS, MI.14.BOARDS,(MI.14.BOARDS- MI.4.BOARDS)
             endif
   
             if ((MI.5.IVT > 0) || (MI.15.IVT > 0))
@@ -234,6 +244,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LRF_WLK", "WAIT" , MI.5.WAIT,   MI.15.WAIT,  (MI.15.WAIT  - MI.5.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LRF_WLK", "WAUX" , MI.5.WAUX,   MI.15.WAUX,  (MI.15.WAUX  - MI.5.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LRF_WLK", "DTIME", MI.5.DTIME,  MI.15.DTIME, (MI.15.DTIME - MI.5.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LRF_WLK", "BOARDS",MI.5.BOARDS, MI.15.BOARDS,(MI.15.BOARDS- MI.5.BOARDS)
             endif
   
             if ((MI.6.IVT > 0) || (MI.16.IVT > 0))
@@ -242,6 +253,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_DRV", "WAIT" , MI.6.WAIT,   MI.16.WAIT,  (MI.16.WAIT  - MI.6.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_DRV", "WAUX" , MI.6.WAUX,   MI.16.WAUX,  (MI.16.WAUX  - MI.6.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_DRV", "DTIME", MI.6.DTIME,  MI.16.DTIME, (MI.16.DTIME - MI.6.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LRF_DRV", "BOARDS",MI.6.BOARDS, MI.16.BOARDS,(MI.16.BOARDS- MI.6.BOARDS)
             endif
   
             if ((MI.7.IVT > 0) || (MI.17.IVT > 0))
@@ -250,6 +262,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_WLK", "WAIT" , MI.7.WAIT,   MI.17.WAIT,  (MI.17.WAIT  - MI.7.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_WLK", "WAUX" , MI.7.WAUX,   MI.17.WAUX,  (MI.17.WAUX  - MI.7.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_WLK", "DTIME", MI.7.DTIME,  MI.17.DTIME, (MI.17.DTIME - MI.7.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_WLK", "BOARDS",MI.7.BOARDS, MI.17.BOARDS,(MI.17.BOARDS- MI.7.BOARDS)
             endif
   
             if ((MI.8.IVT > 0) || (MI.18.IVT > 0))
@@ -258,6 +271,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LOC_WLK", "WAIT" , MI.8.WAIT,   MI.18.WAIT,  (MI.18.WAIT  - MI.8.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LOC_WLK", "WAUX" , MI.8.WAUX,   MI.18.WAUX,  (MI.18.WAUX  - MI.8.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LOC_WLK", "DTIME", MI.8.DTIME,  MI.18.DTIME, (MI.18.DTIME - MI.8.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "DRV_LOC_WLK", "BOARDS",MI.8.BOARDS, MI.18.BOARDS,(MI.18.BOARDS- MI.8.BOARDS)
             endif
 
             if ((MI.9.IVT > 0) || (MI.19.IVT > 0))
@@ -266,6 +280,7 @@ loop period = 1, 5
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_DRV, "WAIT" , MI.9.WAIT,   MI.19.WAIT,  (MI.19.WAIT  - MI.9.WAIT)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_DRV, "WAUX" , MI.9.WAUX,   MI.19.WAUX,  (MI.19.WAUX  - MI.9.WAUX)
               print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_DRV, "DTIME", MI.9.DTIME,  MI.19.DTIME, (MI.19.DTIME - MI.9.DTIME)
+              print CSV=t PRINTO=1 LIST=i(8.0),j(8.0), "@token_period@", "WLK_LOC_DRV, "BOARDS",MI.9.BOARDS, MI.19.BOARDS,(MI.19.BOARDS- MI.9.BOARDS)
             endif
           ENDIF ; J < 1454
         ENDJLOOP
