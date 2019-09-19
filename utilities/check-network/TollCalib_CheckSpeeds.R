@@ -26,7 +26,7 @@ PROJECT_DIR           <- Sys.getenv("PROJECT_DIR")
 PROJECT_DIR           <- gsub("\\\\","/",PROJECT_DIR) # switch slashes around
 
 # for the loaded network, use different path for full runs and extracted output folders
-if (dir.exists(file.path(PROJECT_DIR, "hwy"))) {
+if (dir.exists(file.path(PROJECT_DIR, "CTRAMP"))) {
     LOADED_NETWORK_CSV    <- file.path(PROJECT_DIR, "hwy", paste0("iter",ITER),"avgload5period.csv")
 } else {
     LOADED_NETWORK_CSV    <- file.path(PROJECT_DIR, "OUTPUT","avgload5period.csv")
@@ -37,7 +37,7 @@ UNLOADED_NETWORK_DBF  <- gsub("\\\\","/",UNLOADED_NETWORK_DBF) # switch slashes 
 
 
 # for the toll file, use different path for full runs and extracted output folders
-if (dir.exists(file.path(PROJECT_DIR, "hwy"))) {
+if (dir.exists(file.path(PROJECT_DIR, "CTRAMP"))) {
     TOLLS_CSV             <- file.path(PROJECT_DIR, "hwy", "tolls.csv")
 } else {
     TOLLS_CSV             <- file.path(PROJECT_DIR, "INPUT", "hwy", "tolls.csv")
@@ -297,7 +297,7 @@ bridge_el_tolls_df <- bind_rows(bridge_tolls_df, tolls_new_df)
 
 
 # if it is running on a full model run
-if (dir.exists(file.path(PROJECT_DIR, "hwy"))) {
+if (dir.exists(file.path(PROJECT_DIR, "CTRAMP"))) {
 
     # check if the folder "tollcalib_iter" exists, if not create one
     if (dir.exists(file.path(PROJECT_DIR, "tollcalib_iter"))) {
