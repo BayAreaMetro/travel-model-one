@@ -12,14 +12,14 @@
   </preferences>
   <style-theme name='clean' />
   <datasources>
-    <datasource caption='PerTripTravelTime Extract' inline='true' name='C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde' version='18.1'>
+    <datasource caption='PerTripTravelTime Extract' inline='true' name='PerTripTravelTime.tde' version='18.1'>
       <connection class='federated'>
         <named-connections>
-          <named-connection caption='PerTripTravelTime Extract' name='C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tdeleaf'>
-            <connection authentication='auth-none' author-locale='en_US' class='hyper' db-format='dataengine' dbname='M:/Application/Model One/RTP2021/Horizon_Round2/D4_FreeShortTrips/D4_ShortTrip_Summaries/PerTripTravelTime.tde' default-settings='yes' sslmode='' username='tableau_internal_user' />
+          <named-connection caption='PerTripTravelTime Extract' name='PerTripTravelTime.tdeleaf'>
+            <connection authentication='auth-none' author-locale='en_US' class='hyper' db-format='dataengine' dbname='PerTripTravelTime.tde' default-settings='yes' sslmode='' username='tableau_internal_user' />
           </named-connection>
         </named-connections>
-        <relation connection='C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tdeleaf' name='Extract (Extract.Extract)' table='[Extract].[Extract]' type='table' />
+        <relation connection='PerTripTravelTime.tdeleaf' name='Extract (Extract.Extract)' table='[Extract].[Extract]' type='table' />
         <metadata-records>
           <metadata-record class='column'>
             <remote-name>incQ</remote-name>
@@ -150,7 +150,7 @@
       <aliases enabled='yes' />
       <column datatype='string' name='[:Measure Names]' role='dimension' type='nominal'>
         <aliases>
-          <alias key='&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[pcto:sum:freq:qk]&quot;' value='Share' />
+          <alias key='&quot;[PerTripTravelTime.tde].[pcto:sum:freq:qk]&quot;' value='Share' />
         </aliases>
       </column>
       <column caption='Simple Travel Mode' datatype='string' name='[Calculation_0180919155350154]' role='dimension' type='nominal'>
@@ -214,9 +214,9 @@
       <table>
         <view>
           <datasources>
-            <datasource caption='PerTripTravelTime Extract' name='C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde' />
+            <datasource caption='PerTripTravelTime Extract' name='PerTripTravelTime.tde' />
           </datasources>
-          <datasource-dependencies datasource='C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde'>
+          <datasource-dependencies datasource='PerTripTravelTime.tde'>
             <column caption='Detail' datatype='string' name='[Calculation_1500919153120996]' role='dimension' type='nominal'>
               <calculation class='tableau' formula='IF [trip_mode]=1 Or [trip_mode]=3 Or [trip_mode]=5 THEN&#13;&#10; &apos;-- free&apos;&#13;&#10;ELSEIF [trip_mode]=2 Or [trip_mode]=4 Or [trip_mode]=6 THEN&#13;&#10; &apos;-- pay&apos;&#13;&#10;ELSEIF [trip_mode]=9 Or [trip_mode]=14 THEN&#13;&#10; &apos;-- local bus&apos;&#13;&#10;ELSEIF [trip_mode]=10 or [trip_mode]=15 THEN&#13;&#10; &apos;-- light rail/ferry&apos;&#13;&#10;ELSEIF [trip_mode]=11 or [trip_mode]=16 THEN&#13;&#10; &apos;-- express bus&apos;&#13;&#10;ELSEIF [trip_mode]=12 or [trip_mode]=17 THEN&#13;&#10; &apos;-- heavy rail&apos;&#13;&#10;ELSEIF [trip_mode]=13 or [trip_mode]=18 THEN&#13;&#10; &apos;-- commuter rail&apos;&#13;&#10;ELSE&#13;&#10; &apos;&apos;&#13;&#10;END' scope-isolation='false' />
             </column>
@@ -241,20 +241,20 @@
             <column datatype='real' name='[trvlTime]' role='measure' type='quantitative' />
             <column-instance column='[Calculation_3100919153931806]' derivation='User' name='[usr:Calculation_3100919153931806:qk]' pivot='key' type='quantitative' />
           </datasource-dependencies>
-          <filter class='categorical' column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]'>
+          <filter class='categorical' column='[PerTripTravelTime.tde].[:Measure Names]'>
             <groupfilter function='union' user:op='manual'>
-              <groupfilter function='member' level='[:Measure Names]' member='&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[sum:freq:qk]&quot;' />
-              <groupfilter function='member' level='[:Measure Names]' member='&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[pcto:sum:freq:qk]&quot;' />
-              <groupfilter function='member' level='[:Measure Names]' member='&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[PerTripTravelTime.tde].[sum:freq:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[PerTripTravelTime.tde].[pcto:sum:freq:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]&quot;' />
             </groupfilter>
           </filter>
-          <manual-sort column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]' direction='ASC'>
+          <manual-sort column='[PerTripTravelTime.tde].[:Measure Names]' direction='ASC'>
             <dictionary>
-              <bucket>&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[sum:freq:qk]&quot;</bucket>
-              <bucket>&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[pcto:sum:freq:qk]&quot;</bucket>
+              <bucket>&quot;[PerTripTravelTime.tde].[sum:freq:qk]&quot;</bucket>
+              <bucket>&quot;[PerTripTravelTime.tde].[pcto:sum:freq:qk]&quot;</bucket>
             </dictionary>
           </manual-sort>
-          <manual-sort column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]' direction='ASC'>
+          <manual-sort column='[PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]' direction='ASC'>
             <dictionary>
               <bucket>&quot;Drive alone&quot;</bucket>
               <bucket>&quot;Shared ride 2&quot;</bucket>
@@ -266,7 +266,7 @@
               <bucket>%all%</bucket>
             </dictionary>
           </manual-sort>
-          <manual-sort column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]' direction='ASC'>
+          <manual-sort column='[PerTripTravelTime.tde].[none:incQ_label:nk]' direction='ASC'>
             <dictionary>
               <bucket>&quot;Less than $30k&quot;</bucket>
               <bucket>&quot;$30k to $60k&quot;</bucket>
@@ -276,26 +276,26 @@
             </dictionary>
           </manual-sort>
           <slices>
-            <column>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]</column>
+            <column>[PerTripTravelTime.tde].[:Measure Names]</column>
           </slices>
           <aggregation value='true' />
         </view>
         <style>
           <style-rule element='cell'>
-            <format attr='width' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]' value='99' />
-            <format attr='width' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]' value='81' />
-            <format attr='height' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]' value='35' />
-            <format attr='text-format' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[pcto:sum:freq:qk]' value='p0.0%' />
-            <format attr='text-format' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[sum:freq:qk]' value='n#,##0,K;-#,##0,K' />
+            <format attr='width' field='[PerTripTravelTime.tde].[none:incQ_label:nk]' value='99' />
+            <format attr='width' field='[PerTripTravelTime.tde].[:Measure Names]' value='81' />
+            <format attr='height' field='[PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]' value='35' />
+            <format attr='text-format' field='[PerTripTravelTime.tde].[pcto:sum:freq:qk]' value='p0.0%' />
+            <format attr='text-format' field='[PerTripTravelTime.tde].[sum:freq:qk]' value='n#,##0,K;-#,##0,K' />
             <format attr='color' data-class='total' value='#4f6e8d' />
             <format attr='font-style' data-class='total' value='italic' />
-            <format attr='text-format' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]' value='n#,##0.0;-#,##0.0' />
+            <format attr='text-format' field='[PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]' value='n#,##0.0;-#,##0.0' />
           </style-rule>
           <style-rule element='header'>
-            <format attr='height' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]' value='32' />
-            <format attr='width' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]' value='92' />
-            <format attr='width' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]' value='124' />
-            <format attr='height' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]' value='84' />
+            <format attr='height' field='[PerTripTravelTime.tde].[none:incQ_label:nk]' value='32' />
+            <format attr='width' field='[PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]' value='92' />
+            <format attr='width' field='[PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]' value='124' />
+            <format attr='height' field='[PerTripTravelTime.tde].[:Measure Names]' value='84' />
             <format attr='font-style' data-class='total' value='italic' />
             <format attr='color' data-class='total' value='#4f6e8d' />
           </style-rule>
@@ -303,10 +303,10 @@
             <format attr='font-family' value='Arial Narrow' />
           </style-rule>
           <style-rule element='label'>
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]' value='Arial Narrow' />
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]' value='Arial Narrow' />
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]' value='Arial Narrow' />
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[:Measure Names]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[none:incQ_label:nk]' value='Arial Narrow' />
           </style-rule>
           <style-rule element='worksheet'>
             <format attr='font-size' value='12' />
@@ -323,8 +323,8 @@
             </view>
             <mark class='Automatic' />
             <encodings>
-              <text column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[Multiple Values]' />
-              <lod column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[pcto:sum:freq:qk]' />
+              <text column='[PerTripTravelTime.tde].[Multiple Values]' />
+              <lod column='[PerTripTravelTime.tde].[pcto:sum:freq:qk]' />
             </encodings>
             <customized-tooltip>
               <formatted-text />
@@ -342,10 +342,10 @@
             </style>
           </pane>
         </panes>
-        <rows total='true'>([C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk] / [C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk])</rows>
-        <cols total='true'>([C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk] / [C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names])</cols>
+        <rows total='true'>([PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk] / [PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk])</rows>
+        <cols total='true'>([PerTripTravelTime.tde].[none:incQ_label:nk] / [PerTripTravelTime.tde].[:Measure Names])</cols>
         <pages>
-          <column>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Scenario:nk]</column>
+          <column>[PerTripTravelTime.tde].[none:Scenario:nk]</column>
         </pages>
       </table>
     </worksheet>
@@ -363,9 +363,9 @@
       <table>
         <view>
           <datasources>
-            <datasource caption='PerTripTravelTime Extract' name='C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde' />
+            <datasource caption='PerTripTravelTime Extract' name='PerTripTravelTime.tde' />
           </datasources>
-          <datasource-dependencies datasource='C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde'>
+          <datasource-dependencies datasource='PerTripTravelTime.tde'>
             <column caption='Simple Travel Mode' datatype='string' name='[Calculation_0180919155350154]' role='dimension' type='nominal'>
               <calculation class='tableau' formula='IF [trip_mode] &lt;=6 THEN&#13;&#10; &apos;Automobile&apos;&#13;&#10;ELSEIF [trip_mode]=7 THEN&#13;&#10; &apos;Walk&apos;&#13;&#10;ELSEIF [trip_mode]=8 THEN&#13;&#10; &apos;Bicycle&apos;&#13;&#10;ELSE &#13;&#10; &apos;Transit&apos;&#13;&#10;END' scope-isolation='false' />
             </column>
@@ -386,20 +386,20 @@
             <column datatype='real' name='[trvlTime]' role='measure' type='quantitative' />
             <column-instance column='[Calculation_3100919153931806]' derivation='User' name='[usr:Calculation_3100919153931806:qk]' pivot='key' type='quantitative' />
           </datasource-dependencies>
-          <filter class='categorical' column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]'>
+          <filter class='categorical' column='[PerTripTravelTime.tde].[:Measure Names]'>
             <groupfilter function='union' user:op='manual'>
-              <groupfilter function='member' level='[:Measure Names]' member='&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[sum:freq:qk]&quot;' />
-              <groupfilter function='member' level='[:Measure Names]' member='&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[pcto:sum:freq:qk]&quot;' />
-              <groupfilter function='member' level='[:Measure Names]' member='&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[PerTripTravelTime.tde].[sum:freq:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[PerTripTravelTime.tde].[pcto:sum:freq:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]&quot;' />
             </groupfilter>
           </filter>
-          <manual-sort column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]' direction='ASC'>
+          <manual-sort column='[PerTripTravelTime.tde].[:Measure Names]' direction='ASC'>
             <dictionary>
-              <bucket>&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[sum:freq:qk]&quot;</bucket>
-              <bucket>&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[pcto:sum:freq:qk]&quot;</bucket>
+              <bucket>&quot;[PerTripTravelTime.tde].[sum:freq:qk]&quot;</bucket>
+              <bucket>&quot;[PerTripTravelTime.tde].[pcto:sum:freq:qk]&quot;</bucket>
             </dictionary>
           </manual-sort>
-          <manual-sort column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]' direction='ASC'>
+          <manual-sort column='[PerTripTravelTime.tde].[none:incQ_label:nk]' direction='ASC'>
             <dictionary>
               <bucket>&quot;Less than $30k&quot;</bucket>
               <bucket>&quot;$30k to $60k&quot;</bucket>
@@ -409,31 +409,31 @@
             </dictionary>
           </manual-sort>
           <slices>
-            <column>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]</column>
+            <column>[PerTripTravelTime.tde].[:Measure Names]</column>
           </slices>
           <aggregation value='true' />
         </view>
         <style>
           <style-rule element='cell'>
-            <format attr='width' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]' value='99' />
-            <format attr='width' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]' value='96' />
-            <format attr='height' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_0180919155350154:nk]' value='40' />
-            <format attr='text-format' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[pcto:sum:freq:qk]' value='p0.0%' />
+            <format attr='width' field='[PerTripTravelTime.tde].[none:incQ_label:nk]' value='99' />
+            <format attr='width' field='[PerTripTravelTime.tde].[:Measure Names]' value='96' />
+            <format attr='height' field='[PerTripTravelTime.tde].[none:Calculation_0180919155350154:nk]' value='40' />
+            <format attr='text-format' field='[PerTripTravelTime.tde].[pcto:sum:freq:qk]' value='p0.0%' />
             <format attr='color' data-class='total' value='#4f6e8d' />
             <format attr='font-style' data-class='total' value='italic' />
-            <format attr='text-format' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]' value='n#,##0.0;-#,##0.0' />
-            <format attr='text-format' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[sum:freq:qk]' value='n#,##0;-#,##0' />
+            <format attr='text-format' field='[PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]' value='n#,##0.0;-#,##0.0' />
+            <format attr='text-format' field='[PerTripTravelTime.tde].[sum:freq:qk]' value='n#,##0;-#,##0' />
           </style-rule>
           <style-rule element='header'>
-            <format attr='height' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]' value='48' />
-            <format attr='height' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]' value='84' />
+            <format attr='height' field='[PerTripTravelTime.tde].[none:incQ_label:nk]' value='48' />
+            <format attr='height' field='[PerTripTravelTime.tde].[:Measure Names]' value='84' />
             <format attr='font-style' data-class='total' value='italic' />
             <format attr='color' data-class='total' value='#4f6e8d' />
-            <format attr='width' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_0180919155350154:nk]' value='96' />
+            <format attr='width' field='[PerTripTravelTime.tde].[none:Calculation_0180919155350154:nk]' value='96' />
           </style-rule>
           <style-rule element='label'>
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_0180919155350154:nk]' value='Arial Narrow' />
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[none:Calculation_0180919155350154:nk]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[:Measure Names]' value='Arial Narrow' />
           </style-rule>
           <style-rule element='worksheet'>
             <format attr='font-size' value='12' />
@@ -450,8 +450,8 @@
             </view>
             <mark class='Automatic' />
             <encodings>
-              <text column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[Multiple Values]' />
-              <lod column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[pcto:sum:freq:qk]' />
+              <text column='[PerTripTravelTime.tde].[Multiple Values]' />
+              <lod column='[PerTripTravelTime.tde].[pcto:sum:freq:qk]' />
             </encodings>
             <customized-tooltip>
               <formatted-text />
@@ -469,10 +469,10 @@
             </style>
           </pane>
         </panes>
-        <rows total='true'>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_0180919155350154:nk]</rows>
-        <cols total='true'>([C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk] / [C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names])</cols>
+        <rows total='true'>[PerTripTravelTime.tde].[none:Calculation_0180919155350154:nk]</rows>
+        <cols total='true'>([PerTripTravelTime.tde].[none:incQ_label:nk] / [PerTripTravelTime.tde].[:Measure Names])</cols>
         <pages>
-          <column>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Scenario:nk]</column>
+          <column>[PerTripTravelTime.tde].[none:Scenario:nk]</column>
         </pages>
       </table>
     </worksheet>
@@ -490,9 +490,9 @@
       <table>
         <view>
           <datasources>
-            <datasource caption='PerTripTravelTime Extract' name='C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde' />
+            <datasource caption='PerTripTravelTime Extract' name='PerTripTravelTime.tde' />
           </datasources>
-          <datasource-dependencies datasource='C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde'>
+          <datasource-dependencies datasource='PerTripTravelTime.tde'>
             <column caption='Tour Category' datatype='string' name='[Calculation_1210919154721266]' role='dimension' type='nominal'>
               <calculation class='tableau' formula='CASE [Calculation_2800919154031518]&#13;&#10;WHEN &apos;At work&apos; THEN &apos;At work&apos;&#13;&#10;WHEN &apos;Work&apos;    THEN &apos;Mandatory&apos;&#13;&#10;WHEN &apos;College&apos; THEN &apos;Mandatory&apos;&#13;&#10;WHEN &apos;School&apos;  THEN &apos;Mandatory&apos;&#13;&#10;WHEN &apos;Eat out&apos; THEN &apos;Non-mandatory&apos;&#13;&#10;WHEN &apos;Escort&apos;  THEN &apos;Non-mandatory&apos;&#13;&#10;WHEN &apos;Shopping&apos; THEN &apos;Non-mandatory&apos;&#13;&#10;WHEN &apos;Social&apos;   THEN &apos;Non-mandatory&apos;&#13;&#10;WHEN &apos;Other&apos;    THEN &apos;Non-mandatory&apos;&#13;&#10;END' scope-isolation='false' />
             </column>
@@ -514,13 +514,13 @@
             <column datatype='real' name='[trvlTime]' role='measure' type='quantitative' />
             <column-instance column='[Calculation_3100919153931806]' derivation='User' name='[usr:Calculation_3100919153931806:qk]' pivot='key' type='quantitative' />
           </datasource-dependencies>
-          <filter class='categorical' column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]'>
+          <filter class='categorical' column='[PerTripTravelTime.tde].[:Measure Names]'>
             <groupfilter function='union' user:op='manual'>
-              <groupfilter function='member' level='[:Measure Names]' member='&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]&quot;' />
-              <groupfilter function='member' level='[:Measure Names]' member='&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[sum:freq:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[PerTripTravelTime.tde].[sum:freq:qk]&quot;' />
             </groupfilter>
           </filter>
-          <manual-sort column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk]' direction='ASC'>
+          <manual-sort column='[PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk]' direction='ASC'>
             <dictionary>
               <bucket>&quot;Mandatory&quot;</bucket>
               <bucket>&quot;At work&quot;</bucket>
@@ -528,7 +528,7 @@
               <bucket>%all%</bucket>
             </dictionary>
           </manual-sort>
-          <manual-sort column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]' direction='ASC'>
+          <manual-sort column='[PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]' direction='ASC'>
             <dictionary>
               <bucket>&quot;At work&quot;</bucket>
               <bucket>&quot;Work&quot;</bucket>
@@ -542,7 +542,7 @@
               <bucket>%all%</bucket>
             </dictionary>
           </manual-sort>
-          <manual-sort column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]' direction='ASC'>
+          <manual-sort column='[PerTripTravelTime.tde].[none:incQ_label:nk]' direction='ASC'>
             <dictionary>
               <bucket>&quot;Less than $30k&quot;</bucket>
               <bucket>&quot;$30k to $60k&quot;</bucket>
@@ -552,22 +552,22 @@
             </dictionary>
           </manual-sort>
           <slices>
-            <column>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]</column>
+            <column>[PerTripTravelTime.tde].[:Measure Names]</column>
           </slices>
           <aggregation value='true' />
         </view>
         <style>
           <style-rule element='cell'>
-            <format attr='width' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]' value='146' />
-            <format attr='height' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]' value='34' />
-            <format attr='text-format' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]' value='n#,##0.0;-#,##0.0' />
+            <format attr='width' field='[PerTripTravelTime.tde].[none:incQ_label:nk]' value='146' />
+            <format attr='height' field='[PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]' value='34' />
+            <format attr='text-format' field='[PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]' value='n#,##0.0;-#,##0.0' />
             <format attr='color' data-class='subtotal' value='#9e4c00' />
             <format attr='font-style' data-class='subtotal' value='italic' />
             <format attr='color' data-class='total' value='#4f6e8d' />
           </style-rule>
           <style-rule element='header'>
-            <format attr='height' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]' value='64' />
-            <format attr='width' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]' value='116' />
+            <format attr='height' field='[PerTripTravelTime.tde].[none:incQ_label:nk]' value='64' />
+            <format attr='width' field='[PerTripTravelTime.tde].[:Measure Names]' value='116' />
             <format attr='color' data-class='subtotal' value='#9e4c00' />
             <format attr='font-style' data-class='subtotal' value='italic' />
             <format attr='color' data-class='total' value='#4f6e8d' />
@@ -576,10 +576,10 @@
             <format attr='font-family' value='Arial Narrow' />
           </style-rule>
           <style-rule element='label'>
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]' value='Arial Narrow' />
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk]' value='Arial Narrow' />
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]' value='Arial Narrow' />
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[:Measure Names]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[none:incQ_label:nk]' value='Arial Narrow' />
           </style-rule>
           <style-rule element='worksheet'>
             <format attr='font-size' value='12' />
@@ -596,7 +596,7 @@
             </view>
             <mark class='Automatic' />
             <encodings>
-              <text column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[Multiple Values]' />
+              <text column='[PerTripTravelTime.tde].[Multiple Values]' />
             </encodings>
             <customized-tooltip>
               <formatted-text />
@@ -614,10 +614,10 @@
             </style>
           </pane>
         </panes>
-        <rows total='true'>([C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names] / ([C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk] / [C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]))</rows>
-        <cols total='true'>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]</cols>
+        <rows total='true'>([PerTripTravelTime.tde].[:Measure Names] / ([PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk] / [PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]))</rows>
+        <cols total='true'>[PerTripTravelTime.tde].[none:incQ_label:nk]</cols>
         <pages>
-          <column>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Scenario:nk]</column>
+          <column>[PerTripTravelTime.tde].[none:Scenario:nk]</column>
         </pages>
       </table>
     </worksheet>
@@ -635,9 +635,9 @@
       <table>
         <view>
           <datasources>
-            <datasource caption='PerTripTravelTime Extract' name='C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde' />
+            <datasource caption='PerTripTravelTime Extract' name='PerTripTravelTime.tde' />
           </datasources>
-          <datasource-dependencies datasource='C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde'>
+          <datasource-dependencies datasource='PerTripTravelTime.tde'>
             <column caption='Tour Category' datatype='string' name='[Calculation_1210919154721266]' role='dimension' type='nominal'>
               <calculation class='tableau' formula='CASE [Calculation_2800919154031518]&#13;&#10;WHEN &apos;At work&apos; THEN &apos;At work&apos;&#13;&#10;WHEN &apos;Work&apos;    THEN &apos;Mandatory&apos;&#13;&#10;WHEN &apos;College&apos; THEN &apos;Mandatory&apos;&#13;&#10;WHEN &apos;School&apos;  THEN &apos;Mandatory&apos;&#13;&#10;WHEN &apos;Eat out&apos; THEN &apos;Non-mandatory&apos;&#13;&#10;WHEN &apos;Escort&apos;  THEN &apos;Non-mandatory&apos;&#13;&#10;WHEN &apos;Shopping&apos; THEN &apos;Non-mandatory&apos;&#13;&#10;WHEN &apos;Social&apos;   THEN &apos;Non-mandatory&apos;&#13;&#10;WHEN &apos;Other&apos;    THEN &apos;Non-mandatory&apos;&#13;&#10;END' scope-isolation='false' />
             </column>
@@ -666,13 +666,13 @@
             <column datatype='real' name='[trvlTime]' role='measure' type='quantitative' />
             <column-instance column='[Calculation_3100919153931806]' derivation='User' name='[usr:Calculation_3100919153931806:qk]' pivot='key' type='quantitative' />
           </datasource-dependencies>
-          <filter class='categorical' column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]'>
+          <filter class='categorical' column='[PerTripTravelTime.tde].[:Measure Names]'>
             <groupfilter function='union' user:op='manual'>
-              <groupfilter function='member' level='[:Measure Names]' member='&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]&quot;' />
-              <groupfilter function='member' level='[:Measure Names]' member='&quot;[C:\\Users\\lzorn\\Documents\\AcrossScenarios\\PerTripTravelTime.tde].[sum:freq:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[PerTripTravelTime.tde].[sum:freq:qk]&quot;' />
             </groupfilter>
           </filter>
-          <manual-sort column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk]' direction='ASC'>
+          <manual-sort column='[PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk]' direction='ASC'>
             <dictionary>
               <bucket>&quot;Mandatory&quot;</bucket>
               <bucket>&quot;At work&quot;</bucket>
@@ -680,7 +680,7 @@
               <bucket>%all%</bucket>
             </dictionary>
           </manual-sort>
-          <manual-sort column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]' direction='ASC'>
+          <manual-sort column='[PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]' direction='ASC'>
             <dictionary>
               <bucket>&quot;At work&quot;</bucket>
               <bucket>&quot;Work&quot;</bucket>
@@ -694,7 +694,7 @@
               <bucket>%all%</bucket>
             </dictionary>
           </manual-sort>
-          <manual-sort column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]' direction='ASC'>
+          <manual-sort column='[PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]' direction='ASC'>
             <dictionary>
               <bucket>&quot;Drive alone&quot;</bucket>
               <bucket>&quot;Shared ride 2&quot;</bucket>
@@ -707,24 +707,24 @@
             </dictionary>
           </manual-sort>
           <slices>
-            <column>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]</column>
+            <column>[PerTripTravelTime.tde].[:Measure Names]</column>
           </slices>
           <aggregation value='true' />
         </view>
         <style>
           <style-rule element='cell'>
-            <format attr='height' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]' value='30' />
-            <format attr='width' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]' value='103' />
-            <format attr='text-format' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]' value='n#,##0.0;-#,##0.0' />
-            <format attr='text-format' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[sum:freq:qk]' value='n#,##0,.0K;-#,##0,.0K' />
+            <format attr='height' field='[PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]' value='30' />
+            <format attr='width' field='[PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]' value='103' />
+            <format attr='text-format' field='[PerTripTravelTime.tde].[usr:Calculation_3100919153931806:qk]' value='n#,##0.0;-#,##0.0' />
+            <format attr='text-format' field='[PerTripTravelTime.tde].[sum:freq:qk]' value='n#,##0,.0K;-#,##0,.0K' />
             <format attr='font-style' data-class='total' value='italic' />
             <format attr='color' data-class='total' value='#4f6e8d' />
             <format attr='color' data-class='subtotal' value='#9e4c00' />
             <format attr='font-style' data-class='subtotal' value='italic' />
           </style-rule>
           <style-rule element='header'>
-            <format attr='height' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]' value='36' />
-            <format attr='width' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]' value='112' />
+            <format attr='height' field='[PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]' value='36' />
+            <format attr='width' field='[PerTripTravelTime.tde].[:Measure Names]' value='112' />
             <format attr='color' data-class='total' value='#4f6e8d' />
             <format attr='font-style' data-class='total' value='italic' />
             <format attr='color' data-class='subtotal' value='#906800' />
@@ -734,11 +734,11 @@
             <format attr='font-family' value='Arial Narrow' />
           </style-rule>
           <style-rule element='label'>
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]' value='Arial Narrow' />
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]' value='Arial Narrow' />
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]' value='Arial Narrow' />
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]' value='Arial Narrow' />
-            <format attr='font-family' field='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[:Measure Names]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]' value='Arial Narrow' />
+            <format attr='font-family' field='[PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk]' value='Arial Narrow' />
           </style-rule>
           <style-rule element='worksheet'>
             <format attr='font-size' value='12' />
@@ -755,8 +755,8 @@
             </view>
             <mark class='Automatic' />
             <encodings>
-              <text column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[Multiple Values]' />
-              <lod column='[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[sum:freq:qk]' />
+              <text column='[PerTripTravelTime.tde].[Multiple Values]' />
+              <lod column='[PerTripTravelTime.tde].[sum:freq:qk]' />
             </encodings>
             <customized-tooltip>
               <formatted-text />
@@ -774,10 +774,10 @@
             </style>
           </pane>
         </panes>
-        <rows total='true'>([C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names] / ([C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk] / [C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]))</rows>
-        <cols total='true'>([C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk] / [C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk])</cols>
+        <rows total='true'>([PerTripTravelTime.tde].[:Measure Names] / ([PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk] / [PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]))</rows>
+        <cols total='true'>([PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk] / [PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk])</cols>
         <pages>
-          <column>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Scenario:nk]</column>
+          <column>[PerTripTravelTime.tde].[none:Scenario:nk]</column>
         </pages>
       </table>
     </worksheet>
@@ -814,12 +814,12 @@
         </current-page>
         <highlight>
           <color-one-way>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Scenario:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:src:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:trip_mode:ok]</field>
+            <field>[PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:Scenario:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:incQ_label:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:src:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:trip_mode:ok]</field>
           </color-one-way>
         </highlight>
         <geo-search-visibility value='1' />
@@ -857,13 +857,13 @@
         </current-page>
         <highlight>
           <color-one-way>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_0180919155350154:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Scenario:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:src:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:trip_mode:ok]</field>
+            <field>[PerTripTravelTime.tde].[none:Calculation_0180919155350154:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:Scenario:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:incQ_label:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:src:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:trip_mode:ok]</field>
           </color-one-way>
         </highlight>
         <geo-search-visibility value='1' />
@@ -896,14 +896,14 @@
       <viewpoint>
         <highlight>
           <color-one-way>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Scenario:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:src:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:tour_purpose:nk]</field>
+            <field>[PerTripTravelTime.tde].[:Measure Names]</field>
+            <field>[PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:Calculation_1500919153120996:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:Calculation_7130919152735054:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:Scenario:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:src:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:tour_purpose:nk]</field>
           </color-one-way>
         </highlight>
         <geo-search-visibility value='1' />
@@ -936,11 +936,11 @@
       <viewpoint>
         <highlight>
           <color-one-way>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[:Measure Names]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:Scenario:nk]</field>
-            <field>[C:\Users\lzorn\Documents\AcrossScenarios\PerTripTravelTime.tde].[none:incQ_label:nk]</field>
+            <field>[PerTripTravelTime.tde].[:Measure Names]</field>
+            <field>[PerTripTravelTime.tde].[none:Calculation_1210919154721266:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:Calculation_2800919154031518:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:Scenario:nk]</field>
+            <field>[PerTripTravelTime.tde].[none:incQ_label:nk]</field>
           </color-one-way>
         </highlight>
         <geo-search-visibility value='1' />
