@@ -11,11 +11,11 @@ rem need user inputs here
 rem -------------------------------------
 
 rem where is network_links.dbf?
-set UNLOADED_NETWORK_DBF= \\tsclient\L\RTP2021_PPA\Projects\3000_ExpLanes_Calib\2050_TM151_PPA_RT_14_3000_ExpLanes_Calib_00\OUTPUT\shapefiles\network_links.dbf
+set UNLOADED_NETWORK_DBF=\\tsclient\L\RTP2021_PPA\Projects\3000_ExpLanes_Calib\2050_TM151_PPA_RT_14_3000_ExpLanes_Calib_00\OUTPUT\shapefiles\network_links.dbf
 
 rem where is TOLLCLASS Designations.xlsx?
 rem (this file indicates which facilities have mandatory s2 tolls)
-set TOLL_DESIGNATIONS_XLSX= \\tsclient\L\RTP2021_PPA\Projects\TOLLCLASS_Designations.xlsx
+set TOLL_DESIGNATIONS_XLSX=\\tsclient\L\RTP2021_PPA\Projects\TOLLCLASS_Designations.xlsx
 
 rem if this is being run on aws, what's the Private IP Address?
 if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.70
