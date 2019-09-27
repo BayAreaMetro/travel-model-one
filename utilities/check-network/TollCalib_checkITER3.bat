@@ -8,7 +8,7 @@ set ITER=3
 :: User input needed here
 :: Location of the base run directory
 :: Either the directory with the full run, or the directory with the extracted outputs
-set PROJECT_DIR=D:\Projects\2050_TM151_PPA_RT_11_6000_ReX_PreCalib_03
+set PROJECT_DIR=%MODEL_BASE_DIR%
 
 
 :: the rest doesn't require user inputs if TollCalib_setup.bat is run

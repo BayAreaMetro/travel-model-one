@@ -8,7 +8,7 @@
 :: If on AWS, HOST_IP_ADDRESS has to be set manually
 :: it's the “private IP address” on the wallpaper
 :: -------------------------------------------------
-if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.70
+if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=%HOST_IP_ADDRESS%
 
 :: -------------------------------------------------
 :: User input needed here
@@ -20,13 +20,13 @@ if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.70
 set ITER=4
 
 :: Location of the base run directory - the full run is needed because it needs the CTRAMP directory
-set MODEL_BASE_DIR=D:\Projects\2050_TM151_PPA_RT_11_6000_ReX_PreCalib_03
+set MODEL_BASE_DIR=%MODEL_BASE_DIR%
 
 :: Name and location of the tolls.csv to be used
 set TOLL_FILE=%MODEL_BASE_DIR%\hwy\tolls_iter4.csv
 
 :: Location of the output folder "tollcalib_iter" on the L drive
-set L_DIR=\\tsclient\L\RTP2021_PPA\Projects\6000_ReX_Calib\2050_TM151_PPA_RT_11_6000_ReX_Calib_03
+set L_DIR=%L_DIR%
 
 :: to run highway assignment only, enter 1 below; 
 :: to run highway assigment + skimming + core, enter 0 below
