@@ -11,7 +11,8 @@ import pandas as pd
 
 
 # create empty dataframe with essential columns
-df_metrics = pd.DataFrame(columns=[u'category1', u'category2', u'category3', u'variable_name', u'values', u'Project', u'Future', u'ProjectID', u'BaseID'])
+df_metrics = pd.DataFrame(columns=[u'category1', u'category2', u'category3', u'variable_name', u'values', u'Project', u'Future', u'ProjectID', u'BaseID',\
+            u'PPA ID', u'Mode'])
 
 # create a list of the bcmetrics.csv for all projects in the folder 
 bcmetrics_file_list = [i for i in os.listdir('.') if 'BC_' in i]
@@ -21,8 +22,10 @@ for file in bcmetrics_file_list:
     df = pd.read_csv(file)
     df['Project'] = df.loc[4,'values']
     df['Future'] = df.loc[8,'values']
+    df['Mode'] = df.loc[5,'values']
     df['ProjectID'] = df.loc[3,'values']
     df['BaseID'] = df.loc[9,'values']
+    df['PPA ID'] = df.loc[3,'values'][0:3]
     drop_index = list(range(0,14))
     df = df.drop(drop_index,axis="rows")
     df_metrics = pd.concat([df_metrics, df], axis=0)
