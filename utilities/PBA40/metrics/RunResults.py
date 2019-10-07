@@ -730,8 +730,8 @@ class RunResults:
         daily_results[(cat1,cat2,'Time - Auto (PHT) - AirPax' )] = \
             auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Person Minutes'].sum()/60.0
         
-        '''
-        ##############
+        
+        '''##############
         # hardcode time airpax until bug is figured out
         if self.config.loc['Future'] in ['RTFF']:
             time_airpax = 398266.697
@@ -742,7 +742,7 @@ class RunResults:
         daily_results[(cat1,cat2,'Time - Auto (PHT) - AirPax' )] = time_airpax
         ##############
         '''
-        
+
         daily_results[(cat1,cat2,'Time - Truck (Computed VHT)')] = vmt_byclass.loc[['sm','smt','hv','hvt'],'VHT'].sum()
 
         daily_results[(cat1,cat2,'Cost - Auto ($2000) - IX/EX' )] = \
@@ -963,6 +963,7 @@ class RunResults:
         # Really these are active addults
         daily_results[(cat1,cat2,'Total'  )] = self.unique_active_travelers['number_active_adults']
 
+        '''
         ##############
         # hardcode until bug is figured out
         if self.config.loc['Project Type'] in ['transit']:
@@ -974,7 +975,7 @@ class RunResults:
                 active_adults_base = 2076294          
             daily_results[(cat1,cat2,'Total'  )] = max(daily_results[(cat1,cat2,'Total'  )], active_adults_base)
         ##############
-
+        '''
 
         cat2         = 'Activity: Est Proportion Deaths Averted'
         epda_cat2    = cat2
@@ -989,7 +990,7 @@ class RunResults:
         daily_results[(cat1,cat2,'Walk (20-74yrs walkers)'          )] = daily_results[(cat1,epda_cat2,'Walk (20-74yrs walkers)'          )]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2074YRS)/100000.0)*self.unique_active_travelers['unique_walkers_2074'   ]
         daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')] = daily_results[(cat1,epda_cat2,'Transit (20-74yrs transit riders)')]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2074YRS)/100000.0)*self.unique_active_travelers['unique_transiters_2074']
 
-
+        '''
         ##############
         # hardcode until bug is figured out
         if self.config.loc['Project Type'] in ['transit']:
@@ -1006,7 +1007,7 @@ class RunResults:
                 daily_results[(cat1,cat2,'Walk (20-74yrs walkers)'          )] = max(866.563249357143,daily_results[(cat1,cat2,'Walk (20-74yrs walkers)'          )])
                 daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')] = max(470.521659535714,daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')])                    
          ##############
-
+        '''
 
         # Noise
         cat2            = 'Noise'

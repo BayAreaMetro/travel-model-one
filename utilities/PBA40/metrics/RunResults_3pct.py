@@ -46,7 +46,7 @@ class RunResults:
     REQUIRED_KEYS = [
       'Project ID'  ,  # String identifier for the project
       'Project Name',  # Descriptive name for the project
-      'County'      ,  # County where the project is located
+      'Mode'      ,    # County where the project is located
       'Project Type',  # Categorization of the project
       'Project Mode',  # Road or transit submode.  Used for Out-of-vehicle Transit Travel Time adjustments
       'Future'      ,  # Future scenario to run the project
@@ -727,11 +727,11 @@ class RunResults:
 
         daily_results[(cat1,cat2,'Time - Auto (PHT) - IX/EX' )] = \
             auto_byclass.loc[['da_ix','datoll_ix','sr2_ix','sr2toll_ix','sr3_ix','sr3toll_ix'],'Person Minutes'].sum()/60.0
-        ##daily_results[(cat1,cat2,'Time - Auto (PHT) - AirPax' )] = \
-        ##    auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Person Minutes'].sum()/60.0
+        daily_results[(cat1,cat2,'Time - Auto (PHT) - AirPax' )] = \
+            auto_byclass.loc[['da_air','datoll_air','sr2_air','sr2toll_air','sr3_air','sr3toll_air'],'Person Minutes'].sum()/60.0
         
         
-        ##############
+        '''##############
         # hardcode time airpax until bug is figured out
         if self.config.loc['Future'] in ['RTFF']:
             time_airpax = 398266.697
@@ -741,7 +741,7 @@ class RunResults:
             time_airpax = 365867.0475
         daily_results[(cat1,cat2,'Time - Auto (PHT) - AirPax' )] = time_airpax
         ##############
-        
+        '''
 
         daily_results[(cat1,cat2,'Time - Truck (Computed VHT)')] = vmt_byclass.loc[['sm','smt','hv','hvt'],'VHT'].sum()
 
@@ -963,6 +963,7 @@ class RunResults:
         # Really these are active addults
         daily_results[(cat1,cat2,'Total'  )] = self.unique_active_travelers['number_active_adults']
 
+        '''
         ##############
         # hardcode until bug is figured out
         if self.config.loc['Project Type'] in ['transit']:
@@ -974,7 +975,7 @@ class RunResults:
                 active_adults_base = 2076294          
             daily_results[(cat1,cat2,'Total'  )] = max(daily_results[(cat1,cat2,'Total'  )], active_adults_base)
         ##############
-
+        '''
 
         cat2         = 'Activity: Est Proportion Deaths Averted'
         epda_cat2    = cat2
@@ -985,11 +986,13 @@ class RunResults:
         daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')] = (daily_results[(cat1,active_cat2,'Transit (20-74yrs transit riders)')]*5.0/RunResults.WALKING_REF_WEEKLY_MIN) * (1.0-RunResults.WALKING_RELATIVE_RISK)
 
         cat2         = 'Activity: Est Deaths Averted (Mortality)'
-        daily_results[(cat1,cat2,'Bike (20-64yrs cyclists)'         )] = daily_results[(cat1,epda_cat2,'Bike (20-64yrs cyclists)'         )]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2064YRS)/100000.0)*self.unique_active_travelers['unique_cyclists_2064'  ]
-        daily_results[(cat1,cat2,'Walk (20-74yrs walkers)'          )] = daily_results[(cat1,epda_cat2,'Walk (20-74yrs walkers)'          )]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2074YRS)/100000.0)*self.unique_active_travelers['unique_walkers_2074'   ]
-        daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')] = daily_results[(cat1,epda_cat2,'Transit (20-74yrs transit riders)')]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2074YRS)/100000.0)*self.unique_active_travelers['unique_transiters_2074']
+        # number of deaths averted among cyclists = proportion of deaths prevented as a result of activity * number of regular deaths among cyclists / avg turnover in years of new cyclists
+        #                                         = proportion of deaths prevented as a result of activity * mortality rate among 20-64 year olds * number of cyclists / avg turnover in years of new cyclists
+        daily_results[(cat1,cat2,'Bike (20-64yrs cyclists)'         )] = daily_results[(cat1,epda_cat2,'Bike (20-64yrs cyclists)'         )]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2064YRS)/100000.0)*self.unique_active_travelers['unique_cyclists_2064'  ] / 10.0 
+        daily_results[(cat1,cat2,'Walk (20-74yrs walkers)'          )] = daily_results[(cat1,epda_cat2,'Walk (20-74yrs walkers)'          )]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2074YRS)/100000.0)*self.unique_active_travelers['unique_walkers_2074'   ] / 10.0
+        daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')] = daily_results[(cat1,epda_cat2,'Transit (20-74yrs transit riders)')]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2074YRS)/100000.0)*self.unique_active_travelers['unique_transiters_2074'] / 10.0
 
-
+        '''
         ##############
         # hardcode until bug is figured out
         if self.config.loc['Project Type'] in ['transit']:
@@ -1006,7 +1009,7 @@ class RunResults:
                 daily_results[(cat1,cat2,'Walk (20-74yrs walkers)'          )] = max(866.563249357143,daily_results[(cat1,cat2,'Walk (20-74yrs walkers)'          )])
                 daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')] = max(470.521659535714,daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')])                    
          ##############
-
+        '''
 
         # Noise
         cat2            = 'Noise'
@@ -2000,10 +2003,41 @@ class RunResults:
             worksheet.write(TABLE_HEADER_ROW-2,4, '=(I23+I28) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 4), format_equityben)
 
             worksheet.write(TABLE_HEADER_ROW-5,0, 'Equity Score', format_bc_header_left)
-            worksheet.write(TABLE_HEADER_ROW-5,1, '=(%s+%s)/sum(%s:%s)'%(xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+            worksheet.write(TABLE_HEADER_ROW-5,1, '= if( sum(%s+%s)<(1.51*sum(%s+%s)), 0.1, if(and((%s+%s)<0,sum(%s:%s)<0), abs((%s+%s)-sum(%s:%s)) / max(abs(%s+%s),abs(sum(%s:%s))), \
+                                                        if( and((%s+%s)>0,sum(%s:%s)<0), abs((%s+%s)-sum(%s:%s)) / max(abs(%s+%s),abs(sum(%s:%s))), \
+                                                           (%s+%s) / sum(%s:%s) )))'\
+                                                                        %(xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 3),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
-                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4)), format_equitypct)
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4)),format_equitypct)
 
         # Summing up for total benefits
 

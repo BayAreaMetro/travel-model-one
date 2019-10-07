@@ -275,13 +275,52 @@ if __name__ == '__main__':
         all_trn_df = move_pseudo_line_ridership(all_trn_df, pseudo_lines)
 
     # vehicle type overrides
+
     all_trn_df["veh_type_updated"] = all_trn_df["VEHTYPE"]
-    all_trn_df.loc[ all_trn_df["SYSTEM"]=="AC Transit",         "veh_type_updated"] = "AC Plus Bus"
+
+    # AC Transit Transbay
+    all_trn_df.loc[ all_trn_df["SYSTEM"]=="AC Transit",         "veh_type_updated"] = "AC Plus Bus"   # note this is transbay buses
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_LA"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_NL"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_O"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_NX"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_SB"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_F"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_LA"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_J"),  "veh_type_updated"] = "Motor Articulated Bus"
+
+    # Other express buses
+    all_trn_df.loc[ all_trn_df["SYSTEM"]=="Golden Gate Transit Express", "veh_type_updated"] = "AC Plus Bus"   # note this is transbay buses
+    all_trn_df.loc[ all_trn_df["SYSTEM"]=="WestCAT Express", "veh_type_updated"] = "AC Plus Bus"   # note this is transbay buses
+    all_trn_df.loc[ all_trn_df["SYSTEM"]=="Golden Gate Transit Express", "veh_type_updated"] = "AC Plus Bus"   # note this is transbay buses
+
+
+    # AC Transit Local
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_1AC"),  "veh_type_updated"] = "Motor Articulated Bus"
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_BRT"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_6AC"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_72R"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_97R"),  "veh_type_updated"] = "Motor Articulated Bus"
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_40"),  "veh_type_updated"] = "Motor Bus Mix of Standard and Artics"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_52"),  "veh_type_updated"] = "Motor Bus Mix of Standard and Artics"
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_57"),  "veh_type_updated"] = "Motor Bus Mix of Standard and Artics"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_60"),  "veh_type_updated"] = "Motor Bus Mix of Standard and Artics"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_97"),  "veh_type_updated"] = "Motor Bus Mix of Standard and Artics"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_99"),  "veh_type_updated"] = "Motor Bus Mix of Standard and Artics"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("30_217"),  "veh_type_updated"] = "Motor Bus Mix of Standard and Artics"
+    
+    # VTA bus
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("522VTA"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("523VTA"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("22VTA"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("40VTA"),  "veh_type_updated"] = "Motor Bus Mix of Standard and Artics"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("55VTA"),  "veh_type_updated"] = "Motor Bus Mix of Standard and Artics"
+
+    # Samtrans 
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("24_ECR"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("24_292"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("24_398"),  "veh_type_updated"] = "Motor Articulated Bus"
+
 
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("120_EBART"), "veh_type_updated"] = "eBart 1 car"
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("120_EBART") & (all_trn_df["period"]=="AM"), "veh_type_updated"] = "eBart 2 car"

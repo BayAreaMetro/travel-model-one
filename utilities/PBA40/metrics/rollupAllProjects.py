@@ -22,10 +22,10 @@ for file in bcmetrics_file_list:
     df = pd.read_csv(file)
     df['Project'] = df.loc[4,'values']
     df['Future'] = df.loc[8,'values']
-    df['Mode'] = df.loc[5,'values']
     df['ProjectID'] = df.loc[3,'values']
     df['BaseID'] = df.loc[9,'values']
-    df['PPA ID'] = df.loc[3,'values'][0:3]
+    df['PPA ID'] = df.loc[3,'values'][0:4]
+    df['Mode'] = df.loc[5,'values']
     drop_index = list(range(0,14))
     df = df.drop(drop_index,axis="rows")
     df_metrics = pd.concat([df_metrics, df], axis=0)
