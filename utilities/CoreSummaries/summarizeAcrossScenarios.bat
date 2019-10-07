@@ -2,8 +2,8 @@
 @echo on
 setlocal enabledelayedexpansion
 
-set COMBINED_DIR=Across-Alternatives-Round-14-Proposed-Plan-Amd1
-set RUN_NAME_SET=2015_06_002 2020_06_694 2035_06_694_Amd1 2040_06_694_Amd1
+set COMBINED_DIR=across_rounds_v06
+set RUN_NAME_SET=Horizon_Round1\2015_TM151_PPA_09 Horizon_Round1\2050_TM151_FU1_RT_01 Horizon_Round1\2050_TM151_FU1_CG_02 Horizon_Round1\2050_TM151_FU1_BF_02 Horizon_Round2\2050_TM151_FU2_RT_05 Horizon_Round2\2050_TM151_FU2_CG_04 Horizon_Round2\2050_TM151_FU2_BF_04
 
 copy %COMBINED_DIR%\ScenarioKey.csv ScenarioKey.csv
 
@@ -13,25 +13,32 @@ copy %COMBINED_DIR%\ScenarioKey.csv ScenarioKey.csv
 :: (e.g. M:\Application\, subdirs=INPUT,OUTPUT)
 set ORIGINAL_RUNDIR=0
 
+set CODE_DIR=X:\travel-model-one-master\model-files\scripts\core_summaries
+
 IF %USERNAME%==lzorn (
   rem I AM SPECIAL
-  set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-master\model-files\scripts\core_summaries
-  set R_HOME=C:\Program Files\R\R-3.2.3
+  set R_HOME=C:\Program Files\R\R-3.5.1
   set R_USER=%USERNAME%
-  set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.2
+  set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.5
 ) ELSE (
-  set CODE_DIR=C:\Users\dory\Documents\GitHub\travel-model-one\model-files\scripts\core_summaries
-  set R_HOME=C:\Program Files\R\R-3.3.1
+  IF %USERNAME%==ftsang (
+      set R_HOME=C:\Program Files\R\R-3.4.4
+      set R_USER=%USERNAME%
+      set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.4
+  ) ELSE (
+  set R_HOME=C:\Program Files\R\R-3.5.2
   set R_USER=%USERNAME%
-  set R_LIBS_USER=C:\Users\%USERNAME%\Documents\R\win-library\3.3
+  set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.5
+  )
 )
+
 
 :: save these
 set OLD_PATH=%PATH%
 set PATH=%CODE_DIR%;%PATH%
 
-:: set RDATA=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork PerTripTravelTime TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance VehicleMilesTraveled
-set RDATA=AutomobileOwnership CommuteByIncomeHousehold PerTripTravelTime TripDistance VehicleMilesTraveled
+set RDATA=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork PerTripTravelTime TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance VehicleMilesTraveled
+:: set RDATA=JourneyToWork
 
 :: Create the Tablea Data Extracts covering all scenarios
 :: First, create the summary dirs list
@@ -110,3 +117,5 @@ if not exist "%COMBINED_DIR%\trnlink.tde" (
 :done
 
 set PATH=%OLD_PATH%
+
+c:\windows\system32\Robocopy.exe /E "X:\travel-model-one-master\utilities\CoreSummaries\tableau"       %COMBINED_DIR%
