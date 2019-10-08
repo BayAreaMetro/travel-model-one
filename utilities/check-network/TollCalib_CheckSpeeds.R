@@ -255,7 +255,7 @@ tolls_new_df <- tolls_new_df  %>%
 
 # add s2 tolls for selected facilities
 
-TOLL_DESIGNATIONS_DF <- read_excel(TOLL_DESIGNATIONS_XLSX, sheet = "revised 070319")
+TOLL_DESIGNATIONS_DF <- read_excel(TOLL_DESIGNATIONS_XLSX, sheet = "Inputs_for_tollcalib")
 TOLL_DESIGNATIONS_DF <- TOLL_DESIGNATIONS_DF %>%
                                              select(tollclass,s2toll_mandatory)
 
