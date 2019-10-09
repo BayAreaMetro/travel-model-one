@@ -7,13 +7,13 @@
 ; OAK, and SJC.  Geoff Gosling, a consultant, created vehicle trip tables segmented by time of day, travel mode,
 ; and access/egress direction (i.e. to the airport or from the airport) for years 2007 and 2035.  The tables are
 ; based on a 2006 Air Passenger survey, which was conducted at SFO and OAK (but not SJC).  The five time
-; periods correspond to the time periods used by the travel model and are as follows: (a) early AM, before 6 am; 
-; (b) AM peak period, 6 am to 10 am; (c) midday, 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; and, (e) evening, 
-; after 7 pm.  The travel modes are as follows: (a) escort (drive alone, shared ride 2, and shared ride 3+); (b) 
+; periods correspond to the time periods used by the travel model and are as follows: (a) early AM, before 6 am;
+; (b) AM peak period, 6 am to 10 am; (c) midday, 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; and, (e) evening,
+; after 7 pm.  The travel modes are as follows: (a) escort (drive alone, shared ride 2, and shared ride 3+); (b)
 ; park (da, sr2, & sr3+); (c) rental car (da, sr2, & sr3+); (d) taxi ((da, sr2, & sr3+); (e) limo (da, sr2, & sr3+);
 ; (f) shared ride van (all assumed to be sr3); (g) hotel shuttle (all assumed to be sr3); and, (h) charter bus (all
-; assumed to be sr3).  The shared ride van, hotel shuttle, and charter bus modes are assumed to have no deadhead travel. 
-; The return escort trip is included, as are the deadhead limo and taxi trips. 
+; assumed to be sr3).  The shared ride van, hotel shuttle, and charter bus modes are assumed to have no deadhead travel.
+; The return escort trip is included, as are the deadhead limo and taxi trips.
 ;
 ;
 ; The script reads in DBF files crated from Mr. Gosling's Excel files for 2007 and 2035, and uses a simple linear
@@ -27,7 +27,7 @@
 ;
 ; Transit travel to the airports is not included in these vehicle trip tables.
 ;
-; 
+;
 ; *optional variants:
 ; if CLOSURES=SFO
 ;               35% passengers go to OAK (TAZ 874)
@@ -35,7 +35,7 @@
 ;                5% passengers go to STS (Sonoma County, TAZ 1358)
 ;               25% passengers go to SMF (Sacramento, 1462)
 ;
-; IF CLOSURES=SFO_OAK 
+; IF CLOSURES=SFO_OAK
 ;               50% passengers to SJC (TAZ 434))
 ;                5% passengers to STS (Sonoma County, TAZ 1358)
 ;               45% passengers to SMF (Sacramento)
@@ -73,7 +73,7 @@
 ;
 ; Notes:  (1)
 ;
-; See also: (1) HwyAssign.job, which performs highway assignments; 
+; See also: (1) HwyAssign.job, which performs highway assignments;
 ;
 ; version:  Travel Model One (v 0.3)
 ; authors:  dto (2011 12 14)
@@ -92,50 +92,50 @@ token_closures = '%CLOSURES%'
 ; ----------------------------------------------------------------------------------------------------------------
 loop fYear = 1,8
 
-   if (fYear = 1) 
-   
+   if (fYear = 1)
+
       token_year  = '2015b'
       token_scale = '(2015.0 - 2007.0)/(2035.0 - 2007.0)'
-      
+
    elseif (fYear = 2)
-   
+
       token_year  = '2020b'
       token_scale = '(2020.0 - 2007.0)/(2035.0 - 2007.0)'
-      
+
    elseif (fYear = 3)
-   
+
       token_year  = '2025b'
       token_scale = '(2025.0 - 2007.0)/(2035 - 2007.0)'
-      
+
    elseif (fYear = 4)
-   
+
       token_year  = '2030b'
       token_scale = '(2030.0 - 2007.0)/(2035.0 - 2007.0)'
-      
+
    elseif (fYear = 5)
-   
+
       token_year  = '2035b'
       token_scale = '(2035.0 - 2007.0)/(2035.0 - 2007.0)'
 
    elseif (fYear = 6)
-   
+
       token_year  = '2040b'
       token_scale = '(2040.0 - 2007.0)/(2035.0 - 2007.0)'
 
    elseif (fYear = 7)
-   
+
       token_year  = '2045b'
       token_scale = '(2045.0 - 2007.0)/(2035.0 - 2007.0)'
 
    elseif (fYear = 8)
-   
+
       token_year  = '2050b'
       token_scale = '(2050.0 - 2007.0)/(2035.0 - 2007.0)'
 
    endif
 
    loop airport = 1,3
-   
+
       if (airport = 1)
          token_airport = 'SFO'
          airport_taz_1 = '239'
@@ -225,12 +225,12 @@ loop fYear = 1,8
       endif
 
       loop toFrom = 1,2
-      
+
          if (toFrom = 1) token_toFrom = 'to'
          if (toFrom = 2) token_toFrom = 'from'
 
          run pgm = matrix
-         
+
             filei RECI   = .\GoslingSummaries\2007_@token_toFrom@@token_airport@.dbf
             filei DBI[2] = .\GoslingSummaries\2035b_@token_toFrom@@token_airport@.dbf
 
@@ -248,104 +248,104 @@ loop fYear = 1,8
             RO.DEST = RI.DEST
 
             ; Early AM
-            RO.EA_ES_DA = RI.EA_ES_DA + @token_scale@*(DI.2.EA_ES_DA - RI.EA_ES_DA)
-            RO.EA_ES_S2 = RI.EA_ES_S2 + @token_scale@*(DI.2.EA_ES_S2 - RI.EA_ES_S2)
-            RO.EA_ES_S3 = RI.EA_ES_S3 + @token_scale@*(DI.2.EA_ES_S3 - RI.EA_ES_S3)
-            RO.EA_PK_DA = RI.EA_PK_DA + @token_scale@*(DI.2.EA_PK_DA - RI.EA_PK_DA)
-            RO.EA_PK_S2 = RI.EA_PK_S2 + @token_scale@*(DI.2.EA_PK_S2 - RI.EA_PK_S2)
-            RO.EA_PK_S3 = RI.EA_PK_S3 + @token_scale@*(DI.2.EA_PK_S3 - RI.EA_PK_S3)
-            RO.EA_RN_DA = RI.EA_RN_DA + @token_scale@*(DI.2.EA_RN_DA - RI.EA_RN_DA)
-            RO.EA_RN_S2 = RI.EA_RN_S2 + @token_scale@*(DI.2.EA_RN_S2 - RI.EA_RN_S2)
-            RO.EA_RN_S3 = RI.EA_RN_S3 + @token_scale@*(DI.2.EA_RN_S3 - RI.EA_RN_S3)
-            RO.EA_TX_DA = RI.EA_TX_DA + @token_scale@*(DI.2.EA_TX_DA - RI.EA_TX_DA)
-            RO.EA_TX_S2 = RI.EA_TX_S2 + @token_scale@*(DI.2.EA_TX_S2 - RI.EA_TX_S2)
-            RO.EA_TX_S3 = RI.EA_TX_S3 + @token_scale@*(DI.2.EA_TX_S3 - RI.EA_TX_S3)
-            RO.EA_LI_DA = RI.EA_LI_DA + @token_scale@*(DI.2.EA_LI_DA - RI.EA_LI_DA)
-            RO.EA_LI_S2 = RI.EA_LI_S2 + @token_scale@*(DI.2.EA_LI_S2 - RI.EA_LI_S2)
-            RO.EA_LI_S3 = RI.EA_LI_S3 + @token_scale@*(DI.2.EA_LI_S3 - RI.EA_LI_S3)
-            RO.EA_VN_S3 = RI.EA_VN_S3 + @token_scale@*(DI.2.EA_VN_S3 - RI.EA_VN_S3)
-            RO.EA_HT_S3 = RI.EA_HT_S3 + @token_scale@*(DI.2.EA_HT_S3 - RI.EA_HT_S3)
-            RO.EA_CH_S3 = RI.EA_CH_S3 + @token_scale@*(DI.2.EA_CH_S3 - RI.EA_CH_S3)
+            RO.EA_ES_DA = RI.EA_ES_DA + @token_scale@*max((DI.2.EA_ES_DA - RI.EA_ES_DA),0)
+            RO.EA_ES_S2 = RI.EA_ES_S2 + @token_scale@*max((DI.2.EA_ES_S2 - RI.EA_ES_S2),0)
+            RO.EA_ES_S3 = RI.EA_ES_S3 + @token_scale@*max((DI.2.EA_ES_S3 - RI.EA_ES_S3),0)
+            RO.EA_PK_DA = RI.EA_PK_DA + @token_scale@*max((DI.2.EA_PK_DA - RI.EA_PK_DA),0)
+            RO.EA_PK_S2 = RI.EA_PK_S2 + @token_scale@*max((DI.2.EA_PK_S2 - RI.EA_PK_S2),0)
+            RO.EA_PK_S3 = RI.EA_PK_S3 + @token_scale@*max((DI.2.EA_PK_S3 - RI.EA_PK_S3),0)
+            RO.EA_RN_DA = RI.EA_RN_DA + @token_scale@*max((DI.2.EA_RN_DA - RI.EA_RN_DA),0)
+            RO.EA_RN_S2 = RI.EA_RN_S2 + @token_scale@*max((DI.2.EA_RN_S2 - RI.EA_RN_S2),0)
+            RO.EA_RN_S3 = RI.EA_RN_S3 + @token_scale@*max((DI.2.EA_RN_S3 - RI.EA_RN_S3),0)
+            RO.EA_TX_DA = RI.EA_TX_DA + @token_scale@*max((DI.2.EA_TX_DA - RI.EA_TX_DA),0)
+            RO.EA_TX_S2 = RI.EA_TX_S2 + @token_scale@*max((DI.2.EA_TX_S2 - RI.EA_TX_S2),0)
+            RO.EA_TX_S3 = RI.EA_TX_S3 + @token_scale@*max((DI.2.EA_TX_S3 - RI.EA_TX_S3),0)
+            RO.EA_LI_DA = RI.EA_LI_DA + @token_scale@*max((DI.2.EA_LI_DA - RI.EA_LI_DA),0)
+            RO.EA_LI_S2 = RI.EA_LI_S2 + @token_scale@*max((DI.2.EA_LI_S2 - RI.EA_LI_S2),0)
+            RO.EA_LI_S3 = RI.EA_LI_S3 + @token_scale@*max((DI.2.EA_LI_S3 - RI.EA_LI_S3),0)
+            RO.EA_VN_S3 = RI.EA_VN_S3 + @token_scale@*max((DI.2.EA_VN_S3 - RI.EA_VN_S3),0)
+            RO.EA_HT_S3 = RI.EA_HT_S3 + @token_scale@*max((DI.2.EA_HT_S3 - RI.EA_HT_S3),0)
+            RO.EA_CH_S3 = RI.EA_CH_S3 + @token_scale@*max((DI.2.EA_CH_S3 - RI.EA_CH_S3),0)
 
             ; AM
-            RO.AM_ES_DA = RI.AM_ES_DA + @token_scale@*(DI.2.AM_ES_DA - RI.AM_ES_DA)
-            RO.AM_ES_S2 = RI.AM_ES_S2 + @token_scale@*(DI.2.AM_ES_S2 - RI.AM_ES_S2)
-            RO.AM_ES_S3 = RI.AM_ES_S3 + @token_scale@*(DI.2.AM_ES_S3 - RI.AM_ES_S3)
-            RO.AM_PK_DA = RI.AM_PK_DA + @token_scale@*(DI.2.AM_PK_DA - RI.AM_PK_DA)
-            RO.AM_PK_S2 = RI.AM_PK_S2 + @token_scale@*(DI.2.AM_PK_S2 - RI.AM_PK_S2)
-            RO.AM_PK_S3 = RI.AM_PK_S3 + @token_scale@*(DI.2.AM_PK_S3 - RI.AM_PK_S3)
-            RO.AM_RN_DA = RI.AM_RN_DA + @token_scale@*(DI.2.AM_RN_DA - RI.AM_RN_DA)
-            RO.AM_RN_S2 = RI.AM_RN_S2 + @token_scale@*(DI.2.AM_RN_S2 - RI.AM_RN_S2)
-            RO.AM_RN_S3 = RI.AM_RN_S3 + @token_scale@*(DI.2.AM_RN_S3 - RI.AM_RN_S3)
-            RO.AM_TX_DA = RI.AM_TX_DA + @token_scale@*(DI.2.AM_TX_DA - RI.AM_TX_DA)
-            RO.AM_TX_S2 = RI.AM_TX_S2 + @token_scale@*(DI.2.AM_TX_S2 - RI.AM_TX_S2)
-            RO.AM_TX_S3 = RI.AM_TX_S3 + @token_scale@*(DI.2.AM_TX_S3 - RI.AM_TX_S3)
-            RO.AM_LI_DA = RI.AM_LI_DA + @token_scale@*(DI.2.AM_LI_DA - RI.AM_LI_DA)
-            RO.AM_LI_S2 = RI.AM_LI_S2 + @token_scale@*(DI.2.AM_LI_S2 - RI.AM_LI_S2)
-            RO.AM_LI_S3 = RI.AM_LI_S3 + @token_scale@*(DI.2.AM_LI_S3 - RI.AM_LI_S3)
-            RO.AM_VN_S3 = RI.AM_VN_S3 + @token_scale@*(DI.2.AM_VN_S3 - RI.AM_VN_S3)
-            RO.AM_HT_S3 = RI.AM_HT_S3 + @token_scale@*(DI.2.AM_HT_S3 - RI.AM_HT_S3)
-            RO.AM_CH_S3 = RI.AM_CH_S3 + @token_scale@*(DI.2.AM_CH_S3 - RI.AM_CH_S3)
+            RO.AM_ES_DA = RI.AM_ES_DA + @token_scale@*max((DI.2.AM_ES_DA - RI.AM_ES_DA),0)
+            RO.AM_ES_S2 = RI.AM_ES_S2 + @token_scale@*max((DI.2.AM_ES_S2 - RI.AM_ES_S2),0)
+            RO.AM_ES_S3 = RI.AM_ES_S3 + @token_scale@*max((DI.2.AM_ES_S3 - RI.AM_ES_S3),0)
+            RO.AM_PK_DA = RI.AM_PK_DA + @token_scale@*max((DI.2.AM_PK_DA - RI.AM_PK_DA),0)
+            RO.AM_PK_S2 = RI.AM_PK_S2 + @token_scale@*max((DI.2.AM_PK_S2 - RI.AM_PK_S2),0)
+            RO.AM_PK_S3 = RI.AM_PK_S3 + @token_scale@*max((DI.2.AM_PK_S3 - RI.AM_PK_S3),0)
+            RO.AM_RN_DA = RI.AM_RN_DA + @token_scale@*max((DI.2.AM_RN_DA - RI.AM_RN_DA),0)
+            RO.AM_RN_S2 = RI.AM_RN_S2 + @token_scale@*max((DI.2.AM_RN_S2 - RI.AM_RN_S2),0)
+            RO.AM_RN_S3 = RI.AM_RN_S3 + @token_scale@*max((DI.2.AM_RN_S3 - RI.AM_RN_S3),0)
+            RO.AM_TX_DA = RI.AM_TX_DA + @token_scale@*max((DI.2.AM_TX_DA - RI.AM_TX_DA),0)
+            RO.AM_TX_S2 = RI.AM_TX_S2 + @token_scale@*max((DI.2.AM_TX_S2 - RI.AM_TX_S2),0)
+            RO.AM_TX_S3 = RI.AM_TX_S3 + @token_scale@*max((DI.2.AM_TX_S3 - RI.AM_TX_S3),0)
+            RO.AM_LI_DA = RI.AM_LI_DA + @token_scale@*max((DI.2.AM_LI_DA - RI.AM_LI_DA),0)
+            RO.AM_LI_S2 = RI.AM_LI_S2 + @token_scale@*max((DI.2.AM_LI_S2 - RI.AM_LI_S2),0)
+            RO.AM_LI_S3 = RI.AM_LI_S3 + @token_scale@*max((DI.2.AM_LI_S3 - RI.AM_LI_S3),0)
+            RO.AM_VN_S3 = RI.AM_VN_S3 + @token_scale@*max((DI.2.AM_VN_S3 - RI.AM_VN_S3),0)
+            RO.AM_HT_S3 = RI.AM_HT_S3 + @token_scale@*max((DI.2.AM_HT_S3 - RI.AM_HT_S3),0)
+            RO.AM_CH_S3 = RI.AM_CH_S3 + @token_scale@*max((DI.2.AM_CH_S3 - RI.AM_CH_S3),0)
 
             ; Midday
-            RO.MD_ES_DA = RI.MD_ES_DA + @token_scale@*(DI.2.MD_ES_DA - RI.MD_ES_DA)
-            RO.MD_ES_S2 = RI.MD_ES_S2 + @token_scale@*(DI.2.MD_ES_S2 - RI.MD_ES_S2)
-            RO.MD_ES_S3 = RI.MD_ES_S3 + @token_scale@*(DI.2.MD_ES_S3 - RI.MD_ES_S3)
-            RO.MD_PK_DA = RI.MD_PK_DA + @token_scale@*(DI.2.MD_PK_DA - RI.MD_PK_DA)
-            RO.MD_PK_S2 = RI.MD_PK_S2 + @token_scale@*(DI.2.MD_PK_S2 - RI.MD_PK_S2)
-            RO.MD_PK_S3 = RI.MD_PK_S3 + @token_scale@*(DI.2.MD_PK_S3 - RI.MD_PK_S3)
-            RO.MD_RN_DA = RI.MD_RN_DA + @token_scale@*(DI.2.MD_RN_DA - RI.MD_RN_DA)
-            RO.MD_RN_S2 = RI.MD_RN_S2 + @token_scale@*(DI.2.MD_RN_S2 - RI.MD_RN_S2)
-            RO.MD_RN_S3 = RI.MD_RN_S3 + @token_scale@*(DI.2.MD_RN_S3 - RI.MD_RN_S3)
-            RO.MD_TX_DA = RI.MD_TX_DA + @token_scale@*(DI.2.MD_TX_DA - RI.MD_TX_DA)
-            RO.MD_TX_S2 = RI.MD_TX_S2 + @token_scale@*(DI.2.MD_TX_S2 - RI.MD_TX_S2)
-            RO.MD_TX_S3 = RI.MD_TX_S3 + @token_scale@*(DI.2.MD_TX_S3 - RI.MD_TX_S3)
-            RO.MD_LI_DA = RI.MD_LI_DA + @token_scale@*(DI.2.MD_LI_DA - RI.MD_LI_DA)
-            RO.MD_LI_S2 = RI.MD_LI_S2 + @token_scale@*(DI.2.MD_LI_S2 - RI.MD_LI_S2)
-            RO.MD_LI_S3 = RI.MD_LI_S3 + @token_scale@*(DI.2.MD_LI_S3 - RI.MD_LI_S3)
-            RO.MD_VN_S3 = RI.MD_VN_S3 + @token_scale@*(DI.2.MD_VN_S3 - RI.MD_VN_S3)
-            RO.MD_HT_S3 = RI.MD_HT_S3 + @token_scale@*(DI.2.MD_HT_S3 - RI.MD_HT_S3)
-            RO.MD_CH_S3 = RI.MD_CH_S3 + @token_scale@*(DI.2.MD_CH_S3 - RI.MD_CH_S3)
+            RO.MD_ES_DA = RI.MD_ES_DA + @token_scale@*max((DI.2.MD_ES_DA - RI.MD_ES_DA),0)
+            RO.MD_ES_S2 = RI.MD_ES_S2 + @token_scale@*max((DI.2.MD_ES_S2 - RI.MD_ES_S2),0)
+            RO.MD_ES_S3 = RI.MD_ES_S3 + @token_scale@*max((DI.2.MD_ES_S3 - RI.MD_ES_S3),0)
+            RO.MD_PK_DA = RI.MD_PK_DA + @token_scale@*max((DI.2.MD_PK_DA - RI.MD_PK_DA),0)
+            RO.MD_PK_S2 = RI.MD_PK_S2 + @token_scale@*max((DI.2.MD_PK_S2 - RI.MD_PK_S2),0)
+            RO.MD_PK_S3 = RI.MD_PK_S3 + @token_scale@*max((DI.2.MD_PK_S3 - RI.MD_PK_S3),0)
+            RO.MD_RN_DA = RI.MD_RN_DA + @token_scale@*max((DI.2.MD_RN_DA - RI.MD_RN_DA),0)
+            RO.MD_RN_S2 = RI.MD_RN_S2 + @token_scale@*max((DI.2.MD_RN_S2 - RI.MD_RN_S2),0)
+            RO.MD_RN_S3 = RI.MD_RN_S3 + @token_scale@*max((DI.2.MD_RN_S3 - RI.MD_RN_S3),0)
+            RO.MD_TX_DA = RI.MD_TX_DA + @token_scale@*max((DI.2.MD_TX_DA - RI.MD_TX_DA),0)
+            RO.MD_TX_S2 = RI.MD_TX_S2 + @token_scale@*max((DI.2.MD_TX_S2 - RI.MD_TX_S2),0)
+            RO.MD_TX_S3 = RI.MD_TX_S3 + @token_scale@*max((DI.2.MD_TX_S3 - RI.MD_TX_S3),0)
+            RO.MD_LI_DA = RI.MD_LI_DA + @token_scale@*max((DI.2.MD_LI_DA - RI.MD_LI_DA),0)
+            RO.MD_LI_S2 = RI.MD_LI_S2 + @token_scale@*max((DI.2.MD_LI_S2 - RI.MD_LI_S2),0)
+            RO.MD_LI_S3 = RI.MD_LI_S3 + @token_scale@*max((DI.2.MD_LI_S3 - RI.MD_LI_S3),0)
+            RO.MD_VN_S3 = RI.MD_VN_S3 + @token_scale@*max((DI.2.MD_VN_S3 - RI.MD_VN_S3),0)
+            RO.MD_HT_S3 = RI.MD_HT_S3 + @token_scale@*max((DI.2.MD_HT_S3 - RI.MD_HT_S3),0)
+            RO.MD_CH_S3 = RI.MD_CH_S3 + @token_scale@*max((DI.2.MD_CH_S3 - RI.MD_CH_S3),0)
 
             ; PM
-            RO.PM_ES_DA = RI.PM_ES_DA + @token_scale@*(DI.2.PM_ES_DA - RI.PM_ES_DA)
-            RO.PM_ES_S2 = RI.PM_ES_S2 + @token_scale@*(DI.2.PM_ES_S2 - RI.PM_ES_S2)
-            RO.PM_ES_S3 = RI.PM_ES_S3 + @token_scale@*(DI.2.PM_ES_S3 - RI.PM_ES_S3)
-            RO.PM_PK_DA = RI.PM_PK_DA + @token_scale@*(DI.2.PM_PK_DA - RI.PM_PK_DA)
-            RO.PM_PK_S2 = RI.PM_PK_S2 + @token_scale@*(DI.2.PM_PK_S2 - RI.PM_PK_S2)
-            RO.PM_PK_S3 = RI.PM_PK_S3 + @token_scale@*(DI.2.PM_PK_S3 - RI.PM_PK_S3)
-            RO.PM_RN_DA = RI.PM_RN_DA + @token_scale@*(DI.2.PM_RN_DA - RI.PM_RN_DA)
-            RO.PM_RN_S2 = RI.PM_RN_S2 + @token_scale@*(DI.2.PM_RN_S2 - RI.PM_RN_S2)
-            RO.PM_RN_S3 = RI.PM_RN_S3 + @token_scale@*(DI.2.PM_RN_S3 - RI.PM_RN_S3)
-            RO.PM_TX_DA = RI.PM_TX_DA + @token_scale@*(DI.2.PM_TX_DA - RI.PM_TX_DA)
-            RO.PM_TX_S2 = RI.PM_TX_S2 + @token_scale@*(DI.2.PM_TX_S2 - RI.PM_TX_S2)
-            RO.PM_TX_S3 = RI.PM_TX_S3 + @token_scale@*(DI.2.PM_TX_S3 - RI.PM_TX_S3)
-            RO.PM_LI_DA = RI.PM_LI_DA + @token_scale@*(DI.2.PM_LI_DA - RI.PM_LI_DA)
-            RO.PM_LI_S2 = RI.PM_LI_S2 + @token_scale@*(DI.2.PM_LI_S2 - RI.PM_LI_S2)
-            RO.PM_LI_S3 = RI.PM_LI_S3 + @token_scale@*(DI.2.PM_LI_S3 - RI.PM_LI_S3)
-            RO.PM_VN_S3 = RI.PM_VN_S3 + @token_scale@*(DI.2.PM_VN_S3 - RI.PM_VN_S3)
-            RO.PM_HT_S3 = RI.PM_HT_S3 + @token_scale@*(DI.2.PM_HT_S3 - RI.PM_HT_S3)
-            RO.PM_CH_S3 = RI.PM_CH_S3 + @token_scale@*(DI.2.PM_CH_S3 - RI.PM_CH_S3)
+            RO.PM_ES_DA = RI.PM_ES_DA + @token_scale@*max((DI.2.PM_ES_DA - RI.PM_ES_DA),0)
+            RO.PM_ES_S2 = RI.PM_ES_S2 + @token_scale@*max((DI.2.PM_ES_S2 - RI.PM_ES_S2),0)
+            RO.PM_ES_S3 = RI.PM_ES_S3 + @token_scale@*max((DI.2.PM_ES_S3 - RI.PM_ES_S3),0)
+            RO.PM_PK_DA = RI.PM_PK_DA + @token_scale@*max((DI.2.PM_PK_DA - RI.PM_PK_DA),0)
+            RO.PM_PK_S2 = RI.PM_PK_S2 + @token_scale@*max((DI.2.PM_PK_S2 - RI.PM_PK_S2),0)
+            RO.PM_PK_S3 = RI.PM_PK_S3 + @token_scale@*max((DI.2.PM_PK_S3 - RI.PM_PK_S3),0)
+            RO.PM_RN_DA = RI.PM_RN_DA + @token_scale@*max((DI.2.PM_RN_DA - RI.PM_RN_DA),0)
+            RO.PM_RN_S2 = RI.PM_RN_S2 + @token_scale@*max((DI.2.PM_RN_S2 - RI.PM_RN_S2),0)
+            RO.PM_RN_S3 = RI.PM_RN_S3 + @token_scale@*max((DI.2.PM_RN_S3 - RI.PM_RN_S3),0)
+            RO.PM_TX_DA = RI.PM_TX_DA + @token_scale@*max((DI.2.PM_TX_DA - RI.PM_TX_DA),0)
+            RO.PM_TX_S2 = RI.PM_TX_S2 + @token_scale@*max((DI.2.PM_TX_S2 - RI.PM_TX_S2),0)
+            RO.PM_TX_S3 = RI.PM_TX_S3 + @token_scale@*max((DI.2.PM_TX_S3 - RI.PM_TX_S3),0)
+            RO.PM_LI_DA = RI.PM_LI_DA + @token_scale@*max((DI.2.PM_LI_DA - RI.PM_LI_DA),0)
+            RO.PM_LI_S2 = RI.PM_LI_S2 + @token_scale@*max((DI.2.PM_LI_S2 - RI.PM_LI_S2),0)
+            RO.PM_LI_S3 = RI.PM_LI_S3 + @token_scale@*max((DI.2.PM_LI_S3 - RI.PM_LI_S3),0)
+            RO.PM_VN_S3 = RI.PM_VN_S3 + @token_scale@*max((DI.2.PM_VN_S3 - RI.PM_VN_S3),0)
+            RO.PM_HT_S3 = RI.PM_HT_S3 + @token_scale@*max((DI.2.PM_HT_S3 - RI.PM_HT_S3),0)
+            RO.PM_CH_S3 = RI.PM_CH_S3 + @token_scale@*max((DI.2.PM_CH_S3 - RI.PM_CH_S3),0)
 
             ; EV
-            RO.EV_ES_DA = RI.EV_ES_DA + @token_scale@*(DI.2.EV_ES_DA - RI.EV_ES_DA)
-            RO.EV_ES_S2 = RI.EV_ES_S2 + @token_scale@*(DI.2.EV_ES_S2 - RI.EV_ES_S2)
-            RO.EV_ES_S3 = RI.EV_ES_S3 + @token_scale@*(DI.2.EV_ES_S3 - RI.EV_ES_S3)
-            RO.EV_PK_DA = RI.EV_PK_DA + @token_scale@*(DI.2.EV_PK_DA - RI.EV_PK_DA)
-            RO.EV_PK_S2 = RI.EV_PK_S2 + @token_scale@*(DI.2.EV_PK_S2 - RI.EV_PK_S2)
-            RO.EV_PK_S3 = RI.EV_PK_S3 + @token_scale@*(DI.2.EV_PK_S3 - RI.EV_PK_S3)
-            RO.EV_RN_DA = RI.EV_RN_DA + @token_scale@*(DI.2.EV_RN_DA - RI.EV_RN_DA)
-            RO.EV_RN_S2 = RI.EV_RN_S2 + @token_scale@*(DI.2.EV_RN_S2 - RI.EV_RN_S2)
-            RO.EV_RN_S3 = RI.EV_RN_S3 + @token_scale@*(DI.2.EV_RN_S3 - RI.EV_RN_S3)
-            RO.EV_TX_DA = RI.EV_TX_DA + @token_scale@*(DI.2.EV_TX_DA - RI.EV_TX_DA)
-            RO.EV_TX_S2 = RI.EV_TX_S2 + @token_scale@*(DI.2.EV_TX_S2 - RI.EV_TX_S2)
-            RO.EV_TX_S3 = RI.EV_TX_S3 + @token_scale@*(DI.2.EV_TX_S3 - RI.EV_TX_S3)
-            RO.EV_LI_DA = RI.EV_LI_DA + @token_scale@*(DI.2.EV_LI_DA - RI.EV_LI_DA)
-            RO.EV_LI_S2 = RI.EV_LI_S2 + @token_scale@*(DI.2.EV_LI_S2 - RI.EV_LI_S2)
-            RO.EV_LI_S3 = RI.EV_LI_S3 + @token_scale@*(DI.2.EV_LI_S3 - RI.EV_LI_S3)
-            RO.EV_VN_S3 = RI.EV_VN_S3 + @token_scale@*(DI.2.EV_VN_S3 - RI.EV_VN_S3)
-            RO.EV_HT_S3 = RI.EV_HT_S3 + @token_scale@*(DI.2.EV_HT_S3 - RI.EV_HT_S3)
-            RO.EV_CH_S3 = RI.EV_CH_S3 + @token_scale@*(DI.2.EV_CH_S3 - RI.EV_CH_S3)
+            RO.EV_ES_DA = RI.EV_ES_DA + @token_scale@*max((DI.2.EV_ES_DA - RI.EV_ES_DA),0)
+            RO.EV_ES_S2 = RI.EV_ES_S2 + @token_scale@*max((DI.2.EV_ES_S2 - RI.EV_ES_S2),0)
+            RO.EV_ES_S3 = RI.EV_ES_S3 + @token_scale@*max((DI.2.EV_ES_S3 - RI.EV_ES_S3),0)
+            RO.EV_PK_DA = RI.EV_PK_DA + @token_scale@*max((DI.2.EV_PK_DA - RI.EV_PK_DA),0)
+            RO.EV_PK_S2 = RI.EV_PK_S2 + @token_scale@*max((DI.2.EV_PK_S2 - RI.EV_PK_S2),0)
+            RO.EV_PK_S3 = RI.EV_PK_S3 + @token_scale@*max((DI.2.EV_PK_S3 - RI.EV_PK_S3),0)
+            RO.EV_RN_DA = RI.EV_RN_DA + @token_scale@*max((DI.2.EV_RN_DA - RI.EV_RN_DA),0)
+            RO.EV_RN_S2 = RI.EV_RN_S2 + @token_scale@*max((DI.2.EV_RN_S2 - RI.EV_RN_S2),0)
+            RO.EV_RN_S3 = RI.EV_RN_S3 + @token_scale@*max((DI.2.EV_RN_S3 - RI.EV_RN_S3),0)
+            RO.EV_TX_DA = RI.EV_TX_DA + @token_scale@*max((DI.2.EV_TX_DA - RI.EV_TX_DA),0)
+            RO.EV_TX_S2 = RI.EV_TX_S2 + @token_scale@*max((DI.2.EV_TX_S2 - RI.EV_TX_S2),0)
+            RO.EV_TX_S3 = RI.EV_TX_S3 + @token_scale@*max((DI.2.EV_TX_S3 - RI.EV_TX_S3),0)
+            RO.EV_LI_DA = RI.EV_LI_DA + @token_scale@*max((DI.2.EV_LI_DA - RI.EV_LI_DA),0)
+            RO.EV_LI_S2 = RI.EV_LI_S2 + @token_scale@*max((DI.2.EV_LI_S2 - RI.EV_LI_S2),0)
+            RO.EV_LI_S3 = RI.EV_LI_S3 + @token_scale@*max((DI.2.EV_LI_S3 - RI.EV_LI_S3),0)
+            RO.EV_VN_S3 = RI.EV_VN_S3 + @token_scale@*max((DI.2.EV_VN_S3 - RI.EV_VN_S3),0)
+            RO.EV_HT_S3 = RI.EV_HT_S3 + @token_scale@*max((DI.2.EV_HT_S3 - RI.EV_HT_S3),0)
+            RO.EV_CH_S3 = RI.EV_CH_S3 + @token_scale@*max((DI.2.EV_CH_S3 - RI.EV_CH_S3),0)
 
             WRITE RECO=1
 
@@ -363,14 +363,14 @@ loop fYear = 1,8
          ; ----------------------------------------------------------------------------------------------------------------
          ; STEP 2
          ; These DBFs are then converted into Cube matrices, with optional variants accounting for airport closures and
-         ; diverting trips to alternative airports for Horizon Future scenarios.  
+         ; diverting trips to alternative airports for Horizon Future scenarios.
          ; ----------------------------------------------------------------------------------------------------------------
          run pgm = matrix
-            
+
             filei ZDATI[1] = .\GoslingScaled\@token_year@_to@token_airport@.dbf,   Z=ORIG
             filei ZDATI[2] = .\GoslingScaled\@token_year@_from@token_airport@.dbf, Z=DEST
-   
-            fileo mato[1] = closures_@token_closures@\intermediate\@token_year@_to@token_airport@_@token_tp@.tpp, mo = 1-18, name = 
+
+            fileo mato[1] = closures_@token_closures@\intermediate\@token_year@_to@token_airport@_@token_tp@.tpp, mo = 1-18, name =
                @token_tp@_Escort_DA,@token_tp@_Escort_S2,@token_tp@_Escort_S3,
                @token_tp@_Park_DA,  @token_tp@_Park_S2,  @token_tp@_Park_S3,
                @token_tp@_Rent_DA,  @token_tp@_Rent_S2,  @token_tp@_Rent_S3,
@@ -381,7 +381,7 @@ loop fYear = 1,8
                @token_tp@_Chart_S3
 
             ; note this is the transpose
-            fileo mato[2] = closures_@token_closures@\intermediate\@token_year@_from@token_airport@_t_@token_tp@.tpp, mo = 101-118, name = 
+            fileo mato[2] = closures_@token_closures@\intermediate\@token_year@_from@token_airport@_t_@token_tp@.tpp, mo = 101-118, name =
                @token_tp@_Escort_DA,@token_tp@_Escort_S2,@token_tp@_Escort_S3,
                @token_tp@_Park_DA,  @token_tp@_Park_S2,  @token_tp@_Park_S3,
                @token_tp@_Rent_DA,  @token_tp@_Rent_S2,  @token_tp@_Rent_S3,
@@ -392,9 +392,9 @@ loop fYear = 1,8
                @token_tp@_Chart_S3
 
             zones = 1475
-   
+
             ; ======== destination is @airport_taz_1@ ============
-   
+
             ; Escort
             MW[ 21] = ZI.1.@token_tp@_ES_DA*@airport_pct_1@ INCLUDE=@airport_taz_1@
             MW[ 22] = ZI.1.@token_tp@_ES_S2*@airport_pct_1@ INCLUDE=@airport_taz_1@
@@ -421,7 +421,7 @@ loop fYear = 1,8
             MW[ 37] = ZI.1.@token_tp@_HT_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
             ; Charter
             MW[ 38] = ZI.1.@token_tp@_CH_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
-   
+
             ; ======== destination is @airport_taz_2@ ============
 
             ; Escort
@@ -479,7 +479,7 @@ loop fYear = 1,8
             MW[ 77] = ZI.1.@token_tp@_HT_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
             ; Charter
             MW[ 78] = ZI.1.@token_tp@_CH_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
-           
+
             ; ======== destination is @airport_taz_4@ ============
 
             ; Escort
@@ -530,7 +530,7 @@ loop fYear = 1,8
             MW[ 18] = MW[ 38] + MW[ 58] + MW[ 78] + MW[ 98]
 
             ; ======== destination is @airport_taz_1@ ============
-   
+
             ; Escort
             MW[121] = ZI.2.@token_tp@_ES_DA*@airport_pct_1@ INCLUDE=@airport_taz_1@
             MW[122] = ZI.2.@token_tp@_ES_S2*@airport_pct_1@ INCLUDE=@airport_taz_1@
@@ -557,7 +557,7 @@ loop fYear = 1,8
             MW[137] = ZI.2.@token_tp@_HT_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
             ; Charter
             MW[138] = ZI.2.@token_tp@_CH_S3*@airport_pct_1@ INCLUDE=@airport_taz_1@
-   
+
             ; ======== destination is @airport_taz_2@ ============
 
             ; Escort
@@ -615,7 +615,7 @@ loop fYear = 1,8
             MW[177] = ZI.2.@token_tp@_HT_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
             ; Charter
             MW[178] = ZI.2.@token_tp@_CH_S3*@airport_pct_3@ INCLUDE=@airport_taz_3@
-           
+
             ; ======== destination is @airport_taz_4@ ============
 
             ; Escort
@@ -664,9 +664,9 @@ loop fYear = 1,8
             MW[116] = MW[136] + MW[156] + MW[176] + MW[196]
             MW[117] = MW[137] + MW[157] + MW[177] + MW[197]
             MW[118] = MW[138] + MW[158] + MW[178] + MW[198]
-   
+
          endrun
-   
+
       endloop ; timeperiod
 
    endloop ; airport
@@ -679,32 +679,32 @@ loop fYear = 1,8
       if (timeperiod = 5) token_tp = 'EV'
 
       ; ----------------------------------------------------------------------------------------------------------------
-      ; STEP 3  
+      ; STEP 3
       ; Finally, a highway-assignment ready matrix file is created for each time-of-day interval.
       ; ----------------------------------------------------------------------------------------------------------------
 
       run pgm = matrix
-   
+
          filei mati[1] = closures_@token_closures@\intermediate\@token_year@_toSFO_@token_tp@.tpp
          filei mati[2] = closures_@token_closures@\intermediate\@token_year@_fromSFO_t_@token_tp@.tpp
-      
+
          filei mati[3] = closures_@token_closures@\intermediate\@token_year@_toOAK_@token_tp@.tpp
          filei mati[4] = closures_@token_closures@\intermediate\@token_year@_fromOAK_t_@token_tp@.tpp
-      
+
          filei mati[5] = closures_@token_closures@\intermediate\@token_year@_toSJC_@token_tp@.tpp
          filei mati[6] = closures_@token_closures@\intermediate\@token_year@_fromSJC_t_@token_tp@.tpp
-      
+
          fileo mato[1] = closures_@token_closures@\@token_year@_tripsAirPax@token_tp@.tpp, mo =  1- 6, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
-         
+
         ; combine trips by occupancy ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ;   - drive alone free
         mw[1] = mi.1.@token_tp@_Escort_DA   + mi.1.@token_tp@_Park_DA   + mi.1.@token_tp@_Rent_DA   + mi.1.@token_tp@_Taxi_DA   + mi.1.@token_tp@_Limo_DA   +
                 mi.2.@token_tp@_Escort_DA.T + mi.2.@token_tp@_Park_DA.T + mi.2.@token_tp@_Rent_DA.T + mi.2.@token_tp@_Taxi_DA.T + mi.2.@token_tp@_Limo_DA.T +
-                mi.3.@token_tp@_Escort_DA   + mi.3.@token_tp@_Park_DA   + mi.3.@token_tp@_Rent_DA   + mi.3.@token_tp@_Taxi_DA   + mi.3.@token_tp@_Limo_DA   + 
+                mi.3.@token_tp@_Escort_DA   + mi.3.@token_tp@_Park_DA   + mi.3.@token_tp@_Rent_DA   + mi.3.@token_tp@_Taxi_DA   + mi.3.@token_tp@_Limo_DA   +
                 mi.4.@token_tp@_Escort_DA.T + mi.4.@token_tp@_Park_DA.T + mi.4.@token_tp@_Rent_DA.T + mi.4.@token_tp@_Taxi_DA.T + mi.4.@token_tp@_Limo_DA.T +
                 mi.5.@token_tp@_Escort_DA   + mi.5.@token_tp@_Park_DA   + mi.5.@token_tp@_Rent_DA   + mi.5.@token_tp@_Taxi_DA   + mi.5.@token_tp@_Limo_DA   +
                 mi.6.@token_tp@_Escort_DA.T + mi.6.@token_tp@_Park_DA.T + mi.6.@token_tp@_Rent_DA.T + mi.6.@token_tp@_Taxi_DA.T + mi.6.@token_tp@_Limo_DA.T
-              
+
         ;   - shared ride 2 free
         mw[2] = mi.1.@token_tp@_Escort_S2   + mi.1.@token_tp@_Park_S2   + mi.1.@token_tp@_Rent_S2   + mi.1.@token_tp@_Taxi_S2   + mi.1.@token_tp@_Limo_S2   +
                 mi.2.@token_tp@_Escort_S2.T + mi.2.@token_tp@_Park_S2.T + mi.2.@token_tp@_Rent_S2.T + mi.2.@token_tp@_Taxi_S2.T + mi.2.@token_tp@_Limo_S2.T +
@@ -712,7 +712,7 @@ loop fYear = 1,8
                 mi.4.@token_tp@_Escort_S2.T + mi.4.@token_tp@_Park_S2.T + mi.4.@token_tp@_Rent_S2.T + mi.4.@token_tp@_Taxi_S2.T + mi.4.@token_tp@_Limo_S2.T +
                 mi.5.@token_tp@_Escort_S2   + mi.5.@token_tp@_Park_S2   + mi.5.@token_tp@_Rent_S2   + mi.5.@token_tp@_Taxi_S2   + mi.5.@token_tp@_Limo_S2   +
                 mi.6.@token_tp@_Escort_S2.T + mi.6.@token_tp@_Park_S2.T + mi.6.@token_tp@_Rent_S2.T + mi.6.@token_tp@_Taxi_S2.T + mi.6.@token_tp@_Limo_S2.T
-              
+
          ;   - shared ride 3 free
          mw[3] = mi.1.@token_tp@_Escort_S3   + mi.1.@token_tp@_Park_S3   + mi.1.@token_tp@_Rent_S3   + mi.1.@token_tp@_Taxi_S3   + mi.1.@token_tp@_Limo_S3   + mi.1.@token_tp@_Van_S3   + mi.1.@token_tp@_Hotel_S3   + mi.1.@token_tp@_Chart_S3   +
                  mi.2.@token_tp@_Escort_S3.T + mi.2.@token_tp@_Park_S3.T + mi.2.@token_tp@_Rent_S3.T + mi.2.@token_tp@_Taxi_S3.T + mi.2.@token_tp@_Limo_S3.T + mi.2.@token_tp@_Van_S3.T + mi.2.@token_tp@_Hotel_S3.T + mi.2.@token_tp@_Chart_S3.T +
@@ -720,16 +720,16 @@ loop fYear = 1,8
                  mi.4.@token_tp@_Escort_S3.T + mi.4.@token_tp@_Park_S3.T + mi.4.@token_tp@_Rent_S3.T + mi.4.@token_tp@_Taxi_S3.T + mi.4.@token_tp@_Limo_S3.T + mi.4.@token_tp@_Van_S3.T + mi.4.@token_tp@_Hotel_S3.T + mi.4.@token_tp@_Chart_S3.T +
                  mi.5.@token_tp@_Escort_S3   + mi.5.@token_tp@_Park_S3   + mi.5.@token_tp@_Rent_S3   + mi.5.@token_tp@_Taxi_S3   + mi.5.@token_tp@_Limo_S3   + mi.5.@token_tp@_Van_S3   + mi.5.@token_tp@_Hotel_S3   + mi.5.@token_tp@_Chart_S3   +
                  mi.6.@token_tp@_Escort_S3.T + mi.6.@token_tp@_Park_S3.T + mi.6.@token_tp@_Rent_S3.T + mi.6.@token_tp@_Taxi_S3.T + mi.6.@token_tp@_Limo_S3.T + mi.6.@token_tp@_Van_S3.T + mi.6.@token_tp@_Hotel_S3.T + mi.6.@token_tp@_Chart_S3.T
-   
+
         ;   - drive alone toll (assume no trips pay HOT fee)
         mw[4] = 0
-      
+
         ;   - shared ride 2 toll (assume no trips pay HOT fee)
         mw[5] = 0
-      
+
         ;   - shared ride 3 toll (assume no trips pay HOT fee)
         mw[6] = 0
-      
+
       endrun
    endloop ; timeperiod
 
