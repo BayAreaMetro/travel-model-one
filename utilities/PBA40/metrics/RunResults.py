@@ -59,7 +59,7 @@ class RunResults:
 
     ANNUALIZATION               = 300
     WORK_ANNUALIZATION          = 250
-    DISCOUNT_RATE               = 0.04
+    DISCOUNT_RATE               = 0.03
 
     # per 100000. Crude mortality rate.  For HEAT mortality calcs    ##### AT CHECK THIS
     BAY_AREA_MORTALITY_RATE_2074YRS = 340
@@ -986,9 +986,11 @@ class RunResults:
         daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')] = (daily_results[(cat1,active_cat2,'Transit (20-74yrs transit riders)')]*5.0/RunResults.WALKING_REF_WEEKLY_MIN) * (1.0-RunResults.WALKING_RELATIVE_RISK)
 
         cat2         = 'Activity: Est Deaths Averted (Mortality)'
-        daily_results[(cat1,cat2,'Bike (20-64yrs cyclists)'         )] = daily_results[(cat1,epda_cat2,'Bike (20-64yrs cyclists)'         )]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2064YRS)/100000.0)*self.unique_active_travelers['unique_cyclists_2064'  ]
-        daily_results[(cat1,cat2,'Walk (20-74yrs walkers)'          )] = daily_results[(cat1,epda_cat2,'Walk (20-74yrs walkers)'          )]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2074YRS)/100000.0)*self.unique_active_travelers['unique_walkers_2074'   ]
-        daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')] = daily_results[(cat1,epda_cat2,'Transit (20-74yrs transit riders)')]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2074YRS)/100000.0)*self.unique_active_travelers['unique_transiters_2074']
+        # number of deaths averted among cyclists = proportion of deaths prevented as a result of activity * number of regular deaths among cyclists / avg turnover in years of new cyclists
+        #                                         = proportion of deaths prevented as a result of activity * mortality rate among 20-64 year olds * number of cyclists / avg turnover in years of new cyclists
+        daily_results[(cat1,cat2,'Bike (20-64yrs cyclists)'         )] = daily_results[(cat1,epda_cat2,'Bike (20-64yrs cyclists)'         )]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2064YRS)/100000.0)*self.unique_active_travelers['unique_cyclists_2064'  ] / 10.0 
+        daily_results[(cat1,cat2,'Walk (20-74yrs walkers)'          )] = daily_results[(cat1,epda_cat2,'Walk (20-74yrs walkers)'          )]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2074YRS)/100000.0)*self.unique_active_travelers['unique_walkers_2074'   ] / 10.0
+        daily_results[(cat1,cat2,'Transit (20-74yrs transit riders)')] = daily_results[(cat1,epda_cat2,'Transit (20-74yrs transit riders)')]*(float(RunResults.BAY_AREA_MORTALITY_RATE_2074YRS)/100000.0)*self.unique_active_travelers['unique_transiters_2074'] / 10.0
 
         '''
         ##############
@@ -2001,10 +2003,41 @@ class RunResults:
             worksheet.write(TABLE_HEADER_ROW-2,4, '=(I23+I28) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 4), format_equityben)
 
             worksheet.write(TABLE_HEADER_ROW-5,0, 'Equity Score', format_bc_header_left)
-            worksheet.write(TABLE_HEADER_ROW-5,1, '=(%s+%s)/sum(%s:%s)'%(xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+            worksheet.write(TABLE_HEADER_ROW-5,1, '= if( sum(%s+%s)<(1.51*sum(%s+%s)), 0.1, if(and((%s+%s)<0,sum(%s:%s)<0), abs((%s+%s)-sum(%s:%s)) / max(abs(%s+%s),abs(sum(%s:%s))), \
+                                                        if( and((%s+%s)>0,sum(%s:%s)<0), abs((%s+%s)-sum(%s:%s)) / max(abs(%s+%s),abs(sum(%s:%s))), \
+                                                           (%s+%s) / sum(%s:%s) )))'\
+                                                                        %(xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 3),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
-                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4)), format_equitypct)
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4)),format_equitypct)
 
         # Summing up for total benefits
 
