@@ -47,7 +47,7 @@ class RunResults:
       'Project ID'  ,  # String identifier for the project
       'Project Name',  # Descriptive name for the project
       # 'County'      ,  # County where the project is located
-      # 'Mode'        ,  # Mode for the project
+      'Mode'        ,  # Mode for the project
       'Project Type',  # Categorization of the project
       'Project Mode',  # Road or transit submode.  Used for Out-of-vehicle Transit Travel Time adjustments
       'Future'      ,  # Future scenario to run the project
@@ -498,8 +498,8 @@ class RunResults:
 
 
         # apply change in average auto cost per mile to base truck cost
-        avg_auto_cost        = self.daily_results[('Other Travel Metrics (for reference only)','Auto Average Stats','Average Auto Cost ($2000) per Mile')]
-        base_avg_auto_cost   = self.base_results.daily_results[('Other Travel Metrics (for reference only)','Auto Average Stats','Average Auto Cost ($2000) per Mile')]
+        avg_auto_cost        = self.daily_results[('Other Travel Metrics (for reference only)','Auto Average Stats','Average Auto OpCost ($2000) per Mile')]
+        base_avg_auto_cost   = self.base_results.daily_results[('Other Travel Metrics (for reference only)','Auto Average Stats','Average Auto OpCost ($2000) per Mile')]
         pct_change_cost      = (avg_auto_cost-base_avg_auto_cost)/base_avg_auto_cost
 
         base_truck_cost      = self.base_results.daily_results[cat1, cat2, 'Truck - Computed']
@@ -1145,10 +1145,8 @@ class RunResults:
         daily_results[(cat1,cat2,'Average Truck Speed')] = \
             auto_byclass.loc[auto_byclass.index  == 'truck', 'Vehicle Miles'].sum() / \
            (auto_byclass.loc[auto_byclass.index  == 'truck', 'Vehicle Minutes'].sum()/60.0)
-        daily_results[(cat1,cat2,'Average Auto Cost ($2000) per Mile')] = \
-           ((auto_byclass.loc[auto_byclass.index != 'truck', 'Total Cost'].sum() + \
-             auto_byclass.loc[auto_byclass.index != 'truck', 'Bridge Tolls'].sum() + \
-             auto_byclass.loc[auto_byclass.index != 'truck', 'Value Tolls'].sum())/100.0)/ \
+        daily_results[(cat1,cat2,'Average Auto OpCost ($2000) per Mile')] = \
+           (auto_byclass.loc[auto_byclass.index != 'truck', 'Total Cost'].sum()/100.0)/ \
             auto_byclass.loc[auto_byclass.index != 'truck', 'Vehicle Miles'].sum()
 
         cat2            = 'VMT by class'
