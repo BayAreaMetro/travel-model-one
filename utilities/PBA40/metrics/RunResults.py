@@ -46,7 +46,8 @@ class RunResults:
     REQUIRED_KEYS = [
       'Project ID'  ,  # String identifier for the project
       'Project Name',  # Descriptive name for the project
-      'County'      ,  # County where the project is located
+      # 'County'      ,  # County where the project is located
+      'Mode'        ,  # Mode for the project
       'Project Type',  # Categorization of the project
       'Project Mode',  # Road or transit submode.  Used for Out-of-vehicle Transit Travel Time adjustments
       'Future'      ,  # Future scenario to run the project
@@ -2608,11 +2609,13 @@ class RunResults:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage=USAGE)
+    parser.add_argument('--discount_rate', help="The discount rate.", type=float, default=0.03)
     parser.add_argument('project_dir',
                         help="The directory with the run results csvs.")
     parser.add_argument('all_projects_dir',
                         help="The directory in which to write the Benefit/Cost summary Series")
     args = parser.parse_args(sys.argv[1:])
+    RunResults.DISCOUNT_RATE = args.discount_rate
 
     rr = RunResults(args.project_dir)
     rr.createBaseRunResults()
