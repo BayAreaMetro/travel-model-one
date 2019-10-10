@@ -47,7 +47,7 @@ class RunResults:
       'Project ID'  ,  # String identifier for the project
       'Project Name',  # Descriptive name for the project
       # 'County'      ,  # County where the project is located
-      'Mode'        ,  # Mode for the project
+      # 'Mode'        ,  # Mode for the project
       'Project Type',  # Categorization of the project
       'Project Mode',  # Road or transit submode.  Used for Out-of-vehicle Transit Travel Time adjustments
       'Future'      ,  # Future scenario to run the project
@@ -426,20 +426,22 @@ class RunResults:
         # apply incease in Auto hours to base truck hours
         if not self.base_results: return
 
-        cat1            = 'Travel Time Stats (for reference only)'
-        cat2            = 'Auto Hours (Person Hours)'
-        auto_vht        = self.daily_results[cat1,cat2,'SOV (PHT)'  ] + \
-                          self.daily_results[cat1,cat2,'HOV2 (PHT)' ] + \
-                          self.daily_results[cat1,cat2,'HOV3+ (PHT)']
-        base_auto_vht   = self.base_results.daily_results[cat1,cat2,'SOV (PHT)'  ] + \
-                          self.base_results.daily_results[cat1,cat2,'HOV2 (PHT)' ] + \
-                          self.base_results.daily_results[cat1,cat2,'HOV3+ (PHT)']
-        cat2            = 'Truck Hours'
-        base_truck_vht  = self.base_results.daily_results[cat1,cat2,'Truck (Computed VHT)']
+        cat1                 = 'Other Travel Metrics (for reference only)'
+        cat2                 = 'Auto Average Stats'
+        avg_auto_speed       = self.daily_results[(cat1,cat2,'Average Auto Speed')]
+        base_avg_auto_speed  = self.base_results.daily_results[(cat1,cat2,'Average Auto Speed')]
+        pct_change_speed     = (avg_auto_speed-base_avg_auto_speed)/base_avg_auto_speed
 
-        pct_change_vht  = (auto_vht-base_auto_vht)/base_auto_vht
-        self.daily_results[                cat1,           cat2,       'Truck (Computed VHT)'] = (1.0+pct_change_vht)*base_truck_vht
-        self.daily_results['Accessibility Benefits (other)','Non-Household','Time - Truck (Computed VHT)'] = (1.0+pct_change_vht)*base_truck_vht
+        base_avg_truck_speed = self.base_results.daily_results[(cat1,cat2,'Average Truck Speed')]
+        new_truck_speed      = (1.0+pct_change_speed)*base_avg_truck_speed
+
+        # for truck hours, assume change in avg auto speed applies to truck VMT
+        cat1                 = 'Travel Time Stats (for reference only)'
+        cat2                 = 'Truck Hours'
+        base_truck_vmt       = self.base_results.daily_results[(cat1,cat2,'Truck (Computed VHT)')]*base_avg_truck_speed
+
+        self.daily_results[                cat1,           cat2,       'Truck (Computed VHT)'] = base_truck_vmt/new_truck_speed
+        self.daily_results['Accessibility Benefits (other)','Non-Household','Time - Truck (Computed VHT)'] = base_truck_vmt/new_truck_speed
 
         cat2            = 'Non-Recurring Freeway Delay (Hours)'
         auto_nrfd       = self.daily_results[cat1,cat2,'Auto (Person Hours)']
@@ -493,8 +495,16 @@ class RunResults:
         self.roadways_df['total truck cost']   = (self.roadways_df['small truck volume']*self.roadways_df['smtropc']*self.roadways_df['distance']*0.01) + \
                                                  (self.roadways_df['large truck volume']*self.roadways_df['lrtropc']*self.roadways_df['distance']*0.01)
 
-        self.daily_results[                cat1,           cat2,       'Truck - Computed'] = self.roadways_df['total truck cost'].sum()
-        self.daily_results['Accessibility Benefits (other)','Non-Household','Cost - Truck ($2000) - Computed'] = self.roadways_df['total truck cost'].sum()
+
+
+        # apply change in average auto cost per mile to base truck cost
+        avg_auto_cost        = self.daily_results[('Other Travel Metrics (for reference only)','Auto Average Stats','Average Auto Cost ($2000) per Mile')]
+        base_avg_auto_cost   = self.base_results.daily_results[('Other Travel Metrics (for reference only)','Auto Average Stats','Average Auto Cost ($2000) per Mile')]
+        pct_change_cost      = (avg_auto_cost-base_avg_auto_cost)/base_avg_auto_cost
+
+        base_truck_cost      = self.base_results.daily_results[cat1, cat2, 'Truck - Computed']
+        self.daily_results[                cat1,           cat2,       'Truck - Computed']                     = base_truck_cost*(1.0+pct_change_cost)
+        self.daily_results['Accessibility Benefits (other)','Non-Household','Cost - Truck ($2000) - Computed'] = base_truck_cost*(1.0+pct_change_cost)
 
         cat1            = 'Health Benefits'
         cat2            = 'Noise'
@@ -707,8 +717,6 @@ class RunResults:
         transit_byaceg  = self.transit_times_by_acc_mode_egr.loc['all'].sum(level=['Access','Egress'])
         nonmot_byclass  = self.nonmot_times.loc['all'].sum(level='Mode')  # person trips
         auto_byclass    = self.auto_times.sum(level='Mode')               # person trips
-
-
 
         daily_results   = collections.OrderedDict()
         quick_summary   = {}
@@ -1048,7 +1056,6 @@ class RunResults:
         quick_summary['Vehicle Hours traveled -- HOV3'] =        vmt_byclass.loc[['s3','s3t','s3av'],'VHT'].sum()
         quick_summary['Vehicle Hours traveled -- Trucks']        = vmt_byclass.loc[['sm','smt','hv','hvt'],'VHT'].sum()
 
-
         # These are from vehicle hours -- make them person hours
         cat2            = 'Non-Recurring Freeway Delay (Hours)'
         daily_results[(cat1,cat2,'Auto (Person Hours)')] = \
@@ -1130,6 +1137,19 @@ class RunResults:
 
 
         cat1            = 'Other Travel Metrics (for reference only)'
+
+        cat2           = 'Auto Average Stats'
+        daily_results[(cat1,cat2,'Average Auto Speed')] = \
+            auto_byclass.loc[auto_byclass.index != 'truck', 'Vehicle Miles'].sum() / \
+           (auto_byclass.loc[auto_byclass.index != 'truck', 'Vehicle Minutes'].sum()/60.0)
+        daily_results[(cat1,cat2,'Average Truck Speed')] = \
+            auto_byclass.loc[auto_byclass.index  == 'truck', 'Vehicle Miles'].sum() / \
+           (auto_byclass.loc[auto_byclass.index  == 'truck', 'Vehicle Minutes'].sum()/60.0)
+        daily_results[(cat1,cat2,'Average Auto Cost ($2000) per Mile')] = \
+           ((auto_byclass.loc[auto_byclass.index != 'truck', 'Total Cost'].sum() + \
+             auto_byclass.loc[auto_byclass.index != 'truck', 'Bridge Tolls'].sum() + \
+             auto_byclass.loc[auto_byclass.index != 'truck', 'Value Tolls'].sum())/100.0)/ \
+            auto_byclass.loc[auto_byclass.index != 'truck', 'Vehicle Miles'].sum()
 
         cat2            = 'VMT by class'
         daily_results[(cat1,cat2,'Auto non-AV' )]           = vmt_byclass.loc[['da','dat','s2','s2t','s3','s3t'],'VMT'].sum()
