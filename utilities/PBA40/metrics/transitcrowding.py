@@ -280,14 +280,22 @@ if __name__ == '__main__':
 
     # AC Transit Transbay
     all_trn_df.loc[ all_trn_df["SYSTEM"]=="AC Transit",         "veh_type_updated"] = "AC Plus Bus"   # note this is transbay buses
+    all_trn_df.loc[ all_trn_df["SYSTEM"]=="AC Transit Transbay",         "veh_type_updated"] = "AC Plus Bus"   # note this is transbay buses
+
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_LA"),  "veh_type_updated"] = "Motor Articulated Bus"
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_NL"),  "veh_type_updated"] = "Motor Articulated Bus"
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_O"),  "veh_type_updated"] = "Motor Articulated Bus"
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_NX"),  "veh_type_updated"] = "Motor Articulated Bus"
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_SB"),  "veh_type_updated"] = "Motor Articulated Bus"
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_F"),  "veh_type_updated"] = "Motor Articulated Bus"
-    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_LA"),  "veh_type_updated"] = "Motor Articulated Bus"
     all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_J"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_CFLA"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_CFNL"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_CFO"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_CFNX"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_CFSB"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_CFF"),  "veh_type_updated"] = "Motor Articulated Bus"
+    all_trn_df.loc[ all_trn_df["NAME"].str.contains("84_CFJ"),  "veh_type_updated"] = "Motor Articulated Bus"
 
     # Other express buses
     all_trn_df.loc[ all_trn_df["SYSTEM"]=="Golden Gate Transit Express", "veh_type_updated"] = "AC Plus Bus"   # note this is transbay buses
