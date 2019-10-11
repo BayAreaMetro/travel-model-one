@@ -2022,12 +2022,12 @@ class RunResults:
             worksheet.write(TABLE_HEADER_ROW-2,4, '=(I23+I28) / (%s*1000000)' %xl_rowcol_to_cell(TABLE_HEADER_ROW-3, 4), format_equityben)
 
             worksheet.write(TABLE_HEADER_ROW-5,0, 'Equity Score', format_bc_header_left)
-            worksheet.write(TABLE_HEADER_ROW-5,1, '= if(and((%s+%s)<0,sum(%s:%s)<0), abs((%s+%s)-sum(%s:%s)) / max(abs(%s+%s),abs(sum(%s:%s))), \
-                                                        if( and((%s+%s)>0,sum(%s:%s)<0), abs((%s+%s)-sum(%s:%s)) / max(abs(%s+%s),abs(sum(%s:%s))), \
-                                                           (%s+%s) / sum(%s:%s) ))'\
+            worksheet.write(TABLE_HEADER_ROW-5,1, '=IF((MAX(%s,0)+MAX(%s,0)+MAX(%s,0)+MAX(%s,0))=0,\
+                                                        ABS((%s+%s)-SUM(%s:%s)) / MAX(ABS(%s+%s),ABS(SUM(%s:%s))), \
+                                                        MAX(%s+%s,0)/(MAX(%s,0)+MAX(%s,0)+MAX(%s,0)+MAX(%s,0)))'\
                                                                         %(xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
-                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 3),\
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
@@ -2040,19 +2040,10 @@ class RunResults:
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
-                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
-                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
-                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
-                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
-                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
-                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
-                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
-                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4),\
-                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
-                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
-                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
+                                                                          xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 3),\
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 4)),format_equitypct)
+
 
         # Summing up for total benefits
 
