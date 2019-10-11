@@ -1,16 +1,16 @@
 
 ## Directions for logsums dummy household trace
 
-### 1) move the logs dir aside so we don't overwrite; I usually save as logs_pretrace
-### 2) create logsums_trace dir for output
-### 3) create trace version of logsums.properties file; I usually save old version as logums.properties_pretrace
+#### 1) move the logs dir aside so we don't overwrite; I usually save as logs_pretrace
+#### 2) create logsums_trace dir for output
+#### 3) create trace version of logsums.properties file; I usually save old version as logums.properties_pretrace
 
 note: not sure if ip is ok; if running on different machine than originally run, may need to execute this first to fix IPs:
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --logsums
 
 and then do the following changes.
 
-changes nec. to logsums.properties file:
+changes necessary to CTRAMP\runtime\logsums.properties file:
 
 set output files to be in logsums_trace
   e.g. Results.HouseholdDataFile = logsums_trace/householdData.csv
