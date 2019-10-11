@@ -1,5 +1,5 @@
 
-# Directions for logsums dummy household trace
+## Directions for logsums dummy household trace
 
 ### 1) move the logs dir aside so we don't overwrite; I usually save as logs_pretrace
 ### 2) create logsums_trace dir for output
