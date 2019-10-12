@@ -678,6 +678,9 @@ class RunResults:
         debug_nocem_df["cem"] = True
         debug_nocem_df["cem"] = False
 
+        # note that this is misleading in that the cem column here pertains to the CEM status of the CS columns
+        # but the logsum diffs themselves have CEM enabled in the ldm_cem column and not in the logsum_diff_minutes column
+
         if debug_dir:
             # prepare the debug info
             debug_df = pd.concat(objs=[debug_cem_df, debug_nocem_df], axis="index", sort=True)
