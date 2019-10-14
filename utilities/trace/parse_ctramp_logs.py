@@ -1,7 +1,7 @@
 USAGE = r"""
   Parses ctramp log and outputs trace information into csv files for debugging
 
-  e.g. python parse_ctramp_logs.py event-node0-tourDCMan.log
+  e.g. python parse_ctramp_logs.py base|build event-node0-tourDCMan.log
 
   Note: python2 won't work because of the regex
   It errors out with: 
