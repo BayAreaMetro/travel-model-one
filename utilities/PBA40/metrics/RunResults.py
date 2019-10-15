@@ -2027,7 +2027,7 @@ class RunResults:
             worksheet.write(TABLE_HEADER_ROW-5,0, 'Equity Score', format_bc_header_left)
             worksheet.write(TABLE_HEADER_ROW-5,1, '=IF((MAX(%s,0)+MAX(%s,0)+MAX(%s,0)+MAX(%s,0))=0,\
                                                         ABS((%s+%s)-SUM(%s:%s)) / MAX(ABS(%s+%s),ABS(SUM(%s:%s))), \
-                                                        MAX(%s+%s,0)/(MAX(%s,0)+MAX(%s,0)+MAX(%s,0)+MAX(%s,0)))'\
+                                                        (MAX(%s,0)+MAX(%s,0))/(MAX(%s,0)+MAX(%s,0)+MAX(%s,0)+MAX(%s,0)))'\
                                                                         %(xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 1),\
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 2),\
                                                                           xl_rowcol_to_cell(TABLE_HEADER_ROW-2, 3),\
