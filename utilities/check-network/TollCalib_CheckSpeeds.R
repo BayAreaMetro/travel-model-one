@@ -36,11 +36,18 @@ UNLOADED_NETWORK_DBF  <- Sys.getenv("UNLOADED_NETWORK_DBF") # from cube_to_shape
 UNLOADED_NETWORK_DBF  <- gsub("\\\\","/",UNLOADED_NETWORK_DBF) # switch slashes around
 
 
-# for the toll file, use different path for full runs and extracted output folders
+# for the toll file, use different path for full runs, extracted output folders of baseline runs, and extracted output folders of project runs
 if (dir.exists(file.path(PROJECT_DIR, "CTRAMP"))) {
+    # full runs
     TOLLS_CSV             <- file.path(PROJECT_DIR, "hwy", "tolls.csv")
 } else {
-    TOLLS_CSV             <- file.path(PROJECT_DIR, "INPUT", "hwy", "tolls.csv")
+    if (dir.exists(file.path(PROJECT_DIR, "INPUT"))) {
+        # extracted output folders of baseline runs
+        TOLLS_CSV             <- file.path(PROJECT_DIR, "INPUT", "hwy", "tolls.csv")
+    } else {
+        # extracted output folders of project runs
+        TOLLS_CSV             <- file.path(PROJECT_DIR, "hwy", "tolls.csv")
+    }
 }
 
 
