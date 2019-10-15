@@ -960,7 +960,7 @@
           </datasources>
           <datasource-dependencies datasource='federated.1o6o2vw0kypf4c1d5aghi09z6a8e'>
             <column caption='Build Variable - Base Variable' datatype='real' name='[Calculation_2491053563617210368]' role='measure' type='quantitative'>
-              <calculation class='tableau' formula='IF (ISNULL([variable]) and not isnull([variable (base_tourmc_utilities.csv)])) then&#13;&#10;  -1*[variable (base_tourmc_utilities.csv)]&#13;&#10;elseif (isnull([variable (base_tourmc_utilities.csv)]) and not isnull([variable])) then&#13;&#10;  [variable]&#13;&#10;elseif (not isnull([variable (base_tourmc_utilities.csv)]) and not isnull([variable])) then&#13;&#10;  NULL&#13;&#10;ELSE&#13;&#10;  [variable] - [variable (base_tourmc_utilities.csv)]&#13;&#10;END' />
+              <calculation class='tableau' formula='IF (ISNULL([variable]) and not isnull([variable (base_tourmc_utilities.csv)])) then&#13;&#10;  -1*[variable (base_tourmc_utilities.csv)]&#13;&#10;elseif (isnull([variable (base_tourmc_utilities.csv)]) and not isnull([variable])) then&#13;&#10;  [variable]&#13;&#10;elseif (isnull([variable (base_tourmc_utilities.csv)]) and isnull([variable])) then&#13;&#10;  NULL&#13;&#10;ELSE&#13;&#10;  [variable] - [variable (base_tourmc_utilities.csv)]&#13;&#10;END' />
             </column>
             <column caption='Coefficient' datatype='real' name='[coefficient]' role='measure' type='quantitative' />
             <column aggregation='Sum' caption='Dest Subzone' datatype='integer' name='[dest subzone]' role='dimension' type='ordinal' />
