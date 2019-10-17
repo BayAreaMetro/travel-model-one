@@ -69,9 +69,19 @@ echo FUTURE SHORT NAME = %FUTURE_ABBR%
 set FUTURE=X
 echo FUTURE TEMPORARY LONG NAME = X
 
-:: FUTURE ------------------------- make sure FUTURE_ABBR is one of the three [RT,CG,BF] -------------------------
-:: The long names are: PBA50, CleanAndGreen, BackToTheFuture, or RisingTidesFallingFortunes
+:: FUTURE ------------------------- make sure FUTURE_ABBR is one of the five [BY, BP, RT,CG,BF] -------------------------
+:: The long names are: BaseYear ie 2015, Blueprint aka PBA50, CleanAndGreen, BackToTheFuture, or RisingTidesFallingFortunes
 
+
+echo off
+if %FUTURE_ABBR%==BY (
+  set FUTURE=BaseYear
+)
+
+echo off
+if %FUTURE_ABBR%==BP (
+  set FUTURE=PBA50
+)
 
 echo off
 if %FUTURE_ABBR%==RT (
