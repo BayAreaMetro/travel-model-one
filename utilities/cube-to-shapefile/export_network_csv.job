@@ -1,0 +1,9 @@
+; export network
+;
+run PGM=NETWORK
+
+  filei neti[1] = "%NET_INFILE%"
+  fileo nodeo   = "%NODE_OUTFILE%" FORMAT=CS1
+  fileo linko   = "%LINK_OUTFILE%" FORMAT=CS1
+
+endrun

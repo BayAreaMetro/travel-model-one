@@ -1,0 +1,42 @@
+;
+; Extract a set of trip tables into a csv file (e.g. for tableau)
+;
+
+token_tripsdir = '%TRIPS_DIR%'
+
+; time period loop
+loop period = 1,5
+  if (period = 1)   
+     token_period   = 'ea'
+  elseif (period = 2)
+     token_period   = 'am'
+  elseif (period = 3)
+     token_period   = 'md'
+  elseif (period = 4)
+     token_period   = 'pm'
+  elseif (period = 5)
+     token_period   = 'ev'
+  endif
+
+  DistributeMultistep processid = "ctramp", processnum = period,  commpath = '%COMMPATH%'
+
+  run PGM=MATRIX
+    filei mati[1] = "@token_tripsdir@\trips@token_period@.tpp"
+    fileo mato[1] = "trips@token_period@_noheader.csv", FORMAT=txt, PATTERN=IJM:V, MO=1-30, DELIMITER=',', MAXFIELDS=30
+    
+    MW[1] = 1
+    FILLMW MW[2]=MI.1.1(29)
+      
+  endrun
+      
+   ; add header
+   *echo orig, dest, one_a, one_b, da, datoll, sr2, sr2toll, sr3, sr3toll, walk, bike, wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk, wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv, da_tnc, s2_tnc, s3_tnc, da_av, s2_av, s3_av > "trips@token_period@.csv"
+   *type "trips@token_period@_noheader.csv" >> "trips@token_period@.csv"
+   *del "trips@token_period@_noheader.csv"
+  
+  EndDistributeMultistep
+
+endloop ; time period loop
+
+wait4files files = ctramp1.script.end,  ctramp2.script.end,  ctramp3.script.end,  ctramp4.script.end,  ctramp5.script.end,
+          printfiles = merge, DelDistribFiles = t, CheckReturnCode = t

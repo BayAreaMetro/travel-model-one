@@ -6,7 +6,7 @@ library(dplyr)
 library(reshape2)
 
 # For RStudio, these can be set in the .Rprofile
-MODEL_RUN    <- "2010_06_003"
+MODEL_RUN    <- "2015_06_002"
 TARGET_DIR   <- paste0("M:/Application/Model One/RTP2017/Scenarios/",MODEL_RUN,"/OUTPUT")
 ITER         <- "3"
 SAMPLESHARE  <- "1.00"
