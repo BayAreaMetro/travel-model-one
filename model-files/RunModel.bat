@@ -75,11 +75,13 @@ echo FUTURE TEMPORARY LONG NAME = X
 
 echo off
 if %FUTURE_ABBR%==BY (
-  set FUTURE=BaseYear
+:: for base year
+  set FUTURE=PBA50
 )
 
 echo off
 if %FUTURE_ABBR%==BP (
+:: for the Blueprint
   set FUTURE=PBA50
 )
 
