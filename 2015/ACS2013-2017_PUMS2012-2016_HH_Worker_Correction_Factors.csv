@@ -1,0 +1,37 @@
+COUNTY_NAME,COUNTY,HH_WORKERS,CORRECTION
+Alameda,4,hh_wrks_0,0.56210084
+Alameda,4,hh_wrks_1,1.10148924
+Alameda,4,hh_wrks_2,1.16141048
+Alameda,4,hh_wrks_3_plus,1.27682832
+Contra Costa,5,hh_wrks_0,0.75801448
+Contra Costa,5,hh_wrks_1,1.06763472
+Contra Costa,5,hh_wrks_2,1.07910591
+Contra Costa,5,hh_wrks_3_plus,1.09678653
+Marin,9,hh_wrks_0,0.82851428
+Marin,9,hh_wrks_1,1.03421240
+Marin,9,hh_wrks_2,1.07098673
+Marin,9,hh_wrks_3_plus,1.19898921
+Napa,7,hh_wrks_0,0.69205109
+Napa,7,hh_wrks_1,1.08621834
+Napa,7,hh_wrks_2,1.07878553
+Napa,7,hh_wrks_3_plus,1.26553099
+San Francisco,1,hh_wrks_0,0.67682904
+San Francisco,1,hh_wrks_1,1.08921147
+San Francisco,1,hh_wrks_2,1.08354536
+San Francisco,1,hh_wrks_3_plus,1.16845428
+San Mateo,2,hh_wrks_0,0.64921752
+San Mateo,2,hh_wrks_1,1.05480267
+San Mateo,2,hh_wrks_2,1.08808827
+San Mateo,2,hh_wrks_3_plus,1.16973951
+Santa Clara,3,hh_wrks_0,0.58027660
+Santa Clara,3,hh_wrks_1,1.08859871
+Santa Clara,3,hh_wrks_2,1.09142667
+Santa Clara,3,hh_wrks_3_plus,1.14897690
+Solano,6,hh_wrks_0,0.74793229
+Solano,6,hh_wrks_1,1.07126544
+Solano,6,hh_wrks_2,1.11294028
+Solano,6,hh_wrks_3_plus,1.06629451
+Sonoma,8,hh_wrks_0,0.78336595
+Sonoma,8,hh_wrks_1,1.06958318
+Sonoma,8,hh_wrks_2,1.08952879
+Sonoma,8,hh_wrks_3_plus,1.09744812
