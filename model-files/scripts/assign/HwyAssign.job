@@ -227,7 +227,7 @@ loop period = 1, 5
          lw.capclass = li.CAPCLASS
 
          ; adding at the recommendation of citilabs
-         C = capacityfor(li.lanes,li.ft)
+         C = capacityfor(li.lanes,li.CAPCLASS)
 
          ; set the input time to OT for fixed time links
          if (lw.tsin = 1)
