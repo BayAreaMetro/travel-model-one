@@ -256,7 +256,7 @@ Distance summaries for trips.  Sum(freq) = trips
 | trip_mode | Trip mode. See https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip |
 | tour_purpose | Tour purpose for the trip.  See https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour |
 | freq | Number of trips |
-| distance | Total trip distance |
+| distance | Average trip distance (in miles) |
 
 #### VehicleMilesTraveled
 Auto vehicle miles traveled summed to persons. Sum(freq) = population
