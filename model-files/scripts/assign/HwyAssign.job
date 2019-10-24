@@ -190,6 +190,7 @@ loop period = 1, 5
 
       ; set the assignment parameters -- other closure criteria (do not use)
       parameters gap = 0, aad = 0, raad = 0, rmse = 0
+      parameters ALLOWLAMBDA0 = F
 
       ; set the number of hours in the assignment (see the loop tokens)
       @token_capfac@
