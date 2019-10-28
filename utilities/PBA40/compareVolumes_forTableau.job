@@ -94,5 +94,21 @@ RUN PGM=NETWORK
     TOLLPMDA_DIFF  = LI.2.TOLLPM_DA - LI.1.TOLLPM_DA
     TOLLEVDA_DIFF  = LI.2.TOLLEV_DA - LI.1.TOLLEV_DA
 
+    ; by default, FIRST network attributes will be saved so add a few extra from net2
+    CAPCLASS_N2 = LI.2.CAPCLASS
+    CAP_N2      = LI.2.CAP
+    LANES_N2    = LI.2.LANES
+    
+    VCEA_N2     = LI.2.VCEA
+    VCAM_N2     = LI.2.VCAM
+    VCMD_N2     = LI.2.VCMD
+    VCPM_N2     = LI.2.VCPM
+    VCEV_N2     = LI.2.VCEV
+
+    VOLEA_TOT_N2     = LI.2.VOLEA_TOT
+    VOLAM_TOT_N2     = LI.2.VOLAM_TOT
+    VOLMD_TOT_N2     = LI.2.VOLMD_TOT
+    VOLPM_TOT_N2     = LI.2.VOLPM_TOT
+    VOLEV_TOT_N2     = LI.2.VOLEV_TOT
   ENDPHASE
 ENDRUN
