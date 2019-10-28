@@ -98,7 +98,7 @@ public class MTCCreateLogsums {
         modelStructure = new MtcModelStructure();
 
 		householdDataManager = getHouseholdDataManager();
-	
+		
 		// create a factory object to pass to various model components from which
         // they can create DMU objects
         dmuFactory = new MtcCtrampDmuFactory(tazDataHandler, modelStructure);
@@ -146,7 +146,8 @@ public class MTCCreateLogsums {
 		modelOutputReader.readHouseholdDataOutput();
 		modelOutputReader.readPersonDataOutput();
 		modelOutputReader.readTourDataOutput();
-		
+		logger.info("There are " + householdDataManager.getNumHouseholds()+" households in hh manager after reading model output");
+
 		Household[] households = householdDataManager.getHhArray();
 		for(Household household : households){
 			
@@ -159,6 +160,7 @@ public class MTCCreateLogsums {
 				modelOutputReader.createIndividualTours(household);
 		}
 		householdDataManager.setHhArray(households);
+
 	}
 	
 	
@@ -189,7 +191,6 @@ public class MTCCreateLogsums {
         usualWorkSchoolLocationChoiceModel.runSchoolAndLocationChoiceModel(householdDataManager);
         logger.info ( "finished with usual work and school location choice.");
 
-
 	}
 	
 	public void createNonWorkLogsums(){
@@ -216,6 +217,7 @@ public class MTCCreateLogsums {
         	
         }
 	*/	
+
         HouseholdChoiceModelRunner runner = new HouseholdChoiceModelRunner( propertyMap, jppfClient, "False", householdDataManager, ms, modelStructure, tazDataHandler, dmuFactory );
         runner.runHouseholdChoiceModels();
 
