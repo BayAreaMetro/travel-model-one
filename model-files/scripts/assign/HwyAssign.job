@@ -98,6 +98,7 @@ loop period = 1, 5
 
       ; set the capacity factor, which is the number of hours represented in the assignment
       token_capfac = 'parameters capfac = 3'
+      token_capfac_num = '3'
 
       ; set the processors to be used for the intrastep multithreading
       token_intrastep_processlist = token_intrastep_processlist_EA
@@ -114,6 +115,7 @@ loop period = 1, 5
    elseif (period = 2)
       token_period = 'AM'
       token_capfac = 'parameters capfac = 4'
+      token_capfac_num = '4'
       token_intrastep_processlist = token_intrastep_processlist_AM
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.0005'
@@ -122,6 +124,7 @@ loop period = 1, 5
    elseif (period = 3)
       token_period = 'MD'
       token_capfac = 'parameters capfac = 5'
+      token_capfac_num = '5'
       token_intrastep_processlist = token_intrastep_processlist_MD
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.0005'
@@ -130,6 +133,7 @@ loop period = 1, 5
    elseif (period = 4)
       token_period = 'PM'
       token_capfac = 'parameters capfac = 4'
+      token_capfac_num = '4'
       token_intrastep_processlist = token_intrastep_processlist_PM
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.0005'
@@ -138,6 +142,7 @@ loop period = 1, 5
    elseif (period = 5)
       token_period = 'EV'
       token_capfac = 'parameters capfac = 8'
+      token_capfac_num = '8'
       token_intrastep_processlist = token_intrastep_processlist_EV
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.003'
@@ -185,6 +190,7 @@ loop period = 1, 5
 
       ; set the assignment parameters -- other closure criteria (do not use)
       parameters gap = 0, aad = 0, raad = 0, rmse = 0
+      parameters ALLOWLAMBDA0 = F
 
       ; set the number of hours in the assignment (see the loop tokens)
       @token_capfac@
@@ -226,6 +232,9 @@ loop period = 1, 5
          ; which is area type * 10 + facility type
          lw.capclass = li.CAPCLASS
 
+         ; adding at the recommendation of citilabs
+         C = capacityfor(li.lanes,li.CAPCLASS)*@token_capfac_num@
+
          ; set the input time to OT for fixed time links
          if (lw.tsin = 1)
             t0 = lw.ot
@@ -235,13 +244,13 @@ loop period = 1, 5
 	     read file = ctramp\scripts\block\FreeFlowSpeed.block
 
 	     ; compute the generalized cost for passenger vehicles
-         lw.gencost_da = lw.fft + (0.6/vot) * (lw.dist*AUTOOPC + li.TOLL@token_period@_DA)
-         lw.gencost_s2 = lw.fft + (0.6/vot) * (lw.dist*AUTOOPC + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
-         lw.gencost_s3 = lw.fft + (0.6/vot) * (lw.dist*AUTOOPC + li.TOLL@token_period@_S3 / sr3costshare)  + @token_hov_xfer_pen@
+         lw.gencost_da = lw.fft + (0.6/vot) * (distance*AUTOOPC + li.TOLL@token_period@_DA)
+         lw.gencost_s2 = lw.fft + (0.6/vot) * (distance*AUTOOPC + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
+         lw.gencost_s3 = lw.fft + (0.6/vot) * (distance*AUTOOPC + li.TOLL@token_period@_S3 / sr3costshare)  + @token_hov_xfer_pen@
 
          ; compute the generalized cost for very small, small, and medium trucks (use small truck costs) and large trucks
-         lw.gencost_sml = lw.fft + (0.6/truckvot) * (lw.dist*SMTROPC + li.TOLL@token_period@_SML)
-         lw.gencost_lrg = lw.fft + (0.6/truckvot) * (lw.dist*LRTROPC + li.TOLL@token_period@_LRG)
+         lw.gencost_sml = lw.fft + (0.6/truckvot) * (distance*SMTROPC + li.TOLL@token_period@_SML)
+         lw.gencost_lrg = lw.fft + (0.6/truckvot) * (distance*LRTROPC + li.TOLL@token_period@_LRG)
 
          ; create the link exclusion classes -- HOV only (23), HOV 3+ only (3), no large trucks (4)
          if (li.USE = 2,3)   addtogroup = 23
@@ -311,33 +320,32 @@ loop period = 1, 5
       phase = adjust
 
          ; AV impacts on roadway capacity - represented by adjusting the PCE
-         IF (LI.FT = 1) AV_PCE = AV_PCE_FT01
-         IF (LI.FT = 2) AV_PCE = AV_PCE_FT02
-         IF (LI.FT = 3) AV_PCE = AV_PCE_FT03
-         IF (LI.FT = 4) AV_PCE = AV_PCE_FT04
-         IF (LI.FT = 5) AV_PCE = AV_PCE_FT05
-         IF (LI.FT = 6) AV_PCE = AV_PCE_FT06
-         IF (LI.FT = 7) AV_PCE = AV_PCE_FT07
-         IF (LI.FT = 8) AV_PCE = AV_PCE_FT08
-         IF (LI.FT = 9) AV_PCE = AV_PCE_FT09
-         IF (LI.FT = 10) AV_PCE = AV_PCE_FT10
+         IF (LI.FT = 1) lw.AV_PCE = AV_PCE_FT01
+         IF (LI.FT = 2) lw.AV_PCE = AV_PCE_FT02
+         IF (LI.FT = 3) lw.AV_PCE = AV_PCE_FT03
+         IF (LI.FT = 4) lw.AV_PCE = AV_PCE_FT04
+         IF (LI.FT = 5) lw.AV_PCE = AV_PCE_FT05
+         IF (LI.FT = 6) lw.AV_PCE = AV_PCE_FT06
+         IF (LI.FT = 7) lw.AV_PCE = AV_PCE_FT07
+         IF (LI.FT = 8) lw.AV_PCE = AV_PCE_FT08
+         IF (LI.FT = 9) lw.AV_PCE = AV_PCE_FT09
+         IF (LI.FT = 10) lw.AV_PCE = AV_PCE_FT10
 
          ; very small, small, and medium trucks have a passenger car equivalent of, on average 1.0, large trucks see HwyParam.block for PCE
-         function v = (vol[1] + vol[2] + vol[3] + vol[4] + trkpce*vol[5] + vol[6] + vol[7] + vol[8] + vol[9] + trkpce*vol[10] + (vol[11] + vol[12] + vol[13])* AV_PCE)
+         function v = (vol[1] + vol[2] + vol[3] + vol[4] + trkpce*vol[5] + vol[6] + vol[7] + vol[8] + vol[9] + trkpce*vol[10] + (vol[11] + vol[12] + vol[13])*lw.AV_PCE)
 
          ; the volume delay functions are housed in the SpeedFlowCurve.block file
          read file = ctramp\scripts\block\SpeedFlowCurve.block
 
          ; set the generalized cost functions (same as before, only now we start with "time")
-         lw.gencost_da = time + (0.6/vot) * (lw.dist*AUTOOPC + li.TOLL@token_period@_DA)
-         lw.gencost_s2 = time + (0.6/vot) * (lw.dist*AUTOOPC + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
-         lw.gencost_s3 = time + (0.6/vot) * (lw.dist*AUTOOPC + li.TOLL@token_period@_S3 / sr3costshare) + @token_hov_xfer_pen@
+         lw.gencost_da = time + (0.6/vot) * (distance*AUTOOPC + li.TOLL@token_period@_DA)
+         lw.gencost_s2 = time + (0.6/vot) * (distance*AUTOOPC + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
+         lw.gencost_s3 = time + (0.6/vot) * (distance*AUTOOPC + li.TOLL@token_period@_S3 / sr3costshare) + @token_hov_xfer_pen@
 
-         lw.gencost_sml = time + (0.6/truckvot) * (lw.dist*SMTROPC + li.TOLL@token_period@_SML)
-         lw.gencost_lrg = time + (0.6/truckvot) * (lw.dist*LRTROPC + li.TOLL@token_period@_LRG)
+         lw.gencost_sml = time + (0.6/truckvot) * (distance*SMTROPC + li.TOLL@token_period@_SML)
+         lw.gencost_lrg = time + (0.6/truckvot) * (distance*LRTROPC + li.TOLL@token_period@_LRG)
 
       endphase
-
    endrun
 
    EndDistributeMultistep
