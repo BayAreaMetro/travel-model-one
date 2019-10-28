@@ -294,6 +294,8 @@ public class HouseholdDataWriter {
         data.add("stl_rn");
         data.add("humanVehicles");
         data.add("autonomousVehicles");
+        data.add("sampleRate");
+
 
         return data;
     }
@@ -334,6 +336,8 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.INTEGER);
+        data.add(SqliteDataTypes.REAL);
+        
         return data;
     }
 
@@ -376,7 +380,8 @@ public class HouseholdDataWriter {
         data.add(string(hh.getStlRandomCount()));
         data.add(string(hh.getHumanVehicles()));
         data.add(string(hh.getAutonomousVehicles()));
-        
+        data.add(string(hh.getSampleRate()));
+
         return data;
     }
 
@@ -395,6 +400,8 @@ public class HouseholdDataWriter {
         data.add("inmf_choice");
         data.add("workDCLogsum");
         data.add("schoolDCLogsum");
+        data.add("sampleRate");
+
         return data;
     }
 
@@ -411,6 +418,7 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.TEXT);
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.INTEGER);
+        data.add(SqliteDataTypes.REAL); 
         data.add(SqliteDataTypes.REAL); 
         data.add(SqliteDataTypes.REAL); 
         return data;
@@ -431,6 +439,9 @@ public class HouseholdDataWriter {
         data.add(string(p.getInmtfChoice()));
         data.add(string(p.getWorkLocationLogsum()));
         data.add(string(p.getSchoolLocationLogsum()));
+        float sampleRate = p.getSampleRate();
+        data.add(string(sampleRate));
+        
         return data;
     }
 
@@ -455,6 +466,7 @@ public class HouseholdDataWriter {
        data.add("num_ib_stops");
        data.add("avAvailable");
        data.add("dcLogsum");
+       data.add("sampleRate");
        
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -491,6 +503,7 @@ public class HouseholdDataWriter {
        data.add("num_ib_stops");
        data.add("avAvailable");
        data.add("dcLogsum");
+       data.add("sampleRate");
        
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -530,7 +543,8 @@ public class HouseholdDataWriter {
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.REAL);
-       
+       data.add(SqliteDataTypes.REAL);
+             
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
            for ( int i=1; i <= numModeAlts; i++ ) {
@@ -564,7 +578,8 @@ public class HouseholdDataWriter {
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.REAL);
-      
+       data.add(SqliteDataTypes.REAL);
+
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
            for ( int i=1; i <= numModeAlts; i++ ) {
@@ -601,6 +616,9 @@ public class HouseholdDataWriter {
        data.add(string( t.getNumInboundStops() == 0 ? 0 : t.getNumInboundStops()) );
        data.add(string( t.getUseOwnedAV() ? 1 : 0) );
        data.add(string(t.getDestinationChoiceLogsum()));
+       float sampleRate = t.getSampleRate();
+       data.add(string(sampleRate));
+
        
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -639,6 +657,8 @@ public class HouseholdDataWriter {
        data.add(string( t.getNumInboundStops() == 0 ? 0 : t.getNumInboundStops()) );
        data.add(string( t.getUseOwnedAV() ? 1 : 0) );
        data.add(string(t.getDestinationChoiceLogsum()));
+       float sampleRate = t.getSampleRate();
+       data.add(string(sampleRate));
 
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -732,6 +752,7 @@ public class HouseholdDataWriter {
         data.add("tour_mode");
         data.add("tour_category");
         data.add("avAvailable");
+        data.add("sampleRate");
         return data;
     }
 
@@ -755,6 +776,7 @@ public class HouseholdDataWriter {
         data.add("tour_mode");
         data.add("tour_category");
         data.add("avAvailable");
+        data.add("sampleRate");
         return data;
     }
 
@@ -799,7 +821,8 @@ public class HouseholdDataWriter {
             .append("tour_mode_name").append(",")
             .append("trip_mode_name").append(",")
             .append("travel_time").append(",")
-        	.append("distance").toString();
+        	.append("distance").append(",")
+        	.append("sampleRate").toString();
     }
 
     private String formTravelTimeTableColumnHeader() {
@@ -833,6 +856,7 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.TEXT);
         data.add(SqliteDataTypes.INTEGER);
+        data.add(SqliteDataTypes.REAL);
         return data;
     }
 
@@ -856,6 +880,7 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.TEXT);
         data.add(SqliteDataTypes.INTEGER);
+        data.add(SqliteDataTypes.REAL);
         return data;
     }
 
@@ -925,6 +950,7 @@ public class HouseholdDataWriter {
        data.add(string(t.getTourModeChoice()));
        data.add(string(ModelStructure.TOUR_CATEGORY_LABELS[t.getTourCategoryIndex()]));
        data.add(string( t.getUseOwnedAV() ? 1 : 0) );
+       data.add(string(s.getSampleRate()));
        return data;
    }
 
@@ -1005,6 +1031,8 @@ public class HouseholdDataWriter {
        data.add(string(t.getTourModeChoice()));
        data.add(string(ModelStructure.TOUR_CATEGORY_LABELS[t.getTourCategoryIndex()]));
        data.add(string( t.getUseOwnedAV() ? 1 : 0) );
+       data.add(string(s.getSampleRate()));
+
       
        return data;
    }
@@ -1053,6 +1081,8 @@ public class HouseholdDataWriter {
        data.add(string(t.getTourModeChoice()));
        data.add(string(ModelStructure.TOUR_CATEGORY_LABELS[t.getTourCategoryIndex()]));
        data.add(string( t.getUseOwnedAV() ? 1 : 0) );
+       data.add(string(t.getSampleRate()));
+
 
        return data;
    }
@@ -1110,6 +1140,7 @@ public class HouseholdDataWriter {
        data.add(string(t.getTourModeChoice()));
        data.add(string(ModelStructure.TOUR_CATEGORY_LABELS[t.getTourCategoryIndex()]));
        data.add(string( t.getUseOwnedAV() ? 1 : 0) );
+       data.add(string(t.getSampleRate()));
 
        return data;
    }

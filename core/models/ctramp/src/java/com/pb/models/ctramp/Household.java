@@ -67,6 +67,9 @@ public class Household implements java.io.Serializable {
     // guojy: added for M. Gucwa's research on automated vehicles
     private int hAnalyst; 
     
+    private float                     sampleRate;
+
+    
     public Household() {
         hhRandom = new Random();
      }
@@ -1510,6 +1513,16 @@ public class Household implements java.io.Serializable {
 
 	public void setAutonomousVehicles(short autonomousVehicles) {
 		this.autonomousVehicles = autonomousVehicles;
+	}
+
+
+	public float getSampleRate() {
+		return sampleRate;
+	}
+
+
+	public void setSampleRate(float sampleRate) {
+		this.sampleRate = sampleRate;
 	}
 
 

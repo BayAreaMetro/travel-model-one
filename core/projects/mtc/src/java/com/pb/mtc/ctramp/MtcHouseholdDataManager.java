@@ -111,7 +111,8 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
             newOrder[k] = i;
         }
 
-        
+        boolean hasSampleRate=(hhTable.getColumnPosition(HH_SAMPLERATE_FIELD_NAME) > -1 ? true : false);
+
         
         
         // for each household in the sample
@@ -160,7 +161,16 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
                 // guojy: added for M. Gucwa's research on automated vehicles
 /*                int hAnalyst = (int)hhTable.getValueAt( r, hhTable.getColumnPosition( HH_ANALYST_FIELD_NAME ));
                 hh.setHAnalyst(hAnalyst);
-*/                
+                
+*/  
+                // read sample rate from file if it exists, and multiply by the global sample rate since there might be a sample of households
+                // that doesn't vary by TAZ
+                float hhSampleRate = sampleRate; //the global sample rate
+                if(hasSampleRate)
+                	hhSampleRate = hhTable.getValueAt(r,  hhTable.getColumnPosition(HH_SAMPLERATE_FIELD_NAME))*sampleRate;
+                hh.setSampleRate(hhSampleRate);
+
+              
                 hh.initializeWindows();
                 hhArray[newIndex] = hh;
 

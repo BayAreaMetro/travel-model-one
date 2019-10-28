@@ -21,6 +21,7 @@ public class Stop implements Serializable {
 
     Tour parentTour;
     
+    float sampleRate;
 
     public Stop( Tour parentTour, int origPurposeIndex, int destPurposeIndex, int id, boolean inbound ){
         this.parentTour = parentTour;
@@ -29,6 +30,7 @@ public class Stop implements Serializable {
         this.id = (byte)id;
         this.inbound = inbound;
         this.setDepartHour(this.getTourTodOut()); //default to tour depart/arrival hour
+        this.sampleRate = parentTour.getSampleRate();
     }
 
     public void setOrig(int orig){
@@ -126,7 +128,15 @@ public class Stop implements Serializable {
     }
 
     
-    public void logStopObject( Logger logger, int totalChars, ModelStructure modelStructure ) {
+    public float getSampleRate() {
+		return sampleRate;
+	}
+
+	public void setSampleRate(float sampleRate) {
+		this.sampleRate = sampleRate;
+	}
+
+	public void logStopObject( Logger logger, int totalChars, ModelStructure modelStructure ) {
         
         String separater = "";
         for (int i=0; i < totalChars; i++)

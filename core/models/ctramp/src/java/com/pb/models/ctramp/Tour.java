@@ -47,6 +47,8 @@ public class Tour implements java.io.Serializable {
     private int parentTourId; //for at-work subtours
     
     private boolean useOwnedAV;
+    
+    private float sampleRate;
 
  	// this constructor used for individual mandatory tour creation
     public Tour( Person perObj, int tourId ) {
@@ -56,6 +58,8 @@ public class Tour implements java.io.Serializable {
         this.personTourId = perObj.getMaxTourId();
         this.tourId = (byte)tourId;
         tourCategoryIndex = ModelStructure.MANDATORY_CATEGORY_INDEX;
+        sampleRate = perObj.getSampleRate();
+
     }
 
     // this constructor used to create a temporary tour object for mandatory mode choice logsum calculation in usual work/school location where a tour doesn't yet exist.
@@ -65,6 +69,8 @@ public class Tour implements java.io.Serializable {
     	this.tourPurpose = tourPurpose;
         tourId = -1;
         tourCategoryIndex = ModelStructure.MANDATORY_CATEGORY_INDEX;
+        sampleRate = perObj.getSampleRate();
+
     }
 
     // this constructor used for joint tour creation
@@ -75,6 +81,8 @@ public class Tour implements java.io.Serializable {
         modelStructure.setSegmentedIndexPurpose( tourPurposeIndex, tourPurpose );
         modelStructure.setSegmentedPurposeIndex( tourPurpose, tourPurposeIndex );
         this.tourCategoryIndex = tourCategoryIndex;
+        sampleRate = hhObj.getSampleRate();
+
     }
 
     // this constructor also used for joint tour creation (JEF)
@@ -84,6 +92,7 @@ public class Tour implements java.io.Serializable {
         this.personTourId = (byte) tourId;
         this.tourId = (byte) tourId;
         tourCategoryIndex = ModelStructure.JOINT_NON_MANDATORY_CATEGORY_INDEX;
+        sampleRate = hhObj.getSampleRate();
 
     }
     // this constructor used for individual non-mandatory or at-work subtour creation
@@ -101,6 +110,7 @@ public class Tour implements java.io.Serializable {
         modelStructure.setSegmentedIndexPurpose( tourPurposeIndex, tourPurpose );
         modelStructure.setSegmentedPurposeIndex( tourPurpose, tourPurposeIndex );
         this.tourCategoryIndex = tourCategoryIndex;
+        sampleRate = hhObj.getSampleRate();
     }
 
     /**
@@ -577,6 +587,14 @@ public class Tour implements java.io.Serializable {
 	public void setDestinationChoiceLogsum(float destinationChoiceLogsum) {
 		this.destinationChoiceLogsum = destinationChoiceLogsum;
 	}
+	public float getSampleRate() {
+		return sampleRate;
+	}
+
+	public void setSampleRate(float sampleRate) {
+		this.sampleRate = sampleRate;
+	}
+
 
     
 }
