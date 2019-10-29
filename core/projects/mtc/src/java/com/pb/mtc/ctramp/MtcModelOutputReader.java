@@ -118,7 +118,9 @@ public class MtcModelOutputReader {
         	float valueOfTime = personData.getValueAt(row,"value_of_time");
         	String activityPattern = personData.getStringValueAt(row,"activity_pattern");
         	
-        	int personType = (int) personData.getValueAt(row,"ptype");
+        	String personTypeString = personData.getStringValueAt(row,"type");
+        	int personType = getPersonType(personTypeString);
+        	
         	int imfChoice = (int) personData.getValueAt(row, "imf_choice");
         	int inmfChoice = (int) personData.getValueAt(row, "inmf_choice");
 
