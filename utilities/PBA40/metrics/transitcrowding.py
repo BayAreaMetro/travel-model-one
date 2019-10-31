@@ -272,6 +272,12 @@ if __name__ == '__main__':
     if my_args.no_pseudo_move:
         logging.info("Moving pseudo line ridership into actual lines suppressed by argument")
     elif len(pseudo_lines) > 0:
+
+        # custom override for project
+        if "7000_Resilience_BARTCaldecott" in my_args.project_dir:
+            PSEUDO_LINE_MAPPING["120_OR_YEL"] = ("120_ORANGE[A]?-$","120_YELLOWE-$") # Orange/Richmond - MacArthur - Yellow/SFO
+            PSEUDO_LINE_MAPPING["120_OR_YER"] = ("120_YELLOWE$","120_ORANGE[A]?$")   # Yellow/SFO - MacArthur - Orange/Richmond
+
         all_trn_df = move_pseudo_line_ridership(all_trn_df, pseudo_lines)
 
     # vehicle type overrides
