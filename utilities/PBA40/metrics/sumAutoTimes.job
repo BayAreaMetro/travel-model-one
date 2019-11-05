@@ -143,6 +143,10 @@ loop auto = 1,15
   Read File = "CTRAMP\scripts\block\hwyParam.block"
 
   RUN PGM = MATRIX
+
+  ; Read toll discounts from the block file
+  Read File = "CTRAMP\scripts\block\hwyParam.block"
+
   ; Read person trips for an income quartile for all time periods
      FILEI MATI[1] = "main\tripsEA_no_zpv_@token_inc@.tpp"
      FILEI MATI[2] = "main\tripsAM_no_zpv_@token_inc@.tpp"
@@ -199,7 +203,17 @@ loop auto = 1,15
       MW[4]   = (mi.1.@token_auto@ * mi.6.@token_dist@)/_occupancy  ; Vehicle miles
       MW[5]   = (mi.1.@token_auto@/_occupancy) * (mi.6.@token_dist@ * @AUTOOPC@) ; not including tolls
       MW[6]   = (mi.1.@token_auto@/_occupancy) *  mi.6.@token_btoll@             ; Bridge tolls
-      MW[7]   = (mi.1.@token_auto@/_occupancy) *  mi.6.@token_vtoll@             ; Value tolls
+
+     ; apply toll discounts to Q1 and Q2
+      if (@inc@ = 1)
+          MW[101] = mi.6.@token_btoll@* Means_Based_Tolling_Q1Factor
+      elseif (@inc@ = 2)
+          MW[101] = mi.6.@token_btoll@* Means_Based_Tolling_Q2Factor
+      else
+          MW[101] = mi.6.@token_btoll@
+      endif
+
+      MW[7]   = (mi.1.@token_auto@/_occupancy) *  MW[101]                        ; Value tolls
 
      ; Trips AM * Skims AM
       MW[8]   =  mi.2.@token_auto@ * mi.7.@token_time@               ; Person minutes
@@ -208,7 +222,17 @@ loop auto = 1,15
       MW[11]  = (mi.2.@token_auto@ * mi.7.@token_dist@)/_occupancy  ; Vehilce miles
       MW[12]  = (mi.2.@token_auto@/_occupancy) * (mi.7.@token_dist@ * @AUTOOPC@) ; not including tolls
       MW[13]  = (mi.2.@token_auto@/_occupancy) *  mi.7.@token_btoll@             ; Bridge tolls
-      MW[14]  = (mi.2.@token_auto@/_occupancy) *  mi.7.@token_vtoll@             ; Value tolls
+
+      ; apply toll discounts to Q1 and Q2
+       if (@inc@ = 1)
+           MW[102] = mi.7.@token_btoll@* Means_Based_Tolling_Q1Factor
+       elseif (@inc@ = 2)
+           MW[102] = mi.7.@token_btoll@* Means_Based_Tolling_Q2Factor
+       else
+           MW[102] = mi.7.@token_btoll@
+       endif
+
+      MW[14]  = (mi.2.@token_auto@/_occupancy) *  MW[102]                        ; Value tolls
 
       ; Trips MD * Skims MD
       MW[15]  =  mi.3.@token_auto@ * mi.8.@token_time@               ; Person minutes
@@ -217,7 +241,17 @@ loop auto = 1,15
       MW[18]  = (mi.3.@token_auto@ * mi.8.@token_dist@)/_occupancy  ; Vehicle miles
       MW[19]  = (mi.3.@token_auto@/_occupancy) * (mi.8.@token_dist@ * @AUTOOPC@) ; not including tolls
       MW[20]  = (mi.3.@token_auto@/_occupancy) *  mi.8.@token_btoll@             ; Bridge tolls
-      MW[21]  = (mi.3.@token_auto@/_occupancy) *  mi.8.@token_vtoll@             ; Value tolls
+
+      ; apply toll discounts to Q1 and Q2
+       if (@inc@ = 1)
+           MW[103] = mi.8.@token_btoll@* Means_Based_Tolling_Q1Factor
+       elseif (@inc@ = 2)
+           MW[103] = mi.8.@token_btoll@* Means_Based_Tolling_Q2Factor
+       else
+           MW[103] = mi.8.@token_btoll@
+       endif
+
+      MW[21]  = (mi.3.@token_auto@/_occupancy) *  MW[103]                        ; Value tolls
 
       ; Trips PM * Skims PM
       MW[22]   =  mi.4.@token_auto@ * mi.9.@token_time@                ; Person minutes
@@ -226,7 +260,17 @@ loop auto = 1,15
       MW[25]   = (mi.4.@token_auto@ * mi.9.@token_dist@)/_occupancy   ; Vehicle miles
       MW[26]   = (mi.4.@token_auto@/_occupancy) * (mi.9.@token_dist@ * @AUTOOPC@) ; not including tolls
       MW[27]   = (mi.4.@token_auto@/_occupancy) *  mi.9.@token_btoll@             ; Bridge tolls
-      MW[28]   = (mi.4.@token_auto@/_occupancy) *  mi.9.@token_vtoll@             ; Value tolls
+
+      ; apply toll discounts to Q1 and Q2
+       if (@inc@ = 1)
+           MW[104] = mi.9.@token_btoll@* Means_Based_Tolling_Q1Factor
+       elseif (@inc@ = 2)
+           MW[104] = mi.9.@token_btoll@* Means_Based_Tolling_Q2Factor
+       else
+           MW[104] = mi.9.@token_btoll@
+       endif
+
+      MW[28]   = (mi.4.@token_auto@/_occupancy) *  MW[104]                        ; Value tolls
 
       ; Trips EV * Skims EV
       MW[29]   =  mi.5.@token_auto@ * mi.10.@token_time@               ; Person minutes
@@ -235,7 +279,17 @@ loop auto = 1,15
       MW[32]   = (mi.5.@token_auto@ * mi.10.@token_dist@)/_occupancy  ; Vehicle miles
       MW[33]   = (mi.5.@token_auto@/_occupancy) * (mi.10.@token_dist@ * @AUTOOPC@) ; not including tolls
       MW[34]   = (mi.5.@token_auto@/_occupancy) *  mi.10.@token_btoll@             ; Bridge tolls
-      MW[35]   = (mi.5.@token_auto@/_occupancy) *  mi.10.@token_vtoll@             ; Value tolls
+
+      ; apply toll discounts to Q1 and Q2
+       if (@inc@ = 1)
+           MW[105] = mi.10.@token_btoll@* Means_Based_Tolling_Q1Factor
+       elseif (@inc@ = 2)
+           MW[105] = mi.10.@token_btoll@* Means_Based_Tolling_Q2Factor
+       else
+           MW[105] = mi.10.@token_btoll@
+       endif
+
+      MW[35]   = (mi.5.@token_auto@/_occupancy) * MW[105]                         ; Value tolls
 
      ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
      MW[36] =  mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@

@@ -226,6 +226,9 @@ def config_mobility_params(for_logsums, replacements):
 
     SharingPrefFactor  = float(get_property(params_filename, myfile_contents, "Sharing_Preferences_factor"))
 
+    MeansBasedTollsQ1Factor  = float(get_property(params_filename, myfile_contents, "Means_Based_Tolling_Q1Factor"))
+    MeansBasedTollsQ2Factor  = float(get_property(params_filename, myfile_contents, "Means_Based_Tolling_Q2Factor"))
+
     Adjust_TNCsingle_TourMode = float(get_property(params_filename, myfile_contents, "Adjust_TNCsingle_TourMode"))
     Adjust_TNCshared_TourMode = float(get_property(params_filename, myfile_contents, "Adjust_TNCshared_TourMode"))
     Adjust_TNCsingle_TripMode = float(get_property(params_filename, myfile_contents, "Adjust_TNCsingle_TripMode"))
@@ -284,6 +287,9 @@ def config_mobility_params(for_logsums, replacements):
     replacements[filepath]["(\nModel_Year[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d" % modelYear
 
     replacements[filepath]["(\nSharing_Preferences_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % SharingPrefFactor
+
+    replacements[filepath]["(\nMeans_Based_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ1Factor
+    replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
 
     replacements[filepath]["(\nAdjust_TNCsingle_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCsingle_TourMode
     replacements[filepath]["(\nAdjust_TNCshared_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCshared_TourMode
@@ -397,6 +403,9 @@ def config_auto_opcost(for_logsums, replacements):
     OwnedAV_zpv   = float(get_property(params_filename, myfile_contents, "OwnedAV_ZPV_fac"))
     TNC_zpv   = float(get_property(params_filename, myfile_contents, "TNC_ZPV_fac"))
 
+    MeansBasedTollsQ1Factor  = float(get_property(params_filename, myfile_contents, "Means_Based_Tolling_Q1Factor"))
+    MeansBasedTollsQ2Factor  = float(get_property(params_filename, myfile_contents, "Means_Based_Tolling_Q2Factor"))
+
 
     # put the av pce factors into the CTRAMP\scripts\block\hwyParam.block
     filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
@@ -413,6 +422,9 @@ def config_auto_opcost(for_logsums, replacements):
 
     replacements[filepath]["(\nOwnedAV_ZPV_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % OwnedAV_zpv
     replacements[filepath]["(\nTNC_ZPV_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % TNC_zpv
+
+    replacements[filepath]["(\nMeans_Based_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ1Factor
+    replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
 
 
 def config_logsums(replacements, append):
