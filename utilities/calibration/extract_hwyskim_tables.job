@@ -1,0 +1,15 @@
+; Extract all hwy skim table into a text file of condensed form
+;
+run PGM=MATRIX
+  filei mati[1] = "%MODEL_DIR%\skims\HWYSKM%TIME_PERIOD%.tpp"
+  fileo mato[1] = "HWYSKM%TIME_PERIOD%_noheader.csv", FORMAT=TXT, DELIMITER=",", PATTERN=IJM:V, MO=1-22, MAXFIELDS=22
+
+  MW[1] = 1
+  FILLMW MW[2] = MI.1.1(21)
+
+endrun
+
+; add header
+*echo orig, dest, one_a, one_b, TIMEDA, DISTDA, BTOLLDA, TOLLTIMEDA, TOLLDISTDA, TOLLBTOLLDA, TOLLVTOLLDA, TIMES2, DISTS2, BTOLLS2, TOLLTIMES2, TOLLDISTS2, TOLLBTOLLS2, TOLLVTOLLS2, TIMES3, DISTS3, BTOLLS3, TOLLTIMES3, TOLLDISTS3, TOLLBTOLLS3, TOLLVTOLLS3 > "HWYSKM%TIME_PERIOD%.csv"
+*type "HWYSKM%TIME_PERIOD%_noheader.csv" >> "HWYSKM%TIME_PERIOD%.csv"
+*del "HWYSKM%TIME_PERIOD%_noheader.csv"
