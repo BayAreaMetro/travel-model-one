@@ -181,21 +181,8 @@ loop period = 1,5
       ; compute the speeds with the volume delay curves
       phase = adjust
       
-         ; AV impacts on roadway capacity - represented by adjusting the PCE
-         IF (LI.FT = 1) lw.AV_PCE = AV_PCE_FT01
-         IF (LI.FT = 2) lw.AV_PCE = AV_PCE_FT02
-         IF (LI.FT = 3) lw.AV_PCE = AV_PCE_FT03
-         IF (LI.FT = 4) lw.AV_PCE = AV_PCE_FT04
-         IF (LI.FT = 5) lw.AV_PCE = AV_PCE_FT05
-         IF (LI.FT = 6) lw.AV_PCE = AV_PCE_FT06
-         IF (LI.FT = 7) lw.AV_PCE = AV_PCE_FT07
-         IF (LI.FT = 8) lw.AV_PCE = AV_PCE_FT08
-         IF (LI.FT = 9) lw.AV_PCE = AV_PCE_FT09
-         IF (LI.FT = 10) lw.AV_PCE = AV_PCE_FT10
-
-      
          ; total volume includes each of the 13 classes
-         function v = li.v1_1 + li.v2_1 + li.v3_1 + li.v4_1 + trkpce * li.v5_1 + li.v6_1 + li.v7_1 + li.v8_1 + li.v9_1 + trkpce * li.v10_1 + (li.v11_1 + li.v12_1 + li.v13_1) * lw.AV_PCE
+         function v = li.v1_1 + li.v2_1 + li.v3_1 + li.v4_1 + trkpce*li.v5_1 + li.v6_1 + li.v7_1 + li.v8_1 + li.v9_1 + trkpce*li.v10_1 + (li.v11_1 + li.v12_1 + li.v13_1)*li.AV_PCE
                  
          ; the volume delay functions are housed in the SpeedFlowCurve.block file
          read file = ctramp\scripts\block\SpeedFlowCurve.block 
