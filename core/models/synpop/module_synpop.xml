@@ -48,7 +48,7 @@
 
   <target name="compile.module.synpop" depends="compile.module.common-base, compile.module.reference, compile.module.common-daf-v2, compile.module.utils, compile.module.censusdata" description="compile module synpop production classes">
     <mkdir dir="${synpop.output.dir}"/>
-    <javac destdir="${synpop.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.synpop}/bin/javac">
+    <javac destdir="${synpop.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.synpop}/javac">
       <compilerarg line="${compiler.args.synpop}"/>
       <bootclasspath refid="synpop.module.bootclasspath"/>
       <classpath refid="synpop.module.classpath"/>

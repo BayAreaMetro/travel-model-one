@@ -105,7 +105,9 @@ public class Person implements java.io.Serializable {
         this.schoolTourArrayList = new ArrayList<Tour>();
         this.indNonManTourArrayList = new ArrayList<Tour>();
         this.atWorkSubtourArrayList = new ArrayList<Tour>();
-        this.sampleRate = hhObj.getSampleRate();
+        
+        if(hhObj!=null)
+        	this.sampleRate = hhObj.getSampleRate();
         
         initializeWindows();
     }

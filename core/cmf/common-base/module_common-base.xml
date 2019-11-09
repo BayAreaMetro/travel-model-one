@@ -54,7 +54,7 @@
   
   <target name="compile.module.common-base"  description="compile module common-base production classes">
     <mkdir dir="${common-base.output.dir}"/>
-    <javac destdir="${common-base.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.common-base}/bin/javac">
+    <javac destdir="${common-base.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.common-base}/javac">
       <compilerarg line="${compiler.args.common-base}"/>
       <bootclasspath refid="common-base.module.bootclasspath"/>
       <classpath refid="common-base.module.classpath"/>

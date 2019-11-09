@@ -58,7 +58,9 @@ public class Tour implements java.io.Serializable {
         this.personTourId = perObj.getMaxTourId();
         this.tourId = (byte)tourId;
         tourCategoryIndex = ModelStructure.MANDATORY_CATEGORY_INDEX;
-        sampleRate = perObj.getSampleRate();
+        
+        if(perObj!=null)
+        	sampleRate = perObj.getSampleRate();
 
     }
 
@@ -69,7 +71,8 @@ public class Tour implements java.io.Serializable {
     	this.tourPurpose = tourPurpose;
         tourId = -1;
         tourCategoryIndex = ModelStructure.MANDATORY_CATEGORY_INDEX;
-        sampleRate = perObj.getSampleRate();
+        if(perObj!=null)
+        	sampleRate = perObj.getSampleRate();
 
     }
 
@@ -81,8 +84,9 @@ public class Tour implements java.io.Serializable {
         modelStructure.setSegmentedIndexPurpose( tourPurposeIndex, tourPurpose );
         modelStructure.setSegmentedPurposeIndex( tourPurpose, tourPurposeIndex );
         this.tourCategoryIndex = tourCategoryIndex;
-        sampleRate = hhObj.getSampleRate();
-
+        if(hhObj!=null)
+        	sampleRate = hhObj.getSampleRate();
+ 
     }
 
     // this constructor also used for joint tour creation (JEF)
@@ -92,7 +96,8 @@ public class Tour implements java.io.Serializable {
         this.personTourId = (byte) tourId;
         this.tourId = (byte) tourId;
         tourCategoryIndex = ModelStructure.JOINT_NON_MANDATORY_CATEGORY_INDEX;
-        sampleRate = hhObj.getSampleRate();
+        if(hhObj!=null)
+        	sampleRate = hhObj.getSampleRate();
 
     }
     // this constructor used for individual non-mandatory or at-work subtour creation
@@ -110,7 +115,8 @@ public class Tour implements java.io.Serializable {
         modelStructure.setSegmentedIndexPurpose( tourPurposeIndex, tourPurpose );
         modelStructure.setSegmentedPurposeIndex( tourPurpose, tourPurposeIndex );
         this.tourCategoryIndex = tourCategoryIndex;
-        sampleRate = hhObj.getSampleRate();
+        if(hhObj!=null)
+        	sampleRate = hhObj.getSampleRate();
     }
 
     /**

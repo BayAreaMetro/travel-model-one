@@ -30,7 +30,8 @@ public class Stop implements Serializable {
         this.id = (byte)id;
         this.inbound = inbound;
         this.setDepartHour(this.getTourTodOut()); //default to tour depart/arrival hour
-        this.sampleRate = parentTour.getSampleRate();
+        if(parentTour!=null)
+        	this.sampleRate = parentTour.getSampleRate();
     }
 
     public void setOrig(int orig){

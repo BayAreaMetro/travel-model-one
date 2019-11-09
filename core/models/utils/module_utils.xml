@@ -42,7 +42,7 @@
 
   <target name="compile.module.utils" depends="compile.module.common-base" description="compile module util production classes">
     <mkdir dir="${utils.output.dir}"/>
-    <javac destdir="${utils.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.utils}/bin/javac">
+    <javac destdir="${utils.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.utils}/javac">
       <compilerarg line="${compiler.args.utils}"/>
       <bootclasspath refid="utils.module.bootclasspath"/>
       <classpath refid="utils.module.classpath"/>

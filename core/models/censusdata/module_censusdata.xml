@@ -39,7 +39,7 @@
   
   <target name="compile.module.censusdata" depends="compile.module.common-base, compile.module.reference" description="compile module censusdata production classes">
     <mkdir dir="${censusdata.output.dir}"/>
-    <javac destdir="${censusdata.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.censusdata}/bin/javac">
+    <javac destdir="${censusdata.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.censusdata}/javac">
       <compilerarg line="${compiler.args.censusdata}"/>
       <bootclasspath refid="censusdata.module.bootclasspath"/>
       <classpath refid="censusdata.module.classpath"/>

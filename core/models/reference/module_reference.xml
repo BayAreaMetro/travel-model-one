@@ -41,7 +41,7 @@
 
   <target name="compile.module.reference" depends="compile.module.common-base" description="compile module reference production classes">
     <mkdir dir="${reference.output.dir}"/>
-    <javac destdir="${reference.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.reference}/bin/javac">
+    <javac destdir="${reference.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.reference}/javac">
       <compilerarg line="${compiler.args.reference}"/>
       <bootclasspath refid="reference.module.bootclasspath"/>
       <classpath refid="reference.module.classpath"/>

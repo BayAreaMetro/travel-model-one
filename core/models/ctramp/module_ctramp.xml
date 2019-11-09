@@ -54,7 +54,7 @@
 
   <target name="compile.module.ctramp" depends="compile.module.common-base" description="compile module ctramp production classes">
     <mkdir dir="${ctramp.output.dir}"/>
-    <javac destdir="${ctramp.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.ctramp}/bin/javac">
+    <javac destdir="${ctramp.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memoryMaximumSize="${compiler.max.memory}" fork="true" executable="${module.jdk.home.ctramp}/javac">
       <compilerarg line="${compiler.args.ctramp}"/>
       <bootclasspath refid="ctramp.module.bootclasspath"/>
       <classpath refid="ctramp.module.classpath"/>
