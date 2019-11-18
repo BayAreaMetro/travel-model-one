@@ -150,6 +150,10 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
     	return stop.getTourTodOut(); 
     }
     
+    public int getTripTimeOfDay(){
+        return stop.getDepartHour();
+    }
+
     public int getTripIsInbound(){ 
     	if (stop.isInboundStop()) return 1; 
     	else return 0; 
@@ -270,7 +274,7 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
         methodIndexMap.put( "getHourlyOffPeakParkingCostAtOrigin", 27 );
         methodIndexMap.put( "getHourlyOffPeakParkingCostAtDestination", 28 );
         methodIndexMap.put( "getTourDuration", 29 );
-        methodIndexMap.put( "getTripTimeOfDay", 30 );
+        methodIndexMap.put( "getTripTimeOfDay", 30 ); // note
         methodIndexMap.put( "getTripIsInbound", 31 );
         methodIndexMap.put( "getTerminalTimeAtOrigin", 32); 
         methodIndexMap.put( "getTerminalTimeAtDestination", 33);
@@ -325,7 +329,7 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
             case 27: return getHourlyOffPeakParkingCostAtOrigin();
             case 28: return getHourlyPeakParkingCostAtDestination();
             case 29: return getTourDuration(); 
-            case 30: return getTimeOutbound(); 
+            case 30: return getTripTimeOfDay();
             case 31: return getTripIsInbound(); 
             case 32: return getOriginTerminalTime(); 
             case 33: return getDestinationTerminalTime(); 
