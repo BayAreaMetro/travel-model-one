@@ -797,12 +797,12 @@ temp0 <- workingdata %>%
 "
 1. Add in additional GQ population for growth 2010-2015 from M. Reilly, file gq_add_00051015.csv
 
-Location                                                  TAZ1454    extra_gq
-------------------------------------------------------    -------    --------
-Kennedy Grad at Stanford	                                353        436
-Munger East AND Ng House at Stanford	                    354        120
-Metropolitan, Channing Bowditch, Maximo Commons at UCB	  1008       348
-------------------------------------------------------    -------    --------
+Location                                                  	TAZ1454    extra_gq
+------------------------------------------------------    	-------    --------
+Kennedy Grad at Stanford					353		436
+Munger East AND Ng House at Stanford	                   	354        	120
+Metropolitan, Channing Bowditch, Maximo Commons at UCB	  	1008 		348
+------------------------------------------------------    	-------    --------
 
 2. Sum total 2010 GQ to compare to ACS PUMS 2015 GQ
 
