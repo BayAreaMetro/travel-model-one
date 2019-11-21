@@ -6,6 +6,12 @@
 # Updated December 11, 2018
 
 # Notes
+
+# The working directory is set as the location of the script. All other paths in Petrale will be relative.
+
+wd <- dirname(rstudioapi::getActiveDocumentContext()$path)
+setwd(wd)
+
 "
 
 1. ACS data here is downloaded for the 2013-2017 5-year dataset. The end year can be updated 
@@ -15,10 +21,11 @@
    level, tract-level data used instead. Suppressed variables may change if ACS_year is changed. This 
    should be checked, as this change could cause the script not to work.
 
-3. Group quarters come from the decennial census so they're outdated.  TODO: grow these for 2015.
+3. Group quarters come from the decennial census so they're outdated. There are some small TAZ-specific 
+   additions from university growth that are incorporated in the script. TODO: grow these for 2015.
 
 4. Persons with miltary occupation is from gq_type_mil, which is probably low (since it's both from 2010
-   and also only includes those living in group quarters.)  TOD: find better source.
+   and also only includes those living in group quarters.)  TODO: find better source.
 
 "
 # Import Libraries
@@ -29,11 +36,8 @@ library(httr)
 
 # Set up directories, import TAZ/block equivalence, install census key, set ACS year,set CPI inflation
 
-wd                             <- "X:/petrale/output/"
-employment_2015_data           <- "X:/petrale/output/2015_employment_TAZ1454.csv"
-school_2015_data               <- "X:/petrale/output/tazData_enrollment.csv"
-setwd(wd)
-
+employment_2015_data           <- "2015_employment_TAZ1454.csv"
+school_2015_data               <- "tazData_enrollment.csv"
 
 blockTAZ2010         <- "M:/Data/GIS layers/TM1_taz_census2010/block_to_TAZ1454.csv"
 censuskey            <- readLines("M:/Data/Census/API/api-key.txt")
@@ -398,7 +402,7 @@ f.url <- function (ACS_BG_variables,county,tract) {paste0("https://api.census.go
 
 # Call 1
 
-if (file.exists("ACS 2013-2017 Block Group Vars1.csv")) {source("../scripts/Import block group data.R")
+if (file.exists("ACS 2013-2017 Block Group Vars1.csv")) {source("Import block group data.R")
   } else {                      # Wrapper checks for cached block group variables, then runs a script to import them
                                 # Only checks for first of three BG files, but that should be sufficient
                                 # Else run the API block group calls to retrieve the data
