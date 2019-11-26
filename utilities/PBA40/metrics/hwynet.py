@@ -117,10 +117,12 @@ assert(len(link_tp_vehclass_df) == len(vclasses)*len(periods)*num_links)
 # units: Hours delay per VMT
 # Map headers -> index for this lookup and read lookup data
 nrc_file = os.path.join(lookupdir,"nonRecurringDelayLookup.csv")
-nrclookup_df = pandas.read_csv(nrc_file, dtype={'vcratio':str})
+nrclookup_df = pandas.read_csv(nrc_file)
 # filter by given filter
 nrclookup_df = nrclookup_df.loc[ (nrclookup_df['filter'] == args.filter)&
                                  (nrclookup_df['year']   == args.year  ) ].copy()
+nrclookup_df['vcratio'] = nrclookup_df['vcratio'].map('{:,.2f}'.format) # convert to string with two decimals
+
 if len(nrclookup_df) == 0:
   print("No nonRecurringDelay lookups for {} found".format(args.filter))
   sys.exit(2)
