@@ -4,6 +4,7 @@
 # SI
 # October 25, 2018
 # Updated December 11, 2018
+# UPdated November 25, 2019
 
 # Notes
 
@@ -803,9 +804,9 @@ temp0 <- workingdata %>%
 
 Location                                                  	TAZ1454    extra_gq
 ------------------------------------------------------    	-------    --------
-Kennedy Grad at Stanford					353		436
-Munger East AND Ng House at Stanford	                   	354        	120
-Metropolitan, Channing Bowditch, Maximo Commons at UCB	  	1008 		348
+Kennedy Grad at Stanford					                            353		      436
+Munger East AND Ng House at Stanford	                   	    354        	120
+Metropolitan, Channing Bowditch, Maximo Commons at UCB	  	  1008 		    348
 ------------------------------------------------------    	-------    --------
 
 2. Sum total 2010 GQ to compare to ACS PUMS 2015 GQ
