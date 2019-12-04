@@ -59,7 +59,7 @@ run pgm = matrix
      lookup[2]=EXT_ZONE, result=slope
 
    ; summarize by external production and attraction zones - daily total
-   ARRAY factor=21, prod_tot=21, attr_tot=21
+   ARRAY factor=21, prod_tot=21, attr_tot=21, total_modyear=21
 
    IF (I==1)
 
@@ -78,26 +78,26 @@ run pgm = matrix
        IF ('%FUTURE%'='PBA50')
 
          IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--PBA50--%MODEL_YEAR%--  Non-commute share grows based on slope for ",year_delta," years"
-         total_modyear = total_2015 + year_delta*(1.0-commute_share)*slope
+         total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@] = total_2015 + year_delta*(1.0-commute_share)*slope
 
        ELSEIF ('%FUTURE%'=='CleanAndGreen')
 
          IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--CleanAndGreen--%MODEL_YEAR%--  No growth"
-         total_modyear = total_2015
+         total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@] = total_2015
 
        ELSEIF ('%FUTURE%'='BackToTheFuture')
 
          IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--BackToTheFuture--%MODEL_YEAR%--  Total share grows based on slope for ",year_delta," years, plus 50% for gateways to south and east"
          if (EXT_ZONE >= 1459 & EXT_ZONE <= 1471)
-           total_modyear = total_2015 + year_delta*slope*1.5
+           total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@] = total_2015 + year_delta*slope*1.5
          else
-           total_modyear = total_2015 + year_delta*slope
+           total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@] = total_2015 + year_delta*slope
          endif
 
        ELSEIF ('%FUTURE%'='RisingTidesFallingFortunes')
 
          IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--RisingTidesFallingFortunes--%MODEL_YEAR%--  Total share grows based on slope for ",year_delta," years"
-         total_modyear = total_2015 + year_delta*slope
+         total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@] = total_2015 + year_delta*slope
 
        ELSE
          print LIST="Do not understand token_future @token_future@"
@@ -107,23 +107,51 @@ run pgm = matrix
        if (total_2015 == 0)
          factor[EXT_ZONE-@FIRST_EXT_ZONE@] = 1.0
        else
-         factor[EXT_ZONE-@FIRST_EXT_ZONE@] = total_modyear/total_2015
+         factor[EXT_ZONE-@FIRST_EXT_ZONE@] = total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@]/total_2015
        endif
 
        PRINT LIST="For external zone ",EXT_ZONE, " prod_2015: ", prod_total_2015, " attr_2015: ", attr_total_2015, 
          " commute share: ", commute_share, " slope: ", slope,
-         " total 2015: ", total_2015, " total model_year: ", total_modyear, " => factor: ",factor[EXT_ZONE-@FIRST_EXT_ZONE@]
+         " total 2015: ", total_2015, " total model_year: ", total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@], " => factor: ",factor[EXT_ZONE-@FIRST_EXT_ZONE@]
 
      ENDLOOP
+
+     ; however there are X/X trips between 1461 and 1462
+     tot2015_1461_1462 = MATVAL(1,1,1461,1462) + MATVAL(1,2,1461,1462) + MATVAL(1,3,1461,1462)
+     tot2015_1462_1461 = MATVAL(1,1,1462,1461) + MATVAL(1,2,1462,1461) + MATVAL(1,3,1462,1461)
+
+     ; so if we scale those according to 1461, then 1462 will be short this much
+     tot_1461 = (tot2015_1461_1462 + tot2015_1462_1461) * factor[1461-@FIRST_EXT_ZONE@]
+     tot_1462 = (tot2015_1461_1462 + tot2015_1462_1461) * factor[1462-@FIRST_EXT_ZONE@]
+     diff_1462 = tot_1462 - tot_1461
+
+     PRINT LIST="XX trips for 1461-1462: ", tot2015_1461_1462, " 1462-1461: ", tot2015_1462_1461
+     PRINT LIST="Using 1461 factor: ", tot_1461, "; Using 1462 factor: ", tot_1462, "; 1462 will be short by: ", diff_1462
+
+     ; so make up for it by upping the modyear target. Assuming two XX vals factor to tot2015_1461, remove them from the calc
+     total_2015 = totals_2015(1,1462) + totals_2015(2,1462)
+     factor[1462 - @FIRST_EXT_ZONE@] = (total_modyear[1462-@FIRST_EXT_ZONE@]-tot_1461)/(total_2015-tot2015_1461_1462-tot2015_1462_1461)
+     PRINT LIST=" => Updating factor 1462 to ", factor[1462 - @FIRST_EXT_ZONE@] 
+
    ENDIF
 
    jloop
    
-      ; Apply gateway-specific adjustment factors (no X/X trips mean the gateways act independently)
+      ; Apply gateway-specific adjustment factors
+      ; (no X/X trips mean the gateways act independently, other than the pair we compensated for above)
       if (I >= @FIRST_EXT_ZONE@)
-         mw[1] = mi.1.IX_Daily_DA  * factor[I-@FIRST_EXT_ZONE@]
-         mw[2] = mi.1.IX_Daily_SR2 * factor[I-@FIRST_EXT_ZONE@]
-         mw[3] = mi.1.IX_Daily_SR3 * factor[I-@FIRST_EXT_ZONE@]
+
+         ; 1461/1462 have XX trips -- use 1461 factor
+         if ((I=1462) & (J=1461))
+           mw[1] = mi.1.IX_Daily_DA  * factor[J-@FIRST_EXT_ZONE@]
+           mw[2] = mi.1.IX_Daily_SR2 * factor[J-@FIRST_EXT_ZONE@]
+           mw[3] = mi.1.IX_Daily_SR3 * factor[J-@FIRST_EXT_ZONE@]
+         else
+           mw[1] = mi.1.IX_Daily_DA  * factor[I-@FIRST_EXT_ZONE@]
+           mw[2] = mi.1.IX_Daily_SR2 * factor[I-@FIRST_EXT_ZONE@]
+           mw[3] = mi.1.IX_Daily_SR3 * factor[I-@FIRST_EXT_ZONE@]
+         endif
+
       elseif (J >= @FIRST_EXT_ZONE@)
          mw[1] = mi.1.IX_Daily_DA  * factor[J-@FIRST_EXT_ZONE@]
          mw[2] = mi.1.IX_Daily_SR2 * factor[J-@FIRST_EXT_ZONE@]
