@@ -2,18 +2,20 @@
 ;
 ; create_ix_2015.job
 ;
+; Working directory is M:\Development\Travel Model One\InternalExternal
+;
 ; ----------------------------------------------------------------------------------------------------------------
 FIRST_EXT_ZONE = 1455
 run pgm=matrix
 
    ; Begin with Chuck's BAYCAST matrix
-   mati = nonres\ixDaily2006x4.may2208.mat
+   mati = "M:\Development\Travel Model One\InternalExternal\ixDaily2006x4.may2208.mat"
    
    ; Write out a year-specific matrix
-   mato = nonres\ixDaily2005.tpp, mo = 1-4, name = ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
+   mato = ixDaily2005.tpp, mo = 1-4, name = ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
    
    ; Write out totals
-   reco = nonres\ixDaily2005_totals.dbf, fields=EXT_ZONE(5.0), PROD(12.4), ATTR(12.4)
+   reco = ixDaily2005_totals.dbf, fields=EXT_ZONE(5.0), PROD(12.4), ATTR(12.4)
    
    ; summarize by external production and attraction zones - daily total
    ARRAY prod_tot=21, attr_tot=21
@@ -88,17 +90,17 @@ endrun
 run pgm=matrix
 
    ; Begin with 2005 base year matrix established above
-   mati = nonres\ixDaily2005.tpp
+   mati = ixDaily2005.tpp
    
    ; Write out a year-specific matrix
-   mato = nonres\ixDaily2015.tpp, mo = 1-4, name = ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
+   mato = ixDaily2015.tpp, mo = 1-4, name = ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
 
    ; Write out totals
-   reco = nonres\ixDaily2015_totals.dbf, fields=EXT_ZONE(5.0), PROD(12.4), ATTR(12.4)
+   reco = ixDaily2015_totals.dbf, fields=EXT_ZONE(5.0), PROD(12.4), ATTR(12.4)
 
    ; Also read the totals from 2005 calculated in previous step
-   filei lookupi[1] = nonres\ixDaily2005_totals.dbf
-   filei lookupi[2] = totals_2015.dbf
+   filei lookupi[1] = ixDaily2005_totals.dbf
+   filei lookupi[2] = "X:\travel-model-one-master\utilities\ix-ex\totals_2015.dbf"
 
    lookup lookupi=1, name=totals_2005,
      lookup[1]=EXT_ZONE, result=PROD,  ; productions

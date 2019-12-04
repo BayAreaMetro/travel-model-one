@@ -15,12 +15,13 @@
 ; Input:  (1)  Station-specific assumed growth rates and commute shares for each forecast year
 ;              (the lack of external/external movements through the region allows simple factoring of cells
 ;              without re-balancing) (ixex_config.dbf)
-;         (2)  An input base matrix derived from the Census journey-to-work data (ixDaily2006x4.may2208.mat)
+;         (2)  An input base matrix derived from the Census journey-to-work data (ixDaily2015.tpp) and 
+;              totals (ixDaily2015_totals.dbf)
 ;         (3)  Environment variables: %MODEL_YEAR% (e.g. 2015, 2035, 2050, etc) and
 ;                                     %FUTURE% (one of PBA50, CleanAndGreen, BackToTheFuture, or RisingTidesFallingFortunes)
 ;
 ; Output: (1) Four-table, forecast-year specific trip tables containing internal/external, external/internal, and 
-;             external/external vehicle (xxx or person xxx) travel. Also outputs intermediate versions for 2005 and 2015.
+;             external/external vehicle (xxx or person xxx) travel. (nonres\ixDailyx4.tpp)
 ;
 ; Notes:  (1)
 ;
