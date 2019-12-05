@@ -259,7 +259,8 @@ run pgm = network
                 "    vcAM,",
                 "    vcMD,",
                 "    vcPM,",
-                "    vcEV",
+                "    vcEV,",
+                "tollclass",
                 file = hwy\iter@token_current_iteration@\avgload5period.csv
          
          _doOnce = 1
@@ -295,7 +296,8 @@ run pgm = network
              vcAM(8.4),",",
              vcMD(8.4),",",
              vcPM(8.4),",",
-             vcEV(8.4),
+             vcEV(8.4),",",
+             tollclass(4.0),
              file = hwy\iter@token_current_iteration@\avgload5period.csv
    
    endphase
