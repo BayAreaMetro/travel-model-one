@@ -47,7 +47,7 @@ RUN PGM=NETWORK
     ;  IN_NET2       = 1
     ;  VOLAM_TOT     = 100  ; misleading
     ;  VOLAM_TOT_N2  = 100
-    ;  VOLAMTOT_DIFF = 100  ; misleading
+    ;  VOLAMTOT_DIFF = 100
 
     VOLEA_DA_DIFF  = L2.VOLEA_DA  - L1.VOLEA_DA
     VOLEA_S2_DIFF  = L2.VOLEA_S2  - L1.VOLEA_S2
@@ -140,6 +140,7 @@ RUN PGM=NETWORK
     VOLMD_TOT_N2     = LI.2.VOLMD_TOT
     VOLPM_TOT_N2     = LI.2.VOLPM_TOT
     VOLEV_TOT_N2     = LI.2.VOLEV_TOT
+    VOL24HR_TOT_N2   = LI.2.VOL24HR_TOT
 
     ; AM detail
     VOLAM_DA_N2   = L2.VOLAM_DA
