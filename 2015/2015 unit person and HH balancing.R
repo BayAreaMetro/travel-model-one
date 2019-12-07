@@ -112,10 +112,32 @@ land_use_2015        <- read.csv(Original_2015,header=TRUE) %>%
 combined <- left_join(land_use_2010, land_use_2015, by=c("ZONE","DISTRICT","COUNTY")) 
 
 # Add variable that measures differences between 2010 and 2015 households
-# Adjust total households
-# Also compute share of SFDU for 2015 for later application
 
 combined <- combined %>% mutate(TOTHH_10_15 = TOTHH_2015-TOTHH_2010)
+
+# Export a quick summary comparing 2010/2015 units/hhs
+
+quick_summary <- combined %>%
+  mutate(total_units_2010=MFDU_2010+SFDU_2010,total_units_2015=MFDU_2015+SFDU_2015,
+  County_Name=case_when(
+    COUNTY==1 ~ "San Francisco",
+    COUNTY==2 ~ "San Mateo",
+    COUNTY==3 ~ "Santa Clara",
+    COUNTY==4 ~ "Alameda",
+    COUNTY==5 ~ "Contra Costa",
+    COUNTY==6 ~ "Solano",
+    COUNTY==7 ~ "Napa",
+    COUNTY==8 ~ "Sonoma",
+    COUNTY==9 ~ "Marin"
+  )) %>% 
+  group_by(COUNTY,County_Name) %>% 
+  summarize(total_units_2010=sum(total_units_2010),total_units_2015=sum(total_units_2015),TOTHH_2010=sum(TOTHH_2010),
+            TOTHH_2015=sum(TOTHH_2015))
+
+write.csv(quick_summary, "Quick Total Units and HHs Comparison.csv", row.names = FALSE, quote = T)
+
+# Adjust total households
+# Also compute share of SFDU for 2015 for later application
   
 temp1 <- combined %>% 
   group_by(COUNTY) %>% 
@@ -146,7 +168,7 @@ combined <- combined %>% mutate(
     TOTUNITS_10 = SFDU_2010 + MFDU_2010,
     TOTUNITS_15 = SFDU_2015 + MFDU_2015,
     TOTUNITS_10_15 = TOTUNITS_15-TOTUNITS_10,
-    SFDU_15_share = SFDU_2015/TOTUNITS_15)
+    SFDU_15_share = if_else(TOTUNITS_15!=0,SFDU_2015/TOTUNITS_15,0)) # Avoid divide by zero error
 
 temp1 <- combined %>% 
   group_by(COUNTY) %>% 
@@ -178,3 +200,5 @@ rm(temp1,temp2)                                                    # Remove temp
 
 write.csv(combined, "Adjusted TAZ1454 2015 Land Use.csv", row.names = FALSE, quote = T)
 
+
+  
