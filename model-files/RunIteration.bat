@@ -112,6 +112,11 @@ if ERRORLEVEL 2 goto done
 
 :: If demand models were executed, translate the trip lists to demand matrices
 if %ITER% GTR 0 (
+
+        :: generate zero passenger vehicle trips by privately owned AVs
+        runtpp CTRAMP\scripts\assign\ZPV_ODdist.job
+        python CTRAMP\scripts\assign\OwnedAV_ZPV_Factor.py
+
 	runtpp CTRAMP\scripts\assign\PrepAssign.job
 	if ERRORLEVEL 2 goto done
 )

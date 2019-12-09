@@ -835,6 +835,10 @@ loop period = 1, 5
    run pgm = matrix
 
       filei mati[1] = main\trips@token_period@_no_zpv.tpp
+
+      ; read in the owned AV ZPV trip table in fixed format file
+      filei mati[2] = main\ownedZPV_triptable_@token_period@.dat, pattern = ijm:v, FIELDS=#1,2,0,3
+
       fileo mato[1] = main\trips@token_period@_zpv.tpp, mo=1-2, name=zpv_tnc, zpv_av
 
       ; hwyParam.bock contains variables used in the remainder of the script, particularly in the zero passenger vehicle factor (zpv)
@@ -842,7 +846,8 @@ loop period = 1, 5
 
       ; transpose the matrix and divide by occupancy to get vehicle trips, then multiply by ZPV factor
       mw[1] = (mi.1.da_tnc.t + (mi.1.s2_tnc.t/2.0) + (mi.1.s3_tnc.t/3.25))*TNC_ZPV_factor
-      mw[2] = (mi.1.da_av.t  + (mi.1.s2_av.t /2.0) + (mi.1.s3_av.t /3.25))*OwnedAV_ZPV_factor
+      mw[2] =  mi.2.1 / @token_sample_share@
+
    endrun
 
    ; step five: add the zero passenger trips

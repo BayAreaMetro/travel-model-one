@@ -1,0 +1,45 @@
+; Linking zero passenger vehicle travel to parking costs
+; The underlying assumption is that travelers, as economically rational agents, will either park their cars near their destinations (as in the no AV world), or let their AVs drive the equivalent amount as zero occupancy vehicles
+; This script reads the skims (which has the distance for single occupancy vehicles), the taz data (which has hourly parking costs for each taz), hwyParam.block (which has operating costs info)
+; It outputs matrices of OwnedAV_ZPV_factor
+; OwnedAV_ZPV_fac is the ratio between the parking cost and operating cost, aka "parking cost per mile"
+; OwnedAV_ZPV_fac is capped at 1, as a factor of 1 would mean drive all the way home
+
+
+; time period loop
+loop period = 1,5
+  if (period = 1)
+     token_period   = 'ea'
+  elseif (period = 2)
+     token_period   = 'am'
+  elseif (period = 3)
+     token_period   = 'md'
+  elseif (period = 4)
+     token_period   = 'pm'
+  elseif (period = 5)
+     token_period   = 'ev'
+  endif
+
+RUN PGM=MATRIX
+
+  ; read in the skim that has the distance for single occupancy vehicles (DISTDA)
+  : if there is no free path available (i.e. DISTDA=1000000), then use the toll path (TOLLDISTDA)
+  FILEI MATI[1] = "skims\HWYSKM@token_period@.tpp"
+
+  ; output the distances to a file
+  fileo mato[1] = "main\zpv_distances_@token_period@.csv", FORMAT=TXT, DELIMITER=",", PATTERN=IJ:MV, MO=3
+  ; not sure how to add headers
+
+  ; determine whether the free path or the tolled path should be used
+  mw[3]=MI.1.DISTDA
+  jloop
+      if (mw[3]=1000000)
+          mw[3]=MI.1.TOLLDISTDA
+      else
+          mw[3]=MI.1.DISTDA
+      endif
+  endjloop
+
+ENDRUN
+
+endloop ; time period loop
