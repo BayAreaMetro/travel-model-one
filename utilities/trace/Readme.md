@@ -5,8 +5,9 @@
 #### 2) create logsums_trace dir for output
 #### 3) create trace version of logsums.properties file; I usually save old version as logums.properties_pretrace
 
-note: not sure if ip is ok; if running on different machine than originally run, may need to execute this first to fix IPs:
-python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --logsums
+note: if running on different machine than originally run, may need to 
+- set model_year nd host_ip_address
+- then execute this to fix IPs: python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --logsums
 
 and then do the following changes.
 
