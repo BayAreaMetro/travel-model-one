@@ -64,7 +64,7 @@ TP_conditions = [
     (TripList_df['depart_hour'] < 6),
     (TripList_df['depart_hour'] >= 6) & (TripList_df['depart_hour'] <10),
     (TripList_df['depart_hour'] >= 10) & (TripList_df['depart_hour'] <15),
-    (TripList_df['depart_hour'] >= 6) & (TripList_df['depart_hour'] <19),
+    (TripList_df['depart_hour'] >= 16) & (TripList_df['depart_hour'] <19),
     (TripList_df['depart_hour'] >= 19)]
 TP_choices = ['EA', 'AM', 'MD', 'PM', 'EV']
 TripList_df['time_period'] = np.select(TP_conditions, TP_choices, default='null')
@@ -119,8 +119,7 @@ TripList_df['OwnedAV_ZPV_factor_uncapped'] = (TripList_df['ParkingCostPerHour'] 
 TripList_df['OwnedAV_ZPV_factor'] = np.where(TripList_df['OwnedAV_ZPV_factor_uncapped']>1, 1, TripList_df['OwnedAV_ZPV_factor_uncapped'])
 
 # OwnedAV_ZPV_fac applies only if an AV is used for that trip
-TripList_df['OwnedAV_ZPV_factor'] = np.where((TripList_df['trip_mode']<=6) | (TripList_df['trip_mode']==14) | (TripList_df['trip_mode']==15) | (TripList_df['trip_mode']==16) | (TripList_df['trip_mode']==17) | (TripList_df['trip_mode']==18), TripList_df['OwnedAV_ZPV_factor'], 0)
-TripList_df['OwnedAV_ZPV_factor'] = np.where(TripList_df['avAvailable']==1, TripList_df['OwnedAV_ZPV_factor'], 0)
+TripList_df['OwnedAV_ZPV_factor'] = np.where((TripList_df['trip_mode']<=6) & (TripList_df['avAvailable']==1), TripList_df['OwnedAV_ZPV_factor'], 0)
 
 # OwnedAV_ZPV_fac is 0 if destiantion purpose is "Home"
 TripList_df['OwnedAV_ZPV_factor'] = np.where(TripList_df['dest_purpose']=='Home', 0, TripList_df['OwnedAV_ZPV_factor'])
