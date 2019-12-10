@@ -27,7 +27,7 @@ Debug.Trace.HouseholdIdList=1234
 #-- Set to the ID of a single household to run the simulation with
 run.this.household.only=1234
 
-### 4) turn on the logging
+#### 5) turn on the logging
 
 edit CTRAMP\runtime\config\log4j-node0.xml
 
@@ -46,7 +46,7 @@ for nonmandatory logging, turn level of tourDcNonMan to debug:
     </logger>
 
 
- ### 5) create trace version of RunLogsums.bat; I usually call it RunLogsums_trace.bat
+ #### 6) create trace version of RunLogsums.bat; I usually call it RunLogsums_trace.bat
 
 diffs:
 
@@ -57,7 +57,7 @@ echo STARTED LOGSUMS RUN
 
 delete after shutting down java
 
-### 6) RunLogsums_trace.bat; it won't take too long (~10 min?  should time)
+#### 7) RunLogsums_trace.bat; it won't take too long (~10 min?  should time)
 
 It will produce gigantic event-node0-tourDCMan.log (or nonman version) -- more than 1GB 
 
