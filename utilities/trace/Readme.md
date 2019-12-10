@@ -9,9 +9,7 @@ note: if running on different machine than originally run, may need to
 - set model_year nd host_ip_address
 - then execute this to fix IPs: python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --logsums
 
-and then do the following changes.
-
-changes necessary to CTRAMP\runtime\logsums.properties file:
+#### 4) make necessary changes to CTRAMP\runtime\logsums.properties file:
 
 set output files to be in logsums_trace
   e.g. Results.HouseholdDataFile = logsums_trace/householdData.csv
