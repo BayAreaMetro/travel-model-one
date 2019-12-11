@@ -5,14 +5,15 @@
 library(dplyr)
 library(reshape2)
 
-MODEL_DATA_BASE_DIR <-"M:/Application/Model One/RTP2017/Scenarios"
-OUTPUT_FILE         <-"C:/Users/lzorn/Box/ICF Calculators/Model Data/Model Data - Targeted Transportation Alternatives.csv"
+MODEL_DATA_BASE_DIR <-"M:/Application/Model One/RTP2021/IncrementalProgress"
+OUTPUT_DIR          <-"C:/Users/lzorn/Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation/Incremental Progress/ModelData"
+OUTPUT_FILE         <-file.path(OUTPUT_DIR, "Model Data - Targeted Transportation Alternatives.csv")
 
 # this is the currently running script
-SCRIPT                <- (function() {attr(body(sys.function()), "srcfile")})()$filename
-SCRIPT                <- normalizePath(SCRIPT)
+SCRIPT                <- "X:/travel-model-one-master/utilities/PBA40/Emissions/Off Model Calculators/TargetedTransportationAlternatives.R"
+
 # the model runs are in the parent folder
-model_runs            <- read.table(file.path(dirname(SCRIPT),"..","ModelRuns.csv"), header=TRUE, sep=",")
+model_runs            <- read.table(file.path(dirname(SCRIPT),"..","ModelRuns_RTP2021.csv"), header=TRUE, sep=",")
 
 
 # Read tazdata

@@ -5,14 +5,15 @@
 library(dplyr)
 library(reshape2)
 
-MODEL_DATA_BASE_DIR <-"M:/Application/Model One/RTP2017/Scenarios"
-OUTPUT_FILE         <-"C:/Users/lzorn/Box/ICF Calculators/Model Data/Model Data - Trip Caps.csv"
+MODEL_DATA_BASE_DIR <-"M:/Application/Model One/RTP2021/IncrementalProgress"
+OUTPUT_DIR          <-"C:/Users/lzorn/Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation/Incremental Progress/ModelData"
+OUTPUT_FILE         <-file.path(OUTPUT_DIR, "Model Data - Trip Caps.csv")
 
 # this is the currently running script
-SCRIPT                <- (function() {attr(body(sys.function()), "srcfile")})()$filename
-SCRIPT                <- normalizePath(SCRIPT)
+SCRIPT                <- "X:/travel-model-one-master/utilities/PBA40/Emissions/Off Model Calculators/TripCaps.R"
+
 # the model runs are in the parent folder
-model_runs            <- read.table(file.path(dirname(SCRIPT),"..","ModelRuns.csv"), header=TRUE, sep=",", stringsAsFactors = FALSE)
+model_runs            <- read.table(file.path(dirname(SCRIPT),"..","ModelRuns_RTP2021.csv"), header=TRUE, sep=",", stringsAsFactors = FALSE)
 
 # Calculator constants
 # Criteria for applying trip caps
@@ -42,7 +43,9 @@ remove(tazdata_file, tazdata_file_df)
 # TAZ data vs 2015
 # Keep total employment, total households, and commercial/industrial acres
 # http://analytics.mtc.ca.gov/foswiki/Main/TazData
-tazdata_2015_df <- tazdata_df[ tazdata_df$year == 2015, c("ZONE", "TOTEMP", "TOTHH", "CIACRE", "AREATYPE")] %>%
+# TODO: update to RTP2021 2015 when we have one
+tazdata_2015_df <- read.table("M:/Application/Model One/RTP2017/Scenarios/2015_06_002/OUTPUT/tazData.csv", header=TRUE, sep=",")
+tazdata_2015_df <- tazdata_2015_df[, c("ZONE", "TOTEMP", "TOTHH", "CIACRE", "AREATYPE")] %>%
   rename(TOTEMP_2015=TOTEMP, TOTHH_2015=TOTHH, CIACRE_2015=CIACRE, AREATYPE_2015=AREATYPE)
 
 tazdata_df <- left_join(tazdata_df, tazdata_2015_df, by=c("ZONE")) %>%

@@ -29,7 +29,7 @@
 library(dplyr)
 
 #### Mode look-up table
-LOOKUP_MODE <- data.frame(trip_mode = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18),
+LOOKUP_MODE <- data.frame(trip_mode = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21),
                           mode_name = c("Drive alone - free", "Drive alone - pay", 
                                         "Shared ride two - free", "Shared ride two - pay",
                                         "Shared ride three - free", "Shared ride three - pay",
@@ -37,7 +37,8 @@ LOOKUP_MODE <- data.frame(trip_mode = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,1
                                         "Walk  to local bus", "Walk to light rail or ferry", "Walk to express bus", 
                                         "Walk to heavy rail", "Walk to commuter rail",
                                         "Drive  to local bus", "Drive to light rail or ferry", "Drive to express bus", 
-                                        "Drive to heavy rail", "Drive to commuter rail"))
+                                        "Drive to heavy rail", "Drive to commuter rail",
+                                        "Taxi", "TNC", "TNC shared"))
 
 SAMPLING_RATE = 0.500
 
@@ -45,8 +46,8 @@ SAMPLING_RATE = 0.500
 
 # this should be set by caller
 MODEL_DIR   <- Sys.getenv("MODEL_DIR")
-TARGET_DIR  <- file.path("M:/Application/Model One/RTP2017/Scenarios",MODEL_DIR,"OUTPUT")
-OUTPUT_DIR  <- file.path("M:/Application/Model One/RTP2017/Scenarios",MODEL_DIR,"OUTPUT","bespoke")
+TARGET_DIR  <- file.path("M:/Application/Model One/RTP2021/IncrementalProgress",MODEL_DIR,"OUTPUT")
+OUTPUT_DIR  <- file.path("M:/Application/Model One/RTP2021/IncrementalProgress",MODEL_DIR,"OUTPUT","bespoke")
 
 cat("MODEL_DIR     = ",MODEL_DIR, "\n")
 cat("TARGET_DIR    = ",TARGET_DIR, "\n")
