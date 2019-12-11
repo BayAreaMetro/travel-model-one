@@ -4,10 +4,8 @@
 #### 1) move the logs dir aside so we don't overwrite; I usually save as logs_pretrace
 #### 2) create logsums_trace dir for output
 #### 3) create trace version of \CTRAMP\runtime\logsums.properties file; I usually save old version as logums.properties_pretrace
-
-note: if running on different machine than originally run, may need to 
-- set model_year nd host_ip_address
-- then execute this to fix IPs: python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --logsums
+- set model_year and host_ip_address
+- if running on different machine than originally run, may need to execute this to fix IPs: python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --logsums
 
 #### 4) make necessary changes to CTRAMP\runtime\logsums.properties file:
 
