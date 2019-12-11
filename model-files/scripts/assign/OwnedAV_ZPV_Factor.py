@@ -64,7 +64,7 @@ TP_conditions = [
     (TripList_df['depart_hour'] < 6),
     (TripList_df['depart_hour'] >= 6) & (TripList_df['depart_hour'] <10),
     (TripList_df['depart_hour'] >= 10) & (TripList_df['depart_hour'] <15),
-    (TripList_df['depart_hour'] >= 16) & (TripList_df['depart_hour'] <19),
+    (TripList_df['depart_hour'] >= 15) & (TripList_df['depart_hour'] <19),
     (TripList_df['depart_hour'] >= 19)]
 TP_choices = ['EA', 'AM', 'MD', 'PM', 'EV']
 TripList_df['time_period'] = np.select(TP_conditions, TP_choices, default='null')
@@ -102,7 +102,7 @@ TripList_df['ZPV_dist'] = TripList_df['ZPV_dist'].astype('float64')
 # Calulate the ownedAV ZPV factor
 # -----------------------
 # read in AUTOOPC (auto opeating cost) and autoCPMFactor (the cost per mile discount for AV) from INPUT/params.properties
-sys.path.append('/CTRAMP/scripts/preprocess')
+sys.path.append(os.path.join(os.getcwd(),"CTRAMP","scripts","preprocess"))
 from RuntimeConfiguration import *
 params_filename = os.path.join("INPUT", "params.properties")
 myfile          = open(params_filename, 'r' )
