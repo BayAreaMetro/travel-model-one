@@ -45,6 +45,9 @@ if __name__ == '__main__':
     log_file.write("Read {} lines from {}\n".format(households_len, hh_filename))
     log_file.write(str(households_df.head()) + "\n")
 
+    print("Removing the following: \n{}\n".format(households_df.loc[households_df.HHID == args.household_id]))
+    log_file.write("Removing the following: \n{}\n".format(households_df.loc[households_df.HHID == args.household_id]))
+    
     households_df = households_df.loc[ households_df.HHID != args.household_id]
     print("Removed household with id {}; new len is {}".format(args.household_id, len(households_df)))
     log_file.write("Removed household with id {}; new len is {}\n".format(args.household_id, len(households_df)))
@@ -58,6 +61,9 @@ if __name__ == '__main__':
     print(persons_df.head())
     log_file.write("Read {} lines from {}\n".format(persons_len, hh_filename))
     log_file.write(str(persons_df.head()) + "\n")
+
+    print("Removing the following: \n{}\n".format(persons_df.loc[persons_df.HHID == args.household_id]))
+    log_file.write("Removing the following: \n{}\n".format(persons_df.loc[persons_df.HHID == args.household_id]))
 
     persons_df = persons_df.loc[ persons_df.HHID != args.household_id]
     print("Removed household with id {}; new len is {}".format(args.household_id, len(persons_df)))
