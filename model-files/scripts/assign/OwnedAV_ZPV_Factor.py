@@ -67,7 +67,16 @@ TP_conditions = [
     (TripList_df['depart_hour'] >= 15) & (TripList_df['depart_hour'] <19),
     (TripList_df['depart_hour'] >= 19)]
 TP_choices = ['EA', 'AM', 'MD', 'PM', 'EV']
-TripList_df['time_period'] = np.select(TP_conditions, TP_choices, default='null')
+TripList_df['time_period_gohome'] = np.select(TP_conditions, TP_choices, default='null') # assuming the vehicle goes home in the same TP as the drop-off trip
+
+
+TP_pickup_conditions = [
+    (TripList_df['depart_hour'].shift(-1) < 6),
+    (TripList_df['depart_hour'].shift(-1) >= 6) & (TripList_df['depart_hour'].shift(-1) <10),
+    (TripList_df['depart_hour'].shift(-1) >= 10) & (TripList_df['depart_hour'].shift(-1) <15),
+    (TripList_df['depart_hour'].shift(-1) >= 15) & (TripList_df['depart_hour'].shift(-1) <19),
+    (TripList_df['depart_hour'].shift(-1) >= 19)]
+TripList_df['time_period_pickup'] = np.select(TP_pickup_conditions, TP_choices, default='null')
 
 # merge in the parking cost (peak and non peak)
 # joinining on dest_taz (there is field called parking_taz but it's not used)
@@ -77,7 +86,7 @@ TripList_df.drop('ZONE', axis=1, inplace=True)
 # TripList_df.drop('ZONE', axis=1, inplace=True)
 
 # determine parking cost based on whether it is peak or nonpeak (AM and PM are peak, the rest is nonpeak)
-TripList_df['ParkingCostPerHour'] = np.where( (TripList_df['time_period']=='AM') | (TripList_df['time_period']=='PM') , TripList_df['PRKCST'], TripList_df['OPRKCST'])
+TripList_df['ParkingCostPerHour'] = np.where( (TripList_df['time_period_gohome']=='AM') | (TripList_df['time_period_gohome']=='PM') , TripList_df['PRKCST'], TripList_df['OPRKCST'])
 
 # merge in the OD distances by time period
 TripList_df = pd.merge(TripList_df, zpv_distances_ea_df[['orig','dest','OD_dist']], left_on=['orig_taz', 'dest_taz'], right_on=['orig','dest'], how='left', suffixes=('', '_ea'))
@@ -93,10 +102,17 @@ TripList_df.drop(['orig','dest'], axis=1, inplace=True)
 # force the "_ea" suffix
 TripList_df.rename(columns={"OD_dist": "OD_dist_ea"}, inplace=True)
 
-# pick the distance according to the time period
+
+# pick the distance according to the time period (when the vehicle goes home)
 ODdist_choices = [TripList_df['OD_dist_ea'], TripList_df['OD_dist_am'], TripList_df['OD_dist_md'], TripList_df['OD_dist_pm'], TripList_df['OD_dist_ev']]
-TripList_df['ZPV_dist'] = np.select(TP_conditions, ODdist_choices, default='null')
-TripList_df['ZPV_dist'] = TripList_df['ZPV_dist'].astype('float64')
+TripList_df['ZPV_dist_gohome'] = np.select(TP_conditions, ODdist_choices, default='null')
+TripList_df['ZPV_dist_gohome'] = TripList_df['ZPV_dist_gohome'].astype('float64')
+
+# pick the distance according to the time period (when the vehicle comes back to pickup)
+ODdist_choices = [TripList_df['OD_dist_ea'], TripList_df['OD_dist_am'], TripList_df['OD_dist_md'], TripList_df['OD_dist_pm'], TripList_df['OD_dist_ev']]
+TripList_df['ZPV_dist_pickup'] = np.select(TP_pickup_conditions, ODdist_choices, default='null')
+TripList_df.loc[len(TripList_df)-1,'ZPV_dist_pickup'] = 0 #set the last row to have a value of 0, because it doesn't have a pick-up time
+TripList_df['ZPV_dist_pickup'] = TripList_df['ZPV_dist_pickup'].astype('float64')
 
 # -----------------------
 # Calulate the ownedAV ZPV factor
@@ -111,12 +127,9 @@ myfile.close()
 auto_opc = float(get_property(params_filename, myfile_contents, "AutoOpCost"))
 avCPMFactor = float(get_property(params_filename, myfile_contents, "Mobility.AV.CostPerMileFactor"))
 
-# OwnedAV_ZPV_fac is the ratio between the parking cost and operating cost, aka "parking cost per mile"
+# OwnedAV_ZPV_fac is the ratio between the parking cost and operating cost
 # i.e. (duration * parking cost per hour) / (auto operating cost * trip distance)
-TripList_df['OwnedAV_ZPV_factor_uncapped'] = (TripList_df['ParkingCostPerHour'] * TripList_df['duration']) / (auto_opc * avCPMFactor * TripList_df['ZPV_dist'])
-
-# OwnedAV_ZPV_fac is capped at 1, as a factor of 1 would mean drive all the way home
-TripList_df['OwnedAV_ZPV_factor'] = np.where(TripList_df['OwnedAV_ZPV_factor_uncapped']>1, 1, TripList_df['OwnedAV_ZPV_factor_uncapped'])
+TripList_df['OwnedAV_ZPV_factor'] = (TripList_df['ParkingCostPerHour'] * TripList_df['duration']) / (auto_opc * avCPMFactor * (TripList_df['ZPV_dist_gohome']+TripList_df['ZPV_dist_pickup']))
 
 # OwnedAV_ZPV_fac applies only if an AV is used for that trip
 TripList_df['OwnedAV_ZPV_factor'] = np.where((TripList_df['trip_mode']<=6) & (TripList_df['avAvailable']==1), TripList_df['OwnedAV_ZPV_factor'], 0)
@@ -124,33 +137,61 @@ TripList_df['OwnedAV_ZPV_factor'] = np.where((TripList_df['trip_mode']<=6) & (Tr
 # OwnedAV_ZPV_fac is 0 if destiantion purpose is "Home"
 TripList_df['OwnedAV_ZPV_factor'] = np.where(TripList_df['dest_purpose']=='Home', 0, TripList_df['OwnedAV_ZPV_factor'])
 
-# output the trip list with the owned zpv factor for visualization
+# if OwnedAV_ZPV_factor > 1, then add a trip
+# if OwnedAV_ZPV_factor <= 1, then park
+TripList_df['Trip'] = np.where(TripList_df['OwnedAV_ZPV_factor']<=1, 0, 1)
+
+# output the trip list with the owned zpv factor for visualization, can delete this after this script is fully tested
 output_triplist_filename = "main/output_triplist.csv"
 TripList_df.to_csv(output_triplist_filename, header=True, index=False)
 
 # Generate the owned ZPV trip table
-# by summing up the owned_zpv_factor by ODs
+# by summing up the trips by ODs, for (i) the trip going back home and (ii) the trip returning to the pick up location
 # by 5 time periods
-TripList_4var_df = TripList_df[['orig_taz', 'dest_taz', 'time_period','OwnedAV_ZPV_factor']]
+TripList_gohome_4var_df = TripList_df[['orig_taz', 'dest_taz', 'time_period_gohome','Trip']]
+TripList_pickup_4var_df = TripList_df[['orig_taz', 'dest_taz', 'time_period_pickup','Trip']]
 
 time_period_list = ["EA", "AM", "MD", "PM", "EV"]
 for tp in time_period_list:
-    TripList_4var_tp_df = TripList_4var_df.loc[TripList_4var_df['time_period'] == tp]
-    ZPV_triptable_tp_df = TripList_4var_tp_df.groupby(['orig_taz', 'dest_taz'], as_index=False).sum()
+    # keep the data for a single time period
+    TripList_gohome_4var_tp_df = TripList_gohome_4var_df[TripList_gohome_4var_df['time_period_gohome'] == tp]
+    TripList_pickup_4var_tp_df = TripList_pickup_4var_df[TripList_pickup_4var_df['time_period_pickup'] == tp]
+ 
+    # keep rows that have non-zero trips
+    TripList_gohome_4var_tp_df = TripList_gohome_4var_tp_df[TripList_gohome_4var_tp_df['Trip'] == 1]
+    TripList_pickup_4var_tp_df = TripList_pickup_4var_tp_df[TripList_pickup_4var_tp_df['Trip'] == 1]
+  
+    # zpv trips going home
+    ZPV_gohome_tp_df = TripList_gohome_4var_tp_df.groupby(['orig_taz', 'dest_taz'], as_index=False).sum()
     # transpose it
-    ZPV_triptable_tp_df['orig'] = ZPV_triptable_tp_df['dest_taz']
-    ZPV_triptable_tp_df['dest'] = ZPV_triptable_tp_df['orig_taz']
-    ZPV_triptable_tp_df.drop(['orig_taz','dest_taz'], axis=1, inplace=True)
-    # reorder, rename and resort
-    ZPV_triptable_tp_df = ZPV_triptable_tp_df[['orig', 'dest','OwnedAV_ZPV_factor']]
-    ZPV_triptable_tp_df.rename(columns={"OwnedAV_ZPV_factor": "OwnedAV_ZPV_trip"}, inplace=True)
+    ZPV_gohome_tp_df['orig'] = ZPV_gohome_tp_df['dest_taz']
+    ZPV_gohome_tp_df['dest'] = ZPV_gohome_tp_df['orig_taz']
+    ZPV_gohome_tp_df.drop(['orig_taz','dest_taz'], axis=1, inplace=True)
+    # reorder and resort
+    ZPV_gohome_tp_df = ZPV_gohome_tp_df[['orig', 'dest','Trip']]
+    ZPV_gohome_tp_df.sort_values(by=['orig', 'dest'], inplace=True)
+
+    # zpv trips returning to pickup
+    ZPV_pickup_tp_df = TripList_pickup_4var_tp_df.groupby(['orig_taz', 'dest_taz'], as_index=False).sum()
+    # no transpose, just reorder and resort
+    ZPV_pickup_tp_df = ZPV_pickup_tp_df[['orig_taz', 'dest_taz','Trip']]
+    ZPV_pickup_tp_df.sort_values(by=['orig_taz', 'dest_taz'], inplace=True)
+
+    # add the go home and pick up trip table together
+    ZPV_triptable_tp_df = pd.merge(ZPV_gohome_tp_df, ZPV_pickup_tp_df, left_on=['orig', 'dest'], right_on=['orig_taz','dest_taz'], how='outer', suffixes=('_gohome','_pickup'))
+    ZPV_triptable_tp_df['orig'] = np.where(pd.notnull(ZPV_triptable_tp_df['orig']), ZPV_triptable_tp_df['orig'], ZPV_triptable_tp_df['orig_taz'])
+    ZPV_triptable_tp_df['dest'] = np.where(pd.notnull(ZPV_triptable_tp_df['dest']), ZPV_triptable_tp_df['dest'], ZPV_triptable_tp_df['dest_taz'])
+    ZPV_triptable_tp_df['Trip_gohome'].fillna(0, inplace=True)
+    ZPV_triptable_tp_df['Trip_pickup'].fillna(0, inplace=True)
+    ZPV_triptable_tp_df['Trip'] = ZPV_triptable_tp_df['Trip_gohome'] + ZPV_triptable_tp_df['Trip_pickup']
+    ZPV_triptable_tp_df.drop(['orig_taz','dest_taz','Trip_gohome','Trip_pickup'], axis=1, inplace=True)
     ZPV_triptable_tp_df.sort_values(by=['orig', 'dest'], inplace=True)
 
+
     output_ZPVtriptable_tp_filename = "main/ownedZPV_triptable_"+tp+".csv"
-    ZPV_triptable_tp_df.to_csv(output_ZPVtriptable_tp_filename, header=True, index=False)
-    # also output a tab limited file
+    # ZPV_triptable_tp_df.to_csv(output_ZPVtriptable_tp_filename, header=True, index=False)
+    # output to a fixed width file format for Cube
     output_ZPVtriptable_tp_filename_dat = "main/ownedZPV_triptable_"+tp+".dat"
-    #ZPV_triptable_tp_df.to_csv(output_ZPVtriptable_tp_filename_dat,  sep='\t', header=False, index=False)
     np.savetxt(output_ZPVtriptable_tp_filename_dat, ZPV_triptable_tp_df.values, fmt='%20.5f')
 
 
