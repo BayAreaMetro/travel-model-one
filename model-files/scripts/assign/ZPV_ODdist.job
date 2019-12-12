@@ -1,10 +1,8 @@
-; Linking zero passenger vehicle travel to parking costs
-; The underlying assumption is that travelers, as economically rational agents, will either park their cars near their destinations (as in the no AV world), or let their AVs drive the equivalent amount as zero occupancy vehicles
-; This script reads the skims (which has the distance for single occupancy vehicles), the taz data (which has hourly parking costs for each taz), hwyParam.block (which has operating costs info)
-; It outputs matrices of OwnedAV_ZPV_factor
-; OwnedAV_ZPV_fac is the ratio between the parking cost and operating cost, aka "parking cost per mile"
-; OwnedAV_ZPV_fac is capped at 1, as a factor of 1 would mean drive all the way home
-
+; This script generates the origin-destination distance matrices for zero occupancy trips (by privately owned autonomous vehicles)
+; it reads in the skim that has the distance for single occupancy vehicles (DISTDA and TOLLDISTDA)
+; zero occupancy vehicles are assumed to use free paths as long as such paths are available
+; if there are no free paths (i.e. DISTDA=1000000), then the tolled paths (TOLLDISTDA) are used
+; the output is an OD distance file (in csv format) for each time period, which will be read by the python script that create zero passenger vehicle trips by owned autonomous vehicles
 
 ; time period loop
 loop period = 1,5
@@ -22,7 +20,7 @@ loop period = 1,5
 
 RUN PGM=MATRIX
 
-  ; read in the skim that has the distance for single occupancy vehicles (DISTDA)
+  ; read in the skim that has the distance for single occupancy vehicles (DISTDA and TOLLDISTDA)
   : if there is no free path available (i.e. DISTDA=1000000), then use the toll path (TOLLDISTDA)
   FILEI MATI[1] = "skims\HWYSKM@token_period@.tpp"
 
