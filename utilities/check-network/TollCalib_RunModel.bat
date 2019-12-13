@@ -76,7 +76,6 @@ set PYTHONPATH=X:\NetworkWrangler;X:\NetworkWrangler\_static
 set GAWK_PATH=M:\Software\Gawk\bin
 SET PATH=%TPP_PATH%;%GAWK_PATH%;%PATH%
 
-if %ITER%==4 goto newtoll
 
 :: ------------------------------------------------------------------------------------------------------
 ::
