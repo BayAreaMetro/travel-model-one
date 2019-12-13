@@ -1,3 +1,9 @@
+# This script creates the trip tables for trips by household-owned AV with no passenger (aka owned AV ZPV)
+# It calculates the ratio between the parking cost and operating cost
+# i.e. (duration * parking cost per hour) / (auto operating cost * trip distance)
+# if Park_Drive_CostRatio > 1, add two vehicle trips (one going home and one coming back to pick-up)
+# if Park_Drive_CostRatio <= 1, do not add (as it is assume that the vehicle will be parked)
+
 import os
 import pandas as pd
 import sys
@@ -7,7 +13,7 @@ import numpy as np
 # need to run a .job script to get the distance - a much simplify version of ZeroPassengerVehicles.job
 # set path=%path%;c:/python27
 # set ITER=1
-# python ctramp\scripts\preprocess\OwnedAV_ZPV_Factor.py
+# python ctramp\scripts\preprocess\Create_HHOwnedZPV_trips.py
 
 
 ITER = os.getenv('ITER')
@@ -39,7 +45,7 @@ zpv_distances_pm_df.columns=['orig', 'dest', 'ColumnOf1s', 'OD_dist']
 zpv_distances_ev_df.columns=['orig', 'dest', 'ColumnOf1s', 'OD_dist']
 
 # also need to read in AUTOOPC (auto opeating cost) and autoCPMFactor (the cost per mile discount for AV) from INPUT/params.properties
-# this is done in the Calulate the ownedAV ZPV factor section
+# this is done in the "Calulate the Park vs Drive Cost Ratio" section
 
 
 # -----------------------
@@ -115,7 +121,7 @@ TripList_df.loc[len(TripList_df)-1,'ZPV_dist_pickup'] = 0 #set the last row to h
 TripList_df['ZPV_dist_pickup'] = TripList_df['ZPV_dist_pickup'].astype('float64')
 
 # -----------------------
-# Calulate the ownedAV ZPV factor
+# Calulate the Park vs Drive Cost Ratio
 # -----------------------
 # read in AUTOOPC (auto opeating cost) and autoCPMFactor (the cost per mile discount for AV) from INPUT/params.properties
 sys.path.append(os.path.join(os.getcwd(),"CTRAMP","scripts","preprocess"))
@@ -127,21 +133,21 @@ myfile.close()
 auto_opc = float(get_property(params_filename, myfile_contents, "AutoOpCost"))
 avCPMFactor = float(get_property(params_filename, myfile_contents, "Mobility.AV.CostPerMileFactor"))
 
-# OwnedAV_ZPV_fac is the ratio between the parking cost and operating cost
+# Calculate the ratio between the parking cost and operating cost
 # i.e. (duration * parking cost per hour) / (auto operating cost * trip distance)
-TripList_df['OwnedAV_ZPV_factor'] = (TripList_df['ParkingCostPerHour'] * TripList_df['duration']) / (auto_opc * avCPMFactor * (TripList_df['ZPV_dist_gohome']+TripList_df['ZPV_dist_pickup']))
+TripList_df['Park_Drive_CostRatio'] = (TripList_df['ParkingCostPerHour'] * TripList_df['duration']) / (auto_opc * avCPMFactor * (TripList_df['ZPV_dist_gohome']+TripList_df['ZPV_dist_pickup']))
 
-# OwnedAV_ZPV_fac applies only if an AV is used for that trip
-TripList_df['OwnedAV_ZPV_factor'] = np.where((TripList_df['trip_mode']<=6) & (TripList_df['avAvailable']==1), TripList_df['OwnedAV_ZPV_factor'], 0)
+# Park_Drive_CostRatio applies only if an AV is used for that trip
+TripList_df['Park_Drive_CostRatio'] = np.where((TripList_df['trip_mode']<=6) & (TripList_df['avAvailable']==1), TripList_df['Park_Drive_CostRatio'], 0)
 
-# OwnedAV_ZPV_fac is 0 if destiantion purpose is "Home"
-TripList_df['OwnedAV_ZPV_factor'] = np.where(TripList_df['dest_purpose']=='Home', 0, TripList_df['OwnedAV_ZPV_factor'])
+# Park_Drive_CostRatio is 0 if destiantion purpose is "Home"
+TripList_df['Park_Drive_CostRatio'] = np.where(TripList_df['dest_purpose']=='Home', 0, TripList_df['Park_Drive_CostRatio'])
 
-# if OwnedAV_ZPV_factor > 1, then add a trip
-# if OwnedAV_ZPV_factor <= 1, then park
-TripList_df['Trip'] = np.where(TripList_df['OwnedAV_ZPV_factor']<=1, 0, 1)
+# if Park_Drive_CostRatio > 1, then add a trip
+# if Park_Drive_CostRatio <= 1, then park
+TripList_df['Trip'] = np.where(TripList_df['Park_Drive_CostRatio']<=1, 0, 1)
 
-# output the trip list with the owned zpv factor for visualization, can delete this after this script is fully tested
+# output the trip list with the owned zpv "park vs drive cost ratios" for visualization, can delete this after this script is fully tested
 output_triplist_filename = "main/output_triplist.csv"
 TripList_df.to_csv(output_triplist_filename, header=True, index=False)
 
@@ -156,11 +162,11 @@ for tp in time_period_list:
     # keep the data for a single time period
     TripList_gohome_4var_tp_df = TripList_gohome_4var_df[TripList_gohome_4var_df['time_period_gohome'] == tp]
     TripList_pickup_4var_tp_df = TripList_pickup_4var_df[TripList_pickup_4var_df['time_period_pickup'] == tp]
- 
+
     # keep rows that have non-zero trips
     TripList_gohome_4var_tp_df = TripList_gohome_4var_tp_df[TripList_gohome_4var_tp_df['Trip'] == 1]
     TripList_pickup_4var_tp_df = TripList_pickup_4var_tp_df[TripList_pickup_4var_tp_df['Trip'] == 1]
-  
+
     # zpv trips going home
     ZPV_gohome_tp_df = TripList_gohome_4var_tp_df.groupby(['orig_taz', 'dest_taz'], as_index=False).sum()
     # transpose it
