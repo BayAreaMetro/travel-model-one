@@ -184,7 +184,7 @@ el_gp_summary_df <- el_gp_summary_df %>%
 # merge in the existing toll rates and determine toll adjustment
 #############################################################
 toll_rates_df          <- read.csv(file=TOLLS_CSV, header=TRUE, sep=",")
-toll_rates_df          <- toll_rates_df  %>% select(tollclass, facility_name, tollam_da, tollmd_da, tollpm_da)
+toll_rates_df          <- toll_rates_df  %>% select(tollclass, facility_name, use, tollam_da, tollmd_da, tollpm_da)
 
 el_gp_summary_df <- el_gp_summary_df %>% left_join(toll_rates_df,
                                          by=c("TOLLCLASS"="tollclass"))
@@ -215,14 +215,14 @@ el_gp_summary_df <- el_gp_summary_df %>%
 #############################################################
 # write the new toll rates to a new tolls.csv
 #############################################################
-tolls_new_df <- el_gp_summary_df  %>% select(TOLLCLASS, facility_name, tollam_da_new, tollmd_da_new, tollpm_da_new)
+tolls_new_df <- el_gp_summary_df  %>% select(TOLLCLASS, facility_name, use, tollam_da_new, tollmd_da_new, tollpm_da_new)
 
 tolls_new_df <- tolls_new_df  %>%
-                              mutate(fac_index = TOLLCLASS * 1000 + 4,
+                              mutate(fac_index = TOLLCLASS * 1000 + use,
                                      tollclass = TOLLCLASS,
                                      tollseg   = 0,
                                      tolltype  = "expr_lane",
-                                     use       = 4,
+                                     use       = use,
                                      tollea_da = 0,
                                      tollam_da = tollam_da_new,
                                      tollmd_da = tollmd_da_new,
