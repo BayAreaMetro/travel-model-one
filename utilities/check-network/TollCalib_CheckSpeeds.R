@@ -156,7 +156,7 @@ el_gp_summary_df <- el_gp_loaded_nan_df %>%
 
 #AM
 el_gp_summary_df <- el_gp_summary_df %>%
-                                     mutate(Case_AM = case_when(avgspeed_AM_GP>60                                                            ~ "Case5 - set to min",
+                                     mutate(Case_AM = case_when(avgspeed_AM>48                      & avgspeed_AM_GP>60                      ~ "Case5 - set to min",
                                                                 avgspeed_AM>60                      & avgspeed_AM_GP>40 & avgspeed_AM_GP<=60 ~ "Case4 - drop tolls slightly",
                                                                 avgspeed_AM>48 & avgspeed_AM<=60    & avgspeed_AM_GP>40 & avgspeed_AM_GP<=60 ~ "Case3 - ok",
                                                                 avgspeed_AM>48                      & avgspeed_AM_GP<=40                     ~ "Case2 - drop tolls",
@@ -165,7 +165,7 @@ el_gp_summary_df <- el_gp_summary_df %>%
 
 #MD
 el_gp_summary_df <- el_gp_summary_df %>%
-                                     mutate(Case_MD = case_when(avgspeed_MD_GP>60                                                            ~ "Case5 - set to min",
+                                     mutate(Case_MD = case_when(avgspeed_MD>48                      & avgspeed_MD_GP>60                      ~ "Case5 - set to min",
                                                                 avgspeed_MD>60                      & avgspeed_MD_GP>40 & avgspeed_MD_GP<=60 ~ "Case4 - drop tolls slightly",
                                                                 avgspeed_MD>48 & avgspeed_MD<=60    & avgspeed_MD_GP>40 & avgspeed_MD_GP<=60 ~ "Case3 - ok",
                                                                 avgspeed_MD>48                      & avgspeed_MD_GP<=40                     ~ "Case2 - drop tolls",
@@ -173,7 +173,7 @@ el_gp_summary_df <- el_gp_summary_df %>%
                                                                 TRUE                                                                         ~ "Undefined"))
 #PM
 el_gp_summary_df <- el_gp_summary_df %>%
-                                     mutate(Case_PM = case_when(avgspeed_PM_GP>60                                                            ~ "Case5 - set to min",
+                                     mutate(Case_PM = case_when(avgspeed_PM>48                      & avgspeed_PM_GP>60                      ~ "Case5 - set to min",
                                                                 avgspeed_PM>60                      & avgspeed_PM_GP>40 & avgspeed_PM_GP<=60 ~ "Case4 - drop tolls slightly",
                                                                 avgspeed_PM>48 & avgspeed_PM<=60    & avgspeed_PM_GP>40 & avgspeed_PM_GP<=60 ~ "Case3 - ok",
                                                                 avgspeed_PM>48                      & avgspeed_PM_GP<=40                     ~ "Case2 - drop tolls",
