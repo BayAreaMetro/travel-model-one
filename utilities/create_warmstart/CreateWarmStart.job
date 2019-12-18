@@ -2,10 +2,10 @@
    run pgm = matrix
      
       ; read in the warm start matrices by time period
-      filei mati[1] = A:\TM150_Calibration\2015_TM150_calib8_full\main\trips%timeperiod%.tpp
+      filei mati[1] = "M:\Application\Model One\RTP2017\Scenarios\2005_05_003\INPUT_fullcopy\warmstart\main\trips%timeperiod%.tpp"
       
       ; write out a matrix that includes the old warm start matrices and append three new ones in the end
-      fileo mato[1] = "C:\Users\lzorn\Box\Modeling and Surveys\Development\Travel Model 1.5\Model_inputs\2015\warmstart\main\trips%timeperiod%.tpp", mo = 1-29,
+      fileo mato[1] = "%USERPROFILE%\Box\Modeling and Surveys\Development\Travel Model 1.5\Model_inputs\2005\warmstart\main\trips%timeperiod%.tpp", mo = 1-29,
          name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                 walk, bike, 
                 wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, 
