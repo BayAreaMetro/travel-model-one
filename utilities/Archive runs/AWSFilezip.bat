@@ -4,15 +4,21 @@
 :: run from L:\RTP2021_PPA\Projects_onAWS
 :: List of the model runs to be zipped:
 for /d %%%f in (
-2050_TM151_PPA_BF_07_1_Crossings2_00
-2050_TM151_PPA_BF_07_1_Crossings1_01
+2040_TM151_PPA_RT_12
+2040_TM151_PPA_RT_14
+2050_TM150_FU1_RT_00
+2050_TM151_FU1_BF_00
 )    do    (
 
 rem if not confident, do a dry run first
 rem aws s3 sync --dryrun s3://travel-model-runs/%%modelrun %%modelrun
 rem execute
 rem -------------------------------------------
-aws s3 sync s3://travel-model-runs/%%f %%f
+rem Use this if downlading the whole run:
+rem aws s3 sync s3://travel-model-runs/%%f %%f
+rem 
+rem Use this if only downloading the CTRAMP, extractor and Input folders of the model run:
+aws s3 sync s3://travel-model-runs/%%f %%f --exclude 'core_summaries/*' --exclude 'database/*' --exclude 'landuse/*' --exclude 'logs/*' --exclude 'logsums/*' --exclude 'main/*' --exclude 'metrics/*' --exclude 'nonres/*' --exclude 'popsyn/*' --exclude 'skims/*' --exclude 'trn/*' --exclude 'updated_output/*' --exclude '*.log' --exclude '*.prj' --exclude '*.var'
 REM Use 7Zip to Zip travel model runs and place the zip archive 
 REM in "mtcarchives\cloudmodels1\Archived Travel Model Runs". Then renames folder to X.archived
 REM
