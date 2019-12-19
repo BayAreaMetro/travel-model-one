@@ -1002,11 +1002,11 @@ RUN PGM = MATRIX
   ;
   ; NOTE that the zones may be unconnected, resulting in huge skim values, so we need to exclude those here
   MW[46] = mi.11.connected*mi.11.connected.t*
-          (mi.1.vstruck + mi.1.struck + mi.1.mtruck + mi.1.ctruck +
-           mi.2.vstruck + mi.2.struck + mi.2.mtruck + mi.2.ctruck +
-           mi.3.vstruck + mi.3.struck + mi.3.mtruck + mi.3.ctruck +
-           mi.4.vstruck + mi.4.struck + mi.4.mtruck + mi.4.ctruck +
-           mi.5.vstruck + mi.5.struck + mi.5.mtruck + mi.5.ctruck)
+          (mi.1.vstruck + mi.1.struck + mi.1.mtruck + mi.1.ctruck + mi.1.vstrucktoll + mi.1.strucktoll + mi.1.mtrucktoll + mi.1.ctrucktoll +
+           mi.2.vstruck + mi.2.struck + mi.2.mtruck + mi.2.ctruck + mi.2.vstrucktoll + mi.2.strucktoll + mi.2.mtrucktoll + mi.2.ctrucktoll +
+           mi.3.vstruck + mi.3.struck + mi.3.mtruck + mi.3.ctruck + mi.3.vstrucktoll + mi.3.strucktoll + mi.3.mtrucktoll + mi.3.ctrucktoll +
+           mi.4.vstruck + mi.4.struck + mi.4.mtruck + mi.4.ctruck + mi.4.vstrucktoll + mi.4.strucktoll + mi.4.mtrucktoll + mi.4.ctrucktoll +
+           mi.5.vstruck + mi.5.struck + mi.5.mtruck + mi.5.ctruck + mi.5.vstrucktoll + mi.5.strucktoll + mi.5.mtrucktoll + mi.5.ctrucktoll)
   MW[47] = mi.11.connected*mi.11.connected.t*(MW[1] + MW[5] + MW[10] + MW[14] + MW[19] + MW[23] + MW[28] + MW[32] + MW[37] + MW[41]) ; TripTime
   MW[48] = mi.11.connected*mi.11.connected.t*(MW[2] + MW[6] + MW[11] + MW[15] + MW[20] + MW[24] + MW[29] + MW[33] + MW[38] + Mw[42]) ; TripDist
   MW[49] = mi.11.connected*mi.11.connected.t*(MW[3] + MW[7] + MW[12] + MW[16] + MW[21] + MW[25] + MW[30] + MW[34] + MW[39] + MW[43]) ; TripCost
