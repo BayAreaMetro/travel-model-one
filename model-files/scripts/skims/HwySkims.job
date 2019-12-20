@@ -13,11 +13,14 @@
 ; The skims are based on the shortest generalized cost path; the generalized cost calculation makes the following
 ; assumptions:
 ;	     (a) automobile and truck operating cost is a combination of fuel costs and repair and maintenance (RM) costs.
-;           Additionally, these costs are comprised of two parts: the cost from driving on perfect pavement,
+;           In Travel Model One v0.5, these costs are comprised of two parts: the cost from driving on perfect pavement,
 ;           plus the additional costs from driving on degraded pavement (pavement costs).  Both types of costs
 ;           are added to the network by "AddPavementCosts.job" and the degraded pavement adjustment is dependent
 ;           on the city in which the like resides.  Freeway links are assumed to have the regional average
 ;           pavement quality.
+;           In order to simplify TM1.5, the State of Good Repair (SGR) code (added in Travel Model One v0.5) was removed. 
+;           That is, the auto operating costs were simplified to their previous state -- so they are no longer based on pavement quality. 
+;           Pavement quality by city (and transit delays by transit mode) are no longer inputs to Travel Model 1.5.
 ;       (b) the assumed personal vehicle value of time is $15 per hour ($2000); a value of time is needed to 
 ;           determine if the value toll path is reasonable and one should lean towards a high value, which will 
 ;           create a pay path, thus allowing the mode choice model the opportunity to evaluate it -- Vovsha 
