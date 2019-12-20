@@ -21,11 +21,11 @@ Creates 2015 input for [PopulationSim](https://github.com/BayAreaMetro/Populatio
 
 Creates 2015 input for [PopulationSim](https://github.com/BayAreaMetro/PopulationSim) and [tazdata](https://github.com/BayAreaMetro/modeling-website/wiki/TazData) input for [Travel Model 1.5](https://github.com/BayAreaMetro/travel-model-one)
 
-* Author: @shimonisrael
+* Author: [@shimonisrael](https://github.com/shimonisrael)
 * Input: 2013-2017 ACS 5-year Estimates
 * Output:
   * [ACS 2013-2017 Block Group Vars1.csv](ACS 2013-2017 Block Group Vars1.csv), [ACS 2013-2017 Block Group Vars2.csv](ACS 2013-2017 Block Group Vars2.csv) and [ACS 2013-2017 Block Group Vars3.csv](ACS 2013-2017 Block Group Vars3.csv)
-  * [TAZ1454 2015 Land Use.csv](TAZ1454 2015 Land Use.csv)
+  * [TAZ1454 2015 Land Use.csv](TAZ1454%202015%20Land%20Use.csv)
   * [TAZ1454 2010 District Summary.csv](TAZ1454 2010 District Summary.csv)
   * [TAZ1454 2015 District Summary.csv](TAZ1454 2015 District Summary.csv)
   * [TAZ1454 2015 Popsim Vars.csv](TAZ1454 2015 Popsim Vars.csv)
@@ -39,7 +39,7 @@ Creates 2015 input for [PopulationSim](https://github.com/BayAreaMetro/Populatio
 
 Given the output of [ACS 2013-2016 create TAZ data for 2015.R](ACS 2013-2016 create TAZ data for 2015.R), assumes that the housing unit and household counts don't decrease from the 2010 tazdata used in PlanBayArea2040 (see http://data.mtc.ca.gov/data-repository/).  This script adjusts those numbers to move growth within counties so that no TAZ loses households or housing units.
 
-* Author: @shimonisrael
+* Author: [@shimonisrael](https://github.com/shimonisrael)
 * Input: PBA40 2010 tazData (2010_06_003) and [TAZ1454 2015 Land Use.csv](TAZ1454 2015 Land Use.csv)
 * Output: [Adjusted TAZ1454 2015 Land Use.csv](Adjusted TAZ1454 2015 Land Use.csv)
 * See also:
@@ -47,7 +47,7 @@ Given the output of [ACS 2013-2016 create TAZ data for 2015.R](ACS 2013-2016 cre
 
 ### basis.py
 
-* Author: @fscottfoti
+* Author: [@fscottfoti](https://github.com/fscottfoti)
 
 `scripts/basis.py` is a script used to operate on this data.  There are several modes of operation (use the --mode command line option), analagous to baus.py in the bayarea_urbansim directory.  The modes include:
 
