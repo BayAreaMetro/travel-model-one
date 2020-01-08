@@ -4,10 +4,9 @@
 :: run from L:\RTP2021_PPA\Projects_onAWS
 :: List of the model runs to be zipped:
 for /d %%%f in (
-2040_TM151_PPA_RT_12
-2040_TM151_PPA_RT_14
-2050_TM150_FU1_RT_00
-2050_TM151_FU1_BF_00
+2050_TM151_PPA_BF_12_3107_SR87_Tunnel_00
+2050_TM151_PPA_BF_12_3110_East_West_Connector_00
+
 )    do    (
 
 rem if not confident, do a dry run first
@@ -34,9 +33,14 @@ If exist "%%f\extractor" (
 ) ELSE (
   "C:\Program Files\7-Zip\7z.exe" a "\\mtcarchives\cloudmodels1\Archived Travel Model Runs\%%f" "%%f\CTRAMP*" "%%f\accessibilities" "%%f\core_summaries" "%%f\main" "%%f\metrics" "%%f\skims" "%%f\trn" "%%f\updated_output" "%%f\INPUT" "%%f\*.bat" "%%f\*.csv" -mx9
 )
-ren %%f %%~nxf.archived 
+REM This will add the extension .archived to the folder downloaded
+REM ren %%f %%~nxf.archived 
+REM del %%f %%~nxf
+
+REM Keep this to delete the directory and files downloaded from S3 from the local computer
+del /F/Q/S %%f %%~nxf > NUL
+RMDIR /Q/S %%f %%~nxf
 
 )
 
-
-pause
+Exit
