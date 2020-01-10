@@ -7,26 +7,31 @@ library(xlsx)
 TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
 ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to read
 SAMPLESHARE  <- Sys.getenv("SAMPLESHARE") # Sampling
-
-WORKBOOK       <- "M:\\Development\\Travel Model One\\Calibration\\Version 1.5.0\\02 Automobile Ownership\\02_AutoOwnership.xlsx"
-WORKBOOK_BLANK <- gsub(".xlsx","_blank.xlsx",WORKBOOK)
-WORKBOOK_TEMP  <- gsub(".xlsx","_temp.xlsx", WORKBOOK)
-calib_workbook <- loadWorkbook(file=WORKBOOK_BLANK)
-calib_sheets   <- getSheets(calib_workbook)
+CODE_DIR     <- Sys.getenv("CODE_DIR")    # location of utilitiles\calibration code
 
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
+CODE_DIR     <- gsub("\\\\","/",CODE_DIR  ) # switch slashes around
 OUTPUT_DIR   <- file.path(TARGET_DIR, "OUTPUT", "calibration")
 if (!file.exists(OUTPUT_DIR)) { dir.create(OUTPUT_DIR) }
+
+WORKBOOK       <- "M:\\Development\\Travel Model One\\Calibration\\Version 1.5.2\\02 Automobile Ownership\\02_AutoOwnership.xlsx"
+WORKBOOK       <- gsub("\\\\","/",WORKBOOK  ) # switch slashes around
+WORKBOOK_TEMP  <- gsub(".xlsx","_temp.xlsx", WORKBOOK)
+WORKBOOK_BLANK <- file.path(CODE_DIR, "workbook_templates","02_AutoOwnership_blank.xlsx")
+calib_workbook <- loadWorkbook(file=WORKBOOK_BLANK)
+calib_sheets   <- getSheets(calib_workbook)
 
 stopifnot(nchar(TARGET_DIR  )>0)
 stopifnot(nchar(ITER        )>0)
 stopifnot(nchar(SAMPLESHARE )>0)
+stopifnot(nchar(CODE_DIR    )>0)
 
 SAMPLESHARE <- as.numeric(SAMPLESHARE)
 
 print(paste0("TARGET_DIR  = ",TARGET_DIR ))
 print(paste0("ITER        = ",ITER       ))
 print(paste0("SAMPLESHARE = ",SAMPLESHARE))
+print(paste0("CODE_DIR    = ",CODE_DIR   ))
 
 ######### counties
 LOOKUP_COUNTY        <- data.frame(COUNTY=c(1,2,3,4,5,6,7,8,9),

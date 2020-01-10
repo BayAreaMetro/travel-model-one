@@ -21,9 +21,9 @@ F_INPUT_SURVEY_DIR     = "M:/Data/OnBoard/Data and Reports/_data Standardized"
 F_INPUT_LEGACY_RDATA   = file.path(F_INPUT_SURVEY_DIR, "survey_legacy.RData")
 F_INPUT_STANDARD_RDATA = file.path(F_INPUT_SURVEY_DIR, "survey_standard.RData")
 
-F_VALIDATION_DIR       = "L:/RTP2021_PPA/Projects/2015_TM151_PPA_12/OUTPUT/validation"
+F_VALIDATION_DIR       = "M:/Application/Model One/RTP2021/IncrementalProgress/2015_TM151_IPA_00/OUTPUT/validation"
 F_INPUT_RIDERSHIP      = "M:/Data/Transit/2015 Ridership/transit ridership growth database.xlsx"
-F_INPUT_ESTIMATED      = "L:/RTP2021_PPA/Projects/2015_TM151_PPA_12/OUTPUT/trn/trnline.csv"
+F_INPUT_ESTIMATED      = "M:/Application/Model One/RTP2021/IncrementalProgress/2015_TM151_IPA_00/OUTPUT/trn/trnline.csv"
 
 F_INPUT_MUNI_APC       = "M:/Data/Transit/Muni APC Through Time/consolidated-database.csv"
 

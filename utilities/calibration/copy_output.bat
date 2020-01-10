@@ -1,10 +1,10 @@
 SETLOCAL EnableDelayedExpansion
 
-set MODEL_DIR=B:\Projects\2015_TM151_PPA_07_calib
-set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.5.0\2015_TM151_PPA_07
-set CODE_DIR=X:\travel-model-one-master\utilities\calibration
-set ITER=1
-set SAMPLESHARE=0.2
+set MODEL_DIR=\\MODEL2-D\Model2D-Share\Projects\2015_TM151_IPA_00
+set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.5.2\2015_TM151_IPA_00
+set CODE_DIR=X:\travel-model-one-calib1.5.2\utilities\calibration
+set ITER=3
+set SAMPLESHARE=1.0
 
 mkdir "%TARGET_DIR%"
 cd "%TARGET_DIR%"
@@ -31,6 +31,8 @@ if not exist %SKIMFILE%_%TABLE%.csv (
 
 :: all transit skims
 set COMMPATH=C:\Users\lzorn\Documents\scratch\COMMPATH
+:: Cluster "%COMMPATH%\CTRAMP" 1-15 Starthide Exit
+
 if not exist trnskmam_wlk_loc_wlk.csv (
   runtpp "%CODE_DIR%\extract_trnskim_tables.job"
   IF ERRORLEVEL 2 goto done
