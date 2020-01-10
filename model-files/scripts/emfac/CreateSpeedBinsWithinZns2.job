@@ -1,0 +1,504 @@
+;*   m:\M\Development\ModelToEmfac\reference\model_scripts\yr05_valid\CreateSpeedBinsWithinZns2.job
+;*   1. Extract intrazonal level VMT and speeds;
+;*   2. Extract total daily trips (for calculation of terminal distance VMT & speeds)
+;*   (Subsequent SAS jobs will aggregate intrazonal and terminal distance VMT to
+;*      the 13 CARB speed cohorts, for air quality analysis purposes.)
+;*   Generic Forecast Year Run for all 5 timeperiods.        
+;*
+;*   This Version accounts for the VMT double-counting/speed-bin overlap by using
+;*   ">=" or "<" coding.
+;*
+;*         -- December 20, 2016 ----        hmb. 
+;*
+;*************************************************************************************
+
+
+run pgm = matrix
+
+   ; read in early AM household travel demand
+   mati[1] = main\tripsEA.tpp
+   
+   ; read in early AM household travel skims
+   mati[2] = skims\hwyskmEA.tpp
+     
+   ; read in AM peak household travel demand
+   mati[3] = main\tripsAM.tpp
+   
+   ; read in the AM peak travel skims
+   mati[4] = skims\hwyskmAM.tpp
+   
+   ; read in Midday household travel demand
+   mati[5] = main\tripsMD.tpp
+   
+   ; read in the Midday travel skims
+   mati[6] = skims\hwyskmMD.tpp
+   
+   ; read in PM peak household travel demand
+   mati[7] = main\tripsPM.tpp
+   
+   ; read in the PM peak travel skims
+   mati[8] = skims\hwyskmPM.tpp
+   
+    ; read in Evening household travel demand
+   mati[9] = main\tripsEV.tpp
+   
+   ; read in the Evening travel skims
+   mati[10] = skims\hwyskmEV.tpp
+     
+   ; read in early AM commercial travel demand
+   mati[11] = nonres\tripsTrkEA.tpp
+ 
+    ; read in early AM commercial travel skims
+   mati[12] = skims\com_hwyskimEA.tpp
+
+   ; read in AM peak commercial travel demand
+   mati[13] = nonres\tripstrkAM.tpp
+      
+   ; read in AM peak commercial travel skims
+   mati[14] = skims\com_hwyskimAM.tpp
+
+   ; read in midday commercial travel demand
+   mati[15] = nonres\tripstrkMD.tpp
+      
+   ; read in midday commercial travel skims
+   mati[16] = skims\com_hwyskimMD.tpp
+
+   ; read in PM peak commercial travel demand
+   mati[17] = nonres\tripstrkPM.tpp
+      
+   ; read in PM peak commercial travel skims
+   mati[18] = skims\com_hwyskimPM.tpp
+   
+   ; read in evening commercial travel demand
+   mati[19] = nonres\tripstrkEV.tpp
+      
+   ; read in evening commercial travel skims
+   mati[20] = skims\com_hwyskimEV.tpp
+       
+   ; trucks are included in total vmt calculation AND speed distribution data files
+   ; but speed distribution files ARE NOT applied to truck shares of vmt
+   
+   ; create an array that is indexed by time period x 10000 + county code x 100 + speed bin  
+   array _timeCountyBin = 51013
+   
+   ; do these steps for internal zones only
+   if (i <= 1454)
+   
+      jloop
+      
+         if (i = j)
+         
+            ; set the zone number
+            zone = j
+         
+            ; step 1: determine the county code
+            
+            ;   - San Francisco
+            if (zone < 191) 
+   	 
+   	       _arbCounty  = 38
+   	       _countyName = 'San Francisco'
+   	       _countyCode = 1
+   	       
+   	    ;   - San Mateo
+   	    elseif (zone >= 191 && zone <= 346)
+   	 
+   	       _arbCounty  = 41
+   	       _countyName = 'San Mateo'
+   	       _countyCode = 2
+   	       
+            ;   - Santa Clara
+            elseif (zone >= 347 && zone <= 714) 
+   	 
+   	       _arbCounty  = 43
+   	       _countyName = 'Santa clara'
+   	       _countyCode = 3
+   	       
+   	    ;   - Alameda
+   	    elseif (zone >= 715 && zone <= 1039)
+   	 
+   	       _arbCounty  = 01
+   	       _countyName = 'Alameda'
+   	       _countyCode = 4
+      	 
+            ;   - Contra Costa
+            elseif (zone >= 1040 && zone <= 1210) 
+   	 
+   	       _arbCounty  = 07
+   	       _countyName = 'Contra Costa'
+   	       _countyCode = 5
+   	                   
+   	    ;   - Solano
+   	    elseif (zone >= 1211 && zone <= 1290)
+   	 
+   	       _arbCounty  = 48
+   	       _countyName = 'Solano'
+   	       _countyCode = 6
+   	       
+            ;   - Napa
+            elseif (zone >= 1291 && zone <= 1317) 
+   	 
+   	       _arbCounty  = 28
+   	       _countyName = 'Napa'
+   	       _countyCode = 7
+   	       
+   	    ;   - Sonoma
+   	    elseif (zone >= 1318 && zone <= 1403)
+   	 
+   	       _arbCounty  = 49
+   	       _countyName = 'Sonoma'
+   	       _countyCode = 8
+      	       
+   	    ;   - Marin
+   	    elseif (zone >= 1404 && zone <= 1454)
+   	 
+   	       _arbCounty  = 21
+   	       _countyName = 'Marin'
+   	       _countyCode = 9
+   	       
+            ;   - External Zones
+   	    elseif (zone > 1454)
+   	 
+   	       _arbCounty  = 9999
+   	       _countyName = 'External Zones'
+   	       _countyCode = 10   
+   	 
+   	    endif ; zone number check
+         
+            ; step 2: determine the vmt for each of the five time periods
+            
+            vmtEA = mi.1.DA           * mi.2.DISTDA       + mi.1.SR2         * mi.2.DISTS2       + mi.1.SR3         * mi.2.DISTS3 + 
+                    mi.1.DATOLL       * mi.2.TOLLDISTDA   + mi.1.SR2TOLL     * mi.2.TOLLDISTS2   + mi.1.SR3TOLL     * mi.2.TOLLDISTS3 +
+                    mi.11.VSTRUCK     * mi.12.DISTVSM     + mi.11.STRUCK     * mi.12.DISTSML     + mi.11.MTRUCK     * mi.12.DISTMED     + mi.11.CTRUCK     * mi.12.DISTLRG +
+                    mi.11.VSTRUCKTOLL * mi.12.TOLLDISTVSM + mi.11.STRUCKTOLL * mi.12.TOLLDISTSML + mi.11.MTRUCKTOLL * mi.12.TOLLDISTMED + mi.11.CTRUCKTOLL * mi.12.TOLLDISTLRG
+                 
+            vmtAM = mi.3.DA           * mi.4.DISTDA       + mi.3.SR2         * mi.4.DISTS2       + mi.3.SR3         * mi.4.DISTS3 + 
+                    mi.3.DATOLL       * mi.4.TOLLDISTDA   + mi.3.SR2TOLL     * mi.4.TOLLDISTS2   + mi.3.SR3TOLL     * mi.4.TOLLDISTS3 +
+                    mi.13.VSTRUCK     * mi.14.DISTVSM     + mi.13.STRUCK     * mi.14.DISTSML     + mi.13.MTRUCK     * mi.14.DISTMED     + mi.13.CTRUCK     * mi.14.DISTLRG +
+		    mi.13.VSTRUCKTOLL * mi.14.TOLLDISTVSM + mi.13.STRUCKTOLL * mi.14.TOLLDISTSML + mi.13.MTRUCKTOLL * mi.14.TOLLDISTMED + mi.13.CTRUCKTOLL * mi.14.TOLLDISTLRG           
+            
+            vmtMD = mi.5.DA           * mi.6.DISTDA       + mi.5.SR2         * mi.6.DISTS2       + mi.5.SR3         * mi.6.DISTS3 + 
+                    mi.5.DATOLL       * mi.6.TOLLDISTDA   + mi.5.SR2TOLL     * mi.6.TOLLDISTS2   + mi.5.SR3TOLL     * mi.6.TOLLDISTS3 + 
+                    mi.15.VSTRUCK     * mi.16.DISTVSM     + mi.15.STRUCK     * mi.16.DISTSML     + mi.15.MTRUCK     * mi.16.DISTMED     + mi.15.CTRUCK     * mi.16.DISTLRG +
+		    mi.15.VSTRUCKTOLL * mi.16.TOLLDISTVSM + mi.15.STRUCKTOLL * mi.16.TOLLDISTSML + mi.15.MTRUCKTOLL * mi.16.TOLLDISTMED + mi.15.CTRUCKTOLL * mi.16.TOLLDISTLRG
+              
+            vmtPM = mi.7.DA           * mi.8.DISTDA       + mi.7.SR2         * mi.8.DISTS2       + mi.7.SR3         * mi.8.DISTS3 + 
+                    mi.7.DATOLL       * mi.8.TOLLDISTDA   + mi.7.SR2TOLL     * mi.8.TOLLDISTS2   + mi.7.SR3TOLL     * mi.8.TOLLDISTS3 +
+                    mi.17.VSTRUCK     * mi.18.DISTVSM     + mi.17.STRUCK     * mi.18.DISTSML     + mi.17.MTRUCK     * mi.18.DISTMED     + mi.17.CTRUCK     * mi.18.DISTLRG +
+		    mi.17.VSTRUCKTOLL * mi.18.TOLLDISTVSM + mi.17.STRUCKTOLL * mi.18.TOLLDISTSML + mi.17.MTRUCKTOLL * mi.18.TOLLDISTMED + mi.17.CTRUCKTOLL * mi.18.TOLLDISTLRG 
+             
+            vmtEV = mi.9.DA           * mi.10.DISTDA      + mi.9.SR2         * mi.10.DISTS2      + mi.9.SR3         * mi.10.DISTS3 + 
+                    mi.9.DATOLL       * mi.10.TOLLDISTDA  + mi.9.SR2TOLL     * mi.10.TOLLDISTS2  + mi.9.SR3TOLL     * mi.10.TOLLDISTS3 + 
+                    mi.19.VSTRUCK     * mi.20.DISTVSM     + mi.19.STRUCK     * mi.20.DISTSML     + mi.19.MTRUCK     * mi.20.DISTMED     + mi.19.CTRUCK     * mi.20.DISTLRG +
+		    mi.19.VSTRUCKTOLL * mi.20.TOLLDISTVSM + mi.19.STRUCKTOLL * mi.20.TOLLDISTSML + mi.19.MTRUCKTOLL * mi.20.TOLLDISTMED + mi.19.CTRUCKTOLL * mi.20.TOLLDISTLRG
+                                     
+            ; step 3: determine the congested speed (use drive alone speeds only)
+            
+            cspdEA = mi.2.DISTDA / (mi.2.TIMEDA/60.0)
+            cspdAM = mi.4.DISTDA / (mi.4.TIMEDA/60.0)
+            cspdMD = mi.6.DISTDA / (mi.6.TIMEDA/60.0)
+            cspdPM = mi.8.DISTDA / (mi.8.TIMEDA/60.0)
+            cspdEV = mi.10.DISTDA / (mi.10.TIMEDA/60.0)                    
+            
+         endif ; i = j
+         
+         
+      endjloop
+         
+      ; step 4:  classify the vmt by time of day and speed bin
+      loop _time = 1,5
+   
+         if (_time = 1)
+      
+            _cspd = cspdEA
+            _vmt  = vmtEA
+
+         elseif (_time = 2)
+      
+            _cspd = cspdAM
+            _vmt  = vmtAM
+
+         elseif (_time = 3)
+      
+            _cspd = cspdMD
+            _vmt  = vmtMD
+
+         elseif (_time = 4)
+      
+            _cspd = cspdPM
+            _vmt  = vmtPM
+
+         elseif (_time = 5)
+      
+            _cspd = cspdEV
+            _vmt  = vmtEV
+
+         endif
+	       
+	       loop _speed = 1, 13
+	       
+	          if (_speed = 1)
+	          
+	             _speedBinLower = 0.0
+	             _speedBinUpper = 4.999
+	          
+	          elseif (_speed = 2) 
+	       
+	             _speedBinLower = 5.000
+	             _speedBinUpper = 9.999
+	 
+	          elseif (_speed = 3) 
+	       
+	             _speedBinLower = 10.000
+	             _speedBinUpper = 14.999
+	             
+	          elseif (_speed = 4) 
+	       
+	             _speedBinLower = 15.000
+	             _speedBinUpper = 19.999
+	             
+	          elseif (_speed = 5) 
+	       
+	             _speedBinLower = 20.000
+	             _speedBinUpper = 24.999
+	             
+	          elseif (_speed = 6) 
+	       
+	             _speedBinLower = 25.000
+	             _speedBinUpper = 29.999
+	             
+	          elseif (_speed = 7) 
+	       
+	             _speedBinLower = 30.000
+	             _speedBinUpper = 34.999
+	             
+	          elseif (_speed = 8) 
+	       
+	             _speedBinLower = 35.000
+	             _speedBinUpper = 39.999
+	             
+	          elseif (_speed = 9) 
+	       
+	             _speedBinLower = 40.000
+	             _speedBinUpper = 44.999
+	             
+	          elseif (_speed = 10) 
+	       
+	             _speedBinLower = 45.000
+	             _speedBinUpper = 49.999
+	             
+	          elseif (_speed = 11) 
+	       
+	             _speedBinLower = 50.000
+	             _speedBinUpper = 54.999
+	             
+	          elseif (_speed = 12) 
+	       
+	             _speedBinLower = 55.000
+	             _speedBinUpper = 59.999
+	             
+	          elseif (_speed = 13) 
+	       
+	             _speedBinLower = 60.000
+	             _speedBinUpper = 65.001
+	                         
+	             
+         endif
+	      
+	      if (_cspd >= _speedBinLower && _cspd < _speedBinUpper)
+	      
+	         _arrayIndex = _time * 10000 + _countyCode * 100 + _speed
+	         _timeCountyBin[_arrayIndex] = _timeCountyBin[_arrayIndex] + _vmt
+	      
+	      endif            
+	               
+         endloop ; _speed
+
+      endloop ; time loop
+   
+   endif ; i < 1454
+   
+   if (i==1454)
+   
+    ; set arrays for sum vmt and share of vmt in each hour
+      array _vmtArray = 5000
+      array _shareVmt = 5000
+             
+      list = "countyName, arbCounty, speedBin, hour01, hour02, hour03, hour04, hour05, hour06,", 
+             "hour07, hour08, hour09, hour10, hour11, hour12, hour13, hour14, hour15, hour16,", 
+             "hour17, hour18, hour19, hour20, hour21, hour22, hour23, hour24", 
+             file = emfac2\CreateSpeedBinsWithinZones_sums.csv
+             
+      ; build an array to let us write out the results in alphabetical order
+      array _alphaCounty = 10
+      _alphaCounty[1]  = 4
+      _alphaCounty[2]  = 5
+      _alphaCounty[3]  = 9
+      _alphaCounty[4]  = 7
+      _alphaCounty[5]  = 1
+      _alphaCounty[6]  = 2
+      _alphaCounty[7]  = 3
+      _alphaCounty[8]  = 6
+      _alphaCounty[9]  = 8
+      _alphaCounty[10] = 10
+             
+      ; give each county a name and an ARB code
+      loop _alphaCounter = 1,10
+      
+         ; set the county variable which is used in all the storage arrays
+         _county = _alphaCounty[_alphaCounter]
+         
+         if (_county = 1)
+            _arbCounty   = 38
+            _countyName  = 'San Francisco'
+         
+         elseif (_county = 2) 
+            _arbCounty = 41
+            _countyName = 'San Mateo'
+         
+         elseif (_county = 3)
+            _arbCounty = 43
+            _countyName = 'Santa Clara'     
+         
+         elseif (_county = 4)
+            _arbCounty = 01
+            _countyName = 'Alameda'
+         
+         elseif (_county = 5)
+            _arbCounty = 07
+            _countyName = 'Contra Costa'        
+         
+         elseif (_county = 6)
+            _arbCounty = 48
+            _countyName = 'Solano'
+         
+         elseif (_county = 7)
+            _arbCounty = 28
+            _countyName = 'Napa'            
+         
+         elseif (_county = 8)
+            _arbCounty = 49
+            _countyName = 'Sonoma'            
+         
+         elseif (_county = 9)
+            _arbCounty = 21
+            _countyName = 'Marin'          
+         
+         elseif (_county = 10)
+            _arbCounty = 9999
+            _countyName = 'External Zones' 
+                                                  
+         endif
+               
+         ; first loop to do calculations
+         loop _time24 = 1,24
+         
+            if (_time24>3  && _time24<=6)
+            
+               _timeIndex = 1
+               
+               ; set within time period diurnal factor consistent with EMFAC
+               if (_time24 = 4) _diurnalFactor = 0.157
+               if (_time24 = 5) _diurnalFactor = 0.298
+               if (_time24 = 6) _diurnalFactor = 0.545
+
+               
+            elseif (_time24>6  && _time24<=10)
+            
+               _timeIndex = 2
+               
+               if (_time24 = 7)  _diurnalFactor = 0.164
+	       if (_time24 = 8)  _diurnalFactor = 0.336
+               if (_time24 = 9)  _diurnalFactor = 0.309
+               if (_time24 = 10) _diurnalFactor = 0.191
+               
+               
+             elseif (_time24>10  && _time24<=15)
+            
+               _timeIndex = 3
+               
+               if (_time24 = 11) _diurnalFactor = 0.157
+	       if (_time24 = 12) _diurnalFactor = 0.198
+	       if (_time24 = 13) _diurnalFactor = 0.207
+               if (_time24 = 14) _diurnalFactor = 0.203
+               if (_time24 = 15) _diurnalFactor = 0.235
+                      
+            
+            elseif (_time24>15 && _time24<=19)
+            
+               _timeIndex = 4
+               
+               if (_time24 = 16) _diurnalFactor = 0.251
+	       if (_time24 = 17) _diurnalFactor = 0.261
+	       if (_time24 = 18) _diurnalFactor = 0.288
+               if (_time24 = 19) _diurnalFactor = 0.200
+                                    
+            elseif (_time24>19 || _time24<=3)
+            
+               _timeIndex = 5
+               
+               if (_time24 = 20) _diurnalFactor = 0.248
+	       if (_time24 = 21) _diurnalFactor = 0.190
+	       if (_time24 = 22) _diurnalFactor = 0.192
+               if (_time24 = 23) _diurnalFactor = 0.144   
+               if (_time24 = 24) _diurnalFactor = 0.109
+               
+	       if (_time24 = 1)  _diurnalFactor = 0.067
+	       if (_time24 = 2)  _diurnalFactor = 0.025
+               if (_time24 = 3)  _diurnalFactor = 0.025               
+               
+            endif  
+    
+            _sumVmt = 0.0
+            
+            loop _speedBin = 1,13
+            
+              _index   = _timeIndex * 10000 + _county * 100 + _speedBin
+              _tempVmt = _timeCountyBin[_index] * _diurnalFactor
+              
+              _sumIndex = _speedBin * 100 + _time24
+              _sumVmt = _sumVmt + _tempVmt             
+            
+            endloop
+            
+            loop _speedBin = 1,13
+            
+              _index    = _timeIndex * 10000 + _county * 100 + _speedBin
+              _tempVmt  = _timeCountyBin[_index] * _diurnalFactor
+              
+             
+              _sumIndex = _speedBin * 100 + _time24
+              _shareVmt[_sumIndex] = 0.0
+              
+              if (_sumVmt > 0.0) 
+                 
+                 _shareVmt[_sumIndex] = _tempVmt/_sumVmt 
+                 _vmtArray[_sumIndex] = _tempVmt
+                 
+              endif
+              
+            endloop ; _speedBin
+            
+         endloop ; _time24
+         
+         loop _speedBin = 1,13
+          
+            list = _countyName,",",_arbCounty,",",_speedBin,",",
+                   _vmtArray[_speedBin * 100 + 1](8.2), ",", _vmtArray[_speedBin * 100 + 2](8.2), ",", _vmtArray[_speedBin * 100 + 3](8.2), ",",
+                   _vmtArray[_speedBin * 100 + 4](8.2), ",", _vmtArray[_speedBin * 100 + 5](8.2), ",", _vmtArray[_speedBin * 100 + 6](8.2), ",",
+                   _vmtArray[_speedBin * 100 + 7](8.2), ",", _vmtArray[_speedBin * 100 + 8](8.2), ",", _vmtArray[_speedBin * 100 + 9](8.2), ",",
+                   _vmtArray[_speedBin * 100 + 10](8.2),",", _vmtArray[_speedBin * 100 + 11](8.2),",", _vmtArray[_speedBin * 100 + 12](8.2),",",
+                   _vmtArray[_speedBin * 100 + 13](8.2),",", _vmtArray[_speedBin * 100 + 14](8.2),",", _vmtArray[_speedBin * 100 + 15](8.2),",",
+                   _vmtArray[_speedBin * 100 + 16](8.2),",", _vmtArray[_speedBin * 100 + 17](8.2),",", _vmtArray[_speedBin * 100 + 18](8.2),",",
+                   _vmtArray[_speedBin * 100 + 19](8.2),",", _vmtArray[_speedBin * 100 + 20](8.2),",", _vmtArray[_speedBin * 100 + 21](8.2),",",
+                   _vmtArray[_speedBin * 100 + 22](8.2),",", _vmtArray[_speedBin * 100 + 23](8.2),",", _vmtArray[_speedBin * 100 + 24](8.2),
+                   file = emfac2\CreateSpeedBinsWithinZones_sums.csv
+          
+          endloop
+         
+      endloop ; _county
+   
+   endif
+
+endrun
+;*********************************************************************************************
