@@ -6,16 +6,16 @@
 
 #Import CSVs getting class right for geographies (so as not to lose leading 0s)
 
-bg_df1 <- read.csv("X:/petrale/output/ACS 2013-2017 Block Group Vars1.csv",header=TRUE, stringsAsFactors = FALSE,
+bg_df1 <- read.csv("ACS 2013-2017 Block Group Vars1.csv",header=TRUE, stringsAsFactors = FALSE,
                    colClasses = c("tract" = "character","state" = "character","county" = "character", "block.group" = "character"))
 
 
-bg_df2 <- read.csv("X:/petrale/output/ACS 2013-2017 Block Group Vars2.csv",header=TRUE, stringsAsFactors = FALSE,
+bg_df2 <- read.csv("ACS 2013-2017 Block Group Vars2.csv",header=TRUE, stringsAsFactors = FALSE,
                    colClasses = c("tract" = "character","state" = "character","county" = "character", "block.group" = "character"))
 
 
 
-bg_df3 <- read.csv("X:/petrale/output/ACS 2013-2017 Block Group Vars3.csv",header=TRUE, stringsAsFactors = FALSE,
+bg_df3 <- read.csv("ACS 2013-2017 Block Group Vars3.csv",header=TRUE, stringsAsFactors = FALSE,
                    colClasses = c("tract" = "character","state" = "character","county" = "character", "block.group" = "character"))
 
 # Rename block.group to block group, so rest of ACS 2013-2017 create TAZ data for 2015.R code works

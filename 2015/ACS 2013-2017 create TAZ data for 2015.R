@@ -1,4 +1,3 @@
-
 # ACS 2013-2017 create TAZ data for 2015.R
 # Create "2015" TAZ data from ACS 2013-2017 
 # SI
@@ -10,7 +9,7 @@
 
 # The working directory is set as the location of the script. All other paths in Petrale will be relative.
 
-wd <- dirname(rstudioapi::getActiveDocumentContext()$path)
+wd <- paste0(dirname(rstudioapi::getActiveDocumentContext()$path),"/")
 setwd(wd)
 
 "
@@ -336,7 +335,8 @@ f.tract.call <- function (baycounty){
                       state = "06", county=baycounty,
                       year=ACS_year,
                       output="wide",
-                      survey = "acs5")
+                      survey = "acs5",
+                      key = censuskey)
 }
 
 # Now make tract calls by county and concatenate all counties into a single file
@@ -398,7 +398,7 @@ f.url <- function (ACS_BG_variables,county,tract) {paste0("https://api.census.go
 # Block group calls done for all 1588 Bay Area tracts (done in 3 tranches because API limited to calls of 50 variables)
 # The "4" in the call refers to the number of columns at the end of the API call devoted to geography (not numeric)
 # Numeric values are changed by the f.data function from character to numeric
-# Note that, because the API call process is so long, these data are also saved in X:/petrale/output/
+# Note that, because the API call process is so long, these data are also saved in the working directory (petrale)
 # Calls 1-3 are saved in "ACS 2013-2017 Block Group Vars1-3", respectively
 
 # Call 1
@@ -603,7 +603,8 @@ ACS_BG_raw <- ACS_BG_preraw %>%
 sf1_tract_raw <- get_decennial(geography = "tract", variables = sf1_tract_variables,
                             state = "06", county=baycounties,
                             year=sf1_year,
-                            output="wide")
+                            output="wide",
+                            key=censuskey)
 
 # Join 2013-2017 ACS block group and tract variables to combined_block file
 # Combine and collapse ACS categories to get land use control totals, as appropriate
@@ -923,7 +924,14 @@ temp_rounded_adjusted <- temp_rounded %>% mutate(
   hh_kids_yes = if_else(max_kids==1,hh_kids_yes+(TOTHH-(hh_kids_yes+hh_kids_no)),hh_kids_yes),
   hh_kids_no  = if_else(max_kids==2,hh_kids_no +(TOTHH-(hh_kids_yes+hh_kids_no)),hh_kids_no)
   ) %>%
-  select(-max_income,-max_age,-max_size,-max_workers,-max_kids,-AGE62P)
+  select(-max_income,-max_age,-max_size,-max_workers,-max_kids,-AGE62P) %>%
+  mutate(
+    AGE0004 = if_else(TAZ1454==1439,0,AGE0004),                # Zero out population components in San Quentin TAZ
+    AGE0519 = if_else(TAZ1454==1439,0,AGE0519),                # All institutional group quarters
+    AGE2044 = if_else(TAZ1454==1439,0,AGE2044),                # Total pop and gq pop already 0
+    AGE4564 = if_else(TAZ1454==1439,0,AGE4564),
+    AGE65P =  if_else(TAZ1454==1439,0,AGE65P)
+  )
   
 # Read in old PBA data sets and select variables for joining to new 2015 dataset
 # Bring in updated 2015 employment for joining
@@ -953,14 +961,7 @@ New2015 <- joined_employment %>%
   select(ZONE,DISTRICT,SD,COUNTY,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,TOTACRE,
          RESACRE,CIACRE,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
          MWTEMPN,OTHEMPN,PRKCST,OPRKCST,AREATYPE,HSENROLL,COLLFTE,COLLPTE,TERMINAL,TOPOLOGY,ZERO,hhlds,sftaz,
-         gqpop) %>%
-  mutate(
-    AGE0004 = if_else(ZONE==1439,0,AGE0004),                # Zero out population components in San Quentin TAZ
-    AGE0519 = if_else(ZONE==1439,0,AGE0519),                # All institutional group quarters
-    AGE2044 = if_else(ZONE==1439,0,AGE2044),                # Total pop and gq pop already 0
-    AGE4564 = if_else(ZONE==1439,0,AGE4564),
-    AGE65P =  if_else(ZONE==1439,0,AGE65P)
-  )
+         gqpop) 
 
 # Summarize ACS and employment data by superdistrict for both 2010 and 2015
 
