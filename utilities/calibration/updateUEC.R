@@ -3,8 +3,8 @@ library(tidyr)
 options(java.parameters = "-Xmx8000m")  # xlsx uses java and can run out of memory
 library(xlsx)
 
-CALIB_DIR  <- "M:\\Development\\Travel Model One\\Calibration\\Version 1.5.0"
-UEC_DIR    <- "X:\\travel-model-one-master\\model-files\\model"
+CALIB_DIR  <- "M:\\Development\\Travel Model One\\Calibration\\Version 1.5.2"
+UEC_DIR    <- "X:\\travel-model-one-calib1.5.2\\model-files\\model"
 CALIB_DIR  <- gsub("\\\\","/",CALIB_DIR) # switch slashes around
 UEC_DIR    <- gsub("\\\\","/",UEC_DIR)   # switch slashes around
 
@@ -27,13 +27,13 @@ if (SUBMODEL=="UsualWorkAndSchoolLocation") {
   
   # sheet, column, startRow, endRow
   COPY_SRC <- list("work"       =c("calibration", 4, 4, 8),
-                   "work_county"=c("calibration",10, 4,10),
+                   "work_county"=c("calibration",10, 4,11),
                    "university" =c("calibration",16, 4, 8),
                    "highschool" =c("calibration",33, 4, 8),
                    "gradeschool"=c("calibration",34, 4, 8))
 
   COPY_DST <- list("work"       =c(       "Work", 7,22,26),
-                   "work_county"=c(       "Work", 7,38,44),
+                   "work_county"=c(       "Work", 7,38,45),
                    "university" =c( "University", 7,12,16),
                    "highschool" =c( "HighSchool", 7,12,16),
                    "gradeschool"=c("GradeSchool", 7,12,16))
@@ -210,9 +210,14 @@ for (name in names(COPY_SRC)) {
     # addDataFrame adds a blank cell so fetch the value so we can put it back
     cell_after_last     <- getCells( getRows(uec_sheet, rowIndex=uec_suffix_row:uec_suffix_row), 
                                      colIndex=uec_column:uec_column )
-    cell_after_last_val <- getCellValue(cell_after_last[[1]])
-    print(paste0("Cell after last: ",cell_after_last_val))
-    
+    cell_after_last_val <- NA
+    if (is.null(cell_after_last)) {
+      print(paste0("Cell after last is null"))
+    } else {
+      cell_after_last_val <- getCellValue(cell_after_last[[1]])
+      print(paste0("Cell after last: ",cell_after_last_val))
+    }
+
     addDataFrame(data, sheet=uec_sheet, col.names=FALSE, row.names=FALSE,
                  startRow=uec_start_row, startColumn=uec_column)
 
@@ -227,7 +232,7 @@ saveWorkbook(uec_workbook, UEC_DST_WORKBOOK)
 #forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
 print(paste("Wrote",UEC_DST_WORKBOOK))
 
-BOX_DIR <- "C:\\Users\\lzorn\\Box\\Modeling and Surveys\\Development\\Travel Model 1.5\\Calibration\\workbooks"
+BOX_DIR <- "C:\\Users\\lzorn\\Box\\Modeling and Surveys\\Development\\Travel Model 1.5\\Calibration\\workbooks_TM1.5.2"
 BOX_DIR  <- gsub("\\\\","/",BOX_DIR) # switch slashes around
 
 CALIB_WORKBOOK_NO_VERS <- gsub(paste0("_",VERSION,".xlsx"),".xlsx",basename(CALIB_WORKBOOK))
