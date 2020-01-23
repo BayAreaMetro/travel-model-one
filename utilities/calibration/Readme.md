@@ -13,4 +13,5 @@ The `copy_output.bat` does the following:
 The modeler then:
 * inspects the calibration workbook and makes changes to dampening factors, etc.
 * breaks the links to other workbooks and saves as a calibration workbook iteration
-* run updateUEC.R to update actual UEC
+* run `updateUEC.R` to update actual UEC
+* on model machine, run `calibrateModel.bat`
