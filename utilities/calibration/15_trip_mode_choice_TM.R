@@ -8,16 +8,18 @@ TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
 ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to read
 SAMPLESHARE  <- Sys.getenv("SAMPLESHARE") # Sampling
 CODE_DIR     <- Sys.getenv("CODE_DIR")    # location of utilitiles\calibration code
+CALIB_ITER   <- Sys.getenv("CALIB_ITER")  # calibration iteration
 
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
 CODE_DIR     <- gsub("\\\\","/",CODE_DIR  ) # switch slashes around
-OUTPUT_DIR   <- file.path(TARGET_DIR, "OUTPUT", "calibration")
+OUTPUT_DIR   <- file.path(TARGET_DIR, paste0("OUTPUT_",CALIB_ITER), "calibration")
 if (!file.exists(OUTPUT_DIR)) { dir.create(OUTPUT_DIR) }
 
 stopifnot(nchar(TARGET_DIR  )>0)
 stopifnot(nchar(ITER        )>0)
 stopifnot(nchar(SAMPLESHARE )>0)
 stopifnot(nchar(CODE_DIR    )>0)
+stopifnot(nchar(CALIB_ITER  )>0)
 
 SAMPLESHARE <- as.numeric(SAMPLESHARE)
 
@@ -25,6 +27,7 @@ print(paste0("TARGET_DIR  = ",TARGET_DIR ))
 print(paste0("ITER        = ",ITER       ))
 print(paste0("SAMPLESHARE = ",SAMPLESHARE))
 print(paste0("CODE_DIR    = ",CODE_DIR   ))
+print(paste0("CALIB_ITER  = ",CALIB_ITER ))
 
 TAZ_SD_FILE    <- "X:\\travel-model-one-master\\utilities\\geographies\\taz-superdistrict-county.csv"
 TAZ_SD_FILE    <- gsub("\\\\","/",TAZ_SD_FILE) # switch slashes around
@@ -41,7 +44,7 @@ table      <- "ivtFerry"
 ferry_skim <- data.frame()
 for (timeperiod in c("EA","AM","MD", "PM", "EV")) {
   for (submode in c("wlk_lrf_wlk","drv_lrf_wlk","wlk_lrf_drv")) {
-    skim_table <- read.table(file=file.path(TARGET_DIR, "OUTPUT", "skims", paste0("trnskm",timeperiod,"_",submode,".csv")),
+    skim_table <- read.table(file=file.path(TARGET_DIR, "OUTPUT_00", "skims", paste0("trnskm",timeperiod,"_",submode,".csv")),
                              header=TRUE, sep=",") %>% 
       mutate(timeperiod=timeperiod, submode=submode) %>%
       rename(OTAZ=orig, DTAZ=dest) %>%
@@ -51,12 +54,12 @@ for (timeperiod in c("EA","AM","MD", "PM", "EV")) {
 }
 remove(skim_table)
 
-indiv_trip_results   <- read.table(file=file.path(TARGET_DIR,"OUTPUT","main",paste0("indivTripData_",ITER,".csv")),
+indiv_trip_results   <- read.table(file=file.path(TARGET_DIR,paste0("OUTPUT_",CALIB_ITER),"main",paste0("indivTripData_",ITER,".csv")),
                                    header=TRUE, sep=",") %>% 
   select(inbound, tour_purpose, tour_mode, trip_mode, depart_hour, orig_taz, dest_taz) %>% 
   mutate(num_participants=1, indiv_joint="indiv")
 
-joint_trip_results   <- read.table(file=file.path(TARGET_DIR,"OUTPUT","main",paste0("jointTripData_",ITER,".csv")),
+joint_trip_results   <- read.table(file=file.path(TARGET_DIR,paste0("OUTPUT_",CALIB_ITER),"main",paste0("jointTripData_",ITER,".csv")),
                                    header=TRUE, sep=",") %>% 
   select(inbound, num_participants, tour_purpose, tour_mode, trip_mode, depart_hour, orig_taz, dest_taz) %>%
   mutate(indiv_joint="joint")
@@ -211,7 +214,7 @@ for (timeperiod in c("EA","AM","MD", "PM", "EV")) {
       egr <- substr(acc_egr,5,7)
 
       file_name <- paste0("trnskm",timeperiod,"_",acc,"_",submode,"_",egr,".csv")
-      skim_table <- read.table(file=file.path(TARGET_DIR, "OUTPUT", "skims", file_name), header=TRUE, sep=",") %>%
+      skim_table <- read.table(file=file.path(TARGET_DIR, "OUTPUT_00", "skims", file_name), header=TRUE, sep=",") %>%
         mutate(timeperiod=timeperiod, trn_submode=trn_submode,acc=acc,egr=egr) %>%
         rename(orig_taz=orig, dest_taz=dest)
 

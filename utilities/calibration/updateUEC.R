@@ -27,13 +27,13 @@ if (SUBMODEL=="UsualWorkAndSchoolLocation") {
   
   # sheet, column, startRow, endRow
   COPY_SRC <- list("work"       =c("calibration", 4, 4, 8),
-                   "work_county"=c("calibration",10, 4,11),
+                   "work_county"=c("calibration",10, 4,13),
                    "university" =c("calibration",16, 4, 8),
                    "highschool" =c("calibration",33, 4, 8),
                    "gradeschool"=c("calibration",34, 4, 8))
 
   COPY_DST <- list("work"       =c(       "Work", 7,22,26),
-                   "work_county"=c(       "Work", 7,38,45),
+                   "work_county"=c(       "Work", 7,38,47),
                    "university" =c( "University", 7,12,16),
                    "highschool" =c( "HighSchool", 7,12,16),
                    "gradeschool"=c("GradeSchool", 7,12,16))

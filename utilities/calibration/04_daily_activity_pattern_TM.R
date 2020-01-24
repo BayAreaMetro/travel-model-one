@@ -6,16 +6,18 @@ TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
 ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to read
 SAMPLESHARE  <- Sys.getenv("SAMPLESHARE") # Sampling
 CODE_DIR     <- Sys.getenv("CODE_DIR")    # location of utilitiles\calibration code
+CALIB_ITER   <- Sys.getenv("CALIB_ITER")  # calibration iteration
 
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
 CODE_DIR     <- gsub("\\\\","/",CODE_DIR  ) # switch slashes around
-OUTPUT_DIR   <- file.path(TARGET_DIR, "OUTPUT", "calibration")
+OUTPUT_DIR   <- file.path(TARGET_DIR, paste0("OUTPUT_",CALIB_ITER), "calibration")
 if (!file.exists(OUTPUT_DIR)) { dir.create(OUTPUT_DIR) }
 
 stopifnot(nchar(TARGET_DIR  )>0)
 stopifnot(nchar(ITER        )>0)
 stopifnot(nchar(SAMPLESHARE )>0)
 stopifnot(nchar(CODE_DIR    )>0)
+stopifnot(nchar(CALIB_ITER  )>0)
 
 SAMPLESHARE <- as.numeric(SAMPLESHARE)
 
@@ -23,8 +25,9 @@ print(paste0("TARGET_DIR  = ",TARGET_DIR ))
 print(paste0("ITER        = ",ITER       ))
 print(paste0("SAMPLESHARE = ",SAMPLESHARE))
 print(paste0("CODE_DIR    = ",CODE_DIR   ))
+print(paste0("CALIB_ITER  = ",CALIB_ITER ))
 
-cdap_results <- read.table(file=file.path(TARGET_DIR,"OUTPUT","main","cdapResults.csv"), header=TRUE, sep=",")
+cdap_results <- read.table(file=file.path(TARGET_DIR,paste0("OUTPUT_",CALIB_ITER),"main","cdapResults.csv"), header=TRUE, sep=",")
 
 # summarize to (county, Auto Ownership)
 cdap_ptype  <- group_by(cdap_results, PersonType, ActivityString) %>% summarise(num_pers=n())
