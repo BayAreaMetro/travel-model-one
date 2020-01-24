@@ -70,6 +70,7 @@ mkdir OUTPUT_%CALIB_ITER%\calibration
 Rscript --vanilla "%CODE_DIR%\01_usual_work_school_location_TM.R"
 Rscript --vanilla "%CODE_DIR%\02_auto_ownership_TM.R"
 Rscript --vanilla "%CODE_DIR%\04_daily_activity_pattern_TM.R"
+Rscript --vanilla "%CODE_DIR%\09_nonwork_destination_choice_TM.R"
 Rscript --vanilla "%CODE_DIR%\11_tour_mode_choice_TM.R"
 Rscript --vanilla "%CODE_DIR%\15_trip_mode_choice_TM.R"
 
