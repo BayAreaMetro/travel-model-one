@@ -20,10 +20,12 @@ VERSION  = args[2]
 print(paste0("SUBMODEL = ",SUBMODEL))
 print(paste0("VERSION  = ",VERSION))
 
-if (SUBMODEL=="UsualWorkAndSchoolLocation") {
+if (SUBMODEL=="DestinationChoice") {
 
-  CALIB_WORKBOOK   <- file.path(CALIB_DIR, "01 Usual Work and School Location", "01_UsualWorkAndSchoolLocation.xlsx")
+  # note this includes UsualWorkAndSchoolLocation AND NonWorkDestinationChoice
+  # so the workbook numbers need to be in sync
   UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.0 version", "DestinationChoice_TM1.xls")
+  CALIB_WORKBOOK   <- file.path(CALIB_DIR, "01 Usual Work and School Location", "01_UsualWorkAndSchoolLocation.xlsx")
   
   # sheet, column, startRow, endRow
   COPY_SRC <- list("work"       =c("calibration", 4, 4, 8),
@@ -38,6 +40,30 @@ if (SUBMODEL=="UsualWorkAndSchoolLocation") {
                    "highschool" =c( "HighSchool", 7,12,16),
                    "gradeschool"=c("GradeSchool", 7,12,16))
 
+  
+  CALIB_WORKBOOK2   <- file.path(CALIB_DIR, "09 Non-Work Destination Choice", "09_NonWorkDestinationChoice.xlsx")
+  # sheet, column, startRow, endRow
+  COPY_SRC2 <- list("escort"     =c("calibration", 5, 4, 8),
+                    "escort"     =c("calibration", 5, 4, 8),
+                    "shopping"   =c("calibration",17, 4, 8),
+                    "maint"      =c("calibration",29, 4, 8),
+                    "eatout"     =c("calibration",41, 4, 8),
+                    "social"     =c("calibration",53, 4, 8),
+                    "discr"      =c("calibration",65, 4, 8),
+                    "atwork"     =c("calibration",77, 4, 8))
+  
+  COPY_DST2 <- list("escort"     =c(  "EscortKids", 7,12,16),
+                    "escort"     =c("EscortNoKids", 7,12,16),
+                    "shopping"   =c(    "Shopping", 7,12,16),
+                    "maint"      =c(    "OthMaint", 7,12,16),
+                    "eatout"     =c(      "EatOut", 7,12,16),
+                    "social"     =c(      "Social", 7,12,16),
+                    "discr"      =c(    "OthDiscr", 7,12,16),
+                    "atwork"     =c(   "WorkBased", 7,12,16))
+
+  CONFIG <- list(CALIB_WORKBOOK,  COPY_SRC,  COPY_DST,
+                 CALIB_WORKBOOK2, COPY_SRC2, COPY_DST2)
+  
 } else if (SUBMODEL=="AutomobileOwnership") {
 
   CALIB_WORKBOOK <- file.path(CALIB_DIR, "02 Automobile Ownership", "02_AutoOwnership.xlsx")
@@ -74,6 +100,8 @@ if (SUBMODEL=="UsualWorkAndSchoolLocation") {
                                   "Auto ownership",15, 55, 58,
                                   "Auto ownership",16, 55, 58),
                    "4+_cars_b" =c("Auto ownership",17, 55, 58))
+
+  CONFIG <- list(CALIB_WORKBOOK, COPY_SRC, COPY_DST)
   
 } else if (SUBMODEL=="TourModeChoice") {
 
@@ -124,6 +152,8 @@ if (SUBMODEL=="UsualWorkAndSchoolLocation") {
                    "cbd_social"    =c(    "Social", 5, 468, 473),
                    "cbd_othdiscr"  =c(  "OthDiscr", 5, 468, 473),
                    "cbd_workbased" =c( "WorkBased", 5, 471, 476))
+
+  CONFIG <- list(CALIB_WORKBOOK, COPY_SRC, COPY_DST)
   
 } else if (SUBMODEL=="TripModeChoice") {
 
@@ -152,78 +182,93 @@ if (SUBMODEL=="UsualWorkAndSchoolLocation") {
                    "social"    =c(    "Social", 5, 510, 569),
                    "othdiscr"  =c(  "OthDiscr", 5, 510, 569),
                    "workbased" =c( "WorkBased", 5, 509, 542))
+
+  CONFIG <- list(CALIB_WORKBOOK, COPY_SRC, COPY_DST)
+
 } else {
   stop(paste0("Don't understand SUBMODEL [",SUBMODEL,"]"))
 }
 
-# use the right version
-CALIB_WORKBOOK <- gsub(".xlsx",paste0("_",VERSION,".xlsx"),CALIB_WORKBOOK)
-UEC_DST_WORKBOOK <- gsub("TM1.0 version/","",UEC_SRC_WORKBOOK)
-UEC_DST_WORKBOOK <- gsub("_TM1","",UEC_DST_WORKBOOK)
+# CONFIG should be in sets of three -- calib workbook, copy_src, copy_dst
+if (length(CONFIG) %% 3 != 0) {
+  stop(paste0("Don't understand CONFIG length ",length(CONFIG)))
+}
 
-print(paste0("CALIB_WORKBOOK   = ",CALIB_WORKBOOK))
-print(paste0("UEC_SRC_WORKBOOK = ",UEC_SRC_WORKBOOK))
-print(paste0("UEC_DST_WORKBOOK = ",UEC_DST_WORKBOOK))
-
-# open the calibration workbook
-calib_workbook <- loadWorkbook(file=CALIB_WORKBOOK)
-calib_sheets   <- getSheets(calib_workbook)
-
-# open the UEC SRC   
-uec_workbook <- loadWorkbook(file=UEC_SRC_WORKBOOK)
-uec_sheets   <- getSheets(uec_workbook)
-
-for (name in names(COPY_SRC)) {
-  calib_sheetname     <- COPY_SRC[[name]][1]
-  calib_column        <- strtoi(COPY_SRC[[name]][2])
-  calib_start_row     <- strtoi(COPY_SRC[[name]][3])
-  calib_end_row       <- strtoi(COPY_SRC[[name]][4])
-
-  print(paste0("Reading ",name," from sheet ",calib_sheetname,
-               " @ (",calib_start_row,",",calib_column,") - (",
-               calib_end_row,",",calib_column,")"))
+for (config_num in seq(length(CONFIG)/3)) {
+  CALIB_WORKBOOK <- CONFIG[[3*(config_num-1)+1]]
+  COPY_SRC       <- CONFIG[[3*(config_num-1)+2]]
+  COPY_DST       <- CONFIG[[3*(config_num-1)+3]]
   
-  calib_sheet <- calib_sheets[[calib_sheetname]]
-  data <- readColumns(calib_sheet,
-                      startColumn=calib_column, endColumn=calib_column,
-                      startRow=calib_start_row, endRow=calib_end_row,
-                      header=FALSE, colClasses=c("numeric"))
-  print(data)
-  # error out if any NA
-  if (any(is.na(data))) {
-    stop("Data contains NA")
-  }
-  
-  for (copynum in 1:(length(COPY_DST[[name]])/4)) {
-    print(paste0("Copying set ",copynum))
-    uec_sheetname    <- COPY_DST[[name]][(copynum-1)*4 + 1]
-    uec_column       <- strtoi(COPY_DST[[name]][(copynum-1)*4 + 2])
-    uec_start_row    <- strtoi(COPY_DST[[name]][(copynum-1)*4 + 3])
-    uec_end_row      <- strtoi(COPY_DST[[name]][(copynum-1)*4 + 4])
-    uec_suffix_row   <- uec_end_row+1
-    
-    print(paste0("Copying to ",uec_sheetname,
-                 " @ (",uec_start_row,",",uec_column,") - (",
-                 uec_end_row,",",uec_column,")"))
+  # use the right version
+  CALIB_WORKBOOK <- gsub(".xlsx",paste0("_",VERSION,".xlsx"),CALIB_WORKBOOK)
+  UEC_DST_WORKBOOK <- gsub("TM1.0 version/","",UEC_SRC_WORKBOOK)
+  UEC_DST_WORKBOOK <- gsub("_TM1","",UEC_DST_WORKBOOK)
 
-    uec_sheet <- uec_sheets[[uec_sheetname]]
-    # addDataFrame adds a blank cell so fetch the value so we can put it back
-    cell_after_last     <- getCells( getRows(uec_sheet, rowIndex=uec_suffix_row:uec_suffix_row), 
-                                     colIndex=uec_column:uec_column )
-    cell_after_last_val <- NA
-    if (is.null(cell_after_last)) {
-      print(paste0("Cell after last is null"))
-    } else {
-      cell_after_last_val <- getCellValue(cell_after_last[[1]])
-      print(paste0("Cell after last: ",cell_after_last_val))
+  print("-----------------------------------------------")
+  print(paste0("CALIB_WORKBOOK   = ",CALIB_WORKBOOK))
+  print(paste0("UEC_SRC_WORKBOOK = ",UEC_SRC_WORKBOOK))
+  print(paste0("UEC_DST_WORKBOOK = ",UEC_DST_WORKBOOK))
+
+  # open the calibration workbook
+  calib_workbook <- loadWorkbook(file=CALIB_WORKBOOK)
+  calib_sheets   <- getSheets(calib_workbook)
+
+  # open the UEC SRC
+  uec_workbook <- loadWorkbook(file=UEC_SRC_WORKBOOK)
+  uec_sheets   <- getSheets(uec_workbook)
+
+  for (name in names(COPY_SRC)) {
+    calib_sheetname     <- COPY_SRC[[name]][1]
+    calib_column        <- strtoi(COPY_SRC[[name]][2])
+    calib_start_row     <- strtoi(COPY_SRC[[name]][3])
+    calib_end_row       <- strtoi(COPY_SRC[[name]][4])
+
+    print(paste0("Reading ",name," from sheet ",calib_sheetname,
+                  " @ (",calib_start_row,",",calib_column,") - (",
+                  calib_end_row,",",calib_column,")"))
+  
+    calib_sheet <- calib_sheets[[calib_sheetname]]
+    data <- readColumns(calib_sheet,
+                        startColumn=calib_column, endColumn=calib_column,
+                        startRow=calib_start_row, endRow=calib_end_row,
+                        header=FALSE, colClasses=c("numeric"))
+    print(data)
+    # error out if any NA
+    if (any(is.na(data))) {
+      stop("Data contains NA")
     }
+  
+    for (copynum in 1:(length(COPY_DST[[name]])/4)) {
+      print(paste0("Copying set ",copynum))
+      uec_sheetname    <- COPY_DST[[name]][(copynum-1)*4 + 1]
+      uec_column       <- strtoi(COPY_DST[[name]][(copynum-1)*4 + 2])
+      uec_start_row    <- strtoi(COPY_DST[[name]][(copynum-1)*4 + 3])
+      uec_end_row      <- strtoi(COPY_DST[[name]][(copynum-1)*4 + 4])
+      uec_suffix_row   <- uec_end_row+1
+    
+      print(paste0("Copying to ",uec_sheetname,
+                   " @ (",uec_start_row,",",uec_column,") - (",
+                   uec_end_row,",",uec_column,")"))
 
-    addDataFrame(data, sheet=uec_sheet, col.names=FALSE, row.names=FALSE,
-                 startRow=uec_start_row, startColumn=uec_column)
+      uec_sheet <- uec_sheets[[uec_sheetname]]
+      # addDataFrame adds a blank cell so fetch the value so we can put it back
+      cell_after_last     <- getCells( getRows(uec_sheet, rowIndex=uec_suffix_row:uec_suffix_row), 
+                                       colIndex=uec_column:uec_column )
+      cell_after_last_val <- NA
+      if (is.null(cell_after_last)) {
+        print(paste0("Cell after last is null"))
+      } else {
+        cell_after_last_val <- getCellValue(cell_after_last[[1]])
+        print(paste0("Cell after last: ",cell_after_last_val))
+      }
 
-    # put this back if it's not na
-    if (!is.na(cell_after_last_val)) {
-      setCellValue(cell_after_last[[1]], cell_after_last_val)
+      addDataFrame(data, sheet=uec_sheet, col.names=FALSE, row.names=FALSE,
+                   startRow=uec_start_row, startColumn=uec_column)
+
+      # put this back if it's not na
+      if (!is.na(cell_after_last_val)) {
+        setCellValue(cell_after_last[[1]], cell_after_last_val)
+      }
     }
   }
 }
