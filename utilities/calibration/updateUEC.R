@@ -8,6 +8,10 @@ UEC_DIR    <- "X:\\travel-model-one-calib1.5.2\\model-files\\model"
 CALIB_DIR  <- gsub("\\\\","/",CALIB_DIR) # switch slashes around
 UEC_DIR    <- gsub("\\\\","/",UEC_DIR)   # switch slashes around
 
+BOX_DIR  <- "C:\\Users\\lzorn\\Box\\Modeling and Surveys\\Development\\Travel Model 1.5\\Calibration\\workbooks_TM1.5.2"
+BOX_DIR  <- gsub("\\\\","/",BOX_DIR) # switch slashes around
+
+
 args = commandArgs(trailingOnly=TRUE)
 
 if (length(args)<2) {
@@ -282,7 +286,4 @@ for (config_num in seq(length(CONFIG)/3)) {
 saveWorkbook(uec_workbook, UEC_DST_WORKBOOK)
 #forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
 print(paste("Wrote",UEC_DST_WORKBOOK))
-
-BOX_DIR <- "C:\\Users\\lzorn\\Box\\Modeling and Surveys\\Development\\Travel Model 1.5\\Calibration\\workbooks_TM1.5.2"
-BOX_DIR  <- gsub("\\\\","/",BOX_DIR) # switch slashes around
 
