@@ -43,8 +43,8 @@ if (SUBMODEL=="DestinationChoice") {
   
   CALIB_WORKBOOK2   <- file.path(CALIB_DIR, "09 Non-Work Destination Choice", "09_NonWorkDestinationChoice.xlsx")
   # sheet, column, startRow, endRow
-  COPY_SRC2 <- list("escort"     =c("calibration", 5, 4, 8),
-                    "escort"     =c("calibration", 5, 4, 8),
+  COPY_SRC2 <- list("escort1"    =c("calibration", 5, 4, 8),
+                    "escort2"    =c("calibration", 5, 4, 8),
                     "shopping"   =c("calibration",17, 4, 8),
                     "maint"      =c("calibration",29, 4, 8),
                     "eatout"     =c("calibration",41, 4, 8),
@@ -52,8 +52,8 @@ if (SUBMODEL=="DestinationChoice") {
                     "discr"      =c("calibration",65, 4, 8),
                     "atwork"     =c("calibration",77, 4, 8))
   
-  COPY_DST2 <- list("escort"     =c(  "EscortKids", 7,12,16),
-                    "escort"     =c("EscortNoKids", 7,12,16),
+  COPY_DST2 <- list("escort1"    =c(  "EscortKids", 7,12,16),
+                    "escort2"    =c("EscortNoKids", 7,12,16),
                     "shopping"   =c(    "Shopping", 7,12,16),
                     "maint"      =c(    "OthMaint", 7,12,16),
                     "eatout"     =c(      "EatOut", 7,12,16),
@@ -194,6 +194,15 @@ if (length(CONFIG) %% 3 != 0) {
   stop(paste0("Don't understand CONFIG length ",length(CONFIG)))
 }
 
+# open the UEC SRC
+uec_workbook <- loadWorkbook(file=UEC_SRC_WORKBOOK)
+uec_sheets   <- getSheets(uec_workbook)
+print(paste0("UEC_SRC_WORKBOOK = ",UEC_SRC_WORKBOOK))
+
+UEC_DST_WORKBOOK <- gsub("TM1.0 version/","",UEC_SRC_WORKBOOK)
+UEC_DST_WORKBOOK <- gsub("_TM1","",UEC_DST_WORKBOOK)
+print(paste0("UEC_DST_WORKBOOK = ",UEC_DST_WORKBOOK))
+
 for (config_num in seq(length(CONFIG)/3)) {
   CALIB_WORKBOOK <- CONFIG[[3*(config_num-1)+1]]
   COPY_SRC       <- CONFIG[[3*(config_num-1)+2]]
@@ -201,21 +210,14 @@ for (config_num in seq(length(CONFIG)/3)) {
   
   # use the right version
   CALIB_WORKBOOK <- gsub(".xlsx",paste0("_",VERSION,".xlsx"),CALIB_WORKBOOK)
-  UEC_DST_WORKBOOK <- gsub("TM1.0 version/","",UEC_SRC_WORKBOOK)
-  UEC_DST_WORKBOOK <- gsub("_TM1","",UEC_DST_WORKBOOK)
+
 
   print("-----------------------------------------------")
   print(paste0("CALIB_WORKBOOK   = ",CALIB_WORKBOOK))
-  print(paste0("UEC_SRC_WORKBOOK = ",UEC_SRC_WORKBOOK))
-  print(paste0("UEC_DST_WORKBOOK = ",UEC_DST_WORKBOOK))
 
   # open the calibration workbook
   calib_workbook <- loadWorkbook(file=CALIB_WORKBOOK)
   calib_sheets   <- getSheets(calib_workbook)
-
-  # open the UEC SRC
-  uec_workbook <- loadWorkbook(file=UEC_SRC_WORKBOOK)
-  uec_sheets   <- getSheets(uec_workbook)
 
   for (name in names(COPY_SRC)) {
     calib_sheetname     <- COPY_SRC[[name]][1]
@@ -271,6 +273,10 @@ for (config_num in seq(length(CONFIG)/3)) {
       }
     }
   }
+
+  CALIB_WORKBOOK_NO_VERS <- gsub(paste0("_",VERSION,".xlsx"),".xlsx",basename(CALIB_WORKBOOK))
+  print(paste("Copying",CALIB_WORKBOOK,"to",file.path(BOX_DIR, CALIB_WORKBOOK_NO_VERS)))
+  file.copy(from=CALIB_WORKBOOK, to=file.path(BOX_DIR, CALIB_WORKBOOK_NO_VERS), overwrite=TRUE, copy.date=TRUE)
 }
 
 saveWorkbook(uec_workbook, UEC_DST_WORKBOOK)
@@ -280,6 +286,3 @@ print(paste("Wrote",UEC_DST_WORKBOOK))
 BOX_DIR <- "C:\\Users\\lzorn\\Box\\Modeling and Surveys\\Development\\Travel Model 1.5\\Calibration\\workbooks_TM1.5.2"
 BOX_DIR  <- gsub("\\\\","/",BOX_DIR) # switch slashes around
 
-CALIB_WORKBOOK_NO_VERS <- gsub(paste0("_",VERSION,".xlsx"),".xlsx",basename(CALIB_WORKBOOK))
-print(paste("Copying",CALIB_WORKBOOK,"to",file.path(BOX_DIR, CALIB_WORKBOOK_NO_VERS)))
-file.copy(from=CALIB_WORKBOOK, to=file.path(BOX_DIR, CALIB_WORKBOOK_NO_VERS), overwrite=TRUE, copy.date=TRUE)
