@@ -18,12 +18,14 @@ library(dplyr)
 library(reshape)
 library(foreign)
 
-BOX_PEMS_DIR   <- "~/../Box/Modeling and Surveys/Development/Share Data/pems-typical-weekday"  # Box Drive default
+HOME_DIR       <- Sys.getenv("HOME")
+BOX_PEMS_DIR   <- file.path(HOME_DIR, "../Box/Modeling and Surveys/Share Data/pems-typical-weekday")  # Box Drive default
 PEMS_DATA_FILE <- "pems_period.csv"
 TM_VERSION     <- "TM1" # set to TM1 or TM2
 
 CROSSWALK_DIR  <- paste0("M:/Crosswalks/PeMSStations_",TM_VERSION,"network")
-TM_NETWORK     <- paste0(TM_VERSION,"_freeways_WGS84") # See readme for how this is derived
+TM_NETWORK_DIR <- "M:/Application/Model One/Networks/TM1_2015_Base_Network/shapefile"
+TM_NETWORK     <- paste0(TM_VERSION,"_freeways_wgs84")
 
 VALIDATION_YEAR<- 2015
 PEMS_YEARS     <- c(2014,2015,2016)    # select pems stations with data for these years since PEMS stations may move
@@ -41,23 +43,37 @@ pems_df        <- read.table(file=file.path(BOX_PEMS_DIR, PEMS_DATA_FILE), sep="
 # select to PEMS_YEARS
 pems_df        <- filter(pems_df, year %in% PEMS_YEARS)
 
-# add unique key (e.g. "404594 4 280 N" and select out to key, lat/lon, year
+# add unique key (e.g. "404594 4 280 N" and select out to key, postmile/lat/lon, year
 pems_df        <- mutate(pems_df, key=paste(station, district, route, direction)) %>%
-  select(key, station, district, route, direction, type, latitude, longitude, year)
+  select(key, station, district, route, direction, type, abs_pm, latitude, longitude, year)
 
 # remove the ones without coords
 pems_df        <- pems_df[!(is.na(pems_df$longitude)) | !(is.na(pems_df$latitude)),]
 
 # remove the ones that are freeway-to-freeway ramps for now since we don't label these with route/dir
 pems_df        <- filter(pems_df, type != "FF")
+print(paste("pems_df has",nrow(pems_df),"rows"))
 
-# select only the most recent key, so if it moves over time, we only want the most recent lat/lon
-# hopefully not many do this
-pems_df        <- group_by(pems_df, key) %>% arrange(desc(year))
+# key = station, district, route, direction; e.g. "400001 4 101 N"
+# pems_df[ which(pems_df$key=="401052 4 80 W"), ]
+
+# figure out how many keys move locations based on changed abs_pm/lat/longitude
+pems_key_loc   <- distinct(pems_df, key, abs_pm, latitude, longitude) %>% arrange(key) %>% 
+  mutate(is_dupe = duplicated(key))
+moved_pems_keys <- filter(pems_key_loc, is_dupe==TRUE) %>% select(key) %>% mutate(moved=1)
+print(paste("Out of",nrow(distinct(pems_df, key)),"distinct PEMS keys, dropped",nrow(moved_pems_keys),"because location moved"))
+
+# drop pems keys that have moved
+pems_df        <- left_join(pems_df, moved_pems_keys) %>% filter(is.na(moved)) %>% select(-moved)
+print(paste("pems_df has",nrow(pems_df),"rows"))
+remove(pems_key_loc, moved_pems_keys)
+
+# drop duplicates (multiple years)
 pems_df        <- distinct(pems_df, key, .keep_all=TRUE)
 
 # add pems_rowid and type_route_dir
-pems_df <-  as.data.frame(pems_df) %>% rowid_to_column("pems_rowid") %>%
+pems_df        <- group_by(pems_df, key) %>% arrange(desc(year))
+pems_df        <- as.data.frame(pems_df) %>% rowid_to_column("pems_rowid") %>%
   mutate(type_route_dir = paste(type, route, direction))
 
 # create the SpatialPointsDataFrame object
@@ -69,7 +85,7 @@ print(paste0("Wrote PEMS locations: ",file.path(CROSSWALK_DIR, "shapefiles", pas
 ############# TM freeway network data processing second
 
 # read the route links shapefile
-route_links   <- readOGR(dsn=file.path(CROSSWALK_DIR, "shapefiles"), layer=TM_NETWORK)
+route_links   <- readOGR(dsn=file.path(TM_NETWORK_DIR), layer=TM_NETWORK)
 summary(route_links)
 
 # set type to match pems type
@@ -236,7 +252,7 @@ matching_routes <- left_join(matching_routes, distances_long)
 xwalk <- matching_routes %>% group_by(pems_rowid) %>% slice(which.min(distance)) %>% as.data.frame()
 
 # go back to original columns, plus A, B, distance
-xwalk <- select(xwalk, station, district, route, direction, type, latitude, longitude, A, B, distance) %>%
+xwalk <- select(xwalk, station, district, route, direction, type, abs_pm, latitude, longitude, A, B, distance) %>%
   dplyr::rename(distlink=distance)
 
 # for joins
