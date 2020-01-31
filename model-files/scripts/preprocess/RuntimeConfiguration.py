@@ -228,6 +228,8 @@ def config_mobility_params(for_logsums, replacements):
 
     MeansBasedTollsQ1Factor  = float(get_property(params_filename, myfile_contents, "Means_Based_Tolling_Q1Factor"))
     MeansBasedTollsQ2Factor  = float(get_property(params_filename, myfile_contents, "Means_Based_Tolling_Q2Factor"))
+    MeansBasedFareQ1Factor  = float(get_property(params_filename, myfile_contents, "Means_Based_Fare_Q1Factor"))
+    MeansBasedFareQ2Factor  = float(get_property(params_filename, myfile_contents, "Means_Based_Fare_Q2Factor"))
 
     Adjust_TNCsingle_TourMode = float(get_property(params_filename, myfile_contents, "Adjust_TNCsingle_TourMode"))
     Adjust_TNCshared_TourMode = float(get_property(params_filename, myfile_contents, "Adjust_TNCshared_TourMode"))
@@ -290,6 +292,8 @@ def config_mobility_params(for_logsums, replacements):
 
     replacements[filepath]["(\nMeans_Based_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ1Factor
     replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
+    replacements[filepath]["(\nMeans_Based_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ1Factor
+    replacements[filepath]["(\nMeans_Based_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ2Factor
 
     replacements[filepath]["(\nAdjust_TNCsingle_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCsingle_TourMode
     replacements[filepath]["(\nAdjust_TNCshared_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCshared_TourMode
@@ -405,7 +409,8 @@ def config_auto_opcost(for_logsums, replacements):
 
     MeansBasedTollsQ1Factor  = float(get_property(params_filename, myfile_contents, "Means_Based_Tolling_Q1Factor"))
     MeansBasedTollsQ2Factor  = float(get_property(params_filename, myfile_contents, "Means_Based_Tolling_Q2Factor"))
-
+    MeansBasedFareQ1Factor  = float(get_property(params_filename, myfile_contents, "Means_Based_Fare_Q1Factor"))
+    MeansBasedFareQ2Factor  = float(get_property(params_filename, myfile_contents, "Means_Based_Fare_Q2Factor"))
 
     # put the av pce factors into the CTRAMP\scripts\block\hwyParam.block
     filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
@@ -426,6 +431,10 @@ def config_auto_opcost(for_logsums, replacements):
     replacements[filepath]["(\nMeans_Based_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ1Factor
     replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
 
+    # put the means based fare discount factors into CTRAMP\scripts\block\trnParam.block
+    filepath = os.path.join("CTRAMP","scripts","block","trnParam.block")
+    replacements[filepath]["(\nMeans_Based_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ1Factor
+    replacements[filepath]["(\nMeans_Based_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ2Factor
 
 def config_logsums(replacements, append):
     filepath = os.path.join("CTRAMP","runtime","logsums.properties")
