@@ -235,10 +235,14 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
 
 ; Loop thru income quartiles
   loop inc = 1,4
-   if (inc = 1)  token_inc   = '_no_zpv_inc1' MBF_Discount = Means_Based_Fare_Q1Factor
-   if (inc = 2)  token_inc   = '_no_zpv_inc2' MBF_Discount = Means_Based_Fare_Q2Factor
-   if (inc = 3)  token_inc   = '_no_zpv_inc3' MBF_Discount = 1
-   if (inc = 4)  token_inc   = '_no_zpv_inc4' MBF_Discount = 1
+   if (inc = 1)  token_inc   = '_no_zpv_inc1'
+   if (inc = 2)  token_inc   = '_no_zpv_inc2'
+   if (inc = 3)  token_inc   = '_no_zpv_inc3'
+   if (inc = 4)  token_inc   = '_no_zpv_inc4'
+
+   MBF_Discount = 1.0
+   if (inc = 1)  MBF_Discount = Means_Based_Fare_Q1Factor
+   if (inc = 2)  MBF_Discount = Means_Based_Fare_Q2Factor
 
   RUN PGM = MATRIX
   ; Read person trips for a transitmode for all time periods and Access+Egress combinations

@@ -137,10 +137,14 @@ loop auto = 1,15
 
     ; Loop thru time periods
     loop inc = 1,4
-    if (inc = 1)  token_inc   = 'inc1' vtoll_factor = Means_Based_Tolling_Q1Factor
-    if (inc = 2)  token_inc   = 'inc2' vtoll_factor = Means_Based_Tolling_Q2Factor
-    if (inc = 3)  token_inc   = 'inc3' vtoll_factor = 1
-    if (inc = 4)  token_inc   = 'inc4' vtoll_factor = 1
+    if (inc = 1)  token_inc   = 'inc1'
+    if (inc = 2)  token_inc   = 'inc2'
+    if (inc = 3)  token_inc   = 'inc3'
+    if (inc = 4)  token_inc   = 'inc4'
+
+    vtoll_factor = 1.0
+    if (inc = 1)  vtoll_factor = Means_Based_Tolling_Q1Factor
+    if (inc = 2)  vtoll_factor = Means_Based_Tolling_Q2Factor
 
   RUN PGM = MATRIX
 
