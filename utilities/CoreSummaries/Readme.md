@@ -159,7 +159,7 @@ Commute characteristics by household location. Sum(freq) = commute tours
 | cost | See https://github.com/BayAreaMetro/modeling-website/wiki/SimpleSkims#cost-skims for what's included |
 | parking_cost | Parking costs (in cents in 2000$)|
 | distance | Distance of commute (in miles)|
-| duration	| Duration of commute |
+| duration	| Duration of commute (in minutes) |
 | cost_fail | Commute tours for which the cost lookup failed |
 | time_fail | Commute tours for which the time lookup failed |
 
@@ -194,7 +194,7 @@ Sum(freq) = trips
 | tour_purpose | Tour purpose for the trip.  See https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour |
 | freq | Number of trips |
 | num_participants | Number of participants for these trips |
-| trvlTime | Average travel time |
+| trvlTime | Average travel time (in minutes)|
 | time_fail | Commute tours for which the time lookup failed |
 
 #### TimeOfDay
