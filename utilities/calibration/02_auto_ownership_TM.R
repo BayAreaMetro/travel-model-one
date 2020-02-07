@@ -79,3 +79,23 @@ setCellValue(source_cell[[1]], paste("Source: ",outfile))
 saveWorkbook(calib_workbook, WORKBOOK_TEMP)
 forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
 print(paste("Wrote",WORKBOOK))
+
+# summarize to (taz, Auto Ownership)
+ao_taz <- group_by(ao_results, TAZ, AO) %>% summarize(num_hh=n())
+# divide by SAMPLESHARE
+ao_taz  <- mutate(ao_taz, num_hh=num_hh/SAMPLESHARE, source="Model") %>% 
+  rename(num_vehicles=AO)
+
+# save it
+outfile <- file.path(OUTPUT_DIR,"02_auto_ownership_TAZ_TM_long.csv")
+write.table(ao_taz, outfile, sep=",", row.names=FALSE)
+print(paste("Wrote",outfile))
+
+ao_taz_spread <- spread(ao_taz, key=num_vehicles, value=num_hh)
+outfile <- file.path(OUTPUT_DIR,"02_auto_ownership_TAZ_TM.csv")
+write.table(ao_taz_spread, outfile, sep=",", row.names=FALSE)
+print(paste("Wrote",outfile))
+
+# copy the observed ACS file here to union
+file.copy("M:/Data/Census/ACS/ACS2013-2017/B08201 Household Size by Vehicles Available/vehiclesAvailableByTazACS_long.csv",
+          file.path(OUTPUT_DIR, "02_auto_ownership_TAZ_ACS.csv"))

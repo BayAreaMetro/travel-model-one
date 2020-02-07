@@ -1,4 +1,4 @@
-# Convert vehiclesAvailableByTaz.csv to long form
+# Convert vehiclesAvailableByTazACS.csv to long form
 #
 # Run this in M:\Data\Census\ACS\ACS2013-2017\B08201 Household Size by Vehicles Available
 #
@@ -8,7 +8,7 @@
 library(tidyr)
 library(dplyr)
 
-data_wide <- read.table("vehiclesAvailableByTaz.csv", header=TRUE, sep=",", stringsAsFactors = FALSE)
+data_wide <- read.table("vehiclesAvailableByTazACS.csv", header=TRUE, sep=",", stringsAsFactors = FALSE)
 
 # remove Total
 data_wide <- select(data_wide, -Total)
@@ -23,6 +23,8 @@ data_long <- gather(data_wide,
                                 key_name == "X4.or.more"  ~ 4))
 
 # remove key_name column and add source column
-data_long <- select(data_long, -key_name) %>% mutate(source = "ACS 2013-2017")
+data_long <- select(data_long, -key_name) %>% 
+  mutate(source = "ACS 2013-2017") %>% 
+  rename(TAZ=ZONE, num_hh=value)
 
-write.csv(data_long, "vehiclesAvailableByTaz_long.csv", row.names=FALSE, quote = TRUE)
+write.csv(data_long, "vehiclesAvailableByTazACS_long.csv", row.names=FALSE, quote = TRUE)
