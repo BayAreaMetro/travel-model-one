@@ -13,7 +13,8 @@ F_OUTPUT  <- gsub("\\\\","/",F_OUTPUT)
 print(paste0("F_INPUT  = [",F_INPUT, "]\n"))
 print(paste0("F_OUTPUT = [",F_OUTPUT,"]\n"))
 
-data_df <- read.table(file = F_INPUT, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+# census GEOID should be text
+data_df <- read.table(file = F_INPUT, header = TRUE, sep = ",", stringsAsFactors = FALSE,  colClasses=c("GEOID"="character"))
 
 for (colname in c("AGREMPN","FPSEMPN","HEREMPN","RETEMPN","MWTEMPN","OTHEMPN","TOTEMP",
                   "HHINCQ1","HHINCQ2","HHINCQ3","HHINCQ4","HHPOP","TOTHH","GQPOP","RES_UNITS","TOTPOP","MFDU","SFDU","EMPRES",
@@ -22,8 +23,10 @@ for (colname in c("AGREMPN","FPSEMPN","HEREMPN","RETEMPN","MWTEMPN","OTHEMPN","T
                   "hh_wrks_0","hh_wrks_1","hh_wrks_2","hh_wrks_3_plus","hh_kids_no","hh_kids_yes",
                   "district","topology","zero","hsenroll","collpte","collfte")) {
     if (colname %in% colnames(data_df)) {
+        print(paste("Converting",colname,"to integer"))
         data_df[,colname] <- as.integer(data_df[,colname])
     }
 }
+
 print(head(data_df))
 write.dbf(data_df, F_OUTPUT, factor2char = TRUE, max_nchar = 254)
