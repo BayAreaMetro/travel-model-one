@@ -113,6 +113,26 @@ addDataFrame(as.data.frame(tour_summary_spread), calib_sheets$modeldata, startRo
 source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=1:1), colIndex=1:1 )
 setCellValue(source_cell[[1]], paste("Source: ",outfile))
 
+# combine purposes
+tour_results <- mutate(tour_results,
+                       simple_purpose=case_when(tour_purpose=="atwork_business" ~ "atwork",
+                                                tour_purpose=="atwork_eat"      ~ "atwork",
+                                                tour_purpose=="atwork_maint"    ~ "atwork",
+                                                tour_purpose=="eatout"          ~ "ind_disc",
+                                                tour_purpose=="escort_kids"     ~ "ind_maint",
+                                                tour_purpose=="escort_no kids"  ~ "ind_maint",
+                                                tour_purpose=="othdiscr"        ~ "ind_disc",
+                                                tour_purpose=="othmaint"        ~ "ind_maint",
+                                                tour_purpose=="school_grade"    ~ "school",
+                                                tour_purpose=="school_high"     ~ "school",
+                                                tour_purpose=="shopping"        ~ "ind_maint",
+                                                tour_purpose=="social"          ~ "ind_disc",
+                                                tour_purpose=="university"      ~ "university",
+                                                tour_purpose=="work_high"       ~ "work",
+                                                tour_purpose=="work_low"        ~ "work",
+                                                tour_purpose=="work_med"        ~ "work",
+                                                tour_purpose=="work_very high"  ~ "work"))
+
 # transit submode summary
 # Want submode: Local, LRT-Walk, LRT-Drive, Ferry-Walk, Ferry-Drive, Express, HeavyRail, CommRail
 transit_tour_results <- subset(tour_results, subset=(tour_mode>=9)&(tour_mode<=18))
@@ -179,6 +199,7 @@ LRF_drive <- mutate(LRF_drive, ferryAvailable=ifelse((inFerryAvailable==1)&(outF
 
 # put them back together
 transit_tour_results <- rbind(nonLRF_tour_results, LRF_walk, LRF_drive)
+remove(nonLRF_tour_results, LRF_tour_results, LRF_walk, LRF_drive)
 
 # summarize to "auto_sufficiency", indiv_joint, tour purpose and TRANSIT tour mode
 trn_tour_summary <- group_by(transit_tour_results, auto_suff, indiv_joint, tour_purpose, trn_submode) %>% 
@@ -215,26 +236,6 @@ transit_tour_results <- transit_tour_results %>%
 # add trn_access_mode
 transit_tour_results <- mutate(transit_tour_results,
                                trn_access_mode=if_else(tour_mode<=13,"walk","drive"))
-
-# combine purposes
-transit_tour_results <- mutate(transit_tour_results,
-  simple_purpose=case_when(tour_purpose=="atwork_business" ~ "atwork",
-                           tour_purpose=="atwork_eat"      ~ "atwork",
-                           tour_purpose=="atwork_maint"    ~ "atwork",
-                           tour_purpose=="eatout"          ~ "ind_disc",
-                           tour_purpose=="escort_kids"     ~ "ind_maint",
-                           tour_purpose=="escort_no kids"  ~ "ind_maint",
-                           tour_purpose=="othdiscr"        ~ "ind_disc",
-                           tour_purpose=="othmaint"        ~ "ind_maint",
-                           tour_purpose=="school_grade"    ~ "school",
-                           tour_purpose=="school_high"     ~ "school",
-                           tour_purpose=="shopping"        ~ "ind_maint",
-                           tour_purpose=="social"          ~ "ind_disc",
-                           tour_purpose=="university"      ~ "university",
-                           tour_purpose=="work_high"       ~ "work",
-                           tour_purpose=="work_low"        ~ "work",
-                           tour_purpose=="work_med"        ~ "work",
-                           tour_purpose=="work_very high"  ~ "work"))
 
 # add superdistrict for orig, dest
 taz_sd <- read.table(file = TAZ_SD_FILE, header=TRUE, sep=",")
@@ -281,3 +282,45 @@ setCellValue(source_cell[[1]], paste("Source: ",outfile))
 saveWorkbook(calib_workbook, WORKBOOK_TEMP)
 forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
 print(paste("Wrote",WORKBOOK))
+
+# auto district summaries -- use codes consistent with CHTS_Auto_District_Summary.xlsx
+auto_tour_results <- subset(tour_results, subset=(tour_mode<=6)) %>%
+  mutate(auto_submode=case_when(tour_mode== 1 ~ 1,  # DA
+                                tour_mode== 2 ~ 1,  # DA toll
+                                tour_mode== 3 ~ 2,  # SR2
+                                tour_mode== 4 ~ 2,  # SR2 toll
+                                tour_mode== 5 ~ 3,  # SR3+
+                                tour_mode== 6 ~ 3), # SR3+ toll
+        simple_purpose2=case_when(simple_purpose=="atwork"    ~ "ATWRK",
+                                  (simple_purpose=="ind_disc" )&(indiv_joint=="indiv") ~ "iDISC",
+                                  (simple_purpose=="ind_disc" )&(indiv_joint=="joint") ~ "jDISC",
+                                  (simple_purpose=="ind_maint")&(indiv_joint=="indiv") ~ "iMAIN",
+                                  (simple_purpose=="ind_maint")&(indiv_joint=="joint") ~ "jMAIN",
+                                  simple_purpose=="work"      ~ "WORK",
+                                  simple_purpose=="university"~ "UNIV",
+                                  simple_purpose=="school"    ~ "SCHL"))
+                               
+                               
+# add superdistrict for orig, dest
+auto_tour_results <- left_join(auto_tour_results, 
+                               select(taz_sd, ZONE, SD_NAME) %>% rename(orig_taz=ZONE, orig_SD_NAME=SD_NAME))
+auto_tour_results <- left_join(auto_tour_results, 
+                               select(taz_sd, ZONE, SD_NAME) %>% rename(dest_taz=ZONE, dest_SD_NAME=SD_NAME))
+
+auto_tour_summary <- group_by(auto_tour_results, simple_purpose2, auto_submode, orig_SD_NAME, dest_SD_NAME) %>% 
+  summarise(num_tours=sum(num_participants)) %>%
+  mutate(num_tours=num_tours/SAMPLESHARE) %>% 
+  rename(simple_purpose=simple_purpose2)
+
+# reorder columns
+auto_tour_summary <- auto_tour_summary[c("auto_submode","orig_SD_NAME","dest_SD_NAME","simple_purpose","num_tours")]
+
+# save it
+outfile <- file.path(OUTPUT_DIR, paste0("11_tour_mode_choice_auto_ODdist_TM.csv"))
+write.table(auto_tour_summary, outfile, sep=",", row.names=FALSE)
+print(paste("Wrote ",outfile))
+
+# copy the CHTS file here to union
+chts_file <- file.path(Sys.getenv("HOME"),"..","Box","Modeling and Surveys","Development","Travel Model 1.5","Calibration","CHTS_Summaries","chts_auto_tour_district_flow.csv")
+file.copy(chts_file, file.path(OUTPUT_DIR, "11_tour_mode_choice_auto_ODdist_CHTS.csv"))
+

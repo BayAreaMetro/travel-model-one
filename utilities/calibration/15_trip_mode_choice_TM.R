@@ -67,6 +67,7 @@ joint_trip_results   <- read.table(file=file.path(TARGET_DIR,paste0("OUTPUT_",CA
 # put individual and joint trips together
 trip_results <- rbind(indiv_trip_results, joint_trip_results)
 n_trip_results <- nrow(trip_results)
+remove(indiv_trip_results, joint_trip_results)
 
 # add time period to trip results
 trip_results <- mutate(trip_results,
@@ -74,7 +75,25 @@ trip_results <- mutate(trip_results,
                                               depart_hour <= 10 ~ "AM",
                                               depart_hour <= 15 ~ "MD",
                                               depart_hour <= 19 ~ "PM",
-                                              depart_hour  > 19 ~ "EV"))
+                                              depart_hour  > 19 ~ "EV"),
+                       simple_purpose=case_when(tour_purpose=="atwork_business" ~ "atwork",
+                                                tour_purpose=="atwork_eat"      ~ "atwork",
+                                                tour_purpose=="atwork_maint"    ~ "atwork",
+                                                tour_purpose=="eatout"          ~ "ind_disc",
+                                                tour_purpose=="escort_kids"     ~ "ind_maint",
+                                                tour_purpose=="escort_no kids"  ~ "ind_maint",
+                                                tour_purpose=="othdiscr"        ~ "ind_disc",
+                                                tour_purpose=="othmaint"        ~ "ind_maint",
+                                                tour_purpose=="school_grade"    ~ "school",
+                                                tour_purpose=="school_high"     ~ "school",
+                                                tour_purpose=="shopping"        ~ "ind_maint",
+                                                tour_purpose=="social"          ~ "ind_disc",
+                                                tour_purpose=="university"      ~ "university",
+                                                tour_purpose=="work_high"       ~ "work",
+                                                tour_purpose=="work_low"        ~ "work",
+                                                tour_purpose=="work_med"        ~ "work",
+                                                tour_purpose=="work_very high"  ~ "work"))
+
 
 # split into Light-Rail/Ferry and non Light Rail Ferry to check if ferry avaiable for light rail/ferry
 LRF_trip_results    <- subset(trip_results, (trip_mode==10)|(trip_mode==15))
@@ -108,6 +127,7 @@ trip_results <- rbind(nonLRF_trip_results, LRF_trip_results)
 print(paste("n_trip_results =",n_trip_results))
 print(paste("nrow(trip_results) =",nrow(trip_results)))
 # stopifnot(n_trip_results == nrow(trip_results))
+remove(LRF_trip_results, nonLRF_trip_results, LRF_drive_in, LRF_drive_out, LRF_walk)
 
 # create special trip mode for ferry
 trip_results <- mutate(trip_results, trip_mode=ifelse(ferryAvailable==1,-trip_mode,trip_mode))
@@ -118,7 +138,7 @@ trip_summary <- group_by(trip_results, indiv_joint, tour_purpose, tour_mode, tri
   mutate(num_trips=num_trips/SAMPLESHARE)
 
 # save it
-outfile <- file.path(OUTPUT_DIR, paste0("15_trip_mode_choice_TM.csv"))
+outfile <- file.path(OUTPUT_DIR, "15_trip_mode_choice_TM.csv")
 write.table(trip_summary, outfile, sep=",", row.names=FALSE)
 print(paste("Wrote",outfile))
 
@@ -173,27 +193,6 @@ transit_trip_results$acc[which((transit_trip_results$inbound==1)&
                                  (transit_trip_results$trip_mode==-15))] <- "wlk"
 transit_trip_results$egr[which((transit_trip_results$inbound==1)&
                                  (transit_trip_results$trip_mode==-15))] <- "drv"
-
-# combine purposes
-transit_trip_results <- mutate(transit_trip_results,
-                               simple_purpose=case_when(
-                                 tour_purpose=="atwork_business" ~ "atwork",
-                                 tour_purpose=="atwork_eat"      ~ "atwork",
-                                 tour_purpose=="atwork_maint"    ~ "atwork",
-                                 tour_purpose=="eatout"          ~ "ind_disc",
-                                 tour_purpose=="escort_kids"     ~ "ind_maint",
-                                 tour_purpose=="escort_no kids"  ~ "ind_maint",
-                                 tour_purpose=="othdiscr"        ~ "ind_disc",
-                                 tour_purpose=="othmaint"        ~ "ind_maint",
-                                 tour_purpose=="school_grade"    ~ "school",
-                                 tour_purpose=="school_high"     ~ "school",
-                                 tour_purpose=="shopping"        ~ "ind_maint",
-                                 tour_purpose=="social"          ~ "ind_disc",
-                                 tour_purpose=="university"      ~ "university",
-                                 tour_purpose=="work_high"       ~ "work",
-                                 tour_purpose=="work_low"        ~ "work",
-                                 tour_purpose=="work_med"        ~ "work",
-                                 tour_purpose=="work_very high"  ~ "work"))
 
 # add boards and first transit mode
 transit_trip_results$num_boards <- NA
@@ -341,3 +340,45 @@ setCellValue(source_cell[[1]], paste("Source: ",outfile))
 saveWorkbook(calib_workbook, WORKBOOK_TEMP)
 forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
 print(paste("Wrote",WORKBOOK))
+
+# auto district summaries -- use codes consistent with CHTS_Auto_District_Summary.xlsx
+auto_trip_results <- subset(trip_results, subset=((trip_mode>=1)&(trip_mode <=6))) %>%
+  mutate(auto_submode=case_when(trip_mode== 1 ~ 1,  # DA
+                                trip_mode== 2 ~ 1,  # DA toll
+                                trip_mode== 3 ~ 2,  # SR2
+                                trip_mode== 4 ~ 2,  # SR2 toll
+                                trip_mode== 5 ~ 3,  # SR3+
+                                trip_mode== 6 ~ 3), # SR3+ toll
+         simple_purpose2=case_when(simple_purpose=="atwork"    ~ "ATWRK",
+                                   (simple_purpose=="ind_disc" )&(indiv_joint=="indiv") ~ "iDISC",
+                                   (simple_purpose=="ind_disc" )&(indiv_joint=="joint") ~ "jDISC",
+                                   (simple_purpose=="ind_maint")&(indiv_joint=="indiv") ~ "iMAIN",
+                                   (simple_purpose=="ind_maint")&(indiv_joint=="joint") ~ "jMAIN",
+                                   simple_purpose=="work"      ~ "WORK",
+                                   simple_purpose=="university"~ "UNIV",
+                                   simple_purpose=="school"    ~ "SCHL"))
+
+
+# add superdistrict for orig, dest
+auto_trip_results <- left_join(auto_trip_results, 
+                               select(taz_sd, ZONE, SD_NAME) %>% rename(orig_taz=ZONE, orig_SD_NAME=SD_NAME))
+auto_trip_results <- left_join(auto_trip_results, 
+                               select(taz_sd, ZONE, SD_NAME) %>% rename(dest_taz=ZONE, dest_SD_NAME=SD_NAME))
+
+auto_trip_summary <- group_by(auto_trip_results, simple_purpose2, auto_submode, orig_SD_NAME, dest_SD_NAME) %>% 
+  summarise(num_trips=sum(num_participants)) %>%
+  mutate(num_trips=num_trips/SAMPLESHARE) %>% 
+  rename(simple_purpose=simple_purpose2)
+
+# reorder columns
+auto_trip_summary <- auto_trip_summary[c("auto_submode","orig_SD_NAME","dest_SD_NAME","simple_purpose","num_trips")]
+
+# save it
+outfile <- file.path(OUTPUT_DIR, "15_trip_mode_choice_auto_ODdist_TM.csv")
+write.table(auto_trip_summary, outfile, sep=",", row.names=FALSE)
+print(paste("Wrote ",outfile))
+
+# copy the CHTS file here to union
+chts_file <- file.path(Sys.getenv("HOME"),"..","Box","Modeling and Surveys","Development","Travel Model 1.5","Calibration","CHTS_Summaries","chts_auto_trip_district_flow.csv")
+file.copy(chts_file, file.path(OUTPUT_DIR, "15_trip_mode_choice_auto_ODdist_CHTS.csv"))
+
