@@ -142,58 +142,58 @@ loop period = 2,2
 
          ; drive alone, no value toll, exclude drive alone value toll and HOV facilities, internal demand plus intra-regional demand plus air passenger demand
          pathload path = lw.gencost_da, excludegrp = 11, 23, vol[1] = mi.1.da + mi.2.da + mi.4.da,
-           MW[1]=mi.1.da + mi.2.da + mi.4.da, selectlink=(L=@token_link@), VOL[11]=MW[1]
+           MW[1]=mi.1.da + mi.2.da + mi.4.da, selectlink=(L=@token_link@), VOL[14]=MW[1]
 
          ; shared ride 2, no value toll, exclude sr2 value toll and HOV 3+ facilities, internal demand plus intra-regional demand plus air passenger demand
          pathload path = lw.gencost_s2, excludegrp = 12, 3, vol[2] =  mi.1.sr2 / 2 + mi.2.sr2 + mi.4.sr2,
-           MW[2]=mi.1.sr2 / 2 + mi.2.sr2 + mi.4.sr2, selectlink=(L=@token_link@), VOL[12]=MW[2]
+           MW[2]=mi.1.sr2 / 2 + mi.2.sr2 + mi.4.sr2, selectlink=(L=@token_link@), VOL[15]=MW[2]
 
          ; shared ride 3+, no value toll, exclude sr3 value toll facilities, internal demand plus intra-regional demand plus air passenger demand
          pathload path = lw.gencost_s3, excludegrp = 13, vol[3] = mi.1.sr3 / 3.25 + mi.2.sr3 + mi.4.sr3,
-           MW[3]=mi.1.sr3 / 3.25 + mi.2.sr3 + mi.4.sr3, selectlink=(L=@token_link@), VOL[13]=MW[3]
+           MW[3]=mi.1.sr3 / 3.25 + mi.2.sr3 + mi.4.sr3, selectlink=(L=@token_link@), VOL[16]=MW[3]
 
          ; very small, small, and medium trucks, no value toll, exclude small truck value toll facilities and HOV facilities
          pathload path = lw.gencost_sml, excludegrp = 14, 23, vol[4] = mi.3.vstruck + mi.3.struck + mi.3.mtruck,
-           MW[4]=mi.3.vstruck + mi.3.struck + mi.3.mtruck, selectlink=(L=@token_link@), VOL[14]=MW[4]
+           MW[4]=mi.3.vstruck + mi.3.struck + mi.3.mtruck, selectlink=(L=@token_link@), VOL[17]=MW[4]
 
 
          ; large trucks, no value toll, exclude large truck toll facilities, HOV facilities, and no commercial truck facilities
          pathload path = lw.gencost_lrg, excludegrp = 15, 23, 4, vol[5] = mi.3.ctruck,
-            MW[5]=mi.3.ctruck, selectlink=(L=@token_link@), VOL[15]=MW[5]
+            MW[5]=mi.3.ctruck, selectlink=(L=@token_link@), VOL[18]=MW[5]
 
          ; value toll paying classes second
 
          ; drive alone, value toll paying, exclude HOV facilities, internal demand plus intra-regional demand plus air passenger demand
          pathload path = lw.gencost_da, excludegrp = 23, vol[6] = mi.1.datoll + mi.2.datoll + mi.4.datoll,
-           mw[6]=mi.1.datoll + mi.2.datoll + mi.4.datoll, selectlink=(L=@token_link@), VOL[16]=MW[6]
+           mw[6]=mi.1.datoll + mi.2.datoll + mi.4.datoll, selectlink=(L=@token_link@), VOL[19]=MW[6]
 
          ; shared ride 2, value toll paying, exclude HOV 3+ facilities, internal demand plus intra-regional demand plus air passenger demand
          pathload path = lw.gencost_s2, excludegrp = 3, vol[7] = mi.1.sr2toll / 2 + mi.2.sr2toll + mi.4.sr2toll,
-           mw[7]= mi.1.sr2toll / 2 + mi.2.sr2toll + mi.4.sr2toll, selectlink=(L=@token_link@), VOL[17]=MW[7]
+           mw[7]= mi.1.sr2toll / 2 + mi.2.sr2toll + mi.4.sr2toll, selectlink=(L=@token_link@), VOL[20]=MW[7]
 
          ; shared ride 3+, value toll paying, no exclusions, internal demand plus intra-regional demand plus air passenger demand
          pathload path = lw.gencost_s3, vol[8] = mi.1.sr3toll / 3.25 + mi.2.sr3toll + mi.4.sr3toll,
-           mw[8]= mi.1.sr3toll / 3.25 + mi.2.sr3toll + mi.4.sr3toll, selectlink=(L=@token_link@), VOL[18]=MW[8]
+           mw[8]= mi.1.sr3toll / 3.25 + mi.2.sr3toll + mi.4.sr3toll, selectlink=(L=@token_link@), VOL[21]=MW[8]
 
          ; very small, small, and medium trucks, value toll paying, excluded from HOV facilities, use the small truck generalized cost
          pathload path = lw.gencost_sml, excludegrp = 23, vol[9]= mi.3.vstrucktoll + mi.3.strucktoll + mi.3.mtrucktoll,
-           mw[9]= mi.3.vstrucktoll + mi.3.strucktoll + mi.3.mtrucktoll, selectlink=(L=@token_link@), VOL[19]=MW[9]
+           mw[9]= mi.3.vstrucktoll + mi.3.strucktoll + mi.3.mtrucktoll, selectlink=(L=@token_link@), VOL[22]=MW[9]
 
          ; large trucks, value toll paying, excluded from HOV facilities and no commercial truck facilities
          pathload path = lw.gencost_lrg, excludegrp = 23, 4, vol[10] = mi.3.ctrucktoll,
-           mw[10]= mi.3.ctrucktoll, selectlink=(L=@token_link@), VOL[20]=MW[10]
+           mw[10]= mi.3.ctrucktoll, selectlink=(L=@token_link@), VOL[23]=MW[10]
 
          ; drive alone AV TNC, value toll paying, exclude HOV facilities
          pathload path = lw.gencost_da, excludegrp = 23, vol[11] = mi.1.da_tnc + mi.1.da_av,
-           mw[11] = mi.1.da_tnc + mi.1.da_av, selectlink=(L=@token_link@), VOL[21]=MW[11]
+           mw[11] = mi.1.da_tnc + mi.1.da_av, selectlink=(L=@token_link@), VOL[24]=MW[11]
 
          ; shared ride 2, value toll paying, exclude HOV 3+ facilities
          pathload path = lw.gencost_s2, excludegrp = 3, vol[12] = (mi.1.s2_tnc + mi.1.s2_av) / 2,
-           mw[12] = (mi.1.s2_tnc + mi.1.s2_av) / 2, selectlink=(L=@token_link@), VOL[22]=MW[12]
+           mw[12] = (mi.1.s2_tnc + mi.1.s2_av) / 2, selectlink=(L=@token_link@), VOL[25]=MW[12]
 
          ; shared ride 3+, value toll paying, no exclusions
          pathload path = lw.gencost_s3, vol[13] = (mi.1.s3_tnc + mi.1.s3_av)/ 3.25,
-           mw[13] = (mi.1.s3_tnc + mi.1.s3_av)/ 3.25, selectlink=(L=@token_link@), VOL[23]=MW[13]
+           mw[13] = (mi.1.s3_tnc + mi.1.s3_av)/ 3.25, selectlink=(L=@token_link@), VOL[26]=MW[13]
 
       endphase
 
