@@ -33,7 +33,7 @@ If PeMS years specified:
 p1) Roadways to PeMS.[csv,tde]: dataframe containing both modeled and observed data where each row is one volume
     (e.g. observed OR modeled)
 
-    Columns: a, b, A_B, at, ft, sep_HOV,                                      (model link)
+    Columns: a, b, A_B, at, ft, county, sep_HOV,                              (model link)
              district, station, route, direction, type,                       (PeMS station)
              abs_pm, latitude, longitude,                                     (PeMS station location)
              link_count, pemsonlink, distlink, lanes match,                   (matching info)
@@ -45,7 +45,7 @@ p1) Roadways to PeMS.[csv,tde]: dataframe containing both modeled and observed d
 p2) Roadways to PeMS_wide.[csv,tde]: dataframe containing both modeled and observed data where each row is one set
     of volumes (observed AND modeled)
 
-    Columns: a, b, A_B, at, ft, sep_HOV, lanes modeled,                       (model link)
+    Columns: a, b, A_B, at, ft, county, sep_HOV, lanes modeled,               (model link)
              district, station, route, direction, type, lanes observed,       (PeMS station)
              abs_pm, latitude, longitude,                                     (PeMS station location)
              link_count, pemsonlink, distlink, lanes match,                   (matching info)
@@ -69,7 +69,7 @@ CALTRANS_FILE       = os.path.join(SHARE_DATA, "caltrans-typical-weekday", "typi
 PEMS_OUTPUT_FILE    = "Roadways to PeMS"
 CALTRANS_OUTPUT_FILE= "Roadways to Caltrans"
 
-MODEL_COLUMNS       = ['a','b','ft','at','lanes','volEA_tot','volAM_tot','volMD_tot','volPM_tot','volEV_tot']
+MODEL_COLUMNS       = ['a','b','ft','at','county','lanes','volEA_tot','volAM_tot','volMD_tot','volPM_tot','volEV_tot']
 PEMS_COLUMNS        = ['station','route','direction','time_period','lanes','avg_flow','abs_pm','latitude','longitude','year']
 
 fieldMap = {
@@ -188,6 +188,7 @@ if __name__ == '__main__':
     col_rename = {}
     for colname in model_df.columns.values.tolist(): col_rename[colname] = colname.strip()
     model_df.rename(columns=col_rename, inplace=True)
+    model_df.rename(columns={"gl":"county"}, inplace=True)
 
     # select only the columns we want
     model_df = model_df[MODEL_COLUMNS]
@@ -225,11 +226,11 @@ if __name__ == '__main__':
     model_df["b"] = model_df["b"].astype(int)
     # now a,b isn't unique so group
     model_df["link_count"] = 1
-    model_df = model_df.groupby(["a","b","at","ft"]).agg(sum).reset_index()
+    model_df = model_df.groupby(["a","b","at","ft","county"]).agg(sum).reset_index()
     print("model_df head\n{}".format(model_df.loc[model_df.link_count>1].head()))
 
     # create a multi index for stacking
-    model_df.set_index(['a','b','ft','at','lanes','sep_HOV','link_count'], inplace=True)
+    model_df.set_index(['a','b','ft','at','county','lanes','sep_HOV','link_count'], inplace=True)
     # stack: so now we have a series with multiindex: a,b,lanes,varname
     model_df = pandas.DataFrame({'volume': model_df.stack()})
     # reset the index
@@ -237,7 +238,7 @@ if __name__ == '__main__':
     print("model_df head\n{}".format(model_df.head(12)))
 
     # and rename it
-    model_df.rename(columns={'level_7':'time_period'}, inplace=True)
+    model_df.rename(columns={'level_8':'time_period'}, inplace=True)
     # remove extra chars: 'volAM_tot' => 'AM'
     model_df.loc[model_df['time_period']!='Daily','time_period'] = model_df['time_period'].str[3:5]
     print("model_df head\n{}".format(model_df.head(12)))
@@ -405,8 +406,9 @@ if __name__ == '__main__':
     else:
         index_cols = ["station","route","direction","abs_pm","latitude","longitude","time_period"]
 
-    model_wide = model_final_df[index_cols + ["a","b","A_B","ft","at","sep_HOV","link_count", "pemsonlink", "distlink", "lanes","volume"]].copy()
-    model_wide.rename(columns={"volume":"{} Modeled".format(args.model_year), "lanes":"lanes modeled"}, inplace=True)
+    model_wide = model_final_df[index_cols + ["a","b","A_B","ft","at","county","sep_HOV","link_count", "pemsonlink", "distlink", "lanes","volume"]].copy()
+    model_wide.rename(columns={"volume":"{} Modeled".format(args.model_year), 
+                               "lanes":"lanes modeled"}, inplace=True)
 
     obs_wide.reset_index(inplace=True)
     obs_wide.rename(columns={"lanes":"lanes observed"}, inplace=True)
@@ -418,10 +420,13 @@ if __name__ == '__main__':
     table_wide['lanes match'] = 0
     table_wide.loc[ table_wide['lanes modeled'] == table_wide['lanes observed'], 'lanes match'] = 1
 
-    # bring the attribute back to non-wide table
-    lanes_match_df = table_wide[index_cols + ["lanes match"]].drop_duplicates()
+    # bring the attribute "lanes match", "county" back to non-wide table
+    lanes_match_df = table_wide[index_cols + ["lanes match","county"]].drop_duplicates()
     print("lanes_match_df head:\n{}".format(lanes_match_df.head()))
-    table_df = pandas.merge(left=table_df, right=lanes_match_df, how='left', on=index_cols)
+    table_df = pandas.merge(left=table_df, right=lanes_match_df, how='left', on=index_cols, suffixes=("","_temp"))
+    table_df.loc[ pandas.isnull(table_df.county)&pandas.notnull(table_df.county_temp), "county"] = table_df.county_temp
+    table_df.rename(columns={"lanes match_temp":"lanes match"}, inplace=True)
+    table_df.drop(columns=["county_temp"], inplace=True)
     print("table_df head:\n{}".format(table_df.head()))
 
     # write non-wide
