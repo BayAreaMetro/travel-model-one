@@ -41,7 +41,7 @@ loop period = 2,2
       ; loaded time-specific highway network
       ; neto    = hwy\load@token_period@.net
       neto    = "hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs_v2.net"
-      mato    = "hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs_v2.mat", MO=1-13, NAME=vol_da,vol_s2,vol_s3,vol_sm,vol_hv,vol_daT,vol_s2T,vol_s3T,vol_vmT,vol_hvT,vol_daAVTNC,vol_s2AVTNC,vol_s3AVTNC
+      mato    = "hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs_v2.tpp", MO=1-13, NAME=vol_da,vol_s2,vol_s3,vol_sm,vol_hv,vol_daT,vol_s2T,vol_s3T,vol_smT,vol_hvT,vol_daAVTNC,vol_s2AVTNC,vol_s3AVTNC
 
       ; set the assignment paramters -- equilibrium assignment, frank-wolfe
       parameters combine = equi; , enhance = 2
@@ -217,24 +217,30 @@ loop period = 2,2
       endphase
    endrun
 
-  run PGM=matrix
-   filei mati     ="hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs_v2.mat"
-   fileo printo[1]="hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs_v2.txt"
+   run PGM=matrix
+      filei mati     ="hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs_v2.tpp"
+      fileo mato[1]  ="hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs_v2_noheader.csv", FORMAT=txt, PATTERN=IJM:V, MO=1-15, DELIMITER=',', MAXFIELDS=15
 
-   fillmw mw[1]=mi.1.1(13)  ; set M@[1] = mi.1.1, MW[2] = mi.1.2, etc
-   MW[14] = MW[1]+MW[2]+MW[3]+MW[4]+MW[5]+MW[6]+MW[7]+MW[8]+MW[9]+MW[10]+MW[11]+MW[12]+MW[13]  ; all vehicles
-   MW[15] = MW[1]+MW[2]+MW[3]            +MW[6]+MW[7]+MW[8]             +MW[11]+MW[12]+MW[13]  ; passenger vehicles
+      fillmw mw[3]=mi.1.1(13)  ; set MW[2] = mi.1.1, MW[3] = mi.1.2, etc
 
-   if (I==1) print CSV=T, LIST="OTAZ","DTAZ","vol","vol_pax","vol_da","vol_s2","vol_s3","vol_sm","vol_hv","vol_daT","vol_s2T","vol_s3T","vol_smT","vol_hvT","vol_daAVTNC","vol_s2AVTNC","vol_s3AVTNC", printo=1
-   JLOOP
-     IF (MW[11] > 0.01) print CSV=T, LIST=I(4L),J(4L),MW[11](10.2L),MW[12](10.2L),Mw[1](10.2L),mw[2](10.2L),mw[3](10.2L),mw[4](10.2L),mw[5](10.2L),mw[6](10.2L),mw[7](10.2L),mw[8](10.2L),mw[9](10.2L),mw[10](10.2L),mw[11](10.2L),mw[12](10.2L),mw[13](10.2L), printo=1
-   ENDJLOOP
+      ; all vehicles
+      MW[1] = mi.1.vol_da  + mi.1.vol_s2  + mi.1.vol_s3  + mi.1.vol_sm  + mi.1.vol_hv  + 
+              mi.1.vol_daT + mi.1.vol_s2T + mi.1.vol_s3T + mi.1.vol_smT + mi.1.vol_hvT +
+              mi.1.vol_daAVTNC + mi.1.vol_s2AVTNC + mi.1.vol_s3AVTNC
 
+      ; passenger vehicles
+      MW[2] = mi.1.vol_da  + mi.1.vol_s2  + mi.1.vol_s3  + 
+              mi.1.vol_daT + mi.1.vol_s2T + mi.1.vol_s3T +
+              mi.1.vol_daAVTNC + mi.1.vol_s2AVTNC + mi.1.vol_s3AVTNC 
    endrun
-   EndDistributeMultistep
+
+   ; add header
+   *echo OTAZ,DTAZ,one,vol,vol_pax,vol_da,vol_s2,vol_s3,vol_sm,vol_hv,vol_daT,vol_s2T,vol_s3T,vol_smT,vol_hvT,vol_daAVTNC,vol_s2AVTNC,vol_s3AVTNC >  "hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs_v2.csv"
+   *type "hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs_v2_noheader.csv" >> "hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs_v2.csv"
+   *del "hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs_v2_noheader.csv"
+
+  EndDistributeMultistep
 
 endloop ; time period loop
 
-; Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
-;          PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t
 Wait4Files files = CTRAMP2.script.end, PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t
