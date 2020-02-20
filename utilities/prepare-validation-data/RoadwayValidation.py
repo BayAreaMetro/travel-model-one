@@ -81,6 +81,9 @@ fieldMap = {
     'bool' :        tde.Type.BOOLEAN
 }
 
+# these are bad crosswalk
+PEMS_BAD_STATION_CROSSWALK = [401819, 401820]
+
 # 
 # from Rdata to TableauExtract.py -- move to library?
 # 
@@ -156,6 +159,7 @@ if __name__ == '__main__':
 
     pandas.options.display.width    = 1000
     pandas.options.display.max_rows = 1000
+    pandas.options.display.max_columns = 25
 
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("-m","--model_year",    type=int, required=True)
@@ -174,12 +178,18 @@ if __name__ == '__main__':
     ############ read the mapping first
     mapping_df = None
     tde_file   = None
+    obs_cols   = []
     if args.pems_year:
         mapping_df = pandas.read_csv(PEMS_MAP_FILE)
         tde_file   = PEMS_OUTPUT_FILE
+        obs_cols   = ["{} Observed".format(year) for year in args.pems_year]
     else:
         mapping_df = pandas.read_csv(CALTRANS_MAP_FILE)
         tde_file   = CALTRANS_OUTPUT_FILE
+        obs_cols   = ["{} Observed".format(year) for year in args.caltrans_year]
+
+    # column name for model year observed
+    modelyear_observed = "{} Observed".format(args.model_year)
 
     ############ read the model data
     model_df = pandas.read_csv(MODEL_FILE)
@@ -420,8 +430,110 @@ if __name__ == '__main__':
     table_wide['lanes match'] = 0
     table_wide.loc[ table_wide['lanes modeled'] == table_wide['lanes observed'], 'lanes match'] = 1
 
-    # bring the attribute "lanes match", "county" back to non-wide table
-    lanes_match_df = table_wide[index_cols + ["lanes match","county"]].drop_duplicates()
+    ### filter down to max of one pems station per link by adding columns "skip", "skip_reason"
+    # iterate through links by time period whittle down to a single observed for each link
+    # store results here. columns = A_B, time_period, station, skip, skip_reason
+    AB_timeperiod_station = pandas.DataFrame()
+
+    for AB_timeperiod,group_orig in table_wide.groupby(["A_B","time_period"]):
+        print("Processing {}".format(AB_timeperiod))
+        group = group_orig.copy() # to make it clear
+
+        group["skip"       ] = 0
+        group["skip_reason"] = ""
+
+        # skip due to lanes mismatch
+        group.loc[ (group.skip==0)&(group["lanes match"]== 0), "skip_reason"] = "lanes mismatch"
+        group.loc[ (group.skip==0)&(group["lanes match"]== 0), "skip"       ] = 1
+
+        useable = len(group)-group.skip.sum()
+        print("  Group has length {} and skips {} with {} remaining as useable ".format(len(group), group.skip.sum(), useable))
+        if useable <= 1: 
+            AB_timeperiod_station = pandas.concat([AB_timeperiod_station, 
+                                                   group[["A_B","time_period","station","skip","skip_reason"]]])
+            continue
+
+        # if there are some with modelyear observed and some without, kick out the ones without
+        obs_target_notnull = group.loc[ (group.skip==0)&pandas.notnull(group[modelyear_observed]) ]
+        obs_target_isnull  = group.loc[ (group.skip==0)&pandas.isnull(group[modelyear_observed])  ]
+        if len(obs_target_notnull) > 0 and len(obs_target_isnull) > 0:
+            print("  Skipping {} rows due to null {}".format(len(obs_target_isnull), modelyear_observed))
+            group.loc[ (group.skip==0)&pandas.isnull(group[modelyear_observed]), "skip_reason" ] = "{} null".format(modelyear_observed)
+            group.loc[ (group.skip==0)&pandas.isnull(group[modelyear_observed]), "skip"        ] = 1
+
+            useable = len(group)-group.skip.sum()
+            print("  Group has length {} and skips {} with {} remaining as useable ".format(len(group), group.skip.sum(), useable))
+            if useable <= 1: 
+                AB_timeperiod_station = pandas.concat([AB_timeperiod_station, 
+                                                       group[["A_B","time_period","station","skip","skip_reason"]]])
+                continue
+
+        # if there are some with more observed, kick out the ones with fewer
+        group["obs_count"] = 0
+        for obs_col in obs_cols: group.loc[ pandas.notnull(group[obs_col]), "obs_count"] += 1
+        max_obs_count   = group.loc[ group.skip==0, "obs_count"].max()
+        fewer_obs_count = group.loc[ (group.skip==0)&(group.obs_count < max_obs_count) ]
+        if len(fewer_obs_count) > 0:
+            print("  Skipping {} rows due to having fewer observations than {}".format(len(fewer_obs_count), max_obs_count))
+            group.loc[ (group.skip==0)&(group.obs_count < max_obs_count), "skip_reason"] = "fewer observations than {}".format(max_obs_count)
+            group.loc[ (group.skip==0)&(group.obs_count < max_obs_count), "skip"       ] = 1
+
+            useable = len(group)-group.skip.sum()
+            print("  Group has length {} and skips {} with {} remaining as useable ".format(len(group), group.skip.sum(), useable))
+            if useable <= 1: 
+                AB_timeperiod_station = pandas.concat([AB_timeperiod_station, 
+                                                       group[["A_B","time_period","station","skip","skip_reason"]]])
+                continue
+
+        # if there are more than two remaining, use distlink to break the tie
+        # todo: it would be preferable to choose the median daily value or closest to the middle of the link but those are more work
+        min_distlink    = group.loc[ group.skip==0, "distlink"].min()
+        bigger_distlink = group.loc[ (group.skip==0)&(group.distlink > min_distlink) ]
+        if len(bigger_distlink) > 0:
+            print("  Skipping {} rows due to having bigger distlink than {}".format(len(bigger_distlink), min_distlink))
+            group.loc[ (group.skip==0)&(group.distlink > min_distlink), "skip_reason"] = "bigger distlink than {}".format(min_distlink)
+            group.loc[ (group.skip==0)&(group.distlink > min_distlink), "skip"       ] = 1
+
+            useable = len(group)-group.skip.sum()
+            print("  Group has length {} and skips {} with {} remaining as useable ".format(len(group), group.skip.sum(), useable))
+            if useable <= 1: 
+                AB_timeperiod_station = pandas.concat([AB_timeperiod_station, 
+                                                       group[["A_B","time_period","station","skip","skip_reason"]]])
+                continue
+
+        # if min distlink didn't do it, use station number to break the tie (yes, this happens)
+        min_station    = group.loc[ group.skip==0, "station"].min()
+        bigger_station = group.loc[ (group.skip==0)&(group.station > min_station) ]
+        if len(bigger_station) > 0:
+            print("  Skipping {} rows arbitrarily (station num) {}".format(len(bigger_distlink), min_distlink))
+            group.loc[ (group.skip==0)&(group.station > min_station), "skip_reason"] = "random (non-min station)"
+            group.loc[ (group.skip==0)&(group.station > min_station), "skip"       ] = 1
+
+            useable = len(group)-group.skip.sum()
+            print("  Group has length {} and skips {} with {} remaining as useable ".format(len(group), group.skip.sum(), useable))
+            if useable <= 1: 
+                AB_timeperiod_station = pandas.concat([AB_timeperiod_station, 
+                                                       group[["A_B","time_period","station","skip","skip_reason"]]])
+                continue
+
+        # this shouldn't happen -- but it's useful when constructing above logic
+        print(group)
+        print(group[["A_B","station","distlink","skip","skip_reason"]])
+        value = raw_input("Type any key to continue...\n")
+        break
+
+    # purge observed data with known bad crosswalk
+    if args.pems_year:
+        AB_timeperiod_station.loc[ AB_timeperiod_station.station.isin(PEMS_BAD_STATION_CROSSWALK), "skip_reason" ] = "known bad crosswalk"
+        AB_timeperiod_station.loc[ AB_timeperiod_station.station.isin(PEMS_BAD_STATION_CROSSWALK), "skip"        ] = 1
+
+    # brink skip, skip_reason back to table_wide
+    print(AB_timeperiod_station.head())
+    table_wide = pandas.merge(left=table_wide, right=AB_timeperiod_station, how="left")
+    print(table_wide.head())
+
+    # bring the attributes "lanes match", "county", "skip", "skip_reason" back to non-wide table
+    lanes_match_df = table_wide[index_cols + ["lanes match","county","skip","skip_reason"]].drop_duplicates()
     print("lanes_match_df head:\n{}".format(lanes_match_df.head()))
     table_df = pandas.merge(left=table_df, right=lanes_match_df, how='left', on=index_cols, suffixes=("","_temp"))
     table_df.loc[ pandas.isnull(table_df.county)&pandas.notnull(table_df.county_temp), "county"] = table_df.county_temp
