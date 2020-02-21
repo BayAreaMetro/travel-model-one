@@ -2,7 +2,7 @@
 
 USAGE = """
 
-This scripts produces a correspondence between AADT measurements in the HPMS shapefile to the links in the Travel Model network.
+This script matches AADT measurements in the HPMS shapefile to the links in the Travel Model network.
 
 Requires arcpy, so use arcgis version of python
 e.g. set PATH=C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3;C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3\Scripts

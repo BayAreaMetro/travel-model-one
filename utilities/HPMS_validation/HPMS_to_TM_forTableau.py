@@ -2,16 +2,8 @@
 
 USAGE = """
 
-This scripts produces a correspondence between AADT measurements in the HPMS shapefile to the links in the Travel Model network.
-
-Requires arcpy, so use arcgis version of python
-e.g. set PATH=C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3;C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3\Scripts
-
-HPMS shapefile can be downloaded from FHWA's site:
-https://www.fhwa.dot.gov/policyinformation/hpms/shapefiles.cfm
-
-The fields in the shapefile is documented in the HPMS field manual (https://www.fhwa.dot.gov/policyinformation/hpms/fieldmanual/page04.cfm)
-Note that the AADT recorded in the shapefile are "bi-directional" (see: https://www.fhwa.dot.gov/policyinformation/hpms/fieldmanual/page05.cfm)
+This script is to be run after HPMS_to_TM_SpatialJoin.py
+It matches AADT measurements in the HPMS shapefile to the links in the Travel Model network and calculate %RMSE.
 
 """
 import os
@@ -120,7 +112,7 @@ df_FwyBiDirection['modelled_daily_volume'] = df_FwyBiDirection['vol5period_TMne1
 output_filename2 = arcpy.env.workspace + "\HPMS_to_TM_avgload5period_multistations.csv"
 df_FwyBiDirection.to_csv(output_filename2, header=True, index=False)
 
-# if there is more than one station matched to any given link, take average 
+# if there is more than one station matched to any given link, take average
 df_FwyBiDirection_GroupedbyAB = df_FwyBiDirection.groupby(['A_NE1', 'B_NE1'], as_index=False).mean()
 
 output_filename3 = arcpy.env.workspace + "\HPMS_to_TM_avgload5period.csv"
