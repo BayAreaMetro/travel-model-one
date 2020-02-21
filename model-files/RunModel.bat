@@ -35,6 +35,11 @@ rem for aws machines, HOST_IP_ADDRESS is set in SetUpModel.bat
 
 :: for AWS, this will be "WIN-"
 SET computer_prefix=%computername:~0,4%
+set INSTANCE=%COMPUTERNAME%
+if "%COMPUTER_PREFIX%" == "WIN-" (
+  rem figure out instance
+  for /f "delims=" %%I in ('"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command (wget http://169.254.169.254/latest/meta-data/instance-id).Content"') do set INSTANCE=%%I
+)
 
 :: Figure out the model year
 set MODEL_DIR=%CD%
@@ -114,13 +119,7 @@ if %FUTURE%==X (
 echo on
 echo turn echo back on
 
-set INSTANCE=unknown-instance
-if "%COMPUTER_PREFIX%" == "WIN-" (
-  rem figure out instance
-  for /f "delims=" %%I in ('"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command (wget http://169.254.169.254/latest/meta-data/instance-id).Content"') do set INSTANCE=%%I
-
-  python "CTRAMP\scripts\notify_slack.py" "Starting *%MODEL_DIR%*"
-)
+python "CTRAMP\scripts\notify_slack.py" "Starting *%MODEL_DIR%*"
 
 set MAXITERATIONS=3
 :: --------TrnAssignment Setup -- Standard Configuration
@@ -405,9 +404,10 @@ del *.script
 :success
 ECHO FINISHED SUCCESSFULLY!
 
-if "%COMPUTER_PREFIX%" == "WIN-" (
-  python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%*"
+python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%*"
 
+if "%COMPUTER_PREFIX%" == "WIN-" (
+  
   rem go up a directory and sync model folder to s3
   cd ..
   "C:\Program Files\Amazon\AWSCLI\aws" s3 sync %myfolder% s3://travel-model-runs/%myfolder%
@@ -426,8 +426,6 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 ECHO FINISHED.  
 
 :: if we got here and didn't shutdown -- assume something went wrong
-if "%COMPUTER_PREFIX%" == "WIN-" (
-  python "CTRAMP\scripts\notify_slack.py" ":exclamation: Error in *%MODEL_DIR%*"
-)
+python "CTRAMP\scripts\notify_slack.py" ":exclamation: Error in *%MODEL_DIR%*"
 
 :donedone
