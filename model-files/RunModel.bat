@@ -416,12 +416,12 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
   rem shutdown
   python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%* - shutting down"
   C:\Windows\System32\shutdown.exe /s
-
-  rem shutdown takes a while so goto done
-  goto donedone
 )
 
-:: Complete target and message
+:: no errors
+goto donedone
+
+:: this is the done for errors
 :done
 ECHO FINISHED.  
 
