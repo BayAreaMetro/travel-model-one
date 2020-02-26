@@ -61,7 +61,7 @@ import dataextract as tde
 
 TM_HOV_TO_GP_FILE   = "M:\Crosswalks\PeMSStations_TM1network\hov_to_gp_links.csv"
 PEMS_MAP_FILE       = "M:\Crosswalks\PeMSStations_TM1network\crosswalk_2015.csv"
-CALTRANS_MAP_FILE   = "model_to_caltrans.csv"
+CALTRANS_MAP_FILE   = "M:\Crosswalks\CaltransCountLocations_TM1network\\typical-weekday-counts-xy-TM1link.csv"
 MODEL_FILE          = "avgload5period.csv"
 SHARE_DATA          = os.path.join(os.environ["USERPROFILE"], "Box", "Modeling and Surveys", "Share Data")
 PEMS_FILE           = os.path.join(SHARE_DATA, "pems-typical-weekday", "pems_period.csv")
@@ -185,6 +185,7 @@ if __name__ == '__main__':
         obs_cols   = ["{} Observed".format(year) for year in args.pems_year]
     else:
         mapping_df = pandas.read_csv(CALTRANS_MAP_FILE)
+        mapping_df.rename(columns={"postmileValue":"post_mile", "routeNumber":"route"}, inplace=True)
         tde_file   = CALTRANS_OUTPUT_FILE
         obs_cols   = ["{} Observed".format(year) for year in args.caltrans_year]
 
@@ -314,13 +315,15 @@ if __name__ == '__main__':
         # 10         400002    101         S  416.893       ...          32385.192308            NaN            NaN     32385.192308
         # 11         400002    101         S  416.893       ...          29027.529412            NaN            NaN     29027.529412
     else:
+        ############ read the caltrans data
         obs_df = pandas.read_csv(CALTRANS_FILE)
         # make columns conform to previous version and to model data
-        obs_df.rename(columns={"route":"ROUTE","county":"COUNTY","description":"DESCRIP",
-                      "direction":"DIR", "leg":"LEG","station":"STATION","post_mile":"PM"}, inplace=True)
+        obs_df.rename(columns={"county":"countyCode"}, inplace=True)
+        # print("obs_df head\n{}".format(obs_df.head()))
 
         # select the relevant years
         obs_df = obs_df.loc[ obs_df.year.isin(args.caltrans_year)]
+        id_vars = ["route","countyCode","post_mile","leg","direction","station","description"]
 
         # set the time_period
         obs_df["time_period"] = "EV"
@@ -329,47 +332,47 @@ if __name__ == '__main__':
         obs_df.loc[(obs_df.integer_hour >= 10)&(obs_df.integer_hour < 15), "time_period"] = "MD"
         obs_df.loc[(obs_df.integer_hour >= 15)&(obs_df.integer_hour < 19), "time_period"] = "PM"
 
-        # create postmile rounded
-        obs_df['POSTMILE_INT'] = numpy.round(obs_df['PM']).astype(int)
+        # aggregate to time period and verify each is complete
+        obs_df = obs_df.groupby(id_vars + ["year","time_period"]).aggregate(
+            {"integer_hour":"count", "median_count":"sum", "avg_count":"sum", "days_observed":"mean"}).reset_index()
+        print("obs_df len={} head\n{}".format(len(obs_df), obs_df.head(10)))
+
+        obs_df = obs_df.loc[ ((obs_df.time_period=="EA")&(obs_df.integer_hour==3))|
+                             ((obs_df.time_period=="AM")&(obs_df.integer_hour==4))|
+                             ((obs_df.time_period=="MD")&(obs_df.integer_hour==5))|
+                             ((obs_df.time_period=="PM")&(obs_df.integer_hour==4))|
+                             ((obs_df.time_period=="EV")&(obs_df.integer_hour==8))]
+        print("obs_df len={} head\n{}".format(len(obs_df), obs_df.head(10)))
+
+        # drop integer_hour count, median_count, days_observed -- retain sum of avg_count as the volume
+        obs_df.drop(columns=["integer_hour","median_count","days_observed"], inplace=True)
+        obs_df.rename(columns={"avg_count":"volume"}, inplace=True)
+        print("obs_df head\n{}".format(obs_df.head(10)))
 
         # get Daily by year and add it
-        id_vars = ["ROUTE","COUNTY","POSTMILE_INT","PM","LEG","DIR","STATION","DESCRIP"]
-        obs_daily_df = obs_df.groupby(id_vars + ["year"]).aggregate({"integer_hour":"count","avg_count":"sum", "days_observed":"mean"})
+        obs_daily_df = obs_df.groupby(id_vars + ["year"]).aggregate({"time_period":"count","volume":"sum"})
+        # drop any that are incomplete
+        print("Dropping {} obs_daily_df rows for being incomplete".format(len(obs_daily_df.loc[obs_daily_df.time_period != 5])))
+        obs_daily_df = obs_daily_df.loc[obs_daily_df.time_period==5]
         obs_daily_df["time_period"] = "Daily"
         obs_daily_df.reset_index(inplace=True)
-        #      ROUTE COUNTY  POSTMILE_INT      PM LEG DIR  STATION                         DESCRIP  year  days_observed      avg_count  integer_hour time_period
-        # 0       12    NAP           2.0   2.300   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L  2014      33.958333   18502.722816            24       Daily
-        # 1       12    NAP           2.0   2.300   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L  2015      58.958333   19655.098480            24       Daily
-        # 2       12    NAP           2.0   2.300   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L  2016      39.958333   20310.676923            24       Daily
-        # 3       12    NAP           2.0   2.300   B   W    906.0  .2-MI N/O NAPA/SOLANO COUNTY L  2014      33.750000   18636.507186            24       Daily
-        # 4       12    NAP           2.0   2.300   B   W    906.0  .2-MI N/O NAPA/SOLANO COUNTY L  2015      58.958333   20144.982466            24       Daily
-        obs_df = pandas.concat([obs_df, obs_daily_df], axis="index")
+        print("obs_daily_df head\n{}".format(obs_daily_df.head()))
+        #    route countyCode  post_mile leg direction  station                     description  year time_period        volume
+        # 0      4         CC       11.4   B         E    912.0                    PACHECO BLVD  2016       Daily  41295.952381
+        # 1      4         CC       11.4   B         W    912.0                    PACHECO BLVD  2016       Daily  45729.761905
+        # 2     12        NAP        2.3   B         E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L  2014       Daily  18502.722816
+        # 3     12        NAP        2.3   B         E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L  2015       Daily  19656.101695
+        # 4     12        NAP        2.3   B         E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L  2016       Daily  20468.062500
+        obs_df = pandas.concat([obs_df, obs_daily_df], axis="index", sort=True) # sort means sort columns first so they are aligned
+        obs_df['category'] = obs_df.year.map(str) + ' Observed'
+        obs_df.drop(columns=["year"], inplace=True)
+        print("obs_df head\n{}".format(obs_df.head()))
 
-        # group to year/time_period
-        obs_wide = obs_df.groupby(id_vars + ["year","time_period"]).aggregate(
-            {"integer_hour":"count", "median_count":"sum", "avg_count":"sum", "days_observed":"mean"}).reset_index()
-        obs_wide = pandas.pivot_table(obs_wide, index=id_vars + ["time_period"], columns=["year"], values="avg_count")
-        # print(obs_annual_df.head())
-        # year  ROUTE COUNTY  POSTMILE_INT   PM LEG DIR  STATION                         DESCRIP time_period          2014          2015          2016
-        # 0        12    NAP           2.0  2.3   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L          AM   2916.882353   3117.661017   3187.650000
-        # 1        12    NAP           2.0  2.3   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L       Daily  18502.722816  19655.098480  20310.676923
-        # 2        12    NAP           2.0  2.3   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L          EA    310.941176    336.203390    351.200000
-        # 3        12    NAP           2.0  2.3   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L          EV   4072.205882   4081.437463   4329.701923
-        # 4        12    NAP           2.0  2.3   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L          MD   4932.352941   5198.661017   5421.075000
-        rename_cols = {}
-        for year in args.caltrans_year: rename_cols[year] = "{} Observed".format(year)
-        obs_wide.rename(columns=rename_cols, inplace=True)
-        obs_wide["Average Observed"] = obs_wide[rename_cols.values()].mean(axis=1)  # this will not include NaNs or missing vals so it handles them correctly
-
-        obs_df = obs_wide.stack().reset_index()
-        obs_df.rename(columns={"year":"category", 0:"volume"}, inplace=True)
-        print(obs_df.head())
-        #    ROUTE COUNTY  POSTMILE_INT   PM LEG DIR  STATION                         DESCRIP time_period          category        volume
-        # 0     12    NAP           2.0  2.3   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L          AM     2014 Observed   2916.882353
-        # 1     12    NAP           2.0  2.3   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L          AM     2015 Observed   3117.661017
-        # 2     12    NAP           2.0  2.3   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L          AM     2016 Observed   3187.650000
-        # 3     12    NAP           2.0  2.3   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L          AM  Average Observed   3074.064457
-        # 4     12    NAP           2.0  2.3   B   E    906.0  .2-MI N/O NAPA/SOLANO COUNTY L       Daily     2014 Observed  18502.722816
+        # move category (year) to columns
+        obs_wide = pandas.pivot_table(obs_df, index=id_vars + ["time_period"], columns=["category"], values="volume")
+        obs_wide["Average Observed"] = obs_wide.mean(axis=1)  # this will not include NaNs or missing vals so it handles them correctly
+        obs_wide.reset_index(inplace=True)
+        print("obs_wide head\n{}".format(obs_wide.head()))
 
     # model has a, b, A_B
     obs_df['a'] = -1
@@ -385,10 +388,11 @@ if __name__ == '__main__':
     # 2   400007         4    101         N   ML  37.586936 -122.337721  6315  6409  0.001026  6315_6409
     # 3   400009         4     80         W   ML  37.864883 -122.303345  2512  2509  0.000422  2512_2509
     # 4   400010         4    101         N   ML  37.629765 -122.402365  6554  6567  0.000303  6554_6567
+    # print("mapping_df cols:\n{}\nmodel_df cols:\n{}".format(mapping_df.dtypes, model_df.dtypes))
     model_final_df = pandas.merge(left=mapping_df, right=model_df, how='inner')
     model_final_df['category'] = '%d Modeled' % args.model_year
-    # print("model_final_df head\n{}".format(model_final_df.head(12)))
-    # model_final_df head
+    print("model_final_df head\n{}".format(model_final_df.head(12)))
+    # model_final_df head - pems
     #     station  district  route direction type   latitude   longitude     a     b  distlink        A_B  lanes  sep_HOV  link_count time_period    volume      category
     # 0    400001         4    101         N   ML  37.364085 -121.901149  5716  5690  0.000855  5716_5690    4.0     True           2          EA   4316.77  2015 Modeled
     # 1    400001         4    101         N   ML  37.364085 -121.901149  5716  5690  0.000855  5716_5690    4.0     True           2          AM  23606.98  2015 Modeled
@@ -403,32 +407,53 @@ if __name__ == '__main__':
     # 10   400006         4    880         S   ML  37.605003 -122.065542  3715  3712  0.001245  3715_3712    4.0     True           2          EV  18160.92  2015 Modeled
     # 11   400006         4    880         S   ML  37.605003 -122.065542  3715  3712  0.001245  3715_3712    4.0     True           2       Daily  97146.12  2015 Modeled
 
-    print "Model columns: ", sorted(model_final_df.columns.values.tolist())
-    print "Obsrv columns: ", sorted(obs_df.columns.values.tolist())
+    # model_final_df head - caltrans
+    #      latitude   longitude countyCode  post_mile  route direction postmileSuffix  link_rowid     a     b  dist_from_link        A_B  ft  at  county  lanes  sep_HOV  link_count time_period    volume      category
+    # 0   37.854479 -122.218076        ALA      5.887     24         E              R         143  1952  1950    4.228366e+06  1952_1950   1   3       5    3.0    False           1          EA   2287.43  2015 Modeled
+    # 1   37.854479 -122.218076        ALA      5.887     24         E              R         143  1952  1950    4.228366e+06  1952_1950   1   3       5    3.0    False           1          AM   8742.13  2015 Modeled
+    # 2   37.854479 -122.218076        ALA      5.887     24         E              R         143  1952  1950    4.228366e+06  1952_1950   1   3       5    3.0    False           1          MD  14216.70  2015 Modeled
+    # 3   37.854479 -122.218076        ALA      5.887     24         E              R         143  1952  1950    4.228366e+06  1952_1950   1   3       5    3.0    False           1          PM  17774.32  2015 Modeled
+    # 4   37.854479 -122.218076        ALA      5.887     24         E              R         143  1952  1950    4.228366e+06  1952_1950   1   3       5    3.0    False           1          EV  14894.33  2015 Modeled
+    # 5   37.854479 -122.218076        ALA      5.887     24         E              R         143  1952  1950    4.228366e+06  1952_1950   1   3       5    3.0    False           1       Daily  57914.91  2015 Modeled
+    # 6   37.854479 -122.218076        ALA      5.887     24         W              L         126  1917  1915    4.228366e+06  1917_1915   1   3       5    3.0    False           1          EA   3557.25  2015 Modeled
+    # 7   37.854479 -122.218076        ALA      5.887     24         W              L         126  1917  1915    4.228366e+06  1917_1915   1   3       5    3.0    False           1          AM  21925.53  2015 Modeled
+    # 8   37.854479 -122.218076        ALA      5.887     24         W              L         126  1917  1915    4.228366e+06  1917_1915   1   3       5    3.0    False           1          MD  16331.60  2015 Modeled
+    # 9   37.854479 -122.218076        ALA      5.887     24         W              L         126  1917  1915    4.228366e+06  1917_1915   1   3       5    3.0    False           1          PM  15007.88  2015 Modeled
+    # 10  37.854479 -122.218076        ALA      5.887     24         W              L         126  1917  1915    4.228366e+06  1917_1915   1   3       5    3.0    False           1          EV   8425.77  2015 Modeled
+    # 11  37.854479 -122.218076        ALA      5.887     24         W              L         126  1917  1915    4.228366e+06  1917_1915   1   3       5    3.0    False           1       Daily  65248.03  2015 Modeled
+    print("Model columns: {}".format(sorted(model_final_df.columns.values.tolist())))
+    print("Obsrv columns: {}".format(sorted(obs_df.columns.values.tolist())))
+    print("Obs_wide columns: {}".format(sorted(obs_wide.columns.values.tolist())))
     # followed by the observed
     table_df = pandas.concat([model_final_df, obs_df], axis="index", sort=True) # sort means sort columns first so they are aligned
-
 
     # want a "wide" version, with a column for obsy1, obsy2, obsy3, modeled
 
     if args.caltrans_year:
-        index_cols = ['COUNTY','ROUTE','POSTMILE_INT','DIR','LEG','time_period']
+        index_cols = ["countyCode","route","post_mile","direction","time_period"]
     else:
         index_cols = ["station","route","direction","abs_pm","latitude","longitude","time_period"]
 
-    model_wide = model_final_df[index_cols + ["a","b","A_B","ft","at","county","sep_HOV","link_count", "pemsonlink", "distlink", "lanes","volume"]].copy()
+    model_wide = model_final_df[index_cols + ["a","b","A_B","ft","at","county","sep_HOV","link_count", "stationsonlink", "distlink", "lanes","volume"]].copy()
     model_wide.rename(columns={"volume":"{} Modeled".format(args.model_year), 
                                "lanes":"lanes modeled"}, inplace=True)
 
     obs_wide.reset_index(inplace=True)
     obs_wide.rename(columns={"lanes":"lanes observed"}, inplace=True)
+    print("obs_wide head\n{}".format(obs_wide.head()))
+
 
     # the wide table is an inner join
     table_wide = pandas.merge(left=model_wide, right=obs_wide, how='inner', on=index_cols)
+    print("table_wide head\n{}".format(table_wide.head()))
 
-    # add lanes match attribute
-    table_wide['lanes match'] = 0
-    table_wide.loc[ table_wide['lanes modeled'] == table_wide['lanes observed'], 'lanes match'] = 1
+    if args.pems_year:
+        # add lanes match attribute
+        table_wide['lanes match'] = 0
+        table_wide.loc[ table_wide['lanes modeled'] == table_wide['lanes observed'], 'lanes match'] = 1
+    else:
+        # no data for caltrans so assume match
+        table_wide['lanes match'] = 1
 
     ### filter down to max of one pems station per link by adding columns "skip", "skip_reason"
     # iterate through links by time period whittle down to a single observed for each link
