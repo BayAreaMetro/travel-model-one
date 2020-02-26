@@ -30,8 +30,9 @@ route_links_df   <- mutate(as.data.frame(route_links),
                            route_dir = paste(ROUTENUM, ROUTEDIR)) %>% rowid_to_column("link_rowid")
 
 # recode some of these
-caltrans_locs_df$route_dir[caltrans_locs_df$route_dir=="84 N"] <- "84 W"
-caltrans_locs_df$route_dir[caltrans_locs_df$route_dir=="84 S"] <- "84 E"
+# 84 S has description as the Dumbarton Bridget Toll Plaza, so we think of it as 84 W
+caltrans_locs_df$route_dir[caltrans_locs_df$route_dir=="84 N"] <- "84 E"
+caltrans_locs_df$route_dir[caltrans_locs_df$route_dir=="84 S"] <- "84 W"
 
 # this produces rows (caltrans locs) x columns (route_links)
 distances <- gDistance(route_links, caltrans_locs, byid=TRUE)
