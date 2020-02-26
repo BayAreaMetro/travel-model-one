@@ -24,7 +24,7 @@ PEMS_DATA_FILE <- "pems_period.csv"
 TM_VERSION     <- "TM1" # set to TM1 or TM2
 
 CROSSWALK_DIR  <- paste0("M:/Crosswalks/PeMSStations_",TM_VERSION,"network")
-TM_NETWORK_DIR <- "M:/Application/Model One/Networks/TM1_2015_Base_Network/shapefile"
+TM_NETWORK_DIR <- "M:/Application/Model One/Networks/TM1_2015_Base_Network/shapefile/freeflow_links.dbf"
 TM_NETWORK     <- paste0(TM_VERSION,"_freeways_wgs84")
 
 VALIDATION_YEAR<- 2015

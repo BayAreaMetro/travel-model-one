@@ -242,7 +242,10 @@ if __name__ == '__main__':
     model_df["b"] = model_df["b"].astype(int)
     # now a,b isn't unique so group
     model_df["link_count"] = 1
-    model_df = model_df.groupby(["a","b","at","ft","county"]).agg(sum).reset_index()
+    # facility types may not match since GP toll plazas have ft=6 so take min
+    model_df = model_df.groupby(["a","b","at","county"]).agg( \
+        {'ft':'min','volEA_tot':'sum','volAM_tot':'sum','volMD_tot':'sum','volPM_tot':'sum','volEV_tot':'sum','Daily':'sum',
+         'link_count':'sum','lanes':'sum','sep_HOV':'sum'}).reset_index()
     print("model_df head\n{}".format(model_df.loc[model_df.link_count>1].head()))
 
     # create a multi index for stacking
@@ -570,13 +573,14 @@ if __name__ == '__main__':
     table_wide = pandas.merge(left=table_wide, right=AB_timeperiod_station, how="left")
     print(table_wide.head())
 
-    # bring the attributes "lanes match", "county", "skip", "skip_reason" back to non-wide table
-    lanes_match_df = table_wide[index_cols + ["lanes match","county","skip","skip_reason"]].drop_duplicates()
+    # bring the attributes "lanes match", "ft", "county", "skip", "skip_reason" back to non-wide table
+    lanes_match_df = table_wide[index_cols + ["lanes match","ft","county","skip","skip_reason"]].drop_duplicates()
     print("lanes_match_df head:\n{}".format(lanes_match_df.head()))
     table_df = pandas.merge(left=table_df, right=lanes_match_df, how='left', on=index_cols, suffixes=("","_temp"))
+    table_df.loc[ pandas.isnull(table_df.ft    )&pandas.notnull(table_df.ft_temp    ), "ft"    ] = table_df.ft_temp
     table_df.loc[ pandas.isnull(table_df.county)&pandas.notnull(table_df.county_temp), "county"] = table_df.county_temp
     table_df.rename(columns={"lanes match_temp":"lanes match"}, inplace=True)
-    table_df.drop(columns=["county_temp"], inplace=True)
+    table_df.drop(columns=["ft_temp","county_temp"], inplace=True)
     print("table_df head:\n{}".format(table_df.head()))
 
     # write non-wide

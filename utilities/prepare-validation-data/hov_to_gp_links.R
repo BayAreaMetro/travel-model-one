@@ -7,14 +7,14 @@ library(dplyr)
 
 TM_VERSION      <- "TM1" # set to TM1 or TM2
 CROSSWALK_DIR   <- paste0("M:/Crosswalks/PeMSStations_",TM_VERSION,"network")
-TM_NETWORK      <- file.path(CROSSWALK_DIR, "shapefiles", "freeflow_links.dbf")
+TM_NETWORK      <- "M:/Application/Model One/Networks/TM1_2015_Base_Network/shapefile/freeflow_links.dbf"
 OUTPUT_DBF      <- "hov_to_gp_links.dbf"
 OUTPUT_CSV      <- "hov_to_gp_links.csv"
 
-network_df      <- read.dbf(TM_NETWORK, as.is=TRUE) %>% select(A,B,LANES,USE,FT,ROUTENUM,ROUTEDIR)
+network_df      <- read.dbf(TM_NETWORK, as.is=TRUE) %>% select(A,B,LANES,USE,FT,ROUTENUM,ROUTEDIR,TOLLCLASS)
 
 hov_links_df    <- filter(network_df, USE==2 | USE==3)
-gp_links_df     <- filter(network_df, (USE==1 | USE==4) & (FT<=3 | FT==5 | FT==8 | FT==10))
+gp_links_df     <- filter(network_df, (USE==1 | USE==4) & ((FT<=3 | FT==5 | FT==8 | FT==10) | (FT==6)&(TOLLCLASS>0)) )  # last clause is for toll plaza GP links
 
 print(paste("Have", nrow(hov_links_df), "HOV links"))
 
