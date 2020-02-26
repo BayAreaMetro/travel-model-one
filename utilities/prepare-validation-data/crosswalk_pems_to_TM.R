@@ -259,7 +259,7 @@ xwalk <- select(xwalk, station, district, route, direction, type, abs_pm, latitu
 xwalk <- mutate(xwalk, A_B=paste0(A,"_",B))
 
 # summarize how many pems ids join to a single link
-mult_pems <- group_by(xwalk, A_B) %>% summarise(pemsonlink=n())
+mult_pems <- group_by(xwalk, A_B) %>% summarise(stationsonlink=n())
 xwalk     <- left_join(xwalk, mult_pems)
 
 # write it
@@ -275,7 +275,7 @@ pems_locs$A          <- pems_df$A
 pems_locs$B          <- pems_df$B
 pems_locs$A_B        <- pems_df$A_B
 pems_locs$distlink   <- pems_df$distlink
-pems_locs$pemsonlink <- pems_df$pemsonlink
+pems_locs$stationsonlink <- pems_df$stationsonlink
 
 writeOGR(obj=pems_locs, dsn=file.path(CROSSWALK_DIR, "shapefiles"), layer=paste0(PEMS_LOCS_WITH_CROSSWALK,"_",VALIDATION_YEAR), driver="ESRI Shapefile")
 print(paste0("Wrote PEMS locations with crosswalk: ",file.path(CROSSWALK_DIR, "shapefiles", paste0(PEMS_LOCS_WITH_CROSSWALK,"_",VALIDATION_YEAR,".shp"))))
