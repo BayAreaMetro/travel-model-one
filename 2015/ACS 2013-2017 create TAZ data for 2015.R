@@ -56,7 +56,7 @@ USERPROFILE          <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
 BOX_TM               <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
 PBA_TAZ_2010         <- file.path(BOX_TM, "Share Data",   "plan-bay-area-2040", "2010_06_003","tazData.csv")
 parking_2015_data    <- file.path(BOX_TM,"Share Data", "plan-bay-area-2040", "2015_06_002", "tazData.csv")
-PERSON_RDATA = "M:/Data/Census/PUMS/PUMS 2015/pbayarea15.Rdata"   # 2015 PUMS data for GQ adjustments
+PUMS2013_2017 = "M:/Data/Census/PUMS/PUMS 2013-17/pbayarea1317.Rdata"   # 2015 PUMS data for GQ adjustments
 
 # County FIPS codes for ACS tract API calls
 
@@ -840,9 +840,9 @@ sum_gq10 <- left_join(temp1,PBA2010_county,by=c("TAZ1454"="ZONE")) %>%
 # Bring in 2015 PUMS and perform the same summary, then join with the 2010 data
 # Create GQ adjustment factor
 
-load (PERSON_RDATA) 
+load (PUMS2013_2017) 
 
-sum_gq15 <- pbayarea15 %>%
+sum_gq15 <- pbayarea1317 %>%
   mutate(County_Name=as.character(County_Name)) %>%           # Bug fix to override County_Name as factor
   filter(RELP==17) %>%
   group_by(County_Name) %>%
@@ -868,10 +868,10 @@ temp2 <- left_join(temp1,PBA2010_county,by=c("TAZ1454"="ZONE")) %>%
 # 1=San Francisco; 2=San Mateo; 3=Santa Clara; 4=Alameda; 5=Contra Costa; 6=Solano; 7= Napa; 8=Sonoma; 9=Marin
 # "counties" vector is defined above with this county order
 
-workers0  <- c(0.67682904,0.64921752,0.5802766,0.56210084,0.75801448,0.74793229,0.69205109,0.78336595,0.82851428)
-workers1  <- c(1.08921147,1.05480267,1.08859871,1.10148924,1.06763472,1.07126544,1.08621834,1.06958318,1.0342124)
-workers2  <- c(1.08354536,1.08808827,1.09142667,1.16141048,1.07910591,1.11294028,1.07878553,1.08952879,1.07098673)
-workers3p <- c(1.16845428,1.16973951,1.1489769,1.27682832,1.09678653,1.06629451,1.26553099,1.09744812,1.19898921)
+workers0  <- c(0.72439,0.71045,0.65234,0.61093,0.81432,0.79221,0.71026,0.81646,0.81952)
+workers1  <- c(1.05499,1.01626,1.04675,1.06364,1.02079,1.03487,1.06679,1.04652,1.04665)
+workers2  <- c(1.07740,1.08066,1.08075,1.15069,1.07611,1.10324,1.08483,1.06913,1.06500)
+workers3p <- c(1.21757,1.21119,1.20479,1.34201,1.15367,1.11889,1.26523,1.15975,1.18261)
 
 temp3 <- temp2 %>%
   mutate(
@@ -965,7 +965,7 @@ temp_rounded_adjusted <- temp3 %>%
     mutate_if(is.numeric,round,0) %>%
     mutate(SHPOP62P = if_else(TOTPOP==0,0,AGE62P/TOTPOP)) %>% 
  
-# Scaling adjustments were done above, now make fix small variations due to round for precisely-matching totals
+# Scaling adjustments were done above, now make fix small variations due to rounding for precisely-matching totals
 # Find max value in categorical data to adjust totals so they match univariate totals
 # For example, the households by income across categories should sum to equal total HHs
 # If unequal, the largest constituent cell is adjusted up or down such that the category sums match the marginal total
