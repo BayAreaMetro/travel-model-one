@@ -136,10 +136,10 @@ Commute characteristics by employment location.  Sum(freq) = commute tours
 | dest_SD	| Superdistrict of work commute destination |
 | tour_mode	| Work tour mode.  See https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour |
 | freq | Number of commute tours |
-| totCost	| Total round-trip out of pocket costs in $2000.  Sum of `cost` and `parking_cost`. |
+| totCost	| Total round-trip out of pocket costs in cents in 2000$.  Sum of `cost` and `parking_cost`. |
 | cost | See https://github.com/BayAreaMetro/modeling-website/wiki/SimpleSkims#cost-skims for what's included |
-| parking_cost | Parking costs |
-| distance | Distance of commute |
+| parking_cost | Parking costs (in cents in 2000$)|
+| distance | Distance of commute (in miles)|
 | cost_fail | Commute tours for which the cost lookup failed |
 
 #### CommuteByIncomeHousehold
@@ -155,11 +155,11 @@ Commute characteristics by household location. Sum(freq) = commute tours
 | incQ	| Income quartile |
 | incQ_label | Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k') |
 | freq | Number of commute tours.
-| totCost  | Total round-trip out of pocket costs in $2000.  Sum of `cost` and `parking_cost`. |
+| totCost  | Total round-trip out of pocket costs in cents in 2000$.  Sum of `cost` and `parking_cost`. |
 | cost | See https://github.com/BayAreaMetro/modeling-website/wiki/SimpleSkims#cost-skims for what's included |
-| parking_cost | Parking costs |
-| distance | Distance of commute |
-| duration	| Duration of commute |
+| parking_cost | Parking costs (in cents in 2000$)|
+| distance | Distance of commute (in miles)|
+| duration	| Duration of commute (in minutes) |
 | cost_fail | Commute tours for which the cost lookup failed |
 | time_fail | Commute tours for which the time lookup failed |
 
@@ -194,7 +194,7 @@ Sum(freq) = trips
 | tour_purpose | Tour purpose for the trip.  See https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour |
 | freq | Number of trips |
 | num_participants | Number of participants for these trips |
-| trvlTime | Average travel time |
+| trvlTime | Average travel time (in minutes)|
 | time_fail | Commute tours for which the time lookup failed |
 
 #### TimeOfDay
@@ -234,12 +234,12 @@ Travel costs by household.  Sum(freq) = households
 | incQ_label | Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k') |
 | autos | Number of autos in the household, from 0 to 4 |
 | freq | Number of households |
-| total_cost | Total travel costs |
-| trip_cost_indiv | Total travel costs from individual trips |
-| trip_cost_joint	| Total travel costs from joint trips |
+| total_cost | Total travel costs (in cents in 2000$) |
+| trip_cost_indiv | Total travel costs from individual trips (in cents in 2000$)|
+| trip_cost_joint	| Total travel costs from joint trips (in cents in 2000$) |
 | cost_fail | Trips for which the cost lookup failed |
-| pcost_indiv | Parking cost from individual trips |
-| pcost_joint | Parking cost from joint trips |
+| pcost_indiv | Parking cost from individual trips (in cents in 2000$) |
+| pcost_joint | Parking cost from joint trips (in cents in 2000$)|
 
 
 #### TripDistance
