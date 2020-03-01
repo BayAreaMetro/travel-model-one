@@ -1,24 +1,25 @@
 SETLOCAL EnableDelayedExpansion
 
-set MODEL_DIR=\\MODEL2-D\Model2D-Share\TM152_Calibration\2015_TM152_calib01
-set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.5.2\2015_TM151_IPA_00
+set MODEL_DIR=\\MODEL2-D\Model2D-Share\TM152_Calibration\2015_TM152_calib05
+set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.5.2\2015_TM152_IPA_05
 set CODE_DIR=X:\travel-model-one-calib1.5.2\utilities\calibration
 rem start at 00 when INPUT or skims are updated
-set CALIB_ITER=01
+set CALIB_ITER=03
 
 echo CALIB_ITER=%CALIB_ITER%
+
+mkdir "%TARGET_DIR%"
+cd "%TARGET_DIR%"
+
 if "%CALIB_ITER%"=="00" (
   echo Exporting skims
   set ITER=3
-  set SAMPLESHARE=0.5
+  set SAMPLESHARE=1.00
 ) else (
   set ITER=1
   set SAMPLESHARE=0.2
   goto do_calib_iter
 )
-
-mkdir "%TARGET_DIR%"
-cd "%TARGET_DIR%"
 
 :export_skims
 
@@ -42,7 +43,7 @@ if not exist %SKIMFILE%_%TABLE%.csv (
 
 :: all transit skims
 set COMMPATH=C:\Users\lzorn\Documents\scratch\COMMPATH
-:: Cluster "%COMMPATH%\CTRAMP" 1-15 Starthide Exit
+Cluster "%COMMPATH%\CTRAMP" 1-15 Starthide Exit
 
 if not exist trnskmam_wlk_loc_wlk.csv (
   runtpp "%CODE_DIR%\extract_trnskim_tables.job"

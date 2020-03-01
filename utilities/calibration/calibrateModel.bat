@@ -9,6 +9,7 @@
 :: dto (2012 02 15) gde (2009 04 22)
 ::
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+goto iter1
 
 :setup_model
 :: Setup:: copy over CTRAMP
@@ -21,11 +22,11 @@ c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\model"       CTRAM
 c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\runtime"     CTRAMP\runtime
 c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\scripts"     CTRAMP\scripts
 c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\PBA40\metrics" CTRAMP\scripts\metrics
-copy /Y "%GITHUB_DIR%\model-files\RunIteration.bat"                        CTRAMP
+copy /y "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"                CTRAMP\scripts
 
 :setup_inputs
 :: copy over INPUTs from baseline
-set MODEL_SETUP_BASE_DIR=M:\Application\Model One\RTP2021\IncrementalProgress\2015_TM151_IPA_00
+set MODEL_SETUP_BASE_DIR=\\model2-d\Model2D-Share\Projects\2015_TM152_IPA_05
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\landuse"        INPUT\landuse
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\nonres"         INPUT\nonres
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\popsyn"         INPUT\popsyn
@@ -34,8 +35,11 @@ c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\hwy"          
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\trn"            INPUT\trn
 copy /Y "%MODEL_SETUP_BASE_DIR%\INPUT\params.properties"                          INPUT\params.properties
 
+mkdir main
+copy "%MODEL_SETUP_BASE_DIR%\main\ShadowPricing_7.csv"                            main
+
 :: source of skims to copy
-set SKIM_DIR=E:\Model2D-Share\Projects\2015_TM151_IPA_00
+set SKIM_DIR=\\model2-d\Model2D-Share\Projects\2015_TM152_IPA_05
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -159,5 +163,8 @@ java -showversion -Xmx6000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Dja
 if ERRORLEVEL 2 goto done
 
 C:\Windows\SysWOW64\taskkill /f /im "java.exe"
+
+set INSTANCE=%COMPUTERNAME%
+python CTRAMP\scripts\notify_slack.py "Finished calibration iteration"
 
 :done
