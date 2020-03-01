@@ -30,6 +30,25 @@ if (JUST_MES=="1") {
   UPDATED_DIR <- file.path(TARGET_DIR,"updated_output")
 }
 
+# read means-based cost factors
+MBT_factors <- readLines(file.path(TARGET_DIR,"ctramp/scripts/block/hwyParam.block"))
+MBF_factors <- readLines(file.path(TARGET_DIR,"ctramp/scripts/block/trnParam.block"))
+
+MBT_Q1_line <- grep("Means_Based_Tolling_Q1Factor",MBT_factors,value=TRUE)
+MBT_Q1_string <- substr(MBT_Q1_line,32,39)
+MBT_Q1_factor <- as.numeric(MBT_Q1_string)
+MBT_Q2_line <- grep("Means_Based_Tolling_Q2Factor",MBT_factors,value=TRUE)
+MBT_Q2_string <- substr(MBT_Q2_line,32,39)
+MBT_Q2_factor <- as.numeric(MBT_Q2_string)
+
+MBF_Q1_line <- grep("Means_Based_Fare_Q1Factor",MBF_factors,value=TRUE)
+MBF_Q1_string <- substr(MBF_Q1_line,29,36)
+MBF_Q1_factor <- as.numeric(MBF_Q1_string)
+MBF_Q2_line <- grep("Means_Based_Fare_Q2Factor",MBF_factors,value=TRUE)
+MBF_Q2_string <- substr(MBF_Q2_line,29,36)
+MBF_Q2_factor <- as.numeric(MBF_Q2_string)
+
+
 # write results in TARGET_DIR/core_summaries
 if (!file.exists(RESULTS_DIR)) {
   dir.create(RESULTS_DIR)
@@ -52,7 +71,7 @@ cat("JUST_MES    = ",JUST_MES,   "\n")
 # For counties, see https://github.com/BayAreaMetro/modeling-website/wiki/TazData
 # For walk_subzones, see https://github.com/BayAreaMetro/modeling-website/wiki/Household
 
-######### time periods 
+######### time periods
 LOOKUP_TIMEPERIOD    <- data.frame(timeCodeNum=c(1,2,3,4,5),
                                    timeperiod_label=c("Early AM","AM Peak","Midday","PM Peak","Evening"),
                                    timeperiod_abbrev=c("EA","AM","MD","PM","EV"))
@@ -101,9 +120,9 @@ names(tazData)[names(tazData)=="ZONE"] <- "taz"
 # * the model input file from the synthesized household/population (https://github.com/BayAreaMetro/modeling-website/wiki/PopSynHousehold)
 # * the model output file (https://github.com/BayAreaMetro/modeling-website/wiki/Household)
 
-input.pop.households <- read.table(file = file.path(TARGET_DIR,"popsyn","hhFile.csv"), 
+input.pop.households <- read.table(file = file.path(TARGET_DIR,"popsyn","hhFile.csv"),
                                    header=TRUE, sep=",")
-input.ct.households  <- read.table(file = file.path(MAIN_DIR,paste0("householdData_",ITER,".csv")), 
+input.ct.households  <- read.table(file = file.path(MAIN_DIR,paste0("householdData_",ITER,".csv")),
                                    header=TRUE, sep = ",")
 
 ## Join them
@@ -112,7 +131,7 @@ input.ct.households  <- read.table(file = file.path(MAIN_DIR,paste0("householdDa
 
 # drop random number fields
 input.ct.households  <- select(input.ct.households, -ao_rn, -fp_rn, -cdap_rn,
-  -imtf_rn, -imtod_rn, -immc_rn, -jtf_rn, -jtl_rn, -jtod_rn, -jmc_rn, -inmtf_rn, 
+  -imtf_rn, -imtod_rn, -immc_rn, -jtf_rn, -jtl_rn, -jtod_rn, -jmc_rn, -inmtf_rn,
   -inmtl_rn, -inmtod_rn, -inmmc_rn, -awf_rn, -awl_rn, -awtod_rn, -awmc_rn, -stf_rn, -stl_rn)
 
 # in case households aren't numeric - make the columns numeric
@@ -139,13 +158,13 @@ remove(input.pop.households, input.ct.households)
 #  * dummy for households with children that don't drive (`kidsNoDr`)
 #  * auto sufficiency (`autoSuff`)
 #  * walk subzone label (`walk_subzone_label`)
-  
+
 # incQ are Income Quartiles
 LOOKUP_INCQ          <- data.frame(incQ=c(1,2,3,4),
                                    incQ_label=c("Less than $30k","$30k to $60k","$60k to $100k","More than $100k"))
 LOOKUP_INCQ$incQ     <- as.integer(LOOKUP_INCQ$incQ)
 
-households    <- mutate(households, incQ=1*(income<30000) + 
+households    <- mutate(households, incQ=1*(income<30000) +
                                          2*((income>=30000)&(income<60000)) +
                                          3*((income>=60000)&(income<100000)) +
                                          4*(income>=100000))
@@ -216,7 +235,7 @@ remove(kidsNoDr_hhlds)
 
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour
 
-indiv_tours     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("indivTourData_",ITER,".csv")), 
+indiv_tours     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("indivTourData_",ITER,".csv")),
                                      header=TRUE, sep=","))
 indiv_tours     <- mutate(indiv_tours, tour_id=paste0("i",substr(tour_category,1,2),tour_id))
 
@@ -226,8 +245,8 @@ indiv_tours     <- mutate(indiv_tours, num_participants=1)
 
 # Add in County, Superdistrict, Parking Cost from TAZ Data for the tour destination
 indiv_tours     <- left_join(indiv_tours,
-                             mutate(tazData, dest_taz=taz, dest_COUNTY=COUNTY, dest_county_name=county_name, 
-                                    dest_SD=SD, PRKCST, OPRKCST) %>% 
+                             mutate(tazData, dest_taz=taz, dest_COUNTY=COUNTY, dest_county_name=county_name,
+                                    dest_SD=SD, PRKCST, OPRKCST) %>%
                                select(dest_taz, dest_COUNTY, dest_county_name, dest_SD, PRKCST, OPRKCST),
                              by=c("dest_taz"))
 
@@ -244,7 +263,7 @@ indiv_tours   <- mutate(indiv_tours, parking_rate=ifelse((substr(tour_purpose,0,
 
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/JointTour
 
-joint_tours    <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTourData_",ITER,".csv")), 
+joint_tours    <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTourData_",ITER,".csv")),
                                     header=TRUE, sep=","))
 joint_tours     <- mutate(joint_tours, tour_id=paste0("j",substr(tour_category,1,2),tour_id))
 
@@ -253,8 +272,8 @@ joint_tours    <- left_join(joint_tours, select(households, hh_id, income, incQ,
 
 # Add in County, Superdistrict, Parking Cost from TAZ Data for the tour destination
 joint_tours     <- left_join(joint_tours,
-                             mutate(tazData, dest_taz=taz, dest_COUNTY=COUNTY, dest_county_name=county_name, 
-                                    dest_SD=SD, PRKCST, OPRKCST) %>% 
+                             mutate(tazData, dest_taz=taz, dest_COUNTY=COUNTY, dest_county_name=county_name,
+                                    dest_SD=SD, PRKCST, OPRKCST) %>%
                                select(dest_taz, dest_COUNTY, dest_county_name, dest_SD, PRKCST, OPRKCST),
                              by=c("dest_taz"))
 
@@ -264,7 +283,7 @@ joint_tours    <- mutate(joint_tours, parking_rate=OPRKCST)
 ## Function to add Cost to Tours or Trips
 
 # Function `add_cost`: attaches the cost skims for the given time period abbreviation `this_timeperiod`
-# to the given tours data.frame (note: this can be the trips data frame). Joining is done on the columns 
+# to the given tours data.frame (note: this can be the trips data frame). Joining is done on the columns
 # `orig_taz`, `dest_taz`, and `timeCode`.
 
 # The function fills in values to the column `cost` and `cost_fail` for the given time
@@ -276,18 +295,18 @@ joint_tours    <- mutate(joint_tours, parking_rate=OPRKCST)
 # Tallies failed costs (expected cost but -999 found) in the field cost_fail
 
 add_cost <- function(this_timeperiod, input_trips_or_tours, reverse_od = FALSE) {
-  
+
   # separate the relevant and irrelevant tours/trips
   relevant <- input_trips_or_tours %>%
     filter(timeCode == this_timeperiod)
-  
+
   irrelevant <- input_trips_or_tours %>%
     filter(timeCode != this_timeperiod)
-  
+
   # read in the relevant skim
   skim_file <- file.path(TARGET_DIR,"database",paste0("CostSkimsDatabase",this_timeperiod,".csv"))
   costSkims <- read.table(file = skim_file, header=TRUE, sep=",")
-  
+
   # standardize column names, reversing if needed
   if (reverse_od) {
     costSkims <- costSkims %>%
@@ -296,43 +315,43 @@ add_cost <- function(this_timeperiod, input_trips_or_tours, reverse_od = FALSE) 
       costSkims <- costSkims %>%
         rename(orig_taz = orig, dest_taz = dest)
   }
-  
+
   # Left join tours to the skims
   relevant <- left_join(relevant, costSkims, by=c("orig_taz","dest_taz"))
-  
+
   # assign cost value if we can to new column cost2
   relevant <- relevant %>%
     mutate(cost2 = (costMode == 1) * da +
-             (costMode == 2) * daToll +
+             (costMode == 2 & incQ == 1) * daToll * MBT_Q1_factor + (costMode == 2 & incQ == 2) * daToll * MBT_Q2_factor + (costMode == 2 & incQ >= 3) * daToll +
              (costMode == 3) * s2 +
-             (costMode == 4) * s2Toll +
+             (costMode == 4 & incQ == 1) * s2Toll * MBT_Q1_factor + (costMode == 4 & incQ == 2) * s2Toll * MBT_Q2_factor + (costMode == 4 & incQ >= 3) * s2Toll +
              (costMode == 5) * s3 +
-             (costMode == 6) * s3Toll +
+             (costMode == 6 & incQ == 1) * s3Toll* MBT_Q1_factor + (costMode == 6 & incQ == 2) * s3Toll* MBT_Q2_factor + (costMode == 6 & incQ >= 3) * s3Toll +
              (costMode == 7) * 0.0 +
              (costMode == 8) * 0.0 +
-             (costMode == 9) * wTrnW +
-             (costMode == 10) * (1 - reverse_od) * dTrnW +
-             (costMode == 10) * (reverse_od) * wTrnD +
-             (costMode == 11) * wTrnD)
-             
-  
+             (costMode == 9 & incQ == 1) * wTrnW * MBF_Q1_factor + (costMode == 9 & incQ == 2) * wTrnW * MBF_Q2_factor + (costMode == 9 & incQ >= 3) * wTrnW +
+             (costMode == 10 & incQ == 1) * (1 - reverse_od) * dTrnW * MBF_Q1_factor + (costMode == 10 & incQ == 2) * (1 - reverse_od) * dTrnW * MBF_Q2_factor + (costMode == 10 & incQ >= 3) * (1 - reverse_od) * dTrnW +
+             (costMode == 10 & incQ == 1) * (reverse_od) * wTrnD * MBF_Q1_factor + (costMode == 10 & incQ == 2) * (reverse_od) * wTrnD * MBF_Q2_factor + (costMode == 10 & incQ >= 3) * (reverse_od) * wTrnD +
+             (costMode == 11 & incQ == 1) * wTrnD * MBF_Q1_factor + (costMode == 11 & incQ == 2) * wTrnD * MBF_Q2_factor + (costMode == 11 & incQ >= 3) * wTrnD)
+
+
   # re-code missing as zero and set a failure indicator
   relevant <- relevant %>%
     mutate(cost2 = ifelse(cost2 < -990, 0, cost2)) %>%
     mutate(cost_fail2 = ifelse(cost2 < -990 ,1 ,0))
-  
-  print(paste("For", 
-              this_timeperiod, 
-              "assigned", 
+
+  print(paste("For",
+              this_timeperiod,
+              "assigned",
               prettyNum(sum(!is.na(relevant$cost2)),big.mark=","),
-              "costs, with", 
+              "costs, with",
               prettyNum(sum(!is.na(relevant$cost2)&(relevant$cost2>0)),big.mark=","),
               "nonzero values"))
-  
+
   # re-code na as zero
-  relevant$cost2[is.na(relevant$cost2)]           <- 0           
-  relevant$cost_fail2[is.na(relevant$cost_fail2)] <- 0           
-  
+  relevant$cost2[is.na(relevant$cost2)]           <- 0
+  relevant$cost_fail2[is.na(relevant$cost_fail2)] <- 0
+
   # set the cost variable
   relevant <- relevant %>%
     mutate(cost = cost + cost2) %>%
@@ -340,13 +359,13 @@ add_cost <- function(this_timeperiod, input_trips_or_tours, reverse_od = FALSE) 
 
   print(paste("  -> total nonzero costs:",
               prettyNum(sum(relevant$cost!=0),big.mark=",")))
-  
+
   # clean-up
   relevant <- relevant %>%
     select(-da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -wTrnW, -dTrnW, -wTrnD, -cost2, -cost_fail2)
-  
+
   return_list <- rbind(relevant, irrelevant)
-  
+
   return(return_list)
 
 }
@@ -354,19 +373,19 @@ add_cost <- function(this_timeperiod, input_trips_or_tours, reverse_od = FALSE) 
 ## Function to add Distance to Tours or Trips
 
 # Function `add_distance`: attaches the distance skims the given time period abbreviation `this_timeperiod`
-# to the given tours data frame (note: this can be the trips data frame). Joining is done on the columns 
+# to the given tours data frame (note: this can be the trips data frame). Joining is done on the columns
 # `orig_taz`, `dest_taz`, and `timeCode`. The function fills in values to the column `distance` for the given
 # time period based on the column `distance_mode`.
 
 add_distance <- function(this_timeperiod, input_trips_or_tours) {
-  
+
   # separate the relevant and irrelevant tours/trips
   relevant <- input_trips_or_tours %>%
     filter(timeCode == this_timeperiod)
-  
+
   irrelevant <- input_trips_or_tours %>%
     filter(timeCode != this_timeperiod)
-  
+
   # Read the relevant skim table
   skim_file <- file.path(TARGET_DIR,"database",paste0("DistanceSkimsDatabase",this_timeperiod,".csv"))
   distSkims <- read.table(file = skim_file, header=TRUE, sep=",")
@@ -377,11 +396,11 @@ add_distance <- function(this_timeperiod, input_trips_or_tours) {
 
   # Left join tours to the skims
   relevant <- left_join(relevant, distSkims, by=c("orig_taz","dest_taz"))
-  
+
   # Assign distance value
   relevant <- relevant %>%
     mutate(distance2 = 0.0)
-  
+
   relevant <- relevant %>%
     mutate(distance2 = (distance_mode == 1) * da +
              (distance_mode == 2) * daToll +
@@ -396,27 +415,27 @@ add_distance <- function(this_timeperiod, input_trips_or_tours) {
 
   relevant <- relevant %>%
     mutate(distance2 = ifelse(distance2 < -990.0, 0, distance2))
-  
-  print(paste("For", 
-              this_timeperiod, 
-              "assigned", 
+
+  print(paste("For",
+              this_timeperiod,
+              "assigned",
               prettyNum(sum(!is.na(relevant$distance2)),big.mark=","),
               "distances, with",
               prettyNum(sum(!is.na(relevant$distance2)&(relevant$distance2>0)),big.mark=","),
               "nonzero values"))
-  
-  relevant$distance2[is.na(relevant$distance2)] <- 0         
+
+  relevant$distance2[is.na(relevant$distance2)] <- 0
 
   relevant <- relevant %>%
     mutate(distance = distance + distance2)
-  
+
   print(paste("  -> total nonzero distances:",prettyNum(sum(relevant$distance!=0),big.mark=",")))
-  
+
   relevant <- relevant %>%
     select(-da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -walk, -bike, -distance2)
-  
+
   return_list <- rbind(relevant, irrelevant)
-  
+
   return(return_list)
 }
 
@@ -425,27 +444,27 @@ add_distance <- function(this_timeperiod, input_trips_or_tours) {
 # Function `add_time`: attaches the time skims for the given time period `this_timeperiod`
 # to the given tours data.frame (note: this can be the trips data frame).  Joining is done on the
 # columns `orig_taz`, `dest_taz`, and `timeCode`.
-# 
+#
 # Fills in values to the column `time` for the given time period based on the column `costMode`.
-# 
+#
 # Pass `reverse_od` as TRUE to do return trip; this uses the dest taz as the origin and the origin
 # taz as the dest, and it uses wTrnD time rather than dTrnW.
-# 
+#
 # Tallies failed times (expected time but -999 found) in the field `time_fail`.
 
 add_time <- function(this_timeperiod, input_trips_or_tours, reverse_od=FALSE) {
-  
+
   # separate the relevant and irrelevant tours/trips
   relevant <- input_trips_or_tours %>%
     filter(timeCode == this_timeperiod)
-  
+
   irrelevant <- input_trips_or_tours %>%
     filter(timeCode != this_timeperiod)
-  
+
   # read in the relevant skim
   skim_file <- file.path(TARGET_DIR,"database", paste0("TimeSkimsDatabase", this_timeperiod,".csv"))
   timeSkims   <- read.table(file = skim_file, header = TRUE, sep = ",")
-  
+
   # standardize column names, reversing if needed
   if (reverse_od) {
     timeSkims <- timeSkims %>%
@@ -454,11 +473,11 @@ add_time <- function(this_timeperiod, input_trips_or_tours, reverse_od=FALSE) {
     timeSkims <- timeSkims %>%
       rename(orig_taz = orig, dest_taz = dest)
   }
-  
-  
+
+
   # join the skims and relevant trips/tours
   relevant <- left_join(relevant, timeSkims, by=c("orig_taz","dest_taz"))
-  
+
   # assign the new time
   relevant <- relevant %>%
     mutate(time2 = (costMode == 1) * da +
@@ -472,36 +491,36 @@ add_time <- function(this_timeperiod, input_trips_or_tours, reverse_od=FALSE) {
              (costMode == 9) * wTrnW +
              (costMode == 10) * (1 - reverse_od) * dTrnW +
              (costMode == 10) * (reverse_od) * wTrnD)
-    
+
   # re-code missing as zero and set a failure indicator
   relevant <- relevant %>%
     mutate(time2 = ifelse(time2 < -990, 0, time2)) %>%
-    mutate(time_fail2 = ifelse(time2 < -990 ,1 ,0)) 
-    
-  print(paste("For", 
-              this_timeperiod, 
-              "assigned", 
+    mutate(time_fail2 = ifelse(time2 < -990 ,1 ,0))
+
+  print(paste("For",
+              this_timeperiod,
+              "assigned",
               prettyNum(sum(!is.na(relevant$time2)),big.mark=","),
-              "times, with", 
+              "times, with",
               prettyNum(sum(!is.na(relevant$time2)&(relevant$time2>0)),big.mark=","),
               "nonzero values"))
-  
+
   # re-code na as zero
-  relevant$time2[is.na(relevant$time2)] <- 0  
+  relevant$time2[is.na(relevant$time2)] <- 0
   relevant$time2[is.na(relevant$time_fail2)] <- 0
-  
+
   # set the time variable
   relevant <- relevant %>%
     mutate(time = time + time2) %>%
     mutate(time_fail = time_fail + time_fail2)
-  
+
   print(paste("  -> total nonzero times:",prettyNum(sum(relevant$time!=0),big.mark=",")))
-  
+
   relevant <- relevant %>%
     select(-da, -daToll, -s2, -s2Toll, -s3, -s3Toll, -walk, -bike, -wTrnW, -dTrnW, -wTrnD, -time2, -time_fail2)
-  
+
   return_list <- rbind(relevant, irrelevant)
-  
+
   return(return_list)
 }
 
@@ -510,61 +529,61 @@ add_time <- function(this_timeperiod, input_trips_or_tours, reverse_od=FALSE) {
 
 # Function `add_active`: attaches the active skims of the given time period `this_timeperiod`
 # to the given trip data.frame (joining on the columns `orig_taz`, `dest_taz`, and `timeCode`).
-# 
+#
 # Fills in values to the column `active` for the given time period.
 
 add_active <- function(this_timeperiod, input_trips_or_tours) {
-  
+
   # separate the relevant and irrelevant tours/trips
   relevant <- input_trips_or_tours %>%
     filter(timeCode == this_timeperiod)
-  
+
   irrelevant <- input_trips_or_tours %>%
     filter(timeCode != this_timeperiod)
-  
+
   # read in the relevant skim
   skim_file <- file.path(TARGET_DIR,"database", paste0("ActiveTimeSkimsDatabase", this_timeperiod,".csv"))
   activeSkims <- read.table(file = skim_file,header=TRUE, sep=",")
-  
+
   # standarize column names
   activeSkims <- activeSkims %>%
     rename(orig_taz = orig, dest_taz = dest)
-  
+
   # left join the skims
   relevant <- left_join(relevant, activeSkims, by=c("orig_taz","dest_taz"))
-  
+
   # assign active2
   relevant <- relevant %>%
-    mutate(active2 = (amode == 1) * walk + 
+    mutate(active2 = (amode == 1) * walk +
              (amode == 2) * bike +
              (amode == 3) * wTrnW +
              (amode == 4) * dTrnW +
              (amode == 5) * wTrnD)
-  
+
   relevant <- relevant %>%
     mutate(active2 = ifelse(active2 < -990.0, 0, active2))
 
-  print(paste("For", 
-              this_timeperiod, 
-              "assigned", 
+  print(paste("For",
+              this_timeperiod,
+              "assigned",
               prettyNum(sum(!is.na(relevant$active2)),big.mark=","),
-              "active times, with", 
+              "active times, with",
               prettyNum(sum(!is.na(relevant$active2)&(relevant$active2>0)),big.mark=","),
               "nonzero values"))
-  
-  relevant$active2[is.na(relevant$active2)] <- 0  
-  
+
+  relevant$active2[is.na(relevant$active2)] <- 0
+
   relevant <- relevant %>%
     mutate(active = active + active2)
-  
+
   print(paste("  -> total nonzero active times:",
               prettyNum(sum(relevant$active!=0),big.mark=",")))
-  
+
   relevant <- relevant %>%
     select(-walk, -bike, -wTrnW, -dTrnW, -wTrnD, -active2)
-  
+
   return_list <- rbind(relevant, irrelevant)
-  
+
   return(return_list)
 }
 
@@ -582,7 +601,7 @@ indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest
 ## Data Reads: Joint Trips and recode a few variables
 
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip
-joint_trips     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTripData_",ITER,".csv")), 
+joint_trips     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTripData_",ITER,".csv")),
                                      header=TRUE, sep=","))
 joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz, trip_mode,
                           num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category) %>%
@@ -593,7 +612,7 @@ print(paste("Read",prettyNum(nrow(joint_trips),big.mark=","),
             "joint person trips"))
 
 ## Add `num_participants` to joint_tours
-joint_tours     <- left_join(joint_tours, 
+joint_tours     <- left_join(joint_tours,
                              unique(select(joint_trips, hh_id, tour_id, num_participants)),
                              by=c("hh_id","tour_id"))
 
@@ -635,7 +654,7 @@ add_tour_attrs <- function(ftours) {
   # Parking cost is based on tour duration
   ftours   <- mutate(ftours, parking_cost=parking_rate*duration)
   # Distribute costs across shared ride modes (same value used in skims, assignment) for indiv tours
-  ftours   <- mutate(ftours, 
+  ftours   <- mutate(ftours,
                      parking_cost=ifelse((num_participants==1)&((tour_mode==3)|(tour_mode==4)),
                                         parking_cost/1.75,parking_cost))
   ftours   <- mutate(ftours,
@@ -673,7 +692,7 @@ get_joint_tour_persons <- function(joint_tours, persons) {
   joint_tour_persons <- joint_tour_persons[with(joint_tour_persons, order(hh_id, tour_id)),]
   # merge with the persons to get the person_id
   joint_tour_persons <- left_join(joint_tour_persons, select(persons, hh_id, person_num, person_id), by=c("hh_id","person_num"))
-  
+
   return(joint_tour_persons)
 }
 
@@ -686,7 +705,7 @@ if (JUST_MES=="1") {
   person_tours <- rbind(select(indiv_tours, -person_type, -atWork_freq, -fp_choice),
                         select(joint_tours, -tour_composition))
   person_tours <- add_tour_attrs(person_tours)
-  
+
   save(person_tours, file=file.path(UPDATED_DIR, "person_tours.rdata"))
   write.table(person_tours, file=file.path(UPDATED_DIR, "person_tours.csv"), sep=",", row.names=FALSE)
   remove(indiv_tours, person_tours)
@@ -717,8 +736,8 @@ remove(indiv_trips,joint_person_trips)
 #   * `autoSuff` and label from the household table
 #   * `walk_subzone` and label from the household table
 #   * `ptype` and label from persons
-  
-trips <- mutate(trips, 
+
+trips <- mutate(trips,
                 timeCodeNum=1*(depart_hour<6) +                                       # EA
                             2*((depart_hour>5)&(depart_hour<10)) +                    # AM
                             3*((depart_hour>9)&(depart_hour<15)) +                    # MD
@@ -727,8 +746,8 @@ trips <- mutate(trips,
                 )
 trips <- left_join(trips, LOOKUP_TIMEPERIOD, by=c("timeCodeNum"))
 trips <- select(mutate(trips, timeCode=timeperiod_abbrev), -timeperiod_abbrev)
-trips <- left_join(trips,                   
-                   mutate(households, home_taz=taz) %>% 
+trips <- left_join(trips,
+                   mutate(households, home_taz=taz) %>%
                      select(hh_id, incQ, incQ_label, autoSuff, autoSuff_label,
                             home_taz, walk_subzone, walk_subzone_label),
                    by=c("hh_id"))
@@ -739,7 +758,7 @@ trips <- left_join(trips,
 ## Add Trip Distance to Trips
 
 # Use `add_distance` to add trip distance to trips.
-trips <- mutate(trips, 
+trips <- mutate(trips,
                 distance=0.0,
                 distance_mode=trip_mode) # use trip_mode for distance
 
@@ -793,18 +812,18 @@ trips <- tbl_df(trips)
 # Mandatory Locations
 
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/MandatoryLocation
-mandatory_locations <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")), 
+mandatory_locations <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")),
                                          header=TRUE, sep=","))
 
 # Summaries
 
 ## Active Transportation Summary
 # we only want some variables - sum them to hh_id/person_id
-trips_melt  <- tbl_df(melt(select(trips, hh_id, person_id, wlk_trip, bik_trip, wtr_trip, dtr_trip, active), 
+trips_melt  <- tbl_df(melt(select(trips, hh_id, person_id, wlk_trip, bik_trip, wtr_trip, dtr_trip, active),
                            id.vars=c("hh_id","person_id")))
 trips_dcast <- tbl_df(dcast(trips_melt, hh_id+person_id ~ variable, fun.aggregate=sum))
 # left join with persons --> one row per person!
-trips_by_person <- left_join(select(persons, hh_id, person_id, ptype, activity_pattern, value_of_time), 
+trips_by_person <- left_join(select(persons, hh_id, person_id, ptype, activity_pattern, value_of_time),
                              trips_dcast, by=c("hh_id","person_id"))
 
 # we're done with these
@@ -813,7 +832,7 @@ remove(trips_melt,trips_dcast)
 # append autos, taz, COUNTY from households
 trips_by_person <- left_join(trips_by_person, select(households, hh_id, autos, taz, county_name), by=c("hh_id"))
 # recode zeroAuto
-trips_by_person <- mutate(trips_by_person, 
+trips_by_person <- mutate(trips_by_person,
                           zeroAuto=(autos==0),
                           atHomeA=is.na(active))
 # set NAs to zero
@@ -826,7 +845,7 @@ trips_by_person$active[is.na(trips_by_person$active)] <- 0
 trips_by_person <- mutate(trips_by_person, more15=(active>=15), more30=(active>=30))
 
 # summarize
-active_summary <- summarise(group_by(trips_by_person, taz, county_name, ptype, zeroAuto), 
+active_summary <- summarise(group_by(trips_by_person, taz, county_name, ptype, zeroAuto),
                             freq     = n(),
                             active   = mean(active),
                             more15   = mean(more15),
@@ -857,7 +876,7 @@ remove(actpatt_summary)
 ## Auto Ownership Summaries
 
 # summarise
-autoown_summary <- summarise(group_by(households, SD, COUNTY, county_name, autos, 
+autoown_summary <- summarise(group_by(households, SD, COUNTY, county_name, autos,
                                       incQ, incQ_label, walk_subzone, walk_subzone_label, workers, kidsNoDr), freq=n())
 autoown_summary$freq <- autoown_summary$freq / SAMPLESHARE
 write.table(autoown_summary, file.path(RESULTS_DIR,"AutomobileOwnership.csv"), sep=",", row.names=FALSE)
@@ -882,7 +901,7 @@ commute_tours   <- subset(commute_tours, (tour_purpose!="atwork_business" & tour
 
 # TODO: add this to all tours, not just commute?
 # The cost database contains simplified transit modes, build a cross-walk from the full modes;
-commute_tours   <- mutate(commute_tours, 
+commute_tours   <- mutate(commute_tours,
                           costMode  =(tour_mode<=8)*tour_mode +         # auto, walk, bike all in the skims
                                      # All walk to transit sub modes get best path walk to transit skim
                                      (tour_mode>=9)*(tour_mode<=13)*9 +
@@ -901,13 +920,13 @@ commute_tours   <- mutate(commute_tours,
                                         (end_hour>18)*5                   # EV
                           )
 # add timeCodeHw and timeCodeWh (character abbreviation versions)
-commute_tours   <- left_join(commute_tours, 
-                             select(mutate(LOOKUP_TIMEPERIOD, 
-                                           timeCodeHwNum=timeCodeNum, timeCodeHw=timeperiod_abbrev), 
+commute_tours   <- left_join(commute_tours,
+                             select(mutate(LOOKUP_TIMEPERIOD,
+                                           timeCodeHwNum=timeCodeNum, timeCodeHw=timeperiod_abbrev),
                                     timeCodeHwNum, timeCodeHw))
-commute_tours   <- left_join(commute_tours, 
-                             select(mutate(LOOKUP_TIMEPERIOD, 
-                                           timeCodeWhNum=timeCodeNum, timeCodeWh=timeperiod_abbrev), 
+commute_tours   <- left_join(commute_tours,
+                             select(mutate(LOOKUP_TIMEPERIOD,
+                                           timeCodeWhNum=timeCodeNum, timeCodeWh=timeperiod_abbrev),
                                     timeCodeWhNum, timeCodeWh))
 
 # Initialize for home-work cost lookup
@@ -950,7 +969,7 @@ commute_tours$cost[commute_tours$cost_fail>0]    <- NA
 commute_tours$time[commute_tours$time_fail>0]    <- NA
 
 # summarise
-commute_summary <- summarise(group_by(commute_tours, dest_COUNTY, dest_county_name, dest_SD, tour_mode), 
+commute_summary <- summarise(group_by(commute_tours, dest_COUNTY, dest_county_name, dest_SD, tour_mode),
                              freq         = n(),
                              totCost      = mean(totCost, na.rm=TRUE),
                              cost         = mean(cost,    na.rm=TRUE),
@@ -966,8 +985,8 @@ remove(commute_summary)
 
 
 ## Commute By Income Summaries
-commute_inc_summary_byjob <- summarise(group_by(commute_tours, dest_COUNTY, dest_county_name, dest_SD, dest_taz, 
-                                                tour_mode, incQ, incQ_label), 
+commute_inc_summary_byjob <- summarise(group_by(commute_tours, dest_COUNTY, dest_county_name, dest_SD, dest_taz,
+                                                tour_mode, incQ, incQ_label),
                                        freq         = n(),
                                        totCost      = mean(totCost, na.rm=TRUE),
                                        cost         = mean(cost,    na.rm=TRUE),
@@ -983,12 +1002,12 @@ save(model_summary, file=file.path(RESULTS_DIR,"CommuteByIncomeJob.rdata"))
 
 # The COUNTY and super district are by destination right now; add residence
 commute_tours   <- left_join(commute_tours,
-                             mutate(tazData, orig_taz=taz, res_COUNTY=COUNTY, res_county_name=county_name, 
-                                    res_SD=SD) %>% 
+                             mutate(tazData, orig_taz=taz, res_COUNTY=COUNTY, res_county_name=county_name,
+                                    res_SD=SD) %>%
                                select(orig_taz, res_COUNTY, res_county_name, res_SD),
                              by=c("orig_taz"))
 commute_inc_summary_byres <- summarise(group_by(commute_tours, res_COUNTY, res_county_name, res_SD, orig_taz,
-                                                tour_mode, incQ, incQ_label), 
+                                                tour_mode, incQ, incQ_label),
                                        freq         = n(),
                                        totCost      = mean(totCost, na.rm=TRUE),
                                        cost         = mean(cost,    na.rm=TRUE),
@@ -1008,13 +1027,13 @@ remove(commute_tours, commute_inc_summary_byjob, commute_inc_summary_byres)
 # select out non-work travel
 work_locations <- subset(mandatory_locations, WorkLocation != 0)
 # add home county
-work_locations <- left_join(work_locations, 
-                            mutate(tazData,HomeTAZ=taz, homeCOUNTY=COUNTY, home_county_name=county_name) %>% 
+work_locations <- left_join(work_locations,
+                            mutate(tazData,HomeTAZ=taz, homeCOUNTY=COUNTY, home_county_name=county_name) %>%
                               select(HomeTAZ,homeCOUNTY,home_county_name),
                             by=c("HomeTAZ"))
 # add work county
-work_locations <- left_join(work_locations, 
-                            mutate(tazData,WorkLocation=taz, workCOUNTY=COUNTY, work_county_name=county_name) %>% 
+work_locations <- left_join(work_locations,
+                            mutate(tazData,WorkLocation=taz, workCOUNTY=COUNTY, work_county_name=county_name) %>%
                               select(WorkLocation,workCOUNTY,work_county_name),
                             by=c("WorkLocation"))
 
@@ -1044,8 +1063,8 @@ save(model_summary, file=file.path(RESULTS_DIR, "TimeOfDay.rdata"))
 
 # another table -- who's touring?
 persons_touring <- data.frame(hour=numeric(), simple_purpose=character(), persons_touring=numeric())
-for (h in min(timeofday_summary$start_hour):max(timeofday_summary$end_hour)) { 
-  touring_at_hour <- subset(timeofday_summary, 
+for (h in min(timeofday_summary$start_hour):max(timeofday_summary$end_hour)) {
+  touring_at_hour <- subset(timeofday_summary,
                          (timeofday_summary$start_hour<=h)&(timeofday_summary$end_hour>=h))
   touring_at_hour <- summarise(group_by(touring_at_hour, simple_purpose), persons_touring=sum(num_participants))
   touring_at_hour <- mutate(touring_at_hour, hour=h)
@@ -1082,12 +1101,12 @@ trips       <- mutate(trips,
                       )
 
 # we only want some variables - sum them to hh_id
-trips_melt  <- tbl_df(melt(select(trips, hh_id, trip_cost_indiv, trip_cost_joint, cost_fail), 
+trips_melt  <- tbl_df(melt(select(trips, hh_id, trip_cost_indiv, trip_cost_joint, cost_fail),
                            id.vars=c("hh_id")))
 trips_dcast <- tbl_df(dcast(trips_melt, hh_id ~ variable, fun.aggregate=sum))
 # left join with household --> one row per household!
-costs_by_household <- left_join(select(households, hh_id, SD, COUNTY, county_name, 
-                                       PERSONS, incQ, incQ_label, autos), 
+costs_by_household <- left_join(select(households, hh_id, SD, COUNTY, county_name,
+                                       PERSONS, incQ, incQ_label, autos),
                              trips_dcast, by=c("hh_id"))
 
 # we're done with these
@@ -1106,7 +1125,7 @@ tours       <- mutate(tours,
                       pcost_indiv = (num_participants==1)*parking_cost,
                       pcost_joint = (num_participants>1)*parking_cost)
 # sum them to hh_id
-tours_melt  <- tbl_df(melt(select(tours, hh_id, pcost_indiv, pcost_joint), 
+tours_melt  <- tbl_df(melt(select(tours, hh_id, pcost_indiv, pcost_joint),
                            id.vars=c("hh_id")))
 tours_dcast <- tbl_df(dcast(tours_melt, hh_id ~ variable, fun.aggregate=sum))
 
@@ -1153,7 +1172,7 @@ remove(triptime_summary, model_summary)
 
 ## Cleanup and save tours, trips and households
 save(trips, file=file.path(UPDATED_DIR, "trips.rdata"))
-if (JUST_MES=="1") { 
+if (JUST_MES=="1") {
   write.table(trips, file=file.path(UPDATED_DIR, "trips.csv"), sep=",", row.names=FALSE)
   ## Need a version for mapping.  These are links, so we need to split into points.
   ## No intermediate stop: rows with stop_id == -1
@@ -1240,7 +1259,7 @@ persons$vehicle_trips[is.na(persons$vehicle_trips)] <- 0
 # add household vars
 load(file=file.path(UPDATED_DIR,"households.rdata"))
 persons          <- left_join(persons, select(households, hh_id, taz, COUNTY, county_name, SD,
-                                              walk_subzone, walk_subzone_label, 
+                                              walk_subzone, walk_subzone_label,
                                               autoSuff, autoSuff_label),
                               by=c("hh_id"))
 remove(households)
@@ -1286,7 +1305,7 @@ save(model_summary, file=file.path(RESULTS_DIR, "VehicleMilesTraveled_households
 remove(vmt_summary, model_summary)
 
 # Vehicle Miles Travelef for Climate Action Plans Summary
-mandatory_locations <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")), 
+mandatory_locations <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")),
                                          header=TRUE, sep=","))
 # we only want work_locations to have hh_id, person_id, workLocation
 work_locations      <- subset(mandatory_locations, WorkLocation>0)
@@ -1330,7 +1349,7 @@ auto_trips <- mutate(auto_trips,
                                      (num_participants==1)*(trip_mode==6)*(1.0/3.25) +
                                      (num_participants>1)*(1.0/num_participants))/SAMPLESHARE)
 auto_trips <- select(auto_trips, hh_id, person_id, orig_taz, dest_taz, vmt, vmt_indiv, vmt_joint, trips, vehicle_trips)
-auto_trips <- left_join(auto_trips, select(vmt_persons, hh_id, person_id, taz, WorkLocation), 
+auto_trips <- left_join(auto_trips, select(vmt_persons, hh_id, person_id, taz, WorkLocation),
                         by=c("hh_id","person_id"))
 
 # sum them to origin, destination, taz, WorkLocation

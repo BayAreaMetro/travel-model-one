@@ -230,12 +230,19 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
 
  DistributeMultistep processid = 'ctramp', processNum = path, commpath = '%COMMPATH%'
 
+ ; Read means-based fare discounts from the block file
+ Read File = "CTRAMP\scripts\block\trnParam.block"
+
 ; Loop thru income quartiles
   loop inc = 1,4
    if (inc = 1)  token_inc   = '_no_zpv_inc1'
    if (inc = 2)  token_inc   = '_no_zpv_inc2'
    if (inc = 3)  token_inc   = '_no_zpv_inc3'
    if (inc = 4)  token_inc   = '_no_zpv_inc4'
+
+   MBF_Discount = 1.0
+   if (inc = 1)  MBF_Discount = Means_Based_Fare_Q1Factor
+   if (inc = 2)  MBF_Discount = Means_Based_Fare_Q2Factor
 
   RUN PGM = MATRIX
   ; Read person trips for a transitmode for all time periods and Access+Egress combinations
@@ -248,7 +255,7 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
 
      ; Read transit skims
      ; ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
-     
+
      FILEI MATI[6]  = "skims\trnskmEA_wlk_@token_path@_wlk.tpp"
      FILEI MATI[7]  = "skims\trnskmEA_drv_@token_path@_wlk.tpp"
      FILEI MATI[8]  = "skims\trnskmEA_wlk_@token_path@_drv.tpp"
@@ -308,21 +315,21 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
    MW[35] = (mi.20.ivt + mi.20.wait + mi.20.wacc + mi.20.waux + mi.20.wegr + mi.20.dtime)
 
    ; Travel Cost
-   MW[41] = mi.06.fare
-   MW[42] = mi.07.fare
-   MW[43] = mi.08.fare
-   MW[44] = mi.09.fare
-   MW[45] = mi.10.fare
-   MW[46] = mi.11.fare
-   MW[47] = mi.12.fare
-   MW[48] = mi.13.fare
-   MW[49] = mi.14.fare
-   MW[50] = mi.15.fare
-   MW[51] = mi.16.fare
-   MW[52] = mi.17.fare
-   MW[53] = mi.18.fare
-   MW[54] = mi.19.fare
-   MW[55] = mi.20.fare
+   MW[41] = mi.06.fare * @MBF_discount@
+   MW[42] = mi.07.fare * @MBF_discount@
+   MW[43] = mi.08.fare * @MBF_discount@
+   MW[44] = mi.09.fare * @MBF_discount@
+   MW[45] = mi.10.fare * @MBF_discount@
+   MW[46] = mi.11.fare * @MBF_discount@
+   MW[47] = mi.12.fare * @MBF_discount@
+   MW[48] = mi.13.fare * @MBF_discount@
+   MW[49] = mi.14.fare * @MBF_discount@
+   MW[50] = mi.15.fare * @MBF_discount@
+   MW[51] = mi.16.fare * @MBF_discount@
+   MW[52] = mi.17.fare * @MBF_discount@
+   MW[53] = mi.18.fare * @MBF_discount@
+   MW[54] = mi.19.fare * @MBF_discount@
+   MW[55] = mi.20.fare * @MBF_discount@ 
 
    ; TOTAL TRIPS
    MW[16] = MW[ 1]+MW[ 2]+MW[ 3]+MW[ 4]+MW[ 5]+

@@ -27,3 +27,8 @@ AV_PCE_FT10  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenari
 ; set by RuntimeConfiguration.py -- Zero Passenger Vehicles
 OwnedAV_ZPV_factor  = xx.xx     ; a factor between 0 to 1
 TNC_ZPV_factor  = xx.xx     ; a factor between 0 to 1
+
+; set by RuntimeConfiguration.py -- Means-based tolling
+; these factors are not used in assignment; they are only used in summarization
+Means_Based_Tolling_Q1Factor  = xx.xx     ; a factor between 0 to 1 indicating the toll discount by income group
+Means_Based_Tolling_Q2Factor  = xx.xx     ; a factor between 0 to 1 indicating the toll discount by income group

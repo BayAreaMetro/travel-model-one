@@ -125,7 +125,7 @@ if (SUBMODEL=="DestinationChoice") {
 } else if (SUBMODEL=="TourModeChoice") {
 
   CALIB_WORKBOOK <- file.path(CALIB_DIR, "11 Tour Mode Choice", "11_TourModeChoice.xlsx")
-  UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.0 version", "ModeChoice_TM1.xls")
+  UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.5.1 version", "ModeChoice_TM1.5.1.xls")
 
   # sheet, column, startRow, endRow
   COPY_SRC <- list("work"          =c( "constants", 4,   3,  64),
@@ -150,34 +150,34 @@ if (SUBMODEL=="DestinationChoice") {
                    "cbd_othdiscr"  =c(    "CBD_SF", 9,  27,  32),
                    "cbd_workbased" =c(    "CBD_SF", 9,  33,  38))
 
-  COPY_DST <- list("work"          =c(      "Work", 5, 406, 467),
-                   "university"    =c("University", 5, 406, 467),
-                   "school"        =c(    "School", 5, 406, 467),
-                   "escort"        =c(    "Escort", 5, 406, 467),
-                   "shopping"      =c(  "Shopping", 5, 406, 467),
-                   "eatout"        =c(    "EatOut", 5, 406, 467),
-                   "othmaint"      =c(  "OthMaint", 5, 406, 467),
-                   "social"        =c(    "Social", 5, 406, 467),
-                   "othdiscr"      =c(  "OthDiscr", 5, 406, 467),
-                   "workbased"     =c( "WorkBased", 5, 409, 470),
+  COPY_DST <- list("work"          =c(      "Work", 5, 408, 469),
+                   "university"    =c("University", 5, 408, 469),
+                   "school"        =c(    "School", 5, 408, 469),
+                   "escort"        =c(    "Escort", 5, 408, 469),
+                   "shopping"      =c(  "Shopping", 5, 408, 469),
+                   "eatout"        =c(    "EatOut", 5, 408, 469),
+                   "othmaint"      =c(  "OthMaint", 5, 408, 469),
+                   "social"        =c(    "Social", 5, 408, 469),
+                   "othdiscr"      =c(  "OthDiscr", 5, 408, 469),
+                   "workbased"     =c( "WorkBased", 5, 411, 472),
 
-                   "cbd_work"      =c(      "Work", 5, 468, 473),
-                   "cbd_university"=c("University", 5, 468, 473),
-                   "cbd_school"    =c(    "School", 5, 468, 473),
-                   "cbd_escort"    =c(    "Escort", 5, 468, 473),
-                   "cbd_shopping"  =c(  "Shopping", 5, 468, 473),
-                   "cbd_eatout"    =c(    "EatOut", 5, 468, 473),
-                   "cbd_othmaint"  =c(  "OthMaint", 5, 468, 473),
-                   "cbd_social"    =c(    "Social", 5, 468, 473),
-                   "cbd_othdiscr"  =c(  "OthDiscr", 5, 468, 473),
-                   "cbd_workbased" =c( "WorkBased", 5, 471, 476))
+                   "cbd_work"      =c(      "Work", 5, 470, 475),
+                   "cbd_university"=c("University", 5, 470, 475),
+                   "cbd_school"    =c(    "School", 5, 470, 475),
+                   "cbd_escort"    =c(    "Escort", 5, 470, 475),
+                   "cbd_shopping"  =c(  "Shopping", 5, 470, 475),
+                   "cbd_eatout"    =c(    "EatOut", 5, 470, 475),
+                   "cbd_othmaint"  =c(  "OthMaint", 5, 470, 475),
+                   "cbd_social"    =c(    "Social", 5, 470, 475),
+                   "cbd_othdiscr"  =c(  "OthDiscr", 5, 470, 475),
+                   "cbd_workbased" =c( "WorkBased", 5, 473, 478))
 
   CONFIG <- list(CALIB_WORKBOOK, COPY_SRC, COPY_DST)
   
 } else if (SUBMODEL=="TripModeChoice") {
 
   CALIB_WORKBOOK <- file.path(CALIB_DIR, "15 Trip Mode Choice", "15_TripModeChoice.xlsx")
-  UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.0 version", "TripModeChoice_TM1.xls")
+  UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.5.1 version", "TripModeChoice_TM1.5.1.xls")
 
   # sheet, column, startRow, endRow
   COPY_SRC <- list("work"      =c( "constants", 7,   3,  36),
@@ -191,16 +191,16 @@ if (SUBMODEL=="DestinationChoice") {
                    "othdiscr"  =c( "constants",39,   3,  62), # indiv disc
                    "workbased" =c( "constants",47,   3,  36)) # at work
 
-  COPY_DST <- list("work"      =c(      "Work", 5, 507, 540),
-                   "university"=c("University", 5, 510, 543),
-                   "school"    =c(    "School", 5, 510, 543),
-                   "escort"    =c(    "Escort", 5, 510, 543),
-                   "shopping"  =c(  "Shopping", 5, 510, 569),
-                   "eatout"    =c(    "EatOut", 5, 510, 569),
-                   "othmaint"  =c(  "OthMaint", 5, 510, 569),
-                   "social"    =c(    "Social", 5, 510, 569),
-                   "othdiscr"  =c(  "OthDiscr", 5, 510, 569),
-                   "workbased" =c( "WorkBased", 5, 509, 542))
+  COPY_DST <- list("work"      =c(      "Work", 5, 509, 542),
+                   "university"=c("University", 5, 512, 545),
+                   "school"    =c(    "School", 5, 512, 545),
+                   "escort"    =c(    "Escort", 5, 512, 545),
+                   "shopping"  =c(  "Shopping", 5, 512, 571),
+                   "eatout"    =c(    "EatOut", 5, 512, 571),
+                   "othmaint"  =c(  "OthMaint", 5, 512, 571),
+                   "social"    =c(    "Social", 5, 512, 571),
+                   "othdiscr"  =c(  "OthDiscr", 5, 512, 571),
+                   "workbased" =c( "WorkBased", 5, 511, 544))
 
   CONFIG <- list(CALIB_WORKBOOK, COPY_SRC, COPY_DST)
 
@@ -219,6 +219,8 @@ uec_sheets   <- getSheets(uec_workbook)
 print(paste0("UEC_SRC_WORKBOOK = ",UEC_SRC_WORKBOOK))
 
 UEC_DST_WORKBOOK <- gsub("TM1.0 version/","",UEC_SRC_WORKBOOK)
+UEC_DST_WORKBOOK <- gsub("TM1.5.1 version/","",UEC_SRC_WORKBOOK)
+UEC_DST_WORKBOOK <- gsub("_TM1.5.1","",UEC_DST_WORKBOOK)
 UEC_DST_WORKBOOK <- gsub("_TM1","",UEC_DST_WORKBOOK)
 print(paste0("UEC_DST_WORKBOOK = ",UEC_DST_WORKBOOK))
 
