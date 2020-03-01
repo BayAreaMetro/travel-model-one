@@ -7,26 +7,34 @@ library(xlsx)
 TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
 ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to read
 SAMPLESHARE  <- Sys.getenv("SAMPLESHARE") # Sampling
-
-WORKBOOK       <- "M:\\Development\\Travel Model One\\Calibration\\Version 1.5.0\\02 Automobile Ownership\\02_AutoOwnership.xlsx"
-WORKBOOK_BLANK <- gsub(".xlsx","_blank.xlsx",WORKBOOK)
-WORKBOOK_TEMP  <- gsub(".xlsx","_temp.xlsx", WORKBOOK)
-calib_workbook <- loadWorkbook(file=WORKBOOK_BLANK)
-calib_sheets   <- getSheets(calib_workbook)
+CODE_DIR     <- Sys.getenv("CODE_DIR")    # location of utilitiles\calibration code
+CALIB_ITER   <- Sys.getenv("CALIB_ITER")  # calibration iteration
 
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
-OUTPUT_DIR   <- file.path(TARGET_DIR, "OUTPUT", "calibration")
+CODE_DIR     <- gsub("\\\\","/",CODE_DIR  ) # switch slashes around
+OUTPUT_DIR   <- file.path(TARGET_DIR, paste0("OUTPUT_",CALIB_ITER), "calibration")
 if (!file.exists(OUTPUT_DIR)) { dir.create(OUTPUT_DIR) }
+
+WORKBOOK       <- "M:\\Development\\Travel Model One\\Calibration\\Version 1.5.2\\02 Automobile Ownership\\02_AutoOwnership.xlsx"
+WORKBOOK       <- gsub("\\\\","/",WORKBOOK  ) # switch slashes around
+WORKBOOK_TEMP  <- gsub(".xlsx","_temp.xlsx", WORKBOOK)
+WORKBOOK_BLANK <- file.path(CODE_DIR, "workbook_templates","02_AutoOwnership_blank.xlsx")
+calib_workbook <- loadWorkbook(file=WORKBOOK_BLANK)
+calib_sheets   <- getSheets(calib_workbook)
 
 stopifnot(nchar(TARGET_DIR  )>0)
 stopifnot(nchar(ITER        )>0)
 stopifnot(nchar(SAMPLESHARE )>0)
+stopifnot(nchar(CODE_DIR    )>0)
+stopifnot(nchar(CALIB_ITER  )>0)
 
 SAMPLESHARE <- as.numeric(SAMPLESHARE)
 
 print(paste0("TARGET_DIR  = ",TARGET_DIR ))
 print(paste0("ITER        = ",ITER       ))
 print(paste0("SAMPLESHARE = ",SAMPLESHARE))
+print(paste0("CODE_DIR    = ",CODE_DIR   ))
+print(paste0("CALIB_ITER  = ",CALIB_ITER ))
 
 ######### counties
 LOOKUP_COUNTY        <- data.frame(COUNTY=c(1,2,3,4,5,6,7,8,9),
@@ -42,7 +50,7 @@ input.pop.households <- read.table(file = file.path(TARGET_DIR,"INPUT","popsyn",
 
 tazData              <- read.table(file=file.path(TARGET_DIR,"INPUT","landuse","tazData.csv"), header=TRUE, sep=",")
 
-ao_results           <- read.table(file=file.path(TARGET_DIR,"OUTPUT","main","aoResults.csv"), header=TRUE, sep=",")
+ao_results           <- read.table(file=file.path(TARGET_DIR,paste0("OUTPUT_",CALIB_ITER),"main","aoResults.csv"), header=TRUE, sep=",")
 
 # stopifnot(nrow(input.pop.households) == nrow(ao_results))
 
@@ -71,3 +79,23 @@ setCellValue(source_cell[[1]], paste("Source: ",outfile))
 saveWorkbook(calib_workbook, WORKBOOK_TEMP)
 forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
 print(paste("Wrote",WORKBOOK))
+
+# summarize to (taz, Auto Ownership)
+ao_taz <- group_by(ao_results, TAZ, AO) %>% summarize(num_hh=n())
+# divide by SAMPLESHARE
+ao_taz  <- mutate(ao_taz, num_hh=num_hh/SAMPLESHARE, source="Model") %>% 
+  rename(num_vehicles=AO)
+
+# save it
+outfile <- file.path(OUTPUT_DIR,"02_auto_ownership_TAZ_TM_long.csv")
+write.table(ao_taz, outfile, sep=",", row.names=FALSE)
+print(paste("Wrote",outfile))
+
+ao_taz_spread <- spread(ao_taz, key=num_vehicles, value=num_hh)
+outfile <- file.path(OUTPUT_DIR,"02_auto_ownership_TAZ_TM.csv")
+write.table(ao_taz_spread, outfile, sep=",", row.names=FALSE)
+print(paste("Wrote",outfile))
+
+# copy the observed ACS file here to union
+file.copy("M:/Data/Census/ACS/ACS2013-2017/B08201 Household Size by Vehicles Available/vehiclesAvailableByTazACS_long.csv",
+          file.path(OUTPUT_DIR, "02_auto_ownership_TAZ_ACS.csv"))

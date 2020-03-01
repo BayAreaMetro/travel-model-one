@@ -48,7 +48,7 @@ If an iteration is specified, then the following UsualWorkAndSchoolLocationChoic
 lines are set in CTRAMP\runtime\mtcTourBased.properties:
 
   Iteration 1:
-    ShadowPrice.Input.File          = (blank)
+    # ShadowPrice.Input.File          = (blank)
     ShadowPricing.MaximumIterations = 4
   Iteration 2:
     ShadowPrice.Input.File          = main/ShadowPricing_3.csv

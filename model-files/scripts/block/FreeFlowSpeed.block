@@ -68,6 +68,9 @@
 	  IF (LI.CAPCLASS = 59) CritSpd = 23.543      
 	  IF (LI.CAPCLASS = 60) CritSpd = 16.480     
 ;-----------------------------------------------------------------------	
+	  IF (LI.CAPCLASS = 62) CritSpd = 37.962     
+
+
 COMP Tc=0
 IF (LI.FT=1-5,7-10)  
    
