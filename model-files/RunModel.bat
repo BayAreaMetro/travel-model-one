@@ -69,6 +69,7 @@ if %MODEL_YEAR% GTR 3000 (
   exit /b 2
 )
 
+set PROJECT=%myfolder:~11,3%
 set FUTURE_ABBR=%myfolder:~15,2%
 set FUTURE=X
 
