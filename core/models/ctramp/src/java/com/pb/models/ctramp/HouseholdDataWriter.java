@@ -467,6 +467,12 @@ public class HouseholdDataWriter {
        data.add("avAvailable");
        data.add("dcLogsum");
        data.add("sampleRate");
+       data.add("origTaxiWait");
+       data.add("destTaxiWait");
+       data.add("origSingleTNCWait");
+       data.add("destSingleTNCWait");
+       data.add("origSharedTNCWait");
+       data.add("destSharedTNCWait");
        
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -504,6 +510,12 @@ public class HouseholdDataWriter {
        data.add("avAvailable");
        data.add("dcLogsum");
        data.add("sampleRate");
+       data.add("origTaxiWait");
+       data.add("destTaxiWait");
+       data.add("origSingleTNCWait");
+       data.add("destSingleTNCWait");
+       data.add("origSharedTNCWait");
+       data.add("destSharedTNCWait");
        
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -544,6 +556,12 @@ public class HouseholdDataWriter {
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.REAL);
        data.add(SqliteDataTypes.REAL);
+       data.add(SqliteDataTypes.REAL);
+       data.add(SqliteDataTypes.REAL);
+       data.add(SqliteDataTypes.REAL);
+       data.add(SqliteDataTypes.REAL);
+       data.add(SqliteDataTypes.REAL);
+       data.add(SqliteDataTypes.REAL);
              
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -577,6 +595,12 @@ public class HouseholdDataWriter {
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.INTEGER);
        data.add(SqliteDataTypes.INTEGER);
+       data.add(SqliteDataTypes.REAL);
+       data.add(SqliteDataTypes.REAL);
+       data.add(SqliteDataTypes.REAL);
+       data.add(SqliteDataTypes.REAL);
+       data.add(SqliteDataTypes.REAL);
+       data.add(SqliteDataTypes.REAL);
        data.add(SqliteDataTypes.REAL);
        data.add(SqliteDataTypes.REAL);
 
@@ -618,7 +642,12 @@ public class HouseholdDataWriter {
        data.add(string(t.getDestinationChoiceLogsum()));
        float sampleRate = t.getSampleRate();
        data.add(string(sampleRate));
-
+       data.add(string(t.getOrigTaxiWait()));
+       data.add(string(t.getDestTaxiWait()));
+       data.add(string(t.getOrigTNCSingleWait()));
+       data.add(string(t.getDestTNCSingleWait()));
+       data.add(string(t.getOrigTNCSharedWait()));
+       data.add(string(t.getDestTNCSharedWait()));
        
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -659,6 +688,12 @@ public class HouseholdDataWriter {
        data.add(string(t.getDestinationChoiceLogsum()));
        float sampleRate = t.getSampleRate();
        data.add(string(sampleRate));
+       data.add(string(t.getOrigTaxiWait()));
+       data.add(string(t.getDestTaxiWait()));
+       data.add(string(t.getOrigTNCSingleWait()));
+       data.add(string(t.getDestTNCSingleWait()));
+       data.add(string(t.getOrigTNCSharedWait()));
+       data.add(string(t.getDestTNCSharedWait()));
 
        if ( saveUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
@@ -753,6 +788,9 @@ public class HouseholdDataWriter {
         data.add("tour_category");
         data.add("avAvailable");
         data.add("sampleRate");
+        data.add("taxiWait");
+        data.add("singleTNCWait");
+        data.add("sharedTNCWait");
         return data;
     }
 
@@ -777,6 +815,9 @@ public class HouseholdDataWriter {
         data.add("tour_category");
         data.add("avAvailable");
         data.add("sampleRate");
+        data.add("taxiWait");
+        data.add("singleTNCWait");
+        data.add("sharedTNCWait");
         return data;
     }
 
@@ -822,7 +863,11 @@ public class HouseholdDataWriter {
             .append("trip_mode_name").append(",")
             .append("travel_time").append(",")
         	.append("distance").append(",")
-        	.append("sampleRate").toString();
+        	.append("sampleRate").append(",")
+        	.append("taxiWait").append(",")
+        	.append("singleTNCWait").append(",")
+        	.append("sharedTNCWait").toString();
+
     }
 
     private String formTravelTimeTableColumnHeader() {
@@ -857,6 +902,9 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.TEXT);
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.REAL);
+        data.add(SqliteDataTypes.REAL);
+        data.add(SqliteDataTypes.REAL);
+        data.add(SqliteDataTypes.REAL);
         return data;
     }
 
@@ -880,6 +928,9 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.INTEGER);
         data.add(SqliteDataTypes.TEXT);
         data.add(SqliteDataTypes.INTEGER);
+        data.add(SqliteDataTypes.REAL);
+        data.add(SqliteDataTypes.REAL);
+        data.add(SqliteDataTypes.REAL);
         data.add(SqliteDataTypes.REAL);
         return data;
     }
@@ -951,6 +1002,10 @@ public class HouseholdDataWriter {
        data.add(string(ModelStructure.TOUR_CATEGORY_LABELS[t.getTourCategoryIndex()]));
        data.add(string( t.getUseOwnedAV() ? 1 : 0) );
        data.add(string(s.getSampleRate()));
+       data.add(string(s.getOrigTaxiWait()));
+       data.add(string(s.getOrigSingleTNCWait()));
+       data.add(string(s.getOrigSharedTNCWait()));
+       
        return data;
    }
 
@@ -1032,6 +1087,9 @@ public class HouseholdDataWriter {
        data.add(string(ModelStructure.TOUR_CATEGORY_LABELS[t.getTourCategoryIndex()]));
        data.add(string( t.getUseOwnedAV() ? 1 : 0) );
        data.add(string(s.getSampleRate()));
+       data.add(string(s.getOrigTaxiWait()));
+       data.add(string(s.getOrigSingleTNCWait()));
+       data.add(string(s.getOrigSharedTNCWait()));
 
       
        return data;
@@ -1082,8 +1140,11 @@ public class HouseholdDataWriter {
        data.add(string(ModelStructure.TOUR_CATEGORY_LABELS[t.getTourCategoryIndex()]));
        data.add(string( t.getUseOwnedAV() ? 1 : 0) );
        data.add(string(t.getSampleRate()));
-
-
+       data.add(string((inbound ? t.getDestTaxiWait() : t.getOrigTaxiWait())));
+       data.add(string((inbound ? t.getDestTNCSingleWait() : t.getOrigTNCSingleWait())));
+       data.add(string((inbound ? t.getDestTNCSharedWait() : t.getOrigTNCSharedWait())));
+       
+       
        return data;
    }
 
@@ -1141,6 +1202,9 @@ public class HouseholdDataWriter {
        data.add(string(ModelStructure.TOUR_CATEGORY_LABELS[t.getTourCategoryIndex()]));
        data.add(string( t.getUseOwnedAV() ? 1 : 0) );
        data.add(string(t.getSampleRate()));
+       data.add(string((inbound ? t.getDestTaxiWait() : t.getOrigTaxiWait())));
+       data.add(string((inbound ? t.getDestTNCSingleWait() : t.getOrigTNCSingleWait())));
+       data.add(string((inbound ? t.getDestTNCSharedWait() : t.getOrigTNCSharedWait())));
 
        return data;
    }

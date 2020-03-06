@@ -18,6 +18,10 @@ public class Stop implements Serializable {
 
     byte origPurposeIndex;
     byte destPurposeIndex;
+    
+    float origTaxiWait;
+    float origSingleTNCWait;
+    float origSharedTNCWait;
 
     Tour parentTour;
     
@@ -163,6 +167,30 @@ public class Stop implements Serializable {
         logger.info( "" );
 
     }
+
+	public float getOrigTaxiWait() {
+		return origTaxiWait;
+	}
+
+	public void setOrigTaxiWait(float origTaxiWait) {
+		this.origTaxiWait = origTaxiWait;
+	}
+
+	public float getOrigSingleTNCWait() {
+		return origSingleTNCWait;
+	}
+
+	public void setOrigSingleTNCWait(float origSingleTNCWait) {
+		this.origSingleTNCWait = origSingleTNCWait;
+	}
+
+	public float getOrigSharedTNCWait() {
+		return origSharedTNCWait;
+	}
+
+	public void setOrigSharedTNCWait(float origSharedTNCWait) {
+		this.origSharedTNCWait = origSharedTNCWait;
+	}
     
 }
 

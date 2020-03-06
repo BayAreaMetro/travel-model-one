@@ -34,6 +34,13 @@ public class Tour implements java.io.Serializable {
     private short tourParkTaz;
     private float destinationChoiceLogsum;
     
+    private float origTaxiWait;
+    private float destTaxiWait;
+    private float origTNCSingleWait;
+    private float destTNCSingleWait;
+    private float origTNCSharedWait;
+    private float destTNCSharedWait;
+  
     private float[] tourModalProbabilities;
     private float[] tourModalUtilities;
     
@@ -599,6 +606,54 @@ public class Tour implements java.io.Serializable {
 
 	public void setSampleRate(float sampleRate) {
 		this.sampleRate = sampleRate;
+	}
+
+	public float getOrigTaxiWait() {
+		return origTaxiWait;
+	}
+
+	public void setOrigTaxiWait(float origTaxiWait) {
+		this.origTaxiWait = origTaxiWait;
+	}
+
+	public float getDestTaxiWait() {
+		return destTaxiWait;
+	}
+
+	public void setDestTaxiWait(float destTaxiWait) {
+		this.destTaxiWait = destTaxiWait;
+	}
+
+	public float getOrigTNCSingleWait() {
+		return origTNCSingleWait;
+	}
+
+	public void setOrigTNCSingleWait(float origTNCSingleWait) {
+		this.origTNCSingleWait = origTNCSingleWait;
+	}
+
+	public float getDestTNCSingleWait() {
+		return destTNCSingleWait;
+	}
+
+	public void setDestTNCSingleWait(float destTNCSingleWait) {
+		this.destTNCSingleWait = destTNCSingleWait;
+	}
+
+	public float getOrigTNCSharedWait() {
+		return origTNCSharedWait;
+	}
+
+	public void setOrigTNCSharedWait(float origTNCSharedWait) {
+		this.origTNCSharedWait = origTNCSharedWait;
+	}
+
+	public float getDestTNCSharedWait() {
+		return destTNCSharedWait;
+	}
+
+	public void setDestTNCSharedWait(float destTNCSharedWait) {
+		this.destTNCSharedWait = destTNCSharedWait;
 	}
 
 
