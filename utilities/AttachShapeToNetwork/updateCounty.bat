@@ -6,14 +6,12 @@
 @echo on
 setlocal enabledelayedexpansion
 
-set CODE_DIR=C:\Users\lzorn\Documents\travel-model-one-master
+set CODE_DIR=X:\travel-model-one-master
 set COUNTY_FILE=M:\Development\Travel Model One\Version 05\Adding City to Master Network\Cityshapes\Counties_NAD_1983_UTM_Zone_10N.shp
 ::set MODEL_DIRS=2015_06_002 2040_06_690 2040_06_694 2040_06_691 2040_06_693 2040_06_696 2020_06_694 2035_06_694
-set MODEL_DIRS=2040_06_694_Amd1 2035_06_694_Amd1 2030_06_694_Amd1
+set MODEL_DIRS=2040_06_694_Amd2_V2 2035_06_694_Amd2_V2 2030_06_694_Amd2_V2
 
 call "%CODE_DIR%\model-files\runtime\SetPath.bat"
-
-goto combine2
 
 for %%H in (%MODEL_DIRS%) DO (
   set MODEL_DIR=%%H
@@ -31,8 +29,10 @@ for %%H in (%MODEL_DIRS%) DO (
 )
 
 :combine1
+goto combine2
+
 set COMBINED_DIR=Across-Alternatives-2040-Round-14-Amd1
-set RUN_NAME_SET=2015_06_002 2040_06_690 2040_06_694 2040_06_694_Amd1 2040_06_691 2040_06_693 2040_06_697
+set RUN_NAME_SET=2015_06_002 2040_06_690 2040_06_694 2040_06_694_Amd2 2040_06_691 2040_06_693 2040_06_697
 
 :: Convert the avgload5period.csv
 set HWYFILE_DIRS=%RUN_NAME_SET: =\OUTPUT %
@@ -46,8 +46,8 @@ if not exist "%COMBINED_DIR%\avgload5period_wcounty.tde" (
 )
 
 :combine2
-set COMBINED_DIR=Across-Alternatives-Round-14-Propose-Plan-Amd1
-set RUN_NAME_SET=2015_06_002 2020_06_694 2035_06_694_Amd1 2040_06_694_Amd1
+set COMBINED_DIR=Across-Alternatives-Round-15-Proposed-Plan-Amd2
+set RUN_NAME_SET=2015_06_002 2020_06_694 2030_06_694 2030_06_694_Amd1 2030_06_694_Amd2 2035_06_694 2035_06_694_Amd1 2035_06_694_Amd2 2040_06_694 2040_06_694_Amd1 2040_06_694_Amd2
 
 :: Convert the avgload5period.csv
 set HWYFILE_DIRS=%RUN_NAME_SET: =\OUTPUT %

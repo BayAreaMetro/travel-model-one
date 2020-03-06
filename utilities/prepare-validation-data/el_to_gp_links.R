@@ -7,7 +7,7 @@ library(dplyr)
 
 
 TM_VERSION      <- "" # set to TM1 or TM2 or nothing in other uses
-INPUT_DIR       <- "L:/RTP2021_PPA/Projects/2050_TM151_PPA_BF_05/INPUT"
+INPUT_DIR       <- "L:/RTP2021_PPA/Projects/3000_ExpLanes/2050_TM151_PPA_CG_16_3000_ExpLanes_01"
 TM_NETWORK      <- file.path(INPUT_DIR, "shapefiles", "network_links.dbf")
 OUTPUT_DBF      <- "el_to_gp_links.dbf"
 OUTPUT_CSV      <- "el_to_gp_links.csv"
