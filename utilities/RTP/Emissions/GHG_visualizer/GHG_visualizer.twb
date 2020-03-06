@@ -122,11 +122,11 @@
                       <column datatype='real' name='volMD_hv' ordinal='61' />
                       <column datatype='real' name='volPM_hv' ordinal='62' />
                       <column datatype='real' name='volEV_hv' ordinal='63' />
-                      <column datatype='integer' name='volEA_dat' ordinal='64' />
-                      <column datatype='integer' name='volAM_dat' ordinal='65' />
-                      <column datatype='integer' name='volMD_dat' ordinal='66' />
+                      <column datatype='real' name='volEA_dat' ordinal='64' />
+                      <column datatype='real' name='volAM_dat' ordinal='65' />
+                      <column datatype='real' name='volMD_dat' ordinal='66' />
                       <column datatype='real' name='volPM_dat' ordinal='67' />
-                      <column datatype='integer' name='volEV_dat' ordinal='68' />
+                      <column datatype='real' name='volEV_dat' ordinal='68' />
                       <column datatype='real' name='volEA_s2t' ordinal='69' />
                       <column datatype='real' name='volAM_s2t' ordinal='70' />
                       <column datatype='real' name='volMD_s2t' ordinal='71' />
@@ -137,21 +137,21 @@
                       <column datatype='real' name='volMD_s3t' ordinal='76' />
                       <column datatype='real' name='volPM_s3t' ordinal='77' />
                       <column datatype='real' name='volEV_s3t' ordinal='78' />
-                      <column datatype='integer' name='volEA_smt' ordinal='79' />
+                      <column datatype='real' name='volEA_smt' ordinal='79' />
                       <column datatype='real' name='volAM_smt' ordinal='80' />
-                      <column datatype='integer' name='volMD_smt' ordinal='81' />
+                      <column datatype='real' name='volMD_smt' ordinal='81' />
                       <column datatype='real' name='volPM_smt' ordinal='82' />
-                      <column datatype='integer' name='volEV_smt' ordinal='83' />
-                      <column datatype='integer' name='volEA_hvt' ordinal='84' />
-                      <column datatype='integer' name='volAM_hvt' ordinal='85' />
-                      <column datatype='integer' name='volMD_hvt' ordinal='86' />
-                      <column datatype='integer' name='volPM_hvt' ordinal='87' />
-                      <column datatype='integer' name='volEV_hvt' ordinal='88' />
-                      <column datatype='integer' name='volEA_daav' ordinal='89' />
-                      <column datatype='integer' name='volAM_daav' ordinal='90' />
-                      <column datatype='integer' name='volMD_daav' ordinal='91' />
-                      <column datatype='integer' name='volPM_daav' ordinal='92' />
-                      <column datatype='integer' name='volEV_daav' ordinal='93' />
+                      <column datatype='real' name='volEV_smt' ordinal='83' />
+                      <column datatype='real' name='volEA_hvt' ordinal='84' />
+                      <column datatype='real' name='volAM_hvt' ordinal='85' />
+                      <column datatype='real' name='volMD_hvt' ordinal='86' />
+                      <column datatype='real' name='volPM_hvt' ordinal='87' />
+                      <column datatype='real' name='volEV_hvt' ordinal='88' />
+                      <column datatype='real' name='volEA_daav' ordinal='89' />
+                      <column datatype='real' name='volAM_daav' ordinal='90' />
+                      <column datatype='real' name='volMD_daav' ordinal='91' />
+                      <column datatype='real' name='volPM_daav' ordinal='92' />
+                      <column datatype='real' name='volEV_daav' ordinal='93' />
                       <column datatype='real' name='volEA_s2av' ordinal='94' />
                       <column datatype='real' name='volAM_s2av' ordinal='95' />
                       <column datatype='real' name='volMD_s2av' ordinal='96' />
@@ -1121,34 +1121,34 @@
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volEA_dat</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volEA_dat]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volEA_dat</remote-alias>
             <ordinal>64</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volAM_dat</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volAM_dat]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volAM_dat</remote-alias>
             <ordinal>65</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volMD_dat</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volMD_dat]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volMD_dat</remote-alias>
             <ordinal>66</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
@@ -1165,12 +1165,12 @@
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volEV_dat</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volEV_dat]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volEV_dat</remote-alias>
             <ordinal>68</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
@@ -1286,12 +1286,12 @@
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volEA_smt</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volEA_smt]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volEA_smt</remote-alias>
             <ordinal>79</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
@@ -1308,12 +1308,12 @@
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volMD_smt</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volMD_smt]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volMD_smt</remote-alias>
             <ordinal>81</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
@@ -1330,122 +1330,122 @@
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volEV_smt</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volEV_smt]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volEV_smt</remote-alias>
             <ordinal>83</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volEA_hvt</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volEA_hvt]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volEA_hvt</remote-alias>
             <ordinal>84</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volAM_hvt</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volAM_hvt]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volAM_hvt</remote-alias>
             <ordinal>85</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volMD_hvt</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volMD_hvt]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volMD_hvt</remote-alias>
             <ordinal>86</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volPM_hvt</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volPM_hvt]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volPM_hvt</remote-alias>
             <ordinal>87</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volEV_hvt</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volEV_hvt]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volEV_hvt</remote-alias>
             <ordinal>88</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volEA_daav</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volEA_daav]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volEA_daav</remote-alias>
             <ordinal>89</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volAM_daav</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volAM_daav]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volAM_daav</remote-alias>
             <ordinal>90</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volMD_daav</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volMD_daav]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volMD_daav</remote-alias>
             <ordinal>91</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volPM_daav</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volPM_daav]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volPM_daav</remote-alias>
             <ordinal>92</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
           <metadata-record class='column'>
             <remote-name>volEV_daav</remote-name>
-            <remote-type>20</remote-type>
+            <remote-type>5</remote-type>
             <local-name>[volEV_daav]</local-name>
             <parent-name>[avgload5period_vehclasses.csv]</parent-name>
             <remote-alias>volEV_daav</remote-alias>
             <ordinal>93</ordinal>
-            <local-type>integer</local-type>
+            <local-type>real</local-type>
             <aggregation>Sum</aggregation>
             <contains-null>true</contains-null>
           </metadata-record>
@@ -2256,7 +2256,7 @@
       <column caption='Ffs' datatype='real' name='[ffs]' role='measure' type='quantitative' />
       <column caption='Fft' datatype='real' name='[fft]' role='measure' type='quantitative' />
       <column aggregation='Sum' caption='Ft' datatype='integer' name='[ft]' role='dimension' type='ordinal' />
-      <column caption='Gl' datatype='integer' name='[gl]' role='measure' type='quantitative' />
+      <column aggregation='Sum' caption='Gl' datatype='integer' name='[gl]' role='dimension' type='ordinal' />
       <column caption='Lanes' datatype='integer' name='[lanes]' role='measure' type='quantitative' />
       <column caption='Lrtropc' datatype='real' name='[lrtropc]' role='measure' type='quantitative' />
       <column caption='Mph (Interpolated.Csv1)' datatype='integer' name='[mph (interpolated.csv1)]' role='measure' type='quantitative' />
@@ -2274,10 +2274,10 @@
       <column caption='Vc MD' datatype='integer' name='[vcMD]' role='measure' type='quantitative' />
       <column caption='Vc PM' datatype='integer' name='[vcPM]' role='measure' type='quantitative' />
       <column caption='volAM da' datatype='real' name='[volAM_da]' role='measure' type='quantitative' />
-      <column caption='volAM daav' datatype='integer' name='[volAM_daav]' role='measure' type='quantitative' />
-      <column caption='volAM dat' datatype='integer' name='[volAM_dat]' role='measure' type='quantitative' />
+      <column caption='volAM daav' datatype='real' name='[volAM_daav]' role='measure' type='quantitative' />
+      <column caption='volAM dat' datatype='real' name='[volAM_dat]' role='measure' type='quantitative' />
       <column caption='volAM hv' datatype='real' name='[volAM_hv]' role='measure' type='quantitative' />
-      <column caption='volAM hvt' datatype='integer' name='[volAM_hvt]' role='measure' type='quantitative' />
+      <column caption='volAM hvt' datatype='real' name='[volAM_hvt]' role='measure' type='quantitative' />
       <column caption='volAM s2' datatype='real' name='[volAM_s2]' role='measure' type='quantitative' />
       <column caption='volAM s2av' datatype='real' name='[volAM_s2av]' role='measure' type='quantitative' />
       <column caption='volAM s2t' datatype='real' name='[volAM_s2t]' role='measure' type='quantitative' />
@@ -2288,10 +2288,10 @@
       <column caption='volAM smt' datatype='real' name='[volAM_smt]' role='measure' type='quantitative' />
       <column caption='volAM tot' datatype='real' name='[volAM_tot]' role='measure' type='quantitative' />
       <column caption='volEA da' datatype='real' name='[volEA_da]' role='measure' type='quantitative' />
-      <column caption='volEA daav' datatype='integer' name='[volEA_daav]' role='measure' type='quantitative' />
-      <column caption='volEA dat' datatype='integer' name='[volEA_dat]' role='measure' type='quantitative' />
+      <column caption='volEA daav' datatype='real' name='[volEA_daav]' role='measure' type='quantitative' />
+      <column caption='volEA dat' datatype='real' name='[volEA_dat]' role='measure' type='quantitative' />
       <column caption='volEA hv' datatype='real' name='[volEA_hv]' role='measure' type='quantitative' />
-      <column caption='volEA hvt' datatype='integer' name='[volEA_hvt]' role='measure' type='quantitative' />
+      <column caption='volEA hvt' datatype='real' name='[volEA_hvt]' role='measure' type='quantitative' />
       <column caption='volEA s2' datatype='real' name='[volEA_s2]' role='measure' type='quantitative' />
       <column caption='volEA s2av' datatype='real' name='[volEA_s2av]' role='measure' type='quantitative' />
       <column caption='volEA s2t' datatype='real' name='[volEA_s2t]' role='measure' type='quantitative' />
@@ -2299,13 +2299,13 @@
       <column caption='volEA s3av' datatype='real' name='[volEA_s3av]' role='measure' type='quantitative' />
       <column caption='volEA s3t' datatype='real' name='[volEA_s3t]' role='measure' type='quantitative' />
       <column caption='volEA sm' datatype='real' name='[volEA_sm]' role='measure' type='quantitative' />
-      <column caption='volEA smt' datatype='integer' name='[volEA_smt]' role='measure' type='quantitative' />
+      <column caption='volEA smt' datatype='real' name='[volEA_smt]' role='measure' type='quantitative' />
       <column caption='volEA tot' datatype='real' name='[volEA_tot]' role='measure' type='quantitative' />
       <column caption='volEV da' datatype='real' name='[volEV_da]' role='measure' type='quantitative' />
-      <column caption='volEV daav' datatype='integer' name='[volEV_daav]' role='measure' type='quantitative' />
-      <column caption='volEV dat' datatype='integer' name='[volEV_dat]' role='measure' type='quantitative' />
+      <column caption='volEV daav' datatype='real' name='[volEV_daav]' role='measure' type='quantitative' />
+      <column caption='volEV dat' datatype='real' name='[volEV_dat]' role='measure' type='quantitative' />
       <column caption='volEV hv' datatype='real' name='[volEV_hv]' role='measure' type='quantitative' />
-      <column caption='volEV hvt' datatype='integer' name='[volEV_hvt]' role='measure' type='quantitative' />
+      <column caption='volEV hvt' datatype='real' name='[volEV_hvt]' role='measure' type='quantitative' />
       <column caption='volEV s2' datatype='real' name='[volEV_s2]' role='measure' type='quantitative' />
       <column caption='volEV s2av' datatype='real' name='[volEV_s2av]' role='measure' type='quantitative' />
       <column caption='volEV s2t' datatype='real' name='[volEV_s2t]' role='measure' type='quantitative' />
@@ -2313,13 +2313,13 @@
       <column caption='volEV s3av' datatype='real' name='[volEV_s3av]' role='measure' type='quantitative' />
       <column caption='volEV s3t' datatype='real' name='[volEV_s3t]' role='measure' type='quantitative' />
       <column caption='volEV sm' datatype='real' name='[volEV_sm]' role='measure' type='quantitative' />
-      <column caption='volEV smt' datatype='integer' name='[volEV_smt]' role='measure' type='quantitative' />
+      <column caption='volEV smt' datatype='real' name='[volEV_smt]' role='measure' type='quantitative' />
       <column caption='volEV tot' datatype='real' name='[volEV_tot]' role='measure' type='quantitative' />
       <column caption='volMD da' datatype='real' name='[volMD_da]' role='measure' type='quantitative' />
-      <column caption='volMD daav' datatype='integer' name='[volMD_daav]' role='measure' type='quantitative' />
-      <column caption='volMD dat' datatype='integer' name='[volMD_dat]' role='measure' type='quantitative' />
+      <column caption='volMD daav' datatype='real' name='[volMD_daav]' role='measure' type='quantitative' />
+      <column caption='volMD dat' datatype='real' name='[volMD_dat]' role='measure' type='quantitative' />
       <column caption='volMD hv' datatype='real' name='[volMD_hv]' role='measure' type='quantitative' />
-      <column caption='volMD hvt' datatype='integer' name='[volMD_hvt]' role='measure' type='quantitative' />
+      <column caption='volMD hvt' datatype='real' name='[volMD_hvt]' role='measure' type='quantitative' />
       <column caption='volMD s2' datatype='real' name='[volMD_s2]' role='measure' type='quantitative' />
       <column caption='volMD s2av' datatype='real' name='[volMD_s2av]' role='measure' type='quantitative' />
       <column caption='volMD s2t' datatype='real' name='[volMD_s2t]' role='measure' type='quantitative' />
@@ -2327,13 +2327,13 @@
       <column caption='volMD s3av' datatype='real' name='[volMD_s3av]' role='measure' type='quantitative' />
       <column caption='volMD s3t' datatype='real' name='[volMD_s3t]' role='measure' type='quantitative' />
       <column caption='volMD sm' datatype='real' name='[volMD_sm]' role='measure' type='quantitative' />
-      <column caption='volMD smt' datatype='integer' name='[volMD_smt]' role='measure' type='quantitative' />
+      <column caption='volMD smt' datatype='real' name='[volMD_smt]' role='measure' type='quantitative' />
       <column caption='volMD tot' datatype='real' name='[volMD_tot]' role='measure' type='quantitative' />
       <column caption='volPM da' datatype='real' name='[volPM_da]' role='measure' type='quantitative' />
-      <column caption='volPM daav' datatype='integer' name='[volPM_daav]' role='measure' type='quantitative' />
+      <column caption='volPM daav' datatype='real' name='[volPM_daav]' role='measure' type='quantitative' />
       <column caption='volPM dat' datatype='real' name='[volPM_dat]' role='measure' type='quantitative' />
       <column caption='volPM hv' datatype='real' name='[volPM_hv]' role='measure' type='quantitative' />
-      <column caption='volPM hvt' datatype='integer' name='[volPM_hvt]' role='measure' type='quantitative' />
+      <column caption='volPM hvt' datatype='real' name='[volPM_hvt]' role='measure' type='quantitative' />
       <column caption='volPM s2' datatype='real' name='[volPM_s2]' role='measure' type='quantitative' />
       <column caption='volPM s2av' datatype='real' name='[volPM_s2av]' role='measure' type='quantitative' />
       <column caption='volPM s2t' datatype='real' name='[volPM_s2t]' role='measure' type='quantitative' />
@@ -2343,7 +2343,7 @@
       <column caption='volPM sm' datatype='real' name='[volPM_sm]' role='measure' type='quantitative' />
       <column caption='volPM smt' datatype='real' name='[volPM_smt]' role='measure' type='quantitative' />
       <column caption='volPM tot' datatype='real' name='[volPM_tot]' role='measure' type='quantitative' />
-      <layout dim-ordering='alphabetic' dim-percentage='0.283312' measure-ordering='alphabetic' measure-percentage='0.716688' show-structure='true' />
+      <layout dim-ordering='alphabetic' dim-percentage='0.135834' measure-ordering='alphabetic' measure-percentage='0.864166' show-structure='true' />
       <semantic-values>
         <semantic-value key='[Country].[Name]' value='&quot;United States&quot;' />
       </semantic-values>
@@ -2791,7 +2791,7 @@
     </datasource>
   </datasources>
   <worksheets>
-    <worksheet name='CO2 emissions (in grams)'>
+    <worksheet name='CO2 emissions (in metric tons)'>
       <table>
         <view>
           <datasources>
@@ -2836,6 +2836,9 @@
             <column caption='CO2emissions_grams' datatype='real' name='[Calculation_1279022319856611349]' role='measure' type='quantitative'>
               <calculation class='tableau' formula='[Calculation_1279022319549911056]+[Calculation_1279022319805927441]+[Calculation_1279022319806341138]+[Calculation_1279022319806914579]+[Calculation_1279022319855931412]' />
             </column>
+            <column caption='SUM([CO2emissions_grams])/1000000' datatype='real' name='[Calculation_396035318299529216]' role='measure' type='quantitative' user:unnamed='CO2 emissions (in grams)'>
+              <calculation class='tableau' formula='SUM([Calculation_1279022319856611349])/1000000' />
+            </column>
             <column datatype='real' name='[Contra Costa (interpolated.csv1)]' role='measure' type='quantitative' />
             <column datatype='real' name='[Contra Costa (interpolated.csv2)]' role='measure' type='quantitative' />
             <column datatype='real' name='[Contra Costa (interpolated.csv3)]' role='measure' type='quantitative' />
@@ -2877,11 +2880,11 @@
             <column datatype='real' name='[Sonoma (interpolated.csv4)]' role='measure' type='quantitative' />
             <column datatype='real' name='[Sonoma]' role='measure' type='quantitative' />
             <column caption='Distance' datatype='real' name='[distance]' role='measure' type='quantitative' />
-            <column caption='Gl' datatype='integer' name='[gl]' role='measure' type='quantitative' />
-            <column-instance column='[Calculation_1279022319856611349]' derivation='Sum' name='[sum:Calculation_1279022319856611349:qk]' pivot='key' type='quantitative' />
+            <column aggregation='Sum' caption='Gl' datatype='integer' name='[gl]' role='dimension' type='ordinal' />
+            <column-instance column='[Calculation_396035318299529216]' derivation='User' name='[usr:Calculation_396035318299529216:qk]' pivot='key' type='quantitative' />
             <column caption='volAM da' datatype='real' name='[volAM_da]' role='measure' type='quantitative' />
-            <column caption='volAM daav' datatype='integer' name='[volAM_daav]' role='measure' type='quantitative' />
-            <column caption='volAM dat' datatype='integer' name='[volAM_dat]' role='measure' type='quantitative' />
+            <column caption='volAM daav' datatype='real' name='[volAM_daav]' role='measure' type='quantitative' />
+            <column caption='volAM dat' datatype='real' name='[volAM_dat]' role='measure' type='quantitative' />
             <column caption='volAM s2' datatype='real' name='[volAM_s2]' role='measure' type='quantitative' />
             <column caption='volAM s2av' datatype='real' name='[volAM_s2av]' role='measure' type='quantitative' />
             <column caption='volAM s2t' datatype='real' name='[volAM_s2t]' role='measure' type='quantitative' />
@@ -2889,8 +2892,8 @@
             <column caption='volAM s3av' datatype='real' name='[volAM_s3av]' role='measure' type='quantitative' />
             <column caption='volAM s3t' datatype='real' name='[volAM_s3t]' role='measure' type='quantitative' />
             <column caption='volEA da' datatype='real' name='[volEA_da]' role='measure' type='quantitative' />
-            <column caption='volEA daav' datatype='integer' name='[volEA_daav]' role='measure' type='quantitative' />
-            <column caption='volEA dat' datatype='integer' name='[volEA_dat]' role='measure' type='quantitative' />
+            <column caption='volEA daav' datatype='real' name='[volEA_daav]' role='measure' type='quantitative' />
+            <column caption='volEA dat' datatype='real' name='[volEA_dat]' role='measure' type='quantitative' />
             <column caption='volEA s2' datatype='real' name='[volEA_s2]' role='measure' type='quantitative' />
             <column caption='volEA s2av' datatype='real' name='[volEA_s2av]' role='measure' type='quantitative' />
             <column caption='volEA s2t' datatype='real' name='[volEA_s2t]' role='measure' type='quantitative' />
@@ -2898,8 +2901,8 @@
             <column caption='volEA s3av' datatype='real' name='[volEA_s3av]' role='measure' type='quantitative' />
             <column caption='volEA s3t' datatype='real' name='[volEA_s3t]' role='measure' type='quantitative' />
             <column caption='volEV da' datatype='real' name='[volEV_da]' role='measure' type='quantitative' />
-            <column caption='volEV daav' datatype='integer' name='[volEV_daav]' role='measure' type='quantitative' />
-            <column caption='volEV dat' datatype='integer' name='[volEV_dat]' role='measure' type='quantitative' />
+            <column caption='volEV daav' datatype='real' name='[volEV_daav]' role='measure' type='quantitative' />
+            <column caption='volEV dat' datatype='real' name='[volEV_dat]' role='measure' type='quantitative' />
             <column caption='volEV s2' datatype='real' name='[volEV_s2]' role='measure' type='quantitative' />
             <column caption='volEV s2av' datatype='real' name='[volEV_s2av]' role='measure' type='quantitative' />
             <column caption='volEV s2t' datatype='real' name='[volEV_s2t]' role='measure' type='quantitative' />
@@ -2907,8 +2910,8 @@
             <column caption='volEV s3av' datatype='real' name='[volEV_s3av]' role='measure' type='quantitative' />
             <column caption='volEV s3t' datatype='real' name='[volEV_s3t]' role='measure' type='quantitative' />
             <column caption='volMD da' datatype='real' name='[volMD_da]' role='measure' type='quantitative' />
-            <column caption='volMD daav' datatype='integer' name='[volMD_daav]' role='measure' type='quantitative' />
-            <column caption='volMD dat' datatype='integer' name='[volMD_dat]' role='measure' type='quantitative' />
+            <column caption='volMD daav' datatype='real' name='[volMD_daav]' role='measure' type='quantitative' />
+            <column caption='volMD dat' datatype='real' name='[volMD_dat]' role='measure' type='quantitative' />
             <column caption='volMD s2' datatype='real' name='[volMD_s2]' role='measure' type='quantitative' />
             <column caption='volMD s2av' datatype='real' name='[volMD_s2av]' role='measure' type='quantitative' />
             <column caption='volMD s2t' datatype='real' name='[volMD_s2t]' role='measure' type='quantitative' />
@@ -2916,7 +2919,7 @@
             <column caption='volMD s3av' datatype='real' name='[volMD_s3av]' role='measure' type='quantitative' />
             <column caption='volMD s3t' datatype='real' name='[volMD_s3t]' role='measure' type='quantitative' />
             <column caption='volPM da' datatype='real' name='[volPM_da]' role='measure' type='quantitative' />
-            <column caption='volPM daav' datatype='integer' name='[volPM_daav]' role='measure' type='quantitative' />
+            <column caption='volPM daav' datatype='real' name='[volPM_daav]' role='measure' type='quantitative' />
             <column caption='volPM dat' datatype='real' name='[volPM_dat]' role='measure' type='quantitative' />
             <column caption='volPM s2' datatype='real' name='[volPM_s2]' role='measure' type='quantitative' />
             <column caption='volPM s2av' datatype='real' name='[volPM_s2av]' role='measure' type='quantitative' />
@@ -2935,7 +2938,7 @@
             </view>
             <mark class='Automatic' />
             <encodings>
-              <text column='[federated.07xhurh00xdevv1ajkv6000gt6if].[sum:Calculation_1279022319856611349:qk]' />
+              <text column='[federated.07xhurh00xdevv1ajkv6000gt6if].[usr:Calculation_396035318299529216:qk]' />
             </encodings>
             <style>
               <style-rule element='mark'>
@@ -2949,7 +2952,7 @@
       </table>
       <simple-id uuid='{64C705B1-AFDA-4842-AA66-AA35E43DF7CB}' />
     </worksheet>
-    <worksheet name='CO2GramsPerCapita'>
+    <worksheet name='CO2TonsPerCapita'>
       <table>
         <view>
           <datasources>
@@ -3043,10 +3046,10 @@
             <column datatype='real' name='[Sonoma (interpolated.csv4)]' role='measure' type='quantitative' />
             <column datatype='real' name='[Sonoma]' role='measure' type='quantitative' />
             <column caption='Distance' datatype='real' name='[distance]' role='measure' type='quantitative' />
-            <column caption='Gl' datatype='integer' name='[gl]' role='measure' type='quantitative' />
+            <column aggregation='Sum' caption='Gl' datatype='integer' name='[gl]' role='dimension' type='ordinal' />
             <column caption='volAM da' datatype='real' name='[volAM_da]' role='measure' type='quantitative' />
-            <column caption='volAM daav' datatype='integer' name='[volAM_daav]' role='measure' type='quantitative' />
-            <column caption='volAM dat' datatype='integer' name='[volAM_dat]' role='measure' type='quantitative' />
+            <column caption='volAM daav' datatype='real' name='[volAM_daav]' role='measure' type='quantitative' />
+            <column caption='volAM dat' datatype='real' name='[volAM_dat]' role='measure' type='quantitative' />
             <column caption='volAM s2' datatype='real' name='[volAM_s2]' role='measure' type='quantitative' />
             <column caption='volAM s2av' datatype='real' name='[volAM_s2av]' role='measure' type='quantitative' />
             <column caption='volAM s2t' datatype='real' name='[volAM_s2t]' role='measure' type='quantitative' />
@@ -3054,8 +3057,8 @@
             <column caption='volAM s3av' datatype='real' name='[volAM_s3av]' role='measure' type='quantitative' />
             <column caption='volAM s3t' datatype='real' name='[volAM_s3t]' role='measure' type='quantitative' />
             <column caption='volEA da' datatype='real' name='[volEA_da]' role='measure' type='quantitative' />
-            <column caption='volEA daav' datatype='integer' name='[volEA_daav]' role='measure' type='quantitative' />
-            <column caption='volEA dat' datatype='integer' name='[volEA_dat]' role='measure' type='quantitative' />
+            <column caption='volEA daav' datatype='real' name='[volEA_daav]' role='measure' type='quantitative' />
+            <column caption='volEA dat' datatype='real' name='[volEA_dat]' role='measure' type='quantitative' />
             <column caption='volEA s2' datatype='real' name='[volEA_s2]' role='measure' type='quantitative' />
             <column caption='volEA s2av' datatype='real' name='[volEA_s2av]' role='measure' type='quantitative' />
             <column caption='volEA s2t' datatype='real' name='[volEA_s2t]' role='measure' type='quantitative' />
@@ -3063,8 +3066,8 @@
             <column caption='volEA s3av' datatype='real' name='[volEA_s3av]' role='measure' type='quantitative' />
             <column caption='volEA s3t' datatype='real' name='[volEA_s3t]' role='measure' type='quantitative' />
             <column caption='volEV da' datatype='real' name='[volEV_da]' role='measure' type='quantitative' />
-            <column caption='volEV daav' datatype='integer' name='[volEV_daav]' role='measure' type='quantitative' />
-            <column caption='volEV dat' datatype='integer' name='[volEV_dat]' role='measure' type='quantitative' />
+            <column caption='volEV daav' datatype='real' name='[volEV_daav]' role='measure' type='quantitative' />
+            <column caption='volEV dat' datatype='real' name='[volEV_dat]' role='measure' type='quantitative' />
             <column caption='volEV s2' datatype='real' name='[volEV_s2]' role='measure' type='quantitative' />
             <column caption='volEV s2av' datatype='real' name='[volEV_s2av]' role='measure' type='quantitative' />
             <column caption='volEV s2t' datatype='real' name='[volEV_s2t]' role='measure' type='quantitative' />
@@ -3072,8 +3075,8 @@
             <column caption='volEV s3av' datatype='real' name='[volEV_s3av]' role='measure' type='quantitative' />
             <column caption='volEV s3t' datatype='real' name='[volEV_s3t]' role='measure' type='quantitative' />
             <column caption='volMD da' datatype='real' name='[volMD_da]' role='measure' type='quantitative' />
-            <column caption='volMD daav' datatype='integer' name='[volMD_daav]' role='measure' type='quantitative' />
-            <column caption='volMD dat' datatype='integer' name='[volMD_dat]' role='measure' type='quantitative' />
+            <column caption='volMD daav' datatype='real' name='[volMD_daav]' role='measure' type='quantitative' />
+            <column caption='volMD dat' datatype='real' name='[volMD_dat]' role='measure' type='quantitative' />
             <column caption='volMD s2' datatype='real' name='[volMD_s2]' role='measure' type='quantitative' />
             <column caption='volMD s2av' datatype='real' name='[volMD_s2av]' role='measure' type='quantitative' />
             <column caption='volMD s2t' datatype='real' name='[volMD_s2t]' role='measure' type='quantitative' />
@@ -3081,7 +3084,7 @@
             <column caption='volMD s3av' datatype='real' name='[volMD_s3av]' role='measure' type='quantitative' />
             <column caption='volMD s3t' datatype='real' name='[volMD_s3t]' role='measure' type='quantitative' />
             <column caption='volPM da' datatype='real' name='[volPM_da]' role='measure' type='quantitative' />
-            <column caption='volPM daav' datatype='integer' name='[volPM_daav]' role='measure' type='quantitative' />
+            <column caption='volPM daav' datatype='real' name='[volPM_daav]' role='measure' type='quantitative' />
             <column caption='volPM dat' datatype='real' name='[volPM_dat]' role='measure' type='quantitative' />
             <column caption='volPM s2' datatype='real' name='[volPM_s2]' role='measure' type='quantitative' />
             <column caption='volPM s2av' datatype='real' name='[volPM_s2av]' role='measure' type='quantitative' />
@@ -3113,6 +3116,192 @@
         <cols />
       </table>
       <simple-id uuid='{895E5185-0304-4FB1-8E85-FC2931704C5F}' />
+    </worksheet>
+    <worksheet name='EmissionsByCounty'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='avgload5period_vehclasses.csv+ (Multiple Connections)' name='federated.07xhurh00xdevv1ajkv6000gt6if' />
+          </datasources>
+          <datasource-dependencies datasource='federated.07xhurh00xdevv1ajkv6000gt6if'>
+            <column datatype='real' name='[Alameda (interpolated.csv1)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Alameda (interpolated.csv2)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Alameda (interpolated.csv3)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Alameda (interpolated.csv4)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Alameda]' role='measure' type='quantitative' />
+            <column caption='County_Name' datatype='string' name='[Calculation_1279022319542837256]' role='dimension' type='nominal'>
+              <calculation class='tableau' formula='if [gl] = 1 then &quot;San Francisco&quot;&#13;&#10;ELSEIF &#13;&#10;[gl] = 2 then &quot;San Mateo&quot;&#13;&#10;Elseif&#13;&#10;[gl] = 3 then &quot;Santa Clara&quot;&#13;&#10;elseif&#13;&#10;[gl] = 4 then &quot;Alameda&quot;&#13;&#10;elseif&#13;&#10;[gl] = 5 then &quot;Contra Costa&quot;&#13;&#10;elseif&#13;&#10;[gl] = 6 then &quot;Solano&quot;&#13;&#10;elseif&#13;&#10;[gl] = 7 then &quot;Napa&quot;&#13;&#10;elseif&#13;&#10;[gl] = 8 then &quot;Sonoma&quot;&#13;&#10;elseif&#13;&#10;[gl] = 9 then &quot;Marin&quot;&#13;&#10;END' />
+            </column>
+            <column caption='VMT_PersonalTravel_EA' datatype='real' name='[Calculation_1279022319544557577]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='[distance]*(&#13;&#10;[volEA_da]&#13;&#10;+[volEA_s2]&#13;&#10;+[volEA_s3]&#13;&#10;+[volEA_dat]&#13;&#10;+[volEA_s2t]&#13;&#10;+[volEA_s3t]&#13;&#10;+[volEA_daav]&#13;&#10;+[volEA_s2av]&#13;&#10;+[volEA_s3av])' />
+            </column>
+            <column caption='VMT_PersonalTravel_AM' datatype='real' name='[Calculation_1279022319547920394]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='[distance]*(&#13;&#10;[volAM_da]&#13;&#10;+[volAM_s2]&#13;&#10;+[volAM_s3]&#13;&#10;+[volAM_dat]&#13;&#10;+[volAM_s2t]&#13;&#10;+[volAM_s3t]&#13;&#10;+[volAM_daav]&#13;&#10;+[volAM_s2av]&#13;&#10;+[volAM_s3av])' />
+            </column>
+            <column caption='VMT_PersonalTravel_MD' datatype='real' name='[Calculation_1279022319548018699]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='[distance]*(&#13;&#10;[volMD_da]&#13;&#10;+[volMD_s2]&#13;&#10;+[volMD_s3]&#13;&#10;+[volMD_dat]&#13;&#10;+[volMD_s2t]&#13;&#10;+[volMD_s3t]&#13;&#10;+[volMD_daav]&#13;&#10;+[volMD_s2av]&#13;&#10;+[volMD_s3av])' />
+            </column>
+            <column caption='VMT_PersonalTravel_PM' datatype='real' name='[Calculation_1279022319548190732]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='[distance]*(&#13;&#10;[volPM_da]&#13;&#10;+[volPM_s2]&#13;&#10;+[volPM_s3]&#13;&#10;+[volPM_dat]&#13;&#10;+[volPM_s2t]&#13;&#10;+[volPM_s3t]&#13;&#10;+[volPM_daav]&#13;&#10;+[volPM_s2av]&#13;&#10;+[volPM_s3av])' />
+            </column>
+            <column caption='VMT_PersonalTravel_EV' datatype='real' name='[Calculation_1279022319548547085]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='[distance]*(&#13;&#10;[volEV_da]&#13;&#10;+[volEV_s2]&#13;&#10;+[volEV_s3]&#13;&#10;+[volEV_dat]&#13;&#10;+[volEV_s2t]&#13;&#10;+[volEV_s3t]&#13;&#10;+[volEV_daav]&#13;&#10;+[volEV_s2av]&#13;&#10;+[volEV_s3av])' />
+            </column>
+            <column caption='VMT_PersonalTravel_Total' datatype='real' name='[Calculation_1279022319549345806]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='[Calculation_1279022319544557577]&#13;&#10;+ [Calculation_1279022319547920394]&#13;&#10;+ [Calculation_1279022319548018699]&#13;&#10;+ [Calculation_1279022319548190732]&#13;&#10;+ [Calculation_1279022319548547085]' />
+            </column>
+            <column caption='VMTxEmR_ea' datatype='real' name='[Calculation_1279022319549911056]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='[Calculation_1279022319544557577] * &#13;&#10;(if [gl] = 1 then [San Francisco]&#13;&#10;elseif [gl] = 2 then  [San Mateo]&#9;&#13;&#10;elseif [gl] = 3 then  [Santa Clara]&#13;&#10;elseif [gl] = 4 then  [Alameda]&#13;&#10;elseif [gl] = 5 then [Contra Costa]&#13;&#10;elseif [gl] = 6 then [Solano]&#13;&#10;elseif [gl] = 7 then [Napa]&#13;&#10;elseif [gl] = 8 then [Sonoma]&#13;&#10;elseif [gl] = 9 then [Marin]&#13;&#10;END)' />
+            </column>
+            <column caption='VMTxEmR_am' datatype='real' name='[Calculation_1279022319805927441]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='[Calculation_1279022319547920394] * &#13;&#10;(if [gl] = 1 then [San Francisco (interpolated.csv1)]&#13;&#10;elseif [gl] = 2 then  [San Mateo (interpolated.csv1)]&#9;&#13;&#10;elseif [gl] = 3 then  [Santa Clara (interpolated.csv1)]&#13;&#10;elseif [gl] = 4 then  [Alameda (interpolated.csv1)]&#13;&#10;elseif [gl] = 5 then [Contra Costa (interpolated.csv1)]&#13;&#10;elseif [gl] = 6 then [Solano (interpolated.csv1)]&#13;&#10;elseif [gl] = 7 then [Napa (interpolated.csv1)]&#13;&#10;elseif [gl] = 8 then [Sonoma (interpolated.csv1)]&#13;&#10;elseif [gl] = 9 then [Marin (interpolated.csv1)]&#13;&#10;END)' />
+            </column>
+            <column caption='VMTxEmR_md' datatype='real' name='[Calculation_1279022319806341138]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='[Calculation_1279022319548018699] * &#13;&#10;(if [gl] = 1 then [San Francisco (interpolated.csv2)]&#13;&#10;elseif [gl] = 2 then  [San Mateo (interpolated.csv2)]&#9;&#13;&#10;elseif [gl] = 3 then  [Santa Clara (interpolated.csv2)]&#13;&#10;elseif [gl] = 4 then  [Alameda (interpolated.csv2)]&#13;&#10;elseif [gl] = 5 then [Contra Costa (interpolated.csv2)]&#13;&#10;elseif [gl] = 6 then [Solano (interpolated.csv2)]&#13;&#10;elseif [gl] = 7 then [Napa (interpolated.csv2)]&#13;&#10;elseif [gl] = 8 then [Sonoma (interpolated.csv2)]&#13;&#10;elseif [gl] = 9 then [Marin (interpolated.csv2)]&#13;&#10;END)' />
+            </column>
+            <column caption='VMTxEmR_pm' datatype='real' name='[Calculation_1279022319806914579]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='[Calculation_1279022319548190732] * &#13;&#10;(if [gl] = 1 then [San Francisco (interpolated.csv3)]&#13;&#10;elseif [gl] = 2 then  [San Mateo (interpolated.csv3)]&#9;&#13;&#10;elseif [gl] = 3 then  [Santa Clara (interpolated.csv3)]&#13;&#10;elseif [gl] = 4 then  [Alameda (interpolated.csv3)]&#13;&#10;elseif [gl] = 5 then [Contra Costa (interpolated.csv3)]&#13;&#10;elseif [gl] = 6 then [Solano (interpolated.csv3)]&#13;&#10;elseif [gl] = 7 then [Napa (interpolated.csv3)]&#13;&#10;elseif [gl] = 8 then [Sonoma (interpolated.csv3)]&#13;&#10;elseif [gl] = 9 then [Marin (interpolated.csv3)]&#13;&#10;END)' />
+            </column>
+            <column caption='VMTxEmR_ev' datatype='real' name='[Calculation_1279022319855931412]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='[Calculation_1279022319548547085] * &#13;&#10;(if [gl] = 1 then [San Francisco (interpolated.csv4)]&#13;&#10;elseif [gl] = 2 then  [San Mateo (interpolated.csv4)]&#9;&#13;&#10;elseif [gl] = 3 then  [Santa Clara (interpolated.csv4)]&#13;&#10;elseif [gl] = 4 then  [Alameda (interpolated.csv4)]&#13;&#10;elseif [gl] = 5 then [Contra Costa (interpolated.csv4)]&#13;&#10;elseif [gl] = 6 then [Solano (interpolated.csv4)]&#13;&#10;elseif [gl] = 7 then [Napa (interpolated.csv4)]&#13;&#10;elseif [gl] = 8 then [Sonoma (interpolated.csv4)]&#13;&#10;elseif [gl] = 9 then [Marin (interpolated.csv4)]&#13;&#10;END)' />
+            </column>
+            <column caption='CO2emissions_grams' datatype='real' name='[Calculation_1279022319856611349]' role='measure' type='quantitative'>
+              <calculation class='tableau' formula='[Calculation_1279022319549911056]+[Calculation_1279022319805927441]+[Calculation_1279022319806341138]+[Calculation_1279022319806914579]+[Calculation_1279022319855931412]' />
+            </column>
+            <column caption='SUM([CO2emissions_grams]) / 1000000' datatype='real' name='[Calculation_396035318305800193]' role='measure' type='quantitative' user:unnamed='EmissionsByCounty'>
+              <calculation class='tableau' formula='SUM([Calculation_1279022319856611349]) / 1000000' />
+            </column>
+            <column datatype='real' name='[Contra Costa (interpolated.csv1)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Contra Costa (interpolated.csv2)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Contra Costa (interpolated.csv3)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Contra Costa (interpolated.csv4)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Contra Costa]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Marin (interpolated.csv1)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Marin (interpolated.csv2)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Marin (interpolated.csv3)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Marin (interpolated.csv4)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Marin]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Napa (interpolated.csv1)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Napa (interpolated.csv2)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Napa (interpolated.csv3)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Napa (interpolated.csv4)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Napa]' role='measure' type='quantitative' />
+            <column datatype='real' name='[San Francisco (interpolated.csv1)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[San Francisco (interpolated.csv2)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[San Francisco (interpolated.csv3)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[San Francisco (interpolated.csv4)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[San Francisco]' role='measure' type='quantitative' />
+            <column datatype='real' name='[San Mateo (interpolated.csv1)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[San Mateo (interpolated.csv2)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[San Mateo (interpolated.csv3)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[San Mateo (interpolated.csv4)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[San Mateo]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Santa Clara (interpolated.csv1)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Santa Clara (interpolated.csv2)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Santa Clara (interpolated.csv3)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Santa Clara (interpolated.csv4)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Santa Clara]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Solano (interpolated.csv1)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Solano (interpolated.csv2)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Solano (interpolated.csv3)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Solano (interpolated.csv4)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Solano]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Sonoma (interpolated.csv1)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Sonoma (interpolated.csv2)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Sonoma (interpolated.csv3)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Sonoma (interpolated.csv4)]' role='measure' type='quantitative' />
+            <column datatype='real' name='[Sonoma]' role='measure' type='quantitative' />
+            <column caption='Distance' datatype='real' name='[distance]' role='measure' type='quantitative' />
+            <column aggregation='Sum' caption='Gl' datatype='integer' name='[gl]' role='dimension' type='ordinal' />
+            <column-instance column='[Calculation_1279022319542837256]' derivation='None' name='[none:Calculation_1279022319542837256:nk]' pivot='key' type='nominal' />
+            <column-instance column='[Calculation_1279022319549345806]' derivation='Sum' name='[sum:Calculation_1279022319549345806:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[Calculation_396035318305800193]' derivation='User' name='[usr:Calculation_396035318305800193:qk]' pivot='key' type='quantitative' />
+            <column caption='volAM da' datatype='real' name='[volAM_da]' role='measure' type='quantitative' />
+            <column caption='volAM daav' datatype='real' name='[volAM_daav]' role='measure' type='quantitative' />
+            <column caption='volAM dat' datatype='real' name='[volAM_dat]' role='measure' type='quantitative' />
+            <column caption='volAM s2' datatype='real' name='[volAM_s2]' role='measure' type='quantitative' />
+            <column caption='volAM s2av' datatype='real' name='[volAM_s2av]' role='measure' type='quantitative' />
+            <column caption='volAM s2t' datatype='real' name='[volAM_s2t]' role='measure' type='quantitative' />
+            <column caption='volAM s3' datatype='real' name='[volAM_s3]' role='measure' type='quantitative' />
+            <column caption='volAM s3av' datatype='real' name='[volAM_s3av]' role='measure' type='quantitative' />
+            <column caption='volAM s3t' datatype='real' name='[volAM_s3t]' role='measure' type='quantitative' />
+            <column caption='volEA da' datatype='real' name='[volEA_da]' role='measure' type='quantitative' />
+            <column caption='volEA daav' datatype='real' name='[volEA_daav]' role='measure' type='quantitative' />
+            <column caption='volEA dat' datatype='real' name='[volEA_dat]' role='measure' type='quantitative' />
+            <column caption='volEA s2' datatype='real' name='[volEA_s2]' role='measure' type='quantitative' />
+            <column caption='volEA s2av' datatype='real' name='[volEA_s2av]' role='measure' type='quantitative' />
+            <column caption='volEA s2t' datatype='real' name='[volEA_s2t]' role='measure' type='quantitative' />
+            <column caption='volEA s3' datatype='real' name='[volEA_s3]' role='measure' type='quantitative' />
+            <column caption='volEA s3av' datatype='real' name='[volEA_s3av]' role='measure' type='quantitative' />
+            <column caption='volEA s3t' datatype='real' name='[volEA_s3t]' role='measure' type='quantitative' />
+            <column caption='volEV da' datatype='real' name='[volEV_da]' role='measure' type='quantitative' />
+            <column caption='volEV daav' datatype='real' name='[volEV_daav]' role='measure' type='quantitative' />
+            <column caption='volEV dat' datatype='real' name='[volEV_dat]' role='measure' type='quantitative' />
+            <column caption='volEV s2' datatype='real' name='[volEV_s2]' role='measure' type='quantitative' />
+            <column caption='volEV s2av' datatype='real' name='[volEV_s2av]' role='measure' type='quantitative' />
+            <column caption='volEV s2t' datatype='real' name='[volEV_s2t]' role='measure' type='quantitative' />
+            <column caption='volEV s3' datatype='real' name='[volEV_s3]' role='measure' type='quantitative' />
+            <column caption='volEV s3av' datatype='real' name='[volEV_s3av]' role='measure' type='quantitative' />
+            <column caption='volEV s3t' datatype='real' name='[volEV_s3t]' role='measure' type='quantitative' />
+            <column caption='volMD da' datatype='real' name='[volMD_da]' role='measure' type='quantitative' />
+            <column caption='volMD daav' datatype='real' name='[volMD_daav]' role='measure' type='quantitative' />
+            <column caption='volMD dat' datatype='real' name='[volMD_dat]' role='measure' type='quantitative' />
+            <column caption='volMD s2' datatype='real' name='[volMD_s2]' role='measure' type='quantitative' />
+            <column caption='volMD s2av' datatype='real' name='[volMD_s2av]' role='measure' type='quantitative' />
+            <column caption='volMD s2t' datatype='real' name='[volMD_s2t]' role='measure' type='quantitative' />
+            <column caption='volMD s3' datatype='real' name='[volMD_s3]' role='measure' type='quantitative' />
+            <column caption='volMD s3av' datatype='real' name='[volMD_s3av]' role='measure' type='quantitative' />
+            <column caption='volMD s3t' datatype='real' name='[volMD_s3t]' role='measure' type='quantitative' />
+            <column caption='volPM da' datatype='real' name='[volPM_da]' role='measure' type='quantitative' />
+            <column caption='volPM daav' datatype='real' name='[volPM_daav]' role='measure' type='quantitative' />
+            <column caption='volPM dat' datatype='real' name='[volPM_dat]' role='measure' type='quantitative' />
+            <column caption='volPM s2' datatype='real' name='[volPM_s2]' role='measure' type='quantitative' />
+            <column caption='volPM s2av' datatype='real' name='[volPM_s2av]' role='measure' type='quantitative' />
+            <column caption='volPM s2t' datatype='real' name='[volPM_s2t]' role='measure' type='quantitative' />
+            <column caption='volPM s3' datatype='real' name='[volPM_s3]' role='measure' type='quantitative' />
+            <column caption='volPM s3av' datatype='real' name='[volPM_s3av]' role='measure' type='quantitative' />
+            <column caption='volPM s3t' datatype='real' name='[volPM_s3t]' role='measure' type='quantitative' />
+          </datasource-dependencies>
+          <filter class='categorical' column='[federated.07xhurh00xdevv1ajkv6000gt6if].[:Measure Names]'>
+            <groupfilter function='union' user:op='manual'>
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.07xhurh00xdevv1ajkv6000gt6if].[usr:Calculation_396035318305800193:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.07xhurh00xdevv1ajkv6000gt6if].[sum:Calculation_1279022319549345806:qk]&quot;' />
+            </groupfilter>
+          </filter>
+          <slices>
+            <column>[federated.07xhurh00xdevv1ajkv6000gt6if].[:Measure Names]</column>
+          </slices>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='cell'>
+            <format attr='width' field='[federated.07xhurh00xdevv1ajkv6000gt6if].[:Measure Names]' value='192' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Automatic' />
+            <encodings>
+              <text column='[federated.07xhurh00xdevv1ajkv6000gt6if].[Multiple Values]' />
+            </encodings>
+            <style>
+              <style-rule element='mark'>
+                <format attr='mark-labels-show' value='true' />
+              </style-rule>
+              <style-rule element='pane'>
+                <format attr='minwidth' value='-1' />
+                <format attr='maxwidth' value='-1' />
+              </style-rule>
+            </style>
+          </pane>
+        </panes>
+        <rows total='true'>[federated.07xhurh00xdevv1ajkv6000gt6if].[none:Calculation_1279022319542837256:nk]</rows>
+        <cols total='true'>[federated.07xhurh00xdevv1ajkv6000gt6if].[:Measure Names]</cols>
+      </table>
+      <simple-id uuid='{0172831F-01E5-4EA9-8A39-785B9389C7F4}' />
     </worksheet>
     <worksheet name='Population'>
       <table>
@@ -3150,7 +3339,7 @@
     </worksheet>
   </worksheets>
   <windows source-height='51'>
-    <window class='worksheet' maximized='true' name='CO2 emissions (in grams)'>
+    <window class='worksheet' name='CO2 emissions (in metric tons)'>
       <cards>
         <edge name='left'>
           <strip size='160'>
@@ -3224,7 +3413,7 @@
       </viewpoint>
       <simple-id uuid='{21B404CE-A34C-4466-A8C7-C75DD31BD216}' />
     </window>
-    <window class='worksheet' name='CO2GramsPerCapita'>
+    <window class='worksheet' name='CO2TonsPerCapita'>
       <cards>
         <edge name='left'>
           <strip size='160'>
@@ -3247,84 +3436,304 @@
       </cards>
       <simple-id uuid='{A602F03A-F9BC-4246-AE73-BD9970EBADC1}' />
     </window>
+    <window class='worksheet' maximized='true' name='EmissionsByCounty'>
+      <cards>
+        <edge name='left'>
+          <strip size='267'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+            <card type='measures' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='31'>
+            <card type='title' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <highlight>
+          <color-one-way>
+            <field>[federated.07xhurh00xdevv1ajkv6000gt6if].[none:Calculation_1279022319542837256:nk]</field>
+            <field>[federated.07xhurh00xdevv1ajkv6000gt6if].[none:ft:ok]</field>
+            <field>[federated.07xhurh00xdevv1ajkv6000gt6if].[none:gl:ok]</field>
+          </color-one-way>
+        </highlight>
+      </viewpoint>
+      <simple-id uuid='{24B26D4B-46F1-4E72-A466-4D1D5F4928FE}' />
+    </window>
   </windows>
   <thumbnails>
-    <thumbnail height='24' name='CO2 emissions (in grams)' width='104'>
-      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
-    </thumbnail>
-    <thumbnail height='24' name='CO2GramsPerCapita' width='64'>
+    <thumbnail height='24' name='CO2 emissions (in metric tons)' width='64'>
       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
-      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
+      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
+    </thumbnail>
+    <thumbnail height='24' name='CO2TonsPerCapita' width='64'>
+      iVBORw0KGgoAAAANSUhEUgAAAEAAAAAYCAYAAABKtPtEAAAACXBIWXMAAA7DAAAOwwHHb6hk
+      AAACzUlEQVRYhe2VTyhsURzHP48xTSMukQUxZWVSJNwM+VeSsrCwkWGB1dSkbO5qkg1bylYk
+      sdVY+RMyNZM0WdyFGVZCs7j+jKEZdyxm3kLv9uTPW+lMvfnU2Zzf+fM9n84991c6nU7zH5Mj
+      OoBosgJEBxBNVoDoAKLJChAdQDRZAaIDiCYrQHQA0WQFiA4gmowSsLS0RHd3N6qqfqg9Pz8z
+      NzdHW1sbsizjcrnQNM2o+/1++vr6kGUZRVF4enoyaolEgtnZWRwOBw6Hg5mZGZLJJJBBAi4v
+      LwmHwzQ3N39aX1xcpLq6mr29Pfx+P+3t7SwvLwMQiURYW1tjfn4en89HRUUFq6urAKRSKRYW
+      FrBarezv7+Pz+RgfHyc3NxfIEAGvr6+sr6/jdDopKCj4dIyiKAwNDWG1WsnLy6Orqwuz2QzA
+      yckJra2t2O12LBYLw8PDXF9fE4vFuLm54fb2lomJCWNuVVUVJpMJyBABx8fHSJJEfX39l2P+
+      BIY3YV6vl7q6OgBisRg1NTVGvaSkhNLSUuLxOFdXV9jtdgoLCz9dV7iAlZUVANxuNzk538c5
+      PT3F4/Hw+PiIy+Wip6fnn+vruo6u6zw8PAAQjUZRFIWjoyMATN9N/mk0TWNzc5NIJPKu3+v1
+      EgwG3/VdXFxweHiIx+PBYrG8q0mSRDgcRpZlAO7v77m7uyM/Px+bzcbZ2RlFRUUAFBcX09vb
+      y/n5OZ2dnWJvQFlZGVtbWwSDQaMNDAwYj9vfbG9v09/f/+HwALIsEwgECIVC6LrOxsYGlZWV
+      SJKEzWZD0zR2d3dJpVJEo1EODg5obGwEMuAT+IqXlxfcbjeBQIBEIoGqqoyMjNDU1GS0sbEx
+      4vE45eXljI6OMjU1RUdHh/HoAZjNZiYnJ9nZ2aGlpYXBwUFqa2tpaGh42yidoYRCofT09HQ6
+      mUz+6D4ZewNUVcXpdBq/up/iN8LX/VtXQBFmAAAAAElFTkSuQmCC
+    </thumbnail>
+    <thumbnail height='192' name='EmissionsByCounty' width='192'>
+      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
+      xAfWAAAAAElFTkSuQmCC
     </thumbnail>
     <thumbnail height='24' name='Population' width='84'>
       iVBORw0KGgoAAAANSUhEUgAAAFQAAAAYCAYAAABk8drWAAAACXBIWXMAAA7DAAAOwwHHb6hk
-      AAAEX0lEQVRYhe2Yf0zUZRzHXwf3i9/yQ0ERwSRUUMEfExuHCZKhBaIC6YzEssRyjWZaazOt
-      uWCy0kWzZssKK1GvREtnKGL8iJFhmcBwYAyDkx/HHXcHB4jj+oN54zgM3b5Ac/f683k+z3vP
-      87rn+T7f74lMJpMJG4JhN94TeNSwCRUYm1CBsQkVGJtQgbEJFRibUIERj1RwsckwFvN4ZLDt
-      UIGxCRUYm1CBsQkVGJtQgRnxlheKXqORL/bu5NaNaot2d28f0jI+xs1zokV7Q00VR97bRa/R
-      aG7buGsPQfMXW+UMl1FwPIeS0ydJfTcT/1khVvPp7urk/NeHuVqYz927fTw2J4zk9LfNGTcq
-      ylFmZ9Gp0xISrmDd9jdxcHYZWEt3N2ePHKLi0s8AhC2NJmHbG0ikMkQj/X03mq9NDTVVXC+9
-      zDObtyGyszwslWVFtDX9Q1TixofOaGu8xfmjnyMS2RGZkDys0FOHPmLStAAWLV+JWCKm7Nxp
-      1KpGEtLS0bY0o8zez6rUNCb5+XPh2JeIRHas3PQKpv5+8j47iFQuJ2bDZsQSMdrWFty9fbC3
-      F4/fkTf191NZVsT8ZSusZAJ0tLXiNdl3xJyhGXf77lB8+iSK+CQcnJ3vOy5+6+tEPLsWmYMD
-      9mIJIeEKxBIJAHV/VRC0YDG+gUFIZDIU8Ym0327CaNDT3qxCr1ETnZxiHus1ZSr29gOHfdyE
-      Njf8TU9XFz4B04ft7+7qxHXIY2A4hmbU/vE7ji6uBMye85/j7gmAgR/hysVz5p1sNOjxnfG4
-      ud9lggcuHh70Go2oVY34zggyH/+hjItQtaqRkjNK4rZst1jYYJ7akGpeoF6j5sTBDH49e8oq
-      Z3BGofJbAGJfeHnYXT+U+qpr5H64jy69jhUbX2RuxLIRx/T19tB3p5fODi0AXboOvsncQ3V5
-      KTCGl9JgrpdeJmRJJFK5/IHqXT28CI+N52phvlVOVNLzAOja2/gt/ye0Lc0WNVcunCNmQyox
-      6zdZtN+ur6OyrJh123cikcks+hxdXGm6WUtg6EIADB0aDBoNMkdHvHz9aKy7gZOrGwBObhMI
-      jYxCVV9HcHjE2AvVa9RoW1uIiEu8b42uvY2C3BwiVyfhNWUqRoOe4rwTzFq0xCrnHm6eE3nr
-      8DGLnO8/yWJRzKphL6U/iwpYEPW0lUyAwHkLUWbvJ3DeAib5+VNyRonnZF8cXVyRyuXo1G1c
-      KykkVBGF0aCnsqyY8Ng4YBx26LWiS0ybGWy1O/UaNd9lvU9CWjrefgGEPBFJTsZu1KpGpDIZ
-      S9esJ+zJ5VY5D8qdnh6OZu5GEZ9EwOy5NNRU8csPuRY102YG89LeLNy9fVi65jm+2vcOnTot
-      oYoo1ry6AwCxRMrK1K3kfXqA4wc+QO7oRHRyCtOD5wGM72vTYKrLS2moqSI2ZcsDPf8elqab
-      tZT+qGTtazsQS6SC59/jf/GlZOrvR1VfhyJ+3ajIBLhVU0nk6qRRlQnwL3+FlIfwE/SKAAAA
-      AElFTkSuQmCC
+      AAAEtUlEQVRYhe2YbVBUVRyHH9y7XHaRRXEtw+UlDEWQMkcDh5U0taASFEV8GcekF7QSsdKx
+      ZtSsD5ZImTXYWONETcqYb+HoMA1mKgySoyODa6tuIAWIBgoLC8uy3u2Ddad1Sfxw3Rpnn4/n
+      /u65/33mnvM/d/1cLpcLH4ox4L8u4H7DJ1RhfEIVxidUYXxCFcYnVGF8QhVG6C9Q1tjhjTru
+      G3xvqML4hCqMT6jC+IQqjE+owvTb5ZWku7ODvZ9t5pdTlQhqgeRZ83gyYx6C2t8j29Pdzf7C
+      AqrLj6IN0pHx6hvEJU4CwCVJ1JqqqTi4l6y8dxC1Wvm+9tY/OLDtY8ynqxAENcmzspi+YIln
+      LbZOSou2c+boDzidvUSNGcvcvDUEDxnKt5s2UFPxk1teEziQ7A35hEXHyGPVJ37ku08+JGvl
+      28QnTQbAr7+/75Q6NrkkiZIvP0UfGkZiygycvU4O7SgkfFQs46eleuSPFBfRY+9m+vwlXPu9
+      npIvtpK5Yg36UAPnKo9TU3GM5JlZ6EMNslCH3c7O/A1EPz6BxJQZSJJE27WrDDWEe8y/v/Aj
+      HgiPZPzUVAS1QOXh72lpamDm0jyP7I2rzRzZ/TVpL+fiHxAAgK29jX2FBfiLAcQmJMlCvbbk
+      HXY74Me4ydNRCWpEjYan5i6iwXKBmzedbtmuDitXLtdiTJuDWhQZ/shIYhOM1JmqARgzMZn5
+      b61FH2pwu6/BYiZAG0hiahoqQY3aX+xTJkBaTi5Jz2cgajSoBDVxCUYEtbrPrKmqnNgnkmSZ
+      LkniZGkJsQlGhtxWg9eECqI/tvY2TCfLcUkSLkmiu9NKV4eVnq4ut2yvo4dAXTCBwYPksYiY
+      OLo6rHd8RlOthZgJE1Gp+t/J/plx9jo4VXaYiJg4j1zHjVYaLpl5OO5Reay5vpYb15p5bNIU
+      z9/Z75MVQqUSWLBqnduYVheMn5/fXQm4G5y9DmzWdnq6uhC1WlqaGjjw+RZSF+cwfES0R77O
+      VE1V6UFSX8jh6YXZHte7Ozs4tGMbz2UvQzMwCLi1b9qs7cxZvrrPGrzalG6n0XKRAG2gvJT+
+      Ru0vYrO2Y2tvQxeiB6DebEIbpLvjfMMiomhpapD3VH2ogcjYeK43N3oIvVJn4VzlCWa/vgq1
+      KPY534UzP2OIjiFo8BDgVqOsPHyAy+drKNm+1S0bn3SMhavXe1do65VG1KKILkRPo+UiZcVF
+      zFq2Er8B7juPNkjHQ5FRlJfskZvS+apyMlesueP8YdExVJWWMHxENJGj42ltbqLRcoGxyVM9
+      smePH2HclGf+VabDbqe25izT5i+Wx0SNhqUb3UWWFRfxYFiE3JS8KtR6vZVdm9/Her0FXYie
+      9JxcwkaO/utaCzvz32Pm0jyGRURhTJ/L/sIC1s17loHBg5mzfJXchMqKiyjb9ZU8r6jVkr1+
+      ExExcaQsfoXdWzbSVGshaFAI6Tm56EMNOOx2vvlgLca0TCJHx1NvNnFsX7FbfeGjYnnx3XxE
+      rRZL9WkCgwfJK+Ru8dqxqT/OV1VQbzaRsugljzdWCRp/vUTFwT1kvPZmn+depfhffCm5JImm
+      OgvGtNn3RCbAb+ZzTErPvKcyAf4EdXuhL5xypZQAAAAASUVORK5CYII=
     </thumbnail>
   </thumbnails>
 </workbook>
