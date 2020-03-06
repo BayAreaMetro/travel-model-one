@@ -1,10 +1,10 @@
 SETLOCAL EnableDelayedExpansion
 
-set MODEL_DIR=\\MODEL2-D\Model2D-Share\TM152_Calibration\2015_TM152_calib05
-set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.5.2\2015_TM152_IPA_05
+set MODEL_DIR=\\MODEL2-D\Model2D-Share\Projects\2015_TM152_IPA_06
+set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.5.2\2015_TM152_IPA_06
 set CODE_DIR=X:\travel-model-one-calib1.5.2\utilities\calibration
 rem start at 00 when INPUT or skims are updated
-set CALIB_ITER=03
+set CALIB_ITER=00
 
 echo CALIB_ITER=%CALIB_ITER%
 
@@ -14,7 +14,7 @@ cd "%TARGET_DIR%"
 if "%CALIB_ITER%"=="00" (
   echo Exporting skims
   set ITER=3
-  set SAMPLESHARE=1.00
+  set SAMPLESHARE=0.5
 ) else (
   set ITER=1
   set SAMPLESHARE=0.2
