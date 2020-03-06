@@ -145,10 +145,10 @@
 * copy main\jointtripdata_%ITER%.csv main\jointtripdata_temp_EV.csv
 
 ; the number of zones is used throughout to size arrays to store data
-token_zones = '1454'
+token_zones = '2340'
 
 ; arrays and sized as zones x zones to store matrix data in a one-dimensional array
-token_zones_by_zones = '2114116'
+token_zones_by_zones = '5475600'
 
 ; set the sample share as a TP+ token
 token_sample_share = '%SAMPLESHARE%'
@@ -223,7 +223,8 @@ loop period = 1, 5
                 trip_mode         = 16,
                 tour_mode         = 17,
                 tour_category(c)  = 18,
-                av_available      = 19
+                av_available      = 19,
+				sampleRate       = 20
 
       ; create zones x zones one dimensional arrays to store trips, one for each assigned path
       array da          = @token_zones_by_zones@
@@ -272,130 +273,130 @@ loop period = 1, 5
          ; create person trip tables
          ; - drive alone, no value toll
          if ((ri.trip_mode = 1) & (ri.av_available = 0))
-            da[od_position] = da[od_position] + 1
+            da[od_position] = da[od_position] + (1/ri.sampleRate)
 
          ; - drive alone, value toll
          elseif ((ri.trip_mode = 2) & (ri.av_available = 0))
-            datoll[od_position] = datoll[od_position] + 1
+            datoll[od_position] = datoll[od_position] + (1/ri.sampleRate)
 
          ; - shared ride 2, no value toll
          elseif ((ri.trip_mode = 3) & (ri.av_available = 0))
-            sr2[od_position] = sr2[od_position] + 1
+            sr2[od_position] = sr2[od_position] + (1/ri.sampleRate)
 
          ; - shared ride 2, value toll
          elseif ((ri.trip_mode = 4) & (ri.av_available = 0))
-            sr2toll[od_position] = sr2toll[od_position] + 1
+            sr2toll[od_position] = sr2toll[od_position] + (1/ri.sampleRate)
 
          ; - shared ride 3 or more, no value toll
          elseif ((ri.trip_mode = 5) & (ri.av_available = 0))
-            sr3[od_position] = sr3[od_position] + 1
+            sr3[od_position] = sr3[od_position] + (1/ri.sampleRate)
 
          ; - shared ride 3 or more, value toll
          elseif ((ri.trip_mode = 6) & (ri.av_available = 0))
-            sr3toll[od_position] = sr3toll[od_position] + 1
+            sr3toll[od_position] = sr3toll[od_position] + (1/ri.sampleRate)
 
          ; - walk
          elseif (ri.trip_mode = 7)
-            walk[od_position] = walk[od_position] + 1
+            walk[od_position] = walk[od_position] + (1/ri.sampleRate)
 
          ; - bicycle
          elseif (ri.trip_mode = 8)
-            bike[od_position] = bike[od_position] + 1
+            bike[od_position] = bike[od_position] + (1/ri.sampleRate)
 
          ; - walk, local bus, walk
          elseif (ri.trip_mode = 9)
-            wlk_loc_wlk[od_position] = wlk_loc_wlk[od_position] + 1
+            wlk_loc_wlk[od_position] = wlk_loc_wlk[od_position] + (1/ri.sampleRate)
 
          ; - walk, light rail/ferry, walk
          elseif (ri.trip_mode = 10)
-            wlk_lrf_wlk[od_position] = wlk_lrf_wlk[od_position] + 1
+            wlk_lrf_wlk[od_position] = wlk_lrf_wlk[od_position] + (1/ri.sampleRate)
 
          ; - walk, express bus, walk
          elseif (ri.trip_mode = 11)
-            wlk_exp_wlk[od_position] = wlk_exp_wlk[od_position] + 1
+            wlk_exp_wlk[od_position] = wlk_exp_wlk[od_position] + (1/ri.sampleRate)
 
          ; - walk, heavy rail, walk
          elseif (ri.trip_mode = 12)
-            wlk_hvy_wlk[od_position] = wlk_hvy_wlk[od_position] + 1
+            wlk_hvy_wlk[od_position] = wlk_hvy_wlk[od_position] + (1/ri.sampleRate)
 
          ; - walk, commuter rail, walk
          elseif (ri.trip_mode = 13)
-            wlk_com_wlk[od_position] = wlk_com_wlk[od_position] + 1
+            wlk_com_wlk[od_position] = wlk_com_wlk[od_position] + (1/ri.sampleRate)
 
          ; - drive, local, walk (outbound)
          elseif (ri.trip_mode = 14 && ri.inbound = 0)
-            drv_loc_wlk[od_position] = drv_loc_wlk[od_position] + 1
+            drv_loc_wlk[od_position] = drv_loc_wlk[od_position] + (1/ri.sampleRate)
 
          ; - drive, light rail/ferry, walk (outbound)
          elseif (ri.trip_mode = 15 && ri.inbound = 0)
-            drv_lrf_wlk[od_position] = drv_lrf_wlk[od_position] + 1
+            drv_lrf_wlk[od_position] = drv_lrf_wlk[od_position] + (1/ri.sampleRate)
 
          ; - drive, express bus, walk (outbound)
          elseif (ri.trip_mode = 16 && ri.inbound = 0)
-            drv_exp_wlk[od_position] = drv_exp_wlk[od_position] + 1
+            drv_exp_wlk[od_position] = drv_exp_wlk[od_position] + (1/ri.sampleRate)
 
          ; - drive, heavy rail, walk (outbound)
          elseif (ri.trip_mode = 17 && ri.inbound = 0)
-            drv_hvy_wlk[od_position] = drv_hvy_wlk[od_position] + 1
+            drv_hvy_wlk[od_position] = drv_hvy_wlk[od_position] + (1/ri.sampleRate)
 
          ; - drive, commuter rail, walk (outbound)
          elseif (ri.trip_mode = 18 && ri.inbound = 0)
-            drv_com_wlk[od_position] = drv_com_wlk[od_position] + 1
+            drv_com_wlk[od_position] = drv_com_wlk[od_position] + (1/ri.sampleRate)
 
          ; - walk, local, drive (inbound)
          elseif (ri.trip_mode = 14 && ri.inbound = 1)
-            wlk_loc_drv[od_position] = wlk_loc_drv[od_position] + 1
+            wlk_loc_drv[od_position] = wlk_loc_drv[od_position] + (1/ri.sampleRate)
 
          ; - walk, light rail/ferry, drive (inbound)
          elseif (ri.trip_mode = 15 && ri.inbound = 1)
-            wlk_lrf_drv[od_position] = wlk_lrf_drv[od_position] + 1
+            wlk_lrf_drv[od_position] = wlk_lrf_drv[od_position] + (1/ri.sampleRate)
 
          ; - walk, express bus, drive (inbound)
          elseif (ri.trip_mode = 16 && ri.inbound = 1)
-            wlk_exp_drv[od_position] = wlk_exp_drv[od_position] + 1
+            wlk_exp_drv[od_position] = wlk_exp_drv[od_position] + (1/ri.sampleRate)
 
          ; - walk, heavy rail, drive (inbound)
          elseif (ri.trip_mode = 17 && ri.inbound = 1)
-            wlk_hvy_drv[od_position] = wlk_hvy_drv[od_position] + 1
+            wlk_hvy_drv[od_position] = wlk_hvy_drv[od_position] + (1/ri.sampleRate)
 
          ; - walk, commuter rail, drive (inbound)
          elseif (ri.trip_mode = 18 && ri.inbound = 1)
-            wlk_com_drv[od_position] = wlk_com_drv[od_position] + 1
+            wlk_com_drv[od_position] = wlk_com_drv[od_position] + (1/ri.sampleRate)
 
         ; - taxi
          elseif (ri.trip_mode = 19)
-            taxi[od_position] = taxi[od_position] + 1
+            taxi[od_position] = taxi[od_position] + (1/ri.sampleRate)
 
         ; - TNC single
          elseif (ri.trip_mode = 20)
-            single_tnc[od_position] = single_tnc[od_position] + 1
+            single_tnc[od_position] = single_tnc[od_position] + (1/ri.sampleRate)
 
         elseif (ri.trip_mode = 21)
-            shared_tnc[od_position] = shared_tnc[od_position] + 1
+            shared_tnc[od_position] = shared_tnc[od_position] + (1/ri.sampleRate)
 
          ; - drive alone, no value toll
          elseif ((ri.trip_mode = 1) & (ri.av_available = 1))
-            da_av[od_position] = da_av[od_position] + 1
+            da_av[od_position] = da_av[od_position] + (1/ri.sampleRate)
 
          ; - drive alone, value toll
          elseif ((ri.trip_mode = 2) & (ri.av_available = 1))
-            da_av[od_position] = da_av[od_position] + 1
+            da_av[od_position] = da_av[od_position] + (1/ri.sampleRate)
 
          ; - shared ride 2, no value toll
          elseif ((ri.trip_mode = 3) & (ri.av_available = 1))
-            s2_av[od_position] = s2_av[od_position] + 1
+            s2_av[od_position] = s2_av[od_position] + (1/ri.sampleRate)
 
        ; - shared ride 2, value toll
          elseif ((ri.trip_mode = 4) & (ri.av_available = 1))
-            s2_av[od_position] = s2_av[od_position] + 1
+            s2_av[od_position] = s2_av[od_position] + (1/ri.sampleRate)
 
          ; - shared ride 3 or more, no value toll
          elseif ((ri.trip_mode = 5) & (ri.av_available = 1))
-            s3_av[od_position] = s3_av[od_position] + 1
+            s3_av[od_position] = s3_av[od_position] + (1/ri.sampleRate)
 
          ; - shared ride 3 or more, value toll
          elseif ((ri.trip_mode = 6) & (ri.av_available = 1))
-            s3_av[od_position] = s3_av[od_position] + 1
+            s3_av[od_position] = s3_av[od_position] + (1/ri.sampleRate)
 
        endif ; trip mode if
 
@@ -477,7 +478,8 @@ loop period = 1, 5
                 num_participants  = 15,
                 tour_mode         = 16,
                 tour_category(c)  = 17,
-                av_available      = 18
+                av_available      = 18,
+				sampleRate       = 19
 
 
       ; create zones x zones one dimensional arrays to store trips, one for each assigned path
@@ -527,130 +529,130 @@ loop period = 1, 5
          ; create person trip tables
          ; - drive alone, no value toll
          if ((ri.trip_mode = 1) & (ri.av_available = 0))
-            da[od_position] = da[od_position] + ri.num_participants
+            da[od_position] = da[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - drive alone, value toll
          elseif ((ri.trip_mode = 2) & (ri.av_available = 0))
-            datoll[od_position] = datoll[od_position] + ri.num_participants
+            datoll[od_position] = datoll[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - shared ride 2, no value toll
          elseif ((ri.trip_mode = 3) & (ri.av_available = 0))
-            sr2[od_position] = sr2[od_position] + ri.num_participants
+            sr2[od_position] = sr2[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - shared ride 2, value toll
          elseif ((ri.trip_mode = 4) & (ri.av_available = 0))
-            sr2toll[od_position] = sr2toll[od_position] + ri.num_participants
+            sr2toll[od_position] = sr2toll[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - shared ride 3 or more, no value toll
          elseif ((ri.trip_mode = 5) & (ri.av_available = 0))
-            sr3[od_position] = sr3[od_position] + ri.num_participants
+            sr3[od_position] = sr3[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - shared ride 3 or more, value toll
          elseif ((ri.trip_mode = 6)  & (ri.av_available = 0))
-            sr3toll[od_position] = sr3toll[od_position] + ri.num_participants
+            sr3toll[od_position] = sr3toll[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk
          elseif (ri.trip_mode = 7)
-            walk[od_position] = walk[od_position] + ri.num_participants
+            walk[od_position] = walk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - bicycle
          elseif (ri.trip_mode = 8)
-            bike[od_position] = bike[od_position] + ri.num_participants
+            bike[od_position] = bike[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk, local bus, walk
          elseif (ri.trip_mode = 9)
-            wlk_loc_wlk[od_position] = wlk_loc_wlk[od_position] + ri.num_participants
+            wlk_loc_wlk[od_position] = wlk_loc_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk, light rail/ferry, walk
          elseif (ri.trip_mode = 10)
-            wlk_lrf_wlk[od_position] = wlk_lrf_wlk[od_position] + ri.num_participants
+            wlk_lrf_wlk[od_position] = wlk_lrf_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk, express bus, walk
          elseif (ri.trip_mode = 11)
-            wlk_exp_wlk[od_position] = wlk_exp_wlk[od_position] + ri.num_participants
+            wlk_exp_wlk[od_position] = wlk_exp_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk, heavy rail, walk
          elseif (ri.trip_mode = 12)
-            wlk_hvy_wlk[od_position] = wlk_hvy_wlk[od_position] + ri.num_participants
+            wlk_hvy_wlk[od_position] = wlk_hvy_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk, commuter rail, walk
          elseif (ri.trip_mode = 13)
-            wlk_com_wlk[od_position] = wlk_com_wlk[od_position] + ri.num_participants
+            wlk_com_wlk[od_position] = wlk_com_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - drive, local, walk (outbound)
          elseif (ri.trip_mode = 14 && ri.inbound = 0)
-            drv_loc_wlk[od_position] = drv_loc_wlk[od_position] + ri.num_participants
+            drv_loc_wlk[od_position] = drv_loc_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - drive, light rail/ferry, walk (outbound)
          elseif (ri.trip_mode = 15 && ri.inbound = 0)
-            drv_lrf_wlk[od_position] = drv_lrf_wlk[od_position] + ri.num_participants
+            drv_lrf_wlk[od_position] = drv_lrf_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - drive, express bus, walk (outbound)
          elseif (ri.trip_mode = 16 && ri.inbound = 0)
-            drv_exp_wlk[od_position] = drv_exp_wlk[od_position] + ri.num_participants
+            drv_exp_wlk[od_position] = drv_exp_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - drive, heavy rail, walk (outbound)
          elseif (ri.trip_mode = 17 && ri.inbound = 0)
-            drv_hvy_wlk[od_position] = drv_hvy_wlk[od_position] + ri.num_participants
+            drv_hvy_wlk[od_position] = drv_hvy_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - drive, commuter rail, walk (outbound)
          elseif (ri.trip_mode = 18 && ri.inbound = 0)
-            drv_com_wlk[od_position] = drv_com_wlk[od_position] + ri.num_participants
+            drv_com_wlk[od_position] = drv_com_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk, local, drive (inbound)
          elseif (ri.trip_mode = 14 && ri.inbound = 1)
-            wlk_loc_drv[od_position] = wlk_loc_drv[od_position] + ri.num_participants
+            wlk_loc_drv[od_position] = wlk_loc_drv[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk, light rail/ferry, drive (inbound)
          elseif (ri.trip_mode = 15 && ri.inbound = 1)
-            wlk_lrf_drv[od_position] = wlk_lrf_drv[od_position] + ri.num_participants
+            wlk_lrf_drv[od_position] = wlk_lrf_drv[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk, express bus, drive (inbound)
          elseif (ri.trip_mode = 16 && ri.inbound = 1)
-            wlk_exp_drv[od_position] = wlk_exp_drv[od_position] + ri.num_participants
+            wlk_exp_drv[od_position] = wlk_exp_drv[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk, heavy rail, drive (inbound)
          elseif (ri.trip_mode = 17 && ri.inbound = 1)
-            wlk_hvy_drv[od_position] = wlk_hvy_drv[od_position] + ri.num_participants
+            wlk_hvy_drv[od_position] = wlk_hvy_drv[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk, commuter rail, drive (inbound)
          elseif (ri.trip_mode = 18 && ri.inbound = 1)
-            wlk_com_drv[od_position] = wlk_com_drv[od_position] + ri.num_participants
+            wlk_com_drv[od_position] = wlk_com_drv[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - taxi
          elseif (ri.trip_mode = 19)
-            taxi[od_position] = taxi[od_position] + ri.num_participants
+            taxi[od_position] = taxi[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - TNC single
          elseif (ri.trip_mode = 20)
-            single_tnc[od_position] = single_tnc[od_position] + ri.num_participants
+            single_tnc[od_position] = single_tnc[od_position] + (ri.num_participants/ri.sampleRate)
 
         elseif (ri.trip_mode = 21)
-            shared_tnc[od_position] = shared_tnc[od_position] + ri.num_participants
+            shared_tnc[od_position] = shared_tnc[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - drive alone, no value toll
          elseif ((ri.trip_mode = 1) & (ri.av_available = 1))
-            da_av[od_position] = da_av[od_position] + ri.num_participants
+            da_av[od_position] = da_av[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - drive alone, value toll
          elseif ((ri.trip_mode = 2) & (ri.av_available = 1))
-            da_av[od_position] = da_av[od_position] + ri.num_participants
+            da_av[od_position] = da_av[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - shared ride 2, no value toll
          elseif ((ri.trip_mode = 3) & (ri.av_available = 1))
-            s2_av[od_position] = s2_av[od_position] + ri.num_participants
+            s2_av[od_position] = s2_av[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - shared ride 2, value toll
          elseif ((ri.trip_mode = 4) & (ri.av_available = 1))
-            s2_av[od_position] = s2_av[od_position] + ri.num_participants
+            s2_av[od_position] = s2_av[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - shared ride 3 or more, no value toll
          elseif ((ri.trip_mode = 5) & (ri.av_available = 1))
-            s3_av[od_position] = s3_av[od_position] + ri.num_participants
+            s3_av[od_position] = s3_av[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - shared ride 3 or more, value toll
          elseif ((ri.trip_mode = 6) & (ri.av_available = 1))
-            s3_av[od_position] = s3_av[od_position] + ri.num_participants
+            s3_av[od_position] = s3_av[od_position] + (ri.num_participants/ri.sampleRate)
 
          endif ; trip mode if
 
@@ -720,7 +722,7 @@ loop period = 1, 5
       filei mati[2] = main\jointtrips@token_period@.dat, pattern=ijm:v, fields=#1,2,0,3-35
 
       ; read in the transit trips to/from bay area HSR stations
-      filei mati[3] = main\trips_transitHsr@token_period@.tpp
+      ;filei mati[3] = main\trips_transitHsr@token_period@.tpp
 
       ; read in lookup table of occupancy factors for taxi and tncs
    		FILEI LOOKUPI[1] = taxi_tnc_occ_factors.csv
@@ -743,92 +745,93 @@ loop period = 1, 5
       zones = @token_zones@
 
       ; scale up the trips to account for sampling (sampleshare set in RunModel.bat)
+	  ; sample rate accounts for global sample share, so need not expand based on global sample share
       ; - drive alone, no value toll
-      mw[1]  = (mi.1.1  + mi.2.1 ) * (1 / @token_sample_share@)
+      mw[1]  = (mi.1.1  + mi.2.1 )
 
       ; - drive alone, value toll (add taxi trips factored by occupancy percentage)
-      mw[2]  = (mi.1.2  + mi.2.2 + (mi.1.24 + mi.2.24) * occ_factors(1, 1)) * (1 / @token_sample_share@)
+      mw[2]  = (mi.1.2  + mi.2.2 + (mi.1.24 + mi.2.24) * occ_factors(1, 1)) 
 
       ; - shared ride 2, no value toll
-      mw[3]  = (mi.1.3  + mi.2.3 ) * (1 / @token_sample_share@)
+      mw[3]  = (mi.1.3  + mi.2.3 ) 
 
       ; - shared ride 2, value toll, taxi
-      mw[4]  = (mi.1.4  + mi.2.4  + (mi.1.24 + mi.2.24) * occ_factors(1, 2) ) * (1 / @token_sample_share@)
+      mw[4]  = (mi.1.4  + mi.2.4  + (mi.1.24 + mi.2.24) * occ_factors(1, 2) ) 
 
       ; - shared ride 3+, no value toll
-      mw[5]  = (mi.1.5  + mi.2.5 ) * (1 / @token_sample_share@)
+      mw[5]  = (mi.1.5  + mi.2.5 ) 
 
       ; shared ride 3+, value toll, taxi
-      mw[6]  = (mi.1.6  + mi.2.6  + (mi.1.24 + mi.2.24) * occ_factors(1, 3) ) * (1 / @token_sample_share@)
+      mw[6]  = (mi.1.6  + mi.2.6  + (mi.1.24 + mi.2.24) * occ_factors(1, 3) )
 
       ; walk
-      mw[7]  = (mi.1.7  + mi.2.7 ) * (1 / @token_sample_share@)
+      mw[7]  = (mi.1.7  + mi.2.7 ) 
 
       ; bicycle
-      mw[8]  = (mi.1.8  + mi.2.8 ) * (1 / @token_sample_share@)
+      mw[8]  = (mi.1.8  + mi.2.8 ) 
 
       ; walk, local bus, walk
-      mw[9]  = (mi.1.9  + mi.2.9 ) * (1 / @token_sample_share@) + mi.3.wlk_loc_wlk
+      mw[9]  = (mi.1.9  + mi.2.9 ) 
 
       ; walk, light rail/ferry, walk
-      mw[10] = (mi.1.10 + mi.2.10) * (1 / @token_sample_share@) + mi.3.wlk_lrf_wlk
+      mw[10] = (mi.1.10 + mi.2.10) 
 
       ; walk, express bus, walk
-      mw[11] = (mi.1.11 + mi.2.11) * (1 / @token_sample_share@) + mi.3.wlk_exp_wlk
+      mw[11] = (mi.1.11 + mi.2.11) 
 
       ; walk, heavy rail, walk
-      mw[12] = (mi.1.12 + mi.2.12) * (1 / @token_sample_share@) + mi.3.wlk_hvy_wlk
+      mw[12] = (mi.1.12 + mi.2.12) 
 
       ; walk, commuter rail, walk
-      mw[13] = (mi.1.13 + mi.2.13) * (1 / @token_sample_share@) + mi.3.wlk_com_wlk
+      mw[13] = (mi.1.13 + mi.2.13) 
 
       ; drive, local bus, walk
-      mw[14] = (mi.1.14 + mi.2.14) * (1 / @token_sample_share@) + mi.3.drv_loc_wlk
+      mw[14] = (mi.1.14 + mi.2.14) 
 
       ; drive, light rail/ferry, walk
-      mw[15] = (mi.1.15 + mi.2.15) * (1 / @token_sample_share@) + mi.3.drv_lrf_wlk
+      mw[15] = (mi.1.15 + mi.2.15) 
 
       ; drive, express bus, walk
-      mw[16] = (mi.1.16 + mi.2.16) * (1 / @token_sample_share@) + mi.3.drv_exp_wlk
+      mw[16] = (mi.1.16 + mi.2.16) 
 
       ; drive, heavy rail, walk
-      mw[17] = (mi.1.17 + mi.2.17) * (1 / @token_sample_share@) + mi.3.drv_hvy_wlk
+      mw[17] = (mi.1.17 + mi.2.17) 
 
       ; drive, commuter rail, walk
-      mw[18] = (mi.1.18 + mi.2.18) * (1 / @token_sample_share@) + mi.3.drv_com_wlk
+      mw[18] = (mi.1.18 + mi.2.18) 
 
       ; walk, local bus, drive
-      mw[19] = (mi.1.19 + mi.2.19) * (1 / @token_sample_share@) + mi.3.wlk_loc_drv
+      mw[19] = (mi.1.19 + mi.2.19) 
 
       ; walk, light rail/ferry, drive
-      mw[20] = (mi.1.20 + mi.2.20) * (1 / @token_sample_share@) + mi.3.wlk_lrf_drv
+      mw[20] = (mi.1.20 + mi.2.20) 
 
       ; walk, express bus, drive
-      mw[21] = (mi.1.21 + mi.2.21) * (1 / @token_sample_share@) + mi.3.wlk_exp_drv
+      mw[21] = (mi.1.21 + mi.2.21) 
 
       ; walk, heavy rail, drive
-      mw[22] = (mi.1.22 + mi.2.22) * (1 / @token_sample_share@) + mi.3.wlk_hvy_drv
+      mw[22] = (mi.1.22 + mi.2.22) 
 
       ; walk, commuter rail, drive
-      mw[23] = (mi.1.23 + mi.2.23) * (1 / @token_sample_share@) + mi.3.wlk_com_drv
+      mw[23] = (mi.1.23 + mi.2.23) 
 
       ; da_tnc          single tnc                                  shared tnc
-      mw[24] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 1) + (mi.1.26 + mi.2.26) * occ_factors(3, 1)) * (1 / @token_sample_share@)
+      mw[24] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 1) + (mi.1.26 + mi.2.26) * occ_factors(3, 1)) 
 
        ; s2_tnc          single tnc                                  shared tnc
-      mw[25] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 2) + (mi.1.26 + mi.2.26) * occ_factors(3, 2)) * (1 / @token_sample_share@)
+      mw[25] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 2) + (mi.1.26 + mi.2.26) * occ_factors(3, 2)) 
 
       ; s3_tnc          single tnc                                  shared tnc
-      mw[26] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 3) + (mi.1.26 + mi.2.26) * occ_factors(3, 3)) * (1 / @token_sample_share@)
+      mw[26] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 3) + (mi.1.26 + mi.2.26) * occ_factors(3, 3)) 
 
       ; da_av
-      mw[27] =  (mi.1.27+mi.2.27) * (1 / @token_sample_share@)
+      mw[27] =  (mi.1.27+mi.2.27)
 
       ; s2_av
-      mw[28] =  (mi.1.28+mi.2.28) * (1 / @token_sample_share@)
+      mw[28] =  (mi.1.28+mi.2.28) 
 
       ; s3_av
-      mw[29] =  (mi.1.29+mi.2.29) * (1 / @token_sample_share@)
+      mw[29] =  (mi.1.29+mi.2.29) 
    endrun
 
    ; step four: create zero passenger trips
