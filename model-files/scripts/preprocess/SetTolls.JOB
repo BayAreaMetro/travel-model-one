@@ -212,6 +212,17 @@ RUN PGM=HWYNET
 
    ENDIF
 
+    ; check that all bridge (non-value tolls) are set
+    if ((TOLLCLASS > 0) && (TOLLCLASS < FIRSTVALUE))
+      ; some peak period DA toll must be non-zero.
+      ; note this includes HOV lanes because they get converted to GP during non-peak periods via token_hov_to_freeflow
+      ; in CalculateFiveHighwayNetworks.job
+      IF ((TOLLAM_DA == 0) && (TOLLPM_DA == 0))
+        print LIST="Link ",A,"-",B," has TOLLCLASS ", TOLLCLASS," and no non-zero peak period DA tolls"
+        ABORT MSG ="Link has TOLLCLASS and no non-zero peak period tolls; see log file"
+      ENDIF
+    ENDIF
+
     ; AV impacts on roadway capacity - represented by adjusting the PCE
     ; Make these factors into link attributes
     IF (FT = 1)  AV_PCE = AV_PCE_FT01
