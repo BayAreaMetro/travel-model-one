@@ -137,8 +137,8 @@ run pgm = hwynet
          elseif (_speed = 13)
 
             _speedBinLower = 60.000
-            _speedBinUpper = 65.001
-            ; how come this is not 64.999? maybe this should actually be set to a very high number e.g. 100 mph
+            _speedBinUpper = 75.001
+            ; max free flow speed in the travel model network is 75 mph
 
 
          endif
