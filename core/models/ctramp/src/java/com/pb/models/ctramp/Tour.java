@@ -34,6 +34,13 @@ public class Tour implements java.io.Serializable {
     private short tourParkTaz;
     private float destinationChoiceLogsum;
     
+    private float origTaxiWait;
+    private float destTaxiWait;
+    private float origTNCSingleWait;
+    private float destTNCSingleWait;
+    private float origTNCSharedWait;
+    private float destTNCSharedWait;
+  
     private float[] tourModalProbabilities;
     private float[] tourModalUtilities;
     
@@ -47,6 +54,8 @@ public class Tour implements java.io.Serializable {
     private int parentTourId; //for at-work subtours
     
     private boolean useOwnedAV;
+    
+    private float sampleRate;
 
  	// this constructor used for individual mandatory tour creation
     public Tour( Person perObj, int tourId ) {
@@ -56,6 +65,10 @@ public class Tour implements java.io.Serializable {
         this.personTourId = perObj.getMaxTourId();
         this.tourId = (byte)tourId;
         tourCategoryIndex = ModelStructure.MANDATORY_CATEGORY_INDEX;
+        
+        if(perObj!=null)
+        	sampleRate = perObj.getSampleRate();
+
     }
 
     // this constructor used to create a temporary tour object for mandatory mode choice logsum calculation in usual work/school location where a tour doesn't yet exist.
@@ -65,6 +78,9 @@ public class Tour implements java.io.Serializable {
     	this.tourPurpose = tourPurpose;
         tourId = -1;
         tourCategoryIndex = ModelStructure.MANDATORY_CATEGORY_INDEX;
+        if(perObj!=null)
+        	sampleRate = perObj.getSampleRate();
+
     }
 
     // this constructor used for joint tour creation
@@ -75,6 +91,9 @@ public class Tour implements java.io.Serializable {
         modelStructure.setSegmentedIndexPurpose( tourPurposeIndex, tourPurpose );
         modelStructure.setSegmentedPurposeIndex( tourPurpose, tourPurposeIndex );
         this.tourCategoryIndex = tourCategoryIndex;
+        if(hhObj!=null)
+        	sampleRate = hhObj.getSampleRate();
+ 
     }
 
     // this constructor also used for joint tour creation (JEF)
@@ -84,6 +103,8 @@ public class Tour implements java.io.Serializable {
         this.personTourId = (byte) tourId;
         this.tourId = (byte) tourId;
         tourCategoryIndex = ModelStructure.JOINT_NON_MANDATORY_CATEGORY_INDEX;
+        if(hhObj!=null)
+        	sampleRate = hhObj.getSampleRate();
 
     }
     // this constructor used for individual non-mandatory or at-work subtour creation
@@ -101,6 +122,8 @@ public class Tour implements java.io.Serializable {
         modelStructure.setSegmentedIndexPurpose( tourPurposeIndex, tourPurpose );
         modelStructure.setSegmentedPurposeIndex( tourPurpose, tourPurposeIndex );
         this.tourCategoryIndex = tourCategoryIndex;
+        if(hhObj!=null)
+        	sampleRate = hhObj.getSampleRate();
     }
 
     /**
@@ -577,6 +600,62 @@ public class Tour implements java.io.Serializable {
 	public void setDestinationChoiceLogsum(float destinationChoiceLogsum) {
 		this.destinationChoiceLogsum = destinationChoiceLogsum;
 	}
+	public float getSampleRate() {
+		return sampleRate;
+	}
+
+	public void setSampleRate(float sampleRate) {
+		this.sampleRate = sampleRate;
+	}
+
+	public float getOrigTaxiWait() {
+		return origTaxiWait;
+	}
+
+	public void setOrigTaxiWait(float origTaxiWait) {
+		this.origTaxiWait = origTaxiWait;
+	}
+
+	public float getDestTaxiWait() {
+		return destTaxiWait;
+	}
+
+	public void setDestTaxiWait(float destTaxiWait) {
+		this.destTaxiWait = destTaxiWait;
+	}
+
+	public float getOrigTNCSingleWait() {
+		return origTNCSingleWait;
+	}
+
+	public void setOrigTNCSingleWait(float origTNCSingleWait) {
+		this.origTNCSingleWait = origTNCSingleWait;
+	}
+
+	public float getDestTNCSingleWait() {
+		return destTNCSingleWait;
+	}
+
+	public void setDestTNCSingleWait(float destTNCSingleWait) {
+		this.destTNCSingleWait = destTNCSingleWait;
+	}
+
+	public float getOrigTNCSharedWait() {
+		return origTNCSharedWait;
+	}
+
+	public void setOrigTNCSharedWait(float origTNCSharedWait) {
+		this.origTNCSharedWait = origTNCSharedWait;
+	}
+
+	public float getDestTNCSharedWait() {
+		return destTNCSharedWait;
+	}
+
+	public void setDestTNCSharedWait(float destTNCSharedWait) {
+		this.destTNCSharedWait = destTNCSharedWait;
+	}
+
 
     
 }

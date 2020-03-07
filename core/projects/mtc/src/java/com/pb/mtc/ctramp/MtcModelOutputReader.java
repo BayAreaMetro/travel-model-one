@@ -77,10 +77,11 @@ public class MtcModelOutputReader {
 	        int human_vehicles = (int) householdData.getValueAt(row,"humanVehicles");
 	        String cdap_pattern =  householdData.getStringValueAt(row,"cdap_pattern");
 	        String jtf_pattern = householdData.getStringValueAt(row,"jtf_pattern");
+	        float sampleRate = householdData.getValueAt(row,"sampleRate");
 
 	        HouseholdFileAttributes hhAttributes = new HouseholdFileAttributes(hhid,
 	        		taz, walk_subzone, income, autos, size, workers, automated_vehicles,human_vehicles,cdap_pattern,
-	        		jtf_pattern);
+	        		jtf_pattern,sampleRate);
 	        
 	        householdFileAttributesMap.put(hhid, hhAttributes);
 
@@ -123,9 +124,10 @@ public class MtcModelOutputReader {
         	
         	int imfChoice = (int) personData.getValueAt(row, "imf_choice");
         	int inmfChoice = (int) personData.getValueAt(row, "inmf_choice");
+        	float sampleRate = personData.getValueAt(row,"sampleRate");
 
         	PersonFileAttributes personFileAttributes = new PersonFileAttributes(hhid,person_id,personNumber,age,gender,valueOfTime,
-        			activityPattern,personType,imfChoice,inmfChoice);
+        			activityPattern,personType,imfChoice,inmfChoice,sampleRate);
         	
         	personFileAttributesMap.put(person_id,personFileAttributes);
         	
@@ -219,13 +221,15 @@ public class MtcModelOutputReader {
     		int atWork_freq           = (int) tourData.getValueAt(row,"atWork_freq");           
     		int num_ob_stops          = (int) tourData.getValueAt(row,"num_ob_stops");          
     		int num_ib_stops          = (int) tourData.getValueAt(row,"num_ib_stops");          
-    		int avAvailable           = (int) tourData.getValueAt(row,"avAvailable");           
+    		int avAvailable           = (int) tourData.getValueAt(row,"avAvailable");      
+    		float sampleRate          = tourData.getValueAt(row,"sampleRate");                  
+
     		
     		TourFileAttributes tourFileAttributes = new TourFileAttributes(hh_id, person_id, person_num, person_type,
     				 tour_id,  tour_category, tour_purpose, orig_taz, orig_walk_segment,
     				 dest_taz, dest_walk_segment, start_hour, end_hour, tour_mode, 
     				 atWork_freq,  num_ob_stops, num_ib_stops, avAvailable,
-    				 tour_composition, tour_participants);
+    				 tour_composition, tour_participants, sampleRate);
         	
         	//if individual tour, map key is person_id, else it is hh_id
         	long key = -1;
@@ -469,12 +473,13 @@ public class MtcModelOutputReader {
         int human_vehicles;
         String cdap_pattern;
         String jtf_pattern;
-        
+        float sampleRate;
+
         
        
         public HouseholdFileAttributes(long hhid, int taz, int walk_subzone,
         		int income, int autos, int size, int workers, int automated_vehicles, int human_vehicles, 
-        		String cdap_pattern, String jtf_pattern){
+        		String cdap_pattern, String jtf_pattern, float sampleRate){
         	
     		this.hhid = hhid;
             this.taz = taz;
@@ -487,6 +492,8 @@ public class MtcModelOutputReader {
             this.human_vehicles = human_vehicles;
             this.cdap_pattern = cdap_pattern;
             this.jtf_pattern = jtf_pattern;
+            this.sampleRate = sampleRate;
+
          }
         
         public void setHouseholdAttributes(Household hh){
@@ -502,6 +509,8 @@ public class MtcModelOutputReader {
         	String[] jtf = jtf_pattern.split("_");
         	int jtfAlt = new Integer(jtf[0]);
         	hh.setJointTourFreqResult(jtfAlt, jtf[1]);
+        	hh.setSampleRate(sampleRate);
+
          }
 	}
 	
@@ -524,10 +533,11 @@ public class MtcModelOutputReader {
     	int personType;
     	int imfChoice;
     	int inmfChoice;
+    	float sampleRate;
     	
 		public PersonFileAttributes(long hhid, long person_id, long personNumber, int age, int gender,float valueOfTime, 
 				String activityPattern,int personType,
-				int imfChoice,int inmfChoice){
+				int imfChoice,int inmfChoice, float sampleRate){
 			
 			this.hhid=hhid;
 			this.person_id = person_id;
@@ -539,6 +549,7 @@ public class MtcModelOutputReader {
 			this.personType=personType;
 			this.imfChoice=imfChoice;
 			this.inmfChoice=inmfChoice;
+			this.sampleRate = sampleRate;
 		
 		}
 		
@@ -552,6 +563,8 @@ public class MtcModelOutputReader {
 			p.setPersonTypeCategory(personType);
 			p.setImtfChoice(imfChoice);
 			p.setInmtfChoice(inmfChoice);
+			p.setSampleRate(sampleRate);
+
 				
 		}
 	}
@@ -576,17 +589,18 @@ public class MtcModelOutputReader {
 		int num_ob_stops;
 		int num_ib_stops;
 		int avAvailable;
-		
+		float sampleRate;
 		//for joint tours
 		int tour_composition;
 		String tour_participants;
+		
 
 		public TourFileAttributes(long hh_id, long person_id, int person_num, int person_type,
 				int tour_id, String tour_category,String tour_purpose, int orig_taz, int orig_walk_segment,
 				int dest_taz, int dest_walk_segment,
 				int start_hour,int end_hour,int tour_mode, 
 				int atWork_freq, int num_ob_stops,int num_ib_stops,int avAvailable,
-				int tour_composition,String tour_participants){
+				int tour_composition,String tour_participants, float sampleRate){
 			
 			
 			this.hh_id = hh_id;
@@ -609,6 +623,9 @@ public class MtcModelOutputReader {
 			this.avAvailable = avAvailable;
 			this.tour_composition = tour_composition;
 			this.tour_participants = tour_participants;
+			this.sampleRate = sampleRate;
+
+			
 						
 		}
 		
@@ -629,6 +646,8 @@ public class MtcModelOutputReader {
 			tour.setTourEndHour(end_hour);
 			tour.setSubtourFreqChoice(atWork_freq);
 			tour.setUseOwnedAV(avAvailable==1 ? true : false);
+			tour.setSampleRate(sampleRate);
+
 		}
 
 		

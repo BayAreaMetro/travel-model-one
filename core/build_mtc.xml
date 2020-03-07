@@ -44,21 +44,21 @@
   
 
   <!-- Import module build files -->
-  <import file="${basedir}/../../cmf/common-base/module_common-base.xml"/>
+  <import file="${basedir}/../../../core/cmf/common-base/module_common-base.xml"/>
 	
-  <import file="${basedir}/../../models/utils/module_utils.xml"/>
+  <import file="${basedir}/../../../core/models/utils/module_utils.xml"/>
 	
-  <import file="${basedir}/../../models/reference/module_reference.xml"/>
+  <import file="${basedir}/../../../core/models/reference/module_reference.xml"/>
 	
-  <import file="${basedir}/../../models/censusdata/module_censusdata.xml"/>
+  <import file="${basedir}/../../../core/models/censusdata/module_censusdata.xml"/>
   
-  <import file="${basedir}/../../cmf/common-daf-v2/module_common-daf-v2.xml"/>
+  <import file="${basedir}/../../../core/cmf/common-daf-v2/module_common-daf-v2.xml"/>
 	
-  <import file="${basedir}/../../models/synpop/module_synpop.xml"/>
+  <import file="${basedir}/../../../core/models/synpop/module_synpop.xml"/>
   
-  <import file="${basedir}/../../models/ctramp/module_ctramp.xml"/>
+  <import file="${basedir}/../../../core/models/ctramp/module_ctramp.xml"/>
   
-  <import file="${basedir}/../mtc/module_mtc.xml" />
+  <import file="${basedir}/../../../core/projects/mtc/module_mtc.xml" />
   
   
 

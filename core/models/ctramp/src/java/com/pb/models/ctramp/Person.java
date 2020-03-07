@@ -93,6 +93,8 @@ public class Person implements java.io.Serializable {
     private byte windowAfterLastMandJointTour;
 
     private byte[] halfHourWindow;
+    
+    private float sampleRate;
 
     
     public Person( Household hhObj, int persNum ) {
@@ -103,6 +105,9 @@ public class Person implements java.io.Serializable {
         this.schoolTourArrayList = new ArrayList<Tour>();
         this.indNonManTourArrayList = new ArrayList<Tour>();
         this.atWorkSubtourArrayList = new ArrayList<Tour>();
+        
+        if(hhObj!=null)
+        	this.sampleRate = hhObj.getSampleRate();
         
         initializeWindows();
     }
@@ -392,6 +397,7 @@ public class Person implements java.io.Serializable {
 
     		tempTour.setTourDestTaz(-1);
     		tempTour.setTourDestWalkSubzone(-1);
+            tempTour.setSampleRate(sampleRate);
 
             indNonManTourArrayList.add(tempTour);
             
@@ -417,6 +423,7 @@ public class Person implements java.io.Serializable {
             tempTour.setDestinationChoiceLogsum(workLocationLogsum);
 
             tempTour.setTourPurpose( tourPurpose );
+            tempTour.setSampleRate(sampleRate);
 
             modelStructure.setSegmentedIndexPurpose( modelStructure.getDcModelPurposeIndex(tourPurpose), tourPurpose );
             modelStructure.setSegmentedPurposeIndex( tourPurpose, modelStructure.getDcModelPurposeIndex(tourPurpose) );
@@ -444,6 +451,7 @@ public class Person implements java.io.Serializable {
 
         tempTour.setTourOrigTaz(workTaz);
         tempTour.setTourOrigWalkSubzone(workSubZone);
+        tempTour.setSampleRate(sampleRate);
 
         atWorkSubtourArrayList.add(tempTour);
 
@@ -471,6 +479,7 @@ public class Person implements java.io.Serializable {
 
             modelStructure.setSegmentedIndexPurpose( modelStructure.getDcModelPurposeIndex(tourPurpose), tourPurpose );
             modelStructure.setSegmentedPurposeIndex( tourPurpose, modelStructure.getDcModelPurposeIndex(tourPurpose) );
+            tempTour.setSampleRate(sampleRate);
 
             schoolTourArrayList.add(tempTour);
     	}
@@ -1590,5 +1599,12 @@ public class Person implements java.io.Serializable {
         Preschool_under_age_6
     }
 
-    
+    public float getSampleRate() {
+ 		return sampleRate;
+ 	}
+
+ 	public void setSampleRate(float sampleRate) {
+ 		this.sampleRate = sampleRate;
+ 	}
+
 }

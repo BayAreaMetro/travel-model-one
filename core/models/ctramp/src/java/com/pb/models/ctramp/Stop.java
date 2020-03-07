@@ -18,9 +18,14 @@ public class Stop implements Serializable {
 
     byte origPurposeIndex;
     byte destPurposeIndex;
+    
+    float origTaxiWait;
+    float origSingleTNCWait;
+    float origSharedTNCWait;
 
     Tour parentTour;
     
+    float sampleRate;
 
     public Stop( Tour parentTour, int origPurposeIndex, int destPurposeIndex, int id, boolean inbound ){
         this.parentTour = parentTour;
@@ -29,6 +34,8 @@ public class Stop implements Serializable {
         this.id = (byte)id;
         this.inbound = inbound;
         this.setDepartHour(this.getTourTodOut()); //default to tour depart/arrival hour
+        if(parentTour!=null)
+        	this.sampleRate = parentTour.getSampleRate();
     }
 
     public void setOrig(int orig){
@@ -126,7 +133,15 @@ public class Stop implements Serializable {
     }
 
     
-    public void logStopObject( Logger logger, int totalChars, ModelStructure modelStructure ) {
+    public float getSampleRate() {
+		return sampleRate;
+	}
+
+	public void setSampleRate(float sampleRate) {
+		this.sampleRate = sampleRate;
+	}
+
+	public void logStopObject( Logger logger, int totalChars, ModelStructure modelStructure ) {
         
         String separater = "";
         for (int i=0; i < totalChars; i++)
@@ -152,6 +167,30 @@ public class Stop implements Serializable {
         logger.info( "" );
 
     }
+
+	public float getOrigTaxiWait() {
+		return origTaxiWait;
+	}
+
+	public void setOrigTaxiWait(float origTaxiWait) {
+		this.origTaxiWait = origTaxiWait;
+	}
+
+	public float getOrigSingleTNCWait() {
+		return origSingleTNCWait;
+	}
+
+	public void setOrigSingleTNCWait(float origSingleTNCWait) {
+		this.origSingleTNCWait = origSingleTNCWait;
+	}
+
+	public float getOrigSharedTNCWait() {
+		return origSharedTNCWait;
+	}
+
+	public void setOrigSharedTNCWait(float origSharedTNCWait) {
+		this.origSharedTNCWait = origSharedTNCWait;
+	}
     
 }
 

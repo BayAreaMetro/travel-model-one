@@ -193,6 +193,16 @@ public class ModeChoiceModel implements Serializable {
         mcDmuObject.setDestSharedTNCWaitTime(SharedTNCWaitTimeDest);
         mcDmuObject.setOrigCounty(tazDataManager.getZoneCounty(oTaz));
         
+        Tour thisTour = mcDmuObject.getTourObject();
+        if(thisTour!=null) {
+        	thisTour.setOrigTaxiWait(TaxiWaitTimeOrig);
+        	thisTour.setDestTaxiWait(TaxiWaitTimeDest);
+        	thisTour.setOrigTNCSingleWait(SingleTNCWaitTimeOrig);
+        	thisTour.setDestTNCSingleWait(SingleTNCWaitTimeDest);
+        	thisTour.setOrigTNCSharedWait(SharedTNCWaitTimeOrig);
+        	thisTour.setDestTNCSharedWait(SharedTNCWaitTimeDest);
+        }
+
         // log headers to traceLogger
         if ( household.getDebugChoiceModels() ) {
         	mcModel[modelIndex].choiceModelUtilityTraceLoggerHeading( choiceModelDescription, decisionMakerLabel );
@@ -281,6 +291,16 @@ public class ModeChoiceModel implements Serializable {
         mcDmuObject.setOrigSharedTNCWaitTime(SharedTNCWaitTimeOrig);
         mcDmuObject.setDestSharedTNCWaitTime(SharedTNCWaitTimeDest);        
         mcDmuObject.setOrigCounty(tazDataManager.getZoneCounty(oTaz));
+
+        Tour thisTour = mcDmuObject.getTourObject();
+        if(thisTour!=null) {
+        	thisTour.setOrigTaxiWait(TaxiWaitTimeOrig);
+        	thisTour.setDestTaxiWait(TaxiWaitTimeDest);
+        	thisTour.setOrigTNCSingleWait(SingleTNCWaitTimeOrig);
+        	thisTour.setDestTNCSingleWait(SingleTNCWaitTimeDest);
+        	thisTour.setOrigTNCSharedWait(SharedTNCWaitTimeOrig);
+        	thisTour.setDestTNCSharedWait(SharedTNCWaitTimeDest);
+        }
 
         // log headers to traceLogger
         if ( household.getDebugChoiceModels() ) {

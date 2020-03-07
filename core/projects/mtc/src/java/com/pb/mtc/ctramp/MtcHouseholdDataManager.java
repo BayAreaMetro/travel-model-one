@@ -111,7 +111,8 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
             newOrder[k] = i;
         }
 
-        
+        boolean hasSampleRate=(hhTable.getColumnPosition(HH_SAMPLERATE_FIELD_NAME) > -1 ? true : false);
+
         
         
         // for each household in the sample
@@ -132,6 +133,13 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
                 //int index = sortedIndices[r-1];
                 int newIndex = newOrder[i];
                 hhIndexArray[hh.getHhId()] = newIndex;
+                
+                // read sample rate from file if it exists, and multiply by the global sample rate since there might be a sample of households
+                // that doesn't vary by TAZ
+                float hhSampleRate = sampleRate; //the global sample rate
+                if(hasSampleRate)
+                	hhSampleRate = hhTable.getValueAt(r,  hhTable.getColumnPosition(HH_SAMPLERATE_FIELD_NAME))*sampleRate;
+                hh.setSampleRate(hhSampleRate);
 
                 short htaz = (short)hhTable.getValueAt( r, hhTable.getColumnPosition( HH_HOME_TAZ_FIELD_NAME ) );
                 hh.setHhTaz ( htaz );
@@ -160,7 +168,10 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
                 // guojy: added for M. Gucwa's research on automated vehicles
 /*                int hAnalyst = (int)hhTable.getValueAt( r, hhTable.getColumnPosition( HH_ANALYST_FIELD_NAME ));
                 hh.setHAnalyst(hAnalyst);
-*/                
+                
+*/  
+
+              
                 hh.initializeWindows();
                 hhArray[newIndex] = hh;
 
@@ -215,6 +226,8 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
                 int persId = (int)personTable.getValueAt( p, personTable.getColumnPosition( PERSON_PERSON_ID_FIELD_NAME ) );
                 Person person = hh.getPerson ( persNum++ );
                 person.setPersId( persId );
+                
+                person.setSampleRate(hh.getSampleRate());
 
                 // get required values from table record and store in Person object
                 int age = (int)personTable.getValueAt( p, personTable.getColumnPosition( PERSON_AGE_FIELD_NAME ) );
