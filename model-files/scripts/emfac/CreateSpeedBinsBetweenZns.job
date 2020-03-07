@@ -144,7 +144,6 @@ run pgm = hwynet
          endif
 
          if (_cspd >= _speedBinLower && _cspd < _speedBinUpper)
-         ; what happen to the links with speed greater than 65 mph?
 
             _arrayIndex = _time * 10000 + _countyCode * 100 + _speed
             _tmCtyBn[_arrayIndex]          = _tmCtyBn[_arrayIndex] + _vmt
