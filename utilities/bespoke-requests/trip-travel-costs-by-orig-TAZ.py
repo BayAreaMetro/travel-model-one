@@ -2,7 +2,7 @@ import copy, os, subprocess, sys
 import pandas
 
 # convert rdata from csv
-OUTPUT_FOLDER = "L:\\RTP2021_PPA\\Projects\\2015_TM151_PPA_12\\OUTPUT\\updated_output"
+OUTPUT_FOLDER = "L:\\RTP2021_PPA\\Projects\\6103_Demand_Based_FreewaysQ1Q2\\2050_TM151_PPA_RT_17_6103_Demand_Based_FreewaysQ1Q2_01\\OUTPUT\\updated_output"
 trips_rdata   = os.path.join(OUTPUT_FOLDER, "trips.rdata")
 trips_csv     = os.path.join(OUTPUT_FOLDER, "trips.csv")
 
@@ -30,14 +30,14 @@ print("Read {}".format(trips_csv))
 # these are the columns available
 print(trips_df.columns.values.tolist())
 # keep subset of columns to free memory?
-trips_df = trips_df[["orig_taz","dest_taz","num_participants","trip_mode","distance","cost","time"]]
+trips_df = trips_df[["orig_taz","dest_taz","num_participants","trip_mode","tour_purpose","incQ","distance","cost","time"]]
 print(trips_df.head())
 
 # assume SAMPLE_SHARE=0.5, standard for iter3
 SAMPLESHARE=0.5
 
 # aggregate to origin taz, trip_mode, summing num_participants and taking mean of distance, cost, time
-trips_by_orig_tripmode_df = trips_df.groupby(["orig_taz","trip_mode"]).agg({
+trips_by_orig_tripmode_df = trips_df.groupby(["orig_taz","trip_mode","tour_purpose","incQ"]).agg({
 	'num_participants':'sum', 'distance':'mean', 'cost':'mean', 'time':'mean'}).reset_index()
 
 # this has total cost/time/distance for person trips, but the person trips are a sample -- so scale up

@@ -1,35 +1,35 @@
-SD,COUNTY,SD_NAME,COUNTY_NAME
-1,1,Greater Downtown San Francisco,San Francisco
-2,1,San Francisco Richmond District,San Francisco
-3,1,San Francisco Mission District,San Francisco
-4,1,San Francisco Sunset District,San Francisco
-5,2,Daly City and San Bruno,San Mateo
-6,2,San Mateo and Burlingame,San Mateo
-7,2,Redwood City and Menlo Park,San Mateo
-8,3,Palo Alto and Los Altos,Santa Clara
-9,3,Sunnyvale and Mountain View,Santa Clara
-10,3,Cupertino and Saratoga,Santa Clara
-11,3,Central San Jose,Santa Clara
-12,3,Milpitas and East San Jose,Santa Clara
-13,3,South San Jose,Santa Clara
-14,3,Gilroy and Morgan Hill,Santa Clara
-15,4,Livermore and Pleasanton,Alameda
-16,4,Fremont and Union City,Alameda
-17,4,Hayward and San Leandro,Alameda
-18,4,Oakland and Alameda,Alameda
-19,4,Berkeley and Albany,Alameda
-20,5,Richmond and El Cerrito,Contra Costa
-21,5,Concord and Martinez,Contra Costa
-22,5,Walnut Creek,Contra Costa
-23,5,Danville and San Ramon,Contra Costa
-24,5,Antioch and Pittsburg,Contra Costa
-25,6,Vallejo and Benicia,Solano
-26,6,Fairfield and Vacaville,Solano
-27,7,Napa,Napa
-28,7,St Helena,Napa
-29,8,Petaluma and Rohnert Park,Sonoma
-30,8,Santa Rosa and Sebastopol,Sonoma
-31,8,Healdsburg and Cloverdale,Sonoma
-32,9,Novato,Marin
-33,9,San Rafael,Marin
-34,9,Mill Valley and Sausalito,Marin
+SD,COUNTY,SD_NAME,COUNTY_NAME,SD_NUM_NAME,COUNTY_NUM_NAME
+1,1,Greater Downtown San Francisco,San Francisco,01 Greater Downtown San Francisco,1 San Francisco
+2,1,San Francisco Richmond District,San Francisco,02 San Francisco Richmond District,1 San Francisco
+3,1,San Francisco Mission District,San Francisco,03 San Francisco Mission District,1 San Francisco
+4,1,San Francisco Sunset District,San Francisco,04 San Francisco Sunset District,1 San Francisco
+5,2,Daly City and San Bruno,San Mateo,05 Daly City and San Bruno,2 San Mateo
+6,2,San Mateo and Burlingame,San Mateo,06 San Mateo and Burlingame,2 San Mateo
+7,2,Redwood City and Menlo Park,San Mateo,07 Redwood City and Menlo Park,2 San Mateo
+8,3,Palo Alto and Los Altos,Santa Clara,08 Palo Alto and Los Altos,3 Santa Clara
+9,3,Sunnyvale and Mountain View,Santa Clara,09 Sunnyvale and Mountain View,3 Santa Clara
+10,3,Cupertino and Saratoga,Santa Clara,10 Cupertino and Saratoga,3 Santa Clara
+11,3,Central San Jose,Santa Clara,11 Central San Jose,3 Santa Clara
+12,3,Milpitas and East San Jose,Santa Clara,12 Milpitas and East San Jose,3 Santa Clara
+13,3,South San Jose,Santa Clara,13 South San Jose,3 Santa Clara
+14,3,Gilroy and Morgan Hill,Santa Clara,14 Gilroy and Morgan Hill,3 Santa Clara
+15,4,Livermore and Pleasanton,Alameda,15 Livermore and Pleasanton,4 Alameda
+16,4,Fremont and Union City,Alameda,16 Fremont and Union City,4 Alameda
+17,4,Hayward and San Leandro,Alameda,17 Hayward and San Leandro,4 Alameda
+18,4,Oakland and Alameda,Alameda,18 Oakland and Alameda,4 Alameda
+19,4,Berkeley and Albany,Alameda,19 Berkeley and Albany,4 Alameda
+20,5,Richmond and El Cerrito,Contra Costa,20 Richmond and El Cerrito,5 Contra Costa
+21,5,Concord and Martinez,Contra Costa,21 Concord and Martinez,5 Contra Costa
+22,5,Walnut Creek,Contra Costa,22 Walnut Creek,5 Contra Costa
+23,5,Danville and San Ramon,Contra Costa,23 Danville and San Ramon,5 Contra Costa
+24,5,Antioch and Pittsburg,Contra Costa,24 Antioch and Pittsburg,5 Contra Costa
+25,6,Vallejo and Benicia,Solano,25 Vallejo and Benicia,6 Solano
+26,6,Fairfield and Vacaville,Solano,26 Fairfield and Vacaville,6 Solano
+27,7,Napa,Napa,27 Napa,7 Napa
+28,7,St Helena,Napa,28 St Helena,7 Napa
+29,8,Petaluma and Rohnert Park,Sonoma,29 Petaluma and Rohnert Park,8 Sonoma
+30,8,Santa Rosa and Sebastopol,Sonoma,30 Santa Rosa and Sebastopol,8 Sonoma
+31,8,Healdsburg and Cloverdale,Sonoma,31 Healdsburg and Cloverdale,8 Sonoma
+32,9,Novato,Marin,32 Novato,9 Marin
+33,9,San Rafael,Marin,33 San Rafael,9 Marin
+34,9,Mill Valley and Sausalito,Marin,34 Mill Valley and Sausalito,9 Marin

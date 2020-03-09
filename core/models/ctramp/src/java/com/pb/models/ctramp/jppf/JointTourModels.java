@@ -354,7 +354,7 @@ public class JointTourModels implements Serializable {
         }
         catch ( Exception e ) {
             logger.error( String.format( "error joint tour choices model for hhId=%d.", household.getHhId() ));
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
 
         household.setJtfRandomCount( household.getHhRandomCount() );

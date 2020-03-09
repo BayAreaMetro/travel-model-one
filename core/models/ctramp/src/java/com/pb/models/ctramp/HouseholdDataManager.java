@@ -51,6 +51,8 @@ public abstract class HouseholdDataManager implements HouseholdDataManagerIf, Se
     public static final String HH_AUTOS_FIELD_NAME           = "VEHICL";
     public static final String HH_SIZE_FIELD_NAME            = "PERSONS";
     public static final String HH_TYPE_FIELD_NAME            = "HHT";
+    public static final String HH_SAMPLERATE_FIELD_NAME               = "SampleRate";
+    
 
     public static final String[] hhHeadings = {
         HH_ID_FIELD_NAME,
@@ -1714,27 +1716,28 @@ public abstract class HouseholdDataManager implements HouseholdDataManagerIf, Se
                 for ( int p=1; p < persons.length; p++) {
 
                     Person person = persons[p];
-                    
+                	double expansionFactor = 1.0/person.getSampleRate();
+
                     int purposeIndex = -1;
                     try {
 
                         if ( person.getPersonIsWorker() == 1 ) {
                             
                             purposeIndex = person.getWorkLocationPurposeIndex();
-                            personsWithMandatoryPurpose[purposeIndex][homeZone][homeSubZone] ++;
+                            personsWithMandatoryPurpose[purposeIndex][homeZone][homeSubZone] +=expansionFactor;
 
                         }
 
                         if ( person.getPersonIsPreschoolChild() == 1 || person.getPersonIsStudentDriving() == 1 || person.getPersonIsStudentNonDriving() == 1 ) {
                             
                             purposeIndex = person.getSchoolLocationPurposeIndex();
-                            personsWithMandatoryPurpose[purposeIndex][homeZone][homeSubZone] ++;
+                            personsWithMandatoryPurpose[purposeIndex][homeZone][homeSubZone] +=expansionFactor;
 
                         }
                         else if ( person.getPersonIsUniversityStudent() == 1 ) {
                             
                             purposeIndex = person.getUniversityLocationPurposeIndex();
-                            personsWithMandatoryPurpose[purposeIndex][homeZone][homeSubZone] ++;
+                            personsWithMandatoryPurpose[purposeIndex][homeZone][homeSubZone] +=expansionFactor;
 
                         }
 
@@ -1790,7 +1793,8 @@ public abstract class HouseholdDataManager implements HouseholdDataManagerIf, Se
                 for ( int p=1; p < persons.length; p++) {
         
                     Person person = persons[p];
-                    
+                	double expansionFactor = 1.0/person.getSampleRate();
+            
                     ArrayList<Tour> it = person.getListOfIndividualNonMandatoryTours();
         
                     try {
@@ -1804,7 +1808,7 @@ public abstract class HouseholdDataManager implements HouseholdDataManagerIf, Se
                             if ( purposeString.startsWith( tourPurpose ) ) {
                                 int homeZone = tempHhs[r].getHhTaz();
                                 int homeSubZone = tempHhs[r].getHhWalkSubzone();
-                                individualNonMandatoryTours[homeZone][homeSubZone] ++;
+                                individualNonMandatoryTours[homeZone][homeSubZone] +=expansionFactor;
                                 count++;
                             }
                         }
@@ -1863,7 +1867,8 @@ public abstract class HouseholdDataManager implements HouseholdDataManagerIf, Se
                 for ( int p=1; p < persons.length; p++) {
     
                     Person person = persons[p];
-                    
+                	double expansionFactor = 1.0/person.getSampleRate();
+
                     String purposeName = "";
                     int purposeIndex = -1;
                     int destZone = -1;
@@ -1875,7 +1880,7 @@ public abstract class HouseholdDataManager implements HouseholdDataManagerIf, Se
                             purposeIndex = person.getWorkLocationPurposeIndex();
                             destZone = person.getPersonWorkLocationZone();
                             destSubZone = person.getPersonWorkLocationSubZone();
-                            mandatoryTours[purposeIndex][destZone][destSubZone]++;
+                            mandatoryTours[purposeIndex][destZone][destSubZone]+=expansionFactor;
     
                         }
     
@@ -1884,7 +1889,7 @@ public abstract class HouseholdDataManager implements HouseholdDataManagerIf, Se
                             purposeIndex = person.getSchoolLocationPurposeIndex();
                             destZone = person.getPersonSchoolLocationZone();
                             destSubZone = person.getPersonSchoolLocationSubZone();
-                            mandatoryTours[purposeIndex][destZone][destSubZone]++;
+                            mandatoryTours[purposeIndex][destZone][destSubZone]+=expansionFactor;
     
                         }
                         else if ( person.getPersonIsUniversityStudent() == 1 && person.getPersonSchoolLocationZone() > 0 ) {
@@ -1892,7 +1897,7 @@ public abstract class HouseholdDataManager implements HouseholdDataManagerIf, Se
                             purposeIndex = person.getUniversityLocationPurposeIndex();
                             destZone = person.getPersonSchoolLocationZone();
                             destSubZone = person.getPersonSchoolLocationSubZone();
-                            mandatoryTours[purposeIndex][destZone][destSubZone]++;
+                            mandatoryTours[purposeIndex][destZone][destSubZone]+=expansionFactor;
     
                         }
     
@@ -1944,6 +1949,9 @@ public abstract class HouseholdDataManager implements HouseholdDataManagerIf, Se
             for ( int r=0; r < tempHhs.length; r++ ) {
 
                 try {
+                	
+                	double expansionFactor = 1.0/tempHhs[r].getSampleRate();
+
     
                     Tour[] jt = tempHhs[r].getJointTourArray();
     
@@ -1955,7 +1963,7 @@ public abstract class HouseholdDataManager implements HouseholdDataManagerIf, Se
                         if ( jt[i].getTourPurpose().equalsIgnoreCase( purposeString )) {
                             int homeZone = tempHhs[r].getHhTaz();
                             int homeSubZone = tempHhs[r].getHhWalkSubzone();
-                            jointTours[homeZone][homeSubZone] ++;
+                            jointTours[homeZone][homeSubZone] +=expansionFactor;
                             count++;
                         }
                     }
@@ -2004,7 +2012,8 @@ public abstract class HouseholdDataManager implements HouseholdDataManagerIf, Se
                 for ( int p=1; p < persons.length; p++) {
     
                     Person person = persons[p];
-                    
+                   	double expansionFactor = 1.0/person.getSampleRate();
+
                     ArrayList<Tour> subtourList = person.getListOfAtWorkSubtours();
     
                     try {
@@ -2018,7 +2027,7 @@ public abstract class HouseholdDataManager implements HouseholdDataManagerIf, Se
                             if ( tourPurpose.startsWith( purposeString ) ) {
                                 int workZone = tour.getTourOrigTaz();
                                 int workSubZone = tour.getTourOrigWalkSubzone();
-                                subtours[workZone][workSubZone] ++;
+                                subtours[workZone][workSubZone] +=expansionFactor;
                                 count++;
                             }
                         }

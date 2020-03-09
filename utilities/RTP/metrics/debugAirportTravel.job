@@ -1,0 +1,300 @@
+*del metrics\debug_air.csv
+
+token_cwd = '%SCEN%'
+
+; Convert to has access matrix -- all ones if has access
+RUN PGM=MATRIX
+  ;
+  ; SFO: San Francisco, TAZ  239
+  ; OAK: Oakland,       TAZ  874
+  ; SJC: San Jose,      TAZ  434
+  ; STS: Sonoma County, TAZ 1358
+  ; SMF: Sacramento,    TAZ 1462
+  ;
+  FILEO MATO[1]  = to_from_airports.tpp, MO=1-5 NAME=SFO,OAK,SJC,STS,SMF
+  ZONES=1475
+
+  MW[1] = 0
+  MW[2] = 0
+  MW[3] = 0
+  MW[4] = 0
+  MW[5] = 0
+  JLOOP
+   IF ((I= 239) | (J= 239))  MW[1] = 1
+   IF ((I= 874) | (J= 874))  MW[2] = 1
+   IF ((I= 434) | (J= 434))  MW[3] = 1
+   IF ((I=1358) | (J=1358))  MW[4] = 1
+   IF ((I=1462) | (J=1462))  MW[5] = 1
+  ENDJLOOP
+
+ENDRUN
+
+; Loop thru Auto modes
+loop auto = 1,6
+
+  if (auto  = 1)
+   token_auto   = 'da'
+   token_time   = 'TIMEDA'
+   token_dist   = 'DISTDA'
+   token_btoll  = 'BTOLLDA'
+   token_vtoll  = 'TOLLVTOLLDA'
+  elseif (auto  = 2)
+   token_auto   = 'datoll'
+   token_time   = 'TOLLTIMEDA'
+   token_dist   = 'TOLLDISTDA'
+   token_btoll  = 'TOLLBTOLLDA'
+   token_vtoll  = 'TOLLVTOLLDA'
+  elseif (auto  = 3)
+   token_auto   = 'sr2'
+   token_time   = 'TIMES2'
+   token_dist   = 'DISTS2'
+   token_btoll  = 'BTOLLS2'
+   token_vtoll  = 'TOLLVTOLLS2'
+  elseif (auto  = 4)
+   token_auto   = 'sr2toll'
+   token_time   = 'TOLLTIMES2'
+   token_dist   = 'TOLLDISTS2'
+   token_btoll  = 'TOLLBTOLLS2'
+   token_vtoll  = 'TOLLVTOLLS2'
+  elseif (auto  = 5)
+   token_auto   = 'sr3'
+   token_time   = 'TIMES3'
+   token_dist   = 'DISTS3'
+   token_btoll  = 'BTOLLS3'
+   token_vtoll  = 'TOLLVTOLLS3'
+  elseif (auto  = 6)
+   token_auto   = 'sr3toll'
+   token_time   = 'TOLLTIMES3'
+   token_dist   = 'TOLLDISTS3'
+   token_btoll  = 'TOLLBTOLLS3'
+   token_vtoll  = 'TOLLVTOLLS3'
+  endif
+
+  DistributeMultistep processid = 'ctramp', processNum = auto, commpath = '%COMMPATH%'
+
+  Read File = "CTRAMP\scripts\block\hwyParam.block"
+
+  ; the next steps are only relevant to the da/sr2/sr3 and toll versions of those
+  IF (auto<=6)
+
+   RUN PGM = MATRIX
+     ; Read air passenger travel demand - vehicle trips
+     FILEI MATI[1] = "nonres\tripsAirPaxEA.tpp"
+     FILEI MATI[2] = "nonres\tripsAirPaxAM.tpp"
+     FILEI MATI[3] = "nonres\tripsAirPaxMD.tpp"
+     FILEI MATI[4] = "nonres\tripsAirPaxPM.tpp"
+     FILEI MATI[5] = "nonres\tripsAirPaxEV.tpp"
+
+     ; Read Highway Skims
+     FILEI MATI[6] = "skims\HWYSKMEA.tpp"
+     FILEI MATI[7] = "skims\HWYSKMAM.tpp"
+     FILEI MATI[8] = "skims\HWYSKMMD.tpp"
+     FILEI MATI[9] = "skims\HWYSKMPM.tpp"
+     FILEI MATI[10]= "skims\HWYSKMEV.tpp"
+
+     FILEI MATI[11] = "skims\connected_zones.tpp"
+     FILEI MATI[12] = "to_from_airports.tpp"
+
+     FILEI LOOKUPI[1] = taxi_tnc_occ_factors.csv
+
+     FILEO PRINTO[1] = "metrics\debug_air_@token_auto@.csv",APPEND=T
+     FILEO MATO[2]   = "metrics\debug_airport_@token_auto@.csv", FORMAT=txt, PATTERN=IJM:V, MO=49-94, DELIMITER=',', MAXFIELDS=46
+
+    ; load lookup values for factoring taxi and TNC modes
+    lookup lookupi=1, LIST=y, name=occ_factors,
+      lookup[1]=1, result=2,      ; (occ,taxi)
+      lookup[2]=1, result=3,      ; (occ,single_tnc)
+      lookup[3]=1, result=4       ; (occ,shared_tnc)
+
+    if(I = 1 & @auto@ = 1) PRINT PRINTO=1 LIST="Scenario,Mode,Daily Person Trips,Daily Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost,VTOLL nonzero AM,VTOLL nonzero MD,Bridge Tolls,Value Tolls"
+
+    IF (I=1)
+      IF (@auto@==1 || @auto@==2 || @auto@==10 || @auto@==11)
+        _occupancy = 1.0
+      ELSEIF (@auto@==3 || @auto@==4 || @auto@==12 || @auto@==13)
+        _occupancy = 2.0
+      ELSEIF (@auto@==5 || @auto@==6 || @auto@==14 || @auto@==15)
+        _occupancy = 3.5
+
+      ; calculate the average occupancy
+      ; the multiplication factors for s3 is calculated based on MTC's TNC pilot survey conducted in Oct/Nov 2018
+      ; the spreadsheet is here: M:\Application\Model One\Mock Futures\TNC occupancy\tnc occupancy.xlsx
+      ELSEIF (@auto@==7)
+       ; taxi
+       _occupancy = occ_factors(1, 1)*1 + occ_factors(1, 2)*2 + occ_factors(1, 3)*3.60
+      ELSEIF (@auto@==8)
+       ; tnc single
+       _occupancy = occ_factors(2, 1)*1 + occ_factors(2, 2)*2 + occ_factors(2, 3)*3.60
+      ELSEIF (@auto@==9)
+       ; tnc shared
+       _occupancy = occ_factors(3, 1)*1 + occ_factors(3, 2)*2 + occ_factors(3, 3)*3.83
+      ENDIF
+    ENDIF
+
+     ; Trips EA * Skims EA
+      MW[1]   =  mi.1.@token_auto@ * mi.6.@token_time@ * _occupancy ; Person minutes
+      MW[2]   =  mi.1.@token_auto@ * mi.6.@token_time@               ; Vehicle minutes
+      MW[3]   =  mi.1.@token_auto@ * mi.6.@token_dist@ * _occupancy ; Person miles
+      MW[4]   =  mi.1.@token_auto@ * mi.6.@token_dist@               ; Vehicle miles
+      MW[5]   =  mi.1.@token_auto@ * (mi.6.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[6]   =  mi.1.@token_auto@ *  mi.6.@token_btoll@             ; Bridge tolls
+      MW[7]   =  mi.1.@token_auto@ *  mi.6.@token_vtoll@             ; Value tolls
+
+     ; Trips AM * Skims AM
+      MW[8]   =  mi.2.@token_auto@ * mi.7.@token_time@ * _occupancy ; Person minutes
+      MW[9]   =  mi.2.@token_auto@ * mi.7.@token_time@               ; Vehicle minutes
+      MW[10]  =  mi.2.@token_auto@ * mi.7.@token_dist@ * _occupancy ; Person miles
+      MW[11]  =  mi.2.@token_auto@ * mi.7.@token_dist@               ; Vehilce miles
+      MW[12]  =  mi.2.@token_auto@ * (mi.7.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[13]  =  mi.2.@token_auto@ *  mi.7.@token_btoll@             ; Bridge tolls
+      MW[14]  =  mi.2.@token_auto@ *  mi.7.@token_vtoll@             ; Value tolls
+
+      ; Trips MD * Skims MD
+      MW[15]  =  mi.3.@token_auto@ * mi.8.@token_time@ * _occupancy ; Person minutes
+      MW[16]  =  mi.3.@token_auto@ * mi.8.@token_time@               ; Vehicle minutes
+      MW[17]  =  mi.3.@token_auto@ * mi.8.@token_dist@ * _occupancy ; Person miles
+      MW[18]  =  mi.3.@token_auto@ * mi.8.@token_dist@               ; Vehicle miles
+      MW[19]  =  mi.3.@token_auto@ * (mi.8.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[20]  =  mi.3.@token_auto@ *  mi.8.@token_btoll@             ; Bridge tolls
+      MW[21]  =  mi.3.@token_auto@ *  mi.8.@token_vtoll@             ; Value tolls
+
+      ; Trips PM * Skims PM
+      MW[22]   =  mi.4.@token_auto@ * mi.9.@token_time@ * _occupancy ; Person minutes
+      MW[23]   =  mi.4.@token_auto@ * mi.9.@token_time@               ; Vehicle minutes
+      MW[24]   =  mi.4.@token_auto@ * mi.9.@token_dist@ * _occupancy ; Person miles
+      MW[25]   =  mi.4.@token_auto@ * mi.9.@token_dist@               ; Vehicle miles
+      MW[26]   =  mi.4.@token_auto@ * (mi.9.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[27]   =  mi.4.@token_auto@ *  mi.9.@token_btoll@             ; Bridge tolls
+      MW[28]   =  mi.4.@token_auto@ *  mi.9.@token_vtoll@             ; Value tolls
+
+      ; Trips EV * Skims EV
+      MW[29]   =  mi.5.@token_auto@ * mi.10.@token_time@ * _occupancy ; Person minutes
+      MW[30]   =  mi.5.@token_auto@ * mi.10.@token_time@               ; Vehicle minutes
+      MW[31]   =  mi.5.@token_auto@ * mi.10.@token_dist@ * _occupancy ; Person miles
+      MW[32]   =  mi.5.@token_auto@ * mi.10.@token_dist@               ; Vehicle miles
+      MW[33]   =  mi.5.@token_auto@ * (mi.10.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[34]   =  mi.5.@token_auto@ *  mi.10.@token_btoll@             ; Bridge tolls
+      MW[35]   =  mi.5.@token_auto@ *  mi.10.@token_vtoll@             ; Value tolls
+
+     ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
+     ;
+     ; NOTE that the zones may be unconnected, resulting in huge skim values, so we need to exclude those here
+
+     MW[36] = mi.11.connected*mi.11.connected.t*( mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)*_occupancy
+     MW[37] = mi.11.connected*mi.11.connected.t*( mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)
+     MW[38] = mi.11.connected*mi.11.connected.t*(MW[1] + MW[8]  + MW[15] + MW[22] + MW[29])   ; Person minutes
+     MW[39] = mi.11.connected*mi.11.connected.t*(MW[2] + MW[9]  + MW[16] + MW[23] + MW[30])   ; Vehicle minutes
+     MW[40] = mi.11.connected*mi.11.connected.t*(MW[3] + MW[10] + MW[17] + MW[24] + MW[31])   ; Person miles
+     MW[41] = mi.11.connected*mi.11.connected.t*(MW[4] + MW[11] + MW[18] + MW[25] + MW[32])   ; Vehicle miles
+     MW[42] = mi.11.connected*mi.11.connected.t*(MW[5] + MW[12] + MW[19] + MW[26] + MW[33])   ; Trip Cost
+     MW[43] = mi.11.connected*mi.11.connected.t*(MW[6] + MW[13] + MW[20] + MW[27] + MW[34])   ; Bridge Tolls
+     MW[44] = mi.11.connected*mi.11.connected.t*(MW[7] + MW[14] + MW[21] + MW[28] + MW[35])   ; Value Tolls
+
+     ; Airport debugging
+     MW[49] = 0
+     JLOOP
+       IF (MW[36] > 0) MW[49] = @auto@
+     ENDJLOOP
+
+     MW[50] = MW[36]*mi.12.SFO  ; Person  Trips,   SFO
+     MW[51] = MW[37]*mi.12.SFO  ; Vehicle Trips,   SFO
+     MW[52] = MW[38]*mi.12.SFO  ; Person  Minutes, SFO
+     MW[53] = MW[39]*mi.12.SFO  ; Vehicle Minutes, SFO
+     MW[54] = MW[40]*mi.12.SFO  ; Person  Miles,   SFO
+     MW[55] = MW[41]*mi.12.SFO  ; Vehicle Miles,   SFO
+     MW[56] = MW[42]*mi.12.SFO  ; Trip Cost,       SFO
+     MW[57] = MW[43]*mi.12.SFO  ; Bridge Tolls,    SFO
+     MW[58] = MW[44]*mi.12.SFO  ; Value Tolls,     SFO
+
+     MW[59] = MW[36]*mi.12.OAK  ; Person  Trips,   OAK
+     MW[60] = MW[37]*mi.12.OAK  ; Vehicle Trips,   OAK
+     MW[61] = MW[38]*mi.12.OAK  ; Person  Minutes, OAK
+     MW[62] = MW[39]*mi.12.OAK  ; Vehicle Minutes, OAK
+     MW[63] = MW[40]*mi.12.OAK  ; Person  Miles,   OAK
+     MW[64] = MW[41]*mi.12.OAK  ; Vehicle Miles,   OAK
+     MW[65] = MW[42]*mi.12.OAK  ; Trip Cost,       OAK
+     MW[66] = MW[43]*mi.12.OAK  ; Bridge Tolls,    OAK
+     MW[67] = MW[44]*mi.12.OAK  ; Value Tolls,     OAK
+
+     MW[68] = MW[36]*mi.12.SJC  ; Person  Trips,   SJC
+     MW[69] = MW[37]*mi.12.SJC  ; Vehicle Trips,   SJC
+     MW[70] = MW[38]*mi.12.SJC  ; Person  Minutes, SJC
+     MW[71] = MW[39]*mi.12.SJC  ; Vehicle Minutes, SJC
+     MW[72] = MW[40]*mi.12.SJC  ; Person  Miles,   SJC
+     MW[73] = MW[41]*mi.12.SJC  ; Vehicle Miles,   SJC
+     MW[74] = MW[42]*mi.12.SJC  ; Trip Cost,       SJC
+     MW[75] = MW[43]*mi.12.SJC  ; Bridge Tolls,    SJC
+     MW[76] = MW[43]*mi.12.SJC  ; Value Tolls,     SJC
+
+     MW[77] = MW[36]*mi.12.STS  ; Person  Trips,   STS
+     MW[78] = MW[37]*mi.12.STS  ; Vehicle Trips,   STS
+     MW[79] = MW[38]*mi.12.STS  ; Person  Minutes, STS
+     MW[80] = MW[39]*mi.12.STS  ; Vehicle Minutes, STS
+     MW[81] = MW[40]*mi.12.STS  ; Person  Miles,   STS
+     MW[82] = MW[41]*mi.12.STS  ; Vehicle Miles,   STS
+     MW[83] = MW[42]*mi.12.STS  ; Trip Cost,       STS
+     MW[84] = MW[43]*mi.12.STS  ; Bridge Tolls,    STS
+     MW[85] = MW[44]*mi.12.STS  ; Value Tolls,     STS
+
+     MW[86] = MW[36]*mi.12.SMF  ; Person  Trips,   SMF
+     MW[87] = MW[37]*mi.12.SMF  ; Vehicle Trips,   SMF
+     MW[88] = MW[38]*mi.12.SMF  ; Person  Minutes, SMF
+     MW[89] = MW[39]*mi.12.SMF  ; Vehicle Minutes, SMF
+     MW[90] = MW[40]*mi.12.SMF  ; Person  Miles,   SMF
+     MW[91] = MW[41]*mi.12.SMF  ; Vehicle Miles,   SMF
+     MW[92] = MW[42]*mi.12.SMF  ; Trip Cost,       SMF
+     MW[93] = MW[43]*mi.12.SMF  ; Bridge Tolls,    SMF
+     MW[94] = MW[43]*mi.12.SMF  ; Value Tolls,     SMF
+
+     IF (@auto@==2 || @auto@==4 || @auto@==6)
+       ; only for tolls
+       Value_tolls       = Value_tolls        + ROWSUM(44)
+     else
+       Value_tolls       = 0
+     ENDIF
+
+     Person_trips  = Person_trips  + ROWSUM(36)
+     Vehicle_trips = Vehicle_trips + ROWSUM(37)
+     Person_min    = Person_min    + ROWSUM(38)
+     Vehicle_min   = Vehicle_min   + ROWSUM(39)
+     Person_miles  = Person_miles  + ROWSUM(40)
+     Vehicle_miles = Vehicle_miles + ROWSUM(41)
+     Total_cost    = Total_cost    + ROWSUM(42)
+     Bridge_tolls  = Bridge_tolls  + ROWSUM(43)
+
+      Mode   = '@token_auto@' + '_air'
+
+      if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= "@token_cwd@", Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
+                                                            Person_min(10.2L),   Vehicle_min(10.2L),
+                                                            Person_miles(10.2L), Vehicle_miles(10.2L),
+                                                            Total_cost(10.2L),
+                                                            "na","na",
+                                                            Bridge_tolls(10.2L), Value_tolls(10.2L)
+    ENDRUN
+  ENDIF ; for the first six auto modes
+
+  EndDistributeMultistep
+
+endloop
+
+Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, CTRAMP6.script.end, printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+
+; combine the files into one
+* copy metrics\debug_air_da.csv+metrics\debug_air_datoll.csv+metrics\debug_air_sr2.csv+metrics\debug_air_sr2toll.csv+metrics\debug_air_sr3.csv+metrics\debug_air_sr3toll.csv metrics\debug_air.csv
+; delete the individual ones
+* del metrics\debug_air_*.csv
+
+; add header
+*echo orig,dest,one,auto_class,person trips SFO,vehicle trips SFO,person minutes SFO,vehicle minutes SFO,person miles SFO,vehicle miles SFO,trip cost SFO,bridge tolls SFO,value tolls SFO,person trips OAK,vehicle trips OAK,person minutes OAK,vehicle minutes OAK,person miles OAK,vehicle miles OAK,trip cost OAK,bridge tolls OAK,value tolls OAK,person trips SJC,vehicle trips SJC,person minutes SJC,vehicle minutes SJC,person miles SJC,vehicle miles SJC,trip cost SJC,bridge tolls SJC,value tolls SJC,person trips STS,vehicle trips STS,person minutes STS,vehicle minutes STS,person miles STS,vehicle miles STS,trip cost STS,bridge tolls STS,value tolls STS,person trips SMF,vehicle trips SMF,person minutes SMF,vehicle minutes SMF,person miles SMF,vehicle miles SMF,trip cost SMF,bridge tolls SMF,value tolls SMF > metrics\debug_airport.csv
+
+; combine the files into one
+* type metrics\debug_airport_da.csv >> metrics\debug_airport.csv
+* type metrics\debug_airport_datoll.csv >> metrics\debug_airport.csv
+* type metrics\debug_airport_sr2.csv >> metrics\debug_airport.csv
+* type metrics\debug_airport_sr2toll.csv >> metrics\debug_airport.csv
+* type metrics\debug_airport_sr3.csv >> metrics\debug_airport.csv
+* type metrics\debug_airport_sr3toll.csv >> metrics\debug_airport.csv
+
+; delete the individual ones
+* del metrics\debug_airport_*.csv
+

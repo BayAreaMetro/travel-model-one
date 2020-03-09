@@ -1,0 +1,168 @@
+
+RUN PGM=NETWORK
+
+  NETI[1] = "%NET1%"
+  NETI[2] = "%NET2%"
+  NETO    = "COMPARE.net", exclude=DISTANCE ,
+                                 SPDCLASS ,
+                                 CAPCLASS ,
+                                 LANES    ,
+                                 TSIN     ,
+                                 GL       ,
+                                 USE      ,
+                                 OT       ,
+                                 CAP      ,
+                                 AT       ,
+                                 FT       ,
+                                 SIGCOR   ,
+                                 TOS      ,
+                                 AUX      ,
+                                 YEAR     ,
+                                 FFS      ,
+                                 FFT      ,
+                                 ROUTENUM ,
+                                 HOT      ,
+                                 TOLLCLASS,
+                                 BRT      ,
+                                 CITYID   ,
+                                 CITYNAME
+
+  REPORT MERGE = TRUE
+  MERGE RECORD = TRUE
+
+  PHASE=INPUT
+    _TOTALMISMATCH=0
+  ENDPHASE
+
+  PHASE=LINKMERGE
+    IN_NET1 = 1
+    IN_NET2 = 1
+    IF (LI.1.A=0 && LI.1.B=0) IN_NET1 = 0
+    IF (LI.2.A=0 && LI.2.B=0) IN_NET2 = 0
+
+    ; Keep these
+    N1_DISTANCE  = LI.1.DISTANCE
+    N1_SPDCLASS  = LI.1.SPDCLASS
+    N1_CAPCLASS  = LI.1.CAPCLASS
+    N1_LANES     = LI.1.LANES   
+    N1_TSIN      = LI.1.TSIN    
+    N1_GL        = LI.1.GL      
+    N1_USE       = LI.1.USE     
+    N1_OT        = LI.1.OT      
+    N1_CAP       = LI.1.CAP     
+    N1_AT        = LI.1.AT      
+    N1_FT        = LI.1.FT      
+    N1_SIGCOR    = LI.1.SIGCOR  
+    N1_TOS       = LI.1.TOS     
+    N1_AUX       = LI.1.AUX     
+    N1_YEAR      = LI.1.YEAR    
+    N1_FFS       = LI.1.FFS     
+    N1_FFT       = LI.1.FFT     
+    N1_ROUTENUM  = LI.1.ROUTENUM
+    N1_HOT       = LI.1.HOT     
+    N1_TOLLCLASS = LI.1.TOLLCLASS
+    N1_BRT       = LI.1.BRT     
+;   N1_METER     = LI.1.METER   
+    N1_CITYID    = LI.1.CITYID  
+    N1_CITYNAME  = LI.1.CITYNAME
+
+    ; Keep these
+    N2_DISTANCE  = LI.2.DISTANCE
+    N2_SPDCLASS  = LI.2.SPDCLASS
+    N2_CAPCLASS  = LI.2.CAPCLASS
+    N2_LANES     = LI.2.LANES   
+    N2_TSIN      = LI.2.TSIN    
+    N2_GL        = LI.2.GL      
+    N2_USE       = LI.2.USE     
+    N2_OT        = LI.2.OT      
+    N2_CAP       = LI.2.CAP     
+    N2_AT        = LI.2.AT      
+    N2_FT        = LI.2.FT      
+    N2_SIGCOR    = LI.2.SIGCOR  
+    N2_TOS       = LI.2.TOS     
+    N2_AUX       = LI.2.AUX     
+    N2_YEAR      = LI.2.YEAR    
+    N2_FFS       = LI.2.FFS     
+    N2_FFT       = LI.2.FFT     
+    N2_ROUTENUM  = LI.2.ROUTENUM
+    N2_HOT       = LI.2.HOT     
+    N2_TOLLCLASS = LI.2.TOLLCLASS
+    N2_BRT       = LI.2.BRT     
+;   N2_METER     = LI.2.METER   
+    N2_CITYID    = LI.2.CITYID  
+    N2_CITYNAME  = LI.2.CITYNAME
+
+    IF (IN_NET1=1 & IN_NET2=0)
+      MISMATCH = 'DELETED'
+    ELSEIF (IN_NET1=0 & IN_NET2=1)
+      MISMATCH = 'ADDED'
+    ELSE
+      MISMATCH = ''
+      IF (ABS(LI.1.DISTANCE - LI.2.DISTANCE) > 0.001 ) MISMATCH = MISMATCH + 'DISTANCE '
+  
+      IF (LI.1.SPDCLASS   <> LI.2.SPDCLASS  ) MISMATCH = MISMATCH + 'SPDCLASS '
+      IF (LI.1.CAPCLASS   <> LI.2.CAPCLASS  ) MISMATCH = MISMATCH + 'CAPCLASS '
+      IF (LI.1.LANES      <> LI.2.LANES     ) MISMATCH = MISMATCH + 'LANES '
+      IF (LI.1.TSIN       <> LI.2.TSIN      ) MISMATCH = MISMATCH + 'TSIN '
+      IF (LI.1.GL         <> LI.2.GL        ) MISMATCH = MISMATCH + 'GL '
+      IF (LI.1.USE        <> LI.2.USE       ) MISMATCH = MISMATCH + 'USE '
+      IF (ABS(LI.1.OT    - LI.2.OT) > 0.001 ) MISMATCH = MISMATCH + 'OT '
+
+      IF (LI.1.CAP        <> LI.2.CAP       ) MISMATCH = MISMATCH + 'CAP '
+      IF (LI.1.AT         <> LI.2.AT        ) MISMATCH = MISMATCH + 'AT '
+      IF (LI.1.FT         <> LI.2.FT        ) MISMATCH = MISMATCH + 'FT '
+      IF (LI.1.SIGCOR     <> LI.2.SIGCOR    ) MISMATCH = MISMATCH + 'SIGCOR '
+      IF (LI.1.TOS        <> LI.2.TOS       ) MISMATCH = MISMATCH + 'TOS '
+      IF (LI.1.AUX        <> LI.2.AUX       ) MISMATCH = MISMATCH + 'AUX '
+      IF (LI.1.YEAR       <> LI.2.YEAR      ) MISMATCH = MISMATCH + 'YEAR '
+  
+      IF (LI.1.FFS        <> LI.2.FFS       ) MISMATCH = MISMATCH + 'FFS '
+      IF (ABS(LI.1.FFT - LI.2.FFT) > 0.001  ) MISMATCH = MISMATCH + 'FFT '
+      IF (LI.1.ROUTENUM   <> LI.2.ROUTENUM  ) MISMATCH = MISMATCH + 'ROUTENUM '
+      IF (LI.1.HOT        <> LI.2.HOT       ) MISMATCH = MISMATCH + 'HOT '
+      IF (LI.1.TOLLCLASS  <> LI.2.TOLLCLASS ) MISMATCH = MISMATCH + 'TOLLCLASS '
+      IF (LI.1.BRT        <> LI.2.BRT       ) MISMATCH = MISMATCH + 'BRT '
+;     IF (LI.1.METER      <> LI.2.METER     ) MISMATCH = MISMATCH + 'METER '
+  
+      IF (LI.1.CITYID     <> LI.2.CITYID    ) MISMATCH = MISMATCH + 'CITYID '
+      IF (LI.1.CITYNAME   <> LI.2.CITYNAME  ) MISMATCH = MISMATCH + 'CITYNAME '
+    ENDIF
+
+    IF (STRLEN(MISMATCH) > 0)
+        _TOTALMISMATCH = _TOTALMISMATCH + 1
+        print LIST="MISMATCH: ",MISMATCH,"; A=",A," B=",B," IN_NET1=",IN_NET1," IN_NET2=",IN_NET2
+
+        print LIST="DISTANCE  : ",LI.1.DISTANCE  ," ", LI.2.DISTANCE
+        print LIST="SPDCLASS  : ",LI.1.SPDCLASS  ," ", LI.2.SPDCLASS  
+        print LIST="CAPCLASS  : ",LI.1.CAPCLASS  ," ", LI.2.CAPCLASS  
+        print LIST="LANES     : ",LI.1.LANES     ," ", LI.2.LANES     
+        print LIST="TSIN      : ",LI.1.TSIN      ," ", LI.2.TSIN      
+        print LIST="GL        : ",LI.1.GL        ," ", LI.2.GL        
+        print LIST="USE       : ",LI.1.USE       ," ", LI.2.USE       
+        print LIST="OT        : ",LI.1.OT        ," ", LI.2.OT        
+
+        print LIST="CAP       : ",LI.1.CAP       ," ", LI.2.CAP       
+        print LIST="AT        : ",LI.1.AT        ," ", LI.2.AT        
+        print LIST="FT        : ",LI.1.FT        ," ", LI.2.FT        
+        print LIST="SIGCOR    : ",LI.1.SIGCOR    ," ", LI.2.SIGCOR    
+        print LIST="TOS       : ",LI.1.TOS       ," ", LI.2.TOS       
+        print LIST="AUX       : ",LI.1.AUX       ," ", LI.2.AUX       
+        print LIST="YEAR      : ",LI.1.YEAR      ," ", LI.2.YEAR      
+
+        print LIST="FFS       : ",LI.1.FFS       ," ", LI.2.FFS       
+        print LIST="FFT       : ",LI.1.FFT(10.6) ," ", LI.2.FFT(10.6)
+        print LIST="ROUTENUM  : ",LI.1.ROUTENUM  ," ", LI.2.ROUTENUM  
+        print LIST="HOT       : ",LI.1.HOT       ," ", LI.2.HOT       
+        print LIST="TOLLCLASS : ",LI.1.TOLLCLASS ," ", LI.2.TOLLCLASS 
+        print LIST="BRT       : ",LI.1.BRT       ," ", LI.2.BRT       
+;       print LIST="METER     : ",LI.1.METER     ," ", LI.2.METER     
+
+        print LIST="CITYID    : ",LI.1.CITYID    ," ", LI.2.CITYID    
+        print LIST="CITYNAME  : ",LI.1.CITYNAME  ," ", LI.2.CITYNAME  
+    ENDIF
+  ENDPHASE
+
+  PHASE=SUMMARY
+    print LIST="TOTAL MISMATCH = ",_TOTALMISMATCH
+  ENDPHASE
+ENDRUN
