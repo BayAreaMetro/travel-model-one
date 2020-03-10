@@ -203,7 +203,7 @@ ACS_BG_variables2 <- paste0("B01001_032E,",     # female aged 20
                       "B01001_048E,",		# female aged 80 to 84
                       "B01001_049E,",		# female aged 85+ 
                       
-                      "B25024_002E,",           # 1 unit detached    
+                      "B25024_002E,",   # 1 unit detached    
                       "B25024_003E,",		# 1 unit attached 
                       "B25024_004E,",		# 2 units
                       "B25024_005E,",		# 3 or 4 units
@@ -736,7 +736,8 @@ workingdata <- left_join(workingdata,ACS_tract_raw, by=c("tract"="GEOID"))%>% mu
                            occ_m_ret_salesE + occ_f_ret_salesE)*sharebg,
   pers_occ_manual       = (occ_m_man_buildE + occ_f_man_buildE +
                            occ_m_man_natE   + occ_f_man_natE   +
-                           occ_m_man_prodE  + occ_f_man_prodE )*sharebg
+                           occ_m_man_prodE  + occ_f_man_prodE )*sharebg,
+  pers_occ_military     = (armedforcesE)*sharebg
 )
 # sf1
 workingdata <- left_join(workingdata,sf1_tract_raw, by=c("tract"="GEOID")) %>%
@@ -797,7 +798,7 @@ temp0 <- workingdata %>%
               pers_occ_services    =sum(pers_occ_services),
               pers_occ_retail      =sum(pers_occ_retail),
               pers_occ_manual      =sum(pers_occ_manual),
-              pers_occ_military    =sum(gq_type_mil)) 
+              pers_occ_military    =sum(pers_occ_military)) 
   
 
 # Correct GQ population to sum to ACS PUMS 2015 total, outlined in Steps 1-3 below
@@ -1150,9 +1151,14 @@ Tableau10_15 <- left_join(Tableau2010,Tableau2015,by = c("ZONE","Variable"))
 write.csv(Tableau10_15, "Tableau_2010_2015_Comparison.csv", row.names = FALSE, quote = T)
 
 
+RMWG_Summary <- New2015 %>%
+  mutate(housing_units=SFDU+MFDU) %>% 
+  group_by(COUNTY) %>% 
+  summarize(population=sum(TOTPOP),households=sum(TOTHH),units=sum(housing_units),group=sum(gqpop),jobs=sum(TOTEMP),
+            residents=sum(EMPRES))
 
 
-
+write.csv(RMWG_Summary, "RMWG_Summary.csv", row.names = FALSE, quote = T)
 
   
 
