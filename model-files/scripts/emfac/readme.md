@@ -8,24 +8,27 @@ day and fuel type; (3) vehicle population files by vehicle type and fuel type.
 There are five scripts/steps that produce the activity data inputted into EMFAC. 
 
 Step (1) / Script (1) CreateSpeedBinsBetweenZones.job
+
 This step and script extracts link level VMT and speeds for the 13 ARB speed cohorts.
 This generic script forecast year run applies for all 5 timeperiods.      
 
 Step (2) / Script (2) CreateSpeedBinsWithinZones.job
+
 This step and script - a) extracts intrazonal level VMT and speeds; and b) extracts total daily trips for the 13 ARB speed cohorts
 This generic script forecast year run also applies for all 5 timeperiods.      
 
 Step (3) / Script (3)
+
 This step sums EMFAC output for two csv files 1) travel between zones and 2) travel within zones by county and the 13 ARB 
-speed cohorts.
-The output of this script is two files: 1) a file with the sum of the two inputs; 2) the share of each speed bin relative to county totals; 
-and 3) the total vmt values collapsed to county and hourly bins.
+speed cohorts. The output of this script is two files: 1) a file with the sum of the two inputs; 2) the share of each speed bin relative to county totals; and 3) the total vmt values collapsed to county and hourly bins.
 
 Step (4) / Script (4)
+
 This step multiplies total VMT (stratified by county and hour of day) by VMT share values for fuel type and vehicle class
 The output of this script is a unique file for each county, by VMT, in each category of fuel type, vehicle class, and hour of the day
 
 Step (5) / Script (5)
+
 This step creates a factor for growing the vehicle population files, using county VMT total ratios for project year and base year, and an EMFAC-generated factor 
 The output of this script is a unique file for each county, by vehicle population for each vehicle and fuel type
 
