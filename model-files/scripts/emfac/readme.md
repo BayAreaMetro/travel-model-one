@@ -7,11 +7,11 @@ day and fuel type; (3) vehicle population files by vehicle type and fuel type.
 
 There are five scripts/steps that produce the activity data inputted into EMFAC. 
 
-Step (1) / Script (1) CreateSpeedBinsBetweenZones.job;
+Step (1) / Script (1) CreateSpeedBinsBetweenZones.job
 This step and script extracts link level VMT and speeds for the 13 ARB speed cohorts.
 This generic script forecast year run applies for all 5 timeperiods.      
 
-Step (2) / Script (2) CreateSpeedBinsWithinZones.job;
+Step (2) / Script (2) CreateSpeedBinsWithinZones.job
 This step and script - a) extracts intrazonal level VMT and speeds; and b) extracts total daily trips for the 13 ARB speed cohorts
 This generic script forecast year run also applies for all 5 timeperiods.      
 
