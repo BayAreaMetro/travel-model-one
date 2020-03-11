@@ -58,32 +58,35 @@ The facility type (FT) codes used by this script are as follows: (1) freeway-to-
 The area type (AT) codes used by this script are as follows: (0) regional core; (1) central business 
 district (CBD); (2) urban business; (3) urban; (4) suburban; (5) rural. 
 
-Input:  (1)  A highway network that contains the following variables: (i) PNROK, for which a code of 1 means
+Input:
 
-             (see CreateFiveHighwayNetworks.job); (ii) CTIM, which is the congested travel time (iii) FT, 
-             facility type, whose codes are described above; (iv) AT, area type, whose codes are described above; 
-             (v) DISTANCE, coded in miles. 
+ (1)   A highway network that contains the following variables: (i) PNROK, for which a code of 1 means
+	      the link can be used for park-and-ride connectors, a 0 means the link cannot 
+       (see CreateFiveHighwayNetworks.job); (ii) CTIM, which is the congested travel time (iii) FT, 
+       facility type, whose codes are described above; (iv) AT, area type, whose codes are described above; 
+       (v) DISTANCE, coded in miles. 
 
+ (2)   Access link files, which connect transit-only infrastructure to the highway network;  these files
+       contain only an A-node and a B-node, where the A-node is on the highway network and the B-node is
+	      a walk-access-funnel link, meaning all walk-access links enter the transit-only infrastructure
+	      via this node, which allows for easier accounting of walk access usage.
+       
+  (3)  Transfer link files, which allow bus users to transfer directly to transit-only infrastructure; 
+	      these files contain an A-node, B-node, and a distance, in miles.  The A-node is a point on the
+	      highway network (the point where the nearest bus stops) and the B-node is a stop on the transit-
+	      only infrastructure. 
 
-             contain only an A-node and a B-node, where the A-node is on the highway network and the B-node is
+Output:
 
+(1)  A time-period-specific transit background network that contains transit-only nodes and the
+	       variables PNR_TIME, which is the park-and-ride drive access link time (big values allow us to 
+	       disallow park-and-riding on certain bridges) and BUS_TIME, which is the speed buses travel
+	       on highway lanes;
 
+(2)  The above network with transit access links included, as described above;
 
+(3)  The network in (1) with transit transfer links included, as described above. 
 
-
-
-
-
-Output: (1)  A time-period-specific transit background network that contains transit-only nodes and the
-
-
-
-
-
-
-
-
-Notes:  (1) 
 
 See also: (1) TransitSkims.job -- Uses the bus speeds computed here to estimate transit travel times
           (2) BuildTransitNetworks.job -- Creates the transit networks that are subsequently skimmed and assigned
