@@ -1,4 +1,5 @@
 RunPrepareEmfac.bat
+(in https://github.com/BayAreaMetro/travel-model-one/tree/master/model-files/)
 
 This batch job processes three types of activity data (by county) for input into EMFAC to run in Burden mode 
 and calculating regional on-road emission inventories.  The three types of activity data (all by county) that will 
@@ -17,17 +18,17 @@ Step (2) / Script (2) CreateSpeedBinsWithinZones.job
 This step and script - a) extracts intrazonal level VMT and speeds; and b) extracts total daily trips for the 13 ARB speed cohorts
 This generic script forecast year run also applies for all 5 timeperiods.      
 
-Step (3) / Script (3)
+Step (3) / Script (3) SumSpeedBins1.awk
 
 This step sums EMFAC output for two csv files 1) travel between zones and 2) travel within zones by county and the 13 ARB 
 speed cohorts. The output of this script is two files: 1) a file with the sum of the two inputs; 2) the share of each speed bin relative to county totals; and 3) the total vmt values collapsed to county and hourly bins.
 
-Step (4) / Script (4)
+Step (4) / Script (4) No longer in use
 
 This step multiplies total VMT (stratified by county and hour of day) by VMT share values for fuel type and vehicle class
 The output of this script is a unique file for each county, by VMT, in each category of fuel type, vehicle class, and hour of the day
 
-Step (5) / Script (5)
+Step (5) / Script (5) No longer in use
 
 This step creates a factor for growing the vehicle population files, using county VMT total ratios for project year and base year, and an EMFAC-generated factor 
 The output of this script is a unique file for each county, by vehicle population for each vehicle and fuel type
