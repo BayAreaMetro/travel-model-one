@@ -1,5 +1,5 @@
  ;************************************************************************************
-;*   m:\M\Development\ModelToEmfac\reference\model_scripts\yr05_valid\CreateSpeedBinsBetweenZns2.job
+;*   M:\Development\Travel Model One\ModelToEmfac\reference\05_9County\MODEL2-D\mainmodel\2020_06_701\CTRAMP\scripts\emfac2\CreateSpeedBinsBetweenZns3.job
 ;*   1. Extract link level VMT and speeds;
 ;*   2. Extract total daily trips (for calculation of terminal distance VMT & speeds)
 ;*   (Subsequent SAS jobs will aggregate intrazonal and terminal distance VMT to
@@ -8,8 +8,10 @@
 ;*         
 ;*   This Version accounts for the VMT double-counting/speed-bin overlap by using
 ;*   ">=" or "<" coding.
+;*   This Version also accounts for Futures Scenarios "AV" Vehicle Class VMT
 ;*
-;*         -- December 20, 2016 ----        hmb. 
+;*
+;*         -- February 8, 2019 ----        hmb. 
 ;*
 ;*************************************************************************************
     	
@@ -41,30 +43,30 @@ run pgm = hwynet
       if (_time = 1)
       
          _cspd = cspdEA
-         _vmt  = (volEA_da + volEA_s2 + volEA_s3 + volEA_SM + volEA_HV + volEA_daT + volEA_s2T + volEA_s3T + volEA_SMT + volEA_HVT) * distance 
+         _vmt  = (volEA_da + volEA_s2 + volEA_s3 + volEA_SM + volEA_HV + volEA_daT + volEA_s2T + volEA_s3T + volEA_SMT + volEA_HVT + volEA_DAAV + volEA_S2AV + volEA_S3AV) * distance 
 
       elseif (_time = 2)
       
          _cspd = cspdAM
-         _vmt  = (volAM_da + volAM_s2 + volAM_s3 + volAM_SM + volAM_HV + volAM_daT + volAM_s2T + volAM_s3T + volAM_SMT + volAM_HVT) * distance 
+         _vmt  = (volAM_da + volAM_s2 + volAM_s3 + volAM_SM + volAM_HV + volAM_daT + volAM_s2T + volAM_s3T + volAM_SMT + volAM_HVT + volAM_DAAV + volAM_S2AV + volAM_S3AV) * distance 
   
 
       elseif (_time = 3)
       
          _cspd = cspdMD
-         _vmt  = (volMD_da + volMD_s2 + volMD_s3 + volMD_SM + volMD_HV + volMD_daT + volMD_s2T + volMD_s3T + volMD_SMT + volMD_HVT) * distance 
+         _vmt  = (volMD_da + volMD_s2 + volMD_s3 + volMD_SM + volMD_HV + volMD_daT + volMD_s2T + volMD_s3T + volMD_SMT + volMD_HVT + volMD_DAAV + volMD_S2AV + volMD_S3AV) * distance 
    
 
       elseif (_time = 4)
       
          _cspd = cspdPM
-         _vmt  = (volPM_da + volPM_s2 + volPM_s3 + volPM_SM + volPM_HV + volPM_daT + volPM_s2T + volPM_s3T + volPM_SMT + volPM_HVT) * distance 
+         _vmt  = (volPM_da + volPM_s2 + volPM_s3 + volPM_SM + volPM_HV + volPM_daT + volPM_s2T + volPM_s3T + volPM_SMT + volPM_HVT + volPM_DAAV + volPM_S2AV + volPM_S3AV) * distance 
    
 
       elseif (_time = 5)
       
          _cspd = cspdEV
-         _vmt  = (volEV_da + volEV_s2 + volEV_s3 + volEV_SM + volEV_HV + volEV_daT + volEV_s2T + volEV_s3T  + volEV_SM + volEV_HVT) * distance 
+         _vmt  = (volEV_da + volEV_s2 + volEV_s3 + volEV_SM + volEV_HV + volEV_daT + volEV_s2T + volEV_s3T  + volEV_SM + volEV_HVT + volEV_DAAV + volEV_S2AV + volEV_S3AV) * distance 
          
       endif
       
