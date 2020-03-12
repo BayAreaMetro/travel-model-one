@@ -75,11 +75,14 @@ run pgm = matrix
    ; read in evening commercial travel skims
    mati[20] = skims\com_hwyskimEV.tpp
 
-   ; trucks are included in total vmt calculation AND speed distribution data files
+   ; for conformity, trucks are included in total vmt calculation AND speed distribution data files
    ; but speed distribution files ARE NOT applied to truck shares of vmt
+   ; for SB375, trucks are excluded in total vmt calculations
+
 
    ; create an array that is indexed by time period x 10000 + county code x 100 + speed bin
-   array _timeCountyBin = 51013
+   array _tmCtyBn = 51013
+   array _tmCtyBn_NoTrk = 51013
 
    ; do these steps for internal zones only
    if (i <= 1454)
@@ -174,33 +177,58 @@ run pgm = matrix
                     mi.11.VSTRUCK     * mi.12.DISTVSM     + mi.11.STRUCK     * mi.12.DISTSML     + mi.11.MTRUCK     * mi.12.DISTMED     + mi.11.CTRUCK     * mi.12.DISTLRG +
                     mi.11.VSTRUCKTOLL * mi.12.TOLLDISTVSM + mi.11.STRUCKTOLL * mi.12.TOLLDISTSML + mi.11.MTRUCKTOLL * mi.12.TOLLDISTMED + mi.11.CTRUCKTOLL * mi.12.TOLLDISTLRG
 
+            vmtEA_NoTrk = mi.1.DA           * mi.2.DISTDA       + mi.1.SR2         * mi.2.DISTS2       + mi.1.SR3         * mi.2.DISTS3 +
+                    mi.1.DATOLL       * mi.2.TOLLDISTDA   + mi.1.SR2TOLL     * mi.2.TOLLDISTS2   + mi.1.SR3TOLL     * mi.2.TOLLDISTS3 +
+                    mi.1.DA_TNC       * mi.2.TOLLDISTDA   + mi.1.S2_TNC      * mi.2.TOLLDISTS2   + mi.1.S3_TNC      * mi.2.TOLLDISTS3 +
+                    mi.1.DA_AV        * mi.2.TOLLDISTDA   + mi.1.S2_AV       * mi.2.TOLLDISTS2   + mi.1.S3_AV       * mi.2.TOLLDISTS3
+
             vmtAM = mi.3.DA           * mi.4.DISTDA       + mi.3.SR2         * mi.4.DISTS2       + mi.3.SR3         * mi.4.DISTS3 +
                     mi.3.DATOLL       * mi.4.TOLLDISTDA   + mi.3.SR2TOLL     * mi.4.TOLLDISTS2   + mi.3.SR3TOLL     * mi.4.TOLLDISTS3 +
                     mi.3.DA_TNC       * mi.4.TOLLDISTDA   + mi.3.S2_TNC      * mi.4.TOLLDISTS2   + mi.3.S3_TNC      * mi.4.TOLLDISTS3 +
                     mi.3.DA_AV        * mi.4.TOLLDISTDA   + mi.3.S2_AV       * mi.4.TOLLDISTS2   + mi.3.S3_AV       * mi.4.TOLLDISTS3 +
                     mi.13.VSTRUCK     * mi.14.DISTVSM     + mi.13.STRUCK     * mi.14.DISTSML     + mi.13.MTRUCK     * mi.14.DISTMED     + mi.13.CTRUCK     * mi.14.DISTLRG +
-		                mi.13.VSTRUCKTOLL * mi.14.TOLLDISTVSM + mi.13.STRUCKTOLL * mi.14.TOLLDISTSML + mi.13.MTRUCKTOLL * mi.14.TOLLDISTMED + mi.13.CTRUCKTOLL * mi.14.TOLLDISTLRG
+		    mi.13.VSTRUCKTOLL * mi.14.TOLLDISTVSM + mi.13.STRUCKTOLL * mi.14.TOLLDISTSML + mi.13.MTRUCKTOLL * mi.14.TOLLDISTMED + mi.13.CTRUCKTOLL * mi.14.TOLLDISTLRG
+
+            vmtAM_NoTrk = mi.3.DA           * mi.4.DISTDA       + mi.3.SR2         * mi.4.DISTS2       + mi.3.SR3         * mi.4.DISTS3 +
+                    mi.3.DATOLL       * mi.4.TOLLDISTDA   + mi.3.SR2TOLL     * mi.4.TOLLDISTS2   + mi.3.SR3TOLL     * mi.4.TOLLDISTS3 +
+                    mi.3.DA_TNC       * mi.4.TOLLDISTDA   + mi.3.S2_TNC      * mi.4.TOLLDISTS2   + mi.3.S3_TNC      * mi.4.TOLLDISTS3 +
+                    mi.3.DA_AV        * mi.4.TOLLDISTDA   + mi.3.S2_AV       * mi.4.TOLLDISTS2   + mi.3.S3_AV       * mi.4.TOLLDISTS3
 
             vmtMD = mi.5.DA           * mi.6.DISTDA       + mi.5.SR2         * mi.6.DISTS2       + mi.5.SR3         * mi.6.DISTS3 +
                     mi.5.DATOLL       * mi.6.TOLLDISTDA   + mi.5.SR2TOLL     * mi.6.TOLLDISTS2   + mi.5.SR3TOLL     * mi.6.TOLLDISTS3 +
                     mi.5.DA_TNC       * mi.6.TOLLDISTDA   + mi.5.S2_TNC      * mi.6.TOLLDISTS2   + mi.5.S3_TNC      * mi.6.TOLLDISTS3 +
                     mi.5.DA_AV        * mi.6.TOLLDISTDA   + mi.5.S2_AV       * mi.6.TOLLDISTS2   + mi.5.S3_AV       * mi.6.TOLLDISTS3 +
                     mi.15.VSTRUCK     * mi.16.DISTVSM     + mi.15.STRUCK     * mi.16.DISTSML     + mi.15.MTRUCK     * mi.16.DISTMED     + mi.15.CTRUCK     * mi.16.DISTLRG +
-		                mi.15.VSTRUCKTOLL * mi.16.TOLLDISTVSM + mi.15.STRUCKTOLL * mi.16.TOLLDISTSML + mi.15.MTRUCKTOLL * mi.16.TOLLDISTMED + mi.15.CTRUCKTOLL * mi.16.TOLLDISTLRG
+		    mi.15.VSTRUCKTOLL * mi.16.TOLLDISTVSM + mi.15.STRUCKTOLL * mi.16.TOLLDISTSML + mi.15.MTRUCKTOLL * mi.16.TOLLDISTMED + mi.15.CTRUCKTOLL * mi.16.TOLLDISTLRG
+
+            vmtMD_NoTrk = mi.5.DA           * mi.6.DISTDA       + mi.5.SR2         * mi.6.DISTS2       + mi.5.SR3         * mi.6.DISTS3 +
+                    mi.5.DATOLL       * mi.6.TOLLDISTDA   + mi.5.SR2TOLL     * mi.6.TOLLDISTS2   + mi.5.SR3TOLL     * mi.6.TOLLDISTS3 +
+                    mi.5.DA_TNC       * mi.6.TOLLDISTDA   + mi.5.S2_TNC      * mi.6.TOLLDISTS2   + mi.5.S3_TNC      * mi.6.TOLLDISTS3 +
+                    mi.5.DA_AV        * mi.6.TOLLDISTDA   + mi.5.S2_AV       * mi.6.TOLLDISTS2   + mi.5.S3_AV       * mi.6.TOLLDISTS3
 
             vmtPM = mi.7.DA           * mi.8.DISTDA       + mi.7.SR2         * mi.8.DISTS2       + mi.7.SR3         * mi.8.DISTS3 +
                     mi.7.DATOLL       * mi.8.TOLLDISTDA   + mi.7.SR2TOLL     * mi.8.TOLLDISTS2   + mi.7.SR3TOLL     * mi.8.TOLLDISTS3 +
                     mi.7.DA_TNC       * mi.8.TOLLDISTDA   + mi.7.S2_TNC      * mi.8.TOLLDISTS2   + mi.7.S3_TNC      * mi.8.TOLLDISTS3 +
                     mi.7.DA_AV        * mi.8.TOLLDISTDA   + mi.7.S2_AV       * mi.8.TOLLDISTS2   + mi.7.S3_AV       * mi.8.TOLLDISTS3 +
                     mi.17.VSTRUCK     * mi.18.DISTVSM     + mi.17.STRUCK     * mi.18.DISTSML     + mi.17.MTRUCK     * mi.18.DISTMED     + mi.17.CTRUCK     * mi.18.DISTLRG +
-		                mi.17.VSTRUCKTOLL * mi.18.TOLLDISTVSM + mi.17.STRUCKTOLL * mi.18.TOLLDISTSML + mi.17.MTRUCKTOLL * mi.18.TOLLDISTMED + mi.17.CTRUCKTOLL * mi.18.TOLLDISTLRG
+		    mi.17.VSTRUCKTOLL * mi.18.TOLLDISTVSM + mi.17.STRUCKTOLL * mi.18.TOLLDISTSML + mi.17.MTRUCKTOLL * mi.18.TOLLDISTMED + mi.17.CTRUCKTOLL * mi.18.TOLLDISTLRG
+
+            vmtPM_NoTrk = mi.7.DA           * mi.8.DISTDA       + mi.7.SR2         * mi.8.DISTS2       + mi.7.SR3         * mi.8.DISTS3 +
+                    mi.7.DATOLL       * mi.8.TOLLDISTDA   + mi.7.SR2TOLL     * mi.8.TOLLDISTS2   + mi.7.SR3TOLL     * mi.8.TOLLDISTS3 +
+                    mi.7.DA_TNC       * mi.8.TOLLDISTDA   + mi.7.S2_TNC      * mi.8.TOLLDISTS2   + mi.7.S3_TNC      * mi.8.TOLLDISTS3 +
+                    mi.7.DA_AV        * mi.8.TOLLDISTDA   + mi.7.S2_AV       * mi.8.TOLLDISTS2   + mi.7.S3_AV       * mi.8.TOLLDISTS3
 
             vmtEV = mi.9.DA           * mi.10.DISTDA      + mi.9.SR2         * mi.10.DISTS2      + mi.9.SR3         * mi.10.DISTS3 +
                     mi.9.DATOLL       * mi.10.TOLLDISTDA  + mi.9.SR2TOLL     * mi.10.TOLLDISTS2  + mi.9.SR3TOLL     * mi.10.TOLLDISTS3 +
                     mi.9.DA_TNC       * mi.10.TOLLDISTDA  + mi.9.S2_TNC      * mi.10.TOLLDISTS2  + mi.9.S3_TNC      * mi.10.TOLLDISTS3 +
                     mi.9.DA_AV        * mi.10.TOLLDISTDA  + mi.9.S2_AV       * mi.10.TOLLDISTS2  + mi.9.S3_AV       * mi.10.TOLLDISTS3 +
                     mi.19.VSTRUCK     * mi.20.DISTVSM     + mi.19.STRUCK     * mi.20.DISTSML     + mi.19.MTRUCK     * mi.20.DISTMED     + mi.19.CTRUCK     * mi.20.DISTLRG +
-		                mi.19.VSTRUCKTOLL * mi.20.TOLLDISTVSM + mi.19.STRUCKTOLL * mi.20.TOLLDISTSML + mi.19.MTRUCKTOLL * mi.20.TOLLDISTMED + mi.19.CTRUCKTOLL * mi.20.TOLLDISTLRG
+		    mi.19.VSTRUCKTOLL * mi.20.TOLLDISTVSM + mi.19.STRUCKTOLL * mi.20.TOLLDISTSML + mi.19.MTRUCKTOLL * mi.20.TOLLDISTMED + mi.19.CTRUCKTOLL * mi.20.TOLLDISTLRG
+
+            vmtEV_NoTrk = mi.9.DA           * mi.10.DISTDA      + mi.9.SR2         * mi.10.DISTS2      + mi.9.SR3         * mi.10.DISTS3 +
+                    mi.9.DATOLL       * mi.10.TOLLDISTDA  + mi.9.SR2TOLL     * mi.10.TOLLDISTS2  + mi.9.SR3TOLL     * mi.10.TOLLDISTS3 +
+                    mi.9.DA_TNC       * mi.10.TOLLDISTDA  + mi.9.S2_TNC      * mi.10.TOLLDISTS2  + mi.9.S3_TNC      * mi.10.TOLLDISTS3 +
+                    mi.9.DA_AV        * mi.10.TOLLDISTDA  + mi.9.S2_AV       * mi.10.TOLLDISTS2  + mi.9.S3_AV       * mi.10.TOLLDISTS3
 
             ; step 3: determine the congested speed (use drive alone speeds only)
 
@@ -222,26 +250,31 @@ run pgm = matrix
 
             _cspd = cspdEA
             _vmt  = vmtEA
+            _vmt_NoTrk  = vmtEA_NoTrk
 
          elseif (_time = 2)
 
             _cspd = cspdAM
             _vmt  = vmtAM
+            _vmt_NoTrk  = vmtAM_NoTrk
 
          elseif (_time = 3)
 
             _cspd = cspdMD
             _vmt  = vmtMD
+            _vmt_NoTrk  = vmtMD_NoTrk
 
          elseif (_time = 4)
 
             _cspd = cspdPM
             _vmt  = vmtPM
+            _vmt_NoTrk  = vmtPM_NoTrk
 
          elseif (_time = 5)
 
             _cspd = cspdEV
             _vmt  = vmtEV
+            _vmt_NoTrk  = vmtEV_NoTrk
 
          endif
 
@@ -318,7 +351,8 @@ run pgm = matrix
 	      if (_cspd >= _speedBinLower && _cspd < _speedBinUpper)
 
 	         _arrayIndex = _time * 10000 + _countyCode * 100 + _speed
-	         _timeCountyBin[_arrayIndex] = _timeCountyBin[_arrayIndex] + _vmt
+	         _tmCtyBn[_arrayIndex] = _tmCtyBn[_arrayIndex] + _vmt
+	         _tmCtyBn_NoTrk[_arrayIndex] = _tmCtyBn_NoTrk[_arrayIndex] + _vmt_NoTrk
 
 	      endif
 
@@ -332,12 +366,19 @@ run pgm = matrix
 
     ; set arrays for sum vmt and share of vmt in each hour
       array _vmtArray = 5000
+      array _vmtArray_NoTrk = 5000
       array _shareVmt = 5000
+      array _shareVmt_NoTrk = 5000
 
       list = "countyName, arbCounty, speedBin, hour01, hour02, hour03, hour04, hour05, hour06,",
              "hour07, hour08, hour09, hour10, hour11, hour12, hour13, hour14, hour15, hour16,",
              "hour17, hour18, hour19, hour20, hour21, hour22, hour23, hour24",
-             file = emfac2\CreateSpeedBinsWithinZones_sums.csv
+             file = emfac_output\CreateSpeedBinsWithinZones_sums.csv
+
+      list = "countyName, arbCounty, speedBin, hour01, hour02, hour03, hour04, hour05, hour06,",
+             "hour07, hour08, hour09, hour10, hour11, hour12, hour13, hour14, hour15, hour16,",
+             "hour17, hour18, hour19, hour20, hour21, hour22, hour23, hour24",
+             file = emfac_output\CreateSpeedBinsWithinZones_sums_NoTrk.csv
 
       ; build an array to let us write out the results in alphabetical order
       array _alphaCounty = 10
@@ -464,26 +505,36 @@ run pgm = matrix
             loop _speedBin = 1,13
 
               _index   = _timeIndex * 10000 + _county * 100 + _speedBin
-              _tempVmt = _timeCountyBin[_index] * _diurnalFactor
+              _tempVmt = _tmCtyBn[_index] * _diurnalFactor
+              _tempVmt_NoTrk = _tmCtyBn_NoTrk[_index] * _diurnalFactor
 
               _sumIndex = _speedBin * 100 + _time24
               _sumVmt = _sumVmt + _tempVmt
+              _sumVmt_NoTrk = _sumVmt_NoTrk + _tempVmt_NoTrk
 
             endloop
 
             loop _speedBin = 1,13
 
               _index    = _timeIndex * 10000 + _county * 100 + _speedBin
-              _tempVmt  = _timeCountyBin[_index] * _diurnalFactor
-
+              _tempVmt  = _tmCtyBn[_index] * _diurnalFactor
+              _tempVmt_NoTrk  = _tmCtyBn_NoTrk[_index] * _diurnalFactor
 
               _sumIndex = _speedBin * 100 + _time24
               _shareVmt[_sumIndex] = 0.0
+              _shareVmt_NoTrk[_sumIndex] = 0.0
 
               if (_sumVmt > 0.0)
 
                  _shareVmt[_sumIndex] = _tempVmt/_sumVmt
                  _vmtArray[_sumIndex] = _tempVmt
+
+              endif
+
+              if (_sumVmt_NoTrk > 0.0)
+
+                 _shareVmt_NoTrk[_sumIndex] = _tempVmt_NoTrk/_sumVmt_NoTrk
+                 _vmtArray_NoTrk[_sumIndex] = _tempVmt_NoTrk
 
               endif
 
@@ -502,7 +553,20 @@ run pgm = matrix
                    _vmtArray[_speedBin * 100 + 16](8.2),",", _vmtArray[_speedBin * 100 + 17](8.2),",", _vmtArray[_speedBin * 100 + 18](8.2),",",
                    _vmtArray[_speedBin * 100 + 19](8.2),",", _vmtArray[_speedBin * 100 + 20](8.2),",", _vmtArray[_speedBin * 100 + 21](8.2),",",
                    _vmtArray[_speedBin * 100 + 22](8.2),",", _vmtArray[_speedBin * 100 + 23](8.2),",", _vmtArray[_speedBin * 100 + 24](8.2),
-                   file = emfac2\CreateSpeedBinsWithinZones_sums.csv
+                   file = emfac_output\CreateSpeedBinsWithinZones_sums.csv
+
+            list = _countyName,",",_arbCounty,",",_speedBin,",",
+                   _vmtArray_NoTrk[_speedBin * 100 + 1](8.2), ",", _vmtArray_NoTrk[_speedBin * 100 + 2](8.2), ",", _vmtArray_NoTrk[_speedBin * 100 + 3](8.2), ",",
+                   _vmtArray_NoTrk[_speedBin * 100 + 4](8.2), ",", _vmtArray_NoTrk[_speedBin * 100 + 5](8.2), ",", _vmtArray_NoTrk[_speedBin * 100 + 6](8.2), ",",
+                   _vmtArray_NoTrk[_speedBin * 100 + 7](8.2), ",", _vmtArray_NoTrk[_speedBin * 100 + 8](8.2), ",", _vmtArray_NoTrk[_speedBin * 100 + 9](8.2), ",",
+                   _vmtArray_NoTrk[_speedBin * 100 + 10](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 11](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 12](8.2),",",
+                   _vmtArray_NoTrk[_speedBin * 100 + 13](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 14](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 15](8.2),",",
+                   _vmtArray_NoTrk[_speedBin * 100 + 16](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 17](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 18](8.2),",",
+                   _vmtArray_NoTrk[_speedBin * 100 + 19](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 20](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 21](8.2),",",
+                   _vmtArray_NoTrk[_speedBin * 100 + 22](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 23](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 24](8.2),
+                  file = emfac_output\CreateSpeedBinsWithinZones_sums_NoTrk.csv
+
+
 
           endloop
 
