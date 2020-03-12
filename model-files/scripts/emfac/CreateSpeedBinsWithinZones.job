@@ -283,68 +283,68 @@ run pgm = matrix
 	          if (_speed = 1)
 
 	             _speedBinLower = 0.0
-	             _speedBinUpper = 4.999
+	             _speedBinUpper = 5.000
 
 	          elseif (_speed = 2)
 
 	             _speedBinLower = 5.000
-	             _speedBinUpper = 9.999
+	             _speedBinUpper = 10.000
 
 	          elseif (_speed = 3)
 
 	             _speedBinLower = 10.000
-	             _speedBinUpper = 14.999
+	             _speedBinUpper = 15.000
 
 	          elseif (_speed = 4)
 
 	             _speedBinLower = 15.000
-	             _speedBinUpper = 19.999
+	             _speedBinUpper = 20.000
 
 	          elseif (_speed = 5)
 
 	             _speedBinLower = 20.000
-	             _speedBinUpper = 24.999
+	             _speedBinUpper = 25.000
 
 	          elseif (_speed = 6)
 
 	             _speedBinLower = 25.000
-	             _speedBinUpper = 29.999
+	             _speedBinUpper = 30.000
 
 	          elseif (_speed = 7)
 
 	             _speedBinLower = 30.000
-	             _speedBinUpper = 34.999
+	             _speedBinUpper = 35.000
 
 	          elseif (_speed = 8)
 
 	             _speedBinLower = 35.000
-	             _speedBinUpper = 39.999
+	             _speedBinUpper = 40.000
 
 	          elseif (_speed = 9)
 
 	             _speedBinLower = 40.000
-	             _speedBinUpper = 44.999
+	             _speedBinUpper = 45.000
 
 	          elseif (_speed = 10)
 
 	             _speedBinLower = 45.000
-	             _speedBinUpper = 49.999
+	             _speedBinUpper = 50.000
 
 	          elseif (_speed = 11)
 
 	             _speedBinLower = 50.000
-	             _speedBinUpper = 54.999
+	             _speedBinUpper = 55.000
 
 	          elseif (_speed = 12)
 
 	             _speedBinLower = 55.000
-	             _speedBinUpper = 59.999
+	             _speedBinUpper = 60.000
 
 	          elseif (_speed = 13)
 
 	             _speedBinLower = 60.000
-	             _speedBinUpper = 65.001
-
+	             _speedBinUpper = 75.001
+                    ; max free flow speed in the travel model network is 75 mph
 
          endif
 
