@@ -1,3 +1,4 @@
+# This script is needed for emfac 2007 only (not needed for emfac 2014 and 2017)
 #This file creates a factor for growing the vehicle population files, using county VMT total ratios for project year and base year, and an EMFAC-generated factor 
 #The output of this script is a unique file for each county, by vehicle population for each vehicle and fuel type
 #Form for running this script is gawk -f sumspeedbins3.awk inp_vehpop*.csv
