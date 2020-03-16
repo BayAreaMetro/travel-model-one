@@ -56,12 +56,12 @@ remove(skim_table)
 
 indiv_trip_results   <- read.table(file=file.path(TARGET_DIR,paste0("OUTPUT_",CALIB_ITER),"main",paste0("indivTripData_",ITER,".csv")),
                                    header=TRUE, sep=",") %>% 
-  select(inbound, tour_purpose, tour_mode, trip_mode, depart_hour, orig_taz, dest_taz, taxiWait, singleTNCWait, sharedTNCWait) %>% 
+  select(hh_id,inbound, tour_purpose, tour_mode, trip_mode, depart_hour, orig_taz, dest_taz, taxiWait, singleTNCWait, sharedTNCWait) %>% 
   mutate(num_participants=1, indiv_joint="indiv")
 
 joint_trip_results   <- read.table(file=file.path(TARGET_DIR,paste0("OUTPUT_",CALIB_ITER),"main",paste0("jointTripData_",ITER,".csv")),
                                    header=TRUE, sep=",") %>% 
-  select(inbound, num_participants, tour_purpose, tour_mode, trip_mode, depart_hour, orig_taz, dest_taz, taxiWait, singleTNCWait, sharedTNCWait) %>%
+  select(hh_id,inbound, num_participants, tour_purpose, tour_mode, trip_mode, depart_hour, orig_taz, dest_taz, taxiWait, singleTNCWait, sharedTNCWait) %>%
   mutate(indiv_joint="joint")
 
 # put individual and joint trips together
@@ -97,9 +97,9 @@ trip_results <- mutate(trip_results,
 # add superdistrict for orig, dest
 taz_sd <- read.table(file = TAZ_SD_FILE, header=TRUE, sep=",")
 trip_results <- left_join(trip_results, 
-                          select(taz_sd, ZONE, SD, SD_NAME) %>% rename(orig_taz=ZONE, orig_SD=SD, orig_SD_NAME=SD_NAME))
+                          select(taz_sd, ZONE, SD, SD_NAME, COUNTY) %>% rename(orig_taz=ZONE, orig_SD=SD, orig_SD_NAME=SD_NAME, orig_COUNTY=COUNTY))
 trip_results <- left_join(trip_results, 
-                          select(taz_sd, ZONE, SD, SD_NAME) %>% rename(dest_taz=ZONE, dest_SD=SD, dest_SD_NAME=SD_NAME))
+                          select(taz_sd, ZONE, SD, SD_NAME, COUNTY) %>% rename(dest_taz=ZONE, dest_SD=SD, dest_SD_NAME=SD_NAME, dest_COUNTY=COUNTY))
 
 # split into Light-Rail/Ferry and non Light Rail Ferry to check if ferry avaiable for light rail/ferry
 LRF_trip_results    <- subset(trip_results, (trip_mode==10)|(trip_mode==15))
@@ -136,7 +136,9 @@ print(paste("nrow(trip_results) =",nrow(trip_results)))
 remove(ferry_skim, LRF_trip_results, nonLRF_trip_results, LRF_drive_in, LRF_drive_out, LRF_walk)
 
 # create special trip mode for ferry
-trip_results <- mutate(trip_results, trip_mode=ifelse(ferryAvailable==1,-trip_mode,trip_mode))
+trip_results <- mutate(trip_results,
+                       ferryAvailable=ifelse(is.na(ferryAvailable),0,ferryAvailable),
+                       trip_mode=ifelse(ferryAvailable==1,trip_mode*-1,trip_mode))
 
 # summarize to tour purose, tour mode, trip mode
 trip_summary <- group_by(trip_results, indiv_joint, tour_purpose, tour_mode, trip_mode) %>% 
@@ -337,10 +339,6 @@ source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=1:1), colIndex
 setCellValue(source_cell[[1]], paste("Source: ",outfile))
 remove(trn_trip_summary, transit_trip_results, transit_trip_results_copy)
 
-saveWorkbook(calib_workbook, WORKBOOK_TEMP)
-forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
-print(paste("Wrote",WORKBOOK))
-
 # auto district summaries -- use codes consistent with CHTS_Auto_District_Summary.xlsx
 auto_trip_results <- subset(trip_results, subset=((trip_mode>=1)&(trip_mode <=6))) %>%
   mutate(auto_submode=case_when(trip_mode== 1 ~ 1,  # DA
@@ -379,12 +377,19 @@ file.copy(chts_file, file.path(OUTPUT_DIR, "15_trip_mode_choice_auto_ODdist_CHTS
 # for taxi/tnc visualization
 # trip flows distribution by origin SD, dest SD, simple purpose, simple mode (plus taxi/tnc), avg wait times
 trip_results =  mutate(trip_results,
-                       ridehail_mode=case_when((trip_mode >   0) & (trip_mode <=  6) ~ "auto",
+                       ridehail_mode=case_when(trip_mode  < 0 ~ "transit",
+                                               (trip_mode >   0) & (trip_mode <=  6) ~ "auto",
                                                (trip_mode ==  7) | (trip_mode ==  8) ~ "active",
                                                (trip_mode >=  9) & (trip_mode <= 18) ~ "transit",
                                                trip_mode == 19 ~ "Taxi",
                                                trip_mode == 20 ~ "TNC Single",
                                                trip_mode == 21 ~ "TNC Shared"))
+
+# any with no ridehail_mode set?
+print(paste("Null trip_mode number of rows: ", nrow(subset(trip_results, is.na(trip_results$trip_mode)))))
+# print(subset(trip_results, is.na(trip_results$trip_mode)))
+
+# superdistrict version with purpose
 ridehail_trip_summary <- group_by(trip_results, simple_purpose, ridehail_mode, orig_SD, dest_SD) %>% 
   summarise(num_trips    =sum(num_participants),
             taxiWait     =sum(taxiWait),
@@ -400,7 +405,33 @@ outfile <- file.path(OUTPUT_DIR, "15_trip_mode_choice_ridehail_ODdist_TM.csv")
 write.table(ridehail_trip_summary, outfile, sep=",", row.names=FALSE)
 print(paste("Wrote ",outfile))
 
-# ridehail waits fulldata
-outfile <- file.path(OUTPUT_DIR, "15_trip_mode_choice_ridehail_wait_full_TM.csv")
-write.table(select(trip_results, orig_taz, taxiWait, singleTNCWait, sharedTNCWait, num_participants), outfile, sep=",", row.names=FALSE)
+# county version, without purpose
+ridehail_trip_summary <- group_by(trip_results, ridehail_mode, orig_COUNTY, dest_COUNTY) %>% 
+  summarise(num_trips    =sum(num_participants),
+            taxiWait     =sum(taxiWait),
+            singleTNCWait=sum(singleTNCWait),
+            sharedTNCWait=sum(sharedTNCWait)) %>%
+  mutate(taxiWait      = taxiWait/num_trips,
+         singleTNCWait = singleTNCWait/num_trips,
+         sharedTNCWait = sharedTNCWait/num_trips) %>%
+  mutate(num_trips=num_trips/SAMPLESHARE)
+
+# save it
+outfile <- file.path(OUTPUT_DIR, "15_trip_mode_choice_ridehail_ODcounty_TM.csv")
+write.table(ridehail_trip_summary, outfile, sep=",", row.names=FALSE)
 print(paste("Wrote ",outfile))
+
+# save it (along with source label) to calibration workbook
+addDataFrame(as.data.frame(ridehail_trip_summary), calib_sheets$modeldata, startRow=2, startColumn=32, row.names=FALSE)
+source_cell <- getCells( getRows(calib_sheets$modeldata, rowIndex=1:1), colIndex=32:32 )
+setCellValue(source_cell[[1]], paste("Source: ",outfile))
+
+saveWorkbook(calib_workbook, WORKBOOK_TEMP)
+forceFormulaRefresh(WORKBOOK_TEMP, WORKBOOK, verbose=TRUE)
+print(paste("Wrote",WORKBOOK))
+
+
+# ridehail waits fulldata
+# outfile <- file.path(OUTPUT_DIR, "15_trip_mode_choice_ridehail_wait_full_TM.csv")
+# write.table(select(trip_results, orig_taz, taxiWait, singleTNCWait, sharedTNCWait, num_participants), outfile, sep=",", row.names=FALSE)
+# print(paste("Wrote ",outfile))
