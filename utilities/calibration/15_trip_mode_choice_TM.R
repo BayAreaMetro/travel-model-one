@@ -319,14 +319,14 @@ transit_trip_results <- rbind(
                                        trn_access_mode="Total"))
 
 
-trn_trip_summary <- group_by(transit_trip_results, simple_purpose, trn_access_mode, trn_submode, orig_SD, dest_SD) %>% 
+trn_trip_summary <- group_by(transit_trip_results, simple_purpose, trn_access_mode, trn_submode, orig_SD_NAME, dest_SD_NAME) %>% 
   summarise(num_trips=sum(num_participants)) %>%
   mutate(num_trips=num_trips/SAMPLESHARE)
 
 trn_trip_summary <- as.data.frame(trn_trip_summary) %>% 
-  mutate(key=paste(trn_access_mode, trn_submode, orig_SD, dest_SD, simple_purpose, sep="-"))
+  mutate(key=paste(trn_access_mode, trn_submode, orig_SD_NAME, dest_SD_NAME, simple_purpose, sep="-"))
 
-trn_trip_summary <- trn_trip_summary[c("key","trn_access_mode","trn_submode","orig_SD","dest_SD","simple_purpose","num_trips")]
+trn_trip_summary <- trn_trip_summary[c("key","trn_access_mode","trn_submode","orig_SD_NAME","dest_SD_NAME","simple_purpose","num_trips")]
 
 # save it
 outfile <- file.path(OUTPUT_DIR, paste0("15_trip_mode_choice_trn_ODdist_TM.csv"))
