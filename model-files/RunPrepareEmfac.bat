@@ -6,18 +6,19 @@
 :: ** New Futures Runs for Fuel Consumption and Fuel Economy Estimates                   **
 :: ** These runs forward account for speed bin VMT overlap      hmb.   12/11/19.         **
 
-call ctramp\runtime\setpath
+call  ctramp\runtime\setpath
+mkdir emfac_output
 
 :: Step One
-call runtpp CTRAMP\scripts\emfac2\CreateSpeedBinsBetweenZns3.job
+call runtpp CTRAMP\scripts\emfac\CreateSpeedBinsBetweenZones.job
 
 :: Step Two
-call runtpp CTRAMP\scripts\emfac2\CreateSpeedBinsWithinZns2.job
+call runtpp CTRAMP\scripts\emfac\CreateSpeedBinsWithinZones.job
 
 :: Step Three
-call gawk -f CTRAMP\scripts\emfac2\SumSpeedBins1.awk emfac2\CreateSpeedBins*.csv
+call gawk -f CTRAMP\scripts\emfac\SumSpeedBins1.awk emfac_output\CreateSpeedBins*.csv
 
 
-move HourlyTotalCounty.csv emfac2\HourlyTotalCounty.csv
-move ShareSpeedBinsAll_sums.csv emfac2\ShareSpeedBinsAll_sums.csv
-move SumSpeedBinsAll_sums.csv emfac2\SumSpeedBinsAll_sums.csv
+move HourlyTotalCounty.csv emfac_output\HourlyTotalCounty.csv
+move ShareSpeedBinsAll_sums.csv emfac_output\ShareSpeedBinsAll_sums.csv
+move SumSpeedBinsAll_sums.csv emfac_output\SumSpeedBinsAll_sums.csv
