@@ -1,10 +1,10 @@
 SETLOCAL EnableDelayedExpansion
 
-set MODEL_DIR=\\MODEL2-D\Model2D-Share\Projects\2015_TM152_IPA_06
-set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.5.2\2015_TM152_IPA_06
+set MODEL_DIR=\\MODEL2-D\Model2D-Share\TM152_Calibration\2015_TM152_calib07
+set TARGET_DIR=M:\Development\Travel Model One\Calibration\Version 1.5.2\2015_TM152_IPA_07
 set CODE_DIR=X:\travel-model-one-calib1.5.2\utilities\calibration
 rem start at 00 when INPUT or skims are updated
-set CALIB_ITER=00
+set CALIB_ITER=13
 
 echo CALIB_ITER=%CALIB_ITER%
 
