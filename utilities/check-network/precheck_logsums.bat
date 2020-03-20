@@ -402,7 +402,7 @@ if exist %project_dir%\CTRAMP\scripts\metrics\MapLogsumDiffs_Tableau.py (
     rem MapLogsumDiffs_Tableau.py exists in the metrics folder
 ) else (
     rem MapLogsumDiffs_Tableau.py not in the metrics folder
-    copy \\mainmodel\MainModelShare\travel-model-one-master\utilities\PBA40\metrics\MapLogsumDiffs_Tableau.py %project_dir%\CTRAMP\scripts\metrics\MapLogsumDiffs_Tableau.py
+    copy \\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\metrics\MapLogsumDiffs_Tableau.py %project_dir%\CTRAMP\scripts\metrics\MapLogsumDiffs_Tableau.py
 )
 
 :: from "Projects_precheck" level, run the mapping script 

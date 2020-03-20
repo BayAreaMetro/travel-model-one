@@ -56,7 +56,7 @@ for /d %%f in (
 REM run the script
 cd %%f
 copy INPUT\metrics\CommunitiesOfConcern.csv metrics
-python \\mainmodel\MainModelShare\travel-model-one-1.5.1.2\utilities\PBA40\metrics\scenarioMetrics.py
+python \\mainmodel\MainModelShare\travel-model-one-1.5.1.2\utilities\RTP\metrics\scenarioMetrics.py
 cd ..
 
 REM copy the output to the right place
