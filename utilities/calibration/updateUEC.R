@@ -180,27 +180,27 @@ if (SUBMODEL=="DestinationChoice") {
   UEC_SRC_WORKBOOK <- file.path(UEC_DIR, "TM1.5.1 version", "TripModeChoice_TM1.5.1.xls")
 
   # sheet, column, startRow, endRow
-  COPY_SRC <- list("work"      =c( "constants", 7,   3,  36),
-                   "university"=c( "constants",15,   3,  36),
-                   "school"    =c( "constants",23,   3,  36),
-                   "escort"    =c( "constants",31,   3,  36), # indiv maint, indiv
-                   "shopping"  =c( "constants",31,   3,  62), # indiv maint, joint
-                   "eatout"    =c( "constants",39,   3,  62), # indiv disc, joint
-                   "othmaint"  =c( "constants",31,   3,  62), # indiv maint, joint
-                   "social"    =c( "constants",39,   3,  62), # indiv disc, joint
-                   "othdiscr"  =c( "constants",39,   3,  62), # indiv disc
-                   "workbased" =c( "constants",47,   3,  36)) # at work
+  COPY_SRC <- list("work"      =c( "constants", 7,   3,  39),
+                   "university"=c( "constants",15,   3,  39),
+                   "school"    =c( "constants",23,   3,  39),
+                   "escort"    =c( "constants",31,   3,  39), # indiv maint, indiv
+                   "shopping"  =c( "constants",31,   3,  68), # indiv maint, joint
+                   "eatout"    =c( "constants",39,   3,  68), # indiv disc, joint
+                   "othmaint"  =c( "constants",31,   3,  68), # indiv maint, joint
+                   "social"    =c( "constants",39,   3,  68), # indiv disc, joint
+                   "othdiscr"  =c( "constants",39,   3,  68), # indiv disc
+                   "workbased" =c( "constants",47,   3,  39)) # at work
 
-  COPY_DST <- list("work"      =c(      "Work", 5, 509, 542),
-                   "university"=c("University", 5, 512, 545),
-                   "school"    =c(    "School", 5, 512, 545),
-                   "escort"    =c(    "Escort", 5, 512, 545),
-                   "shopping"  =c(  "Shopping", 5, 512, 571),
-                   "eatout"    =c(    "EatOut", 5, 512, 571),
-                   "othmaint"  =c(  "OthMaint", 5, 512, 571),
-                   "social"    =c(    "Social", 5, 512, 571),
-                   "othdiscr"  =c(  "OthDiscr", 5, 512, 571),
-                   "workbased" =c( "WorkBased", 5, 511, 544))
+  COPY_DST <- list("work"      =c(      "Work", 5, 509, 545),
+                   "university"=c("University", 5, 512, 548),
+                   "school"    =c(    "School", 5, 512, 548),
+                   "escort"    =c(    "Escort", 5, 512, 548),
+                   "shopping"  =c(  "Shopping", 5, 512, 577),
+                   "eatout"    =c(    "EatOut", 5, 512, 577),
+                   "othmaint"  =c(  "OthMaint", 5, 512, 577),
+                   "social"    =c(    "Social", 5, 512, 577),
+                   "othdiscr"  =c(  "OthDiscr", 5, 512, 577),
+                   "workbased" =c( "WorkBased", 5, 511, 547))
 
   CONFIG <- list(CALIB_WORKBOOK, COPY_SRC, COPY_DST)
 
