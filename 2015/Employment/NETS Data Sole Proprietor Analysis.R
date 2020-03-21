@@ -21,7 +21,7 @@ nets2 <- nets %>%              #Filter out sole proprietors and summarize to TAZ
   filter(emp>1) %>% 
   group_by(zone_id,naics_mtc) %>% 
   summarize(total=sum(emp)) %>% 
-  spread(naics_mtc,total,fill=0)
+  spread(naics_mtc,total,fill=0) 
 
 
 
@@ -29,8 +29,9 @@ nets2 <- nets %>%              #Filter out sole proprietors and summarize to TAZ
 
 quentin <- data.frame(zone_id=1439, agrempn=0, fpsempn=0, herempn=0, mwtempn=0, othempn=0, retempn=0)
 
-final <- rbind(as.data.frame(nets2),quentin) %>% 
-  arrange(zone_id)
+final <- rbind(as.data.frame(nets2),quentin) %>%
+  mutate(totemp=agrempn+fpsempn+herempn+mwtempn+othempn+retempn) %>% 
+  arrange(zone_id) 
 
 write.csv(final, "2015 NETS without sole proprietors.csv", row.names = FALSE, quote = T)
 
