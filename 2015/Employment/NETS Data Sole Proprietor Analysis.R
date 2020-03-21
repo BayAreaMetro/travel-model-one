@@ -23,7 +23,9 @@ nets2 <- nets %>%              #Filter out sole proprietors and summarize to TAZ
   summarize(total=sum(emp)) %>% 
   spread(naics_mtc,total,fill=0)
 
-# Append zero values for San Quentin TAZ and append to full data, resort dataset
+
+
+# Append zero values for San Quentin TAZ and append to full data, re-sort dataset, write it out
 
 quentin <- data.frame(zone_id=1439, agrempn=0, fpsempn=0, herempn=0, mwtempn=0, othempn=0, retempn=0)
 
