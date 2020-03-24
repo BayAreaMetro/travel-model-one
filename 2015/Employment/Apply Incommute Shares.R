@@ -72,8 +72,8 @@ temp3 <- left_join(temp1,temp2,by="Comp_SD") %>% mutate(
   M_NETS_NOSOLE_FACTOR        =1-(in_mwtempn/M_NETS_NOSOLE_SUM),
   O_ESRI_FACTOR               =1-(in_othempn/O_ESRI_SUM),
   O_LODES_FACTOR              =1-(in_othempn/O_LODES_SUM),
-  O_NETS_FACTOR               =1-(in_othempn/O_ESRI_SUM),
-  O_NETS_NOSOLE_FACTOR        =1-(in_othempn/O_ESRI_SUM),
+  O_NETS_FACTOR               =1-(in_othempn/O_NETS_SUM),
+  O_NETS_NOSOLE_FACTOR        =1-(in_othempn/O_NETS_NOSOLE_SUM),
   R_ESRI_FACTOR               =1-(in_retempn/R_ESRI_SUM),
   R_LODES_FACTOR              =1-(in_retempn/R_LODES_SUM),
   R_NETS_FACTOR               =1-(in_retempn/R_NETS_SUM),
@@ -90,45 +90,54 @@ incommute_factors <- temp3 %>%
 
 # Join incommute adjustment factors to employment TAZ dataset, by composite superdistrict
 # Calculate new variable values by dataset and industrial sector, at the TAZ level
+# Select out variables of interest
 
 employment_no_incommute <- left_join(employment,incommute_factors,by="Comp_SD") %>% mutate(
   A_ESRI_NEW              =A_ESRI          *A_ESRI_FACTOR,       
   A_LODES_NEW      	      =A_LODES         *A_LODES_FACTOR,
-  _LODES_SELF_NEW
+  A_LODES_SELF_NEW        =A_LODES_NEW + A_ACS_Self_Emp,
   A_NETS_NEW       	      =A_NETS          *A_NETS_FACTOR,       
   A_NETS_NOSOLE_NEW	      =A_NETS_NOSOLE   *A_NETS_NOSOLE_FACTOR,
   F_ESRI_NEW       	      =F_ESRI          *F_ESRI_FACTOR,       
   F_LODES_NEW      	      =F_LODES         *F_LODES_FACTOR, 
-  _LODES_SELF_NEW
+  F_LODES_SELF_NEW        =F_LODES_NEW + F_ACS_Self_Emp,
   F_NETS_NEW       	      =F_NETS          *F_NETS_FACTOR,       
   F_NETS_NOSOLE_NEW	      =F_NETS_NOSOLE   *F_NETS_NOSOLE_FACTOR,
   H_ESRI_NEW       	      =H_ESRI          *H_ESRI_FACTOR,       
   H_LODES_NEW      	      =H_LODES         *H_LODES_FACTOR,  
-  _LODES_SELF_NEW
+  H_LODES_SELF_NEW        =H_LODES_NEW + H_ACS_Self_Emp,
   H_NETS_NEW       	      =H_NETS          *H_NETS_FACTOR,       
   H_NETS_NOSOLE_NEW	      =H_NETS_NOSOLE   *H_NETS_NOSOLE_FACTOR,
   M_ESRI_NEW       	      =M_ESRI          *M_ESRI_FACTOR,       
   M_LODES_NEW      	      =M_LODES         *M_LODES_FACTOR,  
-  _LODES_SELF_NEW
+  M_LODES_SELF_NEW        =M_LODES_NEW + M_ACS_Self_Emp,
   M_NETS_NEW       	      =M_NETS          *M_NETS_FACTOR,       
   M_NETS_NOSOLE_NEW	      =M_NETS_NOSOLE   *M_NETS_NOSOLE_FACTOR,
   O_ESRI_NEW       	      =O_ESRI          *O_ESRI_FACTOR,       
   O_LODES_NEW      	      =O_LODES         *O_LODES_FACTOR, 
-  _LODES_SELF_NEW
+  O_LODES_SELF_NEW        =O_LODES_NEW + O_ACS_Self_Emp,
   O_NETS_NEW       	      =O_NETS          *O_NETS_FACTOR,       
   O_NETS_NOSOLE_NEW	      =O_NETS_NOSOLE   *O_NETS_NOSOLE_FACTOR,
   R_ESRI_NEW       	      =R_ESRI          *R_ESRI_FACTOR,       
   R_LODES_NEW      	      =R_LODES         *R_LODES_FACTOR,
-  _LODES_SELF_NEW
+  R_LODES_SELF_NEW        =R_LODES_NEW + R_ACS_Self_Emp,
   R_NETS_NEW       	      =R_NETS          *R_NETS_FACTOR,       
-  R_NETS_NOSOLE_NEW	      =R_NETS_NOSOLE   *R_NETS_NOSOLE_FACTOR)
-
-
-
-
-
-
-write.csv(employment, "trial.csv", row.names = FALSE, quote = T)
+  R_NETS_NOSOLE_NEW	      =R_NETS_NOSOLE   *R_NETS_NOSOLE_FACTOR) %>% 
+  select(ZONE,county,
+         A_ESRI_NEW,A_LODES_NEW,A_LODES_SELF_NEW,A_NETS_NEW,A_NETS_NOSOLE_NEW,
+         F_ESRI_NEW,F_LODES_NEW,F_LODES_SELF_NEW,F_NETS_NEW,F_NETS_NOSOLE_NEW,
+         H_ESRI_NEW,H_LODES_NEW,H_LODES_SELF_NEW,H_NETS_NEW,H_NETS_NOSOLE_NEW,
+         M_ESRI_NEW,M_LODES_NEW,M_LODES_SELF_NEW,M_NETS_NEW,M_NETS_NOSOLE_NEW,
+         O_ESRI_NEW,O_LODES_NEW,O_LODES_SELF_NEW,O_NETS_NEW,O_NETS_NOSOLE_NEW,
+         R_ESRI_NEW,R_LODES_NEW,R_LODES_SELF_NEW,R_NETS_NEW,R_NETS_NOSOLE_NEW) %>% mutate(
+           
+         T_ESRI_NEW=A_ESRI_NEW+F_ESRI_NEW+H_ESRI_NEW+M_ESRI_NEW+O_ESRI_NEW+R_ESRI_NEW,
+         T_LODES_NEW=A_LODES_NEW+F_LODES_NEW+H_LODES_NEW+M_LODES_NEW+O_LODES_NEW+R_LODES_NEW,
+         T_LODES_SELF_NEW=A_LODES_SELF_NEW+F_LODES_SELF_NEW+H_LODES_SELF_NEW+M_LODES_SELF_NEW+O_LODES_SELF_NEW+R_LODES_SELF_NEW,
+         T_NETS_NEW=A_NETS_NEW+F_NETS_NEW+H_NETS_NEW+M_NETS_NEW+O_NETS_NEW+R_NETS_NEW,
+         T_NETS_NOSOLE_NEW=A_NETS_NOSOLE_NEW+F_NETS_NOSOLE_NEW+H_NETS_NOSOLE_NEW+M_NETS_NOSOLE_NEW+O_NETS_NOSOLE_NEW+R_NETS_NOSOLE_NEW)
+       
+write.csv(employment_no_incommute, "trial.csv", row.names = FALSE, quote = T)
 
 write.csv(temp3,row.names = FALSE,quote=T)
 
