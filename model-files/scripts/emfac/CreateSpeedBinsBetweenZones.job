@@ -169,12 +169,12 @@ run pgm = hwynet
       list = "countyName, arbCounty, speedBin, hour01, hour02, hour03, hour04, hour05, hour06,",
              "hour07, hour08, hour09, hour10, hour11, hour12, hour13, hour14, hour15, hour16,",
              "hour17, hour18, hour19, hour20, hour21, hour22, hour23, hour24",
-             file = emfac_output\CreateSpeedBinsBetweenZones_sums.csv
+             file = emfac_prep\CreateSpeedBinsBetweenZones_sums.csv
 
       list = "countyName, arbCounty, speedBin, hour01, hour02, hour03, hour04, hour05, hour06,",
              "hour07, hour08, hour09, hour10, hour11, hour12, hour13, hour14, hour15, hour16,",
              "hour17, hour18, hour19, hour20, hour21, hour22, hour23, hour24",
-             file = emfac_output\CreateSpeedBinsBetweenZones_sums_NoTrk.csv
+             file = emfac_prep\CreateSpeedBinsBetweenZones_sums_NoTrk.csv
 
 
       ; build an array to let us write out the results in alphabetical order
@@ -345,7 +345,7 @@ run pgm = hwynet
                    _vmtArray[_speedBin * 100 + 16](12.2),",", _vmtArray[_speedBin * 100 + 17](12.2),",", _vmtArray[_speedBin * 100 + 18](12.2),",",
                    _vmtArray[_speedBin * 100 + 19](12.2),",", _vmtArray[_speedBin * 100 + 20](12.2),",", _vmtArray[_speedBin * 100 + 21](12.2),",",
                    _vmtArray[_speedBin * 100 + 22](12.2),",", _vmtArray[_speedBin * 100 + 23](12.2),",", _vmtArray[_speedBin * 100 + 24](12.2),
-                   file = emfac_output\CreateSpeedBinsBetweenZones_sums.csv
+                   file = emfac_prep\CreateSpeedBinsBetweenZones_sums.csv
 
             list = _countyName,",",_arbCounty,",",_speedBin,",",
                    _vmtArray_NoTrk[_speedBin * 100 + 1](12.2), ",", _vmtArray_NoTrk[_speedBin * 100 + 2](12.2), ",", _vmtArray_NoTrk[_speedBin * 100 + 3](12.2), ",",
@@ -356,7 +356,7 @@ run pgm = hwynet
                    _vmtArray_NoTrk[_speedBin * 100 + 16](12.2),",", _vmtArray_NoTrk[_speedBin * 100 + 17](12.2),",", _vmtArray_NoTrk[_speedBin * 100 + 18](12.2),",",
                    _vmtArray_NoTrk[_speedBin * 100 + 19](12.2),",", _vmtArray_NoTrk[_speedBin * 100 + 20](12.2),",", _vmtArray_NoTrk[_speedBin * 100 + 21](12.2),",",
                    _vmtArray_NoTrk[_speedBin * 100 + 22](12.2),",", _vmtArray_NoTrk[_speedBin * 100 + 23](12.2),",", _vmtArray_NoTrk[_speedBin * 100 + 24](12.2),
-                   file = emfac_output\CreateSpeedBinsBetweenZones_sums_NoTrk.csv
+                   file = emfac_prep\CreateSpeedBinsBetweenZones_sums_NoTrk.csv
 
           endloop
 
