@@ -8,16 +8,45 @@ import csv
 #import copy
 import pandas as pd
 
+import argparse,collections,csv,os,sys
+
+
+#parser = argparse.ArgumentParser()
+#parser.add_argument("csv", help="Input csv files")
+
+#args = parser.parse_args()
+
+## Not sure how to read the 2 files separately
+#csvfile   = open(args.csv)
+#csvreader = csv.reader(csvfile)
+
+## Add the file names here
+#CountiesBins_df = pd.read_table(os.path.join(os.getcwd(), ), sep=",")
+#Inter_df = pd.read_table(os.path.join(os.getcwd(), ), sep=",")
+#Intra_df = pd.read_table(os.path.join(os.getcwd(), ), sep=",")
+
+
 # Read the csv files output from the Cube process
 
 CountiesBins_df = pd.read_table(os.path.join(os.getcwd(), "CreateSpeedBinsBetweenZones_sums.csv"), sep=",")
 Inter_df = pd.read_table(os.path.join(os.getcwd(), "CreateSpeedBinsBetweenZones_sums.csv"), sep=",")
 Intra_df = pd.read_table(os.path.join(os.getcwd(), "CreateSpeedBinsWithinZones_sums.csv"), sep=",")
 
-# Renaming the columns. couldn't read them without the blank aspaces before the header name
-CountiesBins_df.columns = ['countyName','arbCounty','speedBin','hour01','hour02','hour03','hour04','hour05','hour06','hour07','hour08','hour09','hour10','hour11','hour12','hour13','hour14','hour15','hour16','hour17','hour18','hour19','hour20','hour21','hour22','hour23','hour24']
-Inter_df.columns = ['countyName','arbCounty','speedBin','hour01','hour02','hour03','hour04','hour05','hour06','hour07','hour08','hour09','hour10','hour11','hour12','hour13','hour14','hour15','hour16','hour17','hour18','hour19','hour20','hour21','hour22','hour23','hour24']
-Intra_df.columns = ['countyName','arbCounty','speedBin','hour01','hour02','hour03','hour04','hour05','hour06','hour07','hour08','hour09','hour10','hour11','hour12','hour13','hour14','hour15','hour16','hour17','hour18','hour19','hour20','hour21','hour22','hour23','hour24']
+
+# Iaking out the blank spaces on headers
+
+col_rename = {}
+for colname in CountiesBins_df.columns.values.tolist(): col_rename[colname] = colname.strip()
+CountiesBins_df.rename(columns=col_rename, inplace=True)
+
+col_rename1 = {}
+for colname in Inter_df.columns.values.tolist(): col_rename1[colname] = colname.strip
+Inter_df.rename(columns=col_rename, inplace=True)
+
+col_rename2 = {}
+for colname in Intra_df.columns.values.tolist(): col_rename2[colname] = colname.strip
+Intra_df.rename(columns=col_rename, inplace=True)
+
 
 # Dropping unecessary columns
 CountiesBins_df = CountiesBins_df.drop(['hour01','hour02','hour03','hour04','hour05','hour06','hour07','hour08','hour09','hour10','hour11','hour12','hour13','hour14','hour15','hour16','hour17','hour18','hour19','hour20','hour21','hour22','hour23','hour24'],1)
@@ -55,9 +84,9 @@ HourlyTotalCounty_df.to_csv(r'HourlyTotalCounty.csv',header=True)
 
 
 # Create the file ShareSpeedBinsAll_sums.csv
-# I'm sure this can be simplify. 
+# I'm sure this can be simplified
 
-# Ended up reading the file created in the previous step. I couldn't read the conuty name and arb county number from the previous dataframe HourlyTotalCounty_df,
+# Ended up reading the file created in the previous step. I couldn't read the county name and arb county number from the previous dataframe HourlyTotalCounty_df,
 # which is the reason I went through this long process.
 # I was trying to divide the SumSpeedBins_df by HourlyTotalCounty_df with a list, but as mentioned couldn't read the county name and arb county number
 #
@@ -65,7 +94,6 @@ HourlyTotalCounty_df.to_csv(r'HourlyTotalCounty.csv',header=True)
 
 Temp1_df = pd.read_table(os.path.join(os.getcwd(), "HourlyTotalCounty.csv"), sep=",")
 
-# Rename the columns with the aggregate values
 Temp1_df.columns = ['countyName','arbCounty','hour01a','hour02a','hour03a','hour04a','hour05a','hour06a','hour07a','hour08a','hour09a','hour10a','hour11a','hour12a','hour13a','hour14a','hour15a','hour16a','hour17a','hour18a','hour19a','hour20a','hour21a','hour22a','hour23a','hour24a']
 
 # Merge the aggreagte values by county and hour with SumSpeedBins_df to have them all in a single file with the speed bins column
