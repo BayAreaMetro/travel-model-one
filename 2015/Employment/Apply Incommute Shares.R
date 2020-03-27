@@ -95,34 +95,34 @@ incommute_factors <- temp3 %>%
 # Select out variables of interest
 
 employment_no_incommute <- left_join(employment,incommute_factors,by="Comp_SD") %>% mutate(
-  A_ESRI_NOIN                =A_ESRI          *A_ESRI_FACTOR,       
+  A_ESRI_NOIN              =A_ESRI          *A_ESRI_FACTOR,       
   A_LODES_NOIN      	     =A_LODES         *A_LODES_FACTOR,
-  A_LODES_SELF_NOIN          =A_LODES_NOIN    +A_ACS_Self_Emp,
+  A_LODES_SELF_NOIN        =A_LODES_NOIN    +A_ACS_Self_Emp,
   A_NETS_NOIN       	     =A_NETS          *A_NETS_FACTOR,       
   A_NETS_NOSOLE_NOIN	     =A_NETS_NOSOLE   *A_NETS_NOSOLE_FACTOR,
   F_ESRI_NOIN       	     =F_ESRI          *F_ESRI_FACTOR,       
   F_LODES_NOIN      	     =F_LODES         *F_LODES_FACTOR, 
-  F_LODES_SELF_NOIN          =F_LODES_NOIN    +F_ACS_Self_Emp,
+  F_LODES_SELF_NOIN        =F_LODES_NOIN    +F_ACS_Self_Emp,
   F_NETS_NOIN       	     =F_NETS          *F_NETS_FACTOR,       
   F_NETS_NOSOLE_NOIN	     =F_NETS_NOSOLE   *F_NETS_NOSOLE_FACTOR,
   H_ESRI_NOIN       	     =H_ESRI          *H_ESRI_FACTOR,       
   H_LODES_NOIN      	     =H_LODES         *H_LODES_FACTOR,  
-  H_LODES_SELF_NOIN          =H_LODES_NOIN    +H_ACS_Self_Emp,
+  H_LODES_SELF_NOIN        =H_LODES_NOIN    +H_ACS_Self_Emp,
   H_NETS_NOIN       	     =H_NETS          *H_NETS_FACTOR,       
   H_NETS_NOSOLE_NOIN	     =H_NETS_NOSOLE   *H_NETS_NOSOLE_FACTOR,
   M_ESRI_NOIN       	     =M_ESRI          *M_ESRI_FACTOR,       
   M_LODES_NOIN      	     =M_LODES         *M_LODES_FACTOR,  
-  M_LODES_SELF_NOIN          =M_LODES_NOIN    +M_ACS_Self_Emp,
+  M_LODES_SELF_NOIN        =M_LODES_NOIN    +M_ACS_Self_Emp,
   M_NETS_NOIN       	     =M_NETS          *M_NETS_FACTOR,       
   M_NETS_NOSOLE_NOIN	     =M_NETS_NOSOLE   *M_NETS_NOSOLE_FACTOR,
   O_ESRI_NOIN       	     =O_ESRI          *O_ESRI_FACTOR,       
   O_LODES_NOIN      	     =O_LODES         *O_LODES_FACTOR, 
-  O_LODES_SELF_NOIN          =O_LODES_NOIN    +O_ACS_Self_Emp,
+  O_LODES_SELF_NOIN        =O_LODES_NOIN    +O_ACS_Self_Emp,
   O_NETS_NOIN       	     =O_NETS          *O_NETS_FACTOR,       
   O_NETS_NOSOLE_NOIN	     =O_NETS_NOSOLE   *O_NETS_NOSOLE_FACTOR,
   R_ESRI_NOIN       	     =R_ESRI          *R_ESRI_FACTOR,       
   R_LODES_NOIN      	     =R_LODES         *R_LODES_FACTOR,
-  R_LODES_SELF_NOIN          =R_LODES_NOIN    +R_ACS_Self_Emp,
+  R_LODES_SELF_NOIN        =R_LODES_NOIN    +R_ACS_Self_Emp,
   R_NETS_NOIN       	     =R_NETS          *R_NETS_FACTOR,       
   R_NETS_NOSOLE_NOIN	     =R_NETS_NOSOLE   *R_NETS_NOSOLE_FACTOR) %>% 
   rename(TAZ=ZONE,County=county) %>% 
@@ -150,3 +150,20 @@ employment_no_incommute <- left_join(employment,incommute_factors,by="Comp_SD") 
 
 write.csv(employment_no_incommute, "Employment data by sector with and wo incommute 032420.csv", row.names = FALSE, quote = T)
 
+# Summarize second data file in list format to facilitate Tableau filtering
+
+list_format <- employment_no_incommute %>% 
+  select(TAZ,County,
+         A_ESRI_NOIN,A_LODES_NOIN,A_LODES_SELF_NOIN,A_NETS_NOIN,A_NETS_NOSOLE_NOIN,
+         F_ESRI_NOIN,F_LODES_NOIN,F_LODES_SELF_NOIN,F_NETS_NOIN,F_NETS_NOSOLE_NOIN,
+         H_ESRI_NOIN,H_LODES_NOIN,H_LODES_SELF_NOIN,H_NETS_NOIN,H_NETS_NOSOLE_NOIN,
+         M_ESRI_NOIN,M_LODES_NOIN,M_LODES_SELF_NOIN,M_NETS_NOIN,M_NETS_NOSOLE_NOIN,
+         O_ESRI_NOIN,O_LODES_NOIN,O_LODES_SELF_NOIN,O_NETS_NOIN,O_NETS_NOSOLE_NOIN,
+         R_ESRI_NOIN,R_LODES_NOIN,R_LODES_SELF_NOIN,R_NETS_NOIN,R_NETS_NOSOLE_NOIN) %>% 
+  gather("Key","Employment",-TAZ,-County) %>%
+  separate(col = Key, into = c("Industry_Code", "Data Source"), sep = "_",extra="merge")
+
+         
+         
+         
+         )
