@@ -159,11 +159,37 @@ list_format <- employment_no_incommute %>%
          H_ESRI_NOIN,H_LODES_NOIN,H_LODES_SELF_NOIN,H_NETS_NOIN,H_NETS_NOSOLE_NOIN,
          M_ESRI_NOIN,M_LODES_NOIN,M_LODES_SELF_NOIN,M_NETS_NOIN,M_NETS_NOSOLE_NOIN,
          O_ESRI_NOIN,O_LODES_NOIN,O_LODES_SELF_NOIN,O_NETS_NOIN,O_NETS_NOSOLE_NOIN,
-         R_ESRI_NOIN,R_LODES_NOIN,R_LODES_SELF_NOIN,R_NETS_NOIN,R_NETS_NOSOLE_NOIN) %>% 
+         R_ESRI_NOIN,R_LODES_NOIN,R_LODES_SELF_NOIN,R_NETS_NOIN,R_NETS_NOSOLE_NOIN,
+         T_ESRI_NOIN,T_LODES_NOIN,T_LODES_SELF_NOIN,T_NETS_NOIN,T_NETS_NOSOLE_NOIN) %>% 
+  mutate(NETSLODESCOMPARE_NETSLODESCOMPARE=T_NETS_NOIN/T_LODES_SELF_NOIN-1)%>% 
   gather("Key","Employment",-TAZ,-County) %>%
-  separate(col = Key, into = c("Industry_Code", "Data Source"), sep = "_",extra="merge")
+  separate(col = Key, into = c("Industry_Code", "Data Source"), sep = "_", extra="merge") %>% 
+  mutate(Industry_Sector=case_when(
+    Industry_Code=="A"                   ~"AGREMPN",
+    Industry_Code=="F"                   ~"FPSEMPN",
+    Industry_Code=="H"                   ~"HEREMPN",
+    Industry_Code=="M"                   ~"MWTEMPN",
+    Industry_Code=="O"                   ~"OTHEMPN",
+    Industry_Code=="R"                   ~"RETGEMPN",
+    Industry_Code=="T"                   ~"TOTAL",
+    Industry_Code=="NETSLODESCOMPARE"    ~"NETS_v_LODES",
+    TRUE                 ~"Uncoded"),
+    Full_Industry_Name=case_when(
+      Industry_Code=="A"                 ~"Agricultural and natural resources employment",
+      Industry_Code=="F"                 ~"Financial and professional services employment",
+      Industry_Code=="H"                 ~"Health, educational, and recreational service employment",
+      Industry_Code=="M"                 ~"Manufacturing, wholesale trade, and transportation employment",
+      Industry_Code=="O"                 ~"Other employment",
+      Industry_Code=="R"                 ~"Retail trade employment",
+      Industry_Code=="T"                 ~"TOTAL",
+      Industry_Code=="NETSLODESCOMPARE"  ~"NETS_v_LODES",
+      TRUE                 ~"Uncoded"))
 
+write.csv(list_format, "Employment data by sector with and wo incommute list format 032427.csv", row.names = FALSE, quote = T)
+
+    
+
+
+  
          
          
-         
-         )
