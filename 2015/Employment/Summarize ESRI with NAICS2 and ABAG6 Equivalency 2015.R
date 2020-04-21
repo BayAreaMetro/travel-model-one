@@ -216,6 +216,6 @@ RETEMPN = emp_sec4445)
 
 # Export to csv
 
-write.csv(esri_no_incommute, "ESRI 2015 ABAG6 and NAICS2 noin.csv", row.names = FALSE, quote = T)
+write.csv(esri_no_incommute, "ESRI 2015 NAICS2 and ABAG6 noin.csv", row.names = FALSE, quote = T)
 
 
