@@ -8,7 +8,7 @@
 SET computer_prefix=%computername:~0,4%
 
 :: copy over CTRAMP
-set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-1.5.2.0
+set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-1.5.2.1
 mkdir CTRAMP\model
 mkdir CTRAMP\runtime
 mkdir CTRAMP\scripts
@@ -16,15 +16,15 @@ mkdir CTRAMP\scripts\metrics
 c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\model"       CTRAMP\model
 c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\runtime"     CTRAMP\runtime
 c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\scripts"     CTRAMP\scripts
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\PBA40\metrics" CTRAMP\scripts\metrics
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\RTP\metrics"   CTRAMP\scripts\metrics
 copy /Y "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"                CTRAMP\scripts
 copy /Y "%GITHUB_DIR%\model-files\RunModel.bat"                            .
 copy /Y "%GITHUB_DIR%\model-files\RunIteration.bat"                        CTRAMP
 copy /Y "%GITHUB_DIR%\model-files\RunLogsums.bat"                          .
 copy /Y "%GITHUB_DIR%\model-files\RunCoreSummaries.bat"                    .
-copy /Y "%GITHUB_DIR%\utilities\PBA40\RunMetrics.bat"                      .
-copy /Y "%GITHUB_DIR%\utilities\PBA40\RunScenarioMetrics.bat"              .
-copy /Y "%GITHUB_DIR%\utilities\PBA40\ExtractKeyFiles.bat"                 .
+copy /Y "%GITHUB_DIR%\utilities\RTP\RunMetrics.bat"                        .
+copy /Y "%GITHUB_DIR%\utilities\RTP\RunScenarioMetrics.bat"                .
+copy /Y "%GITHUB_DIR%\utilities\RTP\ExtractKeyFiles.bat"                   .
 
 if "%COMPUTER_PREFIX%" == "WIN-"    (copy "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"  "CTRAMP\scripts\notify_slack.py")
 if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.33

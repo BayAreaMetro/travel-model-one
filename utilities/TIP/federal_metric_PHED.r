@@ -159,7 +159,7 @@ MylistPM <- list(BusDataPM1, BusDataPM2, BusDataPM3, BusDataPM4, BusDataPM5, Bus
 
 # we only want bus lines
 # i.e. MODE >= 10 and MODE<100
-# according to this: https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/PBA40/metrics/bus_opcost.py
+# according to this: https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/RTP/metrics/bus_opcost.py
 # NewList1 <- filter(BusDataAM1, (MODE>=10 & MODE<100))
 # NewList2 <- filter(BusDataAM2, (MODE>=10 & MODE<100))
 NewList_busonlyAM <- lapply(MylistAM, function(x) filter(x, (MODE>=10 & MODE<100)))

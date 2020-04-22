@@ -1,3 +1,4 @@
+# This script is needed for emfac 2007 only (not needed for emfac 2014 and 2017)
 #This file multiplies total VMT (stratified by county and hour of day) by VMT share values for fuel type and vehicle class
 #The output of this script is a unique file for each county, by VMT, in each category of fuel type, vehicle class, and hour of the day
 #Form for running this script is gawk -f sumspeedbins2b.awk *.csv

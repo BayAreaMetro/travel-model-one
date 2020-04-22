@@ -10,7 +10,7 @@ OUTPUT_DIR          <-"C:/Users/lzorn/Box/Horizon and Plan Bay Area 2050/Bluepri
 OUTPUT_FILE         <-file.path(OUTPUT_DIR, "Model Data - Trip Caps.csv")
 
 # this is the currently running script
-SCRIPT                <- "X:/travel-model-one-master/utilities/PBA40/Emissions/Off Model Calculators/TripCaps.R"
+SCRIPT                <- "X:/travel-model-one-master/utilities/RTP/Emissions/Off Model Calculators/TripCaps.R"
 
 # the model runs are in the parent folder
 model_runs            <- read.table(file.path(dirname(SCRIPT),"..","ModelRuns_RTP2021.csv"), header=TRUE, sep=",", stringsAsFactors = FALSE)

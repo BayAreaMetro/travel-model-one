@@ -3,9 +3,11 @@
 
 :: The commpath
 SET COMMPATH=X:\COMMPATH
-if "%COMPUTER_PREFIX%" == "WIN-" (
-  SET COMMPATH=D:\COMMPATH
-)
+if "%COMPUTER_PREFIX%" == "WIN-" (  SET COMMPATH=D:\COMMPATH)
+if %computername%==MODEL2-A      (  set COMMPATH=E:\Model2A-Share\COMMPATH)
+if %computername%==MODEL2-B      (  set COMMPATH=E:\Model2B-Share\COMMPATH)
+if %computername%==MODEL2-C      (  set COMMPATH=E:\Model2C-Share\COMMPATH)
+if %computername%==MODEL2-D      (  set COMMPATH=E:\Model2D-Share\COMMPATH)
 
 :: The location of the 64-bit java development kit
 set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181

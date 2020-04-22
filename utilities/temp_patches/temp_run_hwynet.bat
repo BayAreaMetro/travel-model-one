@@ -9,7 +9,7 @@ set M_DIR=M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\TestProj
 
 :: set environment variables that vary by users
 set BOX_USER=C:\Users\ftsang
-set GITHUB_DIR=C:\Users\ftsang\Documents\GitHub\travel-model-one\utilities\PBA40\metrics
+set GITHUB_DIR=C:\Users\ftsang\Documents\GitHub\travel-model-one\utilities\RTP\metrics
 
 :: access python (should be the same setup for most users)
 set path=%path%;c:\python27
