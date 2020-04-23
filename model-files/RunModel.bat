@@ -73,10 +73,11 @@ set PROJECT=%myfolder:~11,3%
 set FUTURE_ABBR=%myfolder:~15,2%
 set FUTURE=X
 
-:: FUTURE ------------------------- make sure FUTURE_ABBR is one of the five [BY, BP, RT,CG,BF] -------------------------
+:: FUTURE ------------------------- make sure FUTURE_ABBR is one of the five [RT,CG,BF] -------------------------
 :: The long names are: BaseYear ie 2015, Blueprint aka PBA50, CleanAndGreen, BackToTheFuture, or RisingTidesFallingFortunes
 
 if %PROJECT%==IPA (SET FUTURE=PBA50)
+if %PROJECT%==DBP (SET FUTURE=PBA50)
 if %PROJECT%==PPA (
   if %FUTURE_ABBR%==RT (set FUTURE=RisingTidesFallingFortunes)
   if %FUTURE_ABBR%==CG (set FUTURE=CleanAndGreen)
