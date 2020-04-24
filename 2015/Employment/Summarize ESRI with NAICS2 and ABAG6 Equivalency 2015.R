@@ -17,8 +17,8 @@ setwd(wd)
 
 USERPROFILE             <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
 esri_location           <- file.path(USERPROFILE,"Box", "esri", "ESRI_2015_Disaggregate.Rdata")
-incommute_eq_location   <- paste0(wd,"2012-2016 CTPP Places to Superdistrict Equivalency.xlsx")
-incommute_tot_location  <- paste0(wd,"ACS 2013-2017 Incommute by Industry.xlsx")
+incommute_eq_location   <- paste0(wd,"/Incommute/2012-2016 CTPP Places to Superdistrict Equivalency.xlsx")
+incommute_tot_location  <- paste0(wd,"/Incommute/ACS 2013-2017 Incommute by Industry.xlsx")
 
 reg_total = 4005318          # 2015 regional jobs total from https://mtcdrive.app.box.com/file/654134152628
 
