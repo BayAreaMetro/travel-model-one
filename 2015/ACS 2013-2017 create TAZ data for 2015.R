@@ -1,9 +1,7 @@
 # ACS 2013-2017 create TAZ data for 2015.R
 # Create "2015" TAZ data from ACS 2013-2017 
 # SI
-# October 25, 2018
-# Updated December 11, 2018
-# UPdated November 25, 2019
+# Updated 4/24/20 with new employment data
 
 # Notes
 
@@ -36,8 +34,8 @@ library(httr)
 
 # Set up directories, import TAZ/block equivalence, install census key, set ACS year,set CPI inflation
 
-employment_2015_data           <- "2015_employment_TAZ1454.csv"
-school_2015_data               <- "tazData_enrollment.csv"
+employment_2015_data           <- file.path(wd,"Employment","ESRI 2015 NAICS2 and ABAG6 noin.csv")
+school_2015_data               <- file.path(wd,"School Enrollment","tazData_enrollment.csv")
 
 blockTAZ2010         <- "M:/Data/GIS layers/TM1_taz_census2010/block_to_TAZ1454.csv"
 censuskey            <- readLines("M:/Data/Census/API/api-key.txt")
@@ -1057,8 +1055,7 @@ temp_rounded_adjusted <- temp3 %>%
 PBA2010_joiner <- PBA2010%>%
   select(ZONE,DISTRICT,SD,TOTACRE,RESACRE,CIACRE,AREATYPE,TOPOLOGY,ZERO,sftaz)
 
-employment_2015 <- read.csv(employment_2015_data,header=TRUE) %>%
-  rename(TOTEMP=EMPNUM,HEREMPN=HEREEMPN)               # Rename total employment and HEREMPN variables to match
+employment_2015 <- read.csv(employment_2015_data,header=TRUE) 
 
 parking_2015 <- read.csv(parking_2015_data, header=TRUE) %>% 
   select(ZONE,PRKCST,OPRKCST,TERMINAL)
@@ -1132,7 +1129,11 @@ popsim_vars_county <- joined_10_15 %>%
 
 write.csv(popsim_vars_county, "TAZ1454 2015 Popsim Vars County.csv", row.names = FALSE, quote = T)
 
-# Output into Tableau-friendly format
+# Optional code below for other analyses
+
+# ------------------------------------------------------------------------------------------------
+
+"# Output into Tableau-friendly format
 
 Tableau2015 <- New2015 %>%
   select(ZONE,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
@@ -1144,21 +1145,21 @@ Tableau2010 <- PBA2010 %>%
   select(ZONE,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
          MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop) %>%
   gather(Variable,Value2010,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
-         MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)
+         MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)"
 
-Tableau10_15 <- left_join(Tableau2010,Tableau2015,by = c("ZONE","Variable"))
+#Tableau10_15 <- left_join(Tableau2010,Tableau2015,by = c("ZONE","Variable"))
 
-write.csv(Tableau10_15, "Tableau_2010_2015_Comparison.csv", row.names = FALSE, quote = T)
+#write.csv(Tableau10_15, "Tableau_2010_2015_Comparison.csv", row.names = FALSE, quote = T)
 
 
-RMWG_Summary <- New2015 %>%
+"RMWG_Summary <- New2015 %>%
   mutate(housing_units=SFDU+MFDU) %>% 
   group_by(COUNTY) %>% 
   summarize(population=sum(TOTPOP),households=sum(TOTHH),units=sum(housing_units),group=sum(gqpop),jobs=sum(TOTEMP),
-            residents=sum(EMPRES))
+            residents=sum(EMPRES))"
 
 
-write.csv(RMWG_Summary, "RMWG_Summary.csv", row.names = FALSE, quote = T)
+# write.csv(RMWG_Summary, "RMWG_Summary.csv", row.names = FALSE, quote = T)
 
   
 
