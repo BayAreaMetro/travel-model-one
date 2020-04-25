@@ -27,7 +27,8 @@ reg_total = 4005318          # 2015 regional jobs total from https://mtcdrive.ap
 load(esri_location)
 incommute_eq      <- read_excel (incommute_eq_location,sheet="TAZ Incommute Equivalence") 
 incommute_share   <- read_excel (incommute_eq_location,sheet="Comp_SD Incommute Equivalence")
-incommute_total   <- read_excel (incommute_tot_location,sheet="Incommute_Total")
+incommute_total   <- read_excel (incommute_tot_location,sheet="5. Net_Incommute") %>% 
+  select(Net_Incommute)                                             # Keep just the net incommute value
 
 temp  <- ESRI_2015_Disaggregate %>%     # Remove missing cases
   filter(naics2 !=0)
@@ -133,7 +134,7 @@ esri_scaled <- esri_all %>%
 esri_scaled_eq <- left_join(esri_scaled,incommute_eq, by=c("TAZ1454" = "ZONE")) # Join equivalency
 
 temp_incommute <- cbind(incommute_share,incommute_total) %>%    # Calculate number of incommuters by 
-  mutate(Incommute_Portion=Share_Incommute*Incommute_Total)     # Superdistrict or composite superdistrict
+  mutate(Incommute_Portion=Share_Incommute*Net_Incommute)                     # superdistrict or composite superdistrict
 
 temp_esri_sum <- esri_scaled_eq %>% 
   group_by(Comp_SD) %>%                 # Calculate scaling factors for each TAZ within a SD or composite SD
