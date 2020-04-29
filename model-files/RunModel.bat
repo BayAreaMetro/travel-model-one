@@ -159,7 +159,7 @@ python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
 
 :: For the "Per-Mile Tolling on Congested Freeways" in the Draft Blueprint
-if %UseTollDist%==Yes (python CTRAMP\scripts\preprocess\updateUECsToUseTollDist.py)
+if (%PROJECT%==DBP) (if (%UseTollDist%==Yes) (python CTRAMP\scripts\preprocess\updateUECsToUseTollDist.py)) else (echo "No need to run updateUECsToUseTollDist.py")
 
 :: Set the prices in the roadway network (convert csv to dbf first)
 python CTRAMP\scripts\preprocess\csvToDbf.py hwy\tolls.csv hwy\tolls.dbf
