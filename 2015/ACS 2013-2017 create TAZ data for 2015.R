@@ -19,12 +19,10 @@ setwd(wd)
    level, tract-level data used instead. Suppressed variables may change if ACS_year is changed. This 
    should be checked, as this change could cause the script not to work.
 
-3. Group quarters come from the decennial census so they're outdated. There are some small TAZ-specific 
-   additions from university growth that are incorporated in the script. TODO: grow these for 2015.
-
-4. Persons with miltary occupation is from gq_type_mil, which is probably low (since it's both from 2010
-   and also only includes those living in group quarters.)  TODO: find better source.
-
+3. Group quarters data start with the decennial census data. There are some small TAZ-specific 
+   additions from university growth that are incorporated in the script, and then TAZs are scaled up to match 
+   ACS 2013-2017 county-level totals. 
+   
 "
 # Import Libraries
 
@@ -32,7 +30,7 @@ suppressMessages(library(tidyverse))
 library(tidycensus)
 library(httr)
 
-# Set up directories, import TAZ/block equivalence, install census key, set ACS year,set CPI inflation
+# Set up directories, import TAZ/census block equivalence, install census key, set ACS year,set CPI inflation
 
 employment_2015_data           <- file.path(wd,"Employment","ESRI 2015 NAICS2 and ABAG6 noin.csv")
 school_2015_data               <- file.path(wd,"School Enrollment","tazData_enrollment.csv")
@@ -100,7 +98,7 @@ PBA2010_county <- PBA2010 %>%                                    # Create and jo
 
     * Because the 2017$ equivalent of $60,000 in 2000$ ($91,538) doesn't closely align with 2017 ACS income 
       categories, households within the $75,000-$99,999 category will be apportioned above and below $91,538. 
-      Using the ACS 2012-2016 PUMS data, the share of households above $91,538 within the $75,000-$99,999 
+      Using the ACS 2013-2017 PUMS data, the share of households above $91,538 within the $75,000-$99,999 
       category is 0.3042492.That is, approximately 30 percent of HHs in the $75,000-$99,999 category will be 
       apportioned above this value (Q3) and 70 percent below it (Q2). The table below compares 2000$ and 2017$.
 
@@ -397,7 +395,7 @@ f.url <- function (ACS_BG_variables,county,tract) {paste0("https://api.census.go
 # Block group calls done for all 1588 Bay Area tracts (done in 3 tranches because API limited to calls of 50 variables)
 # The "4" in the call refers to the number of columns at the end of the API call devoted to geography (not numeric)
 # Numeric values are changed by the f.data function from character to numeric
-# Note that, because the API call process is so long, these data are also saved in the working directory (petrale)
+# Note that, because the API call process is so long, these data are also saved in the working directory (Petrale)
 # Calls 1-3 are saved in "ACS 2013-2017 Block Group Vars1-3", respectively
 
 # Call 1
@@ -801,7 +799,8 @@ temp0 <- workingdata %>%
 
 # Correct GQ population to sum to ACS PUMS 2015 total, outlined in Steps 1-3 below
 "
-1. Add in additional GQ population for growth 2010-2015 from M. Reilly, file gq_add_00051015.csv
+1. Add in additional GQ population for growth 2010-2015 from M. Reilly file, 
+petrale/applications/travel_model_lu_inputs/2015/Group Quarters/gq_add_00051015.csv:
 
 Location                                                  	TAZ1454    extra_gq
 ------------------------------------------------------    	-------    --------
@@ -810,7 +809,7 @@ Munger East AND Ng House at Stanford	                   	    354        	120
 Metropolitan, Channing Bowditch, Maximo Commons at UCB	  	  1008 		    348
 ------------------------------------------------------    	-------    --------
 
-2. Sum total 2010 GQ to compare to ACS PUMS 2015 GQ
+2. Sum total 2010 GQ to compare to ACS PUMS 2013-2017 GQ
 
 3. Create factor corrections to apply to TAZs; apply them 
 "
@@ -836,7 +835,7 @@ sum_gq10 <- left_join(temp1,PBA2010_county,by=c("TAZ1454"="ZONE")) %>%
   group_by(County_Name,COUNTY) %>%
   summarize(sum10=sum(gqpop2010)) 
 
-# Bring in 2015 PUMS and perform the same summary, then join with the 2010 data
+# Bring in 2013-2017 PUMS and perform the same summary, then join with the 2010 data
 # Create GQ adjustment factor
 
 load (PUMS2013_2017) 
@@ -854,7 +853,7 @@ gqcounty1015 <- left_join(sum_gq10,sum_gq15,by="County_Name") %>%
 gqfactor <- gqcounty1015$gqfactor                             # Ordered vector of factors to apply   
 counties  <- c(1,2,3,4,5,6,7,8,9)                             # Matching county values for factor ordering
  
-# Apply GQ factor to reconcile adjust 2010 decennial with 2015 PUMS
+# Apply GQ factor to reconcile adjust 2010 decennial with 2013-2017 PUMS
 
 temp2 <- left_join(temp1,PBA2010_county,by=c("TAZ1454"="ZONE")) %>%
   mutate(
@@ -863,7 +862,8 @@ temp2 <- left_join(temp1,PBA2010_county,by=c("TAZ1454"="ZONE")) %>%
 
 
 # Apply households by number of workers correction factors
-# Values from ACS2013-2017_PUMS2012-2016_HH_Worker_Correction_Factors.csv
+# Values from ACS2013-2017_PUMS2013-2017_HH_Worker_Correction_Factors.csv, in
+# petrale\applications\travel_model_lu_inputs\2015\Workers
 # 1=San Francisco; 2=San Mateo; 3=Santa Clara; 4=Alameda; 5=Contra Costa; 6=Solano; 7= Napa; 8=Sonoma; 9=Marin
 # "counties" vector is defined above with this county order
 
@@ -880,7 +880,7 @@ temp3 <- temp2 %>%
     hh_wrks_3_plus = hh_wrks_3_plus*workers3p[match(COUNTY,counties)]) 
 
 # Zero out ages for people in TAZ 1439 (San Quentin)
-# Begin process of scaling constituent values so sums match marginal totals
+# Begin process of scaling constituent values so category subtotals match marginal totals
 
 ### Beginning of recoding
 
@@ -1049,7 +1049,6 @@ temp_rounded_adjusted <- temp3 %>%
 # Read in old PBA data sets and select variables for joining to new 2015 dataset
 # Bring in updated 2015 employment for joining
 # Bring in school and parking data from PBA 2040, 2015 TAZ data 
-# Join "2015" census-derived data to 2010/2015 reused variables and 2015 employment
 # Add HHLDS variable (same as TOTHH), select new 2015 output
 
 PBA2010_joiner <- PBA2010%>%
