@@ -37,7 +37,7 @@ WORKBOOK_BLANK <- file.path(CODE_DIR, "workbook_templates","11_TourModeChoice_bl
 calib_workbook <- loadWorkbook(file=WORKBOOK_BLANK)
 calib_sheets   <- getSheets(calib_workbook)
 
-input.pop.households <- read.table(file = file.path(TARGET_DIR,"INPUT","popsyn","hhFile.calib.2015.csv"),
+input.pop.households <- read.table(file = file.path(TARGET_DIR,"INPUT","popsyn","hhFile.2015.csv"),
                                    header=TRUE, sep=",") %>%
   select(HHID, TAZ, PERSONS, hworkers)
 
