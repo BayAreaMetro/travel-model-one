@@ -31,7 +31,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='Roadways to Caltrans' name='hyper.0a5uweq07wotl9181m3kq0yeapk0'>
-            <connection authentication='auth-none' author-locale='en_US' class='hyper' db-format='dataengine' dbname='M:/Development/Travel Model One/Calibration/Version 1.5.2/2015_TM152_IPA_04/OUTPUT/validation/Roadways to Caltrans.tde' default-settings='yes' sslmode='' username='tableau_internal_user' workgroup-auth-mode='as-is' />
+            <connection authentication='auth-none' author-locale='en_US' class='hyper' db-format='dataengine' dbname='Roadways to Caltrans.tde' default-settings='yes' sslmode='' username='tableau_internal_user' workgroup-auth-mode='as-is' />
           </named-connection>
         </named-connections>
         <relation connection='hyper.0a5uweq07wotl9181m3kq0yeapk0' name='Extract' table='[Extract].[Extract]' type='table' />
@@ -593,7 +593,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='Roadways to Caltrans_wide' name='hyper.0chslro0l3kzep12ggobi0uj41rs'>
-            <connection authentication='auth-none' author-locale='en_US' class='hyper' db-format='dataengine' dbname='M:/Development/Travel Model One/Calibration/Version 1.5.2/2015_TM152_IPA_04/OUTPUT/validation/Roadways to Caltrans_wide.tde' default-settings='yes' sslmode='' username='tableau_internal_user' workgroup-auth-mode='as-is' />
+            <connection authentication='auth-none' author-locale='en_US' class='hyper' db-format='dataengine' dbname='Roadways to Caltrans_wide.tde' default-settings='yes' sslmode='' username='tableau_internal_user' workgroup-auth-mode='as-is' />
           </named-connection>
         </named-connections>
         <relation connection='hyper.0chslro0l3kzep12ggobi0uj41rs' name='Extract' table='[Extract].[Extract]' type='table' />

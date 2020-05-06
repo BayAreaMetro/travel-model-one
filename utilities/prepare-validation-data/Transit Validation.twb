@@ -19,7 +19,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='observed_and_estimated_ridership' name='textscan.0nr78lj0zpqupo1bini040v4ppw0'>
-            <connection class='textscan' directory='M:/Development/Travel Model One/Calibration/Version 1.5.2/2015_TM152_IPA_00/OUTPUT/validation' filename='observed_and_estimated_ridership.csv' password='' server='' workgroup-auth-mode='as-is' />
+            <connection class='textscan' directory='.' filename='observed_and_estimated_ridership.csv' password='' server='' workgroup-auth-mode='as-is' />
           </named-connection>
         </named-connections>
         <relation connection='textscan.0nr78lj0zpqupo1bini040v4ppw0' name='observed_and_estimated_ridership.csv' table='[observed_and_estimated_ridership#csv]' type='table'>
@@ -228,7 +228,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='muni_observed' name='textscan.0t9bgx21w1gykl1fjesyl0hwgax9'>
-            <connection class='textscan' directory='M:/Development/Travel Model One/Calibration/Version 1.5.2/2015_TM152_IPA_00/OUTPUT/validation' filename='muni_observed.csv' password='' server='' workgroup-auth-mode='as-is' />
+            <connection class='textscan' directory='.' filename='muni_observed.csv' password='' server='' workgroup-auth-mode='as-is' />
           </named-connection>
         </named-connections>
         <relation connection='textscan.0t9bgx21w1gykl1fjesyl0hwgax9' name='muni_observed.csv' table='[muni_observed#csv]' type='table'>
@@ -300,7 +300,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='trnline' name='textscan.0irp40u0119v8i12tzbms1vgttyq'>
-            <connection class='textscan' directory='M:/Development/Travel Model One/Calibration/Version 1.5.2/2015_TM152_IPA_00/OUTPUT/trn' filename='trnline.csv' password='' server='' workgroup-auth-mode='as-is' />
+            <connection class='textscan' directory='../trn' filename='trnline.csv' password='' server='' workgroup-auth-mode='as-is' />
           </named-connection>
         </named-connections>
         <relation connection='textscan.0irp40u0119v8i12tzbms1vgttyq' name='trnline.csv' table='[trnline#csv]' type='table'>
