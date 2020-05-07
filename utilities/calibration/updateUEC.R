@@ -139,16 +139,16 @@ if (SUBMODEL=="DestinationChoice") {
                    "othdiscr"      =c( "constants",36,   3,  64),
                    "workbased"     =c( "constants",40,   3,  64),
 
-                   "cbd_work"      =c(    "CBD_SF", 9,   3,   8),
-                   "cbd_university"=c(    "CBD_SF", 9,   9,  14),
-                   "cbd_school"    =c(    "CBD_SF", 9,  15,  20),
-                   "cbd_escort"    =c(    "CBD_SF", 9,  21,  26),
-                   "cbd_shopping"  =c(    "CBD_SF", 9,  21,  26),
-                   "cbd_eatout"    =c(    "CBD_SF", 9,  27,  32),
-                   "cbd_othmaint"  =c(    "CBD_SF", 9,  21,  26),
-                   "cbd_social"    =c(    "CBD_SF", 9,  27,  32),
-                   "cbd_othdiscr"  =c(    "CBD_SF", 9,  27,  32),
-                   "cbd_workbased" =c(    "CBD_SF", 9,  33,  38))
+                   "cbd_work"      =c(    "CBD_SF", 9,   3,  10),
+                   "cbd_university"=c(    "CBD_SF", 9,  11,  18),
+                   "cbd_school"    =c(    "CBD_SF", 9,  19,  26),
+                   "cbd_escort"    =c(    "CBD_SF", 9,  27,  34),
+                   "cbd_shopping"  =c(    "CBD_SF", 9,  27,  34),
+                   "cbd_eatout"    =c(    "CBD_SF", 9,  35,  42),
+                   "cbd_othmaint"  =c(    "CBD_SF", 9,  27,  34),
+                   "cbd_social"    =c(    "CBD_SF", 9,  35,  42),
+                   "cbd_othdiscr"  =c(    "CBD_SF", 9,  35,  42),
+                   "cbd_workbased" =c(    "CBD_SF", 9,  43,  50))
 
   COPY_DST <- list("work"          =c(      "Work", 5, 408, 469),
                    "university"    =c("University", 5, 408, 469),
@@ -161,16 +161,16 @@ if (SUBMODEL=="DestinationChoice") {
                    "othdiscr"      =c(  "OthDiscr", 5, 408, 469),
                    "workbased"     =c( "WorkBased", 5, 411, 472),
 
-                   "cbd_work"      =c(      "Work", 5, 470, 475),
-                   "cbd_university"=c("University", 5, 470, 475),
-                   "cbd_school"    =c(    "School", 5, 470, 475),
-                   "cbd_escort"    =c(    "Escort", 5, 470, 475),
-                   "cbd_shopping"  =c(  "Shopping", 5, 470, 475),
-                   "cbd_eatout"    =c(    "EatOut", 5, 470, 475),
-                   "cbd_othmaint"  =c(  "OthMaint", 5, 470, 475),
-                   "cbd_social"    =c(    "Social", 5, 470, 475),
-                   "cbd_othdiscr"  =c(  "OthDiscr", 5, 470, 475),
-                   "cbd_workbased" =c( "WorkBased", 5, 473, 478))
+                   "cbd_work"      =c(      "Work", 5, 470, 477),
+                   "cbd_university"=c("University", 5, 470, 477),
+                   "cbd_school"    =c(    "School", 5, 470, 477),
+                   "cbd_escort"    =c(    "Escort", 5, 470, 477),
+                   "cbd_shopping"  =c(  "Shopping", 5, 470, 477),
+                   "cbd_eatout"    =c(    "EatOut", 5, 470, 477),
+                   "cbd_othmaint"  =c(  "OthMaint", 5, 470, 477),
+                   "cbd_social"    =c(    "Social", 5, 470, 477),
+                   "cbd_othdiscr"  =c(  "OthDiscr", 5, 470, 477),
+                   "cbd_workbased" =c( "WorkBased", 5, 473, 480))
 
   CONFIG <- list(CALIB_WORKBOOK, COPY_SRC, COPY_DST)
   
