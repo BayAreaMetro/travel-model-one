@@ -5,8 +5,9 @@
 library(dplyr)
 library(reshape2)
 
+USERNAME            <- Sys.getenv("USERNAME")
 MODEL_DATA_BASE_DIR <-"M:/Application/Model One/RTP2021/IncrementalProgress"
-OUTPUT_DIR          <-"C:/Users/lzorn/Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation/Incremental Progress/ModelData"
+OUTPUT_DIR          <-file.path("C:/Users", USERNAME, "Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation/Incremental Progress/ModelData")
 OUTPUT_FILE         <-file.path(OUTPUT_DIR, "Model Data - Bike Infrastructure.csv")
 
 # this is the currently running script
@@ -18,7 +19,7 @@ model_runs            <- read.table(file.path(dirname(SCRIPT),"..","ModelRuns_RT
 TAZDATA_FIELDS <- c("ZONE", "SD", "COUNTY","TOTPOP","TOTACRE") # only care about these fields
 tazdata_df     <- data.frame()
 for (i in 1:nrow(model_runs)) {
-  tazdata_file    <- file.path(MODEL_DATA_BASE_DIR, model_runs[i,"directory"],"OUTPUT","tazData.csv")
+  tazdata_file    <- file.path(MODEL_DATA_BASE_DIR, model_runs[i,"directory"],"INPUT","landuse","tazData.csv")
   tazdata_file_df <- read.table(tazdata_file, header=TRUE, sep=",")
   tazdata_file_df <- tazdata_file_df[, TAZDATA_FIELDS] %>%
     mutate(year      = model_runs[i,"year"],
