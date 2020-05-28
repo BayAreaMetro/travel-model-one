@@ -1,6 +1,7 @@
 .Rproj.user
 .Rhistory
 .RData
+~$*
 core/cmf/**/build
 core/models/**/build
 core/projects/**/build

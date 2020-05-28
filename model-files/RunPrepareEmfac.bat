@@ -11,6 +11,14 @@
 :: RunPrepareEmfac.bat SB375
 :: (Or, RunPrepareEmfac.bat Conformity)
 
+: make sure the user specifies either SB375 or Conformity in the argument
+IF %1==SB375 goto :start
+IF %1==Conformity goto :start 
+:: if neither, print error_message
+ECHO User Error: Please make sure "SB375" or "Conformity" is specified. Note that it is case-sensitive."
+GOTO :end
+ 
+:start
 call  ctramp\runtime\setpath
 mkdir emfac_prep
 
@@ -26,9 +34,9 @@ call runtpp CTRAMP\scripts\emfac\CreateSpeedBinsWithinZones.job
 if %1==SB375 rename emfac_prep\CreateSpeedBinsBetweenZones_sums.csv CreateSpBetweenZones_NotUsed.csv
 if %1==SB375 rename emfac_prep\CreateSpeedBinsWithinZones_sums.csv CreateSpWithinZones_NotUsed.csv
 
-:: use the "with truck" files if the run is for conformity
-if %1==conformity rename emfac_prep\CreateSpeedBinsBetweenZones_sums_NoTrk.csv CreateSpBetweenZonesNoTruck_NotUsed.csv
-if %1==conformity rename emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv CreateSpWithinZonesNoTruck_NotUsed.csv
+:: use the "with truck" files if the run is for Conformity
+if %1==Conformity rename emfac_prep\CreateSpeedBinsBetweenZones_sums_NoTrk.csv CreateSpBetweenZonesNoTruck_NotUsed.csv
+if %1==Conformity rename emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv CreateSpWithinZonesNoTruck_NotUsed.csv
 
 call gawk -f CTRAMP\scripts\emfac\SumSpeedBins1.awk emfac_prep\CreateSpeedBins*.csv
 
@@ -36,3 +44,5 @@ call gawk -f CTRAMP\scripts\emfac\SumSpeedBins1.awk emfac_prep\CreateSpeedBins*.
 move HourlyTotalCounty.csv emfac_prep\HourlyTotalCounty.csv
 move ShareSpeedBinsAll_sums.csv emfac_prep\ShareSpeedBinsAll_sums.csv
 move SumSpeedBinsAll_sums.csv emfac_prep\SumSpeedBinsAll_sums.csv
+
+:end

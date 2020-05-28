@@ -5,8 +5,9 @@
 library(dplyr)
 library(reshape2)
 
+USERNAME            <- Sys.getenv("USERNAME")
 MODEL_DATA_BASE_DIR <-"M:/Application/Model One/RTP2021/IncrementalProgress"
-OUTPUT_DIR          <-"C:/Users/lzorn/Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation/Incremental Progress/ModelData"
+OUTPUT_DIR          <-file.path("C:/Users", USERNAME, "Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation/Incremental Progress/ModelData")
 OUTPUT_FILE         <-file.path(OUTPUT_DIR, "Model Data - Employer Shuttles.csv")
 
 # this is the currently running script

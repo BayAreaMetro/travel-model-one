@@ -54,11 +54,8 @@ cat("TARGET_DIR    = ",TARGET_DIR, "\n")
 cat("OUTPUT_DIR    = ",OUTPUT_DIR, "\n")
 cat("SAMPLING_RATE = ",SAMPLING_RATE,"\n")
 
-# Load
-cat("TARGET_DIR    = ",TARGET_DIR, "\n")
-
 load(file.path(TARGET_DIR, "updated_output", "trips.rdata"))
-zonal_df <- read.table(file = file.path(TARGET_DIR, "tazData.csv"), header=TRUE, sep=",")
+zonal_df <- read.table(file = file.path(TARGET_DIR, "..", "INPUT", "landuse", "tazData.csv"), header=TRUE, sep=",")
 
 # Select and join
 working <- trips %>%
