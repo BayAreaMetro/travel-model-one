@@ -715,7 +715,7 @@ if (JUST_MES=="1") {
 joint_person_trips <- inner_join(joint_trips, joint_tour_persons, by=c("hh_id", "tour_id"))
 # select out person_num and the person table columns
 joint_person_trips <- select(joint_person_trips, hh_id, person_id, tour_id, orig_taz, dest_taz, trip_mode,
-                             num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id)
+                             num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, avAvailable, sampleRate)
 # cleanup
 remove(joint_tours,joint_trips,joint_tour_persons)
 
