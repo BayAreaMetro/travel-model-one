@@ -5,6 +5,7 @@
 # Import libraries
 
 suppressMessages(library(tidyverse))
+library(reshape2)
 
 # Set up directories
 
@@ -28,6 +29,8 @@ model_runs <- read.table(file.path(dirname(SCRIPT),"..","ModelRuns_RTP2021.csv")
 tripdata_df          <- data.frame()
 
 for (i in 1:nrow(model_runs)) {
+  
+  if (model_runs[i,"year"]<2015){next}  # TNCs don't exist in years prior to 2015, so skip those model runs to avoid conflicts
   
 # Bring in parameters file, search for TNC occupancy assumptions and TNC zero-passenger vehicle multiplier
 # Grep Fn separates string into two, extracts the second element (after the equals sign,the parameter of interest)
@@ -75,14 +78,28 @@ for (i in 1:nrow(model_runs)) {
            directory = model_runs[i,"directory"],
            category  = model_runs[i,"category"])
     
-  tripdata_df        <- rbind(tripdata_df, trip_file_df)    # Append
+  tripdata_df        <- rbind(tripdata_df, trip_file_df)    # Accumulate data frames into a single one
 }
 
-# Remove i and large trip files, output file
+# Remove large trip files, then output file
 
-rm(i, trips, trip_file_df)
+rm(trips, trip_file_df)
 
-write.csv(tripdata_df,OUTPUT_FILE,row.names = FALSE,quote=T)
+# columns are: year, category, directory, variable, value
+summary_melted_df <- melt(tripdata_df, id.vars=c("year","category","directory"))
+
+# add index column for vlookup
+summary_melted_df <- mutate(summary_melted_df,
+                            index = paste0(year,"-",category,"-",variable))
+summary_melted_df <- summary_melted_df[order(summary_melted_df$index),
+                                       c("index","year","category","directory","variable","value")]
+
+# prepend note
+prepend_note <- paste0("Output by ",SCRIPT," on ",format(Sys.time(), "%a %b %d %H:%M:%S %Y"))
+write(prepend_note, file=OUTPUT_FILE, append=FALSE)
+
+# output
+write.table(summary_melted_df, OUTPUT_FILE, sep=",", row.names=FALSE, append=TRUE)
 
 
 
