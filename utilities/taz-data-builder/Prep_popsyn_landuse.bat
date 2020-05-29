@@ -1,17 +1,17 @@
-:: assume these commands are running from the INPUT directory
-:: e.g. M:\Application\Model One\RTP2021\Horizon_Round1\2050_TM151_FU1_BF_00\INPUT
-:: to call this batch script, type the script name and then three arugments
+:: this batch script is assumed to be run from the relevant subdirectory within the INPUT_repo directory 
+:: M:\Application\Model One\RTP2021\Blueprint\INPUT_repo\PopSyn_n_LandUse\Basic_00\2050
+
+:: to call this batch script, type the script name and then four arugments
 :: also make sure to add "> prep_popsyn_landuse.log" when you call the batch file so a log will be produced
 :: e.g. 
-:: prep_popsyn_landuse BackToTheFuture 20190724 run10 2035 > prep_popsyn_landuse.log
-:: prep_popsyn_landuse PBA50 20200522 run939 2035 > prep_popsyn_landuse.log
+:: X:\travel-model-one-master\utilities\taz-data-builder\prep_popsyn_landuse.bat BackToTheFuture 20190724 run10 2035 > prep_popsyn_landuse.log
+:: X:\travel-model-one-master\utilities\taz-data-builder\prep_popsyn_landuse.bat PBA50 20200522 run939 2050 > prep_popsyn_landuse.log
 :: 
 :: the 3 arugments are:
 :: 1. Future Name
 :: 2. Date of land use model run
 :: 3. Land use run number
 :: 4. Model Year
-
 
 ::-----------------------------
 :: pop syn files
