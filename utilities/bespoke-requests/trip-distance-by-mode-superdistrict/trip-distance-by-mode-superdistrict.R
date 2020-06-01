@@ -45,9 +45,10 @@ SAMPLING_RATE = 0.500
 #### Remote file locations
 
 # this should be set by caller
+RUN_SET     <- Sys.getenv("RUN_SET")
 MODEL_DIR   <- Sys.getenv("MODEL_DIR")
-TARGET_DIR  <- file.path("M:/Application/Model One/RTP2021/IncrementalProgress",MODEL_DIR,"OUTPUT")
-OUTPUT_DIR  <- file.path("M:/Application/Model One/RTP2021/IncrementalProgress",MODEL_DIR,"OUTPUT","bespoke")
+TARGET_DIR  <- file.path("M:/Application/Model One/RTP2021",RUN_SET,MODEL_DIR,"OUTPUT")
+OUTPUT_DIR  <- file.path("M:/Application/Model One/RTP2021",RUN_SET,MODEL_DIR,"OUTPUT","bespoke")
 
 cat("MODEL_DIR     = ",MODEL_DIR, "\n")
 cat("TARGET_DIR    = ",TARGET_DIR, "\n")
