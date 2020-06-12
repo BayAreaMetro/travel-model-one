@@ -2,8 +2,14 @@
 :: This version of summarizeAcrossScenarios.bat does not bother creating the extracts but instead copies the text files
 :: over to use the union feature of Tableau
 ::
-:: USAGE: summarizeAcrossScenariosUnion [current|all]
+set USAGE=USAGE: summarizeAcrossScenariosUnion [current or all]
 :: Run from M:\Application\Model One
+::
+:: Uses scenario list in \\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\ModelRuns.csv
+::
+:: For all, will include all runs in just copy ScenarioKey.csv and topsheet
+:: For current, will include only runs marked with status=current and copies all core_summaries, transit and loaded network files
+::
 
 @echo off
 setlocal enabledelayedexpansion
@@ -14,11 +20,17 @@ set SET_TYPE=current
 echo Argument 1=[%1]
 if all==%1 (
   set SET_TYPE=all
-)
-if !SET_TYPE!==current (
-  set /p COMBINED_DIR="What across-runs directory do you want to use? "
-  echo COMBINED_DIR=[!COMBINED_DIR!]
-  if [!COMBINED_DIR!]==[] ( goto done )
+  set COMBINED_DIR=M:\Application\Model One\All_Topsheets
+) else (
+  if current==%1 (
+    set SET_TYPE=current
+    set /p COMBINED_DIR="What across-runs directory do you want to use? "
+    echo COMBINED_DIR=[!COMBINED_DIR!]
+    if [!COMBINED_DIR!]==[] ( goto done )
+  ) else (
+    echo %USAGE%
+    goto done
+  )
 )
 
 rem set RUN_NAME_SET=
@@ -47,10 +59,14 @@ for /f "skip=1 tokens=1,2,3,4,5,6 delims=," %%A in (%MODEL_RUNS_CSV%) do (
       set RUN_NAME_SET=!RUN_NAME_SET!!project!\!SUBDIR!\!directory! 
     )
   )
+  if !SET_TYPE!==all (
+    set RUN_NAME_SET=!RUN_NAME_SET!!project!\!SUBDIR!\!directory! 
+  )
 )
 echo RUN_NAME_SET=[!RUN_NAME_SET!]
+echo COMBINED_DIR=[!COMBINED_DIR!]
 
-mkdir "%COMBINED_DIR%"
+mkdir "!COMBINED_DIR!"
 
 :: Set to 1 if running from the original model run directory
 :: (e.g. subdirs = CTRAMP, database, hwy, INPUT, landuse, etc...)
@@ -76,6 +92,20 @@ IF %USERNAME%==lzorn (
   set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.5
   )
 )
+
+
+:: copy over the scenariokey
+copy "%MODEL_RUNS_CSV%" "%COMBINED_DIR%\ScenarioKey.csv"
+
+:: copy over topsheet
+for %%R in (%RUN_NAME_SET%) DO (
+  echo %%R
+  echo %%~nxR
+  copy "%%R\OUTPUT\metrics\topsheet.csv" "%COMBINED_DIR%\topsheet_%%~nxR.csv"
+)
+
+:: rem for "all" mode, topsheet is it
+if !SET_TYPE!==all ( goto done )
 
 :: copy over core_summary csv files
 set FILES=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork PerTripTravelTime TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance VehicleMilesTraveled
@@ -105,8 +135,6 @@ for %%R in (%RUN_NAME_SET%) DO (
   copy "%%R\OUTPUT\trn\trnlink.csv" "%COMBINED_DIR%\trnlink_%%~nxR.csv"
 )
 
-:: copy over the scenariokey
-copy "%MODEL_RUNS_CSV%" "%COMBINED_DIR%\ScenarioKey.csv"
 :done
 
 :: c:\windows\system32\Robocopy.exe /E "X:\travel-model-one-master\utilities\CoreSummaries\tableau"       %COMBINED_DIR%
