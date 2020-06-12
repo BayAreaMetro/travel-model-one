@@ -99,9 +99,17 @@ copy "%MODEL_RUNS_CSV%" "%COMBINED_DIR%\ScenarioKey.csv"
 
 :: copy over topsheet
 for %%R in (%RUN_NAME_SET%) DO (
-  echo %%R
-  echo %%~nxR
-  copy "%%R\OUTPUT\metrics\topsheet.csv" "%COMBINED_DIR%\topsheet_%%~nxR.csv"
+  rem echo %%R
+  rem echo %%~nxR
+  if exist "%COMBINED_DIR%\topsheet_%%~nxR.csv" (
+    echo File is already present: %COMBINED_DIR%\topsheet_%%~nxR.csv
+  ) else (
+    if not exist "%%R\OUTPUT\metrics\topsheet.csv" (
+      echo File doesn't exist: %%R\OUTPUT\metrics\topsheet.csv
+    ) else (
+      copy "%%R\OUTPUT\metrics\topsheet.csv" "%COMBINED_DIR%\topsheet_%%~nxR.csv"
+    )
+  )
 )
 
 :: rem for "all" mode, topsheet is it

@@ -22,6 +22,10 @@ stopifnot(nchar(TARGET_DIR  )>0)
 stopifnot(nchar(ITER        )>0)
 stopifnot(nchar(SAMPLESHARE )>0)
 
+print(paste("TARGET_DIR  =", TARGET_DIR ))
+print(paste("ITER        =", ITER       ))
+print(paste("SAMPLESHARE =", SAMPLESHARE))
+
 short_summary     <- list("directory"=basename(TARGET_DIR))
 
 # The land use file: https://github.com/BayAreaMetro/modeling-website/wiki/TazData
