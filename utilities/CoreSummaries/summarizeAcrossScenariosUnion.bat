@@ -121,26 +121,72 @@ set FILES=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymen
 for %%F in (%FILES%) DO (
   echo %%F
   for %%R in (%RUN_NAME_SET%) DO (
-    echo %%R
-    echo %%~nxR
-    copy "%%R\OUTPUT\core_summaries\%%F.csv" "%COMBINED_DIR%\%%F_%%~nxR.csv"
+    rem echo %%R
+    rem echo %%~nxR
+    if exist "%COMBINED_DIR%\%%F_%%~nxR.csv" (
+      echo File is already present: %COMBINED_DIR%\%%F_%%~nxR.csv
+    ) else (
+      if not exist "%%R\OUTPUT\core_summaries\%%F.csv" (
+        echo File doesn't exist: %%R\OUTPUT\core_summaries\%%F.csv
+      ) else (
+        copy "%%R\OUTPUT\core_summaries\%%F.csv" "%COMBINED_DIR%\%%F_%%~nxR.csv"
+      )
+    )
   )
 )
 
 :: copy over avgload5period.csv files
 for %%R in (%RUN_NAME_SET%) DO (
-  echo %%R
-  echo %%~nxR
-  copy "%%R\OUTPUT\avgload5period.csv" "%COMBINED_DIR%\avgload5period_%%~nxR.csv"
-  copy "%%R\OUTPUT\avgload5period_vehclasses.csv" "%COMBINED_DIR%\avgload5period_vehclasses_%%~nxR.csv"
+  rem echo %%R
+  rem echo %%~nxR
+  if exist "%COMBINED_DIR%\avgload5period_%%~nxR.csv" (
+    echo File is already present: %COMBINED_DIR%\avgload5period_%%~nxR.csv
+  ) else (
+    if not exist "%%R\OUTPUT\avgload5period.csv" (
+      echo File doesn't exist: %%R\OUTPUT\avgload5period.csv
+    ) else (
+      copy "%%R\OUTPUT\avgload5period.csv" "%COMBINED_DIR%\avgload5period_%%~nxR.csv"
+    )
+  )
 )
   
-:: copy over trnline.csv and trnlink.csv files
+:: copy over avgload5period_vehclasses.csv files
 for %%R in (%RUN_NAME_SET%) DO (
-  echo %%R
-  echo %%~nxR
-  copy "%%R\OUTPUT\trn\trnline.csv" "%COMBINED_DIR%\trnline_%%~nxR.csv"
-  copy "%%R\OUTPUT\trn\trnlink.csv" "%COMBINED_DIR%\trnlink_%%~nxR.csv"
+  if exist "%COMBINED_DIR%\avgload5period_vehclasses_%%~nxR.csv" (
+    echo File is already present: %COMBINED_DIR%\avgload5period_vehclasses_%%~nxR.csv
+  ) else (
+    if not exist "%%R\OUTPUT\avgload5period_vehclasses.csv" (
+      echo File doesn't exist: %%R\OUTPUT\avgload5period_vehclasses.csv
+    ) else (
+      copy "%%R\OUTPUT\avgload5period_vehclasses.csv" "%COMBINED_DIR%\avgload5period_vehclasses_%%~nxR.csv"
+    )
+  )
+)
+
+:: copy over trnline.csv files
+for %%R in (%RUN_NAME_SET%) DO (
+  if exist "%COMBINED_DIR%\trnline_%%~nxR.csv" (
+    echo File is already present: %COMBINED_DIR%\trnline_%%~nxR.csv
+  ) else (
+    if not exist "%%R\OUTPUT\trn\trnline.csv" (
+      echo File doesn't exist: %%R\OUTPUT\trn\trnline.csv
+    ) else (
+      copy "%%R\OUTPUT\trn\trnline.csv" "%COMBINED_DIR%\trnline_%%~nxR.csv"
+    )
+  )
+)
+
+:: copy over trnlink.csv files
+for %%R in (%RUN_NAME_SET%) DO (
+  if exist "%COMBINED_DIR%\trnlink_%%~nxR.csv" (
+    echo File is already present: %COMBINED_DIR%\trnlink_%%~nxR.csv
+  ) else (
+    if not exist "%%R\OUTPUT\trn\trnlink.csv" (
+      echo File doesn't exist: %%R\OUTPUT\trn\trnlink.csv
+    ) else (
+      copy "%%R\OUTPUT\trn\trnlink.csv" "%COMBINED_DIR%\trnlink_%%~nxR.csv"
+    )
+  )
 )
 
 :done
