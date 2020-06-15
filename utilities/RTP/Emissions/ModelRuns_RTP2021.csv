@@ -1,4 +1,8 @@
-year,directory,category
-2005,2005_TM152_IPA_03,IP
-2015,2015_TM152_IPA_16,IP
-2035,2035_TM152_IPA_00,IP
+year,directory,run_set,category
+2005,2005_TM152_IPA_03,IP,IP
+2015,2015_TM152_IPA_16,IP,IP
+2035,2035_TM152_IPA_00,IP,IP
+2035,2035_TM152_DBP_Basic_00,DraftBlueprint,Basic
+2050,2050_TM152_DBP_Basic_00,DraftBlueprint,Basic
+2035,2035_TM152_DBP_Plus_01,DraftBlueprint,Plus
+2050,2050_TM152_DBP_PlusCrossing_01,DraftBlueprint,Plus Crossing

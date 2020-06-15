@@ -6,14 +6,30 @@ library(dplyr)
 library(reshape2)
 
 USERNAME            <- Sys.getenv("USERNAME")
-MODEL_DATA_BASE_DIR <-"M:/Application/Model One/RTP2021/IncrementalProgress"
-OUTPUT_DIR          <-file.path("C:/Users", USERNAME, "Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation/Incremental Progress/ModelData")
+RUN_SET             <- Sys.getenv("RUN_SET")
+BOX_BASE_DIR        <- file.path("C:/Users", USERNAME, "Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation")
+MODEL_DATA_BASE_DIRS<- c(IP            ="M:/Application/Model One/RTP2021/IncrementalProgress",
+                         DraftBlueprint="M:/Application/Model One/RTP2021/Blueprint")
+OUTPUT_DIRS         <- c(IP            =file.path(BOX_BASE_DIR, "Incremental Progress/ModelData"),
+                         DraftBlueprint=file.path(BOX_BASE_DIR, "Draft Blueprint/ModelData"))
+
+stopifnot(RUN_SET %in% c("IP", "DraftBlueprint"))
+
+MODEL_DATA_BASE_DIR <-MODEL_DATA_BASE_DIRS[[RUN_SET]]
+OUTPUT_DIR          <-OUTPUT_DIRS[[RUN_SET]]
 OUTPUT_FILE         <-file.path(OUTPUT_DIR, "Model Data - Bike Infrastructure.csv")
 
 # this is the currently running script
-SCRIPT                <- "X:/travel-model-one-master/utilities/RTP/Emissions/Off Model Calculators/BikeInfrastructure.R"
+SCRIPT              <- "X:/travel-model-one-master/utilities/RTP/Emissions/Off Model Calculators/BikeInfrastructure.R"
 # the model runs are in the parent folder
-model_runs            <- read.table(file.path(dirname(SCRIPT),"..","ModelRuns_RTP2021.csv"), header=TRUE, sep=",", stringsAsFactors = FALSE)
+model_runs          <- read.table(file.path(dirname(SCRIPT),"..","ModelRuns_RTP2021.csv"), header=TRUE, sep=",", stringsAsFactors = FALSE)
+
+# filter to the run_set
+model_runs          <- model_runs[ which(model_runs$run_set == RUN_SET), ]
+
+print(paste("MODEL_DATA_BASE_DIR = ",MODEL_DATA_BASE_DIR))
+print(paste("OUTPUT_DIR          = ",OUTPUT_DIR))
+print(model_runs)
 
 # Read tazdata
 TAZDATA_FIELDS <- c("ZONE", "SD", "COUNTY","TOTPOP","TOTACRE") # only care about these fields

@@ -59,8 +59,10 @@ copy main\tripsEV.tpp extractor\main
 copy main\ShadowPricing_7.csv extractor\main
 
 mkdir extractor\nonres
-copy nonres\ixDaily2015.tpp extractor\nonres
-copy nonres\ixDailyx4.tpp   extractor\nonres
+copy nonres\ixDaily2015.tpp       extractor\nonres
+copy nonres\ixDailyx4.tpp         extractor\nonres
+copy nonres\tripsIX*.tpp          extractor\nonres
+copy nonres\tripsTrk*.tpp         extractor\nonres
 
 :: copy skims\hwyskmEA.tpp extractor\emfac\hwyskmEA.tpp
 :: copy skims\hwyskmAM.tpp extractor\emfac\hwyskmAM.tpp

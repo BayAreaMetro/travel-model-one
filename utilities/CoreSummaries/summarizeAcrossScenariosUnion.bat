@@ -2,14 +2,71 @@
 :: This version of summarizeAcrossScenarios.bat does not bother creating the extracts but instead copies the text files
 :: over to use the union feature of Tableau
 ::
+set USAGE=USAGE: summarizeAcrossScenariosUnion [current or all]
+:: Run from M:\Application\Model One
+::
+:: Uses scenario list in \\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\ModelRuns.csv
+::
+:: For all, will include all runs in just copy ScenarioKey.csv and topsheet
+:: For current, will include only runs marked with status=current and copies all core_summaries, transit and loaded network files
+::
 
-@echo on
+@echo off
 setlocal enabledelayedexpansion
 
-set COMBINED_DIR=across_rounds_v06_union
-set RUN_NAME_SET=Horizon_Round1\2015_TM151_PPA_09 Horizon_Round1\2050_TM151_FU1_RT_01 Horizon_Round1\2050_TM151_FU1_CG_02 Horizon_Round1\2050_TM151_FU1_BF_02 Horizon_Round2\2050_TM151_FU2_RT_05 Horizon_Round2\2050_TM151_FU2_CG_04 Horizon_Round2\2050_TM151_FU2_BF_04
+set MODEL_RUNS_CSV=\\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\ModelRuns.csv
+set SET_TYPE=current
 
-mkdir %COMBINED_DIR%
+echo Argument 1=[%1]
+if all==%1 (
+  set SET_TYPE=all
+  set COMBINED_DIR=M:\Application\Model One\All_Topsheets
+) else (
+  if current==%1 (
+    set SET_TYPE=current
+    set /p COMBINED_DIR="What across-runs directory do you want to use? "
+    echo COMBINED_DIR=[!COMBINED_DIR!]
+    if [!COMBINED_DIR!]==[] ( goto done )
+  ) else (
+    echo %USAGE%
+    goto done
+  )
+)
+
+rem set RUN_NAME_SET=
+for /f "skip=1 tokens=1,2,3,4,5,6 delims=," %%A in (%MODEL_RUNS_CSV%) do (
+  set project=%%A
+  set year=%%B
+  set directory=%%C
+  set run_set=%%D
+  set category=%%E
+  set status=%%F
+  rem echo project=[!project!] year=[!year!] directory=[!directory!] run_set=[!run_set!] category=[!category!] status=[!status!]
+
+  set SUBDIR=unknown
+  if !run_set!==DraftBlueprint (
+    set SUBDIR=BluePrint
+  )
+  if !run_set!==IP (
+    set SUBDIR=IncrementalProgress
+  )
+  if !project!==RTP2017 (
+    set SUBDIR=Scenarios
+  )
+
+  if !SET_TYPE!==current (
+    if %%F==current (
+      set RUN_NAME_SET=!RUN_NAME_SET!!project!\!SUBDIR!\!directory! 
+    )
+  )
+  if !SET_TYPE!==all (
+    set RUN_NAME_SET=!RUN_NAME_SET!!project!\!SUBDIR!\!directory! 
+  )
+)
+echo RUN_NAME_SET=[!RUN_NAME_SET!]
+echo COMBINED_DIR=[!COMBINED_DIR!]
+
+mkdir "!COMBINED_DIR!"
 
 :: Set to 1 if running from the original model run directory
 :: (e.g. subdirs = CTRAMP, database, hwy, INPUT, landuse, etc...)
@@ -36,31 +93,100 @@ IF %USERNAME%==lzorn (
   )
 )
 
+
+:: copy over the scenariokey
+copy "%MODEL_RUNS_CSV%" "%COMBINED_DIR%\ScenarioKey.csv"
+
+:: copy over topsheet
+for %%R in (%RUN_NAME_SET%) DO (
+  rem echo %%R
+  rem echo %%~nxR
+  if exist "%COMBINED_DIR%\topsheet_%%~nxR.csv" (
+    echo File is already present: %COMBINED_DIR%\topsheet_%%~nxR.csv
+  ) else (
+    if not exist "%%R\OUTPUT\metrics\topsheet.csv" (
+      echo File doesn't exist: %%R\OUTPUT\metrics\topsheet.csv
+    ) else (
+      copy "%%R\OUTPUT\metrics\topsheet.csv" "%COMBINED_DIR%\topsheet_%%~nxR.csv"
+    )
+  )
+)
+
+:: rem for "all" mode, topsheet is it
+if !SET_TYPE!==all ( goto done )
+
 :: copy over core_summary csv files
 set FILES=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork PerTripTravelTime TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance VehicleMilesTraveled
 
 for %%F in (%FILES%) DO (
   echo %%F
   for %%R in (%RUN_NAME_SET%) DO (
-    echo %%R
-    echo %%~nxR
-    copy %%R\OUTPUT\core_summaries\%%F.csv %COMBINED_DIR%\%%F_%%~nxR.csv
+    rem echo %%R
+    rem echo %%~nxR
+    if exist "%COMBINED_DIR%\%%F_%%~nxR.csv" (
+      echo File is already present: %COMBINED_DIR%\%%F_%%~nxR.csv
+    ) else (
+      if not exist "%%R\OUTPUT\core_summaries\%%F.csv" (
+        echo File doesn't exist: %%R\OUTPUT\core_summaries\%%F.csv
+      ) else (
+        copy "%%R\OUTPUT\core_summaries\%%F.csv" "%COMBINED_DIR%\%%F_%%~nxR.csv"
+      )
+    )
   )
 )
 
 :: copy over avgload5period.csv files
 for %%R in (%RUN_NAME_SET%) DO (
-  echo %%R
-  echo %%~nxR
-  copy %%R\OUTPUT\avgload5period.csv %COMBINED_DIR%\avgload5period_%%~nxR.csv
+  rem echo %%R
+  rem echo %%~nxR
+  if exist "%COMBINED_DIR%\avgload5period_%%~nxR.csv" (
+    echo File is already present: %COMBINED_DIR%\avgload5period_%%~nxR.csv
+  ) else (
+    if not exist "%%R\OUTPUT\avgload5period.csv" (
+      echo File doesn't exist: %%R\OUTPUT\avgload5period.csv
+    ) else (
+      copy "%%R\OUTPUT\avgload5period.csv" "%COMBINED_DIR%\avgload5period_%%~nxR.csv"
+    )
+  )
 )
   
-:: copy over trnline.csv and trnlink.csv files
+:: copy over avgload5period_vehclasses.csv files
 for %%R in (%RUN_NAME_SET%) DO (
-  echo %%R
-  echo %%~nxR
-  copy %%R\OUTPUT\trn\trnline.csv %COMBINED_DIR%\trnline_%%~nxR.csv
-  copy %%R\OUTPUT\trn\trnlink.csv %COMBINED_DIR%\trnlink_%%~nxR.csv
+  if exist "%COMBINED_DIR%\avgload5period_vehclasses_%%~nxR.csv" (
+    echo File is already present: %COMBINED_DIR%\avgload5period_vehclasses_%%~nxR.csv
+  ) else (
+    if not exist "%%R\OUTPUT\avgload5period_vehclasses.csv" (
+      echo File doesn't exist: %%R\OUTPUT\avgload5period_vehclasses.csv
+    ) else (
+      copy "%%R\OUTPUT\avgload5period_vehclasses.csv" "%COMBINED_DIR%\avgload5period_vehclasses_%%~nxR.csv"
+    )
+  )
+)
+
+:: copy over trnline.csv files
+for %%R in (%RUN_NAME_SET%) DO (
+  if exist "%COMBINED_DIR%\trnline_%%~nxR.csv" (
+    echo File is already present: %COMBINED_DIR%\trnline_%%~nxR.csv
+  ) else (
+    if not exist "%%R\OUTPUT\trn\trnline.csv" (
+      echo File doesn't exist: %%R\OUTPUT\trn\trnline.csv
+    ) else (
+      copy "%%R\OUTPUT\trn\trnline.csv" "%COMBINED_DIR%\trnline_%%~nxR.csv"
+    )
+  )
+)
+
+:: copy over trnlink.csv files
+for %%R in (%RUN_NAME_SET%) DO (
+  if exist "%COMBINED_DIR%\trnlink_%%~nxR.csv" (
+    echo File is already present: %COMBINED_DIR%\trnlink_%%~nxR.csv
+  ) else (
+    if not exist "%%R\OUTPUT\trn\trnlink.csv" (
+      echo File doesn't exist: %%R\OUTPUT\trn\trnlink.csv
+    ) else (
+      copy "%%R\OUTPUT\trn\trnlink.csv" "%COMBINED_DIR%\trnlink_%%~nxR.csv"
+    )
+  )
 )
 
 :done

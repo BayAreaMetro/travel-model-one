@@ -33,6 +33,9 @@ PSEUDO_LINE_MAPPING = {
     # baseline
     "120_OR_YEL"  :("120_ORANGE[A]?-$","120_YELLOW[-9W]$"), # Orange/Richmond - MacArthur - Yellow/SFO
     "120_OR_YER"  :("120_YELLOW[E]?$","120_ORANGE[A]?$"), # Yellow/SFO - MacArthur - Orange/Richmond
+    #2015 IPA
+    #"120_OR_YER"  :("120_YELLOW[1E]?$","120_ORANGE[A]?$"), # Yellow/SFO - MacArthur - Orange/Richmond
+    
     # crossings 3
     "120_BL_PS"   :("120_BLUE-",  "120_GREEN-" ), # Blue/DublinPleasanton - San Antonio - Green/Millbrae
     "120_BL_PSR"  :("120_GREEN$", "120_BLUE$"  ), # Green/Millbrae - San Antonio - Blue/DublinPleasanton
@@ -244,7 +247,7 @@ if __name__ == '__main__':
     logging.info("Args: {}".format(my_args))
 
     # import seat capacities from lookup file
-    seatcap_file = "\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\transitSeatCap.csv"
+    seatcap_file = "\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\RTP\\metrics\\transitSeatCap.csv"
     transit_seatcap_df = pd.read_csv(seatcap_file)
     transit_seatcap_df.columns=transit_seatcap_df.columns.str.replace('%','pct')
     transit_seatcap_df.rename(columns={"VEHTYPE":"veh_type_updated", "100pctCapacity":"standcap"},inplace=True)

@@ -173,6 +173,14 @@ if not exist metrics\transit_boards_miles.csv (
   call python "%CODE_DIR%\transit.py" trn\quickboards.xls
 )
 
+:topsheet
+if not exist metrics\topsheet.csv (
+  rem Short summaries for across many runs
+  rem Input: tazdata, popsyn files, avgload5period_vehclasses.csv, core_summaries\VehicleMilesTraveled.csv
+  rem Output: metrics\topsheet.csv
+  call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\topsheet.R"
+)
+
 if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")
 python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
 
