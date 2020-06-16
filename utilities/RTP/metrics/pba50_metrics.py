@@ -156,8 +156,13 @@ def calculate_Connected2_crowding(runid, year, dbp, transit_operator_df, metrics
 
     if "2015" in runid: tm_run_location = tm_run_location_ipa
     else: tm_run_location = tm_run_location_bp
-    tm_crowding_df = pd.read_csv(tm_run_location+runid+'/OUTPUT/metrics/transit_crowding_complete.csv')
 
+    transit_crowding_file = os.path.join(tm_run_location, runid, "OUTPUT", "metrics", "transit_crowding_complete.csv")
+    if not os.path.exists(transit_crowding_file):
+        print("Error: file {} not found".format(transit_crowding_file))
+        raise
+
+    tm_crowding_df = pd.read_csv(transit_crowding_file)
     tm_crowding_df = tm_crowding_df[['TIME','SYSTEM','ABNAMESEQ','period','load_standcap','AB_VOL']]
     tm_crowding_df = tm_crowding_df.loc[tm_crowding_df['period'] == "AM"]
     tm_crowding_df['time_overcapacity'] = tm_crowding_df.apply (lambda row: row['TIME'] if (row['load_standcap']>1) else 0, axis=1)
@@ -362,23 +367,45 @@ if __name__ == '__main__':
 
     #pd.set_option('display.width', 500)
 
-
     # Set Travel model inputs
-    tm_run_location_bp = 'M:/Application/Model One/RTP2021/Blueprint/'
+    tm_run_location_bp  = 'M:/Application/Model One/RTP2021/Blueprint/'
     tm_run_location_ipa = 'M:/Application/Model One/RTP2021/IncrementalProgress/'
-    tm_2015_runid                     = '2015_TM152_IPA_16'
-    tm_2050_DBP_NoProject_runid       = '2050_TM152_DBP_NoProject_01'
-    #tm_2050_DBP_Basic_runid           = '2050_TM152_DBP_Basic_01_AV25'
-    tm_2050_DBP_PlusCrossing_runid    = '2050_TM152_DBP_PlusCrossing_02'
-    #tm_2050_DBP_PlusFixItFirst_runid = '2050_TM152_DBP_PlusCrossing_01'
+
+    # read ModelRuns.csv
+    MODELRUNS_CSV       = '\\\\MainModel\\MainModelShare\\travel-model-one-master\\utilities\\RTP\\ModelRuns.csv'
+
+    model_runs = pd.read_csv(MODELRUNS_CSV)
+
+    # filter to RTP2021 and current
+    model_runs = model_runs.loc[(model_runs['project']=='RTP2021')&(model_runs['status']=='current'), ]
+    # filter to year = 2015 or Plus
+    model_runs = model_runs.loc[(model_runs['year']==2015)|(model_runs['year']==2050), ]
+    print(model_runs)
+
+    # make sure we have one of each
+    model_runs_2015           = model_runs.loc[model_runs['year']==2015,]
+    model_runs_2050_noproject = model_runs.loc[(model_runs['year']==2050)&(model_runs['category']=='No Project'),]
+    model_runs_2050_plus      = model_runs.loc[(model_runs['year']==2050)&(model_runs['category']=='Plus'      ),]
+
+    assert(len(model_runs_2015          )==1)
+    assert(len(model_runs_2050_noproject)==1)
+    assert(len(model_runs_2050_plus     )==1)
+
+    tm_2015_runid                     = model_runs_2015.iloc[0]['directory']
+    tm_2050_DBP_NoProject_runid       = model_runs_2050_noproject.iloc[0]['directory']
+    tm_2050_DBP_PlusCrossing_runid    = model_runs_2050_plus.iloc[0]['directory']
+    print("tm_2015_runid                  = {}".format(tm_2015_runid))
+    print("tm_2050_DBP_NoProject_runid    = {}".format(tm_2050_DBP_NoProject_runid))
+    print("tm_2050_DBP_PlusCrossing_runid = {}".format(tm_2050_DBP_PlusCrossing_runid))
     list_tm_runid = [tm_2015_runid, tm_2050_DBP_NoProject_runid, tm_2050_DBP_PlusCrossing_runid]
     list_tm_runid_blueprintonly = [tm_2050_DBP_PlusCrossing_runid]
 
     # Set external inputs
-    metrics_source_folder         = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/metrics_files/'.format(os.getenv('USERNAME'))
+    METRICS_BOX_DIR               = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics'.format(os.getenv('USERNAME'))
+    metrics_source_folder         = os.path.join(METRICS_BOX_DIR, 'metrics_files')
 
-    transit_operator_file         = metrics_source_folder + 'transit_system_lookup.csv'
-    hwy_corridor_links_file       = metrics_source_folder + 'hwy_corridor_links.csv'
+    transit_operator_file         = os.path.join(metrics_source_folder, 'transit_system_lookup.csv')
+    hwy_corridor_links_file       = os.path.join(metrics_source_folder, 'hwy_corridor_links.csv')
     
 
 
@@ -405,10 +432,12 @@ if __name__ == '__main__':
     print("*****************#####################Completed calc_travelmodel_metrics#####################*******************")
 
     # Write output
-    idx = pd.MultiIndex.from_tuples(metrics_dict.keys(), names=['modelrunID','metric','name','year','blueprint'])
-    metrics = pd.Series(metrics_dict, index=idx)
-    metrics.name = 'value'
-    out_filename = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/metrics_travelmodel.csv'.format(os.getenv('USERNAME'))
+    idx             = pd.MultiIndex.from_tuples(metrics_dict.keys(), names=['modelrunID','metric','name','year','blueprint'])
+    metrics         = pd.Series(metrics_dict, index=idx)
+    metrics.name    = 'value'
+
+
+    out_filename    = os.path.join(METRICS_BOX_DIR, 'metrics_travelmodel.csv')
     metrics.to_csv(out_filename, header=True, sep=',', float_format='%.9f')
     
     print("Wrote {}".format(out_filename))
