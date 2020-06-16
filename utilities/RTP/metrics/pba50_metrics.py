@@ -558,6 +558,15 @@ def calculate_Healthy1_HHs_WFprotected(runid, dbp, parcel_sum_df, metrics_dict):
     # 
     '''
 
+def calculate_Healthy2_HHs_WFprotected(runid, dbp, parcel_sum_df, metrics_dict):
+
+    metric_id = "H2"
+    
+
+    '''
+    # 
+    '''
+
 
 def calculate_Vibrant1_median_commute(runid, year, dbp, tm_commute_df, metrics_dict):
     
@@ -728,7 +737,7 @@ def calc_urbansim_metrics():
         elif "s22" in urbansim_runid:
             dbp = "Plus"
         elif  "s23" in urbansim_runid:
-            dbp = "PlusFixItFirst"
+            dbp = "Plus"
         else:
             dbp = "Unknown"
 
@@ -879,7 +888,7 @@ if __name__ == '__main__':
     urbansim_run_location = 'C:/Users/{}/Box/Modeling and Surveys/Urban Modeling/Bay Area UrbanSim 1.5/PBA50/Draft Blueprint runs/'.format(os.getenv('USERNAME'))
     #us_2050_DBP_NoProject_runid = 'Blueprint Basic (s21)/v1.5/run939'
     #us_2050_DBP_Basic_runid     = 'Blueprint Basic (s21)/v1.5/run939'
-    us_2050_DBP_Plus_runid         = 'Blueprint Basic (s21)/v1.5.1/v1.5.1.2 (to 2050)/run56'
+    us_2050_DBP_Plus_runid         = 'Blueprint Plus Crossing (s23)/v1.5.3/run70'
     #us_2050_DBP_Plus_runid         = 'Blueprint Basic (s21)/v1.5/run939'
     list_us_runid = [us_2050_DBP_Plus_runid]
     #urbansim_runid = urbansim_run_location + runid
@@ -888,12 +897,12 @@ if __name__ == '__main__':
     tm_run_location_bp = 'M:/Application/Model One/RTP2021/Blueprint/'
     tm_run_location_ipa = 'M:/Application/Model One/RTP2021/IncrementalProgress/'
     tm_2015_runid                     = '2015_TM152_IPA_16'
-    tm_2050_DBP_NoProject_runid     = '2050_TM152_DBP_NoProject_00'
-    tm_2050_DBP_Basic_runid         = '2050_TM152_DBP_Basic_01_AV25'
-    tm_2050_DBP_PlusCrossing_runid     = '2050_TM152_DBP_PlusCrossing_01'
-    #tm_2050_DBP_PlusFixItFirst_runid     = '2050_TM152_DBP_PlusCrossing_01'
-    list_tm_runid = [tm_2015_runid, tm_2050_DBP_NoProject_runid, tm_2050_DBP_Basic_runid, tm_2050_DBP_PlusCrossing_runid]
-    list_tm_runid_blueprintonly = [tm_2050_DBP_Basic_runid, tm_2050_DBP_PlusCrossing_runid]
+    tm_2050_DBP_NoProject_runid       = '2050_TM152_DBP_NoProject_01'
+    #tm_2050_DBP_Basic_runid           = '2050_TM152_DBP_Basic_01_AV25'
+    tm_2050_DBP_PlusCrossing_runid    = '2050_TM152_DBP_PlusCrossing_02'
+    #tm_2050_DBP_PlusFixItFirst_runid = '2050_TM152_DBP_PlusCrossing_01'
+    list_tm_runid = [tm_2015_runid, tm_2050_DBP_NoProject_runid, tm_2050_DBP_PlusCrossing_runid]
+    list_tm_runid_blueprintonly = [tm_2050_DBP_PlusCrossing_runid]
 
     # Set external inputs
     metrics_source_folder         = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/metrics_files/'.format(os.getenv('USERNAME'))
@@ -943,6 +952,7 @@ if __name__ == '__main__':
     y_diff    = "2050"
 
     # Calculate all metrics
+    print("Starting metrics functions...")
     calc_urbansim_metrics()
     print("*****************#####################Completed urbansim_metrics#####################*******************")
     calc_travelmodel_metrics()
@@ -953,8 +963,7 @@ if __name__ == '__main__':
     metrics = pd.Series(metrics_dict, index=idx)
     metrics.name = 'value'
     out_filename = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/metrics.csv'.format(os.getenv('USERNAME'))
-    metrics.to_csv(out_filename, header=True, sep=',')
-    out_filename = "metrics.csv"
+    metrics.to_csv(out_filename, header=True, sep=',', float_format='%.9f')
     
     print("Wrote metrics.csv output")
 
