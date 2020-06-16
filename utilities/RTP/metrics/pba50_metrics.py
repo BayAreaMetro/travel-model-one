@@ -954,6 +954,7 @@ if __name__ == '__main__':
     metrics.name = 'value'
     out_filename = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/metrics.csv'.format(os.getenv('USERNAME'))
     metrics.to_csv(out_filename, header=True, sep=',')
+    out_filename = "metrics.csv"
     
     print("Wrote metrics.csv output")
 
