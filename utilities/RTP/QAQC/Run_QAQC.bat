@@ -38,4 +38,5 @@ cd ..
 :: ---------------------------------
 :: check bike mode share
 :: --------------------------------- 
-copy /y "%GITHUB_MASTER%\utilities\RTP\QAQC\Mode_share.twb"             "%M_DIR%\OUTPUT\QAQC\Mode_share.twb"                                        .
+copy /y "%GITHUB_MASTER%\utilities\RTP\QAQC\Mode_share.twb"             "%M_DIR%\OUTPUT\QAQC\Mode_share.twb"
+copy /y "%M_DIR%\OUTPUT\core_summaries\PerTripTravelTime.csv"            "%M_DIR%\OUTPUT\QAQC\PerTripTravelTime.csv"
