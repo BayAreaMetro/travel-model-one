@@ -6,22 +6,28 @@
 
 suppressMessages(library(tidyverse))
 library(reshape2)
+options(width = 180)
 
 # Set up directories
 
-MODEL_DATA_BASE_DIR <-"M:/Application/Model One/RTP2021/IncrementalProgress"
-Box_H               <-file.path(gsub("\\\\","/", Sys.getenv("USERPROFILE")),"Box")
-OUTPUT_DIR          <-file.path(Box_H,"Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation/Incremental Progress/ModelData")
-OUTPUT_FILE         <-file.path(OUTPUT_DIR, "Model Data - TNC_AV.csv")
-trips_location      <-file.path(MODEL_DATA_BASE_DIR,"2035_TM152_IPA_aoc1795_00/OUTPUT/updated_output/trips.rdata") 
+USERNAME            <- Sys.getenv("USERNAME")
+BOX_BASE_DIR        <- file.path("C:/Users", USERNAME, "Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation")
+MODEL_DATA_BASE_DIRS<- c(IP            ="M:/Application/Model One/RTP2021/IncrementalProgress",
+                         DraftBlueprint="M:/Application/Model One/RTP2021/Blueprint")
+OUTPUT_DIR          <- file.path(BOX_BASE_DIR, "Draft Blueprint/ModelData")
+OUTPUT_FILE         <- file.path(OUTPUT_DIR, "Model Data - TNC_AV.csv")
 
 # this is the currently running script
-
 SCRIPT     <- "X:/travel-model-one-master/utilities/RTP/Emissions/Off Model Calculators/TNC_AV.R"
+# the model runs are RTP/ModelRuns.csv
+model_runs          <- read.table(file.path(dirname(SCRIPT),"..","..","ModelRuns.csv"), header=TRUE, sep=",", stringsAsFactors = FALSE)
 
-# the model runs are in the parent folder
+# filter to the current runs
+model_runs          <- model_runs[ which(model_runs$status == "current"), ]
 
-model_runs <- read.table(file.path(dirname(SCRIPT),"..","ModelRuns_RTP2021.csv"), header=TRUE, sep=",", stringsAsFactors = FALSE)
+print(paste("MODEL_DATA_BASE_DIRS = ",MODEL_DATA_BASE_DIRS))
+print(paste("OUTPUT_DIR          = ",OUTPUT_DIR))
+print(model_runs)
 
 # Read trips.rdata for respective scenarios and summarize important variables, appending each new scenario
 # Start with empty data frame
@@ -30,8 +36,9 @@ tripdata_df          <- data.frame()
 
 for (i in 1:nrow(model_runs)) {
   
-  if (model_runs[i,"year"]<2015){next}  # TNCs don't exist in years prior to 2015, so skip those model runs to avoid conflicts
-  
+    if (model_runs[i,"year"]<2015){next}  # TNCs don't exist in years prior to 2015, so skip those model runs to avoid conflicts
+    MODEL_DATA_BASE_DIR <- MODEL_DATA_BASE_DIRS[model_runs[i,"run_set"]]
+
 # Bring in parameters file, search for TNC occupancy assumptions and TNC zero-passenger vehicle multiplier
 # Grep Fn separates string into two, extracts the second element (after the equals sign,the parameter of interest)
   
@@ -58,7 +65,13 @@ for (i in 1:nrow(model_runs)) {
 # Now bring in trip file for respective scenarios and perform summaries, then append and repeat until done
     
     trip_file          <- file.path(MODEL_DATA_BASE_DIR, model_runs[i,"directory"],"OUTPUT","updated_output","trips.rdata")
-    load(trip_file)                                         
+    load(trip_file)
+
+    if ("sampleRate" %in% colnames(trips) == FALSE) {
+      print(paste("sampleRate not found in",trip_file,"; assuming 0.5"))
+      trips['sampleRate'] = 0.5
+    }
+
     trip_file_df       <- trips %>%                         # "trips" comes from native name of loaded .rdata dataset
       select(trip_mode,distance,sampleRate) %>%             # Mode, distance, and sampleRate are only needed variables
       filter(trip_mode %in% c(20,21)) %>%                   # TNC single-party and shared, respectively
@@ -93,6 +106,7 @@ summary_melted_df <- mutate(summary_melted_df,
                             index = paste0(year,"-",category,"-",variable))
 summary_melted_df <- summary_melted_df[order(summary_melted_df$index),
                                        c("index","year","category","directory","variable","value")]
+# print(summary_melted_df)
 
 # prepend note
 prepend_note <- paste0("Output by ",SCRIPT," on ",format(Sys.time(), "%a %b %d %H:%M:%S %Y"))

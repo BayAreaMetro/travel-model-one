@@ -4,30 +4,24 @@
 
 library(dplyr)
 library(reshape2)
+options(width = 180)
 
 USERNAME            <- Sys.getenv("USERNAME")
-RUN_SET             <- Sys.getenv("RUN_SET")
 BOX_BASE_DIR        <- file.path("C:/Users", USERNAME, "Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation")
 MODEL_DATA_BASE_DIRS<- c(IP            ="M:/Application/Model One/RTP2021/IncrementalProgress",
                          DraftBlueprint="M:/Application/Model One/RTP2021/Blueprint")
-OUTPUT_DIRS         <- c(IP            =file.path(BOX_BASE_DIR, "Incremental Progress/ModelData"),
-                         DraftBlueprint=file.path(BOX_BASE_DIR, "Draft Blueprint/ModelData"))
-
-stopifnot(RUN_SET %in% c("IP", "DraftBlueprint"))
-
-MODEL_DATA_BASE_DIR <-MODEL_DATA_BASE_DIRS[[RUN_SET]]
-OUTPUT_DIR          <-OUTPUT_DIRS[[RUN_SET]]
-OUTPUT_FILE         <-file.path(OUTPUT_DIR, "Model Data - Bike Infrastructure.csv")
+OUTPUT_DIR          <- file.path(BOX_BASE_DIR, "Draft Blueprint/ModelData")
+OUTPUT_FILE         <- file.path(OUTPUT_DIR, "Model Data - Bike Infrastructure.csv")
 
 # this is the currently running script
 SCRIPT              <- "X:/travel-model-one-master/utilities/RTP/Emissions/Off Model Calculators/BikeInfrastructure.R"
-# the model runs are in the parent folder
-model_runs          <- read.table(file.path(dirname(SCRIPT),"..","ModelRuns_RTP2021.csv"), header=TRUE, sep=",", stringsAsFactors = FALSE)
+# the model runs are RTP/ModelRuns.csv
+model_runs          <- read.table(file.path(dirname(SCRIPT),"..","..","ModelRuns.csv"), header=TRUE, sep=",", stringsAsFactors = FALSE)
 
-# filter to the run_set
-model_runs          <- model_runs[ which(model_runs$run_set == RUN_SET), ]
+# filter to the current runs
+model_runs          <- model_runs[ which(model_runs$status == "current"), ]
 
-print(paste("MODEL_DATA_BASE_DIR = ",MODEL_DATA_BASE_DIR))
+print(paste("MODEL_DATA_BASE_DIRS = ",MODEL_DATA_BASE_DIRS))
 print(paste("OUTPUT_DIR          = ",OUTPUT_DIR))
 print(model_runs)
 
@@ -35,6 +29,7 @@ print(model_runs)
 TAZDATA_FIELDS <- c("ZONE", "SD", "COUNTY","TOTPOP","TOTACRE") # only care about these fields
 tazdata_df     <- data.frame()
 for (i in 1:nrow(model_runs)) {
+  MODEL_DATA_BASE_DIR <- MODEL_DATA_BASE_DIRS[model_runs[i,"run_set"]]
   tazdata_file    <- file.path(MODEL_DATA_BASE_DIR, model_runs[i,"directory"],"INPUT","landuse","tazData.csv")
   tazdata_file_df <- read.table(tazdata_file, header=TRUE, sep=",")
   tazdata_file_df <- tazdata_file_df[, TAZDATA_FIELDS] %>%
@@ -71,7 +66,8 @@ remove(tazdata_county_df)
 # Read trip-distance-by-mode-superdistrict.csv
 tripdist_df <- data.frame()
 for (i in 1:nrow(model_runs)) {
-  tripdist_file    <- file.path(MODEL_DATA_BASE_DIR, model_runs[i,"directory"],"OUTPUT","bespoke","trip-distance-by-mode-superdistrict.csv")
+  MODEL_DATA_BASE_DIR <- MODEL_DATA_BASE_DIRS[model_runs[i,"run_set"]]
+  tripdist_file       <- file.path(MODEL_DATA_BASE_DIR, model_runs[i,"directory"],"OUTPUT","bespoke","trip-distance-by-mode-superdistrict.csv")
   if (!file.exists(tripdist_file)) {
     stop(paste0("File [",tripdist_file,"] does not exist"))
   }

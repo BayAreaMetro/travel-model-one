@@ -4,17 +4,26 @@
 
 library(dplyr)
 library(reshape2)
+options(width = 180)
 
 USERNAME            <- Sys.getenv("USERNAME")
-MODEL_DATA_BASE_DIR <-"M:/Application/Model One/RTP2021/IncrementalProgress"
-OUTPUT_DIR          <-file.path("C:/Users", USERNAME, "Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation/Incremental Progress/ModelData")
-OUTPUT_FILE         <-file.path(OUTPUT_DIR, "Model Data - Carshare.csv")
+BOX_BASE_DIR        <- file.path("C:/Users", USERNAME, "Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation")
+MODEL_DATA_BASE_DIRS<- c(IP            ="M:/Application/Model One/RTP2021/IncrementalProgress",
+                         DraftBlueprint="M:/Application/Model One/RTP2021/Blueprint")
+OUTPUT_DIR          <- file.path(BOX_BASE_DIR, "Draft Blueprint/ModelData")
+OUTPUT_FILE         <- file.path(OUTPUT_DIR, "Model Data - Carshare.csv")
 
 # this is the currently running script
 SCRIPT                <- "X:/travel-model-one-master/utilities/RTP/Emissions/Off Model Calculators/CarShare.R"
+# the model runs are RTP/ModelRuns.csv
+model_runs          <- read.table(file.path(dirname(SCRIPT),"..","..","ModelRuns.csv"), header=TRUE, sep=",", stringsAsFactors = FALSE)
 
-# the model runs are in the parent folder
-model_runs            <- read.table(file.path(dirname(SCRIPT),"..","ModelRuns_RTP2021.csv"), header=TRUE, sep=",", stringsAsFactors = FALSE)
+# filter to the current runs
+model_runs          <- model_runs[ which(model_runs$status == "current"), ]
+
+print(paste("MODEL_DATA_BASE_DIRS = ",MODEL_DATA_BASE_DIRS))
+print(paste("OUTPUT_DIR          = ",OUTPUT_DIR))
+print(model_runs)
 
 # Calculator constants
 # Criteria for applying trip caps
@@ -32,8 +41,9 @@ TAZDATA_FIELDS <- c("ZONE", "SD", "COUNTY","TOTPOP","RESACRE","AGE2044","AGE4564
 tazdata_df     <- data.frame()
 for (i in 1:nrow(model_runs)) {
   # We don't need past years for Car Share
-  if (model_runs[i,"category"]=="Past year") next
-  
+  if (model_runs[i,"year"]<=2015) next
+  MODEL_DATA_BASE_DIR <- MODEL_DATA_BASE_DIRS[model_runs[i,"run_set"]]
+
   tazdata_file    <- file.path(MODEL_DATA_BASE_DIR, model_runs[i,"directory"],"INPUT","landuse","tazData.csv")
   tazdata_file_df <- read.table(tazdata_file, header=TRUE, sep=",")
   tazdata_file_df <- tazdata_file_df[, TAZDATA_FIELDS] %>%
@@ -67,6 +77,7 @@ summary_melted_df <- mutate(summary_melted_df,
                             index = paste0(year,"-",category,"-",variable))
 summary_melted_df <- summary_melted_df[order(summary_melted_df$index),
                                        c("index","year","category","directory","variable","value")]
+#print(summary_melted_df)
 
 # prepend note
 prepend_note <- paste0("Output by ",SCRIPT," on ",format(Sys.time(), "%a %b %d %H:%M:%S %Y"))
