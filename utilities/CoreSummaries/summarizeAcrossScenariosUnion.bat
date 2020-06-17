@@ -34,14 +34,26 @@ if all==%1 (
 )
 
 rem set RUN_NAME_SET=
-for /f "skip=1 tokens=1,2,3,4,5,6 delims=," %%A in (%MODEL_RUNS_CSV%) do (
+for /f "skip=1 tokens=1,2,3,4,5,6,7,8 delims=," %%A in (%MODEL_RUNS_CSV%) do (
   set project=%%A
   set year=%%B
   set directory=%%C
   set run_set=%%D
   set category=%%E
-  set status=%%F
-  rem echo project=[!project!] year=[!year!] directory=[!directory!] run_set=[!run_set!] category=[!category!] status=[!status!]
+  set urbansim_path=%%F
+  set urbansim_runid=%%G
+  set status=%%H
+
+  rem this doesn't handle blank fields correctly so adjust
+  if !urbansim_path!==current (
+    set urbansim_path=
+    set status=current
+  )
+  if !urbansim_runid!==current (
+    set urbansim_runid=
+    set status=current
+  )
+  echo project=[!project!] year=[!year!] directory=[!directory!] run_set=[!run_set!] category=[!category!] urbansim_path=[!urbansim_path!] urbansim_runid=[!urbansim_runid!] status=[!status!]
 
   set SUBDIR=unknown
   if !run_set!==DraftBlueprint (
@@ -55,7 +67,7 @@ for /f "skip=1 tokens=1,2,3,4,5,6 delims=," %%A in (%MODEL_RUNS_CSV%) do (
   )
 
   if !SET_TYPE!==current (
-    if %%F==current (
+    if !status!==current (
       set RUN_NAME_SET=!RUN_NAME_SET!!project!\!SUBDIR!\!directory! 
     )
   )
