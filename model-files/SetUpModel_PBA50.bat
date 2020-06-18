@@ -195,6 +195,10 @@ if exist "%M_DIR%\INPUT" (
     c:\windows\system32\Robocopy.exe /E "INPUT" "%M_DIR%\INPUT"
 )
 
+Set dir1="%M_DIR%\INPUT"
+Set dir2="%PREV_RUN_DIR%\INPUT"
+robocopy.exe %dir1% %dir2% /e /l /ns /njs /ndl /fp /log:"%M_DIR%\CompareInputs.txt"
+
 ::----------------------------------------------
 :: add folder name to the command prompt window 
 ::----------------------------------------------
@@ -230,3 +234,5 @@ echo oLink.Save >> %TEMP_SCRIPT%
 ::C:\Windows\SysWOW64\cscript.exe /nologo %TEMP_SCRIPT%
 C:\Windows\SysWOW64\cscript.exe %TEMP_SCRIPT%
 del %TEMP_SCRIPT%
+
+:end
