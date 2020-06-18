@@ -379,6 +379,9 @@ del *.prn
 del *.script.*
 del *.script
 
+:: run QA/QC for PBA50
+Run_QAQC.bat
+
 :: Success target and message
 :success
 ECHO FINISHED SUCCESSFULLY!
