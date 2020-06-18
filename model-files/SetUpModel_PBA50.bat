@@ -5,7 +5,10 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_DBP_PlusCrossing_05_test
+set M_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_DBP_PlusCrossing_05_test2
+
+:: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
+set AddStrategies=No
 
 :: set the location of the Travel Model Release
 set GITHUB_DIR=\\tsclient\X\travel-model-one-1.5.2.1
@@ -96,7 +99,7 @@ copy /Y "%PARAMS%"                                                              
 :: Step 4: Overrides for Blueprint Strategies
 ::
 :: ------------------------------------------------------------------------------------------------------
-
+if %AddStrategies%==No goto DoneAddingStrategies
 :: ------
 :: Blueprint Regional Transit Fare Policy
 :: ------
@@ -141,6 +144,7 @@ if %MODEL_YEAR_NUM% GEQ 2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapaci
 copy /Y "%BP_OVERRIDE_DIR%\Complete_Streets_Network\ModeChoice_2050.xls"         CTRAMP\model\ModeChoice.xls
 copy /Y "%BP_OVERRIDE_DIR%\Complete_Streets_Network\TripModeChoice_2050.xls"     CTRAMP\model\TripModeChoice.xls
 
+:DoneAddingStrategies
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -163,6 +167,9 @@ copy /Y "%GITHUB_MASTER%\utilities\RTP\ExtractKeyFiles.bat"                     
 :: added AV share =30% to auto_ownership UECs
 copy /y "%GITHUB_MASTER%\model-files\model\AutoOwnership.xls"                             CTRAMP\model\AutoOwnership.xls
 
+:: add run_qaqc.bat
+copy /Y "%GITHUB_MASTER%\utilities\RTP\QAQC\Run_QAQC.bat"
+                 .
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 6: copy information back to the M drive for run management
@@ -171,8 +178,22 @@ copy /y "%GITHUB_MASTER%\model-files\model\AutoOwnership.xls"                   
                            .
 
 :: copy the INPUT folder back to M for record keeping
-c:\windows\system32\Robocopy.exe /E "INPUT" "%M_DIR%\INPUT"
 
+echo %date%
+SET mm=%date:~4,2%
+SET dd=%date:~7,2%
+SET yy=%date:~12,2%
+echo %time%
+SET hh=%time:~0,2%
+SET min=%time:~3,2%
+SET ss=%time:~6,2%
+
+if exist "%M_DIR%\INPUT" (
+    :: do not overwrite existing INPUT folders on M 
+    c:\windows\system32\Robocopy.exe /E "INPUT" "%M_DIR%\INPUT_%mm%%dd%%yy%_%hh%%min%%ss%"
+) else (
+    c:\windows\system32\Robocopy.exe /E "INPUT" "%M_DIR%\INPUT"
+)
 
 ::----------------------------------------------
 :: add folder name to the command prompt window 
