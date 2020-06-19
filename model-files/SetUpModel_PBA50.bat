@@ -54,9 +54,10 @@ copy /Y "%GITHUB_DIR%\model-files\RunIteration.bat"                        CTRAM
 copy /Y "%GITHUB_DIR%\model-files\RunModel.bat"                            .
 copy /Y "%GITHUB_DIR%\model-files\RunLogsums.bat"                          .
 copy /Y "%GITHUB_DIR%\model-files\RunCoreSummaries.bat"                    .
-copy /Y "%GITHUB_DIR%\utilities\RTP\RunMetrics.bat"                      .
-copy /Y "%GITHUB_DIR%\utilities\RTP\RunScenarioMetrics.bat"              .
-copy /Y "%GITHUB_DIR%\utilities\RTP\ExtractKeyFiles.bat"                 .
+copy /Y "%GITHUB_DIR%\utilities\RTP\RunMetrics.bat"                        .
+copy /Y "%GITHUB_DIR%\utilities\RTP\RunScenarioMetrics.bat"                .
+copy /Y "%GITHUB_DIR%\utilities\RTP\ExtractKeyFiles.bat"                   .
+copy /Y "%GITHUB_DIR%\utilities\check-setupmodel\Check_SetupModelLog.py"   .
 
 if "%COMPUTER_PREFIX%" == "WIN-" (copy "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"  "CTRAMP\scripts\notify_slack.py")
 if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.59
