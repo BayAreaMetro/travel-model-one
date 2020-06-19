@@ -5,25 +5,25 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_DBP_PlusCrossing_05_test2
+set M_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_DBP_PlusCrossing_06
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
-set AddStrategies=No
+set AddStrategies=Yes
 
 :: set the location of the Travel Model Release
 set GITHUB_DIR=\\tsclient\X\travel-model-one-1.5.2.1
 
 :: set the location of the networks (make sure the version and variant are correct)
-set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_14\net_2050_Blueprint Plus Crossing
+set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_15\net_2050_Blueprint Plus Crossing
 
 :: set the location of the populationsim and land use inputs (make sure the version and variant are correct)
-set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v155_01\2050
+set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v160_01\2050
 
 :: set the location of the "input development" directory where other inputs are stored
 set INPUT_DEVELOPMENT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT
 
 :: set the location of the previous run (where warmstart inputs will be copied)
-set PREV_RUN_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_DBP_PlusCrossing_04
+set PREV_RUN_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_DBP_PlusCrossing_05
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
@@ -57,7 +57,7 @@ copy /Y "%GITHUB_DIR%\model-files\RunCoreSummaries.bat"                    .
 copy /Y "%GITHUB_DIR%\utilities\RTP\RunMetrics.bat"                        .
 copy /Y "%GITHUB_DIR%\utilities\RTP\RunScenarioMetrics.bat"                .
 copy /Y "%GITHUB_DIR%\utilities\RTP\ExtractKeyFiles.bat"                   .
-copy /Y "%GITHUB_DIR%\utilities\check-setupmodel\Check_SetupModelLog.py"   .
+::copy /Y "%GITHUB_DIR%\utilities\check-setupmodel\Check_SetupModelLog.py"   .
 
 if "%COMPUTER_PREFIX%" == "WIN-" (copy "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"  "CTRAMP\scripts\notify_slack.py")
 if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.59
@@ -170,6 +170,9 @@ copy /y "%GITHUB_MASTER%\model-files\model\AutoOwnership.xls"                   
 
 :: add run_qaqc.bat
 copy /Y "%GITHUB_MASTER%\utilities\RTP\QAQC\Run_QAQC.bat"                                 .
+
+:: add a process to check setupmodel
+copy /Y "%GITHUB_MASTER%\utilities\check-setupmodel\Check_SetupModelLog.py"               .
 
 :: ------------------------------------------------------------------------------------------------------
 ::
