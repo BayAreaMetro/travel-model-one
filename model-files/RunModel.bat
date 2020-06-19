@@ -380,7 +380,7 @@ del *.script.*
 del *.script
 
 :: run QA/QC for PBA50
-Run_QAQC.bat
+call Run_QAQC
 
 :: Success target and message
 :success
