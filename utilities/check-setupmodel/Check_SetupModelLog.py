@@ -3,7 +3,7 @@
 import os
 
 with open('setupmodel.log') as f:
-    if ('The system cannot find the file specified' in f.read() OR ('not recognized as an internal or external command' in f.read()):
+    if 'The system cannot find the file specified' in f.read() or 'not recognized as an internal or external command' in f.read():
 
  #   if 'not recognized as an internal or external command' in f.read():
         print("Found errors in setupmodel")
@@ -15,6 +15,5 @@ with open('setupmodel.log') as f:
       outfile1.write("SetupOK \n")
       outfile1.close()
 
-print("did this run")
 
 f.close()
