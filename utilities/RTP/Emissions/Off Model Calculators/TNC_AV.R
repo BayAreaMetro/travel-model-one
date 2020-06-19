@@ -38,11 +38,13 @@ for (i in 1:nrow(model_runs)) {
   
     if (model_runs[i,"year"]<2015){next}  # TNCs don't exist in years prior to 2015, so skip those model runs to avoid conflicts
     MODEL_DATA_BASE_DIR <- MODEL_DATA_BASE_DIRS[model_runs[i,"run_set"]]
+    print(paste("Processing",model_runs[i,"directory"]))
 
 # Bring in parameters file, search for TNC occupancy assumptions and TNC zero-passenger vehicle multiplier
 # Grep Fn separates string into two, extracts the second element (after the equals sign,the parameter of interest)
   
-    params <- readLines(file.path(MODEL_DATA_BASE_DIR,model_runs[i,"directory"],"INPUT","params.properties"))
+    param_file <- file.path(MODEL_DATA_BASE_DIR,model_runs[i,"directory"],"INPUT","params.properties")
+    params <- readLines(param_file)
     
     single.da.share  <- as.numeric(str_split_fixed(grep("TNC.single.da.share",params,value=TRUE),"=",n=2)[2])
     single.s2.share  <- as.numeric(str_split_fixed(grep("TNC.single.s2.share",params,value=TRUE),"=",n=2)[2])
@@ -55,12 +57,25 @@ for (i in 1:nrow(model_runs)) {
     single.s3.occ    <- as.numeric(str_split_fixed(grep("TNC.single.s3.occ",params,value=TRUE),"=",n=2)[2])
     shared.s3.occ    <- as.numeric(str_split_fixed(grep("TNC.shared.s3.occ",params,value=TRUE),"=",n=2)[2])
     
+    # print(paste("single.s3.occ:",single.s3.occ,"; shared.s3.occ:",shared.s3.occ))
+
+    if (is.na(single.s3.occ)) {
+      single.s3.occ <- 3.6
+      print(paste("  TNC.single.s3.occ not found in",param_file,"; assuming",single.s3.occ))
+    }
+    if (is.na(shared.s3.occ)) {
+      shared.s3.occ <- 3.83
+      print(paste("  TNC.shared.s3.occ not found in",param_file,"; assuming",shared.s3.occ))
+    }
+
     TNC_ZPV_fac      <- as.numeric(str_split_fixed(grep("TNC_ZPV_fac",params,value=TRUE),"=",n=2)[2])
+
     
 # PMT to VMT conversion factors for single and shared TNC trips
     
     single_factor   = single.da.share*1 + single.s2.share*2 + single.s3.share*single.s3.occ
-    shared_factor   = shared.da.share*1 + shared.s2.share*2 + shared.s3.share*shared.s3.occ    
+    shared_factor   = shared.da.share*1 + shared.s2.share*2 + shared.s3.share*shared.s3.occ
+    print(paste("  single_factor=", single_factor, "and shared_factor=",shared_factor))
 
 # Now bring in trip file for respective scenarios and perform summaries, then append and repeat until done
     
