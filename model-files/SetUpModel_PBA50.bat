@@ -168,14 +168,13 @@ copy /Y "%GITHUB_MASTER%\utilities\RTP\ExtractKeyFiles.bat"                     
 copy /y "%GITHUB_MASTER%\model-files\model\AutoOwnership.xls"                             CTRAMP\model\AutoOwnership.xls
 
 :: add run_qaqc.bat
-copy /Y "%GITHUB_MASTER%\utilities\RTP\QAQC\Run_QAQC.bat"
-                 .
+copy /Y "%GITHUB_MASTER%\utilities\RTP\QAQC\Run_QAQC.bat"                                 .
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 6: copy information back to the M drive for run management
 ::
 :: ------------------------------------------------------------------------------------------------------
-                           .
 
 :: copy the INPUT folder back to M for record keeping
 
