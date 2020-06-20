@@ -5,29 +5,30 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_DBP_PlusCrossing_06
+set M_DIR=M:\Application\Model One\RTP2021\Blueprint\2035_TM152_DBP_NoProject_06
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
-set AddStrategies=Yes
+set AddStrategies=No
 
 :: set the location of the Travel Model Release
 set GITHUB_DIR=\\tsclient\X\travel-model-one-1.5.2.1
 
-:: set the location of the networks (make sure the version and variant are correct)
-set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_15\net_2050_Blueprint Plus Crossing
+:: set the location of the networks (make sure the network version, year and variant are correct)
+set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_15\net_2035_Baseline
 
-:: set the location of the populationsim and land use inputs (make sure the version and variant are correct)
-set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v160_01\2050
+:: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
+set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v160_01\2035
 
 :: set the location of the "input development" directory where other inputs are stored
 set INPUT_DEVELOPMENT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT
 
 :: set the location of the previous run (where warmstart inputs will be copied)
-set PREV_RUN_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_DBP_PlusCrossing_05
+:: the INPUT folder of the previous run will also be used as the base for the compareinputs log
+set PREV_RUN_DIR=M:\Application\Model One\RTP2021\Blueprint\2035_TM152_DBP_NoProject_02
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
-set PARAMS=\\tsclient\X\travel-model-one-master\config\params_PBA50_Blueprint2050.properties
+set PARAMS=\\tsclient\X\travel-model-one-master\config\params_PBA50_BlueprintNoProject2035.properties
 
 :: set the location of the overrides directory (for Blueprint strategies)
 set BP_OVERRIDE_DIR=\\tsclient\M\Application\Model One\RTP2021\Blueprint\travel-model-overrides
