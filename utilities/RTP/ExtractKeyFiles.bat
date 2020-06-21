@@ -107,6 +107,11 @@ copy logsums\person_workDCLogsum.csv                 extractor\logsums
 copy logsums\mandatoryAccessibilities.csv            extractor\logsums
 copy logsums\nonMandatoryAccessibilities.csv         extractor\logsums
 
+mkdir extractor\logsums\ForUrbanSim
+copy logsums\mandatoryAccessibilities.csv            extractor\logsums\ForUrbanSim\mandatoryAccessibilities_%model_year%_%UrbanSimScenario%.csv 
+copy logsums\nonMandatoryAccessibilities.csv         extractor\logsums\ForUrbanSim\nonMandatoryAccessibilities_%model_year%_%UrbanSimScenario%.csv   
+copy core_summaries\AccessibilityMarkets.csv         extractor\logsums\ForUrbanSim\AccessibilityMarkets_%model_year%_%UrbanSimScenario%.csv   
+
 :: Core summaries
 mkdir extractor\core_summaries
 copy core_summaries\*.*                              extractor\core_summaries
