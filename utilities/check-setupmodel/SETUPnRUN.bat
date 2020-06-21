@@ -5,8 +5,8 @@
 :: ------------------------------------------------
 
 :: delete old output files in case they're left from a previous process
-if exist setupOK.txt (del setupOK.txt) 
-if exist setupOK.txt (del setupOK.txt) 
+if exist setupOK.txt    (del setupOK.txt) 
+if exist setupNOTOK.txt (del setupNOTOK.txt) 
 
 :: run setupmodel with a log
 call setupmodel > setupmodel.log 2>&1
