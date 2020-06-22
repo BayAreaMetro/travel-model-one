@@ -22,19 +22,26 @@ RTP2021,2015,2015_TM152_IPA_16,IP,IP,,,current
 RTP2021,2035,2035_TM152_IPA_00,IP,IP,,,current
 RTP2021,2035,2035_TM152_DBP_NoProject_00,DraftBlueprint,No Project,,,
 RTP2021,2035,2035_TM152_DBP_NoProject_01,DraftBlueprint,No Project,,,
-RTP2021,2035,2035_TM152_DBP_NoProject_02,DraftBlueprint,No Project,,,current
-RTP2021,2035,2035_TM152_DBP_NoProject_03,DraftBlueprint,No Project,,,running
+RTP2021,2035,2035_TM152_DBP_NoProject_02,DraftBlueprint,No Project,,,
+RTP2021,2035,2035_TM152_DBP_NoProject_03,DraftBlueprint,No Project,,,
+RTP2021,2035,2035_TM152_DBP_NoProject_04,DraftBlueprint,No Project,"Blueprint Plus Crossing (s23)\v1.5.5",run998,
+RTP2021,2035,2035_TM152_DBP_NoProject_06,DraftBlueprint,No Project,"Blueprint Plus Crossing (s23)\v1.6 (all strategies)",run90,current
+RTP2021,2035,2035_TM152_DBP_NoProject_07,DraftBlueprint,No Project,"Blueprint Plus Crossing (s23)\v1.7 (strategies + BASIS-hybrid)",run92,
 RTP2021,2035,2035_TM152_DBP_Basic_00,DraftBlueprint,Basic,,,
 RTP2021,2035,2035_TM152_DBP_Basic_01,DraftBlueprint,Basic,,,
 RTP2021,2035,2035_TM152_DBP_Plus_00,DraftBlueprint,Plus,,,
 RTP2021,2035,2035_TM152_DBP_Plus_01,DraftBlueprint,Plus,,,
 RTP2021,2035,2035_TM152_DBP_Plus_02,DraftBlueprint,Plus,"Blueprint Basic (s21)\v1.5.1\v1.5.1.1 (only to 2035)",run977,
 RTP2021,2035,2035_TM152_DBP_Plus_03,DraftBlueprint,Plus,"Blueprint Plus Crossing (s23)\v1.5.2",run72,
-RTP2021,2035,2035_TM152_DBP_Plus_04,DraftBlueprint,Plus,"Blueprint Plus Crossing (s23)\v1.5.5",run998,current
+RTP2021,2035,2035_TM152_DBP_Plus_04,DraftBlueprint,Plus,"Blueprint Plus Crossing (s23)\v1.5.5",run998,
+RTP2021,2035,2035_TM152_DBP_Plus_06,DraftBlueprint,Plus,"Blueprint Plus Crossing (s23)\v1.6 (all strategies)",run90,current
+RTP2021,2035,2035_TM152_DBP_Plus_07,DraftBlueprint,Plus,"Blueprint Plus Crossing (s23)\v1.7 (strategies + BASIS-hybrid)",run92,
 RTP2021,2050,2050_TM152_DBP_NoProject_00,DraftBlueprint,No Project,,,
 RTP2021,2050,2050_TM152_DBP_NoProject_01,DraftBlueprint,No Project,,,
 RTP2021,2050,2050_TM152_DBP_NoProject_03,DraftBlueprint,No Project,"Blueprint Plus Crossing (s23)\v1.5.2",run72,
-RTP2021,2050,2050_TM152_DBP_NoProject_04,DraftBlueprint,No Project,"Blueprint Plus Crossing (s23)\v1.5.2",run72,current
+RTP2021,2050,2050_TM152_DBP_NoProject_04,DraftBlueprint,No Project,"Blueprint Plus Crossing (s23)\v1.5.2",run72,
+RTP2021,2050,2050_TM152_DBP_NoProject_06,DraftBlueprint,No Project,"Blueprint Plus Crossing (s23)\v1.6 (all strategies)",run90,current
+RTP2021,2050,2050_TM152_DBP_NoProject_07,DraftBlueprint,No Project,"Blueprint Plus Crossing (s23)\v1.7 (strategies + BASIS-hybrid)",run92,
 RTP2021,2050,2050_TM152_DBP_Basic_00,DraftBlueprint,Basic,,,
 RTP2021,2050,2050_TM152_DBP_Basic_01,DraftBlueprint,Basic,,,
 RTP2021,2050,2050_TM152_DBP_PlusCrossing_00,DraftBlueprint,Plus,,,
@@ -42,4 +49,6 @@ RTP2021,2050,2050_TM152_DBP_PlusCrossing_01,DraftBlueprint,Plus,,,
 RTP2021,2050,2050_TM152_DBP_PlusCrossing_02,DraftBlueprint,Plus,"Blueprint Basic (s21)\v1.5.1\v1.5.1.2 (to 2050)",run56,
 RTP2021,2050,2050_TM152_DBP_PlusCrossing_03,DraftBlueprint,Plus,"Blueprint Basic (s21)\v1.5.1\v1.5.1.2 (to 2050)",run56,
 RTP2021,2050,2050_TM152_DBP_PlusCrossing_04,DraftBlueprint,Plus,"Blueprint Plus Crossing (s23)\v1.5.2",run72,
-RTP2021,2050,2050_TM152_DBP_PlusCrossing_05,DraftBlueprint,Plus,"Blueprint Plus Crossing (s23)\v1.5.5",run998,current
+RTP2021,2050,2050_TM152_DBP_PlusCrossing_05,DraftBlueprint,Plus,"Blueprint Plus Crossing (s23)\v1.5.5",run998,
+RTP2021,2050,2050_TM152_DBP_PlusCrossing_06,DraftBlueprint,Plus,"Blueprint Plus Crossing (s23)\v1.6 (all strategies)",run90,current
+RTP2022,2051,2050_TM152_DBP_PlusCrossing_07,DraftBlueprint,Plus,"Blueprint Plus Crossing (s23)\v1.7 (strategies + BASIS-hybrid)",run92,

@@ -67,9 +67,15 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     (within the travel time windows).
 
     Adds the following keys to the metrics_dict:
-    * jobacc_acc_jobs_weighted_persons  : accessible jobs weighted by persons
-    * jobacc_total_jobs_weighted_persons: total jobs x total persons
-    * jobacc_accessible_job_share       : accessible job share = jobacc_acc_jobs_weighted_persons/jobacc_total_jobs_weighted_persons
+    * jobacc_acc_jobs_weighted_persons         : accessible jobs weighted by persons
+    * jobacc_trn_only_acc_jobs_weighted_persons:   accessibly by transit (and not drv) jobs weighted by persons
+    * jobacc_drv_only_acc_jobs_weighted_persons:   accessibly by drv (and not transit) jobs weighted by persons
+    * jobacc_trn_drv_acc_jobs_weighted_persons :   accessibly by transit *and* drv jobs weighted by persons
+    * jobacc_total_jobs_weighted_persons       : total jobs x total persons
+    * jobacc_accessible_job_share              : accessible job share = jobacc_acc_jobs_weighted_persons/jobacc_total_jobs_weighted_persons
+    * jobacc_trn_only_acc_accessible_job_share :   accessible job share for transit (and not drv)
+    * jobacc_drv_only_acc_accessible_job_share :   accessible job share for drv (and not transit)
+    * jobacc_trn_drv_acc_accessible_job_share  :   accessible job share for transit *and drv
 
     """
     print "Tallying access to jobs"
