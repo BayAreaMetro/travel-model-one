@@ -144,8 +144,8 @@ if %MODEL_YEAR_NUM% GEQ 2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapaci
 :: ------
 :: https://app.asana.com/0/403262763383022/1160600926245407
 :: implemented as an UEC override for now; pass the bike constant via params when there is time
-copy /Y "%BP_OVERRIDE_DIR%\Complete_Streets_Network\ModeChoice_2050.xls"         CTRAMP\model\ModeChoice.xls
-copy /Y "%BP_OVERRIDE_DIR%\Complete_Streets_Network\TripModeChoice_2050.xls"     CTRAMP\model\TripModeChoice.xls
+copy /Y "%BP_OVERRIDE_DIR%\Complete_Streets_Network\ModeChoice_%MODEL_YEAR_NUM%.xls"         CTRAMP\model\ModeChoice.xls
+copy /Y "%BP_OVERRIDE_DIR%\Complete_Streets_Network\TripModeChoice_%MODEL_YEAR_NUM%.xls"     CTRAMP\model\TripModeChoice.xls
 
 :DoneAddingStrategies
 
