@@ -175,6 +175,19 @@ for %%R in (%RUN_NAME_SET%) DO (
   )
 )
 
+:: copy over scenario_metrics.csv files
+for %%R in (%RUN_NAME_SET%) DO (
+  if exist "%COMBINED_DIR%\scenario_metrics_%%~nxR.csv" (
+    echo File is already present: %COMBINED_DIR%\scenario_metrics_%%~nxR.csv
+  ) else (
+    if not exist "%%R\OUTPUT\metrics\scenario_metrics.csv" (
+      echo File doesn't exist: %%R\OUTPUT\metrics\scenario_metrics.csv
+    ) else (
+      copy "%%R\OUTPUT\metrics\scenario_metrics.csv" "%COMBINED_DIR%\scenario_metrics_%%~nxR.csv"
+    )
+  )
+)
+
 :: copy over trnline.csv files
 for %%R in (%RUN_NAME_SET%) DO (
   if exist "%COMBINED_DIR%\trnline_%%~nxR.csv" (

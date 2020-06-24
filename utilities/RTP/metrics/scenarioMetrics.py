@@ -68,9 +68,9 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
 
     Adds the following keys to the metrics_dict:
     * jobacc_acc_jobs_weighted_persons         : accessible jobs weighted by persons
-    * jobacc_trn_only_acc_jobs_weighted_persons:   accessibly by transit (and not drv) jobs weighted by persons
-    * jobacc_drv_only_acc_jobs_weighted_persons:   accessibly by drv (and not transit) jobs weighted by persons
-    * jobacc_trn_drv_acc_jobs_weighted_persons :   accessibly by transit *and* drv jobs weighted by persons
+    * jobacc_trn_only_acc_jobs_weighted_persons:   accessible by transit (and not drv) jobs weighted by persons
+    * jobacc_drv_only_acc_jobs_weighted_persons:   accessible by drv (and not transit) jobs weighted by persons
+    * jobacc_trn_drv_acc_jobs_weighted_persons :   accessible by transit *and* drv jobs weighted by persons
     * jobacc_total_jobs_weighted_persons       : total jobs x total persons
     * jobacc_accessible_job_share              : accessible job share = jobacc_acc_jobs_weighted_persons/jobacc_total_jobs_weighted_persons
     * jobacc_trn_only_acc_accessible_job_share :   accessible job share for transit (and not drv)
@@ -164,6 +164,186 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
         metrics_dict['jobacc_drv_only_acc_accessible_job_share%s'  % suffix] = float(metrics_dict['jobacc_drv_only_acc_jobs_weighted_persons%s' % suffix]) / float(metrics_dict['jobacc_total_jobs_weighted_persons%s' % suffix])
         metrics_dict['jobacc_trn_drv_acc_accessible_job_share%s'   % suffix] = float(metrics_dict['jobacc_trn_drv_acc_jobs_weighted_persons%s'  % suffix]) / float(metrics_dict['jobacc_total_jobs_weighted_persons%s' % suffix])
 
+def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
+    """
+    v2 of tally_access_to_jobs() for Blueprint (see Update and expand accessibility metrics @ https://app.asana.com/0/403262763383022/1174396999538101/f)
+
+    Reads in database\TimeSkimsDatabaseAM.csv and outputs accessible jobs weighted by persons for the following:
+    * wTrnW time   <= 45 minutes
+    * da time      <= 30 minutes
+    * da toll time <= 30 minutes
+    * bike time    <= 20 minutes
+    * walk time    <= 20 minutes
+
+    Unlike tally_access_to_jobs(), each of these are independent metrics
+
+    Joining the dest TAZs to jobs, we find the number of jobs accessible from each TAZ
+    (within the travel time windows).
+
+    Adds the following keys to the metrics_dict:
+    * jobacc2_wtrn_45_acc_jobs_weighted_persons  : accessible by walk-transit-walk (in 45 min) jobs weighted by persons
+    * jobacc2_da_30_acc_jobs_weighted_persons    : accessible by drive alone       (in 30 min) jobs weighted by persons
+    * jobacc2_dat_30_acc_jobs_weighted_persons   : accessible by drive alone toll  (in 30 min) jobs weighted by persons
+    * jobacc2_bike_20_acc_jobs_weighted_persons  : accessibly by bike              (in 20 min) jobs weighted by persons
+    * jobacc2_walk_20_acc_jobs_weighted_persons  : accessibly by walk              (in 20 min) jobs weighted by persons
+
+    * jobacc2_total_jobs_weighted_persons        : total jobs x total persons
+
+    * jobacc2_wtrn_45_accessible_job_share       : accessible job share = jobacc2_wtrn_45_acc_jobs_weighted_persons/jobacc2_total_jobs_weighted_persons
+    * jobacc2_da_30_accessible_job_share         : accessible job share = jobacc2_da_30_acc_jobs_weighted_persons  /jobacc2_total_jobs_weighted_persons
+    * jobacc2_dat_30_accessible_job_share        : accessible job share = jobacc2_dat_30_acc_jobs_weighted_persons /jobacc2_total_jobs_weighted_persons
+    * jobacc2_bike_20_accessible_job_share       : accessible job share = jobacc2_bike_20_acc_jobs_weighted_persons/jobacc2_total_jobs_weighted_persons
+    * jobacc2_walk_20_accessible_job_share       : accessible job share = jobacc2_walk_20_acc_jobs_weighted_persons/jobacc2_total_jobs_weighted_persons
+
+    Also do by household (rather than persons) and by household income quartiles
+
+    """
+    print "Tallying access to jobs v2"
+    traveltime_df = pandas.read_csv(os.path.join("database","TimeSkimsDatabaseAM.csv"),
+                                    sep=",")
+    traveltime_df = traveltime_df[['orig','dest','da','daToll','wTrnW','bike','walk']]
+    # -999 is really no-access
+    traveltime_df.replace(to_replace=[-999.0], value=[None], inplace=True)
+    len_traveltime_df = len(traveltime_df)
+
+    traveltime_df['wtrn_45'] = 0
+    traveltime_df['da_30'  ] = 0
+    traveltime_df['dat_30' ] = 0
+    traveltime_df['bike_20'] = 0
+    traveltime_df['walk_20'] = 0
+    traveltime_df.loc[ (traveltime_df.wTrnW  <=45) , 'wtrn_45'] = 1
+    traveltime_df.loc[ (traveltime_df.da     <=30) , 'da_30'  ] = 1
+    traveltime_df.loc[ (traveltime_df.daToll <=30) , 'dat_30' ] = 1
+    traveltime_df.loc[ (traveltime_df.bike   <=20) , 'bike_20'] = 1
+    traveltime_df.loc[ (traveltime_df.walk   <=20) , 'walk_20'] = 1
+
+    # destinations are jobs => find number of jobs accessible from each TAZ within the travel time windows
+    tazdata_df = pandas.read_csv(os.path.join("landuse", "tazData.csv"), sep=",")
+    tazdata_df = tazdata_df[['ZONE','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','TOTPOP','EMPRES','TOTEMP']]
+    total_emp  = tazdata_df['TOTEMP'].sum()
+    total_pop  = tazdata_df['TOTPOP'].sum()
+
+    traveltime_df = pandas.merge(left=traveltime_df, right=tazdata_df[['ZONE','TOTEMP']],
+                                 left_on="dest",     right_on="ZONE",
+                                 how="left")
+    traveltime_df.drop('ZONE', axis=1, inplace=True)  # ZONE == dest
+    # make these total employment
+    traveltime_df.wtrn_45  = traveltime_df.wtrn_45 *traveltime_df.TOTEMP
+    traveltime_df.da_30    = traveltime_df.da_30   *traveltime_df.TOTEMP
+    traveltime_df.dat_30   = traveltime_df.dat_30  *traveltime_df.TOTEMP
+    traveltime_df.bike_20  = traveltime_df.bike_20 *traveltime_df.TOTEMP
+    traveltime_df.walk_20  = traveltime_df.walk_20 *traveltime_df.TOTEMP
+    # make these numeric
+    traveltime_df['wTrnW' ] = pandas.to_numeric(traveltime_df['wTrnW' ])
+    traveltime_df['da'    ] = pandas.to_numeric(traveltime_df['da'    ])
+    traveltime_df['daToll'] = pandas.to_numeric(traveltime_df['daToll'])
+    traveltime_df['bike'  ] = pandas.to_numeric(traveltime_df['bike'  ])
+    traveltime_df['walk'  ] = pandas.to_numeric(traveltime_df['walk'  ])
+    # print traveltime_df.head()
+
+    # aggregate to origin
+    traveltime_df_grouped = traveltime_df.groupby(['orig'])
+    accessiblejobs_df = traveltime_df_grouped.agg({'wTrnW'  :numpy.mean,
+                                                   'da'     :numpy.mean,
+                                                   'daToll' :numpy.mean,
+                                                   'bike'   :numpy.mean,
+                                                   'walk'   :numpy.mean,
+                                                   'TOTEMP' :numpy.sum,
+                                                   'wtrn_45':numpy.sum,
+                                                   'da_30'  :numpy.sum,
+                                                   'dat_30' :numpy.sum,
+                                                   'bike_20':numpy.sum,
+                                                   'walk_20':numpy.sum})
+    # print accessiblejobs_df.head()
+
+    # read communities of concern
+    coc_df = pandas.read_csv(os.path.join("metrics", "CommunitiesOfConcern.csv"), sep=",")
+    tazdata_df = pandas.merge(left=tazdata_df, right=coc_df, left_on="ZONE", right_on="taz")
+    print "  Read %d TAZs in communities of concern" % tazdata_df["in_set"].sum()
+
+    # join persons to origin
+    accessiblejobs_df = pandas.merge(left=accessiblejobs_df, right=tazdata_df[['ZONE','TOTPOP','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','in_set']],
+                                     left_index=True,         right_on="ZONE",
+                                     how="left")
+    # population version
+    accessiblejobs_df[ 'TOTEMP_weighted'] = accessiblejobs_df[ 'TOTEMP']*accessiblejobs_df['TOTPOP']
+    accessiblejobs_df['wtrn_45_weighted'] = accessiblejobs_df['wtrn_45']*accessiblejobs_df['TOTPOP']
+    accessiblejobs_df[  'da_30_weighted'] = accessiblejobs_df[  'da_30']*accessiblejobs_df['TOTPOP']
+    accessiblejobs_df[ 'dat_30_weighted'] = accessiblejobs_df[ 'dat_30']*accessiblejobs_df['TOTPOP']
+    accessiblejobs_df['bike_20_weighted'] = accessiblejobs_df['bike_20']*accessiblejobs_df['TOTPOP']
+    accessiblejobs_df['walk_20_weighted'] = accessiblejobs_df['walk_20']*accessiblejobs_df['TOTPOP']
+
+    # household version
+    accessiblejobs_df[ 'TOTEMP_weightedhh'] = accessiblejobs_df[ 'TOTEMP']*accessiblejobs_df['TOTHH']
+    accessiblejobs_df['wtrn_45_weightedhh'] = accessiblejobs_df['wtrn_45']*accessiblejobs_df['TOTHH']
+    accessiblejobs_df[  'da_30_weightedhh'] = accessiblejobs_df[  'da_30']*accessiblejobs_df['TOTHH']
+    accessiblejobs_df[ 'dat_30_weightedhh'] = accessiblejobs_df[ 'dat_30']*accessiblejobs_df['TOTHH']
+    accessiblejobs_df['bike_20_weightedhh'] = accessiblejobs_df['bike_20']*accessiblejobs_df['TOTHH']
+    accessiblejobs_df['walk_20_weightedhh'] = accessiblejobs_df['walk_20']*accessiblejobs_df['TOTHH']
+
+    accessiblejobs_df[ 'TOTEMP_weightedhhq1q2'] = accessiblejobs_df[ 'TOTEMP']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
+    accessiblejobs_df['wtrn_45_weightedhhq1q2'] = accessiblejobs_df['wtrn_45']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
+    accessiblejobs_df[  'da_30_weightedhhq1q2'] = accessiblejobs_df[  'da_30']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
+    accessiblejobs_df[ 'dat_30_weightedhhq1q2'] = accessiblejobs_df[ 'dat_30']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
+    accessiblejobs_df['bike_20_weightedhhq1q2'] = accessiblejobs_df['bike_20']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
+    accessiblejobs_df['walk_20_weightedhhq1q2'] = accessiblejobs_df['walk_20']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
+
+    accessiblejobs_df[ 'TOTEMP_weightedhhq3q4'] = accessiblejobs_df[ 'TOTEMP']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
+    accessiblejobs_df['wtrn_45_weightedhhq3q4'] = accessiblejobs_df['wtrn_45']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
+    accessiblejobs_df[  'da_30_weightedhhq3q4'] = accessiblejobs_df[  'da_30']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
+    accessiblejobs_df[ 'dat_30_weightedhhq3q4'] = accessiblejobs_df[ 'dat_30']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
+    accessiblejobs_df['bike_20_weightedhhq3q4'] = accessiblejobs_df['bike_20']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
+    accessiblejobs_df['walk_20_weightedhhq3q4'] = accessiblejobs_df['walk_20']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
+
+    # print accessiblejobs_df.head()
+
+    for suffix in ["", "_coc","_noncoc"]:
+
+        # restrict to suffix if necessary
+        accjob_subset_df = accessiblejobs_df
+        totalpop_subset  = total_pop
+        if suffix == "_coc":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_set"]==1]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["in_set"]==1, "TOTPOP"].sum()
+        elif suffix == "_noncoc":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_set"]==0]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["in_set"]==0, "TOTPOP"].sum()
+
+        # numerator = accessible jobs weighted by persons
+        #  e.g. sum over TAZs of (totpop at TAZ x totemp jobs accessible)
+        # denominator = total jobs weighted by persons
+        metrics_dict['jobacc2_acc_jobs_weighted_persons%s'          % suffix] = accjob_subset_df[  'TOTEMP_weighted'].sum()
+        metrics_dict['jobacc2_wtrn_45_acc_jobs_weighted_persons%s'  % suffix] = accjob_subset_df[ 'wtrn_45_weighted'].sum()
+        metrics_dict['jobacc2_da_30_acc_jobs_weighted_persons%s'    % suffix] = accjob_subset_df[   'da_30_weighted'].sum()
+        metrics_dict['jobacc2_dat_30_acc_jobs_weighted_persons%s'   % suffix] = accjob_subset_df[  'dat_30_weighted'].sum()
+        metrics_dict['jobacc2_bike_20_acc_jobs_weighted_persons%s'  % suffix] = accjob_subset_df[ 'bike_20_weighted'].sum()
+        metrics_dict['jobacc2_walk_20_acc_jobs_weighted_persons%s'  % suffix] = accjob_subset_df[ 'walk_20_weighted'].sum()
+
+        metrics_dict['jobacc2_total_jobs_weighted_persons%s'        % suffix] = total_emp*totalpop_subset
+
+        metrics_dict['jobacc2_wtrn_45_acc_accessible_job_share%s'  % suffix] = float(metrics_dict['jobacc2_wtrn_45_acc_jobs_weighted_persons%s' % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
+        metrics_dict['jobacc2_da_30_acc_accessible_job_share%s'    % suffix] = float(metrics_dict['jobacc2_da_30_acc_jobs_weighted_persons%s'   % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
+        metrics_dict['jobacc2_dat_30_acc_accessible_job_share%s'   % suffix] = float(metrics_dict['jobacc2_dat_30_acc_jobs_weighted_persons%s'  % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
+        metrics_dict['jobacc2_bike_20_acc_accessible_job_share%s'  % suffix] = float(metrics_dict['jobacc2_bike_20_acc_jobs_weighted_persons%s' % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
+        metrics_dict['jobacc2_walk_20_acc_accessible_job_share%s'  % suffix] = float(metrics_dict['jobacc2_walk_20_acc_jobs_weighted_persons%s' % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
+
+    for hhsuffix in ["", "q1q2","q3q4"]:
+        metrics_dict['jobacc2_acc_jobs_weighted_hh{}'        .format(hhsuffix)] = accjob_subset_df[  'TOTEMP_weightedhh{}'.format(hhsuffix)].sum()
+        metrics_dict['jobacc2_wtrn_45_acc_jobs_weighted_hh{}'.format(hhsuffix)] = accjob_subset_df[ 'wtrn_45_weightedhh{}'.format(hhsuffix)].sum()
+        metrics_dict['jobacc2_da_30_acc_jobs_weighted_hh{}'  .format(hhsuffix)] = accjob_subset_df[   'da_30_weightedhh{}'.format(hhsuffix)].sum()
+        metrics_dict['jobacc2_dat_30_acc_jobs_weighted_hh{}' .format(hhsuffix)] = accjob_subset_df[  'dat_30_weightedhh{}'.format(hhsuffix)].sum()
+        metrics_dict['jobacc2_bike_20_acc_jobs_weighted_hh{}'.format(hhsuffix)] = accjob_subset_df[ 'bike_20_weightedhh{}'.format(hhsuffix)].sum()
+        metrics_dict['jobacc2_walk_20_acc_jobs_weighted_hh{}'.format(hhsuffix)] = accjob_subset_df[ 'walk_20_weightedhh{}'.format(hhsuffix)].sum()
+
+        metrics_dict['jobacc2_total_jobs_weighted_hh{}'       .format(hhsuffix)] = total_emp*totalpop_subset
+
+        metrics_dict['jobacc2_wtrn_45_acc_accessible_job_share_hh{}'.format(hhsuffix)] = float(metrics_dict['jobacc2_wtrn_45_acc_jobs_weighted_hh{}'.format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
+        metrics_dict['jobacc2_da_30_acc_accessible_job_share_hh{}'  .format(hhsuffix)] = float(metrics_dict['jobacc2_da_30_acc_jobs_weighted_hh{}'  .format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
+        metrics_dict['jobacc2_dat_30_acc_accessible_job_share_hh{}' .format(hhsuffix)] = float(metrics_dict['jobacc2_dat_30_acc_jobs_weighted_hh{}' .format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
+        metrics_dict['jobacc2_bike_20_acc_accessible_job_share_hh{}'.format(hhsuffix)] = float(metrics_dict['jobacc2_bike_20_acc_jobs_weighted_hh{}'.format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
+        metrics_dict['jobacc2_walk_20_acc_accessible_job_share_hh{}'.format(hhsuffix)] = float(metrics_dict['jobacc2_walk_20_acc_jobs_weighted_hh{}'.format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
+ 
+
 def tally_goods_movement_delay(iteration, sampleshare, metrics_dict):
     """
     Reads in hwy\iter%ITER%\avgload5period_vehclasses.csv and calculates total vehicle hours of delay on
@@ -222,7 +402,7 @@ def tally_nonauto_mode_share(iteration, sampleshare, metrics_dict):
         else:
             # scale by sample share
             temp_trips_df['num_participants'] = temp_trips_df['num_participants']/sampleshare
-            trips_df = pandas.concat([trips_df, temp_trips_df], axis=0)
+            trips_df = pandas.concat([trips_df, temp_trips_df], axis=0, sort=True)
 
     metrics_dict['nonauto_mode_share_walk_trips'   ] = trips_df.loc[trips_df['trip_mode']==7].num_participants.sum()
     metrics_dict['nonauto_mode_share_bike_trips'   ] = trips_df.loc[trips_df['trip_mode']==8].num_participants.sum()
@@ -300,12 +480,13 @@ if __name__ == '__main__':
     metrics_dict = {}
     tally_travel_cost(iteration, sampleshare, metrics_dict)
     tally_access_to_jobs(iteration, sampleshare, metrics_dict)
+    tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict)
     tally_goods_movement_delay(iteration, sampleshare, metrics_dict)
     tally_nonauto_mode_share(iteration, sampleshare, metrics_dict)
     tally_road_cost_vmt(iteration, sampleshare, metrics_dict)
 
     for key in sorted(metrics_dict.keys()):
-        print "%-35s => %f" % (key, metrics_dict[key])
+        print "{:50s} => {}".format(key, metrics_dict[key])
 
     out_series = pandas.Series(metrics_dict)
     out_frame  = out_series.to_frame().reset_index()
