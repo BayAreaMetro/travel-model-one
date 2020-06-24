@@ -6,16 +6,16 @@
 :: ** New Futures Runs for Fuel Consumption and Fuel Economy Estimates                   **
 :: ** These runs forward account for speed bin VMT overlap      hmb.   12/11/19.         **
 
-:: added an argument to indicate whether we are running emfac for SB375 (no trucks)
+:: added an argument to indicate whether we are running emfac with no trucks
 :: To run this batch file, use command: 
-:: RunPrepareEmfac.bat SB375
-:: (Or, RunPrepareEmfac.bat Conformity)
+:: RunPrepareEmfac.bat WithFreight
+:: (Or, RunPrepareEmfac.bat NoFreight)
 
-: make sure the user specifies either SB375 or Conformity in the argument
-IF %1==SB375 goto :start
-IF %1==Conformity goto :start 
+: make sure the user specifies either NoFreight or WithFreight in the argument
+IF %1==NoFreight    goto :start
+IF %1==WithFreight  goto :start 
 :: if neither, print error_message
-ECHO User Error: Please make sure "SB375" or "Conformity" is specified. Note that it is case-sensitive."
+ECHO User Error: Please make sure "NoFreight" or "WithFreight" is specified. Note that it is case-sensitive."
 GOTO :end
  
 :start
@@ -30,13 +30,13 @@ call runtpp CTRAMP\scripts\emfac\CreateSpeedBinsWithinZones.job
 
 :: Step Three
 
-:: use the "no truck" files if the run is for SB375
-if %1==SB375 rename emfac_prep\CreateSpeedBinsBetweenZones_sums.csv CreateSpBetweenZones_NotUsed.csv
-if %1==SB375 rename emfac_prep\CreateSpeedBinsWithinZones_sums.csv CreateSpWithinZones_NotUsed.csv
+:: if we want to run emfac without freight, use the "no truck" file
+if %1==NoFreight rename emfac_prep\CreateSpeedBinsBetweenZones_sums.csv CreateSpBetweenZones_NotUsed.csv
+if %1==NoFreight rename emfac_prep\CreateSpeedBinsWithinZones_sums.csv CreateSpWithinZones_NotUsed.csv
 
-:: use the "with truck" files if the run is for Conformity
-if %1==Conformity rename emfac_prep\CreateSpeedBinsBetweenZones_sums_NoTrk.csv CreateSpBetweenZonesNoTruck_NotUsed.csv
-if %1==Conformity rename emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv CreateSpWithinZonesNoTruck_NotUsed.csv
+:: if we want to run emfac with freight, use the "with truck" files 
+if %1==WithFreight rename emfac_prep\CreateSpeedBinsBetweenZones_sums_NoTrk.csv CreateSpBetweenZonesNoTruck_NotUsed.csv
+if %1==WithFreight rename emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv CreateSpWithinZonesNoTruck_NotUsed.csv
 
 call gawk -f CTRAMP\scripts\emfac\SumSpeedBins1.awk emfac_prep\CreateSpeedBins*.csv
 
