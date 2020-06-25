@@ -182,6 +182,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
 
     Adds the following keys to the metrics_dict:
     * jobacc2_wtrn_45_acc_jobs_weighted_persons  : accessible by walk-transit-walk (in 45 min) jobs weighted by persons
+    * jobacc2_wtrn_30_acc_jobs_weighted_persons  : accessible by walk-transit-walk (in 30 min) jobs weighted by persons
     * jobacc2_da_30_acc_jobs_weighted_persons    : accessible by drive alone       (in 30 min) jobs weighted by persons
     * jobacc2_dat_30_acc_jobs_weighted_persons   : accessible by drive alone toll  (in 30 min) jobs weighted by persons
     * jobacc2_bike_20_acc_jobs_weighted_persons  : accessibly by bike              (in 20 min) jobs weighted by persons
@@ -190,6 +191,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     * jobacc2_total_jobs_weighted_persons        : total jobs x total persons
 
     * jobacc2_wtrn_45_accessible_job_share       : accessible job share = jobacc2_wtrn_45_acc_jobs_weighted_persons/jobacc2_total_jobs_weighted_persons
+    * jobacc2_wtrn_30_accessible_job_share       : accessible job share = jobacc2_wtrn_30_acc_jobs_weighted_persons/jobacc2_total_jobs_weighted_persons
     * jobacc2_da_30_accessible_job_share         : accessible job share = jobacc2_da_30_acc_jobs_weighted_persons  /jobacc2_total_jobs_weighted_persons
     * jobacc2_dat_30_accessible_job_share        : accessible job share = jobacc2_dat_30_acc_jobs_weighted_persons /jobacc2_total_jobs_weighted_persons
     * jobacc2_bike_20_accessible_job_share       : accessible job share = jobacc2_bike_20_acc_jobs_weighted_persons/jobacc2_total_jobs_weighted_persons
@@ -207,11 +209,13 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     len_traveltime_df = len(traveltime_df)
 
     traveltime_df['wtrn_45'] = 0
+    traveltime_df['wtrn_30'] = 0
     traveltime_df['da_30'  ] = 0
     traveltime_df['dat_30' ] = 0
     traveltime_df['bike_20'] = 0
     traveltime_df['walk_20'] = 0
     traveltime_df.loc[ (traveltime_df.wTrnW  <=45) , 'wtrn_45'] = 1
+    traveltime_df.loc[ (traveltime_df.wTrnW  <=30) , 'wtrn_30'] = 1
     traveltime_df.loc[ (traveltime_df.da     <=30) , 'da_30'  ] = 1
     traveltime_df.loc[ (traveltime_df.daToll <=30) , 'dat_30' ] = 1
     traveltime_df.loc[ (traveltime_df.bike   <=20) , 'bike_20'] = 1
@@ -229,6 +233,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     traveltime_df.drop('ZONE', axis=1, inplace=True)  # ZONE == dest
     # make these total employment
     traveltime_df.wtrn_45  = traveltime_df.wtrn_45 *traveltime_df.TOTEMP
+    traveltime_df.wtrn_30  = traveltime_df.wtrn_30 *traveltime_df.TOTEMP
     traveltime_df.da_30    = traveltime_df.da_30   *traveltime_df.TOTEMP
     traveltime_df.dat_30   = traveltime_df.dat_30  *traveltime_df.TOTEMP
     traveltime_df.bike_20  = traveltime_df.bike_20 *traveltime_df.TOTEMP
@@ -250,6 +255,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
                                                    'walk'   :numpy.mean,
                                                    'TOTEMP' :numpy.sum,
                                                    'wtrn_45':numpy.sum,
+                                                   'wtrn_30':numpy.sum,
                                                    'da_30'  :numpy.sum,
                                                    'dat_30' :numpy.sum,
                                                    'bike_20':numpy.sum,
@@ -268,6 +274,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     # population version
     accessiblejobs_df[ 'TOTEMP_weighted'] = accessiblejobs_df[ 'TOTEMP']*accessiblejobs_df['TOTPOP']
     accessiblejobs_df['wtrn_45_weighted'] = accessiblejobs_df['wtrn_45']*accessiblejobs_df['TOTPOP']
+    accessiblejobs_df['wtrn_30_weighted'] = accessiblejobs_df['wtrn_30']*accessiblejobs_df['TOTPOP']
     accessiblejobs_df[  'da_30_weighted'] = accessiblejobs_df[  'da_30']*accessiblejobs_df['TOTPOP']
     accessiblejobs_df[ 'dat_30_weighted'] = accessiblejobs_df[ 'dat_30']*accessiblejobs_df['TOTPOP']
     accessiblejobs_df['bike_20_weighted'] = accessiblejobs_df['bike_20']*accessiblejobs_df['TOTPOP']
@@ -276,6 +283,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     # household version
     accessiblejobs_df[ 'TOTEMP_weightedhh'] = accessiblejobs_df[ 'TOTEMP']*accessiblejobs_df['TOTHH']
     accessiblejobs_df['wtrn_45_weightedhh'] = accessiblejobs_df['wtrn_45']*accessiblejobs_df['TOTHH']
+    accessiblejobs_df['wtrn_30_weightedhh'] = accessiblejobs_df['wtrn_30']*accessiblejobs_df['TOTHH']
     accessiblejobs_df[  'da_30_weightedhh'] = accessiblejobs_df[  'da_30']*accessiblejobs_df['TOTHH']
     accessiblejobs_df[ 'dat_30_weightedhh'] = accessiblejobs_df[ 'dat_30']*accessiblejobs_df['TOTHH']
     accessiblejobs_df['bike_20_weightedhh'] = accessiblejobs_df['bike_20']*accessiblejobs_df['TOTHH']
@@ -283,6 +291,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
 
     accessiblejobs_df[ 'TOTEMP_weightedhhq1q2'] = accessiblejobs_df[ 'TOTEMP']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
     accessiblejobs_df['wtrn_45_weightedhhq1q2'] = accessiblejobs_df['wtrn_45']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
+    accessiblejobs_df['wtrn_30_weightedhhq1q2'] = accessiblejobs_df['wtrn_30']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
     accessiblejobs_df[  'da_30_weightedhhq1q2'] = accessiblejobs_df[  'da_30']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
     accessiblejobs_df[ 'dat_30_weightedhhq1q2'] = accessiblejobs_df[ 'dat_30']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
     accessiblejobs_df['bike_20_weightedhhq1q2'] = accessiblejobs_df['bike_20']*(accessiblejobs_df['HHINCQ1']+accessiblejobs_df['HHINCQ2'])
@@ -290,6 +299,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
 
     accessiblejobs_df[ 'TOTEMP_weightedhhq3q4'] = accessiblejobs_df[ 'TOTEMP']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
     accessiblejobs_df['wtrn_45_weightedhhq3q4'] = accessiblejobs_df['wtrn_45']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
+    accessiblejobs_df['wtrn_30_weightedhhq3q4'] = accessiblejobs_df['wtrn_30']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
     accessiblejobs_df[  'da_30_weightedhhq3q4'] = accessiblejobs_df[  'da_30']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
     accessiblejobs_df[ 'dat_30_weightedhhq3q4'] = accessiblejobs_df[ 'dat_30']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
     accessiblejobs_df['bike_20_weightedhhq3q4'] = accessiblejobs_df['bike_20']*(accessiblejobs_df['HHINCQ3']+accessiblejobs_df['HHINCQ4'])
@@ -314,6 +324,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
         # denominator = total jobs weighted by persons
         metrics_dict['jobacc2_acc_jobs_weighted_persons%s'          % suffix] = accjob_subset_df[  'TOTEMP_weighted'].sum()
         metrics_dict['jobacc2_wtrn_45_acc_jobs_weighted_persons%s'  % suffix] = accjob_subset_df[ 'wtrn_45_weighted'].sum()
+        metrics_dict['jobacc2_wtrn_30_acc_jobs_weighted_persons%s'  % suffix] = accjob_subset_df[ 'wtrn_30_weighted'].sum()
         metrics_dict['jobacc2_da_30_acc_jobs_weighted_persons%s'    % suffix] = accjob_subset_df[   'da_30_weighted'].sum()
         metrics_dict['jobacc2_dat_30_acc_jobs_weighted_persons%s'   % suffix] = accjob_subset_df[  'dat_30_weighted'].sum()
         metrics_dict['jobacc2_bike_20_acc_jobs_weighted_persons%s'  % suffix] = accjob_subset_df[ 'bike_20_weighted'].sum()
@@ -322,6 +333,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
         metrics_dict['jobacc2_total_jobs_weighted_persons%s'        % suffix] = total_emp*totalpop_subset
 
         metrics_dict['jobacc2_wtrn_45_acc_accessible_job_share%s'  % suffix] = float(metrics_dict['jobacc2_wtrn_45_acc_jobs_weighted_persons%s' % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
+        metrics_dict['jobacc2_wtrn_30_acc_accessible_job_share%s'  % suffix] = float(metrics_dict['jobacc2_wtrn_30_acc_jobs_weighted_persons%s' % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
         metrics_dict['jobacc2_da_30_acc_accessible_job_share%s'    % suffix] = float(metrics_dict['jobacc2_da_30_acc_jobs_weighted_persons%s'   % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
         metrics_dict['jobacc2_dat_30_acc_accessible_job_share%s'   % suffix] = float(metrics_dict['jobacc2_dat_30_acc_jobs_weighted_persons%s'  % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
         metrics_dict['jobacc2_bike_20_acc_accessible_job_share%s'  % suffix] = float(metrics_dict['jobacc2_bike_20_acc_jobs_weighted_persons%s' % suffix]) / float(metrics_dict['jobacc2_total_jobs_weighted_persons%s' % suffix])
@@ -330,6 +342,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     for hhsuffix in ["", "q1q2","q3q4"]:
         metrics_dict['jobacc2_acc_jobs_weighted_hh{}'        .format(hhsuffix)] = accjob_subset_df[  'TOTEMP_weightedhh{}'.format(hhsuffix)].sum()
         metrics_dict['jobacc2_wtrn_45_acc_jobs_weighted_hh{}'.format(hhsuffix)] = accjob_subset_df[ 'wtrn_45_weightedhh{}'.format(hhsuffix)].sum()
+        metrics_dict['jobacc2_wtrn_30_acc_jobs_weighted_hh{}'.format(hhsuffix)] = accjob_subset_df[ 'wtrn_30_weightedhh{}'.format(hhsuffix)].sum()
         metrics_dict['jobacc2_da_30_acc_jobs_weighted_hh{}'  .format(hhsuffix)] = accjob_subset_df[   'da_30_weightedhh{}'.format(hhsuffix)].sum()
         metrics_dict['jobacc2_dat_30_acc_jobs_weighted_hh{}' .format(hhsuffix)] = accjob_subset_df[  'dat_30_weightedhh{}'.format(hhsuffix)].sum()
         metrics_dict['jobacc2_bike_20_acc_jobs_weighted_hh{}'.format(hhsuffix)] = accjob_subset_df[ 'bike_20_weightedhh{}'.format(hhsuffix)].sum()
@@ -338,6 +351,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
         metrics_dict['jobacc2_total_jobs_weighted_hh{}'       .format(hhsuffix)] = total_emp*totalpop_subset
 
         metrics_dict['jobacc2_wtrn_45_acc_accessible_job_share_hh{}'.format(hhsuffix)] = float(metrics_dict['jobacc2_wtrn_45_acc_jobs_weighted_hh{}'.format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
+        metrics_dict['jobacc2_wtrn_30_acc_accessible_job_share_hh{}'.format(hhsuffix)] = float(metrics_dict['jobacc2_wtrn_30_acc_jobs_weighted_hh{}'.format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
         metrics_dict['jobacc2_da_30_acc_accessible_job_share_hh{}'  .format(hhsuffix)] = float(metrics_dict['jobacc2_da_30_acc_jobs_weighted_hh{}'  .format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
         metrics_dict['jobacc2_dat_30_acc_accessible_job_share_hh{}' .format(hhsuffix)] = float(metrics_dict['jobacc2_dat_30_acc_jobs_weighted_hh{}' .format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
         metrics_dict['jobacc2_bike_20_acc_accessible_job_share_hh{}'.format(hhsuffix)] = float(metrics_dict['jobacc2_bike_20_acc_jobs_weighted_hh{}'.format(hhsuffix)]) / float(metrics_dict['jobacc2_total_jobs_weighted_hh{}'.format(hhsuffix)])
