@@ -34,18 +34,23 @@ def calculate_urbansim_highlevelmetrics(runid, dbp, parcel_sum_df, county_sum_df
     metrics_dict[runid,metric_id,'TotHH_region',y2,dbp] = parcel_sum_df['tothh_2050'].sum()
     metrics_dict[runid,metric_id,'TotHH_region',y1,dbp] = parcel_sum_df['tothh_2015'].sum()
     metrics_dict[runid,metric_id,'TotHH_growth_region',y_diff,dbp] = metrics_dict[runid,metric_id,'TotHH_region',y2,dbp] / metrics_dict[runid,metric_id,'TotHH_region',y1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotHH_growth_region_number',y_diff,dbp] = parcel_sum_df['tothh_2050'].sum() - parcel_sum_df['tothh_2015'].sum()
+    # HH growth by county
     for index,row in county_sum_df.iterrows():
         metrics_dict[runid,metric_id,'TotHH_county_growth_%s' % row['county'],y_diff,dbp] = row['tothh_growth'] 
+        metrics_dict[runid,metric_id,'TotHH_county_shareofgrowth_%s' % row['county'],y_diff,dbp] = row['tothh_growth'] / metrics_dict[runid,metric_id,'TotHH_growth_region_number',y_diff,dbp] 
 
     # HH Growth in all GGs
     metrics_dict[runid,metric_id,'TotHH_GG',y2,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('GG', na=False), 'tothh_2050'].sum() 
     metrics_dict[runid,metric_id,'TotHH_GG',y1,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('GG', na=False), 'tothh_2015'].sum() 
     metrics_dict[runid,metric_id,'TotHH_GG_growth',y_diff,dbp] = metrics_dict[runid,metric_id,'TotHH_GG',y2,dbp] / metrics_dict[runid,metric_id,'TotHH_GG',y1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotHH_GG_shareofgrowth',y_diff,dbp] = (metrics_dict[runid,metric_id,'TotHH_GG',y2,dbp] - metrics_dict[runid,metric_id,'TotHH_GG',y1,dbp]) / metrics_dict[runid,metric_id,'TotHH_growth_region_number',y_diff,dbp] 
 
     # HH Growth in PDAs
     metrics_dict[runid,metric_id,'TotHH_PDA',y2,dbp] = parcel_sum_df.loc[parcel_sum_df['pda_id'].str.contains('', na=False), 'tothh_2050'].sum() 
     metrics_dict[runid,metric_id,'TotHH_PDA',y1,dbp] = parcel_sum_df.loc[parcel_sum_df['pda_id'].str.contains('', na=False), 'tothh_2015'].sum() 
     metrics_dict[runid,metric_id,'TotHH_PDA_growth',y_diff,dbp] = metrics_dict[runid,metric_id,'TotHH_PDA',y2,dbp] / metrics_dict[runid,metric_id,'TotHH_PDA',y1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotHH_PDA_shareofgrowth',y_diff,dbp] = (metrics_dict[runid,metric_id,'TotHH_PDA',y2,dbp] - metrics_dict[runid,metric_id,'TotHH_PDA',y1,dbp]) / metrics_dict[runid,metric_id,'TotHH_growth_region_number',y_diff,dbp] 
 
     # HH Growth in GGs that are not PDAs
     metrics_dict[runid,metric_id,'TotHH_GG_notPDA',y2,dbp] = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('GG', na=False)) & \
@@ -53,17 +58,20 @@ def calculate_urbansim_highlevelmetrics(runid, dbp, parcel_sum_df, county_sum_df
     metrics_dict[runid,metric_id,'TotHH_GG_notPDA',y1,dbp] = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('GG', na=False)) & \
                                                                 (parcel_sum_df['pda_id'].str.contains('', na=False)==0), 'tothh_2015'].sum() 
     metrics_dict[runid,metric_id,'TotHH_GG_notPDA_growth',y_diff,dbp] = metrics_dict[runid,metric_id,'TotHH_GG_notPDA',y2,dbp] / metrics_dict[runid,metric_id,'TotHH_GG_notPDA',y1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotHH_GG_notPDA_shareofgrowth',y_diff,dbp] = (metrics_dict[runid,metric_id,'TotHH_GG_notPDA',y2,dbp] - metrics_dict[runid,metric_id,'TotHH_GG_notPDA',y1,dbp]) / metrics_dict[runid,metric_id,'TotHH_growth_region_number',y_diff,dbp] 
 
 
     # HH Growth in HRAs
     metrics_dict[runid,metric_id,'TotHH_HRA',y2,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('HRA', na=False), 'tothh_2050'].sum() 
     metrics_dict[runid,metric_id,'TotHH_HRA',y1,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('HRA', na=False), 'tothh_2015'].sum() 
     metrics_dict[runid,metric_id,'TotHH_HRA_growth',y_diff,dbp] = metrics_dict[runid,metric_id,'TotHH_HRA',y2,dbp] / metrics_dict[runid,metric_id,'TotHH_HRA',y1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotHH_HRA_shareofgrowth',y_diff,dbp] = (metrics_dict[runid,metric_id,'TotHH_HRA',y2,dbp] - metrics_dict[runid,metric_id,'TotHH_HRA',y1,dbp]) / metrics_dict[runid,metric_id,'TotHH_growth_region_number',y_diff,dbp] 
 
     # HH Growth in TRAs
     metrics_dict[runid,metric_id,'TotHH_TRA',y2,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'tothh_2050'].sum() 
     metrics_dict[runid,metric_id,'TotHH_TRA',y1,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'tothh_2015'].sum() 
     metrics_dict[runid,metric_id,'TotHH_TRA_growth',y_diff,dbp] = metrics_dict[runid,metric_id,'TotHH_TRA',y2,dbp] / metrics_dict[runid,metric_id,'TotHH_TRA',y1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotHH_TRA_shareofgrowth',y_diff,dbp] = (metrics_dict[runid,metric_id,'TotHH_TRA',y2,dbp] - metrics_dict[runid,metric_id,'TotHH_TRA',y1,dbp]) / metrics_dict[runid,metric_id,'TotHH_growth_region_number',y_diff,dbp] 
 
     # HH Growth in areas that are both HRAs and TRAs
     metrics_dict[runid,metric_id,'TotHH_HRAandTRA',y2,dbp] = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('HRA', na=False)) &\
@@ -71,6 +79,7 @@ def calculate_urbansim_highlevelmetrics(runid, dbp, parcel_sum_df, county_sum_df
     metrics_dict[runid,metric_id,'TotHH_HRAandTRA',y1,dbp] = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('HRA', na=False)) &\
                                                                 (parcel_sum_df['pba50chcat'].str.contains('tra', na=False)) , 'tothh_2015'].sum() 
     metrics_dict[runid,metric_id,'TotHH_HRAandTRA_growth',y_diff,dbp] = metrics_dict[runid,metric_id,'TotHH_HRAandTRA',y2,dbp] / metrics_dict[runid,metric_id,'TotHH_HRAandTRA',y1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotHH_HRAandTRA_shareofgrowth',y_diff,dbp] = (metrics_dict[runid,metric_id,'TotHH_HRAandTRA',y2,dbp] - metrics_dict[runid,metric_id,'TotHH_HRAandTRA',y1,dbp]) / metrics_dict[runid,metric_id,'TotHH_growth_region_number',y_diff,dbp] 
 
 
 
@@ -81,18 +90,23 @@ def calculate_urbansim_highlevelmetrics(runid, dbp, parcel_sum_df, county_sum_df
     metrics_dict[runid,metric_id,'TotJobs_region',y2,dbp] = parcel_sum_df['totemp_2050'].sum()
     metrics_dict[runid,metric_id,'TotJobs_region',y1,dbp] = parcel_sum_df['totemp_2015'].sum()
     metrics_dict[runid,metric_id,'TotJobs_growth_region',y_diff,dbp] = metrics_dict[runid,metric_id,'TotJobs_region',y2,dbp]  / metrics_dict[runid,metric_id,'TotJobs_region',y1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotJobs_growth_region_number',y_diff,dbp] = parcel_sum_df['totemp_2050'].sum() - parcel_sum_df['totemp_2015'].sum()
+    #Job growth by county
     for index,row in county_sum_df.iterrows():
         metrics_dict[runid,metric_id,'TotJobs_growth_%s' % row['county'],y_diff,dbp] = row['totemp_growth'] 
+        metrics_dict[runid,metric_id,'TotJobs_county_shareofgrowth_%s' % row['county'],y_diff,dbp] = row['totemp_growth'] / metrics_dict[runid,metric_id,'TotJobs_growth_region_number',y_diff,dbp] 
 
     # Job Growth in all GGs
     metrics_dict[runid,metric_id,'TotJobs_GG',y2,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('GG', na=False), 'totemp_2050'].sum() 
     metrics_dict[runid,metric_id,'TotJobs_GG',y1,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('GG', na=False), 'totemp_2015'].sum() 
     metrics_dict[runid,metric_id,'TotJobs_GG_growth',y_diff,dbp] = metrics_dict[runid,metric_id,'TotJobs_GG',y2,dbp] / metrics_dict[runid,metric_id,'TotJobs_GG',y1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotJobs_GG_shareofgrowth',y_diff,dbp] = (metrics_dict[runid,metric_id,'TotJobs_GG',y2,dbp] - metrics_dict[runid,metric_id,'TotJobs_GG',y1,dbp]) / metrics_dict[runid,metric_id,'TotJobs_growth_region_number',y_diff,dbp] 
 
     # Job Growth in PDAs
     metrics_dict[runid,metric_id,'TotJobs_PDA',y2,dbp] = parcel_sum_df.loc[parcel_sum_df['pda_id'].str.contains('', na=False), 'totemp_2050'].sum() 
     metrics_dict[runid,metric_id,'TotJobs_PDA',y1,dbp] = parcel_sum_df.loc[parcel_sum_df['pda_id'].str.contains('', na=False), 'totemp_2015'].sum() 
     metrics_dict[runid,metric_id,'TotJobs_PDA_growth',y_diff,dbp] = metrics_dict[runid,metric_id,'TotJobs_PDA',y2,dbp] / metrics_dict[runid,metric_id,'TotJobs_PDA',y1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotJobs_PDA_shareofgrowth',y_diff,dbp] = (metrics_dict[runid,metric_id,'TotJobs_PDA',y2,dbp] - metrics_dict[runid,metric_id,'TotJobs_PDA',y1,dbp]) / metrics_dict[runid,metric_id,'TotJobs_growth_region_number',y_diff,dbp] 
 
     # Job Growth in GGs that are not PDAs
     metrics_dict[runid,metric_id,'TotJobs_GG_notPDA',y2,dbp] = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('GG', na=False)) & \
@@ -100,16 +114,19 @@ def calculate_urbansim_highlevelmetrics(runid, dbp, parcel_sum_df, county_sum_df
     metrics_dict[runid,metric_id,'TotJobs_GG_notPDA',y1,dbp] = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('GG', na=False)) & \
                                                                 (parcel_sum_df['pda_id'].str.contains('', na=False)==0), 'totemp_2015'].sum() 
     metrics_dict[runid,metric_id,'TotJobs_GG_notPDA_growth',y_diff,dbp] = metrics_dict[runid,metric_id,'TotJobs_GG_notPDA',y2,dbp] / metrics_dict[runid,metric_id,'TotJobs_GG_notPDA',y1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotJobs_GG_notPDA_shareofgrowth',y_diff,dbp] = (metrics_dict[runid,metric_id,'TotJobs_GG_notPDA',y2,dbp] - metrics_dict[runid,metric_id,'TotJobs_GG_notPDA',y1,dbp]) / metrics_dict[runid,metric_id,'TotJobs_growth_region_number',y_diff,dbp] 
 
     # Job Growth in HRAs
     metrics_dict[runid,metric_id,'TotJobs_HRA',y2,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('HRA', na=False), 'totemp_2050'].sum() 
     metrics_dict[runid,metric_id,'TotJobs_HRA',y1,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('HRA', na=False), 'totemp_2015'].sum() 
     metrics_dict[runid,metric_id,'TotJobs_HRA_growth',y_diff,dbp] = metrics_dict[runid,metric_id,'TotJobs_HRA',y2,dbp] / metrics_dict[runid,metric_id,'TotJobs_HRA',y1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotJobs_HRA_shareofgrowth',y_diff,dbp] = (metrics_dict[runid,metric_id,'TotJobs_HRA',y2,dbp] - metrics_dict[runid,metric_id,'TotJobs_HRA',y1,dbp]) / metrics_dict[runid,metric_id,'TotJobs_growth_region_number',y_diff,dbp] 
 
     # Job Growth in TRAs
     metrics_dict[runid,metric_id,'TotJobs_TRA',y2,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'totemp_2050'].sum() 
     metrics_dict[runid,metric_id,'TotJobs_TRA',y1,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'totemp_2015'].sum() 
     metrics_dict[runid,metric_id,'TotJobs_TRA_growth',y_diff,dbp] = metrics_dict[runid,metric_id,'TotJobs_TRA',y2,dbp] / metrics_dict[runid,metric_id,'TotJobs_TRA',y1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotJobs_TRA_shareofgrowth',y_diff,dbp] = (metrics_dict[runid,metric_id,'TotJobs_TRA',y2,dbp] - metrics_dict[runid,metric_id,'TotJobs_TRA',y1,dbp]) / metrics_dict[runid,metric_id,'TotJobs_growth_region_number',y_diff,dbp] 
 
     # Job Growth in areas that are both HRAs and TRAs
     metrics_dict[runid,metric_id,'TotJobs_HRAandTRA',y2,dbp] = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('HRA', na=False)) &\
@@ -117,6 +134,7 @@ def calculate_urbansim_highlevelmetrics(runid, dbp, parcel_sum_df, county_sum_df
     metrics_dict[runid,metric_id,'TotJobs_HRAandTRA',y1,dbp] = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('HRA', na=False)) &\
                                                                 (parcel_sum_df['pba50chcat'].str.contains('tra', na=False)) , 'totemp_2015'].sum() 
     metrics_dict[runid,metric_id,'TotJobs_HRAandTRA_growth',y_diff,dbp] = metrics_dict[runid,metric_id,'TotJobs_HRAandTRA',y2,dbp] / metrics_dict[runid,metric_id,'TotJobs_HRAandTRA',y1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotJobs_HRAandTRA_shareofgrowth',y_diff,dbp] = (metrics_dict[runid,metric_id,'TotJobs_HRAandTRA',y2,dbp] - metrics_dict[runid,metric_id,'TotJobs_HRAandTRA',y1,dbp]) / metrics_dict[runid,metric_id,'TotJobs_growth_region_number',y_diff,dbp] 
 
 
     ############################
@@ -149,61 +167,68 @@ def calculate_normalize_factor_Q1(parcel_sum_df):
                         / (parcel_sum_df['hhq1_2015'].sum() /  parcel_sum_df['tothh_2015'].sum())
 
 
-def calculate_Affordable1_transportation_costs(runid, year, dbp, tm_scen_metrics_df, tm_auto_owned_df, tm_auto_times_df, metrics_dict):
+def calculate_Affordable1_transportation_costs(runid, year, dbp, tm_scen_metrics_df, tm_auto_owned_df, tm_auto_times_df, tm_travel_cost_df, metrics_dict):
 
     metric_id = "A1"
 
     days_per_year = 300
 
     # Total number of households
-    tm_tot_hh = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'].str.contains("total_households") == True), 'value'].sum()
+    tm_tot_hh      = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'].str.contains("total_households_inc") == True), 'value'].sum()
     tm_tot_hh_inc1 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_households_inc1"),'value'].item()
     tm_tot_hh_inc2 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_households_inc2"),'value'].item()
 
-    # Total household income (model outputs are in 2000$, per day)
-    tm_total_hh_inc = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'].str.contains("total_hh_inc") == True), 'value'].sum()
+    # Total household income (model outputs are in 2000$, annual)
+    tm_total_hh_inc      = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'].str.contains("total_hh_inc") == True), 'value'].sum()
     tm_total_hh_inc_inc1 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_hh_inc_inc1"),'value'].item()
     tm_total_hh_inc_inc2 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_hh_inc_inc2"),'value'].item()
 
     # Total transit fares (model outputs are in 2000$, per day)
-    tm_tot_transit_fares = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'].str.contains("total_transit_fares") == True), 'value'].sum() * days_per_year
+    tm_tot_transit_fares      = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'].str.contains("total_transit_fares") == True), 'value'].sum() * days_per_year
     tm_tot_transit_fares_inc1 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_transit_fares_inc1"),'value'].item() * days_per_year
     tm_tot_transit_fares_inc2 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_transit_fares_inc2"),'value'].item() * days_per_year
 
     # Total auto op cost (model outputs are in 2000$, per day)
-    tm_tot_auto_op_cost = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'].str.contains("total_auto_cost") == True), 'value'].sum() * days_per_year
+    tm_tot_auto_op_cost      = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'].str.contains("total_auto_cost_inc") == True), 'value'].sum() * days_per_year
     tm_tot_auto_op_cost_inc1 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_auto_cost_inc1"),'value'].item() * days_per_year
     tm_tot_auto_op_cost_inc2 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_auto_cost_inc2"),'value'].item() * days_per_year
 
+    # Total auto parking cost (model outputs are in 2000$, per day, in cents)
+    #tm_travel_cost_df['park_cost'] = (tm_travel_cost_df['pcost_indiv']+tm_travel_cost_df['pcost_joint']) * tm_travel_cost_df['freq']
+    tm_tot_auto_park_cost      = (tm_travel_cost_df.pcost_indiv.sum() + tm_travel_cost_df.pcost_joint.sum()) * days_per_year / 100
+    tm_tot_auto_park_cost_inc1 = (tm_travel_cost_df.loc[(tm_travel_cost_df['incQ'] == 1),'pcost_indiv'].sum() + tm_travel_cost_df.loc[(tm_travel_cost_df['incQ'] == 1),'pcost_joint'].sum()) * days_per_year / 100
+    tm_tot_auto_park_cost_inc2 = (tm_travel_cost_df.loc[(tm_travel_cost_df['incQ'] == 2),'pcost_indiv'].sum() + tm_travel_cost_df.loc[(tm_travel_cost_df['incQ'] == 2),'pcost_joint'].sum()) * days_per_year / 100
+
     # Calculating number of autos owned from autos_owned.csv
     tm_auto_owned_df['tot_autos'] = tm_auto_owned_df['autos'] * tm_auto_owned_df['households'] 
-    tm_tot_autos_owned = tm_auto_owned_df['tot_autos'].sum()
+    tm_tot_autos_owned      = tm_auto_owned_df['tot_autos'].sum()
     tm_tot_autos_owned_inc1 = tm_auto_owned_df.loc[(tm_auto_owned_df['incQ'] == 1), 'tot_autos'].sum()
     tm_tot_autos_owned_inc2 = tm_auto_owned_df.loc[(tm_auto_owned_df['incQ'] == 2), 'tot_autos'].sum()
 
     # Total auto ownership cost in 2000$
-    tm_tot_auto_owner_cost = tm_tot_autos_owned * auto_ownership_cost * inflation_18_20 / inflation_00_20
+    tm_tot_auto_owner_cost      = tm_tot_autos_owned      * auto_ownership_cost      * inflation_18_20 / inflation_00_20
     tm_tot_auto_owner_cost_inc1 = tm_tot_autos_owned_inc1 * auto_ownership_cost_inc1 * inflation_18_20 / inflation_00_20
     tm_tot_auto_owner_cost_inc2 = tm_tot_autos_owned_inc2 * auto_ownership_cost_inc2 * inflation_18_20 / inflation_00_20
 
     # Total Transportation Cost (in 2000$)
-    tp_cost      = tm_tot_auto_op_cost      + tm_tot_transit_fares      + tm_tot_auto_owner_cost
-    tp_cost_inc1 = tm_tot_auto_op_cost_inc1 + tm_tot_transit_fares_inc1 + tm_tot_auto_owner_cost_inc1
-    tp_cost_inc2 = tm_tot_auto_op_cost_inc2 + tm_tot_transit_fares_inc2 + tm_tot_auto_owner_cost_inc2
+    tp_cost      = tm_tot_auto_op_cost      + tm_tot_transit_fares      + tm_tot_auto_owner_cost      + tm_tot_auto_park_cost
+    tp_cost_inc1 = tm_tot_auto_op_cost_inc1 + tm_tot_transit_fares_inc1 + tm_tot_auto_owner_cost_inc1 + tm_tot_auto_park_cost_inc1
+    tp_cost_inc2 = tm_tot_auto_op_cost_inc2 + tm_tot_transit_fares_inc2 + tm_tot_auto_owner_cost_inc2 + tm_tot_auto_park_cost_inc2
 
     # Mean transportation cost per household in 2020$
     tp_cost_mean      = tp_cost / tm_tot_hh * inflation_00_20
     tp_cost_mean_inc1 = tp_cost_inc1 / tm_tot_hh_inc1 * inflation_00_20
     tp_cost_mean_inc2 = tp_cost_inc2 / tm_tot_hh_inc2 * inflation_00_20
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$',year,dbp] = tp_cost_mean
+    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$',year,dbp]      = tp_cost_mean
     metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_inc1',year,dbp] = tp_cost_mean_inc1
     metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_inc2',year,dbp] = tp_cost_mean_inc2
     
     # Transportation cost % of income
-    tp_cost_pct_inc          = tp_cost / tm_total_hh_inc
+    tp_cost_pct_inc          = tp_cost      / tm_total_hh_inc
     tp_cost_pct_inc_inc1     = tp_cost_inc1 / tm_total_hh_inc_inc1
     tp_cost_pct_inc_inc2     = tp_cost_inc2 / tm_total_hh_inc_inc2
     tp_cost_pct_inc_inc1and2 = (tp_cost_inc1+tp_cost_inc2) / (tm_total_hh_inc_inc1+tm_total_hh_inc_inc2)
+
 
     # Transportation cost % of income metrics       
     metrics_dict[runid,metric_id,'transportation_cost_pct_income',year,dbp]      = tp_cost_pct_inc
@@ -212,9 +237,10 @@ def calculate_Affordable1_transportation_costs(runid, year, dbp, tm_scen_metrics
     metrics_dict[runid,metric_id,'transportation_cost_pct_income_inc1and2',year,dbp] = tp_cost_pct_inc_inc1and2
 
     # Transportation cost % of income metrics; split by cost bucket
-    metrics_dict[runid,metric_id,'transportation_cost_pct_income_autoop',year,dbp]      = tm_tot_auto_op_cost / tm_total_hh_inc
-    metrics_dict[runid,metric_id,'transportation_cost_pct_income_transitfare',year,dbp] = tm_tot_transit_fares / tm_total_hh_inc
-    metrics_dict[runid,metric_id,'transportation_cost_pct_income_autoown',year,dbp]     = tm_tot_auto_owner_cost / tm_total_hh_inc
+    metrics_dict[runid,metric_id,'transportation_cost_pct_income_autoop',year,dbp]        = tm_tot_auto_op_cost / tm_total_hh_inc
+    metrics_dict[runid,metric_id,'transportation_cost_pct_income_autopark',year,dbp]      = tm_tot_auto_park_cost / tm_total_hh_inc
+    metrics_dict[runid,metric_id,'transportation_cost_pct_income_transitfare',year,dbp]   = tm_tot_transit_fares / tm_total_hh_inc
+    metrics_dict[runid,metric_id,'transportation_cost_pct_income_autoown',year,dbp]       = tm_tot_auto_owner_cost / tm_total_hh_inc
  
     # Add housing costs from Shimon's outputs
     housing_costs_2050_df = pd.read_csv('C:/Users/ATapase/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/metrics_files/2050 Share of Income Spent on Housing.csv')
@@ -281,14 +307,15 @@ def calculate_Affordable1_transportation_costs(runid, year, dbp, tm_scen_metrics
     tm_tot_transit_trips_inc1 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_transit_trips_inc1"),'value'].item() 
     tm_tot_transit_trips_inc2 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_transit_trips_inc2"),'value'].item() 
 
-    # Average Tolls per trip
+    # Average Tolls per trip  (total_tolls_xx is calculated above as per day tolls in 2000 dollars)
     metrics_dict[runid,metric_id,'tolls_per_trip',year,dbp]          = total_tolls_allHH / tm_tot_auto_trips * inflation_00_20
     metrics_dict[runid,metric_id,'tolls_per_trip_inc1and2',year,dbp] = total_tolls_LIHH / (tm_tot_auto_trips_inc1+tm_tot_auto_trips_inc2) * inflation_00_20
     metrics_dict[runid,metric_id,'tolls_per_trip_inc1',year,dbp]     = total_tolls['inc1'] / tm_tot_auto_trips_inc1 * inflation_00_20
-    # Total auto operating cost per trip
-    metrics_dict[runid,metric_id,'autocost_per_trip',year,dbp]           = tm_tot_auto_op_cost / tm_tot_auto_trips * inflation_00_20 / days_per_year
-    metrics_dict[runid,metric_id,'autocost_per_trip_inc1and2',year,dbp]  = (tm_tot_auto_op_cost_inc1 + tm_tot_auto_op_cost_inc2) / (tm_tot_auto_trips_inc1+tm_tot_auto_trips_inc2) * inflation_00_20  / days_per_year
-    metrics_dict[runid,metric_id,'autocost_per_trip_inc1',year,dbp]     = tm_tot_auto_op_cost_inc1 / tm_tot_auto_trips_inc1 * inflation_00_20 / days_per_year 
+    # Total auto operating cost per trip (tm_tot_auto_op_cost and tm_tot_auto_park_cost are calculated above as annual costs in 2000 dollars)
+    metrics_dict[runid,metric_id,'autocost_per_trip',year,dbp]           = (tm_tot_auto_op_cost + tm_tot_auto_park_cost) / tm_tot_auto_trips * inflation_00_20 / days_per_year
+    metrics_dict[runid,metric_id,'autocost_per_trip_inc1and2',year,dbp]  = (tm_tot_auto_op_cost_inc1 + tm_tot_auto_op_cost_inc2 + tm_tot_auto_park_cost_inc1 + tm_tot_auto_park_cost_inc2) / (tm_tot_auto_trips_inc1+tm_tot_auto_trips_inc2) * inflation_00_20  / days_per_year
+    metrics_dict[runid,metric_id,'autocost_per_trip_inc1',year,dbp]     = (tm_tot_auto_op_cost_inc1 + tm_tot_auto_park_cost_inc1) / tm_tot_auto_trips_inc1 * inflation_00_20 / days_per_year 
+
     # Average Fares per trip   (note: transit fares totals calculated above are annual and need to be divided by days_per_year)
     metrics_dict[runid,metric_id,'fares_per_trip',year,dbp]          = tm_tot_transit_fares / tm_tot_transit_trips * inflation_00_20 / days_per_year
     metrics_dict[runid,metric_id,'fares_per_trip_inc1and2',year,dbp] = (tm_tot_transit_fares_inc1 + tm_tot_transit_fares_inc2) / (tm_tot_transit_trips_inc1+tm_tot_transit_trips_inc2) * inflation_00_20 / days_per_year
@@ -354,24 +381,36 @@ def calculate_Connected1_accessibility(runid, year, dbp, tm_scen_metrics_df, met
                                 
     # % of Jobs accessible by 30 min car only
     metrics_dict[runid,metric_id,'pct_jobs_acc_by_drv_only',year,dbp] = \
-        tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_drv_only_acc_accessible_job_share"), 'value'].item()
+        tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_drv_only_acc_accessible_job_share"), 'value'].item() \
+        + tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_trn_drv_acc_accessible_job_share"), 'value'].item()
+
     metrics_dict[runid,metric_id,'pct_jobs_acc_by_drv_only_coc',year,dbp] = \
-        tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_drv_only_acc_accessible_job_share_coc"), 'value'].item()
+        tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_drv_only_acc_accessible_job_share_coc"), 'value'].item() \
+        + tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_trn_drv_acc_accessible_job_share_coc"), 'value'].item()
     metrics_dict[runid,metric_id,'pct_jobs_acc_by_drv_only_noncoc',year,dbp] = \
-        tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_drv_only_acc_accessible_job_share_noncoc"), 'value'].item()
+        tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_drv_only_acc_accessible_job_share_noncoc"), 'value'].item() \
+        + tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_trn_drv_acc_accessible_job_share_noncoc"), 'value'].item()
                                 
     # % of Jobs accessible by 45 min transit only 
     metrics_dict[runid,metric_id,'pct_jobs_acc_by_trn_only',year,dbp] = \
-        tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_trn_only_acc_accessible_job_share"), 'value'].item()
+        tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_trn_only_acc_accessible_job_share"), 'value'].item() \
+        + tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_trn_drv_acc_accessible_job_share"), 'value'].item()
+
     metrics_dict[runid,metric_id,'pct_jobs_acc_by_trn_only_coc',year,dbp] = \
-        tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_trn_only_acc_accessible_job_share_coc"), 'value'].item()
+        tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_trn_only_acc_accessible_job_share_coc"), 'value'].item() \
+        + tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_trn_drv_acc_accessible_job_share_coc"), 'value'].item()
+
     metrics_dict[runid,metric_id,'pct_jobs_acc_by_trn_only_noncoc',year,dbp] = \
-        tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_trn_only_acc_accessible_job_share_noncoc"), 'value'].item()
+        tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_trn_only_acc_accessible_job_share_noncoc"), 'value'].item() \
+        + tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "jobacc_trn_drv_acc_accessible_job_share_noncoc"), 'value'].item()
 
 
 def calculate_Connected1_proximity(runid, year, dbp, tm_scen_metrics_df, metrics_dict):
     
     metric_id = "C1"
+
+
+
 
 
 def calculate_Connected2_crowding(runid, year, dbp, transit_operator_df, metrics_dict):
@@ -473,7 +512,22 @@ def calculate_Diverse1_LIHHinHRAs(runid, dbp, parcel_sum_df, tract_sum_df, GG_su
     # Total HHs in TRAs, in 2015 and 2050
     metrics_dict[runid,metric_id,'TotHH_inTRA',y1,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'tothh_2015'].sum()
     metrics_dict[runid,metric_id,'TotHH_inTRA',y2,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'tothh_2050'].sum()
-    # Total HHs in DR Tracts, in 2015 and 2050
+    # Total HHs in HRAs only, in 2015 and 2050
+    metrics_dict[runid,metric_id,'TotHH_inHRAonly',y1,dbp] = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('HRA', na=False)) & \
+                                                                                (parcel_sum_df['pba50chcat'].str.contains('tra', na=False) == False), 'tothh_2015'].sum()
+    metrics_dict[runid,metric_id,'TotHH_inHRAonly',y2,dbp] = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('HRA', na=False)) & \
+                                                                                (parcel_sum_df['pba50chcat'].str.contains('tra', na=False) == False), 'tothh_2050'].sum()
+    # Total HHs in TRAs only, in 2015 and 2050
+    metrics_dict[runid,metric_id,'TotHH_inTRAonly',y1,dbp] = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('tra', na=False)) & \
+                                                                                (parcel_sum_df['pba50chcat'].str.contains('HRA', na=False) == False), 'tothh_2015'].sum()
+    metrics_dict[runid,metric_id,'TotHH_inTRAonly',y2,dbp] = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('tra', na=False)) & \
+                                                                                (parcel_sum_df['pba50chcat'].str.contains('HRA', na=False) == False), 'tothh_2050'].sum()
+    # Total HHs in HRA/TRAs, in 2015 and 2050
+    metrics_dict[runid,metric_id,'TotHH_inHRATRA',y1,dbp] = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('tra', na=False)) & \
+                                                                                (parcel_sum_df['pba50chcat'].str.contains('HRA', na=False)), 'tothh_2015'].sum()
+    metrics_dict[runid,metric_id,'TotHH_inHRATRA',y2,dbp] = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('tra', na=False)) & \
+                                                                                (parcel_sum_df['pba50chcat'].str.contains('HRA', na=False)), 'tothh_2050'].sum()
+     # Total HHs in DR Tracts, in 2015 and 2050
     metrics_dict[runid,metric_id,'TotHH_inDRTracts',y1,dbp] = tract_sum_df.loc[(tract_sum_df['DispRisk'] == 1), 'tothh_2015'].sum()
     metrics_dict[runid,metric_id,'TotHH_inDRTracts',y2,dbp] = tract_sum_df.loc[(tract_sum_df['DispRisk'] == 1), 'tothh_2050'].sum()
     # Total HHs in CoC Tracts, in 2015 and 2050
@@ -509,6 +563,22 @@ def calculate_Diverse1_LIHHinHRAs(runid, dbp, parcel_sum_df, tract_sum_df, GG_su
     metrics_dict[runid,metric_id,'Q1HH_shareofHRA',y1,dbp]               = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('HRA', na=False), 'hhq1_2015'].sum() / metrics_dict[runid,metric_id,'TotHH_inHRA',y1,dbp]
     metrics_dict[runid,metric_id,'Q1HH_shareofHRA_normalized',y1,dbp]    = metrics_dict[runid,metric_id,'Q1HH_shareofHRA',y1,dbp] * normalize_factor_Q1
     metrics_dict[runid,metric_id,'Q1HH_shareofHRA',y2,dbp]               = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('HRA', na=False), 'hhq1_2050'].sum()  / metrics_dict[runid,metric_id,'TotHH_inHRA',y2,dbp]
+
+    metrics_dict[runid,metric_id,'Q1HH_shareofTRA',y1,dbp]               = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'hhq1_2015'].sum() / metrics_dict[runid,metric_id,'TotHH_inTRA',y1,dbp]
+    metrics_dict[runid,metric_id,'Q1HH_shareofTRA_normalized',y1,dbp]    = metrics_dict[runid,metric_id,'Q1HH_shareofTRA',y1,dbp] * normalize_factor_Q1
+    metrics_dict[runid,metric_id,'Q1HH_shareofTRA',y2,dbp]               = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'hhq1_2050'].sum()  / metrics_dict[runid,metric_id,'TotHH_inTRA',y2,dbp]
+
+    metrics_dict[runid,metric_id,'Q1HH_shareofHRAonly',y1,dbp]               = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('HRA', na=False)) & (parcel_sum_df['pba50chcat'].str.contains('tra', na=False) == False), 'hhq1_2015'].sum() / metrics_dict[runid,metric_id,'TotHH_inHRAonly',y1,dbp]
+    metrics_dict[runid,metric_id,'Q1HH_shareofHRAonly_normalized',y1,dbp]    = metrics_dict[runid,metric_id,'Q1HH_shareofHRAonly',y1,dbp] * normalize_factor_Q1
+    metrics_dict[runid,metric_id,'Q1HH_shareofHRAonly',y2,dbp]               = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('HRA', na=False)) & (parcel_sum_df['pba50chcat'].str.contains('tra', na=False) == False), 'hhq1_2050'].sum()  / metrics_dict[runid,metric_id,'TotHH_inHRAonly',y2,dbp]
+
+    metrics_dict[runid,metric_id,'Q1HH_shareofTRAonly',y1,dbp]               = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('tra', na=False)) & (parcel_sum_df['pba50chcat'].str.contains('HRA', na=False) == False), 'hhq1_2015'].sum() / metrics_dict[runid,metric_id,'TotHH_inTRAonly',y1,dbp]
+    metrics_dict[runid,metric_id,'Q1HH_shareofTRAonly_normalized',y1,dbp]    = metrics_dict[runid,metric_id,'Q1HH_shareofTRAonly',y1,dbp] * normalize_factor_Q1
+    metrics_dict[runid,metric_id,'Q1HH_shareofTRAonly',y2,dbp]               = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('tra', na=False)) & (parcel_sum_df['pba50chcat'].str.contains('HRA', na=False) == False), 'hhq1_2050'].sum()  / metrics_dict[runid,metric_id,'TotHH_inTRAonly',y2,dbp]
+
+    metrics_dict[runid,metric_id,'Q1HH_shareofHRATRA',y1,dbp]               = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('HRA', na=False)) & (parcel_sum_df['pba50chcat'].str.contains('tra', na=False)), 'hhq1_2015'].sum() / metrics_dict[runid,metric_id,'TotHH_inHRATRA',y1,dbp]
+    metrics_dict[runid,metric_id,'Q1HH_shareofHRATRA_normalized',y1,dbp]    = metrics_dict[runid,metric_id,'Q1HH_shareofHRATRA',y1,dbp] * normalize_factor_Q1
+    metrics_dict[runid,metric_id,'Q1HH_shareofHRATRA',y2,dbp]               = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('HRA', na=False)) & (parcel_sum_df['pba50chcat'].str.contains('tra', na=False)), 'hhq1_2050'].sum()  / metrics_dict[runid,metric_id,'TotHH_inHRATRA',y2,dbp]
 
     metrics_dict[runid,metric_id,'Q1HH_shareofTRA',y1,dbp]               = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'hhq1_2015'].sum() / metrics_dict[runid,metric_id,'TotHH_inTRA',y1,dbp]
     metrics_dict[runid,metric_id,'Q1HH_shareofTRA_normalized',y1,dbp]    = metrics_dict[runid,metric_id,'Q1HH_shareofTRA',y1,dbp] * normalize_factor_Q1
@@ -691,7 +761,7 @@ def calculate_Healthy1_HHs_SLRprotected(runid, dbp, parcel_sum_df, metrics_dict)
     metric_id = "H1"
 
     # Renaming Parcels as "Protected", "Unprotected", and "Unaffected"
-
+    '''
     #Basic
     def label_SLR(row):
         if (row['SLR'] == 12): return 'Unprotected'
@@ -700,7 +770,12 @@ def calculate_Healthy1_HHs_SLRprotected(runid, dbp, parcel_sum_df, metrics_dict)
         elif (row['SLR'] == 100): return 'Protected'
         else: return 'Unaffected'
     parcel_sum_df['SLR_protection'] = parcel_sum_df.apply (lambda row: label_SLR(row), axis=1)
-
+    '''
+    def label_SLR(row):
+        if ((row['SLR'] == 12) or (row['SLR'] == 24)  or (row['SLR'] == 36)): return 'Unprotected'
+        elif row['SLR'] == 100: return 'Protected'
+        else: return 'Unaffected'
+    parcel_sum_df['SLR_protection'] = parcel_sum_df.apply (lambda row: label_SLR(row), axis=1)
 
     # Calculating protected households
 
@@ -797,6 +872,13 @@ def calculate_Healthy1_safety(runid, year, dbp, tm_taz_input_df, safety_df, metr
     metrics_dict[runid,metric_id,'fatalities_ped_annual_per_MNppl',year,dbp]     = fatalities_p / population * per_x_people 
     metrics_dict[runid,metric_id,'injuries_annual_per_MNppl',year,dbp]           = injuries     / population * per_x_people 
 
+    metrics_dict[runid,metric_id,'fatalities_annual_per_100MVMT',year,dbp]         = safety_df.loc[(safety_df['index']=="N_total_fatalities_per_100M_VMT")     & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
+    metrics_dict[runid,metric_id,'fatalities_auto_annual_per_100MVMT',year,dbp]    = safety_df.loc[(safety_df['index']=="N_motorist_fatalities_per_100M_VMT")  & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
+    metrics_dict[runid,metric_id,'fatalities_bike_annual_per_100MVMT',year,dbp]    = safety_df.loc[(safety_df['index']=="N_bike_fatalities_per_100M_VMT")      & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
+    metrics_dict[runid,metric_id,'fatalities_ped_annual_per_100MVMT',year,dbp]     = safety_df.loc[(safety_df['index']=="N_ped_fatalities_per_100M_VMT")       & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
+    metrics_dict[runid,metric_id,'injuries_annual_per_100MVMT',year,dbp]           = safety_df.loc[(safety_df['index']=="N_injuries_per_100M_VMT")             & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
+
+
 
 def calculate_Healthy2_emissions(runid, year, dbp, tm_taz_input_df, tm_auto_times_df, emfac_df, metrics_dict):
 
@@ -814,12 +896,20 @@ def calculate_Healthy2_emissions(runid, year, dbp, tm_taz_input_df, tm_auto_time
     metrics_dict["emfac_hardcode",metric_id,'ghg_emissions_lbs_per_capita',"2005","2005"] = emfac_df.loc[(emfac_df['dbp']==2005), 'Total CO2 Emissions Per Capita (lbs)'].sum() 
     metrics_dict["emfac_hardcode",metric_id,'ghg_emissions_lbs_per_capita',"2015","2015"] = emfac_df.loc[(emfac_df['dbp']==2015), 'Total CO2 Emissions Per Capita (lbs)'].sum() 
     metrics_dict["emfac_hardcode",metric_id,'ghg_emissions_lbs_per_capita',"2035","2035"] = emfac_df.loc[(emfac_df['dbp']==2035), 'Total CO2 Emissions Per Capita (lbs)'].sum() 
-    #metrics_dict["emfac_hardcode",metric_id,'ghg_emissions_lbs_per_capita',"2050","Plus"] = 0
+    metrics_dict["emfac_hardcode",metric_id,'ghg_emissions_lbs_per_capita',"2050","Plus"] = 0
+
+    metrics_dict["emfac_hardcode",metric_id,'ghg_emissions_nonSB375_lbs_per_capita',"2005","2005"] = emfac_df.loc[(emfac_df['dbp']==2005), 'Total CO2 Emissions Per Capita (lbs)'].sum() 
+    metrics_dict["emfac_hardcode",metric_id,'ghg_emissions_nonSB375_lbs_per_capita',"2015","2015"] = emfac_df.loc[(emfac_df['dbp']==2015), 'Total CO2 Emissions Per Capita (lbs)'].sum() 
+    metrics_dict["emfac_hardcode",metric_id,'ghg_emissions_nonSB375_lbs_per_capita',"2035","2035"] = emfac_df.loc[(emfac_df['dbp']==2035), 'Total CO2 Emissions Per Capita (lbs)'].sum() 
+    metrics_dict["emfac_hardcode",metric_id,'ghg_emissions_nonSB375_lbs_per_capita',"2050","Plus"] = 0
 
 
 def calculate_Vibrant1_JobsHousing(runid, dbp, county_sum_df, metrics_dict):
     
     metric_id = "V1"
+    
+    metrics_dict[runid,metric_id,'jobs_housing_ratio_region',y1,dbp] = county_sum_df['totemp_2015'].sum() / county_sum_df['tothh_2015'].sum()
+    metrics_dict[runid,metric_id,'jobs_housing_ratio_region',y2,dbp] = county_sum_df['totemp_2050'].sum() / county_sum_df['tothh_2050'].sum()
 
     for index,row in county_sum_df.iterrows():
         metrics_dict[runid,metric_id,'jobs_housing_ratio_%s' % row['county'],y1,dbp] = row['totemp_2015'] / row['tothh_2015'] 
@@ -974,6 +1064,92 @@ def parcel_building_output_sum(urbansim_runid):
     return pd.merge(left=parcel_building_output_2050, right=parcel_building_output_2015, left_on="parcel_id", right_on="parcel_id", how="left")
     
 
+
+def calc_pba40urbansim():
+
+
+    urbansim_runid = 'C:/Users/{}/Box/Modeling and Surveys/Share Data/plan-bay-area-2040/RTP17 UrbanSim Output/r7224c/run7224'.format(os.getenv('USERNAME'))
+    runid          = "plan-bay-area-2040/RTP17 UrbanSim Output/r7224c/run7224"
+    dbp            = "PBA40"
+
+    metric_id = "Overall"
+    year2     = "2040"
+    year1     = "2010"
+    yeardiff  = "2040"
+
+    parcel_geo_df  = pd.read_csv(parcel_geography_file)
+
+
+    ################## Creating parcel summary
+
+    hhq_list = ['hhq1','hhq2','hhq3','hhq4']
+    emp_list = ['AGREMPN','MWTEMPN','RETEMPN','FPSEMPN','HEREMPN','OTHEMPN']
+    
+    parcel_output_2040_df = pd.read_csv((urbansim_runid+'_parcel_data_2040.csv'))
+    parcel_output_2040_df['tothh'] = parcel_output_2040_df[hhq_list].sum(axis=1, skipna=True)
+    parcel_output_2040_df['totemp'] = parcel_output_2040_df[emp_list].sum(axis=1, skipna=True)
+
+
+    parcel_output_2010_df = pd.read_csv((urbansim_runid+'_parcel_data_2010.csv'))
+    parcel_output_2010_df['tothh'] = parcel_output_2010_df[hhq_list].sum(axis=1, skipna=True)
+    parcel_output_2010_df['totemp'] = parcel_output_2010_df[emp_list].sum(axis=1, skipna=True)
+
+    # keeping essential columns / renaming columns
+    parcel_output_2040_df.drop(['x','y','zoned_du','zoned_du_underbuild', 'zoned_du_underbuild_nodev', 'first_building_type_id'], axis=1, inplace=True)
+    parcel_output_2010_df.drop(['x','y','zoned_du','zoned_du_underbuild', 'zoned_du_underbuild_nodev', 'first_building_type_id'], axis=1, inplace=True)
+    parcel_output_2040_df = parcel_output_2040_df.add_suffix('_2040')
+    parcel_output_2010_df = parcel_output_2010_df.add_suffix('_2010')
+
+    # creating parcel summaries with 2040 and 2010 outputs, and parcel geographic categories 
+    parcel_sum_df = pd.merge(left=parcel_output_2040_df, right=parcel_output_2010_df, left_on="parcel_id_2040", right_on="parcel_id_2010", how="left")
+    parcel_sum_df = pd.merge(left=parcel_sum_df, right=parcel_geo_df[['pba50chcat','PARCEL_ID']], left_on="parcel_id_2040", right_on="PARCEL_ID", how="left")
+    parcel_sum_df.drop(['PARCEL_ID', 'parcel_id_2010'], axis=1, inplace=True)
+    parcel_sum_df = parcel_sum_df.rename(columns={'parcel_id_2040': 'parcel_id'})
+
+
+    #################### Housing
+
+    # all households
+    metrics_dict[runid,metric_id,'TotHH_region',year2,dbp] = parcel_sum_df['tothh_2040'].sum()
+    metrics_dict[runid,metric_id,'TotHH_region',year1,dbp] = parcel_sum_df['tothh_2010'].sum()
+    metrics_dict[runid,metric_id,'TotHH_growth_region',yeardiff,dbp] = metrics_dict[runid,metric_id,'TotHH_region',year2,dbp] / metrics_dict[runid,metric_id,'TotHH_region',year1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotHH_growth_region_number',yeardiff,dbp] = parcel_sum_df['tothh_2040'].sum() - parcel_sum_df['tothh_2010'].sum()
+
+    # HH Growth in HRAs
+    metrics_dict[runid,metric_id,'TotHH_HRA',year2,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('HRA', na=False), 'tothh_2040'].sum() 
+    metrics_dict[runid,metric_id,'TotHH_HRA',year1,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('HRA', na=False), 'tothh_2010'].sum() 
+    metrics_dict[runid,metric_id,'TotHH_HRA_growth',yeardiff,dbp] = metrics_dict[runid,metric_id,'TotHH_HRA',year2,dbp] / metrics_dict[runid,metric_id,'TotHH_HRA',year1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotHH_HRA_shareofgrowth',yeardiff,dbp] = (metrics_dict[runid,metric_id,'TotHH_HRA',year2,dbp] - metrics_dict[runid,metric_id,'TotHH_HRA',year1,dbp]) / metrics_dict[runid,metric_id,'TotHH_growth_region_number',yeardiff,dbp] 
+
+    # HH Growth in TRAs
+    metrics_dict[runid,metric_id,'TotHH_TRA',year2,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'tothh_2040'].sum() 
+    metrics_dict[runid,metric_id,'TotHH_TRA',year1,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'tothh_2010'].sum() 
+    metrics_dict[runid,metric_id,'TotHH_TRA_growth',yeardiff,dbp] = metrics_dict[runid,metric_id,'TotHH_TRA',year2,dbp] / metrics_dict[runid,metric_id,'TotHH_TRA',year1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotHH_TRA_shareofgrowth',yeardiff,dbp] = (metrics_dict[runid,metric_id,'TotHH_TRA',year2,dbp] - metrics_dict[runid,metric_id,'TotHH_TRA',year1,dbp]) / metrics_dict[runid,metric_id,'TotHH_growth_region_number',yeardiff,dbp] 
+
+
+    #################### Jobs
+
+    # all jobs
+    metrics_dict[runid,metric_id,'TotJobs_region',year2,dbp] = parcel_sum_df['totemp_2040'].sum()
+    metrics_dict[runid,metric_id,'TotJobs_region',year1,dbp] = parcel_sum_df['totemp_2010'].sum()
+    metrics_dict[runid,metric_id,'TotJobs_growth_region',yeardiff,dbp] = metrics_dict[runid,metric_id,'TotJobs_region',year2,dbp]  / metrics_dict[runid,metric_id,'TotJobs_region',year1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotJobs_growth_region_number',yeardiff,dbp] = parcel_sum_df['totemp_2040'].sum() - parcel_sum_df['totemp_2010'].sum()
+
+    # Job Growth in HRAs
+    metrics_dict[runid,metric_id,'TotJobs_HRA',year2,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('HRA', na=False), 'totemp_2040'].sum() 
+    metrics_dict[runid,metric_id,'TotJobs_HRA',year1,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('HRA', na=False), 'totemp_2010'].sum() 
+    metrics_dict[runid,metric_id,'TotJobs_HRA_growth',yeardiff,dbp] = metrics_dict[runid,metric_id,'TotJobs_HRA',year2,dbp] / metrics_dict[runid,metric_id,'TotJobs_HRA',year1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotJobs_HRA_shareofgrowth',yeardiff,dbp] = (metrics_dict[runid,metric_id,'TotJobs_HRA',year2,dbp] - metrics_dict[runid,metric_id,'TotJobs_HRA',year1,dbp]) / metrics_dict[runid,metric_id,'TotJobs_growth_region_number',yeardiff,dbp] 
+
+    # Job Growth in TRAs
+    metrics_dict[runid,metric_id,'TotJobs_TRA',year2,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'totemp_2040'].sum() 
+    metrics_dict[runid,metric_id,'TotJobs_TRA',year1,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'totemp_2010'].sum() 
+    metrics_dict[runid,metric_id,'TotJobs_TRA_growth',yeardiff,dbp] = metrics_dict[runid,metric_id,'TotJobs_TRA',year2,dbp] / metrics_dict[runid,metric_id,'TotJobs_TRA',year1,dbp] - 1
+    metrics_dict[runid,metric_id,'TotJobs_TRA_shareofgrowth',yeardiff,dbp] = (metrics_dict[runid,metric_id,'TotJobs_TRA',year2,dbp] - metrics_dict[runid,metric_id,'TotJobs_TRA',year1,dbp]) / metrics_dict[runid,metric_id,'TotJobs_growth_region_number',yeardiff,dbp] 
+
+
+
 def calc_urbansim_metrics():
 
     parcel_geo_df               = pd.read_csv(parcel_geography_file)
@@ -985,7 +1161,7 @@ def calc_urbansim_metrics():
     tract_HRA_xwalk_df          = pd.read_csv(tract_HRA_xwalk_file)
     udp_DR_df                   = pd.read_csv(udp_file)
     coc_flag_df                 = pd.read_csv(coc_flag_file)
-    slr_basic                   = pd.read_csv(slr_basic_file)
+    #slr_basic                   = pd.read_csv(slr_basic_file)
     slr_plus                    = pd.read_csv(slr_plus_file)
 
     for us_runid in list_us_runid:
@@ -1041,22 +1217,15 @@ def calc_urbansim_metrics():
         # Adding displacement risk by tract from UDP
         tract_sum_df = pd.merge(left=tract_sum_df, right=udp_DR_df[['Tract','DispRisk']], left_on="tract_id", right_on="Tract", how="left")
 
-        # Adding county fips to tract id
-        import math
-        def fips_tract_coc(row):
-            return row["county_fips"]*(10**(int(math.log10(row["tract"]))+1)) + row["tract"]  
         # Adding CoC flag to tract_sum_df
-        coc_flag_df['tract_id_coc'] = coc_flag_df.apply (lambda row: fips_tract_coc(row), axis=1)
-        tract_sum_df = pd.merge(left=tract_sum_df, right=coc_flag_df[['tract_id_coc','coc_flag_pba2050']], left_on="tract_id", right_on="tract_id_coc", how="left")
+        tract_sum_df = pd.merge(left=tract_sum_df, right=coc_flag_df[['tract_id','coc_flag_pba2050']], left_on="tract_id", right_on="tract_id", how="left")
  
         # Adding HRA by tract
         tract_sum_df = pd.merge(left=tract_sum_df, right=tract_HRA_xwalk_df[['tract_id','hra']], left_on="tract_id", right_on="tract_id", how="left")
 
 
         # Adding CoC flag to parcel_sum_df as well, cuz, why not
-        parcel_sum_df = pd.merge(left=parcel_sum_df, right=coc_flag_df[['tract_id_coc','coc_flag_pba2050']], left_on="tract_id", right_on="tract_id_coc", how="left")
-        parcel_sum_df.drop(['tract_id_coc'], axis=1, inplace=True)
-
+        parcel_sum_df = pd.merge(left=parcel_sum_df, right=coc_flag_df[['tract_id','coc_flag_pba2050']], left_on="tract_id", right_on="tract_id", how="left")
 
 
         ################### Create county summary
@@ -1080,20 +1249,16 @@ def calc_urbansim_metrics():
         parcel_sum_df = pd.merge(left=parcel_sum_df, right=parcel_TRA_xwalk_df, left_on="parcel_id", right_on="parcel_id", how="left")
         TRA_sum_df = parcel_sum_df.groupby(['juris_tra'])["tothh_2050","tothh_2015","hhq1_2050", "hhq1_2015"].sum().reset_index()
 
-        '''
+        
         ################### Merging SLR data with parcel summary file
-        if "Basic" in dbp:
-            parcel_sum_df = pd.merge(left=parcel_sum_df, right=slr_basic, left_on="parcel_id", right_on="ParcelID", how="left")
-            parcel_sum_df = parcel_sum_df.rename(columns={'Basic': 'SLR'})
-        else:
-            parcel_sum_df = pd.merge(left=parcel_sum_df, right=slr_plus, left_on="parcel_id", right_on="ParcelID", how="left")
-            parcel_sum_df = parcel_sum_df.rename(columns={'SLR_basic': 'SLR'})
-        #parcel_sum_df.drop(['ParcelID_x', 'ParcelID_y'], axis=1, inplace=True)
+        #if "Basic" in dbp:
+        #    parcel_sum_df = pd.merge(left=parcel_sum_df, right=slr_basic, left_on="parcel_id", right_on="ParcelID", how="left")
+        #    parcel_sum_df = parcel_sum_df.rename(columns={'Basic': 'SLR'})
+        #else:
+        parcel_sum_df = pd.merge(left=parcel_sum_df, right=slr_plus, left_on="parcel_id", right_on="ParcelID", how="left")
+        parcel_sum_df = parcel_sum_df.rename(columns={'SLR_basic': 'SLR'})
+        parcel_sum_df.drop(['ParcelID'], axis=1, inplace=True)
 
-
-        ################### Merging Wildfire Risk data with parcel summary file
-        # TBD
-        '''
 
         normalize_factor_Q1Q2  = calculate_normalize_factor_Q1Q2(parcel_sum_df)
         normalize_factor_Q1    = calculate_normalize_factor_Q1(parcel_sum_df)
@@ -1142,11 +1307,12 @@ def calc_travelmodel_metrics():
         tm_scen_metrics_df = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/scenario_metrics.csv',names=["runid", "metric_name", "value"])
         tm_auto_owned_df = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/autos_owned.csv')
         tm_auto_times_df = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/auto_times.csv',sep=",", index_col=[0,1])
+        tm_travel_cost_df = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/core_summaries/TravelCost.csv')
         tm_commute_df = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/core_summaries/CommuteByIncomeHousehold.csv')
         tm_taz_input_df = pd.read_csv(tm_run_location+tm_runid+'/INPUT/landuse/tazData.csv')
 
 
-        calculate_Affordable1_transportation_costs(tm_runid, year, dbp, tm_scen_metrics_df, tm_auto_owned_df, tm_auto_times_df, metrics_dict)
+        calculate_Affordable1_transportation_costs(tm_runid, year, dbp, tm_scen_metrics_df, tm_auto_owned_df, tm_auto_times_df, tm_travel_cost_df, metrics_dict)
         print("@@@@@@@@@@@@@ A1 Done")
         calculate_Connected1_accessibility(tm_runid, year, dbp, tm_scen_metrics_df, metrics_dict)
         print("@@@@@@@@@@@@@ C1 Done")
@@ -1175,10 +1341,10 @@ if __name__ == '__main__':
 
 
     # Set UrbanSim inputs
-    urbansim_run_location = 'C:/Users/{}/Box/Modeling and Surveys/Urban Modeling/Bay Area UrbanSim 1.5/PBA50/Draft Blueprint runs/'.format(os.getenv('USERNAME'))
-    #us_2050_DBP_NoProject_runid = 'Blueprint Basic (s21)/v1.5/run939'
-    #us_2050_DBP_Basic_runid     = 'Blueprint Basic (s21)/v1.5/run939'
-    us_2050_DBP_Plus_runid         = 'Blueprint Plus Crossing (s23)/v1.6 (all strategies)/run90'
+    urbansim_run_location           = 'C:/Users/{}/Box/Modeling and Surveys/Urban Modeling/Bay Area UrbanSim 1.5/PBA50/Draft Blueprint runs/'.format(os.getenv('USERNAME'))
+    #us_2050_DBP_NoProject_runid    = 'Blueprint Basic (s21)/v1.5/run939'
+    #us_2050_DBP_Basic_runid        = 'Blueprint Basic (s21)/v1.5/run939'
+    us_2050_DBP_Plus_runid          = 'Blueprint Plus Crossing (s23)/v1.7.1- FINAL DRAFT BLUEPRINT/run98'
     #us_2050_DBP_Plus_runid         = 'Blueprint Basic (s21)/v1.5/run939'
     list_us_runid = [us_2050_DBP_Plus_runid]
     #urbansim_runid = urbansim_run_location + runid
@@ -1187,9 +1353,9 @@ if __name__ == '__main__':
     tm_run_location_bp = 'M:/Application/Model One/RTP2021/Blueprint/'
     tm_run_location_ipa = 'M:/Application/Model One/RTP2021/IncrementalProgress/'
     tm_2015_runid                     = '2015_TM152_IPA_16'
-    tm_2050_DBP_NoProject_runid       = '2050_TM152_DBP_NoProject_04'
+    tm_2050_DBP_NoProject_runid       = '2050_TM152_DBP_NoProject_08'
     #tm_2050_DBP_Basic_runid           = '2050_TM152_DBP_Basic_01_AV25'
-    tm_2050_DBP_PlusCrossing_runid    = '2050_TM152_DBP_PlusCrossing_04'
+    tm_2050_DBP_PlusCrossing_runid    = '2050_TM152_DBP_PlusCrossing_08'
     #tm_2050_DBP_PlusFixItFirst_runid = '2050_TM152_DBP_PlusCrossing_01'
     list_tm_runid = [tm_2015_runid, tm_2050_DBP_NoProject_runid, tm_2050_DBP_PlusCrossing_runid]
     list_tm_runid_blueprintonly = [tm_2050_DBP_PlusCrossing_runid]
@@ -1209,7 +1375,7 @@ if __name__ == '__main__':
     slr_basic_file                = metrics_source_folder + 'slr_parcel_inundation_basic.csv'
     slr_plus_file                 = metrics_source_folder + 'slr_parcel_inundation_plus.csv'
     transit_operator_file         = metrics_source_folder + 'transit_system_lookup.csv'
-    hwy_corridor_links_file       = metrics_source_folder + 'hwy_corridor_links.csv'
+    hwy_corridor_links_file       = metrics_source_folder + 'maj_corridors_hwy_links.csv'
     safety_file                   = metrics_source_folder + 'fatalities_injuries_export.csv'
     emfac_file                    = metrics_source_folder + 'emfac.csv'
 
@@ -1248,10 +1414,11 @@ if __name__ == '__main__':
 
     # Calculate all metrics
     print("Starting metrics functions...")
+    calc_pba40urbansim()
     calc_urbansim_metrics()
     print("*****************#####################Completed urbansim_metrics#####################*******************")
     calc_travelmodel_metrics()
-    #print("*****************#####################Completed calc_travelmodel_metrics#####################*******************")
+    print("*****************#####################Completed calc_travelmodel_metrics#####################*******************")
 
     # Write output
     idx = pd.MultiIndex.from_tuples(metrics_dict.keys(), names=['modelrunID','metric','name','year','blueprint'])
