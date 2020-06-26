@@ -410,7 +410,7 @@ add_distance <- function(this_timeperiod, input_trips_or_tours) {
              (distance_mode == 6) * s3Toll +
              (distance_mode == 7) * walk   +
              (distance_mode == 8) * bike   +
-             (distance_mode >= 9) * da     )
+             (distance_mode >= 9) * pmin(da, daToll))
 
 
   relevant <- relevant %>%
