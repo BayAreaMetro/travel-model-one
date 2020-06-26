@@ -628,7 +628,6 @@ def calculate_Diverse2_LIHH_Displacement(runid, dbp, parcel_sum_df, tract_sum_df
 
     metric_id = "D2"
 
-
     # For reference: total number of LIHH in tracts
     metrics_dict[runid,metric_id,'LIHH_inDR',y2,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('DR', na=False), 'hhq1_2050'].sum()
     metrics_dict[runid,metric_id,'LIHH_inDR',y1,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('DR', na=False), 'hhq1_2015'].sum()
@@ -647,12 +646,29 @@ def calculate_Diverse2_LIHH_Displacement(runid, dbp, parcel_sum_df, tract_sum_df
     metrics_dict[runid,metric_id,'Num_CoCtracts_total',y1,dbp] = tract_sum_df.loc[(tract_sum_df['coc_flag_pba2050'] == 1), 'tract_id'].nunique()
     metrics_dict[runid,metric_id,'Num_HRAtracts_total',y1,dbp] = tract_sum_df.loc[(tract_sum_df['hra'] == 1), 'tract_id'].nunique()
 
-    # Calculating tracts that lost Households
-    tract_sum_df['hhq1_pct_2015_normalized'] = tract_sum_df['hhq1_2015'] / tract_sum_df['tothh_2015'] * normalize_factor_Q1
+
+
+    # Calculating share of Q1 households at tract level\
+    #tract_sum_df['hhq1_pct_2015_normalized'] = tract_sum_df['hhq1_2015'] / tract_sum_df['tothh_2015'] * normalize_factor_Q1
     tract_sum_df['hhq1_pct_2050'] = tract_sum_df['hhq1_2050'] / tract_sum_df['tothh_2050']
+    tract_sum_df['hhq1_pct_2015'] = tract_sum_df['hhq1_2015'] / tract_sum_df['tothh_2015']
 
 
-    # Calculating number of Tracts that Lost LIHH as a proportion of total HH, with "lost" defined as any loss, or 10% loss
+    
+    # Creating functions to check if rows of a dataframe lost hhq1 share or absolute
+
+    def check_losthhq1_share(row,j):
+        if (row['hhq1_pct_2015'] == 0): return 0
+        elif ((row['hhq1_pct_2050']/row['hhq1_pct_2015'])<j): return 1
+        else: return 0
+
+    def check_losthhq1_abs(row,j):
+        if (row['hhq1_2015'] == 0): return 0
+        elif ((row['hhq1_2050']/row['hhq1_2015'])<j): return 1
+        else: return 0
+
+
+    # Calculating number of Tracts that Lost LIHH, with "lost" defined as any loss, or 10% loss
 
     for i in [0, 10]:
 
@@ -660,69 +676,156 @@ def calculate_Diverse2_LIHH_Displacement(runid, dbp, parcel_sum_df, tract_sum_df
             j = 1
         else:
             j = 0.9
-            
-        tract_sum_df['lost_hhq1_%dpct' % i] = tract_sum_df.apply \
-                    (lambda row: 1 if ((row['hhq1_pct_2050']/row['hhq1_pct_2015_normalized'])<j) else 0, axis=1)
 
-        ######## Displacement from Displacement Risk Tracts
-        # Number or percent of DR tracts that lost Q1 households as a proportion of total HH
+        # Calculating change in share of LIHH at tract level to check gentrification            
+        tract_sum_df['lost_hhq1_%dpct' % i] = tract_sum_df.apply (lambda row: check_losthhq1_share(row,j), axis=1)
+                    #(lambda row: 1 if ((row['hhq1_pct_2050']/row['hhq1_pct_2015_normalized'])<j) else 0, axis=1)
+                    #(lambda row: 1 if (row['hhq1_pct_2050'] < (row['hhq1_pct_2015']*j)) else 0, axis=1)
+
+
+        # Calculating absolute change in LIHH at tract level to check true displacement
+        tract_sum_df['lost_hhq1_abs_%dpct' % i] = tract_sum_df.apply (lambda row: check_losthhq1_abs(row,j), axis=1)
+                    #(lambda row: 1 if (row['hhq1_2050'] < (row['hhq1_2015']*j)) else 0, axis=1)
+
+
+
+        ###############################  Gentrification
+                        
+        ######## Gentrification in Displacement Risk Tracts
+        # Number or percent of DR tracts that lost Q1 households as a share of total HH
         metrics_dict[runid,metric_id,'Num_DRtracts_lostLIHH_%dpct' % i,y_diff,dbp] = tract_sum_df.loc[((tract_sum_df['DispRisk'] == 1) & (tract_sum_df['lost_hhq1_%dpct' % i] == 1)), 'tract_id'].nunique()
         metrics_dict[runid,metric_id,'Pct_DRtracts_lostLIHH_%dpct' % i,y_diff,dbp] = float(metrics_dict[runid,metric_id,'Num_DRtracts_lostLIHH_%dpct' % i,y_diff,dbp]) / float(metrics_dict[runid,metric_id,'Num_DRtracts_total',y1,dbp] )
-        print('Number of DR Tracts that lost LIHH from 2015 to 2050: ',metrics_dict[runid,metric_id,'Num_DRtracts_lostLIHH_%dpct' % i,y_diff,dbp] )
-        print('Pct of DR Tracts that lost LIHH from 2015 to 2050: ',metrics_dict[runid,metric_id,'Pct_DRtracts_lostLIHH_%dpct' % i,y_diff,dbp] )
+        print('Number of DR Tracts that lost LIHH (as a share) from 2015 to 2050: ',metrics_dict[runid,metric_id,'Num_DRtracts_lostLIHH_%dpct' % i,y_diff,dbp] )
+        print('Pct of DR Tracts that lost LIHH (as a share) from 2015 to 2050: ',metrics_dict[runid,metric_id,'Pct_DRtracts_lostLIHH_%dpct' % i,y_diff,dbp] )
 
-        ######## Displacement from Communities of Concern
-        # Number or percent of CoC tracts that lost Q1 households as a proportion of total HH
+        ######## Gentrification in Communities of Concern
+        # Number or percent of CoC tracts that lost Q1 households as a share of total HH
         metrics_dict[runid,metric_id,'Num_CoCtracts_lostLIHH_%dpct' % i,y_diff,dbp] = tract_sum_df.loc[((tract_sum_df['coc_flag_pba2050'] == 1) & (tract_sum_df['lost_hhq1_%dpct' % i] == 1)), 'tract_id'].nunique()
         metrics_dict[runid,metric_id,'Pct_CoCtracts_lostLIHH_%dpct' % i,y_diff,dbp] = float(metrics_dict[runid,metric_id,'Num_CoCtracts_lostLIHH_%dpct' % i,y_diff,dbp]) / float(metrics_dict[runid,metric_id,'Num_CoCtracts_total',y1,dbp] )
-        print('Number of CoC Tracts that lost LIHH from 2015 to 2050: ',metrics_dict[runid,metric_id,'Num_CoCtracts_lostLIHH_%dpct' % i,y_diff,dbp] )
-        print('Pct of CoC Tracts that lost LIHH from 2015 to 2050: ',metrics_dict[runid,metric_id,'Pct_CoCtracts_lostLIHH_%dpct' % i,y_diff,dbp] )
+        print('Number of CoC Tracts that lost LIHH (as a share) from 2015 to 2050: ',metrics_dict[runid,metric_id,'Num_CoCtracts_lostLIHH_%dpct' % i,y_diff,dbp] )
+        print('Pct of CoC Tracts that lost LIHH (as a share) from 2015 to 2050: ',metrics_dict[runid,metric_id,'Pct_CoCtracts_lostLIHH_%dpct' % i,y_diff,dbp] )
 
-        ######## Displacement from HRAs
-        # Number or percent of HRA tracts that lost Q1 households as a proportion of total HH
+        ######## Gentrification in HRAs
+        # Number or percent of HRA tracts that lost Q1 households as a share of total HH
         metrics_dict[runid,metric_id,'Num_HRAtracts_lostLIHH_%dpct' % i,y_diff,dbp] = tract_sum_df.loc[((tract_sum_df['hra'] == 1) & (tract_sum_df['lost_hhq1_%dpct' % i] == 1)), 'tract_id'].nunique()
         metrics_dict[runid,metric_id,'Pct_HRAtracts_lostLIHH_%dpct' % i,y_diff,dbp] = float(metrics_dict[runid,metric_id,'Num_HRAtracts_lostLIHH_%dpct' % i,y_diff,dbp]) / float(metrics_dict[runid,metric_id,'Num_HRAtracts_total',y1,dbp] )
-        print('Number of HRA Tracts that lost LIHH from 2015 to 2050: ',metrics_dict[runid,metric_id,'Num_HRAtracts_lostLIHH_%dpct' % i,y_diff,dbp] )
-        print('Pct of HRA Tracts that lost LIHH from 2015 to 2050: ',metrics_dict[runid,metric_id,'Pct_HRAtracts_lostLIHH_%dpct' % i,y_diff,dbp] )
+        print('Number of HRA Tracts that lost LIHH (as a share) from 2015 to 2050: ',metrics_dict[runid,metric_id,'Num_HRAtracts_lostLIHH_%dpct' % i,y_diff,dbp] )
+        print('Pct of HRA Tracts that lost LIHH (as a share) from 2015 to 2050: ',metrics_dict[runid,metric_id,'Pct_HRAtracts_lostLIHH_%dpct' % i,y_diff,dbp] )
 
 
-    # Function for checking if rows lost Q1 households
-    def check_losthhq1(row,j):
-        if (row['hhq1_pct_2015_normalized'] == 0): return 0
-        elif ((row['hhq1_pct_2050']/row['hhq1_pct_2015_normalized'])<j): return 1
-        else: return 0
+
+        ###############################  Displacement
+                        
+        ######## Displacement in Displacement Risk Tracts
+        # Number or percent of DR tracts that lost Q1 households in absolute numbers
+        metrics_dict[runid,metric_id,'Num_DRtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp] = tract_sum_df.loc[((tract_sum_df['DispRisk'] == 1) & (tract_sum_df['lost_hhq1_abs_%dpct' % i] == 1)), 'tract_id'].nunique()
+        metrics_dict[runid,metric_id,'Pct_DRtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp] = float(metrics_dict[runid,metric_id,'Num_DRtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp]) / float(metrics_dict[runid,metric_id,'Num_DRtracts_total',y1,dbp] )
+        print('Number of DR Tracts that lost LIHH from (in absolute numbers) 2015 to 2050: ',metrics_dict[runid,metric_id,'Num_DRtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp] )
+        print('Pct of DR Tracts that lost LIHH from (in absolute numbers) 2015 to 2050: ',metrics_dict[runid,metric_id,'Pct_DRtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp] )
+
+        ######## Displacement in Communities of Concern
+        # Number or percent of CoC tracts that lost Q1 households in absolute numbers
+        metrics_dict[runid,metric_id,'Num_CoCtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp] = tract_sum_df.loc[((tract_sum_df['coc_flag_pba2050'] == 1) & (tract_sum_df['lost_hhq1_abs_%dpct' % i] == 1)), 'tract_id'].nunique()
+        metrics_dict[runid,metric_id,'Pct_CoCtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp] = float(metrics_dict[runid,metric_id,'Num_CoCtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp]) / float(metrics_dict[runid,metric_id,'Num_CoCtracts_total',y1,dbp] )
+        print('Number of CoC Tracts that lost LIHH (in absolute numbers) from 2015 to 2050: ',metrics_dict[runid,metric_id,'Num_CoCtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp] )
+        print('Pct of CoC Tracts that lost LIHH (in absolute numbers) from 2015 to 2050: ',metrics_dict[runid,metric_id,'Pct_CoCtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp] )
+
+        ######## Displacement in HRAs
+        # Number or percent of HRA tracts that lost Q1 households in absolute numbers
+        metrics_dict[runid,metric_id,'Num_HRAtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp] = tract_sum_df.loc[((tract_sum_df['hra'] == 1) & (tract_sum_df['lost_hhq1_abs_%dpct' % i] == 1)), 'tract_id'].nunique()
+        metrics_dict[runid,metric_id,'Pct_HRAtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp] = float(metrics_dict[runid,metric_id,'Num_HRAtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp]) / float(metrics_dict[runid,metric_id,'Num_HRAtracts_total',y1,dbp] )
+        print('Number of HRA Tracts that lost LIHH (in absolute numbers) from 2015 to 2050: ',metrics_dict[runid,metric_id,'Num_HRAtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp] )
+        print('Pct of HRA Tracts that lost LIHH (in absolute numbers) from 2015 to 2050: ',metrics_dict[runid,metric_id,'Pct_HRAtracts_lostLIHH_abs_%dpct' % i,y_diff,dbp] )
+
+
+    ##### Calculating displacement risk using the PBA2040 methodology
+
+    # Total number of LIHH in HRA/CoC/DR tracts
+    #metrics_dict[runid,metric_id,'Num_LIHH_inDRCoCHRAtracts',y1,dbp] = tract_sum_df.loc[((tract_sum_df['DispRisk'] == 1)|(tract_sum_df['coc_flag_pba2050'] == 1)|\
+    #                                                                                    (tract_sum_df['hra'] == 1)), 'hhq1_2015'].nunique()
+    metrics_dict[runid,metric_id,'Num_LIHH_inDRCoCHRAtracts',y2,dbp] = tract_sum_df.loc[((tract_sum_df['DispRisk'] == 1)|(tract_sum_df['coc_flag_pba2050'] == 1)|\
+                                                                                        (tract_sum_df['hra'] == 1)), 'hhq1_2050'].sum()
+    # Total number of LIHH in HRA/CoC/DR tracts that lost hhq1
+    metrics_dict[runid,metric_id,'Num_LIHH_inDRCoCHRAtracts_disp',y_diff,dbp] = tract_sum_df.loc[(((tract_sum_df['DispRisk'] == 1)|(tract_sum_df['coc_flag_pba2050'] == 1)|\
+                                                                                        (tract_sum_df['hra'] == 1)) & (tract_sum_df['lost_hhq1_abs_0pct'] == 1)), 'hhq1_2050'].sum()
+
+    metrics_dict[runid,metric_id,'DispRisk_PBA40_DRCoCHRAtracts',y_diff,dbp] = metrics_dict[runid,metric_id,'Num_LIHH_inDRCoCHRAtracts_disp',y_diff,dbp] / \
+                                                                                metrics_dict[runid,metric_id,'Num_LIHH_inDRCoCHRAtracts',y2,dbp]   
+
+
+    #For both Q1, Q2
+    metrics_dict[runid,metric_id,'Num_Q1Q2HH_inDRCoCHRAtracts',y2,dbp] = tract_sum_df.loc[((tract_sum_df['DispRisk'] == 1)|(tract_sum_df['coc_flag_pba2050'] == 1)|\
+                                                                                        (tract_sum_df['hra'] == 1)), 'hhq1_2050'].sum() + \
+                                                                         tract_sum_df.loc[((tract_sum_df['DispRisk'] == 1)|(tract_sum_df['coc_flag_pba2050'] == 1)|\
+                                                                                        (tract_sum_df['hra'] == 1)), 'hhq2_2050'].sum() 
+
+    # Total number of LIHH in HRA/CoC/DR tracts that lost hhq1
+    metrics_dict[runid,metric_id,'Num_Q1Q2HH_inDRCoCHRAtracts_disp',y_diff,dbp] = tract_sum_df.loc[(((tract_sum_df['DispRisk'] == 1)|(tract_sum_df['coc_flag_pba2050'] == 1)|\
+                                                                                        (tract_sum_df['hra'] == 1)) & (tract_sum_df['lost_hhq1_abs_0pct'] == 1)), 'hhq1_2050'].sum() + \
+                                                                                  tract_sum_df.loc[(((tract_sum_df['DispRisk'] == 1)|(tract_sum_df['coc_flag_pba2050'] == 1)|\
+                                                                                        (tract_sum_df['hra'] == 1)) & (tract_sum_df['lost_hhq1_abs_0pct'] == 1)), 'hhq2_2050'].sum()
+
+    metrics_dict[runid,metric_id,'DispRisk_PBA40_Q1Q2_DRCoCHRAtracts',y_diff,dbp] = metrics_dict[runid,metric_id,'Num_Q1Q2HH_inDRCoCHRAtracts_disp',y_diff,dbp] / \
+                                                                                metrics_dict[runid,metric_id,'Num_Q1Q2HH_inDRCoCHRAtracts',y2,dbp]   
+
 
     ######## Displacement from TRAs
 
-    # Calculating TRA rows that lost inc1 Households
+    # Calculating share of Q1 households at TRA level using TRA summary dataframe
     TRA_sum_df['hhq1_pct_2015'] = TRA_sum_df['hhq1_2015'] / TRA_sum_df['tothh_2015'] 
-    TRA_sum_df['hhq1_pct_2015_normalized'] = TRA_sum_df['hhq1_pct_2015'] * normalize_factor_Q1
+    #TRA_sum_df['hhq1_pct_2015_normalized'] = TRA_sum_df['hhq1_pct_2015'] * normalize_factor_Q1
     TRA_sum_df['hhq1_pct_2050'] = TRA_sum_df['hhq1_2050'] / TRA_sum_df['tothh_2050']
 
     # Total number of TRAs
     metrics_dict[runid,metric_id,'Num_TRAs_total',y1,dbp] = TRA_sum_df['juris_tra'].nunique()
 
-    # Calculating number of TRAs that Lost LIHH as a proportion of total HH, with "lost" defined as any loss, or 10% loss
+
+    # Calculating number of TRAs that Lost LIHH as a share of total HH, with "lost" defined as any loss, or 10% loss
 
     for i in [0, 10]:
         if i == 0:
             j = 1
         else:
             j = 0.9
-        TRA_sum_df['lost_hhq1_%dpct' % i] = TRA_sum_df.apply (lambda row: check_losthhq1(row,j), axis=1)
 
+        # Calculating change in share of LIHH at TRA level to check gentrification
+        TRA_sum_df['lost_hhq1_%dpct' % i] = TRA_sum_df.apply (lambda row: check_losthhq1_share(row,j), axis=1)
+
+        # Calculating absolute change in LIHH at TRA level to check true displacement
+        TRA_sum_df['lost_hhq1_abs_%dpct' % i] = TRA_sum_df.apply (lambda row: check_losthhq1_abs(row,j), axis=1)
+
+        ######## Gentrification in TRAs
         # Number or percent of TRAs that lost Q1 households as a proportion of total HH
         metrics_dict[runid,metric_id,'Num_TRAs_lostLIHH_%dpct' % i,y_diff,dbp] = TRA_sum_df.loc[(TRA_sum_df['lost_hhq1_%dpct' % i] == 1), 'juris_tra'].nunique()
         metrics_dict[runid,metric_id,'Pct_TRAs_lostLIHH_%dpct' % i,y_diff,dbp] = float(metrics_dict[runid,metric_id,'Num_TRAs_lostLIHH_%dpct' % i,y_diff,dbp]) / float(metrics_dict[runid,metric_id,'Num_TRAs_total',y1,dbp])
-        print('Number of TRAs that lost LIHH from 2015 to 2050: ',metrics_dict[runid,metric_id,'Num_TRAs_lostLIHH_%dpct' % i,y_diff,dbp] )
-        print('Pct of TRAs that lost LIHH from 2015 to 2050: ',metrics_dict[runid,metric_id,'Pct_TRAs_lostLIHH_%dpct' % i,y_diff,dbp] )
+        print('Number of TRAs that lost LIHH (as a share) from 2015 to 2050: ',metrics_dict[runid,metric_id,'Num_TRAs_lostLIHH_%dpct' % i,y_diff,dbp] )
+        print('Pct of TRAs that lost LIHH (as a share) from 2015 to 2050: ',metrics_dict[runid,metric_id,'Pct_TRAs_lostLIHH_%dpct' % i,y_diff,dbp] )
+
+        ######## Displacement in TRAs
+        # Number or percent of TRAs that lost Q1 households as a proportion of total HH
+        metrics_dict[runid,metric_id,'Num_TRAs_lostLIHH_abs_%dpct' % i,y_diff,dbp] = TRA_sum_df.loc[(TRA_sum_df['lost_hhq1_abs_%dpct' % i] == 1), 'juris_tra'].nunique()
+        metrics_dict[runid,metric_id,'Pct_TRAs_lostLIHH_abs_%dpct' % i,y_diff,dbp] = float(metrics_dict[runid,metric_id,'Num_TRAs_lostLIHH_abs_%dpct' % i,y_diff,dbp]) / float(metrics_dict[runid,metric_id,'Num_TRAs_total',y1,dbp])
+        print('Number of TRAs that lost LIHH (in absolute numbers) from 2015 to 2050: ',metrics_dict[runid,metric_id,'Num_TRAs_lostLIHH_abs_%dpct' % i,y_diff,dbp] )
+        print('Pct of TRAs that lost LIHH (in absolute numbers) from 2015 to 2050: ',metrics_dict[runid,metric_id,'Pct_TRAs_lostLIHH_abs_%dpct' % i,y_diff,dbp] )
+
+    ##### Calculating displacement risk in TRAs using the PBA2040 methodology
+    metrics_dict[runid,metric_id,'Num_LIHH_inTRAs',y2,dbp] = TRA_sum_df['hhq1_2050'].sum()
+    metrics_dict[runid,metric_id,'Num_LIHH_inTRAs_disp',y_diff,dbp] = TRA_sum_df.loc[(TRA_sum_df['lost_hhq1_abs_0pct'] == 1), 'hhq1_2050'].sum()
+    metrics_dict[runid,metric_id,'DispRisk_PBA40_TRAs',y_diff,dbp] = metrics_dict[runid,metric_id,'Num_LIHH_inTRAs_disp',y_diff,dbp] / \
+                                                                                metrics_dict[runid,metric_id,'Num_LIHH_inTRAs',y2,dbp]   
+
+    metrics_dict[runid,metric_id,'Num_Q1Q2HH_inTRAs',y2,dbp] = TRA_sum_df['hhq1_2050'].sum() + TRA_sum_df['hhq2_2050'].sum()
+    metrics_dict[runid,metric_id,'Num_Q1Q2_inTRAs_disp',y_diff,dbp] = TRA_sum_df.loc[(TRA_sum_df['lost_hhq1_abs_0pct'] == 1), 'hhq1_2050'].sum() + TRA_sum_df.loc[(TRA_sum_df['lost_hhq1_abs_0pct'] == 1), 'hhq2_2050'].sum()
+    metrics_dict[runid,metric_id,'DispRisk_PBA40_Q1Q2_TRAs',y_diff,dbp] = metrics_dict[runid,metric_id,'Num_Q1Q2_inTRAs_disp',y_diff,dbp] / \
+                                                                                metrics_dict[runid,metric_id,'Num_Q1Q2HH_inTRAs',y2,dbp]   
+
 
 
     ######## Displacement from Growth Geographies
 
     # Calculating GG rows that lost inc1 Households
     GG_sum_df['hhq1_pct_2015'] = GG_sum_df['hhq1_2015'] / GG_sum_df['tothh_2015'] 
-    GG_sum_df['hhq1_pct_2015_normalized'] = GG_sum_df['hhq1_pct_2015'] * normalize_factor_Q1
+    #GG_sum_df['hhq1_pct_2015_normalized'] = GG_sum_df['hhq1_pct_2015'] * normalize_factor_Q1
     GG_sum_df['hhq1_pct_2050'] = GG_sum_df['hhq1_2050'] / GG_sum_df['tothh_2050']
 
     # Total number of GGs
@@ -732,15 +835,15 @@ def calculate_Diverse2_LIHH_Displacement(runid, dbp, parcel_sum_df, tract_sum_df
     metrics_dict[runid,metric_id,'Num_GGs_TRich_total',y1,dbp] = GG_TRich_sum_df['PDA_ID'].nunique()
 
 
-    # Calculating number of GGs that Lost LIHH as a proportion of total HH, with "lost" defined as any loss, or 10% loss
+    # Calculating number of GGs that Lost LIHH as a share of total HH, with "lost" defined as any loss, or 10% loss
 
     for i in [0, 10]:
         if i == 0:
             j = 1
         else:
             j = 0.9
-        GG_sum_df['lost_hhq1_%dpct' % i] = GG_sum_df.apply (lambda row: check_losthhq1(row,j), axis=1)
-        GG_TRich_sum_df['lost_hhq1_%dpct' % i] = GG_TRich_sum_df.apply (lambda row: check_losthhq1(row,j), axis=1)
+        GG_sum_df['lost_hhq1_%dpct' % i] = GG_sum_df.apply (lambda row: check_losthhq1_share(row,j), axis=1)
+        GG_TRich_sum_df['lost_hhq1_%dpct' % i] = GG_TRich_sum_df.apply (lambda row: check_losthhq1_share(row,j), axis=1)
 
         # Number or percent of GGs that lost Q1 households as a proportion of total HH
         metrics_dict[runid,metric_id,'Num_GG_lostLIHH_%dpct' % i,y_diff,dbp] = GG_sum_df.loc[(GG_sum_df['lost_hhq1_%dpct' % i] == 1), 'PDA_ID'].nunique()
@@ -1210,7 +1313,7 @@ def calc_urbansim_metrics():
 
         ################### Create tract summary
         parcel_sum_df = pd.merge(left=parcel_sum_df, right=parcel_tract_crosswalk_df[['parcel_id','zone_id','tract_id','county']], left_on="parcel_id", right_on="parcel_id", how="left")
-        tract_sum_df = parcel_sum_df.groupby(["tract_id"])["tothh_2050","tothh_2015","hhq1_2050", "hhq1_2015"].sum().reset_index()
+        tract_sum_df = parcel_sum_df.groupby(["tract_id"])["tothh_2050","tothh_2015","hhq1_2050", "hhq1_2015","hhq2_2050", "hhq2_2015"].sum().reset_index()
 
         #### Adding flags at tract level for DR, CoC and HRA
 
@@ -1236,7 +1339,7 @@ def calc_urbansim_metrics():
         county_sum_df["LIHH_share_2015"] = (county_sum_df['hhq1_2015'] + county_sum_df['hhq2_2015']) / county_sum_df['tothh_2015']
         county_sum_df["LIHH_growth"] = (county_sum_df['hhq1_2050'] + county_sum_df['hhq2_2050']) / (county_sum_df['hhq1_2015'] + county_sum_df['hhq2_2015'])
 
-
+      
         ################### Create Growth Geography summary
         parcel_sum_df = pd.merge(left=parcel_sum_df, right=parcel_GG_xwalk_df[['PARCEL_ID','PDA_ID','Designation']], left_on="parcel_id", right_on="PARCEL_ID", how="left")
         parcel_sum_df.drop(['PARCEL_ID',], axis=1, inplace=True)
@@ -1247,9 +1350,9 @@ def calc_urbansim_metrics():
 
         ################### Create TRA summary
         parcel_sum_df = pd.merge(left=parcel_sum_df, right=parcel_TRA_xwalk_df, left_on="parcel_id", right_on="parcel_id", how="left")
-        TRA_sum_df = parcel_sum_df.groupby(['juris_tra'])["tothh_2050","tothh_2015","hhq1_2050", "hhq1_2015"].sum().reset_index()
+        TRA_sum_df = parcel_sum_df.groupby(['juris_tra'])["tothh_2050","tothh_2015","hhq1_2050", "hhq1_2015","hhq2_2050", "hhq2_2015"].sum().reset_index()
 
-        
+        '''
         ################### Merging SLR data with parcel summary file
         #if "Basic" in dbp:
         #    parcel_sum_df = pd.merge(left=parcel_sum_df, right=slr_basic, left_on="parcel_id", right_on="ParcelID", how="left")
@@ -1258,11 +1361,13 @@ def calc_urbansim_metrics():
         parcel_sum_df = pd.merge(left=parcel_sum_df, right=slr_plus, left_on="parcel_id", right_on="ParcelID", how="left")
         parcel_sum_df = parcel_sum_df.rename(columns={'SLR_basic': 'SLR'})
         parcel_sum_df.drop(['ParcelID'], axis=1, inplace=True)
-
+        '''
 
         normalize_factor_Q1Q2  = calculate_normalize_factor_Q1Q2(parcel_sum_df)
         normalize_factor_Q1    = calculate_normalize_factor_Q1(parcel_sum_df)
 
+
+        print("Starting urbansim metrics functions...")
         calculate_urbansim_highlevelmetrics(us_runid, dbp, parcel_sum_df, county_sum_df, metrics_dict)
         calculate_Affordable2_deed_restricted_housing(us_runid, dbp, parcel_sum_df, metrics_dict)
         calculate_Diverse1_LIHHinHRAs(us_runid, dbp, parcel_sum_df, tract_sum_df, GG_sum_df, normalize_factor_Q1Q2, normalize_factor_Q1, metrics_dict)
@@ -1414,7 +1519,7 @@ if __name__ == '__main__':
 
     # Calculate all metrics
     print("Starting metrics functions...")
-    calc_pba40urbansim()
+    #calc_pba40urbansim()
     calc_urbansim_metrics()
     print("*****************#####################Completed urbansim_metrics#####################*******************")
     calc_travelmodel_metrics()
