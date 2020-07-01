@@ -17,7 +17,7 @@ Creates 2015 input for [PopulationSim](https://github.com/BayAreaMetro/Populatio
 * Notes: Superceded by [ACS 2013-2017 create TAZ data for 2015.R](ACS%202013-2017%20create%20TAZ%20data%20for%202015.R)
 * See also: [Asana task](https://app.asana.com/0/13098083395690/864065795026327/f)
 
-### ACS 2013-2016 create TAZ data for 2015.R
+### ACS 2013-2017 create TAZ data for 2015.R
 
 Creates 2015 input for [PopulationSim](https://github.com/BayAreaMetro/PopulationSim) and [tazdata](https://github.com/BayAreaMetro/modeling-website/wiki/TazData) input for [Travel Model 1.5](https://github.com/BayAreaMetro/travel-model-one)
 
@@ -37,7 +37,7 @@ Creates 2015 input for [PopulationSim](https://github.com/BayAreaMetro/Populatio
 
 ### 2015 unit person and HH balancing.R
 
-Given the output of [ACS 2013-2016 create TAZ data for 2015.R](ACS 2013-2016 create TAZ data for 2015.R), assumes that the housing unit and household counts don't decrease from the 2010 tazdata used in PlanBayArea2040 (see http://data.mtc.ca.gov/data-repository/).  This script adjusts those numbers to move growth within counties so that no TAZ loses households or housing units.
+Given the output of [ACS 2013-2017 create TAZ data for 2015.R](ACS 2013-2017 create TAZ data for 2015.R), assumes that the housing unit and household counts don't decrease from the 2010 tazdata used in PlanBayArea2040 (see http://data.mtc.ca.gov/data-repository/).  This script adjusts those numbers to move growth within counties so that no TAZ loses households or housing units.
 
 * Author: [@shimonisrael](https://github.com/shimonisrael)
 * Input: PBA40 2010 tazData (2010_06_003) and [TAZ1454 2015 Land Use.csv](TAZ1454%202015%20Land%20Use.csv)
