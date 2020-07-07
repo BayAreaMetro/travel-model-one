@@ -14,11 +14,6 @@
    level, tract-level data used instead. Suppressed variables may change if ACS_year is changed. This 
    should be checked, as this change could cause the script not to work.
 
-3. Group quarters come from the decennial census so they're outdated.  TODO: grow these for 2015.
-
-4. Persons with miltary occupation is from gq_type_mil, which is probably low (since it's both from 2010
-   and also only includes those living in group quarters.)  TOD: find better source.
-
 "
 # Import Libraries
 
