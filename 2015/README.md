@@ -1,5 +1,23 @@
 
-# Scripts related to creating Travel Model Land Use Inputs
+# Scripts and data related to creating Travel Model Land Use Inputs
+
+### ACS 2013-2017 create TAZ data for 2015.R
+
+Creates 2015 input for [PopulationSim](https://github.com/BayAreaMetro/PopulationSim) and [tazdata](https://github.com/BayAreaMetro/modeling-website/wiki/TazData) input for [Travel Model 1.5](https://github.com/BayAreaMetro/travel-model-one)
+
+* Author: [@shimonisrael](https://github.com/shimonisrael)
+* Input: 2013-2017 ACS 5-year Estimates
+  * [ACS 2013-2017 Block Group Vars1.csv](ACS%202013-2017%20Block%20Group%20Vars1.csv), [ACS 2013-2017 Block Group Vars2.csv](ACS%202013-2017%20Block%20Group%20Vars2.csv) and [ACS 2013-2017 Block Group Vars3.csv](ACS%202013-2017%20Block%20Group%20Vars3.csv)
+* Output:  
+  * [TAZ1454 2015 Land Use.csv](TAZ1454%202015%20Land%20Use.csv)
+  * [TAZ1454 2010 District Summary.csv](TAZ1454%202010%20District%20Summary.csv)
+  * [TAZ1454 2015 District Summary.csv](TAZ1454%202015%20District%20Summary.csv)
+  * [TAZ1454 2015 Popsim Vars.csv](TAZ1454%202015%20Popsim%20Vars.csv)
+  * [TAZ1454 2015 Popsim Vars Region.csv](TAZ1454%202015%20Popsim%20Vars%20Region.csv)
+  * [TAZ1454 2015 Popsim Vars County.csv](TAZ1454%202015%20Popsim%20Vars%20County.csv)
+* See also:
+  * [Asana task](https://app.asana.com/0/13098083395690/892913197780752/f)
+  * Documentation memo: [TM 1.5 TAZ 1454 Land Use Documentation Memo.docx](TM%201.5%20TAZ%201454%20Land%20Use%20Documentation%20Memo.docx)
 
 ### ACS 2012-2016 create TAZ data for 2015.R
 
@@ -16,24 +34,6 @@ Creates 2015 input for [PopulationSim](https://github.com/BayAreaMetro/Populatio
   * [TAZ1454 2015 Popsim Vars County.csv](TAZ1454%202015%20Popsim%20Vars%20County.csv)
 * Notes: Superceded by [ACS 2013-2017 create TAZ data for 2015.R](ACS%202013-2017%20create%20TAZ%20data%20for%202015.R)
 * See also: [Asana task](https://app.asana.com/0/13098083395690/864065795026327/f)
-
-### ACS 2013-2017 create TAZ data for 2015.R
-
-Creates 2015 input for [PopulationSim](https://github.com/BayAreaMetro/PopulationSim) and [tazdata](https://github.com/BayAreaMetro/modeling-website/wiki/TazData) input for [Travel Model 1.5](https://github.com/BayAreaMetro/travel-model-one)
-
-* Author: [@shimonisrael](https://github.com/shimonisrael)
-* Input: 2013-2017 ACS 5-year Estimates
-* Output:
-  * [ACS 2013-2017 Block Group Vars1.csv](ACS%202013-2017%20Block%20Group%20Vars1.csv), [ACS 2013-2017 Block Group Vars2.csv](ACS%202013-2017%20Block%20Group%20Vars2.csv) and [ACS 2013-2017 Block Group Vars3.csv](ACS%202013-2017%20Block%20Group%20Vars3.csv)
-  * [TAZ1454 2015 Land Use.csv](TAZ1454%202015%20Land%20Use.csv)
-  * [TAZ1454 2010 District Summary.csv](TAZ1454%202010%20District%20Summary.csv)
-  * [TAZ1454 2015 District Summary.csv](TAZ1454%202015%20District%20Summary.csv)
-  * [TAZ1454 2015 Popsim Vars.csv](TAZ1454%202015%20Popsim%20Vars.csv)
-  * [TAZ1454 2015 Popsim Vars Region.csv](TAZ1454%202015%20Popsim%20Vars%20Region.csv)
-  * [TAZ1454 2015 Popsim Vars County.csv](TAZ1454%202015%20Popsim%20Vars%20County.csv)
-* See also:
-  * [Asana task](https://app.asana.com/0/13098083395690/892913197780752/f)
-  * Documentation memo: [TM 1.5 TAZ 1454 Land Use Documentation Memo.docx](TM%201.5%20TAZ%201454%20Land%20Use%20Documentation%20Memo.docx)
 
 ### 2015 unit person and HH balancing.R
 
