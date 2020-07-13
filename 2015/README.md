@@ -12,7 +12,7 @@ This script brings in all inputs and creates 2015 input for [PopulationSim](http
 * Input: Cached versions of ACS 2013-2017 API block group data inputs, brought in with [Import block group data.R](Import%block%group%data.R): 
   * [ACS 2013-2017 Block Group Vars1.csv](ACS%202013-2017%20Block%20Group%20Vars1.csv), [ACS 2013-2017 Block Group Vars2.csv](ACS%202013-2017%20Block%20Group%20Vars2.csv), and [ACS 2013-2017 Block Group Vars3.csv](ACS%202013-2017%20Block%20Group%20Vars3.csv)
   * [ESRI 2015 NAICS2 and ABAG6 noin.csv](Employment/ESRI%2015%NAICS2%and%ABAG6%noin.csv) employment data, with net incommute removed
-  * [tazData_enrollment.csv](School%Enrollment/tazData_enrollment.csv) 2015 school high school and college enrollment
+  * [tazData_enrollment.csv]("School Enrollment"/tazData_enrollment.csv) 2015 school high school and college enrollment
 
 * Output:  
   * [TAZ1454 2015 Land Use.csv](TAZ1454%202015%20Land%20Use.csv)
