@@ -2,10 +2,11 @@
 :: This version of summarizeAcrossScenarios.bat does not bother creating the extracts but instead copies the text files
 :: over to use the union feature of Tableau
 ::
-set USAGE=USAGE: summarizeAcrossScenariosUnion [current or all]
+set USAGE=USAGE: summarizeAcrossScenariosUnion [current, all, or project]
 :: Run from M:\Application\Model One
 ::
 :: Uses scenario list in \\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\ModelRuns.csv
+:: unless project, in which cases uses .\ModelRuns.csv
 ::
 :: For all, will include all runs in just copy ScenarioKey.csv and topsheet
 :: For current, will include only runs marked with status=current and copies all core_summaries, transit and loaded network files
@@ -15,23 +16,34 @@ set USAGE=USAGE: summarizeAcrossScenariosUnion [current or all]
 setlocal enabledelayedexpansion
 
 set MODEL_RUNS_CSV=\\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\ModelRuns.csv
-set SET_TYPE=current
+set SET_TYPE=unset
 
 echo Argument 1=[%1]
 if all==%1 (
   set SET_TYPE=all
   set COMBINED_DIR=M:\Application\Model One\All_Topsheets
-) else (
-  if current==%1 (
-    set SET_TYPE=current
-    set /p COMBINED_DIR="What across-runs directory do you want to use? "
-    echo COMBINED_DIR=[!COMBINED_DIR!]
-    if [!COMBINED_DIR!]==[] ( goto done )
-  ) else (
-    echo %USAGE%
-    goto done
-  )
 )
+if current==%1 (
+  set SET_TYPE=current
+  set /p COMBINED_DIR="What across-runs directory do you want to use? "
+  echo COMBINED_DIR=[!COMBINED_DIR!]
+  if [!COMBINED_DIR!]==[] ( goto done )
+)
+if project==%1 (
+  set SET_TYPE=project
+  set MODEL_RUNS_CSV=.\ModelRuns.csv
+  set COMBINED_DIR=.\across_scenarios
+)
+
+:: invalid argument?
+if unset==!SET_TYPE! (
+  echo %USAGE%
+  goto done
+)
+
+echo SET_TYPE=[!SET_TYPE!]
+echo MODEL_RUNS_CSV=[!MODEL_RUNS_CSV!]
+echo COMBINED_DIR=[!COMBINED_DIR!]
 
 rem set RUN_NAME_SET=
 for /f "skip=1 tokens=1,2,3,4,5,6,7,8 delims=," %%A in (%MODEL_RUNS_CSV%) do (
@@ -73,6 +85,9 @@ for /f "skip=1 tokens=1,2,3,4,5,6,7,8 delims=," %%A in (%MODEL_RUNS_CSV%) do (
   )
   if !SET_TYPE!==all (
     set RUN_NAME_SET=!RUN_NAME_SET!!project!\!SUBDIR!\!directory! 
+  )
+  if !SET_TYPE!==project (
+    set RUN_NAME_SET=!RUN_NAME_SET!.\!directory! 
   )
 )
 echo RUN_NAME_SET=[!RUN_NAME_SET!]
