@@ -339,22 +339,29 @@ def calculate_Affordable2_deed_restricted_housing(runid, dbp, parcel_sum_df, met
     metrics_dict[runid,metric_id,'deed_restricted_TRA',y1,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'deed_restricted_units_2015'].sum()
     metrics_dict[runid,metric_id,'residential_units_TRA',y2,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'residential_units_2050'].sum()
     metrics_dict[runid,metric_id,'residential_units_TRA',y1,dbp] = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'residential_units_2015'].sum()
+    metrics_dict[runid,metric_id,'deed_restricted_CoC',y2,dbp] = parcel_sum_df.loc[parcel_sum_df['coc_flag_pba2050']==1, 'deed_restricted_units_2050'].sum()
+    metrics_dict[runid,metric_id,'deed_restricted_CoC',y1,dbp] = parcel_sum_df.loc[parcel_sum_df['coc_flag_pba2050']==1, 'deed_restricted_units_2015'].sum()
+    metrics_dict[runid,metric_id,'residential_units_CoC',y2,dbp] = parcel_sum_df.loc[parcel_sum_df['coc_flag_pba2050']==1, 'residential_units_2050'].sum()
+    metrics_dict[runid,metric_id,'residential_units_CoC',y1,dbp] = parcel_sum_df.loc[parcel_sum_df['coc_flag_pba2050']==1, 'residential_units_2015'].sum()
 
     # diff between 2050 and 2015
-    metrics_dict[runid,metric_id,'deed_restricted_diff',y_diff,dbp] = metrics_dict[runid,metric_id,'deed_restricted_total',y2,dbp]  - metrics_dict[runid,metric_id,'deed_restricted_total',y1,dbp] 
-    metrics_dict[runid,metric_id,'residential_units_diff',y_diff,dbp] = metrics_dict[runid,metric_id,'residential_units_total',y2,dbp] - metrics_dict[runid,metric_id,'residential_units_total',y1,dbp] 
-    metrics_dict[runid,metric_id,'deed_restricted_HRA_diff',y_diff,dbp] = metrics_dict[runid,metric_id,'deed_restricted_HRA',y2,dbp] - metrics_dict[runid,metric_id,'deed_restricted_HRA',y1,dbp]
-    metrics_dict[runid,metric_id,'residential_units_HRA_diff',y_diff,dbp] = metrics_dict[runid,metric_id,'residential_units_HRA',y2,dbp]  - metrics_dict[runid,metric_id,'residential_units_HRA',y1,dbp]
-    metrics_dict[runid,metric_id,'deed_restricted_TRA_diff',y_diff,dbp] = metrics_dict[runid,metric_id,'deed_restricted_TRA',y2,dbp] - metrics_dict[runid,metric_id,'deed_restricted_TRA',y1,dbp]
-    metrics_dict[runid,metric_id,'residential_units_TRA_diff',y_diff,dbp] = metrics_dict[runid,metric_id,'residential_units_TRA',y2,dbp]  - metrics_dict[runid,metric_id,'residential_units_TRA',y1,dbp]
+    metrics_dict[runid,metric_id,'deed_restricted_diff',y_diff,dbp]        = metrics_dict[runid,metric_id,'deed_restricted_total',y2,dbp]  - metrics_dict[runid,metric_id,'deed_restricted_total',y1,dbp] 
+    metrics_dict[runid,metric_id,'residential_units_diff',y_diff,dbp]      = metrics_dict[runid,metric_id,'residential_units_total',y2,dbp] - metrics_dict[runid,metric_id,'residential_units_total',y1,dbp] 
+    metrics_dict[runid,metric_id,'deed_restricted_HRA_diff',y_diff,dbp]    = metrics_dict[runid,metric_id,'deed_restricted_HRA',y2,dbp] - metrics_dict[runid,metric_id,'deed_restricted_HRA',y1,dbp]
+    metrics_dict[runid,metric_id,'residential_units_HRA_diff',y_diff,dbp]  = metrics_dict[runid,metric_id,'residential_units_HRA',y2,dbp]  - metrics_dict[runid,metric_id,'residential_units_HRA',y1,dbp]
+    metrics_dict[runid,metric_id,'deed_restricted_TRA_diff',y_diff,dbp]    = metrics_dict[runid,metric_id,'deed_restricted_TRA',y2,dbp] - metrics_dict[runid,metric_id,'deed_restricted_TRA',y1,dbp]
+    metrics_dict[runid,metric_id,'residential_units_TRA_diff',y_diff,dbp]  = metrics_dict[runid,metric_id,'residential_units_TRA',y2,dbp]  - metrics_dict[runid,metric_id,'residential_units_TRA',y1,dbp]
     metrics_dict[runid,metric_id,'deed_restricted_nonHRA_diff',y_diff,dbp] = metrics_dict[runid,metric_id,'deed_restricted_diff',y_diff,dbp] - metrics_dict[runid,metric_id,'deed_restricted_HRA_diff',y_diff,dbp]
     metrics_dict[runid,metric_id,'residential_units_nonHRA_diff',y_diff,dbp] = metrics_dict[runid,metric_id,'residential_units_diff',y_diff,dbp]  - metrics_dict[runid,metric_id,'residential_units_HRA_diff',y_diff,dbp]
+    metrics_dict[runid,metric_id,'deed_restricted_CoC_diff',y_diff,dbp]    = metrics_dict[runid,metric_id,'deed_restricted_CoC',y2,dbp] - metrics_dict[runid,metric_id,'deed_restricted_CoC',y1,dbp]
+    metrics_dict[runid,metric_id,'residential_units_CoC_diff',y_diff,dbp]  = metrics_dict[runid,metric_id,'residential_units_CoC',y2,dbp]  - metrics_dict[runid,metric_id,'residential_units_CoC',y1,dbp]
 
     # metric: deed restricted % of total units: overall, HRA and non-HRA
     metrics_dict[runid,metric_id,'deed_restricted_pct_new_units',y_diff,dbp] = metrics_dict[runid,metric_id,'deed_restricted_diff',y_diff,dbp] / metrics_dict[runid,metric_id,'residential_units_diff',y_diff,dbp] 
     metrics_dict[runid,metric_id,'deed_restricted_pct_new_units_HRA',y_diff,dbp] = metrics_dict[runid,metric_id,'deed_restricted_HRA_diff',y_diff,dbp]/metrics_dict[runid,metric_id,'residential_units_HRA_diff',y_diff,dbp]
     metrics_dict[runid,metric_id,'deed_restricted_pct_new_units_TRA',y_diff,dbp] = metrics_dict[runid,metric_id,'deed_restricted_TRA_diff',y_diff,dbp]/metrics_dict[runid,metric_id,'residential_units_TRA_diff',y_diff,dbp]
     metrics_dict[runid,metric_id,'deed_restricted_pct_new_units_nonHRA',y_diff,dbp] = metrics_dict[runid,metric_id,'deed_restricted_nonHRA_diff',y_diff,dbp]/metrics_dict[runid,metric_id,'residential_units_nonHRA_diff',y_diff,dbp]
+    metrics_dict[runid,metric_id,'deed_restricted_pct_new_units_CoC',y_diff,dbp] = metrics_dict[runid,metric_id,'deed_restricted_CoC_diff',y_diff,dbp]/metrics_dict[runid,metric_id,'residential_units_CoC_diff',y_diff,dbp]
 
     print('********************A2 Affordable********************')
     print('DR pct of new units         %s' % dbp,metrics_dict[runid,metric_id,'deed_restricted_pct_new_units',y_diff,dbp] )
@@ -580,10 +587,6 @@ def calculate_Diverse1_LIHHinHRAs(runid, dbp, parcel_sum_df, tract_sum_df, GG_su
     metrics_dict[runid,metric_id,'Q1HH_shareofHRATRA_normalized',y1,dbp]    = metrics_dict[runid,metric_id,'Q1HH_shareofHRATRA',y1,dbp] * normalize_factor_Q1
     metrics_dict[runid,metric_id,'Q1HH_shareofHRATRA',y2,dbp]               = parcel_sum_df.loc[(parcel_sum_df['pba50chcat'].str.contains('HRA', na=False)) & (parcel_sum_df['pba50chcat'].str.contains('tra', na=False)), 'hhq1_2050'].sum()  / metrics_dict[runid,metric_id,'TotHH_inHRATRA',y2,dbp]
 
-    metrics_dict[runid,metric_id,'Q1HH_shareofTRA',y1,dbp]               = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'hhq1_2015'].sum() / metrics_dict[runid,metric_id,'TotHH_inTRA',y1,dbp]
-    metrics_dict[runid,metric_id,'Q1HH_shareofTRA_normalized',y1,dbp]    = metrics_dict[runid,metric_id,'Q1HH_shareofTRA',y1,dbp] * normalize_factor_Q1
-    metrics_dict[runid,metric_id,'Q1HH_shareofTRA',y2,dbp]               = parcel_sum_df.loc[parcel_sum_df['pba50chcat'].str.contains('tra', na=False), 'hhq1_2050'].sum()  / metrics_dict[runid,metric_id,'TotHH_inTRA',y2,dbp]
-
     metrics_dict[runid,metric_id,'Q1HH_shareofDRTracts',y1,dbp]                = tract_sum_df.loc[(tract_sum_df['DispRisk'] == 1), 'hhq1_2015'].sum() / metrics_dict[runid,metric_id,'TotHH_inDRTracts',y1,dbp]
     metrics_dict[runid,metric_id,'Q1HH_shareofDRTracts_normalized',y1,dbp]     = metrics_dict[runid,metric_id,'Q1HH_shareofDRTracts',y1,dbp] * normalize_factor_Q1
     metrics_dict[runid,metric_id,'Q1HH_shareofDRTracts',y2,dbp]                = tract_sum_df.loc[(tract_sum_df['DispRisk'] == 1), 'hhq1_2050'].sum() / metrics_dict[runid,metric_id,'TotHH_inDRTracts',y2,dbp]
@@ -738,7 +741,7 @@ def calculate_Diverse2_LIHH_Displacement(runid, dbp, parcel_sum_df, tract_sum_df
 
     ##### Calculating displacement risk using the PBA2040 methodology
     # The analysis estimated which zones (i.e., TAZs) gained or lost lower-income households; those zones
-    # that lost lower-income households over the time period would be flagged as being “at risk of displacement.”
+    # that lost lower-income households over the time period would be flagged as being at risk of displacement.
     # The share of lower-income households at risk of displacement would be calculated by
     # dividing the number of lower-income households living in TAZs flagged as PDAs, TPAs, or
     # highopportunity areas with an increased risk of displacement by the total number of lower-income
@@ -1340,11 +1343,11 @@ def calc_urbansim_metrics():
 
         ################### Create county summary
         county_sum_df = parcel_sum_df.groupby(["county"])["tothh_2050","tothh_2015","hhq1_2050", "hhq1_2015","hhq2_2050", "hhq2_2015","totemp_2050","totemp_2015"].sum().reset_index()
-        county_sum_df["tothh_growth"] = county_sum_df['tothh_2050'] / county_sum_df['tothh_2015']
-        county_sum_df["totemp_growth"] = county_sum_df['totemp_2050'] / county_sum_df['totemp_2015']
+        county_sum_df["tothh_growth"] = county_sum_df['tothh_2050'] / county_sum_df['tothh_2015'] - 1
+        county_sum_df["totemp_growth"] = county_sum_df['totemp_2050'] / county_sum_df['totemp_2015'] - 1
         county_sum_df["LIHH_share_2050"] = (county_sum_df['hhq1_2050'] + county_sum_df['hhq2_2050']) / county_sum_df['tothh_2050']
         county_sum_df["LIHH_share_2015"] = (county_sum_df['hhq1_2015'] + county_sum_df['hhq2_2015']) / county_sum_df['tothh_2015']
-        county_sum_df["LIHH_growth"] = (county_sum_df['hhq1_2050'] + county_sum_df['hhq2_2050']) / (county_sum_df['hhq1_2015'] + county_sum_df['hhq2_2015'])
+        county_sum_df["LIHH_growth"] = (county_sum_df['hhq1_2050'] + county_sum_df['hhq2_2050']) / (county_sum_df['hhq1_2015'] + county_sum_df['hhq2_2015']) - 1
 
       
         ################### Create Growth Geography summary
