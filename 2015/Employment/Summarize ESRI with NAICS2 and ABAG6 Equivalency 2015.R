@@ -219,4 +219,11 @@ RETEMPN = emp_sec4445)
 
 write.csv(esri_no_incommute, "ESRI 2015 NAICS2 and ABAG6 noin.csv", row.names = FALSE, quote = T)
 
+# One more export version with just the NAICS2 variables
+
+esri_no_incommute_NAICS2 <- esri_no_incommute %>% 
+  select(-AGREMPN,-FPSEMPN,-HEREMPN,-MWTEMPN,-OTHEMPN,-RETEMPN)
+
+write.csv(esri_no_incommute_NAICS2,"ESRI 2015 NAICS2 noincommute.csv", row.names = FALSE, quote = T)
+
 

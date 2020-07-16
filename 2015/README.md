@@ -67,11 +67,30 @@ Converts Travel Model Two MAZ parking costs to TM1 TAZ values. Given some observ
 
 This folder includes a lot of investigation of other data sets for employment - LODES, NETS, and ESRI data. In the end ESRI data was used, though, given more time, it would be valuable to compare the other datasets on TAZ-by-TAZ (or smaller geography) basis. 
 
-## [Documentation](Documentation)
+## [4. Documentation](Documentation)
 
 Documentation memo: [TM 1.5 TAZ 1454 Land Use Documentation Memo.docx](Documentation/TM%201.5%20TAZ%201454%20Land%20Use%20Documentation%20Memo.docx)
 
-## [Employment](Employment)
+## [5. Employment](Employment)
+
+### [Summarize ESRI with NAICS2 and ABAG6 Equivalency 2015.R](Employment/Summarize%20ESRI%20with%20NAICS2%20and%20ABAG6%20Equivalency%202015.R)
+
+This script summarizes summarizes ESRI business location data for both the NAICS2 and ABAG6 categories. It scales employment to a total of 4,005,318 jobs from the [REMI regional forecast](https://mtcdrive.app.box.com/file/654134152628). Net incommuters are also removed, using incommute shares to superdistricts to account for non-uniform incommuting rates around the region. 
+
+* Author: [@shimonisrael](https://github.com/shimonisrael)
+* Input:
+  * [ESRI disaggregate parcel data](https://mtcdrive.app.box.com/file/655868001941)
+  * [2012-2016 CTPP Places to Superdistrict Equivalency.xlsx](Employment/Incommute/2012-2016%20CTPP%20Places%20to%20Superdistrict%20Equivalency.xlsx)
+  * [ACS 2013-2017 Incommute by Industry.xlsx](Employment/Incommute/ACS%202013-2017%20Incommute%20by%20Industry.xlsx)
+  * [REMI regional forecast total](https://mtcdrive.app.box.com/file/654134152628)
+* Output:
+  * [ESRI 2015 NAICS2 and ABAG6 noin.csv](Employment/ESRI%202015%20NAICS2%20and%20ABAG6%20noin.csv)
+  * [ESRI 2015 NAICS2 noincommute.csv](Employment/ESRI%202015%20NAICS2%20noincommute.csv)
+* Other files:
+  * [NAICS to EMPSIX Equivalency](Employment/NAICS_to_EMPSIX.xlsx)
+
+## []
+
 
 
 
