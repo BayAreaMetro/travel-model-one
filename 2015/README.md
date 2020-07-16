@@ -11,9 +11,10 @@ This script brings in all inputs and creates 2015 input for [PopulationSim](http
 
 * Input: Cached versions of ACS 2013-2017 API block group data inputs, brought in with [Import block group data.R](Import20block%20group%20data.R): 
   * [ACS 2013-2017 Block Group Vars1.csv](ACS%202013-2017%20Block%20Group%20Vars1.csv), [ACS 2013-2017 Block Group Vars2.csv](ACS%202013-2017%20Block%20Group%20Vars2.csv), and [ACS 2013-2017 Block Group Vars3.csv](ACS%202013-2017%20Block%20Group%20Vars3.csv)
-  * [ESRI 2015 NAICS2 and ABAG6 noin.csv](Employment/ESRI%202015%20NAICS2%20and%20ABAG6%20noin.csv) employment data, with net incommute removed
+  * [ESRI 2015 NAICS2 and ABAG6 noin.csv](Employment/ESRI%202015%20NAICS2%20and%20ABAG6%20noin.csv) Employment data, with net incommute removed
   * [tazData_enrollment.csv](https://github.com/BayAreaMetro/petrale/blob/master/applications/travel_model_lu_inputs/2015/School%20Enrollment/tazData_enrollment.csv) 2015 school high school and college enrollment
   * [tazData.csv](https://mtcdrive.app.box.com/file/208576797404) This file includes TAZ data from the Plan Bay Area 2040 run for 2015. 
+  * [2010 to 2015 manual GQ counts](Group%20Quarters/gq_add_00051015.csv) This file includes additional GQ units manually added by MTC staff. 
 
 * Output:  
   * [TAZ1454 2015 Land Use.csv](TAZ1454%202015%20Land%20Use.csv)
@@ -67,9 +68,13 @@ Converts Travel Model Two MAZ parking costs to TM1 TAZ values. Given some observ
 
 This folder includes a lot of investigation of other data sets for employment - LODES, NETS, and ESRI data. In the end ESRI data was used, though, given more time, it would be valuable to compare the other datasets on TAZ-by-TAZ (or smaller geography) basis. 
 
+### [Geography](Deprecated/Geography)
+
+Archived land use policy-related Python geography scripts. 
+
 ## [4. Documentation](Documentation)
 
-Documentation memo: [TM 1.5 TAZ 1454 Land Use Documentation Memo.docx](Documentation/TM%201.5%20TAZ%201454%20Land%20Use%20Documentation%20Memo.docx)
+Documentation memo is here: [TM 1.5 TAZ 1454 Land Use Documentation Memo.docx](Documentation/TM%201.5%20TAZ%201454%20Land%20Use%20Documentation%20Memo.docx). Comprehensive documentation come from the memo, the markdown description here, and the annotated script, [ACS 2013-2017 create TAZ data for 2015.R](ACS%202013-2017%20create%20TAZ%20data%20for%202015.R).
 
 ## [5. Employment](Employment)
 
@@ -87,11 +92,30 @@ This script summarizes summarizes ESRI business location data for both the NAICS
   * [ESRI 2015 NAICS2 and ABAG6 noin.csv](Employment/ESRI%202015%20NAICS2%20and%20ABAG6%20noin.csv)
   * [ESRI 2015 NAICS2 noincommute.csv](Employment/ESRI%202015%20NAICS2%20noincommute.csv)
 * Other files:
-  * [NAICS to EMPSIX Equivalency](Employment/NAICS_to_EMPSIX.xlsx)
+  * [NAICS to EMPSIX equivalency](Employment/NAICS_to_EMPSIX.xlsx)
 
-## []
+## [6. Group Quarters](Group%20Quarters)
 
+This folder includes supplemental group quarters files. One is [2010 to 2015 manual GQ counts](Group%20Quarters/gq_add_00051015.csv), which includes additional GQ units manually added by MTC staff. Another is [GQ Research Using 2010 Data by GQ Type.xlsx](GQ%20Research%20Using%202010%20Data%20by%20GQ%20Type.xlsx), which includes research into the different types of group quarters, available for 2010 data, but not 2015.   
 
+## [7. School Enrollment](School%20Enrollment)
+
+### [2015_HS_enrollment_TAZ1454.ipynb](School%20Enrollment/2015_HS_enrollment_TAZ1454.ipynb)
+### [2015_enrollment_MAZ_v2.2.ipynb](School%20Enrollment/2015_enrollment_MAZ_v2.2.ipynb)
+
+These scripts summarize school enrollment for high school, part-time college, and full-time college at the TAZ level. 
+
+* Author: [@theocharides](https://github.com/theocharides)
+* Input: 
+  * [PUB_schools.csv](School%20Enrollment/PUB_schools.csv)
+  * [school_enrrollment_1516.csv](School%20Enrollment/school_enrollment_1516.csv)
+  * [tazData.csv](School%20Enrollment/tazData.csv)
+* Output:
+  * [tazData_enrollment.csv](School%20Enrollment/tazData_enrollment.csv)
+
+## [7. Workers](Workers)
+
+The number of total employed residents is derived from ACS 2013-2017, Table B23025. The initial distribution of households by household workers comes from Table B08202 for the same period. This household distribution, however, is skewed ([relative to PUMS data](https://github.com/BayAreaMetro/PUMS-Data/tree/master/Analysis/ACS%20PUMS%202013-2017/Worker%20Research)) toward zero-worker households because its universe only includes workers at work during the ACS survey reference week. That is, workers with a job but not at work (e.g., employees who are ill, on vacation, at personal appointments, etc.) are not included here. In addition, household weights from ACS data appear to undercount workers in larger households (with more 3-plus workers), and the person weights appear more accurate. The approach used for reconciling households by number of workers relies on PUMS person weights to correct for worker undercounts. That analysis is [documented in the memo](Documentation/TM%201.5%20TAZ%201454%20Land%20Use%20Documentation%20Memo.docx) and summarized in an [Excel file](Workers/ACSPUMS_WorkerTotals_2013-2017_Comparisons.xlsx) within this folder. 
 
 
 
