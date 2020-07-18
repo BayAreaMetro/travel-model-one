@@ -74,7 +74,7 @@ Archived land use policy-related Python geography scripts.
 
 ## [4. Documentation](Documentation)
 
-Documentation memo is here: [TM 1.5 TAZ 1454 Land Use Documentation Memo.docx](Documentation/TM%201.5%20TAZ%201454%20Land%20Use%20Documentation%20Memo.docx). Comprehensive documentation come from the memo, the markdown description here, and the annotated script, [ACS 2013-2017 create TAZ data for 2015.R](ACS%202013-2017%20create%20TAZ%20data%20for%202015.R).
+Documentation memo is here: [TM 1.5 TAZ 1454 Land Use Documentation Memo.docx](Documentation/TM%201.5%20TAZ%201454%20Land%20Use%20Documentation%20Memo.docx). Comprehensive documentation come from the memo, the markdown description here, the annotated script, [ACS 2013-2017 create TAZ data for 2015.R](ACS%202013-2017%20create%20TAZ%20data%20for%202015.R), and [TAZ1454 2015 Land Use.xlsx](TAZ1454%202015%20Land%20Use.xlsx).
 
 ## [5. Employment](Employment)
 
@@ -113,7 +113,7 @@ These scripts summarize school enrollment for high school, part-time college, an
 * Output:
   * [tazData_enrollment.csv](School%20Enrollment/tazData_enrollment.csv)
 
-## [7. Workers](Workers)
+## [8. Workers](Workers)
 
 The number of total employed residents is derived from ACS 2013-2017, Table B23025. The initial distribution of households by household workers comes from Table B08202 for the same period. This household distribution, however, is skewed ([relative to PUMS data](https://github.com/BayAreaMetro/PUMS-Data/tree/master/Analysis/ACS%20PUMS%202013-2017/Worker%20Research)) toward zero-worker households because its universe only includes workers at work during the ACS survey reference week. That is, workers with a job but not at work (e.g., employees who are ill, on vacation, at personal appointments, etc.) are not included here. In addition, household weights from ACS data appear to undercount workers in larger households (with more 3-plus workers), and the person weights appear more accurate. The approach used for reconciling households by number of workers relies on PUMS person weights to correct for worker undercounts. That analysis is [documented in the memo](Documentation/TM%201.5%20TAZ%201454%20Land%20Use%20Documentation%20Memo.docx) and summarized in an [Excel file](Workers/ACSPUMS_WorkerTotals_2013-2017_Comparisons.xlsx) within this folder. 
 
