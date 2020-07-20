@@ -868,6 +868,9 @@ def calculate_Diverse2_LIHH_Displacement(runid, dbp, parcel_sum_df, tract_sum_df
         print('Pct of Transit Rich GGs that lost LIHH from 2015 to 2050: ',metrics_dict[runid,metric_id,'Pct_GG_TRich_lostLIHH_%dpct' % i,y_diff,dbp] )
 
 
+    tract_sum_filename = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/tract_summary_output.csv'.format(os.getenv('USERNAME'))
+    tract_sum_df.to_csv(tract_sum_filename, header=True, sep=',')
+
 
 def calculate_Healthy1_HHs_SLRprotected(runid, dbp, parcel_sum_df, metrics_dict):
 
@@ -1377,6 +1380,7 @@ def calc_urbansim_metrics():
         normalize_factor_Q1    = calculate_normalize_factor_Q1(parcel_sum_df)
 
 
+
         print("Starting urbansim metrics functions...")
         calculate_urbansim_highlevelmetrics(us_runid, dbp, parcel_sum_df, county_sum_df, metrics_dict)
         calculate_Affordable2_deed_restricted_housing(us_runid, dbp, parcel_sum_df, metrics_dict)
@@ -1388,6 +1392,8 @@ def calc_urbansim_metrics():
         calculate_Vibrant1_JobsHousing(us_runid, dbp, county_sum_df, metrics_dict)
         calculate_Vibrant2_Jobs(us_runid, dbp, parcel_sum_df, metrics_dict)
 
+        parcel_filename = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/parcel_summary_output.csv'.format(os.getenv('USERNAME'))
+        parcel_sum_df.to_csv(parcel_filename, header=True, sep=',')
 
 def calc_travelmodel_metrics():
 
