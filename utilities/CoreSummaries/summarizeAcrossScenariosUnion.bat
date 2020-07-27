@@ -31,8 +31,10 @@ if current==%1 (
 )
 if project==%1 (
   set SET_TYPE=project
-  set MODEL_RUNS_CSV=.\ModelRuns.csv
-  set COMBINED_DIR=.\across_scenarios
+  set /p COMBINED_DIR="What across-runs directory do you want to use? "
+  echo COMBINED_DIR=[!COMBINED_DIR!]
+  if [!COMBINED_DIR!]==[] ( goto done )
+  set MODEL_RUNS_CSV=!COMBINED_DIR!\ModelRuns.csv
 )
 
 :: invalid argument?
@@ -46,7 +48,7 @@ echo MODEL_RUNS_CSV=[!MODEL_RUNS_CSV!]
 echo COMBINED_DIR=[!COMBINED_DIR!]
 
 rem set RUN_NAME_SET=
-for /f "skip=1 tokens=1,2,3,4,5,6,7,8 delims=," %%A in (%MODEL_RUNS_CSV%) do (
+for /f "skip=1 usebackq tokens=1,2,3,4,5,6,7,8 delims=," %%A in ("!MODEL_RUNS_CSV!") do (
   set project=%%A
   set year=%%B
   set directory=%%C
@@ -87,7 +89,13 @@ for /f "skip=1 tokens=1,2,3,4,5,6,7,8 delims=," %%A in (%MODEL_RUNS_CSV%) do (
     set RUN_NAME_SET=!RUN_NAME_SET!!project!\!SUBDIR!\!directory! 
   )
   if !SET_TYPE!==project (
-    set RUN_NAME_SET=!RUN_NAME_SET!.\!directory! 
+    rem for project, if run_set is special (e.g. the project name), assume project subdir is relative to current dir
+    rem but if run_set has triggered SUBDIR to be set above (e.g. Blueprint, IP, etc), use that
+    if !SUBDIR!==unknown (
+      set RUN_NAME_SET=!RUN_NAME_SET!.\!directory! 
+    ) else (
+      set RUN_NAME_SET=!RUN_NAME_SET!!project!\!SUBDIR!\!directory! 
+    )
   )
 )
 echo RUN_NAME_SET=[!RUN_NAME_SET!]
