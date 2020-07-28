@@ -1,14 +1,15 @@
 # this script checks for error messages in setupmodel.log
-# it looks for two most common errors during the model setup process:
-# (1) the system cannot find the file specified'; and
-# (2) [SomeProcess] is not recognized as an internal or external command'
+# it looks for three most common errors during the model setup process:
+# (1) the system cannot find the file specified'; 
+# (2) the system cannot find the path specified'; and
+# (3) [SomeProcess] is not recognized as an internal or external command'
 
 import os
 
 ErrorInSetupModel=0
 
 with open('setupmodel.log') as f:
-    if 'The system cannot find the file specified' in f.read() or 'not recognized as an internal or external command' in f.read():
+    if 'The system cannot find' in f.read() or 'not recognized as an internal or external command' in f.read():
         ErrorInSetupModel=1
         f.close()
         print ("Setupmodel.log contains errors.")
