@@ -19,7 +19,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='PerTripTravelTime' name='textscan.1qniclh0aso8ni1h40ogb19fvwsi'>
-            <connection class='textscan' directory='' filename='PerTripTravelTime.csv' password='' server='' />
+            <connection class='textscan' directory='../core_summaries' filename='PerTripTravelTime.csv' password='' server='' />
           </named-connection>
         </named-connections>
         <_.fcp.ObjectModelEncapsulateLegacy.false...relation connection='textscan.1qniclh0aso8ni1h40ogb19fvwsi' name='PerTripTravelTime.csv' table='[PerTripTravelTime#csv]' type='table'>
