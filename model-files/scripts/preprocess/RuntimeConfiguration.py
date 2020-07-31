@@ -1,4 +1,3 @@
-
 USAGE = r"""
 
 This script makes some runtime configuration changes in order to try to simplify
@@ -224,6 +223,8 @@ def config_mobility_params(for_logsums, replacements):
 
     modelYear = int(os.environ["MODEL_YEAR"])
 
+    BikeInfra_CIVT_Mult = float(get_property(params_filename, myfile_contents, "Bike_Infra_C_IVT_Multiplier"))
+
     SharingPrefFactor  = float(get_property(params_filename, myfile_contents, "Sharing_Preferences_factor"))
 
     MeansBasedTollsQ1Factor  = float(get_property(params_filename, myfile_contents, "Means_Based_Tolling_Q1Factor"))
@@ -287,6 +288,8 @@ def config_mobility_params(for_logsums, replacements):
         filepath = os.path.join("CTRAMP","runtime","logsums.properties")
 
     replacements[filepath]["(\nModel_Year[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d" % modelYear
+
+    replacements[filepath]["(\nBike_Infra_C_IVT_Multiplier[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % BikeInfra_CIVT_Mult
 
     replacements[filepath]["(\nSharing_Preferences_factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % SharingPrefFactor
 
