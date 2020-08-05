@@ -154,22 +154,23 @@ collisionlookup_df.drop(columns=['filter','year'],inplace=True)
 print("Read {} and filtered by {} and year {}:\n{}".format(collision_file, args.filter, args.year, collisionlookup_df.head()))
 
 # Units are grams per mile (equivalent to metric tons per 1,000,000 VMT)
-emission_file = os.path.join(lookupdir,"emissionsLookup.csv")
-emissionslookup_df = pandas.read_csv(emission_file)
-emission_types = list(emissionslookup_df.columns.values)
-emission_types.remove('period')
-emission_types.remove('vclassgroup')
-emission_types.remove('speed')
-emission_types.remove('filter')
-emission_types.remove('year')
-# filter by given filter
-emissionslookup_df = emissionslookup_df.loc[ (emissionslookup_df['filter'] == args.filter)&
+if args.filter!='PBA50':
+    emission_file = os.path.join(lookupdir,"emissionsLookup.csv")
+    emissionslookup_df = pandas.read_csv(emission_file)
+    emission_types = list(emissionslookup_df.columns.values)
+    emission_types.remove('period')
+    emission_types.remove('vclassgroup')
+    emission_types.remove('speed')
+    emission_types.remove('filter')
+    emission_types.remove('year')
+    # filter by given filter
+    emissionslookup_df = emissionslookup_df.loc[ (emissionslookup_df['filter'] == args.filter)&
                                              (emissionslookup_df['year'  ] == args.year  ) ].copy()
-if len(emissionslookup_df) == 0:
-  print("No emission lookups for {} found".format(args.filter))
-  sys.exit(2)
-emissionslookup_df.drop(columns=['filter','year'],inplace=True)
-print("Read {} and filtered by {} and year {}:\n{}".format(emission_file, args.filter, args.year, emissionslookup_df.head()))
+    if len(emissionslookup_df) == 0:
+      print("No emission lookups for {} found".format(args.filter))
+      sys.exit(2)
+    emissionslookup_df.drop(columns=['filter','year'],inplace=True)
+    print("Read {} and filtered by {} and year {}:\n{}".format(emission_file, args.filter, args.year, emissionslookup_df.head()))
 
 # Add link x timeperiod columns
 
@@ -239,14 +240,15 @@ link_tp_vehclass_df = pandas.merge(how='left', left=link_tp_vehclass_df, right=v
 null_vclassgroup = link_tp_vehclass_df.loc[ pandas.isna(link_tp_vehclass_df.vclassgroup) ]
 assert(len(null_vclassgroup) == 0)
 
-link_tp_vehclass_df = pandas.merge(how='left', left=link_tp_vehclass_df,
-                                   right=emissionslookup_df.rename(columns={'period':'timeperiod'}))
-# verify merging with lookup didn't change the number of links/vclass/periods
-assert(len(link_tp_vehclass_df) == len(vclasses)*len(periods)*num_links)
+if args.filter!='PBA50':
+    link_tp_vehclass_df = pandas.merge(how='left', left=link_tp_vehclass_df,
+                                       right=emissionslookup_df.rename(columns={'period':'timeperiod'}))
+    # verify merging with lookup didn't change the number of links/vclass/periods
+    assert(len(link_tp_vehclass_df) == len(vclasses)*len(periods)*num_links)
 
-# emissionlookup in grams per mile (equivalent to metric tons per 1000000 VMT)
-for emission_type in emission_types:
-    link_tp_vehclass_df[emission_type] = link_tp_vehclass_df[emission_type]*link_tp_vehclass_df['vmt']
+    # emissionlookup in grams per mile (equivalent to metric tons per 1000000 VMT)
+    for emission_type in emission_types:
+        link_tp_vehclass_df[emission_type] = link_tp_vehclass_df[emission_type]*link_tp_vehclass_df['vmt']
 
 print("d link_tp_vehclass_df len {}:\n{}".format(len(link_tp_vehclass_df), link_tp_vehclass_df.head()))
 
@@ -255,7 +257,8 @@ aggregate_dict = {'vmt'     :'sum',
                   'hypfft'  :'sum',
                   'nrcdelay':'sum'}
 for collision_type in collision_types: aggregate_dict[collision_type] = 'sum'
-for emission_type  in emission_types:  aggregate_dict[emission_type]  = 'sum'
+if args.filter!='PBA50':
+    for emission_type  in emission_types:  aggregate_dict[emission_type]  = 'sum'
 
 # aggregate to timeperiod x vclass
 metrics_df = link_tp_vehclass_df.groupby(['timeperiod','vclass']).aggregate(aggregate_dict).reset_index()
@@ -265,8 +268,9 @@ for collision_type in collision_types:
     metrics_df[collision_type] = metrics_df[collision_type]/1000000.0
 
 # emissionlookup in grams per mile (equivalent to metric tons per 1000000 VMT)
-for emission_type in emission_types:
-    metrics_df[emission_type] = metrics_df[emission_type]/1000000.0
+if args.filter!='PBA50':
+    for emission_type in emission_types:
+        metrics_df[emission_type] = metrics_df[emission_type]/1000000.0
 
 # print(metrics_df.head())
 metrics_df.rename(columns={'vclass':'vehicle class',
@@ -275,8 +279,11 @@ metrics_df.rename(columns={'vclass':'vehicle class',
                            'hypfft':'Hypothetical Freeflow Time',
                            'nrcdelay':'Non-Recurring Freeway Delay'},
                   inplace=True)
-
-metrics_df[["timeperiod","vehicle class","VMT","VHT","Hypothetical Freeflow Time", "Non-Recurring Freeway Delay"]+
-           collision_types+emission_types].to_csv(vmt_vht_outputfile, header=True, index=False)
+if args.filter!='PBA50':
+    metrics_df[["timeperiod","vehicle class","VMT","VHT","Hypothetical Freeflow Time", "Non-Recurring Freeway Delay"]+
+               collision_types+emission_types].to_csv(vmt_vht_outputfile, header=True, index=False)
+if args.filter=='PBA50':
+    metrics_df[["timeperiod","vehicle class","VMT","VHT","Hypothetical Freeflow Time", "Non-Recurring Freeway Delay"]+
+               collision_types].to_csv(vmt_vht_outputfile, header=True, index=False)  
 print("Wrote {}".format(vmt_vht_outputfile))
 sys.exit(0)
