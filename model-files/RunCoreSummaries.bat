@@ -49,6 +49,15 @@ if %NEED_SUMMARY% GTR 0 (
 )
 echo.
 
+if not exist core_summaries\TelecommuteByIncome.csv (
+  rem A core summary output of people with jobs/work locations who don't do work tours by income quantile
+  rem Input : main\wsLocResults_%ITER%.csv, and
+  rem         main\personData_%ITER%.csv,
+  rem Output: core_summaries\TelecommuteByIncome.csv,
+  python CTRAMP\scripts\core_summaries\TelecommuteByIncome.py
+  if %ERRORLEVEL% GTR 0 goto done
+)
+
 :: convert the summaries to tde for just this dir
 for %%X in ("%TARGET_DIR%\core_summaries\*.rdata") DO (
   if not exist "%TARGET_DIR%\core_summaries\%%~nX.tde" (
