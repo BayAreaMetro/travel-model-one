@@ -30,9 +30,10 @@ copy /y "%GITHUB_MASTER%\utilities\RTP\QAQC\Car_ownership_summary.xlsx"       "%
 :: ---------------------------------
 :: check telecommute
 :: ---------------------------------
-copy /y "%GITHUB_MASTER%\utilities\RTP\QAQC\cdapResults.twb"             "%M_DIR%\OUTPUT\QAQC\cdapResults.twb"
-cd main 
-copy /y "cdapResults.csv"                                                "%M_DIR%\OUTPUT\QAQC\cdapResults.csv"
+copy /y "%GITHUB_MASTER%\utilities\RTP\QAQC\Report_TelecommuteLevel.py"       QAQC\Report_TelecommuteLevel.py
+python QAQC/report_telecommutelevel.py
+cd QAQC
+copy /y "PBA50_QAQC.csv"                                                "%M_DIR%\OUTPUT\QAQC\PBA50_QAQC.csv"
 cd ..
 
 :: ---------------------------------
