@@ -15,7 +15,7 @@ setwd(wd)
 
 USERPROFILE             <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
 esri_location           <- file.path(USERPROFILE,"Box", "esri", "ESRI_2015_Disaggregate.Rdata")
-write_location          <- file.path(dirname(wd), "..", "..", "..", "basemap","imputation_and_siting","employment")
+write_location          <- file.path(dirname(wd), "..", "..", "..", "basemap","imputation_and_siting","employment","2015")
 
 BOX_TM               <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
 PBA_TAZ_2010         <- file.path(BOX_TM, "Share Data",   "plan-bay-area-2040", "2010_06_003","tazData.csv")
