@@ -154,5 +154,5 @@ left_join(.,PBA2010_county,by="TAZ1454")
 
 # Export to csv
 
-write.csv(esri_scaled, paste0(write_location,"ESRI 2015 NAICS2 and ABAG6 total jobs.csv"), row.names = FALSE, quote = T)
+write.csv(esri_scaled, paste0(write_location,"/","ESRI 2015 NAICS2 and ABAG6 total jobs.csv"), row.names = FALSE, quote = T)
 
