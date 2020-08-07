@@ -51,10 +51,10 @@ HaveWorkLocation_df = wsLocResults_df.loc[wsLocResults_df['WorkLocation'] != 0]
 HaveWorkLocation_NoTour_df = HaveWorkLocation_df.loc[HaveWorkLocation_df['imf_choice'] == 0]
 
 # group by income quantile
-TelecommuteByIncome_df = HaveWorkLocation_NoTour_df.groupby(['incQ'], as_index=False).sum()
+TelecommuteByIncome_df = HaveWorkLocation_NoTour_df.groupby(['HomeTAZ','WorkLocation','incQ'], as_index=False).sum()
 
-# keep only the income quantile and frequency columns
-TelecommuteByIncome_df = TelecommuteByIncome_df[['incQ', 'frequency']]
+# keep only the relevant columns
+TelecommuteByIncome_df = TelecommuteByIncome_df[['HomeTAZ','WorkLocation','incQ', 'frequency']]
 
 output_filename = "core_summaries/TelecommuteByIncome.csv"
 TelecommuteByIncome_df.to_csv(output_filename, header=True, index=False)
