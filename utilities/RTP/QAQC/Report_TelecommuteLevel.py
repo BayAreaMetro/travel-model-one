@@ -39,7 +39,7 @@ print "percent of ft workers making a mandatory tour = " + str(P_GoingToWork)
 # From 2015 ACS 5-year, P(telecommuting) = 5.8% (see M:\Development\Travel Model One\Calibration\Version 1.5.0\04 Coordinated Daily Activity Pattern\WorkedFromHome.xlsx)
 # From the IPA run 2015_TM152_IPA_16, P(going to work) =80.8%
 # Solving Ffor P(taking personal time or sick time):
-# 81.3% = (1-P(taking personal time or sick time) x (1-5.8%)
+# 80.8% = (1-P(taking personal time or sick time) x (1-5.8%)
 # P(taking personal time or sick time) = 1 - (80.8% / (1-5.8%)) = 14.2%
 
 # Assume P(taking personal time or sick time) remains constant over time
