@@ -410,7 +410,7 @@ add_distance <- function(this_timeperiod, input_trips_or_tours) {
              (distance_mode == 6) * s3Toll +
              (distance_mode == 7) * walk   +
              (distance_mode == 8) * bike   +
-             (distance_mode >= 9) * da     )
+             (distance_mode >= 9) * pmin(da, daToll))
 
 
   relevant <- relevant %>%
@@ -595,7 +595,7 @@ add_active <- function(this_timeperiod, input_trips_or_tours) {
 
 indiv_trips     <- read.table(file=file.path(MAIN_DIR, paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
 indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest_taz,
-                          trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category) %>%
+                          trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate) %>%
                    mutate(tour_id = paste0("i",substr(tour_category,1,2),tour_id))
 
 ## Data Reads: Joint Trips and recode a few variables
@@ -604,7 +604,7 @@ indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest
 joint_trips     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTripData_",ITER,".csv")),
                                      header=TRUE, sep=","))
 joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz, trip_mode,
-                          num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category) %>%
+                          num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate) %>%
                    mutate(tour_id = paste0("j",substr(tour_category,1,2),tour_id))
 
 print(paste("Read",prettyNum(nrow(joint_trips),big.mark=","),
@@ -715,7 +715,7 @@ if (JUST_MES=="1") {
 joint_person_trips <- inner_join(joint_trips, joint_tour_persons, by=c("hh_id", "tour_id"))
 # select out person_num and the person table columns
 joint_person_trips <- select(joint_person_trips, hh_id, person_id, tour_id, orig_taz, dest_taz, trip_mode,
-                             num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id)
+                             num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, avAvailable, sampleRate)
 # cleanup
 remove(joint_tours,joint_trips,joint_tour_persons)
 

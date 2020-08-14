@@ -59,8 +59,10 @@ copy main\tripsEV.tpp extractor\main
 copy main\ShadowPricing_7.csv extractor\main
 
 mkdir extractor\nonres
-copy nonres\ixDaily2015.tpp extractor\nonres
-copy nonres\ixDailyx4.tpp   extractor\nonres
+copy nonres\ixDaily2015.tpp       extractor\nonres
+copy nonres\ixDailyx4.tpp         extractor\nonres
+copy nonres\tripsIX*.tpp          extractor\nonres
+copy nonres\tripsTrk*.tpp         extractor\nonres
 
 :: copy skims\hwyskmEA.tpp extractor\emfac\hwyskmEA.tpp
 :: copy skims\hwyskmAM.tpp extractor\emfac\hwyskmAM.tpp
@@ -104,6 +106,11 @@ copy logsums\workDCLogsum.csv                        extractor\logsums
 copy logsums\person_workDCLogsum.csv                 extractor\logsums
 copy logsums\mandatoryAccessibilities.csv            extractor\logsums
 copy logsums\nonMandatoryAccessibilities.csv         extractor\logsums
+
+mkdir extractor\logsums\ForUrbanSim
+copy logsums\mandatoryAccessibilities.csv            extractor\logsums\ForUrbanSim\mandatoryAccessibilities_%model_year%_%UrbanSimScenario%.csv 
+copy logsums\nonMandatoryAccessibilities.csv         extractor\logsums\ForUrbanSim\nonMandatoryAccessibilities_%model_year%_%UrbanSimScenario%.csv   
+copy core_summaries\AccessibilityMarkets.csv         extractor\logsums\ForUrbanSim\AccessibilityMarkets_%model_year%_%UrbanSimScenario%.csv   
 
 :: Core summaries
 mkdir extractor\core_summaries

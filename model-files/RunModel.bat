@@ -10,6 +10,7 @@
 ::
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 1:  Set the necessary path variables
@@ -157,12 +158,6 @@ copy INPUT\logsums              logsums\
 :: and synthesized household/population files in the appropriate places
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
-
-:: For the "Per-Mile Tolling on Congested Freeways" in the Draft Blueprint
-if NOT %PROJECT%==DBP (set UseTollDist=No)
-if %PROJECT%==DBP (
-    if %UseTollDist%==Yes (python CTRAMP\scripts\preprocess\updateUECsToUseTollDist.py)
-)
 
 :: Set the prices in the roadway network (convert csv to dbf first)
 python CTRAMP\scripts\preprocess\csvToDbf.py hwy\tolls.csv hwy\tolls.dbf
@@ -384,6 +379,9 @@ Cluster "%COMMPATH%\CTRAMP" 1-48 Close Exit
 del *.prn
 del *.script.*
 del *.script
+
+:: run QA/QC for PBA50
+call Run_QAQC
 
 :: Success target and message
 :success
