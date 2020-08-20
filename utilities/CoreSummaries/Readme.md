@@ -275,7 +275,7 @@ Auto vehicle miles traveled summed to persons. Sum(freq) = population
 | autoSuff_label | Auto sufficiency label, one of ('Zero automobiles','Automobiles < workers','Automobiles >= workers') |
 | freq | Number of persons |
 | vmt_indiv | Mean VMT from individual trips |
-| vmt_joint	| Mean VMT from joing trips |
+| vmt_joint	| Mean VMT from joint trips |
 | vmt | Mean VMT |
 | person_trips | Total person Trips |
 | vehicle_trips | Total vehicle Trips |
