@@ -79,6 +79,7 @@ set FUTURE=X
 
 if %PROJECT%==IPA (SET FUTURE=PBA50)
 if %PROJECT%==DBP (SET FUTURE=PBA50)
+if %PROJECT%==FBP (SET FUTURE=PBA50)
 if %PROJECT%==PPA (
   if %FUTURE_ABBR%==RT (set FUTURE=RisingTidesFallingFortunes)
   if %FUTURE_ABBR%==CG (set FUTURE=CleanAndGreen)
