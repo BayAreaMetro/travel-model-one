@@ -73,6 +73,9 @@ for /f "skip=1 usebackq tokens=1,2,3,4,5,6,7,8 delims=," %%A in ("!MODEL_RUNS_CS
   if !run_set!==DraftBlueprint (
     set SUBDIR=BluePrint
   )
+  if !run_set!==FinalBlueprint (
+    set SUBDIR=BluePrint
+  )
   if !run_set!==IP (
     set SUBDIR=IncrementalProgress
   )
