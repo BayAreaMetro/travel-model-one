@@ -13,11 +13,12 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 # -------------------------------------------------------------------
 # Input/output file names and locations
 # -------------------------------------------------------------------
-arg1_filename = "emfac_prep\\ByVehFuel_Emfac2014_SB375_Yr2035_11Subareas.xlsx"
-# may be ByVehFuel_Emfac2014_SB375_Yr2035_11Subareas.xlsx should live on GitHub with this scrip and the batch file can copy it to the right location
-# maybe the argument should be SB375/notSB375 and year
+run_id = os.getenv('myfolder')
 
-output_excel_template = "emfac_prep\\ready_for_emfac.xlsx"
+emfac_input_xlsx = os.getenv('emfac_input_template')
+emfac_input_xlsx_fullpath = "emfac_prep\\" + emfac_input_xlsx
+
+output_excel_template = "emfac_prep\\ready4emfac_" + run_id + ".xlsx"
 output_filename1 = "emfac_prep\\vmt_b4reshape.csv"
 output_filename2 = "emfac_prep\\vmt.csv"
 output_filename = "emfac_prep\\defaulthourlyfraction.csv"
@@ -31,6 +32,7 @@ output_filename10 = "emfac_prep\\temp_solano.csv"
 output_filename11 = "emfac_prep\\temp_sonoma.csv"
 output_DefaultModelled = "emfac_prep\\temp_DefaultModelled.csv"
 output_checkModelled = "emfac_prep\\temp_checkModelled.csv"
+output_debug1 = "emfac_prep\\temp_veh_tech.csv"
 
 
 # -------------------------------------------------------------------
@@ -221,8 +223,8 @@ print "\n\n================================================================"
 print "Reading from and writing to the EMFAC Custom Activity Template"
 print "================================================================"
 
-print "\nLoading the workbook "+arg1_filename
-workbook = load_workbook(filename=arg1_filename)
+print "\nLoading the workbook "+emfac_input_xlsx_fullpath
+workbook = load_workbook(filename=emfac_input_xlsx_fullpath)
 print "\nWhat are the different tabs in this workbook?"
 print workbook.sheetnames
 
@@ -274,38 +276,64 @@ print "\nFinish reading <Hourly_Fraction_Veh_Tech_Speed>"
 
 # We will merge on Sub-area (identified by GAI) and Hour
 # i.e. the fractions are the assumed to be same for each subarea-hour combination
-# The Travel Model doesn't have the concept of Veh_Tech, so the fraction won't differ by vehicle technology
+# The Travel Model doesn't have the concept of Veh_Tech, so:
+#  - for 9 technologies, use the travel model's hourly fraction
+#    LDA - Dsl
+#    LDA - Gas
+#    LDT1 - Dsl
+#    LDT1 - Gas
+#    LDT2 - Dsl
+#    LDT2 - Gas
+#    MCY - Gas
+#    MDV - Dsl
+#    MDV - Gas
+#  - for the rest, keep the default hourly fraction
+# Flavia to read more about why these 9 technologies
+
+# add a "use TM hourly fractions" column to the default hourly fractons dataframe
+DefaultHourlyFraction_df['useTMhourlyfractions'] = 99 
+DefaultHourlyFraction_df['useTMhourlyfractions'] = np.where( 
+    (DefaultHourlyFraction_df['Veh_Tech']=='LDA - Dsl') | 
+    (DefaultHourlyFraction_df['Veh_Tech']=='LDA - Gas') | 
+    (DefaultHourlyFraction_df['Veh_Tech']=='LDT1 - Dsl') | 
+    (DefaultHourlyFraction_df['Veh_Tech']=='LDT1 - Gas') | 
+    (DefaultHourlyFraction_df['Veh_Tech']=='LDT2 - Dsl') | 
+    (DefaultHourlyFraction_df['Veh_Tech']=='LDT2 - Gas') | 
+    (DefaultHourlyFraction_df['Veh_Tech']=='MCY - Gas') | 
+    (DefaultHourlyFraction_df['Veh_Tech']=='MDV - Dsl') |       
+    (DefaultHourlyFraction_df['Veh_Tech']=='MDV - Gas') , 
+    1, 0)
+
 
 # merge DataFrames
 TM_HourlyFraction_df = pd.merge(DefaultHourlyFraction_df, VMT_reshape_df, left_on=['GAI','Hour'], right_on=['AirBasinNum','Hour'], how='left')
 
-# keep only the relevant columns
-TM_HourlyFraction_df = TM_HourlyFraction_df[['Sub-Area', 'GAI', 'Sub-Area2', 'Cal_Year', 'Veh_Tech', 'Hour',
-                       'HourlyFraction_5mph', 'HourlyFraction_10mph', 'HourlyFraction_15mph', 'HourlyFraction_20mph',
-                       'HourlyFraction_25mph', 'HourlyFraction_30mph', 'HourlyFraction_35mph', 'HourlyFraction_40mph',
-                       'HourlyFraction_45mph', 'HourlyFraction_50mph', 'HourlyFraction_55mph', 'HourlyFraction_60mph',
-                       'HourlyFraction_65mph', 'HourlyFraction_70mph', 'HourlyFraction_75mph', 'HourlyFraction_80mph',
-                       'HourlyFraction_85mph', 'HourlyFraction_90mph']]
+TM_HourlyFraction_df['5mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_5mph'], TM_HourlyFraction_df['5mph_x'])
+TM_HourlyFraction_df['10mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_10mph'], TM_HourlyFraction_df['10mph_x'])
+TM_HourlyFraction_df['15mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_15mph'], TM_HourlyFraction_df['15mph_x'])
+TM_HourlyFraction_df['20mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_20mph'], TM_HourlyFraction_df['20mph_x'])
+TM_HourlyFraction_df['25mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_25mph'], TM_HourlyFraction_df['25mph_x'])
+TM_HourlyFraction_df['30mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_30mph'], TM_HourlyFraction_df['30mph_x'])
+TM_HourlyFraction_df['35mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_35mph'], TM_HourlyFraction_df['35mph_x'])
+TM_HourlyFraction_df['40mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_40mph'], TM_HourlyFraction_df['40mph_x'])
+TM_HourlyFraction_df['45mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_45mph'], TM_HourlyFraction_df['45mph_x'])
+TM_HourlyFraction_df['50mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_50mph'], TM_HourlyFraction_df['50mph_x'])
+TM_HourlyFraction_df['55mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_55mph'], TM_HourlyFraction_df['55mph_x'])
+TM_HourlyFraction_df['60mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_60mph'], TM_HourlyFraction_df['60mph_x'])
+TM_HourlyFraction_df['65mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_65mph'], TM_HourlyFraction_df['65mph_x'])
+TM_HourlyFraction_df['70mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_70mph'], TM_HourlyFraction_df['70mph_x'])
+TM_HourlyFraction_df['75mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_75mph'], TM_HourlyFraction_df['75mph_x'])
+TM_HourlyFraction_df['80mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_80mph'], TM_HourlyFraction_df['80mph_x'])
+TM_HourlyFraction_df['85mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_85mph'], TM_HourlyFraction_df['85mph_x'])
+TM_HourlyFraction_df['90mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_90mph'], TM_HourlyFraction_df['90mph_x'])
 
-# rename these columns
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_5mph": "5mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_10mph": "10mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_15mph": "15mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_20mph": "20mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_25mph": "25mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_30mph": "30mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_35mph": "35mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_40mph": "40mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_45mph": "45mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_50mph": "50mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_55mph": "55mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_60mph": "60mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_65mph": "65mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_70mph": "70mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_75mph": "75mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_80mph": "80mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_85mph": "85mph"}, inplace=True)
-TM_HourlyFraction_df.rename(columns={"HourlyFraction_90mph": "90mph"}, inplace=True)
+TM_HourlyFraction_df.to_csv(output_debug1, header=True, index=False)
+
+
+# keep only the relevant columns
+TM_HourlyFraction_df = TM_HourlyFraction_df[['Sub-Area', 'GAI', 'Sub-Area2', 'Cal_Year', 'Veh_Tech', 'Hour', 
+                                             '5mph', '10mph', '15mph', '20mph', '25mph', '30mph', '35mph', '40mph', '45mph',
+                                             '50mph', '55mph', '60mph', '65mph', '70mph', '75mph', '80mph', '85mph', '90mph']]
 
 
 # round the results to two decimal places
@@ -499,8 +527,8 @@ if numLine_ModelledVMTbyGAI == 9:
 DefaultVMT_df = pd.merge(DefaultVMT_df, ModelledVMTbyGAI_df, left_on=['GAI'], right_on=['AirBasinNum'], how='left')
 DefaultVMT_df.to_csv(output_DefaultModelled, header=True, index=False)
 
-print "Somehow DefaultVMT_df['HourlyTotVMT'].dtype is an " + str(DefaultVMT_df['HourlyTotVMT'].dtype)
-print "When converted to float, it generates a warning. I'm ignoring this for now."
+print "\nSomehow DefaultVMT_df['HourlyTotVMT'].dtype is an " + str(DefaultVMT_df['HourlyTotVMT'].dtype)
+print "When converted to float, it generates a warning. I'm ignoring this because the column in question is meant to be float."
 
 # DefaultVMT_df['modelled_VMT'] = DefaultVMT_df['percentVMT'] * DefaultVMT_df['HourlyTotVMT'] # this didn't work
 DefaultVMT_df['modelled_VMT'] = DefaultVMT_df['percentVMT'] * DefaultVMT_df['HourlyTotVMT'].astype(float)
@@ -512,7 +540,7 @@ DefaultVMT_df.to_csv(output_filename8, header=True, index=False)
 TM_VMT_By_Veh_Tech_df =  DefaultVMT_df[['Sub-Area', 'GAI', 'Sub-Area2', 'Cal_Year_x', 'Veh_Tech', 'modelled_VMT']]
 
 # writing to excel
-print "\nStarted writing to <Daily_VMT_By_Veh_Tech>"
+print "\nStart writing to <Daily_VMT_By_Veh_Tech>"
 workbook2.create_sheet('Daily_VMT_By_Veh_Tech')
 # activate the new sheet
 sheet3 = workbook2['Daily_VMT_By_Veh_Tech']
