@@ -291,47 +291,47 @@ print "\nFinish reading <Hourly_Fraction_Veh_Tech_Speed>"
 # Flavia to read more about why these 9 technologies
 
 # add a "use TM hourly fractions" column to the default hourly fractons dataframe
-DefaultHourlyFraction_df['useTMhourlyfractions'] = 99 
-DefaultHourlyFraction_df['useTMhourlyfractions'] = np.where( 
-    (DefaultHourlyFraction_df['Veh_Tech']=='LDA - Dsl') | 
-    (DefaultHourlyFraction_df['Veh_Tech']=='LDA - Gas') | 
-    (DefaultHourlyFraction_df['Veh_Tech']=='LDT1 - Dsl') | 
-    (DefaultHourlyFraction_df['Veh_Tech']=='LDT1 - Gas') | 
-    (DefaultHourlyFraction_df['Veh_Tech']=='LDT2 - Dsl') | 
-    (DefaultHourlyFraction_df['Veh_Tech']=='LDT2 - Gas') | 
-    (DefaultHourlyFraction_df['Veh_Tech']=='MCY - Gas') | 
-    (DefaultHourlyFraction_df['Veh_Tech']=='MDV - Dsl') |       
-    (DefaultHourlyFraction_df['Veh_Tech']=='MDV - Gas') , 
+DefaultHourlyFraction_df['useTMhourlyfractions'] = 99
+DefaultHourlyFraction_df['useTMhourlyfractions'] = np.where(
+    (DefaultHourlyFraction_df['Veh_Tech']=='LDA - Dsl') |
+    (DefaultHourlyFraction_df['Veh_Tech']=='LDA - Gas') |
+    (DefaultHourlyFraction_df['Veh_Tech']=='LDT1 - Dsl') |
+    (DefaultHourlyFraction_df['Veh_Tech']=='LDT1 - Gas') |
+    (DefaultHourlyFraction_df['Veh_Tech']=='LDT2 - Dsl') |
+    (DefaultHourlyFraction_df['Veh_Tech']=='LDT2 - Gas') |
+    (DefaultHourlyFraction_df['Veh_Tech']=='MCY - Gas') |
+    (DefaultHourlyFraction_df['Veh_Tech']=='MDV - Dsl') |
+    (DefaultHourlyFraction_df['Veh_Tech']=='MDV - Gas') ,
     1, 0)
 
 
 # merge DataFrames
 TM_HourlyFraction_df = pd.merge(DefaultHourlyFraction_df, VMT_reshape_df, left_on=['GAI','Hour'], right_on=['AirBasinNum','Hour'], how='left')
 
-TM_HourlyFraction_df['5mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_5mph'], TM_HourlyFraction_df['5mph_x'])
-TM_HourlyFraction_df['10mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_10mph'], TM_HourlyFraction_df['10mph_x'])
-TM_HourlyFraction_df['15mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_15mph'], TM_HourlyFraction_df['15mph_x'])
-TM_HourlyFraction_df['20mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_20mph'], TM_HourlyFraction_df['20mph_x'])
-TM_HourlyFraction_df['25mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_25mph'], TM_HourlyFraction_df['25mph_x'])
-TM_HourlyFraction_df['30mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_30mph'], TM_HourlyFraction_df['30mph_x'])
-TM_HourlyFraction_df['35mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_35mph'], TM_HourlyFraction_df['35mph_x'])
-TM_HourlyFraction_df['40mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_40mph'], TM_HourlyFraction_df['40mph_x'])
-TM_HourlyFraction_df['45mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_45mph'], TM_HourlyFraction_df['45mph_x'])
-TM_HourlyFraction_df['50mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_50mph'], TM_HourlyFraction_df['50mph_x'])
-TM_HourlyFraction_df['55mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_55mph'], TM_HourlyFraction_df['55mph_x'])
-TM_HourlyFraction_df['60mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_60mph'], TM_HourlyFraction_df['60mph_x'])
-TM_HourlyFraction_df['65mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_65mph'], TM_HourlyFraction_df['65mph_x'])
-TM_HourlyFraction_df['70mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_70mph'], TM_HourlyFraction_df['70mph_x'])
-TM_HourlyFraction_df['75mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_75mph'], TM_HourlyFraction_df['75mph_x'])
-TM_HourlyFraction_df['80mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_80mph'], TM_HourlyFraction_df['80mph_x'])
-TM_HourlyFraction_df['85mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_85mph'], TM_HourlyFraction_df['85mph_x'])
-TM_HourlyFraction_df['90mph'] = np.where(TM_HourlyFraction_df['Veh_Tech'] == 1, TM_HourlyFraction_df['HourlyFraction_90mph'], TM_HourlyFraction_df['90mph_x'])
+TM_HourlyFraction_df['5mph']  = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_5mph'], TM_HourlyFraction_df['5mph_x'])
+TM_HourlyFraction_df['10mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_10mph'], TM_HourlyFraction_df['10mph_x'])
+TM_HourlyFraction_df['15mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_15mph'], TM_HourlyFraction_df['15mph_x'])
+TM_HourlyFraction_df['20mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_20mph'], TM_HourlyFraction_df['20mph_x'])
+TM_HourlyFraction_df['25mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_25mph'], TM_HourlyFraction_df['25mph_x'])
+TM_HourlyFraction_df['30mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_30mph'], TM_HourlyFraction_df['30mph_x'])
+TM_HourlyFraction_df['35mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_35mph'], TM_HourlyFraction_df['35mph_x'])
+TM_HourlyFraction_df['40mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_40mph'], TM_HourlyFraction_df['40mph_x'])
+TM_HourlyFraction_df['45mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_45mph'], TM_HourlyFraction_df['45mph_x'])
+TM_HourlyFraction_df['50mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_50mph'], TM_HourlyFraction_df['50mph_x'])
+TM_HourlyFraction_df['55mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_55mph'], TM_HourlyFraction_df['55mph_x'])
+TM_HourlyFraction_df['60mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_60mph'], TM_HourlyFraction_df['60mph_x'])
+TM_HourlyFraction_df['65mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_65mph'], TM_HourlyFraction_df['65mph_x'])
+TM_HourlyFraction_df['70mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_70mph'], TM_HourlyFraction_df['70mph_x'])
+TM_HourlyFraction_df['75mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_75mph'], TM_HourlyFraction_df['75mph_x'])
+TM_HourlyFraction_df['80mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_80mph'], TM_HourlyFraction_df['80mph_x'])
+TM_HourlyFraction_df['85mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_85mph'], TM_HourlyFraction_df['85mph_x'])
+TM_HourlyFraction_df['90mph'] = np.where(TM_HourlyFraction_df['useTMhourlyfractions'] == 1, TM_HourlyFraction_df['HourlyFraction_90mph'], TM_HourlyFraction_df['90mph_x'])
 
 TM_HourlyFraction_df.to_csv(output_debug1, header=True, index=False)
 
 
 # keep only the relevant columns
-TM_HourlyFraction_df = TM_HourlyFraction_df[['Sub-Area', 'GAI', 'Sub-Area2', 'Cal_Year', 'Veh_Tech', 'Hour', 
+TM_HourlyFraction_df = TM_HourlyFraction_df[['Sub-Area', 'GAI', 'Sub-Area2', 'Cal_Year', 'Veh_Tech', 'Hour',
                                              '5mph', '10mph', '15mph', '20mph', '25mph', '30mph', '35mph', '40mph', '45mph',
                                              '50mph', '55mph', '60mph', '65mph', '70mph', '75mph', '80mph', '85mph', '90mph']]
 
