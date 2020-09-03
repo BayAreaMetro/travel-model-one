@@ -11,18 +11,24 @@
 :: RunPrepareEmfac.bat SB375 WithFreight 
 :: (Or, RunPrepareEmfac.bat Plan-EIR WithFreight)
 
+
 : make sure the user specifies either SB375 or Plan-EIR in the argument
-IF %1==SB375    goto :start
-IF %1==Plan-EIR  goto :start 
+IF "%1"=="" (ECHO Hi! Please make sure the required arguments are specified.
+             ECHO First argument can be either "SB375" or "Plan-EIR""
+             ECHO Second argument should always WithFreight, until further notice.
+             ECHO For example, the command for running this script can be: RunPrepareEmfac.bat SB375 WithFreight 
+             GOTO :end)
+
+IF %1==SB375    goto check_argument2
+IF %1==Plan-EIR  goto check_argument2 
 :: if neither, print error_message
 ECHO Hi! Please make sure "SB375" or "Plan-EIR" is specified. Note that it is case-sensitive."
 GOTO :end
 
 : make sure the user specifies either NoFreight or WithFreight in the argument
-: we are still investigating the adjustments required for the NoFreight option.
-: please use the WithFreight option for both SB375 aand Plan-EIR until further notice.    
-IF %2==NoFreight    goto :start
-IF %2==WithFreight  goto :start 
+:check_argument2 
+IF %2==NoFreight    goto start
+IF %2==WithFreight  goto start 
 :: if neither, print error_message
 ECHO Hi! Please make sure "NoFreight" or "WithFreight" is specified. Note that it is case-sensitive."
 GOTO :end
@@ -48,7 +54,7 @@ if %2==WithFreight rename emfac_prep\CreateSpeedBinsBetweenZones_sums_NoTrk.csv 
 if %2==WithFreight rename emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv CreateSpWithinZonesNoTruck_NotUsed.csv
 
 :: --------------------------------------------------------------------------------------------
-:: copy the EMFAC relevant custom activity template based on analysis year and SB375/Plan-EIR
+:: copy the EMFAC relevant custom activity template based on analysis year and SB375/notSB375
 :: --------------------------------------------------------------------------------------------
 :: Figure out the model year
 set MODEL_DIR=%CD%
@@ -79,7 +85,7 @@ if %MODEL_YEAR% GTR 3000 (
 )
 
 :: Figure out the EMFAC version
-:: See more info in Asana task "EMFAC version for next SCS": https://app.asana.com/0/310827677834656/820983836362952
+:: See Asana task "EMFAC version for next SCS": https://app.asana.com/0/310827677834656/820983836362952
 
 :: SB375
 ::-----

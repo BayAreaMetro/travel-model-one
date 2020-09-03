@@ -368,6 +368,9 @@ if ERRORLEVEL 2 goto done
 call extractkeyfiles
 c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
 
+:: Run Prepare EMFAC
+call RunPrepareEmfac.bat SB375 WithFreight 
+
 : cleanup
 
 :: Move all the TP+ printouts to the \logs folder
