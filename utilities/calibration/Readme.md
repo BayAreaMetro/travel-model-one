@@ -14,7 +14,7 @@ Then use `copy_output.bat` to do the following:
 
 * exports skims to csvs (if `CALIB_ITER=0`)
 * copies model core outputs from `%MODEL_DIR%` into `%TARGET_DIR%`
-* runs the sumodel R scripts which summarize those outputs into csvs and pastes those into the calibration workbook templates, creating an iteration of the calibration workbook
+* runs the submodel R scripts which summarize those outputs into csvs and pastes those into the calibration workbook templates, creating an iteration of the calibration workbook
 
 The modeler then:
 
