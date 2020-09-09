@@ -38,19 +38,17 @@ call  ctramp\runtime\setpath
 mkdir emfac_prep
 
 :: Step One
-call runtpp CTRAMP\scripts\emfac\CreateSpeedBinsBetweenZones.job
+python ctramp\scripts\emfac\betweenzonesvmt.py
 
 :: Step Two
 call runtpp CTRAMP\scripts\emfac\CreateSpeedBinsWithinZones.job
 
 :: Step Three
 
-:: if we want to run emfac without freight, use the "no truck" file
-if %2==NoFreight rename emfac_prep\CreateSpeedBinsBetweenZones_sums.csv CreateSpBetweenZones_NotUsed.csv
+: if we want to run emfac without freight, use the "no truck" file
 if %2==NoFreight rename emfac_prep\CreateSpeedBinsWithinZones_sums.csv CreateSpWithinZones_NotUsed.csv
 
 :: if we want to run emfac with freight, use the "with truck" files 
-if %2==WithFreight rename emfac_prep\CreateSpeedBinsBetweenZones_sums_NoTrk.csv CreateSpBetweenZonesNoTruck_NotUsed.csv
 if %2==WithFreight rename emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv CreateSpWithinZonesNoTruck_NotUsed.csv
 
 :: --------------------------------------------------------------------------------------------
@@ -102,16 +100,17 @@ if %MODEL_YEAR% GTR 3000 (
 :: Year 2040 - Emfac2017 (AQ Conformity)
 :: Year 2050 - Emfac2017 (AQ Conformity + EIR)
 
-if %1=="SB375"    (if %MODEL_YEAR%==2005 (set emfacVersion=Emfac2007))
-if %1=="SB375"    (if %MODEL_YEAR%==2020 (set emfacVersion=Emfac2014))
-if %1=="SB375"    (if %MODEL_YEAR%==2035 (set emfacVersion=Emfac2014))
-
-if %1=="Plan-EIR" (if %MODEL_YEAR%==2015 (set emfacVersion=Emfac2017))
-if %1=="Plan-EIR" (if %MODEL_YEAR%==2020 (set emfacVersion=Emfac2017))
-if %1=="Plan-EIR" (if %MODEL_YEAR%==2030 (set emfacVersion=Emfac2017))
-if %1=="Plan-EIR" (if %MODEL_YEAR%==2035 (set emfacVersion=Emfac2017))
-if %1=="Plan-EIR" (if %MODEL_YEAR%==2040 (set emfacVersion=Emfac2017))
-if %1=="Plan-EIR" (if %MODEL_YEAR%==2050 (set emfacVersion=Emfac2017))
+if %1=="SB375"    if %MODEL_YEAR%==2005 (set emfacVersion=Emfac2007)
+if %1=="SB375"    if %MODEL_YEAR%==2020 (set emfacVersion=Emfac2014)
+if %1=="SB375"    if %MODEL_YEAR%==2035 (set emfacVersion=Emfac2014)
+::if %MODEL_YEAR%==2035 (set emfacVersion=Emfac2014)
+::if %1=="SB375" echo %1
+if %1=="Plan-EIR" if %MODEL_YEAR%==2015 (set emfacVersion=Emfac2017)
+if %1=="Plan-EIR" if %MODEL_YEAR%==2020 (set emfacVersion=Emfac2017)
+if %1=="Plan-EIR" if %MODEL_YEAR%==2030 (set emfacVersion=Emfac2017)
+if %1=="Plan-EIR" if %MODEL_YEAR%==2035 (set emfacVersion=Emfac2017)
+if %1=="Plan-EIR" if %MODEL_YEAR%==2040 (set emfacVersion=Emfac2017)
+if %1=="Plan-EIR" if %MODEL_YEAR%==2050 (set emfacVersion=Emfac2017)
 
 :: as an example, the custom activity template for SB375 and analysis year 2035 is named as ByVehFuel_Emfac2014_SB375_Yr2035_11Subareas
 set emfac_input_template=ByVehFuel_%emfacVersion%_%1_Yr%MODEL_YEAR%_11Subareas.xlsx
