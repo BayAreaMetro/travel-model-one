@@ -14,7 +14,9 @@ SHAPEFILES = [
     "network_nodes.shp",
     "network_trn_lines.shp",
     "network_trn_links.shp",
-    "network_trn_stops.shp"
+    "network_trn_stops.shp",
+    "trnlinkam_withSupport.shp",
+    "trnlinkpm_withSupport.shp"
 ]
 
 if __name__ == '__main__':
@@ -36,6 +38,14 @@ if __name__ == '__main__':
         print("infile1: {}".format(infile1))
         print("infile2: {}".format(infile2))
         print("outfile: {}".format(outfile))
+
+        if not arcpy.Exists(infile1):
+            print("{} doesn't exist -- skipping".format(infile1))
+            continue
+
+        if not arcpy.Exists(infile2):
+            print("{} doesn't exist -- skipping".format(infile2))
+            continue
 
         if arcpy.Exists(outfile):
             print("Found existing {} - deleting".format(outfile))
