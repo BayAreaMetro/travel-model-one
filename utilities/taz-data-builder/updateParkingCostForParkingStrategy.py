@@ -36,7 +36,6 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter)
     # parser.add_argument("model_year", help="Model year")
-    parser.add_argument("fee_type",         choices=["base", "strategy"])
     parser.add_argument("original_tazdata", help="Original tazdata.csv file")
     parser.add_argument("output_tazdata",   help="Output tazdata.csv file with modified parking costs")
     args = parser.parse_args()
@@ -62,15 +61,14 @@ if __name__ == '__main__':
     logging.info("tazdata_df(len={}).head:\n{}".format(len(tazdata_df), tazdata_df.head()))
 
     # base or strategy: apply BASE_PARKING_MIN_COST to TAZs in GG (determined by threshold)
+    logging.info("Applying minimum parking price of {} to GG".format(BASE_PARKING_MIN_COST))
     tazdata_df.loc[ (tazdata_df.pct_area_within_GG >= PCT_AREA_THRESHOLD)&(tazdata_df[ "PRKCST"]<BASE_PARKING_MIN_COST),  "PRKCST"] = BASE_PARKING_MIN_COST
     tazdata_df.loc[ (tazdata_df.pct_area_within_GG >= PCT_AREA_THRESHOLD)&(tazdata_df["OPRKCST"]<BASE_PARKING_MIN_COST), "OPRKCST"] = BASE_PARKING_MIN_COST
 
     # strategy only: apply STRATEGY_PARKING_INCREASE to TAZs in GG+TRA (determined by threshold)
-    if args.fee_type == "strategy":
-        logging.info("Applying strategy parking increase of {}".format(STRATEGY_PARKING_INCREASE))
-
-        tazdata_df.loc[ tazdata_df.pct_area_within_GG_TRA123 >= PCT_AREA_THRESHOLD,  "PRKCST"] = tazdata_df[ "PRKCST"]*STRATEGY_PARKING_INCREASE
-        tazdata_df.loc[ tazdata_df.pct_area_within_GG_TRA123 >= PCT_AREA_THRESHOLD, "OPRKCST"] = tazdata_df["OPRKCST"]*STRATEGY_PARKING_INCREASE
+    logging.info("Applying strategy parking increase of {}".format(STRATEGY_PARKING_INCREASE))
+    tazdata_df.loc[ tazdata_df.pct_area_within_GG_TRA123 >= PCT_AREA_THRESHOLD,  "PRKCST"] = tazdata_df[ "PRKCST"]*STRATEGY_PARKING_INCREASE
+    tazdata_df.loc[ tazdata_df.pct_area_within_GG_TRA123 >= PCT_AREA_THRESHOLD, "OPRKCST"] = tazdata_df["OPRKCST"]*STRATEGY_PARKING_INCREASE
 
     # output full version for debug
     debug_file = args.output_tazdata.replace(".csv", ".debug.csv")
