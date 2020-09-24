@@ -552,7 +552,7 @@ DefaultVMT_df = pd.merge(DefaultVMT_df, ModelledVMTbyGAI_df, left_on=['GAI'], ri
 # DefaultVMT_df.to_csv(output_DefaultModelled, header=True, index=False)
 
 print "\nSomehow DefaultVMT_df['HourlyTotVMT'].dtype is an " + str(DefaultVMT_df['HourlyTotVMT'].dtype)
-print "When converted to float, it generates a warning. I'm ignoring this because the column in question is meant to be float."
+print "When converted to float, it generates a warning. This warning can be ignored because the column in question is meant to be a float."
 
 # DefaultVMT_df['modelled_VMT'] = DefaultVMT_df['percentVMT'] * DefaultVMT_df['HourlyTotVMT'] # this didn't work
 DefaultVMT_df['modelled_VMT'] = DefaultVMT_df['percentVMT'] * DefaultVMT_df['HourlyTotVMT'].astype(float)
@@ -581,6 +581,10 @@ sheet3["F1"] = "New Total VMT"
 workbook2.save(output_excel_template)
 
 print "\nFinished writing to <Daily_VMT_By_Veh_Tech>"
+# the "New Total VMT" in the tab <Daily_VMT_By_Veh_Tech> should be equal to 
+# the "between zone vmt (excluding external zones)" from BetweenZonesVMT.py 
+# plus the "within zone vmt (excluding external zones)" from CreateSpeedBinsWithinZones.job
+# note that *external zones are excluded* when checking totals
 
 
 # -------------------------------------------------------------------
