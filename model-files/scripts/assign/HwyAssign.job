@@ -22,10 +22,12 @@
 ;      (8) shared ride 3+, value toll eligible
 ;      (9) very small, small, and medium trucks, value toll eligible
 ;     (10) large trucks, value toll eligible
-;     (11) DA AV and TNC (value toll eligible)
-;     (12) S2 AV and TNC (value toll eligible)
-;     (13) S3+ AV and TNC (value toll eligible)
-;
+;     (11) DA  AV  (value toll eligible)
+;     (12) S2  AV  (value toll eligible)
+;     (13) S3+ AV  (value toll eligible)
+;     (14) DA  TNC (value toll eligible)
+;     (15) S2  TNC (value toll eligible)
+;     (16) S3+ TNC (value toll eligible)
 ;
 ; Four types of trips are assigned, as follows: (a) personal, inter-regional travel; (b) personal, intra-regional
 ; travel; (c) commercial travel; and, (d) air passenger travel.  Separate trip tables are read in by the script for
@@ -52,17 +54,23 @@
 ;              (4)  CSPD_1 - congested speed, in miles per hour
 ;              (5)  VDT_1 - vehicle distance traveled, in vehicle miles
 ;              (6)  VHT_1 - vehicle hours traveled
-;              (7)  V1_1  - volume of vehicles in assigment class one: drive alone, no value toll
-;              (8)  V2_1  - volume of vehicles in assigment class two: two-occupant vehicles, no value toll
-;              (9)  V3_1  - volume of vehicles in assigment class three: three-or-more-occupant vehicles, no value toll
-;              (10) V4_1  - volume of vehicles in assigment class four: very small, small, and medium trucks, no value toll
-;              (11) V5_1  - volume of vehicles in assigment class five: combination trucks, no value toll
-;              (12) V6_1  - volume of vehicles in assigment class six: drive alone, value toll
-;              (13) V7_1  - volume of vehicles in assigment class seven: two-occupant vehicles, value toll
-;              (14) V8_1  - volume of vehicles in assigment class eight: three-or-more-occupant vehicles, value toll
-;              (15) V9_1  - volume of vehicles in assigment class nine: very small, small, and medium trucks, value toll
-;              (16) V10_1 - volume of vehicles in assigment class ten: combination trucks, value toll
-;              (17) VT_1 and VXT_1, where X is 1 through 10, are the b-to-a volumes
+;              (7)  V1_1  - volume of vehicles in assignment class one:    drive alone, no value toll
+;              (8)  V2_1  - volume of vehicles in assignment class two:    two-occupant vehicles, no value toll
+;              (9)  V3_1  - volume of vehicles in assignment class three:  three-or-more-occupant vehicles, no value toll
+;              (10) V4_1  - volume of vehicles in assignment class four:   very small, small, and medium trucks, no value toll
+;              (11) V5_1  - volume of vehicles in assignment class five:   combination trucks, no value toll
+;              (12) V6_1  - volume of vehicles in assignment class six:    drive alone, value toll
+;              (13) V7_1  - volume of vehicles in assignment class seven:  two-occupant vehicles, value toll
+;              (14) V8_1  - volume of vehicles in assignment class eight:  three-or-more-occupant vehicles, value toll
+;              (15) V9_1  - volume of vehicles in assignment class nine:   very small, small, and medium trucks, value toll
+;              (16) V10_1 - volume of vehicles in assignment class ten:    combination trucks, value toll
+;              (17) V11_1 - volume of vehicles in assignment class eleven: "drive" alone personally-owned AV
+;              (18) V12_1 - volume of vehicles in assignment class eleven: two-occupant personally-owned AV
+;              (19) V13_1 - volume of vehicles in assignment class eleven: three-or-more-occupant personally-owned AV
+;              (20) V14_1 - volume of vehicles in assignment class eleven: "drive" alone TNC
+;              (21) V15_1 - volume of vehicles in assignment class eleven: two-occupant TNC
+;              (22) V16_1 - volume of vehicles in assignment class eleven: three-or-more-occupant TNC
+;              (24) VT_1 and VXT_1, where X is 1 through 10, are the b-to-a volumes
 ;
 ;
 ; Notes: (1) Four types of commercial vehicle demand is estimated: very small, small, medium, and large commercial
@@ -81,8 +89,8 @@
 ;           (2) SetTolls.job, which sets the time- and class-specific bridge and value tools;
 ;           (3) AddPavementCost.job, which sets the pavement degradation cost.
 ;
-; version:  Travel Model One (v 0.5)
-; authors:  dto(2014 08 XX); dto (2014 01 23); dto (2011 12 13); dto (2010 08 10); gde (2009)
+; version:  Travel Model One (v 1.5)
+; authors:  lmz (2020 09); dto(2014 08); dto (2014 01 23); dto (2011 12 13); dto (2010 08 10); gde (2009)
 ;
 ;
 ; ----------------------------------------------------------------------------------------------------------------
@@ -306,14 +314,23 @@ loop period = 1, 5
          ; large trucks, value toll paying, excluded from HOV facilities and no commercial truck facilities
          pathload path = lw.gencost_lrg, excludegrp = 23, 4, vol[10] = mi.3.ctrucktoll
 
-         ; drive alone AV TNC, value toll paying, exclude HOV facilities
-         pathload path = lw.gencost_da, excludegrp = 23, vol[11] = mi.1.da_tnc + mi.1.da_av
+         ; drive alone AV, value toll paying, exclude HOV facilities
+         pathload path = lw.gencost_da, excludegrp = 23, vol[11] = mi.1.da_av
 
-         ; shared ride 2, value toll paying, exclude HOV 3+ facilities
-         pathload path = lw.gencost_s2, excludegrp = 3, vol[12] = (mi.1.s2_tnc + mi.1.s2_av) / 2
+         ; shared ride 2 AV, value toll paying, exclude HOV 3+ facilities
+         pathload path = lw.gencost_s2, excludegrp = 3, vol[12] = mi.1.s2_av / 2
 
-         ; shared ride 3+, value toll paying, no exclusions
-         pathload path = lw.gencost_s3, vol[13] = (mi.1.s3_tnc + mi.1.s3_av)/ 3.25
+         ; shared ride 3+ AV, value toll paying, no exclusions
+         pathload path = lw.gencost_s3, vol[13] = mi.1.s3_av / 3.25
+
+         ; drive alone TNC, value toll paying, exclude HOV facilities
+         pathload path = lw.gencost_da, excludegrp = 23, vol[14] = mi.1.da_tnc
+
+         ; shared ride 2 TNC, value toll paying, exclude HOV 3+ facilities
+         pathload path = lw.gencost_s2, excludegrp = 3, vol[15] = mi.1.s2_tnc / 2
+
+         ; shared ride 3+ TNC, value toll paying, no exclusions
+         pathload path = lw.gencost_s3, vol[16] = mi.1.s3_tnc / 3.25
 
       endphase
 
@@ -321,7 +338,7 @@ loop period = 1, 5
       phase = adjust
 
          ; very small, small, and medium trucks have a passenger car equivalent of, on average 1.0, large trucks see HwyParam.block for PCE
-         function v = (vol[1] + vol[2] + vol[3] + vol[4] + trkpce*vol[5] + vol[6] + vol[7] + vol[8] + vol[9] + trkpce*vol[10] + (vol[11] + vol[12] + vol[13])*li.AV_PCE)
+         function v = (vol[1] + vol[2] + vol[3] + vol[4] + trkpce*vol[5] + vol[6] + vol[7] + vol[8] + vol[9] + trkpce*vol[10] + (vol[11] + vol[12] + vol[13] + vol[14] + vol[15] + vol[16])*li.AV_PCE)
 
          ; the volume delay functions are housed in the SpeedFlowCurve.block file
          read file = ctramp\scripts\block\SpeedFlowCurve.block

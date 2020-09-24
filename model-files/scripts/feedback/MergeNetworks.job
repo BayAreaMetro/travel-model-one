@@ -122,17 +122,20 @@ loop period = 1, 5
       vol@token_period@_smT = VOL_SMT                                               
       vol@token_period@_hvT = VOL_HVT 
       
-      ; AV TNC Classes (toll eligible)
+      ; AV & TNC Classes (toll eligible)
       vol@token_period@_daav = VOL_DAAV                                               
       vol@token_period@_s2av = VOL_S2AV                                               
       vol@token_period@_s3av = VOL_S3AV
-      
+      vol@token_period@_datnc= VOL_DATNC                                               
+      vol@token_period@_s2tnc= VOL_S2TNC                                               
+      vol@token_period@_s3tnc= VOL_S3TNC
      
             
       ; set the assignment-class-specific volumes: total volume
       vol@token_period@_tot = vol@token_period@_da  + vol@token_period@_s2 +  vol@token_period@_s3  + vol@token_period@_sm  +  vol@token_period@_hv + 
                               vol@token_period@_daT + vol@token_period@_s2T + vol@token_period@_s3T + vol@token_period@_smT + vol@token_period@_hvT +
-                              vol@token_period@_daav + vol@token_period@_s2av + vol@token_period@_s3av
+                              vol@token_period@_daav + vol@token_period@_s2av + vol@token_period@_s3av +
+                              vol@token_period@_datnc + vol@token_period@_s2tnc + vol@token_period@_s3tnc
                               
       ; compute delay, vehicle-miles traveled, and vehicle-hours traveled (ignore centroid connectors and other dummy links)
       if (FT != 6)
@@ -176,7 +179,7 @@ run pgm = hwynet
                                                                           VOL_DAT, VOL_S2T, VOL_S3T, VOL_SMT, VOL_HVT,
                                                                           VOLT, VOLT_DA, VOLT_S2, VOLT_S3, VOLT_SM, VOLT_HV,
                                                                           VOLT_DAT, VOLT_S2T, VOLT_S3T, VOLT_SMT, VOLT_HVT,
-                                                                          VOL_DAAV, VOLS2AV, VOLS3AV
+                                                                          VOL_DAAV, VOLS2AV, VOLS3AV, VOL_DATNC, VOL_S2TNC, VOL_S3TNC
      
    ; combine the records of the time-period-specific assignments
    merge record = t     
@@ -197,10 +200,14 @@ run pgm = hwynet
       vol24hr_smT = volEA_smT + volAM_smT + volMD_smt + volPM_smT + volEV_smT        
       vol24hr_hvT = volEA_hvT + volAM_hvT + volMD_hvt + volPM_hvt + volEV_hvT
       
-      vol24hr_daav  = volEA_daav  + volAM_daav  + volMD_daav  + volPM_daav  + volEV_daav         
-      vol24hr_s2av  = volEA_s2av  + volAM_s2av  + volMD_s2av  + volPM_s2av  + volEV_s2av         
-      vol24hr_s3av  = volEA_s3av  + volAM_s3av  + volMD_s3av  + volPM_s3av  + volEV_s3av         
-      
+      vol24hr_daav  = volEA_daav  + volAM_daav  + volMD_daav  + volPM_daav  + volEV_daav
+      vol24hr_s2av  = volEA_s2av  + volAM_s2av  + volMD_s2av  + volPM_s2av  + volEV_s2av
+      vol24hr_s3av  = volEA_s3av  + volAM_s3av  + volMD_s3av  + volPM_s3av  + volEV_s3av
+
+      vol24hr_datnc = volEA_datnc + volAM_datnc + volMD_datnc + volPM_datnc + volEV_datnc
+      vol24hr_s2tnc = volEA_s2tnc + volAM_s2tnc + volMD_s2tnc + volPM_s2tnc + volEV_s2tnc
+      vol24hr_s3tnc = volEA_s3tnc + volAM_s3tnc + volMD_s3tnc + volPM_s3tnc + volEV_s3tnc
+
       vol24hr_tot = volEA_tot + volAM_tot + volMD_tot + volPM_tot + volEV_tot
       
       ; compute delay, vehicle-miles traveled, and vehicle-hours traveled (ignore centroid connectors and other dummy links)
