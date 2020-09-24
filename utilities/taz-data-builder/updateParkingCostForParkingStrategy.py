@@ -72,9 +72,9 @@ if __name__ == '__main__':
 
     # output full version for debug
     debug_file = args.output_tazdata.replace(".csv", ".debug.csv")
-    tazdata_df.to_csv(debug_file)
+    tazdata_df.to_csv(debug_file, index=False)
     logging.info("Wrote debug output to {}".format(debug_file))
 
     # output file with original tazdata columns
-    tazdata_df.to_csv(args.output_tazdata, columns=tazdata_cols)
+    tazdata_df.to_csv(args.output_tazdata, columns=tazdata_cols, index=False)
     logging.info("Wrote tazdata with updated parking pricing to {}".format(args.output_tazdata))
