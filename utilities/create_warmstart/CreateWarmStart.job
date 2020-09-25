@@ -2,16 +2,20 @@
    run pgm = matrix
      
       ; read in the warm start matrices by time period
-      filei mati[1] = "M:\Application\Model One\RTP2017\Scenarios\2005_05_003\INPUT_fullcopy\warmstart\main\trips%timeperiod%.tpp"
+      ; filei mati[1] = "M:\Application\Model One\RTP2017\Scenarios\2005_05_003\INPUT_fullcopy\warmstart\main\trips%timeperiod%.tpp"
+      ; testing with run similar to this run
+      filei mati[1] = "M:\Application\Model One\RTP2021\Blueprint\2050_TM152_FBP_PlusCrossing_03\INPUT\warmstart\main\trips%timeperiod%.tpp"
       
       ; write out a matrix that includes the old warm start matrices and append three new ones in the end
-      fileo mato[1] = "%USERPROFILE%\Box\Modeling and Surveys\Development\Travel Model 1.5\Model_inputs\2005\warmstart\main\trips%timeperiod%.tpp", mo = 1-29,
+      ; fileo mato[1] = "%USERPROFILE%\Box\Modeling and Surveys\Development\Travel Model 1.5\Model_inputs\2005\warmstart\main\trips%timeperiod%.tpp", mo = 1-31,
+      fileo mato[1] = "M:\Application\Model One\RTP2021\Blueprint\2050_TM152_FBP_PlusCrossing_03_splitavtnc\warmstart_main\trips%timeperiod%.tpp", mo = 1-31,
          name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                 walk, bike, 
                 wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, 
                 drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
                 wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
-                da_tnc, s2_tnc, s3_tnc, da_av, s2_av, s3_av
+                zp_av,  da_av,  s2_av,  s3_av, 
+                zp_tnc, da_tnc, s2_tnc, s3_tnc
                     
      
     
@@ -84,15 +88,17 @@
       
       ; walk, commuter rail, drive
       mw[23] = mi.1.23
-      
-      ; da_tnc, s2_tnc, s3_tnc
-      mw[24] =  0
-      mw[25] =  0
-      mw[26] =  0
-      ; da_av, s2_av, s3_av
-      mw[27] =  0
-      mw[28] =  0
-      mw[29] =  0
+
+      ; zp_av, da_av, s2_av, s3_av      
+      mw[24] = 0
+      mw[25] = da_av
+      mw[26] = s2_av
+      mw[27] = s3_av
+      ; zp_av, da_tnc, s2_tnc, s3_tnc
+      mw[28] = 0
+      mw[29] = da_tnc
+      mw[30] = s2_tnc
+      mw[31] = s3_tnc
 
    endrun
    
