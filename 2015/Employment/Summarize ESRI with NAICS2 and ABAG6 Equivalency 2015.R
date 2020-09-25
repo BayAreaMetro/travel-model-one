@@ -1,6 +1,10 @@
 # Summarize ESRI with NAICS2 and ABAG6 Equivalency 2015.R
 # Sum ESRI 2015 data to TAZ levelfor NAICS2 and use equivalency for ABAG6 categories
 # Scale to regional total (4,005,318, from https://mtcdrive.app.box.com/file/654134152628)
+# Output: 
+#  1) ESRI 2015 NAICS2 and ABAG6 total jobs.csv  -- summary of jobs by prior to incommuter removal
+#  2) ESRI 2015 NAICS2 and ABAG6 noin.csv
+#  3) ESRI 2015 NAICS2 noincommute.csv
 # Remove incommuters, using incommute shares to superdistricts to account for non-uniform incommuting rates around region
 
 # Import Libraries
@@ -14,12 +18,16 @@ wd <- paste0(dirname(rstudioapi::getActiveDocumentContext()$path),"/")
 setwd(wd)
 
 # Data locations
-
+USERNAME                <- Sys.getenv("USERNAME")
 USERPROFILE             <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
-esri_location           <- file.path(USERPROFILE,"Box", "esri", "ESRI_2015_Disaggregate.Rdata")
-incommute_eq_location   <- paste0(wd,"/Incommute/2012-2016 CTPP Places to Superdistrict Equivalency.xlsx")
-incommute_tot_location  <- paste0(wd,"/Incommute/ACS 2013-2017 Incommute by Industry.xlsx")
-
+if (USERNAME == "lzorn") {
+  esri_location         <- file.path(USERPROFILE,"Box","baydata","basemap","imputation_and_siting","employment","2015","esri","ESRI_2015_Disaggregate.Rdata")
+} else {
+  esri_location         <- file.path(USERPROFILE,"Box", "esri", "ESRI_2015_Disaggregate.Rdata")
+}
+incommute_eq_location   <- file.path(wd,"Incommute","2012-2016 CTPP Places to Superdistrict Equivalency.xlsx")
+incommute_tot_location  <- file.path(wd,"Incommute","ACS 2013-2017 Incommute by Industry.xlsx")
+taz_county_location     <- file.path("X:/travel-model-one-master/utilities/geographies/taz-superdistrict-county.csv")
 reg_total = 4005318          # 2015 regional jobs total from https://mtcdrive.app.box.com/file/654134152628
 
 # Bring in data, deal with missing values
@@ -29,6 +37,8 @@ incommute_eq      <- read_excel (incommute_eq_location,sheet="TAZ Incommute Equi
 incommute_share   <- read_excel (incommute_eq_location,sheet="Comp_SD Incommute Equivalence")
 incommute_total   <- read_excel (incommute_tot_location,sheet="5. Net_Incommute") %>% 
   select(Net_Incommute)                                             # Keep just the net incommute value
+
+taz_county        <- read_csv(taz_county_location)
 
 temp  <- ESRI_2015_Disaggregate %>%     # Remove missing cases
   filter(naics2 !=0)
@@ -124,6 +134,23 @@ esri_scaled <- esri_all %>%
               "emp_sec4849",
               "TOTEMP"), scale_reg)
 
+# Calculate ABAG6 values from NAICS2 industries (equivalency comes from NAICS_to_EMPSIX.xlsx in folder)
+esri_scaled <- mutate(esri_scaled,
+  AGREMPN = emp_sec11 + emp_sec21, 
+  FPSEMPN = emp_sec52 + emp_sec53   + emp_sec54 + emp_sec55   + emp_sec56,
+  HEREMPN = emp_sec61 + emp_sec62   + emp_sec71 + emp_sec72   + emp_sec81,
+  MWTEMPN = emp_sec22 + emp_sec3133 + emp_sec42 + emp_sec4849,
+  OTHEMPN = emp_sec23 + emp_sec51   + emp_sec92,
+  RETEMPN = emp_sec4445)
+
+# join county names
+esri_scaled <- left_join(esri_scaled, select(taz_county, ZONE, COUNTY_NAME), by=c("TAZ1454"="ZONE"))
+
+# write this result
+write.csv(rename(esri_scaled, County_Name=COUNTY_NAME),
+          "ESRI 2015 NAICS2 and ABAG6 total jobs.csv", row.names = FALSE, quote = T)
+
+
 # Distribute incommute and reduce regional employment totals by incommute total
 # CTPP data were used to distribute the incommute - place-to-place data were smallest home-to-work geo available
 # Tract-to-tract data have missing geocoded data and are unreliable
@@ -131,7 +158,7 @@ esri_scaled <- esri_all %>%
 # Places were matched to superdistricts or "composite superdistricts" - groups of superdistricts
 # Incommuters were distributed across superdistricts or composite superdistricts according to calculated shares
 
-esri_scaled_eq <- left_join(esri_scaled,incommute_eq, by=c("TAZ1454" = "ZONE")) # Join equivalency
+esri_scaled_eq <- left_join(select(esri_scaled,-COUNTY_NAME),incommute_eq, by=c("TAZ1454" = "ZONE")) # Join equivalency
 
 temp_incommute <- cbind(incommute_share,incommute_total) %>%    # Calculate number of incommuters by 
   mutate(Incommute_Portion=Share_Incommute*Net_Incommute)                     # superdistrict or composite superdistrict
