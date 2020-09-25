@@ -64,12 +64,14 @@
 ;              (14) V8_1  - volume of vehicles in assignment class eight:  three-or-more-occupant vehicles, value toll
 ;              (15) V9_1  - volume of vehicles in assignment class nine:   very small, small, and medium trucks, value toll
 ;              (16) V10_1 - volume of vehicles in assignment class ten:    combination trucks, value toll
-;              (17) V11_1 - volume of vehicles in assignment class eleven: "drive" alone personally-owned AV
-;              (18) V12_1 - volume of vehicles in assignment class eleven: two-occupant personally-owned AV
-;              (19) V13_1 - volume of vehicles in assignment class eleven: three-or-more-occupant personally-owned AV
-;              (20) V14_1 - volume of vehicles in assignment class eleven: "drive" alone TNC
-;              (21) V15_1 - volume of vehicles in assignment class eleven: two-occupant TNC
-;              (22) V16_1 - volume of vehicles in assignment class eleven: three-or-more-occupant TNC
+;              (17) V11_1 - volume of vehicles in assignment class eleven: zero passenger personally-owned AV
+;              (17) V12_1 - volume of vehicles in assignment class eleven: "drive" alone personally-owned AV
+;              (18) V13_1 - volume of vehicles in assignment class eleven: two-occupant personally-owned AV
+;              (19) V14_1 - volume of vehicles in assignment class eleven: three-or-more-occupant personally-owned AV
+;              (20) V15_1 - volume of vehicles in assignment class eleven: zero passenger TNC
+;              (20) V16_1 - volume of vehicles in assignment class eleven: "drive" alone TNC
+;              (21) V17_1 - volume of vehicles in assignment class eleven: two-occupant TNC
+;              (22) V18_1 - volume of vehicles in assignment class eleven: three-or-more-occupant TNC
 ;              (24) VT_1 and VXT_1, where X is 1 through 10, are the b-to-a volumes
 ;
 ;
@@ -314,23 +316,29 @@ loop period = 1, 5
          ; large trucks, value toll paying, excluded from HOV facilities and no commercial truck facilities
          pathload path = lw.gencost_lrg, excludegrp = 23, 4, vol[10] = mi.3.ctrucktoll
 
-         ; drive alone AV, value toll paying, exclude HOV facilities
-         pathload path = lw.gencost_da, excludegrp = 23, vol[11] = mi.1.da_av
+         ; zero passenger AV, no value toll, exclude drive alone value toll and HOV facilities
+         pathload path = lw.gencost_da, excludegrp = 11, 23, vol[11] = mi.1.zp_av
+
+         ; drive alone AV, toll paying, exclude HOV facilities
+         pathload path = lw.gencost_da, excludegrp = 23, vol[12] = mi.1.da_av
 
          ; shared ride 2 AV, value toll paying, exclude HOV 3+ facilities
-         pathload path = lw.gencost_s2, excludegrp = 3, vol[12] = mi.1.s2_av / 2
+         pathload path = lw.gencost_s2, excludegrp = 3, vol[13] = mi.1.s2_av / 2
 
          ; shared ride 3+ AV, value toll paying, no exclusions
-         pathload path = lw.gencost_s3, vol[13] = mi.1.s3_av / 3.25
+         pathload path = lw.gencost_s3, vol[14] = mi.1.s3_av / 3.25
+
+         ; zero passenger TNC, no value toll, exclude drive alone value toll and HOV facilities
+         pathload path = lw.gencost_da, excludegrp = 11, 23, vol[15] = mi.1.zp_tnc
 
          ; drive alone TNC, value toll paying, exclude HOV facilities
-         pathload path = lw.gencost_da, excludegrp = 23, vol[14] = mi.1.da_tnc
+         pathload path = lw.gencost_da, excludegrp = 23, vol[16] = mi.1.da_tnc
 
          ; shared ride 2 TNC, value toll paying, exclude HOV 3+ facilities
-         pathload path = lw.gencost_s2, excludegrp = 3, vol[15] = mi.1.s2_tnc / 2
+         pathload path = lw.gencost_s2, excludegrp = 3, vol[17] = mi.1.s2_tnc / 2
 
          ; shared ride 3+ TNC, value toll paying, no exclusions
-         pathload path = lw.gencost_s3, vol[16] = mi.1.s3_tnc / 3.25
+         pathload path = lw.gencost_s3, vol[18] = mi.1.s3_tnc / 3.25
 
       endphase
 
@@ -338,7 +346,7 @@ loop period = 1, 5
       phase = adjust
 
          ; very small, small, and medium trucks have a passenger car equivalent of, on average 1.0, large trucks see HwyParam.block for PCE
-         function v = (vol[1] + vol[2] + vol[3] + vol[4] + trkpce*vol[5] + vol[6] + vol[7] + vol[8] + vol[9] + trkpce*vol[10] + (vol[11] + vol[12] + vol[13] + vol[14] + vol[15] + vol[16])*li.AV_PCE)
+         function v = (vol[1] + vol[2] + vol[3] + vol[4] + trkpce*vol[5] + vol[6] + vol[7] + vol[8] + vol[9] + trkpce*vol[10] + (vol[11] + vol[12] + vol[13] + vol[14] + vol[15] + vol[16] + vol[17] + vol[18])*li.AV_PCE)
 
          ; the volume delay functions are housed in the SpeedFlowCurve.block file
          read file = ctramp\scripts\block\SpeedFlowCurve.block

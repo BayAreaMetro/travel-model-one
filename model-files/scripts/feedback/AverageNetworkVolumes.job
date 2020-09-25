@@ -23,12 +23,14 @@
 ;      (8) shared ride 3+, value toll eligible (s3T)
 ;      (9) very small, small, and medium trucks, value toll eligible (smT)
 ;     (10) large trucks, value toll eligible (hvT)
-;     (11) "drive" personally-owned AV, value toll eligible (daav)
-;     (12) two-occupant personally-owned AV, value toll eligible (s2av)
-;     (13) three-or-more-occupant personally-owned AV, value toll eligible (s3av)
-;     (14) "drive" alone TNC, value toll eligible (datnc)
-;     (15) two-occupant TNC, value toll eligible (s2tnc)
-;     (16) three-or-more-occupant TNC, value toll eligible (s3tnc)
+;     (11) zero passenger personally-owned AV, value toll eligible (zpav)
+;     (12) "drive" alone personally-owned AV, value toll eligible (daav)
+;     (13) two-occupant personally-owned AV, value toll eligible (s2av)
+;     (14) three-or-more-occupant personally-owned AV, value toll eligible (s3av)
+;     (15) zero passenger TNC, value toll eligible (zptnc)
+;     (16) "drive" alone TNC, value toll eligible (datnc)
+;     (17) two-occupant TNC, value toll eligible (s2tnc)
+;     (18) three-or-more-occupant TNC, value toll eligible (s3tnc)
 ;
 ; Input:  (1) A highway network for each time period with the following fields: (a) VOL, which is the total a-to-b link
 ;         volume, in units of equivalent passenger vehicles; (b) VC, which is the volume to capacity ratio; (c) CTIM, which 
@@ -111,12 +113,14 @@ loop period = 1, 5
       v8_1  = @token_previous_weight@ * li.1.vol_s3T  + @token_current_weight@ * li.2.vol_s3T
       v9_1  = @token_previous_weight@ * li.1.vol_smT  + @token_current_weight@ * li.2.vol_smT
       v10_1 = @token_previous_weight@ * li.1.vol_hvT  + @token_current_weight@ * li.2.vol_hvT
-      v11_1 = @token_previous_weight@ * li.1.vol_daav  + @token_current_weight@ * li.2.vol_daav
-      v12_1 = @token_previous_weight@ * li.1.vol_s2av  + @token_current_weight@ * li.2.vol_s2av
-      v13_1 = @token_previous_weight@ * li.1.vol_s3av  + @token_current_weight@ * li.2.vol_s3av
-      v14_1 = @token_previous_weight@ * li.1.vol_datnc + @token_current_weight@ * li.2.vol_datnc
-      v15_1 = @token_previous_weight@ * li.1.vol_s2tnc + @token_current_weight@ * li.2.vol_s2tnc
-      v16_1 = @token_previous_weight@ * li.1.vol_s3tnc + @token_current_weight@ * li.2.vol_s3tnc
+      v11_1 = @token_previous_weight@ * li.1.vol_zpav + @token_current_weight@ * li.2.vol_zpav
+      v12_1 = @token_previous_weight@ * li.1.vol_daav  + @token_current_weight@ * li.2.vol_daav
+      v13_1 = @token_previous_weight@ * li.1.vol_s2av  + @token_current_weight@ * li.2.vol_s2av
+      v14_1 = @token_previous_weight@ * li.1.vol_s3av  + @token_current_weight@ * li.2.vol_s3av
+      v15_1 = @token_previous_weight@ * li.1.vol_zptnc + @token_current_weight@ * li.2.vol_zptnc
+      v16_1 = @token_previous_weight@ * li.1.vol_datnc + @token_current_weight@ * li.2.vol_datnc
+      v17_1 = @token_previous_weight@ * li.1.vol_s2tnc + @token_current_weight@ * li.2.vol_s2tnc
+      v18_1 = @token_previous_weight@ * li.1.vol_s3tnc + @token_current_weight@ * li.2.vol_s3tnc
 
       vt_1  = @token_previous_weight@ * li.1.volT     + @token_current_weight@ * li.2.volT    
       v1t_1 = @token_previous_weight@ * li.1.volT_da  + @token_current_weight@ * li.2.volT_da 
@@ -129,12 +133,14 @@ loop period = 1, 5
       v8t_1 = @token_previous_weight@ * li.1.volT_s3T + @token_current_weight@ * li.2.volT_s3T
       v9t_1 = @token_previous_weight@ * li.1.volT_smT + @token_current_weight@ * li.2.volT_smT
       v10t_1= @token_previous_weight@ * li.1.volT_hvT + @token_current_weight@ * li.2.volT_hvT
-      v11t_1= @token_previous_weight@ * li.1.volT_daav + @token_current_weight@ * li.2.volT_daav
-      v12t_1= @token_previous_weight@ * li.1.volT_s2av + @token_current_weight@ * li.2.volT_s2av
-      v13t_1= @token_previous_weight@ * li.1.volT_s3av + @token_current_weight@ * li.2.volT_s3av
-      v14t_1= @token_previous_weight@ * li.1.volT_datnc+ @token_current_weight@ * li.2.volT_datnc
-      v15t_1= @token_previous_weight@ * li.1.volT_s2tnc+ @token_current_weight@ * li.2.volT_s2tnc
-      v16t_1= @token_previous_weight@ * li.1.volT_s3tnc+ @token_current_weight@ * li.2.volT_s3tnc
+      v11t_1= @token_previous_weight@ * li.1.volT_zpav + @token_current_weight@ * li.2.volT_zpav
+      v12t_1= @token_previous_weight@ * li.1.volT_daav + @token_current_weight@ * li.2.volT_daav
+      v13t_1= @token_previous_weight@ * li.1.volT_s2av + @token_current_weight@ * li.2.volT_s2av
+      v14t_1= @token_previous_weight@ * li.1.volT_s3av + @token_current_weight@ * li.2.volT_s3av
+      v15t_1= @token_previous_weight@ * li.1.volT_zptnc+ @token_current_weight@ * li.2.volT_zptnc
+      v16t_1= @token_previous_weight@ * li.1.volT_datnc+ @token_current_weight@ * li.2.volT_datnc
+      v17t_1= @token_previous_weight@ * li.1.volT_s2tnc+ @token_current_weight@ * li.2.volT_s2tnc
+      v18t_1= @token_previous_weight@ * li.1.volT_s3tnc+ @token_current_weight@ * li.2.volT_s3tnc
 
       ; update the renamed volume variables, which are just along for the ride
       vol      = V_1   
@@ -150,12 +156,14 @@ loop period = 1, 5
       vol_s3T  = V8_1  
       vol_smT  = V9_1  
       vol_hvT  = V10_1 
-      vol_daav  = V11_1  
-      vol_s2av  = V12_1  
-      vol_s3av  = V13_1 
-      vol_datnc = V14_1
-      vol_s2tnc = V15_1
-      vol_s3tnc = V16_1
+      vol_zpav  = V11_1  
+      vol_daav  = V12_1  
+      vol_s2av  = V13_1  
+      vol_s3av  = V14_1 
+      vol_zptnc = V15_1
+      vol_datnc = V16_1
+      vol_s2tnc = V17_1
+      vol_s3tnc = V18_1
 
       volT     = VT_1  
       
@@ -170,12 +178,14 @@ loop period = 1, 5
       volT_s3T = V8T_1 
       volT_smT = V9T_1 
       volT_hvT = V10T_1
-      volT_daav = V11T_1 
-      volT_s2av = V12T_1 
-      volT_s3av = V13T_1
-      volT_datnc= V14T_1 
-      volT_s2tnc= V15T_1 
-      volT_s3tnc= V16T_1
+      volT_zpav  = V11T_1 
+      volT_daav  = V11T_1 
+      volT_s2av  = V12T_1 
+      volT_s3av  = V13T_1
+      volT_zptnc = V14T_1 
+      volT_datnc = V14T_1 
+      volT_s2tnc = V15T_1 
+      volT_s3tnc = V16T_1
 
   endrun
   

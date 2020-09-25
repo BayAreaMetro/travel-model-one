@@ -182,7 +182,7 @@ loop period = 1,5
       phase = adjust
       
          ; total volume includes each of the 13 classes
-         function v = li.v1_1 + li.v2_1 + li.v3_1 + li.v4_1 + trkpce*li.v5_1 + li.v6_1 + li.v7_1 + li.v8_1 + li.v9_1 + trkpce*li.v10_1 + (li.v11_1 + li.v12_1 + li.v13_1 + li.v14_1 + li.v15_1 + li.v16_1)*li.AV_PCE
+         function v = li.v1_1 + li.v2_1 + li.v3_1 + li.v4_1 + trkpce*li.v5_1 + li.v6_1 + li.v7_1 + li.v8_1 + li.v9_1 + trkpce*li.v10_1 + (li.v11_1 + li.v12_1 + li.v13_1 + li.v14_1 + li.v15_1 + li.v16_1 + li.v17_1 + li.v18_1)*li.AV_PCE
                  
          ; the volume delay functions are housed in the SpeedFlowCurve.block file
          read file = ctramp\scripts\block\SpeedFlowCurve.block 
@@ -202,8 +202,8 @@ loop period = 1,5
           
       ; output network with averaged speeds, excluding the dummy assignment results from AverageNetworkVolumes and from step 1 of this script   
       neto = hwy\iter@token_current_iteration@\avgload@token_period@.net, 
-             exclude = V_1, VC_1, V1_1, V2_1, V3_1, V4_1, V5_1, V6_1, V7_1, V8_1, V9_1, V10_1, V11_1, V12_1, V13_1,  
-                       VT_1, V1T_1, V2T_1, V3T_1, V4T_1, V5T_1, V6T_1, V7T_1, V8T_1, V9T_1, V10T_1, V11T_1, V12T_1, V13T_1,
+             exclude = V_1, VC_1, V1_1, V2_1, V3_1, V4_1, V5_1, V6_1, V7_1, V8_1, V9_1, V10_1, V11_1, V12_1, V13_1, V14_1, V15_1, V16_1, V17_1, V18_1, 
+                       VT_1, V1T_1, V2T_1, V3T_1, V4T_1, V5T_1, V6T_1, V7T_1, V8T_1, V9T_1, V10T_1, V11T_1, V12T_1, V13T_1, V14T_1, V15T_1, V16T_1, V17T_1, V18T_1,
                        V_2, TIME_2, VC_2, CSPD_2, VDT_2, VHT_2, V20_2, VT_2, V20T_2
       
       ; shift the key information to the renamed variables (see RenameAssignmentVariables.job), as expected by TestNetworkConvergence script

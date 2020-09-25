@@ -111,12 +111,15 @@
 ;              (21) Walk, express bus, drive
 ;              (22) Walk, heavy rail, drive
 ;              (23) Walk, commuter rail, drive
-;              (24) Drive alone,    TNC (includes zero-passenger deadheading trips)
-;              (25) Shared ride 2,  TNC (includes zero-passenger deadheading trips)
-;              (26) Shared ride 3+, TNC (includes zero-passenger deadheading trips)
-;              (27) Drive alone,    owned autonomous vehicles (includes zero-passenger deadheading trips)
-;              (28) Shared ride 2,  owned autonomous vehicles (includes zero-passenger deadheading trips)
-;              (29) Shared ride 3+, owned autonomous vehicles (includes zero-passenger deadheading trips)
+;              (24) Zero passenger, owned autonomous vehicles
+;              (25) Drive alone,    owned autonomous vehicles
+;              (26) Shared ride 2,  owned autonomous vehicles
+;              (27) Shared ride 3+, owned autonomous vehicles
+;              (28) Zero passenger, TNC
+;              (29) Drive alone,    TNC
+;              (30) Shared ride 2,  TNC
+;              (31) Shared ride 3+, TNC
+
 ;
 ; Notes:  (1)
 ;
@@ -734,7 +737,8 @@ loop period = 1, 5
                                                                    wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
                                                                    drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
                                                                    wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
-                                                                   da_tnc, s2_tnc, s3_tnc, da_av, s2_av, s3_av
+                                                                   da_av,  s2_av,  s3_av,
+                                                                   da_tnc, s2_tnc, s3_tnc
 
      ; load lookup values for factoring taxi and TNC modes
     lookup lookupi=1, LIST=y, name=occ_factors,
@@ -815,23 +819,24 @@ loop period = 1, 5
       ; walk, commuter rail, drive
       mw[23] = (mi.1.23 + mi.2.23) + mi.3.wlk_com_drv
 
-      ; da_tnc          single tnc                                  shared tnc
-      mw[24] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 1) + (mi.1.26 + mi.2.26) * occ_factors(3, 1)) 
-
-       ; s2_tnc          single tnc                                  shared tnc
-      mw[25] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 2) + (mi.1.26 + mi.2.26) * occ_factors(3, 2)) 
-
-      ; s3_tnc          single tnc                                  shared tnc
-      mw[26] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 3) + (mi.1.26 + mi.2.26) * occ_factors(3, 3)) 
-
       ; da_av
-      mw[27] =  (mi.1.27+mi.2.27)
+      mw[24] =  (mi.1.27+mi.2.27)
 
       ; s2_av
-      mw[28] =  (mi.1.28+mi.2.28) 
+      mw[25] =  (mi.1.28+mi.2.28) 
 
       ; s3_av
-      mw[29] =  (mi.1.29+mi.2.29) 
+      mw[26] =  (mi.1.29+mi.2.29) 
+
+      ; da_tnc          single tnc                                  shared tnc
+      mw[27] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 1) + (mi.1.26 + mi.2.26) * occ_factors(3, 1)) 
+
+       ; s2_tnc          single tnc                                  shared tnc
+      mw[28] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 2) + (mi.1.26 + mi.2.26) * occ_factors(3, 2)) 
+
+      ; s3_tnc          single tnc                                  shared tnc
+      mw[29] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 3) + (mi.1.26 + mi.2.26) * occ_factors(3, 3)) 
+
    endrun
 
    ; step four: create zero passenger trips
@@ -854,12 +859,13 @@ loop period = 1, 5
       filei mati[1] = main\trips@token_period@_no_zpv.tpp
       filei mati[2] = main\trips@token_period@_zpv.tpp
 
-      fileo mato[1] = main\trips@token_period@.tpp, mo = 1-29, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+      fileo mato[1] = main\trips@token_period@.tpp, mo = 1-31, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                                                                    walk, bike,
                                                                    wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
                                                                    drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
                                                                    wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
-                                                                   da_tnc, s2_tnc, s3_tnc, da_av, s2_av, s3_av
+                                                                   zp_av,  da_av,  s2_av,  s3_av, 
+                                                                   zp_tnc, da_tnc, s2_tnc, s3_tnc
 
 
       mw[ 1] = mi.1.da
@@ -885,12 +891,14 @@ loop period = 1, 5
       mw[21] = mi.1.wlk_exp_drv
       mw[22] = mi.1.wlk_hvy_drv
       mw[23] = mi.1.wlk_com_drv
-      mw[24] = mi.1.da_tnc       + mi.2.zpv_tnc
-      mw[25] = mi.1.s2_tnc
-      mw[26] = mi.1.s3_tnc
-      mw[27] = mi.1.da_av        + mi.2.zpv_av
-      mw[28] = mi.1.s2_av
-      mw[29] = mi.1.s3_av
+      mw[24] = mi.2.zpv_av
+      mw[25] = mi.1.da_av
+      mw[26] = mi.1.s2_av
+      mw[27] = mi.1.s3_av
+      mw[28] = mi.2.zpv_tnc
+      mw[29] = mi.1.da_tnc
+      mw[30] = mi.1.s2_tnc
+      mw[31] = mi.1.s3_tnc
 
     endrun
 
