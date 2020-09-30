@@ -50,19 +50,19 @@ Documentation memo is here: [TM 1.5 TAZ 1454 Land Use Documentation Memo.docx](D
 
 ### [summarize_BusinessData_by_TAZ_industry.R](Employment/summarize_BusinessData_by_TAZ_industry.R)
 
-This script summarizes summarizes business data for both the NAICS2 and ABAG6 categories. It scales employment to a total number of jobs from the [REMI regional forecast](https://mtcdrive.app.box.com/file/654134152628). Net incommuters are also removed, using incommute shares to superdistricts to account for non-uniform incommuting rates around the region. 
+This script summarizes summarizes business data for both the NAICS2 and ABAG6 categories. It scales employment to a total number of jobs from the [REMI regional forecast](https://github.com/BayAreaMetro/regional_forecast/blob/master/to_baus/s24/employment_controls_s24.csv). Net incommuters are also removed, using incommute shares to superdistricts to account for non-uniform incommuting rates around the region. 
 
-* Author: [@shimonisrael](https://github.com/shimonisrael)
+* Author: [@shimonisrael](https://github.com/shimonisrael), updated by @lmz
 * Input:
-  * [Business Data with point locations](https://mtcdrive.app.box.com/file/655868001941)
-  * [REMI regional forecast total](https://mtcdrive.app.box.com/file/654134152628)
+  * Business Data with point locations (`M:\Data\BusinessData\Businesses_{BIZDATA_YEAR}_BayArea_wcountyTAZ.csv`)
+  * [REMI regional forecast total](https://github.com/BayAreaMetro/regional_forecast/blob/master/to_baus/s24/employment_controls_s24.csv)
   * In-commute data:
     * [2012-2016 CTPP Places to Superdistrict Equivalency.xlsx](Employment/Incommute/2012-2016%20CTPP%20Places%20to%20Superdistrict%20Equivalency.xlsx)
     * [ACS 2013-2017 Incommute by Industry.xlsx](Employment/Incommute/ACS%202013-2017%20Incommute%20by%20Industry.xlsx)
 * Output:
-  * ESRI 2015 NAICS2 and ABAG6 total jobs.csv
-  * [ESRI 2015 NAICS2 and ABAG6 noin.csv](Employment/ESRI%202015%20NAICS2%20and%20ABAG6%20noin.csv)
-  * [ESRI 2015 NAICS2 noincommute.csv](Employment/ESRI%202015%20NAICS2%20noincommute.csv)
+  * `BusinessData_{BIZDATA_YEAR}_TAZ_industry_unscaled.csv`: business data summed to TAZ by industry (NAICS2 & ABAG6), not scaled to regional total
+  * `BusinessData_{BIZDATA_YEAR}_TAZ_industry.csv`: same as previous, but scaled to regional total. NOTE: these are not rounded, so values are float
+  * `BusinessData_{BIZDATA_YEAR}_TAZ_industry_noincommute.csv`: same as previous, but with incommute jobs removed, using incommute shares to superdistricts to account for non-uniform incommuting rates around region
 * Other files:
   * [NAICS to EMPSIX equivalency](Employment/NAICS_to_EMPSIX.xlsx)
 
