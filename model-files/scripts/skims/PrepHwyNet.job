@@ -159,6 +159,9 @@ loop period = 1, 5
         BUS_TIME = FFT  + (delayfactor * DISTANCE * 0.5)
       ELSEIF (BRT = 2)
         BUS_TIME = CTIM + (delayfactor * DISTANCE * 0.5)
+      ELSEIF (BRT = 3)
+        ; Bus on highway shoulder -- assume 35 mph
+        BUS_TIME = li.1.DISTANCE / (35.0/60.0)
       ELSE
         BUS_TIME = CTIM + (delayfactor * DISTANCE)
       ENDIF
