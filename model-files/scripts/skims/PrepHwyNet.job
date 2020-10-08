@@ -160,8 +160,8 @@ loop period = 1, 5
       ELSEIF (BRT = 2)
         BUS_TIME = CTIM + (delayfactor * DISTANCE * 0.5)
       ELSEIF (BRT = 3)
-        ; Bus on highway shoulder -- assume 35 mph
-        BUS_TIME = li.1.DISTANCE / (35.0/60.0)
+        ; Bus on highway shoulder -- assume 35 mph or congested time, which ever is less
+        BUS_TIME = min(CTIM, li.1.DISTANCE / (35.0/60.0))
       ELSE
         BUS_TIME = CTIM + (delayfactor * DISTANCE)
       ENDIF
