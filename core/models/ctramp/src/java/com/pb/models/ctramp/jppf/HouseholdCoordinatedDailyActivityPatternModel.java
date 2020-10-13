@@ -521,7 +521,9 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
             }
             cdapLogger.info(stringToLog);
 
-            // print detail for one person CDAP
+            // log detail for one person CDAP
+            // onePersonUec.printVariableTable();
+            // cdapLogger.info(onePersonUec.getVariableTable());
             onePersonUec.logAnswersArray(cdapLogger, "OnePersonCDAP");
 
         } // debug trace

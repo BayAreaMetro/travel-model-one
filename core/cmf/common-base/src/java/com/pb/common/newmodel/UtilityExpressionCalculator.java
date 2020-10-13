@@ -647,8 +647,8 @@ public class UtilityExpressionCalculator implements VariableTable, Serializable 
         out.println("");
         out.println("----------------------------------- Variable Table --------------------------------------------");
         out.println("");
-        out.println("                                                           value    orig    dest    name  chg by");
-        out.println("Index   Name                         Type                  index   index   index   index     alt");
+        out.println("                                                           value    orig    dest    name  chg by internal");
+        out.println("Index   Name                         Type                  index   index   index   index     alt    index");
         out.println("");
         for (int i=0; i < varInfo.length; i++) {
             StringBuffer sb = new StringBuffer(256);
@@ -662,6 +662,7 @@ public class UtilityExpressionCalculator implements VariableTable, Serializable 
             sb.append( String.format("%8d", varInfo[i].getDestIndexValue()) );
             sb.append( String.format("%8d", varInfo[i].getNameIndexValue()) );
             sb.append( String.format("%8s", (varInfo[i].isChangesByAlternative() ? "T" : "F")) );
+            sb.append( String.format("%9d", varInfo[i].getInternalIndex()));
             out.println(sb.toString());
         }
         out.close();
