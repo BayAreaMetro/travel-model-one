@@ -275,8 +275,7 @@ Additionally, TelecommuteByIncome.py also output a file num_ftworkers_with_telec
 | AGREMPN_TazData | Agricultural and natural resources employment (NAICS-based), based on the input file TazData.csv |
 | MWTEMPN_TazData | Manufacturing, wholesale trade and transportation employment (NAICS-based), based on the input file TazData.csv |
 | num_NoWorkTours | Number of full-time workers who have their usual work locations at this Superdistrict but make no work tour |
-| num_ftworkers_wWrkLoc | Number of full-time workers who their have usual work locations at this Superdistrict.  
-Note that the values in this column are almost equal to but not exactly the same as the sum of ftworkers_RETEMPN, ftworkers_FPSEMPN, ftworkers_HEREMPN, ftworkers_OTHEMPN, ftworkers_AGREMPN and ftworkers_MWTEMPN, because the destination choice size coefficients do not always add up to exactly 1. |
+| num_ftworkers_wWrkLoc | Number of full-time workers who their have usual work locations at this Superdistrict. Note that the values in this column may not be exactly the same as the sum of ftworkers_RETEMPN, ftworkers_FPSEMPN, ftworkers_HEREMPN, ftworkers_OTHEMPN, ftworkers_AGREMPN and ftworkers_MWTEMPN, because the destination choice size coefficients do not always add up to exactly 1. |
 | P_telecommute | Percentage of full-time workers who have their have usual work locations at this Superdistrict and telecommute |
 | num_telecommuters | Number of telecommuters who have this Superdistrict as their usual work location |
 | numEligible_numTele_diff | Number of full-time workers with telecommute eligible jobs minus number of full-time workers who telecommute |
