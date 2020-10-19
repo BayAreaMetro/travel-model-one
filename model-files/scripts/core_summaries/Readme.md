@@ -242,13 +242,40 @@ Auto vehicle miles traveled summed to persons. Sum(freq) = population
 Auto vehicle miles traveled summed to households.
 Same columns as VehicleMilesTraveled but Sum(freq) = households and no ptype columns.
 
-#### Additional Output Tables
-It also outputs updated `.rdata` versions of the Trip, Tours, Persons and Households table, 
-with the extra data fields added.
-
-
 ### TelecommuteEligibleBySDByinc
+The script TelecommuteByInc.py generates two outputs: TelecommuteEligibleBySD.csv and TelecommuteEligibleBySD.csv
 
 | Column Name | Description |
 |-------------|-------------|
 | tbd | tbd |
+| SD | Superdistrict number |
+| SD_NUM_NAME | Superdistrict number and name |
+| COUNTY_NUM_NAME | County number and name |
+| ftworkers_RETEMPN | Number of full-time workers in Retail trade employment (NAICS-based) in this work location |
+| ftworkers_FPSEMPN | Number of full-time workers in Financial and professional services employment (NAICS-based) in this work location |
+| ftworkers_HEREMPN | Number of full-time workers in Health, educational and recreational service employment (NAICS-based) in this work location |
+| ftworkers_OTHEMPN | Number of full-time workers in Other employment (NAICS-based) in this work location |
+| ftworkers_AGREMPN | Number of full-time workers in Agricultural and natural resources employment (NAICS-based) in this work location |
+| ftworkers_MWTEMPN | Number of full-time workers in Manufacturing, wholesale trade and transportation employment (NAICS-based) in this work location |
+| ftworkers_eligible_RETEMPN | Number of full-time workers in Retail trade employment (NAICS-based) in this work location who are telecommute eligible |
+| ftworkers_eligible_FPSEMPN | Number of full-time workers in Financial and professional services employment (NAICS-based) in this work location who are telecommute eligible |
+| ftworkers_eligible_HEREMPN | Number of full-time workers in Health, educational and recreational service employment (NAICS-based) in this work location who are telecommute eligible |
+| ftworkers_eligible_OTHEMPN | Number of full-time workers in Other employment (NAICS-based) in this work location who are telecommute eligible |
+| ftworkers_eligible_AGREMPN | Number of full-time workers in Agricultural and natural resources employment (NAICS-based) in this work location who are telecommute eligible |
+| ftworkers_eligible_MWTEMPN | Number of full-time workers in Manufacturing, wholesale trade and transportation employment (NAICS-based) in this work location who are telecommute eligible |
+| RETEMPN_TazData | Retail trade employment (NAICS-based) in this work location, based on the input file TazData.csv |
+| FPSEMPN_TazData | Financial and professional services employment (NAICS-based) in this work location, based on the input file TazData.csv |
+| HEREMPN_TazData | Health, educational and recreational service employment (NAICS-based) in this work location, based on the input file TazData.csv |
+| OTHEMPN_TazData | Other employment (NAICS-based) in this work location who are telecommute eligible, based on the input file TazData.csv |
+| AGREMPN_TazData | Agricultural and natural resources employment (NAICS-based) in this work location, based on the input file TazData.csv |
+| MWTEMPN_TazData | Manufacturing, wholesale trade and transportation employment (NAICS-based) in this work location, based on the input file TazData.csv |
+| num_NoWorkTours | Number of full-time workers who have usual work location at this Superdistrict but make no work tour |
+| num_ftworkers_wWrkLoc | Number of full-time workers who have usual work location at this Superdistrict |
+| P_telecommute | Percentage of full-time workers who who have usual work location at this Superdistrict and telecommute  |
+| num_telecommuters | Number of telecommuters who have this Superdistrict as their usual work location |
+| numEligible_numTele_diff | Number of full-time workers who are eligible to telecommute minus number of full-time workers who telecommute |
+| run_directory | Name of the model run |
+
+#### Additional Output Tables
+It also outputs updated `.rdata` versions of the Trip, Tours, Persons and Households table, 
+with the extra data fields added.
