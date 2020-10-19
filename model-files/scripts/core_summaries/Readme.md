@@ -250,7 +250,7 @@ The script TelecommuteByInc.py generates two outputs: TelecommuteEligibleBySD.cs
 | SD | Superdistrict number |
 | SD_NUM_NAME | Superdistrict number and name |
 | COUNTY_NUM_NAME | County number and name |
-| ftworkers_RETEMPN | Number of full-time workers in Retail trade employment (NAICS-based) who have their usual work locations at this Superdistrict |
+| ftworkers_RETEMPN | Number of full-time workers in Retail trade employment ([NAICS-based](http://www.census.gov/eos/www/naics/)) who have their usual work locations at this Superdistrict |
 | ftworkers_FPSEMPN | Number of full-time workers in Financial and professional services employment (NAICS-based) who have their usual work locations at this Superdistrict |
 | ftworkers_HEREMPN | Number of full-time workers in Health, educational and recreational service employment (NAICS-based) who have their usual work locations at this Superdistrict |
 | ftworkers_OTHEMPN | Number of full-time workers in Other employment (NAICS-based) who have their usual work locations at this Superdistrict |
