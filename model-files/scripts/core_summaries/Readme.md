@@ -262,7 +262,7 @@ The script TelecommuteByInc.py generates two outputs: TelecommuteEligibleBySD.cs
 | ftworkers_eligible_OTHEMPN | Number of full-time workers in Other employment (NAICS-based) in this work location who are telecommute eligible |
 | ftworkers_eligible_AGREMPN | Number of full-time workers in Agricultural and natural resources employment (NAICS-based) in this work location who are telecommute eligible |
 | ftworkers_eligible_MWTEMPN | Number of full-time workers in Manufacturing, wholesale trade and transportation employment (NAICS-based) in this work location who are telecommute eligible |
-| RETEMPN_TazData | Retail trade employment (NAICS-based), based on the input file TazData.csv |
+| RETEMPN_TazData | Retail trade employment (NAICS-based), based on the input file [TazData.csv](https://github.com/BayAreaMetro/modeling-website/wiki/TazData) |
 | FPSEMPN_TazData | Financial and professional services employment (NAICS-based), based on the input file TazData.csv |
 | HEREMPN_TazData | Health, educational and recreational service employment (NAICS-based), based on the input file TazData.csv |
 | OTHEMPN_TazData | Other employment (NAICS-based), based on the input file TazData.csv |
