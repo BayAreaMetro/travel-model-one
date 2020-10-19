@@ -274,9 +274,9 @@ The script TelecommuteByIncome.py generates a second output, telecommuteEligible
 | MWTEMPN_TazData | Manufacturing, wholesale trade and transportation employment (NAICS-based), based on the input file TazData.csv |
 | num_NoWorkTours | Number of full-time workers who have their usual work locations at this Superdistrict but make no work tour |
 | num_ftworkers_wWrkLoc | Number of full-time workers who their have usual work locations at this Superdistrict |
-| P_telecommute | Percentage of full-time workers who who their have usual work locations at this Superdistrict and telecommute |
+| P_telecommute | Percentage of full-time workers who have their have usual work locations at this Superdistrict and telecommute |
 | num_telecommuters | Number of telecommuters who have this Superdistrict as their usual work location |
-| numEligible_numTele_diff | Number of full-time workers who are telecommute eligible minus number of full-time workers who telecommute |
+| numEligible_numTele_diff | Number of full-time workers with telecommute eligible jobs minus number of full-time workers who telecommute |
 | run_directory | Name of the model run |
 
 
