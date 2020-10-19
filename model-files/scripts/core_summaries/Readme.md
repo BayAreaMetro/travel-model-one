@@ -251,7 +251,7 @@ The script TelecommuteByIncome.py generates a second output, telecommuteEligible
 
 | Column Name | Description |
 |-------------|-------------|
-| SD | Superdistrict number |
+| SD | Superdistrict of usual work location |
 | SD_NUM_NAME | Superdistrict number and name |
 | COUNTY_NUM_NAME | County number and name |
 | ftworkers_RETEMPN | Number of full-time workers in Retail trade employment ([NAICS-based](http://www.census.gov/eos/www/naics/)) who have their usual work locations at this Superdistrict, approximated based on the relationship between income and industry specified in the [destination choice size coefficients](https://github.com/BayAreaMetro/travel-model-one/blob/master/model-files/model/DestinationChoiceSizeCoefficients.csv). |
