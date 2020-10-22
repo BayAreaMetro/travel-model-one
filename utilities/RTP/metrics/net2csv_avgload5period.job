@@ -66,9 +66,14 @@ run pgm = network
                 "volEA_s3t",   "volAM_s3t",   "volMD_s3t",   "volPM_s3t",   "volEV_s3t",
                 "volEA_smt",   "volAM_smt",   "volMD_smt",   "volPM_smt",   "volEV_smt",
                 "volEA_hvt",   "volAM_hvt",   "volMD_hvt",   "volPM_hvt",   "volEV_hvt",
+                "volEA_zpav",  "volAM_zpav",  "volMD_zpav",  "volPM_zpav",  "volEV_zpav",
                 "volEA_daav",  "volAM_daav",  "volMD_daav",  "volPM_daav",  "volEV_daav",
                 "volEA_s2av",  "volAM_s2av",  "volMD_s2av",  "volPM_s2av",  "volEV_s2av",
                 "volEA_s3av",  "volAM_s3av",  "volMD_s3av",  "volPM_s3av",  "volEV_s3av",
+                "volEA_zptnc", "volAM_zptnc", "volMD_zptnc", "volPM_zptnc", "volEV_zptnc",
+                "volEA_datnc", "volAM_datnc", "volMD_datnc", "volPM_datnc", "volEV_datnc",
+                "volEA_s2tnc", "volAM_s2tnc", "volMD_s2tnc", "volPM_s2tnc", "volEV_s2tnc",
+                "volEA_s3tnc", "volAM_s3tnc", "volMD_s3tnc", "volPM_s3tnc", "volEV_s3tnc",
                 printo=1
          
          _doOnce = 1
@@ -124,9 +129,14 @@ run pgm = network
              volEA_s3t(12.2L), volAM_s3t(12.2L), volMD_s3t(12.2L), volPM_s3t(12.2L), volEV_s3t(12.2L),
              volEA_smt(12.2L), volAM_smt(12.2L), volMD_smt(12.2L), volPM_smt(12.2L), volEV_smt(12.2L),
              volEA_hvt(12.2L), volAM_hvt(12.2L), volMD_hvt(12.2L), volPM_hvt(12.2L), volEV_hvt(12.2L),
+             volEA_zpav(12.2L),volAM_zpav(12.2L),volMD_zpav(12.2L),volPM_zpav(12.2L),volEV_zpav(12.2L),
              volEA_daav(12.2L),volAM_daav(12.2L),volMD_daav(12.2L),volPM_daav(12.2L),volEV_daav(12.2L),
              volEA_s2av(12.2L),volAM_s2av(12.2L),volMD_s2av(12.2L),volPM_s2av(12.2L),volEV_s2av(12.2L),
              volEA_s3av(12.2L),volAM_s3av(12.2L),volMD_s3av(12.2L),volPM_s3av(12.2L),volEV_s3av(12.2L),
+             volEA_zptnc(12.2L),volAM_zptnc(12.2L),volMD_zptnc(12.2L),volPM_zptnc(12.2L),volEV_zptnc(12.2L),
+             volEA_datnc(12.2L),volAM_datnc(12.2L),volMD_datnc(12.2L),volPM_datnc(12.2L),volEV_datnc(12.2L),
+             volEA_s2tnc(12.2L),volAM_s2tnc(12.2L),volMD_s2tnc(12.2L),volPM_s2tnc(12.2L),volEV_s2tnc(12.2L),
+             volEA_s3tnc(12.2L),volAM_s3tnc(12.2L),volMD_s3tnc(12.2L),volPM_s3tnc(12.2L),volEV_s3tnc(12.2L),
              printo=1
    
    endphase

@@ -119,22 +119,54 @@ if ("volAM_daav" %in% colnames(loadednet) == FALSE) {
   loadednet$volEV_s2av <- 0
   loadednet$volEV_s3av <- 0
 }
-loadednet$VMT_auto <- (loadednet$volEA_da   + loadednet$volEA_daav + loadednet$volEA_dat +
-                       loadednet$volEA_s2   + loadednet$volEA_s2av + loadednet$volEA_s2t +
-                       loadednet$volEA_s3   + loadednet$volEA_s3av + loadednet$volEA_s3t +
-                       loadednet$volAM_da   + loadednet$volAM_daav + loadednet$volAM_dat +
-                       loadednet$volAM_s2   + loadednet$volAM_s2av + loadednet$volAM_s2t +
-                       loadednet$volAM_s3   + loadednet$volAM_s3av + loadednet$volAM_s3t +
-                       loadednet$volMD_da   + loadednet$volMD_daav + loadednet$volMD_dat +
-                       loadednet$volMD_s2   + loadednet$volMD_s2av + loadednet$volMD_s2t +
-                       loadednet$volMD_s3   + loadednet$volMD_s3av + loadednet$volMD_s3t +
-                       loadednet$volPM_da   + loadednet$volPM_daav + loadednet$volPM_dat +
-                       loadednet$volPM_s2   + loadednet$volPM_s2av + loadednet$volPM_s2t +
-                       loadednet$volPM_s3   + loadednet$volPM_s3av + loadednet$volPM_s3t +
-                       loadednet$volEV_da   + loadednet$volEV_daav + loadednet$volEV_dat +
-                       loadednet$volEV_s2   + loadednet$volEV_s2av + loadednet$volEV_s2t +
-                       loadednet$volEV_s3   + loadednet$volEV_s3av + loadednet$volEV_s3t)*loadednet$distance
-
+# from pre split av/tnc runs
+if ("volAM_zpav" %in% colnames(loadednet) == FALSE) {
+  loadednet$volEA_zpav  <- 0
+  loadednet$volEA_zptnc <- 0
+  loadednet$volEA_datnc <- 0
+  loadednet$volEA_s2tnc <- 0
+  loadednet$volEA_s3tnc <- 0
+  loadednet$volAM_zpav  <- 0
+  loadednet$volAM_zptnc <- 0
+  loadednet$volAM_datnc <- 0
+  loadednet$volAM_s2tnc <- 0
+  loadednet$volAM_s3tnc <- 0
+  loadednet$volMD_zpav  <- 0
+  loadednet$volMD_zptnc <- 0
+  loadednet$volMD_datnc <- 0
+  loadednet$volMD_s2tnc <- 0
+  loadednet$volMD_s3tnc <- 0
+  loadednet$volPM_zpav  <- 0
+  loadednet$volPM_zptnc <- 0
+  loadednet$volPM_datnc <- 0
+  loadednet$volPM_s2tnc <- 0
+  loadednet$volPM_s3tnc <- 0
+  loadednet$volEV_zpav  <- 0
+  loadednet$volEV_zptnc <- 0
+  loadednet$volEV_datnc <- 0
+  loadednet$volEV_s2tnc <- 0
+  loadednet$volEV_s3tnc <- 0
+}
+loadednet$VMT_auto <- (                       loadednet$volEA_zpav + loadednet$volEA_zptnc +
+                       loadednet$volEA_da   + loadednet$volEA_daav + loadednet$volEA_datnc + loadednet$volEA_dat +
+                       loadednet$volEA_s2   + loadednet$volEA_s2av + loadednet$volEA_s2tnc + loadednet$volEA_s2t +
+                       loadednet$volEA_s3   + loadednet$volEA_s3av + loadednet$volEA_s3tnc + loadednet$volEA_s3t +
+                                              loadednet$volAM_zpav + loadednet$volAM_zptnc +
+                       loadednet$volAM_da   + loadednet$volAM_daav + loadednet$volAM_datnc + loadednet$volAM_dat +
+                       loadednet$volAM_s2   + loadednet$volAM_s2av + loadednet$volAM_s2tnc + loadednet$volAM_s2t +
+                       loadednet$volAM_s3   + loadednet$volAM_s3av + loadednet$volAM_s3tnc + loadednet$volAM_s3t +
+                                              loadednet$volMD_zpav + loadednet$volMD_zptnc +
+                       loadednet$volMD_da   + loadednet$volMD_daav + loadednet$volMD_datnc + loadednet$volMD_dat +
+                       loadednet$volMD_s2   + loadednet$volMD_s2av + loadednet$volMD_s2tnc + loadednet$volMD_s2t +
+                       loadednet$volMD_s3   + loadednet$volMD_s3av + loadednet$volMD_s3tnc + loadednet$volMD_s3t +
+                                              loadednet$volPM_zpav + loadednet$volPM_zptnc +
+                       loadednet$volPM_da   + loadednet$volPM_daav + loadednet$volPM_datnc + loadednet$volPM_dat +
+                       loadednet$volPM_s2   + loadednet$volPM_s2av + loadednet$volPM_s2tnc + loadednet$volPM_s2t +
+                       loadednet$volPM_s3   + loadednet$volPM_s3av + loadednet$volPM_s3tnc + loadednet$volPM_s3t +
+                                              loadednet$volEV_zpav + loadednet$volEV_zptnc +
+                       loadednet$volEV_da   + loadednet$volEV_daav + loadednet$volEV_datnc + loadednet$volEV_dat +
+                       loadednet$volEV_s2   + loadednet$volEV_s2av + loadednet$volEV_s2tnc + loadednet$volEV_s2t +
+                       loadednet$volEV_s3   + loadednet$volEV_s3av + loadednet$volEV_s3tnc + loadednet$volEV_s3t)*loadednet$distance
 short_summary$'network VMT'      <- sum(loadednet$VMT)
 short_summary$'network VMT auto' <- sum(loadednet$VMT_auto)
 remove(loadednet)
