@@ -595,7 +595,7 @@ add_active <- function(this_timeperiod, input_trips_or_tours) {
 
 indiv_trips     <- read.table(file=file.path(MAIN_DIR, paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
 indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest_taz,
-                          trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate) %>%
+                          trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate, inbound) %>%
                    mutate(tour_id = paste0("i",substr(tour_category,1,2),tour_id))
 
 ## Data Reads: Joint Trips and recode a few variables
@@ -604,7 +604,7 @@ indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest
 joint_trips     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTripData_",ITER,".csv")),
                                      header=TRUE, sep=","))
 joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz, trip_mode,
-                          num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate) %>%
+                          num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate, inbound) %>%
                    mutate(tour_id = paste0("j",substr(tour_category,1,2),tour_id))
 
 print(paste("Read",prettyNum(nrow(joint_trips),big.mark=","),
@@ -617,9 +617,9 @@ joint_tours     <- left_join(joint_tours,
                              by=c("hh_id","tour_id"))
 
 ## Combine individual tours and joint tours together
-
 tours <- rbind(select(indiv_tours, -person_id, -person_num, -person_type, -atWork_freq, -fp_choice),
                select(joint_tours, -tour_composition, -tour_participants))
+print(paste("Combined into",prettyNum(nrow(tours),big.mark=","),"tours"))
 
 # done with this -- joint_tours will be used for unwinding joint trips and then released
 if (JUST_MES!="1") {
@@ -715,7 +715,7 @@ if (JUST_MES=="1") {
 joint_person_trips <- inner_join(joint_trips, joint_tour_persons, by=c("hh_id", "tour_id"))
 # select out person_num and the person table columns
 joint_person_trips <- select(joint_person_trips, hh_id, person_id, tour_id, orig_taz, dest_taz, trip_mode,
-                             num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, avAvailable, sampleRate)
+                             num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, avAvailable, sampleRate, inbound)
 # cleanup
 remove(joint_tours,joint_trips,joint_tour_persons)
 
@@ -735,7 +735,7 @@ remove(indiv_trips,joint_person_trips)
 #   * `incQ` and label from the household table
 #   * `autoSuff` and label from the household table
 #   * `walk_subzone` and label from the household table
-#   * `ptype` and label from persons
+#   * `ptype` and label, `fp_choice` from persons
 
 trips <- mutate(trips,
                 timeCodeNum=1*(depart_hour<6) +                                       # EA
@@ -752,7 +752,7 @@ trips <- left_join(trips,
                             home_taz, walk_subzone, walk_subzone_label),
                    by=c("hh_id"))
 trips <- left_join(trips,
-                   select(persons, hh_id, person_id, ptype, ptype_label),
+                   select(persons, hh_id, person_id, ptype, ptype_label, fp_choice),
                    by=c("hh_id","person_id"))
 
 ## Add Trip Distance to Trips
