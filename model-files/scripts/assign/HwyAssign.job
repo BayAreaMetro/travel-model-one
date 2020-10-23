@@ -317,7 +317,8 @@ loop period = 1, 5
          pathload path = lw.gencost_lrg, excludegrp = 23, 4, vol[10] = mi.3.ctrucktoll
 
          ; zero passenger AV, no value toll, exclude drive alone value toll and HOV facilities
-         pathload path = lw.gencost_da, excludegrp = 11, 23, vol[11] = mi.1.zp_av
+         ; TEMP change for testing: allow value toll facilities
+         pathload path = lw.gencost_da, excludegrp = 23, vol[11] = mi.1.zp_av
 
          ; drive alone AV, toll paying, exclude HOV facilities
          pathload path = lw.gencost_da, excludegrp = 23, vol[12] = mi.1.da_av
@@ -329,7 +330,8 @@ loop period = 1, 5
          pathload path = lw.gencost_s3, vol[14] = mi.1.s3_av / 3.25
 
          ; zero passenger TNC, no value toll, exclude drive alone value toll and HOV facilities
-         pathload path = lw.gencost_da, excludegrp = 11, 23, vol[15] = mi.1.zp_tnc
+         ; TEMP change for testing: allow value toll facilities
+         pathload path = lw.gencost_da, excludegrp = 23, vol[15] = mi.1.zp_tnc
 
          ; drive alone TNC, value toll paying, exclude HOV facilities
          pathload path = lw.gencost_da, excludegrp = 23, vol[16] = mi.1.da_tnc
