@@ -1,4 +1,4 @@
-### CoreSummaries.R
+## CoreSummaries.R
 
 This R script reads Trips, Tours, Persons and Households, joining them together and joining them with skims in order to create summaries of interest.
 
@@ -7,7 +7,7 @@ Tableau data extracts are converted from the `.rdata` files because the binary f
 is more compressed and also contains information about data types.  The index columns are those
 before the `freq` column.  These outputs include:
 
-#### ActiveTransport
+### ActiveTransport
 
 Active transportation summary of persons.  Sum(freq) = population
 
@@ -27,7 +27,7 @@ Active transportation summary of persons.  Sum(freq) = population
 | dtr_trip | Share of population that makes drive-to-transit trips (note these have a walk component) |
 | atHomeA | Share of population that does not leave home on a typical weekday |
    
-#### ActivityPattern
+### ActivityPattern
 Activity pattern summary of persons.  Sum(freq) = population
 
 | Column Name | Description |
@@ -39,7 +39,7 @@ Activity pattern summary of persons.  Sum(freq) = population
 | incQ_label | Income quartile.  One of ('Less than $30k', '$30k-$60k', '$60k-$100k', 'More than $100k') |
 | freq | Frequency of persons |
 
-#### AutomobileOwnership
+### AutomobileOwnership
 Automobile Ownership summary of households.  Sum(freq) = households
 
 | Column Name | Description |
@@ -57,7 +57,7 @@ Automobile Ownership summary of households.  Sum(freq) = households
  (either pre-school age or school age) |
 | freq | Frequency of households |
 
-#### AutoTripsVMT_perOrigDestHomeWork
+### AutoTripsVMT_perOrigDestHomeWork
 Automobile trips for VMT summing.  Sum(trips) = total auto trips for an average weekday.
 
 | Column Name | Description |
@@ -72,7 +72,7 @@ Automobile trips for VMT summing.  Sum(trips) = total auto trips for an average 
 | trips | Number of (person) trips |
 | vehicle_trips | Number of vehicle trips |
 
-#### AutoTripsVMT_personsHomeWork
+### AutoTripsVMT_personsHomeWork
 Automobile trips by person.  Sum(freq) = population
 
 | Column Name | Description |
@@ -83,7 +83,7 @@ Automobile trips by person.  Sum(freq) = population
 | WorkLocation  | TAZ of Work location or 0 if none |
 | freq | Number of persons with this home/work combination |
 
-#### CommuteByEmploymentLocation
+### CommuteByEmploymentLocation
 Commute characteristics by employment location.  Sum(freq) = commute tours
 
 | Column Name | Description |
@@ -99,7 +99,7 @@ Commute characteristics by employment location.  Sum(freq) = commute tours
 | distance | Distance of commute (in miles)|
 | cost_fail | Commute tours for which the cost lookup failed |
 
-#### CommuteByIncomeHousehold
+### CommuteByIncomeHousehold
 Commute characteristics by household location. Sum(freq) = commute tours
 
 | Column Name | Description |
@@ -120,13 +120,13 @@ Commute characteristics by household location. Sum(freq) = commute tours
 | cost_fail | Commute tours for which the cost lookup failed |
 | time_fail | Commute tours for which the time lookup failed |
 
-#### CommuteByIncomeJob
+### CommuteByIncomeJob
 Commute characteristics by job location.  Sum(freq) = commute tours
 
 Columns are the same as CommuteByIncomeHousehold, except they are summed 
 to job/destination geographies instead of to residential geographies.
 
-#### JourneyToWork
+### JourneyToWork
 Workplace location summaries (including when tours are not made.)  Sum(freq) = persons with work locations
 
 | Column Name | Description |
@@ -140,7 +140,7 @@ Workplace location summaries (including when tours are not made.)  Sum(freq) = p
 | freq | Number of persons with home/work locations as described |
 | Income | Average income |
 
-#### PerTripTravelTime
+### PerTripTravelTime
 Sum(freq) = trips
 
 | Column Name | Description |
@@ -154,7 +154,7 @@ Sum(freq) = trips
 | trvlTime | Average travel time (in minutes)|
 | time_fail | Commute tours for which the time lookup failed |
 
-#### TimeOfDay
+### TimeOfDay
 Sum(freq) = tours
 
 | Column Name | Description |
@@ -169,7 +169,7 @@ Sum(freq) = tours
 | freq | Number of tours |
 | num_participants | Number of person participants |
 
-#### TimeOfDay_personsTouring
+### TimeOfDay_personsTouring
 Summary of how many persons are touring at a given hour.
 
 | Column Name | Description |
@@ -178,7 +178,7 @@ Summary of how many persons are touring at a given hour.
 | persons_touring | Number of persons touring |
 | hour | The hour of their tour, in [5,23] |
 
-#### TravelCost
+### TravelCost
 Travel costs by household.  Sum(freq) = households
 
 | Column Name | Description |
@@ -199,7 +199,7 @@ Travel costs by household.  Sum(freq) = households
 | pcost_joint | Parking cost from joint trips (in cents in 2000$)|
 
 
-#### TripDistance
+### TripDistance
 Distance summaries for trips.  Sum(freq) = trips
 
 | Column Name | Description |
@@ -215,7 +215,7 @@ Distance summaries for trips.  Sum(freq) = trips
 | freq | Number of trips |
 | distance | Average trip distance (in miles) |
 
-#### VehicleMilesTraveled
+### VehicleMilesTraveled
 Auto vehicle miles traveled summed to persons. Sum(freq) = population
 
 | Column Name | Description |
@@ -242,14 +242,73 @@ Auto vehicle miles traveled summed to persons. Sum(freq) = population
 Auto vehicle miles traveled summed to households.
 Same columns as VehicleMilesTraveled but Sum(freq) = households and no ptype columns.
 
-### TelecommuteEligibleBySD
-This output is generated by the core summary script, [TelcommuteByIncome.py](https://github.com/BayAreaMetro/travel-model-one/blob/master/model-files/scripts/core_summaries/TelecommuteByIncome.py).
+### Additional Output Tables
+It also outputs updated `.rdata` versions of the Trip, Tours, Persons and Households table, 
+with the extra data fields added in `updated_output`
+
+### tours.rdata
+
+Each row corresponds to an individual tour or joint tour.  Note that each joint tour is represented *once*, with *num_participants* > 1.
+
+| Column Name | Description | Data Type |
+|-------------|-------------|-----------|
+| hh_id | Unique household ID number corresponding to the HHID in [PopSynHousehold](https://github.com/BayAreaMetro/modeling-website/wiki/PopSynHousehold) | Long integer |
+| tour_id | Updated string ID (differs from version in tour outputfiles).  Concatenation of `i` or `j` for individual or joint, first two characters of *tour_category*, and *tour_id* from [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) | String |
+| tour_category | Type of tour | String, "MANDATORY"; "INDIVIDUAL_NON_MANDATORY"; "AT_WORK"; "JOINT_NON_MANDATORY" |
+| tour_purpose | Tour purpose | String, "work_low"; "work_med"; "work_high"; "work_very high"; "university"; "school_high"; "school_grade"; "atwork_business"; "atwork_eat"; "atwork_maint"; "eatout"; "escort_kids"; "escort_no kids"; "othdiscr", "othmaint"; "shopping"; "social" |
+| orig_taz | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+| orig_walk_segment | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+| dest_taz | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+| dest_walk_segment | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+| start_hour | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+| end_hour | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+| tour_mode | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+| num_ob_stops | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+| num_ib_stops | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+| avAvailable | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+ | dcLogsum | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+ | sampleRate | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+ | origTaxiWait | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+ | destTaxiWait | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+ | origSingleTNCWait | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+ | destSingleTNCWait | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+ | origSharedTNCWait | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+ | destSharedTNCWait | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
+ | income | Annual household income ($2000) from [PopSynHousehold](https://github.com/BayAreaMetro/modeling-website/wiki/PopSynHousehold) | Integer |
+ | incQ | Income Quartile | Integer, 1: less than 30k (in $2000); 2: 30-60k (not including 60k); 3: 60-100k (not including 100k); 4: 100k and above |
+ | incQ_label | Income Quartile label | String, "Less than $30k","$30k to $60k","$60k to $100k","More than $100k" |
+ | num_participants | Number of household participants in the tour; 1 if individual, more if joint | Integer, 1 to 10 |
+ | dest_COUNTY | County of dest_taz | Integer, 1=San Francisco; 2=San Mateo; 3=Santa Clara; 4=Alameda; 5=Contra Costa; 6=Solano; 7=Napa; 8=Sonoma; 9=Marin |
+ | dest_county_name | County of dest_taz | String, "San Francisco"; "San Mateo"; "Santa Clara"; "Alameda"; "Contra Costa"; "Solano"; "Napa"; "Sonoma"; "Marin" |
+ | dest_SD | Superdistrict of dest_taz | Integer |
+ | PRKCST | Hourly parking rate paid by long-term (8-hours) parkers (year 200 cents), from dest_taz and [TazData](https://github.com/BayAreaMetro/modeling-website/wiki/TazData) | Float |
+ | OPRKCST | Hourly parking rate paid by short-term parkers (year 2000 cents), from dest_taz and [TazData](https://github.com/BayAreaMetro/modeling-website/wiki/TazData) | Float |
+ | fp_choice | Free parking eligibility choice from [Person](https://github.com/BayAreaMetro/modeling-website/wiki/Person) | Integer, 1 - person will park for free; 2 - person will pay to park; 0 - joint tour, so not applicable. Note fp_choice applies to work tours only |
+ | parking_rate | Hourly parking rate for this tour (year 2000 cents).  One of PRKCST or OPRKCST, depending on tour_category.  If work tour and person has free parking, then this is zero | Float |
+ | taz | Household residence TAZ | Integer |
+ | SD | Household residence Superdistrict | Integer |
+ | COUNTY | Household residence county | Integer, 1=San Francisco; 2=San Mateo; 3=Santa Clara; 4=Alameda; 5=Contra Costa; 6=Solano; 7=Napa; 8=Sonoma; 9=Marin |
+ | county_name | Household residence county | String, "San Francisco"; "San Mateo"; "Santa Clara"; "Alameda"; "Contra Costa"; "Solano"; "Napa"; "Sonoma"; "Marin" |
+ | simple_purpose | Simplified purpose, from tour_purpose | String, "non-work"; "work"; "school"; "college"; "at work" |
+ | duration | Tour duration, end_hour-start_hour+0.5 | Float |
+ | parking_cost | Total parking cost, based on tour duration and parking_rate.  Split if tour_mode is SR2/SR3. Zero for non-private-auto modes. | Float |
+ | pcost_indiv | Parking cost for individual tours | Float |
+ | pcost_joint | Parking cost for joint tours | Float |
+
+
+### trips.rdata
+
+TBD
+
+## TelecommuteEligibleBySD
+
+This output is generated by [TelcommuteByIncome.py](TelecommuteByIncome.py).
 
 The script TelecommuteByIncome.py generates a second output, telecommuteEligibleBySDByinc.csv. The columns in this second output file is very similar to those in TelecommuteEligibleBySD.csv, except that:
 - It includes an additional column "incQ" indicating the income quartile of the full-time worker (where 1='Less than $30k', 2='$30k-$60k', 3='$60k-$100k', and 4='More than $100k'). 
-- It excludes the six columns related nubmer of employment from the input file TazData.csv.
+- It excludes the six columns, (RETEMPN,FPSEMPN,HEREMPN,OTHEMPN,AGREMPN,MWTEMPN)_TazData
 
-Additionally, TelecommuteByIncome.py also output a file num_ftworkers_with_telecommutable_jobs.csv, which generates the same data as telecommuteEligibleBySDByinc.csv and telecommuteEligibleBySDByinc.csv.except that it keeps both WorkLocation and HomeTAZ in the index. This output file has not been used for analysis and it will likely be dropped from the next version of the script.
+Additionally, TelecommuteByIncome.py also outputs a file num_ftworkers_with_telecommutable_jobs.csv, which generates the same data as telecommuteEligibleBySDByinc.csv and telecommuteEligibleBySDByinc.csv.except that it keeps both WorkLocation and HomeTAZ in the index. This output file has not been used for analysis and it will likely be dropped from the next version of the script.
 
 | Column Name | Description |
 |-------------|-------------|
@@ -267,6 +326,3 @@ Additionally, TelecommuteByIncome.py also output a file num_ftworkers_with_telec
 | run_directory | Name of the model run |
 
 
-#### Additional Output Tables
-It also outputs updated `.rdata` versions of the Trip, Tours, Persons and Households table, 
-with the extra data fields added.
