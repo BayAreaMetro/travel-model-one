@@ -55,13 +55,13 @@ if not exist metrics\autos_owned.csv (
   python "%CODE_DIR%\tallyAutos.py"
 )
 
-if not exist metrics\parking_costs.csv (
-  rem Tally parking costs from tours, persons (for free parking choice)
+if not exist metrics\parking_costs_tour.csv (
+  rem Tally parking costs from tours and trips, persons (for free parking choice)
   rem and tazdata (for parking costs)
-  rem Input: main\indivTourData_%ITER%.csv, main\jointTourData_%ITER%.csv,
-  rem        personData_%ITER%.csv, landuse\tazData.csv
-  rem Output: metrics\parking_costs.csv
-  python "%CODE_DIR%\tallyParking.py"
+  rem Input: updated_output\tours.rdata, updated_output\trips.rdata
+  rem        landuse\tazData.csv
+  rem Output: metrics\parking_costs_tour.csv
+  call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\tallyParking.R"
 )
 
 if not exist main\indivTripDataIncome_%ITER%.csv (
