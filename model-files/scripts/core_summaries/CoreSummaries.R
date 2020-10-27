@@ -239,7 +239,7 @@ remove(kidsNoDr_hhlds)
 
 indiv_tours     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("indivTourData_",ITER,".csv")),
                                      header=TRUE, sep=","))
-indiv_tours     <- mutate(indiv_tours, tour_id=paste0("i",substr(tour_category,1,2),tour_id))
+indiv_tours     <- mutate(indiv_tours, tour_id=paste0("i",substr(tour_purpose,1,4),tour_id))
 
 # Add income from household table
 indiv_tours     <- left_join(indiv_tours, select(households, hh_id, income, incQ, incQ_label), by=c("hh_id"))
@@ -267,7 +267,7 @@ indiv_tours   <- mutate(indiv_tours, parking_rate=ifelse((substr(tour_purpose,0,
 
 joint_tours    <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTourData_",ITER,".csv")),
                                     header=TRUE, sep=","))
-joint_tours     <- mutate(joint_tours, tour_id=paste0("j",substr(tour_category,1,2),tour_id))
+joint_tours     <- mutate(joint_tours, tour_id=paste0("j",substr(tour_purpose,1,4),tour_id))
 
 # Add Income from household table
 joint_tours    <- left_join(joint_tours, select(households, hh_id, income, incQ, incQ_label), by=c("hh_id"))
@@ -596,9 +596,9 @@ add_active <- function(this_timeperiod, input_trips_or_tours) {
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip
 
 indiv_trips     <- read.table(file=file.path(MAIN_DIR, paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
-indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest_taz,
+indiv_trips     <- select(indiv_trips, hh_id, person_id, person_num, tour_id, orig_taz, dest_taz,
                           trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate, inbound) %>%
-                   mutate(tour_id = paste0("i",substr(tour_category,1,2),tour_id))
+                   mutate(tour_id = paste0("i",substr(tour_purpose,1,4),tour_id))
 print(paste("Read",prettyNum(nrow(indiv_trips),big.mark=","),"individual trips"))
 
 ## Data Reads: Joint Trips and recode a few variables
@@ -608,7 +608,7 @@ joint_trips     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTripD
                                      header=TRUE, sep=","))
 joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz, trip_mode,
                           num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate, inbound) %>%
-                   mutate(tour_id = paste0("j",substr(tour_category,1,2),tour_id))
+                   mutate(tour_id = paste0("j",substr(tour_purpose,1,4),tour_id))
 
 print(paste("Read",prettyNum(nrow(joint_trips),big.mark=","),
             "joint trips or ",prettyNum(sum(joint_trips$num_participants),big.mark=","),
@@ -680,7 +680,7 @@ tours <- add_tour_attrs(tours)
 # becomes a row per partipant.  
 # Inputs: joint_tours has columns tour_participants, hh_id, tour_id
 #         persons has hh_id, person_num, person_id
-# Returns table of person-tours, with columns hh_id, tour_id, person_num, person_id
+# Returns table of person-tours, with columns hh_id, tour_id, tour_participants person_num, person_id
 get_joint_tour_persons <- function(joint_tours, persons) {
   # tour participants are person ids separated by spaces -- create a table of hh_id, person_num for them
   joint_tour_persons <- data.frame(hh_id=numeric(), tour_id=numeric(), person_num=numeric())
@@ -689,20 +689,24 @@ get_joint_tour_persons <- function(joint_tours, persons) {
   max_peeps      <- max(sapply(participants,length))
   participants   <- lapply(participants, function(X) c(X,rep(NA, max_peeps-length(X))))
   participants   <- data.frame(t(do.call(cbind, participants)))
-  participants   <- mutate(participants, hh_id=joint_tours$hh_id, tour_id=joint_tours$tour_id)
+  participants   <- mutate(participants, hh_id=joint_tours$hh_id, tour_id=joint_tours$tour_id, tour_participants=joint_tours$tour_participants)
+  print("get_join_tour_persons; head(participants):")
+  print(head(participants))
   # melt the persons so they are each on their own row
   for (peep in 1:max_peeps) {
-    jtp <- melt(participants, id.var=c("hh_id","tour_id"), measure.vars=paste0("X",peep), na.rm=TRUE)
+    jtp <- melt(participants, id.var=c("hh_id","tour_id","tour_participants"), measure.vars=paste0("X",peep), na.rm=TRUE)
     jtp <- mutate(jtp, person_num=value)
-    jtp <- select(jtp, hh_id, tour_id, person_num)
+    jtp <- select(jtp, hh_id, tour_id, tour_participants, person_num)
     joint_tour_persons <- rbind(joint_tour_persons, jtp)
   }
   joint_tour_persons <- transform(joint_tour_persons, person_num=as.numeric(person_num))
   # sort by hh_id
-  joint_tour_persons <- joint_tour_persons[with(joint_tour_persons, order(hh_id, tour_id)),]
+  joint_tour_persons <- joint_tour_persons[with(joint_tour_persons, order(hh_id, tour_participants, tour_id)),]
   # merge with the persons to get the person_id
   joint_tour_persons <- left_join(joint_tour_persons, select(persons, hh_id, person_num, person_id), by=c("hh_id","person_num"))
 
+  print("get_join_tour_persons; head(joint_tour_persons):")
+  print(head(joint_tour_persons))
   return(joint_tour_persons)
 }
 
@@ -724,26 +728,24 @@ if (JUST_MES=="1") {
 # attach persons to the joint_trips
 joint_person_trips <- inner_join(joint_trips, joint_tour_persons, by=c("hh_id", "tour_id"))
 # select out person_num and the person table columns
-joint_person_trips <- select(joint_person_trips, hh_id, person_id, tour_id, orig_taz, dest_taz, trip_mode,
-                             num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, avAvailable, sampleRate, inbound)
+#joint_person_trips <- select(joint_person_trips, hh_id, person_id, tour_id, tour_participants, orig_taz, dest_taz, trip_mode,
+#                             num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, avAvailable, sampleRate, inbound)
 
 print(paste("Created joint_person_trips with",prettyNum(nrow(joint_person_trips),big.mark=","),"rows from",
       prettyNum(nrow(joint_trips),big.mark=","),"rows from joint_trips and",
       prettyNum(nrow(joint_tour_persons),big.mark=","),"rows from joint_tour_persons"))
 
 # cleanup
-remove(joint_tours,joint_trips,joint_tour_persons)
+remove(joint_trips,joint_tour_persons)
 
 ## Combine Individual Trips and Joint Person Trips
-indiv_trips        <- mutate(indiv_trips,        num_participants=1) %>% select(-tour_category)
+indiv_trips <- mutate(indiv_trips, num_participants=1, tour_participants=as.character(person_num))
+print(toString(colnames(joint_person_trips)))
+print(toString(colnames(indiv_trips)))
 trips <- tbl_df(rbind(indiv_trips, joint_person_trips))
 print(paste("Combined",prettyNum(nrow(indiv_trips),big.mark=","),
             "individual trips with",prettyNum(nrow(joint_person_trips),big.mark=","),
-            "joint trips to make",prettyNum(nrow(trips),big.mark=",")," total trips"))
-
-print(paste("Created trips with",prettyNum(nrow(trips),big.mark=","),"rows from",
-      prettyNum(nrow(indiv_trips),big.mark=","),"rows from indiv_trips and",
-      prettyNum(nrow(joint_person_trips),big.mark=","),"rows from joint_person_trips"))
+            "joint trips to make",prettyNum(nrow(trips),big.mark=",")," total trips with columns",toString(colnames(trips))))
 
 remove(indiv_trips,joint_person_trips)
 
@@ -787,6 +789,23 @@ for (timeperiod in LOOKUP_TIMEPERIOD$timeperiod_abbrev) {
 }
 trips <- tbl_df(trips)
 trips <- select(trips, -distance_mode)
+
+num_tours       <- nrow(tours)
+num_tours_dist  <- nrow( distinct(tours, hh_id, tour_participants, tour_id))
+print(paste("num_tours",      prettyNum(num_tours,big.mark=",")))
+print(paste("num_tours_dist", prettyNum(num_tours_dist,big.mark=",")))
+
+duplicate_tours <- tours %>% group_by(hh_id, tour_participants, tour_id) %>% filter(n()>1) %>% ungroup()
+print(duplicate_tours)
+
+write.table(duplicate_tours, "E:\\Model2A-Share\\temp\\dup_tours.csv",  sep=",", row.names=FALSE)
+
+## Add Tour Duration to Trips
+print(paste("Before adding tour duration to trips -- have",prettyNum(nrow(trips),big.mark=","),"rows"))
+# this will only work for individual tours since person_id is set
+trips <- left_join(trips, select(tours, hh_id, tour_participants, tour_id, duration), by=c("hh_id", "tour_participants", "tour_id")) %>% 
+  rename(tour_duration=duration)
+print(paste("After adding tour duration to trips -- have",prettyNum(nrow(trips),big.mark=","),"rows"))
 
 ## Add Active Travel time to Trips
 
