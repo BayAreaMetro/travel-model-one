@@ -5,7 +5,7 @@
 # Run from model directory after CoreSummaries.R
 # 
 # Creates:
-#  parking_costs_tour.csv, with columns
+#  parking_costs_tour.csv, a summary of auto tours only, with columns
 #  1) work_nonwork, either "Non-Work" or "Work"
 #  2) incQ * incQ_label, income "quartile".  incQ is one of 1-4, and incQ_label is the human-readable version.
 #     Note that these are in $2000
@@ -15,7 +15,7 @@
 #  6) parking_cost, total (summed) tour-based parking costs for these tours, in $2000
 #  Note that the sum of parking_cost for work = sum(parking_cost x freq) from CommuteByEmploymentLocation
 #
-# parking_costs_tour_destTaz.csv, with columns
+# parking_costs_tour_destTaz.csv, a summary of auto tours only, with columns
 #  1) simple_purpose, one of "work","school","college","at work",non-work"
 #  2) incQ * incQ_label, income "quartile".  incQ is one of 1-4, and incQ_label is the human-readable version.
 #     Note that these are in $2000
@@ -25,7 +25,7 @@
 #  5) num_tours, number of tours in the parking_category from the given county to the given county
 #  6) parking_cost, total (summed) tour-based parking costs for these tours, in $2000
 #
-# parking_costs_trip_destTaz.csv, with columns
+# parking_costs_trip_destTaz.csv, a summary of all trips, with columns
 #  1) simple_purpose, one of "work","school","college","at work",non-work"
 #  2) incQ * incQ_label, income "quartile".  incQ is one of 1-4, and incQ_label is the human-readable version.
 #     Note that these are in $2000
@@ -34,7 +34,7 @@
 #  5) num_trips, number of trips for the above variables
 #  6) parking_cost, total (summed) trip-based parking costs for these trips, in $2000
 #
-# parking_costs_trip_distBins.csv, with columns
+# parking_costs_trip_distBins.csv, a summary of all trips, with columns
 # 1) simple_purpose, one of "work","school","college","at work",non-work"
 # 2) incQ * incQ_label, income "quartile".  incQ is one of 1-4, and incQ_label is the human-readable version.
 #     Note that these are in $2000
@@ -166,7 +166,7 @@ trips <- mutate(trips, totalParkingCost=ifelse((substr(tour_purpose,0,4)=='work'
 
 # account for sampleRate
 trips <- mutate(trips, 
-                num_trips        = 1.0/sampleRate, # expand each tour to multiple tours
+                num_trips        = 1.0/sampleRate,               # expand each tour to multiple tours
                 totalParkingCost = totalParkingCost/sampleRate)
 
 #trips_debug <- filter(trips, hh_id < 10) %>% 

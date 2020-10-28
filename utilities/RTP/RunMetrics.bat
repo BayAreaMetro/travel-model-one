@@ -60,7 +60,8 @@ if not exist metrics\parking_costs_tour.csv (
   rem and tazdata (for parking costs)
   rem Input: updated_output\tours.rdata, updated_output\trips.rdata
   rem        landuse\tazData.csv
-  rem Output: metrics\parking_costs_tour.csv
+  rem Output: metrics\parking_costs_tour.csv,     metrics\parking_costs_tour_destTaz.csv
+  rem         metrics\parking_costs_trip_destTaz, metrics\parking_costs_trip_distBins.csv
   call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\tallyParking.R"
 )
 
