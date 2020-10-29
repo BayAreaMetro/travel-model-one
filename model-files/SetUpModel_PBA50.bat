@@ -19,7 +19,8 @@ set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\N
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v170_01\2050
-:: draft blueprint was s23; final blueprint is s24; no project is s25
+:: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
+:: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
 set UrbanSimScenario=s24
 
 :: set the location of the "input development" directory where other inputs are stored
