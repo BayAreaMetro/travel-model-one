@@ -15,7 +15,7 @@ set AddStrategies=Yes
 set GITHUB_DIR=\\tsclient\X\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_15\net_2050_Blueprint Plus Crossing
+set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_29\net_2050_Blueprint Plus Crossing
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v170_01\2050
@@ -82,7 +82,6 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_NETWORK%\trn"                       
 :: popsyn and land use
 c:\windows\system32\Robocopy.exe /E "%INPUT_POPLU%\popsyn"                                       INPUT\popsyn
 c:\windows\system32\Robocopy.exe /E "%INPUT_POPLU%\landuse"                                      INPUT\landuse
-:: todo Parking override
 
 :: nonres
 c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\nonres\nonres_00"                   INPUT\nonres
@@ -108,6 +107,30 @@ copy /Y "%PARAMS%"                                                              
 ::
 :: ------------------------------------------------------------------------------------------------------
 if %AddStrategies%==No goto DoneAddingStrategies
+
+:: ----------------------------------------
+:: Parking tazdata update (part of En9 - Expand Transportation Demand Management Initiatives)
+:: -----------------------------------------
+copy /Y "M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v171_01\2050\landuse\parking_strategy\tazData_parkingStrategy_v01.csv"  INPUT\landuse\tazData.csv
+copy /Y "M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v171_01\2050\landuse\parking_strategy\tazData_parkingStrategy_v01.dbf"  INPUT\landuse\tazData.dbf
+
+:: another part of this strategy is to turn off free parking eligibility, which is done via the properties file.
+:: see: https://github.com/BayAreaMetro/travel-model-one/blob/master/config/params_PBA50_Blueprint2050.properties#L156
+
+:: ----------------------------------------
+:: Bus on shoulder by time period
+:: -----------------------------------------
+:: For bus on highway shoulder, BRT is set to 3.
+:: The script assumes 35 mph or congested time, whichever is less.
+:: See: https://github.com/BayAreaMetro/travel-model-one/blob/master/model-files/scripts/skims/PrepHwyNet.job#L163
+:: To allow the links to have different BRT values for different time periods, a few additional lines of code is added to CreateFiveHighwayNetworks.job.
+
+copy /Y  "%BP_OVERRIDE_DIR%\BusOnShoulder_by_TP\CreateFiveHighwayNetworks_BusOnShoulder.job"     CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
+copy /Y  "M:\Application\Model One\NetworkProjects\FBP_MR_018_US101_BOS\mod_links.csv"           INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv
+:copy /Y  "M:\Application\Model One\NetworkProjects\MAJ_Bay_Area_Forward_all\mod_links_BRT.csv"  INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv
+copy INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv    INPUT\hwy\mod_links_BRT.csv
+:copy INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv+INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv    INPUT\hwy\mod_links_BRT.csv
+
 :: ------
 :: Blueprint Regional Transit Fare Policy
 :: ------
@@ -160,7 +183,7 @@ if %MODEL_YEAR_NUM% GEQ 2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapaci
 :: in case the TM release is behind, this is where we copy the most up-to-date scripts from master
 set GITHUB_MASTER=\\tsclient\X\travel-model-one-master
 
-:: non yet
+:: nothing yet
 
 :: ------------------------------------------------------------------------------------------------------
 ::
