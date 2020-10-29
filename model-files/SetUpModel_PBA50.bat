@@ -59,6 +59,7 @@ copy /Y "%GITHUB_DIR%\model-files\RunIteration.bat"                        CTRAM
 copy /Y "%GITHUB_DIR%\model-files\RunModel.bat"                            .
 copy /Y "%GITHUB_DIR%\model-files\RunLogsums.bat"                          .
 copy /Y "%GITHUB_DIR%\model-files\RunCoreSummaries.bat"                    .
+copy /Y "%GITHUB_DIR%\model-files\RunPrepareEmfac.bat"                     .
 copy /Y "%GITHUB_DIR%\utilities\RTP\RunMetrics.bat"                        .
 copy /Y "%GITHUB_DIR%\utilities\RTP\RunScenarioMetrics.bat"                .
 copy /Y "%GITHUB_DIR%\utilities\RTP\ExtractKeyFiles.bat"                   .
