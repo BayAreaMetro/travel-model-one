@@ -596,7 +596,7 @@ add_active <- function(this_timeperiod, input_trips_or_tours) {
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip
 
 indiv_trips     <- read.table(file=file.path(MAIN_DIR, paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
-indiv_trips     <- select(indiv_trips, hh_id, person_id, person_num, tour_id, orig_taz, dest_taz,
+indiv_trips     <- select(indiv_trips, hh_id, person_id, person_num, tour_id, orig_taz, orig_walk_segment, dest_taz, dest_walk_segment,
                           trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate, inbound) %>%
                    mutate(tour_id = paste0("i",substr(tour_purpose,1,4),tour_id))
 print(paste("Read",prettyNum(nrow(indiv_trips),big.mark=","),"individual trips"))
@@ -606,7 +606,7 @@ print(paste("Read",prettyNum(nrow(indiv_trips),big.mark=","),"individual trips")
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip
 joint_trips     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTripData_",ITER,".csv")),
                                      header=TRUE, sep=","))
-joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz, trip_mode,
+joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, orig_walk_segment, dest_taz, dest_walk_segment, trip_mode,
                           num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate, inbound) %>%
                    mutate(tour_id = paste0("j",substr(tour_purpose,1,4),tour_id))
 
@@ -655,8 +655,9 @@ add_tour_attrs <- function(ftours) {
   ftours$simple_purpose[ftours$tour_purpose=='atwork_eat'     ] <- 'at work'
   ftours$simple_purpose[ftours$tour_purpose=='atwork_maint'   ] <- 'at work'
 
-  # Calculate the duration
-  ftours   <- mutate(ftours, duration=end_hour-start_hour+0.5)
+  # Calculate the duration consistently with MtcModeChoiceDMU.java
+  # https://github.com/BayAreaMetro/travel-model-one/blob/15dc6cdfd04e828cf319c21a4b7077ad3c7ca3e6/core/projects/mtc/src/java/com/pb/mtc/ctramp/MtcModeChoiceDMU.java#L83
+  ftours   <- mutate(ftours, duration=end_hour-start_hour+1.0)
 
   # Parking cost is based on tour duration
   ftours   <- mutate(ftours, parking_cost=parking_rate*duration)
@@ -794,11 +795,6 @@ num_tours       <- nrow(tours)
 num_tours_dist  <- nrow( distinct(tours, hh_id, tour_participants, tour_id))
 print(paste("num_tours",      prettyNum(num_tours,big.mark=",")))
 print(paste("num_tours_dist", prettyNum(num_tours_dist,big.mark=",")))
-
-duplicate_tours <- tours %>% group_by(hh_id, tour_participants, tour_id) %>% filter(n()>1) %>% ungroup()
-print(duplicate_tours)
-
-write.table(duplicate_tours, "E:\\Model2A-Share\\temp\\dup_tours.csv",  sep=",", row.names=FALSE)
 
 ## Add Tour Duration to Trips
 print(paste("Before adding tour duration to trips -- have",prettyNum(nrow(trips),big.mark=","),"rows"))
