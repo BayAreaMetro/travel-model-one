@@ -273,7 +273,7 @@ Each row corresponds to an individual tour or joint tour.  Note that each joint 
 | Column Name | Description | Data Type |
 |-------------|-------------|-----------|
 | hh_id | Unique household ID number corresponding to the HHID in [PopSynHousehold](https://github.com/BayAreaMetro/modeling-website/wiki/PopSynHousehold) | Long integer |
-| tour_id | Updated string ID (differs from version in tour outputfiles).  Concatenation of `i` or `j` for individual or joint, first two characters of *tour_category*, and *tour_id* from [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) | String |
+| tour_id | Updated string ID (differs from version in tour outputfiles).  Concatenation of `i` or `j` for individual or joint, first four characters of *tour_purpose*, and *tour_id* from [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) | String |
 | tour_category | Type of tour | String, "MANDATORY"; "INDIVIDUAL_NON_MANDATORY"; "AT_WORK"; "JOINT_NON_MANDATORY" |
 | tour_purpose | Tour purpose | String, "work_low"; "work_med"; "work_high"; "work_very high"; "university"; "school_high"; "school_grade"; "atwork_business"; "atwork_eat"; "atwork_maint"; "eatout"; "escort_kids"; "escort_no kids"; "othdiscr", "othmaint"; "shopping"; "social" |
 | orig_taz | Same as [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) ||
@@ -318,7 +318,57 @@ Each row corresponds to an individual tour or joint tour.  Note that each joint 
 
 ### trips.rdata
 
-TBD
+| Column Name | Description | Data Type |
+|-------------|-------------|-----------|
+| hh_id             | Unique household ID number corresponding to the HHID in [PopSynHousehold](https://github.com/BayAreaMetro/modeling-website/wiki/PopSynHousehold) | Long integer |
+| person_id         | Unique person ID number corresponding to the PERID in [PopSynPerson](https://github.com/BayAreaMetro/modeling-website/wiki/PopSynPerson) | Long integer |
+| person_num        | Person number unique to the household, starting at 1 (see [Person](https://github.com/BayAreaMetro/modeling-website/wiki/Person)) | Integer |
+| tour_id           | Updated string ID (differs from version in tour outputfiles).  Concatenation of `i` or `j` for individual or joint, first four characters of *tour_purpose*, and *tour_id* from [IndividualTour](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour) or [JointTour](https://github.com/BayAreaMetro/modeling-website/wiki/JointTour) | String |
+| orig_taz          | Same as [IndividualTrip](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip) or [JointTrip](https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip) ||
+| orig_walk_segment | Same as [IndividualTrip](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip) or [JointTrip](https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip) ||
+| dest_taz          | Same as [IndividualTrip](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip) or [JointTrip](https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip) ||
+| dest_walk_segment | Same as [IndividualTrip](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip) or [JointTrip](https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip) ||
+| trip_mode         | Same as [IndividualTrip](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip) or [JointTrip](https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip) ||
+| tour_purpose      | Same as [IndividualTrip](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip) or [JointTrip](https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip) ||
+| orig_purpose      | Same as [IndividualTrip](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip) or [JointTrip](https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip) ||
+| dest_purpose      | Same as [IndividualTrip](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip) or [JointTrip](https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip) ||
+| depart_hour       | Same as [IndividualTrip](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip) or [JointTrip](https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip) ||
+| stop_id           | Same as [IndividualTrip](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip) or [JointTrip](https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip) ||
+| tour_category     | Same as [IndividualTrip](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip) or [JointTrip](https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip) ||
+| avAvailable       | Same as [IndividualTrip](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip) or [JointTrip](https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip) ||
+| sampleRate        | Same as [IndividualTrip](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip) or [JointTrip](https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip) ||
+| inbound           | Same as [IndividualTrip](https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip) or [JointTrip](https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip) ||
+| num_participants  | Number of participants on the tour; 1 if individual, 2 and up if joint | Integer |
+| tour_participants | Household members participating in the tour | String of Integers, with spaces between, of the person_num |
+| timeCodeNum       | Time period of travel, based on depart_hour | Integer, 1=EA; 2=AM; 3=MD; 4=PM; 5=EV |
+| timeperiod_label  | Time period of travel, based on timeCodeNum | String, one of "Early AM","AM Peak","Midday","PM Peak","Evening" |
+| timeCode          | Time period of travel, based on timeCodeNum | String, one of "EA","AM","MD","PM","EV" |
+| incQ              | Income Quartile | Integer, 1: less than 30k (in $2000); 2: 30-60k (not including 60k); 3: 60-100k (not including 100k); 4: 100k and above |
+| incQ_label        | Income Quartile label | String, "Less than $30k","$30k to $60k","$60k to $100k","More than $100k" |
+| autoSuff          | Auto sufficiency code, one of [0,1,2] | Integer |
+| autoSuff_label    | Auto sufficiency label | String, "Zero automobiles",'Automobiles < workers","Automobiles >= workers" |
+| home_taz          | TAZ of home location | Integer |
+| walk_subzone      | Walk to transit sub-zone of home from [Household](https://github.com/BayAreaMetro/modeling-website/wiki/Household) | Integer, 0=cannot walk to transit; 1=short walk to transit; 2=long walk to transit |
+| walk_subzone_label| Label for walk_subzone | String |
+| ptype             | Person type | Integer, 1=Full-time worker; 2=Part-time worker; 3=College student; 4=Non-working adult; 5=Retired; 6=Driving-age student; 7-Non-driving-age student; 8=Child too young for school |
+| ptype_label       | Label for person type | String |
+| fp_choice | Free parking eligibility choice from [Person](https://github.com/BayAreaMetro/modeling-website/wiki/Person) | Integer, 1 - person will park for free; 2 - person will pay to park; 0 - joint tour, so not applicable. Note fp_choice applies to work tours only |
+| distance          | Distance of trip, in miles.  Note that these are based on [SimpleSkims](https://github.com/BayAreaMetro/modeling-website/wiki/SimpleSkims) so the transit distances are from da/datoll | Float |
+| tour_duration     | Duration of tour, in hours | Float |
+| amode             | Active trip mode mode| Integer, 0=no walk, 1=walk, 2=bike, 3=walk to and from transit, 4=walk to transit, 5=walk from transit |
+| wlk_trip          | Walk trip mode | Integer, 1=walk, 0 otherwise | Integer |
+| bik_trip          | Walk trip mode | Integer, 1=bike, 0 otherwise | Integer |
+| wtr_trip          | Walk to transit trip mode | Integer, 1=walk to and from transit, 0 otherwise |
+| dtr_trip          | Drive to transit trip mode | Integer, 1=drive from transit, 6=drive to transit, 0 otherwise |
+| active            | Active transportation time for the trip, in minutes | Float
+| costMode          | (doc to be added) | |
+| cost              | (doc to be added) | |
+| cost_fail         | (doc to be added) | |
+| time              | (doc to be added) | |
+| time_fail         | (doc to be added) | |
+| trip_cost_indiv   | (doc to be added) | |
+| trip_cost_joint   | (doc to be added) | |
+
 
 ## TelecommuteEligibleBySD
 
