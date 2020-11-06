@@ -147,7 +147,7 @@ Columns are the same as CommuteByIncomeHousehold, except they are summed
 to job/destination geographies instead of to residential geographies.
 
 ### JourneyToWork
-Workplace location summaries (including when tours are not made.)  Sum(freq) = persons with work locations
+Workplace location summaries (including when tours are not made)  Sum(freq) = persons with work locations
 
 | Column Name | Description |
 |-------------|-------------|
@@ -159,6 +159,22 @@ Workplace location summaries (including when tours are not made.)  Sum(freq) = p
 | work_county_name | County name of work location |
 | freq | Number of persons with home/work locations as described |
 | Income | Average income |
+
+### JourneyToWork_modes
+Workplace location summaries (including when tours are not made) with commute mode. Sum(freq) = persons with work locations
+
+| Column Name | Description |
+|-------------|-------------|
+| incQ | Income Quartile |
+| incQ_label | Income Quartile label |
+| homeSD | Home superdistrict |
+| HomeSubZone | Walk to transit subzone of home |
+| workSD | Work superdistrict |
+| WorkSubZone | Walk to transit zubzone of work |
+| tour_mode | Tour mode of commute trip |
+| freq | Number of persons |
+| distance | Total distance for the commute tour of this category |
+
 
 ### PerTripTravelTime
 Sum(freq) = trips

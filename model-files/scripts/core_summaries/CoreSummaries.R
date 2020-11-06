@@ -847,13 +847,6 @@ for (timeperiod in LOOKUP_TIMEPERIOD$timeperiod_abbrev) {
 trips <- tbl_df(trips)
 
 
-# Mandatory Locations
-
-# The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/MandatoryLocation
-mandatory_locations <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")),
-                                         header=TRUE, sep=","))
-print(paste("Read",prettyNum(nrow(mandatory_locations),big.mark=","),"rows from mandatory_locations"))
-
 # Summaries
 
 ## Active Transportation Summary
@@ -931,7 +924,7 @@ auto_labels <- c("Zero automobiles", "One automobile", "Two automobiles",
                  "Three automobiles", "Four or more automobiles")
 
 ## Commute By Employment Location Summaries
-commute_tours   <- select(tours, hh_id, orig_taz, dest_taz, dest_COUNTY, dest_county_name, dest_SD,
+commute_tours   <- select(tours, hh_id, num_participants, tour_participants, orig_taz, dest_taz, dest_COUNTY, dest_county_name, dest_SD,
                           tour_purpose, start_hour, end_hour, tour_mode, income, incQ, incQ_label, parking_cost)
 # select out non-work travel
 commute_tours   <- subset(commute_tours, (tour_purpose!="atwork_business" & tour_purpose!="atwork_eat"     &
@@ -1067,21 +1060,33 @@ write.table(commute_inc_summary_byres, file.path(RESULTS_DIR,"CommuteByIncomeHou
 print(paste("Wrote",prettyNum(nrow(commute_inc_summary_byres),big.mark=","),"rows of commute_inc_summary_byres"))
 model_summary <- commute_inc_summary_byres  # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR,"CommuteByIncomeHousehold.rdata"))
-remove(commute_tours, commute_inc_summary_byjob, commute_inc_summary_byres)
+
+# save commute tours to look at them
+print(str(commute_tours))
+save(commute_tours, file=file.path(UPDATED_DIR, "commute_tours.rdata"))
+
+remove(commute_inc_summary_byjob, commute_inc_summary_byres)
 
 ## Journey To Work Summary
+
+# Mandatory Locations
+
+# The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/MandatoryLocation
+mandatory_locations <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")),
+                                         header=TRUE, sep=","))
+print(paste("Read",prettyNum(nrow(mandatory_locations),big.mark=","),"rows from mandatory_locations"))
 
 # select out non-work travel
 work_locations <- subset(mandatory_locations, WorkLocation != 0)
 # add home county
 work_locations <- left_join(work_locations,
-                            mutate(tazData,HomeTAZ=taz, homeCOUNTY=COUNTY, home_county_name=county_name) %>%
-                              select(HomeTAZ,homeCOUNTY,home_county_name),
+                            mutate(tazData, HomeTAZ=taz, homeCOUNTY=COUNTY, home_county_name=county_name, homeSD=SD) %>%
+                              select(HomeTAZ,homeCOUNTY,home_county_name,homeSD),
                             by=c("HomeTAZ"))
 # add work county
 work_locations <- left_join(work_locations,
-                            mutate(tazData,WorkLocation=taz, workCOUNTY=COUNTY, work_county_name=county_name) %>%
-                              select(WorkLocation,workCOUNTY,work_county_name),
+                            mutate(tazData, WorkLocation=taz, workCOUNTY=COUNTY, work_county_name=county_name, workSD=SD) %>%
+                              select(WorkLocation,workCOUNTY,work_county_name,workSD),
                             by=c("WorkLocation"))
 
 journeytowork_summary <- summarise(group_by(work_locations,
@@ -1095,7 +1100,46 @@ write.table(journeytowork_summary,
 print(paste("Wrote",prettyNum(nrow(journeytowork_summary),big.mark=","),"rows of journeytowork_summary"))
 model_summary <- journeytowork_summary  # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR,"JourneyToWork.rdata"))
-remove(mandatory_locations, work_locations, journeytowork_summary, model_summary)
+
+# JourneyToWork with SD, subzone, and commute mode
+invalid_commute_tours <- filter(commute_tours, num_participants > 1)
+if (nrow(invalid_commute_tours) > 0) {
+  print("INVALID commute tour(s) with num_participants > 1")
+  print(invalid_commute_tours)
+  stopifnot(FALSE)
+}
+
+# set person_num
+commute_tours <- mutate(commute_tours, person_num=as.integer(tour_participants))
+
+# join to commute_tours for commute tour mode
+work_locations <- left_join(rename(work_locations, hh_id=HHID, person_num=PersonNum),
+                            select(commute_tours, hh_id, person_num, tour_mode, distance))
+# fill in commute_mode for missing
+work_locations$tour_mode[is.na(work_locations$tour_mode)] <- 0
+remove(commute_tours)
+
+# add household income quartile
+work_locations <- left_join(work_locations,
+                            select(households, hh_id, incQ, incQ_label))
+
+# summarize
+journeytowork_mode_summary <- summarise(group_by(work_locations, incQ, incQ_label,
+                                                 homeSD, HomeSubZone, workSD, WorkSubZone,
+                                                 tour_mode),
+                                   freq     = n(),
+                                   distance = sum(distance))
+journeytowork_mode_summary <- mutate(journeytowork_mode_summary, 
+                                     freq = freq/SAMPLESHARE,
+                                     distance = distance/SAMPLESHARE)
+
+write.table(journeytowork_mode_summary,
+            file.path(RESULTS_DIR,"JourneyToWork_modes.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(journeytowork_mode_summary),big.mark=","),"rows of journeytowork_mode_summary"))
+model_summary <- journeytowork_mode_summary  # name it generically for rdata
+save(model_summary, file=file.path(RESULTS_DIR,"JourneyToWork_modes.rdata"))
+
+remove(mandatory_locations, work_locations, journeytowork_summary, journeytowork_mode_summary, model_summary)
 
 ## Time of Day Summary
 timeofday_summary <- summarise(group_by(tours,SD,COUNTY,county_name,
