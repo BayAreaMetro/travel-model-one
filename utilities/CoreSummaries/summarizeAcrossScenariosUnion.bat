@@ -172,7 +172,7 @@ for %%R in (%RUN_NAME_SET%) DO (
 if !SET_TYPE!==all ( goto done )
 
 :: copy over core_summary csv files
-set FILES=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork PerTripTravelTime TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance VehicleMilesTraveled
+set FILES=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork JourneyToWork_modes PerTripTravelTime TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance VehicleMilesTraveled
 
 for %%F in (%FILES%) DO (
   echo %%F
