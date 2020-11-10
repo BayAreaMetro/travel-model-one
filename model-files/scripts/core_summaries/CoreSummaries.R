@@ -1122,9 +1122,13 @@ remove(commute_tours)
 # add household income quartile
 work_locations <- left_join(work_locations,
                             select(households, hh_id, incQ, incQ_label))
+# add person type
+work_locations <- left_join(work_locations,
+                            select(persons, hh_id, person_num, ptype, ptype_label))
+print(table(work_locations$ptype_label))
 
 # summarize
-journeytowork_mode_summary <- summarise(group_by(work_locations, incQ, incQ_label,
+journeytowork_mode_summary <- summarise(group_by(work_locations, incQ, incQ_label, ptype, ptype_label,
                                                  homeSD, HomeSubZone, workSD, WorkSubZone,
                                                  tour_mode),
                                    freq     = n(),
@@ -1183,6 +1187,7 @@ save(model_summary, file=file.path(RESULTS_DIR, "TripDistance.rdata"))
 remove(tripdist_summary, model_summary)
 
 ## Cleanup and save persons
+print(paste("Saving persons.rdata with",prettyNum(nrow(persons),big.mark=","),"rows and",ncol(persons),"columns"))
 save(persons, file=file.path(UPDATED_DIR, "persons.rdata"))
 if (JUST_MES=="1") { write.table(persons, file=file.path(UPDATED_DIR, "persons.csv"), sep=",", row.names=FALSE) }
 remove(persons)
