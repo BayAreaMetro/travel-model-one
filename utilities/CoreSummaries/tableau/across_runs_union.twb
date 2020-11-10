@@ -31,11 +31,11 @@
         <_.fcp.ObjectModelEncapsulateLegacy.false...relation join='left' type='join'>
           <clause type='join'>
             <expression op='='>
-              <expression op='[topsheet_2005_TM152_IPA_03.csv+].[directory]' />
+              <expression op='[topsheet_union].[directory]' />
               <expression op='[ScenarioKey.csv].[directory]' />
             </expression>
           </clause>
-          <relation all='true' connection='textscan.0epbw8p0jg8gjo1e9951d1in85oj' include-siblings='false' is-recursive='false' name='topsheet_2005_TM152_IPA_03.csv+' path='' type='batch-union'>
+          <relation all='true' connection='textscan.0epbw8p0jg8gjo1e9951d1in85oj' include-siblings='false' is-recursive='false' name='topsheet_union' path='' type='batch-union'>
             <database-filter>
               <expression op='='>
                 <expression op='topsheet_*.csv' />
@@ -73,11 +73,11 @@
         <_.fcp.ObjectModelEncapsulateLegacy.true...relation join='left' type='join'>
           <clause type='join'>
             <expression op='='>
-              <expression op='[topsheet_2005_TM152_IPA_03.csv+].[directory]' />
+              <expression op='[topsheet_union].[directory]' />
               <expression op='[ScenarioKey.csv].[directory]' />
             </expression>
           </clause>
-          <relation all='true' connection='textscan.0epbw8p0jg8gjo1e9951d1in85oj' include-siblings='false' is-recursive='false' name='topsheet_2005_TM152_IPA_03.csv+' path='' type='batch-union'>
+          <relation all='true' connection='textscan.0epbw8p0jg8gjo1e9951d1in85oj' include-siblings='false' is-recursive='false' name='topsheet_union' path='' type='batch-union'>
             <database-filter>
               <expression op='='>
                 <expression op='topsheet_*.csv' />
@@ -113,23 +113,23 @@
           </relation>
         </_.fcp.ObjectModelEncapsulateLegacy.true...relation>
         <cols>
-          <map key='[Path]' value='[topsheet_2005_TM152_IPA_03.csv+].[Path]' />
+          <map key='[Path]' value='[topsheet_union].[Path]' />
           <map key='[category]' value='[ScenarioKey.csv].[category]' />
           <map key='[directory (ScenarioKey.csv)]' value='[ScenarioKey.csv].[directory]' />
-          <map key='[directory]' value='[topsheet_2005_TM152_IPA_03.csv+].[directory]' />
-          <map key='[network.VMT.auto]' value='[topsheet_2005_TM152_IPA_03.csv+].[network.VMT.auto]' />
-          <map key='[network.VMT]' value='[topsheet_2005_TM152_IPA_03.csv+].[network.VMT]' />
-          <map key='[popsyn.empres]' value='[topsheet_2005_TM152_IPA_03.csv+].[popsyn.empres]' />
-          <map key='[popsyn.tothh]' value='[topsheet_2005_TM152_IPA_03.csv+].[popsyn.tothh]' />
-          <map key='[popsyn.totpop]' value='[topsheet_2005_TM152_IPA_03.csv+].[popsyn.totpop]' />
+          <map key='[directory]' value='[topsheet_union].[directory]' />
+          <map key='[network.VMT.auto]' value='[topsheet_union].[network.VMT.auto]' />
+          <map key='[network.VMT]' value='[topsheet_union].[network.VMT]' />
+          <map key='[popsyn.empres]' value='[topsheet_union].[popsyn.empres]' />
+          <map key='[popsyn.tothh]' value='[topsheet_union].[popsyn.tothh]' />
+          <map key='[popsyn.totpop]' value='[topsheet_union].[popsyn.totpop]' />
           <map key='[project]' value='[ScenarioKey.csv].[project]' />
-          <map key='[resident.trip.table.VMT]' value='[topsheet_2005_TM152_IPA_03.csv+].[resident.trip.table.VMT]' />
+          <map key='[resident.trip.table.VMT]' value='[topsheet_union].[resident.trip.table.VMT]' />
           <map key='[run_set]' value='[ScenarioKey.csv].[run_set]' />
           <map key='[status]' value='[ScenarioKey.csv].[status]' />
-          <map key='[tazdata.empres]' value='[topsheet_2005_TM152_IPA_03.csv+].[tazdata.empres]' />
-          <map key='[tazdata.totemp]' value='[topsheet_2005_TM152_IPA_03.csv+].[tazdata.totemp]' />
-          <map key='[tazdata.tothh]' value='[topsheet_2005_TM152_IPA_03.csv+].[tazdata.tothh]' />
-          <map key='[tazdata.totpop]' value='[topsheet_2005_TM152_IPA_03.csv+].[tazdata.totpop]' />
+          <map key='[tazdata.empres]' value='[topsheet_union].[tazdata.empres]' />
+          <map key='[tazdata.totemp]' value='[topsheet_union].[tazdata.totemp]' />
+          <map key='[tazdata.tothh]' value='[topsheet_union].[tazdata.tothh]' />
+          <map key='[tazdata.totpop]' value='[topsheet_union].[tazdata.totpop]' />
           <map key='[urbansim_path]' value='[ScenarioKey.csv].[urbansim_path]' />
           <map key='[urbansim_runid]' value='[ScenarioKey.csv].[urbansim_runid]' />
           <map key='[year]' value='[ScenarioKey.csv].[year]' />
@@ -138,7 +138,7 @@
           <metadata-record class='capability'>
             <remote-name />
             <remote-type>0</remote-type>
-            <parent-name>[topsheet_2005_TM152_IPA_03.csv+]</parent-name>
+            <parent-name>[topsheet_union]</parent-name>
             <remote-alias />
             <aggregation>Count</aggregation>
             <contains-null>true</contains-null>
@@ -163,7 +163,7 @@
             <remote-name>directory</remote-name>
             <remote-type>129</remote-type>
             <local-name>[directory]</local-name>
-            <parent-name>[topsheet_2005_TM152_IPA_03.csv+]</parent-name>
+            <parent-name>[topsheet_union]</parent-name>
             <remote-alias>directory</remote-alias>
             <ordinal>0</ordinal>
             <local-type>string</local-type>
@@ -176,7 +176,7 @@
             <remote-name>tazdata.tothh</remote-name>
             <remote-type>20</remote-type>
             <local-name>[tazdata.tothh]</local-name>
-            <parent-name>[topsheet_2005_TM152_IPA_03.csv+]</parent-name>
+            <parent-name>[topsheet_union]</parent-name>
             <remote-alias>tazdata.tothh</remote-alias>
             <ordinal>1</ordinal>
             <local-type>integer</local-type>
@@ -188,7 +188,7 @@
             <remote-name>tazdata.totpop</remote-name>
             <remote-type>20</remote-type>
             <local-name>[tazdata.totpop]</local-name>
-            <parent-name>[topsheet_2005_TM152_IPA_03.csv+]</parent-name>
+            <parent-name>[topsheet_union]</parent-name>
             <remote-alias>tazdata.totpop</remote-alias>
             <ordinal>2</ordinal>
             <local-type>integer</local-type>
@@ -200,7 +200,7 @@
             <remote-name>tazdata.totemp</remote-name>
             <remote-type>20</remote-type>
             <local-name>[tazdata.totemp]</local-name>
-            <parent-name>[topsheet_2005_TM152_IPA_03.csv+]</parent-name>
+            <parent-name>[topsheet_union]</parent-name>
             <remote-alias>tazdata.totemp</remote-alias>
             <ordinal>3</ordinal>
             <local-type>integer</local-type>
@@ -212,7 +212,7 @@
             <remote-name>tazdata.empres</remote-name>
             <remote-type>20</remote-type>
             <local-name>[tazdata.empres]</local-name>
-            <parent-name>[topsheet_2005_TM152_IPA_03.csv+]</parent-name>
+            <parent-name>[topsheet_union]</parent-name>
             <remote-alias>tazdata.empres</remote-alias>
             <ordinal>4</ordinal>
             <local-type>integer</local-type>
@@ -224,7 +224,7 @@
             <remote-name>popsyn.tothh</remote-name>
             <remote-type>20</remote-type>
             <local-name>[popsyn.tothh]</local-name>
-            <parent-name>[topsheet_2005_TM152_IPA_03.csv+]</parent-name>
+            <parent-name>[topsheet_union]</parent-name>
             <remote-alias>popsyn.tothh</remote-alias>
             <ordinal>5</ordinal>
             <local-type>integer</local-type>
@@ -236,7 +236,7 @@
             <remote-name>popsyn.totpop</remote-name>
             <remote-type>20</remote-type>
             <local-name>[popsyn.totpop]</local-name>
-            <parent-name>[topsheet_2005_TM152_IPA_03.csv+]</parent-name>
+            <parent-name>[topsheet_union]</parent-name>
             <remote-alias>popsyn.totpop</remote-alias>
             <ordinal>6</ordinal>
             <local-type>integer</local-type>
@@ -248,7 +248,7 @@
             <remote-name>popsyn.empres</remote-name>
             <remote-type>20</remote-type>
             <local-name>[popsyn.empres]</local-name>
-            <parent-name>[topsheet_2005_TM152_IPA_03.csv+]</parent-name>
+            <parent-name>[topsheet_union]</parent-name>
             <remote-alias>popsyn.empres</remote-alias>
             <ordinal>7</ordinal>
             <local-type>integer</local-type>
@@ -260,7 +260,7 @@
             <remote-name>network.VMT</remote-name>
             <remote-type>5</remote-type>
             <local-name>[network.VMT]</local-name>
-            <parent-name>[topsheet_2005_TM152_IPA_03.csv+]</parent-name>
+            <parent-name>[topsheet_union]</parent-name>
             <remote-alias>network.VMT</remote-alias>
             <ordinal>8</ordinal>
             <local-type>real</local-type>
@@ -272,7 +272,7 @@
             <remote-name>network.VMT.auto</remote-name>
             <remote-type>5</remote-type>
             <local-name>[network.VMT.auto]</local-name>
-            <parent-name>[topsheet_2005_TM152_IPA_03.csv+]</parent-name>
+            <parent-name>[topsheet_union]</parent-name>
             <remote-alias>network.VMT.auto</remote-alias>
             <ordinal>9</ordinal>
             <local-type>real</local-type>
@@ -284,7 +284,7 @@
             <remote-name>resident.trip.table.VMT</remote-name>
             <remote-type>5</remote-type>
             <local-name>[resident.trip.table.VMT]</local-name>
-            <parent-name>[topsheet_2005_TM152_IPA_03.csv+]</parent-name>
+            <parent-name>[topsheet_union]</parent-name>
             <remote-alias>resident.trip.table.VMT</remote-alias>
             <ordinal>10</ordinal>
             <local-type>real</local-type>
@@ -296,7 +296,7 @@
             <remote-name>Path</remote-name>
             <remote-type>129</remote-type>
             <local-name>[Path]</local-name>
-            <parent-name>[topsheet_2005_TM152_IPA_03.csv+]</parent-name>
+            <parent-name>[topsheet_union]</parent-name>
             <remote-alias>Path</remote-alias>
             <ordinal>11</ordinal>
             <local-type>string</local-type>
@@ -500,11 +500,11 @@
               <relation join='left' type='join'>
                 <clause type='join'>
                   <expression op='='>
-                    <expression op='[topsheet_2005_TM152_IPA_03.csv+].[directory]' />
+                    <expression op='[topsheet_union].[directory]' />
                     <expression op='[ScenarioKey.csv].[directory]' />
                   </expression>
                 </clause>
-                <relation all='true' connection='textscan.0epbw8p0jg8gjo1e9951d1in85oj' include-siblings='false' is-recursive='false' name='topsheet_2005_TM152_IPA_03.csv+' path='' type='batch-union'>
+                <relation all='true' connection='textscan.0epbw8p0jg8gjo1e9951d1in85oj' include-siblings='false' is-recursive='false' name='topsheet_union' path='' type='batch-union'>
                   <database-filter>
                     <expression op='='>
                       <expression op='topsheet_*.csv' />
