@@ -33,6 +33,10 @@ if __name__ == '__main__':
     
     print("Found {} unconnected zone(s) in {}".format(len(unconnected_zones), unconnected_zones_file))
 
+    # exclude external zones
+    unconnected_zones[:] = [x for x in unconnected_zones if x <= 1454]
+    print("Found {} unconnected zone(s) in {} after excluding external zones".format(len(unconnected_zones), unconnected_zones_file))
+
     # nothing to do -- just copy the files
     if len(unconnected_zones)==0:
         print("No filtering to do -- copying files")
