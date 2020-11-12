@@ -1112,6 +1112,11 @@ if (nrow(invalid_commute_tours) > 0) {
 # set person_num
 commute_tours <- mutate(commute_tours, person_num=as.integer(tour_participants))
 
+# there may be more than one commute tour for a person; take the first
+print(paste("Before distinct, there are",prettyNum(nrow(commute_tours),big.mark=","),"rows of commute_tours"))
+commute_tours <- distinct(commute_tours, hh_id, person_num, .keep_all = TRUE)
+print(paste("Atfer distinct, there are",prettyNum(nrow(commute_tours),big.mark=","),"rows of commute_tours"))
+
 # join to commute_tours for commute tour mode
 work_locations <- left_join(rename(work_locations, hh_id=HHID, person_num=PersonNum),
                             select(commute_tours, hh_id, person_num, tour_mode, distance))
@@ -1142,6 +1147,10 @@ write.table(journeytowork_mode_summary,
 print(paste("Wrote",prettyNum(nrow(journeytowork_mode_summary),big.mark=","),"rows of journeytowork_mode_summary"))
 model_summary <- journeytowork_mode_summary  # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR,"JourneyToWork_modes.rdata"))
+
+# save work locations
+print(paste("Saving work_locations.rdata with",prettyNum(nrow(work_locations),big.mark=","),"rows and",ncol(work_locations),"columns"))
+save(work_locations, file=file.path(UPDATED_DIR, "work_locations.rdata"))
 
 remove(mandatory_locations, work_locations, journeytowork_summary, journeytowork_mode_summary, model_summary)
 
