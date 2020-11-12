@@ -85,7 +85,7 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_POPLU%\popsyn"                      
 c:\windows\system32\Robocopy.exe /E "%INPUT_POPLU%\landuse"                                      INPUT\landuse
 
 :: nonres
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\nonres\nonres_00"                   INPUT\nonres
+c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\nonres\nonres_01"                   INPUT\nonres
 
 :: logsums and metrics
 c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\logsums_dummies"                    INPUT\logsums
