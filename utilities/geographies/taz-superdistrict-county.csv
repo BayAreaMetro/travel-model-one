@@ -1460,17 +1460,17 @@ ZONE,SD,COUNTY,SD_NAME,COUNTY_NAME,SD_NUM_NAME,COUNTY_NUM_NAME
 1459,35,10,External,External,35 External,10 External
 1460,35,10,External,External,35 External,10 External
 1461,35,10,External,External,35 External,10 External
-1462,35,10,Interstate 80 (Solano),External,35 External,10 External
-1463,35,10,State Route 12 (Solano),External,35 External,10 External
-1464,35,10,State Route 160 (Contra Costa),External,35 External,10 External
-1465,35,10,State Route 4 (Contra Costa),External,35 External,10 External
-1466,35,10,County Route J-4 (Contra Costa),External,35 External,10 External
-1467,35,10,Interstate 205 + Interstate 580 (Alameda),External,35 External,10 External
-1468,35,10,State Route 152 (Santa Clara/East),External,35 External,10 External
-1469,35,10,State Route 156 (Santa Clara),External,35 External,10 External
-1470,35,10,State Route 25 (Santa Clara),External,35 External,10 External
-1471,35,10,U.S. Route 101 (Santa Clara),External,35 External,10 External
-1472,35,10,State Route 152 (Santa Clara/West),External,35 External,10 External
-1473,35,10,State Route 17 (Santa Clara),External,35 External,10 External
-1474,35,10,State Route 9 (Santa Clara),External,35 External,10 External
-1475,35,10,State Route 1 (San Mateo),External,35 External,10 External
+1462,35,10,Gateway: Interstate 80 (Solano),External,35 External,10 External
+1463,35,10,Gateway: State Route 12 (Solano),External,35 External,10 External
+1464,35,10,Gateway: State Route 160 (Contra Costa),External,35 External,10 External
+1465,35,10,Gateway: State Route 4 (Contra Costa),External,35 External,10 External
+1466,35,10,Gateway: County Route J-4 (Contra Costa),External,35 External,10 External
+1467,35,10,Gateway: Interstate 205 + Interstate 580 (Alameda),External,35 External,10 External
+1468,35,10,Gateway: State Route 152 (Santa Clara/East),External,35 External,10 External
+1469,35,10,Gateway: State Route 156 (Santa Clara),External,35 External,10 External
+1470,35,10,Gateway: State Route 25 (Santa Clara),External,35 External,10 External
+1471,35,10,Gateway: U.S. Route 101 (Santa Clara),External,35 External,10 External
+1472,35,10,Gateway: State Route 152 (Santa Clara/West),External,35 External,10 External
+1473,35,10,Gateway: State Route 17 (Santa Clara),External,35 External,10 External
+1474,35,10,Gateway: State Route 9 (Santa Clara),External,35 External,10 External
+1475,35,10,Gateway: State Route 1 (San Mateo),External,35 External,10 External
