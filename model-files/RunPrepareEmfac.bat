@@ -90,6 +90,7 @@ if %MODEL_YEAR% GTR 3000 (
 :: Year 2005 - Emfac2007
 :: Year 2020 - Emfac2014 / Emfac2007 as sensitivity test
 :: Year 2035 - Emfac2014 / Emfac2007 as sensitivity test
+:: Year 2050 - Emfac2014 (strictly speaking not needed, but we sometimes review the results from this)
 
 :: Plan/EIR GHG + Emissions
 ::---------
@@ -103,6 +104,7 @@ if %MODEL_YEAR% GTR 3000 (
 if %1==SB375 if %MODEL_YEAR%==2005 (set emfacVersion=Emfac2007)
 if %1==SB375 if %MODEL_YEAR%==2020 (set emfacVersion=Emfac2014)
 if %1==SB375 if %MODEL_YEAR%==2035 (set emfacVersion=Emfac2014)
+if %1==SB375 if %MODEL_YEAR%==2050 (set emfacVersion=Emfac2014)
 
 if %1==Plan-EIR if %MODEL_YEAR%==2015 (set emfacVersion=Emfac2017)
 if %1==Plan-EIR if %MODEL_YEAR%==2020 (set emfacVersion=Emfac2017)
