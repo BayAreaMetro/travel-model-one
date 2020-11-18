@@ -50,9 +50,23 @@ if (dir.exists(file.path(PROJECT_DIR, "CTRAMP"))) {
     }
 }
 
-
+# this file indicates which facilities have mandatory s2 tolls
 TOLL_DESIGNATIONS_XLSX <- Sys.getenv("TOLL_DESIGNATIONS_XLSX")
 TOLL_DESIGNATIONS_XLSX <- gsub("\\\\","/",TOLL_DESIGNATIONS_XLSX) # switch slashes around
+
+# this file specify which facilities is NOT dynamically tolled (thus don't need toll calibration)
+if (dir.exists(file.path(PROJECT_DIR, "CTRAMP"))) {
+    # full runs
+    NON_DYNA_TOLL_CSV             <- file.path(PROJECT_DIR, "hwy", "NonDynamicTollFacilities.csv")
+} else {
+    if (dir.exists(file.path(PROJECT_DIR, "INPUT"))) {
+        # extracted output folders of baseline runs
+        NON_DYNA_TOLL_CSV             <- file.path(PROJECT_DIR, "INPUT", "hwy", "NonDynamicTollFacilities.csv")
+    } else {
+        # extracted output folders of project runs
+        NON_DYNA_TOLL_CSV             <- file.path(PROJECT_DIR, "hwy", "NonDynamicTollFacilities.csv")
+    }
+}
 
 # specify the following instead, if run as a stand alone script
 # rm(list=ls()) # remove all variables from the r environment
@@ -71,7 +85,7 @@ OUTPUT_NEW_TOLLS_CSV            <- paste0("tolls_iter",ITER+1,".csv")
 
 unloaded_network_df      <- read.dbf(UNLOADED_NETWORK_DBF, as.is=TRUE) %>% select(A,B,USE,FT,TOLLCLASS)
 
-el_links_df    <-  filter(unloaded_network_df , TOLLCLASS>9 )
+el_links_df    <-  filter(unloaded_network_df , TOLLCLASS>11 )
 gp_links_df     <- filter(unloaded_network_df , USE==1 & (FT<=3 | FT==5 | FT==8 | FT==10))
 
 
@@ -211,6 +225,11 @@ el_gp_summary_df <- el_gp_summary_df %>%
                                                                      Case_PM == "Case4 - drop tolls slightly"  ~ pmax((tollpm_da - round((avgspeed_PM - avgspeed_PM_GP)/100/2, digits=2)), 0.03),
                                                                      Case_PM == "Case5 - set to min"           ~ 0.03))
 
+# drop the toll facilities that are not dynamically tolled
+non_dyna_df  <- read.csv(file=NON_DYNA_TOLL_CSV , header=TRUE, sep=",")
+el_gp_summary_df <- el_gp_summary_df %>% left_join(non_dyna_df,
+                                          by=c("TOLLCLASS"="tollclass"))
+el_gp_summary_df <- filter(el_gp_summary_df, is.na(NonDynamicTolling))
 
 #############################################################
 # write the new toll rates to a new tolls.csv
@@ -294,9 +313,17 @@ tolls_new_df <- tolls_new_df  %>% select(-c(TOLLCLASS, tollam_da_new, tollmd_da_
 tolls_new_df <- tolls_new_df  %>% mutate(toll_flat=0)
 
 # append the new toll rates to the first half of the toll.csv file containing the bridge tolls
-bridge_tolls_df    <- read.csv(file=TOLLS_CSV, header=TRUE, sep=",")
-bridge_tolls_df    <- filter(bridge_tolls_df, tollclass<=9)
-bridge_el_tolls_df <- bind_rows(bridge_tolls_df, tolls_new_df)
+old_tolls_df    <- read.csv(file=TOLLS_CSV, header=TRUE, sep=",")
+bridge_tolls_df    <- filter(old_tolls_df, tollclass<=11)
+
+# also append the toll rates from the non-dynamically tolled road
+nondyna_tolls_df <- old_tolls_df %>% left_join(non_dyna_df,
+                                          by=c("tollclass"="tollclass"))
+nondyna_tolls_df <- filter(nondyna_tolls_df, NonDynamicTolling==1)
+nondyna_tolls_df <- nondyna_tolls_df  %>% select(-c(NonDynamicTolling))
+
+bridge_el_tolls_df <- bind_rows(bridge_tolls_df, nondyna_tolls_df, tolls_new_df)
+
 
 #############################################################
 # output

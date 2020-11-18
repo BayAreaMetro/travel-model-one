@@ -5,31 +5,34 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_DBP_PlusCrossing_07
+set M_DIR=M:\Application\Model One\RTP2021\Blueprint\2035_TM152_FBP_Plus_11
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
 
 :: set the location of the Travel Model Release
-set GITHUB_DIR=\\tsclient\X\travel-model-one-1.5.2.1
+:: use master for now until we create a release
+set GITHUB_DIR=\\tsclient\X\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_15\net_2050_Blueprint Plus Crossing
+set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_34\net_2035_Blueprint Plus
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
-set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v170_01\2050
-set UrbanSimScenario=s23
+set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v216\2035
+:: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
+:: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
+set UrbanSimScenario=s24
 
 :: set the location of the "input development" directory where other inputs are stored
 set INPUT_DEVELOPMENT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_DBP_PlusCrossing_06
+set PREV_RUN_DIR=M:\Application\Model One\RTP2021\Blueprint\2035_TM152_FBP_Plus_10
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
-set PARAMS=\\tsclient\X\travel-model-one-master\config\params_PBA50_Blueprint2050.properties
+set PARAMS=\\tsclient\X\travel-model-one-master\config\params_PBA50_Blueprint2035.properties
 
 :: set the location of the overrides directory (for Blueprint strategies)
 set BP_OVERRIDE_DIR=\\tsclient\M\Application\Model One\RTP2021\Blueprint\travel-model-overrides
@@ -56,10 +59,12 @@ copy /Y "%GITHUB_DIR%\model-files\RunIteration.bat"                        CTRAM
 copy /Y "%GITHUB_DIR%\model-files\RunModel.bat"                            .
 copy /Y "%GITHUB_DIR%\model-files\RunLogsums.bat"                          .
 copy /Y "%GITHUB_DIR%\model-files\RunCoreSummaries.bat"                    .
+copy /Y "%GITHUB_DIR%\model-files\RunPrepareEmfac.bat"                     .
 copy /Y "%GITHUB_DIR%\utilities\RTP\RunMetrics.bat"                        .
 copy /Y "%GITHUB_DIR%\utilities\RTP\RunScenarioMetrics.bat"                .
 copy /Y "%GITHUB_DIR%\utilities\RTP\ExtractKeyFiles.bat"                   .
-::copy /Y "%GITHUB_DIR%\utilities\check-setupmodel\Check_SetupModelLog.py"   .
+copy /Y "%GITHUB_DIR%\utilities\RTP\QAQC\Run_QAQC.bat"                     .
+copy /Y "%GITHUB_DIR%\utilities\check-setupmodel\Check_SetupModelLog.py"   .
 
 if "%COMPUTER_PREFIX%" == "WIN-" (copy "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"  "CTRAMP\scripts\notify_slack.py")
 if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.59
@@ -80,11 +85,11 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_POPLU%\popsyn"                      
 c:\windows\system32\Robocopy.exe /E "%INPUT_POPLU%\landuse"                                      INPUT\landuse
 
 :: nonres
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\nonres\nonres_00"                   INPUT\nonres
+c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\nonres\nonres_01"                   INPUT\nonres
 
 :: logsums and metrics
 c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\logsums_dummies"                    INPUT\logsums
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\metrics"                            INPUT\metrics
+c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\metrics\metrics_FinalBlueprint"     INPUT\metrics
 
 :: warmstart (copy from the previous run)
 mkdir INPUT\warmstart\main
@@ -103,6 +108,29 @@ copy /Y "%PARAMS%"                                                              
 ::
 :: ------------------------------------------------------------------------------------------------------
 if %AddStrategies%==No goto DoneAddingStrategies
+
+:: ----------------------------------------
+:: Parking tazdata update (part of En9 - Expand Transportation Demand Management Initiatives)
+:: -----------------------------------------
+copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.csv"  INPUT\landuse\tazData.csv
+copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.dbf"  INPUT\landuse\tazData.dbf
+
+:: another part of this strategy is to turn off free parking eligibility, which is done via the properties file.
+:: see: https://github.com/BayAreaMetro/travel-model-one/blob/master/config/params_PBA50_Blueprint2050.properties#L156
+
+:: ----------------------------------------
+:: Bus on shoulder by time period
+:: -----------------------------------------
+:: For bus on highway shoulder, BRT is set to 3.
+:: The script assumes 35 mph or congested time, whichever is less.
+:: See: https://github.com/BayAreaMetro/travel-model-one/blob/master/model-files/scripts/skims/PrepHwyNet.job#L163
+:: To allow the links to have different BRT values for different time periods, a few additional lines of code is added to CreateFiveHighwayNetworks.job.
+
+copy /Y  "%BP_OVERRIDE_DIR%\BusOnShoulder_by_TP\CreateFiveHighwayNetworks_BusOnShoulder.job"     CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
+copy /Y  "M:\Application\Model One\NetworkProjects\FBP_MR_018_US101_BOS\mod_links.csv"           INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv
+copy /Y  "M:\Application\Model One\NetworkProjects\MAJ_Bay_Area_Forward_all\mod_links_BRT.csv"   INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv
+copy INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv+INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv    INPUT\hwy\mod_links_BRT.csv
+
 :: ------
 :: Blueprint Regional Transit Fare Policy
 :: ------
@@ -142,11 +170,9 @@ if %MODEL_YEAR_NUM% GEQ 2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapaci
 :: ------
 :: Complete Streets
 :: ------
-:: https://app.asana.com/0/403262763383022/1160600926245407
-:: implemented as an UEC override for now; pass the bike constant via params when there is time
-copy /Y "%BP_OVERRIDE_DIR%\Complete_Streets_Network\ModeChoice_%MODEL_YEAR_NUM%.xls"         CTRAMP\model\ModeChoice.xls
-copy /Y "%BP_OVERRIDE_DIR%\Complete_Streets_Network\TripModeChoice_%MODEL_YEAR_NUM%.xls"     CTRAMP\model\TripModeChoice.xls
-
+:: no override needed since it's now in config
+:: see asana task: https://app.asana.com/0/450971779231601/1186351402141779/f
+ 
 :DoneAddingStrategies
 
 :: ------------------------------------------------------------------------------------------------------
@@ -157,24 +183,7 @@ copy /Y "%BP_OVERRIDE_DIR%\Complete_Streets_Network\TripModeChoice_%MODEL_YEAR_N
 :: in case the TM release is behind, this is where we copy the most up-to-date scripts from master
 set GITHUB_MASTER=\\tsclient\X\travel-model-one-master
 
-:: runmodel is behind
-:: because I took out the lines related to UseTollDist
-copy /Y "%GITHUB_MASTER%\model-files\RunModel.bat"                            .
-
-:: some minor updates to trips.rdata for the tnc electrification calculator
-copy /y "%GITHUB_MASTER%\model-files\scripts\core_summaries\CoreSummaries.R"              CTRAMP\scripts\core_summaries\
-
-:: some minor updates to ExtractKeyFiles
-copy /Y "%GITHUB_MASTER%\utilities\RTP\ExtractKeyFiles.bat"                               .
-
-:: added AV share =30% to auto_ownership UECs
-copy /y "%GITHUB_MASTER%\model-files\model\AutoOwnership.xls"                             CTRAMP\model\AutoOwnership.xls
-
-:: add run_qaqc.bat
-copy /Y "%GITHUB_MASTER%\utilities\RTP\QAQC\Run_QAQC.bat"                                 .
-
-:: add a process to check setupmodel
-copy /Y "%GITHUB_MASTER%\utilities\check-setupmodel\Check_SetupModelLog.py"               .
+:: nothing yet
 
 :: ------------------------------------------------------------------------------------------------------
 ::

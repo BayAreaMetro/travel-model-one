@@ -55,13 +55,14 @@ if not exist metrics\autos_owned.csv (
   python "%CODE_DIR%\tallyAutos.py"
 )
 
-if not exist metrics\parking_costs.csv (
-  rem Tally parking costs from tours, persons (for free parking choice)
+if not exist metrics\parking_costs_tour.csv (
+  rem Tally parking costs from tours and trips, persons (for free parking choice)
   rem and tazdata (for parking costs)
-  rem Input: main\indivTourData_%ITER%.csv, main\jointTourData_%ITER%.csv,
-  rem        personData_%ITER%.csv, landuse\tazData.csv
-  rem Output: metrics\parking_costs.csv
-  python "%CODE_DIR%\tallyParking.py"
+  rem Input: updated_output\tours.rdata, updated_output\trips.rdata
+  rem        landuse\tazData.csv
+  rem Output: metrics\parking_costs_tour.csv,     metrics\parking_costs_tour_destTaz.csv
+  rem         metrics\parking_costs_trip_destTaz, metrics\parking_costs_trip_distBins.csv
+  call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\tallyParking.R"
 )
 
 if not exist main\indivTripDataIncome_%ITER%.csv (
@@ -140,14 +141,6 @@ if not exist metrics\nonmot_times.csv (
   if ERRORLEVEL 2 goto error
 )
 
-if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
-  rem Export network to csv version (with vehicle class volumn columns intact)
-  rem Input : hwy\iter%ITER%\avgload5period.net
-  rem Output: hwy\iter%ITER%\avgload5period_vehclasses.csv
-  runtpp "%CODE_DIR%\net2csv_avgload5period.job"
-  IF ERRORLEVEL 2 goto error
-)
-
 if not exist metrics\vmt_vht_metrics.csv (
   rem Summarize network links to vmt, vht, and other collision and emissions estimations
   rem Input: hwy\iter%ITER%\avgload5period_vehclasses.csv
@@ -171,6 +164,16 @@ if not exist metrics\transit_boards_miles.csv (
   rem Input: trn\quickboards.xls
   rem Output: metrics\transit_board_miles.csv
   call python "%CODE_DIR%\transit.py" trn\quickboards.xls
+)
+
+if not exist metrics\transit_crowding.csv (
+  rem Summarize transit crowding
+  rem Input: \\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\metrics\transitSeatCap.csv
+  rem        trn\trnlink[timeperiod]_ALLMSA.dbf
+  rem Output: metrics\transit_crowding_complete.csv
+  rem         metrics\transit_crowding.csv
+  rem         metrics\transit_crowding.log
+  call python "%CODE_DIR%\transitcrowding.py" .
 )
 
 :topsheet

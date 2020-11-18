@@ -88,3 +88,6 @@ EMFACsummary_df.to_csv(output_csv, header=True, index=False)
 
 # Read the results in the "By Sub-Area" tab
 print "\nFinished writing out the regional-level EMFAC results to emfac_prep\\emfac_ghg.csv"
+
+# copy emfac_ghg.csv back to the metrics folder in the model output directory on M
+copy emfac_prep\\emfac_ghg.csv "%M_DIR%\OUTPUT\metrics\emfac_ghg.csv"

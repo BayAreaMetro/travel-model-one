@@ -12,7 +12,7 @@
 :: 2. Date of land use model run - e.g. 20200622
 :: 3. Land use run number - e.g. run98
 :: 4. Model Year - e.g. 2035
-:: 5. UrbanSim outut folder relative to M:\Data\Urban\BAUS\PBA50\Draft_Blueprint\runs - e.g. "Blueprint Plus Crossing (s23)\v1.7.1- FINAL DRAFT BLUEPRINT"
+:: 5. UrbanSim outut folder
 ::
 
 :: note we dequote arg 5 
@@ -53,7 +53,18 @@ set F_INPUT=tazData.csv
 Set F_OUTPUT=tazData.dbf
 "%R_HOME%\Rscript.exe" X:\travel-model-one-master\utilities\taz-data-csv-to-dbf\taz-data-csv-to-dbf.R
 
-cd ..
+:: parking strategy variant
+mkdir parking_strategy
+cd parking_strategy
+python X:\travel-model-one-master\utilities\taz-data-builder\updateParkingCostForParkingStrategy.py ..\tazData.csv tazData_parkingStrategy_v01.csv
+
+set F_INPUT=tazData_parkingStrategy_v01.csv
+set F_OUTPUT=tazData_parkingStrategy_v01.dbf
+RScript X:\travel-model-one-master\utilities\taz-data-csv-to-dbf\taz-data-csv-to-dbf.R
+"%R_HOME%\Rscript.exe" X:\travel-model-one-master\utilities\taz-data-csv-to-dbf\taz-data-csv-to-dbf.R
+
+
+cd ..\..
 :: also need to copy the walk access file for 2010 and before
 :: otherwise create it with clear name and then copy to walkAccessBuffers.float.csv
 :: see https://app.asana.com/0/403262763383022/1161734609745564/f

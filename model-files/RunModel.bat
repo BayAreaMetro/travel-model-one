@@ -316,7 +316,24 @@ if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 12:  Build destination choice logsums
+:: Step 12:  Prepare inputs for EMFAC
+::
+:: ------------------------------------------------------------------------------------------------------
+
+if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
+  rem Export network to csv version (with vehicle class volumn columns intact)
+  rem Input : hwy\iter%ITER%\avgload5period.net
+  rem Output: hwy\iter%ITER%\avgload5period_vehclasses.csv
+  runtpp "CTRAMP\scripts\metrics\net2csv_avgload5period.job"
+  IF ERRORLEVEL 2 goto error
+)
+
+:: Run Prepare EMFAC
+call RunPrepareEmfac.bat SB375 WithFreight
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 13:  Build destination choice logsums
 ::
 :: ------------------------------------------------------------------------------------------------------
 
@@ -330,7 +347,7 @@ if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 13:  Core summaries
+:: Step 14:  Core summaries
 ::
 :: ------------------------------------------------------------------------------------------------------
 
@@ -341,7 +358,7 @@ if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 14:  Cobra Metrics
+:: Step 15:  Cobra Metrics
 ::
 :: ------------------------------------------------------------------------------------------------------
 
@@ -350,7 +367,7 @@ if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 15:  Scenario Metrics
+:: Step 16:  Scenario Metrics
 ::
 :: ------------------------------------------------------------------------------------------------------
 
@@ -359,7 +376,7 @@ if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 16:  Directory clean up
+:: Step 17:  Directory clean up
 ::
 :: ------------------------------------------------------------------------------------------------------
 
@@ -368,8 +385,6 @@ if ERRORLEVEL 2 goto done
 call extractkeyfiles
 c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
 
-:: Run Prepare EMFAC
-call RunPrepareEmfac.bat SB375 WithFreight 
 
 : cleanup
 

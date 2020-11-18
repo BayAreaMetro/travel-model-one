@@ -148,7 +148,7 @@ households <- inner_join(households, tazData, "taz")
 households <- tbl_df(households)
 # clean up
 remove(input.pop.households, input.ct.households)
-
+print(paste("Read household files; have",prettyNum(nrow(households),big.mark=","),"rows"))
 
 ## Recode a few new variables
 
@@ -221,6 +221,8 @@ persons              <- left_join(persons, LOOKUP_PTYPE, by=c("ptype"))
 persons              <- tbl_df(persons)
 # clean up
 remove(input.pop.persons, input.ct.persons)
+print(paste("Read persons files; have",prettyNum(nrow(persons),big.mark=","), "rows"))
+
 
 # kidsNoDr is 1 if the household has children in the household that don't drive (pre-school age or school age)
 # calculate for persons and transfer to households as a binary
@@ -237,7 +239,7 @@ remove(kidsNoDr_hhlds)
 
 indiv_tours     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("indivTourData_",ITER,".csv")),
                                      header=TRUE, sep=","))
-indiv_tours     <- mutate(indiv_tours, tour_id=paste0("i",substr(tour_category,1,2),tour_id))
+indiv_tours     <- mutate(indiv_tours, tour_id=paste0("i",substr(tour_purpose,1,4),tour_id))
 
 # Add income from household table
 indiv_tours     <- left_join(indiv_tours, select(households, hh_id, income, incQ, incQ_label), by=c("hh_id"))
@@ -265,7 +267,7 @@ indiv_tours   <- mutate(indiv_tours, parking_rate=ifelse((substr(tour_purpose,0,
 
 joint_tours    <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTourData_",ITER,".csv")),
                                     header=TRUE, sep=","))
-joint_tours     <- mutate(joint_tours, tour_id=paste0("j",substr(tour_category,1,2),tour_id))
+joint_tours     <- mutate(joint_tours, tour_id=paste0("j",substr(tour_purpose,1,4),tour_id))
 
 # Add Income from household table
 joint_tours    <- left_join(joint_tours, select(households, hh_id, income, incQ, incQ_label), by=c("hh_id"))
@@ -594,18 +596,19 @@ add_active <- function(this_timeperiod, input_trips_or_tours) {
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTrip
 
 indiv_trips     <- read.table(file=file.path(MAIN_DIR, paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
-indiv_trips     <- select(indiv_trips, hh_id, person_id, tour_id, orig_taz, dest_taz,
-                          trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate) %>%
-                   mutate(tour_id = paste0("i",substr(tour_category,1,2),tour_id))
+indiv_trips     <- select(indiv_trips, hh_id, person_id, person_num, tour_id, orig_taz, orig_walk_segment, dest_taz, dest_walk_segment,
+                          trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate, inbound) %>%
+                   mutate(tour_id = paste0("i",substr(tour_purpose,1,4),tour_id))
+print(paste("Read",prettyNum(nrow(indiv_trips),big.mark=","),"individual trips"))
 
 ## Data Reads: Joint Trips and recode a few variables
 
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip
 joint_trips     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTripData_",ITER,".csv")),
                                      header=TRUE, sep=","))
-joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, dest_taz, trip_mode,
-                          num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate) %>%
-                   mutate(tour_id = paste0("j",substr(tour_category,1,2),tour_id))
+joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, orig_walk_segment, dest_taz, dest_walk_segment, trip_mode,
+                          num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate, inbound) %>%
+                   mutate(tour_id = paste0("j",substr(tour_purpose,1,4),tour_id))
 
 print(paste("Read",prettyNum(nrow(joint_trips),big.mark=","),
             "joint trips or ",prettyNum(sum(joint_trips$num_participants),big.mark=","),
@@ -616,10 +619,14 @@ joint_tours     <- left_join(joint_tours,
                              unique(select(joint_trips, hh_id, tour_id, num_participants)),
                              by=c("hh_id","tour_id"))
 
-## Combine individual tours and joint tours together
-
-tours <- rbind(select(indiv_tours, -person_id, -person_num, -person_type, -atWork_freq, -fp_choice),
-               select(joint_tours, -tour_composition, -tour_participants))
+## Combine individual tours and joint tours together, keeping person_id, person_num, tour_participants for both
+tours <- rbind(select(mutate(indiv_tours, tour_participants=as.character(person_num)), -person_type, -atWork_freq),
+               select(mutate(joint_tours, person_id=0, person_num=0, fp_choice=0), -tour_composition))
+print(paste("Combined indiv_tours (",prettyNum(nrow(indiv_tours),big.mark=","),"rows ) and joint_tours (",
+      prettyNum(nrow(joint_tours),big.mark=","),"rows) into",
+      prettyNum(nrow(tours),big.mark=","),"tours with columns",toString(colnames(tours))))
+print(head(select(tours,hh_id,person_id,person_num,tour_id,num_participants,tour_participants),10))
+print(tail(select(tours,hh_id,person_id,person_num,tour_id,num_participants,tour_participants),10))
 
 # done with this -- joint_tours will be used for unwinding joint trips and then released
 if (JUST_MES!="1") {
@@ -648,8 +655,9 @@ add_tour_attrs <- function(ftours) {
   ftours$simple_purpose[ftours$tour_purpose=='atwork_eat'     ] <- 'at work'
   ftours$simple_purpose[ftours$tour_purpose=='atwork_maint'   ] <- 'at work'
 
-  # Calculate the duration
-  ftours   <- mutate(ftours, duration=end_hour-start_hour+0.5)
+  # Calculate the duration consistently with MtcModeChoiceDMU.java
+  # https://github.com/BayAreaMetro/travel-model-one/blob/15dc6cdfd04e828cf319c21a4b7077ad3c7ca3e6/core/projects/mtc/src/java/com/pb/mtc/ctramp/MtcModeChoiceDMU.java#L83
+  ftours   <- mutate(ftours, duration=end_hour-start_hour+1.0)
 
   # Parking cost is based on tour duration
   ftours   <- mutate(ftours, parking_cost=parking_rate*duration)
@@ -670,7 +678,10 @@ tours <- add_tour_attrs(tours)
 ## Convert joint trips to joint person trips
 
 # Getting the tour participants person nums from the joint_tours table, and unwind it so that each joint tour
-# becomes a row per partipant.  Returns table of person-tours, with columns hh_id, tour_id, person_num, person_id
+# becomes a row per partipant.  
+# Inputs: joint_tours has columns tour_participants, hh_id, tour_id
+#         persons has hh_id, person_num, person_id
+# Returns table of person-tours, with columns hh_id, tour_id, tour_participants person_num, person_id
 get_joint_tour_persons <- function(joint_tours, persons) {
   # tour participants are person ids separated by spaces -- create a table of hh_id, person_num for them
   joint_tour_persons <- data.frame(hh_id=numeric(), tour_id=numeric(), person_num=numeric())
@@ -679,20 +690,24 @@ get_joint_tour_persons <- function(joint_tours, persons) {
   max_peeps      <- max(sapply(participants,length))
   participants   <- lapply(participants, function(X) c(X,rep(NA, max_peeps-length(X))))
   participants   <- data.frame(t(do.call(cbind, participants)))
-  participants   <- mutate(participants, hh_id=joint_tours$hh_id, tour_id=joint_tours$tour_id)
+  participants   <- mutate(participants, hh_id=joint_tours$hh_id, tour_id=joint_tours$tour_id, tour_participants=joint_tours$tour_participants)
+  print("get_join_tour_persons; head(participants):")
+  print(head(participants))
   # melt the persons so they are each on their own row
   for (peep in 1:max_peeps) {
-    jtp <- melt(participants, id.var=c("hh_id","tour_id"), measure.vars=paste0("X",peep), na.rm=TRUE)
+    jtp <- melt(participants, id.var=c("hh_id","tour_id","tour_participants"), measure.vars=paste0("X",peep), na.rm=TRUE)
     jtp <- mutate(jtp, person_num=value)
-    jtp <- select(jtp, hh_id, tour_id, person_num)
+    jtp <- select(jtp, hh_id, tour_id, tour_participants, person_num)
     joint_tour_persons <- rbind(joint_tour_persons, jtp)
   }
   joint_tour_persons <- transform(joint_tour_persons, person_num=as.numeric(person_num))
   # sort by hh_id
-  joint_tour_persons <- joint_tour_persons[with(joint_tour_persons, order(hh_id, tour_id)),]
+  joint_tour_persons <- joint_tour_persons[with(joint_tour_persons, order(hh_id, tour_participants, tour_id)),]
   # merge with the persons to get the person_id
   joint_tour_persons <- left_join(joint_tour_persons, select(persons, hh_id, person_num, person_id), by=c("hh_id","person_num"))
 
+  print("get_join_tour_persons; head(joint_tour_persons):")
+  print(head(joint_tour_persons))
   return(joint_tour_persons)
 }
 
@@ -714,17 +729,25 @@ if (JUST_MES=="1") {
 # attach persons to the joint_trips
 joint_person_trips <- inner_join(joint_trips, joint_tour_persons, by=c("hh_id", "tour_id"))
 # select out person_num and the person table columns
-joint_person_trips <- select(joint_person_trips, hh_id, person_id, tour_id, orig_taz, dest_taz, trip_mode,
-                             num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, avAvailable, sampleRate)
+#joint_person_trips <- select(joint_person_trips, hh_id, person_id, tour_id, tour_participants, orig_taz, dest_taz, trip_mode,
+#                             num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, avAvailable, sampleRate, inbound)
+
+print(paste("Created joint_person_trips with",prettyNum(nrow(joint_person_trips),big.mark=","),"rows from",
+      prettyNum(nrow(joint_trips),big.mark=","),"rows from joint_trips and",
+      prettyNum(nrow(joint_tour_persons),big.mark=","),"rows from joint_tour_persons"))
+
 # cleanup
-remove(joint_tours,joint_trips,joint_tour_persons)
+remove(joint_trips,joint_tour_persons)
 
 ## Combine Individual Trips and Joint Person Trips
-indiv_trips        <- mutate(indiv_trips,        num_participants=1) %>% select(-tour_category)
+indiv_trips <- mutate(indiv_trips, num_participants=1, tour_participants=as.character(person_num))
+print(toString(colnames(joint_person_trips)))
+print(toString(colnames(indiv_trips)))
 trips <- tbl_df(rbind(indiv_trips, joint_person_trips))
 print(paste("Combined",prettyNum(nrow(indiv_trips),big.mark=","),
             "individual trips with",prettyNum(nrow(joint_person_trips),big.mark=","),
-            "joint trips to make",prettyNum(nrow(trips),big.mark=",")," total trips"))
+            "joint trips to make",prettyNum(nrow(trips),big.mark=",")," total trips with columns",toString(colnames(trips))))
+
 remove(indiv_trips,joint_person_trips)
 
 ## Add Variables to Trips
@@ -735,7 +758,7 @@ remove(indiv_trips,joint_person_trips)
 #   * `incQ` and label from the household table
 #   * `autoSuff` and label from the household table
 #   * `walk_subzone` and label from the household table
-#   * `ptype` and label from persons
+#   * `ptype` and label, `fp_choice` from persons
 
 trips <- mutate(trips,
                 timeCodeNum=1*(depart_hour<6) +                                       # EA
@@ -752,7 +775,7 @@ trips <- left_join(trips,
                             home_taz, walk_subzone, walk_subzone_label),
                    by=c("hh_id"))
 trips <- left_join(trips,
-                   select(persons, hh_id, person_id, ptype, ptype_label),
+                   select(persons, hh_id, person_id, ptype, ptype_label, fp_choice),
                    by=c("hh_id","person_id"))
 
 ## Add Trip Distance to Trips
@@ -768,8 +791,21 @@ for (timeperiod in LOOKUP_TIMEPERIOD$timeperiod_abbrev) {
 trips <- tbl_df(trips)
 trips <- select(trips, -distance_mode)
 
+num_tours       <- nrow(tours)
+num_tours_dist  <- nrow( distinct(tours, hh_id, tour_participants, tour_id))
+print(paste("num_tours",      prettyNum(num_tours,big.mark=",")))
+print(paste("num_tours_dist", prettyNum(num_tours_dist,big.mark=",")))
+
+## Add Tour Duration to Trips
+print(paste("Before adding tour duration to trips -- have",prettyNum(nrow(trips),big.mark=","),"rows"))
+# this will only work for individual tours since person_id is set
+trips <- left_join(trips, select(tours, hh_id, tour_participants, tour_id, duration), by=c("hh_id", "tour_participants", "tour_id")) %>% 
+  rename(tour_duration=duration)
+print(paste("After adding tour duration to trips -- have",prettyNum(nrow(trips),big.mark=","),"rows"))
+
 ## Add Active Travel time to Trips
 
+print("Adding active mode to trips")
 # code the Active Mode
 trips <- trips %>%
   mutate(amode = 0) %>%
@@ -792,6 +828,7 @@ for (timeperiod in LOOKUP_TIMEPERIOD$timeperiod_abbrev) {
 trips <- tbl_df(trips)
 
 ## Add Travel Cost and Travel Time to Trips
+print("Adding active travel cost and time to trips")
 trips <- trips %>%
   mutate(costMode = 0) %>%
   mutate(costMode = ifelse(trip_mode <= 8, trip_mode, costMode)) %>%
@@ -809,11 +846,6 @@ for (timeperiod in LOOKUP_TIMEPERIOD$timeperiod_abbrev) {
 }
 trips <- tbl_df(trips)
 
-# Mandatory Locations
-
-# The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/MandatoryLocation
-mandatory_locations <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")),
-                                         header=TRUE, sep=","))
 
 # Summaries
 
@@ -825,6 +857,7 @@ trips_dcast <- tbl_df(dcast(trips_melt, hh_id+person_id ~ variable, fun.aggregat
 # left join with persons --> one row per person!
 trips_by_person <- left_join(select(persons, hh_id, person_id, ptype, activity_pattern, value_of_time),
                              trips_dcast, by=c("hh_id","person_id"))
+print(paste("Created trips_by_person with",prettyNum(nrow(trips_by_person),big.mark=","),"rows"))
 
 # we're done with these
 remove(trips_melt,trips_dcast)
@@ -860,6 +893,7 @@ active_summary <- summarise(group_by(trips_by_person, taz, county_name, ptype, z
 active_summary$freq <- active_summary$freq / SAMPLESHARE
 
 write.table(active_summary, file.path(RESULTS_DIR,"ActiveTransport.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(active_summary),big.mark=","),"rows of active_summary"))
 model_summary <- active_summary  # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR,"ActiveTransport.rdata"))
 remove(active_summary, trips_by_person)
@@ -869,6 +903,7 @@ remove(active_summary, trips_by_person)
 actpatt_summary <- summarise(group_by(persons, type, activity_pattern, imf_choice, inmf_choice, incQ_label), freq=n())
 actpatt_summary$freq <- actpatt_summary$freq / SAMPLESHARE
 write.table(actpatt_summary, file.path(RESULTS_DIR,"ActivityPattern.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(actpatt_summary),big.mark=","),"rows of actpatt_summary"))
 model_summary <- actpatt_summary  # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR,"ActivityPattern.rdata"))
 remove(actpatt_summary)
@@ -880,6 +915,7 @@ autoown_summary <- summarise(group_by(households, SD, COUNTY, county_name, autos
                                       incQ, incQ_label, walk_subzone, walk_subzone_label, workers, kidsNoDr), freq=n())
 autoown_summary$freq <- autoown_summary$freq / SAMPLESHARE
 write.table(autoown_summary, file.path(RESULTS_DIR,"AutomobileOwnership.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(autoown_summary),big.mark=","),"rows of autoown_summary"))
 model_summary <- autoown_summary  # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR,"AutomobileOwnership.rdata"))
 
@@ -888,7 +924,7 @@ auto_labels <- c("Zero automobiles", "One automobile", "Two automobiles",
                  "Three automobiles", "Four or more automobiles")
 
 ## Commute By Employment Location Summaries
-commute_tours   <- select(tours, hh_id, orig_taz, dest_taz, dest_COUNTY, dest_county_name, dest_SD,
+commute_tours   <- select(tours, hh_id, num_participants, tour_participants, orig_taz, dest_taz, dest_COUNTY, dest_county_name, dest_SD,
                           tour_purpose, start_hour, end_hour, tour_mode, income, incQ, incQ_label, parking_cost)
 # select out non-work travel
 commute_tours   <- subset(commute_tours, (tour_purpose!="atwork_business" & tour_purpose!="atwork_eat"     &
@@ -929,6 +965,7 @@ commute_tours   <- left_join(commute_tours,
                                            timeCodeWhNum=timeCodeNum, timeCodeWh=timeperiod_abbrev),
                                     timeCodeWhNum, timeCodeWh))
 
+print(paste("Created commute_tours with",prettyNum(nrow(commute_tours),big.mark=","),"rows"))
 # Initialize for home-work cost lookup
 commute_tours   <- mutate(commute_tours, timeCode=timeCodeHw, cost=0.0, cost_fail=0)
 # Add home-work cost to tours
@@ -979,6 +1016,7 @@ commute_summary <- summarise(group_by(commute_tours, dest_COUNTY, dest_county_na
 commute_summary$freq <- commute_summary$freq / SAMPLESHARE
 write.table(commute_summary, file.path(RESULTS_DIR,"CommuteByEmploymentLocation.csv"),
             sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(commute_summary),big.mark=","),"rows of commute_summary"))
 model_summary <- commute_summary  # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR,"CommuteByEmploymentLocation.rdata"))
 remove(commute_summary)
@@ -997,6 +1035,7 @@ commute_inc_summary_byjob <- summarise(group_by(commute_tours, dest_COUNTY, dest
                                        time_fail    = sum(time_fail))
 commute_inc_summary_byjob$freq <- commute_inc_summary_byjob$freq / SAMPLESHARE
 write.table(commute_inc_summary_byjob, file.path(RESULTS_DIR,"CommuteByIncomeJob.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(commute_inc_summary_byjob),big.mark=","),"rows of commute_inc_summary_byjob"))
 model_summary <- commute_inc_summary_byjob  # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR,"CommuteByIncomeJob.rdata"))
 
@@ -1018,23 +1057,36 @@ commute_inc_summary_byres <- summarise(group_by(commute_tours, res_COUNTY, res_c
                                        time_fail    = sum(time_fail))
 commute_inc_summary_byres$freq <- commute_inc_summary_byres$freq / SAMPLESHARE
 write.table(commute_inc_summary_byres, file.path(RESULTS_DIR,"CommuteByIncomeHousehold.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(commute_inc_summary_byres),big.mark=","),"rows of commute_inc_summary_byres"))
 model_summary <- commute_inc_summary_byres  # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR,"CommuteByIncomeHousehold.rdata"))
-remove(commute_tours, commute_inc_summary_byjob, commute_inc_summary_byres)
+
+# save commute tours to look at them
+print(str(commute_tours))
+save(commute_tours, file=file.path(UPDATED_DIR, "commute_tours.rdata"))
+
+remove(commute_inc_summary_byjob, commute_inc_summary_byres)
 
 ## Journey To Work Summary
+
+# Mandatory Locations
+
+# The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/MandatoryLocation
+mandatory_locations <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")),
+                                         header=TRUE, sep=","))
+print(paste("Read",prettyNum(nrow(mandatory_locations),big.mark=","),"rows from mandatory_locations"))
 
 # select out non-work travel
 work_locations <- subset(mandatory_locations, WorkLocation != 0)
 # add home county
 work_locations <- left_join(work_locations,
-                            mutate(tazData,HomeTAZ=taz, homeCOUNTY=COUNTY, home_county_name=county_name) %>%
-                              select(HomeTAZ,homeCOUNTY,home_county_name),
+                            mutate(tazData, HomeTAZ=taz, homeCOUNTY=COUNTY, home_county_name=county_name, homeSD=SD) %>%
+                              select(HomeTAZ,homeCOUNTY,home_county_name,homeSD),
                             by=c("HomeTAZ"))
 # add work county
 work_locations <- left_join(work_locations,
-                            mutate(tazData,WorkLocation=taz, workCOUNTY=COUNTY, work_county_name=county_name) %>%
-                              select(WorkLocation,workCOUNTY,work_county_name),
+                            mutate(tazData, WorkLocation=taz, workCOUNTY=COUNTY, work_county_name=county_name, workSD=SD) %>%
+                              select(WorkLocation,workCOUNTY,work_county_name,workSD),
                             by=c("WorkLocation"))
 
 journeytowork_summary <- summarise(group_by(work_locations,
@@ -1045,9 +1097,62 @@ journeytowork_summary <- summarise(group_by(work_locations,
 journeytowork_summary$freq <- journeytowork_summary$freq / SAMPLESHARE
 write.table(journeytowork_summary,
             file.path(RESULTS_DIR,"JourneyToWork.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(journeytowork_summary),big.mark=","),"rows of journeytowork_summary"))
 model_summary <- journeytowork_summary  # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR,"JourneyToWork.rdata"))
-remove(mandatory_locations, work_locations, journeytowork_summary, model_summary)
+
+# JourneyToWork with SD, subzone, and commute mode
+invalid_commute_tours <- filter(commute_tours, num_participants > 1)
+if (nrow(invalid_commute_tours) > 0) {
+  print("INVALID commute tour(s) with num_participants > 1")
+  print(invalid_commute_tours)
+  stopifnot(FALSE)
+}
+
+# set person_num
+commute_tours <- mutate(commute_tours, person_num=as.integer(tour_participants))
+
+# there may be more than one commute tour for a person; take the first
+print(paste("Before distinct, there are",prettyNum(nrow(commute_tours),big.mark=","),"rows of commute_tours"))
+commute_tours <- distinct(commute_tours, hh_id, person_num, .keep_all = TRUE)
+print(paste("Atfer distinct, there are",prettyNum(nrow(commute_tours),big.mark=","),"rows of commute_tours"))
+
+# join to commute_tours for commute tour mode
+work_locations <- left_join(rename(work_locations, hh_id=HHID, person_num=PersonNum),
+                            select(commute_tours, hh_id, person_num, tour_mode, distance))
+# fill in commute_mode for missing
+work_locations$tour_mode[is.na(work_locations$tour_mode)] <- 0
+remove(commute_tours)
+
+# add household income quartile
+work_locations <- left_join(work_locations,
+                            select(households, hh_id, incQ, incQ_label))
+# add person type
+work_locations <- left_join(work_locations,
+                            select(persons, hh_id, person_num, ptype, ptype_label))
+print(table(work_locations$ptype_label))
+
+# summarize
+journeytowork_mode_summary <- summarise(group_by(work_locations, incQ, incQ_label, ptype, ptype_label,
+                                                 homeSD, HomeSubZone, workSD, WorkSubZone,
+                                                 tour_mode),
+                                   freq     = n(),
+                                   distance = sum(distance))
+journeytowork_mode_summary <- mutate(journeytowork_mode_summary, 
+                                     freq = freq/SAMPLESHARE,
+                                     distance = distance/SAMPLESHARE)
+
+write.table(journeytowork_mode_summary,
+            file.path(RESULTS_DIR,"JourneyToWork_modes.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(journeytowork_mode_summary),big.mark=","),"rows of journeytowork_mode_summary"))
+model_summary <- journeytowork_mode_summary  # name it generically for rdata
+save(model_summary, file=file.path(RESULTS_DIR,"JourneyToWork_modes.rdata"))
+
+# save work locations
+print(paste("Saving work_locations.rdata with",prettyNum(nrow(work_locations),big.mark=","),"rows and",ncol(work_locations),"columns"))
+save(work_locations, file=file.path(UPDATED_DIR, "work_locations.rdata"))
+
+remove(mandatory_locations, work_locations, journeytowork_summary, journeytowork_mode_summary, model_summary)
 
 ## Time of Day Summary
 timeofday_summary <- summarise(group_by(tours,SD,COUNTY,county_name,
@@ -1058,6 +1163,7 @@ timeofday_summary$freq             <- timeofday_summary$freq / SAMPLESHARE
 timeofday_summary$num_participants <- timeofday_summary$num_participants / SAMPLESHARE
 write.table(timeofday_summary,
             file.path(RESULTS_DIR,"TimeOfDay.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(timeofday_summary),big.mark=","),"rows of timeofday_summary"))
 model_summary <- timeofday_summary # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR, "TimeOfDay.rdata"))
 
@@ -1071,6 +1177,7 @@ for (h in min(timeofday_summary$start_hour):max(timeofday_summary$end_hour)) {
   persons_touring <- rbind(persons_touring, touring_at_hour)
 }
 write.table(persons_touring, file.path(RESULTS_DIR,"TimeOfDay_personsTouring.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(persons_touring),big.mark=","),"rows of persons_touring"))
 model_summary <- persons_touring
 save(model_summary, file=file.path(RESULTS_DIR, "TimeOfDay_personsTouring.rdata"))
 remove(timeofday_summary, persons_touring, h, touring_at_hour)
@@ -1083,11 +1190,13 @@ tripdist_summary          <- summarise(group_by(trips, autoSuff, autoSuff_label,
                                        distance     = mean(distance))
 tripdist_summary$freq <- tripdist_summary$freq / SAMPLESHARE
 write.table(tripdist_summary, file.path(RESULTS_DIR,"TripDistance.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(tripdist_summary),big.mark=","),"rows of tripdist_summary"))
 model_summary <- tripdist_summary # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR, "TripDistance.rdata"))
 remove(tripdist_summary, model_summary)
 
 ## Cleanup and save persons
+print(paste("Saving persons.rdata with",prettyNum(nrow(persons),big.mark=","),"rows and",ncol(persons),"columns"))
 save(persons, file=file.path(UPDATED_DIR, "persons.rdata"))
 if (JUST_MES=="1") { write.table(persons, file=file.path(UPDATED_DIR, "persons.csv"), sep=",", row.names=FALSE) }
 remove(persons)
@@ -1108,6 +1217,7 @@ trips_dcast <- tbl_df(dcast(trips_melt, hh_id ~ variable, fun.aggregate=sum))
 costs_by_household <- left_join(select(households, hh_id, SD, COUNTY, county_name,
                                        PERSONS, incQ, incQ_label, autos),
                              trips_dcast, by=c("hh_id"))
+print(paste("Create costs_by_household with",prettyNum(nrow(costs_by_household),big.mark=","),"rows"))
 
 # we're done with these
 remove(trips_melt,trips_dcast)
@@ -1153,6 +1263,7 @@ travelcost_summary  <- summarise(group_by(costs_by_household, SD, COUNTY, county
                                  pcost_joint     = mean(pcost_joint))
 travelcost_summary$freq <- travelcost_summary$freq / SAMPLESHARE
 write.table(travelcost_summary, file.path(RESULTS_DIR,"TravelCost.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(travelcost_summary),big.mark=","),"rows of travelcost_summary"))
 model_summary <- travelcost_summary # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR, "TravelCost.rdata"))
 remove(costs_by_household,travelcost_summary,model_summary)
@@ -1166,11 +1277,13 @@ triptime_summary <- summarise(group_by(trips, incQ, incQ_label, trip_mode, tour_
 triptime_summary$freq             <- triptime_summary$freq / SAMPLESHARE
 triptime_summary$num_participants <- triptime_summary$num_participants / SAMPLESHARE
 write.table(triptime_summary, file.path(RESULTS_DIR,"PerTripTravelTime.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(triptime_summary),big.mark=","),"rows of triptime_summary"))
 model_summary <- triptime_summary # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR, "PerTripTravelTime.rdata"))
 remove(triptime_summary, model_summary)
 
 ## Cleanup and save tours, trips and households
+print(paste("Saving trips.rdata with",prettyNum(nrow(trips),big.mark=","),"rows and",ncol(trips),"columns"))
 save(trips, file=file.path(UPDATED_DIR, "trips.rdata"))
 if (JUST_MES=="1") {
   write.table(trips, file=file.path(UPDATED_DIR, "trips.csv"), sep=",", row.names=FALSE)
@@ -1204,10 +1317,12 @@ if (JUST_MES=="1") {
 }
 remove(trips)
 
+print(paste("Saving tours.rdata with",prettyNum(nrow(tours),big.mark=","),"rows and",ncol(tours),"columns"))
 save(tours, file=file.path(UPDATED_DIR, "tours.rdata"))
 if (JUST_MES=="1") { write.table(tours, file=file.path(UPDATED_DIR, "tours.csv"), sep=",", row.names=FALSE) }
 remove(tours)
 
+print(paste("Saving households.rdata with",prettyNum(nrow(households),big.mark=","),"rows and",ncol(households),"columns"))
 save(households, file=file.path(UPDATED_DIR, "households.rdata"))
 if (JUST_MES=="1") { write.table(households, file=file.path(UPDATED_DIR, "households.csv"), sep=",", row.names=FALSE) }
 remove(households)
@@ -1262,6 +1377,7 @@ persons          <- left_join(persons, select(households, hh_id, taz, COUNTY, co
                                               walk_subzone, walk_subzone_label,
                                               autoSuff, autoSuff_label),
                               by=c("hh_id"))
+print(paste("Read persons and added household vars to get",prettyNum(nrow(persons),big.mark=","),"rows"))
 remove(households)
 
 # added new person vars so save it
@@ -1282,6 +1398,7 @@ vmt_summary$freq          <- vmt_summary$freq / SAMPLESHARE
 vmt_summary$person_trips  <- vmt_summary$person_trips / SAMPLESHARE
 vmt_summary$vehicle_trips <- vmt_summary$vehicle_trips / SAMPLESHARE
 write.table(vmt_summary, file.path(RESULTS_DIR,"VehicleMilesTraveled.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(vmt_summary),big.mark=","),"rows of vmt_summary"))
 model_summary <- vmt_summary # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR, "VehicleMilesTraveled.rdata"))
 remove(vmt_summary, model_summary)
@@ -1300,6 +1417,7 @@ vmt_summary$freq          <- vmt_summary$freq / SAMPLESHARE
 vmt_summary$person_trips  <- vmt_summary$person_trips / SAMPLESHARE
 vmt_summary$vehicle_trips <- vmt_summary$vehicle_trips / SAMPLESHARE
 write.table(vmt_summary, file.path(RESULTS_DIR,"VehicleMilesTraveled_households.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(vmt_summary),big.mark=","),"rows of vmt_summary"))
 model_summary <- vmt_summary # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR, "VehicleMilesTraveled_households.rdata"))
 remove(vmt_summary, model_summary)
@@ -1323,6 +1441,7 @@ if (JUST_MES=="1") { write.table(persons, file=file.path(UPDATED_DIR, "persons.c
 
 # we only care about very specific vars
 vmt_persons <- select(persons, hh_id, person_id, taz, COUNTY, county_name, WorkLocation)
+print(paste("Created vmt_persons with",prettyNum(nrow(vmt_persons),big.mark=","),"rows"))
 remove(persons, work_locations)
 
 # we want: orig_taz, dest_taz, WorkLocation -> #persons, vmt
@@ -1359,6 +1478,7 @@ auto_trips_odhw <- summarise(group_by(auto_trips, orig_taz, dest_taz, taz, WorkL
                              vmt           = sum(vmt),
                              trips         = sum(trips),
                              vehicle_trips = sum(vehicle_trips))
+print(paste("Created auto_trips_odhw with",prettyNum(nrow(auto_trips_odhw),big.mark=","),"rows"))
 remove(auto_trips)
 
 
@@ -1373,6 +1493,7 @@ person_hw_summary      <- summarise(group_by(vmt_persons, COUNTY, county_name, t
                                     freq = n())
 person_hw_summary$freq <- person_hw_summary$freq / SAMPLESHARE
 write.table(person_hw_summary, file.path(RESULTS_DIR,"AutoTripsVMT_personsHomeWork.csv"), sep=",", row.names=FALSE)
+print(paste("Wrote",prettyNum(nrow(person_hw_summary),big.mark=","),"rows of person_hw_summary"))
 model_summary <- person_hw_summary # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR, "AutoTripsVMT_personsHomeWork.rdata"))
 remove(person_hw_summary, model_summary)

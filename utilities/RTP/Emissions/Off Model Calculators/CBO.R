@@ -9,8 +9,9 @@ options(width = 180)
 USERNAME            <- Sys.getenv("USERNAME")
 BOX_BASE_DIR        <- file.path("C:/Users", USERNAME, "Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation")
 MODEL_DATA_BASE_DIRS<- c(IP            ="M:/Application/Model One/RTP2021/IncrementalProgress",
-                         DraftBlueprint="M:/Application/Model One/RTP2021/Blueprint")
-OUTPUT_DIR          <- file.path(BOX_BASE_DIR, "Draft Blueprint/ModelData")
+                         DraftBlueprint="M:/Application/Model One/RTP2021/Blueprint",
+                         FinalBlueprint="M:/Application/Model One/RTP2021/Blueprint")
+OUTPUT_DIR          <- file.path(BOX_BASE_DIR, "Final Blueprint/OffModel_FBP/ModelData")
 OUTPUT_FILE         <- file.path(OUTPUT_DIR, "Model Data - CBO.csv")
 
 # this is the currently running script

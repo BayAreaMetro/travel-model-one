@@ -19,15 +19,20 @@ projects root dir\python transitcrowding.py 1_CaltrainMod\\2050_TM150_BF_00_1_Ca
 
 Input:
 * TransitSeatCap.csv, containing VEHTYPE, seatcap and standcap
+* [project dir]\\OUTPUT?\\trn\\trnlink[ea,am,md,pm,ev]_ALLMSA.dbf
 
 Output:
-* [project_dir]\\OUTPUT\\metrics\\transit_crowding_complete.csv
-* [project_dir]\\OUTPUT\\metrics\\transit_crowding.csv
-* [project_dir]\\OUTPUT\\metrics\\transit_crowding.log -- log file with debug information.
+* [project_dir]\\OUTPUT?\\metrics\\transit_crowding_complete.csv
+* [project_dir]\\OUTPUT?\\metrics\\transit_crowding.csv
+* [project_dir]\\OUTPUT?\\metrics\\transit_crowding.log -- log file with debug information.
+
+If OUTPUT has a ? because if OUTPUT dir doesn't exist, assumes this is running on the modeling machine so uses [project_dir]\\metrics
 
 """
 
 LOG_FILE = "transit_crowding.log"
+SEATCAP_FILE = "\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\RTP\\metrics\\transitSeatCap.csv"
+
 
 PSEUDO_LINE_MAPPING = {
     # baseline
@@ -230,6 +235,20 @@ if __name__ == '__main__':
     parser.add_argument('--no_pseudo_move', action='store_true', help="Don't move pseudo line ridership into real lines")
     my_args = parser.parse_args()
 
+    metrics_dir = os.path.join(my_args.project_dir, "OUTPUT", "metrics")
+    trn_dir     = os.path.join(my_args.project_dir, "OUTPUT", "trn")
+    if os.path.exists(metrics_dir):
+        print("Using metrics dir [{}]".format(metrics_dir))
+    else:
+        print("metrics dir [{}] doesn't exist; trying {}".format(metrics_dir, os.path.join(my_args.project_dir, "metrics")))
+        metrics_dir = os.path.join(my_args.project_dir, "metrics")
+        trn_dir     = os.path.join(my_args.project_dir, "trn")
+        if os.path.exists(metrics_dir):
+            print("Using metrics dir [{}]".format(metrics_dir))
+        else:
+            print("metrics dir [{}] doesn't exist".format(metrics_dir))
+            sys.exit(2)
+
     # create logger
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
@@ -239,7 +258,7 @@ if __name__ == '__main__':
     ch.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     logger.addHandler(ch)
     # file handler
-    fh = logging.FileHandler(os.path.join(my_args.project_dir, "OUTPUT", "metrics", LOG_FILE), mode='w')
+    fh = logging.FileHandler(os.path.join(metrics_dir, LOG_FILE), mode='w')
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     logger.addHandler(fh)
@@ -247,16 +266,15 @@ if __name__ == '__main__':
     logging.info("Args: {}".format(my_args))
 
     # import seat capacities from lookup file
-    seatcap_file = "\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\RTP\\metrics\\transitSeatCap.csv"
-    transit_seatcap_df = pd.read_csv(seatcap_file)
+    transit_seatcap_df = pd.read_csv(SEATCAP_FILE)
     transit_seatcap_df.columns=transit_seatcap_df.columns.str.replace('%','pct')
     transit_seatcap_df.rename(columns={"VEHTYPE":"veh_type_updated", "100pctCapacity":"standcap"},inplace=True)
-    logging.info("Read {}\n{}".format(seatcap_file, transit_seatcap_df.head()))
+    logging.info("Read {}\n{}".format(SEATCAP_FILE, transit_seatcap_df.head()))
 
     # read the transit files
     all_trn_df = pd.DataFrame()
     for timeperiod in ['AM','EA','EV','MD','PM']:
-        trn_file = os.path.join(my_args.project_dir, 'OUTPUT', 'trn', 'trnlink{}_ALLMSA.dbf'.format(timeperiod))
+        trn_file = os.path.join(trn_dir, 'trnlink{}_ALLMSA.dbf'.format(timeperiod))
         dbf      = simpledbf.Dbf5(trn_file)
         trn_df   = dbf.to_dataframe()
         trn_df["period"] = timeperiod
@@ -416,12 +434,12 @@ if __name__ == '__main__':
     all_trn_df.sort_values(by=["MODE","NAME","period","SEQ"], inplace=True)
 
     # writing file with all columns into output\metrics folder of the project
-    transit_crowding_filename = os.path.join(my_args.project_dir, 'OUTPUT', 'metrics', "transit_crowding_complete.csv")
+    transit_crowding_filename = os.path.join(metrics_dir, "transit_crowding_complete.csv")
     all_trn_df.to_csv(transit_crowding_filename,  header=True, index=False)
     logging.info("Wrote {} lines to {}".format(len(all_trn_df), transit_crowding_filename))
 
     # writing essential columns into output\metrics folder of the project
-    transit_crowding_filename = os.path.join(my_args.project_dir, 'OUTPUT', 'metrics', "transit_crowding.csv")
+    transit_crowding_filename = os.path.join(metrics_dir, "transit_crowding.csv")
     all_trn_df[['NAME', 'SYSTEM','SEQ','A','B','AB_BRDA','period','ivtt_hours',\
                 'effective_ivtt_ukdft','effective_ivtt_metrolinx', 'effective_ivtt_metrolinx_max2pt5',\
                 'crowding_penalty_hrs_ukdft', 'crowding_penalty_hrs_metrolinx', 'crowding_penalty_hrs_metrolinx_max2pt5'

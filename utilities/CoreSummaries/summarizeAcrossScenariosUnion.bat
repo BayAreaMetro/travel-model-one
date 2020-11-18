@@ -135,17 +135,23 @@ IF %USERNAME%==lzorn (
 :: copy over the scenariokey
 copy "%MODEL_RUNS_CSV%" "%COMBINED_DIR%\ScenarioKey.csv"
 
-:: copy over topsheet
-for %%R in (%RUN_NAME_SET%) DO (
-  rem echo %%R
-  rem echo %%~nxR
-  if exist "%COMBINED_DIR%\topsheet_%%~nxR.csv" (
-    echo File is already present: %COMBINED_DIR%\topsheet_%%~nxR.csv
-  ) else (
-    if not exist "%%R\OUTPUT\metrics\topsheet.csv" (
-      echo File doesn't exist: %%R\OUTPUT\metrics\topsheet.csv
+:: copy over files in metrics
+set FILES=topsheet scenario_metrics parking_costs_tour parking_costs_tour_destTaz parking_costs_trip_destTaz parking_costs_trip_distBins emfac_ghg
+if !SET_TYPE!==all (set FILES=topsheet scenario_metrics)
+
+for %%F in (%FILES%) DO (
+  echo %%F
+  for %%R in (%RUN_NAME_SET%) DO (
+    rem echo %%R
+    rem echo %%~nxR
+    if exist "%COMBINED_DIR%\%%F_%%~nxR.csv" (
+      echo File is already present: %COMBINED_DIR%\%%F_%%~nxR.csv
     ) else (
-      copy "%%R\OUTPUT\metrics\topsheet.csv" "%COMBINED_DIR%\topsheet_%%~nxR.csv"
+      if not exist "%%R\OUTPUT\metrics\%%F.csv" (
+        echo File doesn't exist: %%R\OUTPUT\metrics\%%F.csv
+      ) else (
+        copy "%%R\OUTPUT\metrics\%%F.csv" "%COMBINED_DIR%\%%F_%%~nxR.csv"
+      )
     )
   )
 )
@@ -154,7 +160,7 @@ for %%R in (%RUN_NAME_SET%) DO (
 if !SET_TYPE!==all ( goto done )
 
 :: copy over core_summary csv files
-set FILES=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork PerTripTravelTime TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance VehicleMilesTraveled
+set FILES=ActiveTransport ActivityPattern AutomobileOwnership CommuteByEmploymentLocation CommuteByIncomeHousehold CommuteByIncomeJob JourneyToWork JourneyToWork_modes PerTripTravelTime TimeOfDay TimeOfDay_personsTouring TravelCost TripDistance VehicleMilesTraveled
 
 for %%F in (%FILES%) DO (
   echo %%F
@@ -197,19 +203,6 @@ for %%R in (%RUN_NAME_SET%) DO (
       echo File doesn't exist: %%R\OUTPUT\avgload5period_vehclasses.csv
     ) else (
       copy "%%R\OUTPUT\avgload5period_vehclasses.csv" "%COMBINED_DIR%\avgload5period_vehclasses_%%~nxR.csv"
-    )
-  )
-)
-
-:: copy over scenario_metrics.csv files
-for %%R in (%RUN_NAME_SET%) DO (
-  if exist "%COMBINED_DIR%\scenario_metrics_%%~nxR.csv" (
-    echo File is already present: %COMBINED_DIR%\scenario_metrics_%%~nxR.csv
-  ) else (
-    if not exist "%%R\OUTPUT\metrics\scenario_metrics.csv" (
-      echo File doesn't exist: %%R\OUTPUT\metrics\scenario_metrics.csv
-    ) else (
-      copy "%%R\OUTPUT\metrics\scenario_metrics.csv" "%COMBINED_DIR%\scenario_metrics_%%~nxR.csv"
     )
   )
 )
