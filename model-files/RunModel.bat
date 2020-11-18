@@ -320,6 +320,14 @@ if ERRORLEVEL 2 goto done
 ::
 :: ------------------------------------------------------------------------------------------------------
 
+if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
+  rem Export network to csv version (with vehicle class volumn columns intact)
+  rem Input : hwy\iter%ITER%\avgload5period.net
+  rem Output: hwy\iter%ITER%\avgload5period_vehclasses.csv
+  runtpp "CTRAMP\scripts\metrics\net2csv_avgload5period.job"
+  IF ERRORLEVEL 2 goto error
+)
+
 :: Run Prepare EMFAC
 call RunPrepareEmfac.bat SB375 WithFreight
 
