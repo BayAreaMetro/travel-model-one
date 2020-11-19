@@ -153,12 +153,14 @@ copy main\telecommute_constants_%CALIB_ITER%.csv main\telecommute_constants.csv
 
 python CTRAMP\scripts\notify_slack.py "Starting telecommute calibration iteration %CALIB_ITER%"
 
-:: Prompt user to set the workplace shadow pricing parameters
-@echo off
-set /P c=Project Directory updated.  Update workplace shadow pricing parameters press Enter to continue...
-@echo on
-:: Don't care about the response
-
+:: only need to do this the first time
+if "%CALIB_ITER%"=="00" (
+  rem Prompt user to set the workplace shadow pricing parameters
+  @echo off
+  set /P c=Project Directory updated.  Update workplace shadow pricing parameters press Enter to continue...
+  @echo on
+  rem Don't care about the response
+)
 
 :core
 rem run matrix manager, household manager and jppf driver
@@ -176,13 +178,8 @@ if ERRORLEVEL 2 goto done
 C:\Windows\SysWOW64\taskkill /f /im "java.exe"
 
 set INSTANCE=%COMPUTERNAME%
-python CTRAMP\scripts\notify_slack.py "Finished telecommute calibration iteration"
+python CTRAMP\scripts\notify_slack.py "Finished telecommute calibration iteration %CALIB_ITER%"
 
-:: increment
-set /A CALIB_ITER=CALIB_ITER+1
-:: format
-set CALIB_ITER=00%CALIBITER%
-set CALIB_ITER=%CALIB_ITER:~-2%
-echo Updating CALIB_ITER to %CALIB_ITER%
+echo TODO: increment CALIB_ITER
 
 :done
