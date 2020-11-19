@@ -26,8 +26,12 @@ TELERATE_FILE = '\\\\mainmodel\\MainModelShare\\travel-model-one-cdap-worktaz\\u
 TELECOMMUTE_CONSTANTS_FILE = os.path.join('main','telecommute_constants_{}.csv')
 
 TARGET_AUTO_SHARE  = 0.40
+# if max_telecommute_rate +/- this, then leave it alone
+TELECOMMUTE_RATE_THRESHHOLD = 0.005
+
 # todo: make this more intelligent
 CONSTANT_INCREMENT = 0.2
+CONSTANT_DECREMENT = 0.1
 
 
 if __name__ == '__main__':
@@ -196,13 +200,23 @@ if __name__ == '__main__':
         # THIS IS IT
         # start at previous value
         telecommute_df['telecommuteConstant'] = telecommute_df['telecommuteConstant_prev']
+
+        # telecommute within threshold of max
+        telecommute_df['telecomute_diff']     = telecommute_df['max_telecommute_rate'] - telecommute_df['telecommute_rate']
+        telecommute_df['telecomute_near_max'] = telecommute_df['telecomute_diff'].abs() < TELECOMMUTE_RATE_THRESHHOLD
+
         # increase (negative) if auto share is high and we're not at max
         telecommute_df.loc[ (telecommute_df['auto_share'] > TARGET_AUTO_SHARE) & 
-                            (telecommute_df['telecommute_rate'] < telecommute_df['max_telecommute_rate']),
-                            'telecommuteConstant' ] = telecommute_df['telecommuteConstant'] - CONSTANT_INCREMENT
+                            (telecommute_df['telecommute_rate'] < telecommute_df['max_telecommute_rate']) &
+                            (telecommute_df['telecomute_near_max'] == False),
+            'telecommuteConstant' ] = telecommute_df['telecommuteConstant'] - CONSTANT_INCREMENT
+        # decrease if telecommute share is high
+        telecommute_df.loc[ (telecommute_df['telecommute_rate'] > telecommute_df['max_telecommute_rate']) &
+                            (telecommute_df['telecomute_near_max'] == False), 
+            'telecommuteConstant' ] = telecommute_df['telecommuteConstant'] + CONSTANT_DECREMENT
 
-        # drop person_type_str column
-        telecommute_df.drop(columns='person_type_str', inplace=True)
+        # drop person_type_str column and other temp cols
+        telecommute_df.drop(columns=['person_type_str','telecomute_diff','telecomute_near_max'], inplace=True)
         telecommute_df['CALIB_ITER'] = int(CALIB_ITER)
 
 
