@@ -688,7 +688,7 @@ def config_cdap(params_filename, params_contents):
             rs = rb.get_sheet(sheet_num)
             for rownum in range(rs.nrows):
                 # print rs.cell(rownum,1)
-                if rs.cell(rownum,2).value=='Simulate telecommuting by reducing mandatory patterns':
+                if rs.cell(rownum,2).value=='Simulate telecommuting by reducing mandatory patterns - global':
                     print "  Sheet '%s': replacing telecommute constant '%s' -> %.2f" % \
                         (rs.name, rs.cell(rownum,6).value, TelecommuteConstant)
                     wb.get_sheet(sheet_num).write(rownum,6, TelecommuteConstant, xlwt.easyxf("align: horiz right"))
