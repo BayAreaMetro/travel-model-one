@@ -11,8 +11,7 @@ BOX_BASE_DIR        <- file.path("C:/Users", USERNAME, "Box/Horizon and Plan Bay
 MODEL_DATA_BASE_DIRS<- c(IP            ="M:/Application/Model One/RTP2021/IncrementalProgress",
                          DraftBlueprint="M:/Application/Model One/RTP2021/Blueprint",
                          FinalBlueprint="M:/Application/Model One/RTP2021/Blueprint")
-OUTPUT_DIR          <- "C:/temp"
-# OUTPUT_DIR          <- file.path(BOX_BASE_DIR, "Final Blueprint/OffModel_FBP/ModelData")
+OUTPUT_DIR          <- file.path(BOX_BASE_DIR, "Final Blueprint/OffModel_FBP/ModelData")
 OUTPUT_FILE         <- file.path(OUTPUT_DIR, "Model Data - Employer Shuttles.csv")
 
 # this is the currently running script
@@ -26,7 +25,6 @@ model_runs          <- model_runs[ which(model_runs$status == "current"), ]
 print(paste("MODEL_DATA_BASE_DIRS = ",MODEL_DATA_BASE_DIRS))
 print(paste("OUTPUT_DIR          = ",OUTPUT_DIR))
 print(model_runs)
-
 
 #### Mode look-up table
 LOOKUP_MODE <- data.frame(trip_mode = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21),
@@ -64,6 +62,11 @@ for (i in 1:nrow(model_runs)) {
   trips <- left_join(trips, select(taz_SD_df, ZONE, SD) %>% rename(orig_taz=ZONE, orig_sd=SD))
   trips <- left_join(trips, select(taz_SD_df, ZONE, SD) %>% rename(dest_taz=ZONE, dest_sd=SD))
 
+  # filter to distance > 30.0
+  trips <- filter(trips, distance>30.0)
+  # filter to work trips
+  trips <- filter(trips, substr(tour_purpose,1,5)=="work_")
+
   # summarize
   trips <- group_by(trips, trip_mode, tour_purpose, orig_sd, dest_sd) %>%
     summarize(simulated_trips = n(), mean_distance = mean(distance))
@@ -83,7 +86,7 @@ for (i in 1:nrow(model_runs)) {
   }
 }
 remove(i, trips)
-print(head(tripdist_df))
+# print(head(tripdist_df))
 #        trip_mode                    mode_name    tour_purpose orig_sd dest_sd simulated_trips estimated_trips mean_distance year                      directory   category
 # 1              1           Drive alone - free atwork_business       1       1             643            1286     1.2962208 2035              2035_TM152_IPA_01         IP
 # 2              1           Drive alone - free atwork_business       1       2             255             510     2.9464314 2035              2035_TM152_IPA_01         IP
@@ -116,18 +119,12 @@ tripdist_df <- left_join(tripdist_df, simplified_mode)
 
 # add a couple other variables
 tripdist_df <- mutate(tripdist_df,
-                      work_purpose    = substr(tour_purpose,1,5)=="work_",
-                      total_distance  = estimated_trips*mean_distance,
-                      mean_dist_gt_30 = (mean_distance>30.0))
-
-
-# filter to just trips to work with mean distance greater than 30 miles
-long_work_tripdist_df <- tripdist_df[ (tripdist_df$work_purpose==TRUE)&(tripdist_df$mean_dist_gt_30==TRUE), ]
+                      total_distance  = estimated_trips*mean_distance)
 
 # summarise to mode
-summary_mode_df <- summarise(group_by(long_work_tripdist_df, year, category, directory, simple_mode),
+summary_mode_df <- summarise(group_by(tripdist_df, year, category, directory, simple_mode),
                             estimated_trips = sum(estimated_trips))
-summary_all_df <- summarise(group_by(long_work_tripdist_df, year, category, directory),
+summary_all_df <- summarise(group_by(tripdist_df, year, category, directory),
                              all_mode_trips = sum(estimated_trips))
 
 # join
