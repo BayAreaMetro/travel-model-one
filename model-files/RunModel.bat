@@ -270,6 +270,14 @@ set SEED=0
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --iter %ITER%
 if ERRORLEVEL 1 goto done
 
+:: Runtime configuration: update telecommute constants using iter1 results
+set CALIB_ITER=02
+python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
+if ERRORLEVEL 1 goto done
+
+:: copy over result for use
+copy main\telecommute_constants_%CALIB_ITER%.csv main\telecommute_constants.csv
+
 :: Call RunIteration batch file
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
@@ -295,12 +303,25 @@ set SEED=0
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --iter %ITER%
 if ERRORLEVEL 1 goto done
 
+:: Runtime configuration: update telecommute constants using iter2 results
+set CALIB_ITER=03
+python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
+if ERRORLEVEL 1 goto done
+
+:: copy over result for use
+copy main\telecommute_constants_%CALIB_ITER%.csv main\telecommute_constants.csv
+
 :: Call RunIteration batch file
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
 :: Shut down java
 C:\Windows\SysWOW64\taskkill /f /im "java.exe"
+
+
+:: update telecommute constants one more time just to evaluate the situation
+set CALIB_ITER=04
+python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
 
 :: ------------------------------------------------------------------------------------------------------
 ::
