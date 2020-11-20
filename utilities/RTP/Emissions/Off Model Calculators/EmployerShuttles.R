@@ -11,7 +11,8 @@ BOX_BASE_DIR        <- file.path("C:/Users", USERNAME, "Box/Horizon and Plan Bay
 MODEL_DATA_BASE_DIRS<- c(IP            ="M:/Application/Model One/RTP2021/IncrementalProgress",
                          DraftBlueprint="M:/Application/Model One/RTP2021/Blueprint",
                          FinalBlueprint="M:/Application/Model One/RTP2021/Blueprint")
-OUTPUT_DIR          <- file.path(BOX_BASE_DIR, "Final Blueprint/OffModel_FBP/ModelData")
+OUTPUT_DIR          <- "C:/temp"
+# OUTPUT_DIR          <- file.path(BOX_BASE_DIR, "Final Blueprint/OffModel_FBP/ModelData")
 OUTPUT_FILE         <- file.path(OUTPUT_DIR, "Model Data - Employer Shuttles.csv")
 
 # this is the currently running script
@@ -26,24 +27,70 @@ print(paste("MODEL_DATA_BASE_DIRS = ",MODEL_DATA_BASE_DIRS))
 print(paste("OUTPUT_DIR          = ",OUTPUT_DIR))
 print(model_runs)
 
+
+#### Mode look-up table
+LOOKUP_MODE <- data.frame(trip_mode = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21),
+                          mode_name = c("Drive alone - free", "Drive alone - pay", 
+                                        "Shared ride two - free", "Shared ride two - pay",
+                                        "Shared ride three - free", "Shared ride three - pay",
+                                        "Walk", "Bike",
+                                        "Walk  to local bus", "Walk to light rail or ferry", "Walk to express bus", 
+                                        "Walk to heavy rail", "Walk to commuter rail",
+                                        "Drive  to local bus", "Drive to light rail or ferry", "Drive to express bus", 
+                                        "Drive to heavy rail", "Drive to commuter rail",
+                                        "Taxi", "TNC", "TNC shared"))
+SAMPLING_RATE = 0.500
+
+# read taz/SD lookup
+taz_SD_df <- read.table(file = "X:/travel-model-one-master/utilities/geographies/taz-superdistrict-county.csv", header=TRUE, sep=",")
+
 # Read trip-distance-by-mode-superdistrict.csv
 tripdist_df <- data.frame()
 for (i in 1:nrow(model_runs)) {
   # We don't need past years for Employer Shuttles
   if (model_runs[i,"year"]<=2015) next
+
   MODEL_DATA_BASE_DIR <- MODEL_DATA_BASE_DIRS[model_runs[i,"run_set"]]
+  trips_file <- file.path(MODEL_DATA_BASE_DIR, model_runs[i,"directory"], "OUTPUT", "updated_output", "trips.rdata")
+
+  print(paste("Reading trips from",trips_file))
+
+  # load trips
+  load(trips_file)
+  # drop unneeded columns
+  trips <- select(trips, hh_id, tour_purpose, distance, trip_mode, orig_taz, dest_taz)
+
+  # add origin SD and destination SD
+  trips <- left_join(trips, select(taz_SD_df, ZONE, SD) %>% rename(orig_taz=ZONE, orig_sd=SD))
+  trips <- left_join(trips, select(taz_SD_df, ZONE, SD) %>% rename(dest_taz=ZONE, dest_sd=SD))
+
+  # summarize
+  trips <- group_by(trips, trip_mode, tour_purpose, orig_sd, dest_sd) %>%
+    summarize(simulated_trips = n(), mean_distance = mean(distance))
+  trips <- left_join(trips, LOOKUP_MODE, by = c("trip_mode"))
+  trips <- mutate(trips, estimated_trips = simulated_trips / SAMPLING_RATE) %>%
+    select(trip_mode, mode_name, tour_purpose, orig_sd, dest_sd, simulated_trips, estimated_trips, mean_distance)
   
-  tripdist_file    <- file.path(MODEL_DATA_BASE_DIR, model_runs[i,"directory"],"OUTPUT","bespoke","trip-distance-by-mode-superdistrict.csv")
-  if (!file.exists(tripdist_file)) {
-    stop(paste0("File [",tripdist_file,"] does not exist"))
-  }
-  tripdist_file_df <- read.table(tripdist_file, header=TRUE, sep=",", stringsAsFactors=FALSE) %>% 
+  trips <- trips %>%
     mutate(year      = model_runs[i,"year"],
            directory = model_runs[i,"directory"],
            category  = model_runs[i,"category"])
-  tripdist_df      <- rbind(tripdist_df, tripdist_file_df)
+
+  if (nrow(tripdist_df) == 0) {
+    tripdist_df <- trips
+  } else {
+    tripdist_df <- bind_rows(tripdist_df, trips)
+  }
 }
-remove(i, tripdist_file, tripdist_file_df)
+remove(i, trips)
+print(head(tripdist_df))
+#        trip_mode                    mode_name    tour_purpose orig_sd dest_sd simulated_trips estimated_trips mean_distance year                      directory   category
+# 1              1           Drive alone - free atwork_business       1       1             643            1286     1.2962208 2035              2035_TM152_IPA_01         IP
+# 2              1           Drive alone - free atwork_business       1       2             255             510     2.9464314 2035              2035_TM152_IPA_01         IP
+# 3              1           Drive alone - free atwork_business       1       3             533            1066     3.6807505 2035              2035_TM152_IPA_01         IP
+# 4              1           Drive alone - free atwork_business       1       4              41              82     7.4807317 2035              2035_TM152_IPA_01         IP
+# 5              1           Drive alone - free atwork_business       1       5             141             282    12.4274468 2035              2035_TM152_IPA_01         IP
+# 6              1           Drive alone - free atwork_business       1       6              12              24    22.0958333 2035              2035_TM152_IPA_01         IP
 
 simplified_mode <- data.frame(
   mode_name=c("Drive alone - free",       "Drive alone - pay",
