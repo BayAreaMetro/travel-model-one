@@ -88,6 +88,7 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_NETWORK%\trn"                       
 :: popsyn and land use
 c:\windows\system32\Robocopy.exe /E "%INPUT_POPLU%\popsyn"                                       INPUT\popsyn
 c:\windows\system32\Robocopy.exe /E "%INPUT_POPLU%\landuse"                                      INPUT\landuse
+copy /Y "%GITHUB_DIR%\utilities\telecommute\telecommute_max_rate_county.csv"                     INPUT\landuse
 
 :: nonres
 c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\nonres\nonres_01"                   INPUT\nonres
