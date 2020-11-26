@@ -675,7 +675,8 @@ def config_uec(auto_operating_cost):
 def config_cdap(params_filename, params_contents):
 
     # read the telecommute constant from the properties file
-    TelecommuteConstant = float(get_property(params_filename, params_contents, "Telecommute_constant"))
+    TelecommuteConstant_FT = float(get_property(params_filename, params_contents, "Telecommute_constant_FT"))
+    TelecommuteConstant_PT = float(get_property(params_filename, params_contents, "Telecommute_constant_PT"))
 
     for bookname in ["CoordinatedDailyActivityPattern.xls"]:
         filepath = os.path.join("CTRAMP","model",bookname)
@@ -688,10 +689,14 @@ def config_cdap(params_filename, params_contents):
             rs = rb.get_sheet(sheet_num)
             for rownum in range(rs.nrows):
                 # print rs.cell(rownum,1)
-                if rs.cell(rownum,2).value=='Simulate telecommuting by reducing mandatory patterns - global':
+                if rs.cell(rownum,2).value=='Simulate telecommuting by reducing mandatory patterns - global_FT':
                     print "  Sheet '%s': replacing telecommute constant '%s' -> %.2f" % \
-                        (rs.name, rs.cell(rownum,6).value, TelecommuteConstant)
-                    wb.get_sheet(sheet_num).write(rownum,6, TelecommuteConstant, xlwt.easyxf("align: horiz right"))
+                        (rs.name, rs.cell(rownum,6).value, TelecommuteConstant_FT)
+                    wb.get_sheet(sheet_num).write(rownum,6, TelecommuteConstant_FT, xlwt.easyxf("align: horiz right"))
+                if rs.cell(rownum,2).value=='Simulate telecommuting by reducing mandatory patterns - global_PT':
+                    print "  Sheet '%s': replacing telecommute constant '%s' -> %.2f" % \
+                        (rs.name, rs.cell(rownum,6).value, TelecommuteConstant_PT)
+                    wb.get_sheet(sheet_num).write(rownum,6, TelecommuteConstant_PT, xlwt.easyxf("align: horiz right"))                    
         wb.save(filepath)
 
 def config_freeparking(params_filename, params_contents):

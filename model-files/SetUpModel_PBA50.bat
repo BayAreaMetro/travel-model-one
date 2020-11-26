@@ -34,7 +34,10 @@ set PREV_RUN_DIR=M:\Application\Model One\RTP2021\Blueprint\2035_TM152_FBP_Plus_
 :: often the properties file is on master during the active application phase
 set PARAMS=\\tsclient\X\travel-model-one-cdap-worktaz\config\params_PBA50_Blueprint2035.properties
 :: test superdistrict-based telecommute constants
-set TELECOMMUTE_CONFIG=\\tsclient\X\travel-model-one-cdap-worktaz\utilities\telecommute\telecommute_constants_2035.csv
+:: for no project or base years, use Zero
+set TELECOMMUTE_CONFIG=\\tsclient\X\travel-model-one-cdap-worktaz\config\telecommute_constants_zero.csv
+:: for blueprint, use calibrated
+:: set TELECOMMUTE_CONFIG=\\tsclient\X\travel-model-one-cdap-worktaz\utilities\telecommute\telecommute_constants_2035.csv
 
 :: set the location of the overrides directory (for Blueprint strategies)
 set BP_OVERRIDE_DIR=\\tsclient\M\Application\Model One\RTP2021\Blueprint\travel-model-overrides
