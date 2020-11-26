@@ -226,6 +226,13 @@ set PREV_WGT=0.00
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
+:: Runtime configuration: setup initial telecommute constants
+python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
+if ERRORLEVEL 1 goto done
+:: copy over result for use
+copy /Y main\telecommute_constants_0%ITER%.csv main\telecommute_constants.csv
+
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 7:  Prepare for iteration 1 and execute RunIteration batch file
@@ -251,11 +258,10 @@ call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
 :: Runtime configuration: update telecommute constants using iter1 results
-set CALIB_ITER=02
 python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
 if ERRORLEVEL 1 goto done
 :: copy over result for use
-copy main\telecommute_constants_%CALIB_ITER%.csv main\telecommute_constants.csv
+copy /Y main\telecommute_constants_%ITER%.csv main\telecommute_constants.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -282,11 +288,10 @@ call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
 :: Runtime configuration: update telecommute constants using iter2 results
-set CALIB_ITER=03
 python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
 if ERRORLEVEL 1 goto done
 :: copy over result for use
-copy main\telecommute_constants_%CALIB_ITER%.csv main\telecommute_constants.csv
+copy /Y main\telecommute_constants_%ITER%.csv main\telecommute_constants.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -317,7 +322,6 @@ C:\Windows\SysWOW64\taskkill /f /im "java.exe"
 
 
 :: update telecommute constants one more time just to evaluate the situation
-set CALIB_ITER=04
 python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
 
 :: ------------------------------------------------------------------------------------------------------

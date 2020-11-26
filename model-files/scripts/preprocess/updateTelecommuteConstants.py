@@ -3,27 +3,29 @@ USAGE = '''
   Creates/updates main/telecommute_constants_[CALIB_ITER].csv with columns
   ZONE, telecommuteConstant
 
-  Uses environment variable CALIB_ITER
-  Filters to full-time workers
+  If in TELECOMMUTE_CALIBRATION mode, then uses CALIB_ITER
+  Else, assumes this is in model run mode, and uses CALIB_ITER=ITER
+
+  Uses environment variables TELECOMMUTE_CALIBRATION, CALIB_ITER, ITER, MODEL_YEAR, MODEL_DIR
+  Filters to full-time workers and part-time workers
   For people who make multiple work tours_df, uses the first one for the purpose of tour tour mode
 '''
 
-import os,sys
+import os,re,sys
 import pandas
 
-# from EN7 Telecommuting.xlsx (https://mtcdrive.box.com/s/uw3n8wyervle6r2cgoz1j6k4i5lmv253) 
-# cell named P_timeoff
-P_timeoff = 0.107904288
 
 # input files
 TAZDATA_FILE  = os.path.join('INPUT', 'landuse', 'tazData.csv')
 TOUR_FILE     = os.path.join('main','indivTourData_{}.csv')
 WSLOC_FILE    = os.path.join('main','wsLocResults_{}.csv')
 # todo: add to input if run during model
-TELERATE_FILE = '\\\\mainmodel\\MainModelShare\\travel-model-one-cdap-worktaz\\utilities\\telecommute\\telecommute_max_rate_county.csv'
+TELERATE_FILE = os.path.join('INPUT','landuse','telecommute_max_rate_county.csv')
 
-# input and output; the {}=CALIB_ITER
-TELECOMMUTE_CONSTANTS_FILE = os.path.join('main','telecommute_constants_{}.csv')
+PARAMS_FILENAME = os.path.join('INPUT','params.properties')
+
+# input and output; input {}=previous calib iter, output {}=CALIB_ITER
+TELECOMMUTE_CONSTANTS_FILE = os.path.join('main','telecommute_constants_{:02d}.csv')
 
 TARGET_AUTO_SHARE  = 0.40
 # if max_telecommute_rate +/- this, then leave it alone
@@ -33,17 +35,63 @@ TELECOMMUTE_RATE_THRESHHOLD = 0.005
 CONSTANT_INCREMENT = 0.05
 CONSTANT_DECREMENT = 0.05
 
+def get_property(properties_file_name, properties_file_contents, propname):
+    """
+    Return the string for this property.
+    Exit if not found.
+    """
+    match           = re.search("\n%s[ \t]*=[ \t]*(\S*)[ \t]*" % propname, properties_file_contents)
+    if match == None:
+        print "Couldn't find %s in %s" % (propname, properties_file_name)
+        sys.exit(2)
+    return match.group(1)
 
 if __name__ == '__main__':
     pandas.options.display.width = 150
 
-    CALIB_ITER  = os.environ['CALIB_ITER']
-    ITER        = os.environ['ITER']
-    SAMPLESHARE = os.environ['SAMPLESHARE']
+    TELECOMMUTE_CALIBRATION = "0"
+    if 'TELECOMMUTE_CALIBRATION' in os.environ:
+        TELECOMMUTE_CALIBRATION = os.environ['TELECOMMUTE_CALIBRATION']
 
-    print('CALIB_ITER  = {}'.format(CALIB_ITER))
-    print('ITER        = {}'.format(ITER))
-    print('SAMPLESHARE = {}'.format(SAMPLESHARE))
+    ITER                    = os.environ['ITER']
+
+    # SAMPLESHARE not set for iter0 model run
+    SAMPLESHARE             = "NA"
+    if 'SAMPLESHARE' in os.environ:
+        SAMPLESHARE = os.environ['SAMPLESHARE']
+
+    if int(TELECOMMUTE_CALIBRATION) == 1:
+        UPDATE_CONSTANT = True
+        CALIB_ITER      = os.environ['CALIB_ITER']
+
+    else:
+        # model run mode -- use ITER for CALIB_ITER
+        CALIB_ITER = "0"+ITER
+        MODEL_YEAR = os.environ['MODEL_YEAR']
+        MODEL_DIR  = os.environ['MODEL_DIR']
+
+        if (int(MODEL_YEAR) < 2035) or (MODEL_DIR.upper().find("NOPROJECT") >= 0):
+            UPDATE_CONSTANT = False
+        else:
+            UPDATE_CONSTANT = True
+
+    print('TELECOMMUTE_CALIBRATION  = {}'.format(TELECOMMUTE_CALIBRATION))
+    print('CALIB_ITER               = {}'.format(CALIB_ITER))
+    print('ITER                     = {}'.format(ITER))
+    print('SAMPLESHARE              = {}'.format(SAMPLESHARE))
+
+    print("UPDATING TELECOMMUTE CONSTANTS? {}".format(UPDATE_CONSTANT))
+
+    # read INPUT\params.properties
+    myfile          = open( PARAMS_FILENAME, 'r' )
+    PARAMS_CONTENTS = myfile.read()
+    myfile.close()
+    print("Read {} lines from {}".format(len(PARAMS_CONTENTS), PARAMS_FILENAME))
+
+    P_notworkingFT = float(get_property(PARAMS_FILENAME, PARAMS_CONTENTS, "P_notworkingFT"))
+    P_notworkingPT = float(get_property(PARAMS_FILENAME, PARAMS_CONTENTS, "P_notworkingPT"))
+    print("P_notworkingFT = {}".format(P_notworkingFT))
+    print("P_notworkingPT = {}".format(P_notworkingPT))
 
     # read tazdata
     TAZDATA_COLS = ['ZONE','DISTRICT','SD','COUNTY','RETEMPN','FPSEMPN','HEREMPN','OTHEMPN','AGREMPN','MWTEMPN','TOTEMP']
@@ -71,14 +119,26 @@ if __name__ == '__main__':
     # initialize primary df
     telecommute_df = tazdata_df[['ZONE','SD','COUNTY']].copy()
 
-    # no results yet -- start at zero
-    if int(CALIB_ITER) == 0:
+    # if in a model run, iter 0
+    if int(ITER)==0:
+        if UPDATE_CONSTANT:
+            # no data yet, don't create file -- the initial calibrated constants should be present
+            print("Model run ITER0 -- using initial calibrated constants")
+            sys.exit(0)
+
+        # otherwise, default to zero
+        telecommute_df['CALIB_ITER'] = int(CALIB_ITER)
+        telecommute_df['telecommuteConstant'] = 0.0
+
+    # assuming ITER=1, CALIB_ITER=0 is calibration. no results yet -- start at zero
+    elif int(ITER)==1 and int(CALIB_ITER)==0:
+        print("Calibrating -- iter0.  Start at zero")
 
         # default to zero
         telecommute_df['CALIB_ITER'] = int(CALIB_ITER)
         telecommute_df['telecommuteConstant'] = 0.0
 
-    # read results
+    # read results, create metrics and update
     else:
 
         TOUR_COLS = ['hh_id','tour_id','person_id','person_num','person_type',
@@ -155,22 +215,37 @@ if __name__ == '__main__':
         work_tours_df['num_workers'] = 1.0/work_tours_df['sampleRate']
         print(work_tours_df.head(10))
 
+        # filter to just Full-time workers and Part-time workers
+        work_tours_df = work_tours_df.loc[(work_tours_df['person_type_str']=='Full-time worker')|
+                                          (work_tours_df['person_type_str']=='Part-time worker'), ]
         # aggregate to work SD
         work_mode_SD_df = work_tours_df.groupby(['person_type_str','COUNTY','SD','simple_mode']).agg({'num_workers':'sum'}).reset_index()
-        # print(work_mode_SD_df.head(20))
         
-        # move simple mode to columns
-        work_mode_SD_df = pandas.pivot_table(work_mode_SD_df, index=['person_type_str','COUNTY','SD'], 
-                                             columns=['simple_mode'], values='num_workers').reset_index()
+        # move person_type_str and simple mode to columns
+        work_mode_SD_df = pandas.pivot_table(work_mode_SD_df, index=['COUNTY','SD'], 
+                                             columns=['person_type_str','simple_mode'], values='num_workers').reset_index()
+        # flatten columns
+        work_mode_SD_df.columns = [' '.join(col).strip() for col in work_mode_SD_df.columns.values]
 
-        # calculate time off to take them out of the universe
-        work_mode_SD_df['time-off'] = P_timeoff*(work_mode_SD_df['auto']+work_mode_SD_df['non-auto']+work_mode_SD_df['no tour'])
+        print(work_mode_SD_df)
+
+        # calculate not working to take them out of the universe
+        work_mode_SD_df['Full-time worker not-working'] = P_notworkingFT*(work_mode_SD_df['Full-time worker auto']+work_mode_SD_df['Full-time worker non-auto']+work_mode_SD_df['Full-time worker no tour'])
+        work_mode_SD_df['Part-time worker not-working'] = P_notworkingPT*(work_mode_SD_df['Part-time worker auto']+work_mode_SD_df['Part-time worker non-auto']+work_mode_SD_df['Part-time worker no tour'])
         # they cannot exceed no tour
-        work_mode_SD_df['time-off'] = work_mode_SD_df[['time-off','no tour']].min(axis=1) # min across columns
+        work_mode_SD_df['Full-time worker not-working'] = work_mode_SD_df[['Full-time worker not-working','Full-time worker no tour']].min(axis=1) # min across columns
+        work_mode_SD_df['Part-time worker not-working'] = work_mode_SD_df[['Part-time worker not-working','Part-time worker no tour']].min(axis=1) # min across columns
         # remaining is telecommute
-        work_mode_SD_df['telecommute'] = work_mode_SD_df['no tour'] - work_mode_SD_df['time-off']
+        work_mode_SD_df['Full-time worker telecommute'] = work_mode_SD_df['Full-time worker no tour'] - work_mode_SD_df['Full-time worker not-working']
+        work_mode_SD_df['Part-time worker telecommute'] = work_mode_SD_df['Part-time worker no tour'] - work_mode_SD_df['Part-time worker not-working']
         # create total workers not taking time off
-        work_mode_SD_df['working'] = work_mode_SD_df['auto'] + work_mode_SD_df['non-auto'] + work_mode_SD_df['telecommute']
+        work_mode_SD_df['Full-time worker working'] = work_mode_SD_df['Full-time worker auto'] + work_mode_SD_df['Full-time worker non-auto'] + work_mode_SD_df['Full-time worker telecommute']
+        work_mode_SD_df['Part-time worker working'] = work_mode_SD_df['Part-time worker auto'] + work_mode_SD_df['Part-time worker non-auto'] + work_mode_SD_df['Part-time worker telecommute']
+
+        # generic
+        work_mode_SD_df['working'    ] = work_mode_SD_df['Full-time worker working'    ] + work_mode_SD_df['Part-time worker working'    ]
+        work_mode_SD_df['telecommute'] = work_mode_SD_df['Full-time worker telecommute'] + work_mode_SD_df['Part-time worker telecommute']
+        work_mode_SD_df['auto'       ] = work_mode_SD_df['Full-time worker auto'       ] + work_mode_SD_df['Part-time worker auto'       ]
 
         # "mode shares" are now a function of people working
         work_mode_SD_df['telecommute_rate'] = work_mode_SD_df['telecommute'] / work_mode_SD_df['working']
@@ -182,14 +257,10 @@ if __name__ == '__main__':
                                        how   ='left',
                                        on    ='COUNTY')
 
-        # NOW filter to Full-time workers
-        work_mode_SD_df = work_mode_SD_df.loc[work_mode_SD_df['person_type_str']=='Full-time worker', ]
         print('work_mode_SD_df:\n{}'.format(work_mode_SD_df))
 
-        # read pervious constants
-        PREV_CALIB_ITER = '{:02d}'.format(int(CALIB_ITER) - 1)
-        print('PREV_CALIB_ITER  = {}'.format(PREV_CALIB_ITER))
-        telecommute_df = pandas.read_csv(TELECOMMUTE_CONSTANTS_FILE.format(PREV_CALIB_ITER))
+        # read pervious CONSTANTS
+        telecommute_df = pandas.read_csv(TELECOMMUTE_CONSTANTS_FILE.format(int(CALIB_ITER)-1))
 
         telecommute_df = telecommute_df[['ZONE','SD','COUNTY','telecommuteConstant']]
         telecommute_df.rename(columns={'telecommuteConstant':'telecommuteConstant_prev'}, inplace=True)
@@ -205,23 +276,24 @@ if __name__ == '__main__':
         telecommute_df['telecomute_diff']     = telecommute_df['max_telecommute_rate'] - telecommute_df['telecommute_rate']
         telecommute_df['telecomute_near_max'] = telecommute_df['telecomute_diff'].abs() < TELECOMMUTE_RATE_THRESHHOLD
 
-        # increase (negative) if auto share is high and we're not at max
-        telecommute_df.loc[ (telecommute_df['auto_share'] > TARGET_AUTO_SHARE) & 
-                            (telecommute_df['telecommute_rate'] < telecommute_df['max_telecommute_rate']) &
-                            (telecommute_df['telecomute_near_max'] == False),
-            'telecommuteConstant' ] = telecommute_df['telecommuteConstant'] - CONSTANT_INCREMENT
-        # decrease if telecommute share is high
-        telecommute_df.loc[ (telecommute_df['telecommute_rate'] > telecommute_df['max_telecommute_rate']) &
-                            (telecommute_df['telecomute_near_max'] == False), 
-            'telecommuteConstant' ] = telecommute_df['telecommuteConstant'] + CONSTANT_DECREMENT
+        if UPDATE_CONSTANT:
+            # increase (negative) if auto share is high and we're not at max
+            telecommute_df.loc[ (telecommute_df['auto_share'] > TARGET_AUTO_SHARE) & 
+                                (telecommute_df['telecommute_rate'] < telecommute_df['max_telecommute_rate']) &
+                                (telecommute_df['telecomute_near_max'] == False),
+                'telecommuteConstant' ] = telecommute_df['telecommuteConstant'] - CONSTANT_INCREMENT
+            # decrease if telecommute share is high
+            telecommute_df.loc[ (telecommute_df['telecommute_rate'] > telecommute_df['max_telecommute_rate']) &
+                                (telecommute_df['telecomute_near_max'] == False), 
+                'telecommuteConstant' ] = telecommute_df['telecommuteConstant'] + CONSTANT_DECREMENT
 
         # drop person_type_str column and other temp cols
-        telecommute_df.drop(columns=['person_type_str','telecomute_diff','telecomute_near_max'], inplace=True)
+        telecommute_df.drop(columns=['telecomute_diff','telecomute_near_max'], inplace=True)
         telecommute_df['CALIB_ITER'] = int(CALIB_ITER)
 
 
     # write it with calib iter
-    telecommute_df.to_csv(TELECOMMUTE_CONSTANTS_FILE.format(CALIB_ITER), header=True, index=False)
-    print("Wrote {} lines to {}".format(len(telecommute_df), TELECOMMUTE_CONSTANTS_FILE.format(CALIB_ITER)))
+    telecommute_df.to_csv(TELECOMMUTE_CONSTANTS_FILE.format(int(CALIB_ITER)), header=True, index=False)
+    print("Wrote {} lines to {}".format(len(telecommute_df), TELECOMMUTE_CONSTANTS_FILE.format(int(CALIB_ITER))))
 
     sys.exit(0)

@@ -12,6 +12,7 @@
 :: uncomment this to iterate
 goto iter1
 
+set TELECOMMUTE_CALIBRATION=1
 set CALIB_ITER=00
 
 :setup_model
