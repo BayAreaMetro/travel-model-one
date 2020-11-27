@@ -142,9 +142,6 @@ COMBINE MAXDIFF[130] = 10  ; Caltrain -- don't combine baby bullets with slow li
     COMBINE if[138] = ((RUN-MINRUN) >=-5 && (RUN-MINRUN) <=5)
     COMBINE if[139] = ((RUN-MINRUN) >=-5 && (RUN-MINRUN) <=5)
 
-; Millbrae transfer point
-factor MAXWAITTIME=5, NODES=13661,15543
-
 ; Caltrain schedules can have long gaps for some stations which can result in no commuter rail
 ; path being found at all as other modes get used instead.  Try to overcome this, but not so
 ; aggressively as to make the model insensitive to frequency improvements
