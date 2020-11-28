@@ -183,7 +183,7 @@ if %MODEL_YEAR_NUM% GEQ 2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapaci
 :: Telecommute V2 strategy
 :: ------
 mkdir main
-copy /Y "%TELECOMMUTE_CONFIG%" "main/telecommute_constants_01.csv"
+copy /Y "%TELECOMMUTE_CONFIG%" "main/telecommute_constants_00.csv"
 copy /Y "%TELECOMMUTE_CONFIG%" "main/telecommute_constants.csv"
  
 :DoneAddingStrategies
