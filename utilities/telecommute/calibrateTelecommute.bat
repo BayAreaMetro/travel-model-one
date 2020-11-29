@@ -29,7 +29,7 @@ copy /y "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"                CTRAM
 
 :setup_inputs
 :: copy over INPUTs from baseline
-set MODEL_SETUP_BASE_DIR=\\MODEL2-B\Model2B-Share\Projects\2035_TM152_FBP_Plus_12
+set MODEL_SETUP_BASE_DIR=\\MODEL2-C\Model2C-Share\Projects\2035_TM152_FBP_Plus_14
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\landuse"        INPUT\landuse
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\nonres"         INPUT\nonres
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\popsyn"         INPUT\popsyn
@@ -52,9 +52,6 @@ set SKIM_DIR=%MODEL_SETUP_BASE_DIR%
 
 :: Set the path
 call CTRAMP\runtime\SetPath.bat
-
-set COMMPATH=E:\Model2C-Share\COMMPATH
-Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 ::  Set the IP address of the host machine which sends tasks to the client machines 
 if %computername%==MODEL2-A set HOST_IP_ADDRESS=192.168.1.206
@@ -145,23 +142,23 @@ set PREV_WGT=0.00
 set SAMPLESHARE=0.20
 set SEED=0
 
-:: update Telecommute Constant
-python \\tsclient\X\travel-model-one-cdap-worktaz\utilities\telecommute\updateTelecommuteConstants.py
+:: only need to do this the first time
+if "%CALIB_ITER%"=="00" (
+  rem Prompt user to set the workplace shadow pricing parameters
+  @echo off
+  set /P c=Project Directory updated.  Update initial telecommute constants and workplace shadow pricing parameters press Enter to continue...
+  @echo on
+  rem Don't care about the response
+)
+
+:: update or initialize Telecommute Constant
+python \\tsclient\X\travel-model-one-cdap-worktaz\model-files\scripts\preprocess\updateTelecommuteConstants.py
 if ERRORLEVEL 1 goto done
 
 :: copy over result for use
 copy main\telecommute_constants_%CALIB_ITER%.csv main\telecommute_constants.csv
 
 python CTRAMP\scripts\notify_slack.py "Starting telecommute calibration iteration %CALIB_ITER%"
-
-:: only need to do this the first time
-if "%CALIB_ITER%"=="00" (
-  rem Prompt user to set the workplace shadow pricing parameters
-  @echo off
-  set /P c=Project Directory updated.  Update workplace shadow pricing parameters press Enter to continue...
-  @echo on
-  rem Don't care about the response
-)
 
 :core
 rem run matrix manager, household manager and jppf driver

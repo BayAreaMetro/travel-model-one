@@ -130,8 +130,14 @@ if __name__ == '__main__':
         telecommute_df['CALIB_ITER'] = int(CALIB_ITER)
         telecommute_df['telecommuteConstant'] = 0.0
 
-    # assuming ITER=1, CALIB_ITER=0 is calibration. no results yet -- start at zero
-    elif int(ITER)==1 and int(CALIB_ITER)==0:
+    # no results yet -- start at zero
+    elif int(TELECOMMUTE_CALIBRATION)==1 and int(CALIB_ITER)==0:
+
+        if os.path.exists(TELECOMMUTE_CONSTANTS_FILE.format(0)):
+            print("Telecommute Calibration CALIB_ITER 0 -- initial constants found.")
+            sys.exit(0)
+
+        # otherwise, make empty file
         print("Calibrating -- iter0.  Start at zero")
 
         # default to zero
@@ -286,6 +292,9 @@ if __name__ == '__main__':
             telecommute_df.loc[ (telecommute_df['telecommute_rate'] > telecommute_df['max_telecommute_rate']) &
                                 (telecommute_df['telecomute_near_max'] == False), 
                 'telecommuteConstant' ] = telecommute_df['telecommuteConstant'] + CONSTANT_DECREMENT
+
+            # don't go positive
+            telecommute_df.loc[ telecommute_df['telecommuteConstant'] > 0, 'telecommuteConstant' ] = 0
 
         # drop person_type_str column and other temp cols
         telecommute_df.drop(columns=['telecomute_diff','telecomute_near_max'], inplace=True)
