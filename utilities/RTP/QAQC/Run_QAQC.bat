@@ -25,7 +25,8 @@ cd main
 call "%R_HOME%\bin\x64\Rscript.exe" ..\QAQC\Car_ownership_AVHV.R
 cd ..
 
-copy /y "%GITHUB_MASTER%\utilities\RTP\QAQC\Car_ownership_summary.xlsx"       "%M_DIR%\OUTPUT\QAQC\Car_ownership_summary.xlsx"
+copy /y "%GITHUB_MASTER%\utilities\RTP\QAQC\Car_ownership_summary_2035.xlsx"       "%M_DIR%\OUTPUT\QAQC\Car_ownership_summary_2035.xlsx"
+copy /y "%GITHUB_MASTER%\utilities\RTP\QAQC\Car_ownership_summary_2050.xlsx"       "%M_DIR%\OUTPUT\QAQC\Car_ownership_summary_2050.xlsx"
 
 :: ---------------------------------
 :: check telecommute
