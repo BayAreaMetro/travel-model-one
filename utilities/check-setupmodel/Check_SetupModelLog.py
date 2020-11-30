@@ -9,14 +9,21 @@ import os
 
 ErrorInSetupModel=0
 
-with open('setupmodel.log') as f:
-    if 'The system cannot find' in f.read() or 'The network name cannot be found' in f.read() or 'not recognized as an internal or external command' in f.read():
-        ErrorInSetupModel=1
-        f.close()
-        print ("Setupmodel.log contains errors.")
+f = open('setupmodel.log')
 
-        # produce an assertion error if setupmodel.log cotains any of the two errors
-        assert ErrorInSetupModel==0
+log_contents = f.read()
+print("Read {} chars from setupmodel.log".format(len(log_contents)))
 
-    else:
-        print ("Setupmodel.log does not contain any obvious errors.")
+if ('The system cannot find' in log_contents) or \
+   ('The network name cannot be found' in log_contents) or \
+   ('not recognized as an internal or external command' in log_contents):
+    ErrorInSetupModel=1
+    print ("Setupmodel.log contains errors.")
+
+    # produce an assertion error if setupmodel.log cotains any of the two errors
+    assert ErrorInSetupModel==0
+
+else:
+    print ("Setupmodel.log does not contain any obvious errors.")
+
+f.close()
