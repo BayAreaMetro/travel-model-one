@@ -261,7 +261,7 @@ if ERRORLEVEL 2 goto done
 python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
 if ERRORLEVEL 1 goto done
 :: copy over result for use
-copy /Y main\telecommute_constants_%ITER%.csv main\telecommute_constants.csv
+copy /Y main\telecommute_constants_0%ITER%.csv main\telecommute_constants.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -291,7 +291,7 @@ if ERRORLEVEL 2 goto done
 python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
 if ERRORLEVEL 1 goto done
 :: copy over result for use
-copy /Y main\telecommute_constants_%ITER%.csv main\telecommute_constants.csv
+copy /Y main\telecommute_constants_0%ITER%.csv main\telecommute_constants.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
