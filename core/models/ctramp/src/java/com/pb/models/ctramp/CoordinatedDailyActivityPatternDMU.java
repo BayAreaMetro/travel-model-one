@@ -62,6 +62,9 @@ public class CoordinatedDailyActivityPatternDMU implements Serializable, Variabl
     
     public void setPersonA(Person passedInPersonA){
     	this.personA = passedInPersonA;
+
+        // set the stop zone as the work location
+        dmuIndex.setStopZone(passedInPersonA.getPersonWorkLocationZone());
     }
     
     public void setPersonB(Person passedInPersonB){

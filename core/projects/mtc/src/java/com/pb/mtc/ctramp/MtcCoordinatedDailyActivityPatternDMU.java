@@ -36,6 +36,11 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
     	return householdObject.getHAnalyst();
     }
 
+    // added for cdap-worktaz
+    public int getUsualWorkLocationA(){
+        return personA.getPersonWorkLocationZone();
+    }
+
 
     private void setupMethodIndexMap() {
         methodIndexMap = new HashMap<String, Integer>();
@@ -77,6 +82,8 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         methodIndexMap.put( "getHhSize", 34 );
         // guojy: added for M. Gucwa's research on automated vehicles
         methodIndexMap.put( "getHAnalyst", 35 );
+        // added for cdap-worktaz
+        methodIndexMap.put( "getUsualWorkLocationA", 36);
     }
     
     
@@ -123,6 +130,8 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
             case 34: return getHhSize();
             // guojy: added for M. Gucwa's research on automated vehicles
             case 35: return getHAnalyst();
+            // added for cdap-worktaz
+            case 36: return getUsualWorkLocationA();
 
             default:
                 logger.error("method number = "+variableIndex+" not found");

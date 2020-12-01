@@ -520,7 +520,12 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
                 stringToLog  += String.format("%10.4f", allMemberInteractionUtilities[i]);
             }
             cdapLogger.info(stringToLog);
-            
+
+            // log detail for one person CDAP
+            // onePersonUec.printVariableTable();
+            // cdapLogger.info(onePersonUec.getVariableTable());
+            onePersonUec.logAnswersArray(cdapLogger, "OnePersonCDAP");
+
         } // debug trace
         
         // align the utilities with the proper alternatives
