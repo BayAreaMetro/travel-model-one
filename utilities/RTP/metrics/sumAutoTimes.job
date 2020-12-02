@@ -291,7 +291,7 @@ loop auto = 1,15
     ENDRUN
 
     ; owned zpv by income
-    IF (auto=10) ; da_av_notoll
+    IF (auto=11) ; da_av_toll
       RUN PGM = MATRIX
         ; Read person trips for an income quartile for all time periods
         FILEI MATI[1] = "main\tripsEA_zpv_@token_inc@.tpp"
@@ -374,9 +374,11 @@ loop auto = 1,15
       Vehicle_miles = Vehicle_miles + ROWSUM(41)
       Total_cost    = Total_cost    + ROWSUM(42)
       Bridge_tolls  = Bridge_tolls  + ROWSUM(43)
+      ; assuming deadheading AVs pay tolls
+      Value_tolls   = Value_tolls   + ROWSUM(44)
 
-      ; assuming no value tolls for deadheading AV
-      Value_tolls       = 0
+      ; assuming value tolls for deadheading AV
+
       _vtoll_am_nonzero = 0
       _vtoll_md_nonzero = 0
 
@@ -390,7 +392,7 @@ loop auto = 1,15
                                                             _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
                                                             Bridge_tolls(10.2L), Value_tolls(10.2L)
       ENDRUN
-    ENDIF ; IF (auto=10) ; da_av_notoll
+    ENDIF ; IF (auto=11) ; da_av_toll
 
   endloop ; income loop
 
@@ -702,49 +704,49 @@ RUN PGM = MATRIX
   FILEO PRINTO[1] = "metrics\auto_times.csv",APPEND=T
 
   ; Trips EA * Skims EA
-  MW[ 1] =  0                                        ; Person minutes
-  MW[ 2] =  mi.1.zpv_tnc * mi.6.TIMEDA               ; Vehicle minutes
-  MW[ 3] =  0                                        ; Person miles
-  MW[ 4] =  mi.1.zpv_tnc * mi.6.DISTDA               ; Vehicle miles
-  MW[ 5] =  mi.1.zpv_tnc * (mi.6.DISTDA * @AUTOOPC@) ; not including tolls
-  MW[ 6] =  mi.1.zpv_tnc *  mi.6.BTOLLDA             ; Bridge tolls
-  MW[ 7] =  0                                        ; Value tolls
+  MW[ 1] =  0                                            ; Person minutes
+  MW[ 2] =  mi.1.zpv_tnc * mi.6.TOLLTIMEDA               ; Vehicle minutes
+  MW[ 3] =  0                                            ; Person miles
+  MW[ 4] =  mi.1.zpv_tnc * mi.6.TOLLDISTDA               ; Vehicle miles
+  MW[ 5] =  mi.1.zpv_tnc * (mi.6.TOLLDISTDA * @AUTOOPC@) ; not including tolls
+  MW[ 6] =  mi.1.zpv_tnc *  mi.6.TOLLBTOLLDA             ; Bridge tolls
+  MW[ 7] =  mi.1.zpv_tnc *  mi.6.TOLLVTOLLDA             ; Value tolls
 
   ; Trips AM * Skims AM
-  MW[ 8]   =  0                                        ; Person minutes
-  MW[ 9]   =  mi.2.zpv_tnc * mi.7.TIMEDA               ; Vehicle minutes
-  MW[10]   =  0                                        ; Person miles
-  MW[11]   =  mi.2.zpv_tnc * mi.7.DISTDA               ; Vehicle miles
-  MW[12]   =  mi.2.zpv_tnc * (mi.7.DISTDA * @AUTOOPC@) ; not including tolls
-  MW[13]   =  mi.2.zpv_tnc *  mi.7.BTOLLDA             ; Bridge tolls
-  MW[14]   =  0                                        ; Value tolls
+  MW[ 8]   =  0                                            ; Person minutes
+  MW[ 9]   =  mi.2.zpv_tnc * mi.7.TOLLTIMEDA               ; Vehicle minutes
+  MW[10]   =  0                                            ; Person miles
+  MW[11]   =  mi.2.zpv_tnc * mi.7.TOLLDISTDA               ; Vehicle miles
+  MW[12]   =  mi.2.zpv_tnc * (mi.7.TOLLDISTDA * @AUTOOPC@) ; not including tolls
+  MW[13]   =  mi.2.zpv_tnc *  mi.7.TOLLBTOLLDA             ; Bridge tolls
+  MW[14]   =  mi.2.zpv_tnc *  mi.7.TOLLVTOLLDA             ; Value tolls
 
   ; Trips MD * Skims MD
-  MW[15]   =  0                                        ; Person minutes
-  MW[16]   =  mi.3.zpv_tnc * mi.8.TIMEDA               ; Vehicle minutes
-  MW[17]   =  0                                        ; Person miles
-  MW[18]   =  mi.3.zpv_tnc * mi.8.DISTDA               ; Vehicle miles
-  MW[19]   =  mi.3.zpv_tnc * (mi.8.DISTDA * @AUTOOPC@) ; not including tolls
-  MW[20]   =  mi.3.zpv_tnc *  mi.8.BTOLLDA             ; Bridge tolls
-  MW[21]   =  0                                        ; Value tolls
+  MW[15]   =  0                                            ; Person minutes
+  MW[16]   =  mi.3.zpv_tnc * mi.8.TOLLTIMEDA               ; Vehicle minutes
+  MW[17]   =  0                                            ; Person miles
+  MW[18]   =  mi.3.zpv_tnc * mi.8.TOLLDISTDA               ; Vehicle miles
+  MW[19]   =  mi.3.zpv_tnc * (mi.8.TOLLDISTDA * @AUTOOPC@) ; not including tolls
+  MW[20]   =  mi.3.zpv_tnc *  mi.8.TOLLBTOLLDA             ; Bridge tolls
+  MW[21]   =  mi.3.zpv_tnc *  mi.8.TOLLVTOLLDA             ; Value tolls
 
   ; Trips PM * Skims PM
-  MW[22]   =  0                                        ; Person minutes
-  MW[23]   =  mi.4.zpv_tnc * mi.9.TIMEDA               ; Vehicle minutes
-  MW[24]   =  0                                        ; Person miles
-  MW[25]   =  mi.4.zpv_tnc * mi.9.DISTDA               ; Vehicle miles
-  MW[26]   =  mi.4.zpv_tnc * (mi.9.DISTDA * @AUTOOPC@) ; not including tolls
-  MW[27]   =  mi.4.zpv_tnc *  mi.9.BTOLLDA             ; Bridge tolls
-  MW[28]   =  0                                        ; Value tolls
+  MW[22]   =  0                                            ; Person minutes
+  MW[23]   =  mi.4.zpv_tnc * mi.9.TOLLTIMEDA               ; Vehicle minutes
+  MW[24]   =  0                                            ; Person miles
+  MW[25]   =  mi.4.zpv_tnc * mi.9.TOLLDISTDA               ; Vehicle miles
+  MW[26]   =  mi.4.zpv_tnc * (mi.9.TOLLDISTDA * @AUTOOPC@) ; not including tolls
+  MW[27]   =  mi.4.zpv_tnc *  mi.9.TOLLBTOLLDA             ; Bridge tolls
+  MW[28]   =  mi.4.zpv_tnc *  mi.9.TOLLVTOLLDA             ; Value tolls
 
   ; Trips EV * Skims EV
-  MW[29]   =  0                                         ; Person minutes
-  MW[30]   =  mi.5.zpv_tnc * mi.10.TIMEDA               ; Vehicle minutes
-  MW[31]   =  0                                         ; Person miles
-  MW[32]   =  mi.5.zpv_tnc * mi.10.DISTDA               ; Vehicle miles
-  MW[33]   =  mi.5.zpv_tnc * (mi.10.DISTDA * @AUTOOPC@) ; not including tolls
-  MW[34]   =  mi.5.zpv_tnc *  mi.10.BTOLLDA             ; Bridge tolls
-  MW[35]   =  0                                         ; Value tolls
+  MW[29]   =  0                                             ; Person minutes
+  MW[30]   =  mi.5.zpv_tnc * mi.10.TOLLTIMEDA               ; Vehicle minutes
+  MW[31]   =  0                                             ; Person miles
+  MW[32]   =  mi.5.zpv_tnc * mi.10.TOLLDISTDA               ; Vehicle miles
+  MW[33]   =  mi.5.zpv_tnc * (mi.10.TOLLDISTDA * @AUTOOPC@) ; not including tolls
+  MW[34]   =  mi.5.zpv_tnc *  mi.10.TOLLBTOLLDA             ; Bridge tolls
+  MW[35]   =  mi.5.zpv_tnc *  mi.10.TOLLVTOLLDA             ; Value tolls
 
   ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls,   Value Tolls
   MW[36] = 0                                                    ; Person Trips
