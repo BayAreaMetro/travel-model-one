@@ -40,17 +40,6 @@ P_notworking_if_noworktour_FT = 0.560554289
 P_notworking_if_noworktour_PT = 0.553307383
 
 
-def get_property(properties_file_name, properties_file_contents, propname):
-    """
-    Return the string for this property.
-    Exit if not found.
-    """
-    match           = re.search("\n%s[ \t]*=[ \t]*(\S*)[ \t]*" % propname, properties_file_contents)
-    if match == None:
-        print "Couldn't find %s in %s" % (propname, properties_file_name)
-        sys.exit(2)
-    return match.group(1)
-
 if __name__ == '__main__':
     pandas.options.display.width = 150
 
