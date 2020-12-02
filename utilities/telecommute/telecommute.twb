@@ -864,7 +864,7 @@
         <table-calc ordering-type='Rows' />
         <table-calc field='[federated.1nycl0u099gnce15w27om1w136t4].[Calculation_3443846393154756612]' ordering-type='Rows' />
       </column-instance>
-      <layout _.fcp.SchemaViewerObjectModel.false...dim-percentage='0.5' _.fcp.SchemaViewerObjectModel.false...measure-percentage='0.4' _.fcp.SchemaViewerObjectModel.true...common-percentage='0.609489' _.fcp.SchemaViewerObjectModel.true...user-set-layout-v2='true' dim-ordering='alphabetic' measure-ordering='alphabetic' parameter-percentage='0.390511' show-structure='true' />
+      <layout _.fcp.SchemaViewerObjectModel.false...dim-percentage='0.5' _.fcp.SchemaViewerObjectModel.false...measure-percentage='0.4' _.fcp.SchemaViewerObjectModel.true...common-percentage='0.609576' _.fcp.SchemaViewerObjectModel.true...user-set-layout-v2='true' dim-ordering='alphabetic' measure-ordering='alphabetic' parameter-percentage='0.390424' show-structure='true' />
       <style>
         <style-rule element='mark'>
           <encoding attr='color' field='[:Measure Names]' type='palette'>
@@ -2231,6 +2231,13 @@
             <run>v2a 2035 TOTAL telecommute share target:</run>
             <run fontcolor='#4e79a7'>Æ </run>
             <run bold='true' fontcolor='#59a14f'>11.8%</run>
+            <run>
+v2a 2050 TOTAL telecommute share target:</run>
+            <run fontcolor='#4e79a7'>Æ </run>
+            <run bold='true' fontcolor='#59a14f'>13.2%</run>
+            <run>Æ&#10;</run>
+            <run bold='true'>verify</run>
+            <run bold='true' fontcolor='#898989'><![CDATA[ correct SAMPLESHARE: <[Parameters].[Parameter 4]>]]></run>
           </formatted-text>
         </caption>
       </layout-options>
@@ -2368,6 +2375,12 @@
           <formatted-text>
             <run>v2b 2035 TOTAL telecommute frequently target:</run>
             <run fontcolor='#4e79a7'> 10.0%</run>
+            <run>
+v2b 2050 TOTAL telecommute frequently target:</run>
+            <run fontcolor='#4e79a7'> 14.5%</run>
+            <run>Æ&#10;</run>
+            <run bold='true'>verify</run>
+            <run bold='true' fontcolor='#898989'><![CDATA[ correct SAMPLESHARE: <[Parameters].[Parameter 4]>]]></run>
           </formatted-text>
         </caption>
       </layout-options>
@@ -2916,13 +2929,8 @@
             <card type='title' />
           </strip>
         </edge>
-        <edge name='right'>
-          <strip size='160'>
-            <card pane-specification-id='0' param='[federated.1nycl0u099gnce15w27om1w136t4].[:Measure Names]' type='color' />
-          </strip>
-        </edge>
         <edge name='bottom'>
-          <strip size='68'>
+          <strip size='114'>
             <card type='caption' />
           </strip>
         </edge>
@@ -2959,13 +2967,8 @@
             <card type='title' />
           </strip>
         </edge>
-        <edge name='right'>
-          <strip size='160'>
-            <card pane-specification-id='0' param='[federated.1nycl0u099gnce15w27om1w136t4].[:Measure Names]' type='color' />
-          </strip>
-        </edge>
         <edge name='bottom'>
-          <strip size='68'>
+          <strip size='110'>
             <card type='caption' />
           </strip>
         </edge>

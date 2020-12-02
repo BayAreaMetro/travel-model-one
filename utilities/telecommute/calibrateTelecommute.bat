@@ -17,7 +17,7 @@ set CALIB_ITER=00
 
 :setup_model
 :: Setup:: copy over CTRAMP
-set GITHUB_DIR=\\tsclient\X\travel-model-one-cdap-worktaz
+set GITHUB_DIR=\\tsclient\X\travel-model-one-master
 mkdir CTRAMP\model
 mkdir CTRAMP\runtime
 mkdir CTRAMP\scripts
@@ -178,6 +178,6 @@ C:\Windows\SysWOW64\taskkill /f /im "java.exe"
 set INSTANCE=%COMPUTERNAME%
 python CTRAMP\scripts\notify_slack.py "Finished telecommute calibration iteration %CALIB_ITER%"
 
-echo TODO: increment CALIB_ITER
+echo TODO: increment CALIB_ITER if you are calibrating SD-based constants. Otherwise, leave at 00.
 
 :done
