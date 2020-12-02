@@ -224,7 +224,7 @@ if exist "%M_DIR%\INPUT" (
 
 Set dir1="%M_DIR%\INPUT"
 Set dir2="%PREV_RUN_DIR%\INPUT"
-robocopy.exe %dir1% %dir2% /e /l /ns /njs /ndl /fp /log:"%M_DIR%\CompareInputs.txt"
+c:\windows\system32\robocopy.exe %dir1% %dir2% /e /l /ns /njs /ndl /fp /log:"%M_DIR%\CompareInputs.txt"
 
 ::----------------------------------------------
 :: add folder name to the command prompt window 
