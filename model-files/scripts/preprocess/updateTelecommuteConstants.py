@@ -35,6 +35,11 @@ TELECOMMUTE_RATE_THRESHHOLD = 0.005
 CONSTANT_INCREMENT = 0.05
 CONSTANT_DECREMENT = 0.05
 
+# see EN7 Telecommuting.xlsx (https://mtcdrive.box.com/s/uw3n8wyervle6r2cgoz1j6k4i5lmv253)
+P_notworking_if_noworktour_FT = 0.560554289
+P_notworking_if_noworktour_PT = 0.553307383
+
+
 def get_property(properties_file_name, properties_file_contents, propname):
     """
     Return the string for this property.
@@ -87,11 +92,6 @@ if __name__ == '__main__':
     PARAMS_CONTENTS = myfile.read()
     myfile.close()
     print("Read {} lines from {}".format(len(PARAMS_CONTENTS), PARAMS_FILENAME))
-
-    P_notworkingFT = float(get_property(PARAMS_FILENAME, PARAMS_CONTENTS, "P_notworkingFT"))
-    P_notworkingPT = float(get_property(PARAMS_FILENAME, PARAMS_CONTENTS, "P_notworkingPT"))
-    print("P_notworkingFT = {}".format(P_notworkingFT))
-    print("P_notworkingPT = {}".format(P_notworkingPT))
 
     # read tazdata
     TAZDATA_COLS = ['ZONE','DISTRICT','SD','COUNTY','RETEMPN','FPSEMPN','HEREMPN','OTHEMPN','AGREMPN','MWTEMPN','TOTEMP']
@@ -236,8 +236,8 @@ if __name__ == '__main__':
         print(work_mode_SD_df)
 
         # calculate not working to take them out of the universe
-        work_mode_SD_df['Full-time worker not-working'] = P_notworkingFT*(work_mode_SD_df['Full-time worker auto']+work_mode_SD_df['Full-time worker non-auto']+work_mode_SD_df['Full-time worker no tour'])
-        work_mode_SD_df['Part-time worker not-working'] = P_notworkingPT*(work_mode_SD_df['Part-time worker auto']+work_mode_SD_df['Part-time worker non-auto']+work_mode_SD_df['Part-time worker no tour'])
+        work_mode_SD_df['Full-time worker not-working'] = P_notworking_if_noworktour_FT*work_mode_SD_df['Full-time worker no tour']
+        work_mode_SD_df['Part-time worker not-working'] = P_notworking_if_noworktour_FT*work_mode_SD_df['Part-time worker no tour']
         # they cannot exceed no tour
         work_mode_SD_df['Full-time worker not-working'] = work_mode_SD_df[['Full-time worker not-working','Full-time worker no tour']].min(axis=1) # min across columns
         work_mode_SD_df['Part-time worker not-working'] = work_mode_SD_df[['Part-time worker not-working','Part-time worker no tour']].min(axis=1) # min across columns
