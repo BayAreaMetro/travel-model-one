@@ -117,7 +117,7 @@ trips <- mutate(trips, simple_purpose=case_when(
   tour_purpose=='work_low'       ~ 'work',
   tour_purpose=='work_med'       ~ 'work',
   tour_purpose=='work_high'      ~ 'work',
-  tour_purpose=='work_very_high' ~ 'work',
+  tour_purpose=='work_very high' ~ 'work',
   tour_purpose=='school_grade'   ~ 'school',
   tour_purpose=='school_high'    ~ 'school',
   tour_purpose=='university'     ~ 'college',
