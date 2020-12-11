@@ -81,7 +81,8 @@ tours <- mutate(tours,
 # summarize by work/nonwork, income quartile, origin county and destination county
 tour_parking_summary <- group_by(tours, work_nonwork, incQ, incQ_label, orig_COUNTY, dest_COUNTY) %>% 
   summarise(num_tours         = sum(num_tours),
-            parking_cost      = sum(parking_cost))
+            parking_cost      = sum(parking_cost),
+            duration          = sum(duration))
 
 tour_parking_file <- file.path("metrics","parking_costs_tour.csv")
 write.table(tour_parking_summary, tour_parking_file, sep=",", row.names=FALSE)
@@ -90,7 +91,8 @@ print(paste("Wrote",nrow(tour_parking_summary),"to",tour_parking_file))
 # summarize by simple_purpose, income quartile, destination taz, parking_rate
 tour_parking_summary <- group_by(tours, simple_purpose, incQ, incQ_label, dest_taz, parking_rate) %>% 
   summarise(num_tours         = sum(num_tours),
-            parking_cost      = sum(parking_cost))
+            parking_cost      = sum(parking_cost),
+            duration          = sum(duration))
 
 tour_parking_file <- file.path("metrics","parking_costs_tour_destTaz.csv")
 write.table(tour_parking_summary, tour_parking_file, sep=",", row.names=FALSE)
@@ -150,6 +152,16 @@ trips <- mutate(trips,
 # divide out costs for SR2 and SR3 (note: for tours, CoreSummaries.R does this but for the trips version, it's here)
 # no special treatment for joint trips
 trips <- mutate(trips,
+                originParkingCost = case_when(
+                  (trip_mode==3)|(trip_mode==4) ~ originParkingCost/COST_SHARE_SR2,
+                  (trip_mode==5)|(trip_mode==6) ~ originParkingCost/COST_SHARE_SR3,
+                  TRUE ~ originParkingCost
+                ),
+                destParkingCost = case_when(
+                  (trip_mode==3)|(trip_mode==4) ~ destParkingCost/COST_SHARE_SR2,
+                  (trip_mode==5)|(trip_mode==6) ~ destParkingCost/COST_SHARE_SR3,
+                  TRUE ~ destParkingCost
+                ),
                 totalParkingCost = case_when(
                   (trip_mode==3)|(trip_mode==4) ~ totalParkingCost/COST_SHARE_SR2,
                   (trip_mode==5)|(trip_mode==6) ~ totalParkingCost/COST_SHARE_SR3,
@@ -157,17 +169,28 @@ trips <- mutate(trips,
                 ))
 
 # convert to $2000 dollars
-trips <- mutate(trips, totalParkingCost = totalParkingCost*0.01)
+trips <- mutate(trips,
+                originParkingCost = originParkingCost*0.01,
+                destParkingCost   = destParkingCost*0.01,
+                totalParkingCost  = totalParkingCost*0.01)
 
 # zero out for non auto trips
-trips <- mutate(trips, totalParkingCost=ifelse(trip_mode>6,0,totalParkingCost))
+trips <- mutate(trips, 
+                originParkingCost=ifelse(trip_mode>6,0,originParkingCost),
+                destParkingCost  =ifelse(trip_mode>6,0,destParkingCost  ),
+                totalParkingCost =ifelse(trip_mode>6,0,totalParkingCost ))
 # zero out for work tours if person has fp_choice
-trips <- mutate(trips, totalParkingCost=ifelse((substr(tour_purpose,0,4)=='work')&(fp_choice==1),0.0,totalParkingCost))
+trips <- mutate(trips,
+                originParkingCost=ifelse((substr(tour_purpose,0,4)=='work')&(fp_choice==1),0.0,totalParkingCost),
+                destParkingCost  =ifelse((substr(tour_purpose,0,4)=='work')&(fp_choice==1),0.0,totalParkingCost),
+                totalParkingCost =ifelse((substr(tour_purpose,0,4)=='work')&(fp_choice==1),0.0,totalParkingCost))
 
 # account for sampleRate
 trips <- mutate(trips, 
-                num_trips        = 1.0/sampleRate,               # expand each tour to multiple tours
-                totalParkingCost = totalParkingCost/sampleRate)
+                num_trips         = 1.0/sampleRate,               # expand each tour to multiple tours
+                originParkingCost = originParkingCost/sampleRate,
+                destParkingCost   = destParkingCost/sampleRate,
+                totalParkingCost  = totalParkingCost/sampleRate)
 
 #trips_debug <- filter(trips, hh_id < 10) %>% 
 #  select(hh_id, person_id, tour_id, tour_purpose, num_participants, inbound, stop_id, orig_purpose, dest_purpose, first_stop, stopIsFirst, last_stop, stopIsLast)
@@ -176,7 +199,11 @@ trips <- mutate(trips,
 # summarize by simple_purpose, income quartile, trip mode, destination taz
 trip_parking_summary <- group_by(trips, simple_purpose, incQ, incQ_label, trip_mode, dest_taz) %>% 
   summarise(num_trips         = sum(num_trips),
-            parking_cost      = sum(totalParkingCost))
+            parking_cost      = sum(totalParkingCost),
+            orig_parking_cost = sum(originParkingCost),
+            dest_parking_cost = sum(destParkingCost),
+            origin_duration   = sum(originDuration),
+            dest_duration     = sum(destDuration))
 
 trip_parking_file <- file.path("metrics","parking_costs_trip_destTaz.csv")
 write.table(trip_parking_summary, trip_parking_file, sep=",", row.names=FALSE)
