@@ -179,6 +179,21 @@ for %%F in (%FILES%) DO (
   )
 )
 
+:: copy over tazData.csv files
+for %%R in (%RUN_NAME_SET%) DO (
+  rem echo %%R
+  rem echo %%~nxR
+  if exist "%COMBINED_DIR%\tazData_%%~nxR.csv" (
+    echo File is already present: %COMBINED_DIR%\tazData_%%~nxR.csv
+  ) else (
+    if not exist "%%R\INPUT\landuse\tazData.csv" (
+      echo File doesn't exist: %%R\INPUT\landuse\tazData.csv
+    ) else (
+      copy "%%R\INPUT\landuse\tazData.csv" "%COMBINED_DIR%\tazData_%%~nxR.csv"
+    )
+  )
+)
+
 :: copy over avgload5period.csv files
 for %%R in (%RUN_NAME_SET%) DO (
   rem echo %%R
