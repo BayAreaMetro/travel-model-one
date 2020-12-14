@@ -98,8 +98,64 @@ tour_parking_file <- file.path("metrics","parking_costs_tour_destTaz.csv")
 write.table(tour_parking_summary, tour_parking_file, sep=",", row.names=FALSE)
 print(paste("Wrote",nrow(tour_parking_summary),"to",tour_parking_file))
 
+# for person-types, we need to split joint tours so each individual has their own row
+print(paste("Have",nrow(tours),"with num_participants as follows"))
+table(tours$num_participants)
+
+tours_indiv    <- filter(tours, num_participants == 1)
+tours_joint    <- filter(tours, num_participants > 1)
+
+# unroll tours_joint to get one row per person tour
+# from CoreSummaries.R get_joint_tour_persons()
+participants   <- strsplit(as.character(tours_joint$tour_participants)," ")
+max_peeps      <- max(sapply(participants,length))
+participants   <- lapply(participants, function(X) c(X,rep(NA, max_peeps-length(X))))
+participants   <- data.frame(t(do.call(cbind, participants)))
+participants   <- mutate(participants, hh_id=tours_joint$hh_id, tour_id=tours_joint$tour_id, tour_participants=tours_joint$tour_participants)
+print(head(participants))
+
+library(reshape2)
+# melt the persons so they are each on their own row
+joint_tour_persons <- data.frame(hh_id=numeric(), tour_id=numeric(), person_num=numeric())
+for (peep in 1:max_peeps) {
+  jtp <- melt(participants, id.var=c("hh_id","tour_id","tour_participants"), measure.vars=paste0("X",peep), na.rm=TRUE)
+  jtp <- mutate(jtp, person_num=value)
+  jtp <- select(jtp, hh_id, tour_id, tour_participants, person_num)
+  joint_tour_persons <- rbind(joint_tour_persons, jtp)
+}
+joint_tour_persons <- transform(joint_tour_persons, person_num=as.numeric(person_num))
+# sort by hh_id
+joint_tour_persons <- joint_tour_persons[with(joint_tour_persons, order(hh_id, tour_participants, tour_id)),]
+
+print(paste("joint_tour_persons has",nrow(joint_tour_persons),"rows"))
+print(paste("sum(tours_joint$num_partipants): ",sum(tours_joint$num_participants)))
+
+# put back together with tours_joint
+tours_joint <- merge(select(tours_joint, -person_num), joint_tour_persons, by=c("hh_id","tour_id","tour_participants"))
+print(paste("tours_joint has",nrow(tours_joint),"rows"))
+
+# put back together and load/add person type
+tours <- rbind(tours_indiv, tours_joint)
+print(paste("tours has",nrow(tours),"rows"))
+
+load("updated_output/persons.rdata")
+persons <- select(persons, hh_id, person_num, ptype, ptype_label)
+print(paste("loaded persons: ",nrow(persons),"rows"))
+
+tours <- left_join(tours, persons, by=c("hh_id","person_num"))
+print(paste("after left_join with persons, tours has",nrow(tours),"rows"))
+
+tour_parking_summary <- group_by(tours, simple_purpose, incQ, incQ_label, ptype, ptype_label, dest_taz, parking_rate) %>% 
+  summarise(num_tours         = sum(num_tours),
+            parking_cost      = sum(parking_cost),
+            duration          = sum(duration))
+
+tour_parking_file <- file.path("metrics","parking_costs_tour_ptype_destTaz.csv")
+write.table(tour_parking_summary, tour_parking_file, sep=",", row.names=FALSE)
+print(paste("Wrote",nrow(tour_parking_summary),"to",tour_parking_file))
+
 # switch to trips
-remove(tours)
+remove(persons, tours, tours_indiv, tours_joint, tour_parking_summary)
 
 load("updated_output/trips.rdata")
 
