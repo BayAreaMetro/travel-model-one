@@ -180,6 +180,12 @@ if %MODEL_YEAR_NUM% GEQ 2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapaci
 :: see asana task: https://app.asana.com/0/450971779231601/1186351402141779/f
 
 :: ------
+:: Bike Access 
+:: ------
+:: Bay Skyway (formerly Bay Bridge West Span Bike Path)
+if %MODEL_YEAR_NUM% GEQ 2045 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMotorizedNetwork_BikeAccess_2045onwards.job"   "CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job")
+
+:: ------
 :: Telecommute V2 strategy
 :: ------
 mkdir main
