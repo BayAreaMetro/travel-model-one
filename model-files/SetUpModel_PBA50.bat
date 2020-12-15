@@ -5,20 +5,20 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2021\Blueprint\2035_TM152_FBP_Plus_13_EN7v2_01
+set M_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_FBP_PlusCrossing_16
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
 
 :: set the location of the Travel Model Release
 :: use master for now until we create a release
-set GITHUB_DIR=\\tsclient\X\travel-model-one-cdap-worktaz
+set GITHUB_DIR=\\tsclient\X\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\2035_TM152_FBP_Plus_13\INPUT
+set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_44\net_2050_Blueprint Plus Crossing
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
-set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\2035_TM152_FBP_Plus_13\INPUT
+set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v225_UBI\2050
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
 set UrbanSimScenario=s24
@@ -28,19 +28,19 @@ set INPUT_DEVELOPMENT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVEL
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=M:\Application\Model One\RTP2021\Blueprint\2035_TM152_FBP_Plus_12
+set PREV_RUN_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_FBP_PlusCrossing_15b
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
-set PARAMS=\\tsclient\X\travel-model-one-cdap-worktaz\config\params_PBA50_Blueprint2035.properties
+set PARAMS=\\tsclient\X\travel-model-one-master\config\params_PBA50_Blueprint2050.properties
 :: test superdistrict-based telecommute constants
 :: for no project or base years, this will get generated/stay at zero
-set TELECOMMUTE_CONFIG=NA
+set TELECOMMUTE_CONFIG=\\tsclient\X\travel-model-one-master\utilities\telecommute\telecommute_constants_2050.csv
 :: for blueprint, use calibrated
 :: set TELECOMMUTE_CONFIG=\\tsclient\X\travel-model-one-cdap-worktaz\utilities\telecommute\telecommute_constants_2035.csv
 
 :: set the location of the overrides directory (for Blueprint strategies)
-set BP_OVERRIDE_DIR=\\tsclient\M\Application\Model One\RTP2021\Blueprint\travel-model-overrides
+set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-overrides
 
 :: ------------------------------------------------------------------------------------------------------
 ::
