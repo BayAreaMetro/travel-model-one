@@ -15,6 +15,8 @@
 :: 5. UrbanSim outut folder
 ::
 
+:: expand variables at execution time rather than parse time
+SETLOCAL EnableDelayedExpansion
 :: note we dequote arg 5 
 echo ARG1=[%1]  ARG2=[%2]  ARG3=[%3]  ARG4=[%4]  ARG5=[%~5]
 
@@ -72,7 +74,13 @@ if %4 LEQ 2010 (
   copy "M:\Application\Model One\RTP2017\Scenarios\2040_06_694_Amd1\INPUT_fullcopy\landuse\walkAccessBuffers.float.csv"          landuse\
 
 ) else (
-  python X:\petrale\applications\tally_household_share_by_taz_subzone.py "%~5\%3_parcel_data_%4.csv" landuse\taz_subzone_hhshare_%3_%4.csv
+  rem the only parcel data files output are 2010, 2015, 2035, 2050
+  rem https://github.com/BayAreaMetro/bayarea_urbansim/blob/32ef490082fc604ab02ae408b55752768ae11520/baus/summaries.py#L1216
+  set PARCEL_YEAR=2015
+  if %4 GEQ 2035 (set PARCEL_YEAR=2035)
+  if %4 GEQ 2050 (set PARCEL_YEAR=2050)
+  echo PARCEL_YEAR=!PARCEL_YEAR!
+  python X:\petrale\applications\tally_household_share_by_taz_subzone.py "%~5\%3_parcel_data_!PARCEL_YEAR!.csv" landuse\taz_subzone_hhshare_%3_%4.csv
   copy landuse\taz_subzone_hhshare_%3_%4.csv landuse\walkAccessBuffers.float.csv
 )
 
