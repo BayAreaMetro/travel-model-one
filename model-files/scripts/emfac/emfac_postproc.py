@@ -3,9 +3,13 @@ USAGE = """
     This script is to be run after EMFAC is completed.
     It takes the EMFAC output file as an input and then write out a concise summary of the regional level results.
 
-    To run this script, start from the model run directory, e.g. B:\Projects\2035_TM152_FBP_Plus_01
-    Note that users need to specify SB375 or EIR as an argument of the run command.
-    e.g. python ctramp/scripts/emfac/emfac_postproc.py SB375
+    To run this script, start from the model run directory, e.g. A:\Projects\2050_TM152_FBP_PlusCrossing_16
+
+    - Set M_DIR according to the path in setupmodel.bat, so the output will get copied to the right place on the M drive
+      e.g. set M_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_FBP_PlusCrossing_16
+
+    - Run this scrpit, with SB375 or EIR as an argument
+      e.g. python ctramp/scripts/emfac/emfac_postproc.py SB375
 
 """
 
