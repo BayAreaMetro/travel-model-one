@@ -1,4 +1,4 @@
-VehicleType,100%Capacity,85%Capacity,seatcap
+VEHTYPE,100%Capacity,85%Capacity,seatcap
 10 Car BART,1110,943,550
 10 Car BART RENOVATED,1120,952,550
 5 Car BART,555,471,275
