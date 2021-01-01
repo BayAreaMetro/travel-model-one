@@ -64,7 +64,10 @@ if __name__ == '__main__':
         MODEL_YEAR = os.environ['MODEL_YEAR']
         MODEL_DIR  = os.environ['MODEL_DIR']
 
-        if (int(MODEL_YEAR) < 2035) or (MODEL_DIR.upper().find("NOPROJECT") >= 0) or (MODEL_DIR.upper().find("NOTRANSPORTPROJECT") >= 0):
+        if (int(MODEL_YEAR) < 2035) or \
+           (MODEL_DIR.upper().find("NOPROJECT") >= 0) or \
+           (MODEL_DIR.upper().find("NOTRANSPORTPROJECT") >= 0) or \
+           (MODEL_DIR.upper().find("IPA") >= 0):
             UPDATE_CONSTANT = False
         else:
             UPDATE_CONSTANT = True
