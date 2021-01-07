@@ -1,19 +1,28 @@
+# this script processes the trips.rdata file into a matrix format
+# I usually just run this from RStudio
+# for a single trip mode (although this can be easily changed by modifying the filter)
+# for commute only for now (although this can be easily changed by modifying the filter)
+
+
 library(tidyverse)
+
+# remove existing variables from the r environment
+rm(list=ls())
+
 
 # -----------
 # user inputs
 # -----------
-run_id <- "2050_TM152_DBP_NoProject_08"
+run_id <- "2050_TM152_FBP_PlusCrossing_15b"
 #run_id <- "2050_TM152_DBP_PlusCrossing_08"
 
-# selected_mode <- 11      # Walk to express bus
-selected_mode <- 12        # Walk to BART
+selected_mode <- 11      # Walk to express bus
+# selected_mode <- 12      # Walk to BART
+# selected_mode <- 16      # Drive to express bus
 
 # -----------
 # processing the trip file
 # -----------
-# remove existing variables from the r environment
-rm(list=ls())
 
 PBA50Location <- "M:/Application/Model One/RTP2021/Blueprint/"
 trip_file    <- file.path(PBA50Location, run_id, "OUTPUT/updated_output", "trips.rdata")
