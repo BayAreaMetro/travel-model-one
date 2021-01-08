@@ -59,6 +59,24 @@ short_summary$'tazdata totpop' <- sum(tazData$TOTPOP)
 short_summary$'tazdata totemp' <- sum(tazData$TOTEMP)
 short_summary$'tazdata empres' <- sum(tazData$EMPRES)
 
+if (("GQPOP" %in% names(tazData)) && (sum(tazData$GQPOP) > 0)) {
+  short_summary$'tazdata gqpop' <- sum(tazData$GQPOP)
+} else {
+
+  TAZSUMMARIES_FILE   <- Sys.glob(file.path(TARGET_DIR,"INPUT","landuse","taz_summaries_*.csv"))[[1]]
+  if (INPUT_FULLCOPY) {
+    TAZSUMMARIES_FILE <- Sys.glob(file.path(TARGET_DIR,"INPUT_fullcopy","landuse","taz_summaries_*.csv"))[[1]]
+  }
+  print(paste("TAZSUMMARIES_FILE=", TAZSUMMARIES_FILE))
+  tazSummaries <- read.table(file=TAZSUMMARIES_FILE, header=TRUE, sep=",")
+  short_summary$'tazdata gqpop' <- sum(tazSummaries$GQPOP)
+
+  if (short_summary$'tazdata gqpop' == 0) {
+    # 2015 taz summaries variant
+    short_summary$'tazdata gqpop' <- sum(tazSummaries$gq_tot_pop)
+  }
+}
+
 ###############
 ## Read the households and person files for length
 HH_FILE   <- file.path(TARGET_DIR,"popsyn","hhFile.csv")
