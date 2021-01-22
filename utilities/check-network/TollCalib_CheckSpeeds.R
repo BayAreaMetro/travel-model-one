@@ -85,7 +85,11 @@ OUTPUT_NEW_TOLLS_CSV            <- paste0("tolls_iter",ITER+1,".csv")
 
 unloaded_network_df      <- read.dbf(UNLOADED_NETWORK_DBF, as.is=TRUE) %>% select(A,B,USE,FT,TOLLCLASS)
 
-el_links_df    <-  filter(unloaded_network_df , TOLLCLASS>11 )
+# firstvalue should be consistent with what is defined in the hwy param block
+# https://github.com/BayAreaMetro/travel-model-one/blob/master/model-files/scripts/block/hwyParam.block#L13
+FIRSTVALUE <- 31
+
+el_links_df    <-  filter(unloaded_network_df , TOLLCLASS>=FIRSTVALUE )
 gp_links_df     <- filter(unloaded_network_df , USE==1 & (FT<=3 | FT==5 | FT==8 | FT==10))
 
 
@@ -314,7 +318,7 @@ tolls_new_df <- tolls_new_df  %>% mutate(toll_flat=0)
 
 # append the new toll rates to the first half of the toll.csv file containing the bridge tolls
 old_tolls_df    <- read.csv(file=TOLLS_CSV, header=TRUE, sep=",")
-bridge_tolls_df    <- filter(old_tolls_df, tollclass<=11)
+bridge_tolls_df    <- filter(old_tolls_df, tollclass<FIRSTVALUE)
 
 # also append the toll rates from the non-dynamically tolled road
 nondyna_tolls_df <- old_tolls_df %>% left_join(non_dyna_df,
