@@ -241,7 +241,6 @@ set PROJECT_DIR=%cd%
 
 if "%COMPUTER_PREFIX%" == "WIN-" (
     call "%R_HOME%\bin\x64\Rscript.exe" TollCalib_CheckSpeeds.R
-::    python TollCalib_stop.py
 ) else (
     call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\TollCalib_CheckSpeeds.R"
     python "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\TollCalib_stop.py"
