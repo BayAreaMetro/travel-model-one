@@ -269,7 +269,7 @@ Auto vehicle miles traveled summed to persons. Sum(freq) = population
 | freq | Number of persons |
 | vmt_indiv | Mean VMT from individual trips |
 | vmt_joint | Mean VMT from joint trips |
-| vmt | Mean VMT |
+| vmt | Mean VMT (i.e. VMT per person) So, to get total VMT, it would be vmt * freq |
 | person_trips | Total person Trips |
 | vehicle_trips | Total vehicle Trips |
 
