@@ -90,6 +90,13 @@ if %ITER%==4 (
     robocopy /MIR "%MODEL_BASE_DIR%\INPUT\hwy"        hwy
 )
 
+:: check that the NonDynamicTollFacilities.csv file is in the INPUT\hwy folder of the base run
+if not exist %MODEL_BASE_DIR%\INPUT\hwy\NonDynamicTollFacilities.csv (
+    echo %MODEL_BASE_DIR%\INPUT\hwy\NonDynamicTollFacilities.csv missing.
+    goto end
+)
+
+
 :: use the new toll file
 copy /y "%TOLL_FILE%" hwy\
 copy /y "%TOLL_FILE%" hwy\tolls.csv
