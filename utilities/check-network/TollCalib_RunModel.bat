@@ -255,6 +255,8 @@ copy tollcalib_iter\el_gp_avg_speed_iter%ITER%.csv %L_DIR%\tollcalib_iter\el_gp_
 copy tollcalib_iter\el_gp_summary_ALL.csv %L_DIR%\tollcalib_iter\el_gp_summary_ALL.csv
 set /a NEXT_ITER=%ITER%+1
 copy hwy\tolls_iter%NEXT_ITER%.csv %L_DIR%\tollcalib_iter\tolls_iter%NEXT_ITER%.csv
+:: in case there is any space on the path of L_DIR e.g. Model One
+copy hwy\tolls_iter%NEXT_ITER%.csv "%L_DIR%\tollcalib_iter\tolls_iter%NEXT_ITER%.csv"
 
 if hwyassignONLY==1 goto end
 
