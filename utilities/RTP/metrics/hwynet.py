@@ -49,6 +49,10 @@ USAGE = """
   The per-link metric values are then joined to this dataframe by A,B and multiplied by sharecol and aggregated by indexcol.
   The script will then output the additional file, metrics\\vmt_vht_metrics(output_suffix).csv
 
+  This file additionally has two more columns:
+  * road_type: 'freeway' for facility type (ft) in [1,2,3,8], 'non-freeway' otherwise
+  * area_type: 'urban' for area type (at) <= 3, 'suburban' for area type == 4, 'rural' for area type == 5
+
   For example, to get vmt_vht_metrics by TAZ, create a link-to-TAZ mapping file as follows:
 
   1) From a directory with the shapefile export of the roadway network 
@@ -327,9 +331,20 @@ if args.link_mapping:
   # set missing index_col value to -1
   link_tp_vehclass_mapped_df.fillna(value={index_col:-1}, inplace=True)
 
-  # and aggregate to timeperiod x vclass x indexcol
-  metrics_mapped_df = link_tp_vehclass_mapped_df.groupby(['timeperiod','vclass',index_col]).aggregate(aggregate_dict).reset_index()
-  print("  - aggregated to timeperiod, vclass, {}; head:\n{}".format(index_col, metrics_mapped_df.head(10)))
+  # additional groupby columns
+  # facility types: https://github.com/BayAreaMetro/modeling-website/wiki/MasterNetworkLookupTables#facility-type-ft
+  link_tp_vehclass_mapped_df['road_type'] = 'non-freeway'
+  link_tp_vehclass_mapped_df.loc[ link_tp_vehclass_mapped_df['ft'].isin([1,2,3,8]), 'road_type'] = 'freeway'
+  # area types: https://github.com/BayAreaMetro/modeling-website/wiki/MasterNetworkLookupTables#area-type-at
+  link_tp_vehclass_mapped_df['area_type'] = 'unset'
+  # note DataFrame.at is a function so can't refer to it that way
+  link_tp_vehclass_mapped_df.loc[ link_tp_vehclass_mapped_df['at'] <= 3, 'area_type'] = 'urban'
+  link_tp_vehclass_mapped_df.loc[ link_tp_vehclass_mapped_df['at'] == 4, 'area_type'] = 'suburban'
+  link_tp_vehclass_mapped_df.loc[ link_tp_vehclass_mapped_df['at'] == 5, 'area_type'] = 'rural'
+
+  # and aggregate to timeperiod x vclass x road_type x area_type x indexcol
+  metrics_mapped_df = link_tp_vehclass_mapped_df.groupby(['timeperiod','vclass','road_type','area_type',index_col]).aggregate(aggregate_dict).reset_index()
+  print("  - aggregated to timeperiod, vclass, road_type, area_type, {}; head:\n{}".format(index_col, metrics_mapped_df.head(10)))
 
 # collisionlookup in collisions per 1000000 VMT
 for collision_type in collision_types: 
@@ -375,7 +390,8 @@ if len(metrics_mapped_df) > 0:
   output_suffix = args.link_mapping[3]
   vmt_vht_outputfile = vmt_vht_outputfile.replace(".csv","{}.csv".format(output_suffix))
 
-  output_cols = [index_col] + output_cols
+  output_cols = [index_col, 'road_type', 'area_type'] + output_cols
   metrics_mapped_df[output_cols].to_csv(vmt_vht_outputfile, header=True, index=False)
   print("Wrote {}".format(vmt_vht_outputfile))
+
 sys.exit(0)
