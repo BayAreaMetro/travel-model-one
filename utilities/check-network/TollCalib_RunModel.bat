@@ -329,10 +329,9 @@ if %ITER%==4 (
     c:\windows\system32\Robocopy.exe /E "%MODEL_BASE_DIR%\landuse" landuse
 )
 
-:: copy in shadow price from base - double check that this step is necessary
 :: used by core java processes
-copy "%MODEL_BASE_DIR%\main\ShadowPricing_5.csv"     main\ShadowPricing_5.csv
-
+copy "%MODEL_BASE_DIR%\main\ShadowPricing_5.csv"           main\ShadowPricing_5.csv
+copy "%MODEL_BASE_DIR%\main\telecommute_constants.csv"     main\telecommute_constants.csv
 
 :: Runtime configuration: set project directory, auto operating cost, 
 :: and synthesized household/population files in the appropriate places
