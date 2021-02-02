@@ -216,9 +216,9 @@ else:
                                                (emissionslookup_df['year'  ] == args.year  ) ].copy()
   if len(emissionslookup_df) == 0:
     print("No emission lookups for {} found".format(args.filter))
-    sys.exit(2)
-  emissionslookup_df.drop(columns=['filter','year'],inplace=True)
-  print("Read {} and filtered by {} and year {} to create emissionslookup_df:\n{}".format(emission_file, args.filter, args.year, emissionslookup_df.head()))
+  else:
+    emissionslookup_df.drop(columns=['filter','year'],inplace=True)
+    print("Read {} and filtered by {} and year {} to create emissionslookup_df:\n{}".format(emission_file, args.filter, args.year, emissionslookup_df.head()))
 
 # Add link x timeperiod columns
 
