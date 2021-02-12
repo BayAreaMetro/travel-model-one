@@ -118,8 +118,10 @@ if %AddStrategies%==No goto DoneAddingStrategies
 :: ----------------------------------------
 :: Parking tazdata update (part of En9 - Expand Transportation Demand Management Initiatives)
 :: -----------------------------------------
-copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.csv"  INPUT\landuse\tazData.csv
-copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.dbf"  INPUT\landuse\tazData.dbf
+if %MODEL_YEAR_NUM% GEQ 2035 (
+  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.csv"  INPUT\landuse\tazData.csv
+  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.dbf"  INPUT\landuse\tazData.dbf
+)
 
 :: another part of this strategy is to turn off free parking eligibility, which is done via the properties file.
 :: see: https://github.com/BayAreaMetro/travel-model-one/blob/master/config/params_PBA50_Blueprint2050.properties#L156
@@ -132,17 +134,20 @@ copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.dbf"
 :: See: https://github.com/BayAreaMetro/travel-model-one/blob/master/model-files/scripts/skims/PrepHwyNet.job#L163
 :: To allow the links to have different BRT values for different time periods, a few additional lines of code is added to CreateFiveHighwayNetworks.job.
 
-copy /Y  "%BP_OVERRIDE_DIR%\BusOnShoulder_by_TP\CreateFiveHighwayNetworks_BusOnShoulder.job"     CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
-copy /Y  "M:\Application\Model One\NetworkProjects\FBP_MR_018_US101_BOS\mod_links.csv"           INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv
-copy /Y  "M:\Application\Model One\NetworkProjects\MAJ_Bay_Area_Forward_all\mod_links_BRT.csv"   INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv
-copy INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv+INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv    INPUT\hwy\mod_links_BRT.csv
+if %MODEL_YEAR_NUM% GEQ 2035 (
+  copy /Y  "%BP_OVERRIDE_DIR%\BusOnShoulder_by_TP\CreateFiveHighwayNetworks_BusOnShoulder.job"     CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
+  copy /Y  "M:\Application\Model One\NetworkProjects\FBP_MR_018_US101_BOS\mod_links.csv"           INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv
+  copy /Y  "M:\Application\Model One\NetworkProjects\MAJ_Bay_Area_Forward_all\mod_links_BRT.csv"   INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv
+  copy INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv+INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv    INPUT\hwy\mod_links_BRT.csv
+)
 
 :: ------
 :: Blueprint Regional Transit Fare Policy
 :: ------
 :: Same as PPA project 6100_TransitFare_Integration
-copy /Y "%BP_OVERRIDE_DIR%\Regional_Transit_Fare_Policy\TransitSkims.job"     CTRAMP\scripts\skims
-
+if %MODEL_YEAR_NUM% GEQ 2035 (
+  copy /Y "%BP_OVERRIDE_DIR%\Regional_Transit_Fare_Policy\TransitSkims.job"     CTRAMP\scripts\skims
+)
 :: means-based fare discount -- 50% off for Q1 -- are config in the parmas.properties file (see step 1)
 
 :: ------
