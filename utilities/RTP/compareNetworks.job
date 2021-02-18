@@ -1,9 +1,10 @@
+; This script compare 2 Cube networks and outputs another Cube network with the mismatches
 
 RUN PGM=NETWORK
 
   NETI[1] = "%NET1%"
   NETI[2] = "%NET2%"
-  NETO    = "COMPARE.net", exclude=DISTANCE ,
+  NETO    = "compare_Networks.net", exclude=DISTANCE ,
                                  SPDCLASS ,
                                  CAPCLASS ,
                                  LANES    ,
@@ -25,7 +26,9 @@ RUN PGM=NETWORK
                                  TOLLCLASS,
                                  BRT      ,
                                  CITYID   ,
-                                 CITYNAME
+                                 CITYNAME ,
+                                 BRT      ,
+                                 PROJ
 
   REPORT MERGE = TRUE
   MERGE RECORD = TRUE
@@ -65,6 +68,8 @@ RUN PGM=NETWORK
 ;   N1_METER     = LI.1.METER   
     N1_CITYID    = LI.1.CITYID  
     N1_CITYNAME  = LI.1.CITYNAME
+    N1_BRT       = LI.1.BRT
+    N1_PROJ      = LI.1.PROJ  
 
     ; Keep these
     N2_DISTANCE  = LI.2.DISTANCE
@@ -91,6 +96,8 @@ RUN PGM=NETWORK
 ;   N2_METER     = LI.2.METER   
     N2_CITYID    = LI.2.CITYID  
     N2_CITYNAME  = LI.2.CITYNAME
+    N2_BRT       = LI.2.BRT
+    N2_PROJ      = LI.2.PROJ
 
     IF (IN_NET1=1 & IN_NET2=0)
       MISMATCH = 'DELETED'
@@ -126,6 +133,8 @@ RUN PGM=NETWORK
   
       IF (LI.1.CITYID     <> LI.2.CITYID    ) MISMATCH = MISMATCH + 'CITYID '
       IF (LI.1.CITYNAME   <> LI.2.CITYNAME  ) MISMATCH = MISMATCH + 'CITYNAME '
+      IF (LI.1.BRT        <> LI.2.BRT       ) MISMATCH = MISMATCH + 'BRT '
+      IF (LI.1.PROJ       <> LI.2.PROJ      ) MISMATCH = MISMATCH + 'PROJ '
     ENDIF
 
     IF (STRLEN(MISMATCH) > 0)
@@ -158,7 +167,9 @@ RUN PGM=NETWORK
 ;       print LIST="METER     : ",LI.1.METER     ," ", LI.2.METER     
 
         print LIST="CITYID    : ",LI.1.CITYID    ," ", LI.2.CITYID    
-        print LIST="CITYNAME  : ",LI.1.CITYNAME  ," ", LI.2.CITYNAME  
+        print LIST="CITYNAME  : ",LI.1.CITYNAME  ," ", LI.2.CITYNAME
+        print LIST="BRT       : ",LI.1.BRT       ," ", LI.2.BRT
+        print LIST="PROJ      : ",LI.1.PROJ      ," ", LI.2.PROJ
     ENDIF
   ENDPHASE
 
