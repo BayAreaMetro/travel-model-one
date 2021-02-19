@@ -127,10 +127,27 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     # read communities of concern
     coc_df = pandas.read_csv(os.path.join("metrics", "CommunitiesOfConcern.csv"), sep=",")
     tazdata_df = pandas.merge(left=tazdata_df, right=coc_df, left_on="ZONE", right_on="taz")
-    print "  Read %d TAZs in communities of concern" % tazdata_df["in_set"].sum()
+    tazdata_df.rename(columns={"in_set":"in_coc"}, inplace=True)
+    print("  Read {} TAZs in communities of concern".format(tazdata_df["in_coc"].sum()))
+
+    # read hra
+    hra_df = pandas.read_csv(os.path.join("metrics", "taz_hra_crosswalk.csv"))
+    hra_df.loc[ pandas.isnull(hra_df["taz_hra"]), "taz_hra"] = 0  # make it 0 or 1
+    hra_df["taz_hra"] = hra_df["taz_hra"].astype(int)
+    print("  Read {} TAZs in HRAs".format(hra_df["taz_hra"].sum()))
+    tazdata_df = pandas.merge(left=tazdata_df, right=hra_df[["taz1454","taz_hra"]], left_on="ZONE", right_on="taz1454")
+    tazdata_df.rename(columns={"taz_hra":"in_hra"}, inplace=True)
+
+    # read urban/suburban categories
+    urban_suburban_df = pandas.read_csv(os.path.join("metrics", "taz_urban_suburban.csv"))
+    urban_suburban_df.rename(columns={"area_type":"U_S_R"}, inplace=True)  # Urban Suburban Rural
+    print("  Read urban_suburban_df:\n{}".format(urban_suburban_df["U_S_R"].value_counts()))
+    tazdata_df = pandas.merge(left=tazdata_df, right=urban_suburban_df, left_on="ZONE", right_on="TAZ1454")
+    tazdata_df.drop(columns=["taz","taz1454","TAZ1454"], inplace=True)
+    print("  => tazdata_df head:\n{}".format(tazdata_df.head()))
 
     # join persons to origin
-    accessiblejobs_df = pandas.merge(left=accessiblejobs_df, right=tazdata_df[['ZONE','TOTPOP','in_set']],
+    accessiblejobs_df = pandas.merge(left=accessiblejobs_df, right=tazdata_df[['ZONE','TOTPOP','in_coc','in_hra','U_S_R']],
                                      left_index=True,         right_on="ZONE",
                                      how="left")
     accessiblejobs_df[  'TOTEMP_weighted'] = accessiblejobs_df[  'TOTEMP']*accessiblejobs_df['TOTPOP']
@@ -139,17 +156,32 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     accessiblejobs_df[ 'trn_drv_weighted'] = accessiblejobs_df[ 'trn_drv']*accessiblejobs_df['TOTPOP']
     # print accessiblejobs_df.head()
 
-    for suffix in ["", "_coc","_noncoc"]:
+    for suffix in ["", "_coc","_noncoc","_hra","_nonhra","_urban","_suburban","_rural"]:
 
         # restrict to suffix if necessary
         accjob_subset_df = accessiblejobs_df
         totalpop_subset  = total_pop
         if suffix == "_coc":
-            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_set"]==1]
-            totalpop_subset  = tazdata_df.loc[tazdata_df["in_set"]==1, "TOTPOP"].sum()
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_coc"]==1]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["in_coc"]==1, "TOTPOP"].sum()
         elif suffix == "_noncoc":
-            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_set"]==0]
-            totalpop_subset  = tazdata_df.loc[tazdata_df["in_set"]==0, "TOTPOP"].sum()
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_coc"]==0]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["in_coc"]==0, "TOTPOP"].sum()
+        elif suffix == "_hra":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_hra"]==1]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["in_hra"]==1, "TOTPOP"].sum()
+        elif suffix == "_nonhra":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_hra"]==0]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["in_hra"]==0, "TOTPOP"].sum()
+        elif suffix == "_urban":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["U_S_R"]=="urban"]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["U_S_R"]=="urban", "TOTPOP"].sum()
+        elif suffix == "_suburban":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["U_S_R"]=="suburban"]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["U_S_R"]=="suburban", "TOTPOP"].sum()
+        elif suffix == "_rural":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["U_S_R"]=="rural"]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["U_S_R"]=="rural", "TOTPOP"].sum()
 
         # numerator = accessible jobs weighted by persons
         #  e.g. sum over TAZs of (totpop at TAZ x totemp jobs accessible)
@@ -265,12 +297,31 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     # read communities of concern
     coc_df = pandas.read_csv(os.path.join("metrics", "CommunitiesOfConcern.csv"), sep=",")
     tazdata_df = pandas.merge(left=tazdata_df, right=coc_df, left_on="ZONE", right_on="taz")
-    print "  Read %d TAZs in communities of concern" % tazdata_df["in_set"].sum()
+    tazdata_df.rename(columns={"in_set":"in_coc"}, inplace=True)
+    print("  Read {} TAZs in communities of concern".format(tazdata_df["in_coc"].sum()))
+
+    # read hra
+    hra_df = pandas.read_csv(os.path.join("metrics", "taz_hra_crosswalk.csv"))
+    hra_df.loc[ pandas.isnull(hra_df["taz_hra"]), "taz_hra"] = 0  # make it 0 or 1
+    hra_df["taz_hra"] = hra_df["taz_hra"].astype(int)
+    print("  Read {} TAZs in HRAs".format(hra_df["taz_hra"].sum()))
+    tazdata_df = pandas.merge(left=tazdata_df, right=hra_df[["taz1454","taz_hra"]], left_on="ZONE", right_on="taz1454")
+    tazdata_df.rename(columns={"taz_hra":"in_hra"}, inplace=True)
+
+    # read urban/suburban categories
+    urban_suburban_df = pandas.read_csv(os.path.join("metrics", "taz_urban_suburban.csv"))
+    urban_suburban_df.rename(columns={"area_type":"U_S_R"}, inplace=True)  # Urban Suburban Rural
+    print("  Read urban_suburban_df:\n{}".format(urban_suburban_df["U_S_R"].value_counts()))
+    tazdata_df = pandas.merge(left=tazdata_df, right=urban_suburban_df, left_on="ZONE", right_on="TAZ1454")
+    tazdata_df.drop(columns=["taz","taz1454","TAZ1454"], inplace=True)
+    print("  => tazdata_df head:\n{}".format(tazdata_df.head()))
 
     # join persons to origin
-    accessiblejobs_df = pandas.merge(left=accessiblejobs_df, right=tazdata_df[['ZONE','TOTPOP','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','in_set']],
+    accessiblejobs_df = pandas.merge(left=accessiblejobs_df, right=tazdata_df[['ZONE','TOTPOP','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4',
+                                                                               'in_coc',"in_hra","U_S_R"]],
                                      left_index=True,         right_on="ZONE",
                                      how="left")
+
     # population version
     accessiblejobs_df[ 'TOTEMP_weighted'] = accessiblejobs_df[ 'TOTEMP']*accessiblejobs_df['TOTPOP']
     accessiblejobs_df['wtrn_45_weighted'] = accessiblejobs_df['wtrn_45']*accessiblejobs_df['TOTPOP']
@@ -283,17 +334,32 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
 
     # print accessiblejobs_df.head()
 
-    for suffix in ["", "_coc","_noncoc"]:
+    for suffix in ["", "_coc","_noncoc","_hra","_nonhra","_urban","_suburban","_rural"]:
 
         # restrict to suffix if necessary
         accjob_subset_df = accessiblejobs_df
         totalpop_subset  = total_pop
         if suffix == "_coc":
-            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_set"]==1]
-            totalpop_subset  = tazdata_df.loc[tazdata_df["in_set"]==1, "TOTPOP"].sum()
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_coc"]==1]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["in_coc"]==1, "TOTPOP"].sum()
         elif suffix == "_noncoc":
-            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_set"]==0]
-            totalpop_subset  = tazdata_df.loc[tazdata_df["in_set"]==0, "TOTPOP"].sum()
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_coc"]==0]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["in_coc"]==0, "TOTPOP"].sum()
+        elif suffix == "_hra":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_hra"]==1]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["in_hra"]==1, "TOTPOP"].sum()
+        elif suffix == "_nonhra":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["in_hra"]==0]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["in_hra"]==0, "TOTPOP"].sum()
+        elif suffix == "_urban":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["U_S_R"]=="urban"]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["U_S_R"]=="urban", "TOTPOP"].sum()
+        elif suffix == "_suburban":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["U_S_R"]=="suburban"]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["U_S_R"]=="suburban", "TOTPOP"].sum()
+        elif suffix == "_rural":
+            accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["U_S_R"]=="rural"]
+            totalpop_subset  = tazdata_df.loc[tazdata_df["U_S_R"]=="rural", "TOTPOP"].sum()
 
         # numerator = accessible jobs weighted by persons
         #  e.g. sum over TAZs of (totpop at TAZ x totemp jobs accessible)
