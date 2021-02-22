@@ -136,7 +136,7 @@ IF %USERNAME%==lzorn (
 copy "%MODEL_RUNS_CSV%" "%COMBINED_DIR%\ScenarioKey.csv"
 
 :: copy over files in metrics
-set FILES=topsheet scenario_metrics parking_costs_tour parking_costs_tour_destTaz parking_costs_trip_destTaz parking_costs_trip_distBins emfac_ghg
+set FILES=topsheet scenario_metrics parking_costs_tour parking_costs_tour_destTaz parking_costs_tour_ptype_destTaz parking_costs_trip_destTaz parking_costs_trip_distBins emfac_ghg
 if !SET_TYPE!==all (set FILES=topsheet scenario_metrics)
 
 for %%F in (%FILES%) DO (
