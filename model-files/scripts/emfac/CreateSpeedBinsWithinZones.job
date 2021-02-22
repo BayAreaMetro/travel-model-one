@@ -230,6 +230,35 @@ run pgm = matrix
                     mi.9.DA_TNC       * mi.10.TOLLDISTDA  + mi.9.S2_TNC      * mi.10.TOLLDISTS2  + mi.9.S3_TNC      * mi.10.TOLLDISTS3 +
                     mi.9.DA_AV        * mi.10.TOLLDISTDA  + mi.9.S2_AV       * mi.10.TOLLDISTS2  + mi.9.S3_AV       * mi.10.TOLLDISTS3
 
+            ; step 2a: set VMT to 0 for disconnected zones
+            ; Some background:
+            ; In some scenarios, a zone can be "disconnected" due to sea level rise
+            ; If a zone is disconnected, the skims values would be 1000000 (or 500000 for intrazonal), which would gives misleadingly high VMT results 
+            ; The code below sets VMT to zero for disconnected zones (TOLLDISTDA is used as the indicator for connectedness, although other skim variables can work as the indicator too)
+            ; Note that this override shouldn't be needed if the demand model responds appropriately and predicts 0 trips to/from disconnected zones
+            ; Indeed the passenger demand model does respond appropriately and predicted 0 trips.
+            ; However, for some reason the truck model still predictis a small number of intrazonal trips, so this override is implemented.
+
+            MW[1] = 1
+            IF (mi.2.TOLLDISTDA>499999)
+                MW[1] = 0
+            ENDIF
+
+            vmtEA        = MW[1]*vmtEA
+            vmtEA_NoTrk  = MW[1]*vmtEA_NoTrk
+
+            vmtAM        = MW[1]*vmtAM
+            vmtAM_NoTrk  = MW[1]*vmtAM_NoTrk
+
+            vmtMD        = MW[1]*vmtMD
+            vmtMD_NoTrk  = MW[1]*vmtMD_NoTrk
+
+            vmtPM        = MW[1]*vmtPM
+            vmtPM_NoTrk  = MW[1]*vmtPM_NoTrk
+
+            vmtEV        = MW[1]*vmtEV
+            vmtEV_NoTrk  = MW[1]*vmtEV_NoTrk
+            
             ; step 3: determine the congested speed (use drive alone speeds only)
 
             cspdEA = mi.2.DISTDA / (mi.2.TIMEDA/60.0)
