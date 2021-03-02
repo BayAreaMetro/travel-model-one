@@ -255,7 +255,14 @@ if __name__ == '__main__':
     logging.debug("dtypes:\n{}".format(tazdata_df.dtypes))
 
     tazdata_df = createParkingCostDataSet(baseyear_tazdata_df, tazdata_df)
-    tazdata_df = createSchoolEnrollmentDataSet(baseyear_tazdata_df, tazdata_df)
+
+    # only createSchoolEnrollmentDataSet() if needed
+    taz_cols = list(tazdata_df.columns.values)
+    if ('HSENROLL' in taz_cols) and ('COLLFTE' in taz_cols) and ('COLLPTE' in taz_cols):
+        logger.info("Skipping createSchoolEnrollmentDataSet() because HSENROLL, COLLFTE, COLLPTE are already present: {}".format(taz_cols))
+    else:
+        tazdata_df = createSchoolEnrollmentDataSet(baseyear_tazdata_df, tazdata_df)
+
     tazdata_df = calculateTerminalTime(baseyear_tazdata_df, tazdata_df)
 
     # for colname in baseyear_tazdata_cols:
