@@ -28,6 +28,9 @@
 ; ----------------------------------------------------------------------------------------------------------------
 model_year = %MODEL_YEAR%
 
+; check if HSR_Interregional_Disable is configured
+READ FILE="CTRAMP\scripts\block\trnParam.block"
+
 loop tpnum=1,5
 
   if (tpnum=1)
@@ -51,7 +54,8 @@ loop tpnum=1,5
 
     fileo mato[1] = 'nonres\tripsHsr@time_period@_intermediate.tpp', mo=1-8, name=m_da, m_sr2, m_transit, m_walk, b_da, b_sr2, b_transit, b_walk
 
-    if (@model_year@ < 2035)
+    ; if the model year is before HSR opening OR HSR interregional travel is disabled by configuration
+    if ((@model_year@ < 2035) | (@HSR_Interregional_Disable@=1))
       ; nothing open
       MW[1] = 0
       MW[2] = 0

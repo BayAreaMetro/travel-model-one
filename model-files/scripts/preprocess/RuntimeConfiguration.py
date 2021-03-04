@@ -24,7 +24,14 @@ If no iteration is specified, then these include:
    + It will be propagated to CTRAMP\scripts\block\hwyParam.block
  * Telecommute constant
    + It will be propagated to CTRAMP\model\CoordinatedDailyActivityPattern.xls
-
+ * Means Based Tolling (Q1 and Q2) factors
+   + They will be propagated to CTRAMP\scripts\block\hwyParam.block
+                                CTRAMP\runtime\mtcTourBased.properties
+ * Means Based Fare (Q1 and Q2) factors
+   + They will be propagated to CTRAMP\scripts\block\trnParam.block
+                                CTRAMP\runtime\mtcTourBased.properties
+ * HSR Interregional trips disable flag
+   + It will be propagated to CTRAMP\scripts\block\trnParam.block
  * Host IP - where the household manager, matrix manager and JPPF Server run
    + Assumed to be the HOST_IP_ADDRESS in the environment
    + Assumed that this script is running on this host IP (this is verified)
@@ -174,48 +181,7 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
 
     Replacements = { filepath -> regex_dict }
     """
-    # get parameters
-    # Mobility.AV.Share = 0.0
-    # Mobility.AV.ProbabilityBoost.AutosLTDrivers = 1.2
-    # Mobility.AV.ProbabilityBoost.AutosGEDrivers = 1.1
-    # Mobility.AV.IVTFactor = 0.5
-    # Mobility.AV.ParkingCostFactor = 0.0
-    # Mobility.AV.CostPerMileFactor = 0.5
-    # Mobility.AV.TerminalTimeFactor = 0.0
-    # Mobility.TNC.shared.IVTFactor = 1.2
-
-    # TNC.single.baseFare = 2.20
-    # TNC.single.costPerMile = 1.33
-    # TNC.single.costPerMinute = 0.24
-    # TNC.single.costMinimum = 7.20
-    #
-    # # use lower costs
-    # TNC.shared.baseFare = 2.20
-    # TNC.shared.costPerMile = 1.33
-    # TNC.shared.costPerMinute = 0.24
-    # TNC.shared.costMinimum = 7.20
-    #
-    # #Note: the following comma-separated value properties cannot have spaces between them, or else the RuntimeConfiguration.py code won't work
-    # TNC.single.waitTime.mean =  10.3,8.5,8.4,6.3,4.7
-    # TNC.single.waitTime.sd =     4.1,4.1,4.1,4.1,4.1
-    #
-    # TNC.shared.waitTime.mean =  15.0,15.0,11.0,8.0,7.0
-    # TNC.shared.waitTime.sd =     4.1,4.1,4.1,4.1,4.1
-    #
-    # Taxi.waitTime.mean = 26.5,17.3,13.3,9.5,5.5
-    # Taxi.waitTime.sd =    6.4,6.4,6.4,6.4,6.4
-    #
-    # Taxi.da.share = 0.0
-    # Taxi.s2.share = 0.9
-    # Taxi.s3.share = 0.1
-    #
-    # TNC.single.da.share = 0.0
-    # TNC.single.s2.share = 0.8
-    # TNC.single.s3.share = 0.2
-    #
-    # TNC.shared.da.share = 0.0
-    # TNC.shared.s2.share = 0.3
-    # TNC.shared.s3.share = 0.7
+    # get parameters - see examples in congig directory
 
     modelYear = int(os.environ["MODEL_YEAR"])
 
@@ -404,6 +370,7 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     MeansBasedTollsQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q2Factor"))
     MeansBasedFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q1Factor"))
     MeansBasedFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q2Factor"))
+    HSRInterregionalDisable  =   int(get_property(params_filename, params_contents, "HSR_Interregional_Disable"))
 
     # put the av pce factors into the CTRAMP\scripts\block\hwyParam.block
     filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
@@ -428,6 +395,7 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     filepath = os.path.join("CTRAMP","scripts","block","trnParam.block")
     replacements[filepath]["(\nMeans_Based_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ1Factor
     replacements[filepath]["(\nMeans_Based_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ2Factor
+    replacements[filepath]["(\nHSR_Interregional_Disable[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d"   % HSRInterregionalDisable
 
 def config_logsums(replacements, append):
     filepath = os.path.join("CTRAMP","runtime","logsums.properties")
