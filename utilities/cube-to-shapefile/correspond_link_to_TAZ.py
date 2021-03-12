@@ -1,7 +1,7 @@
 USAGE = """
 
-  Joins network link shapefile to TAZ shapefile and determins correspondence between link => TAZ, portion of link
-  Note that some links may span more than one TAZ.
+  Joins network link shapefile to TAZ (or any otherr) shapefile and determines correspondence between link => shape, portion of link
+  Note that some links may span more than one shape.
 
   Output csv has the following columns:
   * A             = A node
@@ -31,6 +31,10 @@ if __name__ == '__main__':
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('link_shapefile',  type=str, help="Input link shapefile")
     parser.add_argument('link_to_taz_csv', type=str, help="Output link to taz csv")
+    parser.add_argument('--shapefile',     type=str, help="TAZ or non-TAZ shapefile")
+    parser.add_argument('--shp_id',        type=str, default="TAZ1454",       help="ID from shapefile")
+    parser.add_argument('--linkshp_mi',    type=str, default="linktaz_mi",    help="Column name for link intersect this shape in miles")
+    parser.add_argument('--linkshp_share', type=str, default="linktaz_share", help="Column name for share of the link intersecting this shape")
     my_args = parser.parse_args()
 
     # use scratch gdb
@@ -53,12 +57,15 @@ if __name__ == '__main__':
 
     # copy taz shapefile into workspace
     taz_feature = "tazs"
+    my_shapefile = TAZ_SHAPEFILE
+    if my_args.shapefile:
+      my_shapefile = my_args.shapefile
     if arcpy.Exists(taz_feature):
         print("Found {}; deleting".format(taz_feature))
         arcpy.Delete_management(taz_feature)
-    arcpy.CopyFeatures_management(TAZ_SHAPEFILE, taz_feature)
+    arcpy.CopyFeatures_management(my_shapefile, taz_feature)
     result = arcpy.GetCount_management(taz_feature)
-    print("Copied {} into workspace; {} rows".format(TAZ_SHAPEFILE, result[0]))
+    print("Copied {} into workspace; {} rows".format(my_shapefile, result[0]))
 
     # intersect
     link_taz_feature = "link_intersect_taz"
@@ -70,17 +77,18 @@ if __name__ == '__main__':
     print("Created intersect {}; {} rows".format(link_taz_feature, result[0]))
 
     # calculate length of these links
-    length_taz_field = "linktaz_mi"
+    length_taz_field = my_args.linkshp_mi
     arcpy.AddField_management(link_taz_feature, length_taz_field, "FLOAT", field_precision=12, field_scale=4)
     arcpy.CalculateGeometryAttributes_management(link_taz_feature, [[length_taz_field, "LENGTH"]], "MILES_US")
 
     # bring into pandas
-    fields = ["A","B","TAZ1454",length_field,length_taz_field]
+    fields = ["A","B",my_args.shp_id,length_field,length_taz_field]
+    print(fields)
     links_array = arcpy.da.TableToNumPyArray(in_table=link_taz_feature, field_names=fields)
     links_df = pandas.DataFrame(links_array, columns=fields)
 
     # divide lengths to get proportion
-    links_df["linktaz_share"] = links_df[length_taz_field]/links_df[length_field]
+    links_df[my_args.linkshp_share] = links_df[length_taz_field]/links_df[length_field]
     print("links_df has {} rows; head:\n{}".format(len(links_df), links_df.head()))
 
     # write it
