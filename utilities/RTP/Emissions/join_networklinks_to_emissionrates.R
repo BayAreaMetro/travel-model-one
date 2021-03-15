@@ -1,174 +1,153 @@
+#
+# This R script opens the output network csvs
+# and left_joins them to the emissions rates based on county, model year, care/non-care
+# where "Speed" is joined on int(CSPD)
+#
+# PlanBayArea2050 / RTP2021 Asana Task: https://app.asana.com/0/316552326098022/1200007791721297/f
 
 library(dplyr)
+library(tidyr)
+library(readxl)
 
-#
-# This R script opens the following network csvs
-# and left_joins them to the emissions rates in [county][year].csv
-# where "Speed" is joined on int(CSPD[AM,MD,PM,EV,EA])
-# 
-# join is based on year, county, care/non-care area and speed
-#
-network_csv_files <- c("2015.csv",
-                       "2040_694.csv",
-                       "2040_694_Amd1.csv",  # This is M:\Application\Model One\RTP2017\Scenarios\2040_06_694_Amd1\OUTPUT\avgload5period_dbfto.csv
-                       "2040_690.csv",
-                       "2040_691.csv",
-                       "2040_693.csv",
-                       "2040_697.csv")
+LOOKUP_COUNTY <- data.frame(county2      =c("AL", "CC", "MA", "NA", "SF", "SM", "SC", "SL", "SN"),
+                            county_census=c("001","013","041","055","075","081","085","095","097"),
+                            stringsAsFactors = FALSE)
+MODEL_DIRS <- 
+  c(IP_2015  ="M:/Application/Model One/RTP2021/IncrementalProgress/2015_TM152_IPA_16",
+    NP_2050  ="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_NoProject_22",
+    FBP_2050 ="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_PlusCrossing_21",
+    Alt1_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt1_02",
+    Alt2_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt2_01")
 
-# city county lookup file
-CITY_COUNTY_FILE <- "City-County_Lookup.csv"
-
-# and writes the file
-OUTPUT_FILE <- "CARE-melt-wEmissions_20180221.csv"
+# these are the shapefile exports of the inputs used in the above directories, corresponded to CARE and counties (link_to_COUNTY_CARE.csv)
+NETWORK_CARE_DIRS <-
+  c(IP_2015  ="M:/Application/Model One/RTP2021/IncrementalProgress/Networks/network_2015_03/shapefile",
+    NP_2050  ="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_53/net_2050_Baseline/shapefile",
+    FBP_2050 ="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_53/net_2050_Blueprint Plus Crossing/shapefile",
+    Alt1_2050="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_56/net_2050_Alt1/shapefile",
+    Alt2_2050="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_57/net_2050_Alt2/shapefile")
 
 # all files are expected to be here (note R's preference for slashes)
-if (Sys.getenv("RSTUDIO_USER_IDENTITY") == "lzorn") {
-  BASE_DIR <- "C:/Users/lzorn/Box/CARE Communities/CARE-Data"
+if (Sys.getenv("USERNAME") == "lzorn") {
+  BASE_DIR <- "C:/Users/lzorn/Box/CARE Communities/CARE-Data-PBA50"
 } else {
   BASE_DIR <- "~/Desktop/CARE-Data_R"
 }
 
-city_county_df <- read.table(file.path(BASE_DIR, CITY_COUNTY_FILE), header=TRUE, sep=",", stringsAsFactors=FALSE)
+# for avgload5period_vehclasses.csv
+index_cols   <- c("a","b")
+special_cols <- c("distance","lanes","ft","at","tollclass","ffs")
 
+emissions_rates <- list()
+# use Tableau wildcard union -- no need to put these in a single file
 # loop through each network file
-all_networks_df <- data.frame()
-# keep this for 2040_Amd1 - to grab the CARE,RES,COMM columns so we don't have to do it in qgis
-network_2040    <- data.frame()
-
-for (network_csv_file in network_csv_files) {
+for (network in c("IP_2015","NP_2050","FBP_2050","Alt1_2050","Alt2_2050")) {
+  model_dir  <- basename(MODEL_DIRS[network])
+  model_year <- substr(model_dir,0,4)
+  print(paste("Processing",network," for year",model_year,":",model_dir))
   
-  # read the network file
-  network_fullpath_file <- file.path(BASE_DIR, network_csv_file)
-  cat(paste0("Reading [",network_fullpath_file,"]\n"))
-  network_df <- read.table(network_fullpath_file, header=TRUE, sep=",", stringsAsFactors=FALSE)
+  network_file <- file.path(MODEL_DIRS[network],"OUTPUT","avgload5period_vehclasses.csv")
+  network_df   <- read.table(network_file, header=TRUE, sep=",", stringsAsFactors=TRUE)
+  print(paste(" Read",nrow(network_df),"rows from",network_file))
+  print(str(network_df))
   
-  if (network_csv_file=="2040_694.csv") {
-    network_2040 <- select(network_df, "LINKID","CARE","RES","COMM")
-  } else if (network_csv_file=="2040_694_Amd1.csv") {
-    network_df$LINKID <- paste0(as.character(network_df$A), "_", as.character(network_df$B))
-    network_df$ALT    <- "2040 Proposed Plan Amd1"
-    network_df <- left_join(network_df, network_2040)
-    print(paste("Joined",network_csv_file,"with 2040_694.csv"))
-  }
+  # keep subset of columns
+  network_df <- select(network_df, c(index_cols,special_cols, 
+                                     starts_with("cspd"),                             # congested speed
+                                     intersect(starts_with("vol"), ends_with("tot"))  # total volume
+                                    ))
+  print(head(network_df))
   
-  # note which file it came from
-  network_df$scenario_str <- substr(network_csv_file,0,nchar(network_csv_file)-4)
-  # and the year
-  network_df$year <- strtoi(substr(network_csv_file,0,4))
-  # print(colnames(network_df))
-  # add to all networks
-  all_networks_df <- rbind(all_networks_df, network_df)
-}
-# remove clutter variables - everything is in the all_networks_df
-remove(network_csv_file, network_fullpath_file, network_df)
+  # move timeperiod to rows for cspd
+  cspd_df    <- select(network_df, c(index_cols, starts_with("cspd")))
+  cspd_tp_df <- pivot_longer(cspd_df, starts_with("cspd"), names_to="time_period", names_prefix="cspd", values_to="cspd")
+  # create int version for joining
+  cspd_tp_df <- mutate(cspd_tp_df, cspd_int=as.integer(trunc(cspd)))
+  print(head(cspd_tp_df))
+  
+  # move timeperiod to rows for voltot
+  vol_df     <- select(network_df, c(index_cols, starts_with("vol")))
+  vol_tp_df  <- pivot_longer(vol_df, starts_with("vol"), names_to="time_period", names_pattern="vol(.*)_tot", values_to="voltot")
+  print(head(vol_tp_df))
+  stopifnot(nrow(vol_tp_df) == nrow(cspd_tp_df))
+  
+  # put them back together
+  network_long_df <- select(network_df, c(index_cols,special_cols))
+  network_long_df <- full_join(network_long_df, cspd_tp_df, by=c("a","b"))
+  network_long_df <- left_join(network_long_df, vol_tp_df,  by=c("a","b","time_period"))
+  # set vmt
+  network_long_df <- mutate(network_long_df, vmttot=voltot*distance)
+  stopifnot(nrow(network_long_df) == nrow(cspd_tp_df))
+  
+  # read mapping to CARE
+  care_file <- file.path(NETWORK_CARE_DIRS[network],"link_to_COUNTY_CARE.csv")
+  care_df   <- read.table(care_file, header=TRUE, sep=",")
+  print(paste("Read", nrow(care_df), "lines from",care_file,"; head:"))
+  print(head(care_df))
 
-# CARE field is currently 1 or NA -- make NAs into 0
-all_networks_df <- mutate(all_networks_df, CARE = ifelse(is.na(CARE),0,CARE))
-
-# add county based on city name
-all_networks_df <- left_join(all_networks_df,
-                             city_county_df,
-                             by=c("CITYNAME"))
-
-# read the emissions files
-COUNTY_CODES <- 
-  c("AL", # alameda
-    "CC", # contra costa
-    "MA", # marin
-    "NA", # napa
-    "SC", # santa clara
-    "SF", # san francsico
-    "SL", # solano
-    "SM", # san mateo
-    "SN") # sonoma
-# these should be in the same order as COUNTY_CODES
-COUNTIES <-
-  c("Alameda",
-    "Contra Costa",
-    "Marin",
-    "Napa",
-    "Santa Clara",
-    "San Francisco",
-    "Solano",
-    "San Mateo",
-    "Sonoma")
-county_codes_df <- data.frame(county_code=COUNTY_CODES, county=COUNTIES, stringsAsFactors=FALSE)
-
-YEARS <- c(2015, 2040)
-emission_rates_df <- data.frame()
-for (year in YEARS) {
-  for (county in COUNTY_CODES) {
-    emission_fullpath_file <- file.path(BASE_DIR, paste0(county,year,".csv"))
-    cat(paste0("Reading [",emission_fullpath_file,"]\n"))
-    emission_df <- read.table(emission_fullpath_file, header=TRUE, sep=",")
-    
-    # tag with county
-    emission_df <- mutate(emission_df, county_code=county, year=year)
-    
-    # add to all emission rates
-    emission_rates_df <- rbind(emission_rates_df, emission_df)
-  }
-}
-# remove clutter variables - everything is in the emission_rates_df
-remove(year, county, emission_fullpath_file, emission_df)
-
-# add county rather than county code to emissions file
-emission_rates_df <- left_join(emission_rates_df,
-                               county_codes_df,
-                               by=c("county_code")) %>% select(-county_code)
-
-# these are the columns in the emissions file
-# they look like this: Speed, county, year [C,NC]_EO_PM2.5, [C,NC]_EO_Benzene, [C,NC]_EO_Butadiene, [C,NC]_EO_DieselPM
-
-# let's split by care and no care so care rows are different from no-care rows
-care_emission_rates_df   <- emission_rates_df %>% 
-  select(-NC_EO_PM2.5,        -NC_EO_Benzene,          -NC_EO_Butadiene,            -NC_EO_DieselPM) %>%  # delete no care versions
-  rename(    EO_PM2.5=C_EO_PM2.5, EO_Benzene=C_EO_Benzene, EO_Butadiene=C_EO_Butadiene, EO_DieselPM=C_EO_DieselPM) %>% # rename
-  mutate(CARE=1) # tag as care
-
-nocare_emission_rates_df <- emission_rates_df %>% 
-  select(-C_EO_PM2.5,          -C_EO_Benzene,            -C_EO_Butadiene,              -C_EO_DieselPM) %>%  # delete care versions
-  rename(   EO_PM2.5=NC_EO_PM2.5, EO_Benzene=NC_EO_Benzene, EO_Butadiene=NC_EO_Butadiene, EO_DieselPM=NC_EO_DieselPM) %>% # rename
-  mutate(CARE=0)
-
-emission_rates_df <- rbind(care_emission_rates_df, nocare_emission_rates_df)
-
-emission_cols <- names(emission_rates_df)
-
-# for each time period
-TIMEPERIODS <- c("EA","AM","MD","PM","EV")
-for (timeperiod in TIMEPERIODS) {
-
-  # rename the emissions columns for this timeperiod
-  # FROM: Speed,       year, county, CARE, EO_PM2.5,    EO_Benzene,    EO_Butadiene,    EO_DieselPM
-  #   TO: CSPD_AM_int, year, COUNTY, CARE, EO_PM2.5 AM, EO_Benzene AM, EO_Butadiene AM, EO_DieselPM AM
-  emission_cols_tp <- emission_cols
-  for (colnum in 1:length(emission_cols)) {
-    if (emission_cols[colnum] == "Speed") {
-      emission_cols_tp[colnum] = paste0("CSPD",timeperiod,"_int")
-    } else if ((emission_cols[colnum] == "year")|
-               (emission_cols[colnum] == "CARE")) {
-      emission_cols_tp[colnum] = emission_cols[colnum]
-    } else if (emission_cols[colnum] == "county") {
-      emission_cols_tp[colnum] = "COUNTY"
-    } else {
-      emission_cols_tp[colnum] = paste0(emission_cols[colnum]," ",timeperiod)
+  # combine with network_long
+  network_long_care_df <- left_join(network_long_df, 
+                                    select(care_df, A, B, COUNTYCARE, linkCC_share),
+                                    by=c("a"="A", "b"="B"))
+  # set county,CARE from COUNTYCARRER
+  network_long_care_df <- mutate(network_long_care_df, 
+                                 county_census=substr(COUNTYCARE,0,3),
+                                 CARE=ifelse(str_length(COUNTYCARE)>3,1,0))
+  
+  # filter out dummy links
+  network_long_care_df <- filter(network_long_care_df, ft != 6)
+  print(paste("network_long_care_df has", nrow(network_long_care_df),"rows"))
+  
+  # read emissions
+  if (is.null(emissions_rates[[paste0("AL-",model_year)]])) {
+    emissions_file <- file.path(BASE_DIR, "PBA50_COC_ER_Lookups", paste("Year",model_year,"MSAT Emission Rates (PBA50).xlsx"))
+    for (county2 in LOOKUP_COUNTY$county2) {
+      sheet_name   <- paste0(county2,"-",model_year,".csv")
+      emissions_df <- read_excel(emissions_file, sheet=sheet_name)
+      # rename "-" and "." to "_"
+      emissions_df <- emissions_df %>% setNames(gsub("\\-","_",names(.))) %>% setNames(gsub("\\.","_",names(.)))
+      
+      index_name   <- paste0(county2,"-",model_year)
+      emissions_rates[[index_name]] <- emissions_df
     }
   }
-  emission_rates_tp_df <- emission_rates_df 
-  names(emission_rates_tp_df) <- emission_cols_tp
   
-  # create integerized cspd column
-  cspd_float_col <- paste0("CSPD",timeperiod)
-  cspd_int_col   <- paste0("CSPD",timeperiod,"_int")
-  all_networks_df[[cspd_int_col]] <- trunc(all_networks_df[[cspd_float_col]])
-  
-  # join to emissions -- will join on year, COUNTY, CARE, CSPD[tp]_int
-  all_networks_df <- left_join(all_networks_df, emission_rates_tp_df)
-}
-remove(timeperiod, emission_cols_tp, emission_rates_tp_df, cspd_float_col, cspd_int_col)
+  # finally, join to emissions
+  network_long_care_df <- mutate(network_long_care_df, 
+                                 EO_PM2_5    =0.0,
+                                 EO_Benzene  =0.0,
+                                 EO_Butadiene=0.0,
+                                 EO_DieselPM =0.0)
+  for (row in 1:nrow(LOOKUP_COUNTY)) {
+    this_county2       <- LOOKUP_COUNTY[row, "county2"]
+    this_county_census <- LOOKUP_COUNTY[row, "county_census"]
+    
+    index_name    <- paste0(this_county2,"-",model_year)
+    # print(head(emissions_rates[[index_name]]))
+    
+    # filter for this county
+    this_co_df   <- filter(network_long_care_df, county_census == this_county_census)
+    other_co_df  <- filter(network_long_care_df, (county_census != this_county_census) | is.na(county_census))
+    stopifnot(nrow(this_co_df) + nrow(other_co_df) == nrow(network_long_care_df))
+    
+    # join based on congested speed int
+    this_co_df <- left_join(this_co_df, emissions_rates[[index_name]], 
+                            by=c("cspd_int"="Speed"))
+    this_co_df <- mutate(this_co_df, 
+                         EO_PM2_5    =ifelse(CARE==1, C_EO_PM2_5,     NC_EO_PM2_5),
+                         EO_Benzene  =ifelse(CARE==1, C_EO_Benzene,   NC_EO_Benzene),
+                         EO_Butadiene=ifelse(CARE==1, C_EO_Butadiene, NC_EO_Butadiene),
+                         EO_DieselPM =ifelse(CARE==1, C_EO_DieselPM,  NC_EO_DieselPM))
+    this_co_df <- select(this_co_df, 
+                         -C_EO_PM2_5,     -NC_EO_PM2_5,
+                         -C_EO_Benzene,   -NC_EO_Benzene,
+                         -C_EO_Butadiene, -NC_EO_Butadiene,
+                         -C_EO_DieselPM,  -NC_EO_DieselPM)
+    network_long_care_df <- rbind(this_co_df, other_co_df)
+  }
 
-# write the result
-output_fullpath <- file.path(BASE_DIR, OUTPUT_FILE)
-write.table(all_networks_df, output_fullpath, sep=",", row.names=FALSE)
+  # write the result
+  output_fullpath <- file.path(BASE_DIR, paste0("links_CARE_",model_dir,".csv"))
+  write.table(network_long_care_df, output_fullpath, sep=",", row.names=FALSE)
+  print(paste("Wrote",nrow(network_long_care_df),"rows to",output_fullpath))
+}
