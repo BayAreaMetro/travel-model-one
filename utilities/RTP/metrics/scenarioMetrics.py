@@ -131,7 +131,7 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     print("  Read {} TAZs in communities of concern".format(tazdata_df["in_coc"].sum()))
 
     # read hra
-    hra_df = pandas.read_csv(os.path.join("metrics", "taz_hra_crosswalk.csv"))
+    hra_df = pandas.read_csv(os.path.join("INPUT", "metrics", "taz_hra_crosswalk.csv"))
     hra_df.loc[ pandas.isnull(hra_df["taz_hra"]), "taz_hra"] = 0  # make it 0 or 1
     hra_df["taz_hra"] = hra_df["taz_hra"].astype(int)
     print("  Read {} TAZs in HRAs".format(hra_df["taz_hra"].sum()))
@@ -139,7 +139,7 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     tazdata_df.rename(columns={"taz_hra":"in_hra"}, inplace=True)
 
     # read urban/suburban categories
-    urban_suburban_df = pandas.read_csv(os.path.join("metrics", "taz_urban_suburban.csv"))
+    urban_suburban_df = pandas.read_csv(os.path.join("INPUT","metrics", "taz_urban_suburban.csv"))
     urban_suburban_df.rename(columns={"area_type":"U_S_R"}, inplace=True)  # Urban Suburban Rural
     print("  Read urban_suburban_df:\n{}".format(urban_suburban_df["U_S_R"].value_counts()))
     tazdata_df = pandas.merge(left=tazdata_df, right=urban_suburban_df, left_on="ZONE", right_on="TAZ1454")
@@ -301,7 +301,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     print("  Read {} TAZs in communities of concern".format(tazdata_df["in_coc"].sum()))
 
     # read hra
-    hra_df = pandas.read_csv(os.path.join("metrics", "taz_hra_crosswalk.csv"))
+    hra_df = pandas.read_csv(os.path.join("INPUT","metrics", "taz_hra_crosswalk.csv"))
     hra_df.loc[ pandas.isnull(hra_df["taz_hra"]), "taz_hra"] = 0  # make it 0 or 1
     hra_df["taz_hra"] = hra_df["taz_hra"].astype(int)
     print("  Read {} TAZs in HRAs".format(hra_df["taz_hra"].sum()))
@@ -309,7 +309,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     tazdata_df.rename(columns={"taz_hra":"in_hra"}, inplace=True)
 
     # read urban/suburban categories
-    urban_suburban_df = pandas.read_csv(os.path.join("metrics", "taz_urban_suburban.csv"))
+    urban_suburban_df = pandas.read_csv(os.path.join("INPUT", "metrics", "taz_urban_suburban.csv"))
     urban_suburban_df.rename(columns={"area_type":"U_S_R"}, inplace=True)  # Urban Suburban Rural
     print("  Read urban_suburban_df:\n{}".format(urban_suburban_df["U_S_R"].value_counts()))
     tazdata_df = pandas.merge(left=tazdata_df, right=urban_suburban_df, left_on="ZONE", right_on="TAZ1454")
