@@ -7,17 +7,19 @@
 
 library(dplyr)
 library(tidyr)
+library(stringr)
 library(readxl)
 
 LOOKUP_COUNTY <- data.frame(county2      =c("AL", "CC", "MA", "NA", "SF", "SM", "SC", "SL", "SN"),
                             county_census=c("001","013","041","055","075","081","085","095","097"),
+                            county_name  =c("Alameda", "Contra Costa", "Marin", "Napa", "San Francisco", "San Mateo", "Santa Clara", "Solano", "Sonoma"),
                             stringsAsFactors = FALSE)
 MODEL_DIRS <- 
   c(IP_2015  ="M:/Application/Model One/RTP2021/IncrementalProgress/2015_TM152_IPA_16",
     NP_2050  ="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_NoProject_22",
     FBP_2050 ="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_PlusCrossing_21",
-    Alt1_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt1_02",
-    Alt2_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt2_01")
+    Alt1_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt1_03",
+    Alt2_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt2_02")
 
 # these are the shapefile exports of the inputs used in the above directories, corresponded to CARE and counties (link_to_COUNTY_CARE.csv)
 NETWORK_CARE_DIRS <-
@@ -25,7 +27,7 @@ NETWORK_CARE_DIRS <-
     NP_2050  ="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_53/net_2050_Baseline/shapefile",
     FBP_2050 ="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_53/net_2050_Blueprint Plus Crossing/shapefile",
     Alt1_2050="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_56/net_2050_Alt1/shapefile",
-    Alt2_2050="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_57/net_2050_Alt2/shapefile")
+    Alt2_2050="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_58/net_2050_Alt2/shapefile")
 
 # all files are expected to be here (note R's preference for slashes)
 if (Sys.getenv("USERNAME") == "lzorn") {
@@ -98,7 +100,7 @@ for (network in c("IP_2015","NP_2050","FBP_2050","Alt1_2050","Alt2_2050")) {
   network_long_care_df <- filter(network_long_care_df, ft != 6)
   print(paste("network_long_care_df has", nrow(network_long_care_df),"rows"))
   
-  # read emissions
+  # read exhaust-based emissions
   if (is.null(emissions_rates[[paste0("AL-",model_year)]])) {
     emissions_file <- file.path(BASE_DIR, "PBA50_COC_ER_Lookups", paste("Year",model_year,"MSAT Emission Rates (PBA50).xlsx"))
     for (county2 in LOOKUP_COUNTY$county2) {
@@ -112,18 +114,35 @@ for (network in c("IP_2015","NP_2050","FBP_2050","Alt1_2050","Alt2_2050")) {
     }
   }
   
+  # read non-exhaust-based emission rates
+  index_name <- paste0("non-exhaust-",model_year)
+  if (is.null(emissions_rates[[index_name]])) {
+    emissions_file <- file.path(BASE_DIR, "PBA50_COC_ER_Lookups", "PM2.5 Non-Exhaust ERs.xlsx")
+    emissions_df   <- read_excel(emissions_file, sheet=model_year, skip=1)
+    emissions_df   <- emissions_df %>% setNames(gsub(" ","_",names(.)))
+    
+    emissions_rates[[index_name]] <- emissions_df
+  }
+  
   # finally, join to emissions
   network_long_care_df <- mutate(network_long_care_df, 
                                  EO_PM2_5    =0.0,
                                  EO_Benzene  =0.0,
                                  EO_Butadiene=0.0,
-                                 EO_DieselPM =0.0)
+                                 EO_DieselPM =0.0,
+                                 ##### non-exhaust #####
+                                 Tire_Wear          =0.0,
+                                 Brake_Wear         =0.0,
+                                 Entrained_Road_Dust=0.0)
   for (row in 1:nrow(LOOKUP_COUNTY)) {
     this_county2       <- LOOKUP_COUNTY[row, "county2"]
     this_county_census <- LOOKUP_COUNTY[row, "county_census"]
+    this_county_name   <- LOOKUP_COUNTY[row, "county_name"]
     
     index_name    <- paste0(this_county2,"-",model_year)
     # print(head(emissions_rates[[index_name]]))
+    
+    non_exhaust_rates <- filter(emissions_rates[[paste0('non-exhaust-',model_year)]], County==this_county_name)
     
     # filter for this county
     this_co_df   <- filter(network_long_care_df, county_census == this_county_census)
@@ -137,7 +156,11 @@ for (network in c("IP_2015","NP_2050","FBP_2050","Alt1_2050","Alt2_2050")) {
                          EO_PM2_5    =ifelse(CARE==1, C_EO_PM2_5,     NC_EO_PM2_5),
                          EO_Benzene  =ifelse(CARE==1, C_EO_Benzene,   NC_EO_Benzene),
                          EO_Butadiene=ifelse(CARE==1, C_EO_Butadiene, NC_EO_Butadiene),
-                         EO_DieselPM =ifelse(CARE==1, C_EO_DieselPM,  NC_EO_DieselPM))
+                         EO_DieselPM =ifelse(CARE==1, C_EO_DieselPM,  NC_EO_DieselPM),
+                         # non-exhaust
+                         Tire_Wear          =ifelse(CARE==1, non_exhaust_rates[['C_Tire_Wear'          ]], non_exhaust_rates[['NC_Tire_Wear'          ]]),
+                         Brake_Wear         =ifelse(CARE==1, non_exhaust_rates[['C_Brake_Wear'         ]], non_exhaust_rates[['NC_Brake_Wear'         ]]),
+                         Entrained_Road_Dust=ifelse(CARE==1, non_exhaust_rates[['C_Entrained_Road_Dust']], non_exhaust_rates[['NC_Entrained_Road_Dust']]))
     this_co_df <- select(this_co_df, 
                          -C_EO_PM2_5,     -NC_EO_PM2_5,
                          -C_EO_Benzene,   -NC_EO_Benzene,
