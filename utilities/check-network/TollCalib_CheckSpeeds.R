@@ -167,7 +167,7 @@ el_gp_summary_df <- el_gp_loaded_nan_df %>%
 # Determine scenarios:
 #        EL_speed	   GP_speed
 # Case1	  <=48	        any	        EL too slow. Need to increase toll
-# Case2	  >=48	        <=40	      GP too slow. Need to decrease toll (but still keep EL speed above 48 mph)
+# Case2	  >48	        <=40	      GP too slow. Need to decrease toll (but still keep EL speed above 48 mph)
 # Case3	  48-60	        40-60	      OK, as long as EL speed > GP speed in AM, MD and PM.  If not, need to increase toll.
 # Case4	  >60	          40-60	      GP a bit slow. Maybe decrease toll, depend on how large the difference is.
 # Case5	  >48	          >60	        Set toll to minimum
