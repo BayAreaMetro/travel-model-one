@@ -10,7 +10,8 @@ USERNAME            <- Sys.getenv("USERNAME")
 BOX_BASE_DIR        <- file.path("C:/Users", USERNAME, "Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation")
 MODEL_DATA_BASE_DIRS<- c(IP            ="M:/Application/Model One/RTP2021/IncrementalProgress",
                          DraftBlueprint="M:/Application/Model One/RTP2021/Blueprint",
-                         FinalBlueprint="M:/Application/Model One/RTP2021/Blueprint")
+                         FinalBlueprint="M:/Application/Model One/RTP2021/Blueprint",
+                         EIR           ="M:/Application/Model One/RTP2021/Blueprint")
 OUTPUT_DIR          <- file.path(BOX_BASE_DIR, "Final Blueprint/OffModel_FBP/ModelData")
 OUTPUT_FILE         <-file.path(OUTPUT_DIR, "Model Data - Targeted Transportation Alternatives.csv")
 
@@ -31,6 +32,7 @@ print(model_runs)
 TAZDATA_FIELDS <- c("ZONE", "SD", "COUNTY", "TOTEMP", "TOTHH", "CIACRE", "AREATYPE") # only care about these fields
 tazdata_df     <- data.frame()
 for (i in 1:nrow(model_runs)) {
+  if (model_runs[i,"directory"]=="2015_UrbanSim_FBP") { next }
   MODEL_DATA_BASE_DIR <- MODEL_DATA_BASE_DIRS[model_runs[i,"run_set"]]
   tazdata_file    <- file.path(MODEL_DATA_BASE_DIR, model_runs[i,"directory"],"INPUT","landuse","tazData.csv")
   tazdata_file_df <- read.table(tazdata_file, header=TRUE, sep=",")
@@ -52,6 +54,7 @@ tazdata_summary_df <- summarise(group_by(tazdata_df, year, category, directory),
 # Read trip-distance-by-mode-superdistrict.csv
 tripdist_df <- data.frame()
 for (i in 1:nrow(model_runs)) {
+  if (model_runs[i,"directory"]=="2015_UrbanSim_FBP") { next }
   MODEL_DATA_BASE_DIR <- MODEL_DATA_BASE_DIRS[model_runs[i,"run_set"]]
   tripdist_file    <- file.path(MODEL_DATA_BASE_DIR, model_runs[i,"directory"],"OUTPUT","bespoke","trip-distance-by-mode-superdistrict.csv")
   if (!file.exists(tripdist_file)) {
