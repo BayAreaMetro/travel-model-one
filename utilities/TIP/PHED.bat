@@ -22,14 +22,14 @@ runtpp X:\travel-model-one-master\utilities\cube-to-shapefile\export_network.job
 
 :: add projection
 :: ----------------------------------------------------------------
-copy M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\PHED\freeflow_links.prj freeflow_links.prj
-copy M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\PHED\freeflow_links.shp.xml freeflow_links.shp.xml
+copy X:\travel-model-one-master\utilities\TIP\freeflow_links.prj freeflow_links.prj
+copy X:\travel-model-one-master\utilities\TIP\freeflow_links.shp.xml freeflow_links.shp.xml
 
 :: join the free flow links with the file with the city boundaries
 :: ----------------------------------------------------------------
 set PATH=C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3;C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3\Scripts
 
-python "X:\travel-model-one-master\utilities\cube-to-shapefile\correspond_link_to_TAZ.py" "%SCENARIO_DIR%\INPUT\hwy\forPHED\freeflow_links.shp" "%SCENARIO_DIR%\INPUT\hwy\forPHED\freeflow_links_UA.csv" --shapefile "M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\PHED\UZA_select\UZA_select.shp"  --shp_id NAME10
+python "X:\travel-model-one-master\utilities\cube-to-shapefile\correspond_link_to_TAZ.py" "%SCENARIO_DIR%\INPUT\hwy\forPHED\freeflow_links.shp" "%SCENARIO_DIR%\INPUT\hwy\forPHED\freeflow_links_UA.csv" --shapefile "M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\PHED\SelectedUrbanizedAreas\FiveUZA_NAD1983UTMzone10N.shp"  --shp_id NAME10
 
 :: run the R script that calculates the PHED metric
 :: ----------------------------------------------------------------
