@@ -25,7 +25,7 @@ runtpp X:\travel-model-one-master\utilities\cube-to-shapefile\export_network.job
 copy X:\travel-model-one-master\utilities\TIP\freeflow_links.prj freeflow_links.prj
 copy X:\travel-model-one-master\utilities\TIP\freeflow_links.shp.xml freeflow_links.shp.xml
 
-:: join the free flow links with the file with the city boundaries
+:: join the free flow links with the file with the urbanized area boundaries
 :: ----------------------------------------------------------------
 set PATH=C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3;C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3\Scripts
 

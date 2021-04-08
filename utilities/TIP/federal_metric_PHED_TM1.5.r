@@ -25,14 +25,19 @@
 # set file paths
 ##################################
 
-Scenario <- "M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_PlusCrossing_21"
+# comment out for now
+#Scenario <- Sys.getenv("SCENARIO_DIR")
+#Scenario <- gsub("\\\\","/",Scenario) # switch slashes around
+
+# use this temporarily
+Scenario <- "M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_PlusCrossing_20"
+
+# population inputs
+taz_to_uza_file <-"X:/travel-model-one-master/utilities/TIP/taz_to_uza.csv"
+tazData_file    <-file.path(Scenario, "INPUT", "landuse", "tazData.csv")
+
+# output file location and name 
 PHED_output_file <- file.path(Scenario, "OUTPUT", "metrics", "federal_metric_PHED.csv")
-
-SFOakUAlinks_txt <-"M:/Application/Model One/TIP2019/Excessive_delay/LinksInSFOakUA_2020n2022.txt"
-SJUAlinks_txt <-"M:/Application/Model One/TIP2019/Excessive_delay/LinksInSJUA_2020n2022.txt"
-
-SFOakUAtaz_txt <-"M:/Application/Model One/TIP2019/Excessive_delay/SFOakUA_706TAZ.txt"
-SJUAtaz_txt <- "M:/Application/Model One/TIP2019/Excessive_delay/SJUA_336TAZ.txt"
 
 ##################################
 # Calculations for cars and trucks
@@ -146,51 +151,89 @@ sum(RoadwayBusDataPM$delayXbus_vol)/60
 ##################################
 
 # Read the geographic defintions
-SFOakUA_links <- read.csv(file=SFOakUAlinks_txt, header=TRUE, sep=",")
-SJUA_links <- read.csv(file=SJUAlinks_txt, header=TRUE, sep=",")
+linksUA_file <- file.path(Scenario, "INPUT", "hwy", "forPHED", "freeflow_links_UA.csv")
+linksUA_df <- read.csv(file=linksUA_file, header=TRUE, sep=",")
 
-SFOakUA_links <- select(SFOakUA_links, A, B, DISTANCE)
-SJUA_links <- select(SJUA_links, A, B, DISTANCE)
+# five UAs
+AntiochUA_links    <- filter(linksUA_df, NAME10=="Antioch, CA")
+ConcordUA_links    <- filter(linksUA_df, NAME10=="Concord, CA")
+SFOakUA_links      <- filter(linksUA_df, NAME10=="San Francisco--Oakland, CA")
+SJUA_links         <- filter(linksUA_df, NAME10=="San Jose, CA")
+SantaRosaUA_links  <- filter(linksUA_df, NAME10=="Santa Rosa, CA")
 
-# merge files indicating links that lie within the two urbanized areas respectively
+# merge files to select links that are within the two urbanized areas respectively
+# left join because the A-B pairs in freeflow_links_UA.csv are not necessarily unique          
+
+AntiochUA_RoadwayBusDataAM <- left_join(RoadwayBusDataAM, AntiochUA_links, by = c("a" = "A", "b" = "B"))
+AntiochUA_RoadwayBusDataPM <- left_join(RoadwayBusDataPM, AntiochUA_links, by = c("a" = "A", "b" = "B"))
+
+ConcordUA_RoadwayBusDataAM <- left_join(RoadwayBusDataAM, ConcordUA_links, by = c("a" = "A", "b" = "B"))
+ConcordUA_RoadwayBusDataPM <- left_join(RoadwayBusDataPM, ConcordUA_links, by = c("a" = "A", "b" = "B"))
+
 SFOakUA_RoadwayBusDataAM <- left_join(RoadwayBusDataAM, SFOakUA_links, by = c("a" = "A", "b" = "B"))
 SFOakUA_RoadwayBusDataPM <- left_join(RoadwayBusDataPM, SFOakUA_links, by = c("a" = "A", "b" = "B"))
 
 SJUA_RoadwayBusDataAM <- left_join(RoadwayBusDataAM, SJUA_links, by = c("a" = "A", "b" = "B"))
 SJUA_RoadwayBusDataPM <- left_join(RoadwayBusDataPM, SJUA_links, by = c("a" = "A", "b" = "B"))
 
-# filter out the irrelevant links
-SFOakUA_RoadwayBusDataAM <- filter(SFOakUA_RoadwayBusDataAM, !is.na(DISTANCE))
-SFOakUA_RoadwayBusDataPM <- filter(SFOakUA_RoadwayBusDataPM, !is.na(DISTANCE))
+SantaRosaUA_RoadwayBusDataAM <- left_join(RoadwayBusDataAM, SantaRosaUA_links, by = c("a" = "A", "b" = "B"))
+SantaRosaUA_RoadwayBusDataPM <- left_join(RoadwayBusDataPM, SantaRosaUA_links, by = c("a" = "A", "b" = "B"))
 
-SJUA_RoadwayBusDataAM <- filter(SJUA_RoadwayBusDataAM, !is.na(DISTANCE))
-SJUA_RoadwayBusDataPM <- filter(SJUA_RoadwayBusDataPM, !is.na(DISTANCE))
+# drop links that are not in the urbanized area
+AntiochUA_RoadwayBusDataAM <- filter(AntiochUA_RoadwayBusDataAM, !is.na(NAME10))
+AntiochUA_RoadwayBusDataPM <- filter(AntiochUA_RoadwayBusDataPM, !is.na(NAME10))
+
+ConcordUA_RoadwayBusDataAM <- filter(ConcordUA_RoadwayBusDataAM, !is.na(NAME10))
+ConcordUA_RoadwayBusDataPM <- filter(ConcordUA_RoadwayBusDataPM, !is.na(NAME10))
+
+SFOakUA_RoadwayBusDataAM <- filter(SFOakUA_RoadwayBusDataAM, !is.na(NAME10))
+SFOakUA_RoadwayBusDataPM <- filter(SFOakUA_RoadwayBusDataPM, !is.na(NAME10))
+
+SJUA_RoadwayBusDataAM <- filter(SJUA_RoadwayBusDataAM, !is.na(NAME10))
+SJUA_RoadwayBusDataPM <- filter(SJUA_RoadwayBusDataPM, !is.na(NAME10))
+
+SantaRosaUA_RoadwayBusDataAM <- filter(SantaRosaUA_RoadwayBusDataAM, !is.na(NAME10))
+SantaRosaUA_RoadwayBusDataPM <- filter(SantaRosaUA_RoadwayBusDataPM, !is.na(NAME10))
 
 ##################################
 # Calculate population
 ##################################
 
-# read the VMT file to get total population
-file_population <- paste(Scenario, "/OUTPUT/core_summaries/AutoTripsVMT_personsHomeWork.csv", sep="")
-VMTData <- read.csv(file=file_population, header=TRUE, sep=",")
-totpop_BayArea <- sum(VMTData$freq)
+taz_to_uza_df <- read.csv(file=taz_to_uza_file, header=TRUE, sep=",")
+tazData_df    <- read.csv(file=tazData_file,    header=TRUE, sep=",")
+
+# only need the totpop column from tazData
+tazData_df    <- select(tazData_df, ZONE, TOTPOP)
+
+# join the population data to the taz to uza correspondence file
+population_df <- left_join(taz_to_uza_df, tazData_df, by = c("TAZ1454" = "ZONE"))
+
+# get total population for the Bay Area
+totpop_BayArea <- sum(population_df$TOTPOP)
 totpop_BayArea
 
-# read files indicating tazs that lie within the two urbanized areas respectively
-SFOakUA_TAZ <- read.csv(file=SFOakUAtaz_txt, header=TRUE, sep=",")
-SJUA_TAZ <- read.csv(file=SJUAtaz_txt, header=TRUE, sep=",")
-
-# merge the files
-VMTData_SFOakUA <- left_join(VMTData,SFOakUA_TAZ, by = c("taz" = "TAZ1454"))
-VMTData_SJUA <- left_join(VMTData,SJUA_TAZ, by = c("taz" = "TAZ1454"))
-
-# filter out the irrelevant zones
-VMTData_SFOakUA <- filter(VMTData_SFOakUA, !is.na(FID))
-VMTData_SJUA <- filter(VMTData_SJUA, !is.na(FID))
-
 # calculate total population by UA
-SFOakUA_totpop <- sum(VMTData_SFOakUA$freq)
-SJUA_totpop <- sum(VMTData_SJUA$freq)
+# SFOakUA
+SFOakUA_pop_df1 <- filter(population_df, Majority_Name=="San Francisco--Oakland, CA")
+SFOakUA_pop_df1$weighted_pop <- SFOakUA_pop_df1$Majority_percent/100*SFOakUA_pop_df1$TOTPOP
+
+SFOakUA_pop_df2 <- filter(population_df, Minority_Name=="San Francisco--Oakland, CA" & Minority_Name!=Majority_Name)
+SFOakUA_pop_df2$weighted_pop <- SFOakUA_pop_df2$Minority_percent/100*SFOakUA_pop_df2$TOTPOP
+
+SFOakUA_pop_df  <- rbind(SFOakUA_pop_df1, SFOakUA_pop_df2)
+
+SFOakUA_totpop <- sum(SFOakUA_pop_df$weighted_pop)
+
+# SJUA
+SJUA_pop_df1 <- filter(population_df, Majority_Name=="San Jose, CA")
+SJUA_pop_df1$weighted_pop <- SJUA_pop_df1$Majority_percent/100*SJUA_pop_df1$TOTPOP
+
+SJUA_pop_df2 <- filter(population_df, Minority_Name=="San Jose, CA" & Minority_Name!=Majority_Name)
+SJUA_pop_df2$weighted_pop <- SJUA_pop_df2$Minority_percent/100*SJUA_pop_df2$TOTPOP
+
+SJUA_pop_df  <- rbind(SJUA_pop_df1, SJUA_pop_df2)
+
+SJUA_totpop <- sum(SJUA_pop_df$weighted_pop)
 
 # display total population by UA
 SFOakUA_totpop
