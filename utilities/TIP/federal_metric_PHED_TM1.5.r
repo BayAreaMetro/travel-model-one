@@ -213,6 +213,31 @@ totpop_BayArea <- sum(population_df$TOTPOP)
 totpop_BayArea
 
 # calculate total population by UA
+
+# AntiochUA
+AntiochUA_pop_df1 <- filter(population_df, Majority_Name=="Antioch, CA")
+AntiochUA_pop_df1$weighted_pop <- AntiochUA_pop_df1$Majority_percent/100*AntiochUA_pop_df1$TOTPOP
+
+AntiochUA_pop_df2 <- filter(population_df, Minority_Name=="Antioch, CA" & Minority_Name!=Majority_Name)
+AntiochUA_pop_df2$weighted_pop <- AntiochUA_pop_df2$Minority_percent/100*AntiochUA_pop_df2$TOTPOP
+
+AntiochUA_pop_df  <- rbind(AntiochUA_pop_df1, AntiochUA_pop_df2)
+
+AntiochUA_totpop <- sum(AntiochUA_pop_df$weighted_pop)
+
+
+# ConcordUA
+ConcordUA_pop_df1 <- filter(population_df, Majority_Name=="Concord, CA")
+ConcordUA_pop_df1$weighted_pop <- ConcordUA_pop_df1$Majority_percent/100*ConcordUA_pop_df1$TOTPOP
+
+ConcordUA_pop_df2 <- filter(population_df, Minority_Name=="Concord, CA" & Minority_Name!=Majority_Name)
+ConcordUA_pop_df2$weighted_pop <- ConcordUA_pop_df2$Minority_percent/100*ConcordUA_pop_df2$TOTPOP
+
+ConcordUA_pop_df  <- rbind(ConcordUA_pop_df1, ConcordUA_pop_df2)
+
+ConcordUA_totpop <- sum(ConcordUA_pop_df$weighted_pop)
+
+
 # SFOakUA
 SFOakUA_pop_df1 <- filter(population_df, Majority_Name=="San Francisco--Oakland, CA")
 SFOakUA_pop_df1$weighted_pop <- SFOakUA_pop_df1$Majority_percent/100*SFOakUA_pop_df1$TOTPOP
@@ -235,17 +260,45 @@ SJUA_pop_df  <- rbind(SJUA_pop_df1, SJUA_pop_df2)
 
 SJUA_totpop <- sum(SJUA_pop_df$weighted_pop)
 
+# SantaRosaUA
+SantaRosaUA_pop_df1 <- filter(population_df, Majority_Name=="Santa Rosa, CA")
+SantaRosaUA_pop_df1$weighted_pop <- SantaRosaUA_pop_df1$Majority_percent/100*SantaRosaUA_pop_df1$TOTPOP
+
+SantaRosaUA_pop_df2 <- filter(population_df, Minority_Name=="Santa Rosa, CA" & Minority_Name!=Majority_Name)
+SantaRosaUA_pop_df2$weighted_pop <- SantaRosaUA_pop_df2$Minority_percent/100*SantaRosaUA_pop_df2$TOTPOP
+
+SantaRosaUA_pop_df  <- rbind(SantaRosaUA_pop_df1, SantaRosaUA_pop_df2)
+
+SantaRosaUA_totpop <- sum(SantaRosaUA_pop_df$weighted_pop)
+
+
 # display total population by UA
+print("Antioch UA total population:")
+AntiochUA_totpop
+print("Concord UA total population:")
+ConcordUA_totpop
+print("San Francisco-Oakland UA total population:")
 SFOakUA_totpop
+print("San Jose UA total population:")
 SJUA_totpop
+print("Santa Rosa UA total population:")
+SantaRosaUA_totpop
 
 # total excessive delay *per person* in hours - car, bus, and trucks (per day)
+AntiochUA_AM <-sum(AntiochUA_RoadwayBusDataAM$delayXvolAM + AntiochUA_RoadwayBusDataAM$delayXbus_vol)/60/AntiochUA_totpop
+AntiochUA_PM <-sum(AntiochUA_RoadwayBusDataPM$delayXvolPM + AntiochUA_RoadwayBusDataPM$delayXbus_vol)/60/AntiochUA_totpop
+
+ConcordUA_AM <-sum(ConcordUA_RoadwayBusDataAM$delayXvolAM + ConcordUA_RoadwayBusDataAM$delayXbus_vol)/60/ConcordUA_totpop
+ConcordUA_PM <-sum(ConcordUA_RoadwayBusDataPM$delayXvolPM + ConcordUA_RoadwayBusDataPM$delayXbus_vol)/60/ConcordUA_totpop
+
 SFOakUA_AM <-sum(SFOakUA_RoadwayBusDataAM$delayXvolAM + SFOakUA_RoadwayBusDataAM$delayXbus_vol)/60/SFOakUA_totpop
 SFOakUA_PM <-sum(SFOakUA_RoadwayBusDataPM$delayXvolPM + SFOakUA_RoadwayBusDataPM$delayXbus_vol)/60/SFOakUA_totpop
 
 SJUA_AM <- sum(SJUA_RoadwayBusDataAM$delayXvolAM + SJUA_RoadwayBusDataAM$delayXbus_vol)/60/SJUA_totpop
 SJUA_PM <- sum(SJUA_RoadwayBusDataPM$delayXvolPM + SJUA_RoadwayBusDataPM$delayXbus_vol)/60/SJUA_totpop
 
+SantaRosaUA_AM <-sum(SantaRosaUA_RoadwayBusDataAM$delayXvolAM + SantaRosaUA_RoadwayBusDataAM$delayXbus_vol)/60/SantaRosaUA_totpop
+SantaRosaUA_PM <-sum(SantaRosaUA_RoadwayBusDataPM$delayXvolPM + SantaRosaUA_RoadwayBusDataPM$delayXbus_vol)/60/SantaRosaUA_totpop
 
 ##################################
 # Annualize the results
@@ -255,13 +308,24 @@ SJUA_PM <- sum(SJUA_RoadwayBusDataPM$delayXvolPM + SJUA_RoadwayBusDataPM$delayXb
 # although 52*7 = 364 and the maximum number of days in a year is 366, so the max number of weekday in a year can be 262
 
 # total excessive delay *per person* in hours - car, bus, and trucks - annualized
+PHED_AntiochUA <- (AntiochUA_AM + AntiochUA_PM)* 260
+PHED_ConcordUA <- (ConcordUA_AM + ConcordUA_PM)* 260
 PHED_SFOakUA <- (SFOakUA_AM + SFOakUA_PM)* 260
 PHED_SJUA <- (SJUA_AM + SJUA_PM)* 260
+PHED_SantaRosaUA <- (SantaRosaUA_AM + SantaRosaUA_PM)* 260
 
+print("PHED - Antioch UA")
+PHED_AntiochUA
+print("PHED - Concord UA")
+PHED_ConcordUA
+print("PHED - San Francisco/Oakland UA")
 PHED_SFOakUA
+print("PHED - San Jose UA")
 PHED_SJUA
+print("PHED - Santa Rosa UA")
+PHED_SantaRosaUA
 
-PHED <- data.frame(PHED_SFOakUA, PHED_SJUA)
+PHED <- data.frame(PHED_AntiochUA,PHED_ConcordUA,PHED_SFOakUA, PHED_SJUA,PHED_SantaRosaUA)
 
 # write out the results
 # Annual Hours of Peak Hour Excessive Delay (PHED) Per Capita
