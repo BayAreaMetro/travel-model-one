@@ -193,8 +193,11 @@ def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
             sys.exit()
 
         # check that the actual links have the same runs per hour as the pseudo links
-        mismatch_run_per_hr = match_agg_df.loc[ match_agg_df["run_per_hr"] != pseudo_run_per_hr].reset_index()
-        mismatch_run_per_hr["run_per_hr_diff"] = mismatch_run_per_hr["run_per_hr"] - pseudo_run_per_hr
+        match_agg_df["run_per_hr_diff"] = match_agg_df["run_per_hr"] - pseudo_run_per_hr
+        logging.debug("match_agg_df:\n{}".format(match_agg_df))
+
+        match_agg_df.loc[ abs(match_agg_df["run_per_hr_diff"] < 0), "run_per_hr_diff"] = 0
+        mismatch_run_per_hr = match_agg_df.loc[ match_agg_df["run_per_hr_diff"] != 0 ].reset_index()
         if len(mismatch_run_per_hr) > 0:
             # let a few links slide
             if len(mismatch_run_per_hr) <= 5:
@@ -226,8 +229,9 @@ def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
 
 
 if __name__ == '__main__':
-    pd.options.display.width = 500
+    pd.options.display.width = 1000
     pd.options.display.max_rows = 1000
+    pd.options.display.max_columns = 30
 
     parser = argparse.ArgumentParser(description = USAGE,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -298,6 +302,9 @@ if __name__ == '__main__':
         if "7000_Resilience_BARTCaldecott" in my_args.project_dir:
             PSEUDO_LINE_MAPPING["120_OR_YEL"] = ("120_ORANGE[A]?-$","120_YELLOWE-$") # Orange/Richmond - MacArthur - Yellow/SFO
             PSEUDO_LINE_MAPPING["120_OR_YER"] = ("120_YELLOWE$","120_ORANGE[A]?$")   # Yellow/SFO - MacArthur - Orange/Richmond
+        # custom override for 2025 (120_YELLOW1 has the EA/EV service)
+        if os.path.basename(my_args.project_dir).startswith("2025"):
+            PSEUDO_LINE_MAPPING["120_OR_YER"] = ("120_YELLOW[1E]?$","120_ORANGE[A]?$")   # Yellow/SFO - MacArthur - Orange/Richmond
 
         all_trn_df = move_pseudo_line_ridership(all_trn_df, pseudo_lines)
 
