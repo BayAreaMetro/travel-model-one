@@ -194,9 +194,9 @@ def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
 
         # check that the actual links have the same runs per hour as the pseudo links
         match_agg_df["run_per_hr_diff"] = match_agg_df["run_per_hr"] - pseudo_run_per_hr
+        match_agg_df.loc[ abs(match_agg_df["run_per_hr_diff"]) < 0.01, "run_per_hr_diff"] = 0
         logging.debug("match_agg_df:\n{}".format(match_agg_df))
 
-        match_agg_df.loc[ abs(match_agg_df["run_per_hr_diff"] < 0), "run_per_hr_diff"] = 0
         mismatch_run_per_hr = match_agg_df.loc[ match_agg_df["run_per_hr_diff"] != 0 ].reset_index()
         if len(mismatch_run_per_hr) > 0:
             # let a few links slide
