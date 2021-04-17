@@ -262,7 +262,14 @@ ACS_BG_variables3 <- paste0("C24010_005E,", # Management
                       "C24010_064E,", # Sales and related
                       "C24010_065E,", # Office and administrative support
                       "C24010_066E,", # Natural resources, construction, and maintenance
-                      "C24010_070E")  # Production, transportation, and material moving
+                      "C24010_070E,",  # Production, transportation, and material moving
+                      
+                      "B03002_003E,",   # White alone, not Hispanic
+                      "B03002_004E,",   # Black alone, not Hispanic
+                      "B03002_006E,",   # Asian alone, not Hispanic
+                      "B03002_002E,",   # Total, not Hispanic
+                      "B03002_012E")   # Total Hispanic
+                      
 
 
 ACS_tract_variables <-c(hhwrks0 = "B08202_002",     # 0-worker HH
@@ -419,26 +426,26 @@ for(k in 1:nrow(tract_index)) {
 
 for(k in 1:nrow(tract_index)) {
   if (k==1) {
-    bg_df2 <- f.data(f.url(ACS_BG_variables1,tract_index[k,"county"],tract_index[k,"tract"]),4)
+    bg_df2 <- f.data(f.url(ACS_BG_variables2,tract_index[k,"county"],tract_index[k,"tract"]),4)
   }
   if (k>=2) {
-    subsequent_df <- f.data(f.url(ACS_BG_variables1,tract_index[k,"county"],tract_index[k,"tract"]),4)
+    subsequent_df <- f.data(f.url(ACS_BG_variables2,tract_index[k,"county"],tract_index[k,"tract"]),4)
     bg_df2 <- rbind(bg_df2,subsequent_df)
   }
-  if (k%%10==0) {print(paste(k, "tracts have been called for Call 1"))} # Monitor progress of this step, as it's long.
+  if (k%%10==0) {print(paste(k, "tracts have been called for Call 2"))} # Monitor progress of this step, as it's long.
 }
 
 # Call 3
 
 for(k in 1:nrow(tract_index)) {
   if (k==1) {
-    bg_df3 <- f.data(f.url(ACS_BG_variables1,tract_index[k,"county"],tract_index[k,"tract"]),4)
+    bg_df3 <- f.data(f.url(ACS_BG_variables3,tract_index[k,"county"],tract_index[k,"tract"]),4)
   }
   if (k>=2) {
-    subsequent_df <- f.data(f.url(ACS_BG_variables1,tract_index[k,"county"],tract_index[k,"tract"]),4)
+    subsequent_df <- f.data(f.url(ACS_BG_variables3,tract_index[k,"county"],tract_index[k,"tract"]),4)
     bg_df3 <- rbind(bg_df3,subsequent_df)
   }
-  if (k%%10==0) {print(paste(k, "tracts have been called for Call 1"))} # Monitor progress of this step, as it's long.
+  if (k%%10==0) {print(paste(k, "tracts have been called for Call 3"))} # Monitor progress of this step, as it's long.
 }
   
 }                                   # End of wrapper
@@ -522,6 +529,12 @@ ACS_BG_raw <- ACS_BG_preraw %>%
            female75_79E = B01001_047E,
            female80_84E = B01001_048E,
            female85pE = B01001_049E,
+           
+           white_nonhE = B03002_003E,    # Demographic data 
+           black_nonhE = B03002_004E,    
+           asian_nonhE = B03002_006E,    
+           total_nonhE = B03002_002E,    
+           total_hispE = B03002_012E,    
            
            unit1dE = B25024_002E,       # Single and multi-family dwelling unit data
            unit1aE = B25024_003E,
@@ -688,6 +701,11 @@ workingdata <- left_join(workingdata,ACS_tract_raw, by=c("tract"="GEOID"))%>% mu
             female75_79E+
             female80_84E+
             female85pE)*sharebg,
+  white_nonh=white_nonhE*sharebg,
+  black_nonh=black_nonhE*sharebg,
+  asian_nonh=asian_nonhE*sharebg,
+  other_nonh=(total_nonhE-(white_nonhE+black_nonhE+asian_nonhE))*sharebg,   # "Other, non-Hisp is total non-Hisp minus white,black,Asian
+  hispanic=total_hispE*sharebg,
   SFDU=(unit1dE+
           unit1aE+
           mobileE+
@@ -794,7 +812,12 @@ temp0 <- workingdata %>%
               pers_occ_services    =sum(pers_occ_services),
               pers_occ_retail      =sum(pers_occ_retail),
               pers_occ_manual      =sum(pers_occ_manual),
-              pers_occ_military    =sum(pers_occ_military)) 
+              pers_occ_military    =sum(pers_occ_military),
+              white_nonh           =sum(white_nonh),
+              black_nonh           =sum(black_nonh),
+              asian_nonh           =sum(asian_nonh),
+              other_nonh           =sum(other_nonh),   
+              hispanic             =sum(hispanic))
   
 
 # Correct GQ population to sum to ACS PUMS 2015 total, outlined in Steps 1-3 below
@@ -908,6 +931,7 @@ temp_rounded_adjusted <- temp3 %>%
     HHPOP              = round(HHPOP,0),                                        # Round and sum total pop from HH and GQ pop
     gqpop              = round(gqpop,0),
     TOTPOP             = HHPOP+gqpop, 
+    sum_ethnicity      = white_nonh+black_nonh+asian_nonh+other_nonh+hispanic,
     
 # Create inflation/deflation factors
     
@@ -918,6 +942,7 @@ temp_rounded_adjusted <- temp3 %>%
     kids_factor        = if_else(sum_kids==0,0,TOTHH/sum_kids),
     income_factor      = if_else(sum_income==0,0,TOTHH/sum_income),
     empres_factor      = if_else(sum_empres==0,0,EMPRES/sum_empres),
+    ethnicity_factor   = if_else(sum_ethnicity==0,0,TOTPOP/sum_ethnicity),
 
 # Apply factors to correct for scale up or down constituent parts to match marginal totals
 
@@ -926,6 +951,12 @@ temp_rounded_adjusted <- temp3 %>%
     AGE2044               = AGE2044          * age_factor,  
     AGE4564               = AGE4564          * age_factor,
     AGE65P                = AGE65P           * age_factor,
+
+    white_nonh            = white_nonh       * ethnicity_factor,  # Persons by ethnicity correction
+    black_nonh            = black_nonh       * ethnicity_factor,
+    asian_nonh            = asian_nonh       * ethnicity_factor,
+    other_nonh            = other_nonh       * ethnicity_factor,
+    hispanic              = hispanic         * ethnicity_factor,
 
     gq_type_univ          = gq_type_univ     * gq_factor,          # Group quarters by type
     gq_type_mil           = gq_type_mil      * gq_factor,
@@ -960,7 +991,8 @@ temp_rounded_adjusted <- temp3 %>%
 # Add in population over age 62 variable that is also needed (but should not be rounded, so added at the end)
   
     select (-age_factor,-gq_factor,-size_factor,-hhworkers_factor,-kids_factor,-income_factor,-empres_factor,
-            -sum_age,-sum_groupquarters,-sum_size,-sum_hhworkers,-sum_kids,-sum_income,-sum_empres) %>% 
+            -sum_age,-sum_groupquarters,-sum_size,-sum_hhworkers,-sum_kids,-sum_income,-sum_empres, -sum_ethnicity,
+            -ethnicity_factor) %>% 
     mutate_if(is.numeric,round,0) %>%
     mutate(SHPOP62P = if_else(TOTPOP==0,0,AGE62P/TOTPOP)) %>% 
  
@@ -978,7 +1010,9 @@ temp_rounded_adjusted <- temp3 %>%
     max_income = max.col(.[c("HHINCQ1","HHINCQ2","HHINCQ3","HHINCQ4")],              ties.method="first"),
     max_occ    = max.col(.[c("pers_occ_management","pers_occ_professional",
                              "pers_occ_services","pers_occ_retail",
-                             "pers_occ_manual","pers_occ_military")],                ties.method="first")) %>% 
+                             "pers_occ_manual","pers_occ_military")],                ties.method="first"),
+    max_eth    = max.col(.[c("white_nonh","black_nonh","asian_nonh","other_nonh",
+                             "hispanic")],                                           ties.method="first"))%>% 
     
 # Now use max values determined above to find appropriate column for adjustment
 
@@ -991,6 +1025,19 @@ temp_rounded_adjusted <- temp3 %>%
     AGE2044 = if_else(max_age==3,AGE2044+(TOTPOP-(AGE0004+AGE0519+AGE2044+AGE4564+AGE65P)),AGE2044),
     AGE4564 = if_else(max_age==4,AGE4564+(TOTPOP-(AGE0004+AGE0519+AGE2044+AGE4564+AGE65P)),AGE4564),
     AGE65P  = if_else(max_age==5,AGE65P +(TOTPOP-(AGE0004+AGE0519+AGE2044+AGE4564+AGE65P)),AGE65P), 
+    
+    # Balance population by ethnicity
+    
+    white_nonh = if_else(max_eth==1,white_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+
+                                                          hispanic)),white_nonh),
+    black_nonh = if_else(max_eth==2,black_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+
+                                                          hispanic)),black_nonh),
+    asian_nonh = if_else(max_eth==3,asian_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+
+                                                          hispanic)),asian_nonh),
+    other_nonh = if_else(max_eth==4,other_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+
+                                                          hispanic)),other_nonh),
+    hispanic = if_else(max_eth==5,hispanic+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+
+                                                          hispanic)),hispanic),
     
     # Balance GQ population by type
     
@@ -1042,9 +1089,16 @@ temp_rounded_adjusted <- temp3 %>%
   
 # Remove max variables
   
-  select(-max_age,-max_gq,-max_size,-max_workers,-max_kids,-max_income,-max_occ)
+  select(-max_age,-max_gq,-max_size,-max_workers,-max_kids,-max_income,-max_occ, -max_eth)
 
 ### End of recoding
+
+# Write out ethnic variables
+
+ethnic <- temp_rounded_adjusted %>% 
+  select(TAZ1454,hispanic, white_nonh,black_nonh,asian_nonh,other_nonh,TOTPOP, COUNTY, County_Name)
+
+write.csv (ethnic,file = "TAZ1454_Ethnicity.csv",row.names = FALSE)
 
 # Read in old PBA data sets and select variables for joining to new 2015 dataset
 # Bring in updated 2015 employment for joining
@@ -1159,6 +1213,5 @@ Tableau2010 <- PBA2010 %>%
 
 
 # write.csv(RMWG_Summary, "RMWG_Summary.csv", row.names = FALSE, quote = T)
-
-  
+            
 
