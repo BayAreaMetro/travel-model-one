@@ -32,7 +32,7 @@ library(httr)
 
 # Set up directories, import TAZ/census block equivalence, install census key, set ACS year,set CPI inflation
 
-employment_2015_data           <- file.path(wd,"Employment","ESRI 2015 NAICS2 and ABAG6 noin.csv")
+employment_2015_data           <- "M:/Data/BusinessData/Employment_by_TAZ_industry/BusinessData_2015_TAZ_industry_noincommute.csv"
 school_2015_data               <- file.path(wd,"School Enrollment","tazData_enrollment.csv")
 
 blockTAZ2010         <- "M:/Data/GIS layers/TM1_taz_census2010/block_to_TAZ1454.csv"
