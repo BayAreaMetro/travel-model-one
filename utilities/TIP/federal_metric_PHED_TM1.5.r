@@ -25,12 +25,8 @@
 # set file paths
 ##################################
 
-# comment out for now
-#Scenario <- Sys.getenv("SCENARIO_DIR")
-#Scenario <- gsub("\\\\","/",Scenario) # switch slashes around
-
-# use this temporarily
-Scenario <- "M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_PlusCrossing_20"
+Scenario <- Sys.getenv("SCENARIO_DIR")
+Scenario <- gsub("\\\\","/",Scenario) # switch slashes around
 
 # population inputs
 taz_to_uza_file <-"X:/travel-model-one-master/utilities/TIP/taz_to_uza.csv"
@@ -314,6 +310,8 @@ PHED_SFOakUA <- (SFOakUA_AM + SFOakUA_PM)* 260
 PHED_SJUA <- (SJUA_AM + SJUA_PM)* 260
 PHED_SantaRosaUA <- (SantaRosaUA_AM + SantaRosaUA_PM)* 260
 
+print("Total excessive delay *per person* in hours - car, bus, and trucks - annualized")
+print("-------------------------------------------------------------------------------")
 print("PHED - Antioch UA")
 PHED_AntiochUA
 print("PHED - Concord UA")
