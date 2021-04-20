@@ -27,6 +27,8 @@
 
 Scenario <- Sys.getenv("SCENARIO_DIR")
 Scenario <- gsub("\\\\","/",Scenario) # switch slashes around
+Scenario <- gsub('"', "", Scenario)   # no qoutes
+
 
 # population inputs
 taz_to_uza_file <-"X:/travel-model-one-master/utilities/TIP/taz_to_uza.csv"
@@ -40,7 +42,7 @@ PHED_output_file <- file.path(Scenario, "OUTPUT", "metrics", "federal_metric_PHE
 ##################################
 
 # read the standard output avgload5period_vehclasses.csv from a scenario
-file_cars_n_trucks <- paste(Scenario, "/OUTPUT/avgload5period_vehclasses.csv", sep="")
+file_cars_n_trucks <- file.path(Scenario, "/OUTPUT/avgload5period_vehclasses.csv")
 RoadwayData <- read.csv(file=file_cars_n_trucks, header=TRUE, sep=",")
 
 # check number of rows in the dataset
@@ -310,8 +312,9 @@ PHED_SFOakUA <- (SFOakUA_AM + SFOakUA_PM)* 260
 PHED_SJUA <- (SJUA_AM + SJUA_PM)* 260
 PHED_SantaRosaUA <- (SantaRosaUA_AM + SantaRosaUA_PM)* 260
 
-print("Total excessive delay *per person* in hours - car, bus, and trucks - annualized")
+print("Hours of total annual excessive delay -- in car, bus, and trucks -- per person")
 print("-------------------------------------------------------------------------------")
+print()
 print("PHED - Antioch UA")
 PHED_AntiochUA
 print("PHED - Concord UA")
