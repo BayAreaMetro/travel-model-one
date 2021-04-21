@@ -1,4 +1,4 @@
-## Generating PHED results
+## Generating Peak Hour Excessive Delay (PHED) results
 
 To generate PHED results, you only need to run the wrapper batch script — PHED.bat.
 
