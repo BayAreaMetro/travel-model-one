@@ -79,10 +79,12 @@ RoadwayData$delayPM = RoadwayData$below_thresholdPM * RoadwayData$timediffPM
 
 # excessive delay taking volume into account
 RoadwayData$delayXvolAM = RoadwayData$delayAM * (RoadwayData$volAM_da * 1 + RoadwayData$volAM_s2 * 2 + RoadwayData$volAM_s3 * 3 + RoadwayData$volAM_sm * 1 + RoadwayData$volAM_hv * 1
-			+ RoadwayData$volAM_dat * 1 + RoadwayData$volAM_s2t * 2 + RoadwayData$volAM_s3t * 3 + RoadwayData$volAM_smt * 1 + RoadwayData$volAM_hvt * 1)
+			+ RoadwayData$volAM_dat * 1 + RoadwayData$volAM_s2t * 2 + RoadwayData$volAM_s3t * 3 + RoadwayData$volAM_smt * 1 + RoadwayData$volAM_hvt * 1
+                        + RoadwayData$volAM_daav * 1 + RoadwayData$volAM_s2av * 2 + RoadwayData$volAM_s3av * 3)
 
 RoadwayData$delayXvolPM = RoadwayData$delayPM * (RoadwayData$volPM_da * 1 + RoadwayData$volPM_s2 * 2 + RoadwayData$volPM_s3 * 3 + RoadwayData$volPM_sm * 1 + RoadwayData$volPM_hv * 1
-			+ RoadwayData$volPM_dat * 1 + RoadwayData$volPM_s2t * 2 + RoadwayData$volPM_s3t * 3 + RoadwayData$volPM_smt * 1 + RoadwayData$volPM_hvt * 1)
+			+ RoadwayData$volPM_dat * 1 + RoadwayData$volPM_s2t * 2 + RoadwayData$volPM_s3t * 3 + RoadwayData$volPM_smt * 1 + RoadwayData$volPM_hvt * 1
+                        + RoadwayData$volPM_daav * 1 + RoadwayData$volPM_s2av * 2 + RoadwayData$volPM_s3av * 3)
 
 # total excessive delay in hours - cars and trucks
 print("total excessive delay in hours - cars and trucks")
