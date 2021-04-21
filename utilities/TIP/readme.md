@@ -21,6 +21,6 @@ The unit of PHED is "hours of total annual excessive delay per person". More gen
 ## Common error messages 
 `RuntimeError: Not signed into Portal.`
 
-Sometimes I get this error message if it has been a while since I last open ArcGIS Pro. Stackexchange says try reopening ArcGIS Pro and refreshing your connection to the license. See:
+Sometimes I get this error message if it has been a while since I last opened ArcGIS Pro. Stackexchange says try reopening ArcGIS Pro and refreshing your connection to the license. See:
 https://gis.stackexchange.com/questions/238985/avoiding-arcgisscripting-runtimeerror-not-signed-into-portal-from-arcpy-with-ar
 
