@@ -1,4 +1,5 @@
-Generating PHED results
+##Generating PHED results
+
 To generate PHED results, you only need to run the wrapper batch script — PHED.bat.
 
 This batch file takes only one argument -- the full file path of the model run output directory on M. Here's an example DOS command:
