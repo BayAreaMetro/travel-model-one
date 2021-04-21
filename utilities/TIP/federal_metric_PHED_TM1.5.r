@@ -152,6 +152,10 @@ sum(RoadwayBusDataPM$delayXbus_vol)/60
 linksUA_file <- file.path(Scenario, "INPUT", "hwy", "forPHED", "freeflow_links_UA.csv")
 linksUA_df <- read.csv(file=linksUA_file, header=TRUE, sep=",")
 
+# Rename the variable linktaz_share to be linkUA_share
+
+linksUA_df$linkUA_share <- linksUA_df$linktaz_share
+
 # five UAs
 AntiochUA_links    <- filter(linksUA_df, NAME10=="Antioch, CA")
 ConcordUA_links    <- filter(linksUA_df, NAME10=="Concord, CA")
@@ -283,20 +287,20 @@ print("Santa Rosa UA total population:")
 SantaRosaUA_totpop
 
 # total excessive delay *per person* in hours - car, bus, and trucks (per day)
-AntiochUA_AM <-sum(AntiochUA_RoadwayBusDataAM$delayXvolAM + AntiochUA_RoadwayBusDataAM$delayXbus_vol)/60/AntiochUA_totpop
-AntiochUA_PM <-sum(AntiochUA_RoadwayBusDataPM$delayXvolPM + AntiochUA_RoadwayBusDataPM$delayXbus_vol)/60/AntiochUA_totpop
+AntiochUA_AM <-sum((AntiochUA_RoadwayBusDataAM$delayXvolAM + AntiochUA_RoadwayBusDataAM$delayXbus_vol)*AntiochUA_RoadwayBusDataAM$linkUA_share)/60/AntiochUA_totpop
+AntiochUA_PM <-sum((AntiochUA_RoadwayBusDataPM$delayXvolPM + AntiochUA_RoadwayBusDataPM$delayXbus_vol)*AntiochUA_RoadwayBusDataPM$linkUA_share)/60/AntiochUA_totpop
 
-ConcordUA_AM <-sum(ConcordUA_RoadwayBusDataAM$delayXvolAM + ConcordUA_RoadwayBusDataAM$delayXbus_vol)/60/ConcordUA_totpop
-ConcordUA_PM <-sum(ConcordUA_RoadwayBusDataPM$delayXvolPM + ConcordUA_RoadwayBusDataPM$delayXbus_vol)/60/ConcordUA_totpop
+ConcordUA_AM <-sum((ConcordUA_RoadwayBusDataAM$delayXvolAM + ConcordUA_RoadwayBusDataAM$delayXbus_vol)*ConcordUA_RoadwayBusDataAM$linkUA_share)/60/ConcordUA_totpop
+ConcordUA_PM <-sum((ConcordUA_RoadwayBusDataPM$delayXvolPM + ConcordUA_RoadwayBusDataPM$delayXbus_vol)*ConcordUA_RoadwayBusDataPM$linkUA_share)/60/ConcordUA_totpop
 
-SFOakUA_AM <-sum(SFOakUA_RoadwayBusDataAM$delayXvolAM + SFOakUA_RoadwayBusDataAM$delayXbus_vol)/60/SFOakUA_totpop
-SFOakUA_PM <-sum(SFOakUA_RoadwayBusDataPM$delayXvolPM + SFOakUA_RoadwayBusDataPM$delayXbus_vol)/60/SFOakUA_totpop
+SFOakUA_AM <-sum((SFOakUA_RoadwayBusDataAM$delayXvolAM + SFOakUA_RoadwayBusDataAM$delayXbus_vol)*SFOakUA_RoadwayBusDataAM$linkUA_share)/60/SFOakUA_totpop
+SFOakUA_PM <-sum((SFOakUA_RoadwayBusDataPM$delayXvolPM + SFOakUA_RoadwayBusDataPM$delayXbus_vol)*SFOakUA_RoadwayBusDataPM$linkUA_share)/60/SFOakUA_totpop
 
-SJUA_AM <- sum(SJUA_RoadwayBusDataAM$delayXvolAM + SJUA_RoadwayBusDataAM$delayXbus_vol)/60/SJUA_totpop
-SJUA_PM <- sum(SJUA_RoadwayBusDataPM$delayXvolPM + SJUA_RoadwayBusDataPM$delayXbus_vol)/60/SJUA_totpop
+SJUA_AM <- sum((SJUA_RoadwayBusDataAM$delayXvolAM + SJUA_RoadwayBusDataAM$delayXbus_vol)*SJUA_RoadwayBusDataAM$linkUA_share)/60/SJUA_totpop
+SJUA_PM <- sum((SJUA_RoadwayBusDataPM$delayXvolPM + SJUA_RoadwayBusDataPM$delayXbus_vol)*SJUA_RoadwayBusDataPM$linkUA_share)/60/SJUA_totpop
 
-SantaRosaUA_AM <-sum(SantaRosaUA_RoadwayBusDataAM$delayXvolAM + SantaRosaUA_RoadwayBusDataAM$delayXbus_vol)/60/SantaRosaUA_totpop
-SantaRosaUA_PM <-sum(SantaRosaUA_RoadwayBusDataPM$delayXvolPM + SantaRosaUA_RoadwayBusDataPM$delayXbus_vol)/60/SantaRosaUA_totpop
+SantaRosaUA_AM <-sum((SantaRosaUA_RoadwayBusDataAM$delayXvolAM + SantaRosaUA_RoadwayBusDataAM$delayXbus_vol)*SantaRosaUA_RoadwayBusDataAM$linkUA_share)/60/SantaRosaUA_totpop
+SantaRosaUA_PM <-sum((SantaRosaUA_RoadwayBusDataPM$delayXvolPM + SantaRosaUA_RoadwayBusDataPM$delayXbus_vol)*SantaRosaUA_RoadwayBusDataPM$linkUA_share)/60/SantaRosaUA_totpop
 
 ##################################
 # Annualize the results
@@ -314,7 +318,7 @@ PHED_SantaRosaUA <- (SantaRosaUA_AM + SantaRosaUA_PM)* 260
 
 print("Hours of total annual excessive delay -- in car, bus, and trucks -- per person")
 print("-------------------------------------------------------------------------------")
-print()
+
 print("PHED - Antioch UA")
 PHED_AntiochUA
 print("PHED - Concord UA")
