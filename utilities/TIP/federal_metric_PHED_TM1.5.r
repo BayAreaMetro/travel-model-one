@@ -46,11 +46,11 @@ file_cars_n_trucks <- file.path(Scenario, "/OUTPUT/avgload5period_vehclasses.csv
 RoadwayData <- read.csv(file=file_cars_n_trucks, header=TRUE, sep=",")
 
 # check number of rows in the dataset
-nrow(RoadwayData)
+# nrow(RoadwayData)
 
 # keep cases where facility type does not equal to 6
 RoadwayData <- subset(RoadwayData, ft!=6)
-nrow(RoadwayData)
+# nrow(RoadwayData)
 
 # add a column to show 60 percent of posted speed
 RoadwayData$ffs60pc <- RoadwayData$ffs*0.6
@@ -85,6 +85,8 @@ RoadwayData$delayXvolPM = RoadwayData$delayPM * (RoadwayData$volPM_da * 1 + Road
 			+ RoadwayData$volPM_dat * 1 + RoadwayData$volPM_s2t * 2 + RoadwayData$volPM_s3t * 3 + RoadwayData$volPM_smt * 1 + RoadwayData$volPM_hvt * 1)
 
 # total excessive delay in hours - cars and trucks
+print("total excessive delay in hours - cars and trucks")
+print("------------------------------------------------")
 sum(RoadwayData$delayXvolAM)/60
 sum(RoadwayData$delayXvolPM)/60
 
@@ -136,10 +138,14 @@ RoadwayBusDataAM$delayXbus_vol <- RoadwayBusDataAM$delayAM * RoadwayBusDataAM$bu
 RoadwayBusDataPM$delayXbus_vol <- RoadwayBusDataPM$delayPM * RoadwayBusDataPM$bus_vol
 
 # total excessive delay in hours - bus only
+print("total excessive delay in hours - bus only")
+print("-----------------------------------------")
 sum(RoadwayBusDataAM$delayXbus_vol)/60
 sum(RoadwayBusDataPM$delayXbus_vol)/60
 
 # total excessive delay in hours - car, bus, and trucks
+print("total excessive delay in hours - car, bus, and trucks")
+print("-----------------------------------------------------")
 (sum(RoadwayBusDataAM$delayXvolAM) + sum(RoadwayBusDataAM$delayXbus_vol))/60
 (sum(RoadwayBusDataPM$delayXvolPM) + sum(RoadwayBusDataPM$delayXbus_vol))/60
 
@@ -212,6 +218,9 @@ population_df <- left_join(taz_to_uza_df, tazData_df, by = c("TAZ1454" = "ZONE")
 
 # get total population for the Bay Area
 totpop_BayArea <- sum(population_df$TOTPOP)
+print("Total population:")
+print("-----------------")
+print("Bay Area total population:")
 totpop_BayArea
 
 # calculate total population by UA
