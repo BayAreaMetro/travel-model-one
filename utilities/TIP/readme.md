@@ -20,6 +20,7 @@ https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/TIP/feder
 
 ## Common error messages: 
 "RuntimeError: Not signed into Portal."
+
 Sometimes I get this error message if it has been a while since I last open ArcGIS Pro. Stackexchange says try reopening ArcGIS Pro and refreshing your connection to the license. See:
 https://gis.stackexchange.com/questions/238985/avoiding-arcgisscripting-runtimeerror-not-signed-into-portal-from-arcpy-with-ar
 
