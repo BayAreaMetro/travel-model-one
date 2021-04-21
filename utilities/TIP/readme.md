@@ -9,8 +9,8 @@ Note that the double quotes are needed for the argument, because of the blank sp
 
 The script takes only a couple of minutes to run. When it's done, the output file can be found in: [the model run output directory on M]\OUTPUT\metrics\federal_metric_PHED.csv
 
-The unit of PHED is "hours of total annual excessive delay per person". More general background about what the PHED metric is can be found at the beginning of the R script that does the main PHED data processing.
-(https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/TIP/federal_metric_PHED_TM1.5.r#L6-L19)
+The unit of PHED is "hours of total annual excessive delay per person". More general background about what the PHED metric is can be found at the beginning of the R script that does the main PHED data processing
+(https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/TIP/federal_metric_PHED_TM1.5.r#L6-L19).
 
 ## Software requirements:
 - Cube (to export network from cube to shape)
