@@ -12,13 +12,13 @@ The script takes only a couple of minutes to run. When it's done, the output fil
 The unit of PHED is "hours of total annual excessive delay per person". More general background about what the PHED metric is can be found at the beginning of the R script that does the main PHED data processing
 (https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/TIP/federal_metric_PHED_TM1.5.r#L6-L19).
 
-## Software requirements:
+## Software requirements
 - Cube (to export network from cube to shape)
 - ArcGIS (because it uses an arcpy script that does spatial joins)
 - R-3.5.2 (the script that does the main PHED calculations is written in R) - if you have another version of R installed, edit the R location in the batch script (https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/TIP/PHED.bat#L48)
 - map "\\\mainmodel\MainModelShare" as "X:"
 
-## Common error messages: 
+## Common error messages 
 `RuntimeError: Not signed into Portal.`
 
 Sometimes I get this error message if it has been a while since I last open ArcGIS Pro. Stackexchange says try reopening ArcGIS Pro and refreshing your connection to the license. See:
