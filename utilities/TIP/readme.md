@@ -16,7 +16,7 @@ https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/TIP/feder
 - Cube (to export network from cube to shape)
 - ArcGIS (because it uses an arcpy script that does spatial joins)
 - R-3.5.2 (the script that does the main PHED calculations is written in R) - if you have another version of R installed, edit the R location in the batch script (https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/TIP/PHED.bat#L48)
-- map "\\mainmodel\MainModelShare" as "X:"
+- map "\\\mainmodel\MainModelShare" as "X:"
 
 ## Common error messages: 
 `RuntimeError: Not signed into Portal.`
