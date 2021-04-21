@@ -3,7 +3,7 @@
 To generate PHED results, you only need to run the wrapper batch script — PHED.bat.
 
 This batch file takes only one argument -- the full file path of the model run output directory on M. Here's an example DOS command:
-X:\travel-model-one-master\utilities\TIP\PHED.bat "M:\Application\Model One\RTP2021\Blueprint\2040_TM152_FBP_Plus_21"
+`X:\travel-model-one-master\utilities\TIP\PHED.bat "M:\Application\Model One\RTP2021\Blueprint\2040_TM152_FBP_Plus_21"`
 
 Note that the double quotes are needed for the argument, because of the blank space between "Model" and "One" on the path
 
@@ -19,7 +19,7 @@ https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/TIP/feder
 - map "\\mainmodel\MainModelShare" as "X:"
 
 ## Common error messages: 
-"RuntimeError: Not signed into Portal."
+`RuntimeError: Not signed into Portal.`
 
 Sometimes I get this error message if it has been a while since I last open ArcGIS Pro. Stackexchange says try reopening ArcGIS Pro and refreshing your connection to the license. See:
 https://gis.stackexchange.com/questions/238985/avoiding-arcgisscripting-runtimeerror-not-signed-into-portal-from-arcpy-with-ar
