@@ -16,6 +16,7 @@ The unit of PHED is "hours of total annual excessive delay per person". More gen
 - Cube (to export network from cube to shape)
 - ArcGIS (because it uses an arcpy script that does spatial joins)
 - R-3.5.2 (the script that does the main PHED calculations is written in R) - if you have another version of R installed, edit the R location in the batch script (https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/TIP/PHED.bat#L48)
+- R packages: dplyr and foreign
 - map "\\\mainmodel\MainModelShare" as "X:"
 
 ## Common error messages 
