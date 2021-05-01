@@ -78,7 +78,7 @@ token_bike_speed = 12.00
 token_max_bike_distance = 75.0
 
 ; only print the data for internal to internal flows
-token_internal_zones = 1454
+token_internal_zones = 2340
 
 ; dump time-period-specific databases
 loop period = 1, 5

@@ -145,10 +145,10 @@
 * copy main\jointtripdata_%ITER%.csv main\jointtripdata_temp_EV.csv
 
 ; the number of zones is used throughout to size arrays to store data
-token_zones = '1454'
+token_zones = '2340'
 
 ; arrays and sized as zones x zones to store matrix data in a one-dimensional array
-token_zones_by_zones = '2114116'
+token_zones_by_zones = '5475600'
 
 ; set the sample share as a TP+ token
 token_sample_share = '%SAMPLESHARE%'
@@ -722,7 +722,7 @@ loop period = 1, 5
       filei mati[2] = main\jointtrips@token_period@.dat, pattern=ijm:v, fields=#1,2,0,3-35
 
       ; read in the transit trips to/from bay area HSR stations
-      filei mati[3] = main\trips_transitHsr@token_period@.tpp
+      ;filei mati[3] = main\trips_transitHsr@token_period@.tpp
 
       ; read in lookup table of occupancy factors for taxi and tncs
    		FILEI LOOKUPI[1] = taxi_tnc_occ_factors.csv
@@ -771,49 +771,49 @@ loop period = 1, 5
       mw[8]  = (mi.1.8  + mi.2.8 ) 
 
       ; walk, local bus, walk
-      mw[9]  = (mi.1.9  + mi.2.9 )  + mi.3.wlk_loc_wlk
+      mw[9]  = (mi.1.9  + mi.2.9 ) 
 
       ; walk, light rail/ferry, walk
-      mw[10] = (mi.1.10 + mi.2.10) + mi.3.wlk_lrf_wlk
+      mw[10] = (mi.1.10 + mi.2.10) 
 
       ; walk, express bus, walk
-      mw[11] = (mi.1.11 + mi.2.11) + mi.3.wlk_exp_wlk
+      mw[11] = (mi.1.11 + mi.2.11) 
 
       ; walk, heavy rail, walk
-      mw[12] = (mi.1.12 + mi.2.12) + mi.3.wlk_hvy_wlk
+      mw[12] = (mi.1.12 + mi.2.12) 
 
       ; walk, commuter rail, walk
-      mw[13] = (mi.1.13 + mi.2.13) + mi.3.wlk_com_wlk
+      mw[13] = (mi.1.13 + mi.2.13) 
 
       ; drive, local bus, walk
-      mw[14] = (mi.1.14 + mi.2.14) + mi.3.drv_loc_wlk
+      mw[14] = (mi.1.14 + mi.2.14) 
 
       ; drive, light rail/ferry, walk
-      mw[15] = (mi.1.15 + mi.2.15) + mi.3.drv_lrf_wlk
+      mw[15] = (mi.1.15 + mi.2.15) 
 
       ; drive, express bus, walk
-      mw[16] = (mi.1.16 + mi.2.16) + mi.3.drv_exp_wlk
+      mw[16] = (mi.1.16 + mi.2.16) 
 
       ; drive, heavy rail, walk
-      mw[17] = (mi.1.17 + mi.2.17) + mi.3.drv_hvy_wlk
+      mw[17] = (mi.1.17 + mi.2.17) 
 
       ; drive, commuter rail, walk
-      mw[18] = (mi.1.18 + mi.2.18) + mi.3.drv_com_wlk
+      mw[18] = (mi.1.18 + mi.2.18) 
 
       ; walk, local bus, drive
-      mw[19] = (mi.1.19 + mi.2.19) + mi.3.wlk_loc_drv
+      mw[19] = (mi.1.19 + mi.2.19) 
 
       ; walk, light rail/ferry, drive
-      mw[20] = (mi.1.20 + mi.2.20) + mi.3.wlk_lrf_drv
+      mw[20] = (mi.1.20 + mi.2.20) 
 
       ; walk, express bus, drive
-      mw[21] = (mi.1.21 + mi.2.21) + mi.3.wlk_exp_drv
+      mw[21] = (mi.1.21 + mi.2.21) 
 
       ; walk, heavy rail, drive
-      mw[22] = (mi.1.22 + mi.2.22) + mi.3.wlk_hvy_drv
+      mw[22] = (mi.1.22 + mi.2.22) 
 
       ; walk, commuter rail, drive
-      mw[23] = (mi.1.23 + mi.2.23) + mi.3.wlk_com_drv
+      mw[23] = (mi.1.23 + mi.2.23) 
 
       ; da_tnc          single tnc                                  shared tnc
       mw[24] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 1) + (mi.1.26 + mi.2.26) * occ_factors(3, 1)) 

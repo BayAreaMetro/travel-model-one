@@ -47,15 +47,15 @@ token_model_coefficient_in_vehicle = '-0.0220/0.72'
 token_model_coefficient_cost = '(_kIvtt / VOT) * 0.6'
 
 ; debug
-token_debug_origin      = '14' ; San Francisco HSR TAZ
-token_debug_destination = '971'
+token_debug_origin      = '1007' ; San Francisco HSR TAZ
+token_debug_destination = '1964'
 token_debug_filename    = 'logs\HsrTransitSubmodeChoice'
 
 ; Bay Area HSR TAZs
-Gilroy_TAZ = 707
-SanJos_TAZ = 538
-Millbr_TAZ = 240
-SanFra_TAZ =  14
+Gilroy_TAZ = 1700
+SanJos_TAZ = 1531
+Millbr_TAZ = 1233
+SanFra_TAZ =  1007
 
 loop tpnum=1,5
 

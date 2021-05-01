@@ -76,7 +76,7 @@ run pgm = matrix
    array _timeCountyBin = 51013
    
    ; do these steps for internal zones only
-   if (i <= 1454)
+   if (i <= 2340)
    
       jloop
       
@@ -88,70 +88,70 @@ run pgm = matrix
             ; step 1: determine the county code
             
             ;   - San Francisco
-            if (zone < 191) 
+            if (zone >= 994 && zone <= 1183) 
    	 
    	       _arbCounty  = 38
    	       _countyName = 'San Francisco'
    	       _countyCode = 1
    	       
    	    ;   - San Mateo
-   	    elseif (zone >= 191 && zone <= 346)
+   	    elseif (zone >= 1184 && zone <= 1339)
    	 
    	       _arbCounty  = 41
    	       _countyName = 'San Mateo'
    	       _countyCode = 2
    	       
             ;   - Santa Clara
-            elseif (zone >= 347 && zone <= 714) 
+            elseif (zone >= 1340 && zone <= 1706) 
    	 
    	       _arbCounty  = 43
    	       _countyName = 'Santa clara'
    	       _countyCode = 3
    	       
    	    ;   - Alameda
-   	    elseif (zone >= 715 && zone <= 1039)
+   	    elseif (zone >= 1707 && zone <= 2032)
    	 
    	       _arbCounty  = 01
    	       _countyName = 'Alameda'
    	       _countyCode = 4
       	 
             ;   - Contra Costa
-            elseif (zone >= 1040 && zone <= 1210) 
+            elseif (zone >= 2033 && zone <= 2203) 
    	 
    	       _arbCounty  = 07
    	       _countyName = 'Contra Costa'
    	       _countyCode = 5
    	                   
    	    ;   - Solano
-   	    elseif (zone >= 1211 && zone <= 1290)
+   	    elseif (zone >= 219 && zone <= 987)
    	 
    	       _arbCounty  = 48
    	       _countyName = 'Solano'
    	       _countyCode = 6
    	       
             ;   - Napa
-            elseif (zone >= 1291 && zone <= 1317) 
+            elseif ((zone <= 218) || (zone >= 988 && zone <= 993)) 
    	 
    	       _arbCounty  = 28
    	       _countyName = 'Napa'
    	       _countyCode = 7
    	       
    	    ;   - Sonoma
-   	    elseif (zone >= 1318 && zone <= 1403)
+   	    elseif (zone >= 2204 && zone <= 2289)
    	 
    	       _arbCounty  = 49
    	       _countyName = 'Sonoma'
    	       _countyCode = 8
       	       
    	    ;   - Marin
-   	    elseif (zone >= 1404 && zone <= 1454)
+   	    elseif (zone >= 2290 && zone <= 2340)
    	 
    	       _arbCounty  = 21
    	       _countyName = 'Marin'
    	       _countyCode = 9
    	       
             ;   - External Zones
-   	    elseif (zone > 1454)
+   	    elseif (zone > 2340)
    	 
    	       _arbCounty  = 9999
    	       _countyName = 'External Zones'
@@ -310,9 +310,9 @@ run pgm = matrix
 
       endloop ; time loop
    
-   endif ; i < 1454
+   endif ; i < 2340
    
-   if (i==1454)
+   if (i==2340)
    
     ; set arrays for sum vmt and share of vmt in each hour
       array _vmtArray = 5000

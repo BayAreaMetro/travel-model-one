@@ -110,7 +110,7 @@ loop period = 1, 5
       maxruntime  = 240
       
       ; we want walk access connectors -- mode 1 -- for all non-external i-j pairs
-      select i = 1-1454, j = 1-1454  
+      select i = 1-2340, j = 1-2340  
       select accessmodes = 1
       
       ; generate zone access links
@@ -181,7 +181,7 @@ loop period = 1, 5
       maxruntime  = 240
       
       ; we want drive access connectors -- mode 2 -- for all non-external i-j pairs
-      select i = 1-1454, j = 1-1454  
+      select i = 1-2340, j = 1-2340  
       select accessmodes = 2
       
       ; park and ride parameters -- mode 2 is centroid to drive auxiliary nodes
@@ -248,7 +248,7 @@ loop period = 1, 5
       maxruntime  = 240
    
       ; allow paths to emerge from zones via walk (1) or drive (2) access modes
-      select i = 1-1454, j = 1-1454  
+      select i = 1-2340, j = 1-2340  
       select accessmodes = 1, 2
       
       ; we are not generating zone access links

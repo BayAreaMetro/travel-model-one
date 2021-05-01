@@ -1,9 +1,9 @@
 
 ; set by RuntimeConfiguration.py
-AUTOOPC = xx.xx     ; AUTO,        year 2000 cents per mile
-SMTROPC = xx.xx     ; SMALL TRUCK, year 2000 cents per mile
-LRTROPC = xx.xx     ; LARGE TRUCK, year 2000 cents per mile
-BUSOPC  = xx.xx     ; BUS,         year 2000 cents per mile
+AUTOOPC = 18.29     ; AUTO,        year 2000 cents per mile
+SMTROPC = 37.15     ; SMALL TRUCK, year 2000 cents per mile
+LRTROPC = 55.10     ; LARGE TRUCK, year 2000 cents per mile
+BUSOPC  = 55.10     ; BUS,         year 2000 cents per mile
 
 VOT           = 15.0      ; year 2000 dollars per hour
 TRUCKVOT      = 30.0      ; year 2000 dollars per hour
@@ -13,17 +13,22 @@ TRKPCE        = 2.0       ; passenger car equivalent for combo trucks
 FIRSTVALUE    = 31	      ; first value toll has a TOLL code of 31
 
 ; set by RuntimeConfiguration.py -- AVs
-AV_PCE_FT01  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeway-to-freeway ramp
-AV_PCE_FT02  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeway 
-AV_PCE_FT03  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = expressway
-AV_PCE_FT04  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = collector
-AV_PCE_FT05  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeway ramp
-AV_PCE_FT06  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = centroid connector/dummy link
-AV_PCE_FT07  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = major arterial
-AV_PCE_FT08  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = metered ramp
-AV_PCE_FT09  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeways with ITS treatments and Golden Gate Bridge
-AV_PCE_FT10  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = expressways and arterials with ITS treatments
+AV_PCE_FT01  = 1.00     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeway-to-freeway ramp
+AV_PCE_FT02  = 1.00     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeway 
+AV_PCE_FT03  = 1.00     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = expressway
+AV_PCE_FT04  = 1.00     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = collector
+AV_PCE_FT05  = 1.00     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeway ramp
+AV_PCE_FT06  = 1.00     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = centroid connector/dummy link
+AV_PCE_FT07  = 1.00     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = major arterial
+AV_PCE_FT08  = 1.00     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = metered ramp
+AV_PCE_FT09  = 1.00     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeways with ITS treatments and Golden Gate Bridge
+AV_PCE_FT10  = 1.00     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = expressways and arterials with ITS treatments
 
 ; set by RuntimeConfiguration.py -- Zero Passenger Vehicles
-OwnedAV_ZPV_factor  = xx.xx     ; a factor between 0 to 1
-TNC_ZPV_factor  = xx.xx     ; a factor between 0 to 1
+OwnedAV_ZPV_factor  = 0.00     ; a factor between 0 to 1
+TNC_ZPV_factor  = 0.00     ; a factor between 0 to 1
+
+; set by RuntimeConfiguration.py -- Means-based tolling
+; these factors are not used in assignment; they are only used in summarization
+Means_Based_Tolling_Q1Factor  = 1.00     ; a factor between 0 to 1 indicating the toll discount by income group
+Means_Based_Tolling_Q2Factor  = 1.00     ; a factor between 0 to 1 indicating the toll discount by income group

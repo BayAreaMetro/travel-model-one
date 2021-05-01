@@ -17,7 +17,12 @@
 :: ------------------------------------------------------------------------------------------------------
 
 if %ITER%==0 goto hwyAssign
+:: bmp debugging
+::goto core
 
+:: calibration run , bmp
+::if %ITER%==1 goto hwyAssign
+if %ITER%==1 goto core
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -47,10 +52,13 @@ if ERRORLEVEL 2 goto done
 
 :core
 
+::if %ITER%==1 (
 if %ITER%==1 (
   rem run matrix manager, household manager and jppf driver
   cd CTRAMP\runtime
   call javaOnly_runMain.cmd 
+  rem give hh manager some time to start
+  ping -n 10 localhost
 
   rem run jppf node
   cd CTRAMP\runtime
@@ -58,10 +66,15 @@ if %ITER%==1 (
 )
 
 ::  Call the MtcTourBasedModel class
+
+
 java -showversion -Xmx6000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Djava.library.path=%RUNTIME% -Djppf.config=jppf-clientDistributed.properties com.pb.mtc.ctramp.MtcTourBasedModel mtcTourBased -iteration %ITER% -sampleRate %SAMPLESHARE% -sampleSeed %SEED%
 if ERRORLEVEL 2 goto done
 
+:: calibration run , bmp
+if %ITER%==1 goto hwyAssign
 
+goto done
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 3:  Execute the internal/external and commercial vehicle models
@@ -70,9 +83,9 @@ if ERRORLEVEL 2 goto done
 
 :nonres
 
-:: Create production/attraction tables based on growth assumptions
-runtpp CTRAMP\scripts\nonres\IxForecasts_horizon.job
-if ERRORLEVEL 2 goto done
+:::: Create production/attraction tables based on growth assumptions
+::runtpp CTRAMP\scripts\nonres\IxForecasts_horizon.job
+::if ERRORLEVEL 2 goto done
 
 :: Apply diurnal factors to the fixed internal/external demand matrices
 runtpp CTRAMP\scripts\nonres\IxTimeOfDay.job
@@ -98,9 +111,9 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\nonres\TruckTollChoice.job
 if ERRORLEVEL 2 goto done
 
-:: Apply a transit submode choice model for transit trips to bay area HSR stations
-runtpp CTRAMP\scripts\nonres\HsrTransitSubmodeChoice.job
-if ERRORLEVEL 2 goto done
+:::: Apply a transit submode choice model for transit trips to bay area HSR stations
+::runtpp CTRAMP\scripts\nonres\HsrTransitSubmodeChoice.job
+::if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -115,16 +128,21 @@ if %ITER% GTR 0 (
 	runtpp CTRAMP\scripts\assign\PrepAssign.job
 	if ERRORLEVEL 2 goto done
 )
-
+:: debug, bmp
+goto trnAssignSkim
 :: Assign the demand matrices to the highway network
 runtpp CTRAMP\scripts\assign\HwyAssign.job
 if ERRORLEVEL 2 goto done
+:: debug, bmp
+::goto done
 
 :trnAssignSkim
 :: copy a local version for easier restarting
 copy CTRAMP\scripts\skims\trnAssign.bat trnAssign_iter%ITER%.bat
 call trnAssign_iter%ITER%.bat
 if ERRORLEVEL 2 goto done
+:: debug, bmp
+goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::

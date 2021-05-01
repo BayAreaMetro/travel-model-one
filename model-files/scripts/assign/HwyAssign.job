@@ -174,8 +174,8 @@ loop period = 1, 5
       ; set the assignment paramters -- equilibrium assignment, frank-wolfe
       parameters combine = equi; , enhance = 2
 
-      ; set the assignment parameters -- 1454 internal zones + 21 external zones
-      parameters zones = 1475
+      ; set the assignment parameters -- 2340 internal zones + 36 external zones
+      parameters zones = 2376
 
       ; set the assignment parameters -- maximum number of iterations to 300
       @token_maxiters@

@@ -45,7 +45,7 @@
 ; ----------------------------------------------------------------------------------------------------------------
 
 ; set the number of zones token
-token_number_of_internal_zones = 1454
+token_number_of_internal_zones = 2340
 
 ; step one: create the weighted travel time matrix
 run pgm = matrix

@@ -64,7 +64,7 @@ BEGIN{
     # One record for each input drive-access link
     # use distance, not time, because more stable across scenarios
 	# dist[mode,taz,pnrNum] => dist
-	#		      2 x 1475 x 49
+	#		      2 x 2376 x 49
 	# fill this up with our first pass
     FIELDWIDTHS= "11 5 1 5 6 1 6 4 7 5 8 1 "
 	while(getline <linkFile> 0) {
@@ -88,7 +88,7 @@ BEGIN{
 	# now we sort them to know what to keep
 	for (mode=1;mode<=9;++mode){
 	if (mode==2 || mode==7) {
-		for (taz=1;taz<=1475;++taz){
+		for (taz=1;taz<=2376;++taz){
 		
 			# make a set of the travel times just for this taz
 			delete tazDist

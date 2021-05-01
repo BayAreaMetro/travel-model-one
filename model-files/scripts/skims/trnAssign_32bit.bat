@@ -9,7 +9,7 @@ set TRNASSIGNMODE=NORMAL
 set TOTMAXTRNITERS=30
 set MAXPATHTIME=240
 set PCT=%%
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+set PYTHONPATH=E:\projects\clients\solanoNapa\SNABM\NetworkWrangler;E:\projects\clients\solanoNapa\SNABM\NetworkWrangler\_static
 set TRN_ERRORLEVEL=0
 
 :: 32bit operation -- stop cluster (distributing will make it 64bit) and set PATH

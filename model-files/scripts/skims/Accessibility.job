@@ -100,7 +100,7 @@ run pgm = matrix
    filei zdati[1]= landuse\tazdata.dbf
    
    ; only need calculations for the internal zones (xxx check that this is true xxx)
-   zones = 1454                 
+   zones = 2340                 
    
    ; set the dispersion parameters
    _kAuto = @token_dispersion_parameter_automobile@

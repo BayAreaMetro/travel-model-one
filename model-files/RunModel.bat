@@ -9,7 +9,25 @@
 :: dto (2012 02 15) gde (2009 04 22)
 ::
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+:: NOTE: DIRECTORY NAMING CONVENTION
+:: 
+:: YYYY_TMVVV_PRJ_[FU_]V1[_build_V2]
+:: 
+:: Where 
+:: YYYY is the model year (e.g. 2050)
+:: TMVVV is the TM version (e.g. TM151)
+:: PRJ is the project, e.g. FU1 for Futures Round1, PPA for Project Performance Assessment
+:: FU is the future, e.g. BF for BackToTheFuture, etc.  This one is optional
+:: V1 is the version of the model run, e.g. 00 and then incrementing
+:: 
+:: If there’s a base vs build, then we append to that with the project being built and that also has a version of the model run as V2
+:: 
+:: So for example, a CleanAndGreen Futures Round 2 version 5 is 2050_TM151_FU2_CG_05
+:: A CleanAndGreen Project Performance Baseline version 14 is 2050_TM151_PPA_CG_14
+:: And a Project Performance run that pivots from that baseline is 2050_TM151_PPA_CG_14_6007_FreeShortTripService_00
+:: 
+:: 
+:: 
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 1:  Set the necessary path variables
@@ -37,13 +55,16 @@ rem for aws machines, HOST_IP_ADDRESS is set in SetUpModel.bat
 SET computer_prefix=%computername:~0,4%
 
 :: Figure out the model year
+::
+:: note: %~p0 is the path to the current batch file
 set MODEL_DIR=%CD%
 set PROJECT_DIR=%~p0
 set PROJECT_DIR2=%PROJECT_DIR:~0,-1%
 :: get the base dir only
 for %%f in (%PROJECT_DIR2%) do set myfolder=%%~nxf
 :: the first four characters are model year
-set MODEL_YEAR=%myfolder:~0,4%
+::set MODEL_YEAR=%myfolder:~0,4%
+set MODEL_YEAR=2015
 
 :: MODEL YEAR ------------------------- make sure it's numeric --------------------------------
 set /a MODEL_YEAR_NUM=%MODEL_YEAR% 2>nul
@@ -66,7 +87,12 @@ if %MODEL_YEAR% GTR 3000 (
 
 set FUTURE_ABBR=%myfolder:~15,2%
 echo FUTURE SHORT NAME = %FUTURE_ABBR%
-set FUTURE=X
+
+:: for base year runs use:
+::   set FUTURE=PBA50
+:: else use
+::  set FUTURE=X
+set FUTURE=PBA50
 echo FUTURE TEMPORARY LONG NAME = X
 
 :: FUTURE ------------------------- make sure FUTURE_ABBR is one of the three [RT,CG,BF] -------------------------
@@ -124,6 +150,8 @@ set TRNCONFIG=FAST
 set COMPLEXMODES_DWELL= 
 set COMPLEXMODES_ACCESS= 
 
+SET /A SELECT_COUNTY=9
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 2:  Create the directory structure
@@ -140,7 +168,9 @@ mkdir nonres
 mkdir main
 mkdir logs
 mkdir database
-mkdir logsums
+::
+:: Logsums not nececssary for Solano/Napa models
+:: mkdir logsums
 
 :: Stamp the feedback report with the date and time of the model start
 echo STARTED MODEL RUN  %DATE% %TIME% >> logs\feedback.rpt 
@@ -149,11 +179,16 @@ echo STARTED MODEL RUN  %DATE% %TIME% >> logs\feedback.rpt
 copy INPUT\hwy\                 hwy\
 copy INPUT\trn\                 trn\
 copy INPUT\landuse\             landuse\
+
+rem rename synthetic population files to generic names!
 copy INPUT\popsyn\              popsyn\
 copy INPUT\nonres\              nonres\
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
-copy INPUT\logsums              logsums\
+::
+:: Logsums not nececssary for Solano/Napa models
+:: mkdir logsums
+:: copy INPUT\logsums              logsums\
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -167,6 +202,16 @@ copy INPUT\logsums              logsums\
 :: and synthesized household/population files in the appropriate places
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
+
+IF %SELECT_COUNTY% GTR 0 (
+
+  :: script to convert midday distance skims from TPP to CSV
+  runtpp skims\tpp_to_csv.job
+  
+  :: Sample households according to sample rates by TAZ
+  "%PYTHON_PATH%"\python.exe %BASE_SCRIPTS%\preprocess\popsampler.PY landuse\sampleRateByTAZ.csv popsyn\households.csv popsyn\persons.csv skims\HWYSKMMD.csv landuse\tazData.csv [6,7]
+
+)
 
 :: Set the prices in the roadway network (convert csv to dbf first)
 python CTRAMP\scripts\preprocess\csvToDbf.py hwy\tolls.csv hwy\tolls.dbf
@@ -205,7 +250,7 @@ runtpp CTRAMP\scripts\skims\NonMotorizedSkims.job
 if ERRORLEVEL 2 goto done
 
 :: Step 4.5: Build initial transit files
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+set PYTHONPATH=E:\projects\clients\solanoNapa\SNABM\NetworkWrangler;E:\projects\clients\solanoNapa\SNABM\NetworkWrangler\_static
 python CTRAMP\scripts\skims\transitDwellAccess.py NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 if ERRORLEVEL 2 goto done
 
@@ -333,8 +378,10 @@ if ERRORLEVEL 2 goto done
 :: call RunAccessibility
 :: if ERRORLEVEL 2 goto done
 
-call RunLogsums
-if ERRORLEVEL 2 goto done
+::
+:: Logsums not nececssary for Solano/Napa models
+:: call RunLogsums
+:: if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::

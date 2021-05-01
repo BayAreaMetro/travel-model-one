@@ -102,75 +102,75 @@ run pgm = hwynet
    if (a = 10181 & b = 9894 )  WALKOK = 1
    
    ; allow bicycle access on Antioch Bridge
-   if (a = 1621 & b = 1674 ) BIKEOK = 1
-   if (a = 1622 & b = 1668 ) BIKEOK = 1
-   if (a = 1674 & b = 1675 ) BIKEOK = 1
-   if (a = 1678 & b = 1679 ) BIKEOK = 1
+   if (a = 31621 & b = 31674 ) BIKEOK = 1
+   if (a = 31622 & b = 31668 ) BIKEOK = 1
+   if (a = 31674 & b = 31675 ) BIKEOK = 1
+   if (a = 31678 & b = 31679 ) BIKEOK = 1
    
    ; allow walk access on Antioch Bridge
-   if (a = 1621 & b = 1674 ) WALKOK = 1
-   if (a = 1622 & b = 1668 ) WALKOK = 1
-   if (a = 1674 & b = 1675 ) WALKOK = 1
-   if (a = 1678 & b = 1679 ) WALKOK = 1
+   if (a = 31621 & b = 31674 ) WALKOK = 1
+   if (a = 31622 & b = 31668 ) WALKOK = 1
+   if (a = 31674 & b = 31675 ) WALKOK = 1
+   if (a = 31678 & b = 31679 ) WALKOK = 1
    
    ; allow bicycle access on Dumbarton Bridge    
-   if (a = 3880 & b = 5938 ) BIKEOK = 1
-   if (a = 3886 & b = 3898 ) BIKEOK = 1
-   if (a = 3896 & b = 3954 ) BIKEOK = 1
-   if (a = 3897 & b = 3886 ) BIKEOK = 1
-   if (a = 3898 & b = 3933 ) BIKEOK = 1
-   if (a = 3899 & b = 3897 ) BIKEOK = 1
-   if (a = 3933 & b = 3934 ) BIKEOK = 1
-   if (a = 3934 & b = 3953 ) BIKEOK = 1
-   if (a = 3952 & b = 3899 ) BIKEOK = 1
-   if (a = 3953 & b = 3865 ) BIKEOK = 1
-   if (a = 3954 & b = 3952 ) BIKEOK = 1
+   if (a = 33880 & b = 5938 ) BIKEOK = 1
+   if (a = 33886 & b = 33898 ) BIKEOK = 1
+   if (a = 33896 & b = 33954 ) BIKEOK = 1
+   if (a = 33897 & b = 33886 ) BIKEOK = 1
+   if (a = 33898 & b = 33933 ) BIKEOK = 1
+   if (a = 33899 & b = 33897 ) BIKEOK = 1
+   if (a = 33933 & b = 33934 ) BIKEOK = 1
+   if (a = 33934 & b = 33953 ) BIKEOK = 1
+   if (a = 33952 & b = 33899 ) BIKEOK = 1
+   if (a = 33953 & b = 33865 ) BIKEOK = 1
+   if (a = 33954 & b = 33952 ) BIKEOK = 1
    if (a = 5922 & b = 5939 ) BIKEOK = 1
    if (a = 5938 & b = 5921 ) BIKEOK = 1
-   if (a = 5939 & b = 3895 ) BIKEOK = 1
+   if (a = 5939 & b = 33895 ) BIKEOK = 1
     
    ; allow walk access on Dumbarton Bridge    
-   if (a = 3880 & b = 5938 ) WALKOK = 1
-   if (a = 3886 & b = 3898 ) WALKOK = 1
-   if (a = 3896 & b = 3954 ) WALKOK = 1
-   if (a = 3897 & b = 3886 ) WALKOK = 1
-   if (a = 3898 & b = 3933 ) WALKOK = 1
-   if (a = 3899 & b = 3897 ) WALKOK = 1
-   if (a = 3933 & b = 3934 ) WALKOK = 1
-   if (a = 3934 & b = 3953 ) WALKOK = 1
-   if (a = 3952 & b = 3899 ) WALKOK = 1
-   if (a = 3953 & b = 3865 ) WALKOK = 1
-   if (a = 3954 & b = 3952 ) WALKOK = 1
+   if (a = 33880 & b = 5938 ) WALKOK = 1
+   if (a = 33886 & b = 33898 ) WALKOK = 1
+   if (a = 33896 & b = 33954 ) WALKOK = 1
+   if (a = 33897 & b = 33886 ) WALKOK = 1
+   if (a = 33898 & b = 33933 ) WALKOK = 1
+   if (a = 33899 & b = 33897 ) WALKOK = 1
+   if (a = 33933 & b = 33934 ) WALKOK = 1
+   if (a = 33934 & b = 33953 ) WALKOK = 1
+   if (a = 33952 & b = 33899 ) WALKOK = 1
+   if (a = 33953 & b = 33865 ) WALKOK = 1
+   if (a = 33954 & b = 33952 ) WALKOK = 1
    if (a = 5922 & b = 5939 ) WALKOK = 1
    if (a = 5938 & b = 5921 ) WALKOK = 1
    if (a = 5939 & b = 3895 ) WALKOK = 1
 
    ; allow bicycle access on Bay Bridge East span (opened 2016)   
-   if (a = 2788 & b = 2786 ) BIKEOK = 1
-   if (a = 2786 & b = 2803 ) BIKEOK = 1
-   if (a = 2803 & b = 2783 ) BIKEOK = 1
-   if (a = 2783 & b = 6972 ) BIKEOK = 1
+   if (a = 32788 & b = 32786 ) BIKEOK = 1
+   if (a = 32786 & b = 32803 ) BIKEOK = 1
+   if (a = 32803 & b = 32783 ) BIKEOK = 1
+   if (a = 32783 & b = 6972 ) BIKEOK = 1
    if (a = 6972 & b = 6968 ) BIKEOK = 1
    if (a = 6968 & b = 6970 ) BIKEOK = 1
    if (a = 6968 & b = 20506 ) BIKEOK = 1
    if (a = 20506 & b = 6970 ) BIKEOK = 1
    if (a = 6971 & b = 6969 ) BIKEOK = 1
    if (a = 6969 & b = 6973 ) BIKEOK = 1
-   if (a = 6973 & b = 2784 ) BIKEOK = 1
-   if (a = 2784 & b = 2802 ) BIKEOK = 1
-   if (a = 2802 & b = 2787 ) BIKEOK = 1
+   if (a = 6973 & b = 32784 ) BIKEOK = 1
+   if (a = 32784 & b = 32802 ) BIKEOK = 1
+   if (a = 32802 & b = 32787 ) BIKEOK = 1
 
    ; allow walk access on Bay Bridge East span (opened 2016)  
-   if (a = 2788 & b = 2786 ) WALKOK = 1
-   if (a = 2786 & b = 2803 ) WALKOK = 1
-   if (a = 2803 & b = 2783 ) WALKOK = 1
-   if (a = 2783 & b = 6972 ) WALKOK = 1
+   if (a = 32788 & b = 32786 ) WALKOK = 1
+   if (a = 32786 & b = 32803 ) WALKOK = 1
+   if (a = 32803 & b = 32783 ) WALKOK = 1
+   if (a = 32783 & b = 6972 ) WALKOK = 1
    if (a = 6972 & b = 6968 ) WALKOK = 1
    if (a = 6968 & b = 6970 ) WALKOK = 1
    if (a = 6971 & b = 6969 ) WALKOK = 1
    if (a = 6969 & b = 6973 ) WALKOK = 1
-   if (a = 6973 & b = 2784 ) WALKOK = 1
-   if (a = 2784 & b = 2802 ) WALKOK = 1
-   if (a = 2802 & b = 2787 ) WALKOK = 1
+   if (a = 6973 & b = 32784 ) WALKOK = 1
+   if (a = 32784 & b = 32802 ) WALKOK = 1
+   if (a = 32802 & b = 32787 ) WALKOK = 1
         
 endrun

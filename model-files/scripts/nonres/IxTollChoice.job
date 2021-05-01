@@ -119,7 +119,7 @@ loop period = 1,5
          filei mati[1] = nonres\tripsix@token_period@x.tpp
 
          ; read in the time-period-specifci HSR trip tables
-         filei mati[2] = nonres\tripsHsr@token_period@.tpp
+         ; filei mati[2] = nonres\tripsHsr@token_period@.tpp
 
          ; read in the time-period-specific IX skims
          filei mati[3] = skims\hwyskm@token_period@.tpp
@@ -138,8 +138,8 @@ loop period = 1,5
          
             ; set the input trips
             IF (@class@ < 3)
-              ; HSR trips only exist for DA and SR2
-              inputTrips = mi.1.@token_class@ + mi.2.@token_class_hsr@
+              ; HSR trips only exist for DA and SR2[disabled for SNABM]
+              inputTrips = mi.1.@token_class@ 
             ELSE
               inputTrips = mi.1.@token_class@
             ENDIF

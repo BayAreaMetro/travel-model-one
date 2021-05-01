@@ -1,0 +1,92 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; RedstributeSkims.job
+;
+; TP+ script to redistribute old SNABM skims (2334 internal + 36 external zones) to 
+; new zone format (2340 internal + 36 external zones).  
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; number of zones
+token_internal_zones = 2334
+token_total_zones = 2370
+
+
+; generate a zonal equivalency file for productions "zone_eq_prod.txt"
+RUN pgm=matrix
+zones=@token_total_zones@ 
+IF (z=107)
+list= ' 107 107 50 \n',
+' 107 993 50',
+file=zone_eq_prod.txt
+ELSEIF (z=128)
+list= ' 128 128 0 \n',
+' 128 992 100',
+file=zone_eq_prod.txt
+ELSEIF (z=147)
+list= ' 147 147 44 \n',
+' 147 990 32 \n',
+' 147 991 24',
+file=zone_eq_prod.txt
+ELSEIF (z=172)
+list= ' 172 172 30 \n',
+' 172 988 70',
+file=zone_eq_prod.txt
+ELSEIF (z=187)
+list= ' 187 187 61 \n',
+' 187 989 39',
+file=zone_eq_prod.txt
+ELSEIF (z>987)
+shift_z = z + 6
+list=z(5),shift_z(5),file=zone_eq_prod.txt
+ELSE
+list=z(5),z(5),file=zone_eq_prod.txt
+ENDIF
+ENDRUN
+
+; generate a zonal equivalency file for attractions "zone_eq_attr.txt"
+RUN pgm=matrix
+zones=@token_total_zones@
+IF (z=107)
+list= ' 107 107 15 \n',
+' 107 993 85',
+file=zone_eq_attr.txt
+ELSEIF (z=128)
+list= ' 128 128 50 \n',
+' 128 992 50',
+file=zone_eq_attr.txt
+ELSEIF (z=147)
+list= ' 147 147 45 \n',
+' 147 990 30 \n',
+' 147 991 25',
+file=zone_eq_attr.txt
+ELSEIF (z=172)
+list= ' 172 172 5 \n',
+' 172 988 95',
+file=zone_eq_attr.txt
+ELSEIF (z=187)
+list= ' 187 187 43 \n',
+' 187 989 57',
+file=zone_eq_attr.txt
+ELSEIF (z>987)
+shift_z = z + 6
+list=z(5),shift_z(5),file=zone_eq_attr.txt
+ELSE
+list=z(5),z(5),file=zone_eq_attr.txt
+ENDIF
+ENDRUN
+
+; renumber matrix
+RUN pgm=matrix
+mati=ixDailyx4.tpp
+mato=ixDailyx4_2376.tpp mo = 1-4, name = ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
+mw[1]=mi.1.ix_daily_da
+mw[2]=mi.1.ix_daily_sr2
+mw[3]=mi.1.ix_daily_sr3
+mw[4]=mi.1.ix_daily_total
+; renumber zones according to "zone_eq_prod.txt"
+renumber file=zone_eq_prod.txt
+ENDRUN
+
+

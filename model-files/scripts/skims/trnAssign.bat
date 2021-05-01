@@ -9,7 +9,7 @@ set TRNASSIGNMODE=NORMAL
 set TOTMAXTRNITERS=30
 set MAXPATHTIME=240
 set PCT=%%
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+set PYTHONPATH=E:\projects\clients\solanoNapa\SNABM\NetworkWrangler;E:\projects\clients\solanoNapa\SNABM\NetworkWrangler\_static
 set TRN_ERRORLEVEL=0
 
 :: AverageNetworkVolumes.job uses PREV_ITER=1 for ITER=1
@@ -131,11 +131,11 @@ IF %KEEP_ASGN_DBFS% EQU 1 (
 if %ITER% EQU %MAXITERATIONS% (
   echo START   routelinkMSA       SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
 
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py EA %TRNASSIGNITER% %VOLDIFFCOND%
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py AM %TRNASSIGNITER% %VOLDIFFCOND%
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py MD %TRNASSIGNITER% %VOLDIFFCOND%
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py PM %TRNASSIGNITER% %VOLDIFFCOND%
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py EV %TRNASSIGNITER% %VOLDIFFCOND%
+  E:\projects\clients\solanoNapa\Anaconda2\python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py EA %TRNASSIGNITER% %VOLDIFFCOND%
+  E:\projects\clients\solanoNapa\Anaconda2\python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py AM %TRNASSIGNITER% %VOLDIFFCOND%
+  E:\projects\clients\solanoNapa\Anaconda2\python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py MD %TRNASSIGNITER% %VOLDIFFCOND%
+  E:\projects\clients\solanoNapa\Anaconda2\python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py PM %TRNASSIGNITER% %VOLDIFFCOND%
+  E:\projects\clients\solanoNapa\Anaconda2\python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py EV %TRNASSIGNITER% %VOLDIFFCOND%
 
 )
 
@@ -147,11 +147,11 @@ if %TRNASSIGNITER% EQU 0 (
   echo trnAssignIter,timeperiod,mode,PHT,pctPHTdiff,RMSE_IVTT,RMSE_TOTT,AvgPaths,CurrPaths,CurrBoards,PathsFromBoth,PathsFromIter,PathsFromAvg,PHTCriteriaMet > PHT_total.csv
 )
 
-python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EA %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex AM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex MD %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex PM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EV %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+E:\projects\clients\solanoNapa\Anaconda2\python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EA %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+E:\projects\clients\solanoNapa\Anaconda2\python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex AM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+E:\projects\clients\solanoNapa\Anaconda2\python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex MD %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+E:\projects\clients\solanoNapa\Anaconda2\python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex PM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+E:\projects\clients\solanoNapa\Anaconda2\python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EV %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 
 echo DONE    transitDwellAccess SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
 

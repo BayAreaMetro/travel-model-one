@@ -1,0 +1,5 @@
+
+; set by RuntimeConfiguration.py -- Means-based fare
+; these factors are not used in assignment; they are only used in summarization
+Means_Based_Fare_Q1Factor  = 1.00     ; a factor between 0 to 1 indicating the fare discount for the lowest income group
+Means_Based_Fare_Q2Factor  = 1.00     ; a factor between 0 to 1 indicating the are discount for the second lowest income group
