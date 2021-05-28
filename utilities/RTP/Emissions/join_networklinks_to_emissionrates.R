@@ -102,7 +102,7 @@ for (network in c("IP_2015","NP_2050","FBP_2050","Alt1_2050","Alt2_2050")) {
   
   # read exhaust-based emissions
   if (is.null(emissions_rates[[paste0("AL-",model_year)]])) {
-    emissions_file <- file.path(BASE_DIR, "PBA50_COC_ER_Lookups", paste("Year",model_year,"MSAT Emission Rates (PBA50).xlsx"))
+    emissions_file <- file.path(BASE_DIR, "PBA50_COC_ER_Lookups", paste("Year",model_year,"MSAT Emission Rates with E2021 (PBA2050).xlsx"))
     for (county2 in LOOKUP_COUNTY$county2) {
       sheet_name   <- paste0(county2,"-",model_year,".csv")
       emissions_df <- read_excel(emissions_file, sheet=sheet_name)
@@ -117,7 +117,7 @@ for (network in c("IP_2015","NP_2050","FBP_2050","Alt1_2050","Alt2_2050")) {
   # read non-exhaust-based emission rates
   index_name <- paste0("non-exhaust-",model_year)
   if (is.null(emissions_rates[[index_name]])) {
-    emissions_file <- file.path(BASE_DIR, "PBA50_COC_ER_Lookups", "PM2.5 Non-Exhaust ERs.xlsx")
+    emissions_file <- file.path(BASE_DIR, "PBA50_COC_ER_Lookups", "PM2.5 Non-Exhaust ERs (w E2021 & Mar 2021 road dust update).xlsx")
     emissions_df   <- read_excel(emissions_file, sheet=model_year, skip=1)
     emissions_df   <- emissions_df %>% setNames(gsub(" ","_",names(.)))
     
@@ -170,7 +170,7 @@ for (network in c("IP_2015","NP_2050","FBP_2050","Alt1_2050","Alt2_2050")) {
   }
 
   # write the result
-  output_fullpath <- file.path(BASE_DIR, paste0("links_CARE_",model_dir,".csv"))
+  output_fullpath <- file.path(BASE_DIR, "links_CARE_EMFAC2021", paste0("links_CARE_",model_dir,".csv"))
   write.table(network_long_care_df, output_fullpath, sep=",", row.names=FALSE)
   print(paste("Wrote",nrow(network_long_care_df),"rows to",output_fullpath))
 }
