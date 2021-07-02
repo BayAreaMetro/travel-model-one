@@ -4,7 +4,8 @@ Create shapefile of Cube network, roadway and transit.
 
 Requires arcpy, so may need to use arcgis version of python
 
- e.g. set PATH=C:\\Program Files\\ArcGIS\\Pro\\bin\\Python\\envs\\arcgispro-py3
+ e.g. set PATH=C:\\Program Files\\ArcGIS\\Pro\\bin\\Python\\envs\\arcgispro-py3;C:\\Program Files\\ArcGIS\\Pro\\bin\\Python\\envs\\arcgispro-py3\\Scripts
+      set PYTHONPATH=X:\\NetworkWrangler;X:\\NetworkWrangler\\_static
 
       Running it in the directory in which you want the shapefile, e.g. model_dir\\OUTPUT\\shapefile
       python cube_to_shapefile.py
