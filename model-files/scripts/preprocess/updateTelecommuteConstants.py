@@ -36,8 +36,12 @@ CONSTANT_INCREMENT = 0.05
 CONSTANT_DECREMENT = 0.05
 
 # see EN7 Telecommuting.xlsx (https://mtcdrive.box.com/s/uw3n8wyervle6r2cgoz1j6k4i5lmv253)
+# for 2015 and before
 P_notworking_if_noworktour_FT = 0.560554289
 P_notworking_if_noworktour_PT = 0.553307383
+# future
+P_notworking_FT = 0.107904288
+P_notworking_PT = 0.205942146
 
 
 if __name__ == '__main__':
@@ -48,6 +52,8 @@ if __name__ == '__main__':
         TELECOMMUTE_CALIBRATION = os.environ['TELECOMMUTE_CALIBRATION']
 
     ITER                    = os.environ['ITER']
+    MODEL_YEAR              = os.environ['MODEL_YEAR']
+    MODEL_DIR               = os.environ['MODEL_DIR']
 
     # SAMPLESHARE not set for iter0 model run
     SAMPLESHARE             = "NA"
@@ -61,8 +67,6 @@ if __name__ == '__main__':
     else:
         # model run mode -- use ITER for CALIB_ITER
         CALIB_ITER = "0"+ITER
-        MODEL_YEAR = os.environ['MODEL_YEAR']
-        MODEL_DIR  = os.environ['MODEL_DIR']
 
         if (int(MODEL_YEAR) < 2035) or \
            (MODEL_DIR.upper().find("NOPROJECT") >= 0) or \
@@ -72,6 +76,8 @@ if __name__ == '__main__':
         else:
             UPDATE_CONSTANT = True
 
+    print('MODEL_YEAR               = {}'.format(MODEL_YEAR))
+    print('MODEL_DIR                = {}'.format(MODEL_DIR))
     print('TELECOMMUTE_CALIBRATION  = {}'.format(TELECOMMUTE_CALIBRATION))
     print('CALIB_ITER               = {}'.format(CALIB_ITER))
     print('ITER                     = {}'.format(ITER))
@@ -233,8 +239,13 @@ if __name__ == '__main__':
         print(work_mode_SD_df)
 
         # calculate not working to take them out of the universe
-        work_mode_SD_df['Full-time worker not-working'] = P_notworking_if_noworktour_FT*work_mode_SD_df['Full-time worker no tour']
-        work_mode_SD_df['Part-time worker not-working'] = P_notworking_if_noworktour_FT*work_mode_SD_df['Part-time worker no tour']
+        if (int(MODEL_YEAR) <= 2020):
+            work_mode_SD_df['Full-time worker not-working'] = P_notworking_if_noworktour_FT*work_mode_SD_df['Full-time worker no tour']
+            work_mode_SD_df['Part-time worker not-working'] = P_notworking_if_noworktour_FT*work_mode_SD_df['Part-time worker no tour']
+        else:
+            work_mode_SD_df['Full-time worker not-working'] = P_notworking_FT*work_tours_df['num_workers']
+            work_mode_SD_df['Part-time worker not-working'] = P_notworking_PT*work_tours_df['num_workers']
+
         # they cannot exceed no tour
         work_mode_SD_df['Full-time worker not-working'] = work_mode_SD_df[['Full-time worker not-working','Full-time worker no tour']].min(axis=1) # min across columns
         work_mode_SD_df['Part-time worker not-working'] = work_mode_SD_df[['Part-time worker not-working','Part-time worker no tour']].min(axis=1) # min across columns
