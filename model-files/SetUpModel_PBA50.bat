@@ -108,6 +108,16 @@ del INPUT\warmstart\nonres\ixDailyx4.tpp
 :: the properties file
 copy /Y "%PARAMS%"                                                                               INPUT\params.properties
 
+:: Figure out the model year
+set MODEL_DIR=%CD%
+set PROJECT_DIR=%~p0
+set PROJECT_DIR2=%PROJECT_DIR:~0,-1%
+:: get the base dir only
+for %%f in (%PROJECT_DIR2%) do set myfolder=%%~nxf
+:: the first four characters are model year
+set MODEL_YEAR=%myfolder:~0,4%
+
+set /a MODEL_YEAR_NUM=%MODEL_YEAR% 2>nul
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 4: Overrides for Blueprint Strategies
@@ -155,17 +165,6 @@ if %MODEL_YEAR_NUM% GEQ 2035 (
 :: ------
 :: Start year (freeways): 2030
 :: Start year (local streets): 2025
-
-:: Figure out the model year
-set MODEL_DIR=%CD%
-set PROJECT_DIR=%~p0
-set PROJECT_DIR2=%PROJECT_DIR:~0,-1%
-:: get the base dir only
-for %%f in (%PROJECT_DIR2%) do set myfolder=%%~nxf
-:: the first four characters are model year
-set MODEL_YEAR=%myfolder:~0,4%
-
-set /a MODEL_YEAR_NUM=%MODEL_YEAR% 2>nul
 
 if %MODEL_YEAR_NUM%==2025 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapacity_1hour_2025.block"            "CTRAMP\scripts\block\SpeedCapacity_1hour.block")
 if %MODEL_YEAR_NUM% GEQ 2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapacity_1hour_2030to2050.block"   "CTRAMP\scripts\block\SpeedCapacity_1hour.block")
