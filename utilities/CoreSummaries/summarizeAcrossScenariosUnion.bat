@@ -90,6 +90,10 @@ for /f "skip=1 usebackq tokens=1,2,3,4,5,6,7,8 delims=," %%A in ("!MODEL_RUNS_CS
     if !status!==current (
       set RUN_NAME_SET=!RUN_NAME_SET!!project!\!SUBDIR!\!directory! 
     )
+    rem also include status=DEIR
+    if !status!==DEIR (
+      set RUN_NAME_SET=!RUN_NAME_SET!!project!\!SUBDIR!\!directory! 
+    )
   )
   if !SET_TYPE!==all (
     set RUN_NAME_SET=!RUN_NAME_SET!!project!\!SUBDIR!\!directory! 
