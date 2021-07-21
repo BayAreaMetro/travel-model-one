@@ -63,17 +63,24 @@ if (("GQPOP" %in% names(tazData)) && (sum(tazData$GQPOP) > 0)) {
   short_summary$'tazdata gqpop' <- sum(tazData$GQPOP)
 } else {
 
-  TAZSUMMARIES_FILE   <- Sys.glob(file.path(TARGET_DIR,"INPUT","landuse","taz_summaries_*.csv"))[[1]]
+  TAZSUMMARIES_FILES  <- Sys.glob(file.path(TARGET_DIR,"INPUT","landuse","taz_summaries_*.csv"))
   if (INPUT_FULLCOPY) {
-    TAZSUMMARIES_FILE <- Sys.glob(file.path(TARGET_DIR,"INPUT_fullcopy","landuse","taz_summaries_*.csv"))[[1]]
+    TAZSUMMARIES_FILES <- Sys.glob(file.path(TARGET_DIR,"INPUT_fullcopy","landuse","taz_summaries_*.csv"))
   }
-  print(paste("TAZSUMMARIES_FILE=", TAZSUMMARIES_FILE))
-  tazSummaries <- read.table(file=TAZSUMMARIES_FILE, header=TRUE, sep=",")
-  short_summary$'tazdata gqpop' <- sum(tazSummaries$GQPOP)
+  if (length(TAZSUMMARIES_FILES) == 0) {
+    print("Couldn't find GQPOP and no taz summaries file present")
+    
+  } else {
+    TAZSUMMARIES_FILE   <- TAZSUMMARIES_FILES[[1]]
 
-  if (short_summary$'tazdata gqpop' == 0) {
-    # 2015 taz summaries variant
-    short_summary$'tazdata gqpop' <- sum(tazSummaries$gq_tot_pop)
+    print(paste("TAZSUMMARIES_FILE=", TAZSUMMARIES_FILE))
+    tazSummaries <- read.table(file=TAZSUMMARIES_FILE, header=TRUE, sep=",")
+    short_summary$'tazdata gqpop' <- sum(tazSummaries$GQPOP)
+
+    if (short_summary$'tazdata gqpop' == 0) {
+      # 2015 taz summaries variant
+      short_summary$'tazdata gqpop' <- sum(tazSummaries$gq_tot_pop)
+    }
   }
 }
 
