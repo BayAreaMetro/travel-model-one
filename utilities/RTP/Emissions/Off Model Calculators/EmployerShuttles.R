@@ -21,7 +21,7 @@ SCRIPT                <- "X:/travel-model-one-master/utilities/RTP/Emissions/Off
 model_runs          <- read.table(file.path(dirname(SCRIPT),"..","..","ModelRuns.csv"), header=TRUE, sep=",", stringsAsFactors = FALSE)
 
 # filter to the current runs
-model_runs          <- model_runs[ which(model_runs$status == "current"), ]
+model_runs          <- model_runs[ which((model_runs$status == "current") | (model_runs$status == "DEIR")), ]
 
 print(paste("MODEL_DATA_BASE_DIRS = ",MODEL_DATA_BASE_DIRS))
 print(paste("OUTPUT_DIR          = ",OUTPUT_DIR))
