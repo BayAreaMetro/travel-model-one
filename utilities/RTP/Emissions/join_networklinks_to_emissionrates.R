@@ -15,19 +15,19 @@ LOOKUP_COUNTY <- data.frame(county2      =c("AL", "CC", "MA", "NA", "SF", "SM", 
                             county_name  =c("Alameda", "Contra Costa", "Marin", "Napa", "San Francisco", "San Mateo", "Santa Clara", "Solano", "Sonoma"),
                             stringsAsFactors = FALSE)
 MODEL_DIRS <- 
-  c(IP_2015  ="M:/Application/Model One/RTP2021/IncrementalProgress/2015_TM152_IPA_16",
-    NP_2050  ="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_NoProject_22",
-    FBP_2050 ="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_PlusCrossing_21",
-    Alt1_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt1_03",
-    Alt2_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt2_02")
+  c(IP_2015  ="M:/Application/Model One/RTP2021/IncrementalProgress/2015_TM152_IPA_17",
+    NP_2050  ="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_NoProject_24",
+    FBP_2050 ="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_PlusCrossing_24",
+    Alt1_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt1_05",
+    Alt2_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt2_05")
 
 # these are the shapefile exports of the inputs used in the above directories, corresponded to CARE and counties (link_to_COUNTY_CARE.csv)
 NETWORK_CARE_DIRS <-
-  c(IP_2015  ="M:/Application/Model One/RTP2021/IncrementalProgress/Networks/network_2015_03/shapefile",
-    NP_2050  ="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_53/net_2050_Baseline/shapefile",
-    FBP_2050 ="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_53/net_2050_Blueprint Plus Crossing/shapefile",
-    Alt1_2050="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_56/net_2050_Alt1/shapefile",
-    Alt2_2050="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_58/net_2050_Alt2/shapefile")
+  c(IP_2015  ="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_62/net_2015_Baseline/shapefile",
+    NP_2050  ="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_62/net_2050_Baseline/shapefile",
+    FBP_2050 ="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_64/net_2050_Blueprint/shapefile",
+    Alt1_2050="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_64/net_2050_Alt1/shapefile",
+    Alt2_2050="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_64/net_2050_Alt2/shapefile")
 
 # all files are expected to be here (note R's preference for slashes)
 if (Sys.getenv("USERNAME") == "lzorn") {
