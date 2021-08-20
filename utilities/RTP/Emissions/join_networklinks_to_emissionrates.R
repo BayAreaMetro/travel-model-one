@@ -18,7 +18,7 @@ MODEL_DIRS <-
   c(IP_2015  ="M:/Application/Model One/RTP2021/IncrementalProgress/2015_TM152_IPA_17",
     NP_2050  ="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_NoProject_24",
     FBP_2050 ="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_PlusCrossing_24",
-    Alt1_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt1_05",
+    Alt1_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt1_06",
     Alt2_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt2_05")
 
 # these are the shapefile exports of the inputs used in the above directories, corresponded to CARE and counties (link_to_COUNTY_CARE.csv)
@@ -170,7 +170,7 @@ for (network in c("IP_2015","NP_2050","FBP_2050","Alt1_2050","Alt2_2050")) {
   }
 
   # write the result
-  output_fullpath <- file.path(BASE_DIR, "links_CARE_EMFAC2021", paste0("links_CARE_",model_dir,".csv"))
+  output_fullpath <- file.path(BASE_DIR, "links_CARE_EMFAC2021_FEIR", paste0("links_CARE_",model_dir,".csv"))
   write.table(network_long_care_df, output_fullpath, sep=",", row.names=FALSE)
   print(paste("Wrote",nrow(network_long_care_df),"rows to",output_fullpath))
 }
