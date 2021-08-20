@@ -1,7 +1,7 @@
 import argparse, itertools, optparse, os, sys
 import numpy, pandas
 
-USAGE = """
+USAGE = r"""
   python hwynet.py --filter filter --year 2035 hwy\\iter3\\avgload5period_vehclasses.csv [--link_mapping links_mapping.csv indexcol sharecol output_suffix]
 
  Reads the csv file of links from hwynet.csv and reports a number of
@@ -56,7 +56,7 @@ USAGE = """
   For example, to get vmt_vht_metrics by TAZ, create a link-to-TAZ mapping file as follows:
 
   1) From a directory with the shapefile export of the roadway network 
-     e.g. M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_50\\net_2050_Blueprint Plus Crossing\shapefile
+     e.g. M:\\Application\\Model One\RTP2021\\Blueprint\\INPUT_DEVELOPMENT\\Networks\\BlueprintNetworks_50\\net_2050_Blueprint Plus Crossing\\shapefile
       
      Run the following command:
      python X:\\travel-model-one-master\utilities\cube-to-shapefile\correspond_link_to_TAZ.py network_links.shp network_links_TAZ.csv
@@ -67,9 +67,9 @@ USAGE = """
 
   2) Then run this script with the --link_mapping args as follows:
 
-    e.g. python X:\\travel-model-one-master\utilities\RTP\metrics\hwynet.py --filter PBA50 --year 2035 
-         --link_mapping "M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_51\\net_2035_Blueprint Plus\shapefile\\network_links_TAZ.csv" TAZ1454 linktaz_share _by_taz
-         hwy\iter3\\avgload5period_vehclasses.csv 
+    e.g. python X:\\travel-model-one-master\utilities\\RTP\metrics\\hwynet.py --filter PBA50 --year 2035 
+         --link_mapping "M:\\Application\\Model One\\RTP2021\\Blueprint\\INPUT_DEVELOPMENT\\Networks\\BlueprintNetworks_51\\net_2035_Blueprint Plus\\shapefile\\network_links_TAZ.csv" TAZ1454 linktaz_share _by_taz
+         hwy\\iter3\\avgload5period_vehclasses.csv 
 
 """
 pandas.options.display.width = 1000
