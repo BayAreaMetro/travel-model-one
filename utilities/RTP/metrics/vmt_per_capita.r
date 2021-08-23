@@ -41,10 +41,10 @@ if (RTP==2013) {
   MODEL_RUN_IDS <- c("2025_TM152_FBP_Plus_22",
                      "2030_TM152_FBP_Plus_23",
                      "2035_TM152_FBP_NoProject_24", "2035_TM152_FBP_Plus_24",
-                     "2035_TM152_EIR_Alt1_05", "2035_TM152_EIR_Alt2_04",
+                     "2035_TM152_EIR_Alt1_06", "2035_TM152_EIR_Alt2_04",
                      "2040_TM152_FBP_Plus_24",
                      "2050_TM152_FBP_NoProject_24", "2050_TM152_FBP_PlusCrossing_24",
-                     "2050_TM152_EIR_Alt1_05", "2050_TM152_EIR_Alt2_05")
+                     "2050_TM152_EIR_Alt1_06", "2050_TM152_EIR_Alt2_05")
 }
 
 
