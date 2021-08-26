@@ -1,0 +1,112 @@
+; Extract a set of skim tables into a csv file (e.g. for tableau)
+;
+
+token_modeldir = '%MODEL_DIR%'
+
+; time period loop
+loop period = 1,5
+  if (period = 1)   
+     token_period   = 'ea'
+  elseif (period = 2)
+     token_period   = 'am'
+  elseif (period = 3)
+     token_period   = 'md'
+  elseif (period = 4)
+     token_period   = 'pm'
+  elseif (period = 5)
+     token_period   = 'ev'
+  endif
+
+  ; access/egress loop (walk/walk, auto/walk, walk/auto)
+  loop accegg = 1,3
+
+    if (accegg = 1)         
+      token_access = 'wlk'
+      token_egress = 'wlk'
+    elseif (accegg = 2)        
+      token_access = 'drv'
+      token_egress = 'wlk'
+    elseif (accegg = 3)       
+      token_access = 'wlk'
+      token_egress = 'drv'
+    endif
+
+    counter = 3 * (period - 1) + accegg
+    DistributeMultistep processid = "ctramp", processnum = counter,  commpath = '%COMMPATH%'
+
+    ; line haul loop
+    loop path = 1,6
+      if (path = 1)
+        token_path = 'com'
+      elseif(path = 2)
+        token_path = 'hvy'
+      elseif (path = 3)
+        token_path = 'exp'
+      elseif (path = 4)
+        token_path = 'lrf'
+      elseif (path = 5)
+        token_path = 'loc'
+      elseif (path = 6)
+        token_path = 'trn'
+      endif
+
+      run PGM=MATRIX
+        filei mati[1] = "@token_modeldir@\skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@.tpp"
+        fileo mato[1] = "trnskm@token_period@_@token_access@_@token_path@_@token_egress@_noheader.csv", FORMAT=txt, PATTERN=IJM:V, MO=1-34, DELIMITER=',', MAXFIELDS=34
+      
+        MW[ 1] = MI.1.ivt/100.0    ; Transit in-vehicle time, time (minutes x 100), ivt
+        MW[ 2] = MI.1.iwait/100.0  ; Initial wait time, time (minutes x 100), iwait
+        MW[ 3] = MI.1.xwait/100.0  ; Transfer wait time, time (minutes x 100), xwait;
+        MW[ 4] = MI.1.wait/100.0   ; Total wait time, time (minutes x 100), xwait;
+        MW[ 5] = MI.1.wacc/100.0   ; Walk access time (mode 1), time (minutes x 100), wacc;
+        MW[ 6] = MI.1.waux/100.0   ; Auxiliary walk time (modes 3, 4, and 5), time (minutes x 100), waux;
+        MW[ 7] = MI.1.wegr/100.0   ; Walk egress time (mode 6), time (minutes x 100), wegr;
+        MW[ 8] = MI.1.dtime/100.0  ; Drive access and/or egress time (modes 2 or 7), time (minutes x 100), dtime;
+        MW[ 9] = MI.1.ddist/100.0  ; Drive access and/or egress distance (modes 2 or 7), distance (miles x 100), ddist;
+        MW[10] = MI.1.fare/100.0   ; Fare, cents ($2000), fare;
+      
+        MW[11] = MI.1.boards           ; Boardings, number, boards;
+        MW[12] = MI.1.ivtLOC/100.0     ; Local bus in-vehicle time (modes 10 through 79), time (minutes x 100), ivtLOC;
+        MW[13] = MI.1.ivtLRF/100.0     ; Light rail and/or ferry in-vehicle time (modes 100 through 119), time (minutes x 100), ivtLRF;
+        MW[14] = MI.1.ivtEXP/100.0     ; Express bus in-vehicle time (modes 80 through 99), time (minutes x 100), ivtEXP;
+        MW[15] = MI.1.ivtHVY/100.0     ; Heavy rail in-vehicle time (modes 120 trhough 129), time (minutes x 100), ivtHVY;
+        MW[16] = MI.1.ivtCOM/100.0     ; Commuter rail in-vehicle time (modes 130 through 139), time (minutes x 100), ivtCOM,
+        MW[17] = MI.1.ivtFerry/100.0   ; Ferry in-vehicle time (modes 100 through 109), time (minutes x 100), ivtFerry.
+        MW[18] = MI.1.ivtMUNILoc/100.0 ; Muni Local Bus in-vehicle time
+        MW[19] = MI.1.ivtMUNIMet/100.0 ; Muni Metro in-vehicle-time
+        MW[20] = MI.1.distLoc/100.0    ; Local bus distance (modes 10 through 79), distance (miles x 100), distLoc
+      
+        MW[21] = MI.1.distLRF/100.0    ; Light rail and/or ferry distance (modes 100 through 119), distance (miles x 100), disttLRF;
+        MW[22] = MI.1.distEXP/100.0    ; Express bus distance (modes 80 through 99), distance (miles x 100), distEXP;
+        MW[23] = MI.1.distHVY/100.0    ; Heavy rail distance (modes 120 trhough 129), distance (miles x 100), distHVY;
+        MW[24] = MI.1.distCOM/100.0    ; Commuter rail distance (modes 130 through 139), distance (miles x 100), distCOM,
+        MW[25] = MI.1.distFerry/100.0  ; Ferry distance (modes 100 through 109), distance (miles x 100), distFerry.
+        MW[26] = MI.1.firstMode        ; First transit mode
+
+        ; FCIS added (https://github.com/alexmitrani/travel-model-one/blob/master/model-files/scripts/skims/TransitSkims_T2_Priority_Discount_Fare_Scenario.job)
+        MW[27] = MI.1.xfare/100.0      ; transfer fare types for all modes
+        MW[28] = MI.1.modefare/100.0   ; matrices for all modes
+        MW[29] = MI.1.faremat/100.0    ; boarding fare types for all transit modes
+        MW[30] = MI.1.dLocal/100.0     ; FCIS Local Services
+        MW[31] = MI.1.dRegional/100.0  ; FCIS Regional Services
+        MW[32] = MI.1.dInterCity/100.0 ; FCIS Intercity Services
+        MW[33] = MI.1.dFree/100.0      ; FCIS Free Shuttle Services
+        MW[34] = MI.1.dFareMat/100.0   ; FCIS Regional Services using FAREMAT
+      endrun
+      
+      ; add header
+      *echo orig,dest,one,ivt,iwait,xwait,wait,wacc,waux,wegr,dtime,ddist,fare,boards,ivtLOC,ivtLRF,ivtEXP,ivtHVY,ivtCOM,ivtFerry,ivtMUNILoc,ivtMUNIMet,distLOC,distLRF,distEXP,distHVY,distCOM,distFerry,firstMode,xfare,modefare,faremat,dLocal,dRegional,dInterCity,dFree,dFareMat > "trnskm@token_period@_@token_access@_@token_path@_@token_egress@.csv"
+      *type "trnskm@token_period@_@token_access@_@token_path@_@token_egress@_noheader.csv" >> "trnskm@token_period@_@token_access@_@token_path@_@token_egress@.csv"
+      *del "trnskm@token_period@_@token_access@_@token_path@_@token_egress@_noheader.csv"
+
+    endloop ; line haul loop
+  
+  EndDistributeMultistep
+
+  endloop ; access/egress loop 
+endloop ; time period loop
+
+wait4files files = ctramp1.script.end,  ctramp2.script.end,  ctramp3.script.end,  ctramp4.script.end,  ctramp5.script.end,
+                   ctramp6.script.end,  ctramp7.script.end,  ctramp8.script.end,  ctramp9.script.end,  ctramp10.script.end,
+                   ctramp11.script.end, ctramp12.script.end, ctramp13.script.end, ctramp14.script.end, ctramp15.script.end, 
+          printfiles = merge, DelDistribFiles = t, CheckReturnCode = t
