@@ -26,6 +26,11 @@
 # "landuse"
 # "CTRAMP\scripts\block"
 
+library(scales)
+library(tidyverse)
+library(reshape2)
+library(crayon)
+
 datestampr <- function(myusername = FALSE) {
     # returns something like 20210819_1723_lzorn
     # ignores args other than myusername
@@ -36,11 +41,6 @@ datestampr <- function(myusername = FALSE) {
     }
     return(datestampr)
 }
-
-library(scales)
-library(tidyverse)
-library(reshape2)
-library(crayon)
 
   # Simplified version of CoreSummaries.R
   #
@@ -55,7 +55,7 @@ library(crayon)
   
     datestring <- datestampr(myusername=FALSE)
     print(datestring)
-    mylogfilename <- paste0("combine_indiv_joint_tours_trips", datestring,".log")
+    mylogfilename <- paste0("combine_indiv_joint_tours_trips_", datestring,".log")
     sink()
     sink(mylogfilename, split=TRUE)
     cat(yellow(paste0("A log of the output will be saved to ", mylogfilename, ". \n \n")))
@@ -523,66 +523,38 @@ trips <- left_join(trips,
 		# 19	Taxi (added in Travel Model 1.5)
 		# 20	TNC (Transportation Network Company, or ride-hailing services) - Single party (added in Travel Model 1.5)
 		# 21	TNC - Shared e.g. sharing with strangers (added in Travel Model 1.5)
-		
-		# to this: 
-		# da
-		# daToll
-		# s2
-		# s2Toll
-		# s3
-		# s3Toll
-		# walk
-		# bike
-		# wComW
-		# wHvyW
-		# wExpW
-		# wLrfW
-		# wLocW
-		# wTrnW
-		# dComW
-		# dHvyW
-		# dExpW
-		# dLrfW
-		# dLocW
-		# dTrnW
-		# wComD
-		# wHvyD
-		# wExpD
-		# wLrfD
-		# wLocD
-		# wTrnD
 
 		trips <- trips %>%
 		  mutate(
 		    
 		    skims_mode = case_when(
 		      
-		      trip_mode == 1 ~ "da",
-		      trip_mode == 2 ~ "daToll",
-		      trip_mode == 3 ~ "s2",
-		      trip_mode == 4 ~ "s2Toll",	 
-		      trip_mode == 5 ~ "s3",
-		      trip_mode == 6 ~ "s3Toll",	
-		      trip_mode == 7 ~ "walk",
-		      trip_mode == 8 ~ "bike",		        
-		      trip_mode == 9 ~ "wLocW",	
-		      trip_mode == 10 ~ "wLrfW",	
-		      trip_mode == 11 ~ "wExpW",	
-		      trip_mode == 12 ~ "wHvyW",	
-		      trip_mode == 13 ~ "wComW",	
-		      trip_mode == 14 & (orig_purpose == 'Home') ~ "dLocW",	
-		      trip_mode == 15 & (orig_purpose == 'Home') ~ "dLrfW",	
-		      trip_mode == 16 & (orig_purpose == 'Home') ~ "dExpW",	
-		      trip_mode == 17 & (orig_purpose == 'Home') ~ "dHvyW",	
-		      trip_mode == 18 & (orig_purpose == 'Home') ~ "dComW",
-		      trip_mode == 14 & (dest_purpose == 'Home') ~ "wLocD",	
-		      trip_mode == 15 & (dest_purpose == 'Home') ~ "wLrfD",	
-		      trip_mode == 16 & (dest_purpose == 'Home') ~ "wExpD",	
-		      trip_mode == 17 & (dest_purpose == 'Home') ~ "wHvyD",	
-		      trip_mode == 18 & (dest_purpose == 'Home') ~ "wComD",	        
+		      trip_mode ==  1 ~ "da",
+		      trip_mode ==  2 ~ "daToll",
+		      trip_mode ==  3 ~ "s2",
+		      trip_mode ==  4 ~ "s2Toll",	 
+		      trip_mode ==  5 ~ "s3",
+		      trip_mode ==  6 ~ "s3Toll",	
+		      trip_mode ==  7 ~ "walk",
+		      trip_mode ==  8 ~ "bike",		        
+		      trip_mode ==  9 ~ "wlk_loc_wlk",	
+		      trip_mode == 10 ~ "wlk_lrf_wlk",	
+		      trip_mode == 11 ~ "wlk_exp_wlk",	
+		      trip_mode == 12 ~ "wlk_hvy_wlk",	
+		      trip_mode == 13 ~ "wlk_com_wlk",	
+		      trip_mode == 14 & (orig_purpose == 'Home') ~ "drv_loc_wlk",	
+		      trip_mode == 15 & (orig_purpose == 'Home') ~ "drv_lrf_wlk",	
+		      trip_mode == 16 & (orig_purpose == 'Home') ~ "drv_exp_wlk",	
+		      trip_mode == 17 & (orig_purpose == 'Home') ~ "drv_hvy_wlk",	
+		      trip_mode == 18 & (orig_purpose == 'Home') ~ "drv_com_wlk",
+		      trip_mode == 14 & (dest_purpose == 'Home') ~ "wlk_loc_drv",	
+		      trip_mode == 15 & (dest_purpose == 'Home') ~ "wlk_lrf_drv",	
+		      trip_mode == 16 & (dest_purpose == 'Home') ~ "wlk_exp_drv",	
+		      trip_mode == 17 & (dest_purpose == 'Home') ~ "wlk_hvy_drv",	
+		      trip_mode == 18 & (dest_purpose == 'Home') ~ "wlk_com_drv",	        
 		      trip_mode == 19 ~ "Taxi",
-		      trip_mode == 20 ~ "TNCa",
-		      trip_mode == 21 ~ "TNCs",
+		      trip_mode == 20 ~ "TNC_single",
+		      trip_mode == 21 ~ "TNC_shared",
 		      TRUE ~ "Other"
 		      
 		    )
