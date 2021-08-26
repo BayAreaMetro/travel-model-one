@@ -19,10 +19,19 @@ mkdir CTRAMP\model
 mkdir CTRAMP\runtime
 mkdir CTRAMP\scripts
 mkdir CTRAMP\scripts\metrics
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\model"       CTRAMP\model
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\runtime"     CTRAMP\runtime
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\scripts"     CTRAMP\scripts
-copy /Y "%GITHUB_DIR%\utilties\bespoke-requests\fare-study\TransitSkims.job" CTRAMP\scripts\skims\TransitSkims.job
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\model"                   CTRAMP\model
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\runtime"                 CTRAMP\runtime
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\scripts"                 CTRAMP\scripts
+copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\extract_trnskim_tables.job"        CTRAMP\scripts\database\extract_trnskim_tables.job
+copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\combine_indiv_joint_tours_trips.R" CTRAMP\scripts\core_summaries
+copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\join_trips_with_skims.R"           CTRAMP\scripts\core_summaries
+
+IF "%SCENARIO%" == "2015_FCIS_Base" (
+   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims.job"               CTRAMP\scripts\skims\TransitSkims.job
+)
+IF "%SCENARIO%" == "2015_FCIS_RegLoc25Discount" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims.job"                CTRAMP\scripts\skims\TransitSkims.job
+)
 
 :: Set the Baseline (complete three iteration run) that we're pivoting from
 set BASELINE_FULL_RUN=\\MODEL2-B\Model2B-Share\Projects\2015_TM152_IPA_17
@@ -166,7 +175,7 @@ if ERRORLEVEL 2 goto done
 
 
 :: skip the rest
-goto done
+goto done_iter
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -285,6 +294,7 @@ copy hwy\iter%ITER%\avgLOADEV.net hwy\avgLOADEV.net /Y
 :: Delete temporary files
 del hwy\iter%ITER%\x*.net
 
+:done_iter
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -296,4 +306,38 @@ echo FINISHED ITERATION %ITER%  %DATE% %TIME% >> logs\feedback.rpt
 
 python "CTRAMP\scripts\notify_slack.py" "Finished iteration %ITER% in %MODEL_DIR%"
 
+:: Shut down java
+C:\Windows\SysWOW64\taskkill /f /im "java.exe"
+
+:: summary scripts
+:database
+
+mkdir database
+runtpp CTRAMP\scripts\database\SkimsDatabase.job
+if ERRORLEVEL 2 goto done
+
+set MODEL_DIR=%CD%
+runtpp CTRAMP\scripts\database\extract_trnskim_tables.job
+if ERRORLEVEL 2 goto done
+:: move the results to database
+move trnskm* database
+
+:: Close the cube cluster
+Cluster "%COMMPATH%\CTRAMP" 1-48 Close Exit
+
+:core_summaries
+"%R_HOME%\bin\RScript" --vanilla CTRAMP\scripts\core_summaries\combine_indiv_joint_tours_trips.R
+if ERRORLEVEL 1 goto done
+
+:: combine them with skims
+"%R_HOME%\bin\RScript" --vanilla CTRAMP\scripts\core_summaries\join_trips_with_skims.R
+if ERRORLEVEL 1 goto done
+
+goto done_no_error
+
+:: this is the done for errors
 :done
+ECHO FINISHED with ERROR
+
+:done_no_error
+ECHO FINISHED.

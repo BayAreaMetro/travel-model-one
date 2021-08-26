@@ -1,5 +1,5 @@
-; Additional matrices copied from: https://github.com/alexmitrani/travel-model-one/blob/0aded480944f14d713b42a289616c3476186326a/model-files/scripts/skims/TransitSkims7_rev_081621.job
-; See diff with TransitSkims.job
+; Regional fare discount from https://github.com/alexmitrani/travel-model-one/blob/master/model-files/scripts/skims/TransitSkims_Regional_Local2.5_Discount.job
+; See diff with TransitSkims.job in this directory
 ;
 ; Specify FCIS modes, LL, 7/22/21 
 ;
@@ -294,7 +294,7 @@ loop period = 1,5
           read file = "@token_model_dir@\trn\xfare.far"
 
           ; output skim matrix
-          fileo mato  = trnskm@token_period@_@token_access@_@token_path@_@token_egress@.iter@token_trnassigniter@.tpp
+          fileo mato  = trnskm@token_period@_@token_access@_@token_path@_@token_egress@.iter@token_trnassigniter@_tmp.tpp
 
           ; the bus times are based on those computed in the highway network
           hwytime = BUS_TIME
@@ -365,9 +365,9 @@ loop period = 1,5
           ; set the desired output
           matrices name = ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards,
                           ivtLOC,  ivtLRF,  ivtEXP,  ivtHVY,  ivtCOM,  ivtFerry,  ivtMUNILoc, ivtMUNIMet,
-                          distLOC, distLRF, distEXP, distHVY, distCOM, distFerry, firstMode,
-                          xfare, modefare, faremat,
-                          dLocal, dRegional, dInterCity, dFree, dFareMat,       
+                          distLOC, distLRF, distEXP, distHVY, distCOM, distFerry, firstMode, 
+                          xfare,   modefare, faremat,
+                          dLocal,  dRegional, dInterCity, dFree, dFareMat, 
             ; in-vehicle time for all transit modes, use TP+ code 1001    
             mw[1]  = time(1001),
             ; initial wait time, use TP+ code 'iwait'
@@ -441,6 +441,54 @@ loop period = 1,5
           ; trace a selection of o/d pairs for debugging
           select trace=(i=@token_debug_origin@ && j=@token_debug_destination@)            
         endrun
+        
+        ;
+        ; Calculate FARE base on fare policy and replace value in MW[10]  
+        ;
+        ;    (10)  through  (79) local bus modes, coded by, at least, provider; 
+        ;    (80)  through  (99) express bus modes, coded by provider
+        ;
+        RUN PGM=MATRIX
+            FILEI MATI[1]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.iter@token_trnassigniter@_tmp.tpp  ; by LL, 7/1/21        
+            FILEO MATO[1]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.iter@token_trnassigniter@.tpp, MO=1-34,
+                          NAME=ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards,
+                               ivtLOC,  ivtLRF,  ivtEXP,  ivtHVY,  ivtCOM,  ivtFerry,  ivtMUNILoc, ivtMUNIMet,
+                               distLOC, distLRF, distEXP, distHVY, distCOM, distFerry, firstMode,
+                               xfare, modefare, faremat,
+                               dLocal, dRegional, dInterCity, dFree, dFareMat
+            FILEO MATO[2]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@_debug_noheader.csv, FORMAT=txt, PATTERN=IJM:V, 
+                          DELIMITER=',', MAXFIELDS=3, MO=1,10,50,
+                          NAME=ivt, fare, fareOrig
+              
+            FILLMW MW[1]=MI.1.1(34) ; read in original transit skims
+            MW[50] = MI.1.fare      ; save copy of fare for debug
+
+            ;
+            ; Calculate FARE -- discount all Local & Regional fares by 2.5%
+            ;     LL 7/30/21
+            ;
+            DISCOUNT=0.025
+            
+            JLOOP    ; for each I-J pair             
+                IF (MI.1.firstMode = @FCIS_Intercity@,@FCIS_Free_SHTL@)      ; first mode is Intercity or Free Shuttle
+                    IF ((MI.1.dLocal + MI.1.dRegional)>0)                    ; transfer to Local or Regional
+                        MW[10] = MI.1.fare - (MI.1.xfare*DISCOUNT)           ; only discount transfer fares
+                    ENDIF
+                ELSEIF (MI.1.firstMode = @FCIS_Local@,@FCIS_Regional@)       ; first mode is Local or Regional 
+                    IF ((MI.1.dIntercity+MI.1.dFree)>0)                      ; transfer to Intercity or Free Shuttle
+                        MW[10]=MI.1.fare - (MI.1.modefare*DISCOUNT)          ; only discount Boarding Fare
+                    ELSE                                                     ; else
+                        MW[10]=MI.1.fare*(1-DISCOUNT)                        ; discount total fares
+                    ENDIF
+                ENDIF           
+            ENDJLOOP
+        ENDRUN
+
+        ; add header to debug file
+        *echo orig,dest,one,ivt,fare,fareOrig > "trnskm@token_period@_@token_access@_@token_path@_@token_egress@_debug.csv"
+        *type "trnskm@token_period@_@token_access@_@token_path@_@token_egress@_debug_noheader.csv" >> "trnskm@token_period@_@token_access@_@token_path@_@token_egress@_debug.csv"
+        *del "trnskm@token_period@_@token_access@_@token_path@_@token_egress@_debug_noheader.csv"
+
 
         ; TRNAMW%TIMEPERIOD%.avg.iter%PREVTRNASSIGNITER%.mat is the MSA'd version of the skim
         ; Create a dummy for iter 0
@@ -457,6 +505,7 @@ loop period = 1,5
                                distLOC, distLRF, distEXP, distHVY, distCOM, distFerry, firstMode,
                                xfare, modefare, faremat,
                                dLocal, dRegional, dInterCity, dFree, dFareMat
+
             FILEO PRINTO[1]=PHT_total_trnskm@token_period@_@token_access@_@token_path@_@token_egress@.csv, APPEND=T
 
             ; this is the relevant trips matrix
