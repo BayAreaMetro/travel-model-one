@@ -30,7 +30,7 @@ IF "%SCENARIO%" == "2015_FCIS_Base" (
    copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims.job"               CTRAMP\scripts\skims\TransitSkims.job
 )
 IF "%SCENARIO%" == "2015_FCIS_RegLoc25Discount" (
-  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims.job"                CTRAMP\scripts\skims\TransitSkims.job
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_Regional_Local2.5_Discount.job"  CTRAMP\scripts\skims\TransitSkims.job
 )
 
 :: Set the Baseline (complete three iteration run) that we're pivoting from
