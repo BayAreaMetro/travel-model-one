@@ -55,7 +55,7 @@ library(crayon)
   
     datestring <- datestampr(myusername=FALSE)
     print(datestring)
-    mylogfilename <- paste0("JoinSkimsStr_", datestring,".txt")
+    mylogfilename <- paste0("combine_indiv_joint_tours_trips", datestring,".log")
     sink()
     sink(mylogfilename, split=TRUE)
     cat(yellow(paste0("A log of the output will be saved to ", mylogfilename, ". \n \n")))
