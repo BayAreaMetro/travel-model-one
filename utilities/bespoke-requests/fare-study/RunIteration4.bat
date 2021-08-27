@@ -25,6 +25,7 @@ c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\scripts"          
 copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\extract_trnskim_tables.job"        CTRAMP\scripts\database\extract_trnskim_tables.job
 copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\combine_indiv_joint_tours_trips.R" CTRAMP\scripts\core_summaries
 copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\join_trips_with_skims.R"           CTRAMP\scripts\core_summaries
+copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\summarize_trips_by_mode.R"         CTRAMP\scripts\core_summaries
 
 IF "%SCENARIO%" == "2015_FCIS_Base" (
    copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims.job"               CTRAMP\scripts\skims\TransitSkims.job
@@ -326,12 +327,20 @@ move trnskm* database
 Cluster "%COMMPATH%\CTRAMP" 1-48 Close Exit
 
 :core_summaries
+set TARGET_DIR=%CD%
 "%R_HOME%\bin\RScript" --vanilla CTRAMP\scripts\core_summaries\combine_indiv_joint_tours_trips.R
 if ERRORLEVEL 1 goto done
 
 :: combine them with skims
 "%R_HOME%\bin\RScript" --vanilla CTRAMP\scripts\core_summaries\join_trips_with_skims.R
 if ERRORLEVEL 1 goto done
+
+:: summarize by mode
+"%R_HOME%\bin\RScript" --vanilla CTRAMP\scripts\core_summaries\summarize_trips_by_mode.R
+if ERRORLEVEL 1 goto done
+
+:: copy results to Box
+copy updated_output\trip_summary.csv "\\tsclient\C\Users\lzorn\Box\Modeling and Surveys\Projects\Fare Coordination Integration Study (FCIS)\MTC Modeling\trip_summary_%SCENARIO%.csv"
 
 goto done_no_error
 
