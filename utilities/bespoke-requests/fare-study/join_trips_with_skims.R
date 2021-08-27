@@ -95,6 +95,7 @@ for (timeperiod in c("EA","AM","MD","PM","EV")) {
         if (skim_type == "Cost") {
             skims <- mutate(skims, bike=0, walk=0)
         }
+
         trips_working <- left_join(trips_working, skims, by=c("orig_taz"="orig", "dest_taz"="dest"))
         trips_working <- mutate(trips_working, skim_value=case_when(
                                 skims_mode=="da"         ~ da,
@@ -109,10 +110,20 @@ for (timeperiod in c("EA","AM","MD","PM","EV")) {
                                 skims_mode=="TNC_single" ~ s2Toll,
                                 skims_mode=="TNC_shared" ~ s2Toll,
                                 TRUE                     ~ 0)) %>%
+                        # If travel between two points by the mode in question is not possible
+                        # (or highly unlikely, e.g. a transit trip that would take 5 hours), the skim data contains a value of -999. 
+                        mutate(skim_value = replace(skim_value, skim_value==-999, NA)) %>%
                         dplyr::rename(!!col_name:=skim_value) %>%
                         # remove these and don't error if they're not there
                         select_if(!names(.) %in% c('da','daToll','s2','s2Toll','s3','s3Toll','walk','bike','wTrnW','wTrnD','dTrnW')) 
         print(paste("Joined", timeperiod, "skims for skim_type",skim_type," (", prettyNum(nrow(trips_working),big.mark=","), ") trips"))
+
+        # costs are in 2000 cents, convert to dollars
+        # https://github.com/BayAreaMetro/modeling-website/wiki/SimpleSkims#cost-skims
+        if (skim_type == "Cost") {
+            trips_working <- mutate(trips_working, fare=0.01*fare)
+        }
+
         # print(head(trips_working)) 
     }
     # put it in the done pile
@@ -122,7 +133,7 @@ for (timeperiod in c("EA","AM","MD","PM","EV")) {
 }
 
 print(paste("Saving trips_with_skims.rds with",prettyNum(nrow(trips_done),big.mark=","),"rows and",ncol(trips_done),"columns; expecting", 
-      prettyNum(trips_done,big.mark=","), "rows"))
+      prettyNum(total_trips,big.mark=","), "rows"))
 saveRDS(trips_done, file=file.path(UPDATED_DIR, "trips_with_skims.rds"))
 
 print(paste("Script completed at", Sys.time()))
