@@ -33,6 +33,9 @@ IF "%SCENARIO%" == "2015_FCIS_Base" (
 IF "%SCENARIO%" == "2015_FCIS_RegLoc25Discount" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_Regional_Local2.5_Discount.job"  CTRAMP\scripts\skims\TransitSkims.job
 )
+IF "%SCENARIO%" == "2015_FCIS_FareByDistance" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByDistance.job"  CTRAMP\scripts\skims\TransitSkims.job
+)
 
 :: Set the Baseline (complete three iteration run) that we're pivoting from
 set BASELINE_FULL_RUN=\\MODEL2-B\Model2B-Share\Projects\2015_TM152_IPA_17
@@ -50,6 +53,9 @@ c:\windows\system32\Robocopy.exe /E "%BASELINE_FULL_RUN%\INPUT\hwy"            I
 c:\windows\system32\Robocopy.exe /E "%BASELINE_FULL_RUN%\INPUT\trn"            INPUT\trn
 copy /Y "%BASELINE_FULL_RUN%\INPUT\params.properties"                          INPUT\params.properties
 
+IF "%SCENARIO%" == "2015_FCIS_FareByDistance" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByDistanceLookup.csv"  INPUT\trn
+)
 :: ------------------------------------------------------------------------------------------------------
 :: Create the working directories
 :: ------------------------------------------------------------------------------------------------------
