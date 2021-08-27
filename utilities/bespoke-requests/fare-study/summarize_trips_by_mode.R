@@ -25,13 +25,12 @@ print(str(trips_with_skims))
 trip_summary <- trips_with_skims %>% 
                 group_by(trip_mode) %>%
                 summarize(trips    = n(),
-                          fare     = mean(fare,     na.rm=TRUE),
-                          ivt      = mean(ivt,      na.rm=TRUE),
-                          distance = mean(distance, na.rm=TRUE),
+                          total_fare     = sum(fare,     na.rm=TRUE),
+                          total_ivt      = sum(ivt,      na.rm=TRUE),
+                          total_distance = sum(distance, na.rm=TRUE),
                           # transit specific
-                          walktime = mean(walktime, na.rm=TRUE),
-                          boards   = mean(boards,   na.rm=TRUE)) %>%
-                mutate(revenue=trips*fare)
+                          total_walktime = sum(walktime, na.rm=TRUE),
+                          total_boards   = sum(boards,   na.rm=TRUE))
 
 print(paste("Saving trip_mode_summary.csv with",nrow(trip_summary),"rows"))
 write.csv(trip_summary, file=file.path(UPDATED_DIR, "trip_summary.csv"), row.names=FALSE)
