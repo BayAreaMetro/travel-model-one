@@ -11,6 +11,7 @@ ITER         <- Sys.getenv("ITER")        # The iteration of model outputs to re
 SAMPLESHARE  <- Sys.getenv("SAMPLESHARE") # Sampling
     
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
+SAMPLESHARE  <- as.numeric(SAMPLESHARE)
 
 stopifnot(nchar(TARGET_DIR  )>0)
 stopifnot(nchar(ITER        )>0)
@@ -24,13 +25,13 @@ print(str(trips_with_skims))
 
 trip_summary <- trips_with_skims %>% 
                 group_by(trip_mode) %>%
-                summarize(trips    = n(),
-                          total_fare     = sum(fare,     na.rm=TRUE),
-                          total_ivt      = sum(ivt,      na.rm=TRUE),
-                          total_distance = sum(distance, na.rm=TRUE),
+                summarize(trips          = n()/SAMPLESHARE,
+                          total_fare     = sum(fare,     na.rm=TRUE)/SAMPLESHARE,
+                          total_ivt      = sum(ivt,      na.rm=TRUE)/SAMPLESHARE,
+                          total_distance = sum(distance, na.rm=TRUE)/SAMPLESHARE,
                           # transit specific
-                          total_walktime = sum(walktime, na.rm=TRUE),
-                          total_boards   = sum(boards,   na.rm=TRUE))
+                          total_walktime = sum(walktime, na.rm=TRUE)/SAMPLESHARE,
+                          total_boards   = sum(boards,   na.rm=TRUE)/SAMPLESHARE)
 
 print(paste("Saving trip_mode_summary.csv with",nrow(trip_summary),"rows"))
 write.csv(trip_summary, file=file.path(UPDATED_DIR, "trip_summary.csv"), row.names=FALSE)
