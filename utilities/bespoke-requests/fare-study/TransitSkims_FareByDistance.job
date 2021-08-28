@@ -462,14 +462,15 @@ loop period = 1,5
                                xfare, modefare, faremat, 
                                dLocal, dRegional, dInterCity, dFree, dFareMat, dBART
             FILEO MATO[2]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@_debug_noheader.csv, FORMAT=txt, PATTERN=IJM:V, 
-                          DELIMITER=',', MAXFIELDS=13, MO=1,10,50,11,27-35,
-                          NAME=ivt, fare, fareOrig, boards, xfare, modefare, faremat, dLocal, dRegional, dInterCity, dFree, dFareMat, dBART
+                          DELIMITER=',', MAXFIELDS=14, MO=1,10,50,11,27-35,51
+                          NAME=ivt, fare, fareOrig, boards, xfare, modefare, faremat, dLocal, dRegional, dInterCity, dFree, dFareMat, dBART, ivtMode
 
             FILEI LOOKUPI[1]="@token_model_dir@\INPUT\trn\FareByDistanceLookup.csv"
 
             FILLMW MW[1]=MI.1.1(35) ; read in original transit skims
             MW[50] = MI.1.fare      ; save copy of fare for debug
-              
+            MW[51] = MI.1.@token_ivt@ ; note if this is zero, this OD has no path for this mode
+
             ; Calculate FARE -- Test 18: Fare by Distance, LL, 8/23/21.  Updated by GS and AM 8/25/21.
             LOOKUP, NAME=FareByDist, LOOKUP[1]=1, RESULT=5, LOOKUPI=1, SETUPPER=T, LIST=T
           
