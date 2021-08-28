@@ -462,7 +462,7 @@ loop period = 1,5
                                xfare, modefare, faremat, 
                                dLocal, dRegional, dInterCity, dFree, dFareMat, dBART
             FILEO MATO[2]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@_debug_noheader.csv, FORMAT=txt, PATTERN=IJM:V, 
-                          DELIMITER=',', MAXFIELDS=14, MO=1,10,50,11,27-35,51
+                          DELIMITER=',', MAXFIELDS=14, MO=1,10,50,11,27-35,51,
                           NAME=ivt, fare, fareOrig, boards, xfare, modefare, faremat, dLocal, dRegional, dInterCity, dFree, dFareMat, dBART, ivtMode
 
             FILEI LOOKUPI[1]="@token_model_dir@\INPUT\trn\FareByDistanceLookup.csv"
