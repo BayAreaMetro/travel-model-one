@@ -480,7 +480,7 @@ loop period = 1,5
   
                     IF (MI.1.dLocal>0 && MI.1.dRegional=0)         ; only local services are used
   
-                        IF (MI.1.boards>1) ; Cases with local trips with transfers
+                        IF (MI.1.boards>1)                         ; Cases with local trips with transfers
                             IF (MI.1.firstMode = @FCIS_FAREMAT@) 
                                 INI_FARE=MI.1.faremat
                                 REM_FARE=MI.1.xfare + MI.1.modefare
@@ -497,7 +497,7 @@ loop period = 1,5
                             MYFARE = FareByDist(1,MI.1.dRegional)  ; look up fare from "fare by distance" curve
                             MW[10] = MYFARE*100                    ; convert fares to cents
                         ELSE                                       ; if the regional distance is just BART
-                            WT_DIST = MI.1.dLocal*1.6 + MI.1.dBART
+                            WT_DIST = MI.1.dLocal*1.6 + MI.1.dRegional
                             MW[10]  = MI.1.fare *(MI.1.dRegional/WT_DIST)
                         ENDIF
   
