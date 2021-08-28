@@ -510,7 +510,7 @@ loop period = 1,5
         ENDRUN
 
         ; add header to debug file
-        *echo orig,dest,one,ivt,fare,fareOrig,boards,xfare,modefare,faremat,dLocal,dRegional,dInterCity,dFree,dFareMat,dBART > "trnskm@token_period@_@token_access@_@token_path@_@token_egress@_debug.csv"
+        *echo orig,dest,one,ivt,fare,fareOrig,boards,xfare,modefare,faremat,dLocal,dRegional,dInterCity,dFree,dFareMat,dBART,ivtMode > "trnskm@token_period@_@token_access@_@token_path@_@token_egress@_debug.csv"
         *type "trnskm@token_period@_@token_access@_@token_path@_@token_egress@_debug_noheader.csv" >> "trnskm@token_period@_@token_access@_@token_path@_@token_egress@_debug.csv"
         *del "trnskm@token_period@_@token_access@_@token_path@_@token_egress@_debug_noheader.csv"
 
