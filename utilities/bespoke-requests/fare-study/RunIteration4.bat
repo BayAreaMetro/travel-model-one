@@ -351,7 +351,7 @@ if ERRORLEVEL 1 goto done
 if ERRORLEVEL 1 goto done
 
 :: copy results to Box
-copy updated_output\trips_with_skims.rds "\\tsclient\C\Users\lzorn\Box\Modeling\MTC Modeling\trips_with_skims_%SCENARIO%.csv"
+copy updated_output\trips_with_skims.rds "\\tsclient\C\Users\lzorn\Box\Modeling\MTC Modeling\trips_with_skims_%SCENARIO%.rds"
 copy updated_output\trip_summary.csv     "\\tsclient\C\Users\lzorn\Box\Modeling\MTC Modeling\trip_summary_%SCENARIO%.csv"
 
 goto done_no_error
