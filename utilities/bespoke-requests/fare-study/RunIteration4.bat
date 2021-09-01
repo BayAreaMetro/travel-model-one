@@ -123,6 +123,11 @@ set TRNCONFIG=FAST
 set COMPLEXMODES_DWELL= 
 set COMPLEXMODES_ACCESS= 
 
+:: Step 4.5: Build initial transit files
+set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+python CTRAMP\scripts\skims\transitDwellAccess.py NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+if ERRORLEVEL 2 goto done
+
 : iter4
 
 echo STARTED ITERATION %ITER%  %DATE% %TIME% >> logs\feedback.rpt 
@@ -346,7 +351,8 @@ if ERRORLEVEL 1 goto done
 if ERRORLEVEL 1 goto done
 
 :: copy results to Box
-copy updated_output\trip_summary.csv "\\tsclient\C\Users\lzorn\Box\Modeling and Surveys\Projects\Fare Coordination Integration Study (FCIS)\MTC Modeling\trip_summary_%SCENARIO%.csv"
+copy updated_output\trips_with_skims.rds "\\tsclient\C\Users\lzorn\Box\Modeling\MTC Modeling\trips_with_skims_%SCENARIO%.csv"
+copy updated_output\trip_summary.csv     "\\tsclient\C\Users\lzorn\Box\Modeling\MTC Modeling\trip_summary_%SCENARIO%.csv"
 
 goto done_no_error
 
