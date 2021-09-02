@@ -42,6 +42,9 @@ IF "%SCENARIO%" == "2015_FCIS_FareByDistance_flatLocal_5pctIncrease" (
 IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByZone_Seamless.job"  CTRAMP\scripts\skims\TransitSkims.job
 )
+IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless_plus10pct" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByZone_Seamless_plus10pct.job"  CTRAMP\scripts\skims\TransitSkims.job
+)
 
 :: Set the Baseline (complete three iteration run) that we're pivoting from
 set BASELINE_FULL_RUN=\\MODEL2-B\Model2B-Share\Projects\2015_TM152_IPA_17
@@ -67,6 +70,10 @@ IF "%SCENARIO%" == "2015_FCIS_FareByDistance_flatLocal_5pctIncrease" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByDistanceLookup.csv"  INPUT\trn
 )
 IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByZone_Seamless.tpp"  INPUT\trn
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\ZoneLookup_Seamless.csv"  INPUT\trn
+)
+IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless_plus10pct" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByZone_Seamless.tpp"  INPUT\trn
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\ZoneLookup_Seamless.csv"  INPUT\trn
 )
