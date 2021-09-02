@@ -482,7 +482,7 @@ loop period = 1,5
   
                     IF (MI.1.dLocal>0 && MI.1.dRegional=0)         ; only local services are used
 
-                        MW[10]  =   1.48                           ; flat fare
+                        MW[10]  =  148                             ; flat fare
   
                     ELSEIF (MI.1.dRegional > 0)                    ; if Regional services are used
   
