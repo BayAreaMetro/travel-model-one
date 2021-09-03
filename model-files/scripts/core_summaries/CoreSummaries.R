@@ -506,7 +506,22 @@ add_time <- function(this_timeperiod, input_trips_or_tours, reverse_od=FALSE) {
              (costMode == 8) * bike +
              (costMode == 9) * wTrnW +
              (costMode == 10) * (1 - reverse_od) * dTrnW +
-             (costMode == 10) * (reverse_od) * wTrnD)
+             (costMode == 10) * (reverse_od) * wTrnD +
+             (costMode == 19) * s2Toll +  # taxi uses HOV2TOLL per TripModeChoice UEC
+             (costMode == 20) * s2Toll +  # TNC single uses HOV2TOLL per TripModeChoice UEC
+             (costMode == 21) * s2Toll)   # TNC shared uses HOV2TOLL per TripModeChoice UEC
+
+  # for taxi and TNC trips (not tours!), add the wait time from the record
+  # tours are left as TODO; have origTaxiWait, destTaxiWait, etc
+  if (("trip_mode" %in% colnames(input_trips_or_tours)) && 
+       ("taxiWait" %in% colnames(input_trips_or_tours))) {
+    relevant <- mutate(relevant,
+                       time2 = case_when(
+                          trip_mode == 19 ~ time2 + taxiWait,
+                          trip_mode == 20 ~ time2 + singleTNCWait,
+                          trip_mode == 21 ~ time2 + sharedTNCWait,
+                          TRUE ~ time2))
+  }
 
   # re-code missing as zero and set a failure indicator
   relevant <- relevant %>%
@@ -611,7 +626,8 @@ add_active <- function(this_timeperiod, input_trips_or_tours) {
 
 indiv_trips     <- read.table(file=file.path(MAIN_DIR, paste0("indivTripData_",ITER,".csv")), header=TRUE, sep=",")
 indiv_trips     <- select(indiv_trips, hh_id, person_id, person_num, tour_id, orig_taz, orig_walk_segment, dest_taz, dest_walk_segment,
-                          trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate, inbound) %>%
+                          trip_mode, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate, inbound,
+                          taxiWait, singleTNCWait, sharedTNCWait) %>%
                    mutate(tour_id = paste0("i",substr(tour_purpose,1,4),tour_id))
 print(paste("Read",prettyNum(nrow(indiv_trips),big.mark=","),"individual trips"))
 
@@ -621,7 +637,8 @@ print(paste("Read",prettyNum(nrow(indiv_trips),big.mark=","),"individual trips")
 joint_trips     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTripData_",ITER,".csv")),
                                      header=TRUE, sep=","))
 joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, orig_walk_segment, dest_taz, dest_walk_segment, trip_mode,
-                          num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate, inbound) %>%
+                          num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate, inbound,
+                          taxiWait, singleTNCWait, sharedTNCWait) %>%
                    mutate(tour_id = paste0("j",substr(tour_purpose,1,4),tour_id))
 
 print(paste("Read",prettyNum(nrow(joint_trips),big.mark=","),
@@ -849,6 +866,9 @@ trips <- trips %>%
   mutate(costMode = ifelse((trip_mode >= 9) & (trip_mode <=13), 9, costMode)) %>%
   mutate(costMode = ifelse((trip_mode >= 14) & (trip_mode <=18) & (orig_purpose == 'Home'), 10, costMode)) %>%
   mutate(costMode = ifelse((trip_mode >= 14) & (trip_mode <=18) & (dest_purpose == 'Home'), 11, costMode)) %>%
+  mutate(costMode = ifelse(trip_mode == 19, 19, costMode)) %>% # taxi
+  mutate(costMode = ifelse(trip_mode == 20, 20, costMode)) %>% # TNC single
+  mutate(costMode = ifelse(trip_mode == 21, 21, costMode)) %>% # TNC shared
   mutate(cost = 0) %>%
   mutate(cost_fail = 0) %>%
   mutate(time = 0) %>%
