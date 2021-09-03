@@ -324,17 +324,31 @@ add_cost <- function(this_timeperiod, input_trips_or_tours, reverse_od = FALSE) 
   # assign cost value if we can to new column cost2
   relevant <- relevant %>%
     mutate(cost2 = (costMode == 1) * da +
-             (costMode == 2 & incQ == 1) * daToll * MBT_Q1_factor + (costMode == 2 & incQ == 2) * daToll * MBT_Q2_factor + (costMode == 2 & incQ >= 3) * daToll +
+             (costMode == 2 & incQ == 1) * daToll * MBT_Q1_factor + 
+             (costMode == 2 & incQ == 2) * daToll * MBT_Q2_factor + 
+             (costMode == 2 & incQ >= 3) * daToll +
              (costMode == 3) * s2 +
-             (costMode == 4 & incQ == 1) * s2Toll * MBT_Q1_factor + (costMode == 4 & incQ == 2) * s2Toll * MBT_Q2_factor + (costMode == 4 & incQ >= 3) * s2Toll +
+             (costMode == 4 & incQ == 1) * s2Toll * MBT_Q1_factor + 
+             (costMode == 4 & incQ == 2) * s2Toll * MBT_Q2_factor + 
+             (costMode == 4 & incQ >= 3) * s2Toll +
              (costMode == 5) * s3 +
-             (costMode == 6 & incQ == 1) * s3Toll* MBT_Q1_factor + (costMode == 6 & incQ == 2) * s3Toll* MBT_Q2_factor + (costMode == 6 & incQ >= 3) * s3Toll +
+             (costMode == 6 & incQ == 1) * s3Toll* MBT_Q1_factor + 
+             (costMode == 6 & incQ == 2) * s3Toll* MBT_Q2_factor + 
+             (costMode == 6 & incQ >= 3) * s3Toll +
              (costMode == 7) * 0.0 +
              (costMode == 8) * 0.0 +
-             (costMode == 9 & incQ == 1) * wTrnW * MBF_Q1_factor + (costMode == 9 & incQ == 2) * wTrnW * MBF_Q2_factor + (costMode == 9 & incQ >= 3) * wTrnW +
-             (costMode == 10 & incQ == 1) * (1 - reverse_od) * dTrnW * MBF_Q1_factor + (costMode == 10 & incQ == 2) * (1 - reverse_od) * dTrnW * MBF_Q2_factor + (costMode == 10 & incQ >= 3) * (1 - reverse_od) * dTrnW +
-             (costMode == 10 & incQ == 1) * (reverse_od) * wTrnD * MBF_Q1_factor + (costMode == 10 & incQ == 2) * (reverse_od) * wTrnD * MBF_Q2_factor + (costMode == 10 & incQ >= 3) * (reverse_od) * wTrnD +
-             (costMode == 11 & incQ == 1) * wTrnD * MBF_Q1_factor + (costMode == 11 & incQ == 2) * wTrnD * MBF_Q2_factor + (costMode == 11 & incQ >= 3) * wTrnD)
+             (costMode == 9 & incQ == 1) * wTrnW * MBF_Q1_factor + 
+             (costMode == 9 & incQ == 2) * wTrnW * MBF_Q2_factor + 
+             (costMode == 9 & incQ >= 3) * wTrnW +
+             (costMode == 10 & incQ == 1) * (1 - reverse_od) * dTrnW * MBF_Q1_factor + 
+             (costMode == 10 & incQ == 2) * (1 - reverse_od) * dTrnW * MBF_Q2_factor + 
+             (costMode == 10 & incQ >= 3) * (1 - reverse_od) * dTrnW +
+             (costMode == 10 & incQ == 1) * (reverse_od) * wTrnD * MBF_Q1_factor + 
+             (costMode == 10 & incQ == 2) * (reverse_od) * wTrnD * MBF_Q2_factor + 
+             (costMode == 10 & incQ >= 3) * (reverse_od) * wTrnD +
+             (costMode == 11 & incQ == 1) * wTrnD * MBF_Q1_factor + 
+             (costMode == 11 & incQ == 2) * wTrnD * MBF_Q2_factor + 
+             (costMode == 11 & incQ >= 3) * wTrnD)
 
 
   # re-code missing as zero and set a failure indicator
