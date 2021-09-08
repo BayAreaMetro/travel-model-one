@@ -1,4 +1,4 @@
-; Fare by Distance with flat $1.48 local fare and 5% increase from https://github.com/alexmitrani/travel-model-one/blob/ef5484a9d01cd036af97a476362d0f9d92b3f890/model-files/scripts/skims/TransitSkims_T31.job
+; Fare by Distance with flat $1.48 local fare and (no increease multiplier) from https://github.com/alexmitrani/travel-model-one/blob/ef5484a9d01cd036af97a476362d0f9d92b3f890/model-files/scripts/skims/TransitSkims_T31.job
 ; See diff with TransitSkims.job in this directory
 ;
 ; Specify FCIS modes, LL, 7/22/21 

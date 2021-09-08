@@ -36,8 +36,16 @@ IF "%SCENARIO%" == "2015_FCIS_RegLoc25Discount" (
 IF "%SCENARIO%" == "2015_FCIS_FareByDistance" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByDistance.job"  CTRAMP\scripts\skims\TransitSkims.job
 )
+IF "%SCENARIO%" == "2015_FCIS_FareByDistance_20pctIncrease" (
+  rem same skim but different lookup table
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByDistance.job"  CTRAMP\scripts\skims\TransitSkims.job
+)
 IF "%SCENARIO%" == "2015_FCIS_FareByDistance_flatLocal_5pctIncrease" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByDistance_flatLocal_5pctIncrease.job"  CTRAMP\scripts\skims\TransitSkims.job
+)
+IF "%SCENARIO%" == "2015_FCIS_FareByDistance_flatLocal_20pctIncrease" (
+  rem flat local skim but different lookup table
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByDistance_flatLocal.job"  CTRAMP\scripts\skims\TransitSkims.job
 )
 IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByZone_Seamless.job"  CTRAMP\scripts\skims\TransitSkims.job
@@ -65,9 +73,17 @@ copy /Y "%BASELINE_FULL_RUN%\INPUT\params.properties"                          I
 IF "%SCENARIO%" == "2015_FCIS_FareByDistance" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByDistanceLookup.csv"  INPUT\trn
 )
+IF "%SCENARIO%" == "2015_FCIS_FareByDistance_20pctIncrease" (
+  rem same skim but different lookup table
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByDistanceLookup_plus20pct.csv"  INPUT\trn\FareByDistanceLookup.csv
+)
 IF "%SCENARIO%" == "2015_FCIS_FareByDistance_flatLocal_5pctIncrease" (
   :: use same distance file; increase fare in code
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByDistanceLookup.csv"  INPUT\trn
+)
+IF "%SCENARIO%" == "2015_FCIS_FareByDistance_flatLocal_20pctIncrease" (
+  :: use same distance file; increase fare in code
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByDistanceLookup_plus20pct.csv"  INPUT\trn\FareByDistanceLookup.csv
 )
 IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByZone_Seamless.tpp"  INPUT\trn
