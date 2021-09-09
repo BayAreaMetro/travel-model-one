@@ -36,6 +36,12 @@ IF "%SCENARIO%" == "2015_FCIS_RegLoc25Discount" (
 IF "%SCENARIO%" == "2015_FCIS_FareByDistance" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByDistance.job"  CTRAMP\scripts\skims\TransitSkims.job
 )
+IF "%SCENARIO%" == "2015_FCIS_FareByDistance_max12at74mi" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByDistance.job"  CTRAMP\scripts\skims\TransitSkims.job
+)
+IF "%SCENARIO%" == "2015_FCIS_FareByDistance_flatLocal_max12at74mi" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByDistance_flatLocal.job"  CTRAMP\scripts\skims\TransitSkims.job
+)
 IF "%SCENARIO%" == "2015_FCIS_FareByDistance_20pctIncrease" (
   rem same skim but different lookup table
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByDistance.job"  CTRAMP\scripts\skims\TransitSkims.job
@@ -52,6 +58,9 @@ IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless" (
 )
 IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless_plus10pct" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByZone_Seamless_plus10pct.job"  CTRAMP\scripts\skims\TransitSkims.job
+)
+IF "%SCENARIO%" == "2015_FCIS_RegRegDiscount" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_RegRegDiscount.job"  CTRAMP\scripts\skims\TransitSkims.job
 )
 
 :: Set the Baseline (complete three iteration run) that we're pivoting from
@@ -72,6 +81,12 @@ copy /Y "%BASELINE_FULL_RUN%\INPUT\params.properties"                          I
 
 IF "%SCENARIO%" == "2015_FCIS_FareByDistance" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByDistanceLookup.csv"  INPUT\trn
+)
+IF "%SCENARIO%" == "2015_FCIS_FareByDistance_max12at74mi" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByDistanceLookup_max12usd_at_74mi.csv"  INPUT\trn\\FareByDistanceLookup.csv
+)
+IF "%SCENARIO%" == "2015_FCIS_FareByDistance_flatLocal_max12at74mi" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByDistanceLookup_max12usd_at_74mi.csv"  INPUT\trn\FareByDistanceLookup.csv
 )
 IF "%SCENARIO%" == "2015_FCIS_FareByDistance_20pctIncrease" (
   rem same skim but different lookup table
