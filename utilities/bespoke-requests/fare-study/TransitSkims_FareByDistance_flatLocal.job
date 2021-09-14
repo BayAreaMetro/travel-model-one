@@ -105,6 +105,7 @@ FCIS_BART='120'
 token_model_dir = '%MODEL_DIR%'
 token_trnassigniter = '%TRNASSIGNITER%'
 token_prevtrnassigniter = '%PREVTRNASSIGNITER%'
+token_addfare = '%ADDFARE%'
 
 counter = 0
 
@@ -488,9 +489,9 @@ loop period = 1,5
   
                         IF (MI.1.dRegional > MI.1.dBART)           ; check if other regional services are used as well as BART
                             MYFARE = FareByDist(1,MI.1.dRegional)  ; look up fare from "fare by distance" curve
-                            MW[10] = MYFARE*100                    ; convert fares to cents
+                            MW[10] = MYFARE*100 + @token_addfare@  ; convert fares to cents
                         ELSE                                       ; if the regional distance is just BART
-                            MW[10]  = MI.1.faremat
+                            MW[10] = MI.1.faremat + @token_addfare@
                         ENDIF
   
                     ENDIF                                          ; end: if Regional services are used
