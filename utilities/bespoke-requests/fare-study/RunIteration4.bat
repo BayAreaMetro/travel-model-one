@@ -58,6 +58,10 @@ IF "%SCENARIO%" == "2015_FCIS_FareByDistance_flatLocal_max1220at74mi_plus16c" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByDistance_flatLocal.job"  CTRAMP\scripts\skims\TransitSkims.job
   set ADDFARE=16
 )
+IF "%SCENARIO%" == "2015_FCIS_FareByDistance_flatLocal_max1220at74mi_plus23c" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByDistance_flatLocal.job"  CTRAMP\scripts\skims\TransitSkims.job
+  set ADDFARE=23
+)
 IF "%SCENARIO%" == "2015_FCIS_FareByDistance_20pctIncrease" (
   rem same skim but different lookup table
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByDistance.job"  CTRAMP\scripts\skims\TransitSkims.job
@@ -74,6 +78,10 @@ IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless" (
 )
 IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless_plus10pct" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByZone_Seamless_plus10pct.job"  CTRAMP\scripts\skims\TransitSkims.job
+)
+IF "%SCENARIO%" == "2015_FCIS_FareByZone_LargeRegional_LocalFlatFare_plus62c" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByZone_LargeRegionalZone_flatLocal.job"  CTRAMP\scripts\skims\TransitSkims.job
+  set ADDFARE=62
 )
 IF "%SCENARIO%" == "2015_FCIS_RegRegDiscount" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_RegRegDiscount.job"  CTRAMP\scripts\skims\TransitSkims.job
@@ -116,6 +124,9 @@ IF "%SCENARIO%" == "2015_FCIS_FareByDistance_flatLocal_max1220at74mi" (
 IF "%SCENARIO%" == "2015_FCIS_FareByDistance_flatLocal_max1220at74mi_plus16c" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByDistanceLookup_max1220c_at_74mi.csv"  INPUT\trn\FareByDistanceLookup.csv
 )
+IF "%SCENARIO%" == "2015_FCIS_FareByDistance_flatLocal_max1220at74mi_plus23c" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByDistanceLookup_max1220c_at_74mi.csv"  INPUT\trn\FareByDistanceLookup.csv
+)
 IF "%SCENARIO%" == "2015_FCIS_FareByDistance_20pctIncrease" (
   rem same skim but different lookup table
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByDistanceLookup_plus20pct.csv"  INPUT\trn\FareByDistanceLookup.csv
@@ -135,6 +146,10 @@ IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless" (
 IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless_plus10pct" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByZone_Seamless.tpp"  INPUT\trn
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\ZoneLookup_Seamless.csv"  INPUT\trn
+)
+IF "%SCENARIO%" == "2015_FCIS_FareByZone_LargeRegional_LocalFlatFare_plus62c" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByZone_LargeRegional.tpp"  INPUT\trn
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\ZoneLookup_LargeRegional.csv"  INPUT\trn
 )
 
 :: ------------------------------------------------------------------------------------------------------
