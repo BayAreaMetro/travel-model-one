@@ -486,13 +486,13 @@ loop period = 1,5
                   MW[52] = FZ_O
                   MW[53] = FZ_D
 
-                  IF ((MI.1.ddist < 1000) && (MI.1.dLocal < 1000)                ; distance is measured in miles * 100
+                  IF ((MI.1.ddist < 1000) && (MI.1.dLocal < 1000))               ; distance is measured in miles * 100
                       MYFARE=MATVAL(2,1,FZ_O,FZ_D)                               ; => fare       
                   ELSEIF ( ((MI.1.ddist >= 1000) && (MI.1.dLocal <  1000)) ||    ; if auto distance OR local transit distance is 10 miles or more
                            ((MI.1.ddist <  1000) && (MI.1.dLocal >= 1000)) )     ; (but not both), one zone should be taken off the number of zones to
                                                                                  ; be used in calculating the transit fare
                       MYFARE=MATVAL(2,2,FZ_O,FZ_D)                               ; => are_minus1
-                  ELSEIF ( (MI.ddist >= 1000) && (MI.1.dLocal >= 1000) )         ; if BOTH auto distance AND local transit distance is 10 miles or more,
+                  ELSEIF ( (MI.1.ddist >= 1000) && (MI.1.dLocal >= 1000) )       ; if BOTH auto distance AND local transit distance is 10 miles or more,
                                                                                  ; TWO zones should be taken off the number of zones to be used in 
                                                                                  ; calculating the transit fare
                       MYFARE=MATVAL(2,3,FZ_O,FZ_D)                               ; => fare_minus2
