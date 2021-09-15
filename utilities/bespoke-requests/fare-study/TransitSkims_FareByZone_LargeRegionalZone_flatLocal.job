@@ -480,27 +480,36 @@ loop period = 1,5
               IF (I=J)
                  ; pass -- no transit path intrazonal
               ELSEIF ((MI.1.dInterCity + MI.1.dFree) = 0)            ; if in scope (no free shuttle, no intercity)
- 
-                  FZ_O = TAZ_to_FZ(1,I)                              ; Fare Zone - Origin
-                  FZ_D = TAZ_to_FZ(1,J)                              ; Fare Zone - Destination
-                  MW[52] = FZ_O
-                  MW[53] = FZ_D
+              
+                      IF (MI.1.dRegional=0 && MI.1.dLocal>0)   ; no Regional Services (only local)
+                
+                        MW[10]=148
+                
+                    ELSEIF (MI.1.dRegional>0)             ; distance is travelled on Regional Services
 
-                  IF ((MI.1.ddist < 1000) && (MI.1.dLocal < 1000))               ; distance is measured in miles * 100
-                      MYFARE=MATVAL(2,1,FZ_O,FZ_D)                               ; => fare       
-                  ELSEIF ( ((MI.1.ddist >= 1000) && (MI.1.dLocal <  1000)) ||    ; if auto distance OR local transit distance is 10 miles or more
-                           ((MI.1.ddist <  1000) && (MI.1.dLocal >= 1000)) )     ; (but not both), one zone should be taken off the number of zones to
-                                                                                 ; be used in calculating the transit fare
-                      MYFARE=MATVAL(2,2,FZ_O,FZ_D)                               ; => are_minus1
-                  ELSEIF ( (MI.1.ddist >= 1000) && (MI.1.dLocal >= 1000) )       ; if BOTH auto distance AND local transit distance is 10 miles or more,
-                                                                                 ; TWO zones should be taken off the number of zones to be used in 
-                                                                                 ; calculating the transit fare
-                      MYFARE=MATVAL(2,3,FZ_O,FZ_D)                               ; => fare_minus2
-                  ELSE
-                      ; There shouldn't be any cases in this category
-                  ENDIF
-                  
-                  MW[10] = MYFARE*100*1.10 + @token_addfare@                     ; apply a 10% increase, add @token_addfare@ cents  
+ 
+                      FZ_O = TAZ_to_FZ(1,I)                              ; Fare Zone - Origin
+                      FZ_D = TAZ_to_FZ(1,J)                              ; Fare Zone - Destination
+                      MW[52] = FZ_O
+                      MW[53] = FZ_D
+
+                      IF ((MI.1.ddist < 1000) && (MI.1.dLocal < 1000))               ; distance is measured in miles * 100
+                          MYFARE=MATVAL(2,1,FZ_O,FZ_D)                               ; => fare       
+                      ELSEIF ( ((MI.1.ddist >= 1000) && (MI.1.dLocal <  1000)) ||    ; if auto distance OR local transit distance is 10 miles or more
+                               ((MI.1.ddist <  1000) && (MI.1.dLocal >= 1000)) )     ; (but not both), one zone should be taken off the number of zones to
+                                                                                     ; be used in calculating the transit fare
+                          MYFARE=MATVAL(2,2,FZ_O,FZ_D)                               ; => are_minus1
+                      ELSEIF ( (MI.1.ddist >= 1000) && (MI.1.dLocal >= 1000) )       ; if BOTH auto distance AND local transit distance is 10 miles or more,
+                                                                                     ; TWO zones should be taken off the number of zones to be used in 
+                                                                                     ; calculating the transit fare
+                          MYFARE=MATVAL(2,3,FZ_O,FZ_D)                               ; => fare_minus2
+                      ELSE
+                          ; There shouldn't be any cases in this category
+                      ENDIF
+                      
+                      MW[10] = MYFARE*100*1.10 + @token_addfare@                     ; apply a 10% increase, add @token_addfare@ cents  
+                      
+                    ENDIF                                            ; end if no Regional Services (only local)              
                   
               ENDIF                                                  ; end if in scope
               
