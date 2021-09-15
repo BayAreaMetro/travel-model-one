@@ -79,6 +79,10 @@ IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless" (
 IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless_plus10pct" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByZone_Seamless_plus10pct.job"  CTRAMP\scripts\skims\TransitSkims.job
 )
+IF "%SCENARIO%" == "2015_FCIS_FareByZone_LargeRegional_LocalFlatFare_plus28c" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByZone_LargeRegionalZone_flatLocal.job"  CTRAMP\scripts\skims\TransitSkims.job
+  set ADDFARE=28
+)
 IF "%SCENARIO%" == "2015_FCIS_FareByZone_LargeRegional_LocalFlatFare_plus62c" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\TransitSkims_FareByZone_LargeRegionalZone_flatLocal.job"  CTRAMP\scripts\skims\TransitSkims.job
   set ADDFARE=62
@@ -146,6 +150,10 @@ IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless" (
 IF "%SCENARIO%" == "2015_FCIS_FareByZone_Seamless_plus10pct" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByZone_Seamless.tpp"  INPUT\trn
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\ZoneLookup_Seamless.csv"  INPUT\trn
+)
+IF "%SCENARIO%" == "2015_FCIS_FareByZone_LargeRegional_LocalFlatFare_plus28c" (
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByZone_LargeRegional.tpp"  INPUT\trn
+  copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\ZoneLookup_LargeRegional.csv"  INPUT\trn
 )
 IF "%SCENARIO%" == "2015_FCIS_FareByZone_LargeRegional_LocalFlatFare_plus62c" (
   copy /Y "%GITHUB_DIR%\utilities\bespoke-requests\fare-study\FareByZone_LargeRegional.tpp"  INPUT\trn
