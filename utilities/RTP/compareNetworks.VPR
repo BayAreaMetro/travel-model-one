@@ -1,9 +1,8 @@
 [TPPLUS]
 PROJECT=NETWORK
-VprBasePath=M:\APPLICATION\MODEL ONE\RTP2021\BLUEPRINT\INPUT_DEVELOPMENT\NETWORKS\BLUEPRINTNETWORKS_53\
 
 [HWYLAYER]
-FileName=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_53\COMPARE_BP_2015_2035_V53.net
+FileName=COMPARE.net
 Visible=1
 FileName2=
 DistScale=0.000626136890677995
@@ -77,7 +76,9 @@ LinkColorGroup1=MISMATCH
 LinkColorPaletteIndex1=29
 LinkDrawOffset1=0
 LinkColor1_1=12237498,0,1,(IN_NET1=1)&(IN_NET2=1)&(STRLEN(MISMATCH)=0)
-LinkColor1_2=12550647,0,10,(IN_NET1=1)&(IN_NET2=0)&(N1_GL=7)                                          ; new in net1
+LinkColor1_2=255,0,3,(IN_NET1=1)&(IN_NET2=1)&(STRLEN(MISMATCH)>0)  ; attribute changed
+LinkColor1_3=5281818,0,3,(IN_NET1=0)&(IN_NET2=1)                                            ; new in net2
+LinkColor1_4=12090935,0,3,(IN_NET1=1)&(IN_NET2=0)                                            ; new in net1
 ActiveSelectGroup=0
 SelectGroup1=
 Select1=
@@ -85,92 +86,6 @@ ActiveLinkPostGroup=1
 LinkPostGroup1=MISMATCH
 LinkPost1_1=MISMATCH,-1,0
 LinkPostSelectStr1=STRLEN(MISMATCH)>0
-AniSpeedFromColor=255
-AniSpeedToColor=65280
-AniColorBySpeed=0
-AniSpeedNumColor=7
-AniSpeedColor1=255
-AniSpeedRange1=10
-AniSpeedColor2=8388736
-AniSpeedRange2=20
-AniSpeedColor3=8421504
-AniSpeedRange3=30
-AniSpeedColor4=16711680
-AniSpeedRange4=40
-AniSpeedColor5=8421376
-AniSpeedRange5=50
-AniSpeedColor6=32768
-AniSpeedRange6=60
-AniSpeedColor7=65280
-AniSpeedRange7=70
-NodeOrderListIndex=1
-NodeOrderListName1=
-NodeOrderListValue1=
-NodeOrderListName2=
-NodeOrderListValue2=
-NodeOrderListName3=
-NodeOrderListValue3=
-NodeOrderListName4=
-NodeOrderListValue4=
-NodeOrderListName5=
-NodeOrderListValue5=
-NodeOrderListName6=
-NodeOrderListValue6=
-NodeOrderListName7=
-NodeOrderListValue7=
-NodeOrderListName8=
-NodeOrderListValue8=
-NodeOrderListName9=
-NodeOrderListValue9=
-NodeOrderListName10=
-NodeOrderListValue10=
-NodeOrderListName11=
-NodeOrderListValue11=
-NodeOrderListName12=
-NodeOrderListValue12=
-NodeOrderListName13=
-NodeOrderListValue13=
-NodeOrderListName14=
-NodeOrderListValue14=
-NodeOrderListName15=
-NodeOrderListValue15=
-NodeOrderListName16=
-NodeOrderListValue16=
-NodePopUpDisplayOrder=0
-LinkOrderListIndex=1
-LinkOrderListName1=
-LinkOrderListValue1=
-LinkOrderListName2=
-LinkOrderListValue2=
-LinkOrderListName3=
-LinkOrderListValue3=
-LinkOrderListName4=
-LinkOrderListValue4=
-LinkOrderListName5=
-LinkOrderListValue5=
-LinkOrderListName6=
-LinkOrderListValue6=
-LinkOrderListName7=
-LinkOrderListValue7=
-LinkOrderListName8=
-LinkOrderListValue8=
-LinkOrderListName9=
-LinkOrderListValue9=
-LinkOrderListName10=
-LinkOrderListValue10=
-LinkOrderListName11=
-LinkOrderListValue11=
-LinkOrderListName12=
-LinkOrderListValue12=
-LinkOrderListName13=
-LinkOrderListValue13=
-LinkOrderListName14=
-LinkOrderListValue14=
-LinkOrderListName15=
-LinkOrderListValue15=
-LinkOrderListName16=
-LinkOrderListValue16=
-LinkPopUpDisplayOrder=0
 
 [PLOT]
 ActiveSetUp=1
@@ -233,7 +148,7 @@ Set1Legend4Item1=0,0,0,0,0,0,
 
 [SAVEVIEWS]
 RestoreLastView=0
-ViewLast=538727.653605865,587697.817703815,4228717.65560851,4247180.88453175
+ViewLast=599933.838230221,608633.12043421,4204427.5802809,4208717.13069817
 
 [DYNASIM]
 DynaFieldIsSpeed=1
@@ -317,7 +232,5 @@ Select1=
 NumRecords=1
 ScreenColor=16777215
 FreewayOutlineColor=5263440
-NumDisplayDec=-1
 ScreenFont=Tahoma,0,8
 Order=HWYLAYER,TRNLAYER,PTSLAYER,LINLAYER,BDYLAYER,IMGLAYER,DRWLAYER
-
