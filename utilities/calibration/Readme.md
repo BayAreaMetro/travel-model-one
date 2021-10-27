@@ -1,7 +1,7 @@
 
 ## Contents
 
-* `workbook_templates`: Contains sumodel calibration workbook templates.  These include calibration targets and observed data for 2015.
+* `workbook_templates`: Contains submodel calibration workbook templates.  These include calibration targets and observed data for 2015.
 * `00_submodel.R`: summarizes model core output (plus some inputs) to create model summaries and pastes those into calibration workbooks
 * `updateUEC.R`: used to copy new constants from calibration workbooks into model UECs
 
