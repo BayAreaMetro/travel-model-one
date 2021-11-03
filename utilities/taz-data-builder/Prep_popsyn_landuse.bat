@@ -51,6 +51,9 @@ set R_HOME=C:\Program Files\R\R-3.4.4\bin
 IF %USERNAME%==lzorn (
   set R_HOME=C:\Program Files\R\R-3.5.1\bin
 )
+IF %USERNAME%==mtcpb (
+  set R_HOME=C:\Program Files\R\R-3.5.2\bin
+)
 set F_INPUT=tazData.csv
 Set F_OUTPUT=tazData.dbf
 "%R_HOME%\Rscript.exe" X:\travel-model-one-master\utilities\taz-data-csv-to-dbf\taz-data-csv-to-dbf.R
