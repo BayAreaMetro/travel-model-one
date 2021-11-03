@@ -65,7 +65,6 @@ python X:\travel-model-one-master\utilities\taz-data-builder\updateParkingCostFo
 
 set F_INPUT=tazData_parkingStrategy_v01.csv
 set F_OUTPUT=tazData_parkingStrategy_v01.dbf
-RScript X:\travel-model-one-master\utilities\taz-data-csv-to-dbf\taz-data-csv-to-dbf.R
 "%R_HOME%\Rscript.exe" X:\travel-model-one-master\utilities\taz-data-csv-to-dbf\taz-data-csv-to-dbf.R
 
 
