@@ -29,7 +29,7 @@ copy /y "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"                CTRAM
 
 :setup_inputs
 :: copy over INPUTs from baseline
-set MODEL_SETUP_BASE_DIR=\\MODEL2-C\Model2C-Share\Projects\2035_TM152_FBP_Plus_14
+set MODEL_SETUP_BASE_DIR=\\MODEL2-B\Model2B-Share\Projects\2035_TM152_FBP_Plus_17
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\landuse"        INPUT\landuse
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\nonres"         INPUT\nonres
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\popsyn"         INPUT\popsyn
@@ -152,7 +152,7 @@ if "%CALIB_ITER%"=="00" (
 )
 
 :: update or initialize Telecommute Constant
-python \\tsclient\X\travel-model-one-cdap-worktaz\model-files\scripts\preprocess\updateTelecommuteConstants.py
+python \\tsclient\X\travel-model-one-master\model-files\scripts\preprocess\updateTelecommuteConstants.py
 if ERRORLEVEL 1 goto done
 
 :: copy over result for use
