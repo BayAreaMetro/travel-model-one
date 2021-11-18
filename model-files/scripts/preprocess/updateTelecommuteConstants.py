@@ -68,13 +68,14 @@ if __name__ == '__main__':
         # model run mode -- use ITER for CALIB_ITER
         CALIB_ITER = "0"+ITER
 
-        if (int(MODEL_YEAR) < 2035) or \
-           (MODEL_DIR.upper().find("NOPROJECT") >= 0) or \
-           (MODEL_DIR.upper().find("NOTRANSPORTPROJECT") >= 0) or \
-           (MODEL_DIR.upper().find("IPA") >= 0):
-            UPDATE_CONSTANT = False
-        else:
-            UPDATE_CONSTANT = True
+        UPDATE_CONSTANT = False
+        if (MODEL_DIR.upper().find("FBP") >= 0):
+            if (int(MODEL_YEAR) < 2035) or \
+               (MODEL_DIR.upper().find("NOPROJECT") >= 0) or \
+               (MODEL_DIR.upper().find("NOTRANSPORTPROJECT") >= 0):
+               UPDATE_CONSTANT = False
+            else:
+               UPDATE_CONSTANT = True
 
     print('MODEL_YEAR               = {}'.format(MODEL_YEAR))
     print('MODEL_DIR                = {}'.format(MODEL_DIR))
