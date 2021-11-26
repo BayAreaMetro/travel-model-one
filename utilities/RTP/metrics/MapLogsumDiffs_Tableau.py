@@ -10,7 +10,7 @@ from shutil import copyfile
 
 USAGE = """
   Run this script in the folder of the baseline run output, e.g. RTP2021\IncrementalProgress\2050_TM152_SEN_Project_01
-  python \\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\metrics\MapLogsumDiffs_Tableau.py ..\2050_TM152_SEN_Project_01
+  python \\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\metrics\MapLogsumDiffs_Tableau.py ..\2050_TM152_SEN_Project_01 2050
 
   Reads logsums (work and shop) by market segment for project and base  (sources baseID from PPAMasterInput).
   Reads population by market segment.
@@ -26,6 +26,7 @@ USAGE = """
 
 print('base run: ', os.getcwd())
 print('project run: ', sys.argv[1])
+print('run year: ', sys.argv[2])
 
 # reading logsums by market segment for project
 print(os.path.join(sys.argv[1], 'OUTPUT', 'logsums', "person_workDCLogsum.csv"))
@@ -93,7 +94,11 @@ logsums_pop_shop_df['dcLogsum_base_noCEM'] = logsums_pop_shop_df['dcLogsum_pop b
 logsums_pop_shop_df['dcLogsum_proj_noCEM'] = logsums_pop_shop_df['dcLogsum_pop proj']
 logsums_pop_shop_df = logsums_pop_shop_df.drop(['id','dcLogsum_pop base','dcLogsum_pop proj','work_proj','work_base','shop_proj','shop_base'], 1)
 
-
+# add model run year column
+logsums_work_df['year'] = sys.argv[2]
+logsums_shop_df['year'] = sys.argv[2]
+logsums_pop_work_df['year'] = sys.argv[2]
+logsums_pop_shop_df['year'] = sys.argv[2]
 
 # creating directory for logsum maps within project folder, with subdirectories for Market Segments and Population
 directory = os.path.join(os.getcwd(), 'logsum_diff_map')
