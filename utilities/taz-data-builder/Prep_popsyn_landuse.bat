@@ -2,7 +2,7 @@
 :: M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\Basic_00\2050
 
 :: to call this batch script, type the script name and then four arugments
-:: also make sure to add "> prep_popsyn_landuse.log" when you call the batch file so a log will be produced
+:: also make sure to add "> prep_popsyn_landuse.log 2>&1" when you call the batch file so a log will be produced
 :: e.g. 
 :: X:\travel-model-one-master\utilities\taz-data-builder\prep_popsyn_landuse.bat BackToTheFuture 20190724 run10 2035 > prep_popsyn_landuse.log
 :: X:\travel-model-one-master\utilities\taz-data-builder\prep_popsyn_landuse.bat PBA50 20200522 run939 2050 > prep_popsyn_landuse.log
@@ -49,7 +49,7 @@ python X:\travel-model-one-master\utilities\taz-data-builder\buildTazdata.py taz
 :: ---
 set R_HOME=C:\Program Files\R\R-3.4.4\bin
 IF %USERNAME%==lzorn (
-  set R_HOME=C:\Program Files\R\R-3.5.1\bin
+  set R_HOME=C:\Program Files\R\R-4.1.1\bin
 )
 IF %USERNAME%==mtcpb (
   set R_HOME=C:\Program Files\R\R-3.5.2\bin
