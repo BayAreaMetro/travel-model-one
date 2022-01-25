@@ -51,6 +51,9 @@ set R_HOME=C:\Program Files\R\R-3.4.4\bin
 IF %USERNAME%==lzorn (
   set R_HOME=C:\Program Files\R\R-4.1.1\bin
 )
+IF %USERNAME%==ftsang (
+  set R_HOME=C:\Program Files\R\R-4.1.2\bin
+)
 IF %USERNAME%==mtcpb (
   set R_HOME=C:\Program Files\R\R-3.5.2\bin
 )
