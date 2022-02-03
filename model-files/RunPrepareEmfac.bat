@@ -113,6 +113,10 @@ if %1==Plan-EIR if %MODEL_YEAR%==2035 (set emfacVersion=Emfac2017)
 if %1==Plan-EIR if %MODEL_YEAR%==2040 (set emfacVersion=Emfac2017)
 if %1==Plan-EIR if %MODEL_YEAR%==2050 (set emfacVersion=Emfac2017)
 
+:: additional years for SACOG's federal air quality plan
+if %1==SB375 if %MODEL_YEAR%==2023 (set emfacVersion=Emfac2014)
+if %1==SB375 if %MODEL_YEAR%==2026 (set emfacVersion=Emfac2014)
+
 :: as an example, the custom activity template for SB375 and analysis year 2035 is named as ByVehFuel_Emfac2014_SB375_Yr2035_11Subareas
 set emfac_input_template=ByVehFuel_%emfacVersion%_%1_Yr%MODEL_YEAR%_11Subareas.xlsx
 copy "CTRAMP\scripts\emfac\Custom_Activity_Templates\%emfac_input_template%" emfac_prep\%emfac_input_template%
