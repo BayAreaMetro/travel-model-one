@@ -9,14 +9,14 @@ set TRNASSIGNMODE=NORMAL
 set TOTMAXTRNITERS=30
 set MAXPATHTIME=240
 set PCT=%%
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+set PYTHONPATH=E:\Projects\Clients\gm\models\NetworkWrangler;E:\Projects\Clients\gm\models\NetworkWrangler\_static
 set TRN_ERRORLEVEL=0
 
 :: AverageNetworkVolumes.job uses PREV_ITER=1 for ITER=1
 set PREV_TRN_ITER=%PREV_ITER%
 IF %ITER% EQU 1 SET PREV_TRN_ITER=0
-
-set ALLTRIPMODES=wlk_com_wlk drv_com_wlk wlk_com_drv wlk_hvy_wlk drv_hvy_wlk wlk_hvy_drv wlk_lrf_wlk drv_lrf_wlk wlk_lrf_drv wlk_exp_wlk drv_exp_wlk wlk_exp_drv wlk_loc_wlk drv_loc_wlk wlk_loc_drv
+:: RSG 2022-01-21 TM1.5 add advanced air mobility mode
+set ALLTRIPMODES=wlk_aam_wlk drv_aam_wlk wlk_aam_drv wlk_com_wlk drv_com_wlk wlk_com_drv wlk_hvy_wlk drv_hvy_wlk wlk_hvy_drv wlk_lrf_wlk drv_lrf_wlk wlk_lrf_drv wlk_exp_wlk drv_exp_wlk wlk_exp_drv wlk_loc_wlk drv_loc_wlk wlk_loc_drv
 set ALLTOURMODES=wlk_trn_wlk drv_trn_wlk wlk_trn_drv
 IF NOT DEFINED TRNFASTERTHANFREEFLOW (set TRNFASTERTHANFREEFLOW=0)
 
@@ -223,7 +223,7 @@ if %ITER% EQU %MAXITERATIONS% (
 cd ..
 cd ..
 
-set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%PYTHON_PATH%
+set PATH=%RUNTIME%;%JAVA_PATH%\bin;%TPP_PATH%;%GAWK_PATH%\bin;%PYTHON_PATH%\envs\py27tm1;%PYTHON_PATH%\condabin;%PYTHON_PATH%\envs
 
 :: pass on errorlevel
 EXIT /B %TRN_ERRORLEVEL%
