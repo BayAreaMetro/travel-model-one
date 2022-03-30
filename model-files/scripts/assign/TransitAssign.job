@@ -1,25 +1,25 @@
 ; ----------------------------------------------------------------------------------------------------------------
 ;
 ; TransitAssign.job
-;
+; RSG 2022-01-21 TM1.5 add advanced air mobility mode
 ; TP+ script to perform a transit assignment.  A total of 75 assignments are performed, accounting for five time
 ; periods, three access/egress combinations, and five line-haul mode combinations.  The script first loops 
 ; through five time periods, which are: (a) early AM, before 6 am; (b) AM peak period, 6 am to 10 am; (c) midday, 
 ; 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; and, (e) evening, after 7 pm. Next the script loops through 
 ; three access/egress combinations, which are: walk/transit/walk; drive/transit/walk; and walk/transit/drive.  
-; Next, the script loops through six line-haul mode combinations, which are: (a) long-haul premium or commuter 
-; rail; (b) medium-haul premium or heavy rail (BART) (c) medium-haul basic or express bus; (d) short-haul premium
-; or light rail; (e) short-haul basic or local bus.
+; Next, the script loops through six line-haul mode combinations, which are: (a) long-haul advanced air mobility; 
+; (b) long-haul premium or commuter rail; (c) medium-haul premium or heavy rail (BART) (d) medium-haul basic or 
+; express bus; (e) short-haul premium or light rail; (f) short-haul basic or local bus.
 ;
 ; Please note that ferry is included in the short-haul premium or light rail line-haul options.  This was done to
 ; reduce the number of skims that need to be created.  Because light rail and ferry do not compete with each other, 
 ; travelers in corridors with light rail are presented with the light rail choice and travelers in corridors with
 ; ferry are presented with the ferry choice. 
 ;
-; The hierarchy used to create transit path options is as follows: (1) long-haul premium; (2) medium-haul premium; 
-; (3) medium-haul basic; (4) short-haul premium; and, (5) short-haul basic.  Using more traditional mode names: 
-; (1) commuter rail; (2) heavy rail; (3) express bus; (4) light rail/ferry; (5) local bus.  All modes lower than
-; the line-haul mode are made available when assigning the line-haul mode path, in an effort to create a set of
+; The hierarchy used to create transit path options is as follows: (1) advanced air mobility; (2) long-haul premium; 
+; (3) medium-haul premium; (4) medium-haul basic; (5) short-haul premium; and, (6) short-haul basic.  Using more traditional mode names: 
+; (1) advaned air mobility; (2) commuter rail; (3) heavy rail; (4) express bus; (5) light rail/ferry; (6) local bus.  
+; All modes lower than the line-haul mode are made available when assigning the line-haul mode path, in an effort to create a set of
 ; reasonable transit paths for the mode choice model to assess for each traveler. 
 ;
 ; The transit network coding uses the following mode codes: 
@@ -38,6 +38,7 @@
 ;	(110) through (119) light rail, coded by provider;
 ;	(120) through (129) heavy rail, coded by provider;
 ;	(130) through (139) commuter rail, coded by provider.
+;	(140) advanced air mobility.
 ;
 ; Input:  (A) A trip table with travel segmented into the following origin-destination trips: 
 ;              (1)  Drive alone non-value-toll paying
@@ -53,21 +54,24 @@
 ;              (11) Walk - light rail/ferry - walk
 ;              (12) Walk - heavy rail - walk
 ;              (13) Walk - commuter rail - walk
-;              (14) Drive - local bus - walk
-;              (15) Drive - express bus - walk
-;              (16) Drive - light rail/ferry - walk
-;              (17) Drive - heavy rail - walk
-;              (18) Drive - commuter rail - walk
-;              (19) Walk - local bus - drive
-;              (20) Walk - express bus - drive
-;              (21) Walk - light rail/ferry - drive
-;              (22) Walk - heavy rail - drive
-;              (23) Walk - commuter rail - drive
+;              (14) Walk - advanced air mobility - walk
+;              (15) Drive - local bus - walk
+;              (16) Drive - express bus - walk
+;              (17) Drive - light rail/ferry - walk
+;              (18) Drive - heavy rail - walk
+;              (19) Drive - commuter rail - walk
+;              (20) Drive - advanced air mobility - walk
+;              (21) Walk - local bus - drive
+;              (22) Walk - express bus - drive
+;              (23) Walk - light rail/ferry - drive
+;              (24) Walk - heavy rail - drive
+;              (25) Walk - commuter rail - drive
+;              (26) Walk - advanced air mobility - drive
 ;	  (B) A .block file listing all of the origin/destination fare files for transit services that 
 ;             charge o/d fares (transit_faremat.block);
 ;         (C) Origin/destination fare files listed in the .block file above (.far files);
 ;	  (D) A .far file setting fares to links as necessary to account for all the odd fares in the bay area (Farelinks.far);
-;	  (E) A .far file setting the transfer fares for all the 139 by 139 modal interchanges (xfare.far);
+;	  (E) A .far file setting the transfer fares for all the 140 by 140 modal interchanges (xfare.far);
 ;     (F) A transit line file and a transit link file
 ;	  (G) Numerous support link files that connect zones to transit stations via walking or bicycling (*transit_suplinks*.dat);
 ;	  (I) A .block file that lists commands to combine headways for all line-haul modes when the difference in path time
@@ -171,9 +175,9 @@ loop period = 1, 5
       endif
    
       ; line haul loop
-      loop path = 1, 5
-      
-         ; commuter rail or long-haul premium
+      loop path = 1, 6
+
+         ; advanced air mobility
          if (path = 1)         
 
             ; drive access/egress links to this mode (';' means no)
@@ -182,7 +186,8 @@ loop period = 1, 5
             token_drivelinks_light_rail    = ';'
             token_drivelinks_ferry         = ';'
             token_drivelinks_heavy_rail    = ';'
-            token_drivelinks_commuter_rail = ' '  
+            token_drivelinks_commuter_rail = ';'  
+            token_drivelinks_advanced_air_mobility = ' '  
                
             ; no KNR access links to local bus
             token_bus_acclinks_KNR = ';'
@@ -191,14 +196,39 @@ loop period = 1, 5
             token_skipmodes = '; do not skip any modes for this path'
             
             ; mode-specific perceived time factors
-            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
-            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.1,   10*1.0' 
+            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail  air mobility
+            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.1,   10*1.0,        1*1.0'   
+            
+            ; three-letter path name
+            token_path = 'aam'  
+
+         ; commuter rail or long-haul premium
+         elseif (path = 2)         
+
+            ; drive access/egress links to this mode (';' means no)
+            ; allow higher-class PNRs to be read in case of shared lots
+            token_drivelinks_express_bus   = ';'
+            token_drivelinks_light_rail    = ';'
+            token_drivelinks_ferry         = ';'
+            token_drivelinks_heavy_rail    = ';'
+            token_drivelinks_commuter_rail = ' '
+            token_drivelinks_advanced_air_mobility = ' '    
+               
+            ; no KNR access links to local bus
+            token_bus_acclinks_KNR = ';'
+            
+            ; advanced air mobility and commuter rail excluded from this path
+            token_skipmodes = 'skipmodes =  140'
+            
+            ; mode-specific perceived time factors
+            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail  air mobility
+            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.1,   10*1.0,        1*1.5'   
             
             ; three-letter path name
             token_path = 'com'
 
          ; heavy rail or medium-haul premium
-         elseif (path = 2)
+         elseif (path = 3)
 
             ; drive access/egress links to this mode (';' means no)
             ; allow higher-class PNRs to be read in case of shared lots
@@ -207,22 +237,23 @@ loop period = 1, 5
             token_drivelinks_ferry         = ';'
             token_drivelinks_heavy_rail    = ' '
             token_drivelinks_commuter_rail = ' ' 
+            token_drivelinks_advanced_air_mobility = ' '  
             
             ; no KNR access links to local bus
             token_bus_acclinks_KNR = ';'
             
-            ; commuter rail excluded from this path
-            token_skipmodes = 'skipmodes =  130-139'
+            ; advanced air mobility and commuter rail excluded from this path
+            token_skipmodes = 'skipmodes =  140,130-139'
             
             ; mode-specific perceived time factors
-            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
-            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.0,   10*1.5'
+            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail  air mobility
+            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.0,   10*1.5,        1*1.5'
             
             ; three-letter path name
             token_path = 'hvy'
 
          ; express bus or medium-haul basic
-         elseif (path = 3)
+         elseif (path = 4)
 
             ; drive access/egress links to this mode (';' means no)
             ; allow higher-class PNRs to be read in case of shared lots
@@ -231,23 +262,24 @@ loop period = 1, 5
             token_drivelinks_ferry         = ';'
             token_drivelinks_heavy_rail    = ' '
             token_drivelinks_commuter_rail = ' ' 
+            token_drivelinks_advanced_air_mobility = ' '  
             
             ; KNR access links to local bus
             token_bus_acclinks_KNR = ';'
             
-            ; commuter rail and heavy rail excluded from this path
-            token_skipmodes = 'skipmodes =  130-139,120-139'
+            ; advanced air mobility, commuter rail and heavy rail excluded from this path
+            token_skipmodes = 'skipmodes =  140,130-139,120-140'
             
             ; mode-specific perceived time factors
-            ;                        support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
-            token_modefac = 'modefac = 9*2.0,  70*1.5,  20*1.0, 10*1.5,  10*1.5,   10*1.5,   10*1.5'
+            ;                        support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail  air mobility
+            token_modefac = 'modefac = 9*2.0,  70*1.5,  20*1.0, 10*1.5,  10*1.5,   10*1.5,   10*1.5,        1*1.5'
             
             ; three-letter path name
             token_path = 'exp'
 
 
          ; light rail (or ferry) or short-haul premium
-         elseif (path = 4)
+         elseif (path = 5)
 
             ; drive access/egress links to this mode (';' means no)
             ; allow higher-class PNRs to be read in case of shared lots
@@ -256,22 +288,23 @@ loop period = 1, 5
             token_drivelinks_ferry         = ' '
             token_drivelinks_heavy_rail    = ' '
             token_drivelinks_commuter_rail = ' ' 
+            token_drivelinks_advanced_air_mobility = ' '  
             
             ; no KNR access links to local bus
             token_bus_acclinks_KNR = ';'
             
-            ; commuter rail, heavy rail, and express bus excluded from this path
-            token_skipmodes = 'skipmodes =  130-139,120-139,80-99'
+            ; advanced air mobility, commuter rail, heavy rail, and express bus excluded from this path
+            token_skipmodes = 'skipmodes =  140-140,130-139,120-139,80-99'
             
             ; mode-specific perceived time factors
-            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
-            token_modefac = 'modefac =    9*2.0,  70*1.5,  20*1.5, 10*1.0,  10*1.0,   10*1.5,   10*1.5'  
+            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail  air mobility
+            token_modefac = 'modefac =    9*2.0,  70*1.5,  20*1.5, 10*1.0,  10*1.0,   10*1.5,   10*1.5,        1*1.5'  
             
             ; three-letter path name
             token_path = 'lrf'
 
          ; local bus or short-haul basic
-         elseif (path = 5)
+         elseif (path = 6)
          
             ; drive access/egress links to this mode (';' means no)
             ; allow higher-class PNRs to be read in case of shared lots
@@ -280,16 +313,17 @@ loop period = 1, 5
             token_drivelinks_ferry         = ' '
             token_drivelinks_heavy_rail    = ' '
             token_drivelinks_commuter_rail = ' ' 
+            token_drivelinks_advanced_air_mobility = ' '  
             
             ; KNR access links to local bus
             token_bus_acclinks_KNR = ' '
             
-            ; commuter rail, heavy rail, express bus, light rail, and ferry excluded from this path
-            token_skipmodes = 'skipmodes =  130-139,120-139,80-99,100-119'
+            ; advanced air mobility, commuter rail, heavy rail, express bus, light rail, and ferry excluded from this path
+            token_skipmodes = 'skipmodes =  140-140,130-139,120-139,80-99,100-119'
             
             ; mode-specific perceived time factors
-            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
-            token_modefac = 'modefac  =   9*2.0,  70*1.0,  20*1.5, 10*1.5,  10*1.5,   10*1.5,   10*1.5'  
+            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail  air mobility
+            token_modefac = 'modefac  =   9*2.0,  70*1.0,  20*1.5, 10*1.5,  10*1.5,   10*1.5,   10*1.5,        1*1.5'  
             
             ; three-letter path name
             token_path = 'loc'
@@ -308,7 +342,7 @@ loop period = 1, 5
              ; use the highway network with the computed bus times 
              filei neti = @token_period@_transit_background.net
              
-             ; read in the 23-table matrix created by prepAssign.job (see header for content details)
+             ; read in the 26-table matrix created by prepAssign.job (see header for content details)
              filei mati = "@token_model_dir@\main\trips@token_period@.tpp"
              
              ; path parameter: do not list (write out) all of the subsequent input
@@ -344,6 +378,7 @@ loop period = 1, 5
              @token_drivelinks_ferry@          read file = @token_period@_transit_suplinks_ferry.dat
              @token_drivelinks_heavy_rail@     read file = @token_period@_transit_suplinks_heavy_rail.dat
              @token_drivelinks_commuter_rail@  read file = @token_period@_transit_suplinks_commuter_rail.dat  
+             @token_drivelinks_advanced_air_mobility@  read file = @token_period@_transit_suplinks_advanced_air_mobility.dat  
              
              ; read in the generated KNR links for local bus
              @token_bus_acclinks_KNR@    READ FILE = @token_period@_bus_acclinks_KNR.DAT
@@ -378,10 +413,10 @@ loop period = 1, 5
              @token_boardpen@
 
              ; perceived time factors: initial wait time is equivalent to 2.8 minutes of ride time for modes 10 through 255  
-             factor iwaitfac = 9*0, 130*2.8
+             factor iwaitfac = 9*0, 131*2.8
              
              ; perceived time factors: transfer wait time is equivalent to 2.8 minutes of ride time for modes 1 through 255
-             factor xwaitfac = 139*2.8             
+             factor xwaitfac = 140*2.8             
              
              ; use token_skipmodes to remove modes from the network per the hierarchy
              @token_skipmodes@
