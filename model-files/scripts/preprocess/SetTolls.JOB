@@ -223,6 +223,53 @@ RUN PGM=HWYNET
       ENDIF
     ENDIF
 
+   ; zero out the tolls where tollclass=0
+   IF (TOLLCLASS == 0)
+
+     TOLLEA_DA = 0
+     TOLLAM_DA = 0
+     TOLLMD_DA = 0
+     TOLLPM_DA = 0
+     TOLLEV_DA = 0
+
+     TOLLEA_S2 = 0
+     TOLLAM_S2 = 0
+     TOLLMD_S2 = 0
+     TOLLPM_S2 = 0
+     TOLLEV_S2 = 0
+
+     TOLLEA_S3 = 0
+     TOLLAM_S3 = 0
+     TOLLMD_S3 = 0
+     TOLLPM_S3 = 0
+     TOLLEV_S3 = 0
+
+     TOLLEA_VSM = 0
+     TOLLAM_VSM = 0
+     TOLLMD_VSM = 0
+     TOLLPM_VSM = 0
+     TOLLEV_VSM = 0
+
+     TOLLEA_SML = 0
+     TOLLAM_SML = 0
+     TOLLMD_SML = 0
+     TOLLPM_SML = 0
+     TOLLEV_SML = 0
+
+     TOLLEA_MED = 0
+     TOLLAM_MED = 0
+     TOLLMD_MED = 0
+     TOLLPM_MED = 0
+     TOLLEV_MED = 0
+
+     TOLLEA_LRG = 0
+     TOLLAM_LRG = 0
+     TOLLMD_LRG = 0
+     TOLLPM_LRG = 0
+     TOLLEV_LRG = 0
+
+  ENDIF
+
     ; AV impacts on roadway capacity - represented by adjusting the PCE
     ; Make these factors into link attributes
     IF (FT = 1)  AV_PCE = AV_PCE_FT01
