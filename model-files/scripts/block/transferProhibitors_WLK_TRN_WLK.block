@@ -138,3 +138,5 @@ NOX[136]= Y,Y,N,Y,N,N,Y,Y,Y,255*N; CommuterRail
 NOX[137]= Y,Y,N,Y,N,N,Y,Y,Y,255*N; CommuterRail
 NOX[138]= Y,Y,N,Y,N,N,Y,Y,Y,255*N; CommuterRail
 NOX[139]= Y,Y,N,Y,N,N,Y,Y,Y,255*N; CommuterRail
+; RSG 2022-01-21 TM1.5 add advanced air mobility mode
+NOX[140]= Y,Y,N,Y,N,N,Y,Y,Y,255*N; AdvancedAirMobility
