@@ -1,7 +1,7 @@
 ::
 :: This batch file runs a series of scripts to convert direct model output
 :: to intermediate summaries, and then rolls up those summaries into a set of SCENARIO metrics.
-::
+:: RSG 2022-01-21 TM1.5 add advanced air mobility mode
 :: It's similar to RunMetrics.bat and uses many of the same scripts
 ::
 :: Stamp the feedback report with the date and time of the model start
@@ -56,7 +56,7 @@ if not exist main\tripsEVinc1.tpp (
 if not exist metrics\transit_times_by_mode_income.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
   rem Input : main\trips(EA|AM|MD|PM|EV)allinc.tpp,
-  rem         skims\trnskm(EA|AM|MD|PM|EV)_(wlk|drv)_(com|hvy|exp|lrf|loc)_(wlk|drv).tpp
+  rem         skims\trnskm(EA|AM|MD|PM|EV)_(wlk|drv)_(aam|com|hvy|exp|lrf|loc)_(wlk|drv).tpp
   rem Output: metrics\transit_times_by_acc_mode_egr.csv,
   rem         metrics\transit_times_by_mode_income.csv
   runtpp "%CODE_DIR%\sumTransitTimes.job"

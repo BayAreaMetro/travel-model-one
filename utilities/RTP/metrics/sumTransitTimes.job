@@ -1,9 +1,9 @@
-;
+; RSG 2022-01-21 TM1.5 add advanced air mobility mode
 ; This script Uses Transit trips * Transit skims (IVT and OVT) and outputs:
 ; metrics\transit_times_by_acc_mode_egr.csv with columns:
 ;  * Age                   (all, 20-74, 20-64)
 ;  * Access                (wlk, drv)
-;  * Mode                  (com, hvy, exp, lrf, loc)
+;  * Mode                  (aam, com, hvy, exp, lrf, loc)
 ;  * Egress                (wlk, drv)
 ;  * Transit Trips         (# of transit trips taken by relevant ppl)
 ;  * In-vehicle hours      (# of in-vehicle hours taken by relevant ppl)
@@ -19,7 +19,7 @@
 ; Also outputs
 ; metrics\transit_times_by_mode_income.csv with columns:
 ;  * Income                (inc1, inc2, inc3, inc4)
-;  * Mode                  (com, hvy, exp, lrf, loc)
+;  * Mode                  (aam, com, hvy, exp, lrf, loc)
 ;  * Daily Trips           (# of daily transit trips by relevant ppl)
 ;  * Avg Time              (average travel time per transit trip by relevant ppl, in minutes)
 ;  * Avg Cost              (average fare cost per transit trip by relevant ppl, in $2000 dollars)
@@ -29,25 +29,29 @@
 *del metrics\transit_times_by_acc_mode_egr.csv
 
 ; Loop thru transit modes
-  loop path = 1,5
-    ; commuter rail or long-haul premium
+  loop path = 1,6
+    ; advanced air mobility
       if (path = 1)
+        token_path = 'aam'
+        token_ivt  = 'ivtAAM'  
+    ; commuter rail or long-haul premium
+      elseif (path = 2)
         token_path = 'com'
         token_ivt  = 'ivtCOM'
     ; heavy rail or medium-haul premium
-      elseif (path = 2)
+      elseif (path = 3)
         token_path = 'hvy'
         token_ivt  = 'ivtHVY'
     ; express bus or medium-haul basic
-      elseif (path = 3)
+      elseif (path = 4)
         token_path = 'exp'
         token_ivt  = 'ivtEXP'
     ; light rail (or ferry) or short-haul premium
-      elseif (path = 4)
+      elseif (path = 5)
         token_path = 'lrf'
         token_ivt  = 'ivtLRF'
     ; local bus or short-haul basic
-      elseif (path = 5)
+      elseif (path = 6)
         token_path = 'loc'
         token_ivt  = 'ivtLOC'
       endif
@@ -85,9 +89,9 @@
     RUN PGM = MATRIX
       ; Read person trips
       ; 1. da, 2. datoll, 3. sr2, 4. sr2toll, 5. sr3, 6. sr3toll, 7. walk, 8. bike,
-      ; 9. wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
-      ; 14. drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
-      ; 19. wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv
+      ; 9. wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, wlk_aam_wlk,
+      ; 14. drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk, drv_aam_wlk,
+      ; 19. wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv, wlk_aam_drv
       FILEI MATI[1] = "main\tripsEA@token_suffix@.tpp"
       FILEI MATI[2] = "main\tripsAM@token_suffix@.tpp"
       FILEI MATI[3] = "main\tripsMD@token_suffix@.tpp"
@@ -95,7 +99,7 @@
       FILEI MATI[5] = "main\tripsEV@token_suffix@.tpp"
 
       ; Read transit skims
-      ; ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
+      ; ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtAAM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
       FILEI MATI[6] = "skims\trnskmEA_@token_access@_@token_path@_@token_egress@.tpp"
       FILEI MATI[7] = "skims\trnskmAM_@token_access@_@token_path@_@token_egress@.tpp"
       FILEI MATI[8] = "skims\trnskmMD_@token_access@_@token_path@_@token_egress@.tpp"
@@ -205,8 +209,9 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
            printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the path files into one
-* copy metrics\transit_times_by_acc_mode_egr_com.csv+metrics\transit_times_by_acc_mode_egr_hvy.csv+metrics\transit_times_by_acc_mode_egr_exp.csv+metrics\transit_times_by_acc_mode_egr_lrf.csv+metrics\transit_times_by_acc_mode_egr_loc.csv metrics\transit_times_by_acc_mode_egr.csv
+* copy metrics\transit_times_by_acc_mode_egr_aam.csv+metrics\transit_times_by_acc_mode_egr_com.csv+metrics\transit_times_by_acc_mode_egr_hvy.csv+metrics\transit_times_by_acc_mode_egr_exp.csv+metrics\transit_times_by_acc_mode_egr_lrf.csv+metrics\transit_times_by_acc_mode_egr_loc.csv metrics\transit_times_by_acc_mode_egr.csv
 ; delete the individual ones
+* del metrics\transit_times_by_acc_mode_egr_aam.csv
 * del metrics\transit_times_by_acc_mode_egr_com.csv
 * del metrics\transit_times_by_acc_mode_egr_hvy.csv
 * del metrics\transit_times_by_acc_mode_egr_exp.csv
@@ -221,12 +226,13 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
 *del metrics\transit_times_by_mode_income.csv
 
 ; Loop thru transit modes
-  loop path = 1,5
-    if (path = 1) token_path = 'com'
-    if (path = 2) token_path = 'hvy'
-    if (path = 3) token_path = 'exp'
-    if (path = 4) token_path = 'lrf'
-    if (path = 5) token_path = 'loc'
+  loop path = 1,6
+    if (path = 1) token_path = 'aam'
+    if (path = 2) token_path = 'com'
+    if (path = 3) token_path = 'hvy'
+    if (path = 4) token_path = 'exp'
+    if (path = 5) token_path = 'lrf'
+    if (path = 6) token_path = 'loc'
 
  DistributeMultistep processid = 'ctramp', processNum = path, commpath = '%COMMPATH%'
 
@@ -254,7 +260,7 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
      FILEI MATI[5] = "main\tripsEV@token_inc@.tpp"
 
      ; Read transit skims
-     ; ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
+     ; ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtAAM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
 
      FILEI MATI[6]  = "skims\trnskmEA_wlk_@token_path@_wlk.tpp"
      FILEI MATI[7]  = "skims\trnskmEA_drv_@token_path@_wlk.tpp"
@@ -407,8 +413,9 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
            printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the path files into one
-* copy metrics\transit_times_by_mode_income_com.csv+metrics\transit_times_by_mode_income_hvy.csv+metrics\transit_times_by_mode_income_exp.csv+metrics\transit_times_by_mode_income_lrf.csv+metrics\transit_times_by_mode_income_loc.csv metrics\transit_times_by_mode_income.csv
+* copy metrics\transit_times_by_mode_income_aam.csv+metrics\transit_times_by_mode_income_com.csv+metrics\transit_times_by_mode_income_hvy.csv+metrics\transit_times_by_mode_income_exp.csv+metrics\transit_times_by_mode_income_lrf.csv+metrics\transit_times_by_mode_income_loc.csv metrics\transit_times_by_mode_income.csv
 ; delete the individual ones
+* del metrics\transit_times_by_mode_income_aam.csv
 * del metrics\transit_times_by_mode_income_com.csv
 * del metrics\transit_times_by_mode_income_hvy.csv
 * del metrics\transit_times_by_mode_income_exp.csv

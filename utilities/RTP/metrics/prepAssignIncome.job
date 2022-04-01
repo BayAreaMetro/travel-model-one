@@ -1,5 +1,5 @@
 ; make time-period-specific copies of the individual trip data
-
+; RSG 2022-01-21 TM1.5 add advanced air mobility mode
   ; the iteration
   token_iter = '%ITER%'
 
@@ -47,11 +47,11 @@
         filei mati[1] = main\trips@token_period@@suffix@.dat, pattern = ijm:v, fields = #1,2,0,3-35
 
         ; write out a matrix that combines the individual and joint trips
-        fileo mato[1] = main\trips@token_period@_no_zpv_@suffix@.tpp, mo = 1-32, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+        fileo mato[1] = main\trips@token_period@_no_zpv_@suffix@.tpp, mo = 1-35, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                                                                      walk, bike,
-                                                                     wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
-                                                                     drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
-                                                                     wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
+                                                                     wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, wlk_aam_wlk,
+                                                                     drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk, drv_aam_wlk,
+                                                                     wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv, wlk_aam_drv,
                                                                      taxi, tnc_single, tnc_shared,
                                                                      da_av_notoll, da_av_toll, s2_av_notoll, s2_av_toll, s3_av_notoll, s3_av_toll
         zones = @token_zones@
@@ -69,25 +69,28 @@
         mw[11] = mi.1.11 ; walk, express bus, walk
         mw[12] = mi.1.12 ; walk, heavy rail, walk
         mw[13] = mi.1.13 ; walk, commuter rail, walk
-        mw[14] = mi.1.14 ; drive, local bus, walk
-        mw[15] = mi.1.15 ; drive, light rail/ferry, walk
-        mw[16] = mi.1.16 ; drive, express bus, walk
-        mw[17] = mi.1.17 ; drive, heavy rail, walk
-        mw[18] = mi.1.18 ; drive, commuter rail, walk
-        mw[19] = mi.1.19 ; walk, local bus, drive
-        mw[20] = mi.1.20 ; walk, light rail/ferry, drive
-        mw[21] = mi.1.21 ; walk, express bus, drive
-        mw[22] = mi.1.22 ; walk, heavy rail, drive
-        mw[23] = mi.1.23 ; walk, commuter rail, drive
-        mw[24] = mi.1.24 ; taxi
-        mw[25] = mi.1.25 ; tnc, single-party
-        mw[26] = mi.1.26 ; tnc, shared
-        mw[27] = mi.1.27 ; drive alone, av, no toll
-        mw[28] = mi.1.28 ; drive alone, av, toll
-        mw[29] = mi.1.29 ; shared ride 2, av, no toll
-        mw[30] = mi.1.30 ; shared ride 2, av, toll
-        mw[31] = mi.1.31 ; shared ride 3+, av, no toll
-        mw[32] = mi.1.32 ; shared ride 3+, av, toll
+        mw[14] = mi.1.14 ; walk, advanced air mobility, walk
+        mw[15] = mi.1.15 ; drive, local bus, walk
+        mw[16] = mi.1.16 ; drive, light rail/ferry, walk
+        mw[17] = mi.1.17 ; drive, express bus, walk
+        mw[18] = mi.1.18 ; drive, heavy rail, walk
+        mw[19] = mi.1.19 ; drive, commuter rail, walk
+        mw[20] = mi.1.20 ; drive, advanced air mobility, walk
+        mw[21] = mi.1.21 ; walk, local bus, drive
+        mw[22] = mi.1.22 ; walk, light rail/ferry, drive
+        mw[23] = mi.1.23 ; walk, express bus, drive
+        mw[24] = mi.1.24 ; walk, heavy rail, drive
+        mw[25] = mi.1.25 ; walk, commuter rail, drive
+        mw[26] = mi.1.26 ; walk, advanced air mobility, drive
+        mw[27] = mi.1.27 ; taxi
+        mw[28] = mi.1.28 ; tnc, single-party
+        mw[29] = mi.1.29 ; tnc, shared
+        mw[30] = mi.1.30 ; drive alone, av, no toll
+        mw[31] = mi.1.31 ; drive alone, av, toll
+        mw[32] = mi.1.32 ; shared ride 2, av, no toll
+        mw[33] = mi.1.33 ; shared ride 2, av, toll
+        mw[34] = mi.1.34 ; shared ride 3+, av, no toll
+        mw[35] = mi.1.35 ; shared ride 3+, av, toll
      endrun
 
      ; the last part only makes sense for incomes, not age groups
@@ -130,11 +133,11 @@
   			filei mati[4] = main\trips@token_period@_no_zpv_inc4.tpp
 
   			; write out a matrix that combines the individual and joint trips for assignment
-        fileo mato[1] = main\trips@token_period@_no_zpv_allinc.tpp, mo = 1-32, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+        fileo mato[1] = main\trips@token_period@_no_zpv_allinc.tpp, mo = 1-35, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                                                                      walk, bike,
-                                                                     wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
-                                                                     drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
-                                                                     wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
+                                                                     wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, wlk_aam_wlk,
+                                                                     drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk, drv_aam_wlk,
+                                                                     wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv, wlk_aam_drv,
                                                                      taxi, tnc_single, tnc_shared,
                                                                      da_av_notoll, da_av_toll, sr2_av_notoll, sr2_av_toll, sr3_av_notoll, sr3_av_toll
 
@@ -173,6 +176,9 @@
   			mw[30] = mi.1.30 + mi.2.30 + mi.3.30 + mi.4.30
   			mw[31] = mi.1.31 + mi.2.31 + mi.3.31 + mi.4.31
   			mw[32] = mi.1.32 + mi.2.32 + mi.3.32 + mi.4.32
+        mw[33] = mi.1.33 + mi.2.33 + mi.3.33 + mi.4.33
+        mw[34] = mi.1.34 + mi.2.34 + mi.3.34 + mi.4.34
+        mw[35] = mi.1.35 + mi.2.35 + mi.3.35 + mi.4.35
   	endrun
 
     EndDistributeMultistep
