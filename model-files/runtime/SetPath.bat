@@ -49,6 +49,3 @@ set CLASSPATH=%RUNTIME%/config;%RUNTIME%;%RUNTIME%/config/jppf-2.4/jppf-2.4-admi
 
 :: Set the Python Path to network-wrangler (cloned locally as opposed to pip installed)
 set PYTHONPATH=E:\Projects\Clients\gm\models\NetworkWrangler;E:\Projects\Clients\gm\models\NetworkWrangler\_static
-
-:: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=E:\Projects\Clients\gm\models\2035_TM152_FBP_Plus_26_aam
