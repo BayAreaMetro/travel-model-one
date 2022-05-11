@@ -1,0 +1,36 @@
+operator_in_consolidated_database,operator_in_legacy_database,technology_6groups,operator_group
+SamTrans [EXPRESS],SamTrans,express bus,SamTrans
+SamTrans [LOCAL],SamTrans,local bus,SamTrans
+Caltrain,Caltrain,commuter rail,Caltrain
+BART,BART,heavy rail,BART
+FAST [EXPRESS],FAST,express bus,Smaller Operators
+FAST [LOCAL],FAST,local bus,Smaller Operators
+Marin Transit,Marin Transit,local bus,Smaller Operators
+Rio Vista Delta Breeze,Rio Vista,local bus,Smaller Operators
+SF Muni [LOCAL],SF Muni,local bus,SF Muni
+SF Muni [LRT],SF Muni,light rail,SF Muni
+Soltrans [EXPRESS],SolTrans,express bus,Smaller Operators
+Soltrans [LOCAL],SolTrans,local bus,Smaller Operators
+Union City Transit,Union City,local bus,Smaller Operators
+Vacaville City Coach,Vacaville City Coach,local bus,Smaller Operators
+VTA [EXPRESS],VTA,express bus,VTA
+VTA [LOCAL],VTA,local bus,VTA
+VTA [LRT],VTA,light rail,VTA
+WestCAT [EXPRESS],WestCAT,express bus,Smaller Operators
+WestCAT [LOCAL],WestCAT,local bus,Smaller Operators
+AC Transit [EXPRESS],AC Transit,express bus,AC Transit
+AC Transit [LOCAL],AC Transit,local bus,AC Transit
+Golden Gate Transit [EXPRESS],Golden Gate Transit,express bus,Golden Gate Transit
+Golden Gate Transit [FERRY],Golden Gate Transit,ferry,Golden Gate Transit
+LAVTA,LAVTA,local bus,Smaller Operators
+Petaluma Transit,Petaluma,local bus,Smaller Operators
+Santa Rosa CityBus,Santa Rosa CityBus,local bus,Smaller Operators
+Sonoma County Transit,Sonoma County,local bus,Smaller Operators
+ACE,ACE,commuter rail,Smaller Operators
+Capitol Corridor,Amtrak,commuter rail,Smaller Operators
+County Connection [EXPRESS],County Connection,express bus,Smaller Operators
+County Connection [LOCAL],County Connection,local bus,Smaller Operators
+Napa Vine [EXPRESS],Napa Vine,express bus,Smaller Operators
+Napa Vine [LOCAL],Napa Vine,local bus,Smaller Operators
+SF Bay Ferry/WETA,SF Bay Ferry,ferry,Smaller Operators
+TriDelta,Tri-Delta,local bus,Smaller Operators

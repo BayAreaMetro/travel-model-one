@@ -1,0 +1,60 @@
+mode_code,operator_in_legacy_database,technology_6groups,mode_name,operator_group
+10,City of Berkeley,local bus,West Berkeley,Smaller Operators
+11,City of Oakland,local bus,Broadway Shuttle,Smaller Operators
+12,Emery Go Round,local bus,Emery Go Round,Smaller Operators
+13,Stanford,local bus,Stanford Shuttles,Smaller Operators
+14,Caltrain Shuttle,local bus,Caltrain Shuttles,Smaller Operators
+15,VTA,local bus,VTA Shuttles,VTA
+16,Caltrain Shuttle,local bus,Palo Alto/Menlo Park Shuttles,Smaller Operators
+17,LAVTA,local bus,Wheels ACE Shuttles,Smaller Operators
+19,San Leandro,local bus,San Leandro Links,Smaller Operators
+20,SF Muni,local bus,MUNI Cable Cars,SF Muni
+21,SF Muni,local bus,MUNI - Local,SF Muni
+24,SamTrans,local bus,SamTrans - Local,SamTrans
+27,VTA,local bus,Santa Clara VTA - Community Buses,VTA
+28,VTA,local bus,Santa Clara VTA - Local,VTA
+30,AC Transit,local bus,AC Transit - Local,AC Transit
+33,LAVTA,local bus,WHEELS - Local,Smaller Operators
+38,Union City,local bus,Union City Transit,Smaller Operators
+42,County Connection,local bus,County Connection (CCTA) - Local,Smaller Operators
+44,Tri-Delta,local bus,Tri-Delta,Smaller Operators
+46,WestCAT,local bus,WestCAT - Local,Smaller Operators
+49,SolTrans,local bus,Vallejo Transit - Local,Smaller Operators
+52,FAST,local bus,Fairfield And Suisun Transit - Local,Smaller Operators
+55,Napa Vine,local bus,American Canyon Transit,Smaller Operators
+56,Vacaville City Coach,local bus,Vacaville City Coach,Smaller Operators
+58,SolTrans,local bus,Benicia Breeze,Smaller Operators
+60,Napa Vine,local bus,VINE,Smaller Operators
+63,Sonoma County,local bus,Sonoma County Transit - Local,Smaller Operators
+66,Santa Rosa CityBus,local bus,Santa Rosa City Bus,Smaller Operators
+68,Petaluma,local bus,Petaluma Transit,Smaller Operators
+70,Marin Transit,local bus,Golden Gate Transit - Local,Smaller Operators
+80,SamTrans,express bus,SamTrans - Express,SamTrans
+81,VTA,express bus,Santa Clara VTA - Express,VTA
+82,AC Transit,express bus,Dumbarton Express,AC Transit
+83,AC Transit,express bus,AC Transit - Transbay,AC Transit
+84,AC Transit,express bus,AC Transit - Transbay,AC Transit
+86,County Connection,express bus,County Connection - Express,Smaller Operators
+87,Golden Gate Transit,express bus,Golden Gate Transit - Express San Francisco,Golden Gate Transit
+88,Golden Gate Transit,express bus,Golden Gate Transit - Express Richmond,Golden Gate Transit
+90,WestCAT,express bus,WestCAT - Express,Smaller Operators
+91,SolTrans,express bus,Vallejo Transit - Express,Smaller Operators
+92,FAST,express bus,Fairfield And Suisun Transit - Express,Smaller Operators
+93,Napa Vine,express bus,VINE - Express,Smaller Operators
+95,Napa Vine,express bus,VINE - Express,Smaller Operators
+100,SF Bay Ferry,ferry,East Bay Ferries,Smaller Operators
+101,Golden Gate Transit,ferry,Golden Gate Ferry - Larkspur,Golden Gate Transit
+102,Golden Gate Transit,ferry,Golden Gate Ferry - Sausalito,Golden Gate Transit
+103,SF Bay Ferry,ferry,Tiburon Ferry,Smaller Operators
+104,SF Bay Ferry,ferry,Vallejo Baylink Ferry,Smaller Operators
+105,SF Bay Ferry,ferry,South San Francisco Ferry,Smaller Operators
+110,SF Muni,light rail,MUNI Metro,SF Muni
+111,VTA,light rail,Santa Clara VTA - LRT,VTA
+120,BART,heavy rail,BART,BART
+121,BART,heavy rail,Oakland Airport Connector,BART
+130,Caltrain,commuter rail,Caltrain,Caltrain
+131,Amtrak,commuter rail,Amtrak - Capitol Corridor,Smaller Operators
+132,Amtrak,commuter rail,Amtrak - San Joaquin,Smaller Operators
+133,ACE,commuter rail,ACE,Smaller Operators
+135,SMART,commuter rail,SMART,Smaller Operators
+136,BART,heavy rail,E-BART,BART
