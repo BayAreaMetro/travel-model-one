@@ -254,7 +254,8 @@ public class StopLocationModel {
                                 tripModeChoiceDmuObj.setDestType( INT_STOP_TYPE_INDEX );
                                 tripModeChoiceDmuObj.setIntStopParkRate( parkRate[zone] );
                                 tripModeChoiceDmuObj.setDmuIndexValues( household.getHhId(), origin, zone );
-                                
+                                tripModeChoiceDmuObj.setOrigCounty(tazDataManager.getZoneCounty(origin));
+                          
                                 choice = selectMode(household, tour, stop);
                                 stop.setMode( choice );
                                 int purposeIndex = tripModeChoicePurposeIndexLookup.get( stop.getDestPurpose( modelStructure ) );

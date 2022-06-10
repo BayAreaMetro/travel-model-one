@@ -442,7 +442,7 @@ public class StopLocationModeChoiceModel implements Serializable {
                 tripModeChoiceDmuObj.setWaitTimeSingleTNC(waitTimeSingleTNC);
                 tripModeChoiceDmuObj.setWaitTimeSharedTNC(waitTimeSharedTNC);
                 tripModeChoiceDmuObj.setWaitTimeTaxi(waitTimeTaxi);
-                             
+                  
                 stop.setOrigTaxiWait(waitTimeTaxi);
                 stop.setOrigSingleTNCWait(waitTimeSingleTNC);
                 stop.setOrigSharedTNCWait(waitTimeSharedTNC);
@@ -483,7 +483,8 @@ public class StopLocationModeChoiceModel implements Serializable {
                 stop.setDest(zone);
                 stop.setDestWalkSegment(subzone);
                 tripModeChoiceDmuObj.setDmuIndexValues( household.getHhId(), origin, zone );
-                
+                tripModeChoiceDmuObj.setOrigCounty(tazDataManager.getZoneCounty(origin));
+
                 long check = System.nanoTime();
                 //select trip depart hour
             	int choosenHour = -1;
@@ -585,7 +586,8 @@ public class StopLocationModeChoiceModel implements Serializable {
                        
             stopLocDmuObj.setStopNumber( 1 );
             stopLocDmuObj.setDmuIndexValues( household.getHhId(), household.getHhTaz(), origin, dest );
-            
+            tripModeChoiceDmuObj.setOrigCounty(tazDataManager.getZoneCounty(origin));
+
             int zone = dest;
             int subzone = destWalkSegment;
             if ( stopLocDmuObj.getInboundStop() == 1 ) {
@@ -1059,6 +1061,8 @@ public class StopLocationModeChoiceModel implements Serializable {
         
         //determine the trip mode choice logsum for the sampled dest alt and store in stop location dmu
         tripModeChoiceDmuObj.setDmuIndexValues( household.getHhId(), stop.getOrig(), stop.getDest() );
+        tripModeChoiceDmuObj.setOrigCounty(tazDataManager.getZoneCounty(stop.getOrig()));
+
         tripModeChoiceDmuObj.setIntStopParkRate( parkRate[stop.getDest()-1] );
         
         int mcModelIndex = modelStructure.getTripModeChoiceModelIndex( tour.getTourPrimaryPurpose().toLowerCase() );
