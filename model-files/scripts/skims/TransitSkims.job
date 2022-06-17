@@ -597,7 +597,7 @@ loop period = 1,5
               ENDIF
               ; OVERRIDE FOR AAM, but convert from $2019 to $2000
               if(MW[17] > 0) ; ivtAAM
-                 MW[10]=MW[52] * 0.62
+                 MW[10]=round(MW[52] * 0.62)
               ENDIF
 
               IF (MW[3]>0 && MW[50]>0)
