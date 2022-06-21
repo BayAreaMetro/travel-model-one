@@ -611,6 +611,17 @@ sheet3["F1"] = "New Total VMT"
 
 workbook2.save(output_excel_template)
 
+# Drop the 'CARB default VMT' and 'default hourly fractions' tabs so the template can be processed 
+# in the web-based version of EMFAC17
+workbook3 = load_workbook(filename=output_excel_template)
+
+drop_sheet = workbook3.get_sheet_by_name('CARB default VMT')
+workbook3.remove_sheet(drop_sheet)
+drop_sheet = workbook3.get_sheet_by_name('default hourly fractions')
+workbook3.remove_sheet(drop_sheet)
+
+workbook3.save(output_excel_template)
+
 print "\nFinished writing to <Daily_VMT_By_Veh_Tech>"
 # the "New Total VMT" in the tab <Daily_VMT_By_Veh_Tech> should be equal to 
 # the "between zone vmt (excluding external zones)" from BetweenZonesVMT.py 
