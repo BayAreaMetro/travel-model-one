@@ -67,14 +67,32 @@ SamTrans_patch_df <- data.frame(operator_group=c("SamTrans"),
                                 technology_6groups=c("express bus"),
                                 observed_boardings=c(146))
 
+##################
+# AC Transit Observed Data Patch
+##################
+# Asana task: https://app.asana.com/0/1201809392759895/1202440674530061/f
+# AC Transit shared the route-level observed boardings for 2015, so the 
+# database is patched to reflect their counts.
+# Express bus is defined as routes labeled by AC Transit as "Transbay" 
+# and local bus is defined as all other labels, with the exception of
+# school routes.
+
+# drop the AC Transit express and local bus from the observed data
+Observed_ByOperatorTech_df     <- filter(Observed_ByOperatorTech_df , operator_group!="AC Transit")
+
+# create a new data frame (with two rows)
+ACT_patch_df <- data.frame(operator_group=c("AC Transit","AC Transit"),
+                           technology_6groups=c("local bus","express bus"),
+                           observed_boardings=c(158630,18344))
+
 # append the new data frame
-Observed_ByOperatorTech_df <- rbind(Observed_ByOperatorTech_df, SamTrans_patch_df)
+Observed_ByOperatorTech_df <- rbind(Observed_ByOperatorTech_df, SamTrans_patch_df, ACT_patch_df)
 
 # sort the data frame
 Observed_ByOperatorTech_df <- Observed_ByOperatorTech_df[order(Observed_ByOperatorTech_df$operator_group,Observed_ByOperatorTech_df$technology_6groups),]
 
 ##################
-# Analyse modelled data
+# Analyse modeled data
 ##################
 trnline_df     <-  read.csv(trnline_CSV, header=TRUE, sep=",")
 
