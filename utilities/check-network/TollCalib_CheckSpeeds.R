@@ -18,6 +18,12 @@ library(readxl)
 ITER <- Sys.getenv("ITER")        # The iteration of model outputs to be read
 ITER <- as.numeric(ITER)
 
+TARGET_SPEED <- Sys.getenv("TARGET_SPEED")
+TARGET_SPEED <- as.numeric(TARGET_SPEED)
+
+MAX_TOLL <- Sys.getenv("MAX_TOLL")
+MAX_TOLL <- as.numeric(MAX_TOLL)
+
 #############################################################
 # specify the loaded network, unloaded network and other inputs
 #############################################################
@@ -71,11 +77,14 @@ if (dir.exists(file.path(PROJECT_DIR, "CTRAMP"))) {
 # specify the following instead, if run as a stand alone script
 # rm(list=ls()) # remove all variables from the r environment
 # ITER <- 3
-# PROJECT_DIR           <- "L:/RTP2021_PPA/Projects/2050_TM151_PPA_CG_07" # note direction of the slash
+# PROJECT_DIR           <- "L:/RTP2021_PPA/Projects/2050_TM151_PPA_CG_16/2050_TM151_PPA_CG_16_preTollCalib" # note direction of the slash
 # LOADED_NETWORK_CSV    <- file.path(PROJECT_DIR, "OUTPUT","avgload5period.csv")
-# UNLOADED_NETWORK_DBF  <- file.path("L:/RTP2021_PPA/Projects/2050_TM151_PPA_BF_06/INPUT/shapefiles", "network_links.dbf") # from cube_to_shapefile.py
+# UNLOADED_NETWORK_DBF  <- file.path("L:/RTP2021_PPA/Projects/2050_TM151_PPA_CG_16/2050_TM151_PPA_CG_16_preTollCalib/INPUT/shapefiles", "network_links.dbf") # from cube_to_shapefile.py
 # TOLLS_CSV             <- file.path(PROJECT_DIR, "INPUT", "hwy", "tolls.csv")
-# TOLL_DESIGNATIONS_XLSX <- "M:/Application/Model One/Networks/TOLLCLASS Designations.xlsx"
+# TOLL_DESIGNATIONS_XLSX <- "L:/Application/Model_One/NextGenFwys/Tollclass_Designations/TOLLCLASS_Designations(forNoProject).xlsx"
+# NON_DYNA_TOLL_CSV <- "M:/Application/Model One/RTP2021/Blueprint/Input_calibration/toll_optimization/NonDynamicTollFacilities.csv"
+# MAX_TOLL <- .01
+# TARGET_SPEED <- 35
 # if running this script on a project directory on L, you'll also need to change the path for the tolls.csv output in the end.
 
 # specify the names of the outputs
@@ -166,37 +175,37 @@ el_gp_summary_df <- el_gp_loaded_nan_df %>%
 
 # Determine scenarios:
 #        EL_speed	   GP_speed
-# Case1	  <=48	        any	        EL too slow. Need to increase toll
-# Case2	  >48	        <=40	      GP too slow. Need to decrease toll (but still keep EL speed above 48 mph)
-# Case3	  48-60	        40-60	      OK, as long as EL speed > GP speed in AM, MD and PM.  If not, need to increase toll.
-# Case4	  >60	          40-60	      GP a bit slow. Maybe decrease toll, depend on how large the difference is.
-# Case5	  >48	          >60	        Set toll to minimum
+# Case1	  <=TARGET_SPEED	        any	        EL too slow. Need to increase toll
+# Case2	  >TARGET_SPEED	          <=40	      GP too slow. Need to decrease toll (but still keep EL speed above TARGET_SPEED mph)
+# Case3	  TARGET_SPEED-60	        40-60	      OK, as long as EL speed > GP speed in AM, MD and PM.  If not, need to increase toll.
+# Case4	  >60	                    40-60	      GP a bit slow. Maybe decrease toll, depend on how large the difference is.
+# Case5	  >TARGET_SPEED	          >60	        Set toll to minimum
 
 #AM
 el_gp_summary_df <- el_gp_summary_df %>%
-                                     mutate(Case_AM = case_when(avgspeed_AM>48                      & avgspeed_AM_GP>60                      ~ "Case5 - set to min",
-                                                                avgspeed_AM>60                      & avgspeed_AM_GP>40 & avgspeed_AM_GP<=60 ~ "Case4 - drop tolls slightly",
-                                                                avgspeed_AM>48 & avgspeed_AM<=60    & avgspeed_AM_GP>40 & avgspeed_AM_GP<=60 ~ "Case3 - ok",
-                                                                avgspeed_AM>48                      & avgspeed_AM_GP<=40                     ~ "Case2 - drop tolls",
-                                                                avgspeed_AM<=48                                                              ~ "Case1 - raise tolls",
-                                                                TRUE                                                                         ~ "Undefined"))
+                                     mutate(Case_AM = case_when(avgspeed_AM>TARGET_SPEED                      & avgspeed_AM_GP>60                      ~ "Case5 - set to min",
+                                                                avgspeed_AM>60                                & avgspeed_AM_GP>40 & avgspeed_AM_GP<=60 ~ "Case4 - drop tolls slightly",
+                                                                avgspeed_AM>TARGET_SPEED & avgspeed_AM<=60    & avgspeed_AM_GP>40 & avgspeed_AM_GP<=60 ~ "Case3 - ok",
+                                                                avgspeed_AM>TARGET_SPEED                      & avgspeed_AM_GP<=40                     ~ "Case2 - drop tolls",
+                                                                avgspeed_AM<=TARGET_SPEED                                                              ~ "Case1 - raise tolls",
+                                                                TRUE                                                                                   ~ "Undefined"))
 
 #MD
 el_gp_summary_df <- el_gp_summary_df %>%
-                                     mutate(Case_MD = case_when(avgspeed_MD>48                      & avgspeed_MD_GP>60                      ~ "Case5 - set to min",
-                                                                avgspeed_MD>60                      & avgspeed_MD_GP>40 & avgspeed_MD_GP<=60 ~ "Case4 - drop tolls slightly",
-                                                                avgspeed_MD>48 & avgspeed_MD<=60    & avgspeed_MD_GP>40 & avgspeed_MD_GP<=60 ~ "Case3 - ok",
-                                                                avgspeed_MD>48                      & avgspeed_MD_GP<=40                     ~ "Case2 - drop tolls",
-                                                                avgspeed_MD<=48                                                              ~ "Case1 - raise tolls",
-                                                                TRUE                                                                         ~ "Undefined"))
+                                     mutate(Case_MD = case_when(avgspeed_MD>TARGET_SPEED                      & avgspeed_MD_GP>60                      ~ "Case5 - set to min",
+                                                                avgspeed_MD>60                                & avgspeed_MD_GP>40 & avgspeed_MD_GP<=60 ~ "Case4 - drop tolls slightly",
+                                                                avgspeed_MD>TARGET_SPEED & avgspeed_MD<=60    & avgspeed_MD_GP>40 & avgspeed_MD_GP<=60 ~ "Case3 - ok",
+                                                                avgspeed_MD>TARGET_SPEED                      & avgspeed_MD_GP<=40                     ~ "Case2 - drop tolls",
+                                                                avgspeed_MD<=TARGET_SPEED                                                              ~ "Case1 - raise tolls",
+                                                                TRUE                                                                                   ~ "Undefined"))
 #PM
 el_gp_summary_df <- el_gp_summary_df %>%
-                                     mutate(Case_PM = case_when(avgspeed_PM>48                      & avgspeed_PM_GP>60                      ~ "Case5 - set to min",
-                                                                avgspeed_PM>60                      & avgspeed_PM_GP>40 & avgspeed_PM_GP<=60 ~ "Case4 - drop tolls slightly",
-                                                                avgspeed_PM>48 & avgspeed_PM<=60    & avgspeed_PM_GP>40 & avgspeed_PM_GP<=60 ~ "Case3 - ok",
-                                                                avgspeed_PM>48                      & avgspeed_PM_GP<=40                     ~ "Case2 - drop tolls",
-                                                                avgspeed_PM<=48                                                              ~ "Case1 - raise tolls",
-                                                                TRUE                                                                         ~ "Undefined"))
+                                     mutate(Case_PM = case_when(avgspeed_PM>TARGET_SPEED                      & avgspeed_PM_GP>60                      ~ "Case5 - set to min",
+                                                                avgspeed_PM>60                                & avgspeed_PM_GP>40 & avgspeed_PM_GP<=60 ~ "Case4 - drop tolls slightly",
+                                                                avgspeed_PM>TARGET_SPEED & avgspeed_PM<=60    & avgspeed_PM_GP>40 & avgspeed_PM_GP<=60 ~ "Case3 - ok",
+                                                                avgspeed_PM>TARGET_SPEED                      & avgspeed_PM_GP<=40                     ~ "Case2 - drop tolls",
+                                                                avgspeed_PM<=TARGET_SPEED                                                              ~ "Case1 - raise tolls",
+                                                                TRUE                                                                                   ~ "Undefined"))
 
 #############################################################
 # merge in the existing toll rates and determine toll adjustment
@@ -204,30 +213,40 @@ el_gp_summary_df <- el_gp_summary_df %>%
 toll_rates_df          <- read.csv(file=TOLLS_CSV, header=TRUE, sep=",")
 toll_rates_df          <- toll_rates_df  %>% select(tollclass, facility_name, use, tollam_da, tollmd_da, tollpm_da)
 
+# set maximum toll for each tolling period
+toll_rates_df$tollam_da[toll_rates_df$tollam_da > MAX_TOLL] <- MAX_TOLL
+toll_rates_df$tollmd_da[toll_rates_df$tollmd_da > MAX_TOLL] <- MAX_TOLL
+toll_rates_df$tollpm_da[toll_rates_df$tollpm_da > MAX_TOLL] <- MAX_TOLL
+
 el_gp_summary_df <- el_gp_summary_df %>% left_join(toll_rates_df,
                                          by=c("TOLLCLASS"="tollclass"))
 
 # determine new toll rates
 el_gp_summary_df <- el_gp_summary_df %>%
                                     mutate(tollam_da_new = case_when(Case_AM == "Case1 - raise tolls"         ~ tollam_da + round(((60 - avgspeed_AM)/100), digits=2),
-                                                                     Case_AM == "Case2 - drop tolls"          ~ pmax((tollam_da - round((avgspeed_AM - 48)/100*2, digits=2)), 0.03),
+                                                                     Case_AM == "Case2 - drop tolls"          ~ pmax((tollam_da - round((avgspeed_AM - TARGET_SPEED)/100*2, digits=2)), 0.03),
                                                                      Case_AM == "Case3 - ok"                  ~ tollam_da,
                                                                      Case_AM == "Case4 - drop tolls slightly" ~ pmax((tollam_da - round((avgspeed_AM - avgspeed_AM_GP)/100/2, digits=2)), 0.03),
                                                                      Case_AM == "Case5 - set to min"          ~ 0.03))
 
 el_gp_summary_df <- el_gp_summary_df %>%
                                     mutate(tollmd_da_new = case_when(Case_MD == "Case1 - raise tolls"          ~ tollmd_da + round(((60 - avgspeed_MD)/100), digits=2),
-                                                                     Case_MD == "Case2 - drop tolls"           ~ pmax((tollmd_da - round((avgspeed_MD - 48)/100*2, digits=2)), 0.03),
+                                                                     Case_MD == "Case2 - drop tolls"           ~ pmax((tollmd_da - round((avgspeed_MD - TARGET_SPEED)/100*2, digits=2)), 0.03),
                                                                      Case_MD == "Case3 - ok"                   ~ tollmd_da,
                                                                      Case_MD == "Case4 - drop tolls slightly"  ~ pmax((tollmd_da - round((avgspeed_MD - avgspeed_MD_GP)/100/2, digits=2)), 0.03),
                                                                      Case_MD == "Case5 - set to min"           ~ 0.03))
 
 el_gp_summary_df <- el_gp_summary_df %>%
                                     mutate(tollpm_da_new = case_when(Case_PM == "Case1 - raise tolls"          ~ tollpm_da + round(((60 - avgspeed_PM)/100), digits=2),
-                                                                     Case_PM == "Case2 - drop tolls"           ~ pmax((tollpm_da - round((avgspeed_PM - 48)/100*2, digits=2)), 0.03),
+                                                                     Case_PM == "Case2 - drop tolls"           ~ pmax((tollpm_da - round((avgspeed_PM - TARGET_SPEED)/100*2, digits=2)), 0.03),
                                                                      Case_PM == "Case3 - ok"                   ~ tollpm_da,
                                                                      Case_PM == "Case4 - drop tolls slightly"  ~ pmax((tollpm_da - round((avgspeed_PM - avgspeed_PM_GP)/100/2, digits=2)), 0.03),
                                                                      Case_PM == "Case5 - set to min"           ~ 0.03))
+
+# set maximum new toll for each tolling period
+el_gp_summary_df$tollam_da_new[el_gp_summary_df$tollam_da_new > MAX_TOLL] <- MAX_TOLL
+el_gp_summary_df$tollmd_da_new[el_gp_summary_df$tollmd_da_new > MAX_TOLL] <- MAX_TOLL
+el_gp_summary_df$tollpm_da_new[el_gp_summary_df$tollpm_da_new > MAX_TOLL] <- MAX_TOLL
 
 # drop the toll facilities that are not dynamically tolled
 non_dyna_df  <- read.csv(file=NON_DYNA_TOLL_CSV , header=TRUE, sep=",")
