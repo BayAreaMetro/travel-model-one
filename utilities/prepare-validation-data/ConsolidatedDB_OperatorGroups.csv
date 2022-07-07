@@ -9,15 +9,15 @@ Marin Transit,Marin Transit,local bus,Smaller Operators
 Rio Vista Delta Breeze,Rio Vista,local bus,Smaller Operators
 SF Muni [LOCAL],SF Muni,local bus,SF Muni
 SF Muni [LRT],SF Muni,light rail,SF Muni
-Soltrans [EXPRESS],SolTrans,express bus,Smaller Operators
-Soltrans [LOCAL],SolTrans,local bus,Smaller Operators
+Soltrans [EXPRESS],SolTrans,express bus,SolTrans
+Soltrans [LOCAL],SolTrans,local bus,SolTrans
 Union City Transit,Union City,local bus,Smaller Operators
 Vacaville City Coach,Vacaville City Coach,local bus,Smaller Operators
 VTA [EXPRESS],VTA,express bus,VTA
 VTA [LOCAL],VTA,local bus,VTA
 VTA [LRT],VTA,light rail,VTA
-WestCAT [EXPRESS],WestCAT,express bus,Smaller Operators
-WestCAT [LOCAL],WestCAT,local bus,Smaller Operators
+WestCAT [EXPRESS],WestCAT,express bus,WestCAT
+WestCAT [LOCAL],WestCAT,local bus,WestCAT
 AC Transit [EXPRESS],AC Transit,express bus,AC Transit
 AC Transit [LOCAL],AC Transit,local bus,AC Transit
 Golden Gate Transit [EXPRESS],Golden Gate Transit,express bus,Golden Gate Transit

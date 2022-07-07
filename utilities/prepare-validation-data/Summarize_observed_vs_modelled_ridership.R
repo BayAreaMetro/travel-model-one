@@ -4,8 +4,8 @@
 # summarize observed and modelled ridership by operator and technology
 # using data from the consolidated onboard survey
 #
-# This script replaces \utilities\prepare-validation-data\Prepare Observed Transit Summaries.R
-# as Prepare Observed Transit Summaries.R reads the legacy onboard survey database
+# This script replaces \utilities\prepare-validation-data\Prepare Observed Transit Summaries.R which uses legacy onboard survey data
+# (note that Prepare Observed Transit Summaries.R has been renamed to Prepare Observed Transit Summaries (using LEGACY DATA).R
 #
 #############################################################
 
@@ -16,21 +16,21 @@ library(dplyr)
 ##################
 
 # users to specify the project directory:
-PROJECT_DIR = "L:/Application/Model_One/NextGenFwys/2015_TM152_NGF_01"
+PROJECT_DIR = "L:/Application/Model_One/NextGenFwys/2015_TM152_NGF_04"
 
 # typically, users do not need to specify other input paths, as they do not change across model runs
 # onboard survey data
-F_INPUT_SURVEY_DIR         = "M:/Data/OnBoard/Data and Reports/_data Standardized/share_data/model_version"
-F_INPUT_CONSOLIDATED_RDATA = file.path(F_INPUT_SURVEY_DIR, "TPS_Model_Version_PopulationSim_Weights2021-09-02.Rdata")
+F_INPUT_SURVEY_DIR         <- "M:/Data/OnBoard/Data and Reports/_data Standardized/share_data/model_version"
+F_INPUT_CONSOLIDATED_RDATA <- file.path(F_INPUT_SURVEY_DIR, "TPS_Model_Version_PopulationSim_Weights2021-09-02.Rdata")
 
 # file specifying how the operators are grouped
-ConsolidatedDB_OperatorGroups_CSV    <- file.path(PROJECT_DIR, "OUTPUT","validation", "transit", "ConsolidatedDB_OperatorGroups.csv")
+ConsolidatedDB_OperatorGroups_CSV    <- "X:/travel-model-one-master/utilities/prepare-validation-data/ConsolidatedDB_OperatorGroups.csv"
 
 # file with modelled boardings
 trnline_CSV    <- file.path(PROJECT_DIR, "OUTPUT","trn", "trnline.csv")
 
-# file specifying how the transit modes are grouped
-TransitMode_OperatorGroups_CSV    <- file.path(PROJECT_DIR, "OUTPUT","validation", "transit", "TransitMode_OperatorGroups.csv")
+# file specifying how the transit modes in the model are grouped
+TransitMode_OperatorGroups_CSV    <- "X:/travel-model-one-master/utilities/prepare-validation-data/TransitMode_OperatorGroups.csv"
 
 ##################
 # Analyse observed data
