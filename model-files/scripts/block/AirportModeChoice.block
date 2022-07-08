@@ -12,33 +12,53 @@ TNC.single.costMinimum = 7.20
 
 airport_1 = 'SFO'
 airport_1_taz = 239
-airport_1_shtcph = 1.00
-airport_1_lngcpd = 15.00
-airport_1_offcpd = 10.00
-airport_1_res_per_share = 0.25
-airport_1_res_bus_share = 0.25
-airport_1_vis_per_share = 0.25
-airport_1_vis_bus_share = 0.25
+airport_1_shtcph = 8.00
+airport_1_lngcpd = 28.00
+airport_1_offcpd = 18.00
+airport_1_res_per_share = 0.31
+airport_1_res_bus_share = 0.15
+airport_1_vis_per_share = 0.32
+airport_1_vis_bus_share = 0.22
+; passengers are for 2035
+airport_1_passengers = 116963
+; average duration of travel in days
+airport_1_dur_res_per = 12.0
+airport_1_dur_res_bus = 8.0
+airport_1_dur_vis_per = 12.0
+airport_1_dur_vis_bus = 8.0
 
 airport_2 = 'OAK'
 airport_2_taz = 874
-airport_2_shtcph = 1.00
-airport_2_lngcpd = 15.00
-airport_2_offcpd = 10.00
-airport_2_res_per_share = 0.25
-airport_2_res_bus_share = 0.25
-airport_2_vis_per_share = 0.25
-airport_2_vis_bus_share = 0.25
+airport_2_shtcph = 5.00
+airport_2_lngcpd = 22.00
+airport_2_offcpd = 18.00
+airport_2_res_per_share = 0.40
+airport_2_res_bus_share = 0.18
+airport_2_vis_per_share = 0.26
+airport_2_vis_bus_share = 0.16
+; passengers are for 2035
+airport_2_passengers = 40288
+; average duration of travel in days
+airport_2_dur_res_per = 8.0
+airport_2_dur_res_bus = 4.0
+airport_2_dur_vis_per = 8.0
+airport_2_dur_vis_bus = 4.0
 
 airport_3 = 'SJC'
 airport_3_taz = 434
-airport_3_shtcph = 1.00
-airport_3_lngcpd = 15.00
-airport_3_offcpd = 10.00
-airport_3_res_per_share = 0.25
-airport_3_res_bus_share = 0.25
-airport_3_vis_per_share = 0.25
-airport_3_vis_bus_share = 0.25
+airport_3_shtcph = 6.00
+airport_3_lngcpd = 24.00
+airport_3_offcpd = 15.00
+airport_3_res_per_share = 0.40
+airport_3_res_bus_share = 0.18
+airport_3_vis_per_share = 0.26
+airport_3_vis_bus_share = 0.16
+; passengers are for 2035
+airport_3_passengers = 36094
+airport_2_dur_res_per = 8.0
+airport_2_dur_res_bus = 4.0
+airport_2_dur_vis_per = 8.0
+airport_2_dur_vis_bus = 4.0
 
 c_ivt_res_per = -0.005
 c_ivt_res_bus = -0.027
@@ -194,11 +214,6 @@ inc_aam_res_bus = 100000
 inc_aam_vis_per = 87000        
 inc_aam_vis_bus = 100000
 
-; average duration of travel in days
-dur_res_per = 5.0
-dur_res_bus = 2.0
-dur_vis_per = 5.0
-dur_vis_bus = 2.0
 
 ; base income for AAM income elasticity
 base_inc = 87000
