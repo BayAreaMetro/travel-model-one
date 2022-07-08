@@ -83,7 +83,7 @@ Observed_ByOperatorTech_df     <- filter(Observed_ByOperatorTech_df , operator_g
 # create a new data frame (with two rows)
 ACT_patch_df <- data.frame(operator_group=c("AC Transit","AC Transit"),
                            technology_6groups=c("local bus","express bus"),
-                           observed_boardings=c(158630,18344))
+                           observed_boardings=c(170499,18344))
 
 # append the new data frame
 Observed_ByOperatorTech_df <- rbind(Observed_ByOperatorTech_df, SamTrans_patch_df, ACT_patch_df)
