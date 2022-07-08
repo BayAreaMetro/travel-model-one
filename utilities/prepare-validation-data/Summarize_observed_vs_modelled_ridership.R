@@ -71,11 +71,18 @@ SamTrans_patch_df <- data.frame(operator_group=c("SamTrans"),
 # AC Transit Observed Data Patch
 ##################
 # Asana task: https://app.asana.com/0/1201809392759895/1202440674530061/f
-# AC Transit shared the route-level observed boardings for 2015, so the 
-# database is patched to reflect their counts.
-# Express bus is defined as routes labeled by AC Transit as "Transbay" 
-# and local bus is defined as all other labels, with the exception of
-# school routes.
+# AC Transit shared the route-level automatic passenger counter (APC) data for 2015, so the validation table is patched to use the APC data.
+# The AC Transit APC data are stored in: \Box\Modeling and Surveys\Share Data\Transit\AC Transit Ridership\Ending December 2015 Service Statistics.xls
+# (Alternative file path: https://mtcdrive.app.box.com/folder/165188436123)
+
+# Express bus is defined as routes labeled by AC Transit as "Transbay". 
+# However, Dumbarton Express (DB and DB1) is not included in the APC data provided and its ridership has to come from the onboard survey.
+# The express bus total in "Ending December 2015 Service Statistics.xls" is 18,344.
+# From the onboard survey, the ridership for DB is 630 per day and that for DB1 is 748 per day.
+# So, final express bus total = 18,344 + 630 + 748 = 19,722
+
+# Local bus is defined as all other labels, although school routes are excluded.
+# The total in "Ending December 2015 Service Statistics.xls" is 170,499.
 
 # drop the AC Transit express and local bus from the observed data
 Observed_ByOperatorTech_df     <- filter(Observed_ByOperatorTech_df , operator_group!="AC Transit")
@@ -83,7 +90,7 @@ Observed_ByOperatorTech_df     <- filter(Observed_ByOperatorTech_df , operator_g
 # create a new data frame (with two rows)
 ACT_patch_df <- data.frame(operator_group=c("AC Transit","AC Transit"),
                            technology_6groups=c("local bus","express bus"),
-                           observed_boardings=c(170499,18344))
+                           observed_boardings=c(170499,19722))
 
 # append the new data frame
 Observed_ByOperatorTech_df <- rbind(Observed_ByOperatorTech_df, SamTrans_patch_df, ACT_patch_df)
