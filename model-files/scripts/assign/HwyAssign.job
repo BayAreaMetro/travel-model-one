@@ -171,7 +171,7 @@ loop period = 1, 5
       mati[3] = nonres\tripsTrk@token_period@.tpp
 
       ; air passenger travel demand
-      mati[4] = nonres\tripsAirPax@token_period@.tpp
+      mati[4] = nonres\tripsAirTotal_@token_period@.tpp
 
       ; loaded time-specific highway network
       neto    = hwy\load@token_period@.net
@@ -275,13 +275,13 @@ loop period = 1, 5
          ; no value toll paying classes first
 
          ; drive alone, no value toll, exclude drive alone value toll and HOV facilities, internal demand plus intra-regional demand plus air passenger demand
-         pathload path = lw.gencost_da, excludegrp = 11, 23, vol[1] = mi.1.da + mi.2.da + mi.4.da
+         pathload path = lw.gencost_da, excludegrp = 11, 23, vol[1] = mi.1.da + mi.2.da + mi.4.dant
 
          ; shared ride 2, no value toll, exclude sr2 value toll and HOV 3+ facilities, internal demand plus intra-regional demand plus air passenger demand
-         pathload path = lw.gencost_s2, excludegrp = 12, 3, vol[2] =  mi.1.sr2 / 2 + mi.2.sr2 + mi.4.sr2
+         pathload path = lw.gencost_s2, excludegrp = 12, 3, vol[2] =  mi.1.sr2 / 2 + mi.2.sr2 + mi.4.s2nt/2
 
-         ; shared ride 3+, no value toll, exclude sr3 value toll facilities, internal demand plus intra-regional demand plus air passenger demand
-         pathload path = lw.gencost_s3, excludegrp = 13, vol[3] = mi.1.sr3 / 3.25 + mi.2.sr3 + mi.4.sr3
+         ; shared ride 3+, no value toll, exclude sr3 value toll facilities, internal demand plus intra-regional demand
+         pathload path = lw.gencost_s3, excludegrp = 13, vol[3] = mi.1.sr3 / 3.25 + mi.2.sr3 
 
          ; very small, small, and medium trucks, no value toll, exclude small truck value toll facilities and HOV facilities
          pathload path = lw.gencost_sml, excludegrp = 14, 23, vol[4] = mi.3.vstruck + mi.3.struck + mi.3.mtruck
@@ -292,13 +292,13 @@ loop period = 1, 5
          ; value toll paying classes second
 
          ; drive alone, value toll paying, exclude HOV facilities, internal demand plus intra-regional demand plus air passenger demand
-         pathload path = lw.gencost_da, excludegrp = 23, vol[6] = mi.1.datoll + mi.2.datoll + mi.4.datoll
+         pathload path = lw.gencost_da, excludegrp = 23, vol[6] = mi.1.datoll + mi.2.datoll + mi.4.datl
 
          ; shared ride 2, value toll paying, exclude HOV 3+ facilities, internal demand plus intra-regional demand plus air passenger demand
-         pathload path = lw.gencost_s2, excludegrp = 3, vol[7] = mi.1.sr2toll / 2 + mi.2.sr2toll + mi.4.sr2toll
+         pathload path = lw.gencost_s2, excludegrp = 3, vol[7] = mi.1.sr2toll / 2 + mi.2.sr2toll + mi.4.s2tl / 2
 
          ; shared ride 3+, value toll paying, no exclusions, internal demand plus intra-regional demand plus air passenger demand
-         pathload path = lw.gencost_s3, vol[8] = mi.1.sr3toll / 3.25 + mi.2.sr3toll + mi.4.sr3toll
+         pathload path = lw.gencost_s3, vol[8] = mi.1.sr3toll / 3.25 + mi.2.sr3toll
 
          ; very small, small, and medium trucks, value toll paying, excluded from HOV facilities, use the small truck generalized cost
          pathload path = lw.gencost_sml, excludegrp = 23, vol[9]= mi.3.vstrucktoll + mi.3.strucktoll + mi.3.mtrucktoll

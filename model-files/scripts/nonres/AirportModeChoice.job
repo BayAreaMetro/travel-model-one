@@ -155,7 +155,7 @@ loop period = 1, 5
           u_taxi,u_tnc,u_limo,u_shrv,u_othb
       
       ; write out the time-period and market-specific trips collapsed by assignment mode
-      fileo mato[2] = nonres\tripsAir_@token_period@_@token_segment@.tpp, mo = 12-16, name =  dant, datl, s2nt, s2tl, trn
+      fileo mato[2] = nonres\tripsAir_@token_period@_@token_segment@.tpp, mo = 12-17, name =  dant, datl, s2nt, s2tl, wlk_aam_drv,drv_aam_wlk
       
       if(@period@=1)
         per_pct = percent_EA
@@ -582,12 +582,37 @@ loop period = 1, 5
       MW[15][J] = MW[15][J] + trips * p_s2tl * (p_lngp + p_offp + p_rent)
     endif
      
-    MW[16][J] = trips * p_tran
+    if ((i = airport_1_taz) | (i = airport_2_taz) | (i = airport_3_taz)) ; from airport: walk-trn-drive
+      MW[16][J] = trips * p_tran
+    elseif ((j = airport_1_taz) | (j = airport_2_taz) | (j = airport_3_taz)) ; to airport: drive-trn-walk
+      MW[17][J] = trips * p_tran
+    endif
+    
   
    endjloop
    
   endrun
   
   endloop ; market
+  
+  ;collapse markets
+    run pgm = matrix
+
+      ; input air passenger trips: dant, datl, s2nt, s2tl, trn 
+        filei mati[1] = nonres\tripsAir_@token_period@_res_per.tpp
+        filei mati[2] = nonres\tripsAir_@token_period@_res_bus.tpp
+        filei mati[3] = nonres\tripsAir_@token_period@_vis_per.tpp
+        filei mati[4] = nonres\tripsAir_@token_period@_vis_bus.tpp
+      
+      ; write out the time-period trips
+      fileo mato[1] = nonres\tripsAirTotal_@token_period@.tpp, mo = 1-5, name =  dant, datl, s2nt, s2tl, trn 
+  
+      MW[1] = mi.1.dant + mi.2.dant + mi.3.dant + mi.4.dant 
+      MW[2] = mi.1.datl + mi.2.datl + mi.3.datl + mi.4.datl
+      MW[3] = mi.1.s2nt + mi.2.s2nt + mi.3.s2nt + mi.4.s2nt
+      MW[4] = mi.1.s2tl + mi.2.s2tl + mi.3.s2tl + mi.4.s2tl
+      MW[5] = mi.1.trn + mi.2.trn + mi.3.trn + mi.4.trn 
+  
+  endrun
 endloop ; time period
  
