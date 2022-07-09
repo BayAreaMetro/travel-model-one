@@ -603,15 +603,16 @@ loop period = 1, 5
         filei mati[2] = nonres\tripsAir_@token_period@_res_bus.tpp
         filei mati[3] = nonres\tripsAir_@token_period@_vis_per.tpp
         filei mati[4] = nonres\tripsAir_@token_period@_vis_bus.tpp
-      
+       
       ; write out the time-period trips
-      fileo mato[1] = nonres\tripsAirTotal_@token_period@.tpp, mo = 1-5, name =  dant, datl, s2nt, s2tl, trn 
+      fileo mato[1] = nonres\tripsAirTotal_@token_period@.tpp, mo = 1-6, name =  dant, datl, s2nt, s2tl, wlk_aam_drv, drv_aam_wlk 
   
       MW[1] = mi.1.dant + mi.2.dant + mi.3.dant + mi.4.dant 
       MW[2] = mi.1.datl + mi.2.datl + mi.3.datl + mi.4.datl
       MW[3] = mi.1.s2nt + mi.2.s2nt + mi.3.s2nt + mi.4.s2nt
       MW[4] = mi.1.s2tl + mi.2.s2tl + mi.3.s2tl + mi.4.s2tl
-      MW[5] = mi.1.trn + mi.2.trn + mi.3.trn + mi.4.trn 
+      MW[5] = mi.1.wlk_aam_drv + mi.2.wlk_aam_drv + mi.3.wlk_aam_drv + mi.4.wlk_aam_drv 
+      MW[6] = mi.1.drv_aam_wlk + mi.2.drv_aam_wlk + mi.3.drv_aam_wlk + mi.4.drv_aam_wlk 
   
   endrun
 endloop ; time period
