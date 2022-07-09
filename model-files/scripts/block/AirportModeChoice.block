@@ -226,3 +226,9 @@ sharedvan_cost = 15.00
 
 ; takes into account that model was estimated using 2014 data but skimmed costs are in $2000
 cpi_factor = 1.37
+
+percent_EA = 0.04
+percent_AM = 0.17
+percent_MD = 0.31
+percent_PM = 0.20
+percent_EV = 0.28
