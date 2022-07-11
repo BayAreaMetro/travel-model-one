@@ -4,11 +4,13 @@ output: html_document
 date: '2022-05-26'
 ---
 
+
 ```{r}
 library(lubridate)
 library(openxlsx)
 library(dplyr)
 library(ggplot2)
+library(readxl)
 ```
 
 ```{r}
@@ -106,221 +108,59 @@ eb_cons_survey_df <- subset(cons_survey_df, technology == "express bus")
 sum(eb_cons_survey_df$abs_diff, na.rm = TRUE)
 sum(eb_cons_survey_df$abs_diff, na.rm = TRUE)
 
-write.csv(eb_cons_survey_df, "eb_cons_survey_df.csv")
+#write.csv(eb_cons_survey_df, "eb_cons_survey_df.csv")
 ```
 
 ```{r}
+# Plot the percent diff vs observed boardings
 ggplot(cons_survey_df, aes(x=observed_boardings, y=p_diff)) + geom_point() + geom_hline(yintercept = -.04, linetype = "dashed", color="red" )
 ```
 
-
-
-
-
-
-COPY FROM Prepare Observed Transit Summaries.R
 ```{r}
-estimated_df <- read.table(file = F_INPUT_ESTIMATED, header = TRUE, sep = ",", stringsAsFactors = FALSE)
-#### Prepare estimated database
-estimated_mode_code <- estimated_df %>%
-  rename(mode_code = mode) %>%
-  group_by(mode_code) %>%
-  summarise(estimated_boardings = sum(total.boardings)) %>%
-  ungroup()
-# add other fields
-estimated_mode_code <- left_join(estimated_mode_code, mode_codes_df)
+# load 2015-2021 AC Transit APC data
 
-#### Prepare mode codes database
-travel_model_codes <- mode_codes_df %>%
-  filter(technology != "support")
+act_data_dir <- "E:/Box/Modeling and Surveys/Share Data/Transit/AC Transit Ridership"
+act_data_files <- list.files(act_data_dir)
 
-# Add column, op_tech_count that's the count of (operator, technology)
-count_codes <- summarize(group_by(travel_model_codes, operator, technology),
-                         op_tech_count = n()) %>% ungroup()
+act_15 <- read_excel(paste(act_data_dir, "Ending December 2015 Service Statistics.xls", sep = "/"), sheet = "Weekday", skip = 1)[c(1:19)]
+act_19 <- read_excel(paste(act_data_dir, "1908FA Signup Ending December 2019 Service Statistics Revision 01.xlsx", sep = "/"), sheet = "Weekday", skip = 1)[c(1:19)]
+act_20 <- read_excel(paste(act_data_dir, "2008FA Signup Ending December 2020 Service Statistics.xlsx", sep = "/"), sheet = "Weekday", skip = 1)[c(1:19)]
+act_21 <- read_excel(paste(act_data_dir, "2108FA Signup Ending December 2021 Service Statistics.xlsx" , sep = "/"), sheet = "Weekday", skip = 1)[c(1:19)]
 
-travel_model_codes <- left_join(travel_model_codes, count_codes, by = c("operator", "technology"))
-
-remove(count_codes)
-
-
-#### Prepare ridership database
-
-# adjustment factor to adjust ridership from survey year to 2015
-ridership_adjust <- ridership_df %>%
-  filter(survey_year_ridership != "na") %>%
-  mutate(adjustment = as.numeric(year_2015_ridership) / as.numeric(survey_year_ridership))
-
-#### Prepare on-board survey information
-load(F_INPUT_LEGACY_RDATA)
-load(F_INPUT_STANDARD_RDATA)
-
-# remove this column since it's not in legacy data so it causes the rbind to error
-survey.standard <- survey.standard %>%
-  select(-survey_time)
-
-# put the survey data together and keep only the columns we care about
-survey_df <- rbind(survey.standard, survey.legacy) %>%
-  select(operator, weekpart, survey_tech, survey_year, day_part, route, weight)
-
-# Get rid of partial surveys, get weekdays, other clean-up
-survey_df <- survey_df %>%
-  filter(operator != "BART PRE-TEST") %>%
-  filter(operator != "SF Muni Early Tranche") %>%
-  mutate(operator = ifelse(operator == "Golden Gate Transit (bus)", "Golden Gate Transit", operator)) %>%
-  mutate(operator = ifelse(operator == "Golden Gate Transit (ferry)", "Golden Gate Transit", operator)) %>%
-  filter(weekpart == "WEEKDAY") %>%
-  rename(technology = survey_tech)
-
-# sum by operator and tech
-survey_operator_tech <- survey_df %>%
-  group_by(operator, technology) %>%
-  summarize(survey_boardings = sum(weight)) %>%
-  ungroup()
-
-# sum for all buses
-survey_operator_allbus <- survey_operator_tech[ substr(survey_operator_tech$technology,
-                                                       nchar(survey_operator_tech$technology)-3,
-                                                       nchar(survey_operator_tech$technology)) == " bus", ] %>%
-  group_by(operator) %>%
-  summarize(count = n(), survey_boardings = sum(survey_boardings)) %>%
-  ungroup() %>%
-  filter(count > 1) %>%
-  mutate(technology = "all bus") %>%
-  select(-count)
-
-survey_sum <- rbind(survey_operator_allbus, survey_operator_tech)
-# sort it
-survey_sum <- survey_sum[order(survey_sum$operator),]
-
-# join to ridership database
-survey_adjustments <- left_join(survey_sum, ridership_adjust, by = c("operator", "technology"))
-survey_adjustments
-
-# these are the adjustments we'll make to the survey summary
-survey_adjustments <- survey_adjustments %>%
-  filter(!(is.na(adjustment))) %>%
-  select(operator, technology, adjustment)
-
-# join adjustments back to survey-operator-technology summary -- join on operator and technology
-# this fails on technology which is only represented as allbus in survey_adjustments
-first_oper_tech <- left_join(survey_operator_tech, survey_adjustments, by = c("operator", "technology"))
-
-# these still need the adjustment -- join on tech="all bus"
-then_just_oper <- first_oper_tech %>%
-  filter(is.na(adjustment)) %>%
-  select(-adjustment) %>%
-  mutate(join_tech="all bus")
-
-# these already have the adjustment factor
-first_oper_tech <- first_oper_tech %>%
-  filter(!(is.na(adjustment)))
-
-# get the adjustment factor for these using the all_bus factors
-then_just_oper <- left_join(then_just_oper, survey_adjustments, by = c("operator"="operator", "join_tech"="technology")) %>% select(-join_tech)
-
-survey_adjusted <- rbind(first_oper_tech, then_just_oper)
-
-survey_adjusted <- survey_adjusted %>%
-  mutate(observed_boardings = survey_boardings * adjustment) %>%
-  select(operator, technology, observed_boardings)
-
-remove(first_oper_tech, survey_adjustments, survey_df, survey_operator_allbus,
-       survey_operator_tech, survey_sum, survey.legacy, survey.standard, then_just_oper)
-
-
-#### Use statistical summary ridership directly for non-surveyed routes
-stats_riders <- ridership_df %>%
-  filter(survey_year == "na") %>%
-  select(operator, technology, observed_boardings = year_2015_ridership)
-
-observed_ridership <- rbind(survey_adjusted, stats_riders)
-
-remove(survey_adjusted, stats_riders)
-
-# observed_ridership has operator, technology, observed_boardings
-# where technology == "all bus" in some cases
-
-#### Add travel model mode codes to observed ridership
-
-# join will fail on tech="all bus"
-observed_mode_code <- left_join(observed_ridership, travel_model_codes,
-                                by = c("operator", "technology"))
-
-# for those with more than one, divide observed ridership evenly amongst the travel submodes
-# TODO: this is not a great assumption and could be better informed
-observed_mode_code <- mutate(observed_mode_code,
-                             observed_boardings = ifelse(is.na(op_tech_count),observed_boardings,observed_boardings/op_tech_count))
-
-# fix join failed cases -- assuming all bus == express bus + local bus
-all_bus_cases <- observed_mode_code %>%
-  filter(is.na(mode_code)) %>%                     # join fail
-  filter(technology=="all bus") %>%                # we can only fix this
-  select(operator, observed_boardings)             # reset to the non-null columns, drop all bus technology since it's not helpful
-
-bus_codes <- travel_model_codes %>% filter(technology == "local bus" | technology == "express bus")
-
-# add count
-bus_codes <- left_join(bus_codes, summarize(group_by(bus_codes, operator), bus_op_count=n()) %>% ungroup())
-
-all_bus_cases <- left_join(all_bus_cases,
-                           bus_codes,
-                           by=c("operator"))
-# for those with more than one, divide observed ridership amongst the travel submodes
-# TODO: this is not a great assumption and could be better informed
-all_bus_cases <- mutate(all_bus_cases,
-                        observed_boardings = observed_boardings/bus_op_count)
-
-# put them back together
-observed_mode_code <- rbind(observed_mode_code,
-                            select(all_bus_cases, -bus_op_count))
-remove(bus_codes,all_bus_cases)
-
-#### Find modes for which we have estimates, but nothing observed
-output <- full_join(estimated_mode_code, observed_mode_code)
-
-find_missing <- output %>%
-  filter(!(is.na(estimated_boardings))) %>%
-  filter(is.na(observed_boardings))
-
-# Okay with these missing:
-# 10 - West Berkeley
-# 11 - Broadway Shuttle
-# 14 - Caltrain Shuttle
-# 16 - Palo Alto/Menlo Park Shuttles
-# 19 - San Leandro Links
-print("No observed boardings")
-print(find_missing)
-remove(find_missing)
-
-# drop the ones where everything is NA but mode_code
-output <- output %>% filter(!is.na(estimated_boardings) | !is.na(observed_boardings) | !is.na(operator) | !is.na(technology) )
-
-# integerize observed boardings
-output$observed_boardings <- as.integer(output$observed_boardings)
-# reorder columns
-output <- output[c("mode_code","operator","technology","mode_name","observed_boardings","estimated_boardings")]
-output
+colnames(act_19)<-colnames(act_15)
+colnames(act_20)<-colnames(act_15)
+colnames(act_21)<-colnames(act_15)
 ```
 
 
 
 ```{r}
-output_act <- subset(output, operator=="AC Transit")
+# Drop columns from the survey data and join with the APC data
+survey_data_r <- cons_survey_df[c(3,4,6,7)]
+survey_data_r <- survey_data_r[,c(2,3,1,4)]
+survey_data_r
 
-output_act_tech <- output_act %>%
-  group_by(technology) %>%
-  summarize(output_obs = sum(observed_boardings), output_est = sum(estimated_boardings))
+colnames(survey_data_r) <- c("Route",  "technology", "2018_boardings", "2012_boardings")
 
-output_check <- left_join(output_act_tech, survey_tech)
-output_check <- output_check %>% bind_rows(summarise(.,
-                                                     across(where(is.numeric), sum),
-                                                     across(where(is.character), ~"Total")))
+combined_data <- merge(x=survey_data_r, y=act_15[c(1,17)], by=c("Route"), all.x=TRUE, all.y = TRUE)
+combined_data <- merge(x=combined_data, y=act_19[c(1,2,17)], by=c("Route"), all.x=TRUE, all.y = TRUE)
+combined_data <- merge(x=combined_data, y=act_20[c(1,17)], by=c("Route"), all.x=TRUE, all.y = TRUE)
+combined_data <- merge(x=combined_data, y=act_21[c(1,17)], by=c("Route"), all.x=TRUE, all.y = TRUE)
 
-output_check$obs_p_diff <- (output_check$survey_boardings - output_check$output_obs)/output_check$output_obs
-output_check$est_p_diff <- (output_check$survey_boardings - output_check$output_est)/output_check$output_est
+colnames(combined_data) <- c("Route", "technology", "consolidated_boardings", "legacy_boardings", "2015_boardings_observed", "Route Type", "2019_boardings_observed", "2020_boardings_observed", "2021_boardings_observed")
 
-output_check
+combined_data <- combined_data[,c(1,2,6,4,5,3,7,8,9)]
+combined_data <- combined_data %>% filter(!is.na(Route)) %>%
+  filter(Route != "399")
+combined_data[combined_data$Route=="314/356",]$`Route Type`<-"Very Low Density"
+combined_data[combined_data$Route=="LC",]$`Route Type`<-"Transbay"
+combined_data <- combined_data %>% filter(!is.na(`Route Type`)|!is.na(technology))
 ```
+
+```{r}
+write.csv(combined_data, paste(act_data_dir, "ACT_weekday_ridership_by_route.csv"), sep = "/")
+```
+
 
 
 
