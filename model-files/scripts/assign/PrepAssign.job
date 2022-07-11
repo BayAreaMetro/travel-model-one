@@ -900,12 +900,13 @@ loop period = 1, 5
       mw[2] = (mi.1.da_av.t  + (mi.1.s2_av.t /2.0) + (mi.1.s3_av.t /3.25))*OwnedAV_ZPV_factor
    endrun
 
-   ; step five: add the zero passenger trips
+   ; step five: add the zero passenger trips, add air transit
    run pgm = matrix
 
       filei mati[1] = main\trips@token_period@_no_zpv.tpp
       filei mati[2] = main\trips@token_period@_zpv.tpp
-
+      filei mati[3] = nonres\tripsAirTotal_@token_period@.tpp
+      
       fileo mato[1] = main\trips@token_period@.tpp, mo = 1-32, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                                                                    walk, bike,
                                                                    wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, wlk_aam_wlk,
@@ -933,13 +934,13 @@ loop period = 1, 5
       mw[17] = mi.1.drv_exp_wlk
       mw[18] = mi.1.drv_hvy_wlk
       mw[19] = mi.1.drv_com_wlk
-      mw[20] = mi.1.drv_aam_wlk
+      mw[20] = mi.1.drv_aam_wlk + mi.3.drv_aam_wlk
       mw[21] = mi.1.wlk_loc_drv
       mw[22] = mi.1.wlk_lrf_drv
       mw[23] = mi.1.wlk_exp_drv
       mw[24] = mi.1.wlk_hvy_drv
       mw[25] = mi.1.wlk_com_drv
-      mw[26] = mi.1.wlk_aam_drv
+      mw[26] = mi.1.wlk_aam_drv + mi.3.wlk_aam_drv
       mw[27] = mi.1.da_tnc       + mi.2.zpv_tnc
       mw[28] = mi.1.s2_tnc
       mw[29] = mi.1.s3_tnc

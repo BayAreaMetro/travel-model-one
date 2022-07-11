@@ -1,0 +1,234 @@
+AAM.probability.delay = 0
+AAM.average.delay = 0
+AAM.autonomous.indicator = 0
+AAM.remote.indicator = 0
+taxi.baseFare = 2.20
+taxi.costPerMile = 2.30
+taxi.costPerMinute = 0.10
+TNC.single.baseFare = 2.20
+TNC.single.costPerMile = 1.33
+TNC.single.costPerMinute = 0.24
+TNC.single.costMinimum = 7.20
+
+airport_1 = 'SFO'
+airport_1_taz = 239
+airport_1_shtcph = 8.00
+airport_1_lngcpd = 28.00
+airport_1_offcpd = 18.00
+airport_1_res_per_share = 0.31
+airport_1_res_bus_share = 0.15
+airport_1_vis_per_share = 0.32
+airport_1_vis_bus_share = 0.22
+; passengers are for 2035
+airport_1_passengers = 116963
+; average duration of travel in days
+airport_1_dur_res_per = 12.0
+airport_1_dur_res_bus = 8.0
+airport_1_dur_vis_per = 12.0
+airport_1_dur_vis_bus = 8.0
+
+airport_2 = 'OAK'
+airport_2_taz = 874
+airport_2_shtcph = 5.00
+airport_2_lngcpd = 22.00
+airport_2_offcpd = 18.00
+airport_2_res_per_share = 0.40
+airport_2_res_bus_share = 0.18
+airport_2_vis_per_share = 0.26
+airport_2_vis_bus_share = 0.16
+; passengers are for 2035
+airport_2_passengers = 40288
+; average duration of travel in days
+airport_2_dur_res_per = 8.0
+airport_2_dur_res_bus = 4.0
+airport_2_dur_vis_per = 8.0
+airport_2_dur_vis_bus = 4.0
+
+airport_3 = 'SJC'
+airport_3_taz = 434
+airport_3_shtcph = 6.00
+airport_3_lngcpd = 24.00
+airport_3_offcpd = 15.00
+airport_3_res_per_share = 0.40
+airport_3_res_bus_share = 0.18
+airport_3_vis_per_share = 0.26
+airport_3_vis_bus_share = 0.16
+; passengers are for 2035
+airport_3_passengers = 36094
+airport_2_dur_res_per = 8.0
+airport_2_dur_res_bus = 4.0
+airport_2_dur_vis_per = 8.0
+airport_2_dur_vis_bus = 4.0
+
+c_ivt_res_per = -0.005
+c_ivt_res_bus = -0.027
+c_ivt_vis_per = -0.013
+c_ivt_vis_bus = -0.013
+
+c_cst_res_per = -0.020
+c_cst_res_bus = -0.048
+c_cst_vis_per = -0.022
+c_cst_vis_bus = -0.025
+
+c_xfr_res_per = -0.38
+c_xfr_res_bus = -0.46
+c_xfr_vis_per = -0.41
+c_xfr_vis_bus = -0.41
+
+; ASCs
+;pickup or dropoff private vehicle
+asc_pud_res_per = 0
+asc_pud_res_bus = 0
+asc_pud_vis_per = 0 
+asc_pud_vis_bus = 0
+
+;short-term parking (using domestic constants)
+asc_sht_res_per = -0.71
+asc_sht_res_bus = 2.0
+asc_sht_vis_per = -1.68 
+asc_sht_vis_bus = -1.81
+
+;long-term parking
+asc_lgt_res_per = -0.81
+asc_lgt_res_bus = 1.17
+asc_lgt_vis_per = -999 
+asc_lgt_vis_bus = -999
+
+;off-airport parking
+asc_off_res_per = -0.81 
+asc_off_res_bus = 1.16 
+asc_off_vis_per = -999
+asc_off_vis_bus = -999
+
+;Rental car
+asc_rnt_res_per = -999
+asc_rnt_res_bus = -999
+asc_rnt_vis_per = 0.73 
+asc_rnt_vis_bus = 2.38 
+
+;Taxi
+asc_txi_res_per = -0.37
+asc_txi_res_bus = 2.28
+asc_txi_vis_per = 0.32
+asc_txi_vis_bus = 2.52
+
+;TNC
+asc_tnc_res_per = -0.63
+asc_tnc_res_bus = 1.56 
+asc_tnc_vis_per = -0.66
+asc_tnc_vis_bus = 1.19 
+
+;Limo
+asc_lmo_res_per = -1.27
+asc_lmo_res_bus = 2.27 
+asc_lmo_vis_per = -0.66
+asc_lmo_vis_bus = 1.19 
+
+;Shared-ride van
+asc_srv_res_per = -1.46
+asc_srv_res_bus = -0.67
+asc_srv_vis_per = -0.44
+asc_srv_vis_bus = 0.35 
+
+;Transit
+asc_trn_res_per = 0.72
+asc_trn_res_bus = 1.90
+asc_trn_vis_per = 1.00
+asc_trn_vis_bus = 1.81
+
+;Other scheduled bus
+asc_osb_res_per = -1.99
+asc_osb_res_bus = -1.13
+asc_osb_vis_per = -2.17
+asc_osb_vis_bus = -2.46
+
+;Additional transit constant for baggage (assume one bag)
+asc_bag_res_per = -0.71                           
+asc_bag_res_bus = -0.32                            
+asc_bag_vis_per = -0.45                           
+asc_bag_vis_bus = -0.29                           
+
+; Additional transit constant for party size (not a solo traveler) - assume for personal 
+asc_pty_res_per = -0.53                         
+asc_pty_res_bus = 0                           
+asc_pty_vis_per = -0.44                         
+asc_pty_vis_bus = 0      
+
+; Cost coefficient for AAM                             
+c_cst_aam_res_per = -0.0064                              
+c_cst_aam_res_bus = -0.0346                              
+c_cst_aam_vis_per = -0.0167                              
+c_cst_aam_vis_bus = -0.0167                              
+
+; Reliability coefficient for AAM
+c_rel_aam_res_per = -0.0032
+c_rel_aam_res_bus = -0.0173
+c_rel_aam_vis_per = -0.0083
+c_rel_aam_vis_bus = -0.0083
+      
+; Distance elasticity coefficient for AAM      
+c_dst_aam_res_per = -0.2936        
+c_dst_aam_res_bus = -1.5856        
+c_dst_aam_vis_per = -0.7634        
+c_dst_aam_vis_bus = -0.7634        
+                 
+; Income elasticity coefficient for AAM
+c_inc_aam_res_per = -0.0764                
+c_inc_aam_res_bus = -0.4124                 
+c_inc_aam_vis_per = -0.1986                 
+c_inc_aam_vis_bus = -0.1986                 
+ 
+; Constants for AAM
+asc_aam_res_per = 0.0359
+asc_aam_res_bus = 0.1938                           
+asc_aam_vis_per = 0.0933                         
+asc_aam_vis_bus = 0.0933      
+                 
+; Business constant for AAM                
+asc_bus_aam_res_per = 0.0000                            
+asc_bus_aam_res_bus = 0.6944                            
+asc_bus_aam_vis_per = 0.0000                            
+asc_bus_aam_vis_bus = 0.3343                            
+                 
+; Airport constant for AAM           
+asc_air_aam_res_per = 0.0421          
+asc_air_aam_res_bus = 0.2271          
+asc_air_aam_vis_per = 0.1093          
+asc_air_aam_vis_bus = 0.1093          
+    
+; Autonomous operation constant for AAM
+asc_aut_aam_res_per = -0.0449   
+asc_aut_aam_res_bus = -0.2423    
+asc_aut_aam_vis_per = -0.1167                       
+asc_aut_aam_vis_bus = -0.1167
+
+; Remote operation constant for AAM
+asc_rem_aam_res_per = -0.0474        
+asc_rem_aam_res_bus = -0.2562         
+asc_rem_aam_vis_per = -0.1233        
+asc_rem_aam_vis_bus = -0.1233         
+
+; Income for AAM
+inc_aam_res_per = 87000
+inc_aam_res_bus = 100000
+inc_aam_vis_per = 87000        
+inc_aam_vis_bus = 100000
+
+
+; base income for AAM income elasticity
+base_inc = 87000
+
+; base distance for AAM distance elasticity
+base_dst = 20.10
+
+rental_cpd = 35.00
+sharedvan_cost = 15.00
+
+; takes into account that model was estimated using 2014 data but skimmed costs are in $2000
+cpi_factor = 1.37
+
+percent_EA = 0.04
+percent_AM = 0.17
+percent_MD = 0.31
+percent_PM = 0.20
+percent_EV = 0.28
