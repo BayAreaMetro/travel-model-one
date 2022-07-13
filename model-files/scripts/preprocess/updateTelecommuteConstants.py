@@ -242,7 +242,7 @@ if __name__ == '__main__':
         # calculate not working to take them out of the universe
         if (int(MODEL_YEAR) <= 2020):
             work_mode_SD_df['Full-time worker not-working'] = P_notworking_if_noworktour_FT*work_mode_SD_df['Full-time worker no tour']
-            work_mode_SD_df['Part-time worker not-working'] = P_notworking_if_noworktour_FT*work_mode_SD_df['Part-time worker no tour']
+            work_mode_SD_df['Part-time worker not-working'] = P_notworking_if_noworktour_PT*work_mode_SD_df['Part-time worker no tour']
         else:
             work_mode_SD_df['Full-time worker not-working'] = P_notworking_FT*work_tours_df['num_workers']
             work_mode_SD_df['Part-time worker not-working'] = P_notworking_PT*work_tours_df['num_workers']
