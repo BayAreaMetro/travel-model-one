@@ -54,6 +54,10 @@ set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\Voy
 :: Add these variables to the PATH environment variable, moving the current path to the back
 set PATH=%path%;%TPP_PATH%
 
+:: Configure target speed and max toll
+set target_speed=45 
+set max_toll=5
+
 set NET_INFILE=%MODEL_BASE_DIR%\INPUT\hwy\freeflow.net
 set NODE_OUTFILE=tollcalib_iter\network_nodes.shp
 set LINK_OUTFILE=tollcalib_iter\network_links.shp
