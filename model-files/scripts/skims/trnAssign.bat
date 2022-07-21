@@ -210,6 +210,7 @@ if %ITER% NEQ %MAXITERATIONS% (
   )
 )
  
+:donedone
 :: copy the latest transit assignment dbf into the parent dir
 if %ITER% EQU %MAXITERATIONS% (
   copy .\%LASTSUBDIR_EA%\trnlinkEA_ALLMSA.dbf ..
@@ -219,7 +220,6 @@ if %ITER% EQU %MAXITERATIONS% (
   copy .\%LASTSUBDIR_EV%\trnlinkEV_ALLMSA.dbf ..
 )
 
-:donedone
 cd ..
 cd ..
 

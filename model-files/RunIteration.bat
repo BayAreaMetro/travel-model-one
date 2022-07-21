@@ -112,6 +112,9 @@ if ERRORLEVEL 2 goto done
 
 :: If demand models were executed, translate the trip lists to demand matrices
 if %ITER% GTR 0 (
+	:: Add airport mode choice model for airport trips using advanced air mobility mode (RSG)
+	runtpp CTRAMP\scripts\nonres\AirportModeChoice.job
+	
 	runtpp CTRAMP\scripts\assign\PrepAssign.job
 	if ERRORLEVEL 2 goto done
 )
