@@ -18,12 +18,12 @@ mode_code,operator_in_legacy_database,technology_6groups,mode_name,operator_grou
 38,Union City,local bus,Union City Transit,Smaller Operators
 42,County Connection,local bus,County Connection (CCTA) - Local,Smaller Operators
 44,Tri-Delta,local bus,Tri-Delta,Smaller Operators
-46,WestCAT,local bus,WestCAT - Local,WestCAT
-49,SolTrans,local bus,Vallejo Transit - Local,SolTrans
+46,WestCAT,local bus,WestCAT - Local,Smaller Operators
+49,SolTrans,local bus,Vallejo Transit - Local,Smaller Operators
 52,FAST,local bus,Fairfield And Suisun Transit - Local,Smaller Operators
 55,Napa Vine,local bus,American Canyon Transit,Smaller Operators
 56,Vacaville City Coach,local bus,Vacaville City Coach,Smaller Operators
-58,SolTrans,local bus,Benicia Breeze,SolTrans
+58,SolTrans,local bus,Benicia Breeze,Smaller Operators
 60,Napa Vine,local bus,VINE,Smaller Operators
 63,Sonoma County,local bus,Sonoma County Transit - Local,Smaller Operators
 66,Santa Rosa CityBus,local bus,Santa Rosa City Bus,Smaller Operators
@@ -37,8 +37,8 @@ mode_code,operator_in_legacy_database,technology_6groups,mode_name,operator_grou
 86,County Connection,express bus,County Connection - Express,Smaller Operators
 87,Golden Gate Transit,express bus,Golden Gate Transit - Express San Francisco,Golden Gate Transit
 88,Golden Gate Transit,express bus,Golden Gate Transit - Express Richmond,Golden Gate Transit
-90,WestCAT,express bus,WestCAT - Express,WestCAT
-91,SolTrans,express bus,Vallejo Transit - Express,SolTrans
+90,WestCAT,express bus,WestCAT - Express,Smaller Operators
+91,SolTrans,express bus,Vallejo Transit - Express,Smaller Operators
 92,FAST,express bus,Fairfield And Suisun Transit - Express,Smaller Operators
 93,Napa Vine,express bus,VINE - Express,Smaller Operators
 95,Napa Vine,express bus,VINE - Express,Smaller Operators
