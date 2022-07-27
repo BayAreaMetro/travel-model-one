@@ -60,14 +60,6 @@ taz_mapping = {
                     (1318,1403)  : "Sonoma",
                     (1404,1454)  : "Marin"
                 }
-# time_mapping = {
-#                     (3,6)     : "Early AM",
-#                     (6,10)    : "AM Peak",
-#                     (10,15)   : "Midday",
-#                     (15,19)   : "PM Peak",
-#                     (19,24)   : "Eevening",
-#                     (0,3)     : "Evening"
-#                 }                
 # taz_to_city_mapping
 citytaz = pd.read_csv('C:/Users/jalatorre/Box/NextGen Freeways Study/07 Tasks/05_GoalsandMetrics/Metrics/taz_with_cities.csv') 
 taz_to_city_mapping = citytaz.set_index('taz1454').to_dict()['CITY']
@@ -79,20 +71,9 @@ MVMTM_file_list = [os.path.join(file_loc, i, 'OUTPUT', 'metrics' , 'vmt_vht_metr
 MR_file_list = [os.path.join(file_loc, i, 'OUTPUT', 'metrics' , 'auto_times.csv') for i in list_dir]
 MTT_file_list = [os.path.join(file_loc, i, 'OUTPUT', 'avgload5period.csv') for i in list_dir]
 MMS_file_list = [os.path.join(file_loc, i, 'OUTPUT', 'avgload5period_vehclasses.csv') for i in list_dir]
-# MMSOD_file_list = [os.path.join(file_loc, i, 'OUTPUT', 'logsums', 'indivTourData_3.csv') for i in list_dir]
-MMSCOD_file_list = [os.path.join(file_loc, i, 'OUTPUT', 'main', 'trips csv', 'tripsam.csv') for i in list_dir]
 MRDATA_file_list = [os.path.join(file_loc, i, 'OUTPUT', 'updated_output', 'trips.rdata') for i in list_dir]
 
 
-# # list of files for different costskims time of day
-# costskims = ['CostSkimsDatabaseAM.csv','CostSkimsDatabaseEA.csv','CostSkimsDatabaseEV.csv','CostSkimsDatabaseMD.csv','CostSkimsDatabasePM.csv']
-# MR_file_list = [[os.path.join("//MODEL2-B//Model2B-Share//Projects", i, 'database' , j) for i in list_dir] for j in costskims]
-# # flatten list above
-# MR_file_list = [x for xs in MR_file_list for x in xs]
-# # replace \ with / because accessing a shared drive not stored locally
-# MR_file_list = [x.replace("\\", "//") for x in MR_file_list]
-# # adjust for change in folder name across directory
-# MR_file_list = [x.replace("NoProject_01", "extg") for x in MR_file_list]
 
 def get_rate(number, table): # mapping function within range ex: taz OD    
     for key in table:
@@ -108,7 +89,7 @@ def file_list_to_csv(file_list, file_name): # read through a list of directories
 
         try:
 
-            if '.rdata' in file:
+            if '.rdata' in file: # runtime: 2-3 mins to load and clean each file, 2-3 minutes to write csv. 26 minute runtime for 5 or 6 files
                 df_temp = pyreadr.read_r(file)['trips']
                 df_temp = df_temp[['orig_taz', 'dest_taz', 'trip_mode', 'timeperiod_label', 'incQ_label', 'tour_purpose']]
                 df_temp['Origin'] = df_temp['orig_taz'].map(taz_to_city_mapping)
@@ -140,22 +121,6 @@ def file_list_to_csv(file_list, file_name): # read through a list of directories
                 # aggregate tours by mode             
                 df_temp['mode'] = df_temp['tour_mode'].map(tourmode_mapping)
 
-            # if "indivTourData_3" in file: 
-            #     # aggregate tours by OD taz                 
-            #     df_temp['Origin'] = df_temp['orig_taz'].apply(get_rate, table = (taz_mapping))    
-            #     df_temp['Destination'] = df_temp['dest_taz'].apply(get_rate, table = (taz_mapping))    
-            #     df_temp['mode'] = df_temp['tour_mode'].map(tourmode_mapping)
-
-            # if "tripsam" in file: 
-            #     # aggregate tours by city OD taz
-            #     df_temp['Origin'] = df_temp['orig'].map(taz_to_city_mapping)
-            #     df_temp['Destination'] = df_temp[' dest'].map(taz_to_city_mapping)
-
-            # if "CostSkims" in file:
-            #     # add time of day column
-            #     df_temp['Time of Day'] = file.split("//")[-1].split(".")[0][-2:]
-            #     # very likely will have to sum the columns in script instead of in tableau due to size of file
-
             # add column with Run ID
             df_temp['Run_ID'] = list_dir[i]
 
@@ -175,15 +140,13 @@ def file_list_to_csv(file_list, file_name): # read through a list of directories
     df.to_csv(os.path.join(os.getcwd(),file_name), header=True, index=False)
     print ("Successfully wrote " + file_name)
 
-# CONSIDER ADDING "[METRIC OUTPUT] " TO FILE NAME TO MAKE IT EASIER TO IDENTIFY IN THE FOLDER
-file_list_to_csv(MTB_file_list, "[METRIC OUTPUT] trips_by_mode_and_income.csv")
-file_list_to_csv(MTR_file_list, "[METRIC OUTPUT] transit_ridership_by_mode.csv")
-file_list_to_csv(MVMTM_file_list, "[METRIC OUTPUT] vmt_by_mode.csv")
-# can probably reuse trips by mode and income for vmt calc // do the calc in tableau
-file_list_to_csv(MR_file_list, "[METRIC OUTPUT] revenue.csv")
-file_list_to_csv(MTT_file_list, "[METRIC OUTPUT] trips_by_link.csv")
-file_list_to_csv(MMS_file_list, "[METRIC OUTPUT] trips_by_link_with_mode_share.csv")
-# file_list_to_csv(MMSOD_file_list, "OD_pairs_with_mode_share.csv")
-# file_list_to_csv(MMSCOD_file_list, "COD_pairs_with_mode_share.csv")
-# file_list_to_csv(MRDATA_file_list, "rdatacompiled.csv")
+# # CONSIDER ADDING "[METRIC OUTPUT] " TO FILE NAME TO MAKE IT EASIER TO IDENTIFY IN THE FOLDER
+# file_list_to_csv(MTB_file_list, "[METRIC OUTPUT] trips_by_mode_and_income.csv")
+# file_list_to_csv(MTR_file_list, "[METRIC OUTPUT] transit_ridership_by_mode.csv")
+# file_list_to_csv(MVMTM_file_list, "[METRIC OUTPUT] vmt_by_mode.csv")
+# # can probably reuse trips by mode and income for vmt calc // do the calc in tableau
+# file_list_to_csv(MR_file_list, "[METRIC OUTPUT] revenue.csv")
+# file_list_to_csv(MTT_file_list, "[METRIC OUTPUT] trips_by_link.csv")
+# file_list_to_csv(MMS_file_list, "[METRIC OUTPUT] trips_by_link_with_mode_share.csv")
+file_list_to_csv(MRDATA_file_list, "rdatacompiled.csv")
 
