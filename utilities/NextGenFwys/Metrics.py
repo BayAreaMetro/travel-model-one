@@ -17,8 +17,10 @@ import pyreadr
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 # names of folders for runs listed above
-# #come back and make tis iterable through a folder
-list_dir = ['2035_TM152_FBP_Plus_24','2035_TM152_NGF_NoProject_01']
+# #might want to come back and make this iterable through a folder
+list_dir = ['2035_TM152_FBP_Plus_24','2035_TM152_NGF_NoProject_01','2035_TM152_NGF_SensDiscount_01', '2035_TM152_NGF_SensDiscount_02', '2035_TM152_NGF_SensDiscount_04','2035_TM152_NGF_SensDiscount_05']
+# #alt list_dir for rdata testing
+# list_dir = ['2035_TM152_FBP_Plus_24','2035_TM152_NGF_NoProject_01']
 
 # define path location for folders above
 file_loc = "L:\\Application\\Model_One\\NextGenFwys"
@@ -108,6 +110,7 @@ def file_list_to_csv(file_list, file_name): # read through a list of directories
 
             if '.rdata' in file:
                 df_temp = pyreadr.read_r(file)['trips']
+                df_temp = df_temp[['orig_taz', 'dest_taz', 'trip_mode', 'timeperiod_label', 'incQ_label', 'tour_purpose']]
                 df_temp['Origin'] = df_temp['orig_taz'].map(taz_to_city_mapping)
                 df_temp['Destination'] = df_temp['dest_taz'].map(taz_to_city_mapping)
                 df_temp['mode'] = df_temp['trip_mode'].map(tourmode_mapping)
@@ -143,10 +146,10 @@ def file_list_to_csv(file_list, file_name): # read through a list of directories
             #     df_temp['Destination'] = df_temp['dest_taz'].apply(get_rate, table = (taz_mapping))    
             #     df_temp['mode'] = df_temp['tour_mode'].map(tourmode_mapping)
 
-            if "tripsam" in file: 
-                # aggregate tours by city OD taz
-                df_temp['Origin'] = df_temp['orig'].map(taz_to_city_mapping)
-                df_temp['Destination'] = df_temp[' dest'].map(taz_to_city_mapping)
+            # if "tripsam" in file: 
+            #     # aggregate tours by city OD taz
+            #     df_temp['Origin'] = df_temp['orig'].map(taz_to_city_mapping)
+            #     df_temp['Destination'] = df_temp[' dest'].map(taz_to_city_mapping)
 
             # if "CostSkims" in file:
             #     # add time of day column
@@ -172,14 +175,15 @@ def file_list_to_csv(file_list, file_name): # read through a list of directories
     df.to_csv(os.path.join(os.getcwd(),file_name), header=True, index=False)
     print ("Successfully wrote " + file_name)
 
-# file_list_to_csv(MTB_file_list, "trips_by_mode_and_income.csv")
-# file_list_to_csv(MTR_file_list, "transit_ridership_by_mode.csv")
-# file_list_to_csv(MVMTM_file_list, "vmt_by_mode.csv")
-# # can probably reuse trips by mode and income for vmt calc // do the calc in tableau
-# file_list_to_csv(MR_file_list, "revenue.csv")
-# file_list_to_csv(MTT_file_list, "trips_by_link.csv")
-# file_list_to_csv(MMS_file_list, "trips_by_link_with_mode_share.csv")
-# # file_list_to_csv(MMSOD_file_list, "OD_pairs_with_mode_share.csv")
+# CONSIDER ADDING "[METRIC OUTPUT] " TO FILE NAME TO MAKE IT EASIER TO IDENTIFY IN THE FOLDER
+file_list_to_csv(MTB_file_list, "[METRIC OUTPUT] trips_by_mode_and_income.csv")
+file_list_to_csv(MTR_file_list, "[METRIC OUTPUT] transit_ridership_by_mode.csv")
+file_list_to_csv(MVMTM_file_list, "[METRIC OUTPUT] vmt_by_mode.csv")
+# can probably reuse trips by mode and income for vmt calc // do the calc in tableau
+file_list_to_csv(MR_file_list, "[METRIC OUTPUT] revenue.csv")
+file_list_to_csv(MTT_file_list, "[METRIC OUTPUT] trips_by_link.csv")
+file_list_to_csv(MMS_file_list, "[METRIC OUTPUT] trips_by_link_with_mode_share.csv")
+# file_list_to_csv(MMSOD_file_list, "OD_pairs_with_mode_share.csv")
 # file_list_to_csv(MMSCOD_file_list, "COD_pairs_with_mode_share.csv")
-file_list_to_csv(MRDATA_file_list, "rdatacompiled.csv")
+# file_list_to_csv(MRDATA_file_list, "rdatacompiled.csv")
 
