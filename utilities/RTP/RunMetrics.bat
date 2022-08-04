@@ -141,6 +141,37 @@ if not exist metrics\nonmot_times.csv (
   if ERRORLEVEL 2 goto error
 )
 
+if not exist metrics\transit_times_by_mode_TOD.csv (
+  rem Reads trip tables and skims and outputs tallies for trip attributes
+  rem Input : main\trips(EA|AM|MD|PM|EV)allinc.tpp,
+  rem         skims\trnskm(EA|AM|MD|PM|EV)_(wlk|drv)_(com|hvy|exp|lrf|loc)_(wlk|drv).tpp
+  rem Output: metrics\transit_times_by_acc_mode_egr.csv,
+  rem         metrics\transit_times_by_mode_income.csv
+  runtpp "%CODE_DIR%\sumTransitTimesByTOD.job"
+  if ERRORLEVEL 2 goto error
+)
+
+if not exist metrics\auto_time_TOD.csv (
+  rem Reads trip tables and skims and outputs tallies for trip attributes
+  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp
+  rem         nonres\tripsIx(EA|AM|MD|PM|EV).tpp
+  rem         skims\HWYSKM(EA|AM|MD|PM|EV).tpp
+  rem         skims\COM_HWYSKIM(EA|AM|MD|PM|EV).tpp
+  rem         CTRAMP\scripts\block\hwyParam.block
+  rem Output: metrics\auto_times.csv
+  runtpp "%CODE_DIR%\sumAutoTimesByTOD.job"
+  if ERRORLEVEL 2 goto error
+)
+
+if not exist metrics\nonmot_times_TOD.csv (
+  rem Reads trip tables and skims and outputs tallies for trip attributes
+  rem Input : main\trips(EA|AM|MD|PM|EV).tpp
+  rem         skims\nonmotskm.tpp
+  rem Output: nonmot_times_TOD.csv
+  runtpp "%CODE_DIR%\sumNonMotTimesByTOD.job"
+  if ERRORLEVEL 2 goto error
+)
+
 if not exist metrics\vmt_vht_metrics.csv (
   rem Summarize network links to vmt, vht, and other collision and emissions estimations
   rem Input: hwy\iter%ITER%\avgload5period_vehclasses.csv
