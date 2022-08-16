@@ -213,11 +213,6 @@ el_gp_summary_df <- el_gp_summary_df %>%
 toll_rates_df          <- read.csv(file=TOLLS_CSV, header=TRUE, sep=",")
 toll_rates_df          <- toll_rates_df  %>% select(tollclass, facility_name, use, tollam_da, tollmd_da, tollpm_da)
 
-# set maximum toll for each tolling period
-toll_rates_df$tollam_da[toll_rates_df$tollam_da > MAX_TOLL] <- MAX_TOLL
-toll_rates_df$tollmd_da[toll_rates_df$tollmd_da > MAX_TOLL] <- MAX_TOLL
-toll_rates_df$tollpm_da[toll_rates_df$tollpm_da > MAX_TOLL] <- MAX_TOLL
-
 el_gp_summary_df <- el_gp_summary_df %>% left_join(toll_rates_df,
                                          by=c("TOLLCLASS"="tollclass"))
 
