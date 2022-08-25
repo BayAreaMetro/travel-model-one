@@ -1531,3 +1531,26 @@ print(paste("Wrote",prettyNum(nrow(person_hw_summary),big.mark=","),"rows of per
 model_summary <- person_hw_summary # name it generically for rdata
 save(model_summary, file=file.path(RESULTS_DIR, "AutoTripsVMT_personsHomeWork.rdata"))
 remove(person_hw_summary, model_summary)
+
+
+#---------------------------------------------------------------
+# summarize OD travel time by mode, time period and income group
+#---------------------------------------------------------------
+
+# keep only the variables needed for this analysis
+df_trips_8columns <- trips %>% select(orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, time, sampleRate)
+remove(trips)
+
+df_trips_od <- df_trips_8columns %>%  
+    group_by(orig_taz, dest_taz, trip_mode, timeperiod_label, incQ_label) %>%
+    summarise(num_trips = n(),
+              avg_travel_time_in_mins = mean(time))
+remove(df_trips_8columns)
+
+# the sampleRate column is not needed in the output file
+df_trips_od <- df_trips_od %>% select(orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins)
+
+# save it
+write.table(df_trips_od, file.path(RESULTS_DIR,"ODTravelTime_byModeTimeperiodIncome.csv"), sep=",", row.names=FALSE)
+save(df_trips_od, file=file.path(RESULTS_DIR, "ODTravelTime_byModeTimeperiodIncome.rdata"))
+remove(df_trips_od)
