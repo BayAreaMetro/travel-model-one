@@ -24,6 +24,10 @@ set MODEL_BASE_DIR=E:\Model2C-Share\Projects\2050_TM151_PPA_BF_17_preTollCalib
 :: (this shoudl be the location of the output folder "tollcalib_iter" on the L drive)
 set L_DIR=L:\RTP2021_PPA\Projects\2050_TM151_PPA_BF_17_preTollCalib
 
+:: Configure target speed and max toll
+set target_speed=45 
+set max_toll=5
+
 
 rem copy the two toll calibration inputs 
 rem -------------------------------------
@@ -53,10 +57,6 @@ copy \\tsclient\X\travel-model-one-master\utilities\cube-to-shapefile\export_net
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI
 :: Add these variables to the PATH environment variable, moving the current path to the back
 set PATH=%path%;%TPP_PATH%
-
-:: Configure target speed and max toll
-set target_speed=45 
-set max_toll=5
 
 set NET_INFILE=%MODEL_BASE_DIR%\INPUT\hwy\freeflow.net
 set NODE_OUTFILE=tollcalib_iter\network_nodes.shp
