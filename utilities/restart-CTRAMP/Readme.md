@@ -2,9 +2,9 @@ These are utilities to test the restarrt capabilities of CT-RAMP.
 
 Specifically, we'll test if restarrting CT-RAMP for trip mode choice works.
 
-[restart_full_test.bat] - Does the following:
+[restart_full_test.bat](restart_full_test.bat) - Does the following:
   1) Sets up and runs a single iteration of model
-  2) Modifies skims for test via [restart_test_modify_skims.job]
+  2) Modifies skims for test via [restart_test_modify_skims.job](restart_test_modify_skims.job)
   3) Pause and request the user setup the restart parameters
   4) Keeping the Household Server, Matrix Server, and Node0 running, runs CTRAMP in restart mode.
 
