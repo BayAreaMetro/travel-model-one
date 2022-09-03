@@ -1,0 +1,19 @@
+; Modify auto skims for restart test
+; Make drive-alone travel within SF travel time slower (4x)
+;
+run PGM=MATRIX
+  filei mati[1] = "skims\HWYSKM%TIME_PERIOD%.tpp"
+  fileo mato[1] = "skims\HWYSKM%TIME_PERIOD%_mod.tpp", mo = 1-21, name = TIMEDA,DISTDA,BTOLLDA,
+                                                                  TOLLTIMEDA,TOLLDISTDA,TOLLBTOLLDA,TOLLVTOLLDA,
+                                                                  TIMES2,DISTS2,BTOLLS2,
+                                                                  TOLLTIMES2,TOLLDISTS2,TOLLBTOLLS2,TOLLVTOLLS2,
+                                                                  TIMES3,DISTS3,BTOLLS3,
+                                                                  TOLLTIMES3,TOLLDISTS3,TOLLBTOLLS3,TOLLVTOLLS3
+
+  FILLMW MW[1] = MI.1.1(21)
+  ; SF is 1-190
+  JLOOP
+    IF ((I <= 190) && (J <= 190)) MW[1] = MW[1]*4.0 ; TIMEDA
+  ENDJLOOP
+
+endrun
