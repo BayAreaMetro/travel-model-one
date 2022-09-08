@@ -153,15 +153,29 @@ copy /y skims\HWYSKMEV_mod.tpp skims\HWYSKMEV.tpp
 set INSTANCE=%COMPUTERNAME%
 python CTRAMP\scripts\notify_slack.py "Restart testing - TODO: disable desired submodels"
 
+:test_start
+set TEST_NAME=test4
+
 :: Prompt user to disable submodels and set RestartWithHhServer=stl
 @echo off
-set /P c=Disable desired submodels in the properties file and set RestartWithHhServer. Hit any key to continue...
+set /P c=Kill Node0. Disable desired submodels in the properties file and set RestartWithHhServer. Hit any key to continue...
 @echo on
 :: Don't care about the response
+
+:: Restart node0
+cd CTRAMP\runtime
+call javaOnly_runNode0.cmd
 
 :: Restart the core
 java -showversion -Xmx6000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Djava.library.path=%RUNTIME% -Djppf.config=jppf-clientDistributed.properties com.pb.mtc.ctramp.MtcTourBasedModel mtcTourBased -iteration %ITER% -sampleRate %SAMPLESHARE% -sampleSeed %SEED%
 if ERRORLEVEL 2 goto done
+
+:: Save main output files from test
+mkdir main\%TEST_NAME%
+copy main\*.csv main\%TEST_NAME%\
+:: Save the log files for this test
+mkdir logs\%TEST_NAME%
+copy logs\*.log logs\%TEST_NAME%\
 
 C:\Windows\SysWOW64\taskkill /f /im "java.exe"
 

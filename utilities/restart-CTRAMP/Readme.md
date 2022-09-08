@@ -12,8 +12,9 @@ Specifically, we'll test if restarrting CT-RAMP for trip mode choice works.
 
 ### Test 1: `stl`
 
-With `RunModel.RestartWithHhServer=stl` and all `RunModel.* == false` except for `RunModel.StopLocation`, the event-node0.log was full of
-exceptions like the following:
+* Left all four windows running from the baseline (Matrix Manager, Household Manager, JPPF Server, Node0).
+* Updated properties: `RunModel.RestartWithHhServer=stl` and all `RunModel.* == false` except for `RunModel.StopLocation`,
+* Result: the event-node0.log was full of exceptions like the following:
 
 ```
 02-Sep-2022 12:54:49, INFO, setting up MANDATORY time-of-day choice model.
@@ -62,9 +63,52 @@ Also, MatrixManager did not appear to reread any skims
 
 ### Test 2: `stf`
 
-With `RunModel.RestartWithHhServer=stf` and all `RunModel.* == false` except for `RunModel.StopFrequency`, `RunModel.StopLocation`
+* Left all four windows running from the baseline (Matrix Manager, Household Manager, JPPF Server, Node0).
+* Updated properties: `RunModel.RestartWithHhServer=stf` and all `RunModel.* == false` except for `RunModel.StopFrequency`, `RunModel.StopLocation`
+* Results are the same as Test 1.
 
-Results are the same as Test 1.
+### Test 3: `stl`
+
+* Killed and restarted Node0 (manually via GUI); left other three windows running from the baseline (Matrix Manager, Household Manager, JPPF Server).
+* Updated properties: `RunModel.RestartWithHhServer=stl` and all `RunModel.* == false` except for `RunModel.StopLocation`
+* Results:
+  * MatrixManager is rereading skims after restart
+  * event-node0.log indicates error:
+```
+08-Sep-2022 09:57:23, INFO, starting node
+08-Sep-2022 09:57:24, INFO, Node running 24 processing threads
+08-Sep-2022 09:57:30, WARN, an instance of MBean [org.jppf:name=admin,type=node] already exists, registration was skipped
+08-Sep-2022 09:57:30, WARN, an instance of MBean [org.jppf:name=task.monitor,type=node] already exists, registration was skipped
+08-Sep-2022 09:59:28, INFO, node processing-thread-4: HouseholdChoiceModelManager needs MatrixDataManager, MatrixDataServer connection test: testRemote() method in com.pb.models.ctramp.MatrixDataServer called.
+08-Sep-2022 09:59:28, INFO, setting up stop location choice models.
+08-Sep-2022 09:59:33, INFO, setting up trip depart time choice model.
+08-Sep-2022 09:59:33, INFO, setting up trip mode choice models.
+08-Sep-2022 09:59:39, INFO, Read landuse/tazData.csv : 985 ms
+08-Sep-2022 10:05:31, INFO, setting up parking location choice models.
+08-Sep-2022 10:05:31, INFO, created hhChoiceModels=1, task=1, thread=node processing-thread-4
+08-Sep-2022 10:05:31, FATAL, exception caught in taskIndex=1 hhModel index=1 applying hh model for i=0, hhId=29.
+08-Sep-2022 10:05:31, FATAL, Exception caught:
+java.lang.RuntimeException: Cannot restart model from stl.  Must be one of: none, ao, imtf, jtf, inmtf, awf, stf.
+	at com.pb.models.ctramp.jppf.HouseholdChoiceModels.checkRestartModel(HouseholdChoiceModels.java:648)
+	at com.pb.models.ctramp.jppf.HouseholdChoiceModels.runModelsWithTiming(HouseholdChoiceModels.java:472)
+	at com.pb.models.ctramp.jppf.HouseholdChoiceModelsTaskJppf.run(HouseholdChoiceModelsTaskJppf.java:102)
+	at org.jppf.server.node.NodeTaskWrapper.run(NodeTaskWrapper.java:96)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+08-Sep-2022 10:05:31, FATAL, Throwing new RuntimeException() to terminate.
+```
+### Test 4: `stf`
+
+* Didn't run from the top; used Test 3
+* Killed and restarted Node0 (manually via GUI); left other three windows running from the baseline (Matrix Manager, Household Manager, JPPF Server).
+* Updated properties: `RunModel.RestartWithHhServer=stf` and all `RunModel.* == false` except for `RunModel.StopFrequency`, `RunModel.StopLocation`
+* Results:
+  * MatrixManager is rereading skims after restart
+  * event-node0.log: Appears to work!!
+
 
 ### Internal References
 
