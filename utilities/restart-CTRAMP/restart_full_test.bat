@@ -1,11 +1,12 @@
 :: use
 set PIVOT_FROM=\\MODEL2-C\Model2C-Share\Projects\2015_TM152_NGF_04
-set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-master
+set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-restart-ctramp
 
 :setup_model
-:: Setup:: copy over CTRAMP and INPUT from PIVOT_FROM
-c:\windows\system32\Robocopy.exe /E "%PIVOT_FROM%\CTRAMP"    CTRAMP
-c:\windows\system32\Robocopy.exe /E "%PIVOT_FROM%\INPUT"     INPUT
+:: Setup:: copy over CTRAMP from GITHUB_DIR and INPUT from PIVOT_FROM
+c:\windows\system32\Robocopy.exe /E "%PIVOT_FROM%\INPUT"        INPUT
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files"  CTRAMP
+copy /Y "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"     CTRAMP\scripts
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -94,7 +95,7 @@ set ITER=1
 set PREV_ITER=1
 set WGT=1.0
 set PREV_WGT=0.00
-set SAMPLESHARE=0.50
+set SAMPLESHARE=0.20
 set SEED=0
 
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --iter %ITER%
