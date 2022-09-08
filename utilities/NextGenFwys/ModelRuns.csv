@@ -1,0 +1,14 @@
+project,year,directory,run_set,category,urbansim_path,urbansim_runid,status,network number,asana task
+RTP2021,2015,2015_TM152_IPA_17,IP,IP,"""census_petrale""",na,current,,
+NGF,2015,2015_TM152_NGF_01,NGF,IP,"""census_petrale""",na,,,https://app.asana.com/0/1201809392759895/1201875440335553
+NGF,2015,2015_TM152_NGF_02,NGF,IP,"""census_petrale""",na,,,https://app.asana.com/0/search?q=2015_TM152_NGF_02&child=1202256742619720
+NGF,2015,2015_TM152_NGF_03,NGF,IP,"""census_petrale""",na,,,https://app.asana.com/0/inbox/572982923864205
+NGF,2015,2015_TM152_NGF_04,NGF,IP,"""census_petrale""",na,current,,https://app.asana.com/0/13098083395690/1202541200237173
+RTP2021,2035,2035_TM152_FBP_NoProject_24,FinalBlueprint,No Project,"""EIR runs\Baseline Large (s25) runs\NP_v8""",run314,current,,
+NGF,2035,2035_TM152_NGF_NoProject_01,NGF,No Project,"""Final Blueprint runs\Final Blueprint (s24)\BAUS v2.25 - FINAL VERSION""",run182,current,,https://app.asana.com/0/search?q=2035_TM152_NGF_NoProject_01&child=1201295328698176
+NGF,2035,2035_TM152_NGF_SensDiscount_01,NGF,Sensitivity Test,"""Final Blueprint runs\Final Blueprint (s24)\BAUS v2.25 - FINAL VERSION""",run182,current,,https://app.asana.com/0/0/1202512897941570/f
+NGF,2035,2035_TM152_NGF_SensDiscount_02,NGF,Sensitivity Test,"""Final Blueprint runs\Final Blueprint (s24)\BAUS v2.25 - FINAL VERSION""",run182,current,,https://app.asana.com/0/0/1202512897941573/f
+NGF,2035,2035_TM152_NGF_SensDiscount_03,NGF,Sensitivity Test,"""Final Blueprint runs\Final Blueprint (s24)\BAUS v2.25 - FINAL VERSION""",run182,current,,https://app.asana.com/0/0/1202554938897468/f
+NGF,2035,2035_TM152_NGF_SensDiscount_04,NGF,Sensitivity Test,"""Final Blueprint runs\Final Blueprint (s24)\BAUS v2.25 - FINAL VERSION""",run182,current,,https://app.asana.com/0/0/1202554938897469/f
+NGF,2035,2035_TM152_NGF_SensDiscount_05,NGF,Sensitivity Test,"""Final Blueprint runs\Final Blueprint (s24)\BAUS v2.25 - FINAL VERSION""",run182,current,,https://app.asana.com/0/0/1202554938897470/f
+NGF,2035,2035_TM152_NGF_NP02_Blueprint_00,NGF,Blueprint,"""Final Blueprint runs\Final Blueprint (s24)\BAUS v2.25 - FINAL VERSION""",run182,current,NGF_Networks_Blueprint_01,https://app.asana.com/0/0/1202521542566668/f
