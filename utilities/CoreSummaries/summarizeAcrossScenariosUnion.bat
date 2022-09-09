@@ -132,6 +132,11 @@ IF %USERNAME%==lzorn (
       set R_USER=%USERNAME%
       set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.4
   ) ELSE (
+  IF %USERNAME%==natchison (
+        set R_HOME=C:\Program Files\R\R-4.1.2
+        set R_USER=%USERNAME%
+        set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\4.1
+  ) ELSE (
   set R_HOME=C:\Program Files\R\R-3.5.2
   set R_USER=%USERNAME%
   set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.5
