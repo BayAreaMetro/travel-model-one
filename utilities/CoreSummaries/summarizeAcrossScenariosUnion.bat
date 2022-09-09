@@ -4,6 +4,7 @@
 ::
 set USAGE=USAGE: summarizeAcrossScenariosUnion [current, all, or project]
 :: Run from M:\Application\Model One
+:: unless for NextGenFwys project, run summarizeAcrossScenariosUnion project from L:\Application\Model_One
 ::
 :: Uses scenario list in \\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\ModelRuns.csv
 :: unless project, in which cases uses .\ModelRuns.csv
@@ -85,7 +86,9 @@ for /f "skip=1 usebackq tokens=1,2,3,4,5,6,7,8 delims=," %%A in ("!MODEL_RUNS_CS
   if !project!==RTP2017 (
     set SUBDIR=Scenarios
   )
-
+  if !project!==NextGenFwys (
+    set SUBDIR=Scenarios
+  )
   if !SET_TYPE!==current (
     if !status!==current (
       set RUN_NAME_SET=!RUN_NAME_SET!!project!\!SUBDIR!\!directory! 
@@ -132,17 +135,23 @@ IF %USERNAME%==lzorn (
       set R_USER=%USERNAME%
       set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.4
   ) ELSE (
-  IF %USERNAME%==natchison (
+    IF %USERNAME%==ywang (
+      set R_HOME=C:\Program Files\R\R-3.6.3
+      set R_USER=%USERNAME%
+      set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.6
+    ) ELSE (
+      IF %USERNAME%==natchison (
         set R_HOME=C:\Program Files\R\R-4.1.2
         set R_USER=%USERNAME%
         set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\4.1
-  ) ELSE (
-  set R_HOME=C:\Program Files\R\R-3.5.2
-  set R_USER=%USERNAME%
-  set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.5
+      ) ELSE (
+        set R_HOME=C:\Program Files\R\R-3.5.2
+        set R_USER=%USERNAME%
+        set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.5
+        )
+      )
+    )
   )
-)
-
 
 :: copy over the scenariokey
 copy "%MODEL_RUNS_CSV%" "%COMBINED_DIR%\ScenarioKey.csv"
