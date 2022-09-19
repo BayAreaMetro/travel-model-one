@@ -109,6 +109,14 @@ java.lang.RuntimeException: Cannot restart model from stl.  Must be one of: none
   * MatrixManager is rereading skims after restart
   * event-node0.log: Appears to work!!
 
+### Test 5: `imtf`
+
+* Started from the top in `\\model2-d\Model2D-Sharee\Projects\2015_TM152_NGF_04_restart_test5`
+* Killed and restarted Node0 (manually via GUI); left other three windows running from the baseline (Matrix Manager, Household Manager, JPPF Server).
+* Updated properties: `RunModel.RestartWithHhServer=imtf` and all `RunModel.* == true` for `RunModel.IndividualMandatoryTourFrequency` and lines after.
+* Results:
+  * MatrixManager is rereading skims after restart
+  * event-node0.log: Appears to work
 
 ### Internal References
 
