@@ -113,7 +113,33 @@ java.lang.RuntimeException: Cannot restart model from stl.  Must be one of: none
 
 * Started from the top in `\\model2-d\Model2D-Sharee\Projects\2015_TM152_NGF_04_restart_test5`
 * Killed and restarted Node0 (manually via GUI); left other three windows running from the baseline (Matrix Manager, Household Manager, JPPF Server).
-* Updated properties: `RunModel.RestartWithHhServer=imtf` and all `RunModel.* == true` for `RunModel.IndividualMandatoryTourFrequency` and lines after.
+* Updated properties: `RunModel.RestartWithHhServer=imtf` and 
+
+    RunModel.UsualWorkAndSchoolLocationChoice                   = false
+    UsualWorkAndSchoolLocationChoice.RunFlag.Work       	    = false
+    UsualWorkAndSchoolLocationChoice.RunFlag.University 	    = false
+    UsualWorkAndSchoolLocationChoice.RunFlag.School             = false
+    RunModel.AutoOwnership                                      = false
+    RunModel.FreeParking                                        = false
+    RunModel.CoordinatedDailyActivityPattern                    = false
+    RunModel.IndividualMandatoryTourFrequency                   = true
+    RunModel.MandatoryTourDepartureTimeAndDuration              = true
+    RunModel.MandatoryTourModeChoice                            = true
+    RunModel.JointTourFrequency                                 = true
+    RunModel.JointTourLocationChoice                            = true
+    RunModel.JointTourDepartureTimeAndDuration                  = true
+    RunModel.JointTourModeChoice                                = true
+    RunModel.IndividualNonMandatoryTourFrequency                = true
+    RunModel.IndividualNonMandatoryTourLocationChoice           = true
+    RunModel.IndividualNonMandatoryTourDepartureTimeAndDuration = true
+    RunModel.IndividualNonMandatoryTourModeChoice               = true
+    RunModel.AtWorkSubTourFrequency                             = true
+    RunModel.AtWorkSubTourLocationChoice                        = true
+    RunModel.AtWorkSubTourDepartureTimeAndDuration              = true
+    RunModel.AtWorkSubTourModeChoice                            = true
+    RunModel.StopFrequency                                      = true
+    RunModel.StopLocation                                       = true
+
 * Results:
   * MatrixManager is rereading skims after restart
   * event-node0.log: Appears to work
