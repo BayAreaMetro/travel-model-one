@@ -16,6 +16,8 @@ TOLLCLASS_DES_PATH <- "C:/Users/natchison/Documents/GitHub/travel-model-one/util
 NETWORK_DBF <- read.dbf(NETWORK_DBF_PATH)
 TOLLS_CSV <- read.csv(TOLLS_CSV_PATH)
 TOLLCLASS_DES <- read_xlsx(TOLLCLASS_DES_PATH)
+colnames(TOLLCLASS_DES)[colnames(TOLLCLASS_DES) == "facility_name"] <- 
+  "facility_name_toll_des"
 
 # Identify the unique USE/TOLLCLASS combinations in the network
 net_use_tc <- unique(NETWORK_DBF[c("USE", "TOLLCLASS")])
@@ -37,3 +39,22 @@ print(paste("Tolls.csv is missing the following USE/TOLLCLASS combos:",
             paste(missing_tc, collapse = ", "), sep = " "))
 print(paste("Tolls.csv includes the following extra USE/TOLLCLASS combos:",
             paste(extra_tc, collapse = ", "), sep = " "))
+
+# Create new tolls.csv with minimum tolls
+
+da_col_names <- colnames(TOLLS_CSV)[grep("da", colnames(TOLLS_CSV))]
+s2_col_names <- colnames(TOLLS_CSV)[grep("s2", colnames(TOLLS_CSV))]
+
+min_tolls <- subset(TOLLS_CSV, tolltype %in% c("expr_lane", "permile"))
+min_tolls <- min_tolls %>% left_join(TOLLCLASS_DES, by=c("tollclass"))
+
+min_tolls[,da_col_names] <- .03
+min_tolls[,s2_col_names] <- ifelse(is.na(min_tolls$s2toll_mandatory), 0, .015)
+min_tolls$facility_name <- min_tolls$facility_name_toll_des
+min_tolls <- subset(min_tolls, select = -c(facility_name_toll_des, s2toll_mandatory))
+
+`%notin%` <- Negate(`%in%`)
+new_tolls <- subset(TOLLS_CSV, tolltype %notin% c("expr_lane", "permile"))
+new_tolls <- rbind(new_tolls, min_tolls)
+
+
