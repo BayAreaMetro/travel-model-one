@@ -30,8 +30,8 @@ tolls_use_tc <- filter(tolls_use_tc, tollclass != 0)
 tolls_use_tc$use_tc <- paste("USE =", tolls_use_tc$use, "TC =",
                             tolls_use_tc$tollclass, sep = " ")
 
-missing_tc <- setdiff(tolls_use_tc$use_tc, net_use_tc$use_tc)
-extra_tc <- setdiff(net_use_tc$use_tc, tolls_use_tc$use_tc)
+missing_tc <- setdiff(net_use_tc$use_tc, tolls_use_tc$use_tc)
+extra_tc <- setdiff(tolls_use_tc$use_tc, net_use_tc$use_tc)
 
 print(paste("Tolls.csv is missing the following USE/TOLLCLASS combos:",
             paste(missing_tc, collapse = ", "), sep = " "))
