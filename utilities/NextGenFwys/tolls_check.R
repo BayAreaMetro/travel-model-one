@@ -1,4 +1,3 @@
-
 # Script to identify inconsistencies between freeflow networks and their 
 # corresponding tolls.csv files.
 
@@ -31,7 +30,7 @@ net_use_tc$use_tc <- paste("USE =", net_use_tc$USE, "TC =",
 tolls_use_tc <- unique(TOLLS_CSV[c("use", "tollclass")])
 tolls_use_tc <- filter(tolls_use_tc, tollclass != 0)
 tolls_use_tc$use_tc <- paste("USE =", tolls_use_tc$use, "TC =",
-                            tolls_use_tc$tollclass, sep = " ")
+                             tolls_use_tc$tollclass, sep = " ")
 
 missing_tc <- setdiff(net_use_tc$use_tc, tolls_use_tc$use_tc)
 extra_tc <- setdiff(tolls_use_tc$use_tc, net_use_tc$use_tc)
@@ -43,9 +42,15 @@ print(paste("Tolls.csv includes the following extra USE/TOLLCLASS combos:",
 
 # Create new tolls.csv with minimum tolls
 
-da_col_names <- colnames(TOLLS_CSV)[grep("da", colnames(TOLLS_CSV))]
-da_col_names <- da_col_names[-grep("ea", da_col_names)]
-da_col_names <- da_col_names[-grep("ev", da_col_names)]
+min_col_names <- colnames(TOLLS_CSV)[grep("toll", colnames(TOLLS_CSV))]
+min_col_names <- min_col_names[-grep("s2", min_col_names)]
+min_col_names <- min_col_names[-grep("s3", min_col_names)]
+min_col_names <- min_col_names[-grep("ea", min_col_names)]
+min_col_names <- min_col_names[-grep("ev", min_col_names)]
+min_col_names <- min_col_names[-grep("tollclass", min_col_names)]
+min_col_names <- min_col_names[-grep("tollseg", min_col_names)]
+min_col_names <- min_col_names[-grep("tolltype", min_col_names)]
+min_col_names <- min_col_names[-grep("toll_flat", min_col_names)]
 
 s2_col_names <- colnames(TOLLS_CSV)[grep("s2", colnames(TOLLS_CSV))]
 s2_col_names <- s2_col_names[-grep("ea", s2_col_names)]
@@ -54,7 +59,7 @@ s2_col_names <- s2_col_names[-grep("ev", s2_col_names)]
 min_tolls <- subset(TOLLS_CSV, toll_flat == 0)
 min_tolls <- min_tolls %>% left_join(TOLLCLASS_DES, by=c("tollclass"))
 
-min_tolls[,da_col_names] <- .03
+min_tolls[,min_col_names] <- .03
 min_tolls[,s2_col_names] <- ifelse(is.na(min_tolls$s2toll_mandatory), 0, .015)
 min_tolls$facility_name <- min_tolls$facility_name_toll_des
 min_tolls <- subset(min_tolls, select = -c(facility_name_toll_des, s2toll_mandatory))
