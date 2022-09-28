@@ -144,15 +144,20 @@ IF %USERNAME%==lzorn (
         set R_HOME=C:\Program Files\R\R-4.1.2
         set R_USER=%USERNAME%
         set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\4.1
+    ) ELSE (
+      IF %USERNAME%==sisrael (
+        set R_HOME=C:\Users\sisrael\AppData\Local\Programs\R\R-4.2.1
+        set R_USER=%USERNAME%
+        set R_LIBS_USER=C:\Users\%USERNAME%\Documents\R\R-4.1.3
       ) ELSE (
         set R_HOME=C:\Program Files\R\R-3.5.2
         set R_USER=%USERNAME%
         set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.5
-        )
+        ) 
       )
     )
   )
-
+)
 :: copy over the scenariokey
 copy "%MODEL_RUNS_CSV%" "%COMBINED_DIR%\ScenarioKey.csv"
 
