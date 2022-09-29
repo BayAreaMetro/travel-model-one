@@ -30,6 +30,6 @@ Step 2: Make sure NonDynamicTollFacilities.csv is added under hwy/ and INPUT/hwy
 Step 3: Copy TollCalib_go.batfrom travel-model-one-master on X (\\tsclient\X\travel-model-one-master\utilities\toll_calibration) to this new directory.
 
 This batch file copy the inputs andscripts needed for toll calibration. It requires six pieces of information from users as noted below.
-![Alt text](https://github.com/BayAreaMetro/travel-model-one/tree/split-av-tnc/utilities/toll_calibration/TollCalib_go_example.PNG "TollCalib_go.bat example")
+![Alt text](https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/toll_calibration/TollCalib_go_example.PNG "TollCalib_go.bat example")
 
 
