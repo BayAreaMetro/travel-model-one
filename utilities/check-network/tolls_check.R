@@ -22,7 +22,7 @@ library(readxl)
 
 # Load files
 
-NETWORK_DIR <- "L:/Application/Model_One/NextGenFwys/Networks/NGF_Networks_NoProject_03/net_2035_NextGenFwy_NoProject_03"
+NETWORK_DIR <- "L:/Application/Model_One/NextGenFwys/Networks/NGF_Networks_02"
 NETWORK_DBF_PATH <- paste(NETWORK_DIR, "shapefile", "network_links.dbf", sep = "/")
 TOLLS_CSV_PATH <- paste(NETWORK_DIR, "hwy", "tolls.csv", sep = "/")
 TOLLCLASS_DES_PATH <- "C:/Users/natchison/Documents/GitHub/travel-model-one/utilities/NextGenFwys/TOLLCLASS_Designations.xlsx"
@@ -52,11 +52,6 @@ tolls_use_tc$use_tc <- paste("USE =", tolls_use_tc$use, "TC =",
 missing_tc <- setdiff(net_use_tc$use_tc, tolls_use_tc$use_tc)
 extra_tc <- setdiff(tolls_use_tc$use_tc, net_use_tc$use_tc)
 
-print(paste("Tolls.csv is missing the following USE/TOLLCLASS combos:",
-            paste(missing_tc, collapse = ", "), sep = " "))
-print(paste("Tolls.csv includes the following extra USE/TOLLCLASS combos:",
-            paste(extra_tc, collapse = ", "), sep = " "))
-
 # Drop the extra USE/TC combos from the tolls.csv
 
 `%notin%` <- Negate(`%in%`)
@@ -69,9 +64,16 @@ new_tolls <- subset(tolls_use_tc, use_tc %notin% extra_tc)
 min_tolls <- subset(net_use_tc, use_tc %in% missing_tc)
 min_tolls <- min_tolls %>% left_join(TOLLCLASS_DES, by=c("TOLLCLASS"="tollclass"))
 
-print(paste("Tollclasses", 
-            paste(subset(min_tolls, is.na(TOLLCLASS))$TOLLCLASS, collapse = ", "),
-            "are missing from the Tollclass Designation file.", sep = " "))
+missing_des <- paste(subset(min_tolls, is.na(TOLLCLASS))$TOLLCLASS, collapse = ", ")
+
+sink(LOG_OUTPUT)
+print("Tolls.csv is missing the following USE/TOLLCLASS combos:")
+print(missing_tc)
+print("Tolls.csv includes the following extra USE/TOLLCLASS combos:")
+print(extra_tc)
+print("The following TOLLCLASS values are missing from the Tollclass Designation file:")
+print(missing_des)
+sink()
 
 colnames(min_tolls) <- c("use", "tollclass", "use_tc", "facility_name", "s2toll_mandatory")
 min_tolls$fac_index <- min_tolls$tollclass*1000 + min_tolls$use  # Calculate the facility index from the use and tollclass
