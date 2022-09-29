@@ -24,7 +24,8 @@ A caveat: the speed summary only handles the simple case where a single HOV or e
 
 ## How to run it?
 
-Step 1: Log on to the aws machine (or server) where the pre-calibration run was completed. Start a new folder with the same name, except that “PreCalib” should be changed to “TollCalib”.
+Step 1: Log on to the aws machine where the pre-calibration run was completed. Start a new folder with the same name, except that “PreCalib” should be changed to “TollCalib”. (If the pre-calibration run was done on a local server e.g. model2-a,b,c,d then this can be done from any of the local servers.)
+e.g. 2050_TM151_PPA_RT_11_6000_ReX_PreCalib_03 is renamed to 2050_TM151_PPA_RT_11_6000_ReX_TollCalib_03
 
 Step 2: Make sure NonDynamicTollFacilities.csv is added under hwy/ and INPUT/hwy (To do: provide more explanation here!)
 
