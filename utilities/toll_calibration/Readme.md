@@ -28,7 +28,7 @@ Step 1: Log on to the aws machine where the pre-calibration run was completed. S
 
 e.g. 2050_TM151_PPA_RT_11_6000_ReX_PreCalib_03 --> 2050_TM151_PPA_RT_11_6000_ReX_TollCalib_03
 
-Step 2: Make sure NonDynamicTollFacilities.csv is added under hwy/ and INPUT/hwy (To do: provide more explanation here!)
+Step 2: Make sure NonDynamicTollFacilities.csv is added under INPUT/hwy (To do: provide more explanation here!)
 
 Step 3: Copy TollCalib_go.batfrom travel-model-one-master on X (\\tsclient\X\travel-model-one-master\utilities\toll_calibration) to this new directory.
 
