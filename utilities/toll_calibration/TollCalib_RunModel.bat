@@ -3,7 +3,7 @@
 :: Toll rate calibration
 :: This batch script runs hwyassign, generates loaded network (avgload5period.csv), and determines new toll rates (via TollCalib_CheckSpeeds.R)
 ::
-:: Copy this batch script from GitHub\travel-model-one\utilities\check-network to a local project directory
+:: Copy this batch script from GitHub\travel-model-one\utilities\toll_calibration to a local project directory
 :: e.g. on model2-a, b, c, d, E:\Model2B-Share\Projects\2050_TM151_PPA_BF_06_TollCalibration_00
 :: 
 :: This batch script is called by the wrapper batch file - TollCalib_Iterate.bat
@@ -242,8 +242,8 @@ set PROJECT_DIR=%cd%
 if "%COMPUTER_PREFIX%" == "WIN-" (
     call "%R_HOME%\bin\x64\Rscript.exe" TollCalib_CheckSpeeds.R
 ) else (
-    call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\TollCalib_CheckSpeeds.R"
-    python "\\mainmodel\MainModelShare\travel-model-one-master\utilities\check-network\TollCalib_stop.py"
+    call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\toll_calibration\TollCalib_CheckSpeeds.R"
+    python "\\mainmodel\MainModelShare\travel-model-one-master\utilities\toll_calibration\TollCalib_stop.py"
 )
 
 :: copy the output back to L

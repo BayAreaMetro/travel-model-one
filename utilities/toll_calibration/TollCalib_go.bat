@@ -39,15 +39,15 @@ copy %TOLL_DESIGNATIONS_XLSX%    tollcalib_iter\TOLLCLASS_Designations.xlsx
 rem copy the five toll calibration scripts 
 rem -------------------------------------
 
-copy \\tsclient\X\travel-model-one-master\utilities\check-network\TollCalib_checkITER3.bat TollCalib_checkITER3.bat
+copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_checkITER3.bat TollCalib_checkITER3.bat
 
-copy \\tsclient\X\travel-model-one-master\utilities\check-network\TollCalib_Iterate.bat TollCalib_Iterate.bat
+copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_Iterate.bat TollCalib_Iterate.bat
 
-copy \\tsclient\X\travel-model-one-master\utilities\check-network\TollCalib_RunModel.bat TollCalib_RunModel.bat
+copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_RunModel.bat TollCalib_RunModel.bat
 
-copy \\tsclient\X\travel-model-one-master\utilities\check-network\TollCalib_CheckSpeeds.R TollCalib_CheckSpeeds.R
+copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_CheckSpeeds.R TollCalib_CheckSpeeds.R
 
-copy \\tsclient\X\travel-model-one-master\utilities\check-network\TollCalib_stop.py TollCalib_stop.py
+copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_stop.py TollCalib_stop.py
 
 rem generate network_links.dbf
 rem -------------------------------------
