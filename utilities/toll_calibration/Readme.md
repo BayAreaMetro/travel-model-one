@@ -6,12 +6,12 @@ The toll calibration procedure aims to simulate express lanes dynamic pricing. T
 
 | Case #  | EL speed (mph) | GP speed (mph) | Action                                        |
 | --------| -------------- |--------------- | --------------------------------------------- |
-| Case 1  | <=48**          | any            | EL too slow. Increase toll rate.              |
+| Case 1  | <=48*          | any            | EL too slow. Increase toll rate.              |
 | Case 2  | >48            | <=40           | GP too slow. Decrease toll rate.              |
 | Case 3  | 48-60          | 40-60          | OK. No change in toll.                        |
 | Case 4  | >60            | 40-60          | GP speed can be improved. Decrease toll rate. |
 | Case 5  | >48            | >60            | Set toll to minimum.                          |
- ** Note: The threshold used in the toll calibration script is 48mph, which is slightly higher than the performance target of 45mph. This is because average speeds in toll calibration runs (which only execute CTRAMP and highway assignment) can be slightly different from the full model run (which includes transit assignment). Setting the threshold slightly higher than the actual performance target makes sure the average speeds in the full model run do not go below 45mph.
+Note * : The threshold used in the toll calibration script is 48mph, which is slightly higher than the performance target of 45mph. This is because average speeds in toll calibration runs (which only execute CTRAMP and highway assignment) can be slightly different from the full model run (which includes transit assignment). Setting the threshold slightly higher than the actual performance target makes sure the average speeds in the full model run do not go below 45mph.
 
 In Project Performance Assessment, some additional operational assumptions are made:
 1. Minimum toll is 3 cents (2000$) per mile in AM, MD, PM for drive alone and for trucks
