@@ -35,4 +35,8 @@ Step 3: Copy TollCalib_go.batfrom travel-model-one-master on X (\\tsclient\X\tra
 This batch file copy the inputs and scripts needed for toll calibration. Users are required to "set" six variables in the batch file (see below).
 ![Alt text](https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/toll_calibration/TollCalib_go_example.PNG "TollCalib_go.bat example")
 
+Step 4: launch tollcalib_go.bat using the command prompt
+
+For runs on aws, keep the Remote Desktop Connection connected for the duration of the toll calibration run. Results will be automatically copied back to a L drive location specified by the user (L_DIR in TollCalib_Iterate.bat).
+
 
