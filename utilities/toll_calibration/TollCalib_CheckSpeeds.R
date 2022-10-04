@@ -100,6 +100,9 @@ FIRSTVALUE <- 31
 
 el_links_df    <-  filter(unloaded_network_df , TOLLCLASS>=FIRSTVALUE )
 gp_links_df     <- filter(unloaded_network_df , USE==1 & (FT<=3 | FT==5 | FT==8 | FT==10))
+notruck_links_df <- filter(unloaded_network_df , USE==4 & TOLLCLASS==0)
+gp_notruck_links_df <-  bind_rows(gp_links_df, notruck_links_df) # links that are in parallel to EL links in a model network
+
 
 
 #############################################################
@@ -117,7 +120,7 @@ el_group1_df   <- inner_join(el_group1_df,
                               select(dummy_links, A,B),
                               by=c("B"="A"), suffix=c("","_GP")) # el B   => dummy A
 
-el_group1_df   <- inner_join(el_group1_df, gp_links_df,
+el_group1_df   <- inner_join(el_group1_df, gp_notruck_links_df,
                               by=c("A_GP"="A", "B_GP"="B"),
                               suffix=c("","_GP"))
 
