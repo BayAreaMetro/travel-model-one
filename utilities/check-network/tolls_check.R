@@ -22,7 +22,7 @@ library(readxl)
 
 # Load files
 
-NETWORK_DIR <- "L:/Application/Model_One/NextGenFwys/Networks/NGF_Networks_02"
+NETWORK_DIR <- "L:/Application/Model_One/NextGenFwys/Networks/NGF_Networks_03"
 NETWORK_DBF_PATH <- paste(NETWORK_DIR, "shapefile", "network_links.dbf", sep = "/")
 TOLLS_CSV_PATH <- paste(NETWORK_DIR, "hwy", "tolls.csv", sep = "/")
 TOLLCLASS_DES_PATH <- "C:/Users/natchison/Documents/GitHub/travel-model-one/utilities/NextGenFwys/TOLLCLASS_Designations.xlsx"
@@ -32,6 +32,8 @@ TOLLS_CSV <- read.csv(TOLLS_CSV_PATH)
 TOLLCLASS_DES <- read_xlsx(TOLLCLASS_DES_PATH)
 colnames(TOLLCLASS_DES)[colnames(TOLLCLASS_DES) == "facility_name"] <- 
   "facility_name_toll_des"
+
+LOG_OUTPUT <- paste(NETWORK_DIR, "hwy", "tolls_check_log.txt", sep = "/")
 
 # Identify the unique USE/TOLLCLASS combinations in the network
 
@@ -98,7 +100,7 @@ min_col_names <- min_col_names[-grep("tollseg", min_col_names)]
 min_col_names <- min_col_names[-grep("tolltype", min_col_names)]
 min_col_names <- min_col_names[-grep("toll_flat", min_col_names)]
 
-min_tolls[,min_col_names] <- .03
+min_tolls[,min_col_names] <- .03 #TODO: UPDATE TO SKIP TO LOG PRINT IF EMPTY
 
 # Identify the S2 fields for tollclasses that have mandatory S2 tolls
 s2_col_names <- colnames(TOLLS_CSV)[grep("s2", colnames(TOLLS_CSV))]
