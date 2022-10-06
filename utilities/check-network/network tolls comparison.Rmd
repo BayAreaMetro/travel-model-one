@@ -1,0 +1,50 @@
+---
+title: "network tolls comparison"
+output: html_document
+date: '2022-10-03'
+---
+
+```{r}
+library(foreign)
+library(dplyr)
+```
+
+```{r}
+#read the loaded networks from the model runs to compare the tolls that are actually being applied 
+
+net1 <- read.dbf("L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\2035_TM152_NGF_NP02_Blueprint_01\\OUTPUT\\QAQC\\avgload5period_2035_TM152_NGF_NP02_Blueprint_01.dbf")
+net1$AB <- paste(net1$A, net1$B, sep = ", ")
+
+net2 <- read.dbf("L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\2035_TM152_NGF_NP02_BPALTsegmented_00\\OUTPUT\\QAQC\\avgload5period_2035_TM152_NGF_NP02_BPALTsegmented_01.dbf")
+net2$AB <- paste(net2$A, net2$B, sep = ", ")
+```
+
+```{r}
+toll_fields <- colnames(net1)[grep("TOLL", colnames(net1))]
+toll_fields <- toll_fields[-grep("TOLLCLASS", toll_fields)]
+toll_fields <- append("AB", toll_fields)
+net1_tolls <- net1 %>% select(toll_fields)
+net2_tolls <- net2 %>% select(toll_fields)
+
+n2_missing <- setdiff(net1_tolls, net2_tolls) # Rows included in net1, but missing from net2
+n1_missing <- setdiff(net2_tolls, net1_tolls)
+```
+
+
+```{r}
+n1_missing
+```
+
+```{r}
+n2_missing
+```
+
+
+```{r}
+subset(net1_tolls, AB == "9731, 9732")
+subset(net2_tolls, AB == "9731, 9732")
+```
+
+
+
+
