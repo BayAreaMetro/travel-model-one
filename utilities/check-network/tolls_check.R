@@ -22,7 +22,7 @@ library(readxl)
 
 # Load files
 
-NETWORK_DIR <- "L:/Application/Model_One/NextGenFwys/Networks/NGF_Networks_03"
+NETWORK_DIR <- "L:/Application/Model_One/NextGenFwys/Networks/NGF_Networks_04"
 NETWORK_DBF_PATH <- paste(NETWORK_DIR, "shapefile", "network_links.dbf", sep = "/")
 TOLLS_CSV_PATH <- paste(NETWORK_DIR, "hwy", "tolls.csv", sep = "/")
 TOLLCLASS_DES_PATH <- "C:/Users/natchison/Documents/GitHub/travel-model-one/utilities/NextGenFwys/TOLLCLASS_Designations.xlsx"
@@ -100,19 +100,24 @@ min_col_names <- min_col_names[-grep("tollseg", min_col_names)]
 min_col_names <- min_col_names[-grep("tolltype", min_col_names)]
 min_col_names <- min_col_names[-grep("toll_flat", min_col_names)]
 
-min_tolls[,min_col_names] <- .03 #TODO: UPDATE TO SKIP TO LOG PRINT IF EMPTY
+if (length(missing_tc > 0)){
+  
+  min_tolls[,min_col_names] <- .03 #TODO: UPDATE TO SKIP TO LOG PRINT IF EMPTY
+  
+  # Identify the S2 fields for tollclasses that have mandatory S2 tolls
+  s2_col_names <- colnames(TOLLS_CSV)[grep("s2", colnames(TOLLS_CSV))]
+  s2_col_names <- s2_col_names[-grep("ea", s2_col_names)]
+  s2_col_names <- s2_col_names[-grep("ev", s2_col_names)]
+  
+  min_tolls[,s2_col_names] <- ifelse(is.na(min_tolls$s2toll_mandatory), 0, .015)
+  
+  min_tolls <- subset(min_tolls, select= -c(s2toll_mandatory))
+  
+  new_tolls <- subset(new_tolls, select= -c(use_tc))
+  new_tolls <- rbind(new_tolls, min_tolls)
+}
 
-# Identify the S2 fields for tollclasses that have mandatory S2 tolls
-s2_col_names <- colnames(TOLLS_CSV)[grep("s2", colnames(TOLLS_CSV))]
-s2_col_names <- s2_col_names[-grep("ea", s2_col_names)]
-s2_col_names <- s2_col_names[-grep("ev", s2_col_names)]
-
-min_tolls[,s2_col_names] <- ifelse(is.na(min_tolls$s2toll_mandatory), 0, .015)
-
-min_tolls <- subset(min_tolls, select= -c(s2toll_mandatory))
-
-new_tolls <- subset(new_tolls, select= -c(use_tc))
-new_tolls <- rbind(new_tolls, min_tolls)
+new_tolls <- new_tolls[!duplicated(new_tolls),]
 new_tolls <- new_tolls[order(new_tolls$tollclass),]
 
 file.rename(TOLLS_CSV_PATH, paste(NETWORK_DIR, "hwy", "tolls_old.csv", sep = "/"))
