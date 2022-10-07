@@ -15,7 +15,7 @@ network_df      <- read.dbf(TM_NETWORK, as.is=TRUE) %>% select(A,B,LANES,USE,FT,
 
 hov_links_df        <- filter(network_df, USE==2 | USE==3)
 gp_links_df         <- filter(network_df, (USE==1 | USE==4) & ((FT<=3 | FT==5 | FT==8 | FT==10) | (FT==6)&(TOLLCLASS>0)) )  # last clause is for toll plaza GP links
-notruck_links_df    <- filter(unloaded_network_df , USE==4 & TOLLCLASS==0)
+notruck_links_df    <- filter(network_df , USE==4 & TOLLCLASS==0)
 gp_notruck_links_df <- bind_rows(gp_links_df, notruck_links_df)
 
 print(paste("Have", nrow(hov_links_df), "HOV links"))
