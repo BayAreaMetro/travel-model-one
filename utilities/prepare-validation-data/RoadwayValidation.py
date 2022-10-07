@@ -56,14 +56,16 @@ If CalTrans years specified:
 
 """
 import argparse, os, sys
-import numpy, pandas
-import dataextract as tde
+import pandas
 
 TM_HOV_TO_GP_FILE   = "M:\Crosswalks\PeMSStations_TM1network\hov_to_gp_links.csv"
 PEMS_MAP_FILE       = "M:\Crosswalks\PeMSStations_TM1network\crosswalk_2015.csv"
 CALTRANS_MAP_FILE   = "M:\Crosswalks\CaltransCountLocations_TM1network\\typical-weekday-counts-xy-TM1link.csv"
 MODEL_FILE          = "avgload5period.csv"
 SHARE_DATA          = os.path.join(os.environ["USERPROFILE"], "Box", "Modeling and Surveys", "Share Data")
+if os.environ["USERNAME"] == 'lzorn':
+    SHARE_DATA      = os.path.join("E:\\", "Box", "Modeling and Surveys", "Share Data")
+
 PEMS_FILE           = os.path.join(SHARE_DATA, "pems-typical-weekday", "pems_period.csv")
 CALTRANS_FILE       = os.path.join(SHARE_DATA, "caltrans-typical-weekday", "typical-weekday-counts.csv")
 PEMS_OUTPUT_FILE    = "Roadways to PeMS"
@@ -72,88 +74,8 @@ CALTRANS_OUTPUT_FILE= "Roadways to Caltrans"
 MODEL_COLUMNS       = ['a','b','ft','at','county','lanes','volEA_tot','volAM_tot','volMD_tot','volPM_tot','volEV_tot']
 PEMS_COLUMNS        = ['station','route','direction','time_period','lanes','avg_flow','abs_pm','latitude','longitude','year']
 
-fieldMap = {
-    'float64' :     tde.Type.DOUBLE,
-    'float32' :     tde.Type.DOUBLE,
-    'int64' :       tde.Type.DOUBLE,
-    'int32' :       tde.Type.DOUBLE,
-    'object':       tde.Type.UNICODE_STRING,
-    'bool' :        tde.Type.BOOLEAN
-}
-
 # these are bad crosswalk
 PEMS_BAD_STATION_CROSSWALK = [401819, 401820]
-
-# 
-# from Rdata to TableauExtract.py -- move to library?
-# 
-def write_tde(table_df, tde_fullpath, arg_append):
-    """
-    Writes the given pandas dataframe to the Tableau Data Extract given by tde_fullpath
-    """
-    if arg_append and not os.path.isfile(tde_fullpath):
-        print "Couldn't append -- file doesn't exist"
-        arg_append = False
-
-    # Remove it if already exists
-    if not arg_append and os.path.exists(tde_fullpath):
-        os.remove(tde_fullpath)
-    tdefile = tde.Extract(tde_fullpath)
-
-    # define the table definition
-    table_def = tde.TableDefinition()
-
-    # create a list of column names
-    colnames = table_df.columns
-    # create a list of column types
-    coltypes = table_df.dtypes
-
-    # for each column, add the appropriate info the Table Definition
-    for col_idx in range(0, len(colnames)):
-        cname = colnames[col_idx]
-        ctype = fieldMap[str(coltypes[col_idx])]
-        table_def.addColumn(cname, ctype)
-
-    # create the extract from the Table Definition
-    if arg_append:
-        tde_table = tdefile.openTable('Extract')
-    else:
-        tde_table = tdefile.addTable('Extract', table_def)
-    row = tde.Row(table_def)
-
-    isnull_df = pandas.isnull(table_df)
-    # print isnull_df.head()
-
-    for r in range(0, table_df.shape[0]):
-        for c in range(0, len(coltypes)):
-            try:
-                if isnull_df.iloc[r,c]==True:
-                    row.setNull(c)
-                elif str(coltypes[c]) == 'float64':
-                    row.setDouble(c, table_df.iloc[r,c])
-                elif str(coltypes[c]) == 'float32':
-                    row.setDouble(c, table_df.iloc[r,c])
-                elif str(coltypes[c]) == 'int64':
-                    row.setDouble(c, table_df.iloc[r,c])
-                elif str(coltypes[c]) == 'int32':
-                    row.setDouble(c, table_df.iloc[r,c])
-                elif str(coltypes[c]) == 'object':
-                    row.setString(c, str(table_df.iloc[r,c]))
-                elif str(coltypes[c]) == 'bool':
-                    row.setBoolean(c, table_df.iloc[r,c])
-                else:
-                    row.setNull(c)
-            except:
-                print coltypes[c], colnames[c], table_df.iloc[r,c]
-                print table_df.iloc[r,:]
-                print isnull_df.iloc[r,:]
-                raise
-
-        # insert the row
-        tde_table.insert(row)
-
-    tdefile.close()
-    print "Wrote {} lines to {} with columns {}".format(len(table_df), tde_fullpath, colnames)
 
 if __name__ == '__main__':
 
@@ -167,26 +89,26 @@ if __name__ == '__main__':
     parser.add_argument("-p","--pems_year",     type=int, nargs='*')
     args = parser.parse_args()
     if not args.caltrans_year and not args.pems_year:
-        print USAGE
-        print "No PeMS year nor CalTrans count year argument specified."
+        print(USAGE)
+        print("No PeMS year nor CalTrans count year argument specified.")
         sys.exit()
     if args.caltrans_year and args.pems_year:
-        print USAGE
-        print "Please specify pems_year OR caltrans_year but not both"
+        print(USAGE)
+        print("Please specify pems_year OR caltrans_year but not both")
     print(args)
 
     ############ read the mapping first
     mapping_df = None
-    tde_file   = None
+    out_file   = None
     obs_cols   = []
     if args.pems_year:
         mapping_df = pandas.read_csv(PEMS_MAP_FILE)
-        tde_file   = PEMS_OUTPUT_FILE
+        out_file   = PEMS_OUTPUT_FILE
         obs_cols   = ["{} Observed".format(year) for year in args.pems_year]
     else:
         mapping_df = pandas.read_csv(CALTRANS_MAP_FILE)
         mapping_df.rename(columns={"postmileValue":"post_mile", "routeNumber":"route"}, inplace=True)
-        tde_file   = CALTRANS_OUTPUT_FILE
+        out_file   = CALTRANS_OUTPUT_FILE
         obs_cols   = ["{} Observed".format(year) for year in args.caltrans_year]
 
     # column name for model year observed
@@ -584,9 +506,7 @@ if __name__ == '__main__':
     print("table_df head:\n{}".format(table_df.head()))
 
     # write non-wide
-    write_tde(table_df, "%s.tde" % tde_file, arg_append=False)
-    table_df.to_csv("%s.csv" % tde_file, index=False)
+    table_df.to_csv("%s.csv" % out_file, index=False)
 
     # write wide
-    write_tde(table_wide, "%s_wide.tde" % tde_file, arg_append=False)
-    table_wide.to_csv("%s_wide.csv" % tde_file, index=False)
+    table_wide.to_csv("%s_wide.csv" % out_file, index=False)
