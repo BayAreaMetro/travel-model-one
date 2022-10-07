@@ -13,8 +13,10 @@ OUTPUT_CSV      <- "hov_to_gp_links.csv"
 
 network_df      <- read.dbf(TM_NETWORK, as.is=TRUE) %>% select(A,B,LANES,USE,FT,ROUTENUM,ROUTEDIR,TOLLCLASS)
 
-hov_links_df    <- filter(network_df, USE==2 | USE==3)
-gp_links_df     <- filter(network_df, (USE==1 | USE==4) & ((FT<=3 | FT==5 | FT==8 | FT==10) | (FT==6)&(TOLLCLASS>0)) )  # last clause is for toll plaza GP links
+hov_links_df        <- filter(network_df, USE==2 | USE==3)
+gp_links_df         <- filter(network_df, (USE==1 | USE==4) & ((FT<=3 | FT==5 | FT==8 | FT==10) | (FT==6)&(TOLLCLASS>0)) )  # last clause is for toll plaza GP links
+notruck_links_df    <- filter(unloaded_network_df , USE==4 & TOLLCLASS==0)
+gp_notruck_links_df <- bind_rows(gp_links_df, notruck_links_df)
 
 print(paste("Have", nrow(hov_links_df), "HOV links"))
 
@@ -31,7 +33,7 @@ hov_group1_df   <- inner_join(hov_group1_df,
                               select(dummy_links, A,B),
                               by=c("B"="A"), suffix=c("","_GP")) # hov B   => dummy A
 
-hov_group1_df   <- inner_join(hov_group1_df, gp_links_df,
+hov_group1_df   <- inner_join(hov_group1_df, gp_notruck_links_df,
                               by=c("A_GP"="A", "B_GP"="B"),
                               suffix=c("","_GP"))
 
