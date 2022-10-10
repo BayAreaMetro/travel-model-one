@@ -8,16 +8,16 @@
 ;
 ; A separate SetTolls.job is needed for each forecast year and for each pricing alternative.
 ;
-; The variable TOLLCLASS specifies one of the eight existing Bay Area bridge toll booths as follows:
+; The variable TOLLBOOTH specifies one of the eight existing Bay Area bridge toll booths as follows:
 ; (1) Benicia-Martinez Bridge; (2) Carquinez Bridge; (3) Richmond Bridge; (4) Golden Gate Bridge; (5) San Francisco/
-; Oakland Bay Bridge; (6) San Mateo Bridge; (7) Dumbarton Bridge; (8) Antioch Bridge.  TOLLCLASS codes nine and ten
+; Oakland Bay Bridge; (6) San Mateo Bridge; (7) Dumbarton Bridge; (8) Antioch Bridge.  TOLLBOOTH codes nine and ten
 ; are reserved for testing new Bridges.
 ;
-; TOLLCLASS codes 31 and above (please see hwyParam.block which denotes this value) are reserved for so-called "value
+; TOLLBOOTH codes 11 and above (please see hwyParam.block which denotes this value) are reserved for so-called "value
 ; toll" facilities, which are currently used to model high-occupancy toll (HOT) lanes.  These variables can be used
-; to toll specific links (each link with a different toll needs a different TOLLCLASS code).
+; to toll specific links (each link with a different toll needs a different TOLLBOOTH code).
 ;
-; All tolls should be expressed in year 2000 cents.
+; All tolls should be expressed in year 2010 cents.
 ;
 ; Separate tolls can be charged to each of seven vehicle classes, as follows: (1) single-occupancy passenger
 ; vehicles, or drive alone, "DA"; (2) two-occupant passenger vehicles, or shared ride two, "S2"; (3) three-or-more-
@@ -27,45 +27,44 @@
 ; are charged the average of the five- and six-axle fee, "LRG".
 ;
 ;
-; Input: (1) A highway network containing the field (a) TOLLCLASS, which is a code distinguishing bridge
+; Input: (1) A highway network containing the field (a) TOLLBOOTH, which is a code distinguishing bridge
 ;            tolls -- one through firstValue - 1 -- from value tolls -- firstValue or greater, firstValue
-;            is coded in thehwyParam.block file); (b) USE, which is a code defining
+;            is coded in thehwyParam.block file); (b) TOLLSEG, which holds an integer identifying express
+;            lane toll segments for which the same unit toll applies; (c) USECLASS, which is a code defining
 ;            which class of vehicles can use which link, 0 - everyone, 2 - two occupants, 3 - three occupants,
 ;            4 - no large trucks.
-;            Note: TM2 has an additional attribute TOLLSEG, which holds an integer identifying express
-;            lane toll segments for which the same unit toll applies. TM1 or TM1.5 do not have tollseg.
-;        (2) A dbf mapping the TOLLCLASS/USE combination to the toll value for each time period
-;            and vehicle class.  Tolls for bridges are in 2000 dollars while tolls for express lanes are in
-;            2000 dollars per mile.
+;        (2) A dbf mapping the TOLLBOOTH/TOLLSEG/USECLASS combination to the toll value for each time period
+;            and vehicle class.  Tolls for bridges are in 2010 dollars while tolls for express lanes are in
+;            2010 dollars per mile.
 ;
 ; Output: A highway network containing the following fields:TOLLXX_YY, where XX is a two-letter code
 ;         representing one of the five time periods and YY is the path in question, be it drive alone, shared
 ;         ride 2 or 3+, or very small, small, medium, or large (combination) trucks.
 ;
-; See also: (1) hwyParam.block, which stores the "firstValue" variable denoting 31 as the first value toll.
+; See also: (1) hwyParam.block, which stores the "firstValue" variable denoting 11 as the first value toll.
 ;
-; version:  Travel Model 1.5
-; authors:  dto (2010 08 10); gde (2009 03 12); crf (2013 07); wkft (2018 11)
-;
-;
+; version:  Travel Model Zed
+; authors:  dto (2010 08 10); gde (2009 03 12); crf (2013 07)
+; 
+; version: TM 1.5 BCM
+; author jmh 10 2022
 ; ----------------------------------------------------------------------------------------------------------------
 
 RUN PGM=HWYNET
-
+ 
     ; begin with the standard input network
-   neti = hwy\freeflow.net
+   neti = hwy\complete_network_zone_seq.net
 
-   ; write out to the same name with the added variables
-   ; no need to keep FT-specific AV_PCE as the relevant version has been added to the link
-   neto = hwy\withTolls.net, exclude=AV_PCE_FT01,AV_PCE_FT02,AV_PCE_FT03,AV_PCE_FT04,AV_PCE_FT05,AV_PCE_FT06,AV_PCE_FT07,AV_PCE_FT08,AV_PCE_FT09,AV_PCE_FT10
+   ; write out to the same name with the added variables   
+   neto = hwy\complete_network_tolls.net
 
    ; the input tolls file
    FILEI LOOKUPI[1]=hwy\tolls.dbf
-   read file = "CTRAMP\scripts\block\hwyparam.block"
+   read file = "%BASE_SCRIPTS%\block\hwyparam.block"
 
    ; load toll values
-   lookup lookupi=1, name=tolls,
-     lookup[1]= FAC_INDEX, result=TOLLCLASS,
+   lookup lookupi=1, name=tolls, 
+     lookup[1]= FAC_INDEX, result=TOLLBOOTH,
      lookup[2]= FAC_INDEX, result=TOLLSEG,
      lookup[3]= FAC_INDEX, result=USE,
      lookup[4]= FAC_INDEX, result=TOLLEA_DA,
@@ -103,184 +102,111 @@ RUN PGM=HWYNET
      lookup[36]=FAC_INDEX, result=TOLLMD_LRG,
      lookup[37]=FAC_INDEX, result=TOLLPM_LRG,
      lookup[38]=FAC_INDEX, result=TOLLEV_LRG,
-     lookup[39]=FAC_INDEX, result=TOLL_FLAT,  ; if 1, flat toll, otherwise, per mile toll
      fail[1]=0,
      fail[2]=0,
      fail[3]=0,                  ; set toll to zero if not found in table
      list=Y                      ; echo the lookup table to the standard printo file
-
-   ;_fac_index formula in TM2 includes a tollseg attribute
-   ;_fac_index = TOLLBOOTH*1000+tollseg*10+USECLASS
-   ;_fac_index formula in TM1.5 does not include a tollseg attribute
-   _fac_index = TOLLCLASS*1000+USE
-
+     
+   _fac_index_EA = tollbooth*1000+tollseg*10+useclass_EA
+   _fac_index_AM = tollbooth*1000+tollseg*10+useclass_AM
+   _fac_index_MD = tollbooth*1000+tollseg*10+useclass_MD
+   _fac_index_PM = tollbooth*1000+tollseg*10+useclass_PM
+   _fac_index_EV = tollbooth*1000+tollseg*10+useclass_EV
+     
    ; apply the bridge tolls
+   
+   if (TOLLBOOTH > 0 && TOLLBOOTH < FIRSTVALUE)
 
-   TOLL_FLAT = TOLLS(39,_fac_index)
+     TOLLEA_DA = TOLLS( 4,_fac_index_EA)*100
+     TOLLAM_DA = TOLLS( 5,_fac_index_AM)*100
+     TOLLMD_DA = TOLLS( 6,_fac_index_MD)*100
+     TOLLPM_DA = TOLLS( 7,_fac_index_PM)*100
+     TOLLEV_DA = TOLLS( 8,_fac_index_EV)*100
 
-   if (TOLL_FLAT == 1)
+     TOLLEA_S2 = TOLLS( 9,_fac_index_EA)*100
+     TOLLAM_S2 = TOLLS(10,_fac_index_AM)*100
+     TOLLMD_S2 = TOLLS(11,_fac_index_MD)*100
+     TOLLPM_S2 = TOLLS(12,_fac_index_PM)*100
+     TOLLEV_S2 = TOLLS(13,_fac_index_EV)*100
 
-     TOLLEA_DA = TOLLS( 4,_fac_index)*100
-     TOLLAM_DA = TOLLS( 5,_fac_index)*100
-     TOLLMD_DA = TOLLS( 6,_fac_index)*100
-     TOLLPM_DA = TOLLS( 7,_fac_index)*100
-     TOLLEV_DA = TOLLS( 8,_fac_index)*100
+     TOLLEA_S3 = TOLLS(14,_fac_index_EA)*100
+     TOLLAM_S3 = TOLLS(15,_fac_index_AM)*100
+     TOLLMD_S3 = TOLLS(16,_fac_index_MD)*100
+     TOLLPM_S3 = TOLLS(17,_fac_index_PM)*100
+     TOLLEV_S3 = TOLLS(18,_fac_index_EV)*100
 
-     TOLLEA_S2 = TOLLS( 9,_fac_index)*100
-     TOLLAM_S2 = TOLLS(10,_fac_index)*100
-     TOLLMD_S2 = TOLLS(11,_fac_index)*100
-     TOLLPM_S2 = TOLLS(12,_fac_index)*100
-     TOLLEV_S2 = TOLLS(13,_fac_index)*100
+     TOLLEA_VSM = TOLLS(19,_fac_index_EA)*100
+     TOLLAM_VSM = TOLLS(20,_fac_index_AM)*100
+     TOLLMD_VSM = TOLLS(21,_fac_index_MD)*100
+     TOLLPM_VSM = TOLLS(22,_fac_index_PM)*100
+     TOLLEV_VSM = TOLLS(23,_fac_index_EV)*100
 
-     TOLLEA_S3 = TOLLS(14,_fac_index)*100
-     TOLLAM_S3 = TOLLS(15,_fac_index)*100
-     TOLLMD_S3 = TOLLS(16,_fac_index)*100
-     TOLLPM_S3 = TOLLS(17,_fac_index)*100
-     TOLLEV_S3 = TOLLS(18,_fac_index)*100
+     TOLLEA_SML = TOLLS(24,_fac_index_EA)*100
+     TOLLAM_SML = TOLLS(25,_fac_index_AM)*100
+     TOLLMD_SML = TOLLS(26,_fac_index_MD)*100
+     TOLLPM_SML = TOLLS(27,_fac_index_PM)*100
+     TOLLEV_SML = TOLLS(28,_fac_index_EV)*100
 
-     TOLLEA_VSM = TOLLS(19,_fac_index)*100
-     TOLLAM_VSM = TOLLS(20,_fac_index)*100
-     TOLLMD_VSM = TOLLS(21,_fac_index)*100
-     TOLLPM_VSM = TOLLS(22,_fac_index)*100
-     TOLLEV_VSM = TOLLS(23,_fac_index)*100
+     TOLLEA_MED = TOLLS(29,_fac_index_EA)*100
+     TOLLAM_MED = TOLLS(30,_fac_index_AM)*100
+     TOLLMD_MED = TOLLS(31,_fac_index_MD)*100
+     TOLLPM_MED = TOLLS(32,_fac_index_PM)*100
+     TOLLEV_MED = TOLLS(33,_fac_index_EV)*100
 
-     TOLLEA_SML = TOLLS(24,_fac_index)*100
-     TOLLAM_SML = TOLLS(25,_fac_index)*100
-     TOLLMD_SML = TOLLS(26,_fac_index)*100
-     TOLLPM_SML = TOLLS(27,_fac_index)*100
-     TOLLEV_SML = TOLLS(28,_fac_index)*100
-
-     TOLLEA_MED = TOLLS(29,_fac_index)*100
-     TOLLAM_MED = TOLLS(30,_fac_index)*100
-     TOLLMD_MED = TOLLS(31,_fac_index)*100
-     TOLLPM_MED = TOLLS(32,_fac_index)*100
-     TOLLEV_MED = TOLLS(33,_fac_index)*100
-
-     TOLLEA_LRG = TOLLS(34,_fac_index)*100
-     TOLLAM_LRG = TOLLS(35,_fac_index)*100
-     TOLLMD_LRG = TOLLS(36,_fac_index)*100
-     TOLLPM_LRG = TOLLS(37,_fac_index)*100
-     TOLLEV_LRG = TOLLS(38,_fac_index)*100
-
+     TOLLEA_LRG = TOLLS(34,_fac_index_EA)*100
+     TOLLAM_LRG = TOLLS(35,_fac_index_AM)*100
+     TOLLMD_LRG = TOLLS(36,_fac_index_MD)*100
+     TOLLPM_LRG = TOLLS(37,_fac_index_PM)*100
+     TOLLEV_LRG = TOLLS(38,_fac_index_EV)*100
+     
    ENDIF
+   
+   ; apply the express lane tolls
+   
+   IF (TOLLBOOTH >= FIRSTVALUE)
+   
+     TOLLEA_DA = ROUND(TOLLS( 4,_fac_index_EA)*100*DISTANCE)
+     TOLLAM_DA = ROUND(TOLLS( 5,_fac_index_AM)*100*DISTANCE)
+     TOLLMD_DA = ROUND(TOLLS( 6,_fac_index_MD)*100*DISTANCE)
+     TOLLPM_DA = ROUND(TOLLS( 7,_fac_index_PM)*100*DISTANCE)
+     TOLLEV_DA = ROUND(TOLLS( 8,_fac_index_EV)*100*DISTANCE)
 
-   ; apply the per-mile tolls - e.g. express lanes
+     TOLLEA_S2 = ROUND(TOLLS( 9,_fac_index_EA)*100*DISTANCE)
+     TOLLAM_S2 = ROUND(TOLLS(10,_fac_index_AM)*100*DISTANCE)
+     TOLLMD_S2 = ROUND(TOLLS(11,_fac_index_MD)*100*DISTANCE)
+     TOLLPM_S2 = ROUND(TOLLS(12,_fac_index_PM)*100*DISTANCE)
+     TOLLEV_S2 = ROUND(TOLLS(13,_fac_index_EV)*100*DISTANCE)
 
-   IF ((TOLLCLASS > 0) && (TOLL_FLAT == 0))
+     TOLLEA_S3 = ROUND(TOLLS(14,_fac_index_EA)*100*DISTANCE)
+     TOLLAM_S3 = ROUND(TOLLS(15,_fac_index_AM)*100*DISTANCE)
+     TOLLMD_S3 = ROUND(TOLLS(16,_fac_index_MD)*100*DISTANCE)
+     TOLLPM_S3 = ROUND(TOLLS(17,_fac_index_PM)*100*DISTANCE)
+     TOLLEV_S3 = ROUND(TOLLS(18,_fac_index_EV)*100*DISTANCE)
 
-     TOLLEA_DA = TOLLS( 4,_fac_index)*100*DISTANCE
-     TOLLAM_DA = TOLLS( 5,_fac_index)*100*DISTANCE
-     TOLLMD_DA = TOLLS( 6,_fac_index)*100*DISTANCE
-     TOLLPM_DA = TOLLS( 7,_fac_index)*100*DISTANCE
-     TOLLEV_DA = TOLLS( 8,_fac_index)*100*DISTANCE
+     TOLLEA_VSM = ROUND(TOLLS(19,_fac_index_EA)*100*DISTANCE)
+     TOLLAM_VSM = ROUND(TOLLS(20,_fac_index_AM)*100*DISTANCE)
+     TOLLMD_VSM = ROUND(TOLLS(21,_fac_index_MD)*100*DISTANCE)
+     TOLLPM_VSM = ROUND(TOLLS(22,_fac_index_PM)*100*DISTANCE)
+     TOLLEV_VSM = ROUND(TOLLS(23,_fac_index_EV)*100*DISTANCE)
 
-     TOLLEA_S2 = TOLLS( 9,_fac_index)*100*DISTANCE
-     TOLLAM_S2 = TOLLS(10,_fac_index)*100*DISTANCE
-     TOLLMD_S2 = TOLLS(11,_fac_index)*100*DISTANCE
-     TOLLPM_S2 = TOLLS(12,_fac_index)*100*DISTANCE
-     TOLLEV_S2 = TOLLS(13,_fac_index)*100*DISTANCE
+     TOLLEA_SML = ROUND(TOLLS(24,_fac_index_EA)*100*DISTANCE)
+     TOLLAM_SML = ROUND(TOLLS(25,_fac_index_AM)*100*DISTANCE)
+     TOLLMD_SML = ROUND(TOLLS(26,_fac_index_MD)*100*DISTANCE)
+     TOLLPM_SML = ROUND(TOLLS(27,_fac_index_PM)*100*DISTANCE)
+     TOLLEV_SML = ROUND(TOLLS(28,_fac_index_EV)*100*DISTANCE)
 
-     TOLLEA_S3 = TOLLS(14,_fac_index)*100*DISTANCE
-     TOLLAM_S3 = TOLLS(15,_fac_index)*100*DISTANCE
-     TOLLMD_S3 = TOLLS(16,_fac_index)*100*DISTANCE
-     TOLLPM_S3 = TOLLS(17,_fac_index)*100*DISTANCE
-     TOLLEV_S3 = TOLLS(18,_fac_index)*100*DISTANCE
+     TOLLEA_MED = ROUND(TOLLS(29,_fac_index_EA)*100*DISTANCE)
+     TOLLAM_MED = ROUND(TOLLS(30,_fac_index_AM)*100*DISTANCE)
+     TOLLMD_MED = ROUND(TOLLS(31,_fac_index_MD)*100*DISTANCE)
+     TOLLPM_MED = ROUND(TOLLS(32,_fac_index_PM)*100*DISTANCE)
+     TOLLEV_MED = ROUND(TOLLS(33,_fac_index_EV)*100*DISTANCE)
 
-     TOLLEA_VSM = TOLLS(19,_fac_index)*100*DISTANCE
-     TOLLAM_VSM = TOLLS(20,_fac_index)*100*DISTANCE
-     TOLLMD_VSM = TOLLS(21,_fac_index)*100*DISTANCE
-     TOLLPM_VSM = TOLLS(22,_fac_index)*100*DISTANCE
-     TOLLEV_VSM = TOLLS(23,_fac_index)*100*DISTANCE
-
-     TOLLEA_SML = TOLLS(24,_fac_index)*100*DISTANCE
-     TOLLAM_SML = TOLLS(25,_fac_index)*100*DISTANCE
-     TOLLMD_SML = TOLLS(26,_fac_index)*100*DISTANCE
-     TOLLPM_SML = TOLLS(27,_fac_index)*100*DISTANCE
-     TOLLEV_SML = TOLLS(28,_fac_index)*100*DISTANCE
-
-     TOLLEA_MED = TOLLS(29,_fac_index)*100*DISTANCE
-     TOLLAM_MED = TOLLS(30,_fac_index)*100*DISTANCE
-     TOLLMD_MED = TOLLS(31,_fac_index)*100*DISTANCE
-     TOLLPM_MED = TOLLS(32,_fac_index)*100*DISTANCE
-     TOLLEV_MED = TOLLS(33,_fac_index)*100*DISTANCE
-
-     TOLLEA_LRG = TOLLS(34,_fac_index)*100*DISTANCE
-     TOLLAM_LRG = TOLLS(35,_fac_index)*100*DISTANCE
-     TOLLMD_LRG = TOLLS(36,_fac_index)*100*DISTANCE
-     TOLLPM_LRG = TOLLS(37,_fac_index)*100*DISTANCE
-     TOLLEV_LRG = TOLLS(38,_fac_index)*100*DISTANCE
-
+     TOLLEA_LRG = ROUND(TOLLS(34,_fac_index_EA)*100*DISTANCE)
+     TOLLAM_LRG = ROUND(TOLLS(35,_fac_index_AM)*100*DISTANCE)
+     TOLLMD_LRG = ROUND(TOLLS(36,_fac_index_MD)*100*DISTANCE)
+     TOLLPM_LRG = ROUND(TOLLS(37,_fac_index_PM)*100*DISTANCE)
+     TOLLEV_LRG = ROUND(TOLLS(38,_fac_index_EV)*100*DISTANCE)
+     
    ENDIF
-
-    ; check that all bridge (non-value tolls) are set
-    if ((TOLLCLASS > 0) && (TOLLCLASS < FIRSTVALUE))
-      ; some peak period DA toll must be non-zero.
-      ; note this includes HOV lanes because they get converted to GP during non-peak periods via token_hov_to_freeflow
-      ; in CalculateFiveHighwayNetworks.job
-      IF ((TOLLAM_DA == 0) && (TOLLPM_DA == 0))
-        print LIST="Link ",A,"-",B," has TOLLCLASS ", TOLLCLASS," and no non-zero peak period DA tolls"
-        ABORT MSG ="Link has TOLLCLASS and no non-zero peak period tolls; see log file"
-      ENDIF
-    ENDIF
-
-   ; zero out the tolls where tollclass=0
-   IF (TOLLCLASS == 0)
-
-     TOLLEA_DA = 0
-     TOLLAM_DA = 0
-     TOLLMD_DA = 0
-     TOLLPM_DA = 0
-     TOLLEV_DA = 0
-
-     TOLLEA_S2 = 0
-     TOLLAM_S2 = 0
-     TOLLMD_S2 = 0
-     TOLLPM_S2 = 0
-     TOLLEV_S2 = 0
-
-     TOLLEA_S3 = 0
-     TOLLAM_S3 = 0
-     TOLLMD_S3 = 0
-     TOLLPM_S3 = 0
-     TOLLEV_S3 = 0
-
-     TOLLEA_VSM = 0
-     TOLLAM_VSM = 0
-     TOLLMD_VSM = 0
-     TOLLPM_VSM = 0
-     TOLLEV_VSM = 0
-
-     TOLLEA_SML = 0
-     TOLLAM_SML = 0
-     TOLLMD_SML = 0
-     TOLLPM_SML = 0
-     TOLLEV_SML = 0
-
-     TOLLEA_MED = 0
-     TOLLAM_MED = 0
-     TOLLMD_MED = 0
-     TOLLPM_MED = 0
-     TOLLEV_MED = 0
-
-     TOLLEA_LRG = 0
-     TOLLAM_LRG = 0
-     TOLLMD_LRG = 0
-     TOLLPM_LRG = 0
-     TOLLEV_LRG = 0
-
-  ENDIF
-
-    ; AV impacts on roadway capacity - represented by adjusting the PCE
-    ; Make these factors into link attributes
-    IF (FT = 1)  AV_PCE = AV_PCE_FT01
-    IF (FT = 2)  AV_PCE = AV_PCE_FT02
-    IF (FT = 3)  AV_PCE = AV_PCE_FT03
-    IF (FT = 4)  AV_PCE = AV_PCE_FT04
-    IF (FT = 5)  AV_PCE = AV_PCE_FT05
-    IF (FT = 6)  AV_PCE = AV_PCE_FT06
-    IF (FT = 7)  AV_PCE = AV_PCE_FT07
-    IF (FT = 8)  AV_PCE = AV_PCE_FT08
-    IF (FT = 9)  AV_PCE = AV_PCE_FT09
-    IF (FT = 10) AV_PCE = AV_PCE_FT10
-
+    
 ENDRUN

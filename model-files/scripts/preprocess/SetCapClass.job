@@ -1,0 +1,68 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; SetCapClass.job
+;
+; TP+ script to set the CAPCLASS for the network. This field is a combination of functional class (FC) and area 
+; type, the latter of which is callculated in this script via a call to a python program, which maps the area
+; type of the zone that a link endnode belongs in to the linkn
+;
+;
+; Input:  A highway network after HOV transfer penalties have been added.  
+;
+; Output: A highway network containing the following fields: AT,CAPCLASS
+;
+; version:  Travel Model Zed
+; authors:  crf (2014 01)
+;
+; revised jef (2016 08 09) to work with cube 6.4
+; version: TM 1.5 BCM
+; author jmh 10 2022
+; ----------------------------------------------------------------------------------------------------------------
+
+;write out the links and nodes as csv files
+RUN PGM=NETWORK
+;    PAR  NODES=10000000
+    NETI = hwy\complete_network_with_tolls_with_xferpenalties.net
+    NODEO = hwy\complete_network_with_tolls_nodes.csv FORMAT=SDF, FORM=15.0 INCLUDE=N,X,Y
+    LINKO = hwy\complete_network_with_tolls_links.csv FORMAT=SDF, FORM=15.0 INCLUDE=A,B,CNTYPE
+ENDRUN
+
+;run script to add area type to network links
+*"%PYTHON_PATH%\python.exe" %BASE_SCRIPTS%\preprocess\codeLinkAreaType.py .
+IF (RETURNCODE > 0) abort
+
+;read in link data with area type and calculate capclass
+RUN PGM=NETWORK
+    NETI = hwy\complete_network_with_tolls_with_xferpenalties.net
+    LINKI[2] = hwy\link_area_type.csv VAR=A,B,AT
+    NETO = hwy\complete_network_tolls_at_capclass.net
+
+    PHASE=LINKMERGE
+      MAZMAZVOL=0
+       
+        IF (AT < 0)
+            CAPCLASS = -1
+        ELSE
+            CAPCLASS = 10 * AT + FT
+        ENDIF
+
+        ; lookup FFS (FFS) from SpdCap_Lookup.DAT
+        LOOKUP  NAME= Spd,LOOKUP[1]=1,RESULT=3,
+                FILE = %BASE_SCRIPTS%\block\SPDCAP_LOOKUP.DAT
+        
+        SPEED = Spd(1,CAPCLASS)
+        FFS = SPEED
+	
+        if (FFS > 0)
+          FFT = (60.0 / 5280.0) * FEET / FFS ; (60 minutes / 1 hour) * (1 mile / 5280 feet) * (feet) * (miles / hour) => minutes
+        else
+          FFT = (60.0 / 5280.0) * FEET / 25 ; put a default of 25 mph
+	    endif
+ 
+    ENDPHASE
+ENDRUN
+
+;clean out temporary files
+;* DEL hwy\complete_network_with_tolls.net
+;* DEL hwy\complete_network_with_tolls_nodes.csv
+;* DEL hwy\complete_network_with_tolls_links.csv

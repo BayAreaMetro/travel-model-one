@@ -1,0 +1,29 @@
+; -----------------------------------
+;
+; preprocess input network to 
+; (1) fix space issue in CNTYPE and ROADWAY fields
+; (2) add a FEET field based on DISTANCE
+;
+;
+; version: TM 1.5 BCM
+; author jmh 10 2022
+; -----------------------------------
+
+
+RUN PGM=NETWORK
+    LINKI[1] = "hwy\complete_network_SJQ_externals.net"
+    NETO = "hwy\complete_network_base.net"
+
+    PHASE=LINKMERGE
+        IF (li.1.CNTYPE = '  TAZ') CNTYPE = 'TAZ'
+        IF (li.1.CNTYPE = ' TANA') CNTYPE = 'TANA'
+        IF (li.1.CNTYPE = '  PED') CNTYPE = 'PED'
+        IF (li.1.CNTYPE = '   NA') CNTYPE = 'TANA'
+		
+		ROADWAY = LTRIM(ROADWAY)
+
+        FEET = DISTANCE * 5280
+
+    ENDPHASE
+ENDRUN
+

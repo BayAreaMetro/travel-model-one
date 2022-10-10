@@ -1,0 +1,64 @@
+;---------------------------------------------------------------------------
+; 
+; maz_densities.job
+;
+; This script creates intermediate files to facilitate calculating land use 
+; density fields for CT-RAMP.
+;
+; inputs: network (hwy\complete_network_zone_seq.net)
+;
+; outputs: maz locations (hwy\taz_nodes.csv) and
+;          intersection locations (hwy\intersection_nodes.csv)
+;
+; base version: Travel Model Zed maz_densities.job
+; version: TM 1.5 BCM
+; author jmh 10 2022
+;---------------------------------------------------------------------------
+
+;create intersections node file with x and y coordinate
+RUN PGM=NETWORK
+    neti      ="hwy\complete_network_zone_seq.net"
+    printo[1] ="hwy\taz_nodes.csv"
+    printo[2] ="hwy\intersection_nodes.csv"
+  
+    array _noden = 10000000
+    array _nodex = 10000000
+    array _nodey = 10000000
+  
+    phase=nodemerge
+        IF (N=1) PRINT CSV=T, LIST="TAZ_ORIGINAL","TAZ_X","TAZ_Y", PRINTO=1
+        IF (N=1) PRINT CSV=T, LIST="N","X","Y","link_count" PRINTO=2
+
+        ; store intersection nodes here
+        _noden[N] = 0
+        _nodex[N] = X
+        _nodey[N] = Y
+    
+        IF ((N < 900000))
+            print CSV=T, list=N(L), X(L), Y(L), PRINTO=1
+        ENDIF
+    endphase
+  
+    ;count nodes
+    phase=linkmerge
+    
+        ; increment count for non-freeway, non-connector link nodes
+        ; note: facility type(FT): 1 - Freeway; 8 - Connector
+        IF (FT != 1 & FT != 8)
+            _noden[A] = _noden[A] + 1
+            _noden[B] = _noden[B] + 1
+        ENDIF
+      
+    endphase
+    
+    phase=summary
+        loop _n2=1,10000000
+            if(_noden[_n2] > 4) ;atleast 5 links to be an intersection
+                ;node, x, y
+                print CSV=T, list=_n2(L), _nodex[_n2](L),  _nodey[_n2](L), _noden[_n2](L), PRINTO=2
+            endif
+        endloop
+    endphase
+    
+ENDRUN
+
