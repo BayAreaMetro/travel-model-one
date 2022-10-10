@@ -1,0 +1,192 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; BuildTazNetworks.job
+;
+; TP+ script to create TAZ networks from the base highway network. These networks form the base structure for
+; assignment, volume averageing, etc. This script essentially renumbers the nodes  node so that the TAZs are
+; sequentially numbered starting at 1. So that all subsequent model results are consistent with each other (or
+; at least easy to compare), this process is only performed once in a model run. 
+;
+; Input: Five time-of-day-specific highway networks. 
+;
+; Output: Five time-of-day-specific highway networks to be used in skimming and assignment. 
+;
+; version:  Travel Model Zed
+; authors:  crf (2014 03)
+; revised jef (2016 08 09) to work with cube 6.4
+; version: TM 1.5 BCM
+; author jmh 10 2022
+; ----------------------------------------------------------------------------------------------------------------
+
+;start cluster nodes
+*Cluster.exe ctramp 1-5 start exit
+
+; do, more or less, the same skim procedure for each of the five time periods
+loop period = 1, 5
+  
+   ; a two letter token is used for each time period
+   if (period = 1)   
+      token_period = 'EA'
+   elseif (period = 2)   
+      token_period = 'AM'
+   elseif (period = 3)   
+      token_period = 'MD'
+   elseif (period = 4)   
+      token_period = 'PM'
+   elseif (period = 5)   
+      token_period = 'EV'
+   endif
+   
+   ; do each time of day as a separate process
+   DistributeMultistep processid = 'ctramp', processNum = @period@
+   
+    ;build taz networks
+    node_start = 1000000 ;all tazs or mazs can fit beneath this
+    ;tazs include external stations (900,000 - 1,000,000)
+    taz_selector = '(N < 1000000)'
+	;max zones
+	taz_count = %TAZ_EXTS_COUNT%
+    
+    ;create sequential taz numbers
+    RUN PGM=NETWORK
+;        PAR NODES=10000000
+        NETI = hwy\avgload@token_period@.net
+        NETO = hwy\temp@token_period@.net
+        
+        PHASE = NODEMERGE
+            IF ((@taz_selector@) & (TAZSEQ > 0))
+                NEW_NODE = TAZSEQ
+                OLD_NODE = N
+            ELSEIF ((@taz_selector@) & (EXTSEQ > 0))
+                NEW_NODE = EXTSEQ
+                OLD_NODE = N
+            ELSE
+;                _j = _j + 1     
+;                NEW_NODE = _j + @node_start@
+;                OLD_NODE = N
+                 NEW_NODE = N                     ; do not change numbering of non-taz nodes because it breaks the transit lines
+				 OLD_NODE = N
+            ENDIF
+        ENDPHASE
+      
+        PHASE = LINKMERGE
+            A_NEW_NODE = A.NEW_NODE
+            OLD_A = A
+            B_NEW_NODE = B.NEW_NODE
+            OLD_B = B
+        ENDPHASE
+    ENDRUN
+    ;copy these back to correct network values
+    RUN PGM=NETWORK
+;        PAR  NODES=10000000
+        NETI = hwy\temp@token_period@.net
+        NETO = hwy\temp2@token_period@.net
+
+        PHASE = INPUT FILEI=NI.1
+            N = NEW_NODE
+        ENDPHASE
+
+        PHASE = INPUT FILEI=LI.1
+            A = A_NEW_NODE
+            B = B_NEW_NODE
+        ENDPHASE
+    ENDRUN
+    
+    ;set zone count
+    RUN PGM=NETWORK
+;        PAR NODES=10000000
+        NETI = hwy\temp2@token_period@.net
+        NETO = hwy\avgload@token_period@_complete.net
+        ZONES = @TAZ_COUNT@
+    ENDRUN
+
+    ;filter roadway that is not used in highway assignment
+	;keep the complete network for use in transit network building
+    RUN PGM=NETWORK
+        NETI = hwy\avgload@token_period@_complete.net
+        NETO = hwy\avgload@token_period@_taz.net
+
+        PHASE = LINKMERGE
+		IF ((COUNTY = 'Alameda' | COUNTY ='Contra Costa') | COUNTY = 'San Joaquin')
+			IF ((CNTYPE='TAZ' | CNTYPE='TANA') && (FT <>99 ))
+				;keep record
+			ELSE
+				DELETE
+			ENDIF
+		ELSE
+			IF (ASSIGNABLE=1 )
+				;keep record
+			ELSEIF (ROADWAY = 'PNR')
+				;keep record
+			ELSE
+				DELETE
+			ENDIF
+        ENDIF
+        ENDPHASE
+    ENDRUN
+    
+    ;write out taz to node correspondence
+    RUN PGM=NETWORK
+;        PAR NODES=10000000
+        NETI = hwy\avgload@token_period@_taz.net
+        NODEO=hwy\avgload@token_period@_taz_to_node.txt FORMAT=TXT, FORM=25.5 INCLUDE=N,OLD_NODE,X,Y
+    ENDRUN
+    
+    ;build network which will store MSA volume
+    RUN PGM=NETWORK
+;        PAR NODES=10000000
+        NETI = hwy\avgload@token_period@_taz.net
+        NETO = hwy\msaload@token_period@_taz.net
+        
+        PHASE = LINKMERGE
+            vol      = 0
+            vc       = 0
+            vol_da   = 0
+            vol_s2   = 0
+            vol_s3   = 0
+            vol_sm   = 0
+            vol_hv   = 0
+            vol_daT  = 0
+            vol_s2T  = 0
+            vol_s3T  = 0
+            vol_smT  = 0
+            vol_hvT  = 0
+            volT     = 0
+            volT_da  = 0
+            volT_s2  = 0
+            volT_s3  = 0
+            volT_sm  = 0
+            volT_hv  = 0
+            volT_daT = 0
+            volT_s2T = 0
+            volT_s3T = 0
+            volT_smT = 0
+            volT_hvT = 0
+            mazmazvol = 0
+        ENDPHASE
+    ENDRUN
+    
+    
+    ;old way of doing externals - keeping for the moment just in case...
+    ;*"%PYTHON_PATH%\python.exe" %BASE_SCRIPTS%\skims\build_external_stations.py %TAZ_COUNT% . hwy\external_stations.csv hwy\avgload@token_period@_taz_to_node.txt hwy\@token_period@_exts_node.csv hwy\@token_period@_exts_link.csv
+    ;
+    ;RUN PGM=NETWORK
+    ;    PAR NODES=10000000
+    ;    NETI = hwy\avgload@token_period@_taz.net
+    ;    NODEI[2] = hwy\@token_period@_exts_node.csv VAR=N,X,Y,OLD_NODE
+    ;    LINKI[2] = hwy\@token_period@_exts_link.csv VAR=A,B,CNTYPE(C),FEET,OLD_A,OLD_B
+    ;    NETO = hwy\avgload@token_period@_taz_exts.net
+    ;    ZONES = %TAZ_EXTS_COUNT%
+    ;ENDRUN
+    
+    *del hwy\temp@token_period@.net
+    *del hwy\temp2@token_period@.net
+    
+   EndDistributeMultistep
+
+endloop ; token_period
+
+Wait4Files files = ctramp1.script.end, ctramp2.script.end, ctramp3.script.end, ctramp4.script.end, ctramp5.script.end, 
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+;stop cluster nodes
+*Cluster.exe ctramp 1-5 close exit
