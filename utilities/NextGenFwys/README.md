@@ -2,8 +2,7 @@ This folder hosts scripts and data for the Next Generation Freeways Study projec
 
 ## Metrics
 Calculates and visualizes metrics to analyze and evaluate a variety of pathways/scenarios for Next Generation Freeways policies.
-* [Metrics.py](https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/NextGenFwys/Metrics.py)
-* [Metrics.twb](https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/NextGenFwys/Metrics.twb)
+* TBD
 
 ## ModelRuns tracking
 Tracks model runs with run set, run category, input data version, etc. Also used to create cross-run comparison visualizations in Tableau.
@@ -12,6 +11,7 @@ Tracks model runs with run set, run category, input data version, etc. Also used
     * "save as .csv" to update this file
     * open in a text editor, and replace `"""` with `"` to reverse the reformating of quotation marks by .xlsx
     * copy it into `L:\Application\Model_One\NextGenFwys\across_runs_union` to update the older version
+    
 
 
 
