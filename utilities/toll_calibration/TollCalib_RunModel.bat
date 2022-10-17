@@ -62,7 +62,6 @@ if %ITER% NEQ 4 (
 ::
 :: ------------------------------------------------------------------------------------------------------
 
-python "CTRAMP\scripts\notify_slack.py" "Starting toll calibration *%MODEL_DIR%* Iter *%ITER%*"
 
 :: Use this for COMMPATH
 mkdir COMMPATH
@@ -78,6 +77,7 @@ set PYTHONPATH=X:\NetworkWrangler;X:\NetworkWrangler\_static
 set GAWK_PATH=M:\Software\Gawk\bin
 SET PATH=%TPP_PATH%;%GAWK_PATH%;%PATH%
 
+python "CTRAMP\scripts\notify_slack.py" "Starting toll calibration *%MODEL_DIR%* Iter *%ITER%*"
 
 :: ------------------------------------------------------------------------------------------------------
 ::
