@@ -62,6 +62,8 @@ if %ITER% NEQ 4 (
 ::
 :: ------------------------------------------------------------------------------------------------------
 
+python "CTRAMP\scripts\notify_slack.py" "Starting toll calibration *%MODEL_DIR%* Iter *%ITER%*"
+
 :: Use this for COMMPATH
 mkdir COMMPATH
 set COMMPATH=%CD%\COMMPATH
