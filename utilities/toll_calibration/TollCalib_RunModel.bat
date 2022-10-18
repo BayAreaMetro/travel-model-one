@@ -77,7 +77,6 @@ set PYTHONPATH=X:\NetworkWrangler;X:\NetworkWrangler\_static
 set GAWK_PATH=M:\Software\Gawk\bin
 SET PATH=%TPP_PATH%;%GAWK_PATH%;%PATH%
 
-python "CTRAMP\scripts\notify_slack.py" "Starting toll calibration *%MODEL_DIR%* Iter *%ITER%*"
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -110,6 +109,7 @@ copy /y "%TOLL_FILE%" hwy\tolls.csv
 ::
 :: ------------------------------------------------------------------------------------------------------
 :preprocess
+python "CTRAMP\scripts\notify_slack.py" "Starting toll calibration *%MODEL_DIR%* Iter *%ITER%*"
 
 :: Set the prices in the roadway network (convert csv to dbf first)
 python "CTRAMP\scripts\preprocess\csvToDbf.py" hwy\tolls.csv hwy\tolls.dbf
