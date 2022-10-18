@@ -98,7 +98,7 @@ unloaded_network_df      <- read.dbf(UNLOADED_NETWORK_DBF, as.is=TRUE) %>% selec
 # https://github.com/BayAreaMetro/travel-model-one/blob/master/model-files/scripts/block/hwyParam.block#L13
 FIRSTVALUE <- 31
 
-el_links_df    <-  filter(unloaded_network_df , TOLLCLASS>=FIRSTVALUE )
+el_links_df    <-  filter(unloaded_network_df , TOLLCLASS>=FIRSTVALUE & TOLLCLASS<990000) # assume all all-lane-tolling links will be coded with tollclass > 990000
 gp_links_df     <- filter(unloaded_network_df , USE==1 & (FT<=3 | FT==5 | FT==8 | FT==10))
 notruck_links_df <- filter(unloaded_network_df , USE==4 & TOLLCLASS==0)
 gp_notruck_links_df <-  bind_rows(gp_links_df, notruck_links_df) # links that are in parallel to EL links in a model network
@@ -164,7 +164,7 @@ el_gp_loaded_nan_df <- na.omit(el_gp_loaded_df)
 #############################################################
 
 el_gp_summary_df <- el_gp_loaded_nan_df %>%
-                    group_by(TOLLCLASS) %>%
+                    group_by(TOLLCLASS, USE) %>%
                     summarise(avgspeed_EA    = mean(cspdEA),
                               avgspeed_EA_GP = mean(cspdEA_GP),
                               avgspeed_AM    = mean(cspdAM),
@@ -175,6 +175,41 @@ el_gp_summary_df <- el_gp_loaded_nan_df %>%
                               avgspeed_PM_GP = mean(cspdPM_GP),
                               avgspeed_EV    = mean(cspdEV),
                               avgspeed_EV_GP = mean(cspdEV_GP))
+
+
+#---------------------------------------------------------------#
+# all lane tolling doesn't have EL vs GP, so just set the "EL speed" to be the same as "GP speed"
+#---------------------------------------------------------------#
+# assume all all lane tolling links will be coded with the prefix 990
+# previously:
+# el_links_df    <-  filter(unloaded_network_df , TOLLCLASS>=FIRSTVALUE )
+# el_links_df    <-  filter(unloaded_network_df , TOLLCLASS>=FIRSTVALUE & TOLLCLASS<990000) # assume all all-lane-tolling links will be coded with tollclass > 990000
+# loaded_network_df          <- loaded_network_df  %>% select(a, b, ffs, cspdEA, cspdAM, cspdMD, cspdPM, cspdEV,  volEA_tot,  volAM_tot,  volMD_tot,  volPM_tot,  volEV_tot)
+
+# merge tollclasses from unloaded network to the loaded network
+# (because the toll classes on the loaded network shows up as ****)
+loaded_network_df <- loaded_network_df %>% left_join(unloaded_network_df,
+                                      by=c("a"="A", "b"="B"))
+
+alllanetolling_links_df    <-  filter(loaded_network_df , TOLLCLASS>990000)
+
+alllanetolling_summary_df <- alllanetolling_links_df %>%
+                             group_by(TOLLCLASS, USE) %>%
+                             summarise(avgspeed_EA    = mean(cspdEA),
+                                       avgspeed_EA_GP = mean(cspdEA),
+                                       avgspeed_AM    = mean(cspdAM),
+                                       avgspeed_AM_GP = mean(cspdAM),
+                                       avgspeed_MD    = mean(cspdMD),
+                                       avgspeed_MD_GP = mean(cspdMD),
+                                       avgspeed_PM    = mean(cspdPM),
+                                       avgspeed_PM_GP = mean(cspdPM),
+                                       avgspeed_EV    = mean(cspdEV),
+                                       avgspeed_EV_GP = mean(cspdEV))
+
+# add all lane tolling summary to the el gp summary
+el_gp_summary_df <-  bind_rows(el_gp_summary_df, alllanetolling_summary_df)
+
+#---------------------------------------------------------------#
 
 # Determine scenarios:
 #        EL_speed	   GP_speed
@@ -217,7 +252,7 @@ toll_rates_df          <- read.csv(file=TOLLS_CSV, header=TRUE, sep=",")
 toll_rates_df          <- toll_rates_df  %>% select(tollclass, facility_name, use, tollam_da, tollmd_da, tollpm_da)
 
 el_gp_summary_df <- el_gp_summary_df %>% left_join(toll_rates_df,
-                                         by=c("TOLLCLASS"="tollclass"))
+                                         by=c("TOLLCLASS"="tollclass", "USE"="use"))
 
 # determine new toll rates
 el_gp_summary_df <- el_gp_summary_df %>%
@@ -255,14 +290,14 @@ el_gp_summary_df <- filter(el_gp_summary_df, is.na(NonDynamicTolling))
 #############################################################
 # write the new toll rates to a new tolls.csv
 #############################################################
-tolls_new_df <- el_gp_summary_df  %>% select(TOLLCLASS, facility_name, use, tollam_da_new, tollmd_da_new, tollpm_da_new)
+tolls_new_df <- el_gp_summary_df  %>% select(TOLLCLASS, facility_name, USE, tollam_da_new, tollmd_da_new, tollpm_da_new)
 
 tolls_new_df <- tolls_new_df  %>%
-                              mutate(fac_index = TOLLCLASS * 1000 + use,
+                              mutate(fac_index = TOLLCLASS * 1000 + USE,
                                      tollclass = TOLLCLASS,
                                      tollseg   = 0,
                                      tolltype  = "expr_lane",
-                                     use       = use,
+                                     use       = USE,
                                      tollea_da = 0,
                                      tollam_da = tollam_da_new,
                                      tollmd_da = tollmd_da_new,
@@ -327,8 +362,10 @@ tolls_new_df <- tolls_new_df  %>%
 tolls_new_df <- tolls_new_df  %>%
                              mutate(tollpm_s2 = ifelse(tollpm_da_new>1, tollpm_da_new/2, tollpm_s2))
 
-tolls_new_df <- tolls_new_df  %>% select(-c(TOLLCLASS, tollam_da_new, tollmd_da_new, tollpm_da_new, s2toll_mandatory))
-
+tolls_new_df <- tolls_new_df  %>% select(-c(TOLLCLASS, USE, tollam_da_new, tollmd_da_new, tollpm_da_new, s2toll_mandatory))
+# TOLLCLASS is a "grouping variable" and can't be deleted unless it's ungrouped
+tolls_new_df <- tolls_new_df  %>% ungroup()
+tolls_new_df <- tolls_new_df  %>% select(-c(TOLLCLASS))
 
 # make "toll_flat" equals to zero if it is an express lane
 tolls_new_df <- tolls_new_df  %>% mutate(toll_flat=0)
