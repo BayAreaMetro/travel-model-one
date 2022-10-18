@@ -109,7 +109,8 @@ copy /y "%TOLL_FILE%" hwy\tolls.csv
 ::
 :: ------------------------------------------------------------------------------------------------------
 :preprocess
-python "CTRAMP\scripts\notify_slack.py" "Starting toll calibration *%MODEL_DIR%* Iter *%ITER%*"
+set INSTANCE=%COMPUTERNAME%
+python "CTRAMP\scripts\notify_slack.py" "Starting toll calibration *%MODEL_BASE_DIR%* Iter *%ITER%*"
 
 :: Set the prices in the roadway network (convert csv to dbf first)
 python "CTRAMP\scripts\preprocess\csvToDbf.py" hwy\tolls.csv hwy\tolls.dbf
