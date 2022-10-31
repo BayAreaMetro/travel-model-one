@@ -1,0 +1,996 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; PrepAssign.job
+;
+; TP+ script to convert the trip lists written out by the CT-RAMP software into origin/destination matrices that
+; can be assigned to highway and transit networks. The first step goes through the individual trip list and stores
+; trips, by mode, that are relevant for each time interval.  A fixed format file, sorted first by origin zone and
+; then by destination zone is written to disk. Note that each record in the individual travel list represents one
+; person trip.
+;
+; The second step goes through the joint travel trip list and stores trips, by mode, that are relevant for each time
+; interval.  A fixed format file, sorted first by origin zone and then by destination zone, is written to disk. Note
+; that joint travel includes trips in which two or more persons from the same household travel together for a
+; complete tour (i.e. from when they leave home to when they return, the group stays together).  Joint travel is only
+; represented for a handful of travel purposes as described below.
+;
+; The third and final step reads in the fixed format data from steps one and two and stores the data as a TP+ matrix
+; with 23 tables (see Output below for details).  Note that the trips are scaled up by the sampling rate -- if the
+; model was run on only half the synthetic population, then each resulting trip is counted twice, which allows for
+; a fully representative quantity of demand to be assigned to the roadway and transit networks.
+;
+; Each of these three steps is executed separately for each of the five time periods, which are defined as follows:
+; (a) early AM, 3 am to 6 am; (b) AM peak period, 6 am to 10 am; (c) midday, 10 am to 3 pm; (d) PM peak period,
+; 3 pm to 7 pm; and, (e) evening, 7 pm to 3 am.
+;
+; Input:  (A) A trip list for individual travel with the following data fields:
+;              (1)  hh_id - unique (to the population) household identification number
+;              (2)  person_id - unique (to the population) person identification number
+;              (3)  person_num - unique (to the household) person number
+;              (4)  tour_id - unique (to the person) tour identification number
+;              (5)  stop_id - unique (to the half tour) stop identification number
+;              (6)  inbound - boolean, 1 is the trip is on the inbound (to home) leg of the tour
+;              (7)  tour_purpose - "work_low", "work_med", "work_high", "work_very high", "school_high", "school_grade",
+;                                  "atwork_business", "atwork_eat", "atwork_maint", "eatout", "escort_kids",
+;                                  "escort_no kids", "othdiscr", "othmaint", "shopping", "social"
+;              (8)  orig_purpose - purpose of the activity at the origin end of the trip (see tour_purpose list above, add "Home")
+;              (9)  dest_purpose - purpose of the activity at the destination end of the trip (see tour_purpose list above, add "Home")
+;              (10) orig_taz - location, in the MTC zone system, of the origin location of the trip
+;              (11) orig_walk_segment - walk to transit origin sub-zone, 0 is cannot walk to transit, 1 is short-walk
+;                                       to transit, and 2 is long walk to transit
+;              (12) dest_taz - location, in the MTC zone system, of the destination location of the trip
+;              (13) dest_walk_segment - walk to transit destination sub-zone, see definitions for orig_walk_segment
+;                                       directly above
+;              (14) parking_taz - parking location, in the MTC zone system, of automobile travelers headed to one of
+;                                 the regional TAZs
+;              (15) depart_hour - time when trip leaves the origin, between 5 and 23, where 5 is the hour from 5 am
+;                                 to 6 am, 6 is the hour from 6 am to 7 am, ..., 23 is the hour from 11 pm to midnight.
+;              (16) trip_mode - travel mode code, where 1 - "Drive alone free", 2 - "Drive alone pay", 3 - "Shared ride 2 free",
+;                               4 - "Shared ride 2 pay", 5 - "Shared ride 3+ free", 6 - "Shared ride 3+ pay", 7 - "Walk",
+;                               8 - "Bike", 9 - "Walk to local bus", 10 - "Walk to light rail or ferry", 11 - "Walk to express bus",
+;                              12 - "Walk to BART", 13 - "Walk to commuter rail", 14 - "Drive to local bus",
+;                              15 - "Drive to light rail or ferry", 16 - "Drive to express bus", 17 - "Drive to BART",
+;                              18 - "Drive to commuter rail"
+;                              new jef 2018-11-10 TM1.5  19 - "Taxi" 20 - "TNC"
+;              (17) tour_mode - which is not the same as travel mode -- same codes as for trip mode.
+;              (18) tour_category - Type of tour (MANDATORY, INDIVIDUAL_NON_MANDATORY,AT_WORK)
+;              (19) avAvailable - new for TM1.5 indicating whether an autonomous vehicle is available for trips on tour
+;              (20) sampleRate - the share of the synthetic population to be simulated in a particular model iteration
+;              (21) taxiWait - simulated taxi wait time drawn from a lognormal distribution
+;              (22) singleTNCWait - simulated non-shared TNC wait time drawn from a lognormal distribution
+;              (23) sharedTNCWait - simulated shared TNC wait time drawn from a lognormal distribution
+;              (24) income - Annual household income (2000$)
+;
+;         (B) A trip list for joint travel with the following data fields:
+;              (1)  hh_id - same as above
+;              (2)  tour_id - same as above
+;              (3)  stop_id - same as above
+;              (4)  inbound - same as above
+;              (5)  tour_purpose - purpose of the tour for which the trip is a component: "eatout", "othdiscr",
+;                                 "othmaint", "shopping", "social"
+;              (6)  orig_purpose - purpose of the activity at the origin end of the trip: "Home", "eatout", "othdiscr",
+;                                 "othmaint", "shopping", "social"
+;              (7)  dest_purpose - purpose of the activity at the destination end of the trip (see orig_purpose list above)
+;              (8)  orig_taz - same as above
+;              (9)  orig_walk_segment - same as above
+;              (10) dest_taz - same as above
+;              (11) dest_walk_segment - same as above
+;              (12) parking_taz - same as above
+;              (13) depart_hour - same as above
+;              (14) trip_mode - travel mode code, where 1 - "Drive alone free", 2 - "Drive alone pay", 3 - "Shared ride 2 free",
+;                               4 - "Shared ride 2 pay", 5 - "Shared ride 3+ free", 6 - "Shared ride 3+ pay", 7 - "Walk",
+;                               8 - "Bike", 9 - "Walk to local bus", 10 - "Walk to light rail or ferry", 11 - "Walk to express bus",
+;                              12 - "Walk to BART", 13 - "Walk to commuter rail", 14 - "Drive to local bus",
+;                              15 - "Drive to light rail or ferry", 16 - "Drive to express bus", 17 - "Drive to BART",
+;                              18 - "Drive to commuter rail"
+;                              new jef 2018-11-10 TM1.5  19 - "Taxi" 20 - "TNC"
+;              (15) num_participants - the number of persons traveling on the joint tour
+;              (16) tour_mode - which is not necessarily the travel mode -- same codes as for trip mode.
+;              (17) tour_category - Type of tour (JOINT_NON_MANDATORY)
+;              (18) avAvailable - new for TM1.5 indicating whether an autonomous vehicle is available for trips on tour
+;              (19) sampleRate - the share of the synthetic population to be simulated in a particular model iteration
+;              (20) taxiWait - simulated taxi wait time drawn from a lognormal distribution
+;              (21) singleTNCWait - simulated non-shared TNC wait time drawn from a lognormal distribution
+;              (22) sharedTNCWait - simulated shared TNC wait time drawn from a lognormal distribution
+;              (23) income - Annual household income (2000$)
+;
+;         (C) configuration parameter file, ctramp\scripts\block\hwyparam.block, containing:
+;              (1)  Zero passenger vehicle factor for TNC trips
+;              (2)  Zero passenger vehicle factor for owned autonomous vehicle trips
+;
+; Output: (A) Five x Four (time-period-specific x income-specific) person trip tables, main\trips(EA|AM|MD|PM|EV)_inc(Q1|Q2|Q3|Q4).tpp, with the following values in each table:
+;              (1)  Drive alone, no value toll
+;              (2)  Drive alone, value toll (includes taxi)
+;              (3)  Shared ride 2, no value toll
+;              (4)  Shared ride 2, value toll (includes taxi)
+;              (5)  Shared ride 3+, no value toll
+;              (6)  Shared ride 3+, value toll (includes taxi)
+;              (7)  Walk
+;              (8)  Bicycle
+;              (9)  Walk, local bus, walk
+;              (10) Walk, light rail/ferry, walk
+;              (11) Walk, express bus, walk
+;              (12) Walk, heavy rail, walk
+;              (13) Walk, commuter rail, walk
+;              (14) Drive, local bus, walk
+;              (15) Drive, light rail/ferry, walk
+;              (16) Drive, express bus, walk
+;              (17) Drive, heavy rail, walk
+;              (18) Drive, commuter rail, walk
+;              (19) Walk, local bus, drive
+;              (20) Walk, light rail/ferry, drive
+;              (21) Walk, express bus, drive
+;              (22) Walk, heavy rail, drive
+;              (23) Walk, commuter rail, drive
+;              (24) Drive alone,    TNC (includes zero-passenger deadheading trips)
+;              (25) Shared ride 2,  TNC (includes zero-passenger deadheading trips)
+;              (26) Shared ride 3+, TNC (includes zero-passenger deadheading trips)
+;              (27) Drive alone,    owned autonomous vehicles (includes zero-passenger deadheading trips)
+;              (28) Shared ride 2,  owned autonomous vehicles (includes zero-passenger deadheading trips)
+;              (29) Shared ride 3+, owned autonomous vehicles (includes zero-passenger deadheading trips)
+;
+; Notes:  (1)
+;
+; See also: (1) HwyAssign.job, which performs highway assignments;
+;           (2) TransitAssign.job, which performs transit assignments.
+;
+; version:  Travel Model 1.5
+; authors:  jef (2018 11 10); dto (2010 07 14); gde (2009)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+
+; prepare income-specific input files for highway assignment
+loop income = 1, 4
+
+      if (income = 1)
+        token_income = 'incQ1'
+      elseif (income = 2)
+        token_income = 'incQ2'
+      elseif (income = 3)
+        token_income = 'incQ3'
+      elseif (income = 4)
+        token_income = 'incQ4'
+      endif
+
+    ; make time-period-specific copies of the individual trip data
+    * copy main\indivTripData_@token_income@_%ITER%.csv main\indivTripData_@token_income@_temp_EA.csv
+    * copy main\indivTripData_@token_income@_%ITER%.csv main\indivTripData_@token_income@_temp_AM.csv
+    * copy main\indivTripData_@token_income@_%ITER%.csv main\indivTripData_@token_income@_temp_MD.csv
+    * copy main\indivTripData_@token_income@_%ITER%.csv main\indivTripData_@token_income@_temp_PM.csv
+    * copy main\indivTripData_@token_income@_%ITER%.csv main\indivTripData_@token_income@_temp_EV.csv
+
+    ; make time-period-specific copies of the joint trip data
+    * copy main\jointtripdata_@token_income@_%ITER%.csv main\jointtripdata_@token_income@_temp_EA.csv
+    * copy main\jointtripdata_@token_income@_%ITER%.csv main\jointtripdata_@token_income@_temp_AM.csv
+    * copy main\jointtripdata_@token_income@_%ITER%.csv main\jointtripdata_@token_income@_temp_MD.csv
+    * copy main\jointtripdata_@token_income@_%ITER%.csv main\jointtripdata_@token_income@_temp_PM.csv
+    * copy main\jointtripdata_@token_income@_%ITER%.csv main\jointtripdata_@token_income@_temp_EV.csv
+
+; the number of zones is used throughout to size arrays to store data
+token_zones = '1454'
+
+; arrays and sized as zones x zones to store matrix data in a one-dimensional array
+token_zones_by_zones = '2114116'
+
+; set the sample share as a TP+ token
+token_sample_share = '%SAMPLESHARE%'
+
+; do, more or less, the same procedure for each time period
+  loop period = 1, 5
+
+   ; a two letter token is used for each time period
+   if (period = 1)
+
+      token_period = 'EA'
+
+      ; trips in the following time window are considered
+      token_relevant_time_interval = 'ri.depart_hour >= 3 && ri.depart_hour < 6'
+
+
+   elseif (period = 2)
+
+      token_period = 'AM'
+
+      ; trips in the following time window are considered
+      token_relevant_time_interval = 'ri.depart_hour >= 6 && ri.depart_hour < 10'
+
+   elseif (period = 3)
+
+      token_period = 'MD'
+
+      ; trips in the following time window are considered
+      token_relevant_time_interval = 'ri.depart_hour >= 10 && ri.depart_hour < 15'
+
+   elseif (period = 4)
+
+      token_period = 'PM'
+
+      ; trips in the following time window are considered
+      token_relevant_time_interval = 'ri.depart_hour >= 15 && ri.depart_hour < 19'
+
+
+   elseif (period = 5)
+
+      token_period = 'EV'
+
+      ; trips in the following time window are considered
+      token_relevant_time_interval = 'ri.depart_hour >= 19 || ri.depart_hour < 3'
+
+   endif
+
+   ; do each time of day as a separate process
+   DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = '%COMMPATH%'
+
+
+   ; step one: convert individual trip list to an origin/destination list
+   run pgm = matrix
+
+      ; read in the trip data for the current iteration (note %ITER% is set by RunModel.bat)
+      filei reci = main\IndivTripData_@token_income@_temp_@token_period@.csv, delimiter=',',
+                hh_id             = 1,
+                person_id         = 2,
+                person_num        = 3,
+                tour_id           = 4,
+                stop_id           = 5,
+                inbound           = 6,
+                tour_purpose(c)   = 7,
+                orig_purpose(c)   = 8,
+                dest_purpose(c)   = 9,
+                orig_taz          = 10,
+                orig_walk_segment = 11,
+                dest_taz          = 12,
+                dest_walk_segment = 13,
+                parking_taz       = 14,
+                depart_hour       = 15,
+                trip_mode         = 16,
+                tour_mode         = 17,
+                tour_category(c)  = 18,
+                av_available      = 19,
+				sampleRate       = 20
+
+      ; create zones x zones one dimensional arrays to store trips, one for each assigned path
+      array da          = @token_zones_by_zones@
+      array datoll      = @token_zones_by_zones@
+
+      array sr2         = @token_zones_by_zones@
+      array sr2toll     = @token_zones_by_zones@
+
+      array sr3         = @token_zones_by_zones@
+      array sr3toll     = @token_zones_by_zones@
+
+      array walk        = @token_zones_by_zones@
+      array bike        = @token_zones_by_zones@
+
+      array wlk_loc_wlk = @token_zones_by_zones@
+      array wlk_lrf_wlk = @token_zones_by_zones@
+      array wlk_exp_wlk = @token_zones_by_zones@
+      array wlk_hvy_wlk = @token_zones_by_zones@
+      array wlk_com_wlk = @token_zones_by_zones@
+
+      array drv_loc_wlk = @token_zones_by_zones@
+      array drv_lrf_wlk = @token_zones_by_zones@
+      array drv_exp_wlk = @token_zones_by_zones@
+      array drv_hvy_wlk = @token_zones_by_zones@
+      array drv_com_wlk = @token_zones_by_zones@
+
+      array wlk_loc_drv = @token_zones_by_zones@
+      array wlk_lrf_drv = @token_zones_by_zones@
+      array wlk_exp_drv = @token_zones_by_zones@
+      array wlk_hvy_drv = @token_zones_by_zones@
+      array wlk_com_drv = @token_zones_by_zones@
+
+      array taxi = @token_zones_by_zones@
+      array single_tnc = @token_zones_by_zones@
+      array shared_tnc = @token_zones_by_zones@
+      array da_av  = @token_zones_by_zones@
+      array s2_av  = @token_zones_by_zones@
+      array s3_av  = @token_zones_by_zones@
+
+      ; create a unique index for each origin destination pair
+      od_position = @token_zones@ * (ri.orig_taz-1) + ri.dest_taz
+
+      ; if statement - only read in the trips relevant to the current time period
+      if (@token_relevant_time_interval@)
+
+         ; create person trip tables
+         ; - drive alone, no value toll
+         if ((ri.trip_mode = 1) & (ri.av_available = 0))
+            da[od_position] = da[od_position] + (1/ri.sampleRate)
+
+         ; - drive alone, value toll
+         elseif ((ri.trip_mode = 2) & (ri.av_available = 0))
+            datoll[od_position] = datoll[od_position] + (1/ri.sampleRate)
+
+         ; - shared ride 2, no value toll
+         elseif ((ri.trip_mode = 3) & (ri.av_available = 0))
+            sr2[od_position] = sr2[od_position] + (1/ri.sampleRate)
+
+         ; - shared ride 2, value toll
+         elseif ((ri.trip_mode = 4) & (ri.av_available = 0))
+            sr2toll[od_position] = sr2toll[od_position] + (1/ri.sampleRate)
+
+         ; - shared ride 3 or more, no value toll
+         elseif ((ri.trip_mode = 5) & (ri.av_available = 0))
+            sr3[od_position] = sr3[od_position] + (1/ri.sampleRate)
+
+         ; - shared ride 3 or more, value toll
+         elseif ((ri.trip_mode = 6) & (ri.av_available = 0))
+            sr3toll[od_position] = sr3toll[od_position] + (1/ri.sampleRate)
+
+         ; - walk
+         elseif (ri.trip_mode = 7)
+            walk[od_position] = walk[od_position] + (1/ri.sampleRate)
+
+         ; - bicycle
+         elseif (ri.trip_mode = 8)
+            bike[od_position] = bike[od_position] + (1/ri.sampleRate)
+
+         ; - walk, local bus, walk
+         elseif (ri.trip_mode = 9)
+            wlk_loc_wlk[od_position] = wlk_loc_wlk[od_position] + (1/ri.sampleRate)
+
+         ; - walk, light rail/ferry, walk
+         elseif (ri.trip_mode = 10)
+            wlk_lrf_wlk[od_position] = wlk_lrf_wlk[od_position] + (1/ri.sampleRate)
+
+         ; - walk, express bus, walk
+         elseif (ri.trip_mode = 11)
+            wlk_exp_wlk[od_position] = wlk_exp_wlk[od_position] + (1/ri.sampleRate)
+
+         ; - walk, heavy rail, walk
+         elseif (ri.trip_mode = 12)
+            wlk_hvy_wlk[od_position] = wlk_hvy_wlk[od_position] + (1/ri.sampleRate)
+
+         ; - walk, commuter rail, walk
+         elseif (ri.trip_mode = 13)
+            wlk_com_wlk[od_position] = wlk_com_wlk[od_position] + (1/ri.sampleRate)
+
+         ; - drive, local, walk (outbound)
+         elseif (ri.trip_mode = 14 && ri.inbound = 0)
+            drv_loc_wlk[od_position] = drv_loc_wlk[od_position] + (1/ri.sampleRate)
+
+         ; - drive, light rail/ferry, walk (outbound)
+         elseif (ri.trip_mode = 15 && ri.inbound = 0)
+            drv_lrf_wlk[od_position] = drv_lrf_wlk[od_position] + (1/ri.sampleRate)
+
+         ; - drive, express bus, walk (outbound)
+         elseif (ri.trip_mode = 16 && ri.inbound = 0)
+            drv_exp_wlk[od_position] = drv_exp_wlk[od_position] + (1/ri.sampleRate)
+
+         ; - drive, heavy rail, walk (outbound)
+         elseif (ri.trip_mode = 17 && ri.inbound = 0)
+            drv_hvy_wlk[od_position] = drv_hvy_wlk[od_position] + (1/ri.sampleRate)
+
+         ; - drive, commuter rail, walk (outbound)
+         elseif (ri.trip_mode = 18 && ri.inbound = 0)
+            drv_com_wlk[od_position] = drv_com_wlk[od_position] + (1/ri.sampleRate)
+
+         ; - walk, local, drive (inbound)
+         elseif (ri.trip_mode = 14 && ri.inbound = 1)
+            wlk_loc_drv[od_position] = wlk_loc_drv[od_position] + (1/ri.sampleRate)
+
+         ; - walk, light rail/ferry, drive (inbound)
+         elseif (ri.trip_mode = 15 && ri.inbound = 1)
+            wlk_lrf_drv[od_position] = wlk_lrf_drv[od_position] + (1/ri.sampleRate)
+
+         ; - walk, express bus, drive (inbound)
+         elseif (ri.trip_mode = 16 && ri.inbound = 1)
+            wlk_exp_drv[od_position] = wlk_exp_drv[od_position] + (1/ri.sampleRate)
+
+         ; - walk, heavy rail, drive (inbound)
+         elseif (ri.trip_mode = 17 && ri.inbound = 1)
+            wlk_hvy_drv[od_position] = wlk_hvy_drv[od_position] + (1/ri.sampleRate)
+
+         ; - walk, commuter rail, drive (inbound)
+         elseif (ri.trip_mode = 18 && ri.inbound = 1)
+            wlk_com_drv[od_position] = wlk_com_drv[od_position] + (1/ri.sampleRate)
+
+        ; - taxi
+         elseif (ri.trip_mode = 19)
+            taxi[od_position] = taxi[od_position] + (1/ri.sampleRate)
+
+        ; - TNC single
+         elseif (ri.trip_mode = 20)
+            single_tnc[od_position] = single_tnc[od_position] + (1/ri.sampleRate)
+
+        elseif (ri.trip_mode = 21)
+            shared_tnc[od_position] = shared_tnc[od_position] + (1/ri.sampleRate)
+
+         ; - drive alone, no value toll
+         elseif ((ri.trip_mode = 1) & (ri.av_available = 1))
+            da_av[od_position] = da_av[od_position] + (1/ri.sampleRate)
+
+         ; - drive alone, value toll
+         elseif ((ri.trip_mode = 2) & (ri.av_available = 1))
+            da_av[od_position] = da_av[od_position] + (1/ri.sampleRate)
+
+         ; - shared ride 2, no value toll
+         elseif ((ri.trip_mode = 3) & (ri.av_available = 1))
+            s2_av[od_position] = s2_av[od_position] + (1/ri.sampleRate)
+
+       ; - shared ride 2, value toll
+         elseif ((ri.trip_mode = 4) & (ri.av_available = 1))
+            s2_av[od_position] = s2_av[od_position] + (1/ri.sampleRate)
+
+         ; - shared ride 3 or more, no value toll
+         elseif ((ri.trip_mode = 5) & (ri.av_available = 1))
+            s3_av[od_position] = s3_av[od_position] + (1/ri.sampleRate)
+
+         ; - shared ride 3 or more, value toll
+         elseif ((ri.trip_mode = 6) & (ri.av_available = 1))
+            s3_av[od_position] = s3_av[od_position] + (1/ri.sampleRate)
+
+       endif ; trip mode if
+
+      endif ; departure hour if
+
+      ; write the output only once
+      if (i = 0)
+
+         ; loop through each origin zone
+         loop orig = 1, @token_zones@
+
+            ; loop through each destination zone
+            loop dest = 1, @token_zones@
+
+               ; compute the unique position in each array
+               position = @token_zones@ * (orig - 1) + dest
+
+               ; write the results to a fixed format file easily read in by TP+
+               print list = orig(5.0), dest(5.0),
+                     da[position](20.4lrs),
+                     datoll[position](20.4lrs),
+                     sr2[position](20.4lrs),
+                     sr2toll[position](20.4lrs),
+                     sr3[position](20.4lrs),
+                     sr3toll[position](20.4lrs),
+                     walk[position](20.4lrs),
+                     bike[position](20.4lrs),
+                     wlk_loc_wlk[position](20.4lrs),
+                     wlk_lrf_wlk[position](20.4lrs),
+                     wlk_exp_wlk[position](20.4lrs),
+                     wlk_hvy_wlk[position](20.4lrs),
+                     wlk_com_wlk[position](20.4lrs),
+                     drv_loc_wlk[position](20.4lrs),
+                     drv_lrf_wlk[position](20.4lrs),
+                     drv_exp_wlk[position](20.4lrs),
+                     drv_hvy_wlk[position](20.4lrs),
+                     drv_com_wlk[position](20.4lrs),
+                     wlk_loc_drv[position](20.4lrs),
+                     wlk_lrf_drv[position](20.4lrs),
+                     wlk_exp_drv[position](20.4lrs),
+                     wlk_hvy_drv[position](20.4lrs),
+                     wlk_com_drv[position](20.4lrs),
+                     taxi[position](20.4lrs),
+                     single_tnc[position](20.4lrs),
+                     shared_tnc[position](20.4lrs),
+                     da_av[position](20.4lrs),
+                     s2_av[position](20.4lrs),
+                     s3_av[position](20.4lrs),
+                     file = main\IndivTrips@token_income@@token_period@.dat
+
+         endloop ; dest
+
+      endloop ; orig
+
+      endif ; if i = 0
+
+  endrun
+
+
+   ; step two: convert joint trip list to an origin/destination list
+   run pgm = matrix
+
+      ; read in the trip data for the current iteration (note %ITER% is set by RunModel.bat)
+      filei reci = main\jointtripdata_@token_income@_temp_@token_period@.csv, delimiter=',',
+                hh_id             = 1,
+                tour_id           = 2,
+                stop_id           = 3,
+                inbound           = 4,
+                tour_purpose(c)   = 5,
+                orig_purpose(c)   = 6,
+                dest_purpose(c)   = 7,
+                orig_taz          = 8,
+                orig_walk_segment = 9,
+                dest_taz          = 10,
+                dest_walk_segment = 11,
+                parking_taz       = 12,
+                depart_hour       = 13,
+                trip_mode         = 14,
+                num_participants  = 15,
+                tour_mode         = 16,
+                tour_category(c)  = 17,
+                av_available      = 18,
+		sampleRate        = 19
+
+
+      ; create zones x zones one dimensional arrays to store trips, one for each assigned path
+      array da          = @token_zones_by_zones@
+      array datoll      = @token_zones_by_zones@
+
+      array sr2         = @token_zones_by_zones@
+      array sr2toll     = @token_zones_by_zones@
+
+      array sr3         = @token_zones_by_zones@
+      array sr3toll     = @token_zones_by_zones@
+
+      array walk        = @token_zones_by_zones@
+      array bike        = @token_zones_by_zones@
+
+      array wlk_loc_wlk = @token_zones_by_zones@
+      array wlk_lrf_wlk = @token_zones_by_zones@
+      array wlk_exp_wlk = @token_zones_by_zones@
+      array wlk_hvy_wlk = @token_zones_by_zones@
+      array wlk_com_wlk = @token_zones_by_zones@
+
+      array drv_loc_wlk = @token_zones_by_zones@
+      array drv_lrf_wlk = @token_zones_by_zones@
+      array drv_exp_wlk = @token_zones_by_zones@
+      array drv_hvy_wlk = @token_zones_by_zones@
+      array drv_com_wlk = @token_zones_by_zones@
+
+      array wlk_loc_drv = @token_zones_by_zones@
+      array wlk_lrf_drv = @token_zones_by_zones@
+      array wlk_exp_drv = @token_zones_by_zones@
+      array wlk_hvy_drv = @token_zones_by_zones@
+      array wlk_com_drv = @token_zones_by_zones@
+
+      array taxi = @token_zones_by_zones@
+      array single_tnc = @token_zones_by_zones@
+      array shared_tnc = @token_zones_by_zones@
+      array da_av  = @token_zones_by_zones@
+      array s2_av  = @token_zones_by_zones@
+      array s3_av  = @token_zones_by_zones@
+
+      ; create a unique index for each origin destination pair
+      od_position = @token_zones@ * (ri.orig_taz-1) + ri.dest_taz
+
+      ; if statement - only read in the trips relevant to the current time period
+      if (@token_relevant_time_interval@)
+
+         ; create person trip tables
+         ; - drive alone, no value toll
+         if ((ri.trip_mode = 1) & (ri.av_available = 0))
+            da[od_position] = da[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - drive alone, value toll
+         elseif ((ri.trip_mode = 2) & (ri.av_available = 0))
+            datoll[od_position] = datoll[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - shared ride 2, no value toll
+         elseif ((ri.trip_mode = 3) & (ri.av_available = 0))
+            sr2[od_position] = sr2[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - shared ride 2, value toll
+         elseif ((ri.trip_mode = 4) & (ri.av_available = 0))
+            sr2toll[od_position] = sr2toll[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - shared ride 3 or more, no value toll
+         elseif ((ri.trip_mode = 5) & (ri.av_available = 0))
+            sr3[od_position] = sr3[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - shared ride 3 or more, value toll
+         elseif ((ri.trip_mode = 6)  & (ri.av_available = 0))
+            sr3toll[od_position] = sr3toll[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - walk
+         elseif (ri.trip_mode = 7)
+            walk[od_position] = walk[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - bicycle
+         elseif (ri.trip_mode = 8)
+            bike[od_position] = bike[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - walk, local bus, walk
+         elseif (ri.trip_mode = 9)
+            wlk_loc_wlk[od_position] = wlk_loc_wlk[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - walk, light rail/ferry, walk
+         elseif (ri.trip_mode = 10)
+            wlk_lrf_wlk[od_position] = wlk_lrf_wlk[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - walk, express bus, walk
+         elseif (ri.trip_mode = 11)
+            wlk_exp_wlk[od_position] = wlk_exp_wlk[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - walk, heavy rail, walk
+         elseif (ri.trip_mode = 12)
+            wlk_hvy_wlk[od_position] = wlk_hvy_wlk[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - walk, commuter rail, walk
+         elseif (ri.trip_mode = 13)
+            wlk_com_wlk[od_position] = wlk_com_wlk[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - drive, local, walk (outbound)
+         elseif (ri.trip_mode = 14 && ri.inbound = 0)
+            drv_loc_wlk[od_position] = drv_loc_wlk[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - drive, light rail/ferry, walk (outbound)
+         elseif (ri.trip_mode = 15 && ri.inbound = 0)
+            drv_lrf_wlk[od_position] = drv_lrf_wlk[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - drive, express bus, walk (outbound)
+         elseif (ri.trip_mode = 16 && ri.inbound = 0)
+            drv_exp_wlk[od_position] = drv_exp_wlk[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - drive, heavy rail, walk (outbound)
+         elseif (ri.trip_mode = 17 && ri.inbound = 0)
+            drv_hvy_wlk[od_position] = drv_hvy_wlk[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - drive, commuter rail, walk (outbound)
+         elseif (ri.trip_mode = 18 && ri.inbound = 0)
+            drv_com_wlk[od_position] = drv_com_wlk[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - walk, local, drive (inbound)
+         elseif (ri.trip_mode = 14 && ri.inbound = 1)
+            wlk_loc_drv[od_position] = wlk_loc_drv[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - walk, light rail/ferry, drive (inbound)
+         elseif (ri.trip_mode = 15 && ri.inbound = 1)
+            wlk_lrf_drv[od_position] = wlk_lrf_drv[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - walk, express bus, drive (inbound)
+         elseif (ri.trip_mode = 16 && ri.inbound = 1)
+            wlk_exp_drv[od_position] = wlk_exp_drv[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - walk, heavy rail, drive (inbound)
+         elseif (ri.trip_mode = 17 && ri.inbound = 1)
+            wlk_hvy_drv[od_position] = wlk_hvy_drv[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - walk, commuter rail, drive (inbound)
+         elseif (ri.trip_mode = 18 && ri.inbound = 1)
+            wlk_com_drv[od_position] = wlk_com_drv[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - taxi
+         elseif (ri.trip_mode = 19)
+            taxi[od_position] = taxi[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - TNC single
+         elseif (ri.trip_mode = 20)
+            single_tnc[od_position] = single_tnc[od_position] + (ri.num_participants/ri.sampleRate)
+
+        elseif (ri.trip_mode = 21)
+            shared_tnc[od_position] = shared_tnc[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - drive alone, no value toll
+         elseif ((ri.trip_mode = 1) & (ri.av_available = 1))
+            da_av[od_position] = da_av[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - drive alone, value toll
+         elseif ((ri.trip_mode = 2) & (ri.av_available = 1))
+            da_av[od_position] = da_av[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - shared ride 2, no value toll
+         elseif ((ri.trip_mode = 3) & (ri.av_available = 1))
+            s2_av[od_position] = s2_av[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - shared ride 2, value toll
+         elseif ((ri.trip_mode = 4) & (ri.av_available = 1))
+            s2_av[od_position] = s2_av[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - shared ride 3 or more, no value toll
+         elseif ((ri.trip_mode = 5) & (ri.av_available = 1))
+            s3_av[od_position] = s3_av[od_position] + (ri.num_participants/ri.sampleRate)
+
+         ; - shared ride 3 or more, value toll
+         elseif ((ri.trip_mode = 6) & (ri.av_available = 1))
+            s3_av[od_position] = s3_av[od_position] + (ri.num_participants/ri.sampleRate)
+
+         endif ; trip mode if
+
+      endif ; departure hour if
+
+      ; write the output only once
+      if (i = 0)
+
+         ; loop through each origin zone
+         loop orig = 1, @token_zones@
+
+            ; loop through each destination zone
+            loop dest = 1, @token_zones@
+
+               ; compute the unique position in each array
+               position = @token_zones@ * (orig - 1) + dest
+
+               ; write the results to a fixed format file easily read in by TP+
+               print list = orig(5.0), dest(5.0),
+                     da[position](20.4lrs),
+                     datoll[position](20.4lrs),
+                     sr2[position](20.4lrs),
+                     sr2toll[position](20.4lrs),
+                     sr3[position](20.4lrs),
+                     sr3toll[position](20.4lrs),
+                     walk[position](20.4lrs),
+                     bike[position](20.4lrs),
+                     wlk_loc_wlk[position](20.4lrs),
+                     wlk_lrf_wlk[position](20.4lrs),
+                     wlk_exp_wlk[position](20.4lrs),
+                     wlk_hvy_wlk[position](20.4lrs),
+                     wlk_com_wlk[position](20.4lrs),
+                     drv_loc_wlk[position](20.4lrs),
+                     drv_lrf_wlk[position](20.4lrs),
+                     drv_exp_wlk[position](20.4lrs),
+                     drv_hvy_wlk[position](20.4lrs),
+                     drv_com_wlk[position](20.4lrs),
+                     wlk_loc_drv[position](20.4lrs),
+                     wlk_lrf_drv[position](20.4lrs),
+                     wlk_exp_drv[position](20.4lrs),
+                     wlk_hvy_drv[position](20.4lrs),
+                     wlk_com_drv[position](20.4lrs),
+                     taxi[position](20.4lrs),
+                     single_tnc[position](20.4lrs),
+                     shared_tnc[position](20.4lrs),
+                     da_av[position](20.4lrs),
+                     s2_av[position](20.4lrs),
+                     s3_av[position](20.4lrs),
+                    file = main\JointTrips@token_income@@token_period@.dat
+
+         endloop ; dest
+
+      endloop ; orig
+
+      endif ; if i = 0
+
+   endrun
+
+
+   ; step three: convert the fixed format files to tp+ matrices
+   run pgm = matrix
+
+      ; read in the individual trips fixed format file from step one
+      filei mati[1] = main\IndivTrips@token_income@@token_period@.dat, pattern = ijm:v, fields = #1,2,0,3-35
+
+      ; read in the joint trips fixed format file from step two
+      filei mati[2] = main\jointtrips@token_income@@token_period@.dat, pattern=ijm:v, fields=#1,2,0,3-35
+
+      ; read in the transit trips to/from bay area HSR stations
+      filei mati[3] = main\trips_transitHsr@token_period@.tpp
+      ; need HSR trips to and from Bay Area stations to be segmented by income too!!! For now, assume they are all high income.
+
+      ; read in lookup table of occupancy factors for taxi and tncs
+   		FILEI LOOKUPI[1] = taxi_tnc_occ_factors.csv
+
+
+      ; write out a matrix that combines the individual and joint trips for assignment
+      fileo mato[1] = main\trips@token_income@@token_period@_no_zpv.tpp, mo = 1-29, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+                                                                   walk, bike,
+                                                                   wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
+                                                                   drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
+                                                                   wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
+                                                                   da_tnc, s2_tnc, s3_tnc, da_av, s2_av, s3_av
+
+     ; load lookup values for factoring taxi and TNC modes
+    lookup lookupi=1, LIST=y, name=occ_factors,
+      lookup[1]=1, result=2,      ; (occ,taxi)
+      lookup[2]=1, result=3,      ; (occ,single_tnc)
+      lookup[3]=1, result=4       ; (occ,shared_tnc)
+
+      zones = @token_zones@
+
+      ; scale up the trips to account for sampling (sampleshare set in RunModel.bat)
+	  ; sample rate accounts for global sample share, so need not expand based on global sample share
+      ; - drive alone, no value toll
+      mw[1]  = (mi.1.1  + mi.2.1 )
+
+      ; - drive alone, value toll (add taxi trips factored by occupancy percentage)
+      mw[2]  = (mi.1.2  + mi.2.2 + (mi.1.24 + mi.2.24) * occ_factors(1, 1))
+
+      ; - shared ride 2, no value toll
+      mw[3]  = (mi.1.3  + mi.2.3 )
+
+      ; - shared ride 2, value toll, taxi
+      mw[4]  = (mi.1.4  + mi.2.4  + (mi.1.24 + mi.2.24) * occ_factors(1, 2) )
+
+      ; - shared ride 3+, no value toll
+      mw[5]  = (mi.1.5  + mi.2.5 )
+
+      ; shared ride 3+, value toll, taxi
+      mw[6]  = (mi.1.6  + mi.2.6  + (mi.1.24 + mi.2.24) * occ_factors(1, 3) )
+
+      ; walk
+      mw[7]  = (mi.1.7  + mi.2.7 )
+
+      ; bicycle
+      mw[8]  = (mi.1.8  + mi.2.8 )
+
+      ; walk, local bus, walk
+      mw[9]  = (mi.1.9  + mi.2.9 )  + mi.3.wlk_loc_wlk
+
+      ; walk, light rail/ferry, walk
+      mw[10] = (mi.1.10 + mi.2.10) + mi.3.wlk_lrf_wlk
+
+      ; walk, express bus, walk
+      mw[11] = (mi.1.11 + mi.2.11) + mi.3.wlk_exp_wlk
+
+      ; walk, heavy rail, walk
+      mw[12] = (mi.1.12 + mi.2.12) + mi.3.wlk_hvy_wlk
+
+      ; walk, commuter rail, walk
+      mw[13] = (mi.1.13 + mi.2.13) + mi.3.wlk_com_wlk
+
+      ; drive, local bus, walk
+      mw[14] = (mi.1.14 + mi.2.14) + mi.3.drv_loc_wlk
+
+      ; drive, light rail/ferry, walk
+      mw[15] = (mi.1.15 + mi.2.15) + mi.3.drv_lrf_wlk
+
+      ; drive, express bus, walk
+      mw[16] = (mi.1.16 + mi.2.16) + mi.3.drv_exp_wlk
+
+      ; drive, heavy rail, walk
+      mw[17] = (mi.1.17 + mi.2.17) + mi.3.drv_hvy_wlk
+
+      ; drive, commuter rail, walk
+      mw[18] = (mi.1.18 + mi.2.18) + mi.3.drv_com_wlk
+
+      ; walk, local bus, drive
+      mw[19] = (mi.1.19 + mi.2.19) + mi.3.wlk_loc_drv
+
+      ; walk, light rail/ferry, drive
+      mw[20] = (mi.1.20 + mi.2.20) + mi.3.wlk_lrf_drv
+
+      ; walk, express bus, drive
+      mw[21] = (mi.1.21 + mi.2.21) + mi.3.wlk_exp_drv
+
+      ; walk, heavy rail, drive
+      mw[22] = (mi.1.22 + mi.2.22) + mi.3.wlk_hvy_drv
+
+      ; walk, commuter rail, drive
+      mw[23] = (mi.1.23 + mi.2.23) + mi.3.wlk_com_drv
+
+      ; da_tnc          single tnc                                  shared tnc
+      mw[24] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 1) + (mi.1.26 + mi.2.26) * occ_factors(3, 1))
+
+       ; s2_tnc          single tnc                                  shared tnc
+      mw[25] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 2) + (mi.1.26 + mi.2.26) * occ_factors(3, 2))
+
+      ; s3_tnc          single tnc                                  shared tnc
+      mw[26] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 3) + (mi.1.26 + mi.2.26) * occ_factors(3, 3))
+
+      ; da_av
+      mw[27] =  (mi.1.27+mi.2.27)
+
+      ; s2_av
+      mw[28] =  (mi.1.28+mi.2.28)
+
+      ; s3_av
+      mw[29] =  (mi.1.29+mi.2.29)
+
+      ; Assume HSR trips to and from station are all high income
+      ; ie do not add them unless it's income group 4
+      if (@income@ < 4)
+        ; walk, local bus, walk
+        mw[9]  = (mi.1.9  + mi.2.9 )
+
+        ; walk, light rail/ferry, walk
+        mw[10] = (mi.1.10 + mi.2.10)
+
+        ; walk, express bus, walk
+        mw[11] = (mi.1.11 + mi.2.11)
+
+        ; walk, heavy rail, walk
+        mw[12] = (mi.1.12 + mi.2.12)
+
+        ; walk, commuter rail, walk
+        mw[13] = (mi.1.13 + mi.2.13)
+
+        ; drive, local bus, walk
+        mw[14] = (mi.1.14 + mi.2.14)
+
+        ; drive, light rail/ferry, walk
+        mw[15] = (mi.1.15 + mi.2.15)
+
+        ; drive, express bus, walk
+        mw[16] = (mi.1.16 + mi.2.16)
+
+        ; drive, heavy rail, walk
+        mw[17] = (mi.1.17 + mi.2.17)
+
+        ; drive, commuter rail, walk
+        mw[18] = (mi.1.18 + mi.2.18)
+
+        ; walk, local bus, drive
+        mw[19] = (mi.1.19 + mi.2.19)
+
+        ; walk, light rail/ferry, drive
+        mw[20] = (mi.1.20 + mi.2.20)
+
+        ; walk, express bus, drive
+        mw[21] = (mi.1.21 + mi.2.21)
+
+        ; walk, heavy rail, drive
+        mw[22] = (mi.1.22 + mi.2.22)
+
+        ; walk, commuter rail, drive
+        mw[23] = (mi.1.23 + mi.2.23)
+
+      Endif
+
+   endrun
+
+   ; step four: create zero passenger trips
+   run pgm = matrix
+
+      filei mati[1] = main\trips@token_income@@token_period@_no_zpv.tpp
+      fileo mato[1] = main\trips@token_income@@token_period@_zpv.tpp, mo=1-2, name=zpv_tnc, zpv_av
+
+      ; hwyParam.bock contains variables used in the remainder of the script, particularly in the zero passenger vehicle factor (zpv)
+      read file = ctramp\scripts\block\hwyparam.block
+
+      ; transpose the matrix and divide by occupancy to get vehicle trips, then multiply by ZPV factor
+      mw[1] = (mi.1.da_tnc.t + (mi.1.s2_tnc.t/2.0) + (mi.1.s3_tnc.t/3.25))*TNC_ZPV_factor
+      mw[2] = (mi.1.da_av.t  + (mi.1.s2_av.t /2.0) + (mi.1.s3_av.t /3.25))*OwnedAV_ZPV_factor
+   endrun
+
+   ; step five: add the zero passenger trips
+   run pgm = matrix
+
+      filei mati[1] = main\trips@token_income@@token_period@_no_zpv.tpp
+      filei mati[2] = main\trips@token_income@@token_period@_zpv.tpp
+
+      fileo mato[1] = main\trips@token_period@@token_income@.tpp, mo = 1-29, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+                                                                   walk, bike,
+                                                                   wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
+                                                                   drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
+                                                                   wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
+                                                                   da_tnc, s2_tnc, s3_tnc, da_av, s2_av, s3_av
+
+
+      mw[ 1] = mi.1.da
+      mw[ 2] = mi.1.datoll
+      mw[ 3] = mi.1.sr2
+      mw[ 4] = mi.1.sr2toll
+      mw[ 5] = mi.1.sr3
+      mw[ 6] = mi.1.sr3toll
+      mw[ 7] = mi.1.walk
+      mw[ 8] = mi.1.bike
+      mw[ 9] = mi.1.wlk_loc_wlk
+      mw[10] = mi.1.wlk_lrf_wlk
+      mw[11] = mi.1.wlk_exp_wlk
+      mw[12] = mi.1.wlk_hvy_wlk
+      mw[13] = mi.1.wlk_com_wlk
+      mw[14] = mi.1.drv_loc_wlk
+      mw[15] = mi.1.drv_lrf_wlk
+      mw[16] = mi.1.drv_exp_wlk
+      mw[17] = mi.1.drv_hvy_wlk
+      mw[18] = mi.1.drv_com_wlk
+      mw[19] = mi.1.wlk_loc_drv
+      mw[20] = mi.1.wlk_lrf_drv
+      mw[21] = mi.1.wlk_exp_drv
+      mw[22] = mi.1.wlk_hvy_drv
+      mw[23] = mi.1.wlk_com_drv
+      mw[24] = mi.1.da_tnc       + mi.2.zpv_tnc
+      mw[25] = mi.1.s2_tnc
+      mw[26] = mi.1.s3_tnc
+      mw[27] = mi.1.da_av        + mi.2.zpv_av
+      mw[28] = mi.1.s2_av
+      mw[29] = mi.1.s3_av
+
+
+    endrun
+
+
+   EndDistributeMultistep
+
+  endloop ; time period loop
+
+Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end,
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+
+; delete the time-period-specific copies of the individual trip data used in this scrip
+* del main\IndivTripData_@token_income@_temp_EA.csv
+* del main\IndivTripData_@token_income@_temp_AM.csv
+* del main\IndivTripData_@token_income@_temp_MD.csv
+* del main\IndivTripData_@token_income@_temp_PM.csv
+* del main\IndivTripData_@token_income@_temp_EV.csv
+
+; delete time-period-specific copies of the joint trip data used in this script
+* del main\jointtripdata_@token_income@_temp_EA.csv
+* del main\jointtripdata_@token_income@_temp_AM.csv
+* del main\jointtripdata_@token_income@_temp_MD.csv
+* del main\jointtripdata_@token_income@_temp_PM.csv
+* del main\jointtripdata_@token_income@_temp_EV.csv
+
+endloop; income loop
