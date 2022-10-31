@@ -49,7 +49,7 @@ python X:\travel-model-one-master\utilities\taz-data-builder\buildTazdata.py taz
 :: ---
 set R_HOME=C:\Program Files\R\R-3.4.4\bin
 IF %USERNAME%==lzorn (
-  set R_HOME=C:\Program Files\R\R-4.1.1\bin
+  set R_HOME=C:\Program Files\R\R-4.2.0\bin
 )
 IF %USERNAME%==ftsang (
   set R_HOME=C:\Program Files\R\R-4.1.2\bin
