@@ -8,6 +8,7 @@ if %computername%==MODEL2-A      (  set COMMPATH=E:\Model2A-Share\COMMPATH)
 if %computername%==MODEL2-B      (  set COMMPATH=E:\Model2B-Share\COMMPATH)
 if %computername%==MODEL2-C      (  set COMMPATH=E:\Model2C-Share\COMMPATH)
 if %computername%==MODEL2-D      (  set COMMPATH=E:\Model2D-Share\COMMPATH)
+if %computername%==MODEL3-A      (  set COMMPATH=E:\Model3A-Share\COMMPATH)
 
 :: The location of the 64-bit java development kit
 set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
@@ -20,9 +21,13 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 
 :: The location of R and R libraries
 set R_HOME=C:\Program Files\R\R-3.5.2
-set R_LIB=C:/Users/mtcpb/Documents/R/win-library/3.5
+set R_LIB=C:\Users\mtcpb\Documents\R\win-library\3.5
 if "%COMPUTER_PREFIX%" == "WIN-" (
-  set R_LIB=C:/Users/Administrator/Documents/R/win-library/3.5
+  set R_LIB=C:\Users\Administrator\Documents\R\win-library\3.5
+)
+if "%computername%" == "MODEL3-A" (
+  set R_HOME=C:\Program Files\R\R-4.2.1
+  set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
 )
 
 :: The location of the RUNTPP executable from Citilabs
@@ -30,6 +35,9 @@ set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\Voy
 
 :: The location of python
 set PYTHON_PATH=C:\Python27
+if "%computername%" == "MODEL3-A" (
+  set PYTHON_PATH=C:\Users\mtcpb\.conda\envs\tm15-py27
+)
 
 :: The location of the MTC.JAR file
 set RUNTIME=CTRAMP/runtime

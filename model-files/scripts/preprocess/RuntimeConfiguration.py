@@ -44,7 +44,7 @@ If no iteration is specified, then these include:
                               CTRAMP\runtime\mtcTourBased.properties
  * Distribution
    + Based on hostname.
-     * 'MODEL2-A', 'MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02': single machine setup with
+     * 'MODEL2-A', 'MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02','Model3-a': single machine setup with
         48 Cube Voyager processes available
         48 threads for accessibilities
         24 threads for core
@@ -527,7 +527,7 @@ def config_distribution(replacements):
         shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
-    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02'] or hostname.startswith("WIN-"):
+    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02','Model3-a'] or hostname.startswith("WIN-"):
         # accessibilities: 48 logical processors
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
@@ -547,48 +547,48 @@ def config_distribution(replacements):
     else:
         raise Exception("RuntimeConfiguration.py does not recognize hostname [%s] for distribution configuration" % hostname)
 
-def config_distribution(replacements):
-    """
-    See USAGE for details.
+# def config_distribution(replacements):
+#     """
+#     See USAGE for details.
 
-    Replacements = { filepath -> regex_dict }
-    """
-    hostname = socket.gethostname()
-    if hostname == 'mainmodel':
-        # accessibilities
-        filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
-        replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>14"
+#     Replacements = { filepath -> regex_dict }
+#     """
+#     hostname = socket.gethostname()
+#     if hostname == 'mainmodel':
+#         # accessibilities
+#         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
+#         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>14"
 
-        # CORE
-        filenames = []
-        for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
-        for filename in filenames:
-            filepath = os.path.join("CTRAMP","runtime","config",filename)
-            replacements[filepath]["(\nprocessing.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>12"
+#         # CORE
+#         filenames = []
+#         for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
+#         for filename in filenames:
+#             filepath = os.path.join("CTRAMP","runtime","config",filename)
+#             replacements[filepath]["(\nprocessing.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>12"
 
-        # hwyassign
-        print "Copying HwyIntraStep_64.block to HwyIntraStep.block"
-        shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
-                     os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
+#         # hwyassign
+#         print "Copying HwyIntraStep_64.block to HwyIntraStep.block"
+#         shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
+#                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
-    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02'] or hostname.startswith("WIN-"):
-        # accessibilities: 48 logical processors
-        filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
-        replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
+#     elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02','Model3-a'] or hostname.startswith("WIN-"):
+#         # accessibilities: 48 logical processors
+#         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
+#         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
 
-        # CORE: use half for JPPF nodes - 48 didn't seem to take
-        filenames = []
-        for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
-        for filename in filenames:
-            filepath = os.path.join("CTRAMP","runtime","config",filename)
-            replacements[filepath]["(\nprocessing.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>24"
+#         # CORE: use half for JPPF nodes - 48 didn't seem to take
+#         filenames = []
+#         for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
+#         for filename in filenames:
+#             filepath = os.path.join("CTRAMP","runtime","config",filename)
+#             replacements[filepath]["(\nprocessing.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>24"
 
-        # hwyassign
-        print "Copying HwyIntraStep_48.block to HwyIntraStep.block"
-        shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_48.block"),
-                     os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
+#         # hwyassign
+#         print "Copying HwyIntraStep_48.block to HwyIntraStep.block"
+#         shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_48.block"),
+#                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
-    else:
+#     else:
         raise Exception("RuntimeConfiguration.py does not recognize hostname [%s] for distribution configuration" % hostname)
 
 def config_shadowprice(iter, replacements):
