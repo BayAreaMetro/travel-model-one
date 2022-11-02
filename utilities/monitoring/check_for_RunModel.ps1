@@ -14,6 +14,7 @@ if ($my_hostname -eq 'MODEL2-A') { $my_drive = '\\model2-a\Model2A-Share'}
 if ($my_hostname -eq 'MODEL2-B') { $my_drive = '\\model2-b\Model2B-Share'}
 if ($my_hostname -eq 'MODEL2-C') { $my_drive = '\\model2-c\Model2C-Share'}
 if ($my_hostname -eq 'MODEL2-D') { $my_drive = '\\model2-d\Model2D-Share'}
+if ($my_hostname -eq 'MODEL3-a') { $my_drive = '\\model3-a\Model3A-Share'}
 
 # print the date to make sure this is triggering at all
 date > $my_drive\UTIL\RunModelStatus.txt

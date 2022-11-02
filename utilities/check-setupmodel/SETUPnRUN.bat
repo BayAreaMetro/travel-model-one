@@ -11,6 +11,9 @@ call setupmodel > setupmodel.log 2>&1
 :: this script reads setupmodel.log
 :: it looks for two kinds of errors: 'The system cannot find the file specified' and 'not recognized as an internal or external command'
 set path=%path%;c:/python27
+if %computername%==MODEL3-A (
+    set path=%path%;C:/Users/mtcpb/.conda/envs/tm15-py27
+)
 python Check_SetupModelLog.py
 if ERRORLEVEL 1 goto done
 
