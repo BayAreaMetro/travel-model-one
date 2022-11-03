@@ -32,10 +32,36 @@
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 
+; Added Nov 2022 for NextGen Freeways Study: 
+; peel off a small fixed ortion of these trips and move to trucks.  These are in P/A format.
 run pgm = matrix
 
    ; read in the static internal external trip table
    filei mati[1] = nonres\ixDailyx4.tpp
+
+   fileo mato[1] = nonres\ixDailyx4_truck.tpp, mo=1-4, name=vsm_daily, sml_daily, med_daily, lrg_daily
+   fileo mato[2] = nonres\ixDailyx4_auto.tpp,  mo=5-8, name=ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
+
+   TRK_SML = 0.050 ; 5.0%
+   TRK_LRG = 0.010 ; 1.0%
+
+   ; carve out truck traffic, splitting TRK_SML evenly between VSM, SML, MED
+   mw[1] = (1.0/3.0) * TRK_SML * mi.1.ix_daily_total
+   mw[2] = (1.0/3.0) * TRK_SML * mi.1.ix_daily_total
+   mw[3] = (1.0/3.0) * TRK_SML * mi.1.ix_daily_total
+   mw[4] =             TRK_LRG * mi.1.ix_daily_total
+
+   ; leave remaining
+   mw[5] = (1.0 - TRK_SML - TRK_LRG) * ix_daily_da
+   mw[6] = (1.0 - TRK_SML - TRK_LRG) * ix_daily_sr2
+   mw[7] = (1.0 - TRK_SML - TRK_LRG) * ix_daily_sr3
+   mw[8] = (1.0 - TRK_SML - TRK_LRG) * ix_daily_total
+endrun
+
+run pgm = matrix
+
+   ; read in the static internal external trip table
+   filei mati[1] = nonres\ixDailyx4_auto.tpp
    
    ; write out a trip table for each time period
    fileo mato[1] = nonres\tripsIxEAx.tpp, mo = 1-3,   name = DA, S2, S3
