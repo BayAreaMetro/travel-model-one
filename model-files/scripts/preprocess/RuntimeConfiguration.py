@@ -44,7 +44,7 @@ If no iteration is specified, then these include:
                               CTRAMP\runtime\mtcTourBased.properties
  * Distribution
    + Based on hostname.
-     * 'MODEL2-A', 'MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02','Model3-a': single machine setup with
+     * 'MODEL2-A', 'MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02','Model3-a','Model3-b': single machine setup with
         48 Cube Voyager processes available
         48 threads for accessibilities
         24 threads for core
@@ -527,7 +527,7 @@ def config_distribution(replacements):
         shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
-    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02','Model3-a'] or hostname.startswith("WIN-"):
+    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02','Model3-a','Model3-b'] or hostname.startswith("WIN-"):
         # accessibilities: 48 logical processors
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
