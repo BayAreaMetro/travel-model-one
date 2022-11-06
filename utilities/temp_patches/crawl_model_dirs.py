@@ -18,6 +18,7 @@ MODEL_MACHINES = collections.OrderedDict([
     ('model2-c','\\\\model2-c\\Model2C-Share\\Projects'),
     ('model2-d','\\\\model2-d\\Model2D-Share\\Projects'),
     ('model3-a','\\\\model3-a\\Model3A-Share\\Projects'),
+    ('model3-b','\\\\model3-b\\Model3B-Share\\Projects'),
     #('model2-a',r'A:\Projects'),
     #('model2-b',r'B:\Projects'),
     #('model2-c',r'F:\Projects'),
