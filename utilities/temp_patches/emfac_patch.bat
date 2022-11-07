@@ -1,3 +1,8 @@
+
+REM Emfac_prep.py was broken due to the AQ comformity changes. 
+REM The scipt brings the emfac_prep.py that was used in the plan to prepare the Emfac input files, so we can run the Emfac.
+REM see the detailed task descriptions here https://app.asana.com/0/1201809392759895/1203267291965871
+
 REM change to model run directory
 cd /d B:\Projects\2035_TM152_NGF_NP02_BPALTsegmented_03_SensExtent01
 
