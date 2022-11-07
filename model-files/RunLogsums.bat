@@ -24,6 +24,7 @@ if %computername%==MODEL2-B set HOST_IP_ADDRESS=192.168.1.207
 if %computername%==MODEL2-C set HOST_IP_ADDRESS=192.168.1.208
 if %computername%==MODEL2-D set HOST_IP_ADDRESS=192.168.1.209
 if %computername%==MODEL3-A set HOST_IP_ADDRESS=10.164.0.200
+if %computername%==MODEL3-B set HOST_IP_ADDRESS=10.164.0.201
 if %computername%==PORMDLPPW01 set HOST_IP_ADDRESS=172.24.0.101
 if %computername%==PORMDLPPW02 set HOST_IP_ADDRESS=172.24.0.102
 if %computername%==SATMODEL set HOST_IP_ADDRESS=192.168.1.201
