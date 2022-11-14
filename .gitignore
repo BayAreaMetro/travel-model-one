@@ -12,5 +12,4 @@ core/projects/**/build
 **/TPPL.VAR
 **/*-checkpoint.ipynb
 utilities/bespoke-requests/fare-study/TPPL*.PRN
-model-files/model/ModeChoice.xls
-model-files/model/TripModeChoice.xls
+
