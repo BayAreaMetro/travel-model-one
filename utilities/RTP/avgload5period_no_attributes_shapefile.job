@@ -1,8 +1,8 @@
 ; useful for joining to avgload5period_wide2long.py output
 RUN PGM=NETWORK
 
-  LINKO   = "avgload5period_no_attr.shp"  FORMAT=SHP, INCLUDE=A,B
   NETI[1] = "../avgload5period.net"
+  LINKO   = "avgload5period_no_attr.shp"  FORMAT=SHP, INCLUDE=A,B,ROUTENUM,ROUTEDIR
 
   REPORT MERGE = TRUE
   MERGE RECORD = TRUE
