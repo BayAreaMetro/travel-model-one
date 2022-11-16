@@ -126,6 +126,10 @@ if exist metrics\ITHIM (
   copy metrics\ITHIM\*.* extractor\metrics\ITHIM
 )
 
+:: make generating shapefile outputs easier
+mkdir extractor\shapefile
+copy X:\travel-model-one-master\utilities\cube-to-shapefile\run_CubeToShapefile.bat extractor\shapefile
+
 :success
 echo ExtractKeyFiles into extractor for PBAU Complete
 echo ENDED EXTRACTOR RUN  %DATE% %TIME% >> logs\feedback.rpt
