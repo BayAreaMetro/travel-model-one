@@ -19,6 +19,10 @@
 
 :: Set the path
 call CTRAMP\runtime\SetPath.bat
+:: Activate the correct conda environment
+call activate %ENV_NAME%
+:: Which conda am I running?
+C:\Windows\System32\where python
 
 :: Start the cube cluster
 Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
