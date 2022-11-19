@@ -98,7 +98,7 @@ unloaded_network_df      <- read.dbf(UNLOADED_NETWORK_DBF, as.is=TRUE) %>% selec
 # https://github.com/BayAreaMetro/travel-model-one/blob/master/model-files/scripts/block/hwyParam.block#L13
 FIRSTVALUE <- 31
 
-el_links_df    <-  filter(unloaded_network_df , TOLLCLASS>=FIRSTVALUE & TOLLCLASS<990000) # assume all all-lane-tolling links will be coded with tollclass > 990000
+el_links_df    <-  filter(unloaded_network_df , TOLLCLASS>=FIRSTVALUE & TOLLCLASS<700000) # assume all all-lane-tolling links will be coded with tollclass > 700000
 gp_links_df     <- filter(unloaded_network_df , USE==1 & (FT<=3 | FT==5 | FT==8 | FT==10))
 notruck_links_df <- filter(unloaded_network_df , USE==4 & TOLLCLASS==0)
 gp_notruck_links_df <-  bind_rows(gp_links_df, notruck_links_df) # links that are in parallel to EL links in a model network
@@ -180,10 +180,10 @@ el_gp_summary_df <- el_gp_loaded_nan_df %>%
 #---------------------------------------------------------------#
 # all lane tolling doesn't have EL vs GP, so just set the "EL speed" to be the same as "GP speed"
 #---------------------------------------------------------------#
-# assume all all lane tolling links will be coded with the prefix 990
+# assume all all lane tolling links will be coded with tollclass > 700000
 # previously:
 # el_links_df    <-  filter(unloaded_network_df , TOLLCLASS>=FIRSTVALUE )
-# el_links_df    <-  filter(unloaded_network_df , TOLLCLASS>=FIRSTVALUE & TOLLCLASS<990000) # assume all all-lane-tolling links will be coded with tollclass > 990000
+# el_links_df    <-  filter(unloaded_network_df , TOLLCLASS>=FIRSTVALUE & TOLLCLASS<700000) # assume all all-lane-tolling links will be coded with tollclass > 700000
 # loaded_network_df          <- loaded_network_df  %>% select(a, b, ffs, cspdEA, cspdAM, cspdMD, cspdPM, cspdEV,  volEA_tot,  volAM_tot,  volMD_tot,  volPM_tot,  volEV_tot)
 
 # merge tollclasses from unloaded network to the loaded network
@@ -191,7 +191,7 @@ el_gp_summary_df <- el_gp_loaded_nan_df %>%
 loaded_network_df <- loaded_network_df %>% left_join(unloaded_network_df,
                                       by=c("a"="A", "b"="B"))
 
-alllanetolling_links_df    <-  filter(loaded_network_df , TOLLCLASS>990000)
+alllanetolling_links_df    <-  filter(loaded_network_df , TOLLCLASS>700000)
 
 alllanetolling_summary_df <- alllanetolling_links_df %>%
                              group_by(TOLLCLASS, USE) %>%
