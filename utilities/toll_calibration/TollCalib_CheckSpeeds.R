@@ -60,7 +60,7 @@ if (dir.exists(file.path(PROJECT_DIR, "CTRAMP"))) {
 # this file indicates which facilities have mandatory s2 tolls
 TOLL_DESIGNATIONS_XLSX <- Sys.getenv("TOLL_DESIGNATIONS_XLSX")
 TOLL_DESIGNATIONS_XLSX <- gsub("\\\\","/",TOLL_DESIGNATIONS_XLSX) # switch slashes around
-
+TOLL_DESIGNATIONS_DF <- read_excel(TOLL_DESIGNATIONS_XLSX, sheet = "Inputs_for_tollcalib")
 # this file specify which facilities is NOT dynamically tolled (thus don't need toll calibration)
 if (dir.exists(file.path(PROJECT_DIR, "CTRAMP"))) {
     # full runs
