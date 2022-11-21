@@ -18,11 +18,12 @@ library(readxl)
 ITER <- Sys.getenv("ITER")        # The iteration of model outputs to be read
 ITER <- as.numeric(ITER)
 
-TARGET_SPEED <- Sys.getenv("TARGET_SPEED")
-TARGET_SPEED <- as.numeric(TARGET_SPEED)
-
-MAX_TOLL <- Sys.getenv("MAX_TOLL")
-MAX_TOLL <- as.numeric(MAX_TOLL)
+# TARGET_SPEED and MAX_TOLL would be defined by TOLL_DESIGNATIONS_XLSX
+# TARGET_SPEED <- Sys.getenv("TARGET_SPEED")
+# TARGET_SPEED <- as.numeric(TARGET_SPEED)
+# 
+# MAX_TOLL <- Sys.getenv("MAX_TOLL")
+# MAX_TOLL <- as.numeric(MAX_TOLL)
 
 #############################################################
 # specify the loaded network, unloaded network and other inputs
