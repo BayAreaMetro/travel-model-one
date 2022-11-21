@@ -208,7 +208,8 @@ alllanetolling_summary_df <- alllanetolling_links_df %>%
 
 # add all lane tolling summary to the el gp summary
 el_gp_summary_df <-  bind_rows(el_gp_summary_df, alllanetolling_summary_df)
-
+# Get TARGET_SPEED for each facility from TOLL_DESIGNATIONS_XLSX
+el_gp_summary_df <- left_join(el_gp_summary_df, TOLL_DESIGNATIONS_DF, by=c("TOLLCLASS"="tollclass"))
 #---------------------------------------------------------------#
 
 # Determine scenarios:
@@ -277,9 +278,9 @@ el_gp_summary_df <- el_gp_summary_df %>%
                                                                      Case_PM == "Case5 - set to min"           ~ 0.03))
 
 # set maximum new toll for each tolling period
-el_gp_summary_df$tollam_da_new[el_gp_summary_df$tollam_da_new > MAX_TOLL] <- MAX_TOLL
-el_gp_summary_df$tollmd_da_new[el_gp_summary_df$tollmd_da_new > MAX_TOLL] <- MAX_TOLL
-el_gp_summary_df$tollpm_da_new[el_gp_summary_df$tollpm_da_new > MAX_TOLL] <- MAX_TOLL
+el_gp_summary_df$tollam_da_new[el_gp_summary_df$tollam_da_new > el_gp_summary_df$MAX_TOLL] <- el_gp_summary_df$MAX_TOLL
+el_gp_summary_df$tollmd_da_new[el_gp_summary_df$tollmd_da_new > el_gp_summary_df$MAX_TOLL] <- el_gp_summary_df$MAX_TOLL
+el_gp_summary_df$tollpm_da_new[el_gp_summary_df$tollpm_da_new > el_gp_summary_df$MAX_TOLL] <- el_gp_summary_df$MAX_TOLL
 
 # drop the toll facilities that are not dynamically tolled
 non_dyna_df  <- read.csv(file=NON_DYNA_TOLL_CSV , header=TRUE, sep=",")
