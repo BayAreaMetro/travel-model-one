@@ -253,8 +253,8 @@ el_gp_summary_df <- el_gp_summary_df %>%
 toll_rates_df          <- read.csv(file=TOLLS_CSV, header=TRUE, sep=",")
 toll_rates_df          <- toll_rates_df  %>% select(tollclass, facility_name, use, tollam_da, tollmd_da, tollpm_da)
 
-el_gp_summary_df <- el_gp_summary_df %>% left_join(toll_rates_df,
-                                         by=c("TOLLCLASS"="tollclass", "USE"="use"))
+el_gp_summary_df <- el_gp_summary_df %>% left_join(toll_rates_df %>% select(-facility_name),
+                                                   by=c("TOLLCLASS"="tollclass"))
 
 # determine new toll rates
 el_gp_summary_df <- el_gp_summary_df %>%
@@ -339,11 +339,11 @@ tolls_new_df <- tolls_new_df  %>%
 
 # add s2 tolls for selected facilities
 
-TOLL_DESIGNATIONS_DF <- read_excel(TOLL_DESIGNATIONS_XLSX, sheet = "Inputs_for_tollcalib")
-TOLL_DESIGNATIONS_DF <- TOLL_DESIGNATIONS_DF %>%
-                                             select(tollclass,s2toll_mandatory)
+# TOLL_DESIGNATIONS_DF <- read_excel(TOLL_DESIGNATIONS_XLSX, sheet = "Inputs_for_tollcalib")
+# TOLL_DESIGNATIONS_DF <- TOLL_DESIGNATIONS_DF %>%
+#                                              select(tollclass,s2toll_mandatory)
 
-tolls_new_df <- left_join(tolls_new_df, TOLL_DESIGNATIONS_DF, by=c("tollclass"="tollclass"))
+tolls_new_df <- left_join(tolls_new_df, TOLL_DESIGNATIONS_DF %>% select(-facility_name), by=c("tollclass"="tollclass"))
 
 tolls_new_df <- tolls_new_df  %>%
                              mutate(tollam_s2 = case_when(s2toll_mandatory=="Yes" ~ tollam_da_new/2,
