@@ -38,16 +38,20 @@ if "%computername%" == "MODEL3-B" (
 :: The location of the RUNTPP executable from Citilabs
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI
 
+:: The location of the MTC.JAR file
+set RUNTIME=CTRAMP/runtime
+
+::  Set the Java classpath (locations where Java needs to find configuration and JAR files)
+set CLASSPATH=%RUNTIME%/config;%RUNTIME%;%RUNTIME%/config/jppf-2.4/jppf-2.4-admin-ui/lib/*;%RUNTIME%/mtc.jar
+
 :: The location of Anaconda; this run will use the conda environment tm15-python310
 set CONDA_PATH=C:\ProgramData\Anaconda3;C:\ProgramData\Anaconda3\Library\mingw-w64\bin;C:\ProgramData\Anaconda3\Library\usr\bin;C:\ProgramData\Anaconda3\Library\bin;C:\ProgramData\Anaconda3\Scripts;C:\ProgramData\Anaconda3\bin;C:\ProgramData\Anaconda3\condabin
 set ENV_NAME=tm15-python310
 
-:: The location of the MTC.JAR file
-set RUNTIME=CTRAMP/runtime
-
 :: Add these variables to the PATH environment variable, moving the current path to the back
 set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%CONDA_PATH%
 
-::  Set the Java classpath (locations where Java needs to find configuration and JAR files)
-set CLASSPATH=%RUNTIME%/config;%RUNTIME%;%RUNTIME%/config/jppf-2.4/jppf-2.4-admin-ui/lib/*;%RUNTIME%/mtc.jar
+:: Activate the correct conda environment -- this will update the PATH
+call activate %ENV_NAME%
+
 
