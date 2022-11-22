@@ -33,5 +33,9 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 ) else (
     call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\toll_calibration\TollCalib_CheckSpeeds.R"
 )
+IF %ERRORLEVEL% NEQ 0 goto done
 
+copy %PROJECT_DIR%\tollcalib_iter\el_gp_summary_ALL.csv tollcalib_iter\el_gp_summary_ALL.csv
+
+:done
 copy %PROJECT_DIR%\tollcalib_iter\el_gp_summary_ALL.csv tollcalib_iter\el_gp_summary_ALL.csv
