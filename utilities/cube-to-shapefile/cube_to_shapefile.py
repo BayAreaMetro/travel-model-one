@@ -32,16 +32,50 @@ If --transit_crowding is specified, then the complete transit crowding file is r
 
    1) network_trn_lines.shp - this has all the information unique to the line, such as FREQ per time period,
       ONE_WAY, LONG_NAME, etc.
-      If --loadvol_dir is specified, then VEHTYPE, VEHCAP, and PDCAP will be given for each time period
-      representing standing capacity/load.
-      
-      If --transit_crowding is specified, then seated capacity (SEATCAP), period seat cap (PDSECAP) will be reported.
+      * "NAME" represents unique lines, variations of the same route (e.g. peak-service and off-peak service) are represented
+        by separate lines; "NAME_SET" represents "route", variations of the same route have the same "NAME_SET",
+        two lines with opposite directions (non-circular route, ONE_WAY==0) have the same "NAME_SET".
+      * If --loadvol_dir is specified, then VEHTYPE, VEHCAP, and PDCAP will be given for each time period
+        representing standing capacity/load.      
+      * If --transit_crowding is specified, then seated capacity (SEATCAP), period seat cap (PDSECAP) will be reported.
+        Fields when both are specified:
+        ['Id', 'NAME', 'NAME_SET', 'LONG_NAME',
+        'FREQ_EA', 'FREQ_AM', 'FREQ_MD', 'FREQ_PM', 'FREQ_EV',
+        'ONEWAY', 'MODE', 'MODE_NAME', 'MODE_TYPE', 'OPERATOR_T',
+        'FIRST_N', 'FIRST_NAME', 'LAST_N', 'LAST_NAME', 'N_OR_S', 'E_OR_W',
+        'VEHTYPE_EA', 'VEHTYPE_AM', 'VEHTYPE_MD', 'VEHTYPE_PM', 'VEHTYPE_EV',
+        'VEHCAP_EA', 'VEHCAP_AM', 'VEHCAP_MD', 'VEHCAP_PM', 'VEHCAP_EV',
+        'PDCAP_EA', 'PDCAP_AM', 'PDCAP_MD', 'PDCAP_PM', 'PDCAP_EV',
+        'SEATCAP_EA', 'SEATCAP_AM', 'SEATCAP_MD', 'SEATCAP_PM', 'SEATCAP_EV',
+        'PDSECAP_EA', 'PDSECAP_AM', 'PDSECAP_MD', 'PDSECAP_PM', 'PDSECAP_EV', 'geometry']
 
    2) network_trn_links.shp - this has per line, link information, including A, B, SEQ.
-      If --loadvol_dir is specified, then AB_VOL and LOAD will be given per time period as well.
-      If --transit_crowding is specified, then LOADSE (load seated) will be reported per time period.
+      * If --loadvol_dir is specified, then AB_VOL and LOAD will be given per time period as well.
+      * If --transit_crowding is specified, then LOADSE (load seated) will be reported per time period.
+        Fields when both are specified: 
+        ['Id', 'NAME', 'A', 'B', 'A_STATION', 'B_STATION', 'SEQ', 'NAMESEQAB', 'MODE', 'MODE_NAME', 'MODE_TYPE',
+        'AB_VOL_EA', 'AB_VOL_AM', 'AB_VOL_MD', 'AB_VOL_PM', 'AB_VOL_EV',
+        'LOAD_EA', 'LOAD_AM', 'LOAD_MD', 'LOAD_PM', 'LOAD_EV',
+        'LOADSE_EA', 'LOADSE_AM', 'LOADSE_MD', 'LOADSE_PM', 'LOADSE_EV',
+        'DIST_EA', 'DIST_AM', 'DIST_MD', 'DIST_PM', 'DIST_EV',
+        'TIME_EA', 'TIME_AM', 'TIME_MD', 'TIME_PM', 'TIME_EV', 'geometry']
+      
+   3) network_trn_route_links.shp - this maps each link (A, B) to all the routes ("NAME_SET") that contains the link.
+      * "LINE_COUNT" indicates how many lines contain this link, in other words, these lines have geographically overlapping
+        transit services. 
+      * Note on joining this table with other tables: this table only has "NAME_SET" field, no "NAME" field. A link being used
+        by a route ("NAME_SET") doesn't necessarily mean it is used by all lines ("NAME") of that route.
+      * Fields when both "--loadvol_dir" and "--transit_crowding" are specified:
+        ['Id', 'A', 'B', 'A_STATION', 'B_STATION', 'NAME_SET', 'MODE', 'MODE_NAME', 'MODE_TYPE',
+        'OPERATOR_T', 'LINE_COUNT', 'ROUTE_A_B',
+        'TRIPS_EA', 'TRIPS_AM', 'TRIPS_MD', 'TRIPS_PM', 'TRIPS_EV',
+        'PDCAP_EA', 'PDCAP_AM', 'PDCAP_MD', 'PDCAP_PM', 'PDCAP_EV',
+        'PDSECAP_EA', 'PDSECAP_AM', 'PDSECAP_MD', 'PDSECAP_PM', 'PDSECAP_EV',
+        'ABVOL_EA', 'ABVOL_AM', 'ABVOL_MD', 'ABVOL_PM', 'ABVOL_EV',
+        'LOAD_EA', 'LOAD_AM', 'LOAD_MD', 'LOAD_PM', 'LOAD_EV',
+        'LOADSE_EA', 'LOADSE_AM', 'LOADSE_MD', 'LOADSE_PM', 'LOADSE_EV', 'geometry']
 
-   3) network_trn_nodes.shp - this has per stop information, including LINE_NAME, STATION, N, SEQ, IS_STOP.
+   4) network_trn_stops.shp - this has per stop information, including LINE_NAME, STATION, N, SEQ, IS_STOP.
       If --loadvol_dr is specified, then boardings (BRD) and exits (XIT) as given per time period.
 
 """
