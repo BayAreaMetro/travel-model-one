@@ -1,7 +1,7 @@
 # ntd-wide-to-long.R
 #
 # Transforms NTD data from wide to long, and filters to Bay Area.
-#
+# NTD Glossary: https://www.transit.dot.gov/ntd/national-transit-database-ntd-glossary
 library(tidyr)
 library(dplyr)
 library(stringr)
@@ -12,7 +12,7 @@ library(lubridate)
 BOX_DIR          <- "E:\\Box"
 WORKING_DIR      <- file.path(BOX_DIR, "Modeling and Surveys", "Projects", "Transit Recovery Scenario Modeling")
 INPUT_WORKBOOK   <- file.path(WORKING_DIR, "NTD Ridership and Service Data.xlsx")
-INPUT_WORKSHEETS <- c("VRM","VRH") # vehicle route miles, vehicle route hours
+INPUT_WORKSHEETS <- c("VRM","VRH","UPT") # vehicle route miles, vehicle route hours, unlinked passenger trips
 INPUT_AGENCY_CSV <- file.path(WORKING_DIR, "AgencyToCommonAgencyName.csv")
 
 OUTPUT_FILE     <- file.path(WORKING_DIR, "NTD_long.rdata")
@@ -55,6 +55,9 @@ for (worksheet in INPUT_WORKSHEETS) {
   }
   if (worksheet=="VRH") {
     NTD_long_df <- rename(NTD_long_df, Vehicle.Revenue.Hours=VRH)
+  }
+  if (worksheet=="UPT") {
+    NTD_long_df <- rename(NTD_long_df, Unlinked.Passenger.Trips=UPT)
   }
 
   # Write it to rData
