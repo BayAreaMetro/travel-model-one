@@ -20,3 +20,9 @@ pip install xlwt xlutils
 
 # for csvToDbf.py
 pip install dbfpy3
+
+# for transitcrowding.py
+pip install simpledbf
+
+# for RunResults.py
+pip install xlwings xlsxlwriter openpyxl
