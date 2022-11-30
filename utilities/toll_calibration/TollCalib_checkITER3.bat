@@ -38,4 +38,4 @@ IF %ERRORLEVEL% NEQ 0 goto done
 copy %PROJECT_DIR%\tollcalib_iter\el_gp_summary_ALL.csv tollcalib_iter\el_gp_summary_ALL.csv
 
 :done
-copy %PROJECT_DIR%\tollcalib_iter\el_gp_summary_ALL.csv tollcalib_iter\el_gp_summary_ALL.csv
+echo TollCalib_checkITER3 done with errorlevel %ERRORLEVEL%
