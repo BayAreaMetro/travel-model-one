@@ -23,8 +23,15 @@ for (worksheet in INPUT_WORKSHEETS) {
   NTD_df <- read_excel(path=INPUT_WORKBOOK, sheet=worksheet)
 
   # join to our agency mapping and remove agencies not in that list
-  NTD_df <- left_join(NTD_df, agency_df) %>% 
-    filter(!is.na(Common.Agency.Name))
+  NTD_df <- left_join(NTD_df, agency_df)
+
+  # report on agencies with missing Common.Agency.Name
+  missing_common_agency_name <- filter(NTD_df, is.na(Common.Agency.Name))
+  print("Missing Common.Agency.Name:")
+  missing_common_agency_name <- table(missing_common_agency_name$Agency)
+  write.csv(missing_common_agency_name, "missing_common_agency_name.csv", row.names=FALSE)
+
+  NTD_df <- filter(NTD_df, !is.na(Common.Agency.Name))
 
   NTD_long_df <- pivot_longer(
     data=NTD_df,
