@@ -83,12 +83,12 @@ If --transit_crowding is specified, then the complete transit crowding file is r
 import argparse, collections, copy, csv, logging, os, re, subprocess, sys, traceback
 import numpy, pandas
 
-RUNTPP_PATH     = "C:\\Program Files (x86)\\Citilabs\\CubeVoyager"
-LOG_FILE        = "cube_to_shapefile.log"
+RUNTPP_PATH = "C:\\Program Files (x86)\\Citilabs\\CubeVoyager"
+LOG_FILE = "cube_to_shapefile.log"
 
 # shapefiles
-NODE_SHPFILE    = "network_nodes.shp"
-LINK_SHPFILE    = "network_links.shp"
+NODE_SHPFILE = "network_nodes.shp"
+LINK_SHPFILE = "network_links.shp"
 
 TRN_LINES_SHPFILE = "network_trn_lines{}.shp"
 TRN_LINKS_SHPFILE = "network_trn_links{}.shp"
@@ -97,97 +97,94 @@ TRN_STOPS_SHPFILE = "network_trn_stops{}.shp"
 # aggregated by name set
 TRN_ROUTE_LINKS_SHPFILE = "network_trn_route_links.shp"
 
-TIMEPERIOD_DURATIONS = collections.OrderedDict([
-    ("EA",3.0),
-    ("AM",4.0),
-    ("MD",5.0),
-    ("PM",4.0),
-    ("EV",8.0)
-])
+TIMEPERIOD_DURATIONS = collections.OrderedDict(
+    [("EA", 3.0), ("AM", 4.0), ("MD", 5.0), ("PM", 4.0), ("EV", 8.0)]
+)
 
 MODE_NUM_TO_NAME = {
     # number: [name, operator] (https://github.com/BayAreaMetro/modeling-website/wiki/TransitModes)
     # Support
-    1  :["Walk access connector",                           "NA"],
-    2  :["Drive access connector",                          "NA"],
-    3  :["Stop-to-stop transfer",                           "NA"],
-    4  :["Drive access funnel link",                        "NA"],
-    5  :["Walk access funnel link",                         "NA"],
-    6  :["Walk egress connector",                           "NA"],
-    7  :["Drive egress connector",                          "NA"],
+    1: ["Walk access connector", "NA"],
+    2: ["Drive access connector", "NA"],
+    3: ["Stop-to-stop transfer", "NA"],
+    4: ["Drive access funnel link", "NA"],
+    5: ["Walk access funnel link", "NA"],
+    6: ["Walk egress connector", "NA"],
+    7: ["Drive egress connector", "NA"],
     # Local Bus
-    10 :["West Berkeley",                             "Other"      ],
-    11 :["Broadway Shuttle",                          "Other"      ],
-    12 :["Emery Go Round",                            "Other"      ],
-    13 :["Stanford Shuttles",                         "Other"      ],
-    14 :["Caltrain Shuttles",                         "Other"      ],
-    15 :["VTA Shuttles",                              "Other"      ],
-    16 :["Palo Alto/Menlo Park Shuttles",             "Other"      ],
-    17 :["Wheels ACE Shuttles",                       "Other"      ],
-    18 :["Amtrak Shuttles",                           "Other"      ],
-    19 :["San Leandro Links",                         "Other"      ],
-    20 :["MUNI Cable Cars",                           "SF_Muni"    ],
-    21 :["MUNI Local",                                "SF_Muni"    ],
-    24 :["SamTrans Local",                            "SM_SamTrans"],
-    27 :["Santa Clara VTA Community bus",             "SC_VTA"     ],
-    28 :["Santa Clara VTA Local",                     "SC_VTA"     ],
-    30 :["AC Transit Local",                          "AC_Transit" ],
-    33 :["WHEELS Local",                              "Other"      ],
-    38 :["Union City Transit ",                       "Other"      ],
-    40 :["AirBART",                                   "Other"      ],
-    42 :["County Connection (CCTA) Local",            "Other"      ],
-    44 :["Tri-Delta",                                 "Other"      ],
-    46 :["WestCAT Local",                             "Other"      ],
-    49 :["Vallejo Transit Local",                     "Other"      ],
-    52 :["Fairfield And Suisun Transit Local",        "Other"      ],
-    55 :["American Canyon Transit",                   "Other"      ],
-    56 :["Vacaville City Coach",                      "Other"      ],
-    58 :["Benicia Breeze",                            "Other"      ],
-    60 :["VINE Local",                                "Other"      ],
-    63 :["Sonoma County Transit Local",               "Other"      ],
-    66 :["Santa Rosa City Bus",                       "Other"      ],
-    68 :["Petaluma Transit",                          "Other"      ],
-    70 :["Golden Gate Transit Local",                 "GG_Transit" ],
+    10: ["West Berkeley", "Other"],
+    11: ["Broadway Shuttle", "Other"],
+    12: ["Emery Go Round", "Other"],
+    13: ["Stanford Shuttles", "Other"],
+    14: ["Caltrain Shuttles", "Other"],
+    15: ["VTA Shuttles", "Other"],
+    16: ["Palo Alto/Menlo Park Shuttles", "Other"],
+    17: ["Wheels ACE Shuttles", "Other"],
+    18: ["Amtrak Shuttles", "Other"],
+    19: ["San Leandro Links", "Other"],
+    20: ["MUNI Cable Cars", "SF_Muni"],
+    21: ["MUNI Local", "SF_Muni"],
+    24: ["SamTrans Local", "SM_SamTrans"],
+    27: ["Santa Clara VTA Community bus", "SC_VTA"],
+    28: ["Santa Clara VTA Local", "SC_VTA"],
+    30: ["AC Transit Local", "AC_Transit"],
+    33: ["WHEELS Local", "Other"],
+    38: ["Union City Transit ", "Other"],
+    40: ["AirBART", "Other"],
+    42: ["County Connection (CCTA) Local", "Other"],
+    44: ["Tri-Delta", "Other"],
+    46: ["WestCAT Local", "Other"],
+    49: ["Vallejo Transit Local", "Other"],
+    52: ["Fairfield And Suisun Transit Local", "Other"],
+    55: ["American Canyon Transit", "Other"],
+    56: ["Vacaville City Coach", "Other"],
+    58: ["Benicia Breeze", "Other"],
+    60: ["VINE Local", "Other"],
+    63: ["Sonoma County Transit Local", "Other"],
+    66: ["Santa Rosa City Bus", "Other"],
+    68: ["Petaluma Transit", "Other"],
+    70: ["Golden Gate Transit Local", "GG_Transit"],
     # Express Bus
-    80 :["SamTrans Express",                          "SM_SamTrans"],
-    81 :["Santa Clara VTA Express",                   "SC_VTA"     ],
-    82 :["Dumbarton Express",                         "Other"      ],
-    83 :["AC Transit Transbay",                       "AC_Transit" ],
-    84 :["AC Transit Transbay",                       "AC_Transit" ],
-    85 :["AC Transit BRT",                            "AC_Transit" ],
-    86 :["County Connection Express",                 "Other"      ],
-    87 :["Golden Gate Transit Express San Francisco", "GG_Transit" ],
-    88 :["Golden Gate Transit Express Richmond",      "GG_Transit" ],
-    90 :["WestCAT Express",                           "Other"      ],
-    91 :["Vallejo Transit Express",                   "Other"      ],
-    92 :["Fairfield And Suisun Transit Express",      "Other"      ],
-    93 :["VINE Express",                              "Other"      ],
-    94 :["SMART Temporary Express",                   "Other"      ],
-    95 :["VINE Express",                              "Other"      ],
-    98 :["Regional Express ReX",                      "Other"      ],
+    80: ["SamTrans Express", "SM_SamTrans"],
+    81: ["Santa Clara VTA Express", "SC_VTA"],
+    82: ["Dumbarton Express", "Other"],
+    83: ["AC Transit Transbay", "AC_Transit"],
+    84: ["AC Transit Transbay", "AC_Transit"],
+    85: ["AC Transit BRT", "AC_Transit"],
+    86: ["County Connection Express", "Other"],
+    87: ["Golden Gate Transit Express San Francisco", "GG_Transit"],
+    88: ["Golden Gate Transit Express Richmond", "GG_Transit"],
+    90: ["WestCAT Express", "Other"],
+    91: ["Vallejo Transit Express", "Other"],
+    92: ["Fairfield And Suisun Transit Express", "Other"],
+    93: ["VINE Express", "Other"],
+    94: ["SMART Temporary Express", "Other"],
+    95: ["VINE Express", "Other"],
+    98: ["Regional Express ReX", "Other"],
     # Ferry
-    100:["East Bay Ferries",                          "Other"      ],
-    101:["Golden Gate Ferry - Larkspur",              "GG_Transit" ],
-    102:["Golden Gate Ferry - Sausalito",             "GG_Transit" ],
-    103:["Tiburon Ferry",                             "Other"      ],
-    104:["Vallejo Baylink Ferry",                     "Other"      ],
-    105:["South City Ferry",                          "Other"      ],
+    100: ["East Bay Ferries", "Other"],
+    101: ["Golden Gate Ferry - Larkspur", "GG_Transit"],
+    102: ["Golden Gate Ferry - Sausalito", "GG_Transit"],
+    103: ["Tiburon Ferry", "Other"],
+    104: ["Vallejo Baylink Ferry", "Other"],
+    105: ["South City Ferry", "Other"],
     # Light Rail
-    110:["MUNI Metro",                                "SF_Muni"    ],
-    111:["Santa Clara VTA LRT",                       "SC_VTA"     ],
+    110: ["MUNI Metro", "SF_Muni"],
+    111: ["Santa Clara VTA LRT", "SC_VTA"],
     # Heavy Rail
-    120:["BART",                                      "BART"       ],
-    121:["Oakland Airport Connector",                 "BART"       ],
-    122:["E-BART",                                    "BART"       ],
+    120: ["BART", "BART"],
+    121: ["Oakland Airport Connector", "BART"],
+    122: ["E-BART", "BART"],
     # Commuter Rail
-    130:["Caltrain",                                  "Caltrain"   ],
-    131:["Amtrak - Capitol Corridor",                 "Other"      ],
-    132:["Amtrak - San Joaquin",                      "Other"      ],
-    133:["ACE",                                       "Other"      ],
-    134:["Dumbarton Rail",                            "Other"      ],
-    135:["SMART",                                     "Other"      ],
-    137:["High-Speed Rail",                           "Other"      ],
+    130: ["Caltrain", "Caltrain"],
+    131: ["Amtrak - Capitol Corridor", "Other"],
+    132: ["Amtrak - San Joaquin", "Other"],
+    133: ["ACE", "Other"],
+    134: ["Dumbarton Rail", "Other"],
+    135: ["SMART", "Other"],
+    137: ["High-Speed Rail", "Other"],
 }
+
 
 def runCubeScript(workingdir, script_filename, script_env):
     """
@@ -195,21 +192,26 @@ def runCubeScript(workingdir, script_filename, script_env):
     Returns the return code.
     """
     # run it
-    proc = subprocess.Popen('"{0}" "{1}"'.format(os.path.join(RUNTPP_PATH,"runtpp"), script_filename), 
-                            cwd=workingdir, env=script_env,
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(
+        '"{0}" "{1}"'.format(os.path.join(RUNTPP_PATH, "runtpp"), script_filename),
+        cwd=workingdir,
+        env=script_env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
     for line in proc.stdout:
         line_str = line.decode("utf-8")
-        line_str = line_str.strip('\r\n')
+        line_str = line_str.strip("\r\n")
         logging.info("  stdout: {0}".format(line_str))
     for line in proc.stderr:
         line_str = line.decode("utf-8")
-        line_str = line_str.strip('\r\n')
+        line_str = line_str.strip("\r\n")
         logging.info("  stderr: {0}".format(line_str))
     retcode = proc.wait()
     if retcode == 2:
         raise Exception("Failed to run Cube script %s" % (script_filename))
     logging.info("  Received {0} from 'runtpp {1}'".format(retcode, script_filename))
+
 
 # from maz_taz_checker.py, I am sorry.  Library?!
 def rename_fields(input_feature, output_feature, old_to_new):
@@ -221,40 +223,43 @@ def rename_fields(input_feature, output_feature, old_to_new):
     field_mappings.addTable(input_feature)
 
     for (old_field_name, new_list) in old_to_new.items():
-        mapping_index          = field_mappings.findFieldMapIndex(old_field_name)
+        mapping_index = field_mappings.findFieldMapIndex(old_field_name)
         if mapping_index < 0:
             message = "Field: {0} not in {1}".format(old_field_name, input_feature)
             raise Exception(message)
 
-        field_map              = field_mappings.fieldMappings[mapping_index]
-        output_field           = field_map.outputField
-        output_field.name      = new_list[0]
+        field_map = field_mappings.fieldMappings[mapping_index]
+        output_field = field_map.outputField
+        output_field.name = new_list[0]
         output_field.aliasName = new_list[1]
-        field_map.outputField  = output_field
+        field_map.outputField = output_field
         field_mappings.replaceFieldMap(mapping_index, field_map)
 
     # use merge with single input just to use new field_mappings
     arcpy.Merge_management(input_feature, output_feature, field_mappings)
     return output_feature
 
+
 def get_name_set(line_name, mode_type):
     """
     Generalizes line name to a name set for aggregation.
     """
-    prefix  = None
+    prefix = None
     primary = None
-    suffix  = None
+    suffix = None
 
     # Commuter rail and heavy rail are special -- just aggregate to a single route
     if mode_type in ["Commuter Rail", "Heavy Rail"]:
         line_group_pattern_simple = re.compile(r"([A-Z0-9]+)_(.*)()")
         match_obj = re.match(line_group_pattern_simple, line_name)
-        prefix    = match_obj.group(1)
-        primary   = "all"
+        prefix = match_obj.group(1)
+        primary = "all"
 
     else:
         # this one takes these substrings and classifies them as suffices
-        line_group_pattern_suffix = re.compile(r"([A-Z0-9]+)_(.+?(?=EB|WB|SB|NB|IN|OUT|R|S|N|AM|PM|Lim|-))(EB|WB|SB|NB|IN|OUT|R|S|N|AM|PM|Lim|-)?(.*?)")
+        line_group_pattern_suffix = re.compile(
+            r"([A-Z0-9]+)_(.+?(?=EB|WB|SB|NB|IN|OUT|R|S|N|AM|PM|Lim|-))(EB|WB|SB|NB|IN|OUT|R|S|N|AM|PM|Lim|-)?(.*?)"
+        )
         # this is the simple version if there is no suffix
         line_group_pattern_simple = re.compile(r"([A-Z0-9]+)_(.*)()")
 
@@ -262,49 +267,77 @@ def get_name_set(line_name, mode_type):
         if match_obj == None:
             match_obj = re.match(line_group_pattern_simple, line_name)
 
-        prefix  = match_obj.group(1)
+        prefix = match_obj.group(1)
         primary = match_obj.group(2)
-        suffix  = match_obj.group(3)
+        suffix = match_obj.group(3)
 
-    logging.debug("get_name_set: {:25}  [{}] [{}] [{}]".format(line_name, prefix, primary, suffix))
+    logging.debug(
+        "get_name_set: {:25}  [{}] [{}] [{}]".format(line_name, prefix, primary, suffix)
+    )
     return "{}_{}".format(prefix, primary)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     pandas.options.display.width = 500
     pandas.options.display.max_rows = 1000
 
     # assume code dir is where this script is
-    CODE_DIR    = os.path.dirname(os.path.realpath(__file__))
+    CODE_DIR = os.path.dirname(os.path.realpath(__file__))
 
-    parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
-    parser.add_argument("netfile",  metavar="network.net", help="Cube input roadway network file")
-    parser.add_argument("--outdir", help="Output directory.  Assumes current dir if not specified.")
-    parser.add_argument("--linefile", metavar="transit.lin", help="Cube input transit line file", required=False)
-    parser.add_argument("--by_operator", action="store_true", help="Split transit lines by operator")
-    parser.add_argument("--trn_stop_info", metavar="transit_stops.xlsx", help="Workbook with extra transit stop information")
-    parser.add_argument("--loadvol_dir", help="Directory with loaded volume files for joining")
-    parser.add_argument("--transit_crowding", help="Transit crowding link file for joining. If this argument is specified, then specifying a loadvol_dir is also required.")
+    parser = argparse.ArgumentParser(
+        description=USAGE,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "netfile", metavar="network.net", help="Cube input roadway network file"
+    )
+    parser.add_argument(
+        "--outdir", help="Output directory.  Assumes current dir if not specified."
+    )
+    parser.add_argument(
+        "--linefile",
+        metavar="transit.lin",
+        help="Cube input transit line file",
+        required=False,
+    )
+    parser.add_argument(
+        "--by_operator", action="store_true", help="Split transit lines by operator"
+    )
+    parser.add_argument(
+        "--trn_stop_info",
+        metavar="transit_stops.xlsx",
+        help="Workbook with extra transit stop information",
+    )
+    parser.add_argument(
+        "--loadvol_dir", help="Directory with loaded volume files for joining"
+    )
+    parser.add_argument(
+        "--transit_crowding",
+        help="Transit crowding link file for joining. If this argument is specified, then specifying a loadvol_dir is also required.",
+    )
     args = parser.parse_args()
     # print(args)
 
-    NETFILE               = args.netfile
-    LINE_FILE             = args.linefile
-    TRN_STOP_INFO_FILE    = args.trn_stop_info
-    LOADVOL_DIR           = args.loadvol_dir
+    NETFILE = args.netfile
+    LINE_FILE = args.linefile
+    TRN_STOP_INFO_FILE = args.trn_stop_info
+    LOADVOL_DIR = args.loadvol_dir
     TRANSIT_CROWDING_FILE = args.transit_crowding
 
     if TRANSIT_CROWDING_FILE and not LOADVOL_DIR:
         print(USAGE)
-        print("\n\nFATAL: If --transit_crowding argument is specified, then specifying a loadvol_dir is also required.\n\n")
+        print(
+            "\n\nFATAL: If --transit_crowding argument is specified, then specifying a loadvol_dir is also required.\n\n"
+        )
         sys.exit(2)
 
     # if output dir specified, normalize all other paths first and then switch to it
     if args.outdir:
         WORKING_DIR = os.path.abspath(args.outdir)
-        NETFILE     = os.path.abspath(NETFILE)
+        NETFILE = os.path.abspath(NETFILE)
 
         if LINE_FILE:
-            LINE_FILE   = os.path.abspath(LINE_FILE)
+            LINE_FILE = os.path.abspath(LINE_FILE)
         if TRN_STOP_INFO_FILE:
             TRN_STOP_INFO_FILE = os.path.abspath(TRN_STOP_INFO_FILE)
         if LOADVOL_DIR:
@@ -312,7 +345,7 @@ if __name__ == '__main__':
         if TRANSIT_CROWDING_FILE:
             TRANSIT_CROWDING_FILE = os.path.abspath(TRANSIT_CROWDING_FILE)
 
-        os.chdir( WORKING_DIR )
+        os.chdir(WORKING_DIR)
     else:
         # assume current directory
         WORKING_DIR = os.getcwd()
@@ -323,44 +356,63 @@ if __name__ == '__main__':
     # console handler
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
-    ch.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
+    ch.setFormatter(
+        logging.Formatter(
+            "%(asctime)s - %(levelname)s - %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p"
+        )
+    )
     logger.addHandler(ch)
     # file handler
-    fh = logging.FileHandler(LOG_FILE, mode='w')
+    fh = logging.FileHandler(LOG_FILE, mode="w")
     fh.setLevel(logging.DEBUG)
-    fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
+    fh.setFormatter(
+        logging.Formatter(
+            "%(asctime)s - %(levelname)s - %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p"
+        )
+    )
     logger.addHandler(fh)
 
     # setup the environment
-    script_env                 = os.environ.copy()
-    script_env["PATH"]         = "{0};{1}".format(script_env["PATH"],RUNTPP_PATH)
-    script_env["NET_INFILE"]   = NETFILE
+    script_env = os.environ.copy()
+    script_env["PATH"] = "{0};{1}".format(script_env["PATH"], RUNTPP_PATH)
+    script_env["NET_INFILE"] = NETFILE
     script_env["NODE_OUTFILE"] = NODE_SHPFILE
     script_env["LINK_OUTFILE"] = LINK_SHPFILE
 
     # if these exist, check the modification stamp of them and of the source file to give user the option to opt-out of re-exporting
     do_export = True
     if os.path.exists(NODE_SHPFILE) and os.path.exists(LINK_SHPFILE):
-        net_mtime  = os.path.getmtime(NETFILE)
+        net_mtime = os.path.getmtime(NETFILE)
         node_mtime = os.path.getmtime(NODE_SHPFILE)
         link_mtime = os.path.getmtime(LINK_SHPFILE)
         if (net_mtime < node_mtime) and (net_mtime < link_mtime):
             # give a chance to opt-out since it's slowwwwww
-            print("{} and {} exist with modification times after source network modification time.  Re-export? (y/n)".format(NODE_SHPFILE, LINK_SHPFILE))
+            print(
+                "{} and {} exist with modification times after source network modification time.  Re-export? (y/n)".format(
+                    NODE_SHPFILE, LINK_SHPFILE
+                )
+            )
             response = input("")
-            if response in ["n","N"]:
+            if response in ["n", "N"]:
                 do_export = False
 
     # run the script to do the work
     if do_export:
-        runCubeScript(WORKING_DIR, os.path.join(CODE_DIR, "export_network.job"), script_env)
+        runCubeScript(
+            WORKING_DIR, os.path.join(CODE_DIR, "export_network.job"), script_env
+        )
         logging.info("Wrote network node file to {}".format(NODE_SHPFILE))
         logging.info("Wrote network link file to {}".format(LINK_SHPFILE))
     else:
-        logging.info("Opted out of re-exporting roadway network file.  Using existing {} and {}".format(NODE_SHPFILE, LINK_SHPFILE))
+        logging.info(
+            "Opted out of re-exporting roadway network file.  Using existing {} and {}".format(
+                NODE_SHPFILE, LINK_SHPFILE
+            )
+        )
 
     # MakeXYEventLayer_management
     import arcpy
+
     arcpy.env.workspace = WORKING_DIR
 
     # define the spatial reference
@@ -370,16 +422,19 @@ if __name__ == '__main__':
     arcpy.DefineProjection_management(LINK_SHPFILE, sr)
 
     # if we don't have a transit file, then we're done
-    if not LINE_FILE: sys.exit(0)
+    if not LINE_FILE:
+        sys.exit(0)
 
     import Wrangler
 
     operator_files = [""]
     if args.by_operator:
-        operator_files = set("_{}".format(x[1]) for x in list(MODE_NUM_TO_NAME.values()))
+        operator_files = set(
+            "_{}".format(x[1]) for x in list(MODE_NUM_TO_NAME.values())
+        )
 
     # read the loaded trnlink csv
-    trnlink_df   = pandas.DataFrame()
+    trnlink_df = pandas.DataFrame()
     trnlink_recs = {}
 
     if LOADVOL_DIR:
@@ -387,28 +442,43 @@ if __name__ == '__main__':
         # generated by scripts/core_summaries/ConsolidateLoadedTransit.R
         link_filename = os.path.join(LOADVOL_DIR, "trnlink.csv")
         if not os.path.exists(link_filename):
-            logging.info("{} does not exist; no transit link support links generated".format(link_filename))
+            logging.info(
+                "{} does not exist; no transit link support links generated".format(
+                    link_filename
+                )
+            )
 
         else:
             trnlink_df = pandas.read_csv(link_filename)
             logging.info("Read {} rows from {}".format(len(trnlink_df), link_filename))
 
             # filter to just these cols
-            trnlink_df = trnlink_df[["A","B","mode","name","time","distance","AB_VOL","source"]]
+            trnlink_df = trnlink_df[
+                ["A", "B", "mode", "name", "time", "distance", "AB_VOL", "source"]
+            ]
             logging.debug("\n{}".format(trnlink_df.head()))
 
             # source = 'trnlinkea_wlk_loc_wlk.csv' - pull timeperiod
             # group by A,B,mode,timeperiod -- so rollup across source for the timeperiod
-            trnlink_df['timeperiod'] = trnlink_df.source.str[7:9]
-            trnlink_df = trnlink_df.groupby(["A","B","mode","name","timeperiod"]).agg({"AB_VOL" :numpy.sum,
-                                                                                       "distance":numpy.mean,
-                                                                                       "time"    :numpy.mean})
+            trnlink_df["timeperiod"] = trnlink_df.source.str[7:9]
+            trnlink_df = trnlink_df.groupby(
+                ["A", "B", "mode", "name", "timeperiod"]
+            ).agg({"AB_VOL": numpy.sum, "distance": numpy.mean, "time": numpy.mean})
             trnlink_df.reset_index(drop=False, inplace=True)
-            logging.info("Aggregated to {} links across time periods".format(len(trnlink_df)))
+            logging.info(
+                "Aggregated to {} links across time periods".format(len(trnlink_df))
+            )
 
             # move timeperiods to columns
-            trnlink_df = pandas.pivot_table(trnlink_df, index=["A","B","name","mode"], columns=["timeperiod"], values=["AB_VOL","distance","time"])
-            trnlink_df.columns = ["_".join(col).strip() for col in trnlink_df.columns.values]
+            trnlink_df = pandas.pivot_table(
+                trnlink_df,
+                index=["A", "B", "name", "mode"],
+                columns=["timeperiod"],
+                values=["AB_VOL", "distance", "time"],
+            )
+            trnlink_df.columns = [
+                "_".join(col).strip() for col in trnlink_df.columns.values
+            ]
             trnlink_df.fillna(value=0, inplace=True)
             logging.info("Pivoted to {} links".format(len(trnlink_df)))
 
@@ -419,56 +489,125 @@ if __name__ == '__main__':
 
     # if we read the transit crowding file, some lines (pseudo lines) may have been aggregated into their actual counterparts (see transitcrowding.py)
     transit_crowding_lines = []  # list of line names
-    crowding_line_dict     = {}  # name -> {(veh_type_updated|seatcap|period_seatcap|period_standcap, EA|AM|MD|PM|EV) -> value}
-    crowding_link_dict     = {}  # (name,a,b,seq) -> {(load_seatcap|load_standcap|AB_VOL|AB_BRDA|AB_XITB, EA|AM|MD|PM|EV) -> value}
+    crowding_line_dict = (
+        {}
+    )  # name -> {(veh_type_updated|seatcap|period_seatcap|period_standcap, EA|AM|MD|PM|EV) -> value}
+    crowding_link_dict = (
+        {}
+    )  # (name,a,b,seq) -> {(load_seatcap|load_standcap|AB_VOL|AB_BRDA|AB_XITB, EA|AM|MD|PM|EV) -> value}
     if TRANSIT_CROWDING_FILE:
 
         transit_crowding_df = pandas.read_csv(TRANSIT_CROWDING_FILE)
         transit_crowding_lines = transit_crowding_df["NAME"].drop_duplicates().tolist()
-        logging.info("Read {} rows and {} unique line names from {}".format(len(transit_crowding_df), len(transit_crowding_lines), TRANSIT_CROWDING_FILE))
+        logging.info(
+            "Read {} rows and {} unique line names from {}".format(
+                len(transit_crowding_df),
+                len(transit_crowding_lines),
+                TRANSIT_CROWDING_FILE,
+            )
+        )
 
         # Pivot and make into a lookup for line attributes
-        crowding_line_df = transit_crowding_df[["NAME","period","veh_type_updated","seatcap","period_seatcap","standcap","period_standcap"]]
-        crowding_line_df = crowding_line_df.drop_duplicates().pivot_table(index=["NAME"], columns=["period"], 
-                                                                          values=["veh_type_updated","seatcap","period_seatcap","standcap","period_standcap"],
-                                                                          aggfunc='first', fill_value=0)
+        crowding_line_df = transit_crowding_df[
+            [
+                "NAME",
+                "period",
+                "veh_type_updated",
+                "seatcap",
+                "period_seatcap",
+                "standcap",
+                "period_standcap",
+            ]
+        ]
+        crowding_line_df = crowding_line_df.drop_duplicates().pivot_table(
+            index=["NAME"],
+            columns=["period"],
+            values=[
+                "veh_type_updated",
+                "seatcap",
+                "period_seatcap",
+                "standcap",
+                "period_standcap",
+            ],
+            aggfunc="first",
+            fill_value=0,
+        )
         logging.debug("crowding_line_df head=\n{}".format(crowding_line_df.head(20)))
-        crowding_line_dict = crowding_line_df.to_dict(orient='index')
+        crowding_line_dict = crowding_line_df.to_dict(orient="index")
 
         # need AB_XITA for stops -- so create it by joining with next link
-        ab_xita_df = transit_crowding_df[["NAME","period","SEQ","AB_XITB"]].copy()  # these exits occurred at B -- shift to A
+        ab_xita_df = transit_crowding_df[
+            ["NAME", "period", "SEQ", "AB_XITB"]
+        ].copy()  # these exits occurred at B -- shift to A
         ab_xita_df["SEQ"] = ab_xita_df["SEQ"] + 1
-        ab_xita_df.rename(columns={"AB_XITB":"AB_XITA"}, inplace=True)
-        transit_crowding_df = pandas.merge(left=transit_crowding_df, right=ab_xita_df, how="left", on=["NAME","period","SEQ"]).fillna(value={"AB_XITA":0})
+        ab_xita_df.rename(columns={"AB_XITB": "AB_XITA"}, inplace=True)
+        transit_crowding_df = pandas.merge(
+            left=transit_crowding_df,
+            right=ab_xita_df,
+            how="left",
+            on=["NAME", "period", "SEQ"],
+        ).fillna(value={"AB_XITA": 0})
 
         # Pivot and make into a lookup for link attributes
-        crowding_link_df = transit_crowding_df[["NAME","A","B","SEQ","period","load_seatcap","load_standcap","AB_VOL","AB_BRDA","AB_XITB","AB_XITA"]].pivot_table(
-                                                                          index=["NAME","A","B","SEQ"], columns=["period"], fill_value=0)
+        crowding_link_df = transit_crowding_df[
+            [
+                "NAME",
+                "A",
+                "B",
+                "SEQ",
+                "period",
+                "load_seatcap",
+                "load_standcap",
+                "AB_VOL",
+                "AB_BRDA",
+                "AB_XITB",
+                "AB_XITA",
+            ]
+        ].pivot_table(index=["NAME", "A", "B", "SEQ"], columns=["period"], fill_value=0)
         logging.debug("crowding_link_df head=\n{}".format(crowding_link_df.head(20)))
-        crowding_link_dict = crowding_link_df.to_dict(orient='index')
+        crowding_link_dict = crowding_link_df.to_dict(orient="index")
 
     # store cursors here
-    line_cursor      = {}
-    link_cursor      = {}
-    stop_cursor      = {}
+    line_cursor = {}
+    link_cursor = {}
+    stop_cursor = {}
     operator_to_file = {}
 
     # store link information here -- we'll aggregate this a bit and output later
     link_rows = []
-    link_rows_cols   = [
-        "A", "A_X", "A_Y", "A_STATION",
-        "B", "B_X", "B_Y", "B_STATION",
-        "NAME"    ,        "NAME_SET"  ,
-        "MODE"    ,        "MODE_NAME" ,  "MODE_TYPE",
+    link_rows_cols = [
+        "A",
+        "A_X",
+        "A_Y",
+        "A_STATION",
+        "B",
+        "B_X",
+        "B_Y",
+        "B_STATION",
+        "NAME",
+        "NAME_SET",
+        "MODE",
+        "MODE_NAME",
+        "MODE_TYPE",
         "OPERATOR_T",
         # assume these are additive
-        "TRIPS_EA", "TRIPS_AM", "TRIPS_MD", "TRIPS_PM", "TRIPS_EV",
+        "TRIPS_EA",
+        "TRIPS_AM",
+        "TRIPS_MD",
+        "TRIPS_PM",
+        "TRIPS_EV",
     ]
     if LOADVOL_DIR:
-        link_rows_cols.extend(["PDCAP_EA", "PDCAP_AM", "PDCAP_MD", "PDCAP_PM", "PDCAP_EV"])
-        link_rows_cols.extend(["ABVOL_EA", "ABVOL_AM", "ABVOL_MD", "ABVOL_PM", "ABVOL_EV"])
+        link_rows_cols.extend(
+            ["PDCAP_EA", "PDCAP_AM", "PDCAP_MD", "PDCAP_PM", "PDCAP_EV"]
+        )
+        link_rows_cols.extend(
+            ["ABVOL_EA", "ABVOL_AM", "ABVOL_MD", "ABVOL_PM", "ABVOL_EV"]
+        )
         if TRANSIT_CROWDING_FILE:
-            link_rows_cols.extend(["PDSECAP_EA", "PDSECAP_AM", "PDSECAP_MD", "PDSECAP_PM", "PDSECAP_EV"])
+            link_rows_cols.extend(
+                ["PDSECAP_EA", "PDSECAP_AM", "PDSECAP_MD", "PDSECAP_PM", "PDSECAP_EV"]
+            )
 
     for operator_file in operator_files:
 
@@ -478,150 +617,346 @@ if __name__ == '__main__':
         arcpy.Delete_management(TRN_STOPS_SHPFILE.format(operator_file))
 
         # create the lines shapefile
-        arcpy.CreateFeatureclass_management(WORKING_DIR, TRN_LINES_SHPFILE.format(operator_file), "POLYLINE")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "NAME",       "TEXT", field_length=25)
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "NAME_SET",   "TEXT", field_length=25)
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "LONG_NAME",  "TEXT", field_length=35)
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FREQ_EA",    "FLOAT")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FREQ_AM",    "FLOAT")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FREQ_MD",    "FLOAT")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FREQ_PM",    "FLOAT")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FREQ_EV",    "FLOAT")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "ONEWAY",     "SHORT")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "MODE",       "SHORT")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "MODE_NAME",  "TEXT", field_length=40)
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "MODE_TYPE",  "TEXT", field_length=25)
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "OPERATOR_T", "TEXT", field_length=15)
+        arcpy.CreateFeatureclass_management(
+            WORKING_DIR, TRN_LINES_SHPFILE.format(operator_file), "POLYLINE"
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file), "NAME", "TEXT", field_length=25
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file), "NAME_SET", "TEXT", field_length=25
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file),
+            "LONG_NAME",
+            "TEXT",
+            field_length=35,
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file), "FREQ_EA", "FLOAT"
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file), "FREQ_AM", "FLOAT"
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file), "FREQ_MD", "FLOAT"
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file), "FREQ_PM", "FLOAT"
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file), "FREQ_EV", "FLOAT"
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file), "ONEWAY", "SHORT"
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file), "MODE", "SHORT"
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file),
+            "MODE_NAME",
+            "TEXT",
+            field_length=40,
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file),
+            "MODE_TYPE",
+            "TEXT",
+            field_length=25,
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file),
+            "OPERATOR_T",
+            "TEXT",
+            field_length=15,
+        )
 
         # helpful additional fields
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FIRST_N",    "LONG")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "FIRST_NAME", "TEXT", field_length=40)
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "LAST_N",     "LONG")
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "LAST_NAME",  "TEXT", field_length=40)
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "N_OR_S",     "TEXT", field_length=3)
-        arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "E_OR_W",     "TEXT", field_length=3)
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file), "FIRST_N", "LONG"
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file),
+            "FIRST_NAME",
+            "TEXT",
+            field_length=40,
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file), "LAST_N", "LONG"
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file),
+            "LAST_NAME",
+            "TEXT",
+            field_length=40,
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file), "N_OR_S", "TEXT", field_length=3
+        )
+        arcpy.AddField_management(
+            TRN_LINES_SHPFILE.format(operator_file), "E_OR_W", "TEXT", field_length=3
+        )
 
         TRN_LINES_FIELDS = [
-            "NAME", "NAME_SET", "LONG_NAME", "SHAPE@",
-            "FREQ_EA", "FREQ_AM", "FREQ_MD", "FREQ_PM", "FREQ_EV",
-            "ONEWAY", "MODE", "MODE_NAME", "MODE_TYPE", "OPERATOR_T",
-            "FIRST_N", "FIRST_NAME", "LAST_N", "LAST_NAME", "N_OR_S", "E_OR_W"
+            "NAME",
+            "NAME_SET",
+            "LONG_NAME",
+            "SHAPE@",
+            "FREQ_EA",
+            "FREQ_AM",
+            "FREQ_MD",
+            "FREQ_PM",
+            "FREQ_EV",
+            "ONEWAY",
+            "MODE",
+            "MODE_NAME",
+            "MODE_TYPE",
+            "OPERATOR_T",
+            "FIRST_N",
+            "FIRST_NAME",
+            "LAST_N",
+            "LAST_NAME",
+            "N_OR_S",
+            "E_OR_W",
         ]
 
         if LOADVOL_DIR:
             for timeperiod in TIMEPERIOD_DURATIONS.keys():
-                arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "VEHTYPE_{}".format(timeperiod),  "TEXT", field_length=30)
+                arcpy.AddField_management(
+                    TRN_LINES_SHPFILE.format(operator_file),
+                    "VEHTYPE_{}".format(timeperiod),
+                    "TEXT",
+                    field_length=30,
+                )
                 TRN_LINES_FIELDS.append("VEHTYPE_{}".format(timeperiod))
 
             for timeperiod in TIMEPERIOD_DURATIONS.keys():
-                arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "VEHCAP_{}".format(timeperiod),   "FLOAT")
+                arcpy.AddField_management(
+                    TRN_LINES_SHPFILE.format(operator_file),
+                    "VEHCAP_{}".format(timeperiod),
+                    "FLOAT",
+                )
                 TRN_LINES_FIELDS.append("VEHCAP_{}".format(timeperiod))
 
             for timeperiod in TIMEPERIOD_DURATIONS.keys():
-                arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "PDCAP_{}".format(timeperiod),    "FLOAT")
+                arcpy.AddField_management(
+                    TRN_LINES_SHPFILE.format(operator_file),
+                    "PDCAP_{}".format(timeperiod),
+                    "FLOAT",
+                )
                 TRN_LINES_FIELDS.append("PDCAP_{}".format(timeperiod))
 
             # if transit crowding specified, add seat capacity
             if TRANSIT_CROWDING_FILE:
                 for timeperiod in TIMEPERIOD_DURATIONS.keys():
-                    arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "SEATCAP_{}".format(timeperiod),   "FLOAT")
+                    arcpy.AddField_management(
+                        TRN_LINES_SHPFILE.format(operator_file),
+                        "SEATCAP_{}".format(timeperiod),
+                        "FLOAT",
+                    )
                     TRN_LINES_FIELDS.append("SEATCAP_{}".format(timeperiod))
 
                 for timeperiod in TIMEPERIOD_DURATIONS.keys():
-                    arcpy.AddField_management(TRN_LINES_SHPFILE.format(operator_file), "PDSECAP_{}".format(timeperiod),    "FLOAT")
+                    arcpy.AddField_management(
+                        TRN_LINES_SHPFILE.format(operator_file),
+                        "PDSECAP_{}".format(timeperiod),
+                        "FLOAT",
+                    )
                     TRN_LINES_FIELDS.append("PDSECAP_{}".format(timeperiod))
 
         arcpy.DefineProjection_management(TRN_LINES_SHPFILE.format(operator_file), sr)
 
-        line_cursor[operator_file] = arcpy.da.InsertCursor(TRN_LINES_SHPFILE.format(operator_file), TRN_LINES_FIELDS)
+        line_cursor[operator_file] = arcpy.da.InsertCursor(
+            TRN_LINES_SHPFILE.format(operator_file), TRN_LINES_FIELDS
+        )
 
         # create the links shapefile
-        arcpy.CreateFeatureclass_management(WORKING_DIR, TRN_LINKS_SHPFILE.format(operator_file), "POLYLINE")
-        arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "NAME",     "TEXT", field_length=25)
-        arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "A",        "LONG")
-        arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "B",        "LONG")
-        arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "A_STATION","TEXT", field_length=40)
-        arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "B_STATION","TEXT", field_length=40)
-        arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "SEQ",     "SHORT")
-        arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "NAMESEQAB", "TEXT", field_length=50) # for joining
-        arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "MODE",      "SHORT")
-        arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "MODE_NAME", "TEXT", field_length=40)
-        arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "MODE_TYPE", "TEXT", field_length=25)
+        arcpy.CreateFeatureclass_management(
+            WORKING_DIR, TRN_LINKS_SHPFILE.format(operator_file), "POLYLINE"
+        )
+        arcpy.AddField_management(
+            TRN_LINKS_SHPFILE.format(operator_file), "NAME", "TEXT", field_length=25
+        )
+        arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "A", "LONG")
+        arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "B", "LONG")
+        arcpy.AddField_management(
+            TRN_LINKS_SHPFILE.format(operator_file),
+            "A_STATION",
+            "TEXT",
+            field_length=40,
+        )
+        arcpy.AddField_management(
+            TRN_LINKS_SHPFILE.format(operator_file),
+            "B_STATION",
+            "TEXT",
+            field_length=40,
+        )
+        arcpy.AddField_management(
+            TRN_LINKS_SHPFILE.format(operator_file), "SEQ", "SHORT"
+        )
+        arcpy.AddField_management(
+            TRN_LINKS_SHPFILE.format(operator_file),
+            "NAMESEQAB",
+            "TEXT",
+            field_length=50,
+        )  # for joining
+        arcpy.AddField_management(
+            TRN_LINKS_SHPFILE.format(operator_file), "MODE", "SHORT"
+        )
+        arcpy.AddField_management(
+            TRN_LINKS_SHPFILE.format(operator_file),
+            "MODE_NAME",
+            "TEXT",
+            field_length=40,
+        )
+        arcpy.AddField_management(
+            TRN_LINKS_SHPFILE.format(operator_file),
+            "MODE_TYPE",
+            "TEXT",
+            field_length=25,
+        )
         arcpy.DefineProjection_management(TRN_LINKS_SHPFILE.format(operator_file), sr)
 
-        TRN_LINKS_FIELDS = ["NAME", "SHAPE@", "A", "B", "A_STATION","B_STATION", "SEQ", "NAMESEQAB", "MODE", "MODE_NAME", "MODE_TYPE"]
+        TRN_LINKS_FIELDS = [
+            "NAME",
+            "SHAPE@",
+            "A",
+            "B",
+            "A_STATION",
+            "B_STATION",
+            "SEQ",
+            "NAMESEQAB",
+            "MODE",
+            "MODE_NAME",
+            "MODE_TYPE",
+        ]
 
         if LOADVOL_DIR:
             for timeperiod in TIMEPERIOD_DURATIONS.keys():
-                arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "AB_VOL_{}".format(timeperiod),  "FLOAT")
+                arcpy.AddField_management(
+                    TRN_LINKS_SHPFILE.format(operator_file),
+                    "AB_VOL_{}".format(timeperiod),
+                    "FLOAT",
+                )
                 TRN_LINKS_FIELDS.append("AB_VOL_{}".format(timeperiod))
 
             for timeperiod in TIMEPERIOD_DURATIONS.keys():
-                arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "LOAD_{}".format(timeperiod),    "FLOAT")
+                arcpy.AddField_management(
+                    TRN_LINKS_SHPFILE.format(operator_file),
+                    "LOAD_{}".format(timeperiod),
+                    "FLOAT",
+                )
                 TRN_LINKS_FIELDS.append("LOAD_{}".format(timeperiod))
 
             # if transit crowding specified, add seated capacity
             if TRANSIT_CROWDING_FILE:
                 for timeperiod in TIMEPERIOD_DURATIONS.keys():
-                    arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "LOADSE_{}".format(timeperiod),    "FLOAT")
+                    arcpy.AddField_management(
+                        TRN_LINKS_SHPFILE.format(operator_file),
+                        "LOADSE_{}".format(timeperiod),
+                        "FLOAT",
+                    )
                     TRN_LINKS_FIELDS.append("LOADSE_{}".format(timeperiod))
 
             # if we have distance/time information, add it
             if len(trnlink_recs) > 0:
                 for timeperiod in TIMEPERIOD_DURATIONS.keys():
-                    arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "DIST_{}".format(timeperiod), "FLOAT", field_precision=7, field_scale=2)
+                    arcpy.AddField_management(
+                        TRN_LINKS_SHPFILE.format(operator_file),
+                        "DIST_{}".format(timeperiod),
+                        "FLOAT",
+                        field_precision=7,
+                        field_scale=2,
+                    )
                     TRN_LINKS_FIELDS.append("DIST_{}".format(timeperiod))
 
                 for timeperiod in TIMEPERIOD_DURATIONS.keys():
-                    arcpy.AddField_management(TRN_LINKS_SHPFILE.format(operator_file), "TIME_{}".format(timeperiod),  "FLOAT", field_precision=7, field_scale=2)
+                    arcpy.AddField_management(
+                        TRN_LINKS_SHPFILE.format(operator_file),
+                        "TIME_{}".format(timeperiod),
+                        "FLOAT",
+                        field_precision=7,
+                        field_scale=2,
+                    )
                     TRN_LINKS_FIELDS.append("TIME_{}".format(timeperiod))
 
-
-        link_cursor[operator_file] = arcpy.da.InsertCursor(TRN_LINKS_SHPFILE.format(operator_file), TRN_LINKS_FIELDS)
+        link_cursor[operator_file] = arcpy.da.InsertCursor(
+            TRN_LINKS_SHPFILE.format(operator_file), TRN_LINKS_FIELDS
+        )
 
         # create the stops shapefile
-        arcpy.CreateFeatureclass_management(WORKING_DIR, TRN_STOPS_SHPFILE.format(operator_file), "POINT")
-        arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "LINE_NAME","TEXT", field_length=25)
-        arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "STATION",  "TEXT", field_length=40)
-        arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "N",        "LONG")
-        arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "SEQ",      "SHORT")
-        arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "IS_STOP",  "SHORT")
+        arcpy.CreateFeatureclass_management(
+            WORKING_DIR, TRN_STOPS_SHPFILE.format(operator_file), "POINT"
+        )
+        arcpy.AddField_management(
+            TRN_STOPS_SHPFILE.format(operator_file),
+            "LINE_NAME",
+            "TEXT",
+            field_length=25,
+        )
+        arcpy.AddField_management(
+            TRN_STOPS_SHPFILE.format(operator_file), "STATION", "TEXT", field_length=40
+        )
+        arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "N", "LONG")
+        arcpy.AddField_management(
+            TRN_STOPS_SHPFILE.format(operator_file), "SEQ", "SHORT"
+        )
+        arcpy.AddField_management(
+            TRN_STOPS_SHPFILE.format(operator_file), "IS_STOP", "SHORT"
+        )
         # from node attributes http://bayareametro.github.io/travel-model-two/input/#node-attributes
         # PNR attributes are for TAPs so not included here
         arcpy.DefineProjection_management(TRN_STOPS_SHPFILE.format(operator_file), sr)
 
-        TRN_STOPS_FIELDS = ["LINE_NAME","SHAPE@", "STATION", "N", "SEQ", "IS_STOP"]
+        TRN_STOPS_FIELDS = ["LINE_NAME", "SHAPE@", "STATION", "N", "SEQ", "IS_STOP"]
 
         if LOADVOL_DIR:
             for timeperiod in TIMEPERIOD_DURATIONS.keys():
-                arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "BRD_{}".format(timeperiod),  "FLOAT")
+                arcpy.AddField_management(
+                    TRN_STOPS_SHPFILE.format(operator_file),
+                    "BRD_{}".format(timeperiod),
+                    "FLOAT",
+                )
                 TRN_STOPS_FIELDS.append("BRD_{}".format(timeperiod))
 
             for timeperiod in TIMEPERIOD_DURATIONS.keys():
-                arcpy.AddField_management(TRN_STOPS_SHPFILE.format(operator_file), "XIT_{}".format(timeperiod),    "FLOAT")
+                arcpy.AddField_management(
+                    TRN_STOPS_SHPFILE.format(operator_file),
+                    "XIT_{}".format(timeperiod),
+                    "FLOAT",
+                )
                 TRN_STOPS_FIELDS.append("XIT_{}".format(timeperiod))
 
-        stop_cursor[operator_file] = arcpy.da.InsertCursor(TRN_STOPS_SHPFILE.format(operator_file),TRN_STOPS_FIELDS)
+        stop_cursor[operator_file] = arcpy.da.InsertCursor(
+            TRN_STOPS_SHPFILE.format(operator_file), TRN_STOPS_FIELDS
+        )
 
     # print(operator_to_file)
 
     # read the node points
-    nodes_array = arcpy.da.TableToNumPyArray(in_table="{}.DBF".format(NODE_SHPFILE[:-4]),
-                                             field_names=["N","X","Y"])
+    nodes_array = arcpy.da.TableToNumPyArray(
+        in_table="{}.DBF".format(NODE_SHPFILE[:-4]), field_names=["N", "X", "Y"]
+    )
     node_dicts = {}
-    for node_field in ["X","Y"]:
-        node_dicts[node_field] = dict(zip(nodes_array["N"].tolist(), nodes_array[node_field].tolist()))
+    for node_field in ["X", "Y"]:
+        node_dicts[node_field] = dict(
+            zip(nodes_array["N"].tolist(), nodes_array[node_field].tolist())
+        )
 
     # read the stop information, if there is any
     stops_to_station = {}
     if TRN_STOP_INFO_FILE:
-        stop_info_df = pandas.read_excel(TRN_STOP_INFO_FILE, header=None, names=["Node", "Station"])
-        logging.info("Read {} lines from {}".format(len(stop_info_df), TRN_STOP_INFO_FILE))
+        stop_info_df = pandas.read_excel(
+            TRN_STOP_INFO_FILE, header=None, names=["Node", "Station"]
+        )
+        logging.info(
+            "Read {} lines from {}".format(len(stop_info_df), TRN_STOP_INFO_FILE)
+        )
 
         # only want node numbers and names
-        stop_info_dict = stop_info_df[["Node","Station"]].to_dict(orient='list')
-        stops_to_station = dict(zip(stop_info_dict["Node"],
-                                    stop_info_dict["Station"]))
+        stop_info_dict = stop_info_df[["Node", "Station"]].to_dict(orient="list")
+        stops_to_station = dict(zip(stop_info_dict["Node"], stop_info_dict["Station"]))
         logging.debug("stops_to_station: {}".format(stops_to_station))
 
     (trn_file_base, trn_file_name) = os.path.split(LINE_FILE)
@@ -634,21 +969,31 @@ if __name__ == '__main__':
     tads = {}
     if LOADVOL_DIR:
         for timeperiod in TIMEPERIOD_DURATIONS.keys():
-            loadvol_file = os.path.join(LOADVOL_DIR, "trnlink{}_ALLMSA.dbf".format(timeperiod))
-            tads[timeperiod] = Wrangler.TransitAssignmentData(timeperiod=timeperiod,
-                                                              modelType=Wrangler.Network.MODEL_TYPE_TM1,
-                                                              ignoreModes=[1,2,3,4,5,6,7],
-                                                              tpfactor="constant_with_peaked_muni",
-                                                              transitCapacity=Wrangler.TransitNetwork.capacity,
-                                                              lineLevelAggregateFilename=loadvol_file)
-            logging.info("Read {} rows from {}".format(len(tads[timeperiod].trnAsgnTable), loadvol_file))
+            loadvol_file = os.path.join(
+                LOADVOL_DIR, "trnlink{}_ALLMSA.dbf".format(timeperiod)
+            )
+            tads[timeperiod] = Wrangler.TransitAssignmentData(
+                timeperiod=timeperiod,
+                modelType=Wrangler.Network.MODEL_TYPE_TM1,
+                ignoreModes=[1, 2, 3, 4, 5, 6, 7],
+                tpfactor="constant_with_peaked_muni",
+                transitCapacity=Wrangler.TransitNetwork.capacity,
+                lineLevelAggregateFilename=loadvol_file,
+            )
+            logging.info(
+                "Read {} rows from {}".format(
+                    len(tads[timeperiod].trnAsgnTable), loadvol_file
+                )
+            )
 
     # build lines and links
     line_count = 0
     link_count = 0
     stop_count = 0
 
-    line_group_pattern = re.compile(r"([A-Z0-9]+_[A-Z0-9]+)((EB|WB|NB|SB|AM|PM)?[A-Z0-9])*")
+    line_group_pattern = re.compile(
+        r"([A-Z0-9]+_[A-Z0-9]+)((EB|WB|NB|SB|AM|PM)?[A-Z0-9])*"
+    )
 
     all_lines = trn_net.line(re.compile(".*"))
     # if the line is two way, make sure we add the reverse
@@ -656,8 +1001,10 @@ if __name__ == '__main__':
     for line in all_lines:
         if line.isOneWay() == False:
             rev_line = copy.deepcopy(line)
-            rev_line.reverse() 
-            rev_line.name = rev_line.name[:-1] + "-" # make the last character - rather than R
+            rev_line.reverse()
+            rev_line.name = (
+                rev_line.name[:-1] + "-"
+            )  # make the last character - rather than R
             logging.debug("Adding reverse line {}".format(rev_line))
             reverse_lines.append(rev_line)
     all_lines.extend(reverse_lines)
@@ -675,19 +1022,23 @@ if __name__ == '__main__':
         # if we read the transit crowding file, some lines (pseudo lines) may have been aggregated into their actual counterparts (see transitcrowding.py)
         # so if they're omitted from that file, omit them here
         if TRANSIT_CROWDING_FILE and line.name.upper() not in transit_crowding_lines:
-            logging.warn("Skipping line [{}] because it was removed in transit crowding processing".format(line.name))
+            logging.warn(
+                "Skipping line [{}] because it was removed in transit crowding processing".format(
+                    line.name
+                )
+            )
             continue
 
         line_point_array = arcpy.Array()
         link_point_array = arcpy.Array()
-        op_txt           = "unknown_op"
-        mode_name        = "unknown_mode"
-        mode_num         = int(line.attr['MODE'])
+        op_txt = "unknown_op"
+        mode_name = "unknown_mode"
+        mode_num = int(line.attr["MODE"])
         if mode_num in MODE_NUM_TO_NAME:
             mode_name = MODE_NUM_TO_NAME[mode_num][0]
-            op_txt    = MODE_NUM_TO_NAME[mode_num][1]
+            op_txt = MODE_NUM_TO_NAME[mode_num][1]
         else:
-            logging.warn("MODE not recognized: {}".format(line.attr['MODE']))
+            logging.warn("MODE not recognized: {}".format(line.attr["MODE"]))
 
         mode_type = "Commuter Rail"
         if mode_num < 10:
@@ -704,36 +1055,53 @@ if __name__ == '__main__':
             mode_type = "Heavy Rail"
 
         # figure out the name set
-        name_set  = get_name_set(line.name, mode_type)
+        name_set = get_name_set(line.name, mode_type)
 
         if not args.by_operator:
             operator_file = ""
         else:
             operator_file = "_{}".format(op_txt)
 
-        logging.info("Adding line {:4}/{:4} {:15} set {:15} operator {:15} to operator_file [{}]".format(
-              line_count+1,total_line_count,
-              line.name, name_set, op_txt, operator_file))
+        logging.info(
+            "Adding line {:4}/{:4} {:15} set {:15} operator {:15} to operator_file [{}]".format(
+                line_count + 1,
+                total_line_count,
+                line.name,
+                name_set,
+                op_txt,
+                operator_file,
+            )
+        )
         # for attr_key in line.attr: print(attr_key, line.attr[attr_key])
 
         # keep information about first and last nodes
-        first_n     = -1
-        first_name  = "not_set"
+        first_n = -1
+        first_name = "not_set"
         first_point = None
-        second_n    = -1
-        last_n      = -1
-        last_station= "not_set"
-        last_point  = None
-        last_is_stop= True
-        seq         = 1
-        stop_b_row  = None
+        second_n = -1
+        last_n = -1
+        last_station = "not_set"
+        last_point = None
+        last_is_stop = True
+        seq = 1
+        stop_b_row = None
 
         # and vehicle type, capacity information
-        vehtypes   = collections.OrderedDict([("EA","NA"), ("AM","NA"), ("MD","NA"), ("PM","NA"), ("EV","NA")])
-        vehcaps    = collections.OrderedDict([("EA",  0 ), ("AM",  0 ), ("MD",  0 ), ("PM",  0 ), ("EV",  0 )])
-        pdcaps     = collections.OrderedDict([("EA",  0 ), ("AM",  0 ), ("MD",  0 ), ("PM",  0 ), ("EV",  0 )])
-        seatcaps   = collections.OrderedDict([("EA",  0 ), ("AM",  0 ), ("MD",  0 ), ("PM",  0 ), ("EV",  0 )])
-        pdseatcaps = collections.OrderedDict([("EA",  0 ), ("AM",  0 ), ("MD",  0 ), ("PM",  0 ), ("EV",  0 )])
+        vehtypes = collections.OrderedDict(
+            [("EA", "NA"), ("AM", "NA"), ("MD", "NA"), ("PM", "NA"), ("EV", "NA")]
+        )
+        vehcaps = collections.OrderedDict(
+            [("EA", 0), ("AM", 0), ("MD", 0), ("PM", 0), ("EV", 0)]
+        )
+        pdcaps = collections.OrderedDict(
+            [("EA", 0), ("AM", 0), ("MD", 0), ("PM", 0), ("EV", 0)]
+        )
+        seatcaps = collections.OrderedDict(
+            [("EA", 0), ("AM", 0), ("MD", 0), ("PM", 0), ("EV", 0)]
+        )
+        pdseatcaps = collections.OrderedDict(
+            [("EA", 0), ("AM", 0), ("MD", 0), ("PM", 0), ("EV", 0)]
+        )
 
         for node in line.n:
             n = abs(int(node.num))
@@ -742,8 +1110,10 @@ if __name__ == '__main__':
 
             # first link - create line_abnameseq
             if first_n > 0 and second_n < 0:
-                second_n   = n
-                line_abnameseq  = "{} {} {} 1".format(first_n, second_n, line.name).encode()  # byte string
+                second_n = n
+                line_abnameseq = "{} {} {} 1".format(
+                    first_n, second_n, line.name
+                ).encode()  # byte string
 
                 # lookup vehicle type, vehicle capacity and period capacity
                 if LOADVOL_DIR:
@@ -755,24 +1125,38 @@ if __name__ == '__main__':
 
                     for timeperiod in TIMEPERIOD_DURATIONS.keys():
                         if line_abnameseq in tads[timeperiod].trnAsgnTable:
-                            vehtypes[timeperiod] = tads[timeperiod].trnAsgnTable[line_abnameseq]["VEHTYPE"]
-                            vehcaps[timeperiod]  = tads[timeperiod].trnAsgnTable[line_abnameseq]["VEHCAP"]
-                            pdcaps[timeperiod]   = tads[timeperiod].trnAsgnTable[line_abnameseq]["PERIODCAP"]
+                            vehtypes[timeperiod] = tads[timeperiod].trnAsgnTable[
+                                line_abnameseq
+                            ]["VEHTYPE"]
+                            vehcaps[timeperiod] = tads[timeperiod].trnAsgnTable[
+                                line_abnameseq
+                            ]["VEHCAP"]
+                            pdcaps[timeperiod] = tads[timeperiod].trnAsgnTable[
+                                line_abnameseq
+                            ]["PERIODCAP"]
 
                         # override from transit crowding
                         if cr_line_dict:
-                            vehtypes[timeperiod]   = cr_line_dict[("veh_type_updated", timeperiod)] if cr_line_dict[("veh_type_updated", timeperiod)] else "NA"
-                            vehcaps[timeperiod]    = cr_line_dict[("standcap",         timeperiod)]
-                            pdcaps[timeperiod]     = cr_line_dict[("period_standcap",  timeperiod)]
-                            seatcaps[timeperiod]   = cr_line_dict[("seatcap",          timeperiod)]
-                            pdseatcaps[timeperiod] = cr_line_dict[("period_seatcap",   timeperiod)]
+                            vehtypes[timeperiod] = (
+                                cr_line_dict[("veh_type_updated", timeperiod)]
+                                if cr_line_dict[("veh_type_updated", timeperiod)]
+                                else "NA"
+                            )
+                            vehcaps[timeperiod] = cr_line_dict[("standcap", timeperiod)]
+                            pdcaps[timeperiod] = cr_line_dict[
+                                ("period_standcap", timeperiod)
+                            ]
+                            seatcaps[timeperiod] = cr_line_dict[("seatcap", timeperiod)]
+                            pdseatcaps[timeperiod] = cr_line_dict[
+                                ("period_seatcap", timeperiod)
+                            ]
             if first_n < 0:
-                first_n    = n
+                first_n = n
                 first_name = station
                 first_point = (node_dicts["X"][n], node_dicts["Y"][n])
 
             # print(node.num, n, node.attr, node.stop)
-            point = arcpy.Point( node_dicts["X"][n], node_dicts["Y"][n] )
+            point = arcpy.Point(node_dicts["X"][n], node_dicts["Y"][n])
 
             # get stop B ready
             stop_b_row = [line.name, point, station, n, seq, is_stop]
@@ -785,60 +1169,126 @@ if __name__ == '__main__':
 
             if link_point_array.count > 1:
                 plink_shape = arcpy.Polyline(link_point_array)
-                nameseqab   = "{} {} {} {}".format(line.name, seq-1, last_n, n)
+                nameseqab = "{} {} {} {}".format(line.name, seq - 1, last_n, n)
 
-                link_row = [line.name, plink_shape, last_n, n, last_station, station, seq-1, nameseqab, mode_num, mode_name, mode_type]
+                link_row = [
+                    line.name,
+                    plink_shape,
+                    last_n,
+                    n,
+                    last_station,
+                    station,
+                    seq - 1,
+                    nameseqab,
+                    mode_num,
+                    mode_name,
+                    mode_type,
+                ]
                 # add stop A (last stop)
-                stop_row = [line.name, arcpy.Point(last_point[0], last_point[1]), last_station, last_n, seq-1, last_is_stop]
-                
+                stop_row = [
+                    line.name,
+                    arcpy.Point(last_point[0], last_point[1]),
+                    last_station,
+                    last_n,
+                    seq - 1,
+                    last_is_stop,
+                ]
+
                 if LOADVOL_DIR:
                     # and vehicle type, capacity information
-                    abvols      = collections.OrderedDict([("EA",  0 ), ("AM",  0 ), ("MD",  0 ), ("PM",  0 ), ("EV",  0 )])
-                    loads_stand = collections.OrderedDict([("EA",  0 ), ("AM",  0 ), ("MD",  0 ), ("PM",  0 ), ("EV",  0 )])
-                    loads_seat  = collections.OrderedDict([("EA",  0 ), ("AM",  0 ), ("MD",  0 ), ("PM",  0 ), ("EV",  0 )])
-                    brdas       = collections.OrderedDict([("EA",  0 ), ("AM",  0 ), ("MD",  0 ), ("PM",  0 ), ("EV",  0 )])
-                    xitas       = collections.OrderedDict([("EA",  0 ), ("AM",  0 ), ("MD",  0 ), ("PM",  0 ), ("EV",  0 )])
-                    xitbs       = collections.OrderedDict([("EA",  0 ), ("AM",  0 ), ("MD",  0 ), ("PM",  0 ), ("EV",  0 )])
+                    abvols = collections.OrderedDict(
+                        [("EA", 0), ("AM", 0), ("MD", 0), ("PM", 0), ("EV", 0)]
+                    )
+                    loads_stand = collections.OrderedDict(
+                        [("EA", 0), ("AM", 0), ("MD", 0), ("PM", 0), ("EV", 0)]
+                    )
+                    loads_seat = collections.OrderedDict(
+                        [("EA", 0), ("AM", 0), ("MD", 0), ("PM", 0), ("EV", 0)]
+                    )
+                    brdas = collections.OrderedDict(
+                        [("EA", 0), ("AM", 0), ("MD", 0), ("PM", 0), ("EV", 0)]
+                    )
+                    xitas = collections.OrderedDict(
+                        [("EA", 0), ("AM", 0), ("MD", 0), ("PM", 0), ("EV", 0)]
+                    )
+                    xitbs = collections.OrderedDict(
+                        [("EA", 0), ("AM", 0), ("MD", 0), ("PM", 0), ("EV", 0)]
+                    )
 
-                    abnameseq = "{} {} {} {}".format(last_n, n, line.name, seq-1).encode()  # byte string
+                    abnameseq = "{} {} {} {}".format(
+                        last_n, n, line.name, seq - 1
+                    ).encode()  # byte string
 
                     # if transit crowding file has been read, that overrides
                     cr_link_dict = None
-                    if (line.name.upper(),last_n,n,seq-1) in crowding_link_dict:
-                        cr_link_dict = crowding_link_dict[(line.name.upper(),last_n,n,seq-1)]
+                    if (line.name.upper(), last_n, n, seq - 1) in crowding_link_dict:
+                        cr_link_dict = crowding_link_dict[
+                            (line.name.upper(), last_n, n, seq - 1)
+                        ]
 
                     for timeperiod in TIMEPERIOD_DURATIONS.keys():
                         if abnameseq in tads[timeperiod].trnAsgnTable:
-                            abvols[timeperiod]      = tads[timeperiod].trnAsgnTable[abnameseq]["AB_VOL"]
-                            loads_stand[timeperiod] = tads[timeperiod].trnAsgnTable[abnameseq]["LOAD"]
-                            brdas[timeperiod]       = tads[timeperiod].trnAsgnTable[abnameseq]["AB_BRDA"]
-                            xitas[timeperiod]       = tads[timeperiod].trnAsgnTable[abnameseq]["AB_XITA"]
-                            xitbs[timeperiod]       = tads[timeperiod].trnAsgnTable[abnameseq]["AB_XITB"]
+                            abvols[timeperiod] = tads[timeperiod].trnAsgnTable[
+                                abnameseq
+                            ]["AB_VOL"]
+                            loads_stand[timeperiod] = tads[timeperiod].trnAsgnTable[
+                                abnameseq
+                            ]["LOAD"]
+                            brdas[timeperiod] = tads[timeperiod].trnAsgnTable[
+                                abnameseq
+                            ]["AB_BRDA"]
+                            xitas[timeperiod] = tads[timeperiod].trnAsgnTable[
+                                abnameseq
+                            ]["AB_XITA"]
+                            xitbs[timeperiod] = tads[timeperiod].trnAsgnTable[
+                                abnameseq
+                            ]["AB_XITB"]
 
                         # override from transit crowding
                         if cr_link_dict:
-                            abvols[timeperiod]       = cr_link_dict[("AB_VOL",        timeperiod)]
-                            loads_stand[timeperiod]  = cr_link_dict[("load_standcap", timeperiod)]
-                            loads_seat[timeperiod]   = cr_link_dict[("load_seatcap",  timeperiod)]
-                            brdas[timeperiod]        = cr_link_dict[("AB_BRDA",       timeperiod)]
-                            xitas[timeperiod]        = cr_link_dict[("AB_XITA",       timeperiod)]
-                            xitbs[timeperiod]        = cr_link_dict[("AB_XITB",       timeperiod)]
+                            abvols[timeperiod] = cr_link_dict[("AB_VOL", timeperiod)]
+                            loads_stand[timeperiod] = cr_link_dict[
+                                ("load_standcap", timeperiod)
+                            ]
+                            loads_seat[timeperiod] = cr_link_dict[
+                                ("load_seatcap", timeperiod)
+                            ]
+                            brdas[timeperiod] = cr_link_dict[("AB_BRDA", timeperiod)]
+                            xitas[timeperiod] = cr_link_dict[("AB_XITA", timeperiod)]
+                            xitbs[timeperiod] = cr_link_dict[("AB_XITB", timeperiod)]
 
                     link_row += list(abvols.values()) + list(loads_stand.values())
-                    if TRANSIT_CROWDING_FILE: link_row += list(loads_seat.values())
+                    if TRANSIT_CROWDING_FILE:
+                        link_row += list(loads_seat.values())
 
-                    stop_row += list(brdas.values())  + list(xitas.values())
-                    stop_b_row +=        [0,0,0,0,0]  + list(xitbs.values())
+                    stop_row += list(brdas.values()) + list(xitas.values())
+                    stop_b_row += [0, 0, 0, 0, 0] + list(xitbs.values())
 
                     if len(trnlink_recs) > 0:
-                        if (last_n,n,line.name,mode_num) in trnlink_recs:
-                            rec = trnlink_recs[(last_n,n,line.name,mode_num)]
-                            link_row.extend([rec["distance_ea"], rec["distance_am"], rec["distance_md"], rec["distance_pm"], rec["distance_ev"]])
-                            link_row.extend([rec[    "time_ea"], rec[    "time_am"], rec[    "time_md"], rec[    "time_pm"], rec[    "time_ev"]])
+                        if (last_n, n, line.name, mode_num) in trnlink_recs:
+                            rec = trnlink_recs[(last_n, n, line.name, mode_num)]
+                            link_row.extend(
+                                [
+                                    rec["distance_ea"],
+                                    rec["distance_am"],
+                                    rec["distance_md"],
+                                    rec["distance_pm"],
+                                    rec["distance_ev"],
+                                ]
+                            )
+                            link_row.extend(
+                                [
+                                    rec["time_ea"],
+                                    rec["time_am"],
+                                    rec["time_md"],
+                                    rec["time_pm"],
+                                    rec["time_ev"],
+                                ]
+                            )
                         else:
-                            link_row.extend([0,0,0,0,0])
-                            link_row.extend([0,0,0,0,0])
-                           
+                            link_row.extend([0, 0, 0, 0, 0])
+                            link_row.extend([0, 0, 0, 0, 0])
+
                 # for each link, add stop A to stops
                 stop_cursor[operator_file].insertRow(stop_row)
                 stop_count += 1
@@ -846,36 +1296,74 @@ if __name__ == '__main__':
                 link_cursor[operator_file].insertRow(link_row)
                 # save the link data for aggregation
                 link_rows_item = [
-                    last_n, last_point[0],      last_point[1],      last_station,
-                    n,      node_dicts["X"][n], node_dicts["Y"][n], station,
-                    line.name, name_set,
-                    line.attr['MODE'], mode_name, mode_type, op_txt,
+                    last_n,
+                    last_point[0],
+                    last_point[1],
+                    last_station,
+                    n,
+                    node_dicts["X"][n],
+                    node_dicts["Y"][n],
+                    station,
+                    line.name,
+                    name_set,
+                    line.attr["MODE"],
+                    mode_name,
+                    mode_type,
+                    op_txt,
                     # trips per time period
-                    TIMEPERIOD_DURATIONS["EA"]*60.0/float(line.attr['FREQ[1]']) if float(line.attr['FREQ[1]'])>0 else 0,
-                    TIMEPERIOD_DURATIONS["AM"]*60.0/float(line.attr['FREQ[2]']) if float(line.attr['FREQ[2]'])>0 else 0,
-                    TIMEPERIOD_DURATIONS["MD"]*60.0/float(line.attr['FREQ[3]']) if float(line.attr['FREQ[3]'])>0 else 0,
-                    TIMEPERIOD_DURATIONS["PM"]*60.0/float(line.attr['FREQ[4]']) if float(line.attr['FREQ[4]'])>0 else 0,
-                    TIMEPERIOD_DURATIONS["EV"]*60.0/float(line.attr['FREQ[5]']) if float(line.attr['FREQ[5]'])>0 else 0
+                    TIMEPERIOD_DURATIONS["EA"] * 60.0 / float(line.attr["FREQ[1]"])
+                    if float(line.attr["FREQ[1]"]) > 0
+                    else 0,
+                    TIMEPERIOD_DURATIONS["AM"] * 60.0 / float(line.attr["FREQ[2]"])
+                    if float(line.attr["FREQ[2]"]) > 0
+                    else 0,
+                    TIMEPERIOD_DURATIONS["MD"] * 60.0 / float(line.attr["FREQ[3]"])
+                    if float(line.attr["FREQ[3]"]) > 0
+                    else 0,
+                    TIMEPERIOD_DURATIONS["PM"] * 60.0 / float(line.attr["FREQ[4]"])
+                    if float(line.attr["FREQ[4]"]) > 0
+                    else 0,
+                    TIMEPERIOD_DURATIONS["EV"] * 60.0 / float(line.attr["FREQ[5]"])
+                    if float(line.attr["FREQ[5]"]) > 0
+                    else 0,
                 ]
                 if LOADVOL_DIR:
-                    link_rows_item.extend([
-                        # period cap
-                        pdcaps["EA"], pdcaps["AM"], pdcaps["MD"], pdcaps["PM"], pdcaps["EV"],
-                        # abvols
-                        abvols["EA"], abvols["AM"], abvols["MD"], abvols["PM"], abvols["EV"]
-                    ])
+                    link_rows_item.extend(
+                        [
+                            # period cap
+                            pdcaps["EA"],
+                            pdcaps["AM"],
+                            pdcaps["MD"],
+                            pdcaps["PM"],
+                            pdcaps["EV"],
+                            # abvols
+                            abvols["EA"],
+                            abvols["AM"],
+                            abvols["MD"],
+                            abvols["PM"],
+                            abvols["EV"],
+                        ]
+                    )
                     if TRANSIT_CROWDING_FILE:
-                         link_rows_item.extend([pdseatcaps["EA"], pdseatcaps["AM"], pdseatcaps["MD"], pdseatcaps["PM"], pdseatcaps["EV"]])
+                        link_rows_item.extend(
+                            [
+                                pdseatcaps["EA"],
+                                pdseatcaps["AM"],
+                                pdseatcaps["MD"],
+                                pdseatcaps["PM"],
+                                pdseatcaps["EV"],
+                            ]
+                        )
 
-                link_rows.append( link_rows_item )
+                link_rows.append(link_rows_item)
 
                 link_count += 1
                 link_point_array.removeAll()
                 link_point_array.add(point)
 
-            last_n       = n
+            last_n = n
             last_station = station
-            last_point   = (node_dicts["X"][n], node_dicts["Y"][n])
+            last_point = (node_dicts["X"][n], node_dicts["Y"][n])
             last_is_stop = is_stop
 
             seq += 1
@@ -887,23 +1375,32 @@ if __name__ == '__main__':
         pline_shape = arcpy.Polyline(line_point_array)
 
         line_row = [
-            line.name, name_set, line.attr["LONGNAME"] if "LONGNAME" in line.attr else "", pline_shape,
-            float(line.attr['FREQ[1]']),
-            float(line.attr['FREQ[2]']),
-            float(line.attr['FREQ[3]']),
-            float(line.attr['FREQ[4]']),
-            float(line.attr['FREQ[5]']),
+            line.name,
+            name_set,
+            line.attr["LONGNAME"] if "LONGNAME" in line.attr else "",
+            pline_shape,
+            float(line.attr["FREQ[1]"]),
+            float(line.attr["FREQ[2]"]),
+            float(line.attr["FREQ[3]"]),
+            float(line.attr["FREQ[4]"]),
+            float(line.attr["FREQ[5]"]),
             1 if line.isOneWay() else 0,
-            line.attr['MODE'], mode_name, mode_type,
-            op_txt, # operator
-            first_n, first_name,
-            last_n,  last_station,
+            line.attr["MODE"],
+            mode_name,
+            mode_type,
+            op_txt,  # operator
+            first_n,
+            first_name,
+            last_n,
+            last_station,
             "N" if last_point[1] > first_point[1] else "S",
-            "E" if last_point[0] > first_point[0] else "W"
+            "E" if last_point[0] > first_point[0] else "W",
         ]
 
         if LOADVOL_DIR:
-            line_row += list(vehtypes.values()) + list(vehcaps.values()) + list(pdcaps.values())
+            line_row += (
+                list(vehtypes.values()) + list(vehcaps.values()) + list(pdcaps.values())
+            )
         if TRANSIT_CROWDING_FILE:
             line_row += list(seatcaps.values()) + list(pdseatcaps.values())
 
@@ -913,42 +1410,90 @@ if __name__ == '__main__':
     # add support links since they're not added above
     support_df = trnlink_df.reset_index(drop=False)
     if len(support_df) > 0:
-        support_df = support_df.loc[ support_df["mode"]<10]
+        support_df = support_df.loc[support_df["mode"] < 10]
 
     support_recs = support_df.to_dict(orient="records")
     for support_link in support_recs:
 
-        station_a = stops_to_station[support_link["A"]] if support_link["A"] in stops_to_station else ""
-        station_b = stops_to_station[support_link["B"]] if support_link["B"] in stops_to_station else ""
+        station_a = (
+            stops_to_station[support_link["A"]]
+            if support_link["A"] in stops_to_station
+            else ""
+        )
+        station_b = (
+            stops_to_station[support_link["B"]]
+            if support_link["B"] in stops_to_station
+            else ""
+        )
 
-        mode_name = MODE_NUM_TO_NAME[support_link['mode']][0]
+        mode_name = MODE_NUM_TO_NAME[support_link["mode"]][0]
         mode_type = mode_name
-        point_a   = arcpy.Point(node_dicts["X"][support_link["A"]], node_dicts["Y"][support_link["A"]])
-        point_b   = arcpy.Point(node_dicts["X"][support_link["B"]], node_dicts["Y"][support_link["B"]])
+        point_a = arcpy.Point(
+            node_dicts["X"][support_link["A"]], node_dicts["Y"][support_link["A"]]
+        )
+        point_b = arcpy.Point(
+            node_dicts["X"][support_link["B"]], node_dicts["Y"][support_link["B"]]
+        )
 
         link_point_array = arcpy.Array()
         link_point_array.add(point_a)
         link_point_array.add(point_b)
 
-        nameseqab   = "{} {} {} {}".format(support_link["name"], -1, support_link["A"], support_link["B"])
+        nameseqab = "{} {} {} {}".format(
+            support_link["name"], -1, support_link["A"], support_link["B"]
+        )
 
-        link_row = [support_link["name"], arcpy.Polyline(link_point_array),
-                    support_link["A"], support_link["B"], station_a, station_b, -1, nameseqab, # seq, nameseqab
-                    support_link["mode"], mode_name, mode_type]
-        link_row.extend([support_link[  "AB_VOL_ea"],support_link[  "AB_VOL_am"],support_link[  "AB_VOL_md"],support_link[  "AB_VOL_pm"],support_link[  "AB_VOL_ev"]])
-        link_row.extend([0,0,0,0,0]) # LOAD
-        if TRANSIT_CROWDING_FILE: link_row.extend([0,0,0,0,0]) # LOADSE
-        link_row.extend([support_link["distance_ea"],support_link["distance_am"],support_link["distance_md"],support_link["distance_pm"],support_link["distance_ev"]])
-        link_row.extend([support_link[    "time_ea"],support_link[    "time_am"],support_link[    "time_md"],support_link[    "time_pm"],support_link[    "time_ev"]])
+        link_row = [
+            support_link["name"],
+            arcpy.Polyline(link_point_array),
+            support_link["A"],
+            support_link["B"],
+            station_a,
+            station_b,
+            -1,
+            nameseqab,  # seq, nameseqab
+            support_link["mode"],
+            mode_name,
+            mode_type,
+        ]
+        link_row.extend(
+            [
+                support_link["AB_VOL_ea"],
+                support_link["AB_VOL_am"],
+                support_link["AB_VOL_md"],
+                support_link["AB_VOL_pm"],
+                support_link["AB_VOL_ev"],
+            ]
+        )
+        link_row.extend([0, 0, 0, 0, 0])  # LOAD
+        if TRANSIT_CROWDING_FILE:
+            link_row.extend([0, 0, 0, 0, 0])  # LOADSE
+        link_row.extend(
+            [
+                support_link["distance_ea"],
+                support_link["distance_am"],
+                support_link["distance_md"],
+                support_link["distance_pm"],
+                support_link["distance_ev"],
+            ]
+        )
+        link_row.extend(
+            [
+                support_link["time_ea"],
+                support_link["time_am"],
+                support_link["time_md"],
+                support_link["time_pm"],
+                support_link["time_ev"],
+            ]
+        )
 
         try:
             link_cursor[operator_file].insertRow(link_row)
         except:
-            print("Exception occurred: ",sys.exc_info()[0])
+            print("Exception occurred: ", sys.exc_info()[0])
             print("link_row={}".format(link_row))
             print("TRN_LINKS_FIELDS={}".format(TRN_LINKS_FIELDS))
             sys.exit(2)
-
 
     del stop_cursor
     logging.info("Wrote {} stops to {}".format(stop_count, TRN_STOPS_SHPFILE))
@@ -957,7 +1502,11 @@ if __name__ == '__main__':
     logging.info("Wrote {} lines to {}".format(line_count, TRN_LINES_SHPFILE))
 
     del link_cursor
-    logging.info("Wrote {} links and {} support links to {}".format(link_count, len(support_df), TRN_LINKS_SHPFILE))
+    logging.info(
+        "Wrote {} links and {} support links to {}".format(
+            link_count, len(support_df), TRN_LINKS_SHPFILE
+        )
+    )
 
     # aggregate link level data
     links_df = pandas.DataFrame(columns=link_rows_cols, data=link_rows)
@@ -965,97 +1514,202 @@ if __name__ == '__main__':
     logging.debug("\n{}".format(links_df.head(20)))
 
     # aggregate by A,B,MODE,MODE_NAME,MODE_TYPE,OPERATOR_T,NAME_SET
-    links_df_GB = links_df.groupby(by=["A","B","A_STATION","B_STATION","NAME_SET","MODE","MODE_NAME","MODE_TYPE","OPERATOR_T"])
+    links_df_GB = links_df.groupby(
+        by=[
+            "A",
+            "B",
+            "A_STATION",
+            "B_STATION",
+            "NAME_SET",
+            "MODE",
+            "MODE_NAME",
+            "MODE_TYPE",
+            "OPERATOR_T",
+        ]
+    )
     agg_dict = {
-        "A_X":"first", "A_Y":"first", "B_X":"first", "B_Y":"first", "LINE_COUNT":"sum",
-        "TRIPS_EA"  :"sum","TRIPS_AM"  :"sum","TRIPS_MD"  :"sum","TRIPS_PM" :"sum","TRIPS_EV" :"sum",
+        "A_X": "first",
+        "A_Y": "first",
+        "B_X": "first",
+        "B_Y": "first",
+        "LINE_COUNT": "sum",
+        "TRIPS_EA": "sum",
+        "TRIPS_AM": "sum",
+        "TRIPS_MD": "sum",
+        "TRIPS_PM": "sum",
+        "TRIPS_EV": "sum",
     }
     if LOADVOL_DIR:
-        agg_dict.update({
-            "PDCAP_EA":"sum","PDCAP_AM":"sum","PDCAP_MD":"sum","PDCAP_PM":"sum","PDCAP_EV":"sum",
-            "ABVOL_EA":"sum","ABVOL_AM":"sum","ABVOL_MD":"sum","ABVOL_PM":"sum","ABVOL_EV":"sum",
-        })
+        agg_dict.update(
+            {
+                "PDCAP_EA": "sum",
+                "PDCAP_AM": "sum",
+                "PDCAP_MD": "sum",
+                "PDCAP_PM": "sum",
+                "PDCAP_EV": "sum",
+                "ABVOL_EA": "sum",
+                "ABVOL_AM": "sum",
+                "ABVOL_MD": "sum",
+                "ABVOL_PM": "sum",
+                "ABVOL_EV": "sum",
+            }
+        )
         if TRANSIT_CROWDING_FILE:
-            agg_dict.update({
-                "PDSECAP_EA":"sum","PDSECAP_AM":"sum","PDSECAP_MD":"sum","PDSECAP_PM":"sum","PDSECAP_EV":"sum",
-            })
+            agg_dict.update(
+                {
+                    "PDSECAP_EA": "sum",
+                    "PDSECAP_AM": "sum",
+                    "PDSECAP_MD": "sum",
+                    "PDSECAP_PM": "sum",
+                    "PDSECAP_EV": "sum",
+                }
+            )
 
-    links_df    = links_df_GB.agg(agg_dict).reset_index()
-    links_df["ROUTE_A_B"] = links_df["NAME_SET"] + " " + links_df["A"].astype(str) + "_" + links_df["B"].astype(str)
+    links_df = links_df_GB.agg(agg_dict).reset_index()
+    links_df["ROUTE_A_B"] = (
+        links_df["NAME_SET"]
+        + " "
+        + links_df["A"].astype(str)
+        + "_"
+        + links_df["B"].astype(str)
+    )
 
     if LOADVOL_DIR:
         for timeperiod in TIMEPERIOD_DURATIONS.keys():
             links_df["LOAD_{}".format(timeperiod)] = 0
-            links_df.loc[ links_df["PDCAP_{}".format(timeperiod)] > 0, "LOAD_{}".format(timeperiod)] = \
-                links_df["ABVOL_{}".format(timeperiod)] / links_df["PDCAP_{}".format(timeperiod)]
+            links_df.loc[
+                links_df["PDCAP_{}".format(timeperiod)] > 0,
+                "LOAD_{}".format(timeperiod),
+            ] = (
+                links_df["ABVOL_{}".format(timeperiod)]
+                / links_df["PDCAP_{}".format(timeperiod)]
+            )
         if TRANSIT_CROWDING_FILE:
             for timeperiod in TIMEPERIOD_DURATIONS.keys():
                 links_df["LOADSE_{}".format(timeperiod)] = 0
-                links_df.loc[ links_df["PDSECAP_{}".format(timeperiod)] > 0, "LOADSE_{}".format(timeperiod)] = \
-                    links_df["ABVOL_{}".format(timeperiod)] / links_df["PDSECAP_{}".format(timeperiod)]
+                links_df.loc[
+                    links_df["PDSECAP_{}".format(timeperiod)] > 0,
+                    "LOADSE_{}".format(timeperiod),
+                ] = (
+                    links_df["ABVOL_{}".format(timeperiod)]
+                    / links_df["PDSECAP_{}".format(timeperiod)]
+                )
 
     logging.debug("\n{}".format(links_df.head(20)))
     # create the link file by route
     arcpy.Delete_management(TRN_ROUTE_LINKS_SHPFILE)
-    arcpy.CreateFeatureclass_management(WORKING_DIR, TRN_ROUTE_LINKS_SHPFILE, "POLYLINE")
-    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "A",         "LONG")
-    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "B",         "LONG")
-    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "A_STATION", "TEXT", field_length=40)
-    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "B_STATION", "TEXT", field_length=40)
-    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "NAME_SET",  "TEXT", field_length=25)
-    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "MODE",      "SHORT")
-    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "MODE_NAME", "TEXT", field_length=40)
-    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "MODE_TYPE", "TEXT", field_length=15)
-    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "OPERATOR_T","TEXT", field_length=40)
-    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "LINE_COUNT","SHORT")
-    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "ROUTE_A_B", "TEXT", field_length=40)
+    arcpy.CreateFeatureclass_management(
+        WORKING_DIR, TRN_ROUTE_LINKS_SHPFILE, "POLYLINE"
+    )
+    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "A", "LONG")
+    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "B", "LONG")
+    arcpy.AddField_management(
+        TRN_ROUTE_LINKS_SHPFILE, "A_STATION", "TEXT", field_length=40
+    )
+    arcpy.AddField_management(
+        TRN_ROUTE_LINKS_SHPFILE, "B_STATION", "TEXT", field_length=40
+    )
+    arcpy.AddField_management(
+        TRN_ROUTE_LINKS_SHPFILE, "NAME_SET", "TEXT", field_length=25
+    )
+    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "MODE", "SHORT")
+    arcpy.AddField_management(
+        TRN_ROUTE_LINKS_SHPFILE, "MODE_NAME", "TEXT", field_length=40
+    )
+    arcpy.AddField_management(
+        TRN_ROUTE_LINKS_SHPFILE, "MODE_TYPE", "TEXT", field_length=15
+    )
+    arcpy.AddField_management(
+        TRN_ROUTE_LINKS_SHPFILE, "OPERATOR_T", "TEXT", field_length=40
+    )
+    arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "LINE_COUNT", "SHORT")
+    arcpy.AddField_management(
+        TRN_ROUTE_LINKS_SHPFILE, "ROUTE_A_B", "TEXT", field_length=40
+    )
 
     for timeperiod in TIMEPERIOD_DURATIONS.keys():
-        arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "TRIPS_{}".format(timeperiod),  "FLOAT", field_precision=7, field_scale=2)
+        arcpy.AddField_management(
+            TRN_ROUTE_LINKS_SHPFILE,
+            "TRIPS_{}".format(timeperiod),
+            "FLOAT",
+            field_precision=7,
+            field_scale=2,
+        )
 
     if LOADVOL_DIR:
         for timeperiod in TIMEPERIOD_DURATIONS.keys():
-            arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "PDCAP_{}".format(timeperiod), "FLOAT", field_precision=9, field_scale=2)
+            arcpy.AddField_management(
+                TRN_ROUTE_LINKS_SHPFILE,
+                "PDCAP_{}".format(timeperiod),
+                "FLOAT",
+                field_precision=9,
+                field_scale=2,
+            )
         for timeperiod in TIMEPERIOD_DURATIONS.keys():
-            arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "ABVOL_{}".format(timeperiod), "FLOAT", field_precision=9, field_scale=2)
+            arcpy.AddField_management(
+                TRN_ROUTE_LINKS_SHPFILE,
+                "ABVOL_{}".format(timeperiod),
+                "FLOAT",
+                field_precision=9,
+                field_scale=2,
+            )
         for timeperiod in TIMEPERIOD_DURATIONS.keys():
-            arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "LOAD_{}".format(timeperiod), "FLOAT", field_precision=9, field_scale=2)
+            arcpy.AddField_management(
+                TRN_ROUTE_LINKS_SHPFILE,
+                "LOAD_{}".format(timeperiod),
+                "FLOAT",
+                field_precision=9,
+                field_scale=2,
+            )
 
         if TRANSIT_CROWDING_FILE:
             for timeperiod in TIMEPERIOD_DURATIONS.keys():
-                arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "PDSECAP_{}".format(timeperiod), "FLOAT", field_precision=9, field_scale=2)
+                arcpy.AddField_management(
+                    TRN_ROUTE_LINKS_SHPFILE,
+                    "PDSECAP_{}".format(timeperiod),
+                    "FLOAT",
+                    field_precision=9,
+                    field_scale=2,
+                )
             for timeperiod in TIMEPERIOD_DURATIONS.keys():
-                arcpy.AddField_management(TRN_ROUTE_LINKS_SHPFILE, "LOADSE_{}".format(timeperiod), "FLOAT", field_precision=9, field_scale=2)
+                arcpy.AddField_management(
+                    TRN_ROUTE_LINKS_SHPFILE,
+                    "LOADSE_{}".format(timeperiod),
+                    "FLOAT",
+                    field_precision=9,
+                    field_scale=2,
+                )
 
     arcpy.DefineProjection_management(TRN_ROUTE_LINKS_SHPFILE, sr)
 
     # update link_rows_cols
-    for remove_col in ["A_X","A_Y","B_X","B_Y","NAME"]:
+    for remove_col in ["A_X", "A_Y", "B_X", "B_Y", "NAME"]:
         link_rows_cols.remove(remove_col)
     link_rows_cols = ["SHAPE@"] + link_rows_cols + ["LINE_COUNT", "ROUTE_A_B"]
     if LOADVOL_DIR:
-        link_rows_cols.extend(["LOAD_EA","LOAD_AM","LOAD_MD","LOAD_PM","LOAD_EV"])
+        link_rows_cols.extend(["LOAD_EA", "LOAD_AM", "LOAD_MD", "LOAD_PM", "LOAD_EV"])
         if TRANSIT_CROWDING_FILE:
-            link_rows_cols.extend(["LOADSE_EA","LOADSE_AM","LOADSE_MD","LOADSE_PM","LOADSE_EV"])
+            link_rows_cols.extend(
+                ["LOADSE_EA", "LOADSE_AM", "LOADSE_MD", "LOADSE_PM", "LOADSE_EV"]
+            )
     # create cursor
     link_cursor = arcpy.da.InsertCursor(TRN_ROUTE_LINKS_SHPFILE, link_rows_cols)
-    ab_array    = arcpy.Array()
+    ab_array = arcpy.Array()
 
     # fill it in
     links_df_records = links_df.to_dict(orient="records")
     for record in links_df_records:
         cursor_rec = []
         for col in link_rows_cols:
-            if col=="SHAPE@":
-                ab_array.add( arcpy.Point( record["A_X"], record["A_Y"]) )
-                ab_array.add( arcpy.Point( record["B_X"], record["B_Y"]))
-                ab_line   = arcpy.Polyline(ab_array)
+            if col == "SHAPE@":
+                ab_array.add(arcpy.Point(record["A_X"], record["A_Y"]))
+                ab_array.add(arcpy.Point(record["B_X"], record["B_Y"]))
+                ab_line = arcpy.Polyline(ab_array)
                 cursor_rec.append(ab_line)
                 ab_array.removeAll()
             else:
-                cursor_rec.append (record[col])
+                cursor_rec.append(record[col])
         link_cursor.insertRow(cursor_rec)
 
     del link_cursor
     logging.info("Wrote {} links to {}".format(len(links_df), TRN_ROUTE_LINKS_SHPFILE))
-

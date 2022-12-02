@@ -21,20 +21,33 @@ USAGE = """
 
 import argparse, os
 import arcpy
-import numpy,pandas
+import numpy, pandas
 
 TAZ_SHAPEFILE = "M:\\Data\\GIS layers\\TM1_taz\\bayarea_rtaz1454_rev1_WGS84.shp"
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description = USAGE,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('link_shapefile',  type=str, help="Input link shapefile")
-    parser.add_argument('link_to_taz_csv', type=str, help="Output link to taz csv")
-    parser.add_argument('--shapefile',     type=str, help="TAZ or non-TAZ shapefile")
-    parser.add_argument('--shp_id',        type=str, default="TAZ1454",       help="ID from shapefile")
-    parser.add_argument('--linkshp_mi',    type=str, default="linktaz_mi",    help="Column name for link intersect this shape in miles")
-    parser.add_argument('--linkshp_share', type=str, default="linktaz_share", help="Column name for share of the link intersecting this shape")
+    parser = argparse.ArgumentParser(
+        description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument("link_shapefile", type=str, help="Input link shapefile")
+    parser.add_argument("link_to_taz_csv", type=str, help="Output link to taz csv")
+    parser.add_argument("--shapefile", type=str, help="TAZ or non-TAZ shapefile")
+    parser.add_argument(
+        "--shp_id", type=str, default="TAZ1454", help="ID from shapefile"
+    )
+    parser.add_argument(
+        "--linkshp_mi",
+        type=str,
+        default="linktaz_mi",
+        help="Column name for link intersect this shape in miles",
+    )
+    parser.add_argument(
+        "--linkshp_share",
+        type=str,
+        default="linktaz_share",
+        help="Column name for share of the link intersecting this shape",
+    )
     my_args = parser.parse_args()
 
     # use scratch gdb
@@ -52,14 +65,18 @@ if __name__ == '__main__':
 
     # calculate link length
     length_field = "link_mi"
-    arcpy.AddField_management(link_feature, length_field, "FLOAT", field_precision=12, field_scale=4)
-    arcpy.CalculateGeometryAttributes_management(link_feature, [[length_field, "LENGTH"]], "MILES_US")
+    arcpy.AddField_management(
+        link_feature, length_field, "FLOAT", field_precision=12, field_scale=4
+    )
+    arcpy.CalculateGeometryAttributes_management(
+        link_feature, [[length_field, "LENGTH"]], "MILES_US"
+    )
 
     # copy taz shapefile into workspace
     taz_feature = "tazs"
     my_shapefile = TAZ_SHAPEFILE
     if my_args.shapefile:
-      my_shapefile = my_args.shapefile
+        my_shapefile = my_args.shapefile
     if arcpy.Exists(taz_feature):
         print("Found {}; deleting".format(taz_feature))
         arcpy.Delete_management(taz_feature)
@@ -78,17 +95,25 @@ if __name__ == '__main__':
 
     # calculate length of these links
     length_taz_field = my_args.linkshp_mi
-    arcpy.AddField_management(link_taz_feature, length_taz_field, "FLOAT", field_precision=12, field_scale=4)
-    arcpy.CalculateGeometryAttributes_management(link_taz_feature, [[length_taz_field, "LENGTH"]], "MILES_US")
+    arcpy.AddField_management(
+        link_taz_feature, length_taz_field, "FLOAT", field_precision=12, field_scale=4
+    )
+    arcpy.CalculateGeometryAttributes_management(
+        link_taz_feature, [[length_taz_field, "LENGTH"]], "MILES_US"
+    )
 
     # bring into pandas
-    fields = ["A","B",my_args.shp_id,length_field,length_taz_field]
+    fields = ["A", "B", my_args.shp_id, length_field, length_taz_field]
     print(fields)
-    links_array = arcpy.da.TableToNumPyArray(in_table=link_taz_feature, field_names=fields)
+    links_array = arcpy.da.TableToNumPyArray(
+        in_table=link_taz_feature, field_names=fields
+    )
     links_df = pandas.DataFrame(links_array, columns=fields)
 
     # divide lengths to get proportion
-    links_df[my_args.linkshp_share] = links_df[length_taz_field]/links_df[length_field]
+    links_df[my_args.linkshp_share] = (
+        links_df[length_taz_field] / links_df[length_field]
+    )
     print("links_df has {} rows; head:\n{}".format(len(links_df), links_df.head()))
 
     # write it

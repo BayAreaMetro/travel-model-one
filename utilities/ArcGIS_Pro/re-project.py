@@ -1,6 +1,6 @@
 import arcpy
 
-# input data is in some other coordinate system, e.g. GCS_North_American_1983 
+# input data is in some other coordinate system, e.g. GCS_North_American_1983
 input_features = r"M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\PHED\UZA_select\UZA_select.shp"
 
 # output data

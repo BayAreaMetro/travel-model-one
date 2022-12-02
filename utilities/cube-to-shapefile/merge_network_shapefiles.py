@@ -16,16 +16,19 @@ SHAPEFILES = [
     "network_trn_links.shp",
     "network_trn_stops.shp",
     "trnlinkam_withSupport.shp",
-    "trnlinkpm_withSupport.shp"
+    "trnlinkpm_withSupport.shp",
 ]
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     WORKING_DIR = os.getcwd()
 
-    parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
-    parser.add_argument("indir1",  help="Input directory 1")
-    parser.add_argument("indir2",  help="Input directory 2")
-    parser.add_argument("outdir",  help="Output directory")
+    parser = argparse.ArgumentParser(
+        description=USAGE,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("indir1", help="Input directory 1")
+    parser.add_argument("indir2", help="Input directory 2")
+    parser.add_argument("outdir", help="Output directory")
     args = parser.parse_args()
 
     arcpy.env.workspace = WORKING_DIR
@@ -56,14 +59,15 @@ if __name__ == '__main__':
 
         # Add all fields from both infile2
         infile1_fieldnames = [f.name for f in arcpy.ListFields(infile1)]
-        infile2_fields     = arcpy.ListFields(infile2)
+        infile2_fields = arcpy.ListFields(infile2)
 
         print(infile1_fieldnames)
         # print(infile2_fields)
 
         for field in infile2_fields:
             field_name = field.name
-            if field_name in ["FID","Shape"]: continue
+            if field_name in ["FID", "Shape"]:
+                continue
 
             field_map = arcpy.FieldMap()
 
@@ -73,17 +77,26 @@ if __name__ == '__main__':
 
             # define the resulting field based on infile2 definition
             out_field = arcpy.Field()
-            out_field.name        = field_name
-            out_field.type        = field.type
-            out_field.length      = field.length
-            out_field.scale       = field.scale
-            out_field.precision   = field.precision
-            field_map.outputField = out_field 
+            out_field.name = field_name
+            out_field.type = field.type
+            out_field.length = field.length
+            out_field.scale = field.scale
+            out_field.precision = field.precision
+            field_map.outputField = out_field
 
-            print("  field_map inputFieldCount={} mergeRule={} outputField.name=[{}] type={} length={}  field2.length={}".format(
-                field_map.inputFieldCount, field_map.mergeRule,
-                field_map.outputField.name, field_map.outputField.type, field_map.outputField.length, field.length))
+            print(
+                "  field_map inputFieldCount={} mergeRule={} outputField.name=[{}] type={} length={}  field2.length={}".format(
+                    field_map.inputFieldCount,
+                    field_map.mergeRule,
+                    field_map.outputField.name,
+                    field_map.outputField.type,
+                    field_map.outputField.length,
+                    field.length,
+                )
+            )
 
             field_mappings.addFieldMap(field_map)
 
-        arcpy.Merge_management([infile1, infile2], outfile, field_mappings, add_source="ADD_SOURCE_INFO")
+        arcpy.Merge_management(
+            [infile1, infile2], outfile, field_mappings, add_source="ADD_SOURCE_INFO"
+        )

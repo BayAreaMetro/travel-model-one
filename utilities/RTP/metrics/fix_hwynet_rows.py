@@ -9,18 +9,25 @@ USAGE = """
 
  The problem should be fixed in the source network but this enables hwynet.py to run.
 """
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
-    parser.add_argument("net_csv",  metavar="avgload5period_vehclasses.csv", help="Loaded network export with vehicle classes")
+    parser = argparse.ArgumentParser(
+        description=USAGE,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "net_csv",
+        metavar="avgload5period_vehclasses.csv",
+        help="Loaded network export with vehicle classes",
+    )
     args = parser.parse_args()
 
     print("Reading {}".format(args.net_csv))
-    new_rows   = []
+    new_rows = []
     fixed_rows = 0
 
-    csv_file = open(args.net_csv, 'rb')
-    csv_reader = csv.reader(csv_file, delimiter=',')
+    csv_file = open(args.net_csv, "rb")
+    csv_reader = csv.reader(csv_file, delimiter=",")
     col_count = -1
     for row in csv_reader:
         if col_count < 0:
@@ -50,9 +57,12 @@ if __name__ == '__main__':
     print("Moving {} to {}".format(args.net_csv, bak_file))
     shutil.move(args.net_csv, bak_file)
 
-    print("Writing {} with {} fixed rows out of {}".format(args.net_csv, fixed_rows, len(new_rows)))
+    print(
+        "Writing {} with {} fixed rows out of {}".format(
+            args.net_csv, fixed_rows, len(new_rows)
+        )
+    )
     csv_file = open(args.net_csv, "wb")
     csv_writer = csv.writer(csv_file)
     csv_writer.writerows(new_rows)
     csv_file.close()
-
