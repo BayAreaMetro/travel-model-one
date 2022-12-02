@@ -24,9 +24,9 @@ set MODEL_BASE_DIR=E:\Model2C-Share\Projects\2050_TM151_PPA_BF_17_preTollCalib
 :: (this shoudl be the location of the output folder "tollcalib_iter" on the L drive)
 set L_DIR=L:\RTP2021_PPA\Projects\2050_TM151_PPA_BF_17_preTollCalib
 
-:: Configure target speed and max toll
-set target_speed=45 
-set max_toll=5
+:: Configure target speed and max toll by TOLLCLASS_Designations.xlsx
+rem set target_speed=45 
+rem set max_toll=5
 
 
 rem copy the two toll calibration inputs 
