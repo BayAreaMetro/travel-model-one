@@ -38,9 +38,9 @@ It took about 4.5 to 5 hours between iterations on AWS machines (for Back to the
 4. Update environment variables in the batch fille. This batch file copies the inputs and scripts needed for toll calibration. Users are required to "set" four variables in the batch file (see below). <br>https://github.com/BayAreaMetro/travel-model-one/blob/a6b8651737ca6138e04b4f35ca8d4cd4ee264521/utilities/toll_calibration/TollCalib_go.bat#L15-L26
 
     1. Line 15: set the path of the `TOLLCLASS_Designations.xlsx` (required)
-    2. Line 18: set the IP address (most likely no need to change)
-    3. Line 21: the location of the base run (i.e. pre toll calibration) directory 
-    4. Line 25: Where do you want the toll calibration outputs to be stored on L or M drive.
+    2. Line 18: set the IP address (only needed for aws runs; for runs on MTC servers, leaving this line unchanged or commenting it out would both be fine.)
+    3. Line 21: the location of the base run (i.e. pre toll calibration) directory (required)
+    4. Line 25: Where do you want the toll calibration outputs to be stored (not required, but MTC staff finds it helpful to have the results automatically copied to the L or M drive) 
 
 5. Run [`TollCalib_go.bat`](TollCalib_go.bat) in the command prompt
 
