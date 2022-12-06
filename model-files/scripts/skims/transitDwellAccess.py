@@ -43,7 +43,7 @@ def updateLinesOfInterest(timeperiod, trnAssignIter, complexAccessModes, current
     # initialize with file contents
     if os.path.exists(LOIfile):
         linesOfInterest = []
-        reader = csv.reader(open(LOIfile, "rb"))
+        reader = csv.reader(open(LOIfile, "r"))
         for row in reader:
             linesOfInterest.append(row)
             if len(row)>0: lineStopToRowIdx[row[0] + row[1]] = len(linesOfInterest)-1
@@ -54,6 +54,7 @@ def updateLinesOfInterest(timeperiod, trnAssignIter, complexAccessModes, current
         lineStopToRowIdx["linename"] = 0
         
     # add one or two columns
+    WranglerLogger.debug("linesOfInterest: {}".format(linesOfInterest))
     if len(linesOfInterest[0]) == 3:
         volIdx = 3
     else:
@@ -82,7 +83,7 @@ def updateLinesOfInterest(timeperiod, trnAssignIter, complexAccessModes, current
                                             abs(int(node.num)), abs(int(line.n[nodeIdx+1].num)), 
                                             nodeIdx+1)
             except:
-                print sys.exc_info()
+                print(sys.exc_info())
 
             boardsDisallowed = int(node.boardsDisallowed())
             
@@ -94,7 +95,7 @@ def updateLinesOfInterest(timeperiod, trnAssignIter, complexAccessModes, current
                 linesOfInterest[rowIdx].insert(volIdx, vol)
                 linesOfInterest[rowIdx].append(boardsDisallowed)
         
-    writer = csv.writer(open(LOIfile, "wb"))
+    writer = csv.writer(open(LOIfile, "w"))
     writer.writerows(linesOfInterest)
 
 def updatePHT(timeperiod, trnAssignIter, maxTrnAssignIter, PHTDiffCond):
@@ -165,7 +166,7 @@ def updatePHT(timeperiod, trnAssignIter, maxTrnAssignIter, PHTDiffCond):
         
     # First iteration -- nothing to do
     if currpaths == 0:
-        print "Currpaths = 0 for {},{},{}".format(phtIterationStr,phtTimeperiod,Mode)
+        print("Currpaths = 0 for {},{},{}".format(phtIterationStr,phtTimeperiod,Mode))
         RMSEivtt = 0
         RMSEtott = 0
     else:
@@ -182,7 +183,7 @@ def updatePHT(timeperiod, trnAssignIter, maxTrnAssignIter, PHTDiffCond):
 
     # otherwise -- Check convergence
     else:
-        # print PHT
+        # print(PHT)
         currPHT = PHT[trnAssignIter][timeperiod]
         prevPHT = PHT[trnAssignIter-1][timeperiod]
         pctdiffPHT = (currPHT-prevPHT)/prevPHT
@@ -205,17 +206,18 @@ def checkMSAcriteriaMet(timeperiod, trnAssignIter):
     Check the RouteLinksMSALog.csv to see if we've converged.
     Returns criteriaMet boolean.    
     """
-    routelinkFile = open("RouteLinkMSALog.csv", "rb")
+    routelinkFile = open("RouteLinkMSALog.csv", "r")
     logReader=csv.reader(routelinkFile)
     for trnAssignIterStr, timeperiodStr, totVolStr, pctDiffVolStr, criteriaMetStr in logReader:
         if timeperiodStr == timeperiod and int(trnAssignIterStr) == trnAssignIter:
             routelinkFile.close()
             criteriaMet = bool(int(criteriaMetStr))
-            print "RouteLinkMSALog criteria %s met for %s iteration %d" % ("" if criteriaMet else "not ", timeperiod, trnAssignIter)
+            print("RouteLinkMSALog criteria {} met for {} iteration {}".format(
+                "" if criteriaMet else "not ", timeperiod, trnAssignIter))
             return criteriaMet
     
     routelinkFile.close()
-    print "Line not found for %s iteration %d in RouteLinkMSALog.csv!" % (timeperiod, trnAssignIter)
+    print("Line not found for {} iteration {} in RouteLinkMSALog.csv!".format(timeperiod, trnAssignIter))
     raise
 
 def readExtraDelayFile(extraDelayFile):
@@ -291,12 +293,12 @@ if __name__ == '__main__':
         # For now, we'll leave this off.
         stripTimeFacRunTimeAttrs = False
     else:
-        print USAGE
+        print(USAGE)
         exit(2)
 
     runmode = sys.argv[3]
     if runmode not in ("Simple", "Complex"):
-        print USAGE
+        print(USAGE)
         exit(2)
 
 
@@ -312,7 +314,7 @@ if __name__ == '__main__':
     if runmode == "Complex":
         complexArgnum = 8
     if sys.argv[complexArgnum].lower() != "complexdwell":
-        print USAGE
+        print(USAGE)
         exit(2)
         
     complexDwellModes = sys.argv[complexArgnum+1:]
@@ -353,7 +355,7 @@ if __name__ == '__main__':
                 net.parseFile(fullfile="transitLines.lin",insert_replace=True)
             
                 # Cube will fail on a line with no frequencies so let's just delete those ahead of time
-                for lineidx in xrange(len(net.lines)-1, -1, -1):
+                for lineidx in range(len(net.lines)-1, -1, -1):
                     if not isinstance(net.lines[lineidx],TransitLine): continue
                     frequency = net.lines[lineidx].getFreqs()
                     freqsum = sum([float(i) for i in frequency])
@@ -374,8 +376,8 @@ if __name__ == '__main__':
                 net.write(name='transitOriginal' + timeperiod, writeEmptyFiles=False, suppressQuery=True, suppressValidation=True, cubeNetFileForValidation=None)
                 
             except:
-                print "Unexpected error:"
-                print traceback.print_exc()
+                print("Unexpected error:")
+                print(traceback.print_exc())
                 sys.exit(2)
 
             # convenience method to check that we know capacities for the complexModes
@@ -400,7 +402,7 @@ if __name__ == '__main__':
                                          FieldType("AB","C", 15, 0),
                                          FieldType("TRNVEHVOL", "F", 9, 2)))
             rownum = 0
-            for key,val in AB_to_trnvehvol.iteritems():
+            for key,val in AB_to_trnvehvol.items():
                 outTable[rownum]["A"] = key[0]
                 outTable[rownum]["B"] = key[1]
                 outTable[rownum]["AB"] = "%d %d" % (key[0], key[1])
@@ -415,8 +417,8 @@ if __name__ == '__main__':
     
     # Complex mode
     if len(sys.argv) <= 7:
-        print USAGE
-        print sys.argv
+        print(USAGE)
+        print(sys.argv)
         exit(1)
     
     timeperiod      = sys.argv[4]
@@ -426,8 +428,8 @@ if __name__ == '__main__':
     
     # argument validation
     if timeperiod not in ("AM", "MD", "PM", "EV", "EA"):
-        print "Invalid time period"
-        print USAGE
+        print("Invalid time period")
+        print(USAGE)
         exit(1)
     
     setupLogging(infoLogFilename=None, debugLogFilename="transitDwellAccess_%s.%d.log" % (timeperiod, trnAssignIter), 
@@ -490,7 +492,7 @@ if __name__ == '__main__':
                                     tpfactor="constant_with_peaked_muni",
                                     transitCapacity=TransitNetwork.capacity,
                                     lineLevelAggregateFilename=curRouteFileName)
-    except Exception, err:
+    except Exception as err:
         WranglerLogger.fatal(sys.exc_info()[0])
         WranglerLogger.fatal(sys.exc_info()[1])
         WranglerLogger.fatal(traceback.format_exc())

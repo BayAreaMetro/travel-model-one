@@ -19,6 +19,8 @@
 
 :: Set the path
 call CTRAMP\runtime\SetPath.bat
+:: Which conda am I running?
+C:\Windows\System32\where python
 
 :: Start the cube cluster
 Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
@@ -163,11 +165,6 @@ copy INPUT\logsums              logsums\
 
 : Pre-Process
 
-:: activate tm15-py27 Python environment
-if %computername%==MODEL3-B (
-  CALL conda activate tm15-py27
-)
-
 :: Runtime configuration: set project directory, auto operating cost, 
 :: and synthesized household/population files in the appropriate places
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
@@ -210,7 +207,6 @@ runtpp CTRAMP\scripts\skims\NonMotorizedSkims.job
 if ERRORLEVEL 2 goto done
 
 :: Step 4.5: Build initial transit files
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
 python CTRAMP\scripts\skims\transitDwellAccess.py NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 if ERRORLEVEL 2 goto done
 
