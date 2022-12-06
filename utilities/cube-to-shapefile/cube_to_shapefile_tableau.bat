@@ -70,7 +70,6 @@ for /d %%x in (
 			echo Shapefile folder successfully created for %%x
 		)
 		cd M:\Application\Model One\RTP2021\ProjectPerformanceAssessment\Projects
-		set PATH=C:\Python27;C:\Python27\Scripts
 		)
 		
 pause
