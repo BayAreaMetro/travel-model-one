@@ -254,7 +254,7 @@ toll_rates_df          <- read.csv(file=TOLLS_CSV, header=TRUE, sep=",")
 toll_rates_df          <- toll_rates_df  %>% select(tollclass, facility_name, use, tollam_da, tollmd_da, tollpm_da)
 
 el_gp_summary_df <- el_gp_summary_df %>% left_join(toll_rates_df %>% select(-facility_name),
-                                                   by=c("TOLLCLASS"="tollclass"))
+                                                   by=c("TOLLCLASS"="tollclass", "USE"="use"))
 
 # determine new toll rates
 el_gp_summary_df <- el_gp_summary_df %>%
