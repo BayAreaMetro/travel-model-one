@@ -2,7 +2,7 @@ import argparse, copy, csv, logging, os, sys
 import pandas as pd
 import simpledbf
 
-USAGE="""
+USAGE=r"""
 
 This code sources transit outputs by links that are sourced in five files, one for each period.
 Based on the volume of trips for each link, and the seating capacity for the link, it calculates a crowding factor.
@@ -183,7 +183,7 @@ def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
         if len(pseudo_link_with_missing_actual) > 0:
             # let a few link slide
             if len(pseudo_link_with_missing_actual) <= 5:
-                logging.warn("{} Pseudo links found with no corresponding actual link:\n{}".format(
+                logging.warning("{} Pseudo links found with no corresponding actual link:\n{}".format(
                              len(pseudo_link_with_missing_actual), pseudo_link_with_missing_actual))
             else:
                 logging.fatal("TODO: NAME count < 0 shouldn't happen")
@@ -201,11 +201,11 @@ def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
         if len(mismatch_run_per_hr) > 0:
             # let a few links slide
             if len(mismatch_run_per_hr) <= 5:
-                logging.warn("{} Pseudo links found with mismatching run per hour:\n{}".format(
+                logging.warning("{} Pseudo links found with mismatching run per hour:\n{}".format(
                              len(mismatch_run_per_hr), mismatch_run_per_hr))
             # more in EA, EV
             elif period in ["EA","EV"]:
-                logging.warn("{} Pseudo links found with mismatching run per hour:\n{}".format(len(mismatch_run_per_hr), mismatch_run_per_hr))
+                logging.warning("{} Pseudo links found with mismatching run per hour:\n{}".format(len(mismatch_run_per_hr), mismatch_run_per_hr))
             else:
                 logging.fatal("Mismatch run_per_hr between pseudo line and matching line\n{}".format(mismatch_run_per_hr))
                 sys.exit()

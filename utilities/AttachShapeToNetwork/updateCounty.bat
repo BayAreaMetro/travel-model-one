@@ -41,9 +41,6 @@ set HWYFILE_DIRS=%HWYFILE_DIRS%\OUTPUT
 echo Reading avgload5period_wcounty.csv files from HWYFILE_DIRS=
 echo   [%HWYFILE_DIRS%]
 copy /Y %COMBINED_DIR%\ScenarioKey.csv .
-if not exist "%COMBINED_DIR%\avgload5period_wcounty.tde" (
-  python "%CODE_DIR%\model-files\scripts\core_summaries\csvToTableauExtract.py" %HWYFILE_DIRS% "%COMBINED_DIR%" avgload5period_wcounty.csv
-)
 
 :combine2
 set COMBINED_DIR=Across-Alternatives-Round-15-Proposed-Plan-Amd2
@@ -56,8 +53,5 @@ set HWYFILE_DIRS=%HWYFILE_DIRS%\OUTPUT
 echo Reading avgload5period_wcounty.csv files from HWYFILE_DIRS=
 echo   [%HWYFILE_DIRS%]
 copy /Y %COMBINED_DIR%\ScenarioKey.csv .
-if not exist "%COMBINED_DIR%\avgload5period_wcounty.tde" (
-  python "%CODE_DIR%\model-files\scripts\core_summaries\csvToTableauExtract.py" %HWYFILE_DIRS% "%COMBINED_DIR%" avgload5period_wcounty.csv
-)
 
 :done

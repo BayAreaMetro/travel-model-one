@@ -27,7 +27,7 @@ python routeLinkMSA AM|MD|PM|EV|EA trnAssignIter VolumeDiffCondition
 
 
 if len(sys.argv) != 4:
-    print USAGE
+    print(USAGE)
     exit(1)
     
 timeperiod              = sys.argv[1]
@@ -91,9 +91,9 @@ for row in curTad.trnAsgnTable:
             #Add absolute diff and total up for convergence calc to follow
             totalDeltaVol   += deltaVol
         except:
-            print "An error occurred in MSAing for link [%s]" % key
-            print sys.exc_info()
-            print "Skipping..."
+            print("An error occurred in MSAing for link [{}]".format(key))
+            print(sys.exc_info())
+            print("Skipping...")
             
 # Convergence criteria: is the change in volume (as a fraction of the total volumes) small enough?
 # When we have met the convergence criteria, we do not create a new "trnlink[timeperiod]_ALLMSA.dbf"

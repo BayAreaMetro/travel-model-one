@@ -40,9 +40,9 @@ echo *****THE SOURCE OF THE TAZDATA FILE IS:*****
 copy \\mainmodel\MainModelShare\populationsim\bay_area\hh_gq\data\taz_summaries_%1_%2_%3_%4.csv        landuse\
 
 :: to generate tazData.csv
+:: todo: test this script is ok for python3
 :: ---
 cd landuse
-set path=%path%;c:\python27
 python X:\travel-model-one-master\utilities\taz-data-builder\buildTazdata.py taz_summaries_%1_%2_%3_%4.csv
 
 :: to convert csv to dbf
