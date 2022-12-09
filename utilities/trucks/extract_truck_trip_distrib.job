@@ -1,4 +1,4 @@
-; This script is for lookign at truck trip distribution input and output to investigate truck trip sensitivity.
+; This script is for looking at truck trip distribution input and output to investigate truck trip sensitivity.
 ; See https://app.asana.com/0/1201809392759895/1203246561643092/f
 ;
 ; Create a blendedTruckTimeTOLL.tpp for testing purposes 

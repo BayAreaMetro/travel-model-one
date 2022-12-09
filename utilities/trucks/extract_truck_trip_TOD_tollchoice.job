@@ -1,0 +1,24 @@
+; This script is for looking at truck time of day and toll/no-toll output to investigate truck trip sensitivity
+;
+run pgm = matrix
+  filei mati[1]  = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\nonres\tripstrkEA.tpp"
+  filei mati[2]  = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\nonres\tripstrkAM.tpp"
+  filei mati[3]  = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\nonres\tripstrkMD.tpp"
+  filei mati[4]  = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\nonres\tripstrkPM.tpp"
+  filei mati[5]  = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\nonres\tripstrkEV.tpp"
+
+  fileo mato[1] = "truck_trip_tod_tollchoice_noheader.csv", FORMAT=TXT, DELIMITER=",", PATTERN=IJM:V, MO=1-42, MAXFIELDS=42
+  
+  MW[1] = 1
+  FILLMW MW[2]  = MI.1.1(8) ; [VS,S,M,C]TRUCK then [VS,S,M,C]TRUCKTOLL
+  FILLMW MW[10] = MI.2.1(8) ; [VS,S,M,C]TRUCK then [VS,S,M,C]TRUCKTOLL
+  FILLMW MW[18] = MI.3.1(8) ; [VS,S,M,C]TRUCK then [VS,S,M,C]TRUCKTOLL
+  FILLMW MW[26] = MI.4.1(8) ; [VS,S,M,C]TRUCK then [VS,S,M,C]TRUCKTOLL
+  FILLMW MW[34] = MI.5.1(8) ; [VS,S,M,C]TRUCK then [VS,S,M,C]TRUCKTOLL
+
+endrun
+
+; add header
+*echo orig,dest,one_a,one_b,truck trips noToll verySmall EA,truck trips noToll small EA,truck trips noToll medium EA,truck trips noToll large EA,truck trips toll verySmall EA,truck trips toll small EA,truck trips toll medium EA,truck trips toll large EA,truck trips noToll verySmall AM,truck trips noToll small AM,truck trips noToll medium AM,truck trips noToll large AM,truck trips toll verySmall AM,truck trips toll small AM,truck trips toll medium AM,truck trips toll large AM,truck trips noToll verySmall MD,truck trips noToll small MD,truck trips noToll medium MD,truck trips noToll large MD,truck trips toll verySmall MD,truck trips toll small MD,truck trips toll medium MD,truck trips toll large MD,truck trips noToll verySmall PM,truck trips noToll small PM,truck trips noToll medium PM,truck trips noToll large PM,truck trips toll verySmall PM,truck trips toll small PM,truck trips toll medium PM,truck trips toll large PM,truck trips noToll verySmall EV,truck trips noToll small EV,truck trips noToll medium EV,truck trips noToll large EV,truck trips toll verySmall EV,truck trips toll small EV,truck trips toll medium EV,truck trips toll large EV> "truck_trip_tod_tollchoice_%MODEL_DIR%.csv"
+*type "truck_trip_tod_tollchoice_noheader.csv" >> "truck_trip_tod_tollchoice_%MODEL_DIR%.csv"
+*del "truck_trip_tod_tollchoice_noheader.csv"

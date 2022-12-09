@@ -5,7 +5,7 @@ USAGE = r"""
   Converts wide version of file output by extract_truck_trip_distrib.job into long version
   by moving the truck classes from columns to rows.
 """
-import argparse,os,re,sys
+import argparse,os,sys
 import pandas,numpy
 
 if __name__ == '__main__':
