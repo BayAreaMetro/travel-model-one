@@ -8,5 +8,8 @@ core/models/**/build
 core/projects/**/build
 **/.svn
 **/*.pyc
-model-files/model/ModeChoice.xls
-model-files/model/TripModeChoice.xls
+**/TPPL.PRJ
+**/TPPL.VAR
+**/*-checkpoint.ipynb
+utilities/bespoke-requests/fare-study/TPPL*.PRN
+

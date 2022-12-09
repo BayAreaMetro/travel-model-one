@@ -51,11 +51,15 @@ set COMMPATH=%CD%\COMMPATH
 "C:\Program Files\Citilabs\CubeVoyager\Cluster" "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 :: Path details
-set PATH=c:\windows\system32;C:\Python27;C:\Python27\Scripts
+set CONDA_PATH=C:\ProgramData\Anaconda3;C:\ProgramData\Anaconda3\Library\mingw-w64\bin;C:\ProgramData\Anaconda3\Library\usr\bin;C:\ProgramData\Anaconda3\Library\bin;C:\ProgramData\Anaconda3\Scripts;C:\ProgramData\Anaconda3\bin;C:\ProgramData\Anaconda3\condabin
+set ENV_NAME=tm15-python310
+set PATH=c:\windows\system32;%CONDA_PATH%
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files (x86)\Citilabs\CubeVoyager
 set PYTHONPATH=X:\NetworkWrangler;X:\NetworkWrangler\_static
 set GAWK_PATH=M:\Software\Gawk\bin
 SET PATH=%TPP_PATH%;%GAWK_PATH%;%PATH%
+
+conda activate %ENV_NAME%
 
 :: ------------------------------------------------------------------------------------------------------
 ::

@@ -1,4 +1,4 @@
-USAGE = """
+USAGE = r"""
 
   python scenarioMetrics.py
 
@@ -27,18 +27,18 @@ def tally_travel_cost(iteration, sampleshare, metrics_dict):
     total_households_inc[1-4]
     total_hh_inc_inc[1-4] ($2000)
     """
-    print "Tallying travel costs"
+    print("Tallying travel costs")
     transit_df = pandas.read_csv(os.path.join("metrics","transit_times_by_mode_income.csv"),
                                  sep=",", index_col=[0,1])
     transit_df['Total Cost'] = transit_df['Daily Trips']*transit_df['Avg Cost']
-    transit_df = transit_df.sum(level='Income')
+    transit_df = transit_df.groupby('Income').agg('sum')
     for inc_level in range(1,5):
         metrics_dict['total_transit_fares_inc%d' % inc_level] = transit_df.loc['_no_zpv_inc%d' % inc_level, 'Total Cost']
         metrics_dict['total_transit_trips_inc%d' % inc_level] = transit_df.loc['_no_zpv_inc%d' % inc_level, 'Daily Trips']
 
     auto_df = pandas.read_csv(os.path.join("metrics","auto_times.csv"),
                               sep=",", index_col=[0,1])
-    auto_df = auto_df.sum(level='Income')
+    auto_df = auto_df.groupby('Income').agg('sum')
     for inc_level in range(1,5):
         metrics_dict['total_auto_cost_inc%d'  % inc_level] = auto_df.loc['inc%d' % inc_level, ['Total Cost', 'Bridge Tolls', 'Value Tolls']].sum()/100  # cents -> dollars
         metrics_dict['total_auto_trips_inc%d' % inc_level] = auto_df.loc['inc%d' % inc_level, 'Daily Person Trips']
@@ -78,7 +78,7 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     * jobacc_trn_drv_acc_accessible_job_share  :   accessible job share for transit *and drv
 
     """
-    print "Tallying access to jobs"
+    print("Tallying access to jobs")
     traveltime_df = pandas.read_csv(os.path.join("database","TimeSkimsDatabaseAM.csv"),
                                     sep=",")
     traveltime_df = traveltime_df[['orig','dest','da','wTrnW']]
@@ -88,7 +88,8 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
 
     # look at only those O/D pairs with wTrnW <= 45 OR da <= 30
     traveltime_df = traveltime_df.loc[(traveltime_df.wTrnW <=45)|(traveltime_df.da <=30)]
-    print "  Out of %d O/D pairs, %d are accessible within 45 min wTrnW or 30 min da" % (len_traveltime_df, len(traveltime_df))
+    print("  Out of {} O/D pairs, {} are accessible within 45 min wTrnW or 30 min da".format
+        (len_traveltime_df, len(traveltime_df)))
 
     # separate the three disjoint sets
     traveltime_df['trn_only'] = 0
@@ -116,13 +117,13 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     # make these numeric
     traveltime_df["da"   ] = pandas.to_numeric(traveltime_df["da"   ])
     traveltime_df["wTrnW"] = pandas.to_numeric(traveltime_df["wTrnW"])
-    # print traveltime_df.head()
+    # print(traveltime_df.head())
 
     # aggregate to origin
     traveltime_df_grouped = traveltime_df.groupby(['orig'])
     accessiblejobs_df = traveltime_df_grouped.agg({'da':numpy.mean, 'wTrnW':numpy.mean,
                                                   'TOTEMP':numpy.sum, 'trn_only':numpy.sum, 'drv_only':numpy.sum, 'trn_drv':numpy.sum})
-    # print accessiblejobs_df.head()
+    # print(accessiblejobs_df.head())
 
     # read communities of concern
     coc_df = pandas.read_csv(os.path.join("metrics", "CommunitiesOfConcern.csv"), sep=",")
@@ -154,7 +155,7 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     accessiblejobs_df['trn_only_weighted'] = accessiblejobs_df['trn_only']*accessiblejobs_df['TOTPOP']
     accessiblejobs_df['drv_only_weighted'] = accessiblejobs_df['drv_only']*accessiblejobs_df['TOTPOP']
     accessiblejobs_df[ 'trn_drv_weighted'] = accessiblejobs_df[ 'trn_drv']*accessiblejobs_df['TOTPOP']
-    # print accessiblejobs_df.head()
+    # print(accessiblejobs_df.head())
 
     for suffix in ["", "_coc","_noncoc","_hra","_nonhra","_urban","_suburban","_rural"]:
 
@@ -232,7 +233,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     Also do by household (rather than persons) and by household income quartiles
 
     """
-    print "Tallying access to jobs v2"
+    print("Tallying access to jobs v2")
     traveltime_df = pandas.read_csv(os.path.join("database","TimeSkimsDatabaseAM.csv"),
                                     sep=",")
     traveltime_df = traveltime_df[['orig','dest','da','daToll','wTrnW','bike','walk']]
@@ -276,7 +277,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     traveltime_df['daToll'] = pandas.to_numeric(traveltime_df['daToll'])
     traveltime_df['bike'  ] = pandas.to_numeric(traveltime_df['bike'  ])
     traveltime_df['walk'  ] = pandas.to_numeric(traveltime_df['walk'  ])
-    # print traveltime_df.head()
+    # print(traveltime_df.head())
 
     # aggregate to origin
     traveltime_df_grouped = traveltime_df.groupby(['orig'])
@@ -292,7 +293,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
                                                    'dat_30' :numpy.sum,
                                                    'bike_20':numpy.sum,
                                                    'walk_20':numpy.sum})
-    # print accessiblejobs_df.head()
+    # print(accessiblejobs_df.head())
 
     # read communities of concern
     coc_df = pandas.read_csv(os.path.join("metrics", "CommunitiesOfConcern.csv"), sep=",")
@@ -332,7 +333,7 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     accessiblejobs_df['walk_20_weighted'] = accessiblejobs_df['walk_20']*accessiblejobs_df['TOTPOP']
 
 
-    # print accessiblejobs_df.head()
+    # print(accessiblejobs_df.head())
 
     for suffix in ["", "_coc","_noncoc","_hra","_nonhra","_urban","_suburban","_rural"]:
 
@@ -441,7 +442,7 @@ def tally_goods_movement_delay(iteration, sampleshare, metrics_dict):
     * goods_delay_total_pop     : total persons
     * goods_delay_vhd_per_person: goods_delay_vehicle_hours/goods_delay_total_pop
     """
-    print "Tallying goods movement delay"
+    print("Tallying goods movement delay")
     roadvols_df = pandas.read_csv(os.path.join("hwy","iter%d" % iteration, "avgload5period_vehclasses.csv"), sep=",")
     tazdata_df  = pandas.read_csv(os.path.join("landuse", "tazData.csv"), sep=",")
 
@@ -471,13 +472,13 @@ def tally_nonauto_mode_share(iteration, sampleshare, metrics_dict):
     * nonauto_mode_share               : total nonauto trips / total trips
 
     """
-    print "Tallying non auto mode share"
+    print("Tallying non auto mode share")
 
     trips_df = None
     for trip_type in ['indiv', 'joint']:
         filename = os.path.join("main", "%sTripData_%d.csv" % (trip_type, iteration))
         temp_trips_df = pandas.read_table(filename, sep=",")
-        print "  Read %d %s trips" % (len(temp_trips_df), trip_type)
+        print("  Read {} {} trips".format(len(temp_trips_df), trip_type))
 
         if trip_type == 'indiv':
             # each row is a trip; scale by sampleshare
@@ -513,7 +514,7 @@ def tally_road_cost_vmt(iteration, sampleshare, metrics_dict):
     * road_vmt_lrtr                  : VMT by large trucks
 
     """
-    print "Tallying roads cost and vmt"
+    print("Tallying roads cost and vmt")
     roadvols_df = pandas.read_csv(os.path.join("hwy","iter%d" % iteration, "avgload5period_vehclasses.csv"), sep=",")
     # [auto,smtr,lrtr]opc      = total opcost for autos, small trucks and large trucks in 2000 cents per mile
 
@@ -571,7 +572,7 @@ if __name__ == '__main__':
     tally_road_cost_vmt(iteration, sampleshare, metrics_dict)
 
     for key in sorted(metrics_dict.keys()):
-        print "{:50s} => {}".format(key, metrics_dict[key])
+        print("{:50s} => {}".format(key, metrics_dict[key]))
 
     out_series = pandas.Series(metrics_dict)
     out_frame  = out_series.to_frame().reset_index()
@@ -584,4 +585,4 @@ if __name__ == '__main__':
 
     out_filename = os.path.join("metrics","scenario_metrics.csv")
     out_frame.to_csv(out_filename, header=False, float_format='%.5f', index=False)
-    print "Wrote %s" % out_filename
+    print("Wrote {}".format(out_filename))

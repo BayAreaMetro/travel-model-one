@@ -43,12 +43,14 @@ set COMMPATH=%CD%\COMMPATH
 set LOGSUMS_CHECK_DIR=%PROJ_DIR%\logsum_precheck
 
 :: Path details
-set PATH=c:\windows\system32;C:\Python27;C:\Python27\Scripts
+set CONDA_PATH=C:\ProgramData\Anaconda3;C:\ProgramData\Anaconda3\Library\mingw-w64\bin;C:\ProgramData\Anaconda3\Library\usr\bin;C:\ProgramData\Anaconda3\Library\bin;C:\ProgramData\Anaconda3\Scripts;C:\ProgramData\Anaconda3\bin;C:\ProgramData\Anaconda3\condabin
+set ENV_NAME=tm15-python310
+set PATH=c:\windows\system32;%CONDA_PATH%
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files (x86)\Citilabs\CubeVoyager
-set PYTHONPATH=Z:\NetworkWrangler;Z:\NetworkWrangler\_static
 set GAWK_PATH=M:\Software\Gawk\bin
 SET PATH=%TPP_PATH%;%GAWK_PATH%;%PATH%
 
+conda activate %ENV_NAME%
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -243,6 +245,8 @@ if %computername%==MODEL2-A set HOST_IP_ADDRESS=192.168.1.206
 if %computername%==MODEL2-B set HOST_IP_ADDRESS=192.168.1.207
 if %computername%==MODEL2-C set HOST_IP_ADDRESS=192.168.1.208
 if %computername%==MODEL2-D set HOST_IP_ADDRESS=192.168.1.209
+if %computername%==MODEL3-A set HOST_IP_ADDRESS=10.164.0.200
+if %computername%==MODEL3-B set HOST_IP_ADDRESS=10.164.0.201
 if %computername%==PORMDLPPW01 set HOST_IP_ADDRESS=172.24.0.101
 if %computername%==PORMDLPPW02 set HOST_IP_ADDRESS=172.24.0.102
 if %computername%==MAINMODEL set HOST_IP_ADDRESS=192.168.1.200

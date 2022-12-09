@@ -7,7 +7,7 @@ Goes through file twice, the first time to figure out types.
 Try assuming ints, then floats, then strings.
 
 """
-from dbfpy import dbf
+import dbfpy3
 import argparse,collections,csv,os,sys
 
 if __name__ == '__main__':
@@ -27,18 +27,18 @@ if __name__ == '__main__':
         if len(columns) == 0:
             col_list = row
             for colname in row:
-                dbf_colname = colname[:10]
-                if len(colname) > 10: print("Truncating column {} to {}", colname, dbf_colname)
-                columns[colname] = [dbf_colname, "N", 10] # try int first
+                dbf_colname = colname[:10].upper()
+                if len(colname) > 10: print("Truncating column {} to {}".format(colname, dbf_colname))
+                columns[colname] = ["N", dbf_colname, 10] # try int first
             continue
 
         # subsequent rows
         for col_idx in range(len(row)):
             colname = col_list[col_idx]
-            dbf_colname = columns[colname][0]
+            dbf_colname = columns[colname][1]
 
             # do we think it's an int?  try it
-            if columns[colname][1] == "N" and len(columns[colname])==3:
+            if columns[colname][0] == "N" and len(columns[colname])==3:
                 try:
                     val_int = int(row[col_idx])
                 except:
@@ -46,25 +46,25 @@ if __name__ == '__main__':
                     columns[colname].append(5)
 
             # do we think it's a float? try it
-            if columns[colname][1] == "N" and len(columns[colname])==4:
+            if columns[colname][0] == "N" and len(columns[colname])==4:
                 try:
                     val_float = float(row[col_idx])
                 except:
                     # upgrade to string
-                    columns[colname] = [dbf_colname, "C", 1]
+                    columns[colname] = ["C", dbf_colname, 1]
 
             # do we think it's a string? make sure it's long enough
-            if columns[colname][1] == "C":
+            if columns[colname][0] == "C":
                 columns[colname][2] = max(columns[colname][2], len(row[col_idx])+2)
     csvfile.close()
-    print("Read {} and determined dbf columns".format(args.input_csv))
+    print("Read {} and determined dbf columns:".format(args.input_csv))
 
     # create the dbf
-    new_dbf = dbf.Dbf(args.output_dbf, new=True)
+    new_dbf = dbfpy3.dbf.Dbf(args.output_dbf, new=True)
 
     for col in columns.keys():
-        # print "{} : {}".format(col, columns[col])
-        new_dbf.addField(columns[col])
+        # print("Adding field {} : {}".format(col, columns[col]))
+        new_dbf.add_field(columns[col])
 
     csvfile   = open(args.input_csv)
     csvreader = csv.reader(csvfile)
@@ -75,19 +75,20 @@ if __name__ == '__main__':
             header = True
             continue
 
-        rec = new_dbf.newRecord()
+        rec = new_dbf.new()
         for col_idx in range(len(row)):
             colname = col_list[col_idx]
-            if columns[colname][1] == "N" and len(columns[colname]) == 3:
-                rec[ columns[colname][0] ] = int(row[col_idx])
-            elif columns[colname][1] == "N":
-                rec[ columns[colname][0] ] = float(row[col_idx])
+            if columns[colname][0] == "N" and len(columns[colname]) == 3:
+                rec[ columns[colname][1] ] = int(row[col_idx])
+            elif columns[colname][0] == "N":
+                rec[ columns[colname][1] ] = float(row[col_idx])
             else:
-                rec[ columns[colname][0] ] = row[col_idx]
-        rec.store()
+                rec[ columns[colname][1] ] = row[col_idx]
+        # print("rec={}".format(rec))
+        new_dbf.append(rec)
 
     csvfile.close()
-    print new_dbf
+    print(new_dbf)
     new_dbf.close()
 
     print("Wrote {}".format(args.output_dbf))

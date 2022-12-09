@@ -47,7 +47,7 @@ If no iteration is specified, then these include:
                               CTRAMP\\runtime\\mtcTourBased.properties
  * Distribution
    + Based on hostname.
-     * 'MODEL2-A', 'MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02': single machine setup with
+     * 'MODEL2-A', 'MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02','Model3-a','Model3-b': single machine setup with
         48 Cube Voyager processes available
         48 threads for accessibilities
         24 threads for core
@@ -92,7 +92,7 @@ def replace_in_file(filepath, regex_dict):
     are replaced by the corresponding values.
     """
     shutil.move(filepath, "%s.original" % filepath)
-    print "Updating %s" % filepath
+    print("Updating {}".format(filepath))
 
     # read the contents
     myfile = open("%s.original" % filepath, 'r')
@@ -100,13 +100,13 @@ def replace_in_file(filepath, regex_dict):
     myfile.close()
 
     # do the regex subs
-    for pattern,newstr in regex_dict.iteritems():
+    for pattern,newstr in regex_dict.items():
         (file_contents, numsubs) = re.subn(pattern,newstr,file_contents,flags=re.IGNORECASE)
-        print "  Made %d sub for %s" % (numsubs, newstr)
+        print("  Made {} sub for {}".format(numsubs, newstr))
         # Fail on failure
         if numsubs < 1:
-            print "  SUBSITUTION NOT MADE -- Fatal error"
-            print "  pattern = [%s]" % pattern
+            print("  SUBSITUTION NOT MADE -- Fatal error")
+            print("  pattern = [{}]".format(pattern))
             sys.exit(2)
 
     # write the result
@@ -121,7 +121,7 @@ def append_to_file(filepath, append_str):
     The new version is the same as the old, with the lines in append_dict added
     """
     shutil.move(filepath, "%s.original" % filepath)
-    print "Updating %s" % filepath
+    print("Updating {}".format(filepath))
 
     # read the contents
     myfile = open("%s.original" % filepath, 'r')
@@ -313,7 +313,7 @@ def get_property(properties_file_name, properties_file_contents, propname):
     """
     match           = re.search("\n%s[ \t]*=[ \t]*(\S*)[ \t]*" % propname, properties_file_contents)
     if match == None:
-        print "Couldn't find %s in %s" % (propname, properties_file_name)
+        print("Couldn't find {} in {}".format(propname, properties_file_name))
         sys.exit(2)
     return match.group(1)
 
@@ -467,7 +467,7 @@ def config_host_ip(for_logsums, replacements):
     # verify that the host IP address relevant to this machine
     ips_here        = socket.gethostbyname_ex(socket.gethostname())[-1]
     if host_ip_address not in ips_here:
-        print "FATAL: HOST_IP_ADDRESS %s does not match the IP addresses for this machine %s" % (host_ip_address, str(ips_here))
+        print("FATAL: HOST_IP_ADDRESS {} does not match the IP addresses for this machine {}".format(host_ip_address, str(ips_here)))
         sys.exit(2)
 
     # CTRAMP\runtime\JavaOnly_runMain.cmd and CTRAMP\runtime\JavaOnly_runNode*.cmd
@@ -530,11 +530,11 @@ def config_distribution(replacements):
             replacements[filepath]["(\nprocessing.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>12"
 
         # hwyassign
-        print "Copying HwyIntraStep_64.block to HwyIntraStep.block"
+        print("Copying HwyIntraStep_64.block to HwyIntraStep.block")
         shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
-    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02'] or hostname.startswith("WIN-"):
+    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02','Model3-a','Model3-b'] or hostname.startswith("WIN-"):
         # accessibilities: 48 logical processors
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
@@ -547,55 +547,55 @@ def config_distribution(replacements):
             replacements[filepath]["(\nprocessing.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>24"
 
         # hwyassign
-        print "Copying HwyIntraStep_48.block to HwyIntraStep.block"
+        print("Copying HwyIntraStep_48.block to HwyIntraStep.block")
         shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_48.block"),
                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
     else:
         raise Exception("RuntimeConfiguration.py does not recognize hostname [%s] for distribution configuration" % hostname)
 
-def config_distribution(replacements):
-    """
-    See USAGE for details.
+# def config_distribution(replacements):
+#     """
+#     See USAGE for details.
 
-    Replacements = { filepath -> regex_dict }
-    """
-    hostname = socket.gethostname()
-    if hostname == 'mainmodel':
-        # accessibilities
-        filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
-        replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>14"
+#     Replacements = { filepath -> regex_dict }
+#     """
+#     hostname = socket.gethostname()
+#     if hostname == 'mainmodel':
+#         # accessibilities
+#         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
+#         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>14"
 
-        # CORE
-        filenames = []
-        for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
-        for filename in filenames:
-            filepath = os.path.join("CTRAMP","runtime","config",filename)
-            replacements[filepath]["(\nprocessing.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>12"
+#         # CORE
+#         filenames = []
+#         for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
+#         for filename in filenames:
+#             filepath = os.path.join("CTRAMP","runtime","config",filename)
+#             replacements[filepath]["(\nprocessing.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>12"
 
-        # hwyassign
-        print "Copying HwyIntraStep_64.block to HwyIntraStep.block"
-        shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
-                     os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
+#         # hwyassign
+#         print("Copying HwyIntraStep_64.block to HwyIntraStep.block")
+#         shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
+#                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
-    elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02'] or hostname.startswith("WIN-"):
-        # accessibilities: 48 logical processors
-        filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
-        replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
+#     elif hostname in ['MODEL2-A','MODEL2-B','MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02','Model3-a'] or hostname.startswith("WIN-"):
+#         # accessibilities: 48 logical processors
+#         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
+#         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>48"
 
-        # CORE: use half for JPPF nodes - 48 didn't seem to take
-        filenames = []
-        for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
-        for filename in filenames:
-            filepath = os.path.join("CTRAMP","runtime","config",filename)
-            replacements[filepath]["(\nprocessing.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>24"
+#         # CORE: use half for JPPF nodes - 48 didn't seem to take
+#         filenames = []
+#         for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
+#         for filename in filenames:
+#             filepath = os.path.join("CTRAMP","runtime","config",filename)
+#             replacements[filepath]["(\nprocessing.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>24"
 
-        # hwyassign
-        print "Copying HwyIntraStep_48.block to HwyIntraStep.block"
-        shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_48.block"),
-                     os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
+#         # hwyassign
+#         print("Copying HwyIntraStep_48.block to HwyIntraStep.block")
+#         shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_48.block"),
+#                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
-    else:
+#     else:
         raise Exception("RuntimeConfiguration.py does not recognize hostname [%s] for distribution configuration" % hostname)
 
 def config_shadowprice(iter, replacements):
@@ -629,19 +629,19 @@ def config_uec(auto_operating_cost):
         filepath = os.path.join("CTRAMP","model",bookname)
         shutil.move(filepath, "%s.original" % filepath)
 
-        print "Updating %s" % filepath
+        print("Updating {}".format(filepath))
         rb = xlrd.open_workbook("%s.original" % filepath, formatting_info=True, on_demand=True)
         wb = xlutils.copy.copy(rb)
         for sheet_num in range(rb.nsheets):
             rs = rb.get_sheet(sheet_num)
             for rownum in range(rs.nrows):
-                # print rs.cell(rownum,1)
+                # print(rs.cell(rownum,1))
                 if rs.cell(rownum,1).value=='costPerMile':
-                    print "  Sheet '%s': replacing costPerMile '%s' -> %.2f" % \
-                        (rs.name, rs.cell(rownum,4).value, auto_op_cost_float)
+                    print("  Sheet '{}': replacing costPerMile '{}' -> {:.2f}".format(
+                        rs.name, rs.cell(rownum,4).value, auto_op_cost_float))
                     wb.get_sheet(sheet_num).write(rownum,4,auto_op_cost_float,
                                                   xlwt.easyxf("align: horiz left"))
-                # print rs.cell(rownum,1)
+                # print(rs.cell(rownum,1))
 
         wb.save(filepath)
 
@@ -657,20 +657,20 @@ def config_cdap(params_filename, params_contents):
         filepath = os.path.join("CTRAMP","model",bookname)
         shutil.move(filepath, "%s.original" % filepath)
 
-        print "Updating %s" % filepath
+        print("Updating {}".format(filepath))
         rb = xlrd.open_workbook("%s.original" % filepath, formatting_info=True, on_demand=True)
         wb = xlutils.copy.copy(rb)
         for sheet_num in range(rb.nsheets):
             rs = rb.get_sheet(sheet_num)
             for rownum in range(rs.nrows):
-                # print rs.cell(rownum,1)
+                # print(rs.cell(rownum,1))
                 if rs.cell(rownum,2).value=='Simulate telecommuting by reducing mandatory patterns - global_FT':
-                    print "  Sheet '%s': replacing telecommute constant '%s' -> %.2f" % \
-                        (rs.name, rs.cell(rownum,6).value, TelecommuteConstant_FT)
+                    print("  Sheet '{}': replacing telecommute constant '{}' -> {:.2f}".format(
+                        rs.name, rs.cell(rownum,6).value, TelecommuteConstant_FT))
                     wb.get_sheet(sheet_num).write(rownum,6, TelecommuteConstant_FT, xlwt.easyxf("align: horiz right"))
                 if rs.cell(rownum,2).value=='Simulate telecommuting by reducing mandatory patterns - global_PT':
-                    print "  Sheet '%s': replacing telecommute constant '%s' -> %.2f" % \
-                        (rs.name, rs.cell(rownum,6).value, TelecommuteConstant_PT)
+                    print("  Sheet '{}': replacing telecommute constant '{}' -> {:.2f}".format(
+                        rs.name, rs.cell(rownum,6).value, TelecommuteConstant_PT))
                     wb.get_sheet(sheet_num).write(rownum,6, TelecommuteConstant_PT, xlwt.easyxf("align: horiz right"))                    
         wb.save(filepath)
 
@@ -686,16 +686,16 @@ def config_freeparking(params_filename, params_contents):
         filepath = os.path.join("CTRAMP","model",bookname)
         shutil.move(filepath, "%s.original" % filepath)
 
-        print "Updating %s" % filepath
+        print("Updating {}".format(filepath))
         rb = xlrd.open_workbook("%s.original" % filepath, formatting_info=True, on_demand=True)
         wb = xlutils.copy.copy(rb)
         for sheet_num in range(rb.nsheets):
             rs = rb.get_sheet(sheet_num)
             for rownum in range(rs.nrows):
-                # print rs.cell(rownum,1)
+                # print(rs.cell(rownum,1))
                 if rs.cell(rownum,2).value=='Free parking eligibility OnOff dummy':
-                    print "  Sheet '%s': replacing Free parking eligibility OnOff dummy '%s' -> %.4f" % \
-                        (rs.name, rs.cell(rownum,6).value, Free_Parking_Eligibility_OnOff)
+                    print("  Sheet '{}': replacing Free parking eligibility OnOff dummy '{}' -> {:.4f}".format(
+                        rs.name, rs.cell(rownum,6).value, Free_Parking_Eligibility_OnOff))
                     wb.get_sheet(sheet_num).write(rownum,6, Free_Parking_Eligibility_OnOff, xlwt.easyxf("align: horiz right"))
         wb.save(filepath)
 
@@ -743,9 +743,9 @@ if __name__ == '__main__':
         config_shadowprice(my_args.iter, replacements)
 
     # Go ahead and make the replacements
-    for filepath,regex_dict in replacements.iteritems():
+    for filepath,regex_dict in replacements.items():
         replace_in_file(filepath, regex_dict)
 
     # append
-    for filepath,append_str in append.iteritems():
+    for filepath,append_str in append.items():
         append_to_file(filepath, append_str)

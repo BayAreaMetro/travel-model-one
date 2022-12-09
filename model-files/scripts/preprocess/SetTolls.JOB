@@ -220,6 +220,57 @@ RUN PGM=HWYNET
       ENDIF
     ENDIF
 
+
+   ; zero out the tolls where the input toll rate is meant to be 0 -- but are set to be a very small value (e.g. less than 1 cent) to represent 0 in the tolls.csv, so the tolls.csv will pass the check above
+   IF ((TOLLCLASS > 0) && (TOLL_FLAT == 0))
+
+     IF (TOLLEA_DA < 0.01)  TOLLEA_DA = 0
+     IF (TOLLAM_DA < 0.01)  TOLLAM_DA = 0
+     IF (TOLLMD_DA < 0.01)  TOLLMD_DA = 0
+     IF (TOLLPM_DA < 0.01)  TOLLPM_DA = 0
+     IF (TOLLEV_DA < 0.01)  TOLLEV_DA = 0
+
+     IF (TOLLEA_S2 < 0.01)  TOLLEA_S2 = 0
+     IF (TOLLAM_S2 < 0.01)  TOLLAM_S2 = 0
+     IF (TOLLMD_S2 < 0.01)  TOLLMD_S2 = 0
+     IF (TOLLPM_S2 < 0.01)  TOLLPM_S2 = 0
+     IF (TOLLEV_S2 < 0.01)  TOLLEV_S2 = 0
+
+     IF (TOLLEA_S3 < 0.01)  TOLLEA_S3 = 0
+     IF (TOLLAM_S3 < 0.01)  TOLLAM_S3 = 0
+     IF (TOLLMD_S3 < 0.01)  TOLLMD_S3 = 0
+     IF (TOLLPM_S3 < 0.01)  TOLLPM_S3 = 0
+     IF (TOLLEV_S3 < 0.01)  TOLLEV_S3 = 0
+
+     IF (TOLLEA_VSM < 0.01)  TOLLEA_VSM = 0
+     IF (TOLLAM_VSM < 0.01)  TOLLAM_VSM = 0
+     IF (TOLLMD_VSM < 0.01)  TOLLMD_VSM = 0
+     IF (TOLLPM_VSM < 0.01)  TOLLPM_VSM = 0
+     IF (TOLLEV_VSM < 0.01)  TOLLEV_VSM = 0
+
+     IF (TOLLEA_SML < 0.01)  TOLLEA_SML = 0
+     IF (TOLLAM_SML < 0.01)  TOLLAM_SML = 0
+     IF (TOLLMD_SML < 0.01)  TOLLMD_SML = 0
+     IF (TOLLPM_SML < 0.01)  TOLLPM_SML = 0
+     IF (TOLLEV_SML < 0.01)  TOLLEV_SML = 0
+
+     IF (TOLLEA_MED < 0.01)  TOLLEA_MED = 0
+     IF (TOLLAM_MED < 0.01)  TOLLAM_MED = 0
+     IF (TOLLMD_MED < 0.01)  TOLLMD_MED = 0
+     IF (TOLLPM_MED < 0.01)  TOLLPM_MED = 0
+     IF (TOLLEV_MED < 0.01)  TOLLEV_MED = 0
+
+     IF (TOLLEA_LRG < 0.01)  TOLLEA_LRG = 0
+     IF (TOLLAM_LRG < 0.01)  TOLLAM_LRG = 0
+     IF (TOLLMD_LRG < 0.01)  TOLLMD_LRG = 0
+     IF (TOLLPM_LRG < 0.01)  TOLLPM_LRG = 0
+     IF (TOLLEV_LRG < 0.01)  TOLLEV_LRG = 0
+
+  ENDIF
+
+
+
+
    ; zero out the tolls where tollclass=0
    IF (TOLLCLASS == 0)
 

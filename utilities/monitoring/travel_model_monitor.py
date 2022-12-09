@@ -16,7 +16,9 @@ MODEL_MACHINES = {
     "model2-a" : "\\\\model2-a\Model2A-Share\UTIL",
     "model2-b" : "\\\\model2-b\Model2B-Share\UTIL",
     "model2-c" : "\\\\model2-c\Model2C-Share\UTIL",
-    "model2-d" : "\\\\model2-d\Model2D-Share\UTIL"
+    "model2-d" : "\\\\model2-d\Model2D-Share\UTIL",
+    "model3-a" : "\\\\model3-a\Model3A-Share\UTIL",
+    "model3-b" : "\\\\model3-b\Model3B-Share\UTIL"
 }
 
 STATE_Uninitialized, STATE_NoStatusFile, STATE_InvalidStatusFile, STATE_StaleStatusFile, STATE_NoModelsRunning, STATE_ModelRunning = range(6)

@@ -41,11 +41,6 @@ if %NEED_SUMMARY% GTR 0 (
   call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\CoreSummaries.R"
   IF %ERRORLEVEL% GTR 0 goto done
   echo %DATE% %TIME% ...Done
-  
-  rem This will make all the tdes stale
-  for %%X in (%RDATA%) DO (
-    del "%TARGET_DIR%\core_summaries\%%X.tde"
-  )
 )
 echo.
 
@@ -56,14 +51,6 @@ if not exist core_summaries\TelecommuteByIncome.csv (
   rem Output: core_summaries\TelecommuteByIncome.csv,
   python CTRAMP\scripts\core_summaries\TelecommuteByIncome.py
   if %ERRORLEVEL% GTR 0 goto done
-)
-
-:: convert the avgload5period.csv
-if not exist "%TARGET_DIR%\core_summaries\avgload5period.tde" (
-  python "%CODE_DIR%\csvToTableauExtract.py" "%TARGET_DIR%\hwy\iter%ITER%" "%TARGET_DIR%\core_summaries" avgload5period.csv
-  if %ERRORLEVEL% GTR 0 goto done
-  
-  echo.
 )
 
 :: create trn\trnline.csv

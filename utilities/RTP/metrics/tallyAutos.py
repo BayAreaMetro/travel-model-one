@@ -32,7 +32,6 @@ if __name__ == '__main__':
     households_by_incQ = households.groupby('incQ')
 
     autos_by_inc = households_by_incQ['autos'].value_counts()
-    autos_by_inc.index.levels[1].name = 'autos'
     autos_by_inc.name = 'households'
 
     # divide households by sampleshare
