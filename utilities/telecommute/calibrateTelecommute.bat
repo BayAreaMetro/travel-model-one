@@ -9,15 +9,16 @@
 :: dto (2012 02 15) gde (2009 04 22)
 ::
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+set TELECOMMUTE_CALIBRATION=0
+set CALIB_ITER=02
+
 :: uncomment this to iterate
 goto iter1
 
-set TELECOMMUTE_CALIBRATION=1
-set CALIB_ITER=00
-
 :setup_model
 :: Setup:: copy over CTRAMP
-set GITHUB_DIR=\\tsclient\X\travel-model-one-master
+set GITHUB_DIR=\\tsclient\E\GitHub\travel-model-one-transit-calib-2020
 mkdir CTRAMP\model
 mkdir CTRAMP\runtime
 mkdir CTRAMP\scripts
@@ -29,7 +30,7 @@ copy /y "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"                CTRAM
 
 :setup_inputs
 :: copy over INPUTs from baseline
-set MODEL_SETUP_BASE_DIR=\\MODEL2-B\Model2B-Share\Projects\2035_TM152_FBP_Plus_17
+set MODEL_SETUP_BASE_DIR=\\MODEL2-D\Model2D-Share\Projects\2020_TM152_TRR_01
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\landuse"        INPUT\landuse
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\nonres"         INPUT\nonres
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\popsyn"         INPUT\popsyn
@@ -70,7 +71,7 @@ set PROJECT_DIR2=%PROJECT_DIR:~0,-1%
 :: get the base dir only
 for %%f in (%PROJECT_DIR2%) do set myfolder=%%~nxf
 :: the first four characters are model year
-set MODEL_YEAR=2035
+set MODEL_YEAR=2020
 
 
 :: --------TrnAssignment Setup
@@ -153,8 +154,12 @@ if "%CALIB_ITER%"=="00" (
   rem Don't care about the response
 )
 
+:: Update CDAP for telecommute constants
+python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
+if ERRORLEVEL 1 goto done
+
 :: update or initialize Telecommute Constant
-python \\tsclient\X\travel-model-one-master\model-files\scripts\preprocess\updateTelecommuteConstants.py
+python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
 if ERRORLEVEL 1 goto done
 
 :: copy over result for use
