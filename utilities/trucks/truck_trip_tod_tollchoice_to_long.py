@@ -56,6 +56,17 @@ if __name__ == '__main__':
     trucks_long_df.reset_index(drop=False, inplace=True)
     print(trucks_long_df.head())
 
+    trucks_long_df = pandas.wide_to_long(
+        trucks_long_df, 
+        ["truck trips"],
+        i=["orig","dest","time period","truck class"], 
+        j="toll choice",
+        sep=" ",
+        suffix=r"(toll|noToll)"
+    )
+    trucks_long_df.reset_index(drop=False, inplace=True)
+    print(trucks_long_df.head())
+
     trucks_long_df.to_csv(output_file, index=False)
     print("Wrote {}".format(output_file))
 
