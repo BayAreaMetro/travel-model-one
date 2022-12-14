@@ -67,6 +67,11 @@ if __name__ == '__main__':
     trucks_long_df.reset_index(drop=False, inplace=True)
     print(trucks_long_df.head())
 
+    # remove lines with truck trips == 0
+    print("Length: {:,}".format(len(trucks_long_df)))
+    trucks_long_df = trucks_long_df.loc[ trucks_long_df["truck trips"] > 0 ]
+    print("After filter, length: {:,}".format(len(trucks_long_df)))
+
     trucks_long_df.to_csv(output_file, index=False)
     print("Wrote {}".format(output_file))
 
