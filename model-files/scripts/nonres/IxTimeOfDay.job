@@ -42,8 +42,8 @@ run pgm = matrix
    fileo mato[1] = nonres\ixDailyx4_truck.tpp, mo=1-4, name=vsm_daily, sml_daily, med_daily, lrg_daily
    fileo mato[2] = nonres\ixDailyx4_auto.tpp,  mo=5-8, name=ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
 
-   TRK_SML = 0.300
-   TRK_LRG = 0.180
+   TRK_SML = 0.045
+   TRK_LRG = 0.027
 
    ; carve out truck traffic, splitting TRK_SML evenly between VSM, SML, MED
    mw[1] = (1.0/3.0) * TRK_SML * mi.1.ix_daily_total
