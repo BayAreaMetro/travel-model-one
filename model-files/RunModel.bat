@@ -19,6 +19,8 @@
 
 :: Set the path
 call CTRAMP\runtime\SetPath.bat
+:: Which conda am I running?
+C:\Windows\System32\where python
 
 :: Start the cube cluster
 Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
@@ -28,6 +30,8 @@ if %computername%==MODEL2-A            set HOST_IP_ADDRESS=192.168.1.206
 if %computername%==MODEL2-B            set HOST_IP_ADDRESS=192.168.1.207
 if %computername%==MODEL2-C            set HOST_IP_ADDRESS=192.168.1.208
 if %computername%==MODEL2-D            set HOST_IP_ADDRESS=192.168.1.209
+if %computername%==MODEL3-A            set HOST_IP_ADDRESS=10.164.0.200
+if %computername%==MODEL3-B            set HOST_IP_ADDRESS=10.164.0.201
 if %computername%==PORMDLPPW01         set HOST_IP_ADDRESS=172.24.0.101
 if %computername%==PORMDLPPW02         set HOST_IP_ADDRESS=172.24.0.102
 if %computername%==WIN-FK0E96C8BNI     set HOST_IP_ADDRESS=10.0.0.154
@@ -85,6 +89,7 @@ if %PROJECT%==SEN (SET FUTURE=PBA50)
 if %PROJECT%==STP (SET FUTURE=PBA50)
 if %PROJECT%==NGF (SET FUTURE=PBA50)
 if %PROJECT%==TIP (SET FUTURE=PBA50)
+if %PROJECT%==TRR (SET FUTURE=PBA50)
 if %PROJECT%==PPA (
   if %FUTURE_ABBR%==RT (set FUTURE=RisingTidesFallingFortunes)
   if %FUTURE_ABBR%==CG (set FUTURE=CleanAndGreen)
@@ -202,7 +207,6 @@ runtpp CTRAMP\scripts\skims\NonMotorizedSkims.job
 if ERRORLEVEL 2 goto done
 
 :: Step 4.5: Build initial transit files
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
 python CTRAMP\scripts\skims\transitDwellAccess.py NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 if ERRORLEVEL 2 goto done
 

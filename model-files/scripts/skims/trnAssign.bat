@@ -9,7 +9,6 @@ set TRNASSIGNMODE=NORMAL
 set TOTMAXTRNITERS=30
 set MAXPATHTIME=240
 set PCT=%%
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
 set TRN_ERRORLEVEL=0
 
 :: AverageNetworkVolumes.job uses PREV_ITER=1 for ITER=1
@@ -101,12 +100,14 @@ echo START TRNASSIGN            SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\l
 runtpp ..\..\CTRAMP\scripts\assign\TransitAssign.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
+  echo ERRORLEVEL is %ERRORLEVEL%
   goto donedone
 )
 :: And skim
 runtpp ..\..\CTRAMP\scripts\skims\TransitSkims.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
+  echo ERRORLEVEL is %ERRORLEVEL%
   goto donedone
 )
 
@@ -137,6 +138,11 @@ if %ITER% EQU %MAXITERATIONS% (
   python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py PM %TRNASSIGNITER% %VOLDIFFCOND%
   python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py EV %TRNASSIGNITER% %VOLDIFFCOND%
 
+  if ERRORLEVEL 2 (
+    set TRN_ERRORLEVEL=2
+    echo ERRORLEVEL is %ERRORLEVEL%
+    goto donedone
+  )
 )
 
 :modifyDwellAccess
@@ -147,11 +153,19 @@ if %TRNASSIGNITER% EQU 0 (
   echo trnAssignIter,timeperiod,mode,PHT,pctPHTdiff,RMSE_IVTT,RMSE_TOTT,AvgPaths,CurrPaths,CurrBoards,PathsFromBoth,PathsFromIter,PathsFromAvg,PHTCriteriaMet > PHT_total.csv
 )
 
+:: debug print out python version
+python --version
 python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EA %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex AM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex MD %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex PM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EV %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
+
+if ERRORLEVEL 2 (
+  set TRN_ERRORLEVEL=2
+  echo ERRORLEVEL is %ERRORLEVEL%
+  goto donedone
+)
 
 echo DONE    transitDwellAccess SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
 
@@ -176,7 +190,7 @@ IF EXIST transitEA_%NEXTTRNASSIGNITER%.lin (
     set LASTSUBDIR_EA=Subdir%TRNASSIGNITER%
     set LASTITER_EA=%TRNASSIGNITER%
     move transitEA_%NEXTTRNASSIGNITER%.lin transitEA_unused.lin
-    copy transitEA_%TRNASSIGNITER%.lin transitEA.lin
+    copy /y transitEA_%TRNASSIGNITER%.lin transitEA.lin
   )
 )
 
@@ -193,6 +207,7 @@ goto trnassign_loop
 ::============================== END LOOP ==============================
 :donetrnassign
 :: if we have an error then stop
+echo donetrnassign with errorlevel %ERRORLEVEL%
 if ERRORLEVEL 2 goto donedone
 
 echo Done transit assignment; LastIters are %LASTITER_AM%, %LASTITER_MD%, %LASTITER_PM%, %LASTITER_EV%, %LASTITER_EA%
@@ -222,8 +237,6 @@ if %ITER% EQU %MAXITERATIONS% (
 :donedone
 cd ..
 cd ..
-
-set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%PYTHON_PATH%
 
 :: pass on errorlevel
 EXIT /B %TRN_ERRORLEVEL%

@@ -4,6 +4,7 @@
 ::
 set USAGE=USAGE: summarizeAcrossScenariosUnion [current, all, or project]
 :: Run from M:\Application\Model One
+:: unless for NextGenFwys project, run summarizeAcrossScenariosUnion project from L:\Application\Model_One
 ::
 :: Uses scenario list in \\mainmodel\MainModelShare\travel-model-one-master\utilities\RTP\ModelRuns.csv
 :: unless project, in which cases uses .\ModelRuns.csv
@@ -85,7 +86,9 @@ for /f "skip=1 usebackq tokens=1,2,3,4,5,6,7,8 delims=," %%A in ("!MODEL_RUNS_CS
   if !project!==RTP2017 (
     set SUBDIR=Scenarios
   )
-
+  if !project!==NextGenFwys (
+    set SUBDIR=Scenarios
+  )
   if !SET_TYPE!==current (
     if !status!==current (
       set RUN_NAME_SET=!RUN_NAME_SET!!project!\!SUBDIR!\!directory! 
@@ -128,22 +131,38 @@ IF %USERNAME%==lzorn (
   set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.5
 ) ELSE (
   IF %USERNAME%==ftsang (
-      set R_HOME=C:\Program Files\R\R-3.4.4
+      set R_HOME=C:\Program Files\R\R-4.1.2
       set R_USER=%USERNAME%
-      set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.4
+      set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\R-4.1.2\library
   ) ELSE (
-  set R_HOME=C:\Program Files\R\R-3.5.2
-  set R_USER=%USERNAME%
-  set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.5
+    IF %USERNAME%==ywang (
+      set R_HOME=C:\Program Files\R\R-3.6.3
+      set R_USER=%USERNAME%
+      set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.6
+    ) ELSE (
+      IF %USERNAME%==llin (
+        set R_HOME=C:\Program Files\R\R-4.2.2rc
+        set R_USER=%USERNAME%
+        set R_LIBS_USER=C:/Users/%R_USER%/AppData/Local/R/win-library/4.2
+    ) ELSE (
+      IF %USERNAME%==sisrael (
+        set R_HOME=C:\Users\sisrael\AppData\Local\Programs\R\R-4.2.1
+        set R_USER=%USERNAME%
+        set R_LIBS_USER=C:\Users\%USERNAME%\Documents\R\R-4.1.3
+      ) ELSE (
+        set R_HOME=C:\Program Files\R\R-3.5.2
+        set R_USER=%USERNAME%
+        set R_LIBS_USER=C:\Users\%R_USER%\Documents\R\win-library\3.5
+        ) 
+      )
+    )
   )
 )
-
-
 :: copy over the scenariokey
 copy "%MODEL_RUNS_CSV%" "%COMBINED_DIR%\ScenarioKey.csv"
 
 :: copy over files in metrics
-set FILES=topsheet scenario_metrics parking_costs_tour parking_costs_tour_destTaz parking_costs_tour_ptype_destTaz parking_costs_trip_destTaz parking_costs_trip_distBins emfac_ghg
+set FILES=topsheet scenario_metrics auto_times parking_costs_tour parking_costs_tour_destTaz parking_costs_tour_ptype_destTaz parking_costs_trip_destTaz parking_costs_trip_distBins emfac_ghg
 if !SET_TYPE!==all (set FILES=topsheet scenario_metrics)
 
 for %%F in (%FILES%) DO (

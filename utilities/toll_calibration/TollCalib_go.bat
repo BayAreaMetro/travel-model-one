@@ -1,7 +1,7 @@
 rem -------------------------------------
 rem
 rem This batch file copies the inputs and scripts needed for toll calibration. 
-rem It requires two user inputs (re. network_links.dbf and TOLLCLASS_Designations.xlsx)
+rem It requires six pieces of information
 rem Scripts are copied from travel-model-one-master on the X drive.
 rem 
 rem -------------------------------------
@@ -24,9 +24,9 @@ set MODEL_BASE_DIR=E:\Model2C-Share\Projects\2050_TM151_PPA_BF_17_preTollCalib
 :: (this shoudl be the location of the output folder "tollcalib_iter" on the L drive)
 set L_DIR=L:\RTP2021_PPA\Projects\2050_TM151_PPA_BF_17_preTollCalib
 
-:: Configure target speed and max toll
-set target_speed=45 
-set max_toll=5
+:: Configure target speed and max toll by TOLLCLASS_Designations.xlsx
+rem set target_speed=45 
+rem set max_toll=5
 
 
 rem copy the two toll calibration inputs 
@@ -39,15 +39,15 @@ copy %TOLL_DESIGNATIONS_XLSX%    tollcalib_iter\TOLLCLASS_Designations.xlsx
 rem copy the five toll calibration scripts 
 rem -------------------------------------
 
-copy \\tsclient\X\travel-model-one-master\utilities\check-network\TollCalib_checkITER3.bat TollCalib_checkITER3.bat
+copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_checkITER3.bat TollCalib_checkITER3.bat
 
-copy \\tsclient\X\travel-model-one-master\utilities\check-network\TollCalib_Iterate.bat TollCalib_Iterate.bat
+copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_Iterate.bat TollCalib_Iterate.bat
 
-copy \\tsclient\X\travel-model-one-master\utilities\check-network\TollCalib_RunModel.bat TollCalib_RunModel.bat
+copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_RunModel.bat TollCalib_RunModel.bat
 
-copy \\tsclient\X\travel-model-one-master\utilities\check-network\TollCalib_CheckSpeeds.R TollCalib_CheckSpeeds.R
+copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_CheckSpeeds.R TollCalib_CheckSpeeds.R
 
-copy \\tsclient\X\travel-model-one-master\utilities\check-network\TollCalib_stop.py TollCalib_stop.py
+copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_stop.py TollCalib_stop.py
 
 rem generate network_links.dbf
 rem -------------------------------------
