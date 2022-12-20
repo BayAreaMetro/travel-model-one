@@ -7,7 +7,7 @@ USAGE = r"""
 """
 
 import argparse,sys
-import pandas
+import pandas, numpy
 
 if __name__ == '__main__':
 
@@ -118,3 +118,23 @@ if __name__ == '__main__':
     trucks_long_df.to_csv(output_file, index=False)
     print("Wrote {}".format(output_file))
 
+
+    # summarize to truck class, time period, toll choice - but not OD
+    trucks_long_df["total time" ] = trucks_long_df["truck trips"] * trucks_long_df["time"]
+    trucks_long_df["total dist" ] = trucks_long_df["truck trips"] * trucks_long_df["dist"]
+    trucks_long_df["total vtoll"] = trucks_long_df["truck trips"] * trucks_long_df["vtoll"] # year 2000 cents
+    summary_df = pandas.pivot_table(
+        data=trucks_long_df,
+        values=["truck trips","total time","total dist","total vtoll"],
+        index=["truck class","time period","toll choice"],
+        aggfunc=numpy.sum, 
+        fill_value=0.0
+    )
+    summary_df.reset_index(drop=False, inplace=True)
+
+    print("summary_df head:\n{}".format(summary_df.head()))
+
+    # write summary
+    output_file = "truck_trip_tod_tollchoice_{}_summary.csv".format(model_run)
+    summary_df.to_csv(output_file, index=False)
+    print("Wrote {}".format(output_file))
