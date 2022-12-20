@@ -1,8 +1,9 @@
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :: RunModel.bat
 ::
-:: MS-DOS batch file to execute the MTC travel model.  Each of the model steps are sequentially
-:: called here.  
+:: MS-DOS batch file to execute the Alameda / Contra Costa bi-county travel model (BCM). 
+:: BCM is derivative of MTC Travel Model 1.5 
+:: Each of the model steps are sequentially called here.  
 ::
 :: For complete details, please see http://mtcgis.mtc.ca.gov/foswiki/Main/RunModelBatch.
 ::
@@ -17,30 +18,24 @@
 ::
 :: ------------------------------------------------------------------------------------------------------
 
+:: Set local vs distributed run type. Only local option is implemented for BCM
+set RUNTYPE=LOCAL
+
 :: Set the path
 call CTRAMP\runtime\SetPath.bat
 
+:: Set the location of the model scripts
+SET BASE_SCRIPTS=CTRAMP\scripts
+
 :: Start the cube cluster
-Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
+Cluster "%COMMPATH%\CTRAMP" 1-8 Starthide Exit
 
-::  Set the IP address of the host machine which sends tasks to the client machines 
-if %computername%==MODEL2-A            set HOST_IP_ADDRESS=192.168.1.206
-if %computername%==MODEL2-B            set HOST_IP_ADDRESS=192.168.1.207
-if %computername%==MODEL2-C            set HOST_IP_ADDRESS=192.168.1.208
-if %computername%==MODEL2-D            set HOST_IP_ADDRESS=192.168.1.209
-if %computername%==PORMDLPPW01         set HOST_IP_ADDRESS=172.24.0.101
-if %computername%==PORMDLPPW02         set HOST_IP_ADDRESS=172.24.0.102
-if %computername%==WIN-FK0E96C8BNI     set HOST_IP_ADDRESS=10.0.0.154
-rem if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.70
-rem for aws machines, HOST_IP_ADDRESS is set in SetUpModel.bat
+::  Set the IP address of the host machine 
+set HOST_IP_ADDRESS=10.1.184.47
 
-:: for AWS, this will be "WIN-"
-SET computer_prefix=%computername:~0,4%
+:: Settings for sending notifications to Slack -- requires a Slack account
+set computer_prefix=%computername:~0,4%
 set INSTANCE=%COMPUTERNAME%
-if "%COMPUTER_PREFIX%" == "WIN-" (
-  rem figure out instance
-  for /f "delims=" %%I in ('"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command (wget http://169.254.169.254/latest/meta-data/instance-id).Content"') do set INSTANCE=%%I
-)
 
 :: Figure out the model year
 set MODEL_DIR=%CD%
@@ -71,45 +66,18 @@ if %MODEL_YEAR% GTR 3000 (
 )
 
 set PROJECT=%myfolder:~11,3%
-set FUTURE_ABBR=%myfolder:~15,2%
-set FUTURE=X
 
-:: FUTURE ------------------------- make sure FUTURE_ABBR is one of the five [RT,CG,BF] -------------------------
-:: The long names are: BaseYear ie 2015, Blueprint aka PBA50, CleanAndGreen, BackToTheFuture, or RisingTidesFallingFortunes
-
-if %PROJECT%==IPA (SET FUTURE=PBA50)
-if %PROJECT%==DBP (SET FUTURE=PBA50)
-if %PROJECT%==FBP (SET FUTURE=PBA50)
-if %PROJECT%==EIR (SET FUTURE=PBA50)
-if %PROJECT%==SEN (SET FUTURE=PBA50)
-if %PROJECT%==STP (SET FUTURE=PBA50)
-if %PROJECT%==NGF (SET FUTURE=PBA50)
-if %PROJECT%==PPA (
-  if %FUTURE_ABBR%==RT (set FUTURE=RisingTidesFallingFortunes)
-  if %FUTURE_ABBR%==CG (set FUTURE=CleanAndGreen)
-  if %FUTURE_ABBR%==BF (set FUTURE=BackToTheFuture)
-)
-
-echo on
-echo FUTURE = %FUTURE%
-
-echo off
-if %FUTURE%==X (
-  echo on
-  echo Couldn't determine FUTURE name.
-  echo Make sure the name of the project folder conform to the naming convention.
-  exit /b 2
-)
 
 echo on
 echo turn echo back on
 
-python "CTRAMP\scripts\notify_slack.py" "Starting *%MODEL_DIR%*"
+:: slack notification disabled
+:: python "CTRAMP\scripts\notify_slack.py" "Starting *%MODEL_DIR%*"
 
 set MAXITERATIONS=3
 :: --------TrnAssignment Setup -- Standard Configuration
 :: CHAMP has dwell  configured for buses (local and premium)
-:: CHAMP has access configured for for everything
+:: CHAMP has access configured for everything
 :: set TRNCONFIG=STANDARD
 :: set COMPLEXMODES_DWELL=21 24 27 28 30 70 80 81 83 84 87 88
 :: set COMPLEXMODES_ACCESS=21 24 27 28 30 70 80 81 83 84 87 88 110 120 130
@@ -151,6 +119,11 @@ copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
 copy INPUT\logsums              logsums\
 
+:: Use interim network inputs until the networks are regenerated with all project card updates
+copy INPUT\hwy\complete_network_SJQ_externals.net                 hwy\complete_network.net
+
+goto hwysk
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 3:  Pre-process steps
@@ -164,6 +137,35 @@ copy INPUT\logsums              logsums\
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
 
+:: Preprocess input network to: 
+::    1 - fix space issue in CNTYPE
+::    2 - add a FEET field based on DISTANCE
+runtpp %BASE_SCRIPTS%\preprocess\preprocess_input_net.job
+IF ERRORLEVEL 2 goto done
+
+:: Write a batch file with number of zones
+runtpp %BASE_SCRIPTS%\preprocess\writeZoneSystems.job
+if ERRORLEVEL 2 goto done
+
+::Run the batch file
+call zoneSystem.bat
+
+:: Build sequential numberings
+runtpp %BASE_SCRIPTS%\preprocess\zone_seq_net_builder.job
+if ERRORLEVEL 2 goto done
+
+:: Create all necessary input files based on updated sequential zone numbering
+"%PYTHON_PATH%"\python %BASE_SCRIPTS%\preprocess\zone_seq_disseminator.py .
+IF ERRORLEVEL 1 goto done
+
+:: Write out the intersection and taz XY
+runtpp %BASE_SCRIPTS%\preprocess\taz_densities.job
+if ERRORLEVEL 2 goto done
+
+:: Calculate density fields and append to MAZ file
+"%PYTHON_PATH%"\python %BASE_SCRIPTS%\preprocess\createTazDensityFile.py 
+IF ERRORLEVEL 1 goto done
+
 :: Set the prices in the roadway network (convert csv to dbf first)
 python CTRAMP\scripts\preprocess\csvToDbf.py hwy\tolls.csv hwy\tolls.dbf
 IF ERRORLEVEL 1 goto done
@@ -176,9 +178,25 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\preprocess\SetHovXferPenalties.job
 if ERRORLEVEL 2 goto done
 
+:: Create areatype and capclass fields in network
+runtpp %BASE_SCRIPTS%\preprocess\SetCapClass.job
+if ERRORLEVEL 2 goto done
+
 :: Create time-of-day-specific 
 runtpp CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
 if ERRORLEVEL 2 goto done
+
+:: Create taz networks
+runtpp %BASE_SCRIPTS%\preprocess\BuildTazNetworks.job
+if ERRORLEVEL 2 goto done
+
+:hwysk
+
+:: THIS STEP DOES NOT GO HERE Build the initial highway skims
+runtpp %BASE_SCRIPTS%\skims\HwySkims.job
+if ERRORLEVEL 2 goto done
+
+goto done
 
 :: Create HSR trip tables to/from Bay Area stations
 runtpp CTRAMP\scripts\preprocess\HsrTripGeneration.job
@@ -200,10 +218,43 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\skims\NonMotorizedSkims.job
 if ERRORLEVEL 2 goto done
 
+:: ------------------------------------------------------------------------------------------------------
+::
 :: Step 4.5: Build initial transit files
+::
+:: ------------------------------------------------------------------------------------------------------
+
+:: Python path specific to network management procedures
 set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+
+::renumber the duplicated stop ids in the transt line file
+python CTRAMP\scripts\preprocess\renumber_duplicated_transit_stops.py
+python CTRAMP\scripts\preprocess\list_all_transit_nodes.py
 python CTRAMP\scripts\skims\transitDwellAccess.py NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 if ERRORLEVEL 2 goto done
+
+:: Create list of PNR lots
+runtpp %BASE_SCRIPTS%\preprocess\CreatePnrList.job
+if ERRORLEVEL 2 goto done
+
+:: Prepare the highway network for use by the transit network
+runtpp %BASE_SCRIPTS%\skims\PrepHwyNet.job
+if ERRORLEVEL 2 goto done
+
+:: Create the transit networks
+runtpp CTRAMP\scripts\skims\BuildTransitNetworks.job
+if ERRORLEVEL 2 goto done
+
+call zoneSystem.bat
+:: Build the transit skims
+runtpp CTRAMP\scripts\skims\TransitSkims.job
+if ERRORLEVEL 2 goto done
+
+
+
+goto done
+
+
 
 
 :: ------------------------------------------------------------------------------------------------------
@@ -432,7 +483,8 @@ call Run_QAQC
 :success
 ECHO FINISHED SUCCESSFULLY!
 
-python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%*"
+:: slack notification disabled
+:: python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%*"
 
 if "%COMPUTER_PREFIX%" == "WIN-" (
   
@@ -454,6 +506,7 @@ goto donedone
 ECHO FINISHED.  
 
 :: if we got here and didn't shutdown -- assume something went wrong
-python "CTRAMP\scripts\notify_slack.py" ":exclamation: Error in *%MODEL_DIR%*"
+:: slack notification disabled
+:: python "CTRAMP\scripts\notify_slack.py" ":exclamation: Error in *%MODEL_DIR%*"
 
 :donedone
