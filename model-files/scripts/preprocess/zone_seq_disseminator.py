@@ -4,7 +4,7 @@
     where base_dir is the directory in which the model runs (directory with INPUTS, hwy, etc.)
 
     This script builds all of the CTRAMP files that use zone numbers in them. It is necessary to
-    script this because the zone numbers that CTRAMP uses must be sequential and my change with
+    script this because the zone numbers that CTRAMP uses must be sequential and may change with
     any given model run (primarily because TAPs may change). See zone_seq_net_build.job for more
     details about this process and its necessity.
     

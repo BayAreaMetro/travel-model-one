@@ -23,16 +23,15 @@ with open(TAZ_DATA_FILE, 'rb') as csvfile:
   tazreader = csv.reader(csvfile, skipinitialspace=True)
   for row in tazreader:
     tazData.append(row)
-#CHANGE VARIABLE HERE
 tazDataColNames = tazData.pop(0)
 print tazDataColNames
 tazLandUse = dict()
 origTazToSeqTaz = dict()
 for row in tazData:
   taz = row[tazDataColNames.index("TAZ_ORIGINAL")]
-  pop = row[tazDataColNames.index("HHQ1_15")] #CHANGE VARIABLE HERE
-  emp = row[tazDataColNames.index("TOTEMPN15")]
-  acres = row[tazDataColNames.index("acres")]
+  pop = row[tazDataColNames.index("TOTPOP")]
+  emp = row[tazDataColNames.index("TOTEMPN")]
+  acres = row[tazDataColNames.index("TOTACRE")]
   tazLandUse[taz] = [taz, pop, emp, acres,-1,-1,-1] #-1,-1,-1 = x,y,area type
   
   #create sequential lookup to join to network

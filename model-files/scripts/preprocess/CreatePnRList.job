@@ -1,0 +1,36 @@
+;---------------------------------------------------------------------------
+; 
+; CreatePnrList.job
+;
+; This script creates a list of all the nodes that represent transit
+; park and ride lots. This list is used when building the transit network.
+; PNR locations are identified in the input network with node attribute PNR.
+; PNR nodes are connected to the highway network via a dummy walkable link.
+;
+; We use the the transit background network so the node numbering is 
+; consistent with the route cards. Although the transit background
+; networks are period-specific, the PNR locations are the same for
+; all periods so only one network needs to be processed. We are using
+; the AM network for this purpose.
+;
+; inputs: network (trn\am_transit_background.net)
+;
+; outputs: pnr locations (trn\pnr_nodes.csv) 
+;
+; version: BCM, TM1.5 w TM2 network.
+; rpm (10 22)
+;---------------------------------------------------------------------------
+
+;create list of PNR nodes
+RUN PGM=NETWORK
+    neti      ="trn\am_transit_background.net"
+    printo[1] ="trn\pnr_nodes.csv"
+  
+    phase=nodemerge
+    
+        if ((N > 999999) & PNR > 0)
+            print, list="PNR NODE = ", N(8), ", ZONES = 1-%taz_count%" printo=1 
+        endif
+		
+    endphase
+ENDRUN

@@ -11,7 +11,7 @@
 
 
 RUN PGM=NETWORK
-    LINKI[1] = "hwy\complete_network_SJQ_externals.net"
+    LINKI[1] = "hwy\complete_network.net"
     NETO = "hwy\complete_network_base.net"
 
     PHASE=LINKMERGE

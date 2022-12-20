@@ -1,9 +1,7 @@
 # Author: jmh
 # Date: 06 2022
-# CHANGE VARIABLE IN LINE 159 FOR TOTAL POPULATION IN TAZ, currently using a dummy value for population
-# CHANGE VARIABLE IN LINE 160 FOR TOTAL ACRES IN TAZ, currently using a dummy value for acres
-# Description: This script takes input network and taz files and writes
-# out an taz density file for CT-RAMP.
+# Description: This script takes input network and TAZ files and writes
+# out a TAZ density file for CT-RAMP.
 #
 # Inputs:
 #   hwy\taz_nodes.csv: A file with fields N, X, Y, one record per TAZ. Non-Sequential node numbers.
@@ -11,7 +9,7 @@
 #   landuse\taz_data.csv: A file with fields TAZ,TAZ_ORIGINAL,emp_total,HH,POP,ACRES,ret_reg,ret_loc.
 #
 # Outputs:
-#   landuse\TAZ_density.csv: An TAZ file with fields:
+#   landuse\TAZ_density.csv: A TAZ file with fields:
 #       TAZ             Sequential TAZ 
 #       TAZ_ORIGINAL    Non-sequential TAZ
 #       TotInt          Total intersections within 1/2 mile of TAZ
@@ -153,17 +151,16 @@ while i < len(taz_seqn):
      
     #sum the variables for all tazs within the max distance
     tazData['distance'] = tazData.eval("((TAZ_X - dest_x)**2 + (TAZ_Y-dest_y)**2)**0.5")    
-    totEmp = tazData.loc[tazData['distance'] < max_dist, 'TOTEMPN15'].sum()
-    totRet = tazData.loc[tazData['distance'] < max_dist, 'RETEMPN15'].sum() 
-    totHH = tazData.loc[tazData['distance'] < max_dist, 'HHQ1_15'].sum()
-    ##CHANGE VALUE HERE
-    totPop = 2*(tazData.loc[tazData['distance'] < max_dist, 'HHQ1_15'].sum())
-    totAcres = tazData.loc[tazData['distance'] < max_dist, 'acres'].sum()
+    totEmp = tazData.loc[tazData['distance'] < max_dist, 'TOTEMPN'].sum()
+    totRet = tazData.loc[tazData['distance'] < max_dist, 'RETEMPN'].sum() 
+    totHH = tazData.loc[tazData['distance'] < max_dist, 'TOTHH'].sum()
+    totPop = tazData.loc[tazData['distance'] < max_dist, 'TOTPOP'].sum()
+    totAcres = tazData.loc[tazData['distance'] < max_dist, 'TOTACRE'].sum()
     
     # TNC\Taxi wait time density fields
-    totPopWaitTime = tazData.loc[tazData['distance'] < max_dist_popempden, 'HHQ1_15'].sum()
-    totEmpWaitTime = tazData.loc[tazData['distance'] < max_dist_popempden, 'TOTEMPN15'].sum()
-    totAcreWaitTime = tazData.loc[tazData['distance'] < max_dist_popempden, 'acres'].sum()
+    totPopWaitTime = tazData.loc[tazData['distance'] < max_dist_popempden, 'TOTPOP'].sum()
+    totEmpWaitTime = tazData.loc[tazData['distance'] < max_dist_popempden, 'TOTEMPN'].sum()
+    totAcreWaitTime = tazData.loc[tazData['distance'] < max_dist_popempden, 'TOTACRE'].sum()
     
     # calculate density variables
     if(totAcres>0):
