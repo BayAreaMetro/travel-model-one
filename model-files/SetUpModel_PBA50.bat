@@ -195,8 +195,7 @@ if %MODEL_YEAR_NUM% GEQ 2045 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMo
 :: Telecommute V2 strategy
 :: ------
 mkdir main
-copy /Y "%TELECOMMUTE_CONFIG%" "main/telecommute_constants_00.csv"
-copy /Y "%TELECOMMUTE_CONFIG%" "main/telecommute_constants.csv"
+copy /Y "%TELECOMMUTE_CONFIG%" "INPUT/main/telecommute_constants.csv"
  
 :DoneAddingStrategies
 
