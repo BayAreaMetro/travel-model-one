@@ -156,8 +156,8 @@ copy INPUT\nonres\              nonres\
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
 copy INPUT\logsums              logsums\
-copy INPUT\main\telecommute_constants.csv   main\telecommute_constants.csv
-copy INPUT\main\telecommute_constants.csv   main\telecommute_constants_00.csv
+copy INPUT\telecommute_constants.csv   main\telecommute_constants.csv
+copy INPUT\telecommute_constants.csv   main\telecommute_constants_00.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
