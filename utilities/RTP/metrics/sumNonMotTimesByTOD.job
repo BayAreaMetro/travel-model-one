@@ -1,12 +1,13 @@
 ; This script Uses Non-Motorized trips * Non-Mot skims (DIST) and outputs:
-; metrics\transit_times_by_acc_mode_egr.csv with columns:
-;  * Time Period           (EA, AM, MD, PM, EV)
+; metrics\nonmot_times_TOD.csv with columns:
+;  * Period                (EA, AM, MD, PM, EV)
+;  * Mode                  (walk, bike)
 ;  * Trips                 (# of non-motorized trips)
 ;  * Distance              (# of miles travelled by this mode)
 ;
 
 
-;*del metrics\transit_times_by_acc_mode_egr.csv
+;*del metrics\nonmot_times_TOD.csv
 
 ; Loop thru transit modes
 loop mode = 1,2
@@ -46,13 +47,13 @@ loop mode = 1,2
 
       ; Read non-motorized skims
       ; DISTWALK, DISTBIKE, DIST
-      FILEI MATI[6] = "skims\nonmotskm.tpp"
+      FILEI MATI[2] = "skims\nonmotskm.tpp"
 
       FILEO PRINTO[1] = "metrics\nonmot_times_@token_mode@.csv", append=T
 
       ; Transit Trips by TOD
       MW[1] = mi.1.@token_mode@                 ; Trips
-      MW[2] = MW[1] *  mi.6.@token_dist@    ; Distance
+      MW[2] = MW[1] *  mi.2.@token_dist@    ; Distance
 
       JLOOP
       Trips       = Trips  + MW[1]
@@ -68,11 +69,10 @@ loop mode = 1,2
     ENDRUN
   endloop ; period loop
 
-;EndDistributeMultistep
+  ;EndDistributeMultistep
 endloop ; mode loop
 
-;Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
-;                 CTRAMP4.script.end, CTRAMP5.script.end,
+;Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, 
 ;           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the path files into one

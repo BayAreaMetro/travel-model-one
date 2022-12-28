@@ -1,7 +1,7 @@
 ; RSG 2022-01-21 TM1.5 add advanced air mobility mode
 ; This script Uses Transit trips * Transit skims (IVT and OVT) and outputs:
-; metrics\transit_times_by_acc_mode_egr.csv with columns:
-;  * Age                   (all, 20-74, 20-64)
+; metrics\transit_times_by_mode_TOD.csv with columns:
+;  * Period                (EA, AM, MD, PM, EV)
 ;  * Access                (wlk, drv)
 ;  * Mode                  (aam, com, hvy, exp, lrf, loc)
 ;  * Egress                (wlk, drv)
@@ -13,12 +13,10 @@
 ;  * Walk acc & egr hours  (# of hours spent in walk access and egress by relevant ppl)
 ;  * Aux walk hours        (# of hours spent in auxiliary walk by relevant ppl)
 ;  * Drive acc & egr hours (# of hours spent in drive access and egress by relevant ppl)
-;  * AM path count         (# of O-D paths that exist out of full matrix in AM)
-;  * MD path count         (# of O-D paths that exist out of full matrix in MD)
 ;
 
 
-;*del metrics\transit_times_by_acc_mode_egr.csv
+;*del metrics\transit_times_by_mode_TOD.csv
 
 ; Loop thru transit modes
   loop path = 1,6
@@ -50,7 +48,7 @@
 
  DistributeMultistep processid = 'ctramp', processNum = path, commpath = '%COMMPATH%'
 
-; Loop thru access + egress modes
+ ; Loop thru access + egress modes
  loop accegg = 1,3
       if (accegg = 1)
          token_access = 'wlk'
@@ -80,39 +78,29 @@
           token_period = 'EV'
       endif
 
-    RUN PGM = MATRIX
+     RUN PGM = MATRIX
       ; Read person trips
       ; 1. da, 2. datoll, 3. sr2, 4. sr2toll, 5. sr3, 6. sr3toll, 7. walk, 8. bike,
       ; 9. wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, wlk_aam_wlk,
       ; 14. drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk, drv_aam_wlk,
       ; 19. wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv, wlk_aam_drv
       FILEI MATI[1] = "main\trips@token_period@_no_zpv_allinc.tpp"
-      ;FILEI MATI[1] = "main\tripsEA_no_zpv_allinc.tpp"
-      ;FILEI MATI[2] = "main\tripsAM_no_zpv_allinc.tpp"
-      ;FILEI MATI[3] = "main\tripsMD_no_zpv_allinc.tpp"
-      ;FILEI MATI[4] = "main\tripsPM_no_zpv_allinc.tpp"
-      ;FILEI MATI[5] = "main\tripsEV_no_zpv_allinc.tpp"
 
       ; Read transit skims
       ; ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtAAM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
-      FILEI MATI[6] = "skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@.tpp"
-      ;FILEI MATI[6] = "skims\trnskmEA_@token_access@_@token_path@_@token_egress@.tpp"
-      ;FILEI MATI[7] = "skims\trnskmAM_@token_access@_@token_path@_@token_egress@.tpp"
-      ;FILEI MATI[8] = "skims\trnskmMD_@token_access@_@token_path@_@token_egress@.tpp"
-      ;FILEI MATI[9] = "skims\trnskmPM_@token_access@_@token_path@_@token_egress@.tpp"
-      ;FILEI MATI[10]= "skims\trnskmEV_@token_access@_@token_path@_@token_egress@.tpp"
+      FILEI MATI[2] = "skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@.tpp"
 
       FILEO PRINTO[1] = "metrics\transit_times_by_acc_mode_egr_@token_path@.csv", append=T
 
       ; Transit Trips by TOD
       MW[1] = mi.1.@token_access@_@token_path@_@token_egress@            ; Trips
-      MW[2] = MW[1] *  mi.6.ivt                                          ; IVTTrips
-      MW[3] = MW[1] * (mi.6.wait+mi.6.wacc+mi.6.waux+mi.6.wegr+mi.6.dtime) ; OVTTrips
-      MW[101] = MW[1] * mi.6.iwait       					 ; iwaitTrips
-      MW[102] = MW[1] * mi.6.xwait       					 ; xwaitTrips
-      MW[103] = MW[1] * (mi.6.wacc +mi.6.wegr) 		 ; accegrTrips
-      MW[104] = MW[1] * mi.6.waux       					 ; wauxTrips
-      MW[105] = MW[1] * mi.6.dtime       					 ; dtimeTrips
+      MW[2] = MW[1] *  mi.2.ivt                                          ; IVTTrips
+      MW[3] = MW[1] * (mi.2.wait+mi.2.wacc+mi.2.waux+mi.2.wegr+mi.2.dtime) ; OVTTrips
+      MW[101] = MW[1] * mi.2.iwait       					 ; iwaitTrips
+      MW[102] = MW[1] * mi.2.xwait       					 ; xwaitTrips
+      MW[103] = MW[1] * (mi.2.wacc +mi.2.wegr) 		 ; accegrTrips
+      MW[104] = MW[1] * mi.2.waux       					 ; wauxTrips
+      MW[105] = MW[1] * mi.2.dtime       					 ; dtimeTrips
 
       JLOOP
       Trips  = Trips  + MW[1]
@@ -145,15 +133,15 @@
           xwait_hours,accegr_hours,
           waux_hours,dtime_hours
       endif
-    ENDRUN
-endloop
-endloop
+     ENDRUN
+    endloop
+ endloop
 
-EndDistributeMultistep
+ EndDistributeMultistep
 endloop
 
 Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
-                 CTRAMP4.script.end, CTRAMP5.script.end,
+                 CTRAMP4.script.end, CTRAMP5.script.end, CTRAMP6.script.end,
            printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the path files into one

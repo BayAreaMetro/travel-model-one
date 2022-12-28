@@ -12,7 +12,7 @@
 ;  5. Applying as multinomial since only one market in the original model had a significant nesting parameter
 ;
 ; applied to following airports: 
-;     1: SFO (TAZ 339)
+;     1: SFO (TAZ 239)
 ;     2: OAK (TAZ 874)
 ;     3: SJC (TAZ 434)
 
@@ -411,7 +411,7 @@ loop period = 1, 5
         ; add AAM utility component if AAM in path
         if( mi.5.ivtAAM[j] > 0)
           
-        u_tran = u_tran + c_cst_aam * cpi_factor * mi.5.fare[j]/100 *POW((mi.2.DISTDA[j]/base_dst),c_dst_aam)*POW((inc_aam/base_inc),c_inc_aam) +
+        u_tran = u_tran + c_cst_aam * cpi_factor * (mi.5.fare[j]/100 + round(mi.5.distAAM[j]/100 * AAM.costPerMile)) *POW((mi.2.DISTDA[j]/base_dst),c_dst_aam)*POW((inc_aam/base_inc),c_inc_aam) +
             c_rel_aam * AAM.probability.delay * AAM.average.delay +
             asc_aut_aam * AAM.autonomous.indicator +
             asc_rem_aam * AAM.remote.indicator +
@@ -430,7 +430,7 @@ loop period = 1, 5
        ; add AAM utility component if AAM in path
        if( mi.6.ivtAAM[j] > 0)
          
-         u_tran = u_tran + c_cst_aam * cpi_factor * mi.6.fare[j]/100 *POW((mi.2.DISTDA[j]/base_dst),c_dst_aam)*POW((inc_aam/base_inc),c_inc_aam) +
+         u_tran = u_tran + c_cst_aam * cpi_factor * (mi.6.fare[j]/100 + round(mi.6.distAAM[j]/100 * AAM.costPerMile)) *POW((mi.2.DISTDA[j]/base_dst),c_dst_aam)*POW((inc_aam/base_inc),c_inc_aam) +
            c_rel_aam * AAM.probability.delay * AAM.average.delay +
            asc_aut_aam * AAM.autonomous.indicator +
            asc_rem_aam * AAM.remote.indicator +

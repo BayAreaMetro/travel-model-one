@@ -379,7 +379,7 @@ loop period = 1,5
           ; set the desired output
           matrices name = ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards,
                           ivtLOC,  ivtLRF,  ivtEXP,  ivtHVY,  ivtCOM,  ivtAAM,  ivtFerry,  ivtMUNILoc, ivtMUNIMet,
-                          distLOC, distLRF, distEXP, distHVY, distCOM, distAAM, distFerry, firstMode,
+                          distLOC, distLRF, distEXP, distHVY, distCOM, distAAM, distFerry, firstMode, firstAAMv, lastAAMv,
             ; in-vehicle time for all transit modes, use TP+ code 1001    
             mw[1]  = time(1001),
             ; initial wait time, use TP+ code 'iwait'
@@ -435,7 +435,11 @@ loop period = 1,5
             ; capture the ferry distance in order to distinguish between ferry paths and light rail paths in the light rail/ferry choice (modes 100 to 109)
             mw[27] = dist(100,101,102,103,104,105,106,107,108,109),
             ; first transit mode
-            mw[28] = modet1
+            mw[28] = modet1,
+            ; first boarding advanced air mobility vertiport
+            mw[29] = NODE0(140), 
+            ; first boarding advanced air mobility vertiport
+            mw[30] = NODEL(140)
 
           ; trace a selection of o/d pairs for debugging
           select trace=(i=@token_debug_origin@ && j=@token_debug_destination@)            
@@ -450,10 +454,10 @@ loop period = 1,5
             FILEI MATI[2]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.iter@token_trnassigniter@.tpp  ; current travel times +
             FILEI MATI[3]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.avg.iter@token_prevtrnassigniter@.tpp ; bring in averaged travel times
         
-            FILEO MATO[1]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.avg.iter@token_trnassigniter@.tpp, MO=1-28,
+            FILEO MATO[1]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@.avg.iter@token_trnassigniter@.tpp, MO=1-30,
                           NAME=ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards,
                                ivtLOC,  ivtLRF,  ivtEXP,  ivtHVY,  ivtCOM,  ivtAAM,  ivtFerry,  ivtMUNILoc, ivtMUNIMet,
-                               distLOC, distLRF, distEXP, distHVY, distCOM, distAAM, distFerry, firstMode
+                               distLOC, distLRF, distEXP, distHVY, distCOM, distAAM, distFerry, firstMode, firstAAMv, lastAAMv
 	    FILEO MATO[2]=trnskm@token_period@_@token_access@_@token_path@_@token_egress@_debug.tpp, MO=12,13,50,51,52,10,
 			  NAME=ivtLOC, ivtLRF, ivtNonLoc, dist, fareOrig, fareNew
         
@@ -502,6 +506,8 @@ loop period = 1,5
                 MW[26] =(MI.2.distAAM   *LAMBDA)+((1-LAMBDA)*MI.3.distAAM   )
                 MW[27] =(MI.2.distFerry *LAMBDA)+((1-LAMBDA)*MI.3.distFerry )
                 MW[28] =(MI.2.firstMode *LAMBDA)+((1-LAMBDA)*MI.3.firstMode )
+                MW[29] =(MI.2.firstAAMv *LAMBDA)+((1-LAMBDA)*MI.3.firstAAMv )
+                MW[30] =(MI.2.lastAAMv  *LAMBDA)+((1-LAMBDA)*MI.3.lastAAMv  )
                 _BOTH = _BOTH+1
               ELSEIF (MI.2.@token_ivt@>0)
                 MW[1 ] =MI.2.ivt
@@ -532,6 +538,8 @@ loop period = 1,5
                 MW[26] =MI.2.distAAM  
                 MW[27] =MI.2.distFerry
                 MW[28] =MI.2.firstMode
+                MW[29] =MI.2.firstAAMv
+                MW[30] =MI.2.lastAAMv
                 _ITERONLY = _ITERONLY+1
               ELSEIF (MI.3.@token_ivt@>0)
                 MW[1 ] =MI.3.ivt      
@@ -562,14 +570,16 @@ loop period = 1,5
                 MW[26] =MI.3.distAAM 
                 MW[27] =MI.3.distFerry
                 MW[28] =MI.3.firstMode
+                MW[29] =MI.3.firstAAMv
+                MW[30] =MI.3.lastAAMv
                 _AVGONLY = _AVGONLY+1
               ENDIF
 
               ; integrated fares
-              ; => calculate non-loc IVT
-              MW[50] = MW[18] + MW[14] + MW[15] + MW[16] + MW[17]; ivtFerry + ivtEXP + ivtHVY + ivtCOM + ivtAAM
-              ; => calculate dist
-              MW[51] = MW[21] + MW[22] + MW[23] + MW[24] + MW[25] + MW[26]
+              ; => calculate non-loc non-AAM IVT
+              MW[50] = MW[18] + MW[14] + MW[15] + MW[16]; ivtFerry + ivtEXP + ivtHVY + ivtCOM
+              ; => calculate non-AAM dist
+              MW[51] = MW[21] + MW[22] + MW[23] + MW[24] + MW[25]
 	      ; debug: copy of original fares
 	      MW[52] = MW[10]
 
@@ -595,10 +605,10 @@ loop period = 1,5
                  ; $8.50 (2019$) = $5.28 ($2000)
                  MW[10] = 528
               ENDIF
-              ; OVERRIDE FOR AAM, but convert from $2019 to $2000
-              if(MW[17] > 0) ; ivtAAM
-                 MW[10]=round(MW[52] * 0.62)
-              ENDIF
+              ; AAM fare removed from Cube; max fare of 32767 (cents) allowed too low to model high AAM fare
+              ; if(MW[17] > 0) ; ivtAAM
+              ;    MW[10]=round(MW[52] * 0.62)
+              ; ENDIF
 
               IF (MW[3]>0 && MW[50]>0)
                 ; PMT = Person Minutes Travelled

@@ -143,22 +143,19 @@ if not exist metrics\nonmot_times.csv (
 
 if not exist metrics\transit_times_by_mode_TOD.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : main\trips(EA|AM|MD|PM|EV)allinc.tpp,
+  rem Input : main\trips(EA|AM|MD|PM|EV)_no_zpv_allinc.tpp,
   rem         skims\trnskm(EA|AM|MD|PM|EV)_(wlk|drv)_(com|hvy|exp|lrf|loc)_(wlk|drv).tpp
-  rem Output: metrics\transit_times_by_acc_mode_egr.csv,
-  rem         metrics\transit_times_by_mode_income.csv
+  rem Output: metrics\transit_times_by_mode_TOD.csv
   runtpp "%CODE_DIR%\sumTransitTimesByTOD.job"
   if ERRORLEVEL 2 goto error
 )
 
 if not exist metrics\auto_time_TOD.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
-  rem Input : main\trips(EA|AM|MD|PM|EV)inc[1-4].tpp
-  rem         nonres\tripsIx(EA|AM|MD|PM|EV).tpp
+  rem Input : main\trips(EA|AM|MD|PM|EV)_no_zpv_allinc.tpp
   rem         skims\HWYSKM(EA|AM|MD|PM|EV).tpp
-  rem         skims\COM_HWYSKIM(EA|AM|MD|PM|EV).tpp
   rem         CTRAMP\scripts\block\hwyParam.block
-  rem Output: metrics\auto_times.csv
+  rem Output: metrics\auto_time_TOD.csv
   runtpp "%CODE_DIR%\sumAutoTimesByTOD.job"
   if ERRORLEVEL 2 goto error
 )
@@ -167,8 +164,24 @@ if not exist metrics\nonmot_times_TOD.csv (
   rem Reads trip tables and skims and outputs tallies for trip attributes
   rem Input : main\trips(EA|AM|MD|PM|EV).tpp
   rem         skims\nonmotskm.tpp
-  rem Output: nonmot_times_TOD.csv
+  rem Output: metrics\nonmot_times_TOD.csv
   runtpp "%CODE_DIR%\sumNonMotTimesByTOD.job"
+  if ERRORLEVEL 2 goto error
+)
+
+if not exist nonres\airport_by_mode_TOD.csv (
+  rem Reads trip tables and skims and outputs tallies for trip attributes
+  rem Input : nonres\tripsAirTotal_(EA|AM|MD|PM|EV).tpp
+  rem Output: nonres\airport_by_mode_TOD.csv
+  runtpp "%CODE_DIR%\sumAirportByTOD.job"
+  if ERRORLEVEL 2 goto error
+)
+
+if not exist skims\DA_MD.csv (
+  rem Export to csv to append to trip list
+  rem Input : skims\DA_MD.tpp
+  rem Output: skims\DA_MD.csv
+  runtpp "%CODE_DIR%\export_DA_MD_csv.job"
   if ERRORLEVEL 2 goto error
 )
 

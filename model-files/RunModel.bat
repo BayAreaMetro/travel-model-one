@@ -404,6 +404,9 @@ if ERRORLEVEL 2 goto done
 call RunScenarioMetrics
 if ERRORLEVEL 2 goto done
 
+call ExportToOMX
+if ERRORLEVEL 2 goto done
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 17:  Directory clean up

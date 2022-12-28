@@ -2,6 +2,7 @@ AAM.probability.delay = 0
 AAM.average.delay = 0
 AAM.autonomous.indicator = 0
 AAM.remote.indicator = 0
+AAM.costPerMile = 3.10
 taxi.baseFare = 2.20
 taxi.costPerMile = 2.30
 taxi.costPerMinute = 0.10

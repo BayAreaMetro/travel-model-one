@@ -1,13 +1,17 @@
-;*del metrics\auto_times.csv
+;*del metrics\auto_time_TOD.csv
 
-; Create auto summary based on trips per day by income quartile and mode of:
-; - Average travel time in minutes
-; - Average travel distance in miles
-; - Average travel cost (auto operating cost, including pavement costs and
+; Create auto summary based on trips by time period and mode and outputs:
+; metrics\auto_time_TOD.csv with columns:
+; - Period
+; - Mode
+; - Total person trips
+; - Total vehicle trips
+; - Total person travel time in minutes
+; - Total vehicle travel time in minutes
+; - Total person travel distance in miles
+; - Total vehicle travel distance in miles
+; - Total travel cost (auto operating cost, including pavement costs and
 ;   NOT including BRIDGE OR VALUE TOLLS)
-; - Total bridge tolls paid
-; - Total value tolls paid
-;   by mode and income quartile
 ;   in year 2000 cents
 ;
 
@@ -130,7 +134,7 @@ loop auto = 1,15
    token_vtoll  = 'TOLLVTOLLS3'
   endif
 
-  ;DistributeMultistep processid = 'ctramp', processNum = auto, commpath = '%COMMPATH%'
+  DistributeMultistep processid = 'ctramp', processNum = auto, commpath = '%COMMPATH%'
 
     ; Read toll discounts from the block file
     Read File = "CTRAMP\scripts\block\hwyParam.block"
@@ -153,19 +157,9 @@ loop auto = 1,15
 
      ; Read person trips for an income quartile for all time periods
      FILEI MATI[1] = "main\trips@token_period@_no_zpv_allinc.tpp"
-     ;FILEI MATI[1] = "main\tripsEA_no_zpv_allinc.tpp"
-     ;FILEI MATI[2] = "main\tripsAM_no_zpv_allinc.tpp"
-     ;FILEI MATI[3] = "main\tripsMD_no_zpv_allinc.tpp"
-     ;FILEI MATI[4] = "main\tripsPM_no_zpv_allinc.tpp"
-     ;FILEI MATI[5] = "main\tripsEV_no_zpv_allinc.tpp"
 
      ; Read Highway Skims
-     FILEI MATI[6] = "skims\HWYSKM@token_period@.tpp"
-     ;FILEI MATI[6] = "skims\HWYSKMEA.tpp"
-     ;FILEI MATI[7] = "skims\HWYSKMAM.tpp"
-     ;FILEI MATI[8] = "skims\HWYSKMMD.tpp"
-     ;FILEI MATI[9] = "skims\HWYSKMPM.tpp"
-     ;FILEI MATI[10]= "skims\HWYSKMEV.tpp"
+     FILEI MATI[2] = "skims\HWYSKM@token_period@.tpp"
 
      FILEI LOOKUPI[1] = taxi_tnc_occ_factors.csv
 
@@ -203,13 +197,13 @@ loop auto = 1,15
 
 
      ; Trips by TOD * Skims by TOD
-      MW[1]   =  mi.1.@token_auto@ * mi.6.@token_time@               ; Person minutes
-      MW[2]   = (mi.1.@token_auto@ * mi.6.@token_time@)/_occupancy  ; Vehicle minutes
-      MW[3]   =  mi.1.@token_auto@ * mi.6.@token_dist@               ; Person miles
-      MW[4]   = (mi.1.@token_auto@ * mi.6.@token_dist@)/_occupancy  ; Vehicle miles
-      MW[5]   = (mi.1.@token_auto@/_occupancy) * (mi.6.@token_dist@ * @AUTOOPC@) ; not including tolls
-      MW[6]   = (mi.1.@token_auto@/_occupancy) *  mi.6.@token_btoll@             ; Bridge tolls
-      MW[7]   = (mi.1.@token_auto@/_occupancy) *  mi.6.@token_vtoll@             ; Value tolls
+      MW[1]   =  mi.1.@token_auto@ * mi.2.@token_time@               ; Person minutes
+      MW[2]   = (mi.1.@token_auto@ * mi.2.@token_time@)/_occupancy  ; Vehicle minutes
+      MW[3]   =  mi.1.@token_auto@ * mi.2.@token_dist@               ; Person miles
+      MW[4]   = (mi.1.@token_auto@ * mi.2.@token_dist@)/_occupancy  ; Vehicle miles
+      MW[5]   = (mi.1.@token_auto@/_occupancy) * (mi.2.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[6]   = (mi.1.@token_auto@/_occupancy) *  mi.2.@token_btoll@             ; Bridge tolls
+      MW[7]   = (mi.1.@token_auto@/_occupancy) *  mi.2.@token_vtoll@             ; Value tolls
 
      ; Compute Person Trips, Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
      MW[36] =  mi.1.@token_auto@
@@ -219,8 +213,8 @@ loop auto = 1,15
      MW[40] = MW[3]   ; Person miles
      MW[41] = MW[4]   ; Vehicle miles
      MW[42] = MW[5]   ; Trip Cost
-     MW[43] = MW[6]   ; Bridge Tolls
-     MW[44] = MW[7]   ; Value Tolls
+     ;MW[43] = MW[6]   ; Bridge Tolls
+     ;MW[44] = MW[7]   ; Value Tolls
 
       Person_trips  = Person_trips  + ROWSUM(36)
       Vehicle_trips = Vehicle_trips + ROWSUM(37)
@@ -229,12 +223,13 @@ loop auto = 1,15
       Person_miles  = Person_miles  + ROWSUM(40)
       Vehicle_miles = Vehicle_miles + ROWSUM(41)
       Total_cost    = Total_cost    + ROWSUM(42)
-      Bridge_tolls  = Bridge_tolls  + ROWSUM(43)
+      ;Bridge_tolls  = Bridge_tolls  + ROWSUM(43)
+      ;Value_tolls   = Value_tolls   + ROWSUM(43)
 
       Mode   = '@token_auto@'
       Period = '@token_period@'
 
-      if(I = 1 & @period@=1 & @auto@ = 1) PRINT PRINTO=1 LIST="Period,Mode,Person Trips,Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles"
+      if(I = 1 & @period@=1 & @auto@ = 1) PRINT PRINTO=1 LIST="Period,Mode,Person Trips,Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost"
       if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= Period, Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
                                                             Person_min(10.2L),   Vehicle_min(10.2L),
                                                             Person_miles(10.2L), Vehicle_miles(10.2L),
@@ -243,14 +238,14 @@ loop auto = 1,15
 
   endloop ; period loop
 
-  ;EndDistributeMultistep
+  EndDistributeMultistep
 
 endloop
 
-;Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, CTRAMP6.script.end,
-;                 CTRAMP7.script.end, CTRAMP8.script.end, CTRAMP9.script.end, CTRAMP10.script.end, CTRAMP11.script.end, CTRAMP12.script.end,
-;                 CTRAMP13.script.end, CTRAMP14.script.end, CTRAMP15.script.end,
-;           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, CTRAMP6.script.end,
+                 CTRAMP7.script.end, CTRAMP8.script.end, CTRAMP9.script.end, CTRAMP10.script.end, CTRAMP11.script.end, CTRAMP12.script.end,
+                 CTRAMP13.script.end, CTRAMP14.script.end, CTRAMP15.script.end,
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the TOD files into one
 * copy metrics\auto_times_da.csv+metrics\auto_times_datoll.csv+metrics\auto_times_sr2.csv+metrics\auto_times_sr2toll.csv+metrics\auto_times_sr3.csv+metrics\auto_times_sr3toll.csv+metrics\auto_times_taxi.csv+metrics\auto_times_tnc_single.csv+metrics\auto_times_tnc_shared.csv+metrics\auto_times_da_av_notoll.csv+metrics\auto_times_da_av_toll.csv+metrics\auto_times_sr2_av_notoll.csv+metrics\auto_times_sr2_av_toll.csv+metrics\auto_times_sr3_av_notoll.csv+metrics\auto_times_sr3_av_toll.csv metrics\auto_time_TOD.csv
