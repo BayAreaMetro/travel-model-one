@@ -109,7 +109,8 @@ public class StopLocationModeChoiceModel implements Serializable {
     private long[][] hhTimes = new long[7][2];
     
     private TNCAndTaxiWaitTimeCalculator tncTaxiWaitTimeCalculator;
-    
+    private boolean saveUtilsProbsFlag=false;
+
     /**
      * Constructor that will be used to set up the ChoiceModelApplications for each
      * type of tour
@@ -213,6 +214,14 @@ public class StopLocationModeChoiceModel implements Serializable {
         
         tncTaxiWaitTimeCalculator = new TNCAndTaxiWaitTimeCalculator();
         tncTaxiWaitTimeCalculator.createWaitTimeDistributions(propertyMap);
+        
+        // default is to not save the tour mode choice utils and probs for each tour
+        String saveUtilsProbsString = propertyMap.get( CtrampApplication.PROPERTIES_SAVE_TRIP_MODE_CHOICE_UTILS );
+        if ( saveUtilsProbsString != null ) {
+            if ( saveUtilsProbsString.equalsIgnoreCase( "true" ) )
+                saveUtilsProbsFlag = true;
+        }
+
 
     }
 
@@ -1043,7 +1052,24 @@ public class StopLocationModeChoiceModel implements Serializable {
 
         }
 
-        
+        if ( saveUtilsProbsFlag ) {
+            
+            // get the utilities and probabilities arrays for the tour mode choice model for this tour and save them to the tour object 
+            double[] utilities     = choiceModel.getUtilities();
+            double[] probabilities = choiceModel.getProbabilities();
+
+            float[] utils = new float[utilities.length];
+            float[] probs = new float[probabilities.length];
+            for ( int k=0; k < utilities.length; k++ ) {
+                utils[k] = (float)utilities[k];
+                probs[k] = (float)probabilities[k];
+            }
+            
+            stop.setTripModalUtilities(utils);
+            stop.setTripModalProbabilities(probs);
+            
+        }
+
         
         if ( chosen > 0 )
             return chosen;
