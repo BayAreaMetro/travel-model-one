@@ -22,6 +22,8 @@ public class Stop implements Serializable {
     float origTaxiWait;
     float origSingleTNCWait;
     float origSharedTNCWait;
+    private float[] tripModalProbabilities;
+    private float[] tripModalUtilities;
 
     Tour parentTour;
     
@@ -192,5 +194,22 @@ public class Stop implements Serializable {
 		this.origSharedTNCWait = origSharedTNCWait;
 	}
     
+    public void setTripModalUtilities( float[] utils ) {
+        tripModalUtilities = utils;
+    }
+
+    public float[] getTripModalUtilities() {
+        return tripModalUtilities;
+    }
+
+    public void setTripModalProbabilities( float[] probs ) {
+        tripModalProbabilities = probs;
+    }
+
+    public float[] getTripModalProbabilities() {
+        return tripModalProbabilities;
+    }
+
+
 }
 
