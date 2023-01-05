@@ -5,42 +5,44 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_FBP_PlusCrossing_16
+set M_DIR=D:\Projects\BCM\2015_BaseY_BCM2015
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
 
 :: set the location of the Travel Model Release
 :: use master for now until we create a release
-set GITHUB_DIR=\\tsclient\X\travel-model-one-master
+set GITHUB_DIR=D:\Projects\travel-model-one
 
-:: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_44\net_2050_Blueprint Plus Crossing
-
+:: set the location of the networks (make sure the network version, year and variant are correct); currently set to the SharePoint location. 
+set INPUT_NETWORK=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 05 Model Design and Model Environment\travel-model-1.5-BCM\hwy\Base Network\Base Network Externals
+set INPUT_TRN=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 05 Model Design and Model Environment\travel-model-1.5-BCM\trn
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
-set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v225_UBI\2050
+::set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v225_UBI\2050
+set INPUT_LU=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 02 Land Use and Network Refinement\FINAL 2015 LANDUSE FILES
+set INPUT_POP=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 02 Land Use and Network Refinement\PopulationSim\BiCountyModel PopulationSim Setup\output_2015
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
 set UrbanSimScenario=s24
 
-:: set the location of the "input development" directory where other inputs are stored
-set INPUT_DEVELOPMENT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT
+:: set the location of the "input development" directory where other inputs are stored; currently set to the TM1.5 run for most cases
+set INPUT_DEVELOPMENT_DIR=D:\Projects\BCM\travel-model-1.5\INPUT
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_FBP_PlusCrossing_15b
+set PREV_RUN_DIR=D:\Projects\BCM\travel-model-1.5\INPUT
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
-set PARAMS=\\tsclient\X\travel-model-one-master\config\params_PBA50_Blueprint2050.properties
+set PARAMS=%GITHUB_DIR%\config\params_PBA50_Blueprint2050.properties
 :: test superdistrict-based telecommute constants
 :: for no project or base years, this will get generated/stay at zero
-set TELECOMMUTE_CONFIG=\\tsclient\X\travel-model-one-master\utilities\telecommute\telecommute_constants_2050.csv
+set TELECOMMUTE_CONFIG=%GITHUB_DIR%\utilities\telecommute\telecommute_constants_2050.csv
 :: for blueprint, use calibrated
 :: set TELECOMMUTE_CONFIG=\\tsclient\X\travel-model-one-cdap-worktaz\utilities\telecommute\telecommute_constants_2035.csv
 
 :: set the location of the overrides directory (for Blueprint strategies)
-set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-overrides
+set BP_OVERRIDE_DIR=D:\Projects\BCM\2015_BaseY_BCM2015\travel-model-overrides
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -82,16 +84,16 @@ if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.59
 :: ------------------------------------------------------------------------------------------------------
 
 :: networks
-c:\windows\system32\Robocopy.exe /E "%INPUT_NETWORK%\hwy"                                        INPUT\hwy
-c:\windows\system32\Robocopy.exe /E "%INPUT_NETWORK%\trn"                                        INPUT\trn
+c:\windows\system32\Robocopy.exe /E "%INPUT_NETWORK%"                                        	INPUT\hwy
+c:\windows\system32\Robocopy.exe /E "%INPUT_TRN%"                                        		INPUT\trn
 
 :: popsyn and land use
-c:\windows\system32\Robocopy.exe /E "%INPUT_POPLU%\popsyn"                                       INPUT\popsyn
-c:\windows\system32\Robocopy.exe /E "%INPUT_POPLU%\landuse"                                      INPUT\landuse
+c:\windows\system32\Robocopy.exe /E "%INPUT_POP%"                                       		INPUT\popsyn
+c:\windows\system32\Robocopy.exe /E "%INPUT_LU%"                                      			INPUT\landuse
 copy /Y "%GITHUB_DIR%\utilities\telecommute\telecommute_max_rate_county.csv"                     INPUT\landuse
-
+::need to update the maximum telecommute rate for San Joaquin County in the telecommute_max_rate_county.csv file
 :: nonres
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\nonres\nonres_02"                   INPUT\nonres
+c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\nonres"                   			INPUT\nonres
 
 :: logsums and metrics
 c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\logsums_dummies"                    INPUT\logsums
