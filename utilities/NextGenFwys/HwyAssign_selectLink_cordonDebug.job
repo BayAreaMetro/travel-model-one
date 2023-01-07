@@ -88,6 +88,8 @@
 ; ----------------------------------------------------------------------------------------------------------------
 
 read file = ctramp\scripts\block\HwyIntraStep.block
+; set this to list of B nodes, e.g. "1,2,4"
+token_select_b = '%SELECT_B%'
 
 ; do, more or less, the same assignment procedure for each time period
 loop period = 1, 5
@@ -174,7 +176,8 @@ loop period = 1, 5
       mati[4] = nonres\tripsAirPax@token_period@.tpp
 
       ; loaded time-specific highway network
-      neto    = hwy\load@token_period@.net
+      neto    = "hwy\selectlink\load@token_period@_selectlink_b@token_select_b@.net"
+      mato    = "hwy\selectlink\load@token_period@_selectlink_b@token_select_b@.tpp", MO=1-10, NAME=vol_da,vol_s2,vol_s3,vol_sm,vol_hv,vol_daT,vol_s2T,vol_s3T,vol_smT,vol_hvT
 
       ; set the assignment paramters -- equilibrium assignment, frank-wolfe
       parameters combine = equi; , enhance = 2
@@ -275,45 +278,58 @@ loop period = 1, 5
          ; no value toll paying classes first
 
          ; drive alone, no value toll, exclude drive alone value toll and HOV facilities, internal demand plus intra-regional demand plus air passenger demand
-         pathload path = lw.gencost_da, excludegrp = 11, 23, vol[1] = mi.1.da + mi.2.da + mi.4.da
+         pathload path = lw.gencost_da, excludegrp = 11, 23, vol[1] = mi.1.da + mi.2.da + mi.4.da,
+           MW[1]=mi.1.da + mi.2.da + mi.4.da, selectlink=(B=@token_select_b@), VOL[14]=MW[1]
 
          ; shared ride 2, no value toll, exclude sr2 value toll and HOV 3+ facilities, internal demand plus intra-regional demand plus air passenger demand
-         pathload path = lw.gencost_s2, excludegrp = 12, 3, vol[2] =  mi.1.sr2 / 2 + mi.2.sr2 + mi.4.sr2
+         pathload path = lw.gencost_s2, excludegrp = 12, 3, vol[2] =  mi.1.sr2 / 2 + mi.2.sr2 + mi.4.sr2,
+           MW[2]=mi.1.sr2 / 2 + mi.2.sr2 + mi.4.sr2, selectlink=(B=@token_select_b@), VOL[15]=MW[2]
 
          ; shared ride 3+, no value toll, exclude sr3 value toll facilities, internal demand plus intra-regional demand plus air passenger demand
-         pathload path = lw.gencost_s3, excludegrp = 13, vol[3] = mi.1.sr3 / 3.25 + mi.2.sr3 + mi.4.sr3
+         pathload path = lw.gencost_s3, excludegrp = 13, vol[3] = mi.1.sr3 / 3.25 + mi.2.sr3 + mi.4.sr3,
+           MW[3]=mi.1.sr3 / 3.25 + mi.2.sr3 + mi.4.sr3, selectlink=(B=@token_select_b@), VOL[16]=MW[3]
 
          ; very small, small, and medium trucks, no value toll, exclude small truck value toll facilities and HOV facilities
-         pathload path = lw.gencost_sml, excludegrp = 14, 23, vol[4] = mi.3.vstruck + mi.3.struck + mi.3.mtruck
+         pathload path = lw.gencost_sml, excludegrp = 14, 23, vol[4] = mi.3.vstruck + mi.3.struck + mi.3.mtruck,
+           MW[4]=mi.3.vstruck + mi.3.struck + mi.3.mtruck, selectlink=(B=@token_select_b@), VOL[17]=MW[4]
 
          ; large trucks, no value toll, exclude large truck toll facilities, HOV facilities, and no commercial truck facilities
-         pathload path = lw.gencost_lrg, excludegrp = 15, 23, 4, vol[5] = mi.3.ctruck
+         pathload path = lw.gencost_lrg, excludegrp = 15, 23, 4, vol[5] = mi.3.ctruck,
+           MW[5]=mi.3.ctruck, selectlink=(B=@token_select_b@), VOL[18]=MW[5]
 
          ; value toll paying classes second
 
          ; drive alone, value toll paying, exclude HOV facilities, internal demand plus intra-regional demand plus air passenger demand
-         pathload path = lw.gencost_da, excludegrp = 23, vol[6] = mi.1.datoll + mi.2.datoll + mi.4.datoll
+         pathload path = lw.gencost_da, excludegrp = 23, vol[6] = mi.1.datoll + mi.2.datoll + mi.4.datoll,
+           MW[6]=mi.1.datoll + mi.2.datoll + mi.4.datoll, selectlink=(B=@token_select_b@), VOL[19]=MW[6]
 
          ; shared ride 2, value toll paying, exclude HOV 3+ facilities, internal demand plus intra-regional demand plus air passenger demand
-         pathload path = lw.gencost_s2, excludegrp = 3, vol[7] = mi.1.sr2toll / 2 + mi.2.sr2toll + mi.4.sr2toll
+         pathload path = lw.gencost_s2, excludegrp = 3, vol[7] = mi.1.sr2toll / 2 + mi.2.sr2toll + mi.4.sr2toll,
+           MW[7]=mi.1.sr2toll / 2 + mi.2.sr2toll + mi.4.sr2toll, selectlink=(B=@token_select_b@), VOL[20]=MW[7]
 
          ; shared ride 3+, value toll paying, no exclusions, internal demand plus intra-regional demand plus air passenger demand
-         pathload path = lw.gencost_s3, vol[8] = mi.1.sr3toll / 3.25 + mi.2.sr3toll + mi.4.sr3toll
+         pathload path = lw.gencost_s3, vol[8] = mi.1.sr3toll / 3.25 + mi.2.sr3toll + mi.4.sr3toll,
+           MW[8]=mi.1.sr3toll / 3.25 + mi.2.sr3toll + mi.4.sr3toll, selectlink=(B=@token_select_b@), VOL[21]=MW[8]
 
          ; very small, small, and medium trucks, value toll paying, excluded from HOV facilities, use the small truck generalized cost
-         pathload path = lw.gencost_sml, excludegrp = 23, vol[9]= mi.3.vstrucktoll + mi.3.strucktoll + mi.3.mtrucktoll
+         pathload path = lw.gencost_sml, excludegrp = 23, vol[9]= mi.3.vstrucktoll + mi.3.strucktoll + mi.3.mtrucktoll,
+           MW[9]=mi.3.vstrucktoll + mi.3.strucktoll + mi.3.mtrucktoll, selectlink=(B=@token_select_b@), VOL[22]=MW[9]
 
          ; large trucks, value toll paying, excluded from HOV facilities and no commercial truck facilities
-         pathload path = lw.gencost_lrg, excludegrp = 23, 4, vol[10] = mi.3.ctrucktoll
+         pathload path = lw.gencost_lrg, excludegrp = 23, 4, vol[10] = mi.3.ctrucktoll,
+           MW[10]=mi.3.ctrucktoll, selectlink=(B=@token_select_b@), VOL[23]=MW[10]
 
          ; drive alone AV TNC, value toll paying, exclude HOV facilities
-         pathload path = lw.gencost_da, excludegrp = 23, vol[11] = mi.1.da_tnc + mi.1.da_av
+         pathload path = lw.gencost_da, excludegrp = 23, vol[11] = mi.1.da_tnc + mi.1.da_av,
+           MW[11]=mi.1.da_tnc + mi.1.da_av, selectlink=(B=@token_select_b@), VOL[24]=MW[11]
 
          ; shared ride 2, value toll paying, exclude HOV 3+ facilities
-         pathload path = lw.gencost_s2, excludegrp = 3, vol[12] = (mi.1.s2_tnc + mi.1.s2_av) / 2
+         pathload path = lw.gencost_s2, excludegrp = 3, vol[12] = (mi.1.s2_tnc + mi.1.s2_av) / 2,
+           MW[12]=(mi.1.s2_tnc + mi.1.s2_av) / 2, selectlink=(B=@token_select_b@), VOL[25]=MW[12]
 
          ; shared ride 3+, value toll paying, no exclusions
-         pathload path = lw.gencost_s3, vol[13] = (mi.1.s3_tnc + mi.1.s3_av)/ 3.25
+         pathload path = lw.gencost_s3, vol[13] = (mi.1.s3_tnc + mi.1.s3_av)/ 3.25,
+           MW[13]=(mi.1.s3_tnc + mi.1.s3_av)/ 3.25,, selectlink=(B=@token_select_b@), VOL[26]=MW[13]
 
       endphase
 
