@@ -230,8 +230,10 @@ set PREV_WGT=0.00
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
-:: do select link if needed -- or do this after
+:: do select link if needed -- or do this after this batch file is complete (make sure your Cluster nodes are running)
+:: set ITER=0
 :: mkdir hwy\selectlink
+:: set SELECT_A=1130-1136
 :: set SELECT_B=558
 :: runtpp CTRAMP\scripts\assign\HwyAssign_selectLink_cordonDebug.job
 :: if ERRORLEVEL 1 goto done
