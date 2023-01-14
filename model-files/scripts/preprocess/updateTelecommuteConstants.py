@@ -11,9 +11,8 @@ USAGE = '''
   For people who make multiple work tours_df, uses the first one for the purpose of tour tour mode
 '''
 
-import os,re,sys
+import logging,os,sys,time
 import pandas
-
 
 # input files
 TAZDATA_FILE  = os.path.join('INPUT', 'landuse', 'tazData.csv')
@@ -55,6 +54,23 @@ if __name__ == '__main__':
     MODEL_YEAR              = os.environ['MODEL_YEAR']
     MODEL_DIR               = os.environ['MODEL_DIR']
 
+    NOW = time.strftime("%Y%b%d_%H%M")
+    LOG_FILE = "updateTelecommuteConstants_iter{}_{}.log".format(ITER, NOW)
+
+     # create logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    # console handler
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    ch.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
+    logger.addHandler(ch)
+    # file handler
+    fh = logging.FileHandler(LOG_FILE, mode='w')
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
+    logger.addHandler(fh)
+
     # SAMPLESHARE not set for iter0 model run
     SAMPLESHARE             = "NA"
     if 'SAMPLESHARE' in os.environ:
@@ -77,29 +93,29 @@ if __name__ == '__main__':
             else:
                UPDATE_CONSTANT = True
 
-    print('MODEL_YEAR               = {}'.format(MODEL_YEAR))
-    print('MODEL_DIR                = {}'.format(MODEL_DIR))
-    print('TELECOMMUTE_CALIBRATION  = {}'.format(TELECOMMUTE_CALIBRATION))
-    print('CALIB_ITER               = {}'.format(CALIB_ITER))
-    print('ITER                     = {}'.format(ITER))
-    print('SAMPLESHARE              = {}'.format(SAMPLESHARE))
+    logging.info('MODEL_YEAR               = {}'.format(MODEL_YEAR))
+    logging.info('MODEL_DIR                = {}'.format(MODEL_DIR))
+    logging.info('TELECOMMUTE_CALIBRATION  = {}'.format(TELECOMMUTE_CALIBRATION))
+    logging.info('CALIB_ITER               = {}'.format(CALIB_ITER))
+    logging.info('ITER                     = {}'.format(ITER))
+    logging.info('SAMPLESHARE              = {}'.format(SAMPLESHARE))
 
-    print("UPDATING TELECOMMUTE CONSTANTS? {}".format(UPDATE_CONSTANT))
+    logging.info("UPDATING TELECOMMUTE CONSTANTS? {}".format(UPDATE_CONSTANT))
 
     # read INPUT\params.properties
     myfile          = open( PARAMS_FILENAME, 'r' )
     PARAMS_CONTENTS = myfile.read()
     myfile.close()
-    print("Read {} lines from {}".format(len(PARAMS_CONTENTS), PARAMS_FILENAME))
+    logging.info("Read {} lines from {}".format(len(PARAMS_CONTENTS), PARAMS_FILENAME))
 
     # read tazdata
     TAZDATA_COLS = ['ZONE','DISTRICT','SD','COUNTY','RETEMPN','FPSEMPN','HEREMPN','OTHEMPN','AGREMPN','MWTEMPN','TOTEMP']
     tazdata_df = pandas.read_csv(TAZDATA_FILE, index_col=False, sep=',', usecols=TAZDATA_COLS)
-    print('Read {} lines from {}; head:\n{}'.format(len(tazdata_df), TAZDATA_FILE, tazdata_df.head()))
+    logging.info('Read {} lines from {}; head:\n{}'.format(len(tazdata_df), TAZDATA_FILE, tazdata_df.head()))
 
     # read max telecommute rate
     telecommute_rate_df = pandas.read_csv(TELERATE_FILE, sep=',')
-    print('Read {} lines from {}; head:\n{}'.format(len(telecommute_rate_df), TELERATE_FILE, telecommute_rate_df.head()))
+    logging.info('Read {} lines from {}; head:\n{}'.format(len(telecommute_rate_df), TELERATE_FILE, telecommute_rate_df.head()))
 
     # join to tazdata to figure out effective max telecommute rate for each county
     telecommute_rate_df = pandas.merge(left=tazdata_df, right=telecommute_rate_df, how='left', on='COUNTY')
@@ -113,7 +129,7 @@ if __name__ == '__main__':
     # aggregate back to county
     telecommute_rate_df = telecommute_rate_df.groupby('COUNTY').agg({'max_telecommuters':'sum', 'TOTEMP':'sum'}).reset_index()
     telecommute_rate_df['max_telecommute_rate'] = telecommute_rate_df['max_telecommuters']/telecommute_rate_df['TOTEMP']
-    print(telecommute_rate_df)
+    logging.info("telecommute_rate_df:\n{}".format(telecommute_rate_df))
 
     # initialize primary df
     telecommute_df = tazdata_df[['ZONE','SD','COUNTY']].copy()
@@ -122,11 +138,11 @@ if __name__ == '__main__':
     if int(ITER)==0:
         if UPDATE_CONSTANT:
             # no data yet, don't create file -- the initial calibrated constants should be present
-            print("Model run ITER0 -- using initial calibrated constants")
+            logging.info("Model run ITER0 -- using initial calibrated constants")
 
             # all the same, let's verify
             if not os.path.exists(TELECOMMUTE_CONSTANTS_FILE.format(0)):
-                print("However - the file {} is not found -- core will hang!".format(TELECOMMUTE_CONSTANTS_FILE.format(0)))
+                logging.fatal("However - the file {} is not found -- core will hang!".format(TELECOMMUTE_CONSTANTS_FILE.format(0)))
                 sys.exit(2)
             sys.exit(0)
 
@@ -138,11 +154,11 @@ if __name__ == '__main__':
     elif int(TELECOMMUTE_CALIBRATION)==1 and int(CALIB_ITER)==0:
 
         if os.path.exists(TELECOMMUTE_CONSTANTS_FILE.format(0)):
-            print("Telecommute Calibration CALIB_ITER 0 -- initial constants found.")
+            logging.info("Telecommute Calibration CALIB_ITER 0 -- initial constants found.")
             sys.exit(0)
 
         # otherwise, make empty file
-        print("Calibrating -- iter0.  Start at zero")
+        logging.info("Calibrating -- iter0.  Start at zero")
 
         # default to zero
         telecommute_df['CALIB_ITER'] = int(CALIB_ITER)
@@ -156,17 +172,17 @@ if __name__ == '__main__':
 
         # no need to read joint tours_df; they are never work
         tours_df = pandas.read_csv(TOUR_FILE.format(ITER), usecols=TOUR_COLS)
-        print('Read {} lines from {}; head:\n{}'.format(len(tours_df),TOUR_FILE.format(ITER),tours_df.head()))
-        # print(tours_df.dtypes)
+        logging.info('Read {:,} lines from {}; head:\n{}'.format(len(tours_df),TOUR_FILE.format(ITER),tours_df.head()))
+        # logging.debug(tours_df.dtypes)
 
         # filter to work
         tours_df = tours_df.loc[ tours_df['tour_purpose'].str.slice(stop=4)=='work' ]
-        print('  Filtered to {} rows of work tours_df; head:\n{}'.format(len(tours_df), tours_df.head()))
+        logging.info('  Filtered to {:,} rows of work tours_df; head:\n{}'.format(len(tours_df), tours_df.head()))
         num_work_tours_df = len(tours_df)
 
         # deduplicate -- some people have multiple work tours_df
         tours_df.drop_duplicates(subset=['hh_id','person_id','person_num'], keep='first', inplace=True)
-        print('  Dropped {} second work tours_df'.format(num_work_tours_df - len(tours_df)))
+        logging.info('  Dropped {:,} second work tours_df'.format(num_work_tours_df - len(tours_df)))
 
         # read work locations to get people who don't make work tours_df
         wslocs_df = pandas.read_csv(WSLOC_FILE.format(ITER), usecols=['HHID','PersonID','PersonNum','PersonType','WorkLocation'])
@@ -175,20 +191,20 @@ if __name__ == '__main__':
                                'PersonID':'person_id',
                                'PersonNum':'person_num',
                                'PersonType':'person_type_str'}, inplace=True)
-        print('Read {} lines from {}; head:\n{}'.format(len(wslocs_df),WSLOC_FILE.format(ITER),wslocs_df.head()))
-        # print(wslocs_df.dtypes)
-        # print(tours_df.dtypes)
+        logging.info('Read {:,} lines from {}; head:\n{}'.format(len(wslocs_df),WSLOC_FILE.format(ITER),wslocs_df.head()))
+        # logging.debug(wslocs_df.dtypes)
+        # logging.debug(tours_df.dtypes)
 
         # filter to people with work locations
         wslocs_df = wslocs_df.loc[ wslocs_df['WorkLocation']>0 ]
-        print('  Filtered to {} rows with work locations'.format(len(wslocs_df)))
+        logging.info('  Filtered to {:,} rows with work locations'.format(len(wslocs_df)))
 
         # join together
         work_tours_df = pandas.merge(left=wslocs_df, right=tours_df,
                                   on =['hh_id','person_id','person_num'],
                                   how='outer',
                                   indicator=True)
-        print(work_tours_df['_merge'].value_counts())
+        logging.info(work_tours_df['_merge'].value_counts())
         # make sure no right only (tours_df without wsloc)
         assert(len(work_tours_df.loc[ work_tours_df._merge=='right_only'])==0)
         # make sure dest_taz == workLocation where it's set
@@ -202,7 +218,7 @@ if __name__ == '__main__':
         # fill in tour_mode as 0 for doesn't make tour
         work_tours_df.loc[ pandas.isnull(work_tours_df.tour_mode), 'tour_mode'] = 0
         work_tours_df = work_tours_df.astype({'tour_mode': int})
-        # print(work_tours_df['tour_mode'].value_counts())
+        # logging.info(work_tours_df['tour_mode'].value_counts())
 
         # fill in sample rate
         work_tours_df.loc[ pandas.isnull(work_tours_df.sampleRate), 'sampleRate'] = float(SAMPLESHARE)
@@ -213,7 +229,7 @@ if __name__ == '__main__':
         work_tours_df.loc[(work_tours_df.tour_mode>  0)&(work_tours_df.tour_mode<=6), 'simple_mode'] = 'auto'
         work_tours_df.loc[(work_tours_df.tour_mode>=19),                              'simple_mode'] = 'auto' # tnc
         work_tours_df.loc[(work_tours_df.tour_mode>= 7)&(work_tours_df.tour_mode<=18),'simple_mode'] = 'non-auto'
-        print(work_tours_df.simple_mode.value_counts())
+        logging.debug(work_tours_df.simple_mode.value_counts())
 
         # join to work place superdistricts
         work_tours_df = pandas.merge(left    =work_tours_df,
@@ -223,7 +239,7 @@ if __name__ == '__main__':
                                      how     ='left')
         # expand from sampleRate
         work_tours_df['num_workers'] = 1.0/work_tours_df['sampleRate']
-        print(work_tours_df.head(10))
+        logging.debug("work_tours_df.head(10):\n{}".format(work_tours_df.head(10)))
 
         # filter to just Full-time workers and Part-time workers
         work_tours_df = work_tours_df.loc[(work_tours_df['person_type_str']=='Full-time worker')|
@@ -237,7 +253,7 @@ if __name__ == '__main__':
         # flatten columns
         work_mode_SD_df.columns = [' '.join(col).strip() for col in work_mode_SD_df.columns.values]
 
-        print(work_mode_SD_df)
+        logging.debug("work_mode_SD_df:\n{}".format(work_mode_SD_df))
 
         # calculate not working to take them out of the universe
         if (int(MODEL_YEAR) <= 2020):
@@ -272,7 +288,7 @@ if __name__ == '__main__':
                                        how   ='left',
                                        on    ='COUNTY')
 
-        print('work_mode_SD_df:\n{}'.format(work_mode_SD_df))
+        logging.debug('work_mode_SD_df:\n{}'.format(work_mode_SD_df))
 
         # read pervious CONSTANTS
         telecommute_df = pandas.read_csv(TELECOMMUTE_CONSTANTS_FILE.format(int(CALIB_ITER)-1))
@@ -312,6 +328,6 @@ if __name__ == '__main__':
 
     # write it with calib iter
     telecommute_df.to_csv(TELECOMMUTE_CONSTANTS_FILE.format(int(CALIB_ITER)), header=True, index=False)
-    print("Wrote {} lines to {}".format(len(telecommute_df), TELECOMMUTE_CONSTANTS_FILE.format(int(CALIB_ITER))))
+    logging.info("Wrote {:,} lines to {}".format(len(telecommute_df), TELECOMMUTE_CONSTANTS_FILE.format(int(CALIB_ITER))))
 
     sys.exit(0)
