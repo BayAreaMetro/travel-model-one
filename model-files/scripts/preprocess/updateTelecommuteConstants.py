@@ -9,6 +9,33 @@ USAGE = '''
   Uses environment variables TELECOMMUTE_CALIBRATION, CALIB_ITER, ITER, MODEL_YEAR, MODEL_DIR
   Filters to full-time workers and part-time workers
   For people who make multiple work tours_df, uses the first one for the purpose of tour tour mode
+
+  First, the script figures out if it's updating the telecommute constants for PBA50's EN7 strategy
+  (e.g. UPDATE_CONSTANT=True)
+
+  The basic calculations steps:
+  - Read individual tours for this iteration, filtering to work tours only, including taking just
+    the first work tour for persons with multiple work tours
+  - Read work and school locations for this iteration, filtering to just rows with work locations
+  - Join the two together, filling in tour_mode = 0 for missing work tours
+  - Code simple_mode as one of ['no tour', 'auto', 'non-auto']
+  - Filter to just full-time workers and part-time workers
+  - Aggregeate to work superdistrict
+  - Calculate workers not working:
+    - for MODEL_YEAR < 2020, assume P_notworking_if_noworktour_[FT,PT] of workers not making a tour
+    - for MODEL_YEAR >= 2020,  assume P_notworking_[FT,PT] of workers -- this is because telecommuting is way up
+      starting in 2020 due to the pandemic so there's a fundamental change!
+  - Make sure workers not working does not exceed workers not making a work tour
+  - Call the remaining workers not making a work tour telecommuting (that day)
+  - Total workers working = auto + non-auto + telecommuting
+  - Calculate telecommute_rate and auto_share with that denominator
+  - Join with max telecommute rate for the superdistrict
+
+  - IF UPDATE_CONSTANT is true:
+    - Increase the telecommute constant if the auto share > TARGET_AUTO_SHARE and we're not at max
+    - Decrease the telecommute constant if the rate is higher than max
+  - Write out telecommute constants file
+
 '''
 
 import logging,os,sys,time
@@ -256,7 +283,7 @@ if __name__ == '__main__':
         logging.debug("work_mode_SD_df:\n{}".format(work_mode_SD_df))
 
         # calculate not working to take them out of the universe
-        if (int(MODEL_YEAR) <= 2020):
+        if (int(MODEL_YEAR) < 2020):
             work_mode_SD_df['Full-time worker not-working'] = P_notworking_if_noworktour_FT*work_mode_SD_df['Full-time worker no tour']
             work_mode_SD_df['Part-time worker not-working'] = P_notworking_if_noworktour_PT*work_mode_SD_df['Part-time worker no tour']
         else:
