@@ -52,6 +52,7 @@ set BP_OVERRIDE_DIR=D:\Projects\BCM\2015_BaseY_BCM2015\travel-model-overrides
 
 SET computer_prefix=%computername:~0,4%
 
+cd %M_DIR%
 :: copy over CTRAMP
 mkdir CTRAMP\model
 mkdir CTRAMP\runtime
@@ -102,8 +103,8 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\metrics\metrics_Fin
 :: warmstart (copy from the previous run)
 mkdir INPUT\warmstart\main
 mkdir INPUT\warmstart\nonres
-copy /Y "%PREV_RUN_DIR%\OUTPUT\main\*.tpp"                                                       INPUT\warmstart\main
-copy /Y "%PREV_RUN_DIR%\OUTPUT\nonres\*.tpp"                                                     INPUT\warmstart\nonres
+copy /Y "%PREV_RUN_DIR%\main\warmstart\main\*.tpp"                                                       INPUT\warmstart\main
+copy /Y "%PREV_RUN_DIR%\main\warmstart\nonres\*.tpp"                                                     INPUT\warmstart\nonres
 del INPUT\warmstart\nonres\ixDaily2015.tpp
 del INPUT\warmstart\nonres\ixDailyx4.tpp 
 
@@ -253,7 +254,7 @@ title %myfolder%
 
 
 :: copy this batch file itself to M
-set CopyOfSetupModel="SetUpModel_" %myfolder%".txt"
+set CopyOfSetupModel="SetUpModel_"%myfolder%".txt"
 copy SetUpModel.bat "%M_DIR%\%CopyOfSetupModel%"
 
 ::-----------------------------------------------------------------------

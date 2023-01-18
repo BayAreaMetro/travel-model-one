@@ -30,9 +30,6 @@ SET BASE_SCRIPTS=CTRAMP\scripts
 :: Start the cube cluster
 Cluster "%COMMPATH%\CTRAMP" 1-8 Starthide Exit
 
-::  Set the IP address of the host machine 
-set HOST_IP_ADDRESS=10.1.184.47
-
 :: Settings for sending notifications to Slack -- requires a Slack account
 set computer_prefix=%computername:~0,4%
 set INSTANCE=%COMPUTERNAME%
@@ -122,7 +119,6 @@ copy INPUT\logsums              logsums\
 :: Use interim network inputs until the networks are regenerated with all project card updates
 copy INPUT\hwy\complete_network_SJQ_externals.net                 hwy\complete_network.net
 
-goto hwysk
 
 :: ------------------------------------------------------------------------------------------------------
 ::
