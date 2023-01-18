@@ -42,11 +42,33 @@ Naming convention:
 The folder should be created in the same directory as the model directory
 ### Step 4: Edit the SetUpModel_PBA50.bat:
 Go into the locally cloned travel-model-one repository. Inside model-files, open the SetUpModel_PBA50.bat batch file in any standard text file editor (notepad, notepad++, visual studio code) and edit to point to correct locations of the input files. <b> Make Sure to Point to Your Own SharePoint path</b>
-### Step 5: Run SetUpModel_PBA50.bat:
-Open command prompt in the local clone of travel-model-one and run the SetUpModel_PBA50.bat file. This will copy over the scripts and input files to the Model/Scenario Directory.
-### Step 6: Edit the SetPath.bat:
-This file points to the COMMPATH, java development kit, GAWK binary executable file, R and R libraries, python, RunTPP executable from CitiLabs etc. Edit the CTRAMP>runtime>SetPath.bat file for your specific set up. 
-### Step 7: Edit the RunTimeConfiguration.py file:
+
+* set M_DIR=D:\Projects\BCM\2015_BaseY_BCM2015
+* set GITHUB_DIR=D:\Projects\travel-model-one
+* set INPUT_NETWORK=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 05 Model Design and Model Environment\travel-model-1.5-BCM\hwy\Base Network\Base Network Externals
+* set INPUT_TRN=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 05 Model Design and Model Environment\travel-model-1.5-BCM\trn
+* set INPUT_LU=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 02 Land Use and Network Refinement\FINAL 2015 LANDUSE FILES
+* set INPUT_POP=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 02 Land Use and Network Refinement\PopulationSim\BiCountyModel PopulationSim Setup\output_2015
+* set INPUT_DEVELOPMENT_DIR=D:\Projects\BCM\travel-model-1.5\INPUT
+* set INPUT_DEVELOPMENT_DIR=D:\Projects\BCM\travel-model-1.5\INPUT
+* set INPUT_DEVELOPMENT_DIR=D:\Projects\BCM\travel-model-1.5\INPUT
+* set PREV_RUN_DIR=D:\Projects\BCM\travel-model-1.5\INPUT
+
+### Step 5: Edit the RunTimeConfiguration.py file:
 Edit CTRAMP>scripts>preprocess>RunTimeConfiguration.py file on lines 530 and 574 to include the local computer name in the hostname list. Copy it from System settings.
+### Step 6: Run SetUpModel_PBA50.bat:
+Open command prompt in the local clone of travel-model-one and run the SetUpModel_PBA50.bat file. This will copy over the scripts and input files to the Model/Scenario Directory.
+### Step 7: Edit the SetPath.bat:
+This file points to the COMMPATH, java development kit, GAWK binary executable file, R and R libraries, python, RunTPP executable from CitiLabs etc. Edit the CTRAMP>runtime>SetPath.bat file for your specific set up. 
+
+* SET COMMPATH=X:\COMMPATH
+* set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
+* set GAWK_PATH=X:\UTIL\Gawk
+*   set GAWK_PATH=C:\Software\Gawk
+* set R_HOME=C:\Program Files\R\R-3.5.2
+* set R_LIB=C:/Users/mtcpb/Documents/R/win-library/3.5
+*  set R_LIB=C:/Users/Administrator/Documents/R/win-library/3.5
+* set PYTHON_PATH=C:\Python27
+
 ### Step 8: Run the RunModel.bat file:
 The current iteration of RunModel.bat file works with the modified scripts. Open a command prompt from the Model Directory and run the batch file to run a simulation.
