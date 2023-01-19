@@ -8,18 +8,16 @@
     any given model run (primarily because TAPs may change). See zone_seq_net_build.job for more
     details about this process and its necessity.
     
-    This script first reads in the zone sequence correspondence, and builds mappings from/to the
+    This script first reads in the zone sequence correspondence (created in the zone_seq_net_builder.job script), and builds mappings from/to the
     (CUBE) network zone numbers to the (CTRAMP) sequential zone numbers. This file is:
    
-        base_dir\hwy\mtc_final_network_zone_seq.csv
+        base_dir\hwy\complete_network_zone_seq.csv
         
     Then this script builds a number of output files, replacing the existing one, only with updated/added
     sequential numbers:
     
-        base_dir\landuse\taz_data.csv - the taz data file; the sequential numbers are listed under TAZ,
-            and the original zone numbers under TAZ_ORIGINAL
-        base_dir\landuse\maz_data.csv - the maz data file; the sequential numbers are listed under MAZ,
-            and the original zone numbers under MAZ_ORIGINAL
+        base_dir\landuse\tazData.csv - the taz data file; the sequential numbers are listed under TAZ (ZONE),
+            and the original zone numbers under TAZ_ORIGINAL (BCM_TAZ)
         base_dir\CTRAMP\model\ParkLocationAlts.csv - park location alternatives; basically a list of
             mazs built from maz_data.csv
         base_dir\CTRAMP\model\DestinationChoiceAlternatives.csv - destination choice alternatives; 
@@ -29,7 +27,7 @@
         
     crf 11/2013
 
-    jmh 2022 06: needs final TAZ data, on hold for now.
+    jmh 2023 01: updating
 """
 import collections, sys, os
 import pandas
@@ -66,7 +64,7 @@ def map_data(filename, sequence_mapping, mapping_dict):
         assert(len(missing_vals)==0)
 
         # drop N - it's redundant
-        dframe.drop('N', axis=1, inplace=True)
+        dframe.drop(['N', 'index', mapdef['N_col']], axis=1, inplace=True)
         # rename sequence column
         dframe.rename(columns={mapdef['seqcol']:mapkey}, inplace=True)
 
@@ -81,7 +79,8 @@ if __name__ == '__main__':
 
     base_dir                = sys.argv[1]
     zone_seq_mapping_file   = os.path.join(base_dir,'hwy',      'complete_network_zone_seq.csv')
-    taz_data_file           = os.path.join(base_dir,'landuse',  'taz_data.csv') # TAZ,TAZ_ORIGINAL,AVGTTS,DIST,PCTDETOUR,TERMINALTIME
+    taz_data_file           = os.path.join(base_dir,'landuse',  'tazData.csv') # TAZ,TAZ_ORIGINAL,AVGTTS,DIST,PCTDETOUR,TERMINALTIME
+    hhfile                  = pandas.read_csv(os.path.join(base_dir,'popsyn',  'hhfile.2015.csv'))
     #maz_data_file           = os.path.join(base_dir,'landuse',  'maz_data.csv') # MAZ,TAZ,MAZ_ORIGINAL,TAZ_ORIGINAL,HH,POP,emp_self,emp_ag,emp_const_non_bldg_prod,emp_const_non_bldg_office,emp_utilities_prod,emp_utilities_office,emp_const_bldg_prod,emp_const_bldg_office,emp_mfg_prod,emp_mfg_office,emp_whsle_whs,emp_trans,emp_retail,emp_prof_bus_svcs,emp_prof_bus_svcs_bldg_maint,emp_pvt_ed_k12,emp_pvt_ed_post_k12_oth,emp_health,emp_personal_svcs_office,emp_amusement,emp_hotel,emp_restaurant_bar,emp_personal_svcs_retail,emp_religious,emp_pvt_hh,emp_state_local_gov_ent,emp_scrap_other,emp_fed_non_mil,emp_fed_mil,emp_state_local_gov_blue,emp_state_local_gov_white,emp_public_ed,emp_own_occ_dwell_mgmt,emp_fed_gov_accts,emp_st_lcl_gov_accts,emp_cap_accts,emp_total,collegeEnroll,otherCollegeEnroll,AdultSchEnrl,EnrollGradeKto8,EnrollGrade9to12,PrivateEnrollGradeKto8,ech_dist,hch_dist,parkarea,hstallsoth,hstallssam,hparkcost,numfreehrs,dstallsoth,dstallssam,dparkcost,mstallsoth,mstallssam,mparkcost,TotInt,DUDen,EmpDen,PopDen,RetEmpDen,IntDenBin,EmpDenBin,DuDenBin,ACRES,beachAcres,mall_flag
     
     # the following isn't needed because it is dealt with in a different script
@@ -94,16 +93,25 @@ if __name__ == '__main__':
     #parking_soa_alts_file   = os.path.join(model_files_dir,'ParkLocationSampleAlts.csv')  # a,mgra
     
     sequence_mapping        = pandas.read_csv(zone_seq_mapping_file)
+    sequence_dict           = dict(zip(sequence_mapping['N'], sequence_mapping['TAZSEQ']))
     sequence_mapping.reset_index(inplace=True)
     
     ######### map TAZ_ORIGINAL to the actual TAZ
-    taz_data = map_data(taz_data_file, sequence_mapping, {'TAZ':{'seqcol':'TAZSEQ','N_col':'TAZ_ORIGINAL'}})
-    
+    taz_data        = map_data(taz_data_file, sequence_mapping, {'ZONE':{'seqcol':'TAZSEQ','N_col':'BCM_TAZ'}})
+    hhfile_columns  = hhfile.columns
+    hhfile['TAZ_SEQ'] = hhfile['TAZ'].map(sequence_dict)
+    hhfile            = hhfile.drop(columns='TAZ')
+    hhfile            = hhfile.rename(columns={'TAZ_SEQ':'TAZ'})
+    hhfile[hhfile_columns].to_csv(os.path.join(base_dir,'popsyn',  'hhfile.2015.csv'), index=False, float_format="%.9f")
+
     ######### map TAZ_ORIGINAL to the actual TAZ and MAZ_ORIGINAL to MAZ
-    mapping_dict = collections.OrderedDict()
-    mapping_dict['TAZ'] = {'seqcol':'TAZSEQ','N_col':'TAZ_ORIGINAL'}
+    # mapping_dict = collections.OrderedDict()
+    # mapping_dict['TAZ'] = {'seqcol':'TAZSEQ','N_col':'BCM_TAZ'}
     #mapping_dict['MAZ'] = {'seqcol':'MAZSEQ','N_col':'MAZ_ORIGINAL'}
     #maz_data = map_data(maz_data_file, sequence_mapping,mapping_dict)
+
+    ######### map sequential TAZs in the populationsim output file ############
+
     
     ######### parkarea ?
     #parkarea = maz_data[['MAZ','parkarea']]
