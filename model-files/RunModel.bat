@@ -134,7 +134,7 @@ python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
 
 ::convert the landuse file from dbf to csv
-"%R_HOME%"\RScript.exe --vanilla %BASE_SCRIPTS%\preprocess\create_landuse_csv.R
+"%R_HOME%"\RScript.exe --vanilla %BASE_SCRIPTS%\preprocess\create_landuse_csv.R %MODEL_DIR%/landuse/ > create_landuse_csv.log 2>&1
 if ERRORLEVEL 1 goto done
 :: Preprocess input network to: 
 ::    1 - fix space issue in CNTYPE
