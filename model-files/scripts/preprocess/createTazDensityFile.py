@@ -33,9 +33,9 @@ from shutil import copyfile
 # Variables: Input
 inTazNodes          = "hwy/taz_nodes.csv"
 inIntersectionNodes = "hwy/intersection_nodes.csv"
-inTazData           = "landuse/taz_data.csv"
+inTazData           = "landuse/tazData.csv"
 outDensityData      = "landuse/taz_density.csv"
-outTazData          = "landuse/taz_data_withDensity.csv"
+outTazData          = "landuse/taz_data_withdensity.csv"
 start_time          = datetime.datetime.now()
 
 print inTazNodes
@@ -96,25 +96,25 @@ tazData = pd.read_csv(inTazData)
 
 # create dataset and pandas dataframe of taz xy and intersection count
 interDataSet = list(zip(taz_nonseq, taz_x, taz_y, int_cnt))
-tazIntersections = pd.DataFrame(data=interDataSet,columns=['TAZ_ORIGINAL', 'TAZ_X','TAZ_Y','INTER_CNT'])
+tazIntersections = pd.DataFrame(data=interDataSet,columns=['ZONE', 'TAZ_X','TAZ_Y','INTER_CNT'])
 
 # merge the taz xys with the taz data 
-tazData = pd.merge(tazData,tazIntersections,how='inner',on='TAZ_ORIGINAL')
+tazData = pd.merge(tazData,tazIntersections,how='inner',on='ZONE')
 tazData['dest_x'] = 0
 tazData['dest_y'] = 0
 tazData['distance'] = 0
-tazData.sort_values(by='TAZ_ORIGINAL')
+tazData.sort_values(by='ZONE')
 
 # get the xy columns and node numbers for iterating
 taz_x_seq = tazData['TAZ_X'].tolist()
 taz_y_seq = tazData['TAZ_Y'].tolist()
-taz_seqn = tazData['TAZ_ORIGINAL'].tolist()
-taz_nonseqn = tazData['TAZ_ORIGINAL'].tolist()
+taz_seqn = tazData['ZONE'].tolist()
+taz_nonseqn = tazData['ZONE'].tolist()
 
 # create writer
 writeTazDensityFile = open(outDensityData, "wb")
 writer = csv.writer(writeTazDensityFile, delimiter=',')
-outHeader = ["TAZ_ORIGINAL","TotInt","EmpDen","RetEmpDen","DUDen","PopDen","IntDenBin","EmpDenBin","DuDenBin","PopEmpDenPerMi"]
+outHeader = ["ZONE","TotInt","EmpDen","RetEmpDen","DUDen","PopDen","IntDenBin","EmpDenBin","DuDenBin","PopEmpDenPerMi"]
 writer.writerow(outHeader)
 
 # iterate through TAZs and calculate density terms
@@ -207,7 +207,7 @@ writeTazDensityFile.close()
 densityData = pd.read_csv(outDensityData)   
 
 # merge with taz data
-tazData = pd.merge(tazData,densityData,how='inner',on='TAZ_ORIGINAL')
+tazData = pd.merge(tazData,densityData,how='inner',on='ZONE')
 
 # drop unnecessary fields
 tazData.drop('INTER_CNT', axis=1, inplace=True)

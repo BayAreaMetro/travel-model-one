@@ -11,10 +11,10 @@ import math, os, csv, sys
 from rtree import index
 
 model_run_dir = sys.argv[1]
-TAZ_DATA_FILE = os.path.join(model_run_dir,r'landuse\taz_data_withdensity.csv')
-NODE_CSV_FILE = os.path.join(model_run_dir,r'hwy\complete_network_with_tolls_nodes.csv')
-LINK_CSV_FILE = os.path.join(model_run_dir,r'hwy\complete_network_with_tolls_links.csv')
-AREA_TYPE_FILE = os.path.join(model_run_dir,r'hwy\link_area_type.csv')
+TAZ_DATA_FILE = os.path.join(model_run_dir,'landuse/taz_data_withdensity.csv')
+NODE_CSV_FILE = os.path.join(model_run_dir,'hwy/complete_network_with_tolls_nodes.csv')
+LINK_CSV_FILE = os.path.join(model_run_dir,'hwy/complete_network_with_tolls_links.csv')
+AREA_TYPE_FILE = os.path.join(model_run_dir,'hwy/link_area_type.csv')
 BUFF_DIST       = 5280 * 0.5
 
 print "Reading TAZ data"
@@ -28,14 +28,14 @@ print tazDataColNames
 tazLandUse = dict()
 origTazToSeqTaz = dict()
 for row in tazData:
-  taz = row[tazDataColNames.index("TAZ_ORIGINAL")]
+  taz = row[tazDataColNames.index("ZONE")]
   pop = row[tazDataColNames.index("TOTPOP")]
   emp = row[tazDataColNames.index("TOTEMPN")]
   acres = row[tazDataColNames.index("TOTACRE")]
   tazLandUse[taz] = [taz, pop, emp, acres,-1,-1,-1] #-1,-1,-1 = x,y,area type
   
   #create sequential lookup to join to network
-  orig_taz_id = row[tazDataColNames.index("TAZ_ORIGINAL")]
+  orig_taz_id = row[tazDataColNames.index("ZONE")]
   origTazToSeqTaz[orig_taz_id] = taz
 
 print "Reading nodes"
