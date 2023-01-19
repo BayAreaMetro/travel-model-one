@@ -7,12 +7,12 @@
 ;
 ; inputs: network (hwy\complete_network_zone_seq.net)
 ;
-; outputs: maz locations (hwy\taz_nodes.csv) and
+; outputs: taz locations (hwy\taz_nodes.csv) and
 ;          intersection locations (hwy\intersection_nodes.csv)
 ;
 ; base version: Travel Model Zed maz_densities.job
 ; version: TM 1.5 BCM
-; author jmh 10 2022
+; author jmh 01 2023
 ;---------------------------------------------------------------------------
 
 ;create intersections node file with x and y coordinate

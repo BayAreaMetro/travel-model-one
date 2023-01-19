@@ -110,7 +110,8 @@ echo STARTED MODEL RUN  %DATE% %TIME% >> logs\feedback.rpt
 copy INPUT\hwy\                 hwy\
 copy INPUT\trn\                 trn\
 copy INPUT\landuse\             landuse\
-copy INPUT\popsyn\              popsyn\
+copy INPUT\popsyn\hhFile.%MODEL_YEAR%.csv              		popsyn\hhFile.%MODEL_YEAR%.csv
+copy INPUT\popsyn\personFile.%MODEL_YEAR%.csv              	popsyn\personFile.%MODEL_YEAR%.csv
 copy INPUT\nonres\              nonres\
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
@@ -127,12 +128,14 @@ copy INPUT\hwy\complete_network_SJQ_externals.net                 hwy\complete_n
 :: ------------------------------------------------------------------------------------------------------
 
 : Pre-Process
-
 :: Runtime configuration: set project directory, auto operating cost, 
 :: and synthesized household/population files in the appropriate places
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
 
+::convert the landuse file from dbf to csv
+"%R_HOME%"\RScript.exe --vanilla %BASE_SCRIPTS%\preprocess\create_landuse_csv.R
+if ERRORLEVEL 1 goto done
 :: Preprocess input network to: 
 ::    1 - fix space issue in CNTYPE
 ::    2 - add a FEET field based on DISTANCE
@@ -158,7 +161,7 @@ IF ERRORLEVEL 1 goto done
 runtpp %BASE_SCRIPTS%\preprocess\taz_densities.job
 if ERRORLEVEL 2 goto done
 
-:: Calculate density fields and append to MAZ file
+:: Calculate pop and emp density fields density fields. The output csv file is used in the SetCapClass.job script later.
 "%PYTHON_PATH%"\python %BASE_SCRIPTS%\preprocess\createTazDensityFile.py 
 IF ERRORLEVEL 1 goto done
 

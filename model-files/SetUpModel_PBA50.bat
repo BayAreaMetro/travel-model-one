@@ -20,7 +20,8 @@ set INPUT_TRN=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 ::set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v225_UBI\2050
 set INPUT_LU=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 02 Land Use and Network Refinement\FINAL 2015 LANDUSE FILES
-set INPUT_POP=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 02 Land Use and Network Refinement\PopulationSim\BiCountyModel PopulationSim Setup\output_2015
+::Latest PopulationSim results are in the Run_8 folder. 
+set INPUT_POP=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 02 Land Use and Network Refinement\PopulationSim\BiCountyModel PopulationSim Setup\output\Run_8
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
 set UrbanSimScenario=s24
@@ -51,7 +52,7 @@ set BP_OVERRIDE_DIR=D:\Projects\BCM\2015_BaseY_BCM2015\travel-model-overrides
 :: ------------------------------------------------------------------------------------------------------
 
 SET computer_prefix=%computername:~0,4%
-
+mkdir %M_DIR%
 cd %M_DIR%
 :: copy over CTRAMP
 mkdir CTRAMP\model
@@ -73,7 +74,7 @@ copy /Y "%GITHUB_DIR%\utilities\RTP\RunScenarioMetrics.bat"                .
 copy /Y "%GITHUB_DIR%\utilities\RTP\ExtractKeyFiles.bat"                   .
 copy /Y "%GITHUB_DIR%\utilities\RTP\QAQC\Run_QAQC.bat"                     .
 copy /Y "%GITHUB_DIR%\utilities\check-setupmodel\Check_SetupModelLog.py"   .
-
+copy /Y "%GITHUB_DIR%\utilities\dbf_to_csv\create_landuse_csv.R"   		   CTRAMP\scripts\preprocess
 if "%COMPUTER_PREFIX%" == "WIN-" (copy "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"  "CTRAMP\scripts\notify_slack.py")
 if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.59
 
@@ -91,7 +92,8 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_TRN%"                               
 :: popsyn and land use
 c:\windows\system32\Robocopy.exe /E "%INPUT_POP%"                                       		INPUT\popsyn
 c:\windows\system32\Robocopy.exe /E "%INPUT_LU%"                                      			INPUT\landuse
-copy /Y "%GITHUB_DIR%\utilities\telecommute\telecommute_max_rate_county.csv"                     INPUT\landuse
+copy "%INPUT_POP%"\hhFile2015.csv																INPUT\popsyn\hhFile.2015.csv
+copy "%INPUT_POP%"\personFile2015.csv																INPUT\popsyn\personFile.2015.csv
 ::need to update the maximum telecommute rate for San Joaquin County in the telecommute_max_rate_county.csv file
 :: nonres
 c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\nonres"                   			INPUT\nonres
