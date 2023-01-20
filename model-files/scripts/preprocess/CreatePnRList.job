@@ -23,7 +23,7 @@
 
 ;create list of PNR nodes
 RUN PGM=NETWORK
-    neti      ="hwy\complete_network.net"
+    neti      ="hwy\complete_network_base.net"
     printo[1] ="trn\pnr_nodes.csv"
   
     phase=nodemerge
