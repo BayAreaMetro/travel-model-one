@@ -30,7 +30,7 @@ origTazToSeqTaz = dict()
 for row in tazData:
   taz = row[tazDataColNames.index("ZONE")]
   pop = row[tazDataColNames.index("TOTPOP")]
-  emp = row[tazDataColNames.index("TOTEMPN")]
+  emp = row[tazDataColNames.index("TOTEMP")]
   acres = row[tazDataColNames.index("TOTACRE")]
   tazLandUse[taz] = [taz, pop, emp, acres,-1,-1,-1] #-1,-1,-1 = x,y,area type
   

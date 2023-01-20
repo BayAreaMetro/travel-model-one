@@ -9,7 +9,7 @@
     <code> conda create -y -n py27 python=2.7 </code>  
 	Activate py27 by typing activate py27 on anaconda prompt
 	Install the following packages:   
-        dbfpy, numpy, simpleparse, openpyxl, xlrd, xlwt, xlutils, requests, pandas using pip   
+        dbfpy, numpy, simpleparse, openpyxl, xlrd, xlwt, xlutils, requests, pandas, rtree using pip   
         <code> pip install dbfpy, numpy, simpleparse, openpyxl, xlrd, xlwt, xlutils, requests, pandas </code>
 
 2. ### Add HOME_IP_ADDRESS to PATH

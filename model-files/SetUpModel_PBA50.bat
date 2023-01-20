@@ -22,6 +22,8 @@ set INPUT_TRN=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update 
 set INPUT_LU=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 02 Land Use and Network Refinement\FINAL 2015 LANDUSE FILES
 ::Latest PopulationSim results are in the Run_8 folder. 
 set INPUT_POP=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 02 Land Use and Network Refinement\PopulationSim\BiCountyModel PopulationSim Setup\output\Run_8
+::Transit Skimming is done separately for now. Delete the next line in the final update
+set TRANSIT_SKIMS=D:\Models\BCM Transit Skims
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
 set UrbanSimScenario=s24
@@ -101,7 +103,9 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\nonres"            
 :: logsums and metrics
 c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\logsums_dummies"                    INPUT\logsums
 c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\metrics\metrics_FinalBlueprint"     INPUT\metrics
-
+:: copy the temporary transit skims to M_DIR. Created skims directory.
+mkdir skims
+c:\windows\system32\Robocopy.exe /E "%TRANSIT_SKIMS%"     										skims
 :: warmstart (copy from the previous run)
 mkdir INPUT\warmstart\main
 mkdir INPUT\warmstart\nonres

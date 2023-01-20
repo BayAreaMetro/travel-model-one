@@ -64,9 +64,9 @@ def map_data(filename, sequence_mapping, mapping_dict):
         assert(len(missing_vals)==0)
 
         # drop N - it's redundant
-        dframe.drop(['N', 'index', mapdef['N_col']], axis=1, inplace=True)
+        dframe.drop(['N', 'index', mapdef['N_col'],'COLLENRL'], axis=1, inplace=True)
         # rename sequence column
-        dframe.rename(columns={mapdef['seqcol']:mapkey}, inplace=True)
+        dframe.rename(columns={mapdef['seqcol']:mapkey, 'TOTEMPN':'TOTEMP'}, inplace=True)
 
     # write it
     dframe.to_csv(filename, index=False, float_format="%.9f")

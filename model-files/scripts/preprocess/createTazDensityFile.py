@@ -151,7 +151,7 @@ while i < len(taz_seqn):
      
     #sum the variables for all tazs within the max distance
     tazData['distance'] = tazData.eval("((TAZ_X - dest_x)**2 + (TAZ_Y-dest_y)**2)**0.5")    
-    totEmp = tazData.loc[tazData['distance'] < max_dist, 'TOTEMPN'].sum()
+    totEmp = tazData.loc[tazData['distance'] < max_dist, 'TOTEMP'].sum()
     totRet = tazData.loc[tazData['distance'] < max_dist, 'RETEMPN'].sum() 
     totHH = tazData.loc[tazData['distance'] < max_dist, 'TOTHH'].sum()
     totPop = tazData.loc[tazData['distance'] < max_dist, 'TOTPOP'].sum()
@@ -159,7 +159,7 @@ while i < len(taz_seqn):
     
     # TNC\Taxi wait time density fields
     totPopWaitTime = tazData.loc[tazData['distance'] < max_dist_popempden, 'TOTPOP'].sum()
-    totEmpWaitTime = tazData.loc[tazData['distance'] < max_dist_popempden, 'TOTEMPN'].sum()
+    totEmpWaitTime = tazData.loc[tazData['distance'] < max_dist_popempden, 'TOTEMP'].sum()
     totAcreWaitTime = tazData.loc[tazData['distance'] < max_dist_popempden, 'TOTACRE'].sum()
     
     # calculate density variables
