@@ -347,22 +347,23 @@ if __name__ == '__main__':
         WranglerLogger.debug("complexAccessModes = %s" % str(complexAccessModes))
     
         for timeperiod in ["AM", "MD", "PM", "EV", "EA"]:
-            net = TransitNetwork(modelType="TravelModelOne", modelVersion=1.5)
+            net = TransitNetwork(modelType="TravelModelOne", modelVersion=1.0)
             
             try:
-                net.parseFile(fullfile="transitLines.lin",insert_replace=True)
+                net.parseFile(fullfile="transit_duplicated_stops_removed_new.lin",insert_replace=True)
             
                 # Cube will fail on a line with no frequencies so let's just delete those ahead of time
                 for lineidx in xrange(len(net.lines)-1, -1, -1):
                     if not isinstance(net.lines[lineidx],TransitLine): continue
                     frequency = net.lines[lineidx].getFreqs()
+                    #print(frequency)
                     freqsum = sum([float(i) for i in frequency])
                     if freqsum == 0:
                         WranglerLogger.info("Line %s has no frequencies: %s -- deleting" % (net.lines[lineidx].name, str(net.lines[lineidx].getFreqs())))
                         del net.lines[lineidx]
                                
                 TransitNetwork.initializeTransitCapacity(directory=".")
-                net.addDelay(timeperiod="Simple", additionalLinkFile="transitLines.link",
+                net.addDelay(timeperiod="Simple", additionalLinkFile=None,
                              complexDelayModes=complexDwellModes, complexAccessModes=complexAccessModes,
                              stripTimeFacRunTimeAttrs=stripTimeFacRunTimeAttrs)
 
@@ -370,7 +371,7 @@ if __name__ == '__main__':
                 if extraDelayMapping:
                     addExtraDelayToNet(extraDelayMapping, net, timeperiod)
 
-                cubeFile = os.path.abspath( os.path.join("hwy","FREEFLOW.NET") )
+                cubeFile = os.path.abspath( os.path.join("hwy","complete_network_base.NET") )
                 net.write(name='transitOriginal' + timeperiod, writeEmptyFiles=False, suppressQuery=True, suppressValidation=True, cubeNetFileForValidation=None)
                 
             except:

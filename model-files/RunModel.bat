@@ -189,17 +189,18 @@ if ERRORLEVEL 2 goto done
 runtpp %BASE_SCRIPTS%\preprocess\BuildTazNetworks.job
 if ERRORLEVEL 2 goto done
 
-:hwysk
 
 :: THIS STEP DOES NOT GO HERE Build the initial highway skims
 runtpp %BASE_SCRIPTS%\skims\HwySkims.job
 if ERRORLEVEL 2 goto done
 
-goto done
-
 :: Create HSR trip tables to/from Bay Area stations
-runtpp CTRAMP\scripts\preprocess\HsrTripGeneration.job
-if ERRORLEVEL 2 goto done
+:: Starting with input trip tables for 2025 (opening year for the Gilroy and San Jose stations), 2029 (opening
+:: year for Millbrae and San Francisco stations), and 2040 (future modeled year), the script will assume zero
+:: trips before the opening year for the relevant station and interpolate the number of trips afterwards.
+:: skip for 2015
+::runtpp CTRAMP\scripts\preprocess\HsrTripGeneration.job
+::if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
