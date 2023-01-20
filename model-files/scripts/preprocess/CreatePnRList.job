@@ -23,12 +23,12 @@
 
 ;create list of PNR nodes
 RUN PGM=NETWORK
-    neti      ="trn\am_transit_background.net"
+    neti      ="hwy\complete_network.net"
     printo[1] ="trn\pnr_nodes.csv"
   
     phase=nodemerge
     
-        if ((N > 999999) & PNR > 0)
+        if ((N > 999999) & (PNR > 0))
             print, list="PNR NODE = ", N(8), ", ZONES = 1-%taz_count%" printo=1 
         endif
 		
