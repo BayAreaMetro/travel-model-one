@@ -116,7 +116,7 @@ copy INPUT\nonres\              nonres\
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
 copy INPUT\logsums              logsums\
-
+copy INPUT\warmstart\skims\      skims\
 :: Use interim network inputs until the networks are regenerated with all project card updates
 copy INPUT\hwy\complete_network_SJQ_externals.net                 hwy\complete_network.net
 
