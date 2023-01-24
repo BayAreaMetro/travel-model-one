@@ -38,7 +38,7 @@ RUN PGM=NETWORK
     NETO = hwy\complete_network_tolls_at_capclass.net
 
     PHASE=LINKMERGE
-      MAZMAZVOL=0
+;      MAZMAZVOL=0
        
         IF (AT < 0)
             CAPCLASS = -1
