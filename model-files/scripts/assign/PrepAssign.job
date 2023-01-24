@@ -145,10 +145,10 @@
 * copy main\jointtripdata_%ITER%.csv main\jointtripdata_temp_EV.csv
 
 ; the number of zones is used throughout to size arrays to store data
-token_zones = '1454'
+token_zones = '%TAZ_EXTS_COUNT%'
 
-; arrays and sized as zones x zones to store matrix data in a one-dimensional array
-token_zones_by_zones = '2114116'
+; arrays and sized as zones x zones to store matrix data in a one-dimensional array; 6626x6626
+token_zones_by_zones = '43897250'
 
 ; set the sample share as a TP+ token
 token_sample_share = '%SAMPLESHARE%'

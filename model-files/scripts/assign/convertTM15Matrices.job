@@ -1,0 +1,210 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; PrepAssign_BCM.job
+;
+; TP+ script to convert the output trip matrices from Travel Model 1.5 (1454 TAZs) to input trip matrices for BCM Travel Model (with 6593 internal + 33 external) zones.
+;
+;
+; The steps is executed separately for each of the five time periods, which are defined as follows:
+; (a) early AM, 3 am to 6 am; (b) AM peak period, 6 am to 10 am; (c) midday, 10 am to 3 pm; (d) PM peak period,
+; 3 pm to 7 pm; and, (e) evening, 7 pm to 3 am.
+;
+; Input:  
+      ; internal/external travel demand
+      ;mati[2] = nonres\tripsIx@token_period@.tpp
+
+      ; commercial travel demand
+      ;mati[3] = nonres\tripsTrk@token_period@.tpp
+
+      ; air passenger travel demand
+      ;mati[4] = nonres\tripsAirPax@token_period@.tpp;
+	  ;(A) Five time-period-specific person trip tables, main\trips(EA|AM|MD|PM|EV).tpp, with the following values in each table:
+;              (1)  Drive alone, no value toll
+;              (2)  Drive alone, value toll (includes taxi)
+;              (3)  Shared ride 2, no value toll
+;              (4)  Shared ride 2, value toll (includes taxi)
+;              (5)  Shared ride 3+, no value toll
+;              (6)  Shared ride 3+, value toll (includes taxi)
+;              (7)  Walk
+;              (8)  Bicycle
+;              (9)  Walk, local bus, walk
+;              (10) Walk, light rail/ferry, walk
+;              (11) Walk, express bus, walk
+;              (12) Walk, heavy rail, walk
+;              (13) Walk, commuter rail, walk
+;              (14) Drive, local bus, walk
+;              (15) Drive, light rail/ferry, walk
+;              (16) Drive, express bus, walk
+;              (17) Drive, heavy rail, walk
+;              (18) Drive, commuter rail, walk
+;              (19) Walk, local bus, drive
+;              (20) Walk, light rail/ferry, drive
+;              (21) Walk, express bus, drive
+;              (22) Walk, heavy rail, drive
+;              (23) Walk, commuter rail, drive
+;              (24) Drive alone,    TNC (includes zero-passenger deadheading trips)
+;              (25) Shared ride 2,  TNC (includes zero-passenger deadheading trips)
+;              (26) Shared ride 3+, TNC (includes zero-passenger deadheading trips)
+;              (27) Drive alone,    owned autonomous vehicles (includes zero-passenger deadheading trips)
+;              (28) Shared ride 2,  owned autonomous vehicles (includes zero-passenger deadheading trips)
+;              (29) Shared ride 3+, owned autonomous vehicles (includes zero-passenger deadheading trips)
+;
+;         (B) Zonal correspondence file
+;					RENUMBER causes the program to assign new zone numbers to all values in the output matrices. 
+;					This causes an extra layer of processing, because the matrices must be saved, and then retrieved and combined after all normal processing is completed. 
+;					Each input zone must be assigned a new output zone number, and a pair of percentages (ROWPCT and COLPCT) to indicate how the outgoing matrix zonal values are to be allocated to the renumbered zones. 
+;					These equivalencies are obtained from records in the designated FILE. The records may have from one to four fields to specify the renumbering.
+;
+; Output: (A) Five time-period-specific person trip tables, main\trips(EA|AM|MD|PM|EV).tpp, with the following values in each table:
+;              (1)  Drive alone, no value toll
+;              (2)  Drive alone, value toll (includes taxi)
+;              (3)  Shared ride 2, no value toll
+;              (4)  Shared ride 2, value toll (includes taxi)
+;              (5)  Shared ride 3+, no value toll
+;              (6)  Shared ride 3+, value toll (includes taxi)
+;              (7)  Walk
+;              (8)  Bicycle
+;              (9)  Walk, local bus, walk
+;              (10) Walk, light rail/ferry, walk
+;              (11) Walk, express bus, walk
+;              (12) Walk, heavy rail, walk
+;              (13) Walk, commuter rail, walk
+;              (14) Drive, local bus, walk
+;              (15) Drive, light rail/ferry, walk
+;              (16) Drive, express bus, walk
+;              (17) Drive, heavy rail, walk
+;              (18) Drive, commuter rail, walk
+;              (19) Walk, local bus, drive
+;              (20) Walk, light rail/ferry, drive
+;              (21) Walk, express bus, drive
+;              (22) Walk, heavy rail, drive
+;              (23) Walk, commuter rail, drive
+;              (24) Drive alone,    TNC (includes zero-passenger deadheading trips)
+;              (25) Shared ride 2,  TNC (includes zero-passenger deadheading trips)
+;              (26) Shared ride 3+, TNC (includes zero-passenger deadheading trips)
+;              (27) Drive alone,    owned autonomous vehicles (includes zero-passenger deadheading trips)
+;              (28) Shared ride 2,  owned autonomous vehicles (includes zero-passenger deadheading trips)
+;              (29) Shared ride 3+, owned autonomous vehicles (includes zero-passenger deadheading trips)
+;
+
+;
+; See also: (1) HwyAssign.job, which performs highway assignments;
+;           (2) TransitAssign.job, which performs transit assignments.
+;
+; version:  Travel Model 1.5 BCM
+; authors:  jmh (2022 10)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+
+; do, more or less, the same procedure for each time period
+loop period = 1, 5
+
+; a two letter token is used for each time period
+   if (period = 1)
+
+      token_period = 'EA'
+
+   elseif (period = 2)
+
+      token_period = 'AM'
+
+
+   elseif (period = 3)
+
+      token_period = 'MD'
+
+   elseif (period = 4)
+
+      token_period = 'PM'
+
+   elseif (period = 5)
+
+      token_period = 'EV'
+
+   endif
+   
+   ; do each time of day as a separate process
+   DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = '%COMMPATH%'
+	
+	run pgm = matrix
+	  
+	  filei mati[1] = nonres\tm15\tripsAirPax@token_period@.tpp
+
+      fileo mato[1] = nonres\tripsAirPax@token_period@.tpp, mo = 1-6, name = da, datoll, sr2, sr2toll, sr3, sr3toll
+	  
+	  mw[ 1] = mi.1.da
+      mw[ 2] = mi.1.datoll
+      mw[ 3] = mi.1.sr2
+      mw[ 4] = mi.1.sr2toll
+      mw[ 5] = mi.1.sr3
+      mw[ 6] = mi.1.sr3toll
+	  
+	  RENUMBER FILE = "INPUT\warmstart\main\IZ_OZ_PCT.DAT", ZONES=%TAZ_EXTS_COUNT%, MISSINGZI=W,MISSINGZO=W
+	  
+	  loop value = 1,6
+	  
+		_x=ROWFIX (value,3)
+	
+	  endloop
+
+    endrun
+	
+	run pgm = matrix
+	  
+	  filei mati[1] = nonres\tm15\tripsIX@token_period@.tpp
+
+      fileo mato[1] = nonres\tripsIX@token_period@.tpp, mo = 1-6, name = da, datoll, sr2, sr2toll, sr3, sr3toll
+	  
+	  mw[ 1] = mi.1.da
+      mw[ 2] = mi.1.datoll
+      mw[ 3] = mi.1.sr2
+      mw[ 4] = mi.1.sr2toll
+      mw[ 5] = mi.1.sr3
+      mw[ 6] = mi.1.sr3toll
+	  
+	  RENUMBER FILE = "INPUT\warmstart\main\IZ_OZ_PCT.DAT", ZONES=%TAZ_EXTS_COUNT%, MISSINGZI=W,MISSINGZO=W
+	  
+	  loop value = 1,6
+	  
+		_x=ROWFIX (value,3)
+	
+	  endloop
+
+    endrun
+	
+	run pgm = matrix
+	  
+	  filei mati[1] = nonres\tm15\tripstrk@token_period@.tpp
+
+      fileo mato[1] = main\tripstrk@token_period@.tpp, mo = 1-8, name = vstruck, struck, mtruck, ctruck, vstrucktoll, strucktoll, mtrucktoll, ctrucktoll
+	  
+	  mw[ 1] = mi.1.vstruck
+      mw[ 2] = mi.1.struck
+      mw[ 3] = mi.1.mtruck
+      mw[ 4] = mi.1.ctruck
+      mw[ 5] = mi.1.vstrucktoll
+      mw[ 6] = mi.1.strucktoll
+      mw[ 7] = mi.1.mtrucktoll
+      mw[ 8] = mi.1.ctrucktoll
+	  
+	  RENUMBER FILE = "INPUT\warmstart\main\IZ_OZ_PCT.DAT", ZONES=%TAZ_EXTS_COUNT%, MISSINGZI=W,MISSINGZO=W
+	  
+	  loop value = 1,8
+	  
+		_x=ROWFIX (value,3)
+	
+	  endloop
+
+    endrun
+
+
+   EndDistributeMultistep
+
+endloop ; time period loop
+
+
+Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end,
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+

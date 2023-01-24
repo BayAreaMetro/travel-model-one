@@ -31,9 +31,9 @@ set UrbanSimScenario=s24
 :: set the location of the "input development" directory where other inputs are stored; currently set to the TM1.5 run for most cases
 set INPUT_DEVELOPMENT_DIR=D:\Projects\BCM\travel-model-1.5\INPUT
 
-:: set the location of the previous run (where warmstart inputs will be copied)
+:: TODO  set the location of the previous run (where warmstart inputs will be copied):Currently set to be the calibration folder. The trip tables will be used in the 0th iteration HwyAssignment.job step
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=D:\Projects\BCM\travel-model-1.5\INPUT
+set PREV_RUN_DIR=D:\Models\BCM Warmstart
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
@@ -98,19 +98,20 @@ copy "%INPUT_POP%"\hhFile2015.csv																INPUT\popsyn\hhFile.2015.csv
 copy "%INPUT_POP%"\personFile2015.csv																INPUT\popsyn\personFile.2015.csv
 ::need to update the maximum telecommute rate for San Joaquin County in the telecommute_max_rate_county.csv file
 :: nonres
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\nonres"                   			INPUT\nonres
+c:\windows\system32\Robocopy.exe /E "%PREV_RUN_DIR%\tm15_nonres"                   			INPUT\nonres\tm15
 
 :: logsums and metrics
 c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\logsums_dummies"                    INPUT\logsums
 c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\metrics\metrics_FinalBlueprint"     INPUT\metrics
 :: copy the temporary transit skims to M_DIR. Created skims directory.
 mkdir skims
-c:\windows\system32\Robocopy.exe /E "%TRANSIT_SKIMS%"     										skims
+::c:\windows\system32\Robocopy.exe /E "%TRANSIT_SKIMS%"     										skims
 :: warmstart (copy from the previous run)
 mkdir INPUT\warmstart\main
 mkdir INPUT\warmstart\nonres
-copy /Y "%PREV_RUN_DIR%\main\warmstart\main\*.tpp"                                                       INPUT\warmstart\main
-copy /Y "%PREV_RUN_DIR%\main\warmstart\nonres\*.tpp"                                                     INPUT\warmstart\nonres
+copy /Y "%PREV_RUN_DIR%\main\*.tpp"                                                       	INPUT\warmstart\main
+copy /Y "%PREV_RUN_DIR%\main\*.tpp"                                                     	INPUT\warmstart\nonres
+copy /Y "%PREV_RUN_DIR%\main\*.dat" 														INPUT\warmstart\main
 del INPUT\warmstart\nonres\ixDaily2015.tpp
 del INPUT\warmstart\nonres\ixDailyx4.tpp 
 

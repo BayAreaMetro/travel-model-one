@@ -6,7 +6,7 @@
 ::
 :: For complete details, please see http://mtcgis.mtc.ca.gov/foswiki/Main/RunIterationBatch.
 ::
-:: dto (2012 02 15) gde (2009 10 9)
+:: dto (2012 02 15) gde (2009 10 9) jmh (2023 1 20)
 ::
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -66,8 +66,9 @@ if ERRORLEVEL 2 goto done
 ::
 :: Step 3:  Execute the internal/external and commercial vehicle models
 ::
+:: TODO: Skip for now. Work with the same matrices converted from TM1.5
 :: ------------------------------------------------------------------------------------------------------
-
+goto hwyAssign
 :nonres
 
 :: Create production/attraction tables based on growth assumptions
@@ -119,7 +120,8 @@ if %ITER% GTR 0 (
 :: Assign the demand matrices to the highway network
 runtpp CTRAMP\scripts\assign\HwyAssign.job
 if ERRORLEVEL 2 goto done
-
+::skip transit assignment step
+goto feedback
 :trnAssignSkim
 :: copy a local version for easier restarting
 copy CTRAMP\scripts\skims\trnAssign.bat trnAssign_iter%ITER%.bat
