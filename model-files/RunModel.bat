@@ -190,10 +190,6 @@ runtpp %BASE_SCRIPTS%\preprocess\BuildTazNetworks.job
 if ERRORLEVEL 2 goto done
 
 
-:: THIS STEP DOES NOT GO HERE Build the initial highway skims
-runtpp %BASE_SCRIPTS%\skims\HwySkims.job
-if ERRORLEVEL 2 goto done
-
 :: Create HSR trip tables to/from Bay Area stations
 :: Starting with input trip tables for 2025 (opening year for the Gilroy and San Jose stations), 2029 (opening
 :: year for Millbrae and San Francisco stations), and 2040 (future modeled year), the script will assume zero
@@ -245,17 +241,18 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\skims\BuildTransitNetworks.job
 if ERRORLEVEL 2 goto done
 
+:: skip transit skimming and create nonres trip matrices from tm 1.5
+goto convert_nonres
+
 call zoneSystem.bat
 :: Build the transit skims
 runtpp CTRAMP\scripts\skims\TransitSkims.job
 if ERRORLEVEL 2 goto done
 
+:convert_nonres
 
-
-goto done
-
-
-
+runtpp CTRAMP\scripts\assign\convertTM15Matrices.job
+if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -301,7 +298,7 @@ set ITER=1
 set PREV_ITER=1
 set WGT=1.0
 set PREV_WGT=0.00
-set SAMPLESHARE=0.15
+set SAMPLESHARE=0.05
 set SEED=0
 
 :: Runtime configuration: set the workplace shadow pricing parameters
