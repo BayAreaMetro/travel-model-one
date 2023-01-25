@@ -48,7 +48,9 @@
 ;
 ; version:  Travel Model One
 ; authors:  dto (2010 08 30); gde (2009 04 30); bts (2009 04 09); jh (2008 11 10); dto (2007 12 20)
-;
+; version: BiCounty Model
+; author jmh
+; NOTE: go to line 146 to check column headers are appropriate
 ;
 ; ----------------------------------------------------------------------------------------------------------------
     
@@ -76,13 +78,13 @@ token_out_of_vehicle_time_weight = '2.0'
 run pgm = matrix
 
    ; am peak period highway skim
-   filei mati[1] = skims\hwyskmAM.tpp
+   filei mati[1] = skims\HWYSKMAM_taz.tpp
    
    ; midday period highway skim
-   filei mati[2] = skims\hwyskmMD.tpp 
+   filei mati[2] = skims\HWYSKMMD_taz.tpp 
    
    ; pm peak period highway skim
-   filei mati[3] = skims\hwyskmPM.tpp
+   filei mati[3] = skims\HWYSKMPM_taz.tpp
    
    ; generic (all line-haul modes weighted equally) am peak period walk-transit-walk skim
    filei mati[4] = skims\trnskmAM_wlk_trn_wlk.tpp
@@ -97,10 +99,10 @@ run pgm = matrix
    filei mati[7] = skims\nonmotskm.tpp
    
    ; zonal data in DBF format (allows to use header rows)
-   filei zdati[1]= landuse\tazdata.dbf
+   filei zdati[1]= landuse\tazData.dbf
    
    ; only need calculations for the internal zones (xxx check that this is true xxx)
-   zones = 1454                 
+   zones = 6593                 
    
    ; set the dispersion parameters
    _kAuto = @token_dispersion_parameter_automobile@
