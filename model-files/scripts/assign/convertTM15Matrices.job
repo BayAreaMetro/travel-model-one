@@ -130,9 +130,9 @@ loop period = 1, 5
 	
 	run pgm = matrix
 	  
-	  filei mati[1] = nonres\tm15\tripsAirPax@token_period@.tpp
+	  filei mati[1] = "nonres\tm15\tripsAirPax@token_period@.tpp"
 
-      fileo mato[1] = nonres\tripsAirPax@token_period@.tpp, mo = 1-6, name = da, datoll, sr2, sr2toll, sr3, sr3toll
+      fileo mato[1] = "nonres\tripsAirPax@token_period@.tpp", mo = 1-6, name = da, datoll, sr2, sr2toll, sr3, sr3toll
 	  
 	  mw[ 1] = mi.1.da
       mw[ 2] = mi.1.datoll
@@ -141,7 +141,7 @@ loop period = 1, 5
       mw[ 5] = mi.1.sr3
       mw[ 6] = mi.1.sr3toll
 	  
-	  RENUMBER FILE = "INPUT\warmstart\main\IZ_OZ_PCT.DAT", ZONES=%TAZ_EXTS_COUNT%, MISSINGZI=W,MISSINGZO=W
+	  RENUMBER FILE = "INPUT\warmstart\main\IZ_OZ_PCT.DAT", ZONES=6593, MISSINGZI=W,MISSINGZO=W
 	  
 	  loop value = 1,6
 	  
@@ -153,9 +153,9 @@ loop period = 1, 5
 	
 	run pgm = matrix
 	  
-	  filei mati[1] = nonres\tm15\tripsIX@token_period@.tpp
+	  filei mati[1] = "nonres\tm15\tripsIX@token_period@.tpp"
 
-      fileo mato[1] = nonres\tripsIX@token_period@.tpp, mo = 1-6, name = da, datoll, sr2, sr2toll, sr3, sr3toll
+      fileo mato[1] = "nonres\tripsIX@token_period@.tpp", mo = 1-6, name = da, datoll, sr2, sr2toll, sr3, sr3toll
 	  
 	  mw[ 1] = mi.1.da
       mw[ 2] = mi.1.datoll
@@ -164,7 +164,7 @@ loop period = 1, 5
       mw[ 5] = mi.1.sr3
       mw[ 6] = mi.1.sr3toll
 	  
-	  RENUMBER FILE = "INPUT\warmstart\main\IZ_OZ_PCT.DAT", ZONES=%TAZ_EXTS_COUNT%, MISSINGZI=W,MISSINGZO=W
+	  RENUMBER FILE = "INPUT\warmstart\main\IZ_OZ_PCT.DAT", ZONES=6593, MISSINGZI=W,MISSINGZO=W
 	  
 	  loop value = 1,6
 	  
@@ -176,9 +176,9 @@ loop period = 1, 5
 	
 	run pgm = matrix
 	  
-	  filei mati[1] = nonres\tm15\tripstrk@token_period@.tpp
+	  filei mati[1] = "nonres\tm15\tripstrk@token_period@.tpp"
 
-      fileo mato[1] = main\tripstrk@token_period@.tpp, mo = 1-8, name = vstruck, struck, mtruck, ctruck, vstrucktoll, strucktoll, mtrucktoll, ctrucktoll
+      fileo mato[1] = "nonres\tripstrk@token_period@.tpp", mo = 1-8, name = vstruck, struck, mtruck, ctruck, vstrucktoll, strucktoll, mtrucktoll, ctrucktoll
 	  
 	  mw[ 1] = mi.1.vstruck
       mw[ 2] = mi.1.struck
@@ -189,7 +189,7 @@ loop period = 1, 5
       mw[ 7] = mi.1.mtrucktoll
       mw[ 8] = mi.1.ctrucktoll
 	  
-	  RENUMBER FILE = "INPUT\warmstart\main\IZ_OZ_PCT.DAT", ZONES=%TAZ_EXTS_COUNT%, MISSINGZI=W,MISSINGZO=W
+	  RENUMBER FILE = "INPUT\warmstart\main\IZ_OZ_PCT.DAT", ZONES=6593, MISSINGZI=W,MISSINGZO=W
 	  
 	  loop value = 1,8
 	  
