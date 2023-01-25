@@ -112,7 +112,7 @@ copy INPUT\trn\                 trn\
 copy INPUT\landuse\             landuse\
 copy INPUT\popsyn\hhFile.%MODEL_YEAR%.csv              		popsyn\hhFile.%MODEL_YEAR%.csv
 copy INPUT\popsyn\personFile.%MODEL_YEAR%.csv              	popsyn\personFile.%MODEL_YEAR%.csv
-copy INPUT\nonres\              nonres\
+copy INPUT\tm15\nonres\              nonres\tm15\
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
 copy INPUT\logsums              logsums\
@@ -233,11 +233,15 @@ if ERRORLEVEL 2 goto done
 runtpp %BASE_SCRIPTS%\skims\PrepHwyNet.job
 if ERRORLEVEL 2 goto done
 
+:: There are some issues with the transit network creation. Skipping the steps.
+goto convert_nonres
+:: this is an extra step created to add pnr nodes to the network manually. Skipping.
+goto transit_network
 :: Create list of PNR lots
 runtpp %BASE_SCRIPTS%\preprocess\CreatePnrList.job
 if ERRORLEVEL 2 goto done
 
-
+:transit_network
 
 :: Create the transit networks
 runtpp CTRAMP\scripts\skims\BuildTransitNetworks.job
