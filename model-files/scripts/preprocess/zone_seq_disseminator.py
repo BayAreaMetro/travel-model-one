@@ -69,8 +69,8 @@ def map_data(filename, sequence_mapping, mapping_dict):
         dframe.rename(columns={mapdef['seqcol']:mapkey, 'TOTEMPN':'TOTEMP'}, inplace=True)
 
     # write it
-    dframe.to_csv(filename, index=False, float_format="%.9f")
-    print "Wrote %s" % filename
+    #dframe.to_csv(filename, index=False, float_format="%.9f")
+    #print "Wrote %s" % filename
     return dframe
 
 if __name__ == '__main__':
@@ -98,6 +98,22 @@ if __name__ == '__main__':
     
     ######### map TAZ_ORIGINAL to the actual TAZ
     taz_data        = map_data(taz_data_file, sequence_mapping, {'ZONE':{'seqcol':'TAZSEQ','N_col':'BCM_TAZ'}})
+    taz_columns= ['ZONE','DISTRICT','SD','COUNTY','TOTHH','HHPOP','TOTPOP','EMPRES','SFDU','MFDU',
+              'HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','TOTACRE','RESACRE','CIACRE','SHPOP62P',
+              'TOTEMP','AGE0004','AGE0519','AGE2044','AGE4564','AGE65P','RETEMPN','FPSEMPN',
+              'HEREMPN','OTHEMPN','AGREMPN','MWTEMPN','PRKCST','OPRKCST','AREATYPE','HSENROLL',
+              'COLLFTE','COLLPTE','TOPOLOGY','TERMINAL','ZERO']
+    taz_data        = taz_data[taz_columns]
+    
+    taz_data['RESACRE'] = taz_data['RESACRE'].fillna(5.555)
+    taz_data['CIACRE'] = taz_data['CIACRE'].fillna(3.555)
+    taz_data['PRKCST'] = taz_data['PRKCST'].fillna(0)
+    taz_data['OPRKCST'] = taz_data['OPRKCST'].fillna(0)
+    taz_data['AREATYPE'] = taz_data['AREATYPE'].fillna(1)
+    taz_data['TOPOLOGY'] = taz_data['TOPOLOGY'].fillna(1)
+    taz_data['TERMINAL'] = taz_data['TERMINAL'].fillna(1.21)
+    taz_data.to_csv(taz_data_file, index=False, float_format="%.9f")
+    
     hhfile_columns  = hhfile.columns
     hhfile['TAZ_SEQ'] = hhfile['TAZ'].map(sequence_dict)
     hhfile            = hhfile.drop(columns='TAZ')
