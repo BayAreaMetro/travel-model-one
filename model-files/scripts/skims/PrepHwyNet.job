@@ -2,6 +2,7 @@
 ;
 ; PrepHwyNet.job
 ;
+; called in trnAssign.bat in iteration 1
 ; TP+ script does three things.  First, it computes the bus travel time on every highway link by assuming a fixed
 ; delay (in minutes per mile), segmented by area type and facility type.  Links with speeds below a very low 
 ; minimum threshold are sped up to that minimum threshold to help the path builder find valid paths.  This step 
@@ -57,7 +58,8 @@
 ;
 ; version:  Travel Model One (v 0.3)
 ; authors:  dto (2011 09 08); dto (2010 08 10); gde
-;
+; version: Travel Model 1.5 BCM
+; author jmh (2022 07 18)
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 
@@ -87,18 +89,19 @@ loop period = 1, 5
    endif 
    
    ; faster to do without distributing using cluster
-   *echo iter %ITER% > "%MODEL_DIR%\logs\SpeedErrors_@token_period@.log"
+   *echo iter %ITER% > "logs\SpeedErrors_@token_period@.log"
 
    ; compute bus travel times
    run pgm = network
    
       ; use the same highway network used in the skimming
-      neti[1] = "%MODEL_DIR%\hwy\avgload@token_period@.net"
+;      neti[1] = "hwy\avgload@token_period@.net"
+      neti[1] = "hwy\avgload@token_period@_complete.net"
 
       ; output a time-period-specific transit background network
-      neto = @token_period@_transit_background.net
+      neto = "trn\@token_period@_transit_background.net"
 
-      fileo printo[1] = "%MODEL_DIR%\logs\SpeedErrors_@token_period@.log"  APPEND=T
+      fileo printo[1] = "logs\SpeedErrors_@token_period@.log"  APPEND=T
       
       ; bus time is a function of highway time and delay per mile, segmented by area type and facility type
       delayfactor = 0.0
@@ -147,54 +150,30 @@ loop period = 1, 5
 
       
       ; set the park-and-ride time to the highway time, except the bridges which the park-and-ride paths ignore
-      if (PNROK=1)
-         PNR_TIME = CTIM
-      else 
-         PNR_TIME = 9999
-      endif
+      ;if (PNROK=1)
+      ;   PNR_TIME = CTIM
+      ;else 
+      ;   PNR_TIME = 9999
+      ;endif
+	  
+      ; set the park-and-ride time to the highway time
+	  ; ROADWAY and PNROK are not coded properly so for now pnr time is the highway time on all drivable links
+	  if (drive_access>0)
+	      PNR_TIME = CTIM
+	  else
+	      PNR_TIME = 9999
+	  endif
 
       ; compute bus time
       ; no congestion for BRT facilities (two-levels)
-      IF (BRT = 1)
+      IF (BUS_ONLY = 1)
         BUS_TIME = FFT  + (delayfactor * DISTANCE * 0.5)
-      ELSEIF (BRT = 2)
-        BUS_TIME = CTIM + (delayfactor * DISTANCE * 0.5)
-      ELSEIF (BRT = 3)
-        ; Bus on highway shoulder -- assume 35 mph or congested time, which ever is less
-        BUS_TIME = min(CTIM, li.1.DISTANCE / (35.0/60.0))
       ELSE
         BUS_TIME = CTIM + (delayfactor * DISTANCE)
       ENDIF
       
    endrun   
    
-   ; add transit-only access links to the highway network to facilitate automated access link building
-   run pgm = network
-   
-      ; use the input network created by the previous step
-      neti = @token_period@_transit_background.net
-   
-      ; add the access links
-      linki[2] = "%MODEL_DIR%\trn\transitLines.access",   var = a, var = b, rev = 1
-
-      ; output a temporary network used in the BuildTransitNetworks.job script
-      neto = @token_period@_temporary_transit_background_accesslinks.net
-      
-   endrun
-
-   ; add transit-only transfer links to the highway network to facilitate automated transfer link building
-   run pgm=network
-   
-      ; use the input network created by the previous step
-      neti = @token_period@_transit_background.net
-      
-      ; add the transit transfer links
-      linki[2] = "%MODEL_DIR%\trn\transitLines.xfer",   var = a, var = b, var = DISTANCE, rev = 1
-
-      ; output a temporary network used in the BuildTransitNetworks.job script
-      neto = @token_period@_temporary_transit_background_transferlinks.net
-       
-   endrun
    
 endloop ; period
 

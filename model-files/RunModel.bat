@@ -229,13 +229,15 @@ python CTRAMP\scripts\preprocess\list_all_transit_nodes.py
 python CTRAMP\scripts\skims\transitDwellAccess.py NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 if ERRORLEVEL 2 goto done
 
+:: Prepare the highway network for use by the transit network
+runtpp %BASE_SCRIPTS%\skims\PrepHwyNet.job
+if ERRORLEVEL 2 goto done
+
 :: Create list of PNR lots
 runtpp %BASE_SCRIPTS%\preprocess\CreatePnrList.job
 if ERRORLEVEL 2 goto done
 
-:: Prepare the highway network for use by the transit network
-runtpp %BASE_SCRIPTS%\skims\PrepHwyNet.job
-if ERRORLEVEL 2 goto done
+
 
 :: Create the transit networks
 runtpp CTRAMP\scripts\skims\BuildTransitNetworks.job
