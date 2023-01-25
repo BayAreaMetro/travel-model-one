@@ -411,7 +411,7 @@ loop period = 1, 2
         NETO = hwy\avgload@token_period@_taz_delete.net
 	
         PHASE=LINKMERGE
-
+		IF (FFS = 0) DELETE
 	;
         ; Capacity and Speed Lookups
         ;
