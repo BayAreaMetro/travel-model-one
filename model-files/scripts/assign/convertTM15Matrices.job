@@ -145,7 +145,7 @@ loop period = 1, 5
 	  
 	  loop value = 1,6
 	  
-		_x=ROWFIX (value,3)
+		_x=ROWFIX (value,2)
 	
 	  endloop
 
@@ -168,7 +168,7 @@ loop period = 1, 5
 	  
 	  loop value = 1,6
 	  
-		_x=ROWFIX (value,3)
+		_x=ROWFIX (value,2)
 	
 	  endloop
 
@@ -193,7 +193,7 @@ loop period = 1, 5
 	  
 	  loop value = 1,8
 	  
-		_x=ROWFIX (value,3)
+		_x=ROWFIX (value,2)
 	
 	  endloop
 
