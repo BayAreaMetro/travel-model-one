@@ -3,8 +3,8 @@
 ; used in the HwyAssign.job script, which assigns trips in two different loops
 ; the first loop loops through the EA, AM and MD time period, second one loops through the rest
 ; processors 1-5 is kept independent
-token_intrastep_processlist_EA = '6-18'
-token_intrastep_processlist_AM = '6-26'
-token_intrastep_processlist_MD = '19-34'
-token_intrastep_processlist_PM = '27-48'
-token_intrastep_processlist_EV = '35-48'
+token_intrastep_processlist_EA = '6-15'
+token_intrastep_processlist_AM = '6-20'
+token_intrastep_processlist_MD = '16-24'
+token_intrastep_processlist_PM = '21-32'
+token_intrastep_processlist_EV = '25-32'

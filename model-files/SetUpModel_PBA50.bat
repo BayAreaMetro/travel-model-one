@@ -110,7 +110,7 @@ mkdir skims
 mkdir INPUT\warmstart\main
 mkdir INPUT\warmstart\nonres
 copy /Y "%PREV_RUN_DIR%\main\*.tpp"                                                       	INPUT\warmstart\main
-copy /Y "%PREV_RUN_DIR%\main\*.tpp"                                                     	INPUT\warmstart\nonres
+copy /Y "%PREV_RUN_DIR%\nonres\*.tpp"                                                     	INPUT\warmstart\nonres
 copy /Y "%PREV_RUN_DIR%\main\*.dat" 														INPUT\warmstart\main
 del INPUT\warmstart\nonres\ixDaily2015.tpp
 del INPUT\warmstart\nonres\ixDailyx4.tpp 

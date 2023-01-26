@@ -102,7 +102,7 @@ mkdir main
 mkdir logs
 mkdir database
 mkdir logsums
-
+mkdir nonres\tm15
 :: Stamp the feedback report with the date and time of the model start
 echo STARTED MODEL RUN  %DATE% %TIME% >> logs\feedback.rpt 
 
@@ -112,7 +112,7 @@ copy INPUT\trn\                 trn\
 copy INPUT\landuse\             landuse\
 copy INPUT\popsyn\hhFile.%MODEL_YEAR%.csv              		popsyn\hhFile.%MODEL_YEAR%.csv
 copy INPUT\popsyn\personFile.%MODEL_YEAR%.csv              	popsyn\personFile.%MODEL_YEAR%.csv
-copy INPUT\tm15\nonres\              nonres\tm15\
+copy INPUT\nonres\tm15\              nonres\tm15\
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
 copy INPUT\logsums              logsums\
