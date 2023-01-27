@@ -9,20 +9,26 @@ import numpy as np
 # user settings
 # (they are determined based on a manual review of the toll rate histogram)
 
-# toll rates in dollars
-high_toll   = 0.3
-medium_toll = 0.2
-low_toll    = 0.1
+# toll rates in cents
+high_toll_cents   = 30
+medium_toll_cents = 20
+low_toll_cents    = 10
 
 high_cutoff    = 23
 medium_cutoff  = 13
 low_cutoff     = 4
 
+# specify "yes" below if there will be no midday tolls
+no_tolls_in_midday = "yes"
+
 project_dir ="L:/Application/Model_One/NextGenFwys/" 
 modelrun_with_DynamicTolling = "2035_TM152_NGF_NP02_BPALTsegmented_03_SensDyn00_1"
 
 # output directory
-output_dir = "INPUT_DEVELOPMENT/Static_toll_plans/Test1"
+output_dir = "INPUT_DEVELOPMENT/Static_toll_plans/Test2"
+
+# to do: add a log file to record to config 
+
 
 # ------------------
 # Inputs
@@ -93,12 +99,26 @@ for tp in TimePeriods:
     SimpleToll_tp_df['avg_toll_rate'] = SimpleToll_tp_df['TOLLtp_DA']/SimpleToll_tp_df['DISTANCE']
 
     # apply a simple rule to convert the results to high, medium, low toll
+
+    # toll rates in dollars
+    high_toll_dollars   = high_toll_cents / 100
+    medium_toll_dollars = medium_toll_cents / 100
+    low_toll_dollars    = low_toll_cents / 100
+
     TollLevel_conditions = [
         (SimpleToll_tp_df['avg_toll_rate'] >  high_cutoff),
         (SimpleToll_tp_df['avg_toll_rate'] >= medium_cutoff),
         (SimpleToll_tp_df['avg_toll_rate'] >= low_cutoff),
         (SimpleToll_tp_df['avg_toll_rate'] >= 0)]
-    TollLevel_choices = [high_toll, medium_toll, low_toll, 0]
+    TollLevel_choices = [high_toll_dollars, medium_toll_dollars, low_toll_dollars, 0.0001] 
+    # note 0.0001 is applied instead of 0 
+    # because settolls.job has an input verification step which rejects the tolls.csv if it finds a tolled link with peak period DA tolls equal to 0 
+    # as ((TOLLAM_DA == 0) && (TOLLPM_DA == 0)) could means that a TOLLCLASS and USE combination is missing from the tolls.csv
+    # https://github.com/BayAreaMetro/travel-model-one/blob/master/model-files/scripts/preprocess/SetTolls.JOB#L215-L221
+    # settolls.job includes codes that sets anything toll value less than 1 cent to 0
+    # https://github.com/BayAreaMetro/travel-model-one/blob/master/model-files/scripts/preprocess/SetTolls.JOB#L224-L269
+
+
     SimpleToll_tp_df['simplified_toll'] = np.select(TollLevel_conditions, TollLevel_choices, default='null')
 
     # store the average toll rate and simplied toll rate for each time period
@@ -208,9 +228,9 @@ new_tollscsv_df = pd.merge(tollcsv_df,
                        indicator=True)
 
 # replace the values
-# only do this for AM and PM 
+# only use simplified toll value for AM and PM; no tolls for MD
 # (when we looked at the results, there aren't many links need to be tolled in thd midday. So it was decided that we do no toll the midday at all.)
-TimePeriods = ["AM", "PM"]
+TimePeriods = ["AM", "MD", "PM"]
 for tp in TimePeriods:
     
     if tp=="AM": 
@@ -236,6 +256,23 @@ for tp in TimePeriods:
         new_tollscsv_df["tollpm_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_PM'], new_tollscsv_df["tollpm_lrg"])
 
 
+    if tp=="MD":
+        if no_tolls_in_midday == "yes": 
+            # set midday tolls to zero 
+            new_tollscsv_df["tollmd_da"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_da"])
+            new_tollscsv_df["tollmd_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_vsm"])
+            new_tollscsv_df["tollmd_sml"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_sml"])
+            new_tollscsv_df["tollmd_med"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_med"])
+            new_tollscsv_df["tollmd_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_lrg"])
+        else: 
+            # use simplified tolls from the dynamic toll run
+            new_tollscsv_df["tollmd_da"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD'], new_tollscsv_df["tollpm_da"])
+            new_tollscsv_df["tollmd_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD'], new_tollscsv_df["tollpm_vsm"])
+            new_tollscsv_df["tollmd_sml"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD'], new_tollscsv_df["tollpm_sml"])
+            new_tollscsv_df["tollmd_med"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD'], new_tollscsv_df["tollpm_med"])
+            new_tollscsv_df["tollmd_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD'], new_tollscsv_df["tollpm_lrg"])
+
+  
 # keep only variables that are part of the tolls.csv
 new_tollscsv_df = new_tollscsv_df[['facility_name', 'fac_index', 'tollclass', 'tollseg', 'tolltype', 'use', 'tollea_da', 'tollam_da', 'tollmd_da', 'tollpm_da', 'tollev_da', 'tollea_s2', 'tollam_s2', 'tollmd_s2', 'tollpm_s2', 'tollev_s2', 'tollea_s3', 'tollam_s3', 'tollmd_s3', 'tollpm_s3', 'tollev_s3', 'tollea_vsm', 'tollam_vsm', 'tollmd_vsm', 'tollpm_vsm', 'tollev_vsm', 'tollea_sml', 'tollam_sml', 'tollmd_sml', 'tollpm_sml', 'tollev_sml', 'tollea_med', 'tollam_med', 'tollmd_med', 'tollpm_med', 'tollev_med', 'tollea_lrg', 'tollam_lrg', 'tollmd_lrg', 'tollpm_lrg', 'tollev_lrg', 'toll_flat']]
 
