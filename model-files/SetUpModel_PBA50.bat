@@ -77,6 +77,7 @@ copy /Y "%GITHUB_DIR%\utilities\RTP\ExtractKeyFiles.bat"                   .
 copy /Y "%GITHUB_DIR%\utilities\RTP\QAQC\Run_QAQC.bat"                     .
 copy /Y "%GITHUB_DIR%\utilities\check-setupmodel\Check_SetupModelLog.py"   .
 copy /Y "%GITHUB_DIR%\utilities\dbf_to_csv\create_landuse_csv.R"   		   CTRAMP\scripts\preprocess
+
 if "%COMPUTER_PREFIX%" == "WIN-" (copy "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"  "CTRAMP\scripts\notify_slack.py")
 if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.59
 
@@ -97,6 +98,8 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_LU%"                                
 copy "%INPUT_POP%"\hhFile2015.csv																INPUT\popsyn\hhFile.2015.csv
 copy "%INPUT_POP%"\personFile2015.csv																INPUT\popsyn\personFile.2015.csv
 ::need to update the maximum telecommute rate for San Joaquin County in the telecommute_max_rate_county.csv file
+::right now using the same values as Marin
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\telecommute\"   		   INPUT\landuse
 :: nonres
 c:\windows\system32\Robocopy.exe /E "%PREV_RUN_DIR%\tm15_nonres"                   			INPUT\nonres\tm15
 
