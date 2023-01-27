@@ -101,7 +101,7 @@ loop period = 1, 5
       ctim@token_period@ = CTIM
       
       ; for non-fixed links, computed the congested speed from the DISTANCE variable
-      if (CNTYPE = "TAZ") cspd@token_period@ = DISTANCE / (CTIM/60.0)
+      if (CNTYPE = 'TAZ') cspd@token_period@ = DISTANCE / (CTIM/60.0)
       
       ; set the v/c ratio
       vc@token_period@ = VC
