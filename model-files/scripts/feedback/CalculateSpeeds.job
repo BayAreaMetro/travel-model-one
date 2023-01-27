@@ -38,7 +38,8 @@
 ;
 ; version:  Travel Model One
 ; authors:  dto (2010 08 10); gde (2009)
-;
+; version:  Travel Model 1.5+ BCM
+; authors:  jmh (2023 01)
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 
@@ -107,7 +108,7 @@ loop period = 1,5
       parameters combine = equi                                 
       
       ; set the assignment parameters -- 1454 internal zones + 21 external zones
-      parameters zones = 1475
+      parameters zones = %TAZ_EXTS_COUNT%
       
       ; set the assignment parameters -- single dummy iteration just to calculate speeds
       parameters maxiters = 1
@@ -156,12 +157,14 @@ loop period = 1,5
          lw.capclass = li.CAPCLASS
 
          ; adding at the recommendation of citilabs
-         C = capacityfor(li.lanes,li.CAPCLASS)*@token_capfac_num@
-
+         ; C = capacityfor(li.lanes,li.CAPCLASS)*@token_capfac_num@
+		 C = li.CAP_TOTFAC
          ; set the input time to OT for fixed time links
          if (lw.tsin = 1)
-            t0 = lw.ot
-         endif        
+				t0 = lw.ot
+			 else
+				t0=li.FFT
+			 endif        
          
       ; the setting of critical speeds and computation of the volume/delay function parameter is in the FreeFlowSpeed.block file  
       read file = ctramp\scripts\block\FreeFlowSpeed.block 
