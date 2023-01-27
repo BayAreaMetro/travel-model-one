@@ -57,7 +57,8 @@
 ;
 ; version:  Travel Model One
 ; authors:  dto (2013 06 26; 2010 08 10); gde (2009)
-;
+; version: Travel Model 1.5 BCM
+; authors: jmh (2023 01)
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 
@@ -100,13 +101,13 @@ loop period = 1, 5
       ctim@token_period@ = CTIM
       
       ; for non-fixed links, computed the congested speed from the DISTANCE variable
-      if (TSIN = 0) cspd@token_period@ = DISTANCE / (CTIM/60.0)
+      if (CNTYPE = "TAZ") cspd@token_period@ = DISTANCE / (CTIM/60.0)
       
       ; set the v/c ratio
       vc@token_period@ = VC
       
       ; keep track of USE code by time of day
-      use@token_period@ = USE
+      use@token_period@ = USECLASS
       
       ; set the assignment-class-specific volumes: non-value-toll-paying classes
       vol@token_period@_da = VOL_DA                     
@@ -171,7 +172,7 @@ run pgm = hwynet
    neti[5] = hwy\iter@token_current_iteration@\x3avgloadEV.net
    
    ; output network includes time-period-specific and 24-hour volumes
-   neto = hwy\iter@token_current_iteration@\avgload5period.net, exclude = USE, VOL, CTIM, VC, CSPD, VDT, VHT,
+   neto = hwy\iter@token_current_iteration@\avgload5period.net, exclude = USECLASS, VOL, CTIM, VC, CSPD, VDT, VHT,
                                                                           VOL_DA, VOL_S2, VOL_S3, VOL_SM, VOL_HV,
                                                                           VOL_DAT, VOL_S2T, VOL_S3T, VOL_SMT, VOL_HVT,
                                                                           VOLT, VOLT_DA, VOLT_S2, VOLT_S3, VOLT_SM, VOLT_HV,
