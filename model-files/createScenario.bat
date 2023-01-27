@@ -1,0 +1,1 @@
+SetUpModel_PBA50.bat  > SetUpModel_PBA50.log 2>&1

@@ -1,0 +1,1 @@
+RunModel.bat  > RunModel.log 2>&1
