@@ -5,35 +5,38 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=D:\Projects\BCM\2015_BaseY_BCM2015
+set M_DIR=D:\2015_BaseY_BCM2015
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
 
 :: set the location of the Travel Model Release
 :: use master for now until we create a release
-set GITHUB_DIR=D:\Projects\travel-model-one
+set GITHUB_DIR=Z:\projects\ccta\31000190\travel-model-one
+set ALL_BCM_INPUTS=Z:\projects\ccta\31000190\BCM_Inputs
+set ALL_TEMP_INPUTS=Z:\projects\ccta\31000190\BCM_Static_Data
+
 
 :: set the location of the networks (make sure the network version, year and variant are correct); currently set to the SharePoint location. 
-set INPUT_NETWORK=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 05 Model Design and Model Environment\travel-model-1.5-BCM\hwy\Base Network\Base Network Externals
-set INPUT_TRN=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 05 Model Design and Model Environment\travel-model-1.5-BCM\trn
+set INPUT_NETWORK=%ALL_BCM_INPUTS%\Base Network Externals
+set INPUT_TRN=%ALL_BCM_INPUTS%\trn
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 ::set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v225_UBI\2050
-set INPUT_LU=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 02 Land Use and Network Refinement\FINAL 2015 LANDUSE FILES
+set INPUT_LU=%ALL_BCM_INPUTS%\FINAL 2015 LANDUSE FILES
 ::Latest PopulationSim results are in the Run_8 folder. 
-set INPUT_POP=C:\Users\USJH706661\WSP O365\Bi-County Travel Demand Model Update - Documents\Task 02 Land Use and Network Refinement\PopulationSim\BiCountyModel PopulationSim Setup\output\Run_8
+set INPUT_POP=%ALL_BCM_INPUTS%\INPUT_POP
 ::Transit Skimming is done separately for now. Delete the next line in the final update
-set TRANSIT_SKIMS=D:\Models\BCM Transit Skims
+set TRANSIT_SKIMS=%ALL_TEMP_INPUTS%\BCM Transit Skims
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
 set UrbanSimScenario=s24
 
 :: set the location of the "input development" directory where other inputs are stored; currently set to the TM1.5 run for most cases
-set INPUT_DEVELOPMENT_DIR=D:\Projects\BCM\travel-model-1.5\INPUT
+set INPUT_DEVELOPMENT_DIR=%ALL_BCM_INPUTS%\downloaded_files\INPUT
 
 :: TODO  set the location of the previous run (where warmstart inputs will be copied):Currently set to be the calibration folder. The trip tables will be used in the 0th iteration HwyAssignment.job step
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=D:\Models\BCM Warmstart
+set PREV_RUN_DIR=%ALL_TEMP_INPUTS%\BCM Warmstart
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
@@ -55,7 +58,7 @@ set BP_OVERRIDE_DIR=D:\Projects\BCM\2015_BaseY_BCM2015\travel-model-overrides
 
 SET computer_prefix=%computername:~0,4%
 mkdir %M_DIR%
-cd %M_DIR%
+cd /d %M_DIR%
 :: copy over CTRAMP
 mkdir CTRAMP\model
 mkdir CTRAMP\runtime
