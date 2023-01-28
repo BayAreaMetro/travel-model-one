@@ -41,20 +41,22 @@ run pgm = matrix
    fileo mato[1] = nonres\ixDailyx4_truck.tpp, mo=1-4, name=vsm_daily, sml_daily, med_daily, lrg_daily
    fileo mato[2] = nonres\ixDailyx4_auto.tpp,  mo=5-8, name=ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
 
-   IX_EX_TRK_SML_SHARE = 0.045  ; move this share to non-large trucks
+   IX_EX_TRK_VSM_SHARE = 0.015  ; move this share to very small trucks
+   IX_EX_TRK_SML_SHARE = 0.015  ; move this share to small trucks
+   IX_EX_TRK_MED_SHARE = 0.015  ; move this share to medium trucks
    IX_EX_TRK_LRG_SHARE = 0.027  ; move this share to large trucks
 
    ; carve out truck traffic, splitting TRK_SML evenly between VSM, SML, MED
-   mw[1] = (1.0/3.0) * IX_EX_TRK_SML_SHARE * mi.1.ix_daily_total
-   mw[2] = (1.0/3.0) * IX_EX_TRK_SML_SHARE * mi.1.ix_daily_total
-   mw[3] = (1.0/3.0) * IX_EX_TRK_SML_SHARE * mi.1.ix_daily_total
-   mw[4] =             IX_EX_TRK_LRG_SHARE * mi.1.ix_daily_total
+   mw[1] = IX_EX_TRK_VSM_SHARE * mi.1.ix_daily_total
+   mw[2] = IX_EX_TRK_SML_SHARE * mi.1.ix_daily_total
+   mw[3] = IX_EX_TRK_MED_SHARE * mi.1.ix_daily_total
+   mw[4] = IX_EX_TRK_LRG_SHARE * mi.1.ix_daily_total
 
    ; leave remaining
-   mw[5] = (1.0 - IX_EX_TRK_SML_SHARE - IX_EX_TRK_LRG_SHARE) * mi.1.ix_daily_da
-   mw[6] = (1.0 - IX_EX_TRK_SML_SHARE - IX_EX_TRK_LRG_SHARE) * mi.1.ix_daily_sr2
-   mw[7] = (1.0 - IX_EX_TRK_SML_SHARE - IX_EX_TRK_LRG_SHARE) * mi.1.ix_daily_sr3
-   mw[8] = (1.0 - IX_EX_TRK_SML_SHARE - IX_EX_TRK_LRG_SHARE) * mi.1.ix_daily_total
+   mw[5] = (1.0 - IX_EX_TRK_VSM_SHARE - IX_EX_TRK_SML_SHARE - IX_EX_TRK_MED_SHARE - IX_EX_TRK_LRG_SHARE) * mi.1.ix_daily_da
+   mw[6] = (1.0 - IX_EX_TRK_VSM_SHARE - IX_EX_TRK_SML_SHARE - IX_EX_TRK_MED_SHARE - IX_EX_TRK_LRG_SHARE) * mi.1.ix_daily_sr2
+   mw[7] = (1.0 - IX_EX_TRK_VSM_SHARE - IX_EX_TRK_SML_SHARE - IX_EX_TRK_MED_SHARE - IX_EX_TRK_LRG_SHARE) * mi.1.ix_daily_sr3
+   mw[8] = (1.0 - IX_EX_TRK_VSM_SHARE - IX_EX_TRK_SML_SHARE - IX_EX_TRK_MED_SHARE - IX_EX_TRK_LRG_SHARE) * mi.1.ix_daily_total
 endrun
 
 run pgm = matrix
