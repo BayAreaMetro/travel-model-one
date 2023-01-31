@@ -29,7 +29,7 @@
 run pgm = hwynet
 
    ; use the standard input network
-   neti = hwy\complete_network_zone_seq.net
+   neti = hwy\avgloadAM_complete.net
    
    ; slim network for non-motorized distance skimming
    neto = hwy\nonMotorized.net, include = A, B, FT, DISTANCE, WALKOK, BIKEOK
