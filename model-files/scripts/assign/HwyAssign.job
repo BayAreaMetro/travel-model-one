@@ -101,7 +101,7 @@ loop period = 1, 3
       token_capfac_num = '3'
 
       ; set the processors to be used for the intrastep multithreading
-      token_intrastep_processlist = '1-32'
+      token_intrastep_processlist = '1-48'
 
       ; switch to use time penalties for transfering to hov lane
       token_hov_xfer_pen = 'li.HOVXPEN'
@@ -116,7 +116,7 @@ loop period = 1, 3
       token_period = 'MD'
       token_capfac = 'parameters capfac = 5'
       token_capfac_num = '5'
-      token_intrastep_processlist = '1-32'
+      token_intrastep_processlist = '1-48'
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.005'
       token_maxiters = 'parameters maxiters = 3'
@@ -125,7 +125,7 @@ loop period = 1, 3
       token_period = 'EV'
       token_capfac = 'parameters capfac = 8'
       token_capfac_num = '8'
-      token_intrastep_processlist = '1-32'
+      token_intrastep_processlist = '1-48'
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.005'
       token_maxiters = 'parameters maxiters = 3'
@@ -377,7 +377,7 @@ loop period = 1, 2
       token_capfac_num = '4'
 
       ; set the processors to be used for the intrastep multithreading
-      token_intrastep_processlist = '1-32'
+      token_intrastep_processlist = '1-48'
 
       ; switch to use time penalties for transfering to hov lane
       token_hov_xfer_pen = 'li.HOVXPEN'
@@ -392,7 +392,7 @@ loop period = 1, 2
       token_period = 'PM'
       token_capfac = 'parameters capfac = 4'
       token_capfac_num = '4'
-      token_intrastep_processlist = '1-32'
+      token_intrastep_processlist = '1-48'
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.005'
       token_maxiters = 'parameters maxiters = 3'
