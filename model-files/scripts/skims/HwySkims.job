@@ -415,7 +415,7 @@ loop period = 1, 5
       mati[7] = skims\LRG_@token_period@_taz.tpp
       
       ; passenger vehicle skims
-      mato[1] = skims\HWYSKM@token_period@_taz.tpp, mo = 1-36, name = TIMEDA,DISTDA,BTOLLDA,FFTDA,HOVDISTDA,
+      mato[1] = skims\HWYSKM@token_period@.tpp, mo = 1-36, name = TIMEDA,DISTDA,BTOLLDA,FFTDA,HOVDISTDA,
                                                                       TOLLTIMEDA,TOLLDISTDA,TOLLBTOLLDA,TOLLVTOLLDA,TOLLFFTDA,TOLLHOVDISTDA,TOLLTOLLDISTDA,
                                                                       TIMES2,DISTS2,BTOLLS2,FFTS2,HOVDISTS2,
                                                                       TOLLTIMES2,TOLLDISTS2,TOLLBTOLLS2,TOLLVTOLLS2,TOLLFFTS2,TOLLHOVDISTS2,TOLLTOLLDISTS2,

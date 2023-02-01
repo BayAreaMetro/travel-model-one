@@ -459,9 +459,9 @@ def config_host_ip(for_logsums, replacements):
 
     # verify that the host IP address relevant to this machine
     ips_here        = socket.gethostbyname_ex(socket.gethostname())[-1]
-    if host_ip_address not in ips_here:
-        print "FATAL: HOST_IP_ADDRESS %s does not match the IP addresses for this machine %s" % (host_ip_address, str(ips_here))
-        sys.exit(2)
+    #if host_ip_address not in ips_here:
+    #    print "FATAL: HOST_IP_ADDRESS %s does not match the IP addresses for this machine %s" % (host_ip_address, str(ips_here))
+    #    sys.exit(2)
 
     # CTRAMP\runtime\JavaOnly_runMain.cmd and CTRAMP\runtime\JavaOnly_runNode*.cmd
     filenames = ["JavaOnly_runMain.cmd"]
@@ -473,14 +473,13 @@ def config_host_ip(for_logsums, replacements):
     # driver number
     last_number = host_ip_address.split(".")[-1]
     driver      = 'driver%s' % last_number
-    for filename in ['jppf-clientDistributed.properties','jppf-clientLocal.properties']:
+    for filename in ['jppf-clientDistributed.properties']:
         filepath = os.path.join("CTRAMP","runtime","config",filename)
         replacements[filepath]["(\njppf.drivers[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % driver
         replacements[filepath]["(\n)(driver[0-9]+\.)"] = r"\g<1>%s." % driver
 
     # server host
     filenames = ['jppf-clientDistributed.properties',
-                 'jppf-clientLocal.properties',
                  'jppf-driver.properties']
     for nodenum in range(5): filenames.append("jppf-node%d.properties" % nodenum)
     for filename in filenames:
@@ -496,12 +495,12 @@ def config_host_ip(for_logsums, replacements):
         # do for logsums.properties
         filepath = os.path.join("CTRAMP","runtime","logsums.properties")
         replacements[filepath]["(\nRunModel.HouseholdServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
-        replacements[filepath]["(\nRunModel.MatrixServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
-
+        #replacements[filepath]["(\nRunModel.MatrixServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
+    
     else:
         filepath = os.path.join("CTRAMP","runtime","mtcTourBased.properties")
         replacements[filepath]["(\nRunModel.HouseholdServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
-        replacements[filepath]["(\nRunModel.MatrixServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
+        #replacements[filepath]["(\nRunModel.MatrixServerAddress[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % host_ip_address
 
 def config_distribution(replacements):
     """

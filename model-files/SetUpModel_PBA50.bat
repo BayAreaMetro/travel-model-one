@@ -56,6 +56,10 @@ set BP_OVERRIDE_DIR=D:\Projects\BCM\2015_BaseY_BCM2015\travel-model-overrides
 ::
 :: ------------------------------------------------------------------------------------------------------
 
+for /f "delims=[] tokens=2" %%a in ('ping -4 -n 1 %ComputerName% ^| findstr [') do set HOST_IP_ADDRESS=%%a
+SET HOST_IP_ADDRESS=localhost
+echo HOST_IP_ADDRESS: %HOST_IP_ADDRESS%
+
 SET computer_prefix=%computername:~0,4%
 mkdir %M_DIR%
 cd /d %M_DIR%
@@ -102,7 +106,7 @@ copy "%INPUT_POP%"\hhFile2015.csv																INPUT\popsyn\hhFile.2015.csv
 copy "%INPUT_POP%"\personFile2015.csv																INPUT\popsyn\personFile.2015.csv
 ::need to update the maximum telecommute rate for San Joaquin County in the telecommute_max_rate_county.csv file
 ::right now using the same values as Marin
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\telecommute\"   		   INPUT\landuse
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\telecommute"   		   INPUT\landuse
 :: nonres
 c:\windows\system32\Robocopy.exe /E "%PREV_RUN_DIR%\tm15_nonres"                   			INPUT\nonres\tm15
 
@@ -111,7 +115,7 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\logsums_dummies"   
 c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\metrics\metrics_FinalBlueprint"     INPUT\metrics
 :: copy the temporary transit skims to M_DIR. Created skims directory.
 mkdir skims
-::c:\windows\system32\Robocopy.exe /E "%TRANSIT_SKIMS%"     										skims
+c:\windows\system32\Robocopy.exe /E "%TRANSIT_SKIMS%"     										skims
 :: warmstart (copy from the previous run)
 mkdir INPUT\warmstart\main
 mkdir INPUT\warmstart\nonres
