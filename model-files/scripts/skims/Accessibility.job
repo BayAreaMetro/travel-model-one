@@ -78,13 +78,13 @@ token_out_of_vehicle_time_weight = '2.0'
 run pgm = matrix
 
    ; am peak period highway skim
-   filei mati[1] = skims\HWYSKMAM_taz.tpp
+   filei mati[1] = skims\HWYSKMAM.tpp
    
    ; midday period highway skim
-   filei mati[2] = skims\HWYSKMMD_taz.tpp 
+   filei mati[2] = skims\HWYSKMMD.tpp 
    
    ; pm peak period highway skim
-   filei mati[3] = skims\HWYSKMPM_taz.tpp
+   filei mati[3] = skims\HWYSKMPM.tpp
    
    ; generic (all line-haul modes weighted equally) am peak period walk-transit-walk skim
    filei mati[4] = skims\trnskmAM_wlk_trn_wlk.tpp
@@ -99,7 +99,7 @@ run pgm = matrix
    filei mati[7] = skims\nonmotskm.tpp
    
    ; zonal data in DBF format (allows to use header rows)
-   filei zdati[1]= landuse\tazData.dbf
+   filei zdati[1]= landuse\ZMAST15.dbf
    
    ; only need calculations for the internal zones (xxx check that this is true xxx)
    zones = 6593                 
@@ -143,7 +143,7 @@ run pgm = matrix
    
      ; get the destination zone employment variables from the TAZ data file (use column header names)
      retailEmp = zi.1.RETEMPN[j] 
-     totalEmp  = zi.1.TOTEMP[j]
+     totalEmp  = zi.1.TOTEMPN[j]
      
      ; initialize origin/destination specific values
      auPkRetail = 0.0
