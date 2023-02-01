@@ -17,6 +17,9 @@
 :: Step 1:  Set the necessary path variables
 ::
 :: ------------------------------------------------------------------------------------------------------
+for /f "delims=[] tokens=2" %%a in ('ping -4 -n 1 %ComputerName% ^| findstr [') do set HOST_IP_ADDRESS=%%a
+SET HOST_IP_ADDRESS=localhost
+echo HOST_IP_ADDRESS: %HOST_IP_ADDRESS%
 
 :: Set local vs distributed run type. Only local option is implemented for BCM
 set RUNTYPE=LOCAL
@@ -304,7 +307,7 @@ set ITER=1
 set PREV_ITER=1
 set WGT=1.0
 set PREV_WGT=0.00
-set SAMPLESHARE=0.05
+set SAMPLESHARE=0.01
 set SEED=0
 
 :: Runtime configuration: set the workplace shadow pricing parameters
@@ -334,7 +337,7 @@ set ITER=2
 set PREV_ITER=1
 set WGT=0.50
 set PREV_WGT=0.50
-set SAMPLESHARE=0.30
+set SAMPLESHARE=0.05
 set SEED=0
 
 :: Runtime configuration: set the workplace shadow pricing parameters
@@ -364,7 +367,7 @@ set ITER=3
 set PREV_ITER=2
 set WGT=0.33
 set PREV_WGT=0.67
-set SAMPLESHARE=0.50
+set SAMPLESHARE=0.20
 set SEED=0
 
 :: Runtime configuration: set the workplace shadow pricing parameters
