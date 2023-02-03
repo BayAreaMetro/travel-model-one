@@ -15,7 +15,7 @@ INPUT_WORKBOOK   <- file.path(WORKING_DIR, "NTD Ridership and Service Data.xlsx"
 INPUT_WORKSHEETS <- c("VRM","VRH","UPT") # vehicle route miles, vehicle route hours, unlinked passenger trips
 INPUT_AGENCY_CSV <- file.path(WORKING_DIR, "AgencyToCommonAgencyName.csv")
 
-OUTPUT_FILE     <- file.path(WORKING_DIR, "NTD_long.rdata")
+OUTPUT_FILE      <- file.path(WORKING_DIR, "NTD_long.rdata")
 
 agency_df <- read.csv(file=INPUT_AGENCY_CSV)
 
@@ -55,16 +55,29 @@ for (worksheet in INPUT_WORKSHEETS) {
     day_one   = sprintf("%d-%02d-01", year, month_int),
     days_in_month = lubridate::days_in_month(as.Date(day_one))) %>%
     select(-day_one)
+
+  # add very simple average daily
+  NTD_long_df <- mutate(NTD_long_df,
+    average_daily = !!as.symbol(worksheet) / days_in_month
+  )
   
   # rename column
   if (worksheet=="VRM") {
-    NTD_long_df <- rename(NTD_long_df, Vehicle.Revenue.Miles=VRM)
+    NTD_long_df <- rename(NTD_long_df, 
+      Monthly.Vehicle.Revenue.Miles=VRM,
+      avg.daily.Vehicle.Revenue.Miles=average_daily
+    )
   }
   if (worksheet=="VRH") {
-    NTD_long_df <- rename(NTD_long_df, Vehicle.Revenue.Hours=VRH)
+    NTD_long_df <- rename(NTD_long_df, 
+      Monthly.Vehicle.Revenue.Hours=VRH,
+      average.daily.Vehicle.Revenue.Hours=average_daily
+    )
   }
   if (worksheet=="UPT") {
-    NTD_long_df <- rename(NTD_long_df, Unlinked.Passenger.Trips=UPT)
+    NTD_long_df <- rename(NTD_long_df, 
+      Monthly.Unlinked.Passenger.Trips=UPT,
+      average.daily.Unlinked.Passenger.Trips=average_daily)
   }
 
   # Write it to rData
@@ -72,3 +85,4 @@ for (worksheet in INPUT_WORKSHEETS) {
   print(paste("Saving", out_file))
   save(NTD_long_df, file=out_file)
 }
+
