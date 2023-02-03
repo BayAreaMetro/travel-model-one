@@ -40,7 +40,7 @@ set PREV_RUN_DIR=%ALL_TEMP_INPUTS%\BCM Warmstart
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
-set PARAMS=%GITHUB_DIR%\config\params_PBA50_Blueprint2050.properties
+set PARAMS=%GITHUB_DIR%\config\params_2015.properties
 :: test superdistrict-based telecommute constants
 :: for no project or base years, this will get generated/stay at zero
 set TELECOMMUTE_CONFIG=%GITHUB_DIR%\utilities\telecommute\telecommute_constants_2050.csv
