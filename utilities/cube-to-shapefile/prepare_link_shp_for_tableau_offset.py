@@ -4,7 +4,7 @@ Does two things:
 - convert to crs 4326
 - extract the X and Y of each link's A, B nodes
 
-Example call: python prepare_link_shp_for_tableau_offset.py L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP02_BPALTsegmented_03_SimpleTolls01\OUTPUT\shapefile network_links.shp
+Example call: python prepare_link_shp_for_tableau_offset.py L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\2035_TM152_NGF_NP02_BPALTsegmented_03_SimpleTolls01\\OUTPUT\\shapefile network_links.shp
 
 Args: 
     links.shp: network links shapefile
