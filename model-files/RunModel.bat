@@ -319,6 +319,8 @@ call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
 :: Runtime configuration: update telecommute constants using iter1 results
+:: For regular model run (i.e., when we are not calibrating TeleCommuteConstants, this step is basically ignored, 
+:: see Line 296 onwards in the preprocess\updateTelecommuteConstants.py script. We can skip it, but in case we want to calibrate telecommute, the script is updated.
 python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
 if ERRORLEVEL 1 goto done
 :: copy over result for use
