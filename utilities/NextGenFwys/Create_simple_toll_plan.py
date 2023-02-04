@@ -15,6 +15,7 @@
 #
 # -------------------------------------------------------------------------------------
 
+
 import os
 import pandas as pd
 import geopandas as gpd
@@ -26,10 +27,10 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 # for copying files
 import shutil
 
-
+#-------------------
 # user settings
-# (they are determined based on a discussion with the planners)
-
+# (to be determined based on discussions our planning colleagues)
+#-------------------
 # may add a config file to store these configs, but not a high priority
 # toll rates in cents
 high_toll_cents   = 30
@@ -40,6 +41,11 @@ high_cutoff    = 23
 medium_cutoff  = 13
 low_cutoff     = 4
 
+# our planning colleagues have done some work to group the links into 8 major groups and 18 minor groups, based on their geography and congestion levels
+# please indicate whether you'd like to use the major groups or the minor groups in the averaging process
+# by typing either "major" or "minor" in the below
+grouping_option = "major"
+
 # specify "yes" below if there will be no midday tolls
 no_tolls_in_midday = "yes"
 
@@ -48,7 +54,7 @@ modelrun_with_DynamicTolling = "2035_TM152_NGF_NP02_BPALTsegmented_03_SensDyn00_
 modelrun_with_NoProject      = "2035_TM152_NGF_NP02"
 
 # output directory
-output_dir = "INPUT_DEVELOPMENT/Static_toll_plans/Test4"
+output_dir = "INPUT_DEVELOPMENT/Static_toll_plans/Test6"
 
 
 # ------------------
@@ -77,15 +83,14 @@ TollclassGrouping = list(TollclassGrouping)
 TollclassGrouping_df = pd.DataFrame(TollclassGrouping, columns=cols)
 # TollclassGrouping_df = pd.read_csv('X:/travel-model-one-master/utilities/NextGenFwys/TollclassGrouping.csv', index_col=False, sep=",")
 
-# ------------------
-# Create data for a toll rate histogram - still to do
-#-------------------
-
-# calculate the toll rate of each link (this step isn't really needed)
-#loadednetwork_100psegs_shp_gdf["toll_rate am da 100plus"] = loadednetwork_100psegs_shp_gdf["TOLLAM_DA"] / loadednetwork_100psegs_shp_gdf["DISTANCE"]
-
-
+#-----------------------------------------------------
 # merge the tollclass grouping to the loaded network 
+#-----------------------------------------------------
+if grouping_option == "major":
+    TollclassGrouping_df["Tollclass Group"]=TollclassGrouping_df["Grouping major"]
+if grouping_option == "minor":
+    TollclassGrouping_df["Tollclass Group"]=TollclassGrouping_df["Grouping minor"]
+
 loadednetwork_100psegs_shp_gdf = pd.merge(loadednetwork_100psegs_shp_gdf,
                              TollclassGrouping_df,
                              how='left',
@@ -105,7 +110,7 @@ loadednetwork_100psegs_shp_gdf = loadednetwork_100psegs_shp_gdf.loc[loadednetwor
 #-------------------
 TimePeriods = ["EA", "AM", "MD", "PM", "EV"]
 for tp in TimePeriods:
-    print("\n", tp)
+    # print("\n", tp)
     if tp=="EA":
         loadednetwork_100psegs_shp_gdf['USEtp']     = loadednetwork_100psegs_shp_gdf['USEEA']
         loadednetwork_100psegs_shp_gdf['TOLLtp_DA'] = loadednetwork_100psegs_shp_gdf['TOLLEA_DA']
@@ -123,10 +128,10 @@ for tp in TimePeriods:
         loadednetwork_100psegs_shp_gdf['TOLLtp_DA'] = loadednetwork_100psegs_shp_gdf['TOLLEV_DA']  
 
     # keep only the variables that are needed
-    streamlined_shp_df = loadednetwork_100psegs_shp_gdf[['Grouping major','Grouping minor','USEtp','DISTANCE', 'TOLLtp_DA']] 
+    streamlined_shp_df = loadednetwork_100psegs_shp_gdf[['Grouping major','Tollclass Group','USEtp','DISTANCE', 'TOLLtp_DA']] 
 
     # calculate average toll rate
-    SimpleToll_tp_df = streamlined_shp_df.groupby(['Grouping minor', 'USEtp'], as_index=False).sum()
+    SimpleToll_tp_df = streamlined_shp_df.groupby(['Tollclass Group', 'USEtp'], as_index=False).sum()
     SimpleToll_tp_df['avg_toll_rate'] = SimpleToll_tp_df['TOLLtp_DA']/SimpleToll_tp_df['DISTANCE']
 
     # apply a simple rule to convert the results to high, medium, low toll
@@ -160,8 +165,8 @@ for tp in TimePeriods:
         # drop variables that are not needed for subsequent processing
         SimpleToll_EA_df.drop(columns=['DISTANCE','TOLLtp_DA', 'avg_toll_rate','simplified_toll'], inplace=True)
         # temp output 
-        output_filename1 = os.path.join(project_dir, output_dir,"average_n_simplified_toll_rate_EA.csv")
-        SimpleToll_EA_df.to_csv(output_filename1, header=True, index=False)
+        #output_filename1 = os.path.join(project_dir, output_dir,"average_n_simplified_toll_rate_EA.csv")
+        #SimpleToll_EA_df.to_csv(output_filename1, header=True, index=False)
     if tp=="AM":
         SimpleToll_tp_df['avg_toll_rate_AM']       = SimpleToll_tp_df['avg_toll_rate']
         SimpleToll_tp_df['simplified_toll_AM']     = SimpleToll_tp_df['simplified_toll']
@@ -169,8 +174,8 @@ for tp in TimePeriods:
         # drop variables that are not needed for subsequent processing
         SimpleToll_AM_df.drop(columns=['DISTANCE','TOLLtp_DA', 'avg_toll_rate','simplified_toll'], inplace=True)
         # temp output 
-        output_filename1 = os.path.join(project_dir, output_dir,"average_n_simplified_toll_rate_AM.csv")
-        SimpleToll_AM_df.to_csv(output_filename1, header=True, index=False)
+        #output_filename1 = os.path.join(project_dir, output_dir,"average_n_simplified_toll_rate_AM.csv")
+        #SimpleToll_AM_df.to_csv(output_filename1, header=True, index=False)
     if tp=="MD":
         SimpleToll_tp_df['avg_toll_rate_MD']       = SimpleToll_tp_df['avg_toll_rate']
         SimpleToll_tp_df['simplified_toll_MD']     = SimpleToll_tp_df['simplified_toll']
@@ -197,29 +202,29 @@ for tp in TimePeriods:
         SimpleToll_5tp_df = pd.merge(SimpleToll_5tp_df,
                               SimpleToll_AM_df,
                               how='outer',
-                              left_on=['Grouping minor', 'USEtp'], 
-                              right_on = ['Grouping minor', 'USEtp'],
+                              left_on=['Tollclass Group', 'USEtp'], 
+                              right_on = ['Tollclass Group', 'USEtp'],
                               indicator=False)
     if tp=="MD":
         SimpleToll_5tp_df = pd.merge(SimpleToll_5tp_df,
                               SimpleToll_MD_df,
                               how='outer',
-                              left_on=['Grouping minor', 'USEtp'], 
-                              right_on = ['Grouping minor', 'USEtp'],
+                              left_on=['Tollclass Group', 'USEtp'], 
+                              right_on = ['Tollclass Group', 'USEtp'],
                               indicator=False)
     if tp=="PM":
         SimpleToll_5tp_df = pd.merge(SimpleToll_5tp_df,
                               SimpleToll_PM_df,
                               how='outer',
-                              left_on=['Grouping minor', 'USEtp'], 
-                              right_on = ['Grouping minor', 'USEtp'],
+                              left_on=['Tollclass Group', 'USEtp'], 
+                              right_on = ['Tollclass Group', 'USEtp'],
                               indicator=False)
     if tp=="EV":
         SimpleToll_5tp_df = pd.merge(SimpleToll_5tp_df,
                               SimpleToll_EV_df,
                               how='outer',
-                              left_on=['Grouping minor', 'USEtp'], 
-                              right_on = ['Grouping minor', 'USEtp'],
+                              left_on=['Tollclass Group', 'USEtp'], 
+                              right_on = ['Tollclass Group', 'USEtp'],
                               indicator=False)
 
         # temp output 
@@ -232,8 +237,8 @@ for tp in TimePeriods:
 TollClass_SimpleToll_df = pd.merge(TollclassGrouping_df,
                               SimpleToll_5tp_df,
                               how='outer',
-                              left_on=['Grouping minor'], 
-                              right_on = ['Grouping minor'],
+                              left_on=['Tollclass Group'], 
+                              right_on = ['Tollclass Group'],
                               indicator=False)
 
 
