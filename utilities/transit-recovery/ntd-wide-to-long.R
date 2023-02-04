@@ -19,6 +19,9 @@ OUTPUT_FILE      <- file.path(WORKING_DIR, "NTD_long.rdata")
 
 agency_df <- read.csv(file=INPUT_AGENCY_CSV)
 
+# model-specific summary
+NTD_model_df <- data.frame()
+
 for (worksheet in INPUT_WORKSHEETS) {
   NTD_df <- read_excel(path=INPUT_WORKBOOK, sheet=worksheet)
 
@@ -65,7 +68,7 @@ for (worksheet in INPUT_WORKSHEETS) {
   if (worksheet=="VRM") {
     NTD_long_df <- rename(NTD_long_df, 
       Monthly.Vehicle.Revenue.Miles=VRM,
-      avg.daily.Vehicle.Revenue.Miles=average_daily
+      average.daily.Vehicle.Revenue.Miles=average_daily
     )
   }
   if (worksheet=="VRH") {
@@ -84,5 +87,39 @@ for (worksheet in INPUT_WORKSHEETS) {
   out_file <- str_replace(OUTPUT_FILE, ".rdata", paste0("_",worksheet,".rdata"))
   print(paste("Saving", out_file))
   save(NTD_long_df, file=out_file)
+
+  INDEX_COLS <- c(
+    "5 digit NTD ID","4 digit NTD ID","Agency","Active","Reporter Type",
+    "UZA","UZA Name","Modes","TOS","Common.Agency.Name")
+
+  # model-specific summary -- filter to just model months
+  NTD_long_df <- filter(NTD_long_df, month %in% c('MAR','APR','MAY','SEP','OCT','NOV'))
+  print(paste("Filtering to model months:",nrow(NTD_long_df),"rows"))
+  if (nrow(NTD_model_df) == 0)
+    NTD_model_df <- NTD_long_df
+  else {
+     NTD_model_df <- full_join(NTD_model_df, NTD_long_df,
+      by=append(INDEX_COLS, c("month","year","month_int","days_in_month")))
+    print(paste("Joining with other variables; nrow: ",nrow(NTD_model_df),"rows"))
+    # print(head(NTD_model_df))
+  }
 }
 
+# model data has been filtered to model months -- save this version
+model_output_file <- file.path(WORKING_DIR, "NTD_monthly_model.rdata")
+print(paste("Saving", nrow(NTD_model_df), "rows to",model_output_file))
+save(NTD_model_df, file=model_output_file)
+
+# plus a yearly version
+NTD_model_df <- group_by(NTD_model_df, across(all_of(append(INDEX_COLS, "year")))) %>%
+  summarize(
+    average.Monthly.Vehicle.Revenue.Miles   =mean(Monthly.Vehicle.Revenue.Miles),
+    average.daily.Vehicle.Revenue.Miles     =mean(average.daily.Vehicle.Revenue.Miles),
+    average.Monthly.Vehicle.Revenue.Hours   =mean(Monthly.Vehicle.Revenue.Hours),
+    average.daily.Vehicle.Revenue.Hours     =mean(average.daily.Vehicle.Revenue.Hours),
+    average.Monthly.Unlinked.Passenger.Trips=mean(Monthly.Unlinked.Passenger.Trips),
+    average.daily.Unlinked.Passenger.Trips  =mean(average.daily.Unlinked.Passenger.Trips)
+  )
+model_output_file <- file.path(WORKING_DIR, "NTD_yearly_model.rdata")
+print(paste("Saving", nrow(NTD_model_df), "rows to",model_output_file))
+save(NTD_model_df, file=model_output_file)
