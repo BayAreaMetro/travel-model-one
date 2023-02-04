@@ -26,7 +26,7 @@ PARAMS_FILENAME = os.path.join('INPUT','params.properties')
 
 # input and output; input {}=previous calib iter, output {}=CALIB_ITER
 TELECOMMUTE_CONSTANTS_FILE = os.path.join('main','telecommute_constants_{:02d}.csv')
-
+TELECOMMUTE_CONSTANTS_FILE_FULL = os.path.join('main','telecommute_constants_full_{:02d}.csv')
 TARGET_AUTO_SHARE  = 0.40
 # if max_telecommute_rate +/- this, then leave it alone
 TELECOMMUTE_RATE_THRESHHOLD = 0.005
@@ -281,8 +281,10 @@ if __name__ == '__main__':
         telecommute_df.rename(columns={'telecommuteConstant':'telecommuteConstant_prev'}, inplace=True)
 
         # join with work_mode_SD_df
-        telecommute_df = pandas.merge(left=telecommute_df, right=work_mode_SD_df) 
+        telecommute_df = pandas.merge(left=telecommute_df, right=work_mode_SD_df, how='left')
+        for column in ['auto_share','telecommute_rate','max_telecommute_rate']:
 
+            telecommute_df[column]=telecommute_df[column].fillna(0)
         # THIS IS IT
         # start at previous value
         telecommute_df['telecommuteConstant'] = telecommute_df['telecommuteConstant_prev']
@@ -311,7 +313,10 @@ if __name__ == '__main__':
 
 
     # write it with calib iter
-    telecommute_df.to_csv(TELECOMMUTE_CONSTANTS_FILE.format(int(CALIB_ITER)), header=True, index=False)
+    telecommute_df.sort_values(by=['ZONE'], ascending=True, inplace=True)
+    telecommute_df.to_csv(TELECOMMUTE_CONSTANTS_FILE_FULL.format(int(CALIB_ITER)), header=True, index=False)
+    
+    telecommute_df[['ZONE','SD','COUNTY','CALIB_ITER','telecommuteConstant']].to_csv(TELECOMMUTE_CONSTANTS_FILE.format(int(CALIB_ITER)), header=True, index=False)
     print("Wrote {} lines to {}".format(len(telecommute_df), TELECOMMUTE_CONSTANTS_FILE.format(int(CALIB_ITER))))
 
     sys.exit(0)
