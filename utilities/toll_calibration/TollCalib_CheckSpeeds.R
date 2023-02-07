@@ -25,6 +25,9 @@ ITER <- as.numeric(ITER)
 # MAX_TOLL <- Sys.getenv("MAX_TOLL")
 # MAX_TOLL <- as.numeric(MAX_TOLL)
 
+HOV2_discount_factor <- Sys.getenv("DiscountFactor_HOV2")
+HOV3_discount_factor <- Sys.getenv("DiscountFactor_HOV3")
+
 #############################################################
 # specify the loaded network, unloaded network and other inputs
 #############################################################
@@ -363,6 +366,26 @@ tolls_new_df <- tolls_new_df  %>%
                              mutate(tollmd_s2 = ifelse(tollmd_da_new>1, tollmd_da_new/2, tollmd_s2))
 tolls_new_df <- tolls_new_df  %>%
                              mutate(tollpm_s2 = ifelse(tollpm_da_new>1, tollpm_da_new/2, tollpm_s2))
+
+
+# for all-lane tolling, s2 and s3 tolls are dependant on the HOV discount
+
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollam_s2 = ifelse(TOLLCLASS>700000, tollam_da_new*HOV2_discount_factor, tollam_s2))
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollmd_s2 = ifelse(TOLLCLASS>700000, tollmd_da_new*HOV2_discount_factor, tollmd_s2))
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollpm_s2 = ifelse(TOLLCLASS>700000, tollpm_da_new*HOV2_discount_factor, tollpm_s2))
+
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollam_s3 = ifelse(TOLLCLASS>700000, tollam_da_new*HOV3_discount_factor, tollam_s3))
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollmd_s3 = ifelse(TOLLCLASS>700000, tollmd_da_new*HOV3_discount_factor, tollmd_s3))
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollpm_s3 = ifelse(TOLLCLASS>700000, tollpm_da_new*HOV3_discount_factor, tollpm_s3))
+
+
+
 
 tolls_new_df <- tolls_new_df  %>% select(-c(TOLLCLASS, USE, tollam_da_new, tollmd_da_new, tollpm_da_new, s2toll_mandatory))
 # TOLLCLASS is a "grouping variable" and can't be deleted unless it's ungrouped
