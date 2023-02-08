@@ -423,7 +423,7 @@ loop period = 1, 2
 		CAP_HRLN = Cap(1,CAPCLASS)
 		CAP_LANE = CAP_HRLN * @token_capfac_num@
 		CAP_TOTAL = CAP_LANE * LANES
-		CAP_TOTFAC = CAP_TOTAL * 1.1
+		CAP_TOTFAC = CAP_TOTAL
 			
 		ENDPHASE
 		
