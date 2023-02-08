@@ -12,6 +12,12 @@ SR3COSTSHARE  = 2.50      ; scales toll cost for SR3+ occupancy
 TRKPCE        = 2.0       ; passenger car equivalent for combo trucks
 FIRSTVALUE    = 31	      ; first value toll has a TOLL code of 31
 
+; set by RuntimeConfiguration.py 
+; TruckTripDistribution gravity LOS term is a blended travel time
+; This configures how much is tolled time vs non-tolled (free) time
+; 0.0 = non-tolled (free) time only, 1.0 = tolled time only
+TRUCK_DISTRIB_LOS_TOLL_PART = x.xx
+
 ; set by RuntimeConfiguration.py -- AVs
 AV_PCE_FT01  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeway-to-freeway ramp
 AV_PCE_FT02  = xx.xx     ; a factor between 0 to 1 - value is 1 in no AV scenario, FT = freeway 

@@ -15,7 +15,9 @@
 ;             which contain truck-class specific estimates of congested travel time (in minutes) using the following
 ;             table names:(a) timeVSM, which is the time for very small trucks; (b) timeSML, which is the time for 
 ;             small trucks; (c) timeMED, which is the time for medium trucks; and, (d) timeLRG, which is the time
-;             for large trucks.
+;             for large trucks. 
+;         (1a) Added on 2022-12-01: Uses tolled time skims as well; the portion uses is configured by
+;             TRUCK_DISTRIB_LOS_TOLL_PART which is configured in hwyParam.block
 ;         (2) Trip generation results in ASCII format with the following fields (each 12 columns wide): (a) zone 
 ;             number; (b) very small truck trip productions; (c) very small truck trip attractions; (d) small truck
 ;             trip productions; (e) small truck trip attractions; (f) medium truck trip productions; (g) medium 
@@ -38,8 +40,8 @@
 ;           (2) TruckTimeOfDay.job, which applies diurnal factors to the daily trips generated here. 
 ;           (3) TruckTollChoice.job, which applies a toll/no toll choice model for trucks.
 ;
-; version:  Travel Model One (v 0.3)
-; authors:  dto (2011 09 08); dto (2010 08 31); cp (date unknown)
+; version:  Travel Model One (v 0.3-1.5)
+; authors:  lmz (2022 12 01); dto (2011 09 08); dto (2010 08 31); cp (date unknown)
 ;
 ;
 ; ----------------------------------------------------------------------------------------------------------------
@@ -53,6 +55,8 @@ run pgm = matrix
    ; distribute via cluster
    DistributeIntrastep processid = 'CTRAMP', processlist = 1-2, commpath = '%COMMPATH%', saveprn = f
 
+   read file = ctramp\scripts\block\hwyParam.block
+
    ; read in the AM peak period commercial skims
    filei mati[1] = skims\com_hwyskimAM.tpp
    
@@ -64,17 +68,20 @@ run pgm = matrix
    
    ; compute the blended travel time for each truck class
    ;   - very small
-   mw[1] = mi.1.timeVSM * 1.0/3.0 + mi.2.timeVSM * 2.0/3.0
+   mw[1] = ((mi.1.timeVSM     * 1.0/3.0) + (mi.2.timeVSM *     2.0/3.0))*(1.0-TRUCK_DISTRIB_LOS_TOLL_PART) +
+           ((mi.1.tolltimeVSM * 1.0/3.0) + (mi.2.tolltimeVSM * 2.0/3.0))*(    TRUCK_DISTRIB_LOS_TOLL_PART)
    
    ;   - small
-   mw[2] = mi.1.timeSML * 1.0/3.0 + mi.2.timeSML * 2.0/3.0
+   mw[2] = ((mi.1.timeSML     * 1.0/3.0) + (mi.2.timeSML     * 2.0/3.0))*(1.0-TRUCK_DISTRIB_LOS_TOLL_PART) +
+           ((mi.1.tolltimeSML * 1.0/3.0) + (mi.2.tolltimeSML * 2.0/3.0))*(    TRUCK_DISTRIB_LOS_TOLL_PART)
    
    ;   - medium
-   mw[3] = mi.1.timeMED * 1.0/3.0 + mi.2.timeMED * 2.0/3.0
-   
-   ;   - large
-   mw[4] = mi.1.timeLRG * 1.0/3.0 + mi.2.timeLRG * 2.0/3.0
+   mw[3] = ((mi.1.timeMED     * 1.0/3.0) + (mi.2.timeMED     * 2.0/3.0))*(1.0-TRUCK_DISTRIB_LOS_TOLL_PART) +
+           ((mi.1.tolltimeMED * 1.0/3.0) + (mi.2.tolltimeMED * 2.0/3.0))*(    TRUCK_DISTRIB_LOS_TOLL_PART)
 
+   ;   - large
+   mw[4] = (mi.1.timeLRG     * 1.0/3.0) + (mi.2.timeLRG     * 2.0/3.0)*(1.0-TRUCK_DISTRIB_LOS_TOLL_PART) +
+           (mi.1.tolltimeLRG * 1.0/3.0) + (mi.2.tolltimeLRG * 2.0/3.0)*(    TRUCK_DISTRIB_LOS_TOLL_PART)
 endrun
 
 ; step two: apply the distribution models
