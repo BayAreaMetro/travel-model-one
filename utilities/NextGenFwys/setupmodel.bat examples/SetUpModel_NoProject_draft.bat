@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07
+set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_MinToll
 
 :: Should strategies be included? AddStrategies=Yes for all Blueprint Project and all NGF runs; AddStrategies=No for Blueprint NoProject runs.
 :: The NGF NoProject scenario includes some Blueprint strategies and excludes some (e.g. Regional Transit Fares and Vision Zero).
@@ -169,14 +169,9 @@ if %MODEL_YEAR_NUM% GEQ 2035 (
 :: ------
 :: Same as PPA project 6100_TransitFare_Integration
 
-:: exclude "T4 - Reform Regional Transit Fare Policy" from NFG NoProject
-if %NGFNoProject%==Yes goto SkipRegionalTransitFare
-
 if %MODEL_YEAR_NUM% GEQ 2035 (
   copy /Y "%BP_OVERRIDE_DIR%\Regional_Transit_Fare_Policy\TransitSkims.job"     CTRAMP\scripts\skims
 )
-
-:SkipRegionalTransitFare
 
 :: means-based fare discount -- 50% off for Q1 -- are config in the parmas.properties file (see step 1)
 
