@@ -35,7 +35,8 @@ set PREV_RUN_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_N
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
-set PARAMS=\\mainmodel\MainModelShare\travel-model-one-master\config\params_PBA50_Blueprint2035.properties
+:: set PARAMS=\\mainmodel\MainModelShare\travel-model-one-master\config\params_PBA50_Blueprint2035.properties
+set PARAMS=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_MinToll\INPUT_prep\params_NGF_NoProject.properties
 
 :: superdistrict-based telecommute constants
 :: for no project or base years, this will get generated/stay at zero
