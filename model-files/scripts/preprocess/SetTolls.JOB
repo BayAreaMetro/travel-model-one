@@ -65,7 +65,7 @@ RUN PGM=HWYNET
 
    ; load toll values
    lookup lookupi=1, name=tolls, 
-     lookup[1]= FAC_INDEX, result=TOLLCLASS,
+     lookup[1]= FAC_INDEX, result=TOLLBOOTH,	;the tolls.csv file for BCM renames the column to TOLLBOOTH. Will make sure if in the final tolls.csv file it is named correctly.
      lookup[2]= FAC_INDEX, result=TOLLSEG,
      lookup[3]= FAC_INDEX, result=USE,
      lookup[4]= FAC_INDEX, result=TOLLEA_DA,
