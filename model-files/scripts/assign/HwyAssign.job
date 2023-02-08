@@ -423,7 +423,7 @@ loop period = 1, 2
 		CAP_HRLN = Cap(1,CAPCLASS)
 		CAP_LANE = CAP_HRLN * @token_capfac_num@
 		CAP_TOTAL = CAP_LANE * LANES
-		CAP_TOTFAC = CAP_TOTAL * 1.1
+		CAP_TOTFAC = CAP_TOTAL
 			
 		ENDPHASE
 		
@@ -612,12 +612,12 @@ loop period = 1, 2
          read file = ctramp\scripts\block\SpeedFlowCurve.block
 
          ; set the generalized cost functions (same as before, only now we start with "time")
-         lw.gencost_da = lw.time + (0.6/vot) * (distance*AUTOOPC + li.TOLL@token_period@_DA)
-         lw.gencost_s2 = lw.time + (0.6/vot) * (distance*AUTOOPC + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
-         lw.gencost_s3 = lw.time + (0.6/vot) * (distance*AUTOOPC + li.TOLL@token_period@_S3 / sr3costshare) + @token_hov_xfer_pen@
+         lw.gencost_da = time + (0.6/vot) * (distance*AUTOOPC + li.TOLL@token_period@_DA)
+         lw.gencost_s2 = time + (0.6/vot) * (distance*AUTOOPC + li.TOLL@token_period@_S2 / sr2costshare)  + @token_hov_xfer_pen@
+         lw.gencost_s3 = time + (0.6/vot) * (distance*AUTOOPC + li.TOLL@token_period@_S3 / sr3costshare) + @token_hov_xfer_pen@
 
-         lw.gencost_sml = lw.time + (0.6/truckvot) * (distance*SMTROPC + li.TOLL@token_period@_SML)
-         lw.gencost_lrg = lw.time + (0.6/truckvot) * (distance*LRTROPC + li.TOLL@token_period@_LRG)
+         lw.gencost_sml = time + (0.6/truckvot) * (distance*SMTROPC + li.TOLL@token_period@_SML)
+         lw.gencost_lrg = time + (0.6/truckvot) * (distance*LRTROPC + li.TOLL@token_period@_LRG)
 
       endphase
    endrun

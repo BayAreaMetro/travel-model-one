@@ -1,40 +1,24 @@
-
-;************** BPR Variation for Freeway Links ************
+;************** BPR Variation for Freeway Links ************;comes from travel model two network rebuild branch
+  FUNCTION TC[3] = T0 * (1 + 0.20 * ( (V/C)/0.75 )^6)
   FUNCTION TC[1] = T0 * (1 + 0.20 * ( (V/C)/0.75 )^6)
-  FUNCTION TC[2] = T0 * (1 + 0.20 * ( (V/C)/0.75 )^6)
-  FUNCTION TC[8] = T0 * (1 + 0.20 * ( (V/C)/0.75 )^6)
-  FUNCTION TC[9] = T0 * (1 + 0.20 * ( (V/C)/0.75 )^6) 
 ;***********************************************************
 
 ;*********************************   Akcelik Curve  ****************************************
 
 FUNCTION
-TC[3]  = 60 * ( (DISTANCE/LI.FFS) + ( 0.25 *( ( (V/C) - 1) + ( ( ( ( (V/C) - 1)^2 ) + (16 * (lw.Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )
+TC[2]  = 60 * ( (DISTANCE/LI.FFS) + ( 0.25 *( ( (V/C) - 1) + ( ( ( ( (V/C) - 1)^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )
 
 FUNCTION
-TC[4]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1)^2 ) + (16 * (lw.Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )
+TC[4]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )
 
 FUNCTION
-TC[5]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1)^2 ) + (16 * (lw.Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )
+TC[5]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )
 
 FUNCTION
-TC[6]  = T0    ;For time based links congested time TC = coded time OT = T0
+TC[6]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )
 
 FUNCTION
-TC[7]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (lw.Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) ) 
+TC[7]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )
 
 FUNCTION
-TC[10] = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (lw.Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )  
-
-;copied from travel model two
-FUNCTION
-TC[11]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (lw.Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) ) 
-
-FUNCTION
-TC[12]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1)^2 ) + (16 * (lw.Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )
-
-FUNCTION
-TC[13]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1)^2 ) + (16 * (lw.Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )
-
-FUNCTION
-TC[14]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1)^2 ) + (16 * (lw.Ja10000/10000) * (V/C) * (DISTANCE^2) ) )^0.5) ) ) )
+TC[8]  = T0    ;For time based links congested time TC = coded time OT = T0
