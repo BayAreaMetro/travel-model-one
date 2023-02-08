@@ -56,6 +56,7 @@ RUN PGM=HWYNET
    neti = hwy\complete_network_zone_seq.net
 
    ; write out to the same name with the added variables   
+   ; no need to keep FT-specific AV_PCE as the relevant version has been added to the link
    neto = hwy\complete_network_tolls.net
 
    ; the input tolls file
@@ -64,7 +65,7 @@ RUN PGM=HWYNET
 
    ; load toll values
    lookup lookupi=1, name=tolls, 
-     lookup[1]= FAC_INDEX, result=TOLLBOOTH,
+     lookup[1]= FAC_INDEX, result=TOLLCLASS,
      lookup[2]= FAC_INDEX, result=TOLLSEG,
      lookup[3]= FAC_INDEX, result=USE,
      lookup[4]= FAC_INDEX, result=TOLLEA_DA,
@@ -209,4 +210,28 @@ RUN PGM=HWYNET
      
    ENDIF
     
+	    ; check that all bridge (non-value tolls) are set
+    if ((TOLLBOOTH > 0) && (TOLLBOOTH < FIRSTVALUE))
+      ; some peak period DA toll must be non-zero.
+      ; note this includes HOV lanes because they get converted to GP during non-peak periods via token_hov_to_freeflow
+      ; in CalculateFiveHighwayNetworks.job
+      IF ((TOLLAM_DA == 0) && (TOLLPM_DA == 0))
+        print LIST="Link ",A,"-",B," has TOLLCLASS ", TOLLCLASS," and no non-zero peak period DA tolls"
+        ABORT MSG ="Link has TOLLCLASS and no non-zero peak period tolls; see log file"
+      ENDIF
+    ENDIF
+
+    ; AV impacts on roadway capacity - represented by adjusting the PCE
+    ; Make these factors into link attributes
+    IF (FT = 1)  AV_PCE = AV_PCE_FT01
+    IF (FT = 2)  AV_PCE = AV_PCE_FT02
+    IF (FT = 3)  AV_PCE = AV_PCE_FT03
+    IF (FT = 4)  AV_PCE = AV_PCE_FT04
+    IF (FT = 5)  AV_PCE = AV_PCE_FT05
+    IF (FT = 6)  AV_PCE = AV_PCE_FT06
+    IF (FT = 7)  AV_PCE = AV_PCE_FT07
+    IF (FT = 8)  AV_PCE = AV_PCE_FT08
+    IF (FT = 9)  AV_PCE = AV_PCE_FT09
+    IF (FT = 10) AV_PCE = AV_PCE_FT10
+	
 ENDRUN

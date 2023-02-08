@@ -338,7 +338,7 @@ loop period = 1, 3
       phase = adjust
 
          ; very small, small, and medium trucks have a passenger car equivalent of, on average 1.0, large trucks see HwyParam.block for PCE
-         function v = (vol[1] + vol[2] + vol[3] + vol[4] + trkpce*vol[5] + vol[6] + vol[7] + vol[8] + vol[9] + trkpce*vol[10] + (vol[11] + vol[12] + vol[13])*li.AV_PCE_FT01)
+         function v = (vol[1] + vol[2] + vol[3] + vol[4] + trkpce*vol[5] + vol[6] + vol[7] + vol[8] + vol[9] + trkpce*vol[10] + (vol[11] + vol[12] + vol[13])*li.AV_PCE)
 
          ; the volume delay functions are housed in the SpeedFlowCurve.block file
          read file = ctramp\scripts\block\SpeedFlowCurve.block
