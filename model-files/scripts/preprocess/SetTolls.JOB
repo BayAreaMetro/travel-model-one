@@ -57,7 +57,7 @@ RUN PGM=HWYNET
 
    ; write out to the same name with the added variables   
    ; no need to keep FT-specific AV_PCE as the relevant version has been added to the link
-   neto = hwy\complete_network_tolls.net
+   neto = hwy\complete_network_tolls.net, exclude=AV_PCE_FT01,AV_PCE_FT02,AV_PCE_FT03,AV_PCE_FT04,AV_PCE_FT05,AV_PCE_FT06,AV_PCE_FT07,AV_PCE_FT08,AV_PCE_FT09,AV_PCE_FT10
 
    ; the input tolls file
    FILEI LOOKUPI[1]=hwy\tolls.dbf
