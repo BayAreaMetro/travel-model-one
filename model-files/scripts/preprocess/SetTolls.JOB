@@ -67,7 +67,7 @@ RUN PGM=HWYNET
    lookup lookupi=1, name=tolls, 
      lookup[1]= FAC_INDEX, result=TOLLBOOTH,	;the tolls.csv file for BCM renames the column to TOLLBOOTH. Will make sure if in the final tolls.csv file it is named correctly.
      lookup[2]= FAC_INDEX, result=TOLLSEG,
-     lookup[3]= FAC_INDEX, result=USE,
+     lookup[3]= FAC_INDEX, result=USECLASS,
      lookup[4]= FAC_INDEX, result=TOLLEA_DA,
      lookup[5]= FAC_INDEX, result=TOLLAM_DA,
      lookup[6]= FAC_INDEX, result=TOLLMD_DA,
@@ -216,8 +216,8 @@ RUN PGM=HWYNET
       ; note this includes HOV lanes because they get converted to GP during non-peak periods via token_hov_to_freeflow
       ; in CalculateFiveHighwayNetworks.job
       IF ((TOLLAM_DA == 0) && (TOLLPM_DA == 0))
-        print LIST="Link ",A,"-",B," has TOLLCLASS ", TOLLCLASS," and no non-zero peak period DA tolls"
-        ABORT MSG ="Link has TOLLCLASS and no non-zero peak period tolls; see log file"
+        print LIST="Link ",A,"-",B," has TOLLBOOTH ", TOLLBOOTH," and no non-zero peak period DA tolls"
+        ABORT MSG ="Link has TOLLBOOTH and no non-zero peak period tolls; see log file"
       ENDIF
     ENDIF
 
