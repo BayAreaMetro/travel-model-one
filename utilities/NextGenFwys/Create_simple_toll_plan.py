@@ -43,18 +43,23 @@ low_cutoff     = 4
 
 # our planning colleagues have done some work to group the links into 8 major groups and 18 minor groups, based on their geography and congestion levels
 # please indicate whether you'd like to use the major groups or the minor groups in the averaging process
-# by typing either "major" or "minor" in the below
-grouping_option = "major"
+# by commenting out either "major" or "minor" in the below
+# grouping_option = "major"
+grouping_option = "minor"
 
 # specify "yes" below if there will be no midday tolls
 no_tolls_in_midday = "yes"
 
+# specify HOV discounts
+# a DiscountFactor of 0.5 means half price; a DiscountFactor of 0 means free; and a DiscountFactor of 1 means no discount.
+DiscountFactor_HOV2 = 1.0
+DiscountFactor_HOV3 = 0.5
+
+# specify working directories and run ids
 project_dir ="L:/Application/Model_One/NextGenFwys/" 
 modelrun_with_DynamicTolling = "2035_TM152_NGF_NP02_BPALTsegmented_03_SensDyn00_1"
 modelrun_with_NoProject      = "2035_TM152_NGF_NP02"
-
-# output directory
-output_dir = "INPUT_DEVELOPMENT/Static_toll_plans/Test6"
+output_dir = "INPUT_DEVELOPMENT/Static_toll_plans/Test8"
 
 
 # ------------------
@@ -270,43 +275,45 @@ TimePeriods = ["AM", "MD", "PM"]
 for tp in TimePeriods:
     
     if tp=="AM": 
-        new_tollscsv_df["tollam_da"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_AM'], new_tollscsv_df["tollam_da"])
-
-        # what about two-occupant vehicles?
-        # according to the heuristic used in PPA (https://github.com/BayAreaMetro/travel-model-one/tree/master/utilities/toll_calibration),
-        # two-occupant vehicles are only charged if drive alone tolls go over $1 per mile. In such cases, two-occupant vehicles is set to have half of the drive alone tolls
-
-        # Three-or-more-occupant vehicles use the express lanes for free.
-
+        new_tollscsv_df["tollam_da"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_AM']                                    , new_tollscsv_df["tollam_da"])
+        new_tollscsv_df["tollam_s2"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, (new_tollscsv_df['simplified_toll_AM']).astype(float)*DiscountFactor_HOV2, new_tollscsv_df["tollam_s2"])
+        new_tollscsv_df["tollam_s3"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, (new_tollscsv_df['simplified_toll_AM']).astype(float)*DiscountFactor_HOV3, new_tollscsv_df["tollam_s3"])
         # trucks (vsm, sml, med and lrg) are assumed to pay the same toll as da
-        new_tollscsv_df["tollam_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_AM'], new_tollscsv_df["tollam_vsm"])
-        new_tollscsv_df["tollam_sml"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_AM'], new_tollscsv_df["tollam_sml"])
-        new_tollscsv_df["tollam_med"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_AM'], new_tollscsv_df["tollam_med"])
-        new_tollscsv_df["tollam_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_AM'], new_tollscsv_df["tollam_lrg"])
+        new_tollscsv_df["tollam_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_AM']                                    , new_tollscsv_df["tollam_vsm"])
+        new_tollscsv_df["tollam_sml"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_AM']                                    , new_tollscsv_df["tollam_sml"])
+        new_tollscsv_df["tollam_med"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_AM']                                    , new_tollscsv_df["tollam_med"])
+        new_tollscsv_df["tollam_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_AM']                                    , new_tollscsv_df["tollam_lrg"])
     
     if tp=="PM": 
-        new_tollscsv_df["tollpm_da"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_PM'], new_tollscsv_df["tollpm_da"])
-        new_tollscsv_df["tollpm_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_PM'], new_tollscsv_df["tollpm_vsm"])
-        new_tollscsv_df["tollpm_sml"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_PM'], new_tollscsv_df["tollpm_sml"])
-        new_tollscsv_df["tollpm_med"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_PM'], new_tollscsv_df["tollpm_med"])
-        new_tollscsv_df["tollpm_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_PM'], new_tollscsv_df["tollpm_lrg"])
+        new_tollscsv_df["tollpm_da"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_PM']                                    , new_tollscsv_df["tollpm_da"])
+        new_tollscsv_df["tollpm_s2"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, (new_tollscsv_df['simplified_toll_PM']).astype(float)*DiscountFactor_HOV2, new_tollscsv_df["tollpm_s2"])
+        new_tollscsv_df["tollpm_s3"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, (new_tollscsv_df['simplified_toll_PM']).astype(float)*DiscountFactor_HOV3, new_tollscsv_df["tollpm_s3"])
+        # trucks (vsm, sml, med and lrg) are assumed to pay the same toll as da
+        new_tollscsv_df["tollpm_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_PM']                                    , new_tollscsv_df["tollpm_vsm"])
+        new_tollscsv_df["tollpm_sml"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_PM']                                    , new_tollscsv_df["tollpm_sml"])
+        new_tollscsv_df["tollpm_med"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_PM']                                    , new_tollscsv_df["tollpm_med"])
+        new_tollscsv_df["tollpm_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_PM']                                    , new_tollscsv_df["tollpm_lrg"])
 
 
     if tp=="MD":
         if no_tolls_in_midday == "yes": 
             # set midday tolls to zero 
             new_tollscsv_df["tollmd_da"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_da"])
+            new_tollscsv_df["tollmd_s2"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_s2"])
+            new_tollscsv_df["tollmd_s3"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_s3"])
             new_tollscsv_df["tollmd_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_vsm"])
             new_tollscsv_df["tollmd_sml"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_sml"])
             new_tollscsv_df["tollmd_med"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_med"])
             new_tollscsv_df["tollmd_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_lrg"])
         else: 
             # use simplified tolls from the dynamic toll run
-            new_tollscsv_df["tollmd_da"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD'], new_tollscsv_df["tollpm_da"])
-            new_tollscsv_df["tollmd_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD'], new_tollscsv_df["tollpm_vsm"])
-            new_tollscsv_df["tollmd_sml"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD'], new_tollscsv_df["tollpm_sml"])
-            new_tollscsv_df["tollmd_med"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD'], new_tollscsv_df["tollpm_med"])
-            new_tollscsv_df["tollmd_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD'], new_tollscsv_df["tollpm_lrg"])
+            new_tollscsv_df["tollmd_da"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD']                                    , new_tollscsv_df["tollmd_da"])
+            new_tollscsv_df["tollmd_s2"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, (new_tollscsv_df['simplified_toll_MD']).astype(float)*DiscountFactor_HOV2, new_tollscsv_df["tollmd_s2"])
+            new_tollscsv_df["tollmd_s3"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, (new_tollscsv_df['simplified_toll_MD']).astype(float)*DiscountFactor_HOV3, new_tollscsv_df["tollmd_s3"])
+            new_tollscsv_df["tollmd_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD']                                    , new_tollscsv_df["tollpm_vsm"])
+            new_tollscsv_df["tollmd_sml"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD']                                    , new_tollscsv_df["tollpm_sml"])
+            new_tollscsv_df["tollmd_med"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD']                                    , new_tollscsv_df["tollpm_med"])
+            new_tollscsv_df["tollmd_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD']                                    , new_tollscsv_df["tollpm_lrg"])
 
   
 # keep only variables that are part of the tolls.csv
