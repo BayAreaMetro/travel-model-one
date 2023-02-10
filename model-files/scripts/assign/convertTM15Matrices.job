@@ -164,7 +164,7 @@ loop period = 1, 5
       mw[ 5] = mi.1.sr3
       mw[ 6] = mi.1.sr3toll
 	  
-	  RENUMBER FILE = "INPUT\warmstart\main\IZ_OZ_PCT.DAT", ZONES=6593, MISSINGZI=W,MISSINGZO=W
+	  RENUMBER FILE = "INPUT\warmstart\main\IZ_OZ_PCT_EXT.DAT", ZONES=6626, MISSINGZI=W,MISSINGZO=W
 	  
 	  loop value = 1,6
 	  
@@ -189,7 +189,7 @@ loop period = 1, 5
       mw[ 7] = mi.1.mtrucktoll
       mw[ 8] = mi.1.ctrucktoll
 	  
-	  RENUMBER FILE = "INPUT\warmstart\main\IZ_OZ_PCT.DAT", ZONES=6593, MISSINGZI=W,MISSINGZO=W
+	  RENUMBER FILE = "INPUT\warmstart\main\IZ_OZ_PCT_EXT.DAT", ZONES=6626, MISSINGZI=W,MISSINGZO=W
 	  
 	  loop value = 1,8
 	  
