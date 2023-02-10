@@ -31,7 +31,7 @@ call CTRAMP\runtime\SetPath.bat
 SET BASE_SCRIPTS=CTRAMP\scripts
 
 :: Start the cube cluster
-Cluster "%COMMPATH%\CTRAMP" 1-8 Starthide Exit
+Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 :: Settings for sending notifications to Slack -- requires a Slack account
 set computer_prefix=%computername:~0,4%

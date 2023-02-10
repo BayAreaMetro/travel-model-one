@@ -108,7 +108,7 @@ loop period = 1,5
       parameters combine = equi                                 
       
       ; set the assignment parameters -- 1454 internal zones + 21 external zones
-      parameters zones = %TAZ_EXTS_COUNT%
+      parameters zones = 6626
       
       ; set the assignment parameters -- single dummy iteration just to calculate speeds
       parameters maxiters = 1
@@ -135,10 +135,10 @@ loop period = 1,5
          linkclass = li.FT
          
          ; tollclass determines whether a link is only available to value toll payers
-         lw.tollclass = li.TOLLCLASS
+         lw.tollclass = li.TOLLBOOTH
          
          ; fixed time links (where TSIN = 1) are indifferent to congestion
-         lw.ot = li.OT
+         ;lw.ot = li.OT
          
          ; free-flow speed is used in the volume/delay functions
          lw.ffs = li.FFS
@@ -147,7 +147,15 @@ loop period = 1,5
          lw.fft = (distance / lw.ffs) * 60.0 
          
          ; TSIN is a code, where 1 indicates the link has a fixed time and is immune to demand
-         lw.tsin = li.TSIN
+         ;lw.tsin = li.TSIN
+		 
+		 IF (li.CNTYPE = 'TAZ')
+			lw.tsin = 1
+			lw.ot = li.FFT
+		 ELSE
+			lw.tsin = 0
+			lw.ot = 0
+		 ENDIF
          
          ; link capacity is a function of the number of lanes
          lw.lanes = li.LANES
@@ -185,7 +193,7 @@ loop period = 1,5
       phase = adjust
       
          ; total volume includes each of the 13 classes
-         function v = li.v1_1 + li.v2_1 + li.v3_1 + li.v4_1 + trkpce*li.v5_1 + li.v6_1 + li.v7_1 + li.v8_1 + li.v9_1 + trkpce*li.v10_1 + (li.v11_1 + li.v12_1 + li.v13_1)*li.AV_PCE
+         function v = li.v1_1 + li.v2_1 + li.v3_1 + li.v4_1 + trkpce*li.v5_1 + li.v6_1 + li.v7_1 + li.v8_1 + li.v9_1 + trkpce*li.v10_1 + (li.v11_1 + li.v12_1 + li.v13_1)*li.AV_PCE_FT01
                  
          ; the volume delay functions are housed in the SpeedFlowCurve.block file
          read file = ctramp\scripts\block\SpeedFlowCurve.block 
