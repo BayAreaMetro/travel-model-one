@@ -33,6 +33,8 @@ public class TripModeChoiceDMU implements Serializable, VariableTable {
     protected float waitTimeSingleTNC;
     protected float waitTimeSharedTNC;
     
+    protected int origCounty;
+
 
     private ModelStructure modelStructure;
     
@@ -325,6 +327,14 @@ public class TripModeChoiceDMU implements Serializable, VariableTable {
     	return (tour.getUseOwnedAV() ? 1: 0);
     }
 
+    public float getOrigCounty() {
+        return origCounty;
+    }
+
+    public void setOrigCounty(int origCounty) {
+        this.origCounty = origCounty;
+    }
+    
 
 
 

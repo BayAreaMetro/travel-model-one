@@ -53,7 +53,8 @@ public class HouseholdDataWriter {
     private final String databaseStringFormat = "'%s'";
     private String stringFormat = fileStringFormat;
 
-    private boolean saveUtilsProbsFlag = false;
+    private boolean saveTourUtilsProbsFlag = false;
+    private boolean saveTripUtilsProbsFlag = false;
     
     private ResourceBundle resourceBundle;
     private ModelStructure modelStructure;
@@ -77,12 +78,18 @@ public class HouseholdDataWriter {
         this.iteration = iteration;
 
         // default is to not save the tour mode choice utils and probs for each tour
-        String saveUtilsProbsString = resourceBundle.getString( CtrampApplication.PROPERTIES_SAVE_TOUR_MODE_CHOICE_UTILS );
-        if ( saveUtilsProbsString != null ) {
-            if ( saveUtilsProbsString.equalsIgnoreCase( "true" ) )
-                saveUtilsProbsFlag = true;
+        String saveTourUtilsProbsString = resourceBundle.getString( CtrampApplication.PROPERTIES_SAVE_TOUR_MODE_CHOICE_UTILS );
+        if ( saveTourUtilsProbsString != null ) {
+            if ( saveTourUtilsProbsString.equalsIgnoreCase( "true" ) )
+                saveTourUtilsProbsFlag = true;
         }
 
+        // default is to not save the trip mode choice utils and probs for each trip
+        String saveTripUtilsProbsString = resourceBundle.getString( CtrampApplication.PROPERTIES_SAVE_TRIP_MODE_CHOICE_UTILS );
+        if ( saveTripUtilsProbsString != null ) {
+            if ( saveTripUtilsProbsString.equalsIgnoreCase( "true" ) )
+                saveTripUtilsProbsFlag = true;
+        }
     }
 
     //NOTE - this method should not be called simultaneously with the file one one as the string format is changed
@@ -474,7 +481,7 @@ public class HouseholdDataWriter {
        data.add("origSharedTNCWait");
        data.add("destSharedTNCWait");
        
-       if ( saveUtilsProbsFlag ) {
+       if ( saveTourUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
            for ( int i=1; i <= numModeAlts; i++ ) {
                String colName = String.format( "util_%d", i );
@@ -517,7 +524,7 @@ public class HouseholdDataWriter {
        data.add("origSharedTNCWait");
        data.add("destSharedTNCWait");
        
-       if ( saveUtilsProbsFlag ) {
+       if ( saveTourUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
            for ( int i=1; i <= numModeAlts; i++ ) {
                String colName = String.format( "util_%d", i );
@@ -563,7 +570,7 @@ public class HouseholdDataWriter {
        data.add(SqliteDataTypes.REAL);
        data.add(SqliteDataTypes.REAL);
              
-       if ( saveUtilsProbsFlag ) {
+       if ( saveTourUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
            for ( int i=1; i <= numModeAlts; i++ ) {
                data.add( SqliteDataTypes.REAL );
@@ -604,7 +611,7 @@ public class HouseholdDataWriter {
        data.add(SqliteDataTypes.REAL);
        data.add(SqliteDataTypes.REAL);
 
-       if ( saveUtilsProbsFlag ) {
+       if ( saveTourUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
            for ( int i=1; i <= numModeAlts; i++ ) {
                data.add( SqliteDataTypes.REAL );
@@ -649,7 +656,7 @@ public class HouseholdDataWriter {
        data.add(string(t.getOrigTNCSharedWait()));
        data.add(string(t.getDestTNCSharedWait()));
        
-       if ( saveUtilsProbsFlag ) {
+       if ( saveTourUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
            float[] utils = t.getTourModalUtilities();
            for ( int i=0; i < utils.length; i++ )
@@ -695,7 +702,7 @@ public class HouseholdDataWriter {
        data.add(string(t.getOrigTNCSharedWait()));
        data.add(string(t.getDestTNCSharedWait()));
 
-       if ( saveUtilsProbsFlag ) {
+       if ( saveTourUtilsProbsFlag ) {
            int numModeAlts = modelStructure.getMaxTourModeIndex();
            float[] utils = t.getTourModalUtilities();
            for ( int i=0; i < utils.length; i++ )
@@ -791,6 +798,20 @@ public class HouseholdDataWriter {
         data.add("taxiWait");
         data.add("singleTNCWait");
         data.add("sharedTNCWait");
+
+        if ( saveTripUtilsProbsFlag ) {
+            int numModeAlts = modelStructure.getMaxTourModeIndex();
+            for ( int i=1; i <= numModeAlts; i++ ) {
+                String colName = String.format( "util_%d", i );
+                data.add( colName );
+            }
+            
+            for ( int i=1; i <= numModeAlts; i++ ) {
+                String colName = String.format( "prob_%d", i );
+                data.add( colName );
+            }
+        }
+
         return data;
     }
 
@@ -818,6 +839,18 @@ public class HouseholdDataWriter {
         data.add("taxiWait");
         data.add("singleTNCWait");
         data.add("sharedTNCWait");
+        if ( saveTripUtilsProbsFlag ) {
+            int numModeAlts = modelStructure.getMaxTourModeIndex();
+            for ( int i=1; i <= numModeAlts; i++ ) {
+                String colName = String.format( "util_%d", i );
+                data.add( colName );
+            }
+            
+            for ( int i=1; i <= numModeAlts; i++ ) {
+                String colName = String.format( "prob_%d", i );
+                data.add( colName );
+            }
+        }
         return data;
     }
 
@@ -905,6 +938,18 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.REAL);
         data.add(SqliteDataTypes.REAL);
         data.add(SqliteDataTypes.REAL);
+        
+        if ( saveTripUtilsProbsFlag ) {
+            int numModeAlts = modelStructure.getMaxTourModeIndex();
+            for ( int i=1; i <= numModeAlts; i++ ) {
+                data.add( SqliteDataTypes.REAL );
+            }
+            
+            for ( int i=1; i <= numModeAlts; i++ ) {
+                data.add( SqliteDataTypes.REAL );
+            }
+        }
+
         return data;
     }
 
@@ -932,6 +977,18 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.REAL);
         data.add(SqliteDataTypes.REAL);
         data.add(SqliteDataTypes.REAL);
+        
+        if ( saveTripUtilsProbsFlag ) {
+            int numModeAlts = modelStructure.getMaxTourModeIndex();
+            for ( int i=1; i <= numModeAlts; i++ ) {
+                data.add( SqliteDataTypes.REAL );
+            }
+            
+            for ( int i=1; i <= numModeAlts; i++ ) {
+                data.add( SqliteDataTypes.REAL );
+            }
+        }
+
         return data;
     }
 
@@ -1005,6 +1062,22 @@ public class HouseholdDataWriter {
        data.add(string(s.getOrigTaxiWait()));
        data.add(string(s.getOrigSingleTNCWait()));
        data.add(string(s.getOrigSharedTNCWait()));
+       
+       if ( saveTripUtilsProbsFlag ) {
+           int numModeAlts = modelStructure.getMaxTourModeIndex();
+           float[] utils = s.getTripModalUtilities();
+           for ( int i=0; i < utils.length; i++ )
+               data.add(string(utils[i]));
+           for ( int i=utils.length; i < numModeAlts; i++ )
+               data.add( "-999" );
+           
+           float[] probs = s.getTripModalProbabilities();
+           for ( int i=0; i < probs.length; i++ )
+               data.add(string(probs[i]));
+           for ( int i=probs.length; i < numModeAlts; i++ )
+               data.add( "0.0" );
+       }
+
        
        return data;
    }
@@ -1091,7 +1164,21 @@ public class HouseholdDataWriter {
        data.add(string(s.getOrigSingleTNCWait()));
        data.add(string(s.getOrigSharedTNCWait()));
 
-      
+       if ( saveTripUtilsProbsFlag ) {
+           int numModeAlts = modelStructure.getMaxTourModeIndex();
+           float[] utils = s.getTripModalUtilities();
+           for ( int i=0; i < utils.length; i++ )
+               data.add(string(utils[i]));
+           for ( int i=utils.length; i < numModeAlts; i++ )
+               data.add( "-999" );
+           
+           float[] probs = s.getTripModalProbabilities();
+           for ( int i=0; i < probs.length; i++ )
+               data.add(string(probs[i]));
+           for ( int i=probs.length; i < numModeAlts; i++ )
+               data.add( "0.0" );
+       }
+
        return data;
    }
 
@@ -1144,7 +1231,21 @@ public class HouseholdDataWriter {
        data.add(string((inbound ? t.getDestTNCSingleWait() : t.getOrigTNCSingleWait())));
        data.add(string((inbound ? t.getDestTNCSharedWait() : t.getOrigTNCSharedWait())));
        
-       
+       if ( saveTripUtilsProbsFlag ) {
+           int numModeAlts = modelStructure.getMaxTourModeIndex();
+           float[] utils = t.getTourModalUtilities();
+           for ( int i=0; i < utils.length; i++ )
+               data.add(string(utils[i]));
+           for ( int i=utils.length; i < numModeAlts; i++ )
+               data.add( "-999" );
+           
+           float[] probs = t.getTourModalProbabilities();
+           for ( int i=0; i < probs.length; i++ )
+               data.add(string(probs[i]));
+           for ( int i=probs.length; i < numModeAlts; i++ )
+               data.add( "0.0" );
+       }
+
        return data;
    }
 
@@ -1205,6 +1306,21 @@ public class HouseholdDataWriter {
        data.add(string((inbound ? t.getDestTaxiWait() : t.getOrigTaxiWait())));
        data.add(string((inbound ? t.getDestTNCSingleWait() : t.getOrigTNCSingleWait())));
        data.add(string((inbound ? t.getDestTNCSharedWait() : t.getOrigTNCSharedWait())));
+
+       if ( saveTripUtilsProbsFlag ) {
+           int numModeAlts = modelStructure.getMaxTourModeIndex();
+           float[] utils = t.getTourModalUtilities();
+           for ( int i=0; i < utils.length; i++ )
+               data.add(string(utils[i]));
+           for ( int i=utils.length; i < numModeAlts; i++ )
+               data.add( "-999" );
+           
+           float[] probs = t.getTourModalProbabilities();
+           for ( int i=0; i < probs.length; i++ )
+               data.add(string(probs[i]));
+           for ( int i=probs.length; i < numModeAlts; i++ )
+               data.add( "0.0" );
+       }
 
        return data;
    }

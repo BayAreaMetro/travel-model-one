@@ -33,13 +33,13 @@ print "total rows in input file, personData = " + str(CountRows_personData)
 SizeCoeff_df = pd.read_csv(os.path.join(os.getcwd(), 'ctramp', 'model', 'DestinationChoiceSizeCoefficients.csv'), index_col=False, sep=",")
 
 # read in the input on % of jobs that can be performed at home by industry
-WFHbyIndustry_df = pd.read_csv(os.path.join('//mainmodel//MainModelShare//travel-model-one-master//utilities//RTP', 'wfh_by_industry.csv'), index_col=False, sep=",", nrows=7)
+WFHbyIndustry_df = pd.read_csv(os.path.join('E:\\Projects\\Clients\\gm\\models\\travel-model-one\\utilities\\RTP', 'wfh_by_industry.csv'), index_col=False, sep=",", nrows=7)
 
 
 # for the super district level summary
 # ------
 # read in the taz-superdistrict correspondence
-tazSD_df = pd.read_csv(os.path.join('//mainmodel//MainModelShare//travel-model-one-master//utilities//geographies', 'taz-superdistrict-county.csv'), index_col=False, sep=",")
+tazSD_df = pd.read_csv(os.path.join('E:\\Projects\\Clients\\gm\\models\\travel-model-one\\utilities\\geographies', 'taz-superdistrict-county.csv'), index_col=False, sep=",")
 
 # read in the land use data about job types
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/TazData

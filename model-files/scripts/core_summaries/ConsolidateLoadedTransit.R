@@ -1,6 +1,6 @@
 #
 # Simple script to consolidate loaded transit files
-#
+# RSG 2022-01-21 TM1.5 add advanced air mobility mode
 
 # Overhead
 ## Initialization: Set the workspace and load needed libraries
@@ -40,7 +40,7 @@ for (timeperiod in c("ea","am","md","pm","ev")) {
   trnlink_dbf_data <- rbind(trnlink_dbf_data, trndata)
   print(paste("Read ",fullfile))
 
-  for (submode in c("loc","lrf","exp","hvy","com")) {
+  for (submode in c("loc","lrf","exp","hvy","com","aam")) {
     for (acc_egr in list( c("wlk","wlk"), c("drv","wlk"), c("wlk","drv"))) {
         # line file
         filename <- paste0("trnline",timeperiod,"_",acc_egr[1],"_",submode,"_",acc_egr[2],".csv")

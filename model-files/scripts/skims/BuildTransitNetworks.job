@@ -1,7 +1,7 @@
 ; ----------------------------------------------------------------------------------------------------------------
 ;
 ; BuildTransitNetworks.job
-;
+; RSG 2022-01-21 TM1.5 add advanced air mobility mode
 ; A TP+ script that creates transit support links in five acts, namely: (1) in the first step, walk access links 
 ; are generated connecting zone centroids to bus stops (on the highway network) and walk access funnel links for
 ; transit-only infrastructure; (2) in the second step, drive access links are generated connecting zone centroids
@@ -26,7 +26,8 @@
 ;	(100) through (109) ferry service, coded by provider;
 ;	(110) through (119) light rail, coded by provider;
 ;	(120) through (129) heavy rail, coded by provider;
-;	(130) through (139) commuter rail, coded by provider. 
+;	(130) through (139) commuter rail, coded by provider;
+;  (140) advanced air mobility.
 ;
 ; Input:  (1) A transit background network that contains all the walk access funnel links;
 ;	  (2) A transit background network that contains all the transfer nodes;
@@ -114,11 +115,11 @@ loop period = 1, 5
       select accessmodes = 1
       
       ; generate zone access links
-      ; recall we have 9 support modes, 70 local bus modes, 20 express bus, 10 lrt, 10 ferry, 10 heavy rail, and 10 commuter rail
+      ; recall we have 9 support modes, 70 local bus modes, 20 express bus, 10 lrt, 10 ferry, 10 heavy rail, 10 commuter rail, and 1 advanced air mobility
       zoneaccess generate = true,
       
          ; allow up to 10 access links per mode
-      	 maxstops = 9*10, 70*10, 20*10, 20*10, 10*10, 10*10,
+      	 maxstops = 9*10, 70*10, 20*10, 20*10, 10*10, 10*10, 1*10,
       	
          ; build links from zone to transit node (code 1)
          direction = 1,
@@ -127,7 +128,7 @@ loop period = 1, 5
          maxlinks = 30,
       	
          ; set the maximum distance to be .75 miles, 1.1 miles for express bus and above
-         maxdist = 9*75, 70*75, 20*110, 20*110, 10*110, 10*110,
+         maxdist = 9*75, 70*75, 20*110, 20*110, 10*110, 10*110, 1*110,
       	
          ; generate walk access or mode 1 links
          mode = 1
@@ -195,6 +196,7 @@ loop period = 1, 5
       read file = "%MODEL_DIR%\trn\transitLines_ferry.pnr"
       read file = "%MODEL_DIR%\trn\transitLines_heavy_rail.pnr"
       read file = "%MODEL_DIR%\trn\transitLines_commuter_rail.pnr"
+      read file = "%MODEL_DIR%\trn\transitLines_advanced_air_mobility.pnr"
 
       ; trnbuild requires that we read in some transit lines, though we're building
       ; drive access links to funnel nodes, so no reading of lines are necessary
@@ -255,9 +257,9 @@ loop period = 1, 5
       zoneaccess generate = n
       
       ; generate transfer links
-      ; recall we have 9 support modes, 70 local bus modes, 20 express bus, 10 lrt, 10 ferry, 10 heavy rail, and 10 commuter rail
+      ; recall we have 9 support modes, 70 local bus modes, 20 express bus, 10 lrt, 10 ferry, 10 heavy rail, 10 commuter rail, and 1 advanced air mobility
       ; set the maximum distance to be .75 miles
-      xfergen mode = 3, maxdist = 9*75, 70*75, 20*75, 20*75, 10*75, 10*75
+      xfergen mode = 3, maxdist = 9*75, 70*75, 20*75, 20*75, 10*75, 10*75, 1*75
       
       ; read in walk/drive access and walk egress link files created in the preceeding steps in their script
       read file = @token_period@_walk_acclinks.dat     
@@ -277,6 +279,7 @@ loop period = 1, 5
    *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=ferry         -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_ferry.dat
    *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=heavy_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_heavy_rail.dat
    *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=commuter_rail -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_commuter_rail.dat
+   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=advanced_air_mobility -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_advanced_air_mobility.dat
    
    ; step 6: create KNR access links for local bus from walk access links
    *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\createLocalBusKNRs.awk" @token_period@_transit_suplinks_walk.dat > @token_period@_bus_acclinks_KNR.dat

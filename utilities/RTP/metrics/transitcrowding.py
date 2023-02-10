@@ -31,7 +31,7 @@ If OUTPUT has a ? because if OUTPUT dir doesn't exist, assumes this is running o
 """
 
 LOG_FILE = "transit_crowding.log"
-SEATCAP_FILE = "\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\RTP\\metrics\\transitSeatCap.csv"
+SEATCAP_FILE = "E:\\Projects\\Clients\\gm\\models\\travel-model-one\\utilities\\RTP\\metrics\\transitSeatCap.csv"
 
 
 PSEUDO_LINE_MAPPING = {

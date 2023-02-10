@@ -5,11 +5,11 @@ USAGE = """
  python transit.py quickboards.xls
 
  Opens the given quickboards workbook and tallies Daily Boardings and Daily Passenger Miles for each
- mode type (local, express, ferry, lrt, heavy rail, commuter rail).  Mode type is interpretted based
- on the line name numeric prefix.
+ mode type (local, express, ferry, lrt, heavy rail, commuter rail, advanced air mobility).  
+ Mode type is interpretted based on the line name numeric prefix.
 
  Outputs result into metrics\transit_boards_miles.csv
-
+ RSG 2022-01-21 TM1.5 add advanced air mobility mode
  """
 
 parser = optparse.OptionParser()
@@ -51,8 +51,10 @@ while True:
 		mode_str = 'lrf'
 	elif mode < 130:
 		mode_str = 'hvy'
+	elif mode < 140:
+		mode_str = 'com'		
 	else:
-		mode_str = 'com'
+		mode_str = 'aam'
 
 	if mode_str not in boardings: boardings[mode_str] = 0.0
 	if mode_str not in passmiles: passmiles[mode_str] = 0.0
@@ -70,6 +72,6 @@ print boardings
 outfile = open(outputfile, 'w')
 writer = csv.writer(outfile,lineterminator='\n')
 writer.writerow(['Transit mode','Daily Boardings','Daily Passenger Miles Traveled'])
-for mode_str in ['loc','exp','lrf','hvy','com']:
+for mode_str in ['loc','exp','lrf','hvy','com','aam']:
 	writer.writerow([mode_str,boardings[mode_str],passmiles[mode_str]])
 outfile.close()

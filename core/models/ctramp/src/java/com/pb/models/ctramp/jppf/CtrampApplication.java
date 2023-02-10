@@ -240,7 +240,8 @@ public class CtrampApplication implements Serializable {
      public static final String PROPERTIES_WRITE_DATA_TO_DATABASE = "Results.WriteDataToDatabase";
 
      public static final String PROPERTIES_SAVE_TOUR_MODE_CHOICE_UTILS = "TourModeChoice.Save.UtilsAndProbs";
-
+     public static final String PROPERTIES_SAVE_TRIP_MODE_CHOICE_UTILS = "TripModeChoice.Save.UtilsAndProbs";
+     
      public static final String PROPERTIES_WORK_SCHOOL_LOCATION_CHOICE_SHADOW_PRICE_INPUT_FILE = "UsualWorkAndSchoolLocationChoice.ShadowPrice.Input.File";
 
      public static final String PROPERTIES_NUMBER_OF_GLOBAL_ITERATIONS = "Global.iterations";

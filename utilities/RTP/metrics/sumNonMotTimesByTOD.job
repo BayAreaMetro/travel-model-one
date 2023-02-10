@@ -1,0 +1,82 @@
+; This script Uses Non-Motorized trips * Non-Mot skims (DIST) and outputs:
+; metrics\nonmot_times_TOD.csv with columns:
+;  * Period                (EA, AM, MD, PM, EV)
+;  * Mode                  (walk, bike)
+;  * Trips                 (# of non-motorized trips)
+;  * Distance              (# of miles travelled by this mode)
+;
+
+
+;*del metrics\nonmot_times_TOD.csv
+
+; Loop thru transit modes
+loop mode = 1,2
+    ; walk
+      if (mode = 1)
+        token_mode = 'walk'
+        token_dist  = 'DISTWALK'
+    ; bike
+      elseif (mode = 2)
+        token_mode = 'bike'
+        token_dist  = 'DISTBIKE'
+      endif
+
+  ;DistributeMultistep processid = 'ctramp', processNum = path, commpath = '%COMMPATH%'
+
+  loop period = 1,5
+
+    if (period = 1)
+        token_period = 'EA'
+    elseif (period = 2)
+        token_period = 'AM'
+    elseif (period = 3)
+        token_period = 'MD'
+    elseif (period = 4)
+        token_period = 'PM'
+    elseif (period = 5)
+        token_period = 'EV'
+    endif
+
+    RUN PGM = MATRIX
+      ; Read person trips
+      ; 1. da, 2. datoll, 3. sr2, 4. sr2toll, 5. sr3, 6. sr3toll, 7. walk, 8. bike,
+      ; 9. wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, 
+      ; 14. drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk, 
+      ; 19. wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv
+      FILEI MATI[1] = "main\trips@token_period@.tpp"
+
+      ; Read non-motorized skims
+      ; DISTWALK, DISTBIKE, DIST
+      FILEI MATI[2] = "skims\nonmotskm.tpp"
+
+      FILEO PRINTO[1] = "metrics\nonmot_times_@token_mode@.csv", append=T
+
+      ; Transit Trips by TOD
+      MW[1] = mi.1.@token_mode@                 ; Trips
+      MW[2] = MW[1] *  mi.2.@token_dist@    ; Distance
+
+      JLOOP
+      Trips       = Trips  + MW[1]
+      Distance    = Distance    + MW[2]
+      ENDJLOOP
+
+      if(I = 1 & @period@ = 1 & @mode@ = 1)
+      	PRINT PRINTO=1 CSV=T LIST= "Period", "Mode", "Trips", "Distance"
+      endif
+      if(I=1475)
+        PRINT PRINTO=1 CSV=T LIST= '@token_period@','@token_mode@',Trips,Distance
+      endif
+    ENDRUN
+  endloop ; period loop
+
+  ;EndDistributeMultistep
+endloop ; mode loop
+
+;Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, 
+;           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+
+; combine the path files into one
+* copy metrics\nonmot_times_walk.csv+metrics\nonmot_times_bike.csv metrics\nonmot_times_TOD.csv
+; delete the individual ones
+* del metrics\nonmot_times_walk.csv
+* del metrics\nonmot_times_bike.csv

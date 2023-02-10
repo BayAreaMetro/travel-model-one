@@ -5,9 +5,6 @@ USAGE = """
 
     To run this script, start from the model run directory, e.g. A:\Projects\2050_TM152_FBP_PlusCrossing_16
 
-    - Set M_DIR according to the path in setupmodel.bat, so the output will get copied to the right place on the M drive
-      e.g. set M_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_FBP_PlusCrossing_16
-
     - Run this scrpit, with SB375 or EIR as an argument
       e.g. python ctramp/scripts/emfac/emfac_postproc.py SB375
 
@@ -106,7 +103,7 @@ EMFACsummary_df.to_csv(output_csv, header=True, index=False)
 print "\nFinished writing out the regional-level EMFAC results to emfac_prep\\emfac_ghg.csv"
 
 # copy emfac_ghg.csv back to the metrics folder in the model output directory on M
-M_DIR = os.getenv('M_DIR')
+M_DIR = os.getenv('MODEL_DIR')
 
 M_OUTPUT = os.path.join(M_DIR, "OUTPUT") 
 if not os.path.isdir(M_OUTPUT):

@@ -2,25 +2,32 @@
 :: Utility to set the path.  Used in RunModel as well as RunMain and RunNodeX. 
 
 :: The commpath
-SET COMMPATH=X:\COMMPATH
+::SET COMMPATH=X:\COMMPATH
+:: NOTE: This has been changed to simply point to the scenario directory
+SET COMMPATH=%MODEL_DIR%
+
 if "%COMPUTER_PREFIX%" == "WIN-" (  SET COMMPATH=D:\COMMPATH)
 if %computername%==MODEL2-A      (  set COMMPATH=E:\Model2A-Share\COMMPATH)
 if %computername%==MODEL2-B      (  set COMMPATH=E:\Model2B-Share\COMMPATH)
 if %computername%==MODEL2-C      (  set COMMPATH=E:\Model2C-Share\COMMPATH)
 if %computername%==MODEL2-D      (  set COMMPATH=E:\Model2D-Share\COMMPATH)
+if %computername%==WRJMDLPPW05   (  SET COMMPATH=%CD%)
+if %computername%==WRJMDLPPW06   (  SET COMMPATH=%CD%)
+if %computername%==WRJMDLPPW07   (  SET COMMPATH=%CD%)
+if %computername%==WRJMDLPPW08   (  SET COMMPATH=%CD%)
 
 :: The location of the 64-bit java development kit
-set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
+set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_201
 
 :: The location of the GAWK binary executable files
-set GAWK_PATH=X:\UTIL\Gawk
+set GAWK_PATH=E:\projects\clients\gm\models\util
 if "%COMPUTER_PREFIX%" == "WIN-" (
   set GAWK_PATH=C:\Software\Gawk
 )
 
 :: The location of R and R libraries
-set R_HOME=C:\Program Files\R\R-3.5.2
-set R_LIB=C:/Users/mtcpb/Documents/R/win-library/3.5
+set R_HOME=C:\Program Files\R\R-4.0.2
+set R_LIB=C:\Users\teddy.lin\Documents\R\win-library\4.0
 if "%COMPUTER_PREFIX%" == "WIN-" (
   set R_LIB=C:/Users/Administrator/Documents/R/win-library/3.5
 )
@@ -29,14 +36,16 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI
 
 :: The location of python
-set PYTHON_PATH=C:\Python27
+set PYTHON_PATH=C:\ProgramData\Anaconda3
 
 :: The location of the MTC.JAR file
 set RUNTIME=CTRAMP/runtime
 
 :: Add these variables to the PATH environment variable, moving the current path to the back
-set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%PYTHON_PATH%
+set PATH=%RUNTIME%;%JAVA_PATH%\bin;%TPP_PATH%;%GAWK_PATH%\bin;%PYTHON_PATH%\envs\py27tm1;%PYTHON_PATH%\condabin;%PYTHON_PATH%\envs
 
 ::  Set the Java classpath (locations where Java needs to find configuration and JAR files)
 set CLASSPATH=%RUNTIME%/config;%RUNTIME%;%RUNTIME%/config/jppf-2.4/jppf-2.4-admin-ui/lib/*;%RUNTIME%/mtc.jar
 
+:: Set the Python Path to network-wrangler (cloned locally as opposed to pip installed)
+set PYTHONPATH=E:\Projects\Clients\gm\models\NetworkWrangler;E:\Projects\Clients\gm\models\NetworkWrangler\_static

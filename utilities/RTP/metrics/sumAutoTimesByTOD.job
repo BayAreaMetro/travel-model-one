@@ -1,0 +1,254 @@
+;*del metrics\auto_time_TOD.csv
+
+; Create auto summary based on trips by time period and mode and outputs:
+; metrics\auto_time_TOD.csv with columns:
+; - Period
+; - Mode
+; - Total person trips
+; - Total vehicle trips
+; - Total person travel time in minutes
+; - Total vehicle travel time in minutes
+; - Total person travel distance in miles
+; - Total vehicle travel distance in miles
+; - Total travel cost (auto operating cost, including pavement costs and
+;   NOT including BRIDGE OR VALUE TOLLS)
+;   in year 2000 cents
+;
+
+; find no access zones
+RUN PGM=MATRIX
+  FILEI MATI[1]   = "skims\HWYSKMAM.tpp"
+  FILEO RECO[1]   = "skims\unconnected_zones.dbf", FIELDS=ZONE(5.0), UNCONNECTED(3.0)
+
+  MW[1] = MI.1.DISTDA
+  IF (ROWMIN(1) == 500000)
+    RO.ZONE = I
+    RO.UNCONNECTED = 1
+    WRITE RECO=1
+  ENDIF
+ENDRUN
+
+; Convert to has access matrix -- all ones if has access
+RUN PGM=MATRIX
+  FILEI ZDATI[1] = "skims\unconnected_zones.dbf"
+  FILEO MATO[1]  = "skims\connected_zones.tpp", MO=1, NAME=CONNECTED
+  ZONES=1475
+
+  MW[1] = 1
+  IF (ZI.1.UNCONNECTED=1) MW[1] = 0
+ENDRUN
+
+
+; Loop thru Auto modes
+loop auto = 1,15
+
+  if (auto  = 1)
+   token_auto   = 'da'
+   token_time   = 'TIMEDA'
+   token_dist   = 'DISTDA'
+   token_btoll  = 'BTOLLDA'
+   token_vtoll  = 'TOLLVTOLLDA'
+  elseif (auto  = 2)
+   token_auto   = 'datoll'
+   token_time   = 'TOLLTIMEDA'
+   token_dist   = 'TOLLDISTDA'
+   token_btoll  = 'TOLLBTOLLDA'
+   token_vtoll  = 'TOLLVTOLLDA'
+  elseif (auto  = 3)
+   token_auto   = 'sr2'
+   token_time   = 'TIMES2'
+   token_dist   = 'DISTS2'
+   token_btoll  = 'BTOLLS2'
+   token_vtoll  = 'TOLLVTOLLS2'
+  elseif (auto  = 4)
+   token_auto   = 'sr2toll'
+   token_time   = 'TOLLTIMES2'
+   token_dist   = 'TOLLDISTS2'
+   token_btoll  = 'TOLLBTOLLS2'
+   token_vtoll  = 'TOLLVTOLLS2'
+  elseif (auto  = 5)
+   token_auto   = 'sr3'
+   token_time   = 'TIMES3'
+   token_dist   = 'DISTS3'
+   token_btoll  = 'BTOLLS3'
+   token_vtoll  = 'TOLLVTOLLS3'
+  elseif (auto  = 6)
+   token_auto   = 'sr3toll'
+   token_time   = 'TOLLTIMES3'
+   token_dist   = 'TOLLDISTS3'
+   token_btoll  = 'TOLLBTOLLS3'
+   token_vtoll  = 'TOLLVTOLLS3'
+  elseif (auto  = 7)
+   token_auto   = 'taxi'
+   token_time   = 'TOLLTIMEs2'
+   token_dist   = 'TOLLDISTS2'
+   token_btoll  = 'TOLLBTOLLS2'
+   token_vtoll  = 'TOLLVTOLLS2'
+  elseif (auto  = 8)
+   token_auto   = 'tnc_single'
+   token_time   = 'TOLLTIMES2'
+   token_dist   = 'TOLLDISTS2'
+   token_btoll  = 'TOLLBTOLLS2'
+   token_vtoll  = 'TOLLVTOLLS2'
+  elseif (auto  = 9)
+   token_auto   = 'tnc_shared'
+   token_time   = 'TOLLTIMES3'
+   token_dist   = 'TOLLDISTS3'
+   token_btoll  = 'TOLLBTOLLS3'
+   token_vtoll  = 'TOLLVTOLLS3'
+  elseif (auto  = 10)
+   token_auto   = 'da_av_notoll'
+   token_time   = 'TIMEDA'
+   token_dist   = 'DISTDA'
+   token_btoll  = 'BTOLLDA'
+   token_vtoll  = 'TOLLVTOLLDA'
+  elseif (auto  = 11)
+   token_auto   = 'da_av_toll'
+   token_time   = 'TOLLTIMEDA'
+   token_dist   = 'TOLLDISTDA'
+   token_btoll  = 'TOLLBTOLLDA'
+   token_vtoll  = 'TOLLVTOLLDA'
+  elseif (auto  = 12)
+   token_auto   = 'sr2_av_notoll'
+   token_time   = 'TIMES2'
+   token_dist   = 'DISTS2'
+   token_btoll  = 'BTOLLS2'
+   token_vtoll  = 'TOLLVTOLLS2'
+  elseif (auto  = 13)
+   token_auto   = 'sr2_av_toll'
+   token_time   = 'TOLLTIMES2'
+   token_dist   = 'TOLLDISTS2'
+   token_btoll  = 'TOLLBTOLLS2'
+   token_vtoll  = 'TOLLVTOLLS2'
+  elseif (auto  = 14)
+   token_auto   = 'sr3_av_notoll'
+   token_time   = 'TIMES3'
+   token_dist   = 'DISTS3'
+   token_btoll  = 'BTOLLS3'
+   token_vtoll  = 'TOLLVTOLLS3'
+  elseif (auto  = 15)
+   token_auto   = 'sr3_av_toll'
+   token_time   = 'TOLLTIMES3'
+   token_dist   = 'TOLLDISTS3'
+   token_btoll  = 'TOLLBTOLLS3'
+   token_vtoll  = 'TOLLVTOLLS3'
+  endif
+
+  DistributeMultistep processid = 'ctramp', processNum = auto, commpath = '%COMMPATH%'
+
+    ; Read toll discounts from the block file
+    Read File = "CTRAMP\scripts\block\hwyParam.block"
+
+    loop period = 1,5
+
+      if (period = 1)
+          token_period = 'EA'
+      elseif (period = 2)
+          token_period = 'AM'
+      elseif (period = 3)
+          token_period = 'MD'
+      elseif (period = 4)
+          token_period = 'PM'
+      elseif (period = 5)
+          token_period = 'EV'
+      endif
+
+    RUN PGM = MATRIX
+
+     ; Read person trips for an income quartile for all time periods
+     FILEI MATI[1] = "main\trips@token_period@_no_zpv_allinc.tpp"
+
+     ; Read Highway Skims
+     FILEI MATI[2] = "skims\HWYSKM@token_period@.tpp"
+
+     FILEI LOOKUPI[1] = taxi_tnc_occ_factors.csv
+
+     ; Specify output file
+     FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T
+
+    ; load lookup values for factoring taxi and TNC modes
+    lookup lookupi=1, LIST=y, name=occ_factors,
+      lookup[1]=1, result=2,      ; (occ,taxi)
+      lookup[2]=1, result=3,      ; (occ,single_tnc)
+      lookup[3]=1, result=4       ; (occ,shared_tnc)
+
+    IF (I=1)
+      IF (@auto@==1 || @auto@==2 || @auto@==10 || @auto@==11)
+        _occupancy = 1.0
+      ELSEIF (@auto@==3 || @auto@==4 || @auto@==12 || @auto@==13)
+        _occupancy = 2.0
+      ELSEIF (@auto@==5 || @auto@==6 || @auto@==14 || @auto@==15)
+        _occupancy = 3.5
+
+      ; calculate the average occupancy
+      ; the multiplication factors for s3 is calculated based on MTC's TNC pilot survey conducted in Oct/Nov 2018
+      ; the spreadsheet is here: M:\Application\Model One\Mock Futures\TNC occupancy\tnc occupancy.xlsx
+      ELSEIF (@auto@==7)
+       ; taxi
+       _occupancy = occ_factors(1, 1)*1 + occ_factors(1, 2)*2 + occ_factors(1, 3)*3.60
+      ELSEIF (@auto@==8)
+       ; tnc single
+       _occupancy = occ_factors(2, 1)*1 + occ_factors(2, 2)*2 + occ_factors(2, 3)*3.60
+      ELSEIF (@auto@==9)
+       ; tnc shared
+       _occupancy = occ_factors(3, 1)*1 + occ_factors(3, 2)*2 + occ_factors(3, 3)*3.83
+      ENDIF
+    ENDIF
+
+
+     ; Trips by TOD * Skims by TOD
+      MW[1]   =  mi.1.@token_auto@ * mi.2.@token_time@               ; Person minutes
+      MW[2]   = (mi.1.@token_auto@ * mi.2.@token_time@)/_occupancy  ; Vehicle minutes
+      MW[3]   =  mi.1.@token_auto@ * mi.2.@token_dist@               ; Person miles
+      MW[4]   = (mi.1.@token_auto@ * mi.2.@token_dist@)/_occupancy  ; Vehicle miles
+      MW[5]   = (mi.1.@token_auto@/_occupancy) * (mi.2.@token_dist@ * @AUTOOPC@) ; not including tolls
+      MW[6]   = (mi.1.@token_auto@/_occupancy) *  mi.2.@token_btoll@             ; Bridge tolls
+      MW[7]   = (mi.1.@token_auto@/_occupancy) *  mi.2.@token_vtoll@             ; Value tolls
+
+     ; Compute Person Trips, Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
+     MW[36] =  mi.1.@token_auto@
+     MW[37] = mi.1.@token_auto@/_occupancy
+     MW[38] = MW[1]   ; Person minutes
+     MW[39] = MW[2]   ; Vehicle minutes
+     MW[40] = MW[3]   ; Person miles
+     MW[41] = MW[4]   ; Vehicle miles
+     MW[42] = MW[5]   ; Trip Cost
+     ;MW[43] = MW[6]   ; Bridge Tolls
+     ;MW[44] = MW[7]   ; Value Tolls
+
+      Person_trips  = Person_trips  + ROWSUM(36)
+      Vehicle_trips = Vehicle_trips + ROWSUM(37)
+      Person_min    = Person_min    + ROWSUM(38)
+      Vehicle_min   = Vehicle_min   + ROWSUM(39)
+      Person_miles  = Person_miles  + ROWSUM(40)
+      Vehicle_miles = Vehicle_miles + ROWSUM(41)
+      Total_cost    = Total_cost    + ROWSUM(42)
+      ;Bridge_tolls  = Bridge_tolls  + ROWSUM(43)
+      ;Value_tolls   = Value_tolls   + ROWSUM(43)
+
+      Mode   = '@token_auto@'
+      Period = '@token_period@'
+
+      if(I = 1 & @period@=1 & @auto@ = 1) PRINT PRINTO=1 LIST="Period,Mode,Person Trips,Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost"
+      if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= Period, Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
+                                                            Person_min(10.2L),   Vehicle_min(10.2L),
+                                                            Person_miles(10.2L), Vehicle_miles(10.2L),
+                                                            Total_cost(10.2L)
+    ENDRUN
+
+  endloop ; period loop
+
+  EndDistributeMultistep
+
+endloop
+
+Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, CTRAMP6.script.end,
+                 CTRAMP7.script.end, CTRAMP8.script.end, CTRAMP9.script.end, CTRAMP10.script.end, CTRAMP11.script.end, CTRAMP12.script.end,
+                 CTRAMP13.script.end, CTRAMP14.script.end, CTRAMP15.script.end,
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+
+; combine the TOD files into one
+* copy metrics\auto_times_da.csv+metrics\auto_times_datoll.csv+metrics\auto_times_sr2.csv+metrics\auto_times_sr2toll.csv+metrics\auto_times_sr3.csv+metrics\auto_times_sr3toll.csv+metrics\auto_times_taxi.csv+metrics\auto_times_tnc_single.csv+metrics\auto_times_tnc_shared.csv+metrics\auto_times_da_av_notoll.csv+metrics\auto_times_da_av_toll.csv+metrics\auto_times_sr2_av_notoll.csv+metrics\auto_times_sr2_av_toll.csv+metrics\auto_times_sr3_av_notoll.csv+metrics\auto_times_sr3_av_toll.csv metrics\auto_time_TOD.csv
+; delete the individual ones
+* del metrics\auto_times_*.csv
+

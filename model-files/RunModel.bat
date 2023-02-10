@@ -18,7 +18,11 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: Set the path
+set MODEL_DIR=%CD%
 call CTRAMP\runtime\SetPath.bat
+
+:: activate conda environment
+call conda activate py27tm1
 
 :: Start the cube cluster
 Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
@@ -31,6 +35,7 @@ if %computername%==MODEL2-D            set HOST_IP_ADDRESS=192.168.1.209
 if %computername%==PORMDLPPW01         set HOST_IP_ADDRESS=172.24.0.101
 if %computername%==PORMDLPPW02         set HOST_IP_ADDRESS=172.24.0.102
 if %computername%==WIN-FK0E96C8BNI     set HOST_IP_ADDRESS=10.0.0.154
+if %computername%==WRJMDLPPW05		   set HOST_IP_ADDRESS=10.0.0.134
 rem if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.70
 rem for aws machines, HOST_IP_ADDRESS is set in SetUpModel.bat
 
@@ -43,7 +48,6 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 )
 
 :: Figure out the model year
-set MODEL_DIR=%CD%
 set PROJECT_DIR=%~p0
 set PROJECT_DIR2=%PROJECT_DIR:~0,-1%
 :: get the base dir only
@@ -104,7 +108,8 @@ if %FUTURE%==X (
 echo on
 echo turn echo back on
 
-python "CTRAMP\scripts\notify_slack.py" "Starting *%MODEL_DIR%*"
+::commenting out slack
+::python "CTRAMP\scripts\notify_slack.py" "Starting *%MODEL_DIR%*"
 
 set MAXITERATIONS=3
 :: --------TrnAssignment Setup -- Standard Configuration
@@ -201,7 +206,6 @@ runtpp CTRAMP\scripts\skims\NonMotorizedSkims.job
 if ERRORLEVEL 2 goto done
 
 :: Step 4.5: Build initial transit files
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
 python CTRAMP\scripts\skims\transitDwellAccess.py NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 if ERRORLEVEL 2 goto done
 
@@ -400,6 +404,9 @@ if ERRORLEVEL 2 goto done
 call RunScenarioMetrics
 if ERRORLEVEL 2 goto done
 
+call ExportToOMX
+if ERRORLEVEL 2 goto done
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 17:  Directory clean up
@@ -409,7 +416,7 @@ if ERRORLEVEL 2 goto done
 
 :: Extract key files
 call extractkeyfiles
-c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
+c:\windows\system32\Robocopy.exe /E extractor OUTPUT
 
 
 : cleanup
@@ -432,7 +439,7 @@ call Run_QAQC
 :success
 ECHO FINISHED SUCCESSFULLY!
 
-python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%*"
+::python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%*"
 
 if "%COMPUTER_PREFIX%" == "WIN-" (
   
@@ -442,7 +449,7 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
   cd %myfolder%
 
   rem shutdown
-  python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%* - shutting down"
+  ::python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%* - shutting down"
   C:\Windows\System32\shutdown.exe /s
 )
 
@@ -454,6 +461,6 @@ goto donedone
 ECHO FINISHED.  
 
 :: if we got here and didn't shutdown -- assume something went wrong
-python "CTRAMP\scripts\notify_slack.py" ":exclamation: Error in *%MODEL_DIR%*"
+::python "CTRAMP\scripts\notify_slack.py" ":exclamation: Error in *%MODEL_DIR%*"
 
 :donedone

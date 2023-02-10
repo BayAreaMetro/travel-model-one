@@ -1,4 +1,5 @@
-# usage: gawk -f Select_PNRs.awk [-v type=express_bus|light_rail|ferry|heavy_rail|commuter_rail|all|walk] [-v period=EA|AM|MD|PM|EV]  XX_Transit_suplinks.dat > XX_Transit_suplinks_MOD.dat
+# RSG 2022-01-21 TM1.5 add advanced air mobility mode
+# usage: gawk -f Select_PNRs.awk [-v type=express_bus|light_rail|ferry|heavy_rail|commuter_rail|advanced_air_mobility|all|walk] [-v period=EA|AM|MD|PM|EV]  XX_Transit_suplinks.dat > XX_Transit_suplinks_MOD.dat
 # default type: walk
 
 BEGIN{ 
@@ -20,6 +21,9 @@ BEGIN{
 	if (type=="commuter_rail" || type=="all") {
 		pnrFiles["../transitLines_commuter_rail.pnr"] = 1
 	}
+	if (type=="advanced_air_mobility" || type=="all") {
+		pnrFiles["../transitLines_advanced_air_mobility.pnr"] = 1
+	}	
 	if (type=="walk") {
 	    # keep all walk links   
 	}

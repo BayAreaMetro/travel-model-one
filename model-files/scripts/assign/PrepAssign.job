@@ -1,7 +1,7 @@
 ; ----------------------------------------------------------------------------------------------------------------
 ;
 ; PrepAssign.job
-;
+; RSG 2022-01-21 TM1.5 add advanced air mobility mode
 ; TP+ script to convert the trip lists written out by the CT-RAMP software into origin/destination matrices that
 ; can be assigned to highway and transit networks. The first step goes through the individual trip list and stores
 ; trips, by mode, that are relevant for each time interval.  A fixed format file, sorted first by origin zone and
@@ -15,7 +15,7 @@
 ; represented for a handful of travel purposes as described below.
 ;
 ; The third and final step reads in the fixed format data from steps one and two and stores the data as a TP+ matrix
-; with 23 tables (see Output below for details).  Note that the trips are scaled up by the sampling rate -- if the
+; with 26 tables (see Output below for details).  Note that the trips are scaled up by the sampling rate -- if the
 ; model was run on only half the synthetic population, then each resulting trip is counted twice, which allows for
 ; a fully representative quantity of demand to be assigned to the roadway and transit networks.
 ;
@@ -48,10 +48,10 @@
 ;              (16) trip_mode - travel mode code, where 1 - "Drive alone free", 2 - "Drive alone pay", 3 - "Shared ride 2 free",
 ;                               4 - "Shared ride 2 pay", 5 - "Shared ride 3+ free", 6 - "Shared ride 3+ pay", 7 - "Walk",
 ;                               8 - "Bike", 9 - "Walk to local bus", 10 - "Walk to light rail or ferry", 11 - "Walk to express bus",
-;                              12 - "Walk to BART", 13 - "Walk to commuter rail", 14 - "Drive to local bus",
-;                              15 - "Drive to light rail or ferry", 16 - "Drive to express bus", 17 - "Drive to BART",
-;                              18 - "Drive to commuter rail"
-;                              new jef 2018-11-10 TM1.5  19 - "Taxi" 20 - "TNC"
+;                              12 - "Walk to BART", 13 - "Walk to commuter rail", 14 - "Walk to advanced air mobility",
+;                              15 - "Drive to local bus", 16 - "Drive to light rail or ferry", 17 - "Drive to express bus", 
+;                              18 - "Drive to BART", 19 - "Drive to commuter rail", 20 - "Drive to advanced air mobility",
+;                              new jef 2018-11-10 TM1.5  21 - "Taxi" 22 - "TNC"
 ;              (17) tour_mode - which is not the same as travel mode -- same codes as for trip mode.
 ;              (18) tour_category - Type of tour (MANDATORY, INDIVIDUAL_NON_MANDATORY,AT_WORK)
 ;              (19) avAvailable - new for TM1.5 indicating whether an autonomous vehicle is available for trips on tour
@@ -75,10 +75,10 @@
 ;              (14) trip_mode - travel mode code, where 1 - "Drive alone free", 2 - "Drive alone pay", 3 - "Shared ride 2 free",
 ;                               4 - "Shared ride 2 pay", 5 - "Shared ride 3+ free", 6 - "Shared ride 3+ pay", 7 - "Walk",
 ;                               8 - "Bike", 9 - "Walk to local bus", 10 - "Walk to light rail or ferry", 11 - "Walk to express bus",
-;                              12 - "Walk to BART", 13 - "Walk to commuter rail", 14 - "Drive to local bus",
-;                              15 - "Drive to light rail or ferry", 16 - "Drive to express bus", 17 - "Drive to BART",
-;                              18 - "Drive to commuter rail"
-;                              new jef 2018-11-10 TM1.5  19 - "Taxi" 20 - "TNC"
+;                              12 - "Walk to BART", 13 - "Walk to commuter rail", 14 - "Walk to advanced air mobility",
+;                              15 - "Drive to local bus", 16 - "Drive to light rail or ferry", 17 - "Drive to express bus", 
+;                              18 - "Drive to BART", 19 - "Drive to commuter rail", 20 - "Drive to advanced air mobility",
+;                              new jef 2018-11-10 TM1.5  21 - "Taxi" 22 - "TNC"
 ;              (15) num_participants - the number of persons traveling on the joint tour
 ;              (16) tour_mode - which is not necessarily the travel mode -- same codes as for trip mode.
 ;              (17) tour_category - Type of tour (JOINT_NON_MANDATORY)
@@ -101,22 +101,25 @@
 ;              (11) Walk, express bus, walk
 ;              (12) Walk, heavy rail, walk
 ;              (13) Walk, commuter rail, walk
-;              (14) Drive, local bus, walk
-;              (15) Drive, light rail/ferry, walk
-;              (16) Drive, express bus, walk
-;              (17) Drive, heavy rail, walk
-;              (18) Drive, commuter rail, walk
-;              (19) Walk, local bus, drive
-;              (20) Walk, light rail/ferry, drive
-;              (21) Walk, express bus, drive
-;              (22) Walk, heavy rail, drive
-;              (23) Walk, commuter rail, drive
-;              (24) Drive alone,    TNC (includes zero-passenger deadheading trips)
-;              (25) Shared ride 2,  TNC (includes zero-passenger deadheading trips)
-;              (26) Shared ride 3+, TNC (includes zero-passenger deadheading trips)
-;              (27) Drive alone,    owned autonomous vehicles (includes zero-passenger deadheading trips)
-;              (28) Shared ride 2,  owned autonomous vehicles (includes zero-passenger deadheading trips)
-;              (29) Shared ride 3+, owned autonomous vehicles (includes zero-passenger deadheading trips)
+;              (14) Walk, advanced air mobility, walk
+;              (15) Drive, local bus, walk
+;              (16) Drive, light rail/ferry, walk
+;              (17) Drive, express bus, walk
+;              (18) Drive, heavy rail, walk
+;              (19) Drive, commuter rail, walk
+;              (20) Drive, advanced air mobility, walk
+;              (21) Walk, local bus, drive
+;              (22) Walk, light rail/ferry, drive
+;              (23) Walk, express bus, drive
+;              (24) Walk, heavy rail, drive
+;              (25) Walk, commuter rail, drive
+;              (26) Walk, advanced air mobility, drive
+;              (27) Drive alone,    TNC (includes zero-passenger deadheading trips)
+;              (28) Shared ride 2,  TNC (includes zero-passenger deadheading trips)
+;              (29) Shared ride 3+, TNC (includes zero-passenger deadheading trips)
+;              (30) Drive alone,    owned autonomous vehicles (includes zero-passenger deadheading trips)
+;              (31) Shared ride 2,  owned autonomous vehicles (includes zero-passenger deadheading trips)
+;              (32) Shared ride 3+, owned autonomous vehicles (includes zero-passenger deadheading trips)
 ;
 ; Notes:  (1)
 ;
@@ -244,18 +247,21 @@ loop period = 1, 5
       array wlk_exp_wlk = @token_zones_by_zones@
       array wlk_hvy_wlk = @token_zones_by_zones@
       array wlk_com_wlk = @token_zones_by_zones@
+      array wlk_aam_wlk = @token_zones_by_zones@      
 
       array drv_loc_wlk = @token_zones_by_zones@
       array drv_lrf_wlk = @token_zones_by_zones@
       array drv_exp_wlk = @token_zones_by_zones@
       array drv_hvy_wlk = @token_zones_by_zones@
       array drv_com_wlk = @token_zones_by_zones@
+      array drv_aam_wlk = @token_zones_by_zones@       
 
       array wlk_loc_drv = @token_zones_by_zones@
       array wlk_lrf_drv = @token_zones_by_zones@
       array wlk_exp_drv = @token_zones_by_zones@
       array wlk_hvy_drv = @token_zones_by_zones@
       array wlk_com_drv = @token_zones_by_zones@
+      array wlk_aam_drv = @token_zones_by_zones@          
 
       array taxi = @token_zones_by_zones@
       array single_tnc = @token_zones_by_zones@
@@ -263,6 +269,10 @@ loop period = 1, 5
       array da_av  = @token_zones_by_zones@
       array s2_av  = @token_zones_by_zones@
       array s3_av  = @token_zones_by_zones@
+
+
+ 
+      
 
       ; create a unique index for each origin destination pair
       od_position = @token_zones@ * (ri.orig_taz-1) + ri.dest_taz
@@ -323,55 +333,67 @@ loop period = 1, 5
          elseif (ri.trip_mode = 13)
             wlk_com_wlk[od_position] = wlk_com_wlk[od_position] + (1/ri.sampleRate)
 
+         ; - walk, advanced air mobility, walk
+         elseif (ri.trip_mode = 14)
+            wlk_aam_wlk[od_position] = wlk_aam_wlk[od_position] + (1/ri.sampleRate)
+
          ; - drive, local, walk (outbound)
-         elseif (ri.trip_mode = 14 && ri.inbound = 0)
+         elseif (ri.trip_mode = 15 && ri.inbound = 0)
             drv_loc_wlk[od_position] = drv_loc_wlk[od_position] + (1/ri.sampleRate)
 
          ; - drive, light rail/ferry, walk (outbound)
-         elseif (ri.trip_mode = 15 && ri.inbound = 0)
+         elseif (ri.trip_mode = 16 && ri.inbound = 0)
             drv_lrf_wlk[od_position] = drv_lrf_wlk[od_position] + (1/ri.sampleRate)
 
          ; - drive, express bus, walk (outbound)
-         elseif (ri.trip_mode = 16 && ri.inbound = 0)
+         elseif (ri.trip_mode = 17 && ri.inbound = 0)
             drv_exp_wlk[od_position] = drv_exp_wlk[od_position] + (1/ri.sampleRate)
 
          ; - drive, heavy rail, walk (outbound)
-         elseif (ri.trip_mode = 17 && ri.inbound = 0)
+         elseif (ri.trip_mode = 18 && ri.inbound = 0)
             drv_hvy_wlk[od_position] = drv_hvy_wlk[od_position] + (1/ri.sampleRate)
 
          ; - drive, commuter rail, walk (outbound)
-         elseif (ri.trip_mode = 18 && ri.inbound = 0)
+         elseif (ri.trip_mode = 19 && ri.inbound = 0)
             drv_com_wlk[od_position] = drv_com_wlk[od_position] + (1/ri.sampleRate)
 
+         ; - drive, advanced air mobility, walk (outbound)
+         elseif (ri.trip_mode = 20 && ri.inbound = 0)
+            drv_aam_wlk[od_position] = drv_aam_wlk[od_position] + (1/ri.sampleRate)
+
          ; - walk, local, drive (inbound)
-         elseif (ri.trip_mode = 14 && ri.inbound = 1)
+         elseif (ri.trip_mode = 15 && ri.inbound = 1)
             wlk_loc_drv[od_position] = wlk_loc_drv[od_position] + (1/ri.sampleRate)
 
          ; - walk, light rail/ferry, drive (inbound)
-         elseif (ri.trip_mode = 15 && ri.inbound = 1)
+         elseif (ri.trip_mode = 16 && ri.inbound = 1)
             wlk_lrf_drv[od_position] = wlk_lrf_drv[od_position] + (1/ri.sampleRate)
 
          ; - walk, express bus, drive (inbound)
-         elseif (ri.trip_mode = 16 && ri.inbound = 1)
+         elseif (ri.trip_mode = 17 && ri.inbound = 1)
             wlk_exp_drv[od_position] = wlk_exp_drv[od_position] + (1/ri.sampleRate)
 
          ; - walk, heavy rail, drive (inbound)
-         elseif (ri.trip_mode = 17 && ri.inbound = 1)
+         elseif (ri.trip_mode = 18 && ri.inbound = 1)
             wlk_hvy_drv[od_position] = wlk_hvy_drv[od_position] + (1/ri.sampleRate)
 
          ; - walk, commuter rail, drive (inbound)
-         elseif (ri.trip_mode = 18 && ri.inbound = 1)
+         elseif (ri.trip_mode = 19 && ri.inbound = 1)
             wlk_com_drv[od_position] = wlk_com_drv[od_position] + (1/ri.sampleRate)
 
-        ; - taxi
-         elseif (ri.trip_mode = 19)
+         ; - walk, advanced air mobility, drive (inbound)
+         elseif (ri.trip_mode = 20 && ri.inbound = 1)
+            wlk_aam_drv[od_position] = wlk_aam_drv[od_position] + (1/ri.sampleRate)
+
+         ; - taxi
+         elseif (ri.trip_mode = 21)
             taxi[od_position] = taxi[od_position] + (1/ri.sampleRate)
 
-        ; - TNC single
-         elseif (ri.trip_mode = 20)
+         ; - TNC single
+         elseif (ri.trip_mode = 22)
             single_tnc[od_position] = single_tnc[od_position] + (1/ri.sampleRate)
 
-        elseif (ri.trip_mode = 21)
+         elseif (ri.trip_mode = 23)
             shared_tnc[od_position] = shared_tnc[od_position] + (1/ri.sampleRate)
 
          ; - drive alone, no value toll
@@ -429,16 +451,19 @@ loop period = 1, 5
                      wlk_exp_wlk[position](20.4lrs),
                      wlk_hvy_wlk[position](20.4lrs),
                      wlk_com_wlk[position](20.4lrs),
+                     wlk_aam_wlk[position](20.4lrs),                     
                      drv_loc_wlk[position](20.4lrs),
                      drv_lrf_wlk[position](20.4lrs),
                      drv_exp_wlk[position](20.4lrs),
                      drv_hvy_wlk[position](20.4lrs),
                      drv_com_wlk[position](20.4lrs),
+                     drv_aam_wlk[position](20.4lrs),
                      wlk_loc_drv[position](20.4lrs),
                      wlk_lrf_drv[position](20.4lrs),
                      wlk_exp_drv[position](20.4lrs),
                      wlk_hvy_drv[position](20.4lrs),
                      wlk_com_drv[position](20.4lrs),
+                     wlk_aam_drv[position](20.4lrs),
                      taxi[position](20.4lrs),
                      single_tnc[position](20.4lrs),
                      shared_tnc[position](20.4lrs),
@@ -500,18 +525,21 @@ loop period = 1, 5
       array wlk_exp_wlk = @token_zones_by_zones@
       array wlk_hvy_wlk = @token_zones_by_zones@
       array wlk_com_wlk = @token_zones_by_zones@
+      array wlk_aam_wlk = @token_zones_by_zones@
 
       array drv_loc_wlk = @token_zones_by_zones@
       array drv_lrf_wlk = @token_zones_by_zones@
       array drv_exp_wlk = @token_zones_by_zones@
       array drv_hvy_wlk = @token_zones_by_zones@
       array drv_com_wlk = @token_zones_by_zones@
+      array drv_aam_wlk = @token_zones_by_zones@
 
       array wlk_loc_drv = @token_zones_by_zones@
       array wlk_lrf_drv = @token_zones_by_zones@
       array wlk_exp_drv = @token_zones_by_zones@
       array wlk_hvy_drv = @token_zones_by_zones@
       array wlk_com_drv = @token_zones_by_zones@
+      array wlk_aam_drv = @token_zones_by_zones@
 
       array taxi = @token_zones_by_zones@
       array single_tnc = @token_zones_by_zones@
@@ -579,55 +607,67 @@ loop period = 1, 5
          elseif (ri.trip_mode = 13)
             wlk_com_wlk[od_position] = wlk_com_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
+         ; - walk, advanced air mobility, walk
+         elseif (ri.trip_mode = 14)
+            wlk_aam_wlk[od_position] = wlk_aam_wlk[od_position] + (ri.num_participants/ri.sampleRate)
+
          ; - drive, local, walk (outbound)
-         elseif (ri.trip_mode = 14 && ri.inbound = 0)
+         elseif (ri.trip_mode = 15 && ri.inbound = 0)
             drv_loc_wlk[od_position] = drv_loc_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - drive, light rail/ferry, walk (outbound)
-         elseif (ri.trip_mode = 15 && ri.inbound = 0)
+         elseif (ri.trip_mode = 16 && ri.inbound = 0)
             drv_lrf_wlk[od_position] = drv_lrf_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - drive, express bus, walk (outbound)
-         elseif (ri.trip_mode = 16 && ri.inbound = 0)
+         elseif (ri.trip_mode = 17 && ri.inbound = 0)
             drv_exp_wlk[od_position] = drv_exp_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - drive, heavy rail, walk (outbound)
-         elseif (ri.trip_mode = 17 && ri.inbound = 0)
+         elseif (ri.trip_mode = 18 && ri.inbound = 0)
             drv_hvy_wlk[od_position] = drv_hvy_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - drive, commuter rail, walk (outbound)
-         elseif (ri.trip_mode = 18 && ri.inbound = 0)
+         elseif (ri.trip_mode = 19 && ri.inbound = 0)
             drv_com_wlk[od_position] = drv_com_wlk[od_position] + (ri.num_participants/ri.sampleRate)
 
+         ; - drive, advanced air mobility, walk (outbound)
+         elseif (ri.trip_mode = 20 && ri.inbound = 0)
+            drv_aam_wlk[od_position] = drv_aam_wlk[od_position] + (ri.num_participants/ri.sampleRate)
+
          ; - walk, local, drive (inbound)
-         elseif (ri.trip_mode = 14 && ri.inbound = 1)
+         elseif (ri.trip_mode = 15 && ri.inbound = 1)
             wlk_loc_drv[od_position] = wlk_loc_drv[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk, light rail/ferry, drive (inbound)
-         elseif (ri.trip_mode = 15 && ri.inbound = 1)
+         elseif (ri.trip_mode = 16 && ri.inbound = 1)
             wlk_lrf_drv[od_position] = wlk_lrf_drv[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk, express bus, drive (inbound)
-         elseif (ri.trip_mode = 16 && ri.inbound = 1)
+         elseif (ri.trip_mode = 17 && ri.inbound = 1)
             wlk_exp_drv[od_position] = wlk_exp_drv[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk, heavy rail, drive (inbound)
-         elseif (ri.trip_mode = 17 && ri.inbound = 1)
+         elseif (ri.trip_mode = 18 && ri.inbound = 1)
             wlk_hvy_drv[od_position] = wlk_hvy_drv[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - walk, commuter rail, drive (inbound)
-         elseif (ri.trip_mode = 18 && ri.inbound = 1)
+         elseif (ri.trip_mode = 19 && ri.inbound = 1)
             wlk_com_drv[od_position] = wlk_com_drv[od_position] + (ri.num_participants/ri.sampleRate)
 
+         ; - walk, advanced air mobility, drive (inbound)
+         elseif (ri.trip_mode = 20 && ri.inbound = 1)
+            wlk_aam_drv[od_position] = wlk_aam_drv[od_position] + (ri.num_participants/ri.sampleRate)
+
          ; - taxi
-         elseif (ri.trip_mode = 19)
+         elseif (ri.trip_mode = 21)
             taxi[od_position] = taxi[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - TNC single
-         elseif (ri.trip_mode = 20)
+         elseif (ri.trip_mode = 22)
             single_tnc[od_position] = single_tnc[od_position] + (ri.num_participants/ri.sampleRate)
 
-        elseif (ri.trip_mode = 21)
+        elseif (ri.trip_mode = 23)
             shared_tnc[od_position] = shared_tnc[od_position] + (ri.num_participants/ri.sampleRate)
 
          ; - drive alone, no value toll
@@ -685,16 +725,19 @@ loop period = 1, 5
                      wlk_exp_wlk[position](20.4lrs),
                      wlk_hvy_wlk[position](20.4lrs),
                      wlk_com_wlk[position](20.4lrs),
+                     wlk_aam_wlk[position](20.4lrs),
                      drv_loc_wlk[position](20.4lrs),
                      drv_lrf_wlk[position](20.4lrs),
                      drv_exp_wlk[position](20.4lrs),
                      drv_hvy_wlk[position](20.4lrs),
                      drv_com_wlk[position](20.4lrs),
+                     drv_aam_wlk[position](20.4lrs),
                      wlk_loc_drv[position](20.4lrs),
                      wlk_lrf_drv[position](20.4lrs),
                      wlk_exp_drv[position](20.4lrs),
                      wlk_hvy_drv[position](20.4lrs),
                      wlk_com_drv[position](20.4lrs),
+                     wlk_aam_drv[position](20.4lrs),
                      taxi[position](20.4lrs),
                      single_tnc[position](20.4lrs),
                      shared_tnc[position](20.4lrs),
@@ -729,11 +772,11 @@ loop period = 1, 5
 
 
       ; write out a matrix that combines the individual and joint trips for assignment
-      fileo mato[1] = main\trips@token_period@_no_zpv.tpp, mo = 1-29, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+      fileo mato[1] = main\trips@token_period@_no_zpv.tpp, mo = 1-32, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                                                                    walk, bike,
-                                                                   wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
-                                                                   drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
-                                                                   wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
+                                                                   wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, wlk_aam_wlk,
+                                                                   drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk, drv_aam_wlk,
+                                                                   wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv, wlk_aam_drv,
                                                                    da_tnc, s2_tnc, s3_tnc, da_av, s2_av, s3_av
 
      ; load lookup values for factoring taxi and TNC modes
@@ -785,53 +828,62 @@ loop period = 1, 5
       ; walk, commuter rail, walk
       mw[13] = (mi.1.13 + mi.2.13) + mi.3.wlk_com_wlk
 
+      ; walk, advanced air mobility, walk (no trips to/from HSR)
+      mw[14] = (mi.1.14 + mi.2.14)
+
       ; drive, local bus, walk
-      mw[14] = (mi.1.14 + mi.2.14) + mi.3.drv_loc_wlk
+      mw[15] = (mi.1.15 + mi.2.15) + mi.3.drv_loc_wlk
 
       ; drive, light rail/ferry, walk
-      mw[15] = (mi.1.15 + mi.2.15) + mi.3.drv_lrf_wlk
+      mw[16] = (mi.1.16 + mi.2.16) + mi.3.drv_lrf_wlk
 
       ; drive, express bus, walk
-      mw[16] = (mi.1.16 + mi.2.16) + mi.3.drv_exp_wlk
+      mw[17] = (mi.1.17 + mi.2.17) + mi.3.drv_exp_wlk
 
       ; drive, heavy rail, walk
-      mw[17] = (mi.1.17 + mi.2.17) + mi.3.drv_hvy_wlk
+      mw[18] = (mi.1.18 + mi.2.18) + mi.3.drv_hvy_wlk
 
       ; drive, commuter rail, walk
-      mw[18] = (mi.1.18 + mi.2.18) + mi.3.drv_com_wlk
+      mw[19] = (mi.1.19 + mi.2.19) + mi.3.drv_com_wlk
+
+      ; drive, advanced air mobility, walk (no trips to/from HSR)
+      mw[20] = (mi.1.20 + mi.2.20)
 
       ; walk, local bus, drive
-      mw[19] = (mi.1.19 + mi.2.19) + mi.3.wlk_loc_drv
+      mw[21] = (mi.1.21 + mi.2.21) + mi.3.wlk_loc_drv
 
       ; walk, light rail/ferry, drive
-      mw[20] = (mi.1.20 + mi.2.20) + mi.3.wlk_lrf_drv
+      mw[22] = (mi.1.22 + mi.2.22) + mi.3.wlk_lrf_drv
 
       ; walk, express bus, drive
-      mw[21] = (mi.1.21 + mi.2.21) + mi.3.wlk_exp_drv
+      mw[23] = (mi.1.23 + mi.2.23) + mi.3.wlk_exp_drv
 
       ; walk, heavy rail, drive
-      mw[22] = (mi.1.22 + mi.2.22) + mi.3.wlk_hvy_drv
+      mw[24] = (mi.1.24 + mi.2.24) + mi.3.wlk_hvy_drv
 
       ; walk, commuter rail, drive
-      mw[23] = (mi.1.23 + mi.2.23) + mi.3.wlk_com_drv
+      mw[25] = (mi.1.25 + mi.2.25) + mi.3.wlk_com_drv
+
+      ; walk, advanced air mobility, drive (no trips to/from HSR)
+      mw[26] = (mi.1.26 + mi.2.26)
 
       ; da_tnc          single tnc                                  shared tnc
-      mw[24] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 1) + (mi.1.26 + mi.2.26) * occ_factors(3, 1)) 
+      mw[27] =  ((mi.1.28 + mi.2.28) * occ_factors(2, 1) + (mi.1.29 + mi.2.29) * occ_factors(3, 1)) 
 
        ; s2_tnc          single tnc                                  shared tnc
-      mw[25] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 2) + (mi.1.26 + mi.2.26) * occ_factors(3, 2)) 
+      mw[28] =  ((mi.1.28 + mi.2.28) * occ_factors(2, 2) + (mi.1.29 + mi.2.29) * occ_factors(3, 2)) 
 
       ; s3_tnc          single tnc                                  shared tnc
-      mw[26] =  ((mi.1.25 + mi.2.25) * occ_factors(2, 3) + (mi.1.26 + mi.2.26) * occ_factors(3, 3)) 
+      mw[29] =  ((mi.1.28 + mi.2.28) * occ_factors(2, 3) + (mi.1.29 + mi.2.29) * occ_factors(3, 3)) 
 
       ; da_av
-      mw[27] =  (mi.1.27+mi.2.27)
+      mw[30] =  (mi.1.30+mi.2.30)
 
       ; s2_av
-      mw[28] =  (mi.1.28+mi.2.28) 
+      mw[31] =  (mi.1.31+mi.2.31) 
 
       ; s3_av
-      mw[29] =  (mi.1.29+mi.2.29) 
+      mw[32] =  (mi.1.32+mi.2.32) 
    endrun
 
    ; step four: create zero passenger trips
@@ -848,17 +900,18 @@ loop period = 1, 5
       mw[2] = (mi.1.da_av.t  + (mi.1.s2_av.t /2.0) + (mi.1.s3_av.t /3.25))*OwnedAV_ZPV_factor
    endrun
 
-   ; step five: add the zero passenger trips
+   ; step five: add the zero passenger trips, add air transit
    run pgm = matrix
 
       filei mati[1] = main\trips@token_period@_no_zpv.tpp
       filei mati[2] = main\trips@token_period@_zpv.tpp
-
-      fileo mato[1] = main\trips@token_period@.tpp, mo = 1-29, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
+      filei mati[3] = nonres\tripsAirTotal_@token_period@.tpp
+      
+      fileo mato[1] = main\trips@token_period@.tpp, mo = 1-32, name = da, datoll, sr2, sr2toll, sr3, sr3toll,
                                                                    walk, bike,
-                                                                   wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
-                                                                   drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
-                                                                   wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv,
+                                                                   wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, wlk_aam_wlk,
+                                                                   drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk, drv_aam_wlk,
+                                                                   wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv, wlk_aam_drv,
                                                                    da_tnc, s2_tnc, s3_tnc, da_av, s2_av, s3_av
 
 
@@ -875,22 +928,25 @@ loop period = 1, 5
       mw[11] = mi.1.wlk_exp_wlk
       mw[12] = mi.1.wlk_hvy_wlk
       mw[13] = mi.1.wlk_com_wlk
-      mw[14] = mi.1.drv_loc_wlk
-      mw[15] = mi.1.drv_lrf_wlk
-      mw[16] = mi.1.drv_exp_wlk
-      mw[17] = mi.1.drv_hvy_wlk
-      mw[18] = mi.1.drv_com_wlk
-      mw[19] = mi.1.wlk_loc_drv
-      mw[20] = mi.1.wlk_lrf_drv
-      mw[21] = mi.1.wlk_exp_drv
-      mw[22] = mi.1.wlk_hvy_drv
-      mw[23] = mi.1.wlk_com_drv
-      mw[24] = mi.1.da_tnc       + mi.2.zpv_tnc
-      mw[25] = mi.1.s2_tnc
-      mw[26] = mi.1.s3_tnc
-      mw[27] = mi.1.da_av        + mi.2.zpv_av
-      mw[28] = mi.1.s2_av
-      mw[29] = mi.1.s3_av
+      mw[14] = mi.1.wlk_aam_wlk
+      mw[15] = mi.1.drv_loc_wlk
+      mw[16] = mi.1.drv_lrf_wlk
+      mw[17] = mi.1.drv_exp_wlk
+      mw[18] = mi.1.drv_hvy_wlk
+      mw[19] = mi.1.drv_com_wlk
+      mw[20] = mi.1.drv_aam_wlk + mi.3.drv_aam_wlk
+      mw[21] = mi.1.wlk_loc_drv
+      mw[22] = mi.1.wlk_lrf_drv
+      mw[23] = mi.1.wlk_exp_drv
+      mw[24] = mi.1.wlk_hvy_drv
+      mw[25] = mi.1.wlk_com_drv
+      mw[26] = mi.1.wlk_aam_drv + mi.3.wlk_aam_drv
+      mw[27] = mi.1.da_tnc       + mi.2.zpv_tnc
+      mw[28] = mi.1.s2_tnc
+      mw[29] = mi.1.s3_tnc
+      mw[30] = mi.1.da_av        + mi.2.zpv_av
+      mw[31] = mi.1.s2_av
+      mw[32] = mi.1.s3_av
 
     endrun
 

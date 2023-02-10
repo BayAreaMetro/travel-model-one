@@ -138,13 +138,13 @@ public class MtcModelStructure extends ModelStructure {
     public static final int[] WALK_ALTS = { 7 };
     public static final int[] BIKE_ALTS = { 8 };
     public static final int[] NON_MOTORIZED_ALTS = { 7, 8 };
-    public static final int[] TRANSIT_ALTS = { 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 };
+    public static final int[] TRANSIT_ALTS = { 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,20 };
     public static final int[] WALK_LOCAL_ALTS = { 9 };
-    public static final int[] WALK_PREMIUM_ALTS = { 10, 11, 12, 13 };
-    public static final int[] DRIVE_TRANSIT_ALTS = { 14, 15, 16, 17, 18 };
+    public static final int[] WALK_PREMIUM_ALTS = { 10, 11, 12, 13, 14 };
+    public static final int[] DRIVE_TRANSIT_ALTS = { 15, 16, 17, 18, 19, 20 };
     public static final int[] SCHOOL_BUS_ALTS = {};
-    public static final int[] RIDE_HAIL_ALTS = {19, 20, 21};
-    public static final int MAXIMUM_TOUR_MODE_ALT_INDEX = 21;
+    public static final int[] RIDE_HAIL_ALTS = {21, 22, 23};
+    public static final int MAXIMUM_TOUR_MODE_ALT_INDEX = 23;
 
     public static final int NUM_INCOME_CATEGORIES = 4; 
     

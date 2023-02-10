@@ -1,0 +1,155 @@
+; RSG 2022-01-21 TM1.5 add advanced air mobility mode
+; This script Uses Transit trips * Transit skims (IVT and OVT) and outputs:
+; metrics\transit_times_by_mode_TOD.csv with columns:
+;  * Period                (EA, AM, MD, PM, EV)
+;  * Access                (wlk, drv)
+;  * Mode                  (aam, com, hvy, exp, lrf, loc)
+;  * Egress                (wlk, drv)
+;  * Transit Trips         (# of transit trips taken by relevant ppl)
+;  * In-vehicle hours      (# of in-vehicle hours taken by relevant ppl)
+;  * Out-of-vehicle hours  (# of out-of-vehicle hours taken by relevant ppl)
+;  * Init wait hours       (# of hours spent in the initial wait by relevant ppl)
+;  * Xfer wait hours       (# of hours spent in the transfer wait by relevant ppl)
+;  * Walk acc & egr hours  (# of hours spent in walk access and egress by relevant ppl)
+;  * Aux walk hours        (# of hours spent in auxiliary walk by relevant ppl)
+;  * Drive acc & egr hours (# of hours spent in drive access and egress by relevant ppl)
+;
+
+
+;*del metrics\transit_times_by_mode_TOD.csv
+
+; Loop thru transit modes
+  loop path = 1,6
+    ; advanced air mobility
+      if (path = 1)
+        token_path = 'aam'
+        token_ivt  = 'ivtAAM'  
+    ; commuter rail or long-haul premium
+      elseif (path = 2)
+        token_path = 'com'
+        token_ivt  = 'ivtCOM'
+    ; heavy rail or medium-haul premium
+      elseif (path = 3)
+        token_path = 'hvy'
+        token_ivt  = 'ivtHVY'
+    ; express bus or medium-haul basic
+      elseif (path = 4)
+        token_path = 'exp'
+        token_ivt  = 'ivtEXP'
+    ; light rail (or ferry) or short-haul premium
+      elseif (path = 5)
+        token_path = 'lrf'
+        token_ivt  = 'ivtLRF'
+    ; local bus or short-haul basic
+      elseif (path = 6)
+        token_path = 'loc'
+        token_ivt  = 'ivtLOC'
+      endif
+
+ DistributeMultistep processid = 'ctramp', processNum = path, commpath = '%COMMPATH%'
+
+ ; Loop thru access + egress modes
+ loop accegg = 1,3
+      if (accegg = 1)
+         token_access = 'wlk'
+         token_egress = 'wlk'
+
+      elseif (accegg = 2)
+         token_access = 'drv'
+         token_egress = 'wlk'
+
+      elseif (accegg = 3)
+         token_access = 'wlk'
+         token_egress = 'drv'
+
+      endif
+
+    loop period = 1,5
+
+      if (period = 1)
+          token_period = 'EA'
+      elseif (period = 2)
+          token_period = 'AM'
+      elseif (period = 3)
+          token_period = 'MD'
+      elseif (period = 4)
+          token_period = 'PM'
+      elseif (period = 5)
+          token_period = 'EV'
+      endif
+
+     RUN PGM = MATRIX
+      ; Read person trips
+      ; 1. da, 2. datoll, 3. sr2, 4. sr2toll, 5. sr3, 6. sr3toll, 7. walk, 8. bike,
+      ; 9. wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk, wlk_aam_wlk,
+      ; 14. drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk, drv_aam_wlk,
+      ; 19. wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv, wlk_aam_drv
+      FILEI MATI[1] = "main\trips@token_period@_no_zpv_allinc.tpp"
+
+      ; Read transit skims
+      ; ivt, iwait, xwait, wait, wacc, waux, wegr, dtime, ddist, fare, boards, ivtLOC, ivtLRF, ivtEXP, ivtHVY, ivtCOM, ivtAAM, ivtFerry, ivtMUNILoc, ivtMUNIMet,
+      FILEI MATI[2] = "skims\trnskm@token_period@_@token_access@_@token_path@_@token_egress@.tpp"
+
+      FILEO PRINTO[1] = "metrics\transit_times_by_acc_mode_egr_@token_path@.csv", append=T
+
+      ; Transit Trips by TOD
+      MW[1] = mi.1.@token_access@_@token_path@_@token_egress@            ; Trips
+      MW[2] = MW[1] *  mi.2.ivt                                          ; IVTTrips
+      MW[3] = MW[1] * (mi.2.wait+mi.2.wacc+mi.2.waux+mi.2.wegr+mi.2.dtime) ; OVTTrips
+      MW[101] = MW[1] * mi.2.iwait       					 ; iwaitTrips
+      MW[102] = MW[1] * mi.2.xwait       					 ; xwaitTrips
+      MW[103] = MW[1] * (mi.2.wacc +mi.2.wegr) 		 ; accegrTrips
+      MW[104] = MW[1] * mi.2.waux       					 ; wauxTrips
+      MW[105] = MW[1] * mi.2.dtime       					 ; dtimeTrips
+
+      JLOOP
+      Trips  = Trips  + MW[1]
+      IVT    = IVT    + MW[2]
+      OVT    = OVT    + MW[3]
+      iwait  = iwait  + MW[101]
+      xwait  = xwait  + MW[102]
+      accegr = accegr + MW[103]
+      waux   = waux   + MW[104]
+      dtime  = dtime  + MW[105]
+      ENDJLOOP
+
+       Name = '@token_access@_@token_path@_@token_egress@'
+      if(I = 1 & @path@ = 1 & @accegg@ = 1 & @period@ = 1)
+      	PRINT PRINTO=1 CSV=T LIST= "Period", "Access","Mode","Egress",
+          "Transit Trips","In-vehicle hours","Out-of-vehicle hours","Init wait hours",
+          "Xfer wait hours","Walk acc & egr hours",
+          "Aux walk hours","Drive acc & egr hours"
+      endif
+      if(I=1475)
+        IVT_triphours = IVT    / 6000
+      	OVT_triphours = OVT    / 6000
+      	iwait_hours   = iwait  / 6000
+      	xwait_hours   = xwait  / 6000
+      	accegr_hours  = accegr / 6000
+      	waux_hours    = waux   / 6000
+      	dtime_hours   = dtime  / 6000
+        PRINT PRINTO=1 CSV=T LIST= '@token_period@','@token_access@','@token_path@','@token_egress@',
+          Trips,IVT_triphours,OVT_triphours,iwait_hours,
+          xwait_hours,accegr_hours,
+          waux_hours,dtime_hours
+      endif
+     ENDRUN
+    endloop
+ endloop
+
+ EndDistributeMultistep
+endloop
+
+Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
+                 CTRAMP4.script.end, CTRAMP5.script.end, CTRAMP6.script.end,
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+
+; combine the path files into one
+* copy metrics\transit_times_by_acc_mode_egr_aam.csv+metrics\transit_times_by_acc_mode_egr_com.csv+metrics\transit_times_by_acc_mode_egr_hvy.csv+metrics\transit_times_by_acc_mode_egr_exp.csv+metrics\transit_times_by_acc_mode_egr_lrf.csv+metrics\transit_times_by_acc_mode_egr_loc.csv metrics\transit_times_by_mode_TOD.csv
+; delete the individual ones
+* del metrics\transit_times_by_acc_mode_egr_aam.csv
+* del metrics\transit_times_by_acc_mode_egr_com.csv
+* del metrics\transit_times_by_acc_mode_egr_hvy.csv
+* del metrics\transit_times_by_acc_mode_egr_exp.csv
+* del metrics\transit_times_by_acc_mode_egr_lrf.csv
+* del metrics\transit_times_by_acc_mode_egr_loc.csv
