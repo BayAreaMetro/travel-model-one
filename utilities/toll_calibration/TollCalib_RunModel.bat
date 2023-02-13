@@ -58,24 +58,15 @@ if %ITER% NEQ 4 (
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 0: set file location and folder structure
+:: Step 0: set paths, file location and folder structure
 ::
 :: ------------------------------------------------------------------------------------------------------
-
 
 :: Use this for COMMPATH
 mkdir COMMPATH
 set COMMPATH=%CD%\COMMPATH
 echo COMMPATH is [%COMMPATH%]
 "C:\Program Files\Citilabs\CubeVoyager\Cluster" "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
-
-
-:: Path details
-set PATH=c:\windows\system32;C:\Python27;C:\Python27\Scripts
-set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files (x86)\Citilabs\CubeVoyager
-set PYTHONPATH=X:\NetworkWrangler;X:\NetworkWrangler\_static
-set GAWK_PATH=M:\Software\Gawk\bin
-SET PATH=%TPP_PATH%;%GAWK_PATH%;%PATH%
 
 
 :: ------------------------------------------------------------------------------------------------------
@@ -108,6 +99,9 @@ copy /y "%TOLL_FILE%" hwy\tolls.csv
 :: Step 2: Pre-process steps
 ::
 :: ------------------------------------------------------------------------------------------------------
+:: set paths
+call CTRAMP\runtime\SetPath.bat
+
 :preprocess
 set INSTANCE=%COMPUTERNAME%
 set MODEL_DIR=%CD%
@@ -168,6 +162,10 @@ if ERRORLEVEL 2 goto done
 :: Complete
 echo FINISHED HIGHWAY ASSIGNMENT  %DATE% %TIME% >> logs\feedback.rpt
 "C:\Program Files\Citilabs\CubeVoyager\Cluster" "%COMMPATH%\CTRAMP" 1-48 Close Exit
+
+:: kill voyager.exe after highway assignment 
+:: to make sure the process does not hold onto the outputs and prevent the outputs from being moved as needed 
+C:\Windows\SysWOW64\taskkill /f /im "voyager.exe"
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -294,7 +292,7 @@ if ERRORLEVEL 2 goto done
 :: ------------------------------------------
 :: including the location of the 64-bit java development kit
 :: set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
-call CTRAMP\runtime\SetPath.bat
+:: call CTRAMP\runtime\SetPath.bat
 :: but overwrite the commpath setting
 set COMMPATH=%CD%\COMMPATH
 
