@@ -24,9 +24,11 @@ set MODEL_BASE_DIR=E:\Model2C-Share\Projects\2050_TM151_PPA_BF_17_preTollCalib
 :: (this shoudl be the location of the output folder "tollcalib_iter" on the L drive)
 set L_DIR=L:\RTP2021_PPA\Projects\2050_TM151_PPA_BF_17_preTollCalib
 
-:: Configure target speed and max toll by TOLLCLASS_Designations.xlsx
-rem set target_speed=45 
-rem set max_toll=5
+:: specify any HOV discount for the all-lane tolling system 
+:: (note that these discounts are for all-lane tolling only, and won't be applied to express lanes) 
+:: A DiscountFactor of 0.5 means half price; a DiscountFactor of 0 means free; and a DiscountFactor of 1 means no discount.
+set DiscountFactor_HOV2=1 
+set DiscountFactor_HOV3=0.5
 
 
 rem copy the two toll calibration inputs 

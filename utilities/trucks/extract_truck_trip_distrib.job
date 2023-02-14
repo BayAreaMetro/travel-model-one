@@ -1,0 +1,54 @@
+; This script is for looking at truck trip distribution input and output to investigate truck trip sensitivity.
+; See https://app.asana.com/0/1201809392759895/1203246561643092/f
+;
+; Create a blendedTruckTimeTOLL.tpp for testing purposes 
+run pgm = matrix
+
+  ; read in the AM peak period commercial skims
+  filei mati[1] = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\skims\com_hwyskimAM.tpp"
+  filei mati[2] = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\skims\com_hwyskimMD.tpp"
+   
+  ; write out the blended travel time (1/3 peak, 2/3 off-peak) for each truck class; plus distance between TAZs
+  fileo mato[1] = blendedTruckTimeTOLL_%MODEL_DIR%.tpp, mo = 1-5, name = timeVSM, timeSML, timeMED, timeLRG, TOLLDISTVSM_AM
+   
+   ; compute the blended travel time for each truck class
+   ;   - very small
+   mw[1] = mi.1.TOLLtimeVSM * 1.0/3.0 + mi.2.TOLLtimeVSM * 2.0/3.0
+   
+   ;   - small
+   mw[2] = mi.1.TOLLtimeSML * 1.0/3.0 + mi.2.TOLLtimeSML * 2.0/3.0
+   
+   ;   - medium
+   mw[3] = mi.1.TOLLtimeMED * 1.0/3.0 + mi.2.TOLLtimeMED * 2.0/3.0
+   
+   ;   - large
+   mw[4] = mi.1.TOLLtimeLRG * 1.0/3.0 + mi.2.TOLLtimeLRG * 2.0/3.0
+
+   mw[5] = mi.1.TOLLDISTVSM
+
+endrun
+
+;
+; Extract all truck skim tables and daily truck trips into a text file of condensed form
+;
+run PGM=MATRIX
+  filei mati[1] = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\nonres\blendedTruckTime.tpp"
+  filei mati[2] = "blendedTruckTimeTOLL_%MODEL_DIR%.tpp"
+  filei mati[3] = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\nonres\DailyTruckTrips.tpp"
+  filei mati[4] = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\nonres\truckkfact.k22.z1454.mat"
+  fileo mato[1] = "truck_trip_distrib_noheader.csv", FORMAT=TXT, DELIMITER=",", PATTERN=IJM:V, MO=1-15, MAXFIELDS=15
+
+  MW[1] = 1
+  FILLMW MW[2]  = MI.1.1(4)
+  FILLMW MW[6]  = MI.2.1(4)
+  FILLMW MW[10] = MI.3.1(4)
+  MW[14]        = MI.4.truck_k
+  MW[15]        = MI.2.TOLLDISTVSM_AM
+
+endrun
+
+; add header
+*echo production, attraction, one_a, one_b, skim time verySmall, skim time small, skim time medium, skim time large, skim toll time verySmall, skim toll time small, skim toll time medium, skim toll time large, daily trips verySmall, daily trips small, daily trips medium, daily trips large, truck_k, TOLLDISTVSM_AM > "truck_trip_distrib_%MODEL_DIR%.csv"
+*type "truck_trip_distrib_noheader.csv" >> "truck_trip_distrib_%MODEL_DIR%.csv"
+*del "truck_trip_distrib_noheader.csv"
+

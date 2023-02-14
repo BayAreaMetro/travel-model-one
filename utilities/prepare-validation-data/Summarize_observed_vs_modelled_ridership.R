@@ -16,7 +16,7 @@ library(dplyr)
 ##################
 
 # users to specify the project directory:
-PROJECT_DIR = "L:/Application/Model_One/TransitRecovery/2015_TM152_TRR_00"
+PROJECT_DIR = "L:/Application/Model_One/NextGenFwys/Scenarios/2015_TM152_NGF_05"
 
 # typically, users do not need to specify other input paths, as they do not change across model runs
 # onboard survey data
