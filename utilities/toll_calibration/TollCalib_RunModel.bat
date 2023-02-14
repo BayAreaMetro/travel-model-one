@@ -77,9 +77,9 @@ echo COMMPATH is [%COMMPATH%]
 
 if %ITER%==4 (
     :: Use the same CTRAMP as the BASE
-    robocopy /MIR "%MODEL_BASE_DIR%\CTRAMP"           CTRAMP
+    c:\windows\system32\Robocopy.exe /MIR "%MODEL_BASE_DIR%\CTRAMP"           CTRAMP
 
-    robocopy /MIR "%MODEL_BASE_DIR%\INPUT\hwy"        hwy
+    c:\windows\system32\Robocopy.exe /MIR "%MODEL_BASE_DIR%\INPUT\hwy"        hwy
 )
 
 :: check that the NonDynamicTollFacilities.csv file is in the INPUT\hwy folder of the base run
@@ -166,6 +166,8 @@ echo FINISHED HIGHWAY ASSIGNMENT  %DATE% %TIME% >> logs\feedback.rpt
 :: kill voyager.exe after highway assignment 
 :: to make sure the process does not hold onto the outputs and prevent the outputs from being moved as needed 
 C:\Windows\SysWOW64\taskkill /f /im "voyager.exe"
+:: Restart the cube cluster
+Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -180,7 +182,7 @@ set WGT=0.33
 set PREV_WGT=0.67
 
 if %ITER%==4 (
-   robocopy "%MODEL_BASE_DIR%\hwy\iter%PREV_ITER%" hwy\iter%PREV_ITER%
+   c:\windows\system32\Robocopy.exe "%MODEL_BASE_DIR%\hwy\iter%PREV_ITER%" hwy\iter%PREV_ITER%
 )
 
 :: Move assigned networks to a iteration-specific directory

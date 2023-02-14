@@ -138,16 +138,11 @@ if ERRORLEVEL 2 goto done
 :: Move assigned networks to a iteration-specific directory
 mkdir hwy\iter%ITER%      
 
-copy hwy\LOADEA.net hwy\iter%ITER%\LOADEA.net
-copy hwy\LOADAM.net hwy\iter%ITER%\LOADAM.net
-copy hwy\LOADMD.net hwy\iter%ITER%\LOADMD.net
-copy hwy\LOADPM.net hwy\iter%ITER%\LOADPM.net
-copy hwy\LOADEV.net hwy\iter%ITER%\LOADEV.net
-del  hwy\LOADEA.net
-del  hwy\LOADAM.net
-del  hwy\LOADMD.net
-del  hwy\LOADPM.net
-del  hwy\LOADEV.net
+move hwy\LOADEA.net hwy\iter%ITER%\LOADEA.net
+move hwy\LOADAM.net hwy\iter%ITER%\LOADAM.net
+move hwy\LOADMD.net hwy\iter%ITER%\LOADMD.net
+move hwy\LOADPM.net hwy\iter%ITER%\LOADPM.net
+move hwy\LOADEV.net hwy\iter%ITER%\LOADEV.net
 
 :: Give the default TP+ variables more intuitive names
 runtpp CTRAMP\scripts\feedback\RenameAssignmentVariables.job
