@@ -31,7 +31,7 @@ call CTRAMP\runtime\SetPath.bat
 SET BASE_SCRIPTS=CTRAMP\scripts
 
 :: Start the cube cluster
-Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
+Cluster "CTRAMP" 1-64 Starthide Exit
 
 :: Settings for sending notifications to Slack -- requires a Slack account
 set computer_prefix=%computername:~0,4%
@@ -477,7 +477,7 @@ c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
 copy *.prn logs\*.prn
 
 :: Close the cube cluster
-Cluster "%COMMPATH%\CTRAMP" 1-48 Close Exit
+Cluster "CTRAMP" 1-64 Close Exit
 
 :: Delete all the temporary TP+ printouts and cluster files
 del *.prn

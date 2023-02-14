@@ -88,7 +88,6 @@
 ; ----------------------------------------------------------------------------------------------------------------
 ; 48 procesors, copied by the runTimeConfiguration.py script
 read file = ctramp\scripts\block\HwyIntraStep.block
-*Cluster.exe CTRAMP 1-48 start exit
 ; do, more or less, the same assignment procedure for each time period
 loop period = 1, 3
 
@@ -101,7 +100,7 @@ loop period = 1, 3
       token_capfac_num = '3'
 
       ; set the processors to be used for the intrastep multithreading
-      token_intrastep_processlist = '1-48'
+      token_intrastep_processlist = token_intrastep_processlist_EA
 
       ; switch to use time penalties for transfering to hov lane
       token_hov_xfer_pen = 'li.HOVXPEN'
@@ -116,7 +115,7 @@ loop period = 1, 3
       token_period = 'MD'
       token_capfac = 'parameters capfac = 5'
       token_capfac_num = '5'
-      token_intrastep_processlist = '1-48'
+      token_intrastep_processlist = token_intrastep_processlist_MD
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.005'
       token_maxiters = 'parameters maxiters = 10'
@@ -125,7 +124,7 @@ loop period = 1, 3
       token_period = 'EV'
       token_capfac = 'parameters capfac = 8'
       token_capfac_num = '8'
-      token_intrastep_processlist = '1-48'
+      token_intrastep_processlist = token_intrastep_processlist_EV
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.005'
       token_maxiters = 'parameters maxiters = 10'
@@ -133,7 +132,7 @@ loop period = 1, 3
    endif
 
    ; distribute via cluster
-   ;DistributeMultistep processid = 'CTRAMP', processNum = @period@, commpath = '%COMMPATH%'
+   DistributeMultistep processid = 'CTRAMP', processNum = @period@
 
 	; comment out these steps when trimming the network manually prior to assignment
 	; this is just a temporary step, network should be whole from beginning of process
@@ -165,7 +164,7 @@ loop period = 1, 3
    run pgm = highway
 
       ; distribute via cluster
-      DistributeIntrastep processid = 'CTRAMP', processlist = @token_intrastep_processlist@, commpath = '%COMMPATH%', saveprn = f
+      DistributeIntrastep processid = 'CTRAMP', processlist = @token_intrastep_processlist@, saveprn = f
 
       ; time-specific input highway network
       neti    = hwy\avgload@token_period@_taz_delete.net
@@ -189,7 +188,7 @@ loop period = 1, 3
       parameters combine = equi; , enhance = 2
 
       ; set the assignment parameters -- 6593 internal zones + 33 external zones
-      parameters zones = %TAZ_EXTS_COUNT%
+      parameters zones = 6626
 
       ; set the assignment parameters -- maximum number of iterations to 300
       @token_maxiters@
@@ -354,17 +353,14 @@ loop period = 1, 3
       endphase
    endrun
 
-   ;EndDistributeMultistep
+   EndDistributeMultistep
 
 endloop ; time period loop
 
-;Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
-;          PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t
-*Cluster.exe CTRAMP 1-48 close exit
+Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
+          PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t
 
 
-;start cluster nodes
-*Cluster.exe CTRAMP 1-48 start exit
 ; do, more or less, the same assignment procedure for each time period
 loop period = 1, 2
 
@@ -377,7 +373,7 @@ loop period = 1, 2
       token_capfac_num = '4'
 
       ; set the processors to be used for the intrastep multithreading
-      token_intrastep_processlist = '1-48'
+      token_intrastep_processlist = token_intrastep_processlist_AM
 
       ; switch to use time penalties for transfering to hov lane
       token_hov_xfer_pen = 'li.HOVXPEN'
@@ -392,7 +388,7 @@ loop period = 1, 2
       token_period = 'PM'
       token_capfac = 'parameters capfac = 4'
       token_capfac_num = '4'
-      token_intrastep_processlist = '1-48'
+      token_intrastep_processlist = token_intrastep_processlist_PM
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.005'
       token_maxiters = 'parameters maxiters = 10'
@@ -400,7 +396,7 @@ loop period = 1, 2
    endif
 
    ; distribute via cluster
-   ;DistributeMultistep processid = 'CTRAMP', processNum = @period@, commpath = '%COMMPATH%'
+   DistributeMultistep processid = 'CTRAMP', processNum = @period@
 
 	; comment out these steps when trimming the network manually prior to assignment
 	; this is just a temporary step, network should be whole from beginning of process
@@ -432,7 +428,7 @@ loop period = 1, 2
    run pgm = highway
 
       ; distribute via cluster
-      DistributeIntrastep processid = 'CTRAMP', processlist = @token_intrastep_processlist@, commpath = '%COMMPATH%', saveprn = f
+      DistributeIntrastep processid = 'CTRAMP', processlist = @token_intrastep_processlist@, saveprn = f
 
       ; time-specific input highway network
       neti    = hwy\avgload@token_period@_taz_delete.net
@@ -456,7 +452,7 @@ loop period = 1, 2
       parameters combine = equi; , enhance = 2
 
       ; set the assignment parameters -- 6593 internal zones + 33 external zones
-      parameters zones = %TAZ_EXTS_COUNT%
+      parameters zones = 6626
 
       ; set the assignment parameters -- maximum number of iterations to 300
       @token_maxiters@
@@ -622,10 +618,9 @@ loop period = 1, 2
       endphase
    endrun
 
-   ;EndDistributeMultistep
+   EndDistributeMultistep
 
 endloop ; time period loop
 
-;Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end,
-;          PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t
-*Cluster.exe CTRAMP 1-48 close exit
+Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end,
+          PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t

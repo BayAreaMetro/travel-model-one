@@ -136,7 +136,6 @@ read file = %BASE_SCRIPTS%\block\hwyparam.block
 hwy_block_param = '%BASE_SCRIPTS%\block\hwyparam.block'
 
 ;start cluster nodes
-*Cluster.exe ctramp 1-30 start exit
 
 ;first, do taz-taz skims
 
@@ -524,6 +523,4 @@ Wait4Files files = ctramp1.script.end, ctramp2.script.end, ctramp3.script.end, c
 
 
 
-;stop cluster nodes
-*Cluster.exe ctramp 1-30 close exit
 

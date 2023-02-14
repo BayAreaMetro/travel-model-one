@@ -87,7 +87,7 @@ loop period = 1, 5
    endif
    
    ; disable distribution: process is faster without the distribution overhead
-  ; DistributeMultistep processid = 'ctramp', processNum = @period@, commpath = '%COMMPATH%'
+  ; DistributeMultistep processid = 'ctramp', processNum = @period@
    
    run pgm = network
    
