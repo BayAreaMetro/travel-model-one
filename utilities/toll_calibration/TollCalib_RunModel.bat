@@ -163,12 +163,6 @@ if ERRORLEVEL 2 goto done
 echo FINISHED HIGHWAY ASSIGNMENT  %DATE% %TIME% >> logs\feedback.rpt
 "C:\Program Files\Citilabs\CubeVoyager\Cluster" "%COMMPATH%\CTRAMP" 1-48 Close Exit
 
-:: kill voyager.exe after highway assignment 
-:: to make sure the process does not hold onto the outputs and prevent the outputs from being moved as needed 
-C:\Windows\SysWOW64\taskkill /f /im "voyager.exe"
-:: Restart the cube cluster
-Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
-
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 4:  Prepare the networks for the next iteration
