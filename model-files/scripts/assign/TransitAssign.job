@@ -301,7 +301,7 @@ loop period = 1, 5
          counter = counter + 1
          
          ; distribute the tasks
-         DistributeMultistep processid = "ctramp", processnum = @counter@,  commpath = '%COMMPATH%' 
+         DistributeMultistep processid = "ctramp", processnum = @counter@
 
          run pgm = trnbuild
              

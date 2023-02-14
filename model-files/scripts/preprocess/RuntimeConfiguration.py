@@ -539,8 +539,8 @@ def config_distribution(replacements):
             replacements[filepath]["(\nprocessing.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>24"
 
         # hwyassign
-        print "Copying HwyIntraStep_48.block to HwyIntraStep.block"
-        shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_48.block"),
+        print "Copying HwyIntraStep_64.block to HwyIntraStep.block"
+        shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
     else:
@@ -583,8 +583,8 @@ def config_distribution(replacements):
             replacements[filepath]["(\nprocessing.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>24"
 
         # hwyassign
-        print "Copying HwyIntraStep_48.block to HwyIntraStep.block"
-        shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_48.block"),
+        print "Copying HwyIntraStep_64.block to HwyIntraStep.block"
+        shutil.copy2(os.path.join("CTRAMP","scripts","block","HwyIntraStep_64.block"),
                      os.path.join("CTRAMP","scripts","block","HwyIntraStep.block"))
 
     else:

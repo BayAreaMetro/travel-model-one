@@ -19,7 +19,6 @@
 ; ----------------------------------------------------------------------------------------------------------------
 
 ;start cluster nodes
-*Cluster.exe ctramp 1-5 start exit
 
 ; do, more or less, the same skim procedure for each of the five time periods
 loop period = 1, 5
@@ -45,7 +44,7 @@ loop period = 1, 5
     ;tazs include external stations (900,000 - 1,000,000)
     taz_selector = '(N < 1000000)'
 	;max zones
-	taz_count = %TAZ_EXTS_COUNT%
+	taz_count = 6626
     
     ;create sequential taz numbers
     RUN PGM=NETWORK
@@ -176,7 +175,7 @@ loop period = 1, 5
     ;    NODEI[2] = hwy\@token_period@_exts_node.csv VAR=N,X,Y,OLD_NODE
     ;    LINKI[2] = hwy\@token_period@_exts_link.csv VAR=A,B,CNTYPE(C),FEET,OLD_A,OLD_B
     ;    NETO = hwy\avgload@token_period@_taz_exts.net
-    ;    ZONES = %TAZ_EXTS_COUNT%
+    ;    ZONES = 6626
     ;ENDRUN
     
     *del hwy\temp@token_period@.net
@@ -188,5 +187,3 @@ endloop ; token_period
 
 Wait4Files files = ctramp1.script.end, ctramp2.script.end, ctramp3.script.end, ctramp4.script.end, ctramp5.script.end, 
            printfiles = merge, deldistribfiles = t, CheckReturnCode = t
-;stop cluster nodes
-*Cluster.exe ctramp 1-5 close exit
