@@ -75,7 +75,7 @@ if __name__ == '__main__':
     LOG_FILE                       = os.path.join(DATA_OUTPUT_DIR, "tag_transit_FreewayArterial_{}_{}.log".format(RUN_ID, today))
 
     ############ set up logging
-   # create logger
+    # create logger
     logger = logging.getLogger(__name__)
     logger.setLevel('DEBUG')
 
