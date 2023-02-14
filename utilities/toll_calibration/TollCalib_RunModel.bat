@@ -79,6 +79,9 @@ if %ITER%==4 (
     :: Use the same CTRAMP as the BASE
     c:\windows\system32\Robocopy.exe /MIR "%MODEL_BASE_DIR%\CTRAMP"           CTRAMP
 
+    :: use a special mtcTourBased.properties to turn off workplace shadow pricing to reduce run time
+    copy /Y "X:\travel-model-one-master\utilities\toll_calibration\mtcTourBased_WorkplaceShadowPricingOff.properties"  CTRAMP\runtime\mtcTourBased.properties
+    
     c:\windows\system32\Robocopy.exe /MIR "%MODEL_BASE_DIR%\INPUT\hwy"        hwy
 )
 
@@ -92,7 +95,6 @@ if not exist %MODEL_BASE_DIR%\INPUT\hwy\NonDynamicTollFacilities.csv (
 :: use the new toll file
 copy /y "%TOLL_FILE%" hwy\
 copy /y "%TOLL_FILE%" hwy\tolls.csv
-
 
 :: ------------------------------------------------------------------------------------------------------
 ::
