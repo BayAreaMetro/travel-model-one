@@ -26,7 +26,10 @@ ITER <- as.numeric(ITER)
 # MAX_TOLL <- as.numeric(MAX_TOLL)
 
 HOV2_discount_factor <- Sys.getenv("DiscountFactor_HOV2")
+HOV2_discount_factor <- as.numeric(HOV2_discount_factor)
+
 HOV3_discount_factor <- Sys.getenv("DiscountFactor_HOV3")
+HOV3_discount_factor <- as.numeric(HOV3_discount_factor)
 
 #############################################################
 # specify the loaded network, unloaded network and other inputs
