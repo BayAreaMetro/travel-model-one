@@ -25,6 +25,8 @@ set INPUT_TRN=%ALL_BCM_INPUTS%\trn
 set INPUT_LU=%ALL_BCM_INPUTS%\FINAL 2015 LANDUSE FILES
 ::Latest PopulationSim results are in the Run_8 folder. 
 set INPUT_POP=%ALL_BCM_INPUTS%\INPUT_POP
+::Inputs for the nonres models
+set INPUT_NONRES=%ALL_BCM_INPUTS%\nonres
 ::Transit Skimming is done separately for now. Delete the next line in the final update
 set TRANSIT_SKIMS=%ALL_TEMP_INPUTS%\BCM Transit Skims
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
@@ -104,6 +106,7 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_POP%"                               
 c:\windows\system32\Robocopy.exe /E "%INPUT_LU%"                                      			INPUT\landuse
 copy "%INPUT_POP%"\hhFile2015.csv																INPUT\popsyn\hhFile.2015.csv
 copy "%INPUT_POP%"\personFile2015.csv																INPUT\popsyn\personFile.2015.csv
+c:\windows\system32\Robocopy.exe /E "%INPUT_NONRES%"                   			INPUT\nonres
 ::need to update the maximum telecommute rate for San Joaquin County in the telecommute_max_rate_county.csv file
 ::right now using the same values as Marin
 c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\telecommute"   		   INPUT\landuse

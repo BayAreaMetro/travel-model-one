@@ -62,9 +62,9 @@ if ERRORLEVEL 2 goto done
 ::
 :: Step 3:  Execute the internal/external and commercial vehicle models
 ::
-:: TODO: Skip for now. Work with the same matrices converted from TM1.5
+:: TODO: Skip IX and AirPax
 :: ------------------------------------------------------------------------------------------------------
-goto hwyAssign
+goto truck_gen
 :nonres
 
 :: Create production/attraction tables based on growth assumptions
@@ -79,13 +79,11 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\nonres\IxTollChoice.job
 if ERRORLEVEL 2 goto done
 
+:truck_gen
 :: Apply the commercial vehicle generation models
-runtpp CTRAMP\scripts\nonres\TruckTripGeneration.job
+runtpp CTRAMP\scripts\nonres\BCMTrucks.job
 if ERRORLEVEL 2 goto done
 
-:: Apply the commercial vehicle distribution models
-runtpp CTRAMP\scripts\nonres\TruckTripDistribution.job
-if ERRORLEVEL 2 goto done
 
 :: Apply the commercial vehicle diurnal factors
 runtpp CTRAMP\scripts\nonres\TruckTimeOfDay.job
@@ -95,6 +93,7 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\nonres\TruckTollChoice.job
 if ERRORLEVEL 2 goto done
 
+goto hwyassign
 :: Apply a transit submode choice model for transit trips to bay area HSR stations
 runtpp CTRAMP\scripts\nonres\HsrTransitSubmodeChoice.job
 if ERRORLEVEL 2 goto done
