@@ -1,0 +1,511 @@
+;===============================================================================
+; BCMTrucks.job
+;
+; Modified version of the Alameda CTC Truck Model for use in the Bi-County Activity-Based Model
+; 
+; Developed by George Naylor WSP 12-02-2022
+; Modified for use in the setup by Jawad Hoque, 02-15-2023
+;===============================================================================
+; The MTC truck trip generation models are directly from the study
+; "I-880 Intermodal Corridor Study: Truck Travel in the San Francisco
+;   Bay Area" prepared by Barton Aschman Associates, December 1992. 
+;   Published by Caltrans District 4 and Alameda County.
+; Trip generation coefficients are on page 223 of this report.
+; The "NHB" trips are "non-home-based" trips, referred to as "linked" trips
+;   in the report.
+; The "GAR" trips are "garage-based" trips, also called garage-based in the report.
+; IMPORTANT: Two-Axle trucks ("Small") are two-axle, six tire trucks,
+;   and exclude two-axle, four tire trucks ("Very Small").
+; In the variable names "P" is for Productions; "A" is for Attractions
+; 3 is for three-axle trucks ("Medium")
+; 4 is for four-plus axle "combination" trucks
+;
+; The Alameda County model uses the MTC model for Very Small trucks
+;   but as of the P09 update replaces the MTC model for Small, Medium and Combo
+;   trucks with new models developed by Cambridge Systematics in 2009
+;===============================================================================
+;
+; The nonres trips in the Travel Model 1.5.2.3 are run in consecutive steps: 
+;	nonres\TruckTripGeneration.job
+;	nonres\TruckTripDistribution.job
+;	nonres\TruckTimeOfDay.job
+;	nonres\TruckTollChoice.job
+; This script implements the Trip Generation and Distribution.
+;
+;;===============================================================================
+
+RUN PGM=TRIPGEN
+  ;
+  ; Truck Trip Generation - Very Small Trucks
+  ;
+  ; Based on MTC script \fcast2003\tripgen\truck_tripgen_2006vs.job (August 23, 2004)
+  ; "Very Small Trucks" based on Phoenix 4-tire truck models
+  ; Documented in TMIP Quick Response Freight Manual
+
+  FILEI ZDATI[1] = landuse\ZMAST15.DBF
+  PAO = nonres\2015_TRTGPA_VS.DBF,DBF=T, LIST=Z,P[1],A[1]
+
+  ZONES = 6593
+  MAXPURPS = 7
+
+  PHASE = ILOOP
+
+    ; Compute trip generation for very small truck trips (2-axle, 4-tires) "VSTRUCK"
+ 
+    VSTRUCKP = ROUND(0.251 * TOTHH + 1.110 * AGREMPN + 0.938 * MWTEMPN +
+               0.888 * RETEMPN + 0.437 * FPSEMPN + 0.663 * OTHEMPN)
+    VSTRUCKA = VSTRUCKP ; Attractions are set to productions for VSTRUCK			  
+ 
+    LOOKUP,
+      FILE = CTRAMP\scripts\block\DTKTG_ACCMA.CAL,
+      NAME=apa, 
+      LOOKUP[1]=1, RESULT=5,
+      LOOKUP[2]=1, RESULT=9
+    ;
+    ; Set the production and attraction variables for the normalization phase
+    ;
+    P[1] = VSTRUCKP
+    A[1] = VSTRUCKA
+
+    IF (I=1-4454)
+      P[1] = P[1] * APA(1,ZI.1.SD)
+      A[1] = A[1] * APA(2,ZI.1.SD)
+    ENDIF
+
+  ENDPHASE
+
+  PHASE=ADJUST ; Normalization of attractions to productions
+
+    A[1] = P[1][0] / A[1][0] * A[1]
+
+  ENDPHASE
+
+ENDRUN
+
+;-------------------------------------------------------------------------------
+
+RUN PGM=TRIPGEN
+
+	; Truck Trip Generation - Internal Trips
+	;   Updated by Cambridge Systematics 12/09
+
+	ZONES = 6626
+
+	ZDATI[1]= landuse\zmast15.dbf
+	ZDATI[2]= nonres\Inputs\calib\port_sg_2015.dbf
+	ZDATI[3]= nonres\Inputs\AC10IXXI.DBF
+	PAO = nonres\2015_TRTGPA_TRK.DBF,DBF=T, LIST=Z,
+		P[1],P[2],P[3],P[4],P[5],P[6],
+		A[1],A[2],A[3],A[4],A[5],A[6]
+
+
+	phase=iloop
+		;
+		; Compute trip generation for internal-to-internal truck trips:
+		;
+		P_II_SML = ROUND(0.03564 * MWTEMPN + 0.03875 * RETEMPN  + 0.03512 * FPSEMPN + 0.07190 * (OTHEMPN+AGREMPN)) 
+		P_II_MED = ROUND(0.02973 * MWTEMPN + 0.02341 * RETEMPN	+ 0.04559 * FPSEMPN + 0.04113 * (OTHEMPN+AGREMPN)) 
+		P_II_COM = ROUND(0.01209 * MWTEMPN + 0.01868 * RETEMPN	+ 0.01120 * FPSEMPN + 0.01511 * (OTHEMPN+AGREMPN))
+		;
+		; Compute trip generation for internal-to-external truck trips:
+		;
+		P_IX_SML = ROUND(0.0014 * OTHEMPN )                    ; Small Trucks
+		P_IX_MED = ROUND(0.0041 * OTHEMPN + 0.00033 * MWTEMPN) ; Medium Trucks
+		P_IX_COM = ROUND(0.0114 * OTHEMPN + 0.0072 * MWTEMPN)  ; Combo Trucks
+		;
+		; Total truck trip productions
+		;
+		P_TOT_SML = P_II_SML + P_IX_SML
+		P_TOT_MED = P_II_MED + P_IX_MED
+		P_TOT_COM = P_II_COM + P_IX_COM
+		;
+		; Default external percentages (only used if a TAZ has special generators but no employment)
+		;
+		PCT_IX_SML = 0.02	; 0.0014/0.07190
+		PCT_IX_MED = 0.10	; 0.0062/0.06169
+		PCT_IX_COM = 0.60	; Average of ratios of rates for OTHEMP, MANEMP, WHOEMP
+
+		IF (P_TOT_SML > 0) PCT_IX_SML = P_IX_SML / P_TOT_SML
+		IF (P_TOT_MED > 0) PCT_IX_MED = P_IX_MED / P_TOT_MED
+		IF (P_TOT_COM > 0) PCT_IX_COM = P_IX_COM / P_TOT_COM
+		;
+		; If special generators exist, replace calculated total truck trips 
+		;
+		IF (ZI.2.SMALL>0 || ZI.2.MEDIUM>0 || ZI.2.COMBO>0)
+			P_TOT_SML = ZI.2.SMALL
+			P_TOT_MED = ZI.2.MEDIUM
+			P_TOT_COM = ZI.2.COMBO
+		ENDIF
+		;
+		;Update II vs. IX truck trips after special generators
+		;
+		P[1] = P_TOT_SML * (1 - PCT_IX_SML)
+		P[2] = P_TOT_MED * (1 - PCT_IX_MED)
+		P[3] = P_TOT_COM * (1 - PCT_IX_COM)
+		P[4] = (P_TOT_SML * PCT_IX_SML)
+		P[5] = (P_TOT_MED * PCT_IX_MED)
+		P[6] = (P_TOT_COM * PCT_IX_COM)
+		;
+		; Set daily attractions equivalent to daily productions
+		;
+		A[1] = P[1]
+		A[2] = P[2]
+		A[3] = P[3]
+		A[4] = P[4]
+		A[5] = P[5]
+		A[6] = P[6]
+		;
+		; Add gateway truck trips
+		;
+		P[4] = P[4] + ZI.3.XI_P11
+		P[5] = P[5] + ZI.3.XI_P12
+		P[6] = P[6] + ZI.3.XI_P13
+		A[4] = A[4] + ZI.3.IX_A11
+		A[5] = A[5] + ZI.3.IX_A12
+		A[6] = A[6] + ZI.3.IX_A13
+
+	ENDPHASE
+
+	PHASE = ADJUST
+	ENDPHASE
+
+ENDRUN
+;===============================================================================
+; TRIP DISTRIBUTION
+;===============================================================================
+
+RUN PGM=MATRIX
+
+;
+; Expand K-Factors from Superdistricts to TAZs
+;
+
+  MATI = nonres\Inputs\KFactors\Kfactors_SD.MAT
+  MATO = nonres\Kfactors_Temp.MAT, MO=1-12,
+         NAME = HWQ1, HWQ2, HWQ3, HWQ4, HBSH, HBSR, NHB, 
+                HBGS, HBHS, HBCO, TRUK, VSTR
+  
+  ZONES = 6626
+  
+  MW[1] = MI.1.HWQ1
+  MW[2] = MI.1.HWQ2
+  MW[3] = MI.1.HWQ3
+  MW[4] = MI.1.HWQ4
+  MW[5] = MI.1.HBSH
+  MW[6] = MI.1.HBSR
+  MW[7] = MI.1.NHB
+  MW[8] = MI.1.HBGS
+  MW[9] = MI.1.HBHS
+  MW[10] = MI.1.HBCO
+  MW[11] = MI.1.TRUK
+  MW[12] = MI.1.VSTR
+  
+  RENUMBER FILE = landuse\SD2TAZ_KF.PRN, MISSINGZI=M, MISSINGZO=M, ZONES=6626
+ 
+ENDRUN
+
+;-------------------------------------------------------------------------------
+
+RUN PGM=MATRIX
+
+
+;
+; Set K-factors to 1.0 if they are 0 or in unused TAZs
+;
+  MATI = nonres\Kfactors_Temp.MAT
+  MATO = nonres\Kfactors.MAT, MO=21-32,
+         NAME = HWQ1, HWQ2, HWQ3, HWQ4, HBSH, HBSR, NHB, 
+                HBGS, HBHS, HBCO, TRUK, VSTR
+  
+  MW[1] = MI.1.HWQ1
+  MW[2] = MI.1.HWQ2
+  MW[3] = MI.1.HWQ3
+  MW[4] = MI.1.HWQ4
+  MW[5] = MI.1.HBSH
+  MW[6] = MI.1.HBSR
+  MW[7] = MI.1.NHB
+  MW[8] = MI.1.HBGS
+  MW[9] = MI.1.HBHS
+  MW[10] = MI.1.HBCO
+  MW[11] = MI.1.TRUK
+  MW[12] = MI.1.VSTR
+  
+  MW[21] = MW[1]
+  MW[22] = MW[2]
+  MW[23] = MW[3]
+  MW[24] = MW[4]
+  MW[25] = MW[5]
+  MW[26] = MW[6]
+  MW[27] = MW[7]
+  MW[28] = MW[8]
+  MW[29] = MW[9]
+  MW[30] = MW[10]
+  MW[31] = MW[11]
+  MW[32] = MW[12]
+  
+  JLOOP
+    IF (MW[1] = 0) MW[21] = 1.0
+    IF (MW[2] = 0) MW[22] = 1.0
+    IF (MW[3] = 0) MW[23] = 1.0
+    IF (MW[4] = 0) MW[24] = 1.0
+    IF (MW[5] = 0) MW[25] = 1.0
+    IF (MW[6] = 0) MW[26] = 1.0
+    IF (MW[7] = 0) MW[27] = 1.0
+    IF (MW[8] = 0) MW[28] = 1.0
+    IF (MW[9] = 0) MW[29] = 1.0
+    IF (MW[10] = 0) MW[30] = 1.0
+    IF (MW[11] = 0) MW[31] = 1.0
+    IF (MW[12] = 0) MW[32] = 1.0
+  ENDJLOOP
+   
+ENDRUN
+
+RUN PGM=TRIPDIST
+  
+;
+  ; Truck Trip Distribution - Internal Trips
+  ;
+ 
+  ZONES = 6593
+  MAXITERS = 99
+  MAXRMSE = 1
+  
+  ZDATI[1]= nonres\2015_TRTGPA_TRK.dbf
+  MATI[1] = skims\DA_MD_TAZ.TPP
+  MATI[2] = nonres\Kfactors.mat    ; read in k-factor matrices 
+
+  MATO[1]= nonres\2015_TRUCK_II.MAT,MO=1-3, NAME=SML,MED,COM       ; write 3 truck Trip Tables
+
+  ;REPORT ZDAT=Y                    ; report trip end data
+  ;REPORT ACOMP=1-3 ITERATIONS=99   ; report attraction balancing for all 3 purposes
+
+  SETPA P[1]=ZI.1.P1 P[2]=ZI.1.P2 P[3]=ZI.1.P3         ; set Prods & Attrs
+  SETPA A[1]=ZI.1.A1 A[2]=ZI.1.A2 A[3]=ZI.1.A3         ; set Prods & Attrs
+  ;
+  ; Read Friction Factors
+  ;
+  LOOKUP LIST=N, FILE= nonres\Inputs\Calib\truckFF_II.dat,name=truckff,
+    LOOKUP[1]=1, RESULT=2,                             ; Friction Factors for Small Trucks
+    LOOKUP[2]=1, RESULT=3,                             ; Friction Factors for Medium Trucks
+    LOOKUP[3]=1, RESULT=4,                             ; Friction Factors for Combo Trucks
+    INTERPOLATE=Y, SETUPPER=N
+  ;
+  ; Gravity Model for Internal Truck Trips
+  ;
+  GRAVITY PURPOSE=1, LOS=MI.1.2, FFACTORS=truckff, KFACTORS=MI.2.TRUK
+  GRAVITY PURPOSE=2, LOS=MI.1.2, FFACTORS=truckff, KFACTORS=MI.2.TRUK
+  GRAVITY PURPOSE=3, LOS=MI.1.2, FFACTORS=truckff, KFACTORS=MI.2.TRUK
+
+ENDRUN
+
+;-------------------------------------------------------------------------------
+
+RUN PGM=TRIPDIST
+  ;
+  ; Truck Trip Distribution - Internal-External Trips
+  ;
+  
+  ZONES = 6626
+  MAXITERS = 99
+  MAXRMSE = 1
+
+  ZDATI[1]= nonres\2015_TRTGPA_TRK.dbf
+  MATI[1] = skims\DA_MD_TAZ.TPP
+
+  MATO[1]= nonres\2015_TRUCK_IE.MAT,MO=1-3, NAME=SML,MED,COM       ; write 3 truck Trip Tables
+
+  ;REPORT ZDAT=Y                    ; report trip end data
+  ;REPORT ACOMP=1-3 ITERATIONS=99   ; report attraction balancing for all 3 purposes
+
+  SETPA INCLUDE=1-6593,  P[1]=ZI.1.P4 P[2]=ZI.1.P5 P[3]=ZI.1.P6         ; set Prods & Attrs
+  SETPA INCLUDE=6594-6626, A[1]=ZI.1.A4 A[2]=ZI.1.A5 A[3]=ZI.1.A6         ; set Prods & Attrs
+  ;
+  ; Read Friction Factors
+  ;
+  LOOKUP LIST=N, FILE= nonres\Inputs\Calib\truckFF_IEEI.dat,name=truckff,
+    LOOKUP[1]=1, RESULT=2,                             ; Friction Factors for Small Trucks
+    LOOKUP[2]=1, RESULT=3,                             ; Friction Factors for Medium Trucks
+    LOOKUP[3]=1, RESULT=4,                             ; Friction Factors for Combo Trucks
+    INTERPOLATE=Y, SETUPPER=N
+  ;
+  ; Gravity Model for I-E Truck Trips
+  ;
+  GRAVITY PURPOSE=1, LOS=MI.1.2, FFACTORS=truckff
+  GRAVITY PURPOSE=2, LOS=MI.1.2, FFACTORS=truckff
+  GRAVITY PURPOSE=3, LOS=MI.1.2, FFACTORS=truckff
+
+ENDRUN
+
+;-------------------------------------------------------------------------------
+
+RUN PGM=TRIPDIST
+  ;
+  ; Truck Trip Distribution - External-Internal Trips
+  ;
+
+  ZONES = 6626
+  MAXITERS = 99
+  MAXRMSE = 1
+
+  ZDATI[1]= nonres\2015_TRTGPA_TRK.dbf
+  MATI[1]= skims\DA_MD_TAZ.TPP
+
+  MATO[1]= nonres\2015_TRUCK_EI.MAT,MO=1-3, NAME=SML,MED,COM       ; write 3 truck Trip Tables
+
+  ;REPORT ZDAT=Y                    ; report trip end data
+  ;REPORT ACOMP=1-3 ITERATIONS=99   ; report attraction balancing for all 3 purposes
+
+  SETPA INCLUDE=4455-4485,  P[1]=ZI.1.P4 P[2]=ZI.1.P5 P[3]=ZI.1.P6         ; set Prods & Attrs
+  SETPA INCLUDE=1-4454, A[1]=ZI.1.A4 A[2]=ZI.1.A5 A[3]=ZI.1.A6         ; set Prods & Attrs
+  ;
+  ; Read Friction Factors
+  ;
+  LOOKUP LIST=N, FILE= nonres\Inputs\Calib\truckFF_IEEI.dat,name=truckff,
+    LOOKUP[1]=1, RESULT=2,                             ; Friction Factors for Small Trucks
+    LOOKUP[2]=1, RESULT=3,                             ; Friction Factors for Medium Trucks
+    LOOKUP[3]=1, RESULT=4,                             ; Friction Factors for Combo Trucks
+    INTERPOLATE=Y, SETUPPER=N
+  ;
+  ; Gravity Model for E-I Truck Trips
+  ;
+  GRAVITY PURPOSE=1, LOS=MI.1.2, FFACTORS=truckff
+  GRAVITY PURPOSE=2, LOS=MI.1.2, FFACTORS=truckff
+  GRAVITY PURPOSE=3, LOS=MI.1.2, FFACTORS=truckff
+
+ENDRUN
+;
+;-------------------------------------------------------------------------------
+;
+RUN PGM=TRIPDIST
+  ;
+  ; Trip Distribution, Very Small Trucks
+  ;
+  ; Based on MTC script apply_vstrucktd_2006.job (August 23, 2004)
+  ;
+  
+  ZONES = 6593
+  MAXITERS = 99
+  MAXRMSE = 1  
+  
+  ZDATI[1] = nonres\2015_TRTGPA_VS.DBF
+  MATI[1] = skims\DA_MD_TAZ.TPP
+  MATI[2] = nonres\Kfactors.mat    ; read in k-factor matrices
+  MATO[1] = nonres\2015_TRUCK2.MAT, MO=1,NAME=VSML            ; write 1 truck Trip Tables
+ 
+  SETPA P[1]= ZI.1.P1         ; set Prods & Attrs
+  SETPA A[1]= ZI.1.A1         ; set Prods & Attrs
+  ;
+  ; Read Friction Factors
+  ;
+  LOOKUP LIST=Y, FILE= nonres\Inputs\Calib\vstruck.ff.dat,name=truckff,
+    LOOKUP[1]=1, RESULT=2,                             ; Friction Factors for Very Small Trucks
+    INTERPOLATE=Y, SETUPPER=N
+  ;
+  ; Gravity Model for Very Small Trucks
+  ;
+  GRAVITY PURPOSE=1, LOS=MI.1.2, FFACTORS=truckff, KFACTORS = MI.2.VSTR
+
+ENDRUN
+
+;-------------------------------------------------------------------------------
+
+RUN PGM=MATRIX
+  ;
+  ; Combine truck trip distributions into single file
+  ;
+
+  MATI[1]= nonres\2015_TRUCK_II.MAT     ; Small Medium & Combo Trucks
+  MATI[2]= nonres\2015_TRUCK2.MAT       ; Very Small Trucks
+  MATI[3]= nonres\2015_TRUCK_IE.MAT     ; IE Trucks
+  MATI[4]= nonres\2015_TRUCK_EI.MAT     ; EI Trucks 
+  MATO[1]= nonres\2015_TRUCK.MAT,MO=1-5, NAME=VSML,SML,MED,COM,TRK
+
+  MW[1] = MI.2.VSML
+  MW[2] = MI.1.SML + MI.3.SML + MI.4.SML
+  MW[3] = MI.1.MED + MI.3.MED + MI.4.MED
+  MW[4] = MI.1.COM + MI.3.COM + MI.4.COM
+  MW[5] = MW[1] + MW[2] + MW[3] + MW[4]
+
+ENDRUN
+
+;-------------------------------------------------------------------------------
+
+RUN PGM=MATRIX
+  ;
+  ; Report truck trip distribution by superdistrict
+  ;
+  MATI[1] = nonres\2015_TRUCK.MAT
+  MATO = nonres\2015_SD2SD_TRK.mat,MO=1-5,NAME=VSML,SML,MED,COM,TRK
+
+  MW[1] = MI.1.VSML
+  MW[2] = MI.1.SML
+  MW[3] = MI.1.MED
+  MW[4] = MI.1.COM
+  MW[5] = MI.1.TRK
+
+  RENUMBER FILE= landuse\TAZ2SD.PRN, MISSINGZI=M, MISSINGZO=M
+
+ENDRUN
+
+;-------------------------------------------------------------------------------
+
+RUN PGM=MATRIX
+  ;
+  ; Report truck trip distribution by county
+  ;
+  MATI[1] = nonres\2015_TRUCK.MAT
+  MATO = nonres\2015_CO2CO_TRK.mat,MO=1-5,NAME=VSML,SML,MED,COM,TRK
+
+  MW[1] = MI.1.VSML
+  MW[2] = MI.1.SML
+  MW[3] = MI.1.MED
+  MW[4] = MI.1.COM
+  MW[5] = MI.1.TRK
+
+  RENUMBER FILE= landuse\TAZ2CO.PRN, MISSINGZI=M, MISSINGZO=M
+
+ENDRUN
+
+;===============================================================================
+; XX.S
+;===============================================================================
+
+RUN PGM=MATRIX
+
+  ; Through X-X Vehicle Trips
+  
+  ZONES = 6626
+  
+  MATI[1] = nonres\Inputs\2015_XX_trips.DBF, PATTERN=IJ:V, FIELDS=I,J,V 
+  
+  MATO = nonres\2015_XX.MAT,MO=1,NAME=XX
+
+  MW[1] = MI.1.1
+  
+ENDRUN
+
+;Don't actually need the following (?)
+RUN PGM=MATRIX
+  ;
+  ; Create Truck and External to External Trips by Five Peak Periods
+  ; Early AM, AM Peak, Mid-day, PM Peak and Evening
+  ;
+  MATI[1]= nonres\2015_TRUCK_II.MAT     ; Small Medium & Combo Trucks
+  MATI[2]= nonres\2015_TRUCK2.MAT       ; Very Small Trucks
+  MATI[3]= nonres\2015_TRUCK_IE.MAT     ; IE Trucks
+  MATI[4]= nonres\2015_TRUCK_EI.MAT     ; EI Trucks
+  MATI[5]= nonres\2015_XX.MAT               ; XX Trucks 
+  MATO[1]= nonres\2015_TRUCKPEAK.MAT,MO=1-5, NAME=AM,MD,PM,EV,EA
+
+  MW[1] = MI.1.1*0.20646+MI.1.2*0.20597+MI.1.3*0.20593+MI.2.1*0.20646+MI.3.1*0.13662+MI.3.1.T*0.04491+MI.3.2*0.13662+MI.3.2.T*0.04491+MI.3.3*0.13662+MI.3.3.T*0.04491+
+  MI.4.1*0.13662+MI.4.1.T*0.04491+MI.4.2*0.13662+MI.4.2.T*0.04491+MI.4.3*0.13662+MI.4.3.T*0.04491
+  MW[2] =  MI.1.1*0.19606+MI.1.2*0.19096+MI.1.3*0.19173+MI.2.1*0.19606+MI.3.1*0.12381+MI.3.1.T*0.14620+MI.3.2*0.12381+MI.3.2.T*0.14620+MI.3.3*0.12381+MI.3.3.T*0.14620+
+  MI.4.1*0.12381+MI.4.1.T*0.14620+MI.4.2*0.12381+MI.4.2.T*0.14620+MI.4.3*0.12381+MI.4.3.T*0.14620
+  MW[3] =  MI.1.1*0.36858+MI.1.2*0.37352+MI.1.3*0.37276+MI.2.1*0.36858+MI.3.1*0.22356+MI.3.1.T*0.13502+MI.3.2*0.22356+MI.3.2.T*0.13502+MI.3.3*0.22356+MI.3.3.T*0.13502+
+  MI.4.1*0.22356+MI.4.1.T*0.13502+MI.4.2*0.22356+MI.4.2.T*0.13502+MI.4.3*0.22356+MI.4.3.T*0.13502
+  MW[4] =  MI.1.1*0.11445+MI.1.2*0.11478+MI.1.3*0.11479+MI.2.1*0.11445+MI.3.1*0.11478+MI.3.1.T*0.11479+MI.3.2*0.03104+MI.3.2.T*0.06391+MI.3.3*0.03104+MI.3.3.T*0.06391+
+  MI.4.1*0.03104+MI.4.1.T*0.06391+MI.4.2*0.03104+MI.4.2.T*0.06391+MI.4.3*0.03104+MI.4.3.T*0.06391
+  MW[5] =  MI.1.1*0.11445+MI.1.2*0.11478+MI.1.3*0.11479+MI.2.1*0.11445+MI.3.1*0.11478+MI.3.1.T*0.11479+MI.3.2*0.03104+MI.3.2.T*0.06391+MI.3.3*0.03104+MI.3.3.T*0.06391+
+  MI.4.1*0.0
+  
+ENDRUN 

@@ -22,69 +22,69 @@
 ;             manner consistent with the Travel Model One implementation
 ;
 ; See also: (1) TruckTripDistribution.job, which applies a gravity distribution model and precedes this script.
+;					Replaced by BCMTrucks.job script for BCM which creates the input matrices.			
 ;           (2) TruckTollChoice.job, which applies a toll/no toll logit model and follows this script.
 ;
 ; version:  Travel Model One
 ; authors:  dto (2011 06 24); jh (2010)
-;
+; version:  Travel Model 1.5+BCM
+; authors:  jmh (2023 02)
 ;
 ; ----------------------------------------------------------------------------------------------------------------
+RUN PGM=MATRIX
+  ;
+  ; Create categorized Truck and External to External Trips by Five Peak Periods
+  ; Early AM, AM Peak, Mid-day, PM Peak and Evening
 
-run pgm = matrix
-
-   ; Daily trips from the TruckTripDistribution model
-   filei mati[1] = nonres\DailyTruckTrips.tpp        
+  MATI[1]= nonres\2015_TRUCK_II.MAT     ; SML,MED,COM
+  MATI[2]= nonres\2015_TRUCK2.MAT       ; Very Small Trucks VSML
+  MATI[3]= nonres\2015_TRUCK_IE.MAT     ; IE Trucks NAME=SML,MED,COM
+  MATI[4]= nonres\2015_TRUCK_EI.MAT     ; EI Trucks SML,MED,COM
+  MATI[5]= nonres\2015_XX.MAT               ; XX Trucks 
   
-   ; Time-of-day specific truck tables
-   fileo mato[1] = nonres\TripsTrkEAx.tpp, mo=11-14, name = vstruck, struck, mtruck, ctruck
-   fileo mato[2] = nonres\TripsTrkAMx.tpp, mo=15-18, name = vstruck, struck, mtruck, ctruck
-   fileo mato[3] = nonres\TripsTrkMDx.tpp, mo=19-22, name = vstruck, struck, mtruck, ctruck
-   fileo mato[4] = nonres\TripsTrkPMx.tpp, mo=23-26, name = vstruck, struck, mtruck, ctruck
-   fileo mato[5] = nonres\TripsTrkEVx.tpp, mo=27-30, name = vstruck, struck, mtruck, ctruck
+  
+     ; Time-of-day specific truck tables
+  fileo mato[1] = nonres\TripsTrkEAx.tpp, mo=11-14, name = vstruck, struck, mtruck, ctruck
+  fileo mato[2] = nonres\TripsTrkAMx.tpp, mo=15-18, name = vstruck, struck, mtruck, ctruck
+  fileo mato[3] = nonres\TripsTrkMDx.tpp, mo=19-22, name = vstruck, struck, mtruck, ctruck
+  fileo mato[4] = nonres\TripsTrkPMx.tpp, mo=23-26, name = vstruck, struck, mtruck, ctruck
+  fileo mato[5] = nonres\TripsTrkEVx.tpp, mo=27-30, name = vstruck, struck, mtruck, ctruck
    
-   ; convert the P/A matrices to O/D (and scale by 100, as distribution outputs trips x 100)
-   mw[1] = (0.5 * mi.1.1 + 0.5 * mi.1.1.T)/100.0
-   mw[2] = (0.5 * mi.1.2 + 0.5 * mi.1.2.T)/100.0
-   mw[3] = (0.5 * mi.1.3 + 0.5 * mi.1.3.T)/100.0
-   mw[4] = (0.5 * mi.1.4 + 0.5 * mi.1.4.T)/100.0
-   
-   ; apply class-specific diurnal factors - very small truck factors adjusted during calibration
-   
-   ;     - early AM
+      ;     - early AM
    ;          - very small trucks
-   mw[11] = 0.0235 * mw[1]     
+   mw[11] = MI.2.1*0.11445
    
    ;          - small trucks
-   mw[12] = 0.0765 * mw[2]      
+   mw[12] = MI.1.1*0.11445 + MI.3.1*0.11478+MI.3.1.T*0.11479+MI.4.1*0.0
    
    ;          - medium trucks
-   mw[13] = 0.0665 * mw[3]     
+   mw[13] = MI.1.2*0.11478+ MI.3.2*0.03104+MI.3.2.T*0.06391    
    
-   ;          - combination trucks
-   mw[14] = 0.1430 * mw[4]      
+   ;          - combination trucks+xx trucks
+   mw[14] = MI.1.3*0.11479+ MI.3.3*0.03104+MI.3.3.T*0.06391 + MI.5.1*0.0+MI.5.1.T*0.0
    
    ;     - AM peak
-   mw[15] = 0.0000 * mw[1]      
-   mw[16] = 0.2440 * mw[2]      
-   mw[17] = 0.2930 * mw[3]      
-   mw[18] = 0.2320 * mw[4] 
+   mw[15] = MI.2.1*0.20646     ;          - very small trucks   
+   mw[16] = MI.1.1*0.20646+ MI.3.1*0.13662+MI.3.1.T*0.04491  + MI.4.1*0.13662+MI.4.1.T*0.04491       ;          - small trucks
+   mw[17] = MI.1.2*0.20597+  MI.3.2*0.13662+MI.3.2.T*0.04491  +MI.4.2*0.13662+MI.4.2.T*0.04491     ;          - medium trucks
+   mw[18] = MI.1.3*0.20593+ +MI.3.3*0.13662+MI.3.3.T*0.04491+MI.4.3*0.13662+MI.4.3.T*0.04491+ MI.5.1*0.13662+MI.5.1.T*0.04491       ;          - combination trucks+xx trucks
    
    ;     - midday
-   mw[19] = 0.6080 * mw[1]     
-   mw[20] = 0.3710 * mw[2]      
-   mw[21] = 0.3935 * mw[3]  
-   mw[22] = 0.3315 * mw[4]      
+   mw[19] = MI.2.1*0.19606         ;          - very small trucks 
+   mw[20] = MI.1.1*0.19606  + MI.3.1*0.12381+MI.3.1.T*0.14620 + MI.4.1*0.12381+MI.4.1.T*0.14620          ;          - small trucks
+   mw[21] = MI.1.2*0.19096+MI.3.2*0.12381+MI.3.2.T*0.14620+MI.4.2*0.12381+MI.4.2.T*0.14620     ;          - medium trucks
+   mw[22] = MI.1.3*0.19173+ MI.3.3*0.12381+MI.3.3.T*0.14620+  MI.4.3*0.12381+MI.4.3.T*0.14620  +  MI.5.1*0.12381+MI.5.1.T*0.14620     ;          - combination trucks+xx trucks
    
    ;     - PM peak
-   mw[23] = 0.1980 * mw[1]      
-   mw[24] = 0.2180 * mw[2]     
-   mw[25] = 0.1730 * mw[3]      
-   mw[26] = 0.1750 * mw[4]     
+   mw[23] = MI.2.1*0.36858      ;          - very small trucks 
+   mw[24] = MI.1.1*0.36858 +MI.3.1*0.22356+MI.3.1.T*0.13502+  MI.4.1*0.22356+MI.4.1.T*0.13502         ;          - small trucks
+   mw[25] = MI.1.2*0.37352+MI.3.2*0.22356+MI.3.2.T*0.13502+MI.4.2*0.22356+MI.4.2.T*0.13502      ;          - medium trucks
+   mw[26] = MI.1.3*0.37276+  MI.3.3*0.22356+MI.3.3.T*0.13502+MI.4.3*0.22356+MI.4.3.T*0.13502+MI.5.1*0.22356+MI.5.1.T*0.13502   ;          - combination trucks+xx trucks
    
    ;     - evening
-   mw[27] = 0.1705 * mw[1]      
-   mw[28] = 0.0905 * mw[2]      
-   mw[29] = 0.0740 * mw[3]     
-   mw[30] = 0.1185 * mw[4]      
+   mw[27] = MI.2.1*0.11445          ;          - very small trucks  
+   mw[28] = MI.1.1*0.11445 +MI.3.1*0.11478+MI.3.1.T*0.11479+MI.4.1*0.03104+MI.4.1.T*0.06391       ;          - small trucks
+   mw[29] = MI.1.2*0.11478+MI.3.2*0.03104+MI.3.2.T*0.06391+MI.4.2*0.03104+MI.4.2.T*0.06391     ;          - medium trucks
+   mw[30] = MI.1.3*0.11479+ MI.3.3*0.03104+MI.3.3.T*0.06391+MI.4.3*0.03104+MI.4.3.T*0.06391+MI.5.1*0.03104+MI.5.1.T*0.06391   ;          - combination trucks+xx trucks
   
-endrun
+ENDRUN
