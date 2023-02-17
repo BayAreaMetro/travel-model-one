@@ -1,0 +1,1216 @@
+;===============================================================================
+; BCMAirport.s
+; 
+; Modified version of the Alameda CTC Air-Passenger Model for use in the Bi-County Activity-Based Model
+; 
+; Developed by George Naylor WSP 12-02-2022 
+;===============================================================================
+;
+; Model originally developed by George Naylor, VTA to represent San Jose Airport
+; Based on spreadsheet model by Mike Aronson, Dowling used for SJO access and people mover studies 1998-2001
+; Original coefficients from Greig Harvey 
+; Modifications to represent Oakland Airport and SFO
+;-------------------------------------------------------------------------------
+;
+RUN PGM=MATRIX
+
+  ; Calculate Airport Trips By Category By County
+  
+;  READ FILE = INPUTS\ClusterControl.DAT
+
+  ZONES = 6593
+
+  ZDATI[1] = landuse\ZMAST15.DBF
+  MATO[1] = nonres\2015_PTrips_AirPass.MAT, MO=1-4, NAME=RB,RNB,VB,VNB
+
+  ; Average daily passenger trips (arrivals+departures) requiring ground access at SJO:
+  ;   2000: 29,000
+  ;   2010: 53,000
+  ; Trip generation rates in VTA model scaled to generate 29,000 trips in 2000
+  ;
+  ; Oakland passenger forecasts from 2000 RASP and BART OAC EIS, converted to average daily ground access trips:
+  ;   1999: 24,600
+  ;   2005: 35,100
+  ;   2020: 65,000
+  
+  ; 2015 
+  INP_OAK_Passengers = 34850
+  INP_SFO_Passengers = 90150
+  INP_SJC_Passengers = 25400
+   
+  
+  ; Scale total trips based on ratio of scenario year OAK passengers and 
+  ;   25,000 OAK passengers in 2000
+  COMP FACT = INP_OAK_Passengers / 25000
+  COMP FACT1 = INP_SFO_Passengers / 48400
+  COMP FACT2 = INP_SJC_Passengers / 29000
+
+  ; VTA trip generation rates for SJO were set to generate the correct numbers
+  ;   of SJO air passengers from each county (year 2000)
+  ; To adjust for OAK, multiply SJO trip generation rates by
+  ;   ratio of OAK passengers to SJO passengers for each of the 4 passenger types
+  ; Passenger ratios are derived from the 1995 MTC Air Passenger Survey
+  ;
+  ; 1995 MTC AIR PASSENGER SURVEY DATA
+  ;
+  ; San Jose Airport factored to year 2000 total daily passengers
+  ;
+  ;                              RB       RNB        VB       VNB     TOTAL                 
+  ; San Francisco County
+  ; San Mateo County
+  ; Subtotal SF/SM              350       620       340       540     1,850
+  ; Santa Clara County        5,190     7,120     7,470     5,010    24,790
+  ; Alameda County
+  ; Contra Costa County
+  ; Subtotal East Bay           580       640       520       520     2,260
+  ; Solano/Napa Counties
+  ; Marin/Sonoma Counties
+  ; Subtotal North Bay           10        10        30        40        90
+  ; TOTAL                     6,130     8,390     8,360     6,110    28,990
+  ;
+  ; Oakland Airport factored to year 1999 total daily passengers
+  ;
+  ;                              RB       RNB        VB       VNB     TOTAL                 
+  ; San Francisco County        480     1,010       560     1,400     3,450
+  ; San Mateo County             30       240        50       200       520
+  ; Subtotal SF/SM              510     1,250       610     1,600     3,970
+  ;
+  ; Santa Clara County           90       130        80       140       430
+  ;
+  ; Alameda County            1,890     4,130     1,730     2,710    10,460
+  ; Contra Costa County       1,840     2,520       580     1,640     6,580
+  ; Subtotal East Bay         3,730     6,650     2,310     4,350    17,040
+  ;
+  ; Solano/Napa Counties        220       430       120       520     1,290
+  ; Marin/Sonoma Counties       350       720       160       670     1,890
+  ; Subtotal North Bay          570     1,150       280     1,190     3,180
+  ; TOTAL                     4,900     9,180     3,280     7,280    24,620
+  ;
+
+  JLOOP
+    ; San Francisco County
+    ;  OAK passengers include SF+Marin/Sonoma
+    ;  SJO passengers are assumed as 25% of SF/Peninsula subtotal
+    
+    ; OAK Air Passenger Trips (BCM TAZ = 2989)
+    
+    IF (ZI.1.COUNTY=1 & J=2989) ;THEN
+      
+      ; Resident Business
+      COMP MW[1] = (0.081*HHINCQ1 + 0.079*HHINCQ2 + 0.068*HHINCQ3 + 0.065*HHINCQ4 + 0.009*TOTEMPN)/1000 *
+                   (480+350)/(350*0.25) * 1.40 * 0.79
+      
+      ; Resident Non-Business
+      COMP MW[2] = (0.081*HHINCQ1 + 0.079*HHINCQ2 + 0.205*HHINCQ3 + 0.065*HHINCQ4 + 0.036*TOTEMPN)/1000 *
+                   (1010+720)/(620*0.25) * 1.38 * 0.81
+      
+      ; Visitor Business
+      COMP MW[3] = (0.036*TOTEMPN + 0.454*FPSEMPN + 0.018*TOTHH)/1000 *
+                   (560+160)/(340*0.25) * 0.82 * 0.93
+      
+      ; Visitor Non-Business
+      COMP MW[4] = (0.009*TOTEMPN + 0.268*FPSEMPN + 0.054*TOTHH)/1000 *
+                   (1400+670)/(540*0.25) * 1.25 *0.93
+    
+    ENDIF ; San Francisco
+
+    ;San Mateo County
+    ;  SJO passengers are assumed as 75% of SF/Peninsula subtotal
+    IF (ZI.1.COUNTY=2 & J=2989) ;THEN
+      
+      ; Resident Business    
+      COMP MW[1] = (0.000*HHINCQ1 + 0.762*HHINCQ2 + 0.698*HHINCQ3 + 1.649*HHINCQ4 + 0.211*TOTEMPN)/1000 *
+                   30/(350*0.75) * 1.40 * 0.81
+      
+      ; Resident Non-Business
+      COMP MW[2] = (2.558*HHINCQ1 + 2.394*HHINCQ2 + 2.024*HHINCQ3 + 1.015*HHINCQ4 + 0.136*TOTEMPN)/1000 *
+                   240/(620*0.75) * 1.38 * 0.83
+      
+      ; Visitor Business
+      COMP MW[3] = (0.271*TOTEMPN + 0.295*FPSEMPN + 0.158*TOTHH)/1000 *
+                   50/(340*0.75) * 0.82 * 0.82
+       
+      ; Visitor Non-Business
+      COMP MW[4] = (0.000*TOTEMPN + 0.716*FPSEMPN + 1.195*TOTHH)/1000 *
+                   200/(540*0.75) * 1.25 * 0.87
+    
+    ENDIF ; San Mateo
+  
+    ; Santa Clara County
+    
+    IF (ZI.1.COUNTY=3 & J=2989) ;THEN
+      
+      ; Resident Business    
+      COMP MW[1] = (2.037*HHINCQ1 + 4.977*HHINCQ2 + 9.285*HHINCQ3 + 6.804*HHINCQ4 + 1.341*TOTEMPN)/1000 *
+                   90/5190 * 1.40 * 0.81
+      
+      ; Resident Non-Business                   
+      COMP MW[2] = (18.334*HHINCQ1 + 14.075*HHINCQ2 + 11.740*HHINCQ3 + 6.482*HHINCQ4 + 0.745*TOTEMPN)/1000 *
+                   130/7120 * 1.38 * 0.82
+      
+      ; Visitor Business
+      COMP MW[3] = (2.709*TOTEMPN + 10.937*FPSEMPN + 1.051*TOTHH)/1000 *
+                   80/7470 * 0.82 * 0.87
+      
+      ; Visitor Non-Business
+      COMP MW[4] = (0.202*TOTEMPN + 3.567*FPSEMPN + 5.843*TOTHH)/1000 *
+                   140/5010 * 1.25 * 0.86
+    
+    ENDIF ; Santa Clara
+
+    ;Alameda County
+    ;  SJO passengers assumed as 75% of East Bay subtotal
+    IF (ZI.1.COUNTY=4 & J=2989) ;THEN 								
+      
+      ; Resident Business    
+      COMP MW[1] = (0.099*HHINCQ1 + 0.374*HHINCQ2 + 1.327*HHINCQ3 + 1.324*HHINCQ4 + 0.101*TOTEMPN)/1000 *
+                   1890/(580*0.75) * 1.40 * 0.82
+      
+      ; Resident Non-Business
+      COMP MW[2] = (0.943*HHINCQ1 + 0.608*HHINCQ2 + 1.668*HHINCQ3 + 1.004*HHINCQ4 + 0.016*TOTEMPN)/1000 *
+                   4130/(640*0.75) * 1.38 *1.80 *0.48
+      
+      ; Visitor Business
+      COMP MW[3] = (0.261*TOTEMPN + 0.807*FPSEMPN + 0.089*TOTHH)/1000 *
+                   1730/(520*0.75) * 0.82 * 0.82
+      
+      ; Visitor Non-Business
+      COMP MW[4] = (0.032*TOTEMPN + 0.268*FPSEMPN + 0.646*TOTHH)/1000 *
+                   2710/(520*0.75) * 1.25 * 0.86
+    
+    ENDIF
+
+    ; Contra Costa County
+    ;  OAK passengers include Solano/Napa
+    ;  SJO passengers assumed as 25% of East Bay subtotal + North Bay
+    IF (ZI.1.COUNTY=5 & J=2989) ;THEN 								
+      
+      ; Resident Business    
+      COMP MW[1] = (0.098*HHINCQ1 + 0.160*HHINCQ2 + 0.223*HHINCQ3 + 0.379*HHINCQ4 + 0.016*TOTEMPN)/1000 *
+                   (1840+220)/(580*0.25 + 10) * 1.40 * 0.82
+      
+      ; Resident Non-Business
+      COMP MW[2] = (0.000*HHINCQ1 + 0.000*HHINCQ2 + 0.167*HHINCQ3 + 0.216*HHINCQ4 + 0.016*TOTEMPN)/1000 *
+                   (2520+430)/(640*0.25 + 10) * 1.38 * 0.82
+      
+      ; Visitor Business
+      COMP MW[3] = (0.159*TOTEMPN + 0.217*FPSEMPN + 0.051*TOTHH)/1000 *
+                   (580+120)/(520*0.25 + 30) * 0.82 * 0.89
+      
+      ; Visitor Non-Business
+      COMP MW[4] = (0.000*TOTEMPN + 0.173*FPSEMPN + 0.135*TOTHH)/1000 *
+                    (1640+520)/(520*0.25 + 40) * 1.25 * 0.95
+    
+    ENDIF ; Contra Costa
+
+; Calculate SJC Productions  (BCM TAZ = 1887)
+
+;Calculate trips originiated in San Francisco County
+IF (zi.1.county=1 & J=1887) ;then
+;RB Trips
+COMP MW[1] = (0.081*HHINCQ1 + 0.079*HHINCQ2 + 0.068*HHINCQ3 + 0.065*HHINCQ4 + 0.009*TOTEMPN)/1000 * 0.96
+;RNB Trips
+COMP MW[2] = (0.081*HHINCQ1 + 0.079*HHINCQ2 + 0.205*HHINCQ3 + 0.065*HHINCQ4 + 0.036*TOTEMPN)/1000 * 0.96
+;NRB Trips
+COMP MW[3] = (0.036*TOTEMPN + 0.454*FPSEMPN + 0.018*TOTHH)/1000 * 1.11
+;NRNB Trips
+COMP MW[4] = (0.009*TOTEMPN + 0.268*FPSEMPN + 0.054*TOTHH)/1000 * 1.12
+ELSE
+ENDIF
+
+;Calculate trips originiated in San Mateo County
+IF (zi.1.county=2 & J=1887) ;then 
+;RB Trips
+COMP MW[1] = (0.000*HHINCQ1 + 0.762*HHINCQ2 + 0.698*HHINCQ3 + 1.649*HHINCQ4 + 0.211*TOTEMPN)/1000 * 0.97
+;RNB Trips
+COMP MW[2] = (2.558*HHINCQ1 + 2.394*HHINCQ2 + 2.024*HHINCQ3 + 1.015*HHINCQ4 + 0.136*TOTEMPN)/1000 * 0.99
+;NRB Trips
+COMP MW[3] = (0.271*TOTEMPN + 0.295*FPSEMPN + 0.158*TOTHH)/1000 * 0.98
+;NRNB Trips
+COMP MW[4] = (0.000*TOTEMPN + 0.716*FPSEMPN + 1.195*TOTHH)/1000 * 1.04
+ELSE
+ENDIF
+  
+;Calculate trips originiated in Santa Clara County
+IF (zi.1.county=3 & J=1887) ;then 
+;RB Trips
+COMP MW[1] = (2.037*HHINCQ1 + 4.977*HHINCQ2 + 9.285*HHINCQ3 + 6.804*HHINCQ4 + 1.341*TOTEMPN)/1000 * 0.96
+;RNB Trips
+COMP MW[2] = (18.334*HHINCQ1 + 14.075*HHINCQ2 + 11.740*HHINCQ3 + 6.482*HHINCQ4 + 0.745*TOTEMPN)/1000 * 0.98
+;NRB Trips
+COMP MW[3] = (2.709*TOTEMPN + 10.937*FPSEMPN + 1.051*TOTHH)/1000 * 1.03
+;NRNB Trips
+COMP MW[4] = (0.202*TOTEMPN + 3.567*FPSEMPN + 5.843*TOTHH)/1000 * 1.03
+ELSE
+ENDIF
+
+;Calculate trips originiated in Alameda County
+IF (zi.1.county=4 & J=1887) ;then 
+;RB Trips
+COMP MW[1] = (0.099*HHINCQ1 + 0.374*HHINCQ2 + 1.327*HHINCQ3 + 1.324*HHINCQ4 + 0.101*TOTEMPN)/1000 * 0.98
+;RNB Trips
+COMP MW[2] = (0.943*HHINCQ1 + 0.608*HHINCQ2 + 1.668*HHINCQ3 + 1.004*HHINCQ4 + 0.016*TOTEMPN)/1000 * 1.02
+;NRB Trips
+COMP MW[3] = (0.261*TOTEMPN + 0.807*FPSEMPN + 0.089*TOTHH)/1000 * 0.98
+;NRNB Trips
+COMP MW[4] = (0.032*TOTEMPN + 0.268*FPSEMPN + 0.646*TOTHH)/1000 * 1.02
+ELSE
+ENDIF
+
+;Calculate trips originiated in Contra Costa County
+IF (zi.1.county=5 & J=1887) ;then 
+;RB Trips
+COMP MW[1] = (0.098*HHINCQ1 + 0.160*HHINCQ2 + 0.223*HHINCQ3 + 0.379*HHINCQ4 + 0.016*TOTEMPN)/1000 * 0.99
+;RNB Trips
+COMP MW[2] = (0.000*HHINCQ1 + 0.000*HHINCQ2 + 0.167*HHINCQ3 + 0.216*HHINCQ4 + 0.016*TOTEMPN)/1000 * 0.98
+;NRB Trips
+COMP MW[3] = (0.159*TOTEMPN + 0.217*FPSEMPN + 0.051*TOTHH)/1000 * 1.06
+;NRNB Trips
+COMP MW[4] = (0.000*TOTEMPN + 0.173*FPSEMPN + 0.135*TOTHH)/1000 * 1.12
+ELSE
+ENDIF
+
+
+; Calculate SFO Trip Productions (BCM TAZ = 1020)
+
+;Calculate trips originiated in San Francisco County
+IF (zi.1.county=1 & J=1020) ;then
+;RB Trips
+COMP MW[1] = (1.71*HHINCQ1 + 4.18*HHINCQ2 + 7.79*HHINCQ3 + 5.71*HHINCQ4 + 1.17*TOTEMPN)/1000 * 0.93
+;RNB Trips
+COMP MW[2] = (2.44*HHINCQ1 + 2.38*HHINCQ2 + 6.17*HHINCQ3 + 1.96*HHINCQ4 + 1.09*TOTEMPN)/1000 * 0.92
+;NRB Trips
+COMP MW[3] = (1.28*TOTEMPN + 16.10*FPSEMPN + 0.64*TOTHH)/1000 * 1.06
+;NRNB Trips
+COMP MW[4] = (1.22*TOTEMPN + 36.15*FPSEMPN + 7.28*TOTHH)/1000 * 1.06
+ELSE
+ENDIF
+
+;Calculate trips originiated in San Mateo County
+IF (zi.1.county=2 & J=1020) ;then 
+;RB Trips
+COMP MW[1] = (0.001*HHINCQ1 + 3.75*HHINCQ2 + 3.4*HHINCQ3 + 8.12*HHINCQ4 + 1.04*TOTEMPN)/1000 * 0.92
+;RNB Trips
+COMP MW[2] = (9.96*HHINCQ1 + 9.32*HHINCQ2 + 7.88*HHINCQ3 + 3.95*HHINCQ4 + 0.53*TOTEMPN)/1000 * 0.95
+;NRB Trips
+COMP MW[3] = (2.74*TOTEMPN + 2.98*FPSEMPN + 1.59*TOTHH)/1000 * 0.93
+;NRNB Trips
+COMP MW[4] = (0.01*TOTEMPN + 7.25*FPSEMPN + 12.10*TOTHH)/1000 * 0.99
+ELSE
+ENDIF
+  
+;Calculate trips originiated in Santa Clara County
+IF (zi.1.county=3 & J=1020) ;then 
+;RB Trips
+COMP MW[1] = (0.49*HHINCQ1 + 1.18*HHINCQ2 + 2.19*HHINCQ3 + 1.61*HHINCQ4 + 0.32*TOTEMPN)/1000 * 0.92
+;RNB Trips
+COMP MW[2] = (1.69*HHINCQ1 + 1.30*HHINCQ2 + 1.08*HHINCQ3 + 0.60*HHINCQ4 + 0.07*TOTEMPN)/1000 * 0.94
+;NRB Trips
+COMP MW[3] = (0.39*TOTEMPN + 1.57*FPSEMPN + 0.15*TOTHH)/1000 * 0.98
+;NRNB Trips
+COMP MW[4] = (0.08*TOTEMPN + 1.35*FPSEMPN + 2.22*TOTHH)/1000 * 0.99
+ELSE
+ENDIF
+
+;Calculate trips originiated in Alameda County
+IF (zi.1.county=4 & J=1020) ;then 
+;RB Trips
+COMP MW[1] = (0.14*HHINCQ1 + 0.56*HHINCQ2 + 1.82*HHINCQ3 + 1.81*HHINCQ4 + 0.14*TOTEMPN)/1000 * 0.94
+;RNB Trips
+COMP MW[2] = (1.74*HHINCQ1 + 1.12*HHINCQ2 + 3.08*HHINCQ3 + 1.85*HHINCQ4 + 0.03*TOTEMPN)/1000 * 0.98
+;NRB Trips
+COMP MW[3] = (0.37*TOTEMPN + 0.99*FPSEMPN + 0.11*TOTHH)/1000 * 0.93
+;NRNB Trips
+COMP MW[4] = (0.12*TOTEMPN + 0.98*FPSEMPN + 2.37*TOTHH)/1000 * 0.98
+ELSE
+ENDIF
+
+;Calculate trips originiated in Contra Costa County
+IF (zi.1.county=5 & J=1020) ;then 
+;RB Trips
+COMP MW[1] = (0.56*HHINCQ1 + 0.90*HHINCQ2 + 1.27*HHINCQ3 + 2.16*HHINCQ4 + 0.09*TOTEMPN)/1000 * 0.93
+;RNB Trips
+COMP MW[2] = (0.02*HHINCQ1 + 0.02*HHINCQ2 + 2.00*HHINCQ3 + 2.59*HHINCQ4 + 0.19*TOTEMPN)/1000 * 0.93
+;NRB Trips
+COMP MW[3] = (0.20*TOTEMPN + 0.27*FPSEMPN + 0.07*TOTHH)/1000 * 1.01
+;NRNB Trips
+COMP MW[4] = (0.01*TOTEMPN + 1.77*FPSEMPN + 1.38*TOTHH)/1000 * 1.09
+ELSE
+ENDIF
+
+;Calculate trips originiated in Sonoma County
+IF (zi.1.county=8 & J=1020) ;then 
+;RB Trips
+COMP MW[1] = (0.76*HHINCQ1 + 1.14*HHINCQ2 + 1.61*HHINCQ3 + 2.71*HHINCQ4 + 0.11*TOTEMPN)/1000 * 0.93
+;RNB Trips
+COMP MW[2] = (0.02*HHINCQ1 + 0.02*HHINCQ2 + 2.90*HHINCQ3 + 3.78*HHINCQ4 + 0.28*TOTEMPN)/1000 * 0.91
+;NRB Trips
+COMP MW[3] = (0.74*TOTEMPN + 0.86*FPSEMPN + 0.26*TOTHH)/1000 * 1.04
+;NRNB Trips
+COMP MW[4] = (0.02*TOTEMPN + 3.48*FPSEMPN + 2.74*TOTHH)/1000 * 1.15
+ELSE
+ENDIF
+
+;Calculate trips originated in Marin County
+IF (zi.1.county=9 & J=1020) ;then 
+;RB Trips
+COMP MW[1] = (2.37*HHINCQ1 + 3.55*HHINCQ2 + 4.99*HHINCQ3 + 8.41*HHINCQ4 + 0.34*TOTEMPN)/1000 * 0.93
+;RNB Trips
+COMP MW[2] = (0.03*HHINCQ1 + 0.03*HHINCQ2 + 5.20*HHINCQ3 + 6.77*HHINCQ4 + 0.50*TOTEMPN)/1000 * 0.94
+;NRB Trips
+COMP MW[3] = (0.75*TOTEMPN + 0.86*FPSEMPN + 0.26*TOTHH)/1000 * 1.02
+;NRNB Trips
+COMP MW[4] = (0.04*TOTEMPN + 6.35*FPSEMPN + 4.99*TOTHH)/1000 * 1.04
+ELSE
+ENDIF
+
+if (J=2989) ;then
+    COMP MW[1]=MW[1]*FACT
+    COMP MW[2]=MW[2]*FACT
+    COMP MW[3]=MW[3]*FACT
+    COMP MW[4]=MW[4]*FACT
+else
+endif
+
+if (J=1887) ;then
+comp mw[1]=mw[1]*fact2
+comp mw[2]=mw[2]*fact2
+comp mw[3]=mw[3]*fact2
+comp mw[4]=mw[4]*fact2
+else
+endif
+
+if (J=1020) ;then
+comp mw[1]=mw[1]*fact1
+comp mw[2]=mw[2]*fact1
+comp mw[3]=mw[3]*fact1
+comp mw[4]=mw[4]*fact1
+else
+endif
+  ENDJLOOP
+  
+ENDRUN
+RUN PGM=MATRIX
+
+  ; Summarize Airport Passenger Person Trips by COunty
+  
+  ZONES = 6593
+  
+  MATI[1] = nonres\2015_PTrips_Airpass.MAT
+  MATO[1] = nonres\2015_APTrips_CTY.MAT, MO=1-4, NAME=RB,RNB,VB,VNB
+
+  MW[1] = MI.1.1   ; Resident Business Transit Person Trips
+  MW[2] = MI.1.2   ; Resident Non Business Transit Person Trips
+  MW[3] = MI.1.3   ; Visitor Business Transit Person Trips
+  MW[4] = MI.1.4   ; Visitor Non Business Transit Person Trips
+
+  RENUMBER FILE= c:\BCM\Landuse\TAZ2COUNTY.PRN, MISSINGZI=M, MISSINGZO=M ;
+
+ENDRUN
+RUN PGM=MATRIX
+
+  ; Resident Business (RB) Mode Choice
+
+;  READ FILE = INPUTS\ClusterControl.DAT
+
+  ZONES = 6593
+
+  MATI[1] = skims\DA_MD_TAZ.TPP
+  MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.ITER1.TPP
+  MATI[5] = nonres\2015_PTrips_AirPass.MAT
+  ZDATI[1] = landuse\ZMAST15.DBF
+  
+  MATO[1] = nonres\2015_APTrips_RB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
+  ;MATO[2] = c:\bcm\airport\?_Util_RB.MAT, mo=21,23,24, NAME=Auto,Transit,OnCall, DEC=9
+
+  MW[2]=MI.1.1        ;congested highway travel time 3+
+  MW[3]=MI.1.2        ;highway distance
+
+  COMP MW[6]=(MI.1.1)/100      ;offpeak transit ivtt
+  ; Subtract 8 minutes from 10 minute walk model assumes at Airport
+  COMP MW[7]=(MI.3.4+MI.3.5+MI.3.6)/100      ;offpeak transit aux (walk)
+  COMP MW[8]=(MI.3.2+MI.3.3)/100      ;offpeak transit wait
+  MW[9]=MI.3.9        ;offpeak transit fare
+  ;MW[10]=MI.4         ;on-call fare matrix, not used
+  MW[11]=MI.5.RB*100         ;resident business trips
+
+  ;Auto Operating Costs
+
+  GCOST = 15.0                  ; Gas cost, cents/mile (1990$)
+  NGCOST = 7.5                ; Non-gas cost, cents/mile (1990$)
+  AOCOST=NGCOST+GCOST
+
+
+  JLOOP
+  
+    ;Calculate mode choice utilities from all origins to SFO
+    IF (j=1020) ;then
+
+      ; Drive Utility
+      ; Add 10.0 minutes for circulation within airport
+      ; Add 6 minutes average time from parked car to inside of airport
+      ; $10.80 is average parking cost ($8/day /2 trip ends * 2.7 days average duration)
+      ; 1.6 is the weighted average vehicle occupancy rates for RB trips (derived from the 1995 APS 
+      COMP MW[21] = EXP ((-0.071 * (MW[2] + 10.0)) + (-0.2585 * (TERMINAL + 6.0)) + (-0.00277 * ((MW[3]*AOCOST) + 1080)/1.6))
+
+      ; Transit Utility
+      COMP MW[23] = EXP ((-0.073 * MW[6]) + (-0.2585 * MW[7]) + (-0.107 * MW[8]) + (-0.00277 * MW[9]) - 6.56)
+
+      ; On-Call Utility
+      ; Add 2 minute average walk time between taxi and terminal
+      ; Add 6 minute average wait for taxi at either end of trip (from 1995 APS)
+      ; Estimate taxi fares as $2.00 flag drop + $2.00/mile
+      COMP MW[24] = EXP ((-0.071 * MW[2]) + (-0.2585 * 2.0) + (-0.107 * 6.0) + (-0.00277 * (200 + (200*MW[3]))) - 0.80)
+    ENDIF
+
+    ;Zero out utilities for trips originating from SFO 
+    IF (i=1020) ;then
+      COMP MW[21] = 0
+      COMP MW[23] = 0
+      COMP MW[24] = 0
+    ENDIF
+
+    IF ( MW[6] = 0 )
+      COMP MW[23] = 0
+    ENDIF
+
+    COMP MW[25] = MW[21] + MW[23] + MW[24]
+    
+    ;Calculate Person Trips by Mode
+
+    IF ( j=1020 & MW[25]<>0 )  
+      COMP MW[31] = MW[11] * (MW[21] / (MW[21] + MW[23] + MW[24])) 	;Drive Person Trips
+      COMP MW[33] = MW[11] * (MW[23] / (MW[21] + MW[23] + MW[24])) 	;Transit Person Trips
+      COMP MW[34] = MW[11] * (MW[24] / (MW[21] + MW[23] + MW[24]))  ;On-Call Person Trips
+	ENDIF
+
+  ENDJLOOP
+  JLOOP
+  
+    ;Calculate mode choice utilities from all origins to SJC
+    IF (j=1887) ;then
+
+      ; Drive Utility
+      ; Add 10.0 minutes for circulation within airport
+      ; Add 6 minutes average time from parked car to inside of airport
+      ; $10.80 is average parking cost ($8/day /2 trip ends * 2.7 days average duration)
+      ; 1.6 is the weighted average vehicle occupancy rates for RB trips (derived from the 1995 APS 
+      COMP MW[21] = EXP ((-0.071 * (MW[2] + 10.0)) + (-0.2585 * (TERMINAL + 6.0)) + (-0.00277 * ((MW[3]*AOCOST) + 1080)/1.6))
+
+      ; Transit Utility
+      COMP MW[23] = EXP ((-0.073 * MW[6]) + (-0.2585 * MW[7]) + (-0.107 * MW[8]) + (-0.00277 * MW[9]) - 6.56)
+
+      ; On-Call Utility
+      ; Add 2 minute average walk time between taxi and terminal
+      ; Add 6 minute average wait for taxi at either end of trip (from 1995 APS)
+      ; Estimate taxi fares as $2.00 flag drop + $2.00/mile
+      COMP MW[24] = EXP ((-0.071 * MW[2]) + (-0.2585 * 2.0) + (-0.107 * 6.0) + (-0.00277 * (200 + (200*MW[3]))) - 0.80)
+    ENDIF
+
+    ;Zero out utilities for trips originating from SJC 
+    IF (i=1887) ;then
+      COMP MW[21] = 0
+      COMP MW[23] = 0
+      COMP MW[24] = 0
+    ENDIF
+
+    IF ( MW[6] = 0 )
+      COMP MW[23] = 0
+    ENDIF
+
+    COMP MW[25] = MW[21] + MW[23] + MW[24]
+    
+    ;Calculate Person Trips by Mode
+
+    IF ( j=1887 & MW[25]<>0 )  
+      COMP MW[31] = MW[11] * (MW[21] / (MW[21] + MW[23] + MW[24])) 	;Drive Person Trips
+      COMP MW[33] = MW[11] * (MW[23] / (MW[21] + MW[23] + MW[24])) 	;Transit Person Trips
+      COMP MW[34] = MW[11] * (MW[24] / (MW[21] + MW[23] + MW[24]))  ;On-Call Person Trips
+	ENDIF
+
+  ENDJLOOP
+
+  JLOOP
+  
+    ;Calculate mode choice utilities from all origins to OAK
+    IF (j=2989) ;then
+
+      ; Drive Utility
+      ; Add 10.0 minutes for circulation within airport
+      ; Add 6 minutes average time from parked car to inside of airport
+      ; $10.80 is average parking cost ($8/day /2 trip ends * 2.7 days average duration)
+      ; 1.6 is the weighted average vehicle occupancy rates for RB trips (derived from the 1995 APS 
+      COMP MW[21] = EXP ((-0.071 * (MW[2] + 10.0)) + (-0.2585 * (TERMINAL + 6.0)) + (-0.00277 * ((MW[3]*AOCOST) + 1080)/1.6))
+
+      ; Transit Utility
+      COMP MW[23] = EXP ((-0.073 * MW[6]) + (-0.2585 * MW[7]) + (-0.107 * MW[8]) + (-0.00277 * MW[9]) - 6.56)
+
+      ; On-Call Utility
+      ; Add 2 minute average walk time between taxi and terminal
+      ; Add 6 minute average wait for taxi at either end of trip (from 1995 APS)
+      ; Estimate taxi fares as $2.00 flag drop + $2.00/mile
+      COMP MW[24] = EXP ((-0.071 * MW[2]) + (-0.2585 * 2.0) + (-0.107 * 6.0) + (-0.00277 * (200 + (200*MW[3]))) - 0.80)
+    ENDIF
+
+    ;Zero out utilities for trips originating from OAK 
+    IF (i=2989) ;then
+      COMP MW[21] = 0
+      COMP MW[23] = 0
+      COMP MW[24] = 0
+    ENDIF
+
+    IF ( MW[6] = 0 )
+      COMP MW[23] = 0
+    ENDIF
+
+    COMP MW[25] = MW[21] + MW[23] + MW[24]
+    
+    ;Calculate Person Trips by Mode
+
+    IF ( j=2989 & MW[25]<>0 )  
+      COMP MW[31] = MW[11] * (MW[21] / (MW[21] + MW[23] + MW[24])) 	;Drive Person Trips
+      COMP MW[33] = MW[11] * (MW[23] / (MW[21] + MW[23] + MW[24])) 	;Transit Person Trips
+      COMP MW[34] = MW[11] * (MW[24] / (MW[21] + MW[23] + MW[24]))  ;On-Call Person Trips
+	ENDIF
+
+  ENDJLOOP
+
+
+ENDRUN
+
+;-------------------------------------------------------------------------------
+
+RUN PGM=MATRIX
+
+  ; Resident Non-Business (RNB) Mode Choice
+  
+;  READ FILE = c:\bcm\INPUTS\ClusterControl.DAT
+
+  ZONES = 6593
+
+  MATI[1] = skims\DA_MD_TAZ.TPP
+  MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.ITER1.TPP
+  MATI[5] = nonres\2015_PTrips_AirPass.MAT
+  ZDATI[1] = landuse\ZMAST15.DBF
+  
+  MATO[1] = nonres\2015_APTrips_RNB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
+  ;MATO[2] = c:\bcm\airport\?_Util_RB.MAT, mo=21,23,24, NAME=Auto,Transit,OnCall, DEC=9
+
+  MW[2]=MI.1.1        ;congested highway travel time 3+
+  MW[3]=MI.1.2        ;highway distance
+
+  COMP MW[6]=(MI.1.1)/100      ;offpeak transit ivtt
+  ; Subtract 8 minutes from 10 minute walk model assumes at Airport
+  COMP MW[7]=(MI.3.4+MI.3.5+MI.3.6)/100      ;offpeak transit aux (walk)
+  COMP MW[8]=(MI.3.2+MI.3.3)/100      ;offpeak transit wait
+  MW[9]=MI.3.9        ;offpeak transit fare
+  ;MW[10]=MI.4         ;on-call fare matrix, not used
+  MW[11]=MI.5.RNB*100         ;resident business trips
+
+  ;Auto Operating Costs
+
+  GCOST = 15.0                  ; Gas cost, cents/mile (1990$)
+  NGCOST = 7.5                ; Non-gas cost, cents/mile (1990$)
+  AOCOST=NGCOST+GCOST
+
+  IF (TOTHH>0)
+  COMP MHHINC=((HHINCQ1*15000+HHINCQ2*45000+HHINCQ3*80000+HHINCQ4*160000)/TOTHH)*0.46
+  ENDIF
+  
+  JLOOP
+  ;Calculate mode choice utilities from all origins to OAK
+;  COMP MHHINC=1
+
+  
+ ;   IF (j=2989 & ZI.1.MHHINC <> 0) ;then
+   IF (j=2989 & TOTHH <> 0) ;then
+
+      ; Drive Utility
+      ; Add 10.0 minutes for circulation within airport
+      ; Add 6 minutes average time from parked car to inside of airport
+      ; $17.60 is average parking cost ($8/day /2 trip ends * 4.4 days average duration)
+      ; 2.4 is the weighted average vehicle occupancy rates for Resident Non-Business trips (derived from the 1995 APS) 
+      COMP MW[21] = EXP ((-0.044 * (MW[2] + 10.0)) + (-0.164 * (TERMINAL + 6.0)) + (-1.04 * ((MW[3]*AOCOST) + 1760)/(MHHINC^1.5)/2.4))
+
+      ; Transit Utility
+      COMP MW[23] = EXP ((-0.041 * MW[6]) + (-0.164 * MW[7]) + (-0.077 * MW[8]) + (-1.04 * MW[9]/(MHHINC^1.5)) - 4.72)
+
+      ; On-Call Utility
+      ; Add 2 minute average walk time between taxi and terminal
+      ; Add 6 minute average wait for taxi at either end of trip (from 1995 APS)
+      ; Estimate taxi fares as $2.00 flag drop + $2.00/mile
+      COMP MW[24] = EXP ((-0.044 * MW[2]) + (-0.164 * 2.0) + (-0.077 * 6.0) + (-1.04 * (200 + (200*MW[3]))/(MHHINC^1.5)) - 1.76)
+
+    ENDIF
+
+    ;Zero out utilities for trips originating from OAK 
+    IF (i=2989) ;then
+      COMP MW[21] = 0
+      COMP MW[23] = 0
+      COMP MW[24] = 0
+    ENDIF
+
+    IF ( MW[6] = 0 )
+      COMP MW[23] = 0
+    ENDIF
+
+    COMP MW[25] = MW[21] + MW[23] + MW[24]
+    
+    ; Calculate Person Trips by Mode
+
+    IF ( j=2989 & MW[25]<>0 )  
+      COMP MW[31] = MW[11] * (MW[21] / (MW[21] + MW[23] + MW[24])) 	;Drive Person Trips
+      COMP MW[33] = MW[11] * (MW[23] / (MW[21] + MW[23] + MW[24])) 	;Transit Person Trips
+      COMP MW[34] = MW[11] * (MW[24] / (MW[21] + MW[23] + MW[24]))  	;On-Call Person Trips
+    ENDIF
+
+  ENDJLOOP
+
+  JLOOP
+  ;Calculate mode choice utilities from all origins to SFO
+  
+    IF (j=1020 & TOTHH <> 0) ;then
+
+
+      ; Drive Utility
+      ; Add 10.0 minutes for circulation within airport
+      ; Add 6 minutes average time from parked car to inside of airport
+      ; $17.60 is average parking cost ($8/day /2 trip ends * 4.4 days average duration)
+      ; 2.4 is the weighted average vehicle occupancy rates for Resident Non-Business trips (derived from the 1995 APS) 
+      COMP MW[21] = EXP ((-0.044 * (MW[2] + 10.0)) + (-0.164 * (TERMINAL + 6.0)) + (-1.04 * ((MW[3]*AOCOST) + 1760)/(MHHINC^1.5)/2.4))
+
+      ; Transit Utility
+      COMP MW[23] = EXP ((-0.041 * MW[6]) + (-0.164 * MW[7]) + (-0.077 * MW[8]) + (-1.04 * MW[9]/(MHHINC^1.5)) - 4.72)
+
+      ; On-Call Utility
+      ; Add 2 minute average walk time between taxi and terminal
+      ; Add 6 minute average wait for taxi at either end of trip (from 1995 APS)
+      ; Estimate taxi fares as $2.00 flag drop + $2.00/mile
+      COMP MW[24] = EXP ((-0.044 * MW[2]) + (-0.164 * 2.0) + (-0.077 * 6.0) + (-1.04 * (200 + (200*MW[3]))/(MHHINC^1.5)) - 1.76)
+
+    ENDIF
+
+    ;Zero out utilities for trips originating from SFO 
+    IF (i=1020) ;then
+      COMP MW[21] = 0
+      COMP MW[23] = 0
+      COMP MW[24] = 0
+    ENDIF
+
+    IF ( MW[6] = 0 )
+      COMP MW[23] = 0
+    ENDIF
+
+    COMP MW[25] = MW[21] + MW[23] + MW[24]
+    
+    ; Calculate Person Trips by Mode
+
+    IF ( j=1020 & MW[25]<>0 )  
+      COMP MW[31] = MW[11] * (MW[21] / (MW[21] + MW[23] + MW[24])) 	;Drive Person Trips
+      COMP MW[33] = MW[11] * (MW[23] / (MW[21] + MW[23] + MW[24])) 	;Transit Person Trips
+      COMP MW[34] = MW[11] * (MW[24] / (MW[21] + MW[23] + MW[24]))  	;On-Call Person Trips
+    ENDIF
+
+  ENDJLOOP
+
+  JLOOP
+  ;Calculate mode choice utilities from all origins to SJC
+
+
+    IF (j=1887 & TOTHH <> 0) ;then
+
+      ; Drive Utility
+      ; Add 10.0 minutes for circulation within airport
+      ; Add 6 minutes average time from parked car to inside of airport
+      ; $17.60 is average parking cost ($8/day /2 trip ends * 4.4 days average duration)
+      ; 2.4 is the weighted average vehicle occupancy rates for Resident Non-Business trips (derived from the 1995 APS) 
+      COMP MW[21] = EXP ((-0.044 * (MW[2] + 10.0)) + (-0.164 * (TERMINAL + 6.0)) + (-1.04 * ((MW[3]*AOCOST) + 1760)/(MHHINC^1.5)/2.4))
+
+      ; Transit Utility
+      COMP MW[23] = EXP ((-0.041 * MW[6]) + (-0.164 * MW[7]) + (-0.077 * MW[8]) + (-1.04 * MW[9]/(MHHINC^1.5)) - 4.72)
+
+      ; On-Call Utility
+      ; Add 2 minute average walk time between taxi and terminal
+      ; Add 6 minute average wait for taxi at either end of trip (from 1995 APS)
+      ; Estimate taxi fares as $2.00 flag drop + $2.00/mile
+      COMP MW[24] = EXP ((-0.044 * MW[2]) + (-0.164 * 2.0) + (-0.077 * 6.0) + (-1.04 * (200 + (200*MW[3]))/(MHHINC^1.5)) - 1.76)
+
+    ENDIF
+
+    ;Zero out utilities for trips originating from OAK 
+    IF (i=1887) ;then
+      COMP MW[21] = 0
+      COMP MW[23] = 0
+      COMP MW[24] = 0
+    ENDIF
+
+    IF ( MW[6] = 0 )
+      COMP MW[23] = 0
+    ENDIF
+
+    COMP MW[25] = MW[21] + MW[23] + MW[24]
+    
+    ; Calculate Person Trips by Mode
+
+    IF ( j=1887 & MW[25]<>0 )  
+      COMP MW[31] = MW[11] * (MW[21] / (MW[21] + MW[23] + MW[24])) 	;Drive Person Trips
+      COMP MW[33] = MW[11] * (MW[23] / (MW[21] + MW[23] + MW[24])) 	;Transit Person Trips
+      COMP MW[34] = MW[11] * (MW[24] / (MW[21] + MW[23] + MW[24]))  	;On-Call Person Trips
+    ENDIF
+
+  ENDJLOOP
+
+ENDRUN
+
+;-------------------------------------------------------------------------------
+
+RUN PGM=MATRIX
+
+  ; Visitor Business (VB) Mode Choice
+  
+ ; READ FILE = INPUTS\ClusterControl.DAT
+
+  ZONES = 6593
+
+  MATI[1] = skims\DA_MD_TAZ.TPP
+  MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.ITER1.TPP
+  MATI[5] = nonres\2015_PTrips_AirPass.MAT
+  ZDATI[1] = landuse\ZMAST15.DBF
+  
+  MATO[1] = nonres\2015_APTrips_VB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
+  ;MATO[2] = c:\bcm\airport\?_Util_RB.MAT, mo=21,23,24, NAME=Auto,Transit,OnCall, DEC=9
+
+  MW[2]=MI.1.1        ;congested highway travel time 3+
+  MW[3]=MI.1.2        ;highway distance
+
+  COMP MW[6]=(MI.1.1)/100      ;offpeak transit ivtt
+  ; Subtract 8 minutes from 10 minute walk model assumes at Airport
+  COMP MW[7]=(MI.3.4+MI.3.5+MI.3.6)/100      ;offpeak transit aux (walk)
+  COMP MW[8]=(MI.3.2+MI.3.3)/100      ;offpeak transit wait
+  MW[9]=MI.3.9        ;offpeak transit fare
+  ;MW[10]=MI.4         ;on-call fare matrix, not used
+  MW[11]=MI.5.VB*100         ;resident business trips
+
+  ;Auto Operating Costs
+
+  GCOST = 15.0                  ; Gas cost, cents/mile (1990$)
+  NGCOST = 7.5                ; Non-gas cost, cents/mile (1990$)
+  AOCOST=NGCOST+GCOST
+
+  JLOOP
+    ;Calculate mode choice utilities from all origins to OAK
+
+    IF (j=2989) ;then
+
+      ; Drive Utility
+      ; Add 10.0 minutes for circulation within airport
+      ; Add 6 minutes average time from parked car to inside of airport
+      ; $2.00 is average parking cost for visitors ($0.75 avg short-term at Airport + 12% downtown SF @$8 and 7% downtown Oakland @$4)
+      ; 2.6 is the weighted average vehicle occupancy rates for Visitor Business trips (from 1995 APS)
+      COMP MW[21] = EXP ((-0.068 * (MW[2] + 10.0)) + (-0.2345 * (TERMINAL + 6.0)) + (-0.00256 * ((MW[3]*AOCOST) + 200)/2.6))
+
+      ; Transit Utility
+      COMP MW[23] = EXP ((-0.070 * MW[6]) + (-0.2345 * MW[7]) + (-0.096 * MW[8]) + (-0.00256 * MW[9]) - 4.93)
+
+      ; On-Call Utility
+      ; Add 2 minute average walk time between taxi and terminal
+      ; Add 6 minute average wait for taxi at either end of trip (from 1995 APS)
+      ; Estimate taxi fares as $2.00 flag drop + $2.00/mile
+      COMP MW[24] = EXP ((-0.068 * MW[2]) + (-0.2345 * 2.0) + (-0.096 * 6.0) + (-0.00256 * (200 + (200*MW[3]))) + 0.15)
+
+    ENDIF
+
+    ; Zero out utilities for trips originating from OAK 
+    IF (i=2989) ;then
+      COMP MW[21] = 0
+      COMP MW[23] = 0
+      COMP MW[24] = 0
+    ENDIF
+
+    IF ( MW[6] = 0 )
+      COMP MW[23] = 0
+    ENDIF
+
+    COMP MW[25] = MW[21] + MW[23] + MW[24]
+    
+    ; Calculate Person Trips by Mode
+
+    IF ( j=2989 & MW[25]<>0 )  
+      COMP MW[31] = MW[11] * (MW[21] / (MW[21] + MW[23] + MW[24])) 	;Drive Person Trips
+      COMP MW[33] = MW[11] * (MW[23] / (MW[21] + MW[23] + MW[24])) 	;Transit Person Trips
+      COMP MW[34] = MW[11] * (MW[24] / (MW[21] + MW[23] + MW[24]))  	;On-Call Person Trips
+    ENDIF
+
+  ENDJLOOP
+  JLOOP
+    ;Calculate mode choice utilities from all origins to OAK
+
+
+    IF (j=1020) ;then
+
+      ; Drive Utility
+      ; Add 10.0 minutes for circulation within airport
+      ; Add 6 minutes average time from parked car to inside of airport
+      ; $2.00 is average parking cost for visitors ($0.75 avg short-term at Airport + 12% downtown SF @$8 and 7% downtown Oakland @$4)
+      ; 2.6 is the weighted average vehicle occupancy rates for Visitor Business trips (from 1995 APS)
+      COMP MW[21] = EXP ((-0.068 * (MW[2] + 10.0)) + (-0.2345 * (TERMINAL + 6.0)) + (-0.00256 * ((MW[3]*AOCOST) + 200)/2.6))
+
+      ; Transit Utility
+      COMP MW[23] = EXP ((-0.070 * MW[6]) + (-0.2345 * MW[7]) + (-0.096 * MW[8]) + (-0.00256 * MW[9]) - 4.93)
+
+      ; On-Call Utility
+      ; Add 2 minute average walk time between taxi and terminal
+      ; Add 6 minute average wait for taxi at either end of trip (from 1995 APS)
+      ; Estimate taxi fares as $2.00 flag drop + $2.00/mile
+      COMP MW[24] = EXP ((-0.068 * MW[2]) + (-0.2345 * 2.0) + (-0.096 * 6.0) + (-0.00256 * (200 + (200*MW[3]))) + 0.15)
+
+    ENDIF
+
+    ; Zero out utilities for trips originating from OAK 
+    IF (i=1020) ;then
+      COMP MW[21] = 0
+      COMP MW[23] = 0
+      COMP MW[24] = 0
+    ENDIF
+
+    IF ( MW[6] = 0 )
+      COMP MW[23] = 0
+    ENDIF
+
+    COMP MW[25] = MW[21] + MW[23] + MW[24]
+    
+    ; Calculate Person Trips by Mode
+
+    IF ( j=1020 & MW[25]<>0 )  
+      COMP MW[31] = MW[11] * (MW[21] / (MW[21] + MW[23] + MW[24])) 	;Drive Person Trips
+      COMP MW[33] = MW[11] * (MW[23] / (MW[21] + MW[23] + MW[24])) 	;Transit Person Trips
+      COMP MW[34] = MW[11] * (MW[24] / (MW[21] + MW[23] + MW[24]))  	;On-Call Person Trips
+    ENDIF
+
+  ENDJLOOP
+
+  JLOOP
+    ;Calculate mode choice utilities from all origins to OAK
+
+    IF (j=1887) ;then
+
+      ; Drive Utility
+      ; Add 10.0 minutes for circulation within airport
+      ; Add 6 minutes average time from parked car to inside of airport
+      ; $2.00 is average parking cost for visitors ($0.75 avg short-term at Airport + 12% downtown SF @$8 and 7% downtown Oakland @$4)
+      ; 2.6 is the weighted average vehicle occupancy rates for Visitor Business trips (from 1995 APS)
+      COMP MW[21] = EXP ((-0.068 * (MW[2] + 10.0)) + (-0.2345 * (TERMINAL + 6.0)) + (-0.00256 * ((MW[3]*AOCOST) + 200)/2.6))
+
+      ; Transit Utility
+      COMP MW[23] = EXP ((-0.070 * MW[6]) + (-0.2345 * MW[7]) + (-0.096 * MW[8]) + (-0.00256 * MW[9]) - 4.93)
+
+      ; On-Call Utility
+      ; Add 2 minute average walk time between taxi and terminal
+      ; Add 6 minute average wait for taxi at either end of trip (from 1995 APS)
+      ; Estimate taxi fares as $2.00 flag drop + $2.00/mile
+      COMP MW[24] = EXP ((-0.068 * MW[2]) + (-0.2345 * 2.0) + (-0.096 * 6.0) + (-0.00256 * (200 + (200*MW[3]))) + 0.15)
+
+    ENDIF
+
+    ; Zero out utilities for trips originating from OAK 
+    IF (i=1887) ;then
+      COMP MW[21] = 0
+      COMP MW[23] = 0
+      COMP MW[24] = 0
+    ENDIF
+
+    IF ( MW[6] = 0 )
+      COMP MW[23] = 0
+    ENDIF
+
+    COMP MW[25] = MW[21] + MW[23] + MW[24]
+    
+    ; Calculate Person Trips by Mode
+
+    IF ( j=1887 & MW[25]<>0 )  
+      COMP MW[31] = MW[11] * (MW[21] / (MW[21] + MW[23] + MW[24])) 	;Drive Person Trips
+      COMP MW[33] = MW[11] * (MW[23] / (MW[21] + MW[23] + MW[24])) 	;Transit Person Trips
+      COMP MW[34] = MW[11] * (MW[24] / (MW[21] + MW[23] + MW[24]))  	;On-Call Person Trips
+    ENDIF
+
+  ENDJLOOP
+
+
+ENDRUN
+
+;-------------------------------------------------------------------------------
+
+RUN PGM=MATRIX
+
+  ; Visitor Non-Business (VNB) Mode Choice
+
+ ; READ FILE = INPUTS\ClusterControl.DAT
+
+  ZONES = 6593
+
+  MATI[1] = skims\DA_MD_TAZ.TPP
+  MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.ITER1.TPP
+  MATI[5] = nonres\2015_PTrips_AirPass.MAT
+  ZDATI[1] = landuse\ZMAST15.DBF
+  
+  MATO[1] = nonres\2015_APTrips_VNB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
+  ;MATO[2] = c:\bcm\airport\?_Util_RB.MAT, mo=21,23,24, NAME=Auto,Transit,OnCall, DEC=9
+
+  MW[2]=MI.1.1        ;congested highway travel time 3+
+  MW[3]=MI.1.2        ;highway distance
+
+  COMP MW[6]=(MI.1.1)/100      ;offpeak transit ivtt
+  ; Subtract 8 minutes from 10 minute walk model assumes at Airport
+  COMP MW[7]=(MI.3.4+MI.3.5+MI.3.6)/100      ;offpeak transit aux (walk)
+  COMP MW[8]=(MI.3.2+MI.3.3)/100      ;offpeak transit wait
+  MW[9]=MI.3.9        ;offpeak transit fare
+  ;MW[10]=MI.4         ;on-call fare matrix, not used
+  MW[11]=MI.5.VNB*100         ;resident business trips
+
+  ;Auto Operating Costs
+
+  GCOST = 15.0                  ; Gas cost, cents/mile (1990$)
+  NGCOST = 7.5                ; Non-gas cost, cents/mile (1990$)
+  AOCOST=NGCOST+GCOST
+IF (TOTHH>0)
+    COMP MHHINC=((HHINCQ1*15000+HHINCQ2*45000+HHINCQ3*80000+HHINCQ4*160000)/TOTHH)*0.46
+ENDIF
+  JLOOP
+    ;Calculate mode choice utilities from all origins to OAK
+
+
+    IF (j=2989 & TOTHH <> 0) ;then
+
+      ; Drive Utility
+      ; Add 10.0 minutes for circulation within airport
+      ; Add 6 minutes average time from parked car to inside of airport
+      ; $2.00 is average parking cost for visitors ($0.75 avg short-term at Airport + 12% downtown SF @$8 and 7% downtown Oakland @$4)
+      ; 2.8 is the weighted average vehicle occupancy rates for Resident Non-Business trips (derived from the 1995 APS) 
+      COMP MW[21] = EXP ((-0.039 * (MW[2] + 10.0)) + (-0.147 * (TERMINAL + 6.0)) + (-0.973 * ((MW[3]*AOCOST) + 200)/(MHHINC^1.5)/ 2.8))
+
+      ; Transit Utility
+      COMP MW[23] = EXP ((-0.037 * MW[6]) + (-0.147 * MW[7]) + (-0.071 * MW[8]) + (-0.973 * MW[9]/(MHHINC^1.5)) - 4.56)
+
+      ; On-Call Utility
+      ; Add 2 minute average walk time between taxi and terminal
+      ; Add 6 minute average wait for taxi at either end of trip (from 1995 APS)
+      ; Estimate taxi fares as $2.00 flag drop + $2.00/mile
+      COMP MW[24] = EXP ((-0.039 * MW[2]) + (-0.147 * 2.0) + (-0.071 * 6.0) + (-0.973 * (200 + (200*MW[3]))/(MHHINC^1.5)) - 1.04)
+	
+    ENDIF
+
+    ;Zero out utilities for trips originating from OAK 
+    IF (i=2989) ;then
+      COMP MW[21] = 0
+      COMP MW[23] = 0
+      COMP MW[24] = 0
+    ENDIF
+
+    IF ( MW[6] = 0 )
+      COMP MW[23] = 0
+    ENDIF
+
+    COMP MW[25] = MW[21] + MW[23] + MW[24]
+    
+    ; Calculate Person Trips by Mode
+
+    IF ( j=2989 & MW[25]<>0 )  
+      COMP MW[31] = MW[11] * (MW[21] / (MW[21] + MW[23] + MW[24])) 	;Drive Person Trips
+      COMP MW[33] = MW[11] * (MW[23] / (MW[21] + MW[23] + MW[24])) 	;Transit Person Trips
+      COMP MW[34] = MW[11] * (MW[24] / (MW[21] + MW[23] + MW[24]))  	;On-Call Person Trips
+    ENDIF
+
+  ENDJLOOP
+
+  JLOOP
+    ;Calculate mode choice utilities from all origins to OAK
+
+
+    IF (j=1020 & TOTHH <> 0) ;then
+ 
+      ; Drive Utility
+      ; Add 10.0 minutes for circulation within airport
+      ; Add 6 minutes average time from parked car to inside of airport
+      ; $2.00 is average parking cost for visitors ($0.75 avg short-term at Airport + 12% downtown SF @$8 and 7% downtown Oakland @$4)
+      ; 2.8 is the weighted average vehicle occupancy rates for Resident Non-Business trips (derived from the 1995 APS) 
+      COMP MW[21] = EXP ((-0.039 * (MW[2] + 10.0)) + (-0.147 * (TERMINAL + 6.0)) + (-0.973 * ((MW[3]*AOCOST) + 200)/(MHHINC^1.5)/ 2.8))
+
+      ; Transit Utility
+      COMP MW[23] = EXP ((-0.037 * MW[6]) + (-0.147 * MW[7]) + (-0.071 * MW[8]) + (-0.973 * MW[9]/(MHHINC^1.5)) - 4.56)
+
+      ; On-Call Utility
+      ; Add 2 minute average walk time between taxi and terminal
+      ; Add 6 minute average wait for taxi at either end of trip (from 1995 APS)
+      ; Estimate taxi fares as $2.00 flag drop + $2.00/mile
+      COMP MW[24] = EXP ((-0.039 * MW[2]) + (-0.147 * 2.0) + (-0.071 * 6.0) + (-0.973 * (200 + (200*MW[3]))/(MHHINC^1.5)) - 1.04)
+	
+    ENDIF
+
+    ;Zero out utilities for trips originating from OAK 
+    IF (i=1020) ;then
+      COMP MW[21] = 0
+      COMP MW[23] = 0
+      COMP MW[24] = 0
+    ENDIF
+
+    IF ( MW[6] = 0 )
+      COMP MW[23] = 0
+    ENDIF
+
+    COMP MW[25] = MW[21] + MW[23] + MW[24]
+    
+    ; Calculate Person Trips by Mode
+
+    IF ( j=1020 & MW[25]<>0 )  
+      COMP MW[31] = MW[11] * (MW[21] / (MW[21] + MW[23] + MW[24])) 	;Drive Person Trips
+      COMP MW[33] = MW[11] * (MW[23] / (MW[21] + MW[23] + MW[24])) 	;Transit Person Trips
+      COMP MW[34] = MW[11] * (MW[24] / (MW[21] + MW[23] + MW[24]))  	;On-Call Person Trips
+    ENDIF
+
+  ENDJLOOP
+
+
+  JLOOP
+    ;Calculate mode choice utilities from all origins to OAK
+
+
+    IF (j=1887 & TOTHH <> 0) ;then
+
+      ; Drive Utility
+      ; Add 10.0 minutes for circulation within airport
+      ; Add 6 minutes average time from parked car to inside of airport
+      ; $2.00 is average parking cost for visitors ($0.75 avg short-term at Airport + 12% downtown SF @$8 and 7% downtown Oakland @$4)
+      ; 2.8 is the weighted average vehicle occupancy rates for Resident Non-Business trips (derived from the 1995 APS) 
+      COMP MW[21] = EXP ((-0.039 * (MW[2] + 10.0)) + (-0.147 * (TERMINAL + 6.0)) + (-0.973 * ((MW[3]*AOCOST) + 200)/(MHHINC^1.5)/ 2.8))
+
+      ; Transit Utility
+      COMP MW[23] = EXP ((-0.037 * MW[6]) + (-0.147 * MW[7]) + (-0.071 * MW[8]) + (-0.973 * MW[9]/(MHHINC^1.5)) - 4.56)
+
+      ; On-Call Utility
+      ; Add 2 minute average walk time between taxi and terminal
+      ; Add 6 minute average wait for taxi at either end of trip (from 1995 APS)
+      ; Estimate taxi fares as $2.00 flag drop + $2.00/mile
+      COMP MW[24] = EXP ((-0.039 * MW[2]) + (-0.147 * 2.0) + (-0.071 * 6.0) + (-0.973 * (200 + (200*MW[3]))/(MHHINC^1.5)) - 1.04)
+	
+    ENDIF
+
+    ;Zero out utilities for trips originating from OAK 
+    IF (i=1887) ;then
+      COMP MW[21] = 0
+      COMP MW[23] = 0
+      COMP MW[24] = 0
+    ENDIF
+
+    IF ( MW[6] = 0 )
+      COMP MW[23] = 0
+    ENDIF
+
+    COMP MW[25] = MW[21] + MW[23] + MW[24]
+    
+    ; Calculate Person Trips by Mode
+
+    IF ( j=1887 & MW[25]<>0 )  
+      COMP MW[31] = MW[11] * (MW[21] / (MW[21] + MW[23] + MW[24])) 	;Drive Person Trips
+      COMP MW[33] = MW[11] * (MW[23] / (MW[21] + MW[23] + MW[24])) 	;Transit Person Trips
+      COMP MW[34] = MW[11] * (MW[24] / (MW[21] + MW[23] + MW[24]))  	;On-Call Person Trips
+    ENDIF
+
+  ENDJLOOP
+
+
+ENDRUN
+
+;-------------------------------------------------------------------------------
+
+RUN PGM=MATRIX
+
+  ; Summarize Airport Passenger Transit Trips by Superdistrict
+  
+; READ FILE = INPUTS\ClusterControl.DAT
+
+  ZONES = 6593
+
+  MATI[1] = nonres\2015_APTrips_RB.MAT
+  MATI[2] = nonres\2015_APTrips_RNB.MAT
+  MATI[3] = nonres\2015_APTrips_VB.MAT
+  MATI[4] = nonres\2015_APTrips_VNB.MAT
+
+  MATO[1] = nonres\2015_APTrips_SD.MAT, MO=1-4, NAME=RB,RNB,VB,VNB
+
+  MW[1] = MI.1.1   ; Resident Business Transit Person Trips
+  MW[2] = MI.2.1   ; Resident Non Business Transit Person Trips
+  MW[3] = MI.3.1   ; Visitor Business Transit Person Trips
+  MW[4] = MI.4.1   ; Visitor Non Business Transit Person Trips
+
+  RENUMBER FILE= landuse\TAZ2SD.PRN, MISSINGZI=M, MISSINGZO=M ;
+
+ENDRUN
+
+;-------------------------------------------------------------------------------
+
+RUN PGM=MATRIX
+
+  ; Combine 4 Types of Airport Passenger Trips and Calculate Auto Vehicle Trips
+  
+;  READ FILE = INPUTS\ClusterControl.DAT
+
+  ZONES = 6593
+
+  MATI[1] = nonres\2015_APTrips_RB.MAT
+  MATI[2] = nonres\2015_APTrips_RNB.MAT
+  MATI[3] = nonres\2015_APTrips_VB.MAT
+  MATI[4] = nonres\2015_APTrips_VNB.MAT
+
+  MATO[1] = nonres\2015_APTRIPS.MAT, MO=1-13,15,
+    NAME= Auto_RB,Auto_RNB,Auto_VB,Auto_VNB,Auto_AirPass,
+          Transit_RB,Transit_RNB,Transit_VB,Transit_VNB,Transit_AirPass,
+          AirPass_HBW, AirPass_HSR, AirPass_NHB, AirPass_Total
+  MATO[2] = nonres\2015_APVEHTRIPS.MAT, MO=16-18,
+    NAME= Auto_DA,Auto_SR2,Auto_SR3
+         
+  ; Auto Trips (add Auto and On-Call)
+  MW[1] = MI.1.Auto + MI.1.OnCall   ; Resident Business (add to HBW)
+  MW[2] = MI.2.Auto + MI.2.OnCall  ; Resident Non-Business (add to HSR)
+  MW[3] = MI.3.Auto + MI.3.OnCall  ; Visitor Business (add to NHB)
+  MW[4] = MI.4.Auto + MI.4.OnCall  ; Visitor Non-Business (add to NHB)
+  MW[5] = MW[1] + MW[2] + MW[3] + MW[4]
+
+  ; Transit Trips
+  MW[6] = MI.1.Transit            ; Resident Business (add to HBW)
+  MW[7] = MI.2.Transit            ; Resident Non-Business (add to HSR)
+  MW[8] = MI.3.Transit            ; Visitor Business (add to NHB)
+  MW[9] = MI.4.Transit            ; Visitor Non-Business (add to NHB)
+  MW[10] = MW[6] + MW[7] + MW[8] + MW[9] 
+
+  ; Totals
+  MW[11] = MW[1] + MW[2]    ; Resident Business (add to HBW)
+  MW[12] = MW[2] + MW[7]    ; Resident Non-Business (add to HSR)
+  MW[13] = MW[3] + MW[4] + MW[5] + MW[6] ; Visitor (add to NHB)
+  MW[15] = MW[5] + MW[10]
+  ; Calculate Vehicle Trips for Highway Assignments
+
+  ; Drive Alone Auto Vehicle
+  MW[16]=MI.1.Auto*0.34+MI.2.Auto*0.23+MI.3.Auto*0.04+MI.4.Auto*0.05
+  ; Shared Ride 2
+  MW[17]=(MI.1.Auto*0.42+MI.1.OnCall*0.04+MI.2.Auto*0.41+MI.2.OnCall*0.05+MI.3.Auto*0.38+MI.3.OnCall*0+MI.4.Auto*0.37+MI.4.OnCall*0.02)/2
+  ; Shared Ride 3+
+  MW[18]=MI.1.Auto*0.24/3.52+MI.1.OnCall*0.96/5.32+MI.2.Auto*0.37/3.55+MI.2.OnCall*0.95/5.38+MI.3.Auto*0.58/3.84+MI.3.OnCall*1/5.38+
+  MI.4.Auto*0.58/3.65+MI.4.OnCall*0.98/4.72 
+
+ENDRUN
+
+RUN PGM=MATRIX
+
+  ; Calculate Peak period Vehicle Trips for Highway Assignments
+  
+  ZONES = 6593
+  MATI[1] = nonres\2015_APVEHTRIPS.MAT
+  MATO[1] = nonres\2015_APPKVEHTRIPS.MAT, MO=1-5,
+    NAME= Auto_AM,Auto_MD,Auto_PM,Auto_EV,Auto_EA
+  MW[1]=(MI.1.1+MI.1.2+MI.1.3+MI.1.1.T+MI.1.2.T+MI.1.3.T)*0.1111/100
+  MW[2]=(MI.1.1+MI.1.2+MI.1.3+MI.1.1.T+MI.1.2.T+MI.1.3.T)*0.1667/100
+  MW[3]=(MI.1.1+MI.1.2+MI.1.3+MI.1.1.T+MI.1.2.T+MI.1.3.T)*0.1111/100
+  MW[4]=(MI.1.1+MI.1.2+MI.1.3+MI.1.1.T+MI.1.2.T+MI.1.3.T)*0.1111/100
+  MW[5]=(MI.1.1+MI.1.2+MI.1.3+MI.1.1.T+MI.1.2.T+MI.1.3.T)*0
+   
+ENDRUN
