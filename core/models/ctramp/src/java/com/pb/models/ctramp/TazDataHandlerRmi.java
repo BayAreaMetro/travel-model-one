@@ -218,6 +218,16 @@ public class TazDataHandlerRmi implements TazDataIf, Serializable {
         return (Integer)remote.method( "getZoneCounty", objArray);
     }
 
+    public int getZoneCordon( int taz ) {
+        Object[] objArray = { taz };
+        return (Integer)remote.method( "getZoneCordon", objArray);
+    }
+
+    public int getZoneCordonCost( int taz ) {
+        Object[] objArray = { taz };
+        return (Integer)remote.method( "getZoneCordonCost", objArray);
+    }
+
     public float getPopEmpPerSqMi(int taz) {
         Object[] objArray = { taz };
         return (Float)remote.method( "getPopEmpPerSqMi", objArray);

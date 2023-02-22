@@ -58,6 +58,8 @@ public class TazDataHandler implements TazDataIf, Serializable {
     private static final String ZONE_DATA_AREATYPE_FIELD_NAME = "at";
     private static final String ZONE_DATA_DISTRICT_FIELD_NAME = "dist";
     private static final String ZONE_DATA_COUNTY_FIELD_NAME = "county";
+    private static final String ZONE_DATA_CORDON_FIELD_NAME = "cordon";
+    private static final String ZONE_DATA_CORDON_COST_FIELD_NAME = "cordonCost";
 
     private static final String ZONE_DATA_PARKTOT_FIELD_NAME = "parkTot";
     private static final String ZONE_DATA_PARKLNG_FIELD_NAME = "parkLong";
@@ -607,8 +609,16 @@ public class TazDataHandler implements TazDataIf, Serializable {
         return zoneDataTable.getColumnAsInt( countyFieldPosition );
     }
 
-    
-    
+    public int getZoneCordon( int taz ) {
+        // handle if the cordon column doesn't exist
+        return (int)getZoneTableValue(taz, ZONE_DATA_CORDON_FIELD_NAME );
+    }
+
+    public int getZoneCordonCost( int taz ) {
+        // handle if the cordon column doesn't exist
+        return (int)getZoneTableValue(taz, ZONE_DATA_CORDON_COST_FIELD_NAME );
+    }
+
     public int getZoneIsCbd( int taz ) {
         return getZoneIsInAreaType( taz, areaTypes[cbdAreaTypesArrayIndex] );
     }
