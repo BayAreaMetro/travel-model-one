@@ -188,22 +188,5 @@ match3 <- match2 %>% mutate(
   relocate(.,c(Fwy_E_W,Fwy_N_S),.after = Art_N_S)
 
 
------------------
-
-# Break apart arterials and freeway links and then rematch by directionality, find outliers
-art_break <- match2 %>% 
-  select(A_Art, B_Art, A_Fwy, B_Fwy, ROUTENUM, ROUTEDIR, 
-         TOLLCLASS, FT, A_Art_X, A_Art_Y, B_Art_X, B_Art_Y, 
-         A_Fwy_X, A_Fwy_Y, B_Fwy_X, B_Fwy_Y, Fwy_E_W, Fwy_N_S, 
-         Art_E_W, Art_N_S, Orientation)
-fwy_break <- match2 %>% 
-  select(A_Art, B_Art, A_Fwy, B_Fwy, ROUTENUM, ROUTEDIR, 
-         TOLLCLASS, FT, A_Art_X, A_Art_Y, B_Art_X, B_Art_Y, 
-         A_Fwy_X, A_Fwy_Y, B_Fwy_X, B_Fwy_Y, Fwy_E_W, Fwy_N_S, 
-         Art_E_W, Art_N_S, Orientation)
-
-# Write out shapefile
-
-st_write(just_arterials,'L:/Application/Model_One/NextGenFwys/NetworkProject_Development/Arterials/Shapefile/2035 with Tollclass Updates and Arterial Links.shp')
 
 
