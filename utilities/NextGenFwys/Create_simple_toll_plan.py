@@ -57,9 +57,9 @@ DiscountFactor_HOV3 = 0.5
 
 # specify working directories and run ids
 project_dir ="L:/Application/Model_One/NextGenFwys/" 
-modelrun_with_DynamicTolling = "2035_TM152_NGF_NP02_BPALTsegmented_03_SensDyn00_1"
-modelrun_with_NoProject      = "2035_TM152_NGF_NP02"
-output_dir = "INPUT_DEVELOPMENT/Static_toll_plans/Test8"
+modelrun_with_DynamicTolling = "2035_TM152_NGF_NP07_Path1b_01_TollCalibration01_UseWithTolls"
+modelrun_with_NoProject      = "2035_TM152_NGF_NP07_TollCalibrated02"
+output_dir = "INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P1b_V3"
 
 
 # ------------------
@@ -370,27 +370,27 @@ destination = os.path.join(project_dir, output_dir, "network_links_100plusSeg.sh
 shutil.copy(source, destination)
 
 # shapefiles from the NoProject run
-source = os.path.join(project_dir,"Scenarios", modelrun_with_DynamicTolling, "OUTPUT", "Shapefile", "network_links.shp") 
+source = os.path.join(project_dir,"Scenarios", modelrun_with_NoProject, "OUTPUT", "Shapefile", "network_links.shp") 
 destination = os.path.join(project_dir, output_dir, "network_links_NoProject.shp")
 shutil.copy(source, destination)
 
-source = os.path.join(project_dir,"Scenarios", modelrun_with_DynamicTolling, "OUTPUT", "Shapefile", "network_links.cpg") 
+source = os.path.join(project_dir,"Scenarios", modelrun_with_NoProject, "OUTPUT", "Shapefile", "network_links.cpg") 
 destination = os.path.join(project_dir, output_dir, "network_links_NoProject.cpg")
 shutil.copy(source, destination)
 
-source = os.path.join(project_dir,"Scenarios", modelrun_with_DynamicTolling, "OUTPUT", "Shapefile", "network_links.dbf") 
+source = os.path.join(project_dir,"Scenarios", modelrun_with_NoProject, "OUTPUT", "Shapefile", "network_links.dbf") 
 destination = os.path.join(project_dir, output_dir, "network_links_NoProject.dbf")
 shutil.copy(source, destination)
 
-source = os.path.join(project_dir,"Scenarios", modelrun_with_DynamicTolling, "OUTPUT", "Shapefile", "network_links.prj") 
+source = os.path.join(project_dir,"Scenarios", modelrun_with_NoProject, "OUTPUT", "Shapefile", "network_links.prj") 
 destination = os.path.join(project_dir, output_dir, "network_links_NoProject.prj")
 shutil.copy(source, destination)
 
-source = os.path.join(project_dir,"Scenarios", modelrun_with_DynamicTolling, "OUTPUT", "Shapefile", "network_links.shp.xml") 
+source = os.path.join(project_dir,"Scenarios", modelrun_with_NoProject, "OUTPUT", "Shapefile", "network_links.shp.xml") 
 destination = os.path.join(project_dir, output_dir, "network_links_NoProject.shp.xml")
 shutil.copy(source, destination)
 
-source = os.path.join(project_dir,"Scenarios", modelrun_with_DynamicTolling, "OUTPUT", "Shapefile", "network_links.shx") 
+source = os.path.join(project_dir,"Scenarios", modelrun_with_NoProject, "OUTPUT", "Shapefile", "network_links.shx") 
 destination = os.path.join(project_dir, output_dir, "network_links_NoProject.shx")
 shutil.copy(source, destination)
 
