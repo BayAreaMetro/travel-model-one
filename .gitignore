@@ -15,3 +15,4 @@ model-files/runtime/SetPath.bat.bak
 model-files/SetUpModel_PBA50.bat.bak
 model-files/scripts/preprocess/taz_densities.job.bak
 *.bak
+model-files/SetUpModel_PBA50.log
