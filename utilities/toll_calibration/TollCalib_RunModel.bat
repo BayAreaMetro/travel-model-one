@@ -58,19 +58,6 @@ if %ITER% NEQ 4 (
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 0: set paths, file location and folder structure
-::
-:: ------------------------------------------------------------------------------------------------------
-
-:: Use this for COMMPATH
-mkdir COMMPATH
-set COMMPATH=%CD%\COMMPATH
-echo COMMPATH is [%COMMPATH%]
-"C:\Program Files\Citilabs\CubeVoyager\Cluster" "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
-
-
-:: ------------------------------------------------------------------------------------------------------
-::
 :: Step 1: bring in ctramp and the highway network
 ::
 :: ------------------------------------------------------------------------------------------------------
@@ -103,6 +90,12 @@ copy /y "%TOLL_FILE%" hwy\tolls.csv
 :: ------------------------------------------------------------------------------------------------------
 :: set paths
 call CTRAMP\runtime\SetPath.bat
+
+:: Use this for COMMPATH
+mkdir COMMPATH
+set COMMPATH=%CD%\COMMPATH
+echo COMMPATH is [%COMMPATH%]
+"C:\Program Files\Citilabs\CubeVoyager\Cluster" "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 :preprocess
 set INSTANCE=%COMPUTERNAME%
