@@ -370,6 +370,9 @@ call RunPrepareEmfac.bat SB375 WithFreight
 ::
 :: ------------------------------------------------------------------------------------------------------
 
+rem for the NextGenFwy Project, we don't need to run logsums
+if %PROJECT%==NGF goto core_summaries
+
 : logsums
 
 :: call RunAccessibility
@@ -384,7 +387,7 @@ if ERRORLEVEL 2 goto done
 ::
 :: ------------------------------------------------------------------------------------------------------
 
-: core_summaries
+:core_summaries
 
 call RunCoreSummaries
 if ERRORLEVEL 2 goto done
