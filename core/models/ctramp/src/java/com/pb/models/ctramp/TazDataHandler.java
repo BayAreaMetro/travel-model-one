@@ -609,6 +609,30 @@ public class TazDataHandler implements TazDataIf, Serializable {
         return zoneDataTable.getColumnAsInt( countyFieldPosition );
     }
 
+    /**
+     * @return cordon array from the zone data table.
+     */
+    public int[] getZonalCordon () {
+        int cordonFieldPosition = zoneDataTable.getColumnPosition( ZONE_DATA_CORDON_FIELD_NAME );
+        if ( cordonFieldPosition < 0 ) {
+            logger.error ( String.format("The county field name = %s defined in %s is not found as a field name in the zone data table.", ZONE_DATA_CORDON_FIELD_NAME, this.getClass().getName() ));
+            throw new RuntimeException();
+        }
+        return zoneDataTable.getColumnAsInt( cordonFieldPosition );
+    }
+
+    /**
+     * @return cordon cost array from the zone data table.
+     */
+    public int[] getZonalCordonCost () {
+        int cordonCostFieldPosition = zoneDataTable.getColumnPosition( ZONE_DATA_CORDON_COST_FIELD_NAME );
+        if ( cordonCostFieldPosition < 0 ) {
+            logger.error ( String.format("The county field name = %s defined in %s is not found as a field name in the zone data table.", ZONE_DATA_CORDON_COST_FIELD_NAME, this.getClass().getName() ));
+            throw new RuntimeException();
+        }
+        return zoneDataTable.getColumnAsInt( cordonCostFieldPosition );
+    }
+
     public int getZoneCordon( int taz ) {
         // handle if the cordon column doesn't exist
         return (int)getZoneTableValue(taz, ZONE_DATA_CORDON_FIELD_NAME );

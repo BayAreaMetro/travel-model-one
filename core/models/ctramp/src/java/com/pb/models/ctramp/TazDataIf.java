@@ -138,6 +138,9 @@ public interface TazDataIf {
      */
     int[] getZonalParkTot ();
 
+    int[] getZonalCordon();
+    int[] getZonalCordonCost();
+
     public String getZonalParkTotFieldName ();
     public String getZonalParkRateFieldName ();
     

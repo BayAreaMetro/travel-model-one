@@ -17,7 +17,9 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
     float[] prkCostOffPeak;
     int[] topology;
     float[] densityIndex;
-    float[] terminalTime; 
+    float[] terminalTime;
+    int[] cordon;
+    int[] cordonCost;
 
     public MtcTripModeChoiceDMU(TazDataIf tazDataManager, ModelStructure modelStructure){
         super( modelStructure );
@@ -38,6 +40,8 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
         topology = getZonalTopology(tazDataManager);
         densityIndex = getZonalDensityIndex(tazDataManager);
         terminalTime = getZonalTerminalTime(tazDataManager);
+        cordon = tazDataManager.getZonalCordon();
+        cordonCost = tazDataManager.getZonalCordonCost();
     }
 
     
@@ -140,6 +144,30 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
         int destZone = dmuIndex.getDestZone();
         int index = zoneTableRow[destZone] - 1;
         return areaType[index];
+    }
+
+    public int getDestCordon() {
+        int destZone = dmuIndex.getDestZone();
+        int index = zoneTableRow[destZone] - 1;
+        return cordon[index];
+    }
+
+    public int getDestCordonCost() {
+        int destZone = dmuIndex.getDestZone();
+        int index = zoneTableRow[destZone] - 1;
+        return cordonCost[index];
+    }
+
+    public int getOrigCordon() {
+        int origZone = dmuIndex.getOriginZone();
+        int index = zoneTableRow[origZone] - 1;
+        return cordon[index];
+    }
+
+    public int getOrigCordonCost() {
+        int origZone = dmuIndex.getOriginZone();
+        int index = zoneTableRow[origZone] - 1;
+        return cordonCost[index];
     }
 
     public float getValueOfTime(){ 
@@ -290,8 +318,10 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
         methodIndexMap.put("getUseOwnedAV", 41);
         methodIndexMap.put("getTourModeIsRideHail", 42 );
         methodIndexMap.put("getHhIncomeInDollars", 43);
-        
-        
+        methodIndexMap.put("getDestCordon", 44);
+        methodIndexMap.put("getDestCordonCost", 45); 
+        methodIndexMap.put("getOrigCordon", 46);
+        methodIndexMap.put("getOrigCordonCost", 47); 
     }
     
         
@@ -345,6 +375,10 @@ public class MtcTripModeChoiceDMU extends TripModeChoiceDMU {
             case 41: return getUseOwnedAV();
             case 42: return getTourModeIsRideHail();
             case 43: return getHhIncomeInDollars();
+            case 44: return getDestCordon();
+            case 45: return getDestCordonCost();
+            case 46: return getOrigCordon();
+            case 47: return getOrigCordonCost();
 
             default:
                 logger.error("method number = "+variableIndex+" not found");
