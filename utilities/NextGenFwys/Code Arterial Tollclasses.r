@@ -187,6 +187,52 @@ match3 <- match2 %>% mutate(
 ) %>% 
   relocate(.,c(Fwy_E_W,Fwy_N_S),.after = Art_N_S)
 
+# Separate into missing and complete records
 
+missing <- match3 %>% filter(interim_tollclass==999999)
+complete <- match3 %>% filter(interim_tollclass!=999999)
 
+# Use trigonometry to find arterial/freeway angle difference
+# Convert from radians to degrees
+# Difference goes both ways around the circle, so a difference is never greater than 180 degrees
+# Assign same direction tollclass if <45 degree difference and opposite direction tollclass if >135 degrees
 
+missing1 <- missing %>% 
+  rowwise %>% 
+  mutate(
+  X_Art_diff=abs(B_Art_X-A_Art_X),
+  Y_Art_diff=abs(B_Art_Y-A_Art_Y),
+  Arctan_Art=atan(X_Art_diff/Y_Art_diff)*(180/pi),
+  Angle_Art=case_when(
+    paste0(Art_N_S,Art_E_W)=="NE"              ~ Arctan_Art,
+    paste0(Art_N_S,Art_E_W)=="SE"              ~ 180-Arctan_Art,
+    paste0(Art_N_S,Art_E_W)=="SW"              ~ 180+Arctan_Art,
+    paste0(Art_N_S,Art_E_W)=="NW"              ~ 360-Arctan_Art),
+  
+  X_Fwy_diff=abs(B_Fwy_X-A_Fwy_X),
+  Y_Fwy_diff=abs(B_Fwy_Y-A_Fwy_Y),
+  Arctan_Fwy=atan(X_Fwy_diff/Y_Fwy_diff)*(180/pi),
+  Angle_Fwy=case_when(
+    paste0(Fwy_N_S,Fwy_E_W)=="NE"              ~ Arctan_Fwy,
+    paste0(Fwy_N_S,Fwy_E_W)=="SE"              ~ 180-Arctan_Fwy,
+    paste0(Fwy_N_S,Fwy_E_W)=="SW"              ~ 180+Arctan_Fwy,
+    paste0(Fwy_N_S,Fwy_E_W)=="NW"              ~ 360-Arctan_Fwy),
+  Art_Fwy_Angle_Diff=if_else(Angle_Fwy>Angle_Art,min(Angle_Fwy-Angle_Art,Angle_Art+
+                                                       (360-Angle_Fwy)),min(Angle_Art-Angle_Fwy,Angle_Fwy+(360-Angle_Art))
+)
+  ) %>% 
+  ungroup() %>% 
+  mutate(interim_tollclass=case_when(
+    Art_Fwy_Angle_Diff<45                     ~  TOLLCLASS,
+    Art_Fwy_Angle_Diff>135                    ~  TOLLCLASS_ALT,
+    TRUE                                      ~  interim_tollclass
+  ))
+  
+print(paste(nrow(missing1[missing1$interim_tollclass==999999,]),"remaining missing tollclasses of original", nrow(missing1)))
+
+#updated_missing <- missing %>% 
+#  mutate(
+#    updated_tollclass_BtoA = if_else(match(.$A_Art,complete$B_Art) != match(.$B_Art,complete$A_Art),complete$interim_tollclass[match(.$B_Art,complete$A_Art)],NA_real_),
+#    updated_tollclass_AtoB = if_else(match(.$B_Art,complete$A_Art) != match(.$A_Art,complete$B_Art),complete$interim_tollclass[match(.$A_Art,complete$B_Art)],NA_real_),
+#    final_tollclass = if_else(updated_tollclass_AtoB==updated_tollclass_BtoA,updated_tollclass_AtoB,NA_real_)
+#  ) 
