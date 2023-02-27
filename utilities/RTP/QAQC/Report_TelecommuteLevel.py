@@ -30,7 +30,7 @@ total_ftworkersM = len(ftworkersM_df.index)
 
 # calculate the percentage of full-time workers making a mandatory tour, P(going to work)
 P_GoingToWork = float(total_ftworkersM) / float(total_ftworkers)
-print "percent of ft workers making a mandatory tour = " + str(P_GoingToWork)
+print ("percent of ft workers making a mandatory tour = " + str(P_GoingToWork))
 
 # calculate telecommute level
 # see discussion on Asana:
@@ -46,7 +46,7 @@ print "percent of ft workers making a mandatory tour = " + str(P_GoingToWork)
 # Solving for  P(telecommuting) for the model run
 # P(telecommuting) = 1 - (P(going to work) / P(not taking personal time or sick time)
 P_Telecommuting = 1 - (P_GoingToWork / (1-0.142))
-print "Telecommuting level = " + str(P_Telecommuting)
+print ("Telecommuting level = " + str(P_Telecommuting))
 
 # -----------------------
 # output a single number to the QAQC file
