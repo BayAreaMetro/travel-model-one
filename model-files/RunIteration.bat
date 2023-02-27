@@ -64,7 +64,7 @@ if ERRORLEVEL 2 goto done
 ::
 :: TODO: Skip IX and AirPax
 :: ------------------------------------------------------------------------------------------------------
-goto truck_gen
+
 :nonres
 
 :: Create production/attraction tables based on growth assumptions
@@ -79,7 +79,7 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\nonres\IxTollChoice.job
 if ERRORLEVEL 2 goto done
 
-:truck_gen
+
 :: Apply the commercial vehicle generation models
 runtpp CTRAMP\scripts\nonres\BCMTrucks.job
 if ERRORLEVEL 2 goto done
@@ -98,8 +98,8 @@ runtpp CTRAMP\scripts\nonres\BCMAirport.job
 if ERRORLEVEL 2 goto done
 goto hwyassign
 :: Apply a transit submode choice model for transit trips to bay area HSR stations
-runtpp CTRAMP\scripts\nonres\HsrTransitSubmodeChoice.job
-if ERRORLEVEL 2 goto done
+::runtpp CTRAMP\scripts\nonres\HsrTransitSubmodeChoice.job
+::if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
