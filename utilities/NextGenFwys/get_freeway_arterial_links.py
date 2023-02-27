@@ -80,7 +80,7 @@ logger.info("getting links of tolled arterials")
 # tally number of projects
 n = 0
 for proj in os.listdir(ART_PROJ_DIR):
-    if ("NGF" in proj) and ("Art" in proj):
+    if ("NGF" in proj) and ("_Art_" in proj):
         logger.info(proj)
         try:
             mod_links_df = pd.read_csv(os.path.join(ART_PROJ_DIR, proj, "mod_links_tollclass_direction.csv"))
