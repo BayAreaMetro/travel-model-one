@@ -101,12 +101,12 @@ run pgm = matrix
      lookup[2]=EXT_ZONE, result=slope
 
    ; summarize by external production and attraction zones - daily total
-   ARRAY factor=21, prod_tot=21, attr_tot=21, total_modyear=21
+   ARRAY factor=33, prod_tot=33, attr_tot=33, total_modyear=33
 
    IF (I==1)
 
      ; first, figure out desired daily total
-     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,1475
+     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,6626
        prod_total_2015 = totals_2015(1,EXT_ZONE)
        attr_total_2015 = totals_2015(2,EXT_ZONE)
 
@@ -142,8 +142,10 @@ run pgm = matrix
          total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@] = total_2015 + year_delta*slope
 
        ELSE
-         print LIST="Do not understand token_future @token_future@"
-         ABORT MSG="Do not understand token_future @token_future@"
+         print LIST="Do not understand token_future @token_future@, Using 2015 as Base"
+         ;ABORT MSG="Do not understand token_future @token_future@"
+		 IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--PBA50--%MODEL_YEAR%--  Non-commute share grows based on slope for ",year_delta," years"
+         total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@] = total_2015 + year_delta*(1.0-commute_share)*slope
        ENDIF
 
        if (total_2015 == 0)
@@ -211,7 +213,7 @@ run pgm = matrix
    ; write production/attraction totals to the log file and dbf
    IF (I==ZONES)
      print LIST="-----RESULTS-----"
-     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,1475
+     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,6626
        total = prod_tot[EXT_ZONE-@FIRST_EXT_ZONE@] + attr_tot[EXT_ZONE-@FIRST_EXT_ZONE@]
        print LIST="For external zone ",EXT_ZONE, " production: ", prod_tot[EXT_ZONE-@FIRST_EXT_ZONE@], " attraction: ", attr_tot[EXT_ZONE-@FIRST_EXT_ZONE@], " total: ", total
      ENDLOOP
