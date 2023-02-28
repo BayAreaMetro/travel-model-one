@@ -107,6 +107,8 @@ mkdir database
 mkdir logsums
 mkdir nonres\tm15
 mkdir nonres\Inputs
+mkdir nonres\Inputs\Calib
+mkdir nonres\Inputs\Kfactors
 :: Stamp the feedback report with the date and time of the model start
 echo STARTED MODEL RUN  %DATE% %TIME% >> logs\feedback.rpt 
 
@@ -116,8 +118,12 @@ copy INPUT\trn\                 trn\
 copy INPUT\landuse\             landuse\
 copy INPUT\popsyn\hhFile.%MODEL_YEAR%.csv              		popsyn\hhFile.%MODEL_YEAR%.csv
 copy INPUT\popsyn\personFile.%MODEL_YEAR%.csv              	popsyn\personFile.%MODEL_YEAR%.csv
+
 copy INPUT\nonres\tm15\              nonres\tm15\
 copy INPUT\nonres\              nonres\Inputs\
+copy INPUT\nonres\Calib\		nonres\Inputs\Calib\
+copy INPUT\nonres\Kfactors\		nonres\Inputs\Kfactors\
+
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
 copy INPUT\logsums              logsums\
@@ -239,7 +245,7 @@ runtpp %BASE_SCRIPTS%\skims\PrepHwyNet.job
 if ERRORLEVEL 2 goto done
 
 :: There are some issues with the transit network creation. Skipping the steps.
-goto convert_nonres
+goto iter0
 :: this is an extra step created to add pnr nodes to the network manually. Skipping.
 goto transit_network
 :: Create list of PNR lots
@@ -252,18 +258,12 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\skims\BuildTransitNetworks.job
 if ERRORLEVEL 2 goto done
 
-:: skip transit skimming and create nonres trip matrices from tm 1.5
-goto convert_nonres
 
 call zoneSystem.bat
 :: Build the transit skims
 runtpp CTRAMP\scripts\skims\TransitSkims.job
 if ERRORLEVEL 2 goto done
 
-:convert_nonres
-
-runtpp CTRAMP\scripts\assign\convertTM15Matrices.job
-if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
