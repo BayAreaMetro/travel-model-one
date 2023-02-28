@@ -27,4 +27,7 @@ ixex_config_new=pd.merge(ixex_config_original, iz_ez_map, left_on='EXT_ZONE', ri
 ixex_config_new=ixex_config_new.rename(columns={'ez':"EXT_ZONE"})[ixex_config_original.columns]
 ixex_config_new=ixex_config_new.sort_values(by=['EXT_ZONE'], ascending=True)
 ixex_config_new=ixex_config_new.drop_duplicates(['EXT_ZONE'])
+ixex_config_new=ixex_config_new[ixex_config_new['EXT_ZONE'].notnull()]
+ixex_config_new['EXT_ZONE']=ixex_config_new['EXT_ZONE'].astype(str)
+
 ixex_config_new.to_csv('nonres/ixex_config.csv', index=False)
