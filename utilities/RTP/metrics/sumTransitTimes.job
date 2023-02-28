@@ -243,6 +243,9 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
    MBF_Discount = 1.0
    if (inc = 1)  MBF_Discount = Means_Based_Fare_Q1Factor
    if (inc = 2)  MBF_Discount = Means_Based_Fare_Q2Factor
+   MBF_Cordon_Discount = 1.0
+   if (inc = 1)  MBF_Discount = Means_Based_Cordon_Fare_Q1Factor
+   if (inc = 2)  MBF_Discount = Means_Based_Cordon_Fare_Q2Factor
 
   RUN PGM = MATRIX
   ; Read person trips for a transitmode for all time periods and Access+Egress combinations
@@ -276,6 +279,7 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
      FILEI MATI[19] = "skims\trnskmEV_drv_@token_path@_wlk.tpp"
      FILEI MATI[20] = "skims\trnskmEV_wlk_@token_path@_drv.tpp"
 
+     FILEI ZDATI[1] = "landuse\tazData.dbf"  ; need cordon and cordon cost information
 
      FILEO PRINTO[1] = "metrics\transit_times_by_mode_income_@token_path@.csv",APPEND=T
      FILEO PRINTO[2] = "metrics\debugM16M18_@token_path@.csv",APPEND=T
@@ -315,21 +319,38 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
    MW[35] = (mi.20.ivt + mi.20.wait + mi.20.wacc + mi.20.waux + mi.20.wegr + mi.20.dtime)
 
    ; Travel Cost
-   MW[41] = mi.06.fare * @MBF_discount@
+   MW[41] = mi.06.fare * @MBF_discount@ ; EA
    MW[42] = mi.07.fare * @MBF_discount@
    MW[43] = mi.08.fare * @MBF_discount@
-   MW[44] = mi.09.fare * @MBF_discount@
+   MW[44] = mi.09.fare * @MBF_discount@ ; AM
    MW[45] = mi.10.fare * @MBF_discount@
    MW[46] = mi.11.fare * @MBF_discount@
-   MW[47] = mi.12.fare * @MBF_discount@
+   MW[47] = mi.12.fare * @MBF_discount@ ; MD
    MW[48] = mi.13.fare * @MBF_discount@
    MW[49] = mi.14.fare * @MBF_discount@
-   MW[50] = mi.15.fare * @MBF_discount@
+   MW[50] = mi.15.fare * @MBF_discount@ ; PM
    MW[51] = mi.16.fare * @MBF_discount@
    MW[52] = mi.17.fare * @MBF_discount@
-   MW[53] = mi.18.fare * @MBF_discount@
+   MW[53] = mi.18.fare * @MBF_discount@ ; EV
    MW[54] = mi.19.fare * @MBF_discount@
-   MW[55] = mi.20.fare * @MBF_discount@ 
+   MW[55] = mi.20.fare * @MBF_discount@
+
+   if (@MBF_Cordon_Discount@ < 1.0)
+     jloop
+        orig_cordon = zi.1.CORDON[i]
+        dest_cordon = zi.1.CORDON[j]
+        ; cordon discount overrides if orig or dest in cordon
+        if ((orig_cordon > 0) || (dest_cordon > 0))
+          MW[44] = mi.09.fare * @MBF_Cordon_Discount@  ; AM
+          MW[45] = mi.10.fare * @MBF_Cordon_Discount@
+          MW[46] = mi.11.fare * @MBF_Cordon_Discount@
+          
+          MW[50] = mi.15.fare * @MBF_Cordon_Discount@ ; PM
+          MW[51] = mi.16.fare * @MBF_Cordon_Discount@
+          MW[52] = mi.17.fare * @MBF_Cordon_Discount@
+        endif
+      endjloop
+    endif
 
    ; TOTAL TRIPS
    MW[16] = MW[ 1]+MW[ 2]+MW[ 3]+MW[ 4]+MW[ 5]+
