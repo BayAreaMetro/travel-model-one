@@ -230,9 +230,27 @@ missing1 <- missing %>%
   
 print(paste(nrow(missing1[missing1$interim_tollclass==999999,]),"remaining missing tollclasses of original", nrow(missing1)))
 
-#updated_missing <- missing %>% 
-#  mutate(
-#    updated_tollclass_BtoA = if_else(match(.$A_Art,complete$B_Art) != match(.$B_Art,complete$A_Art),complete$interim_tollclass[match(.$B_Art,complete$A_Art)],NA_real_),
-#    updated_tollclass_AtoB = if_else(match(.$B_Art,complete$A_Art) != match(.$A_Art,complete$B_Art),complete$interim_tollclass[match(.$A_Art,complete$B_Art)],NA_real_),
-#    final_tollclass = if_else(updated_tollclass_AtoB==updated_tollclass_BtoA,updated_tollclass_AtoB,NA_real_)
-#  ) 
+#Output all records to join the records that continue to be missing
+
+manual_coding <- rbind(complete,missing1[,c("A_Art", "B_Art", "A_Fwy", "B_Fwy", "ROUTENUM", "ROUTEDIR", 
+                                            "TOLLCLASS", "TOLLCLASS_ALT", "FT", "A_Art_X", "A_Art_Y", "B_Art_X", 
+                                            "B_Art_Y", "A_Fwy_X", "A_Fwy_Y", "B_Fwy_X", "B_Fwy_Y", "Art_E_W", 
+                                            "Art_N_S", "Fwy_E_W", "Fwy_N_S", "interim_tollclass")]) %>% 
+  mutate(art_index=A_Art*100000+B_Art) 
+
+write.csv(manual_coding,file.path(directory,"Arterial Links to Manually Code.csv"),row.names = FALSE)
+
+# Bring in manually coded links (in ArcGIS process) and join, creating single tollclass value
+# Filter out links deemed unnecessary (recorded in the input file as manual_tollclass==111111)
+# Conversion from 990 prefix (freeway toll values) to 770 prefix (arterial tollclass values) done in Excel in output file
+
+manual_output <- read.csv(file.path(directory,"Shapefile","2035 output tollclass values from manual arcgis process.csv")) %>% 
+  mutate(manual_tollclass=as.numeric(manual_tollclass))
+final <- left_join(manual_coding,manual_output,by=c("A_Art"="A","B_Art"="B")) %>% 
+  mutate(manual_tollclass=if_else(is.na(manual_tollclass),0,manual_tollclass),
+    final_tollclass=if_else((interim_tollclass==999999 & manual_tollclass>0L),manual_tollclass,interim_tollclass)) %>% 
+  filter(!(final_tollclass==111111)) %>% 
+  select(A=A_Art,B=B_Art,TOLLCLASS=final_tollclass) 
+
+write.csv(final,file.path(directory,"final 2035 arterial tollclass file for project.csv"),row.names = FALSE)
+
