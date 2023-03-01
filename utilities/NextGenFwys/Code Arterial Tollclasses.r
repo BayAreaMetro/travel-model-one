@@ -12,15 +12,12 @@ library(pacman)
 p_load(tidyverse,foreign)
 
 # Set up input and output directories
-#arterial_in     <- file.path(directory,"Shapefile","2035 with Tollclass Updates and Arterial Links.dbf")
-#match_in        <- file.path(directory,"Shapefile","Arterial_parallels.dbf")
 match_in        <- file.path(directory,"Shapefile","arterial_parallelness_no_FT_1.dbf")
 tollclass_in    <- file.path(directory,"Shapefile","2035 with Tollclass Updates.dbf")
 node_in         <- file.path(directory,"Shapefile","2035 Nodes.dbf")
   
 # Bring in DBF files
    
-#arterial  <- read.dbf(arterial_in)
 match     <- read.dbf(match_in) %>% select(A_Art=A,B_Art=B,matchFwy_C) %>% 
   separate(.,col=matchFwy_C,into=c("A_Fwy","B_Fwy"),sep="-") %>% 
   mutate(A_Fwy=as.integer(A_Fwy),B_Fwy=as.integer(B_Fwy))
@@ -231,6 +228,7 @@ missing1 <- missing %>%
 print(paste(nrow(missing1[missing1$interim_tollclass==999999,]),"remaining missing tollclasses of original", nrow(missing1)))
 
 #Output all records to join the records that continue to be missing
+#Create single index for joining by both A_Art and B_Art within ArcGIS (100000*A_Art+B_Art)
 
 manual_coding <- rbind(complete,missing1[,c("A_Art", "B_Art", "A_Fwy", "B_Fwy", "ROUTENUM", "ROUTEDIR", 
                                             "TOLLCLASS", "TOLLCLASS_ALT", "FT", "A_Art_X", "A_Art_Y", "B_Art_X", 
