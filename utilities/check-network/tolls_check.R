@@ -22,10 +22,10 @@ library(readxl)
 
 # Load files
 
-NETWORK_DIR <- "L:/Application/Model_One/NextGenFwys/Networks/NGF_Networks_04"
+NETWORK_DIR <- "L:/Application/Model_One/NextGenFwys/INPUT_DEVELOPMENT/Networks/NGF_Network_P3a_3Cordons_01/NGF_P3_3Cordons_network_2035"
 NETWORK_DBF_PATH <- paste(NETWORK_DIR, "shapefile", "network_links.dbf", sep = "/")
 TOLLS_CSV_PATH <- paste(NETWORK_DIR, "hwy", "tolls.csv", sep = "/")
-TOLLCLASS_DES_PATH <- "C:/Users/natchison/Documents/GitHub/travel-model-one/utilities/NextGenFwys/TOLLCLASS_Designations.xlsx"
+TOLLCLASS_DES_PATH <- "X:/travel-model-one-master/utilities/NextGenFwys/TOLLCLASS_Designations.xlsx"
 
 NETWORK_DBF <- read.dbf(NETWORK_DBF_PATH)
 TOLLS_CSV <- read.csv(TOLLS_CSV_PATH)

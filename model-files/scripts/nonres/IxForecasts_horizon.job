@@ -21,7 +21,7 @@
 ;                                     %FUTURE% (one of PBA50, CleanAndGreen, BackToTheFuture, or RisingTidesFallingFortunes)
 ;
 ; Output: (1) Four-table, forecast-year specific trip tables containing internal/external, external/internal, and 
-;             external/external vehicle (xxx or person xxx) travel. (nonres\ixDailyx4.tpp)
+;             external/external vehicle travel. (nonres\ixDailyx4.tpp)
 ;
 ; Notes:  (1)
 ;
@@ -38,7 +38,7 @@ FIRST_EXT_ZONE = 1455
 ; Create MODEL_YEAR table using assumption for FUTURE
 run pgm = matrix
 
-   ; Begin with 2005 base year matrix established above
+   ; Begin with 2015 base year matrix established above
    mati = nonres\ixDaily2015.tpp
    
    ; Write out a year-specific matrix

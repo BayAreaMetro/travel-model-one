@@ -146,6 +146,22 @@ public class TazDataHandlerRmi implements TazDataIf, Serializable {
         Object[] objArray = {};
         return (int[])remote.method( "getZonalAreaType", objArray);
     }
+    
+    /**
+     * @return cordon from the zone data table for the zone.
+     */
+    public int[] getZonalCordon () {
+        Object[] objArray = {};
+        return (int[])remote.method( "getZonalCordon", objArray);
+    }
+
+    /**
+     * @return cordon cost from the zone data table for the zone.
+     */
+    public int[] getZonalCordonCost () {
+        Object[] objArray = {};
+        return (int[])remote.method( "getZonalCordonCost", objArray);
+    }
 
     /**
      * @return district from the zone data table for the zone.
@@ -216,6 +232,16 @@ public class TazDataHandlerRmi implements TazDataIf, Serializable {
     public int getZoneCounty( int taz ) {
         Object[] objArray = { taz };
         return (Integer)remote.method( "getZoneCounty", objArray);
+    }
+
+    public int getZoneCordon( int taz ) {
+        Object[] objArray = { taz };
+        return (Integer)remote.method( "getZoneCordon", objArray);
+    }
+
+    public int getZoneCordonCost( int taz ) {
+        Object[] objArray = { taz };
+        return (Integer)remote.method( "getZoneCordonCost", objArray);
     }
 
     public float getPopEmpPerSqMi(int taz) {

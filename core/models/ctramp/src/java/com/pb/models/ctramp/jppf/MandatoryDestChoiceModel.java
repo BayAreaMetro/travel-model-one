@@ -473,6 +473,8 @@ public class MandatoryDestChoiceModel implements Serializable {
             mcDmuObject.setDestSingleTNCWaitTime(singleTNCWaitTimeDest);
             mcDmuObject.setDestSharedTNCWaitTime(sharedTNCWaitTimeDest);
             mcDmuObject.setOrigCounty(tazDataManager.getZoneCounty(origTaz));
+            mcDmuObject.setOrigCordon(tazDataManager.getZoneCordon(origTaz));
+            mcDmuObject.setOrigCordonCost(tazDataManager.getZoneCordonCost(origTaz));
 
             // Only log if we're doing a sample
             if ( household.getDebugChoiceModels() && (numAlts < numberOfSubzones*tazDataManager.getNumberOfZones()) ) {

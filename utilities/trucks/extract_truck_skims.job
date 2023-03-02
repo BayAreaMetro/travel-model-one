@@ -1,0 +1,130 @@
+; This script is for looking at truck skims to investigate truck trip sensitivity
+;
+; tables:  TIMEVSM, DISTVSM, BTOLLVSM,
+;          TOLLTIMEVSM, TOLLDISTVSM, TOLLBTOLLVSM, TOLLVTOLLVSM,
+;          TIMESML, DISTSML, BTOLLSML,
+;          TOLLTIMESML, TOLLDISTSML, TOLLBTOLLSML, TOLLVTOLLSML,
+;          TIMEMED, DISTMED, BTOLLMED,
+;          TOLLTIMEMED, TOLLDISTMED, TOLLBTOLLMED, TOLLVTOLLMED,
+;          TIMELRG, DISTLRG, BTOLLLRG,
+;          TOLLTIMELRG, TOLLDISTLRG, TOLLBTOLLLRG, TOLLVTOLLLRG
+;
+; note VSM == SML
+;
+run pgm = matrix
+  filei mati[1]  = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\skims\COM_HWYSKIMEA.tpp"
+  filei mati[2]  = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\skims\COM_HWYSKIMAM.tpp"
+  filei mati[3]  = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\skims\COM_HWYSKIMMD.tpp"
+  filei mati[4]  = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\skims\COM_HWYSKIMPM.tpp"
+  filei mati[5]  = "\\model2-c\MODEL2C-Share\Projects\%MODEL_DIR%\skims\COM_HWYSKIMEV.tpp"
+
+  fileo mato[1] = "truck_skims_noheader.csv", FORMAT=TXT, DELIMITER=",", PATTERN=IJM:V, MO=1-75, MAXFIELDS=75
+  
+  MW[1] = 1
+
+  ; 5 per truck class / time period = 15 per time period
+  ; ----- EA -----
+  MW[2]  = MI.1.TIMEVSM
+  MW[3]  = MI.1.DISTVSM
+  MW[4]  = MI.1.TOLLTIMEVSM
+  MW[5]  = MI.1.TOLLDISTVSM
+  MW[6]  = MI.1.TOLLVTOLLVSM
+
+  ; skip SML since VSM==SML
+  MW[7]  = MI.1.TIMEMED
+  MW[8]  = MI.1.DISTMED
+  MW[9]  = MI.1.TOLLTIMEMED
+  MW[10] = MI.1.TOLLDISTMED
+  MW[11] = MI.1.TOLLVTOLLMED
+
+  MW[12] = MI.1.TIMELRG
+  MW[13] = MI.1.DISTLRG
+  MW[14] = MI.1.TOLLTIMELRG
+  MW[15] = MI.1.TOLLDISTLRG
+  MW[16] = MI.1.TOLLVTOLLLRG
+
+  ; ----- AM -----
+  MW[17] = MI.2.TIMEVSM
+  MW[18] = MI.2.DISTVSM
+  MW[19] = MI.2.TOLLTIMEVSM
+  MW[20] = MI.2.TOLLDISTVSM
+  MW[21] = MI.2.TOLLVTOLLVSM
+
+  ; skip SML since VSM==SML
+  MW[22] = MI.2.TIMEMED
+  MW[23] = MI.2.DISTMED
+  MW[24] = MI.2.TOLLTIMEMED
+  MW[25] = MI.2.TOLLDISTMED
+  MW[26] = MI.2.TOLLVTOLLMED
+
+  MW[27] = MI.2.TIMELRG
+  MW[28] = MI.2.DISTLRG
+  MW[29] = MI.2.TOLLTIMELRG
+  MW[30] = MI.2.TOLLDISTLRG
+  MW[31] = MI.2.TOLLVTOLLLRG
+
+  ; ----- MD -----
+  MW[32] = MI.3.TIMEVSM
+  MW[33] = MI.3.DISTVSM
+  MW[34] = MI.3.TOLLTIMEVSM
+  MW[35] = MI.3.TOLLDISTVSM
+  MW[36] = MI.3.TOLLVTOLLVSM
+
+  ; skip SML since VSM==SML
+  MW[37] = MI.3.TIMEMED
+  MW[38] = MI.3.DISTMED
+  MW[39] = MI.3.TOLLTIMEMED
+  MW[40] = MI.3.TOLLDISTMED
+  MW[41] = MI.3.TOLLVTOLLMED
+
+  MW[42] = MI.3.TIMELRG
+  MW[43] = MI.3.DISTLRG
+  MW[44] = MI.3.TOLLTIMELRG
+  MW[45] = MI.3.TOLLDISTLRG
+  MW[46] = MI.3.TOLLVTOLLLRG
+
+  ; ----- PM -----
+  MW[47] = MI.4.TIMEVSM
+  MW[48] = MI.4.DISTVSM
+  MW[49] = MI.4.TOLLTIMEVSM
+  MW[50] = MI.4.TOLLDISTVSM
+  MW[51] = MI.4.TOLLVTOLLVSM
+
+  ; skip SML since VSM==SML
+  MW[52] = MI.4.TIMEMED
+  MW[53] = MI.4.DISTMED
+  MW[54] = MI.4.TOLLTIMEMED
+  MW[55] = MI.4.TOLLDISTMED
+  MW[56] = MI.4.TOLLVTOLLMED
+
+  MW[57] = MI.4.TIMELRG
+  MW[58] = MI.4.DISTLRG
+  MW[59] = MI.4.TOLLTIMELRG
+  MW[60] = MI.4.TOLLDISTLRG
+  MW[61] = MI.4.TOLLVTOLLLRG
+
+  ; ----- EV -----
+  MW[62] = MI.5.TIMEVSM
+  MW[63] = MI.5.DISTVSM
+  MW[64] = MI.5.TOLLTIMEVSM
+  MW[65] = MI.5.TOLLDISTVSM
+  MW[66] = MI.5.TOLLVTOLLVSM
+
+  ; skip SML since VSM==SML
+  MW[67] = MI.5.TIMEMED
+  MW[68] = MI.5.DISTMED
+  MW[69] = MI.5.TOLLTIMEMED
+  MW[70] = MI.5.TOLLDISTMED
+  MW[72] = MI.5.TOLLVTOLLMED
+
+  MW[71] = MI.5.TIMELRG
+  MW[72] = MI.5.DISTLRG
+  MW[73] = MI.5.TOLLTIMELRG
+  MW[74] = MI.5.TOLLDISTLRG
+  MW[75] = MI.5.TOLLVTOLLLRG
+endrun
+
+; add header
+*echo orig,dest,one_a,one_b,time noToll verySmall EA,dist noToll verySmall EA,time toll verySmall EA,dist toll verySmall EA,vtoll toll verySmall EA,time noToll medium EA,dist noToll medium EA,time toll medium EA,dist toll medium EA,vtoll toll medium EA,time noToll large EA,dist noToll large EA,time toll large EA,dist toll large EA,vtoll toll large EA,time noToll verySmall AM,dist noToll verySmall AM,time toll verySmall AM,dist toll verySmall AM,vtoll toll verySmall AM,time noToll medium AM,dist noToll medium AM,time toll medium AM,dist toll medium AM,vtoll toll medium AM,time noToll large AM,dist noToll large AM,time toll large AM,dist toll large AM,vtoll toll large AM,time noToll verySmall MD,dist noToll verySmall MD,time toll verySmall MD,dist toll verySmall MD,vtoll toll verySmall MD,time noToll medium MD,dist noToll medium MD,time toll medium MD,dist toll medium MD,vtoll toll medium MD,time noToll large MD,dist noToll large MD,time toll large MD,dist toll large MD,vtoll toll large MD,time noToll verySmall PM,dist noToll verySmall PM,time toll verySmall PM,dist toll verySmall PM,vtoll toll verySmall PM,time noToll medium PM,dist noToll medium PM,time toll medium PM,dist toll medium PM,vtoll toll medium PM,time noToll large PM,dist noToll large PM,time toll large PM,dist toll large PM,vtoll toll large PM,time noToll verySmall EV,dist noToll verySmall EV,time toll verySmall EV,dist toll verySmall EV,vtoll toll verySmall EV,time noToll medium EV,dist noToll medium EV,time toll medium EV,dist toll medium EV,vtoll toll medium EV,time noToll large EV,dist noToll large EV,time toll large EV,dist toll large EV,vtoll toll large EV> "truck_skims_%MODEL_DIR%.csv"
+*type "truck_skims_noheader.csv" >> "truck_skims_%MODEL_DIR%.csv"
+*del "truck_skims_noheader.csv"

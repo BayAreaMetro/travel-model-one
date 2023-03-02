@@ -25,6 +25,12 @@ ITER <- as.numeric(ITER)
 # MAX_TOLL <- Sys.getenv("MAX_TOLL")
 # MAX_TOLL <- as.numeric(MAX_TOLL)
 
+HOV2_discount_factor <- Sys.getenv("DiscountFactor_HOV2")
+HOV2_discount_factor <- as.numeric(HOV2_discount_factor)
+
+HOV3_discount_factor <- Sys.getenv("DiscountFactor_HOV3")
+HOV3_discount_factor <- as.numeric(HOV3_discount_factor)
+
 #############################################################
 # specify the loaded network, unloaded network and other inputs
 #############################################################
@@ -260,21 +266,21 @@ el_gp_summary_df <- el_gp_summary_df %>% left_join(toll_rates_df %>% select(-fac
 el_gp_summary_df <- el_gp_summary_df %>%
                                     mutate(tollam_da_new = case_when(Case_AM == "Case1 - raise tolls"         ~ tollam_da + round(((60 - avgspeed_AM)/100), digits=2),
                                                                      Case_AM == "Case2 - drop tolls"          ~ pmax((tollam_da - round((avgspeed_AM - THRESHOLD_SPEED)/100*2, digits=2)), MIN_TOLL),
-                                                                     Case_AM == "Case3 - ok"                  ~ tollam_da,
+                                                                     Case_AM == "Case3 - ok"                  ~ pmax(tollam_da, MIN_TOLL),
                                                                      Case_AM == "Case4 - drop tolls slightly" ~ pmax((tollam_da - round((avgspeed_AM - avgspeed_AM_GP)/100/2, digits=2)), MIN_TOLL),
                                                                      Case_AM == "Case5 - set to min"          ~ MIN_TOLL))
 
 el_gp_summary_df <- el_gp_summary_df %>%
                                     mutate(tollmd_da_new = case_when(Case_MD == "Case1 - raise tolls"          ~ tollmd_da + round(((60 - avgspeed_MD)/100), digits=2),
                                                                      Case_MD == "Case2 - drop tolls"           ~ pmax((tollmd_da - round((avgspeed_MD - THRESHOLD_SPEED)/100*2, digits=2)), MIN_TOLL),
-                                                                     Case_MD == "Case3 - ok"                   ~ tollmd_da,
+                                                                     Case_MD == "Case3 - ok"                   ~ pmax(tollmd_da, MIN_TOLL),
                                                                      Case_MD == "Case4 - drop tolls slightly"  ~ pmax((tollmd_da - round((avgspeed_MD - avgspeed_MD_GP)/100/2, digits=2)), MIN_TOLL),
                                                                      Case_MD == "Case5 - set to min"           ~ MIN_TOLL))
 
 el_gp_summary_df <- el_gp_summary_df %>%
                                     mutate(tollpm_da_new = case_when(Case_PM == "Case1 - raise tolls"          ~ tollpm_da + round(((60 - avgspeed_PM)/100), digits=2),
                                                                      Case_PM == "Case2 - drop tolls"           ~ pmax((tollpm_da - round((avgspeed_PM - THRESHOLD_SPEED)/100*2, digits=2)), MIN_TOLL),
-                                                                     Case_PM == "Case3 - ok"                   ~ tollpm_da,
+                                                                     Case_PM == "Case3 - ok"                   ~ pmax(tollpm_da, MIN_TOLL),
                                                                      Case_PM == "Case4 - drop tolls slightly"  ~ pmax((tollpm_da - round((avgspeed_PM - avgspeed_PM_GP)/100/2, digits=2)), MIN_TOLL),
                                                                      Case_PM == "Case5 - set to min"           ~ MIN_TOLL))
 
@@ -363,6 +369,26 @@ tolls_new_df <- tolls_new_df  %>%
                              mutate(tollmd_s2 = ifelse(tollmd_da_new>1, tollmd_da_new/2, tollmd_s2))
 tolls_new_df <- tolls_new_df  %>%
                              mutate(tollpm_s2 = ifelse(tollpm_da_new>1, tollpm_da_new/2, tollpm_s2))
+
+
+# for all-lane tolling, s2 and s3 tolls are dependant on the HOV discount
+
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollam_s2 = ifelse(TOLLCLASS>700000, tollam_da_new*HOV2_discount_factor, tollam_s2))
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollmd_s2 = ifelse(TOLLCLASS>700000, tollmd_da_new*HOV2_discount_factor, tollmd_s2))
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollpm_s2 = ifelse(TOLLCLASS>700000, tollpm_da_new*HOV2_discount_factor, tollpm_s2))
+
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollam_s3 = ifelse(TOLLCLASS>700000, tollam_da_new*HOV3_discount_factor, tollam_s3))
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollmd_s3 = ifelse(TOLLCLASS>700000, tollmd_da_new*HOV3_discount_factor, tollmd_s3))
+tolls_new_df <- tolls_new_df  %>%
+                             mutate(tollpm_s3 = ifelse(TOLLCLASS>700000, tollpm_da_new*HOV3_discount_factor, tollpm_s3))
+
+
+
 
 tolls_new_df <- tolls_new_df  %>% select(-c(TOLLCLASS, USE, tollam_da_new, tollmd_da_new, tollpm_da_new, s2toll_mandatory))
 # TOLLCLASS is a "grouping variable" and can't be deleted unless it's ungrouped
