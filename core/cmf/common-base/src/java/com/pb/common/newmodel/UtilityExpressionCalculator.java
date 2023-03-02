@@ -947,7 +947,11 @@ public class UtilityExpressionCalculator implements VariableTable, Serializable 
                         logger.error(String.format(
                             "Exception thrown evaluating expression for: alt=%d, e=%d, expression=%s.",
                             altIndex + 1, e + 1, modelExpressions[e].getExpression()));
-                        ex.printStackTrace();
+                        // ex.printStackTrace();
+                        StringWriter sw = new StringWriter();
+                        PrintWriter pw = new PrintWriter(sw);
+                        ex.printStackTrace(pw);
+                        logger.error(sw.toString());
                         throw new RuntimeException();
                     }
                 }

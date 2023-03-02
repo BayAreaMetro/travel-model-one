@@ -197,6 +197,12 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     MeansBasedFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q1Factor"))
     MeansBasedFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q2Factor"))
 
+    # cordon
+    MeansBasedCordonTollsQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q1Factor"))
+    MeansBasedCordonTollsQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q2Factor"))
+    MeansBasedCordonFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q1Factor"))
+    MeansBasedCordonFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
+
     Adjust_TNCsingle_TourMode = float(get_property(params_filename, params_contents, "Adjust_TNCsingle_TourMode"))
     Adjust_TNCshared_TourMode = float(get_property(params_filename, params_contents, "Adjust_TNCshared_TourMode"))
     Adjust_TNCsingle_TripMode = float(get_property(params_filename, params_contents, "Adjust_TNCsingle_TripMode"))
@@ -261,6 +267,11 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
     replacements[filepath]["(\nMeans_Based_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ1Factor
     replacements[filepath]["(\nMeans_Based_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ2Factor
+
+    replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ1Factor
+    replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ2Factor
+    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ1Factor
+    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ2Factor
 
     replacements[filepath]["(\nAdjust_TNCsingle_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCsingle_TourMode
     replacements[filepath]["(\nAdjust_TNCshared_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCshared_TourMode
@@ -373,11 +384,15 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     OwnedAV_zpv      = float(get_property(params_filename, params_contents, "OwnedAV_ZPV_fac"))
     TNC_zpv          = float(get_property(params_filename, params_contents, "TNC_ZPV_fac"))
 
-    MeansBasedTollsQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q1Factor"))
-    MeansBasedTollsQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q2Factor"))
-    MeansBasedFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q1Factor"))
-    MeansBasedFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q2Factor"))
-    HSRInterregionalDisable  =   int(get_property(params_filename, params_contents, "HSR_Interregional_Disable"))
+    MeansBasedTollsQ1Factor       = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q1Factor"))
+    MeansBasedTollsQ2Factor       = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q2Factor"))
+    MeansBasedCordonTollsQ1Factor = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q1Factor"))
+    MeansBasedCordonTollsQ2Factor = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q2Factor"))
+    MeansBasedFareQ1Factor        = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q1Factor"))
+    MeansBasedFareQ2Factor        = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q2Factor"))
+    MeansBasedCordonFareQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q1Factor"))
+    MeansBasedCordonFareQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
+    HSRInterregionalDisable       =   int(get_property(params_filename, params_contents, "HSR_Interregional_Disable"))
 
     # put the av pce factors into the CTRAMP\scripts\block\hwyParam.block
     filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
@@ -397,11 +412,15 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
 
     replacements[filepath]["(\nMeans_Based_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ1Factor
     replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
+    replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ1Factor
+    replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ2Factor
 
     # put the means based fare discount factors into CTRAMP\scripts\block\trnParam.block
     filepath = os.path.join("CTRAMP","scripts","block","trnParam.block")
     replacements[filepath]["(\nMeans_Based_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ1Factor
     replacements[filepath]["(\nMeans_Based_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ2Factor
+    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ1Factor
+    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ2Factor
     replacements[filepath]["(\nHSR_Interregional_Disable[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d"   % HSRInterregionalDisable
 
 def config_logsums(replacements, append):
@@ -517,7 +536,7 @@ def config_distribution(replacements):
     Replacements = { filepath -> regex_dict }
     """
     hostname = socket.gethostname()
-    if hostname == 'mainmodel':
+    if hostname in ['mainmodel','satmodel2','lzorn-vm']:
         # accessibilities
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>14"

@@ -2,6 +2,8 @@
 
 This R script reads Trips, Tours, Persons and Households, joining them together and joining them with skims in order to create summaries of interest.
 
+**A note on costs**: The costs databases used by CoreSummaries do not [split auto costs by bridge tolls, value tolls, and distance-based auto operating costs](../database/SkimsDatabase.JOB). Therefore, the means based discounts for auto modes below are being applied incorrectly because only the value-toll based factor is implemented and it is being applied to the entire cost rather than the express lane tolls.  The means-based discounts for cordon tolls are not implemented here.
+
 It outputs numerious summaries both as `.csv` files and as `.rdata` files.  The
 Tableau data extracts are converted from the `.rdata` files because the binary format
 is more compressed and also contains information about data types.  The index columns are those
@@ -25,6 +27,7 @@ before the `freq` column.  These outputs include:
 * [VehicleMilesTraveled_households](#vehiclemilestraveled_households)
 * [Additional Output Tables](#additional-output-tables)
   * [tours.rdata](#toursrdata)
+  * [trips.rdata](#tripsrdata)
 * [TelecommuteEligibleBySD](#telecommuteeligiblebysd)
 
 ### ActiveTransport
