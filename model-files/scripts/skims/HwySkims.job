@@ -314,13 +314,13 @@ loop period = 1, 5
             
                ; set the value tolls
                lw.valuetoll_@token_class@  = li.TOLL@token_period@_@token_class@
-               lw.tolldist = li.FEET
+               lw.tolldist = li.FEET / 5280.0
               
             else            
            
                ; set the bridge tolls
                lw.bridgetoll_@token_class@  = li.TOLL@token_period@_@token_class@   
-              
+            
             endif          
               
             ; the USE variable defines what type of vehicles can use the roadway
@@ -329,13 +329,13 @@ loop period = 1, 5
             ; Group 23 defines HOV 2 and 3+ facilities
             if (li.USECLASS = 2,3)
                 addtogroup = 23
-                lw.hovdist = li.FEET
+                lw.hovdist = li.FEET / 5280.0
             endif
            
             ; Group 3 defines HOV 3+ facilities
             if (li.USECLASS = 3)
                 addtogroup = 3
-                lw.hovdist = li.FEET
+                lw.hovdist = li.FEET / 5280.0
             endif
             
             ; Group 4 defines facilities not available to trucks
