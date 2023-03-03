@@ -122,9 +122,11 @@ c:\windows\system32\Robocopy.exe /E "%TRANSIT_SKIMS%"     										skims
 :: warmstart (copy from the previous run)
 mkdir INPUT\warmstart\main
 mkdir INPUT\warmstart\nonres
+mkdir INPUT\warmstart\skims
 copy /Y "%PREV_RUN_DIR%\main\*.tpp"                                                       	INPUT\warmstart\main
 copy /Y "%PREV_RUN_DIR%\nonres\*.tpp"                                                     	INPUT\warmstart\nonres
 copy /Y "%PREV_RUN_DIR%\main\*.dat" 														INPUT\warmstart\main
+copy /Y "%PREV_RUN_DIR%\skims\*.tpp" 														INPUT\warmstart\skims
 del INPUT\warmstart\nonres\ixDaily2015.tpp
 del INPUT\warmstart\nonres\ixDailyx4.tpp 
 
