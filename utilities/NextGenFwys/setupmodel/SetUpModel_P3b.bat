@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path3a_02
+set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path3b_02
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 :: The NGF NoProject scenario includes some Blueprint strategies and excludes some (e.g. Regional Transit Fares and Vision Zero).
@@ -18,7 +18,7 @@ set NGFNoProject=No
 set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_P3a_3Cordons_ImproveTransit_01\NGF_P3a_3Cordons_ImproveTransit_network_2035
+set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_P3b_3Cordons_Affordable_01\NGF_P3b_3Cordons_Affordable_network_2035
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 set INPUT_POPLU=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\PopSyn_n_LandUse\2035_cordon
@@ -36,7 +36,7 @@ set PREV_RUN_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_N
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
 :: set PARAMS=\\mainmodel\MainModelShare\travel-model-one-master\config\params_PBA50_Blueprint2035.properties
-set PARAMS=X:\travel-model-one-master\utilities\NextGenFwys\properties_files\params_Pathway3a.properties
+set PARAMS=X:\travel-model-one-master\utilities\NextGenFwys\properties_files\params_Pathway3b.properties
 
 :: superdistrict-based telecommute constants
 :: for no project or base years, this will get generated/stay at zero
