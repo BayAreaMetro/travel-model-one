@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path1b_01_UniformTolls02
+set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path2b_wP1bStaticTolls_01
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 :: The NGF NoProject scenario includes some Blueprint strategies and excludes some (e.g. Regional Transit Fares and Vision Zero).
@@ -18,7 +18,7 @@ set NGFNoProject=No
 set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_P1b_AllLaneTolling_Affordable_01\NGF_P1b_AllLaneTolling_Affordable_network_2035
+set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_P2b_AllLaneTollingPlusArterials_Affordable_03\NGF_P2b_AllLaneTollingPlusArterials_Affordable_network_2035
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 set INPUT_POPLU=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\PopSyn_n_LandUse\2035_cordon
@@ -49,7 +49,7 @@ set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-over
 :: use special input tolls.csv?
 set SwapTollsCsv=Yes
 :: if the above is Yes, where is the input tolls.csv?
-set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Static_toll_plans\Static_toll_P1b_V05\tolls_Uniform_tolls_in_major_group.csv
+set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Static_toll_plans\Static_toll_P2b_V01\tolls_Static.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::

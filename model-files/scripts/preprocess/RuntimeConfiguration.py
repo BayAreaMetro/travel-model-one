@@ -80,9 +80,21 @@ import shutil
 import socket
 import sys
 
+import pandas
 import xlrd
 import xlwt
 import xlutils.copy
+
+def check_tazdata():
+    """
+    Checks that INPUT\\landuse\\tazData.csv has new required columns, CORDON and CORDONCOST
+    """
+    tazdata_file = os.path.join("INPUT", "landuse", "tazData.csv")
+    tazdata_df = pandas.read_csv(tazdata_file)
+    tazdata_cols = list(tazdata_df.columns)
+    assert("CORDON" in tazdata_cols)
+    assert("CORDONCOST" in tazdata_cols)
+    print("Found columns CORDON and CORDONCOST in tazData.csv")
 
 def replace_in_file(filepath, regex_dict):
     """
@@ -750,6 +762,7 @@ if __name__ == '__main__':
         config_mobility_params(params_filename, params_contents, True, replacements)
         config_auto_opcost(params_filename, params_contents, True, replacements)
     elif my_args.iter == None:
+        check_tazdata()
         config_project_dir(False, replacements)
         config_popsyn_files(replacements)
         config_mobility_params(params_filename, params_contents, False, replacements)
