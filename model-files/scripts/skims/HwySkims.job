@@ -322,12 +322,12 @@ loop period = 1, 5
          phase = iloop
      
             ; non-value toll paying path
-            pathload path = lw.gencost, @token_excludegrp_free@
+            pathload path = lw.gencost_@token_class@, @token_excludegrp_free@
                mw[1] = pathtrace(lw.time),
                mw[2] = pathtrace(lw.dist),
                mw[3] = pathtrace(lw.bridgetoll_@token_class@)               
             ; value toll paying path
-            pathload path = lw.gencost, @token_excludegrp_toll@
+            pathload path = lw.gencost_@token_class@, @token_excludegrp_toll@
                mw[4] = pathtrace(lw.time),
                mw[5] = pathtrace(lw.dist),
                mw[6] = pathtrace(lw.bridgetoll_@token_class@),

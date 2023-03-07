@@ -12,7 +12,7 @@ set AddStrategies=Yes
 
 :: set the location of the Travel Model Release
 :: use master for now until we create a release
-set GITHUB_DIR=Z:\projects\ccta\31000190\travel-model-one
+set GITHUB_DIR=Z:\projects\ccta\31000190\Jawad\travel-model-one
 set ALL_BCM_INPUTS=Z:\projects\ccta\31000190\BCM_Inputs
 set ALL_TEMP_INPUTS=Z:\projects\ccta\31000190\BCM_Static_Data
 
