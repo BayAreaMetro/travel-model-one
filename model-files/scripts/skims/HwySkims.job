@@ -390,7 +390,7 @@ loop period = 1, 5
                                                                           TOLLTIMESML, TOLLDISTSML, TOLLBTOLLSML, TOLLVTOLLSML,
                                                                           TIMEMED, DISTMED, BTOLLMED,
                                                                           TOLLTIMEMED, TOLLDISTMED, TOLLBTOLLMED, TOLLVTOLLMED,
-                                                                          TIMELRG, DISTLRG, BTOLLLRG,
+                                                                          TIMELRG, DISTLRG, BTOLLLRG
         
       ; drive alone
       mw[1]   = mi.1.TIMEDA
