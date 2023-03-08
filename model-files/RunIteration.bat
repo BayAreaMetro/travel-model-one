@@ -170,11 +170,11 @@ runtpp CTRAMP\scripts\feedback\MergeNetworks.job
 if ERRORLEVEL 2 goto done                
 
 :: Place a copy of the loaded networks into the root \hwy directory for access by the next iteration
-copy hwy\iter%ITER%\avgLOADEA.net hwy\avgLOADEA.net /Y
-copy hwy\iter%ITER%\avgLOADAM.net hwy\avgLOADAM.net /Y
-copy hwy\iter%ITER%\avgLOADMD.net hwy\avgLOADMD.net /Y
-copy hwy\iter%ITER%\avgLOADPM.net hwy\avgLOADPM.net /Y
-copy hwy\iter%ITER%\avgLOADEV.net hwy\avgLOADEV.net /Y
+copy hwy\iter%ITER%\avgLOADEA.net hwy\avgLOADEA_taz.net /Y
+copy hwy\iter%ITER%\avgLOADAM.net hwy\avgLOADAM_taz.net /Y
+copy hwy\iter%ITER%\avgLOADMD.net hwy\avgLOADMD_taz.net /Y
+copy hwy\iter%ITER%\avgLOADPM.net hwy\avgLOADPM_taz.net /Y
+copy hwy\iter%ITER%\avgLOADEV.net hwy\avgLOADEV_taz.net /Y
 
 :: Delete temporary files
 del hwy\iter%ITER%\x*.net
