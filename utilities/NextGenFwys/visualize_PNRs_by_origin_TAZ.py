@@ -13,8 +13,8 @@ import pandas
 
 ITER            = 3
 TIMEPERIOD      = 'am'
-SUPLINKS_SUFFIX = ['commuter_rail','express_bus','ferry','heavy_rail','light_rail']
-LINE_RE         = re.compile(r"^SUPPLINK N=\s*(?P<orig>\d+)[\-]\s*(?P<dest>\d+) MODE=(?P<mode>\d+) DIST=\s*(?P<dist>\d+) SPEED=\s*(?P<speed>\d+[\.]\d+) ONEWAY=(?P<oneway>[YN])$")
+SUPLINKS_SUFFIX = ['commuter_rail','express_bus','ferry','heavy_rail','light_rail','knr']
+LINE_RE         = re.compile(r"^SUPPLINK N=\s*(?P<orig>\d+)[\-]\s*(?P<dest>\d+) MODE=(?P<mode>\d+) DIST=\s*(?P<dist>\d+) SPEED=\s*(?P<speed>\d+([\.]\d+)?) ONEWAY=(?P<oneway>[YN])$")
 
 if __name__ == '__main__':
 
@@ -23,7 +23,8 @@ if __name__ == '__main__':
         supplinks_dict_list = []
         filename = os.path.join("trn", 
                                 "TransitAssignment.iter{}".format(ITER),
-                                "{}_transit_suplinks_{}.dat".format(TIMEPERIOD, suffix))
+                                "{}_bus_acclinks_KNR.dat".format(TIMEPERIOD) if suffix == "knr" 
+                                    else "{}_transit_suplinks_{}.dat".format(TIMEPERIOD, suffix))
         
         suplinks_fileobj = open(filename, 'r')
         lines_read = 0
