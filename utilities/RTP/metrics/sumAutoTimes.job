@@ -217,6 +217,10 @@ loop auto = 1,15
       MW[12]  = (mi.2.@token_auto@/_occupancy) * (mi.7.@token_dist@ * @AUTOOPC@)         ; not including tolls
       MW[13]  = (mi.2.@token_auto@/_occupancy) *  mi.7.@token_btoll@                     ; Bridge tolls (includes Cordon Tolls)
       MW[14]  = (mi.2.@token_auto@/_occupancy) *  mi.7.@token_vtoll@ * @vtoll_factor@    ; Value tolls
+      jloop
+        dest_cordon_cost = zi.1.CORDONCOST[j]
+        MW[36] = (mi.2.@token_auto@/_occupancy) * (@btoll_factor@) * dest_cordon_cost    ; Cordon tolls
+      endjloop
 
       ; Trips MD * Skims MD
       MW[15]  =  mi.3.@token_auto@ * mi.8.@token_time@                                   ; Person minutes
@@ -235,6 +239,10 @@ loop auto = 1,15
       MW[26]   = (mi.4.@token_auto@/_occupancy) * (mi.9.@token_dist@ * @AUTOOPC@)        ; not including tolls
       MW[27]   = (mi.4.@token_auto@/_occupancy) *  mi.9.@token_btoll@                    ; Bridge tolls (includes Cordon Tolls)
       MW[28]   = (mi.4.@token_auto@/_occupancy) *  mi.9.@token_vtoll@ * @vtoll_factor@   ; Value tolls
+      jloop
+        dest_cordon_cost = zi.1.CORDONCOST[j]
+        MW[37] = (mi.4.@token_auto@/_occupancy) * (@btoll_factor@) * dest_cordon_cost    ; Cordon tolls
+      endjloop
 
       ; Trips EV * Skims EV
       MW[29]   =  mi.5.@token_auto@ * mi.10.@token_time@                                 ; Person minutes
@@ -246,63 +254,66 @@ loop auto = 1,15
       MW[35]   = (mi.5.@token_auto@/_occupancy) *  mi.10.@token_vtoll@ * @vtoll_factor@  ; Value tolls
 
       ; incorporate cordon-based auto tolls which apply to bridge tolls
-      if (@btoll_factor@ < 1.0)
+      if (@btoll_factor@ <= 1.0)
         jloop
           dest_cordon = zi.1.CORDON[j]
           dest_cordon_cost = zi.1.CORDONCOST[j]
           ; discount by (1-factor)*cordon_cost
           ; AM & PM bridge toll 
-          if (dest_cordon > 0) MW[13] = MW[13] - ((mi.2.@token_auto@/_occupancy) * (1.0-@btoll_factor@) * dest_cordon_cost)
-          if (dest_cordon > 0) MW[27] = MW[27] - ((mi.4.@token_auto@/_occupancy) * (1.0-@btoll_factor@) * dest_cordon_cost)
+          if (dest_cordon > 0) MW[13] = MW[13] - ((mi.2.@token_auto@/_occupancy) * (@btoll_factor@) * dest_cordon_cost)
+          if (dest_cordon > 0) MW[27] = MW[27] - ((mi.4.@token_auto@/_occupancy) * (@btoll_factor@) * dest_cordon_cost)
         endjloop
       endif
 
      ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
-     MW[36] =  mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
-     MW[37] = (mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)/_occupancy
-     MW[38] = MW[1] + MW[8]  + MW[15] + MW[22] + MW[29]   ; Person minutes
-     MW[39] = MW[2] + MW[9]  + MW[16] + MW[23] + MW[30]   ; Vehicle minutes
-     MW[40] = MW[3] + MW[10] + MW[17] + MW[24] + MW[31]   ; Person miles
-     MW[41] = MW[4] + MW[11] + MW[18] + MW[25] + MW[32]   ; Vehicle miles
-     MW[42] = MW[5] + MW[12] + MW[19] + MW[26] + MW[33]   ; Trip Cost
-     MW[43] = MW[6] + MW[13] + MW[20] + MW[27] + MW[34]   ; Bridge Tolls
-     MW[44] = MW[7] + MW[14] + MW[21] + MW[28] + MW[35]   ; Value Tolls
+     MW[38] =  mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
+     MW[39] = (mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)/_occupancy
+     MW[40] = MW[1] + MW[8]  + MW[15] + MW[22] + MW[29]   ; Person minutes
+     MW[41] = MW[2] + MW[9]  + MW[16] + MW[23] + MW[30]   ; Vehicle minutes
+     MW[42] = MW[3] + MW[10] + MW[17] + MW[24] + MW[31]   ; Person miles
+     MW[43] = MW[4] + MW[11] + MW[18] + MW[25] + MW[32]   ; Vehicle miles
+     MW[44] = MW[5] + MW[12] + MW[19] + MW[26] + MW[33]   ; Trip Cost
+     MW[45] = MW[6] + MW[13] + MW[20] + MW[27] + MW[34]   ; Bridge Tolls
+     MW[46] = MW[7] + MW[14] + MW[21] + MW[28] + MW[35]   ; Value Tolls
+     MW[47] = MW[36]+MW[37]                               ; Cordon Tolls
 
      ; count value tolls for toll options, including taxi and tnc
      IF (@auto@==2 || @auto@==4 || @auto@==6 || @auto@==7 || @auto@==8 || @auto@==9 || @auto@==11 || @auto@==13 || @auto@==15)
        ; count non-zero paths in the AM
-       MW[45] = mi.7.@token_vtoll@
-       MW[46] = mi.8.@token_vtoll@
-       _vtoll_am_nonzero = _vtoll_am_nonzero  + ROWCNT(45)
-       _vtoll_md_nonzero = _vtoll_md_nonzero  + ROWCNT(46)
+       MW[48] = mi.7.@token_vtoll@
+       MW[49] = mi.8.@token_vtoll@
+       _vtoll_am_nonzero = _vtoll_am_nonzero  + ROWCNT(48)
+       _vtoll_md_nonzero = _vtoll_md_nonzero  + ROWCNT(49)
 
        ; only for tolls
-       Value_tolls       = Value_tolls        + ROWSUM(44)
+       Value_tolls       = Value_tolls        + ROWSUM(46)
      else
        _vtoll_am_nonzero = 0
        _vtoll_md_nonzero = 0
        Value_tolls       = 0
      ENDIF
 
-      Person_trips  = Person_trips  + ROWSUM(36)
-      Vehicle_trips = Vehicle_trips + ROWSUM(37)
-      Person_min    = Person_min    + ROWSUM(38)
-      Vehicle_min   = Vehicle_min   + ROWSUM(39)
-      Person_miles  = Person_miles  + ROWSUM(40)
-      Vehicle_miles = Vehicle_miles + ROWSUM(41)
-      Total_cost    = Total_cost    + ROWSUM(42)
-      Bridge_tolls  = Bridge_tolls  + ROWSUM(43)
+      Person_trips  = Person_trips  + ROWSUM(38)
+      Vehicle_trips = Vehicle_trips + ROWSUM(39)
+      Person_min    = Person_min    + ROWSUM(40)
+      Vehicle_min   = Vehicle_min   + ROWSUM(41)
+      Person_miles  = Person_miles  + ROWSUM(42)
+      Vehicle_miles = Vehicle_miles + ROWSUM(43)
+      Total_cost    = Total_cost    + ROWSUM(44)
+      Bridge_tolls  = Bridge_tolls  + ROWSUM(45)
+      Cordon_tolls  = Cordon_tolls  + ROWSUM(47)
 
       Mode   = '@token_auto@'
       Income = '@token_inc@'
 
-      if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=1 LIST="Income,Mode,Daily Person Trips,Daily Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost,VTOLL nonzero AM,VTOLL nonzero MD,Bridge Tolls,Value Tolls"
+      if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=1 LIST="Income,Mode,Daily Person Trips,Daily Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost,VTOLL nonzero AM,VTOLL nonzero MD,Bridge Tolls,Value Tolls,Cordon Tolls"
       if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= Income, Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
                                                             Person_min(10.2L),   Vehicle_min(10.2L),
                                                             Person_miles(10.2L), Vehicle_miles(10.2L),
                                                             Total_cost(10.2L),
                                                             _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
-                                                            Bridge_tolls(10.2L), Value_tolls(10.2L)
+                                                            Bridge_tolls(10.2L), Value_tolls(10.2L),
+                                                            Cordon_tolls(10.2L)
     ENDRUN
 
     ; owned zpv by income
