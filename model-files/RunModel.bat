@@ -26,7 +26,7 @@ C:\Windows\System32\where python
 Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 ::  Set the IP address of the host machine which sends tasks to the client machines 
-if %computername%==MODEL2-A            set HOST_IP_ADDRESS=192.168.1.206
+if %computername%==MODEL2-A            set HOST_IP_ADDRESS=10.1.1.206
 if %computername%==MODEL2-B            set HOST_IP_ADDRESS=192.168.1.207
 if %computername%==MODEL2-C            set HOST_IP_ADDRESS=192.168.1.208
 if %computername%==MODEL2-D            set HOST_IP_ADDRESS=192.168.1.209
@@ -156,6 +156,8 @@ copy INPUT\nonres\              nonres\
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
 copy INPUT\logsums              logsums\
+copy INPUT\telecommute_constants.csv   main\telecommute_constants.csv
+copy INPUT\telecommute_constants.csv   main\telecommute_constants_00.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -368,6 +370,9 @@ call RunPrepareEmfac.bat SB375 WithFreight
 ::
 :: ------------------------------------------------------------------------------------------------------
 
+rem for the NextGenFwy Project, we don't need to run logsums
+if %PROJECT%==NGF goto core_summaries
+
 : logsums
 
 :: call RunAccessibility
@@ -382,7 +387,7 @@ if ERRORLEVEL 2 goto done
 ::
 :: ------------------------------------------------------------------------------------------------------
 
-: core_summaries
+:core_summaries
 
 call RunCoreSummaries
 if ERRORLEVEL 2 goto done

@@ -21,6 +21,8 @@ public interface TazDataIf {
     public int getZoneIsSuburban( int taz );
     public int getZoneIsRural( int taz );
     public int getZoneCounty( int taz );
+    public int getZoneCordon( int taz );
+    public int getZoneCordonCost( int taz );
 
     public float getPopEmpPerSqMi(int taz);
 
@@ -135,6 +137,9 @@ public interface TazDataIf {
      * @return the number of parking spots array
      */
     int[] getZonalParkTot ();
+
+    int[] getZonalCordon();
+    int[] getZonalCordonCost();
 
     public String getZonalParkTotFieldName ();
     public String getZonalParkRateFieldName ();

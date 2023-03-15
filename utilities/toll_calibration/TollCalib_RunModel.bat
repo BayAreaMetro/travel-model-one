@@ -58,37 +58,18 @@ if %ITER% NEQ 4 (
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 0: set file location and folder structure
-::
-:: ------------------------------------------------------------------------------------------------------
-
-
-:: Use this for COMMPATH
-mkdir COMMPATH
-set COMMPATH=%CD%\COMMPATH
-echo COMMPATH is [%COMMPATH%]
-"C:\Program Files\Citilabs\CubeVoyager\Cluster" "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
-
-
-:: Path details
-set PATH=c:\windows\system32;C:\Python27;C:\Python27\Scripts
-set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files (x86)\Citilabs\CubeVoyager
-set PYTHONPATH=X:\NetworkWrangler;X:\NetworkWrangler\_static
-set GAWK_PATH=M:\Software\Gawk\bin
-SET PATH=%TPP_PATH%;%GAWK_PATH%;%PATH%
-
-
-:: ------------------------------------------------------------------------------------------------------
-::
 :: Step 1: bring in ctramp and the highway network
 ::
 :: ------------------------------------------------------------------------------------------------------
 
 if %ITER%==4 (
     :: Use the same CTRAMP as the BASE
-    robocopy /MIR "%MODEL_BASE_DIR%\CTRAMP"           CTRAMP
+    c:\windows\system32\Robocopy.exe /MIR "%MODEL_BASE_DIR%\CTRAMP"           CTRAMP
 
-    robocopy /MIR "%MODEL_BASE_DIR%\INPUT\hwy"        hwy
+    :: use a special mtcTourBased.properties to turn off workplace shadow pricing to reduce run time
+    copy /Y "X:\travel-model-one-master\utilities\toll_calibration\mtcTourBased_WorkplaceShadowPricingOff.properties"  CTRAMP\runtime\mtcTourBased.properties
+    
+    c:\windows\system32\Robocopy.exe /MIR "%MODEL_BASE_DIR%\INPUT\hwy"        hwy
 )
 
 :: check that the NonDynamicTollFacilities.csv file is in the INPUT\hwy folder of the base run
@@ -102,12 +83,20 @@ if not exist %MODEL_BASE_DIR%\INPUT\hwy\NonDynamicTollFacilities.csv (
 copy /y "%TOLL_FILE%" hwy\
 copy /y "%TOLL_FILE%" hwy\tolls.csv
 
-
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 2: Pre-process steps
 ::
 :: ------------------------------------------------------------------------------------------------------
+:: set paths
+call CTRAMP\runtime\SetPath.bat
+
+:: Use this for COMMPATH
+mkdir COMMPATH
+set COMMPATH=%CD%\COMMPATH
+echo COMMPATH is [%COMMPATH%]
+"C:\Program Files\Citilabs\CubeVoyager\Cluster" "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
+
 :preprocess
 set INSTANCE=%COMPUTERNAME%
 set MODEL_DIR=%CD%
@@ -182,7 +171,7 @@ set WGT=0.33
 set PREV_WGT=0.67
 
 if %ITER%==4 (
-   robocopy "%MODEL_BASE_DIR%\hwy\iter%PREV_ITER%" hwy\iter%PREV_ITER%
+   c:\windows\system32\Robocopy.exe "%MODEL_BASE_DIR%\hwy\iter%PREV_ITER%" hwy\iter%PREV_ITER%
 )
 
 :: Move assigned networks to a iteration-specific directory
@@ -294,7 +283,7 @@ if ERRORLEVEL 2 goto done
 :: ------------------------------------------
 :: including the location of the 64-bit java development kit
 :: set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
-call CTRAMP\runtime\SetPath.bat
+:: call CTRAMP\runtime\SetPath.bat
 :: but overwrite the commpath setting
 set COMMPATH=%CD%\COMMPATH
 

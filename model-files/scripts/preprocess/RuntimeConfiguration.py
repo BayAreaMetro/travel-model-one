@@ -6,42 +6,45 @@ changes that need to be made at runtime.
 If no iteration is specified, then these include:
  * Project Directory
    + Assumed to be the current working directory
-   + Propagated to CTRAMP\runtime\accessibilities.properties,
-                   CTRAMP\runtime\mtcTourBased.properties
+   + Propagated to CTRAMP\\runtime\\accessibilities.properties,
+                   CTRAMP\\runtime\\mtcTourBased.properties
  * Synthesized households and persons files
-   + Assumed to be INPUT\popsyn\hhFile.* and INPUT\popsyn\personFile.*
-   + Propagated to CTRAMP\runtime\mtcTourBased.properties
+   + Assumed to be INPUT\\popsyn\\hhFile.* and INPUT\\popsyn\\personFile.*
+   + Propagated to CTRAMP\\runtime\\mtcTourBased.properties
  * Auto Operating Costs
-   + Specify the values in INPUT\params.properties
-   + It will be propagated to CTRAMP\scripts\block\hwyParam.block,
-                              CTRAMP\runtime\accessibilities.properties (new!),
-                              CTRAMP\runtime\mtcTourBased.properties (new!)
-   + It will be propagated to CTRAMP\model\ModeChoice.xls,  (for costPerMile)
-                              CTRAMP\model\TripModeChoice.xls,
-                              CTRAMP\model\accessibility_utility.xls
- * Truck Operating Cost (plus RM, Fuel breakdown)
-   + Specify the value in INPUT\params.properties
-   + It will be propagated to CTRAMP\scripts\block\hwyParam.block
+   + Specify the values in INPUT\\params.properties
+   + It will be propagated to CTRAMP\\scripts\\block\\hwyParam.block,
+                              CTRAMP\\runtime\\accessibilities.properties (new!),
+                              CTRAMP\\runtime\\mtcTourBased.properties (new!)
+   + It will be propagated to CTRAMP\\model\\ModeChoice.xls,  (for costPerMile)
+                              CTRAMP\\model\\TripModeChoice.xls,
+                              CTRAMP\\model\\accessibility_utility.xls
+ * Truck Operating Cost
+   + Specify the value in INPUT\\params.properties
+   + It will be propagated to CTRAMP\\scripts\\block\\hwyParam.block
+ * Truck Trip Distribution gravity LOS term part from tolled time
+   + Specify the value in INPUT\\params.properties
+   + It will be propagated to CTRAMP\\scripts\\block\\hwyParam.block
  * Telecommute constant
-   + It will be propagated to CTRAMP\model\CoordinatedDailyActivityPattern.xls
+   + It will be propagated to CTRAMP\\model\\CoordinatedDailyActivityPattern.xls
  * Means Based Tolling (Q1 and Q2) factors
-   + They will be propagated to CTRAMP\scripts\block\hwyParam.block
-                                CTRAMP\runtime\mtcTourBased.properties
+   + They will be propagated to CTRAMP\\scripts\\block\\hwyParam.block
+                                CTRAMP\\runtime\\mtcTourBased.properties
  * Means Based Fare (Q1 and Q2) factors
-   + They will be propagated to CTRAMP\scripts\block\trnParam.block
-                                CTRAMP\runtime\mtcTourBased.properties
+   + They will be propagated to CTRAMP\\scripts\\block\\trnParam.block
+                                CTRAMP\\runtime\\mtcTourBased.properties
  * HSR Interregional trips disable flag
-   + It will be propagated to CTRAMP\scripts\block\trnParam.block
+   + It will be propagated to CTRAMP\\scripts\\block\\trnParam.block
  * Host IP - where the household manager, matrix manager and JPPF Server run
    + Assumed to be the HOST_IP_ADDRESS in the environment
    + Assumed that this script is running on this host IP (this is verified)
-   + It will be propagated to CTRAMP\runtime\JavaOnly_runMain.cmd
-                              CTRAMP\runtime\JavaOnly_runNode[0-4].cmd
-                              CTRAMP\runtime\config\jppf-clientDistributed.properties
-                              CTRAMP\runtime\config\jppf-clientLocal.properties
-                              CTRAMP\runtime\config\jppf-driver.properties
-                              CTRAMP\runtime\config\jppf-node[0-4].properties
-                              CTRAMP\runtime\mtcTourBased.properties
+   + It will be propagated to CTRAMP\\runtime\\JavaOnly_runMain.cmd
+                              CTRAMP\\runtime\\JavaOnly_runNode[0-4].cmd
+                              CTRAMP\\runtime\\config\\jppf-clientDistributed.properties
+                              CTRAMP\\runtime\\config\\jppf-clientLocal.properties
+                              CTRAMP\\runtime\\config\\jppf-driver.properties
+                              CTRAMP\\runtime\\config\\jppf-node[0-4].properties
+                              CTRAMP\\runtime\\mtcTourBased.properties
  * Distribution
    + Based on hostname.
      * 'MODEL2-A', 'MODEL2-C','MODEL2-D','PORMDLPPW01','PORMDLPPW02','Model3-a','Model3-b': single machine setup with
@@ -51,7 +54,7 @@ If no iteration is specified, then these include:
      * 'mainmodel': multiple machine setup
 
 If an iteration is specified, then the following UsualWorkAndSchoolLocationChoice
-lines are set in CTRAMP\runtime\mtcTourBased.properties:
+lines are set in CTRAMP\\runtime\\mtcTourBased.properties:
 
   Iteration 1:
     # ShadowPrice.Input.File          = (blank)
@@ -77,9 +80,21 @@ import shutil
 import socket
 import sys
 
+import pandas
 import xlrd
 import xlwt
 import xlutils.copy
+
+def check_tazdata():
+    """
+    Checks that INPUT\\landuse\\tazData.csv has new required columns, CORDON and CORDONCOST
+    """
+    tazdata_file = os.path.join("INPUT", "landuse", "tazData.csv")
+    tazdata_df = pandas.read_csv(tazdata_file)
+    tazdata_cols = list(tazdata_df.columns)
+    assert("CORDON" in tazdata_cols)
+    assert("CORDONCOST" in tazdata_cols)
+    print("Found columns CORDON and CORDONCOST in tazData.csv")
 
 def replace_in_file(filepath, regex_dict):
     """
@@ -194,6 +209,12 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     MeansBasedFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q1Factor"))
     MeansBasedFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q2Factor"))
 
+    # cordon
+    MeansBasedCordonTollsQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q1Factor"))
+    MeansBasedCordonTollsQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q2Factor"))
+    MeansBasedCordonFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q1Factor"))
+    MeansBasedCordonFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
+
     Adjust_TNCsingle_TourMode = float(get_property(params_filename, params_contents, "Adjust_TNCsingle_TourMode"))
     Adjust_TNCshared_TourMode = float(get_property(params_filename, params_contents, "Adjust_TNCshared_TourMode"))
     Adjust_TNCsingle_TripMode = float(get_property(params_filename, params_contents, "Adjust_TNCsingle_TripMode"))
@@ -258,6 +279,11 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
     replacements[filepath]["(\nMeans_Based_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ1Factor
     replacements[filepath]["(\nMeans_Based_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ2Factor
+
+    replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ1Factor
+    replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ2Factor
+    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ1Factor
+    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ2Factor
 
     replacements[filepath]["(\nAdjust_TNCsingle_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCsingle_TourMode
     replacements[filepath]["(\nAdjust_TNCshared_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCshared_TourMode
@@ -351,6 +377,10 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     bus_opc         = get_property(params_filename, params_contents, "BusOpCost")
     replacements[filepath]["(\nBUSOPC[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % bus_opc
 
+    # TruckTripDistribution gravity LOS term - tolled time part
+    truck_distrib_LOS_toll_part = get_property(params_filename, params_contents, "TRUCK_DISTRIB_LOS_TOLL_PART")
+    replacements[filepath]["(\nTRUCK_DISTRIB_LOS_TOLL_PART[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%s" % truck_distrib_LOS_toll_part
+
     # AV impacts on road capacity - represented by adjusting passenger car equivalents (PCEs) by facility type
     av_pcefac_ft01   = float(get_property(params_filename, params_contents, "AV_PCE_FAC_FT01"))
     av_pcefac_ft02   = float(get_property(params_filename, params_contents, "AV_PCE_FAC_FT02"))
@@ -366,11 +396,15 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     OwnedAV_zpv      = float(get_property(params_filename, params_contents, "OwnedAV_ZPV_fac"))
     TNC_zpv          = float(get_property(params_filename, params_contents, "TNC_ZPV_fac"))
 
-    MeansBasedTollsQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q1Factor"))
-    MeansBasedTollsQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q2Factor"))
-    MeansBasedFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q1Factor"))
-    MeansBasedFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q2Factor"))
-    HSRInterregionalDisable  =   int(get_property(params_filename, params_contents, "HSR_Interregional_Disable"))
+    MeansBasedTollsQ1Factor       = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q1Factor"))
+    MeansBasedTollsQ2Factor       = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q2Factor"))
+    MeansBasedCordonTollsQ1Factor = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q1Factor"))
+    MeansBasedCordonTollsQ2Factor = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Tolling_Q2Factor"))
+    MeansBasedFareQ1Factor        = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q1Factor"))
+    MeansBasedFareQ2Factor        = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q2Factor"))
+    MeansBasedCordonFareQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q1Factor"))
+    MeansBasedCordonFareQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
+    HSRInterregionalDisable       =   int(get_property(params_filename, params_contents, "HSR_Interregional_Disable"))
 
     # put the av pce factors into the CTRAMP\scripts\block\hwyParam.block
     filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
@@ -390,11 +424,15 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
 
     replacements[filepath]["(\nMeans_Based_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ1Factor
     replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
+    replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ1Factor
+    replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ2Factor
 
     # put the means based fare discount factors into CTRAMP\scripts\block\trnParam.block
     filepath = os.path.join("CTRAMP","scripts","block","trnParam.block")
     replacements[filepath]["(\nMeans_Based_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ1Factor
     replacements[filepath]["(\nMeans_Based_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ2Factor
+    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ1Factor
+    replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ2Factor
     replacements[filepath]["(\nHSR_Interregional_Disable[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d"   % HSRInterregionalDisable
 
 def config_logsums(replacements, append):
@@ -510,7 +548,7 @@ def config_distribution(replacements):
     Replacements = { filepath -> regex_dict }
     """
     hostname = socket.gethostname()
-    if hostname == 'mainmodel':
+    if hostname in ['mainmodel','satmodel2','lzorn-vm']:
         # accessibilities
         filepath = os.path.join("CTRAMP","runtime","accessibilities.properties")
         replacements[filepath]["(\nnum.acc.threads[ \t]*=[ \t]*)(\S*)"] = r"\g<1>14"
@@ -724,6 +762,7 @@ if __name__ == '__main__':
         config_mobility_params(params_filename, params_contents, True, replacements)
         config_auto_opcost(params_filename, params_contents, True, replacements)
     elif my_args.iter == None:
+        check_tazdata()
         config_project_dir(False, replacements)
         config_popsyn_files(replacements)
         config_mobility_params(params_filename, params_contents, False, replacements)

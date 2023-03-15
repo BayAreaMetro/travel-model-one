@@ -321,6 +321,11 @@ add_cost <- function(this_timeperiod, input_trips_or_tours, reverse_od = FALSE) 
   # Left join tours to the skims
   relevant <- left_join(relevant, costSkims, by=c("orig_taz","dest_taz"))
 
+  # NOTE: The costs databases do not split auto costs by bridge tolls, 
+  # value tolls, and distance-based auto operating costs.
+  # Therefore, the means based factors for auto modes below are being applied incorrectly
+  # because they should apply to the value tolls only.
+  
   # assign cost value if we can to new column cost2
   relevant <- relevant %>%
     mutate(cost2 = (costMode == 1) * da +
