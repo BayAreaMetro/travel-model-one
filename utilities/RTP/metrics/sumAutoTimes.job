@@ -215,12 +215,12 @@ loop auto = 1,15
       MW[10]  =  mi.2.@token_auto@ * mi.7.@token_dist@                                   ; Person miles
       MW[11]  = (mi.2.@token_auto@ * mi.7.@token_dist@)/_occupancy                       ; Vehilce miles
       MW[12]  = (mi.2.@token_auto@/_occupancy) * (mi.7.@token_dist@ * @AUTOOPC@)         ; not including tolls
-      MW[13]  = (mi.2.@token_auto@/_occupancy) *  mi.7.@token_btoll@                     ; Bridge tolls (includes Cordon Tolls)
       MW[14]  = (mi.2.@token_auto@/_occupancy) *  mi.7.@token_vtoll@ * @vtoll_factor@    ; Value tolls
       jloop
         dest_cordon_cost = zi.1.CORDONCOST[j]
         MW[36] = (mi.2.@token_auto@/_occupancy) * (@btoll_factor@) * dest_cordon_cost    ; Cordon tolls
       endjloop
+      MW[13]  = (mi.2.@token_auto@/_occupancy) *  mi.7.@token_btoll@ - MW[36]            ; Bridge tolls (excludes Cordon Tolls)
 
       ; Trips MD * Skims MD
       MW[15]  =  mi.3.@token_auto@ * mi.8.@token_time@                                   ; Person minutes
@@ -237,12 +237,12 @@ loop auto = 1,15
       MW[24]   =  mi.4.@token_auto@ * mi.9.@token_dist@                                  ; Person miles
       MW[25]   = (mi.4.@token_auto@ * mi.9.@token_dist@)/_occupancy                      ; Vehicle miles
       MW[26]   = (mi.4.@token_auto@/_occupancy) * (mi.9.@token_dist@ * @AUTOOPC@)        ; not including tolls
-      MW[27]   = (mi.4.@token_auto@/_occupancy) *  mi.9.@token_btoll@                    ; Bridge tolls (includes Cordon Tolls)
       MW[28]   = (mi.4.@token_auto@/_occupancy) *  mi.9.@token_vtoll@ * @vtoll_factor@   ; Value tolls
       jloop
         dest_cordon_cost = zi.1.CORDONCOST[j]
         MW[37] = (mi.4.@token_auto@/_occupancy) * (@btoll_factor@) * dest_cordon_cost    ; Cordon tolls
       endjloop
+      MW[27]   = (mi.4.@token_auto@/_occupancy) *  mi.9.@token_btoll@ - MW[37]           ; Bridge tolls (excludes Cordon Tolls)
 
       ; Trips EV * Skims EV
       MW[29]   =  mi.5.@token_auto@ * mi.10.@token_time@                                 ; Person minutes
@@ -252,18 +252,6 @@ loop auto = 1,15
       MW[33]   = (mi.5.@token_auto@/_occupancy) * (mi.10.@token_dist@ * @AUTOOPC@)       ; not including tolls
       MW[34]   = (mi.5.@token_auto@/_occupancy) *  mi.10.@token_btoll@                   ; Bridge tolls
       MW[35]   = (mi.5.@token_auto@/_occupancy) *  mi.10.@token_vtoll@ * @vtoll_factor@  ; Value tolls
-
-      ; incorporate cordon-based auto tolls which apply to bridge tolls
-      if (@btoll_factor@ <= 1.0)
-        jloop
-          dest_cordon = zi.1.CORDON[j]
-          dest_cordon_cost = zi.1.CORDONCOST[j]
-          ; discount by (1-factor)*cordon_cost
-          ; AM & PM bridge toll 
-          if (dest_cordon > 0) MW[13] = MW[13] - ((mi.2.@token_auto@/_occupancy) * (@btoll_factor@) * dest_cordon_cost)
-          if (dest_cordon > 0) MW[27] = MW[27] - ((mi.4.@token_auto@/_occupancy) * (@btoll_factor@) * dest_cordon_cost)
-        endjloop
-      endif
 
      ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
      MW[38] =  mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@
