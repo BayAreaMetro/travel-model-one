@@ -1,8 +1,8 @@
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :: RunIteration.bat
 ::
-:: MS-DOS batch file to execute a single iteration of the MTC travel model.  This script is repeatedly 
-:: called by the RunModel batch file.  
+:: MS-DOS batch file to execute a single iteration of the MTC travel model.  This script is repeatedly
+:: called by the RunModel batch file.
 ::
 :: For complete details, please see http://mtcgis.mtc.ca.gov/foswiki/Main/RunIterationBatch.
 ::
@@ -50,7 +50,7 @@ if ERRORLEVEL 2 goto done
 if %ITER%==1 (
   rem run matrix manager, household manager and jppf driver
   cd CTRAMP\runtime
-  call javaOnly_runMain.cmd 
+  call javaOnly_runMain.cmd
 
   rem run jppf node
   cd CTRAMP\runtime
@@ -102,6 +102,10 @@ if ERRORLEVEL 2 goto done
 runtpp CTRAMP\scripts\nonres\HsrTransitSubmodeChoice.job
 if ERRORLEVEL 2 goto done
 
+:: Move air passenger trips from the free path to the tolled path, if the free path does not exist
+runtpp CTRAMP\scripts\nonres\MoveAirPaxTrips_IfNoFreePath.job
+if ERRORLEVEL 2 goto done
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 4:  Build matrices from trip lists and assign trips to the highway network
@@ -136,7 +140,7 @@ if ERRORLEVEL 2 goto done
 
 
 :: Move assigned networks to a iteration-specific directory
-mkdir hwy\iter%ITER%      
+mkdir hwy\iter%ITER%
 
 move hwy\LOADEA.net hwy\iter%ITER%\LOADEA.net
 move hwy\LOADAM.net hwy\iter%ITER%\LOADAM.net
@@ -147,7 +151,7 @@ move hwy\LOADEV.net hwy\iter%ITER%\LOADEV.net
 :: Give the default TP+ variables more intuitive names
 runtpp CTRAMP\scripts\feedback\RenameAssignmentVariables.job
 
-:: Average the demand for this and the previous iteration and compute a speed estimate for each link 
+:: Average the demand for this and the previous iteration and compute a speed estimate for each link
 IF %ITER% GTR 1 (
 	runtpp CTRAMP\scripts\feedback\AverageNetworkVolumes.job
 	if ERRORLEVEL 2 goto done
@@ -166,8 +170,8 @@ runtpp CTRAMP\scripts\feedback\TestNetworkConvergence.job
 if ERRORLEVEL 2 goto done
 
 :: Combine the time-of-day-specific networks into a single network
-runtpp CTRAMP\scripts\feedback\MergeNetworks.job  
-if ERRORLEVEL 2 goto done                
+runtpp CTRAMP\scripts\feedback\MergeNetworks.job
+if ERRORLEVEL 2 goto done
 
 :: Place a copy of the loaded networks into the root \hwy directory for access by the next iteration
 copy hwy\iter%ITER%\avgLOADEA.net hwy\avgLOADEA.net /Y
@@ -186,7 +190,7 @@ del hwy\iter%ITER%\x*.net
 ::
 :: ------------------------------------------------------------------------------------------------------
 
-echo FINISHED ITERATION %ITER%  %DATE% %TIME% >> logs\feedback.rpt 
+echo FINISHED ITERATION %ITER%  %DATE% %TIME% >> logs\feedback.rpt
 
 python "CTRAMP\scripts\notify_slack.py" "Finished iteration %ITER% in %MODEL_DIR%"
 
