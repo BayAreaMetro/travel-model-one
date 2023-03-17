@@ -19,11 +19,8 @@ today = time.strftime("%Y_%m_%d")
 ## INPUT
 # Network that contains all-lane tolling
 RUN_OUTPUT_DIR = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\2035_TM152_NGF_NP02_BPALTsegmented_03_SimpleTolls01\\OUTPUT"
-NETWORK_DIR = os.path.join(RUN_OUTPUT_DIR, "shapefile")
-
-ROADWAY_FILE = os.path.join(NETWORK_DIR, "network_links.dbf")
-
-TRN_LINKS_RAW_FILE = os.path.join(RUN_OUTPUT_DIR, "trn", "trnlink.csv")
+NETWORK_DIR    = os.path.join(RUN_OUTPUT_DIR, "shapefile")
+ROADWAY_FILE   = os.path.join(NETWORK_DIR, "network_links.dbf")
 
 # NextGenFwy arterial projects
 # NOTE: these are coded as indivdiual NetworkProject named "NGF_XXX_Art_XXX";
