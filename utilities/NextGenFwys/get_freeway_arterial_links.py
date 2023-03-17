@@ -1,7 +1,7 @@
 """
 Reads a roadway network shapefile file (exported from model output)
-Filters to tolled freeway links (toll > 990000) and 
-  tolled arterial links (based on their presence in NetworkProjects named NGF_*_Art_*)
+Filters to tolled freeway links (toll > 990000 in 2035_TM152_NGF_NP02_BPALTsegmented_03_SimpleTolls01 network) and 
+  arterial links of interest (based on their presence in NetworkProjects named NGF_*_Art_*)
 Saves resulting file to L:\\Application\\Model_One\\NextGenFwys\\Transit_Utilization\\freeway_arterial_links.csv
   with columns 'A', 'B', 'DISTANCE', 'Project', 'TollClass', 'link_tag' (one of 'freeway' or 'arterial')
 Also saves get_freeway_arterial_links_[YYYY_MM_DD].log
