@@ -2,7 +2,7 @@
 Reads a roadway network shapefile file (exported from model output)
 Filters to tolled freeway links (toll > 990000 in 2035_TM152_NGF_NP02_BPALTsegmented_03_SimpleTolls01 network) and 
   arterial links of interest (based on their presence in NetworkProjects named NGF_*_Art_*)
-Saves resulting file to L:\\Application\\Model_One\\NextGenFwys\\Transit_Utilization\\freeway_arterial_links.csv
+Saves resulting file to L:\\Application\\Model_One\\NextGenFwys\\across_runs_union\\freeway_arterial_links.csv
   with columns 'A', 'B', 'DISTANCE', 'Project', 'TollClass', 'link_tag' (one of 'freeway' or 'arterial')
 Also saves get_freeway_arterial_links_[YYYY_MM_DD].log
 """
@@ -32,7 +32,7 @@ ART_PROJ_DIR = "M:\\Application\\Model One\\NetworkProjects"
 
 ## OUTPUT
 # freeway and tolled arterial links
-DATA_OUTPUT_DIR             = "L:\\Application\\Model_One\\NextGenFwys\\Transit_Utilization"
+DATA_OUTPUT_DIR             = "L:\\Application\\Model_One\\NextGenFwys\\across_runs_union"
 FREEWAY_ARTERIAL_LINKS_FILE = os.path.join(DATA_OUTPUT_DIR, "freeway_arterial_links.csv")
 LOG_FILE                    = os.path.join(DATA_OUTPUT_DIR, "get_freeway_arterial_links_{}.log".format(today))
 
