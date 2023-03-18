@@ -19,7 +19,8 @@ OUTPUT_FILES = {
         "parking_costs_tour_ptype_destTaz",
         "parking_costs_trip_destTaz",
         "parking_costs_trip_distBins",
-        "emfac_ghg"
+        "emfac_ghg",
+        "vmt_vht_metrics_by_taz",
     ],
     "core_summaries":[
         "ActiveTransport",
