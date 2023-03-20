@@ -321,6 +321,8 @@ loop auto = 1,15
         FILEI MATI[9] = "skims\HWYSKMPM.tpp"
         FILEI MATI[10]= "skims\HWYSKMEV.tpp"
 
+        FILEI ZDATI[1] = "landuse\tazData.dbf"  ; need cordon and cordon cost information
+
         ; Specify output file
         FILEO PRINTO[1] = "metrics\auto_times_zpv_av.csv",APPEND=T
 
@@ -344,7 +346,7 @@ loop auto = 1,15
           dest_cordon_cost = zi.1.CORDONCOST[j]
           MW[36] = mi.2.zpv_av * dest_cordon_cost                 ; Cordon tolls (no discounts for zpv)
           MW[13] = mi.2.zpv_av * (mi.7.@token_btoll@ - dest_cordon_cost); Bridge tolls (btolls - cordon tolls at full price)
-        endloop
+        endjloop
 
         ; Trips MD * Skims MD
         MW[15]   =  0                                             ; Person minutes
@@ -366,7 +368,7 @@ loop auto = 1,15
           dest_cordon_cost = zi.1.CORDONCOST[j]
           MW[37] = mi.4.zpv_av * dest_cordon_cost                 ; Cordon tolls (no discounts for zpv)
           MW[27] = mi.4.zpv_av * (mi.9.@token_btoll@ - dest_cordon_cost); Bridge tolls (btolls - cordon tolls at full price)
-        endloop
+        endjloop
 
         ; Trips EV * Skims EV
         MW[29]   =  0                                              ; Person minutes
@@ -592,6 +594,8 @@ loop auto = 1,15
 
      FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T
 
+     FILEI ZDATI[1] = "landuse\tazData.dbf"  ; need cordon and cordon cost information
+
     ; load lookup values for factoring taxi and TNC modes
     lookup lookupi=1, LIST=y, name=occ_factors,
       lookup[1]=1, result=2,      ; (occ,taxi)
@@ -636,8 +640,12 @@ loop auto = 1,15
       MW[10]  =  mi.2.@token_auto@ * mi.7.@token_dist@ * _occupancy ; Person miles
       MW[11]  =  mi.2.@token_auto@ * mi.7.@token_dist@               ; Vehilce miles
       MW[12]  =  mi.2.@token_auto@ * (mi.7.@token_dist@ * @AUTOOPC@) ; not including tolls
-      MW[13]  =  mi.2.@token_auto@ *  mi.7.@token_btoll@             ; Bridge tolls
       MW[14]  =  mi.2.@token_auto@ *  mi.7.@token_vtoll@             ; Value tolls
+      jloop
+        dest_cordon_cost = zi.1.CORDONCOST[j]
+        MW[36] = (mi.2.@token_auto@) * (@btoll_factor@) * dest_cordon_cost    ; Cordon tolls (considering discounts)
+        MW[13] = (mi.2.@token_auto@) * (mi.7.@token_btoll@ - dest_cordon_cost); Bridge tolls (btolls - cordon tolls at full price)
+      endjloop
 
       ; Trips MD * Skims MD
       MW[15]  =  mi.3.@token_auto@ * mi.8.@token_time@ * _occupancy ; Person minutes
@@ -656,6 +664,11 @@ loop auto = 1,15
       MW[26]   =  mi.4.@token_auto@ * (mi.9.@token_dist@ * @AUTOOPC@) ; not including tolls
       MW[27]   =  mi.4.@token_auto@ *  mi.9.@token_btoll@             ; Bridge tolls
       MW[28]   =  mi.4.@token_auto@ *  mi.9.@token_vtoll@             ; Value tolls
+      jloop
+        dest_cordon_cost = zi.1.CORDONCOST[j]
+        MW[37] = (mi.4.@token_auto@) * (@btoll_factor@) * dest_cordon_cost    ; Cordon tolls (considering discounts)
+        MW[27] = (mi.4.@token_auto@) * (mi.9.@token_btoll@ - dest_cordon_cost); Bridge tolls (btolls - cordon tolls at full price)
+      endjloop
 
       ; Trips EV * Skims EV
       MW[29]   =  mi.5.@token_auto@ * mi.10.@token_time@ * _occupancy ; Person minutes
@@ -670,31 +683,33 @@ loop auto = 1,15
      ;
      ; NOTE that the zones may be unconnected, resulting in huge skim values, so we need to exclude those here
 
-     MW[36] = mi.11.connected*mi.11.connected.t*( mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@ )*_occupancy
-     MW[37] = mi.11.connected*mi.11.connected.t*( mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)
-     MW[38] = mi.11.connected*mi.11.connected.t*(MW[1] + MW[8]  + MW[15] + MW[22] + MW[29])   ; Person minutes
-     MW[39] = mi.11.connected*mi.11.connected.t*(MW[2] + MW[9]  + MW[16] + MW[23] + MW[30])   ; Vehicle minutes
-     MW[40] = mi.11.connected*mi.11.connected.t*(MW[3] + MW[10] + MW[17] + MW[24] + MW[31])   ; Person miles
-     MW[41] = mi.11.connected*mi.11.connected.t*(MW[4] + MW[11] + MW[18] + MW[25] + MW[32])   ; Vehicle miles
-     MW[42] = mi.11.connected*mi.11.connected.t*(MW[5] + MW[12] + MW[19] + MW[26] + MW[33])   ; Trip Cost
-     MW[43] = mi.11.connected*mi.11.connected.t*(MW[6] + MW[13] + MW[20] + MW[27] + MW[34])   ; Bridge Tolls
-     MW[44] = mi.11.connected*mi.11.connected.t*(MW[7] + MW[14] + MW[21] + MW[28] + MW[35])   ; Value Tolls
+     MW[38] = mi.11.connected*mi.11.connected.t*( mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@ )*_occupancy
+     MW[39] = mi.11.connected*mi.11.connected.t*( mi.1.@token_auto@ + mi.2.@token_auto@ + mi.3.@token_auto@ + mi.4.@token_auto@ +mi.5.@token_auto@)
+     MW[40] = mi.11.connected*mi.11.connected.t*(MW[1] + MW[8]  + MW[15] + MW[22] + MW[29])   ; Person minutes
+     MW[41] = mi.11.connected*mi.11.connected.t*(MW[2] + MW[9]  + MW[16] + MW[23] + MW[30])   ; Vehicle minutes
+     MW[42] = mi.11.connected*mi.11.connected.t*(MW[3] + MW[10] + MW[17] + MW[24] + MW[31])   ; Person miles
+     MW[43] = mi.11.connected*mi.11.connected.t*(MW[4] + MW[11] + MW[18] + MW[25] + MW[32])   ; Vehicle miles
+     MW[44] = mi.11.connected*mi.11.connected.t*(MW[5] + MW[12] + MW[19] + MW[26] + MW[33])   ; Trip Cost
+     MW[45] = mi.11.connected*mi.11.connected.t*(MW[6] + MW[13] + MW[20] + MW[27] + MW[34])   ; Bridge Tolls
+     MW[46] = mi.11.connected*mi.11.connected.t*(MW[7] + MW[14] + MW[21] + MW[28] + MW[35])   ; Value Tolls
+     MW[47] = mi.11.connected*mi.11.connected.t*(MW[36] + MW[37])                             ; Cordon Tolls
 
      IF (@auto@==2 || @auto@==4 || @auto@==6)
        ; only for tolls
-       Value_tolls       = Value_tolls        + ROWSUM(44)
+       Value_tolls       = Value_tolls        + ROWSUM(46)
      else
        Value_tolls       = 0
      ENDIF
 
-     Person_trips  = Person_trips  + ROWSUM(36)
-     Vehicle_trips = Vehicle_trips + ROWSUM(37)
-     Person_min    = Person_min    + ROWSUM(38)
-     Vehicle_min   = Vehicle_min   + ROWSUM(39)
-     Person_miles  = Person_miles  + ROWSUM(40)
-     Vehicle_miles = Vehicle_miles + ROWSUM(41)
-     Total_cost    = Total_cost    + ROWSUM(42)
-     Bridge_tolls  = Bridge_tolls  + ROWSUM(43)
+     Person_trips  = Person_trips  + ROWSUM(38)
+     Vehicle_trips = Vehicle_trips + ROWSUM(39)
+     Person_min    = Person_min    + ROWSUM(40)
+     Vehicle_min   = Vehicle_min   + ROWSUM(41)
+     Person_miles  = Person_miles  + ROWSUM(42)
+     Vehicle_miles = Vehicle_miles + ROWSUM(43)
+     Total_cost    = Total_cost    + ROWSUM(44)
+     Bridge_tolls  = Bridge_tolls  + ROWSUM(45)
+     Cordon_tolls  = Cordon_tolls  + ROWSUM(47)
 
       Mode   = '@token_auto@' + '_air'
 
@@ -703,7 +718,8 @@ loop auto = 1,15
                                                             Person_miles(10.2L), Vehicle_miles(10.2L),
                                                             Total_cost(10.2L),
                                                             "na","na",
-                                                            Bridge_tolls(10.2L), Value_tolls(10.2L)
+                                                            Bridge_tolls(10.2L), Value_tolls(10.2L),
+                                                            Cordon_tolls(10.2L)
     ENDRUN
   ENDIF ; for the first six auto modes
 
@@ -737,6 +753,8 @@ RUN PGM = MATRIX
   FILEI MATI[9] = "skims\HWYSKMPM.tpp"
   FILEI MATI[10]= "skims\HWYSKMEV.tpp"
 
+  FILEI ZDATI[1] = "landuse\tazData.dbf"  ; need cordon and cordon cost information
+
   ; Specify output file
   FILEO PRINTO[1] = "metrics\auto_times.csv",APPEND=T
 
@@ -758,7 +776,7 @@ RUN PGM = MATRIX
   MW[14]   =  mi.2.zpv_tnc *  mi.7.TOLLVTOLLDA             ; Value tolls
   jloop
     dest_cordon_cost = zi.1.CORDONCOST[j]
-    MW[36] = (mi.2.zpv_tnc) * (@btoll_factor@) * dest_cordon_cost  ; Cordon tolls (considering discounts)
+    MW[36] = (mi.2.zpv_tnc) * dest_cordon_cost             ; Cordon tolls (considering discounts)
     MW[13] = (mi.2.zpv_tnc) * (mi.7.TOLLBTOLLDA - dest_cordon_cost); Bridge tolls (btolls - cordon tolls at full price)
   endjloop  
 
@@ -780,7 +798,7 @@ RUN PGM = MATRIX
   MW[28]   =  mi.4.zpv_tnc *  mi.9.TOLLVTOLLDA             ; Value tolls
   jloop
     dest_cordon_cost = zi.1.CORDONCOST[j]
-    MW[37] = (mi.4.zpv_tnc) * (@btoll_factor@) * dest_cordon_cost  ; Cordon tolls (considering discounts)
+    MW[37] = (mi.4.zpv_tnc) * dest_cordon_cost             ; Cordon tolls (considering discounts)
     MW[27] = (mi.4.zpv_tnc) * (mi.9.TOLLBTOLLDA - dest_cordon_cost); Bridge tolls (btolls - cordon tolls at full price)
   endjloop  
 
@@ -847,6 +865,8 @@ RUN PGM = MATRIX
 
   FILEI MATI[11] = "skims\connected_zones.tpp"
 
+  FILEI ZDATI[1] = "landuse\tazData.dbf"  ; need cordon and cordon cost information
+
   ; Read Truck Operating Cost from Properties file
   Read File = "CTRAMP\scripts\block\hwyParam.block"
 
@@ -905,10 +925,17 @@ RUN PGM = MATRIX
             ( mi.2.struck *(mi.7.distsml * SMTROPC)) +
             ( mi.2.mtruck *(mi.7.distmed * SMTROPC)) +
             ( mi.2.ctruck *(mi.7.distlrg * LRTROPC))
-  MW[13]  = (mi.2.vstruck * mi.7.btollvsm) +
-            ( mi.2.struck * mi.7.btollsml) +
-            ( mi.2.mtruck * mi.7.btollmed) +
-            ( mi.2.ctruck * mi.7.btolllrg) ; Bridge tolls
+  jloop
+    dest_cordon_cost = zi.1.CORDONCOST[j]            
+    MW[46]  = (mi.2.vstruck * (@btoll_factor@) * dest_cordon_cost) +
+              ( mi.2.struck * (@btoll_factor@) * dest_cordon_cost) +
+              ( mi.2.mtruck * (@btoll_factor@) * dest_cordon_cost) +
+              ( mi.2.ctruck * (@btoll_factor@) * dest_cordon_cost)   ; Cordon tolls (considering discounts)   
+    MW[13]  = (mi.2.vstruck * (mi.7.btollvsm - dest_cordon_cost)) +
+              ( mi.2.struck * (mi.7.btollsml - dest_cordon_cost)) +
+              ( mi.2.mtruck * (mi.7.btollmed - dest_cordon_cost)) +
+              ( mi.2.ctruck * (mi.7.btolllrg - dest_cordon_cost))    ; Bridge tolls (btolls - cordon tolls at full price)    
+  endjloop
 
   ; TOLL Trips AM * Skims AM
   MW[14]  = (mi.2.vstrucktoll *  mi.7.tolltimevsm) +
@@ -923,14 +950,21 @@ RUN PGM = MATRIX
             ( mi.2.strucktoll * (mi.7.tolldistsml * SMTROPC)) +
             ( mi.2.mtrucktoll * (mi.7.tolldistmed * SMTROPC)) +
             ( mi.2.ctrucktoll * (mi.7.tolldistlrg * LRTROPC))
-  MW[17]  = (mi.2.vstrucktoll * mi.7.tollbtollvsm) +
-            ( mi.2.strucktoll * mi.7.tollbtollsml) +
-            ( mi.2.mtrucktoll * mi.7.tollbtollmed) +
-            ( mi.2.ctrucktoll * mi.7.tollbtolllrg) ; Bridge tolls
   MW[18]  = (mi.2.vstrucktoll * mi.7.tollvtollvsm) +
             ( mi.2.strucktoll * mi.7.tollvtollsml) +
             ( mi.2.mtrucktoll * mi.7.tollvtollmed) +
             ( mi.2.ctrucktoll * mi.7.tollvtolllrg) ; Value tolls
+  jloop
+    dest_cordon_cost = zi.1.CORDONCOST[j]            
+    MW[47]  = (mi.2.vstrucktoll * (@btoll_factor@) * dest_cordon_cost) +
+              ( mi.2.strucktoll * (@btoll_factor@) * dest_cordon_cost) +
+              ( mi.2.mtrucktoll * (@btoll_factor@) * dest_cordon_cost) +
+              ( mi.2.ctrucktoll * (@btoll_factor@) * dest_cordon_cost)       ; Cordon tolls (considering discounts)   
+    MW[17]  = (mi.2.vstrucktoll * (mi.7.tollbtollvsm - dest_cordon_cost)) +
+              ( mi.2.strucktoll * (mi.7.tollbtollsml - dest_cordon_cost)) +
+              ( mi.2.mtrucktoll * (mi.7.tollbtollmed - dest_cordon_cost)) +
+              ( mi.2.ctrucktoll * (mi.7.tollbtolllrg - dest_cordon_cost))    ; Bridge tolls (btolls - cordon tolls at full price)    
+  endjloop 
 
   ; Trips MD * Skims MD
   MW[19]  = (mi.3.vstruck * mi.8.timevsm) +
@@ -985,10 +1019,17 @@ RUN PGM = MATRIX
             ( mi.4.struck *(mi.9.distsml * SMTROPC)) +
             ( mi.4.mtruck *(mi.9.distmed * SMTROPC)) +
             ( mi.4.ctruck *(mi.9.distlrg * LRTROPC))
-  MW[31]  = (mi.4.vstruck * mi.9.btollvsm) +
-            ( mi.4.struck * mi.9.btollsml) +
-            ( mi.4.mtruck * mi.9.btollmed) +
-            ( mi.4.ctruck * mi.9.btolllrg) ; Bridge tolls
+  jloop
+    dest_cordon_cost = zi.1.CORDONCOST[j]            
+    MW[48]  = (mi.4.vstruck * (@btoll_factor@) * dest_cordon_cost) +
+              ( mi.4.struck * (@btoll_factor@) * dest_cordon_cost) +
+              ( mi.4.mtruck * (@btoll_factor@) * dest_cordon_cost) +
+              ( mi.4.ctruck * (@btoll_factor@) * dest_cordon_cost)       ; Cordon tolls (considering discounts)   
+    MW[31]  = (mi.4.vstruck * (mi.9.btollvsm - dest_cordon_cost)) +
+              ( mi.4.struck * (mi.9.btollsml - dest_cordon_cost)) +
+              ( mi.4.mtruck * (mi.9.btollmed - dest_cordon_cost)) +
+              ( mi.4.ctruck * (mi.9.btolllrg - dest_cordon_cost))        ; Bridge tolls (btolls - cordon tolls at full price)    
+  endjloop 
 
   ; TOLL Trips PM * Skims PM
   MW[32]  = (mi.4.vstrucktoll *  mi.9.tolltimevsm) +
@@ -1003,14 +1044,21 @@ RUN PGM = MATRIX
             ( mi.4.strucktoll * (mi.9.tolldistsml * SMTROPC)) +
             ( mi.4.mtrucktoll * (mi.9.tolldistmed * SMTROPC)) +
             ( mi.4.ctrucktoll * (mi.9.tolldistlrg * LRTROPC))
-  MW[35]  = (mi.4.vstrucktoll * mi.9.tollbtollvsm) +
-            ( mi.4.strucktoll * mi.9.tollbtollsml) +
-            ( mi.4.mtrucktoll * mi.9.tollbtollmed) +
-            ( mi.4.ctrucktoll * mi.9.tollbtolllrg) ; Bridge tolls
   MW[36]  = (mi.4.vstrucktoll * mi.9.tollvtollvsm) +
             ( mi.4.strucktoll * mi.9.tollvtollsml) +
             ( mi.4.mtrucktoll * mi.9.tollvtollmed) +
             ( mi.4.ctrucktoll * mi.9.tollvtolllrg) ; Value tolls
+  jloop
+    dest_cordon_cost = zi.1.CORDONCOST[j]            
+    MW[49]  = (mi.4.vstrucktoll * (@btoll_factor@) * dest_cordon_cost) +
+              ( mi.4.strucktoll * (@btoll_factor@) * dest_cordon_cost) +
+              ( mi.4.mtrucktoll * (@btoll_factor@) * dest_cordon_cost) +
+              ( mi.4.ctrucktoll * (@btoll_factor@) * dest_cordon_cost)           ; Cordon tolls (considering discounts)   
+    MW[35]  = (mi.4.vstrucktoll * (mi.9.tollvtollvsm - dest_cordon_cost)) +
+              ( mi.4.strucktoll * (mi.9.tollvtollsml - dest_cordon_cost)) +
+              ( mi.4.mtrucktoll * (mi.9.tollvtollmed - dest_cordon_cost)) +
+              ( mi.4.ctrucktoll * (mi.9.tollvtolllrg - dest_cordon_cost))        ; Bridge tolls (btolls - cordon tolls at full price)    
+  endjloop 
 
   ; Trips EV * Skims EV
   MW[37]  = (mi.5.vstruck * mi.10.timevsm) +
@@ -1055,24 +1103,26 @@ RUN PGM = MATRIX
   ; Compute Daily Trips, TripTime, TripDist, TripCost, BridgeToll, ValueToll
   ;
   ; NOTE that the zones may be unconnected, resulting in huge skim values, so we need to exclude those here
-  MW[46] = mi.11.connected*mi.11.connected.t*
+  MW[50] = mi.11.connected*mi.11.connected.t*
           (mi.1.vstruck + mi.1.struck + mi.1.mtruck + mi.1.ctruck + mi.1.vstrucktoll + mi.1.strucktoll + mi.1.mtrucktoll + mi.1.ctrucktoll +
            mi.2.vstruck + mi.2.struck + mi.2.mtruck + mi.2.ctruck + mi.2.vstrucktoll + mi.2.strucktoll + mi.2.mtrucktoll + mi.2.ctrucktoll +
            mi.3.vstruck + mi.3.struck + mi.3.mtruck + mi.3.ctruck + mi.3.vstrucktoll + mi.3.strucktoll + mi.3.mtrucktoll + mi.3.ctrucktoll +
            mi.4.vstruck + mi.4.struck + mi.4.mtruck + mi.4.ctruck + mi.4.vstrucktoll + mi.4.strucktoll + mi.4.mtrucktoll + mi.4.ctrucktoll +
            mi.5.vstruck + mi.5.struck + mi.5.mtruck + mi.5.ctruck + mi.5.vstrucktoll + mi.5.strucktoll + mi.5.mtrucktoll + mi.5.ctrucktoll)
-  MW[47] = mi.11.connected*mi.11.connected.t*(MW[1] + MW[5] + MW[10] + MW[14] + MW[19] + MW[23] + MW[28] + MW[32] + MW[37] + MW[41]) ; TripTime
-  MW[48] = mi.11.connected*mi.11.connected.t*(MW[2] + MW[6] + MW[11] + MW[15] + MW[20] + MW[24] + MW[29] + MW[33] + MW[38] + Mw[42]) ; TripDist
-  MW[49] = mi.11.connected*mi.11.connected.t*(MW[3] + MW[7] + MW[12] + MW[16] + MW[21] + MW[25] + MW[30] + MW[34] + MW[39] + MW[43]) ; TripCost
-  MW[50] = mi.11.connected*mi.11.connected.t*(MW[4] + MW[8] + MW[13] + MW[17] + MW[22] + MW[26] + MW[31] + MW[35] + MW[40] + MW[44]) ; BridgeToll
-  MW[51] = mi.11.connected*mi.11.connected.t*(        MW[9]          + MW[18]          + MW[27]          + MW[36]          + MW[45]) ; ValueToll
+  MW[51] = mi.11.connected*mi.11.connected.t*(MW[1] + MW[5] + MW[10] + MW[14] + MW[19] + MW[23] + MW[28] + MW[32] + MW[37] + MW[41]) ; TripTime
+  MW[52] = mi.11.connected*mi.11.connected.t*(MW[2] + MW[6] + MW[11] + MW[15] + MW[20] + MW[24] + MW[29] + MW[33] + MW[38] + Mw[42]) ; TripDist
+  MW[53] = mi.11.connected*mi.11.connected.t*(MW[3] + MW[7] + MW[12] + MW[16] + MW[21] + MW[25] + MW[30] + MW[34] + MW[39] + MW[43]) ; TripCost
+  MW[54] = mi.11.connected*mi.11.connected.t*(MW[4] + MW[8] + MW[13] + MW[17] + MW[22] + MW[26] + MW[31] + MW[35] + MW[40] + MW[44]) ; BridgeToll
+  MW[55] = mi.11.connected*mi.11.connected.t*(        MW[9]          + MW[18]          + MW[27]          + MW[36]          + MW[45]) ; ValueToll
+  MW[56] = mi.11.connected*mi.11.connected.t*(MW[46]+ MW[47]+ MW[48]+ MW[49])                                                        ; CordonToll
 
-  Daily_Trips   = Daily_Trips   + ROWSUM(46)
-  TripTime      = TripTime      + ROWSUM(47)
-  TripDist      = TripDist      + ROWSUM(48)
-  TripCost      = TripCost      + ROWSUM(49)
-  Bridge_tolls  = Bridge_tolls  + ROWSUM(50)
-  Value_tolls   = Value_tolls   + ROWSUM(51)
+  Daily_Trips   = Daily_Trips   + ROWSUM(50)
+  TripTime      = TripTime      + ROWSUM(51)
+  TripDist      = TripDist      + ROWSUM(52)
+  TripCost      = TripCost      + ROWSUM(53)
+  Bridge_tolls  = Bridge_tolls  + ROWSUM(54)
+  Value_tolls   = Value_tolls   + ROWSUM(55)
+  Cordon_tolls  = Cordon_tolls  + ROWSUM(56)
 
   ; "Income,Mode,Daily Person Trips,Daily Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost"
   if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= "na", "truck", Daily_Trips(10.2L), Daily_Trips(10.2L),
@@ -1080,5 +1130,6 @@ RUN PGM = MATRIX
                                                          TripDist(10.2L),   TripDist(10.2L),
                                                          TripCost(10.2L),
                                                          "na","na",
-                                                         Bridge_tolls(10.2L), Value_tolls(10.2L)
+                                                         Bridge_tolls(10.2L), Value_tolls(10.2L),
+                                                         Cordon_tolls(10.2L)
 ENDRUN
