@@ -10,6 +10,10 @@ import pandas
 
 # output_dir -> file_list
 OUTPUT_FILES = {
+    ".":[
+        "avgload5period",
+        "avgload5period_vehclasses"
+    ],
     "metrics":[
         "topsheet",
         "scenario_metrics",
