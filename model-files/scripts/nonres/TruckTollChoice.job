@@ -41,7 +41,8 @@
 ;
 ; version:  Travel Model One
 ; authors:  dto (2010 09 03); gde (2009 03 12)
-;
+; version:  Travel Model 1.5+BCM
+; authors:  jmh (2023 03)
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 
@@ -343,18 +344,18 @@ loop period = 1,5
       ; combined output matrix
       mato = nonres\tripstrk@token_period@.tpp, mo = 1-8, name = VSTRUCK,    STRUCK,    MTRUCK,    CTRUCK,
                                                                  VSTRUCKTOLL,STRUCKTOLL,MTRUCKTOLL,CTRUCKTOLL
-                                                              
+   ;divided by 100 since trips are scaled by 100 in the previous step                                                           
       ; set the non-value-toll paying path trips first
-      mw[1] = mi.1.free
-      mw[2] = mi.2.free
-      mw[3] = mi.3.free
-      mw[4] = mi.4.free
+      mw[1] = mi.1.free/100
+      mw[2] = mi.2.free/100
+      mw[3] = mi.3.free/100
+      mw[4] = mi.4.free/100
    
       ; set the value toll paying path trips second
-      mw[5] = mi.1.toll
-      mw[6] = mi.2.toll
-      mw[7] = mi.3.toll
-      mw[8] = mi.4.toll
+      mw[5] = mi.1.toll/100
+      mw[6] = mi.2.toll/100
+      mw[7] = mi.3.toll/100
+      mw[8] = mi.4.toll/100
    
    endrun
    
