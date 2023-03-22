@@ -91,7 +91,7 @@ new_tollscsv_df = pd.merge(new_tollscsv_df,
 #-------------------
 # replace the values
 #-------------------
-# only replace the values for AM and PM; no tolls for MD
+# only replace the values for AM, MD and PM
 
 #freeways
 #am

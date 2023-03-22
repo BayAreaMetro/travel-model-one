@@ -32,14 +32,24 @@ import shutil
 # (to be determined based on discussions our planning colleagues)
 #-------------------
 # may add a config file to store these configs, but not a high priority
-# toll rates in cents
-high_toll_cents   = 30
-medium_toll_cents = 20
-low_toll_cents    = 10
+# toll rates in 2023$
+high_toll_cents      = 50
+medhigh_toll_cents   = 40
+medium_toll_cents    = 30
+medlow_toll_cents    = 20
+low_toll_cents       = 10
 
-high_cutoff    = 23
-medium_cutoff  = 13
-low_cutoff     = 4
+# cutoff points in 2023$
+high_cutoff    = 43
+medhigh_cutoff = 33 
+medium_cutoff  = 23
+medlow_cutoff  = 13
+low_cutoff     = 3
+
+# Inflation assumptions 
+# Follow this table here: https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions. A
+# According to this table + an assumption of 1.03 for 2023, the conversion factor from 2023$ to 2000$ would be 1.81*1.03 = 1.86. 
+CoversionFactorTo2000cents = 1.86
 
 # our planning colleagues have done some work to group the links into 8 major groups and 18 minor groups, based on their geography and congestion levels
 # please indicate whether you'd like to use the major groups or the minor groups in the averaging process
@@ -47,19 +57,20 @@ low_cutoff     = 4
 # grouping_option = "major"
 grouping_option = "minor"
 
-# specify "yes" below if there will be no midday tolls
-no_tolls_in_midday = "yes"
+# specify "true" below if there will be midday tolls
+tolls_in_midday = "true"
 
 # specify HOV discounts
 # a DiscountFactor of 0.5 means half price; a DiscountFactor of 0 means free; and a DiscountFactor of 1 means no discount.
+# in NGF, there is a carpool discounts of 50% for HOV3
 DiscountFactor_HOV2 = 1.0
 DiscountFactor_HOV3 = 0.5
 
 # specify working directories and run ids
-project_dir ="L:/Application/Model_One/NextGenFwys/" 
-modelrun_with_DynamicTolling = "2035_TM152_NGF_NP07_Path1b_01_TollCalibration01_UseWithTolls"
+project_dir                  ="L:/Application/Model_One/NextGenFwys/" 
+modelrun_with_DynamicTolling = "2035_TM152_NGF_NP07_Path1b_01_TollCalibrated01"
 modelrun_with_NoProject      = "2035_TM152_NGF_NP07_TollCalibrated02"
-output_dir = "INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P1b_V3"
+output_dir                   = "INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P1b_V06"
 
 
 # ------------------
@@ -141,17 +152,28 @@ for tp in TimePeriods:
 
     # apply a simple rule to convert the results to high, medium, low toll
 
-    # toll rates in dollars
-    high_toll_dollars   = high_toll_cents / 100
-    medium_toll_dollars = medium_toll_cents / 100
-    low_toll_dollars    = low_toll_cents / 100
+    # toll rates in 2000 prices and in $
+    high_toll_dollars      = round(high_toll_cents      / CoversionFactorTo2000cents / 100, 4)
+    medhigh_toll_dollars   = round(medhigh_toll_cents   / CoversionFactorTo2000cents / 100, 4)
+    medium_toll_dollars    = round(medium_toll_cents    / CoversionFactorTo2000cents / 100, 4)
+    medlow_toll_dollars    = round(medlow_toll_cents    / CoversionFactorTo2000cents / 100, 4)
+    low_toll_dollars       = round(low_toll_cents       / CoversionFactorTo2000cents / 100, 4)
+
+    # cutoff points in 2000 cents
+    high_cutoff_2000cents    = high_cutoff    / CoversionFactorTo2000cents
+    medhigh_cutoff_2000cents = medhigh_cutoff / CoversionFactorTo2000cents
+    medium_cutoff_2000cents  = medium_cutoff  / CoversionFactorTo2000cents
+    medlow_cutoff_2000cents  = medlow_cutoff  / CoversionFactorTo2000cents
+    low_cutoff_2000cents     = low_cutoff     / CoversionFactorTo2000cents
 
     TollLevel_conditions = [
-        (SimpleToll_tp_df['avg_toll_rate'] >  high_cutoff),
-        (SimpleToll_tp_df['avg_toll_rate'] >= medium_cutoff),
-        (SimpleToll_tp_df['avg_toll_rate'] >= low_cutoff),
+        (SimpleToll_tp_df['avg_toll_rate'] >  high_cutoff_2000cents),
+        (SimpleToll_tp_df['avg_toll_rate'] >= medhigh_cutoff_2000cents),
+        (SimpleToll_tp_df['avg_toll_rate'] >= medium_cutoff_2000cents),
+        (SimpleToll_tp_df['avg_toll_rate'] >= medlow_cutoff_2000cents),
+        (SimpleToll_tp_df['avg_toll_rate'] >= low_cutoff_2000cents),
         (SimpleToll_tp_df['avg_toll_rate'] >= 0)]
-    TollLevel_choices = [high_toll_dollars, medium_toll_dollars, low_toll_dollars, 0.0001] 
+    TollLevel_choices = [high_toll_dollars, medhigh_toll_dollars, medium_toll_dollars, medlow_toll_dollars, low_toll_dollars, 0.0001] 
     # note 0.0001 is applied instead of 0 
     # because settolls.job has an input verification step which rejects the tolls.csv if it finds a tolled link with peak period DA tolls equal to 0 
     # as ((TOLLAM_DA == 0) && (TOLLPM_DA == 0)) could means that a TOLLCLASS and USE combination is missing from the tolls.csv
@@ -296,16 +318,7 @@ for tp in TimePeriods:
 
 
     if tp=="MD":
-        if no_tolls_in_midday == "yes": 
-            # set midday tolls to zero 
-            new_tollscsv_df["tollmd_da"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_da"])
-            new_tollscsv_df["tollmd_s2"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_s2"])
-            new_tollscsv_df["tollmd_s3"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_s3"])
-            new_tollscsv_df["tollmd_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_vsm"])
-            new_tollscsv_df["tollmd_sml"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_sml"])
-            new_tollscsv_df["tollmd_med"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_med"])
-            new_tollscsv_df["tollmd_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_lrg"])
-        else: 
+        if tolls_in_midday == "true": 
             # use simplified tolls from the dynamic toll run
             new_tollscsv_df["tollmd_da"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD']                                    , new_tollscsv_df["tollmd_da"])
             new_tollscsv_df["tollmd_s2"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, (new_tollscsv_df['simplified_toll_MD']).astype(float)*DiscountFactor_HOV2, new_tollscsv_df["tollmd_s2"])
@@ -314,17 +327,21 @@ for tp in TimePeriods:
             new_tollscsv_df["tollmd_sml"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD']                                    , new_tollscsv_df["tollpm_sml"])
             new_tollscsv_df["tollmd_med"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD']                                    , new_tollscsv_df["tollpm_med"])
             new_tollscsv_df["tollmd_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 700000, new_tollscsv_df['simplified_toll_MD']                                    , new_tollscsv_df["tollpm_lrg"])
-
+        else: 
+            # set midday tolls to zero 
+            new_tollscsv_df["tollmd_da"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_da"])
+            new_tollscsv_df["tollmd_s2"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_s2"])
+            new_tollscsv_df["tollmd_s3"]  = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_s3"])
+            new_tollscsv_df["tollmd_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_vsm"])
+            new_tollscsv_df["tollmd_sml"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_sml"])
+            new_tollscsv_df["tollmd_med"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_med"])
+            new_tollscsv_df["tollmd_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 700000, 0, new_tollscsv_df["tollpm_lrg"])
   
 # keep only variables that are part of the tolls.csv
 new_tollscsv_df.rename(columns = {'facility_name_x':'facility_name'}, inplace = True)
 new_tollscsv_df = new_tollscsv_df[['facility_name', 'fac_index', 'tollclass', 'tollseg', 'tolltype', 'use', 'tollea_da', 'tollam_da', 'tollmd_da', 'tollpm_da', 'tollev_da', 'tollea_s2', 'tollam_s2', 'tollmd_s2', 'tollpm_s2', 'tollev_s2', 'tollea_s3', 'tollam_s3', 'tollmd_s3', 'tollpm_s3', 'tollev_s3', 'tollea_vsm', 'tollam_vsm', 'tollmd_vsm', 'tollpm_vsm', 'tollev_vsm', 'tollea_sml', 'tollam_sml', 'tollmd_sml', 'tollpm_sml', 'tollev_sml', 'tollea_med', 'tollam_med', 'tollmd_med', 'tollpm_med', 'tollev_med', 'tollea_lrg', 'tollam_lrg', 'tollmd_lrg', 'tollpm_lrg', 'tollev_lrg', 'toll_flat']]
 
 # main output 
-output_filename3 = os.path.join(project_dir, output_dir, "tolls_simplifiedVersionOf" + modelrun_with_DynamicTolling + "(" + str(low_toll_cents) + "_" + str(medium_toll_cents) + "_" + str(high_toll_cents) + ").csv")
-new_tollscsv_df.to_csv(output_filename3, header=True, index=False)
-
-# write out the same file with a simplier name for Tableau mapping
 output_filename4 = os.path.join(project_dir, output_dir, "tolls_simplified.csv")
 new_tollscsv_df.to_csv(output_filename4, header=True, index=False)
 
@@ -335,7 +352,7 @@ new_tollscsv_df.to_csv(output_filename4, header=True, index=False)
 # -------------------------------------------
 
 # Tableau workbook
-source = "X:/travel-model-one-master/utilities/NextGenFwys/Map_simplified_tolls.twb"
+source = "X:/travel-model-one-master/utilities/NextGenFwys/toll_plan_creation/Map_simplified_tolls.twb"
 destination = os.path.join(project_dir, output_dir, "Map_simplified_tolls.twb")
 shutil.copy(source, destination)
 
@@ -393,7 +410,3 @@ shutil.copy(source, destination)
 source = os.path.join(project_dir,"Scenarios", modelrun_with_NoProject, "OUTPUT", "Shapefile", "network_links.shx") 
 destination = os.path.join(project_dir, output_dir, "network_links_NoProject.shx")
 shutil.copy(source, destination)
-
-
-
-# need to test this tolls csv - by running just settolls.job

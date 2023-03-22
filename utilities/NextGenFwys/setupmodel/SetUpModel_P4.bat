@@ -64,12 +64,13 @@ mkdir CTRAMP\model
 mkdir CTRAMP\runtime
 mkdir CTRAMP\scripts
 mkdir CTRAMP\scripts\metrics
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\model"       CTRAMP\model
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\runtime"     CTRAMP\runtime
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\scripts"     CTRAMP\scripts
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\RTP\metrics"   CTRAMP\scripts\metrics
-copy /Y "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"                CTRAMP\scripts
-copy /Y "%GITHUB_DIR%\model-files\RunIteration.bat"                        CTRAMP
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\model"               CTRAMP\model
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\runtime"             CTRAMP\runtime
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\scripts"             CTRAMP\scripts
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\RTP\metrics"           CTRAMP\scripts\metrics
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\NextGenFwys\metrics"   CTRAMP\scripts\core_summaries
+copy /Y "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"                        CTRAMP\scripts
+copy /Y "%GITHUB_DIR%\model-files\RunIteration.bat"                                CTRAMP
 copy /Y "%GITHUB_DIR%\model-files\RunModel.bat"                            .
 copy /Y "%GITHUB_DIR%\model-files\RunLogsums.bat"                          .
 copy /Y "%GITHUB_DIR%\model-files\RunCoreSummaries.bat"                    .

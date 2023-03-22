@@ -1,0 +1,66 @@
+; this script moves air passenger trips from the free path to the tolled path, if the free path does not exist
+
+; Airport pre-process step: currently, airport trip tables have DA, SR2, SR3 tables (nonzero) and DATOLL, SR2TOLL, SR3TOLL (zero)
+; This step will move the trips to toll if the path is not available for free; this will make the skim values viable but
+; have minimum diffs with baseline
+
+; rename existing air passenger trip matrices
+*copy /y nonres\tripsAirPaxEA.tpp nonres\tripsAirPaxEA_notolltrips.tpp
+*copy /y nonres\tripsAirPaxAM.tpp nonres\tripsAirPaxAM_notolltrips.tpp
+*copy /y nonres\tripsAirPaxMD.tpp nonres\tripsAirPaxMD_notolltrips.tpp
+*copy /y nonres\tripsAirPaxPM.tpp nonres\tripsAirPaxPM_notolltrips.tpp
+*copy /y nonres\tripsAirPaxEV.tpp nonres\tripsAirPaxEV_notolltrips.tpp
+
+loop period = 1,5
+  if (period = 1)
+    token_period = 'EA'
+  elseif (period = 2)
+    token_period = 'AM'
+  elseif (period = 3)
+    token_period = 'MD'
+  elseif (period = 4)
+    token_period = 'PM'
+  elseif (period = 5)
+    token_period = 'EV'
+  endif
+
+  DistributeMultistep processid = 'ctramp', processNum = period, commpath = '%COMMPATH%'
+    RUN PGM=MATRIX
+     ; Read air passenger travel demand - vehicle trips
+     FILEI MATI[1] = "nonres\tripsAirPax@token_period@_notolltrips.tpp"
+     ; Read Highway Skims
+     FILEI MATI[2] = "skims\HWYSKM@token_period@.tpp"
+
+     FILEO MATO[1]  = "nonres\tripsAirPax@token_period@.tpp", MO=1-6, name=DA,SR2,SR3,DATOLL,SR2TOLL,SR3TOLL
+
+     ; start with original
+     FILLMW MW[1]=MI.1.1(6)
+
+     JLOOP
+       ; 499999 because intrazonal is 1000000/2
+       ; move DA to DATOLL if free path doesn't exist
+       IF (MI.2.TIMEDA > 499999)
+         MW[4] = MW[1]
+         MW[1] = 0
+       ENDIF
+
+       ; move SR2 to SR2TOLL if free path doesn't exist
+       IF (MI.2.TIMES2 > 499999)
+         MW[5] = MW[2]
+         MW[2] = 0
+       ENDIF
+
+       ; move SR3 to SR3TOLL if free path doesn't exist
+       IF (MI.2.TIMES3 > 499999)
+         MW[6] = MW[3]
+         MW[3] = 0
+       ENDIF
+     ENDJLOOP
+
+    ENDRUN
+
+EndDistributeMultistep
+endloop
+
+Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end,
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t

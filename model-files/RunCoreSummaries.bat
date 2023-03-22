@@ -44,6 +44,17 @@ if %NEED_SUMMARY% GTR 0 (
 )
 echo.
 
+
+if not exist core_summaries/CommuteByIncomeByTPHousehold.csv (
+  rem Similar to the core summary output of CommuteByIncomeHousehold.csv but with time period information
+  rem ie. commute characteristics by household location. Sum(freq) = commute tours
+  rem Input : updated_output\commute_tours.rdata
+  rem Output: core_summaries\CommuteByIncomeByTPHousehold.csv
+  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\commute_tours_by_inc_tp.r"
+  if %ERRORLEVEL% GTR 0 goto done
+)
+
+
 if not exist core_summaries\TelecommuteByIncome.csv (
   rem A core summary output of people with jobs/work locations who don't do work tours by income quantile
   rem Input : main\wsLocResults_%ITER%.csv, and
