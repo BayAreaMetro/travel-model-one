@@ -1,6 +1,6 @@
 #-------------------
 #
-# this script takes a matrix of 18x3 toll inputs and creates a new tolls.csv
+# this script takes a matrix of 19x3 toll inputs and creates a new tolls.csv
 #
 #-------------------
 import os

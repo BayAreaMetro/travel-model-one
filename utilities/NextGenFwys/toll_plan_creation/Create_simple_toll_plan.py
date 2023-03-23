@@ -21,6 +21,7 @@ import pandas as pd
 import geopandas as gpd
 import numpy as np
 
+import openpyxl
 from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 
@@ -72,9 +73,9 @@ ArterialFactor = 0.2
 
 # specify working directories and run ids
 project_dir                  ="L:/Application/Model_One/NextGenFwys/" 
-modelrun_with_DynamicTolling = "2035_TM152_NGF_NP07_Path1b_01_TollCalibrated01"
+modelrun_with_DynamicTolling = "2035_TM152_NGF_NP07_Path1a_05_TollCalibrated01"
 modelrun_with_NoProject      = "2035_TM152_NGF_NP07_TollCalibrated02"
-output_dir                   = "INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P2b_V02"
+output_dir                   = "INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P1a_V02_withExcel"
 
 
 # ------------------
@@ -261,6 +262,36 @@ for tp in TimePeriods:
         # temp output 
         output_filename1 = os.path.join(project_dir, output_dir,"average_n_simplified_toll_rate_5tp.csv")
         SimpleToll_5tp_df.to_csv(output_filename1, header=True, index=False)
+
+        # ---
+        # generate an output that can be used by Generate_tollscsv_from_TollclassGrouping.py
+        # ---
+        # keep only if use=1 (in the NGF results we have seen so far, we never have to toll the HOV lanes parallel to the all-lane tolling system)
+        SimpleToll_MinorGroupingX3TP_df = SimpleToll_5tp_df.loc[SimpleToll_5tp_df['USEtp']==1]
+        # drop the row with Tollclass Group = #N/A
+        SimpleToll_MinorGroupingX3TP_df = SimpleToll_MinorGroupingX3TP_df[SimpleToll_MinorGroupingX3TP_df['Tollclass Group'].str.contains('#N/A')==False]
+        # add back the "Grouping major" column
+        MajorMinorGroupList_df = TollclassGrouping_df[['Grouping major', 'Grouping minor','Tollclass Group']]
+        MajorMinorGroupList_df = MajorMinorGroupList_df.groupby(['Grouping major', 'Grouping minor'], as_index=False).first()
+        MajorMinorGroupList_df = MajorMinorGroupList_df[MajorMinorGroupList_df['Grouping minor'].str.contains('#N/A')==False]
+        SimpleToll_MinorGroupingX3TP_df= pd.merge(SimpleToll_MinorGroupingX3TP_df,
+                                   MajorMinorGroupList_df,
+                                   how='left',
+                                   left_on=['Tollclass Group'], 
+                                   right_on = ['Tollclass Group'],
+                                   indicator=False)
+        # keep only the relevant columns
+        SimpleToll_MinorGroupingX3TP_df = SimpleToll_MinorGroupingX3TP_df[['Grouping major','Tollclass Group','simplified_toll_AM','simplified_toll_MD', 'simplified_toll_PM']]
+        # rename the columns
+        SimpleToll_MinorGroupingX3TP_df.rename(columns = {'Tollclass Group'   :'Grouping minor'}, inplace = True) 
+        SimpleToll_MinorGroupingX3TP_df.rename(columns = {'simplified_toll_AM':'tollam_da'     }, inplace = True)
+        SimpleToll_MinorGroupingX3TP_df.rename(columns = {'simplified_toll_MD':'tollmd_da'     }, inplace = True)
+        SimpleToll_MinorGroupingX3TP_df.rename(columns = {'simplified_toll_PM':'tollpm_da'     }, inplace = True)
+
+        output_excelfilename = os.path.join(project_dir, output_dir, "SimpleToll_MinorGroupingX3TP.xlsx")
+        wb = openpyxl.Workbook()
+        wb.save(output_excelfilename)
+        SimpleToll_MinorGroupingX3TP_df.to_excel(output_excelfilename, sheet_name = 'Simple', index=False)         
 
 # ------------------
 # merge the simple toll df back to a dataframe of toll classes
