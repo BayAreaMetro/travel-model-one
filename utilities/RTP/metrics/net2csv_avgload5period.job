@@ -84,7 +84,7 @@ run pgm = network
              GL(4.0L),
              FT(4.0L),
              AT(4.0L),
-             TOLLCLASS(4.0L),
+             TOLLCLASS(8.0L),
              STATE(4.0L),
              CITYID(6.0L),   CITYNAME,
              REGFREIGHT(2.0L),
