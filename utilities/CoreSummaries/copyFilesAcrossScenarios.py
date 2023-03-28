@@ -42,6 +42,9 @@ OUTPUT_FILES = {
         "TripDistance",
         "VehicleMilesTraveled"
     ],
+    "trn":[
+        "trnline",
+    ],
     "shapefile":[
         "network_trn_links",
         "network_trn_route_links",
