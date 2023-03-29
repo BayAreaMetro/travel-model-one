@@ -1262,5 +1262,11 @@ RUN PGM=MATRIX
   MW[28]=0
   MW[29]=0
   MW[30]=0
+  
+  loop value = 1,30
+	  
+		x=ROWFIX (value,2)
+	
+	 endloop
    
 ENDRUN
