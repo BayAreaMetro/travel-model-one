@@ -24,9 +24,9 @@ set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Network
 set INPUT_POPLU=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\PopSyn_n_LandUse\2035_cordon
 
 :: choose of the following tazDataFileName
-:: for NGF, NoProject, pathway 1a, 1b, 2a, 2b, and 4, choose tazData_parkingStrategy_v01_TIcordon
-:: for pathway 3a and 3b, choose tazData_parkingStrategy_v01_TIplus3cordons
-set tazDataFileName=tazData_parkingStrategy_v01_TIplus3cordons
+:: for NGF, NoProject, pathway 1a, 1b, 2a, 2b, and 4, set tazDataFileName=tazData_parkingStrategy_v01_LeaveOutTI
+:: for pathway 3a and 3b, set tazDataFileName=tazData_parkingStrategy_v01_3cordons_LeaveOutTI
+set tazDataFileName=tazData_parkingStrategy_v01_3cordons_LeaveOutTI
 
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
