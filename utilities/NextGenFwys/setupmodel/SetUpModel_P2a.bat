@@ -5,12 +5,14 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path2b_wP1bStaticTolls_01
+set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path2a_01
 
-:: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
-:: The NGF NoProject scenario includes some Blueprint strategies and excludes some (e.g. Regional Transit Fares and Vision Zero).
-:: set NGFNoProject=Yes if this is a NGF NoProject run.
+:: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for Blueprint NoProject runs; AddStrategies=Yes for NGF NoProject runs.
 set AddStrategies=Yes
+
+:: The NGF NoProject scenario excludes some Blueprint strategies. Most of them are excluded via the netspec.
+:: But Vision Zero needs to be excluded via the setupmodel (in additional to via the netspec)
+:: set NGFNoProject=Yes if this is a NGF NoProject run; set NGFNoProject=No otherwise.
 set NGFNoProject=No
 
 :: set the location of the Travel Model Release
@@ -18,7 +20,7 @@ set NGFNoProject=No
 set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_P2b_AllLaneTollingPlusArterials_Affordable_03\NGF_P2b_AllLaneTollingPlusArterials_Affordable_network_2035
+set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_P2a_AllLaneTollingPlusArterials_ImproveTransit_06\NGF_P2a_AllLaneTollingPlusArterials_ImproveTransit_network_2035
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 set INPUT_POPLU=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\PopSyn_n_LandUse\2035_cordon
@@ -36,7 +38,7 @@ set PREV_RUN_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_N
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
 :: set PARAMS=\\mainmodel\MainModelShare\travel-model-one-master\config\params_PBA50_Blueprint2035.properties
-set PARAMS=X:\travel-model-one-master\utilities\NextGenFwys\properties_files\params_Pathway1b2b.properties
+set PARAMS=X:\travel-model-one-master\utilities\NextGenFwys\properties_files\params_Pathway1a2a.properties
 
 :: superdistrict-based telecommute constants
 :: for no project or base years, this will get generated/stay at zero
@@ -49,7 +51,7 @@ set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-over
 :: use special input tolls.csv?
 set SwapTollsCsv=Yes
 :: if the above is Yes, where is the input tolls.csv?
-set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Static_toll_plans\Static_toll_P2b_V01\tolls_Static.csv
+set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Static_toll_plans\Static_toll_P2a_V03\tolls_Simple.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
