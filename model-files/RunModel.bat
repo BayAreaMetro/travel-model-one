@@ -172,6 +172,15 @@ copy INPUT\telecommute_constants.csv   main\telecommute_constants_00.csv
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
 
+if %PROJECT%==NGF (
+    :: In NGF, because of the extensive tolling system, some TAZs may no longer have a free path
+    :: This will cause choice models that rely on non-toll distances or times to fail
+    :: To avoid this problem, their UECs are updated to use toll distances and times
+    :: Choice models that are updated: AutoOwnership.xls, IndividualMandatoryTourFrequency.xls, and TourDepartureAndDuration.xls
+   python CTRAMP\scripts\preprocess\updateUECsToUseTollDist.py
+   if ERRORLEVEL 1 goto done
+)
+
 :: Set the prices in the roadway network (convert csv to dbf first)
 python CTRAMP\scripts\preprocess\csvToDbf.py hwy\tolls.csv hwy\tolls.dbf
 IF ERRORLEVEL 1 goto done
