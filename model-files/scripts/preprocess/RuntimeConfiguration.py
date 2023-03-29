@@ -99,22 +99,58 @@ def check_tazdata():
     # check if the tollam_da in tolls.csv is consistent with the CORDONCOST in tazData
     toll_file = os.path.join("INPUT", "hwy", "tolls.csv")
     toll_df = pandas.read_csv(toll_file)
-    # the last cordon toll class in tolls.csv
-    max_cordon = toll_df.loc[(toll_df.tollclass> 9) & (toll_df.tollclass <= 20)]['tollclass'].max()
-    for i in range(9, max_cordon+1):
-        try: 
-            tollam_da = float(toll_df.loc[
-            (toll_df.tollclass == i)]['tollam_da'])
-        except:
-            tollam_da = 0.00
-        try:
-            CORDONCOST = float(tazdata_df.loc[tazdata_df.CORDON == i].groupby('CORDON').agg({'CORDONCOST':'mean'})['CORDONCOST'])/100
-        except:
-            CORDONCOST = 0.00
-        if tollam_da != CORDONCOST:
-            assert tollam_da == CORDONCOST, "tollclass " +str(i) + " from toll.csv tollam_da matches with tazData.csv CORDONCOST"
-        else:
-            print("tollclass "+str(i)+" from toll.csv tollam_da matches with tazData.csv CORDONCOST")
+    # get tollam_da for each cordon from tolls.csv
+    # TI
+    try: 
+        tollam_da_TI = float(toll_df.loc[
+        (toll_df.tollclass == 9)]['tollam_da'])
+    except:
+        tollam_da_TI = 0.00
+    # SF
+    try: 
+        tollam_da_SF = float(toll_df.loc[
+        (toll_df.tollclass == 10)]['tollam_da'])
+    except:
+        tollam_da_SF = 0.00
+    # OK
+    try: 
+        tollam_da_OK = float(toll_df.loc[
+        (toll_df.tollclass == 11)]['tollam_da'])
+    except:
+        tollam_da_OK = 0.00
+    # SJ   
+    try: 
+        tollam_da_SJ = float(toll_df.loc[
+        (toll_df.tollclass == 12)]['tollam_da'])
+    except:
+        tollam_da_SJ = 0.00
+    # get CORDONCOST for each cordon from tazData.csv
+    # TI
+    try: 
+        CORDONCOST_TI = float(tazdata_df.loc[tazdata_df.CORDON == 9].groupby('CORDON').agg({'CORDONCOST':'mean'})['CORDONCOST'])/100
+    except:
+        CORDONCOST_TI = 0.00
+    # SF
+    try: 
+        CORDONCOST_SF = float(tazdata_df.loc[tazdata_df.CORDON == 10].groupby('CORDON').agg({'CORDONCOST':'mean'})['CORDONCOST'])/100
+    except:
+        CORDONCOST_SF = 0.00
+    # OK
+    try: 
+        CORDONCOST_OK = float(tazdata_df.loc[tazdata_df.CORDON == 11].groupby('CORDON').agg({'CORDONCOST':'mean'})['CORDONCOST'])/100
+    except:
+        CORDONCOST_OK = 0.00
+    # SJ
+    try: 
+        CORDONCOST_SJ = float(tazdata_df.loc[tazdata_df.CORDON == 12].groupby('CORDON').agg({'CORDONCOST':'mean'})['CORDONCOST'])/100
+    except:
+        CORDONCOST_SJ = 0.00
+    # Check consistency
+    assert tollam_da_TI == CORDONCOST_TI, "Treasury Island toll.csv tollam_da doesn't match with tazData.csv CORDONCOST"
+    assert tollam_da_SF == CORDONCOST_SF, "San Francisco toll.csv tollam_da doesn't match with tazData.csv CORDONCOST"
+    assert tollam_da_OK == CORDONCOST_OK, "Oakland toll.csv tollam_da doesn't match with tazData.csv CORDONCOST"
+    assert tollam_da_SJ == CORDONCOST_SJ, "San Jose toll.csv tollam_da doesn't match with tazData.csv CORDONCOST"
+    print("tollam_da in tolls.csv is consistent with the CORDONCOST in tazData")
 
 def replace_in_file(filepath, regex_dict):
     """
