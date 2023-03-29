@@ -21,7 +21,13 @@ set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-master
 set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_NoProjectNoSFCordon_07\net_2035_NGFNoProjectNoSFCordon
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
-set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v225_UBI\2035
+set INPUT_POPLU=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\PopSyn_n_LandUse\2035_cordon
+
+:: choose of the following tazDataFileName
+:: for NGF, NoProject, pathway 1a, 1b, 2a, 2b, and 4, choose tazData_parkingStrategy_v01_TIcordon
+:: for pathway 3a and 3b, choose tazData_parkingStrategy_v01_TIplus3cordons
+set tazDataFileName=tazData_parkingStrategy_v01_TIcordon
+
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
 set UrbanSimScenario=s24
@@ -145,8 +151,8 @@ if %AddStrategies%==No goto DoneAddingStrategies
 :: Parking tazdata update (part of En9 - Expand Transportation Demand Management Initiatives)
 :: -----------------------------------------
 if %MODEL_YEAR_NUM% GEQ 2035 (
-  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.csv"  INPUT\landuse\tazData.csv
-  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.dbf"  INPUT\landuse\tazData.dbf
+  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\%tazDataFileName%.csv"  INPUT\landuse\tazData.csv
+  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\%tazDataFileName%.dbf"  INPUT\landuse\tazData.dbf
 )
 
 :: another part of this strategy is to turn off free parking eligibility, which is done via the properties file.
