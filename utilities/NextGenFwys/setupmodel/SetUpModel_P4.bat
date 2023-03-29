@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path4_01
+set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path4_03
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 :: The NGF NoProject scenario includes some Blueprint strategies and excludes some (e.g. Regional Transit Fares and Vision Zero).
