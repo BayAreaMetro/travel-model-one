@@ -100,7 +100,7 @@ def check_tazdata():
     toll_file = os.path.join("INPUT", "hwy", "tolls.csv")
     toll_df = pandas.read_csv(toll_file)
     # the last cordon toll class in tolls.csv
-    max_cordon = toll_df.loc[(toll_df.tollclass> 9) & (toll_df.tollclass <= 20)]['tollclass'].max()
+    max_cordon = toll_df.loc[(toll_df.tollclass>= 9) & (toll_df.tollclass <= 20)]['tollclass'].max()
     for i in range(9, max_cordon+1):
         try: 
             tollam_da = float(toll_df.loc[
@@ -112,7 +112,7 @@ def check_tazdata():
         except:
             CORDONCOST = 0.00
         if tollam_da != CORDONCOST:
-            assert tollam_da == CORDONCOST, "tollclass " +str(i) + " from toll.csv tollam_da matches with tazData.csv CORDONCOST"
+            assert tollam_da == CORDONCOST, "tollclass " +str(i) + " from toll.csv tollam_da doesn't matches with tazData.csv CORDONCOST"
         else:
             print("tollclass "+str(i)+" from toll.csv tollam_da matches with tazData.csv CORDONCOST")
 
