@@ -19,7 +19,7 @@ set NGFNoProject=No
 set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_P1a_AllLaneTolling_ImproveTransit_07\NGF_P1a_AllLaneTolling_ImproveTransit_network_2035
+set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_P1a_AllLaneTolling_ImproveTransit_08\NGF_P1a_AllLaneTolling_ImproveTransit_network_2035
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 set INPUT_POPLU=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\PopSyn_n_LandUse\2035_cordon
