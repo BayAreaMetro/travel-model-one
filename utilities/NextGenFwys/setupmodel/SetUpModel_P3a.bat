@@ -23,7 +23,7 @@ set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Network
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 set INPUT_POPLU=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\PopSyn_n_LandUse\2035_cordon
 
-:: choose of the following tazDataFileName
+:: choose one of the following tazDataFileName
 :: for NGF, NoProject, pathway 1a, 1b, 2a, 2b, and 4, set tazDataFileName=tazData_parkingStrategy_v01_LeaveOutTI
 :: for pathway 3a and 3b, set tazDataFileName=tazData_parkingStrategy_v01_3cordons_LeaveOutTI
 set tazDataFileName=tazData_parkingStrategy_v01_3cordons_LeaveOutTI
