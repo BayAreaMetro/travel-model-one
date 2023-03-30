@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_TollCalibrated01
+set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP08
 
 :: Should strategies be included? AddStrategies=Yes for all Blueprint Project and all NGF runs; AddStrategies=No for Blueprint NoProject runs.
 :: The NGF NoProject scenario includes some Blueprint strategies and excludes some (e.g. Regional Transit Fares and Vision Zero).
@@ -18,7 +18,7 @@ set NGFNoProject=Yes
 set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_NoProjectNoSFCordon_07\net_2035_NGFNoProjectNoSFCordon
+set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_NoProjectNoSFCordon_08\net_2035_NGFNoProjectNoSFCordon
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 set INPUT_POPLU=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\PopSyn_n_LandUse\2035_cordon
@@ -55,7 +55,7 @@ set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-over
 :: use special input tolls.csv?
 set SwapTollsCsv=Yes
 :: if the above is Yes, where is the input tolls.csv?
-set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_TollCalibration01\tollcalib_iter\tolls_iter15.csv
+set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_TollCalibration01\tollcalib_iter\tolls_iter15_3centsAsMinToll.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
