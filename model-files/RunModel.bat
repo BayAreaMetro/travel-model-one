@@ -170,6 +170,8 @@ copy INPUT\telecommute_constants.csv   main\telecommute_constants_00.csv
 :: Runtime configuration: set project directory, auto operating cost, 
 :: and synthesized household/population files in the appropriate places
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
+if %consistent_tolls_and_tazData%==false
+    python "CTRAMP\scripts\notify_slack.py" "Warning:*inconsistent tolls and tazData*"
 if ERRORLEVEL 1 goto done
 
 if %PROJECT%==NGF (
