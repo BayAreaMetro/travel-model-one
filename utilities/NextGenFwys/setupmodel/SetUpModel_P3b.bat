@@ -55,7 +55,7 @@ set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-over
 :: use special input tolls.csv?
 set SwapTollsCsv=Yes
 :: if the above is Yes, where is the input tolls.csv?
-set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path3a_01\INPUT_prep\tolls_189SJ_189OAK_ELpricesFromNP07.csv
+set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path3a_02\INPUT_prep\tolls_189SJ_189OAK_ELpricesFromNP07.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
