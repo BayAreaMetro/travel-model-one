@@ -18,7 +18,7 @@ set NGFNoProject=No
 set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_P3a_3Cordons_ImproveTransit_01\NGF_P3a_3Cordons_ImproveTransit_network_2035
+set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_P3a_3Cordons_ImproveTransit_03\NGF_P3a_3Cordons_ImproveTransit_network_2035
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 set INPUT_POPLU=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\PopSyn_n_LandUse\2035_cordon
@@ -55,7 +55,7 @@ set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-over
 :: use special input tolls.csv?
 set SwapTollsCsv=Yes
 :: if the above is Yes, where is the input tolls.csv?
-set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path3a_01\INPUT_prep\tolls_189SJ_189OAK_ELpricesFromNP07.csv
+set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path3a_02\INPUT_prep\tolls_189SJ_189OAK_ELpricesFromNP07.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
