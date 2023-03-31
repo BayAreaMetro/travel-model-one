@@ -83,7 +83,8 @@ class RunResults:
        6:'Solano',
        7:'Napa',
        8:'Sonoma',
-       9:'Marin'
+       9:'Marin',
+       10:'San Joaquin',
     }
 
     # From 'Plan Bay Area Performance Assessment Report_FINAL.pdf'
@@ -316,7 +317,7 @@ class RunResults:
         roadway_read    = False
 
         # on M
-        roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "avgload5period_vehclasses.csv"))
+        roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "avgload5period.csv"))
         if os.path.exists(roadway_netfile):
             self.roadways_df = pd.read_table(roadway_netfile, sep=",")
             #print "Read roadways from %s" % roadway_netfile
@@ -324,7 +325,7 @@ class RunResults:
 
         # on model machine for reading baseline
         if not roadway_read:
-            roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "extractor", "avgload5period_vehclasses.csv"))
+            roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "extractor", "avgload5period.csv"))
             if os.path.exists(roadway_netfile):
                 self.roadways_df = pd.read_table(roadway_netfile, sep=",")
                 print "Read roadways from %s" % roadway_netfile
@@ -337,7 +338,7 @@ class RunResults:
                 print "So looking in hwy/iterX but ITER isn't in the environment."
                 sys.exit(2)
 
-            roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "hwy", "iter%s" % os.environ['ITER'], "avgload5period_vehclasses.csv"))
+            roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "hwy", "iter%s" % os.environ['ITER'], "avgload5period.csv"))
             self.roadways_df = pd.read_table(roadway_netfile, sep=",")
             print "Read roadways from %s" % roadway_netfile
             roadway_read = True
