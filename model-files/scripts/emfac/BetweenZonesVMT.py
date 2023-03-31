@@ -18,7 +18,7 @@ from os import path
 # Input/output file names and locations
 # -------------------------------------------------------------------
 # loaded network assignment file
-loadednet_df = pd.read_csv(os.path.join(os.getcwd(), "hwy", "iter3", "avgload5period_vehclasses.csv"), index_col=False, sep=",")
+loadednet_df = pd.read_csv(os.path.join(os.getcwd(), "hwy", "iter3", "avgload5period.csv"), index_col=False, sep=",")
 
 # Todo: add truck or no truck
 
@@ -31,24 +31,26 @@ output_csv = "emfac_prep\\CreateSpeedBinsBetweenZones_sums.csv"
 # by hours as columns
 # -------------------------------------------------------------------
 
-GL_conditions = [
-    (loadednet_df['gl'] == 1),
-    (loadednet_df['gl'] == 2),
-    (loadednet_df['gl'] == 3),
-    (loadednet_df['gl'] == 4),
-    (loadednet_df['gl'] == 5),
-    (loadednet_df['gl'] == 6),
-    (loadednet_df['gl'] == 7),
-    (loadednet_df['gl'] == 8),
-    (loadednet_df['gl'] == 9),
-    (loadednet_df['gl'] == 10)]
+#the network already codes
+# GL_conditions = [
+#     (loadednet_df['gl'] == 1),
+#     (loadednet_df['gl'] == 2),
+#     (loadednet_df['gl'] == 3),
+#     (loadednet_df['gl'] == 4),
+#     (loadednet_df['gl'] == 5),
+#     (loadednet_df['gl'] == 6),
+#     (loadednet_df['gl'] == 7),
+#     (loadednet_df['gl'] == 8),
+#     (loadednet_df['gl'] == 9),
+#     (loadednet_df['gl'] == 10)]
 
-CountyName_choices = ["San Francisco", "San Mateo", "Santa Clara", "Alameda", "Contra Costa", "Solano", "Napa", "Sonoma", "Marin", "external"]
-loadednet_df['countyName'] = np.select(GL_conditions, CountyName_choices , default='null')
+loadednet_df['countyName'] = loadednet_df['COUNTY'].apply(lambda x: x.replace("'",''))
+# CountyName_choices = ["San Francisco", "San Mateo", "Santa Clara", "Alameda", "Contra Costa", "Solano", "Napa", "Sonoma", "Marin", "external"]
+# loadednet_df['countyName'] = np.select(GL_conditions, CountyName_choices , default='null')
 
 #  arbCounty - this variable is not actually needed for subsequent processing. CountyName is enough.
-arbCounty_choices = ["38", "41", "43", "01", "07", "48", "28", "49", "21", "9999"]
-loadednet_df[' arbCounty'] = np.select(GL_conditions, arbCounty_choices , default='null')
+# arbCounty_choices = ["38", "41", "43", "01", "07", "48", "28", "49", "21", "9999"]
+# loadednet_df[' arbCounty'] = np.select(GL_conditions, arbCounty_choices , default='null')
 
 # create dataframe for each time period and loop through tem
 # store dataframes into a dictionary
@@ -59,77 +61,78 @@ for tp in timeperiodList:
 
     # speed bins
     Speed_conditions = [
-        (loadednet_df['cspd'+tp] >= 0) & (loadednet_df['cspd'+tp] < 5),
-        (loadednet_df['cspd'+tp] >= 5) & (loadednet_df['cspd'+tp] < 10),
-        (loadednet_df['cspd'+tp] >= 10) & (loadednet_df['cspd'+tp] < 15),
-        (loadednet_df['cspd'+tp] >= 15) & (loadednet_df['cspd'+tp] < 20),
-        (loadednet_df['cspd'+tp] >= 20) & (loadednet_df['cspd'+tp] < 25),
-        (loadednet_df['cspd'+tp] >= 25) & (loadednet_df['cspd'+tp] < 30),
-        (loadednet_df['cspd'+tp] >= 30) & (loadednet_df['cspd'+tp] < 35),
-        (loadednet_df['cspd'+tp] >= 35) & (loadednet_df['cspd'+tp] < 40),
-        (loadednet_df['cspd'+tp] >= 40) & (loadednet_df['cspd'+tp] < 45),
-        (loadednet_df['cspd'+tp] >= 45) & (loadednet_df['cspd'+tp] < 50),
-        (loadednet_df['cspd'+tp] >= 50) & (loadednet_df['cspd'+tp] < 55),
-        (loadednet_df['cspd'+tp] >= 55) & (loadednet_df['cspd'+tp] < 60),
-        (loadednet_df['cspd'+tp] >= 60)]
+        (loadednet_df['CSPD'+tp] >= 0) & (loadednet_df['CSPD'+tp] < 5),
+        (loadednet_df['CSPD'+tp] >= 5) & (loadednet_df['CSPD'+tp] < 10),
+        (loadednet_df['CSPD'+tp] >= 10) & (loadednet_df['CSPD'+tp] < 15),
+        (loadednet_df['CSPD'+tp] >= 15) & (loadednet_df['CSPD'+tp] < 20),
+        (loadednet_df['CSPD'+tp] >= 20) & (loadednet_df['CSPD'+tp] < 25),
+        (loadednet_df['CSPD'+tp] >= 25) & (loadednet_df['CSPD'+tp] < 30),
+        (loadednet_df['CSPD'+tp] >= 30) & (loadednet_df['CSPD'+tp] < 35),
+        (loadednet_df['CSPD'+tp] >= 35) & (loadednet_df['CSPD'+tp] < 40),
+        (loadednet_df['CSPD'+tp] >= 40) & (loadednet_df['CSPD'+tp] < 45),
+        (loadednet_df['CSPD'+tp] >= 45) & (loadednet_df['CSPD'+tp] < 50),
+        (loadednet_df['CSPD'+tp] >= 50) & (loadednet_df['CSPD'+tp] < 55),
+        (loadednet_df['CSPD'+tp] >= 55) & (loadednet_df['CSPD'+tp] < 60),
+        (loadednet_df['CSPD'+tp] >= 60)]
     SpeedBin_choices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
     loadednet_df[' speedBin'] = np.select(Speed_conditions, SpeedBin_choices, default='null')
 
     # reset speeds to 25 mph for dummy links (these are dummy/centroid connector-access links)
-    loadednet_df[' speedBin'] = np.where(loadednet_df['ft']==6, 6, loadednet_df[' speedBin']).astype(int)
+    #bcm_ft_dict={1:'Freeway GP',2:'Expressway',3:'Ramp',4:'Arterial', 5:'Arterial',6:'Collector', 7:'Local', 8:'CentroidConnector'}
+    loadednet_df[' speedBin'] = np.where(loadednet_df['FT']==8, 6, loadednet_df[' speedBin']).astype(int)
 
     # calculate vmt
-    loadednet_df['vmt_'+tp] = loadednet_df['distance'] *  loadednet_df['vol'+tp+'_tot']
+    loadednet_df['VMT_'+tp] = loadednet_df['DISTANCE'] *  loadednet_df['VOL'+tp+'_TOT']
 
     # keep the relevant columns
-    loadednet1_df =  loadednet_df[['countyName', ' arbCounty', ' speedBin', 'vmt_'+tp]]
+    loadednet1_df =  loadednet_df[['countyName', ' speedBin', 'VMT_'+tp]]
 
     # save as new dataframe
     key_name = 'VMTBySpeedBin_'+ tp +'_df'
-    key_name = loadednet1_df.groupby(['countyName', ' arbCounty', ' speedBin'], as_index=False).sum()
+    key_name = loadednet1_df.groupby(['countyName',  ' speedBin'], as_index=False).sum()
 
     # merge the data frames
     if tp=='EA':
         VMTBySpeedBin_allTP_df = key_name
-    else: VMTBySpeedBin_allTP_df = pd.merge(VMTBySpeedBin_allTP_df, key_name, left_on=['countyName', ' arbCounty', ' speedBin'], right_on=['countyName', ' arbCounty', ' speedBin'], how='outer')
+    else: VMTBySpeedBin_allTP_df = pd.merge(VMTBySpeedBin_allTP_df, key_name, left_on=['countyName',  ' speedBin'], right_on=['countyName',  ' speedBin'], how='outer')
 
 # set within time period diurnal factor consistent with EMFAC
 # (these diurnal factors came from the old script CreateSpeedBinsBetweenZones.job)
 
-VMTBySpeedBin_allTP_df[' hour04'] = 0.157 * VMTBySpeedBin_allTP_df['vmt_EA']
-VMTBySpeedBin_allTP_df[' hour05'] = 0.298 * VMTBySpeedBin_allTP_df['vmt_EA']
-VMTBySpeedBin_allTP_df[' hour06'] = 0.545 * VMTBySpeedBin_allTP_df['vmt_EA']
+VMTBySpeedBin_allTP_df[' hour04'] = 0.157 * VMTBySpeedBin_allTP_df['VMT_EA']
+VMTBySpeedBin_allTP_df[' hour05'] = 0.298 * VMTBySpeedBin_allTP_df['VMT_EA']
+VMTBySpeedBin_allTP_df[' hour06'] = 0.545 * VMTBySpeedBin_allTP_df['VMT_EA']
 
-VMTBySpeedBin_allTP_df['hour07'] = 0.164 * VMTBySpeedBin_allTP_df['vmt_AM'] #note missing space
-VMTBySpeedBin_allTP_df[' hour08'] = 0.336 * VMTBySpeedBin_allTP_df['vmt_AM']
-VMTBySpeedBin_allTP_df[' hour09'] = 0.309 * VMTBySpeedBin_allTP_df['vmt_AM']
-VMTBySpeedBin_allTP_df[' hour10'] = 0.191 * VMTBySpeedBin_allTP_df['vmt_AM']
+VMTBySpeedBin_allTP_df[' hour07'] = 0.164 * VMTBySpeedBin_allTP_df['VMT_AM'] #note missing space
+VMTBySpeedBin_allTP_df[' hour08'] = 0.336 * VMTBySpeedBin_allTP_df['VMT_AM']
+VMTBySpeedBin_allTP_df[' hour09'] = 0.309 * VMTBySpeedBin_allTP_df['VMT_AM']
+VMTBySpeedBin_allTP_df[' hour10'] = 0.191 * VMTBySpeedBin_allTP_df['VMT_AM']
 
-VMTBySpeedBin_allTP_df[' hour11'] = 0.157 * VMTBySpeedBin_allTP_df['vmt_MD']
-VMTBySpeedBin_allTP_df[' hour12'] = 0.198 * VMTBySpeedBin_allTP_df['vmt_MD']
-VMTBySpeedBin_allTP_df[' hour13'] = 0.207 * VMTBySpeedBin_allTP_df['vmt_MD']
-VMTBySpeedBin_allTP_df[' hour14'] = 0.203 * VMTBySpeedBin_allTP_df['vmt_MD']
-VMTBySpeedBin_allTP_df[' hour15'] = 0.235 * VMTBySpeedBin_allTP_df['vmt_MD']
+VMTBySpeedBin_allTP_df[' hour11'] = 0.157 * VMTBySpeedBin_allTP_df['VMT_MD']
+VMTBySpeedBin_allTP_df[' hour12'] = 0.198 * VMTBySpeedBin_allTP_df['VMT_MD']
+VMTBySpeedBin_allTP_df[' hour13'] = 0.207 * VMTBySpeedBin_allTP_df['VMT_MD']
+VMTBySpeedBin_allTP_df[' hour14'] = 0.203 * VMTBySpeedBin_allTP_df['VMT_MD']
+VMTBySpeedBin_allTP_df[' hour15'] = 0.235 * VMTBySpeedBin_allTP_df['VMT_MD']
 
-VMTBySpeedBin_allTP_df[' hour16'] = 0.251 * VMTBySpeedBin_allTP_df['vmt_PM']
-VMTBySpeedBin_allTP_df['hour17'] = 0.261 * VMTBySpeedBin_allTP_df['vmt_PM'] #note missing space
-VMTBySpeedBin_allTP_df[' hour18'] = 0.288 * VMTBySpeedBin_allTP_df['vmt_PM']
-VMTBySpeedBin_allTP_df[' hour19'] = 0.200 * VMTBySpeedBin_allTP_df['vmt_PM']
+VMTBySpeedBin_allTP_df[' hour16'] = 0.251 * VMTBySpeedBin_allTP_df['VMT_PM']
+VMTBySpeedBin_allTP_df[' hour17'] = 0.261 * VMTBySpeedBin_allTP_df['VMT_PM'] #note missing space
+VMTBySpeedBin_allTP_df[' hour18'] = 0.288 * VMTBySpeedBin_allTP_df['VMT_PM']
+VMTBySpeedBin_allTP_df[' hour19'] = 0.200 * VMTBySpeedBin_allTP_df['VMT_PM']
 
-VMTBySpeedBin_allTP_df[' hour20'] = 0.248 * VMTBySpeedBin_allTP_df['vmt_EV']
-VMTBySpeedBin_allTP_df[' hour21'] = 0.190 * VMTBySpeedBin_allTP_df['vmt_EV']
-VMTBySpeedBin_allTP_df[' hour22'] = 0.192 * VMTBySpeedBin_allTP_df['vmt_EV']
-VMTBySpeedBin_allTP_df[' hour23'] = 0.144 * VMTBySpeedBin_allTP_df['vmt_EV']
-VMTBySpeedBin_allTP_df[' hour24'] = 0.109 * VMTBySpeedBin_allTP_df['vmt_EV']
+VMTBySpeedBin_allTP_df[' hour20'] = 0.248 * VMTBySpeedBin_allTP_df['VMT_EV']
+VMTBySpeedBin_allTP_df[' hour21'] = 0.190 * VMTBySpeedBin_allTP_df['VMT_EV']
+VMTBySpeedBin_allTP_df[' hour22'] = 0.192 * VMTBySpeedBin_allTP_df['VMT_EV']
+VMTBySpeedBin_allTP_df[' hour23'] = 0.144 * VMTBySpeedBin_allTP_df['VMT_EV']
+VMTBySpeedBin_allTP_df[' hour24'] = 0.109 * VMTBySpeedBin_allTP_df['VMT_EV']
 
-VMTBySpeedBin_allTP_df[' hour01'] = 0.067 * VMTBySpeedBin_allTP_df['vmt_EV']
-VMTBySpeedBin_allTP_df[' hour02'] = 0.025 * VMTBySpeedBin_allTP_df['vmt_EV']
-VMTBySpeedBin_allTP_df[' hour03'] = 0.025 * VMTBySpeedBin_allTP_df['vmt_EV']
+VMTBySpeedBin_allTP_df[' hour01'] = 0.067 * VMTBySpeedBin_allTP_df['VMT_EV']
+VMTBySpeedBin_allTP_df[' hour02'] = 0.025 * VMTBySpeedBin_allTP_df['VMT_EV']
+VMTBySpeedBin_allTP_df[' hour03'] = 0.025 * VMTBySpeedBin_allTP_df['VMT_EV']
 
 
 
 # make sure all 13 speed bins are listed (since the script emfac_prep needs this)
-CountyList = ["San Francisco", "San Mateo", "Santa Clara", "Alameda", "Contra Costa", "Solano", "Napa", "Sonoma", "Marin", "external"]
+CountyList = ["San Francisco", "San Mateo", "Santa Clara", "Alameda", "Contra Costa", "Solano", "Napa", "Sonoma", "Marin", "San Joaquin", "External"]
 
 for cnty in CountyList:
     speedBin_dummy = {'dummy_col': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]}
@@ -155,7 +158,9 @@ for cnty in CountyList:
        speedBin_dummy_df['arbCnty_dummy'] = "49"
     if cnty=="Marin":
        speedBin_dummy_df['arbCnty_dummy'] = "21"
-    if cnty=="external":
+    if cnty=="San Joaquin":
+       speedBin_dummy_df['arbCnty_dummy'] = "100"
+    if cnty=="External":
        speedBin_dummy_df['arbCnty_dummy'] = "9999"
 
   # append the data frames
@@ -173,8 +178,8 @@ VMTBySpeedBin_allTP_df[' speedBin'] = VMTBySpeedBin_allTP_df['dummy_col']
 
 # keep the relevant columns and recorder
 VMTBySpeedBin_allTP_df =  VMTBySpeedBin_allTP_df[['countyName', ' arbCounty', ' speedBin',
-                                                  ' hour01', ' hour02', ' hour03', ' hour04', ' hour05', ' hour06', 'hour07', ' hour08', ' hour09', ' hour10',
-                                                  ' hour11', ' hour12', ' hour13', ' hour14', ' hour15', ' hour16', 'hour17', ' hour18', ' hour19', ' hour20',
+                                                  ' hour01', ' hour02', ' hour03', ' hour04', ' hour05', ' hour06', ' hour07', ' hour08', ' hour09', ' hour10',
+                                                  ' hour11', ' hour12', ' hour13', ' hour14', ' hour15', ' hour16', ' hour17', ' hour18', ' hour19', ' hour20',
                                                   ' hour21', ' hour22', ' hour23', ' hour24']]
 
 # sort the file

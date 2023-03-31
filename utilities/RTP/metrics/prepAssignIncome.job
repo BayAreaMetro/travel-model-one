@@ -4,7 +4,7 @@
   token_iter = '%ITER%'
 
   ; the number of zones is used throughout to size arrays to store data
-  token_zones = '1454'
+  token_zones = '6593'
 
   ; do, more or less, the same procedure for each time period
   loop period = 1, 5
