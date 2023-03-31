@@ -74,6 +74,7 @@ lines are set in CTRAMP\\runtime\\mtcTourBased.properties:
 import argparse
 import collections
 import glob
+import math
 import os
 import re
 import shutil
@@ -120,6 +121,10 @@ def check_tazdata():
     toll_df = pandas.read_csv(toll_file)
     # the last cordon toll class in tolls.csv
     max_cordon = toll_df.loc[(toll_df.tollclass>= 9) & (toll_df.tollclass <= 30)]['tollclass'].max() #assuming the biggest tollclass for cordon is tollclass == 30
+    if math.isnan(max_cordon):
+        logger.info("No cordons found in tollclasses")
+        return
+
     for i in range(9, max_cordon+1): 
         tollam_da = float(toll_df.loc[(toll_df.tollclass == i)]['tollam_da'])
         CORDONCOST = float(tazdata_df.loc[tazdata_df.CORDON == i].groupby('CORDON').agg({'CORDONCOST':'mean'})['CORDONCOST'])/100
