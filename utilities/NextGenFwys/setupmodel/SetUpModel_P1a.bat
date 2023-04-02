@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path1a_06_SimpleTolls01
+set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path1a_06_SimpleTolls02
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 :: The NGF NoProject scenario excludes some Blueprint strategies. Most of them are excluded via the netspec.
@@ -56,7 +56,7 @@ set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-over
 :: use special input tolls.csv?
 set SwapTollsCsv=Yes
 :: if the above is Yes, where is the input tolls.csv?
-set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Static_toll_plans\Static_toll_P1a_V04\tolls_simplified.csv
+set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Static_toll_plans\Static_toll_P1a_V05\tolls_simplified.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
