@@ -43,12 +43,12 @@ import shutil
 # User settings needed for both Process 1 and 2:
 #-------------------
 # Which process is being run? Please enter 1 or 2 below.
-Process=1
+Process=2
 
 # Please specify working directories and run ids
 project_dir                  ="L:/Application/Model_One/NextGenFwys/" 
-modelrun_with_NoProject      = "2035_TM152_NGF_NP07_TollCalibrated02"
-output_dir                   = "INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P1b_V11"
+modelrun_with_NoProject      = "2035_TM152_NGF_NP08"
+output_dir                   = "INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P2b_V12"
 
 # Specify HOV discount levels
 # A DiscountFactor of 0.75 means a 25% discount; a DiscountFactor of 0 means free; and a DiscountFactor of 1 means no discount.
@@ -60,20 +60,6 @@ DiscountFactor_HOV3 = 0.5
 # For example, if ArterialFactor = 0.2, this script will set arterial tolls to be 20% of freeway tolls
 # If the pathway does not have arterial tolling, ArterialFactor won't be applied 
 ArterialFactor = 0.2
-
-#-------------------
-# User settings needed Process 2:
-# (Can skip if running process 1) 
-#-------------------
-
-# Specify toll input file and toll plan option
-#toll_input_file="L:/Application/Model_One/NextGenFwys/INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P1b_V05/Reruns_toll_inputs.xlsx"
-toll_input_file="L:/Application/Model_One/NextGenFwys/INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P1b_V09round/SimpleToll_MinorGroupingX3TP - Copy.xlsx"
-#toll_plan_option="Static" #This is the name of the excel worksheet
-toll_plan_option="Simple" #This is the name of the excel worksheet
-
-tollcsv_with_allcombos = "L:/Application/Model_One/NextGenFwys/INPUT_DEVELOPMENT/Networks/Prep_work/NGF_Networks_P2a_AllLaneTollingPlusArterials_ImproveTransit_03/NGF_P2a_AllLaneTollingPlusArterials_ImproveTransit_network_2035/hwy/tolls.csv"
-
 
 #-------------------
 # User settings needed Process 1:
@@ -109,7 +95,16 @@ grouping_option = "minor"
 tolls_in_midday = "true"
 
 
+#-------------------
+# User settings needed Process 2:
+# (Can skip if running process 1) 
+#-------------------
 
+# Specify toll input file and toll plan option
+toll_input_file="L:/Application/Model_One/NextGenFwys/INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P1b_V11/SimpleToll_MinorGroupingX3TP.xlsx"
+toll_plan_option="new1b" #This is the name of the excel worksheet
+
+tollcsv_with_allcombos = "L:/Application/Model_One/NextGenFwys/Scenarios/2035_TM152_NGF_NP07_Path2b_02/INPUT/hwy/tolls.csv"
 
 
 # ------------------
@@ -221,11 +216,11 @@ def Process1_Averaging():
         # apply a simple rule to convert the results to high, medium, low toll
 
         # toll rates in 2000 prices and in $
-        high_toll_dollars      = round(high_toll_cents      / CoversionFactorTo2000cents / 100, 4)
-        medhigh_toll_dollars   = round(medhigh_toll_cents   / CoversionFactorTo2000cents / 100, 4)
-        medium_toll_dollars    = round(medium_toll_cents    / CoversionFactorTo2000cents / 100, 4)
-        medlow_toll_dollars    = round(medlow_toll_cents    / CoversionFactorTo2000cents / 100, 4)
-        low_toll_dollars       = round(low_toll_cents       / CoversionFactorTo2000cents / 100, 4)
+        high_toll_dollars      = high_toll_cents      / CoversionFactorTo2000cents / 100
+        medhigh_toll_dollars   = medhigh_toll_cents   / CoversionFactorTo2000cents / 100
+        medium_toll_dollars    = medium_toll_cents    / CoversionFactorTo2000cents / 100
+        medlow_toll_dollars    = medlow_toll_cents    / CoversionFactorTo2000cents / 100
+        low_toll_dollars       = low_toll_cents       / CoversionFactorTo2000cents / 100
 
         # cutoff points in 2000 cents
         high_cutoff_2000cents    = high_cutoff    / CoversionFactorTo2000cents
@@ -496,29 +491,29 @@ if __name__ == '__main__':
 
 
     # rounding the values
-    new_tollscsv_df["tollam_da"] 	=	new_tollscsv_df["tollam_da"].astype(float).round(4)
-    new_tollscsv_df["tollam_s2"]  	=	new_tollscsv_df["tollam_s2"].astype(float).round(4)
-    new_tollscsv_df["tollam_s3"]  	=	new_tollscsv_df["tollam_s3"].astype(float).round(4)
-    new_tollscsv_df["tollam_vsm"] 	=	new_tollscsv_df["tollam_vsm"].astype(float).round(4)
-    new_tollscsv_df["tollam_sml"] 	=	new_tollscsv_df["tollam_sml"].astype(float).round(4)
-    new_tollscsv_df["tollam_med"] 	=	new_tollscsv_df["tollam_med"].astype(float).round(4)
-    new_tollscsv_df["tollam_lrg"] 	=	new_tollscsv_df["tollam_lrg"].astype(float).round(4)
+    new_tollscsv_df["tollam_da"] 	=	new_tollscsv_df["tollam_da"].astype(float).round(5)
+    new_tollscsv_df["tollam_s2"]  	=	new_tollscsv_df["tollam_s2"].astype(float).round(5)
+    new_tollscsv_df["tollam_s3"]  	=	new_tollscsv_df["tollam_s3"].astype(float).round(5)
+    new_tollscsv_df["tollam_vsm"] 	=	new_tollscsv_df["tollam_vsm"].astype(float).round(5)
+    new_tollscsv_df["tollam_sml"] 	=	new_tollscsv_df["tollam_sml"].astype(float).round(5)
+    new_tollscsv_df["tollam_med"] 	=	new_tollscsv_df["tollam_med"].astype(float).round(5)
+    new_tollscsv_df["tollam_lrg"] 	=	new_tollscsv_df["tollam_lrg"].astype(float).round(5)
             
-    new_tollscsv_df["tollpm_da"]  	=	new_tollscsv_df["tollpm_da"].astype(float).round(4)
-    new_tollscsv_df["tollpm_s2"]  	=	new_tollscsv_df["tollpm_s2"].astype(float).round(4)
-    new_tollscsv_df["tollpm_s3"]  	=	new_tollscsv_df["tollpm_s3"].astype(float).round(4)
-    new_tollscsv_df["tollpm_vsm"] 	=	new_tollscsv_df["tollpm_vsm"].astype(float).round(4)
-    new_tollscsv_df["tollpm_sml"] 	=	new_tollscsv_df["tollpm_sml"].astype(float).round(4)
-    new_tollscsv_df["tollpm_med"] 	=	new_tollscsv_df["tollpm_med"].astype(float).round(4)
-    new_tollscsv_df["tollpm_lrg"] 	=	new_tollscsv_df["tollpm_lrg"].astype(float).round(4)
+    new_tollscsv_df["tollpm_da"]  	=	new_tollscsv_df["tollpm_da"].astype(float).round(5)
+    new_tollscsv_df["tollpm_s2"]  	=	new_tollscsv_df["tollpm_s2"].astype(float).round(5)
+    new_tollscsv_df["tollpm_s3"]  	=	new_tollscsv_df["tollpm_s3"].astype(float).round(5)
+    new_tollscsv_df["tollpm_vsm"] 	=	new_tollscsv_df["tollpm_vsm"].astype(float).round(5)
+    new_tollscsv_df["tollpm_sml"] 	=	new_tollscsv_df["tollpm_sml"].astype(float).round(5)
+    new_tollscsv_df["tollpm_med"] 	=	new_tollscsv_df["tollpm_med"].astype(float).round(5)
+    new_tollscsv_df["tollpm_lrg"] 	=	new_tollscsv_df["tollpm_lrg"].astype(float).round(5)
             
-    new_tollscsv_df["tollmd_da"]  	=	new_tollscsv_df["tollmd_da"].astype(float).round(4)
-    new_tollscsv_df["tollmd_s2"]  	=	new_tollscsv_df["tollmd_s2"].astype(float).round(4)
-    new_tollscsv_df["tollmd_s3"]  	=	new_tollscsv_df["tollmd_s3"].astype(float).round(4)
-    new_tollscsv_df["tollmd_vsm"] 	=	new_tollscsv_df["tollmd_vsm"].astype(float).round(4)
-    new_tollscsv_df["tollmd_sml"] 	=	new_tollscsv_df["tollmd_sml"].astype(float).round(4)
-    new_tollscsv_df["tollmd_med"] 	=	new_tollscsv_df["tollmd_med"].astype(float).round(4)
-    new_tollscsv_df["tollmd_lrg"]	=	new_tollscsv_df["tollmd_lrg"].astype(float).round(4)
+    new_tollscsv_df["tollmd_da"]  	=	new_tollscsv_df["tollmd_da"].astype(float).round(5)
+    new_tollscsv_df["tollmd_s2"]  	=	new_tollscsv_df["tollmd_s2"].astype(float).round(5)
+    new_tollscsv_df["tollmd_s3"]  	=	new_tollscsv_df["tollmd_s3"].astype(float).round(5)
+    new_tollscsv_df["tollmd_vsm"] 	=	new_tollscsv_df["tollmd_vsm"].astype(float).round(5)
+    new_tollscsv_df["tollmd_sml"] 	=	new_tollscsv_df["tollmd_sml"].astype(float).round(5)
+    new_tollscsv_df["tollmd_med"] 	=	new_tollscsv_df["tollmd_med"].astype(float).round(5)
+    new_tollscsv_df["tollmd_lrg"]	=	new_tollscsv_df["tollmd_lrg"].astype(float).round(5)
     
     # keep only variables that are part of the tolls.csv
     new_tollscsv_df.rename(columns = {'facility_name_x':'facility_name'}, inplace = True)
