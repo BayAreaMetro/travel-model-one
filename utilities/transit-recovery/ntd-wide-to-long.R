@@ -13,16 +13,36 @@ library(rlang)
 library(readxl)
 library(lubridate)
 
+# UZA = Urbanized Area https://www.transit.dot.gov/ntd/national-transit-database-ntd-glossary#U
+BayArea_UZAs = c(
+  "Concord, CA",
+  "Fairfield, CA",
+  "Napa, CA",
+  "Petaluma, CA",
+  "San Francisco-Oakland, CA",
+  "San Jose, CA",
+  "Santa Rosa, CA",
+  "Vacaville, CA",
+  "Vallejo, CA"
+)
+
 BOX_DIR          <- "E:\\Box"
-WORKING_DIR      <- file.path(BOX_DIR, "Modeling and Surveys", "Projects", "Transit Recovery Scenario Modeling")
-INPUT_WORKBOOK   <- file.path(WORKING_DIR, "NTD Ridership and Service Data.xlsx")
+WORKING_DIR      <- file.path(BOX_DIR, "Modeling and Surveys", "Share Data", "national-transit-database")
+INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "January 2023 Adjusted Database_1_0.xlsx")
 INPUT_WORKSHEETS <- c("VRM","VRH","UPT") # vehicle route miles, vehicle route hours, unlinked passenger trips
 INPUT_AGENCY_CSV <- file.path(WORKING_DIR, "AgencyToCommonAgencyName.csv")
 
-# assuming workingdir is travel-model-one
+# model/ntd files will get saved here
+MODEL_OUTPUT_DIR <- file.path(BOX_DIR, "Modeling and Surveys", "Projects", "Transit Recovery Scenario Modeling")
+
+# assuming cwd is travel-model-one
 INPUT_MODEL_LOOKUP_XLSX <- file.path("utilities","TableauAliases.xlsx")
 
 OUTPUT_FILE      <- file.path(WORKING_DIR, "NTD_long.rdata")
+
+# Excel stores days as days since 1970-01-01
+# lubridate as days since 1900-01-01
+DAYS_1900_TO_1970 <- 25569
 
 agency_df <- read.csv(file=INPUT_AGENCY_CSV)
 
@@ -37,11 +57,30 @@ for (worksheet in INPUT_WORKSHEETS) {
 
   # report on agencies with missing Common.Agency.Name
   missing_common_agency_name <- filter(NTD_df, is.na(Common.Agency.Name))
+  # print(table(select(missing_common_agency_name, "UZA Name")))
+  # filter to Bay Area UZAs
+  missing_common_agency_name <- filter(missing_common_agency_name, 
+    missing_common_agency_name["UZA Name"] %in% BayArea_UZAs)
+  # summarize to Agency Name, UZA Name
+  missing_common_agency_name <- table(select(missing_common_agency_name, "UZA Name", Agency))
+
   print("Missing Common.Agency.Name:")
-  missing_common_agency_name <- table(missing_common_agency_name$Agency)
-  write.csv(missing_common_agency_name, "missing_common_agency_name.csv", row.names=FALSE)
+  print(missing_common_agency_name)
+  if (nrow(missing_common_agency_name) > 0) {
+    write.csv(missing_common_agency_name, 
+      file.path(WORKING_DIR, paste0("missing_common_agency_name_", worksheet, ".csv")),
+      row.names=FALSE)
+  }
 
   NTD_df <- filter(NTD_df, !is.na(Common.Agency.Name))
+
+  # column names are in Excel date formats, which are number of days since 1900 01 01
+  # rename them. e.g. "44927" => JAN23
+  NTD_df <- rename_with(NTD_df,
+    ~ toupper(format(as_date(strtoi(.x) - DAYS_1900_TO_1970), "%b%y")),
+    num_range(prefix="", 37000:50000)
+  )
+  print(colnames(NTD_df))
 
   NTD_long_df <- pivot_longer(
     data=NTD_df,
@@ -96,8 +135,8 @@ for (worksheet in INPUT_WORKSHEETS) {
   save(NTD_long_df, file=out_file)
 
   INDEX_COLS <- c(
-    "5 digit NTD ID","4 digit NTD ID","Agency","Active","Reporter Type",
-    "UZA","UZA Name","Modes","TOS","Common.Agency.Name")
+    "NTD ID","Legacy NTD ID","Agency","Reporter Type",
+    "UZA","UZA Name","Mode","TOS","Common.Agency.Name")
 
   # model-specific summary -- filter to just model months
   NTD_long_df <- filter(NTD_long_df, month %in% c('MAR','APR','MAY','SEP','OCT','NOV'))
@@ -139,26 +178,26 @@ NTD_agency_mode_tm_lookup <- read_excel(INPUT_MODEL_LOOKUP_XLSX, sheet="Transit 
 # try to associate NTD_model_df with a travel model transit mode number
 # note: multiple="first" works for dplyr 1.1.0
 NTD_model_df <- left_join(NTD_model_df, NTD_agency_mode_tm_lookup, 
-  by=c("Common.Agency.Name"="Common.Agency.Name", "Modes"="NTD.mode"), 
+  by=c("Common.Agency.Name"="Common.Agency.Name", "Mode"="NTD.mode"), 
   multiple="first")
 print(paste("Now have",nrow(NTD_model_df),"rows"))
 stopifnot(nrow(NTD_model_df)==NTD_model_rows)
 
 # join failure: missing Transit Mode
-NTD_model_df["Modes backup"] = "MB" # default to motor bus
-NTD_model_df[NTD_model_df$Common.Agency.Name == "BART",     "Modes backup"] <- "HR" # BART is heavy rail
-NTD_model_df[NTD_model_df$Common.Agency.Name == "Caltrain", "Modes backup"] <- "CR" # Caltrain is commuter rail
+NTD_model_df["Mode backup"] = "MB" # default to motor bus
+NTD_model_df[NTD_model_df$Common.Agency.Name == "BART",     "Mode backup"] <- "HR" # BART is heavy rail
+NTD_model_df[NTD_model_df$Common.Agency.Name == "Caltrain", "Mode backup"] <- "CR" # Caltrain is commuter rail
 NTD_model_df[(NTD_model_df$Common.Agency.Name == "SFMTA") &
-             (NTD_model_df$Modes == "SR"), "Modes backup"] <- "LR" # Muni Streetcar Rail is Lightrail
+             (NTD_model_df$Mode == "SR"), "Mode backup"] <- "LR" # Muni Streetcar Rail is Lightrail
 
 # print the agency/mode and try a backup mode
-missing_df <- filter(select(NTD_model_df, Common.Agency.Name, Modes, "Modes backup", "Transit Mode"), 
+missing_df <- filter(select(NTD_model_df, Common.Agency.Name, Mode, "Mode backup", "Transit Mode"), 
   is.na(NTD_model_df["Transit Mode"])) %>% distinct()
 print(paste("Missing Transit Mode: "))
 print(missing_df)
 
 NTD_model_df <- left_join(NTD_model_df, NTD_agency_mode_tm_lookup,
-  by=c("Common.Agency.Name"="Common.Agency.Name", "Modes backup"="NTD.mode"),
+  by=c("Common.Agency.Name"="Common.Agency.Name", "Mode backup"="NTD.mode"),
   multiple="first",
   suffix=c(""," backup")
 )
@@ -172,7 +211,7 @@ NTD_model_df <- mutate(NTD_model_df,
 stopifnot(nrow(filter(NTD_model_df, is.na(`Transit Mode`)))==0)
 # remove backup cols
 NTD_model_df <- select(NTD_model_df, 
-  -`Modes backup`, -`Transit Mode backup`, -`Transit Mode Name backup`, -`Mode Category backup`)
+  -`Mode backup`, -`Transit Mode backup`, -`Transit Mode Name backup`, -`Mode Category backup`)
 
 # transform columns to: 
 # name	mode	owner	frequency	line time	line dist	total boardings	passenger miles	passenger hours	path id
@@ -183,7 +222,7 @@ NTD_model_df <- select(NTD_model_df,
 #   = (24*60/frequency)*60/60 = (24*60/frequency)
 # so frequency = 24*60/vrh
 NTD_model_df <- mutate(NTD_model_df, 
-  name        = paste0(as.character(`Transit Mode`), "_NTD_", Modes, "_", as.character(year)),
+  name        = paste0(as.character(`Transit Mode`), "_NTD_", Mode, "_", as.character(year)),
   mode        = `Transit Mode`,
   `path id`   = "24_NTD_NTD_NTD", # am_wlk_loc_wlk
   owner       = 0,    # do we use this?
@@ -197,7 +236,7 @@ NTD_model_df <- mutate(NTD_model_df,
 
 # save by year
 for (save_year in unique(NTD_model_df$year)) {
-  output_file <- file.path(WORKING_DIR, paste0('trnline_', save_year, '_NTD.csv'))
+  output_file <- file.path(MODEL_OUTPUT_DIR, paste0('trnline_', save_year, '_NTD.csv'))
   NTD_model_year_df <- filter(NTD_model_df, year==save_year) %>%
     select(name, mode, owner, frequency, `line time`, `line dist`, `total boardings`,
     `passenger miles`, `passenger hours`, `path id`)
