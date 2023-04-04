@@ -85,7 +85,7 @@ import pandas
 import xlrd
 import xlwt
 import xlutils.copy
-import logging
+
 def check_tazdata():
     """
     Checks that INPUT\\landuse\\tazData.csv has new required columns, CORDON and CORDONCOST
@@ -93,47 +93,34 @@ def check_tazdata():
     tazdata_file = os.path.join("INPUT", "landuse", "tazData.csv")
     tazdata_df = pandas.read_csv(tazdata_file)
     tazdata_cols = list(tazdata_df.columns)
-    LOG_FILE = os.path.join("INPUT", "check_tolls_and_tazData_consistency.log")
+    
     # check if the CORDON and CORDONCOST columns are in tazdata
     assert("CORDON" in tazdata_cols)
     assert("CORDONCOST" in tazdata_cols)
     print("Found columns CORDON and CORDONCOST in tazData.csv")
+
     # check if the tollam_da in tolls.csv is consistent with the CORDONCOST in tazData
-    ############ setup logging
-    # create logger
-    logger = logging.getLogger(__name__)
-    logger.setLevel("DEBUG")
-
-    # console handler
-    ch = logging.StreamHandler()
-    ch.setLevel("INFO")
-    ch.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p"))
-    logger.addHandler(ch)
-
-    # file handler
-    fh = logging.FileHandler(LOG_FILE, mode="w")
-    fh.setLevel("DEBUG")
-    fh.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p"))
-    logger.addHandler(fh)
-
     # read toll file
     toll_file = os.path.join("INPUT", "hwy", "tolls.csv")
     toll_df = pandas.read_csv(toll_file)
-    # the last cordon toll class in tolls.csv
-    max_cordon = toll_df.loc[(toll_df.tollclass>= 9) & (toll_df.tollclass <= 30)]['tollclass'].max() #assuming the biggest tollclass for cordon is tollclass == 30
-    if math.isnan(max_cordon):
-        logger.info("No cordons found in tollclasses")
+    # the cordon toll class in tolls.csv
+    cordon_toll = list(set(toll_df.loc[(toll_df.tolltype == 'cordon')]['tollclass']))
+    if cordon_toll == []:
+        print("No cordons found in tollclasses")
         return
 
-    for i in range(9, max_cordon+1): 
+    for i in cordon_toll: 
         tollam_da = float(toll_df.loc[(toll_df.tollclass == i)]['tollam_da'])
-        CORDONCOST = float(tazdata_df.loc[tazdata_df.CORDON == i].groupby('CORDON').agg({'CORDONCOST':'mean'})['CORDONCOST'])/100
+        try:
+            CORDONCOST = float(tazdata_df.loc[tazdata_df.CORDON == i].groupby('CORDON').agg({'CORDONCOST':'mean'})['CORDONCOST'])/100
+        except:
+            CORDONCOST = None # Handle errors occur when some tollclass from tolls.csv don't exist in tazData.csv
 
         if tollam_da != CORDONCOST:
-            logger.warning("WARMING: tollclass "+ str(i)+" from toll.csv tollam_da DOESN'T match with tazData.csv CORDONCOST") 
-            os.environ["consistent_tolls_and_tazData"] = "false"
+            print("ERROR: tollclass "+ str(i)+" from toll.csv tollam_da DOESN'T match with tazData.csv CORDONCOST") 
+            assert tollam_da == CORDONCOST, "ERROR: tollclass "+ str(i)+" from toll.csv tollam_da DOESN'T matches with tazData.csv CORDONCOST"
         else:
-            logger.info("tollclass "+ str(i)+" from toll.csv tollam_da matches with tazData.csv CORDONCOST")
+            print("tollclass "+ str(i)+" from toll.csv tollam_da matches with tazData.csv CORDONCOST")
 
 def replace_in_file(filepath, regex_dict):
     """
