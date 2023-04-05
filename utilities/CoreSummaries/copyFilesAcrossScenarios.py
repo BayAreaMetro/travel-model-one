@@ -131,5 +131,17 @@ if __name__ == '__main__':
                     print("    Copying {}".format(source_file))
                     print("      => {}".format(dest_file))
                     shutil.copyfile(source_file, dest_file)
+    # delete files
+    # run directories to keep
+    current_directory = list(model_runs_df.loc[model_runs_df.status == "current"]['directory'])
+    # extensions to modify
+    extensions = ('.csv','.shp', 'shp.xml', '.cpg', '.dbf', '.prj', '.shx')
+    # delete files from previous ModelRun.xlsx
+    for f in os.listdir(my_args.dest_dir):
+        if not (any(x in f for x in current_directory)):
+            if f.endswith(extensions):
+                if f != 'freeway_arterial_links.csv':
+                    os.remove(f)
+                    print('Remove' + ' '+ f)
 
     print("Complete")
