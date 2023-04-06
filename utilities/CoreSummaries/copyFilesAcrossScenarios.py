@@ -140,7 +140,7 @@ if __name__ == '__main__':
     for f in os.listdir(my_args.dest_dir):
         if not (any(x in f for x in current_directory)):
             if f.endswith(extensions):
-                if f != 'freeway_arterial_links.csv':
+                if f != 'freeway_arterial_links.csv' and f != 'representative_links_for_19minorGroupings_20230330.csv':
                     os.remove(f)
                     print('Remove' + ' '+ f)
 
