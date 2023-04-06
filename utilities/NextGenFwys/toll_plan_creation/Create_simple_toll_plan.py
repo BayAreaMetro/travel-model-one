@@ -48,7 +48,7 @@ Process=2
 # Please specify working directories and run ids
 project_dir                  ="L:/Application/Model_One/NextGenFwys/" 
 modelrun_with_NoProject      = "2035_TM152_NGF_NP08"
-output_dir                   = "INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P2b_V12"
+output_dir                   = "INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P2b_V12_10pc"
 
 # Specify HOV discount levels
 # A DiscountFactor of 0.75 means a 25% discount; a DiscountFactor of 0 means free; and a DiscountFactor of 1 means no discount.
@@ -59,7 +59,7 @@ DiscountFactor_HOV3 = 0.5
 # Specify the relationship between arterial tolls and freeway tolls
 # For example, if ArterialFactor = 0.2, this script will set arterial tolls to be 20% of freeway tolls
 # If the pathway does not have arterial tolling, ArterialFactor won't be applied 
-ArterialFactor = 0.2
+ArterialFactor = 0.1
 
 #-------------------
 # User settings needed Process 1:
@@ -96,7 +96,7 @@ tolls_in_midday = "true"
 
 
 #-------------------
-# User settings needed Process 2:
+# User settings needed for Process 2:
 # (Can skip if running process 1) 
 #-------------------
 
@@ -492,29 +492,29 @@ if __name__ == '__main__':
 
     # rounding the values to 4 decimals
     # but making sure the values won't be 0.000 (without this, some arterials can get a value of 0.0000 after rounding) 
-    new_tollscsv_df["tollam_da"] 	=	max(new_tollscsv_df["tollam_da"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollam_s2"]  	=	max(new_tollscsv_df["tollam_s2"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollam_s3"]  	=	max(new_tollscsv_df["tollam_s3"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollam_vsm"] 	=	max(new_tollscsv_df["tollam_vsm"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollam_sml"] 	=	max(new_tollscsv_df["tollam_sml"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollam_med"] 	=	max(new_tollscsv_df["tollam_med"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollam_lrg"] 	=	max(new_tollscsv_df["tollam_lrg"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollam_da"] 	=	np.maximum(new_tollscsv_df["tollam_da"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollam_s2"]  	=	np.maximum(new_tollscsv_df["tollam_s2"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollam_s3"]  	=	np.maximum(new_tollscsv_df["tollam_s3"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollam_vsm"] 	=	np.maximum(new_tollscsv_df["tollam_vsm"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollam_sml"] 	=	np.maximum(new_tollscsv_df["tollam_sml"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollam_med"] 	=	np.maximum(new_tollscsv_df["tollam_med"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollam_lrg"] 	=	np.maximum(new_tollscsv_df["tollam_lrg"].astype(float).round(4), 0.0001)
             
-    new_tollscsv_df["tollpm_da"]  	=	max(new_tollscsv_df["tollpm_da"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollpm_s2"]  	=	max(new_tollscsv_df["tollpm_s2"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollpm_s3"]  	=	max(new_tollscsv_df["tollpm_s3"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollpm_vsm"] 	=	max(new_tollscsv_df["tollpm_vsm"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollpm_sml"] 	=	max(new_tollscsv_df["tollpm_sml"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollpm_med"] 	=	max(new_tollscsv_df["tollpm_med"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollpm_lrg"] 	=	max(new_tollscsv_df["tollpm_lrg"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollpm_da"]  	=	np.maximum(new_tollscsv_df["tollpm_da"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollpm_s2"]  	=	np.maximum(new_tollscsv_df["tollpm_s2"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollpm_s3"]  	=	np.maximum(new_tollscsv_df["tollpm_s3"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollpm_vsm"] 	=	np.maximum(new_tollscsv_df["tollpm_vsm"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollpm_sml"] 	=	np.maximum(new_tollscsv_df["tollpm_sml"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollpm_med"] 	=	np.maximum(new_tollscsv_df["tollpm_med"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollpm_lrg"] 	=	np.maximum(new_tollscsv_df["tollpm_lrg"].astype(float).round(4), 0.0001)
             
-    new_tollscsv_df["tollmd_da"]  	=	max(new_tollscsv_df["tollmd_da"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollmd_s2"]  	=	max(new_tollscsv_df["tollmd_s2"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollmd_s3"]  	=	max(new_tollscsv_df["tollmd_s3"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollmd_vsm"] 	=	max(new_tollscsv_df["tollmd_vsm"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollmd_sml"] 	=	max(new_tollscsv_df["tollmd_sml"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollmd_med"] 	=	max(new_tollscsv_df["tollmd_med"].astype(float).round(4), 0.0001)
-    new_tollscsv_df["tollmd_lrg"]	=	max(new_tollscsv_df["tollmd_lrg"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollmd_da"]  	=	np.maximum(new_tollscsv_df["tollmd_da"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollmd_s2"]  	=	np.maximum(new_tollscsv_df["tollmd_s2"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollmd_s3"]  	=	np.maximum(new_tollscsv_df["tollmd_s3"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollmd_vsm"] 	=	np.maximum(new_tollscsv_df["tollmd_vsm"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollmd_sml"] 	=	np.maximum(new_tollscsv_df["tollmd_sml"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollmd_med"] 	=	np.maximum(new_tollscsv_df["tollmd_med"].astype(float).round(4), 0.0001)
+    new_tollscsv_df["tollmd_lrg"]	=	np.maximum(new_tollscsv_df["tollmd_lrg"].astype(float).round(4), 0.0001)
     
     # keep only variables that are part of the tolls.csv
     new_tollscsv_df.rename(columns = {'facility_name_x':'facility_name'}, inplace = True)
