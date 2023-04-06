@@ -601,6 +601,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id, metrics_dict):
     # 3) Ratio of travel time by transit over that of auto between representative origin-destination pairs
     #
     # Puts results into metrics_dict, with key: tm_run_id, 'Efficient 1', extra|intermediate|final, key, metric_description
+    # TODO: why put results into a dictionary rather than returning a dataframe?
     #
     # Notes:
     #  * Representative origin-destination pairs are given by TAZs corresponding with 
@@ -731,15 +732,29 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id, metrics_dict):
     ] = average_ratio
 
 
-def calculate_Efficient2_commute_mode_share(tm_run_id, year, tm_commute_df, metrics_dict):    
+def calculate_Efficient2_commute_mode_share(tm_run_id, metrics_dict):    
     # 4) Transit, walk and bike mode share of commute trips during peak hours
-    
+    # TODO: why put results into a dictionary rather than returning a dataframe?
+
+    METRIC_ID = 'Efficient 2'
+    print("Calculating {}".format(METRIC_ID))
+
     # borrow from prep_for_telecommute_excel.R
     # location \Box\Horizon and Plan Bay Area 2050\Equity and Performance\7_Analysis\Metrics\Metrics Development\Connected\prep_for_telecommute_excel.R
-    metric_id = 'Efficient 2'
+
     # calculate auto and transit commute trips (similar to PBA2050 [\metrics development\diverse] Healthy: commute mode share)
     # simplify modes
-    peak_commute_df = tm_commute_df.copy().loc[(tm_commute_df['timeCodeHwNum'] == 2)|(tm_commute_df['timeCodeHwNum'] == 4)]
+
+    # TODO: This method is currently using commute TOURS and not trips, which are round trips.  So it's not technically "commute trip mode share".
+    commute_tours_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "CommuteByIncomeByTPHousehold.csv")
+    tm_commute_df = pd.read_csv(commute_tours_file)
+    print("  Read {:,} rows from {}".format(len(tm_commute_df), commute_tours_file))
+
+    # TODO: From this perspective, 'timeCodeHwNum' is the time of the home-to-work trip, the below line is selecting people who 
+    # TODO: go to work in AM or PM (and returning home in any time period)
+    peak_commute_df = tm_commute_df.loc[(tm_commute_df['timeCodeHwNum'] == 2)|(tm_commute_df['timeCodeHwNum'] == 4)]
+
+    # TODO: Create more readable version of for aggregating modes
     total_peak_trips = peak_commute_df.copy().loc[:,'freq'].sum()
     peak_commute_df.loc[(peak_commute_df['tour_mode'] == 1)|(peak_commute_df['tour_mode'] == 2),'mode'] = 'sov'
     peak_commute_df.loc[(peak_commute_df['tour_mode'] == 3)|(peak_commute_df['tour_mode'] == 4)|(peak_commute_df['tour_mode'] == 5)|(peak_commute_df['tour_mode'] == 6),'mode'] = 'hov'
@@ -751,11 +766,10 @@ def calculate_Efficient2_commute_mode_share(tm_run_id, year, tm_commute_df, metr
 
     peak_commute_summed = peak_commute_df.copy().groupby('mode').agg('sum')
     for type_of_mode in ['sov', 'hov', 'tnc', 'taxi', 'transit', 'walk', 'bike']:
-        metrics_dict[tm_run_id, metric_id,'final','{} Mode Share'.format(type_of_mode),'{}_peak_hour_commute_trips' .format(type_of_mode), year] = peak_commute_summed.loc['{}'.format(type_of_mode), 'freq']
-        metrics_dict[tm_run_id, metric_id,'intermediate','{} Mode Share'.format(type_of_mode),'{}_peak_hour_mode_share_of_commute_trips'.format(type_of_mode), year] = peak_commute_summed.loc['{}'.format(type_of_mode), 'freq']/total_peak_trips
+        metrics_dict[tm_run_id, METRIC_ID,'final','{} Mode Share'.format(type_of_mode),'{}_peak_hour_commute_trips' .format(type_of_mode), tm_run_id[:4]] = peak_commute_summed.loc['{}'.format(type_of_mode), 'freq']
+        metrics_dict[tm_run_id, METRIC_ID,'intermediate','{} Mode Share'.format(type_of_mode),'{}_peak_hour_mode_share_of_commute_trips'.format(type_of_mode), tm_run_id[:4]] = peak_commute_summed.loc['{}'.format(type_of_mode), 'freq']/total_peak_trips
 
-    metrics_dict[tm_run_id, metric_id,'final','Daily Total Commute Trips During Peak Hours', 'Daily_total_peak_hour_commute_trips', year] = total_peak_trips
-
+    metrics_dict[tm_run_id, METRIC_ID,'final','Daily Total Commute Trips During Peak Hours', 'Daily_total_peak_hour_commute_trips', year] = total_peak_trips
 
 
 
@@ -1304,7 +1318,7 @@ if __name__ == "__main__":
         # print("@@@@@@@@@@@@@ A2 Done")
         calculate_Efficient1_ratio_travel_time(tm_run_id, metrics_dict)
         # print("@@@@@@@@@@@@@ E1 Done")
-        calculate_Efficient2_commute_mode_share(tm_run_id, year, tm_commute_df, metrics_dict)
+        calculate_Efficient2_commute_mode_share(tm_run_id, metrics_dict)
         calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df, metrics_dict)
         # print("@@@@@@@@@@@@@ R1 Done")
         calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_od_tt_with_cities_df, metrics_dict) #add tm_metric_id to all?
@@ -1327,7 +1341,7 @@ if __name__ == "__main__":
         # print("@@@@@@@@@@@@@ A1 Done")
         calculate_Efficient1_ratio_travel_time(tm_run_id_base, metrics_dict)
         # print("@@@@@@@@@@@@@ E1 Done")
-        calculate_Efficient2_commute_mode_share(tm_run_id_base, year, tm_commute_df_base, metrics_dict)
+        calculate_Efficient2_commute_mode_share(tm_run_id_base, metrics_dict)
         calculate_Reliable2_ratio_peak_nonpeak(tm_run_id_base, year, tm_od_tt_with_cities_df_base, metrics_dict) #add tm_metric_id to all?
         # print("@@@@@@@@@@@@@ R2 Done")
         calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id_base, year, tm_loaded_network_df_base, metrics_dict)
