@@ -927,10 +927,10 @@ RUN PGM = MATRIX
             ( mi.2.ctruck *(mi.7.distlrg * LRTROPC))
   jloop
     dest_cordon_cost = zi.1.CORDONCOST[j]            
-    MW[46]  = (mi.2.vstruck * (@btoll_factor@) * dest_cordon_cost) +
-              ( mi.2.struck * (@btoll_factor@) * dest_cordon_cost) +
-              ( mi.2.mtruck * (@btoll_factor@) * dest_cordon_cost) +
-              ( mi.2.ctruck * (@btoll_factor@) * dest_cordon_cost)   ; Cordon tolls (considering discounts)   
+    MW[46]  = (mi.2.vstruck * dest_cordon_cost) +
+              ( mi.2.struck * dest_cordon_cost) +
+              ( mi.2.mtruck * dest_cordon_cost) +
+              ( mi.2.ctruck * dest_cordon_cost)   ; Cordon tolls
     MW[13]  = (mi.2.vstruck * (mi.7.btollvsm - dest_cordon_cost)) +
               ( mi.2.struck * (mi.7.btollsml - dest_cordon_cost)) +
               ( mi.2.mtruck * (mi.7.btollmed - dest_cordon_cost)) +
@@ -956,10 +956,10 @@ RUN PGM = MATRIX
             ( mi.2.ctrucktoll * mi.7.tollvtolllrg) ; Value tolls
   jloop
     dest_cordon_cost = zi.1.CORDONCOST[j]            
-    MW[47]  = (mi.2.vstrucktoll * (@btoll_factor@) * dest_cordon_cost) +
-              ( mi.2.strucktoll * (@btoll_factor@) * dest_cordon_cost) +
-              ( mi.2.mtrucktoll * (@btoll_factor@) * dest_cordon_cost) +
-              ( mi.2.ctrucktoll * (@btoll_factor@) * dest_cordon_cost)       ; Cordon tolls (considering discounts)   
+    MW[47]  = (mi.2.vstrucktoll * dest_cordon_cost) +
+              ( mi.2.strucktoll * dest_cordon_cost) +
+              ( mi.2.mtrucktoll * dest_cordon_cost) +
+              ( mi.2.ctrucktoll * dest_cordon_cost)       ; Cordon tolls
     MW[17]  = (mi.2.vstrucktoll * (mi.7.tollbtollvsm - dest_cordon_cost)) +
               ( mi.2.strucktoll * (mi.7.tollbtollsml - dest_cordon_cost)) +
               ( mi.2.mtrucktoll * (mi.7.tollbtollmed - dest_cordon_cost)) +
@@ -1021,10 +1021,10 @@ RUN PGM = MATRIX
             ( mi.4.ctruck *(mi.9.distlrg * LRTROPC))
   jloop
     dest_cordon_cost = zi.1.CORDONCOST[j]            
-    MW[48]  = (mi.4.vstruck * (@btoll_factor@) * dest_cordon_cost) +
-              ( mi.4.struck * (@btoll_factor@) * dest_cordon_cost) +
-              ( mi.4.mtruck * (@btoll_factor@) * dest_cordon_cost) +
-              ( mi.4.ctruck * (@btoll_factor@) * dest_cordon_cost)       ; Cordon tolls (considering discounts)   
+    MW[48]  = (mi.4.vstruck * dest_cordon_cost) +
+              ( mi.4.struck * dest_cordon_cost) +
+              ( mi.4.mtruck * dest_cordon_cost) +
+              ( mi.4.ctruck * dest_cordon_cost)       ; Cordon tolls
     MW[31]  = (mi.4.vstruck * (mi.9.btollvsm - dest_cordon_cost)) +
               ( mi.4.struck * (mi.9.btollsml - dest_cordon_cost)) +
               ( mi.4.mtruck * (mi.9.btollmed - dest_cordon_cost)) +
@@ -1050,10 +1050,10 @@ RUN PGM = MATRIX
             ( mi.4.ctrucktoll * mi.9.tollvtolllrg) ; Value tolls
   jloop
     dest_cordon_cost = zi.1.CORDONCOST[j]            
-    MW[49]  = (mi.4.vstrucktoll * (@btoll_factor@) * dest_cordon_cost) +
-              ( mi.4.strucktoll * (@btoll_factor@) * dest_cordon_cost) +
-              ( mi.4.mtrucktoll * (@btoll_factor@) * dest_cordon_cost) +
-              ( mi.4.ctrucktoll * (@btoll_factor@) * dest_cordon_cost)           ; Cordon tolls (considering discounts)   
+    MW[49]  = (mi.4.vstrucktoll * dest_cordon_cost) +
+              ( mi.4.strucktoll * dest_cordon_cost) +
+              ( mi.4.mtrucktoll * dest_cordon_cost) +
+              ( mi.4.ctrucktoll * dest_cordon_cost)           ; Cordon tolls
     MW[35]  = (mi.4.vstrucktoll * (mi.9.tollvtollvsm - dest_cordon_cost)) +
               ( mi.4.strucktoll * (mi.9.tollvtollsml - dest_cordon_cost)) +
               ( mi.4.mtrucktoll * (mi.9.tollvtollmed - dest_cordon_cost)) +
