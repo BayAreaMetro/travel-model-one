@@ -89,15 +89,18 @@ if __name__ == '__main__':
     # double check
     logger.info(link_gdf[['A', 'B', 'geometry', 'A_point', 'B_point', 'A_X', 'A_Y', 'B_X', 'B_Y']].head())
 
-    # check column types
+    # check column data types of raw gdf and new gdf to make sure no change in data type
     coltypes_before = raw_link_gdf.dtypes
     coltypes_after = link_gdf.dtypes
     for colname in list(raw_link_gdf):
         logger.debug('{}: {} --> {}'.format(colname, coltypes_before[colname], coltypes_after[colname]))
     
     # check memory usage
+    # raw file
     logger.debug('memory usage of old file: {}'.format(raw_link_gdf.memory_usage(index=True).sum()))
+    # new file with 6 new columns: 'A_point', 'B_point', 'A_X', 'A_Y', 'B_X', 'B_Y'
     logger.debug('memory usage of new file: {}'.format(link_gdf.memory_usage(index=True).sum()))
+    # the size of a sub-df of [['A_X', 'A_Y', 'B_X', 'B_Y']]
     logger.debug('memory usage of new columns :{}'.format(link_gdf[['A_X', 'A_Y', 'B_X', 'B_Y']].memory_usage(index=True).sum()))
 
     # export
