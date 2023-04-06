@@ -132,16 +132,21 @@ if __name__ == '__main__':
                     print("      => {}".format(dest_file))
                     shutil.copyfile(source_file, dest_file)
     # delete files
+    print("Do you want to delete files of old runs from the folder that no longer needed (y/n): ", end="")
+    my_args.delete_old_files = input()
+    if my_args.delete_old_files == "Y" or my_args.delete_old_files == "y":
     # run directories to keep
-    current_directory = list(model_runs_df.loc[model_runs_df.status == "current"]['directory'])
-    # extensions to modify
-    extensions = ('.csv','.shp', 'shp.xml', '.cpg', '.dbf', '.prj', '.shx')
-    # delete files from previous ModelRun.xlsx
-    for f in os.listdir(my_args.dest_dir):
-        if not (any(x in f for x in current_directory)):
-            if f.endswith(extensions):
-                if f != 'freeway_arterial_links.csv' and f != 'representative_links_for_19minorGroupings_20230330.csv':
-                    os.remove(f)
-                    print('Remove' + ' '+ f)
+        current_directory = list(model_runs_df.loc[model_runs_df['status'].isin(my_args.status_to_copy)]['directory'])
+        # extensions to modify
+        extensions = ('.csv','.shp', 'shp.xml', '.cpg', '.dbf', '.prj', '.shx')
+        # delete files from previous ModelRun.xlsx
+        for f in os.listdir(my_args.dest_dir):
+            if not (any(x in f for x in current_directory)):
+                if f.endswith(extensions):
+                    if f != 'freeway_arterial_links.csv' and f != 'representative_links_for_19minorGroupings_20230330.csv':
+                        os.remove(f)
+                        print('Remove' + ' '+ f)
 
-    print("Complete")
+        print("Complete")
+    else:
+        print("Complete")
