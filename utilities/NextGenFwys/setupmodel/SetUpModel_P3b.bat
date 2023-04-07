@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path3b_05
+set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP09_Path3b_06
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 :: The NGF NoProject scenario includes some Blueprint strategies and excludes some (e.g. Regional Transit Fares and Vision Zero).
@@ -15,7 +15,7 @@ set NGFNoProject=No
 
 :: set the location of the Travel Model Release
 :: use master for now until we create a release
-set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-master
+set GITHUB_DIR=X:\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
 set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_P3b_3Cordons_Affordable_03\NGF_P3b_3Cordons_Affordable_network_2035
@@ -32,8 +32,10 @@ set tazDataFileName=tazData_parkingStrategy_v01_3cordons_LeaveOutTI
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
 set UrbanSimScenario=s24
 
-:: set the location of the "input development" directory where other inputs are stored
-set INPUT_DEVELOPMENT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT
+:: set the location of the input directories for non resident travel, logsums and metrics
+set NONRES_INPUT_DIR=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\nonres\nonres_03
+set LOGSUMS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\logsums_dummies
+set METRICS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\metrics_FinalBlueprint
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
@@ -112,11 +114,11 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_POPLU%\landuse"                     
 copy /Y "%GITHUB_DIR%\utilities\telecommute\telecommute_max_rate_county.csv"                     INPUT\landuse
 
 :: nonres
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\nonres\nonres_02"                   INPUT\nonres
+c:\windows\system32\Robocopy.exe /E "%NONRES_INPUT_DIR%"                                         INPUT\nonres
 
 :: logsums and metrics
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\logsums_dummies"                    INPUT\logsums
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\metrics\metrics_FinalBlueprint"     INPUT\metrics
+c:\windows\system32\Robocopy.exe /E "%LOGSUMS_INPUT_DIR%"                                        INPUT\logsums
+c:\windows\system32\Robocopy.exe /E "%METRICS_INPUT_DIR%"                                        INPUT\metrics
 
 :: warmstart (copy from the previous run)
 mkdir INPUT\warmstart\main
@@ -307,5 +309,18 @@ echo oLink.Save >> %TEMP_SCRIPT%
 ::C:\Windows\SysWOW64\cscript.exe /nologo %TEMP_SCRIPT%
 C:\Windows\SysWOW64\cscript.exe %TEMP_SCRIPT%
 del %TEMP_SCRIPT%
+
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 7: log the git commit and git status of GITHUB_DIR
+::
+:: ------------------------------------------------------------------------------------------------------
+set CURRENT_DIR=%CD%
+cd /d %GITHUB_DIR%
+git log -1
+git status
+cd /d %CURRENT_DIR%
+
 
 :end

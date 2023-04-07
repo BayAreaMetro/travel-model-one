@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path2a_03
+set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP09_Path2a_04
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for Blueprint NoProject runs; AddStrategies=Yes for NGF NoProject runs.
 set AddStrategies=Yes
@@ -34,8 +34,10 @@ set tazDataFileName=tazData_parkingStrategy_v01_LeaveOutTI
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
 set UrbanSimScenario=s24
 
-:: set the location of the "input development" directory where other inputs are stored
-set INPUT_DEVELOPMENT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT
+:: set the location of the input directories for non resident travel, logsums and metrics
+set NONRES_INPUT_DIR=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\nonres\nonres_03
+set LOGSUMS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\logsums_dummies
+set METRICS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\metrics_FinalBlueprint
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
@@ -114,11 +116,11 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_POPLU%\landuse"                     
 copy /Y "%GITHUB_DIR%\utilities\telecommute\telecommute_max_rate_county.csv"                     INPUT\landuse
 
 :: nonres
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\nonres\nonres_02"                   INPUT\nonres
+c:\windows\system32\Robocopy.exe /E "%NONRES_INPUT_DIR%"                                         INPUT\nonres
 
 :: logsums and metrics
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\logsums_dummies"                    INPUT\logsums
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\metrics\metrics_FinalBlueprint"     INPUT\metrics
+c:\windows\system32\Robocopy.exe /E "%LOGSUMS_INPUT_DIR%"                                        INPUT\logsums
+c:\windows\system32\Robocopy.exe /E "%METRICS_INPUT_DIR%"                                        INPUT\metrics
 
 :: warmstart (copy from the previous run)
 mkdir INPUT\warmstart\main

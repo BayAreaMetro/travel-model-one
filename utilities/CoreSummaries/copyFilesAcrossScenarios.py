@@ -5,7 +5,7 @@ USAGE = r"""
   Takes an arg with the ModelRuns.xlsx
 
 """
-import argparse, os, shutil
+import argparse, os, re, shutil
 import pandas
 
 # output_dir -> file_list
@@ -90,11 +90,41 @@ if __name__ == '__main__':
     else:
         my_args.status_to_copy = set(status_to_copy.split(","))
 
+    # option to delete files
+    print("Do you want to delete files related to any other runs? (y/n): ", end="")
+    my_args.delete_other_run_files = input().lower()
+    print(my_args)
+
+    # create list of model run directories to copy
+    directory_copy_list = list(model_runs_df.loc[model_runs_df['status'].isin(my_args.status_to_copy)]['directory'])
+    # lower case these
+    directory_copy_list = [dir.lower() for dir in directory_copy_list]
+    print("directory_copy_list={}".format(directory_copy_list))
+
     # copy files
     for output_dir in OUTPUT_FILES.keys():
         print("Copying files for {}".format(output_dir))
 
         for output_file in OUTPUT_FILES[output_dir]:
+
+            if my_args.delete_other_run_files == "y":
+                print("  Looking for other versions of output_file to delete: {}".format(output_file))
+
+                # these are the files we're ok to delete
+                # assume model run ID starts with 4-digit year
+                potential_file_to_delete_re_str = r"^{}_(?P<run_id>\d\d\d\d_.+)\.{}$".format(
+                    output_file,
+                    "csv" if output_dir != "shapefile" else "(shp|shp.xml|cpg|dbf|prj|shx)")
+                # print(potential_file_to_delete_re_str)
+                potential_file_to_delete_re = re.compile(potential_file_to_delete_re_str)
+
+                for potential_file_to_delete in os.listdir(my_args.dest_dir):
+                    match = re.search(potential_file_to_delete_re, potential_file_to_delete)
+                    if match == None: continue
+
+                    if match.group('run_id').lower() not in directory_copy_list:
+                        print("    => Deleting {}".format(potential_file_to_delete))
+                        os.remove(os.path.join(my_args.dest_dir, potential_file_to_delete))
 
             print("  Copying output_file: {}".format(output_file))
 
@@ -131,22 +161,5 @@ if __name__ == '__main__':
                     print("    Copying {}".format(source_file))
                     print("      => {}".format(dest_file))
                     shutil.copyfile(source_file, dest_file)
-    # delete files
-    print("Do you want to delete files of old runs from the folder that no longer needed (y/n): ", end="")
-    my_args.delete_old_files = input()
-    if my_args.delete_old_files == "Y" or my_args.delete_old_files == "y":
-    # run directories to keep
-        current_directory = list(model_runs_df.loc[model_runs_df['status'].isin(my_args.status_to_copy)]['directory'])
-        # extensions to modify
-        extensions = ('.csv','.shp', 'shp.xml', '.cpg', '.dbf', '.prj', '.shx')
-        # delete files from previous ModelRun.xlsx
-        for f in os.listdir(my_args.dest_dir):
-            if not (any(x in f for x in current_directory)):
-                if f.endswith(extensions):
-                    if f != 'freeway_arterial_links.csv' and f != 'representative_links_for_19minorGroupings_20230330.csv':
-                        os.remove(f)
-                        print('Remove' + ' '+ f)
 
-        print("Complete")
-    else:
-        print("Complete")
+    print("Complete")
