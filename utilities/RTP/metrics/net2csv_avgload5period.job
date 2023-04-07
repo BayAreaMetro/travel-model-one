@@ -70,6 +70,14 @@ run pgm = network
                 "volEA_daav",  "volAM_daav",  "volMD_daav",  "volPM_daav",  "volEV_daav",
                 "volEA_s2av",  "volAM_s2av",  "volMD_s2av",  "volPM_s2av",  "volEV_s2av",
                 "volEA_s3av",  "volAM_s3av",  "volMD_s3av",  "volPM_s3av",  "volEV_s3av",
+                ; add tolling amounts
+                "tollEA_da",   "tollAM_da",   "tollMD_da",   "tollPM_da",   "tollEV_da",
+                "tollEA_s2",   "tollAM_s2",   "tollMD_s2",   "tollPM_s2",   "tollEV_s2",
+                "tollEA_s3",   "tollAM_s3",   "tollMD_s3",   "tollPM_s3",   "tollEV_s3",
+                "tollEA_vsm",  "tollAM_vsm",  "tollMD_vsm",  "tollPM_vsm",  "tollEV_vsm",
+                "tollEA_sml",  "tollAM_sml",  "tollMD_sml",  "tollPM_sml",  "tollEV_sml",
+                "tollEA_med",  "tollAM_med",  "tollMD_med",  "tollPM_med",  "tollEV_med",
+                "tollEA_lrg",  "tollAM_lrg",  "tollMD_lrg",  "tollPM_lrg",  "tollEV_lrg",
                 printo=1
          
          _doOnce = 1
@@ -129,7 +137,15 @@ run pgm = network
              volEA_daav(12.2L),volAM_daav(12.2L),volMD_daav(12.2L),volPM_daav(12.2L),volEV_daav(12.2L),
              volEA_s2av(12.2L),volAM_s2av(12.2L),volMD_s2av(12.2L),volPM_s2av(12.2L),volEV_s2av(12.2L),
              volEA_s3av(12.2L),volAM_s3av(12.2L),volMD_s3av(12.2L),volPM_s3av(12.2L),volEV_s3av(12.2L),
-             printo=1
+            ; add tolling amounts
+            tollEA_da(6.4L),   tollAM_da(6.4L),  tollMD_da(6.4L),  tollPM_da(6.4L),  tollEV_da(6.4L),
+            tollEA_s2(6.4L),   tollAM_s2(6.4L),  tollMD_s2(6.4L),  tollPM_s2(6.4L),  tollEV_s2(6.4L),
+            tollEA_s3(6.4L),   tollAM_s3(6.4L),  tollMD_s3(6.4L),  tollPM_s3(6.4L),  tollEV_s3(6.4L),
+            tollEA_vsm(6.4L),  tollAM_vsm(6.4L), tollMD_vsm(6.4L), tollPM_vsm(6.4L), tollEV_vsm(6.4L),
+            tollEA_sml(6.4L),  tollAM_sml(6.4L), tollMD_sml(6.4L), tollPM_sml(6.4L), tollEV_sml(6.4L),
+            tollEA_med(6.4L),  tollAM_med(6.4L), tollMD_med(6.4L), tollPM_med(6.4L), tollEV_med(6.4L),
+            tollEA_lrg(6.4L),  tollAM_lrg(6.4L), tollMD_lrg(6.4L), tollPM_lrg(6.4L), tollEV_lrg(6.4L),
+            printo=1
    
    endphase
    
