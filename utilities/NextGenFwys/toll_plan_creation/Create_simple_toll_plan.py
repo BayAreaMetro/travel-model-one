@@ -103,6 +103,7 @@ tolls_in_midday = "true"
 # Specify toll input file and toll plan option
 toll_input_file="L:/Application/Model_One/NextGenFwys/INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P1b_V11/SimpleToll_MinorGroupingX3TP.xlsx"
 toll_plan_option="new1b" #This is the name of the excel worksheet
+# Note that Process 2 assumes the values in the toll input file are in 2000$ - it doesn't do any price conversion
 
 tollcsv_with_allcombos = "L:/Application/Model_One/NextGenFwys/Scenarios/2035_TM152_NGF_NP07_Path2b_02/INPUT/hwy/tolls.csv"
 
