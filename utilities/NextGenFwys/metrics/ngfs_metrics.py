@@ -27,13 +27,12 @@ USAGE = """
 import datetime, os, sys
 import numpy, pandas as pd
 from collections import OrderedDict, defaultdict
-from dbfread import DBF
 import math
 import csv
 
 # paths
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns1.xlsx")
+NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
 
 # maps TAZs to a few selected cities for Origin/Destination analysis
@@ -109,6 +108,19 @@ OBS_INJURIES_15 = 1968
 MODES_TRANSIT      = [9,10,11,12,13,14,15,16,17,18]
 MODES_PRIVATE_AUTO = [1,2,3,4,5,6]
 MODES_TAXI_TNC     = [19,20,21]
+
+METRICS_COLUMNS = [
+    'grouping1',
+    'grouping2',
+    'grouping3',
+    'modelrun_id',
+    'metric_id',
+    'intermediate/final', # TODO: suggest renaming this to 'metric_level' since other options are used beyond intermediate and final
+    'key',
+    'metric_desc',
+    'year',
+    'value'
+]
 
 def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df, metrics_dict):
     DESCRIPTION = """
@@ -638,11 +650,10 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
 
 
 
-def calculate_Efficient1_ratio_travel_time(tm_run_id, metrics_dict):
+def calculate_Efficient1_ratio_travel_time(tm_run_id):
     # 3) Ratio of travel time by transit over that of auto between representative origin-destination pairs
     #
-    # Puts results into metrics_dict, with key: tm_run_id, 'Efficient 1', extra|intermediate|final, key, metric_description
-    # TODO: why put results into a dictionary rather than returning a dataframe?
+    # Returns metrics in pandas.DataFrame
     #
     # Notes:
     #  * Representative origin-destination pairs are given by TAZs corresponding with 
@@ -654,10 +665,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id, metrics_dict):
     #
     METRIC_ID = 'Efficient 1'
     print("Calculating {}".format(METRIC_ID))
-    grouping1 = ' '
-    grouping2 = ' '
-    grouping3 = ' '
-    	
     
     # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
     ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv")
@@ -743,7 +750,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id, metrics_dict):
     print("  => average_ratio={}".format(average_ratio))
     # print(trips_od_travel_time_df)
 
-    # convert to metrics_dict elements by pivoting one last time to just columns orig_CITY, dest_CITY
+    # convert to metrics dataframe by pivoting one last time to just columns orig_CITY, dest_CITY
     trips_od_travel_time_df = pd.melt(trips_od_travel_time_df, 
                                       id_vars=['orig_CITY','dest_CITY'], 
                                       var_name='metric_desc',
@@ -752,30 +759,31 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id, metrics_dict):
     trips_od_travel_time_df['intermediate/final']   = 'extra'
     # ratios are intermediate
     trips_od_travel_time_df.loc[ trips_od_travel_time_df.metric_desc.str.startswith('ratio'), 'intermediate/final'] = 'intermediate'
-    # print(trips_od_travel_time_df)
 
-    # convert to list of records to add to metrics_dict
-    my_metrics_dict = trips_od_travel_time_df.to_dict(orient='records')
-    for record in my_metrics_dict:
-        metrics_dict[grouping1, grouping2, grouping3,                       # TODO: implement formatting from below 
-            tm_run_id,                                                      # modelrun_id
-            METRIC_ID,                                                      # metric_id
-            record['intermediate/final'],                                   # intermediate/final
-            "{}_{}".format(record['orig_CITY'], record['dest_CITY']),       # key
-            record['metric_desc'],                                          # metric_desc
-            tm_run_id[:4],                                                  # year
-        ] = record['value']
+    # key is orig_CITY, dest_CITY
+    trips_od_travel_time_df['key']  = trips_od_travel_time_df['orig_CITY'] + "_" + trips_od_travel_time_df['dest_CITY']
+    trips_od_travel_time_df.drop(columns=['orig_CITY','dest_CITY'], inplace=True)
+
+    trips_od_travel_time_df['modelrun_id'] = tm_run_id
+    trips_od_travel_time_df['year'] = tm_run_id[:4]
+    trips_od_travel_time_df['metric_id'] = METRIC_ID
+    # print(trips_od_travel_time_df)
     
     # finally, add the average_ratio
-    metrics_dict[grouping1, grouping2, grouping3,                       # TODO: implement formatting from below
-        tm_run_id,                                                         # modelrun_id
-        METRIC_ID,                                                          # metric_id
-        "final",                                                            # intermediate/final
-        "Average across OD pairs",                                          # key
-        "ratio_travel_time_transit_auto_across_pairs",                      # metric_desc
-        tm_run_id[:4],                                                      # year
-    ] = average_ratio
-
+    final_row = pd.DataFrame.from_records([{
+        'modelrun_id':          tm_run_id,
+        'metric_id':            METRIC_ID,
+        'intermediate/final':   "final",
+        'key':                  "Average across OD pairs",
+        'metric_desc':          "ratio_travel_time_transit_auto_across_pairs",
+        'year':                 tm_run_id[:4], 
+        'value':                average_ratio
+     }])
+    # print(final_row)
+     
+    trips_od_travel_time_df = pd.concat([trips_od_travel_time_df, final_row])
+    # print(trips_od_travel_time_df)
+    return trips_od_travel_time_df
 
 def calculate_Efficient2_commute_mode_share(tm_run_id, metrics_dict):    
     # 4) Transit, walk and bike mode share of commute trips during peak hours
@@ -1292,7 +1300,21 @@ def calculate_Safe2_change_in_vmt(tm_run_id, year, tm_loaded_network_df,tm_auto_
 
 
 
+def metrics_dict_to_df(metrics_dict):
+    """
+    Temporary method to convert metrics_dict to metrics_df (pd.DataFrame) since the dictionary structure just makes this more confusing
 
+    Returns DataFrame with columns: grouping1, grouping2, grouping3, modelrun_id, metric_id, metric_level, key, metric_desc, year, value
+    """
+    # key=grouping1, grouping2, grouping3, tm_run_id, metric_id, top_level|extra|intermediate|final, key, metric_desc, year
+    row_dict_list = []
+    for metric_key in metrics_dict.keys():
+        # keys given by METRICS_COLUMNS
+        row_dict = {METRICS_COLUMNS[idx]: metric_key[idx] for idx in range(len(metric_key))}
+        # metric value
+        row_dict['value'] = metrics_dict[metric_key]
+        row_dict_list.append(row_dict)
+    return pd.DataFrame.from_records(row_dict_list)
 
 if __name__ == "__main__":
 
@@ -1408,7 +1430,10 @@ if __name__ == "__main__":
         loaded_network_2015_df = loaded_network_2015_df.rename(columns=lambda x: x.strip())
 
         # results will be stored here
+        # key=grouping1, grouping2, grouping3, tm_run_id, metric_id, top_level|extra|intermediate|final, key, metric_desc, year
+        # TODO: convert to pandas.DataFrame with these column headings.  It's far more straightforward.
         metrics_dict = {}
+        metrics_df = pd.DataFrame()
         calculate_Affordable1_transportation_costs(tm_run_id, year, 
                                                    tm_scen_metrics_df,
                                                    tm_auto_owned_df,
@@ -1418,7 +1443,9 @@ if __name__ == "__main__":
         # print("@@@@@@@@@@@@@ A1 Done")
         calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df, network_links_dbf, metrics_dict)
         # print("@@@@@@@@@@@@@ A2 Done")
-        calculate_Efficient1_ratio_travel_time(tm_run_id, metrics_dict)
+        efficient1_metrics_df = calculate_Efficient1_ratio_travel_time(tm_run_id)
+        metrics_df = pd.concat([metrics_df, efficient1_metrics_df])
+        
         # print("@@@@@@@@@@@@@ E1 Done")
         calculate_Efficient2_commute_mode_share(tm_run_id, metrics_dict)
         calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df, metrics_dict)
@@ -1441,7 +1468,8 @@ if __name__ == "__main__":
         # -----------base runs--------------------
         calculate_Affordable1_transportation_costs(tm_run_id_base, year, tm_scen_metrics_df_base, tm_auto_owned_df_base, tm_travel_cost_df_base, tm_auto_times_df_base, metrics_dict)
         # print("@@@@@@@@@@@@@ A1 Done")
-        calculate_Efficient1_ratio_travel_time(tm_run_id_base, metrics_dict)
+        efficient1_metrics_df = calculate_Efficient1_ratio_travel_time(tm_run_id_base)
+        metrics_df = pd.concat([metrics_df, efficient1_metrics_df])
         # print("@@@@@@@@@@@@@ E1 Done")
         calculate_Efficient2_commute_mode_share(tm_run_id_base, metrics_dict)
         calculate_Reliable2_ratio_peak_nonpeak(tm_run_id_base, year, tm_od_tt_with_cities_df_base, metrics_dict) #add tm_metric_id to all?
@@ -1453,13 +1481,13 @@ if __name__ == "__main__":
         calculate_top_level_metrics(tm_run_id_base, year, tm_vmt_metrics_df_base, tm_auto_times_df_base, tm_transit_times_df_base, tm_commute_df_base, tm_loaded_network_df_base, vmt_hh_df_base,tm_scen_metrics_df_base, metrics_dict)
   
         # _________output table__________
-        out_series = pd.Series(metrics_dict)
-        out_frame  = out_series.to_frame().reset_index()
-        out_frame.columns = ['grouping1', 'grouping2', 'grouping3','modelrun_id','metric_id','intermediate/final','key','metric_desc','year','value']
+        # TODO: deprecate when all metrics just come through via metrics_df
+        metrics_df = pd.concat([metrics_df, metrics_dict_to_df(metrics_dict)])
         # print out table
 
         out_filename = os.path.join(os.getcwd(),"ngfs_metrics_{}.csv".format(tm_run_id))
-        out_frame.to_csv(out_filename, float_format='%.5f', index=False) #, header=False
+        metrics_df[METRICS_COLUMNS].to_csv(out_filename, float_format='%.5f', index=False) #, header=False
         print("Wrote {}".format(out_filename))
 
         # for testing, stop here
+        sys.exit()
