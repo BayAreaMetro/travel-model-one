@@ -1490,4 +1490,4 @@ if __name__ == "__main__":
         print("Wrote {}".format(out_filename))
 
         # for testing, stop here
-        sys.exit()
+        # sys.exit()
