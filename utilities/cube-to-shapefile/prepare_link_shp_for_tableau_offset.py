@@ -13,6 +13,7 @@ Returns:
     links_withXY.shp: network links shapefile with crs 4326, and four additional columns: 'A_X', 'A_Y', 'B_X', 'B_Y'  
 """
 
+import fiona # geopandas requires this
 import geopandas as gpd
 import argparse, os, logging, time
 from datetime import datetime
@@ -70,6 +71,14 @@ if __name__ == '__main__':
     logger.info('data has {:,} rows'.format(raw_link_gdf.shape[0]))
     logger.info(raw_link_gdf.head())
 
+    # load the schema
+    logger.info('start loading the network schema')
+    input_schema = None
+    fiona_collection = fiona.open(os.path.join(FILE_DIR, RAW_LINK_FILE))
+    input_schema = fiona_collection.schema
+    fiona_collection.close()
+    logger.info('input_schema: {}'.format(input_schema))
+
     # convert to 4326
     logger.info('converting to crs 4326')
     link_gdf = raw_link_gdf.to_crs(TARGET_CRS)
@@ -103,9 +112,17 @@ if __name__ == '__main__':
     # the size of a sub-df of [['A_X', 'A_Y', 'B_X', 'B_Y']]
     logger.debug('memory usage of new columns :{}'.format(link_gdf[['A_X', 'A_Y', 'B_X', 'B_Y']].memory_usage(index=True).sum()))
 
+    # use the same schema as input
+    output_schema = input_schema.copy()
+    # new fields are precision 12, scale 5
+    output_schema['properties']['A_X'] = 'float:12.5'
+    output_schema['properties']['A_Y'] = 'float:12.5'
+    output_schema['properties']['B_X'] = 'float:12.5'
+    output_schema['properties']['B_Y'] = 'float:12.5'
     # export
     logger.info('Start writing out')
     link_gdf[list(raw_link_gdf) + ['A_X', 'A_Y', 'B_X', 'B_Y']].to_file(
-        os.path.join(FILE_DIR, LINK_WITH_XY_FILE)
+        os.path.join(FILE_DIR, LINK_WITH_XY_FILE),
+        schema=output_schema
     )
     logger.info('wrote {} to {}'.format(LINK_WITH_XY_FILE, FILE_DIR) )
