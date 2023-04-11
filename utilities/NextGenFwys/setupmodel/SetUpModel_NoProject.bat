@@ -15,7 +15,7 @@ set NGFNoProject=Yes
 
 :: set the location of the Travel Model Release
 :: use master for now until we create a release
-set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-master
+set GITHUB_DIR=X:\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
 set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_NoProjectNoSFCordon_08\net_2035_NGFNoProjectNoSFCordon
@@ -304,5 +304,18 @@ echo oLink.Save >> %TEMP_SCRIPT%
 ::C:\Windows\SysWOW64\cscript.exe /nologo %TEMP_SCRIPT%
 C:\Windows\SysWOW64\cscript.exe %TEMP_SCRIPT%
 del %TEMP_SCRIPT%
+
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 7: log the git commit and git status of GITHUB_DIR
+::
+:: ------------------------------------------------------------------------------------------------------
+set CURRENT_DIR=%CD%
+cd /d %GITHUB_DIR%
+git log -1
+git status
+cd /d %CURRENT_DIR%
+
 
 :end
