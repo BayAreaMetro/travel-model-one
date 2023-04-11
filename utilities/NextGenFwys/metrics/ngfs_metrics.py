@@ -11,16 +11,16 @@ USAGE = """
     3) metric value
     
   Metrics are:
-    1) Transportation costs as a share of household income
-    2) Ratio of value of auto travel time savings to incremental toll costs
-    3) Ratio of travel time by transit vs. auto between  representative origin-destination pairs
-    4) Transit, walk and bike mode share of commute trips during peak hours
-    5) Change in peak hour travel time on key freeway corridors and parallel arterials
-    6) Ratio of travel time during peak hours vs. non-peak hours between representative origin-destination pairs 
-    7) Absolute dollar amount of new revenues generated that is reinvested in freeway adjacent communities
-    8) Ratio of new revenues paid for by low-income populations to revenues reinvested toward low-income populations
-    9) Annual number of estimated fatalities on freeways and non-freeway facilities
-    10) Change in vehicle miles travelled on freeway and adjacent non-freeway facilities
+    1) Affordable 1: Transportation costs as a share of household income
+    2) Affordable 2: Ratio of value of auto travel time savings to incremental toll costs
+    3) Efficient 1: Ratio of travel time by transit vs. auto between  representative origin-destination pairs
+    4) Efficient 2: Transit, walk and bike mode share of commute trips during peak hours
+    5) Reliable 1: Change in peak hour travel time on key freeway corridors and parallel arterials
+    6) Reliable 2: Ratio of travel time during peak hours vs. non-peak hours between representative origin-destination pairs 
+    7) Reparative 1: Absolute dollar amount of new revenues generated that is reinvested in freeway adjacent communities
+    8) Reparative 2: Ratio of new revenues paid for by low-income populations to revenues reinvested toward low-income populations
+    9) Safe 1: Annual number of estimated fatalities on freeways and non-freeway facilities
+    10) Safe 2: Change in vehicle miles travelled on freeway and adjacent non-freeway facilities
 
 """
 
@@ -1408,8 +1408,8 @@ if __name__ == "__main__":
         # load collisionLookup table
         if tm_run_id == '2035_TM152_NGF_NP07_Path4_02':
           collision_rates_df = pd.read_csv(tm_run_location + '/INPUT_032123_160659/metrics/collisionLookup.csv')
-        elif tm_run_id == '2035_TM152_NGF_NP07_Path3a_05':
-          collision_rates_df = pd.read_csv(tm_run_location + '/INPUT_033023_ 92607/metrics/collisionLookup.csv')
+        # elif tm_run_id == '2035_TM152_NGF_NP07_Path3a_05':
+        #   collision_rates_df = pd.read_csv(tm_run_location + '/INPUT_033023_ 92607/metrics/collisionLookup.csv')
         else:
           collision_rates_df = pd.read_csv(tm_run_location + '/INPUT/metrics/collisionLookup.csv')
 
