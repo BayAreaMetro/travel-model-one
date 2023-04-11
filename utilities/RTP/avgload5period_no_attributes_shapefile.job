@@ -2,11 +2,17 @@
 RUN PGM=NETWORK
 
   NETI[1] = "../avgload5period.net"
-  LINKO   = "avgload5period_no_attr.shp"  FORMAT=SHP, INCLUDE=A,B,ROUTENUM,ROUTEDIR
+  LINKO   = "avgload5period_no_attr.shp"  FORMAT=SHP, INCLUDE=A,B,ROUTENUM,ROUTEDIR,A_X,A_Y,B_X,B_Y
 
   REPORT MERGE = TRUE
   MERGE RECORD = TRUE
 
+  phase=LINKMERGE
+    A_X = A.X
+    A_Y = A.Y
+    B_X = B.X
+    B_Y = B.Y
+  endphase
 ENDRUN
 
 ;
