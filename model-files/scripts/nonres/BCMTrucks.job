@@ -284,7 +284,7 @@ RUN PGM=TRIPDIST
   ;
   ; Read Friction Factors
   ;
-  LOOKUP LIST=N, FILE= nonres\Inputs\Calib\truckFF_II.dat,name=truckff,
+  LOOKUP LIST=N, FILE= nonres\Inputs\Calib\truckFF_IItm15.dat,name=truckff,
     LOOKUP[1]=1, RESULT=2,                             ; Friction Factors for Small Trucks
     LOOKUP[2]=1, RESULT=3,                             ; Friction Factors for Medium Trucks
     LOOKUP[3]=1, RESULT=4,                             ; Friction Factors for Combo Trucks
@@ -397,7 +397,7 @@ RUN PGM=TRIPDIST
   ;
   ; Read Friction Factors
   ;
-  LOOKUP LIST=Y, FILE= nonres\Inputs\Calib\vstruck.ff.dat,name=truckff,
+  LOOKUP LIST=Y, FILE= nonres\Inputs\Calib\vstruck.fftm15.dat,name=truckff,
     LOOKUP[1]=1, RESULT=2,                             ; Friction Factors for Very Small Trucks
     INTERPOLATE=Y, SETUPPER=N
   ;
