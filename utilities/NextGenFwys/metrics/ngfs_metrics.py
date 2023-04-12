@@ -1117,10 +1117,9 @@ def calculate_fatalitites(run_id, loaded_network_df, collision_rates_df, tm_load
         # join average speed on each link in no project
         # calculate average speed
         tm_loaded_network_df_base['Avg_reduced_speed'] = (tm_loaded_network_df_base['cspdEA'] + tm_loaded_network_df_base['cspdAM'] + tm_loaded_network_df_base['cspdMD'] + tm_loaded_network_df_base['cspdPM'] + tm_loaded_network_df_base['cspdEV']) / 5
-        tm_loaded_network_df_base['a_b'] = tm_loaded_network_df_base['a'].astype(str) + "_" + tm_loaded_network_df_base['b'].astype(str)
-        base_network_avg_speed_df = tm_loaded_network_df_base[['a_b', 'Avg_reduced_speed']]
-        # merge DFs on 'a_b'
-        modified_network_df = modified_network_df.merge(base_network_avg_speed_df, on='a_b', how='left')
+        base_network_avg_speed_df = tm_loaded_network_df_base[['a','b', 'Avg_reduced_speed']]
+        # merge DFs on 'a' & 'b'
+        modified_network_df = pd.merge(left=modified_network_df, right=base_network_avg_speed_df, how='left', left_on=['a','b'], right_on=['a','b'])
         # add attributes for fatality reduction exponent based on ft
         # exponents and methodology sourced from here: https://www.toi.no/getfile.php?mmfileid=13206 (table S1)
         # methodology cited in this FHWA resource: https://www.fhwa.dot.gov/publications/research/safety/17098/003.cfm
@@ -1339,12 +1338,13 @@ if __name__ == "__main__":
 
     # load lookup file for parallel arterial links
     parallel_arterials_links = pd.read_csv('L:\\Application\\Model_One\\NextGenFwys\\metrics\\Input Files\\ParallelArterialLinks.csv')
+    # TODO: remove all instances of merging on an extra 'a_b' column
     parallel_arterials_links['a_b'] = parallel_arterials_links['A'].astype(str) + "_" + parallel_arterials_links['B'].astype(str)
 
     # define base run inputs
     # # base year run for comparisons (no project)
     # ______load no project network to use for speed comparisons in vmt corrections______
-    tm_run_location_base = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\2035_TM152_NGF_NP08"
+    tm_run_location_base = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\2035_TM152_NGF_NP09_Path4_04"
     tm_run_id_base = tm_run_location_base.split('\\')[-1]
     # ______define the base run inputs for "change in" comparisons______
     tm_scen_metrics_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/metrics/scenario_metrics.csv',names=["runid", "metric_name", "value"])
