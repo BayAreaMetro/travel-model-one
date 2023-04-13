@@ -15,6 +15,7 @@ Returns:
 
 import fiona # geopandas requires this
 import geopandas as gpd
+import numpy as np
 import argparse, os, logging, time
 from datetime import datetime
 
@@ -98,6 +99,14 @@ if __name__ == '__main__':
     # double check
     logger.info(link_gdf[['A', 'B', 'geometry', 'A_point', 'B_point', 'A_X', 'A_Y', 'B_X', 'B_Y']].head())
 
+    # we've seen rows with bad values -- filter these
+    link_gdf_bad_vals = link_gdf.loc[
+        (link_gdf['A_X']==np.inf) | np.isnan(link_gdf['A_X']) | 
+        (link_gdf['A_Y']==np.inf) | np.isnan(link_gdf['A_Y']) |
+        (link_gdf['B_X']==np.inf) | np.isnan(link_gdf['B_X']) |
+        (link_gdf['B_Y']==np.inf) | np.isnan(link_gdf['B_Y'])]
+    logger.error("Found {} rows with bad A/B coords:\n{}".format(len(link_gdf_bad_vals), link_gdf_bad_vals))
+
     # check column data types of raw gdf and new gdf to make sure no change in data type
     coltypes_before = raw_link_gdf.dtypes
     coltypes_after = link_gdf.dtypes
@@ -121,8 +130,15 @@ if __name__ == '__main__':
     output_schema['properties']['B_Y'] = 'float:12.5'
     # export
     logger.info('Start writing out')
-    link_gdf[list(raw_link_gdf) + ['A_X', 'A_Y', 'B_X', 'B_Y']].to_file(
-        os.path.join(FILE_DIR, LINK_WITH_XY_FILE),
-        schema=output_schema
-    )
-    logger.info('wrote {} to {}'.format(LINK_WITH_XY_FILE, FILE_DIR) )
+    try:
+        link_gdf[list(raw_link_gdf) + ['A_X', 'A_Y', 'B_X', 'B_Y']].to_file(
+            os.path.join(FILE_DIR, LINK_WITH_XY_FILE),
+            schema=output_schema
+        )
+        logger.info('wrote {} to {}'.format(LINK_WITH_XY_FILE, FILE_DIR) )
+    except Exception as inst:
+        print(type(inst))    # the exception type
+        print(inst.args)     # arguments stored in .args
+        print(inst)          # __str__ allows args to be printed directly,
+                         # but may be overridden in exception subclasses
+
