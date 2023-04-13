@@ -27,6 +27,7 @@ USAGE = """
 import datetime, os, sys
 import numpy, pandas as pd
 from collections import OrderedDict, defaultdict
+import logging
 import math
 import csv
 
