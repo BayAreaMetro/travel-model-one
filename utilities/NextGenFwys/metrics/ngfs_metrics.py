@@ -27,6 +27,7 @@ USAGE = """
 import datetime, os, sys
 import numpy, pandas as pd
 from collections import OrderedDict, defaultdict
+import logging
 import math
 import csv
 
@@ -35,9 +36,18 @@ TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__
 NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
 
+# These calculations are complex enough that a debug log file would be helpful to track what's happening
+LOG_FILE                = "ngfs_metrics.log" # in the cwd
+LOGGER                  = None # will initialize in main     
+
 # maps TAZs to a few selected cities for Origin/Destination analysis
 NGFS_OD_CITIES_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_with_cities.csv")
 NGFS_OD_CITIES_DF      = pd.read_csv(NGFS_OD_CITIES_FILE)
+
+# parallel arterials
+# TODO: Document how these were made?
+NGFS_PARALLEL_ARTERIALS_FILE = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "ParallelArterialLinks.csv")
+NGFS_PARALLEL_ARTERIALS_DF   = pd.read_csv(NGFS_PARALLEL_ARTERIALS_FILE)
 
 # define origin destination pairs
 NGFS_OD_CITIES_OF_INTEREST = [
@@ -650,30 +660,46 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
 
 
 
-def calculate_Efficient1_ratio_travel_time(tm_run_id):
-    # 3) Ratio of travel time by transit over that of auto between representative origin-destination pairs
-    #
-    # Returns metrics in pandas.DataFrame
-    #
-    # Notes:
-    #  * Representative origin-destination pairs are given by TAZs corresponding with 
-    #    NGFS_OD_CITIES_FILE and NGFS_OD_CITIES_OF_INTEREST
-    #  * Auto modes includes taxi and tncs
-    #  * Final calculation is the average of these ratios (not weighted) across all OD pairs,
-    #    excluding those which have no transit trips and therefore lack a transit travel time
-    #    TODO: Does this make sense?  If a market is very small, should it be considered equally
-    #
+def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
+    """ Calculates Efficient1: Ratio of travel time by transit over that of auto between representative origin-destination pairs
+    
+    Args:
+        tm_run_id (str): Travel model run ID
+
+    Returns:
+        pandas.DataFrame: with columns a subset of METRICS_COLUMNS
+        Metrics returned:
+          key                       intermediate/final  metric_desc
+          [origCITY_destCITY]       extra               avg_travel_time_in_mins_auto
+          [origCITY_destCITY]       extra               avg_travel_time_in_mins_transit
+          [origCITY_destCITY]       extra               num_trips_auto
+          [origCITY_destCITY]       extra               num_trips_transit
+          [origCITY_destCITY]       intermediate        ratio_travel_time_transit_auto
+          Average across OD pairs   intermediate        ratio_travel_time_transit_auto_across_pairs
+
+    Notes:
+    * Representative origin-destination pairs are given by TAZs corresponding with 
+      NGFS_OD_CITIES_FILE and NGFS_OD_CITIES_OF_INTEREST
+    * Auto modes includes taxi and tncs
+    * Final calculation is the average of these ratios (not weighted) across all OD pairs,
+      excluding those which have no transit trips and therefore lack a transit travel time
+    
+      TODO: Does this make sense?  If a market is very small, should it be considered equally
+    """
     METRIC_ID = 'Efficient 1'
     print("Calculating {}".format(METRIC_ID))
+    LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
     
     # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
     ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv")
     # this is large so join/subset it immediately
     trips_od_travel_time_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
     print("  Read {:,} rows from {}".format(len(trips_od_travel_time_df), ODTravelTime_byModeTimeperiod_file))
+    LOGGER.info("  Read {:,} rows from {}".format(len(trips_od_travel_time_df), ODTravelTime_byModeTimeperiod_file))
 
     trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df.timeperiod_label == 'AM Peak' ]
     print("  Filtered to AM only: {:,} rows".format(len(trips_od_travel_time_df)))
+    LOGGER.info("  Filtered to AM only: {:,} rows".format(len(trips_od_travel_time_df)))
 
     # pivot out the income since we don't need it
     trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df,
@@ -682,6 +708,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id):
                                              aggfunc={'num_trips':numpy.sum, 'avg_travel_time_in_mins':numpy.mean})
     trips_od_travel_time_df.reset_index(inplace=True)
     print("  Aggregated income groups: {:,} rows".format(len(trips_od_travel_time_df)))
+    LOGGER.info("  Aggregated income groups: {:,} rows".format(len(trips_od_travel_time_df)))
 
     # join to OD cities for origin
     trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
@@ -698,6 +725,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id):
     trips_od_travel_time_df.rename(columns={"CITY":"dest_CITY"}, inplace=True)
     trips_od_travel_time_df.drop(columns=["taz1454"], inplace=True)
     print("  Joined with {} for origin, destination: {:,} rows".format(NGFS_OD_CITIES_FILE, len(trips_od_travel_time_df)))
+    LOGGER.info("  Joined with {} for origin, destination: {:,} rows".format(NGFS_OD_CITIES_FILE, len(trips_od_travel_time_df)))
 
     # filter again to only those of interest
     trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
@@ -705,6 +733,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id):
                                        indicator=True)
     trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df._merge == 'both']
     print("  Filtered to only NGFS_OD_CITIES_OF_INTEREST: {:,} rows".format(len(trips_od_travel_time_df)))
+    LOGGER.info("  Filtered to only NGFS_OD_CITIES_OF_INTEREST: {:,} rows".format(len(trips_od_travel_time_df)))
 
     # we're going to aggregate trip modes; auto includes TAXI and TNC
     trips_od_travel_time_df['agg_trip_mode'] = "N/A"
@@ -725,6 +754,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id):
     trips_od_travel_time_df['avg_travel_time_in_mins'] = \
         trips_od_travel_time_df['tot_travel_time_in_mins']/trips_od_travel_time_df['num_trips']
     # print(trips_od_travel_time_df)
+    # LOGGER.debug(trips_od_travel_time_df)
 
     # pivot again to move agg_mode to column
     # columns will now be: orig_CITY_, dest_CITY_, avg_travel_time_in_mins_auto, avg_travel_time_in_mins_transit, num_trips_auto, num_trips_transit
@@ -749,6 +779,8 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id):
     average_ratio = trips_od_travel_time_df['ratio_travel_time_transit_auto'].mean()
     print("  => average_ratio={}".format(average_ratio))
     # print(trips_od_travel_time_df)
+    LOGGER.info("  => average_ratio={}".format(average_ratio))
+    # LOGGER.debug(trips_od_travel_time_df)
 
     # convert to metrics dataframe by pivoting one last time to just columns orig_CITY, dest_CITY
     trips_od_travel_time_df = pd.melt(trips_od_travel_time_df, 
@@ -768,6 +800,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id):
     trips_od_travel_time_df['year'] = tm_run_id[:4]
     trips_od_travel_time_df['metric_id'] = METRIC_ID
     # print(trips_od_travel_time_df)
+    # LOGGER.info(trips_od_travel_time_df)
     
     # finally, add the average_ratio
     final_row = pd.DataFrame.from_records([{
@@ -780,9 +813,11 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id):
         'value':                average_ratio
      }])
     # print(final_row)
+    # LOGGER.debug(final_row)
      
     trips_od_travel_time_df = pd.concat([trips_od_travel_time_df, final_row])
     # print(trips_od_travel_time_df)
+    LOGGER.debug("{} Result: \n{}".format(METRIC_ID, trips_od_travel_time_df))
     return trips_od_travel_time_df
 
 def calculate_Efficient2_commute_mode_share(tm_run_id, metrics_dict):    
@@ -791,6 +826,7 @@ def calculate_Efficient2_commute_mode_share(tm_run_id, metrics_dict):
 
     METRIC_ID = 'Efficient 2'
     print("Calculating {}".format(METRIC_ID))
+    LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
     grouping1 = ' '
     grouping2 = ' '
     grouping3 = ' '
@@ -806,6 +842,7 @@ def calculate_Efficient2_commute_mode_share(tm_run_id, metrics_dict):
     commute_tours_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "CommuteByIncomeByTPHousehold.csv")
     tm_commute_df = pd.read_csv(commute_tours_file)
     print("  Read {:,} rows from {}".format(len(tm_commute_df), commute_tours_file))
+    LOGGER.info("  Read {:,} rows from {}".format(len(tm_commute_df), commute_tours_file))
 
     # TODO: From this perspective, 'timeCodeHwNum' is the time of the home-to-work trip, the below line is selecting people who 
     # TODO: go to work in AM or PM (and returning home in any time period)
@@ -1321,8 +1358,26 @@ def metrics_dict_to_df(metrics_dict):
     return pd.DataFrame.from_records(row_dict_list)
 
 if __name__ == "__main__":
-
+    pd.options.display.width = 500 # redirect output to file so this will be readable
+    pd.options.display.max_columns = 100
+    pd.options.display.max_rows = 100
     pd.options.mode.chained_assignment = None  # default='warn'
+
+    # set up logging
+    # create logger
+    LOGGER = logging.getLogger(__name__)
+    LOGGER.setLevel('DEBUG')
+
+    # console handler
+    ch = logging.StreamHandler()
+    ch.setLevel('INFO')
+    ch.setFormatter(logging.Formatter('%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
+    LOGGER.addHandler(ch)
+    # file handler
+    fh = logging.FileHandler(LOG_FILE, mode='w')
+    fh.setLevel('DEBUG')
+    fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
+    LOGGER.addHandler(fh)
 
     current_runs_df = pd.read_excel(NGFS_MODEL_RUNS_FILE, sheet_name='all_runs')
     current_runs_list = current_runs_df.loc[current_runs_df['status'] == 'current', 'directory']
@@ -1378,6 +1433,7 @@ if __name__ == "__main__":
 
     for tm_run_id in runs:
         print("Processing run {}".format(tm_run_id))
+        LOGGER.info("Processing run {}".format(tm_run_id))
 
         # #temporary run location for testing purposes
         tm_run_location = os.path.join(NGFS_SCENARIOS, tm_run_id)
@@ -1446,42 +1502,42 @@ if __name__ == "__main__":
                                                    tm_travel_cost_df,
                                                    tm_auto_times_df,
                                                    metrics_dict)
-        # print("@@@@@@@@@@@@@ A1 Done")
+        # LOGGER.info("@@@@@@@@@@@@@ A1 Done")
         calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df, network_links_dbf, metrics_dict)
-        # print("@@@@@@@@@@@@@ A2 Done")
+        # LOGGER.info("@@@@@@@@@@@@@ A2 Done")
         efficient1_metrics_df = calculate_Efficient1_ratio_travel_time(tm_run_id)
         metrics_df = pd.concat([metrics_df, efficient1_metrics_df])
         
-        # print("@@@@@@@@@@@@@ E1 Done")
+        # LOGGER.info("@@@@@@@@@@@@@ E1 Done")
         calculate_Efficient2_commute_mode_share(tm_run_id, metrics_dict)
         calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df, metrics_dict)
-        # print("@@@@@@@@@@@@@ R1 Done")
+        # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
         calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_od_tt_with_cities_df, metrics_dict) #add tm_metric_id to all?
-        # print("@@@@@@@@@@@@@ R2 Done")
+        # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
         calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict)
-        # print("@@@@@@@@@@@@@ S1 Done")
+        # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
         calculate_Safe2_change_in_vmt(tm_run_id, year, tm_loaded_network_df,tm_auto_times_df, metrics_dict)
-        # print("@@@@@@@@@@@@@ S2 Done")
+        # LOGGER.info("@@@@@@@@@@@@@ S2 Done")
 
         # -----------run base for comparisons---------------
 
         calculate_Safe2_change_in_vmt(tm_run_id_base, year, tm_loaded_network_df_base,tm_auto_times_df_base,  metrics_dict)
-        # print("@@@@@@@@@@@@@ S2 Done")
+        # LOGGER.info("@@@@@@@@@@@@@ S2 Done")
 
         # -----------run comparisons---------------
         calculate_change_between_run_and_base(tm_run_id, tm_run_id_base, year, 'Safe 2', metrics_dict)
 
         # -----------base runs--------------------
         calculate_Affordable1_transportation_costs(tm_run_id_base, year, tm_scen_metrics_df_base, tm_auto_owned_df_base, tm_travel_cost_df_base, tm_auto_times_df_base, metrics_dict)
-        # print("@@@@@@@@@@@@@ A1 Done")
+        # LOGGER.info("@@@@@@@@@@@@@ A1 Done")
         efficient1_metrics_df = calculate_Efficient1_ratio_travel_time(tm_run_id_base)
         metrics_df = pd.concat([metrics_df, efficient1_metrics_df])
-        # print("@@@@@@@@@@@@@ E1 Done")
+        # LOGGER.info("@@@@@@@@@@@@@ E1 Done")
         calculate_Efficient2_commute_mode_share(tm_run_id_base, metrics_dict)
         calculate_Reliable2_ratio_peak_nonpeak(tm_run_id_base, year, tm_od_tt_with_cities_df_base, metrics_dict) #add tm_metric_id to all?
-        # print("@@@@@@@@@@@@@ R2 Done")
+        # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
         calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id_base, year, tm_loaded_network_df_base, metrics_dict)
-        # print("@@@@@@@@@@@@@ S1 Done")
+        # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
         # run function to calculate top level metrics
         calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df, metrics_dict)  # calculate for base run too
         calculate_top_level_metrics(tm_run_id_base, year, tm_vmt_metrics_df_base, tm_auto_times_df_base, tm_transit_times_df_base, tm_commute_df_base, tm_loaded_network_df_base, vmt_hh_df_base,tm_scen_metrics_df_base, metrics_dict)
@@ -1493,7 +1549,7 @@ if __name__ == "__main__":
 
         out_filename = os.path.join(os.getcwd(),"ngfs_metrics_{}.csv".format(tm_run_id))
         metrics_df[METRICS_COLUMNS].to_csv(out_filename, float_format='%.5f', index=False) #, header=False
-        print("Wrote {}".format(out_filename))
+        LOGGER.info("Wrote {}".format(out_filename))
 
         # for testing, stop here
         # sys.exit()
