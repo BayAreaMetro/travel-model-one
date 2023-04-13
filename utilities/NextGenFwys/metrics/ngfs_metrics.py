@@ -331,7 +331,7 @@ def calculate_change_between_run_and_base(tm_run_id, tm_run_id_base, year, metri
     metrics_dict_df  = metrics_dict_series.to_frame().reset_index()
     metrics_dict_df.columns = ['grouping1', 'grouping2', 'grouping3', 'modelrun_id','metric_id','intermediate/final','key','metric_desc','year','value']
     #     make a list of the metrics from the run of interest to iterate through and calculate a difference with
-    metrics_list = metrics_dict_df.copy().loc[(metrics_dict_df['modelrun_id'].str.contains(tm_run_id) == True)]
+    metrics_list = metrics_dict_df.copy().loc[(metrics_dict_df['modelrun_id'] == tm_run_id)]
     metrics_list = metrics_list.loc[(metrics_dict_df['metric_id'].str.contains(metric_id) == True)]['metric_desc']
     # iterate through the list
     # add in grouping field
@@ -815,14 +815,13 @@ def calculate_Efficient2_commute_mode_share(tm_run_id, metrics_dict):
     total_peak_trips = peak_commute_df.copy().loc[:,'freq'].sum()
     peak_commute_df.loc[(peak_commute_df['tour_mode'] == 1)|(peak_commute_df['tour_mode'] == 2),'mode'] = 'sov'
     peak_commute_df.loc[(peak_commute_df['tour_mode'] == 3)|(peak_commute_df['tour_mode'] == 4)|(peak_commute_df['tour_mode'] == 5)|(peak_commute_df['tour_mode'] == 6),'mode'] = 'hov'
-    peak_commute_df.loc[(peak_commute_df['tour_mode'] == 20)|(peak_commute_df['tour_mode'] == 21),'mode'] = 'tnc'
-    peak_commute_df.loc[(peak_commute_df['tour_mode'] == 19),'mode'] = 'taxi'
+    peak_commute_df.loc[(peak_commute_df['tour_mode'] == 19)|(peak_commute_df['tour_mode'] == 20)|(peak_commute_df['tour_mode'] == 21),'mode'] = 'taxi/tnc'
     peak_commute_df.loc[(peak_commute_df['tour_mode'] == 9)|(peak_commute_df['tour_mode'] == 10)|(peak_commute_df['tour_mode'] == 11)|(peak_commute_df['tour_mode'] == 12)|(peak_commute_df['tour_mode'] == 13)|(peak_commute_df['tour_mode'] == 14)|(peak_commute_df['tour_mode'] == 15)|(peak_commute_df['tour_mode'] == 16)|(peak_commute_df['tour_mode'] == 17)|(peak_commute_df['tour_mode'] == 18),'mode'] = 'transit'
     peak_commute_df.loc[(peak_commute_df['tour_mode'] == 7),'mode'] = 'walk'
     peak_commute_df.loc[(peak_commute_df['tour_mode'] == 8),'mode'] = 'bike'
 
     peak_commute_summed = peak_commute_df.copy().groupby('mode').agg('sum')
-    for type_of_mode in ['sov', 'hov', 'tnc', 'taxi', 'transit', 'walk', 'bike']:
+    for type_of_mode in ['sov', 'hov','taxi/tnc', 'transit', 'walk', 'bike']:
         metrics_dict[grouping1, grouping2, grouping3, tm_run_id, METRIC_ID,'final','{} Mode Share'.format(type_of_mode),'{}_peak_hour_commute_trips' .format(type_of_mode), tm_run_id[:4]] = peak_commute_summed.loc['{}'.format(type_of_mode), 'freq']
         metrics_dict[grouping1, grouping2, grouping3, tm_run_id, METRIC_ID,'intermediate','{} Mode Share'.format(type_of_mode),'{}_peak_hour_mode_share_of_commute_trips'.format(type_of_mode), tm_run_id[:4]] = peak_commute_summed.loc['{}'.format(type_of_mode), 'freq']/total_peak_trips
 
@@ -844,7 +843,7 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
   grouping3 = ' '
 
   tm_ab_ctim_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] == 1)&(tm_loaded_network_df['ft'] != 6)]
-  tm_ab_ctim_df = tm_ab_ctim_df.copy()[['Grouping minor_AMPM','a_b','ctimAM','ctimPM', 'distance','volEA_tot', 'volAM_tot', 'volMD_tot', 'volPM_tot', 'volEV_tot']]  
+  tm_ab_ctim_df = tm_ab_ctim_df.copy()[['Grouping minor_AMPM','a_b','fft','ctimAM','ctimPM', 'distance','volEA_tot', 'volAM_tot', 'volMD_tot', 'volPM_tot', 'volEV_tot']]  
 
   # create df for parallel arterials  
   tm_parallel_arterials_df = tm_loaded_network_df.copy().merge(parallel_arterials_links, on='a_b', how='left')
@@ -909,6 +908,12 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
     # __commented out to reduce clutter - not insightful - can reveal for debugging
     # metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate',i,'%s' % i + '_AM_vmt',year] = vmt_minor_grouping_AM
     # metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate',i,'%s' % i + '_PM_vmt',year] = vmt_minor_grouping_PM
+
+    # add free flow time column for comparison
+    metrics_dict[grouping1, grouping2, grouping3, 'FFT',metric_id,'extra',i,'Freeway_travel_time_%s' % i + '_AM',year] = minor_group_am_df['fft'].sum()
+    metrics_dict[grouping1, grouping2, grouping3, 'FFT',metric_id,'extra',i,'Freeway_travel_time_%s' % i + '_PM',year] = minor_group_am_df['fft'].sum()
+    metrics_dict[grouping1, grouping2, grouping3, 'FFT',metric_id,'extra',i,'Parallel_Arterial_travel_time_%s' % i + '_AM',year] = minor_group_am_parallel_arterial_df['fft'].sum()
+    metrics_dict[grouping1, grouping2, grouping3, 'FFT',metric_id,'extra',i,'Parallel_Arterial_travel_time_%s' % i + '_PM',year] = minor_group_am_parallel_arterial_df['fft'].sum()
 
     # add travel times to metric dict
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra',i,'Freeway_travel_time_%s' % i + '_AM',year] = minor_group_am
@@ -1026,15 +1031,15 @@ def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_od_travel_times_d
         except:
             avg_tt_peak_ORIG_DEST = 0
             avg_tt_nonpeak_ORIG_DEST = 0
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra','{}_{}'.format(od[0],od[1]),'avg_travel_time_peak_{}_{}'.format(od[0],od[1]),year]      = avg_tt_peak_ORIG_DEST
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra','{}_{}'.format(od[0],od[1]),'avg_travel_time__nonpeak_{}_{}'.format(od[0],od[1]),year]      = avg_tt_nonpeak_ORIG_DEST
+        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra','{}_{}'.format(od[0],od[1]),'average peak travel time',year]      = avg_tt_peak_ORIG_DEST
+        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra','{}_{}'.format(od[0],od[1]),'average nonpeak travel time',year]      = avg_tt_nonpeak_ORIG_DEST
         if avg_tt_nonpeak_ORIG_DEST == 0:
             ratio_peak_nonpeak = 0
         else:
             ratio_peak_nonpeak = avg_tt_peak_ORIG_DEST/avg_tt_nonpeak_ORIG_DEST
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','{}_{}'.format(od[0],od[1]),'ratio_avg_travel_time_peak_nonpeak_{}_{}'.format(od[0],od[1]),year]      = ratio_peak_nonpeak
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'extra','{}_{}'.format(od[0],od[1]),'observed_number_of_peak_trips_{}_{}'.format(od[0],od[1]),year]      = num_peak_trips.sum()
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'extra','{}_{}'.format(od[0],od[1]),'observed_number_of_nonpeak_trips_{}_{}'.format(od[0],od[1]),year]      = num_nonpeak_trips.sum()
+        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','{}_{}'.format(od[0],od[1]),'ratio of average peak to nonpeak travel time',year]      = ratio_peak_nonpeak
+        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'debug step','{}_{}'.format(od[0],od[1]),'observed number of peak trips',year]      = num_peak_trips.sum()
+        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'debug step','{}_{}'.format(od[0],od[1]),'observed number of nonpeak trips',year]      = num_nonpeak_trips.sum()
 
         # for od average calc
         n = n+1
@@ -1324,7 +1329,8 @@ if __name__ == "__main__":
 
     # TODO: why drop the first one?  is this to exclude the 2015?  If so, I'd exclude it because of the year and not because it's first
     # in either case, this should be explained
-    runs = current_runs_list[1:]  
+    # runs = current_runs_list[1:]  
+    runs = current_runs_list  
     
     # load lookup file for a city's TAZs
     taz_cities_df = pd.read_csv('L:\\Application\\Model_One\\NextGenFwys\\metrics\\Input Files\\taz_with_cities.csv')
