@@ -34,6 +34,7 @@ import csv
 # paths
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
+NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx") 
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
 
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
@@ -116,8 +117,12 @@ OBS_INJURIES_15 = 1968
 # travel model tour and trip modes
 # https://github.com/BayAreaMetro/modeling-website/wiki/TravelModes#tour-and-trip-modes
 MODES_TRANSIT      = [9,10,11,12,13,14,15,16,17,18]
-MODES_PRIVATE_AUTO = [1,2,3,4,5,6]
 MODES_TAXI_TNC     = [19,20,21]
+MODES_SOV          = [1,2]
+MODES_HOV          = [3,4,5,6]
+MODES_PRIVATE_AUTO = MODES_SOV + MODES_HOV
+MODES_WALK         = [7]
+MODES_BIKE         = [8]
 
 METRICS_COLUMNS = [
     'grouping1',
@@ -332,7 +337,7 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
 
 
 
-def calculate_change_between_run_and_base(tm_run_id, tm_run_id_base, year, metric_id, metrics_dict):
+def calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year, metric_id, metrics_dict):
     #function to compare two runs and enter difference as a metric in dictionary
     grouping1 = ' '
     grouping2 = ' '
@@ -354,7 +359,7 @@ def calculate_change_between_run_and_base(tm_run_id, tm_run_id_base, year, metri
             key = 'Average Across Corridors'
 
         val_run = metrics_dict_df.copy().loc[(metrics_dict_df['modelrun_id'] == tm_run_id)].loc[(metrics_dict_df['metric_desc'] == metric)].iloc[0]['value']
-        val_base = metrics_dict_df.copy().loc[(metrics_dict_df['modelrun_id'] == tm_run_id_base)].loc[(metrics_dict_df['metric_desc'] == metric)].iloc[0]['value']
+        val_base = metrics_dict_df.copy().loc[(metrics_dict_df['modelrun_id'] == BASE_SCENARIO_RUN_ID)].loc[(metrics_dict_df['metric_desc'] == metric)].iloc[0]['value']
         metrics_dict[key, grouping2, grouping3, tm_run_id, metric_id,'debug step','By Corridor','change_in_{}'.format(metric),year] = (val_run-val_base)
         metrics_dict[key, grouping2, grouping3, tm_run_id, metric_id,'debug step','By Corridor','pct_change_in_{}'.format(metric),year] = ((val_run-val_base)/val_base)
 
@@ -472,9 +477,9 @@ def calculate_auto_travel_time(tm_run_id,metric_id, year,network,metrics_dict):
 
         # check for length //can remove later
         length_of_grouping = (minor_group_am_df['distance']).sum()
-        metrics_dict[i, grouping2, grouping3, tm_run_id_base,metric_id,'debug step','By Corridor','%s' % i + '_AM_length',year] = length_of_grouping
+        metrics_dict[i, grouping2, grouping3, BASE_SCENARIO_RUN_ID,metric_id,'debug step','By Corridor','%s' % i + '_AM_length',year] = length_of_grouping
 
-        metrics_dict[i, grouping2, grouping3, tm_run_id_base,metric_id,'debug step','By Corridor','%s' % i + '_AM_vmt',year] = vmt_minor_grouping_AM
+        metrics_dict[i, grouping2, grouping3, BASE_SCENARIO_RUN_ID,metric_id,'debug step','By Corridor','%s' % i + '_AM_vmt',year] = vmt_minor_grouping_AM
 
         # add travel times to metric dict
         metrics_dict[i, 'Travel Time', grouping3, tm_run_id,metric_id,'extra','By Corridor','travel_time_%s' % i + '_AM',year] = minor_group_am
@@ -517,11 +522,11 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     index_a_b = network_with_nonzero_tolls.copy()[['a_b']]
     network_with_nonzero_tolls_base = tm_loaded_network_df_base.copy().merge(index_a_b, on='a_b', how='right')
     calculate_auto_travel_time(tm_run_id,metric_id, year,network_with_nonzero_tolls,metrics_dict)
-    calculate_auto_travel_time(tm_run_id_base,metric_id, year,network_with_nonzero_tolls_base,metrics_dict)
+    calculate_auto_travel_time(BASE_SCENARIO_RUN_ID,metric_id, year,network_with_nonzero_tolls_base,metrics_dict)
     # ----calculate difference between runs----
 
     # run comparisons
-    calculate_change_between_run_and_base(tm_run_id, tm_run_id_base, year, 'Affordable 2', metrics_dict)
+    calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year, 'Affordable 2', metrics_dict)
 
     metrics_dict_series = pd.Series(metrics_dict)
     metrics_dict_df  = metrics_dict_series.to_frame().reset_index()
@@ -687,18 +692,15 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
       TODO: Does this make sense?  If a market is very small, should it be considered equally
     """
     METRIC_ID = 'Efficient 1'
-    print("Calculating {}".format(METRIC_ID))
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
     
     # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
     ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv")
     # this is large so join/subset it immediately
     trips_od_travel_time_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
-    print("  Read {:,} rows from {}".format(len(trips_od_travel_time_df), ODTravelTime_byModeTimeperiod_file))
     LOGGER.info("  Read {:,} rows from {}".format(len(trips_od_travel_time_df), ODTravelTime_byModeTimeperiod_file))
 
     trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df.timeperiod_label == 'AM Peak' ]
-    print("  Filtered to AM only: {:,} rows".format(len(trips_od_travel_time_df)))
     LOGGER.info("  Filtered to AM only: {:,} rows".format(len(trips_od_travel_time_df)))
 
     # pivot out the income since we don't need it
@@ -707,7 +709,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
                                              values=['num_trips','avg_travel_time_in_mins'],
                                              aggfunc={'num_trips':numpy.sum, 'avg_travel_time_in_mins':numpy.mean})
     trips_od_travel_time_df.reset_index(inplace=True)
-    print("  Aggregated income groups: {:,} rows".format(len(trips_od_travel_time_df)))
     LOGGER.info("  Aggregated income groups: {:,} rows".format(len(trips_od_travel_time_df)))
 
     # join to OD cities for origin
@@ -724,7 +725,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
                                        right_on="taz1454")
     trips_od_travel_time_df.rename(columns={"CITY":"dest_CITY"}, inplace=True)
     trips_od_travel_time_df.drop(columns=["taz1454"], inplace=True)
-    print("  Joined with {} for origin, destination: {:,} rows".format(NGFS_OD_CITIES_FILE, len(trips_od_travel_time_df)))
     LOGGER.info("  Joined with {} for origin, destination: {:,} rows".format(NGFS_OD_CITIES_FILE, len(trips_od_travel_time_df)))
 
     # filter again to only those of interest
@@ -732,7 +732,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
                                        right=NGFS_OD_CITIES_OF_INTEREST_DF,
                                        indicator=True)
     trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df._merge == 'both']
-    print("  Filtered to only NGFS_OD_CITIES_OF_INTEREST: {:,} rows".format(len(trips_od_travel_time_df)))
     LOGGER.info("  Filtered to only NGFS_OD_CITIES_OF_INTEREST: {:,} rows".format(len(trips_od_travel_time_df)))
 
     # we're going to aggregate trip modes; auto includes TAXI and TNC
@@ -753,7 +752,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     trips_od_travel_time_df.reset_index(inplace=True)
     trips_od_travel_time_df['avg_travel_time_in_mins'] = \
         trips_od_travel_time_df['tot_travel_time_in_mins']/trips_od_travel_time_df['num_trips']
-    # print(trips_od_travel_time_df)
     # LOGGER.debug(trips_od_travel_time_df)
 
     # pivot again to move agg_mode to column
@@ -777,8 +775,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     # for example, if most ODs had NO transit paths, then the average ratio would be very low, making it seem like transit travel times
     # compare favorably to auto, which they do not
     average_ratio = trips_od_travel_time_df['ratio_travel_time_transit_auto'].mean()
-    print("  => average_ratio={}".format(average_ratio))
-    # print(trips_od_travel_time_df)
     LOGGER.info("  => average_ratio={}".format(average_ratio))
     # LOGGER.debug(trips_od_travel_time_df)
 
@@ -799,7 +795,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     trips_od_travel_time_df['modelrun_id'] = tm_run_id
     trips_od_travel_time_df['year'] = tm_run_id[:4]
     trips_od_travel_time_df['metric_id'] = METRIC_ID
-    # print(trips_od_travel_time_df)
     # LOGGER.info(trips_od_travel_time_df)
     
     # finally, add the average_ratio
@@ -812,11 +807,9 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
         'year':                 tm_run_id[:4], 
         'value':                average_ratio
      }])
-    # print(final_row)
     # LOGGER.debug(final_row)
      
     trips_od_travel_time_df = pd.concat([trips_od_travel_time_df, final_row])
-    # print(trips_od_travel_time_df)
     LOGGER.debug("{} Result: \n{}".format(METRIC_ID, trips_od_travel_time_df))
     return trips_od_travel_time_df
 
@@ -825,7 +818,6 @@ def calculate_Efficient2_commute_mode_share(tm_run_id, metrics_dict):
     # TODO: why put results into a dictionary rather than returning a dataframe?
 
     METRIC_ID = 'Efficient 2'
-    print("Calculating {}".format(METRIC_ID))
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
     grouping1 = ' '
     grouping2 = ' '
@@ -841,7 +833,6 @@ def calculate_Efficient2_commute_mode_share(tm_run_id, metrics_dict):
     # TODO: This method is currently using commute TOURS and not trips, which are round trips.  So it's not technically "commute trip mode share".
     commute_tours_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "CommuteByIncomeByTPHousehold.csv")
     tm_commute_df = pd.read_csv(commute_tours_file)
-    print("  Read {:,} rows from {}".format(len(tm_commute_df), commute_tours_file))
     LOGGER.info("  Read {:,} rows from {}".format(len(tm_commute_df), commute_tours_file))
 
     # TODO: From this perspective, 'timeCodeHwNum' is the time of the home-to-work trip, the below line is selecting people who 
@@ -1155,7 +1146,7 @@ def calculate_fatalitites(run_id, loaded_network_df, collision_rates_df, tm_load
     modified_network_df['N_bike_fatalities'] = modified_network_df['annual_VMT'] / 1000000 * modified_network_df['Bike Fatality']
     modified_network_df['N_total_fatalities'] = modified_network_df['N_motorist_fatalities'] + modified_network_df['N_ped_fatalities'] + modified_network_df['N_bike_fatalities']
 
-    if ('2015' not in run_id)&(tm_run_id_base not in run_id):
+    if ('2015' not in run_id)&(BASE_SCENARIO_RUN_ID not in run_id):
         # join average speed on each link in no project
         # calculate average speed
         tm_loaded_network_df_base['Avg_reduced_speed'] = (tm_loaded_network_df_base['cspdEA'] + tm_loaded_network_df_base['cspdAM'] + tm_loaded_network_df_base['cspdMD'] + tm_loaded_network_df_base['cspdPM'] + tm_loaded_network_df_base['cspdEV']) / 5
@@ -1221,7 +1212,7 @@ def calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id, year, tm_loaded_
     # output df has columns for each fatality type + 'after' which indicates that a correction was made for speed reductions in the scenario run
 
     # check for base run
-    if tm_run_id_base in tm_run_id:
+    if BASE_SCENARIO_RUN_ID in tm_run_id:
         N_motorist_fatalities_after = fatality_df[('N_motorist_fatalities','sum')][0]
         N_ped_fatalities_after = fatality_df[('N_ped_fatalities','sum')][0]
         N_bike_fatalities_after = fatality_df[('N_bike_fatalities','sum')][0]
@@ -1360,7 +1351,7 @@ def metrics_dict_to_df(metrics_dict):
 if __name__ == "__main__":
     pd.options.display.width = 500 # redirect output to file so this will be readable
     pd.options.display.max_columns = 100
-    pd.options.display.max_rows = 100
+    pd.options.display.max_rows = 500
     pd.options.mode.chained_assignment = None  # default='warn'
 
     # set up logging
@@ -1379,13 +1370,13 @@ if __name__ == "__main__":
     fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     LOGGER.addHandler(fh)
 
-    current_runs_df = pd.read_excel(NGFS_MODEL_RUNS_FILE, sheet_name='all_runs')
-    current_runs_list = current_runs_df.loc[current_runs_df['status'] == 'current', 'directory']
+    current_runs_df = pd.read_excel(NGFS_MODEL_RUNS_FILE, sheet_name='all_runs', usecols=['project','directory','run_set','category','short_name','status'])
+    current_runs_df = current_runs_df.loc[ current_runs_df['status'] == 'current']
+    LOGGER.info("current_runs_df: \n{}".format(current_runs_df))
 
     # TODO: why drop the first one?  is this to exclude the 2015?  If so, I'd exclude it because of the year and not because it's first
     # in either case, this should be explained
-    # runs = current_runs_list[1:]  
-    runs = current_runs_list  
+    runs = current_runs_df['directory'].to_list()
     
     # load lookup file for a city's TAZs
     taz_cities_df = pd.read_csv('L:\\Application\\Model_One\\NextGenFwys\\metrics\\Input Files\\taz_with_cities.csv')
@@ -1403,10 +1394,13 @@ if __name__ == "__main__":
     parallel_arterials_links['a_b'] = parallel_arterials_links['A'].astype(str) + "_" + parallel_arterials_links['B'].astype(str)
 
     # define base run inputs
-    # # base year run for comparisons (no project)
+    # # base year run for comparisons = most recent Pathway 4 (No New Pricing) run
+    pathway4_runs = current_runs_df.loc[ current_runs_df['category']=="Pathway 4" ]
+    BASE_SCENARIO_RUN_ID = pathway4_runs['directory'].tolist()[-1] # take the last one
+    tm_run_id_base = BASE_SCENARIO_RUN_ID # todo: deprecate this
+    LOGGER.info("=> BASE_SCENARIO_RUN_ID = {}".format(BASE_SCENARIO_RUN_ID))
     # ______load no project network to use for speed comparisons in vmt corrections______
-    tm_run_location_base = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\2035_TM152_NGF_NP09_Path4_04"
-    tm_run_id_base = tm_run_location_base.split('\\')[-1]
+    tm_run_location_base = os.path.join(NGFS_SCENARIOS, BASE_SCENARIO_RUN_ID)
     # ______define the base run inputs for "change in" comparisons______
     tm_scen_metrics_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/metrics/scenario_metrics.csv',names=["runid", "metric_name", "value"])
     tm_auto_owned_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/metrics/autos_owned.csv')
@@ -1521,26 +1515,26 @@ if __name__ == "__main__":
 
         # -----------run base for comparisons---------------
 
-        calculate_Safe2_change_in_vmt(tm_run_id_base, year, tm_loaded_network_df_base,tm_auto_times_df_base,  metrics_dict)
+        calculate_Safe2_change_in_vmt(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_base,tm_auto_times_df_base,  metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S2 Done")
 
         # -----------run comparisons---------------
-        calculate_change_between_run_and_base(tm_run_id, tm_run_id_base, year, 'Safe 2', metrics_dict)
+        calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year, 'Safe 2', metrics_dict)
 
         # -----------base runs--------------------
-        calculate_Affordable1_transportation_costs(tm_run_id_base, year, tm_scen_metrics_df_base, tm_auto_owned_df_base, tm_travel_cost_df_base, tm_auto_times_df_base, metrics_dict)
+        calculate_Affordable1_transportation_costs(BASE_SCENARIO_RUN_ID, year, tm_scen_metrics_df_base, tm_auto_owned_df_base, tm_travel_cost_df_base, tm_auto_times_df_base, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ A1 Done")
-        efficient1_metrics_df = calculate_Efficient1_ratio_travel_time(tm_run_id_base)
+        efficient1_metrics_df = calculate_Efficient1_ratio_travel_time(BASE_SCENARIO_RUN_ID)
         metrics_df = pd.concat([metrics_df, efficient1_metrics_df])
         # LOGGER.info("@@@@@@@@@@@@@ E1 Done")
-        calculate_Efficient2_commute_mode_share(tm_run_id_base, metrics_dict)
-        calculate_Reliable2_ratio_peak_nonpeak(tm_run_id_base, year, tm_od_tt_with_cities_df_base, metrics_dict) #add tm_metric_id to all?
+        calculate_Efficient2_commute_mode_share(BASE_SCENARIO_RUN_ID, metrics_dict)
+        calculate_Reliable2_ratio_peak_nonpeak(BASE_SCENARIO_RUN_ID, year, tm_od_tt_with_cities_df_base, metrics_dict) #add tm_metric_id to all?
         # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
-        calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id_base, year, tm_loaded_network_df_base, metrics_dict)
+        calculate_Safe1_fatalities_freewayss_nonfreeways(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_base, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
         # run function to calculate top level metrics
         calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df, metrics_dict)  # calculate for base run too
-        calculate_top_level_metrics(tm_run_id_base, year, tm_vmt_metrics_df_base, tm_auto_times_df_base, tm_transit_times_df_base, tm_commute_df_base, tm_loaded_network_df_base, vmt_hh_df_base,tm_scen_metrics_df_base, metrics_dict)
+        calculate_top_level_metrics(BASE_SCENARIO_RUN_ID, year, tm_vmt_metrics_df_base, tm_auto_times_df_base, tm_transit_times_df_base, tm_commute_df_base, tm_loaded_network_df_base, vmt_hh_df_base,tm_scen_metrics_df_base, metrics_dict)
   
         # _________output table__________
         # TODO: deprecate when all metrics just come through via metrics_df
