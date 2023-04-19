@@ -1370,8 +1370,11 @@ if __name__ == "__main__":
     fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     LOGGER.addHandler(fh)
 
-    current_runs_df = pd.read_excel(NGFS_MODEL_RUNS_FILE, sheet_name='all_runs', usecols=['project','directory','run_set','category','short_name','status'])
+    current_runs_df = pd.read_excel(NGFS_MODEL_RUNS_FILE, sheet_name='all_runs', usecols=['project','year','directory','run_set','category','short_name','status'])
     current_runs_df = current_runs_df.loc[ current_runs_df['status'] == 'current']
+    # only process metrics for 2035 model runs 
+    current_runs_df = current_runs_df.loc[ current_runs_df['year'] == 2035]
+
     LOGGER.info("current_runs_df: \n{}".format(current_runs_df))
 
     # TODO: why drop the first one?  is this to exclude the 2015?  If so, I'd exclude it because of the year and not because it's first
