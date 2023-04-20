@@ -34,7 +34,7 @@ import csv
 # paths
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
-NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx") 
+NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
 
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
@@ -45,10 +45,17 @@ LOGGER                  = None # will initialize in main
 NGFS_OD_CITIES_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_with_cities.csv")
 NGFS_OD_CITIES_DF      = pd.read_csv(NGFS_OD_CITIES_FILE)
 
+# tollclass designations
+TOLLCLASS_LOOKUP_DF     = pd.read_excel(NGFS_TOLLCLASS_FILE, sheet_name='Inputs_for_tollcalib', usecols=['project','facility_name','tollclass','s2toll_mandatory','THRESHOLD_SPEED','MAX_TOLL','MIN_TOLL','Grouping major','Grouping minor'])
+
 # parallel arterials
 # TODO: Document how these were made?
 NGFS_PARALLEL_ARTERIALS_FILE = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "ParallelArterialLinks.csv")
 NGFS_PARALLEL_ARTERIALS_DF   = pd.read_csv(NGFS_PARALLEL_ARTERIALS_FILE)
+
+# tolled arterials
+# TODO: apply the same fix that LZ will implement for a_b_with_minor_groupings
+NGFS_PATHWAY2_TOLLED_ARTERIALS_FILE = pd.read_csv('L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\2035_TM152_NGF_NP09_Path2a_04\\OUTPUT\\avgload5period.csv').rename(columns=lambda x: x.strip())[['a','b','tollclass']]
 
 # define origin destination pairs
 NGFS_OD_CITIES_OF_INTEREST = [
@@ -875,7 +882,7 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
 
   # create df for parallel arterials  
   tm_parallel_arterials_df = tm_loaded_network_df.copy().merge(parallel_arterials_links, on='a_b', how='left')
-  
+
   #  calcuate average across corridors
   sum_of_weights = 0 #sum of weights (vmt of corridor) to be used for weighted average 
   total_weighted_travel_time = 0 #sum for numerator
@@ -912,7 +919,7 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra',i,'%s' % i + '_AM_parallel_arterial_length',year] = length_of_grouping
     length_of_grouping = (minor_group_pm_parallel_arterial_df['distance']).sum()
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra',i,'%s' % i + '_PM_parallel_arterial_length',year] = length_of_grouping
-    
+
     # vmt to be used for weighted averages
     index_a_b = minor_group_am_df.copy()[['a_b']]
     network_for_vmt_df_AM = tm_loaded_network_df_base.copy().merge(index_a_b, on='a_b', how='right')
@@ -938,10 +945,16 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
     # metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate',i,'%s' % i + '_PM_vmt',year] = vmt_minor_grouping_PM
 
     # add free flow time column for comparison
+    # note: the base run overrides the comparison run - tableau will show the base run fft
     metrics_dict[grouping1, grouping2, grouping3, 'FFT',metric_id,'extra',i,'Freeway_travel_time_%s' % i + '_AM',year] = minor_group_am_df['fft'].sum()
-    metrics_dict[grouping1, grouping2, grouping3, 'FFT',metric_id,'extra',i,'Freeway_travel_time_%s' % i + '_PM',year] = minor_group_am_df['fft'].sum()
+    metrics_dict[grouping1, grouping2, grouping3, 'FFT',metric_id,'extra',i,'Freeway_travel_time_%s' % i + '_PM',year] = minor_group_pm_df['fft'].sum()
     metrics_dict[grouping1, grouping2, grouping3, 'FFT',metric_id,'extra',i,'Parallel_Arterial_travel_time_%s' % i + '_AM',year] = minor_group_am_parallel_arterial_df['fft'].sum()
-    metrics_dict[grouping1, grouping2, grouping3, 'FFT',metric_id,'extra',i,'Parallel_Arterial_travel_time_%s' % i + '_PM',year] = minor_group_am_parallel_arterial_df['fft'].sum()
+    metrics_dict[grouping1, grouping2, grouping3, 'FFT',metric_id,'extra',i,'Parallel_Arterial_travel_time_%s' % i + '_PM',year] = minor_group_pm_parallel_arterial_df['fft'].sum()
+    # add average fft for each minor grouping to metric dict
+    avgfft_minor_group = numpy.mean([minor_group_am_df['fft'].sum(),minor_group_pm_df['fft'].sum()])
+    avgfft_parallel_arterial = numpy.mean([minor_group_am_parallel_arterial_df['fft'].sum(),minor_group_pm_parallel_arterial_df['fft'].sum()])
+    metrics_dict[grouping1, grouping2, grouping3, 'FFT',metric_id,'intermediate',i,'Freeway_avg_travel_time_%s' % i,year] = avgfft_minor_group
+    metrics_dict[grouping1, grouping2, grouping3, 'FFT',metric_id,'intermediate',i,'Parallel_Arterial_avg_travel_time_%s' % i,year] = avgfft_parallel_arterial
 
     # add travel times to metric dict
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra',i,'Freeway_travel_time_%s' % i + '_AM',year] = minor_group_am
@@ -950,7 +963,7 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
     weighted_AM_travel_time_by_vmt = minor_group_am * am_pm_avg_vmt
     weighted_PM_travel_time_by_vmt = minor_group_pm * am_pm_avg_vmt
 
-     # [for parallel arterials] add travel times to metric dict
+    # [for parallel arterials] add travel times to metric dict
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra',i,'Parallel_Arterial_travel_time_%s' % i + '_AM',year] = minor_group_am_parallel_arterial
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra',i,'Parallel_Arterial_travel_time_%s' % i + '_PM',year] = minor_group_pm_parallel_arterial
     # [for parallel arterials] weighted AM,PM travel times (by vmt)
@@ -973,6 +986,30 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
 
     # __commented out to reduce clutter - not insightful - can reveal for debugging
     # metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final',i,'avg_travel_time_%s_weighted_by_vmt' % i,year] = avgtime_weighted_by_vmt
+
+    # if 'Path2' in tm_run_id: # investigation: compare travel time changes on all parallel tolled arterials
+    # TODO: review method for comparing pathways with no tolled arterials (ex: base run)
+    # create df for tolled parallel arterial links (using pathway 2 network toll classes and TOLLCLASS_Designations.xlsx as lookup)
+    tm_tolled_arterial_links_df = pd.merge(left=tm_loaded_network_df.copy(), right=NGFS_PATHWAY2_TOLLED_ARTERIALS_FILE, how='left', left_on=['a','b'], right_on=['a','b'])
+    tm_tolled_arterial_links_df['tollclass'] = tm_tolled_arterial_links_df['tollclass_y']
+    tm_tolled_arterial_links_df.drop(columns=["tollclass_x"], inplace=True)
+    tm_tolled_arterial_links_df.drop(columns=["tollclass_y"], inplace=True)
+    tm_tolled_arterial_links_df = tm_tolled_arterial_links_df.copy().merge(TOLLCLASS_LOOKUP_DF, on='tollclass', how='left').loc[(tm_tolled_arterial_links_df['ft'] == 3)|(tm_tolled_arterial_links_df['ft'] == 4)|(tm_tolled_arterial_links_df['ft'] == 7)]
+
+    # for tolled arterial links
+    # TODO: remove duplicate 'Grouping minor' column
+    minor_group_am_tolled_arterial_df = tm_tolled_arterial_links_df.copy().loc[(tm_tolled_arterial_links_df['Grouping minor_y'].str.contains(i+'_AM') == True)]
+    minor_group_pm_tolled_arterial_df = tm_tolled_arterial_links_df.copy().loc[(tm_tolled_arterial_links_df['Grouping minor_y'].str.contains(i+'_PM') == True)]
+    minor_group_am_tolled_arterial = sum_grouping(minor_group_am_tolled_arterial_df,'AM')
+    minor_group_pm_tolled_arterial = sum_grouping(minor_group_pm_tolled_arterial_df,'PM')
+
+    # add travel times for all tolled arterials to metrics dict
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra',i,'Tolled_Arterial_travel_time_%s' % i + '_AM',year] = minor_group_am_tolled_arterial
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra',i,'Tolled_Arterial_travel_time_%s' % i + '_PM',year] = minor_group_pm_tolled_arterial
+
+    # [for tolled arterials] add average ctim for each minor grouping to metric dict
+    avgtime_tolled_arterial = numpy.mean([minor_group_am_tolled_arterial,minor_group_pm_tolled_arterial])
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate',i,'Tolled_Arterial_avg_travel_time_%s' % i,year] = avgtime_tolled_arterial
     
     # for corrdior average calc
     sum_of_weights = sum_of_weights + am_pm_avg_vmt
