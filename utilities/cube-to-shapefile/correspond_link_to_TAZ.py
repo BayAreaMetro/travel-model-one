@@ -20,7 +20,7 @@ USAGE = """
 """
 
 import argparse, os
-import arcpy
+import geopandas as gpd
 import numpy,pandas
 
 TAZ_SHAPEFILE = "M:\\Data\\GIS layers\\TM1_taz\\bayarea_rtaz1454_rev1_WGS84.shp"
@@ -37,55 +37,34 @@ if __name__ == '__main__':
     parser.add_argument('--linkshp_share', type=str, default="linktaz_share", help="Column name for share of the link intersecting this shape")
     my_args = parser.parse_args()
 
-    # use scratch gdb
-    arcpy.env.workspace = arcpy.env.scratchGDB
-    print("Using workspace {}".format(arcpy.env.workspace))
-
-    # copy link shapefile into workspace
-    link_feature = "network_links"
-    if arcpy.Exists(link_feature):
-        print("Found {}; deleting".format(link_feature))
-        arcpy.Delete_management(link_feature)
-    arcpy.CopyFeatures_management(my_args.link_shapefile, link_feature)
-    result = arcpy.GetCount_management(link_feature)
-    print("Copied {} into workspace; {} rows".format(my_args.link_shapefile, result[0]))
-
+    # read network_links shapefile 
+    network_links = gpd.read_file(my_args.link_shapefile)
+    
     # calculate link length
+    network_links  = network_links.to_crs(2227)  # EPSG:2227 is Bay Area's local coordinate system - NAD83 / California zone 3 (ftUS)
     length_field = "link_mi"
-    arcpy.AddField_management(link_feature, length_field, "FLOAT", field_precision=12, field_scale=4)
-    arcpy.CalculateGeometryAttributes_management(link_feature, [[length_field, "LENGTH"]], "MILES_US")
+    network_links[length_field] = network_links['geometry'].length/5280 # 1 mile = 5,280 feet
+    print(network_links)
 
-    # copy taz shapefile into workspace
+    # read taz shapefile
     taz_feature = "tazs"
-    my_shapefile = TAZ_SHAPEFILE
-    if my_args.shapefile:
-      my_shapefile = my_args.shapefile
-    if arcpy.Exists(taz_feature):
-        print("Found {}; deleting".format(taz_feature))
-        arcpy.Delete_management(taz_feature)
-    arcpy.CopyFeatures_management(my_shapefile, taz_feature)
-    result = arcpy.GetCount_management(taz_feature)
-    print("Copied {} into workspace; {} rows".format(my_shapefile, result[0]))
+    my_shapefile = gpd.read_file(TAZ_SHAPEFILE)  
+    my_shapefile = my_shapefile.to_crs(2227)     # EPSG:2227 is Bay Area's local coordinate system - NAD83 / California zone 3 (ftUS)
+    print(my_shapefile)
 
     # intersect
     link_taz_feature = "link_intersect_taz"
-    if arcpy.Exists(link_taz_feature):
-        print("Found {}; deleting".format(link_taz_feature))
-        arcpy.Delete_management(link_taz_feature)
-    arcpy.Intersect_analysis([link_feature, taz_feature], link_taz_feature)
-    result = arcpy.GetCount_management(link_taz_feature)
-    print("Created intersect {}; {} rows".format(link_taz_feature, result[0]))
+    link_intersect_taz = gpd.overlay(network_links, my_shapefile, how='intersection')
+    print(link_intersect_taz)
 
     # calculate length of these links
     length_taz_field = my_args.linkshp_mi
-    arcpy.AddField_management(link_taz_feature, length_taz_field, "FLOAT", field_precision=12, field_scale=4)
-    arcpy.CalculateGeometryAttributes_management(link_taz_feature, [[length_taz_field, "LENGTH"]], "MILES_US")
+    link_intersect_taz[length_taz_field] = link_intersect_taz['geometry'].length/5280 # 1 mile = 5,280 feet
 
     # bring into pandas
     fields = ["A","B",my_args.shp_id,length_field,length_taz_field]
     print(fields)
-    links_array = arcpy.da.TableToNumPyArray(in_table=link_taz_feature, field_names=fields)
-    links_df = pandas.DataFrame(links_array, columns=fields)
+    links_df = pandas.DataFrame(link_intersect_taz, columns=fields)
 
     # divide lengths to get proportion
     links_df[my_args.linkshp_share] = links_df[length_taz_field]/links_df[length_field]
