@@ -30,6 +30,8 @@ from collections import OrderedDict, defaultdict
 import logging
 import math
 import csv
+from dbfread import DBF
+
 
 # paths
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
@@ -143,6 +145,10 @@ METRICS_COLUMNS = [
     'year',
     'value'
 ]
+
+# TODO: remove these after metrics methodology is finilzed (for debugging)
+ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiodIncome.csv"
+# ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiod_reduced_file.csv"
 
 def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df, metrics_dict):
     DESCRIPTION = """
@@ -702,7 +708,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
     
     # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
-    ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv")
+    ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", ODTRAVELTIME_FILENAME) #changed "ODTravelTime_byModeTimeperiodIncome.csv" to a variable for better performance during debugging
     # this is large so join/subset it immediately
     trips_od_travel_time_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
     LOGGER.info("  Read {:,} rows from {}".format(len(trips_od_travel_time_df), ODTravelTime_byModeTimeperiod_file))
@@ -1064,14 +1070,22 @@ def calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df
 
 
 
-def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_od_travel_times_df, metrics_dict):    
+def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, metrics_dict):    
     # 6) Ratio of travel time during peak hours vs. non-peak hours between representative origin-destination pairs 
 
     metric_id = 'Reliable 2'
     grouping1 = ' '
     grouping2 = ' '
     grouping3 = ' '
+    LOGGER.info("Calculating {} for {}".format(metric_id, tm_run_id))
 
+    # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
+    ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", ODTRAVELTIME_FILENAME)
+    # TODO: this is large so join/subset it immediately
+    tm_od_travel_times_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
+    LOGGER.info("  Read {:,} rows from {}".format(len(tm_od_travel_times_df), ODTravelTime_byModeTimeperiod_file))
+    
+    tm_od_travel_times_df = tm_od_travel_times_df.merge(taz_cities_df, left_on='orig_taz', right_on='taz1454', how='left', suffixes = ["",'_orig']).merge(taz_cities_df, left_on='dest_taz', right_on='taz1454', how='left', suffixes = ["",'_dest'])
     tm_od_travel_times_df = tm_od_travel_times_df.copy().loc[(tm_od_travel_times_df['trip_mode'] == 1)|(tm_od_travel_times_df['trip_mode'] == 2)|(tm_od_travel_times_df['trip_mode'] == 3)|(tm_od_travel_times_df['trip_mode'] == 4)|(tm_od_travel_times_df['trip_mode'] == 5)|(tm_od_travel_times_df['trip_mode'] == 6)|(tm_od_travel_times_df['trip_mode'] == 19)|(tm_od_travel_times_df['trip_mode'] == 20)|(tm_od_travel_times_df['trip_mode'] == 21)]
     tm_od_travel_times_df = tm_od_travel_times_df.loc[(tm_od_travel_times_df['avg_travel_time_in_mins'] > 0)]
     od_tt_peak_df = tm_od_travel_times_df.loc[(tm_od_travel_times_df['timeperiod_label'].str.contains("AM Peak") == True)|(tm_od_travel_times_df['timeperiod_label'].str.contains("PM Peak") == True)]
@@ -1417,6 +1431,8 @@ if __name__ == "__main__":
     # TODO: why drop the first one?  is this to exclude the 2015?  If so, I'd exclude it because of the year and not because it's first
     # in either case, this should be explained
     runs = current_runs_df['directory'].to_list()
+    # for debugging/testing
+    # runs = ['2035_TM152_FBP_Plus_24']
     
     # load lookup file for a city's TAZs
     taz_cities_df = pd.read_csv('L:\\Application\\Model_One\\NextGenFwys\\metrics\\Input Files\\taz_with_cities.csv')
@@ -1446,13 +1462,17 @@ if __name__ == "__main__":
     tm_auto_owned_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/metrics/autos_owned.csv')
     tm_travel_cost_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/core_summaries/TravelCost.csv')
     tm_auto_times_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/metrics/auto_times.csv',sep=",")#, index_col=[0,1])
-    tm_od_travel_times_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/core_summaries/ODTravelTime_byModeTimeperiod_reduced_file.csv')
-    tm_od_tt_with_cities_df_base = tm_od_travel_times_df_base.merge(taz_cities_df, left_on='orig_taz', right_on='taz1454', how='left', suffixes = ["",'_orig']).merge(taz_cities_df, left_on='dest_taz', right_on='taz1454', how='left', suffixes = ["",'_dest'])
+    # tm_od_travel_times_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/core_summaries/ODTravelTime_byModeTimeperiod_reduced_file.csv')
+    # tm_od_tt_with_cities_df_base = tm_od_travel_times_df_base.merge(taz_cities_df, left_on='orig_taz', right_on='taz1454', how='left', suffixes = ["",'_orig']).merge(taz_cities_df, left_on='dest_taz', right_on='taz1454', how='left', suffixes = ["",'_dest'])
     tm_loaded_network_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/avgload5period.csv')
     tm_loaded_network_df_base = tm_loaded_network_df_base.rename(columns=lambda x: x.strip())
     # merging df that has the list of minor segments with loaded network - for corridor analysis
     tm_loaded_network_df_base['a_b'] = tm_loaded_network_df_base['a'].astype(str) + "_" + tm_loaded_network_df_base['b'].astype(str)
-    network_links_dbf_base = pd.read_csv(tm_run_location_base + '\\OUTPUT\\shapefile\\network_links_reduced_file.csv')
+    # addding back original code for simplicity of steps to update the tableau workbook (at the cost of run time)
+    network_links_dbf_base = DBF(tm_run_location_base + '\\OUTPUT\\shapefile\\network_links.DBF')
+    network_links_dbf_base = pd.DataFrame(network_links_dbf_base)
+    network_links_dbf_base['a_b'] = network_links_dbf_base['A'].astype(str) + "_" + network_links_dbf_base['B'].astype(str)
+    # network_links_dbf_base = pd.read_csv(tm_run_location_base + '\\OUTPUT\\shapefile\\network_links_reduced_file.csv')
     tm_loaded_network_df_base = tm_loaded_network_df_base.copy().merge(network_links_dbf_base.copy(), on='a_b', how='left')
     tm_loaded_network_df_base = tm_loaded_network_df_base.merge(minor_links_df, on='a_b', how='left')
 
@@ -1489,15 +1509,19 @@ if __name__ == "__main__":
         tm_auto_owned_df = pd.read_csv(tm_run_location+'/OUTPUT/metrics/autos_owned.csv')
         tm_travel_cost_df = pd.read_csv(tm_run_location+'/OUTPUT/core_summaries/TravelCost.csv')
         tm_auto_times_df = pd.read_csv(tm_run_location+'/OUTPUT/metrics/auto_times.csv',sep=",")#, index_col=[0,1])
-        tm_od_travel_times_df = pd.read_csv(tm_run_location+'/OUTPUT/core_summaries/ODTravelTime_byModeTimeperiod_reduced_file.csv')
-        tm_od_tt_with_cities_df = tm_od_travel_times_df.merge(taz_cities_df, left_on='orig_taz', right_on='taz1454', how='left', suffixes = ["",'_orig']).merge(taz_cities_df, left_on='dest_taz', right_on='taz1454', how='left', suffixes = ["",'_dest'])
+        # tm_od_travel_times_df = pd.read_csv(tm_run_location+'/OUTPUT/core_summaries/ODTravelTime_byModeTimeperiod_reduced_file.csv')
+        # tm_od_tt_with_cities_df = tm_od_travel_times_df.merge(taz_cities_df, left_on='orig_taz', right_on='taz1454', how='left', suffixes = ["",'_orig']).merge(taz_cities_df, left_on='dest_taz', right_on='taz1454', how='left', suffixes = ["",'_dest'])
         tm_loaded_network_df = pd.read_csv(tm_run_location+'/OUTPUT/avgload5period.csv')
         tm_loaded_network_df = tm_loaded_network_df.rename(columns=lambda x: x.strip())
         # ----merging df that has the list of minor segments with loaded network - for corridor analysis
         tm_loaded_network_df['a_b'] = tm_loaded_network_df['a'].astype(str) + "_" + tm_loaded_network_df['b'].astype(str)
         tm_loaded_network_df = tm_loaded_network_df.merge(minor_links_df, on='a_b', how='left')
+        # addding back original code for simplicity of steps to update the tableau workbook (at the cost of run time)
+        network_links_dbf = DBF(tm_run_location + '\\OUTPUT\\shapefile\\network_links.DBF')
+        network_links_dbf = pd.DataFrame(network_links_dbf)
+        network_links_dbf['a_b'] = network_links_dbf['A'].astype(str) + "_" + network_links_dbf['B'].astype(str)
         # ----import network links file from reduced dbf as a dataframe to merge with loaded network and get toll rates
-        network_links_dbf = pd.read_csv(tm_run_location + '\\OUTPUT\\shapefile\\network_links_reduced_file.csv')
+        # network_links_dbf = pd.read_csv(tm_run_location + '\\OUTPUT\\shapefile\\network_links_reduced_file.csv')
         tm_loaded_network_df = tm_loaded_network_df.copy().merge(network_links_dbf.copy(), on='a_b', how='left')
 
         # TODO: why?
@@ -1546,7 +1570,7 @@ if __name__ == "__main__":
         calculate_Efficient2_commute_mode_share(tm_run_id, metrics_dict)
         calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
-        calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_od_tt_with_cities_df, metrics_dict) #add tm_metric_id to all?
+        calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, metrics_dict) #add tm_metric_id to all?
         # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
         calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
@@ -1568,7 +1592,7 @@ if __name__ == "__main__":
         metrics_df = pd.concat([metrics_df, efficient1_metrics_df])
         # LOGGER.info("@@@@@@@@@@@@@ E1 Done")
         calculate_Efficient2_commute_mode_share(BASE_SCENARIO_RUN_ID, metrics_dict)
-        calculate_Reliable2_ratio_peak_nonpeak(BASE_SCENARIO_RUN_ID, year, tm_od_tt_with_cities_df_base, metrics_dict) #add tm_metric_id to all?
+        calculate_Reliable2_ratio_peak_nonpeak(BASE_SCENARIO_RUN_ID, year, metrics_dict) #add tm_metric_id to all?
         # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
         calculate_Safe1_fatalities_freewayss_nonfreeways(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_base, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
