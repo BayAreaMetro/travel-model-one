@@ -14,7 +14,7 @@ USAGE = """
     1) Affordable 1: Transportation costs as a share of household income
     2) Affordable 2: Ratio of value of auto travel time savings to incremental toll costs
     3) Efficient 1: Ratio of travel time by transit vs. auto between  representative origin-destination pairs
-    4) Efficient 2: Transit, walk and bike mode share of commute trips during peak hours
+    4) Efficient 2: Transit, telecommute, walk and bike mode share of commute tours
     5) Reliable 1: Change in peak hour travel time on key freeway corridors and parallel arterials
     6) Reliable 2: Ratio of travel time during peak hours vs. non-peak hours between representative origin-destination pairs 
     7) Reparative 1: Absolute dollar amount of new revenues generated that is reinvested in freeway adjacent communities
@@ -677,7 +677,9 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
         tm_run_id (str): Travel model run ID
 
     Returns:
-        pandas.DataFrame: with columns a subset of METRICS_COLUMNS
+        pandas.DataFrame: with columns a subset of METRICS_COLUMNS, including 
+          metric_id   = 'Efficient 1'
+          modelrun_id = tm_run_id
         Metrics returned:
           key                       intermediate/final  metric_desc
           [origCITY_destCITY]       extra               avg_travel_time_in_mins_auto
@@ -685,7 +687,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
           [origCITY_destCITY]       extra               num_trips_auto
           [origCITY_destCITY]       extra               num_trips_transit
           [origCITY_destCITY]       intermediate        ratio_travel_time_transit_auto
-          Average across OD pairs   intermediate        ratio_travel_time_transit_auto_across_pairs
+          Average across OD pairs   final               ratio_travel_time_transit_auto_across_pairs
 
     Notes:
     * Representative origin-destination pairs are given by TAZs corresponding with 
@@ -818,47 +820,124 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     LOGGER.debug("{} Result: \n{}".format(METRIC_ID, trips_od_travel_time_df))
     return trips_od_travel_time_df
 
-def calculate_Efficient2_commute_mode_share(tm_run_id, metrics_dict):    
-    # 4) Transit, walk and bike mode share of commute trips during peak hours
-    # TODO: why put results into a dictionary rather than returning a dataframe?
+def calculate_Efficient2_commute_mode_share(tm_run_id: str) -> pd.DataFrame:
+    """ Calculates Efficient 2: Transit, walk, bike and telecommute mode share of commute *tours*
+
+    Args:
+        tm_run_id (str): Travel model run ID
+
+    Returns:
+        pandas.DataFrame: Dataframe with columns a subset of METRICS_COLUMNS, including 
+          metric_id   = 'Efficient 2'
+          modelrun_id = tm_run_id
+        Metrics returned:
+          key             intermediate/final  metric_desc
+          [commute_mode]  intermediate        commute_tours
+          [commute_mode]  final               commute_tours_share
+
+        where commute_mode is one of:
+         SOV, HOV, transit, walk, bike, telecommute, did not go to work
+    """
+    # from model-files\scripts\preprocess\updateTelecommuteConstants.py
+    # see EN7 Telecommuting.xlsx (https://mtcdrive.box.com/s/uw3n8wyervle6r2cgoz1j6k4i5lmv253)
+    # for 2015 and before
+    P_notworking_if_noworktour_FT = 0.560554289
+    P_notworking_if_noworktour_PT = 0.553307383
+    # future
+    P_notworking_FT = 0.107904288
+    P_notworking_PT = 0.205942146
 
     METRIC_ID = 'Efficient 2'
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
-    grouping1 = ' '
-    grouping2 = ' '
-    grouping3 = ' '
+
+    journey_to_work_modes_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "JourneyToWork_modes.csv")
+    tm_journey_to_work_df = pd.read_csv(journey_to_work_modes_file)
+    LOGGER.info("  Read {:,} rows from {}".format(len(tm_journey_to_work_df), journey_to_work_modes_file))
+    LOGGER.debug("tm_journey_to_work_df.head() =\n{}".format(tm_journey_to_work_df.head()))
+
+    # create aggregate mode
+    tm_journey_to_work_df['commute_mode'] = 'Unknown'
+    tm_journey_to_work_df.loc[ tm_journey_to_work_df.tour_mode.isin(MODES_SOV),      'commute_mode'] = 'SOV'
+    tm_journey_to_work_df.loc[ tm_journey_to_work_df.tour_mode.isin(MODES_HOV),      'commute_mode'] = 'HOV'
+    tm_journey_to_work_df.loc[ tm_journey_to_work_df.tour_mode.isin(MODES_TRANSIT),  'commute_mode'] = 'transit'
+    tm_journey_to_work_df.loc[ tm_journey_to_work_df.tour_mode.isin(MODES_TAXI_TNC), 'commute_mode'] = 'taxi/TNC'
+    tm_journey_to_work_df.loc[ tm_journey_to_work_df.tour_mode.isin(MODES_WALK),     'commute_mode'] = 'walk'
+    tm_journey_to_work_df.loc[ tm_journey_to_work_df.tour_mode.isin(MODES_BIKE),     'commute_mode'] = 'bike'
+    tm_journey_to_work_df.loc[ tm_journey_to_work_df.tour_mode == 0,                 'commute_mode'] = 'did not go to work'
+
+    # aggregate to person types and move person types to columns
+    tm_journey_to_work_df = tm_journey_to_work_df.groupby(['ptype_label', 'commute_mode']).agg(
+        {"freq": "sum"}).reset_index()
+    tm_journey_to_work_df = tm_journey_to_work_df.pivot(index=['commute_mode'],
+                                                        columns=['ptype_label'])
+    # reset multiindex columns to just a single level, ptype_label
+    tm_journey_to_work_df.columns = tm_journey_to_work_df.columns.get_level_values(1)
+    # reorder to match tableau convention
+    tm_journey_to_work_df = tm_journey_to_work_df[[
+        'Full-time worker',
+        'Part-time worker',
+        'College student',
+        'Driving-age student']]
+    # add row for total workers
+    tm_journey_to_work_df.loc['all_modes'] = tm_journey_to_work_df.sum(axis=0)
+
+    # add row for telecommute, not-working, start with 0 for the four person types
+    LOGGER.debug("tm_journey_to_work_df:\n{}".format(tm_journey_to_work_df))
+    tm_journey_to_work_df.loc['telecommute'] = [0,0,0,0]
+    tm_journey_to_work_df.loc['time off'] = [0,0,0,0]
+
+    # calculate non-workers consistently with model-files\scripts\preprocess\updateTelecommuteConstants.py
+    model_year = int(tm_run_id[:4])
+    # note: Full-time worker and Part-time worker columns will be float now
+    if model_year <= 2020:
+        tm_journey_to_work_df.at['time off', 'Full-time worker'] = P_notworking_if_noworktour_FT*tm_journey_to_work_df.at['did not go to work', 'Full-time worker']
+        tm_journey_to_work_df.at['time off', 'Part-time worker'] = P_notworking_if_noworktour_PT*tm_journey_to_work_df.at['did not go to work', 'Part-time worker']
+    else:
+        tm_journey_to_work_df.at['time off', 'Full-time worker'] = P_notworking_FT*tm_journey_to_work_df.at['all_modes', 'Full-time worker']
+        tm_journey_to_work_df.at['time off', 'Part-time worker'] = P_notworking_PT*tm_journey_to_work_df.at['all_modes', 'Part-time worker']
+    # assume no telecommute for driving-age students and college students
+    tm_journey_to_work_df.at['time off', 'Driving-age student'] = tm_journey_to_work_df.at['did not go to work' , 'Driving-age student']
+    tm_journey_to_work_df.at['time off', 'College student']     = tm_journey_to_work_df.at['did not go to work' , 'College student']
+    # subtract for telecommute
+    tm_journey_to_work_df.loc['telecommute'] = tm_journey_to_work_df.loc['did not go to work'] - tm_journey_to_work_df.loc['time off']
+
+    # add column for all person types
+    tm_journey_to_work_df['All workers'] = tm_journey_to_work_df.sum(axis=1)
+    LOGGER.debug("tm_journey_to_work_df:\n{}".format(tm_journey_to_work_df))
+    LOGGER.debug(tm_journey_to_work_df.columns)
+    LOGGER.debug(tm_journey_to_work_df.index)
+    # drop did not go to work since it's covered by telecommute + time off
+    tm_journey_to_work_df = tm_journey_to_work_df.loc[ tm_journey_to_work_df.index != 'did not go to work']
+
+    # convert to shares
+    tm_journey_to_work_shares_df = tm_journey_to_work_df/tm_journey_to_work_df.loc['all_modes']
+    LOGGER.debug("tm_journey_to_work_shares_df:\n{}".format(tm_journey_to_work_shares_df))
+
+    # reformat to metrics
+    # we only care about the All Workers column
+    tm_journey_to_work_df = tm_journey_to_work_df[['All workers']].reset_index(drop=False)
+    tm_journey_to_work_df['intermediate/final'] = 'intermediate'
+    tm_journey_to_work_df['metric_desc'] = 'commute_tours'
+    # LOGGER.debug("tm_journey_to_work_df:\n{}".format(tm_journey_to_work_df))
+    # columns: commute_mode, All workers, intermediate/final, metric_desc
+
+    tm_journey_to_work_shares_df = tm_journey_to_work_shares_df[['All workers']].reset_index(drop=False)
+    tm_journey_to_work_shares_df['intermediate/final'] = 'final'
+    tm_journey_to_work_shares_df['metric_desc'] = 'commute_tours_share'
+    # LOGGER.debug("tm_journey_to_work_shares_df:\n{}".format(tm_journey_to_work_shares_df))
+    # columns: commute_mode, All workers, intermediate/final, metric_desc
+
+    metrics_df = pd.concat([tm_journey_to_work_df, tm_journey_to_work_shares_df])
+    metrics_df.rename(columns={'All workers':'value', 'commute_mode':'key'}, inplace=True)
+    metrics_df['metric_id'] = METRIC_ID
+    metrics_df['modelrun_id'] = tm_run_id
+    metrics_df.columns.name = None # it was named ptype_label
+    LOGGER.debug("metrics_df:\n{}".format(metrics_df))
+    return metrics_df
 
 
-    # borrow from prep_for_telecommute_excel.R
-    # location \Box\Horizon and Plan Bay Area 2050\Equity and Performance\7_Analysis\Metrics\Metrics Development\Connected\prep_for_telecommute_excel.R
 
-    # calculate auto and transit commute trips (similar to PBA2050 [\metrics development\diverse] Healthy: commute mode share)
-    # simplify modes
 
-    # TODO: This method is currently using commute TOURS and not trips, which are round trips.  So it's not technically "commute trip mode share".
-    commute_tours_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "CommuteByIncomeByTPHousehold.csv")
-    tm_commute_df = pd.read_csv(commute_tours_file)
-    LOGGER.info("  Read {:,} rows from {}".format(len(tm_commute_df), commute_tours_file))
-
-    # TODO: From this perspective, 'timeCodeHwNum' is the time of the home-to-work trip, the below line is selecting people who 
-    # TODO: go to work in AM or PM (and returning home in any time period)
-    peak_commute_df = tm_commute_df.loc[(tm_commute_df['timeCodeHwNum'] == 2)|(tm_commute_df['timeCodeHwNum'] == 4)]
-
-    # TODO: Create more readable version of for aggregating modes
-    total_peak_trips = peak_commute_df.copy().loc[:,'freq'].sum()
-    peak_commute_df.loc[(peak_commute_df['tour_mode'] == 1)|(peak_commute_df['tour_mode'] == 2),'mode'] = 'sov'
-    peak_commute_df.loc[(peak_commute_df['tour_mode'] == 3)|(peak_commute_df['tour_mode'] == 4)|(peak_commute_df['tour_mode'] == 5)|(peak_commute_df['tour_mode'] == 6),'mode'] = 'hov'
-    peak_commute_df.loc[(peak_commute_df['tour_mode'] == 19)|(peak_commute_df['tour_mode'] == 20)|(peak_commute_df['tour_mode'] == 21),'mode'] = 'taxi/tnc'
-    peak_commute_df.loc[(peak_commute_df['tour_mode'] == 9)|(peak_commute_df['tour_mode'] == 10)|(peak_commute_df['tour_mode'] == 11)|(peak_commute_df['tour_mode'] == 12)|(peak_commute_df['tour_mode'] == 13)|(peak_commute_df['tour_mode'] == 14)|(peak_commute_df['tour_mode'] == 15)|(peak_commute_df['tour_mode'] == 16)|(peak_commute_df['tour_mode'] == 17)|(peak_commute_df['tour_mode'] == 18),'mode'] = 'transit'
-    peak_commute_df.loc[(peak_commute_df['tour_mode'] == 7),'mode'] = 'walk'
-    peak_commute_df.loc[(peak_commute_df['tour_mode'] == 8),'mode'] = 'bike'
-
-    peak_commute_summed = peak_commute_df.copy().groupby('mode').agg('sum')
-    for type_of_mode in ['sov', 'hov','taxi/tnc', 'transit', 'walk', 'bike']:
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, METRIC_ID,'final','{} Mode Share'.format(type_of_mode),'{}_peak_hour_commute_trips' .format(type_of_mode), tm_run_id[:4]] = peak_commute_summed.loc['{}'.format(type_of_mode), 'freq']
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, METRIC_ID,'intermediate','{} Mode Share'.format(type_of_mode),'{}_peak_hour_mode_share_of_commute_trips'.format(type_of_mode), tm_run_id[:4]] = peak_commute_summed.loc['{}'.format(type_of_mode), 'freq']/total_peak_trips
-
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, METRIC_ID,'final','Daily Total Commute Trips During Peak Hours', 'Daily_total_peak_hour_commute_trips', year] = total_peak_trips
 
 
 
@@ -1641,7 +1720,8 @@ if __name__ == "__main__":
         metrics_df = pd.concat([metrics_df, efficient1_metrics_df])
         
         # LOGGER.info("@@@@@@@@@@@@@ E1 Done")
-        calculate_Efficient2_commute_mode_share(tm_run_id, metrics_dict)
+        efficient2_metrics_df = calculate_Efficient2_commute_mode_share(tm_run_id)
+        metrics_df = pd.concat([metrics_df, efficient2_metrics_df])
         calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
         calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, metrics_dict) #add tm_metric_id to all?
@@ -1665,7 +1745,9 @@ if __name__ == "__main__":
         efficient1_metrics_df = calculate_Efficient1_ratio_travel_time(BASE_SCENARIO_RUN_ID)
         metrics_df = pd.concat([metrics_df, efficient1_metrics_df])
         # LOGGER.info("@@@@@@@@@@@@@ E1 Done")
-        calculate_Efficient2_commute_mode_share(BASE_SCENARIO_RUN_ID, metrics_dict)
+        efficient2_metrics_df = calculate_Efficient2_commute_mode_share(BASE_SCENARIO_RUN_ID)
+        metrics_df = pd.concat([metrics_df, efficient2_metrics_df])
+
         calculate_Reliable2_ratio_peak_nonpeak(BASE_SCENARIO_RUN_ID, year, metrics_dict) #add tm_metric_id to all?
         # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
         calculate_Safe1_fatalities_freewayss_nonfreeways(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_base, metrics_dict)
