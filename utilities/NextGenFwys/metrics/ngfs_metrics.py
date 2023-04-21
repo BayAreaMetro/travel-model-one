@@ -1615,17 +1615,17 @@ if __name__ == "__main__":
     tm_auto_owned_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/metrics/autos_owned.csv')
     tm_travel_cost_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/core_summaries/TravelCost.csv')
     tm_auto_times_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/metrics/auto_times.csv',sep=",")#, index_col=[0,1])
-    # tm_od_travel_times_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/core_summaries/ODTravelTime_byModeTimeperiod_reduced_file.csv')
-    # tm_od_tt_with_cities_df_base = tm_od_travel_times_df_base.merge(taz_cities_df, left_on='orig_taz', right_on='taz1454', how='left', suffixes = ["",'_orig']).merge(taz_cities_df, left_on='dest_taz', right_on='taz1454', how='left', suffixes = ["",'_dest'])
     tm_loaded_network_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/avgload5period.csv')
     tm_loaded_network_df_base = tm_loaded_network_df_base.rename(columns=lambda x: x.strip())
     # merging df that has the list of minor segments with loaded network - for corridor analysis
     tm_loaded_network_df_base['a_b'] = tm_loaded_network_df_base['a'].astype(str) + "_" + tm_loaded_network_df_base['b'].astype(str)
-    # addding back original code for simplicity of steps to update the tableau workbook (at the cost of run time)
-    network_links_dbf_base = DBF(tm_run_location_base + '\\OUTPUT\\shapefile\\network_links.DBF')
-    network_links_dbf_base = pd.DataFrame(network_links_dbf_base)
-    network_links_dbf_base['a_b'] = network_links_dbf_base['A'].astype(str) + "_" + network_links_dbf_base['B'].astype(str)
-    # network_links_dbf_base = pd.read_csv(tm_run_location_base + '\\OUTPUT\\shapefile\\network_links_reduced_file.csv')
+    if ODTRAVELTIME_FILENAME == "ODTravelTime_byModeTimeperiod_reduced_file.csv":
+        network_links_dbf_base = pd.read_csv(tm_run_location_base + '\\OUTPUT\\shapefile\\network_links_reduced_file.csv')
+    else:
+        # addding back original code for simplicity of steps to update the tableau workbook (at the cost of run time)
+        network_links_dbf_base = DBF(tm_run_location_base + '\\OUTPUT\\shapefile\\network_links.DBF')
+        network_links_dbf_base = pd.DataFrame(network_links_dbf_base)
+        network_links_dbf_base['a_b'] = network_links_dbf_base['A'].astype(str) + "_" + network_links_dbf_base['B'].astype(str)
     tm_loaded_network_df_base = tm_loaded_network_df_base.copy().merge(network_links_dbf_base.copy(), on='a_b', how='left')
     tm_loaded_network_df_base = tm_loaded_network_df_base.merge(minor_links_df, on='a_b', how='left')
 
@@ -1662,19 +1662,21 @@ if __name__ == "__main__":
         tm_auto_owned_df = pd.read_csv(tm_run_location+'/OUTPUT/metrics/autos_owned.csv')
         tm_travel_cost_df = pd.read_csv(tm_run_location+'/OUTPUT/core_summaries/TravelCost.csv')
         tm_auto_times_df = pd.read_csv(tm_run_location+'/OUTPUT/metrics/auto_times.csv',sep=",")#, index_col=[0,1])
-        # tm_od_travel_times_df = pd.read_csv(tm_run_location+'/OUTPUT/core_summaries/ODTravelTime_byModeTimeperiod_reduced_file.csv')
-        # tm_od_tt_with_cities_df = tm_od_travel_times_df.merge(taz_cities_df, left_on='orig_taz', right_on='taz1454', how='left', suffixes = ["",'_orig']).merge(taz_cities_df, left_on='dest_taz', right_on='taz1454', how='left', suffixes = ["",'_dest'])
         tm_loaded_network_df = pd.read_csv(tm_run_location+'/OUTPUT/avgload5period.csv')
         tm_loaded_network_df = tm_loaded_network_df.rename(columns=lambda x: x.strip())
         # ----merging df that has the list of minor segments with loaded network - for corridor analysis
         tm_loaded_network_df['a_b'] = tm_loaded_network_df['a'].astype(str) + "_" + tm_loaded_network_df['b'].astype(str)
         tm_loaded_network_df = tm_loaded_network_df.merge(minor_links_df, on='a_b', how='left')
-        # addding back original code for simplicity of steps to update the tableau workbook (at the cost of run time)
-        network_links_dbf = DBF(tm_run_location + '\\OUTPUT\\shapefile\\network_links.DBF')
-        network_links_dbf = pd.DataFrame(network_links_dbf)
-        network_links_dbf['a_b'] = network_links_dbf['A'].astype(str) + "_" + network_links_dbf['B'].astype(str)
-        # ----import network links file from reduced dbf as a dataframe to merge with loaded network and get toll rates
-        # network_links_dbf = pd.read_csv(tm_run_location + '\\OUTPUT\\shapefile\\network_links_reduced_file.csv')
+        
+        if ODTRAVELTIME_FILENAME == "ODTravelTime_byModeTimeperiod_reduced_file.csv":
+            # import network links file from reduced dbf as a dataframe to merge with loaded network and get toll rates
+            network_links_dbf = pd.read_csv(tm_run_location + '\\OUTPUT\\shapefile\\network_links_reduced_file.csv')
+        else:
+            # addding back original code for simplicity of steps to update the tableau workbook (at the cost of run time)
+            network_links_dbf = DBF(tm_run_location + '\\OUTPUT\\shapefile\\network_links.DBF')
+            network_links_dbf = pd.DataFrame(network_links_dbf)
+            network_links_dbf['a_b'] = network_links_dbf['A'].astype(str) + "_" + network_links_dbf['B'].astype(str)
+     
         tm_loaded_network_df = tm_loaded_network_df.copy().merge(network_links_dbf.copy(), on='a_b', how='left')
 
         # TODO: why?
