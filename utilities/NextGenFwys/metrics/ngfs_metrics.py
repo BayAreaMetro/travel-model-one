@@ -78,21 +78,12 @@ NGFS_OD_CITIES_OF_INTEREST_DF = pd.DataFrame(
 )
 # print(NGFS_OD_CITIES_OF_INTEREST_DF)
 # TODO: merge formatting and consolidate variables
-# cpi index data: https://data.bls.gov/timeseries/CUURS49BSA0
-cpi_index_2023 = 337.173
-cpi_index_2000 = 180.2
-inflation_factor = 1.03
-
-# adjustment_2000_to_2023 = 1 + (cpi_index_2023 - cpi_index_2000)/cpi_index_2000
-adjustment_2000_to_2023 = 1.81 * inflation_factor
-revenue_days_per_year = 260
-
-inflation_00_20 = 1.67
-inflation_18_20 = 1 + (300.08 - 285.55)/285.55
-
-# TODO: add source.  This doesn't match for 2000: https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
-INFLATION_00_20 = 1.53
-INFLATION_18_20 = 1.04
+# source: https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
+INFLATION_FACTOR = 1.03
+INFLATION_00_23 = (327.06 / 180.20) * INFLATION_FACTOR
+INFLATION_00_20 = 300.08 / 180.20
+INFLATION_18_20 = 300.08 / 285.55
+REVENUE_DAYS_PER_YEAR = 260
 
 # Annual Auto ownership cost in 2018$
 # Source: Consumer Expenditure Survey 2018 (see Box\Horizon and Plan Bay Area 2050\Equity and Performance\7_Analysis\Metrics\Affordable\auto_ownership_costs.xlsx)
@@ -105,8 +96,8 @@ AUTO_OWNERSHIP_COST_2018D_INC2 = 4224
 # chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.transportation.gov/sites/dot.gov/files/2022-03/Benefit%20Cost%20Analysis%20Guidance%202022%20Update%20%28Final%29.pdf
 # inflation adjustment CPI 2020, 2000 reference https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
 # TODO: why doesn't this use INFLATION_00_20 ?
-VOT_2023D_PERSONAL             = 17.8 / inflation_00_20 * adjustment_2000_to_2023  # based on "All Purposes" in Table A-3
-VOT_2023D_COMMERCIAL           = 32 / inflation_00_20 * adjustment_2000_to_2023  # based on Commercial Vehicle Operators - Truck Drivers
+VOT_2023D_PERSONAL             = 17.8 / INFLATION_00_20 * INFLATION_00_23  # based on "All Purposes" in Table A-3
+VOT_2023D_COMMERCIAL           = 32 / INFLATION_00_20 * INFLATION_00_23  # based on Commercial Vehicle Operators - Truck Drivers
 
 
 
@@ -322,11 +313,11 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     PM_total_tolls = (network_with_tolls['volPM_tot'] * network_with_tolls['TOLLPM_DA']).sum()/100
     EV_total_tolls = (network_with_tolls['volEV_tot'] * network_with_tolls['TOLLEV_DA']).sum()/100
     daily_toll_rev_2000_dollars = EA_total_tolls + AM_total_tolls + MD_total_tolls + PM_total_tolls + EV_total_tolls
-    daily_toll_rev_2023_dollars = daily_toll_rev_2000_dollars * adjustment_2000_to_2023
-    annual_toll_rev_2023_dollars = daily_toll_rev_2023_dollars * revenue_days_per_year
-    annual_toll_rev_2035_dollars = annual_toll_rev_2023_dollars*inflation_factor**(2035-2023)
+    daily_toll_rev_2023_dollars = daily_toll_rev_2000_dollars * INFLATION_00_23
+    annual_toll_rev_2023_dollars = daily_toll_rev_2023_dollars * REVENUE_DAYS_PER_YEAR
+    annual_toll_rev_2035_dollars = annual_toll_rev_2023_dollars*INFLATION_FACTOR**(2035-2023)
     # compute sum of geometric series for year of expenditure value
-    fifteen_year_toll_rev_2050_dollars = (annual_toll_rev_2035_dollars * (1- inflation_factor**15))/(1 - inflation_factor)
+    fifteen_year_toll_rev_2050_dollars = (annual_toll_rev_2035_dollars * (1- INFLATION_FACTOR**15))/(1 - INFLATION_FACTOR)
     
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily_toll_revenues_from_new_tolling_2000$', year] = daily_toll_rev_2000_dollars
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily_toll_revenues_from_new_tolling_2035$', year] = annual_toll_rev_2035_dollars/260
@@ -598,10 +589,11 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         metrics_dict[key, 'Travel Time', grouping3, tm_run_id, metric_id,'intermediate','By Corridor','Monetized value low-income (${}/hr)'.format(round(VOT_2023D_PERSONAL)),year] = priv_auto_travel_time_savings_minor_grouping
         metrics_dict[key, 'Travel Time', grouping3, tm_run_id, metric_id,'intermediate','By Corridor','Monetized value freight (${}/hr)'.format(round(VOT_2023D_COMMERCIAL)),year] = commercial_vehicle_travel_time_savings_minor_grouping
 
-        # calculate the denominator, incremental toll costs (for PA CV and HOV), by filtering for the links on the corridor and summing across them
-        DA_incremental_toll_costs_minor_grouping = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['Grouping minor_AMPM'].str.contains(minor_grouping_corridor) == True), 'TOLLAM_DA'].sum()/100 * adjustment_2000_to_2023 #filter and sum across links
-        LRG_incremental_toll_costs_minor_grouping = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['Grouping minor_AMPM'].str.contains(minor_grouping_corridor) == True), 'TOLLAM_LRG'].sum()/100 * adjustment_2000_to_2023 #filter and sum across links
-        S3_incremental_toll_costs_minor_grouping = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['Grouping minor_AMPM'].str.contains(minor_grouping_corridor) == True), 'TOLLAM_S3'].sum()/100 * adjustment_2000_to_2023 #filter and sum across links
+        # calculate the denominator: incremental toll costs (for PA CV and HOV) 
+        # by filtering for the links on the corridor and summing across them
+        DA_incremental_toll_costs_minor_grouping = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['Grouping minor_AMPM'].str.contains(minor_grouping_corridor) == True), 'TOLLAM_DA'].sum()/100 * INFLATION_00_23
+        LRG_incremental_toll_costs_minor_grouping = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['Grouping minor_AMPM'].str.contains(minor_grouping_corridor) == True), 'TOLLAM_LRG'].sum()/100 * INFLATION_00_23
+        S3_incremental_toll_costs_minor_grouping = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['Grouping minor_AMPM'].str.contains(minor_grouping_corridor) == True), 'TOLLAM_S3'].sum()/100 * INFLATION_00_23
         DA_incremental_toll_costs_inc1_minor_grouping = (DA_incremental_toll_costs_minor_grouping * inc1_discounts_credits_rebates)
         DA_incremental_toll_costs_inc2_minor_grouping = (DA_incremental_toll_costs_minor_grouping * inc2_discounts_credits_rebates)
         metrics_dict[key, 'Toll Costs (2023$)', 'private auto', tm_run_id, metric_id,'intermediate','By Corridor','auto_toll_costs',year] = DA_incremental_toll_costs_minor_grouping
