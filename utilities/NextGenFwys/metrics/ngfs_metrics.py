@@ -306,7 +306,7 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     # calculate toll revenues
     
     tm_loaded_network_df_copy = tm_loaded_network_df.copy()
-    network_with_tolls = tm_loaded_network_df_copy.loc[(tm_loaded_network_df_copy['TOLLCLASS'] > 1000)| (tm_loaded_network_df_copy['TOLLCLASS'] == 99)] 
+    network_with_tolls = tm_loaded_network_df_copy.loc[(tm_loaded_network_df_copy['TOLLCLASS'] > 1000)| (tm_loaded_network_df_copy['TOLLCLASS'] == 99)|(tm_loaded_network_df_copy['TOLLCLASS'] == 10)|(tm_loaded_network_df_copy['TOLLCLASS'] == 11)|(tm_loaded_network_df_copy['TOLLCLASS'] == 12)] 
     EA_total_tolls = (network_with_tolls['volEA_tot'] * network_with_tolls['TOLLEA_DA']).sum()/100
     AM_total_tolls = (network_with_tolls['volAM_tot'] * network_with_tolls['TOLLAM_DA']).sum()/100
     MD_total_tolls = (network_with_tolls['volMD_tot'] * network_with_tolls['TOLLMD_DA']).sum()/100
@@ -333,10 +333,12 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
         toll_revenue_column = 'Value Tolls'
     for inc_level in range(1,5):
         tm_tot_hh_incgroup = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_households_inc%d" % inc_level),'value'].item()
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Tolls', 'Daily_approximate_toll_values_per_inc%dHH_(ie_includes_express_lane_revenues)_2000$' % inc_level, year] = (auto_times_summed.loc['inc%d' % inc_level, toll_revenue_column]/100)/tm_tot_hh_incgroup
-        toll_revenues_overall += auto_times_summed.loc['inc%d' % inc_level, toll_revenue_column]/100
+        incgroup_dailytolls = (auto_times_summed.loc['inc%d' % inc_level, toll_revenue_column]/100)
+        metrics_dict[inc_level, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily revenue (includes express lane, 2000$)', year] = incgroup_dailytolls
+        metrics_dict[inc_level, grouping2, grouping3, tm_run_id, metric_id,'top_level','Tolls', 'Average Daily Tolls per Household', year] = incgroup_dailytolls/tm_tot_hh_incgroup
+        toll_revenues_overall += incgroup_dailytolls
     # use as a check for calculated value above. should be in the same ballpark. calculate ratio and use for links?
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily_approximate_toll_revenues_(ie_includes_express_lane_revenues)_2000$', year] = toll_revenues_overall
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily revenue (includes express lane, 2000$)', year] = toll_revenues_overall
 
 
 
@@ -511,7 +513,7 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     grouping2 = ' '
     grouping3 = ' '
   
-    network_with_nonzero_tolls = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['TOLLCLASS'] > 1000) | (tm_loaded_network_df['TOLLCLASS'] == 99)]
+    network_with_nonzero_tolls = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['TOLLCLASS'] > 1000) | (tm_loaded_network_df['TOLLCLASS'] == 99)] # might add this in to provide a denominator to ratios in pathway 3: |(tm_loaded_network_df['TOLLCLASS'] == 10)|(tm_loaded_network_df['TOLLCLASS'] == 11)|(tm_loaded_network_df['TOLLCLASS'] == 12)]
     network_with_nonzero_tolls = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] == 1)&(tm_loaded_network_df['ft'] != 6)]
     network_with_nonzero_tolls['sum of tolls'] = network_with_nonzero_tolls['TOLLAM_DA'] + network_with_nonzero_tolls['TOLLAM_LRG'] + network_with_nonzero_tolls['TOLLAM_S3']
     # check if run has all lane tolling, if not return 0 for this metric 
