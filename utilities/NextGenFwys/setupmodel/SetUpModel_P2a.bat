@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP09_Path2a_04
+set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP10_Path2a_01
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for Blueprint NoProject runs; AddStrategies=Yes for NGF NoProject runs.
 set AddStrategies=Yes
