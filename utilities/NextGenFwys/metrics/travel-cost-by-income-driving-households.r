@@ -7,6 +7,7 @@
 #   number of households
 #   number of auto trips
 #   number of transit trips
+#   number of household autos
 #   total trip op cost
 #   total trip parking cost
 #   total trip bridge toll cost
@@ -71,7 +72,7 @@ print(paste0("SAMPLESHARE = ",SAMPLESHARE))
 load(file.path(TARGET_DIR, "updated_output", "trips.rdata"))
 # print(str(trips))
 # select only columns we need
-trips <- select(trips, hh_id, person_id, incQ, incQ_label, home_taz, trip_mode, cost)
+trips <- select(trips, hh_id, person_id, incQ, incQ_label, autos, home_taz, trip_mode, cost)
 
 # join on lookup
 trips <- left_join(trips, LOOKUP_MODE)
@@ -108,6 +109,17 @@ print(head(hhld_trips_summary))
 trips <- left_join(trips, hhld_trips_summary)
 # print(head(trips))
 
+# need autos summary by household by income, home_taz, hhld_travel(segment)
+hhld_autos_summary <- group_by(trips, hh_id, incQ, incQ_label, home_taz, hhld_travel) %>%
+    summarise( hhld_autos = max(autos) )
+print("hhld_autos_summary:")
+print(head(hhld_autos_summary))
+# summarize again to aggregate for households
+hhld_autos_summary <- group_by(hhld_autos_summary, incQ, incQ_label, home_taz, hhld_travel) %>%
+    summarise( total_hhld_autos = sum(hhld_autos) )
+print("hhld_autos_summary:")
+print(head(hhld_autos_summary))   
+
 trip_summary <- group_by(trips, incQ, incQ_label, home_taz, hhld_travel) %>%
     summarise(
         num_hhlds           = n_distinct(hh_id) / SAMPLESHARE,
@@ -121,6 +133,11 @@ trip_summary <- group_by(trips, incQ, incQ_label, home_taz, hhld_travel) %>%
 
 print("trip_summary: ")
 print(trip_summary)
+
+# join with hhld_autos_summary
+trip_summary <- left_join(trip_summary, hhld_autos_summary) %>%
+    mutate(total_hhld_autos = total_hhld_autos / SAMPLESHARE)
+
 write.csv(trip_summary, file = OUTPUT_FILE, row.names = FALSE, quote = F)
 print(paste("Wrote",nrow(trip_summary),"rows to",OUTPUT_FILE))
 
