@@ -69,7 +69,7 @@ if __name__ == '__main__':
         CALIB_ITER = "0"+ITER
 
         UPDATE_CONSTANT = False
-        if (MODEL_DIR.upper().find("FBP") >= 0):
+        if (MODEL_DIR.upper().find("FBP") >= 0) or (MODEL_DIR.upper().find("NGF") >= 0):
             if (int(MODEL_YEAR) < 2035) or \
                (MODEL_DIR.upper().find("NOPROJECT") >= 0) or \
                (MODEL_DIR.upper().find("NOTRANSPORTPROJECT") >= 0):
