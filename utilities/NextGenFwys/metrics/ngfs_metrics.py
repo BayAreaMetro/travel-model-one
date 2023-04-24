@@ -19,7 +19,7 @@ USAGE = """
     6) Reliable 2: Ratio of travel time during peak hours vs. non-peak hours between representative origin-destination pairs 
     7) Reparative 1: Absolute dollar amount of new revenues generated that is reinvested in freeway adjacent communities
     8) Reparative 2: Ratio of new revenues paid for by low-income populations to revenues reinvested toward low-income populations
-    9) Safe 1: Annual number of estimated fatalities on freeways and non-freeway facilities
+    9) Safe 1: Annual number of estimated fatalities on freeways and non-freeway facilities (Annual Incidents, per 1,000,000 VMT)
     10) Safe 2: Change in vehicle miles travelled on freeway and adjacent non-freeway facilities
 
 """
@@ -1245,12 +1245,12 @@ def calculate_fatalitites(run_id, loaded_network_df, collision_rates_df, tm_load
     modified_network_df = loaded_network_df.copy()
     modified_network_df['ft_collision'] = modified_network_df['ft']
     modified_network_df['at_collision'] = modified_network_df['at']
-    modified_network_df.loc[modified_network_df['ft_collision'] == 1,'ft_collision'] = 2
-    modified_network_df.loc[modified_network_df['ft_collision'] == 8,'ft_collision'] = 2
-    modified_network_df.loc[modified_network_df['ft_collision'] == 6,'ft_collision'] = -1 #ignore ft 6 (dummy links) and lanes <= 0 by replacing the ft with -1, which won't match with anything
-    modified_network_df.loc[modified_network_df['lanes'] <= 0,'ft_collision'] = -1
-    modified_network_df.loc[modified_network_df['ft_collision'] > 4,'ft_collision'] = 4
-    modified_network_df.loc[modified_network_df['at_collision'] < 3,'at_collision'] = 3
+    modified_network_df.loc[modified_network_df['ft_collision'] == 1,'ft_collision'] = 2    # Freeway-to-freeway connector is like a freeway
+    modified_network_df.loc[modified_network_df['ft_collision'] == 8,'ft_collision'] = 2    # managed freeway is like a freeway
+    modified_network_df.loc[modified_network_df['ft_collision'] == 6,'ft_collision'] = -1   # ignore ft 6 (dummy links) and lanes <= 0 by replacing the ft with -1, which won't match with anything
+    modified_network_df.loc[modified_network_df['lanes'] <= 0,'ft_collision'] = -1          # or those with lanes <= 0
+    modified_network_df.loc[modified_network_df['ft_collision'] > 4,'ft_collision'] = 4     # cap at 4
+    modified_network_df.loc[modified_network_df['at_collision'] < 3,'at_collision'] = 3     # this is different from hwynet.py but taken from PBA script
     modified_network_df.loc[modified_network_df['at_collision'] > 4,'at_collision'] = 4
     # ____confirm this is ok with FMS team and Anup______
     # filter for desired ft and remove links where all speeds are 0 <-- not sure if this is an error in the network
@@ -1260,6 +1260,7 @@ def calculate_fatalitites(run_id, loaded_network_df, collision_rates_df, tm_load
     modified_network_df = modified_network_df.merge(collision_rates_df,how='left',left_on=['ft_collision','at_collision'],right_on=['ft','at'])
         
     # calculate fatalities and injuries as they would be calculated without the speed reduction
+    # "collisionLookup.csv" Units are collisions per 1,000,000 VMT
     modified_network_df['annual_VMT'] = N_DAYS_PER_YEAR * (modified_network_df['volEA_tot'] + modified_network_df['volAM_tot'] + modified_network_df['volMD_tot'] + modified_network_df['volPM_tot'] + modified_network_df['volEV_tot']) * modified_network_df['distance']
     
     modified_network_df['Avg_speed'] = (modified_network_df['cspdEA'] + modified_network_df['cspdAM'] + modified_network_df['cspdMD'] + modified_network_df['cspdPM'] + modified_network_df['cspdEV']) / 5
