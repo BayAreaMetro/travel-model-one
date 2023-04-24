@@ -69,13 +69,20 @@ if __name__ == '__main__':
         CALIB_ITER = "0"+ITER
 
         UPDATE_CONSTANT = False
-        if (MODEL_DIR.upper().find("FBP") >= 0) or (MODEL_DIR.upper().find("NGF") >= 0):
+        # Rules to determine whether the telecommute constants should be turned on for FBP
+        if (MODEL_DIR.upper().find("FBP") >= 0):
             if (int(MODEL_YEAR) < 2035) or \
                (MODEL_DIR.upper().find("NOPROJECT") >= 0) or \
                (MODEL_DIR.upper().find("NOTRANSPORTPROJECT") >= 0):
                UPDATE_CONSTANT = False
             else:
                UPDATE_CONSTANT = True
+        # Rules to determine whether the telecommute constants should be turned on for NGF
+        if (MODEL_DIR.upper().find("NGF") >= 0):
+            if (int(MODEL_YEAR) < 2035):
+               UPDATE_CONSTANT = False
+            else:
+               UPDATE_CONSTANT = True      
 
     print('MODEL_YEAR               = {}'.format(MODEL_YEAR))
     print('MODEL_DIR                = {}'.format(MODEL_DIR))
