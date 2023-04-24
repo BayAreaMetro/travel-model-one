@@ -21,8 +21,12 @@
 # Output:  %TARGET_DIR%\core_summaries\travel-cost-by-income-driving-households.csv
 #
 #
-# modeling machines have R_LIB setup
-.libPaths(Sys.getenv("R_LIB"))
+
+COMPUTERNAME <- Sys.getenv("COMPUTERNAME")
+if (startsWith(COMPUTERNAME, "MODEL2D") | startsWith(COMPUTERNAME, "MODEL2D")) {
+    # modeling machines have R_LIB setup
+    .libPaths(Sys.getenv("R_LIB"))
+}
 
 library(dplyr)
 
@@ -65,13 +69,20 @@ print(paste0("TARGET_DIR  = ",TARGET_DIR))
 print(paste0("SAMPLESHARE = ",SAMPLESHARE))
 
 load(file.path(TARGET_DIR, "updated_output", "trips.rdata"))
-print(str(trips))
+# print(str(trips))
 # select only columns we need
 trips <- select(trips, hh_id, person_id, incQ, incQ_label, home_taz, trip_mode, cost)
 
 # join on lookup
 trips <- left_join(trips, LOOKUP_MODE)
-print(head(trips))
+# print(head(trips))
+
+# separate cost into auto cost versus transit fare
+# Note: from SkimsDatabase.JOB, drive to transit costs are fare driven
+trips <- mutate(trips,
+    transit_cost = ifelse(is_transit, cost, 0),
+    auto_cost    = ifelse(is_transit==FALSE, cost, 0)  # Note: Taxi/TNC included here
+)
 
 # summarize by household on is_auto, is_transit
 hhld_trips_summary <- group_by(trips, hh_id) %>%
@@ -90,11 +101,12 @@ hhld_trips_summary <- mutate(hhld_trips_summary,
         (hhld_auto_trips == 0) & (hhld_transit_trips == 0) ~ "no_auto_no_transit"), 
     hhld_travel = factor(hhld_travel, levels=c("auto_and_transit","auto_no_transit", "transit_no_auto","no_auto_no_transit"))
 )
+print("hhld_trips_summary head: ")
 print(head(hhld_trips_summary))
 
 # join back to trips and summarize trip costs
 trips <- left_join(trips, hhld_trips_summary)
-print(head(trips))
+# print(head(trips))
 
 trip_summary <- group_by(trips, incQ, incQ_label, home_taz, hhld_travel) %>%
     summarise(
@@ -102,8 +114,12 @@ trip_summary <- group_by(trips, incQ, incQ_label, home_taz, hhld_travel) %>%
         num_persons         = n_distinct(person_id) / SAMPLESHARE,
         num_auto_trips      = sum(is_auto) / SAMPLESHARE,
         num_transit_trips   = sum(is_transit) / SAMPLESHARE,
+        auto_cost           = sum(auto_cost) / SAMPLESHARE,
+        transit_cost        = sum(transit_cost) / SAMPLESHARE,
         total_cost          = sum(cost) / SAMPLESHARE
     )
+
+print("trip_summary: ")
 print(trip_summary)
 write.csv(trip_summary, file = OUTPUT_FILE, row.names = FALSE, quote = F)
 print(paste("Wrote",nrow(trip_summary),"rows to",OUTPUT_FILE))

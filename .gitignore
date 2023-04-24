@@ -8,8 +8,10 @@ core/models/**/build
 core/projects/**/build
 **/.svn
 **/*.pyc
+**/*.log
 **/TPPL.PRJ
 **/TPPL.VAR
+**/TPPL*.PRN
 **/*-checkpoint.ipynb
-utilities/bespoke-requests/fare-study/TPPL*.PRN
+utilities/NextGenFwys/metrics/*.csv
 
