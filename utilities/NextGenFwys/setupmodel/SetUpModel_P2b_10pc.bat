@@ -5,22 +5,24 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP10
+set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP10_Path2b_01_10pc
 
-:: Should strategies be included? AddStrategies=Yes for all Blueprint Project and all NGF runs; AddStrategies=No for Blueprint NoProject runs.
-:: The NGF NoProject scenario includes some Blueprint strategies and excludes some (e.g. Regional Transit Fares and Vision Zero).
-:: set NGFNoProject=Yes if this is a NGF NoProject run.
+:: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for Blueprint NoProject runs; AddStrategies=Yes for NGF NoProject runs.
 set AddStrategies=Yes
-set NGFNoProject=Yes
+
+:: The NGF NoProject scenario excludes some Blueprint strategies. Most of them are excluded via the netspec.
+:: But Vision Zero needs to be excluded via the setupmodel (in additional to via the netspec)
+:: set NGFNoProject=Yes if this is a NGF NoProject run; set NGFNoProject=No otherwise.
+set NGFNoProject=No
 
 :: set the location of the Travel Model Release
 :: use master for now until we create a release
 set GITHUB_DIR=X:\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_NoProjectNoSFCordon_08\net_2035_NGFNoProjectNoSFCordon
+set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_P2b_AllLaneTollingPlusArterials_Affordable_05\NGF_P2b_AllLaneTollingPlusArterials_Affordable_network_2035
 
-:: set the location of the populationsim and land use inputs (make sure the land use version and year are correct)
+:: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 set INPUT_POPLU=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\PopSyn_n_LandUse\2035_cordon
 
 :: choose one of the following tazDataFileName
@@ -39,12 +41,12 @@ set METRICS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPME
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP02
+set PREV_RUN_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_Path1b_01_SimpleToll01
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
 :: set PARAMS=\\mainmodel\MainModelShare\travel-model-one-master\config\params_PBA50_Blueprint2035.properties
-set PARAMS=X:\travel-model-one-master\utilities\NextGenFwys\properties_files\params_NGF_NoProject.properties
+set PARAMS=X:\travel-model-one-master\utilities\NextGenFwys\properties_files\params_Pathway1b2b.properties
 
 :: superdistrict-based telecommute constants
 :: for no project or base years, this will get generated/stay at zero
@@ -57,7 +59,7 @@ set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-over
 :: use special input tolls.csv?
 set SwapTollsCsv=Yes
 :: if the above is Yes, where is the input tolls.csv?
-set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_TollCalibration01\tollcalib_iter\tolls_iter15_3centsAsMinToll.csv
+set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Static_toll_plans\Static_toll_P2b_V13_10pc\tolls_simplified.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -126,7 +128,7 @@ mkdir INPUT\warmstart\nonres
 copy /Y "%PREV_RUN_DIR%\OUTPUT\main\*.tpp"                                                       INPUT\warmstart\main
 copy /Y "%PREV_RUN_DIR%\OUTPUT\nonres\*.tpp"                                                     INPUT\warmstart\nonres
 del INPUT\warmstart\nonres\ixDaily2015.tpp
-del INPUT\warmstart\nonres\ixDailyx4.tpp
+del INPUT\warmstart\nonres\ixDailyx4.tpp 
 
 :: the properties file
 copy /Y "%PARAMS%"                                                                               INPUT\params.properties
@@ -180,9 +182,14 @@ if %MODEL_YEAR_NUM% GEQ 2035 (
 :: ------
 :: Same as PPA project 6100_TransitFare_Integration
 
+:: exclude "T4 - Reform Regional Transit Fare Policy" from NFG NoProject
+if %NGFNoProject%==Yes goto SkipRegionalTransitFare
+
 if %MODEL_YEAR_NUM% GEQ 2035 (
   copy /Y "%BP_OVERRIDE_DIR%\Regional_Transit_Fare_Policy\TransitSkims.job"     CTRAMP\scripts\skims
 )
+
+:SkipRegionalTransitFare
 
 :: means-based fare discount -- 50% off for Q1 -- are config in the parmas.properties file (see step 1)
 
@@ -215,7 +222,7 @@ if %MODEL_YEAR_NUM% GEQ 2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapaci
 :: see asana task: https://app.asana.com/0/450971779231601/1186351402141779/f
 
 :: ------
-:: Bike Access
+:: Bike Access 
 :: ------
 :: Bike/ped improvement on the San Rafael Bridge
 if %MODEL_YEAR_NUM% GEQ 2025 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMotorizedNetwork_BikeAccess_2025-2040.job"     "CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job")
@@ -228,12 +235,12 @@ if %MODEL_YEAR_NUM% GEQ 2045 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMo
 mkdir main
 copy /Y "%TELECOMMUTE_CONFIG%" "main/telecommute_constants_00.csv"
 copy /Y "%TELECOMMUTE_CONFIG%" "main/telecommute_constants.csv"
-
+ 
 :DoneAddingStrategies
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 5: Patches to Travel Model Release
+:: Step 5: Patches to Travel Model Release 
 ::
 :: ------------------------------------------------------------------------------------------------------
 :: in case the TM release is behind, this is where we copy the most up-to-date scripts from master
@@ -259,7 +266,7 @@ SET min=%time:~3,2%
 SET ss=%time:~6,2%
 
 if exist "%M_DIR%\INPUT" (
-    :: do not overwrite existing INPUT folders on M
+    :: do not overwrite existing INPUT folders on M 
     c:\windows\system32\Robocopy.exe /E "INPUT" "%M_DIR%\INPUT_%mm%%dd%%yy%_%hh%%min%%ss%"
 ) else (
     c:\windows\system32\Robocopy.exe /E "INPUT" "%M_DIR%\INPUT"
@@ -270,7 +277,7 @@ Set dir2="%PREV_RUN_DIR%\INPUT"
 c:\windows\system32\robocopy.exe %dir1% %dir2% /e /l /ns /njs /ndl /fp /log:"%M_DIR%\CompareInputs.txt"
 
 ::----------------------------------------------
-:: add folder name to the command prompt window
+:: add folder name to the command prompt window 
 ::----------------------------------------------
 set MODEL_DIR=%CD%
 set PROJECT_DIR=%~p0
@@ -304,7 +311,6 @@ echo oLink.Save >> %TEMP_SCRIPT%
 ::C:\Windows\SysWOW64\cscript.exe /nologo %TEMP_SCRIPT%
 C:\Windows\SysWOW64\cscript.exe %TEMP_SCRIPT%
 del %TEMP_SCRIPT%
-
 
 :: ------------------------------------------------------------------------------------------------------
 ::
