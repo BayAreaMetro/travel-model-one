@@ -1,19 +1,31 @@
 #
 # Summarize transportation costs by the following new segmentation of households:
-#   income group
-#   taz of household
-#   household type (driving only, driving + transit, transit only, other)
-# Data:
-#   number of households
-#   number of auto trips
-#   number of transit trips
-#   number of household autos
+#   incQ, incQ_lable: income group
+#   home_taz: taz of household
+#   hhld_travel: household type, one of [auto_and_transit, auto_no_transit, transit_no_auto, no_auto_no_transit]
+#      for segmentation purposes,
+#         auto trips include personal auto trips (but *not* taxi, TNC) and drive-to-transit trips
+#         transit trips include walk-to-transit trips and drive-to-transit trips
+#         so a household with a single drive-to-transit trip is in auto_and_transit
+# Data columns:
+#   num_hhlds:          number of households
+#   num_persons:        number of persons in those households
+#   num_auto_trips:     number of auto trips taken by those households
+#   num_transit_trips:  number of transit trips taken by those households
+#     (Note the same classifications of auto and transit apply as were used in the segmentation
+#      so there IS double counting -- a drive-to-transit trip is counted twice)
+#   total_hhld_autos:   total number of household autos for these households
+#   total_hhd_income:   total household income for these households (in 2000 dollars)
+#   total_auto_cost:    total daily auto cost for these trips (in 2000 cents)
+#   total_transit_cost: total daily transit cost for these trips (in 2000 cents)
+# 
+# Note: Initial implementation only reports a single cost; detailed costs are more complicated.
+# TODO: break up auto_cost into the following -- this will involve reading detailed skims
 #   total trip op cost
 #   total trip parking cost
 #   total trip bridge toll cost
 #   total trip value toll cost
-#   total transit fare cost
-# Note: Initial implementation only reports a single cost; detailed costs are more complicated.
+#
 #
 # See asana task: Calculate daily driving cost breakdown per household for driving households
 # https://app.asana.com/0/0/1204292931632605/f
@@ -72,7 +84,7 @@ print(paste0("SAMPLESHARE = ",SAMPLESHARE))
 load(file.path(TARGET_DIR, "updated_output", "trips.rdata"))
 # print(str(trips))
 # select only columns we need
-trips <- select(trips, hh_id, person_id, incQ, incQ_label, autos, home_taz, trip_mode, cost)
+trips <- select(trips, hh_id, person_id, incQ, incQ_label, home_taz, income, autos, trip_mode, cost)
 
 # join on lookup
 trips <- left_join(trips, LOOKUP_MODE)
@@ -109,34 +121,47 @@ print(head(hhld_trips_summary))
 trips <- left_join(trips, hhld_trips_summary)
 # print(head(trips))
 
-# need autos summary by household by income, home_taz, hhld_travel(segment)
-hhld_autos_summary <- group_by(trips, hh_id, incQ, incQ_label, home_taz, hhld_travel) %>%
-    summarise( hhld_autos = max(autos) )
-print("hhld_autos_summary:")
-print(head(hhld_autos_summary))
+# need autos / income summary by household by income, home_taz, hhld_travel(segment)
+hhld_autos_income_summary <- group_by(trips, hh_id, incQ, incQ_label, home_taz, hhld_travel) %>%
+    summarise( 
+        hhld_autos  = max(autos),  # max, min, avg -- should all be the same
+        hhld_income = max(income)  # max, min, avg -- should all be the same
+    )
+# zero out negative household income
+hhld_autos_income_summary <- mutate(hhld_autos_income_summary,
+    hhld_income = ifelse(hhld_income < 0, 0, hhld_income)
+)
+print("hhld_autos_income_summary:")
+print(head(hhld_autos_income_summary))
 # summarize again to aggregate for households
-hhld_autos_summary <- group_by(hhld_autos_summary, incQ, incQ_label, home_taz, hhld_travel) %>%
-    summarise( total_hhld_autos = sum(hhld_autos) )
-print("hhld_autos_summary:")
-print(head(hhld_autos_summary))   
+hhld_autos_income_summary <- group_by(hhld_autos_income_summary, 
+    incQ, incQ_label, home_taz, hhld_travel) %>%
+    summarise( 
+        total_hhld_autos  = sum(hhld_autos),
+        total_hhld_income = sum(hhld_income)
+    )
+print("hhld_autos_income_summary:")
+print(head(hhld_autos_income_summary))
 
+# everything is a total so divide by sampleshare
 trip_summary <- group_by(trips, incQ, incQ_label, home_taz, hhld_travel) %>%
     summarise(
-        num_hhlds           = n_distinct(hh_id) / SAMPLESHARE,
+        num_hhlds           = n_distinct(hh_id)     / SAMPLESHARE,
         num_persons         = n_distinct(person_id) / SAMPLESHARE,
-        num_auto_trips      = sum(is_auto) / SAMPLESHARE,
-        num_transit_trips   = sum(is_transit) / SAMPLESHARE,
-        auto_cost           = sum(auto_cost) / SAMPLESHARE,
-        transit_cost        = sum(transit_cost) / SAMPLESHARE,
-        total_cost          = sum(cost) / SAMPLESHARE
+        num_auto_trips      = sum(is_auto)          / SAMPLESHARE,
+        num_transit_trips   = sum(is_transit)       / SAMPLESHARE,
+        total_auto_cost     = sum(auto_cost)        / SAMPLESHARE,
+        total_transit_cost  = sum(transit_cost)     / SAMPLESHARE,
+        total_cost          = sum(cost)             / SAMPLESHARE
     )
 
 print("trip_summary: ")
 print(trip_summary)
 
 # join with hhld_autos_summary
-trip_summary <- left_join(trip_summary, hhld_autos_summary) %>%
-    mutate(total_hhld_autos = total_hhld_autos / SAMPLESHARE)
+trip_summary <- left_join(trip_summary, hhld_autos_income_summary) %>%
+    mutate(total_hhld_autos = total_hhld_autos / SAMPLESHARE,
+           total_hhld_income = total_hhld_income/SAMPLESHARE)
 
 write.csv(trip_summary, file = OUTPUT_FILE, row.names = FALSE, quote = F)
 print(paste("Wrote",nrow(trip_summary),"rows to",OUTPUT_FILE))
