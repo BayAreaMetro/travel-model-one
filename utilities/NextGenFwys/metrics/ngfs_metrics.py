@@ -138,8 +138,8 @@ METRICS_COLUMNS = [
 ]
 
 # TODO: remove these after metrics methodology is finilzed (for debugging)
-ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiodIncome.csv"
-# ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiod_reduced_file.csv"
+# ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiodIncome.csv"
+ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiod_reduced_file.csv"
 
 def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df, metrics_dict):
     DESCRIPTION = """
@@ -334,8 +334,8 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     for inc_level in range(1,5):
         tm_tot_hh_incgroup = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_households_inc%d" % inc_level),'value'].item()
         incgroup_dailytolls = (auto_times_summed.loc['inc%d' % inc_level, toll_revenue_column]/100)
-        metrics_dict[inc_level, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily revenue (includes express lane, 2000$)', year] = incgroup_dailytolls
-        metrics_dict[inc_level, grouping2, grouping3, tm_run_id, metric_id,'top_level','Tolls', 'Average Daily Tolls per Household', year] = incgroup_dailytolls/tm_tot_hh_incgroup
+        metrics_dict["Inc %d" % inc_level, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily revenue (includes express lane, 2000$)', year] = incgroup_dailytolls
+        metrics_dict["Inc %d" % inc_level, grouping2, grouping3, tm_run_id, metric_id,'top_level','Tolls', 'Average Daily Tolls per Household', year] = incgroup_dailytolls/tm_tot_hh_incgroup
         toll_revenues_overall += incgroup_dailytolls
     # use as a check for calculated value above. should be in the same ballpark. calculate ratio and use for links?
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily revenue (includes express lane, 2000$)', year] = toll_revenues_overall
@@ -596,11 +596,16 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         DA_incremental_toll_costs_minor_grouping = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['Grouping minor_AMPM'].str.contains(minor_grouping_corridor) == True), 'TOLLAM_DA'].sum()/100 * INFLATION_00_23
         LRG_incremental_toll_costs_minor_grouping = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['Grouping minor_AMPM'].str.contains(minor_grouping_corridor) == True), 'TOLLAM_LRG'].sum()/100 * INFLATION_00_23
         S3_incremental_toll_costs_minor_grouping = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['Grouping minor_AMPM'].str.contains(minor_grouping_corridor) == True), 'TOLLAM_S3'].sum()/100 * INFLATION_00_23
-        DA_incremental_toll_costs_inc1_minor_grouping = (DA_incremental_toll_costs_minor_grouping * inc1_discounts_credits_rebates)
-        DA_incremental_toll_costs_inc2_minor_grouping = (DA_incremental_toll_costs_minor_grouping * inc2_discounts_credits_rebates)
+        DA_incremental_toll_costs_inc1_minor_grouping = (DA_incremental_toll_costs_minor_grouping * Q1_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
+        DA_incremental_toll_costs_inc2_minor_grouping = (DA_incremental_toll_costs_minor_grouping * Q2_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
+        DA_incremental_toll_costs_inc3_minor_grouping = (DA_incremental_toll_costs_minor_grouping * Q3_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
+        DA_incremental_toll_costs_inc4_minor_grouping = (DA_incremental_toll_costs_minor_grouping * Q4_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
+
         metrics_dict[key, 'Toll Costs (2023$)', 'private auto', tm_run_id, metric_id,'intermediate','By Corridor','auto_toll_costs',year] = DA_incremental_toll_costs_minor_grouping
         metrics_dict[key, 'Toll Costs (2023$)', 'inc1', tm_run_id, metric_id,'intermediate','By Corridor','auto_toll_costs',year] = DA_incremental_toll_costs_inc1_minor_grouping
         metrics_dict[key, 'Toll Costs (2023$)', 'inc2', tm_run_id, metric_id,'intermediate','By Corridor','auto_toll_costs',year] = DA_incremental_toll_costs_inc2_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'inc3', tm_run_id, metric_id,'intermediate','By Corridor','auto_toll_costs',year] = DA_incremental_toll_costs_inc3_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'inc4', tm_run_id, metric_id,'intermediate','By Corridor','auto_toll_costs',year] = DA_incremental_toll_costs_inc4_minor_grouping
         metrics_dict[key, 'Toll Costs (2023$)', 'truck', tm_run_id, metric_id,'intermediate','By Corridor','truck_toll_costs',year] = LRG_incremental_toll_costs_minor_grouping
         metrics_dict[key, 'Toll Costs (2023$)', 'hov', tm_run_id, metric_id,'intermediate','By Corridor','hov_toll_costs',year] = S3_incremental_toll_costs_minor_grouping
 
@@ -1654,11 +1659,16 @@ if __name__ == "__main__":
         # adjust later
         # TODO: What are these?
         if ('1b' in tm_run_id) | ('2b' in tm_run_id) | ('3b' in tm_run_id): #how to include discounts for persons with disabilities?
-          inc1_discounts_credits_rebates = .5
-          inc2_discounts_credits_rebates = 1
+          Q1_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS = 1 - 0.5
+          Q2_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS = 1 - 0
+          Q3_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS = 1 - 0
+          Q4_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS = 1 - 0
+
         else:
-          inc1_discounts_credits_rebates = 1
-          inc2_discounts_credits_rebates = 1
+          Q1_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS = 1 - 0
+          Q2_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS = 1 - 0
+          Q3_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS = 1 - 0
+          Q4_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS = 1 - 0
 
         # ______define the inputs_______
         tm_scen_metrics_df = pd.read_csv(tm_run_location+'/OUTPUT/metrics/scenario_metrics.csv',names=["runid", "metric_name", "value"])
