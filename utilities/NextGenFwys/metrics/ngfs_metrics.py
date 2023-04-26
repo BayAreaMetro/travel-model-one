@@ -1609,6 +1609,8 @@ if __name__ == "__main__":
     current_runs_df = current_runs_df.loc[ current_runs_df['status'] == 'current']
     # only process metrics for 2035 model runs 
     current_runs_df = current_runs_df.loc[ current_runs_df['year'] == 2035]
+    # TODO: delete later after NP10 runs are completed
+    current_runs_df = current_runs_df.loc[ (current_runs_df['directory'].str.contains('NP10') == False)]
 
     LOGGER.info("current_runs_df: \n{}".format(current_runs_df))
 
@@ -1638,7 +1640,7 @@ if __name__ == "__main__":
     pathway4_runs = current_runs_df.loc[ current_runs_df['category']=="Pathway 4" ]
     BASE_SCENARIO_RUN_ID = pathway4_runs['directory'].tolist()[-1] # take the last one
     noproject_runs = current_runs_df.loc[ current_runs_df['category'] == 'No Project']
-    NO_PROJECT_SCENARIO_RUN_ID = ['directory'].tolist()[-1] # take the last one
+    NO_PROJECT_SCENARIO_RUN_ID = noproject_runs['directory'].tolist()[-1] # take the last one
     tm_run_id_base = BASE_SCENARIO_RUN_ID # todo: deprecate this
     LOGGER.info("=> BASE_SCENARIO_RUN_ID = {}".format(BASE_SCENARIO_RUN_ID))
 
