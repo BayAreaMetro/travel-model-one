@@ -244,8 +244,8 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
    if (inc = 1)  MBF_Discount = Means_Based_Fare_Q1Factor
    if (inc = 2)  MBF_Discount = Means_Based_Fare_Q2Factor
    MBF_Cordon_Discount = 1.0
-   if (inc = 1)  MBF_Discount = Means_Based_Cordon_Fare_Q1Factor
-   if (inc = 2)  MBF_Discount = Means_Based_Cordon_Fare_Q2Factor
+   if (inc = 1)  MBF_Cordon_Discount = Means_Based_Cordon_Fare_Q1Factor
+   if (inc = 2)  MBF_Cordon_Discount = Means_Based_Cordon_Fare_Q2Factor
 
   RUN PGM = MATRIX
   ; Read person trips for a transitmode for all time periods and Access+Egress combinations
