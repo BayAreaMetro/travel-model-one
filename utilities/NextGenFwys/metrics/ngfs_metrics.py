@@ -151,8 +151,8 @@ METRICS_COLUMNS = [
 ]
 
 # TODO: remove these after metrics methodology is finilzed (for debugging)
-# ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiodIncome.csv"
-ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiod_reduced_file.csv"
+ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiodIncome.csv"
+# ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiod_reduced_file.csv"
 
 def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df, metrics_dict):
     DESCRIPTION = """
@@ -1609,8 +1609,8 @@ if __name__ == "__main__":
     current_runs_df = current_runs_df.loc[ current_runs_df['status'] == 'current']
     # only process metrics for 2035 model runs 
     current_runs_df = current_runs_df.loc[ current_runs_df['year'] == 2035]
-    # TODO: delete later after NP10 runs are completed
-    current_runs_df = current_runs_df.loc[ (current_runs_df['directory'].str.contains('NP10') == False)]
+    # # TODO: delete later after NP10 runs are completed
+    # current_runs_df = current_runs_df.loc[ (current_runs_df['directory'].str.contains('NP10') == False)]
 
     LOGGER.info("current_runs_df: \n{}".format(current_runs_df))
 
