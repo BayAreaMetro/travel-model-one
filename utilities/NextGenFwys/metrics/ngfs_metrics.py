@@ -99,6 +99,19 @@ AUTO_OWNERSHIP_COST_2018D_INC2 = 4224
 VOT_2023D_PERSONAL             = 17.8 / INFLATION_00_20 * INFLATION_00_23  # based on "All Purposes" in Table A-3
 VOT_2023D_COMMERCIAL           = 32 / INFLATION_00_20 * INFLATION_00_23  # based on Commercial Vehicle Operators - Truck Drivers
 
+A2_CONSTANTS = """
+
+ - Avg hourly wage ($/hr)
+ - Monetary Value of travel time (% of wage rate)
+ - Monetary Value of travel time ($/hr)
+
+"""
+
+# TODO: placeholders pending adjustment post research, see: https://www.vtpi.org/tca/tca0502.pdf
+Q1_AVG_HOURLY_WAGE = 15
+Q2_AVG_HOURLY_WAGE = 30
+Q3_AVG_HOURLY_WAGE = 45
+Q4_AVG_HOURLY_WAGE = 60
 
 
 BASE_YEAR       = "2015"
@@ -138,8 +151,8 @@ METRICS_COLUMNS = [
 ]
 
 # TODO: remove these after metrics methodology is finilzed (for debugging)
-# ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiodIncome.csv"
-ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiod_reduced_file.csv"
+ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiodIncome.csv"
+# ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiod_reduced_file.csv"
 
 def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df, metrics_dict):
     DESCRIPTION = """
@@ -588,6 +601,7 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         metrics_dict[key, 'Travel Time', grouping3, tm_run_id, metric_id,'extra','By Corridor','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
         metrics_dict[key, 'Travel Time', grouping3, tm_run_id, metric_id,'extra','By Corridor','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
         metrics_dict[key, 'Travel Time', grouping3, tm_run_id, metric_id,'intermediate','By Corridor','Monetized value driver (${}/hr)'.format(round(VOT_2023D_PERSONAL)),year] = priv_auto_travel_time_savings_minor_grouping
+
         metrics_dict[key, 'Travel Time', grouping3, tm_run_id, metric_id,'intermediate','By Corridor','Monetized value low-income (${}/hr)'.format(round(VOT_2023D_PERSONAL)),year] = priv_auto_travel_time_savings_minor_grouping
         metrics_dict[key, 'Travel Time', grouping3, tm_run_id, metric_id,'intermediate','By Corridor','Monetized value freight (${}/hr)'.format(round(VOT_2023D_COMMERCIAL)),year] = commercial_vehicle_travel_time_savings_minor_grouping
 
@@ -1290,13 +1304,13 @@ def calculate_fatalitites(run_id, loaded_network_df, collision_rates_df, tm_load
         modified_network_df.loc[(modified_network_df['ft_collision'] == 1) | (modified_network_df['ft_collision'] == 2) | (modified_network_df['ft_collision'] == 3) | (modified_network_df['ft_collision'] == 5) | (modified_network_df['ft_collision'] == 6) | (modified_network_df['ft_collision'] == 8),'fatality_exponent'] = 4.6
         modified_network_df.loc[(modified_network_df['ft_collision'] == 4) | (modified_network_df['ft_collision'] == 7),'fatality_exponent'] = 3
     
-        modified_network_df['N_motorist_fatalities_after'] = modified_network_df.apply(lambda row: adjust_fatalities_exp_speed(row,'N_motorist_fatalities'), axis = 1)
-        modified_network_df['N_ped_fatalities_after'] = modified_network_df.apply(lambda row: adjust_fatalities_exp_speed(row,'N_ped_fatalities'), axis = 1)
-        modified_network_df['N_bike_fatalities_after'] = modified_network_df.apply(lambda row: adjust_fatalities_exp_speed(row,'N_bike_fatalities'), axis = 1)
-        modified_network_df['N_total_fatalities_after'] = modified_network_df['N_motorist_fatalities_after'] + modified_network_df['N_ped_fatalities_after'] + modified_network_df['N_bike_fatalities_after']
+        modified_network_df['N_motorist_fatalities_speed_reduction'] = modified_network_df.apply(lambda row: adjust_fatalities_exp_speed(row,'N_motorist_fatalities'), axis = 1)
+        modified_network_df['N_ped_fatalities_speed_reduction'] = modified_network_df.apply(lambda row: adjust_fatalities_exp_speed(row,'N_ped_fatalities'), axis = 1)
+        modified_network_df['N_bike_fatalities_speed_reduction'] = modified_network_df.apply(lambda row: adjust_fatalities_exp_speed(row,'N_bike_fatalities'), axis = 1)
+        modified_network_df['N_total_fatalities_speed_reduction'] = modified_network_df['N_motorist_fatalities_speed_reduction'] + modified_network_df['N_ped_fatalities_speed_reduction'] + modified_network_df['N_bike_fatalities_speed_reduction']
         modified_network_df['tm_run_id'] = tm_run_id
         # sum the metrics
-        return modified_network_df.groupby('tm_run_id').agg({'N_motorist_fatalities': ['sum'],'N_motorist_fatalities_after': ['sum'],'N_bike_fatalities': ['sum'],'N_bike_fatalities_after': ['sum'],'N_ped_fatalities': ['sum'],'N_ped_fatalities_after': ['sum'],'N_total_fatalities': ['sum'],'N_total_fatalities_after': ['sum']})
+        return modified_network_df.groupby('tm_run_id').agg({'N_motorist_fatalities': ['sum'],'N_motorist_fatalities_speed_reduction': ['sum'],'N_bike_fatalities': ['sum'],'N_bike_fatalities_speed_reduction': ['sum'],'N_ped_fatalities': ['sum'],'N_ped_fatalities_speed_reduction': ['sum'],'N_total_fatalities': ['sum'],'N_total_fatalities_speed_reduction': ['sum']})
     else:
         modified_network_df['tm_run_id'] = tm_run_id
         return modified_network_df.groupby('tm_run_id').agg({'N_motorist_fatalities': ['sum'],'N_bike_fatalities': ['sum'],'N_ped_fatalities': ['sum'],'N_total_fatalities': ['sum']})
@@ -1341,28 +1355,35 @@ def calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id, year, tm_loaded_
     # separate into variables for this run
     # output df has columns for each fatality type + 'after' which indicates that a correction was made for speed reductions in the scenario run
 
-    # check for base run
-    if BASE_SCENARIO_RUN_ID in tm_run_id:
-        N_motorist_fatalities_after = fatality_df[('N_motorist_fatalities','sum')][0]
-        N_ped_fatalities_after = fatality_df[('N_ped_fatalities','sum')][0]
-        N_bike_fatalities_after = fatality_df[('N_bike_fatalities','sum')][0]
+    # check for "No Project" in run id - all other projects implement vision zero strategies and thus have speed reductions (a fix is necessary to be able to run this function for 2015 runs)
+    if NO_PROJECT_SCENARIO_RUN_ID in tm_run_id:
+        N_motorist_fatalities = fatality_df[('N_motorist_fatalities','sum')][0]
+        N_ped_fatalities = fatality_df[('N_ped_fatalities','sum')][0]
+        N_bike_fatalities = fatality_df[('N_bike_fatalities','sum')][0]
+        N_motorist_fatalities_speed_reduction = N_motorist_fatalities
+        N_ped_fatalities_speed_reduction = N_ped_fatalities
+        N_bike_fatalities_speed_reduction = N_bike_fatalities
         # calculate and enter FWY AND NONFWY into metrics dict
-        N_fwy_motorist_fatalities_after = fwy_fatality_df[('N_motorist_fatalities','sum')][0]
-        N_nonfwy_motorist_fatalities_after = nonfwy_fatality_df[('N_motorist_fatalities','sum')][0]
+        N_fwy_motorist_fatalities = fwy_fatality_df[('N_motorist_fatalities','sum')][0]
+        N_nonfwy_motorist_fatalities = nonfwy_fatality_df[('N_motorist_fatalities','sum')][0]
+        N_fwy_motorist_fatalities_speed_reduction = N_fwy_motorist_fatalities
+        N_nonfwy_motorist_fatalities_speed_reduction = N_nonfwy_motorist_fatalities
     else:
 
-        # N_motorist_fatalities = fatality_df[('N_motorist_fatalities','sum')][0]
-        N_motorist_fatalities_after = fatality_df[('N_motorist_fatalities_after','sum')][0]
-        # N_ped_fatalities = fatality_df[('N_ped_fatalities','sum')][0]
-        N_ped_fatalities_after = fatality_df[('N_ped_fatalities_after','sum')][0]
-        # N_bike_fatalities = fatality_df[('N_bike_fatalities','sum')][0]
-        N_bike_fatalities_after = fatality_df[('N_bike_fatalities_after','sum')][0]
-        # N_total_fatalities = fatality_df[('N_total_fatalities','sum')][0]
-        # N_total_fatalities_after = fatality_df[('N_total_fatalities_after','sum')][0]
+        N_motorist_fatalities = fatality_df[('N_motorist_fatalities','sum')][0]
+        N_motorist_fatalities_speed_reduction = fatality_df[('N_motorist_fatalities_speed_reduction','sum')][0]
+        N_ped_fatalities = fatality_df[('N_ped_fatalities','sum')][0]
+        N_ped_fatalities_speed_reduction = fatality_df[('N_ped_fatalities_speed_reduction','sum')][0]
+        N_bike_fatalities = fatality_df[('N_bike_fatalities','sum')][0]
+        N_bike_fatalities_speed_reduction = fatality_df[('N_bike_fatalities_speed_reduction','sum')][0]
+        N_total_fatalities = fatality_df[('N_total_fatalities','sum')][0]
+        N_total_fatalities_speed_reduction = fatality_df[('N_total_fatalities_speed_reduction','sum')][0]
 
         # calculate and enter FWY AND NONFWY into metrics dict
-        N_fwy_motorist_fatalities_after = fwy_fatality_df[('N_motorist_fatalities_after','sum')][0]
-        N_nonfwy_motorist_fatalities_after = nonfwy_fatality_df[('N_motorist_fatalities_after','sum')][0]
+        N_fwy_motorist_fatalities = fwy_fatality_df[('N_motorist_fatalities','sum')][0]
+        N_nonfwy_motorist_fatalities = nonfwy_fatality_df[('N_motorist_fatalities','sum')][0]
+        N_fwy_motorist_fatalities_speed_reduction = fwy_fatality_df[('N_motorist_fatalities_speed_reduction','sum')][0]
+        N_nonfwy_motorist_fatalities_speed_reduction = nonfwy_fatality_df[('N_motorist_fatalities_speed_reduction','sum')][0]
 
     # separate into variables for 2015 run
     N_motorist_fatalities_15 = fatality_df_2015[('N_motorist_fatalities','sum')][0]
@@ -1371,22 +1392,37 @@ def calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id, year, tm_loaded_
     # N_total_fatalities_15 = fatality_df_2015[('N_total_fatalities','sum')][0]
     
     # calculate and enter into metrics dict
-    N_motorist_fatalities_corrected = N_motorist_fatalities_after*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
-    N_ped_fatalities_corrected = N_ped_fatalities_after*(OBS_N_PED_FATALITIES_15/N_ped_fatalities_15)
-    N_bike_fatalities_corrected = N_bike_fatalities_after*(OBS_N_BIKE_FATALITIES_15/N_bike_fatalities_15)
-    N_total_fatalities_corrected = N_motorist_fatalities_corrected + N_ped_fatalities_corrected + N_bike_fatalities_corrected
+    N_motorist_fatalities_2015_obs_correction = N_motorist_fatalities*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
+    N_ped_fatalities_2015_obs_correction = N_ped_fatalities*(OBS_N_PED_FATALITIES_15/N_ped_fatalities_15)
+    N_bike_fatalities_2015_obs_correction = N_bike_fatalities*(OBS_N_BIKE_FATALITIES_15/N_bike_fatalities_15)
+    N_total_fatalities_2015_obs_correction = N_motorist_fatalities_2015_obs_correction + N_ped_fatalities_2015_obs_correction + N_bike_fatalities_2015_obs_correction
     
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_motorist_fatalities_corrected',year] = N_motorist_fatalities_corrected
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_pedestrian_fatalities_corrected',year] = N_ped_fatalities_corrected
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_bicycle_fatalities_corrected',year] = N_bike_fatalities_corrected
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_total_fatalities_corrected',year] = N_total_fatalities_corrected
-
+    N_motorist_fatalities_speed_reduction_2015_obs_correction = N_motorist_fatalities_speed_reduction*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
+    N_ped_fatalities_speed_reduction_2015_obs_correction = N_ped_fatalities_speed_reduction*(OBS_N_PED_FATALITIES_15/N_ped_fatalities_15)
+    N_bike_fatalities_speed_reduction_2015_obs_correction = N_bike_fatalities_speed_reduction*(OBS_N_BIKE_FATALITIES_15/N_bike_fatalities_15)
+    N_total_fatalities_speed_reduction_2015_obs_correction = N_motorist_fatalities_speed_reduction_2015_obs_correction + N_ped_fatalities_speed_reduction_2015_obs_correction + N_bike_fatalities_speed_reduction_2015_obs_correction
     
-    N_fwy_motorist_fatalities_corrected = N_fwy_motorist_fatalities_after*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_number_of_fwy_motorist_fatalities_corrected',year] = N_fwy_motorist_fatalities_corrected
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_motorist_fatalities_2015_obs_correction',year] = N_motorist_fatalities_2015_obs_correction
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_pedestrian_fatalities_2015_obs_correction',year] = N_ped_fatalities_2015_obs_correction
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_bicycle_fatalities_2015_obs_correction',year] = N_bike_fatalities_2015_obs_correction
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_total_fatalities_2015_obs_correction',year] = N_total_fatalities_2015_obs_correction
+    
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_motorist_fatalities_speed_reduction_2015_obs_correction',year] = N_motorist_fatalities_speed_reduction_2015_obs_correction
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_pedestrian_fatalities_speed_reduction_2015_obs_correction',year] = N_ped_fatalities_speed_reduction_2015_obs_correction
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_bicycle_fatalities_speed_reduction_2015_obs_correction',year] = N_bike_fatalities_speed_reduction_2015_obs_correction
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_total_fatalities_speed_reduction_2015_obs_correction',year] = N_total_fatalities_speed_reduction_2015_obs_correction
 
-    N_nonfwy_motorist_fatalities_corrected = N_nonfwy_motorist_fatalities_after*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_number_of_nonfwy_motorist_fatalities_corrected',year] = N_nonfwy_motorist_fatalities_corrected
+    N_fwy_motorist_fatalities_2015_obs_correction = N_fwy_motorist_fatalities*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_number_of_fwy_motorist_fatalities_2015_obs_correction',year] = N_fwy_motorist_fatalities_2015_obs_correction
+    
+    N_fwy_motorist_fatalities_speed_reduction_2015_obs_correction = N_fwy_motorist_fatalities_speed_reduction*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_number_of_fwy_motorist_fatalities_speed_reduction_2015_obs_correction',year] = N_fwy_motorist_fatalities_speed_reduction_2015_obs_correction
+
+    N_nonfwy_motorist_fatalities_2015_obs_correction = N_nonfwy_motorist_fatalities*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_number_of_nonfwy_motorist_fatalities_2015_obs_correction',year] = N_nonfwy_motorist_fatalities_2015_obs_correction
+
+    N_nonfwy_motorist_fatalities_speed_reduction_2015_obs_correction = N_nonfwy_motorist_fatalities_speed_reduction*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_number_of_nonfwy_motorist_fatalities_speed_reduction_2015_obs_correction',year] = N_nonfwy_motorist_fatalities_speed_reduction_2015_obs_correction
 
 
 
@@ -1601,6 +1637,8 @@ if __name__ == "__main__":
     # # base year run for comparisons = most recent Pathway 4 (No New Pricing) run
     pathway4_runs = current_runs_df.loc[ current_runs_df['category']=="Pathway 4" ]
     BASE_SCENARIO_RUN_ID = pathway4_runs['directory'].tolist()[-1] # take the last one
+    noproject_runs = current_runs_df.loc[ current_runs_df['category'] == 'No Project']
+    NO_PROJECT_SCENARIO_RUN_ID = ['directory'].tolist()[-1] # take the last one
     tm_run_id_base = BASE_SCENARIO_RUN_ID # todo: deprecate this
     LOGGER.info("=> BASE_SCENARIO_RUN_ID = {}".format(BASE_SCENARIO_RUN_ID))
 
