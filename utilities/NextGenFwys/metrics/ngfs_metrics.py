@@ -151,8 +151,8 @@ METRICS_COLUMNS = [
 ]
 
 # TODO: remove these after metrics methodology is finilzed (for debugging)
-ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiodIncome.csv"
-# ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiod_reduced_file.csv"
+# ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiodIncome.csv"
+ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiod_reduced_file.csv"
 
 def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df, metrics_dict):
     DESCRIPTION = """
@@ -735,7 +735,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df,
                                              index=['orig_taz','dest_taz','trip_mode'],
                                              values=['num_trips','avg_travel_time_in_mins'],
-                                             aggfunc={'num_trips':numpy.sum, 'avg_travel_time_in_mins':numpy.mean})
+                                             aggfunc={'num_trips':numpy.sum, 'avg_travel_time_in_mins':numpy.min})
     trips_od_travel_time_df.reset_index(inplace=True)
     LOGGER.info("  Aggregated income groups: {:,} rows".format(len(trips_od_travel_time_df)))
 
@@ -768,35 +768,35 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     trips_od_travel_time_df.loc[ trips_od_travel_time_df.trip_mode.isin(MODES_PRIVATE_AUTO), 'agg_trip_mode' ] = "auto"
     trips_od_travel_time_df.loc[ trips_od_travel_time_df.trip_mode.isin(MODES_TAXI_TNC),     'agg_trip_mode' ] = "auto"
 
-    # to get weighted average, transform to total travel time
-    trips_od_travel_time_df['tot_travel_time_in_mins'] = \
-        trips_od_travel_time_df['avg_travel_time_in_mins']*trips_od_travel_time_df['num_trips']
+    # TODO: delete if not necessary. Changing calculation from weighted average to minimum travel time to capture the quickest travel
+    # # to get weighted average, transform to total travel time
+    # trips_od_travel_time_df['tot_travel_time_in_mins'] = \
+    #     trips_od_travel_time_df['avg_travel_time_in_mins']*trips_od_travel_time_df['num_trips']
 
     # pivot down to orig_CITY x dest_CITY x agg_trip_mode
     trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df, 
                                              index=['orig_CITY','dest_CITY','agg_trip_mode'],
-                                             values=['num_trips','tot_travel_time_in_mins'],
-                                             aggfunc={'num_trips':numpy.sum, 'tot_travel_time_in_mins':numpy.sum})
+                                             values=['num_trips','avg_travel_time_in_mins'],
+                                             aggfunc={'num_trips':numpy.sum, 'avg_travel_time_in_mins':numpy.min})
     trips_od_travel_time_df.reset_index(inplace=True)
-    trips_od_travel_time_df['avg_travel_time_in_mins'] = \
-        trips_od_travel_time_df['tot_travel_time_in_mins']/trips_od_travel_time_df['num_trips']
+    trips_od_travel_time_df['minimum_travel_time_in_mins'] = trips_od_travel_time_df['avg_travel_time_in_mins']
     # LOGGER.debug(trips_od_travel_time_df)
 
     # pivot again to move agg_mode to column
-    # columns will now be: orig_CITY_, dest_CITY_, avg_travel_time_in_mins_auto, avg_travel_time_in_mins_transit, num_trips_auto, num_trips_transit
+    # columns will now be: orig_CITY_, dest_CITY_, minimum_travel_time_in_mins_auto, minimum_travel_time_in_mins_transit, num_trips_auto, num_trips_transit
     trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df, 
                                              index=['orig_CITY','dest_CITY'],
                                              columns=['agg_trip_mode'],
-                                             values=['num_trips','avg_travel_time_in_mins'])
+                                             values=['num_trips','minimum_travel_time_in_mins'])
     trips_od_travel_time_df.reset_index(inplace=True)
     # flatten resulting MultiIndex column names
-    # rename from ('orig_CITY',''), ('dest_CITY',''), ('avg_travel_time_in_mins','auto'), ('avg_travel_time_in_mins', 'transit'), ...
-    # to orig_CITY, dest_CITY, avg_travel_time_in_mins_auto, avg_travel_time_in_mins_transit, ...
+    # rename from ('orig_CITY',''), ('dest_CITY',''), ('minimum_travel_time_in_mins','auto'), ('minimum_travel_time_in_mins', 'transit'), ...
+    # to orig_CITY, dest_CITY, minimum_travel_time_in_mins_auto, minimum_travel_time_in_mins_transit, ...
     trips_od_travel_time_df.columns = ['_'.join(col) if len(col[1]) > 0 else col[0] for col in trips_od_travel_time_df.columns.values]
 
     # add ratio
     trips_od_travel_time_df['ratio_travel_time_transit_auto'] = \
-        trips_od_travel_time_df['avg_travel_time_in_mins_transit']/trips_od_travel_time_df['avg_travel_time_in_mins_auto']
+        trips_od_travel_time_df['minimum_travel_time_in_mins_transit']/trips_od_travel_time_df['minimum_travel_time_in_mins_auto']
     
     # note that this does not include NaNs in either the numerator or the denominator, which I think is correct
     # TODO: in the previous implementation, NaN is converted to zero, which artificially lowers the average.
