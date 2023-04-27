@@ -897,7 +897,7 @@ def calculate_Efficient2_commute_mode_share(tm_run_id: str) -> pd.DataFrame:
           [commute_mode]  final               commute_tours_share
 
         where commute_mode is one of:
-         SOV, HOV, transit, walk, bike, telecommute, did not go to work
+         SOV, HOV, transit, walk, bike, telecommute, taxi/TNC
     """
     # from model-files\scripts\preprocess\updateTelecommuteConstants.py
     # see EN7 Telecommuting.xlsx (https://mtcdrive.box.com/s/uw3n8wyervle6r2cgoz1j6k4i5lmv253)
@@ -940,7 +940,7 @@ def calculate_Efficient2_commute_mode_share(tm_run_id: str) -> pd.DataFrame:
         'College student',
         'Driving-age student']]
     # add row for total workers
-    tm_journey_to_work_df.loc['all_modes'] = tm_journey_to_work_df.sum(axis=0)
+    tm_journey_to_work_df.loc['all_modes incl time off'] = tm_journey_to_work_df.sum(axis=0)
 
     # add row for telecommute, not-working, start with 0 for the four person types
     LOGGER.debug("tm_journey_to_work_df:\n{}".format(tm_journey_to_work_df))
@@ -954,13 +954,16 @@ def calculate_Efficient2_commute_mode_share(tm_run_id: str) -> pd.DataFrame:
         tm_journey_to_work_df.at['time off', 'Full-time worker'] = P_notworking_if_noworktour_FT*tm_journey_to_work_df.at['did not go to work', 'Full-time worker']
         tm_journey_to_work_df.at['time off', 'Part-time worker'] = P_notworking_if_noworktour_PT*tm_journey_to_work_df.at['did not go to work', 'Part-time worker']
     else:
-        tm_journey_to_work_df.at['time off', 'Full-time worker'] = P_notworking_FT*tm_journey_to_work_df.at['all_modes', 'Full-time worker']
-        tm_journey_to_work_df.at['time off', 'Part-time worker'] = P_notworking_PT*tm_journey_to_work_df.at['all_modes', 'Part-time worker']
+        tm_journey_to_work_df.at['time off', 'Full-time worker'] = P_notworking_FT*tm_journey_to_work_df.at['all_modes incl time off', 'Full-time worker']
+        tm_journey_to_work_df.at['time off', 'Part-time worker'] = P_notworking_PT*tm_journey_to_work_df.at['all_modes incl time off', 'Part-time worker']
     # assume no telecommute for driving-age students and college students
     tm_journey_to_work_df.at['time off', 'Driving-age student'] = tm_journey_to_work_df.at['did not go to work' , 'Driving-age student']
     tm_journey_to_work_df.at['time off', 'College student']     = tm_journey_to_work_df.at['did not go to work' , 'College student']
     # subtract for telecommute
     tm_journey_to_work_df.loc['telecommute'] = tm_journey_to_work_df.loc['did not go to work'] - tm_journey_to_work_df.loc['time off']
+
+    # create all_modes excl time off
+    tm_journey_to_work_df.loc['all_modes excl time off'] = tm_journey_to_work_df.loc['all_modes incl time off'] - tm_journey_to_work_df.loc['time off']
 
     # add column for all person types
     tm_journey_to_work_df['All workers'] = tm_journey_to_work_df.sum(axis=1)
@@ -969,9 +972,12 @@ def calculate_Efficient2_commute_mode_share(tm_run_id: str) -> pd.DataFrame:
     LOGGER.debug(tm_journey_to_work_df.index)
     # drop did not go to work since it's covered by telecommute + time off
     tm_journey_to_work_df = tm_journey_to_work_df.loc[ tm_journey_to_work_df.index != 'did not go to work']
+    # drop time off and all modes incl time off since the mode share won't include those
+    tm_journey_to_work_df = tm_journey_to_work_df.loc[ tm_journey_to_work_df.index != 'time off']
+    tm_journey_to_work_df = tm_journey_to_work_df.loc[ tm_journey_to_work_df.index != 'all_modes incl time off']
 
     # convert to shares
-    tm_journey_to_work_shares_df = tm_journey_to_work_df/tm_journey_to_work_df.loc['all_modes']
+    tm_journey_to_work_shares_df = tm_journey_to_work_df/tm_journey_to_work_df.loc['all_modes excl time off']
     LOGGER.debug("tm_journey_to_work_shares_df:\n{}".format(tm_journey_to_work_shares_df))
 
     # reformat to metrics
