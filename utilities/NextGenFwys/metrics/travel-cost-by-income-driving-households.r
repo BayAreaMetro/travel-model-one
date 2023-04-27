@@ -18,7 +18,8 @@
 #   total_hhd_income:   total household income for these households (in 2000 dollars)
 #   total_auto_cost:    total daily auto cost for these trips (in 2000 cents)
 #   total_transit_cost: total daily transit cost for these trips (in 2000 cents)
-# 
+#   total_cost:         total daily cost (in 2000 cents)
+#
 # Note: Initial implementation only reports a single cost; detailed costs are more complicated.
 # TODO: break up auto_cost into the following -- this will involve reading detailed skims
 #   total trip op cost

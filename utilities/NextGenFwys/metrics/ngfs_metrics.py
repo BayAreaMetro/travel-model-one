@@ -113,12 +113,11 @@ Q2_AVG_HOURLY_WAGE = 30
 Q3_AVG_HOURLY_WAGE = 45
 Q4_AVG_HOURLY_WAGE = 60
 
-
 BASE_YEAR       = "2015"
 FORECAST_YEAR   = "2035"
 # assumptions for fatalities
 # TODO: Add source, add units. What does the _15 refer to?  What does OBS refer to?
-N_DAYS_PER_YEAR = 300 # assume 300 days per year (outputs are for one day)
+N_DAYS_PER_YEAR = 300 # used in Affordable1
 OBS_N_MOTORIST_FATALITIES_15 = 301
 OBS_N_PED_FATALITIES_15 = 127
 OBS_N_BIKE_FATALITIES_15 = 27
@@ -340,17 +339,12 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     # NEED HELP FROM FMS TEAM --> RE: INCOME ASSIGNMENT
     # calculate toll revenues by income quartile (calculation from scenarioMetrics.py)
     toll_revenues_overall = 0
-    if 'NP10' in tm_run_id:
-        CORDON_TOLLS_FIELD_NAME = 'Cordon tolls with discount'
-        VALUE_TOLLS_FIELD_NAME = 'Value Tolls with discount'
-    else:
-        CORDON_TOLLS_FIELD_NAME = 'Cordon Tolls'
-        VALUE_TOLLS_FIELD_NAME = 'Value Tolls'
-
     if 'Path3' in tm_run_id:
-        toll_revenue_column = CORDON_TOLLS_FIELD_NAME
+        # 'Cordon Tolls' was the old column; 'Cordon Tolls with discount' is newer
+        toll_revenue_column = 'Cordon Tolls' if 'Cordon Tolls' in auto_times_summed.columns else 'Cordon Tolls with discount'
     else:
-        toll_revenue_column = VALUE_TOLLS_FIELD_NAME
+        # 'Value Tolls' was the old column; 'Value Tolls with discount' is newer
+        toll_revenue_column = 'Value Tolls' if 'Value Tolls' in auto_times_summed.columns else 'Value Tolls with discount'
     for inc_level in range(1,5):
         tm_tot_hh_incgroup = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_households_inc%d" % inc_level),'value'].item()
         incgroup_dailytolls = (auto_times_summed.loc['inc%d' % inc_level, toll_revenue_column]/100)
@@ -392,95 +386,130 @@ def calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year,
 
 
 
-def calculate_Affordable1_transportation_costs(tm_run_id, year, tm_scen_metrics_df, tm_auto_owned_df, tm_travel_cost_df, tm_auto_times_df, metrics_dict):
-    # 1) Transportation costs as a share of household income
-    
-    # pulled from pba50_metrics.py
-    # https://github.com/BayAreaMetro/travel-model-one/blob/594ee4c4df8ac044cdd3db68fae90879c0aff14d/utilities/RTP/metrics/pba50_metrics.py
-    metric_id = "Affordable 1"
-    grouping1 = ' '
-    grouping2 = ' '
-    grouping3 = ' '
+def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
+    """ Calculates Affordable 1: Transportation costs as a share of household income
 
-    days_per_year = 300
+    Args:
+        tm_run_id (str): Travel model run ID
 
-    # Total number of households
-    tm_tot_hh      = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'].str.contains("total_households_inc") == True), 'value'].sum()
-    tm_tot_hh_inc1 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_households_inc1"),'value'].item()
-    tm_tot_hh_inc2 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_households_inc2"),'value'].item()
-
-    # Total household income (model outputs are in 2000$, annual)
-    tm_total_hh_inc      = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'].str.contains("total_hh_inc") == True), 'value'].sum()
-    tm_total_hh_inc_inc1 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_hh_inc_inc1"),'value'].item()
-    tm_total_hh_inc_inc2 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_hh_inc_inc2"),'value'].item()
-
-    # Total transit fares (model outputs are in 2000$, per day)
-    tm_tot_transit_fares      = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'].str.contains("total_transit_fares") == True), 'value'].sum() * days_per_year
-    tm_tot_transit_fares_inc1 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_transit_fares_inc1"),'value'].item() * days_per_year
-    tm_tot_transit_fares_inc2 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_transit_fares_inc2"),'value'].item() * days_per_year
-
-    # Total auto op cost (model outputs are in 2000$, per day)
-    tm_tot_auto_op_cost      = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'].str.contains("total_auto_cost_inc") == True), 'value'].sum() * days_per_year
-    tm_tot_auto_op_cost_inc1 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_auto_cost_inc1"),'value'].item() * days_per_year
-    tm_tot_auto_op_cost_inc2 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_auto_cost_inc2"),'value'].item() * days_per_year
-
-    # Total auto parking cost (model outputs are in 2000$, per day, in cents)
-    #tm_travel_cost_df['park_cost'] = (tm_travel_cost_df['pcost_indiv']+tm_travel_cost_df['pcost_joint']) * tm_travel_cost_df['freq']
-    tm_tot_auto_park_cost      = (tm_travel_cost_df.pcost_indiv.sum() + tm_travel_cost_df.pcost_joint.sum()) * days_per_year / 100
-    tm_tot_auto_park_cost_inc1 = (tm_travel_cost_df.loc[(tm_travel_cost_df['incQ'] == 1),'pcost_indiv'].sum() + tm_travel_cost_df.loc[(tm_travel_cost_df['incQ'] == 1),'pcost_joint'].sum()) * days_per_year / 100
-    tm_tot_auto_park_cost_inc2 = (tm_travel_cost_df.loc[(tm_travel_cost_df['incQ'] == 2),'pcost_indiv'].sum() + tm_travel_cost_df.loc[(tm_travel_cost_df['incQ'] == 2),'pcost_joint'].sum()) * days_per_year / 100
-
-    # Calculating number of autos owned from autos_owned.csv
-    tm_auto_owned_df['tot_autos'] = tm_auto_owned_df['autos'] * tm_auto_owned_df['households'] 
-    tm_tot_autos_owned      = tm_auto_owned_df['tot_autos'].sum()
-    tm_tot_autos_owned_inc1 = tm_auto_owned_df.loc[(tm_auto_owned_df['incQ'] == 1), 'tot_autos'].sum()
-    tm_tot_autos_owned_inc2 = tm_auto_owned_df.loc[(tm_auto_owned_df['incQ'] == 2), 'tot_autos'].sum()
-
-    # Total auto ownership cost in 2000$
-    tm_tot_auto_owner_cost      = tm_tot_autos_owned      * AUTO_OWNERSHIP_COST_2018D      * INFLATION_18_20 / INFLATION_00_20
-    tm_tot_auto_owner_cost_inc1 = tm_tot_autos_owned_inc1 * AUTO_OWNERSHIP_COST_2018D_INC1 * INFLATION_18_20 / INFLATION_00_20
-    tm_tot_auto_owner_cost_inc2 = tm_tot_autos_owned_inc2 * AUTO_OWNERSHIP_COST_2018D_INC2 * INFLATION_18_20 / INFLATION_00_20
-
-    # Total Transportation Cost (in 2000$)
-    tp_cost      = tm_tot_auto_op_cost      + tm_tot_transit_fares      + tm_tot_auto_owner_cost      + tm_tot_auto_park_cost
-    tp_cost_inc1 = tm_tot_auto_op_cost_inc1 + tm_tot_transit_fares_inc1 + tm_tot_auto_owner_cost_inc1 + tm_tot_auto_park_cost_inc1
-    tp_cost_inc2 = tm_tot_auto_op_cost_inc2 + tm_tot_transit_fares_inc2 + tm_tot_auto_owner_cost_inc2 + tm_tot_auto_park_cost_inc2
-    
-    # Transportation cost % of income
-    tp_cost_pct_inc          = tp_cost      / tm_total_hh_inc
-    tp_cost_pct_inc_inc1     = tp_cost_inc1 / tm_total_hh_inc_inc1
-    tp_cost_pct_inc_inc2     = tp_cost_inc2 / tm_total_hh_inc_inc2
-    tp_cost_pct_inc_inc1and2 = (tp_cost_inc1+tp_cost_inc2) / (tm_total_hh_inc_inc1+tm_total_hh_inc_inc2)
+    Returns:
+        pd.DataFrame: with columns a subset of METRICS_COLUMNS, including 
+          metric_id   = 'Affordable 1'
+          modelrun_id = tm_run_id
+        Metrics returned:
 
 
-    # Transportation cost % of income metrics       
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Transportation Costs','transportation_cost_pct_income',year]      = tp_cost_pct_inc
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Transportation Costs','transportation_cost_pct_income_inc1',year] = tp_cost_pct_inc_inc1
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Transportation Costs','transportation_cost_pct_income_inc2',year] = tp_cost_pct_inc_inc2
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Transportation Costs','transportation_cost_pct_income_inc1and2',year] = tp_cost_pct_inc_inc1and2
+        where [income_category] is one of: incQ1, incQ2, incQ1Q2, all_inc, referring to travel model income quartiles
+        and   [hhld_travel_category] is based on whether the houseld makes private auto trips, transit trips, both, or neither, 
+                                     so it is one of auto_and_transit, auto_no_transit, transit_no_auto, no_auto_no_transit
+        See travel-cost-by-income-driving-households.r for more
 
-    # Tolls (intermediate metric)
-    
-    # Reading auto times file
-    tm_auto_times_df = tm_auto_times_df.copy().groupby('Income').agg('sum')
+    """
+    METRIC_ID = "Affordable 1"
+    LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
 
-    # Calculating Total Tolls per day = bridge tolls + value tolls  (2000$)
-    if 'NP10' in tm_run_id:
-        VALUE_TOLLS_FIELD_NAME = 'Value Tolls with discount'
-    else:
-        VALUE_TOLLS_FIELD_NAME = 'Value Tolls'
-    total_tolls = OrderedDict()
-    for inc_level in range(1,5): 
-        total_tolls['inc%d'  % inc_level] = tm_auto_times_df.loc['inc%d' % inc_level, ['Bridge Tolls', VALUE_TOLLS_FIELD_NAME]].sum()/100  # cents -> dollars
-    total_tolls_allHH = sum(total_tolls.values())
-    total_tolls_LIHH = total_tolls['inc1'] + total_tolls['inc2']
-    
-    # Average Daily Tolls per household
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Toll Costs','toll_cost_pct_income',year]     = total_tolls_allHH / tm_total_hh_inc
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Toll Costs','toll_cost_pct_income_inc1',year] = total_tolls['inc1'] / tm_total_hh_inc_inc1
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Toll Costs','toll_cost_pct_income_inc2',year] = total_tolls['inc2'] / tm_total_hh_inc_inc2
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Toll Costs','toll_cost_pct_income_inc1and2',year]     = total_tolls_LIHH / (tm_total_hh_inc_inc1+tm_total_hh_inc_inc2)
+    travel_cost_by_travel_hhld_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "travel-cost-by-income-driving-households.csv")
+    travel_cost_df = pd.read_csv(travel_cost_by_travel_hhld_file)
+    LOGGER.info("  Read {:,} rows from {}".format(len(travel_cost_df), travel_cost_by_travel_hhld_file))
+    LOGGER.debug("  Head:\n{}".format(travel_cost_df.head()))
 
+    # columns are: incQ, incQ_label, home_taz, hhld_travel, 
+    #              num_hhlds, num_persons, num_auto_trips, num_transit_trips, 
+    #              total_auto_cost, total_transit_cost, total_cost, total_hhld_autos, total_hhld_income
+    # convert incQ from number to string
+    travel_cost_df['incQ'] = "incQ" + travel_cost_df['incQ'].astype('str')
+    # Summarize to incQ_label, hhld_travel segments
+    travel_cost_df = travel_cost_df.groupby(by=['incQ','hhld_travel']).agg({
+        'num_hhlds':            'sum',
+        'total_auto_cost':      'sum',
+        'total_transit_cost':   'sum',
+        'total_hhld_autos':     'sum',
+        'total_hhld_income':    'sum'
+    })
+    # note: the index is not reset so it's a MultiIndex with incQ, hhld_travel
+    LOGGER.debug("  travel_cost_df:\n{}".format(travel_cost_df))
+
+    # annualize and convert daily costs from 2000 cents to 2023 dollars 
+    travel_cost_df['total_auto_op_cost_annual_2023d']    = travel_cost_df['total_auto_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_transit_op_cost_annual_2023d'] = travel_cost_df['total_transit_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+
+    # add auto ownership costs (by income)
+    travel_cost_df.loc['incQ1', 'total_auto_own_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*AUTO_OWNERSHIP_COST_2018D_INC1 / INFLATION_00_18 * INFLATION_00_23
+    travel_cost_df.loc['incQ2', 'total_auto_own_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*AUTO_OWNERSHIP_COST_2018D_INC2 / INFLATION_00_18 * INFLATION_00_23
+    travel_cost_df.loc['incQ3', 'total_auto_own_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*AUTO_OWNERSHIP_COST_2018D      / INFLATION_00_18 * INFLATION_00_23
+    travel_cost_df.loc['incQ4', 'total_auto_own_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*AUTO_OWNERSHIP_COST_2018D      / INFLATION_00_18 * INFLATION_00_23
+
+    # all transportation costs
+    travel_cost_df['total_transportation_cost_annual_2023d'] = \
+        travel_cost_df['total_auto_op_cost_annual_2023d']    + \
+        travel_cost_df['total_transit_op_cost_annual_2023d'] + \
+        travel_cost_df['total_auto_own_cost_annual_2023d']
+
+    # and finally annual household income from 2000 dollars to 2023 dollars
+    travel_cost_df['total_hhld_income_annual_2023d']    = travel_cost_df['total_hhld_income']*INFLATION_00_23
+
+    # create a combined incQ1Q2 and all_ind
+    incQ1Q2_df = \
+        travel_cost_df.loc['incQ1'] + \
+        travel_cost_df.loc['incQ2'] 
+    all_inc_df = \
+        travel_cost_df.loc['incQ1'] + \
+        travel_cost_df.loc['incQ2'] + \
+        travel_cost_df.loc['incQ3'] + \
+        travel_cost_df.loc['incQ4']
+    # make index consistent and add to our table
+    incQ1Q2_df.index = pd.MultiIndex.from_arrays([['incQ1Q2']*len(incQ1Q2_df.index.tolist()), incQ1Q2_df.index.tolist()], names=('incQ','hhld_travel'))
+    all_inc_df.index = pd.MultiIndex.from_arrays([['all_inc']*len(all_inc_df.index.tolist()), all_inc_df.index.tolist()], names=('incQ','hhld_travel'))
+    travel_cost_df = pd.concat([travel_cost_df, incQ1Q2_df, all_inc_df])
+    LOGGER.debug("   travel_cost_df:\n{}".format(travel_cost_df))
+
+    # calculate average per household
+    travel_cost_df['avg_auto_op_cost_annual_2023d_per_hhld']        = travel_cost_df['total_auto_op_cost_annual_2023d']        /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_transit_op_cost_annual_2023d_per_hhld']     = travel_cost_df['total_transit_op_cost_annual_2023d']     /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_auto_own_cost_annual_2023d_per_hhld']       = travel_cost_df['total_auto_own_cost_annual_2023d']       /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_transportation_cost_annual_2023d_per_hhld'] = travel_cost_df['total_transportation_cost_annual_2023d'] /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_hhld_income_annual_2023d_per_hhld']         = travel_cost_df['total_hhld_income_annual_2023d']         /travel_cost_df['num_hhlds']
+    # calculate pct of income
+    travel_cost_df['auto_op_cost_pct_of_income']        = travel_cost_df['total_auto_op_cost_annual_2023d']        /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['transit_op_cost_pct_of_income']     = travel_cost_df['total_transit_op_cost_annual_2023d']     /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['auto_own_cost_pct_of_income']       = travel_cost_df['total_auto_own_cost_annual_2023d']       /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['transportation_cost_pct_of_income'] = travel_cost_df['total_transportation_cost_annual_2023d'] /travel_cost_df['total_hhld_income_annual_2023d']
+
+    # package for returning
+    # create key
+    travel_cost_df.reset_index(drop=False, inplace=True)
+    travel_cost_df['key'] = travel_cost_df['incQ'] + " " + travel_cost_df['hhld_travel']
+
+    # drop unused rows
+    travel_cost_df = travel_cost_df.loc[ (travel_cost_df['incQ'] != 'incQ3') & (travel_cost_df['incQ'] != 'incQ4') ]
+
+    # drop unused columns
+    travel_cost_df.drop(columns=[
+        'incQ', 'hhld_travel', # now in key
+        'total_auto_cost',
+        'total_transit_cost',
+        'total_hhld_income',
+        'total_auto_op_cost_annual_2023d',
+        'total_transit_op_cost_annual_2023d',
+        'total_auto_own_cost_annual_2023d',
+        'total_transportation_cost_annual_2023d',
+        'total_hhld_income_annual_2023d'], 
+        inplace=True)
+
+    LOGGER.debug("  travel_cost_df:\n{}".format(travel_cost_df))
+    # move columns to rows
+    metrics_df = pd.melt(travel_cost_df,
+                         id_vars=['key'],
+                         var_name='metric_desc',
+                         value_name='value')
+    metrics_df['intermediate/final'] = 'intermediate'
+    metrics_df.loc[ metrics_df['metric_desc'].str.endswith('_pct_of_income'), 'intermediate/final'] = 'final'
+    metrics_df['modelrun_id'] = tm_run_id
+    metrics_df['year'] = tm_run_id[:4]
+    metrics_df['metric_id'] = METRIC_ID
+    LOGGER.debug("  returning:\n{}".format(metrics_df))
+
+    return metrics_df
 
 
 
@@ -1791,12 +1820,9 @@ if __name__ == "__main__":
         # TODO: convert to pandas.DataFrame with these column headings.  It's far more straightforward.
         metrics_dict = {}
         metrics_df = pd.DataFrame()
-        calculate_Affordable1_transportation_costs(tm_run_id, year, 
-                                                   tm_scen_metrics_df,
-                                                   tm_auto_owned_df,
-                                                   tm_travel_cost_df,
-                                                   tm_auto_times_df,
-                                                   metrics_dict)
+        affordable1_metrics_df = calculate_Affordable1_transportation_costs(tm_run_id)
+        metrics_df = pd.concat([metrics_df, affordable1_metrics_df])
+
         # LOGGER.info("@@@@@@@@@@@@@ A1 Done")
         calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df, network_links_dbf, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ A2 Done")
@@ -1824,7 +1850,9 @@ if __name__ == "__main__":
         calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year, 'Safe 2', metrics_dict)
 
         # -----------base runs--------------------
-        calculate_Affordable1_transportation_costs(BASE_SCENARIO_RUN_ID, year, tm_scen_metrics_df_base, tm_auto_owned_df_base, tm_travel_cost_df_base, tm_auto_times_df_base, metrics_dict)
+        affordable1_metrics_df = calculate_Affordable1_transportation_costs(BASE_SCENARIO_RUN_ID)
+        metrics_df = pd.concat([metrics_df, affordable1_metrics_df])
+
         # LOGGER.info("@@@@@@@@@@@@@ A1 Done")
         efficient1_metrics_df = calculate_Efficient1_ratio_travel_time(BASE_SCENARIO_RUN_ID)
         metrics_df = pd.concat([metrics_df, efficient1_metrics_df])
