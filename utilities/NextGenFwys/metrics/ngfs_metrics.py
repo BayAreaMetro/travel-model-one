@@ -340,10 +340,17 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     # NEED HELP FROM FMS TEAM --> RE: INCOME ASSIGNMENT
     # calculate toll revenues by income quartile (calculation from scenarioMetrics.py)
     toll_revenues_overall = 0
-    if 'Path3' in tm_run_id:
-        toll_revenue_column = 'Cordon Tolls'
+    if 'NP10' in tm_run_id:
+        CORDON_TOLLS_FIELD_NAME = 'Cordon tolls with discount'
+        VALUE_TOLLS_FIELD_NAME = 'Value Tolls with discount'
     else:
-        toll_revenue_column = 'Value Tolls'
+        CORDON_TOLLS_FIELD_NAME = 'Cordon Tolls'
+        VALUE_TOLLS_FIELD_NAME = 'Value Tolls'
+
+    if 'Path3' in tm_run_id:
+        toll_revenue_column = CORDON_TOLLS_FIELD_NAME
+    else:
+        toll_revenue_column = VALUE_TOLLS_FIELD_NAME
     for inc_level in range(1,5):
         tm_tot_hh_incgroup = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_households_inc%d" % inc_level),'value'].item()
         incgroup_dailytolls = (auto_times_summed.loc['inc%d' % inc_level, toll_revenue_column]/100)
@@ -458,9 +465,13 @@ def calculate_Affordable1_transportation_costs(tm_run_id, year, tm_scen_metrics_
     tm_auto_times_df = tm_auto_times_df.copy().groupby('Income').agg('sum')
 
     # Calculating Total Tolls per day = bridge tolls + value tolls  (2000$)
+    if 'NP10' in tm_run_id:
+        VALUE_TOLLS_FIELD_NAME = 'Value Tolls with discount'
+    else:
+        VALUE_TOLLS_FIELD_NAME = 'Value Tolls'
     total_tolls = OrderedDict()
     for inc_level in range(1,5): 
-        total_tolls['inc%d'  % inc_level] = tm_auto_times_df.loc['inc%d' % inc_level, ['Bridge Tolls', 'Value Tolls']].sum()/100  # cents -> dollars
+        total_tolls['inc%d'  % inc_level] = tm_auto_times_df.loc['inc%d' % inc_level, ['Bridge Tolls', VALUE_TOLLS_FIELD_NAME]].sum()/100  # cents -> dollars
     total_tolls_allHH = sum(total_tolls.values())
     total_tolls_LIHH = total_tolls['inc1'] + total_tolls['inc2']
     
