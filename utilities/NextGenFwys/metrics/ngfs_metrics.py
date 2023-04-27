@@ -1413,15 +1413,15 @@ def calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id, year, tm_loaded_
     N_bike_fatalities_speed_reduction_2015_obs_correction = N_bike_fatalities_speed_reduction*(OBS_N_BIKE_FATALITIES_15/N_bike_fatalities_15)
     N_total_fatalities_speed_reduction_2015_obs_correction = N_motorist_fatalities_speed_reduction_2015_obs_correction + N_ped_fatalities_speed_reduction_2015_obs_correction + N_bike_fatalities_speed_reduction_2015_obs_correction
     
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_motorist_fatalities_2015_obs_correction',year] = N_motorist_fatalities_2015_obs_correction
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_pedestrian_fatalities_2015_obs_correction',year] = N_ped_fatalities_2015_obs_correction
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_bicycle_fatalities_2015_obs_correction',year] = N_bike_fatalities_2015_obs_correction
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_total_fatalities_2015_obs_correction',year] = N_total_fatalities_2015_obs_correction
+    metrics_dict['Motorist', 'No Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_motorist_fatalities_2015_obs_correction
+    metrics_dict['Pedestrian', 'No Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_ped_fatalities_2015_obs_correction
+    metrics_dict['Bicycle', 'No Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_bike_fatalities_2015_obs_correction
+    metrics_dict['Total', 'No Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_total_fatalities_2015_obs_correction
     
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_motorist_fatalities_speed_reduction_2015_obs_correction',year] = N_motorist_fatalities_speed_reduction_2015_obs_correction
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_pedestrian_fatalities_speed_reduction_2015_obs_correction',year] = N_ped_fatalities_speed_reduction_2015_obs_correction
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_bicycle_fatalities_speed_reduction_2015_obs_correction',year] = N_bike_fatalities_speed_reduction_2015_obs_correction
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_total_fatalities_speed_reduction_2015_obs_correction',year] = N_total_fatalities_speed_reduction_2015_obs_correction
+    metrics_dict['Motorist', 'Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_motorist_fatalities_speed_reduction_2015_obs_correction
+    metrics_dict['Pedestrian', 'Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_ped_fatalities_speed_reduction_2015_obs_correction
+    metrics_dict['Bicycle', 'Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_bike_fatalities_speed_reduction_2015_obs_correction
+    metrics_dict['Total', 'Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_total_fatalities_speed_reduction_2015_obs_correction
 
     N_fwy_motorist_fatalities_2015_obs_correction = N_fwy_motorist_fatalities*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_number_of_fwy_motorist_fatalities_2015_obs_correction',year] = N_fwy_motorist_fatalities_2015_obs_correction
