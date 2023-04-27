@@ -26,11 +26,11 @@ USAGE = """
 
 import datetime, os, sys
 import numpy, pandas as pd
+import simpledbf
 from collections import OrderedDict, defaultdict
 import logging
 import math
 import csv
-from dbfread import DBF
 
 
 # paths
@@ -82,6 +82,7 @@ NGFS_OD_CITIES_OF_INTEREST_DF = pd.DataFrame(
 INFLATION_FACTOR = 1.03
 INFLATION_00_23 = (327.06 / 180.20) * INFLATION_FACTOR
 INFLATION_00_20 = 300.08 / 180.20
+INFLATION_00_18 = 285.55 / 180.20
 INFLATION_18_20 = 300.08 / 285.55
 REVENUE_DAYS_PER_YEAR = 260
 
@@ -95,9 +96,8 @@ AUTO_OWNERSHIP_COST_2018D_INC2 = 4224
 # sourced from USDOT Benefit-Cost Analysis Guidance  in 2020 dollars
 # chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.transportation.gov/sites/dot.gov/files/2022-03/Benefit%20Cost%20Analysis%20Guidance%202022%20Update%20%28Final%29.pdf
 # inflation adjustment CPI 2020, 2000 reference https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
-# TODO: why doesn't this use INFLATION_00_20 ?
 VOT_2023D_PERSONAL             = 17.8 / INFLATION_00_20 * INFLATION_00_23  # based on "All Purposes" in Table A-3
-VOT_2023D_COMMERCIAL           = 32 / INFLATION_00_20 * INFLATION_00_23  # based on Commercial Vehicle Operators - Truck Drivers
+VOT_2023D_COMMERCIAL           = 32.0 / INFLATION_00_20 * INFLATION_00_23  # based on Commercial Vehicle Operators - Truck Drivers
 
 A2_CONSTANTS = """
 
@@ -1639,6 +1639,7 @@ if __name__ == "__main__":
     # # base year run for comparisons = most recent Pathway 4 (No New Pricing) run
     pathway4_runs = current_runs_df.loc[ current_runs_df['category']=="Pathway 4" ]
     BASE_SCENARIO_RUN_ID = pathway4_runs['directory'].tolist()[-1] # take the last one
+
     noproject_runs = current_runs_df.loc[ current_runs_df['category'] == 'No Project']
     NO_PROJECT_SCENARIO_RUN_ID = noproject_runs['directory'].tolist()[-1] # take the last one
     tm_run_id_base = BASE_SCENARIO_RUN_ID # todo: deprecate this
@@ -1671,8 +1672,10 @@ if __name__ == "__main__":
         network_links_dbf_base = pd.read_csv(tm_run_location_base + '\\OUTPUT\\shapefile\\network_links_reduced_file.csv')
     else:
         # addding back original code for simplicity of steps to update the tableau workbook (at the cost of run time)
-        network_links_dbf_base = DBF(tm_run_location_base + '\\OUTPUT\\shapefile\\network_links.DBF')
-        network_links_dbf_base = pd.DataFrame(network_links_dbf_base)
+        input_file = tm_run_location_base + '\\OUTPUT\\shapefile\\network_links.DBF'
+        LOGGER.info("Reading {}".format(input_file))
+        dbf = simpledbf.Dbf5(input_file)
+        network_links_dbf_base = dbf.to_dataframe()
         network_links_dbf_base['a_b'] = network_links_dbf_base['A'].astype(str) + "_" + network_links_dbf_base['B'].astype(str)
     tm_loaded_network_df_base = tm_loaded_network_df_base.copy().merge(network_links_dbf_base.copy(), on='a_b', how='left')
     tm_loaded_network_df_base = tm_loaded_network_df_base.merge(minor_links_df, on='a_b', how='left')
@@ -1726,8 +1729,11 @@ if __name__ == "__main__":
             network_links_dbf = pd.read_csv(tm_run_location + '\\OUTPUT\\shapefile\\network_links_reduced_file.csv')
         else:
             # addding back original code for simplicity of steps to update the tableau workbook (at the cost of run time)
-            network_links_dbf = DBF(tm_run_location + '\\OUTPUT\\shapefile\\network_links.DBF')
-            network_links_dbf = pd.DataFrame(network_links_dbf)
+            input_file = tm_run_location + '\\OUTPUT\\shapefile\\network_links.DBF'
+            LOGGER.info("Reading {}".format(input_file))
+            dbf = simpledbf.Dbf5(input_file)
+            network_links_dbf = dbf.to_dataframe()
+            LOGGER.debug("network_links_dbf:\n{}".format(network_links_dbf))
             network_links_dbf['a_b'] = network_links_dbf['A'].astype(str) + "_" + network_links_dbf['B'].astype(str)
      
         tm_loaded_network_df = tm_loaded_network_df.copy().merge(network_links_dbf.copy(), on='a_b', how='left')
