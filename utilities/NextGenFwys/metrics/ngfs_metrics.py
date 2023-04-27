@@ -93,6 +93,7 @@ AUTO_OWNERSHIP_COST_2018D      = 5945
 AUTO_OWNERSHIP_COST_2018D_INC1 = 2585
 AUTO_OWNERSHIP_COST_2018D_INC2 = 4224
 
+# TODO: replace use of these constants with Income category specific VOTs
 # sourced from USDOT Benefit-Cost Analysis Guidance  in 2020 dollars
 # chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.transportation.gov/sites/dot.gov/files/2022-03/Benefit%20Cost%20Analysis%20Guidance%202022%20Update%20%28Final%29.pdf
 # inflation adjustment CPI 2020, 2000 reference https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
@@ -102,16 +103,35 @@ VOT_2023D_COMMERCIAL           = 32.0 / INFLATION_00_20 * INFLATION_00_23  # bas
 A2_CONSTANTS = """
 
  - Avg hourly wage ($/hr)
+    - source: ACS PUMS 2021, see M:\Data\Requests\Anup Tapase\ACS PUMS 2021 Mean Wage by Quartile.csv
  - Monetary Value of travel time (% of wage rate)
+    - source: Table 5.2.11-1 https://www.vtpi.org/tca/tca0502.pdf
  - Monetary Value of travel time ($/hr)
 
 """
 
-# TODO: placeholders pending adjustment post research, see: https://www.vtpi.org/tca/tca0502.pdf
-Q1_AVG_HOURLY_WAGE = 15
-Q2_AVG_HOURLY_WAGE = 30
-Q3_AVG_HOURLY_WAGE = 45
-Q4_AVG_HOURLY_WAGE = 60
+# for houeholds and commercial
+# TODO: placeholders pending adjustment post research
+Q1_MEAN_HOURLY_WAGE_2023D = 16.48544
+Q2_MEAN_HOURLY_WAGE_2023D = 34.40701
+Q3_MEAN_HOURLY_WAGE_2023D = 59.05509
+Q4_MEAN_HOURLY_WAGE_2023D = 144.79832
+
+Q1_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D = .5
+Q2_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D = .5
+Q3_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D = .5
+Q4_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D = .5
+Q1_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D = 1.5
+Q2_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D = 1.5
+Q3_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D = 1.5
+
+Q1_HOUSEHOLD_VOT_2023D = Q1_MEAN_HOURLY_WAGE_2023D * Q1_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
+Q2_HOUSEHOLD_VOT_2023D = Q2_MEAN_HOURLY_WAGE_2023D * Q2_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
+Q3_HOUSEHOLD_VOT_2023D = Q3_MEAN_HOURLY_WAGE_2023D * Q3_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
+Q4_HOUSEHOLD_VOT_2023D = Q4_MEAN_HOURLY_WAGE_2023D * Q4_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
+Q1_COMMERCIAL_VOT_2023D = Q1_MEAN_HOURLY_WAGE_2023D * Q1_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
+Q2_COMMERCIAL_VOT_2023D = Q2_MEAN_HOURLY_WAGE_2023D * Q2_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
+Q3_COMMERCIAL_VOT_2023D = Q3_MEAN_HOURLY_WAGE_2023D * Q3_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
 
 BASE_YEAR       = "2015"
 FORECAST_YEAR   = "2035"
@@ -604,12 +624,21 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     sum_of_weighted_ratio_hov_time_savings_to_toll_costs = 0
     sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc1 = 0
     sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc2 = 0
+    sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc3 = 0
+    sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc4 = 0
+    sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc1 = 0
+    sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc2 = 0
+    sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc3 = 0
 
     # for simple average
     sum_of_ratio_auto_time_savings_to_toll_costs = 0
     sum_of_ratio_auto_time_savings_to_toll_costs_inc1 = 0
     sum_of_ratio_auto_time_savings_to_toll_costs_inc2 = 0
-    sum_of_ratio_truck_time_savings_to_toll_costs = 0
+    sum_of_ratio_auto_time_savings_to_toll_costs_inc3 = 0
+    sum_of_ratio_auto_time_savings_to_toll_costs_inc4 = 0
+    sum_of_ratio_truck_time_savings_to_toll_costs_inc1 = 0
+    sum_of_ratio_truck_time_savings_to_toll_costs_inc2 = 0
+    sum_of_ratio_truck_time_savings_to_toll_costs_inc3 = 0
     sum_of_ratio_hov_time_savings_to_toll_costs = 0
 
     sum_of_weights = 0 #sum of weights (length of corridor) to be used for weighted average 
@@ -635,15 +664,71 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         # define key for grouping field, consistent with section above
         key = minor_grouping_corridor.split('_AM')[0]
 
-        # private auto numerator: travel time savings
         priv_auto_travel_time_savings_minor_grouping = time_savings_in_hours * VOT_2023D_PERSONAL
         commercial_vehicle_travel_time_savings_minor_grouping = time_savings_in_hours * VOT_2023D_COMMERCIAL
-        metrics_dict[key, 'Travel Time', grouping3, tm_run_id, metric_id,'extra','By Corridor','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
-        metrics_dict[key, 'Travel Time', grouping3, tm_run_id, metric_id,'extra','By Corridor','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', grouping3, tm_run_id, metric_id,'intermediate','By Corridor','Monetized value driver (${}/hr)'.format(round(VOT_2023D_PERSONAL)),year] = priv_auto_travel_time_savings_minor_grouping
 
-        metrics_dict[key, 'Travel Time', grouping3, tm_run_id, metric_id,'intermediate','By Corridor','Monetized value low-income (${}/hr)'.format(round(VOT_2023D_PERSONAL)),year] = priv_auto_travel_time_savings_minor_grouping
-        metrics_dict[key, 'Travel Time', grouping3, tm_run_id, metric_id,'intermediate','By Corridor','Monetized value freight (${}/hr)'.format(round(VOT_2023D_COMMERCIAL)),year] = commercial_vehicle_travel_time_savings_minor_grouping
+        # Q1 HH numerator: travel time savings
+        q1_household_travel_time_savings_minor_grouping = time_savings_in_hours * Q1_HOUSEHOLD_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Household','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Household','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)'.format(round(VOT_2023D_PERSONAL)),year] = Q1_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time (% of wage rate)',year] = Q1_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time ($/hr)',year] = Q1_HOUSEHOLD_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time savings',year] = q1_household_travel_time_savings_minor_grouping
+
+        # Q2 HH numerator: travel time savings
+        q2_household_travel_time_savings_minor_grouping = time_savings_in_hours * Q2_HOUSEHOLD_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Household','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Household','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)'.format(round(VOT_2023D_PERSONAL)),year] = Q2_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time (% of wage rate)',year] = Q2_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time ($/hr)',year] = Q2_HOUSEHOLD_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time savings',year] = q2_household_travel_time_savings_minor_grouping
+
+        # Q3 HH numerator: travel time savings
+        q3_household_travel_time_savings_minor_grouping = time_savings_in_hours * Q3_HOUSEHOLD_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Household','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Household','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)'.format(round(VOT_2023D_PERSONAL)),year] = Q3_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time (% of wage rate)',year] = Q3_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time ($/hr)',year] = Q3_HOUSEHOLD_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time savings',year] = q3_household_travel_time_savings_minor_grouping
+
+        # Q4 HH numerator: travel time savings
+        q4_household_travel_time_savings_minor_grouping = time_savings_in_hours * Q4_HOUSEHOLD_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'extra','Household','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'extra','Household','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)'.format(round(VOT_2023D_PERSONAL)),year] = Q4_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time (% of wage rate)',year] = Q4_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time ($/hr)',year] = Q4_HOUSEHOLD_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time savings',year] = q4_household_travel_time_savings_minor_grouping
+
+        # Q1 Commercial Vehicle numerator: travel time savings
+        q1_commercial_travel_time_savings_minor_grouping = time_savings_in_hours * Q1_COMMERCIAL_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Commercial','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Commercial','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','Avg hourly wage ($/hr)'.format(round(VOT_2023D_PERSONAL)),year] = Q1_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time (% of wage rate)',year] = Q1_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time ($/hr)',year] = Q1_COMMERCIAL_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time savings',year] = q1_commercial_travel_time_savings_minor_grouping
+
+        # Q2 Commercial Vehicle numerator: travel time savings
+        q2_commercial_travel_time_savings_minor_grouping = time_savings_in_hours * Q2_COMMERCIAL_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Commercial','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Commercial','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','Avg hourly wage ($/hr)'.format(round(VOT_2023D_PERSONAL)),year] = Q2_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time (% of wage rate)',year] = Q2_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time ($/hr)',year] = Q2_COMMERCIAL_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time savings',year] = q2_commercial_travel_time_savings_minor_grouping
+
+        # Q3 Commercial Vehicle numerator: travel time savings
+        q3_commercial_travel_time_savings_minor_grouping = time_savings_in_hours * Q3_COMMERCIAL_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Commercial','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Commercial','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','Avg hourly wage ($/hr)'.format(round(VOT_2023D_PERSONAL)),year] = Q3_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time (% of wage rate)',year] = Q3_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time ($/hr)',year] = Q3_COMMERCIAL_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time savings',year] = q3_commercial_travel_time_savings_minor_grouping
 
         # calculate the denominator: incremental toll costs (for PA CV and HOV) 
         # by filtering for the links on the corridor and summing across them
@@ -654,53 +739,83 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         DA_incremental_toll_costs_inc2_minor_grouping = (DA_incremental_toll_costs_minor_grouping * Q2_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
         DA_incremental_toll_costs_inc3_minor_grouping = (DA_incremental_toll_costs_minor_grouping * Q3_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
         DA_incremental_toll_costs_inc4_minor_grouping = (DA_incremental_toll_costs_minor_grouping * Q4_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
+        LRG_incremental_toll_costs_inc1_minor_grouping = (LRG_incremental_toll_costs_minor_grouping * Q1_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
+        LRG_incremental_toll_costs_inc2_minor_grouping = (LRG_incremental_toll_costs_minor_grouping * Q2_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
+        LRG_incremental_toll_costs_inc3_minor_grouping = (LRG_incremental_toll_costs_minor_grouping * Q3_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
 
-        metrics_dict[key, 'Toll Costs (2023$)', 'private auto', tm_run_id, metric_id,'intermediate','By Corridor','auto_toll_costs',year] = DA_incremental_toll_costs_minor_grouping
-        metrics_dict[key, 'Toll Costs (2023$)', 'inc1', tm_run_id, metric_id,'intermediate','By Corridor','auto_toll_costs',year] = DA_incremental_toll_costs_inc1_minor_grouping
-        metrics_dict[key, 'Toll Costs (2023$)', 'inc2', tm_run_id, metric_id,'intermediate','By Corridor','auto_toll_costs',year] = DA_incremental_toll_costs_inc2_minor_grouping
-        metrics_dict[key, 'Toll Costs (2023$)', 'inc3', tm_run_id, metric_id,'intermediate','By Corridor','auto_toll_costs',year] = DA_incremental_toll_costs_inc3_minor_grouping
-        metrics_dict[key, 'Toll Costs (2023$)', 'inc4', tm_run_id, metric_id,'intermediate','By Corridor','auto_toll_costs',year] = DA_incremental_toll_costs_inc4_minor_grouping
-        metrics_dict[key, 'Toll Costs (2023$)', 'truck', tm_run_id, metric_id,'intermediate','By Corridor','truck_toll_costs',year] = LRG_incremental_toll_costs_minor_grouping
-        metrics_dict[key, 'Toll Costs (2023$)', 'hov', tm_run_id, metric_id,'intermediate','By Corridor','hov_toll_costs',year] = S3_incremental_toll_costs_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'inc1', tm_run_id, metric_id,'intermediate','Household','auto_toll_costs',year] = DA_incremental_toll_costs_inc1_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'inc2', tm_run_id, metric_id,'intermediate','Household','auto_toll_costs',year] = DA_incremental_toll_costs_inc2_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'inc3', tm_run_id, metric_id,'intermediate','Household','auto_toll_costs',year] = DA_incremental_toll_costs_inc3_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'inc4', tm_run_id, metric_id,'intermediate','Household','auto_toll_costs',year] = DA_incremental_toll_costs_inc4_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','truck_toll_costs',year] = LRG_incremental_toll_costs_inc1_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','truck_toll_costs',year] = LRG_incremental_toll_costs_inc2_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','truck_toll_costs',year] = LRG_incremental_toll_costs_inc3_minor_grouping
+
+        metrics_dict[key, 'Toll Costs (2023$)', 'hov', tm_run_id, metric_id,'debug','Houshold','hov_toll_costs',year] = S3_incremental_toll_costs_minor_grouping
 
         if (DA_incremental_toll_costs_minor_grouping == 0):
             priv_auto_ratio_time_savings_to_toll_costs_minor_grouping = 0
             priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc1 = 0
             priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc2 = 0
-            comm_veh_ratio_time_savings_to_toll_costs_minor_grouping = 0
+            priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc3 = 0
+            priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc4 = 0
+
+            comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1 = 0
+            comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc2 = 0
+            comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc3 = 0
             hov_ratio_time_savings_to_toll_costs_minor_grouping = 0
         else:
             # calculate ratios for overall + inc groups and enter into metrics dict 
             priv_auto_ratio_time_savings_to_toll_costs_minor_grouping = priv_auto_travel_time_savings_minor_grouping/DA_incremental_toll_costs_minor_grouping
-            priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc1 = priv_auto_travel_time_savings_minor_grouping/DA_incremental_toll_costs_inc1_minor_grouping
-            priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc2 = priv_auto_travel_time_savings_minor_grouping/DA_incremental_toll_costs_inc2_minor_grouping
+            priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc1 = q1_household_travel_time_savings_minor_grouping/DA_incremental_toll_costs_inc1_minor_grouping
+            priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc2 = q2_household_travel_time_savings_minor_grouping/DA_incremental_toll_costs_inc2_minor_grouping
+            priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc3 = q3_household_travel_time_savings_minor_grouping/DA_incremental_toll_costs_inc3_minor_grouping
+            priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc4 = q4_household_travel_time_savings_minor_grouping/DA_incremental_toll_costs_inc4_minor_grouping
 
+            comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1 = q1_commercial_travel_time_savings_minor_grouping/LRG_incremental_toll_costs_inc1_minor_grouping
+            comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc2 = q2_commercial_travel_time_savings_minor_grouping/LRG_incremental_toll_costs_inc2_minor_grouping
+            comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc3 = q3_commercial_travel_time_savings_minor_grouping/LRG_incremental_toll_costs_inc3_minor_grouping
 
-            comm_veh_ratio_time_savings_to_toll_costs_minor_grouping = commercial_vehicle_travel_time_savings_minor_grouping/LRG_incremental_toll_costs_minor_grouping
             hov_ratio_time_savings_to_toll_costs_minor_grouping = priv_auto_travel_time_savings_minor_grouping/S3_incremental_toll_costs_minor_grouping
 
         if S3_incremental_toll_costs_minor_grouping == 0: #make the ratio 0 if there is no cost to drive
             hov_ratio_time_savings_to_toll_costs_minor_grouping = 0
  
 
-        metrics_dict[key, 'Ratio', grouping3, tm_run_id, metric_id,'final','By Corridor','private vehicle',year] = priv_auto_ratio_time_savings_to_toll_costs_minor_grouping
-        metrics_dict[key, 'Ratio', grouping3, tm_run_id, metric_id,'final','By Corridor','inc1',year] = priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc1
-        metrics_dict[key, 'Ratio', grouping3, tm_run_id, metric_id,'final','By Corridor','commercial vehicle',year] = comm_veh_ratio_time_savings_to_toll_costs_minor_grouping
+        metrics_dict[key, 'Ratio', 'inc1', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc1
+        metrics_dict[key, 'Ratio', 'inc2', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc2
+        metrics_dict[key, 'Ratio', 'inc3', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc3
+        metrics_dict[key, 'Ratio', 'inc4', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc4
+
+        metrics_dict[key, 'Ratio', 'inc1', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1
+        metrics_dict[key, 'Ratio', 'inc2', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc2
+        metrics_dict[key, 'Ratio', 'inc3', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc3
+        
+        metrics_dict[key, 'Ratio', grouping3, tm_run_id, metric_id,'final','By Corridor','commercial vehicle',year] = comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1
 
         # ----sum up the ratio of tolls and time savings across the corridors for weighted average
 
         # ----calculate average vmt, multiply time savings by it?
 
         sum_of_weighted_ratio_auto_time_savings_to_toll_costs = sum_of_weighted_ratio_auto_time_savings_to_toll_costs + priv_auto_ratio_time_savings_to_toll_costs_minor_grouping * minor_grouping_vmt
-        sum_of_weighted_ratio_truck_time_savings_to_toll_costs = sum_of_weighted_ratio_truck_time_savings_to_toll_costs + comm_veh_ratio_time_savings_to_toll_costs_minor_grouping * minor_grouping_vmt
+        sum_of_weighted_ratio_truck_time_savings_to_toll_costs = sum_of_weighted_ratio_truck_time_savings_to_toll_costs + comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1 * minor_grouping_vmt
         sum_of_weighted_ratio_hov_time_savings_to_toll_costs = sum_of_weighted_ratio_hov_time_savings_to_toll_costs + hov_ratio_time_savings_to_toll_costs_minor_grouping * minor_grouping_vmt
         sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc1 = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc1 + priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc1 * minor_grouping_vmt
         sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc2 = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc2 + priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc2 * minor_grouping_vmt
-        
+        sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc3 = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc3 + priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc3 * minor_grouping_vmt
+        sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc4 = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc4 + priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc4 * minor_grouping_vmt
+        sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc1 = sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc1 + comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1 * minor_grouping_vmt
+        sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc2 = sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc2 + comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc2 * minor_grouping_vmt
+        sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc3 = sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc3 + comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc3 * minor_grouping_vmt
+
         sum_of_ratio_auto_time_savings_to_toll_costs += priv_auto_ratio_time_savings_to_toll_costs_minor_grouping
         sum_of_ratio_auto_time_savings_to_toll_costs_inc1 += priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc1
         sum_of_ratio_auto_time_savings_to_toll_costs_inc2 += priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc2
-        sum_of_ratio_truck_time_savings_to_toll_costs += comm_veh_ratio_time_savings_to_toll_costs_minor_grouping
+        sum_of_ratio_auto_time_savings_to_toll_costs_inc3 += priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc3
+        sum_of_ratio_auto_time_savings_to_toll_costs_inc4 += priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc4
+        sum_of_ratio_truck_time_savings_to_toll_costs_inc1 += comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1
+        sum_of_ratio_truck_time_savings_to_toll_costs_inc2 += comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc2
+        sum_of_ratio_truck_time_savings_to_toll_costs_inc3 += comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc3
         sum_of_ratio_hov_time_savings_to_toll_costs += hov_ratio_time_savings_to_toll_costs_minor_grouping
 
         #----sum of weights (vmt of corridor) to be used for weighted average
@@ -715,18 +830,25 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     # metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'intermediate','Commercial Vehicle','sum_of_ratio_truck_time_savings_to_toll_costs_weighted_by_vmt',year] = sum_of_weighted_ratio_truck_time_savings_to_toll_costs
     # metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'intermediate','High Occupancy Vehicle','sum_of_ratio_hov_time_savings_to_toll_costs_weighted_by_vmt',year] = sum_of_weighted_ratio_hov_time_savings_to_toll_costs
 
+    # weighted averages
+    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'inc1', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc1/sum_of_weights
+    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'inc2', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc2/sum_of_weights
+    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'inc3', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc3/sum_of_weights
+    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'inc4', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc4/sum_of_weights
+    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'inc1', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc1/sum_of_weights
+    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'inc2', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc2/sum_of_weights
+    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'inc3', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc3/sum_of_weights
+    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', grouping3, tm_run_id, metric_id,'debug','High Occupancy Vehicle','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_hov_time_savings_to_toll_costs/sum_of_weights
 
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Private Auto: All Households','average_ratio_auto_time_savings_to_toll_costs_across_corridors_weighted_by_vmt',year] = sum_of_weighted_ratio_auto_time_savings_to_toll_costs/sum_of_weights
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Private Auto: Very Low Income Households','average_ratio_auto_time_savings_to_toll_costs_across_corridors_inc1_weighted_by_vmt',year] = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc1/sum_of_weights
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Private Auto: Very Low Income Households','average_ratio_auto_time_savings_to_toll_costs_across_corridors_inc2_weighted_by_vmt',year] = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc2/sum_of_weights
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Commercial Vehicle','average_ratio_truck_time_savings_to_toll_costs_across_corridors_weighted_by_vmt',year] = sum_of_weighted_ratio_truck_time_savings_to_toll_costs/sum_of_weights
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','High Occupancy Vehicle','average_ratio_hov_time_savings_to_toll_costs_across_corridors_weighted_by_vmt',year] = sum_of_weighted_ratio_hov_time_savings_to_toll_costs/sum_of_weights
-
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Private Auto: All Households','simple_average_ratio_auto_time_savings_to_toll_costs_across_corridors',year] = sum_of_ratio_auto_time_savings_to_toll_costs/n
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Private Auto: Very Low Income Households','simple_average_ratio_auto_time_savings_to_toll_costs_across_corridors_inc1',year] = sum_of_ratio_auto_time_savings_to_toll_costs_inc1/n
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Private Auto: Very Low Income Households','simple_average_ratio_auto_time_savings_to_toll_costs_across_corridors_inc2',year] = sum_of_ratio_auto_time_savings_to_toll_costs_inc2/n
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Commercial Vehicle','simple_average_ratio_truck_time_savings_to_toll_costs_across_corridors',year] = sum_of_ratio_truck_time_savings_to_toll_costs/n
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','High Occupancy Vehicle','simple_average_ratio_hov_time_savings_to_toll_costs_across_corridors',year] = sum_of_ratio_hov_time_savings_to_toll_costs/n
+    # simple averages
+    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc1', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_auto_time_savings_to_toll_costs_inc1/n
+    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc2', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_auto_time_savings_to_toll_costs_inc2/n
+    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc3', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_auto_time_savings_to_toll_costs_inc3/n
+    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc4', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_auto_time_savings_to_toll_costs_inc4/n
+    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc1', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_truck_time_savings_to_toll_costs_inc1/n
+    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc2', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_truck_time_savings_to_toll_costs_inc2/n
+    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc3', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_truck_time_savings_to_toll_costs_inc3/n
+    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', grouping3, tm_run_id, metric_id,'debug','High Occupancy Vehicle','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_hov_time_savings_to_toll_costs/n
 
 
 
@@ -1336,7 +1458,7 @@ def calculate_fatalitites(run_id, loaded_network_df, collision_rates_df, tm_load
     modified_network_df['N_bike_fatalities'] = modified_network_df['annual_VMT'] / 1000000 * modified_network_df['Bike Fatality']
     modified_network_df['N_total_fatalities'] = modified_network_df['N_motorist_fatalities'] + modified_network_df['N_ped_fatalities'] + modified_network_df['N_bike_fatalities']
 
-    if ('2015' not in run_id)&(NO_PROJECT_SCENARIO_RUN_ID != run_id):
+    if ('2015' not in run_id)&(NO_PROJECT_SCENARIO_RUN_ID != run_id): # need to make an adjustment here to exclude all no project runs, not just the most recent
         # join average speed on each link in no project
         # calculate average speed
         tm_loaded_network_df_no_project_copy = tm_loaded_network_df_no_project.copy()
@@ -1462,16 +1584,16 @@ def calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id, year, tm_loaded_
     metrics_dict['Total', 'Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_total_fatalities_speed_reduction_2015_obs_correction
 
     N_fwy_motorist_fatalities_2015_obs_correction = N_fwy_motorist_fatalities*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_number_of_fwy_motorist_fatalities_2015_obs_correction',year] = N_fwy_motorist_fatalities_2015_obs_correction
+    metrics_dict['Motorist', 'No Vision Zero', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_number_of_fwy_motorist_fatalities_2015_obs_correction',year] = N_fwy_motorist_fatalities_2015_obs_correction
     
     N_fwy_motorist_fatalities_speed_reduction_2015_obs_correction = N_fwy_motorist_fatalities_speed_reduction*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_number_of_fwy_motorist_fatalities_speed_reduction_2015_obs_correction',year] = N_fwy_motorist_fatalities_speed_reduction_2015_obs_correction
+    metrics_dict['Motorist', 'Vision Zero', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_number_of_fwy_motorist_fatalities_speed_reduction_2015_obs_correction',year] = N_fwy_motorist_fatalities_speed_reduction_2015_obs_correction
 
     N_nonfwy_motorist_fatalities_2015_obs_correction = N_nonfwy_motorist_fatalities*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_number_of_nonfwy_motorist_fatalities_2015_obs_correction',year] = N_nonfwy_motorist_fatalities_2015_obs_correction
+    metrics_dict['Motorist', 'No Vision Zero', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_number_of_nonfwy_motorist_fatalities_2015_obs_correction',year] = N_nonfwy_motorist_fatalities_2015_obs_correction
 
     N_nonfwy_motorist_fatalities_speed_reduction_2015_obs_correction = N_nonfwy_motorist_fatalities_speed_reduction*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_number_of_nonfwy_motorist_fatalities_speed_reduction_2015_obs_correction',year] = N_nonfwy_motorist_fatalities_speed_reduction_2015_obs_correction
+    metrics_dict['Motorist', 'Vision Zero', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_number_of_nonfwy_motorist_fatalities_speed_reduction_2015_obs_correction',year] = N_nonfwy_motorist_fatalities_speed_reduction_2015_obs_correction
 
 
 
