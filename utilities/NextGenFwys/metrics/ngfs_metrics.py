@@ -720,7 +720,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
           [origCITY_destCITY]       extra               num_trips_transit
           [origCITY_destCITY]       intermediate        ratio_travel_time_transit_auto
           Average across OD pairs   final               ratio_travel_time_transit_auto_across_pairs
-          
+
     Notes:
     * Representative origin-destination pairs are given by TAZs corresponding with 
       NGFS_OD_CITIES_FILE and NGFS_OD_CITIES_OF_INTEREST
@@ -1301,7 +1301,7 @@ def calculate_fatalitites(run_id, loaded_network_df, collision_rates_df, tm_load
     modified_network_df['N_bike_fatalities'] = modified_network_df['annual_VMT'] / 1000000 * modified_network_df['Bike Fatality']
     modified_network_df['N_total_fatalities'] = modified_network_df['N_motorist_fatalities'] + modified_network_df['N_ped_fatalities'] + modified_network_df['N_bike_fatalities']
 
-    if ('2015' not in run_id)&(BASE_SCENARIO_RUN_ID not in run_id):
+    if ('2015' not in run_id)&(NO_PROJECT_SCENARIO_RUN_ID != run_id):
         # join average speed on each link in no project
         # calculate average speed
         tm_loaded_network_df_base['Avg_reduced_speed'] = (tm_loaded_network_df_base['cspdEA'] + tm_loaded_network_df_base['cspdAM'] + tm_loaded_network_df_base['cspdMD'] + tm_loaded_network_df_base['cspdPM'] + tm_loaded_network_df_base['cspdEV']) / 5
@@ -1367,7 +1367,7 @@ def calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id, year, tm_loaded_
     # output df has columns for each fatality type + 'after' which indicates that a correction was made for speed reductions in the scenario run
 
     # check for "No Project" in run id - all other projects implement vision zero strategies and thus have speed reductions (a fix is necessary to be able to run this function for 2015 runs)
-    if NO_PROJECT_SCENARIO_RUN_ID in tm_run_id:
+    if NO_PROJECT_SCENARIO_RUN_ID == tm_run_id:
         N_motorist_fatalities = fatality_df[('N_motorist_fatalities','sum')][0]
         N_ped_fatalities = fatality_df[('N_ped_fatalities','sum')][0]
         N_bike_fatalities = fatality_df[('N_bike_fatalities','sum')][0]
