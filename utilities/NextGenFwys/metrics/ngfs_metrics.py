@@ -35,7 +35,7 @@ import csv
 
 # paths
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns1.xlsx")
+NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
 NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
 
@@ -1261,12 +1261,12 @@ def adjust_fatalities_exp_speed(row, type_of_fatality):
     if N_type_fatalities==0 :
         return 0
     else:
-        return numpy.minimum(N_type_fatalities*(row['Avg_speed']/row['Avg_reduced_speed'])**row['fatality_exponent'], N_type_fatalities)
+        return numpy.minimum(N_type_fatalities*(row['Avg_speed']/row['Avg_Speed_No_Project'])**row['fatality_exponent'], N_type_fatalities)
 
 
 
 
-def calculate_fatalitites(run_id, loaded_network_df, collision_rates_df, tm_loaded_network_df_base):
+def calculate_fatalitites(run_id, loaded_network_df, collision_rates_df, tm_loaded_network_df_no_project):
     NOTE_ON_FT_AND_AT = """
     FT is reclassified to -1 because the link is a dummy link (FT=6) and/or because lanes <=0. 
     FT is reclassified to -1 so that the join with fatality and injury rates doesn't match with anything
@@ -1304,10 +1304,13 @@ def calculate_fatalitites(run_id, loaded_network_df, collision_rates_df, tm_load
     if ('2015' not in run_id)&(NO_PROJECT_SCENARIO_RUN_ID != run_id):
         # join average speed on each link in no project
         # calculate average speed
-        tm_loaded_network_df_base['Avg_reduced_speed'] = (tm_loaded_network_df_base['cspdEA'] + tm_loaded_network_df_base['cspdAM'] + tm_loaded_network_df_base['cspdMD'] + tm_loaded_network_df_base['cspdPM'] + tm_loaded_network_df_base['cspdEV']) / 5
-        base_network_avg_speed_df = tm_loaded_network_df_base[['a','b', 'Avg_reduced_speed']]
+        tm_loaded_network_df_no_project_copy = tm_loaded_network_df_no_project.copy()
+        tm_loaded_network_df_no_project_copy['Avg_Speed_No_Project'] = (tm_loaded_network_df_no_project['cspdEA'] + tm_loaded_network_df_no_project['cspdAM'] + tm_loaded_network_df_no_project['cspdMD'] + tm_loaded_network_df_no_project['cspdPM'] + tm_loaded_network_df_no_project['cspdEV']) / 5
+        no_project_network_avg_speed_df = tm_loaded_network_df_no_project_copy[['a','b', 'Avg_Speed_No_Project']]
         # merge DFs on 'a' & 'b'
-        modified_network_df = pd.merge(left=modified_network_df, right=base_network_avg_speed_df, how='left', left_on=['a','b'], right_on=['a','b'])
+        if 'Avg_Speed_No_Project' in modified_network_df.columns:
+            modified_network_df.drop(columns=['Avg_Speed_No_Project'], inplace=True)
+        modified_network_df = pd.merge(left=modified_network_df.copy(), right=no_project_network_avg_speed_df, how='left', left_on=['a','b'], right_on=['a','b'])
         # add attributes for fatality reduction exponent based on ft
         # exponents and methodology sourced from here: https://www.toi.no/getfile.php?mmfileid=13206 (table S1)
         # methodology cited in this FHWA resource: https://www.fhwa.dot.gov/publications/research/safety/17098/003.cfm
@@ -1352,16 +1355,16 @@ def calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id, year, tm_loaded_
     grouping2 = ' '
     grouping3 = ' '
 
-    fatality_df = calculate_fatalitites(tm_run_id, tm_loaded_network_df, collision_rates_df, tm_loaded_network_df_base)
-    fatality_df_2015 = calculate_fatalitites(runid_2015, loaded_network_2015_df, collision_rates_df, tm_loaded_network_df_base)
+    fatality_df = calculate_fatalitites(tm_run_id, tm_loaded_network_df, collision_rates_df, tm_loaded_network_df_no_project)
+    fatality_df_2015 = calculate_fatalitites(runid_2015, loaded_network_2015_df, collision_rates_df, tm_loaded_network_df_no_project)
 
     # ______calculate fatalities for freeway and non-freeway________
     fwy_network_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['ft'] != 7)|(tm_loaded_network_df['ft'] != 4)|(tm_loaded_network_df['ft'] != 3)|(tm_loaded_network_df['ft'] != 6)]
     nonfwy_network_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['ft'] == 7)|(tm_loaded_network_df['ft'] == 4)|(tm_loaded_network_df['ft'] == 3)]
-    fwy_network_df_base = tm_loaded_network_df_base.copy().loc[(tm_loaded_network_df_base['ft'] != 7)|(tm_loaded_network_df_base['ft'] != 4)|(tm_loaded_network_df_base['ft'] != 3)|(tm_loaded_network_df_base['ft'] != 6)]
-    nonfwy_network_df_base = tm_loaded_network_df_base.copy().loc[(tm_loaded_network_df_base['ft'] == 7)|(tm_loaded_network_df_base['ft'] == 4)|(tm_loaded_network_df_base['ft'] == 3)]
-    fwy_fatality_df = calculate_fatalitites(tm_run_id, fwy_network_df, collision_rates_df, fwy_network_df_base)
-    nonfwy_fatality_df = calculate_fatalitites(tm_run_id, nonfwy_network_df, collision_rates_df, nonfwy_network_df_base)
+    fwy_network_df_no_project = tm_loaded_network_df_no_project.copy().loc[(tm_loaded_network_df_no_project['ft'] != 7)|(tm_loaded_network_df_no_project['ft'] != 4)|(tm_loaded_network_df_no_project['ft'] != 3)|(tm_loaded_network_df_no_project['ft'] != 6)]
+    nonfwy_network_df_no_project = tm_loaded_network_df_no_project.copy().loc[(tm_loaded_network_df_no_project['ft'] == 7)|(tm_loaded_network_df_no_project['ft'] == 4)|(tm_loaded_network_df_no_project['ft'] == 3)]
+    fwy_fatality_df = calculate_fatalitites(tm_run_id, fwy_network_df, collision_rates_df, fwy_network_df_no_project)
+    nonfwy_fatality_df = calculate_fatalitites(tm_run_id, nonfwy_network_df, collision_rates_df, nonfwy_network_df_no_project)
     
     # separate into variables for this run
     # output df has columns for each fatality type + 'after' which indicates that a correction was made for speed reductions in the scenario run
@@ -1668,17 +1671,8 @@ if __name__ == "__main__":
     LOGGER.info("=> PATHWAY2_SCENARIO_RUN_ID = {}".format(PATHWAY2_SCENARIO_RUN_ID))
     TOLLED_ART_MINOR_GROUP_LINKS_DF = determine_tolled_minor_group_links(PATHWAY2_SCENARIO_RUN_ID, "arterial")
 
-    # ______load no project network to use for speed comparisons in vmt corrections______
+    # ______load base scenario network to use for speed comparisons in vmt corrections______
     tm_run_location_base = os.path.join(NGFS_SCENARIOS, BASE_SCENARIO_RUN_ID)
-    # ______define the base run inputs for "change in" comparisons______
-    tm_scen_metrics_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/metrics/scenario_metrics.csv',names=["runid", "metric_name", "value"])
-    tm_auto_owned_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/metrics/autos_owned.csv')
-    tm_travel_cost_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/core_summaries/TravelCost.csv')
-    tm_auto_times_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/metrics/auto_times.csv',sep=",")#, index_col=[0,1])
-    tm_loaded_network_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/avgload5period.csv')
-    tm_loaded_network_df_base = tm_loaded_network_df_base.rename(columns=lambda x: x.strip())
-    # merging df that has the list of minor segments with loaded network - for corridor analysis
-    tm_loaded_network_df_base['a_b'] = tm_loaded_network_df_base['a'].astype(str) + "_" + tm_loaded_network_df_base['b'].astype(str)
     if ODTRAVELTIME_FILENAME == "ODTravelTime_byModeTimeperiod_reduced_file.csv":
         network_links_dbf_base = pd.read_csv(tm_run_location_base + '\\OUTPUT\\shapefile\\network_links_reduced_file.csv')
     else:
@@ -1688,8 +1682,26 @@ if __name__ == "__main__":
         dbf = simpledbf.Dbf5(input_file)
         network_links_dbf_base = dbf.to_dataframe()
         network_links_dbf_base['a_b'] = network_links_dbf_base['A'].astype(str) + "_" + network_links_dbf_base['B'].astype(str)
+    # ______define the base run inputs for "change in" comparisons______
+    tm_scen_metrics_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/metrics/scenario_metrics.csv',names=["runid", "metric_name", "value"])
+    tm_auto_owned_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/metrics/autos_owned.csv')
+    tm_travel_cost_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/core_summaries/TravelCost.csv')
+    tm_auto_times_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/metrics/auto_times.csv',sep=",")#, index_col=[0,1])
+    tm_loaded_network_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/avgload5period.csv')
+    tm_loaded_network_df_base = tm_loaded_network_df_base.rename(columns=lambda x: x.strip())
+    # merging df that has the list of minor segments with loaded network - for corridor analysis
+    tm_loaded_network_df_base['a_b'] = tm_loaded_network_df_base['a'].astype(str) + "_" + tm_loaded_network_df_base['b'].astype(str)
     tm_loaded_network_df_base = tm_loaded_network_df_base.copy().merge(network_links_dbf_base.copy(), on='a_b', how='left')
     tm_loaded_network_df_base = tm_loaded_network_df_base.merge(minor_links_df, on='a_b', how='left')
+
+# ______load no project network to use for speed comparisons in vmt corrections______
+    tm_run_location_no_project = os.path.join(NGFS_SCENARIOS, NO_PROJECT_SCENARIO_RUN_ID)
+    tm_loaded_network_df_no_project = pd.read_csv(tm_run_location_no_project+'/OUTPUT/avgload5period.csv')
+    tm_loaded_network_df_no_project = tm_loaded_network_df_no_project.rename(columns=lambda x: x.strip())
+    # merging df that has the list of minor segments with loaded network - for corridor analysis
+    tm_loaded_network_df_no_project['a_b'] = tm_loaded_network_df_no_project['a'].astype(str) + "_" + tm_loaded_network_df_no_project['b'].astype(str)
+    tm_loaded_network_df_no_project = tm_loaded_network_df_no_project.copy().merge(network_links_dbf_base.copy(), on='a_b', how='left')
+    tm_loaded_network_df_no_project = tm_loaded_network_df_no_project.merge(minor_links_df, on='a_b', how='left')
 
     # load vmt_vht_metrics.csv for vmt calc
     tm_vmt_metrics_df_base = pd.read_csv(tm_run_location_base + '/OUTPUT/metrics/vmt_vht_metrics.csv', sep=",", index_col=[0,1])
@@ -1805,7 +1817,7 @@ if __name__ == "__main__":
 
         # -----------run base for comparisons---------------
 
-        calculate_Safe2_change_in_vmt(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_base,tm_auto_times_df_base,  metrics_dict)
+        calculate_Safe2_change_in_vmt(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_no_project,tm_auto_times_df_base,  metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S2 Done")
 
         # -----------run comparisons---------------
@@ -1822,11 +1834,11 @@ if __name__ == "__main__":
 
         calculate_Reliable2_ratio_peak_nonpeak(BASE_SCENARIO_RUN_ID, year, metrics_dict) #add tm_metric_id to all?
         # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
-        calculate_Safe1_fatalities_freewayss_nonfreeways(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_base, metrics_dict)
+        calculate_Safe1_fatalities_freewayss_nonfreeways(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_no_project, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
         # run function to calculate top level metrics
         calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df, metrics_dict)  # calculate for base run too
-        calculate_top_level_metrics(BASE_SCENARIO_RUN_ID, year, tm_vmt_metrics_df_base, tm_auto_times_df_base, tm_transit_times_df_base, tm_commute_df_base, tm_loaded_network_df_base, vmt_hh_df_base,tm_scen_metrics_df_base, metrics_dict)
+        calculate_top_level_metrics(BASE_SCENARIO_RUN_ID, year, tm_vmt_metrics_df_base, tm_auto_times_df_base, tm_transit_times_df_base, tm_commute_df_base, tm_loaded_network_df_no_project, vmt_hh_df_base,tm_scen_metrics_df_base, metrics_dict)
   
         # _________output table__________
         # TODO: deprecate when all metrics just come through via metrics_df
