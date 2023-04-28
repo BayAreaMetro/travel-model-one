@@ -217,12 +217,15 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
           metric_id   = 'overall'
           modelrun_id = tm_run_id
         Metrics returned:
-          key                                                         intermediate/final    metric_desc
-          [commute|noncommute]_[auto|transit|active]_[peak|offpeak]   top_level             trips
-          [commute|noncommute]_[auto|transit|active]_[peak|offpeak]   top_level             trips
-          [peak|off-peak]                                             top_level             [auto|transit|active]_commute_peak-vs-offpeak_share
-          [peak|off-peak]                                             top_level             [auto|transit|active]_noncommute_peak-vs-offpeak_share
-          [auto|transit|active]                                       top_level             [peak|offpeak]_[commute|noncommute]_mode_share
+          key                       intermediate/final    metric_desc
+          [commute]_[mode]_[pkop]   top_level             trips
+          [commute]_[mode]_[pkop]   top_level             trips
+          [pkop]                    top_level             [mode]_commute_peak-vs-offpeak_share
+          [pkop]                    top_level             [mode]_noncommute_peak-vs-offpeak_share
+          [mode]                    top_level             [pkop]_[commute]_mode_share
+        where [mode] is one of auto|transit|active, 
+              [pkop] is one of peak|offpeak, and 
+              [commute] is one of commute|noncommute
           TODO: add others
     """
     REVENUE_METHODOLOGY_AND_ASSUMPTIONS = """
@@ -295,9 +298,9 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Trips', 'Daily_total_transit_trips_overall', year] = transit_trips_overall
 
     ################################### trips by peak/off-peak, commute/noncommute, auto/transit ###################################
-    # key                                                         intermediate/final    metric_desc
-    # [commute|noncommute]_[auto|transit|active]_[peak|offpeak]   top_level             trips
-    # [commute|noncommute]_[auto|transit|active]_[peak|offpeak]   top_level             trips
+    # key                       intermediate/final    metric_desc
+    # [commute]_[mode]_[pkop]   top_level             trips
+    # [commute]_[mode]_[pkop]   top_level             trips
     trip_distance_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "TripDistance.csv")
     tm_trips_df = pd.read_csv(trip_distance_file)
     LOGGER.info("  Read {:,} rows from {}".format(len(tm_trips_df), trip_distance_file))
@@ -332,9 +335,9 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     LOGGER.debug('metrics_trip_df:\n{}'.format(metrics_trip_df))
     metrics_df = pd.concat([metrics_df, metrics_trip_df])
 
-    # key                  intermediate/final    metric_desc
-    # [peak|offpeak]       top_level             [auto|transit|active]_commute_peak-vs-offpeak_share
-    # [peak|offpeak]       top_level             [auto|transit|active]_noncommute_peak-vs-offpeak_share
+    # key                       intermediate/final    metric_desc
+    # [pkop]                    top_level             [mode]_commute_peak-vs-offpeak_share
+    # [pkop]                    top_level             [mode]_noncommute_peak-vs-offpeak_share
 
     # metrics: peak vs offpeak shares
     # add column for peak_offpeak_trips = peak + nonpeak
@@ -353,8 +356,8 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     LOGGER.debug("metrics_peak_offpeak_share_df:\n{}".format(metrics_peak_offpeak_share_df))
     metrics_df = pd.concat([metrics_df, metrics_peak_offpeak_share_df])
 
-    # key                    intermediate/final    metric_desc
-    # [auto|transit_active]  top_level             [peak|offpeak]_[commute|noncommute]_mode_share
+    # key                       intermediate/final    metric_desc
+    # [mode]                    top_level             [pkop]_[commute]_mode_share
     metrics_modeshare_df = pd.merge(
         left  = tm_trips_df,
         right = tm_trips_df.groupby(by=['commute_non','peak_non']).agg(
