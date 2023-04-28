@@ -28,6 +28,7 @@ import datetime, os, sys
 import numpy, pandas as pd
 import simpledbf
 from collections import OrderedDict, defaultdict
+import argparse
 import logging
 import math
 import csv
@@ -173,7 +174,7 @@ METRICS_COLUMNS = [
 ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiodIncome.csv"
 # ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiod_reduced_file.csv"
 
-def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df, metrics_dict):
+def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df):
     DESCRIPTION = """
     top level metrics that are not part of the 10 metrics, that will give us overall understanding of the pathway, such as:
     - vmt (this is metric 10 but, repeated as a top level metric)
@@ -214,7 +215,9 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     grouping1 = ' '
     grouping2 = ' '
     grouping3 = ' '
+    LOGGER.info("Calculating {} for {}".format(metric_id, tm_run_id))
 
+    metrics_dict = {}
     # calculate vmt (as calculated in pba50_metrics.py)
     # metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','VMT','daily_total_vmt',year] = tm_auto_times_df.loc[:,'Vehicle Miles'].sum()
     # # calculate hh vmt 
@@ -374,8 +377,9 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     # use as a check for calculated value above. should be in the same ballpark. calculate ratio and use for links?
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily revenue (includes express lane, 2000$)', year] = toll_revenues_overall
 
-
-
+    metrics_df = metrics_dict_to_df(metrics_dict)
+    LOGGER.debug("metrics_df from calculate_top_level_metrics:\n{}".format(metrics_df))
+    return metrics_df
 
 def calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year, metric_id, metrics_dict):
     #function to compare two runs and enter difference as a metric in dictionary
@@ -1755,6 +1759,10 @@ def determine_tolled_minor_group_links(tm_run_id: str, fwy_or_arterial: str) -> 
     return grouping_df
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--skip_if_exists", action="store_true", help="Use this option to skip creating metrics files if one exists already")
+    args = parser.parse_args()
+
     pd.options.display.width = 500 # redirect output to file so this will be readable
     pd.options.display.max_columns = 100
     pd.options.display.max_rows = 500
@@ -1770,11 +1778,13 @@ if __name__ == "__main__":
     ch.setLevel('INFO')
     ch.setFormatter(logging.Formatter('%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     LOGGER.addHandler(ch)
-    # file handler
-    fh = logging.FileHandler(LOG_FILE, mode='w')
+    # file handler -- append if skip_if_exists is passed
+    fh = logging.FileHandler(LOG_FILE, mode='a' if args.skip_if_exists else 'w')
     fh.setLevel('DEBUG')
     fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     LOGGER.addHandler(fh)
+
+    LOGGER.debug("args = {}".format(args))
 
     current_runs_df = pd.read_excel(NGFS_MODEL_RUNS_FILE, sheet_name='all_runs', usecols=['project','year','directory','run_set','category','short_name','status'])
     current_runs_df = current_runs_df.loc[ current_runs_df['status'] == 'current']
@@ -1785,11 +1795,7 @@ if __name__ == "__main__":
 
     LOGGER.info("current_runs_df: \n{}".format(current_runs_df))
 
-    # TODO: why drop the first one?  is this to exclude the 2015?  If so, I'd exclude it because of the year and not because it's first
-    # in either case, this should be explained
-    runs = current_runs_df['directory'].to_list()
-    # for debugging/testing
-    # runs = ['2035_TM152_FBP_Plus_24']
+    current_runs_list = current_runs_df['directory'].to_list()
     
     # load lookup file for a city's TAZs
     taz_cities_df = pd.read_csv('L:\\Application\\Model_One\\NextGenFwys\\metrics\\Input Files\\taz_with_cities.csv')
@@ -1869,8 +1875,13 @@ if __name__ == "__main__":
     # load VehicleMilesTraveled_households.csv
     vmt_hh_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/core_summaries/VehicleMilesTraveled_households.csv')
 
-    for tm_run_id in runs:
-        print("Processing run {}".format(tm_run_id))
+    for tm_run_id in current_runs_list:
+        out_filename = os.path.join(os.getcwd(),"ngfs_metrics_{}.csv".format(tm_run_id))
+
+        if args.skip_if_exists and os.path.exists(out_filename):
+            LOGGER.info("Skipping {} -- {} exists".format(tm_run_id, out_filename))
+            continue
+
         LOGGER.info("Processing run {}".format(tm_run_id))
 
         # #temporary run location for testing purposes
@@ -1993,15 +2004,17 @@ if __name__ == "__main__":
         calculate_Safe1_fatalities_freewayss_nonfreeways(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_base, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
         # run function to calculate top level metrics
-        calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df, metrics_dict)  # calculate for base run too
-        calculate_top_level_metrics(BASE_SCENARIO_RUN_ID, year, tm_vmt_metrics_df_base, tm_auto_times_df_base, tm_transit_times_df_base, tm_commute_df_base, tm_loaded_network_df_base, vmt_hh_df_base,tm_scen_metrics_df_base, metrics_dict)
-  
+        toplevel_metrics_df = calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df)  # calculate for base run too
+        metrics_df = pd.concat([metrics_df, toplevel_metrics_df])
+
+        toplevel_metrics_df = calculate_top_level_metrics(BASE_SCENARIO_RUN_ID, year, tm_vmt_metrics_df_base, tm_auto_times_df_base, tm_transit_times_df_base, tm_commute_df_base, tm_loaded_network_df_base, vmt_hh_df_base,tm_scen_metrics_df_base)
+        metrics_df = pd.concat([metrics_df, toplevel_metrics_df])
+
         # _________output table__________
         # TODO: deprecate when all metrics just come through via metrics_df
         metrics_df = pd.concat([metrics_df, metrics_dict_to_df(metrics_dict)])
         # print out table
 
-        out_filename = os.path.join(os.getcwd(),"ngfs_metrics_{}.csv".format(tm_run_id))
         metrics_df[METRICS_COLUMNS].to_csv(out_filename, float_format='%.5f', index=False) #, header=False
         LOGGER.info("Wrote {}".format(out_filename))
 
