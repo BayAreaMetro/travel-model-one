@@ -52,10 +52,12 @@ token_model_coefficient_in_vehicle = '-0.0220/0.25'
 token_model_coefficient_cost = '(kIvtt / TRUCKVOT) * 0.6'
 
 ; set a debug origin
-token_debug_origin = '1028'
+; token_debug_origin = '1028'
+token_debug_origin = '412'
 
 ; set a debug destination
-token_debug_destination = '2'
+;token_debug_destination = '2'
+token_debug_destination = '412'
 
 ; set a debug filename prefix
 token_debug_filename = 'logs\TruckTollChoice'
@@ -178,8 +180,15 @@ loop period = 1,5
             else
 
                ; if the value toll cost is zero, the toll probability is 0.0
-               probNoToll = 1.0
                probToll   = 0.0
+
+              ; still have to check if there is a valid no toll path
+               if (noTollTime > 0 && noTollTime < 500000)
+                   probNoToll = 1.0
+               else 
+                  ; probability is 0 for both toll and no toll 
+                  probNoToll = 0 
+               endif  ; valid no toll path check           
 
             endif ; non-zero toll check
 
