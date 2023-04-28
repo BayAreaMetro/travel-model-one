@@ -157,6 +157,14 @@ MODES_PRIVATE_AUTO = MODES_SOV + MODES_HOV
 MODES_WALK         = [7]
 MODES_BIKE         = [8]
 
+# travel model tour purpose
+# https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour
+PURPOSES_COMMUTE = ['work_low','work_med','work_high','work_very high']
+
+# travel model time periods
+# https://github.com/BayAreaMetro/modeling-website/wiki/TimePeriods
+TIME_PERIODS_PEAK = ['AM','PM']
+
 METRICS_COLUMNS = [
     'grouping1',
     'grouping2',
@@ -174,9 +182,9 @@ METRICS_COLUMNS = [
 ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiodIncome.csv"
 # ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiod_reduced_file.csv"
 
-def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df):
-    DESCRIPTION = """
-    top level metrics that are not part of the 10 metrics, that will give us overall understanding of the pathway, such as:
+def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df):
+    """ Calculates top-level metrics (which are not part of the 10 metrics)
+    These metrics are designed to give us overall understanding of the pathway, such as:
     - vmt (this is metric 10 but, repeated as a top level metric)
     - auto trips overall
     - auto trips by income level
@@ -199,6 +207,23 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
         - freeways
         - arterials
         - cordons
+
+    Args:
+        tm_run_id (str): Travel model run ID
+        [todo fill these in]
+    
+    Returns:
+        pandas.DataFrame: with columns a subset of METRICS_COLUMNS, including 
+          metric_id   = 'overall'
+          modelrun_id = tm_run_id
+        Metrics returned:
+          key                                                         intermediate/final    metric_desc
+          [commute|noncommute]_[auto|transit|active]_[peak|offpeak]   top_level             trips
+          [commute|noncommute]_[auto|transit|active]_[peak|offpeak]   top_level             trips
+          [peak|off-peak]                                             top_level             [auto|transit|active]_commute_peak-vs-offpeak_share
+          [peak|off-peak]                                             top_level             [auto|transit|active]_noncommute_peak-vs-offpeak_share
+          [auto|transit|active]                                       top_level             [peak|offpeak]_[commute|noncommute]_mode_share
+          TODO: add others
     """
     REVENUE_METHODOLOGY_AND_ASSUMPTIONS = """
     toll revenues - from Value Tolls field in auto times --> this is daily revenue in $2000 cents
@@ -218,6 +243,8 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     LOGGER.info("Calculating {} for {}".format(metric_id, tm_run_id))
 
     metrics_dict = {}
+    metrics_df = pd.DataFrame() # move towards putting metrics in here
+
     # calculate vmt (as calculated in pba50_metrics.py)
     # metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','VMT','daily_total_vmt',year] = tm_auto_times_df.loc[:,'Vehicle Miles'].sum()
     # # calculate hh vmt 
@@ -267,45 +294,86 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
         transit_trips_overall += transit_times_summed.loc['_no_zpv_inc%d' % inc_level, 'Daily Trips']
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Trips', 'Daily_total_transit_trips_overall', year] = transit_trips_overall
 
-    # calculate auto and transit commute trips (similar to PBA2050 [\metrics development\diverse] Healthy: commute mode share)
-    # simplify modes
-    tm_commute_df.loc[(tm_commute_df['tour_mode'] == 1)|(tm_commute_df['tour_mode'] == 2),'mode'] = 'sov'
-    tm_commute_df.loc[(tm_commute_df['tour_mode'] == 3)|(tm_commute_df['tour_mode'] == 4)|(tm_commute_df['tour_mode'] == 5)|(tm_commute_df['tour_mode'] == 6),'mode'] = 'hov'
-    tm_commute_df.loc[(tm_commute_df['tour_mode'] == 20)|(tm_commute_df['tour_mode'] == 21),'mode'] = 'tnc'
-    tm_commute_df.loc[(tm_commute_df['tour_mode'] == 19),'mode'] = 'taxi'
-    tm_commute_df.loc[(tm_commute_df['tour_mode'] == 9)|(tm_commute_df['tour_mode'] == 10)|(tm_commute_df['tour_mode'] == 11)|(tm_commute_df['tour_mode'] == 12)|(tm_commute_df['tour_mode'] == 13)|(tm_commute_df['tour_mode'] == 14)|(tm_commute_df['tour_mode'] == 15)|(tm_commute_df['tour_mode'] == 16)|(tm_commute_df['tour_mode'] == 17)|(tm_commute_df['tour_mode'] == 18),'mode'] = 'transit'
-    tm_commute_df.loc[(tm_commute_df['tour_mode'] == 7),'mode'] = 'walk'
-    tm_commute_df.loc[(tm_commute_df['tour_mode'] == 8),'mode'] = 'bike'
+    ################################### trips by peak/off-peak, commute/noncommute, auto/transit ###################################
+    # key                                                         intermediate/final    metric_desc
+    # [commute|noncommute]_[auto|transit|active]_[peak|offpeak]   top_level             trips
+    # [commute|noncommute]_[auto|transit|active]_[peak|offpeak]   top_level             trips
+    trip_distance_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "TripDistance.csv")
+    tm_trips_df = pd.read_csv(trip_distance_file)
+    LOGGER.info("  Read {:,} rows from {}".format(len(tm_trips_df), trip_distance_file))
+    LOGGER.debug("tm_trips_df.head():\n{}".format(tm_trips_df.head()))
 
-    # pick out df of auto and transit trips
-    commute_auto_trips = tm_commute_df.copy().loc[(tm_commute_df['mode'] == 'sov')]
-    commute_transit_trips = tm_commute_df.copy().loc[(tm_commute_df['mode'] == 'transit')]
+    # simplify to auto versus transit versus active
+    tm_trips_df['agg_trip_mode'] = 'active'
+    tm_trips_df.loc[ tm_trips_df.trip_mode.isin(MODES_TRANSIT),      'agg_trip_mode' ] = 'transit'
+    tm_trips_df.loc[ tm_trips_df.trip_mode.isin(MODES_PRIVATE_AUTO), 'agg_trip_mode' ] = 'auto'
+    tm_trips_df.loc[ tm_trips_df.trip_mode.isin(MODES_TAXI_TNC),     'agg_trip_mode' ] = 'auto'
 
-    # calculate trips and percentages
-    auto_peak_trips = commute_auto_trips.copy().loc[(commute_auto_trips['timeCodeHwNum'] == 2)|(commute_auto_trips['timeCodeHwNum'] == 4),'freq'].sum()
-    auto_offpeak_trips = commute_auto_trips.copy().loc[(commute_auto_trips['timeCodeHwNum'] == 3),'freq'].sum()
-    transit_peak_trips = commute_transit_trips.copy().loc[(commute_transit_trips['timeCodeHwNum'] == 2)|(commute_transit_trips['timeCodeHwNum'] == 4),'freq'].sum()
-    transit_offpeak_trips = commute_transit_trips.copy().loc[(commute_transit_trips['timeCodeHwNum'] == 3),'freq'].sum()
-    total_auto_trips = auto_peak_trips + auto_offpeak_trips
-    total_transit_trips = transit_peak_trips + transit_offpeak_trips
-    peak_percent_of_total_auto_trips = (auto_peak_trips)/total_auto_trips
-    offpeak_percent_of_total_auto_trips = (auto_offpeak_trips)/total_auto_trips
-    peak_percent_of_total_transit_trips = (transit_peak_trips)/total_transit_trips
-    offpeak_percent_of_total_transit_trips = (transit_offpeak_trips)/total_transit_trips
-    # enter metrics into dict
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Auto Commute Trips', 'daily_auto_peak_trips', year] = auto_peak_trips
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Auto Commute Trips', 'daily_auto_offpeak_trips', year] = auto_offpeak_trips
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Auto Commute Trips', 'daily_auto_total_trips', year] = total_auto_trips
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Auto Commute Trips', 'peak_percent_of_total_auto_trips', year] = peak_percent_of_total_auto_trips
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Auto Commute Trips', 'offpeak_percent_of_total_auto_trips', year] = offpeak_percent_of_total_auto_trips
+    # simplify to commute versus noncommute
+    tm_trips_df['commute_non'] = 'noncommute'
+    tm_trips_df.loc[ tm_trips_df.tour_purpose.isin(PURPOSES_COMMUTE), 'commute_non' ] = 'commute'
 
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Transit Commute Trips', 'daily_transit_peak_trips', year] = transit_peak_trips
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Transit Commute Trips', 'daily_transit_offpeak_trips', year] = transit_offpeak_trips
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Transit Commute Trips', 'daily_transit_total_trips', year] = total_transit_trips
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Transit Commute Trips', 'peak_percent_of_total_transit_trips', year] = peak_percent_of_total_transit_trips
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Transit Commute Trips', 'offpeak_percent_of_total_transit_trips', year] = offpeak_percent_of_total_transit_trips
+    # simplify to peak versus nonpeak
+    tm_trips_df['peak_non'] = 'offpeak'
+    tm_trips_df.loc[ tm_trips_df.timeCode.isin(TIME_PERIODS_PEAK), 'peak_non' ] = 'peak'
 
-    # calculate freeway delay:
+    # roll it up
+    tm_trips_df = tm_trips_df.groupby(by=['agg_trip_mode', 'commute_non', 'peak_non']).agg({'freq':'sum'}).reset_index()
+    tm_trips_df.rename(columns={'freq':'trips'}, inplace=True)
+    LOGGER.debug('Aggregated tm_trips_df:\n{}'.format(tm_trips_df))
+
+    # metrics: total trips
+    metrics_trip_df = tm_trips_df.copy()
+    metrics_trip_df['key'] = metrics_trip_df['commute_non'] + "_" + metrics_trip_df['agg_trip_mode'] + "_" + metrics_trip_df['peak_non']
+    metrics_trip_df['intermediate/final'] = 'top_level'
+    metrics_trip_df['metric_desc'] = 'trips'
+    metrics_trip_df.rename(columns={'trips':'value'}, inplace=True)
+    metrics_trip_df.drop(columns=['commute_non','agg_trip_mode','peak_non'], inplace=True)
+    LOGGER.debug('metrics_trip_df:\n{}'.format(metrics_trip_df))
+    metrics_df = pd.concat([metrics_df, metrics_trip_df])
+
+    # key                  intermediate/final    metric_desc
+    # [peak|offpeak]       top_level             [auto|transit|active]_commute_peak-vs-offpeak_share
+    # [peak|offpeak]       top_level             [auto|transit|active]_noncommute_peak-vs-offpeak_share
+
+    # metrics: peak vs offpeak shares
+    # add column for peak_offpeak_trips = peak + nonpeak
+    metrics_peak_offpeak_share_df = pd.merge(
+        left  = tm_trips_df,
+        right = tm_trips_df.groupby(by=['agg_trip_mode','commute_non']).agg(
+                     peak_offpeak_trips = pd.NamedAgg(column='trips', aggfunc='sum')).reset_index(),
+        how='left'
+    )
+    metrics_peak_offpeak_share_df.rename(columns={'peak_non':'key'}, inplace=True)
+    metrics_peak_offpeak_share_df['intermediate/final'] = 'top_level'
+    metrics_peak_offpeak_share_df['metric_desc'] = metrics_peak_offpeak_share_df['agg_trip_mode'] + \
+                                                   "_" + metrics_peak_offpeak_share_df['commute_non'] + "_peak-vs-offpeak_share"
+    metrics_peak_offpeak_share_df['value'] = metrics_peak_offpeak_share_df['trips'] / metrics_peak_offpeak_share_df['peak_offpeak_trips']
+    metrics_peak_offpeak_share_df.drop(columns=['agg_trip_mode','commute_non','trips','peak_offpeak_trips'], inplace=True)
+    LOGGER.debug("metrics_peak_offpeak_share_df:\n{}".format(metrics_peak_offpeak_share_df))
+    metrics_df = pd.concat([metrics_df, metrics_peak_offpeak_share_df])
+
+    # key                    intermediate/final    metric_desc
+    # [auto|transit_active]  top_level             [peak|offpeak]_[commute|noncommute]_mode_share
+    metrics_modeshare_df = pd.merge(
+        left  = tm_trips_df,
+        right = tm_trips_df.groupby(by=['commute_non','peak_non']).agg(
+                     allmode_trips = pd.NamedAgg(column='trips', aggfunc='sum')).reset_index(),
+        how   ='left'
+    )
+    # LOGGER.debug("metrics_modeshare_df:\n{}".format(metrics_modeshare_df))
+    metrics_modeshare_df.rename(columns={'agg_trip_mode':'key'}, inplace=True)
+    metrics_modeshare_df['intermediate/final'] = 'top_level'
+    metrics_modeshare_df['metric_desc'] = metrics_modeshare_df['peak_non'] + \
+                                          "_" + metrics_modeshare_df['commute_non'] + "_mode_share"
+    metrics_modeshare_df['value'] = metrics_modeshare_df['trips'] / metrics_modeshare_df['allmode_trips']
+    metrics_modeshare_df.sort_values(by=['metric_desc'], inplace=True)
+    metrics_modeshare_df.drop(columns=['commute_non','peak_non','trips','allmode_trips'], inplace=True)
+    LOGGER.debug("metrics_modeshare_df:\n{}".format(metrics_modeshare_df))
+    metrics_df = pd.concat([metrics_df, metrics_modeshare_df])
+
+    
+    # ################################### freeway delay ###################################
     # MTC calculates two measures of delay 
     # - congested delay, or delay that occurs when speeds are below 35 miles per hour, 
     # and total delay, or delay that occurs when speeds are below the posted speed limit.
@@ -377,8 +445,14 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     # use as a check for calculated value above. should be in the same ballpark. calculate ratio and use for links?
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily revenue (includes express lane, 2000$)', year] = toll_revenues_overall
 
-    metrics_df = metrics_dict_to_df(metrics_dict)
-    LOGGER.debug("metrics_df from calculate_top_level_metrics:\n{}".format(metrics_df))
+    # fill in generic dataframe columns
+    metrics_df['metric_id'] = metric_id
+    metrics_df['modelrun_id'] = tm_run_id
+    metrics_df['year'] = tm_run_id[:4]
+    # combine dict and dataframe
+    metrics_df = pd.concat([metrics_df, metrics_dict_to_df(metrics_dict)])
+    metrics_df = metrics_df[METRICS_COLUMNS] # reorder columns
+    # LOGGER.debug("metrics_df from calculate_top_level_metrics:\n{}".format(metrics_df))
     return metrics_df
 
 def calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year, metric_id, metrics_dict):
@@ -1870,8 +1944,6 @@ if __name__ == "__main__":
     tm_vmt_metrics_df_base = pd.read_csv(tm_run_location_base + '/OUTPUT/metrics/vmt_vht_metrics.csv', sep=",", index_col=[0,1])
     # load transit_times_by_mode_income.csv
     tm_transit_times_df_base = pd.read_csv(tm_run_location_base + '/OUTPUT/metrics/transit_times_by_mode_income.csv', sep=",", index_col=[0,1])
-    # load CommuteByIncomeHousehold.csv
-    tm_commute_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/core_summaries/CommuteByIncomeByTPHousehold.csv')
     # load VehicleMilesTraveled_households.csv
     vmt_hh_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/core_summaries/VehicleMilesTraveled_households.csv')
 
@@ -1942,8 +2014,6 @@ if __name__ == "__main__":
         tm_vmt_metrics_df = pd.read_csv(tm_run_location + '/OUTPUT/metrics/vmt_vht_metrics.csv', sep=",", index_col=[0,1])
         # load transit_times_by_mode_income.csv
         tm_transit_times_df = pd.read_csv(tm_run_location + '/OUTPUT/metrics/transit_times_by_mode_income.csv', sep=",", index_col=[0,1])
-        # load CommuteByIncomeHousehold.csv
-        tm_commute_df = pd.read_csv(tm_run_location+'/OUTPUT/core_summaries/CommuteByIncomeByTPHousehold.csv')
         # load VehicleMilesTraveled_households.csv
         vmt_hh_df = pd.read_csv(tm_run_location+'/OUTPUT/core_summaries/VehicleMilesTraveled_households.csv')
 
@@ -2004,10 +2074,10 @@ if __name__ == "__main__":
         calculate_Safe1_fatalities_freewayss_nonfreeways(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_base, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
         # run function to calculate top level metrics
-        toplevel_metrics_df = calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df)  # calculate for base run too
+        toplevel_metrics_df = calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df)  # calculate for base run too
         metrics_df = pd.concat([metrics_df, toplevel_metrics_df])
 
-        toplevel_metrics_df = calculate_top_level_metrics(BASE_SCENARIO_RUN_ID, year, tm_vmt_metrics_df_base, tm_auto_times_df_base, tm_transit_times_df_base, tm_commute_df_base, tm_loaded_network_df_base, vmt_hh_df_base,tm_scen_metrics_df_base)
+        toplevel_metrics_df = calculate_top_level_metrics(BASE_SCENARIO_RUN_ID, year, tm_vmt_metrics_df_base, tm_auto_times_df_base, tm_transit_times_df_base, tm_loaded_network_df_base, vmt_hh_df_base,tm_scen_metrics_df_base)
         metrics_df = pd.concat([metrics_df, toplevel_metrics_df])
 
         # _________output table__________
