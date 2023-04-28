@@ -1971,7 +1971,7 @@ if __name__ == "__main__":
 
         # -----------run base for comparisons---------------
 
-        calculate_Safe2_change_in_vmt(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_no_project,tm_auto_times_df_base,  metrics_dict)
+        calculate_Safe2_change_in_vmt(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_base,tm_auto_times_df_base,  metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S2 Done")
 
         # -----------run comparisons---------------
@@ -1990,11 +1990,11 @@ if __name__ == "__main__":
 
         calculate_Reliable2_ratio_peak_nonpeak(BASE_SCENARIO_RUN_ID, year, metrics_dict) #add tm_metric_id to all?
         # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
-        calculate_Safe1_fatalities_freewayss_nonfreeways(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_no_project, metrics_dict)
+        calculate_Safe1_fatalities_freewayss_nonfreeways(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_base, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
         # run function to calculate top level metrics
         calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_commute_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df, metrics_dict)  # calculate for base run too
-        calculate_top_level_metrics(BASE_SCENARIO_RUN_ID, year, tm_vmt_metrics_df_base, tm_auto_times_df_base, tm_transit_times_df_base, tm_commute_df_base, tm_loaded_network_df_no_project, vmt_hh_df_base,tm_scen_metrics_df_base, metrics_dict)
+        calculate_top_level_metrics(BASE_SCENARIO_RUN_ID, year, tm_vmt_metrics_df_base, tm_auto_times_df_base, tm_transit_times_df_base, tm_commute_df_base, tm_loaded_network_df_base, vmt_hh_df_base,tm_scen_metrics_df_base, metrics_dict)
   
         # _________output table__________
         # TODO: deprecate when all metrics just come through via metrics_df
