@@ -435,7 +435,7 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     toll_revenues_overall = 0
     if 'Path3' in tm_run_id:
         # 'Cordon Tolls' was the old column; 'Cordon Tolls with discount' is newer
-        toll_revenue_column = 'Cordon Tolls' if 'Cordon Tolls' in auto_times_summed.columns else 'Cordon Tolls with discount'
+        toll_revenue_column = 'Cordon Tolls' if 'Cordon Tolls' in auto_times_summed.columns else 'Cordon tolls with discount'
     else:
         # 'Value Tolls' was the old column; 'Value Tolls with discount' is newer
         toll_revenue_column = 'Value Tolls' if 'Value Tolls' in auto_times_summed.columns else 'Value Tolls with discount'
@@ -1934,7 +1934,7 @@ if __name__ == "__main__":
     tm_loaded_network_df_base = tm_loaded_network_df_base.copy().merge(network_links_dbf_base.copy(), on='a_b', how='left')
     tm_loaded_network_df_base = tm_loaded_network_df_base.merge(minor_links_df, on='a_b', how='left')
 
-# ______load no project network to use for speed comparisons in vmt corrections______
+    # ______load no project network to use for speed comparisons in vmt corrections______
     tm_run_location_no_project = os.path.join(NGFS_SCENARIOS, NO_PROJECT_SCENARIO_RUN_ID)
     tm_loaded_network_df_no_project = pd.read_csv(tm_run_location_no_project+'/OUTPUT/avgload5period.csv')
     tm_loaded_network_df_no_project = tm_loaded_network_df_no_project.rename(columns=lambda x: x.strip())
