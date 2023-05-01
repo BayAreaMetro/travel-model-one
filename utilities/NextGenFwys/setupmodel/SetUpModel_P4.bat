@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP10_Path4_01
+set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP10_Path4_02
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 :: The NGF NoProject scenario includes some Blueprint strategies and excludes some (e.g. Regional Transit Fares and Vision Zero).
@@ -18,7 +18,7 @@ set NGFNoProject=No
 set GITHUB_DIR=X:\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_P4_NoNewPricing_02\NGF_P4_NoNewPricing_network_2035
+set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_P4_NoNewPricing_03\NGF_P4_NoNewPricing_network_2035
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 set INPUT_POPLU=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\PopSyn_n_LandUse\2035_cordon
