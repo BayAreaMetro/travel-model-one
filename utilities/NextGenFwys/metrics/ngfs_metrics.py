@@ -876,6 +876,17 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         metrics_dict[key, 'Ratio', 'inc2', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc2
         metrics_dict[key, 'Ratio', 'inc3', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc3
         
+        # add in metric as $ per minute saved
+        metrics_dict[key, 'Ratio', 'inc1', tm_run_id, metric_id,'final','Household','Ratio of toll$ (2023$) to minutes saved',year] = DA_incremental_toll_costs_inc1_minor_grouping / time_savings_minutes
+        metrics_dict[key, 'Ratio', 'inc2', tm_run_id, metric_id,'final','Household','Ratio of toll$ (2023$) to minutes saved',year] = DA_incremental_toll_costs_inc2_minor_grouping / time_savings_minutes
+        metrics_dict[key, 'Ratio', 'inc3', tm_run_id, metric_id,'final','Household','Ratio of toll$ (2023$) to minutes saved',year] = DA_incremental_toll_costs_inc3_minor_grouping / time_savings_minutes
+        metrics_dict[key, 'Ratio', 'inc4', tm_run_id, metric_id,'final','Household','Ratio of toll$ (2023$) to minutes saved',year] = DA_incremental_toll_costs_inc4_minor_grouping / time_savings_minutes
+
+        metrics_dict[key, 'Ratio', 'inc1', tm_run_id, metric_id,'final','Commercial','Ratio of toll$ (2023$) to minutes saved',year] = LRG_incremental_toll_costs_inc1_minor_grouping / time_savings_minutes
+        metrics_dict[key, 'Ratio', 'inc2', tm_run_id, metric_id,'final','Commercial','Ratio of toll$ (2023$) to minutes saved',year] = LRG_incremental_toll_costs_inc2_minor_grouping / time_savings_minutes
+        metrics_dict[key, 'Ratio', 'inc3', tm_run_id, metric_id,'final','Commercial','Ratio of toll$ (2023$) to minutes saved',year] = LRG_incremental_toll_costs_inc3_minor_grouping / time_savings_minutes
+
+
         metrics_dict[key, 'Ratio', grouping3, tm_run_id, metric_id,'final','By Corridor','commercial vehicle',year] = comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1
 
         # ----sum up the ratio of tolls and time savings across the corridors for weighted average
