@@ -48,6 +48,10 @@ LOGGER                  = None # will initialize in main
 NGFS_OD_CITIES_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_with_cities.csv")
 NGFS_OD_CITIES_DF      = pd.read_csv(NGFS_OD_CITIES_FILE)
 
+# EPC lookup file - indicates whether a TAZ is designated as an EPC in PBA2050
+NGFS_EPC_TAZ_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_epc_crosswalk.csv")
+NGFS_EPC_TAZ_DF      = pd.read_csv(NGFS_EPC_TAZ_FILE)
+
 # tollclass designations
 TOLLCLASS_LOOKUP_DF     = pd.read_excel(NGFS_TOLLCLASS_FILE, sheet_name='Inputs_for_tollcalib', usecols=['project','facility_name','tollclass','s2toll_mandatory','THRESHOLD_SPEED','MAX_TOLL','MIN_TOLL','Grouping major','Grouping minor'])
 
@@ -932,7 +936,74 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', grouping3, tm_run_id, metric_id,'debug','High Occupancy Vehicle','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_hov_time_savings_to_toll_costs/n
 
 
+def return_E1_DF(tm_run_id, od_df, All_or_EPC):
+    # change orig_CITY to 'All TAZs
 
+    od_df['orig_CITY'] = All_or_EPC + ' TAZs'
+
+    # we're going to aggregate trip modes; auto includes TAXI and TNC    
+    od_df['agg_trip_mode'] = "N/A"
+    od_df.loc[ od_df.trip_mode.isin(MODES_TRANSIT),      'agg_trip_mode' ] = "transit"
+    od_df.loc[ od_df.trip_mode.isin(MODES_PRIVATE_AUTO), 'agg_trip_mode' ] = "auto"
+    od_df.loc[ od_df.trip_mode.isin(MODES_TAXI_TNC),     'agg_trip_mode' ] = "auto"
+
+    # to get weighted average, transform to total travel time
+    od_df['tot_travel_time_in_mins'] = \
+        od_df['avg_travel_time_in_mins']*od_df['num_trips']
+
+    # pivot down to orig_CITY x dest_CITY x agg_trip_mode
+    od_df = pd.pivot_table(od_df, 
+                                             index=['orig_CITY','dest_CITY','agg_trip_mode'],
+                                             values=['num_trips','tot_travel_time_in_mins'],
+                                             aggfunc={'num_trips':numpy.sum, 'tot_travel_time_in_mins':numpy.sum})
+    od_df.reset_index(inplace=True)
+    od_df['avg_travel_time_in_mins'] = \
+        od_df['tot_travel_time_in_mins']/od_df['num_trips']
+    # LOGGER.debug(od_df)
+
+    # pivot again to move agg_mode to column
+    # columns will now be: orig_CITY_, dest_CITY_, avg_travel_time_in_mins_auto, avg_travel_time_in_mins_transit, num_trips_auto, num_trips_transit
+    od_df = pd.pivot_table(od_df, 
+                                             index=['orig_CITY','dest_CITY'],
+                                             columns=['agg_trip_mode'],
+                                             values=['num_trips','avg_travel_time_in_mins'])
+    od_df.reset_index(inplace=True)
+    # flatten resulting MultiIndex column names
+    # rename from ('orig_CITY',''), ('dest_CITY',''), ('avg_travel_time_in_mins','auto'), ('avg_travel_time_in_mins', 'transit'), ...
+    # to orig_CITY, dest_CITY, avg_travel_time_in_mins_auto, avg_travel_time_in_mins_transit, ...
+    od_df.columns = ['_'.join(col) if len(col[1]) > 0 else col[0] for col in od_df.columns.values]
+
+    # add ratio
+    od_df['ratio_travel_time_transit_auto'] = \
+        od_df['avg_travel_time_in_mins_transit']/od_df['avg_travel_time_in_mins_auto']
+    
+    # note that this does not include NaNs in either the numerator or the denominator, which I think is correct
+    # TODO: in the previous implementation, NaN is converted to zero, which artificially lowers the average.
+    # for example, if most ODs had NO transit paths, then the average ratio would be very low, making it seem like transit travel times
+    # compare favorably to auto, which they do not
+    average_ratio = od_df['ratio_travel_time_transit_auto'].mean()
+    LOGGER.info("  => average_ratio={}".format(average_ratio))
+    # LOGGER.debug(od_df)
+
+    # convert to metrics dataframe by pivoting one last time to just columns orig_CITY, dest_CITY
+    od_df = pd.melt(od_df, 
+                                      id_vars=['orig_CITY','dest_CITY'], 
+                                      var_name='metric_desc',
+                                      value_name='value')
+    # travel times and num trips are extra
+    od_df['intermediate/final']   = 'extra'
+    # ratios are intermediate
+    od_df.loc[ od_df.metric_desc.str.startswith('ratio'), 'intermediate/final'] = 'intermediate'
+
+    # key is orig_CITY, dest_CITY
+    od_df['key']  = od_df['orig_CITY'] + "_" + od_df['dest_CITY']
+    od_df.drop(columns=['orig_CITY','dest_CITY'], inplace=True)
+
+    od_df['modelrun_id'] = tm_run_id
+    od_df['year'] = tm_run_id[:4]
+    od_df['metric_id'] = 'Efficient 1'
+    # LOGGER.info(od_df)
+    return od_df
 
 def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     """ Calculates Efficient1: Ratio of travel time by transit over that of auto between representative origin-destination pairs
@@ -997,6 +1068,18 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     trips_od_travel_time_df.rename(columns={"CITY":"dest_CITY"}, inplace=True)
     trips_od_travel_time_df.drop(columns=["taz1454"], inplace=True)
     LOGGER.info("  Joined with {} for origin, destination: {:,} rows".format(NGFS_OD_CITIES_FILE, len(trips_od_travel_time_df)))
+
+    # filter a copy to only those ending in cities of interest
+    trips_ending_in_city_dt_od_travel_time_df = trips_od_travel_time_df.copy().loc[(trips_od_travel_time_df['dest_CITY'] == 'SAN FRANCISCO')|
+                                                                                    (trips_od_travel_time_df['dest_CITY'] == 'OAKLAND')|
+                                                                                    (trips_od_travel_time_df['dest_CITY'] == 'SAN JOSE')]
+    # join to epc lookup table
+    trips_ending_in_city_dt_od_travel_time_df = pd.merge(left=trips_ending_in_city_dt_od_travel_time_df,
+                                                        right=NGFS_EPC_TAZ_DF,
+                                                        left_on="orig_taz",
+                                                        right_on="TAZ1454")
+    # filter a copy to only those staring in EPCs
+    trips_starting_EPC_ending_in_city_dt_od_travel_time_df = trips_ending_in_city_dt_od_travel_time_df.copy().loc[(trips_ending_in_city_dt_od_travel_time_df['taz_epc'] == 1)]
 
     # filter again to only those of interest
     trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
@@ -1079,8 +1162,12 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
         'value':                average_ratio
      }])
     # LOGGER.debug(final_row)
+
+    # all TAZ rows
+    all_taz_rows = return_E1_DF(tm_run_id, trips_ending_in_city_dt_od_travel_time_df, 'All')
+    epc_taz_rows = return_E1_DF(tm_run_id, trips_starting_EPC_ending_in_city_dt_od_travel_time_df, 'EPC')
      
-    trips_od_travel_time_df = pd.concat([trips_od_travel_time_df, final_row])
+    trips_od_travel_time_df = pd.concat([trips_od_travel_time_df, final_row, all_taz_rows, epc_taz_rows])
     LOGGER.debug("{} Result: \n{}".format(METRIC_ID, trips_od_travel_time_df))
     return trips_od_travel_time_df
 
