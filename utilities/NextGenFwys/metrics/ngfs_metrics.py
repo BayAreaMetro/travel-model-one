@@ -91,14 +91,7 @@ INFLATION_00_18 = 285.55 / 180.20
 INFLATION_18_20 = 300.08 / 285.55
 REVENUE_DAYS_PER_YEAR = 260
 
-# Annual Auto ownership cost in 2018$
-# Source: Consumer Expenditure Survey 2018 (see Box\Horizon and Plan Bay Area 2050\Equity and Performance\7_Analysis\Metrics\Affordable\auto_ownership_costs.xlsx)
-# (includes depreciation, insurance, finance charges, license fees)
-AUTO_OWNERSHIP_COST_2018D      = 5945
-AUTO_OWNERSHIP_COST_2018D_INC1 = 2585
-AUTO_OWNERSHIP_COST_2018D_INC2 = 4224
-
-# Average Annual Costs of Driving a Car
+# Average Annual Costs of Driving a Car in 2020$
 # Source: AAA Driving Costs 2020; mid-size sedan
 # \Box\NextGen Freeways Study\04 Engagement\02_Stakeholder Engagement\Advisory Group\Meeting 02 - Apr 2022 Existing Conditions\NGFS_Advisory Group Meeting 2_Apr2022.pptx
 AUTO_OWNERSHIP_COST_2020D           = 3400
