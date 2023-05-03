@@ -374,6 +374,8 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     )
     # LOGGER.debug("metrics_modeshare_df:\n{}".format(metrics_modeshare_df))
     metrics_modeshare_df.rename(columns={'agg_trip_mode':'key'}, inplace=True)
+    metrics_modeshare_df['grouping1'] = metrics_modeshare_df['peak_non']
+    metrics_modeshare_df['grouping2'] = metrics_modeshare_df['commute_non']
     metrics_modeshare_df['intermediate/final'] = 'top_level'
     metrics_modeshare_df['metric_desc'] = metrics_modeshare_df['peak_non'] + \
                                           "_" + metrics_modeshare_df['commute_non'] + "_mode_share"
