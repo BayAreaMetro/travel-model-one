@@ -98,6 +98,16 @@ AUTO_OWNERSHIP_COST_2018D      = 5945
 AUTO_OWNERSHIP_COST_2018D_INC1 = 2585
 AUTO_OWNERSHIP_COST_2018D_INC2 = 4224
 
+# Average Annual Costs of Driving a Car
+# Source: AAA Driving Costs 2020; mid-size sedan
+# \Box\NextGen Freeways Study\04 Engagement\02_Stakeholder Engagement\Advisory Group\Meeting 02 - Apr 2022 Existing Conditions\NGFS_Advisory Group Meeting 2_Apr2022.pptx
+AUTO_OWNERSHIP_COST_2020D           = 3400
+AUTO_MAINTENANCE_COST_2020D         = 1430 # use a model output instead
+AUTO_INSURANCE_COST_2020D           = 1250
+AUTO_FINANCE_COST_2020D             = 680
+AUTO_REGISTRATION_TAXES_COST_2020D  = 730
+AUTO_GAS_COST_2020D                 = 1250 # use a model output instead
+
 # TODO: replace use of these constants with Income category specific VOTs
 # sourced from USDOT Benefit-Cost Analysis Guidance  in 2020 dollars
 # chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.transportation.gov/sites/dot.gov/files/2022-03/Benefit%20Cost%20Analysis%20Guidance%202022%20Update%20%28Final%29.pdf
@@ -141,7 +151,8 @@ Q3_COMMERCIAL_VOT_2023D = Q3_MEAN_HOURLY_WAGE_2023D * Q3_COMMERCIAL_VOT_PCT_HOUR
 BASE_YEAR       = "2015"
 FORECAST_YEAR   = "2035"
 # assumptions for fatalities
-# TODO: Add source, add units. What does the _15 refer to?  What does OBS refer to?
+# constants below are observed values for year 2015 (fatalities/year)
+# copied from Box\Horizon and Plan Bay Area 2050\Equity and Performance\7_Analysis\Metrics\Metrics Development\Healthy\Fatalities Injuries\VZ_safety_calc_correction_v2.R
 N_DAYS_PER_YEAR = 300 # used in Affordable1
 OBS_N_MOTORIST_FATALITIES_15 = 301
 OBS_N_PED_FATALITIES_15 = 127
@@ -539,16 +550,30 @@ def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
     travel_cost_df['total_transit_op_cost_annual_2023d'] = travel_cost_df['total_transit_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
 
     # add auto ownership costs (by income)
-    travel_cost_df.loc['incQ1', 'total_auto_own_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*AUTO_OWNERSHIP_COST_2018D_INC1 / INFLATION_00_18 * INFLATION_00_23
-    travel_cost_df.loc['incQ2', 'total_auto_own_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*AUTO_OWNERSHIP_COST_2018D_INC2 / INFLATION_00_18 * INFLATION_00_23
-    travel_cost_df.loc['incQ3', 'total_auto_own_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*AUTO_OWNERSHIP_COST_2018D      / INFLATION_00_18 * INFLATION_00_23
-    travel_cost_df.loc['incQ4', 'total_auto_own_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*AUTO_OWNERSHIP_COST_2018D      / INFLATION_00_18 * INFLATION_00_23
+    travel_cost_df.loc['incQ1', 'total_auto_own_finance_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*(AUTO_OWNERSHIP_COST_2020D + AUTO_FINANCE_COST_2020D) / INFLATION_00_20 * INFLATION_00_23
+    travel_cost_df.loc['incQ2', 'total_auto_own_finance_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*(AUTO_OWNERSHIP_COST_2020D + AUTO_FINANCE_COST_2020D) / INFLATION_00_20 * INFLATION_00_23
+    travel_cost_df.loc['incQ3', 'total_auto_own_finance_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*(AUTO_OWNERSHIP_COST_2020D + AUTO_FINANCE_COST_2020D) / INFLATION_00_20 * INFLATION_00_23
+    travel_cost_df.loc['incQ4', 'total_auto_own_finance_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*(AUTO_OWNERSHIP_COST_2020D + AUTO_FINANCE_COST_2020D) / INFLATION_00_20 * INFLATION_00_23
+
+    # add auto insurance costs (by income)
+    travel_cost_df.loc['incQ1', 'total_auto_insurance_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*(AUTO_INSURANCE_COST_2020D) / INFLATION_00_20 * INFLATION_00_23
+    travel_cost_df.loc['incQ2', 'total_auto_insurance_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*(AUTO_INSURANCE_COST_2020D) / INFLATION_00_20 * INFLATION_00_23
+    travel_cost_df.loc['incQ3', 'total_auto_insurance_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*(AUTO_INSURANCE_COST_2020D) / INFLATION_00_20 * INFLATION_00_23
+    travel_cost_df.loc['incQ4', 'total_auto_insurance_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*(AUTO_INSURANCE_COST_2020D) / INFLATION_00_20 * INFLATION_00_23
+
+    # add auto registration/taxes costs (by income)
+    travel_cost_df.loc['incQ1', 'total_auto_registration_taxes_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*(AUTO_REGISTRATION_TAXES_COST_2020D) / INFLATION_00_20 * INFLATION_00_23
+    travel_cost_df.loc['incQ2', 'total_auto_registration_taxes_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*(AUTO_REGISTRATION_TAXES_COST_2020D) / INFLATION_00_20 * INFLATION_00_23
+    travel_cost_df.loc['incQ3', 'total_auto_registration_taxes_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*(AUTO_REGISTRATION_TAXES_COST_2020D) / INFLATION_00_20 * INFLATION_00_23
+    travel_cost_df.loc['incQ4', 'total_auto_registration_taxes_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*(AUTO_REGISTRATION_TAXES_COST_2020D) / INFLATION_00_20 * INFLATION_00_23
 
     # all transportation costs
-    travel_cost_df['total_transportation_cost_annual_2023d'] = \
-        travel_cost_df['total_auto_op_cost_annual_2023d']    + \
-        travel_cost_df['total_transit_op_cost_annual_2023d'] + \
-        travel_cost_df['total_auto_own_cost_annual_2023d']
+    travel_cost_df['total_transportation_cost_annual_2023d']       = \
+        travel_cost_df['total_auto_op_cost_annual_2023d']          + \
+        travel_cost_df['total_transit_op_cost_annual_2023d']       + \
+        travel_cost_df['total_auto_own_finance_cost_annual_2023d'] + \
+        travel_cost_df['total_auto_insurance_cost_annual_2023d']   + \
+        travel_cost_df['total_auto_registration_taxes_cost_annual_2023d']
 
     # and finally annual household income from 2000 dollars to 2023 dollars
     travel_cost_df['total_hhld_income_annual_2023d']    = travel_cost_df['total_hhld_income']*INFLATION_00_23
@@ -569,16 +594,21 @@ def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
     LOGGER.debug("   travel_cost_df:\n{}".format(travel_cost_df))
 
     # calculate average per household
-    travel_cost_df['avg_auto_op_cost_annual_2023d_per_hhld']        = travel_cost_df['total_auto_op_cost_annual_2023d']        /travel_cost_df['num_hhlds']
-    travel_cost_df['avg_transit_op_cost_annual_2023d_per_hhld']     = travel_cost_df['total_transit_op_cost_annual_2023d']     /travel_cost_df['num_hhlds']
-    travel_cost_df['avg_auto_own_cost_annual_2023d_per_hhld']       = travel_cost_df['total_auto_own_cost_annual_2023d']       /travel_cost_df['num_hhlds']
-    travel_cost_df['avg_transportation_cost_annual_2023d_per_hhld'] = travel_cost_df['total_transportation_cost_annual_2023d'] /travel_cost_df['num_hhlds']
-    travel_cost_df['avg_hhld_income_annual_2023d_per_hhld']         = travel_cost_df['total_hhld_income_annual_2023d']         /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_num_autos_per_hhld']                                 = travel_cost_df['total_hhld_autos']                                   /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_auto_op_cost_annual_2023d_per_hhld']                 = travel_cost_df['total_auto_op_cost_annual_2023d']                    /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_transit_op_cost_annual_2023d_per_hhld']              = travel_cost_df['total_transit_op_cost_annual_2023d']                 /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_auto_own_finance_cost_annual_2023d_per_hhld']        = travel_cost_df['total_auto_own_finance_cost_annual_2023d']           /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_auto_insurance_cost_annual_2023d_per_hhld']          = travel_cost_df['total_auto_insurance_cost_annual_2023d']             /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_auto_registration_taxes_cost_annual_2023d_per_hhld'] = travel_cost_df['total_auto_registration_taxes_cost_annual_2023d']    /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_transportation_cost_annual_2023d_per_hhld']          = travel_cost_df['total_transportation_cost_annual_2023d']             /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_hhld_income_annual_2023d_per_hhld']                  = travel_cost_df['total_hhld_income_annual_2023d']                     /travel_cost_df['num_hhlds']
     # calculate pct of income
-    travel_cost_df['auto_op_cost_pct_of_income']        = travel_cost_df['total_auto_op_cost_annual_2023d']        /travel_cost_df['total_hhld_income_annual_2023d']
-    travel_cost_df['transit_op_cost_pct_of_income']     = travel_cost_df['total_transit_op_cost_annual_2023d']     /travel_cost_df['total_hhld_income_annual_2023d']
-    travel_cost_df['auto_own_cost_pct_of_income']       = travel_cost_df['total_auto_own_cost_annual_2023d']       /travel_cost_df['total_hhld_income_annual_2023d']
-    travel_cost_df['transportation_cost_pct_of_income'] = travel_cost_df['total_transportation_cost_annual_2023d'] /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['auto_op_cost_pct_of_income']                 = travel_cost_df['total_auto_op_cost_annual_2023d']                 /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['transit_op_cost_pct_of_income']              = travel_cost_df['total_transit_op_cost_annual_2023d']              /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['auto_own_finance_cost_pct_of_income']        = travel_cost_df['total_auto_own_finance_cost_annual_2023d']        /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['auto_insurance_cost_pct_of_income']          = travel_cost_df['total_auto_insurance_cost_annual_2023d']          /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['auto_registration_taxes_cost_pct_of_income'] = travel_cost_df['total_auto_registration_taxes_cost_annual_2023d'] /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['transportation_cost_pct_of_income']          = travel_cost_df['total_transportation_cost_annual_2023d']          /travel_cost_df['total_hhld_income_annual_2023d']
 
     # package for returning
     # create key
@@ -596,7 +626,9 @@ def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
         'total_hhld_income',
         'total_auto_op_cost_annual_2023d',
         'total_transit_op_cost_annual_2023d',
-        'total_auto_own_cost_annual_2023d',
+        'total_auto_own_finance_cost_annual_2023d',
+        'total_auto_insurance_cost_annual_2023d',
+        'total_auto_registration_taxes_cost_annual_2023d',
         'total_transportation_cost_annual_2023d',
         'total_hhld_income_annual_2023d'], 
         inplace=True)
@@ -612,6 +644,19 @@ def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
     metrics_df['modelrun_id'] = tm_run_id
     metrics_df['year'] = tm_run_id[:4]
     metrics_df['metric_id'] = METRIC_ID
+    # add grouping for Tableau view
+    metrics_df.loc[ metrics_df['metric_desc'] == 'num_hhlds', 'grouping1'] = 'Households'
+    metrics_df.loc[ metrics_df['metric_desc'] == 'avg_hhld_income_annual_2023d_per_hhld', 'grouping1'] = 'Households'
+    metrics_df.loc[ metrics_df['metric_desc'] == 'avg_num_autos_per_hhld', 'grouping1'] = 'Households'
+    metrics_df.loc[ metrics_df['metric_desc'] == 'avg_auto_own_finance_cost_annual_2023d_per_hhld', 'grouping1'] = 'Fixed Costs'
+    metrics_df.loc[ metrics_df['metric_desc'] == 'avg_auto_insurance_cost_annual_2023d_per_hhld', 'grouping1'] = 'Fixed Costs'
+    metrics_df.loc[ metrics_df['metric_desc'] == 'avg_auto_registration_taxes_cost_annual_2023d_per_hhld', 'grouping1'] = 'Fixed Costs'
+    metrics_df.loc[ metrics_df['metric_desc'] == 'avg_auto_op_cost_annual_2023d_per_hhld', 'grouping1'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'] == 'avg_transit_op_cost_annual_2023d_per_hhld', 'grouping1'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'] == 'avg_transportation_cost_annual_2023d_per_hhld', 'grouping1'] = 'Total Costs'
+
+
+
     LOGGER.debug("  returning:\n{}".format(metrics_df))
 
     return metrics_df
@@ -1484,7 +1529,7 @@ def calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df
     # calculate travel times on each cprridor for both runs
     this_run_metric = calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, year, tm_loaded_network_df, metrics_dict)
     base_run_metric = calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id_base, year, tm_loaded_network_df_base, metrics_dict)
-    # find the change in thravel time for each corridor
+    # find the change in travel time for each corridor
     calculate_change_between_run_and_base(tm_run_id, tm_run_id_base, year, 'Reliable 1', metrics_dict)
 
     change_in_travel_time_weighted = this_run_metric[1] - base_run_metric[1]
