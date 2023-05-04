@@ -2194,34 +2194,8 @@ if __name__ == "__main__":
         calculate_Safe2_change_in_vmt(tm_run_id, year, tm_loaded_network_df,tm_auto_times_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S2 Done")
 
-        # -----------run base for comparisons---------------
-
-        calculate_Safe2_change_in_vmt(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_base,tm_auto_times_df_base,  metrics_dict)
-        # LOGGER.info("@@@@@@@@@@@@@ S2 Done")
-
-        # -----------run comparisons---------------
-        calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year, 'Safe 2', metrics_dict)
-
-        # -----------base runs--------------------
-        affordable1_metrics_df = calculate_Affordable1_transportation_costs(BASE_SCENARIO_RUN_ID)
-        metrics_df = pd.concat([metrics_df, affordable1_metrics_df])
-
-        # LOGGER.info("@@@@@@@@@@@@@ A1 Done")
-        efficient1_metrics_df = calculate_Efficient1_ratio_travel_time(BASE_SCENARIO_RUN_ID)
-        metrics_df = pd.concat([metrics_df, efficient1_metrics_df])
-        # LOGGER.info("@@@@@@@@@@@@@ E1 Done")
-        efficient2_metrics_df = calculate_Efficient2_commute_mode_share(BASE_SCENARIO_RUN_ID)
-        metrics_df = pd.concat([metrics_df, efficient2_metrics_df])
-
-        calculate_Reliable2_ratio_peak_nonpeak(BASE_SCENARIO_RUN_ID, year, metrics_dict) #add tm_metric_id to all?
-        # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
-        calculate_Safe1_fatalities_freewayss_nonfreeways(BASE_SCENARIO_RUN_ID, year, tm_loaded_network_df_base, metrics_dict)
-        # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
         # run function to calculate top level metrics
         toplevel_metrics_df = calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df)  # calculate for base run too
-        metrics_df = pd.concat([metrics_df, toplevel_metrics_df])
-
-        toplevel_metrics_df = calculate_top_level_metrics(BASE_SCENARIO_RUN_ID, year, tm_vmt_metrics_df_base, tm_auto_times_df_base, tm_transit_times_df_base, tm_loaded_network_df_base, vmt_hh_df_base,tm_scen_metrics_df_base)
         metrics_df = pd.concat([metrics_df, toplevel_metrics_df])
 
         # _________output table__________
