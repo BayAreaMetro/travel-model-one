@@ -270,7 +270,7 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
         metrics_dict['Income Level', 'Auto', grouping3, tm_run_id, metric_id,'top_level','VMT', 'inc%d' % inc_level, year] = auto_times_summed.loc['inc%d' % inc_level, 'Vehicle Miles']
         # total auto trips
         auto_trips_overall += auto_times_summed.loc['inc%d' % inc_level, 'Daily Person Trips']
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Trips', 'Daily_total_auto_trips_overall', year] = auto_trips_overall
+    metrics_dict[grouping1, 'Auto', grouping3, tm_run_id, metric_id,'top_level','Trips', 'Daily_total_auto_trips_overall', year] = auto_trips_overall
     # calculate vmt and trip breakdown to understand what's going on
     for auto_times_mode in ['truck', 'ix', 'air', 'zpv_tnc']:
         if auto_times_mode == 'truck':
@@ -301,9 +301,9 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     transit_trips_overall = 0
     transit_times_summed = tm_transit_times_df.copy().groupby('Income').agg('sum')
     for inc_level in range(1,5):
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Trips','Daily_total_transit_trips_inc%d' % inc_level, year] = transit_times_summed.loc['_no_zpv_inc%d' % inc_level, 'Daily Trips']
+        metrics_dict['Income Level', 'Transit',, grouping3, tm_run_id, metric_id,'top_level','Trips','Daily_total_transit_trips_inc%d' % inc_level, year] = transit_times_summed.loc['_no_zpv_inc%d' % inc_level, 'Daily Trips']
         transit_trips_overall += transit_times_summed.loc['_no_zpv_inc%d' % inc_level, 'Daily Trips']
-    metrics_dict['Income Level', 'Transit', grouping3, tm_run_id, metric_id,'top_level','Trips', 'Daily_total_transit_trips_overall', year] = transit_trips_overall
+    metrics_dict[grouping1, 'Transit', grouping3, tm_run_id, metric_id,'top_level','Trips', 'Daily_total_transit_trips_overall', year] = transit_trips_overall
 
     ################################### trips by peak/off-peak, commute/noncommute, auto/transit ###################################
     # key                       intermediate/final    metric_desc
