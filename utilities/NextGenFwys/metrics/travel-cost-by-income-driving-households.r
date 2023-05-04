@@ -46,8 +46,8 @@
 #   (6) %TARGET_DIR%\skims\trnskm_cost_[EA,AM,MD,PM,EV].csv - transit cost skims exported
 # Output:  
 #   (1) %TARGET_DIR%\updated_output\trips_with_detailed_cost.rdata - trips with detailed cost columns added
-#   (2) %TARGET_DIR%\core_summaries\travel-cost-by-income-driving-households.csv - table with columns listed above
-#   (3) %TARGET_DIR%\core_summaries\travel-cost-by-income-driving-households-[auto,transit].csv - pivoted
+#   (2) %TARGET_DIR%\core_summaries\travel-cost-hhldtraveltype.csv - table with columns listed above
+#   (3) %TARGET_DIR%\core_summaries\travel-cost-hhldtraveltype-[auto,transit].csv - pivoted
 #       version for tableau exploration
 #
 #  See also:
@@ -96,7 +96,7 @@ TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
 SAMPLESHARE  <- 0.5
 TAZDATA_FILE <- file.path(TARGET_DIR, "INPUT", "landuse", "tazData.csv")
-OUTPUT_FILE  <- file.path(TARGET_DIR, "core_summaries", "travel-cost-by-income-driving-households.csv")
+OUTPUT_FILE  <- file.path(TARGET_DIR, "core_summaries", "travel-cost-hhldtraveltype.csv")
 
 # from TripModeChoice UEC
 COST_SHARE_SR2 = 1.75

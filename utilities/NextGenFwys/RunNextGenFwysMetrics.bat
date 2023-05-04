@@ -26,12 +26,14 @@ if not exist skims\trnskm_cost_ev.csv (
   IF ERRORLEVEL 2 goto error
 )
 
-if not exist core_summaries\travel-cost-by-income-driving-households.csv (
+if not exist core_summaries\travel-cost-hhldtraveltype.csv (
   rem Summarize transportation costs by income, home_taz, hhld_travel type
   rem Input:  updated_output\trips.rdata
   rem         skims\HWYSKM_cost_[EA,AM,MD,PM,EV].csv
   rem         skims\trnskm_cost_[EA,AM,MD,PM,EV].csv
-  rem Output: core_summaries\travel-cost-by-income-driving-households.csv
+  rem Output: core_summaries\travel-cost-hhldtraveltype.csv
+  rem         core_summaries\travel-cost-hhldtraveltype-[auto,transit].csv
+  rem         updated_output\trips_with_detailed_cost.rdata
   call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\travel-cost-by-income-driving-households.r"
   IF ERRORLEVEL 2 goto error
 )
