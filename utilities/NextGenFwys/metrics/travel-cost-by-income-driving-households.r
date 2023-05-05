@@ -13,8 +13,11 @@
 #   num_hhlds:          number of households
 #   num_persons:        number of persons in those households
 #   num_auto_trips:     number of private auto trips taken by those households
+#                       not including drive-to-transit, taxis or TNCs
 #   num_transit_trips:  number of transit trips taken by those households
-#   num other_trips:    number of walk, bike, taxi or TNC trips
+#                       including both walk and drive to transit
+#   num_taxi_tnc_trips: number of taxi or TNC trips taken by those households
+#   num_active_trips:   number of walk, bike trips
 #   total_hhld_autos:   total number of household autos for these households
 #   total_hhd_income:   total household income for these households (in 2000 dollars)
 #   ========= Initial *simple* costs from CoreSummaries: ====
@@ -32,6 +35,7 @@
 #      total_fare:                  transit fare, including means-based discounts
 #      total_drv_trn_op_cost:       auto operating cost, from drive to transit distance x AOC
 #      total_detailed_transit_cost: sum of transit fare and drive-to-transit auto operating cost
+#      total_taxi_tnc_cost:         includes tolls and fares
 #
 # See asana task: Affordable 1 (transportation costs / share of income) and subtasks
 # https://app.asana.com/0/0/1204323747319792/f
@@ -97,11 +101,16 @@ LOOKUP_MODE <- data.frame(
                    TRUE,  TRUE,  TRUE,  TRUE,  TRUE,         # walk to transit
                    TRUE,  TRUE,  TRUE,  TRUE,  TRUE,         # drive to transit
                    FALSE, FALSE, FALSE),                     # taxi, tnc; drive=personal vehicle
-    is_other   = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, # DAx2, SR2x2, SR3x2
+    is_active  = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, # DAx2, SR2x2, SR3x2
                    TRUE,  TRUE,                              # walk, bike
                    FALSE, FALSE, FALSE, FALSE, FALSE,        # walk to transit
                    FALSE, FALSE, FALSE, FALSE, FALSE,        # drive to transit
-                   TRUE, TRUE, TRUE)                      # taxi, tnc; drive=personal vehicle
+                   FALSE, FALSE, FALSE),                        # taxi, tnc; drive=personal vehicle
+    is_taxi_tnc= c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, # DAx2, SR2x2, SR3x2
+                   FALSE,  FALSE,                            # walk, bike
+                   FALSE, FALSE, FALSE, FALSE, FALSE,        # walk to transit
+                   FALSE, FALSE, FALSE, FALSE, FALSE,        # drive to transit
+                   TRUE, TRUE, TRUE)                         # taxi, tnc; drive=personal vehicle
 )
 print("LOOKUP_MODE:")
 print(LOOKUP_MODE)
@@ -267,13 +276,16 @@ add_detailed_cost <- function(model_params, this_timeperiod, input_trips) {
             mode_name == "Shared ride two - pay"    ~ model_params$auto_op_cost*TOLLDISTS2,
             mode_name == "Shared ride three - free" ~ model_params$auto_op_cost*DISTS3,
             mode_name == "Shared ride three - pay"  ~ model_params$auto_op_cost*TOLLDISTS3,
+            .default = NA
+        ),  # c_cost*(costPerMile*SOVTOLL_DIST[tripPeriod])*autoCPMFactor
+        taxitnc_cost = case_when(
             # c_cost*(costInitialTaxi + HOV2TOLL_DIST[tripPeriod] * costPerMileTaxi + HOV2TOLL_DIST[tripPeriod] * costPerMinuteTaxi )*100
             # TODO: second use of TOLLDISTS2 here is wrong but reflects UEC error: https://github.com/BayAreaMetro/travel-model-one/issues/57
             mode_name == "Taxi"         ~ (model_params$taxi_base_fare       + (model_params$taxi_cost_per_mile      *TOLLDISTS2) + (model_params$taxi_cost_per_minute      *TOLLDISTS2))*100, 
             mode_name == "TNC"          ~ (model_params$TNC_single_base_fare + (model_params$TNC_single_cost_per_mile*TOLLDISTS2) + (model_params$TNC_single_cost_per_minute*TOLLDISTS2))*100, 
             mode_name == "TNC shared"   ~ (model_params$TNC_shared_baseFare  + (model_params$TNC_shared_cost_per_mile*TOLLDISTS2) + (model_params$TNC_shared_cost_per_minute*TOLLDISTS2))*100, 
             .default = NA
-        ),  # c_cost*(costPerMile*SOVTOLL_DIST[tripPeriod])*autoCPMFactor
+        ),
         # this is in 2000 cents - start with just skim value
         bridge_toll = case_when(
             mode_name == "Drive alone - free"       ~ BTOLLDA,
@@ -282,11 +294,15 @@ add_detailed_cost <- function(model_params, this_timeperiod, input_trips) {
             mode_name == "Shared ride two - pay"    ~ TOLLBTOLLS2,
             mode_name == "Shared ride three - free" ~ BTOLLS3,
             mode_name == "Shared ride three - pay"  ~ TOLLBTOLLS3,
-            mode_name == "Taxi"                     ~ TOLLBTOLLS2, # c_cost*HOV2TOLL_BTOLL[tripPeriod]
-            mode_name == "TNC"                      ~ TOLLBTOLLS2, # c_cost*(HOV2TOLL_BTOLL[tripPeriod] + HOV2TOLL_BTOLL[tripPeriod])
-            mode_name == "TNC shared"               ~ TOLLBTOLLS2, # c_cost*(HOV2TOLL_BTOLL[tripPeriod] + HOV2TOLL_BTOLL[tripPeriod])
             .default = NA
-        ),  
+        ),
+        # add bridge toll to taxi/tnc cost
+        taxitnc_cost = case_when(
+            mode_name == "Taxi"                     ~ taxitnc_cost + TOLLBTOLLS2, # c_cost*HOV2TOLL_BTOLL[tripPeriod]
+            mode_name == "TNC"                      ~ taxitnc_cost + TOLLBTOLLS2, # c_cost*(HOV2TOLL_BTOLL[tripPeriod] + HOV2TOLL_BTOLL[tripPeriod])
+            mode_name == "TNC shared"               ~ taxitnc_cost + TOLLBTOLLS2, # c_cost*(HOV2TOLL_BTOLL[tripPeriod] + HOV2TOLL_BTOLL[tripPeriod])
+            .default = taxitnc_cost
+        ),
         # this is in 2000 cents - start with just skim value
         value_toll = case_when(
             mode_name == "Drive alone - free"       ~ 0,
@@ -295,10 +311,14 @@ add_detailed_cost <- function(model_params, this_timeperiod, input_trips) {
             mode_name == "Shared ride two - pay"    ~ TOLLVTOLLS2,
             mode_name == "Shared ride three - free" ~ 0,
             mode_name == "Shared ride three - pay"  ~ TOLLVTOLLS3,
-            mode_name == "Taxi"                     ~ TOLLVTOLLS2,
-            mode_name == "TNC"                      ~ TOLLVTOLLS2,
-            mode_name == "TNC shared"               ~ TOLLVTOLLS2,
             .default = NA
+        ),
+        # add value toll to taxi/tnc cost
+        taxitnc_cost = case_when(
+            mode_name == "Taxi"                     ~ taxitnc_cost + TOLLVTOLLS2,
+            mode_name == "TNC"                      ~ taxitnc_cost + TOLLVTOLLS2,
+            mode_name == "TNC shared"               ~ taxitnc_cost + TOLLVTOLLS2,
+            .default = taxitnc_cost
         ),
         fare = NA,
         drv_trn_op_cost = NA
@@ -312,10 +332,10 @@ add_detailed_cost <- function(model_params, this_timeperiod, input_trips) {
     # Left join tours to the REVERSE skims for TNC bridge tolls
     relevant <- left_join(relevant, cost_skims, by=c("orig_taz"="dest","dest_taz"="orig"))
     relevant <- mutate(relevant,
-        bridge_toll = case_when(
-            mode_name == "TNC"                      ~ bridge_toll + TOLLBTOLLS2, # c_cost*(HOV2TOLL_BTOLL[tripPeriod] + HOV2TOLL_BTOLL[tripPeriod])
-            mode_name == "TNC shared"               ~ bridge_toll + TOLLBTOLLS2, # c_cost*(HOV2TOLL_BTOLL[tripPeriod] + HOV2TOLL_BTOLL[tripPeriod])
-            .default = bridge_toll
+        taxitnc_cost = case_when(
+            mode_name == "TNC"                      ~ taxitnc_cost + (bridge_toll + TOLLBTOLLS2), # c_cost*(HOV2TOLL_BTOLL[tripPeriod] + HOV2TOLL_BTOLL[tripPeriod])
+            mode_name == "TNC shared"               ~ taxitnc_cost + (bridge_toll + TOLLBTOLLS2), # c_cost*(HOV2TOLL_BTOLL[tripPeriod] + HOV2TOLL_BTOLL[tripPeriod])
+            .default = taxitnc_cost
         )
     )
     # delete cost_skim columns; we're done with them
@@ -624,7 +644,8 @@ trip_summary <- group_by(trips, incQ, incQ_label, home_taz, hhld_travel) %>%
         num_persons           = n_distinct(person_id) / SAMPLESHARE,
         num_auto_trips        = sum(is_auto)          / SAMPLESHARE,
         num_transit_trips     = sum(is_transit)       / SAMPLESHARE,
-        num_other_trips       = sum(is_other)         / SAMPLESHARE,
+        num_active_trips      = sum(is_active)        / SAMPLESHARE,
+        num_taxitnc_trips     = sum(is_taxi_tnc)      / SAMPLESHARE,
         # original simple costs
         total_auto_cost       = sum(auto_cost)        / SAMPLESHARE,
         total_transit_cost    = sum(transit_cost)     / SAMPLESHARE,
@@ -637,6 +658,7 @@ trip_summary <- group_by(trips, incQ, incQ_label, home_taz, hhld_travel) %>%
         total_value_toll      = sum(value_toll,       na.rm=T) / SAMPLESHARE,
         total_fare            = sum(fare,             na.rm=T) / SAMPLESHARE,
         total_drv_trn_op_cost = sum(drv_trn_op_cost,  na.rm=T) / SAMPLESHARE,
+        total_taxitnc_cost    = sum(taxitnc_cost,     na.rm=T) / SAMPLESHARE,    
     )
 
 print("trip_summary: ")
@@ -660,7 +682,8 @@ print(paste("Wrote",nrow(trip_summary),"rows to",OUTPUT_FILE))
 trip_summary_auto <- pivot_longer(
     select(trip_summary, 
         incQ, incQ_label, hhld_travel, 
-        num_hhlds, num_persons, num_auto_trips, num_transit_trips, total_hhld_autos, total_hhld_income,
+        num_hhlds, num_persons, total_hhld_autos, total_hhld_income,
+        num_auto_trips, num_transit_trips, num_active_trips, num_taxitnc_trips,
         total_parking_cost, total_auto_op_cost, total_bridge_toll, total_cordon_toll, total_value_toll),
     cols=c(total_parking_cost, total_auto_op_cost, total_bridge_toll, total_cordon_toll, total_value_toll),
     names_to="auto_cost_type",
@@ -670,12 +693,12 @@ auto_output_file = str_replace(OUTPUT_FILE, ".csv", "-auto.csv")
 write.csv(trip_summary_auto, file = auto_output_file, row.names = FALSE, quote = F)
 print(paste("Wrote",nrow(trip_summary_auto),"rows to",auto_output_file))
 
-
 # long version transit - for stacking in tableau
 trip_summary_transit <- pivot_longer(
     select(trip_summary, 
         incQ, incQ_label, hhld_travel, 
-        num_hhlds, num_persons, num_auto_trips, num_transit_trips, total_hhld_autos, total_hhld_income,
+        num_hhlds, num_persons, total_hhld_autos, total_hhld_income,
+        num_auto_trips, num_transit_trips, num_active_trips, num_taxitnc_trips,
         total_fare, total_drv_trn_op_cost),
     cols=c(total_fare, total_drv_trn_op_cost),
     names_to="transit_cost_type",
