@@ -20,12 +20,12 @@
 #   num_active_trips:   number of walk, bike trips
 #   total_hhld_autos:   total number of household autos for these households
 #   total_hhd_income:   total household income for these households (in 2000 dollars)
-#   ========= Initial *simple* costs from CoreSummaries: ====
-#     total_auto_cost:    total daily auto cost for these trips (in 2000 cents)
+#   ========= Initial *simple* costs from CoreSummaries; ALL COSTS in 2000 cents ====
+#     total_auto_cost:    total daily auto cost for these trips
 #                         NOTE that these have means-based discounts applied incorrectly
-#     total_transit_cost: total daily transit cost for these trips (in 2000 cents)
-#     total_cost:         total daily cost (in 2000 cents)
-#   ========= Added 5/2/2023 *detailed* costs skims: ====
+#     total_transit_cost: total daily transit cost for these trips
+#     total_cost:         total daily cost
+#   ========= Added 5/2/2023 *detailed* costs skims; ALL COSTS in 2000 cents ====
 #      total_parking_cost:          parking cost
 #      total_auto_op_cost:          total auto operating cost, from distance x AOC
 #      total_bridge_toll:           bridge tolls, not including cordon tolls
@@ -333,8 +333,8 @@ add_detailed_cost <- function(model_params, this_timeperiod, input_trips) {
     relevant <- left_join(relevant, cost_skims, by=c("orig_taz"="dest","dest_taz"="orig"))
     relevant <- mutate(relevant,
         taxitnc_cost = case_when(
-            mode_name == "TNC"                      ~ taxitnc_cost + (bridge_toll + TOLLBTOLLS2), # c_cost*(HOV2TOLL_BTOLL[tripPeriod] + HOV2TOLL_BTOLL[tripPeriod])
-            mode_name == "TNC shared"               ~ taxitnc_cost + (bridge_toll + TOLLBTOLLS2), # c_cost*(HOV2TOLL_BTOLL[tripPeriod] + HOV2TOLL_BTOLL[tripPeriod])
+            mode_name == "TNC"             ~ taxitnc_cost + TOLLBTOLLS2, # c_cost*(HOV2TOLL_BTOLL[tripPeriod] + HOV2TOLL_BTOLL[tripPeriod])
+            mode_name == "TNC shared"      ~ taxitnc_cost + TOLLBTOLLS2, # c_cost*(HOV2TOLL_BTOLL[tripPeriod] + HOV2TOLL_BTOLL[tripPeriod])
             .default = taxitnc_cost
         )
     )
@@ -348,8 +348,8 @@ add_detailed_cost <- function(model_params, this_timeperiod, input_trips) {
     if ((this_timeperiod == "AM") | (this_timeperiod == "PM")) {
         # these are skimmed as a bridge_toll; move to cordon_toll
         relevant <- mutate(relevant,
-            cordon_toll = ifelse(CORDON_dest > 0, CORDONCOST_dest, 0),
-            bridge_toll = ifelse(CORDON_dest > 0, bridge_toll - CORDONCOST_dest, bridge_toll)
+            cordon_toll = ifelse((CORDON_dest > 0) & (bridge_toll > 0), CORDONCOST_dest, 0),
+            bridge_toll = ifelse((CORDON_dest > 0) & (bridge_toll > 0), bridge_toll - CORDONCOST_dest, bridge_toll)
         )
         # apply means-based cordon toll discount factor
         relevant <- mutate(relevant,
