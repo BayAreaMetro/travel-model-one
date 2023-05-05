@@ -186,9 +186,91 @@ METRICS_COLUMNS = [
     'value'
 ]
 
-# TODO: remove these after metrics methodology is finilzed (for debugging)
-ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiodIncome.csv"
-# ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiod_reduced_file.csv"
+def trips_commute_mode_pkop(tm_run_id, metric_id):
+    ################################### trips by peak/off-peak, commute/noncommute, auto/transit ###################################
+    # key                       intermediate/final    metric_desc
+    # [commute]_[mode]_[pkop]   top_level/E2b             trips
+    # [commute]_[mode]_[pkop]   top_level/E2b             trips
+    metrics_df = pd.DataFrame()
+    trip_distance_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "TripDistance.csv")
+    tm_trips_df = pd.read_csv(trip_distance_file)
+    LOGGER.info("  Read {:,} rows from {}".format(len(tm_trips_df), trip_distance_file))
+    LOGGER.debug("tm_trips_df.head():\n{}".format(tm_trips_df.head()))
+
+    # simplify to auto versus transit versus active
+    tm_trips_df['agg_trip_mode'] = 'active'
+    tm_trips_df.loc[ tm_trips_df.trip_mode.isin(MODES_TRANSIT),      'agg_trip_mode' ] = 'transit'
+    tm_trips_df.loc[ tm_trips_df.trip_mode.isin(MODES_PRIVATE_AUTO), 'agg_trip_mode' ] = 'auto'
+    tm_trips_df.loc[ tm_trips_df.trip_mode.isin(MODES_TAXI_TNC),     'agg_trip_mode' ] = 'other'
+
+    # simplify to commute versus noncommute
+    tm_trips_df['commute_non'] = 'noncommute'
+    tm_trips_df.loc[ tm_trips_df.tour_purpose.isin(PURPOSES_COMMUTE), 'commute_non' ] = 'commute'
+
+    # simplify to peak versus nonpeak
+    tm_trips_df['peak_non'] = 'offpeak'
+    tm_trips_df.loc[ tm_trips_df.timeCode.isin(TIME_PERIODS_PEAK), 'peak_non' ] = 'peak'
+
+    # roll it up
+    tm_trips_df = tm_trips_df.groupby(by=['agg_trip_mode', 'commute_non', 'peak_non']).agg({'freq':'sum'}).reset_index()
+    tm_trips_df.rename(columns={'freq':'trips'}, inplace=True)
+    LOGGER.debug('Aggregated tm_trips_df:\n{}'.format(tm_trips_df))
+
+    # metrics: total trips
+    metrics_trip_df = tm_trips_df.copy()
+    metrics_trip_df['grouping1'] = metrics_trip_df['commute_non']
+    metrics_trip_df['grouping2'] = metrics_trip_df['agg_trip_mode']
+    metrics_trip_df['grouping3'] = metrics_trip_df['peak_non']
+    metrics_trip_df['key'] = metrics_trip_df['commute_non'] + "_" + metrics_trip_df['agg_trip_mode'] + "_" + metrics_trip_df['peak_non']
+    metrics_trip_df['intermediate/final'] = 'top_level'
+    metrics_trip_df['metric_desc'] = 'trips'
+    metrics_trip_df.rename(columns={'trips':'value'}, inplace=True)
+    metrics_trip_df.drop(columns=['commute_non','agg_trip_mode','peak_non'], inplace=True)
+    LOGGER.debug('metrics_trip_df:\n{}'.format(metrics_trip_df))
+    metrics_df = pd.concat([metrics_df, metrics_trip_df])
+
+    # key                       intermediate/final    metric_desc
+    # [pkop]                    top_level/E2b             [mode]_commute_peak-vs-offpeak_share
+    # [pkop]                    top_level/E2b             [mode]_noncommute_peak-vs-offpeak_share
+
+    # metrics: peak vs offpeak shares
+    # add column for peak_offpeak_trips = peak + nonpeak
+    metrics_peak_offpeak_share_df = pd.merge(
+        left  = tm_trips_df,
+        right = tm_trips_df.groupby(by=['agg_trip_mode','commute_non']).agg(
+                     peak_offpeak_trips = pd.NamedAgg(column='trips', aggfunc='sum')).reset_index(),
+        how='left'
+    )
+    metrics_peak_offpeak_share_df.rename(columns={'peak_non':'key'}, inplace=True)
+    metrics_peak_offpeak_share_df['intermediate/final'] = metric_id
+    metrics_peak_offpeak_share_df['metric_desc'] = metrics_peak_offpeak_share_df['agg_trip_mode'] + \
+                                                   "_" + metrics_peak_offpeak_share_df['commute_non'] + "_peak-vs-offpeak_share"
+    metrics_peak_offpeak_share_df['value'] = metrics_peak_offpeak_share_df['trips'] / metrics_peak_offpeak_share_df['peak_offpeak_trips']
+    metrics_peak_offpeak_share_df.drop(columns=['agg_trip_mode','commute_non','trips','peak_offpeak_trips'], inplace=True)
+    LOGGER.debug("metrics_peak_offpeak_share_df:\n{}".format(metrics_peak_offpeak_share_df))
+    metrics_df = pd.concat([metrics_df, metrics_peak_offpeak_share_df])
+
+    # key                       intermediate/final    metric_desc
+    # [mode]                    top_level/E2b             [pkop]_[commute]_mode_share
+    metrics_modeshare_df = pd.merge(
+        left  = tm_trips_df,
+        right = tm_trips_df.groupby(by=['commute_non','peak_non']).agg(
+                     allmode_trips = pd.NamedAgg(column='trips', aggfunc='sum')).reset_index(),
+        how   ='left'
+    )
+    # LOGGER.debug("metrics_modeshare_df:\n{}".format(metrics_modeshare_df))
+    metrics_modeshare_df.rename(columns={'agg_trip_mode':'key'}, inplace=True)
+    metrics_modeshare_df['grouping1'] = metrics_modeshare_df['peak_non']
+    metrics_modeshare_df['grouping2'] = metrics_modeshare_df['commute_non']
+    metrics_modeshare_df['intermediate/final'] = metric_id
+    metrics_modeshare_df['metric_desc'] = metrics_modeshare_df['peak_non'] + \
+                                          "_" + metrics_modeshare_df['commute_non'] + "_mode_share"
+    metrics_modeshare_df['value'] = metrics_modeshare_df['trips'] / metrics_modeshare_df['allmode_trips']
+    metrics_modeshare_df.sort_values(by=['metric_desc'], inplace=True)
+    metrics_modeshare_df.drop(columns=['commute_non','peak_non','trips','allmode_trips'], inplace=True)
+    LOGGER.debug("metrics_modeshare_df:\n{}".format(metrics_modeshare_df))
+    metrics_df = pd.concat([metrics_df, metrics_modeshare_df])
+    return metrics_df
 
 def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df):
     """ Calculates top-level metrics (which are not part of the 10 metrics)
@@ -305,88 +387,7 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
         transit_trips_overall += transit_times_summed.loc['_no_zpv_inc%d' % inc_level, 'Daily Trips']
     metrics_dict[grouping1, 'Transit', grouping3, tm_run_id, metric_id,'top_level','Trips', 'Daily_total_transit_trips_overall', year] = transit_trips_overall
 
-    ################################### trips by peak/off-peak, commute/noncommute, auto/transit ###################################
-    # key                       intermediate/final    metric_desc
-    # [commute]_[mode]_[pkop]   top_level             trips
-    # [commute]_[mode]_[pkop]   top_level             trips
-    trip_distance_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "TripDistance.csv")
-    tm_trips_df = pd.read_csv(trip_distance_file)
-    LOGGER.info("  Read {:,} rows from {}".format(len(tm_trips_df), trip_distance_file))
-    LOGGER.debug("tm_trips_df.head():\n{}".format(tm_trips_df.head()))
-
-    # simplify to auto versus transit versus active
-    tm_trips_df['agg_trip_mode'] = 'active'
-    tm_trips_df.loc[ tm_trips_df.trip_mode.isin(MODES_TRANSIT),      'agg_trip_mode' ] = 'transit'
-    tm_trips_df.loc[ tm_trips_df.trip_mode.isin(MODES_PRIVATE_AUTO), 'agg_trip_mode' ] = 'auto'
-    tm_trips_df.loc[ tm_trips_df.trip_mode.isin(MODES_TAXI_TNC),     'agg_trip_mode' ] = 'other'
-
-    # simplify to commute versus noncommute
-    tm_trips_df['commute_non'] = 'noncommute'
-    tm_trips_df.loc[ tm_trips_df.tour_purpose.isin(PURPOSES_COMMUTE), 'commute_non' ] = 'commute'
-
-    # simplify to peak versus nonpeak
-    tm_trips_df['peak_non'] = 'offpeak'
-    tm_trips_df.loc[ tm_trips_df.timeCode.isin(TIME_PERIODS_PEAK), 'peak_non' ] = 'peak'
-
-    # roll it up
-    tm_trips_df = tm_trips_df.groupby(by=['agg_trip_mode', 'commute_non', 'peak_non']).agg({'freq':'sum'}).reset_index()
-    tm_trips_df.rename(columns={'freq':'trips'}, inplace=True)
-    LOGGER.debug('Aggregated tm_trips_df:\n{}'.format(tm_trips_df))
-
-    # metrics: total trips
-    metrics_trip_df = tm_trips_df.copy()
-    metrics_trip_df['grouping1'] = metrics_trip_df['commute_non']
-    metrics_trip_df['grouping2'] = metrics_trip_df['agg_trip_mode']
-    metrics_trip_df['grouping3'] = metrics_trip_df['peak_non']
-    metrics_trip_df['key'] = metrics_trip_df['commute_non'] + "_" + metrics_trip_df['agg_trip_mode'] + "_" + metrics_trip_df['peak_non']
-    metrics_trip_df['intermediate/final'] = 'top_level'
-    metrics_trip_df['metric_desc'] = 'trips'
-    metrics_trip_df.rename(columns={'trips':'value'}, inplace=True)
-    metrics_trip_df.drop(columns=['commute_non','agg_trip_mode','peak_non'], inplace=True)
-    LOGGER.debug('metrics_trip_df:\n{}'.format(metrics_trip_df))
-    metrics_df = pd.concat([metrics_df, metrics_trip_df])
-
-    # key                       intermediate/final    metric_desc
-    # [pkop]                    top_level             [mode]_commute_peak-vs-offpeak_share
-    # [pkop]                    top_level             [mode]_noncommute_peak-vs-offpeak_share
-
-    # metrics: peak vs offpeak shares
-    # add column for peak_offpeak_trips = peak + nonpeak
-    metrics_peak_offpeak_share_df = pd.merge(
-        left  = tm_trips_df,
-        right = tm_trips_df.groupby(by=['agg_trip_mode','commute_non']).agg(
-                     peak_offpeak_trips = pd.NamedAgg(column='trips', aggfunc='sum')).reset_index(),
-        how='left'
-    )
-    metrics_peak_offpeak_share_df.rename(columns={'peak_non':'key'}, inplace=True)
-    metrics_peak_offpeak_share_df['intermediate/final'] = 'top_level'
-    metrics_peak_offpeak_share_df['metric_desc'] = metrics_peak_offpeak_share_df['agg_trip_mode'] + \
-                                                   "_" + metrics_peak_offpeak_share_df['commute_non'] + "_peak-vs-offpeak_share"
-    metrics_peak_offpeak_share_df['value'] = metrics_peak_offpeak_share_df['trips'] / metrics_peak_offpeak_share_df['peak_offpeak_trips']
-    metrics_peak_offpeak_share_df.drop(columns=['agg_trip_mode','commute_non','trips','peak_offpeak_trips'], inplace=True)
-    LOGGER.debug("metrics_peak_offpeak_share_df:\n{}".format(metrics_peak_offpeak_share_df))
-    metrics_df = pd.concat([metrics_df, metrics_peak_offpeak_share_df])
-
-    # key                       intermediate/final    metric_desc
-    # [mode]                    top_level             [pkop]_[commute]_mode_share
-    metrics_modeshare_df = pd.merge(
-        left  = tm_trips_df,
-        right = tm_trips_df.groupby(by=['commute_non','peak_non']).agg(
-                     allmode_trips = pd.NamedAgg(column='trips', aggfunc='sum')).reset_index(),
-        how   ='left'
-    )
-    # LOGGER.debug("metrics_modeshare_df:\n{}".format(metrics_modeshare_df))
-    metrics_modeshare_df.rename(columns={'agg_trip_mode':'key'}, inplace=True)
-    metrics_modeshare_df['grouping1'] = metrics_modeshare_df['peak_non']
-    metrics_modeshare_df['grouping2'] = metrics_modeshare_df['commute_non']
-    metrics_modeshare_df['intermediate/final'] = 'top_level'
-    metrics_modeshare_df['metric_desc'] = metrics_modeshare_df['peak_non'] + \
-                                          "_" + metrics_modeshare_df['commute_non'] + "_mode_share"
-    metrics_modeshare_df['value'] = metrics_modeshare_df['trips'] / metrics_modeshare_df['allmode_trips']
-    metrics_modeshare_df.sort_values(by=['metric_desc'], inplace=True)
-    metrics_modeshare_df.drop(columns=['commute_non','peak_non','trips','allmode_trips'], inplace=True)
-    LOGGER.debug("metrics_modeshare_df:\n{}".format(metrics_modeshare_df))
-    metrics_df = pd.concat([metrics_df, metrics_modeshare_df])
+    metrics_df = pd.concat([metrics_df, trips_commute_mode_pkop(tm_run_id, 'top_level')])
 
     
     # ################################### freeway delay ###################################
@@ -1341,6 +1342,8 @@ def calculate_Efficient2_commute_mode_share(tm_run_id: str) -> pd.DataFrame:
     metrics_df = pd.concat([tm_journey_to_work_df, tm_journey_to_work_shares_df])
     metrics_df.rename(columns={'All workers':'value', 'commute_mode':'key'}, inplace=True)
     metrics_df['metric_id'] = METRIC_ID
+    # add 2b metric for modeshare by trips for non commute trips
+    metrics_df = pd.concat([metrics_df, trips_commute_mode_pkop(tm_run_id, 'Efficient 2b')])
     metrics_df['modelrun_id'] = tm_run_id
     metrics_df.columns.name = None # it was named ptype_label
     LOGGER.debug("metrics_df:\n{}".format(metrics_df))
