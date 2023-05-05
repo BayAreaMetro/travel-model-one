@@ -1345,9 +1345,9 @@ def calculate_Efficient2_commute_mode_share(tm_run_id: str) -> pd.DataFrame:
 
     metrics_df = pd.concat([tm_journey_to_work_df, tm_journey_to_work_shares_df])
     metrics_df.rename(columns={'All workers':'value', 'commute_mode':'key'}, inplace=True)
-    metrics_df['metric_id'] = METRIC_ID
     # add 2b metric for modeshare by trips for non commute trips
     metrics_df = pd.concat([metrics_df, trips_commute_mode_pkop(tm_run_id, 'Efficient 2b')])
+    metrics_df['metric_id'] = METRIC_ID
     metrics_df['modelrun_id'] = tm_run_id
     metrics_df.columns.name = None # it was named ptype_label
     LOGGER.debug("metrics_df:\n{}".format(metrics_df))
