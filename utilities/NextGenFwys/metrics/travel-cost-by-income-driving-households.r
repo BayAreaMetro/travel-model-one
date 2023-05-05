@@ -12,10 +12,9 @@
 # Data columns:
 #   num_hhlds:          number of households
 #   num_persons:        number of persons in those households
-#   num_auto_trips:     number of auto trips taken by those households
+#   num_auto_trips:     number of private auto trips taken by those households
 #   num_transit_trips:  number of transit trips taken by those households
-#     (Note the same classifications of auto and transit apply as were used in the segmentation
-#      so there IS double counting -- a drive-to-transit trip is counted twice)
+#   num other_trips:    number of walk, bike, taxi or TNC trips
 #   total_hhld_autos:   total number of household autos for these households
 #   total_hhd_income:   total household income for these households (in 2000 dollars)
 #   ========= Initial *simple* costs from CoreSummaries: ====
@@ -76,18 +75,34 @@ LOOKUP_MODE <- data.frame(
                   "Drive to local bus", "Drive to light rail or ferry", "Drive to express bus", 
                   "Drive to heavy rail", "Drive to commuter rail",
                   "Taxi", "TNC", "TNC shared")),
-    is_auto =    c(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,       # DAx2, SR2x2, SR3x2
+    # for household travel segmentation
+    is_auto_seg = c(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,       # DAx2, SR2x2, SR3x2
                    FALSE, FALSE,                             # walk, bike
                    FALSE, FALSE, FALSE, FALSE, FALSE,        # walk to transit
                    TRUE,  TRUE,  TRUE,  TRUE,  TRUE,         # drive to transit
+                   FALSE, FALSE, FALSE),                     # taxi, tnc; auto=personal vehicle?
+    is_transit_seg = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, # DAx2, SR2x2, SR3x2
+                   FALSE, FALSE,                             # walk, bike
+                   TRUE,  TRUE,  TRUE,  TRUE,  TRUE,         # walk to transit
+                   TRUE,  TRUE,  TRUE,  TRUE,  TRUE,         # drive to transit
+                   FALSE, FALSE, FALSE),                     # taxi, tnc; drive=personal vehicle
+    # for counting to use in output -- these are disjoint and account for all
+    is_auto    = c(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE,       # DAx2, SR2x2, SR3x2
+                   FALSE, FALSE,                             # walk, bike
+                   FALSE, FALSE, FALSE, FALSE, FALSE,        # walk to transit
+                   FALSE, FALSE, FALSE, FALSE, FALSE,        # drive to transit
                    FALSE, FALSE, FALSE),                     # taxi, tnc; auto=personal vehicle?
     is_transit = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, # DAx2, SR2x2, SR3x2
                    FALSE, FALSE,                             # walk, bike
                    TRUE,  TRUE,  TRUE,  TRUE,  TRUE,         # walk to transit
                    TRUE,  TRUE,  TRUE,  TRUE,  TRUE,         # drive to transit
-                   FALSE, FALSE, FALSE)                      # taxi, tnc; drive=personal vehicle
-        
-    )
+                   FALSE, FALSE, FALSE),                     # taxi, tnc; drive=personal vehicle
+    is_other   = c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, # DAx2, SR2x2, SR3x2
+                   TRUE,  TRUE,                              # walk, bike
+                   FALSE, FALSE, FALSE, FALSE, FALSE,        # walk to transit
+                   FALSE, FALSE, FALSE, FALSE, FALSE,        # drive to transit
+                   TRUE, TRUE, TRUE)                      # taxi, tnc; drive=personal vehicle
+)
 print("LOOKUP_MODE:")
 print(LOOKUP_MODE)
 
@@ -551,21 +566,21 @@ for (timeperiod in c("EA","AM","MD","PM","EV")) {
 }
 print_cost_summary(trips)
 
-# summarize by household on is_auto, is_transit
+# summarize by household on is_auto_seg, is_transit_seg
 hhld_trips_summary <- group_by(trips, hh_id) %>%
     summarise(
         hhld_trips = n(),
-        hhld_auto_trips = sum(is_auto),
-        hhld_transit_trips = sum(is_transit)
+        hhld_auto_seg_trips    = sum(is_auto_seg),
+        hhld_transit_seg_trips = sum(is_transit_seg)
     )
 
 # summarize at household level
 hhld_trips_summary <- mutate(hhld_trips_summary,
     hhld_travel = case_when(
-        (hhld_auto_trips >  0) & (hhld_transit_trips  > 0) ~ "auto_and_transit",
-        (hhld_auto_trips >  0) & (hhld_transit_trips == 0) ~ "auto_no_transit",
-        (hhld_auto_trips == 0) & (hhld_transit_trips  > 0) ~ "transit_no_auto",
-        (hhld_auto_trips == 0) & (hhld_transit_trips == 0) ~ "no_auto_no_transit"), 
+        (hhld_auto_seg_trips >  0) & (hhld_transit_seg_trips  > 0) ~ "auto_and_transit",
+        (hhld_auto_seg_trips >  0) & (hhld_transit_seg_trips == 0) ~ "auto_no_transit",
+        (hhld_auto_seg_trips == 0) & (hhld_transit_seg_trips  > 0) ~ "transit_no_auto",
+        (hhld_auto_seg_trips == 0) & (hhld_transit_seg_trips == 0) ~ "no_auto_no_transit"), 
     hhld_travel = factor(hhld_travel, levels=c("auto_and_transit","auto_no_transit", "transit_no_auto","no_auto_no_transit"))
 )
 print("hhld_trips_summary head: ")
@@ -609,6 +624,7 @@ trip_summary <- group_by(trips, incQ, incQ_label, home_taz, hhld_travel) %>%
         num_persons           = n_distinct(person_id) / SAMPLESHARE,
         num_auto_trips        = sum(is_auto)          / SAMPLESHARE,
         num_transit_trips     = sum(is_transit)       / SAMPLESHARE,
+        num_other_trips       = sum(is_other)         / SAMPLESHARE,
         # original simple costs
         total_auto_cost       = sum(auto_cost)        / SAMPLESHARE,
         total_transit_cost    = sum(transit_cost)     / SAMPLESHARE,
