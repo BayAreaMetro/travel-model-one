@@ -186,6 +186,10 @@ METRICS_COLUMNS = [
     'value'
 ]
 
+# TODO: remove these after metrics methodology is finilzed (for debugging)
+ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiodIncome.csv"
+# ODTRAVELTIME_FILENAME = "ODTravelTime_byModeTimeperiod_reduced_file.csv"
+
 def trips_commute_mode_pkop(tm_run_id, metric_id):
     ################################### trips by peak/off-peak, commute/noncommute, auto/transit ###################################
     # key                       intermediate/final    metric_desc
