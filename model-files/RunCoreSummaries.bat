@@ -54,16 +54,6 @@ if not exist core_summaries/CommuteByIncomeByTPHousehold.csv (
   if %ERRORLEVEL% GTR 0 goto done
 )
 
-
-if not exist core_summaries\TelecommuteByIncome.csv (
-  rem A core summary output of people with jobs/work locations who don't do work tours by income quantile
-  rem Input : main\wsLocResults_%ITER%.csv, and
-  rem         main\personData_%ITER%.csv,
-  rem Output: core_summaries\TelecommuteByIncome.csv,
-  python CTRAMP\scripts\core_summaries\TelecommuteByIncome.py
-  if %ERRORLEVEL% GTR 0 goto done
-)
-
 :: create trn\trnline.csv
 if not exist "%TARGET_DIR%\trn\trnline.csv" (
   call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\ConsolidateLoadedTransit.R"

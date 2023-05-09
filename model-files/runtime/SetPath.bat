@@ -10,6 +10,8 @@ if %computername%==MODEL2-C      (  set COMMPATH=E:\Model2C-Share\COMMPATH)
 if %computername%==MODEL2-D      (  set COMMPATH=E:\Model2D-Share\COMMPATH)
 if %computername%==MODEL3-A      (  set COMMPATH=E:\Model3A-Share\COMMPATH)
 if %computername%==MODEL3-B      (  set COMMPATH=E:\Model3B-Share\COMMPATH)
+if %computername%==MODEL3-C      (  set COMMPATH=E:\Model3C-Share\COMMPATH)
+if %computername%==MODEL3-D      (  set COMMPATH=E:\Model3D-Share\COMMPATH)
 
 :: The location of the 64-bit java development kit
 set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
@@ -31,6 +33,14 @@ if "%computername%" == "MODEL3-A" (
   set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
 )
 if "%computername%" == "MODEL3-B" (
+  set R_HOME=C:\Program Files\R\R-4.2.1
+  set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
+)
+if "%computername%" == "MODEL3-C" (
+  set R_HOME=C:\Program Files\R\R-4.2.1
+  set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
+)
+if "%computername%" == "MODEL3-D" (
   set R_HOME=C:\Program Files\R\R-4.2.1
   set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
 )

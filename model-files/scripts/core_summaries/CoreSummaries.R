@@ -807,7 +807,7 @@ trips <- left_join(trips, LOOKUP_TIMEPERIOD, by=c("timeCodeNum"))
 trips <- select(mutate(trips, timeCode=timeperiod_abbrev), -timeperiod_abbrev)
 trips <- left_join(trips,
                    mutate(households, home_taz=taz) %>%
-                     select(hh_id, incQ, incQ_label, autoSuff, autoSuff_label,
+                     select(hh_id, incQ, incQ_label, income, autos, autoSuff, autoSuff_label,
                             home_taz, walk_subzone, walk_subzone_label),
                    by=c("hh_id"))
 trips <- left_join(trips,
