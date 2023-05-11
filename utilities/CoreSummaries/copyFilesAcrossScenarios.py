@@ -25,6 +25,7 @@ OUTPUT_FILES = {
         "parking_costs_trip_distBins",
         "emfac_ghg",
         "vmt_vht_metrics_by_taz",
+        "trips_cordon_mode_summary"
     ],
     "core_summaries":[
         "ActiveTransport",
