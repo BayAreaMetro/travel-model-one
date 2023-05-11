@@ -529,7 +529,7 @@ def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
     METRIC_ID = "Affordable 1"
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
 
-    travel_cost_by_travel_hhld_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "travel-cost-by-income-driving-households.csv")
+    travel_cost_by_travel_hhld_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "travel-cost-hhldtraveltype.csv")
     travel_cost_df = pd.read_csv(travel_cost_by_travel_hhld_file)
     LOGGER.info("  Read {:,} rows from {}".format(len(travel_cost_df), travel_cost_by_travel_hhld_file))
     LOGGER.debug("  Head:\n{}".format(travel_cost_df.head()))
@@ -537,22 +537,58 @@ def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
     # columns are: incQ, incQ_label, home_taz, hhld_travel, 
     #              num_hhlds, num_persons, num_auto_trips, num_transit_trips, 
     #              total_auto_cost, total_transit_cost, total_cost, total_hhld_autos, total_hhld_income
+    #              total_auto_op_cost, total_bridge_toll, total_cordon_toll, total_value_toll, 
+    #              total_fare, total_drv_trn_op_cost, total_taxitnc_cost,
+    #              total_detailed_auto_cost, total_detailed_transit_cost
     # convert incQ from number to string
     travel_cost_df['incQ'] = "incQ" + travel_cost_df['incQ'].astype('str')
     # Summarize to incQ_label, hhld_travel segments
     travel_cost_df = travel_cost_df.groupby(by=['incQ','hhld_travel']).agg({
         'num_hhlds':            'sum',
-        'total_auto_cost':      'sum',
-        'total_transit_cost':   'sum',
+        'total_auto_op_cost':      'sum',
+        'total_detailed_auto_cost':      'sum',
+        'total_detailed_transit_cost':      'sum',
+        'total_parking_cost':      'sum',
+        'total_bridge_toll':      'sum',
+        'total_value_toll':      'sum',
+        'total_cordon_toll':      'sum',
+        'total_fare':   'sum',
+        'total_drv_trn_op_cost':   'sum',
+        'total_taxitnc_cost':   'sum',
         'total_hhld_autos':     'sum',
-        'total_hhld_income':    'sum'
+        'total_hhld_income':    'sum',
+        'num_auto_trips':    'sum',
+        'num_transit_trips':    'sum',
+        'num_taxitnc_trips':    'sum'
     })
     # note: the index is not reset so it's a MultiIndex with incQ, hhld_travel
     LOGGER.debug("  travel_cost_df:\n{}".format(travel_cost_df))
 
+    # add variable costs to df:
+    #   Ops cost (includes fuel+maintenance)
+    #   Parking costs
+    #   Bridge Toll costs
+    #   Value Toll costs
+    #   Transit fare costs
+
     # annualize and convert daily costs from 2000 cents to 2023 dollars 
-    travel_cost_df['total_auto_op_cost_annual_2023d']    = travel_cost_df['total_auto_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_transit_op_cost_annual_2023d'] = travel_cost_df['total_transit_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_auto_op_cost_annual_2023d']    = travel_cost_df['total_auto_op_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_parking_cost_annual_2023d']    = travel_cost_df['total_parking_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_bridge_toll_cost_annual_2023d']    = travel_cost_df['total_bridge_toll']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_value_toll_cost_annual_2023d']    = travel_cost_df['total_value_toll']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_cordon_toll_cost_annual_2023d']    = travel_cost_df['total_cordon_toll']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_transit_op_cost_annual_2023d'] = travel_cost_df['total_fare']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_drive_to_transit_cost_annual_2023d'] = travel_cost_df['total_drv_trn_op_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    
+    travel_cost_df['total_taxitnc_cost_annual_2023d'] = travel_cost_df['total_taxitnc_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+
+    travel_cost_df['total_detailed_auto_cost_annual_2023d'] = travel_cost_df['total_detailed_auto_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_detailed_transit_cost_annual_2023d'] = travel_cost_df['total_detailed_transit_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+
+    # add fixed costs to df:
+    #   ownership + finance
+    #   insurance
+    #   registration/taxes
 
     # add auto ownership costs (by income)
     travel_cost_df.loc['incQ1', 'total_auto_own_finance_cost_annual_2023d'] = travel_cost_df['total_hhld_autos']*(AUTO_OWNERSHIP_COST_2020D + AUTO_FINANCE_COST_2020D) / INFLATION_00_20 * INFLATION_00_23
@@ -574,11 +610,12 @@ def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
 
     # all transportation costs
     travel_cost_df['total_transportation_cost_annual_2023d']       = \
-        travel_cost_df['total_auto_op_cost_annual_2023d']          + \
-        travel_cost_df['total_transit_op_cost_annual_2023d']       + \
+        travel_cost_df['total_detailed_auto_cost_annual_2023d']          + \
+        travel_cost_df['total_detailed_transit_cost_annual_2023d']       + \
         travel_cost_df['total_auto_own_finance_cost_annual_2023d'] + \
         travel_cost_df['total_auto_insurance_cost_annual_2023d']   + \
-        travel_cost_df['total_auto_registration_taxes_cost_annual_2023d']
+        travel_cost_df['total_auto_registration_taxes_cost_annual_2023d'] + \
+        travel_cost_df['total_taxitnc_cost_annual_2023d']
 
     # and finally annual household income from 2000 dollars to 2023 dollars
     travel_cost_df['total_hhld_income_annual_2023d']    = travel_cost_df['total_hhld_income']*INFLATION_00_23
@@ -600,16 +637,41 @@ def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
 
     # calculate average per household
     travel_cost_df['avg_num_autos_per_hhld']                                 = travel_cost_df['total_hhld_autos']                                   /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_hhld_income_annual_2023d_per_hhld']                  = travel_cost_df['total_hhld_income_annual_2023d']                     /travel_cost_df['num_hhlds']
     travel_cost_df['avg_auto_op_cost_annual_2023d_per_hhld']                 = travel_cost_df['total_auto_op_cost_annual_2023d']                    /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_parking_cost_annual_2023d_per_hhld']                 = travel_cost_df['total_parking_cost_annual_2023d']                    /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_bridge_toll_cost_annual_2023d_per_hhld']             = travel_cost_df['total_bridge_toll_cost_annual_2023d']                    /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_value_toll_cost_annual_2023d_per_hhld']              = travel_cost_df['total_value_toll_cost_annual_2023d']                    /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_cordon_toll_cost_annual_2023d_per_hhld']             = travel_cost_df['total_cordon_toll_cost_annual_2023d']                    /travel_cost_df['num_hhlds']
     travel_cost_df['avg_transit_op_cost_annual_2023d_per_hhld']              = travel_cost_df['total_transit_op_cost_annual_2023d']                 /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_drive_to_transit_cost_annual_2023d_per_hhld']        = travel_cost_df['total_drive_to_transit_cost_annual_2023d']                 /travel_cost_df['num_hhlds']
+    travel_cost_df['avg_taxitnc_cost_annual_2023d_per_hhld']                 = travel_cost_df['total_taxitnc_cost_annual_2023d']                 /travel_cost_df['num_hhlds']
     travel_cost_df['avg_auto_own_finance_cost_annual_2023d_per_hhld']        = travel_cost_df['total_auto_own_finance_cost_annual_2023d']           /travel_cost_df['num_hhlds']
     travel_cost_df['avg_auto_insurance_cost_annual_2023d_per_hhld']          = travel_cost_df['total_auto_insurance_cost_annual_2023d']             /travel_cost_df['num_hhlds']
     travel_cost_df['avg_auto_registration_taxes_cost_annual_2023d_per_hhld'] = travel_cost_df['total_auto_registration_taxes_cost_annual_2023d']    /travel_cost_df['num_hhlds']
     travel_cost_df['avg_transportation_cost_annual_2023d_per_hhld']          = travel_cost_df['total_transportation_cost_annual_2023d']             /travel_cost_df['num_hhlds']
-    travel_cost_df['avg_hhld_income_annual_2023d_per_hhld']                  = travel_cost_df['total_hhld_income_annual_2023d']                     /travel_cost_df['num_hhlds']
+    # calculate average per trip
+    travel_cost_df['avg_auto_cost_annual_2023d_per_trip']             = (travel_cost_df['total_detailed_auto_cost_annual_2023d'] + \
+                                                                             travel_cost_df['total_auto_own_finance_cost_annual_2023d'] + \
+                                                                             travel_cost_df['total_auto_insurance_cost_annual_2023d']   + \
+                                                                             travel_cost_df['total_auto_registration_taxes_cost_annual_2023d'])     /travel_cost_df['num_auto_trips']
+    travel_cost_df['avg_transit_cost_annual_2023d_per_trip']          = (travel_cost_df['total_detailed_transit_cost_annual_2023d'] + \
+                                                                             travel_cost_df['total_auto_own_finance_cost_annual_2023d'] + \
+                                                                             travel_cost_df['total_auto_insurance_cost_annual_2023d']   + \
+                                                                             travel_cost_df['total_auto_registration_taxes_cost_annual_2023d'])     /travel_cost_df['num_transit_trips']
+    travel_cost_df['avg_taxitnc_cost_annual_2023d_per_trip']          = travel_cost_df['total_taxitnc_cost_annual_2023d']                                  /travel_cost_df['num_taxitnc_trips']
+    travel_cost_df['avg_transportation_cost_annual_2023d_per_trip']   = travel_cost_df['total_transportation_cost_annual_2023d']                    /(travel_cost_df['num_auto_trips'] + \
+                                                                                                                                                      travel_cost_df['num_transit_trips'] + \
+                                                                                                                                                      travel_cost_df['num_taxitnc_trips'])
     # calculate pct of income
     travel_cost_df['auto_op_cost_pct_of_income']                 = travel_cost_df['total_auto_op_cost_annual_2023d']                 /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['parking_cost_pct_of_income']                 = travel_cost_df['total_parking_cost_annual_2023d']                 /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['bridge_toll_cost_pct_of_income']             = travel_cost_df['total_bridge_toll_cost_annual_2023d']                 /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['value_toll_cost_pct_of_income']              = travel_cost_df['total_value_toll_cost_annual_2023d']                 /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['cordon_toll_cost_pct_of_income']             = travel_cost_df['total_cordon_toll_cost_annual_2023d']                 /travel_cost_df['total_hhld_income_annual_2023d']
     travel_cost_df['transit_op_cost_pct_of_income']              = travel_cost_df['total_transit_op_cost_annual_2023d']              /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['drive_to_transit_cost_pct_of_income']        = travel_cost_df['total_drive_to_transit_cost_annual_2023d']              /travel_cost_df['total_hhld_income_annual_2023d']
+    travel_cost_df['taxitnc_cost_pct_of_income']                 = travel_cost_df['total_taxitnc_cost_annual_2023d']              /travel_cost_df['total_hhld_income_annual_2023d']
     travel_cost_df['auto_own_finance_cost_pct_of_income']        = travel_cost_df['total_auto_own_finance_cost_annual_2023d']        /travel_cost_df['total_hhld_income_annual_2023d']
     travel_cost_df['auto_insurance_cost_pct_of_income']          = travel_cost_df['total_auto_insurance_cost_annual_2023d']          /travel_cost_df['total_hhld_income_annual_2023d']
     travel_cost_df['auto_registration_taxes_cost_pct_of_income'] = travel_cost_df['total_auto_registration_taxes_cost_annual_2023d'] /travel_cost_df['total_hhld_income_annual_2023d']
@@ -626,11 +688,27 @@ def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
     # drop unused columns
     travel_cost_df.drop(columns=[
         'incQ', 'hhld_travel', # now in key
-        'total_auto_cost',
-        'total_transit_cost',
+        'total_auto_op_cost',
+        'total_parking_cost',
+        'total_bridge_toll',
+        'total_value_toll',
+        'total_cordon_toll',
+        'total_fare',
+        'total_drv_trn_op_cost',
+        'total_taxitnc_cost',
+        'total_detailed_auto_cost',
+        'total_detailed_transit_cost',
         'total_hhld_income',
         'total_auto_op_cost_annual_2023d',
+        'total_parking_cost_annual_2023d',
+        'total_bridge_toll_cost_annual_2023d',
+        'total_value_toll_cost_annual_2023d',
+        'total_cordon_toll_cost_annual_2023d',
         'total_transit_op_cost_annual_2023d',
+        'total_drive_to_transit_cost_annual_2023d',
+        'total_taxitnc_cost_annual_2023d',
+        'total_detailed_auto_cost_annual_2023d',
+        'total_detailed_transit_cost_annual_2023d',
         'total_auto_own_finance_cost_annual_2023d',
         'total_auto_insurance_cost_annual_2023d',
         'total_auto_registration_taxes_cost_annual_2023d',
@@ -656,11 +734,20 @@ def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
     metrics_df.loc[ metrics_df['metric_desc'] == 'avg_auto_own_finance_cost_annual_2023d_per_hhld', 'grouping1'] = 'Fixed Costs'
     metrics_df.loc[ metrics_df['metric_desc'] == 'avg_auto_insurance_cost_annual_2023d_per_hhld', 'grouping1'] = 'Fixed Costs'
     metrics_df.loc[ metrics_df['metric_desc'] == 'avg_auto_registration_taxes_cost_annual_2023d_per_hhld', 'grouping1'] = 'Fixed Costs'
-    metrics_df.loc[ metrics_df['metric_desc'] == 'avg_auto_op_cost_annual_2023d_per_hhld', 'grouping1'] = 'Variable Costs'
-    metrics_df.loc[ metrics_df['metric_desc'] == 'avg_transit_op_cost_annual_2023d_per_hhld', 'grouping1'] = 'Variable Costs'
-    metrics_df.loc[ metrics_df['metric_desc'] == 'avg_transportation_cost_annual_2023d_per_hhld', 'grouping1'] = 'Total Costs'
-
-
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('auto_op_cost') == True , 'grouping1'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('parking_cost') == True , 'grouping1'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('bridge_toll_cost') == True , 'grouping1'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('value_toll_cost') == True , 'grouping1'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('cordon_toll_cost') == True , 'grouping1'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('transit_op_cost') == True , 'grouping1'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('drive_to_transit_cost') == True , 'grouping1'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('taxitnc_cost') == True , 'grouping1'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('transportation_cost') == True , 'grouping1'] = 'Total Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('cost_annual_2023d_per_hhld') == True , 'grouping2'] = 'cost per household'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('_cost_pct_of_income') == True , 'grouping2'] = 'cost percent of income'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('_per_trip') == True , 'grouping2'] = 'cost per trip'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('auto_cost') == True , 'grouping1'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('transit_cost') == True , 'grouping1'] = 'Variable Costs'
 
     LOGGER.debug("  returning:\n{}".format(metrics_df))
 
@@ -1732,7 +1819,7 @@ def calculate_fatalitites(run_id, loaded_network_df, collision_rates_df, tm_load
         modified_network_df['tm_run_id'] = tm_run_id
         return modified_network_df.groupby('tm_run_id').agg({'N_motorist_fatalities': ['sum'],'N_bike_fatalities': ['sum'],'N_ped_fatalities': ['sum'],'N_total_fatalities': ['sum']})
  
-def calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict):
+def calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict):
     # 9) Annual number of estimated fatalities on freeways and non-freeway facilities
 
     # borrow from VZ_safety_calc_correction_v2.R
@@ -1849,8 +1936,6 @@ def calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id, year, tm_loaded_
                                                         left_on="TAZ1454",
                                                         right_on="TAZ1454",
                                                         how='left')
-    # filter for nonfreeway
-    vmt_vht_metrics_by_taz_df = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'non-freeway']
     # make a copy and filter for EPCs
     vmt_vht_metrics_by_epc_taz_df = vmt_vht_metrics_by_taz_df.copy().loc[vmt_vht_metrics_by_taz_df['taz_epc'] == 1]
     # load taz data to pull population from
@@ -1867,18 +1952,55 @@ def calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id, year, tm_loaded_
     # calculate population of EPC TAZs
     epc_population = tm_taz_input_df.copy().loc[tm_taz_input_df['taz_epc'] == 1]
     epc_population = epc_population.TOTPOP.sum()
-    # for region
-    annual_nonfwy_motorist_fatalities_region = vmt_vht_metrics_by_taz_df.loc[:, 'Motor Vehicle Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_nonfwy_walk_fatalities_region = vmt_vht_metrics_by_taz_df.loc[:, 'Walk Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_nonfwy_bike_fatalities_region = vmt_vht_metrics_by_taz_df.loc[:, 'Bike Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
+    # filter for fwy vs nonfreeway, sum fatalities across relevant TAZs, divide per 100K residents
+    # fwy:
+    #   for entire region:
+    annual_fwy_motorist_fatalities_region = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'freeway', 'Motor Vehicle Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
+    annual_fwy_walk_fatalities_region = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'freeway', 'Walk Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
+    annual_fwy_bike_fatalities_region = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'freeway', 'Bike Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
+    annual_fwy_total_fatalities_region = annual_fwy_motorist_fatalities_region + annual_fwy_walk_fatalities_region + annual_fwy_bike_fatalities_region
+    #   for EPCs:
+    annual_fwy_motorist_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[vmt_vht_metrics_by_epc_taz_df['road_type'] == 'freeway', 'Motor Vehicle Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
+    annual_fwy_walk_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[vmt_vht_metrics_by_epc_taz_df['road_type'] == 'freeway', 'Walk Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
+    annual_fwy_bike_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[vmt_vht_metrics_by_epc_taz_df['road_type'] == 'freeway', 'Bike Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
+    annual_fwy_total_fatalities_epc = annual_fwy_motorist_fatalities_epc + annual_fwy_walk_fatalities_epc + annual_fwy_bike_fatalities_epc
+    #   for rest of the region
+    annual_fwy_motorist_fatalities_nonepc = annual_fwy_motorist_fatalities_region - annual_fwy_motorist_fatalities_epc
+    annual_fwy_walk_fatalities_nonepc = annual_fwy_walk_fatalities_region - annual_fwy_walk_fatalities_epc
+    annual_fwy_bike_fatalities_nonepc = annual_fwy_bike_fatalities_region - annual_fwy_bike_fatalities_epc
+    annual_fwy_total_fatalities_nonepc = annual_fwy_total_fatalities_region - annual_fwy_total_fatalities_epc
+
+    # nonfwy:
+    #   for entire region:
+    annual_nonfwy_motorist_fatalities_region = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'non-freeway', 'Motor Vehicle Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
+    annual_nonfwy_walk_fatalities_region = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'non-freeway', 'Walk Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
+    annual_nonfwy_bike_fatalities_region = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'non-freeway', 'Bike Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
     annual_nonfwy_total_fatalities_region = annual_nonfwy_motorist_fatalities_region + annual_nonfwy_walk_fatalities_region + annual_nonfwy_bike_fatalities_region
-    # for EPCs
-    annual_nonfwy_motorist_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[:, 'Motor Vehicle Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_nonfwy_walk_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[:, 'Walk Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_nonfwy_bike_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[:, 'Bike Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
+    #   for EPCs:
+    annual_nonfwy_motorist_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[vmt_vht_metrics_by_epc_taz_df['road_type'] == 'non-freeway', 'Motor Vehicle Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
+    annual_nonfwy_walk_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[vmt_vht_metrics_by_epc_taz_df['road_type'] == 'non-freeway', 'Walk Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
+    annual_nonfwy_bike_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[vmt_vht_metrics_by_epc_taz_df['road_type'] == 'non-freeway', 'Bike Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
     annual_nonfwy_total_fatalities_epc = annual_nonfwy_motorist_fatalities_epc + annual_nonfwy_walk_fatalities_epc + annual_nonfwy_bike_fatalities_epc
+    #   for rest of the region
+    annual_nonfwy_motorist_fatalities_nonepc = annual_nonfwy_motorist_fatalities_region - annual_nonfwy_motorist_fatalities_epc
+    annual_nonfwy_walk_fatalities_nonepc = annual_nonfwy_walk_fatalities_region - annual_nonfwy_walk_fatalities_epc
+    annual_nonfwy_bike_fatalities_nonepc = annual_nonfwy_bike_fatalities_region - annual_nonfwy_bike_fatalities_epc
+    annual_nonfwy_total_fatalities_nonepc = annual_nonfwy_total_fatalities_region - annual_nonfwy_total_fatalities_epc
 
     # enter into metrics dict
+    metrics_dict['Motorist', 'Region', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_motorist_fatalities_region
+    metrics_dict['Walk', 'Region', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_walk_fatalities_region
+    metrics_dict['Bike', 'Region', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_bike_fatalities_region
+    metrics_dict['Total', 'Region', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_total_fatalities_region
+    metrics_dict['Motorist', 'EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_motorist_fatalities_epc
+    metrics_dict['Walk', 'EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_walk_fatalities_epc
+    metrics_dict['Bike', 'EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_bike_fatalities_epc
+    metrics_dict['Total', 'EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_total_fatalities_epc
+    metrics_dict['Motorist', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_motorist_fatalities_nonepc
+    metrics_dict['Walk', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_walk_fatalities_nonepc
+    metrics_dict['Bike', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_bike_fatalities_nonepc
+    metrics_dict['Total', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_total_fatalities_nonepc
+
     metrics_dict['Motorist', 'Region', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_motorist_fatalities_region
     metrics_dict['Walk', 'Region', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_walk_fatalities_region
     metrics_dict['Bike', 'Region', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_bike_fatalities_region
@@ -1887,6 +2009,10 @@ def calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id, year, tm_loaded_
     metrics_dict['Walk', 'EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_walk_fatalities_epc
     metrics_dict['Bike', 'EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_bike_fatalities_epc
     metrics_dict['Total', 'EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_total_fatalities_epc
+    metrics_dict['Motorist', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_motorist_fatalities_nonepc
+    metrics_dict['Walk', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_walk_fatalities_nonepc
+    metrics_dict['Bike', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_bike_fatalities_nonepc
+    metrics_dict['Total', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_total_fatalities_nonepc
 
 def calculate_Safe2_change_in_vmt(tm_run_id, year, tm_loaded_network_df,tm_auto_times_df, metrics_dict):
     # 10) Change in vehicle miles travelled on freeway and adjacent non-freeway facilities
@@ -2257,7 +2383,7 @@ if __name__ == "__main__":
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
         calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, metrics_dict) #add tm_metric_id to all?
         # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
-        calculate_Safe1_fatalities_freewayss_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict)
+        calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
         calculate_Safe2_change_in_vmt(tm_run_id, year, tm_loaded_network_df,tm_auto_times_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S2 Done")
