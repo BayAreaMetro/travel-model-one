@@ -9,20 +9,20 @@ library(readxl)
 
 # create path
 #change it for each model run
-WORK_DIR        <- "L:/Application/Model_One/NextGenFwys/NetworkProject_Development/NGF_Path3a"
+WORK_DIR        <- "L:/Application/Model_One/NextGenFwys/Scenarios"
 #change it for each model run
-MODEL           <- "2035_TM152_NGF_NP07_Path3a_01_Toll_189SJ_189OAK"
+MODEL           <- "2035_TM152_NGF_NP10_Path3b_02"
 #change it for each model run
-MODEL_DIR_01    <- "L:/Application/Model_One/NextGenFwys/Scenarios/2035_TM152_NGF_NP07_Path3a_01_Toll_189SJ_189OAK" 
+MODEL_DIR_01    <- paste(WORK_DIR, MODEL, sep = "/") 
 TRIP_RDATA_PATH <- paste(MODEL_DIR_01, "OUTPUT", "updated_output" , "trips.rdata", sep = "/")
-CORDON_PATH     <- "L:/Application/Model_One/NextGenFwys/INPUT_DEVELOPMENT/PopSyn_n_LandUse/2035_cordon/landuse/tazdata.csv"
-OUTPUT_NAME     <- paste("trips_cordon_mode_summary_",MODEL, ".csv", sep ="")
-OUTPUT_PATH     <- paste(WORK_DIR, OUTPUT_NAME, sep = "/")
+CORDON_PATH     <- "L:/Application/Model_One/NextGenFwys/INPUT_DEVELOPMENT/PopSyn_n_LandUse/2035_cordon/landuse/parking_strategy/tazData_parkingStrategy_v01_3cordons_LeaveOutTI.csv"
+OUTPUT_NAME     <- paste("trips_cordon_mode_summary",".csv", sep ="")
+OUTPUT_PATH     <- paste(WORK_DIR, MODEL, "OUTPUT", "metrics", OUTPUT_NAME,sep = "/")
 
 # read files
 TRIP_RDATA      <- load(TRIP_RDATA_PATH)
 CORDON          <- read.csv(CORDON_PATH)
-
+SAMPLING_RATE = 0.500
 
 #### process cordon data ####
 
@@ -47,7 +47,6 @@ CORDON$COUNTY_NAME[CORDON$COUNTY ==  9] <- "Marin County"
 # Cordon Name
 CORDON$CORDON_NAME <- NA
 CORDON$CORDON_NAME[CORDON$CORDON ==  0] <- "0-No Cordons"
-CORDON$CORDON_NAME[CORDON$CORDON ==  9] <- "9-Treasury Island Cordon"
 CORDON$CORDON_NAME[CORDON$CORDON == 10] <- "10-San Francisco Cordon"
 CORDON$CORDON_NAME[CORDON$CORDON == 11] <- "11-Oakland Cordon"
 CORDON$CORDON_NAME[CORDON$CORDON == 12] <- "12-San Jose Cordon"
@@ -82,8 +81,19 @@ trips_cordon_mode_summary <-
   group_by(CORDON_NAME_orig,
            CORDON_NAME_dest,
            trip_mode) %>%
-  summarise(num_of_trips = n()) %>%
-  mutate(model_run = MODEL)
+  summarise(simulated_trips = n()) %>%
+  mutate(CORDON_orig = as.numeric(sub("\\-.*", "", CORDON_NAME_orig)),
+         CORDON_dest = as.numeric(sub("\\-.*", "", CORDON_NAME_dest)),
+         estimated_trips = simulated_trips / SAMPLING_RATE,
+         run_id = MODEL) %>%
+  select(CORDON_NAME_orig,
+         CORDON_orig,
+         CORDON_NAME_dest,
+         CORDON_dest,
+         trip_mode,
+         simulated_trips,
+         estimated_trips,
+         run_id)
 
 trips_cordon_mode_summary$trip_mode_description <- NA
 trips_cordon_mode_summary$trip_mode_description[trips_cordon_mode_summary$trip_mode == 1]  <- "Drive alone free"
@@ -109,3 +119,4 @@ trips_cordon_mode_summary$trip_mode_description[trips_cordon_mode_summary$trip_m
 trips_cordon_mode_summary$trip_mode_description[trips_cordon_mode_summary$trip_mode == 21] <- "TNC, shared"
 #### write the output ####
 write.csv(trips_cordon_mode_summary, OUTPUT_PATH, row.names = FALSE)
+
