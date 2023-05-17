@@ -1948,8 +1948,11 @@ def calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id, year, tm_loaded_n
     
     # calculate and enter into metrics dict
     N_motorist_fatalities_2015_obs_correction = N_motorist_fatalities*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
+    LOGGER.debug("2015 motorist correction factor =\n{}".format(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15))
     N_ped_fatalities_2015_obs_correction = N_ped_fatalities*(OBS_N_PED_FATALITIES_15/N_ped_fatalities_15)
+    LOGGER.debug("2015 ped correction factor =\n{}".format(OBS_N_PED_FATALITIES_15/N_ped_fatalities_15))
     N_bike_fatalities_2015_obs_correction = N_bike_fatalities*(OBS_N_BIKE_FATALITIES_15/N_bike_fatalities_15)
+    LOGGER.debug("2015 bike correction factor =\n{}".format(OBS_N_BIKE_FATALITIES_15/N_bike_fatalities_15))
     N_total_fatalities_2015_obs_correction = N_motorist_fatalities_2015_obs_correction + N_ped_fatalities_2015_obs_correction + N_bike_fatalities_2015_obs_correction
     
     N_motorist_fatalities_speed_reduction_2015_obs_correction = N_motorist_fatalities_speed_reduction*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
