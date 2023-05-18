@@ -1650,7 +1650,7 @@ def calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df
 
 
 
-def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, metrics_dict):    
+def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df, metrics_dict):    
     # 6) Ratio of travel time during peak hours vs. non-peak hours between representative origin-destination pairs 
 
     metric_id = 'Reliable 2'
@@ -1707,8 +1707,66 @@ def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, metrics_dict):
     # add average across corridors to metric dict
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Average across 10 O-D pairs','ratio_travel_time_peak_nonpeak_across_pairs',year]      = total_travel_time/n
 
+    # add metric for goods routes: Calculate [Ratio of travel time during peak hours vs. non-peak hours] for 3 truck routes (using link-level)
+    # load table with links for each goods route
+    # columns: A, B, I580_I238_I880_PortOfOakland, I101_I880_PortOfOakland, I80_I880_PortOfOakland
+    goods_routes_a_b_links_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "goods_routes_a_b.csv")
+    # TODO: this is large so join/subset it immediately
+    goods_routes_a_b_links_df = pd.read_csv(goods_routes_a_b_links_file)
+    LOGGER.info("  Read {:,} rows from {}".format(len(goods_routes_a_b_links_df), goods_routes_a_b_links_file))
+    LOGGER.debug("goods_routes_a_b_links_df.head() =\n{}".format(goods_routes_a_b_links_df.head()))
+    # merge loaded network with df containing route information
+    # remove HOV lanes from the network
+    loaded_network_with_goods_routes_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] == 1)]
+    loaded_network_with_goods_routes_df = loaded_network_with_goods_routes_df.copy()[['a','b','ctimAM','ctimMD','ctimPM']]
+    loaded_network_with_goods_routes_df = pd.merge(left=loaded_network_with_goods_routes_df, right=goods_routes_a_b_links_df, how='left', left_on=['a','b'], right_on=['A','B'])
+    LOGGER.debug("loaded_network_with_goods_routes_df.head() =\n{}".format(loaded_network_with_goods_routes_df.head()))
 
-
+    # sum the travel time for the different time periods on the route that begins on I580
+    travel_time_route_I580_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I580_I238_I880_PortOfOakland').agg('sum')
+    LOGGER.debug("travel_time_route_I580_summed_df.head() =\n{}".format(travel_time_route_I580_summed_df.head()))
+    # Only use rows containing 'AM' since this is the direction toward the port of oakland
+    AM_travel_time_route_I580 = travel_time_route_I580_summed_df.loc['AM', 'ctimAM']
+    MD_travel_time_route_I580 = travel_time_route_I580_summed_df.loc['AM', 'ctimMD']
+    PM_travel_time_route_I580 = travel_time_route_I580_summed_df.loc['AM', 'ctimPM']
+    # calculate average travel time for peak period
+    peak_average_travel_time_route_I580 = numpy.mean([AM_travel_time_route_I580,PM_travel_time_route_I580])
+    # calculate ratio for peak/offpeak
+    ratio_peak_offpeak_route_I580 = peak_average_travel_time_route_I580 / MD_travel_time_route_I580
+    # enter into metrics_dict
+    metrics_dict['Goods Routes', 'Peak Hours', grouping3, tm_run_id, metric_id,'intermediate','I580_I238_I880_PortOfOakland', 'average peak travel time', year] = peak_average_travel_time_route_I580
+    metrics_dict['Goods Routes', 'NonPeak Hours', grouping3, tm_run_id, metric_id,'intermediate','I580_I238_I880_PortOfOakland', 'average nonpeak travel time', year] = MD_travel_time_route_I580
+    metrics_dict['Goods Routes', 'Peak vs NonPeak', grouping3, tm_run_id, metric_id,'final','I580_I238_I880_PortOfOakland', 'Ratio', year] = ratio_peak_offpeak_route_I580
+    
+    # sum the travel time for the different time periods on the route that begins on I101
+    travel_time_route_I101_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I101_I880_PortOfOakland').agg('sum')
+    # Only use rows containing 'AM' since this is the direction toward the port of oakland
+    AM_travel_time_route_I101 = travel_time_route_I101_summed_df.loc['AM', 'ctimAM']
+    MD_travel_time_route_I101 = travel_time_route_I101_summed_df.loc['AM', 'ctimMD']
+    PM_travel_time_route_I101 = travel_time_route_I101_summed_df.loc['AM', 'ctimPM']
+    # calculate average travel time for peak period
+    peak_average_travel_time_route_I101 = numpy.mean([AM_travel_time_route_I101,PM_travel_time_route_I101])
+    # calculate ratio for peak/offpeak
+    ratio_peak_offpeak_route_I101 = peak_average_travel_time_route_I101 / MD_travel_time_route_I101
+    # enter into metrics_dict
+    metrics_dict['Goods Routes', 'Peak Hours', grouping3, tm_run_id, metric_id,'intermediate','I101_I880_PortOfOakland', 'average peak travel time', year] = peak_average_travel_time_route_I101
+    metrics_dict['Goods Routes', 'NonPeak Hours', grouping3, tm_run_id, metric_id,'intermediate','I101_I880_PortOfOakland', 'average nonpeak travel time', year] = MD_travel_time_route_I101
+    metrics_dict['Goods Routes', 'Peak vs NonPeak', grouping3, tm_run_id, metric_id,'final','I101_I880_PortOfOakland', 'Ratio', year] = ratio_peak_offpeak_route_I101
+    
+    # sum the travel time for the different time periods on the route that begins on I80
+    travel_time_route_I80_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I80_I880_PortOfOakland').agg('sum')
+    # Only use rows containing 'AM' since this is the direction toward the port of oakland
+    AM_travel_time_route_I80 = travel_time_route_I80_summed_df.loc['AM', 'ctimAM']
+    MD_travel_time_route_I80 = travel_time_route_I80_summed_df.loc['AM', 'ctimMD']
+    PM_travel_time_route_I80 = travel_time_route_I80_summed_df.loc['AM', 'ctimPM']
+    # calculate average travel time for peak period
+    peak_average_travel_time_route_I80 = numpy.mean([AM_travel_time_route_I80,PM_travel_time_route_I80])
+    # calculate ratio for peak/offpeak
+    ratio_peak_offpeak_route_I80 = peak_average_travel_time_route_I80 / MD_travel_time_route_I80
+    # enter into metrics_dict
+    metrics_dict['Goods Routes', 'Peak Hours', grouping3, tm_run_id, metric_id,'intermediate','I80_I880_PortOfOakland', 'average peak travel time', year] = peak_average_travel_time_route_I80
+    metrics_dict['Goods Routes', 'NonPeak Hours', grouping3, tm_run_id, metric_id,'intermediate','I80_I880_PortOfOakland', 'average nonpeak travel time', year] = MD_travel_time_route_I80
+    metrics_dict['Goods Routes', 'Peak vs NonPeak', grouping3, tm_run_id, metric_id,'final','I80_I880_PortOfOakland', 'Ratio', year] = ratio_peak_offpeak_route_I80
 
 def calculate_Reparative1_dollar_revenues_revinvested(tm_run_id, year, tm_scen_metrics_df, tm_auto_owned_df, tm_travel_cost_df, metrics_dict):
     # 7) Absolute dollar amount of new revenues generated that is reinvested in freeway adjacent communities
@@ -2494,7 +2552,7 @@ if __name__ == "__main__":
         metrics_df = pd.concat([metrics_df, efficient2_metrics_df])
         calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
-        calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, metrics_dict) #add tm_metric_id to all?
+        calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
         calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
