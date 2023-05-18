@@ -1,3 +1,27 @@
+# Calculate Safe1 metrics from MTC model outputs
+# - Lowness correction: use CollisionLookupFINAL.xlsx to adjust fatalities and injuries based on VMT, ft (facility type), and at (area type)
+# - The lowness correction is used for all scenrios
+# - Speed correction: use speed exponent to adjust fatalities and injuries based on the speed reduction from a base scenario
+# - literature reviews of the speed correction: https://www.toi.no/getfile.php?mmfileid=13206; https://www.fhwa.dot.gov/publications/research/safety/17098/003.cfm
+# - documentation of the speed correction: P.49 of the PBA performance report - https://www.planbayarea.org/sites/default/files/documents/Plan_Bay_Area_2050_Performance_Report_October_2021.pdf
+# - it should be used to all scenrios involving speed reduction projects like Vision Zero
+# 
+# Histroical version of this script:
+#   - The original R script was created by Raleigh and used for PBA 50. It is saved on Box (https://mtcdrive.app.box.com/file/748326296021?s=nzm9twmohfblc35vddlnv9wd6zw04zdv).
+# - The original R script was also pushed to MTC's GitHub: https://github.com/BayAreaMetro/travel-model-one/commit/731ee7495f22d13e83086ffade6ace3acd364b06
+# 
+# In Next Generation Freeway project, the project team decided to update the R script to the current version, including:
+# - the ability to separate freeway and non-freeway metrics
+# - the ability to separate EPC and non-EPC metrics
+# 
+# This updated is conducted by Lufeng Lin. Feel free to reach out for questions.
+# 
+# The entire script has three parts:
+# 1. lowness correction for 2015 base scenario: the calculation for 2015 base year is based on some assumptions. The result of 2015 base year is used in the following parts.
+# 2. lowness_correction_loop: this function ONLY has lowness correction. It should be used for No Project scenario and other scenarios without speed reduction.
+# 3. lowness_speed_correction_loop: this function has both lowness and speed correction. In NGF, it is used for all pathways.
+
+
 library(dplyr)
 library(tidyr)
 library(readxl)
@@ -5,24 +29,8 @@ library(readxl)
 # disable sci notation
 options(scipen=999)
 
-# path for 2015 run
-Path_2015 = "M:/Application/Model One/RTP2021/IncrementalProgress/2015_TM152_IPA_17/"
-
-# path for 2050 No project run
-#Path_2050_NP = "M:/Application/Model One/RTP2021/Blueprint/2050_TM152_DBP_NoProject_08/"
-Path_2050_NP = "M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_NoProject_24/"
-
-
-# path for 2050 BP run
-#Path_2050_BP = "M:/Application/Model One/RTP2021/Blueprint/2050_TM152_DBP_PlusCrossing_08/"
-Path_2050_BP = "M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_PlusCrossing_24/"
-
-# Alt 1 2050
-Path_2050_Alt1 = "M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt1_05/"
-
-# Alt 2 2050
-Path_2050_Alt2 = "M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt2_05/"
-
+# project setting
+project <- 'NGF'
 
 
 # assumptions
@@ -35,17 +43,22 @@ Obs_N_ped_injuries_15 = 379
 Obs_N_bike_injuries_15 = 251
 Obs_injuries_15 = 1968
 
-
-collisionrates = read_excel("C:/Users/rmccoy/Box/Other Performance Projects/Research & Development/Safety Research/LookupTable/CollisionLookupFINAL.xlsx", sheet = "Lookup Table")%>%rename(
+# collision look up table: seethe full research here: https://mtcdrive.box.com/s/vww1t4g169dv0f016f7o1k3qt1e32kx2
+collisionrates = read_excel("X:/travel-model-one-master/utilities/RTP/metrics/CollisionLookupFINAL.xlsx", sheet = "Lookup Table")%>%rename(
  serious_injury_rate = a, fatality_rate = k, ped_fatality = k_ped, motorist_fatality = k_motor, bike_fatality = k_bike)%>%select(
     at, ft, fatality_rate, serious_injury_rate,  motorist_fatality, ped_fatality, bike_fatality)  
 
+####### Calculate for 2015 #######
+MODEL_DIR <- "2015_TM152_NGF_05"
+NETWORK_DIR <- file.path("L:/Application/Model_One/NextGenFwys/Scenarios", MODEL_DIR)
 
-# calculate for 2015
-df_15 = read.csv(paste0(Path_2015,"OUTPUT/avgload5period.csv"))%>%mutate(ft_collision = ft, at_collision = at)
+df_15 <- read.csv(file.path(NETWORK_DIR, "OUTPUT", "avgload5period.csv")) %>%
+  mutate(ft_collision = ft, at_collision = at)
 
 df_15$ft_collision[df_15$ft_collision==1] = 2 
 df_15$ft_collision[df_15$ft_collision==8] = 2
+df_15$ft_collision[df_15$ft_collision==5] = 2 # pending review
+df_15$ft_collision[df_15$ft_collision==7] = 4 # pending review
 df_15$ft_collision[df_15$ft_collision==6] = -1 # code says ignore ft 6 (dummy links) and lanes <= 0 by replacing the ft with -1, which won't match with anything
 df_15$ft_collision[df_15$lanes<=0] = -1
 df_15$ft_collision[df_15$ft_collision>4] = 4
@@ -53,9 +66,9 @@ df_15$ft_collision[df_15$ft_collision>4] = 4
 df_15$at_collision[df_15$at_collision<3] = 3 
 df_15$at_collision[df_15$at_collision>4] = 4 
 
-df_15 = df_15%>%rename(at_original = at, ft_original = ft, at = at_collision, ft = ft_collision)
+df_15 <- df_15%>%rename(at_original = at, ft_original = ft, at = at_collision, ft = ft_collision)
 
-df_15_2 = left_join(df_15, collisionrates, by = c("ft", "at"))%>%mutate(annual_VMT = N_days_per_year * (volEA_tot+volAM_tot+volMD_tot+volPM_tot+volEV_tot)*distance,
+df_15_2 <- left_join(df_15, collisionrates, by = c("ft", "at"))%>%mutate(annual_VMT = N_days_per_year * (volEA_tot+volAM_tot+volMD_tot+volPM_tot+volEV_tot)*distance,
                                                                         Avg_speed = (cspdEA + cspdAM+ cspdMD+ cspdPM+ cspdEV)/5,
                                                                         N_motorist_fatalities = annual_VMT/1000000 * motorist_fatality,
                                                                         N_ped_fatalities =  annual_VMT/1000000 * ped_fatality,
@@ -63,9 +76,11 @@ df_15_2 = left_join(df_15, collisionrates, by = c("ft", "at"))%>%mutate(annual_V
                                                                         N_total_fatalities = N_motorist_fatalities + N_ped_fatalities + N_bike_fatalities,
                                                                         N_total_injuries =  annual_VMT/1000000 * serious_injury_rate)
 
-pop_15 = (read.csv(paste0(Path_2015,"INPUT/landuse/tazData.csv"))%>%summarize(TOTPOP = sum(TOTPOP)))[1,1]
+taz <- 
+  read.csv(file.path(NETWORK_DIR, "INPUT", "landuse","tazData.csv"))
+pop_15 <- sum(taz$TOTPOP)
 
-df_15_3 = df_15_2%>%summarize(N_motorist_fatalities = sum(N_motorist_fatalities, na.rm=TRUE),
+df_15_3 <- df_15_2 %>% summarize(N_motorist_fatalities = sum(N_motorist_fatalities, na.rm=TRUE),
                               N_bike_fatalities = sum(N_bike_fatalities, na.rm=TRUE),
                               N_ped_fatalities = sum(N_ped_fatalities, na.rm=TRUE),
                               N_fatalities = sum(N_total_fatalities, na.rm=TRUE),
@@ -74,248 +89,532 @@ df_15_3 = df_15_2%>%summarize(N_motorist_fatalities = sum(N_motorist_fatalities,
                                 Population = pop_15
                               )
 
-df_15_4 = df_15_3%>%mutate(N_motorist_fatalities_corrected= N_motorist_fatalities*(Obs_N_motorist_fatalities_15/df_15_3$N_motorist_fatalities),
-         N_ped_fatalities_corrected = N_ped_fatalities* (Obs_N_ped_fatalities_15/df_15_3$N_ped_fatalities),
-         N_bike_fatalities_corrected = N_bike_fatalities* (Obs_N_bike_fatalities_15/df_15_3$N_bike_fatalities),
-         N_injuries_corrected = N_injuries * (Obs_injuries_15/df_15_3$N_injuries),
-         N_total_fatalities_corrected = N_motorist_fatalities_corrected + N_ped_fatalities_corrected + N_bike_fatalities_corrected,
-         N_motorist_fatalities_corrected_per_100M_VMT = N_motorist_fatalities_corrected/(annual_VMT/100000000),
-         N_ped_fatalities_corrected_per_100M_VMT = N_ped_fatalities_corrected/(annual_VMT/100000000),
-         N_bike_fatalities_corrected_per_100M_VMT = N_bike_fatalities_corrected/(annual_VMT/100000000),
-         N_total_fatalities_corrected_per_100M_VMT = N_total_fatalities_corrected/(annual_VMT/100000000),
-         N_injuries_corrected_per_100M_VMT = N_injuries_corrected/(annual_VMT/100000000),
-         N_motorist_fatalities_corrected_per_100K_pop = N_motorist_fatalities_corrected/(Population/100000),
-         N_ped_fatalities_corrected_per_100K_pop = N_ped_fatalities_corrected/(Population/100000),
-         N_bike_fatalities_corrected_per_100K_pop = N_bike_fatalities_corrected/(Population/100000),
-         N_total_fatalities_corrected_per_100K_pop = N_total_fatalities_corrected/(Population/100000),
-         N_injuries_corrected_per_100K_pop = N_injuries_corrected/(Population/100000)
-         )%>%
+df_15_4 <- df_15_3%>%mutate(N_motorist_fatalities_corrected= N_motorist_fatalities*(Obs_N_motorist_fatalities_15/df_15_3$N_motorist_fatalities),
+                           N_ped_fatalities_corrected = N_ped_fatalities* (Obs_N_ped_fatalities_15/df_15_3$N_ped_fatalities),
+                           N_bike_fatalities_corrected = N_bike_fatalities* (Obs_N_bike_fatalities_15/df_15_3$N_bike_fatalities),
+                           N_injuries_corrected = N_injuries * (Obs_injuries_15/df_15_3$N_injuries),
+                           N_total_fatalities_corrected = N_motorist_fatalities_corrected + N_ped_fatalities_corrected + N_bike_fatalities_corrected,
+                           N_motorist_fatalities_corrected_per_100M_VMT = N_motorist_fatalities_corrected/(annual_VMT/100000000),
+                           N_ped_fatalities_corrected_per_100M_VMT = N_ped_fatalities_corrected/(annual_VMT/100000000),
+                           N_bike_fatalities_corrected_per_100M_VMT = N_bike_fatalities_corrected/(annual_VMT/100000000),
+                           N_total_fatalities_corrected_per_100M_VMT = N_total_fatalities_corrected/(annual_VMT/100000000),
+                           N_injuries_corrected_per_100M_VMT = N_injuries_corrected/(annual_VMT/100000000),
+                           N_motorist_fatalities_corrected_per_100K_pop = N_motorist_fatalities_corrected/(Population/100000),
+                           N_ped_fatalities_corrected_per_100K_pop = N_ped_fatalities_corrected/(Population/100000),
+                           N_bike_fatalities_corrected_per_100K_pop = N_bike_fatalities_corrected/(Population/100000),
+                           N_total_fatalities_corrected_per_100K_pop = N_total_fatalities_corrected/(Population/100000),
+                           N_injuries_corrected_per_100K_pop = N_injuries_corrected/(Population/100000)
+)%>%
   select(-N_motorist_fatalities, -N_bike_fatalities, -N_ped_fatalities, -N_fatalities, -N_injuries)
 
 df_15_5 = gather(df_15_4, index, value, annual_VMT:N_injuries_corrected_per_100K_pop, factor_key = TRUE)%>%
-  mutate(Year = 2015, modelrunID = gsub('M:/Application/Model One/RTP2021/', '', Path_2015))
+  mutate(Year = 2015, modelrunID = (MODEL_DIR))
 
-# read in no project
-df_np = read.csv(paste0(Path_2050_NP,"OUTPUT/avgload5period.csv"))%>%mutate(
-  Avg_speed_NP = (cspdEA + cspdAM+ cspdMD+ cspdPM+ cspdEV)/5)%>%select(
-  a,b,Avg_speed_NP)
-  
+base_year_2015 <- df_15_5
+base_year_2015_3 <- df_15_3
+rm(df_15)
+rm(df_15_2)
+rm(df_15_3)
+rm(df_15_4)
+rm(df_15_5)
 
-# write function for adjusting fatalities based on change in speeds
-fatalities_injuries_process = function(path){
-  df = read.csv(paste0(path,"OUTPUT/avgload5period.csv"))%>%mutate(ft_collision = ft, at_collision = at)
+
+
+
+
+######## Calculate for other scenarios#######
+
+# use lowness_correction on NGF No Project (2035_TM152_NGF_NP10)
+
+# For scenarios without Vision Zero: The function for lowness correction NGF No Project (2035_TM152_NGF_NP10) and Blueprint
+lowness_correction_loop = function(path)
+{ 
+  # EPC
+  taz_epc_crosswalk <- 
+    read.csv("X:/travel-model-one-master/utilities/NextGenFwys/metrics/Input Files/taz_epc_crosswalk.csv")
   
-  df$ft_collision[df$ft_collision==1] = 2 
-  df$ft_collision[df$ft_collision==8] = 2
-  df$ft_collision[df$ft_collision==6] = -1 # code says ignore ft 6 (dummy links) and lanes <= 0 by replacing the ft with -1, which won't match with anything
-  df$ft_collision[df$lanes<=0] = -1
-  df$ft_collision[df$ft_collision>4] = 4
+  # network_links_TAZ: this table tells us if a link is within EPC or not
+  network_links_TAZ <- 
+    read.csv(file.path(path, "OUTPUT", "shapefile", "network_links_TAZ.csv")) %>%
+    left_join(taz_epc_crosswalk, by = "TAZ1454") %>%
+    select(A, B, TAZ1454, taz_epc) %>%
+    group_by(A, B) %>%
+    summarise(taz_epc = max(taz_epc))
+    
   
-  df$at_collision[df$at_collision<3] = 3 
-  df$at_collision[df$at_collision>4] = 4 
+  # Network of both freeway and non-freeway facilities
+  NETWORK_all <- 
+    read.csv(file.path(path, "OUTPUT", "avgload5period.csv")) %>%
+    left_join(network_links_TAZ, by=c('a'='A', 'b'='B')) %>%
+    mutate(key = "all")
   
+  # Network of freeway facilities
+  NETWORK_fwy <- 
+    NETWORK_all %>%
+    filter(ft == 1 | ft == 2 | ft == 5 | ft == 8) %>%
+    mutate(key = "fwy")
   
-  df = df%>%rename(at_original = at, ft_original = ft, at = at_collision, ft = ft_collision)
+  # Network of non freeway facilities
+  NETWORK_nonfwy <- 
+    NETWORK_all %>%
+    filter(ft != 1 & ft != 2 & ft != 5 & ft != 8) %>%
+    mutate(key = "non_fwy")
   
-  # calculate fatalities and injuries as they would be calculated without the speed reduction
-  df2 = left_join(df, collisionrates, by = c("ft", "at"))%>%mutate(annual_VMT = N_days_per_year *(volEA_tot+volAM_tot+volMD_tot+volPM_tot+volEV_tot)*distance,
-                                                                   Avg_speed = (cspdEA + cspdAM+ cspdMD+ cspdPM+ cspdEV)/5,
-                                                                   N_motorist_fatalities = annual_VMT/1000000 * motorist_fatality,
-                                                                   N_ped_fatalities = annual_VMT/1000000 * ped_fatality,
-                                                                   N_bike_fatalities = annual_VMT/1000000 * bike_fatality,
-                                                                   N_total_fatalities = N_motorist_fatalities + N_ped_fatalities + N_bike_fatalities,
-                                                                   N_total_injuries = annual_VMT/1000000 * serious_injury_rate)
+  # Network of links inside of EPC
+  NETWORK_EPC <- 
+    NETWORK_all %>%
+    filter(taz_epc == 1) %>%
+    mutate(key = "EPC")
   
-  # join average speed on each link in no project
-  df3 = left_join(df2, df_np, by=c("a", "b"))%>%select(a,, b, ft, at, annual_VMT, N_motorist_fatalities, N_ped_fatalities, N_bike_fatalities, 
-                                                       N_total_injuries, Avg_speed, Avg_speed_NP)
+  # Network of links outside of EPC
+  NETWORK_nonEPC <- 
+    NETWORK_all %>%
+    filter(taz_epc == 0 | is.na(taz_epc)) %>%
+    mutate(key = "non_EPC")
   
+  result <- data.frame()
   
-  # add attributes for fatality reduction exponent based on ft
-  # exponents and methodology sourced from here: https://www.toi.no/getfile.php?mmfileid=13206 (table S1)
-  # methodology cited in this FHWA resource: https://www.fhwa.dot.gov/publications/research/safety/17098/003.cfm
-  df3$fatality_exponent = 0
-  df3$fatality_exponent[df3$ft%in%c(1,2,3,5,6,8)] = 4.6
-  df3$fatality_exponent[df3$ft%in%c(4,7)] = 3
+  # loop over different networks
+  for (NETWORK in list(NETWORK_all, NETWORK_fwy, NETWORK_nonfwy, NETWORK_EPC, NETWORK_nonEPC))
+  {
+    df_1 <- 
+      NETWORK %>%
+      mutate(ft_collision = ft, at_collision = at)
   
-  df3$injury_exponent = 0
-  df3$injury_exponent[df3$ft%in%c(1,2,3,5,6,8)] = 3.5
-  df3$injury_exponent[df3$ft%in%c(4,7)] = 2
+    # get the freeway facility type: https://github.com/BayAreaMetro/modeling-website/wiki/MasterNetworkLookupTables#facility-type-ft
+    df_1$ft_collision[df_1$ft_collision==1] = 2 
+    df_1$ft_collision[df_1$ft_collision==8] = 2
+    df_1$ft_collision[df_1$ft_collision==5] = 2 # pending review
+    df_1$ft_collision[df_1$ft_collision==7] = 4 # pending review
+    df_1$ft_collision[df_1$ft_collision==6] = -1 # code says ignore ft 6 (dummy links) and lanes <= 0 by replacing the ft with -1, which won't match with anything
+    df_1$ft_collision[df_1$lanes<=0]        = -1
+    df_1$ft_collision[df_1$ft_collision>4]  = 4
+    # at
+    df_1$at_collision[df_1$at_collision<3]  = 3 
+    df_1$at_collision[df_1$at_collision>4]  = 4 
   
-  # adjust fatalities based on exponents and speed. 
-  # if fatalities/injuries are higher because speeds are higher in FBP than NP, use pmin function to replace with originally calculated FBP fatalities/injuries before VZ adjustment (do not let fatalities/injuries increase due to VZ adjustment calculation)
-  df4 = df3%>%mutate(N_motorist_fatalities_after = ifelse(N_motorist_fatalities == 0,0,pmin(N_motorist_fatalities*(Avg_speed/Avg_speed_NP)^fatality_exponent, N_motorist_fatalities)),
-                     N_ped_fatalities_after = ifelse(N_ped_fatalities == 0,0,pmin(N_ped_fatalities*(Avg_speed/Avg_speed_NP)^fatality_exponent, N_ped_fatalities)),
-                     N_bike_fatalities_after = ifelse(N_bike_fatalities == 0,0,pmin(N_bike_fatalities*(Avg_speed/Avg_speed_NP)^fatality_exponent,N_bike_fatalities)),
-                     N_fatalities = N_motorist_fatalities+ N_ped_fatalities+ N_bike_fatalities,
-                     N_fatalities_after = N_motorist_fatalities_after+ N_ped_fatalities_after+ N_bike_fatalities_after,
-                     N_injuries = N_total_injuries,
-                     N_injuries_after = ifelse(N_injuries == 0,0,pmin(N_injuries*(Avg_speed/Avg_speed_NP)^injury_exponent, N_injuries)))
+    df_1 <-
+      df_1 %>%
+      rename(at_original = at, ft_original = ft, at = at_collision, ft = ft_collision)
   
-  # in instances where a new link was added between no project and FBP, replace N_fatalities_after with N_fatalities
-  #N_fatalities_after = coalesce(N_fatalities_after, N_fatalities),
-  #N_motorist_fatalities_after = coalesce(N_motorist_fatalities_after, N_motorist_fatalities),
-  #N_ped_fatalities_after = coalesce(N_ped_fatalities_after, N_ped_fatalities),
-  #N_bike_fatalities_after = coalesce(N_bike_fatalities_after, N_bike_fatalities),
-  #N_injuries_after = coalesce(N_injuries_after, N_injuries))
+    # join with collisionrates
+    # df_2 calculates the fatalities based on ft and at for every link
+    df_2 <-
+      left_join(df_1, collisionrates, by = c("ft", "at")) %>%
+      mutate(
+        # annual VMT
+        annual_VMT            = N_days_per_year * (volEA_tot+volAM_tot+volMD_tot+volPM_tot+volEV_tot)*distance,
+        # average speed
+        Avg_speed             = (cspdEA + cspdAM+ cspdMD+ cspdPM+ cspdEV)/5,
+        # motorist fatalities 
+        N_motorist_fatalities = annual_VMT/1000000 * motorist_fatality,
+        # pedestrian fatalities
+        N_ped_fatalities      = annual_VMT/1000000 * ped_fatality,
+        # bike fatalities
+        N_bike_fatalities     = annual_VMT/1000000 * bike_fatality,
+        # total fatalities
+        N_total_fatalities    = N_motorist_fatalities + N_ped_fatalities + N_bike_fatalities,
+        # total injuries
+        N_total_injuries      = annual_VMT/1000000 * serious_injury_rate)
+    
+    # get the population
+    taz <- 
+      read.csv(file.path(path, "INPUT", "landuse","tazData.csv")) %>%
+      left_join(taz_epc_crosswalk, by=c('ZONE'='TAZ1454')) 
+    
+    if (first(df_2$key) == 'EPC') {
+      taz <- 
+        taz %>%
+        filter(taz_epc == 1)
+    } else if (first(df_2$key) == 'non_EPC') {
+      taz <- 
+        taz %>%
+        filter(taz_epc == 0)
+    } else {
+      taz <- taz
+    }
+    
+    pop <- sum(taz$TOTPOP)
+    
+    # df_3 summarizes the fatalities for the entire network
+    df_3 <- 
+      df_2 %>%
+      summarize(
+        # lowness correction for motorist fatalities
+        N_motorist_fatalities = sum(N_motorist_fatalities, na.rm=TRUE),
+        # lowness correction for bike fatalities
+        N_bike_fatalities     = sum(N_bike_fatalities, na.rm=TRUE),
+        # lowness correction for pedestrian fatalities
+        N_ped_fatalities      = sum(N_ped_fatalities, na.rm=TRUE),
+        # lowness correction for total fatalities
+        N_fatalities          = sum(N_total_fatalities, na.rm=TRUE),
+        # lowness correction for total injuries
+        N_injuries            = sum(N_total_injuries, na.rm=TRUE),
+        # key
+        key                   = first(key),
+        # annual VMT
+        annual_VMT            = sum(annual_VMT, na.rm=TRUE),
+        ) %>%
+      mutate(Population       = pop)
+    
+    # df_4 applies the lowness correction on fatalities
+    df_4 <- 
+      df_3 %>%
+      mutate(
+        # lowness correction for motorist fatalities
+        N_motorist_fatalities_corrected              = N_motorist_fatalities*(Obs_N_motorist_fatalities_15/base_year_2015_3$N_motorist_fatalities),
+        # lowness correction for pedestrian fatalities
+        N_ped_fatalities_corrected                   = N_ped_fatalities* (Obs_N_ped_fatalities_15/base_year_2015_3$N_ped_fatalities),
+        # lowness correction for bike fatalities
+        N_bike_fatalities_corrected                  = N_bike_fatalities* (Obs_N_bike_fatalities_15/base_year_2015_3$N_bike_fatalities),
+        # lowness correction for total fatalities
+        N_total_fatalities_corrected                 = N_motorist_fatalities_corrected + N_ped_fatalities_corrected + N_bike_fatalities_corrected,
+        # lowness correction for motorist fatalities per 100M VMT
+        N_motorist_fatalities_corrected_per_100M_VMT = N_motorist_fatalities_corrected/(annual_VMT/100000000),
+        # lowness correction for pedestrian fatalities per 100M VMT
+        N_ped_fatalities_corrected_per_100M_VMT      = N_ped_fatalities_corrected/(annual_VMT/100000000),
+        # lowness correction for bike fatalities per 100M VMT
+        N_bike_fatalities_corrected_per_100M_VMT     = N_bike_fatalities_corrected/(annual_VMT/100000000),
+        # lowness correction for total fatalities per 100M VMT
+        N_total_fatalities_corrected_per_100M_VMT    = N_total_fatalities_corrected/(annual_VMT/100000000),
+        # lowness correction for motorist injuries per 100K resident
+        N_motorist_fatalities_corrected_per_100K_pop = N_motorist_fatalities_corrected/(Population/100000),
+        # lowness correction for pedestrian injuries per 100K resident
+        N_ped_fatalities_corrected_per_100K_pop      = N_ped_fatalities_corrected/(Population/100000),
+        # lowness correction for bike injuries per 100K resident
+        N_bike_fatalities_corrected_per_100K_pop     = N_bike_fatalities_corrected/(Population/100000),
+        # lowness correction for total fatalities per 100K resident
+        N_total_fatalities_corrected_per_100K_pop    = N_total_fatalities_corrected/(Population/100000),
+        # lowness correction for total injuries
+        N_injuries_corrected                         = N_injuries * (Obs_injuries_15/base_year_2015_3$N_injuries),
+        # lowness correction for total injuries per 100M VMT
+        N_injuries_corrected_per_100M_VMT            = N_injuries_corrected/(annual_VMT/100000000),
+        # lowness correction for total injuries per 100K resident
+        N_injuries_corrected_per_100K_pop            = N_injuries_corrected/(Population/100000)
+      ) %>%
+      select(-N_motorist_fatalities, -N_bike_fatalities, -N_ped_fatalities, -N_fatalities, -N_injuries)
   
-  pop_50_BP = (read.csv(paste0(path,"INPUT/landuse/tazData.csv"))%>%summarize(TOTPOP = sum(TOTPOP)))[1,1]
+  # df_5 is a long format
+  df_5 <- 
+    gather(df_4, index, value, annual_VMT:N_injuries_corrected_per_100K_pop, factor_key = TRUE) %>%
+    mutate(modelrunID = path, key = df_4$key)
   
-  # summarize
-  df5 = df4%>%summarize(N_motorist_fatalities = sum(N_motorist_fatalities, na.rm=TRUE),
-                        N_motorist_fatalities_after = sum(N_motorist_fatalities_after, na.rm=TRUE),
-                        N_bike_fatalities = sum(N_bike_fatalities, na.rm=TRUE),
-                        N_bike_fatalities_after = sum(N_bike_fatalities_after, na.rm=TRUE),
-                        N_ped_fatalities = sum(N_ped_fatalities, na.rm=TRUE),
-                        N_ped_fatalities_after = sum(N_ped_fatalities_after, na.rm=TRUE),
-                        N_fatalities = sum(N_fatalities, na.rm=TRUE),
-                        N_fatalities_after = sum(N_fatalities_after, na.rm=TRUE),
-                        N_injuries = sum(N_injuries, na.rm=TRUE),
-                        N_injuries_after = sum(N_injuries_after, na.rm=TRUE),
-                        annual_VMT = sum(annual_VMT, na.rm=TRUE))%>%select(-N_motorist_fatalities, -N_bike_fatalities, -N_ped_fatalities, -N_fatalities, -N_injuries)%>%rename(
-                          N_motorist_fatalities = N_motorist_fatalities_after, N_bike_fatalities = N_bike_fatalities_after,  N_ped_fatalities = N_ped_fatalities_after, 
-                          N_fatalities = N_fatalities_after, N_injuries = N_injuries_after
-                        )%>%mutate(Population = pop_50_BP)
-  
-  df6 = df5 %>%
-    mutate(N_motorist_fatalities_corrected = N_motorist_fatalities*(Obs_N_motorist_fatalities_15/df_15_3$N_motorist_fatalities),
-           N_ped_fatalities_corrected = N_ped_fatalities*(Obs_N_ped_fatalities_15/df_15_3$N_ped_fatalities),
-           N_bike_fatalities_corrected = N_bike_fatalities*(Obs_N_bike_fatalities_15/df_15_3$N_bike_fatalities),
-           N_total_fatalities_corrected = N_motorist_fatalities_corrected + N_ped_fatalities_corrected + N_bike_fatalities_corrected,
-           N_injuries_corrected = N_injuries*(Obs_injuries_15/df_15_3$N_injuries),
-           N_motorist_fatalities_corrected_per_100M_VMT = N_motorist_fatalities_corrected/(annual_VMT/100000000),
-           N_ped_fatalities_corrected_per_100M_VMT = N_ped_fatalities_corrected/(annual_VMT/100000000),
-           N_bike_fatalities_corrected_per_100M_VMT = N_bike_fatalities_corrected/(annual_VMT/100000000),
-           N_total_fatalities_corrected_per_100M_VMT = N_total_fatalities_corrected/(annual_VMT/100000000),
-           N_injuries_corrected_per_100M_VMT = N_injuries_corrected/(annual_VMT/100000000),
-           N_motorist_fatalities_corrected_per_100K_pop = N_motorist_fatalities_corrected/(Population/100000),
-           N_ped_fatalities_corrected_per_100K_pop = N_ped_fatalities_corrected/(Population/100000),
-           N_bike_fatalities_corrected_per_100K_pop = N_bike_fatalities_corrected/(Population/100000),
-           N_total_fatalities_corrected_per_100K_pop = N_total_fatalities_corrected/(Population/100000),
-           N_injuries_corrected_per_100K_pop = N_injuries_corrected/(Population/100000)
-    )%>%
-    select(-N_motorist_fatalities, -N_bike_fatalities, -N_ped_fatalities, -N_fatalities, -N_injuries)
-  
-  df7 = gather(df6, index, value, annual_VMT:N_injuries_corrected_per_100K_pop, factor_key = TRUE)%>%mutate(Year = 2050,
-                                                                                                            modelrunID = gsub('M:/Application/Model One/RTP2021/Blueprint', '', path))
+  result <- rbind(result, df_5)
+  }
+  result <-
+    result %>%
+    spread(key, value)
+  return (result)
 }
 
-df_2050_bp = fatalities_injuries_process(Path_2050_BP)
-df_2050_alt1 = fatalities_injuries_process(Path_2050_Alt1)
-df_2050_alt2 = fatalities_injuries_process(Path_2050_Alt2)
+MODEL_NP_DIR <- "2035_TM152_NGF_NP10"
+NETWORK_NP_DIR <- file.path("L:/Application/Model_One/NextGenFwys/Scenarios", MODEL_NP_DIR)
+
+NGF_NP10 <- lowness_correction_loop(NETWORK_NP_DIR)
 
 
-# calculate for 2050 no project
-df_50np = read.csv(paste0(Path_2050_NP,"OUTPUT/avgload5period.csv"))%>%mutate(ft_collision = ft, at_collision = at)
+# For scenarios with Vision Zero: Pathway 1-4
 
-df_50np$ft_collision[df_50np$ft_collision==1] = 2 
-df_50np$ft_collision[df_50np$ft_collision==8] = 2
-df_50np$ft_collision[df_50np$ft_collision==6] = -1 # code says ignore ft 6 (dummy links) and lanes <= 0 by replacing the ft with -1, which won't match with anything
-df_50np$ft_collision[df_50np$lanes<=0] = -1
-df_50np$ft_collision[df_50np$ft_collision>4] = 4
+# write function for adjusting fatalities based on change in speeds
+lowness_speed_correction_loop = function(path, NP_path = NETWORK_NP_DIR)
+{
+  # No Project
+  df_np <- 
+    read.csv(file.path(NP_path, "OUTPUT", "avgload5period.csv")) %>%
+    mutate(Avg_speed_NP = (cspdEA + cspdAM+ cspdMD+ cspdPM+ cspdEV)/5) %>%
+    select(a,b,Avg_speed_NP)
+  
+  # EPC
+  taz_epc_crosswalk <- read.csv("X:/travel-model-one-master/utilities/NextGenFwys/metrics/Input Files/taz_epc_crosswalk.csv")
+  
+  # network_links_TAZ: this table tells us if a link is within EPC or not
+  network_links_TAZ <- 
+    read.csv(file.path(path, "OUTPUT", "shapefile", "network_links_TAZ.csv")) %>%
+    left_join(taz_epc_crosswalk, by = "TAZ1454") %>%
+    select(A, B, TAZ1454, taz_epc) %>%
+    group_by(A, B) %>%
+    summarise(taz_epc = max(taz_epc))
+  
+  # Network of both freeway and non-freeway facilities
+  NETWORK_all <- 
+    read.csv(file.path(path, "OUTPUT", "avgload5period.csv")) %>%
+    left_join(network_links_TAZ, by=c('a'='A', 'b'='B')) %>%
+    mutate(key = "all")
+  
+  # Network of freeway facilities
+  NETWORK_fwy <- 
+    NETWORK_all %>%
+    filter(ft == 1 | ft == 2 | ft == 5 | ft == 8) %>%
+    mutate(key = "fwy")
+  
+  # Network of non freeway facilities
+  NETWORK_nonfwy <- 
+    NETWORK_all %>%
+    filter(ft != 1 & ft != 2 & ft != 5 & ft != 8) %>%
+    mutate(key = "non_fwy")
+  
+  # Network of links inside of EPC
+  NETWORK_EPC <- 
+    NETWORK_all %>%
+    filter(taz_epc == 1) %>%
+    mutate(key = "EPC")
+  
+  # Network of links outside of EPC
+  NETWORK_nonEPC <- 
+    NETWORK_all %>%
+    filter(taz_epc == 0 | is.na(taz_epc)) %>%
+    mutate(key = "non_EPC")
+  
+  result <- data.frame()
+  
+  # loop over different networks
+  for (NETWORK in list(NETWORK_all, NETWORK_fwy, NETWORK_nonfwy, NETWORK_EPC, NETWORK_nonEPC))
+  {
+    df_1 <- 
+      NETWORK %>%
+      mutate(ft_collision = ft, at_collision = at)
+    
+    # get the freeway facility type: https://github.com/BayAreaMetro/modeling-website/wiki/MasterNetworkLookupTables#facility-type-ft
+    df_1$ft_collision[df_1$ft_collision==1] = 2 
+    df_1$ft_collision[df_1$ft_collision==8] = 2
+    df_1$ft_collision[df_1$ft_collision==5] = 2 # pending review
+    df_1$ft_collision[df_1$ft_collision==7] = 4 # pending review
+    df_1$ft_collision[df_1$ft_collision==6] = -1 # code says ignore ft 6 (dummy links) and lanes <= 0 by replacing the ft with -1, which won't match with anything
+    df_1$ft_collision[df_1$lanes<=0]        = -1
+    df_1$ft_collision[df_1$ft_collision>4]  = 4
+    # at
+    df_1$at_collision[df_1$at_collision<3]  = 3 
+    df_1$at_collision[df_1$at_collision>4]  = 4 
+    
+    
+    df_1 <- 
+      df_1 %>%
+      rename(at_original = at, ft_original = ft, at = at_collision, ft = ft_collision)
+    
+    # join with collisionrates
+    # df_2 calculates the fatalities based on ft and at for every link (without speed reduction) - lowness correction
+    df_2 <- 
+      left_join(df_1, collisionrates, by = c("ft", "at")) %>%
+      mutate(
+        # annual VMT
+        annual_VMT            = N_days_per_year * (volEA_tot+volAM_tot+volMD_tot+volPM_tot+volEV_tot)*distance,
+        # average speed
+        Avg_speed             = (cspdEA + cspdAM+ cspdMD+ cspdPM+ cspdEV)/5,
+        # motorist fatalities 
+        N_motorist_fatalities = annual_VMT/1000000 * motorist_fatality,
+        # pedestrian fatalities
+        N_ped_fatalities      = annual_VMT/1000000 * ped_fatality,
+        # bike fatalities
+        N_bike_fatalities     = annual_VMT/1000000 * bike_fatality,
+        # total fatalities
+        N_total_fatalities    = N_motorist_fatalities + N_ped_fatalities + N_bike_fatalities,
+        # total injuries
+        N_total_injuries      = annual_VMT/1000000 * serious_injury_rate)
+    
+    # join average speed on each link with No Project's average speed - speed correction
+    df_3 <- 
+      left_join(df_2, df_np, by=c("a", "b")) %>%
+      select(a, b, ft, at, key,
+             annual_VMT, 
+             N_motorist_fatalities, 
+             N_ped_fatalities, 
+             N_bike_fatalities, 
+             N_total_injuries, 
+             Avg_speed, 
+             Avg_speed_NP)
+    
+    # add attributes for fatality reduction exponent based on ft
+    # exponents and methodology sourced from here: https://www.toi.no/getfile.php?mmfileid=13206 (table S1)
+    # methodology cited in this FHWA resource: https://www.fhwa.dot.gov/publications/research/safety/17098/003.cfm
+    df_3$fatality_exponent = 0
+    df_3$fatality_exponent[df_3$ft%in%c(1,2,3,5,6,8)] = 4.6
+    df_3$fatality_exponent[df_3$ft%in%c(4,7)] = 3
+    # injuries
+    df_3$injury_exponent = 0
+    df_3$injury_exponent[df_3$ft%in%c(1,2,3,5,6,8)] = 3.5
+    df_3$injury_exponent[df_3$ft%in%c(4,7)] = 2
+    
+    # adjust fatalities based on exponents and speed. 
+    # if fatalities/injuries are higher because speeds are higher in FBP than NP, use pmin function to replace with originally calculated FBP fatalities/injuries before VZ adjustment (do not let fatalities/injuries increase due to VZ adjustment calculation)
+    df_4 <- 
+      df_3 %>%
+      mutate(
+        # motorist fatalities after speed correction
+        N_motorist_fatalities_after = ifelse(N_motorist_fatalities == 0,0,pmin(N_motorist_fatalities*(Avg_speed/Avg_speed_NP)^fatality_exponent, N_motorist_fatalities)),
+        # pedestrian fatalities after speed correction     
+        N_ped_fatalities_after      = ifelse(N_ped_fatalities == 0,0,pmin(N_ped_fatalities*(Avg_speed/Avg_speed_NP)^fatality_exponent, N_ped_fatalities)),
+        # bike fatalities after speed correction   
+        N_bike_fatalities_after     = ifelse(N_bike_fatalities == 0,0,pmin(N_bike_fatalities*(Avg_speed/Avg_speed_NP)^fatality_exponent,N_bike_fatalities)),
+        # total fatalities before correction          
+        N_fatalities                = N_motorist_fatalities+ N_ped_fatalities+ N_bike_fatalities,
+        # total fatalities after speed correction            
+        N_fatalities_after          = N_motorist_fatalities_after+ N_ped_fatalities_after+ N_bike_fatalities_after,
+        # total injuries before correction             
+        N_injuries                  = N_total_injuries,
+        # total injuries after correction 
+        N_injuries_after            = ifelse(N_injuries == 0,0,pmin(N_injuries*(Avg_speed/Avg_speed_NP)^injury_exponent, N_injuries)))
+    
+    # in instances where a new link was added between no project and FBP, replace N_fatalities_after with N_fatalities
+    #N_fatalities_after = coalesce(N_fatalities_after, N_fatalities),
+    #N_motorist_fatalities_after = coalesce(N_motorist_fatalities_after, N_motorist_fatalities),
+    #N_ped_fatalities_after = coalesce(N_ped_fatalities_after, N_ped_fatalities),
+    #N_bike_fatalities_after = coalesce(N_bike_fatalities_after, N_bike_fatalities),
+    #N_injuries_after = coalesce(N_injuries_after, N_injuries))
+    
+    # get the population
+    taz <- 
+      read.csv(file.path(path, "INPUT", "landuse","tazData.csv")) %>%
+      left_join(taz_epc_crosswalk, by=c('ZONE'='TAZ1454')) 
+    
+    if (first(df_2$key) == 'EPC') {
+      taz <- 
+        taz %>%
+        filter(taz_epc == 1)
+    } else if (first(df_2$key) == 'non_EPC') {
+      taz <- 
+        taz %>%
+        filter(taz_epc == 0)
+    } else {
+      taz <- taz
+    }
+    
+    pop <- sum(taz$TOTPOP)
+    
+    # summarize
+    df_5 <- 
+      df_4 %>%
+      summarize(
+        # motorist fatalities without speed correction
+        N_motorist_fatalities       = sum(N_motorist_fatalities, na.rm=TRUE),
+        # motorist fatalities with speed correction                
+        N_motorist_fatalities_after = sum(N_motorist_fatalities_after, na.rm=TRUE),
+        # bike fatalities without speed correction
+        N_bike_fatalities           = sum(N_bike_fatalities, na.rm=TRUE),
+        # bike fatalities with speed correction
+        N_bike_fatalities_after     = sum(N_bike_fatalities_after, na.rm=TRUE),
+        # pedestrian fatalities without speed correction
+        N_ped_fatalities            = sum(N_ped_fatalities, na.rm=TRUE),
+        # pedestrian fatalities with speed correction
+        N_ped_fatalities_after      = sum(N_ped_fatalities_after, na.rm=TRUE),
+        # total fatalities without speed correction
+        N_fatalities                = sum(N_fatalities, na.rm=TRUE),
+        # total fatalities with speed correction
+        N_fatalities_after          = sum(N_fatalities_after, na.rm=TRUE),
+        # total injuries without speed correction
+        N_injuries                  = sum(N_injuries, na.rm=TRUE),
+        # total injuries with speed correction
+        N_injuries_after            = sum(N_injuries_after, na.rm=TRUE),
+        # key
+        key                         = first(key),
+        # annual VMT
+        annual_VMT                  = sum(annual_VMT, na.rm=TRUE)) %>%
+      select(-N_motorist_fatalities, -N_bike_fatalities, -N_ped_fatalities, -N_fatalities, -N_injuries ) %>%
+      rename(
+        N_motorist_fatalities = N_motorist_fatalities_after, 
+        N_bike_fatalities = N_bike_fatalities_after,  
+        N_ped_fatalities = N_ped_fatalities_after, 
+        N_fatalities = N_fatalities_after, 
+        N_injuries = N_injuries_after) %>%
+      mutate(Population = pop)
+    
+    df_6 <-
+      df_5 %>%
+      mutate(
+        # lowness and speed correction for motorist fatalities
+        N_motorist_fatalities_corrected = N_motorist_fatalities*(Obs_N_motorist_fatalities_15/base_year_2015_3$N_motorist_fatalities),
+        # lowness and speed correction for pedestrian fatalities      
+        N_ped_fatalities_corrected = N_ped_fatalities*(Obs_N_ped_fatalities_15/base_year_2015_3$N_ped_fatalities),
+        # lowness and speed correction for bike fatalities 
+        N_bike_fatalities_corrected = N_bike_fatalities*(Obs_N_bike_fatalities_15/base_year_2015_3$N_bike_fatalities),
+        # lowness and speed correction for total fatalities 
+        N_total_fatalities_corrected = N_motorist_fatalities_corrected + N_ped_fatalities_corrected + N_bike_fatalities_corrected,
+        # lowness and speed correction for motorist fatalities per 100M VMT
+        N_motorist_fatalities_corrected_per_100M_VMT = N_motorist_fatalities_corrected/(annual_VMT/100000000),
+        # lowness and speed correction for pedestrian fatalities per 100M VMT
+        N_ped_fatalities_corrected_per_100M_VMT = N_ped_fatalities_corrected/(annual_VMT/100000000),
+        # lowness and speed correction for bike fatalities per 100M VMT
+        N_bike_fatalities_corrected_per_100M_VMT = N_bike_fatalities_corrected/(annual_VMT/100000000),
+        # lowness and speed correction for total fatalities per 100M VMT
+        N_total_fatalities_corrected_per_100M_VMT = N_total_fatalities_corrected/(annual_VMT/100000000),
+        # lowness and speed correction for motorist fatalities per 100K resident
+        N_motorist_fatalities_corrected_per_100K_pop = N_motorist_fatalities_corrected/(Population/100000),
+        # lowness and speed correction for pedestrian fatalities per 100K resident
+        N_ped_fatalities_corrected_per_100K_pop = N_ped_fatalities_corrected/(Population/100000),
+        # lowness and speed correction for bike fatalities per 100K resident
+        N_bike_fatalities_corrected_per_100K_pop = N_bike_fatalities_corrected/(Population/100000),
+        # lowness and speed correction for total fatalities per 100K resident
+        N_total_fatalities_corrected_per_100K_pop = N_total_fatalities_corrected/(Population/100000),
+        # lowness and speed correction for total injuries   
+        N_injuries_corrected = N_injuries*(Obs_injuries_15/base_year_2015_3$N_injuries),
+        # lowness and speed correction for total injuries per 100M VMT
+        N_injuries_corrected_per_100M_VMT = N_injuries_corrected/(annual_VMT/100000000),
+        # lowness and speed correction for total injuries per 100K resident
+        N_injuries_corrected_per_100K_pop = N_injuries_corrected/(Population/100000)
+      ) %>%
+      select(-N_motorist_fatalities, -N_bike_fatalities, -N_ped_fatalities, -N_fatalities, -N_injuries)
+    
+    df_7 <-
+      gather(df_6, index, value, annual_VMT:N_injuries_corrected_per_100K_pop, factor_key = TRUE) %>%
+      mutate(modelrunID = path, key = df_6$key)
+    
+    result <- rbind(result, df_7)
+  }  
+  result <-
+    result %>%
+    spread(key, value)
+  return (result)
+}
 
-df_50np$at_collision[df_50np$at_collision<3] = 3 
-df_50np$at_collision[df_50np$at_collision>4] = 4 
+# Pathway 1a
+MODEL_DIR <- "2035_TM152_NGF_NP10_Path1a_02"
+NETWORK_DIR <- file.path("L:/Application/Model_One/NextGenFwys/Scenarios", MODEL_DIR)
+NGF_Path1a_02 <- lowness_speed_correction_loop(NETWORK_DIR)
 
-df_50np = df_50np%>%rename(at_original = at, ft_original = ft, at = at_collision, ft = ft_collision)
+# Pathway 1b
+MODEL_DIR <- "2035_TM152_NGF_NP10_Path1b_02"
+NETWORK_DIR <- file.path("L:/Application/Model_One/NextGenFwys/Scenarios", MODEL_DIR)
+NGF_Path1b_02 <- lowness_speed_correction_loop(NETWORK_DIR)
 
-df_50np_2 = left_join(df_50np, collisionrates, by = c("ft", "at"))%>%mutate(annual_VMT = N_days_per_year *(volEA_tot+volAM_tot+volMD_tot+volPM_tot+volEV_tot)*distance,
-                                                             Avg_speed = (cspdEA + cspdAM+ cspdMD+ cspdPM+ cspdEV)/5,
-                                                             N_motorist_fatalities = annual_VMT/1000000 * motorist_fatality,
-                                                             N_ped_fatalities = annual_VMT/1000000 * ped_fatality,
-                                                             N_bike_fatalities =  annual_VMT/1000000 * bike_fatality,
-                                                             N_total_fatalities = N_motorist_fatalities + N_ped_fatalities + N_bike_fatalities,
-                                                             N_total_injuries = annual_VMT/1000000 * serious_injury_rate)
+# Pathway 2a
+MODEL_DIR <- "2035_TM152_NGF_NP10_Path2a_02"
+NETWORK_DIR <- file.path("L:/Application/Model_One/NextGenFwys/Scenarios", MODEL_DIR)
+NGF_Path2a_02 <- lowness_speed_correction_loop(NETWORK_DIR)
 
-pop_50_NP = (read.csv(paste0(Path_2050_NP,"INPUT/landuse/tazData.csv"))%>%summarize(TOTPOP = sum(TOTPOP)))[1,1]
+# Pathway 2b
+MODEL_DIR <- "2035_TM152_NGF_NP10_Path2b_02"
+NETWORK_DIR <- file.path("L:/Application/Model_One/NextGenFwys/Scenarios", MODEL_DIR)
+NGF_Path2b_02 <- lowness_speed_correction_loop(NETWORK_DIR)
 
-df_50np_3 = df_50np_2%>%summarize(N_motorist_fatalities = sum(N_motorist_fatalities, na.rm=TRUE),
-                      N_bike_fatalities = sum(N_bike_fatalities, na.rm=TRUE),
-                      N_ped_fatalities = sum(N_ped_fatalities, na.rm=TRUE),
-                      N_fatalities = sum(N_total_fatalities, na.rm=TRUE),
-                      N_injuries = sum(N_total_injuries, na.rm=TRUE),
-                      annual_VMT = sum(annual_VMT, na.rm=TRUE))%>%mutate(
-                        Population = pop_50_NP
-                      )
+# Pathway 3a
+MODEL_DIR <- "2035_TM152_NGF_NP10_Path3a_02"
+NETWORK_DIR <- file.path("L:/Application/Model_One/NextGenFwys/Scenarios", MODEL_DIR)
+NGF_Path3a_02 <- lowness_speed_correction_loop(NETWORK_DIR)
 
-df_50np_4 = df_50np_3%>%
-  mutate(N_motorist_fatalities_corrected = N_motorist_fatalities*(Obs_N_motorist_fatalities_15/df_15_3$N_motorist_fatalities),
-         N_ped_fatalities_corrected = N_ped_fatalities*(Obs_N_ped_fatalities_15/df_15_3$N_ped_fatalities),
-         N_bike_fatalities_corrected = N_bike_fatalities*(Obs_N_bike_fatalities_15/df_15_3$N_bike_fatalities),
-         N_total_fatalities_corrected = N_motorist_fatalities_corrected + N_ped_fatalities_corrected + N_bike_fatalities_corrected,
-         N_injuries_corrected = N_injuries*(Obs_injuries_15/df_15_3$N_injuries),
-         N_motorist_fatalities_corrected_per_100M_VMT = N_motorist_fatalities_corrected/(annual_VMT/100000000),
-         N_ped_fatalities_corrected_per_100M_VMT = N_ped_fatalities_corrected/(annual_VMT/100000000),
-         N_bike_fatalities_corrected_per_100M_VMT = N_bike_fatalities_corrected/(annual_VMT/100000000),
-         N_total_fatalities_corrected_per_100M_VMT = N_total_fatalities_corrected/(annual_VMT/100000000),
-         N_injuries_corrected_per_100M_VMT = N_injuries_corrected/(annual_VMT/100000000),
-         N_motorist_fatalities_corrected_per_100K_pop = N_motorist_fatalities_corrected/(Population/100000),
-         N_ped_fatalities_corrected_per_100K_pop = N_ped_fatalities_corrected/(Population/100000),
-         N_bike_fatalities_corrected_per_100K_pop = N_bike_fatalities_corrected/(Population/100000),
-         N_total_fatalities_corrected_per_100K_pop = N_total_fatalities_corrected/(Population/100000),
-         N_injuries_corrected_per_100K_pop = N_injuries_corrected/(Population/100000)
-         )%>%
-  select(-N_motorist_fatalities, -N_bike_fatalities, -N_ped_fatalities, -N_fatalities, -N_injuries)
+# Pathway 3b
+MODEL_DIR <- "2035_TM152_NGF_NP10_Path3b_02"
+NETWORK_DIR <- file.path("L:/Application/Model_One/NextGenFwys/Scenarios", MODEL_DIR)
+NGF_Path3b_02 <- lowness_speed_correction_loop(NETWORK_DIR)
 
-df_50np_5 = gather(df_50np_4, index, value, annual_VMT:N_injuries_corrected_per_100K_pop, factor_key = TRUE)%>%
-  mutate(Year = 2050, modelrunID = gsub('M:/Application/Model One/RTP2021/Blueprint', '', Path_2050_NP))
+# Pathway 4
+MODEL_DIR <- "2035_TM152_NGF_NP10_Path4_02"
+NETWORK_DIR <- file.path("L:/Application/Model_One/NextGenFwys/Scenarios", MODEL_DIR)
+NGF_Path4_02 <- lowness_speed_correction_loop(NETWORK_DIR)
 
-
-export = rbind(df_15_5, df_50np_5, df_2050_bp, df_2050_alt1, df_2050_alt2)
+export <- 
+  rbind(
+    NGF_NP10,
+    NGF_Path1a_02, 
+    NGF_Path1b_02, 
+    NGF_Path2a_02, 
+    NGF_Path2b_02,
+    NGF_Path3a_02,
+    NGF_Path3b_02,
+    NGF_Path4_02
+  )
 
 # write csv
-write.csv(export,"C:/Users/rmccoy/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/Metrics_Outputs_FinalBlueprint/Raleigh outputs/fatalities_injuries_export_0804.csv")
+write.csv(export,
+          "L:/Application/Model_One/NextGenFwys/metrics/Safe1/fatalities_injuries_export.csv",
+          row.names = FALSE)
 
-#### SCRATCH TO COMPARE ACROSS BLUEPRINTS
-
-df_50np_2_join = df_50np_2%>%select("a","b", "annual_VMT",  "N_motorist_fatalities", "N_total_injuries")%>%rename(annual_VMT_NP = annual_VMT, 
-                                                                                                                      N_motorist_fatalities_NP = N_motorist_fatalities, 
-                                                                                                                      N_total_injuries_NP = N_total_injuries)
-
-df4_join = df4%>%select("a", "b", "ft", "at", "annual_VMT", "Avg_speed", "Avg_speed_NP", "N_motorist_fatalities_after", "N_injuries_after")%>%rename(annual_VMT_BP = annual_VMT, 
-                                                                                                                                         Avg_speed_BP = Avg_speed,
-                                                                                                                                         N_motorist_fatalities_after_BP = N_motorist_fatalities_after, 
-                                                                                                                                         N_injuries_after_BP = N_injuries_after)
-
-df_np_bp = left_join(df4_join, df_50np_2_join, by=c("a", "b"))%>%mutate(inj_per_vmt_np = N_total_injuries_NP/annual_VMT_NP*100000000,
-                                                                        inj_per_vmt_bp = N_injuries_after_BP/annual_VMT_BP*100000000,
-                                                                        speed_bp_minus_np = Avg_speed_BP - Avg_speed_NP,
-                                                                        inj_per_vmt_bp_minus_np = inj_per_vmt_bp-inj_per_vmt_np,
-                                                                        speed_down_rate_up = 0)
-
-df_15_2_join = df_15_2%>%select("a","b", "annual_VMT",  "N_motorist_fatalities", "N_total_injuries")%>%rename(annual_VMT_15 = annual_VMT, 
-                                                                                                                N_motorist_fatalities_15 = N_motorist_fatalities, 
-                                                                                                                N_total_injuries_15 = N_total_injuries) 
-
-df_np_bp_15 = left_join(df_np_bp, df_15_2_join, by=c("a", "b"))%>%mutate(inj_per_vmt_15 = N_total_injuries_NP/annual_VMT_NP*100000000,
-                                                                         inj_per_vmt_15 = N_injuries_after_BP/annual_VMT_BP*100000000,
-                                                                         speed_bp_minus_15 = Avg_speed_BP - Avg_speed_NP)
-
-
-df_np_bp$speed_down_rate_up[(df_np_bp$inj_per_vmt_bp_minus_np>0)& (df_np_bp$speed_bp_minus_np<0)] = 1
-df_np_bp$speed_down_rate_up[(df_np_bp$inj_per_vmt_bp_minus_np<0)& (df_np_bp$speed_bp_minus_np>0)] = 1
-
-
-
-df_np_bp_15_summary = df_np_bp_15%>%group_by(ft, at)%>%summarize(avg_speed_NP_wt = weighted.mean(Avg_speed_NP, annual_VMT_NP, na.rm=TRUE),
-                                                          avg_speed_BP_wt = weighted.mean(Avg_speed_BP, annual_VMT_BP, na.rm=TRUE),
-                                                          annual_VMT_15 = sum(annual_VMT_15, na.rm=TRUE),
-                                                          annual_VMT_NP = sum(annual_VMT_NP, na.rm=TRUE),
-                                                          annual_VMT_BP = sum(annual_VMT_BP, na.rm=TRUE),
-                                                          N_motorist_fatalities_15 = sum(N_motorist_fatalities_15, na.rm=TRUE),
-                                                          N_motorist_fatalities_NP = sum(N_motorist_fatalities_NP, na.rm=TRUE),
-                                                          N_motorist_fatalities_after_BP = sum(N_motorist_fatalities_after_BP, na.rm=TRUE),
-                                                          N_total_injuries_15 = sum(N_total_injuries_15, na.rm=TRUE),
-                                                          N_total_injuries_NP = sum(N_total_injuries_NP, na.rm=TRUE),
-                                                          N_injuries_after_BP = sum(N_injuries_after_BP, na.rm=TRUE))
-                                                          
-
-df_np_bp_summary2 = df_np_bp%>%summarize(#avg_speed_NP_wt = weighted.mean(Avg_speed_NP, annual_VMT_NP, na.rm=TRUE),
-                                                 #avg_speed_BP_wt = weighted.mean(Avg_speed_BP, annual_VMT_BP, na.rm=TRUE),
-                                                 annual_VMT_NP = sum(annual_VMT_NP, na.rm=TRUE),
-                                                 annual_VMT_BP = sum(annual_VMT_BP, na.rm=TRUE),
-                                                 N_motorist_fatalities_NP = sum(N_motorist_fatalities_NP, na.rm=TRUE),
-                                                 N_motorist_fatalities_after_BP = sum(N_motorist_fatalities_after_BP, na.rm=TRUE),
-                                                 N_total_injuries_NP = sum(N_total_injuries_NP, na.rm=TRUE),
-                                                 N_injuries_after_BP = sum(N_injuries_after_BP, na.rm=TRUE))
 
