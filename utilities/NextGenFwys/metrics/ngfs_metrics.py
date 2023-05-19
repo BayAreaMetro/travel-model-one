@@ -118,7 +118,7 @@ A2_CONSTANTS = """
 
 """
 
-# for houeholds and commercial
+# for households and commercial
 # TODO: placeholders pending adjustment post research
 Q1_MEAN_HOURLY_WAGE_2023D = 16.48544
 Q2_MEAN_HOURLY_WAGE_2023D = 34.40701
@@ -2133,127 +2133,138 @@ def calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id, year, tm_loaded_n
     metrics_dict['Bike', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_bike_fatalities_nonepc
     metrics_dict['Total', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_total_fatalities_nonepc
 
-def calculate_Safe2_change_in_vmt(tm_run_id, year, tm_loaded_network_df,tm_auto_times_df, metrics_dict):
-    # 10) Change in vehicle miles travelled on freeway and adjacent non-freeway facilities
+def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
+    """ Calculates Safety 2: Change in vehicle miles travelled (VMT) on freeway and non-freeway facilities
+    Additionally, calculates VMT segmented by different categories (households by income, non-houehold and trucks)
+    and VMT segmented by whether or not the links are located in Equity Priority Communities (EPC) TAZS.
 
-    # borrow from scenarioMetrics.py
-    # https://github.com/BayAreaMetro/travel-model-one/blob/28188e99c0d20dd0efad45a17a6b74b36df9a95a/utilities/RTP/metrics/scenarioMetrics.py
-    # follow same process, but filter by FT
-    #     includes av - autanomous vehicles
+    Args:
+        tm_run_id (str): Travel model run ID
     
-    metric_id = 'Safe 2'
-    grouping1 = ' '
-    grouping2 = ' '
-    grouping3 = ' '
+    Returns:
+        pd.DataFrame: with columns a subset of METRICS_COLUMNS, including
+          metric_id          = 'Safe1'
+          modelrun_id        = tm_run_id
+          intermediate/final = final
+        Metrics return:
+          grouping1              key                                    metric_desc
+          Income Level           inc[1234]                              VMT|VHT  (category breakdown)
+          Non-Household          air|ix|zpv_tnc                         VMT|VHT
+          Truck                  truck                                  VMT|VHT
+          Freeway|Non-Freeway    Freeway|Arterial|Collector|Expressway  VMT|VHT  (facility type breakdown)
+          Freeway|Non-Freeway    EPCs|Non-EPCs|Region                   VMT|VHT  (EPC/non-EPC breakdown)
 
-    auto_trips_overall = 0
-    auto_times_summed = tm_auto_times_df.copy().groupby('Income').agg('sum')
-    for inc_level in range(1,5):
-        metrics_dict['Income Level', grouping2, grouping3, tm_run_id, metric_id,'final','VMT', 'inc%d' % inc_level, year] = auto_times_summed.loc['inc%d' % inc_level, 'Vehicle Miles']
-        metrics_dict['Income Level', grouping2, grouping3, tm_run_id, metric_id,'final','VHT', 'inc%d' % inc_level, year] = auto_times_summed.loc['inc%d' % inc_level, 'Vehicle Minutes']/60
+    Notes: Uses
+    * auto_times.csv (for category breakdown)
+    * avgload5period.csv (for facility type breakdown)
+    * vmt_vht_metrics_by_taz.csv (for EPC/non-EPC breakdown)
+    """
+    METRIC_ID = 'Safe 2'
+    metric_id = METRIC_ID
+    LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
 
-    # calculate vmt and trip breakdown to understand what's going on
-    for auto_times_mode in ['truck', 'ix', 'air', 'zpv_tnc']:
-        if auto_times_mode == 'truck':
-            modegrouping = 'Truck'
-        else:
-            modegrouping = 'Non-Household'
-        metrics_dict[modegrouping, grouping2, grouping3, tm_run_id, metric_id,'final','VMT', '{}'.format(auto_times_mode), year] = tm_auto_times_df.copy().loc[(tm_auto_times_df['Mode'].str.contains(auto_times_mode) == True), 'Vehicle Miles'].sum()
-        metrics_dict[modegrouping, grouping2, grouping3, tm_run_id, metric_id,'final','VHT', '{}'.format(auto_times_mode), year] = tm_auto_times_df.copy().loc[(tm_auto_times_df['Mode'].str.contains(auto_times_mode) == True), 'Vehicle Minutes'].sum()/60
+    # read network-based auto times
+    auto_times_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "metrics", "auto_times.csv")
+    auto_times_df = pd.read_csv(auto_times_file)
+    LOGGER.info("  Read {:,} rows from {}".format(len(auto_times_df), auto_times_file))
 
+    # we'll summarize by these
+    auto_times_df['grouping1'] = 'Income Level'
+    auto_times_df['key']      = auto_times_df['Income']  # for households, use income
+    auto_times_df.loc[ auto_times_df.Mode.str.endswith('ix'),  ['grouping1', 'key']] = ['Non-Household', 'ix'     ]
+    auto_times_df.loc[ auto_times_df.Mode.str.endswith('air'), ['grouping1', 'key']] = ['Non-Household', 'air'    ]
+    auto_times_df.loc[ auto_times_df.Mode == 'zpv_tnc',        ['grouping1', 'key']] = ['Non-Household', 'zpv_tnc']
+    auto_times_df.loc[ auto_times_df.Mode == 'truck',          ['grouping1', 'key']] = ['Truck',         'truck'  ]
+
+    auto_times_df = auto_times_df.groupby(by=['grouping1','key']).agg({'Vehicle Miles':'sum', 'Vehicle Minutes':'sum'}).reset_index()
+    auto_times_df['VHT'] = auto_times_df['Vehicle Minutes']/60.0
+    auto_times_df.drop(columns=['Vehicle Minutes'], inplace=True)
+    auto_times_df.rename(columns={'Vehicle Miles':'VMT'}, inplace=True)
+    LOGGER.debug("auto_times_df:\n{}".format(auto_times_df))
+
+    loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period.csv")
+    loaded_network_df = pd.read_csv(loaded_network_file)
+    loaded_network_df.rename(columns=lambda x: x.strip(), inplace=True)
+    LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
+    LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
 
     # compute Fwy and Non_Fwy VMT
-    vmt_df = tm_loaded_network_df.copy()
-    vmt_df['total_vmt'] = (vmt_df['distance']*(vmt_df['volEA_tot']+vmt_df['volAM_tot']+vmt_df['volMD_tot']+vmt_df['volPM_tot']+vmt_df['volEV_tot']))
-    vmt_df['total_vht'] = ((vmt_df['ctimEA']*vmt_df['volEA_tot']) + (vmt_df['ctimAM']*vmt_df['volAM_tot']) + (vmt_df['ctimMD']*vmt_df['volMD_tot']) + (vmt_df['ctimPM']*vmt_df['volPM_tot']) + (vmt_df['ctimEV']*vmt_df['volEV_tot']))/60
-    fwy_vmt_df = vmt_df.copy().loc[(vmt_df['ft'] == 1)|(vmt_df['ft'] == 2)|(vmt_df['ft'] == 8)]
-    arterial_vmt_df = vmt_df.copy().loc[(vmt_df['ft'] == 7)]
-    expressway_vmt_df = vmt_df.copy().loc[(vmt_df['ft'] == 3)]
-    collector_vmt_df = vmt_df.copy().loc[(vmt_df['ft'] == 4)]
-    metrics_dict['Freeway', grouping2, grouping3, tm_run_id, metric_id,'final','VMT', 'Freeway', year] = fwy_vmt_df.loc[:,'total_vmt'].sum()
-    metrics_dict['Non-Freeway', grouping2, grouping3, tm_run_id, metric_id,'final','VMT', 'Arterial', year] = arterial_vmt_df.loc[:,'total_vmt'].sum()
-    metrics_dict['Non-Freeway', grouping2, grouping3, tm_run_id, metric_id,'final','VMT', 'Expressway', year] = expressway_vmt_df.loc[:,'total_vmt'].sum()
-    metrics_dict['Non-Freeway', grouping2, grouping3, tm_run_id, metric_id,'final','VMT', 'Collector', year] = collector_vmt_df.loc[:,'total_vmt'].sum()
-    metrics_dict['Freeway', grouping2, grouping3, tm_run_id, metric_id,'final','VHT', 'Freeway', year] = fwy_vmt_df.loc[:,'total_vht'].sum()
-    metrics_dict['Non-Freeway', grouping2, grouping3, tm_run_id, metric_id,'final','VHT', 'Arterial', year] = arterial_vmt_df.loc[:,'total_vht'].sum()
-    metrics_dict['Non-Freeway', grouping2, grouping3, tm_run_id, metric_id,'final','VHT', 'Expressway', year] = expressway_vmt_df.loc[:,'total_vht'].sum()
-    metrics_dict['Non-Freeway', grouping2, grouping3, tm_run_id, metric_id,'final','VHT', 'Collector', year] = collector_vmt_df.loc[:,'total_vht'].sum()
+    loaded_network_df['VMT'] = \
+        (loaded_network_df['volEA_tot']+
+         loaded_network_df['volAM_tot']+
+         loaded_network_df['volMD_tot']+
+         loaded_network_df['volPM_tot']+
+         loaded_network_df['volEV_tot'])*loaded_network_df['distance']
+    loaded_network_df['VHT'] = (\
+        (loaded_network_df['ctimEA']*loaded_network_df['volEA_tot']) + \
+        (loaded_network_df['ctimAM']*loaded_network_df['volAM_tot']) + \
+        (loaded_network_df['ctimMD']*loaded_network_df['volMD_tot']) + \
+        (loaded_network_df['ctimPM']*loaded_network_df['volPM_tot']) + \
+        (loaded_network_df['ctimEV']*loaded_network_df['volEV_tot']))/60.0
     
-    # commented out below - using top-level metric calculation
-    # fwy_vmt = 0
-    # nonfwy_vmt = 0
+    # https://github.com/BayAreaMetro/modeling-website/wiki/MasterNetworkLookupTables#facility-type-ft
+    ft_to_grouping_key_df = pd.DataFrame(columns=['ft','grouping1','key'], data=[
+        ( 1, 'Freeway',    'Freeway'   ), # freeway-to-freeway connector
+        ( 2, 'Freeway',    'Freeway'   ), # freeway
+        ( 3, 'Non-Freeway','Expressway'), # expressway
+        ( 4, 'Non-Freeway','Collector' ), # collector
+        ( 5, None,          None       ), # freeway ramp
+        ( 6, None,          None       ), # dummy link
+        ( 7, 'Non-Freeway','Arterial'  ), # major arterial
+        ( 8, 'Freeway',    'Freeway'   ), # managed freeway
+        ( 9, None,          None       ), # special facility
+        (10, None,          None       )  # toll plaza
+    ])
+    # NOTE: this is inconsistent with the vmt_vht_metrics.csv road_type for 'non-freeway' which includes
+    # ft [1,2,3,8] as 'freeway' and all others as 'non-freeway'
+    # https://github.com/BayAreaMetro/travel-model-one/blob/78fb93e881348f794e3423f3a987753a0eef1255/utilities/RTP/metrics/hwynet.py#L334
 
-    # #     filter for fwy and nonfwy facilities
-    # fwy_network_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['ft'] != 7)|(tm_loaded_network_df['ft'] != 4)|(tm_loaded_network_df['ft'] != 3)|(tm_loaded_network_df['ft'] != 6)]
-    # nonfwy_network_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['ft'] == 7)|(tm_loaded_network_df['ft'] == 4)|(tm_loaded_network_df['ft'] == 3)]
-
-    # for timeperiod in ['EA','AM','MD','PM','EV']:
-    #     # vmt
-    #     fwy_network_df['vmt%s_tot' % timeperiod] = fwy_network_df['vol%s_tot' % timeperiod]*fwy_network_df['distance']
-    #     nonfwy_network_df['vmt%s_tot' % timeperiod] = nonfwy_network_df['vol%s_tot' % timeperiod]*nonfwy_network_df['distance']
-
-    #    # total vmt for all timeperiods
-    #     fwy_vmt += fwy_network_df['vmt%s_tot' % timeperiod].sum()
-    #     nonfwy_vmt += nonfwy_network_df['vmt%s_tot' % timeperiod].sum()
-
-    # # return it
-
-    # metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id, 'final','Freeway Facilities','annual_fwy_vmt', year] = fwy_vmt * N_days_per_year
-    # metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id, 'final','Adjacent Non-Freeway Facilities','annual_nonfwy_vmt', year] = nonfwy_vmt * N_days_per_year
+    LOGGER.debug("  Using facility type categories:\n{}".format(ft_to_grouping_key_df))
+    loaded_network_df = pd.merge(left=loaded_network_df, right=ft_to_grouping_key_df, on='ft', how='left')
+    ft_metrics_df = loaded_network_df.groupby(by=['grouping1','key']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
+    LOGGER.debug("ft_metrics_df:\n{}".format(ft_metrics_df))
 
     # Calculate equity metric: non-freeway VMT in region and EPCs
     # calculated using vmt_vht_metrics_by_taz.csv, but can also compute at the link level using network_links_TAZ.csv
     # load vmt metrics df
     vmt_vht_metrics_by_taz_file    = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "metrics", "vmt_vht_metrics_by_taz.csv")
     vmt_vht_metrics_by_taz_df      = pd.read_csv(vmt_vht_metrics_by_taz_file)
+    LOGGER.info("  Read {:,} rows from {}".format(len(vmt_vht_metrics_by_taz_df), vmt_vht_metrics_by_taz_file))
 
     # join to epc lookup table
-    vmt_vht_metrics_by_taz_df = pd.merge(left=vmt_vht_metrics_by_taz_df,
-                                                        right=NGFS_EPC_TAZ_DF,
-                                                        left_on="TAZ1454",
-                                                        right_on="TAZ1454",
-                                                        how='left')
-    # make a copy and filter for EPCs
-    vmt_vht_metrics_by_epc_taz_df = vmt_vht_metrics_by_taz_df.copy().loc[vmt_vht_metrics_by_taz_df['taz_epc'] == 1]
-    # load taz data to pull population from
-    tm_taz_input_file     = os.path.join(NGFS_SCENARIOS, tm_run_id, "INPUT", "landuse", "tazData.csv")
-    tm_taz_input_df     = pd.read_csv(tm_taz_input_file)
-    # sum the fatalities by mode and divide per 100K residents
-    tm_taz_input_df = pd.merge(left=tm_taz_input_df,
-                                                        right=NGFS_EPC_TAZ_DF,
-                                                        left_on="ZONE",
-                                                        right_on="TAZ1454",
-                                                        how='left')
-    # calculate population of region
-    region_population = tm_taz_input_df.TOTPOP.sum()
-    # calculate population of EPC TAZs
-    epc_population = tm_taz_input_df.copy().loc[tm_taz_input_df['taz_epc'] == 1]
-    epc_population = epc_population.TOTPOP.sum()
-    # filter for fwy vs nonfreeway, sum fatalities across relevant TAZs, divide per 100K residents
-    # fwy:
-    #   for entire region:
-    fwy_vmt_region = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'freeway', 'VMT'].sum()
-    #   for EPCs:
-    fwy_vmt_epc = vmt_vht_metrics_by_epc_taz_df.loc[vmt_vht_metrics_by_epc_taz_df['road_type'] == 'freeway', 'VMT'].sum()
-    #   for rest of the region
-    fwy_vmt_nonepc = fwy_vmt_region - fwy_vmt_epc
-    
-    # nonfwy:
-    #   for entire region:
-    nonfwy_vmt_region = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'non-freeway', 'VMT'].sum()
-    #   for EPCs:
-    nonfwy_vmt_epc = vmt_vht_metrics_by_epc_taz_df.loc[vmt_vht_metrics_by_epc_taz_df['road_type'] == 'non-freeway', 'VMT'].sum()
-    #   for rest of the region
-    nonfwy_vmt_nonepc = nonfwy_vmt_region - nonfwy_vmt_epc
-    
-    # enter into metrics dict
-    metrics_dict['Freeway', grouping2, grouping3, tm_run_id,metric_id,'final','VMT','Region',year] = fwy_vmt_region
-    metrics_dict['Freeway', grouping2, grouping3, tm_run_id,metric_id,'final','VMT','EPCs',year] = fwy_vmt_epc
-    metrics_dict['Freeway', grouping2, grouping3, tm_run_id,metric_id,'final','VMT','Non-EPCs',year] = fwy_vmt_nonepc
+    vmt_vht_metrics_by_taz_df = pd.merge(
+        left=vmt_vht_metrics_by_taz_df,
+        right=NGFS_EPC_TAZ_DF,
+        left_on="TAZ1454",
+        right_on="TAZ1454",
+        how='left')
+    # LOGGER.debug("vmt_vht_metrics_by_taz_df.head():\n{}".format(vmt_vht_metrics_by_taz_df))
 
-    metrics_dict['Non-Freeway', grouping2, grouping3, tm_run_id,metric_id,'final','VMT','Region',year] = nonfwy_vmt_region
-    metrics_dict['Non-Freeway', grouping2, grouping3, tm_run_id,metric_id,'final','VMT','EPCs',year] = nonfwy_vmt_epc
-    metrics_dict['Non-Freeway', grouping2, grouping3, tm_run_id,metric_id,'final','VMT','Non-EPCs',year] = nonfwy_vmt_nonepc
+    # capitalize to be consistent with above
+    vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.road_type=='freeway',     'road_type' ] = 'Freeway'
+    vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.road_type=='non-freeway', 'road_type' ] = 'Non-Freeway'
+    # Recode
+    vmt_vht_metrics_by_taz_df['key'] = 'Non-EPCs'
+    vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.taz_epc == 1, 'key'] = 'EPCs'
+    # Summarize
+    epc_metrics_df    = vmt_vht_metrics_by_taz_df.groupby(by=['road_type','key']).agg({'VMT':'sum','VHT':'sum'}).reset_index()
+    region_metrics_df = vmt_vht_metrics_by_taz_df.groupby(by=['road_type'      ]).agg({'VMT':'sum','VHT':'sum'}).reset_index()
+    region_metrics_df['key'] = 'Region'
+    # Combine
+    epc_metrics_df = pd.concat([epc_metrics_df, region_metrics_df])
+    epc_metrics_df.rename(columns={'road_type':'grouping1'}, inplace=True)
+    LOGGER.debug("epc_metrics_df\n{}".format(epc_metrics_df))
+
+    # put it together, move to long form and return
+    metrics_df = pd.concat([auto_times_df, ft_metrics_df, epc_metrics_df])
+    metrics_df = metrics_df.melt(id_vars=['grouping1','key'], var_name='metric_desc')
+    metrics_df['modelrun_id'] = tm_run_id
+    metrics_df['metric_id'] = METRIC_ID
+    metrics_df['intermediate/final'] = 'final'
+    metrics_df['year'] = tm_run_id[:4]
+    LOGGER.debug("metrics_df for Safe 2:\n{}".format(metrics_df))
+
+    return metrics_df
 
 def metrics_dict_to_df(metrics_dict: dict) -> pd.DataFrame:
     """
@@ -2556,7 +2567,9 @@ if __name__ == "__main__":
         # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
         calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
-        calculate_Safe2_change_in_vmt(tm_run_id, year, tm_loaded_network_df,tm_auto_times_df, metrics_dict)
+        safe2_metrics_df = calculate_Safe2_change_in_vmt(tm_run_id)
+        metrics_df = pd.concat([metrics_df, safe2_metrics_df])
+
         # LOGGER.info("@@@@@@@@@@@@@ S2 Done")
 
         # run function to calculate top level metrics
