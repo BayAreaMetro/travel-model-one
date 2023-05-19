@@ -54,7 +54,7 @@ SAMPLING_RATE = 0.500
 
 # this should be set by caller
 # project <- 'Blueprint'
-OUTPUT_DIR <- file.path(PROJECT_DIR, "metrics")
+OUTPUT_DIR <- file.path(PROJECT_DIR, "core_summaries")
 
 
 cat("MODEL_DIR     = ",MODEL_DIR, "\n")
