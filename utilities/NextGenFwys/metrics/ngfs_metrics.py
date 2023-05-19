@@ -1462,7 +1462,20 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
   grouping2 = ' '
   grouping3 = ' '
 
-  # load network_links_TAZ.csv as lookup df to use for equity metric 
+  # load network_links_TAZ.csv as lookup df to use for equity metric:
+  #     --> calculate travel time for arterial road links in EPCs vs region average
+  #         --> tolled aerterials within EPCs for each corridor and a corridor average 
+  # load network link to TAZ lookup file
+  tm_network_links_taz_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "shapefile", "network_links_TAZ.csv")
+  tm_network_links_taz_df = pd.read_csv(tm_network_links_taz_file)[['A', 'B', 'TAZ1454']]
+  LOGGER.info("  Read {:,} rows from {}".format(len(tm_network_links_taz_df), tm_network_links_taz_file))
+  tm_network_links_with_epc_df = pd.merge(
+      left=tm_network_links_taz_df,
+      right=NGFS_EPC_TAZ_DF,
+      left_on="TAZ1454",
+      right_on="TAZ1454",
+      how='left')
+  LOGGER.debug("tm_network_links_with_epc_df.head() =\n{}".format(tm_network_links_with_epc_df.head()))
 
   tm_ab_ctim_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] == 1)&(tm_loaded_network_df['ft'] != 6)]
   tm_ab_ctim_df = tm_ab_ctim_df.copy()[['Grouping minor_AMPM','a_b','fft','ctimAM','ctimPM', 'distance','volEA_tot', 'volAM_tot', 'volMD_tot', 'volPM_tot', 'volEV_tot']]  
@@ -1480,6 +1493,11 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
   sum_of_weights_parallel_arterial = 0 #sum of weights (vmt of corridor) to be used for weighted average 
   total_weighted_travel_time_parallel_arterial = 0 #sum for numerator
   total_travel_time_parallel_arterial = 0 #numerator for simple average 
+
+  # for tolled arterial simple averages
+  arterial_total_travel_time_region = 0
+  arterial_total_travel_time_epc = 0
+  arterial_total_travel_time_nonepc = 0 
 
   for i in minor_groups:
     #     add minor ampm ctim to metric dict
@@ -1512,8 +1530,8 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
     network_for_vmt_df_AM = tm_loaded_network_df_base.copy().merge(index_a_b, on='a_b', how='right')
     index_a_b = minor_group_pm_df.copy()[['a_b']]
     network_for_vmt_df_PM = tm_loaded_network_df_base.copy().merge(index_a_b, on='a_b', how='right')
-    vmt_minor_grouping_AM = network_for_vmt_df_AM['volAM_tot'].sum()
-    vmt_minor_grouping_PM = network_for_vmt_df_PM['volPM_tot'].sum()
+    vmt_minor_grouping_AM = (network_for_vmt_df_AM['volAM_tot'] * network_for_vmt_df_AM['distance']).sum()
+    vmt_minor_grouping_PM = (network_for_vmt_df_PM['volPM_tot'] * network_for_vmt_df_PM['distance']).sum()
     # will use avg vmt for simplicity
     am_pm_avg_vmt = numpy.mean([vmt_minor_grouping_AM,vmt_minor_grouping_PM])
 
@@ -1522,8 +1540,8 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
     network_for_vmt_df_AM_parallel_arterial = tm_loaded_network_df_base.copy().merge(index_a_b, on='a_b', how='right')
     index_a_b = minor_group_am_parallel_arterial_df.copy()[['a_b']]
     network_for_vmt_df_PM_parallel_arterial = tm_loaded_network_df_base.copy().merge(index_a_b, on='a_b', how='right')
-    vmt_minor_grouping_AM_parallel_arterial = network_for_vmt_df_AM_parallel_arterial['volAM_tot'].sum()
-    vmt_minor_grouping_PM_parallel_arterial = network_for_vmt_df_PM_parallel_arterial['volPM_tot'].sum()
+    vmt_minor_grouping_AM_parallel_arterial = (network_for_vmt_df_AM_parallel_arterial['volAM_tot'] * network_for_vmt_df_AM_parallel_arterial['distance']).sum()
+    vmt_minor_grouping_PM_parallel_arterial = (network_for_vmt_df_PM_parallel_arterial['volPM_tot'] * network_for_vmt_df_PM_parallel_arterial['distance']).sum()
     # will use avg vmt for simplicity
     am_pm_avg_vmt_parallel_arterial = numpy.mean([vmt_minor_grouping_AM_parallel_arterial,vmt_minor_grouping_PM_parallel_arterial])
 
@@ -1574,42 +1592,140 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
     # __commented out to reduce clutter - not insightful - can reveal for debugging
     # metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'final',i,'avg_travel_time_%s_weighted_by_vmt' % i,year] = avgtime_weighted_by_vmt
 
-    # if 'Path2' in tm_run_id: # investigation: compare travel time changes on all parallel tolled arterials
-    # TODO: review method for comparing pathways with no tolled arterials (ex: base run)
+    # investigation: compare travel time changes on all parallel tolled arterials
     # create df for tolled parallel arterial links (using pathway 2 network toll classes and TOLLCLASS_Designations.xlsx as lookup)
-    tm_tolled_arterial_links_df = pd.merge(left=tm_loaded_network_df.copy(), right=NGFS_PATHWAY2_TOLLED_ARTERIALS_FILE, how='left', left_on=['a','b'], right_on=['a','b'])
-    tm_tolled_arterial_links_df['tollclass'] = tm_tolled_arterial_links_df['tollclass_y']
-    tm_tolled_arterial_links_df.drop(columns=["tollclass_x"], inplace=True)
-    tm_tolled_arterial_links_df.drop(columns=["tollclass_y"], inplace=True)
-    tm_tolled_arterial_links_df = tm_tolled_arterial_links_df.copy().merge(TOLLCLASS_LOOKUP_DF, on='tollclass', how='left').loc[(tm_tolled_arterial_links_df['ft'] == 3)|(tm_tolled_arterial_links_df['ft'] == 4)|(tm_tolled_arterial_links_df['ft'] == 7)]
+    # merge with epc df
+    LOGGER.debug("tm_loaded_network_df.head() =\n{}".format(tm_loaded_network_df.head()))
+    arterials_epc_df = pd.merge(left= tm_loaded_network_df, right= tm_network_links_with_epc_df, left_on= ['a','b'], right_on= ['A', 'B'], how='left')
+    LOGGER.debug("arterials_epc_df.head() =\n{}".format(arterials_epc_df.head()))
+    tm_tolled_arterial_links_df = pd.merge(left=arterials_epc_df, right=TOLLED_ART_MINOR_GROUP_LINKS_DF, how='left', left_on=['a','b'], right_on=['a','b'])
+    tm_tolled_arterial_links_df = tm_tolled_arterial_links_df.copy().loc[(tm_tolled_arterial_links_df['ft'] == 3)|(tm_tolled_arterial_links_df['ft'] == 4)|(tm_tolled_arterial_links_df['ft'] == 7)]
+    LOGGER.debug("tm_tolled_arterial_links_df.head() =\n{}".format(tm_tolled_arterial_links_df.head()))
+    tm_tolled_arterial_epc_links_df = tm_tolled_arterial_links_df.loc[tm_tolled_arterial_links_df['taz_epc'] == 1]
+    LOGGER.debug("tm_tolled_arterial_epc_links_df.head() =\n{}".format(tm_tolled_arterial_epc_links_df.head()))
+    tm_tolled_arterial_nonepc_links_df = tm_tolled_arterial_links_df.loc[tm_tolled_arterial_links_df['taz_epc'] == 0]
+    LOGGER.debug("tm_tolled_arterial_nonepc_links_df.head() =\n{}".format(tm_tolled_arterial_nonepc_links_df.head()))
+
 
     # for tolled arterial links
-    # TODO: remove duplicate 'Grouping minor' column
-    minor_group_am_tolled_arterial_df = tm_tolled_arterial_links_df.copy().loc[(tm_tolled_arterial_links_df['Grouping minor_y'].str.contains(i+'_AM') == True)]
-    minor_group_pm_tolled_arterial_df = tm_tolled_arterial_links_df.copy().loc[(tm_tolled_arterial_links_df['Grouping minor_y'].str.contains(i+'_PM') == True)]
+    minor_group_am_tolled_arterial_df = tm_tolled_arterial_links_df.copy().loc[(tm_tolled_arterial_links_df['grouping'].str.contains(i) == True) & (tm_tolled_arterial_links_df['grouping_dir'].str.contains('AM') == True)]
+    LOGGER.debug("minor_group_am_tolled_arterial_df.head() =\n{}".format(minor_group_am_tolled_arterial_df.head()))
+    minor_group_pm_tolled_arterial_df = tm_tolled_arterial_links_df.copy().loc[(tm_tolled_arterial_links_df['grouping'].str.contains(i) == True) & (tm_tolled_arterial_links_df['grouping_dir'].str.contains('PM') == True)]
+    LOGGER.debug("minor_group_pm_tolled_arterial_df.head() =\n{}".format(minor_group_pm_tolled_arterial_df.head()))
     minor_group_am_tolled_arterial = sum_grouping(minor_group_am_tolled_arterial_df,'AM')
     minor_group_pm_tolled_arterial = sum_grouping(minor_group_pm_tolled_arterial_df,'PM')
 
     # add travel times for all tolled arterials to metrics dict
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra',i,'Tolled_Arterial_travel_time_%s' % i + '_AM',year] = minor_group_am_tolled_arterial
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra',i,'Tolled_Arterial_travel_time_%s' % i + '_PM',year] = minor_group_pm_tolled_arterial
+    metrics_dict['Region', grouping2, grouping3, tm_run_id,metric_id,'extra',i,'Tolled_Arterial_travel_time_%s' % i + '_AM',year] = minor_group_am_tolled_arterial
+    metrics_dict['Region', grouping2, grouping3, tm_run_id,metric_id,'extra',i,'Tolled_Arterial_travel_time_%s' % i + '_PM',year] = minor_group_pm_tolled_arterial
 
     # [for tolled arterials] add average ctim for each minor grouping to metric dict
     avgtime_tolled_arterial = numpy.mean([minor_group_am_tolled_arterial,minor_group_pm_tolled_arterial])
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate',i,'Tolled_Arterial_avg_travel_time_%s' % i,year] = avgtime_tolled_arterial
+    metrics_dict['Region', grouping2, grouping3, tm_run_id,metric_id,'intermediate',i,'Tolled_Arterial_avg_travel_time_%s' % i,year] = avgtime_tolled_arterial
     
-    # for corrdior average calc
+    # for [epc] tolled arterial links
+    minor_group_am_tolled_arterial_epc_df = tm_tolled_arterial_epc_links_df.copy().loc[(tm_tolled_arterial_epc_links_df['grouping'].str.contains(i) == True) & (tm_tolled_arterial_links_df['grouping_dir'].str.contains('AM') == True)]
+    LOGGER.debug("minor_group_am_tolled_arterial_epc_df.head() =\n{}".format(minor_group_am_tolled_arterial_epc_df.head()))
+    minor_group_pm_tolled_arterial_epc_df = tm_tolled_arterial_epc_links_df.copy().loc[(tm_tolled_arterial_epc_links_df['grouping'].str.contains(i) == True) & (tm_tolled_arterial_links_df['grouping_dir'].str.contains('PM') == True)]
+    LOGGER.debug("minor_group_pm_tolled_arterial_epc_df.head() =\n{}".format(minor_group_pm_tolled_arterial_epc_df.head()))
+    minor_group_am_tolled_arterial_epc = sum_grouping(minor_group_am_tolled_arterial_epc_df,'AM')
+    minor_group_pm_tolled_arterial_epc = sum_grouping(minor_group_pm_tolled_arterial_epc_df,'PM')
+
+    # add travel times for all tolled arterials to metrics dict
+    metrics_dict['EPC', grouping2, grouping3, tm_run_id,metric_id,'extra',i,'EPC_Tolled_Arterial_travel_time_%s' % i + '_AM',year] = minor_group_am_tolled_arterial_epc
+    metrics_dict['EPC', grouping2, grouping3, tm_run_id,metric_id,'extra',i,'EPC_Tolled_Arterial_travel_time_%s' % i + '_PM',year] = minor_group_pm_tolled_arterial_epc
+
+    # add average ctim for each minor grouping to metric dict
+    avgtime_tolled_arterial_epc = numpy.mean([minor_group_am_tolled_arterial_epc,minor_group_pm_tolled_arterial_epc])
+    metrics_dict['EPC', grouping2, grouping3, tm_run_id,metric_id,'intermediate',i,'EPC_Tolled_Arterial_avg_travel_time_%s' % i,year] = avgtime_tolled_arterial_epc
+
+    # for [nonepc] tolled arterial links
+    minor_group_am_tolled_arterial_nonepc_df = tm_tolled_arterial_nonepc_links_df.copy().loc[(tm_tolled_arterial_nonepc_links_df['grouping'].str.contains(i) == True) & (tm_tolled_arterial_links_df['grouping_dir'].str.contains('AM') == True)]
+    LOGGER.debug("minor_group_am_tolled_arterial_nonepc_df.head() =\n{}".format(minor_group_am_tolled_arterial_nonepc_df.head()))
+    minor_group_pm_tolled_arterial_nonepc_df = tm_tolled_arterial_nonepc_links_df.copy().loc[(tm_tolled_arterial_nonepc_links_df['grouping'].str.contains(i) == True) & (tm_tolled_arterial_links_df['grouping_dir'].str.contains('PM') == True)]
+    LOGGER.debug("minor_group_pm_tolled_arterial_nonepc_df.head() =\n{}".format(minor_group_pm_tolled_arterial_nonepc_df.head()))
+    minor_group_am_tolled_arterial_nonepc = sum_grouping(minor_group_am_tolled_arterial_nonepc_df,'AM')
+    minor_group_pm_tolled_arterial_nonepc = sum_grouping(minor_group_pm_tolled_arterial_nonepc_df,'PM')
+
+    # add travel times for all tolled arterials to metrics dict
+    metrics_dict['NonEPC', grouping2, grouping3, tm_run_id,metric_id,'extra',i,'NonEPC_Tolled_Arterial_travel_time_%s' % i + '_AM',year] = minor_group_am_tolled_arterial_nonepc
+    metrics_dict['NonEPC', grouping2, grouping3, tm_run_id,metric_id,'extra',i,'NonEPC_Tolled_Arterial_travel_time_%s' % i + '_PM',year] = minor_group_pm_tolled_arterial_nonepc
+
+    # add average ctim for each minor grouping to metric dict
+    avgtime_tolled_arterial_nonepc = numpy.mean([minor_group_am_tolled_arterial_nonepc,minor_group_pm_tolled_arterial_nonepc])
+    metrics_dict['NonEPC', grouping2, grouping3, tm_run_id,metric_id,'intermediate',i,'NonEPC_Tolled_Arterial_avg_travel_time_%s' % i,year] = avgtime_tolled_arterial_nonepc
+
+	# for corrdior average calc
     sum_of_weights = sum_of_weights + am_pm_avg_vmt
     total_weighted_travel_time = total_weighted_travel_time + (avgtime_weighted_by_vmt)
     n += 1
     total_travel_time += avgtime
 
-    # [for parallel arterials]
+	# [for parallel arterials]
     sum_of_weights_parallel_arterial += am_pm_avg_vmt_parallel_arterial
     total_weighted_travel_time_parallel_arterial += avgtime_weighted_by_vmt_parallel_arterial
     total_travel_time_parallel_arterial += avgtime_parallel_arterial
+    
+    # [for tolled arterials]
+	# regional average:
+    arterial_total_travel_time_region += avgtime_tolled_arterial
+    # epc average:
+    arterial_total_travel_time_epc += avgtime_tolled_arterial_epc
+	# nonepc average
+    arterial_total_travel_time_nonepc += avgtime_tolled_arterial_nonepc
 
-  return [sum_of_weights, total_weighted_travel_time, n, total_travel_time, sum_of_weights_parallel_arterial, total_weighted_travel_time_parallel_arterial, total_travel_time_parallel_arterial]
+  # add metric for goods routes: Calculate [Change in peak hour travel time] for 3 truck routes (using link-level)
+  # load table with links for each goods route
+  # columns: A, B, I580_I238_I880_PortOfOakland, I101_I880_PortOfOakland, I80_I880_PortOfOakland
+  goods_routes_a_b_links_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "goods_routes_a_b.csv")
+  goods_routes_a_b_links_df = pd.read_csv(goods_routes_a_b_links_file)
+  LOGGER.info("  Read {:,} rows from {}".format(len(goods_routes_a_b_links_df), goods_routes_a_b_links_file))
+  LOGGER.debug("goods_routes_a_b_links_df.head() =\n{}".format(goods_routes_a_b_links_df.head()))
+  # merge loaded network with df containing route information
+  # remove HOV lanes from the network
+  loaded_network_with_goods_routes_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] == 1)]
+  loaded_network_with_goods_routes_df = loaded_network_with_goods_routes_df.copy()[['a','b','ctimAM','ctimPM']]
+  loaded_network_with_goods_routes_df = pd.merge(left=loaded_network_with_goods_routes_df, right=goods_routes_a_b_links_df, how='left', left_on=['a','b'], right_on=['A','B'])
+  LOGGER.debug("loaded_network_with_goods_routes_df.head() =\n{}".format(loaded_network_with_goods_routes_df.head()))
+
+  # sum the travel time for the different time periods on the route that begins on I580
+  travel_time_route_I580_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I580_I238_I880_PortOfOakland').agg('sum')
+  LOGGER.debug("travel_time_route_I580_summed_df.head() =\n{}".format(travel_time_route_I580_summed_df.head()))
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_route_I580 = travel_time_route_I580_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_route_I580 = travel_time_route_I580_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_route_I580 = numpy.mean([AM_travel_time_route_I580,PM_travel_time_route_I580])
+  # enter into metrics_dict
+  metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I580_I238_I880_PortOfOakland', 'travel_time_I580_I238_I880_PortOfOakland_AM', year] = AM_travel_time_route_I580
+  metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I580_I238_I880_PortOfOakland', 'travel_time_I580_I238_I880_PortOfOakland_PM', year] = PM_travel_time_route_I580
+  metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I580_I238_I880_PortOfOakland', 'peak_hour_travel_time_I580_I238_I880_PortOfOakland', year] = peak_average_travel_time_route_I580
+
+  # sum the travel time for the different time periods on the route that begins on I101
+  travel_time_route_I101_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I101_I880_PortOfOakland').agg('sum')
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_route_I101 = travel_time_route_I101_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_route_I101 = travel_time_route_I101_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_route_I101 = numpy.mean([AM_travel_time_route_I101,PM_travel_time_route_I101])
+  # enter into metrics_dict
+  metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I101_I880_PortOfOakland', 'travel_time_I101_I880_PortOfOakland_AM', year] = AM_travel_time_route_I101
+  metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I101_I880_PortOfOakland', 'travel_time_I101_I880_PortOfOakland_PM', year] = PM_travel_time_route_I101
+  metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I101_I880_PortOfOakland', 'peak_hour_travel_time_I101_I880_PortOfOakland', year] = peak_average_travel_time_route_I101
+    
+  # sum the travel time for the different time periods on the route that begins on I80
+  travel_time_route_I80_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I80_I880_PortOfOakland').agg('sum')
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_route_I80 = travel_time_route_I80_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_route_I80 = travel_time_route_I80_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_route_I80 = numpy.mean([AM_travel_time_route_I80,PM_travel_time_route_I80])
+  # enter into metrics_dict
+  metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I80_I880_PortOfOakland', 'travel_time_I80_I880_PortOfOakland_AM', year] = AM_travel_time_route_I80
+  metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I80_I880_PortOfOakland', 'travel_time_I80_I880_PortOfOakland_PM', year] = PM_travel_time_route_I80
+  metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I80_I880_PortOfOakland', 'peak_hour_travel_time_I80_I880_PortOfOakland', year] = peak_average_travel_time_route_I80
+
+  return [sum_of_weights, total_weighted_travel_time, n, total_travel_time, sum_of_weights_parallel_arterial, total_weighted_travel_time_parallel_arterial, total_travel_time_parallel_arterial, arterial_total_travel_time_region, arterial_total_travel_time_epc, arterial_total_travel_time_nonepc]
 
 
 
@@ -1629,24 +1745,33 @@ def calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df
     # find the change in travel time for each corridor
     calculate_change_between_run_and_base(tm_run_id, tm_run_id_base, year, 'Reliable 1', metrics_dict)
 
-    change_in_travel_time_weighted = this_run_metric[1] - base_run_metric[1]
-    change_in_parallel_arterial_travel_time_weighted = this_run_metric[5] - base_run_metric[5]
+	# 5/18/23 update: changed from diff to show averages (diff is computed in tableau)
+    travel_time_weighted = this_run_metric[1]
+    parallel_arterial_travel_time_weighted = this_run_metric[5]
 
     sum_of_weights = this_run_metric[0]
     sum_of_weights_parallel_arterial = this_run_metric[4]
 
-    total_travel_time = this_run_metric[3] - base_run_metric[3]
-    total_travel_time_parallel_arterial = this_run_metric[6] - base_run_metric[6]
+    total_travel_time = this_run_metric[3]
+    total_travel_time_parallel_arterial = this_run_metric[6]
+    
+	# numerators for tolled arterial simple averages
+    arterial_travel_time_region_avg = this_run_metric[7]
+    arterial_travel_time_epc_avg = this_run_metric[8]
+    arterial_travel_time_nonepc_avg = this_run_metric[9]
 
     n = this_run_metric[2]
 
     # add average across corridors to metric dict
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Freeways','Fwy_avg_change_in_peak_hour_travel_time_across_key_corridors_weighted_by_vmt',year]      = change_in_travel_time_weighted/sum_of_weights
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Freeways','Fwy_simple_avg_change_in_peak_hour_travel_time_across_key_corridors',year]      = total_travel_time/n
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Freeways','Fwy_avg_peak_hour_travel_time_across_key_corridors_weighted_by_vmt',year]      = travel_time_weighted/sum_of_weights
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Freeways','Fwy_simple_avgpeak_hour_travel_time_across_key_corridors',year]      = total_travel_time/n
     # parallel arterials
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Parallel Arterials','Parallel_Arterial_avg_change_in_peak_hour_travel_time_across_key_corridors_weighted_by_vmt',year]      = change_in_parallel_arterial_travel_time_weighted/sum_of_weights_parallel_arterial
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Parallel Arterials','Parallel_Arterial_simple_avg_change_in_peak_hour_travel_time_across_key_corridors',year]      = total_travel_time_parallel_arterial/n
-    
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Parallel Arterials','Parallel_Arterial_avg_peak_hour_travel_time_across_key_corridors_weighted_by_vmt',year]      = parallel_arterial_travel_time_weighted/sum_of_weights_parallel_arterial
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Parallel Arterials','Parallel_Arterial_simple_avg_peak_hour_travel_time_across_key_corridors',year]      = total_travel_time_parallel_arterial/n
+    # tolled arterials
+    metrics_dict['Region', grouping2, grouping3, tm_run_id, metric_id,'final','Tolled Arterials','peak hour travel time for tolled arterial road links, Regional average',year]      = arterial_travel_time_region_avg/n
+    metrics_dict['EPC', grouping2, grouping3, tm_run_id, metric_id,'final','Tolled Arterials','peak hour travel time for tolled arterial road links, EPC average',year]      = arterial_travel_time_epc_avg/n
+    metrics_dict['NonEPC', grouping2, grouping3, tm_run_id, metric_id,'final','Tolled Arterials','peak hour travel time for tolled arterial road links, Non-EPC average',year]      = arterial_travel_time_nonepc_avg/n
 
 
 
