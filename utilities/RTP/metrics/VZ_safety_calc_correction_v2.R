@@ -576,12 +576,12 @@ NETWORK_DIR <- file.path("L:/Application/Model_One/NextGenFwys/Scenarios", MODEL
 NGF_Path1b_02 <- lowness_speed_correction_loop(NETWORK_DIR)
 
 # Pathway 2a
-MODEL_DIR <- "2035_TM152_NGF_NP10_Path2a_02"
+MODEL_DIR <- "2035_TM152_NGF_NP10_Path2a_02_10pc"
 NETWORK_DIR <- file.path("L:/Application/Model_One/NextGenFwys/Scenarios", MODEL_DIR)
 NGF_Path2a_02 <- lowness_speed_correction_loop(NETWORK_DIR)
 
 # Pathway 2b
-MODEL_DIR <- "2035_TM152_NGF_NP10_Path2b_02"
+MODEL_DIR <- "2035_TM152_NGF_NP10_Path2b_02_10pc"
 NETWORK_DIR <- file.path("L:/Application/Model_One/NextGenFwys/Scenarios", MODEL_DIR)
 NGF_Path2b_02 <- lowness_speed_correction_loop(NETWORK_DIR)
 
