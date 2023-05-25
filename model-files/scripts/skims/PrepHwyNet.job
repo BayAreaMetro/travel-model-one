@@ -89,19 +89,19 @@ loop period = 1, 5
    endif 
    
    ; faster to do without distributing using cluster
-   *echo iter %ITER% > "logs\SpeedErrors_@token_period@.log"
+   *echo iter %ITER% > "%MODEL_DIR%\logs\SpeedErrors_@token_period@.log"
 
    ; compute bus travel times
    run pgm = network
    
       ; use the same highway network used in the skimming
 ;      neti[1] = "hwy\avgload@token_period@.net"
-      neti[1] = "hwy\avgload@token_period@_complete.net"
+      neti[1] = "%MODEL_DIR%\hwy\avgload@token_period@_complete.net"
 
       ; output a time-period-specific transit background network
-      neto = "trn\@token_period@_transit_background.net"
+      neto = "@token_period@_transit_background.net"
 
-      fileo printo[1] = "logs\SpeedErrors_@token_period@.log"  APPEND=T
+      fileo printo[1] = "%MODEL_DIR%\logs\SpeedErrors_@token_period@.log"  APPEND=T
       
       ; bus time is a function of highway time and delay per mile, segmented by area type and facility type
       delayfactor = 0.0
