@@ -216,7 +216,8 @@ calculate_per_capita.fatalities_injuries <- function(fatal_inj) {
     N_fatalities_per_100M_VMT_motorist   = N_fatalities_motorist / (annual_VMT_100M),
     N_fatalities_per_100M_VMT_ped        = N_fatalities_ped      / (annual_VMT_100M),
     N_fatalities_per_100M_VMT_bike       = N_fatalities_bike     / (annual_VMT_100M),
-    N_serious_injuries_per_100M_VMT_bike = N_serious_injuries    / (annual_VMT_100M)
+    N_fatalities_per_100M_VMT_total      = N_fatalities_total    / (annual_VMT_100M),
+    N_serious_injuries_per_100M_VMT      = N_serious_injuries    / (annual_VMT_100M)
   )
   # TODO: For the EPC, the existing code uses population in the EPC tazs
   # TODO: I don't think this makes sense -- the EPC population are not generating this VMT so I think
