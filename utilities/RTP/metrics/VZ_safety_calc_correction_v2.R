@@ -340,6 +340,9 @@ modeled_fatalities_injuries <- function(model_run_id, model_year, model_network_
   }
 
   # join to collision rates and calculate annual VMT, avg speed, fatalies, injuries by link
+  # TODO: This is applying the speed correction from average speeds across all time periods
+  # TODO: I think it would be more appropriate to use the timeperiod-based speed
+  # TODO: e.g., fatality_speed_correction_tp instead of fatality_speed_correction_avg
   model_network_df <- left_join(model_network_df, collision_rates_df, by=c("ft_collision","at_collision"))
   model_network_df <- mutate(model_network_df,
       N_fatalities_motorist = fatality_speed_correction_avg * (annual_VMT/ONE_MILLION) * fatality_rate_motorist,
