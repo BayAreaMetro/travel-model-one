@@ -64,8 +64,8 @@ FORECAST_YEAR             <- 2035
 MODEL_RUN_ID_NO_PROjeCT   <- Sys.getenv("MODEL_RUN_ID_NO_PROJECT") # run id only -- not directory
 # FORECAST SCENARIO DIR
 MODEL_RUN_ID_SCENARIO     <- Sys.getenv("MODEL_RUN_ID")  # run id only -- not directory
-OUTPUT_FILE               <- file.path(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_SCENARIO, "OUTPUT", "metrics", "fatalies_injuries.csv")
-LOG_FILE                  <- file.path(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_SCENARIO, "OUTPUT", "metrics", "fatalies_injuries.log")
+OUTPUT_FILE               <- file.path(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_SCENARIO, "OUTPUT", "metrics", "fatalities_injuries.csv")
+LOG_FILE                  <- file.path(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_SCENARIO, "OUTPUT", "metrics", "fatalities_injuries.log")
 
 stopifnot(nchar(MODEL_RUN_ID_NO_PROjeCT)>0)
 stopifnot(nchar(MODEL_RUN_ID_SCENARIO)>0)
@@ -577,7 +577,7 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
 
   # if there's no scenario, we're done
   if (MODEL_RUN_IDS[["NO_PROJECT"]] == MODEL_RUN_IDS[["SCENARIO"]]) {
-    next
+    break
   }
   # save no project for SCENARIO
   if (model_run_type == "NO_PROJECT") {
