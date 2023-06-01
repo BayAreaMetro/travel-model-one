@@ -464,18 +464,6 @@ add_speed_correction_columns <- function(model_network_df, network_no_project_df
   # save it for debugging
   # write.csv(model_network_df, paste0("corrections_",model_fatal_inj$model_run_id,".csv"))
 
-  # this was in the original code via pmin
-  # TODO: I don't think we should do this -- if we take credit for slowing down traffic, we should also
-  # TODO: take credit for speeding it up and increaasing fatalities/injuries
-  # these are multiplicative so default to 1.0 in place of NA
-  model_network_df <- mutate(model_network_df,
-    # fatality
-    fatality_speed_correction_tp  = if_else(fatality_speed_correction_tp  > 1.0,  1.0, fatality_speed_correction_tp),
-    fatality_speed_correction_avg = if_else(fatality_speed_correction_avg > 1.0,  1.0, fatality_speed_correction_avg),
-    # injury_else
-    injury_speed_correction_tp    = if_else(injury_speed_correction_tp  > 1.0,    1.0, injury_speed_correction_tp),
-    injury_speed_correction_avg   = if_else(injury_speed_correction_avg > 1.0,    1.0, injury_speed_correction_avg)
-  )
   # print(head(filter(model_network_df, ft != 6)))
 
   # return it
