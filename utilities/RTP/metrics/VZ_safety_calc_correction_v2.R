@@ -340,16 +340,13 @@ modeled_fatalities_injuries <- function(model_run_id, model_year, model_network_
   }
 
   # join to collision rates and calculate annual VMT, avg speed, fatalies, injuries by link
-  # TODO: This is applying the speed correction from average speeds across all time periods
-  # TODO: I think it would be more appropriate to use the timeperiod-based speed
-  # TODO: e.g., fatality_speed_correction_tp instead of fatality_speed_correction_avg
   model_network_df <- left_join(model_network_df, collision_rates_df, by=c("ft_collision","at_collision"))
   model_network_df <- mutate(model_network_df,
-      N_fatalities_motorist = fatality_speed_correction_avg * (annual_VMT/ONE_MILLION) * fatality_rate_motorist,
-      N_fatalities_ped      = fatality_speed_correction_avg * (annual_VMT/ONE_MILLION) * fatality_rate_ped,
-      N_fatalities_bike     = fatality_speed_correction_avg * (annual_VMT/ONE_MILLION) * fatality_rate_bike,
+      N_fatalities_motorist = fatality_speed_correction_tp * (annual_VMT/ONE_MILLION) * fatality_rate_motorist,
+      N_fatalities_ped      = fatality_speed_correction_tp * (annual_VMT/ONE_MILLION) * fatality_rate_ped,
+      N_fatalities_bike     = fatality_speed_correction_tp * (annual_VMT/ONE_MILLION) * fatality_rate_bike,
       N_fatalities_total    = N_fatalities_motorist + N_fatalities_ped + N_fatalities_bike,
-      N_serious_injuries    = injury_speed_correction_avg * (annual_VMT/ONE_MILLION) * serious_injury_rate
+      N_serious_injuries    = injury_speed_correction_tp * (annual_VMT/ONE_MILLION) * serious_injury_rate
     )
 
   # save for debugging
@@ -456,15 +453,14 @@ add_speed_correction_columns <- function(model_network_df, network_no_project_df
     injury_speed_correction_avg   = (avg_speed/avg_speed_no_project)^injury_exponent      # based on avg speed
   )
   # these are multiplicative so default to 1.0 in place of NA
-  # TODO: Commenting this out as original code didn't do this but I think it should be done or the join fails get dropped
-  # model_network_df <- mutate(model_network_df,
-  #   # fatality
-  #   fatality_speed_correction_tp  = if_else(is.na(fatality_speed_correction_tp),  1.0, fatality_speed_correction_tp),
-  #   fatality_speed_correction_avg = if_else(is.na(fatality_speed_correction_avg), 1.0, fatality_speed_correction_avg),
-  #   # injury_else
-  #   injury_speed_correction_tp    = if_else(is.na(injury_speed_correction_tp),    1.0, injury_speed_correction_tp),
-  #   injury_speed_correction_avg   = if_else(is.na(injury_speed_correction_avg),   1.0, injury_speed_correction_avg)
-  # )
+  model_network_df <- mutate(model_network_df,
+    # fatality
+    fatality_speed_correction_tp  = if_else(is.na(fatality_speed_correction_tp),  1.0, fatality_speed_correction_tp),
+    fatality_speed_correction_avg = if_else(is.na(fatality_speed_correction_avg), 1.0, fatality_speed_correction_avg),
+    # injury_else
+    injury_speed_correction_tp    = if_else(is.na(injury_speed_correction_tp),    1.0, injury_speed_correction_tp),
+    injury_speed_correction_avg   = if_else(is.na(injury_speed_correction_avg),   1.0, injury_speed_correction_avg)
+  )
   # save it for debugging
   # write.csv(model_network_df, paste0("corrections_",model_fatal_inj$model_run_id,".csv"))
 
