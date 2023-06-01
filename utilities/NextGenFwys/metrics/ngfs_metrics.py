@@ -950,7 +950,7 @@ def calculate_auto_travel_time_for_pathway3(tm_run_id):
         OD_cordon_travel_time = OD_cordon_travel_time_df.loc[OD_cordon_travel_time_df['metric_desc'] == 'avg_travel_time_in_mins_auto'].iloc[0]['value']
         LOGGER.info(OD_cordon_travel_time)
         LOGGER.info(type(OD_cordon_travel_time))
-        metrics_dict[OD, 'Travel Time', grouping3, tm_run_id,METRIC_ID,'extra','By Corridor','travel_time_%s' % OD + '_AM',year] = OD_cordon_travel_time
+        metrics_dict[OD + '_AM', 'Travel Time', grouping3, tm_run_id,METRIC_ID,'extra','By Corridor','travel_time_%s' % OD + '_AM',year] = OD_cordon_travel_time
 
 def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df, network_links, metrics_dict):
     # 2) Ratio of value of auto travel time savings to incremental toll costs
@@ -1071,63 +1071,63 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
 
         # Q1 HH numerator: travel time savings
         q1_household_travel_time_savings_minor_grouping = time_savings_in_hours * Q1_HOUSEHOLD_VOT_2023D
-        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Household','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
-        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Household','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)'.format(round(VOT_2023D_PERSONAL)),year] = Q1_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Household','Travel Time Savings (minutes)',year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Household','Travel Time Savings (hours)',year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)',year] = Q1_MEAN_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time (% of wage rate)',year] = Q1_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time ($/hr)',year] = Q1_HOUSEHOLD_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time savings',year] = q1_household_travel_time_savings_minor_grouping
 
         # Q2 HH numerator: travel time savings
         q2_household_travel_time_savings_minor_grouping = time_savings_in_hours * Q2_HOUSEHOLD_VOT_2023D
-        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Household','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
-        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Household','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)'.format(round(VOT_2023D_PERSONAL)),year] = Q2_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Household','Travel Time Savings (minutes)',year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Household','Travel Time Savings (hours)',year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)',year] = Q2_MEAN_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time (% of wage rate)',year] = Q2_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time ($/hr)',year] = Q2_HOUSEHOLD_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time savings',year] = q2_household_travel_time_savings_minor_grouping
 
         # Q3 HH numerator: travel time savings
         q3_household_travel_time_savings_minor_grouping = time_savings_in_hours * Q3_HOUSEHOLD_VOT_2023D
-        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Household','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
-        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Household','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)'.format(round(VOT_2023D_PERSONAL)),year] = Q3_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Household','Travel Time Savings (minutes)',year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Household','Travel Time Savings (hours)',year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)',year] = Q3_MEAN_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time (% of wage rate)',year] = Q3_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time ($/hr)',year] = Q3_HOUSEHOLD_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time savings',year] = q3_household_travel_time_savings_minor_grouping
 
         # Q4 HH numerator: travel time savings
         q4_household_travel_time_savings_minor_grouping = time_savings_in_hours * Q4_HOUSEHOLD_VOT_2023D
-        metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'extra','Household','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
-        metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'extra','Household','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)'.format(round(VOT_2023D_PERSONAL)),year] = Q4_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'extra','Household','Travel Time Savings (minutes)',year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'extra','Household','Travel Time Savings (hours)',year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)',year] = Q4_MEAN_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time (% of wage rate)',year] = Q4_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time ($/hr)',year] = Q4_HOUSEHOLD_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time savings',year] = q4_household_travel_time_savings_minor_grouping
 
         # Q1 Commercial Vehicle numerator: travel time savings
         q1_commercial_travel_time_savings_minor_grouping = time_savings_in_hours * Q1_COMMERCIAL_VOT_2023D
-        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Commercial','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
-        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Commercial','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','Avg hourly wage ($/hr)'.format(round(VOT_2023D_PERSONAL)),year] = Q1_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Commercial','Travel Time Savings (minutes)',year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Commercial','Travel Time Savings (hours)',year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','Avg hourly wage ($/hr)',year] = Q1_MEAN_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time (% of wage rate)',year] = Q1_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time ($/hr)',year] = Q1_COMMERCIAL_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time savings',year] = q1_commercial_travel_time_savings_minor_grouping
 
         # Q2 Commercial Vehicle numerator: travel time savings
         q2_commercial_travel_time_savings_minor_grouping = time_savings_in_hours * Q2_COMMERCIAL_VOT_2023D
-        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Commercial','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
-        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Commercial','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','Avg hourly wage ($/hr)'.format(round(VOT_2023D_PERSONAL)),year] = Q2_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Commercial','Travel Time Savings (minutes)',year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Commercial','Travel Time Savings (hours)',year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','Avg hourly wage ($/hr)',year] = Q2_MEAN_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time (% of wage rate)',year] = Q2_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time ($/hr)',year] = Q2_COMMERCIAL_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time savings',year] = q2_commercial_travel_time_savings_minor_grouping
 
         # Q3 Commercial Vehicle numerator: travel time savings
         q3_commercial_travel_time_savings_minor_grouping = time_savings_in_hours * Q3_COMMERCIAL_VOT_2023D
-        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Commercial','auto_time_savings_minutes_{}_'.format(minor_grouping_corridor),year] = time_savings_minutes 
-        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Commercial','auto_time_savings_hours_{}'.format(minor_grouping_corridor),year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','Avg hourly wage ($/hr)'.format(round(VOT_2023D_PERSONAL)),year] = Q3_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Commercial','Travel Time Savings (minutes)',year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Commercial','Travel Time Savings (hours)',year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','Avg hourly wage ($/hr)',year] = Q3_MEAN_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time (% of wage rate)',year] = Q3_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time ($/hr)',year] = Q3_COMMERCIAL_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time savings',year] = q3_commercial_travel_time_savings_minor_grouping
