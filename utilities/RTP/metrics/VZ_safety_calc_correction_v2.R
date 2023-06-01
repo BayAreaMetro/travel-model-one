@@ -456,15 +456,14 @@ add_speed_correction_columns <- function(model_network_df, network_no_project_df
     injury_speed_correction_avg   = (avg_speed/avg_speed_no_project)^injury_exponent      # based on avg speed
   )
   # these are multiplicative so default to 1.0 in place of NA
-  # TODO: Commenting this out as original code didn't do this but I think it should be done or the join fails get dropped
-  # model_network_df <- mutate(model_network_df,
-  #   # fatality
-  #   fatality_speed_correction_tp  = if_else(is.na(fatality_speed_correction_tp),  1.0, fatality_speed_correction_tp),
-  #   fatality_speed_correction_avg = if_else(is.na(fatality_speed_correction_avg), 1.0, fatality_speed_correction_avg),
-  #   # injury_else
-  #   injury_speed_correction_tp    = if_else(is.na(injury_speed_correction_tp),    1.0, injury_speed_correction_tp),
-  #   injury_speed_correction_avg   = if_else(is.na(injury_speed_correction_avg),   1.0, injury_speed_correction_avg)
-  # )
+  model_network_df <- mutate(model_network_df,
+    # fatality
+    fatality_speed_correction_tp  = if_else(is.na(fatality_speed_correction_tp),  1.0, fatality_speed_correction_tp),
+    fatality_speed_correction_avg = if_else(is.na(fatality_speed_correction_avg), 1.0, fatality_speed_correction_avg),
+    # injury_else
+    injury_speed_correction_tp    = if_else(is.na(injury_speed_correction_tp),    1.0, injury_speed_correction_tp),
+    injury_speed_correction_avg   = if_else(is.na(injury_speed_correction_avg),   1.0, injury_speed_correction_avg)
+  )
   # save it for debugging
   # write.csv(model_network_df, paste0("corrections_",model_fatal_inj$model_run_id,".csv"))
 
