@@ -81,6 +81,19 @@ NGFS_OD_CITIES_OF_INTEREST_DF = pd.DataFrame(
     data=NGFS_OD_CITIES_OF_INTEREST,
     columns=['orig_CITY', 'dest_CITY']
 )
+# define origin destination pairs to use for Affordable 2, Pathway 3 Travel Time calculation
+NGFS_OD_CORDONS_OF_INTEREST = [
+    ['SF Internal',   'SF Cordon'],
+    ['SF External',   'SF Cordon'],
+    ['Oakland Internal',   'Oakland Cordon'],
+    ['Oakland External',   'Oakland Cordon'],
+    ['San Jose Internal',   'San Jose Cordon'],
+    ['San Jose External',   'San Jose Cordon']
+]
+NGFS_OD_CORDONS_OF_INTEREST_DF = pd.DataFrame(
+    data=NGFS_OD_CORDONS_OF_INTEREST,
+    columns=['orig_ZONE', 'dest_CORDON']
+)
 # print(NGFS_OD_CITIES_OF_INTEREST_DF)
 # TODO: merge formatting and consolidate variables
 # source: https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
@@ -481,6 +494,7 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
 
 def calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year, metric_id, metrics_dict):
     #function to compare two runs and enter difference as a metric in dictionary
+    LOGGER.debug("calculating change between run and base for metric: \n{} for runs \n{} and \n{}".format(metric_id, tm_run_id, BASE_SCENARIO_RUN_ID))
     grouping1 = ' '
     grouping2 = ' '
     grouping3 = ' '
@@ -488,6 +502,7 @@ def calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year,
     metrics_dict_df  = metrics_dict_series.to_frame().reset_index()
     metrics_dict_df.columns = ['grouping1', 'grouping2', 'grouping3', 'modelrun_id','metric_id','intermediate/final','key','metric_desc','year','value']
     #     make a list of the metrics from the run of interest to iterate through and calculate a difference with
+    LOGGER.debug("   metrics_dict_df:\n{}".format(metrics_dict_df))
     metrics_list = metrics_dict_df.copy().loc[(metrics_dict_df['modelrun_id'] == tm_run_id)]
     metrics_list = metrics_list.loc[(metrics_dict_df['metric_id'].str.contains(metric_id) == True)]['metric_desc']
     # iterate through the list
@@ -502,8 +517,10 @@ def calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year,
 
         val_run = metrics_dict_df.copy().loc[(metrics_dict_df['modelrun_id'] == tm_run_id)].loc[(metrics_dict_df['metric_desc'] == metric)].iloc[0]['value']
         val_base = metrics_dict_df.copy().loc[(metrics_dict_df['modelrun_id'] == BASE_SCENARIO_RUN_ID)].loc[(metrics_dict_df['metric_desc'] == metric)].iloc[0]['value']
+        LOGGER.debug("   run value:\n{}".format(val_run))
+        LOGGER.debug("   base value:\n{}".format(val_base))
         metrics_dict[key, grouping2, grouping3, tm_run_id, metric_id,'debug step','By Corridor','change_in_{}'.format(metric),year] = (val_run-val_base)
-        metrics_dict[key, grouping2, grouping3, tm_run_id, metric_id,'debug step','By Corridor','pct_change_in_{}'.format(metric),year] = ((val_run-val_base)/val_base)
+                    
 
 
 
@@ -764,6 +781,7 @@ def calculate_auto_travel_time(tm_run_id,metric_id, year,network,metrics_dict):
     total_weighted_travel_time = 0 #sum for numerator
     n = 0 #counter for simple average 
     total_travel_time = 0 #numerator for simple average 
+    LOGGER.info("Calling function calculate_auto_travel_time() for {}".format(tm_run_id))
 
     for i in minor_groups:
         #     add minor ampm ctim to metric dict
@@ -794,8 +812,145 @@ def calculate_auto_travel_time(tm_run_id,metric_id, year,network,metrics_dict):
         # weighted AM,PM travel times (by vmt)
         weighted_AM_travel_time_by_vmt = minor_group_am * vmt_minor_grouping_AM
 
+def calculate_auto_travel_time_for_pathway3(tm_run_id):
+    """ Calculates travel time by auto between representative origin-destination pairs
+    overwrites the travel_time metric in the metric dictionary for pathway 3,
+    the other function will still be called for simplicity of not editing all the code
+    
+    Args:
+        tm_run_id (str): Travel model run ID
 
+    Returns:
+        pandas.DataFrame: with columns a subset of METRICS_COLUMNS, including 
+          metric_id   = 'Affordable 2'
+          modelrun_id = tm_run_id
+        Metrics returned:
+          key                       intermediate/final  metric_desc
+          [origCITY_destCITY]       extra               avg_travel_time_in_mins_auto
+          [origCITY_destCITY]       extra               num_trips_auto
 
+    Notes:
+    * Representative origin-destination pairs are given by TAZs corresponding with 
+      NGFS_OD_CITIES_FILE and NGFS_OD_CORDONS_OF_INTEREST
+    * Auto modes includes taxi and tncs
+    
+      TODO: come back and change the code for all of Affordable 2 to improve readability
+    """
+    grouping1 = ' '
+    grouping2 = ' '
+    grouping3 = ' '
+    METRIC_ID = 'Affordable 2'
+
+    LOGGER.info("calculate_auto_travel_time_for_pathway3() for {}, metric: {}".format(tm_run_id, METRIC_ID))
+    LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
+
+    # load tables that contain TAZs for trips originating within and outside of the cordons and headed to the cordons + the cordons itself
+    NGFS_OD_ORIGINS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_with_origins.csv")
+    NGFS_OD_ORIGINS_DF      = pd.read_csv(NGFS_OD_ORIGINS_FILE)
+    LOGGER.info("  Read {:,} rows from {}".format(len(NGFS_OD_ORIGINS_DF), NGFS_OD_ORIGINS_FILE))
+
+    NGFS_OD_CORDONS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_with_cordons.csv")
+    NGFS_OD_CORDONS_DF      = pd.read_csv(NGFS_OD_CORDONS_FILE)
+    LOGGER.info("  Read {:,} rows from {}".format(len(NGFS_OD_CORDONS_DF), NGFS_OD_CORDONS_FILE))
+
+    # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
+    ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", ODTRAVELTIME_FILENAME) #changed "ODTravelTime_byModeTimeperiodIncome.csv" to a variable for better performance during debugging
+    # this is large so join/subset it immediately
+    trips_od_travel_time_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
+    LOGGER.info("  Read {:,} rows from {}".format(len(trips_od_travel_time_df), ODTravelTime_byModeTimeperiod_file))
+
+    trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df.timeperiod_label == 'AM Peak' ]
+    LOGGER.info("  Filtered to AM only: {:,} rows".format(len(trips_od_travel_time_df)))
+
+    # pivot out the income since we don't need it
+    trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df,
+                                             index=['orig_taz','dest_taz','trip_mode'],
+                                             values=['num_trips','avg_travel_time_in_mins'],
+                                             aggfunc={'num_trips':numpy.sum, 'avg_travel_time_in_mins':numpy.mean})
+    trips_od_travel_time_df.reset_index(inplace=True)
+    LOGGER.info("  Aggregated income groups: {:,} rows".format(len(trips_od_travel_time_df)))
+
+    # join to OD cities for origin
+    trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
+                                       right=NGFS_OD_ORIGINS_DF,
+                                       left_on="orig_taz",
+                                       right_on="taz1454")
+    trips_od_travel_time_df.rename(columns={"ORIGIN":"orig_ZONE"}, inplace=True)
+    trips_od_travel_time_df.drop(columns=["taz1454"], inplace=True)
+    # join to OD cities for destination
+    trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
+                                       right=NGFS_OD_CORDONS_DF,
+                                       left_on="dest_taz",
+                                       right_on="taz1454")
+    trips_od_travel_time_df.rename(columns={"CORDON":"dest_CORDON"}, inplace=True)
+    trips_od_travel_time_df.drop(columns=["taz1454"], inplace=True)
+    LOGGER.info("  Joined with {} for origin, destination: {:,} rows".format(NGFS_OD_CITIES_FILE, len(trips_od_travel_time_df)))
+    LOGGER.debug("trips_od_travel_time_df.head():\n{}".format(trips_od_travel_time_df.head()))
+
+    # filter again to only those of interest
+    trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
+                                       right=NGFS_OD_CORDONS_OF_INTEREST_DF,
+                                       indicator=True)
+    trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df._merge == 'both']
+    LOGGER.info("  Filtered to only NGFS_OD_CORDONS_OF_INTEREST: {:,} rows".format(len(trips_od_travel_time_df)))
+
+    # we're going to aggregate trip modes; auto includes TAXI and TNC
+    trips_od_travel_time_df['agg_trip_mode'] = "N/A"
+    trips_od_travel_time_df.loc[ trips_od_travel_time_df.trip_mode.isin(MODES_PRIVATE_AUTO), 'agg_trip_mode' ] = "auto"
+    trips_od_travel_time_df.loc[ trips_od_travel_time_df.trip_mode.isin(MODES_TAXI_TNC),     'agg_trip_mode' ] = "auto"
+
+    # to get weighted average, transform to total travel time
+    trips_od_travel_time_df['tot_travel_time_in_mins'] = \
+        trips_od_travel_time_df['avg_travel_time_in_mins']*trips_od_travel_time_df['num_trips']
+
+    # pivot down to orig_ZONE x dest_CORDON x agg_trip_mode
+    trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df, 
+                                             index=['orig_ZONE','dest_CORDON','agg_trip_mode'],
+                                             values=['num_trips','tot_travel_time_in_mins'],
+                                             aggfunc={'num_trips':numpy.sum, 'tot_travel_time_in_mins':numpy.sum})
+    trips_od_travel_time_df.reset_index(inplace=True)
+    trips_od_travel_time_df['avg_travel_time_in_mins'] = \
+        trips_od_travel_time_df['tot_travel_time_in_mins']/trips_od_travel_time_df['num_trips']
+    LOGGER.debug(trips_od_travel_time_df)
+
+    # pivot again to move agg_mode to column
+    # columns will now be: orig_ZONE_, dest_CORDON_, avg_travel_time_in_mins_auto, avg_travel_time_in_mins_transit, num_trips_auto, num_trips_transit
+    trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df, 
+                                             index=['orig_ZONE','dest_CORDON'],
+                                             columns=['agg_trip_mode'],
+                                             values=['num_trips','avg_travel_time_in_mins'])
+    trips_od_travel_time_df.reset_index(inplace=True)
+    # flatten resulting MultiIndex column names
+    # rename from ('orig_ZONE',''), ('dest_CORDON',''), ('avg_travel_time_in_mins','auto'), ('avg_travel_time_in_mins', 'transit'), ...
+    # to orig_ZONE, dest_CORDON, avg_travel_time_in_mins_auto, avg_travel_time_in_mins_transit, ...
+    trips_od_travel_time_df.columns = ['_'.join(col) if len(col[1]) > 0 else col[0] for col in trips_od_travel_time_df.columns.values]
+
+    # convert to metrics dataframe by pivoting one last time to just columns orig_ZONE, dest_CORDON
+    trips_od_travel_time_df = pd.melt(trips_od_travel_time_df, 
+                                      id_vars=['orig_ZONE','dest_CORDON'], 
+                                      var_name='metric_desc',
+                                      value_name='value')
+    # travel times and num trips are extra
+    trips_od_travel_time_df['intermediate/final']   = 'intermediate'
+    
+    # key is orig_ZONE, dest_CORDON
+    trips_od_travel_time_df['key']  = trips_od_travel_time_df['orig_ZONE'] + "_into_" + trips_od_travel_time_df['dest_CORDON']
+    trips_od_travel_time_df.drop(columns=['orig_ZONE','dest_CORDON'], inplace=True)
+
+    trips_od_travel_time_df['modelrun_id'] = tm_run_id
+    trips_od_travel_time_df['year'] = tm_run_id[:4]
+    trips_od_travel_time_df['metric_id'] = METRIC_ID
+
+    LOGGER.info(trips_od_travel_time_df)
+
+    for OD in trips_od_travel_time_df['key']:
+        # add travel times to metric dict
+        OD_cordon_travel_time_df = trips_od_travel_time_df.loc[trips_od_travel_time_df['key'] == OD]
+        LOGGER.info(OD_cordon_travel_time_df)
+        OD_cordon_travel_time = OD_cordon_travel_time_df.loc[OD_cordon_travel_time_df['metric_desc'] == 'avg_travel_time_in_mins_auto'].iloc[0]['value']
+        LOGGER.info(OD_cordon_travel_time)
+        LOGGER.info(type(OD_cordon_travel_time))
+        metrics_dict[OD, 'Travel Time', grouping3, tm_run_id,METRIC_ID,'extra','By Corridor','travel_time_%s' % OD + '_AM',year] = OD_cordon_travel_time
 
 def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df, network_links, metrics_dict):
     # 2) Ratio of value of auto travel time savings to incremental toll costs
@@ -808,8 +963,9 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     grouping1 = ' '
     grouping2 = ' '
     grouping3 = ' '
-  
-    network_with_nonzero_tolls = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['TOLLCLASS'] > 1000) | (tm_loaded_network_df['TOLLCLASS'] == 99)] # might add this in to provide a denominator to ratios in pathway 3: |(tm_loaded_network_df['TOLLCLASS'] == 10)|(tm_loaded_network_df['TOLLCLASS'] == 11)|(tm_loaded_network_df['TOLLCLASS'] == 12)]
+    LOGGER.info("Calculating {} for {}".format(metric_id, tm_run_id))
+    
+    network_with_nonzero_tolls = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['TOLLCLASS'] > 1000) | (tm_loaded_network_df['TOLLCLASS'] == 99) |(tm_loaded_network_df['TOLLCLASS'] == 10)|(tm_loaded_network_df['TOLLCLASS'] == 11)|(tm_loaded_network_df['TOLLCLASS'] == 12)]
     network_with_nonzero_tolls = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] == 1)&(tm_loaded_network_df['ft'] != 6)]
     network_with_nonzero_tolls['sum of tolls'] = network_with_nonzero_tolls['TOLLAM_DA'] + network_with_nonzero_tolls['TOLLAM_LRG'] + network_with_nonzero_tolls['TOLLAM_S3']
     # check if run has all lane tolling, if not return 0 for this metric 
@@ -823,21 +979,38 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     network_with_nonzero_tolls = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['sum of tolls'] > 1)]
     index_a_b = network_with_nonzero_tolls.copy()[['a_b']]
     network_with_nonzero_tolls_base = tm_loaded_network_df_base.copy().merge(index_a_b, on='a_b', how='right')
+
+    # add in the minor groupings for the cordon (they're not included in the source file, might be able to make it work with function that calls TOLLCLASS_Designations.xlsx)   
+    network_with_nonzero_tolls.loc[network_with_nonzero_tolls['TOLLCLASS'] == 10, 'Grouping minor_AMPM' ] = "SF Cordon_AM"
+    network_with_nonzero_tolls.loc[network_with_nonzero_tolls['TOLLCLASS'] == 11, 'Grouping minor_AMPM' ] = "Oakland Cordon_AM"
+    network_with_nonzero_tolls.loc[network_with_nonzero_tolls['TOLLCLASS'] == 12, 'Grouping minor_AMPM' ] = "San Jose Cordon_AM"
+    network_with_nonzero_tolls_base.loc[network_with_nonzero_tolls_base['TOLLCLASS'] == 10, 'Grouping minor_AMPM' ] = "SF Cordon_AM"
+    network_with_nonzero_tolls_base.loc[network_with_nonzero_tolls_base['TOLLCLASS'] == 11, 'Grouping minor_AMPM' ] = "Oakland Cordon_AM"
+    network_with_nonzero_tolls_base.loc[network_with_nonzero_tolls_base['TOLLCLASS'] == 12, 'Grouping minor_AMPM' ] = "San Jose Cordon_AM"
+
+    LOGGER.debug('network_with_nonzero_tolls (sent to calculate_auto_travel_time()):\n{}'.format(network_with_nonzero_tolls))
     calculate_auto_travel_time(tm_run_id,metric_id, year,network_with_nonzero_tolls,metrics_dict)
     calculate_auto_travel_time(BASE_SCENARIO_RUN_ID,metric_id, year,network_with_nonzero_tolls_base,metrics_dict)
+    if 'Path3' in tm_run_id:
+        calculate_auto_travel_time_for_pathway3(tm_run_id)
+        calculate_auto_travel_time_for_pathway3(BASE_SCENARIO_RUN_ID)
     # ----calculate difference between runs----
-
     # run comparisons
     calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year, 'Affordable 2', metrics_dict)
 
     metrics_dict_series = pd.Series(metrics_dict)
     metrics_dict_df  = metrics_dict_series.to_frame().reset_index()
+    LOGGER.debug('metrics_dict_df:\n{}'.format(metrics_dict_df))
     metrics_dict_df.columns = ['grouping1', 'grouping2', 'grouping3', 'modelrun_id','metric_id','intermediate/final','key','metric_desc','year','value']
     corridor_vmt_df = metrics_dict_df.copy().loc[(metrics_dict_df['metric_desc'].str.contains('_AM_vmt') == True)&(metrics_dict_df['metric_desc'].str.contains('change') == False)]
+    LOGGER.debug('corridor_vmt_df:\n{}'.format(corridor_vmt_df))
     # simplify df to relevant model run
     metrics_dict_df = metrics_dict_df.copy().loc[(metrics_dict_df['modelrun_id'].str.contains(tm_run_id) == True)]
     #make a list of the metrics from the run of interest to iterate through and calculate numerator of ratio with
+    if 'Path3' in tm_run_id:
+        metrics_dict_df = metrics_dict_df.copy().loc[(metrics_dict_df['metric_desc'].str.contains('Cordon') == True)]
     metrics_list = metrics_dict_df.loc[(metrics_dict_df['metric_desc'].str.startswith('change_in_travel_time_') == True)&(metrics_dict_df['metric_desc'].str.contains('_AM') == True)&(metrics_dict_df['metric_desc'].str.contains('vmt') == False)]['metric_desc'] 
+    LOGGER.debug('metrics_list:\n{}'.format(metrics_list))
 
     # the list of metrics should have the name of the corridor. split on 'change_in_avg' and pick the end part. if empty, will be final ratio, use this for other disaggregations
     # total tolls and time savings variables to be used for average
@@ -870,11 +1043,14 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     for metric in metrics_list:
         minor_grouping_corridor = metric.split('travel_time_')[1]
 
-        # calculate average vmt
-        minor_grouping_vmt = corridor_vmt_df.loc[corridor_vmt_df['metric_desc'] == (minor_grouping_corridor + '_vmt')].iloc[0]['value']
+        if 'Path3' in tm_run_id:
+            minor_grouping_vmt = 0
+        else:
+            # calculate average vmt
+            minor_grouping_vmt = corridor_vmt_df.loc[corridor_vmt_df['metric_desc'] == (minor_grouping_corridor + '_vmt')].iloc[0]['value']
         # simplify df to relevant metric
         metric_row = metrics_dict_df.loc[(metrics_dict_df['metric_desc'].str.contains(metric) == True)]
-        if (minor_grouping_vmt == 0): #check to make sure there is traffic on the link
+        if (minor_grouping_vmt == 0) & ('Path3' not in tm_run_id): #check to make sure there is traffic on the link
             time_savings_minutes = 0
             time_savings_in_hours = 0
         else:
@@ -885,7 +1061,10 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         # ____consider including a call to change_in function here. first define the metrics needed
 
         # define key for grouping field, consistent with section above
-        key = minor_grouping_corridor.split('_AM')[0]
+        if 'Path3' in tm_run_id:
+            key = minor_grouping_corridor
+        else:
+            key = minor_grouping_corridor.split('_AM')[0]
 
         priv_auto_travel_time_savings_minor_grouping = time_savings_in_hours * VOT_2023D_PERSONAL
         commercial_vehicle_travel_time_savings_minor_grouping = time_savings_in_hours * VOT_2023D_COMMERCIAL
@@ -955,9 +1134,17 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
 
         # calculate the denominator: incremental toll costs (for PA CV and HOV) 
         # by filtering for the links on the corridor and summing across them
+        if 'Path3' in tm_run_id:
+            minor_grouping_corridor = minor_grouping_corridor.split('_into_')[-1]
         DA_incremental_toll_costs_minor_grouping = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['Grouping minor_AMPM'].str.contains(minor_grouping_corridor) == True), 'TOLLAM_DA'].sum()/100 * INFLATION_00_23
         LRG_incremental_toll_costs_minor_grouping = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['Grouping minor_AMPM'].str.contains(minor_grouping_corridor) == True), 'TOLLAM_LRG'].sum()/100 * INFLATION_00_23
         S3_incremental_toll_costs_minor_grouping = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['Grouping minor_AMPM'].str.contains(minor_grouping_corridor) == True), 'TOLLAM_S3'].sum()/100 * INFLATION_00_23
+        if 'Path3' in tm_run_id:
+            number_of_links = len(network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['Grouping minor_AMPM'].str.contains(minor_grouping_corridor) == True)])
+            LOGGER.debug('number_of_links:\n{}'.format(number_of_links))
+            DA_incremental_toll_costs_minor_grouping = DA_incremental_toll_costs_minor_grouping / number_of_links
+            LRG_incremental_toll_costs_minor_grouping = LRG_incremental_toll_costs_minor_grouping / number_of_links
+            S3_incremental_toll_costs_minor_grouping = S3_incremental_toll_costs_minor_grouping / number_of_links
         DA_incremental_toll_costs_inc1_minor_grouping = (DA_incremental_toll_costs_minor_grouping * Q1_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
         DA_incremental_toll_costs_inc2_minor_grouping = (DA_incremental_toll_costs_minor_grouping * Q2_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
         DA_incremental_toll_costs_inc3_minor_grouping = (DA_incremental_toll_costs_minor_grouping * Q3_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
@@ -2269,7 +2456,7 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     
     Returns:
         pd.DataFrame: with columns a subset of METRICS_COLUMNS, including
-          metric_id          = 'Safe1'
+          metric_id          = 'Safe2'
           modelrun_id        = tm_run_id
           intermediate/final = final
         Metrics return:
@@ -2630,8 +2817,14 @@ if __name__ == "__main__":
         tm_loaded_network_df = pd.read_csv(tm_run_location+'/OUTPUT/avgload5period.csv')
         tm_loaded_network_df = tm_loaded_network_df.rename(columns=lambda x: x.strip())
         # ----merging df that has the list of minor segments with loaded network - for corridor analysis
+        # TODO: deprecate use of 'a_b'with tm_loaded_network_df
         tm_loaded_network_df['a_b'] = tm_loaded_network_df['a'].astype(str) + "_" + tm_loaded_network_df['b'].astype(str)
         tm_loaded_network_df = tm_loaded_network_df.merge(minor_links_df, on='a_b', how='left')
+        # TODO: fix implementation of determine_tolled_minor_group_links(), currently zeroing out many corridors. Suspect that I need to perform 2 merges to include arterial links, but issue might go deeper than that
+        # LOGGER.debug("TOLLED_FWY_MINOR_GROUP_LINKS_DF:\n{}".format(TOLLED_FWY_MINOR_GROUP_LINKS_DF))
+        # tm_loaded_network_df = pd.merge(left=tm_loaded_network_df, right=TOLLED_FWY_MINOR_GROUP_LINKS_DF, how='left', left_on=['a','b'], right_on=['a','b'])
+        # tm_loaded_network_df['Grouping minor_AMPM'] = tm_loaded_network_df['grouping'] + '_' + tm_loaded_network_df['grouping_dir']
+        LOGGER.debug("tm_loaded_network_df:\n{}".format(tm_loaded_network_df))
         
         if ODTRAVELTIME_FILENAME == "ODTravelTime_byModeTimeperiod_reduced_file.csv":
             # import network links file from reduced dbf as a dataframe to merge with loaded network and get toll rates
