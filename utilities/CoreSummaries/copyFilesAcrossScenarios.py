@@ -42,7 +42,8 @@ OUTPUT_FILES = {
         "TimeOfDay_personsTouring",
         "TravelCost",
         "TripDistance",
-        "VehicleMilesTraveled"
+        "VehicleMilesTraveled",
+        "ODTravelTime_byModeTimeperiodIncome"
     ],
     "trn":[
         "trnline",
