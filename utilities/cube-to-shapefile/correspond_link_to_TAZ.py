@@ -11,8 +11,8 @@ USAGE = """
   * linktaz_mi    = link intersect this taz length in miles (calculated by arcpy)
   * linktaz_share = share of the link in this taz (e.g. linktaz_mi / link_mi)
 
-  Requires arcpy, so use arcgis version of python
-  e.g. set PATH=C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3;C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3\Scripts
+  Requires GeoPandas. 
+  TODO: Add geopandas to tm15-python310 environment (https://github.com/BayAreaMetro/modeling-website/wiki/SetupConfiguration)
 
   Developed for task: Calculate metrics for emissions and fatalities at TAZ level
   https://app.asana.com/0/13098083395690/1195902248890525/f
