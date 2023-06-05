@@ -83,8 +83,8 @@ NGFS_OD_CITIES_OF_INTEREST_DF = pd.DataFrame(
 )
 # define origin destination pairs to use for Affordable 2, Pathway 3 Travel Time calculation
 NGFS_OD_CORDONS_OF_INTEREST = [
-    ['SF Internal',   'SF Cordon'],
-    ['SF External',   'SF Cordon'],
+    ['SF Internal',   'San Francisco Cordon'],
+    ['SF External',   'San Francisco Cordon'],
     ['Oakland Internal',   'Oakland Cordon'],
     ['Oakland External',   'Oakland Cordon'],
     ['San Jose Internal',   'San Jose Cordon'],
@@ -981,10 +981,10 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     network_with_nonzero_tolls_base = tm_loaded_network_df_base.copy().merge(index_a_b, on='a_b', how='right')
 
     # add in the minor groupings for the cordon (they're not included in the source file, might be able to make it work with function that calls TOLLCLASS_Designations.xlsx)   
-    network_with_nonzero_tolls.loc[network_with_nonzero_tolls['TOLLCLASS'] == 10, 'Grouping minor_AMPM' ] = "SF Cordon_AM"
+    network_with_nonzero_tolls.loc[network_with_nonzero_tolls['TOLLCLASS'] == 10, 'Grouping minor_AMPM' ] = "San Francisco Cordon_AM"
     network_with_nonzero_tolls.loc[network_with_nonzero_tolls['TOLLCLASS'] == 11, 'Grouping minor_AMPM' ] = "Oakland Cordon_AM"
     network_with_nonzero_tolls.loc[network_with_nonzero_tolls['TOLLCLASS'] == 12, 'Grouping minor_AMPM' ] = "San Jose Cordon_AM"
-    network_with_nonzero_tolls_base.loc[network_with_nonzero_tolls_base['TOLLCLASS'] == 10, 'Grouping minor_AMPM' ] = "SF Cordon_AM"
+    network_with_nonzero_tolls_base.loc[network_with_nonzero_tolls_base['TOLLCLASS'] == 10, 'Grouping minor_AMPM' ] = "San Francisco Cordon_AM"
     network_with_nonzero_tolls_base.loc[network_with_nonzero_tolls_base['TOLLCLASS'] == 11, 'Grouping minor_AMPM' ] = "Oakland Cordon_AM"
     network_with_nonzero_tolls_base.loc[network_with_nonzero_tolls_base['TOLLCLASS'] == 12, 'Grouping minor_AMPM' ] = "San Jose Cordon_AM"
 
@@ -2084,20 +2084,27 @@ def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df
 def calculate_Reparative1_dollar_revenues_revinvested(tm_run_id, year, tm_scen_metrics_df, tm_auto_owned_df, tm_travel_cost_df, metrics_dict):
     # 7) Absolute dollar amount of new revenues generated that is reinvested in freeway adjacent communities
 
-    # off model?
+    # calculated off model
     metric_id = 'Reparative 1'
-
-
+    # read reparative metrics excel file
+    reparative_metrics_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "CostingDetails_JA_v3.xlsx")
+    reparative_1_df = pd.read_excel(reparative_metrics_file, sheet_name='reparative 1')
+    LOGGER.info("  Read {:,} rows from {}".format(len(reparative_1_df), reparative_metrics_file))
+    # for pathway in reparative_1_df
 
 
 def calculate_Reparative2_ratio_revenues_revinvested(tm_run_id, year, tm_scen_metrics_df, tm_auto_owned_df, tm_travel_cost_df, metrics_dict):
     # 8) Ratio of new revenues paid for by low-income populations to revenues reinvested toward low-income populations
 
-    # off model?
+    # calculated off model
     metric_id = 'Reparative 2'
     grouping1 = ' '
     grouping2 = ' '
     grouping3 = ' '
+    # read reparative metrics excel file
+    reparative_metrics_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "CostingDetails_JA_v3.xlsx")
+    reparative_2_df = pd.read_excel(reparative_metrics_file, sheet_name='reparative 2')
+    LOGGER.info("  Read {:,} rows from {}".format(len(reparative_2_df), reparative_metrics_file))
 
 
 
