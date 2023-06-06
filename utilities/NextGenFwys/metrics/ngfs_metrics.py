@@ -83,12 +83,19 @@ NGFS_OD_CITIES_OF_INTEREST_DF = pd.DataFrame(
 )
 # define origin destination pairs to use for Affordable 2, Pathway 3 Travel Time calculation
 NGFS_OD_CORDONS_OF_INTEREST = [
-    ['SF Internal',   'San Francisco Cordon'],
-    ['SF External',   'San Francisco Cordon'],
-    ['Oakland Internal',   'Oakland Cordon'],
-    ['Oakland External',   'Oakland Cordon'],
-    ['San Jose Internal',   'San Jose Cordon'],
-    ['San Jose External',   'San Jose Cordon']
+    ['Richmond',   'San Francisco Cordon'],
+    ['Mission/Bayview',   'San Francisco Cordon'],
+    ['Sunset',   'San Francisco Cordon'],
+    ['Daly City',   'San Francisco Cordon'],
+    ['Oakland/Alameda',   'San Francisco Cordon'],
+    ['Oakland/Alameda',   'Oakland Cordon'],
+    ['Berkeley',   'Oakland Cordon'],
+    ['Hayward',   'Oakland Cordon'],
+    ['Downtown San Jose',   'San Jose Cordon'],
+    ['East San Jose',   'San Jose Cordon'],
+    ['South San Jose',   'San Jose Cordon'],
+    ['Sunnyvale',   'San Jose Cordon'],
+    ['Cupertino',   'San Jose Cordon'],
 ]
 NGFS_OD_CORDONS_OF_INTEREST_DF = pd.DataFrame(
     data=NGFS_OD_CORDONS_OF_INTEREST,
@@ -812,7 +819,7 @@ def calculate_auto_travel_time(tm_run_id,metric_id, year,network,metrics_dict):
         # weighted AM,PM travel times (by vmt)
         weighted_AM_travel_time_by_vmt = minor_group_am * vmt_minor_grouping_AM
 
-def calculate_auto_travel_time_for_pathway3(tm_run_id):
+def calculate_auto_travel_time_for_pathway3(tm_run_id, origin_city_abbreviation):
     """ Calculates travel time by auto between representative origin-destination pairs
     overwrites the travel_time metric in the metric dictionary for pathway 3,
     the other function will still be called for simplicity of not editing all the code
@@ -871,11 +878,12 @@ def calculate_auto_travel_time_for_pathway3(tm_run_id):
     LOGGER.info("  Aggregated income groups: {:,} rows".format(len(trips_od_travel_time_df)))
 
     # join to OD cities for origin
+    origin_column_name = "ORIGIN_" + origin_city_abbreviation
     trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
                                        right=NGFS_OD_ORIGINS_DF,
                                        left_on="orig_taz",
                                        right_on="taz1454")
-    trips_od_travel_time_df.rename(columns={"ORIGIN":"orig_ZONE"}, inplace=True)
+    trips_od_travel_time_df.rename(columns={origin_column_name:"orig_ZONE"}, inplace=True)
     trips_od_travel_time_df.drop(columns=["taz1454"], inplace=True)
     # join to OD cities for destination
     trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
@@ -992,8 +1000,12 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     calculate_auto_travel_time(tm_run_id,metric_id, year,network_with_nonzero_tolls,metrics_dict)
     calculate_auto_travel_time(BASE_SCENARIO_RUN_ID,metric_id, year,network_with_nonzero_tolls_base,metrics_dict)
     if 'Path3' in tm_run_id:
-        calculate_auto_travel_time_for_pathway3(tm_run_id)
-        calculate_auto_travel_time_for_pathway3(BASE_SCENARIO_RUN_ID)
+        calculate_auto_travel_time_for_pathway3(tm_run_id, 'SF')
+        calculate_auto_travel_time_for_pathway3(BASE_SCENARIO_RUN_ID, 'SF')
+        calculate_auto_travel_time_for_pathway3(tm_run_id, 'OAK')
+        calculate_auto_travel_time_for_pathway3(BASE_SCENARIO_RUN_ID, 'OAK')
+        calculate_auto_travel_time_for_pathway3(tm_run_id, 'SJ')
+        calculate_auto_travel_time_for_pathway3(BASE_SCENARIO_RUN_ID, 'SJ')
     # ----calculate difference between runs----
     # run comparisons
     calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year, 'Affordable 2', metrics_dict)
