@@ -2112,7 +2112,7 @@ def calculate_Reparative1_dollar_revenues_revinvested(tm_run_id):
         for pathway in reparative_1_df['pathway']:
             if 'Path'+ pathway in tm_run_id:     
                 reparative_1_value = reparative_1_df.loc[(reparative_1_df['pathway'] == pathway)].iloc[0]['value']
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,' ',' ', '', year] = reparative_1_value
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,' ',' ', 'Dollars (2023$)', year] = reparative_1_value
         
 
 
@@ -2135,7 +2135,7 @@ def calculate_Reparative2_ratio_revenues_revinvested(tm_run_id):
         for pathway in reparative_2_df['pathway']:
             if 'Path'+ pathway in tm_run_id:     
                 reparative_2_value = reparative_2_df.loc[(reparative_2_df['pathway'] == pathway)].iloc[0]['value']
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,' ',' ', '', year] = reparative_2_value
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,' ',' ', 'Ratio', year] = reparative_2_value
 
 
 
