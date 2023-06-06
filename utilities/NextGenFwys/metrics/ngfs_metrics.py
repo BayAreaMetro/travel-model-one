@@ -848,7 +848,7 @@ def calculate_auto_travel_time_for_pathway3(tm_run_id, origin_city_abbreviation)
     grouping3 = ' '
     METRIC_ID = 'Affordable 2'
 
-    LOGGER.info("calculate_auto_travel_time_for_pathway3() for {}, metric: {}".format(tm_run_id, METRIC_ID))
+    LOGGER.info("calculate_auto_travel_time_for_pathway3() for {}, metric: {}, city: {}".format(tm_run_id, METRIC_ID, origin_city_abbreviation))
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
 
     # load tables that contain TAZs for trips originating within and outside of the cordons and headed to the cordons + the cordons itself
@@ -2093,19 +2093,30 @@ def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df
     metrics_dict['Goods Routes', 'NonPeak Hours', grouping3, tm_run_id, metric_id,'intermediate','I80_I880_PortOfOakland', 'average nonpeak travel time', year] = MD_travel_time_route_I80
     metrics_dict['Goods Routes', 'Peak vs NonPeak', grouping3, tm_run_id, metric_id,'final','I80_I880_PortOfOakland', 'Ratio', year] = ratio_peak_offpeak_route_I80
 
-def calculate_Reparative1_dollar_revenues_revinvested(tm_run_id, year, tm_scen_metrics_df, tm_auto_owned_df, tm_travel_cost_df, metrics_dict):
+def calculate_Reparative1_dollar_revenues_revinvested(tm_run_id):
     # 7) Absolute dollar amount of new revenues generated that is reinvested in freeway adjacent communities
 
     # calculated off model
     metric_id = 'Reparative 1'
+    grouping1 = ' '
+    grouping2 = ' '
+    grouping3 = ' '
     # read reparative metrics excel file
-    reparative_metrics_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "CostingDetails_JA_v3.xlsx")
+    reparative_metrics_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "CostingDetails.xlsx")
     reparative_1_df = pd.read_excel(reparative_metrics_file, sheet_name='reparative 1')
+    reparative_1_df['pathway'] = reparative_1_df['pathway'].astype('str')
     LOGGER.info("  Read {:,} rows from {}".format(len(reparative_1_df), reparative_metrics_file))
-    # for pathway in reparative_1_df
+    LOGGER.debug('reparative_1_df tm_trips_df:\n{}'.format(reparative_1_df))
+    reparative_1_value = 0
+    if 'Path' in tm_run_id:
+        for pathway in reparative_1_df['pathway']:
+            if 'Path'+ pathway in tm_run_id:     
+                reparative_1_value = reparative_1_df.loc[(reparative_1_df['pathway'] == pathway)].iloc[0]['value']
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,' ',' ', '', year] = reparative_1_value
+        
 
 
-def calculate_Reparative2_ratio_revenues_revinvested(tm_run_id, year, tm_scen_metrics_df, tm_auto_owned_df, tm_travel_cost_df, metrics_dict):
+def calculate_Reparative2_ratio_revenues_revinvested(tm_run_id):
     # 8) Ratio of new revenues paid for by low-income populations to revenues reinvested toward low-income populations
 
     # calculated off model
@@ -2114,10 +2125,17 @@ def calculate_Reparative2_ratio_revenues_revinvested(tm_run_id, year, tm_scen_me
     grouping2 = ' '
     grouping3 = ' '
     # read reparative metrics excel file
-    reparative_metrics_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "CostingDetails_JA_v3.xlsx")
+    reparative_metrics_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "CostingDetails.xlsx")
     reparative_2_df = pd.read_excel(reparative_metrics_file, sheet_name='reparative 2')
+    reparative_2_df['pathway'] = reparative_2_df['pathway'].astype('str')
     LOGGER.info("  Read {:,} rows from {}".format(len(reparative_2_df), reparative_metrics_file))
-
+    LOGGER.debug('reparative_2_df tm_trips_df:\n{}'.format(reparative_2_df))
+    reparative_2_value = 0
+    if 'Path' in tm_run_id:
+        for pathway in reparative_2_df['pathway']:
+            if 'Path'+ pathway in tm_run_id:     
+                reparative_2_value = reparative_2_df.loc[(reparative_2_df['pathway'] == pathway)].iloc[0]['value']
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,' ',' ', '', year] = reparative_2_value
 
 
 
@@ -2902,6 +2920,10 @@ if __name__ == "__main__":
         calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
         calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df, metrics_dict)
+        # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
+        calculate_Reparative1_dollar_revenues_revinvested(tm_run_id)
+        # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
+        calculate_Reparative2_ratio_revenues_revinvested(tm_run_id)
         # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
         calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
