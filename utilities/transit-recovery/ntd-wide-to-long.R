@@ -28,7 +28,7 @@ BayArea_UZAs = c(
 
 BOX_DIR          <- "E:\\Box"
 WORKING_DIR      <- file.path(BOX_DIR, "Modeling and Surveys", "Share Data", "national-transit-database")
-INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "January 2023 Adjusted Database_1_0.xlsx")
+INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "April 2023 Complete Monthly Ridership (with adjustments and estimates).xlsx")
 INPUT_WORKSHEETS <- c("VRM","VRH","UPT") # vehicle route miles, vehicle route hours, unlinked passenger trips
 INPUT_AGENCY_CSV <- file.path(WORKING_DIR, "AgencyToCommonAgencyName.csv")
 
@@ -50,6 +50,7 @@ agency_df <- read.csv(file=INPUT_AGENCY_CSV)
 NTD_model_df <- data.frame()
 
 for (worksheet in INPUT_WORKSHEETS) {
+  print(paste("Processing worksheet", worksheet))
   NTD_df <- read_excel(path=INPUT_WORKBOOK, sheet=worksheet)
 
   # join to our agency mapping and remove agencies not in that list
@@ -64,9 +65,9 @@ for (worksheet in INPUT_WORKSHEETS) {
   # summarize to Agency Name, UZA Name
   missing_common_agency_name <- table(select(missing_common_agency_name, "UZA Name", Agency))
 
-  print("Missing Common.Agency.Name:")
-  print(missing_common_agency_name)
+  print(paste(nrow(missing_common_agency_name), "rows missing Common.Agency.Name:"))
   if (nrow(missing_common_agency_name) > 0) {
+    print(missing_common_agency_name)
     write.csv(missing_common_agency_name, 
       file.path(WORKING_DIR, paste0("missing_common_agency_name_", worksheet, ".csv")),
       row.names=FALSE)
@@ -74,12 +75,18 @@ for (worksheet in INPUT_WORKSHEETS) {
 
   NTD_df <- filter(NTD_df, !is.na(Common.Agency.Name))
 
-  # column names are in Excel date formats, which are number of days since 1900 01 01
+  # If column names are in Excel date formats, which are number of days since 1900 01 01
   # rename them. e.g. "44927" => JAN23
   NTD_df <- rename_with(NTD_df,
     ~ toupper(format(as_date(strtoi(.x) - DAYS_1900_TO_1970), "%b%y")),
     num_range(prefix="", 37000:50000)
   )
+  # If column names are strings, e.g. 1/2010 rename them to JAN10
+  NTD_df <- rename_with(NTD_df,
+    ~ toupper(format(as_date(paste0("1/",.x), format="%d/%m/%Y"), "%b%y")),
+    matches("^\\d+/\\d*$")
+  )
+  print("After renaming date columns")
   print(colnames(NTD_df))
 
   NTD_long_df <- pivot_longer(
