@@ -35,6 +35,8 @@ library(dplyr)
 # For RStudio, these can be set in the .Rprofile
 MODEL_DIR        <- Sys.getenv("TARGET_DIR")  # The location of the input file
 MODEL_DIR        <- gsub("\\\\","/",MODEL_DIR) # switch slashes around
+OUTPUT_DIR       <- file.path(MODEL_DIR, "core_summaries")
+SAMPLING_RATE    <- 0.500
 
 #### Mode look-up table
 LOOKUP_MODE <- data.frame(trip_mode = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21),
@@ -44,24 +46,17 @@ LOOKUP_MODE <- data.frame(trip_mode = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,1
                                         "Walk", "Bike",
                                         "Walk  to local bus", "Walk to light rail or ferry", "Walk to express bus", 
                                         "Walk to heavy rail", "Walk to commuter rail",
-                                        "Drive  to local bus", "Drive to light rail or ferry", "Drive to express bus", 
+                                        "Drive to local bus", "Drive to light rail or ferry", "Drive to express bus", 
                                         "Drive to heavy rail", "Drive to commuter rail",
                                         "Taxi", "TNC", "TNC shared"))
 
-SAMPLING_RATE = 0.500
 
 #### Remote file locations
-
-# this should be set by caller
-# project <- 'Blueprint'
-OUTPUT_DIR <- file.path(PROJECT_DIR, "core_summaries")
-
-
 cat("MODEL_DIR     = ",MODEL_DIR, "\n")
 cat("OUTPUT_DIR    = ",OUTPUT_DIR, "\n")
 cat("SAMPLING_RATE = ",SAMPLING_RATE,"\n")
 
-load(file.path(MODEL_DIR, "extractor", "updated_output", "trips.rdata"))
+load(file.path(MODEL_DIR, "updated_output", "trips.rdata"))
 zonal_df <- read.table(file = file.path(MODEL_DIR, "INPUT", "landuse", "tazData.csv"), header=TRUE, sep=",")
 
 # Select and join
@@ -85,9 +80,8 @@ summarized <- output %>%
 summarized <- left_join(summarized, LOOKUP_MODE, by = c("trip_mode"))
 
 summarized <- summarized %>%
-  mutate(estimated_trips = simulated_trips / SAMPLING_RATE,
-         run_id = MODEL_DIR) %>%
-  select(trip_mode, mode_name, tour_purpose, orig_sd, dest_sd, simulated_trips, estimated_trips, mean_distance,run_id)
+  mutate(estimated_trips = simulated_trips / SAMPLING_RATE) %>%
+  select(trip_mode, mode_name, tour_purpose, orig_sd, dest_sd, simulated_trips, estimated_trips, mean_distance)
 
 #### Write to disk
 if (!file.exists(OUTPUT_DIR)) {
