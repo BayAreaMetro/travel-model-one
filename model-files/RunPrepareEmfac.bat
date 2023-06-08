@@ -22,7 +22,7 @@ IF "%1"=="" (ECHO Hi! Please make sure the required arguments are specified.
 IF %1==SB375    goto check_argument2
 IF %1==Plan-EIR  goto check_argument2 
 :: if neither, print error_message
-ECHO Hi! Please make sure "SB375" or "Plan-EIR" is specified. Note that it is case-sensitive."
+ECHO Hi! Please make sure "SB375" or "Plan-EIR" is specified. Note that it is case-sensitive.
 GOTO :end
 
 : make sure the user specifies either NoFreight or WithFreight in the argument
@@ -30,7 +30,7 @@ GOTO :end
 IF %2==NoFreight    goto start
 IF %2==WithFreight  goto start 
 :: if neither, print error_message
-ECHO Hi! Please make sure "NoFreight" or "WithFreight" is specified. Note that it is case-sensitive."
+ECHO Hi! Please make sure "NoFreight" or "WithFreight" is specified. Note that it is case-sensitive.
 GOTO :end
  
 :start
