@@ -10,7 +10,7 @@ os.chdir("trn")
 setupLogging(infoLogFilename=None, debugLogFilename="transit_duplicated_stops_updated_to_nodes.txt", logToConsole=True)
 net = TransitNetwork(modelType="TravelModelOne", modelVersion=1.0)
 
-net.parseFile(fullfile="transit_converted_2.lin",insert_replace=True)
+net.parseFile(fullfile="transitUpdated.lin",insert_replace=True)
 
 for lineidx in xrange(len(net.lines)-1, -1, -1):
     if not isinstance(net.lines[lineidx],TransitLine): continue
@@ -39,4 +39,4 @@ for lineidx in xrange(len(net.lines)-1, -1, -1):
 
         net.lines[lineidx].setNodes(_stop_list)
             
-net.write(name='transit_duplicated_stops_removed_new', writeEmptyFiles=False, suppressQuery=True, suppressValidation=True, cubeNetFileForValidation=None)
+net.write(name='transit_duplicated_stops_removed', writeEmptyFiles=False, suppressQuery=True, suppressValidation=True, cubeNetFileForValidation=None)
