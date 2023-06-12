@@ -1,0 +1,23 @@
+"source","estimate","dimension_01_name","dimension_01_value","dimension_02_name","dimension_02_value","estimate_name","estimate_value"
+"CHTS","Trips by trip mode","Trip Mode","Auto 2 Person (Free)       ","NA","NA","Number of Trips",6299411.7453907
+"CHTS","Trips by trip mode","Trip Mode","Auto 3+ Person (Free)      ","NA","NA","Number of Trips",4483691.08027011
+"CHTS","Trips by trip mode","Trip Mode","Auto SOV (Free)            ","NA","NA","Number of Trips",10544193.5819196
+"CHTS","Trips by trip mode","Trip Mode","Bike/Moped","NA","NA","Number of Trips",573304.929562296
+"CHTS","Trips by trip mode","Trip Mode","KNR-Bus","NA","NA","Number of Trips",18200.4911779715
+"CHTS","Trips by trip mode","Trip Mode","KNR-CR","NA","NA","Number of Trips",16937.8512817768
+"CHTS","Trips by trip mode","Trip Mode","KNR-LRT","NA","NA","Number of Trips",9258.0665291054
+"CHTS","Trips by trip mode","Trip Mode","KNR-UR","NA","NA","Number of Trips",52833.3945571872
+"CHTS","Trips by trip mode","Trip Mode","Other","NA","NA","Number of Trips",116552.932568895
+"CHTS","Trips by trip mode","Trip Mode","PNR-BRT/Streetcar","NA","NA","Number of Trips",263.949219436423
+"CHTS","Trips by trip mode","Trip Mode","PNR-Bus","NA","NA","Number of Trips",15224.5846376384
+"CHTS","Trips by trip mode","Trip Mode","PNR-CR","NA","NA","Number of Trips",16439.2798916923
+"CHTS","Trips by trip mode","Trip Mode","PNR-LRT","NA","NA","Number of Trips",12630.0946016993
+"CHTS","Trips by trip mode","Trip Mode","PNR-UR","NA","NA","Number of Trips",125012.456936069
+"CHTS","Trips by trip mode","Trip Mode","School Bus","NA","NA","Number of Trips",135992.492006987
+"CHTS","Trips by trip mode","Trip Mode","Taxi/Shuttle","NA","NA","Number of Trips",46836.6470205856
+"CHTS","Trips by trip mode","Trip Mode","Walk","NA","NA","Number of Trips",3141999.94847373
+"CHTS","Trips by trip mode","Trip Mode","Walk-BRT/Streetcar","NA","NA","Number of Trips",15001.4680761864
+"CHTS","Trips by trip mode","Trip Mode","Walk-Bus","NA","NA","Number of Trips",545742.726217771
+"CHTS","Trips by trip mode","Trip Mode","Walk-CR","NA","NA","Number of Trips",51398.882766794
+"CHTS","Trips by trip mode","Trip Mode","Walk-LRT","NA","NA","Number of Trips",128886.803667704
+"CHTS","Trips by trip mode","Trip Mode","Walk-UR","NA","NA","Number of Trips",231843.514869683

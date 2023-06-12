@@ -1,0 +1,249 @@
+"source","estimate","dimension_01_name","dimension_01_value","dimension_02_name","dimension_02_value","estimate_name","estimate_value"
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Bike","Share of Tours",0.060449738680692
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Bike","Share of Tours",0.0181976656541747
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Bike","Share of Tours",0.0369186375489206
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Drive Alone","Share of Tours",0.279158953395616
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Drive Alone","Share of Tours",0.497074589987855
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Other","Share of Tours",0.00628924011382927
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Other","Share of Tours",0.00876139872598017
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","PNR-Transit","Share of Tours",0.00668895479852734
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 2 Free","Share of Tours",0.0828075701259232
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 2 Free","Share of Tours",0.159171588238989
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 3 Free","Share of Tours",0.010282662390816
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 3 Free","Share of Tours",0.0652364991439886
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 3 Free","Share of Tours",0.0060266784829735
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Taxi","Share of Tours",0.00119644415712964
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Taxi","Share of Tours",0.00106996774286584
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Taxi","Share of Tours",0.0139817267288431
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk","Share of Tours",0.559815391135994
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk","Share of Tours",0.242590250604259
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk","Share of Tours",0.76371753537777
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk-Transit","Share of Tours",0.0012090851033599
+"CHTS","Share of At-Work tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk-Transit","Share of Tours",0.179355421861492
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Bike","Share of Tours",0.0917055223912237
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Bike","Share of Tours",0.0238082037530348
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Bike","Share of Tours",0.0758650463175813
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Drive Alone","Share of Tours",0.233434279717379
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Drive Alone","Share of Tours",0.265396028927052
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Drive Alone","Share of Tours",0.037671154722517
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","KNR-Transit","Share of Tours",0.00143255858310542
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","KNR-Transit","Share of Tours",0.000486295804172317
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","KNR-Transit","Share of Tours",0
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Other","Share of Tours",0.00737356608291377
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Other","Share of Tours",0.010967245963531
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Other","Share of Tours",0.0713065043688566
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","PNR-Transit","Share of Tours",0.00164688870595442
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","School Bus","Share of Tours",0.00166690194654291
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 2 Free","Share of Tours",0.124977511380525
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 2 Free","Share of Tours",0.268882805474105
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 2 Free","Share of Tours",0.119122924893952
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 3 Free","Share of Tours",0.204957920512256
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 3 Free","Share of Tours",0.226094955492383
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 3 Free","Share of Tours",0.0269535271797945
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Taxi","Share of Tours",0.00549761027770615
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Taxi","Share of Tours",0.00798296410391564
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk","Share of Tours",0.305744896049973
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk","Share of Tours",0.1792366633316
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk","Share of Tours",0.410020788172637
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk-Transit","Share of Tours",0.0303737452826236
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk-Transit","Share of Tours",0.0163164003239184
+"CHTS","Share of Discretionary tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk-Transit","Share of Tours",0.251077090240746
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Bike","Share of Tours",0.193491980130969
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Bike","Share of Tours",0.0287306787668349
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Bike","Share of Tours",0.00371090214807252
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Drive Alone","Share of Tours",0.154594533864341
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Drive Alone","Share of Tours",0.251357025089028
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Drive Alone","Share of Tours",0
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","KNR-Transit","Share of Tours",0.0577868253738907
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Other","Share of Tours",0.00296047781616422
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Other","Share of Tours",0.108235540806347
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 2 Free","Share of Tours",0.146846240820507
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 2 Free","Share of Tours",0.325532355618614
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 2 Free","Share of Tours",0.11670282986093
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 3 Free","Share of Tours",0.110425077643865
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 3 Free","Share of Tours",0.243221113568508
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 3 Free","Share of Tours",0
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Taxi","Share of Tours",0.000581790154145422
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Taxi","Share of Tours",0.0295331239277769
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk","Share of Tours",0.205495167064035
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk","Share of Tours",0.136170224747108
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk","Share of Tours",0.606354687653291
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk-Transit","Share of Tours",0.189147000476282
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk-Transit","Share of Tours",0.0114463342395961
+"CHTS","Share of Eat Out tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk-Transit","Share of Tours",0.077676090229691
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Bike","Share of Tours",0.0081816268661586
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Drive Alone","Share of Tours",0.0286494759203072
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Drive Alone","Share of Tours",0.0100746136692334
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Other","Share of Tours",0.0462034092110852
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Other","Share of Tours",0.00600070995893895
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","PNR-Transit","Share of Tours",0.0001712604545019
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 2 Free","Share of Tours",0.39730489639241
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 2 Free","Share of Tours",0.426317042458722
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 2 Free","Share of Tours",0.0465588700166908
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 3 Free","Share of Tours",0.40395518702139
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 3 Free","Share of Tours",0.444889976708533
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 3 Free","Share of Tours",0.321357871589957
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk","Share of Tours",0.110675915208597
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk","Share of Tours",0.103361784449263
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk","Share of Tours",0.632083258393353
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk-Transit","Share of Tours",0.0132111162462099
+"CHTS","Share of Escorting tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk-Transit","Share of Tours",0.00100298543464859
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Bike","Share of Tours",0.0493576413247603
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Bike","Share of Tours",0.0120335613662326
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Bike","Share of Tours",0.0973923382196352
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Drive Alone","Share of Tours",0.169376815170088
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Drive Alone","Share of Tours",0.413632430172607
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Drive Alone","Share of Tours",0.0505413235845971
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","KNR-Transit","Share of Tours",0.00126537082966863
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","KNR-Transit","Share of Tours",0.00145607156891508
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","KNR-Transit","Share of Tours",0.0535693733485711
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Other","Share of Tours",0.00562076537286229
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Other","Share of Tours",0.0336835898267835
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","PNR-Transit","Share of Tours",0.000947716103201073
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","PNR-Transit","Share of Tours",0.000594655388048781
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","School Bus","Share of Tours",0.00174596403758056
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","School Bus","Share of Tours",0.00425871226799249
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 2 Free","Share of Tours",0.12821784541544
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 2 Free","Share of Tours",0.339882208934771
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 2 Free","Share of Tours",0.0763062855486972
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 3 Free","Share of Tours",0.347153344005285
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 3 Free","Share of Tours",0.115100255495396
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 3 Free","Share of Tours",0.017530145129695
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Taxi","Share of Tours",0.0281903053173094
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Taxi","Share of Tours",0.00555447043803282
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Taxi","Share of Tours",0.0262136488045962
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk","Share of Tours",0.190480366929815
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk","Share of Tours",0.0994148333405927
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk","Share of Tours",0.306138322805235
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk-Transit","Share of Tours",0.0832646308668522
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk-Transit","Share of Tours",0.00671074792254223
+"CHTS","Share of Maintenance tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk-Transit","Share of Tours",0.334366260464197
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Bike","Share of Tours",0.0397232307028063
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Bike","Share of Tours",0.031989491919648
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Drive Alone","Share of Tours",0.0238423929335269
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Drive Alone","Share of Tours",0.0223440350054954
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","KNR-Transit","Share of Tours",0.003423507704863
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","KNR-Transit","Share of Tours",0.0023025433812468
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Other","Share of Tours",0.0015274492294276
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","PNR-Transit","Share of Tours",0.000314731083349838
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","School Bus","Share of Tours",0.128889415598843
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","School Bus","Share of Tours",0.0708304555039296
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","School Bus","Share of Tours",0.0251163963569915
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 2 Free","Share of Tours",0.109289869142387
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 2 Free","Share of Tours",0.182955573738689
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 2 Free","Share of Tours",0.036419975112922
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 3 Free","Share of Tours",0.501385381552131
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 3 Free","Share of Tours",0.518531840402418
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 3 Free","Share of Tours",0.135547433751512
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Taxi","Share of Tours",0.00468311144371469
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Taxi","Share of Tours",0.00108879107193074
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk","Share of Tours",0.156672114911443
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk","Share of Tours",0.140465546194303
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk","Share of Tours",0.597968671396745
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk-Transit","Share of Tours",0.0320909760102856
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk-Transit","Share of Tours",0.0276495424695622
+"CHTS","Share of School tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk-Transit","Share of Tours",0.204947523381829
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Bike","Share of Tours",0.0733093819398892
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Bike","Share of Tours",0.00811466958258052
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Bike","Share of Tours",0
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Drive Alone","Share of Tours",0.214728622372223
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Drive Alone","Share of Tours",0.371405361328324
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Drive Alone","Share of Tours",0.0119689090825316
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","KNR-Transit","Share of Tours",0.00419374546404962
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","KNR-Transit","Share of Tours",0.000294634263144263
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Other","Share of Tours",0
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Other","Share of Tours",0.00506095013671471
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","PNR-Transit","Share of Tours",0.000595229766725989
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","School Bus","Share of Tours",0.000092404242931475
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 2 Free","Share of Tours",0.293643631850836
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 2 Free","Share of Tours",0.333899526948921
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 2 Free","Share of Tours",0.131660651762305
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 3 Free","Share of Tours",0.196854160490342
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 3 Free","Share of Tours",0.162985163917632
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 3 Free","Share of Tours",0.0301813504198328
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Taxi","Share of Tours",0.00229296704180451
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Taxi","Share of Tours",0.00340996609202519
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk","Share of Tours",0.176089617203766
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk","Share of Tours",0.107251316491777
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk","Share of Tours",0.444735445172333
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk-Transit","Share of Tours",0.041180840678895
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk-Transit","Share of Tours",0.0130687264161586
+"CHTS","Share of Shopping tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk-Transit","Share of Tours",0.372982727334258
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Bike","Share of Tours",0.119398566983684
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Bike","Share of Tours",0.0126441956183911
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Bike","Share of Tours",0.0499712490555924
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Drive Alone","Share of Tours",0.228817552459741
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Drive Alone","Share of Tours",0.290495380284622
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Drive Alone","Share of Tours",0.144504885416598
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","KNR-Transit","Share of Tours",0.00617844483755639
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","KNR-Transit","Share of Tours",0.0106509875729544
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Other","Share of Tours",0.00163027280370928
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Other","Share of Tours",0.0160661329514767
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Other","Share of Tours",0.256827028331595
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 2 Free","Share of Tours",0.23771921695332
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 2 Free","Share of Tours",0.22082227403034
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 2 Free","Share of Tours",0.148487189264721
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 3 Free","Share of Tours",0.280767687033309
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 3 Free","Share of Tours",0.362178144025395
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 3 Free","Share of Tours",0.0877966305386373
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Taxi","Share of Tours",0.0017614575484514
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Taxi","Share of Tours",0
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk","Share of Tours",0.0436682454374614
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk","Share of Tours",0.0799756743289316
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk","Share of Tours",0.158526283860704
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk-Transit","Share of Tours",0.0862370007803233
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk-Transit","Share of Tours",0.0116397539232871
+"CHTS","Share of Social/Visit tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk-Transit","Share of Tours",0.143235745959198
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Bike","Share of Tours",0.175671171134916
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Bike","Share of Tours",0.0222018438807371
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Drive Alone","Share of Tours",0.0353287574988301
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Drive Alone","Share of Tours",0.403876142084434
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Drive Alone","Share of Tours",0.0226643888078202
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","KNR-Transit","Share of Tours",0.0131171211693289
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Other","Share of Tours",0.0680198755754385
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Other","Share of Tours",0.0477056169084845
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","PNR-Transit","Share of Tours",0.00956473772986011
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","School Bus","Share of Tours",0.0321274844563415
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","School Bus","Share of Tours",0.00632461046930359
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 2 Free","Share of Tours",0.233511192846042
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 2 Free","Share of Tours",0.249722213466375
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 2 Free","Share of Tours",0
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 3 Free","Share of Tours",0.0532700216794381
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 3 Free","Share of Tours",0.133618165891287
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Taxi","Share of Tours",0.0646041371567041
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Taxi","Share of Tours",0.00435278280286844
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk","Share of Tours",0.102730066616059
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk","Share of Tours",0.0244321158030504
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk","Share of Tours",0.043564805158921
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk-Transit","Share of Tours",0.234737293036231
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk-Transit","Share of Tours",0.0850846497942712
+"CHTS","Share of University tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk-Transit","Share of Tours",0.933770806033259
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Bike","Share of Tours",0.0831174423948946
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Bike","Share of Tours",0.0256444405835707
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Bike","Share of Tours",0.061067769526603
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Drive Alone","Share of Tours",0.291268393234211
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Drive Alone","Share of Tours",0.651887558895147
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Drive Alone","Share of Tours",0.0285302502848543
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","KNR-Transit","Share of Tours",0.0182085447051408
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","KNR-Transit","Share of Tours",0.000856651156688203
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Other","Share of Tours",0.0671400381513809
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Other","Share of Tours",0.0241358332535661
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Other","Share of Tours",0.173643665677173
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","PNR-Transit","Share of Tours",0.00064824645317244
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","PNR-Transit","Share of Tours",0.00412093465671772
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","School Bus","Share of Tours",0.0000316899664497649
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 2 Free","Share of Tours",0.251282315774993
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 2 Free","Share of Tours",0.158681158663306
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 2 Free","Share of Tours",0.0222294490152296
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Shared 3 Free","Share of Tours",0.0776447423407597
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Shared 3 Free","Share of Tours",0.0891473506287752
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Shared 3 Free","Share of Tours",0.00167903955137081
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Taxi","Share of Tours",0.00883743252830159
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Taxi","Share of Tours",0.000290030559410909
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Taxi","Share of Tours",0.0134877567561583
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk","Share of Tours",0.090598068094312
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk","Share of Tours",0.0184236395794656
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk","Share of Tours",0.112405763217337
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Insufficient","Tour Mode","Walk-Transit","Share of Tours",0.111254776322834
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Sufficient","Tour Mode","Walk-Transit","Share of Tours",0.0267807120569028
+"CHTS","Share of Work tours by auto sufficiency and tour mode","Auto Sufficiency","Zero-Auto","Tour Mode","Walk-Transit","Share of Tours",0.586956305971273

@@ -1,0 +1,221 @@
+county_name,household_size,num_vehicles,num_households
+Alameda,1,0,31754
+Alameda,1,1,91200
+Alameda,1,2,12896
+Alameda,1,3,2113
+Alameda,1,4+,700
+Alameda,2,0,13986
+Alameda,2,1,52574
+Alameda,2,2,83994
+Alameda,2,3,19437
+Alameda,2,4+,4848
+Alameda,3,0,5567
+Alameda,3,1,23339
+Alameda,3,2,42981
+Alameda,3,3,24194
+Alameda,3,4+,7132
+Alameda,4+,0,4706
+Alameda,4+,1,19110
+Alameda,4+,2,64984
+Alameda,4+,3,37315
+Alameda,4+,4+,28998
+Contra Costa,1,0,13918
+Contra Costa,1,1,56727
+Contra Costa,1,2,13107
+Contra Costa,1,3,2399
+Contra Costa,1,4+,257
+Contra Costa,2,0,5222
+Contra Costa,2,1,26790
+Contra Costa,2,2,65297
+Contra Costa,2,3,18340
+Contra Costa,2,4+,6387
+Contra Costa,3,0,1146
+Contra Costa,3,1,12889
+Contra Costa,3,2,27175
+Contra Costa,3,3,18327
+Contra Costa,3,4+,7949
+Contra Costa,4+,0,2586
+Contra Costa,4+,1,12761
+Contra Costa,4+,2,47091
+Contra Costa,4+,3,30211
+Contra Costa,4+,4+,23417
+Marin,1,0,4259
+Marin,1,1,22722
+Marin,1,2,4784
+Marin,1,3,482
+Marin,1,4+,86
+Marin,2,0,430
+Marin,2,1,7586
+Marin,2,2,22577
+Marin,2,3,5560
+Marin,2,4+,962
+Marin,3,0,289
+Marin,3,1,2790
+Marin,3,2,6443
+Marin,3,3,4872
+Marin,3,4+,1301
+Marin,4+,0,75
+Marin,4+,1,2438
+Marin,4+,2,10390
+Marin,4+,3,5603
+Marin,4+,4+,2238
+Napa,1,0,1913
+Napa,1,1,9420
+Napa,1,2,1338
+Napa,1,3,333
+Napa,1,4+,145
+Napa,2,0,219
+Napa,2,1,3341
+Napa,2,2,8177
+Napa,2,3,3309
+Napa,2,4+,662
+Napa,3,0,31
+Napa,3,1,1441
+Napa,3,2,2873
+Napa,3,3,2821
+Napa,3,4+,842
+Napa,4+,0,229
+Napa,4+,1,749
+Napa,4+,2,5215
+Napa,4+,3,3480
+Napa,4+,4+,3081
+San Francisco,1,0,66711
+San Francisco,1,1,63469
+San Francisco,1,2,3369
+San Francisco,1,3,219
+San Francisco,1,4+,169
+San Francisco,2,0,29840
+San Francisco,2,1,53154
+San Francisco,2,2,32671
+San Francisco,2,3,2951
+San Francisco,2,4+,736
+San Francisco,3,0,8570
+San Francisco,3,1,17722
+San Francisco,3,2,14823
+San Francisco,3,3,5149
+San Francisco,3,4+,1048
+San Francisco,4+,0,6389
+San Francisco,4+,1,11598
+San Francisco,4+,2,21191
+San Francisco,4+,3,10637
+San Francisco,4+,4+,6500
+San Joaquin,1,0,8365
+San Joaquin,1,1,27579
+San Joaquin,1,2,7686
+San Joaquin,1,3,1535
+San Joaquin,1,4+,343
+San Joaquin,2,0,3961
+San Joaquin,2,1,14246
+San Joaquin,2,2,30761
+San Joaquin,2,3,9627
+San Joaquin,2,4+,3030
+San Joaquin,3,0,1567
+San Joaquin,3,1,8478
+San Joaquin,3,2,15502
+San Joaquin,3,3,9209
+San Joaquin,3,4+,3081
+San Joaquin,4+,0,2348
+San Joaquin,4+,1,10979
+San Joaquin,4+,2,32090
+San Joaquin,4+,3,18831
+San Joaquin,4+,4+,13844
+San Mateo,1,0,7781
+San Mateo,1,1,41038
+San Mateo,1,2,7225
+San Mateo,1,3,1666
+San Mateo,1,4+,228
+San Mateo,2,0,3231
+San Mateo,2,1,20185
+San Mateo,2,2,46773
+San Mateo,2,3,9141
+San Mateo,2,4+,3066
+San Mateo,3,0,1106
+San Mateo,3,1,9430
+San Mateo,3,2,19870
+San Mateo,3,3,13335
+San Mateo,3,4+,4161
+San Mateo,4+,0,1169
+San Mateo,4+,1,7893
+San Mateo,4+,2,30661
+San Mateo,4+,3,17085
+San Mateo,4+,4+,18236
+Santa Clara,1,0,17962
+Santa Clara,1,1,90846
+Santa Clara,1,2,16602
+Santa Clara,1,3,3392
+Santa Clara,1,4+,1766
+Santa Clara,2,0,8629
+Santa Clara,2,1,44493
+Santa Clara,2,2,105423
+Santa Clara,2,3,24552
+Santa Clara,2,4+,7675
+Santa Clara,3,0,3565
+Santa Clara,3,1,19223
+Santa Clara,3,2,51702
+Santa Clara,3,3,33266
+Santa Clara,3,4+,9177
+Santa Clara,4+,0,3227
+Santa Clara,4+,1,17004
+Santa Clara,4+,2,82020
+Santa Clara,4+,3,50025
+Santa Clara,4+,4+,43237
+Solano,1,0,5360
+Solano,1,1,20759
+Solano,1,2,5909
+Solano,1,3,943
+Solano,1,4+,203
+Solano,2,0,1713
+Solano,2,1,10677
+Solano,2,2,22773
+Solano,2,3,9735
+Solano,2,4+,3424
+Solano,3,0,664
+Solano,3,1,4352
+Solano,3,2,8914
+Solano,3,3,6517
+Solano,3,4+,3204
+Solano,4+,0,418
+Solano,4+,1,5093
+Solano,4+,2,15082
+Solano,4+,3,11291
+Solano,4+,4+,8471
+Sonoma,1,0,4825
+Sonoma,1,1,38329
+Sonoma,1,2,8190
+Sonoma,1,3,1475
+Sonoma,1,4+,391
+Sonoma,2,0,1795
+Sonoma,2,1,13393
+Sonoma,2,2,35681
+Sonoma,2,3,9404
+Sonoma,2,4+,3825
+Sonoma,3,0,637
+Sonoma,3,1,6182
+Sonoma,3,2,12024
+Sonoma,3,3,9470
+Sonoma,3,4+,3736
+Sonoma,4+,0,851
+Sonoma,4+,1,4535
+Sonoma,4+,2,15145
+Sonoma,4+,3,10964
+Sonoma,4+,4+,9810
+Total,1,0,162848
+Total,1,1,462089
+Total,1,2,81106
+Total,1,3,14557
+Total,1,4+,4288
+Total,2,0,69026
+Total,2,1,246439
+Total,2,2,454127
+Total,2,3,112056
+Total,2,4+,34615
+Total,3,0,23142
+Total,3,1,105846
+Total,3,2,202307
+Total,3,3,127160
+Total,3,4+,41631
+Total,4+,0,21998
+Total,4+,1,92160
+Total,4+,2,323869
+Total,4+,3,195442
+Total,4+,4+,157832

@@ -1,0 +1,101 @@
+RESIDENCE,WORKPLACE,Workers
+Alameda,Alameda,467980
+Alameda,Contra Costa,41235
+Alameda,Marin,4615
+Alameda,Napa,305
+Alameda,San Francisco,99355
+Alameda,San Joaquin,2460
+Alameda,San Mateo,37275
+Alameda,Santa Clara,73555
+Alameda,Solano,1780
+Alameda,Sonoma,985
+Contra Costa,Alameda,101605
+Contra Costa,Contra Costa,289535
+Contra Costa,Marin,8570
+Contra Costa,Napa,1670
+Contra Costa,San Francisco,61090
+Contra Costa,San Joaquin,2140
+Contra Costa,San Mateo,11870
+Contra Costa,Santa Clara,14020
+Contra Costa,Solano,7710
+Contra Costa,Sonoma,1115
+Marin,Alameda,4205
+Marin,Contra Costa,1960
+Marin,Marin,81445
+Marin,Napa,505
+Marin,San Francisco,28885
+Marin,San Joaquin,0
+Marin,San Mateo,2445
+Marin,Santa Clara,1195
+Marin,Solano,440
+Marin,Sonoma,4500
+Napa,Alameda,1120
+Napa,Contra Costa,1885
+Napa,Marin,1280
+Napa,Napa,52865
+Napa,San Francisco,1720
+Napa,San Joaquin,95
+Napa,San Mateo,620
+Napa,Santa Clara,495
+Napa,Solano,4355
+Napa,Sonoma,2630
+San Francisco,Alameda,22550
+San Francisco,Contra Costa,4100
+San Francisco,Marin,6695
+San Francisco,Napa,235
+San Francisco,San Francisco,361120
+San Francisco,San Joaquin,175
+San Francisco,San Mateo,50400
+San Francisco,Santa Clara,27985
+San Francisco,Solano,620
+San Francisco,Sonoma,955
+San Joaquin,Alameda,27645
+San Joaquin,Contra Costa,6350
+San Joaquin,Marin,250
+San Joaquin,Napa,330
+San Joaquin,San Francisco,2305
+San Joaquin,San Joaquin,199980
+San Joaquin,San Mateo,2160
+San Joaquin,Santa Clara,11105
+San Joaquin,Solano,1105
+San Joaquin,Sonoma,175
+San Mateo,Alameda,12940
+San Mateo,Contra Costa,2075
+San Mateo,Marin,965
+San Mateo,Napa,125
+San Mateo,San Francisco,84195
+San Mateo,San Joaquin,70
+San Mateo,San Mateo,222355
+San Mateo,Santa Clara,61165
+San Mateo,Solano,275
+San Mateo,Sonoma,150
+Santa Clara,Alameda,38120
+Santa Clara,Contra Costa,3155
+Santa Clara,Marin,340
+Santa Clara,Napa,65
+Santa Clara,San Francisco,15470
+Santa Clara,San Joaquin,385
+Santa Clara,San Mateo,46430
+Santa Clara,Santa Clara,791635
+Santa Clara,Solano,190
+Santa Clara,Sonoma,485
+Solano,Alameda,10085
+Solano,Contra Costa,19485
+Solano,Marin,5240
+Solano,Napa,12660
+Solano,San Francisco,10150
+Solano,San Joaquin,550
+Solano,San Mateo,2195
+Solano,Santa Clara,1690
+Solano,Solano,111510
+Solano,Sonoma,2935
+Sonoma,Alameda,2320
+Sonoma,Contra Costa,965
+Sonoma,Marin,16105
+Sonoma,Napa,4165
+Sonoma,San Francisco,6870
+Sonoma,San Joaquin,60
+Sonoma,San Mateo,1010
+Sonoma,Santa Clara,1160
+Sonoma,Solano,885
+Sonoma,Sonoma,201875

@@ -1,0 +1,101 @@
+Page 1  (VOYAGER PILOT) Model Run
+WSP Global Inc.
+----------------------------------
+PILOT (v.07/30/2020 [6.5.0 x64]) Wed Jun 07 16:18:32 2023
+
+Args: Z:\projects\ccta\31000190\Jawad\travel-model-one\utilities\bcm_calibration\Calibration Scripts\convert_skims.000 -SZ:\projects\ccta\31000190\Jawad\travel-model-one\utilities\bcm_calibration\Calibration Scripts -PTPPL -PH:58 -PW:80 -IModel Run
+Input:   Z:...lities\bcm_calibration\Calibration Scripts\convert_skims.000
+
+RUN PGM=MATRIX,0
+
+PILOT Stack Size = 42 bytes.
+................................................................................
+Page 2  (VOYAGER MATRIX) Model Run
+WSP Global Inc.
+-----------------------------------
+MATRIX (v.07/30/2020 [6.5.0 x64])  Wed Jun 07 16:18:32 2023
+
+
+mati[1] = D:\2015_BaseY_BCM2015\skims\tm15\HWYSKMAM.tpp
+mati[2] = D:\2015_BaseY_BCM2015\skims\tm15\HWYSKMPM.tpp
+mati[3] = D:\2015_BaseY_BCM2015\skims\tm15\HWYSKMMD.tpp
+mati[4] = D:\2015_BaseY_BCM2015\skims\tm15\HWYSKMEA.tpp
+mati[5] = D:\2015_BaseY_BCM2015\skims\tm15\HWYSKMEV.tpp
+
+fileo mato[1] = D:\2015_BaseY_BCM2015\main_Run_TM15\da_am_skims.csv, MO=1, DELIMITER=',', PATTERN = IJM:V
+fileo mato[2] = D:\2015_BaseY_BCM2015\main_Run_TM15\da_pm_skims.csv, MO=1, DELIMITER=',', PATTERN = IJM:V
+fileo mato[3] = D:\2015_BaseY_BCM2015\main_Run_TM15\da_md_skims.csv, MO=1, DELIMITER=',', PATTERN = IJM:V
+fileo mato[4] = D:\2015_BaseY_BCM2015\main_Run_TM15\da_ea_skims.csv, MO=1, DELIMITER=',', PATTERN = IJM:V
+fileo mato[5] = D:\2015_BaseY_BCM2015\main_Run_TM15\da_ev_skims.csv, MO=1, DELIMITER=',', PATTERN = IJM:V
+
+mw[1]  = mi.1.2
+mw[2]  = mi.2.2
+mw[3]  = mi.3.2
+mw[4]  = mi.4.2
+mw[5]  = mi.5.2
+
+
+MATRIX Stack Size = 1430 bytes.
+................................................................................
+
+
+MATI[1] TPP D:\2015_BaseY_BCM2015\skims\tm15\HWYSKMAM.tpp Opened
+MAT PGM=MATRIX (v.08/13/2019 [6.4.5 x64])  DATE=Fri Apr 29 17:18:59 2022 
+ID=Model Run
+PAR Zones=1475 M=21
+  TIMEDA  DISTDA  BTOLLDA  TOLLTIMEDA  TOLLDISTDA  TOLLBTOLLDA  TOLLVTOLLDA  TIMES2  DISTS2
+  BTOLLS2  TOLLTIMES2  TOLLDISTS2  TOLLBTOLLS2  TOLLVTOLLS2  TIMES3  DISTS3  BTOLLS3
+  TOLLTIMES3  TOLLDISTS3  TOLLBTOLLS3  TOLLVTOLLS3
+
+MATI[2] TPP D:\2015_BaseY_BCM2015\skims\tm15\HWYSKMPM.tpp Opened
+MAT PGM=MATRIX (v.08/13/2019 [6.4.5 x64])  DATE=Fri Apr 29 17:19:00 2022 
+ID=Model Run
+PAR Zones=1475 M=21
+  TIMEDA  DISTDA  BTOLLDA  TOLLTIMEDA  TOLLDISTDA  TOLLBTOLLDA  TOLLVTOLLDA  TIMES2  DISTS2
+  BTOLLS2  TOLLTIMES2  TOLLDISTS2  TOLLBTOLLS2  TOLLVTOLLS2  TIMES3  DISTS3  BTOLLS3
+  TOLLTIMES3  TOLLDISTS3  TOLLBTOLLS3  TOLLVTOLLS3
+
+MATI[3] TPP D:\2015_BaseY_BCM2015\skims\tm15\HWYSKMMD.tpp Opened
+MAT PGM=MATRIX (v.08/13/2019 [6.4.5 x64])  DATE=Fri Apr 29 17:19:07 2022 
+ID=Model Run
+PAR Zones=1475 M=21
+  TIMEDA  DISTDA  BTOLLDA  TOLLTIMEDA  TOLLDISTDA  TOLLBTOLLDA  TOLLVTOLLDA  TIMES2  DISTS2
+  BTOLLS2  TOLLTIMES2  TOLLDISTS2  TOLLBTOLLS2  TOLLVTOLLS2  TIMES3  DISTS3  BTOLLS3
+  TOLLTIMES3  TOLLDISTS3  TOLLBTOLLS3  TOLLVTOLLS3
+
+MATI[4] TPP D:\2015_BaseY_BCM2015\skims\tm15\HWYSKMEA.tpp OpenedPage 3  (VOYAGER MATRIX) Model Run
+WSP Global Inc.
+-----------------------------------
+MAT PGM=MATRIX (v.08/13/2019 [6.4.5 x64])  DATE=Fri Apr 29 17:19:06 2022 
+ID=Model Run
+PAR Zones=1475 M=21
+  TIMEDA  DISTDA  BTOLLDA  TOLLTIMEDA  TOLLDISTDA  TOLLBTOLLDA  TOLLVTOLLDA  TIMES2  DISTS2
+  BTOLLS2  TOLLTIMES2  TOLLDISTS2  TOLLBTOLLS2  TOLLVTOLLS2  TIMES3  DISTS3  BTOLLS3
+  TOLLTIMES3  TOLLDISTS3  TOLLBTOLLS3  TOLLVTOLLS3
+
+MATI[5] TPP D:\2015_BaseY_BCM2015\skims\tm15\HWYSKMEV.tpp Opened
+MAT PGM=MATRIX (v.08/13/2019 [6.4.5 x64])  DATE=Fri Apr 29 17:19:07 2022 
+ID=Model Run
+PAR Zones=1475 M=21
+  TIMEDA  DISTDA  BTOLLDA  TOLLTIMEDA  TOLLDISTDA  TOLLBTOLLDA  TOLLVTOLLDA  TIMES2  DISTS2
+  BTOLLS2  TOLLTIMES2  TOLLDISTS2  TOLLBTOLLS2  TOLLVTOLLS2  TIMES3  DISTS3  BTOLLS3
+  TOLLTIMES3  TOLLDISTS3  TOLLBTOLLS3  TOLLVTOLLS3
+
+Totals after Iteration 1 I loop:
+
+	MI.01.002: 92,081,399.7   @J=I:      1,022.8
+	MI.02.002: 92,245,757.5   @J=I:      1,022.8
+	MI.03.002: 91,451,254.3   @J=I:      1,023  
+	MI.04.002: 91,109,642.8   @J=I:      1,022.8
+	MI.05.002: 91,105,008.3   @J=I:      1,022.8
+	MW[1]    : 92,081,399.7   @J=I:      1,022.8
+	MW[2]    : 92,245,757.5   @J=I:      1,022.8
+	MW[3]    : 91,451,254.3   @J=I:      1,023  
+	MW[4]    : 91,109,642.8   @J=I:      1,022.8
+	MW[5]    : 91,105,008.3   @J=I:      1,022.8
+
+MATRIX   ReturnCode = 0  Elapsed Time = 00:00:14
+################################################################################
+
+
+VOYAGER  ReturnCode = 0  Elapsed Time = 00:00:14

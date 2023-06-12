@@ -1,0 +1,168 @@
+auto_sufficiency,tours,
+Insufficient,999927.7843,
+Sufficient,8358136.678,
+Zero-Auto,445383.1354,
+,,
+,,
+mode_name,tours,
+Bike,266097.6373,
+Drive Alone,3105570.268,
+KNR-Transit,24341.06617,
+Other,169320.3018,
+PNR-Transit,17831.3923,
+School Bus,90990.08539,
+Shared 2 Free,2372265.197,
+Shared 3 Free,2160955.994,
+Taxi,28925.45074,
+Walk,1178093.897,
+Walk-Transit,389056.3088,
+,,
+,,
+tour_purpose,tours,
+At-Work,488349.8107,
+Discretionary,1454811.265,
+Eat Out,407547.3347,
+Escorting,1098302.353,
+Maintenance,837669.1647,
+School,1171764.904,
+Shopping,904589.2285,
+Social/Visit,426580.6524,
+University,270092.5974,
+Work,2743740.288,
+,,
+,,
+tour_purpose,auto_sufficiency,tours
+At-Work,Insufficient,81039.28314
+At-Work,Sufficient,388572.1095
+At-Work,Zero-Auto,18738.41809
+Discretionary,Insufficient,89531.78273
+Discretionary,Sufficient,1297189.912
+Discretionary,Zero-Auto,68089.57022
+Eat Out,Insufficient,24448.30719
+Eat Out,Sufficient,364694.0462
+Eat Out,Zero-Auto,18404.98134
+Escorting,Insufficient,92492.17583
+Escorting,Sufficient,988960.3447
+Escorting,Zero-Auto,16849.83216
+Maintenance,Insufficient,76624.95021
+Maintenance,Sufficient,695372.819
+Maintenance,Zero-Auto,65671.39545
+School,Insufficient,80913.13778
+School,Sufficient,1052695.606
+School,Zero-Auto,38156.15955
+Shopping,Insufficient,84399.98028
+Shopping,Sufficient,747506.6232
+Shopping,Zero-Auto,72682.62502
+Social/Visit,Insufficient,45759.54539
+Social/Visit,Sufficient,358172.1029
+Social/Visit,Zero-Auto,22649.00417
+University,Insufficient,27198.53049
+University,Sufficient,229341.4286
+University,Zero-Auto,13552.63826
+Work,Insufficient,397520.0913
+Work,Sufficient,2235631.686
+Work,Zero-Auto,110588.5111
+,,
+,,
+tour_purpose,mode_name,tours
+At-Work,Bike,12661.70569
+At-Work,Drive Alone,215772.1635
+At-Work,Other,3914.110695
+At-Work,PNR-Transit,2599.141276
+At-Work,Shared 2 Free,68560.30593
+At-Work,Shared 3 Free,26295.3141
+At-Work,Taxi,774.7140408
+At-Work,Walk,153941.7019
+At-Work,Walk-Transit,3830.653631
+Discretionary,Bike,44259.93903
+Discretionary,Drive Alone,367733.8512
+Discretionary,KNR-Transit,759.077535
+Discretionary,Other,19741.99857
+Discretionary,PNR-Transit,2136.327415
+Discretionary,School Bus,2162.288389
+Discretionary,Shared 2 Free,368092.5508
+Discretionary,Shared 3 Free,313473.5974
+Discretionary,Taxi,7675.001185
+Discretionary,Walk,287796.0163
+Discretionary,Walk-Transit,40980.61662
+Eat Out,Bike,15276.75794
+Eat Out,Drive Alone,95447.98518
+Eat Out,KNR-Transit,1063.565443
+Eat Out,Other,3071.741743
+Eat Out,Shared 2 Free,124457.7674
+Eat Out,Shared 3 Free,91400.99825
+Eat Out,Taxi,755.7320003
+Eat Out,Walk,65844.42592
+Eat Out,Walk-Transit,10228.36091
+Escorting,Bike,8091.304525
+Escorting,Drive Alone,12613.24577
+Escorting,Other,10207.91804
+Escorting,PNR-Transit,169.3697981
+Escorting,Shared 2 Free,459142.7527
+Escorting,Shared 3 Free,482756.0651
+Escorting,Walk,123107.859
+Escorting,Walk-Transit,2213.837708
+Maintenance,Bike,18545.72906
+Maintenance,Drive Alone,303926.3583
+Maintenance,KNR-Transit,4627.44707
+Maintenance,Other,6120.57581
+Maintenance,PNR-Transit,486.1258927
+Maintenance,School Bus,413.4599849
+Maintenance,Shared 2 Free,251180.676
+Maintenance,Shared 3 Free,107789.4259
+Maintenance,Taxi,7743.995405
+Maintenance,Walk,103830.4524
+Maintenance,Walk-Transit,33004.91881
+School,Bike,36889.32883
+School,Drive Alone,25450.6303
+School,KNR-Transit,2700.884051
+School,Other,1607.939093
+School,PNR-Transit,331.3160286
+School,School Bus,85950.10157
+School,Shared 2 Free,202829.1613
+School,Shared 3 Free,591596.8241
+School,Taxi,1525.090819
+School,Walk,183360.4838
+School,Walk-Transit,39523.14384
+Shopping,Bike,12253.07965
+Shopping,Drive Alone,296620.9907
+Shopping,KNR-Transit,574.1930976
+Shopping,Other,367.843141
+Shopping,PNR-Transit,444.938193
+Shopping,School Bus,69.07278361
+Shopping,Shared 2 Free,283945.0664
+Shopping,Shared 3 Free,140640.6366
+Shopping,Taxi,1961.853337
+Shopping,Walk,127357.5692
+Shopping,Walk-Transit,40353.9854
+Social/Visit,Bike,11124.22131
+Social/Visit,Drive Alone,117790.8202
+Social/Visit,KNR-Transit,2454.180842
+Social/Visit,Other,11645.9176
+Social/Visit,Shared 2 Free,93333.38851
+Social/Visit,Shared 3 Free,144558.4154
+Social/Visit,Taxi,80.60349665
+Social/Visit,Walk,34233.75697
+Social/Visit,Walk-Transit,11359.3481
+University,Bike,9869.800298
+University,Drive Alone,93893.58396
+University,KNR-Transit,3008.299308
+University,Other,12790.91499
+University,PNR-Transit,2193.590615
+University,School Bus,2324.315566
+University,Shared 2 Free,63622.81049
+University,Shared 3 Free,32093.04736
+University,Taxi,2755.411021
+University,Walk,8987.821237
+University,Walk-Transit,38553.00251
+Work,Bike,97125.77093
+Work,Drive Alone,1576320.638
+Work,KNR-Transit,9153.418823
+Work,Other,99851.34214
+Work,PNR-Transit,9470.583083
+Work,School Bus,70.84709312
+Work,Shared 2 Free,457100.717
+Work,Shared 3 Free,230351.6693
+Work,Taxi,5653.049432
+Work,Walk,89633.81071
+Work,Walk-Transit,169008.4413

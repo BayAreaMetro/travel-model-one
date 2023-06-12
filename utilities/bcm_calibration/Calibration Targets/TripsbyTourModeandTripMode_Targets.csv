@@ -1,0 +1,550 @@
+"source","estimate","dimension_01_name","dimension_01_value","dimension_02_name","dimension_02_value","estimate_name","estimate_value"
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Bike/Moped","Share of Trips",0.993925008559734
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Walk","Share of Trips",0.00607499144026556
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.989761454445531
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Other","Share of Trips",0.000304220067014305
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Walk","Share of Trips",0.0099343254874547
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Other","Share of Trips",0.775214624924476
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Walk-UR","Share of Trips",0.224785375075524
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-Bus","Share of Trips",1
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.810913699500724
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.184531664669085
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","PNR-UR","Share of Trips",0.00299064771850844
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk","Share of Trips",0.00156398811168271
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.0583713724461477
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.764197971388036
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.174629886525519
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk","Share of Trips",0.00280076964029657
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode",NA,"Share of Trips",0
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.0822835252176954
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Taxi/Shuttle","Share of Trips",0.744818521566432
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Walk","Share of Trips",0.172897953215872
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk","Share of Trips",0.999532228535574
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk-UR","Share of Trips",0.000467771464425727
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Taxi/Shuttle","Share of Trips",0.015810432072419
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk","Share of Trips",0.0397593007901467
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-Bus","Share of Trips",0.896532529701979
+"CHTS","Share of At-Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-LRT","Share of Trips",0.0478977374354556
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.0189629869748903
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.00162915324431327
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0207599508414705
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Bike/Moped","Share of Trips",0.864444736601022
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","KNR-UR","Share of Trips",0
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Walk","Share of Trips",0.0929861743946479
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Walk-UR","Share of Trips",0.00121699794365642
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.972751820787731
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Other","Share of Trips",0.000456705220118704
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","PNR-CR","Share of Trips",0.000202568591956961
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","PNR-UR","Share of Trips",0.00126003345863893
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Walk","Share of Trips",0.0247010761585607
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode",NA,"Share of Trips",0.000627795782993703
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.100233832471455
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Auto SOV (Free)            ","Share of Trips",0
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-Bus","Share of Trips",0.231604093168949
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-LRT","Share of Trips",0
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","PNR-UR","Share of Trips",0
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk","Share of Trips",0.465133654303316
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk-Bus","Share of Trips",0.20302842005628
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","KNR-CR","Share of Trips",0.0863437509515098
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","KNR-UR","Share of Trips",0.0458139365587575
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Other","Share of Trips",0.503617835596615
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","PNR-CR","Share of Trips",0.014554755732048
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","PNR-UR","Share of Trips",0.0714867434179033
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Walk-CR","Share of Trips",0.194722630870667
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Walk-UR","Share of Trips",0.0577474940074372
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Other","Trip Mode",NA,"Share of Trips",0.0257128528650617
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.0197849459114773
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.306098620413728
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","KNR-UR","Share of Trips",0
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-Bus","Share of Trips",0.0520267198915992
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-LRT","Share of Trips",0.592412294915979
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-UR","Share of Trips",0
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Walk","Share of Trips",0.0197849459114773
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Walk-Bus","Share of Trips",0.00989247295573865
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Walk-LRT","Share of Trips",0
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.281221765986901
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.266322880494903
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","School Bus","Share of Trips",0.366838559752548
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","Walk","Share of Trips",0.0856167937656477
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.838727058509999
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.138795424874425
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","KNR-UR","Share of Trips",0
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Other","Share of Trips",0.000932889172756855
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk","Share of Trips",0.019099182511622
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk-CR","Share of Trips",0.00174414130516726
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk-UR","Share of Trips",0.000147399805507185
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode",NA,"Share of Trips",0.000553903820522726
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.133231719808749
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.735575951124969
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0870288345991468
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","KNR-CR","Share of Trips",0.000549256142062505
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","KNR-UR","Share of Trips",0.000610611972180873
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Other","Share of Trips",0.000424855931156613
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","PNR-CR","Share of Trips",0.000193716134395529
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","PNR-UR","Share of Trips",0
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk","Share of Trips",0.0345513227851969
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk-CR","Share of Trips",0.00701572586762487
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk-UR","Share of Trips",0.000818005634518141
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode",NA,"Share of Trips",0
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.0217072317015993
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.00726257624867881
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Other","Share of Trips",0.0283626183278889
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Taxi/Shuttle","Share of Trips",0.91553433024185
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Walk","Share of Trips",0.0271332434799833
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","KNR-UR","Share of Trips",0
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Other","Share of Trips",0.00510210855685253
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","PNR-UR","Share of Trips",0.00069533737875011
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk","Share of Trips",0.987423529259608
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk-UR","Share of Trips",0.00677902480478892
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.00649880256864285
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.0903189399720579
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.00851205747612586
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Bike/Moped","Share of Trips",0.00395346445009005
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","KNR-CR","Share of Trips",0
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","KNR-UR","Share of Trips",0
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Other","Share of Trips",0
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","PNR-UR","Share of Trips",0.00483638835026408
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","School Bus","Share of Trips",0.0017876182504994
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk","Share of Trips",0.213970459101587
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-BRT/Streetcar","Share of Trips",0.0337328705454659
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-Bus","Share of Trips",0.459016314584486
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-CR","Share of Trips",0.0029756473077529
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-LRT","Share of Trips",0.167179586614408
+"CHTS","Share of Discretionary trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-UR","Share of Trips",0.00721785077861913
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.00203167208779521
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.00193729712200105
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0038745942440021
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Bike/Moped","Share of Trips",0.961097574475816
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Taxi/Shuttle","Share of Trips",0.00406334417559043
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Walk","Share of Trips",0.0269955178947946
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.957567267681541
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Walk","Share of Trips",0.042432732318459
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-Bus","Share of Trips",0.333333333333333
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk-Bus","Share of Trips",0.666666666666667
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","KNR-CR","Share of Trips",0
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","KNR-UR","Share of Trips",0
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Other","Share of Trips",0.57654176154993
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","PNR-CR","Share of Trips",0
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","PNR-UR","Share of Trips",0
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Walk-CR","Share of Trips",0
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Walk-UR","Share of Trips",0.42345823845007
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.829911927895383
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.133217937617373
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","KNR-UR","Share of Trips",0.00110697957063256
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Other","Share of Trips",0.00553073570499664
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","PNR-UR","Share of Trips",0.00110697957063256
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk","Share of Trips",0.0291254396409822
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.110849458014758
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.82430372863376
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0500825307606576
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","KNR-UR","Share of Trips",0.00142447130388245
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","PNR-UR","Share of Trips",0.00142447130388245
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk","Share of Trips",0.0119153399830598
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk-UR","Share of Trips",0
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Taxi/Shuttle","Share of Trips",1
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","PNR-UR","Share of Trips",0.00100769636613606
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk","Share of Trips",0.998992303633864
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk-UR","Share of Trips",0
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.0307240724057275
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.139036732385481
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Taxi/Shuttle","Share of Trips",0.00716891363494864
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk","Share of Trips",0.182912974196668
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-BRT/Streetcar","Share of Trips",0
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-Bus","Share of Trips",0.540890108433384
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-LRT","Share of Trips",0.0435427289432443
+"CHTS","Share of Eat Out trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-UR","Share of Trips",0.0557244700005474
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.0610513270832948
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto SOV (Free)            ","Share of Trips",0
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Bike/Moped","Share of Trips",0.929823212085753
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Walk","Share of Trips",0.00912546083095232
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Auto SOV (Free)            ","Share of Trips",1
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Other","Share of Trips",0.861112794922374
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Walk-UR","Share of Trips",0.138887205077626
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.4
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.4
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-Bus","Share of Trips",0.2
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.543497772717161
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.453365701427087
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk","Share of Trips",0.00313652585575147
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.294041363133919
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.523496850592807
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.17169360158066
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Other","Share of Trips",0.00103550556008343
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk","Share of Trips",0.00973267913253075
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","KNR-CR","Share of Trips",0
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Other","Share of Trips",0.00109461168433429
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk","Share of Trips",0.998905388315666
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk-CR","Share of Trips",0
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.0333250723568419
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk","Share of Trips",0.308109209381766
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-Bus","Share of Trips",0.512386296378213
+"CHTS","Share of Escorting trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-UR","Share of Trips",0.146179421883179
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.00874997341561437
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0230264707584768
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Bike/Moped","Share of Trips",0.927832453370381
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Walk","Share of Trips",0.0403911024555277
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Walk-CR","Share of Trips",0
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.982888453822758
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Other","Share of Trips",0
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","PNR-UR","Share of Trips",0.00207834236369449
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Walk","Share of Trips",0.0145698363100501
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Walk-CR","Share of Trips",0
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Walk-UR","Share of Trips",0.000463367503497389
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.215948004578488
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.0578033545978211
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-Bus","Share of Trips",0.0637551008682503
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-LRT","Share of Trips",0.224645784528036
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk","Share of Trips",0.215948004578488
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk-LRT","Share of Trips",0.215948004578488
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk-UR","Share of Trips",0.00595174627042922
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Other","Share of Trips",0.36551291403469
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Walk-UR","Share of Trips",0.0498296020434839
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Other","Trip Mode",NA,"Share of Trips",0.584657483921826
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.343508865502624
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-Bus","Share of Trips",0.507360911551804
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-LRT","Share of Trips",0.0994201486303816
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Walk","Share of Trips",0.0497100743151908
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.411786402946065
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.169106798526968
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","School Bus","Share of Trips",0.419106798526968
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.843464572614098
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.142881836777491
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","KNR-UR","Share of Trips",0.000150656050159326
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Other","Share of Trips",0.000177920070137491
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk","Share of Trips",0.0109007299443192
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk-UR","Share of Trips",0.00242428454379405
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.153650399076593
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.731182903194176
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.101821975839195
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","KNR-UR","Share of Trips",0.00107413590811376
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Other","Share of Trips",0
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","PNR-UR","Share of Trips",0.000504617729857492
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk","Share of Trips",0.0117659682520645
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0591804657901921
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Taxi/Shuttle","Share of Trips",0.940819534209808
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Other","Share of Trips",0.0190500268974667
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk","Share of Trips",0.979461731601448
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk-UR","Share of Trips",0.0014882415010851
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.00499453804376619
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.0269932275499178
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto SOV (Free)            ","Share of Trips",0
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Other","Share of Trips",0.0432222940356021
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Taxi/Shuttle","Share of Trips",0.00418264785075264
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk","Share of Trips",0.222458217934386
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-BRT/Streetcar","Share of Trips",0.0168345425251255
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-Bus","Share of Trips",0.574590256291036
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-LRT","Share of Trips",0.106724275769414
+"CHTS","Share of Maintenance trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-UR","Share of Trips",0
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.100756916453998
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.00847603063627575
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Bike/Moped","Share of Trips",0.776069518495489
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Other","Share of Trips",0.0101413805314006
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Walk","Share of Trips",0.104556153882837
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Auto SOV (Free)            ","Share of Trips",1
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.160124761144659
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.0284993460544376
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-Bus","Share of Trips",0.346498163679421
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-LRT","Share of Trips",0.0532804817668769
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk","Share of Trips",0.206863420504761
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk-Bus","Share of Trips",0.186373402534763
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk-LRT","Share of Trips",0.0183604243150821
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Other","Share of Trips",0.373810955685836
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Walk-UR","Share of Trips",0.555330576077831
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Other","Trip Mode",NA,"Share of Trips",0.070858468236333
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.75
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-Bus","Share of Trips",0.25
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.151455524140157
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.183159116637728
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.00220375927663856
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","Bike/Moped","Share of Trips",0.000725186840824412
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","Other","Share of Trips",0.000389375846131785
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","School Bus","Share of Trips",0.648237066791315
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","Walk","Share of Trips",0.0138299704672054
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.918709837914606
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0181797209791659
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","KNR-UR","Share of Trips",0.000542587059558767
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Other","Share of Trips",0.00166209587958365
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk","Share of Trips",0.0558107024641164
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk-CR","Share of Trips",0.000143987725470633
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk-UR","Share of Trips",0.00457070690002186
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode",NA,"Share of Trips",0.000380361077476504
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.185486784014817
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.743738161967112
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.00347054702578838
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","KNR-CR","Share of Trips",0.000109286237599882
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","KNR-UR","Share of Trips",0.0015182427836224
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Other","Share of Trips",0.00188677494806856
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk","Share of Trips",0.0614265204872109
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk-CR","Share of Trips",0.0008025658754056
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk-UR","Share of Trips",0.000902977227692001
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode",NA,"Share of Trips",0.000658139432683202
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.324377486319191
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.0577907239405352
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Taxi/Shuttle","Share of Trips",0.330627797904353
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Walk","Share of Trips",0.287203991835921
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Other","Share of Trips",0.00268889098159721
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk","Share of Trips",0.996929840095607
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk-UR","Share of Trips",0.00038126892279576
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.0943915605465546
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.0850940876841073
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","KNR-UR","Share of Trips",0.0101036525063444
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","School Bus","Share of Trips",0.00764027114357546
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk","Share of Trips",0.146541800849838
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-BRT/Streetcar","Share of Trips",0.00374792199706755
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-Bus","Share of Trips",0.587084887757168
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-LRT","Share of Trips",0.044532483206316
+"CHTS","Share of School trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-UR","Share of Trips",0.0208633343090287
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.00567684844926839
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Bike/Moped","Share of Trips",0.968524465880791
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Walk","Share of Trips",0.0257986856699405
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Walk-UR","Share of Trips",0
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.988464609775016
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Other","Share of Trips",0.000502504028633231
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","PNR-UR","Share of Trips",0.000741342377882749
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Walk","Share of Trips",0.0102915438184678
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.145630305494805
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-Bus","Share of Trips",0.145630305494805
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-LRT","Share of Trips",0.090616157508659
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-UR","Share of Trips",0.090616157508659
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk","Share of Trips",0.381876768498268
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk-CR","Share of Trips",0.145630305494805
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","KNR-UR","Share of Trips",0
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Other","Share of Trips",0.603991033890317
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","PNR-UR","Share of Trips",0
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Walk-UR","Share of Trips",0.396008966109683
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.503746254317274
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-Bus","Share of Trips",0.125936563579318
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-LRT","Share of Trips",0.123439060701136
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-UR","Share of Trips",0.123439060701136
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Walk","Share of Trips",0.123439060701136
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","School Bus","Share of Trips",0.666666666666667
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","Walk","Share of Trips",0.333333333333333
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.853479050537719
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.131163251909247
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","KNR-UR","Share of Trips",0
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Other","Share of Trips",0.00238806200473513
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","PNR-UR","Share of Trips",0
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk","Share of Trips",0.0128269548901914
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk-UR","Share of Trips",0.000142680658107326
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.178193568494932
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.747809669410866
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0554079771584422
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","KNR-UR","Share of Trips",0
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","PNR-UR","Share of Trips",0
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk","Share of Trips",0.01858878493576
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk-UR","Share of Trips",0
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.071193333458512
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.34288289845105
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Other","Share of Trips",0.0834007891951056
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Taxi/Shuttle","Share of Trips",0.426345816340996
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Walk","Share of Trips",0.0380885812771682
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Walk-CR","Share of Trips",0.0380885812771682
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","KNR-UR","Share of Trips",0
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","PNR-UR","Share of Trips",0
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk","Share of Trips",0.999276741328402
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk-UR","Share of Trips",0.000723258671597747
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.0547341912492021
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.00389046091338739
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.00109309728253788
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Other","Share of Trips",0.0252922475699061
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Taxi/Shuttle","Share of Trips",0.00760102525920326
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk","Share of Trips",0.351625562935307
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-BRT/Streetcar","Share of Trips",0.00227915421536534
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-Bus","Share of Trips",0.505372703202303
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-LRT","Share of Trips",0.0230870121648448
+"CHTS","Share of Shopping trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-UR","Share of Trips",0.0250245452079429
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.00526099493692088
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.0543361469189693
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.00566231426921872
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Bike/Moped","Share of Trips",0.880106185372701
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","PNR-UR","Share of Trips",0
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Walk","Share of Trips",0.0546343585021904
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.985426751425414
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Other","Share of Trips",0.00351173160313906
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","PNR-UR","Share of Trips",0.000709716451790024
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Walk","Share of Trips",0.0103518005196565
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-LRT","Share of Trips",0.281491114877662
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk","Share of Trips",0.462210662146806
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk-LRT","Share of Trips",0.231105331073403
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk-UR","Share of Trips",0.0251928919021293
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","KNR-CR","Share of Trips",0
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","KNR-UR","Share of Trips",0.217703513541272
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Other","Share of Trips",0.157201349549781
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","PNR-CR","Share of Trips",0
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","PNR-UR","Share of Trips",0
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Walk-UR","Share of Trips",0.625095136908946
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Other","Trip Mode",NA,"Share of Trips",0
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.739831090774864
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.217815865363909
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Other","Share of Trips",0.00107142331049796
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk","Share of Trips",0.0330254902968448
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk-UR","Share of Trips",0.008256130253884
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.129402498901633
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.758458571924023
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.093371708131556
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Other","Share of Trips",0.00103496909698616
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","PNR-UR","Share of Trips",0
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk","Share of Trips",0.0169906952133968
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk-UR","Share of Trips",0.000741556732405423
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto SOV (Free)            ","Share of Trips",0
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Taxi/Shuttle","Share of Trips",1
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Walk","Share of Trips",0
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","KNR-UR","Share of Trips",0.00817035938099413
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Other","Share of Trips",0.0123548324964626
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk","Share of Trips",0.978289210152129
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk-UR","Share of Trips",0.00118559797041418
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.0874402959504184
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.0204878617947064
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","KNR-UR","Share of Trips",0
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Other","Share of Trips",0.0196138436564089
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk","Share of Trips",0.0817185857915692
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-BRT/Streetcar","Share of Trips",0
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-Bus","Share of Trips",0.580110678747963
+"CHTS","Share of Social/Visit trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-LRT","Share of Trips",0.210628734058934
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0264515678178767
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Bike/Moped","Share of Trips",0.973548432182123
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.972013820319262
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","PNR-UR","Share of Trips",0.00849947028303239
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Walk","Share of Trips",0.0119362691368538
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Walk-UR","Share of Trips",0.00755044026085216
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.159720879736281
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-Bus","Share of Trips",0.649179549565151
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-LRT","Share of Trips",0
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk-Bus","Share of Trips",0.191099570698567
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","KNR-UR","Share of Trips",0.0967253985336896
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Other","Share of Trips",0
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","PNR-CR","Share of Trips",0.0349010101285492
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","PNR-UR","Share of Trips",0.281207216330805
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Walk-CR","Share of Trips",0.134043676703938
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Walk-UR","Share of Trips",0.453122698303019
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.491793140791955
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-CR","Share of Trips",0.00820685920804522
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-LRT","Share of Trips",0.5
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.172565661687235
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","School Bus","Share of Trips",0.827434338312764
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.868122449452966
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0868612416473026
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","PNR-UR","Share of Trips",0.0081329458402701
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk","Share of Trips",0.0297603061322758
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk-UR","Share of Trips",0.000854604223523412
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode",NA,"Share of Trips",0.00626845270366236
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.149612342494599
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.707036282980941
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0731540185306734
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","KNR-UR","Share of Trips",0.00635448919046872
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk","Share of Trips",0.0328911586458416
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk-UR","Share of Trips",0.0309517081574761
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.327808152048317
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.121766091192979
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Taxi/Shuttle","Share of Trips",0.550425756758704
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk","Share of Trips",0.851583584641328
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk-UR","Share of Trips",0.148416415358672
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.138865781761081
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","KNR-UR","Share of Trips",0.0129327995665892
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Other","Share of Trips",0.00231707573761382
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Taxi/Shuttle","Share of Trips",0.00677200515400013
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk","Share of Trips",0.0816263184037108
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-BRT/Streetcar","Share of Trips",0.00705218322309622
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-Bus","Share of Trips",0.651705326820045
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-LRT","Share of Trips",0.0347789464094691
+"CHTS","Share of University trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-UR","Share of Trips",0.063949562924395
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.0300657124928885
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.0226750155261835
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0179466747886226
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Bike/Moped","Share of Trips",0.864266773996534
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","KNR-UR","Share of Trips",0.0023378439131154
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Taxi/Shuttle","Share of Trips",0.0003010022263118
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Walk","Share of Trips",0.0212187682687447
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Walk-CR","Share of Trips",0.00701995725798566
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Bike","Trip Mode","Walk-UR","Share of Trips",0.0341682515296139
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.981333683387859
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","KNR-UR","Share of Trips",0.000964888463307964
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Other","Share of Trips",0.00057158820634452
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","PNR-CR","Share of Trips",0.000191061297331519
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","PNR-UR","Share of Trips",0.00572785694410806
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Walk","Share of Trips",0.00926946223502119
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Walk-CR","Share of Trips",0.0000678003081364025
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Drive Alone","Trip Mode","Walk-UR","Share of Trips",0.00187365915789133
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.28384799706423
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.18830327591494
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0779598335768664
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-Bus","Share of Trips",0.333781961578087
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-CR","Share of Trips",0.006987025986219
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-LRT","Share of Trips",0.0807853684646999
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","KNR-UR","Share of Trips",0
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk","Share of Trips",0.00432050528221108
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk-Bus","Share of Trips",0.00428838773827911
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","KNR-Transit","Trip Mode","Walk-LRT","Share of Trips",0.0197256443944679
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","KNR-CR","Share of Trips",0.0592289446188714
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","KNR-UR","Share of Trips",0.0555853373474873
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Other","Share of Trips",0.0102275478534845
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","PNR-CR","Share of Trips",0.0409842735141356
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","PNR-UR","Share of Trips",0.29808632893077
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Walk-CR","Share of Trips",0.0621374215764804
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Other","Trip Mode","Walk-UR","Share of Trips",0.444026941897059
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Other","Trip Mode",NA,"Share of Trips",0.0297232042617115
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.0926673891951872
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.0399999692636026
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.156061479917564
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-BRT/Streetcar","Share of Trips",0.010422278426529
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-Bus","Share of Trips",0.427204542591946
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-LRT","Share of Trips",0.161100479828645
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","PNR-UR","Share of Trips",0.0184937446722653
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Walk","Share of Trips",0.0621666928686807
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Walk-Bus","Share of Trips",0.0209275145149471
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","PNR-Transit","Trip Mode","Walk-LRT","Share of Trips",0.0109559087206333
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","School Bus","Trip Mode","School Bus","Share of Trips",1
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.522275193438192
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.42984053994119
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","KNR-CR","Share of Trips",0.000208708522204384
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","KNR-UR","Share of Trips",0.00710782653373863
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Other","Share of Trips",0.0075956442494024
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","PNR-CR","Share of Trips",0.00130749922633756
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","PNR-UR","Share of Trips",0.00649554300236925
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk","Share of Trips",0.0128643617856387
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk-CR","Share of Trips",0.00373706152099152
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode","Walk-UR","Share of Trips",0.00841041838864365
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 2 Free","Trip Mode",NA,"Share of Trips",0.000157203391292052
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.187923474720793
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.399527786781778
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.394609277641979
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","KNR-UR","Share of Trips",0.00352625855155945
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","PNR-CR","Share of Trips",0.000662323775317129
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","PNR-UR","Share of Trips",0.00172736489244156
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk","Share of Trips",0.00751108798130528
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode","Walk-UR","Share of Trips",0.00374623684335992
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Shared 3 Free","Trip Mode",NA,"Share of Trips",0.00076618881146759
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.019700983971237
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.00847393523370609
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0160462788279351
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","KNR-UR","Share of Trips",0.00847393523370609
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Other","Share of Trips",0.369453157387541
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Taxi/Shuttle","Share of Trips",0.338054170358169
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Taxi","Trip Mode","Walk","Share of Trips",0.239797538987706
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","KNR-CR","Share of Trips",0.00223397257835077
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","KNR-UR","Share of Trips",0.00906154615267296
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Other","Share of Trips",0
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","PNR-CR","Share of Trips",0.0117370870672087
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","PNR-UR","Share of Trips",0.0372779198831293
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk","Share of Trips",0.840065932917014
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk-CR","Share of Trips",0.0114181090060744
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode","Walk-UR","Share of Trips",0.0882054323955496
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk","Trip Mode",NA,"Share of Trips",0
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 2 Person (Free)       ","Share of Trips",0.0566144649936904
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto 3+ Person (Free)      ","Share of Trips",0.0183595894682859
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Auto SOV (Free)            ","Share of Trips",0.0200163396012647
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Bike/Moped","Share of Trips",0.00290198156086257
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","KNR-UR","Share of Trips",0.00770195356460245
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Other","Share of Trips",0.00457516458326101
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","PNR-UR","Share of Trips",0.00223449430599588
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Taxi/Shuttle","Share of Trips",0.0116459259482074
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk","Share of Trips",0.18061971531087
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-BRT/Streetcar","Share of Trips",0.0181932709541287
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-Bus","Share of Trips",0.46056523057355
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-CR","Share of Trips",0.014299610673638
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-LRT","Share of Trips",0.164966135060776
+"CHTS","Share of Work trips by tour mode and trip mode","Tour Mode","Walk-Transit","Trip Mode","Walk-UR","Share of Trips",0.0373061234008667

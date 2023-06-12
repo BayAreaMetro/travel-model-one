@@ -1,0 +1,23 @@
+"source","estimate","dimension_01_name","dimension_01_value","dimension_02_name","dimension_02_value","estimate_name","estimate_value"
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Driving age student","Daily Activity Pattern","Home","Share of Persons",0.151898734177215
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Driving age student","Daily Activity Pattern","Mandatory","Share of Persons",0.555555555555556
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Driving age student","Daily Activity Pattern","Non-Mandatory","Share of Persons",0.292545710267229
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Full-time worker","Daily Activity Pattern","Home","Share of Persons",0.130996104618809
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Full-time worker","Daily Activity Pattern","Mandatory","Share of Persons",0.609348914858097
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Full-time worker","Daily Activity Pattern","Non-Mandatory","Share of Persons",0.259654980523094
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Non-driving student","Daily Activity Pattern","Home","Share of Persons",0.146722164412071
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Non-driving student","Daily Activity Pattern","Mandatory","Share of Persons",0.541103017689906
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Non-driving student","Daily Activity Pattern","Non-Mandatory","Share of Persons",0.312174817898023
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Non-working adult","Daily Activity Pattern","Home","Share of Persons",0.267355505327736
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Non-working adult","Daily Activity Pattern","Non-Mandatory","Share of Persons",0.732644494672263
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Non-working senior","Daily Activity Pattern","Home","Share of Persons",0.353617308992563
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Non-working senior","Daily Activity Pattern","Non-Mandatory","Share of Persons",0.646382691007438
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Part-time worker","Daily Activity Pattern","Home","Share of Persons",0.130869130869131
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Part-time worker","Daily Activity Pattern","Mandatory","Share of Persons",0.464202464202464
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Part-time worker","Daily Activity Pattern","Non-Mandatory","Share of Persons",0.404928404928405
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Pre-school","Daily Activity Pattern","Home","Share of Persons",0.192384769539078
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Pre-school","Daily Activity Pattern","Mandatory","Share of Persons",0.308617234468938
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","Pre-school","Daily Activity Pattern","Non-Mandatory","Share of Persons",0.498997995991984
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","University student","Daily Activity Pattern","Home","Share of Persons",0.2003046458492
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","University student","Daily Activity Pattern","Mandatory","Share of Persons",0.431073876618431
+"CHTS","Share of persons by daily activity pattern and person type","Person Type","University student","Daily Activity Pattern","Non-Mandatory","Share of Persons",0.368621477532369
