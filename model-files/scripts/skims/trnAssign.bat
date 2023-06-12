@@ -83,7 +83,7 @@ if ERRORLEVEL 2 (
   goto donedone
 )
 :: Create list of PNR lots
-::runtpp %BASE_SCRIPTS%\preprocess\CreatePnrList.job
+runtpp %BASE_SCRIPTS%\preprocess\CreatePnrList.job
 ::if ERRORLEVEL 2 goto done
 :: Create the transit networks
 runtpp %BASE_SCRIPTS%\skims\BuildTransitNetworks.job
@@ -105,7 +105,7 @@ if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
 )
-: skip
+
 :: And skim
 runtpp %BASE_SCRIPTS%\skims\TransitSkims.job
 if ERRORLEVEL 2 (

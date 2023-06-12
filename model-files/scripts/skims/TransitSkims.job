@@ -90,9 +90,9 @@ counter = 0
 loop period = 1,5
 
   ; set a debug origin
-  token_debug_origin = '64,240,277,378,967,1449'
+  token_debug_origin = '2516,240,277,378,967,1449'
   ; set a debug destination
-  token_debug_destination = '22,100,106,109,240,968,971'
+  token_debug_destination = '2187,100,106,109,240,968,971'
   ; set a debug filename prefix
   token_debug_filename = 'TransitSkims'
 
