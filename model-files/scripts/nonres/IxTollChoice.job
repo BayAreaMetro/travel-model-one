@@ -64,7 +64,7 @@ token_debug_filename = 'logs\IxTollChoice'
 loop period = 1,5
 
    ; set a debug origin
-   token_debug_origin = '1474'
+   token_debug_origin = '6601'
      
    ; set a debug destination
    token_debug_destination = '1'

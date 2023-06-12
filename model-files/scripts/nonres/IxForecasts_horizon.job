@@ -48,7 +48,7 @@ run pgm = matrix
       mw[ 3] = mi.1.ix_daily_sr3
       mw[ 4] = mw[1] + mw[2] + mw[3]
 	  
-	  RENUMBER FILE = "INPUT\warmstart\main\IZ_OZ_PCT_EXT.DAT", ZONES=6626, MISSINGZI=W,MISSINGZO=W
+	  RENUMBER FILE = "landuse\IZ_OZ_PCT_EXT_SJC.DAT", ZONES=6626, MISSINGZI=W,MISSINGZO=W
 	  
 	  loop value = 1,4
 	  
