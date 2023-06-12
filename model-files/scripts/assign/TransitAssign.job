@@ -118,12 +118,13 @@
 ;
 ; version:  Travel Model One
 ; authors:  dto, be (2014 02 03); dto (2010 06 30); gde; 
-;
+;; version: TM 1.5 BCM
+; author jmh 5 2023
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 
 token_model_dir = '%MODEL_DIR%'
-
+*Cluster.exe CTRAMP 1-15 start exit
 ; time period loop
 loop period = 1, 5
 
@@ -261,7 +262,7 @@ loop period = 1, 5
             token_bus_acclinks_KNR = ';'
             
             ; commuter rail, heavy rail, and express bus excluded from this path
-            token_skipmodes = 'skipmodes =  130-139,120-139,80-99'
+            token_skipmodes = 'skipmodes =  130-139,120-139,80-95,97'
             
             ; mode-specific perceived time factors
             ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
@@ -285,7 +286,7 @@ loop period = 1, 5
             token_bus_acclinks_KNR = ' '
             
             ; commuter rail, heavy rail, express bus, light rail, and ferry excluded from this path
-            token_skipmodes = 'skipmodes =  130-139,120-139,80-99,100-119'
+            token_skipmodes = 'skipmodes =  130-139,120-139,80-95,97,100-119'
             
             ; mode-specific perceived time factors
             ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
@@ -301,7 +302,7 @@ loop period = 1, 5
          counter = counter + 1
          
          ; distribute the tasks
-         DistributeMultistep processid = "ctramp", processnum = @counter@
+         DistributeMultistep processid = "CTRAMP", processnum = @counter@
 
          run pgm = trnbuild
              
@@ -332,21 +333,21 @@ loop period = 1, 5
 
              
              ; read the transit line and link files
-             read file = "@token_model_dir@\trn\transitLines.link"
-             read file = transit@token_period@.lin        
+             ;read file = "@token_model_dir@\trn\transitLines.link"
+             read file = @token_model_dir@\trn\transitOriginal@token_period@.lin        
              
              ; read in the generated support links
-             read file = @token_period@_transit_suplinks_walk.dat
+             read file = @token_period@_transit_suplinks_walk.dat	;created by the BuildTransitNetwork.job script
              
              ; read in the generated drive access/egress links for this mode             
-             @token_drivelinks_express_bus@    read file = @token_period@_transit_suplinks_express_bus.dat
-             @token_drivelinks_light_rail@     read file = @token_period@_transit_suplinks_light_rail.dat
-             @token_drivelinks_ferry@          read file = @token_period@_transit_suplinks_ferry.dat
-             @token_drivelinks_heavy_rail@     read file = @token_period@_transit_suplinks_heavy_rail.dat
-             @token_drivelinks_commuter_rail@  read file = @token_period@_transit_suplinks_commuter_rail.dat  
+             @token_drivelinks_express_bus@    read file = @token_period@_transit_suplinks_express_bus.dat	;created by the BuildTransitNetwork.job script
+             @token_drivelinks_light_rail@     read file = @token_period@_transit_suplinks_light_rail.dat	;created by the BuildTransitNetwork.job script
+             @token_drivelinks_ferry@          read file = @token_period@_transit_suplinks_ferry.dat	;created by the BuildTransitNetwork.job script
+             @token_drivelinks_heavy_rail@     read file = @token_period@_transit_suplinks_heavy_rail.dat	;created by the BuildTransitNetwork.job script
+             @token_drivelinks_commuter_rail@  read file = @token_period@_transit_suplinks_commuter_rail.dat 	;created by the BuildTransitNetwork.job script 
              
              ; read in the generated KNR links for local bus
-             @token_bus_acclinks_KNR@    READ FILE = @token_period@_bus_acclinks_KNR.DAT
+             @token_bus_acclinks_KNR@    READ FILE = @token_period@_bus_acclinks_KNR.DAT 	;created by the BuildTransitNetwork.job script 
              
              ; set the service headways
              freqperiod = @period@
@@ -427,3 +428,4 @@ loop period = 1, 5
            printfiles = save, DelDistribFiles = t, CheckReturnCode = t
 
 endloop ; time of day  
+*Cluster.exe CTRAMP 1-15 close exit

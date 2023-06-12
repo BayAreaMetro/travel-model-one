@@ -1,5 +1,5 @@
 echo on
-
+SET BASE_SCRIPTS=..\..\CTRAMP\scripts
 set ALLTIMEPERIODS=AM MD PM EV EA
 set TRNASSIGNITER=0
 set PREVTRNASSIGNITER=NEG1
@@ -75,16 +75,18 @@ IF %ITER% EQU POSTPROC (set TRNASSIGNMODE=POSTPROC)
 IF %ITER% EQU %MAXITERATIONS% (set PHTDIFFCOND=0)
 
 echo START TRNASSIGN BuildTransitNetworks %DATE% %TIME% >> ..\..\logs\feedback.rpt
-
+goto trnassign_loop
 :: Prepare the highway network for use by the transit network
-runtpp ..\..\CTRAMP\scripts\skims\PrepHwyNet.job
+runtpp %BASE_SCRIPTS%\skims\PrepHwyNet.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
 )
-
+:: Create list of PNR lots
+runtpp %BASE_SCRIPTS%\preprocess\CreatePnrList.job
+::if ERRORLEVEL 2 goto done
 :: Create the transit networks
-runtpp ..\..\CTRAMP\scripts\skims\BuildTransitNetworks.job
+runtpp %BASE_SCRIPTS%\skims\BuildTransitNetworks.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
@@ -98,13 +100,14 @@ echo START TRNASSIGN            SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\l
 :transitSubAssign
 
 :: Assign the transit trips to the transit network
-runtpp ..\..\CTRAMP\scripts\assign\TransitAssign.job
+runtpp %BASE_SCRIPTS%\assign\TransitAssign.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
 )
+
 :: And skim
-runtpp ..\..\CTRAMP\scripts\skims\TransitSkims.job
+runtpp %BASE_SCRIPTS%\skims\TransitSkims.job
 if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
@@ -131,11 +134,11 @@ IF %KEEP_ASGN_DBFS% EQU 1 (
 if %ITER% EQU %MAXITERATIONS% (
   echo START   routelinkMSA       SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
 
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py EA %TRNASSIGNITER% %VOLDIFFCOND%
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py AM %TRNASSIGNITER% %VOLDIFFCOND%
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py MD %TRNASSIGNITER% %VOLDIFFCOND%
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py PM %TRNASSIGNITER% %VOLDIFFCOND%
-  python ..\..\CTRAMP\scripts\skims\routeLinkMSA.py EV %TRNASSIGNITER% %VOLDIFFCOND%
+  python %BASE_SCRIPTS%\skims\routeLinkMSA.py EA %TRNASSIGNITER% %VOLDIFFCOND%
+  python %BASE_SCRIPTS%\skims\routeLinkMSA.py AM %TRNASSIGNITER% %VOLDIFFCOND%
+  python %BASE_SCRIPTS%\skims\routeLinkMSA.py MD %TRNASSIGNITER% %VOLDIFFCOND%
+  python %BASE_SCRIPTS%\skims\routeLinkMSA.py PM %TRNASSIGNITER% %VOLDIFFCOND%
+  python %BASE_SCRIPTS%\skims\routeLinkMSA.py EV %TRNASSIGNITER% %VOLDIFFCOND%
 
 )
 

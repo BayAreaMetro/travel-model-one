@@ -350,7 +350,7 @@ if __name__ == '__main__':
             net = TransitNetwork(modelType="TravelModelOne", modelVersion=1.0)
             
             try:
-                net.parseFile(fullfile="transit_duplicated_stops_removed_new.lin",insert_replace=True)
+                net.parseFile(fullfile="transit_duplicated_stops_removed.lin",insert_replace=True)
             
                 # Cube will fail on a line with no frequencies so let's just delete those ahead of time
                 for lineidx in xrange(len(net.lines)-1, -1, -1):
