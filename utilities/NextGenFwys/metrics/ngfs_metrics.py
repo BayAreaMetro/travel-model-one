@@ -1055,7 +1055,7 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     for metric in metrics_list:
         minor_grouping_corridor = metric.split('travel_time_')[1]
 
-        if 'Path3' in tm_run_id:
+        if 'Path3' in tm_run_id: # can not calculate a weighted average for pathway 3 using TAZ level data because it doesn't contain a distance field
             minor_grouping_vmt = 0
         else:
             # calculate average vmt
@@ -1389,6 +1389,23 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     # this is large so join/subset it immediately
     trips_od_travel_time_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
     LOGGER.info("  Read {:,} rows from {}".format(len(trips_od_travel_time_df), ODTravelTime_byModeTimeperiod_file))
+
+    # remove 'num_trips' column to use from base run instead
+    trips_od_travel_time_df = trips_od_travel_time_df.drop('num_trips', axis = 1)
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # read a copy of the table for the base comparison run to pull the number of trips (for weighting)
+    # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
+    ODTravelTime_byModeTimeperiod_file_base = os.path.join(NGFS_SCENARIOS, tm_run_id_base, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv")
+    trips_od_travel_time_df_base = pd.read_csv(ODTravelTime_byModeTimeperiod_file_base)
+    LOGGER.info("  Read {:,} rows from {}".format(len(trips_od_travel_time_df_base), ODTravelTime_byModeTimeperiod_file_base))
+
+    # reduce copied df to only relevant columns orig, dest, and num_trips
+    trips_od_travel_time_df_base = trips_od_travel_time_df_base[['orig_taz', 'dest_taz', 'num_trips']]
+    LOGGER.debug("trips_od_travel_time_df_base: \n{}".format(trips_od_travel_time_df_base))
+
+    trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df, right=trips_od_travel_time_df_base, how='left', left_on=['orig_taz','dest_taz'], right_on=['orig_taz','dest_taz'])
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
 
     trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df.timeperiod_label == 'AM Peak' ]
     LOGGER.info("  Filtered to AM only: {:,} rows".format(len(trips_od_travel_time_df)))
@@ -2112,7 +2129,7 @@ def calculate_Reparative1_dollar_revenues_revinvested(tm_run_id):
         for pathway in reparative_1_df['pathway']:
             if 'Path'+ pathway in tm_run_id:     
                 reparative_1_value = reparative_1_df.loc[(reparative_1_df['pathway'] == pathway)].iloc[0]['value']
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,' ',' ', 'Dollars (2023$)', year] = reparative_1_value
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,' ',' ', 'Dollars (YOE$B)', year] = reparative_1_value
         
 
 
