@@ -1941,6 +1941,10 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
   metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I80_I880_PortOfOakland', 'travel_time_I80_I880_PortOfOakland_PM', year] = PM_travel_time_route_I80
   metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I80_I880_PortOfOakland', 'peak_hour_travel_time_I80_I880_PortOfOakland', year] = peak_average_travel_time_route_I80
 
+  # enter goods routes average
+  goods_routes_average_peak_travel_time = numpy.mean([peak_average_travel_time_route_I580, peak_average_travel_time_route_I101,peak_average_travel_time_route_I80])
+  metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'final','Average Across Routes', 'peak_hour_travel_time', year] = goods_routes_average_peak_travel_time
+
   return [sum_of_weights, total_weighted_travel_time, n, total_travel_time, sum_of_weights_parallel_arterial, total_weighted_travel_time_parallel_arterial, total_travel_time_parallel_arterial, arterial_total_travel_time_region, arterial_total_travel_time_epc, arterial_total_travel_time_nonepc]
 
 
