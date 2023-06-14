@@ -1401,10 +1401,14 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     LOGGER.info("  Read {:,} rows from {}".format(len(trips_od_travel_time_df_base), ODTravelTime_byModeTimeperiod_file_base))
 
     # reduce copied df to only relevant columns orig, dest, and num_trips
-    trips_od_travel_time_df_base = trips_od_travel_time_df_base[['orig_taz', 'dest_taz', 'num_trips']]
+    trips_od_travel_time_df_base = trips_od_travel_time_df_base[['orig_taz','dest_taz','trip_mode','timeperiod_label','incQ', 'num_trips']]
     LOGGER.debug("trips_od_travel_time_df_base: \n{}".format(trips_od_travel_time_df_base))
 
-    trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df, right=trips_od_travel_time_df_base, how='left', left_on=['orig_taz','dest_taz'], right_on=['orig_taz','dest_taz'])
+    trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
+                                       right=trips_od_travel_time_df_base, 
+                                       how='left', 
+                                       left_on=['orig_taz','dest_taz','trip_mode','timeperiod_label','incQ'], 
+                                       right_on=['orig_taz','dest_taz','trip_mode','timeperiod_label','incQ'])
     LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
 
     trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df.timeperiod_label == 'AM Peak' ]
@@ -1421,6 +1425,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     # join to OD cities for origin
     trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
                                        right=NGFS_OD_CITIES_DF,
+                                       how='left',
                                        left_on="orig_taz",
                                        right_on="taz1454")
     trips_od_travel_time_df.rename(columns={"CITY":"orig_CITY"}, inplace=True)
@@ -1428,6 +1433,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     # join to OD cities for destination
     trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
                                        right=NGFS_OD_CITIES_DF,
+                                       how='left',
                                        left_on="dest_taz",
                                        right_on="taz1454")
     trips_od_travel_time_df.rename(columns={"CITY":"dest_CITY"}, inplace=True)
@@ -1441,6 +1447,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     # join to epc lookup table
     trips_ending_in_city_dt_od_travel_time_df = pd.merge(left=trips_ending_in_city_dt_od_travel_time_df,
                                                         right=NGFS_EPC_TAZ_DF,
+                                                        how='left',
                                                         left_on="orig_taz",
                                                         right_on="TAZ1454")
     # filter a copy to only those staring in EPCs
@@ -1449,6 +1456,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     # filter again to only those of interest
     trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
                                        right=NGFS_OD_CITIES_OF_INTEREST_DF,
+                                       how='left',
                                        indicator=True)
     trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df._merge == 'both']
     LOGGER.info("  Filtered to only NGFS_OD_CITIES_OF_INTEREST: {:,} rows".format(len(trips_od_travel_time_df)))
@@ -1471,7 +1479,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     trips_od_travel_time_df.reset_index(inplace=True)
     trips_od_travel_time_df['avg_travel_time_in_mins'] = \
         trips_od_travel_time_df['tot_travel_time_in_mins']/trips_od_travel_time_df['num_trips']
-    # LOGGER.debug(trips_od_travel_time_df)
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
 
     # pivot again to move agg_mode to column
     # columns will now be: orig_CITY_, dest_CITY_, avg_travel_time_in_mins_auto, avg_travel_time_in_mins_transit, num_trips_auto, num_trips_transit
