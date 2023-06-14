@@ -34,6 +34,7 @@
 # -- percent_hhld
 #
 # (additional outputs need to be documented)
+# for the AG10 slide deck, I used the results from the outputs hhld_vNctoll_stats.csv and hhld_vNctoll_stats_incQ1.csv
 #
 # ----------------------------------------------------------------------------------------------------------------
 
@@ -48,7 +49,7 @@ library(knitr) # for the kable function that creates well-formatted tables
 #TARGET_DIR = "//MODEL2-C/Model2C-Share/Projects/2035_TM152_NGF_NP10_Path4_02"       # new numbering: P1
 #TARGET_DIR = "//MODEL3-C/Model3C-Share/Projects/2035_TM152_NGF_NP10_Path3a_02"      # new numbering: 2A
 TARGET_DIR = "//MODEL3-D/Model3D-Share/Projects/2035_TM152_NGF_NP10_Path3b_02"       # new numbering: 2B
-#TARGET_DIR = "//MODEL3-A/Model3A-Share/Projects/2035_TM152_NGF_NP10_Path1a_02"      # new numbering: 3A -- no access to this drive
+#TARGET_DIR = "//MODEL3-A/Model3A-Share/Projects/2035_TM152_NGF_NP10_Path1a_02"      # new numbering: 3A
 #TARGET_DIR = "//MODEL3-B/Model3B-Share/Projects/2035_TM152_NGF_NP10_Path1b_02"      # new numbering: P3B
 #TARGET_DIR = "//MODEL2-D/Model2D-Share/Projects/2035_TM152_NGF_NP10_Path2a_02_10pc" # new numbering: P4A
 #TARGET_DIR = "//MODEL3-D/Model3D-Share/Projects/2035_TM152_NGF_NP10_Path2b_02_10pc" # new numbering: P4B
@@ -399,6 +400,7 @@ df_hhldCosts_no0vNctoll <- df_hhldCosts %>%
 annual_vNctoll_dropped0s_min <- min(df_hhldCosts_no0vNctoll$annual_valueNcordon_toll)
 annual_vNctoll_dropped0s_mean <- mean(df_hhldCosts_no0vNctoll$annual_valueNcordon_toll)
 annual_vNctoll_dropped0s_median <- median(df_hhldCosts_no0vNctoll$annual_valueNcordon_toll)
+annual_vNctoll_dropped0s_p90 <- quantile(df_hhldCosts_no0vNctoll$annual_valueNcordon_toll, 0.9)
 
 # Calculate the percentage of records with annual_valueNcordon_toll equals to 0
 num_zeros <- sum(df_hhldCosts$annual_valueNcordon_toll == 0)
@@ -413,6 +415,7 @@ annual_vNctoll_max
 annual_vNctoll_dropped0s_min
 annual_vNctoll_dropped0s_mean
 annual_vNctoll_dropped0s_median
+annual_vNctoll_dropped0s_p10
 percentage_zero
 
 df_vNctoll_stats <- data.frame(
@@ -423,12 +426,108 @@ df_vNctoll_stats <- data.frame(
   annual_vNctoll_dropped0s_min,
   annual_vNctoll_dropped0s_mean,
   annual_vNctoll_dropped0s_median,
+  annual_vNctoll_dropped0s_p10,
   percentage_zero
 )
 
 # export
 OUTFILE1_vNctoll <- file.path(TARGET_DIR, "updated_output", "hhld_vNctoll_stats.csv")
 write.csv(df_vNctoll_stats , OUTFILE1_vNctoll, row.names = FALSE)
+
+
+# ------------------------------------------
+# focus on the low-income group
+# 1. create new frequency table of value tolls + cordon tolls for income group 1
+# 2. get statistics on the distribution 
+# ------------------------------------------
+
+# create a data frame with households in income group 1 only
+df_hhldCosts_incQ1 <- filter(df_hhldCosts, hhld_incQ == 1)
+
+df_vNctoll_freqTable_SimpleGroups_incQ1 <- df_hhldCosts_incQ1 %>%
+  mutate(bin = cut(
+    annual_valueNcordon_toll,
+    breaks = c(-Inf, seq(0, 0, 1), seq(0.000001, 1600, 800), Inf),
+    #labels = c("No toll cost", "Up to $800", "Above $800"),
+    include.lowest = TRUE,
+    right = FALSE
+  )) %>%
+  count(bin, sort = FALSE) %>%
+  mutate(percent_hhld = prop.table(n) * 100) %>%
+  mutate(vNctoll_lower_bound = as.numeric(sub("\\[([^,]+).*", "\\1", bin)),
+         vNctoll_upper_bound = as.numeric(sub("[^,]+,([^\\)]+).*", "\\1", bin)))
+
+# print the frequency table to console
+kable(df_vNctoll_freqTable_SimpleGroups, format = "markdown")
+
+# rename the variables to improve clarity
+df_vNctoll_freqTable_SimpleGroups_incQ1 <- df_vNctoll_freqTable_SimpleGroups_incQ1 %>%
+  rename(vNctoll_bin = bin)
+
+# somehow "rename" doesn't work for "n"
+# The error was: no applicable method for 'rename' applied to an object of class "function"
+# but the following code works:
+colnames(df_vNctoll_freqTable_SimpleGroups_incQ1)[colnames(df_vNctoll_freqTable_SimpleGroups_incQ1) == "n"] <- "num_hhld"
+
+# accounting for the fact that the input file is a sample (typically at 50% in iter 3)
+df_vNctoll_freqTable_SimpleGroups_incQ1$num_hhld = df_vNctoll_freqTable_SimpleGroups_incQ1$num_hhld/SAMPLESHARE
+
+# reorder the columns
+df_vNctoll_freqTable_SimpleGroups_incQ1 <- df_vNctoll_freqTable_SimpleGroups_incQ1 %>%
+  select(vNctoll_bin, vNctoll_lower_bound, vNctoll_upper_bound, num_hhld, percent_hhld)
+
+# export
+OUTFILE3_SimpleGroups_vNctoll_incQ1 <-file.path(TARGET_DIR, "updated_output", "hhld_vNctoll_freqTable_SimpleGroups_incQ1.csv")
+write.csv(df_vNctoll_freqTable_SimpleGroups_incQ1, OUTFILE3_SimpleGroups_vNctoll_incQ1, row.names = FALSE)
+
+# ------------------------------------------
+# get statistics of annual_valueNcordon_toll
+# ------------------------------------------
+annual_vNctoll_mean   <- mean(df_hhldCosts_incQ1$annual_valueNcordon_toll)
+annual_vNctoll_median <- median(df_hhldCosts_incQ1$annual_valueNcordon_toll)
+annual_vNctoll_p90    <- quantile(df_hhldCosts_incQ1$annual_valueNcordon_toll, 0.9)
+annual_vNctoll_max    <- max(df_hhldCosts_incQ1$annual_valueNcordon_toll)
+
+# Filter out records with annual_valueNcordon_toll equals to 0
+df_hhldCosts_incQ1_no0vNctoll <- df_hhldCosts_incQ1 %>%
+  filter(annual_valueNcordon_toll != 0)
+# Find the minimum value of annual_valueNcordon_toll
+annual_vNctoll_dropped0s_min <- min(df_hhldCosts_incQ1_no0vNctoll$annual_valueNcordon_toll)
+annual_vNctoll_dropped0s_mean <- mean(df_hhldCosts_incQ1_no0vNctoll$annual_valueNcordon_toll)
+annual_vNctoll_dropped0s_median <- median(df_hhldCosts_incQ1_no0vNctoll$annual_valueNcordon_toll)
+annual_vNctoll_dropped0s_p90 <- quantile(df_hhldCosts_incQ1_no0vNctoll$annual_valueNcordon_toll, 0.9)
+
+# Calculate the percentage of records with annual_valueNcordon_toll equals to 0
+num_zeros <- sum(df_hhldCosts_incQ1$annual_valueNcordon_toll == 0)
+total_records <- nrow(df_hhldCosts_incQ1)
+percentage_zero <- (num_zeros / total_records) * 100
+
+# print to console
+annual_vNctoll_mean
+annual_vNctoll_median
+annual_vNctoll_p90
+annual_vNctoll_max
+annual_vNctoll_dropped0s_min
+annual_vNctoll_dropped0s_mean
+annual_vNctoll_dropped0s_median
+annual_vNctoll_dropped0s_p90
+percentage_zero
+
+df_vNctoll_stats_incQ1 <- data.frame(
+  annual_vNctoll_mean,
+  annual_vNctoll_median,
+  annual_vNctoll_p90,
+  annual_vNctoll_max,
+  annual_vNctoll_dropped0s_min,
+  annual_vNctoll_dropped0s_mean,
+  annual_vNctoll_dropped0s_median,
+  annual_vNctoll_dropped0s_p90,
+  percentage_zero
+)
+
+# export
+OUTFILE1_vNctoll_incQ1 <- file.path(TARGET_DIR, "updated_output", "hhld_vNctoll_stats_incQ1.csv")
+write.csv(df_vNctoll_stats_incQ1 , OUTFILE1_vNctoll_incQ1, row.names = FALSE)
 
 
 # ------------------------------------------
