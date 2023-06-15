@@ -265,12 +265,6 @@ for run in runs:
   network_links_dbf = pd.read_csv(tm_run_location + '\\OUTPUT\\shapefile\\network_links_reduced_file.csv')
   tm_loaded_network_df = tm_loaded_network_df.copy().merge(network_links_dbf.copy(), on='a_b', how='left')
 
-  # ______load 2015 network to use for speed comparisons in vmt corrections______
-  run_2015_location = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\2015_TM152_NGF_05"
-  runid_2015 = run_2015_location.split('\\')[-1]
-  loaded_network_2015_df = pd.read_csv(run_2015_location+'/OUTPUT/avgload5period.csv')
-  loaded_network_2015_df = loaded_network_2015_df.rename(columns=lambda x: x.strip())
-
   metrics_dict = {} 
   calculate_map_data(tm_runid, year, tm_loaded_network_df, representative_links_df, metrics_dict)
 
