@@ -36,7 +36,7 @@ import csv
 
 # paths
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns1.xlsx")
+NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
 NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
 
@@ -2960,27 +2960,27 @@ if __name__ == "__main__":
         efficient1_metrics_df = calculate_Efficient1_ratio_travel_time(tm_run_id)
         metrics_df = pd.concat([metrics_df, efficient1_metrics_df])
         
-        # # LOGGER.info("@@@@@@@@@@@@@ E1 Done")
-        # efficient2_metrics_df = calculate_Efficient2_commute_mode_share(tm_run_id)
-        # metrics_df = pd.concat([metrics_df, efficient2_metrics_df])
-        # calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df, metrics_dict)
-        # # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
-        # calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df, metrics_dict)
-        # # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
-        # calculate_Reparative1_dollar_revenues_revinvested(tm_run_id)
-        # # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
-        # calculate_Reparative2_ratio_revenues_revinvested(tm_run_id)
-        # # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
-        # calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict)
-        # # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
-        # safe2_metrics_df = calculate_Safe2_change_in_vmt(tm_run_id)
-        # metrics_df = pd.concat([metrics_df, safe2_metrics_df])
+        # LOGGER.info("@@@@@@@@@@@@@ E1 Done")
+        efficient2_metrics_df = calculate_Efficient2_commute_mode_share(tm_run_id)
+        metrics_df = pd.concat([metrics_df, efficient2_metrics_df])
+        calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df, metrics_dict)
+        # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
+        calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df, metrics_dict)
+        # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
+        calculate_Reparative1_dollar_revenues_revinvested(tm_run_id)
+        # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
+        calculate_Reparative2_ratio_revenues_revinvested(tm_run_id)
+        # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
+        calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict)
+        # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
+        safe2_metrics_df = calculate_Safe2_change_in_vmt(tm_run_id)
+        metrics_df = pd.concat([metrics_df, safe2_metrics_df])
 
-        # # LOGGER.info("@@@@@@@@@@@@@ S2 Done")
+        # LOGGER.info("@@@@@@@@@@@@@ S2 Done")
 
-        # # run function to calculate top level metrics
-        # toplevel_metrics_df = calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df)  # calculate for base run too
-        # metrics_df = pd.concat([metrics_df, toplevel_metrics_df])
+        # run function to calculate top level metrics
+        toplevel_metrics_df = calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_times_df, tm_transit_times_df, tm_loaded_network_df, vmt_hh_df,tm_scen_metrics_df)  # calculate for base run too
+        metrics_df = pd.concat([metrics_df, toplevel_metrics_df])
 
         # _________output table__________
         # TODO: deprecate when all metrics just come through via metrics_df
