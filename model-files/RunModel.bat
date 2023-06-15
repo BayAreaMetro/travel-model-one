@@ -230,7 +230,7 @@ if ERRORLEVEL 2 goto done
 :: Step 4.5: Build initial transit files
 ::
 :: ------------------------------------------------------------------------------------------------------
-
+python CTRAMP\scripts\preprocess\update_transit_line_file.py
 :: Python path specific to network management procedures
 set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
 
@@ -240,29 +240,9 @@ python CTRAMP\scripts\preprocess\list_all_transit_nodes.py
 python CTRAMP\scripts\skims\transitDwellAccess.py NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 if ERRORLEVEL 2 goto done
 
-:: Prepare the highway network for use by the transit network
-runtpp %BASE_SCRIPTS%\skims\PrepHwyNet.job
-if ERRORLEVEL 2 goto done
-
-:: There are some issues with the transit network creation. Skipping the steps.
-goto iter0
-:: this is an extra step created to add pnr nodes to the network manually. Skipping.
-goto transit_network
 :: Create list of PNR lots
-runtpp %BASE_SCRIPTS%\preprocess\CreatePnrList.job
-if ERRORLEVEL 2 goto done
-
-:transit_network
-
-:: Create the transit networks
-runtpp CTRAMP\scripts\skims\BuildTransitNetworks.job
-if ERRORLEVEL 2 goto done
-
-
-call zoneSystem.bat
-:: Build the transit skims
-runtpp CTRAMP\scripts\skims\TransitSkims.job
-if ERRORLEVEL 2 goto done
+::runtpp %BASE_SCRIPTS%\preprocess\CreatePnrList.job
+::if ERRORLEVEL 2 goto done
 
 
 :: ------------------------------------------------------------------------------------------------------

@@ -75,7 +75,7 @@ IF %ITER% EQU POSTPROC (set TRNASSIGNMODE=POSTPROC)
 IF %ITER% EQU %MAXITERATIONS% (set PHTDIFFCOND=0)
 
 echo START TRNASSIGN BuildTransitNetworks %DATE% %TIME% >> ..\..\logs\feedback.rpt
-goto trnassign_loop
+
 :: Prepare the highway network for use by the transit network
 runtpp %BASE_SCRIPTS%\skims\PrepHwyNet.job
 if ERRORLEVEL 2 (
@@ -83,7 +83,7 @@ if ERRORLEVEL 2 (
   goto donedone
 )
 :: Create list of PNR lots
-runtpp %BASE_SCRIPTS%\preprocess\CreatePnrList.job
+::runtpp %BASE_SCRIPTS%\preprocess\CreatePnrList.job
 ::if ERRORLEVEL 2 goto done
 :: Create the transit networks
 runtpp %BASE_SCRIPTS%\skims\BuildTransitNetworks.job
