@@ -232,7 +232,7 @@ if ERRORLEVEL 2 goto done
 :: ------------------------------------------------------------------------------------------------------
 python CTRAMP\scripts\preprocess\update_transit_line_file.py
 :: Python path specific to network management procedures
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+set PYTHONPATH=Z:\projects\ccta\31000190\Jawad\NetworkWrangler\NetworkWrangler-master;Z:\projects\ccta\31000190\Jawad\NetworkWrangler\NetworkWrangler-master\_static
 
 ::renumber the duplicated stop ids in the transt line file
 python CTRAMP\scripts\preprocess\renumber_duplicated_transit_stops.py
