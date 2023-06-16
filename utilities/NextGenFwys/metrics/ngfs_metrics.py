@@ -68,13 +68,13 @@ NGFS_PATHWAY2_TOLLED_ARTERIALS_FILE = pd.read_csv('L:\\Application\\Model_One\\N
 NGFS_OD_CITIES_OF_INTEREST = [
     ['OAKLAND',   'SAN FRANCISCO'],
     ['VALLEJO',   'SAN FRANCISCO'],
-    ['ANTIOCH',   'SAN FRANCISCO'],
+    ['DUBLIN',    'SAN FRANCISCO'],
     ['ANTIOCH',   'OAKLAND'],
     ['SAN JOSE',  'SAN FRANCISCO'],
     ['OAKLAND',   'PALO ALTO'],
     ['OAKLAND',   'SAN JOSE'],
     ['LIVERMORE', 'SAN JOSE'],
-    ['FAIRFIELD', 'DUBLIN'],
+    ['FAIRFIELD', 'RICHMOND'],
     ['SANTA ROSA','SAN FRANCISCO']
 ]
 NGFS_OD_CITIES_OF_INTEREST_DF = pd.DataFrame(
@@ -2612,7 +2612,7 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
         (10, None,          None       )  # toll plaza
     ])
     # NOTE: this is inconsistent with the vmt_vht_metrics.csv road_type for 'non-freeway' which includes
-    # ft [1,2,3,8] as 'freeway' and all others as 'non-freeway'
+    # ft [1,2,3,5,8] as 'freeway' and all others as 'non-freeway'
     # https://github.com/BayAreaMetro/travel-model-one/blob/78fb93e881348f794e3423f3a987753a0eef1255/utilities/RTP/metrics/hwynet.py#L334
 
     LOGGER.debug("  Using facility type categories:\n{}".format(ft_to_grouping_key_df))
