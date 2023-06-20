@@ -66,16 +66,16 @@ NGFS_PATHWAY2_TOLLED_ARTERIALS_FILE = pd.read_csv('L:\\Application\\Model_One\\N
 
 # define origin destination pairs
 NGFS_OD_CITIES_OF_INTEREST = [
-    ['OAKLAND',   'SAN FRANCISCO'],
-    ['VALLEJO',   'SAN FRANCISCO'],
-    ['DUBLIN',    'SAN FRANCISCO'],
-    ['ANTIOCH',   'OAKLAND'],
-    ['SAN JOSE',  'SAN FRANCISCO'],
-    ['OAKLAND',   'PALO ALTO'],
-    ['OAKLAND',   'SAN JOSE'],
-    ['LIVERMORE', 'SAN JOSE'],
-    ['FAIRFIELD', 'RICHMOND'],
-    ['SANTA ROSA','SAN FRANCISCO']
+    ['Central/West Oakland',                           'San Francisco Downtown Area'],
+    ['Vallejo',                                        'San Francisco Downtown Area'],
+    ['Danville, San Ramon, Dublin, and Pleasanton',    'San Francisco Downtown Area'],
+    ['Antioch',                                        'Central/West Oakland'],
+    ['Central San Jose',                               'San Francisco Downtown Area'],
+    ['Central/West Oakland',                           'Palo Alto'],
+    ['Central/West Oakland',                           'Central San Jose'],
+    ['Livermore',                                      'Central San Jose'],
+    ['Fairfield and Vacaville',                        'Richmond'],
+    ['Santa Rosa',                                     'San Francisco Downtown Area']
 ]
 NGFS_OD_CITIES_OF_INTEREST_DF = pd.DataFrame(
     data=NGFS_OD_CITIES_OF_INTEREST,
@@ -121,7 +121,7 @@ AUTO_FINANCE_COST_2020D             = 680
 AUTO_REGISTRATION_TAXES_COST_2020D  = 730
 AUTO_GAS_COST_2020D                 = 1250 # use a model output instead
 
-# TODO: replace use of these constants with Income category specific VOTs
+# TODO: deprecate the use of these in Affordable 2 (don't affect results, just need to clean up the code)
 # sourced from USDOT Benefit-Cost Analysis Guidance  in 2020 dollars
 # chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.transportation.gov/sites/dot.gov/files/2022-03/Benefit%20Cost%20Analysis%20Guidance%202022%20Update%20%28Final%29.pdf
 # inflation adjustment CPI 2020, 2000 reference https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
@@ -140,11 +140,11 @@ A2_CONSTANTS = """
 """
 
 # for households and commercial
-# TODO: placeholders pending adjustment post research
-Q1_MEAN_HOURLY_WAGE_2023D = 16.48544
-Q2_MEAN_HOURLY_WAGE_2023D = 34.40701
-Q3_MEAN_HOURLY_WAGE_2023D = 59.05509
-Q4_MEAN_HOURLY_WAGE_2023D = 144.79832
+# updated 6/19/2023: https://app.asana.com/0/0/1204482774098821/1204820567114779/f
+Q1_MEAN_HOURLY_WAGE_2023D = 15.33286
+Q2_MEAN_HOURLY_WAGE_2023D = 30.05282
+Q3_MEAN_HOURLY_WAGE_2023D = 53.90458
+Q4_MEAN_HOURLY_WAGE_2023D = 114.96050
 
 Q1_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D = .5
 Q2_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D = .5
@@ -1463,9 +1463,9 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
 
     # filter a copy to only those ending in cities of interest
-    trips_ending_in_city_dt_od_travel_time_df = trips_od_travel_time_df.copy().loc[(trips_od_travel_time_df['dest_CITY'] == 'SAN FRANCISCO')|
-                                                                                    (trips_od_travel_time_df['dest_CITY'] == 'OAKLAND')|
-                                                                                    (trips_od_travel_time_df['dest_CITY'] == 'SAN JOSE')]
+    trips_ending_in_city_dt_od_travel_time_df = trips_od_travel_time_df.copy().loc[(trips_od_travel_time_df['dest_CITY'] == 'San Francisco Downtown Area')|
+                                                                                    (trips_od_travel_time_df['dest_CITY'] == 'Central/West Oakland')|
+                                                                                    (trips_od_travel_time_df['dest_CITY'] == 'Central San Jose')]
     # join to epc lookup table
     trips_ending_in_city_dt_od_travel_time_df = pd.merge(left=trips_ending_in_city_dt_od_travel_time_df,
                                                         right=NGFS_EPC_TAZ_DF,
@@ -1533,7 +1533,7 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     trips_od_travel_time_df.loc[ trips_od_travel_time_df.metric_desc.str.startswith('ratio'), 'intermediate/final'] = 'intermediate'
 
     # key is orig_CITY, dest_CITY
-    trips_od_travel_time_df['key']  = trips_od_travel_time_df['orig_CITY'] + "_" + trips_od_travel_time_df['dest_CITY']
+    trips_od_travel_time_df['key']  = trips_od_travel_time_df['orig_CITY'] + " to " + trips_od_travel_time_df['dest_CITY']
     trips_od_travel_time_df.drop(columns=['orig_CITY','dest_CITY'], inplace=True)
 
     trips_od_travel_time_df['modelrun_id'] = tm_run_id
@@ -2044,7 +2044,7 @@ def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df
 
      #  calcuate average across corridors
     n = 0 #counter to serve as denominator 
-    total_travel_time = 0 #sum for numerator
+    sum_of_ratios = 0 #sum for numerator
 
 
     #     iterate through Origin Destination pairs, calculate metrics: average peak travel time, average nonpeak travel time, ratio of the two
@@ -2061,22 +2061,22 @@ def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df
         except:
             avg_tt_peak_ORIG_DEST = 0
             avg_tt_nonpeak_ORIG_DEST = 0
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra','{}_{}'.format(od[0],od[1]),'average peak travel time',year]      = avg_tt_peak_ORIG_DEST
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra','{}_{}'.format(od[0],od[1]),'average nonpeak travel time',year]      = avg_tt_nonpeak_ORIG_DEST
+        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra','{} to {}'.format(od[0],od[1]),'average peak travel time',year]      = avg_tt_peak_ORIG_DEST
+        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra','{} to {}'.format(od[0],od[1]),'average nonpeak travel time',year]      = avg_tt_nonpeak_ORIG_DEST
         if avg_tt_nonpeak_ORIG_DEST == 0:
             ratio_peak_nonpeak = 0
         else:
             ratio_peak_nonpeak = avg_tt_peak_ORIG_DEST/avg_tt_nonpeak_ORIG_DEST
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','{}_{}'.format(od[0],od[1]),'ratio of average peak to nonpeak travel time',year]      = ratio_peak_nonpeak
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'debug step','{}_{}'.format(od[0],od[1]),'observed number of peak trips',year]      = num_peak_trips.sum()
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'debug step','{}_{}'.format(od[0],od[1]),'observed number of nonpeak trips',year]      = num_nonpeak_trips.sum()
+        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','{} to {}'.format(od[0],od[1]),'ratio of average peak to nonpeak travel time',year]      = ratio_peak_nonpeak
+        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'debug step','{} to {}'.format(od[0],od[1]),'observed number of peak trips',year]      = num_peak_trips.sum()
+        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'debug step','{} to {}'.format(od[0],od[1]),'observed number of nonpeak trips',year]      = num_nonpeak_trips.sum()
 
         # for od average calc
         n = n+1
-        total_travel_time = total_travel_time + ratio_peak_nonpeak
+        sum_of_ratios = sum_of_ratios + ratio_peak_nonpeak
 
     # add average across corridors to metric dict
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Average across 10 O-D pairs','ratio_travel_time_peak_nonpeak_across_pairs',year]      = total_travel_time/n
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Average across 10 O-D pairs','ratio_travel_time_peak_nonpeak_across_pairs',year]      = sum_of_ratios/n
 
     # add metric for goods routes: Calculate [Ratio of travel time during peak hours vs. non-peak hours] for 3 truck routes (using link-level)
     # load table with links for each goods route
