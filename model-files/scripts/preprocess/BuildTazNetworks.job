@@ -106,7 +106,9 @@ loop period = 1, 5
         NETO = hwy\avgload@token_period@_taz.net
 
         PHASE = LINKMERGE
-		IF ((COUNTY = 'Alameda' | COUNTY ='Contra Costa') | COUNTY = 'San Joaquin')
+		IF (HAS_TRANSIT = 1)
+			;keep record
+		ELSEIF ((COUNTY = 'Alameda' | COUNTY ='Contra Costa') | COUNTY = 'San Joaquin')
 			IF ((CNTYPE='TAZ' | CNTYPE='TANA') && (FT <>99 ))
 				;keep record
 			ELSE

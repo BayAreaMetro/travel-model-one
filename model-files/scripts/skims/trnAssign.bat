@@ -1,5 +1,6 @@
 echo on
 SET BASE_SCRIPTS=..\..\CTRAMP\scripts
+SET MODEL_DIR=..\..\
 set ALLTIMEPERIODS=AM MD PM EV EA
 set TRNASSIGNITER=0
 set PREVTRNASSIGNITER=NEG1
@@ -9,14 +10,15 @@ set TRNASSIGNMODE=NORMAL
 set TOTMAXTRNITERS=30
 set MAXPATHTIME=240
 set PCT=%%
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+set PYTHON_PATH=Z:\projects\ccta\31000190\R\user_py27
 set TRN_ERRORLEVEL=0
-
+set R_HOME=Z:\projects\ccta\31000190\R\R-4.0.4\bin\x64
 :: AverageNetworkVolumes.job uses PREV_ITER=1 for ITER=1
 set PREV_TRN_ITER=%PREV_ITER%
 IF %ITER% EQU 1 SET PREV_TRN_ITER=0
 
-set ALLTRIPMODES=wlk_com_wlk drv_com_wlk wlk_com_drv wlk_hvy_wlk drv_hvy_wlk wlk_hvy_drv wlk_lrf_wlk drv_lrf_wlk wlk_lrf_drv wlk_exp_wlk drv_exp_wlk wlk_exp_drv wlk_loc_wlk drv_loc_wlk wlk_loc_drv
+set ALLTRIPMODES=wlk_com_wlk 
+::drv_com_wlk wlk_com_drv wlk_hvy_wlk drv_hvy_wlk wlk_hvy_drv wlk_lrf_wlk drv_lrf_wlk wlk_lrf_drv wlk_exp_wlk drv_exp_wlk wlk_exp_drv wlk_loc_wlk drv_loc_wlk wlk_loc_drv
 set ALLTOURMODES=wlk_trn_wlk drv_trn_wlk wlk_trn_drv
 IF NOT DEFINED TRNFASTERTHANFREEFLOW (set TRNFASTERTHANFREEFLOW=0)
 
@@ -106,19 +108,11 @@ if ERRORLEVEL 2 (
   goto donedone
 )
 
-:: And skim
-runtpp %BASE_SCRIPTS%\skims\TransitSkims.job
-if ERRORLEVEL 2 (
-  set TRN_ERRORLEVEL=2
-  goto donedone
-)
-
 :: RUNNING OUT OF SPACE - delete this from the recycle bin too
 set THISDIR=%cd:X:\=X:\Recycle Bin\%
 IF "%THISDIR:~3,11%"=="Recycle Bin" (
   del /Q "%THISDIR%"
 )
-
 
 set SUBDIR=Subdir%TRNASSIGNITER%
 IF NOT EXIST %SUBDIR% mkdir %SUBDIR%
@@ -131,20 +125,24 @@ IF %KEEP_ASGN_DBFS% EQU 1 (
 
 :routelinkMSA
 :: For the final iteration, MSA our link volumes and use that to check for convergence
-if %ITER% EQU %MAXITERATIONS% (
+::if %ITER% EQU %MAXITERATIONS% (
   echo START   routelinkMSA       SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
 
-  python %BASE_SCRIPTS%\skims\routeLinkMSA.py EA %TRNASSIGNITER% %VOLDIFFCOND%
-  python %BASE_SCRIPTS%\skims\routeLinkMSA.py AM %TRNASSIGNITER% %VOLDIFFCOND%
-  python %BASE_SCRIPTS%\skims\routeLinkMSA.py MD %TRNASSIGNITER% %VOLDIFFCOND%
-  python %BASE_SCRIPTS%\skims\routeLinkMSA.py PM %TRNASSIGNITER% %VOLDIFFCOND%
-  python %BASE_SCRIPTS%\skims\routeLinkMSA.py EV %TRNASSIGNITER% %VOLDIFFCOND%
+  python %BASE_SCRIPTS%\skims\routeLinkMSA_Update.py EA %TRNASSIGNITER% %VOLDIFFCOND%
 
-)
+  python %BASE_SCRIPTS%\skims\routeLinkMSA_Update.py AM %TRNASSIGNITER% %VOLDIFFCOND%
+
+  python %BASE_SCRIPTS%\skims\routeLinkMSA_Update.py MD %TRNASSIGNITER% %VOLDIFFCOND%
+  python %BASE_SCRIPTS%\skims\routeLinkMSA_Update.py PM %TRNASSIGNITER% %VOLDIFFCOND%
+  python %BASE_SCRIPTS%\skims\routeLinkMSA_Update.py EV %TRNASSIGNITER% %VOLDIFFCOND%
+
+::)
+
+"%R_HOME%"\RScript.exe --vanilla %BASE_SCRIPTS%\skims\convert_to_dbf.R %MODEL_DIR%\trn\TransitAssignment.iter%ITER%\Subdir%TRNASSIGNITER%\ > create_transitassignment_dbf.log 2>&1
 
 :modifyDwellAccess
 echo START   transitDwellAccess SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
-
+set PYTHONPATH=Z:\projects\ccta\31000190\Jawad\NetworkWrangler\NetworkWrangler-master;Z:\projects\ccta\31000190\Jawad\NetworkWrangler\NetworkWrangler-master\_static
 :: Initialize with header line
 if %TRNASSIGNITER% EQU 0 (
   echo trnAssignIter,timeperiod,mode,PHT,pctPHTdiff,RMSE_IVTT,RMSE_TOTT,AvgPaths,CurrPaths,CurrBoards,PathsFromBoth,PathsFromIter,PathsFromAvg,PHTCriteriaMet > PHT_total.csv
@@ -199,7 +197,11 @@ goto trnassign_loop
 if ERRORLEVEL 2 goto donedone
 
 echo Done transit assignment; LastIters are %LASTITER_AM%, %LASTITER_MD%, %LASTITER_PM%, %LASTITER_EV%, %LASTITER_EA%
-
+runtpp %BASE_SCRIPTS%\skims\TransitSkims.job
+if ERRORLEVEL 2 (
+  set TRN_ERRORLEVEL=2
+  goto donedone
+)
 :copyup
 
 :: for core

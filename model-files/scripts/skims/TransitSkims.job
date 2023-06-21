@@ -269,7 +269,7 @@ loop period = 1,5
           parameters listinput = F
 
           ; use the highway network with the computed bus times 
-          filei neti  = @token_model_dir@\trn\@token_period@_transit_background.net
+          filei neti  = @token_period@_transit_background.net
             
           ; read in the fare matrices
           read file = "@token_model_dir@\trn\transit_faremat.block"

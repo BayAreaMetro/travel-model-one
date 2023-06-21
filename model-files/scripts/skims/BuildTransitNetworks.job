@@ -50,7 +50,7 @@
 
 
 ; time period loop
-loop period = 1, 5
+loop period = 2,2
 
    ; define a two-letter token for each time period
    if (period = 1)   
@@ -134,7 +134,7 @@ loop period = 1, 5
          mode = 1
 
       ; read in the transit stop locations in the line files
-      read file = "%MODEL_DIR%\trn\transitOriginal@token_period@.lin"
+      read file = transit@token_period@.lin
 	  ;read file = "trn\test.lin"
 
    endrun   
@@ -267,11 +267,11 @@ loop period = 1, 5
 
    ; step 5: select two best park and ride locations for each mode and create the support links that are used in skimming/assignment  
    *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=walk          -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_walk.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=express_bus   -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_express_bus.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=light_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_light_rail.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=ferry         -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_ferry.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=heavy_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_heavy_rail.dat
-   *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=commuter_rail -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_commuter_rail.dat
+   ;*gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=express_bus   -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_express_bus.dat
+   ;*gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=light_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_light_rail.dat
+   ;*gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=ferry         -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_ferry.dat
+   ;*gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=heavy_rail    -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_heavy_rail.dat
+   ;*gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=commuter_rail -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_commuter_rail.dat
    
    ; step 6: create KNR access links for local bus from walk access links
    *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\createLocalBusKNRs.awk" @token_period@_transit_suplinks_walk.dat > @token_period@_bus_acclinks_KNR.dat
