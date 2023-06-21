@@ -18,9 +18,9 @@ for lineidx in xrange(len(net.lines)-1, -1, -1):
     _stop_to_idx = {}
     _stop_list   = []
     all_nodes=net.lines[lineidx].listNodeIds(ignoreStops=False)
-    WranglerLogger.info("Updated the first node {} on Line: {} to be a stop".format(_stop_list[all_nodes[0]],net.lines[lineidx].name))
-    _stop_list.append(np.abs(all_nodes[0]))
-    for node in all_nodes[1:]:
+    
+    #_stop_list.append(np.abs(all_nodes[0]))
+    for node in all_nodes:
         node_num=node             
         if node_num not in _stop_to_idx: 
             _stop_to_idx[node_num] = []
@@ -31,7 +31,10 @@ for lineidx in xrange(len(net.lines)-1, -1, -1):
             if np.abs(np.int(node_num)) not in _stop_list:
                 _stop_list.append(np.int(node_num))
                 
-
+    first_node = _stop_list[0]
+    first_stop = np.abs(first_node)
+    _stop_list[0] = first_stop
+    WranglerLogger.info("Updated the first node {} on Line: {} to be a stop".format(_stop_list[0],net.lines[lineidx].name))
     net.lines[lineidx].setNodes(_stop_list)
 
     if net.lines[lineidx].hasDuplicateStops():

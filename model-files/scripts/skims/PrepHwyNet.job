@@ -68,7 +68,7 @@ token_minimum_speed = 3.0
 token_minimum_speed_fwy = 6.0
 
 ; time period loop
-loop period = 1, 5
+loop period = 2,2
 
    ; define a two-letter token for each time period
    if (period = 1)   
@@ -96,7 +96,7 @@ loop period = 1, 5
    
       ; use the same highway network used in the skimming
 ;      neti[1] = "hwy\avgload@token_period@.net"
-      neti[1] = "%MODEL_DIR%\hwy\avgload@token_period@_complete.net"
+      neti[1] = "%MODEL_DIR%\hwy\avgload@token_period@_taz.net"
 
       ; output a time-period-specific transit background network
       neto = "@token_period@_transit_background.net"
@@ -147,14 +147,6 @@ loop period = 1, 5
          endif
 
       endif
-
-      
-      ; set the park-and-ride time to the highway time, except the bridges which the park-and-ride paths ignore
-      ;if (PNROK=1)
-      ;   PNR_TIME = CTIM
-      ;else 
-      ;   PNR_TIME = 9999
-      ;endif
 	  
       ; set the park-and-ride time to the highway time
 	  ; ROADWAY and PNROK are not coded properly so for now pnr time is the highway time on all drivable links

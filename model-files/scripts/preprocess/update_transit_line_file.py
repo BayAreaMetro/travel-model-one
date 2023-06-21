@@ -144,7 +144,8 @@ transit_veh[['Name', 'System',
 
 trans_prefix = transit_veh[['OPERATOR', 'System', 'AM Vehicle Type']]
 trans_prefix = trans_prefix.rename(columns={'Operator': 'Prefix', 
-                                            'AM Vehicle Type': 'VehicleType'}).drop_duplicates().to_csv('transitPrefixToVehicle.csv', index=False)
+                                            'AM Vehicle Type': 'VehicleType'}).drop_duplicates()
+trans_prefix.to_csv('transitPrefixToVehicle.csv', index=False)
 
 ##All vehicle types are included in the transitVehicleToCapacity.csv file already. So not modifying it.
 
