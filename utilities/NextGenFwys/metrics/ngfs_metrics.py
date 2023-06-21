@@ -141,26 +141,35 @@ A2_CONSTANTS = """
 
 # for households and commercial
 # updated 6/19/2023: https://app.asana.com/0/0/1204482774098821/1204820567114779/f
-Q1_MEAN_HOURLY_WAGE_2023D = 15.33286
-Q2_MEAN_HOURLY_WAGE_2023D = 30.05282
-Q3_MEAN_HOURLY_WAGE_2023D = 53.90458
-Q4_MEAN_HOURLY_WAGE_2023D = 114.96050
+Q1_MEDIAN_HOURLY_WAGE_2023D = 15.33286
+Q2_MEDIAN_HOURLY_WAGE_2023D = 30.05282
+Q3_MEDIAN_HOURLY_WAGE_2023D = 53.90458
+Q4_MEDIAN_HOURLY_WAGE_2023D = 114.96050
+
+# BLS wage rates for the following categories
+# source: https://www.bls.gov/oes/current/oes_41860.htm
+HEAVY_TRUCK_OPERATORS_MEAN_HOURLY_WAGE_2023D = 30.83 * INFLATION_FACTOR
+SALES_WORKERS_MEAN_HOURLY_WAGE_2023D = 35.04 * INFLATION_FACTOR
+CONSTRUCTION_WORKERS_MEAN_HOURLY_WAGE_2023D = 39.35 * INFLATION_FACTOR
 
 Q1_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D = .5
 Q2_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D = .5
 Q3_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D = .5
 Q4_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D = .5
-Q1_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D = 1
-Q2_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D = 1
-Q3_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D = 1
+# USDOT calculates value of travel time savings for commercial/business vehicles by expanding  the wage rate to total compensation using a factor of 1.54 (deduced from page 15 and 16)
+# https://www.transportation.gov/sites/dot.gov/files/docs/2016%20Revised%20Value%20of%20Travel%20Time%20Guidance.pdf
+# for simplicity the compensation factor is included below along with the Recommended Values of Travel Time Savings (per person-hour as a percentage of total earnings) 
+HEAVY_TRUCK_OPERATORS_VOT_PCT_HOURLY_WAGE_2023D = 1 * 1.54
+SALES_WORKERS_VOT_PCT_HOURLY_WAGE_2023D = 1 * 1.54
+CONSTRUCTION_WORKERS_VOT_PCT_HOURLY_WAGE_2023D = 1 * 1.54
 
-Q1_HOUSEHOLD_VOT_2023D = Q1_MEAN_HOURLY_WAGE_2023D * Q1_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
-Q2_HOUSEHOLD_VOT_2023D = Q2_MEAN_HOURLY_WAGE_2023D * Q2_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
-Q3_HOUSEHOLD_VOT_2023D = Q3_MEAN_HOURLY_WAGE_2023D * Q3_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
-Q4_HOUSEHOLD_VOT_2023D = Q4_MEAN_HOURLY_WAGE_2023D * Q4_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
-Q1_COMMERCIAL_VOT_2023D = Q1_MEAN_HOURLY_WAGE_2023D * Q1_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
-Q2_COMMERCIAL_VOT_2023D = Q2_MEAN_HOURLY_WAGE_2023D * Q2_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
-Q3_COMMERCIAL_VOT_2023D = Q3_MEAN_HOURLY_WAGE_2023D * Q3_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
+Q1_HOUSEHOLD_VOT_2023D = Q1_MEDIAN_HOURLY_WAGE_2023D * Q1_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
+Q2_HOUSEHOLD_VOT_2023D = Q2_MEDIAN_HOURLY_WAGE_2023D * Q2_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
+Q3_HOUSEHOLD_VOT_2023D = Q3_MEDIAN_HOURLY_WAGE_2023D * Q3_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
+Q4_HOUSEHOLD_VOT_2023D = Q4_MEDIAN_HOURLY_WAGE_2023D * Q4_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
+HEAVY_TRUCK_OPERATORS_VOT_2023D = HEAVY_TRUCK_OPERATORS_MEAN_HOURLY_WAGE_2023D * HEAVY_TRUCK_OPERATORS_VOT_PCT_HOURLY_WAGE_2023D
+SALES_WORKERS_VOT_2023D = SALES_WORKERS_MEAN_HOURLY_WAGE_2023D * SALES_WORKERS_VOT_PCT_HOURLY_WAGE_2023D
+CONSTRUCTION_WORKERS_VOT_2023D = CONSTRUCTION_WORKERS_MEAN_HOURLY_WAGE_2023D * CONSTRUCTION_WORKERS_VOT_PCT_HOURLY_WAGE_2023D
 
 BASE_YEAR       = "2015"
 FORECAST_YEAR   = "2035"
@@ -1034,9 +1043,9 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc2 = 0
     sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc3 = 0
     sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc4 = 0
-    sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc1 = 0
-    sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc2 = 0
-    sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc3 = 0
+    sum_of_weighted_ratio_HEAVY_TRUCK_OPERATORS_time_savings_to_toll_costs = 0
+    sum_of_weighted_ratio_SALES_WORKERS_time_savings_to_toll_costs = 0
+    sum_of_weighted_ratio_CONSTRUCTION_WORKERS_time_savings_to_toll_costs = 0
 
     # for simple average
     sum_of_ratio_auto_time_savings_to_toll_costs = 0
@@ -1044,9 +1053,9 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     sum_of_ratio_auto_time_savings_to_toll_costs_inc2 = 0
     sum_of_ratio_auto_time_savings_to_toll_costs_inc3 = 0
     sum_of_ratio_auto_time_savings_to_toll_costs_inc4 = 0
-    sum_of_ratio_truck_time_savings_to_toll_costs_inc1 = 0
-    sum_of_ratio_truck_time_savings_to_toll_costs_inc2 = 0
-    sum_of_ratio_truck_time_savings_to_toll_costs_inc3 = 0
+    sum_of_ratio_HEAVY_TRUCK_OPERATORS_time_savings_to_toll_costs = 0
+    sum_of_ratio_SALES_WORKERS_time_savings_to_toll_costs = 0
+    sum_of_ratio_CONSTRUCTION_WORKERS_time_savings_to_toll_costs = 0
     sum_of_ratio_hov_time_savings_to_toll_costs = 0
 
     sum_of_weights = 0 #sum of weights (length of corridor) to be used for weighted average 
@@ -1085,7 +1094,7 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         q1_household_travel_time_savings_minor_grouping = time_savings_in_hours * Q1_HOUSEHOLD_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Household','Travel Time Savings (minutes)',year] = time_savings_minutes 
         metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Household','Travel Time Savings (hours)',year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)',year] = Q1_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)',year] = Q1_MEDIAN_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time (% of wage rate)',year] = Q1_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time ($/hr)',year] = Q1_HOUSEHOLD_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time savings',year] = q1_household_travel_time_savings_minor_grouping
@@ -1094,7 +1103,7 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         q2_household_travel_time_savings_minor_grouping = time_savings_in_hours * Q2_HOUSEHOLD_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Household','Travel Time Savings (minutes)',year] = time_savings_minutes 
         metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Household','Travel Time Savings (hours)',year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)',year] = Q2_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)',year] = Q2_MEDIAN_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time (% of wage rate)',year] = Q2_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time ($/hr)',year] = Q2_HOUSEHOLD_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time savings',year] = q2_household_travel_time_savings_minor_grouping
@@ -1103,7 +1112,7 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         q3_household_travel_time_savings_minor_grouping = time_savings_in_hours * Q3_HOUSEHOLD_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Household','Travel Time Savings (minutes)',year] = time_savings_minutes 
         metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Household','Travel Time Savings (hours)',year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)',year] = Q3_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)',year] = Q3_MEDIAN_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time (% of wage rate)',year] = Q3_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time ($/hr)',year] = Q3_HOUSEHOLD_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time savings',year] = q3_household_travel_time_savings_minor_grouping
@@ -1112,37 +1121,37 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         q4_household_travel_time_savings_minor_grouping = time_savings_in_hours * Q4_HOUSEHOLD_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'extra','Household','Travel Time Savings (minutes)',year] = time_savings_minutes 
         metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'extra','Household','Travel Time Savings (hours)',year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)',year] = Q4_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'intermediate','Household','Avg hourly wage ($/hr)',year] = Q4_MEDIAN_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time (% of wage rate)',year] = Q4_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
         metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time ($/hr)',year] = Q4_HOUSEHOLD_VOT_2023D
         metrics_dict[key, 'Travel Time', 'inc4', tm_run_id, metric_id,'intermediate','Household','Monetary Value of travel time savings',year] = q4_household_travel_time_savings_minor_grouping
 
-        # Q1 Commercial Vehicle numerator: travel time savings
-        q1_commercial_travel_time_savings_minor_grouping = time_savings_in_hours * Q1_COMMERCIAL_VOT_2023D
-        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Commercial','Travel Time Savings (minutes)',year] = time_savings_minutes 
-        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'extra','Commercial','Travel Time Savings (hours)',year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','Avg hourly wage ($/hr)',year] = Q1_MEAN_HOURLY_WAGE_2023D
-        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time (% of wage rate)',year] = Q1_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
-        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time ($/hr)',year] = Q1_COMMERCIAL_VOT_2023D
-        metrics_dict[key, 'Travel Time', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time savings',year] = q1_commercial_travel_time_savings_minor_grouping
+        # Heavy Truck Operators numerator: travel time savings
+        HEAVY_TRUCK_OPERATORS_travel_time_savings_minor_grouping = time_savings_in_hours * HEAVY_TRUCK_OPERATORS_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'Heavy Truck Operators', tm_run_id, metric_id,'extra','Business/Commercial','Travel Time Savings (minutes)',year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'Heavy Truck Operators', tm_run_id, metric_id,'extra','Business/Commercial','Travel Time Savings (hours)',year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'Heavy Truck Operators', tm_run_id, metric_id,'intermediate','Business/Commercial','Avg hourly wage ($/hr)',year] = HEAVY_TRUCK_OPERATORS_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'Heavy Truck Operators', tm_run_id, metric_id,'intermediate','Business/Commercial','Monetary Value of travel time (% of wage rate)',year] = HEAVY_TRUCK_OPERATORS_VOT_PCT_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'Heavy Truck Operators', tm_run_id, metric_id,'intermediate','Business/Commercial','Monetary Value of travel time ($/hr)',year] = HEAVY_TRUCK_OPERATORS_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'Heavy Truck Operators', tm_run_id, metric_id,'intermediate','Business/Commercial','Monetary Value of travel time savings',year] = HEAVY_TRUCK_OPERATORS_travel_time_savings_minor_grouping
 
-        # Q2 Commercial Vehicle numerator: travel time savings
-        q2_commercial_travel_time_savings_minor_grouping = time_savings_in_hours * Q2_COMMERCIAL_VOT_2023D
-        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Commercial','Travel Time Savings (minutes)',year] = time_savings_minutes 
-        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'extra','Commercial','Travel Time Savings (hours)',year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','Avg hourly wage ($/hr)',year] = Q2_MEAN_HOURLY_WAGE_2023D
-        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time (% of wage rate)',year] = Q2_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
-        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time ($/hr)',year] = Q2_COMMERCIAL_VOT_2023D
-        metrics_dict[key, 'Travel Time', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time savings',year] = q2_commercial_travel_time_savings_minor_grouping
+        # Sales Workers numerator: travel time savings
+        SALES_WORKERS_travel_time_savings_minor_grouping = time_savings_in_hours * SALES_WORKERS_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'Sales Workers', tm_run_id, metric_id,'extra','Business/Commercial','Travel Time Savings (minutes)',year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'Sales Workers', tm_run_id, metric_id,'extra','Business/Commercial','Travel Time Savings (hours)',year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'Sales Workers', tm_run_id, metric_id,'intermediate','Business/Commercial','Avg hourly wage ($/hr)',year] = SALES_WORKERS_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'Sales Workers', tm_run_id, metric_id,'intermediate','Business/Commercial','Monetary Value of travel time (% of wage rate)',year] = SALES_WORKERS_VOT_PCT_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'Sales Workers', tm_run_id, metric_id,'intermediate','Business/Commercial','Monetary Value of travel time ($/hr)',year] = SALES_WORKERS_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'Sales Workers', tm_run_id, metric_id,'intermediate','Business/Commercial','Monetary Value of travel time savings',year] = SALES_WORKERS_travel_time_savings_minor_grouping
 
-        # Q3 Commercial Vehicle numerator: travel time savings
-        q3_commercial_travel_time_savings_minor_grouping = time_savings_in_hours * Q3_COMMERCIAL_VOT_2023D
-        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Commercial','Travel Time Savings (minutes)',year] = time_savings_minutes 
-        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'extra','Commercial','Travel Time Savings (hours)',year] = time_savings_in_hours
-        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','Avg hourly wage ($/hr)',year] = Q3_MEAN_HOURLY_WAGE_2023D
-        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time (% of wage rate)',year] = Q3_COMMERCIAL_VOT_PCT_HOURLY_WAGE_2023D
-        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time ($/hr)',year] = Q3_COMMERCIAL_VOT_2023D
-        metrics_dict[key, 'Travel Time', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','Monetary Value of travel time savings',year] = q3_commercial_travel_time_savings_minor_grouping
+        # Construction Workers numerator: travel time savings
+        CONSTRUCTION_WORKERS_travel_time_savings_minor_grouping = time_savings_in_hours * CONSTRUCTION_WORKERS_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'Construction Workers', tm_run_id, metric_id,'extra','Business/Commercial','Travel Time Savings (minutes)',year] = time_savings_minutes 
+        metrics_dict[key, 'Travel Time', 'Construction Workers', tm_run_id, metric_id,'extra','Business/Commercial','Travel Time Savings (hours)',year] = time_savings_in_hours
+        metrics_dict[key, 'Travel Time', 'Construction Workers', tm_run_id, metric_id,'intermediate','Business/Commercial','Avg hourly wage ($/hr)',year] = CONSTRUCTION_WORKERS_MEAN_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'Construction Workers', tm_run_id, metric_id,'intermediate','Business/Commercial','Monetary Value of travel time (% of wage rate)',year] = CONSTRUCTION_WORKERS_VOT_PCT_HOURLY_WAGE_2023D
+        metrics_dict[key, 'Travel Time', 'Construction Workers', tm_run_id, metric_id,'intermediate','Business/Commercial','Monetary Value of travel time ($/hr)',year] = CONSTRUCTION_WORKERS_VOT_2023D
+        metrics_dict[key, 'Travel Time', 'Construction Workers', tm_run_id, metric_id,'intermediate','Business/Commercial','Monetary Value of travel time savings',year] = CONSTRUCTION_WORKERS_travel_time_savings_minor_grouping
 
         # calculate the denominator: incremental toll costs (for PA CV and HOV) 
         # by filtering for the links on the corridor and summing across them
@@ -1161,19 +1170,20 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         DA_incremental_toll_costs_inc2_minor_grouping = (DA_incremental_toll_costs_minor_grouping * Q2_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
         DA_incremental_toll_costs_inc3_minor_grouping = (DA_incremental_toll_costs_minor_grouping * Q3_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
         DA_incremental_toll_costs_inc4_minor_grouping = (DA_incremental_toll_costs_minor_grouping * Q4_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
-        LRG_incremental_toll_costs_inc1_minor_grouping = (LRG_incremental_toll_costs_minor_grouping * Q1_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
-        LRG_incremental_toll_costs_inc2_minor_grouping = (LRG_incremental_toll_costs_minor_grouping * Q2_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
-        LRG_incremental_toll_costs_inc3_minor_grouping = (LRG_incremental_toll_costs_minor_grouping * Q3_TOLL_DISCOUNTS_HIGHWAYS_ARTERIALS)
+        # assuming no inc quantile discounts for business/commercial drivers
+        HEAVY_TRUCK_OPERATORS_incremental_toll_costs_minor_grouping = (LRG_incremental_toll_costs_minor_grouping)
+        SALES_WORKERS_incremental_toll_costs_minor_grouping = (LRG_incremental_toll_costs_minor_grouping)
+        CONSTRUCTION_WORKERS_incremental_toll_costs_minor_grouping = (LRG_incremental_toll_costs_minor_grouping)
 
         metrics_dict[key, 'Toll Costs (2023$)', 'inc1', tm_run_id, metric_id,'intermediate','Household','auto_toll_costs',year] = DA_incremental_toll_costs_inc1_minor_grouping
         metrics_dict[key, 'Toll Costs (2023$)', 'inc2', tm_run_id, metric_id,'intermediate','Household','auto_toll_costs',year] = DA_incremental_toll_costs_inc2_minor_grouping
         metrics_dict[key, 'Toll Costs (2023$)', 'inc3', tm_run_id, metric_id,'intermediate','Household','auto_toll_costs',year] = DA_incremental_toll_costs_inc3_minor_grouping
         metrics_dict[key, 'Toll Costs (2023$)', 'inc4', tm_run_id, metric_id,'intermediate','Household','auto_toll_costs',year] = DA_incremental_toll_costs_inc4_minor_grouping
-        metrics_dict[key, 'Toll Costs (2023$)', 'inc1', tm_run_id, metric_id,'intermediate','Commercial','truck_toll_costs',year] = LRG_incremental_toll_costs_inc1_minor_grouping
-        metrics_dict[key, 'Toll Costs (2023$)', 'inc2', tm_run_id, metric_id,'intermediate','Commercial','truck_toll_costs',year] = LRG_incremental_toll_costs_inc2_minor_grouping
-        metrics_dict[key, 'Toll Costs (2023$)', 'inc3', tm_run_id, metric_id,'intermediate','Commercial','truck_toll_costs',year] = LRG_incremental_toll_costs_inc3_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'Heavy Truck Operators', tm_run_id, metric_id,'intermediate','Business/Commercial','truck_toll_costs',year] = HEAVY_TRUCK_OPERATORS_incremental_toll_costs_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'Sales Workers', tm_run_id, metric_id,'intermediate','Business/Commercial','truck_toll_costs',year] = SALES_WORKERS_incremental_toll_costs_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'Construction Workers', tm_run_id, metric_id,'intermediate','Business/Commercial','truck_toll_costs',year] = CONSTRUCTION_WORKERS_incremental_toll_costs_minor_grouping
 
-        metrics_dict[key, 'Toll Costs (2023$)', 'hov', tm_run_id, metric_id,'debug','Houshold','hov_toll_costs',year] = S3_incremental_toll_costs_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'hov', tm_run_id, metric_id,'debug','Household','hov_toll_costs',year] = S3_incremental_toll_costs_minor_grouping
 
         if (DA_incremental_toll_costs_minor_grouping == 0):
             priv_auto_ratio_time_savings_to_toll_costs_minor_grouping = 0
@@ -1182,9 +1192,9 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
             priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc3 = 0
             priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc4 = 0
 
-            comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1 = 0
-            comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc2 = 0
-            comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc3 = 0
+            HEAVY_TRUCK_OPERATORS_ratio_time_savings_to_toll_costs_minor_grouping = 0
+            SALES_WORKERS_ratio_time_savings_to_toll_costs_minor_grouping = 0
+            CONSTRUCTION_WORKERS_ratio_time_savings_to_toll_costs_minor_grouping = 0
             hov_ratio_time_savings_to_toll_costs_minor_grouping = 0
         else:
             # calculate ratios for overall + inc groups and enter into metrics dict 
@@ -1194,9 +1204,9 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
             priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc3 = q3_household_travel_time_savings_minor_grouping/DA_incremental_toll_costs_inc3_minor_grouping
             priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc4 = q4_household_travel_time_savings_minor_grouping/DA_incremental_toll_costs_inc4_minor_grouping
 
-            comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1 = q1_commercial_travel_time_savings_minor_grouping/LRG_incremental_toll_costs_inc1_minor_grouping
-            comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc2 = q2_commercial_travel_time_savings_minor_grouping/LRG_incremental_toll_costs_inc2_minor_grouping
-            comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc3 = q3_commercial_travel_time_savings_minor_grouping/LRG_incremental_toll_costs_inc3_minor_grouping
+            HEAVY_TRUCK_OPERATORS_ratio_time_savings_to_toll_costs_minor_grouping = HEAVY_TRUCK_OPERATORS_travel_time_savings_minor_grouping/HEAVY_TRUCK_OPERATORS_incremental_toll_costs_minor_grouping
+            SALES_WORKERS_ratio_time_savings_to_toll_costs_minor_grouping = SALES_WORKERS_travel_time_savings_minor_grouping/SALES_WORKERS_incremental_toll_costs_minor_grouping
+            CONSTRUCTION_WORKERS_ratio_time_savings_to_toll_costs_minor_grouping = CONSTRUCTION_WORKERS_travel_time_savings_minor_grouping/CONSTRUCTION_WORKERS_incremental_toll_costs_minor_grouping
 
             hov_ratio_time_savings_to_toll_costs_minor_grouping = priv_auto_travel_time_savings_minor_grouping/S3_incremental_toll_costs_minor_grouping
 
@@ -1209,9 +1219,9 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         metrics_dict[key, 'Ratio', 'inc3', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc3
         metrics_dict[key, 'Ratio', 'inc4', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc4
 
-        metrics_dict[key, 'Ratio', 'inc1', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1
-        metrics_dict[key, 'Ratio', 'inc2', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc2
-        metrics_dict[key, 'Ratio', 'inc3', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc3
+        metrics_dict[key, 'Ratio', 'Heavy Truck Operators', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = HEAVY_TRUCK_OPERATORS_ratio_time_savings_to_toll_costs_minor_grouping
+        metrics_dict[key, 'Ratio', 'Sales Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = SALES_WORKERS_ratio_time_savings_to_toll_costs_minor_grouping
+        metrics_dict[key, 'Ratio', 'Construction Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = CONSTRUCTION_WORKERS_ratio_time_savings_to_toll_costs_minor_grouping
         
         # add in metric as $ per minute saved
         metrics_dict[key, 'Ratio', 'inc1', tm_run_id, metric_id,'final','Household','Ratio of toll$ (2023$) to minutes saved',year] = DA_incremental_toll_costs_inc1_minor_grouping / time_savings_minutes
@@ -1219,36 +1229,36 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         metrics_dict[key, 'Ratio', 'inc3', tm_run_id, metric_id,'final','Household','Ratio of toll$ (2023$) to minutes saved',year] = DA_incremental_toll_costs_inc3_minor_grouping / time_savings_minutes
         metrics_dict[key, 'Ratio', 'inc4', tm_run_id, metric_id,'final','Household','Ratio of toll$ (2023$) to minutes saved',year] = DA_incremental_toll_costs_inc4_minor_grouping / time_savings_minutes
 
-        metrics_dict[key, 'Ratio', 'inc1', tm_run_id, metric_id,'final','Commercial','Ratio of toll$ (2023$) to minutes saved',year] = LRG_incremental_toll_costs_inc1_minor_grouping / time_savings_minutes
-        metrics_dict[key, 'Ratio', 'inc2', tm_run_id, metric_id,'final','Commercial','Ratio of toll$ (2023$) to minutes saved',year] = LRG_incremental_toll_costs_inc2_minor_grouping / time_savings_minutes
-        metrics_dict[key, 'Ratio', 'inc3', tm_run_id, metric_id,'final','Commercial','Ratio of toll$ (2023$) to minutes saved',year] = LRG_incremental_toll_costs_inc3_minor_grouping / time_savings_minutes
+        metrics_dict[key, 'Ratio', 'Heavy Truck Operators', tm_run_id, metric_id,'final','Business/Commercial','Ratio of toll$ (2023$) to minutes saved',year] = HEAVY_TRUCK_OPERATORS_incremental_toll_costs_minor_grouping / time_savings_minutes
+        metrics_dict[key, 'Ratio', 'Sales Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of toll$ (2023$) to minutes saved',year] = SALES_WORKERS_incremental_toll_costs_minor_grouping / time_savings_minutes
+        metrics_dict[key, 'Ratio', 'Construction Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of toll$ (2023$) to minutes saved',year] = CONSTRUCTION_WORKERS_incremental_toll_costs_minor_grouping / time_savings_minutes
 
 
-        metrics_dict[key, 'Ratio', grouping3, tm_run_id, metric_id,'final','By Corridor','commercial vehicle',year] = comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1
+        metrics_dict[key, 'Ratio', grouping3, tm_run_id, metric_id,'final','By Corridor','commercial vehicle',year] = HEAVY_TRUCK_OPERATORS_ratio_time_savings_to_toll_costs_minor_grouping
 
         # ----sum up the ratio of tolls and time savings across the corridors for weighted average
 
         # ----calculate average vmt, multiply time savings by it?
 
         sum_of_weighted_ratio_auto_time_savings_to_toll_costs = sum_of_weighted_ratio_auto_time_savings_to_toll_costs + priv_auto_ratio_time_savings_to_toll_costs_minor_grouping * minor_grouping_vmt
-        sum_of_weighted_ratio_truck_time_savings_to_toll_costs = sum_of_weighted_ratio_truck_time_savings_to_toll_costs + comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1 * minor_grouping_vmt
+        sum_of_weighted_ratio_truck_time_savings_to_toll_costs = sum_of_weighted_ratio_truck_time_savings_to_toll_costs + HEAVY_TRUCK_OPERATORS_ratio_time_savings_to_toll_costs_minor_grouping * minor_grouping_vmt
         sum_of_weighted_ratio_hov_time_savings_to_toll_costs = sum_of_weighted_ratio_hov_time_savings_to_toll_costs + hov_ratio_time_savings_to_toll_costs_minor_grouping * minor_grouping_vmt
         sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc1 = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc1 + priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc1 * minor_grouping_vmt
         sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc2 = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc2 + priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc2 * minor_grouping_vmt
         sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc3 = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc3 + priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc3 * minor_grouping_vmt
         sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc4 = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc4 + priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc4 * minor_grouping_vmt
-        sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc1 = sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc1 + comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1 * minor_grouping_vmt
-        sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc2 = sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc2 + comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc2 * minor_grouping_vmt
-        sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc3 = sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc3 + comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc3 * minor_grouping_vmt
+        sum_of_weighted_ratio_HEAVY_TRUCK_OPERATORS_time_savings_to_toll_costs = sum_of_weighted_ratio_HEAVY_TRUCK_OPERATORS_time_savings_to_toll_costs + HEAVY_TRUCK_OPERATORS_ratio_time_savings_to_toll_costs_minor_grouping * minor_grouping_vmt
+        sum_of_weighted_ratio_SALES_WORKERS_time_savings_to_toll_costs = sum_of_weighted_ratio_SALES_WORKERS_time_savings_to_toll_costs + SALES_WORKERS_ratio_time_savings_to_toll_costs_minor_grouping * minor_grouping_vmt
+        sum_of_weighted_ratio_CONSTRUCTION_WORKERS_time_savings_to_toll_costs = sum_of_weighted_ratio_CONSTRUCTION_WORKERS_time_savings_to_toll_costs + CONSTRUCTION_WORKERS_ratio_time_savings_to_toll_costs_minor_grouping * minor_grouping_vmt
 
         sum_of_ratio_auto_time_savings_to_toll_costs += priv_auto_ratio_time_savings_to_toll_costs_minor_grouping
         sum_of_ratio_auto_time_savings_to_toll_costs_inc1 += priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc1
         sum_of_ratio_auto_time_savings_to_toll_costs_inc2 += priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc2
         sum_of_ratio_auto_time_savings_to_toll_costs_inc3 += priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc3
         sum_of_ratio_auto_time_savings_to_toll_costs_inc4 += priv_auto_ratio_time_savings_to_toll_costs_minor_grouping_inc4
-        sum_of_ratio_truck_time_savings_to_toll_costs_inc1 += comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc1
-        sum_of_ratio_truck_time_savings_to_toll_costs_inc2 += comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc2
-        sum_of_ratio_truck_time_savings_to_toll_costs_inc3 += comm_veh_ratio_time_savings_to_toll_costs_minor_grouping_inc3
+        sum_of_ratio_HEAVY_TRUCK_OPERATORS_time_savings_to_toll_costs += HEAVY_TRUCK_OPERATORS_ratio_time_savings_to_toll_costs_minor_grouping
+        sum_of_ratio_SALES_WORKERS_time_savings_to_toll_costs += SALES_WORKERS_ratio_time_savings_to_toll_costs_minor_grouping
+        sum_of_ratio_CONSTRUCTION_WORKERS_time_savings_to_toll_costs += CONSTRUCTION_WORKERS_ratio_time_savings_to_toll_costs_minor_grouping
         sum_of_ratio_hov_time_savings_to_toll_costs += hov_ratio_time_savings_to_toll_costs_minor_grouping
 
         #----sum of weights (vmt of corridor) to be used for weighted average
@@ -1268,9 +1278,9 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'inc2', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc2/sum_of_weights
     metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'inc3', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc3/sum_of_weights
     metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'inc4', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_auto_time_savings_to_toll_costs_inc4/sum_of_weights
-    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'inc1', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc1/sum_of_weights
-    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'inc2', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc2/sum_of_weights
-    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'inc3', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_truck_time_savings_to_toll_costs_inc3/sum_of_weights
+    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'Heavy Truck Operators', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_HEAVY_TRUCK_OPERATORS_time_savings_to_toll_costs/sum_of_weights
+    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'Sales Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_SALES_WORKERS_time_savings_to_toll_costs/sum_of_weights
+    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'Construction Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_CONSTRUCTION_WORKERS_time_savings_to_toll_costs/sum_of_weights
     metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', grouping3, tm_run_id, metric_id,'debug','High Occupancy Vehicle','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_hov_time_savings_to_toll_costs/sum_of_weights
 
     # simple averages
@@ -1278,9 +1288,9 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc2', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_auto_time_savings_to_toll_costs_inc2/n
     metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc3', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_auto_time_savings_to_toll_costs_inc3/n
     metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc4', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_auto_time_savings_to_toll_costs_inc4/n
-    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc1', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_truck_time_savings_to_toll_costs_inc1/n
-    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc2', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_truck_time_savings_to_toll_costs_inc2/n
-    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc3', tm_run_id, metric_id,'final','Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_truck_time_savings_to_toll_costs_inc3/n
+    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'Heavy Truck Operators', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_HEAVY_TRUCK_OPERATORS_time_savings_to_toll_costs/n
+    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'Sales Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_SALES_WORKERS_time_savings_to_toll_costs/n
+    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'Construction Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_CONSTRUCTION_WORKERS_time_savings_to_toll_costs/n
     metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', grouping3, tm_run_id, metric_id,'debug','High Occupancy Vehicle','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_hov_time_savings_to_toll_costs/n
 
 
