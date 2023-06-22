@@ -91,6 +91,7 @@ df_trip_vtoll_freqTable <- df_trips %>%
 df_trip_vtoll_freqTable$n=df_trip_vtoll_freqTable$n/SAMPLESHARE
 
 # print the frequency table to the console
+print("Frequency Table -- cell values represent the number of trips falling within a certain value_toll bin")
 kable(df_trip_vtoll_freqTable, format = "markdown")
 
 
@@ -127,6 +128,7 @@ df_trip_vtoll_freqTable_DrivingHhld <- df_DrivingOnly %>%
 df_trip_vtoll_freqTable_DrivingHhld$n = df_trip_vtoll_freqTable_DrivingHhld$n/SAMPLESHARE
 
 # print the frequency table to the console
+print("Frequency Table -- cell values represent the number of trips falling within a certain value_toll bin, for driving household only")
 kable(df_trip_vtoll_freqTable_DrivingHhld, format = "markdown")
 
 #-----------------------------------------------
@@ -280,6 +282,7 @@ df_vtoll_freqTable <- df_hhldCosts %>%
          vtoll_upper_bound = as.numeric(sub("[^,]+,([^\\)]+).*", "\\1", bin)))
 
 # print the frequency table to console
+print("Frequency Table -- cell values represent the number of households falling within a certain annual_value_toll bin")
 kable(df_vtoll_freqTable, format = "markdown")
 
 # rename the variables to improve clarity
@@ -319,6 +322,7 @@ df_vtoll_freqTable_SimpleGroups <- df_hhldCosts %>%
          vtoll_upper_bound = as.numeric(sub("[^,]+,([^\\)]+).*", "\\1", bin)))
 
 # print the frequency table to console
+print("Frequency Table -- cell values represent the number of households falling within a certain (simplified) annual_value_toll bin")
 kable(df_vtoll_freqTable_SimpleGroups, format = "markdown")
 
 # rename the variables to improve clarity
@@ -363,6 +367,7 @@ df_vNctoll_freqTable_SimpleGroups <- df_hhldCosts %>%
          vNctoll_upper_bound = as.numeric(sub("[^,]+,([^\\)]+).*", "\\1", bin)))
 
 # print the frequency table to console
+print("Frequency Table -- cell values represent the number of households falling within a certain (simplified) annual_valueNcordon_toll bin")
 kable(df_vNctoll_freqTable_SimpleGroups, format = "markdown")
 
 # rename the variables to improve clarity
@@ -407,10 +412,16 @@ num_zeros <- sum(df_hhldCosts$annual_valueNcordon_toll == 0)
 total_records <- nrow(df_hhldCosts)
 percentage_zero <- (num_zeros / total_records) * 100
 
+# Calculate the percentage of records with annual_valueNcordon_toll greater than or equal to 800
+# the number 800 is chosen because: out of all pathways, the highest p90 value was $754 (P4a: All-Lane & Arterial Tolling)
+num_pay800plus        <- sum(df_hhldCosts$annual_valueNcordon_toll >= 800)
+percentage_pay800plus <- (num_pay800plus / total_records ) * 100
+
 # among those who pay 90th percentile, how many of those are low-income
 num_payP90plus       <- sum(df_hhldCosts$annual_valueNcordon_toll >= quantile(df_hhldCosts$annual_valueNcordon_toll, 0.9)) # could be a tiny bit different from total_records*0.1
 num_payP90plus_incQ1 <- sum(df_hhldCosts$annual_valueNcordon_toll >= quantile(df_hhldCosts$annual_valueNcordon_toll, 0.9) & df_hhldCosts$hhld_incQ == 1)
 percentage_payP90plus_incQ1 <- (num_payP90plus_incQ1 / num_payP90plus ) * 100
+
 
 # print to console
 annual_vNctoll_mean
@@ -423,9 +434,12 @@ annual_vNctoll_dropped0s_median
 total_records
 num_zeros
 percentage_zero
+num_pay800plus
+percentage_pay800plus
 num_payP90plus
 num_payP90plus_incQ1
 percentage_payP90plus_incQ1
+
 
 df_vNctoll_stats <- data.frame(
   annual_vNctoll_mean,
@@ -438,6 +452,8 @@ df_vNctoll_stats <- data.frame(
   total_records,
   num_zeros,
   percentage_zero,
+  num_pay800plus,
+  percentage_pay800plus,
   num_payP90plus,
   num_payP90plus_incQ1,
   percentage_payP90plus_incQ1
@@ -491,7 +507,8 @@ df_vNctoll_freqTable_SimpleGroups_incQ1 <- df_hhldCosts_incQ1 %>%
          vNctoll_upper_bound = as.numeric(sub("[^,]+,([^\\)]+).*", "\\1", bin)))
 
 # print the frequency table to console
-kable(df_vNctoll_freqTable_SimpleGroups, format = "markdown")
+print("Frequency Table -- cell values represent the number of incQ1 households falling within a certain (simplified) annual_valueNcordon_toll bin")
+kable(df_vNctoll_freqTable_SimpleGroups_incQ1, format = "markdown")
 
 # rename the variables to improve clarity
 df_vNctoll_freqTable_SimpleGroups_incQ1 <- df_vNctoll_freqTable_SimpleGroups_incQ1 %>%
@@ -610,6 +627,7 @@ df_tCostVsInc_freqTable <- df_hhldCosts %>%
 df_tCostVsInc_freqTable$n = df_tCostVsInc_freqTable$n/SAMPLESHARE
 
 # print the frequency table to console
+print("Frequency Table of transportation costs as a share of household income (Affordable 1) -- call values represent number of households")
 kable(df_tCostVsInc_freqTable, format = "markdown")
 
 # not exporting this one because the data needs to be cleaned
@@ -645,6 +663,7 @@ df_tCostVsInc_NoNegOrZeroInc_freqTable <- df_tCostVsInc_NoNegOrZeroInc_freqTable
   select(bin, lower_bound, upper_bound, n, percentage)
 
 # print the frequency table to console
+print("Frequency Table of transportation costs as a share of household income (Affordable 1) -- call values represent number of households. Note that negative or zero incomes are dropped")
 kable(df_tCostVsInc_NoNegOrZeroInc_freqTable, format = "markdown")
 
 # export
