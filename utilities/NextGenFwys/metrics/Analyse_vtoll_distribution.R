@@ -34,7 +34,7 @@
 # -- percent_hhld
 #
 # (additional outputs need to be documented)
-# for the AG10 slide deck, I used the results from the outputs hhld_vNctoll_stats.csv and hhld_vNctoll_stats_incQ1.csv
+# for the AG10 slide deck, I used the results from the outputs hhld_vNctoll_stats.csv, hhld_vNctoll_stats_incQ1.csv and hhld_vNctoll_percentiles.csv
 #
 # ----------------------------------------------------------------------------------------------------------------
 
@@ -42,13 +42,13 @@ library(dplyr)
 library(knitr) # for the kable function that creates well-formatted tables 
 
 # paths if running this script from command prompt
-#TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
-#TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
+TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
+TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
 
 # for NGF Round 1, the TARGET_DIR are: 
 #TARGET_DIR = "//MODEL2-C/Model2C-Share/Projects/2035_TM152_NGF_NP10_Path4_02"       # new numbering: P1
 #TARGET_DIR = "//MODEL3-C/Model3C-Share/Projects/2035_TM152_NGF_NP10_Path3a_02"      # new numbering: 2A
-TARGET_DIR = "//MODEL3-D/Model3D-Share/Projects/2035_TM152_NGF_NP10_Path3b_02"       # new numbering: 2B
+#TARGET_DIR = "//MODEL3-D/Model3D-Share/Projects/2035_TM152_NGF_NP10_Path3b_02"       # new numbering: 2B
 #TARGET_DIR = "//MODEL3-A/Model3A-Share/Projects/2035_TM152_NGF_NP10_Path1a_02"      # new numbering: 3A
 #TARGET_DIR = "//MODEL3-B/Model3B-Share/Projects/2035_TM152_NGF_NP10_Path1b_02"      # new numbering: P3B
 #TARGET_DIR = "//MODEL2-D/Model2D-Share/Projects/2035_TM152_NGF_NP10_Path2a_02_10pc" # new numbering: P4A
@@ -407,6 +407,11 @@ num_zeros <- sum(df_hhldCosts$annual_valueNcordon_toll == 0)
 total_records <- nrow(df_hhldCosts)
 percentage_zero <- (num_zeros / total_records) * 100
 
+# among those who pay 90th percentile, how many of those are low-income
+num_payP90plus       <- sum(df_hhldCosts$annual_valueNcordon_toll >= quantile(df_hhldCosts$annual_valueNcordon_toll, 0.9)) # could be a tiny bit different from total_records*0.1
+num_payP90plus_incQ1 <- sum(df_hhldCosts$annual_valueNcordon_toll >= quantile(df_hhldCosts$annual_valueNcordon_toll, 0.9) & df_hhldCosts$hhld_incQ == 1)
+percentage_payP90plus_incQ1 <- (num_payP90plus_incQ1 / num_payP90plus ) * 100
+
 # print to console
 annual_vNctoll_mean
 annual_vNctoll_median
@@ -415,8 +420,12 @@ annual_vNctoll_max
 annual_vNctoll_dropped0s_min
 annual_vNctoll_dropped0s_mean
 annual_vNctoll_dropped0s_median
-annual_vNctoll_dropped0s_p10
+total_records
+num_zeros
 percentage_zero
+num_payP90plus
+num_payP90plus_incQ1
+percentage_payP90plus_incQ1
 
 df_vNctoll_stats <- data.frame(
   annual_vNctoll_mean,
@@ -426,13 +435,37 @@ df_vNctoll_stats <- data.frame(
   annual_vNctoll_dropped0s_min,
   annual_vNctoll_dropped0s_mean,
   annual_vNctoll_dropped0s_median,
-  annual_vNctoll_dropped0s_p10,
-  percentage_zero
+  total_records,
+  num_zeros,
+  percentage_zero,
+  num_payP90plus,
+  num_payP90plus_incQ1,
+  percentage_payP90plus_incQ1
 )
 
 # export
 OUTFILE1_vNctoll <- file.path(TARGET_DIR, "updated_output", "hhld_vNctoll_stats.csv")
 write.csv(df_vNctoll_stats , OUTFILE1_vNctoll, row.names = FALSE)
+
+
+# plot it
+# Calculate percentiles
+vNctoll_percentiles <- seq(0, 100, 1)
+vNctoll_values     <- quantile(df_hhldCosts$annual_valueNcordon_toll, probs = vNctoll_percentiles/100)
+
+jpeg(file.path(TARGET_DIR, "updated_output","hhld_vNctoll_percentile_plot.jpg"))
+plot(vNctoll_percentiles, vNctoll_values, type = "o", xlab = "Percentile", ylab = "annual_valueNcordon_toll", main = "Percentile vs. annual_valueNcordon_toll")
+# Save and close the JPEG file
+dev.off()
+
+# Create new data frame for export, for plotting in PPT or Excel
+df_vNctoll_percentiles <- data.frame(vNctollPercentile = vNctoll_percentiles, vNctollValue = vNctoll_values)
+
+# export
+OUTFILE2_vNctoll <- file.path(TARGET_DIR, "updated_output", "hhld_vNctoll_percentiles.csv")
+write.csv(df_vNctoll_percentiles , OUTFILE2_vNctoll, row.names = FALSE)
+
+
 
 
 # ------------------------------------------
@@ -528,6 +561,7 @@ df_vNctoll_stats_incQ1 <- data.frame(
 # export
 OUTFILE1_vNctoll_incQ1 <- file.path(TARGET_DIR, "updated_output", "hhld_vNctoll_stats_incQ1.csv")
 write.csv(df_vNctoll_stats_incQ1 , OUTFILE1_vNctoll_incQ1, row.names = FALSE)
+
 
 
 # ------------------------------------------
