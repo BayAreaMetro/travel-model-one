@@ -23,7 +23,7 @@ all_trnline_data <- data.frame()
 all_trnlink_data <- data.frame()
 trnlink_dbf_data <- data.frame()
 
-for (timeperiod in c("ea","am","md","pm","ev")) {
+for (timeperiod in c("EA","AM","MD","PM","EV")) {
   # read the input dbfs
   filename <- paste0("trnlink",timeperiod,"_ALLMSA.dbf")
   fullfile <- file.path(MODEL_DIR, "trn", filename)
@@ -78,7 +78,7 @@ write.csv(all_trnlink_data, file=outfile, row.names=FALSE, quote=FALSE)
 print(paste("Wrote",outfile))
 
 # split into timeperiods and write dbfs for quickboards
-for (my_tp in c("ea","am","md","pm","ev")) {
+for (my_tp in c("EA","AM","MD","PM","EV")) {
     # columns: A, B, TIME, MODE, FREQ, PLOT, COLOR, STOP_A, STOP_B, DIST, NAME, SEQ, OWNER, AB, ABNAMESEQ, 
     # FULLNAME, SYSTEM, GROUP, VEHTYPE, VEHCAP, PERIODCAP, LOAD, 
     # AB_VOL, AB_BRDA, AB_XITA, AB_BRDB, AB_XITB,
