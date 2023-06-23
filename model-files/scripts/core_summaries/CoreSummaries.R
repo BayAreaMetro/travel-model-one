@@ -512,6 +512,7 @@ add_time <- function(this_timeperiod, input_trips_or_tours, reverse_od=FALSE) {
              (costMode == 9) * wTrnW +
              (costMode == 10) * (1 - reverse_od) * dTrnW +
              (costMode == 10) * (reverse_od) * wTrnD +
+             (costMode == 11) * dTrnW +
              (costMode == 19) * s2Toll +  # taxi uses HOV2TOLL per TripModeChoice UEC
              (costMode == 20) * s2Toll +  # TNC single uses HOV2TOLL per TripModeChoice UEC
              (costMode == 21) * s2Toll)   # TNC shared uses HOV2TOLL per TripModeChoice UEC
