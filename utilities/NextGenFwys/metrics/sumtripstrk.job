@@ -1,0 +1,65 @@
+*del metrics\truck_trips_by_timeperiod.csv
+; Create auto summary based on trips per day by income quartile and mode of:
+; - Average travel time in minutes
+; - Average travel distance in miles
+; - Average travel cost (auto operating cost, NOT including BRIDGE OR VALUE TOLLS)
+; - Total bridge tolls paid (includes cordon tolls)
+; - Total value tolls paid
+;   by mode and income quartile
+;   in year 2000 cents
+;
+
+RUN PGM = MATRIX
+  ; Read truck trips for all time periods
+  FILEI MATI[1] = "nonres\tripstrkEA.tpp"
+  FILEI MATI[2] = "nonres\tripstrkAM.tpp"
+  FILEI MATI[3] = "nonres\tripstrkMD.tpp"
+  FILEI MATI[4] = "nonres\tripstrkPM.tpp"
+  FILEI MATI[5] = "nonres\tripstrkEV.tpp"
+
+
+  FILEO PRINTO[1] = "metrics\truck_trips_by_timeperiod.csv",APPEND=T
+
+  ; Trips EA
+  MW[1]   = (mi.1.vstruck) +
+            ( mi.1.struck) +
+            ( mi.1.mtruck) +
+            ( mi.1.ctruck)
+
+  ; Trips AM
+  MW[2]  = (mi.2.vstruck) +
+            ( mi.2.struck) +
+            ( mi.2.mtruck) +
+            ( mi.2.ctruck)
+
+  ; Trips MD
+  MW[3]  = (mi.3.vstruck) +
+            ( mi.3.struck) +
+            ( mi.3.mtruck) +
+            ( mi.3.ctruck)
+ 
+  ; Trips PM 
+  MW[4]  = (mi.4.vstruck) +
+            ( mi.4.struck) +
+            ( mi.4.mtruck) +
+            ( mi.4.ctruck)
+
+  ; Trips EV
+  MW[5]  = (mi.5.vstruck) +
+            ( mi.5.struck) +
+            ( mi.5.mtruck) +
+            ( mi.5.ctruck)
+
+
+  EA_Truck_Trips   = EA_Truck_Trips   + ROWSUM(1)
+  AM_Truck_Trips   = AM_Truck_Trips   + ROWSUM(2)
+  MD_Truck_Trips   = MD_Truck_Trips   + ROWSUM(3)
+  PM_Truck_Trips   = PM_Truck_Trips   + ROWSUM(4)
+  EV_Truck_Trips   = EV_Truck_Trips   + ROWSUM(5)
+
+
+  ; "EA_Truck_Trips,AM_Truck_Trips,MD_Truck_Trips,PM_Truck_Trips,EV_Truck_Trips"
+  if(I = ZONES) PRINT PRINTO=1 LIST="Mode,EA_Truck_Trips, AM_Truck_Trips, MD_Truck_Trips, PM_Truck_Trips, EV_Truck_Trips"
+  if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= "truck", EA_Truck_Trips(10.2L), AM_Truck_Trips(10.2L),
+  MD_Truck_Trips(10.2L),  PM_Truck_Trips(10.2L), EV_Truck_Trips(10.2L)
+ENDRUN

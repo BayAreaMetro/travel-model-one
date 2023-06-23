@@ -161,7 +161,7 @@ for cnty in CountyList:
   # append the data frames
     if cnty=='San Francisco':
         dummy_df = speedBin_dummy_df
-    else: dummy_df = dummy_df.append(speedBin_dummy_df)
+    else: dummy_df = pd.concat([dummy_df, speedBin_dummy_df])
 
 
 VMTBySpeedBin_allTP_df = pd.merge(VMTBySpeedBin_allTP_df, dummy_df, left_on=['countyName',' speedBin'], right_on=['county_dummy', 'dummy_col'], how='outer')

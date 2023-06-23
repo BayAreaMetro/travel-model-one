@@ -50,7 +50,7 @@ USAGE = r"""
   The script will then output the additional file, metrics\\vmt_vht_metrics(output_suffix).csv
 
   This file additionally has two more columns:
-  * road_type: 'freeway' for facility type (ft) in [1,2,3,8], 'non-freeway' otherwise
+  * road_type: 'freeway' for facility type (ft) in [1,2,8], 'non-freeway' otherwise
   * area_type: 'urban' for area type (at) <= 3, 'suburban' for area type == 4, 'rural' for area type == 5
 
   For example, to get vmt_vht_metrics by TAZ, create a link-to-TAZ mapping file as follows:
@@ -334,7 +334,7 @@ if args.link_mapping:
   # additional groupby columns
   # facility types: https://github.com/BayAreaMetro/modeling-website/wiki/MasterNetworkLookupTables#facility-type-ft
   link_tp_vehclass_mapped_df['road_type'] = 'non-freeway'
-  link_tp_vehclass_mapped_df.loc[ link_tp_vehclass_mapped_df['ft'].isin([1,2,3,8]), 'road_type'] = 'freeway'
+  link_tp_vehclass_mapped_df.loc[ link_tp_vehclass_mapped_df['ft'].isin([1,2,8]), 'road_type'] = 'freeway'
   # area types: https://github.com/BayAreaMetro/modeling-website/wiki/MasterNetworkLookupTables#area-type-at
   link_tp_vehclass_mapped_df['area_type'] = 'unset'
   # note DataFrame.at is a function so can't refer to it that way
