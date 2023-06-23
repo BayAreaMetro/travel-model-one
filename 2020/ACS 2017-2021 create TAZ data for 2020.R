@@ -94,36 +94,35 @@ cpi100         =100000*cpi_correction
     $100,000           $171,876              $171,876*
     ------------------ -------------------   ---------------------------
 
-    * Because the 2017$ equivalent of $60,000 in 2000$ ($91,538) doesn't closely align with 2017 ACS income 
-      categories, households within the $75,000-$99,999 category will be apportioned above and below $91,538. 
-      Using the ACS 2013-2017 PUMS data, the share of households above $91,538 within the $75,000-$99,999 
-      category is 0.3042492.That is, approximately 30 percent of HHs in the $75,000-$99,999 category will be 
-      apportioned above this value (Q3) and 70 percent below it (Q2). The table below compares 2000$ and 2017$.
+    * Because the 2021$ equivalent of $100,000 in 2000$ ($171,876) doesn't closely align with 2021 ACS income 
+      categories, households within the $150,000-$199,999 category will be apportioned above and below $171,876. 
+      Using the ACS 2017-2021 PUMS data, the share of households above $171,876 within the $150,000-$199,999 
+      category is 0.5035511.That is, approximately 50 percent of HHs in the $150,000-$199,999 category will be 
+      apportioned above this value (Q3) and approximately 50 percent below it (Q2). The table below compares 2000$ and 2021$.
 
 Household Income Category Equivalency, 2000$ and 2017$
 
           Year      Lower Bound     Upper Bound
           ----      ------------    -----------
 HHINCQ1   2000      $-inf           $29,999
-          2017      $-inf           $44,999
+          2021      $-inf           $49,999
 HHINCQ2   2000      $30,000         $59,999
-          2017      $45,000         $91,537
+          2021      $50,000         $99,999
 HHINCQ3   2000      $60,000         $99,999
-          2017      $91,538         $149,999
+          2021      $150,000        $171,876
 HHINCQ4   2000      $100,000        $inf
-          2017      $150,000        $inf
+          2021      $171,877        $inf
           ----      -------------   -----------
 
 "
 
-shareabove91538 <- 0.3113032 # Use this value to later divvy up HHs in the 30-60k and 60-100k respective quartiles.
+shareabove171876 <- 0.5035511 # Use this value to later divvy up HHs in the 60-100k and 100k+ respective quartiles.
 
 # Import ACS library for variable inspection
 
-ACS_table <- load_variables(year=2017, dataset="acs5", cache=TRUE)
+ACS_table <- load_variables(year=2021, dataset="acs5", cache=TRUE)
 
-# Set up ACS block group and tract variables for later API download. 
-# Block group calls broken up into 3 groups of <50 variables each, due to API limit
+# Identify the ACS variables
 # Some variables skipped in sequence due to nesting
 
 ACS_BG_variables1 <- paste0("B25009_001E,",     # Total HHs
