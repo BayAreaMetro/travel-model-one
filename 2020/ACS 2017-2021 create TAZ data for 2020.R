@@ -28,6 +28,7 @@ setwd(wd)
 
 suppressMessages(library(tidyverse))
 library(tidycensus)
+library(readxl)
 
 # Set up directories, import TAZ/census block equivalence, install census key, set ACS year,set CPI inflation
 
@@ -47,28 +48,20 @@ ACS_product="5"
 
 USERPROFILE          <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
 BOX_TM               <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
-PBA_TAZ_2010         <- file.path(BOX_TM, "Share Data",   "plan-bay-area-2040", "2010_06_003","tazData.csv")
-parking_2015_data    <- file.path(BOX_TM,"Share Data", "plan-bay-area-2040", "2015_06_002", "tazData.csv")
-PUMS2013_2017 = "M:/Data/Census/PUMS/PUMS 2013-17/pbayarea1317.Rdata"   # 2015 PUMS data for GQ adjustments
+PBA_TAZ_2015         <- file.path(BOX_TM, "Share Data", "plan-bay-area-2050", "tazdata","PBA50_FinalBlueprintLandUse_TAZdata.xlsx")
+#PUMS2013_2017 = "M:/Data/Census/PUMS/PUMS 2013-17/pbayarea1317.Rdata"   # 2015 PUMS data for GQ adjustments
 
 # County FIPS codes for ACS tract API calls
 
-Alameda   <- "001"
-Contra    <- "013"
-Marin     <- "041"
-Napa      <- "055"
-Francisco <- "075"
-Mateo     <- "081"
-Clara     <- "085"
-Solano    <- "095"
-Sonoma    <- "097"
+baycounties <- c("01","13","41","55","75","81","85","95","97")
+state_code <- "06" 
 
-# Bring in PBA (2017) 2010 land use data for county equivalencies and later summaries
+# Bring in PBA 2050 2015 land use data for county equivalencies and other data needs
 # 1=San Francisco; 2=San Mateo; 3=Santa Clara; 4=Alameda; 5=Contra Costa; 6=Solano; 7= Napa; 8=Sonoma; 9=Marin
 
-PBA2010 <- read.csv(PBA_TAZ_2010,header=TRUE) 
+PBA2015 <- read_excel(PBA_TAZ_2015,sheet="census2015") 
 
-PBA2010_county <- PBA2010 %>%                                    # Create and join TAZ/county equivalence
+PBA2015_county <- PBA2015 %>%                                    # Create and join TAZ/county equivalence
   select(ZONE,COUNTY) %>%
   mutate(County_Name=case_when(
     COUNTY==1 ~ "San Francisco",
@@ -82,15 +75,23 @@ PBA2010_county <- PBA2010 %>%                                    # Create and jo
     COUNTY==9 ~ "Marin"
   ))
 
+cpi2000        = 180.20
+cpi2017        = 274.92
+cpi2021        = 309.72
+cpi_correction = cpi2021/cpi2000
+cpi30          =30000*cpi_correction
+cpi60          =60000*cpi_correction
+cpi100         =100000*cpi_correction
+
 
 # Income table - Guidelines for HH income values used from ACS
 "
 
-    2000 income breaks 2017 CPI equivalent   Nearest 2017 ACS breakpoint
+    2000 income breaks 2021 CPI equivalent   Nearest 2021 ACS breakpoint
     ------------------ -------------------   ---------------------------
-    $30,000            $45,769               $45,000
-    $60,000            $91,538               $91,538* 
-    $100,000           $152,564              $150,000
+    $30,000            $51,563               $50,000
+    $60,000            $103,125              $100,000 
+    $100,000           $171,876              $171,876*
     ------------------ -------------------   ---------------------------
 
     * Because the 2017$ equivalent of $60,000 in 2000$ ($91,538) doesn't closely align with 2017 ACS income 
