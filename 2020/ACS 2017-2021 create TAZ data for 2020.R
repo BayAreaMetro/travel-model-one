@@ -110,11 +110,12 @@ HHINCQ4   2000      $100,000        $inf
 
 shareabove171876 <- 0.5035511 # Use this value to later divvy up HHs in the 60-100k and 100k+ respective quartiles.
 
-# Import ACS library for variable inspection
+# Import decennial census (DHC file) and ACS for variable inspection, use to get variable numbers
 
+DHC_table <- load_variables(year=2020, dataset="dhc", cache=TRUE)
 ACS_table <- load_variables(year=2021, dataset="acs5", cache=TRUE)
 
-# Identify the ACS variables
+# Identify the 2020 decennial census variables
 # Some variables skipped in sequence due to nesting
 
 decennial_BG_variables <- c(
@@ -279,7 +280,7 @@ ACS_tract_variables <-c(hhwrks0 = "B08202_002",     # 0-worker HH
                         rentkidsno = "B25012_017"   # Rent without related kids under 18
                         )
 
-dhc_table <- load_variables(year=2020, dataset="dhc", cache=TRUE)
+
 
 sf1_tract_variables <-
   c(gq_noninst_m_0017_univ = "P043010",
