@@ -75,14 +75,6 @@ PBA2015_county <- PBA2015 %>%                                    # Create and jo
     COUNTY==9 ~ "Marin"
   ))
 
-cpi2000        = 180.20
-cpi2017        = 274.92
-cpi2021        = 309.72
-cpi_correction = cpi2021/cpi2000
-cpi30          =30000*cpi_correction
-cpi60          =60000*cpi_correction
-cpi100         =100000*cpi_correction
-
 
 # Income table - Guidelines for HH income values used from ACS
 "
@@ -109,7 +101,7 @@ HHINCQ1   2000      $-inf           $29,999
 HHINCQ2   2000      $30,000         $59,999
           2021      $50,000         $99,999
 HHINCQ3   2000      $60,000         $99,999
-          2021      $150,000        $171,876
+          2021      $100,000        $171,876
 HHINCQ4   2000      $100,000        $inf
           2021      $171,877        $inf
           ----      -------------   -----------
@@ -125,147 +117,154 @@ ACS_table <- load_variables(year=2021, dataset="acs5", cache=TRUE)
 # Identify the ACS variables
 # Some variables skipped in sequence due to nesting
 
-ACS_BG_variables1 <- paste0("B25009_001E,",     # Total HHs
-                      "B11002_001E,",		# HH pop
-                      
-                      "B23025_004E,",   # Employed residents (employed residents is "employed" + "armed forces")
-                      "B23025_006E,", 	# Armed forces
-                      
-                      "B19001_002E,",   # Household income 0 to $10k 
-                      "B19001_003E,",		# Household income $10 to $15k
-                      "B19001_004E,",		# Household income $15 to $20k
-                      "B19001_005E,",		# Household income $20 to $25k
-                      "B19001_006E,",		# Household income $25 to $30k
-                      "B19001_007E,",		# Household income $30 to $35k
-                      "B19001_008E,",		# Household income $35 to $40k
-                      "B19001_009E,",		# Household income $40 to $45k
-                      "B19001_010E,",		# Household income $45 to $50k
-                      "B19001_011E,",		# Household income 50 to $60k
-                      "B19001_012E,",		# Household income 60 to $75k
-                      "B19001_013E,",		# Household income 75 to $100k
-                      "B19001_014E,",		# Household income $100 to $1$25k
-                      "B19001_015E,",		# Household income $1$25 to $150k
-                      "B19001_016E,",		# Household income $150 to $200k
-                      "B19001_017E,",		# Household income $200k+
-                      
-                      "B01001_003E,",   # male aged 0 to 4 
-                      "B01001_004E,",		# male aged 5 to 9 
-                      "B01001_005E,",		# male aged 10 to 14
-                      "B01001_006E,",		# male aged 15 to 17
-                      "B01001_007E,",		# male aged 18 to 19
-                      "B01001_008E,",		# male aged 20 
-                      "B01001_009E,",		# male aged 21 
-                      "B01001_010E,",		# male aged 22 to 24 
-                      "B01001_011E,",		# male aged 25 to 29 
-                      "B01001_012E,",		# male aged 30 to 34 
-                      "B01001_013E,",		# male aged 35 to 39 
-                      "B01001_014E,",		# male aged 40 to 44 
-                      "B01001_015E,",		# male aged 45 to 49 
-                      "B01001_016E,",		# male aged 50 to 54 
-                      "B01001_017E,",		# male aged 55 to 59 
-                      "B01001_018E,",		# male aged 60 to 61 
-                      "B01001_019E,",		# male aged 62 to 64 
-                      "B01001_020E,",		# male aged 65 to 66 
-                      "B01001_021E,",		# male aged 67 to 69 
-                      "B01001_022E,",		# male aged 70 to 74 
-                      "B01001_023E,",		# male aged 75 to 79 
-                      "B01001_024E,",		# male aged 80 to 84 
-                      "B01001_025E,",		# male aged 85+ 
-                      "B01001_027E,",		# female aged 0 to 4 
-                      "B01001_028E,",		# female aged 5 to 9 
-                      "B01001_029E,",		# female aged 10 to 14
-                      "B01001_030E,",		# female aged 15 to 17
-                      "B01001_031E")		# female aged 18 to 19
+decennial_BG_variables <- c(
+# Household totals
+  tothh="H12_001N",   # Total HHs 
+  hhpop="P15_001N",	  # HH pop 
+# Age, male
+  male0_4    ="P12_003N",   # male aged 0 to 4 
+  male5_9    ="P12_004N",		# male aged 5 to 9 
+  male10_14  ="P12_005N",		# male aged 10 to 14
+  male15_17  ="P12_006N",		# male aged 15 to 17
+  male18_19  ="P12_007N",		# male aged 18 to 19
+  male20     ="P12_008N",		# male aged 20 
+  male21     ="P12_009N",		# male aged 21 
+  male22_24  ="P12_010N",		# male aged 22 to 24 
+  male25_29  ="P12_011N",		# male aged 25 to 29 
+  male30_34  ="P12_012N",		# male aged 30 to 34 
+  male35_39  ="P12_013N",		# male aged 35 to 39 
+  male40_44  ="P12_014N",		# male aged 40 to 44 
+  male45_49  ="P12_015N",		# male aged 45 to 49 
+  male50_54  ="P12_016N",		# male aged 50 to 54 
+  male55_59  ="P12_017N",		# male aged 55 to 59 
+  male60_61  ="P12_018N",		# male aged 60 to 61 
+  male62_64  ="P12_019N",		# male aged 62 to 64 
+  male65_66  ="P12_020N",		# male aged 65 to 66 
+  male67_69  ="P12_021N",		# male aged 67 to 69 
+  male70_74  ="P12_022N",		# male aged 70 to 74 
+  male75_79  ="P12_023N",		# male aged 75 to 79 
+  male80_84  ="P12_024N",		# male aged 80 to 84 
+  male85p    ="P12_025N",		# male aged 85+ 
+# Age, female
+female0_4    ="P12_027N",   # female aged 0 to 4 
+female5_9    ="P12_028N",		# female aged 5 to 9 
+female10_14  ="P12_029N",		# female aged 10 to 14
+female15_17  ="P12_030N",		# female aged 15 to 17
+female18_19  ="P12_031N",		# female aged 18 to 19
+female20     ="P12_032N",		# female aged 20 
+female21     ="P12_033N",		# female aged 21 
+female22_24  ="P12_034N",		# female aged 22 to 24 
+female25_29  ="P12_035N",		# female aged 25 to 29 
+female30_34  ="P12_036N",		# female aged 30 to 34 
+female35_39  ="P12_037N",		# female aged 35 to 39 
+female40_44  ="P12_038N",		# female aged 40 to 44 
+female45_49  ="P12_039N",		# female aged 45 to 49 
+female50_54  ="P12_040N",		# female aged 50 to 54 
+female55_59  ="P12_041N",		# female aged 55 to 59 
+female60_61  ="P12_042N",		# female aged 60 to 61 
+female62_64  ="P12_043N",		# female aged 62 to 64 
+female65_66  ="P12_044N",		# female aged 65 to 66 
+female67_69  ="P12_045N",		# female aged 67 to 69 
+female70_74  ="P12_046N",		# female aged 70 to 74 
+female75_79  ="P12_047N",		# female aged 75 to 79 
+female80_84  ="P12_048N",		# female aged 80 to 84 
+female85p    ="P12_049N",		# female aged 85+ 
 
-ACS_BG_variables2 <- paste0("B01001_032E,",     # female aged 20  
-                      "B01001_033E,",         	# female aged 21  
-                      "B01001_034E,",		# female aged 22 to 24
-                      "B01001_035E,",		# female aged 25 to 29
-                      "B01001_036E,",		# female aged 30 to 34
-                      "B01001_037E,",		# female aged 35 to 39
-                      "B01001_038E,",		# female aged 40 to 44
-                      "B01001_039E,",		# female aged 45 to 49
-                      "B01001_040E,",		# female aged 50 to 54
-                      "B01001_041E,",		# female aged 55 to 59
-                      "B01001_042E,",		# female aged 60 to 61
-                      "B01001_043E,",		# female aged 62 to 64
-                      "B01001_044E,",		# female aged 65 to 66
-                      "B01001_045E,",		# female aged 67 to 69
-                      "B01001_046E,",		# female aged 70 to 74
-                      "B01001_047E,",		# female aged 75 to 79
-                      "B01001_048E,",		# female aged 80 to 84
-                      "B01001_049E,",		# female aged 85+ 
+
+"B25024_002",   # 1 unit detached    
+"B25024_003",		# 1 unit attached 
+"B25024_004",		# 2 units
+"B25024_005",		# 3 or 4 units
+"B25024_006",		# 5 to 9 units
+"B25024_007",		# 10 to 19 units
+"B25024_008",		# 20 to 49 units
+"B25024_009",		# 50+ units
+"B25024_010",		# mobile homes
+"B25024_011",		# boats, RVs, vans
+
+"B25009_003",   # own 1 person in HH 	     
+"B25009_004",		# own 2 persons in HH 
+"B25009_005",		# own 3 persons in HH 
+"B25009_006",		# own 4 persons in HH 
+"B25009_007",		# own 5 persons in HH 
+"B25009_008",		# own 6 persons in HH 
+"B25009_009",		# own 7+ persons in HH 
+"B25009_011",		# rent 1 person in HH
+"B25009_012",		# rent 2 persons in HH 
+"B25009_013",		# rent 3 persons in HH 
+"B25009_014",		# rent 4 persons in HH 
+"B25009_015",		# rent 5 persons in HH 
+"B25009_016",		# rent 6 persons in HH 
+"B25009_017")		# rent 7+ persons in HH
+
+"B03002_003",   # White alone, not Hispanic
+"B03002_004",   # Black alone, not Hispanic
+"B03002_006",   # Asian alone, not Hispanic
+"B03002_002",   # Total, not Hispanic
+"B03002_012")   # Total Hispanic
+
+
+ACS_BG_variables <- c(
                       
-                      "B25024_002E,",   # 1 unit detached    
-                      "B25024_003E,",		# 1 unit attached 
-                      "B25024_004E,",		# 2 units
-                      "B25024_005E,",		# 3 or 4 units
-                      "B25024_006E,",		# 5 to 9 units
-                      "B25024_007E,",		# 10 to 19 units
-                      "B25024_008E,",		# 20 to 49 units
-                      "B25024_009E,",		# 50+ units
-                      "B25024_010E,",		# mobile homes
-                      "B25024_011E,",		# boats, RVs, vans
+                      "B23025_004",   # Civilian employed residents (employed residents is "employed" + "armed forces")
+                      "B23025_006", 	# Armed forces
                       
-                      "B25009_003E,",           # own 1 person in HH 	     
-                      "B25009_004E,",		# own 2 persons in HH 
-                      "B25009_005E,",		# own 3 persons in HH 
-                      "B25009_006E,",		# own 4 persons in HH 
-                      "B25009_007E,",		# own 5 persons in HH 
-                      "B25009_008E,",		# own 6 persons in HH 
-                      "B25009_009E,",		# own 7+ persons in HH 
-                      "B25009_011E,",		# rent 1 person in HH
-                      "B25009_012E,",		# rent 2 persons in HH 
-                      "B25009_013E,",		# rent 3 persons in HH 
-                      "B25009_014E,",		# rent 4 persons in HH 
-                      "B25009_015E,",		# rent 5 persons in HH 
-                      "B25009_016E,",		# rent 6 persons in HH 
-                      "B25009_017E")		# rent 7+ persons in HH
+                      "B19001_002",   # Household income 0 to $10k 
+                      "B19001_003",		# Household income $10 to $15k
+                      "B19001_004",		# Household income $15 to $20k
+                      "B19001_005",		# Household income $20 to $25k
+                      "B19001_006",		# Household income $25 to $30k
+                      "B19001_007",		# Household income $30 to $35k
+                      "B19001_008",		# Household income $35 to $40k
+                      "B19001_009",		# Household income $40 to $45k
+                      "B19001_010",		# Household income $45 to $50k
+                      "B19001_011",		# Household income 50 to $60k
+                      "B19001_012",		# Household income 60 to $75k
+                      "B19001_013",		# Household income 75 to $100k
+                      "B19001_014",		# Household income $100 to $1$25k
+                      "B19001_015",		# Household income $1$25 to $150k
+                      "B19001_016",		# Household income $150 to $200k
+                      "B19001_017",		# Household income $200k+
+# Industry, male                      
+                      "C24010_005", # Management
+                      "C24010_006", # Business and financial
+                      "C24010_007", # Computer, engineering, and science
+                      "C24010_012", # community and social service
+                      "C24010_013", # Legal
+                      "C24010_014", # ducation, training, and library
+                      "C24010_015", # Arts, design, entertainment, sports, and media
+                      "C24010_016", # Healthcare practitioners and technical
+                      "C24010_020", # Healthcare support
+                      "C24010_022", # Fire fighting and prevention, and other protectiv
+                      "C24010_023", # Law enforcement workers
+                      "C24010_024", # Food preparation and serving related
+                      "C24010_025", # Building and grounds cleaning and maintenance
+                      "C24010_026", # Personal care and service
+                      "C24010_028", # Sales and related
+                      "C24010_029", # Office and administrative support
+                      "C24010_030", # Natural resources, construction, and maintenance
+                      "C24010_034", # Production, transportation, and material moving
+# Industry, female                      
+                      "C24010_041", # Management
+                      "C24010_042", # Business and financial
+                      "C24010_043", # Computer, engineering, and science
+                      "C24010_048", # community and social service
+                      "C24010_049", # Legal
+                      "C24010_050", # Education, training, and library
+                      "C24010_051", # Arts, design, entertainment, sports, and media
+                      "C24010_052", # Healthcare practitioners and technical
+                      "C24010_056", # Healthcare support
+                      "C24010_058", # Fire fighting and prevention, and other protectiv
+                      "C24010_059", # Law enforcement workers
+                      "C24010_060", # Food preparation and serving related
+                      "C24010_061", # Building and grounds cleaning and maintenance
+                      "C24010_062", # Personal care and service
+                      "C24010_064", # Sales and related
+                      "C24010_065", # Office and administrative support
+                      "C24010_066", # Natural resources, construction, and maintenance
+                      "C24010_070",  # Production, transportation, and material moving
                       
-                      # these skip some numbers since there are nested levels
-ACS_BG_variables3 <- paste0("C24010_005E,", # Management
-                      "C24010_006E,", # Business and financial
-                      "C24010_007E,", # Computer, engineering, and science
-                      "C24010_012E,", # community and social service
-                      "C24010_013E,", # Legal
-                      "C24010_014E,", # Education, training, and library
-                      "C24010_015E,", # Arts, design, entertainment, sports, and media
-                      "C24010_016E,", # Healthcare practitioners and technical
-                      "C24010_020E,", # Healthcare support
-                      "C24010_022E,", # Fire fighting and prevention, and other protectiv
-                      "C24010_023E,", # Law enforcement workers
-                      "C24010_024E,", # Food preparation and serving related
-                      "C24010_025E,", # Building and grounds cleaning and maintenance
-                      "C24010_026E,", # Personal care and service
-                      "C24010_028E,", # Sales and related
-                      "C24010_029E,", # Office and administrative support
-                      "C24010_030E,", # Natural resources, construction, and maintenance
-                      "C24010_034E,", # Production, transportation, and material moving
-                      
-                      "C24010_041E,", # Management
-                      "C24010_042E,", # Business and financial
-                      "C24010_043E,", # Computer, engineering, and science
-                      "C24010_048E,", # community and social service
-                      "C24010_049E,", # Legal
-                      "C24010_050E,", # Education, training, and library
-                      "C24010_051E,", # Arts, design, entertainment, sports, and media
-                      "C24010_052E,", # Healthcare practitioners and technical
-                      "C24010_056E,", # Healthcare support
-                      "C24010_058E,", # Fire fighting and prevention, and other protectiv
-                      "C24010_059E,", # Law enforcement workers
-                      "C24010_060E,", # Food preparation and serving related
-                      "C24010_061E,", # Building and grounds cleaning and maintenance
-                      "C24010_062E,", # Personal care and service
-                      "C24010_064E,", # Sales and related
-                      "C24010_065E,", # Office and administrative support
-                      "C24010_066E,", # Natural resources, construction, and maintenance
-                      "C24010_070E,",  # Production, transportation, and material moving
-                      
-                      "B03002_003E,",   # White alone, not Hispanic
-                      "B03002_004E,",   # Black alone, not Hispanic
-                      "B03002_006E,",   # Asian alone, not Hispanic
-                      "B03002_002E,",   # Total, not Hispanic
-                      "B03002_012E")   # Total Hispanic
+
                       
 
 
@@ -280,7 +279,7 @@ ACS_tract_variables <-c(hhwrks0 = "B08202_002",     # 0-worker HH
                         rentkidsno = "B25012_017"   # Rent without related kids under 18
                         )
 
-sf1_table <- load_variables(year=2010, dataset="sf1", cache=TRUE)
+dhc_table <- load_variables(year=2020, dataset="dhc", cache=TRUE)
 
 sf1_tract_variables <-
   c(gq_noninst_m_0017_univ = "P043010",
@@ -364,93 +363,6 @@ tract_index <- ACS_tract_raw %>%
       ) %>%
   select(county,tract)
 
-# Manual function for converting API calls into data frame (due to tidycensus not working for county -> block group downloads)
-# The "geography_fields" argument helps convert relevant (variable, not geographic) columns to numeric format
-
-f.data <- function(url,geography_fields){  
-  furl <- content(RETRY("GET",url,times=10))         # Retry the API up to 10 times to overcome choking of API call
-  for (i in 1:length(furl)){
-    if (i==1) header <- furl [[i]]
-    if (i==2){
-      temp <- lapply(furl[[i]], function(x) ifelse(is.null(x), NA, x))
-      output_data <- data.frame(temp, stringsAsFactors=FALSE)
-      names (output_data) <- header
-    }
-    if (i>2){
-      temp <- lapply(furl[[i]], function(x) ifelse(is.null(x), NA, x))
-      tempdf <- data.frame(temp, stringsAsFactors=FALSE)
-      names (tempdf) <- header
-      output_data <- rbind (output_data,tempdf)
-    }
-  }
-  for(j in 2:(ncol(output_data)-geography_fields)) {
-    output_data[,j] <- as.numeric(output_data[,j])
-  }
-  return (output_data)
-}
-
-# Function for creating URLs to pass into tract -> block group API calls
-
-f.url <- function (ACS_BG_variables,county,tract) {paste0("https://api.census.gov/data/",ACS_year,"/acs/acs",ACS_product,"?get=NAME,",
-                                                   ACS_BG_variables,"&for=block%20group:*&in=state:",state,"%20county:",county,
-                                                   "%20tract:",tract,"&key=",censuskey)}
-
-# Create wrapper to either perform API calls or not depending on presence of cached block group data
-# Block group calls done for all 1588 Bay Area tracts (done in 3 tranches because API limited to calls of 50 variables)
-# The "4" in the call refers to the number of columns at the end of the API call devoted to geography (not numeric)
-# Numeric values are changed by the f.data function from character to numeric
-# Note that, because the API call process is so long, these data are also saved in the working directory (Petrale)
-# Calls 1-3 are saved in "ACS 2013-2017 Block Group Vars1-3", respectively
-
-# Call 1
-
-if (file.exists("ACS 2013-2017 Block Group Vars1.csv")) {source("Import block group data.R")
-  } else {                      # Wrapper checks for cached block group variables, then runs a script to import them
-                                # Only checks for first of three BG files, but that should be sufficient
-                                # Else run the API block group calls to retrieve the data
-for(k in 1:nrow(tract_index)) {  
-  if (k==1) {
-    bg_df1 <- f.data(f.url(ACS_BG_variables1,tract_index[k,"county"],tract_index[k,"tract"]),4)
-  }
-  if (k>=2) {
-    subsequent_df <- f.data(f.url(ACS_BG_variables1,tract_index[k,"county"],tract_index[k,"tract"]),4)
-    bg_df1 <- rbind(bg_df1,subsequent_df)
-  }
-  if (k%%10==0) {print(paste(k, "tracts have been called for Call 1"))} # Monitor progress of this step, as it's long.
-}
-
-# Call 2
-
-for(k in 1:nrow(tract_index)) {
-  if (k==1) {
-    bg_df2 <- f.data(f.url(ACS_BG_variables2,tract_index[k,"county"],tract_index[k,"tract"]),4)
-  }
-  if (k>=2) {
-    subsequent_df <- f.data(f.url(ACS_BG_variables2,tract_index[k,"county"],tract_index[k,"tract"]),4)
-    bg_df2 <- rbind(bg_df2,subsequent_df)
-  }
-  if (k%%10==0) {print(paste(k, "tracts have been called for Call 2"))} # Monitor progress of this step, as it's long.
-}
-
-# Call 3
-
-for(k in 1:nrow(tract_index)) {
-  if (k==1) {
-    bg_df3 <- f.data(f.url(ACS_BG_variables3,tract_index[k,"county"],tract_index[k,"tract"]),4)
-  }
-  if (k>=2) {
-    subsequent_df <- f.data(f.url(ACS_BG_variables3,tract_index[k,"county"],tract_index[k,"tract"]),4)
-    bg_df3 <- rbind(bg_df3,subsequent_df)
-  }
-  if (k%%10==0) {print(paste(k, "tracts have been called for Call 3"))} # Monitor progress of this step, as it's long.
-}
-  
-}                                   # End of wrapper
-
-# Combine three data tranches into single data frame
-
-ACS_BG_preraw <- left_join (bg_df1,bg_df2,by=c("NAME","state","county","block group","tract"))
-ACS_BG_preraw <- left_join (ACS_BG_preraw,bg_df3,by=c("NAME","state","county","block group","tract"))
 
 
 # Rename block group variables 
