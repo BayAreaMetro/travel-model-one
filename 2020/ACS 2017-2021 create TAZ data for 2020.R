@@ -1,5 +1,6 @@
-# ACS 2013-2017 create TAZ data for 2015.R
-# Create "2015" TAZ data from ACS 2013-2017 
+# ACS 2017-2021 create TAZ data for 2020.R
+# Create "2020" TAZ data from ACS 2013-2017 
+# SI
 
 # Notes
 
@@ -10,41 +11,39 @@ setwd(wd)
 
 "
 
-1. ACS data here is downloaded for the 2013-2017 5-year dataset. The end year can be updated 
+1. ACS data here is downloaded for the 2017-2021 5-year dataset. The end year can be updated 
    by changing the *ACS_year* variable. 
 
 2. ACS block group variables used in all instances where not suppressed. If suppressed at the block group 
    level, tract-level data used instead. Suppressed variables may change if ACS_year is changed. This 
    should be checked, as this change could cause the script not to work.
 
-3. Group quarters data start with the decennial census data. There are some small TAZ-specific 
-   additions from university growth that are incorporated in the script, and then TAZs are scaled up to match 
-   ACS 2013-2017 county-level totals. 
+3. Different than the effort for 2015, many small area variables (such as age, total population, etc.) are
+   available from Census 2020 data. 
+
+4. TAZs are scaled up to match Census 2020 totals (possibly small area, but may be at the county level). 
    
 "
 # Import Libraries
 
 suppressMessages(library(tidyverse))
 library(tidycensus)
-library(httr)
 
 # Set up directories, import TAZ/census block equivalence, install census key, set ACS year,set CPI inflation
 
 employment_2015_data           <- "M:/Data/BusinessData/Employment_by_TAZ_industry/BusinessData_2015_TAZ_industry_noincommute.csv"
 school_2015_data               <- file.path(wd,"School Enrollment","tazData_enrollment.csv")
 
-blockTAZ2010         <- "M:/Data/GIS layers/TM1_taz_census2010/block_to_TAZ1454.csv"
+blockTAZ2010         <- "M:/Data/GIS layers/TM1_taz_census2010/2010block_to_TAZ1454.csv"
+blockTAZ2020         <- "M:/Data/GIS layers/TM1_taz_census2020/2020block_to_TAZ1454.csv"
 censuskey            <- readLines("M:/Data/Census/API/api-key.txt")
 baycounties          <- c("01","13","41","55","75","81","85","95","97")
+state                <- "06"
 census_api_key(censuskey, install = TRUE, overwrite = TRUE)
 
-ACS_year <- 2017
-sf1_year <- 2010
+ACS_year <- 2021
+sf1_year <- 2020
 ACS_product="5"
-state="06"
-CPI_current <- 274.92  # CPI value for 2017
-CPI_reference <- 180.20 # CPI value for 2000
-CPI_ratio <- CPI_current/CPI_reference # 2017 CPI/2000 CPI
 
 USERPROFILE          <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
 BOX_TM               <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
