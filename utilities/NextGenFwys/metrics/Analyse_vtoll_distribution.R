@@ -414,13 +414,17 @@ percentage_zero <- (num_zeros / total_records) * 100
 
 # Calculate the percentage of records with annual_valueNcordon_toll greater than or equal to 800
 # the number 800 is chosen because: out of all pathways, the highest p90 value was $754 (P4a: All-Lane & Arterial Tolling)
-num_pay800plus        <- sum(df_hhldCosts$annual_valueNcordon_toll >= 800)
-percentage_pay800plus <- (num_pay800plus / total_records ) * 100
+num_pay800plus                 <- sum(df_hhldCosts$annual_valueNcordon_toll >= 800)
+percentage_pay800plus_outOfTot <- (num_pay800plus / total_records ) * 100
+
+# among those who pay more than $800, how many of those are low-income
+num_pay800plus_incQ1                   <- sum(df_hhldCosts$annual_valueNcordon_toll >= 800 & df_hhldCosts$hhld_incQ == 1)
+percentage_pay800plus_incQ1_outOfSubgp <- (num_pay800plus_incQ1 / num_pay800plus ) * 100
 
 # among those who pay 90th percentile, how many of those are low-income
-num_payP90plus       <- sum(df_hhldCosts$annual_valueNcordon_toll >= quantile(df_hhldCosts$annual_valueNcordon_toll, 0.9)) # could be a tiny bit different from total_records*0.1
-num_payP90plus_incQ1 <- sum(df_hhldCosts$annual_valueNcordon_toll >= quantile(df_hhldCosts$annual_valueNcordon_toll, 0.9) & df_hhldCosts$hhld_incQ == 1)
-percentage_payP90plus_incQ1 <- (num_payP90plus_incQ1 / num_payP90plus ) * 100
+num_payP90plus                         <- sum(df_hhldCosts$annual_valueNcordon_toll >= quantile(df_hhldCosts$annual_valueNcordon_toll, 0.9)) # could be a tiny bit different from total_records*0.1
+num_payP90plus_incQ1                   <- sum(df_hhldCosts$annual_valueNcordon_toll >= quantile(df_hhldCosts$annual_valueNcordon_toll, 0.9) & df_hhldCosts$hhld_incQ == 1)
+percentage_payP90plus_incQ1_outOfSubgp <- (num_payP90plus_incQ1 / num_payP90plus ) * 100
 
 
 # print to console
@@ -435,10 +439,12 @@ total_records
 num_zeros
 percentage_zero
 num_pay800plus
-percentage_pay800plus
+percentage_pay800plus_outOfTot
+num_pay800plus_incQ1
+percentage_pay800plus_incQ1_outOfSubgp
 num_payP90plus
 num_payP90plus_incQ1
-percentage_payP90plus_incQ1
+percentage_payP90plus_incQ1_outOfSubgp
 
 
 df_vNctoll_stats <- data.frame(
@@ -453,10 +459,12 @@ df_vNctoll_stats <- data.frame(
   num_zeros,
   percentage_zero,
   num_pay800plus,
-  percentage_pay800plus,
+  percentage_pay800plus_outOfTot,
+  num_pay800plus_incQ1,
+  percentage_pay800plus_incQ1_outOfSubgp,
   num_payP90plus,
   num_payP90plus_incQ1,
-  percentage_payP90plus_incQ1
+  percentage_payP90plus_incQ1_outOfSubgp
 )
 
 # export
