@@ -195,8 +195,8 @@ loop period = 2,2
       ; to avoid numerous errors for long run times caused by the PNR_TIME values, which
       ; are artificially increased to prevent PNR over bridges
       ;read file = "trn\transit_converted_2.lin"
-      ;read file = "%MODEL_DIR%\trn\transit_dummy.lin"
-	  read file = "%MODEL_DIR%\trn\test.lin"
+      read file = "%MODEL_DIR%\trn\transit_dummy.lin"
+	  ;read file = "%MODEL_DIR%\trn\test.lin"
 	  
    endrun   
    
