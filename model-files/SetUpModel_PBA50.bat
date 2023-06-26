@@ -15,7 +15,7 @@ set AddStrategies=Yes
 set GITHUB_DIR=Z:\projects\ccta\31000190\Jawad\travel-model-one
 set ALL_BCM_INPUTS=Z:\projects\ccta\31000190\BCM_Inputs
 set ALL_TEMP_INPUTS=Z:\projects\ccta\31000190\BCM_Static_Data
-
+set Software_Dir=Z:\projects\ccta\31000190\BCM_Software
 
 :: set the location of the networks (make sure the network version, year and variant are correct); currently set to the SharePoint location. 
 set INPUT_NETWORK=%ALL_BCM_INPUTS%\Base Network Externals
@@ -27,8 +27,6 @@ set INPUT_LU=%ALL_BCM_INPUTS%\FINAL 2015 LANDUSE FILES
 set INPUT_POP=%ALL_BCM_INPUTS%\INPUT_POP
 ::Inputs for the nonres models
 set INPUT_NONRES=%ALL_BCM_INPUTS%\nonres
-::Transit Skimming is done separately for now. Delete the next line in the final update
-set TRANSIT_SKIMS=%ALL_TEMP_INPUTS%\BCM Transit Skims
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
 set UrbanSimScenario=s24
@@ -67,6 +65,7 @@ mkdir %M_DIR%
 cd /d %M_DIR%
 :: copy over CTRAMP
 mkdir CTRAMP\model
+mkdir Software
 mkdir CTRAMP\runtime
 mkdir CTRAMP\scripts
 mkdir CTRAMP\scripts\metrics
@@ -74,6 +73,7 @@ c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\model"       CTRAM
 c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\runtime"     CTRAMP\runtime
 c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\scripts"     CTRAMP\scripts
 c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\RTP\metrics"   CTRAMP\scripts\metrics
+c:\windows\system32\Robocopy.exe /E "%Software_Dir%"       				   Software
 copy /Y "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"                CTRAMP\scripts
 copy /Y "%GITHUB_DIR%\model-files\RunIteration.bat"                        CTRAMP
 copy /Y "%GITHUB_DIR%\model-files\RunModel.bat"                            .
@@ -105,28 +105,25 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_TRN%"                               
 c:\windows\system32\Robocopy.exe /E "%INPUT_POP%"                                       		INPUT\popsyn
 c:\windows\system32\Robocopy.exe /E "%INPUT_LU%"                                      			INPUT\landuse
 copy "%INPUT_POP%"\hhFile2015.csv																INPUT\popsyn\hhFile.2015.csv
-copy "%INPUT_POP%"\personFile2015.csv																INPUT\popsyn\personFile.2015.csv
-c:\windows\system32\Robocopy.exe /E "%INPUT_NONRES%"                   			INPUT\nonres
+copy "%INPUT_POP%"\personFile2015.csv															INPUT\popsyn\personFile.2015.csv
+c:\windows\system32\Robocopy.exe /E "%INPUT_NONRES%"                   							INPUT\nonres
 ::need to update the maximum telecommute rate for San Joaquin County in the telecommute_max_rate_county.csv file
 ::right now using the same values as Marin
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\telecommute"   		   INPUT\landuse
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\telecommute"   		   				INPUT\landuse
 :: nonres
-c:\windows\system32\Robocopy.exe /E "%PREV_RUN_DIR%\tm15_nonres"                   			INPUT\nonres\tm15
+c:\windows\system32\Robocopy.exe /E "%PREV_RUN_DIR%\tm15_nonres"                   				INPUT\nonres\tm15
 
 :: logsums and metrics
 c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\logsums_dummies"                    INPUT\logsums
 c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\metrics\metrics_FinalBlueprint"     INPUT\metrics
 :: copy the temporary transit skims to M_DIR. Created skims directory.
 mkdir skims
-c:\windows\system32\Robocopy.exe /E "%TRANSIT_SKIMS%"     										skims
 :: warmstart (copy from the previous run)
 mkdir INPUT\warmstart\main
 mkdir INPUT\warmstart\nonres
-mkdir INPUT\warmstart\skims
-copy /Y "%PREV_RUN_DIR%\main\*.tpp"                                                       	INPUT\warmstart\main
-copy /Y "%PREV_RUN_DIR%\nonres\*.tpp"                                                     	INPUT\warmstart\nonres
-copy /Y "%PREV_RUN_DIR%\main\*.dat" 														INPUT\warmstart\main
-copy /Y "%PREV_RUN_DIR%\skims\*.tpp" 														INPUT\warmstart\skims
+copy /Y "%PREV_RUN_DIR%\main\*.tpp"                                                       		INPUT\warmstart\main
+copy /Y "%PREV_RUN_DIR%\nonres\*.tpp"                                                     		INPUT\warmstart\nonres
+copy /Y "%PREV_RUN_DIR%\main\*.dat" 															INPUT\warmstart\main
 del INPUT\warmstart\nonres\ixDaily2015.tpp
 del INPUT\warmstart\nonres\ixDailyx4.tpp 
 

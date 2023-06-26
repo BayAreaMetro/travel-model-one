@@ -23,7 +23,7 @@ echo HOST_IP_ADDRESS: %HOST_IP_ADDRESS%
 
 :: Set local vs distributed run type. Only local option is implemented for BCM
 set RUNTYPE=LOCAL
-
+set MODEL_DIR=%CD%
 :: Set the path
 call CTRAMP\runtime\SetPath.bat
 
@@ -38,7 +38,7 @@ set computer_prefix=%computername:~0,4%
 set INSTANCE=%COMPUTERNAME%
 
 :: Figure out the model year
-set MODEL_DIR=%CD%
+
 set PROJECT_DIR=%~p0
 set PROJECT_DIR2=%PROJECT_DIR:~0,-1%
 :: get the base dir only
@@ -232,7 +232,7 @@ if ERRORLEVEL 2 goto done
 :: ------------------------------------------------------------------------------------------------------
 python CTRAMP\scripts\preprocess\update_transit_line_file.py
 :: Python path specific to network management procedures
-set PYTHONPATH=Z:\projects\ccta\31000190\Jawad\NetworkWrangler\NetworkWrangler-master;Z:\projects\ccta\31000190\Jawad\NetworkWrangler\NetworkWrangler-master\_static
+set PYTHONPATH=Z:\projects\ccta\31000190\BCM_Inputs\NetworkWrangler\NetworkWrangler-master;Z:\projects\ccta\31000190\BCM_Inputs\NetworkWrangler\NetworkWrangler-master\_static
 
 ::renumber the duplicated stop ids in the transt line file
 python CTRAMP\scripts\preprocess\renumber_duplicated_transit_stops.py
