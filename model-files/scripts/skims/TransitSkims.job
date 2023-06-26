@@ -85,7 +85,7 @@ token_trnassigniter = '%TRNASSIGNITER%'
 token_prevtrnassigniter = '%PREVTRNASSIGNITER%'
 
 counter = 0
-*Cluster.exe CTRAMP 1-15 start exit
+;*Cluster.exe CTRAMP 1-15 start exit
 ; time period loop
 loop period = 1,5
 
@@ -128,7 +128,7 @@ loop period = 1,5
     counter = 3 * (period - 1) + accegg
 
     ; distribute the tasks
-    DistributeMultistep processid = "CTRAMP", processnum = counter
+    ;DistributeMultistep processid = "CTRAMP", processnum = counter
 
       ; line haul loop
       loop path = 1,6
@@ -592,28 +592,28 @@ loop period = 1,5
         *del trnskm@token_period@_@token_access@_@token_path@_@token_egress@.avg.iter@token_prevtrnassigniter@.tpp
 
       endloop ; line haul loop
-    EndDistributeMultistep
+    ;EndDistributeMultistep
   endloop ; access/egress loop 
 endloop ; time period loop
    
-wait4files files = CTRAMP1.script.end, 
-   	              CTRAMP2.script.end, 
-   	              CTRAMP3.script.end, 
-   	              CTRAMP4.script.end, 
-   	              CTRAMP5.script.end, 
-   	              CTRAMP6.script.end, 
-   	              CTRAMP7.script.end, 
-   	              CTRAMP8.script.end, 
-   	              CTRAMP9.script.end, 
-   	              CTRAMP10.script.end, 
-   	              CTRAMP11.script.end, 
-   	              CTRAMP12.script.end, 
-   	              CTRAMP13.script.end, 
-   	              CTRAMP14.script.end, 
-   	              CTRAMP15.script.end,
-          printfiles = save, DelDistribFiles = t, CheckReturnCode = t
+;wait4files files = CTRAMP1.script.end, 
+   	       ;       CTRAMP2.script.end, 
+   	      ;        CTRAMP3.script.end, 
+   	     ;         CTRAMP4.script.end, 
+   	    ;          CTRAMP5.script.end, 
+   	   ;           CTRAMP6.script.end, 
+   	  ;            CTRAMP7.script.end, 
+   	 ;             CTRAMP8.script.end, 
+   	;              CTRAMP9.script.end, 
+   ;	              CTRAMP10.script.end, 
+  ; 	              CTRAMP11.script.end, 
+ ;  	              CTRAMP12.script.end, 
+;   	              CTRAMP13.script.end, 
+;   	              CTRAMP14.script.end, 
+;   	              CTRAMP15.script.end,
+;          printfiles = save, DelDistribFiles = t, CheckReturnCode = t
                    
-*Cluster.exe CTRAMP 1-15 close exit
+;*Cluster.exe CTRAMP 1-15 close exit
 ; combine all the debug output
 * copy @token_debug_filename@.ea.wlk.com.wlk.debug+@token_debug_filename@.ea.wlk.hvy.wlk.debug+@token_debug_filename@.ea.wlk.exp.wlk.debug+@token_debug_filename@.ea.wlk.lrf.wlk.debug+@token_debug_filename@.ea.wlk.loc.wlk.debug+@token_debug_filename@.ea.wlk.trn.wlk.debug @token_debug_filename@.ea.wlk.all.wlk.debug
 * copy @token_debug_filename@.am.wlk.com.wlk.debug+@token_debug_filename@.am.wlk.hvy.wlk.debug+@token_debug_filename@.am.wlk.exp.wlk.debug+@token_debug_filename@.am.wlk.lrf.wlk.debug+@token_debug_filename@.am.wlk.loc.wlk.debug+@token_debug_filename@.am.wlk.trn.wlk.debug @token_debug_filename@.am.wlk.all.wlk.debug
