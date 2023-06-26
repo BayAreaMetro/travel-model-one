@@ -126,8 +126,8 @@ copy INPUT\nonres\Kfactors\		nonres\Inputs\Kfactors\
 
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
-copy INPUT\logsums              logsums\
-copy INPUT\warmstart\skims\      skims\
+::copy INPUT\logsums              logsums\
+::copy INPUT\warmstart\skims\      skims\
 :: Use interim network inputs until the networks are regenerated with all project card updates
 copy INPUT\hwy\complete_network_with_externals_v2.net                 hwy\complete_network.net
 

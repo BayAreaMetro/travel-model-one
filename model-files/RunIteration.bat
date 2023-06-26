@@ -16,7 +16,7 @@
 ::
 :: ------------------------------------------------------------------------------------------------------
 
-if %ITER%==0 goto nonres
+if %ITER%==0 goto hwyAssign
 
 
 :: ------------------------------------------------------------------------------------------------------
@@ -118,8 +118,7 @@ if %ITER% GTR 0 (
 :: Assign the demand matrices to the highway network
 runtpp CTRAMP\scripts\assign\HwyAssign.job
 if ERRORLEVEL 2 goto done
-::skip transit assignment step
-goto feedback
+
 :trnAssignSkim
 :: copy a local version for easier restarting
 copy CTRAMP\scripts\skims\trnAssign.bat trnAssign_iter%ITER%.bat
