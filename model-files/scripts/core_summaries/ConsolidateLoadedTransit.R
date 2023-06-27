@@ -9,6 +9,108 @@
 library(foreign)
 library(dplyr)
 
+write.dbfMODIF <- function (dataframe, file, factor2char = TRUE, max_nchar = 254)
+{
+  allowed_classes <- c("logical", "integer", "numeric", "character",
+                       "factor", "Date")
+  if (!is.data.frame(dataframe))
+    dataframe <- as.data.frame(dataframe)     
+  if (any(sapply(dataframe, function(x) !is.null(dim(x)))))
+      stop("cannot handle matrix/array columns")     
+  cl <- sapply(dataframe, function(x) class(x[1L]))     
+  asis <- cl == "AsIs"
+      
+  cl[asis & sapply(dataframe, mode) == "character"] <- "character"     
+  if (length(cl0 <- setdiff(cl, allowed_classes)))
+        stop("data frame contains columns of unsupported class(es) ",
+             paste(cl0, collapse = ","))
+      
+  m <- ncol(dataframe)
+      
+  DataTypes <- c(logical = "L", integer = "N", numeric = "F", 
+                 character = "C", factor = if (factor2char) "C" else "N",
+                 Date = "D")[cl]
+      
+  for (i in seq_len(m)) {
+        
+    x <- dataframe[[i]]
+    if (is.factor(x))
+      dataframe[[i]] <- 
+        if (factor2char) as.character(x) else as.integer(x)
+        
+    else if (inherits(x, "Date"))
+      dataframe[[i]] <- format(x, "%Y%m%d")
+    }
+
+  precision <- integer(m)
+  scale <- integer(m)
+  dfnames <- names(dataframe)
+  for (i in seq_len(m)) {
+    nlen <- nchar(dfnames[i], "b")
+    x <- dataframe[, i]
+    if (is.logical(x)) {
+      precision[i] <- 1L
+      scale[i] <- 0L 
+      }
+    else if (is.integer(x)) {
+      if (dfnames[i] == "TIME") {
+        precision[i] <- 5L
+        scale[i] <- 0L
+      } else if (dfnames[i] == "MODE"){
+        precision[i] <- 3L
+        scale[i] <- 0L
+      } else if (dfnames[i] == "PLOT"){
+        precision[i] <- 1L
+        scale[i] <- 0L
+      } else if (dfnames[i] == "COLOR"){
+        precision[i] <- 2L
+        scale[i] <- 0L
+      } else if (dfnames[i] == "STOP_A"){
+        precision[i] <- 1L
+        scale[i] <- 0L
+      } else if (dfnames[i] == "STOP_B"){
+        precision[i] <- 1L
+        scale[i] <- 0L
+      } else if (dfnames[i] == "DIST"){
+        precision[i] <- 4L
+        scale[i] <- 0L
+      } else if (dfnames[i] == "SEQ"){
+        precision[i] <- 3L
+        scale[i] <- 0L
+      } else {
+        precision[i] <- 7L
+        scale[i] <- 0L
+      }
+    }
+    else if (is.double(x)) {
+      #"AB_VOL","AB_BRDA","AB_XITA","AB_BRDB","AB_XITB"
+      if (dfnames[i] == "FREQ"){
+        precision[i] <- 6L
+        scale[i] <- 2L
+      } else {
+        precision[i] <- 9L
+        scale[i] <- 2L}
+    } else if (is.character(x)) {
+      mf <- max(nchar(x[!is.na(x)], "b"))
+      p <- max(nlen, mf)
+      if(p > max_nchar)
+        warning(gettextf("character column %d will be truncated to %d bytes", i, max_nchar), domain = NA)
+      precision[i] <- min(p, max_nchar)
+      scale[i] <- 0L
+    } else stop("unknown column type in data frame")
+      }
+      
+  if (any(is.na(precision))) stop("NA in precision")
+      
+  if (any(is.na(scale))) stop("NA in scale")
+      
+  invisible(.Call(foreign:::DoWritedbf, 
+                  as.character(file), 
+                  dataframe,
+                  as.integer(precision), 
+                  as.integer(scale), 
+                  as.character(DataTypes))) }
+
 # For RStudio, these can be set in the .Rprofile
 MODEL_DIR        <- Sys.getenv("TARGET_DIR")  # The location of the input file
 MODEL_DIR        <- gsub("\\\\","/",MODEL_DIR) # switch slashes around
@@ -22,8 +124,8 @@ stopifnot(nchar(MODEL_DIR  )>0)
 all_trnline_data <- data.frame()
 all_trnlink_data <- data.frame()
 trnlink_dbf_data <- data.frame()
-
-for (timeperiod in c("EA","AM","MD","PM","EV")) {
+#,"AM","MD","PM","EV"
+for (timeperiod in c("AM","MD","PM","EV", "EA")) {
   # read the input dbfs
   filename <- paste0("trnlink",timeperiod,"_ALLMSA.dbf")
   fullfile <- file.path(MODEL_DIR, "trn", filename)
@@ -76,9 +178,9 @@ print(paste("Wrote",outfile))
 outfile <- file.path(MODEL_DIR, "trn", "trnlink.csv")
 write.csv(all_trnlink_data, file=outfile, row.names=FALSE, quote=FALSE)
 print(paste("Wrote",outfile))
-
+#,"AM","MD","PM","EV"
 # split into timeperiods and write dbfs for quickboards
-for (my_tp in c("EA","AM","MD","PM","EV")) {
+for (my_tp in c("AM","MD","PM","EV", "EA")) {
     # columns: A, B, TIME, MODE, FREQ, PLOT, COLOR, STOP_A, STOP_B, DIST, NAME, SEQ, OWNER, AB, ABNAMESEQ, 
     # FULLNAME, SYSTEM, GROUP, VEHTYPE, VEHCAP, PERIODCAP, LOAD, 
     # AB_VOL, AB_BRDA, AB_XITA, AB_BRDB, AB_XITB,
@@ -94,7 +196,7 @@ for (my_tp in c("EA","AM","MD","PM","EV")) {
     # set support link fields
     supdata_tp$TIME  <- as.integer(supdata_tp$time*100)
     supdata_tp$DIST  <- as.integer(supdata_tp$distance*100)
-    supdata_tp$FREQ  <- 0.0
+    supdata_tp$FREQ  <- as.integer(0)
     supdata_tp$SEQ   <- as.integer(0)
     supdata_tp$COLOR <- as.integer(0)
     supdata_tp$OWNER <- as.character(supdata_tp$owner)
@@ -134,11 +236,17 @@ for (my_tp in c("EA","AM","MD","PM","EV")) {
     # print(colnames(trndata_tp))
     trndata_tp <- trndata_tp[c("A","B","TIME","MODE","FREQ","PLOT","COLOR",
                                "STOP_A","STOP_B","DIST","NAME","SEQ","OWNER",
-                               "AB_VOL","AB_BRDA","AB_XITA","AB_BRDB","AB_XITB")]
+                               "AB_VOL","AB_BRDA","AB_XITA","AB_BRDB","AB_XITB")]%>%
+      #mutate(across(c("DIST", "AB_VOL","AB_BRDA","AB_XITA","AB_BRDB","AB_XITB"), round, 2)) %>%
+      mutate(across(c("TIME","DIST","MODE","PLOT","COLOR","SEQ","STOP_A","STOP_B"),
+             as.integer))%>%
+      mutate(across(c("FREQ","AB_VOL","AB_BRDA","AB_XITA","AB_BRDB","AB_XITB"),
+             as.double))
+
 
     # print(str(trndata_tp))
 
     outfile <- file.path(MODEL_DIR, "trn", paste0("trnlink", my_tp,"_withSupport.dbf"))
-    write.dbf(as.data.frame(trndata_tp), file=outfile)
+    write.dbfMODIF(as.data.frame(trndata_tp), file=outfile)
     print(paste("Wrote", outfile))
 }
