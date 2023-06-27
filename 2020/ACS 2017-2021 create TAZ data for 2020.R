@@ -119,93 +119,101 @@ ACS_table <- load_variables(year=2021, dataset="acs5", cache=TRUE)
 # Some variables skipped in sequence due to nesting
 
 decennial_BG_variables <- c(
+
 # Household totals
-  tothh="H12_001N",   # Total HHs 
-  hhpop="P15_001N",	  # HH pop 
+  
+  tothh         ="H12_001N",   # Total HHs 
+  hhpop         ="P15_001N",	  # HH pop 
+
 # Age, male
-  male0_4    ="P12_003N",   # male aged 0 to 4 
-  male5_9    ="P12_004N",		# male aged 5 to 9 
-  male10_14  ="P12_005N",		# male aged 10 to 14
-  male15_17  ="P12_006N",		# male aged 15 to 17
-  male18_19  ="P12_007N",		# male aged 18 to 19
-  male20     ="P12_008N",		# male aged 20 
-  male21     ="P12_009N",		# male aged 21 
-  male22_24  ="P12_010N",		# male aged 22 to 24 
-  male25_29  ="P12_011N",		# male aged 25 to 29 
-  male30_34  ="P12_012N",		# male aged 30 to 34 
-  male35_39  ="P12_013N",		# male aged 35 to 39 
-  male40_44  ="P12_014N",		# male aged 40 to 44 
-  male45_49  ="P12_015N",		# male aged 45 to 49 
-  male50_54  ="P12_016N",		# male aged 50 to 54 
-  male55_59  ="P12_017N",		# male aged 55 to 59 
-  male60_61  ="P12_018N",		# male aged 60 to 61 
-  male62_64  ="P12_019N",		# male aged 62 to 64 
-  male65_66  ="P12_020N",		# male aged 65 to 66 
-  male67_69  ="P12_021N",		# male aged 67 to 69 
-  male70_74  ="P12_022N",		# male aged 70 to 74 
-  male75_79  ="P12_023N",		# male aged 75 to 79 
-  male80_84  ="P12_024N",		# male aged 80 to 84 
-  male85p    ="P12_025N",		# male aged 85+ 
+  
+  male0_4       ="P12_003N",   # male aged 0 to 4 
+  male5_9       ="P12_004N",		# male aged 5 to 9 
+  male10_14     ="P12_005N",		# male aged 10 to 14
+  male15_17     ="P12_006N",		# male aged 15 to 17
+  male18_19     ="P12_007N",		# male aged 18 to 19
+  male20        ="P12_008N",		# male aged 20 
+  male21        ="P12_009N",		# male aged 21 
+  male22_24     ="P12_010N",		# male aged 22 to 24 
+  male25_29     ="P12_011N",		# male aged 25 to 29 
+  male30_34     ="P12_012N",		# male aged 30 to 34 
+  male35_39     ="P12_013N",		# male aged 35 to 39 
+  male40_44     ="P12_014N",		# male aged 40 to 44 
+  male45_49     ="P12_015N",		# male aged 45 to 49 
+  male50_54     ="P12_016N",		# male aged 50 to 54 
+  male55_59     ="P12_017N",		# male aged 55 to 59 
+  male60_61     ="P12_018N",		# male aged 60 to 61 
+  male62_64     ="P12_019N",		# male aged 62 to 64 
+  male65_66     ="P12_020N",		# male aged 65 to 66 
+  male67_69     ="P12_021N",		# male aged 67 to 69 
+  male70_74     ="P12_022N",		# male aged 70 to 74 
+  male75_79     ="P12_023N",		# male aged 75 to 79 
+  male80_84     ="P12_024N",		# male aged 80 to 84 
+  male85p       ="P12_025N",		# male aged 85+ 
+
 # Age, female
-female0_4    ="P12_027N",   # female aged 0 to 4 
-female5_9    ="P12_028N",		# female aged 5 to 9 
-female10_14  ="P12_029N",		# female aged 10 to 14
-female15_17  ="P12_030N",		# female aged 15 to 17
-female18_19  ="P12_031N",		# female aged 18 to 19
-female20     ="P12_032N",		# female aged 20 
-female21     ="P12_033N",		# female aged 21 
-female22_24  ="P12_034N",		# female aged 22 to 24 
-female25_29  ="P12_035N",		# female aged 25 to 29 
-female30_34  ="P12_036N",		# female aged 30 to 34 
-female35_39  ="P12_037N",		# female aged 35 to 39 
-female40_44  ="P12_038N",		# female aged 40 to 44 
-female45_49  ="P12_039N",		# female aged 45 to 49 
-female50_54  ="P12_040N",		# female aged 50 to 54 
-female55_59  ="P12_041N",		# female aged 55 to 59 
-female60_61  ="P12_042N",		# female aged 60 to 61 
-female62_64  ="P12_043N",		# female aged 62 to 64 
-female65_66  ="P12_044N",		# female aged 65 to 66 
-female67_69  ="P12_045N",		# female aged 67 to 69 
-female70_74  ="P12_046N",		# female aged 70 to 74 
-female75_79  ="P12_047N",		# female aged 75 to 79 
-female80_84  ="P12_048N",		# female aged 80 to 84 
-female85p    ="P12_049N",		# female aged 85+ 
 
+  female0_4     ="P12_027N",   # female aged 0 to 4 
+  female5_9     ="P12_028N",		# female aged 5 to 9 
+  female10_14   ="P12_029N",		# female aged 10 to 14
+  female15_17   ="P12_030N",		# female aged 15 to 17
+  female18_19   ="P12_031N",		# female aged 18 to 19
+  female20      ="P12_032N",		# female aged 20 
+  female21      ="P12_033N",		# female aged 21 
+  female22_24   ="P12_034N",		# female aged 22 to 24 
+  female25_29   ="P12_035N",		# female aged 25 to 29 
+  female30_34   ="P12_036N",		# female aged 30 to 34 
+  female35_39   ="P12_037N",		# female aged 35 to 39 
+  female40_44   ="P12_038N",		# female aged 40 to 44 
+  female45_49   ="P12_039N",		# female aged 45 to 49 
+  female50_54   ="P12_040N",		# female aged 50 to 54 
+  female55_59   ="P12_041N",		# female aged 55 to 59 
+  female60_61   ="P12_042N",		# female aged 60 to 61 
+  female62_64   ="P12_043N",		# female aged 62 to 64 
+  female65_66   ="P12_044N",		# female aged 65 to 66 
+  female67_69   ="P12_045N",		# female aged 67 to 69 
+  female70_74   ="P12_046N",		# female aged 70 to 74 
+  female75_79   ="P12_047N",		# female aged 75 to 79 
+  female80_84   ="P12_048N",		# female aged 80 to 84 
+  female85p     ="P12_049N",		# female aged 85+ 
 
-"B25024_002",   # 1 unit detached    
-"B25024_003",		# 1 unit attached 
-"B25024_004",		# 2 units
-"B25024_005",		# 3 or 4 units
-"B25024_006",		# 5 to 9 units
-"B25024_007",		# 10 to 19 units
-"B25024_008",		# 20 to 49 units
-"B25024_009",		# 50+ units
-"B25024_010",		# mobile homes
-"B25024_011",		# boats, RVs, vans
+# household size by tenure
 
-"B25009_003",   # own 1 person in HH 	     
-"B25009_004",		# own 2 persons in HH 
-"B25009_005",		# own 3 persons in HH 
-"B25009_006",		# own 4 persons in HH 
-"B25009_007",		# own 5 persons in HH 
-"B25009_008",		# own 6 persons in HH 
-"B25009_009",		# own 7+ persons in HH 
-"B25009_011",		# rent 1 person in HH
-"B25009_012",		# rent 2 persons in HH 
-"B25009_013",		# rent 3 persons in HH 
-"B25009_014",		# rent 4 persons in HH 
-"B25009_015",		# rent 5 persons in HH 
-"B25009_016",		# rent 6 persons in HH 
-"B25009_017")		# rent 7+ persons in HH
+  own1          ="H12_003N",    # own 1 person in HH 	     
+  own2          ="H12_004N",    # own 2 persons in HH 
+  own3          ="H12_005N",    # own 3 persons in HH 
+  own4          ="H12_006N",    # own 4 persons in HH 
+  own5          ="H12_007N",    # own 5 persons in HH 
+  own6          ="H12_008N",    # own 6 persons in HH 
+  own7p         ="H12_009N",    # own 7+ persons in HH 
+  rent1         ="H12_011N",    # rent 1 person in HH
+  rent2         ="H12_012N",    # rent 2 persons in HH 
+  rent3         ="H12_013N",    # rent 3 persons in HH 
+  rent4         ="H12_014N",    # rent 4 persons in HH 
+  rent5         ="H12_015N",    # rent 5 persons in HH 
+  rent6         ="H12_016N",    # rent 6 persons in HH 
+  rent7p        ="H12_017N",    # rent 7+ persons in HH
 
-"B03002_003",   # White alone, not Hispanic
-"B03002_004",   # Black alone, not Hispanic
-"B03002_006",   # Asian alone, not Hispanic
-"B03002_002",   # Total, not Hispanic
-"B03002_012")   # Total Hispanic
+# Race/Ethnicity variables
 
+  white_nonh    ="P5_003N",   # White alone, not Hispanic
+  black_nonh    ="P5_004N",   # Black alone, not Hispanic
+  asian_nonh    ="P5_006N",   # Asian alone, not Hispanic
+  total_nonh    ="P5_002N",   # Total, not Hispanic
+  total_hisp    ="P5_010N",   # Total Hispanic
 
 ACS_BG_variables <- c(
+  
+                      "B25024_002",   # 1 unit detached    
+                      "B25024_003",		# 1 unit attached 
+                      "B25024_004",		# 2 units
+                      "B25024_005",		# 3 or 4 units
+                      "B25024_006",		# 5 to 9 units
+                      "B25024_007",		# 10 to 19 units
+                      "B25024_008",		# 20 to 49 units
+                      "B25024_009",		# 50+ units
+                      "B25024_010",		# mobile homes
+                      "B25024_011",		# boats, RVs, vans
                       
                       "B23025_004",   # Civilian employed residents (employed residents is "employed" + "armed forces")
                       "B23025_006", 	# Armed forces
