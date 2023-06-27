@@ -203,8 +203,9 @@ PURPOSES_COMMUTE = ['work_low','work_med','work_high','work_very high']
 
 # travel model time periods
 # https://github.com/BayAreaMetro/modeling-website/wiki/TimePeriods
-TIME_PERIODS_PEAK = ['AM','PM']
-
+TIME_PERIODS_PEAK    = ['AM','PM']
+TIME_PERIOD_LABELS_PEAK    = ['AM Peak','PM Peak']
+TIME_PERIOD_LABELS_NONPEAK = ['Midday']
 METRICS_COLUMNS = [
     'grouping1',
     'grouping2',
@@ -1456,7 +1457,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     # join to OD cities for origin
     trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
                                        right=NGFS_OD_CITIES_DF,
-                                       how='left',
                                        left_on="orig_taz",
                                        right_on="taz1454")
     trips_od_travel_time_df.rename(columns={"CITY":"orig_CITY"}, inplace=True)
@@ -1464,7 +1464,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     # join to OD cities for destination
     trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
                                        right=NGFS_OD_CITIES_DF,
-                                       how='left',
                                        left_on="dest_taz",
                                        right_on="taz1454")
     trips_od_travel_time_df.rename(columns={"CITY":"dest_CITY"}, inplace=True)
@@ -1479,7 +1478,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     # join to epc lookup table
     trips_ending_in_city_dt_od_travel_time_df = pd.merge(left=trips_ending_in_city_dt_od_travel_time_df,
                                                         right=NGFS_EPC_TAZ_DF,
-                                                        how='left',
                                                         left_on="orig_taz",
                                                         right_on="TAZ1454")
     # filter a copy to only those starting in EPCs
@@ -1488,7 +1486,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     # filter again to only those of interest
     trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
                                        right=NGFS_OD_CITIES_OF_INTEREST_DF,
-                                       how='left',
                                        indicator=True)
     trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df._merge == 'both']
     LOGGER.info("  Filtered to only NGFS_OD_CITIES_OF_INTEREST: {:,} rows".format(len(trips_od_travel_time_df)))
@@ -1694,17 +1691,8 @@ def calculate_Efficient2_commute_mode_share(tm_run_id: str) -> pd.DataFrame:
     LOGGER.debug("metrics_df:\n{}".format(metrics_df))
     return metrics_df
 
-
-
-
-
-
-
 def sum_grouping(network_df,period): #sum congested time across selected toll class groupings
     return network_df['ctim'+period].sum()
-
-
-
 
 def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, year, tm_loaded_network_df, metrics_dict):
   # Keeping essential columns of loaded highway network: node A and B, distance, free flow time, congested time
@@ -1982,9 +1970,6 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
 
   return [sum_of_weights, total_weighted_travel_time, n, total_travel_time, sum_of_weights_parallel_arterial, total_weighted_travel_time_parallel_arterial, total_travel_time_parallel_arterial, arterial_total_travel_time_region, arterial_total_travel_time_epc, arterial_total_travel_time_nonepc]
 
-
-
-
 def calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df, metrics_dict):    
     # 5) Change in peak hour travel time on key freeway corridors and parallel arterials
 
@@ -2028,65 +2013,203 @@ def calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df
     metrics_dict['EPC', grouping2, grouping3, tm_run_id, metric_id,'final','Tolled Arterials','peak hour travel time for tolled arterial road links, EPC average',year]      = arterial_travel_time_epc_avg/n
     metrics_dict['NonEPC', grouping2, grouping3, tm_run_id, metric_id,'final','Tolled Arterials','peak hour travel time for tolled arterial road links, Non-EPC average',year]      = arterial_travel_time_nonepc_avg/n
 
+def R2_aggregate_before_joining(tm_run_id):
+    """
 
+    have to aggregate before joining.  
+    e.g. simplify the trip mode, aggregate all income quartiles, and then join — so we won't lose trips
+    see asana task: https://app.asana.com/0/0/1204811778297277/f 
+    
+    """
+    LOGGER.info("Reliable 2: Aggregating before joining for {}".format(tm_run_id)) 
 
+    # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
+    ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", ODTRAVELTIME_FILENAME) #changed "ODTravelTime_byModeTimeperiodIncome.csv" to a variable for better performance during debugging
+    # this is large so join/subset it immediately
+    trips_od_travel_time_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
+    LOGGER.info("  Read {:,} rows from {}".format(len(trips_od_travel_time_df), ODTravelTime_byModeTimeperiod_file))
 
-def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df, metrics_dict):    
-    # 6) Ratio of travel time during peak hours vs. non-peak hours between representative origin-destination pairs 
+    # pivot out the income and mode since we don't need it
+    trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df,
+                                             index=['orig_taz','dest_taz','timeperiod_label'],
+                                             values=['num_trips','avg_travel_time_in_mins'],
+                                             aggfunc={'num_trips':numpy.sum, 'avg_travel_time_in_mins':numpy.mean})
+    trips_od_travel_time_df.reset_index(inplace=True)
+    LOGGER.info("  Aggregated income groups and modes: {:,} rows".format(len(trips_od_travel_time_df)))
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
 
+    # we're going to aggregate trip time periods; auto includes TAXI and TNC
+    trips_od_travel_time_df['agg_timeperiod_label'] = "N/A"
+    trips_od_travel_time_df.loc[ trips_od_travel_time_df.timeperiod_label.isin(TIME_PERIOD_LABELS_PEAK),      'agg_timeperiod_label' ] = "peak"
+    trips_od_travel_time_df.loc[ trips_od_travel_time_df.timeperiod_label.isin(TIME_PERIOD_LABELS_NONPEAK), 'agg_timeperiod_label' ] = "nonpeak"
+    LOGGER.info("   Aggregated trip time periods: {:,} rows".format(len(trips_od_travel_time_df)))
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # pivot down to orig_taz x dest_taz x agg_timeperiod_label
+    trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df, 
+                                             index=['orig_taz','dest_taz','agg_timeperiod_label'],
+                                             values=['num_trips','avg_travel_time_in_mins'],
+                                             aggfunc={'num_trips':numpy.sum, 'avg_travel_time_in_mins':numpy.mean})
+    trips_od_travel_time_df.reset_index(inplace=True)
+
+    return trips_od_travel_time_df
+
+def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id: str) -> pd.DataFrame:
+    """ Calculates Reliable 2: Ratio of travel time during peak hours vs. non-peak hours between representative origin-destination pairs 
+    
+    Args:
+        tm_run_id (str): Travel model run ID
+
+    Returns:
+        pandas.DataFrame: with columns a subset of METRICS_COLUMNS, including 
+          metric_id   = 'Reliable 2'
+          modelrun_id = tm_run_id
+        Metrics returned:
+          key                       intermediate/final  metric_desc
+          [origCITY_destCITY]       extra               avg_travel_time_in_mins_peak
+          [origCITY_destCITY]       extra               avg_travel_time_in_mins_nonpeak
+          [origCITY_destCITY]       extra               num_trips_peak
+          [origCITY_destCITY]       extra               num_trips_nonpeak
+          [origCITY_destCITY]       intermediate        ratio_travel_time_peak_nonpeak
+          Average across OD pairs   final               ratio_travel_time_peak_nonpeak_across_pairs
+
+    Notes:
+    * Representative origin-destination pairs are given by TAZs corresponding with 
+      NGFS_OD_CITIES_FILE and NGFS_OD_CITIES_OF_INTEREST
+    * peak time includes AM and PM
+    * Final calculation is the average of these ratios (not weighted) across all OD pairs,
+      excluding those which have no trips and therefore lack a travel time
+    
+      TODO: Does this make sense?  If a market is very small, should it be considered equally
+    """
     metric_id = 'Reliable 2'
     grouping1 = ' '
     grouping2 = ' '
     grouping3 = ' '
     LOGGER.info("Calculating {} for {}".format(metric_id, tm_run_id))
 
-    # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
-    ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", ODTRAVELTIME_FILENAME)
-    # TODO: this is large so join/subset it immediately
-    tm_od_travel_times_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
-    LOGGER.info("  Read {:,} rows from {}".format(len(tm_od_travel_times_df), ODTravelTime_byModeTimeperiod_file))
+    trips_od_travel_time_df = R2_aggregate_before_joining(tm_run_id)
+    # remove 'num_trips' column to use from base run instead
+    trips_od_travel_time_df = trips_od_travel_time_df.drop('num_trips', axis = 1)
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # read a copy of the table for the base comparison run to pull the number of trips (for weighting)
+    trips_od_travel_time_df_base = R2_aggregate_before_joining(tm_run_id_base) 
+    LOGGER.debug("trips_od_travel_time_df_base: \n{}".format(trips_od_travel_time_df_base))
+    # reduce copied df to only relevant columns orig, dest, and num_trips
+    # pivot down to orig_taz x dest_taz x agg_timeperiod_label
+    # purpose is to use same number-of-trip weights by TAZ-TAZ pairs, for both peak and off-peak (and consistent across pathways)
+    # https://app.asana.com/0/0/1204844161312298/1204858353452819/f
+    trips_od_travel_time_df_base = pd.pivot_table(trips_od_travel_time_df_base, 
+                                             index=['orig_taz','dest_taz'],
+                                             values=['num_trips'],
+                                             aggfunc={'num_trips':numpy.sum})
+    trips_od_travel_time_df_base.reset_index(inplace=True)
+    LOGGER.debug("pivot down trips_od_travel_time_df_base to only relevant columns orig, dest, and num_trips: \n{}".format(trips_od_travel_time_df_base))
+
+    trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
+                                       right=trips_od_travel_time_df_base, 
+                                       how='left', 
+                                       left_on=['orig_taz','dest_taz'], 
+                                       right_on=['orig_taz','dest_taz'])
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # join to OD cities for origin
+    trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
+                                       right=NGFS_OD_CITIES_DF,
+                                       left_on="orig_taz",
+                                       right_on="taz1454")
+    trips_od_travel_time_df.rename(columns={"CITY":"orig_CITY"}, inplace=True)
+    trips_od_travel_time_df.drop(columns=["taz1454"], inplace=True)
+    # join to OD cities for destination
+    trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
+                                       right=NGFS_OD_CITIES_DF,
+                                       left_on="dest_taz",
+                                       right_on="taz1454")
+    trips_od_travel_time_df.rename(columns={"CITY":"dest_CITY"}, inplace=True)
+    trips_od_travel_time_df.drop(columns=["taz1454"], inplace=True)
+    LOGGER.info("  Joined with {} for origin, destination: {:,} rows".format(NGFS_OD_CITIES_FILE, len(trips_od_travel_time_df)))
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # trips_od_travel_time_df.to_csv(os.path.join(os.getcwd(),"trips_od_travel_time_df({}).csv".format(tm_run_id)), float_format='%.5f', index=False)
+
+    # filter again to only those of interest
+    trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
+                                       right=NGFS_OD_CITIES_OF_INTEREST_DF,
+                                       indicator=True)
+    trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df._merge == 'both']
+    LOGGER.info("  Filtered to only NGFS_OD_CITIES_OF_INTEREST: {:,} rows".format(len(trips_od_travel_time_df)))
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # to get weighted average, transform to total travel time
+    trips_od_travel_time_df['tot_travel_time_in_mins'] = \
+        trips_od_travel_time_df['avg_travel_time_in_mins']*trips_od_travel_time_df['num_trips']
+
+    # pivot down to orig_CITY x dest_CITY x agg_timeperiod_label
+    trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df, 
+                                             index=['orig_CITY','dest_CITY','agg_timeperiod_label'],
+                                             values=['num_trips','tot_travel_time_in_mins'],
+                                             aggfunc={'num_trips':numpy.sum, 'tot_travel_time_in_mins':numpy.sum})
+    trips_od_travel_time_df.reset_index(inplace=True)
+    trips_od_travel_time_df['avg_travel_time_in_mins'] = \
+        trips_od_travel_time_df['tot_travel_time_in_mins']/trips_od_travel_time_df['num_trips']
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # pivot again to move agg_timeperiod to column
+    # columns will now be: orig_CITY_, dest_CITY_, avg_travel_time_in_mins_peak, avg_travel_time_in_mins_nonpeak, num_trips_peak, num_trips_nonpeak
+    trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df, 
+                                             index=['orig_CITY','dest_CITY'],
+                                             columns=['agg_timeperiod_label'],
+                                             values=['num_trips','avg_travel_time_in_mins'])
+    trips_od_travel_time_df.reset_index(inplace=True)
+    # flatten resulting MultiIndex column names
+    # rename from ('orig_CITY',''), ('dest_CITY',''), ('avg_travel_time_in_mins','peak'), ('avg_travel_time_in_mins', 'nonpeak'), ...
+    # to orig_CITY, dest_CITY, avg_travel_time_in_mins_peak, avg_travel_time_in_mins_nonpeak, ...
+    trips_od_travel_time_df.columns = ['_'.join(col) if len(col[1]) > 0 else col[0] for col in trips_od_travel_time_df.columns.values]
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # add ratio
+    trips_od_travel_time_df['ratio_travel_time_peak_nonpeak'] = \
+        trips_od_travel_time_df['avg_travel_time_in_mins_peak']/trips_od_travel_time_df['avg_travel_time_in_mins_nonpeak']
     
-    tm_od_travel_times_df = tm_od_travel_times_df.merge(taz_cities_df, left_on='orig_taz', right_on='taz1454', how='left', suffixes = ["",'_orig']).merge(taz_cities_df, left_on='dest_taz', right_on='taz1454', how='left', suffixes = ["",'_dest'])
-    tm_od_travel_times_df = tm_od_travel_times_df.copy().loc[(tm_od_travel_times_df['trip_mode'] == 1)|(tm_od_travel_times_df['trip_mode'] == 2)|(tm_od_travel_times_df['trip_mode'] == 3)|(tm_od_travel_times_df['trip_mode'] == 4)|(tm_od_travel_times_df['trip_mode'] == 5)|(tm_od_travel_times_df['trip_mode'] == 6)|(tm_od_travel_times_df['trip_mode'] == 19)|(tm_od_travel_times_df['trip_mode'] == 20)|(tm_od_travel_times_df['trip_mode'] == 21)]
-    tm_od_travel_times_df = tm_od_travel_times_df.loc[(tm_od_travel_times_df['avg_travel_time_in_mins'] > 0)]
-    od_tt_peak_df = tm_od_travel_times_df.loc[(tm_od_travel_times_df['timeperiod_label'].str.contains("AM Peak") == True)|(tm_od_travel_times_df['timeperiod_label'].str.contains("PM Peak") == True)]
-    od_tt_nonpeak_df = tm_od_travel_times_df.loc[(tm_od_travel_times_df['timeperiod_label'].str.contains("Midday") == True)]
+    # note that this does not include NaNs in either the numerator or the denominator, which I think is correct
+    # TODO: in the previous implementation, NaN is converted to zero, which artificially lowers the average.
+    # for example, if most ODs had NO transit paths, then the average ratio would be very low, making it seem like transit travel times
+    # compare favorably to auto, which they do not
+    average_ratio = trips_od_travel_time_df['ratio_travel_time_peak_nonpeak'].mean()
+    LOGGER.info("  => average_ratio={}".format(average_ratio))
+    # LOGGER.debug(trips_od_travel_time_df)
 
-     #  calcuate average across corridors
-    n = 0 #counter to serve as denominator 
-    sum_of_ratios = 0 #sum for numerator
+    # convert to metrics dataframe by pivoting one last time to just columns orig_CITY, dest_CITY
+    trips_od_travel_time_df = pd.melt(trips_od_travel_time_df, 
+                                      id_vars=['orig_CITY','dest_CITY'], 
+                                      var_name='metric_desc',
+                                      value_name='value')
+    # travel times and num trips are extra
+    trips_od_travel_time_df['intermediate/final']   = 'extra'
+    # ratios are intermediate
+    trips_od_travel_time_df.loc[ trips_od_travel_time_df.metric_desc.str.startswith('ratio'), 'intermediate/final'] = 'intermediate'
 
+    # key is orig_CITY, dest_CITY
+    trips_od_travel_time_df['key']  = trips_od_travel_time_df['orig_CITY'] + " to " + trips_od_travel_time_df['dest_CITY']
+    trips_od_travel_time_df.drop(columns=['orig_CITY','dest_CITY'], inplace=True)
 
-    #     iterate through Origin Destination pairs, calculate metrics: average peak travel time, average nonpeak travel time, ratio of the two
-    #     enter metrics into dictionary
-    for od in NGFS_OD_CITIES_OF_INTEREST:
-        peak_od_df = od_tt_peak_df.loc[(od_tt_peak_df['CITY'].str.contains(od[0]) == True)].loc[(od_tt_peak_df['CITY_dest'].str.contains(od[1]) == True), 'avg_travel_time_in_mins']
-        num_peak_trips = od_tt_peak_df.loc[(od_tt_peak_df['CITY'].str.contains(od[0]) == True)].loc[(od_tt_peak_df['CITY_dest'].str.contains(od[1]) == True), 'num_trips']
-        nonpeak_od_df = od_tt_nonpeak_df.loc[(od_tt_nonpeak_df['CITY'].str.contains(od[0]) == True)].loc[(od_tt_nonpeak_df['CITY_dest'].str.contains(od[1]) == True), 'avg_travel_time_in_mins']
-        num_nonpeak_trips = od_tt_nonpeak_df.loc[(od_tt_nonpeak_df['CITY'].str.contains(od[0]) == True)].loc[(od_tt_nonpeak_df['CITY_dest'].str.contains(od[1]) == True), 'num_trips']
-        
-        try:
-            avg_tt_peak_ORIG_DEST = numpy.average(a = peak_od_df, weights = num_peak_trips)
-            avg_tt_nonpeak_ORIG_DEST = numpy.average(a = nonpeak_od_df, weights = num_nonpeak_trips)
-        except:
-            avg_tt_peak_ORIG_DEST = 0
-            avg_tt_nonpeak_ORIG_DEST = 0
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra','{} to {}'.format(od[0],od[1]),'average peak travel time',year]      = avg_tt_peak_ORIG_DEST
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra','{} to {}'.format(od[0],od[1]),'average nonpeak travel time',year]      = avg_tt_nonpeak_ORIG_DEST
-        if avg_tt_nonpeak_ORIG_DEST == 0:
-            ratio_peak_nonpeak = 0
-        else:
-            ratio_peak_nonpeak = avg_tt_peak_ORIG_DEST/avg_tt_nonpeak_ORIG_DEST
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','{} to {}'.format(od[0],od[1]),'ratio of average peak to nonpeak travel time',year]      = ratio_peak_nonpeak
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'debug step','{} to {}'.format(od[0],od[1]),'observed number of peak trips',year]      = num_peak_trips.sum()
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'debug step','{} to {}'.format(od[0],od[1]),'observed number of nonpeak trips',year]      = num_nonpeak_trips.sum()
-
-        # for od average calc
-        n = n+1
-        sum_of_ratios = sum_of_ratios + ratio_peak_nonpeak
-
-    # add average across corridors to metric dict
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Average across 10 O-D pairs','ratio_travel_time_peak_nonpeak_across_pairs',year]      = sum_of_ratios/n
+    trips_od_travel_time_df['modelrun_id'] = tm_run_id
+    trips_od_travel_time_df['year'] = tm_run_id[:4]
+    trips_od_travel_time_df['metric_id'] = metric_id
+    # LOGGER.info(trips_od_travel_time_df)
+    
+    # finally, add the average_ratio
+    final_row = pd.DataFrame.from_records([{
+        'modelrun_id':          tm_run_id,
+        'metric_id':            metric_id,
+        'intermediate/final':   "final",
+        'key':                  "Average across OD pairs",
+        'metric_desc':          "ratio_travel_time_peak_nonpeak_across_pairs",
+        'year':                 tm_run_id[:4], 
+        'value':                average_ratio
+     }])
+    # LOGGER.debug(final_row)
 
     # add metric for goods routes: Calculate [Ratio of travel time during peak hours vs. non-peak hours] for 3 truck routes (using link-level)
     # load table with links for each goods route
@@ -2149,6 +2272,16 @@ def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df
     metrics_dict['Goods Routes', 'NonPeak Hours', grouping3, tm_run_id, metric_id,'intermediate','I80_I880_PortOfOakland', 'average nonpeak travel time', year] = MD_travel_time_route_I80
     metrics_dict['Goods Routes', 'Peak vs NonPeak', grouping3, tm_run_id, metric_id,'final','I80_I880_PortOfOakland', 'Ratio', year] = ratio_peak_offpeak_route_I80
 
+    # enter goods routes average
+    goods_routes_average_ratio_peak_offpeak = numpy.mean([ratio_peak_offpeak_route_I580, ratio_peak_offpeak_route_I101,ratio_peak_offpeak_route_I80])
+    metrics_dict['Goods Routes', 'Peak vs NonPeak', grouping3, tm_run_id, metric_id,'final','Average Across Routes', 'Ratio', year] = goods_routes_average_ratio_peak_offpeak
+
+    # return df for reliable 2 excluding goods routes
+    # TODO: add goods routes metric to DF returned
+    trips_od_travel_time_df = pd.concat([trips_od_travel_time_df, final_row])
+    LOGGER.debug("{} Result: \n{}".format(metric_id, trips_od_travel_time_df))
+    return trips_od_travel_time_df
+
 def calculate_Reparative1_dollar_revenues_revinvested(tm_run_id):
     # 7) Absolute dollar amount of new revenues generated that is reinvested in freeway adjacent communities
 
@@ -2170,8 +2303,6 @@ def calculate_Reparative1_dollar_revenues_revinvested(tm_run_id):
                 reparative_1_value = reparative_1_df.loc[(reparative_1_df['pathway'] == pathway)].iloc[0]['value']
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,' ',' ', 'Dollars (YOE$B)', year] = reparative_1_value
         
-
-
 def calculate_Reparative2_ratio_revenues_revinvested(tm_run_id):
     # 8) Ratio of new revenues paid for by low-income populations to revenues reinvested toward low-income populations
 
@@ -2193,8 +2324,6 @@ def calculate_Reparative2_ratio_revenues_revinvested(tm_run_id):
                 reparative_2_value = reparative_2_df.loc[(reparative_2_df['pathway'] == pathway)].iloc[0]['value']
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,' ',' ', 'Ratio', year] = reparative_2_value
 
-
-
 def adjust_fatalities_exp_speed(row, type_of_fatality):    
     # adjust fatalities based on exponents and speed. 
     # if fatalities/injuries are higher because speeds are higher in run than NP, use pmin function to replace with originally calculated FBP fatalities/injuries before VZ adjustment (do not let fatalities/injuries increase due to VZ adjustment calculation)
@@ -2203,9 +2332,6 @@ def adjust_fatalities_exp_speed(row, type_of_fatality):
         return 0
     else:
         return numpy.minimum(N_type_fatalities*(row['Avg_speed']/row['Avg_Speed_No_Project'])**row['fatality_exponent'], N_type_fatalities)
-
-
-
 
 def calculate_fatalitites(run_id, loaded_network_df, collision_rates_df, tm_loaded_network_df_no_project):
     NOTE_ON_FT_AND_AT = """
@@ -2975,7 +3101,8 @@ if __name__ == "__main__":
         metrics_df = pd.concat([metrics_df, efficient2_metrics_df])
         calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
-        calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df, metrics_dict)
+        reliable2_metrics_df = calculate_Reliable2_ratio_peak_nonpeak(tm_run_id)
+        metrics_df = pd.concat([metrics_df, reliable2_metrics_df])
         # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
         calculate_Reparative1_dollar_revenues_revinvested(tm_run_id)
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
