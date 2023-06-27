@@ -122,12 +122,12 @@ decennial_BG_variables <- c(
 
 # Household totals
   
-  tothh         ="H12_001N",   # Total HHs 
+  tothh         ="H12_001N",    # Total HHs 
   hhpop         ="P15_001N",	  # HH pop 
 
 # Age, male
   
-  male0_4       ="P12_003N",   # male aged 0 to 4 
+  male0_4       ="P12_003N",    # male aged 0 to 4 
   male5_9       ="P12_004N",		# male aged 5 to 9 
   male10_14     ="P12_005N",		# male aged 10 to 14
   male15_17     ="P12_006N",		# male aged 15 to 17
@@ -200,40 +200,42 @@ decennial_BG_variables <- c(
   black_nonh    ="P5_004N",   # Black alone, not Hispanic
   asian_nonh    ="P5_006N",   # Asian alone, not Hispanic
   total_nonh    ="P5_002N",   # Total, not Hispanic
-  total_hisp    ="P5_010N",   # Total Hispanic
+  total_hisp    ="P5_010N")   # Total Hispanic
 
 ACS_BG_variables <- c(
   
-                      "B25024_002",   # 1 unit detached    
-                      "B25024_003",		# 1 unit attached 
-                      "B25024_004",		# 2 units
-                      "B25024_005",		# 3 or 4 units
-                      "B25024_006",		# 5 to 9 units
-                      "B25024_007",		# 10 to 19 units
-                      "B25024_008",		# 20 to 49 units
-                      "B25024_009",		# 50+ units
-                      "B25024_010",		# mobile homes
-                      "B25024_011",		# boats, RVs, vans
+# Units
+  
+  unit1d_       ="B25024_002",    # 1 unit detached    
+  unit1a_       ="B25024_003",		# 1 unit attached 
+  unit2_        ="B25024_004",		# 2 units
+  unit3_4_      ="B25024_005",		# 3 or 4 units
+  unit5_9_      ="B25024_006",		# 5 to 9 units
+  unit10_19_    ="B25024_007",		# 10 to 19 units
+  unit20_49_    ="B25024_008",		# 20 to 49 units
+  unit50p_      ="B25024_009",		# 50+ units
+  mobile_       ="B25024_010",		# mobile homes
+  boat_RV_Van_  ="B25024_011",		# boats, RVs, vans
+                  
+  employed_     ="B23025_004",    # Civilian employed residents (employed residents is "employed" + "armed forces")
+  armedforces_  ="B23025_006", 	  # Armed forces
                       
-                      "B23025_004",   # Civilian employed residents (employed residents is "employed" + "armed forces")
-                      "B23025_006", 	# Armed forces
-                      
-                      "B19001_002",   # Household income 0 to $10k 
-                      "B19001_003",		# Household income $10 to $15k
-                      "B19001_004",		# Household income $15 to $20k
-                      "B19001_005",		# Household income $20 to $25k
-                      "B19001_006",		# Household income $25 to $30k
-                      "B19001_007",		# Household income $30 to $35k
-                      "B19001_008",		# Household income $35 to $40k
-                      "B19001_009",		# Household income $40 to $45k
-                      "B19001_010",		# Household income $45 to $50k
-                      "B19001_011",		# Household income 50 to $60k
-                      "B19001_012",		# Household income 60 to $75k
-                      "B19001_013",		# Household income 75 to $100k
-                      "B19001_014",		# Household income $100 to $1$25k
-                      "B19001_015",		# Household income $1$25 to $150k
-                      "B19001_016",		# Household income $150 to $200k
-                      "B19001_017",		# Household income $200k+
+  hhinc0_10_    ="B19001_002",    # Household income 0 to $10k 
+  hhinc10_15_   ="B19001_003",		# Household income $10 to $15k
+  hhinc15_20_   ="B19001_004",		# Household income $15 to $20k
+  hhinc20_25_   ="B19001_005",		# Household income $20 to $25k
+  hhinc25_30_   ="B19001_006",		# Household income $25 to $30k
+  hhinc30_35_   ="B19001_007",		# Household income $30 to $35k
+  hhinc35_40_   ="B19001_008",		# Household income $35 to $40k
+  hhinc40_45_   ="B19001_009",		# Household income $40 to $45k
+  hhinc45_50_   ="B19001_010",		# Household income $45 to $50k
+  hhinc50_60_   ="B19001_011",		# Household income 50 to $60k
+  hhinc60_75_   ="B19001_012",		# Household income 60 to $75k
+  hhinc75_100_  ="B19001_013",		# Household income 75 to $100k
+  hhinc100_125_ ="B19001_014",		# Household income $100 to $1$25k
+  hhinc125_150_ ="B19001_015",		# Household income $1$25 to $150k
+  hhinc150_200_ ="B19001_016",		# Household income $150 to $200k
+  hhinc200p_    ="B19001_017",		# Household income $200k+
 # Industry, male                      
                       "C24010_005", # Management
                       "C24010_006", # Business and financial
@@ -271,7 +273,7 @@ ACS_BG_variables <- c(
                       "C24010_064", # Sales and related
                       "C24010_065", # Office and administrative support
                       "C24010_066", # Natural resources, construction, and maintenance
-                      "C24010_070",  # Production, transportation, and material moving
+                      "C24010_070")  # Production, transportation, and material moving
                       
 
                       
