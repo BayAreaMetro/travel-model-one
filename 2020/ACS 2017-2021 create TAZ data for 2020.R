@@ -317,7 +317,7 @@ dhc_tract_variables <-  c(gq_noninst_m_0017_univ      = "PCT19_024N", # Male non
                           gq_noninst_f_65p_mil        = "PCT19_186N", # Female non-inst. 65+ military
                           gq_noninst_f_65p_oth        = "PCT19_189N") # Female non-inst. 65+ other
 
-# Bring in 2010 block/TAZ equivalency, create block group ID and tract ID fields for later joining to ACS data
+# Bring in 2010 and 2020 block/TAZ equivalency, create block group ID and tract ID fields for later joining to ACS data
 # Add zero on that is lost in CSV conversion
 
 blockTAZ2010 <- read.csv(blockTAZ2010_in,header=TRUE) %>% mutate(      
@@ -330,60 +330,54 @@ blockTAZ2020 <- read.csv(blockTAZ2020_in,header=TRUE) %>% mutate(
 
 # Summarize block population by block group and tract 
 
-blockTAZBG <- blockTAZ %>% 
+blockTAZBG2010 <- blockTAZ2010 %>% 
   group_by(blockgroup) %>%
   summarize(BGTotal=sum(block_POPULATION))
   
-blockTAZTract <- blockTAZ %>% 
+blockTAZTract2010 <- blockTAZ2010 %>% 
   group_by(tract) %>%
   summarize(TractTotal=sum(block_POPULATION))
 
-# Create 2010 block share of total population for block/block group and block/tract, append to comnbined_block file
+blockTAZBG2020 <- blockTAZ2020 %>% 
+  group_by(blockgroup) %>%
+  summarize(BGTotal=sum(block_POPULATION))
+
+blockTAZTract2020 <- blockTAZ2020 %>% 
+  group_by(tract) %>%
+  summarize(TractTotal=sum(block_POPULATION))
+
+# Create 2010 and 2020 block share of total population for block/block group and block/tract, append to comnbined_block file
 # Be mindful of divide by zero error associated with 0-pop block groups and tracts
 
-combined_block <- left_join(blockTAZ,blockTAZBG,by="blockgroup") %>% mutate(
+combined_block2010 <- left_join(blockTAZ2010,blockTAZBG2010,by="blockgroup") %>% mutate(
   sharebg=if_else(block_POPULATION==0,0,block_POPULATION/BGTotal))
 
-combined_block <- left_join(combined_block,blockTAZTract,by="tract") %>% mutate(
+combined_block2010 <- left_join(combined_block2010,blockTAZTract2010,by="tract") %>% mutate(
   sharetract=if_else(block_POPULATION==0,0,block_POPULATION/TractTotal))
 
-# Function to make tract data API calls by county
-# For a brief time, 2013-2017 API no longer supported vectorized county calls, and they had to be made individually
-# TODO: Revert this process back to the API as the Census Bureau has fixed vectorized calls for BGs and tracts
+combined_block2020 <- left_join(blockTAZ2020,blockTAZBG2020,by="blockgroup") %>% mutate(
+  sharebg=if_else(block_POPULATION==0,0,block_POPULATION/BGTotal))
 
-f.tract.call <- function (baycounty){
-                      get_acs(geography = "tract", variables = ACS_tract_variables,
-                      state = "06", county=baycounty,
-                      year=ACS_year,
-                      output="wide",
-                      survey = "acs5",
-                      key = censuskey)
-}
+combined_block2020 <- left_join(combined_block2020,blockTAZTract2020,by="tract") %>% mutate(
+  sharetract=if_else(block_POPULATION==0,0,block_POPULATION/TractTotal))
 
-# Now make tract calls by county and concatenate all counties into a single file
+# Function to make tract and block group data API calls by county for ACS 2017-2021
 
-Alameda_tracts <- f.tract.call(Alameda)
-Contra_tracts <- f.tract.call(Contra)
-Marin_tracts <- f.tract.call(Marin)
-Napa_tracts <- f.tract.call(Napa)
-Francisco_tracts <- f.tract.call(Francisco)
-Mateo_tracts <- f.tract.call(Mateo)
-Clara_tracts <- f.tract.call(Clara)
-Solano_tracts <- f.tract.call(Solano)
-Sonoma_tracts <- f.tract.call(Sonoma)
-ACS_tract_raw <- rbind(Alameda_tracts,Contra_tracts,Marin_tracts,Napa_tracts,Francisco_tracts,
-                       Mateo_tracts,Clara_tracts,Solano_tracts,Sonoma_tracts)
+ACS_tract_raw2010 <- get_acs(
+          geography = "tract", variables = ACS_tract_variables,
+          state = state_code, county=baycounties,
+          year=ACS_year,
+          output="wide",
+          survey = "acs5",
+          key = censuskey)
 
-# Create index of Bay Area tracts to pass into block group API calls 
-# 2013-2017 API no longer supports county->block group, and now relies on county -> tract -> block group calls
-
-tract_index <- ACS_tract_raw %>%
-  mutate(
-    county=substr(GEOID,3,5),
-    tract=substr(GEOID,6,11)
-      ) %>%
-  select(county,tract)
-
+ACS_BG_raw2010 <- get_acs(
+  geography = "block group", variables = ACS_BG_variables,
+  state = state_code, county="055",
+  year=ACS_year,
+  output="wide",
+  survey = "acs5",
+  key = censuskey)
 
 
 # Rename block group variables 
