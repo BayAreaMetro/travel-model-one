@@ -55,15 +55,6 @@ NGFS_EPC_TAZ_DF      = pd.read_csv(NGFS_EPC_TAZ_FILE)
 # tollclass designations
 TOLLCLASS_LOOKUP_DF     = pd.read_excel(NGFS_TOLLCLASS_FILE, sheet_name='Inputs_for_tollcalib', usecols=['project','facility_name','tollclass','s2toll_mandatory','THRESHOLD_SPEED','MAX_TOLL','MIN_TOLL','Grouping major','Grouping minor'])
 
-# parallel arterials
-# TODO: Document how these were made?
-NGFS_PARALLEL_ARTERIALS_FILE = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "ParallelArterialLinks.csv")
-NGFS_PARALLEL_ARTERIALS_DF   = pd.read_csv(NGFS_PARALLEL_ARTERIALS_FILE)
-
-# tolled arterials
-# TODO: apply the same fix that LZ will implement for a_b_with_minor_groupings
-NGFS_PATHWAY2_TOLLED_ARTERIALS_FILE = pd.read_csv('L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\2035_TM152_NGF_NP09_Path2a_04\\OUTPUT\\avgload5period.csv').rename(columns=lambda x: x.strip())[['a','b','tollclass']]
-
 # define origin destination pairs
 NGFS_OD_CITIES_OF_INTEREST = [
     ['Central/West Oakland',                           'San Francisco Downtown Area'],
@@ -2028,6 +2019,15 @@ def R2_aggregate_before_joining(tm_run_id):
     # this is large so join/subset it immediately
     trips_od_travel_time_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
     LOGGER.info("  Read {:,} rows from {}".format(len(trips_od_travel_time_df), ODTravelTime_byModeTimeperiod_file))
+
+    # filter for only driving modes
+    # we're going to aggregate trip modes; auto includes TAXI and TNC
+    trips_od_travel_time_df['agg_trip_mode'] = "N/A"
+    trips_od_travel_time_df.loc[ trips_od_travel_time_df.trip_mode.isin(MODES_PRIVATE_AUTO), 'agg_trip_mode' ] = "auto"
+    trips_od_travel_time_df.loc[ trips_od_travel_time_df.trip_mode.isin(MODES_TAXI_TNC),     'agg_trip_mode' ] = "auto"
+    trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df.agg_trip_mode == 'auto' ]
+    LOGGER.info("  Filtered to auto only: {:,} rows".format(len(trips_od_travel_time_df)))
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
 
     # pivot out the income and mode since we don't need it
     trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df,
