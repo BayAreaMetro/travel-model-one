@@ -35,8 +35,8 @@ library(readxl)
 employment_2015_data           <- "M:/Data/BusinessData/Employment_by_TAZ_industry/BusinessData_2015_TAZ_industry_noincommute.csv"
 school_2015_data               <- file.path(wd,"School Enrollment","tazData_enrollment.csv")
 
-blockTAZ2010         <- "M:/Data/GIS layers/TM1_taz_census2010/2010block_to_TAZ1454.csv"
-blockTAZ2020         <- "M:/Data/GIS layers/TM1_taz_census2020/2020block_to_TAZ1454.csv"
+blockTAZ2010_in      <- "M:/Data/GIS layers/TM1_taz_census2010/2010block_to_TAZ1454.csv"
+blockTAZ2020_in      <- "M:/Data/GIS layers/TM1_taz_census2020/2020block_to_TAZ1454.csv"
 censuskey            <- readLines("M:/Data/Census/API/api-key.txt")
 baycounties          <- c("01","13","41","55","75","81","85","95","97")
 state                <- "06"
@@ -177,7 +177,7 @@ decennial_BG_variables <- c(
   female80_84       ="P12_048N",		# female aged 80 to 84 
   female85p         ="P12_049N",		# female aged 85+ 
 
-# household size by tenure
+# Household size by tenure
 
   own1              ="H12_003N",    # own 1 person in HH 	     
   own2              ="H12_004N",    # own 2 persons in HH 
@@ -222,7 +222,7 @@ ACS_BG_variables <- c(
   employed_         ="B23025_004",    # Civilian employed residents (employed residents is "employed" + "armed forces")
   armedforces_      ="B23025_006", 	  # Armed forces
 
-# Household Income
+# Household income
                       
   hhinc0_10_        ="B19001_002",    # Household income 0 to $10k 
   hhinc10_15_       ="B19001_003",		# Household income $10 to $15k
@@ -282,6 +282,8 @@ ACS_BG_variables <- c(
   occ_f_svc_off_    ="C24010_065", # Office and administrative support
   occ_f_man_nat_    ="C24010_066", # Natural resources, construction, and maintenance
   occ_f_man_prod_   ="C24010_070")  # Production, transportation, and material moving
+
+# Households by number of workers, households by number of kids
                       
 ACS_tract_variables <-  c(hhwrks0_                    = "B08202_002", # 0-worker HH
                           hhwrks1_                    = "B08202_003",	# 1-worker HH
@@ -294,6 +296,7 @@ ACS_tract_variables <-  c(hhwrks0_                    = "B08202_002", # 0-worker
                           rentkidsno_                 = "B25012_017"  # Rent without related kids under 18
                           )
 
+# Group quarters for tracts by age and type of resident
 
 dhc_tract_variables <-  c(gq_noninst_m_0017_univ      = "PCT19_024N", # Male non-inst. under 18 university
                           gq_noninst_m_0017_mil       = "PCT19_025N", # Male non-inst. under 18 military
@@ -315,10 +318,15 @@ dhc_tract_variables <-  c(gq_noninst_m_0017_univ      = "PCT19_024N", # Male non
                           gq_noninst_f_65p_oth        = "PCT19_189N") # Female non-inst. 65+ other
 
 # Bring in 2010 block/TAZ equivalency, create block group ID and tract ID fields for later joining to ACS data
+# Add zero on that is lost in CSV conversion
 
-blockTAZ <- read.csv(blockTAZ2010,header=TRUE) %>% mutate(      
+blockTAZ2010 <- read.csv(blockTAZ2010_in,header=TRUE) %>% mutate(      
   blockgroup = paste0("0",substr(GEOID10,1,11)),
-  tract = paste0("0",substr(GEOID10,1,10))) 
+  tract = paste0("0",substr(GEOID10,1,10)))
+
+blockTAZ2020 <- read.csv(blockTAZ2020_in,header=TRUE) %>% mutate(      
+  blockgroup = paste0("0",blockgroup),
+  tract = paste0("0",tract))
 
 # Summarize block population by block group and tract 
 
