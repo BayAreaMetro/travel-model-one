@@ -122,195 +122,197 @@ decennial_BG_variables <- c(
 
 # Household totals
   
-  tothh         ="H12_001N",    # Total HHs 
-  hhpop         ="P15_001N",	  # HH pop 
+  tothh             ="H12_001N",    # Total HHs 
+  hhpop             ="P15_001N",	  # HH pop 
 
 # Age, male
   
-  male0_4       ="P12_003N",    # male aged 0 to 4 
-  male5_9       ="P12_004N",		# male aged 5 to 9 
-  male10_14     ="P12_005N",		# male aged 10 to 14
-  male15_17     ="P12_006N",		# male aged 15 to 17
-  male18_19     ="P12_007N",		# male aged 18 to 19
-  male20        ="P12_008N",		# male aged 20 
-  male21        ="P12_009N",		# male aged 21 
-  male22_24     ="P12_010N",		# male aged 22 to 24 
-  male25_29     ="P12_011N",		# male aged 25 to 29 
-  male30_34     ="P12_012N",		# male aged 30 to 34 
-  male35_39     ="P12_013N",		# male aged 35 to 39 
-  male40_44     ="P12_014N",		# male aged 40 to 44 
-  male45_49     ="P12_015N",		# male aged 45 to 49 
-  male50_54     ="P12_016N",		# male aged 50 to 54 
-  male55_59     ="P12_017N",		# male aged 55 to 59 
-  male60_61     ="P12_018N",		# male aged 60 to 61 
-  male62_64     ="P12_019N",		# male aged 62 to 64 
-  male65_66     ="P12_020N",		# male aged 65 to 66 
-  male67_69     ="P12_021N",		# male aged 67 to 69 
-  male70_74     ="P12_022N",		# male aged 70 to 74 
-  male75_79     ="P12_023N",		# male aged 75 to 79 
-  male80_84     ="P12_024N",		# male aged 80 to 84 
-  male85p       ="P12_025N",		# male aged 85+ 
+  male0_4           ="P12_003N",    # male aged 0 to 4 
+  male5_9           ="P12_004N",		# male aged 5 to 9 
+  male10_14         ="P12_005N",		# male aged 10 to 14
+  male15_17         ="P12_006N",		# male aged 15 to 17
+  male18_19         ="P12_007N",		# male aged 18 to 19
+  male20            ="P12_008N",		# male aged 20 
+  male21            ="P12_009N",		# male aged 21 
+  male22_24         ="P12_010N",		# male aged 22 to 24 
+  male25_29         ="P12_011N",		# male aged 25 to 29 
+  male30_34         ="P12_012N",		# male aged 30 to 34 
+  male35_39         ="P12_013N",		# male aged 35 to 39 
+  male40_44         ="P12_014N",		# male aged 40 to 44 
+  male45_49         ="P12_015N",		# male aged 45 to 49 
+  male50_54         ="P12_016N",		# male aged 50 to 54 
+  male55_59         ="P12_017N",		# male aged 55 to 59 
+  male60_61         ="P12_018N",		# male aged 60 to 61 
+  male62_64         ="P12_019N",		# male aged 62 to 64 
+  male65_66         ="P12_020N",		# male aged 65 to 66 
+  male67_69         ="P12_021N",		# male aged 67 to 69 
+  male70_74         ="P12_022N",		# male aged 70 to 74 
+  male75_79         ="P12_023N",		# male aged 75 to 79 
+  male80_84         ="P12_024N",		# male aged 80 to 84 
+  male85p           ="P12_025N",		# male aged 85+ 
 
-# Age, female
-
-  female0_4     ="P12_027N",   # female aged 0 to 4 
-  female5_9     ="P12_028N",		# female aged 5 to 9 
-  female10_14   ="P12_029N",		# female aged 10 to 14
-  female15_17   ="P12_030N",		# female aged 15 to 17
-  female18_19   ="P12_031N",		# female aged 18 to 19
-  female20      ="P12_032N",		# female aged 20 
-  female21      ="P12_033N",		# female aged 21 
-  female22_24   ="P12_034N",		# female aged 22 to 24 
-  female25_29   ="P12_035N",		# female aged 25 to 29 
-  female30_34   ="P12_036N",		# female aged 30 to 34 
-  female35_39   ="P12_037N",		# female aged 35 to 39 
-  female40_44   ="P12_038N",		# female aged 40 to 44 
-  female45_49   ="P12_039N",		# female aged 45 to 49 
-  female50_54   ="P12_040N",		# female aged 50 to 54 
-  female55_59   ="P12_041N",		# female aged 55 to 59 
-  female60_61   ="P12_042N",		# female aged 60 to 61 
-  female62_64   ="P12_043N",		# female aged 62 to 64 
-  female65_66   ="P12_044N",		# female aged 65 to 66 
-  female67_69   ="P12_045N",		# female aged 67 to 69 
-  female70_74   ="P12_046N",		# female aged 70 to 74 
-  female75_79   ="P12_047N",		# female aged 75 to 79 
-  female80_84   ="P12_048N",		# female aged 80 to 84 
-  female85p     ="P12_049N",		# female aged 85+ 
+# Age, female   
+    
+  female0_4         ="P12_027N",   # female aged 0 to 4 
+  female5_9         ="P12_028N",		# female aged 5 to 9 
+  female10_14       ="P12_029N",		# female aged 10 to 14
+  female15_17       ="P12_030N",		# female aged 15 to 17
+  female18_19       ="P12_031N",		# female aged 18 to 19
+  female20          ="P12_032N",		# female aged 20 
+  female21          ="P12_033N",		# female aged 21 
+  female22_24       ="P12_034N",		# female aged 22 to 24 
+  female25_29       ="P12_035N",		# female aged 25 to 29 
+  female30_34       ="P12_036N",		# female aged 30 to 34 
+  female35_39       ="P12_037N",		# female aged 35 to 39 
+  female40_44       ="P12_038N",		# female aged 40 to 44 
+  female45_49       ="P12_039N",		# female aged 45 to 49 
+  female50_54       ="P12_040N",		# female aged 50 to 54 
+  female55_59       ="P12_041N",		# female aged 55 to 59 
+  female60_61       ="P12_042N",		# female aged 60 to 61 
+  female62_64       ="P12_043N",		# female aged 62 to 64 
+  female65_66       ="P12_044N",		# female aged 65 to 66 
+  female67_69       ="P12_045N",		# female aged 67 to 69 
+  female70_74       ="P12_046N",		# female aged 70 to 74 
+  female75_79       ="P12_047N",		# female aged 75 to 79 
+  female80_84       ="P12_048N",		# female aged 80 to 84 
+  female85p         ="P12_049N",		# female aged 85+ 
 
 # household size by tenure
 
-  own1          ="H12_003N",    # own 1 person in HH 	     
-  own2          ="H12_004N",    # own 2 persons in HH 
-  own3          ="H12_005N",    # own 3 persons in HH 
-  own4          ="H12_006N",    # own 4 persons in HH 
-  own5          ="H12_007N",    # own 5 persons in HH 
-  own6          ="H12_008N",    # own 6 persons in HH 
-  own7p         ="H12_009N",    # own 7+ persons in HH 
-  rent1         ="H12_011N",    # rent 1 person in HH
-  rent2         ="H12_012N",    # rent 2 persons in HH 
-  rent3         ="H12_013N",    # rent 3 persons in HH 
-  rent4         ="H12_014N",    # rent 4 persons in HH 
-  rent5         ="H12_015N",    # rent 5 persons in HH 
-  rent6         ="H12_016N",    # rent 6 persons in HH 
-  rent7p        ="H12_017N",    # rent 7+ persons in HH
+  own1              ="H12_003N",    # own 1 person in HH 	     
+  own2              ="H12_004N",    # own 2 persons in HH 
+  own3              ="H12_005N",    # own 3 persons in HH 
+  own4              ="H12_006N",    # own 4 persons in HH 
+  own5              ="H12_007N",    # own 5 persons in HH 
+  own6              ="H12_008N",    # own 6 persons in HH 
+  own7p             ="H12_009N",    # own 7+ persons in HH 
+  rent1             ="H12_011N",    # rent 1 person in HH
+  rent2             ="H12_012N",    # rent 2 persons in HH 
+  rent3             ="H12_013N",    # rent 3 persons in HH 
+  rent4             ="H12_014N",    # rent 4 persons in HH 
+  rent5             ="H12_015N",    # rent 5 persons in HH 
+  rent6             ="H12_016N",    # rent 6 persons in HH 
+  rent7p            ="H12_017N",    # rent 7+ persons in HH
 
 # Race/Ethnicity variables
 
-  white_nonh    ="P5_003N",   # White alone, not Hispanic
-  black_nonh    ="P5_004N",   # Black alone, not Hispanic
-  asian_nonh    ="P5_006N",   # Asian alone, not Hispanic
-  total_nonh    ="P5_002N",   # Total, not Hispanic
-  total_hisp    ="P5_010N")   # Total Hispanic
+  white_nonh        ="P5_003N",   # White alone, not Hispanic
+  black_nonh        ="P5_004N",   # Black alone, not Hispanic
+  asian_nonh        ="P5_006N",   # Asian alone, not Hispanic
+  total_nonh        ="P5_002N",   # Total, not Hispanic
+  total_hisp        ="P5_010N")   # Total Hispanic
 
 ACS_BG_variables <- c(
   
-# Units
+# Units   
+      
+  unit1d_           ="B25024_002",    # 1 unit detached    
+  unit1a_           ="B25024_003",		# 1 unit attached 
+  unit2_            ="B25024_004",		# 2 units
+  unit3_4_          ="B25024_005",		# 3 or 4 units
+  unit5_9_          ="B25024_006",		# 5 to 9 units
+  unit10_19_        ="B25024_007",		# 10 to 19 units
+  unit20_49_        ="B25024_008",		# 20 to 49 units
+  unit50p_          ="B25024_009",		# 50+ units
+  mobile_           ="B25024_010",		# mobile homes
+  boat_RV_Van_      ="B25024_011",		# boats, RVs, vans
   
-  unit1d_       ="B25024_002",    # 1 unit detached    
-  unit1a_       ="B25024_003",		# 1 unit attached 
-  unit2_        ="B25024_004",		# 2 units
-  unit3_4_      ="B25024_005",		# 3 or 4 units
-  unit5_9_      ="B25024_006",		# 5 to 9 units
-  unit10_19_    ="B25024_007",		# 10 to 19 units
-  unit20_49_    ="B25024_008",		# 20 to 49 units
-  unit50p_      ="B25024_009",		# 50+ units
-  mobile_       ="B25024_010",		# mobile homes
-  boat_RV_Van_  ="B25024_011",		# boats, RVs, vans
-                  
-  employed_     ="B23025_004",    # Civilian employed residents (employed residents is "employed" + "armed forces")
-  armedforces_  ="B23025_006", 	  # Armed forces
+# Employment  
+  
+  employed_         ="B23025_004",    # Civilian employed residents (employed residents is "employed" + "armed forces")
+  armedforces_      ="B23025_006", 	  # Armed forces
+
+# Household Income
                       
-  hhinc0_10_    ="B19001_002",    # Household income 0 to $10k 
-  hhinc10_15_   ="B19001_003",		# Household income $10 to $15k
-  hhinc15_20_   ="B19001_004",		# Household income $15 to $20k
-  hhinc20_25_   ="B19001_005",		# Household income $20 to $25k
-  hhinc25_30_   ="B19001_006",		# Household income $25 to $30k
-  hhinc30_35_   ="B19001_007",		# Household income $30 to $35k
-  hhinc35_40_   ="B19001_008",		# Household income $35 to $40k
-  hhinc40_45_   ="B19001_009",		# Household income $40 to $45k
-  hhinc45_50_   ="B19001_010",		# Household income $45 to $50k
-  hhinc50_60_   ="B19001_011",		# Household income 50 to $60k
-  hhinc60_75_   ="B19001_012",		# Household income 60 to $75k
-  hhinc75_100_  ="B19001_013",		# Household income 75 to $100k
-  hhinc100_125_ ="B19001_014",		# Household income $100 to $1$25k
-  hhinc125_150_ ="B19001_015",		# Household income $1$25 to $150k
-  hhinc150_200_ ="B19001_016",		# Household income $150 to $200k
-  hhinc200p_    ="B19001_017",		# Household income $200k+
-# Industry, male                      
-                      "C24010_005", # Management
-                      "C24010_006", # Business and financial
-                      "C24010_007", # Computer, engineering, and science
-                      "C24010_012", # community and social service
-                      "C24010_013", # Legal
-                      "C24010_014", # ducation, training, and library
-                      "C24010_015", # Arts, design, entertainment, sports, and media
-                      "C24010_016", # Healthcare practitioners and technical
-                      "C24010_020", # Healthcare support
-                      "C24010_022", # Fire fighting and prevention, and other protectiv
-                      "C24010_023", # Law enforcement workers
-                      "C24010_024", # Food preparation and serving related
-                      "C24010_025", # Building and grounds cleaning and maintenance
-                      "C24010_026", # Personal care and service
-                      "C24010_028", # Sales and related
-                      "C24010_029", # Office and administrative support
-                      "C24010_030", # Natural resources, construction, and maintenance
-                      "C24010_034", # Production, transportation, and material moving
-# Industry, female                      
-                      "C24010_041", # Management
-                      "C24010_042", # Business and financial
-                      "C24010_043", # Computer, engineering, and science
-                      "C24010_048", # community and social service
-                      "C24010_049", # Legal
-                      "C24010_050", # Education, training, and library
-                      "C24010_051", # Arts, design, entertainment, sports, and media
-                      "C24010_052", # Healthcare practitioners and technical
-                      "C24010_056", # Healthcare support
-                      "C24010_058", # Fire fighting and prevention, and other protectiv
-                      "C24010_059", # Law enforcement workers
-                      "C24010_060", # Food preparation and serving related
-                      "C24010_061", # Building and grounds cleaning and maintenance
-                      "C24010_062", # Personal care and service
-                      "C24010_064", # Sales and related
-                      "C24010_065", # Office and administrative support
-                      "C24010_066", # Natural resources, construction, and maintenance
-                      "C24010_070")  # Production, transportation, and material moving
+  hhinc0_10_        ="B19001_002",    # Household income 0 to $10k 
+  hhinc10_15_       ="B19001_003",		# Household income $10 to $15k
+  hhinc15_20_       ="B19001_004",		# Household income $15 to $20k
+  hhinc20_25_       ="B19001_005",		# Household income $20 to $25k
+  hhinc25_30_       ="B19001_006",		# Household income $25 to $30k
+  hhinc30_35_       ="B19001_007",		# Household income $30 to $35k
+  hhinc35_40_       ="B19001_008",		# Household income $35 to $40k
+  hhinc40_45_       ="B19001_009",		# Household income $40 to $45k
+  hhinc45_50_       ="B19001_010",		# Household income $45 to $50k
+  hhinc50_60_       ="B19001_011",		# Household income 50 to $60k
+  hhinc60_75_       ="B19001_012",		# Household income 60 to $75k
+  hhinc75_100_      ="B19001_013",		# Household income 75 to $100k
+  hhinc100_125_     ="B19001_014",		# Household income $100 to $1$25k
+  hhinc125_150_     ="B19001_015",		# Household income $1$25 to $150k
+  hhinc150_200_     ="B19001_016",		# Household income $150 to $200k
+  hhinc200p_        ="B19001_017",		# Household income $200k+
+  
+# Occupation, male    
+  
+  occ_m_manage_     ="C24010_005", # Management
+  occ_m_prof_biz_   ="C24010_006", # Business and financial
+  occ_m_prof_comp_  ="C24010_007", # Computer, engineering, and science
+  occ_m_svc_comm_   ="C24010_012", # community and social service
+  occ_m_prof_leg_   ="C24010_013", # Legal
+  occ_m_prof_edu_   ="C24010_014", # Education, training, and library
+  occ_m_svc_ent_    ="C24010_015", # Arts, design, entertainment, sports, and media
+  occ_m_prof_heal_  ="C24010_016", # Healthcare practitioners and technical
+  occ_m_svc_heal_   ="C24010_020", # Healthcare support
+  occ_m_svc_fire_   ="C24010_022", # Fire fighting and prevention, and other protectiv
+  occ_m_svc_law_    ="C24010_023", # Law enforcement workers
+  occ_m_ret_eat_    ="C24010_024", # Food preparation and serving related
+  occ_m_man_build_  ="C24010_025", # Building and grounds cleaning and maintenance
+  occ_m_svc_pers_   ="C24010_026", # Personal care and service
+  occ_m_ret_sales_  ="C24010_028", # Sales and related
+  occ_m_svc_off_    ="C24010_029", # Office and administrative support
+  occ_m_man_nat_    ="C24010_030", # Natural resources, construction, and maintenance
+  occ_m_man_prod_   ="C24010_034", # Production, transportation, and material moving
+  
+# Occupation, female
+  
+  occ_f_manage_     ="C24010_041", # Management
+  occ_f_prof_biz_   ="C24010_042", # Business and financial
+  occ_f_prof_comp_  ="C24010_043", # Computer, engineering, and science
+  occ_f_svc_comm_   ="C24010_048", # community and social service
+  occ_f_prof_leg_   ="C24010_049", # Legal
+  occ_f_prof_edu_   ="C24010_050", # Education, training, and library
+  occ_f_svc_ent_    ="C24010_051", # Arts, design, entertainment, sports, and media
+  occ_f_prof_heal_  ="C24010_052", # Healthcare practitioners and technical
+  occ_f_svc_heal_   ="C24010_056", # Healthcare support
+  occ_f_svc_fire_   ="C24010_058", # Fire fighting and prevention, and other protectiv
+  occ_f_svc_law_    ="C24010_059", # Law enforcement workers
+  occ_f_ret_eat_    ="C24010_060", # Food preparation and serving related
+  occ_f_man_build_  ="C24010_061", # Building and grounds cleaning and maintenance
+  occ_f_svc_pers_   ="C24010_062", # Personal care and service
+  occ_f_ret_sales_  ="C24010_064", # Sales and related
+  occ_f_svc_off_    ="C24010_065", # Office and administrative support
+  occ_f_man_nat_    ="C24010_066", # Natural resources, construction, and maintenance
+  occ_f_man_prod_   ="C24010_070")  # Production, transportation, and material moving
                       
-
-                      
-
-
-ACS_tract_variables <-c(hhwrks0 = "B08202_002",     # 0-worker HH
-                        hhwrks1 = "B08202_003",	    # 1-worker HH
-                        hhwrks2 = "B08202_004",	    # 2-worker HH
-                        hhwrks3p = "B08202_005",    # 3+-worker HH
-                   
-                        ownkidsyes = "B25012_003",  # Own with related kids under 18
-                        rentkidsyes = "B25012_011", # Rent with related kids under 18
-                        ownkidsno = "B25012_009",   # Own without related kids under 18
-                        rentkidsno = "B25012_017"   # Rent without related kids under 18
-                        )
+ACS_tract_variables <-  c(hhwrks0_                    = "B08202_002", # 0-worker HH
+                          hhwrks1_                    = "B08202_003",	# 1-worker HH
+                          hhwrks2_                    = "B08202_004",	# 2-worker HH
+                          hhwrks3p_                   = "B08202_005", # 3+-worker HH
+                                
+                          ownkidsyes_                 = "B25012_003", # Own with related kids under 18
+                          rentkidsyes_                = "B25012_011", # Rent with related kids under 18
+                          ownkidsno_                  = "B25012_009", # Own without related kids under 18
+                          rentkidsno_                 = "B25012_017"  # Rent without related kids under 18
+                          )
 
 
-
-sf1_tract_variables <-
-  c(gq_noninst_m_0017_univ = "P043010",
-    gq_noninst_m_0017_mil  = "P043011",
-    gq_noninst_m_0017_oth  = "P043012",
-    gq_noninst_m_1864_univ = "P043020",
-    gq_noninst_m_1864_mil  = "P043021",
-    gq_noninst_m_1864_oth  = "P043022",
-    gq_noninst_m_65p_univ  = "P043030",
-    gq_noninst_m_65p_mil   = "P043031",
-    gq_noninst_m_65p_oth   = "P043032",
-    gq_noninst_f_0017_univ = "P043041",
-    gq_noninst_f_0017_mil  = "P043042",
-    gq_noninst_f_0017_oth  = "P043043",
-    gq_noninst_f_1864_univ = "P043051",
-    gq_noninst_f_1864_mil  = "P043052",
-    gq_noninst_f_1864_oth  = "P043053",
-    gq_noninst_f_65p_univ  = "P043061",
-    gq_noninst_f_65p_mil   = "P043062",
-    gq_noninst_f_65p_oth   = "P043063")
+dhc_tract_variables <-  c(gq_noninst_m_0017_univ      = "PCT19_024N", # Male non-inst. under 18 university
+                          gq_noninst_m_0017_mil       = "PCT19_025N", # Male non-inst. under 18 military
+                          gq_noninst_m_0017_oth       = "PCT19_028N", # Male non-inst. under 18 other
+                          gq_noninst_m_1864_univ      = "PCT19_056N", # Male non-inst. 18-64 university
+                          gq_noninst_m_1864_mil       = "PCT19_057N", # Male non-inst. 18-64 military
+                          gq_noninst_m_1864_oth       = "PCT19_060N", # Male non-inst. 18-64 other
+                          gq_noninst_m_65p_univ       = "PCT19_088N", # Male non-inst. 65+ university
+                          gq_noninst_m_65p_mil        = "PCT19_089N", # Male non-inst. 65+ military
+                          gq_noninst_m_65p_oth        = "PCT19_092N", # Male non-inst. 65+ other
+                          gq_noninst_f_0017_univ      = "PCT19_121N", # Female non-inst. under 18 university
+                          gq_noninst_f_0017_mil       = "PCT19_122N", # Female non-inst. under 18 military
+                          gq_noninst_f_0017_oth       = "PCT19_125N", # Female non-inst. under 18 other
+                          gq_noninst_f_1864_univ      = "PCT19_153N", # Female non-inst. 18-64 university
+                          gq_noninst_f_1864_mil       = "PCT19_154N", # Female non-inst. 18-64 military
+                          gq_noninst_f_1864_oth       = "PCT19_157N", # Female non-inst. 18-64 other
+                          gq_noninst_f_65p_univ       = "PCT19_185N", # Female non-inst. 65+ university
+                          gq_noninst_f_65p_mil        = "PCT19_186N", # Female non-inst. 65+ military
+                          gq_noninst_f_65p_oth        = "PCT19_189N") # Female non-inst. 65+ other
 
 # Bring in 2010 block/TAZ equivalency, create block group ID and tract ID fields for later joining to ACS data
 
