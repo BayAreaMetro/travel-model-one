@@ -35,7 +35,6 @@ library(readxl)
 employment_2015_data           <- "M:/Data/BusinessData/Employment_by_TAZ_industry/BusinessData_2015_TAZ_industry_noincommute.csv"
 school_2015_data               <- file.path(wd,"School Enrollment","tazData_enrollment.csv")
 
-blockTAZ2010_in      <- "M:/Data/GIS layers/TM1_taz_census2010/2010block_to_TAZ1454.csv"
 blockTAZ2020_in      <- "M:/Data/GIS layers/TM1_taz_census2020/2020block_to_TAZ1454.csv"
 censuskey            <- readLines("M:/Data/Census/API/api-key.txt")
 baycounties          <- c("01","13","41","55","75","81","85","95","97")
@@ -118,7 +117,7 @@ ACS_table <- load_variables(year=2021, dataset="acs5", cache=TRUE)
 # Identify the 2020 decennial census variables
 # Some variables skipped in sequence due to nesting
 
-decennial_BG_variables <- c(
+DHC_BG_variables <- c(
 
 # Household totals
   
@@ -298,7 +297,7 @@ ACS_tract_variables <-  c(hhwrks0_                    = "B08202_002", # 0-worker
 
 # Group quarters for tracts by age and type of resident
 
-dhc_tract_variables <-  c(gq_noninst_m_0017_univ      = "PCT19_024N", # Male non-inst. under 18 university
+DHC_tract_variables <-  c(gq_noninst_m_0017_univ      = "PCT19_024N", # Male non-inst. under 18 university
                           gq_noninst_m_0017_mil       = "PCT19_025N", # Male non-inst. under 18 military
                           gq_noninst_m_0017_oth       = "PCT19_028N", # Male non-inst. under 18 other
                           gq_noninst_m_1864_univ      = "PCT19_056N", # Male non-inst. 18-64 university
@@ -317,53 +316,36 @@ dhc_tract_variables <-  c(gq_noninst_m_0017_univ      = "PCT19_024N", # Male non
                           gq_noninst_f_65p_mil        = "PCT19_186N", # Female non-inst. 65+ military
                           gq_noninst_f_65p_oth        = "PCT19_189N") # Female non-inst. 65+ other
 
-# Bring in 2010 and 2020 block/TAZ equivalency, create block group ID and tract ID fields for later joining to ACS data
+# Bring in 2020 block/TAZ equivalency, create block group ID and tract ID fields for later joining to ACS data
 # Add zero on that is lost in CSV conversion
 
-blockTAZ2010 <- read.csv(blockTAZ2010_in,header=TRUE) %>% mutate(      
-  blockgroup = paste0("0",substr(GEOID10,1,11)),
-  tract = paste0("0",substr(GEOID10,1,10)))
-
-blockTAZ2020 <- read.csv(blockTAZ2020_in,header=TRUE) %>% mutate(      
+blockTAZ <- read.csv(blockTAZ2020_in,header=TRUE) %>% mutate(      
   blockgroup = paste0("0",blockgroup),
   tract = paste0("0",tract))
 
 # Summarize block population by block group and tract 
 
-blockTAZBG2010 <- blockTAZ2010 %>% 
-  group_by(blockgroup) %>%
-  summarize(BGTotal=sum(block_POPULATION))
-  
-blockTAZTract2010 <- blockTAZ2010 %>% 
-  group_by(tract) %>%
-  summarize(TractTotal=sum(block_POPULATION))
 
-blockTAZBG2020 <- blockTAZ2020 %>% 
+blockTAZBG <- blockTAZ %>% 
   group_by(blockgroup) %>%
   summarize(BGTotal=sum(block_POPULATION))
 
-blockTAZTract2020 <- blockTAZ2020 %>% 
+blockTAZTract <- blockTAZ %>% 
   group_by(tract) %>%
   summarize(TractTotal=sum(block_POPULATION))
 
-# Create 2010 and 2020 block share of total population for block/block group and block/tract, append to comnbined_block file
+# Create 2020 block share of total population for block/block group and block/tract, append to comnbined_block file
 # Be mindful of divide by zero error associated with 0-pop block groups and tracts
 
-combined_block2010 <- left_join(blockTAZ2010,blockTAZBG2010,by="blockgroup") %>% mutate(
+combined_block <- left_join(blockTAZ,blockTAZBG,by="blockgroup") %>% mutate(
   sharebg=if_else(block_POPULATION==0,0,block_POPULATION/BGTotal))
 
-combined_block2010 <- left_join(combined_block2010,blockTAZTract2010,by="tract") %>% mutate(
-  sharetract=if_else(block_POPULATION==0,0,block_POPULATION/TractTotal))
-
-combined_block2020 <- left_join(blockTAZ2020,blockTAZBG2020,by="blockgroup") %>% mutate(
-  sharebg=if_else(block_POPULATION==0,0,block_POPULATION/BGTotal))
-
-combined_block2020 <- left_join(combined_block2020,blockTAZTract2020,by="tract") %>% mutate(
+combined_block <- left_join(combined_block,blockTAZTract,by="tract") %>% mutate(
   sharetract=if_else(block_POPULATION==0,0,block_POPULATION/TractTotal))
 
 # Function to make tract and block group data API calls by county for ACS 2017-2021
 
-ACS_tract_raw2010 <- get_acs(
+ACS_tract_raw <- get_acs(
           geography = "tract", variables = ACS_tract_variables,
           state = state_code, county=baycounties,
           year=ACS_year,
@@ -371,196 +353,66 @@ ACS_tract_raw2010 <- get_acs(
           survey = "acs5",
           key = censuskey)
 
-ACS_BG_raw2010 <- get_acs(
+ACS_BG_raw <- get_acs(
   geography = "block group", variables = ACS_BG_variables,
-  state = state_code, county="055",
+  state = state_code, county=baycounties,
   year=ACS_year,
   output="wide",
   survey = "acs5",
   key = censuskey)
 
+DHC_tract_raw <- get_decennial(
+  geography = "tract", variables = DHC_tract_variables,
+  state = state_code, county=baycounties,
+  year=2020,
+  output="wide",
+  sumfile = "dhc",
+  key = censuskey)
 
-# Rename block group variables 
-names(ACS_BG_preraw) <- str_replace_all(names(ACS_BG_preraw), c(" " = "_"))   # Remove space in variable name, 
-                                                                              # "block group" to "block_group"
-ACS_BG_raw <- ACS_BG_preraw %>%
-  rename(	 tothhE = B25009_001E,        #Total HHs, HH pop
-           hhpopE = B11002_001E,
-           
-           employedE = B23025_004E,     # Employed residents is employedE +armed forcesE
-           armedforcesE = B23025_006E, 
-           
-           hhinc0_10E = B19001_002E,    # Income categories 
-           hhinc10_15E = B19001_003E,
-           hhinc15_20E = B19001_004E,
-           hhinc20_25E = B19001_005E,
-           hhinc25_30E = B19001_006E,
-           hhinc30_35E = B19001_007E,
-           hhinc35_40E = B19001_008E,
-           hhinc40_45E = B19001_009E,
-           hhinc45_50E = B19001_010E,
-           hhinc50_60E = B19001_011E,
-           hhinc60_75E = B19001_012E,
-           hhinc75_100E = B19001_013E,
-           hhinc100_125E = B19001_014E,
-           hhinc125_150E = B19001_015E,
-           hhinc150_200E = B19001_016E,
-           hhinc200pE = B19001_017E,
-           
-           male0_4E = B01001_003E,      # Age data
-           male5_9E = B01001_004E,
-           male10_14E = B01001_005E,
-           male15_17E = B01001_006E,
-           male18_19E = B01001_007E,
-           male20E = B01001_008E,
-           male21E = B01001_009E,
-           male22_24E = B01001_010E,
-           male25_29E = B01001_011E,
-           male30_34E = B01001_012E,
-           male35_39E = B01001_013E,
-           male40_44E = B01001_014E,
-           male45_49E = B01001_015E,
-           male50_54E = B01001_016E,
-           male55_59E = B01001_017E,
-           male60_61E = B01001_018E,
-           male62_64E = B01001_019E,
-           male65_66E = B01001_020E,
-           male67_69E = B01001_021E,
-           male70_74E = B01001_022E,
-           male75_79E = B01001_023E,
-           male80_84E = B01001_024E,
-           male85pE = B01001_025E,
-           female0_4E = B01001_027E,
-           female5_9E = B01001_028E,
-           female10_14E = B01001_029E,
-           female15_17E = B01001_030E,
-           female18_19E = B01001_031E,
-           female20E = B01001_032E,
-           female21E = B01001_033E,
-           female22_24E = B01001_034E,
-           female25_29E = B01001_035E,
-           female30_34E = B01001_036E,
-           female35_39E = B01001_037E,
-           female40_44E = B01001_038E,
-           female45_49E = B01001_039E,
-           female50_54E = B01001_040E,
-           female55_59E = B01001_041E,
-           female60_61E = B01001_042E,
-           female62_64E = B01001_043E,
-           female65_66E = B01001_044E,
-           female67_69E = B01001_045E,
-           female70_74E = B01001_046E,
-           female75_79E = B01001_047E,
-           female80_84E = B01001_048E,
-           female85pE = B01001_049E,
-           
-           white_nonhE = B03002_003E,    # Demographic data 
-           black_nonhE = B03002_004E,    
-           asian_nonhE = B03002_006E,    
-           total_nonhE = B03002_002E,    
-           total_hispE = B03002_012E,    
-           
-           unit1dE = B25024_002E,       # Single and multi-family dwelling unit data
-           unit1aE = B25024_003E,
-           unit2E = B25024_004E,
-           unit3_4E = B25024_005E,
-           unit5_9E = B25024_006E,
-           unit10_19E = B25024_007E,
-           unit20_49E = B25024_008E,
-           unit50pE = B25024_009E,
-           mobileE = B25024_010E,
-           boat_RV_VanE = B25024_011E,
-           
-           own1E = B25009_003E,        # Household size data
-           own2E = B25009_004E,
-           own3E = B25009_005E,
-           own4E = B25009_006E,
-           own5E = B25009_007E,
-           own6E = B25009_008E,
-           own7pE = B25009_009E,
-           rent1E = B25009_011E,
-           rent2E = B25009_012E,
-           rent3E = B25009_013E,
-           rent4E = B25009_014E,
-           rent5E = B25009_015E,
-           rent6E = B25009_016E,
-           rent7pE = B25009_017E,
-           
-           # these skip some numbers since there are nested levels
-           occ_m_manageE    = C24010_005E, # Management
-           occ_m_prof_bizE  = C24010_006E, # Business and financial
-           occ_m_prof_compE = C24010_007E, # Computer, engineering, and science
-           occ_m_svc_commE  = C24010_012E, # community and social service
-           occ_m_prof_legE  = C24010_013E, # Legal
-           occ_m_prof_eduE  = C24010_014E, # Education, training, and library
-           occ_m_svc_entE   = C24010_015E, # Arts, design, entertainment, sports, and media
-           occ_m_prof_healE = C24010_016E, # Healthcare practitioners and technical
-           occ_m_svc_healE  = C24010_020E, # Healthcare support
-           occ_m_svc_fireE  = C24010_022E, # Fire fighting and prevention, and other protectiv
-           occ_m_svc_lawE   = C24010_023E, # Law enforcement workers
-           occ_m_ret_eatE   = C24010_024E, # Food preparation and serving related
-           occ_m_man_buildE = C24010_025E, # Building and grounds cleaning and maintenance
-           occ_m_svc_persE  = C24010_026E, # Personal care and service
-           occ_m_ret_salesE = C24010_028E, # Sales and related
-           occ_m_svc_offE   = C24010_029E, # Office and administrative support
-           occ_m_man_natE   = C24010_030E, # Natural resources, construction, and maintenance
-           occ_m_man_prodE  = C24010_034E, # Production, transportation, and material moving
-           
-           occ_f_manageE    = C24010_041E, # Management
-           occ_f_prof_bizE  = C24010_042E, # Business and financial
-           occ_f_prof_compE = C24010_043E, # Computer, engineering, and science
-           occ_f_svc_commE  = C24010_048E, # community and social service
-           occ_f_prof_legE  = C24010_049E, # Legal
-           occ_f_prof_eduE  = C24010_050E, # Education, training, and library
-           occ_f_svc_entE   = C24010_051E, # Arts, design, entertainment, sports, and media
-           occ_f_prof_healE = C24010_052E, # Healthcare practitioners and technical
-           occ_f_svc_healE  = C24010_056E, # Healthcare support
-           occ_f_svc_fireE  = C24010_058E, # Fire fighting and prevention, and other protectiv
-           occ_f_svc_lawE   = C24010_059E, # Law enforcement workers
-           occ_f_ret_eatE   = C24010_060E, # Food preparation and serving related
-           occ_f_man_buildE = C24010_061E, # Building and grounds cleaning and maintenance
-           occ_f_svc_persE  = C24010_062E, # Personal care and service
-           occ_f_ret_salesE = C24010_064E, # Sales and related
-           occ_f_svc_offE   = C24010_065E, # Office and administrative support
-           occ_f_man_natE   = C24010_066E, # Natural resources, construction, and maintenance
-           occ_f_man_prodE  = C24010_070E  # Production, transportation, and material moving
-        ) %>%
-  mutate(
-    GEOID=paste0(state,county,tract,block_group),
-    tract=paste0(state,county,tract)
-  )
+DHC_BG_raw <- get_decennial(
+  geography = "block group", variables = DHC_BG_variables,
+  state = state_code, county=baycounties,
+  year=2020,
+  output="wide",
+  sumfile = "dhc",
+  key = censuskey)
 
+# Remove NAME variable for later joining
 
+DHC_tract_raw <- DHC_tract_raw %>% select(-NAME)
+DHC_BG_raw    <- DHC_BG_raw %>% select(-NAME)
 
-# Make decennial census calls
+# Remove MOEs from ACS variables,rename to drop "_E" suffix
+# Drop NAME variable for later joining
 
-sf1_tract_raw <- get_decennial(geography = "tract", variables = sf1_tract_variables,
-                            state = "06", county=baycounties,
-                            year=sf1_year,
-                            output="wide",
-                            key=censuskey)
+ACS_tract_raw <- ACS_tract_raw %>% select(!(ends_with("_M"))) %>% select(-NAME)
+ACS_BG_raw <- ACS_BG_raw %>% select(!(ends_with("_M"))) %>% select(-NAME)
+names(ACS_tract_raw) <- str_replace_all(names(ACS_tract_raw), c("_E" = ""))
+names(ACS_BG_raw) <- str_replace_all(names(ACS_BG_raw), c("_E" = ""))
+                                                                             
 
-# Join 2013-2017 ACS block group and tract variables to combined_block file
+# Join 2017-2021 ACS block group and tract variables to combined_block file
 # Combine and collapse ACS categories to get land use control totals, as appropriate
-# Apply block share of 2013-2017 ACS variables using block/block group and block/tract shares of 2010 total population
-# Note that "E" on the end of each variable is appended by tidycensus package to denote "estimate"
+# Apply block share of 2013-2017 ACS variables using block/block group and block/tract shares of 2020 total population
 
-workingdata <- left_join(combined_block,ACS_BG_raw, by=c("blockgroup"="GEOID","tract"))          
-workingdata <- left_join(workingdata,ACS_tract_raw, by=c("tract"="GEOID"))%>% mutate(
-  TOTHH=tothhE*sharebg,
-  HHPOP=hhpopE*sharebg,
+workingdata <- left_join(combined_block,ACS_BG_raw, by=c("blockgroup"="GEOID")) %>% 
+  left_join(.,ACS_tract_raw, by=c("tract"="GEOID"))%>% 
+  left_join(.,DHC_BG_raw, by=c("blockgroup"="GEOID"))%>%
+  left_join(.,DHC_tract_raw, by=c("tract"="GEOID"))%>% mutate(
+  TOTHH=tothh*sharebg,
+  HHPOP=hhpop*sharebg,
   EMPRES=(employedE+armedforcesE)*sharebg,
-  HHINCQ1=(hhinc0_10E+
-             hhinc10_15E+
-             hhinc15_20E+
-             hhinc20_25E+
-             hhinc25_30E+
-             hhinc30_35E+
-             hhinc35_40E+
-             hhinc40_45E)*sharebg,
-  HHINCQ2=(hhinc45_50E+
-             hhinc50_60E+
-             hhinc60_75E+
+  HHINCQ1=(hhinc0_10+
+             hhinc10_15+
+             hhinc15_20+
+             hhinc20_25+
+             hhinc25_30+
+             hhinc30_35+
+             hhinc35_40+
+             hhinc40_45)*sharebg,
+  HHINCQ2=(hhinc45_50+
+             hhinc50_60+
+             hhinc60_75+
              (hhinc75_100E*(1-shareabove91538)))*sharebg, # Apportions HHs below $91,538 within $75,000-$100,000
   HHINCQ3=((hhinc75_100E*shareabove91538)+                # Apportions HHs above $91,538 within $75,000-$100,000
              hhinc100_125E+
