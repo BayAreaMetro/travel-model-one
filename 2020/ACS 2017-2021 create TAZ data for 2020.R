@@ -325,7 +325,6 @@ blockTAZ <- read.csv(blockTAZ2020_in,header=TRUE) %>% mutate(
 
 # Summarize block population by block group and tract 
 
-
 blockTAZBG <- blockTAZ %>% 
   group_by(blockgroup) %>%
   summarize(BGTotal=sum(block_POPULATION))
@@ -391,17 +390,18 @@ names(ACS_tract_raw) <- str_replace_all(names(ACS_tract_raw), c("_E" = ""))
 names(ACS_BG_raw) <- str_replace_all(names(ACS_BG_raw), c("_E" = ""))
                                                                              
 
-# Join 2017-2021 ACS block group and tract variables to combined_block file
+# Join 2017-2021 ACS and DHC block group and tract variables to combined_block file
 # Combine and collapse ACS categories to get land use control totals, as appropriate
 # Apply block share of 2013-2017 ACS variables using block/block group and block/tract shares of 2020 total population
 
-workingdata <- left_join(combined_block,ACS_BG_raw, by=c("blockgroup"="GEOID")) %>% 
+interim <- left_join(combined_block,ACS_BG_raw, by=c("blockgroup"="GEOID")) %>% 
   left_join(.,ACS_tract_raw, by=c("tract"="GEOID"))%>% 
   left_join(.,DHC_BG_raw, by=c("blockgroup"="GEOID"))%>%
-  left_join(.,DHC_tract_raw, by=c("tract"="GEOID"))%>% mutate(
+  left_join(.,DHC_tract_raw, by=c("tract"="GEOID"))
+workingdata <- interim %>% mutate(
   TOTHH=tothh*sharebg,
   HHPOP=hhpop*sharebg,
-  EMPRES=(employedE+armedforcesE)*sharebg,
+  EMPRES=(employed+armedforces)*sharebg,
   HHINCQ1=(hhinc0_10+
              hhinc10_15+
              hhinc15_20+
@@ -409,129 +409,127 @@ workingdata <- left_join(combined_block,ACS_BG_raw, by=c("blockgroup"="GEOID")) 
              hhinc25_30+
              hhinc30_35+
              hhinc35_40+
-             hhinc40_45)*sharebg,
-  HHINCQ2=(hhinc45_50+
-             hhinc50_60+
+             hhinc40_45+
+             hhinc45_50)*sharebg,
+  HHINCQ2=(  hhinc50_60+
              hhinc60_75+
-             (hhinc75_100E*(1-shareabove91538)))*sharebg, # Apportions HHs below $91,538 within $75,000-$100,000
-  HHINCQ3=((hhinc75_100E*shareabove91538)+                # Apportions HHs above $91,538 within $75,000-$100,000
-             hhinc100_125E+
-             hhinc125_150E)*sharebg,
-  HHINCQ4=(hhinc150_200E+hhinc200pE)*sharebg,
-  AGE0004=(male0_4E+female0_4E)*sharebg,
-  AGE0519=(male5_9E+
-             male10_14E+
-             male15_17E+
-             male18_19E+
-             female5_9E+
-             female10_14E+
-             female15_17E+
-             female18_19E)*sharebg,
-  AGE2044=(male20E+
-             male21E+
-             male22_24E+
-             male25_29E+
-             male30_34E+
-             male35_39E+
-             male40_44E+
-             female20E+
-             female21E+
-             female22_24E+
-             female25_29E+
-             female30_34E+
-             female35_39E+
-             female40_44E)*sharebg,
-  AGE4564=(male45_49E+
-             male50_54E+
-             male55_59E+
-             male60_61E+
-             male62_64E+
-             female45_49E+
-             female50_54E+
-             female55_59E+
-             female60_61E+
-             female62_64E)*sharebg,
-  AGE65P=(male65_66E+
-            male67_69E+
-            male70_74E+
-            male75_79E+
-            male80_84E+
-            male85pE+
-            female65_66E+
-            female67_69E+
-            female70_74E+
-            female75_79E+
-            female80_84E+
-            female85pE)*sharebg,
-  AGE62P=(male62_64E+
-            male65_66E+
-            male67_69E+
-            male70_74E+
-            male75_79E+
-            male80_84E+
-            male85pE+
-            female62_64E+
-            female65_66E+
-            female67_69E+
-            female70_74E+
-            female75_79E+
-            female80_84E+
-            female85pE)*sharebg,
-  white_nonh=white_nonhE*sharebg,
-  black_nonh=black_nonhE*sharebg,
-  asian_nonh=asian_nonhE*sharebg,
-  other_nonh=(total_nonhE-(white_nonhE+black_nonhE+asian_nonhE))*sharebg,   # "Other, non-Hisp is total non-Hisp minus white,black,Asian
-  hispanic=total_hispE*sharebg,
-  SFDU=(unit1dE+
-          unit1aE+
-          mobileE+
-          boat_RV_VanE)*sharebg,
-  MFDU=(unit2E+
-          unit3_4E+
-          unit5_9E+
-          unit10_19E+
-          unit20_49E+
-          unit50pE)*sharebg,
-  hh_size_1=(own1E+rent1E)*sharebg,
-  hh_size_2=(own2E+rent2E)*sharebg,
-  hh_size_3=(own3E+rent3E)*sharebg,
-  hh_size_4_plus=(own4E+
-                   own5E+
-                   own6E+
-                   own7pE+
-                   rent4E+
-                   rent5E+
-                   rent6E+
-                   rent7pE)*sharebg,
-  hh_wrks_0=hhwrks0E*sharetract,
-  hh_wrks_1=hhwrks1E*sharetract,
-  hh_wrks_2=hhwrks2E*sharetract,
-  hh_wrks_3_plus=hhwrks3pE*sharetract,
-  hh_kids_yes=(ownkidsyesE+rentkidsyesE)*sharetract,
-  hh_kids_no=(ownkidsnoE+rentkidsnoE)*sharetract,
-  pers_occ_management   = (occ_m_manageE    + occ_f_manageE   )*sharebg,
-  pers_occ_professional = (occ_m_prof_bizE  + occ_f_prof_bizE  +
-                           occ_m_prof_compE + occ_f_prof_compE +
-                           occ_m_prof_legE  + occ_f_prof_legE  +
-                           occ_m_prof_eduE  + occ_f_prof_eduE  +
-                           occ_m_prof_healE + occ_f_prof_healE)*sharebg,
-  pers_occ_services     = (occ_m_svc_commE  + occ_f_svc_commE  +
-                           occ_m_svc_entE   + occ_f_svc_entE   +
-                           occ_m_svc_healE  + occ_f_svc_healE  +
-                           occ_m_svc_fireE  + occ_f_svc_fireE  +
-                           occ_m_svc_lawE   + occ_f_svc_lawE   +
-                           occ_m_svc_persE  + occ_f_svc_persE  +
-                           occ_m_svc_offE   + occ_f_svc_offE  )*sharebg,
-  pers_occ_retail       = (occ_m_ret_eatE   + occ_f_ret_eatE   +
-                           occ_m_ret_salesE + occ_f_ret_salesE)*sharebg,
-  pers_occ_manual       = (occ_m_man_buildE + occ_f_man_buildE +
-                           occ_m_man_natE   + occ_f_man_natE   +
-                           occ_m_man_prodE  + occ_f_man_prodE )*sharebg,
-  pers_occ_military     = (armedforcesE)*sharebg
-)
-# sf1
-workingdata <- left_join(workingdata,sf1_tract_raw, by=c("tract"="GEOID")) %>%
-  mutate(gq_type_univ  =(gq_noninst_m_0017_univ +
+             hhinc75_100)*sharebg,
+  HHINCQ3=(  hhinc100_125+
+             hhinc125_150+
+             (hhinc150_200*(1-shareabove171876)))*sharebg, # Apportions HHs below $171,876 within $150,000-$200,000 range
+  HHINCQ4=((hhinc150_200*shareabove171876)+                # Apportions HHs above $171,876 within $150,000-$200,000 range
+             hhinc200p)*sharebg,
+  AGE0004=(male0_4+female0_4)*sharebg,
+  AGE0519=(male5_9+
+             male10_14+
+             male15_17+
+             male18_19+
+             female5_9+
+             female10_14+
+             female15_17+
+             female18_19)*sharebg,
+  AGE2044=(male20+
+             male21+
+             male22_24+
+             male25_29+
+             male30_34+
+             male35_39+
+             male40_44+
+             female20+
+             female21+
+             female22_24+
+             female25_29+
+             female30_34+
+             female35_39+
+             female40_44)*sharebg,
+  AGE4564=(male45_49+
+             male50_54+
+             male55_59+
+             male60_61+
+             male62_64+
+             female45_49+
+             female50_54+
+             female55_59+
+             female60_61+
+             female62_64)*sharebg,
+  AGE65P=(male65_66+
+            male67_69+
+            male70_74+
+            male75_79+
+            male80_84+
+            male85p+
+            female65_66+
+            female67_69+
+            female70_74+
+            female75_79+
+            female80_84+
+            female85p)*sharebg,
+  AGE62P=(male62_64+
+            male65_66+
+            male67_69+
+            male70_74+
+            male75_79+
+            male80_84+
+            male85p+
+            female62_64+
+            female65_66+
+            female67_69+
+            female70_74+
+            female75_79+
+            female80_84+
+            female85p)*sharebg,
+  white_nonh=white_nonh*sharebg,
+  black_nonh=black_nonh*sharebg,
+  asian_nonh=asian_nonh*sharebg,
+  other_nonh=(total_nonh-(white_nonh+black_nonh+asian_nonh))*sharebg,   # "Other, non-Hisp is total non-Hisp minus white,black,Asian
+  hispanic=total_hisp*sharebg,
+  SFDU=(unit1d+
+          unit1a+
+          mobile+
+          boat_RV_Van)*sharebg,
+  MFDU=(unit2+
+          unit3_4+
+          unit5_9+
+          unit10_19+
+          unit20_49+
+          unit50p)*sharebg,
+  hh_size_1=(own1+rent1)*sharebg,
+  hh_size_2=(own2+rent2)*sharebg,
+  hh_size_3=(own3+rent3)*sharebg,
+  hh_size_4_plus=(own4+
+                   own5+
+                   own6+
+                   own7p+
+                   rent4+
+                   rent5+
+                   rent6+
+                   rent7p)*sharebg,
+  hh_wrks_0=hhwrks0*sharetract,
+  hh_wrks_1=hhwrks1*sharetract,
+  hh_wrks_2=hhwrks2*sharetract,
+  hh_wrks_3_plus=hhwrks3p*sharetract,
+  hh_kids_yes=(ownkidsyes+rentkidsyes)*sharetract,
+  hh_kids_no=(ownkidsno+rentkidsno)*sharetract,
+  pers_occ_management   = (occ_m_manage    + occ_f_manage   )*sharebg,
+  pers_occ_professional = (occ_m_prof_biz  + occ_f_prof_biz  +
+                           occ_m_prof_comp + occ_f_prof_comp +
+                           occ_m_prof_leg  + occ_f_prof_leg  +
+                           occ_m_prof_edu  + occ_f_prof_edu  +
+                           occ_m_prof_heal + occ_f_prof_heal)*sharebg,
+  pers_occ_services     = (occ_m_svc_comm  + occ_f_svc_comm  +
+                           occ_m_svc_ent   + occ_f_svc_ent   +
+                           occ_m_svc_heal  + occ_f_svc_heal  +
+                           occ_m_svc_fire  + occ_f_svc_fire  +
+                           occ_m_svc_law   + occ_f_svc_law   +
+                           occ_m_svc_pers  + occ_f_svc_pers  +
+                           occ_m_svc_off   + occ_f_svc_off  )*sharebg,
+  pers_occ_retail       = (occ_m_ret_eat   + occ_f_ret_eat   +
+                           occ_m_ret_sales + occ_f_ret_sales)*sharebg,
+  pers_occ_manual       = (occ_m_man_build + occ_f_man_build +
+                           occ_m_man_nat   + occ_f_man_nat   +
+                           occ_m_man_prod  + occ_f_man_prod )*sharebg,
+  pers_occ_military     = (armedforces)*sharebg,
+  gq_type_univ  =(gq_noninst_m_0017_univ +
                          gq_noninst_m_1864_univ +
                          gq_noninst_m_65p_univ  +
                          gq_noninst_f_0017_univ +
@@ -582,7 +580,7 @@ temp0 <- workingdata %>%
               gq_type_univ         =sum(gq_type_univ),
               gq_type_mil          =sum(gq_type_mil),
               gq_type_othnon       =sum(gq_type_othnon),
-              gqpop2010            =gq_type_univ+gq_type_mil+gq_type_othnon,
+              gqpop2020            =gq_type_univ+gq_type_mil+gq_type_othnon,
               pers_occ_management  =sum(pers_occ_management),
               pers_occ_professional=sum(pers_occ_professional),
               pers_occ_services    =sum(pers_occ_services),
@@ -594,6 +592,13 @@ temp0 <- workingdata %>%
               asian_nonh           =sum(asian_nonh),
               other_nonh           =sum(other_nonh),   
               hispanic             =sum(hispanic))
+
+# Confirmed values for 2020 are:
+    # Total regional HH pop is 7590783
+    # Total regional non-institutional GQ pop is 126779
+    # Total regional institutional pop is 48078
+    # Total pop (including institutional pop) is 7765640
+    # Total pop (excluding institutional pop) is 7717562
   
 
 # Correct GQ population to sum to ACS PUMS 2015 total, outlined in Steps 1-3 below
