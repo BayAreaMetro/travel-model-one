@@ -44,7 +44,7 @@ loop period = 1, 5
     ;tazs include external stations (900,000 - 1,000,000)
     taz_selector = '(N < 1000000)'
 	;max zones
-	taz_count = 6626
+	taz_count = 6593
     
     ;create sequential taz numbers
     RUN PGM=NETWORK
@@ -96,7 +96,7 @@ loop period = 1, 5
 ;        PAR NODES=10000000
         NETI = hwy\temp2@token_period@.net
         NETO = hwy\avgload@token_period@_complete.net
-        ZONES = @TAZ_COUNT@
+        ZONES = 6593
     ENDRUN
 
     ;filter roadway that is not used in highway assignment

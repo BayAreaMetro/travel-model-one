@@ -1,23 +1,18 @@
 import pandas as pd
 import numpy as np
 import math
-import argparse
 import os, sys
 
-model_run_dir = sys.argv[1]
+model_run_dir = sys.argv[0]
 
+print model_run_dir
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--transit_buffer",type=float, help="Specify maximum distance (in miles) from PNR node to transit stops")
-
-args = parser.parse_args()
-
-buffer_dist =args.transit_buffer
+buffer_dist = 0.125
 
 
 #Remote I/O
-nodes_list = pd.read_csv(os.path.join(model_run_dir,'trn/transit_background_nodes.csv'))
-transit_nodes = pd.read_csv(os.path.join(model_run_dir,'trn/all_transit_nodes.csv'), names=['Node'])
+nodes_list = pd.read_csv('../transit_background_nodes.csv')
+transit_nodes = pd.read_csv('../all_transit_nodes.csv', names=['Node'])
 
 
 pnr_nodes = nodes_list[nodes_list['PNR']=='1.0'][['N', 'X', 'Y']]
@@ -35,14 +30,17 @@ pnr_nodes_coords_dict = dict(zip(pnr_nodes['N'], pnr_nodes['coord']))
 list_node_distances = {}
 
 for pnr in pnr_nodes_coords_dict.keys():
-    pnr_coord = pnr_nodes_coords_dict.get(pnr)
+    pnr_xcoord = pnr_nodes_coords_dict.get(pnr)[0]
+    pnr_ycoord = pnr_nodes_coords_dict.get(pnr)[1]
 
     distance_list = []
     nodes_within_a_mile = []
     for transit_node in transit_stops_coords_dict.keys():
-        transit_node_coord = transit_stops_coords_dict.get(transit_node)
+        transit_node_xcoord = transit_stops_coords_dict.get(transit_node)[0]
+        transit_node_ycoord = transit_stops_coords_dict.get(transit_node)[1]
 
-        distance = math.dist(pnr_coord, transit_node_coord)/5280
+        distance = ((transit_node_ycoord-pnr_ycoord)**2 + (transit_node_xcoord-pnr_xcoord)**2)**0.5/5280
+        #math.dist(pnr_coord, transit_node_coord)/5280
         
         if distance<buffer_dist:
             nodes_within_a_mile.append(transit_node)
@@ -52,16 +50,16 @@ for pnr in pnr_nodes_coords_dict.keys():
 
 
 pnr_to_stops = pd.DataFrame(list_node_distances.items(), columns=['PNR','Stop'])
-pnr_to_stops = pnr_to_stops.explode('Stop')
+pnr_to_stops = pnr_to_stops.set_index(['PNR'])['Stop'].apply(pd.Series).stack().reset_index(level=0).rename(columns={0:'Stop'})
 pnr_to_stops['PNR']=pnr_to_stops['PNR'].astype(str)
-pnr_to_stops['Stop']=pnr_to_stops['Stop'].astype(str)
+pnr_to_stops['Stop']=pnr_to_stops['Stop'].apply(lambda x: str(x).replace('.0',''))
 pnr_to_stops['COL_1'] = 'PNR'
 pnr_to_stops['COL_2'] = 'NODE='+pnr_to_stops['PNR']+'-'+pnr_to_stops['Stop']
 pnr_to_stops['COL_3'] = 'ZONES=1-6593'
 
-pnr_connector = r'trn\pnr_connectors.txt'
+pnr_connector = r'../pnr_connectors.txt'
 
-with open (pnr_connector, 'a') as f:
+with open (pnr_connector, 'w') as f:
 
     df_string  = pnr_to_stops[['COL_1','COL_2','COL_3']].to_string(header=False, index=False)
     f.write(df_string)

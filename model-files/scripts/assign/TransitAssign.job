@@ -334,17 +334,17 @@ loop period = 1, 5
              
              ; read the transit line and link files
              ;read file = "@token_model_dir@\trn\transitLines.link"
-             read file = @token_model_dir@\trn\transitOriginal@token_period@.lin        
+             read file = transit@token_period@.lin        
              
              ; read in the generated support links
              read file = @token_period@_transit_suplinks_walk.dat	;created by the BuildTransitNetwork.job script
              
              ; read in the generated drive access/egress links for this mode             
-             @token_drivelinks_express_bus@    read file = @token_period@_transit_suplinks_express_bus.dat	;created by the BuildTransitNetwork.job script
-             @token_drivelinks_light_rail@     read file = @token_period@_transit_suplinks_light_rail.dat	;created by the BuildTransitNetwork.job script
-             @token_drivelinks_ferry@          read file = @token_period@_transit_suplinks_ferry.dat	;created by the BuildTransitNetwork.job script
-             @token_drivelinks_heavy_rail@     read file = @token_period@_transit_suplinks_heavy_rail.dat	;created by the BuildTransitNetwork.job script
-             @token_drivelinks_commuter_rail@  read file = @token_period@_transit_suplinks_commuter_rail.dat 	;created by the BuildTransitNetwork.job script 
+             ;@token_drivelinks_express_bus@    read file = @token_period@_transit_suplinks_express_bus.dat	;created by the BuildTransitNetwork.job script
+             ;@token_drivelinks_light_rail@     read file = @token_period@_transit_suplinks_light_rail.dat	;created by the BuildTransitNetwork.job script
+             ;@token_drivelinks_ferry@          read file = @token_period@_transit_suplinks_ferry.dat	;created by the BuildTransitNetwork.job script
+             ;@token_drivelinks_heavy_rail@     read file = @token_period@_transit_suplinks_heavy_rail.dat	;created by the BuildTransitNetwork.job script
+             ;@token_drivelinks_commuter_rail@  read file = @token_period@_transit_suplinks_commuter_rail.dat 	;created by the BuildTransitNetwork.job script 
              
              ; read in the generated KNR links for local bus
              @token_bus_acclinks_KNR@    READ FILE = @token_period@_bus_acclinks_KNR.DAT 	;created by the BuildTransitNetwork.job script 

@@ -23,12 +23,12 @@
 
 ;create list of PNR nodes
 RUN PGM=NETWORK
-    neti      ="%MODEL_DIR%\trn\am_transit_background.net"
+    neti      ="AM_transit_background.net"
     printo[1] ="%MODEL_DIR%\trn\pnr_nodes.csv"
   
     phase=nodemerge
     
-        if ((N > 999999) & (PNR > 0))
+        if ((N > 999999) & (PNR <> '0.0'))
             print, list="PNR NODE = ", N(8), ", ZONES = 1-%taz_count%" printo=1 
         endif
 		
@@ -37,13 +37,13 @@ ENDRUN
 ;create list of All nodes
 RUN PGM=NETWORK
 
-  FLIEI NETI[1] = %MODEL_DIR%\trn\AM_transit_background.net
+  FILEI NETI[1] = AM_transit_background.net
 
   FILEO NODEO   = %MODEL_DIR%\trn\transit_background_nodes.csv, FORMAT=CS1
 
 ENDRUN
 
 ;run script to add area type to network links
-*"%PYTHON_PATH%\python.exe" %BASE_SCRIPTS%\preprocess\create_pnr_connectors.py --transit_buffer 0.125
+*"%PYTHON_PATH%\python.exe" %BASE_SCRIPTS%\preprocess\create_pnr_connectors.py
 IF (RETURNCODE > 0) abort
 

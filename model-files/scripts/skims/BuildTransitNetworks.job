@@ -50,7 +50,7 @@
 
 
 ; time period loop
-loop period = 2,2
+loop period = 1,5
 
    ; define a two-letter token for each time period
    if (period = 1)   
@@ -184,7 +184,7 @@ loop period = 2,2
       ;	                         -- 40 minutes the maximum time allowed to reach the pnr lot
       pnr mode = 2  lotmode = 4  oneway = y  maxtime = 40  global = y
 
-      read file = "%MODEL_DIR%\trn\pnr_connectors.txt"
+      read file = "..\pnr_connectors.txt"
 
       ;pnr mode = 2  oneway = y  maxtime = 40  global = y
       ;read file = "trn\pnr_nodes.csv"
@@ -195,7 +195,7 @@ loop period = 2,2
       ; to avoid numerous errors for long run times caused by the PNR_TIME values, which
       ; are artificially increased to prevent PNR over bridges
       ;read file = "trn\transit_converted_2.lin"
-      read file = "%MODEL_DIR%\trn\transit_dummy.lin"
+      read file = "..\transit_dummy.lin"
 	  ;read file = "%MODEL_DIR%\trn\test.lin"
 	  
    endrun   
@@ -262,7 +262,7 @@ loop period = 2,2
    
       ; read in the transit stop locations in the line files
       ;read file = "trn\transit_converted_2.lin"
-      read file = "%MODEL_DIR%\trn\transitOriginal@token_period@.lin"
+      read file = "transit@token_period@.lin"
    endrun
 
    ; step 5: select two best park and ride locations for each mode and create the support links that are used in skimming/assignment  

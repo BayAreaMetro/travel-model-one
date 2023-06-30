@@ -10,15 +10,14 @@ set TRNASSIGNMODE=NORMAL
 set TOTMAXTRNITERS=30
 set MAXPATHTIME=240
 set PCT=%%
-set PYTHON_PATH=%MODEL_DIR%\Software\R\user_py27
+set PYTHON_PATH=Software\R\user_py27
 set TRN_ERRORLEVEL=0
-set R_HOME=%MODEL_DIR%\Software\R\R-4.0.4\bin\x64
+set R_HOME=Software\R\R-4.0.4\bin\x64
 :: AverageNetworkVolumes.job uses PREV_ITER=1 for ITER=1
 set PREV_TRN_ITER=%PREV_ITER%
 IF %ITER% EQU 1 SET PREV_TRN_ITER=0
 
-set ALLTRIPMODES=wlk_com_wlk 
-::drv_com_wlk wlk_com_drv wlk_hvy_wlk drv_hvy_wlk wlk_hvy_drv wlk_lrf_wlk drv_lrf_wlk wlk_lrf_drv wlk_exp_wlk drv_exp_wlk wlk_exp_drv wlk_loc_wlk drv_loc_wlk wlk_loc_drv
+set ALLTRIPMODES=wlk_com_wlk drv_com_wlk wlk_com_drv wlk_hvy_wlk drv_hvy_wlk wlk_hvy_drv wlk_lrf_wlk drv_lrf_wlk wlk_lrf_drv wlk_exp_wlk drv_exp_wlk wlk_exp_drv wlk_loc_wlk drv_loc_wlk wlk_loc_drv
 set ALLTOURMODES=wlk_trn_wlk drv_trn_wlk wlk_trn_drv
 IF NOT DEFINED TRNFASTERTHANFREEFLOW (set TRNFASTERTHANFREEFLOW=0)
 
@@ -85,8 +84,8 @@ if ERRORLEVEL 2 (
   goto donedone
 )
 :: Create list of PNR lots
-::runtpp %BASE_SCRIPTS%\preprocess\CreatePnrList.job
-::if ERRORLEVEL 2 goto done
+runtpp %BASE_SCRIPTS%\preprocess\CreatePnrList.job
+if ERRORLEVEL 2 goto done
 :: Create the transit networks
 runtpp %BASE_SCRIPTS%\skims\BuildTransitNetworks.job
 if ERRORLEVEL 2 (
@@ -142,7 +141,7 @@ IF %KEEP_ASGN_DBFS% EQU 1 (
 
 :modifyDwellAccess
 echo START   transitDwellAccess SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
-set PYTHONPATH=%MODEL_DIR%\Software\NetworkWrangler\NetworkWrangler-master;%MODEL_DIR%\Software\NetworkWrangler\NetworkWrangler-master\_static
+set PYTHONPATH=Software\NetworkWrangler\NetworkWrangler-master;Software\NetworkWrangler\NetworkWrangler-master\_static
 :: Initialize with header line
 if %TRNASSIGNITER% EQU 0 (
   echo trnAssignIter,timeperiod,mode,PHT,pctPHTdiff,RMSE_IVTT,RMSE_TOTT,AvgPaths,CurrPaths,CurrBoards,PathsFromBoth,PathsFromIter,PathsFromAvg,PHTCriteriaMet > PHT_total.csv
