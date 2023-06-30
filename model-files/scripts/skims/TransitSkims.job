@@ -290,11 +290,11 @@ loop period = 1,5
           read file = @token_period@_transit_suplinks_walk.dat
 
           ; read in the generated drive access/egress links for this mode             
-          @token_drivelinks_express_bus@    read file = @token_period@_transit_suplinks_express_bus.dat
-          @token_drivelinks_light_rail@     read file = @token_period@_transit_suplinks_light_rail.dat
-          @token_drivelinks_ferry@          read file = @token_period@_transit_suplinks_ferry.dat
-          @token_drivelinks_heavy_rail@     read file = @token_period@_transit_suplinks_heavy_rail.dat
-          @token_drivelinks_commuter_rail@  read file = @token_period@_transit_suplinks_commuter_rail.dat            
+          ;@token_drivelinks_express_bus@    read file = @token_period@_transit_suplinks_express_bus.dat
+          ;@token_drivelinks_light_rail@     read file = @token_period@_transit_suplinks_light_rail.dat
+          ;@token_drivelinks_ferry@          read file = @token_period@_transit_suplinks_ferry.dat
+          ;@token_drivelinks_heavy_rail@     read file = @token_period@_transit_suplinks_heavy_rail.dat
+          ;@token_drivelinks_commuter_rail@  read file = @token_period@_transit_suplinks_commuter_rail.dat            
 
           ; read in the generated KNR links for local bus
           @token_bus_acclinks_KNR@    READ FILE = @TOKEN_PERIOD@_BUS_ACCLINKS_KNR.DAT
@@ -597,17 +597,17 @@ loop period = 1,5
 endloop ; time period loop
    
 ;wait4files files = CTRAMP1.script.end, 
-   	       ;       CTRAMP2.script.end, 
-   	      ;        CTRAMP3.script.end, 
-   	     ;         CTRAMP4.script.end, 
-   	    ;          CTRAMP5.script.end, 
-   	   ;           CTRAMP6.script.end, 
-   	  ;            CTRAMP7.script.end, 
-   	 ;             CTRAMP8.script.end, 
-   	;              CTRAMP9.script.end, 
-   ;	              CTRAMP10.script.end, 
-  ; 	              CTRAMP11.script.end, 
- ;  	              CTRAMP12.script.end, 
+;   	              CTRAMP2.script.end, 
+;   	              CTRAMP3.script.end, 
+;   	              CTRAMP4.script.end, 
+;   	              CTRAMP5.script.end, 
+;   	              CTRAMP6.script.end, 
+;   	              CTRAMP7.script.end, 
+;   	              CTRAMP8.script.end, 
+;   	              CTRAMP9.script.end, 
+;   	              CTRAMP10.script.end, 
+;   	              CTRAMP11.script.end, 
+;   	              CTRAMP12.script.end, 
 ;   	              CTRAMP13.script.end, 
 ;   	              CTRAMP14.script.end, 
 ;   	              CTRAMP15.script.end,
