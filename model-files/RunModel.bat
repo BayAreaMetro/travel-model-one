@@ -45,7 +45,7 @@ set PROJECT_DIR2=%PROJECT_DIR:~0,-1%
 for %%f in (%PROJECT_DIR2%) do set myfolder=%%~nxf
 :: the first four characters are model year
 set MODEL_YEAR=%myfolder:~0,4%
-
+set MODEL_YEAR_SHORT=%MODEL_YEAR:~2,2%
 :: MODEL YEAR ------------------------- make sure it's numeric --------------------------------
 set /a MODEL_YEAR_NUM=%MODEL_YEAR% 2>nul
 if %MODEL_YEAR_NUM%==%MODEL_YEAR% (
@@ -116,6 +116,7 @@ echo STARTED MODEL RUN  %DATE% %TIME% >> logs\feedback.rpt
 copy INPUT\hwy\                 hwy\
 copy INPUT\trn\                 trn\
 copy INPUT\landuse\             landuse\
+copy INPUT\landuse\ZMAST%MODEL_YEAR_SHORT%.dbf             landuse\TAZDATA.dbf
 copy INPUT\popsyn\hhFile.%MODEL_YEAR%.csv              		popsyn\hhFile.%MODEL_YEAR%.csv
 copy INPUT\popsyn\personFile.%MODEL_YEAR%.csv              	popsyn\personFile.%MODEL_YEAR%.csv
 
@@ -126,8 +127,8 @@ copy INPUT\nonres\Kfactors\		nonres\Inputs\Kfactors\
 
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
-::copy INPUT\logsums              logsums\
-::copy INPUT\warmstart\skims\      skims\
+copy INPUT\logsums              logsums\
+copy INPUT\warmstart\skims\      skims\
 :: Use interim network inputs until the networks are regenerated with all project card updates
 copy INPUT\hwy\complete_network_with_externals_v2.net                 hwy\complete_network.net
 
@@ -232,7 +233,9 @@ if ERRORLEVEL 2 goto done
 :: ------------------------------------------------------------------------------------------------------
 python CTRAMP\scripts\preprocess\update_transit_line_file.py
 :: Python path specific to network management procedures
-set PYTHONPATH=Z:\projects\ccta\31000190\BCM_Inputs\NetworkWrangler\NetworkWrangler-master;Z:\projects\ccta\31000190\BCM_Inputs\NetworkWrangler\NetworkWrangler-master\_static
+
+set PYTHONPATH=Software\NetworkWrangler\NetworkWrangler-master;Software\NetworkWrangler\NetworkWrangler-master\_static
+
 
 ::renumber the duplicated stop ids in the transt line file
 python CTRAMP\scripts\preprocess\renumber_duplicated_transit_stops.py
