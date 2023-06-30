@@ -603,17 +603,21 @@ temp0 <- workingdata %>%
 # Apply households by number of workers correction factors
 # The initial table values are actually households by number of "commuters" (people at work in the ACS reference week)
 # This overstates 0-worker households and understates 3+-worker households. A correction needs to be applied.
-# Values from ACS2017-2021_PUMS2017-2021_HH_Worker_Correction_Factors.csv, in
+# Correction factors are calculated in ACSPUMS_WorkerTotals_2017-2021_Comparisons.xls, in
 # petrale\applications\travel_model_lu_inputs\2020\Workers
 # 1=San Francisco; 2=San Mateo; 3=Santa Clara; 4=Alameda; 5=Contra Costa; 6=Solano; 7= Napa; 8=Sonoma; 9=Marin
 # "counties" vector is defined above with this county order
 
-workers0  <- c(0.72439,0.71045,0.65234,0.61093,0.81432,0.79221,0.71026,0.81646,0.81952)
-workers1  <- c(1.05499,1.01626,1.04675,1.06364,1.02079,1.03487,1.06679,1.04652,1.04665)
-workers2  <- c(1.07740,1.08066,1.08075,1.15069,1.07611,1.10324,1.08483,1.06913,1.06500)
-workers3p <- c(1.21757,1.21119,1.20479,1.34201,1.15367,1.11889,1.26523,1.15975,1.18261)
+counties  <- c(1,2,3,4,5,6,7,8,9)                             # Matching county values for factor ordering
 
-temp3 <- temp2 %>%
+workers0  <- c(0.75147,0.74299,0.68878,0.59029,0.80718,0.79450,0.70344,0.83817,0.81702)
+workers1  <- c(1.05364,1.02063,1.04834,1.06543,1.01895,1.02327,1.09197,1.03080,1.05727)
+workers2	<- c(1.06342,1.06356,1.05941,1.14105,1.07070,1.06588,1.08631,1.08274,1.06551)
+workers3p	<- c(1.18711,1.18950,1.15641,1.27100,1.15972,1.20442,1.18671,1.10573,1.13854)
+
+
+temp1 <- temp0 %>%
+  left_join(.,PBA2015_county,by=c("TAZ1454"="ZONE")) %>% 
   mutate(
     hh_wrks_0      = hh_wrks_0*workers0[match(COUNTY,counties)], # Apply the above index values for correction factors
     hh_wrks_1      = hh_wrks_1*workers1[match(COUNTY,counties)],
@@ -625,7 +629,7 @@ temp3 <- temp2 %>%
 
 ### Beginning of recoding
 
-temp_rounded_adjusted <- temp3 %>%
+temp_rounded_adjusted <- temp1 %>%
   mutate(
     AGE0004 = if_else(TAZ1454==1439,0,AGE0004),                # Zero out population components in San Quentin TAZ
     AGE0519 = if_else(TAZ1454==1439,0,AGE0519),                # All institutional group quarters
