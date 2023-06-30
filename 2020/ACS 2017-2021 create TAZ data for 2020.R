@@ -33,7 +33,6 @@ library(readxl)
 # Set up directories, import TAZ/census block equivalence, install census key, set ACS year,set CPI inflation
 
 employment_2015_data           <- "M:/Data/BusinessData/Employment_by_TAZ_industry/BusinessData_2015_TAZ_industry_noincommute.csv"
-school_2015_data               <- file.path(wd,"School Enrollment","tazData_enrollment.csv")
 
 blockTAZ2020_in      <- "M:/Data/GIS layers/TM1_taz_census2020/2020block_to_TAZ1454.csv"
 censuskey            <- readLines("M:/Data/Census/API/api-key.txt")
@@ -318,10 +317,17 @@ DHC_tract_variables <-  c(gq_noninst_m_0017_univ      = "PCT19_024N", # Male non
 
 # Bring in 2020 block/TAZ equivalency, create block group ID and tract ID fields for later joining to ACS data
 # Add zero on that is lost in CSV conversion
+# Remove San Quentin block from file and move other blocks with population in TAZ 1439 to adjacent 1438
 
 blockTAZ <- read.csv(blockTAZ2020_in,header=TRUE) %>% mutate(      
   blockgroup = paste0("0",blockgroup),
-  tract = paste0("0",tract))
+  tract = paste0("0",tract)) %>% 
+  filter (!(NAME=="Block 1007, Block Group 1, Census Tract 1220, Marin County, California")) %>% 
+  mutate(TAZ1454=case_when(
+    NAME=="Block 1006, Block Group 1, Census Tract 1220, Marin County, California"   ~ as.integer(1438),
+    NAME=="Block 1002, Block Group 1, Census Tract 1220, Marin County, California"   ~ as.integer(1438),
+    TRUE                                                                             ~ TAZ1454
+  ))
 
 # Summarize block population by block group and tract 
 
@@ -552,46 +558,46 @@ workingdata <- interim %>% mutate(
 
 temp0 <- workingdata %>%
   group_by(TAZ1454) %>%
-  summarize(  TOTHH=sum(TOTHH),
-              HHPOP=sum(HHPOP),
-              EMPRES=sum(EMPRES),
-              HHINCQ1=sum(HHINCQ1),
-              HHINCQ2=sum(HHINCQ2),
-              HHINCQ3=sum(HHINCQ3),
-              HHINCQ4=sum(HHINCQ4),
-              AGE0004=sum(AGE0004),
-              AGE0519=sum(AGE0519),
-              AGE2044=sum(AGE2044),
-              AGE4564=sum(AGE4564),
-              AGE65P=sum(AGE65P),
-              SFDU=sum(SFDU),
-              MFDU=sum(MFDU),
-              hh_size_1=sum(hh_size_1),
-              hh_size_2=sum(hh_size_2),
-              hh_size_3=sum(hh_size_3),
-              hh_size_4_plus=sum(hh_size_4_plus),
-              hh_wrks_0=sum(hh_wrks_0),
-              hh_wrks_1=sum(hh_wrks_1),
-              hh_wrks_2=sum(hh_wrks_2),
-              hh_wrks_3_plus=sum(hh_wrks_3_plus),
-              hh_kids_yes=sum(hh_kids_yes),
-              hh_kids_no=sum(hh_kids_no),
-              AGE62P=sum(AGE62P),
-              gq_type_univ         =sum(gq_type_univ),
-              gq_type_mil          =sum(gq_type_mil),
-              gq_type_othnon       =sum(gq_type_othnon),
-              gqpop2020            =gq_type_univ+gq_type_mil+gq_type_othnon,
-              pers_occ_management  =sum(pers_occ_management),
-              pers_occ_professional=sum(pers_occ_professional),
-              pers_occ_services    =sum(pers_occ_services),
-              pers_occ_retail      =sum(pers_occ_retail),
-              pers_occ_manual      =sum(pers_occ_manual),
-              pers_occ_military    =sum(pers_occ_military),
-              white_nonh           =sum(white_nonh),
-              black_nonh           =sum(black_nonh),
-              asian_nonh           =sum(asian_nonh),
-              other_nonh           =sum(other_nonh),   
-              hispanic             =sum(hispanic))
+  summarize(  TOTHH                   =sum(TOTHH),
+              HHPOP                   =sum(HHPOP),
+              EMPRES                  =sum(EMPRES),
+              HHINCQ1                 =sum(HHINCQ1),
+              HHINCQ2                 =sum(HHINCQ2),
+              HHINCQ3                 =sum(HHINCQ3),
+              HHINCQ4                 =sum(HHINCQ4),
+              AGE0004                 =sum(AGE0004),
+              AGE0519                 =sum(AGE0519),
+              AGE2044                 =sum(AGE2044),
+              AGE4564                 =sum(AGE4564),
+              AGE65P                  =sum(AGE65P),
+              SFDU                    =sum(SFDU),
+              MFDU                    =sum(MFDU),
+              hh_size_1               =sum(hh_size_1),
+              hh_size_2               =sum(hh_size_2),
+              hh_size_3               =sum(hh_size_3),
+              hh_size_4_plus          =sum(hh_size_4_plus),
+              hh_wrks_0               =sum(hh_wrks_0),
+              hh_wrks_1               =sum(hh_wrks_1),
+              hh_wrks_2               =sum(hh_wrks_2),
+              hh_wrks_3_plus          =sum(hh_wrks_3_plus),
+              hh_kids_yes             =sum(hh_kids_yes),
+              hh_kids_no              =sum(hh_kids_no),
+              AGE62P                  =sum(AGE62P),
+              gq_type_univ            =sum(gq_type_univ),
+              gq_type_mil             =sum(gq_type_mil),
+              gq_type_othnon          =sum(gq_type_othnon),
+              gqpop                   =gq_type_univ+gq_type_mil+gq_type_othnon,
+              pers_occ_management     =sum(pers_occ_management),
+              pers_occ_professional   =sum(pers_occ_professional),
+              pers_occ_services       =sum(pers_occ_services),
+              pers_occ_retail         =sum(pers_occ_retail),
+              pers_occ_manual         =sum(pers_occ_manual),
+              pers_occ_military       =sum(pers_occ_military),
+              white_nonh              =sum(white_nonh),
+              black_nonh              =sum(black_nonh),
+              asian_nonh              =sum(asian_nonh),
+              other_nonh              =sum(other_nonh),   
+              hispanic                =sum(hispanic))
 
 # Confirmed values for 2020 are:
     # Total regional HH pop is 7590783
@@ -624,23 +630,10 @@ temp1 <- temp0 %>%
     hh_wrks_2      = hh_wrks_2*workers2[match(COUNTY,counties)],
     hh_wrks_3_plus = hh_wrks_3_plus*workers3p[match(COUNTY,counties)]) 
 
-# Zero out ages for people in TAZ 1439 (San Quentin)
+# Sum constituent parts to compare with marginal totals
 # Begin process of scaling constituent values so category subtotals match marginal totals
 
-### Beginning of recoding
-
 temp_rounded_adjusted <- temp1 %>%
-  mutate(
-    AGE0004 = if_else(TAZ1454==1439,0,AGE0004),                # Zero out population components in San Quentin TAZ
-    AGE0519 = if_else(TAZ1454==1439,0,AGE0519),                # All institutional group quarters
-    AGE2044 = if_else(TAZ1454==1439,0,AGE2044),                # Total pop and gq pop already 0
-    AGE4564 = if_else(TAZ1454==1439,0,AGE4564),
-    AGE65P =  if_else(TAZ1454==1439,0,AGE65P),
-    AGE62P =  if_else(TAZ1454==1439,0,AGE62P)
-  ) %>% 
-  
-# Sum constituent parts to compare with marginal totals
-  
   mutate (
     sum_age            = AGE0004 + AGE0519 + AGE2044  +AGE4564 + AGE65P,       # First person totals by age
     sum_groupquarters  = gq_type_univ + gq_type_mil + gq_type_othnon,          # GQ by type
@@ -827,32 +820,33 @@ write.csv (ethnic,file = "TAZ1454_Ethnicity.csv",row.names = FALSE)
 # Bring in school and parking data from PBA 2040, 2015 TAZ data 
 # Add HHLDS variable (same as TOTHH), select new 2015 output
 
-PBA2010_joiner <- PBA2010%>%
-  select(ZONE,DISTRICT,SD,TOTACRE,RESACRE,CIACRE,AREATYPE,TOPOLOGY,ZERO,sftaz)
+PBA2015_joiner <- PBA2015%>%
+  select(ZONE,DISTRICT,SD,TOTACRE,RESACRE,CIACRE,PRKCST,OPRKCST,AREATYPE,HSENROLL,COLLFTE,COLLPTE,TOPOLOGY,TERMINAL, ZERO)
 
 employment_2015 <- read.csv(employment_2015_data,header=TRUE) 
 
-parking_2015 <- read.csv(parking_2015_data, header=TRUE) %>% 
-  select(ZONE,PRKCST,OPRKCST,TERMINAL)
 
-school_2015 <- read.csv(school_2015_data, header=TRUE) %>% 
-  select(ZONE,HSENROLL,COLLFTE,COLLPTE)
-
-joined_10_15      <- left_join(PBA2010_joiner,temp_rounded_adjusted, by=c("ZONE"="TAZ1454")) # Join 2010 topology
-joined_parking    <- left_join(joined_10_15,parking_2015, by="ZONE")                         # Join PBA 2015 parking
-joined_school     <- left_join(joined_parking, school_2015, by="ZONE")                       # Join schools
-joined_employment <- left_join(joined_school,employment_2015, by=c("ZONE"="TAZ1454"))        # Join employment
+joined_15_20      <- left_join(PBA2015_joiner,temp_rounded_adjusted, by=c("ZONE"="TAZ1454")) # Join 2015 topology, parking, enrollment
+joined_employment <- left_join(joined_15_20,employment_2015, by=c("ZONE"="TAZ1454"))        # Join employment
  
-New2015 <- joined_employment %>%
+New2020 <- joined_employment %>%
   mutate(hhlds=TOTHH) %>%
   select(ZONE,DISTRICT,SD,COUNTY,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,TOTACRE,
          RESACRE,CIACRE,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
-         MWTEMPN,OTHEMPN,PRKCST,OPRKCST,AREATYPE,HSENROLL,COLLFTE,COLLPTE,TERMINAL,TOPOLOGY,ZERO,hhlds,sftaz,
+         MWTEMPN,OTHEMPN,PRKCST,OPRKCST,AREATYPE,HSENROLL,COLLFTE,COLLPTE,TERMINAL,TOPOLOGY,ZERO,hhlds,
          gqpop) 
 
-# Summarize ACS and employment data by superdistrict for both 2010 and 2015
+# Summarize ACS and employment data by superdistrict for both 2015 and 2020
 
-summed10 <- PBA2010 %>%
+summed15 <- PBA2015 %>%
+  group_by(DISTRICT) %>%
+  summarize(TOTHH=sum(TOTHH),HHPOP=sum(HHPOP),TOTPOP=sum(TOTPOP),EMPRES=sum(EMPRES),SFDU=sum(SFDU),MFDU=sum(MFDU),
+            HHINCQ1=sum(HHINCQ1),HHINCQ2=sum(HHINCQ2),HHINCQ3=sum(HHINCQ3),HHINCQ4=sum(HHINCQ4),TOTEMP=sum(TOTEMP),
+            AGE0004=sum(AGE0004),AGE0519=sum(AGE0519),AGE2044=sum(AGE2044),AGE4564=sum(AGE4564),AGE65P=sum(AGE65P),
+            RETEMPN=sum(RETEMPN),FPSEMPN=sum(FPSEMPN),HEREMPN=sum(HEREMPN),AGREMPN=sum(AGREMPN),MWTEMPN=sum(MWTEMPN),
+            OTHEMPN=sum(OTHEMPN),HSENROLL=sum(HSENROLL),COLLFTE=sum(COLLFTE),COLLPTE=sum(COLLPTE),gqpop=TOTPOP-HHPOP)
+
+summed20 <- New2020 %>%
   group_by(DISTRICT) %>%
   summarize(TOTHH=sum(TOTHH),HHPOP=sum(HHPOP),TOTPOP=sum(TOTPOP),EMPRES=sum(EMPRES),SFDU=sum(SFDU),MFDU=sum(MFDU),
             HHINCQ1=sum(HHINCQ1),HHINCQ2=sum(HHINCQ2),HHINCQ3=sum(HHINCQ3),HHINCQ4=sum(HHINCQ4),TOTEMP=sum(TOTEMP),
@@ -860,19 +854,11 @@ summed10 <- PBA2010 %>%
             RETEMPN=sum(RETEMPN),FPSEMPN=sum(FPSEMPN),HEREMPN=sum(HEREMPN),AGREMPN=sum(AGREMPN),MWTEMPN=sum(MWTEMPN),
             OTHEMPN=sum(OTHEMPN),HSENROLL=sum(HSENROLL),COLLFTE=sum(COLLFTE),COLLPTE=sum(COLLPTE),gqpop=sum(gqpop))
 
-summed15 <- New2015 %>%
-  group_by(DISTRICT) %>%
-  summarize(TOTHH=sum(TOTHH),HHPOP=sum(HHPOP),TOTPOP=sum(TOTPOP),EMPRES=sum(EMPRES),SFDU=sum(SFDU),MFDU=sum(MFDU),
-            HHINCQ1=sum(HHINCQ1),HHINCQ2=sum(HHINCQ2),HHINCQ3=sum(HHINCQ3),HHINCQ4=sum(HHINCQ4),TOTEMP=sum(TOTEMP),
-            AGE0004=sum(AGE0004),AGE0519=sum(AGE0519),AGE2044=sum(AGE2044),AGE4564=sum(AGE4564),AGE65P=sum(AGE65P),
-            RETEMPN=sum(RETEMPN),FPSEMPN=sum(FPSEMPN),HEREMPN=sum(HEREMPN),AGREMPN=sum(AGREMPN),MWTEMPN=sum(MWTEMPN),
-            OTHEMPN=sum(OTHEMPN),HSENROLL=sum(HSENROLL),COLLFTE=sum(COLLFTE),COLLPTE=sum(COLLPTE),gqpop=sum(gqpop))
+# Export new 2020 data, 2015 and 2020 district summary data
 
-# Export new 2015 data, 2010 and 2015 district summary data
-
-write.csv(New2015, "TAZ1454 2015 Land Use.csv", row.names = FALSE, quote = T)
-write.csv(summed10, "TAZ1454 2010 District Summary.csv", row.names = FALSE, quote = T)
+write.csv(New2020, "TAZ1454 2015 Land Use.csv", row.names = FALSE, quote = T)
 write.csv(summed15, "TAZ1454 2015 District Summary.csv", row.names = FALSE, quote = T)
+write.csv(summed20, "TAZ1454 2020 District Summary.csv", row.names = FALSE, quote = T)
 
 # Select out PopSim variables and export to separate csv
 
@@ -882,7 +868,7 @@ popsim_vars <- temp_rounded_adjusted %>%
          hh_kids_no,hh_kids_yes,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,
          gq_tot_pop,gq_type_univ,gq_type_mil,gq_type_othnon)
 
-write.csv(popsim_vars, "TAZ1454 2015 Popsim Vars.csv", row.names = FALSE, quote = T)
+write.csv(popsim_vars, "TAZ1454 2020 Popsim Vars.csv", row.names = FALSE, quote = T)
 
 # region popsim vars
 popsim_vars_region <- popsim_vars %>% 
@@ -890,10 +876,10 @@ popsim_vars_region <- popsim_vars %>%
   group_by(REGION) %>%
   summarize(gq_num_hh_region=sum(gq_tot_pop))
 
-write.csv(popsim_vars_region, "TAZ1454 2015 Popsim Vars Region.csv", row.names = FALSE, quote = T)
+write.csv(popsim_vars_region, "TAZ1454 2020 Popsim Vars Region.csv", row.names = FALSE, quote = T)
 
 # county popsim vars
-popsim_vars_county <- joined_10_15 %>%
+popsim_vars_county <- joined_15_20 %>%
   group_by(COUNTY) %>% summarize(
     pers_occ_management  =sum(pers_occ_management),
     pers_occ_professional=sum(pers_occ_professional),
@@ -902,5 +888,6 @@ popsim_vars_county <- joined_10_15 %>%
     pers_occ_manual      =sum(pers_occ_manual),
     pers_occ_military    =sum(pers_occ_military))
 
-write.csv(popsim_vars_county, "TAZ1454 2015 Popsim Vars County.csv", row.names = FALSE, quote = T)
+write.csv(popsim_vars_county, "TAZ1454 2020 Popsim Vars County.csv", row.names = FALSE, quote = T)
+
 
