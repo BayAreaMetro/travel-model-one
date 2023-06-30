@@ -600,74 +600,11 @@ temp0 <- workingdata %>%
     # Total pop (including institutional pop) is 7765640
     # Total pop (excluding institutional pop) is 7717562
   
-
-# Correct GQ population to sum to ACS PUMS 2015 total, outlined in Steps 1-3 below
-"
-1. Add in additional GQ population for growth 2010-2015 from M. Reilly file, 
-petrale/applications/travel_model_lu_inputs/2015/Group Quarters/gq_add_00051015.csv:
-
-Location                                                  	TAZ1454    extra_gq
-------------------------------------------------------    	-------    --------
-Kennedy Grad at Stanford					                            353		      436
-Munger East AND Ng House at Stanford	                   	    354        	120
-Metropolitan, Channing Bowditch, Maximo Commons at UCB	  	  1008 		    348
-------------------------------------------------------    	-------    --------
-
-2. Sum total 2010 GQ to compare to ACS PUMS 2013-2017 GQ
-
-3. Create factor corrections to apply to TAZs; apply them 
-"
-
-# Create data frame for added GQ pop (only three TAZs have empirically-collected data for updates)
-# Join to temp0 file and add GQ pop, then remove column
-
-added_gq <- data.frame(TAZ1454=1:1454,extra_gq=0) %>%
-  mutate(extra_gq=case_when(
-    TAZ1454 == 353  ~ 436,                              
-    TAZ1454 == 354  ~ 120,
-    TAZ1454 == 1008 ~ 348,
-    TRUE ~ extra_gq                                    # All other values kept at zero
-  ))
-
-temp1 <- left_join(temp0,added_gq, by="TAZ1454") %>%
-  mutate(gqpop2010=gqpop2010+extra_gq) %>%
-  select(-extra_gq)
-
-# Sum GQ 2010 population by county
-
-sum_gq10 <- left_join(temp1,PBA2010_county,by=c("TAZ1454"="ZONE")) %>%
-  group_by(County_Name,COUNTY) %>%
-  summarize(sum10=sum(gqpop2010)) 
-
-# Bring in 2013-2017 PUMS and perform the same summary, then join with the 2010 data
-# Create GQ adjustment factor
-
-load (PUMS2013_2017) 
-
-sum_gq15 <- pbayarea1317 %>%
-  mutate(County_Name=as.character(County_Name)) %>%           # Bug fix to override County_Name as factor
-  filter(RELP==17) %>%
-  group_by(County_Name) %>%
-  summarize(sum15=sum(PWGTP))
-
-gqcounty1015 <- left_join(sum_gq10,sum_gq15,by="County_Name") %>%
-  mutate(gqfactor=sum15/sum10) %>%                            # Factor is ratio of GQ15/GQ10, by county  
-  arrange(COUNTY)                                             # Sort by COUNTY variable, so factors in correct order
-
-gqfactor <- gqcounty1015$gqfactor                             # Ordered vector of factors to apply   
-counties  <- c(1,2,3,4,5,6,7,8,9)                             # Matching county values for factor ordering
- 
-# Apply GQ factor to reconcile adjust 2010 decennial with 2013-2017 PUMS
-
-temp2 <- left_join(temp1,PBA2010_county,by=c("TAZ1454"="ZONE")) %>%
-  mutate(
-    gqpop = gqpop2010*gqfactor[match(COUNTY,counties)]
-  )
-
-
 # Apply households by number of workers correction factors
-# Values from ACS2013-2017_PUMS2013-2017_HH_Worker_Correction_Factors.csv, in
-# petrale\applications\travel_model_lu_inputs\2015\Workers
+# The initial table values are actually households by number of "commuters" (people at work in the ACS reference week)
+# This overstates 0-worker households and understates 3+-worker households. A correction needs to be applied.
+# Values from ACS2017-2021_PUMS2017-2021_HH_Worker_Correction_Factors.csv, in
+# petrale\applications\travel_model_lu_inputs\2020\Workers
 # 1=San Francisco; 2=San Mateo; 3=Santa Clara; 4=Alameda; 5=Contra Costa; 6=Solano; 7= Napa; 8=Sonoma; 9=Marin
 # "counties" vector is defined above with this county order
 
@@ -962,37 +899,4 @@ popsim_vars_county <- joined_10_15 %>%
     pers_occ_military    =sum(pers_occ_military))
 
 write.csv(popsim_vars_county, "TAZ1454 2015 Popsim Vars County.csv", row.names = FALSE, quote = T)
-
-# Optional code below for other analyses
-
-# ------------------------------------------------------------------------------------------------
-
-"# Output into Tableau-friendly format
-
-Tableau2015 <- New2015 %>%
-  select(ZONE,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
-         MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop) %>%
-  gather(Variable,Value2015,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
-         MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)
-
-Tableau2010 <- PBA2010 %>%
-  select(ZONE,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
-         MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop) %>%
-  gather(Variable,Value2010,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
-         MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)"
-
-#Tableau10_15 <- left_join(Tableau2010,Tableau2015,by = c("ZONE","Variable"))
-
-#write.csv(Tableau10_15, "Tableau_2010_2015_Comparison.csv", row.names = FALSE, quote = T)
-
-
-"RMWG_Summary <- New2015 %>%
-  mutate(housing_units=SFDU+MFDU) %>% 
-  group_by(COUNTY) %>% 
-  summarize(population=sum(TOTPOP),households=sum(TOTHH),units=sum(housing_units),group=sum(gqpop),jobs=sum(TOTEMP),
-            residents=sum(EMPRES))"
-
-
-# write.csv(RMWG_Summary, "RMWG_Summary.csv", row.names = FALSE, quote = T)
-            
 
