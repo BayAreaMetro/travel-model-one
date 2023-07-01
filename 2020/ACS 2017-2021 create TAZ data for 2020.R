@@ -1,5 +1,5 @@
 # ACS 2017-2021 create TAZ data for 2020.R
-# Create "2020" TAZ data from ACS 2013-2017 
+# Create "2020" TAZ data from ACS 2017-2021 
 # SI
 
 # Notes
@@ -21,7 +21,7 @@ setwd(wd)
 3. Different than the effort for 2015, many small area variables (such as age, total population, etc.) are
    available from Census 2020 data. 
 
-4. TAZs are scaled up to match Census 2020 totals (possibly small area, but may be at the county level). 
+4. TAZs are scaled up to match Census 2020 totals 
    
 "
 # Import Libraries
@@ -47,7 +47,6 @@ ACS_product="5"
 USERPROFILE          <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
 BOX_TM               <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
 PBA_TAZ_2015         <- file.path(BOX_TM, "Share Data", "plan-bay-area-2050", "tazdata","PBA50_FinalBlueprintLandUse_TAZdata.xlsx")
-#PUMS2013_2017 = "M:/Data/Census/PUMS/PUMS 2013-17/pbayarea1317.Rdata"   # 2015 PUMS data for GQ adjustments
 
 # County FIPS codes for ACS tract API calls
 
@@ -322,7 +321,7 @@ DHC_tract_variables <-  c(gq_noninst_m_0017_univ      = "PCT19_024N", # Male non
 blockTAZ <- read.csv(blockTAZ2020_in,header=TRUE) %>% mutate(      
   blockgroup = paste0("0",blockgroup),
   tract = paste0("0",tract)) %>% 
-  filter (!(NAME=="Block 1007, Block Group 1, Census Tract 1220, Marin County, California")) %>% 
+  filter (!(NAME=="Block 1007, Block Group 1, Census Tract 1220, Marin County, California")) %>%  # San Quentin block
   mutate(TAZ1454=case_when(
     NAME=="Block 1006, Block Group 1, Census Tract 1220, Marin County, California"   ~ as.integer(1438),
     NAME=="Block 1002, Block Group 1, Census Tract 1220, Marin County, California"   ~ as.integer(1438),
@@ -382,7 +381,7 @@ DHC_BG_raw <- get_decennial(
   sumfile = "dhc",
   key = censuskey)
 
-# Remove NAME variable for later joining
+# Remove NAME variable from decennial files for later joining
 
 DHC_tract_raw <- DHC_tract_raw %>% select(-NAME)
 DHC_BG_raw    <- DHC_BG_raw %>% select(-NAME)
@@ -607,12 +606,12 @@ temp0 <- workingdata %>%
     # Total pop (excluding institutional pop) is 7717562
   
 # Apply households by number of workers correction factors
-# The initial table values are actually households by number of "commuters" (people at work in the ACS reference week)
+# The initial table values are actually households by number of "commuters" (people at work - not sick, vacation - in the ACS reference week)
 # This overstates 0-worker households and understates 3+-worker households. A correction needs to be applied.
 # Correction factors are calculated in ACSPUMS_WorkerTotals_2017-2021_Comparisons.xls, in
 # petrale\applications\travel_model_lu_inputs\2020\Workers
 # 1=San Francisco; 2=San Mateo; 3=Santa Clara; 4=Alameda; 5=Contra Costa; 6=Solano; 7= Napa; 8=Sonoma; 9=Marin
-# "counties" vector is defined above with this county order
+# "counties" vector is defined below with this county order
 
 counties  <- c(1,2,3,4,5,6,7,8,9)                             # Matching county values for factor ordering
 
@@ -631,7 +630,7 @@ temp1 <- temp0 %>%
     hh_wrks_3_plus = hh_wrks_3_plus*workers3p[match(COUNTY,counties)]) 
 
 # Sum constituent parts to compare with marginal totals
-# Begin process of scaling constituent values so category subtotals match marginal totals
+# Begin process of scaling constituent values so category subtotals match marginal totals for 2020
 
 temp_rounded_adjusted <- temp1 %>%
   mutate (
@@ -816,14 +815,14 @@ ethnic <- temp_rounded_adjusted %>%
 write.csv (ethnic,file = "TAZ1454_Ethnicity.csv",row.names = FALSE)
 
 # Read in old PBA data sets and select variables for joining to new 2015 dataset
-# Bring in updated 2015 employment for joining
+# Bring in updated 2020 employment for joining
 # Bring in school and parking data from PBA 2040, 2015 TAZ data 
 # Add HHLDS variable (same as TOTHH), select new 2015 output
 
 PBA2015_joiner <- PBA2015%>%
   select(ZONE,DISTRICT,SD,TOTACRE,RESACRE,CIACRE,PRKCST,OPRKCST,AREATYPE,HSENROLL,COLLFTE,COLLPTE,TOPOLOGY,TERMINAL, ZERO)
 
-employment_2015 <- read.csv(employment_2015_data,header=TRUE) 
+#employment_2015 <- read.csv(employment_2015_data,header=TRUE) 
 
 
 joined_15_20      <- left_join(PBA2015_joiner,temp_rounded_adjusted, by=c("ZONE"="TAZ1454")) # Join 2015 topology, parking, enrollment
@@ -844,7 +843,8 @@ summed15 <- PBA2015 %>%
             HHINCQ1=sum(HHINCQ1),HHINCQ2=sum(HHINCQ2),HHINCQ3=sum(HHINCQ3),HHINCQ4=sum(HHINCQ4),TOTEMP=sum(TOTEMP),
             AGE0004=sum(AGE0004),AGE0519=sum(AGE0519),AGE2044=sum(AGE2044),AGE4564=sum(AGE4564),AGE65P=sum(AGE65P),
             RETEMPN=sum(RETEMPN),FPSEMPN=sum(FPSEMPN),HEREMPN=sum(HEREMPN),AGREMPN=sum(AGREMPN),MWTEMPN=sum(MWTEMPN),
-            OTHEMPN=sum(OTHEMPN),HSENROLL=sum(HSENROLL),COLLFTE=sum(COLLFTE),COLLPTE=sum(COLLPTE),gqpop=TOTPOP-HHPOP)
+            OTHEMPN=sum(OTHEMPN),HSENROLL=sum(HSENROLL),COLLFTE=sum(COLLFTE),COLLPTE=sum(COLLPTE),gqpop=TOTPOP-HHPOP) %>% 
+  ungroup()
 
 summed20 <- New2020 %>%
   group_by(DISTRICT) %>%
@@ -852,11 +852,12 @@ summed20 <- New2020 %>%
             HHINCQ1=sum(HHINCQ1),HHINCQ2=sum(HHINCQ2),HHINCQ3=sum(HHINCQ3),HHINCQ4=sum(HHINCQ4),TOTEMP=sum(TOTEMP),
             AGE0004=sum(AGE0004),AGE0519=sum(AGE0519),AGE2044=sum(AGE2044),AGE4564=sum(AGE4564),AGE65P=sum(AGE65P),
             RETEMPN=sum(RETEMPN),FPSEMPN=sum(FPSEMPN),HEREMPN=sum(HEREMPN),AGREMPN=sum(AGREMPN),MWTEMPN=sum(MWTEMPN),
-            OTHEMPN=sum(OTHEMPN),HSENROLL=sum(HSENROLL),COLLFTE=sum(COLLFTE),COLLPTE=sum(COLLPTE),gqpop=sum(gqpop))
+            OTHEMPN=sum(OTHEMPN),HSENROLL=sum(HSENROLL),COLLFTE=sum(COLLFTE),COLLPTE=sum(COLLPTE),gqpop=sum(gqpop)) %>% 
+  ungroup()
 
 # Export new 2020 data, 2015 and 2020 district summary data
 
-write.csv(New2020, "TAZ1454 2015 Land Use.csv", row.names = FALSE, quote = T)
+write.csv(New2020, "TAZ1454 2020 Land Use.csv", row.names = FALSE, quote = T)
 write.csv(summed15, "TAZ1454 2015 District Summary.csv", row.names = FALSE, quote = T)
 write.csv(summed20, "TAZ1454 2020 District Summary.csv", row.names = FALSE, quote = T)
 
