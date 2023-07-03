@@ -78,9 +78,10 @@ if __name__ == '__main__':
     pandas.options.mode.chained_assignment = None  # default='warn'
 
     base_dir                = sys.argv[1]
+    model_year              = sys.argv[2]
     zone_seq_mapping_file   = os.path.join(base_dir,'hwy',      'complete_network_zone_seq.csv')
     taz_data_file           = os.path.join(base_dir,'landuse',  'tazData.csv') # TAZ,TAZ_ORIGINAL,AVGTTS,DIST,PCTDETOUR,TERMINALTIME
-    hhfile                  = pandas.read_csv(os.path.join(base_dir,'popsyn',  'hhfile.2015.csv'))
+    hhfile                  = pandas.read_csv(os.path.join(base_dir,'popsyn',  'hhfile.'+model_year+'.csv'))
     #maz_data_file           = os.path.join(base_dir,'landuse',  'maz_data.csv') # MAZ,TAZ,MAZ_ORIGINAL,TAZ_ORIGINAL,HH,POP,emp_self,emp_ag,emp_const_non_bldg_prod,emp_const_non_bldg_office,emp_utilities_prod,emp_utilities_office,emp_const_bldg_prod,emp_const_bldg_office,emp_mfg_prod,emp_mfg_office,emp_whsle_whs,emp_trans,emp_retail,emp_prof_bus_svcs,emp_prof_bus_svcs_bldg_maint,emp_pvt_ed_k12,emp_pvt_ed_post_k12_oth,emp_health,emp_personal_svcs_office,emp_amusement,emp_hotel,emp_restaurant_bar,emp_personal_svcs_retail,emp_religious,emp_pvt_hh,emp_state_local_gov_ent,emp_scrap_other,emp_fed_non_mil,emp_fed_mil,emp_state_local_gov_blue,emp_state_local_gov_white,emp_public_ed,emp_own_occ_dwell_mgmt,emp_fed_gov_accts,emp_st_lcl_gov_accts,emp_cap_accts,emp_total,collegeEnroll,otherCollegeEnroll,AdultSchEnrl,EnrollGradeKto8,EnrollGrade9to12,PrivateEnrollGradeKto8,ech_dist,hch_dist,parkarea,hstallsoth,hstallssam,hparkcost,numfreehrs,dstallsoth,dstallssam,dparkcost,mstallsoth,mstallssam,mparkcost,TotInt,DUDen,EmpDen,PopDen,RetEmpDen,IntDenBin,EmpDenBin,DuDenBin,ACRES,beachAcres,mall_flag
     
     # the following isn't needed because it is dealt with in a different script
@@ -118,7 +119,7 @@ if __name__ == '__main__':
     hhfile['TAZ_SEQ'] = hhfile['TAZ'].map(sequence_dict)
     hhfile            = hhfile.drop(columns='TAZ')
     hhfile            = hhfile.rename(columns={'TAZ_SEQ':'TAZ'})
-    hhfile[hhfile_columns].to_csv(os.path.join(base_dir,'popsyn',  'hhfile.2015.csv'), index=False, float_format="%.9f")
+    hhfile[hhfile_columns].to_csv(os.path.join(base_dir,'popsyn',  'hhfile.'+model_year+'.csv'), index=False, float_format="%.9f")
 
     ######### map TAZ_ORIGINAL to the actual TAZ and MAZ_ORIGINAL to MAZ
     # mapping_dict = collections.OrderedDict()

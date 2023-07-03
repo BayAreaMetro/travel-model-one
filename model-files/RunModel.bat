@@ -166,7 +166,7 @@ runtpp %BASE_SCRIPTS%\preprocess\zone_seq_net_builder.job
 if ERRORLEVEL 2 goto done
 
 :: Create all necessary input files based on updated sequential zone numbering
-"%PYTHON_PATH%"\python %BASE_SCRIPTS%\preprocess\zone_seq_disseminator.py .
+"%PYTHON_PATH%"\python %BASE_SCRIPTS%\preprocess\zone_seq_disseminator.py . %MODEL_YEAR%
 IF ERRORLEVEL 1 goto done
 
 :: Write out the intersection and taz XY
