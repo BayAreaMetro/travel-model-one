@@ -10,9 +10,9 @@ set TRNASSIGNMODE=NORMAL
 set TOTMAXTRNITERS=30
 set MAXPATHTIME=240
 set PCT=%%
-set PYTHON_PATH=Software\R\user_py27
+set PYTHON_PATH=%SOFTWARE_DIR%\user_py27
 set TRN_ERRORLEVEL=0
-set R_HOME=Software\R\R-4.0.4\bin\x64
+set R_HOME=%SOFTWARE_DIR%\R-4.0.4\bin\x64
 :: AverageNetworkVolumes.job uses PREV_ITER=1 for ITER=1
 set PREV_TRN_ITER=%PREV_ITER%
 IF %ITER% EQU 1 SET PREV_TRN_ITER=0
@@ -141,7 +141,7 @@ IF %KEEP_ASGN_DBFS% EQU 1 (
 
 :modifyDwellAccess
 echo START   transitDwellAccess SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
-set PYTHONPATH=Software\NetworkWrangler\NetworkWrangler-master;Software\NetworkWrangler\NetworkWrangler-master\_static
+set PYTHONPATH=%SOFTWARE_DIR%\NetworkWrangler\NetworkWrangler-master;%SOFTWARE_DIR%\NetworkWrangler\NetworkWrangler-master\_static
 :: Initialize with header line
 if %TRNASSIGNITER% EQU 0 (
   echo trnAssignIter,timeperiod,mode,PHT,pctPHTdiff,RMSE_IVTT,RMSE_TOTT,AvgPaths,CurrPaths,CurrBoards,PathsFromBoth,PathsFromIter,PathsFromAvg,PHTCriteriaMet > PHT_total.csv

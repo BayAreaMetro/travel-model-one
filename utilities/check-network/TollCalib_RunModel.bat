@@ -72,7 +72,7 @@ echo COMMPATH is [%COMMPATH%]
 :: Path details
 set PATH=c:\windows\system32;C:\Python27;C:\Python27\Scripts
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files (x86)\Citilabs\CubeVoyager
-set PYTHONPATH=X:\NetworkWrangler;X:\NetworkWrangler\_static
+set PYTHONPATH=%SOFTWARE_DIR%\NetworkWrangler\NetworkWrangler-master;%SOFTWARE_DIR%\NetworkWrangler\NetworkWrangler-master\_static
 set GAWK_PATH=M:\Software\Gawk\bin
 SET PATH=%TPP_PATH%;%GAWK_PATH%;%PATH%
 

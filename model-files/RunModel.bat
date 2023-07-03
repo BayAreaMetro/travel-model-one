@@ -31,7 +31,7 @@ call CTRAMP\runtime\SetPath.bat
 SET BASE_SCRIPTS=CTRAMP\scripts
 
 :: Start the cube cluster
-Cluster "CTRAMP" 1-64 Starthide Exit
+Cluster "CTRAMP" 1-%NUMBER_OF_PROCESSORS% Starthide Exit
 
 :: Settings for sending notifications to Slack -- requires a Slack account
 set computer_prefix=%computername:~0,4%
@@ -233,9 +233,7 @@ if ERRORLEVEL 2 goto done
 :: ------------------------------------------------------------------------------------------------------
 python CTRAMP\scripts\preprocess\update_transit_line_file.py
 :: Python path specific to network management procedures
-
-set PYTHONPATH=Software\NetworkWrangler\NetworkWrangler-master;Software\NetworkWrangler\NetworkWrangler-master\_static
-
+set PYTHONPATH=%SOFTWARE_DIR%\NetworkWrangler\NetworkWrangler-master;%SOFTWARE_DIR%\NetworkWrangler\NetworkWrangler-master\_static
 
 ::renumber the duplicated stop ids in the transt line file
 python CTRAMP\scripts\preprocess\renumber_duplicated_transit_stops.py
@@ -324,7 +322,7 @@ set ITER=2
 set PREV_ITER=1
 set WGT=0.50
 set PREV_WGT=0.50
-set SAMPLESHARE=0.05
+set SAMPLESHARE=0.02
 set SEED=0
 
 :: Runtime configuration: set the workplace shadow pricing parameters
@@ -354,7 +352,7 @@ set ITER=3
 set PREV_ITER=2
 set WGT=0.33
 set PREV_WGT=0.67
-set SAMPLESHARE=0.20
+set SAMPLESHARE=0.05
 set SEED=0
 
 :: Runtime configuration: set the workplace shadow pricing parameters
@@ -464,7 +462,7 @@ c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
 copy *.prn logs\*.prn
 
 :: Close the cube cluster
-Cluster "CTRAMP" 1-64 Close Exit
+Cluster "CTRAMP" 1-%NUMBER_OF_PROCESSORS% Close Exit
 
 :: Delete all the temporary TP+ printouts and cluster files
 del *.prn
