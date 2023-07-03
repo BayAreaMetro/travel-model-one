@@ -141,8 +141,8 @@ def calculate_map_data(tm_runid, year, tm_loaded_network_df, representative_link
     calculate_change_between_run_and_base(tm_runid, tm_runid_base, year, 'Reliable 1', metrics_dict)
 
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
-NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
+NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "NextGenFwys", "ModelRuns.xlsx")
+NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
 current_runs_df = pd.read_excel(NGFS_MODEL_RUNS_FILE, sheet_name='all_runs', usecols=['project','year','directory','run_set','category','short_name','status'])
 current_runs_df = current_runs_df.loc[ current_runs_df['status'] == 'current']
@@ -168,7 +168,7 @@ runs = [run1a, run1b, run2a, run2b, run4]
 # load minor groupings, to be merged with loaded network
 # minor_links_df = pd.read_csv('C:\\Users\\jalatorre\\Box\\NextGen Freeways Study\\07 Tasks\\07_AnalysisRound1\\202302 Metrics Scripting\\Input Files\\a_b_with_minor_groupings.csv')
 minor_links_df = TOLLED_FWY_MINOR_GROUP_LINKS_DF
-representative_links_lookup = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "NGFS_CorridorMaps_SketchData_v3.xlsx")
+representative_links_lookup = os.path.join(TM1_GIT_DIR, "NextGenFwys", "metrics", "Input Files", "NGFS_CorridorMaps_SketchData_v3.xlsx")
 representative_links_df = pd.read_excel(representative_links_lookup, sheet_name='am_links')
 # list for iteration
 # minor_groups = minor_links_df['Grouping minor'].dropna().unique()[1:] #exclude 'other' and NaN
@@ -190,7 +190,7 @@ tm_loaded_network_df_base = tm_loaded_network_df_base.copy().merge(network_links
 tm_loaded_network_df_base = pd.merge(left=tm_loaded_network_df_base.copy(), right=minor_links_df, how='left', left_on=['a','b'], right_on=['a','b'])
 
 # load transit data
-transit_vol_AM = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "transit_vols_AM.csv")
+transit_vol_AM = os.path.join(TM1_GIT_DIR, "NextGenFwys", "metrics", "Input Files", "transit_vols_AM.csv")
 transit_vol_df = pd.read_csv(transit_vol_AM).fillna(0)
 # parallel and express bus
 transit_vol_df['m2_LRT_Bus'] = transit_vol_df.iloc[:,5] + transit_vol_df.iloc[:,7] + transit_vol_df.iloc[:,9]
