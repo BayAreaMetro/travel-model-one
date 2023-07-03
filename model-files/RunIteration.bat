@@ -123,6 +123,7 @@ if ERRORLEVEL 2 goto done
 :: copy a local version for easier restarting
 copy CTRAMP\scripts\skims\trnAssign.bat trnAssign_iter%ITER%.bat
 call trnAssign_iter%ITER%.bat
+SET BASE_SCRIPTS=CTRAMP\scripts
 if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
