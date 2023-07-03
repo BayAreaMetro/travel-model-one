@@ -5,18 +5,18 @@
 :: ------------------------------------------------------------------------------------------------------
 set YEAR=%1
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=D:\Projects\%YEAR%_BaseY_BCM%YEAR%
+set M_DIR=D:\Models\BCM\%YEAR%_BaseY_BCM%YEAR%
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
 
 :: set the location of the Travel Model Release
 :: use master for now until we create a release
-set GITHUB_DIR=E:\Models\BCM\travel-model-one
-set ALL_BCM_INPUTS=E:\Models\BCM\BCM_Inputs
-set Software_Dir=E:\Models\BCM\BCM_Software
+set GITHUB_DIR=D:\Models\BCM\travel-model-one
+set ALL_BCM_INPUTS=D:\Models\BCM\BCM_Inputs
+set Software_Dir=D:\Models\BCM\BCM_Software
 
-echo SET SOFTWARE_DIR=%Software_Dir%> %M_DIR%\Set_Software_Dr.cmd
+
 
 :: set the location of the networks (make sure the network version, year and variant are correct); currently set to the SharePoint location. 
 set INPUT_NETWORK=%ALL_BCM_INPUTS%\Base Network Externals
@@ -63,6 +63,7 @@ echo HOST_IP_ADDRESS: %HOST_IP_ADDRESS%
 
 SET computer_prefix=%computername:~0,4%
 mkdir %M_DIR%
+echo SET SOFTWARE_DIR=%Software_Dir%> %M_DIR%\Set_Software_Dr.cmd
 cd /d %M_DIR%
 :: copy over CTRAMP
 mkdir CTRAMP\model
@@ -104,9 +105,10 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_TRN%"                               
 
 :: popsyn and land use
 mkdir popsyn
+mkdir INPUT\popsyn
 c:\windows\system32\Robocopy.exe /E "%INPUT_LU%"                                      			INPUT\landuse
-copy "%INPUT_POP%"\hhFile%YEAR%.csv																INPUT\popsyn\hhFile.%YEAR%.csv
-copy "%INPUT_POP%"\personFile%YEAR%.csv															INPUT\popsyn\personFile.%YEAR%.csv
+copy %INPUT_POP%\hhFile%YEAR%.csv																INPUT\popsyn\hhFile.%YEAR%.csv
+copy %INPUT_POP%\personFile%YEAR%.csv															INPUT\popsyn\personFile.%YEAR%.csv
 c:\windows\system32\Robocopy.exe /E "%INPUT_NONRES%"                   							INPUT\nonres
 ::need to update the maximum telecommute rate for San Joaquin County in the telecommute_max_rate_county.csv file
 ::right now using the same values as Marin
