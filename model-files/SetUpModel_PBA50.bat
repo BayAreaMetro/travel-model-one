@@ -14,7 +14,6 @@ set AddStrategies=Yes
 :: use master for now until we create a release
 set GITHUB_DIR=E:\Models\BCM\travel-model-one
 set ALL_BCM_INPUTS=E:\Models\BCM\BCM_Inputs
-set ALL_TEMP_INPUTS=E:\Models\BCM\BCM_Static_Data
 set Software_Dir=E:\Models\BCM\BCM_Software
 
 echo SET SOFTWARE_DIR=%Software_Dir%> %M_DIR%\Set_Software_Dr.cmd
@@ -38,7 +37,7 @@ set INPUT_DEVELOPMENT_DIR=%ALL_BCM_INPUTS%\downloaded_files\INPUT
 
 :: TODO  set the location of the previous run (where warmstart inputs will be copied):Currently set to be the calibration folder. The trip tables will be used in the 0th iteration HwyAssignment.job step
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=%ALL_TEMP_INPUTS%\BCM Warmstart
+set PREV_RUN_DIR=%ALL_BCM_INPUTS%\BCM Warmstart
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
