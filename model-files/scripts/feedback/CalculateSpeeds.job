@@ -87,13 +87,13 @@ loop period = 1,5
    endif
    
    ; distribute via cluster
-   DistributeMultistep processid = 'CTRAMP', processNum = @period@
+   ;DistributeMultistep processid = 'CTRAMP', processNum = @period@
   
    ; step 1: use the assignment routine to compute link speeds with the averaged volume
    run pgm = highway
   
       ; overhead causes time losses with Intrastep distribution -- leave our for now, but leave instructure there for future
-      ; DistributeIntrastep processid = "ctramp", processlist = @token_intrastep_processlist@, saveprn = f
+      DistributeIntrastep processid = "ctramp", processlist = 1-%NUMBER_OF_PROCESSORS%, saveprn = f
       
       ; use the networks with the averaged (through big iterations) volumes -- see AverageNetworkVolumes.job
       neti = hwy\iter@token_current_iteration@\xavgload@token_period@.net
@@ -226,10 +226,10 @@ loop period = 1,5
       
    endrun
   
-   EndDistributeMultistep
+   ;EndDistributeMultistep
   
 endloop ; time period loop
 
-Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
-          printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+;Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTRAMP4.script.end, CTRAMP5.script.end, 
+;          printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
