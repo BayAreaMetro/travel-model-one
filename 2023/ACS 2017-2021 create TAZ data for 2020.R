@@ -846,8 +846,6 @@ joined_employment <- left_join(joined_15_20,employment_2015, by=c("ZONE"="TAZ145
 
 # Save R version of data for 2020 to later inflate to 2023
 
-final_2020 <- joined_employment
-save(final_2020,file="TAZ Land Use File 2020.rdata")
 
 # Write out subsets of final 2020 data
  
