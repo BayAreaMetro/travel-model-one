@@ -72,7 +72,7 @@ loop period = 1,5
    
    ; distribute the tasks
    ; calling GAWK doesn't appear to work when distributed.  Is the PATH different???
-   DistributeMultistep processid = "ctramp", processnum = @period@,  commpath = '%COMMPATH%'
+   ;DistributeMultistep processid = "ctramp", processnum = @period@, commpath = '../../'
                               
    ; step 1: build walk access links
    run pgm = trnbuild
@@ -276,14 +276,14 @@ loop period = 1,5
    ; step 6: create KNR access links for local bus from walk access links
    *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\createLocalBusKNRs.awk" @token_period@_transit_suplinks_walk.dat > @token_period@_bus_acclinks_KNR.dat
 
-   EndDistributeMultistep
+   ;EndDistributeMultistep
            
 endloop ; period loop
 
 ; wait for each time period to finish before proceeding
-Wait4Files files = ctramp1.script.end, 
-                   ctramp2.script.end, 
-                   ctramp3.script.end, 
-                   ctramp4.script.end, 
-                   ctramp5.script.end, 
-           printfiles = merge, deldistribfiles = t, checkreturncode = t
+;Wait4Files files = ctramp1.script.end, 
+;                   ctramp2.script.end, 
+;                   ctramp3.script.end, 
+;                   ctramp4.script.end, 
+;                   ctramp5.script.end, 
+;           printfiles = merge, deldistribfiles = t, checkreturncode = t

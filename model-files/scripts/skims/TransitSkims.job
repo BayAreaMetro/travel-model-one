@@ -128,7 +128,7 @@ loop period = 1,5
     counter = 3 * (period - 1) + accegg
 
     ; distribute the tasks
-    DistributeMultistep processid = "CTRAMP", processnum = counter
+    DistributeMultistep processid = "CTRAMP", processnum = counter, commpath = '../../'
 
       ; line haul loop
       loop path = 1,6
