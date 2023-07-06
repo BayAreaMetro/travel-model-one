@@ -842,7 +842,7 @@ PBA2015_joiner <- PBA2015%>%
 
 
 joined_15_20      <- left_join(PBA2015_joiner,temp_rounded_adjusted, by=c("ZONE"="TAZ1454")) # Join 2015 topology, parking, enrollment
-joined_employment <- left_join(joined_15_20,employment_2015, by=c("ZONE"="TAZ1454"))        # Join employment
+joined_employment <- left_join(joined_15_20,employment_2015, by=c("ZONE"="TAZ1454","County_Name"))        # Join employment
 
 # Save R version of data for 2020 to later inflate to 2023
 

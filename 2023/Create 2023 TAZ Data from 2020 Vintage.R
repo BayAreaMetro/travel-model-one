@@ -1,5 +1,5 @@
-# ACS 2017-2021 create TAZ data for 2020.R
-# Create "2020" TAZ data from ACS 2017-2021 
+# Create 2023 TAZ Data from 2020 Vintage.R
+# Create "2023" TAZ data by inflating values from the 2020 dataset 
 # SI
 
 # Notes
@@ -9,52 +9,50 @@
 wd <- paste0(dirname(rstudioapi::getActiveDocumentContext()$path),"/")
 setwd(wd)
 
-"
-
-1. ACS data here is downloaded for the 2017-2021 5-year dataset. The end year can be updated 
-   by changing the *ACS_year* variable. 
-
-2. ACS block group variables used in all instances where not suppressed. If suppressed at the block group 
-   level, tract-level data used instead. Suppressed variables may change if ACS_year is changed. This 
-   should be checked, as this change could cause the script not to work.
-
-3. Different than the effort for 2015, many small area variables (such as age, total population, etc.) are
-   available from Census 2020 data. 
-
-4. TAZs are scaled up to match Census 2020 totals 
-   
-"
 # Import Libraries
 
 suppressMessages(library(tidyverse))
-library(tidycensus)
 library(readxl)
 
 # Set up directories, import TAZ/census block equivalence, install census key, set ACS year,set CPI inflation
 
 employment_2015_data           <- "M:/Data/BusinessData/Employment_by_TAZ_industry/BusinessData_2015_TAZ_industry_noincommute.csv"
 
-blockTAZ2020_in      <- "M:/Data/GIS layers/TM1_taz_census2020/2020block_to_TAZ1454.csv"
-censuskey            <- readLines("M:/Data/Census/API/api-key.txt")
-baycounties          <- c("01","13","41","55","75","81","85","95","97")
-state                <- "06"
-census_api_key(censuskey, install = TRUE, overwrite = TRUE)
-
-ACS_year <- 2021
-sf1_year <- 2020
-ACS_product="5"
-
 USERPROFILE          <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
-BOX_TM               <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
-PBA_TAZ_2015         <- file.path(BOX_TM, "Share Data", "plan-bay-area-2050", "tazdata","PBA50_FinalBlueprintLandUse_TAZdata.xlsx")
+Petrale              <- file.path(USERPROFILE,"Documents","GitHub","Petrale","Applications","travel_model_lu_inputs")
 
-# County FIPS codes for ACS tract API calls
+# Bring in TAZ 2020 dataset, dataframe is named "final_2020"
 
-baycounties <- c("01","13","41","55","75","81","85","95","97")
-state_code <- "06" 
+load(file.path(Petrale,"2020","TAZ Land Use File 2020.rdata"))
 
-# Bring in PBA 2050 2015 land use data for county equivalencies and other data needs
-# 1=San Francisco; 2=San Mateo; 3=Santa Clara; 4=Alameda; 5=Contra Costa; 6=Solano; 7= Napa; 8=Sonoma; 9=Marin
+# Bring in California Department of Finance 2023/2020 scaling values for counties
+
+DOF_scaling <- read_excel(file.path(Petrale,"2023","P2A_County_Total.xlsx"),sheet = "2023_2020 Ratio")
+
+# Select out scaling vars, apply scaling factors and join back to non-scaled vars
+
+scaling_vars <- final_2020 %>% select("ZONE", "DISTRICT", "SD", "COUNTY", "County_Name",
+   "HSENROLL", "COLLFTE", "COLLPTE",  "TOTHH", "HHPOP", "EMPRES", "HHINCQ1", "HHINCQ2", 
+  "HHINCQ3", "HHINCQ4", "AGE0004", "AGE0519", "AGE2044", "AGE4564", 
+  "AGE65P", "SFDU", "MFDU", "hh_size_1", "hh_size_2", "hh_size_3", 
+  "hh_size_4_plus", "hh_wrks_0", "hh_wrks_1", "hh_wrks_2", "hh_wrks_3_plus", 
+  "hh_kids_yes", "hh_kids_no", "AGE62P", "gq_type_univ", "gq_type_mil", 
+  "gq_type_othnon", "gqpop", "pers_occ_management", "pers_occ_professional", 
+  "pers_occ_services", "pers_occ_retail", "pers_occ_manual", "pers_occ_military", 
+  "white_nonh", "black_nonh", "asian_nonh", "other_nonh", "hispanic", 
+   "TOTPOP", "emp_sec11", "emp_sec21", 
+  "emp_sec22", "emp_sec23", "emp_sec3133", "emp_sec42", "emp_sec4445", 
+  "emp_sec4849", "emp_sec51", "emp_sec52", "emp_sec53", "emp_sec54", 
+  "emp_sec55", "emp_sec56", "emp_sec61", "emp_sec62", "emp_sec71", 
+  "emp_sec72", "emp_sec81", "emp_sec92", "emp_sec99", "TOTEMP", 
+  "AGREMPN", "FPSEMPN", "HEREMPN", "MWTEMPN", "OTHEMPN", "RETEMPN")
+
+non_scaling_vars <- final_2020 %>% select("ZONE", "DISTRICT", "SD", "COUNTY", "County_Name",
+  "TOTACRE", "RESACRE", "CIACRE", "PRKCST", "OPRKCST", "AREATYPE","TOPOLOGY", "TERMINAL", "ZERO", 
+  "SHPOP62P")
+
+scaling_vars_updated <- left_join(scaling_vars,DOF_scaling[,c("County_Name","Ratio_2023_2020")],by=c("County_Name")) %>% 
+  mutate_at(c(6:77),~.*Ratio_2023_2020)
 
 PBA2015 <- read_excel(PBA_TAZ_2015,sheet="census2015") 
 
