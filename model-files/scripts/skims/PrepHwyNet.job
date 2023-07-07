@@ -181,6 +181,6 @@ loop period = 1,5
       
    endrun   
    
-   
+      *del %MODEL_DIR%\hwy\tempavgload@token_period@_transit.net
 endloop ; period
 
