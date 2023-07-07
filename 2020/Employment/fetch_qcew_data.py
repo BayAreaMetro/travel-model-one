@@ -1,37 +1,34 @@
-# U.S. Department of Labor
-# Bureau of Labor Statistics 
-# Quarterly Census of Employment and Wages
-# July 2014
-#  
-# QCEW Open Data Access for Python 3.x
-#  
-# This version was written using Python 3.3 and should work with other "3.x"
-# versions. However, some modification may be needed. There is a separate 
-# example file for "2.x" versions Python. 
-#
-#
-# Submit questions at: http://www.bls.gov/cgi-bin/forms/cew?/cew/home.htm 
-#
-# *******************************************************************************
+USAGE="""
 
+  Fetches U.S. Department of Labor Bureau of Labor Statistics (BLS) 
+  Quarterly Census of Employment and Wages (QCEW) data for Bay Area counties
+  by year or year+quarter
 
+"""
+
+import argparse, io, urllib, sys
 import urllib.request
-import urllib
+import pandas
+
+BAY_AREA_COUNTY_FIPS = {
+    "06001": "Alameda",
+    "06013": "Contra Costa",
+    "06041": "Marin",
+    "06055": "Napa",
+    "06075": "San Francisco",
+    "06081": "San Mateo",
+    "06085": "Santa Clara",
+    "06095": "Solano",
+    "06097": "Sonoma"
+}
 
 # *******************************************************************************
-# qcewCreateDataRows : This function takes a raw csv string and splits it into
-# a two-dimensional array containing the data and the header row of the csv file
-# a try/except block is used to handle for both binary and char encoding
+# qcewCreateDataRows : This function takes a raw csv bytes string and converts it
+# to a pandas.DataFrame.
 def qcewCreateDataRows(csv):
-    dataRows = []
-    try: dataLines = csv.decode().split('\r\n')
-    except er: dataLines = csv.split('\r\n');
-    for row in dataLines:
-        dataRows.append(row.split(','))
-    return dataRows
+    dataframe = pandas.read_csv(io.BytesIO(csv))    
+    return dataframe
 # *******************************************************************************
-
-
 
 
 # *******************************************************************************
@@ -94,22 +91,24 @@ def qcewGetSizeData(year,size):
     return qcewCreateDataRows(csv)
 # *******************************************************************************
 
+if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
+    parser.add_argument("year", help='Year of data')
+    parser.add_argument("quarter", choices=['A','1','2','3','4'])
+    args = parser.parse_args()
 
-Michigan_Data = qcewGetAreaData("2015","1","26000")
-Auto_Manufacturing = qcewGetIndustryData("2015","1","3361")
-SizeData = qcewGetSizeData("2015","6")
-
-# prints the industry_code in row 5.
-# remember row zero contains field names
-print(Michigan_Data[5][2])
-
-
-# prints the area_fips in row 1.
-# remember row zero contains field names
-print(Auto_Manufacturing[1][0])
-
-
-# prints the own_code in row 1.
-# remember row zero contains field names
-print(SizeData[1][1])
+    output_file = "qcew_BayArea_{}_{}.csv".format(
+        args.year,
+        "annual" if args.quarter=="A" else "Q{}".format(args.quarter)
+    )
+    print("output_file: {}".format(output_file))
+    
+    bay_area_df = pandas.DataFrame()
+    for fips in BAY_AREA_COUNTY_FIPS.keys():
+        county_df = qcewGetAreaData(args.year,args.quarter,fips)
+        county_df['county'] = BAY_AREA_COUNTY_FIPS[fips]
+        bay_area_df = pandas.concat([bay_area_df, county_df])
+        print("Fetched data for {}".format(BAY_AREA_COUNTY_FIPS[fips]))
+    bay_area_df.to_csv(output_file, index=False)
+    print("Wrote {} lines to {}".format(len(bay_area_df), output_file))
