@@ -124,7 +124,7 @@
 ; ----------------------------------------------------------------------------------------------------------------
 
 token_model_dir = '%MODEL_DIR%'
-*Cluster.exe CTRAMP 1-15 start exit
+
 ; time period loop
 loop period = 1, 5
 
@@ -428,4 +428,3 @@ loop period = 1, 5
            printfiles = save, DelDistribFiles = t, CheckReturnCode = t
 
 endloop ; time of day  
-*Cluster.exe CTRAMP 1-15 close exit
