@@ -150,7 +150,7 @@ loop period = 1, 5
    endif
    
    ; do each time of day as a separate process
-   ;DistributeMultistep processid = 'ctramp', processNum = @period@
+   DistributeMultistep processid = 'ctramp', processNum = @period@
    
    
    ; do, more or less, the same skim procedure for each of seven classes of vehicles
@@ -242,7 +242,7 @@ loop period = 1, 5
       run pgm = highway
       
          ; give each time of day two additional processors to work with   
-         DistributeIntrastep processid = 'ctramp', processlist = 1-%NUMBER_OF_PROCESSORS% saveprn = f
+         ;DistributeIntrastep processid = 'ctramp', processlist = 1-%NUMBER_OF_PROCESSORS% saveprn = f
      
          ; a congested network is input
          neti = hwy\avgload@token_period@_taz.net
@@ -458,12 +458,12 @@ loop period = 1, 5
       
    ENDRUN
    
-   ;EndDistributeMultistep
+   EndDistributeMultistep
 
 endloop ; token_period
 
-;Wait4Files files = ctramp1.script.end, ctramp2.script.end, ctramp3.script.end, ctramp4.script.end, ctramp5.script.end, 
-;           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
+Wait4Files files = ctramp1.script.end, ctramp2.script.end, ctramp3.script.end, ctramp4.script.end, ctramp5.script.end, 
+           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
 
 

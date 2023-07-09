@@ -132,7 +132,7 @@ loop period = 1, 3
    endif
 
    ; distribute via cluster
-   ;DistributeMultistep processid = 'CTRAMP', processNum = @period@
+   DistributeMultistep processid = 'CTRAMP', processNum = @period@
 
 	; comment out these steps when trimming the network manually prior to assignment
 	; this is just a temporary step, network should be whole from beginning of process
@@ -164,7 +164,7 @@ loop period = 1, 3
    run pgm = highway
 
       ; distribute via cluster
-      DistributeIntrastep processid = 'CTRAMP', processlist = 1-%NUMBER_OF_PROCESSORS%, saveprn = f
+      DistributeIntrastep processid = 'CTRAMP', processlist = @token_intrastep_processlist@, saveprn = f
 
       ; time-specific input highway network
       neti    = hwy\avgload@token_period@_taz_delete.net
@@ -353,12 +353,12 @@ loop period = 1, 3
       endphase
    endrun
 
-   ;EndDistributeMultistep
+   EndDistributeMultistep
 
 endloop ; time period loop
 
-;Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
-;          PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t
+Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end,
+          PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t
 
 
 ; do, more or less, the same assignment procedure for each time period
@@ -396,7 +396,7 @@ loop period = 1, 2
    endif
 
    ; distribute via cluster
-   ;DistributeMultistep processid = 'CTRAMP', processNum = @period@
+   DistributeMultistep processid = 'CTRAMP', processNum = @period@
 
 	; comment out these steps when trimming the network manually prior to assignment
 	; this is just a temporary step, network should be whole from beginning of process
@@ -428,7 +428,7 @@ loop period = 1, 2
    run pgm = highway
 
       ; distribute via cluster
-      DistributeIntrastep processid = 'CTRAMP', processlist = 1-%NUMBER_OF_PROCESSORS%, saveprn = f
+      DistributeIntrastep processid = 'CTRAMP', processlist = @token_intrastep_processlist@, saveprn = f
 
       ; time-specific input highway network
       neti    = hwy\avgload@token_period@_taz_delete.net
@@ -618,9 +618,9 @@ loop period = 1, 2
       endphase
    endrun
 
-   ;EndDistributeMultistep
+   EndDistributeMultistep
 
 endloop ; time period loop
 
-;Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end,
-;          PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t
+Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end,
+          PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t
