@@ -110,8 +110,8 @@ with open('transit.lin', 'r+') as fr, open('transitUpdated.lin', 'r+') as fw:
             fw.write(';;<<Trnbuild>>;;\n\n')
         else: 
             fw.write('\n\nLINE NAME='+name_dict[line.split('=')[1].replace(',', '').replace('"', '').replace('\n', '')]+',\n' if line_name == 0
-                    else (line.split(',')[0]+',\n' if nntime == 10
-                        else (line.replace('HEADWAY', 'FREQ'))))
+                    #else (line.split(',')[0]+',\n' if nntime == 10
+                    else (line.replace('HEADWAY', 'FREQ').replace('NNTIME','TIME')))
             
 print('Updating PT Transit Line file to TRNBUILD Line File: Success')
 
