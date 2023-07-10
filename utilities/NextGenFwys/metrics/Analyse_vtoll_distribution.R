@@ -412,14 +412,16 @@ num_zeros <- sum(df_hhldCosts$annual_valueNcordon_toll == 0)
 total_records <- nrow(df_hhldCosts)
 percentage_zero <- (num_zeros / total_records) * 100
 
-# Calculate the percentage of records with annual_valueNcordon_toll greater than or equal to 800
-# the number 800 is chosen because: out of all pathways, the highest p90 value was $754 (P4a: All-Lane & Arterial Tolling)
-num_pay800plus                 <- sum(df_hhldCosts$annual_valueNcordon_toll >= 800)
-percentage_pay800plus_outOfTot <- (num_pay800plus / total_records ) * 100
+# Calculate the percentage of records with annual_valueNcordon_toll greater than or equal to a threshold number
+# The threshold number was set to 800 because: out of all pathways, the highest p90 value was $754 (P4a: All-Lane & Arterial Tolling)
+# On July 10, 2023. Anup requested to change it to 700: https://app.asana.com/0/1203274136008809/1205003161397219/f
+threshold <- 700
+num_paythresholdplus                 <- sum(df_hhldCosts$annual_valueNcordon_toll >= threshold)
+percentage_paythresholdplus_outOfTot <- (num_paythresholdplus / total_records ) * 100
 
-# among those who pay more than $800, how many of those are low-income
-num_pay800plus_incQ1                   <- sum(df_hhldCosts$annual_valueNcordon_toll >= 800 & df_hhldCosts$hhld_incQ == 1)
-percentage_pay800plus_incQ1_outOfSubgp <- (num_pay800plus_incQ1 / num_pay800plus ) * 100
+# among those who pay more than the threshold, how many of those are low-income
+num_paythresholdplus_incQ1                   <- sum(df_hhldCosts$annual_valueNcordon_toll >= threshold & df_hhldCosts$hhld_incQ == 1)
+percentage_paythresholdplus_incQ1_outOfSubgp <- (num_paythresholdplus_incQ1 / num_paythresholdplus ) * 100
 
 # among those who pay 90th percentile, how many of those are low-income
 num_payP90plus                         <- sum(df_hhldCosts$annual_valueNcordon_toll >= quantile(df_hhldCosts$annual_valueNcordon_toll, 0.9)) # could be a tiny bit different from total_records*0.1
@@ -438,10 +440,10 @@ annual_vNctoll_dropped0s_median
 total_records
 num_zeros
 percentage_zero
-num_pay800plus
-percentage_pay800plus_outOfTot
-num_pay800plus_incQ1
-percentage_pay800plus_incQ1_outOfSubgp
+num_paythresholdplus
+percentage_paythresholdplus_outOfTot
+num_paythresholdplus_incQ1
+percentage_paythresholdplus_incQ1_outOfSubgp
 num_payP90plus
 num_payP90plus_incQ1
 percentage_payP90plus_incQ1_outOfSubgp
@@ -458,10 +460,10 @@ df_vNctoll_stats <- data.frame(
   total_records,
   num_zeros,
   percentage_zero,
-  num_pay800plus,
-  percentage_pay800plus_outOfTot,
-  num_pay800plus_incQ1,
-  percentage_pay800plus_incQ1_outOfSubgp,
+  num_paythresholdplus,
+  percentage_paythresholdplus_outOfTot,
+  num_paythresholdplus_incQ1,
+  percentage_paythresholdplus_incQ1_outOfSubgp,
   num_payP90plus,
   num_payP90plus_incQ1,
   percentage_payP90plus_incQ1_outOfSubgp
