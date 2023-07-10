@@ -468,3 +468,50 @@ Wait4Files files = ctramp1.script.end, ctramp2.script.end, ctramp3.script.end, c
 
 
 
+* del skims\DA_EA_taz.tpp
+* del skims\DA_AM_taz.tpp
+* del skims\DA_MD_taz.tpp
+* del skims\DA_PM_taz.tpp
+* del skims\DA_EV_taz.tpp
+
+* del skims\S2_EA_taz.tpp
+* del skims\S2_AM_taz.tpp
+* del skims\S2_MD_taz.tpp
+* del skims\S2_PM_taz.tpp
+* del skims\S2_EV_taz.tpp
+
+* del skims\S3_EA_taz.tpp
+* del skims\S3_AM_taz.tpp
+* del skims\S3_MD_taz.tpp
+* del skims\S3_PM_taz.tpp
+* del skims\S3_EV_taz.tpp
+
+* del skims\VSM_EA_taz.tpp
+* del skims\VSM_AM_taz.tpp
+* del skims\VSM_MD_taz.tpp
+* del skims\VSM_PM_taz.tpp
+* del skims\VSM_EV_taz.tpp
+
+* del skims\SML_EA_taz.tpp
+* del skims\SML_AM_taz.tpp
+* del skims\SML_MD_taz.tpp
+* del skims\SML_PM_taz.tpp
+* del skims\SML_EV_taz.tpp
+
+* del skims\MED_EA_taz.tpp
+* del skims\MED_AM_taz.tpp
+* del skims\MED_MD_taz.tpp
+* del skims\MED_PM_taz.tpp
+* del skims\MED_EV_taz.tpp
+
+* del skims\LRG_EA_taz.tpp
+* del skims\LRG_AM_taz.tpp
+* del skims\LRG_MD_taz.tpp
+* del skims\LRG_PM_taz.tpp
+* del skims\LRG_EV_taz.tpp
+
+* del skims\DA_EA_taz.tpp
+* del skims\DA_AM_taz.tpp
+* del skims\DA_MD_taz.tpp
+* del skims\DA_PM_taz.tpp
+* del skims\DA_EV_taz.tpp

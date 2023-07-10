@@ -917,3 +917,16 @@ Wait4Files files = CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, C
 * del main\jointtripdata_temp_MD.csv
 * del main\jointtripdata_temp_PM.csv
 * del main\jointtripdata_temp_EV.csv
+
+
+* del main\IndivTripsEA.dat
+* del main\IndivTripsAM.dat
+* del main\IndivTripsMD.dat
+* del main\IndivTripsPM.dat
+* del main\IndivTripsEV.dat
+
+* del main\JointTripsEA.dat
+* del main\JointTripsAM.dat
+* del main\JointTripsMD.dat
+* del main\JointTripsPM.dat
+* del main\JointTripsEV.dat

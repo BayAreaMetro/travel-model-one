@@ -109,7 +109,7 @@ loop period = 1, 3
       token_relativegap = 'parameters relativegap = 0.005'
 
       ; set the maximum number of iterations
-      token_maxiters = 'parameters maxiters = 5'
+      token_maxiters = 'parameters maxiters = 20'
 
    elseif (period = 2)
       token_period = 'MD'
@@ -118,7 +118,7 @@ loop period = 1, 3
       token_intrastep_processlist = token_intrastep_processlist_MD
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.005'
-      token_maxiters = 'parameters maxiters = 5'
+      token_maxiters = 'parameters maxiters = 20'
 
    elseif (period = 3)
       token_period = 'EV'
@@ -127,7 +127,7 @@ loop period = 1, 3
       token_intrastep_processlist = token_intrastep_processlist_EV
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.005'
-      token_maxiters = 'parameters maxiters = 5'
+      token_maxiters = 'parameters maxiters = 20'
 
    endif
 
@@ -382,7 +382,7 @@ loop period = 1, 2
       token_relativegap = 'parameters relativegap = 0.005'
 
       ; set the maximum number of iterations
-      token_maxiters = 'parameters maxiters = 5'
+      token_maxiters = 'parameters maxiters = 20'
 
    elseif (period = 2)
       token_period = 'PM'
@@ -391,7 +391,7 @@ loop period = 1, 2
       token_intrastep_processlist = token_intrastep_processlist_PM
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.005'
-      token_maxiters = 'parameters maxiters = 5'
+      token_maxiters = 'parameters maxiters = 20'
 
    endif
 
