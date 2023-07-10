@@ -321,6 +321,11 @@ add_cost <- function(this_timeperiod, input_trips_or_tours, reverse_od = FALSE) 
   # Left join tours to the skims
   relevant <- left_join(relevant, costSkims, by=c("orig_taz","dest_taz"))
 
+  # NOTE: The costs databases do not split auto costs by bridge tolls, 
+  # value tolls, and distance-based auto operating costs.
+  # Therefore, the means based factors for auto modes below are being applied incorrectly
+  # because they should apply to the value tolls only.
+  
   # assign cost value if we can to new column cost2
   relevant <- relevant %>%
     mutate(cost2 = (costMode == 1) * da +
@@ -507,6 +512,7 @@ add_time <- function(this_timeperiod, input_trips_or_tours, reverse_od=FALSE) {
              (costMode == 9) * wTrnW +
              (costMode == 10) * (1 - reverse_od) * dTrnW +
              (costMode == 10) * (reverse_od) * wTrnD +
+             (costMode == 11) * dTrnW +
              (costMode == 19) * s2Toll +  # taxi uses HOV2TOLL per TripModeChoice UEC
              (costMode == 20) * s2Toll +  # TNC single uses HOV2TOLL per TripModeChoice UEC
              (costMode == 21) * s2Toll)   # TNC shared uses HOV2TOLL per TripModeChoice UEC
@@ -802,7 +808,7 @@ trips <- left_join(trips, LOOKUP_TIMEPERIOD, by=c("timeCodeNum"))
 trips <- select(mutate(trips, timeCode=timeperiod_abbrev), -timeperiod_abbrev)
 trips <- left_join(trips,
                    mutate(households, home_taz=taz) %>%
-                     select(hh_id, incQ, incQ_label, autoSuff, autoSuff_label,
+                     select(hh_id, incQ, incQ_label, income, autos, autoSuff, autoSuff_label,
                             home_taz, walk_subzone, walk_subzone_label),
                    by=c("hh_id"))
 trips <- left_join(trips,

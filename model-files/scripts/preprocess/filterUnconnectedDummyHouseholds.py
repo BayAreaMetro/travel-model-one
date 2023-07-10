@@ -18,7 +18,7 @@ Filter out households and persons with home TAZ in unconnected zones from access
 
 import os, shutil, sys
 import pandas
-from dbfpy import dbf
+import dbfpy3
 
 FILES = ["households","persons","model_households","model_persons","indivTours"]
 
@@ -26,10 +26,13 @@ if __name__ == '__main__':
 
     unconnected_zones = []
     unconnected_zones_file = os.path.join("skims","unconnected_zones.dbf")
-    db = dbf.Dbf(unconnected_zones_file)
-    for rec in db:
-        # rec["NOCONNECT"] == 1
-        unconnected_zones.append(rec["ZONE"])
+    try:
+        db = dbfpy3.dbf.Dbf(unconnected_zones_file)
+        for rec in db:
+            # rec["NOCONNECT"] == 1
+            unconnected_zones.append(rec["ZONE"])
+    except Exception as e:
+        print(e)
     
     print("Found {} unconnected zone(s) in {}".format(len(unconnected_zones), unconnected_zones_file))
 

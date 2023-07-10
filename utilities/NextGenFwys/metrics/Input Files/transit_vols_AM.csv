@@ -1,0 +1,212 @@
+﻿Corridor,Category,Short Name,Model Run ID,Ab Vol,"Difference in Ab Vol from the 'Pathway 4','Pathway 4 - No New Pricing (more VZ, less trn)','2035_TM152_NGF_NP10_Path4_02' along Category, Short Name, Model Run ID",Ab Vol,"Difference in Ab Vol from the 'Pathway 4','Pathway 4 - No New Pricing (more VZ, less trn)','2035_TM152_NGF_NP10_Path4_02' along Category, Short Name, Model Run ID",Ab Vol,"Difference in Ab Vol from the 'Pathway 4','Pathway 4 - No New Pricing (more VZ, less trn)','2035_TM152_NGF_NP10_Path4_02' along Category, Short Name, Model Run ID",Ab Vol,"Difference in Ab Vol from the 'Pathway 4','Pathway 4 - No New Pricing (more VZ, less trn)','2035_TM152_NGF_NP10_Path4_02' along Category, Short Name, Model Run ID",Ab Vol,"Difference in Ab Vol from the 'Pathway 4','Pathway 4 - No New Pricing (more VZ, less trn)','2035_TM152_NGF_NP10_Path4_02' along Category, Short Name, Model Run ID",Ab Vol,"Difference in Ab Vol from the 'Pathway 4','Pathway 4 - No New Pricing (more VZ, less trn)','2035_TM152_NGF_NP10_Path4_02' along Category, Short Name, Model Run ID"
+EastBay_880680,No Project,NoProject v10,2035_TM152_NGF_NP10,474,104,0,0,,,8074,-777,,,8548,-673
+EastBay_880680,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,590,220,0,0,,,9707,856,,,10297,1076
+EastBay_880680,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,500,130,1988,1988,,,7750,-1101,,,10238,1018
+EastBay_880680,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,430,60,0,0,,,9933,1082,,,10363,1142
+EastBay_880680,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,520,150,2142,2142,,,7710,-1141,,,10372,1152
+EastBay_880680,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,527,157,2120,2120,,,7774,-1076,,,10422,1201
+EastBay_880680,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,468,98,0,0,,,10034,1184,,,10502,1282
+EastBay_880680,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,502,132,0,0,,,10174,1324,,,10676,1456
+EastBay_880680,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,519,149,1682,1682,,,7669,-1182,,,9870,649
+EastBay_880680,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,534,164,0,0,,,9361,510,,,9895,674
+EastBay_880680,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,370,0,0,0,,,8850,0,,,9220,0
+EastBay_68024980,No Project,NoProject v10,2035_TM152_NGF_NP10,58,31,304,-486,,,19379,-229,,,19741,-684
+EastBay_68024980,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,51,25,354,-436,,,20630,1022,,,21036,611
+EastBay_68024980,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,135,108,1415,625,,,20370,762,,,21920,1495
+EastBay_68024980,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,24,-3,894,104,,,20572,964,,,21490,1066
+EastBay_68024980,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,153,126,1423,633,,,20798,1190,,,22374,1949
+EastBay_68024980,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,156,129,1537,747,,,20644,1036,,,22337,1912
+EastBay_68024980,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,27,1,974,184,,,21426,1818,,,22428,2003
+EastBay_68024980,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,40,13,914,124,,,21274,1666,,,22228,1804
+EastBay_68024980,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,23,-4,805,15,,,19771,163,,,20599,174
+EastBay_68024980,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,27,0,626,-164,,,20162,554,,,20815,390
+EastBay_68024980,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,27,0,790,0,,,19608,0,,,20425,0
+EastBay_Inner580,No Project,NoProject v10,2035_TM152_NGF_NP10,704,64,1834,-178,,,,,,,2538,-114
+EastBay_Inner580,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,886,246,2832,819,,,,,,,3718,1065
+EastBay_Inner580,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,3936,3296,5068,3055,,,,,,,9004,6351
+EastBay_Inner580,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,646,6,2124,111,,,,,,,2770,117
+EastBay_Inner580,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,4024,3384,4879,2866,,,,,,,8903,6250
+EastBay_Inner580,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,4156,3516,4840,2828,,,,,,,8996,6344
+EastBay_Inner580,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,616,-24,2261,249,,,,,,,2877,225
+EastBay_Inner580,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,610,-30,2260,247,,,,,,,2870,217
+EastBay_Inner580,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,4206,3566,4646,2633,,,,,,,8852,6199
+EastBay_Inner580,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,678,38,1744,-269,,,,,,,2422,-231
+EastBay_Inner580,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,640,0,2013,0,,,,,,,2653,0
+EastBay_InnerBBApproach80580880,No Project,NoProject v10,2035_TM152_NGF_NP10,,,10600,-2016,,,101039,-1384,,,111639,-3400
+EastBay_InnerBBApproach80580880,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,,,13688,1072,,,103589,1166,,,117277,2238
+EastBay_InnerBBApproach80580880,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,7902,,18542,5926,,,88713,-13710,,,115156,117
+EastBay_InnerBBApproach80580880,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,,,13862,1246,,,105082,2659,,,118944,3905
+EastBay_InnerBBApproach80580880,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,8700,,19617,7001,,,86623,-15800,,,114941,-98
+EastBay_InnerBBApproach80580880,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,8576,,19802,7186,,,86001,-16422,,,114379,-660
+EastBay_InnerBBApproach80580880,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,,,14646,2030,,,104592,2169,,,119238,4199
+EastBay_InnerBBApproach80580880,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,,,14674,2058,,,104521,2098,,,119195,4156
+EastBay_InnerBBApproach80580880,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,8764,,18697,6081,,,86732,-15691,,,114193,-846
+EastBay_InnerBBApproach80580880,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,,,13416,800,,,103220,797,,,116636,1597
+EastBay_InnerBBApproach80580880,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,,,12616,0,,,102423,0,,,115039,0
+EastBay_Outer80,No Project,NoProject v10,2035_TM152_NGF_NP10,3062,-16,2364,-572,,,20495,-613,,,25921,-1201
+EastBay_Outer80,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,3686,608,1824,-1112,,,20798,-310,,,26308,-814
+EastBay_Outer80,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,3040,-38,3684,748,,,19806,-1302,,,26531,-591
+EastBay_Outer80,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,3238,160,3474,538,,,22598,1490,,,29310,2188
+EastBay_Outer80,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,3269,191,3896,960,,,19549,-1559,,,26714,-408
+EastBay_Outer80,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,3258,180,4024,1088,,,19533,-1575,,,26815,-307
+EastBay_Outer80,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,3214,136,3816,880,,,22640,1532,,,29670,2548
+EastBay_Outer80,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,3245,167,3754,818,,,22684,1576,,,29683,2561
+EastBay_Outer80,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,3690,612,3358,422,,,18614,-2494,,,25662,-1460
+EastBay_Outer80,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,3308,230,3054,118,,,20826,-282,,,27188,66
+EastBay_Outer80,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,3078,0,2936,0,,,21108,0,,,27122,0
+EastBay_Outer580,No Project,NoProject v10,2035_TM152_NGF_NP10,32,-9,6,-6,,,7800,-223,,,7838,-238
+EastBay_Outer580,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,57,17,10,-2,,,8898,875,,,8965,890
+EastBay_Outer580,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,194,153,96,84,,,8748,725,,,9038,962
+EastBay_Outer580,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,46,5,2,-10,,,9400,1376,,,9448,1372
+EastBay_Outer580,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,198,157,66,54,,,8648,625,,,8912,836
+EastBay_Outer580,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,206,165,92,80,,,8882,859,,,9180,1104
+EastBay_Outer580,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,35,-6,6,-6,,,9489,1466,,,9530,1454
+EastBay_Outer580,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,41,0,4,-8,,,9335,1312,,,9380,1304
+EastBay_Outer580,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,39,-2,80,68,,,8089,66,,,8208,132
+EastBay_Outer580,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,43,2,6,-6,,,8425,402,,,8474,398
+EastBay_Outer580,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,41,0,12,0,,,8023,0,,,8076,0
+Periphery_80Solano,No Project,NoProject v10,2035_TM152_NGF_NP10,,,74,-66,,,,,830,-43,904,-109
+Periphery_80Solano,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,,,94,-46,,,,,906,34,1000,-12
+Periphery_80Solano,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,,,2217,2077,,,,,968,96,3186,2173
+Periphery_80Solano,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,,,2185,2045,,,,,885,12,3069,2057
+Periphery_80Solano,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,,,2403,2263,,,,,938,66,3341,2329
+Periphery_80Solano,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,,,2515,2375,,,,,971,98,3486,2474
+Periphery_80Solano,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,,,2367,2227,,,,,916,44,3283,2271
+Periphery_80Solano,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,,,2337,2197,,,,,912,39,3248,2236
+Periphery_80Solano,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,,,64,-76,,,,,928,55,992,-21
+Periphery_80Solano,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,,,138,-2,,,,,957,85,1095,83
+Periphery_80Solano,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,,,140,0,,,,,872,0,1012,0
+Periphery_101NorthBay,No Project,NoProject v10,2035_TM152_NGF_NP10,296,84,7152,-1136,,,,,176,-114,7624,-1166
+Periphery_101NorthBay,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,254,42,7278,-1010,,,,,288,-2,7820,-970
+Periphery_101NorthBay,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,201,-11,9980,1692,,,,,271,-19,10453,1663
+Periphery_101NorthBay,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,256,44,9391,1103,,,,,242,-48,9889,1099
+Periphery_101NorthBay,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,208,-4,9767,1479,,,,,251,-39,10226,1436
+Periphery_101NorthBay,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,244,32,10048,1760,,,,,207,-83,10499,1709
+Periphery_101NorthBay,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,246,34,9214,926,,,,,216,-74,9676,886
+Periphery_101NorthBay,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,256,44,9092,804,,,,,254,-36,9602,812
+Periphery_101NorthBay,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,166,-46,9001,713,,,,,248,-42,9415,625
+Periphery_101NorthBay,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,234,22,7757,-531,,,,,188,-102,8179,-611
+Periphery_101NorthBay,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,212,0,8288,0,,,,,290,0,8790,0
+Periphery_101SouthBay,No Project,NoProject v10,2035_TM152_NGF_NP10,209,26,22,8,,,,,401,-90,631,-56
+Periphery_101SouthBay,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,193,10,54,40,,,,,533,42,779,92
+Periphery_101SouthBay,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,241,58,18,4,,,,,453,-38,711,24
+Periphery_101SouthBay,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,165,-18,32,18,,,,,679,188,875,188
+Periphery_101SouthBay,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,277,94,18,4,,,,,585,94,879,192
+Periphery_101SouthBay,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,251,68,26,12,,,,,541,50,817,130
+Periphery_101SouthBay,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,237,54,40,26,,,,,751,260,1027,340
+Periphery_101SouthBay,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,175,-8,36,22,,,,,677,186,887,200
+Periphery_101SouthBay,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,277,94,12,-2,,,,,503,12,791,104
+Periphery_101SouthBay,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,271,88,14,0,,,,,515,24,799,112
+Periphery_101SouthBay,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,183,0,14,0,,,,,491,0,687,0
+Periphery_580,No Project,NoProject v10,2035_TM152_NGF_NP10,666,-20,106,12,,,,,,,772,-8
+Periphery_580,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,731,45,279,185,,,,,,,1009,230
+Periphery_580,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,770,85,239,145,,,,,,,1009,230
+Periphery_580,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,888,203,130,36,,,,,,,1018,239
+Periphery_580,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,839,153,243,149,,,,,,,1082,302
+Periphery_580,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,856,170,261,167,,,,,,,1117,338
+Periphery_580,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,813,128,116,22,,,,,,,929,150
+Periphery_580,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,800,114,102,8,,,,,,,902,122
+Periphery_580,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,760,74,96,2,,,,,,,856,76
+Periphery_580,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,699,14,70,-24,,,,,,,769,-10
+Periphery_580,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,685,0,94,0,,,,,,,779,0
+Periphery_SR4,No Project,NoProject v10,2035_TM152_NGF_NP10,382,32,,,,,4224,-68,,,4606,-36
+Periphery_SR4,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,406,56,,,,,4790,498,,,5196,554
+Periphery_SR4,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,560,210,,,,,4455,163,,,5015,373
+Periphery_SR4,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,362,12,,,,,4880,588,,,5242,600
+Periphery_SR4,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,630,280,,,,,4633,341,,,5263,621
+Periphery_SR4,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,658,308,,,,,4837,545,,,5495,853
+Periphery_SR4,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,376,26,,,,,5192,900,,,5568,926
+Periphery_SR4,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,488,138,,,,,5262,970,,,5750,1108
+Periphery_SR4,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,386,36,,,,,4470,178,,,4856,214
+Periphery_SR4,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,348,-2,,,,,4528,236,,,4876,234
+Periphery_SR4,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,350,0,,,,,4292,0,,,4642,0
+SanMateo_101,No Project,NoProject v10,2035_TM152_NGF_NP10,1404,358,2312,-544,,,,,31396,-928,35112,-1114
+SanMateo_101,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,1033,-13,2494,-362,,,,,34088,1763,37615,1389
+SanMateo_101,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,1368,322,5546,2690,,,,,33326,1002,40240,4014
+SanMateo_101,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,986,-60,3344,488,,,,,35437,3113,39767,3541
+SanMateo_101,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,1562,516,5939,3083,,,,,34206,1882,41707,5481
+SanMateo_101,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,1531,485,6169,3313,,,,,34596,2272,42296,6070
+SanMateo_101,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,1044,-2,3662,806,,,,,36068,3744,40774,4548
+SanMateo_101,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,1050,4,3572,716,,,,,35814,3490,40436,4210
+SanMateo_101,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,1206,160,3881,1025,,,,,32206,-118,37293,1067
+SanMateo_101,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,1050,4,2578,-278,,,,,33440,1116,37068,842
+SanMateo_101,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,1046,0,2856,0,,,,,32324,0,36226,0
+SanMateo_28092,No Project,NoProject v10,2035_TM152_NGF_NP10,872,256,2842,-716,,,,,31429,-883,35143,-1343
+SanMateo_28092,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,584,-32,3144,-414,,,,,33695,1383,37423,937
+SanMateo_28092,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,694,78,3888,330,,,,,33802,1490,38384,1898
+SanMateo_28092,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,580,-36,3920,362,,,,,35077,2765,39577,3091
+SanMateo_28092,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,818,202,3756,198,,,,,34767,2455,39341,2855
+SanMateo_28092,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,708,92,3754,196,,,,,35223,2911,39685,3199
+SanMateo_28092,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,648,32,3846,288,,,,,35734,3422,40228,3742
+SanMateo_28092,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,666,50,3762,204,,,,,35332,3020,39760,3274
+SanMateo_28092,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,678,62,2712,-846,,,,,32603,291,35993,-493
+SanMateo_28092,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,646,30,2776,-782,,,,,33358,1045,36780,293
+SanMateo_28092,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,616,0,3558,0,,,,,32312,0,36486,0
+SF,No Project,NoProject v10,2035_TM152_NGF_NP10,2181,-34,250,-464,3264,-668,51630,385,32733,-376,90058,-1158
+SF,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,2710,495,330,-384,3642,-290,53636,2391,32003,-1107,92320,1104
+SF,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,2681,466,1142,428,3428,-504,48385,-2861,33381,271,89017,-2199
+SF,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,2231,16,720,6,3872,-60,52563,1318,34181,1071,93567,2351
+SF,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,2582,367,1209,495,3380,-552,48838,-2407,33460,350,89469,-1747
+SF,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,2648,433,1116,402,3390,-542,48924,-2321,33887,778,89966,-1250
+SF,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,2318,103,794,80,4060,128,52589,1344,33934,824,93695,2479
+SF,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,2259,44,716,2,4108,176,52961,1716,34243,1133,94287,3071
+SF,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,2697,482,879,165,4040,108,49437,-1808,33218,108,90271,-945
+SF,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,2802,587,560,-154,4098,166,52605,1360,34082,972,94147,2931
+SF,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,2215,0,714,0,3932,0,51245,0,33110,0,91216,0
+SFOSanMateo_101,No Project,NoProject v10,2035_TM152_NGF_NP10,928,74,340,-498,,,16137,-468,34437,-441,51842,-1333
+SFOSanMateo_101,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,1014,160,436,-402,,,17095,490,33937,-941,52481,-694
+SFOSanMateo_101,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,846,-8,1006,168,,,15873,-732,35083,205,52809,-366
+SFOSanMateo_101,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,786,-68,860,22,,,16879,274,35905,1027,54430,1255
+SFOSanMateo_101,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,926,72,1073,235,,,15985,-619,35028,150,53013,-162
+SFOSanMateo_101,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,940,86,1021,183,,,15795,-809,35528,649,53284,109
+SFOSanMateo_101,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,870,16,922,84,,,17021,416,35714,836,54527,1352
+SFOSanMateo_101,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,810,-44,846,8,,,16783,178,36055,1177,54494,1319
+SFOSanMateo_101,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,880,26,779,-59,,,15925,-680,34886,8,52470,-705
+SFOSanMateo_101,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,864,10,666,-172,,,16647,42,35754,876,53931,756
+SFOSanMateo_101,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,854,0,838,0,,,16605,0,34878,0,53175,0
+SFOSanMateo_280380,No Project,NoProject v10,2035_TM152_NGF_NP10,564,144,796,-6,,,10163,312,25266,255,36789,705
+SFOSanMateo_280380,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,544,124,922,120,,,11359,1508,25173,162,37998,1913
+SFOSanMateo_280380,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,452,32,1186,384,,,9702,-150,25130,119,36469,385
+SFOSanMateo_280380,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,408,-12,848,46,,,10111,260,25725,713,37092,1007
+SFOSanMateo_280380,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,466,46,1222,420,,,9520,-331,25043,31,36250,166
+SFOSanMateo_280380,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,458,38,1224,422,,,9676,-175,25361,350,36719,634
+SFOSanMateo_280380,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,428,8,784,-18,,,10209,358,25627,616,37048,964
+SFOSanMateo_280380,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,422,2,874,72,,,10079,228,25932,921,37307,1223
+SFOSanMateo_280380,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,406,-14,1109,307,,,9511,-340,24930,-82,35956,-128
+SFOSanMateo_280380,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,450,30,658,-144,,,10005,154,25494,483,36607,523
+SFOSanMateo_280380,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,420,0,802,0,,,9851,0,25011,0,36085,0
+SouthBay_Inner,No Project,NoProject v10,2035_TM152_NGF_NP10,93,-20,194,2,9282,-908,,,12287,-1192,21855,-2118
+SouthBay_Inner,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,96,-17,294,102,6294,-3896,,,13149,-330,19833,-4140
+SouthBay_Inner,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,638,525,1997,1805,6476,-3714,,,13105,-374,22216,-1757
+SouthBay_Inner,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,117,5,248,56,11174,984,,,15104,1625,26643,2670
+SouthBay_Inner,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,786,673,1954,1762,6324,-3866,,,13270,-209,22334,-1639
+SouthBay_Inner,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,694,581,1982,1790,6564,-3626,,,13526,48,22767,-1207
+SouthBay_Inner,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,101,-11,222,30,11188,998,,,14925,1446,26436,2463
+SouthBay_Inner,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,97,-16,272,80,11560,1370,,,14854,1375,26783,2809
+SouthBay_Inner,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,76,-37,1581,1389,5928,-4262,,,12153,-1326,19739,-4235
+SouthBay_Inner,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,70,-43,178,-14,5974,-4216,,,13305,-174,19527,-4446
+SouthBay_Inner,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,113,0,192,0,10190,0,,,13479,0,23973,0
+SouthBay_Outer10187,No Project,NoProject v10,2035_TM152_NGF_NP10,1381,147,32,12,6970,-474,,,2161,-243,10543,-558
+SouthBay_Outer10187,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,3247,2013,82,62,6532,-912,,,2348,-55,12209,1108
+SouthBay_Outer10187,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,2791,1557,210,190,7946,502,,,1943,-461,12890,1788
+SouthBay_Outer10187,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,1267,32,42,22,7847,404,,,2506,103,11662,561
+SouthBay_Outer10187,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,2851,1616,171,151,8046,602,,,2132,-271,13200,2099
+SouthBay_Outer10187,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,2882,1648,210,190,8002,558,,,2166,-237,13260,2159
+SouthBay_Outer10187,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,1324,90,50,30,7947,504,,,2569,166,11890,789
+SouthBay_Outer10187,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,1333,98,48,28,7990,547,,,2545,142,11916,815
+SouthBay_Outer10187,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,4019,2784,180,160,6558,-886,,,2067,-337,12824,1723
+SouthBay_Outer10187,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,3218,1983,18,-2,7506,62,,,2109,-295,12850,1749
+SouthBay_Outer10187,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,1234,0,20,0,7444,0,,,2403,0,11101,0
+SouthBay_Outer280680,No Project,NoProject v10,2035_TM152_NGF_NP10,2648,93,,,4777,-501,,,,,7425,-408
+SouthBay_Outer280680,Blueprint,Blueprint,2035_TM152_FBP_Plus_24,3193,638,,,2909,-2368,,,,,6102,-1731
+SouthBay_Outer280680,Pathway 1a,"Pathway 1a (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1a_02,2961,406,180,,3265,-2012,,,,,6406,-1427
+SouthBay_Outer280680,Pathway 1b,"Pathway 1b (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path1b_02,2777,222,0,,5461,184,,,,,8239,406
+SouthBay_Outer280680,Pathway 2a,"Pathway 2a with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02_10pc,2976,420,147,,3273,-2004,,,,,6396,-1437
+SouthBay_Outer280680,Pathway 2a,"Pathway 2a with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2a_02,3107,552,174,,3257,-2020,,,,,6538,-1295
+SouthBay_Outer280680,Pathway 2b,"Pathway 2b with 10pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02_10pc,2659,104,0,,5543,266,,,,,8202,370
+SouthBay_Outer280680,Pathway 2b,"Pathway 2b with 20pct art toll (more VZ, less trn, lower toll)",2035_TM152_NGF_NP10_Path2b_02,2540,-15,0,,5473,196,,,,,8013,181
+SouthBay_Outer280680,Pathway 3a,"Pathway 3a (more VZ, less trn)",2035_TM152_NGF_NP10_Path3a_02,4418,1863,,,3219,-2058,,,,,7638,-195
+SouthBay_Outer280680,Pathway 3b,"Pathway 3b (more VZ, less trn)",2035_TM152_NGF_NP10_Path3b_02,4406,1850,,,3318,-1959,,,,,7723,-109
+SouthBay_Outer280680,Pathway 4,"Pathway 4 - No New Pricing (more VZ, less trn)",2035_TM152_NGF_NP10_Path4_02,2555,0,,,5277,0,,,,,7833,0
+SouthBay_Outer280680,Pathway 4,,,,,,,,,,,,,,
+SouthBay_Outer280680,Pathway 4,,,,,,,,,,,,,,

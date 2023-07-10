@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_TollCalibrated01
+set M_DIR=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP10
 
 :: Should strategies be included? AddStrategies=Yes for all Blueprint Project and all NGF runs; AddStrategies=No for Blueprint NoProject runs.
 :: The NGF NoProject scenario includes some Blueprint strategies and excludes some (e.g. Regional Transit Fares and Vision Zero).
@@ -15,19 +15,27 @@ set NGFNoProject=Yes
 
 :: set the location of the Travel Model Release
 :: use master for now until we create a release
-set GITHUB_DIR=\\mainmodel\MainModelShare\travel-model-one-master
+set GITHUB_DIR=X:\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_NoProjectNoSFCordon_07\net_2035_NGFNoProjectNoSFCordon
+set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\Networks\NGF_Networks_NoProjectNoSFCordon_08\net_2035_NGFNoProjectNoSFCordon
 
-:: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
-set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v225_UBI\2035
+:: set the location of the populationsim and land use inputs (make sure the land use version and year are correct)
+set INPUT_POPLU=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\PopSyn_n_LandUse\2035_cordon
+
+:: choose one of the following tazDataFileName
+:: for NGF, NoProject, pathway 1a, 1b, 2a, 2b, and 4, set tazDataFileName=tazData_parkingStrategy_v01_LeaveOutTI
+:: for pathway 3a and 3b, set tazDataFileName=tazData_parkingStrategy_v01_3cordons_LeaveOutTI
+set tazDataFileName=tazData_parkingStrategy_v01_LeaveOutTI
+
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
 set UrbanSimScenario=s24
 
-:: set the location of the "input development" directory where other inputs are stored
-set INPUT_DEVELOPMENT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT
+:: set the location of the input directories for non resident travel, logsums and metrics
+set NONRES_INPUT_DIR=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\nonres\nonres_03
+set LOGSUMS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\logsums_dummies
+set METRICS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\metrics_FinalBlueprint
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
@@ -49,7 +57,7 @@ set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-over
 :: use special input tolls.csv?
 set SwapTollsCsv=Yes
 :: if the above is Yes, where is the input tolls.csv?
-set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_TollCalibration01\tollcalib_iter\tolls_iter15.csv
+set TOLLS_CSV=L:\Application\Model_One\NextGenFwys\Scenarios\2035_TM152_NGF_NP07_TollCalibration01\tollcalib_iter\tolls_iter15_3centsAsMinToll.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -64,12 +72,13 @@ mkdir CTRAMP\model
 mkdir CTRAMP\runtime
 mkdir CTRAMP\scripts
 mkdir CTRAMP\scripts\metrics
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\model"       CTRAMP\model
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\runtime"     CTRAMP\runtime
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\scripts"     CTRAMP\scripts
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\RTP\metrics"   CTRAMP\scripts\metrics
-copy /Y "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"                CTRAMP\scripts
-copy /Y "%GITHUB_DIR%\model-files\RunIteration.bat"                        CTRAMP
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\model"               CTRAMP\model
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\runtime"             CTRAMP\runtime
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\model-files\scripts"             CTRAMP\scripts
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\RTP\metrics"           CTRAMP\scripts\metrics
+c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\NextGenFwys\metrics"   CTRAMP\scripts\core_summaries
+copy /Y "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"                        CTRAMP\scripts
+copy /Y "%GITHUB_DIR%\model-files\RunIteration.bat"                                CTRAMP
 copy /Y "%GITHUB_DIR%\model-files\RunModel.bat"                            .
 copy /Y "%GITHUB_DIR%\model-files\RunLogsums.bat"                          .
 copy /Y "%GITHUB_DIR%\model-files\RunCoreSummaries.bat"                    .
@@ -79,6 +88,7 @@ copy /Y "%GITHUB_DIR%\utilities\RTP\RunScenarioMetrics.bat"                .
 copy /Y "%GITHUB_DIR%\utilities\RTP\ExtractKeyFiles.bat"                   .
 copy /Y "%GITHUB_DIR%\utilities\RTP\QAQC\Run_QAQC.bat"                     .
 copy /Y "%GITHUB_DIR%\utilities\check-setupmodel\Check_SetupModelLog.py"   .
+copy /Y "%GITHUB_DIR%\utilities\NextGenFwys\updateUECsToUseTollDist.py"           CTRAMP\scripts\preprocess
 
 if "%COMPUTER_PREFIX%" == "WIN-" (copy "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"  "CTRAMP\scripts\notify_slack.py")
 if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.59
@@ -104,11 +114,11 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_POPLU%\landuse"                     
 copy /Y "%GITHUB_DIR%\utilities\telecommute\telecommute_max_rate_county.csv"                     INPUT\landuse
 
 :: nonres
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\nonres\nonres_02"                   INPUT\nonres
+c:\windows\system32\Robocopy.exe /E "%NONRES_INPUT_DIR%"                                         INPUT\nonres
 
 :: logsums and metrics
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\logsums_dummies"                    INPUT\logsums
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\metrics\metrics_FinalBlueprint"     INPUT\metrics
+c:\windows\system32\Robocopy.exe /E "%LOGSUMS_INPUT_DIR%"                                        INPUT\logsums
+c:\windows\system32\Robocopy.exe /E "%METRICS_INPUT_DIR%"                                        INPUT\metrics
 
 :: warmstart (copy from the previous run)
 mkdir INPUT\warmstart\main
@@ -116,7 +126,7 @@ mkdir INPUT\warmstart\nonres
 copy /Y "%PREV_RUN_DIR%\OUTPUT\main\*.tpp"                                                       INPUT\warmstart\main
 copy /Y "%PREV_RUN_DIR%\OUTPUT\nonres\*.tpp"                                                     INPUT\warmstart\nonres
 del INPUT\warmstart\nonres\ixDaily2015.tpp
-del INPUT\warmstart\nonres\ixDailyx4.tpp 
+del INPUT\warmstart\nonres\ixDailyx4.tpp
 
 :: the properties file
 copy /Y "%PARAMS%"                                                                               INPUT\params.properties
@@ -143,8 +153,8 @@ if %AddStrategies%==No goto DoneAddingStrategies
 :: Parking tazdata update (part of En9 - Expand Transportation Demand Management Initiatives)
 :: -----------------------------------------
 if %MODEL_YEAR_NUM% GEQ 2035 (
-  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.csv"  INPUT\landuse\tazData.csv
-  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.dbf"  INPUT\landuse\tazData.dbf
+  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\%tazDataFileName%.csv"  INPUT\landuse\tazData.csv
+  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\%tazDataFileName%.dbf"  INPUT\landuse\tazData.dbf
 )
 
 :: another part of this strategy is to turn off free parking eligibility, which is done via the properties file.
@@ -205,7 +215,7 @@ if %MODEL_YEAR_NUM% GEQ 2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapaci
 :: see asana task: https://app.asana.com/0/450971779231601/1186351402141779/f
 
 :: ------
-:: Bike Access 
+:: Bike Access
 :: ------
 :: Bike/ped improvement on the San Rafael Bridge
 if %MODEL_YEAR_NUM% GEQ 2025 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMotorizedNetwork_BikeAccess_2025-2040.job"     "CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job")
@@ -218,12 +228,12 @@ if %MODEL_YEAR_NUM% GEQ 2045 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMo
 mkdir main
 copy /Y "%TELECOMMUTE_CONFIG%" "main/telecommute_constants_00.csv"
 copy /Y "%TELECOMMUTE_CONFIG%" "main/telecommute_constants.csv"
- 
+
 :DoneAddingStrategies
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 5: Patches to Travel Model Release 
+:: Step 5: Patches to Travel Model Release
 ::
 :: ------------------------------------------------------------------------------------------------------
 :: in case the TM release is behind, this is where we copy the most up-to-date scripts from master
@@ -249,7 +259,7 @@ SET min=%time:~3,2%
 SET ss=%time:~6,2%
 
 if exist "%M_DIR%\INPUT" (
-    :: do not overwrite existing INPUT folders on M 
+    :: do not overwrite existing INPUT folders on M
     c:\windows\system32\Robocopy.exe /E "INPUT" "%M_DIR%\INPUT_%mm%%dd%%yy%_%hh%%min%%ss%"
 ) else (
     c:\windows\system32\Robocopy.exe /E "INPUT" "%M_DIR%\INPUT"
@@ -260,7 +270,7 @@ Set dir2="%PREV_RUN_DIR%\INPUT"
 c:\windows\system32\robocopy.exe %dir1% %dir2% /e /l /ns /njs /ndl /fp /log:"%M_DIR%\CompareInputs.txt"
 
 ::----------------------------------------------
-:: add folder name to the command prompt window 
+:: add folder name to the command prompt window
 ::----------------------------------------------
 set MODEL_DIR=%CD%
 set PROJECT_DIR=%~p0
@@ -294,5 +304,18 @@ echo oLink.Save >> %TEMP_SCRIPT%
 ::C:\Windows\SysWOW64\cscript.exe /nologo %TEMP_SCRIPT%
 C:\Windows\SysWOW64\cscript.exe %TEMP_SCRIPT%
 del %TEMP_SCRIPT%
+
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 7: log the git commit and git status of GITHUB_DIR
+::
+:: ------------------------------------------------------------------------------------------------------
+set CURRENT_DIR=%CD%
+cd /d %GITHUB_DIR%
+git log -1
+git status
+cd /d %CURRENT_DIR%
+
 
 :end
