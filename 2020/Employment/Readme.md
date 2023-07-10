@@ -1,5 +1,7 @@
 
-Data Sources and Notes
+## Data Sources and Notes
+
+Further discussion can be found in [Create 2020 land use file](https://app.asana.com/0/310827677834656/1204790289402872/f) > [Update employment data](https://app.asana.com/0/0/1204885735452348/f)
 
 | Data Source | Spatial Level | Temporal Level | Data nuances | Data Availability/Cost | Data Location |
 | ------------|------------------|----------------|--------------|------------------------|---------------|
