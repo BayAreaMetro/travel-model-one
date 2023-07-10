@@ -366,7 +366,7 @@ loop period = 1, 5
              
              
              ; path parameter: we do not use the route time coded in the line files; bus times are a function of highway times
-             parameters useruntime = n        
+             parameters useruntime = y        
              
              ; path parameter: the maximum path time for a single route is 3 hours or 180 minutes
              parameters maxruntime = 180
