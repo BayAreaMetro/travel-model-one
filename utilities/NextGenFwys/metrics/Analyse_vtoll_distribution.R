@@ -422,6 +422,7 @@ percentage_paythresholdplus_outOfTot <- (num_paythresholdplus / total_records ) 
 # among those who pay more than the threshold, how many of those are low-income
 num_paythresholdplus_incQ1                   <- sum(df_hhldCosts$annual_valueNcordon_toll >= threshold & df_hhldCosts$hhld_incQ == 1)
 num_incQ1                                    <- sum(df_hhldCosts$hhld_incQ == 1)
+annual_vNctoll_paythresholdplus_incQ1        <- sum(df_hhldCosts$annual_valueNcordon_toll[df_hhldCosts$hhld_incQ==1 & df_hhldCosts$annual_valueNcordon_toll> threshold])
 percentage_paythresholdplus_incQ1_outOfSubgp <- (num_paythresholdplus_incQ1 / num_paythresholdplus ) * 100
 percentage_paythresholdplus_incQ1_outofQ1 <- (num_paythresholdplus_incQ1 / num_incQ1 ) * 100
 
@@ -446,6 +447,7 @@ num_incQ1
 percentage_zero
 num_paythresholdplus
 percentage_paythresholdplus_outOfTot
+annual_vNctoll_paythresholdplus_incQ1
 num_paythresholdplus_incQ1
 percentage_paythresholdplus_incQ1_outOfSubgp
 percentage_paythresholdplus_incQ1_outofQ1
@@ -469,6 +471,7 @@ df_vNctoll_stats <- data.frame(
   percentage_zero,
   num_paythresholdplus,
   percentage_paythresholdplus_outOfTot,
+  annual_vNctoll_paythresholdplus_incQ1,
   num_paythresholdplus_incQ1,
   percentage_paythresholdplus_incQ1_outOfSubgp,
   percentage_paythresholdplus_incQ1_outofQ1,
