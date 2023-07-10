@@ -50,20 +50,3 @@ output <- st_join(block_proj,TAZ1454_shapefile,join = st_nearest_feature, maxdis
 st_geometry(output) <- NULL
 
 write.csv(output,output_location,row.names = FALSE)
-
-trial <- get_decennial(geography = "block", 
-                       state = state_code,
-                       county = "Marin",
-                       variables = c("P1_001N","P18_003N","P18_013N","P18_023N"),
-                       geometry = TRUE,
-                       output = "wide",
-                       year = 2020,
-                       sumfile = "dhc")
-  
-list <- c("Block 1006, Block Group 1, Census Tract 1220, Marin County, California",
-          "Block 1005, Block Group 1, Census Tract 1220, Marin County, California",
-          "Block 1007, Block Group 1, Census Tract 1220, Marin County, California",
-          "Block 1002, Block Group 1, Census Tract 1220, Marin County, California")
-
-partial <- trial %>% filter(NAME %in% list)
-
