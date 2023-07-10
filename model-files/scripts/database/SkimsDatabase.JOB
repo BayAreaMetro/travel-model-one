@@ -133,7 +133,7 @@ loop period = 1, 5
       filei mati[5] = skims\trnskm@token_period@_wlk_trn_drv.tpp
 
       ; zonal data in DBF format (allows to use header rows)
-      filei zdati[1] = landuse\ZMAST15.dbf
+      filei zdati[1] = landuse\TAZDATA.dbf
       
       ; block file containing highway parameters (see note above)
       read file = ctramp\scripts\block\hwyparam.block

@@ -99,7 +99,7 @@ run pgm = matrix
    filei mati[7] = skims\nonmotskm.tpp
    
    ; zonal data in DBF format (allows to use header rows)
-   filei zdati[1]= landuse\ZMAST15.dbf
+   filei zdati[1]= landuse\TAZDATA.dbf
    
    ; only need calculations for the internal zones (xxx check that this is true xxx)
    zones = 6593                 

@@ -42,7 +42,7 @@ RUN PGM=TRIPGEN
   ; "Very Small Trucks" based on Phoenix 4-tire truck models
   ; Documented in TMIP Quick Response Freight Manual
 
-  FILEI ZDATI[1] = landuse\ZMAST15.DBF
+  FILEI ZDATI[1] = landuse\TAZDATA.DBF
   PAO = nonres\2015_TRTGPA_VS.DBF,DBF=T, LIST=Z,P[1],A[1]
 
   ZONES = 6593
@@ -91,7 +91,7 @@ RUN PGM=TRIPGEN
 
 	ZONES = 6626
 
-	ZDATI[1]= landuse\zmast15.dbf
+	ZDATI[1]= landuse\TAZDATA.dbf
 	ZDATI[2]= nonres\Inputs\calib\port_sg_2015.dbf
 	ZDATI[3]= nonres\Inputs\AC10IXXI.DBF
 	PAO = nonres\2015_TRTGPA_TRK.DBF,DBF=T, LIST=Z,

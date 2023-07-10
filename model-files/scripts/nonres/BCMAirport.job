@@ -20,7 +20,7 @@ RUN PGM=MATRIX
 
   ZONES = 6593
 
-  ZDATI[1] = landuse\ZMAST15.DBF
+  ZDATI[1] = landuse\TAZDATA.DBF
   MATO[1] = nonres\2015_PTrips_AirPass.MAT, MO=1-4, NAME=RB,RNB,VB,VNB
 
   ; Average daily passenger trips (arrivals+departures) requiring ground access at SJO:
@@ -418,7 +418,7 @@ RUN PGM=MATRIX
   MATI[1] = skims\DA_MD_TAZ.TPP
   MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.TPP
   MATI[5] = nonres\2015_PTrips_AirPass.MAT
-  ZDATI[1] = landuse\ZMAST15.DBF
+  ZDATI[1] = landuse\TAZDATA.DBF
   
   MATO[1] = nonres\2015_APTrips_RB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
   ;MATO[2] = c:\bcm\airport\?_Util_RB.MAT, mo=21,23,24, NAME=Auto,Transit,OnCall, DEC=9
@@ -591,7 +591,7 @@ RUN PGM=MATRIX
   MATI[1] = skims\DA_MD_TAZ.TPP
   MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.TPP
   MATI[5] = nonres\2015_PTrips_AirPass.MAT
-  ZDATI[1] = landuse\ZMAST15.DBF
+  ZDATI[1] = landuse\TAZDATA.DBF
   
   MATO[1] = nonres\2015_APTrips_RNB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
   ;MATO[2] = c:\bcm\airport\?_Util_RB.MAT, mo=21,23,24, NAME=Auto,Transit,OnCall, DEC=9
@@ -775,7 +775,7 @@ RUN PGM=MATRIX
   MATI[1] = skims\DA_MD_TAZ.TPP
   MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.TPP
   MATI[5] = nonres\2015_PTrips_AirPass.MAT
-  ZDATI[1] = landuse\ZMAST15.DBF
+  ZDATI[1] = landuse\TAZDATA.DBF
   
   MATO[1] = nonres\2015_APTrips_VB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
   ;MATO[2] = c:\bcm\airport\?_Util_RB.MAT, mo=21,23,24, NAME=Auto,Transit,OnCall, DEC=9
@@ -951,7 +951,7 @@ RUN PGM=MATRIX
   MATI[1] = skims\DA_MD_TAZ.TPP
   MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.TPP
   MATI[5] = nonres\2015_PTrips_AirPass.MAT
-  ZDATI[1] = landuse\ZMAST15.DBF
+  ZDATI[1] = landuse\TAZDATA.DBF
   
   MATO[1] = nonres\2015_APTrips_VNB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
   ;MATO[2] = c:\bcm\airport\?_Util_RB.MAT, mo=21,23,24, NAME=Auto,Transit,OnCall, DEC=9
