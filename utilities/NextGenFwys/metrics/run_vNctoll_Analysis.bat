@@ -7,6 +7,10 @@ IF %USERNAME%==ftsang (
   set R_HOME=C:\Program Files\R\R-4.1.2\bin
 )
 
+IF %USERNAME%==llin (
+  set R_HOME=C:\Program Files\R\R-4.2.2rc\bin
+)
+
 
 REM for NGF Round 1, the TARGET_DIR are: 
 for /d %%f in (
