@@ -36,7 +36,7 @@ import csv
 
 # paths
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns1.xlsx")
+NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
 NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
 
@@ -2324,11 +2324,13 @@ def calculate_Reparative2_ratio_revenues_revinvested(tm_run_id):
                 reparative_2_value = reparative_2_df.loc[(reparative_2_df['pathway'] == pathway)].iloc[0]['value']
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,' ',' ', 'Ratio', year] = reparative_2_value
  
-def calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict):
+def calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id):
     # 9) Annual number of estimated fatalities on freeways and non-freeway facilities
 
     # reads from fatalities_injuries.csv
     # output from GitHub\travel-model-one\utilities\RTP\metrics\VZ_safety_calc_correction_v2.R
+
+    # final desired DF columns ['grouping1', 'grouping2', 'grouping3', 'modelrun_id', 'metric_id', 'intermediate/final', 'key', 'metric_desc', 'year', 'value']
     
     metric_id = 'Safe 1'
     grouping1 = ' '
@@ -2336,10 +2338,37 @@ def calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id, year, tm_loaded_n
     grouping3 = ' '
     LOGGER.info("Calculating {} for {}".format(metric_id, tm_run_id))
     # read fatalities file metrics excel file
-    fatalities_metrics_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "TripDistance.csv")
+    fatalities_metrics_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "metrics", "fatalities_injuries.csv")
     fatalities_df = pd.read_csv(fatalities_metrics_file)
-    fatalities_df = fatalities_df.loc[(fatalities_df['model_run_type'] == 'SCENARIO')]
+    if tm_run_id == NO_PROJECT_SCENARIO_RUN_ID:
+        fatalities_df = fatalities_df.loc[(fatalities_df['model_run_type'] == 'NO_PROJECT')]
+    else:
+        fatalities_df = fatalities_df.loc[(fatalities_df['model_run_type'] == 'SCENARIO')]
     LOGGER.debug('fatalities_df:\n{}'.format(fatalities_df))
+
+    relevant_metric_columns = list(fatalities_df.columns.values)
+    relevant_metric_columns.remove('model_run_type')
+    relevant_metric_columns.remove('key')
+
+    # create empty DF to add relevant metrics to in for loop
+    metrics_df = pd.DataFrame()
+
+    for column in relevant_metric_columns:
+        metric_fatalities_df = fatalities_df[[column]]
+        metric_fatalities_df = metric_fatalities_df.rename(columns={column:'value'})
+        metric_fatalities_df['metric_desc'] = column
+        metric_fatalities_df['key'] = fatalities_df['key']
+        metrics_df = pd.concat([metrics_df, metric_fatalities_df])
+
+
+    # put it together, move to long form and return
+    metrics_df['modelrun_id'] = tm_run_id
+    metrics_df['metric_id'] = metric_id
+    metrics_df['intermediate/final'] = 'final'
+    metrics_df['year'] = tm_run_id[:4]
+    LOGGER.debug("metrics_df for Safe 1:\n{}".format(metrics_df))
+
+    return metrics_df
     
 def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     """ Calculates Safety 2: Change in vehicle miles travelled (VMT) on freeway and non-freeway facilities
@@ -2396,6 +2425,25 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
 
+    # load network_links_TAZ.csv as lookup df to use for equity metric:
+    #     --> calculate VMT for arterial road links in EPCs vs region
+    #         --> tolled aerterials within EPCs 
+    # load network link to TAZ lookup file
+
+    tm_network_links_taz_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "shapefile", "network_links_TAZ.csv")
+    tm_network_links_taz_df = pd.read_csv(tm_network_links_taz_file)[['A', 'B', 'TAZ1454']]
+    LOGGER.info("  Read {:,} rows from {}".format(len(tm_network_links_taz_df), tm_network_links_taz_file))
+    # join to epc lookup table
+    tm_network_links_with_epc_df = pd.merge(
+        left=tm_network_links_taz_df,
+        right=NGFS_EPC_TAZ_DF,
+        left_on="TAZ1454",
+        right_on="TAZ1454",
+        how='left')
+    LOGGER.debug("tm_network_links_with_epc_df.head() =\n{}".format(tm_network_links_with_epc_df.head()))
+    
+    loaded_network_df = pd.merge(left= loaded_network_df, right= tm_network_links_with_epc_df, left_on= ['a','b'], right_on= ['A', 'B'], how='left')
+
     # compute Fwy and Non_Fwy VMT
     loaded_network_df['VMT'] = \
         (loaded_network_df['volEA_tot']+
@@ -2429,7 +2477,16 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
 
     LOGGER.debug("  Using facility type categories:\n{}".format(ft_to_grouping_key_df))
     loaded_network_df = pd.merge(left=loaded_network_df, right=ft_to_grouping_key_df, on='ft', how='left')
-    ft_metrics_df = loaded_network_df.groupby(by=['grouping1','key']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
+
+    # Recode
+    loaded_network_df['grouping2'] = 'Non-EPCs'
+    loaded_network_df.loc[ loaded_network_df.taz_epc == 1, 'grouping2'] = 'EPCs'
+
+    # identify tolled arterial links 
+    loaded_network_df['grouping3'] = 'Non-tolled facilities'
+    loaded_network_df.loc[loaded_network_df.tollclass > 700000, 'grouping3'] = 'Tolled facilities'
+
+    ft_metrics_df = loaded_network_df.groupby(by=['grouping1','key', 'grouping2', 'grouping3']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
     LOGGER.debug("ft_metrics_df:\n{}".format(ft_metrics_df))
 
     # Calculate equity metric: non-freeway VMT in region and EPCs
@@ -2465,7 +2522,7 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
 
     # put it together, move to long form and return
     metrics_df = pd.concat([auto_times_df, ft_metrics_df, epc_metrics_df])
-    metrics_df = metrics_df.melt(id_vars=['grouping1','key'], var_name='metric_desc')
+    metrics_df = metrics_df.melt(id_vars=['grouping1','key','grouping2', 'grouping3'], var_name='metric_desc')
     metrics_df['modelrun_id'] = tm_run_id
     metrics_df['metric_id'] = METRIC_ID
     metrics_df['intermediate/final'] = 'final'
@@ -2591,7 +2648,7 @@ if __name__ == "__main__":
     current_runs_df = pd.read_excel(NGFS_MODEL_RUNS_FILE, sheet_name='all_runs', usecols=['project','year','directory','run_set','category','short_name','status'])
     current_runs_df = current_runs_df.loc[ current_runs_df['status'] == 'current']
     # only process metrics for 2035 model runs 
-    current_runs_df = current_runs_df.loc[ current_runs_df['year'] == 2035]
+    # current_runs_df = current_runs_df.loc[ current_runs_df['year'] == 2035]
     # # TODO: delete later after NP10 runs are completed
     # current_runs_df = current_runs_df.loc[ (current_runs_df['directory'].str.contains('NP10') == False)]
 
@@ -2763,18 +2820,18 @@ if __name__ == "__main__":
         # TODO: convert to pandas.DataFrame with these column headings.  It's far more straightforward.
         metrics_dict = {}
         metrics_df = pd.DataFrame()
+
         affordable1_metrics_df = calculate_Affordable1_transportation_costs(tm_run_id)
         metrics_df = pd.concat([metrics_df, affordable1_metrics_df])
-
         # LOGGER.info("@@@@@@@@@@@@@ A1 Done")
         calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df, network_links_dbf, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ A2 Done")
         efficient1_metrics_df = calculate_Efficient1_ratio_travel_time(tm_run_id)
-        metrics_df = pd.concat([metrics_df, efficient1_metrics_df])
-        
+        metrics_df = pd.concat([metrics_df, efficient1_metrics_df])        
         # LOGGER.info("@@@@@@@@@@@@@ E1 Done")
         efficient2_metrics_df = calculate_Efficient2_commute_mode_share(tm_run_id)
         metrics_df = pd.concat([metrics_df, efficient2_metrics_df])
+        # LOGGER.info("@@@@@@@@@@@@@ E2 Done")
         calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
         reliable2_metrics_df = calculate_Reliable2_ratio_peak_nonpeak(tm_run_id)
@@ -2784,11 +2841,11 @@ if __name__ == "__main__":
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
         calculate_Reparative2_ratio_revenues_revinvested(tm_run_id)
         # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
-        # calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict)
-        # # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
+        safe1_metrics_df = calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id)
+        metrics_df = pd.concat([metrics_df,safe1_metrics_df])
+        # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
         safe2_metrics_df = calculate_Safe2_change_in_vmt(tm_run_id)
         metrics_df = pd.concat([metrics_df, safe2_metrics_df])
-
         # LOGGER.info("@@@@@@@@@@@@@ S2 Done")
 
         # run function to calculate top level metrics
