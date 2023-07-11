@@ -271,7 +271,7 @@ RUN PGM=TRIPDIST
   MAXRMSE = 1
   
   ZDATI[1]= nonres\2015_TRTGPA_TRK.dbf
-  MATI[1] = skims\DA_MD_TAZ.TPP
+  MATI[1] = skims\HWYSKMMD.TPP
   MATI[2] = nonres\Kfactors.mat    ; read in k-factor matrices 
 
   MATO[1]= nonres\2015_TRUCK_II.MAT,MO=1-3, NAME=SML,MED,COM       ; write 3 truck Trip Tables
@@ -310,7 +310,7 @@ RUN PGM=TRIPDIST
   MAXRMSE = 1
 
   ZDATI[1]= nonres\2015_TRTGPA_TRK.dbf
-  MATI[1] = skims\DA_MD_TAZ.TPP
+  MATI[1] = skims\HWYSKMMD.TPP
 
   MATO[1]= nonres\2015_TRUCK_IE.MAT,MO=1-3, NAME=SML,MED,COM       ; write 3 truck Trip Tables
 
@@ -348,7 +348,7 @@ RUN PGM=TRIPDIST
   MAXRMSE = 1
 
   ZDATI[1]= nonres\2015_TRTGPA_TRK.dbf
-  MATI[1]= skims\DA_MD_TAZ.TPP
+  MATI[1]= skims\HWYSKMMD.TPP
 
   MATO[1]= nonres\2015_TRUCK_EI.MAT,MO=1-3, NAME=SML,MED,COM       ; write 3 truck Trip Tables
 
@@ -388,7 +388,7 @@ RUN PGM=TRIPDIST
   MAXRMSE = 1  
   
   ZDATI[1] = nonres\2015_TRTGPA_VS.DBF
-  MATI[1] = skims\DA_MD_TAZ.TPP
+  MATI[1] = skims\HWYSKMMD.TPP
   MATI[2] = nonres\Kfactors.mat    ; read in k-factor matrices
   MATO[1] = nonres\2015_TRUCK2.MAT, MO=1,NAME=VSML            ; write 1 truck Trip Tables
  

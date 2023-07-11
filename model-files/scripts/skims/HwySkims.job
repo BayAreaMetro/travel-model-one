@@ -509,9 +509,3 @@ Wait4Files files = ctramp1.script.end, ctramp2.script.end, ctramp3.script.end, c
 * del skims\LRG_MD_taz.tpp
 * del skims\LRG_PM_taz.tpp
 * del skims\LRG_EV_taz.tpp
-
-* del skims\DA_EA_taz.tpp
-* del skims\DA_AM_taz.tpp
-* del skims\DA_MD_taz.tpp
-* del skims\DA_PM_taz.tpp
-* del skims\DA_EV_taz.tpp

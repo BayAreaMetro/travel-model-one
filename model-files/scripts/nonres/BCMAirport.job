@@ -415,7 +415,7 @@ RUN PGM=MATRIX
 
   ZONES = 6593
 
-  MATI[1] = skims\DA_MD_TAZ.TPP
+  MATI[1] = skims\HWYSKMMD.TPP
   MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.TPP
   MATI[5] = nonres\2015_PTrips_AirPass.MAT
   ZDATI[1] = landuse\ZMAST15.DBF
@@ -588,7 +588,7 @@ RUN PGM=MATRIX
 
   ZONES = 6593
 
-  MATI[1] = skims\DA_MD_TAZ.TPP
+  MATI[1] = skims\HWYSKMMD.TPP
   MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.TPP
   MATI[5] = nonres\2015_PTrips_AirPass.MAT
   ZDATI[1] = landuse\ZMAST15.DBF
@@ -772,7 +772,7 @@ RUN PGM=MATRIX
 
   ZONES = 6593
 
-  MATI[1] = skims\DA_MD_TAZ.TPP
+  MATI[1] = skims\HWYSKMMD.TPP
   MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.TPP
   MATI[5] = nonres\2015_PTrips_AirPass.MAT
   ZDATI[1] = landuse\ZMAST15.DBF
@@ -948,7 +948,7 @@ RUN PGM=MATRIX
 
   ZONES = 6593
 
-  MATI[1] = skims\DA_MD_TAZ.TPP
+  MATI[1] = skims\HWYSKMMD.TPP
   MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.TPP
   MATI[5] = nonres\2015_PTrips_AirPass.MAT
   ZDATI[1] = landuse\ZMAST15.DBF
