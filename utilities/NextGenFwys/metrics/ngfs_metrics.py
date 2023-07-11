@@ -1970,6 +1970,8 @@ def calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df
     grouping2 = ' '
     grouping3 = ' '
 
+    LOGGER.info("Calculating {} for {}".format(metric_id, tm_run_id))
+
     # calculate travel times on each cprridor for both runs
     this_run_metric = calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, year, tm_loaded_network_df, metrics_dict)
     base_run_metric = calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id_base, year, tm_loaded_network_df_base, metrics_dict)
@@ -2424,6 +2426,7 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     loaded_network_df.rename(columns=lambda x: x.strip(), inplace=True)
     LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
+    LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
 
     # load network_links_TAZ.csv as lookup df to use for equity metric:
     #     --> calculate VMT for arterial road links in EPCs vs region
@@ -2431,7 +2434,7 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     # load network link to TAZ lookup file
 
     tm_network_links_taz_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "shapefile", "network_links_TAZ.csv")
-    tm_network_links_taz_df = pd.read_csv(tm_network_links_taz_file)[['A', 'B', 'TAZ1454']]
+    tm_network_links_taz_df = pd.read_csv(tm_network_links_taz_file)[['A', 'B', 'TAZ1454', 'linktaz_share']]
     LOGGER.info("  Read {:,} rows from {}".format(len(tm_network_links_taz_df), tm_network_links_taz_file))
     # join to epc lookup table
     tm_network_links_with_epc_df = pd.merge(
@@ -2440,9 +2443,11 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
         left_on="TAZ1454",
         right_on="TAZ1454",
         how='left')
-    LOGGER.debug("tm_network_links_with_epc_df.head() =\n{}".format(tm_network_links_with_epc_df.head()))
+    tm_network_links_with_epc_df = tm_network_links_with_epc_df.sort_values('linktaz_share', ascending=False).drop_duplicates(['A', 'B']).sort_index()
+    LOGGER.debug("tm_network_links_with_epc_df =\n{}".format(tm_network_links_with_epc_df))
     
     loaded_network_df = pd.merge(left= loaded_network_df, right= tm_network_links_with_epc_df, left_on= ['a','b'], right_on= ['A', 'B'], how='left')
+    LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
 
     # compute Fwy and Non_Fwy VMT
     loaded_network_df['VMT'] = \
@@ -2489,39 +2494,39 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     ft_metrics_df = loaded_network_df.groupby(by=['grouping1','key', 'grouping2', 'grouping3']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
     LOGGER.debug("ft_metrics_df:\n{}".format(ft_metrics_df))
 
-    # Calculate equity metric: non-freeway VMT in region and EPCs
-    # calculated using vmt_vht_metrics_by_taz.csv, but can also compute at the link level using network_links_TAZ.csv
-    # load vmt metrics df
-    vmt_vht_metrics_by_taz_file    = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "metrics", "vmt_vht_metrics_by_taz.csv")
-    vmt_vht_metrics_by_taz_df      = pd.read_csv(vmt_vht_metrics_by_taz_file)
-    LOGGER.info("  Read {:,} rows from {}".format(len(vmt_vht_metrics_by_taz_df), vmt_vht_metrics_by_taz_file))
+    # # Calculate equity metric: non-freeway VMT in region and EPCs
+    # # calculated using vmt_vht_metrics_by_taz.csv, but can also compute at the link level using network_links_TAZ.csv
+    # # load vmt metrics df
+    # vmt_vht_metrics_by_taz_file    = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "metrics", "vmt_vht_metrics_by_taz.csv")
+    # vmt_vht_metrics_by_taz_df      = pd.read_csv(vmt_vht_metrics_by_taz_file)
+    # LOGGER.info("  Read {:,} rows from {}".format(len(vmt_vht_metrics_by_taz_df), vmt_vht_metrics_by_taz_file))
 
-    # join to epc lookup table
-    vmt_vht_metrics_by_taz_df = pd.merge(
-        left=vmt_vht_metrics_by_taz_df,
-        right=NGFS_EPC_TAZ_DF,
-        left_on="TAZ1454",
-        right_on="TAZ1454",
-        how='left')
-    # LOGGER.debug("vmt_vht_metrics_by_taz_df.head():\n{}".format(vmt_vht_metrics_by_taz_df))
+    # # join to epc lookup table
+    # vmt_vht_metrics_by_taz_df = pd.merge(
+    #     left=vmt_vht_metrics_by_taz_df,
+    #     right=NGFS_EPC_TAZ_DF,
+    #     left_on="TAZ1454",
+    #     right_on="TAZ1454",
+    #     how='left')
+    # # LOGGER.debug("vmt_vht_metrics_by_taz_df.head():\n{}".format(vmt_vht_metrics_by_taz_df))
 
-    # capitalize to be consistent with above
-    vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.road_type=='freeway',     'road_type' ] = 'Freeway'
-    vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.road_type=='non-freeway', 'road_type' ] = 'Non-Freeway'
-    # Recode
-    vmt_vht_metrics_by_taz_df['key'] = 'Non-EPCs'
-    vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.taz_epc == 1, 'key'] = 'EPCs'
-    # Summarize
-    epc_metrics_df    = vmt_vht_metrics_by_taz_df.groupby(by=['road_type','key']).agg({'VMT':'sum','VHT':'sum'}).reset_index()
-    region_metrics_df = vmt_vht_metrics_by_taz_df.groupby(by=['road_type'      ]).agg({'VMT':'sum','VHT':'sum'}).reset_index()
-    region_metrics_df['key'] = 'Region'
-    # Combine
-    epc_metrics_df = pd.concat([epc_metrics_df, region_metrics_df])
-    epc_metrics_df.rename(columns={'road_type':'grouping1'}, inplace=True)
-    LOGGER.debug("epc_metrics_df\n{}".format(epc_metrics_df))
+    # # capitalize to be consistent with above
+    # vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.road_type=='freeway',     'road_type' ] = 'Freeway'
+    # vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.road_type=='non-freeway', 'road_type' ] = 'Non-Freeway'
+    # # Recode
+    # vmt_vht_metrics_by_taz_df['key'] = 'Non-EPCs'
+    # vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.taz_epc == 1, 'key'] = 'EPCs'
+    # # Summarize
+    # epc_metrics_df    = vmt_vht_metrics_by_taz_df.groupby(by=['road_type','key']).agg({'VMT':'sum','VHT':'sum'}).reset_index()
+    # region_metrics_df = vmt_vht_metrics_by_taz_df.groupby(by=['road_type'      ]).agg({'VMT':'sum','VHT':'sum'}).reset_index()
+    # region_metrics_df['key'] = 'Region'
+    # # Combine
+    # epc_metrics_df = pd.concat([epc_metrics_df, region_metrics_df])
+    # epc_metrics_df.rename(columns={'road_type':'grouping1'}, inplace=True)
+    # LOGGER.debug("epc_metrics_df\n{}".format(epc_metrics_df))
 
     # put it together, move to long form and return
-    metrics_df = pd.concat([auto_times_df, ft_metrics_df, epc_metrics_df])
+    metrics_df = pd.concat([auto_times_df, ft_metrics_df])
     metrics_df = metrics_df.melt(id_vars=['grouping1','key','grouping2', 'grouping3'], var_name='metric_desc')
     metrics_df['modelrun_id'] = tm_run_id
     metrics_df['metric_id'] = METRIC_ID
@@ -2836,7 +2841,7 @@ if __name__ == "__main__":
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
         reliable2_metrics_df = calculate_Reliable2_ratio_peak_nonpeak(tm_run_id)
         metrics_df = pd.concat([metrics_df, reliable2_metrics_df])
-        # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
+        LOGGER.info("@@@@@@@@@@@@@ R2 Done")
         calculate_Reparative1_dollar_revenues_revinvested(tm_run_id)
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
         calculate_Reparative2_ratio_revenues_revinvested(tm_run_id)
