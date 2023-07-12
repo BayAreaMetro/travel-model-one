@@ -55,15 +55,6 @@ NGFS_EPC_TAZ_DF      = pd.read_csv(NGFS_EPC_TAZ_FILE)
 # tollclass designations
 TOLLCLASS_LOOKUP_DF     = pd.read_excel(NGFS_TOLLCLASS_FILE, sheet_name='Inputs_for_tollcalib', usecols=['project','facility_name','tollclass','s2toll_mandatory','THRESHOLD_SPEED','MAX_TOLL','MIN_TOLL','Grouping major','Grouping minor'])
 
-# parallel arterials
-# TODO: Document how these were made?
-NGFS_PARALLEL_ARTERIALS_FILE = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "ParallelArterialLinks.csv")
-NGFS_PARALLEL_ARTERIALS_DF   = pd.read_csv(NGFS_PARALLEL_ARTERIALS_FILE)
-
-# tolled arterials
-# TODO: apply the same fix that LZ will implement for a_b_with_minor_groupings
-NGFS_PATHWAY2_TOLLED_ARTERIALS_FILE = pd.read_csv('L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\2035_TM152_NGF_NP09_Path2a_04\\OUTPUT\\avgload5period.csv').rename(columns=lambda x: x.strip())[['a','b','tollclass']]
-
 # define origin destination pairs
 NGFS_OD_CITIES_OF_INTEREST = [
     ['Central/West Oakland',                           'San Francisco Downtown Area'],
@@ -203,8 +194,9 @@ PURPOSES_COMMUTE = ['work_low','work_med','work_high','work_very high']
 
 # travel model time periods
 # https://github.com/BayAreaMetro/modeling-website/wiki/TimePeriods
-TIME_PERIODS_PEAK = ['AM','PM']
-
+TIME_PERIODS_PEAK    = ['AM','PM']
+TIME_PERIOD_LABELS_PEAK    = ['AM Peak','PM Peak']
+TIME_PERIOD_LABELS_NONPEAK = ['Midday']
 METRICS_COLUMNS = [
     'grouping1',
     'grouping2',
@@ -1183,7 +1175,7 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         metrics_dict[key, 'Toll Costs (2023$)', 'Sales Workers', tm_run_id, metric_id,'intermediate','Business/Commercial','truck_toll_costs',year] = SALES_WORKERS_incremental_toll_costs_minor_grouping
         metrics_dict[key, 'Toll Costs (2023$)', 'Construction Workers', tm_run_id, metric_id,'intermediate','Business/Commercial','truck_toll_costs',year] = CONSTRUCTION_WORKERS_incremental_toll_costs_minor_grouping
 
-        metrics_dict[key, 'Toll Costs (2023$)', 'hov', tm_run_id, metric_id,'debug','Household','hov_toll_costs',year] = S3_incremental_toll_costs_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'hov', tm_run_id, metric_id,'debug step','Household','hov_toll_costs',year] = S3_incremental_toll_costs_minor_grouping
 
         if (DA_incremental_toll_costs_minor_grouping == 0):
             priv_auto_ratio_time_savings_to_toll_costs_minor_grouping = 0
@@ -1281,7 +1273,7 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'Heavy Truck Operators', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_HEAVY_TRUCK_OPERATORS_time_savings_to_toll_costs/sum_of_weights
     metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'Sales Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_SALES_WORKERS_time_savings_to_toll_costs/sum_of_weights
     metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'Construction Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_CONSTRUCTION_WORKERS_time_savings_to_toll_costs/sum_of_weights
-    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', grouping3, tm_run_id, metric_id,'debug','High Occupancy Vehicle','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_hov_time_savings_to_toll_costs/sum_of_weights
+    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', grouping3, tm_run_id, metric_id,'debug step','High Occupancy Vehicle','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_hov_time_savings_to_toll_costs/sum_of_weights
 
     # simple averages
     metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc1', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_auto_time_savings_to_toll_costs_inc1/n
@@ -1291,7 +1283,7 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'Heavy Truck Operators', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_HEAVY_TRUCK_OPERATORS_time_savings_to_toll_costs/n
     metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'Sales Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_SALES_WORKERS_time_savings_to_toll_costs/n
     metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'Construction Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_CONSTRUCTION_WORKERS_time_savings_to_toll_costs/n
-    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', grouping3, tm_run_id, metric_id,'debug','High Occupancy Vehicle','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_hov_time_savings_to_toll_costs/n
+    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', grouping3, tm_run_id, metric_id,'debug step','High Occupancy Vehicle','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_hov_time_savings_to_toll_costs/n
 
 
 def return_E1_DF(tm_run_id, od_df, All_or_EPC):
@@ -1456,7 +1448,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     # join to OD cities for origin
     trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
                                        right=NGFS_OD_CITIES_DF,
-                                       how='left',
                                        left_on="orig_taz",
                                        right_on="taz1454")
     trips_od_travel_time_df.rename(columns={"CITY":"orig_CITY"}, inplace=True)
@@ -1464,7 +1455,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     # join to OD cities for destination
     trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
                                        right=NGFS_OD_CITIES_DF,
-                                       how='left',
                                        left_on="dest_taz",
                                        right_on="taz1454")
     trips_od_travel_time_df.rename(columns={"CITY":"dest_CITY"}, inplace=True)
@@ -1479,7 +1469,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     # join to epc lookup table
     trips_ending_in_city_dt_od_travel_time_df = pd.merge(left=trips_ending_in_city_dt_od_travel_time_df,
                                                         right=NGFS_EPC_TAZ_DF,
-                                                        how='left',
                                                         left_on="orig_taz",
                                                         right_on="TAZ1454")
     # filter a copy to only those starting in EPCs
@@ -1488,7 +1477,6 @@ def calculate_Efficient1_ratio_travel_time(tm_run_id: str) -> pd.DataFrame:
     # filter again to only those of interest
     trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
                                        right=NGFS_OD_CITIES_OF_INTEREST_DF,
-                                       how='left',
                                        indicator=True)
     trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df._merge == 'both']
     LOGGER.info("  Filtered to only NGFS_OD_CITIES_OF_INTEREST: {:,} rows".format(len(trips_od_travel_time_df)))
@@ -1694,17 +1682,8 @@ def calculate_Efficient2_commute_mode_share(tm_run_id: str) -> pd.DataFrame:
     LOGGER.debug("metrics_df:\n{}".format(metrics_df))
     return metrics_df
 
-
-
-
-
-
-
 def sum_grouping(network_df,period): #sum congested time across selected toll class groupings
     return network_df['ctim'+period].sum()
-
-
-
 
 def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, year, tm_loaded_network_df, metrics_dict):
   # Keeping essential columns of loaded highway network: node A and B, distance, free flow time, congested time
@@ -1728,7 +1707,7 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
       how='left')
   LOGGER.debug("tm_network_links_with_epc_df.head() =\n{}".format(tm_network_links_with_epc_df.head()))
 
-  tm_ab_ctim_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] == 1)&(tm_loaded_network_df['ft'] != 6)]
+  tm_ab_ctim_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] != 3)&(tm_loaded_network_df['ft'] != 6)]
   tm_ab_ctim_df = tm_ab_ctim_df.copy()[['Grouping minor_AMPM','a_b','fft','ctimAM','ctimPM', 'distance','volEA_tot', 'volAM_tot', 'volMD_tot', 'volPM_tot', 'volEV_tot']]  
 
   # create df for parallel arterials  
@@ -1928,13 +1907,15 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
   # add metric for goods routes: Calculate [Change in peak hour travel time] for 3 truck routes (using link-level)
   # load table with links for each goods route
   # columns: A, B, I580_I238_I880_PortOfOakland, I101_I880_PortOfOakland, I80_I880_PortOfOakland
+  # the table also includes links for the untolled 680 corridor (see asana task below)
+  # https://app.asana.com/0/0/1204972308899338/f  
   goods_routes_a_b_links_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "goods_routes_a_b.csv")
   goods_routes_a_b_links_df = pd.read_csv(goods_routes_a_b_links_file)
   LOGGER.info("  Read {:,} rows from {}".format(len(goods_routes_a_b_links_df), goods_routes_a_b_links_file))
   LOGGER.debug("goods_routes_a_b_links_df.head() =\n{}".format(goods_routes_a_b_links_df.head()))
   # merge loaded network with df containing route information
   # remove HOV lanes from the network
-  loaded_network_with_goods_routes_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] == 1)]
+  loaded_network_with_goods_routes_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] != 3)]
   loaded_network_with_goods_routes_df = loaded_network_with_goods_routes_df.copy()[['a','b','ctimAM','ctimPM']]
   loaded_network_with_goods_routes_df = pd.merge(left=loaded_network_with_goods_routes_df, right=goods_routes_a_b_links_df, how='left', left_on=['a','b'], right_on=['A','B'])
   LOGGER.debug("loaded_network_with_goods_routes_df.head() =\n{}".format(loaded_network_with_goods_routes_df.head()))
@@ -1980,10 +1961,31 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
   goods_routes_average_peak_travel_time = numpy.mean([peak_average_travel_time_route_I580, peak_average_travel_time_route_I101,peak_average_travel_time_route_I80])
   metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'final','Average Across Routes', 'peak_hour_travel_time', year] = goods_routes_average_peak_travel_time
 
+  # sum the travel time for the different time periods on the route that begins on I680
+  travel_time_route_I680_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I680').agg('sum')
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_route_I680 = travel_time_route_I680_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_route_I680 = travel_time_route_I680_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_route_I680 = numpy.mean([AM_travel_time_route_I680,PM_travel_time_route_I680])
+  # enter into metrics_dict
+  metrics_dict['untolled I680 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I680', 'travel_time_I680_AM', year] = AM_travel_time_route_I680
+  metrics_dict['untolled I680 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I680', 'travel_time_I680_PM', year] = PM_travel_time_route_I680
+  metrics_dict['untolled I680 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I680', 'peak_hour_travel_time_I680', year] = peak_average_travel_time_route_I680 
+
+  # sum the travel time for the different time periods on the route that begins on SR85
+  travel_time_route_SR85_summed_df = loaded_network_with_goods_routes_df.copy().groupby('SR85').agg('sum')
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_route_SR85 = travel_time_route_SR85_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_route_SR85 = travel_time_route_SR85_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_route_SR85 = numpy.mean([AM_travel_time_route_SR85,PM_travel_time_route_SR85])
+  # enter into metrics_dict
+  metrics_dict['untolled SR85 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR85', 'travel_time_SR85_AM', year] = AM_travel_time_route_SR85
+  metrics_dict['untolled SR85 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR85', 'travel_time_SR85_PM', year] = PM_travel_time_route_SR85
+  metrics_dict['untolled SR85 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR85', 'peak_hour_travel_time_SR85', year] = peak_average_travel_time_route_SR85 
+
   return [sum_of_weights, total_weighted_travel_time, n, total_travel_time, sum_of_weights_parallel_arterial, total_weighted_travel_time_parallel_arterial, total_travel_time_parallel_arterial, arterial_total_travel_time_region, arterial_total_travel_time_epc, arterial_total_travel_time_nonepc]
-
-
-
 
 def calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df, metrics_dict):    
     # 5) Change in peak hour travel time on key freeway corridors and parallel arterials
@@ -1993,6 +1995,8 @@ def calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df
     grouping1 = ' '
     grouping2 = ' '
     grouping3 = ' '
+
+    LOGGER.info("Calculating {} for {}".format(metric_id, tm_run_id))
 
     # calculate travel times on each cprridor for both runs
     this_run_metric = calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, year, tm_loaded_network_df, metrics_dict)
@@ -2028,65 +2032,212 @@ def calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df
     metrics_dict['EPC', grouping2, grouping3, tm_run_id, metric_id,'final','Tolled Arterials','peak hour travel time for tolled arterial road links, EPC average',year]      = arterial_travel_time_epc_avg/n
     metrics_dict['NonEPC', grouping2, grouping3, tm_run_id, metric_id,'final','Tolled Arterials','peak hour travel time for tolled arterial road links, Non-EPC average',year]      = arterial_travel_time_nonepc_avg/n
 
+def R2_aggregate_before_joining(tm_run_id):
+    """
 
+    have to aggregate before joining.  
+    e.g. simplify the trip mode, aggregate all income quartiles, and then join — so we won't lose trips
+    see asana task: https://app.asana.com/0/0/1204811778297277/f 
+    
+    """
+    LOGGER.info("Reliable 2: Aggregating before joining for {}".format(tm_run_id)) 
 
+    # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
+    ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", ODTRAVELTIME_FILENAME) #changed "ODTravelTime_byModeTimeperiodIncome.csv" to a variable for better performance during debugging
+    # this is large so join/subset it immediately
+    trips_od_travel_time_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
+    LOGGER.info("  Read {:,} rows from {}".format(len(trips_od_travel_time_df), ODTravelTime_byModeTimeperiod_file))
 
-def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df, metrics_dict):    
-    # 6) Ratio of travel time during peak hours vs. non-peak hours between representative origin-destination pairs 
+    # filter for only driving modes
+    # we're going to aggregate trip modes; auto includes TAXI and TNC
+    trips_od_travel_time_df['agg_trip_mode'] = "N/A"
+    trips_od_travel_time_df.loc[ trips_od_travel_time_df.trip_mode.isin(MODES_PRIVATE_AUTO), 'agg_trip_mode' ] = "auto"
+    trips_od_travel_time_df.loc[ trips_od_travel_time_df.trip_mode.isin(MODES_TAXI_TNC),     'agg_trip_mode' ] = "auto"
+    trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df.agg_trip_mode == 'auto' ]
+    LOGGER.info("  Filtered to auto only: {:,} rows".format(len(trips_od_travel_time_df)))
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
 
+    # pivot out the income and mode since we don't need it
+    trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df,
+                                             index=['orig_taz','dest_taz','timeperiod_label'],
+                                             values=['num_trips','avg_travel_time_in_mins'],
+                                             aggfunc={'num_trips':numpy.sum, 'avg_travel_time_in_mins':numpy.mean})
+    trips_od_travel_time_df.reset_index(inplace=True)
+    LOGGER.info("  Aggregated income groups and modes: {:,} rows".format(len(trips_od_travel_time_df)))
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # we're going to aggregate trip time periods; auto includes TAXI and TNC
+    trips_od_travel_time_df['agg_timeperiod_label'] = "N/A"
+    trips_od_travel_time_df.loc[ trips_od_travel_time_df.timeperiod_label.isin(TIME_PERIOD_LABELS_PEAK),      'agg_timeperiod_label' ] = "peak"
+    trips_od_travel_time_df.loc[ trips_od_travel_time_df.timeperiod_label.isin(TIME_PERIOD_LABELS_NONPEAK), 'agg_timeperiod_label' ] = "nonpeak"
+    LOGGER.info("   Aggregated trip time periods: {:,} rows".format(len(trips_od_travel_time_df)))
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # pivot down to orig_taz x dest_taz x agg_timeperiod_label
+    trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df, 
+                                             index=['orig_taz','dest_taz','agg_timeperiod_label'],
+                                             values=['num_trips','avg_travel_time_in_mins'],
+                                             aggfunc={'num_trips':numpy.sum, 'avg_travel_time_in_mins':numpy.mean})
+    trips_od_travel_time_df.reset_index(inplace=True)
+
+    return trips_od_travel_time_df
+
+def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id: str) -> pd.DataFrame:
+    """ Calculates Reliable 2: Ratio of travel time during peak hours vs. non-peak hours between representative origin-destination pairs 
+    
+    Args:
+        tm_run_id (str): Travel model run ID
+
+    Returns:
+        pandas.DataFrame: with columns a subset of METRICS_COLUMNS, including 
+          metric_id   = 'Reliable 2'
+          modelrun_id = tm_run_id
+        Metrics returned:
+          key                       intermediate/final  metric_desc
+          [origCITY_destCITY]       extra               avg_travel_time_in_mins_peak
+          [origCITY_destCITY]       extra               avg_travel_time_in_mins_nonpeak
+          [origCITY_destCITY]       extra               num_trips_peak
+          [origCITY_destCITY]       extra               num_trips_nonpeak
+          [origCITY_destCITY]       intermediate        ratio_travel_time_peak_nonpeak
+          Average across OD pairs   final               ratio_travel_time_peak_nonpeak_across_pairs
+
+    Notes:
+    * Representative origin-destination pairs are given by TAZs corresponding with 
+      NGFS_OD_CITIES_FILE and NGFS_OD_CITIES_OF_INTEREST
+    * peak time includes AM and PM
+    * Final calculation is the average of these ratios (not weighted) across all OD pairs,
+      excluding those which have no trips and therefore lack a travel time
+    
+      TODO: Does this make sense?  If a market is very small, should it be considered equally
+    """
     metric_id = 'Reliable 2'
     grouping1 = ' '
     grouping2 = ' '
     grouping3 = ' '
     LOGGER.info("Calculating {} for {}".format(metric_id, tm_run_id))
 
-    # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
-    ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", ODTRAVELTIME_FILENAME)
-    # TODO: this is large so join/subset it immediately
-    tm_od_travel_times_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
-    LOGGER.info("  Read {:,} rows from {}".format(len(tm_od_travel_times_df), ODTravelTime_byModeTimeperiod_file))
+    trips_od_travel_time_df = R2_aggregate_before_joining(tm_run_id)
+    # remove 'num_trips' column to use from base run instead
+    trips_od_travel_time_df = trips_od_travel_time_df.drop('num_trips', axis = 1)
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # read a copy of the table for the base comparison run to pull the number of trips (for weighting)
+    trips_od_travel_time_df_base = R2_aggregate_before_joining(tm_run_id_base) 
+    LOGGER.debug("trips_od_travel_time_df_base: \n{}".format(trips_od_travel_time_df_base))
+    # reduce copied df to only relevant columns orig, dest, and num_trips
+    # pivot down to orig_taz x dest_taz x agg_timeperiod_label
+    # purpose is to use same number-of-trip weights by TAZ-TAZ pairs, for both peak and off-peak (and consistent across pathways)
+    # https://app.asana.com/0/0/1204844161312298/1204858353452819/f
+    trips_od_travel_time_df_base = pd.pivot_table(trips_od_travel_time_df_base, 
+                                             index=['orig_taz','dest_taz'],
+                                             values=['num_trips'],
+                                             aggfunc={'num_trips':numpy.sum})
+    trips_od_travel_time_df_base.reset_index(inplace=True)
+    LOGGER.debug("pivot down trips_od_travel_time_df_base to only relevant columns orig, dest, and num_trips: \n{}".format(trips_od_travel_time_df_base))
+
+    trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
+                                       right=trips_od_travel_time_df_base, 
+                                       how='left', 
+                                       left_on=['orig_taz','dest_taz'], 
+                                       right_on=['orig_taz','dest_taz'])
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # join to OD cities for origin
+    trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
+                                       right=NGFS_OD_CITIES_DF,
+                                       left_on="orig_taz",
+                                       right_on="taz1454")
+    trips_od_travel_time_df.rename(columns={"CITY":"orig_CITY"}, inplace=True)
+    trips_od_travel_time_df.drop(columns=["taz1454"], inplace=True)
+    # join to OD cities for destination
+    trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
+                                       right=NGFS_OD_CITIES_DF,
+                                       left_on="dest_taz",
+                                       right_on="taz1454")
+    trips_od_travel_time_df.rename(columns={"CITY":"dest_CITY"}, inplace=True)
+    trips_od_travel_time_df.drop(columns=["taz1454"], inplace=True)
+    LOGGER.info("  Joined with {} for origin, destination: {:,} rows".format(NGFS_OD_CITIES_FILE, len(trips_od_travel_time_df)))
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # trips_od_travel_time_df.to_csv(os.path.join(os.getcwd(),"trips_od_travel_time_df({}).csv".format(tm_run_id)), float_format='%.5f', index=False)
+
+    # filter again to only those of interest
+    trips_od_travel_time_df = pd.merge(left=trips_od_travel_time_df,
+                                       right=NGFS_OD_CITIES_OF_INTEREST_DF,
+                                       indicator=True)
+    trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df._merge == 'both']
+    LOGGER.info("  Filtered to only NGFS_OD_CITIES_OF_INTEREST: {:,} rows".format(len(trips_od_travel_time_df)))
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # to get weighted average, transform to total travel time
+    trips_od_travel_time_df['tot_travel_time_in_mins'] = \
+        trips_od_travel_time_df['avg_travel_time_in_mins']*trips_od_travel_time_df['num_trips']
+
+    # pivot down to orig_CITY x dest_CITY x agg_timeperiod_label
+    trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df, 
+                                             index=['orig_CITY','dest_CITY','agg_timeperiod_label'],
+                                             values=['num_trips','tot_travel_time_in_mins'],
+                                             aggfunc={'num_trips':numpy.sum, 'tot_travel_time_in_mins':numpy.sum})
+    trips_od_travel_time_df.reset_index(inplace=True)
+    trips_od_travel_time_df['avg_travel_time_in_mins'] = \
+        trips_od_travel_time_df['tot_travel_time_in_mins']/trips_od_travel_time_df['num_trips']
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # pivot again to move agg_timeperiod to column
+    # columns will now be: orig_CITY_, dest_CITY_, avg_travel_time_in_mins_peak, avg_travel_time_in_mins_nonpeak, num_trips_peak, num_trips_nonpeak
+    trips_od_travel_time_df = pd.pivot_table(trips_od_travel_time_df, 
+                                             index=['orig_CITY','dest_CITY'],
+                                             columns=['agg_timeperiod_label'],
+                                             values=['num_trips','avg_travel_time_in_mins'])
+    trips_od_travel_time_df.reset_index(inplace=True)
+    # flatten resulting MultiIndex column names
+    # rename from ('orig_CITY',''), ('dest_CITY',''), ('avg_travel_time_in_mins','peak'), ('avg_travel_time_in_mins', 'nonpeak'), ...
+    # to orig_CITY, dest_CITY, avg_travel_time_in_mins_peak, avg_travel_time_in_mins_nonpeak, ...
+    trips_od_travel_time_df.columns = ['_'.join(col) if len(col[1]) > 0 else col[0] for col in trips_od_travel_time_df.columns.values]
+    LOGGER.debug("trips_od_travel_time_df: \n{}".format(trips_od_travel_time_df))
+
+    # add ratio
+    trips_od_travel_time_df['ratio_travel_time_peak_nonpeak'] = \
+        trips_od_travel_time_df['avg_travel_time_in_mins_peak']/trips_od_travel_time_df['avg_travel_time_in_mins_nonpeak']
     
-    tm_od_travel_times_df = tm_od_travel_times_df.merge(taz_cities_df, left_on='orig_taz', right_on='taz1454', how='left', suffixes = ["",'_orig']).merge(taz_cities_df, left_on='dest_taz', right_on='taz1454', how='left', suffixes = ["",'_dest'])
-    tm_od_travel_times_df = tm_od_travel_times_df.copy().loc[(tm_od_travel_times_df['trip_mode'] == 1)|(tm_od_travel_times_df['trip_mode'] == 2)|(tm_od_travel_times_df['trip_mode'] == 3)|(tm_od_travel_times_df['trip_mode'] == 4)|(tm_od_travel_times_df['trip_mode'] == 5)|(tm_od_travel_times_df['trip_mode'] == 6)|(tm_od_travel_times_df['trip_mode'] == 19)|(tm_od_travel_times_df['trip_mode'] == 20)|(tm_od_travel_times_df['trip_mode'] == 21)]
-    tm_od_travel_times_df = tm_od_travel_times_df.loc[(tm_od_travel_times_df['avg_travel_time_in_mins'] > 0)]
-    od_tt_peak_df = tm_od_travel_times_df.loc[(tm_od_travel_times_df['timeperiod_label'].str.contains("AM Peak") == True)|(tm_od_travel_times_df['timeperiod_label'].str.contains("PM Peak") == True)]
-    od_tt_nonpeak_df = tm_od_travel_times_df.loc[(tm_od_travel_times_df['timeperiod_label'].str.contains("Midday") == True)]
+    # note that this does not include NaNs in either the numerator or the denominator, which I think is correct
+    # TODO: in the previous implementation, NaN is converted to zero, which artificially lowers the average.
+    # for example, if most ODs had NO transit paths, then the average ratio would be very low, making it seem like transit travel times
+    # compare favorably to auto, which they do not
+    average_ratio = trips_od_travel_time_df['ratio_travel_time_peak_nonpeak'].mean()
+    LOGGER.info("  => average_ratio={}".format(average_ratio))
+    # LOGGER.debug(trips_od_travel_time_df)
 
-     #  calcuate average across corridors
-    n = 0 #counter to serve as denominator 
-    sum_of_ratios = 0 #sum for numerator
+    # convert to metrics dataframe by pivoting one last time to just columns orig_CITY, dest_CITY
+    trips_od_travel_time_df = pd.melt(trips_od_travel_time_df, 
+                                      id_vars=['orig_CITY','dest_CITY'], 
+                                      var_name='metric_desc',
+                                      value_name='value')
+    # travel times and num trips are extra
+    trips_od_travel_time_df['intermediate/final']   = 'extra'
+    # ratios are intermediate
+    trips_od_travel_time_df.loc[ trips_od_travel_time_df.metric_desc.str.startswith('ratio'), 'intermediate/final'] = 'intermediate'
 
+    # key is orig_CITY, dest_CITY
+    trips_od_travel_time_df['key']  = trips_od_travel_time_df['orig_CITY'] + " to " + trips_od_travel_time_df['dest_CITY']
+    trips_od_travel_time_df.drop(columns=['orig_CITY','dest_CITY'], inplace=True)
 
-    #     iterate through Origin Destination pairs, calculate metrics: average peak travel time, average nonpeak travel time, ratio of the two
-    #     enter metrics into dictionary
-    for od in NGFS_OD_CITIES_OF_INTEREST:
-        peak_od_df = od_tt_peak_df.loc[(od_tt_peak_df['CITY'].str.contains(od[0]) == True)].loc[(od_tt_peak_df['CITY_dest'].str.contains(od[1]) == True), 'avg_travel_time_in_mins']
-        num_peak_trips = od_tt_peak_df.loc[(od_tt_peak_df['CITY'].str.contains(od[0]) == True)].loc[(od_tt_peak_df['CITY_dest'].str.contains(od[1]) == True), 'num_trips']
-        nonpeak_od_df = od_tt_nonpeak_df.loc[(od_tt_nonpeak_df['CITY'].str.contains(od[0]) == True)].loc[(od_tt_nonpeak_df['CITY_dest'].str.contains(od[1]) == True), 'avg_travel_time_in_mins']
-        num_nonpeak_trips = od_tt_nonpeak_df.loc[(od_tt_nonpeak_df['CITY'].str.contains(od[0]) == True)].loc[(od_tt_nonpeak_df['CITY_dest'].str.contains(od[1]) == True), 'num_trips']
-        
-        try:
-            avg_tt_peak_ORIG_DEST = numpy.average(a = peak_od_df, weights = num_peak_trips)
-            avg_tt_nonpeak_ORIG_DEST = numpy.average(a = nonpeak_od_df, weights = num_nonpeak_trips)
-        except:
-            avg_tt_peak_ORIG_DEST = 0
-            avg_tt_nonpeak_ORIG_DEST = 0
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra','{} to {}'.format(od[0],od[1]),'average peak travel time',year]      = avg_tt_peak_ORIG_DEST
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'extra','{} to {}'.format(od[0],od[1]),'average nonpeak travel time',year]      = avg_tt_nonpeak_ORIG_DEST
-        if avg_tt_nonpeak_ORIG_DEST == 0:
-            ratio_peak_nonpeak = 0
-        else:
-            ratio_peak_nonpeak = avg_tt_peak_ORIG_DEST/avg_tt_nonpeak_ORIG_DEST
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id,metric_id,'intermediate','{} to {}'.format(od[0],od[1]),'ratio of average peak to nonpeak travel time',year]      = ratio_peak_nonpeak
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'debug step','{} to {}'.format(od[0],od[1]),'observed number of peak trips',year]      = num_peak_trips.sum()
-        metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'debug step','{} to {}'.format(od[0],od[1]),'observed number of nonpeak trips',year]      = num_nonpeak_trips.sum()
-
-        # for od average calc
-        n = n+1
-        sum_of_ratios = sum_of_ratios + ratio_peak_nonpeak
-
-    # add average across corridors to metric dict
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Average across 10 O-D pairs','ratio_travel_time_peak_nonpeak_across_pairs',year]      = sum_of_ratios/n
+    trips_od_travel_time_df['modelrun_id'] = tm_run_id
+    trips_od_travel_time_df['year'] = tm_run_id[:4]
+    trips_od_travel_time_df['metric_id'] = metric_id
+    # LOGGER.info(trips_od_travel_time_df)
+    
+    # finally, add the average_ratio
+    final_row = pd.DataFrame.from_records([{
+        'modelrun_id':          tm_run_id,
+        'metric_id':            metric_id,
+        'intermediate/final':   "final",
+        'key':                  "Average across OD pairs",
+        'metric_desc':          "ratio_travel_time_peak_nonpeak_across_pairs",
+        'year':                 tm_run_id[:4], 
+        'value':                average_ratio
+     }])
+    # LOGGER.debug(final_row)
 
     # add metric for goods routes: Calculate [Ratio of travel time during peak hours vs. non-peak hours] for 3 truck routes (using link-level)
     # load table with links for each goods route
@@ -2098,7 +2249,7 @@ def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df
     LOGGER.debug("goods_routes_a_b_links_df.head() =\n{}".format(goods_routes_a_b_links_df.head()))
     # merge loaded network with df containing route information
     # remove HOV lanes from the network
-    loaded_network_with_goods_routes_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] == 1)]
+    loaded_network_with_goods_routes_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] != 3)]
     loaded_network_with_goods_routes_df = loaded_network_with_goods_routes_df.copy()[['a','b','ctimAM','ctimMD','ctimPM']]
     loaded_network_with_goods_routes_df = pd.merge(left=loaded_network_with_goods_routes_df, right=goods_routes_a_b_links_df, how='left', left_on=['a','b'], right_on=['A','B'])
     LOGGER.debug("loaded_network_with_goods_routes_df.head() =\n{}".format(loaded_network_with_goods_routes_df.head()))
@@ -2149,6 +2300,16 @@ def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df
     metrics_dict['Goods Routes', 'NonPeak Hours', grouping3, tm_run_id, metric_id,'intermediate','I80_I880_PortOfOakland', 'average nonpeak travel time', year] = MD_travel_time_route_I80
     metrics_dict['Goods Routes', 'Peak vs NonPeak', grouping3, tm_run_id, metric_id,'final','I80_I880_PortOfOakland', 'Ratio', year] = ratio_peak_offpeak_route_I80
 
+    # enter goods routes average
+    goods_routes_average_ratio_peak_offpeak = numpy.mean([ratio_peak_offpeak_route_I580, ratio_peak_offpeak_route_I101,ratio_peak_offpeak_route_I80])
+    metrics_dict['Goods Routes', 'Peak vs NonPeak', grouping3, tm_run_id, metric_id,'final','Average Across Routes', 'Ratio', year] = goods_routes_average_ratio_peak_offpeak
+
+    # return df for reliable 2 excluding goods routes
+    # TODO: add goods routes metric to DF returned
+    trips_od_travel_time_df = pd.concat([trips_od_travel_time_df, final_row])
+    LOGGER.debug("{} Result: \n{}".format(metric_id, trips_od_travel_time_df))
+    return trips_od_travel_time_df
+
 def calculate_Reparative1_dollar_revenues_revinvested(tm_run_id):
     # 7) Absolute dollar amount of new revenues generated that is reinvested in freeway adjacent communities
 
@@ -2170,8 +2331,6 @@ def calculate_Reparative1_dollar_revenues_revinvested(tm_run_id):
                 reparative_1_value = reparative_1_df.loc[(reparative_1_df['pathway'] == pathway)].iloc[0]['value']
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,' ',' ', 'Dollars (YOE$B)', year] = reparative_1_value
         
-
-
 def calculate_Reparative2_ratio_revenues_revinvested(tm_run_id):
     # 8) Ratio of new revenues paid for by low-income populations to revenues reinvested toward low-income populations
 
@@ -2192,353 +2351,53 @@ def calculate_Reparative2_ratio_revenues_revinvested(tm_run_id):
             if 'Path'+ pathway in tm_run_id:     
                 reparative_2_value = reparative_2_df.loc[(reparative_2_df['pathway'] == pathway)].iloc[0]['value']
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,' ',' ', 'Ratio', year] = reparative_2_value
-
-
-
-def adjust_fatalities_exp_speed(row, type_of_fatality):    
-    # adjust fatalities based on exponents and speed. 
-    # if fatalities/injuries are higher because speeds are higher in run than NP, use pmin function to replace with originally calculated FBP fatalities/injuries before VZ adjustment (do not let fatalities/injuries increase due to VZ adjustment calculation)
-    N_type_fatalities = row[type_of_fatality]
-    if N_type_fatalities==0 :
-        return 0
-    else:
-        return numpy.minimum(N_type_fatalities*(row['Avg_speed']/row['Avg_Speed_No_Project'])**row['fatality_exponent'], N_type_fatalities)
-
-
-
-
-def calculate_fatalitites(run_id, loaded_network_df, collision_rates_df, tm_loaded_network_df_no_project):
-    NOTE_ON_FT_AND_AT = """
-    FT is reclassified to -1 because the link is a dummy link (FT=6) and/or because lanes <=0. 
-    FT is reclassified to -1 so that the join with fatality and injury rates doesn't match with anything
-    and those links don't have any fatalities or injuries, so they are effectively filtered out.
-    there is a travel model script to estimate fatalities in R
-    https://github.com/BayAreaMetro/travel-model-one/blob/12962d73a5842b71b2439016e65d00b979af8f92/utilities/RTP/metrics/hwynet.py
-    """
-    LOGGER.info("{:,} rows from loaded_network_df".format(len(loaded_network_df)))
-    LOGGER.debug("loaded_network_df.head() =\n{}".format(loaded_network_df.head()))
-    modified_network_df = loaded_network_df.copy()
-    modified_network_df['ft_collision'] = modified_network_df['ft']
-    modified_network_df['at_collision'] = modified_network_df['at']
-    modified_network_df.loc[modified_network_df['ft_collision'] == 1,'ft_collision'] = 2    # Freeway-to-freeway connector is like a freeway
-    modified_network_df.loc[modified_network_df['ft_collision'] == 8,'ft_collision'] = 2    # managed freeway is like a freeway
-    modified_network_df.loc[modified_network_df['ft_collision'] == 6,'ft_collision'] = -1   # ignore ft 6 (dummy links) and lanes <= 0 by replacing the ft with -1, which won't match with anything
-    modified_network_df.loc[modified_network_df['lanes'] <= 0,'ft_collision'] = -1          # or those with lanes <= 0
-    modified_network_df.loc[modified_network_df['ft_collision'] > 4,'ft_collision'] = 4     # cap at 4
-    modified_network_df.loc[modified_network_df['at_collision'] < 3,'at_collision'] = 3     # this is different from hwynet.py but taken from PBA script
-    modified_network_df.loc[modified_network_df['at_collision'] > 4,'at_collision'] = 4
-    # ____confirm this is ok with FMS team and Anup______
-    # filter for desired ft and remove links where all speeds are 0 <-- not sure if this is an error in the network
-    modified_network_df = modified_network_df.loc[modified_network_df['ft_collision'] != -1]
-    modified_network_df = modified_network_df.loc[modified_network_df['cspdAM'] != 0]
-
-    modified_network_df = modified_network_df.merge(collision_rates_df.loc[collision_rates_df['year'] == 2035],how='left',left_on=['ft_collision','at_collision'],right_on=['ft','at'])
-    LOGGER.info("{:,} rows from modified_network_df".format(len(modified_network_df)))
-    LOGGER.debug("modified_network_df.head() =\n{}".format(modified_network_df.head()))
-
-    # calculate population (only for relevant links/TAZs)
-    relevant_links_ab = modified_network_df[['a','b']]
-    LOGGER.info("{:,} rows from relevant_links_ab".format(len(relevant_links_ab)))
-    LOGGER.debug("relevant_links_ab.head() =\n{}".format(relevant_links_ab.head()))
-    # load network link to TAZ lookup file
-    tm_network_links_taz_file = os.path.join(NGFS_SCENARIOS, run_id, "OUTPUT", "shapefile", "network_links_TAZ.csv")
-    tm_network_links_taz_df = pd.read_csv(tm_network_links_taz_file)
-    LOGGER.info("  Read {:,} rows from {}".format(len(tm_network_links_taz_df), tm_network_links_taz_file))
-    relevant_taz_df = pd.merge(left=relevant_links_ab, right=tm_network_links_taz_df, how='left', left_on=['a','b'], right_on=['A','B']).drop_duplicates(subset='TAZ1454', keep='first')
-    LOGGER.debug("relevant_taz_df.head() =\n{}".format(relevant_taz_df.head()))
-    # load TAZ population data
-    tm_taz_input_file     = os.path.join(NGFS_SCENARIOS, run_id, "INPUT", "landuse", "tazData.csv")
-    tm_taz_input_df     = pd.read_csv(tm_taz_input_file)
-    LOGGER.info("  Read {:,} rows from {}".format(len(tm_taz_input_df), tm_taz_input_file))
-
-    # used to divide fatalities per 100K residents
-    tm_taz_input_df = pd.merge(left=relevant_taz_df,
-                                                        right=tm_taz_input_df,
-                                                        left_on="TAZ1454",
-                                                        right_on="ZONE",
-                                                        how='left')
-    # calculate population of area of interest
-    LOGGER.debug("tm_taz_input_df.head() =\n{}".format(tm_taz_input_df.head()))
-    Population = tm_taz_input_df.TOTPOP.sum()
-    LOGGER.debug("Population =\n{}".format(Population))
-
-    # calculate fatalities and injuries as they would be calculated without the speed reduction
-    # "collisionLookup.csv" Units are collisions per 1,000,000 VMT
-    # initialize columns to use in for loop
-    modified_network_df['total_VMT'] = 0
-    modified_network_df['sum_weighted_speeds'] = 0
-    for timeperiod in ['EA','AM','MD','PM','EV']:
-        # run for loop to compute vmt and weighted speeds (by vmt) for each time period, then sum together for weighted average
-        # calculate vmt for each time period
-        modified_network_df['vmt%s_tot' % timeperiod] = modified_network_df['vol%s_tot' % timeperiod]*modified_network_df['distance']
-        # calculate weighted speed (vmt*speed) for each time period
-        modified_network_df['weighted_speed_%s' % timeperiod] = modified_network_df['vmt%s_tot' % timeperiod]*modified_network_df['cspd%s' % timeperiod]
-        # calculate numberator and denominator for weighted average
-        # calculate total vmt for all timeperiods
-        modified_network_df['total_VMT'] += modified_network_df['vmt%s_tot' % timeperiod]
-        modified_network_df['sum_weighted_speeds'] += modified_network_df['weighted_speed_%s' % timeperiod]
-    modified_network_df['annual_VMT'] = N_DAYS_PER_YEAR * modified_network_df['total_VMT']
-    # compute a weighted average for speed (weights = vmt)
-    modified_network_df['Avg_speed'] = modified_network_df['sum_weighted_speeds'] / modified_network_df['total_VMT']
-    modified_network_df['N_motorist_fatalities'] = modified_network_df['Motor Vehicle Fatality'] * (modified_network_df['annual_VMT'] / 1000000) 
-    modified_network_df['N_ped_fatalities'] = modified_network_df['Walk Fatality'] * (modified_network_df['annual_VMT'] / 1000000)
-    modified_network_df['N_bike_fatalities'] = modified_network_df['Bike Fatality'] * (modified_network_df['annual_VMT'] / 1000000)
-    modified_network_df['N_total_fatalities'] = modified_network_df['N_motorist_fatalities'] + modified_network_df['N_ped_fatalities'] + modified_network_df['N_bike_fatalities']
-    modified_network_df['N_motorist_fatalities_per_100k_pop'] = modified_network_df['N_motorist_fatalities'] / (Population/100000) 
-    modified_network_df['N_ped_fatalities_per_100k_pop'] = modified_network_df['N_ped_fatalities'] / (Population/100000)
-    modified_network_df['N_bike_fatalities_per_100k_pop'] = modified_network_df['N_bike_fatalities'] / (Population/100000)
-    modified_network_df['N_total_fatalities_per_100k_pop'] = modified_network_df['N_motorist_fatalities_per_100k_pop'] + modified_network_df['N_ped_fatalities_per_100k_pop'] + modified_network_df['N_bike_fatalities_per_100k_pop']
-    LOGGER.debug("modified_network_df.head() =\n{}".format(modified_network_df.head()))
-
-    if ('2015' not in run_id)&(NO_PROJECT_SCENARIO_RUN_ID != run_id): # need to make an adjustment here to exclude all no project runs, not just the most recent
-        # join average speed on each link in no project
-        # calculate average speed
-        tm_loaded_network_df_no_project_copy = tm_loaded_network_df_no_project.copy()
-        tm_loaded_network_df_no_project_copy['Avg_Speed_No_Project'] = (tm_loaded_network_df_no_project['cspdEA'] + tm_loaded_network_df_no_project['cspdAM'] + tm_loaded_network_df_no_project['cspdMD'] + tm_loaded_network_df_no_project['cspdPM'] + tm_loaded_network_df_no_project['cspdEV']) / 5
-        no_project_network_avg_speed_df = tm_loaded_network_df_no_project_copy[['a','b', 'Avg_Speed_No_Project']]
-        # merge DFs on 'a' & 'b'
-        if 'Avg_Speed_No_Project' in modified_network_df.columns:
-            modified_network_df.drop(columns=['Avg_Speed_No_Project'], inplace=True)
-        modified_network_df = pd.merge(left=modified_network_df.copy(), right=no_project_network_avg_speed_df, how='left', left_on=['a','b'], right_on=['a','b'])
-        # add attributes for fatality reduction exponent based on ft
-        # exponents and methodology sourced from here: https://www.toi.no/getfile.php?mmfileid=13206 (table S1)
-        # methodology cited in this FHWA resource: https://www.fhwa.dot.gov/publications/research/safety/17098/003.cfm
-        # modified_network_df['fatality_exponent'] = 0
-        modified_network_df.loc[(modified_network_df['ft_collision'] == 1) | (modified_network_df['ft_collision'] == 2) | (modified_network_df['ft_collision'] == 3) | (modified_network_df['ft_collision'] == 5) | (modified_network_df['ft_collision'] == 6) | (modified_network_df['ft_collision'] == 8),'fatality_exponent'] = 4.6
-        modified_network_df.loc[(modified_network_df['ft_collision'] == 4) | (modified_network_df['ft_collision'] == 7),'fatality_exponent'] = 3
-    
-        modified_network_df['N_motorist_fatalities_speed_reduction'] = modified_network_df.apply(lambda row: adjust_fatalities_exp_speed(row,'N_motorist_fatalities'), axis = 1)
-        modified_network_df['N_ped_fatalities_speed_reduction'] = modified_network_df.apply(lambda row: adjust_fatalities_exp_speed(row,'N_ped_fatalities'), axis = 1)
-        modified_network_df['N_bike_fatalities_speed_reduction'] = modified_network_df.apply(lambda row: adjust_fatalities_exp_speed(row,'N_bike_fatalities'), axis = 1)
-        modified_network_df['N_total_fatalities_speed_reduction'] = modified_network_df['N_motorist_fatalities_speed_reduction'] + modified_network_df['N_ped_fatalities_speed_reduction'] + modified_network_df['N_bike_fatalities_speed_reduction']
-
-        modified_network_df['N_motorist_fatalities_per_100k_pop_speed_reduction'] = modified_network_df.apply(lambda row: adjust_fatalities_exp_speed(row,'N_motorist_fatalities_per_100k_pop'), axis = 1)
-        modified_network_df['N_ped_fatalities_per_100k_pop_speed_reduction'] = modified_network_df.apply(lambda row: adjust_fatalities_exp_speed(row,'N_ped_fatalities_per_100k_pop'), axis = 1)
-        modified_network_df['N_bike_fatalities_per_100k_pop_speed_reduction'] = modified_network_df.apply(lambda row: adjust_fatalities_exp_speed(row,'N_bike_fatalities_per_100k_pop'), axis = 1)
-        modified_network_df['N_total_fatalities_per_100k_pop_speed_reduction'] = modified_network_df['N_motorist_fatalities_per_100k_pop_speed_reduction'] + modified_network_df['N_ped_fatalities_per_100k_pop_speed_reduction'] + modified_network_df['N_bike_fatalities_per_100k_pop_speed_reduction']
-        modified_network_df['tm_run_id'] = tm_run_id
-        LOGGER.debug("modified_network_df.head() =\n{}".format(modified_network_df.head()))
-        # sum the metrics
-        return modified_network_df.groupby('tm_run_id').agg({'N_motorist_fatalities_per_100k_pop': ['sum'],'N_motorist_fatalities_per_100k_pop_speed_reduction': ['sum'],
-                                                             'N_bike_fatalities_per_100k_pop': ['sum'],'N_bike_fatalities_per_100k_pop_speed_reduction': ['sum'],
-                                                             'N_ped_fatalities_per_100k_pop': ['sum'],'N_ped_fatalities_per_100k_pop_speed_reduction': ['sum'],
-                                                             'N_total_fatalities_per_100k_pop': ['sum'],'N_total_fatalities_per_100k_pop_speed_reduction': ['sum'],
-                                                             'N_motorist_fatalities': ['sum'],'N_motorist_fatalities_speed_reduction': ['sum'],
-                                                             'N_bike_fatalities': ['sum'],'N_bike_fatalities_speed_reduction': ['sum'],
-                                                             'N_ped_fatalities': ['sum'],'N_ped_fatalities_speed_reduction': ['sum'],
-                                                             'N_total_fatalities': ['sum'],'N_total_fatalities_speed_reduction': ['sum']})
-    else:
-        modified_network_df['tm_run_id'] = tm_run_id
-        LOGGER.debug("modified_network_df.head() =\n{}".format(modified_network_df.head()))
-        return modified_network_df.groupby('tm_run_id').agg({'N_motorist_fatalities_per_100k_pop': ['sum'],'N_bike_fatalities_per_100k_pop': ['sum'],
-                                                             'N_ped_fatalities_per_100k_pop': ['sum'],'N_total_fatalities_per_100k_pop': ['sum'],
-                                                             'N_motorist_fatalities': ['sum'],'N_bike_fatalities': ['sum'],
-                                                             'N_ped_fatalities': ['sum'],'N_total_fatalities': ['sum']})
  
-def calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict):
+def calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id):
     # 9) Annual number of estimated fatalities on freeways and non-freeway facilities
 
-    # borrow from VZ_safety_calc_correction_v2.R
-    # location \Box\Horizon and Plan Bay Area 2050\Equity and Performance\7_Analysis\Metrics\Metrics Development\Healthy\Fatalities Injuries
+    # reads from fatalities_injuries.csv
+    # output from GitHub\travel-model-one\utilities\RTP\metrics\VZ_safety_calc_correction_v2.R
+
+    # final desired DF columns ['grouping1', 'grouping2', 'grouping3', 'modelrun_id', 'metric_id', 'intermediate/final', 'key', 'metric_desc', 'year', 'value']
     
-    NOTE_ON_CORRECTIONS = """
-    the model does not do a great job with estimating fatalities. 
-    the ratio of observed to calculated scales the modeled fatalities so that the modeled data matches observed data 
-    (for example, if we know there were 400 fatalities in 2015 but the model says there were 200, the scaling factor would be x2. 
-    that scaling factor should be kept in future years so that the magnitude is correct.
-    the speed restrictions correction accounts for the fact that the likelihood of fatality or injury depends on the speed,
-    but the model just calculates fatalities and injuries as a function of VMT and facility type (irrespective of speed). 
-    we used research on the relationship between speed change and fatality rate to adjust fatalities and injuries down based on the PBA strategy to reduce speed limits on freeways and local streets.
-    you should keep that adjustment if you change the speeds, consistent with PBA50.
-    If you don't reduce speeds, don't keep the adjustment
-    """
     metric_id = 'Safe 1'
     grouping1 = ' '
     grouping2 = ' '
     grouping3 = ' '
     LOGGER.info("Calculating {} for {}".format(metric_id, tm_run_id))
-
-    fatality_df = calculate_fatalitites(tm_run_id, tm_loaded_network_df, collision_rates_df, tm_loaded_network_df_no_project)
-    LOGGER.debug("fatality_df.head() =\n{}".format(fatality_df.head()))
-    fatality_df_2015 = calculate_fatalitites(runid_2015, loaded_network_2015_df, collision_rates_df, tm_loaded_network_df_no_project)
-    LOGGER.debug("fatality_df.head() =\n{}".format(fatality_df_2015.head()))
-
-    # ______calculate fatalities for freeway and non-freeway________
-    fwy_network_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['ft'] != 7)|(tm_loaded_network_df['ft'] != 4)|(tm_loaded_network_df['ft'] != 3)|(tm_loaded_network_df['ft'] != 6)]
-    nonfwy_network_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['ft'] == 7)|(tm_loaded_network_df['ft'] == 4)|(tm_loaded_network_df['ft'] == 3)]
-    fwy_network_df_no_project = tm_loaded_network_df_no_project.copy().loc[(tm_loaded_network_df_no_project['ft'] != 7)|(tm_loaded_network_df_no_project['ft'] != 4)|(tm_loaded_network_df_no_project['ft'] != 3)|(tm_loaded_network_df_no_project['ft'] != 6)]
-    nonfwy_network_df_no_project = tm_loaded_network_df_no_project.copy().loc[(tm_loaded_network_df_no_project['ft'] == 7)|(tm_loaded_network_df_no_project['ft'] == 4)|(tm_loaded_network_df_no_project['ft'] == 3)]
-    fwy_fatality_df = calculate_fatalitites(tm_run_id, fwy_network_df, collision_rates_df, fwy_network_df_no_project)
-    nonfwy_fatality_df = calculate_fatalitites(tm_run_id, nonfwy_network_df, collision_rates_df, nonfwy_network_df_no_project)
-    
-    # separate into variables for this run
-    # output df has columns for each fatality type + 'after' which indicates that a correction was made for speed reductions in the scenario run
-
-    # check for "No Project" in run id - all other projects implement vision zero strategies and thus have speed reductions (a fix is necessary to be able to run this function for 2015 runs)
-    if NO_PROJECT_SCENARIO_RUN_ID == tm_run_id:
-        N_motorist_fatalities = fatality_df[('N_motorist_fatalities_per_100k_pop','sum')][0]
-        N_ped_fatalities = fatality_df[('N_ped_fatalities_per_100k_pop','sum')][0]
-        N_bike_fatalities = fatality_df[('N_bike_fatalities_per_100k_pop','sum')][0]
-        N_motorist_fatalities_speed_reduction = N_motorist_fatalities
-        N_ped_fatalities_speed_reduction = N_ped_fatalities
-        N_bike_fatalities_speed_reduction = N_bike_fatalities
-        # calculate and enter FWY AND NONFWY into metrics dict
-        N_fwy_motorist_fatalities = fwy_fatality_df[('N_motorist_fatalities_per_100k_pop','sum')][0]
-        N_nonfwy_motorist_fatalities = nonfwy_fatality_df[('N_motorist_fatalities_per_100k_pop','sum')][0]
-        N_fwy_motorist_fatalities_speed_reduction = N_fwy_motorist_fatalities
-        N_nonfwy_motorist_fatalities_speed_reduction = N_nonfwy_motorist_fatalities
+    # read fatalities file metrics excel file
+    fatalities_metrics_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "metrics", "fatalities_injuries.csv")
+    fatalities_df = pd.read_csv(fatalities_metrics_file)
+    if tm_run_id == NO_PROJECT_SCENARIO_RUN_ID:
+        fatalities_df = fatalities_df.loc[(fatalities_df['model_run_type'] == 'NO_PROJECT')]
     else:
+        fatalities_df = fatalities_df.loc[(fatalities_df['model_run_type'] == 'SCENARIO')]
+    LOGGER.debug('fatalities_df:\n{}'.format(fatalities_df))
 
-        N_motorist_fatalities = fatality_df[('N_motorist_fatalities_per_100k_pop','sum')][0]
-        N_motorist_fatalities_speed_reduction = fatality_df[('N_motorist_fatalities_per_100k_pop_speed_reduction','sum')][0]
-        N_ped_fatalities = fatality_df[('N_ped_fatalities_per_100k_pop','sum')][0]
-        N_ped_fatalities_speed_reduction = fatality_df[('N_ped_fatalities_per_100k_pop_speed_reduction','sum')][0]
-        N_bike_fatalities = fatality_df[('N_bike_fatalities_per_100k_pop','sum')][0]
-        N_bike_fatalities_speed_reduction = fatality_df[('N_bike_fatalities_per_100k_pop_speed_reduction','sum')][0]
-        N_total_fatalities = fatality_df[('N_total_fatalities_per_100k_pop','sum')][0]
-        N_total_fatalities_speed_reduction = fatality_df[('N_total_fatalities_per_100k_pop_speed_reduction','sum')][0]
+    relevant_metric_columns = list(fatalities_df.columns.values)
+    relevant_metric_columns.remove('model_run_type')
+    relevant_metric_columns.remove('key')
 
-        # calculate and enter FWY AND NONFWY into metrics dict
-        N_fwy_motorist_fatalities = fwy_fatality_df[('N_motorist_fatalities_per_100k_pop','sum')][0]
-        N_nonfwy_motorist_fatalities = nonfwy_fatality_df[('N_motorist_fatalities_per_100k_pop','sum')][0]
-        N_fwy_motorist_fatalities_speed_reduction = fwy_fatality_df[('N_motorist_fatalities_per_100k_pop_speed_reduction','sum')][0]
-        N_nonfwy_motorist_fatalities_speed_reduction = nonfwy_fatality_df[('N_motorist_fatalities_per_100k_pop_speed_reduction','sum')][0]
+    # create empty DF to add relevant metrics to in for loop
+    metrics_df = pd.DataFrame()
 
-    # separate into variables for 2015 run
-    N_motorist_fatalities_15 = fatality_df_2015[('N_motorist_fatalities','sum')][0]
-    N_ped_fatalities_15 = fatality_df_2015[('N_ped_fatalities','sum')][0]
-    N_bike_fatalities_15 = fatality_df_2015[('N_bike_fatalities','sum')][0]
-    # N_total_fatalities_15 = fatality_df_2015[('N_total_fatalities','sum')][0]
+    for column in relevant_metric_columns:
+        metric_fatalities_df = fatalities_df[[column]]
+        metric_fatalities_df = metric_fatalities_df.rename(columns={column:'value'})
+        metric_fatalities_df['metric_desc'] = column
+        metric_fatalities_df['key'] = fatalities_df['key']
+        metrics_df = pd.concat([metrics_df, metric_fatalities_df])
+
+
+    # put it together, move to long form and return
+    metrics_df['modelrun_id'] = tm_run_id
+    metrics_df['metric_id'] = metric_id
+    metrics_df['intermediate/final'] = 'final'
+    metrics_df['year'] = tm_run_id[:4]
+    LOGGER.debug("metrics_df for Safe 1:\n{}".format(metrics_df))
+
+    return metrics_df
     
-    # calculate and enter into metrics dict
-    N_motorist_fatalities_2015_obs_correction = N_motorist_fatalities*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
-    LOGGER.debug("2015 motorist correction factor =\n{}".format(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15))
-    N_ped_fatalities_2015_obs_correction = N_ped_fatalities*(OBS_N_PED_FATALITIES_15/N_ped_fatalities_15)
-    LOGGER.debug("2015 ped correction factor =\n{}".format(OBS_N_PED_FATALITIES_15/N_ped_fatalities_15))
-    N_bike_fatalities_2015_obs_correction = N_bike_fatalities*(OBS_N_BIKE_FATALITIES_15/N_bike_fatalities_15)
-    LOGGER.debug("2015 bike correction factor =\n{}".format(OBS_N_BIKE_FATALITIES_15/N_bike_fatalities_15))
-    N_total_fatalities_2015_obs_correction = N_motorist_fatalities_2015_obs_correction + N_ped_fatalities_2015_obs_correction + N_bike_fatalities_2015_obs_correction
-    
-    N_motorist_fatalities_speed_reduction_2015_obs_correction = N_motorist_fatalities_speed_reduction*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
-    N_ped_fatalities_speed_reduction_2015_obs_correction = N_ped_fatalities_speed_reduction*(OBS_N_PED_FATALITIES_15/N_ped_fatalities_15)
-    N_bike_fatalities_speed_reduction_2015_obs_correction = N_bike_fatalities_speed_reduction*(OBS_N_BIKE_FATALITIES_15/N_bike_fatalities_15)
-    N_total_fatalities_speed_reduction_2015_obs_correction = N_motorist_fatalities_speed_reduction_2015_obs_correction + N_ped_fatalities_speed_reduction_2015_obs_correction + N_bike_fatalities_speed_reduction_2015_obs_correction
-    
-    metrics_dict['Motorist', 'No Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_motorist_fatalities_2015_obs_correction
-    metrics_dict['Pedestrian', 'No Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_ped_fatalities_2015_obs_correction
-    metrics_dict['Bicycle', 'No Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_bike_fatalities_2015_obs_correction
-    metrics_dict['Total', 'No Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_total_fatalities_2015_obs_correction
-    
-    metrics_dict['Motorist', 'Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_motorist_fatalities_speed_reduction_2015_obs_correction
-    metrics_dict['Pedestrian', 'Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_ped_fatalities_speed_reduction_2015_obs_correction
-    metrics_dict['Bicycle', 'Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_bike_fatalities_speed_reduction_2015_obs_correction
-    metrics_dict['Total', 'Vision Zero', grouping3, tm_run_id,metric_id,'intermediate','Mode','annual_number_of_fatalities',year] = N_total_fatalities_speed_reduction_2015_obs_correction
-
-    N_fwy_motorist_fatalities_2015_obs_correction = N_fwy_motorist_fatalities*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
-    metrics_dict['Motorist', 'No Vision Zero', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_number_of_fwy_motorist_fatalities_2015_obs_correction',year] = N_fwy_motorist_fatalities_2015_obs_correction
-    
-    N_fwy_motorist_fatalities_speed_reduction_2015_obs_correction = N_fwy_motorist_fatalities_speed_reduction*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
-    metrics_dict['Motorist', 'Vision Zero', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_number_of_fwy_motorist_fatalities_speed_reduction_2015_obs_correction',year] = N_fwy_motorist_fatalities_speed_reduction_2015_obs_correction
-
-    N_nonfwy_motorist_fatalities_2015_obs_correction = N_nonfwy_motorist_fatalities*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
-    metrics_dict['Motorist', 'No Vision Zero', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_number_of_nonfwy_motorist_fatalities_2015_obs_correction',year] = N_nonfwy_motorist_fatalities_2015_obs_correction
-
-    N_nonfwy_motorist_fatalities_speed_reduction_2015_obs_correction = N_nonfwy_motorist_fatalities_speed_reduction*(OBS_N_MOTORIST_FATALITIES_15/N_motorist_fatalities_15)
-    metrics_dict['Motorist', 'Vision Zero', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_number_of_nonfwy_motorist_fatalities_speed_reduction_2015_obs_correction',year] = N_nonfwy_motorist_fatalities_speed_reduction_2015_obs_correction
-
-    # Calculate equity metric: rate of non-freeway fatalities (per 100K residents) in region vs. EPCs
-    # calculated using vmt_vht_metrics_by_taz.csv, but can also compute at the link level using network_links_TAZ.csv
-    # load fatalities metrics df
-    vmt_vht_metrics_by_taz_file    = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "metrics", "vmt_vht_metrics_by_taz.csv")
-    vmt_vht_metrics_by_taz_df      = pd.read_csv(vmt_vht_metrics_by_taz_file)
-    LOGGER.info("  Read {:,} rows from {}".format(len(vmt_vht_metrics_by_taz_df), vmt_vht_metrics_by_taz_file))
-
-    # join to epc lookup table
-    vmt_vht_metrics_by_taz_df = pd.merge(left=vmt_vht_metrics_by_taz_df,
-                                                        right=NGFS_EPC_TAZ_DF,
-                                                        left_on="TAZ1454",
-                                                        right_on="TAZ1454",
-                                                        how='left')
-    # make a copy and filter for EPCs
-    vmt_vht_metrics_by_epc_taz_df = vmt_vht_metrics_by_taz_df.copy().loc[vmt_vht_metrics_by_taz_df['taz_epc'] == 1]
-    # load taz data to pull population from
-    tm_taz_input_file     = os.path.join(NGFS_SCENARIOS, tm_run_id, "INPUT", "landuse", "tazData.csv")
-    tm_taz_input_df     = pd.read_csv(tm_taz_input_file)
-    LOGGER.info("  Read {:,} rows from {}".format(len(tm_taz_input_df), tm_taz_input_file))
-
-    # sum the fatalities by mode and divide per 100K residents
-    tm_taz_input_df = pd.merge(left=tm_taz_input_df,
-                                                        right=NGFS_EPC_TAZ_DF,
-                                                        left_on="ZONE",
-                                                        right_on="TAZ1454",
-                                                        how='left')
-    # calculate population of region
-    region_population = tm_taz_input_df.TOTPOP.sum()
-    # calculate population of EPC TAZs
-    epc_population = tm_taz_input_df.copy().loc[tm_taz_input_df['taz_epc'] == 1]
-    epc_population = epc_population.TOTPOP.sum()
-    # filter for fwy vs nonfreeway, sum fatalities across relevant TAZs, divide per 100K residents
-    # fwy:
-    #   for entire region:
-    annual_fwy_motorist_fatalities_region = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'freeway', 'Motor Vehicle Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_fwy_walk_fatalities_region = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'freeway', 'Walk Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_fwy_bike_fatalities_region = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'freeway', 'Bike Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_fwy_total_fatalities_region = annual_fwy_motorist_fatalities_region + annual_fwy_walk_fatalities_region + annual_fwy_bike_fatalities_region
-    #   for EPCs:
-    annual_fwy_motorist_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[vmt_vht_metrics_by_epc_taz_df['road_type'] == 'freeway', 'Motor Vehicle Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_fwy_walk_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[vmt_vht_metrics_by_epc_taz_df['road_type'] == 'freeway', 'Walk Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_fwy_bike_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[vmt_vht_metrics_by_epc_taz_df['road_type'] == 'freeway', 'Bike Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_fwy_total_fatalities_epc = annual_fwy_motorist_fatalities_epc + annual_fwy_walk_fatalities_epc + annual_fwy_bike_fatalities_epc
-    #   for rest of the region
-    annual_fwy_motorist_fatalities_nonepc = annual_fwy_motorist_fatalities_region - annual_fwy_motorist_fatalities_epc
-    annual_fwy_walk_fatalities_nonepc = annual_fwy_walk_fatalities_region - annual_fwy_walk_fatalities_epc
-    annual_fwy_bike_fatalities_nonepc = annual_fwy_bike_fatalities_region - annual_fwy_bike_fatalities_epc
-    annual_fwy_total_fatalities_nonepc = annual_fwy_total_fatalities_region - annual_fwy_total_fatalities_epc
-
-    # nonfwy:
-    #   for entire region:
-    annual_nonfwy_motorist_fatalities_region = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'non-freeway', 'Motor Vehicle Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_nonfwy_walk_fatalities_region = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'non-freeway', 'Walk Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_nonfwy_bike_fatalities_region = vmt_vht_metrics_by_taz_df.loc[vmt_vht_metrics_by_taz_df['road_type'] == 'non-freeway', 'Bike Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_nonfwy_total_fatalities_region = annual_nonfwy_motorist_fatalities_region + annual_nonfwy_walk_fatalities_region + annual_nonfwy_bike_fatalities_region
-    #   for EPCs:
-    annual_nonfwy_motorist_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[vmt_vht_metrics_by_epc_taz_df['road_type'] == 'non-freeway', 'Motor Vehicle Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_nonfwy_walk_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[vmt_vht_metrics_by_epc_taz_df['road_type'] == 'non-freeway', 'Walk Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_nonfwy_bike_fatalities_epc = vmt_vht_metrics_by_epc_taz_df.loc[vmt_vht_metrics_by_epc_taz_df['road_type'] == 'non-freeway', 'Bike Fatality'].sum() * N_DAYS_PER_YEAR / region_population * PER_X_PEOPLE
-    annual_nonfwy_total_fatalities_epc = annual_nonfwy_motorist_fatalities_epc + annual_nonfwy_walk_fatalities_epc + annual_nonfwy_bike_fatalities_epc
-    #   for rest of the region
-    annual_nonfwy_motorist_fatalities_nonepc = annual_nonfwy_motorist_fatalities_region - annual_nonfwy_motorist_fatalities_epc
-    annual_nonfwy_walk_fatalities_nonepc = annual_nonfwy_walk_fatalities_region - annual_nonfwy_walk_fatalities_epc
-    annual_nonfwy_bike_fatalities_nonepc = annual_nonfwy_bike_fatalities_region - annual_nonfwy_bike_fatalities_epc
-    annual_nonfwy_total_fatalities_nonepc = annual_nonfwy_total_fatalities_region - annual_nonfwy_total_fatalities_epc
-
-    # enter into metrics dict
-    metrics_dict['Motorist', 'Region', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_motorist_fatalities_region
-    metrics_dict['Walk', 'Region', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_walk_fatalities_region
-    metrics_dict['Bike', 'Region', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_bike_fatalities_region
-    metrics_dict['Total', 'Region', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_total_fatalities_region
-    metrics_dict['Motorist', 'EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_motorist_fatalities_epc
-    metrics_dict['Walk', 'EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_walk_fatalities_epc
-    metrics_dict['Bike', 'EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_bike_fatalities_epc
-    metrics_dict['Total', 'EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_total_fatalities_epc
-    metrics_dict['Motorist', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_motorist_fatalities_nonepc
-    metrics_dict['Walk', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_walk_fatalities_nonepc
-    metrics_dict['Bike', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_bike_fatalities_nonepc
-    metrics_dict['Total', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_fwy_total_fatalities_nonepc
-
-    metrics_dict['Motorist', 'Region', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_motorist_fatalities_region
-    metrics_dict['Walk', 'Region', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_walk_fatalities_region
-    metrics_dict['Bike', 'Region', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_bike_fatalities_region
-    metrics_dict['Total', 'Region', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_total_fatalities_region
-    metrics_dict['Motorist', 'EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_motorist_fatalities_epc
-    metrics_dict['Walk', 'EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_walk_fatalities_epc
-    metrics_dict['Bike', 'EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_bike_fatalities_epc
-    metrics_dict['Total', 'EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_total_fatalities_epc
-    metrics_dict['Motorist', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_motorist_fatalities_nonepc
-    metrics_dict['Walk', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_walk_fatalities_nonepc
-    metrics_dict['Bike', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_bike_fatalities_nonepc
-    metrics_dict['Total', 'Non-EPCs', grouping3, tm_run_id,metric_id,'final','Non-Freeway Facilities','annual_fatalities (per 100K residents)',year] = annual_nonfwy_total_fatalities_nonepc
-
 def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     """ Calculates Safety 2: Change in vehicle miles travelled (VMT) on freeway and non-freeway facilities
     Additionally, calculates VMT segmented by different categories (households by income, non-houehold and trucks)
@@ -2593,6 +2452,28 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     loaded_network_df.rename(columns=lambda x: x.strip(), inplace=True)
     LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
+    LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
+
+    # load network_links_TAZ.csv as lookup df to use for equity metric:
+    #     --> calculate VMT for arterial road links in EPCs vs region
+    #         --> tolled aerterials within EPCs 
+    # load network link to TAZ lookup file
+
+    tm_network_links_taz_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "shapefile", "network_links_TAZ.csv")
+    tm_network_links_taz_df = pd.read_csv(tm_network_links_taz_file)[['A', 'B', 'TAZ1454', 'linktaz_share']]
+    LOGGER.info("  Read {:,} rows from {}".format(len(tm_network_links_taz_df), tm_network_links_taz_file))
+    # join to epc lookup table
+    tm_network_links_with_epc_df = pd.merge(
+        left=tm_network_links_taz_df,
+        right=NGFS_EPC_TAZ_DF,
+        left_on="TAZ1454",
+        right_on="TAZ1454",
+        how='left')
+    tm_network_links_with_epc_df = tm_network_links_with_epc_df.sort_values('linktaz_share', ascending=False).drop_duplicates(['A', 'B']).sort_index()
+    LOGGER.debug("tm_network_links_with_epc_df =\n{}".format(tm_network_links_with_epc_df))
+    
+    loaded_network_df = pd.merge(left= loaded_network_df, right= tm_network_links_with_epc_df, left_on= ['a','b'], right_on= ['A', 'B'], how='left')
+    LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
 
     # compute Fwy and Non_Fwy VMT
     loaded_network_df['VMT'] = \
@@ -2615,7 +2496,7 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
         ( 3, 'Non-Freeway','Expressway'), # expressway
         ( 4, 'Non-Freeway','Collector' ), # collector
         ( 5, 'Freeway',    'Freeway'   ), # freeway ramp
-        ( 6, None,          None       ), # dummy link
+        ( 6, 'Non-Freeway','Other'     ), # dummy link --> include VMT from FT==6 links because they’re a proxy for VMT on roads not included in the model network.
         ( 7, 'Non-Freeway','Arterial'  ), # major arterial
         ( 8, 'Freeway',    'Freeway'   ), # managed freeway
         ( 9, None,          None       ), # special facility
@@ -2627,43 +2508,52 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
 
     LOGGER.debug("  Using facility type categories:\n{}".format(ft_to_grouping_key_df))
     loaded_network_df = pd.merge(left=loaded_network_df, right=ft_to_grouping_key_df, on='ft', how='left')
-    ft_metrics_df = loaded_network_df.groupby(by=['grouping1','key']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
+
+    # Recode
+    loaded_network_df['grouping2'] = 'Non-EPCs'
+    loaded_network_df.loc[ loaded_network_df.taz_epc == 1, 'grouping2'] = 'EPCs'
+
+    # identify tolled arterial links 
+    loaded_network_df['grouping3'] = 'Non-tolled facilities'
+    loaded_network_df.loc[loaded_network_df.tollclass > 700000, 'grouping3'] = 'Tolled facilities'
+
+    ft_metrics_df = loaded_network_df.groupby(by=['grouping1','key', 'grouping2', 'grouping3']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
     LOGGER.debug("ft_metrics_df:\n{}".format(ft_metrics_df))
 
-    # Calculate equity metric: non-freeway VMT in region and EPCs
-    # calculated using vmt_vht_metrics_by_taz.csv, but can also compute at the link level using network_links_TAZ.csv
-    # load vmt metrics df
-    vmt_vht_metrics_by_taz_file    = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "metrics", "vmt_vht_metrics_by_taz.csv")
-    vmt_vht_metrics_by_taz_df      = pd.read_csv(vmt_vht_metrics_by_taz_file)
-    LOGGER.info("  Read {:,} rows from {}".format(len(vmt_vht_metrics_by_taz_df), vmt_vht_metrics_by_taz_file))
+    # # Calculate equity metric: non-freeway VMT in region and EPCs
+    # # calculated using vmt_vht_metrics_by_taz.csv, but can also compute at the link level using network_links_TAZ.csv
+    # # load vmt metrics df
+    # vmt_vht_metrics_by_taz_file    = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "metrics", "vmt_vht_metrics_by_taz.csv")
+    # vmt_vht_metrics_by_taz_df      = pd.read_csv(vmt_vht_metrics_by_taz_file)
+    # LOGGER.info("  Read {:,} rows from {}".format(len(vmt_vht_metrics_by_taz_df), vmt_vht_metrics_by_taz_file))
 
-    # join to epc lookup table
-    vmt_vht_metrics_by_taz_df = pd.merge(
-        left=vmt_vht_metrics_by_taz_df,
-        right=NGFS_EPC_TAZ_DF,
-        left_on="TAZ1454",
-        right_on="TAZ1454",
-        how='left')
-    # LOGGER.debug("vmt_vht_metrics_by_taz_df.head():\n{}".format(vmt_vht_metrics_by_taz_df))
+    # # join to epc lookup table
+    # vmt_vht_metrics_by_taz_df = pd.merge(
+    #     left=vmt_vht_metrics_by_taz_df,
+    #     right=NGFS_EPC_TAZ_DF,
+    #     left_on="TAZ1454",
+    #     right_on="TAZ1454",
+    #     how='left')
+    # # LOGGER.debug("vmt_vht_metrics_by_taz_df.head():\n{}".format(vmt_vht_metrics_by_taz_df))
 
-    # capitalize to be consistent with above
-    vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.road_type=='freeway',     'road_type' ] = 'Freeway'
-    vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.road_type=='non-freeway', 'road_type' ] = 'Non-Freeway'
-    # Recode
-    vmt_vht_metrics_by_taz_df['key'] = 'Non-EPCs'
-    vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.taz_epc == 1, 'key'] = 'EPCs'
-    # Summarize
-    epc_metrics_df    = vmt_vht_metrics_by_taz_df.groupby(by=['road_type','key']).agg({'VMT':'sum','VHT':'sum'}).reset_index()
-    region_metrics_df = vmt_vht_metrics_by_taz_df.groupby(by=['road_type'      ]).agg({'VMT':'sum','VHT':'sum'}).reset_index()
-    region_metrics_df['key'] = 'Region'
-    # Combine
-    epc_metrics_df = pd.concat([epc_metrics_df, region_metrics_df])
-    epc_metrics_df.rename(columns={'road_type':'grouping1'}, inplace=True)
-    LOGGER.debug("epc_metrics_df\n{}".format(epc_metrics_df))
+    # # capitalize to be consistent with above
+    # vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.road_type=='freeway',     'road_type' ] = 'Freeway'
+    # vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.road_type=='non-freeway', 'road_type' ] = 'Non-Freeway'
+    # # Recode
+    # vmt_vht_metrics_by_taz_df['key'] = 'Non-EPCs'
+    # vmt_vht_metrics_by_taz_df.loc[ vmt_vht_metrics_by_taz_df.taz_epc == 1, 'key'] = 'EPCs'
+    # # Summarize
+    # epc_metrics_df    = vmt_vht_metrics_by_taz_df.groupby(by=['road_type','key']).agg({'VMT':'sum','VHT':'sum'}).reset_index()
+    # region_metrics_df = vmt_vht_metrics_by_taz_df.groupby(by=['road_type'      ]).agg({'VMT':'sum','VHT':'sum'}).reset_index()
+    # region_metrics_df['key'] = 'Region'
+    # # Combine
+    # epc_metrics_df = pd.concat([epc_metrics_df, region_metrics_df])
+    # epc_metrics_df.rename(columns={'road_type':'grouping1'}, inplace=True)
+    # LOGGER.debug("epc_metrics_df\n{}".format(epc_metrics_df))
 
     # put it together, move to long form and return
-    metrics_df = pd.concat([auto_times_df, ft_metrics_df, epc_metrics_df])
-    metrics_df = metrics_df.melt(id_vars=['grouping1','key'], var_name='metric_desc')
+    metrics_df = pd.concat([auto_times_df, ft_metrics_df])
+    metrics_df = metrics_df.melt(id_vars=['grouping1','key','grouping2', 'grouping3'], var_name='metric_desc')
     metrics_df['modelrun_id'] = tm_run_id
     metrics_df['metric_id'] = METRIC_ID
     metrics_df['intermediate/final'] = 'final'
@@ -2789,7 +2679,7 @@ if __name__ == "__main__":
     current_runs_df = pd.read_excel(NGFS_MODEL_RUNS_FILE, sheet_name='all_runs', usecols=['project','year','directory','run_set','category','short_name','status'])
     current_runs_df = current_runs_df.loc[ current_runs_df['status'] == 'current']
     # only process metrics for 2035 model runs 
-    current_runs_df = current_runs_df.loc[ current_runs_df['year'] == 2035]
+    # current_runs_df = current_runs_df.loc[ current_runs_df['year'] == 2035]
     # # TODO: delete later after NP10 runs are completed
     # current_runs_df = current_runs_df.loc[ (current_runs_df['directory'].str.contains('NP10') == False)]
 
@@ -2961,31 +2851,32 @@ if __name__ == "__main__":
         # TODO: convert to pandas.DataFrame with these column headings.  It's far more straightforward.
         metrics_dict = {}
         metrics_df = pd.DataFrame()
+
         affordable1_metrics_df = calculate_Affordable1_transportation_costs(tm_run_id)
         metrics_df = pd.concat([metrics_df, affordable1_metrics_df])
-
         # LOGGER.info("@@@@@@@@@@@@@ A1 Done")
         calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df, network_links_dbf, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ A2 Done")
         efficient1_metrics_df = calculate_Efficient1_ratio_travel_time(tm_run_id)
-        metrics_df = pd.concat([metrics_df, efficient1_metrics_df])
-        
+        metrics_df = pd.concat([metrics_df, efficient1_metrics_df])        
         # LOGGER.info("@@@@@@@@@@@@@ E1 Done")
         efficient2_metrics_df = calculate_Efficient2_commute_mode_share(tm_run_id)
         metrics_df = pd.concat([metrics_df, efficient2_metrics_df])
+        # LOGGER.info("@@@@@@@@@@@@@ E2 Done")
         calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df, metrics_dict)
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
-        calculate_Reliable2_ratio_peak_nonpeak(tm_run_id, year, tm_loaded_network_df, metrics_dict)
+        reliable2_metrics_df = calculate_Reliable2_ratio_peak_nonpeak(tm_run_id)
+        metrics_df = pd.concat([metrics_df, reliable2_metrics_df])
         # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
         calculate_Reparative1_dollar_revenues_revinvested(tm_run_id)
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
         calculate_Reparative2_ratio_revenues_revinvested(tm_run_id)
         # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
-        calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id, year, tm_loaded_network_df, metrics_dict)
+        safe1_metrics_df = calculate_Safe1_fatalities_freeways_nonfreeways(tm_run_id)
+        metrics_df = pd.concat([metrics_df,safe1_metrics_df])
         # LOGGER.info("@@@@@@@@@@@@@ S1 Done")
         safe2_metrics_df = calculate_Safe2_change_in_vmt(tm_run_id)
         metrics_df = pd.concat([metrics_df, safe2_metrics_df])
-
         # LOGGER.info("@@@@@@@@@@@@@ S2 Done")
 
         # run function to calculate top level metrics
