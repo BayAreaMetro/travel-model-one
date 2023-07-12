@@ -49,7 +49,7 @@ PBA_TAZ_2015         <- file.path(BOX_TM, "Share Data", "plan-bay-area-2050", "t
 # Bring in 2020 TAZ employment data
 
 PETRALE              <- file.path(USERPROFILE,"Documents","GitHub","Petrale","Applications","travel_model_lu_inputs")
-employment_2020_data <- read.csv(file.path(PETRALE,"2020","Employment","lodes_wac_employment.csv"),header = T)
+employment_2020      <- read.csv(file.path(PETRALE,"2020","Employment","lodes_wac_employment.csv"),header = T)
 
 # County FIPS codes for ACS tract API calls
 
@@ -833,19 +833,16 @@ ethnic <- temp_rounded_adjusted %>%
 
 write.csv (ethnic,file = "TAZ1454_Ethnicity.csv",row.names = FALSE)
 
-# Read in old PBA data sets and select variables for joining to new 2015 dataset
-# Bring in updated 2020 employment for joining
-# Bring in school and parking data from PBA 2040, 2015 TAZ data 
+# Read in old PBA data sets and select variables for joining to new 2020 dataset
+# Join 2020 employment data
+# Bring in school and parking data from 2015 TAZ data 
 # Add HHLDS variable (same as TOTHH), select new 2015 output
 
 PBA2015_joiner <- PBA2015%>%
   select(ZONE,DISTRICT,SD,TOTACRE,RESACRE,CIACRE,PRKCST,OPRKCST,AREATYPE,HSENROLL,COLLFTE,COLLPTE,TOPOLOGY,TERMINAL, ZERO)
 
-#employment_2015 <- read.csv(employment_2015_data,header=TRUE) 
-
-
 joined_15_20      <- left_join(PBA2015_joiner,temp_rounded_adjusted, by=c("ZONE"="TAZ1454")) # Join 2015 topology, parking, enrollment
-joined_employment <- left_join(joined_15_20,employment_2015, by=c("ZONE"="TAZ1454","County_Name"))        # Join employment
+joined_employment <- left_join(joined_15_20,employment_2020, by=c("ZONE"="TAZ1454"))        # Join employment
 
 # Save R version of data for 2020 to later inflate to 2023
 
@@ -917,4 +914,20 @@ popsim_vars_county <- joined_15_20 %>%
 
 write.csv(popsim_vars_county, "TAZ1454 2020 Popsim Vars County.csv", row.names = FALSE, quote = T)
 
+# Output into Tableau-friendly format
 
+Tableau2015 <- PBA2015 %>%
+  mutate(gqpop=TOTPOP-HHPOP) %>% 
+  select(ZONE,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
+         MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop) %>%
+  gather(Variable,Value2015,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
+         MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)
+
+Tableau2020 <- New2020 %>%
+  select(ZONE,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
+         MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop) %>%
+  gather(Variable,Value2020,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
+         MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)
+
+write.csv(Tableau2015,"TAZ1454_2015_Tableau_Version.csv",row.names = F)
+write.csv(Tableau2020,"TAZ1454_2020_Tableau_Version.csv",row.names = F)
