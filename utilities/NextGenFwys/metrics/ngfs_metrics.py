@@ -1175,7 +1175,7 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
         metrics_dict[key, 'Toll Costs (2023$)', 'Sales Workers', tm_run_id, metric_id,'intermediate','Business/Commercial','truck_toll_costs',year] = SALES_WORKERS_incremental_toll_costs_minor_grouping
         metrics_dict[key, 'Toll Costs (2023$)', 'Construction Workers', tm_run_id, metric_id,'intermediate','Business/Commercial','truck_toll_costs',year] = CONSTRUCTION_WORKERS_incremental_toll_costs_minor_grouping
 
-        metrics_dict[key, 'Toll Costs (2023$)', 'hov', tm_run_id, metric_id,'debug','Household','hov_toll_costs',year] = S3_incremental_toll_costs_minor_grouping
+        metrics_dict[key, 'Toll Costs (2023$)', 'hov', tm_run_id, metric_id,'debug step','Household','hov_toll_costs',year] = S3_incremental_toll_costs_minor_grouping
 
         if (DA_incremental_toll_costs_minor_grouping == 0):
             priv_auto_ratio_time_savings_to_toll_costs_minor_grouping = 0
@@ -1273,7 +1273,7 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'Heavy Truck Operators', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_HEAVY_TRUCK_OPERATORS_time_savings_to_toll_costs/sum_of_weights
     metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'Sales Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_SALES_WORKERS_time_savings_to_toll_costs/sum_of_weights
     metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', 'Construction Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_CONSTRUCTION_WORKERS_time_savings_to_toll_costs/sum_of_weights
-    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', grouping3, tm_run_id, metric_id,'debug','High Occupancy Vehicle','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_hov_time_savings_to_toll_costs/sum_of_weights
+    metrics_dict['Weighted Average Across Tolled Corridors', 'Ratio', grouping3, tm_run_id, metric_id,'debug step','High Occupancy Vehicle','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_weighted_ratio_hov_time_savings_to_toll_costs/sum_of_weights
 
     # simple averages
     metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'inc1', tm_run_id, metric_id,'final','Household','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_auto_time_savings_to_toll_costs_inc1/n
@@ -1283,7 +1283,7 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
     metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'Heavy Truck Operators', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_HEAVY_TRUCK_OPERATORS_time_savings_to_toll_costs/n
     metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'Sales Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_SALES_WORKERS_time_savings_to_toll_costs/n
     metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', 'Construction Workers', tm_run_id, metric_id,'final','Business/Commercial','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_CONSTRUCTION_WORKERS_time_savings_to_toll_costs/n
-    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', grouping3, tm_run_id, metric_id,'debug','High Occupancy Vehicle','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_hov_time_savings_to_toll_costs/n
+    metrics_dict['Simple Average Across Tolled Corridors', 'Ratio', grouping3, tm_run_id, metric_id,'debug step','High Occupancy Vehicle','Ratio of Monetary value of travel time savings to toll costs',year] = sum_of_ratio_hov_time_savings_to_toll_costs/n
 
 
 def return_E1_DF(tm_run_id, od_df, All_or_EPC):
@@ -1907,6 +1907,8 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
   # add metric for goods routes: Calculate [Change in peak hour travel time] for 3 truck routes (using link-level)
   # load table with links for each goods route
   # columns: A, B, I580_I238_I880_PortOfOakland, I101_I880_PortOfOakland, I80_I880_PortOfOakland
+  # the table also includes links for the untolled 680 corridor (see asana task below)
+  # https://app.asana.com/0/0/1204972308899338/f  
   goods_routes_a_b_links_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "goods_routes_a_b.csv")
   goods_routes_a_b_links_df = pd.read_csv(goods_routes_a_b_links_file)
   LOGGER.info("  Read {:,} rows from {}".format(len(goods_routes_a_b_links_df), goods_routes_a_b_links_file))
@@ -1958,6 +1960,30 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
   # enter goods routes average
   goods_routes_average_peak_travel_time = numpy.mean([peak_average_travel_time_route_I580, peak_average_travel_time_route_I101,peak_average_travel_time_route_I80])
   metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'final','Average Across Routes', 'peak_hour_travel_time', year] = goods_routes_average_peak_travel_time
+
+  # sum the travel time for the different time periods on the route that begins on I680
+  travel_time_route_I680_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I680').agg('sum')
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_route_I680 = travel_time_route_I680_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_route_I680 = travel_time_route_I680_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_route_I680 = numpy.mean([AM_travel_time_route_I680,PM_travel_time_route_I680])
+  # enter into metrics_dict
+  metrics_dict['untolled I680 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I680', 'travel_time_I680_AM', year] = AM_travel_time_route_I680
+  metrics_dict['untolled I680 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I680', 'travel_time_I680_PM', year] = PM_travel_time_route_I680
+  metrics_dict['untolled I680 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I680', 'peak_hour_travel_time_I680', year] = peak_average_travel_time_route_I680 
+
+  # sum the travel time for the different time periods on the route that begins on SR85
+  travel_time_route_SR85_summed_df = loaded_network_with_goods_routes_df.copy().groupby('SR85').agg('sum')
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_route_SR85 = travel_time_route_SR85_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_route_SR85 = travel_time_route_SR85_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_route_SR85 = numpy.mean([AM_travel_time_route_SR85,PM_travel_time_route_SR85])
+  # enter into metrics_dict
+  metrics_dict['untolled SR85 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR85', 'travel_time_SR85_AM', year] = AM_travel_time_route_SR85
+  metrics_dict['untolled SR85 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR85', 'travel_time_SR85_PM', year] = PM_travel_time_route_SR85
+  metrics_dict['untolled SR85 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR85', 'peak_hour_travel_time_SR85', year] = peak_average_travel_time_route_SR85 
 
   return [sum_of_weights, total_weighted_travel_time, n, total_travel_time, sum_of_weights_parallel_arterial, total_weighted_travel_time_parallel_arterial, total_travel_time_parallel_arterial, arterial_total_travel_time_region, arterial_total_travel_time_epc, arterial_total_travel_time_nonepc]
 
@@ -2470,7 +2496,7 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
         ( 3, 'Non-Freeway','Expressway'), # expressway
         ( 4, 'Non-Freeway','Collector' ), # collector
         ( 5, 'Freeway',    'Freeway'   ), # freeway ramp
-        ( 6, None,          None       ), # dummy link
+        ( 6, 'Non-Freeway','Other'     ), # dummy link --> include VMT from FT==6 links because they’re a proxy for VMT on roads not included in the model network.
         ( 7, 'Non-Freeway','Arterial'  ), # major arterial
         ( 8, 'Freeway',    'Freeway'   ), # managed freeway
         ( 9, None,          None       ), # special facility
@@ -2841,7 +2867,7 @@ if __name__ == "__main__":
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
         reliable2_metrics_df = calculate_Reliable2_ratio_peak_nonpeak(tm_run_id)
         metrics_df = pd.concat([metrics_df, reliable2_metrics_df])
-        LOGGER.info("@@@@@@@@@@@@@ R2 Done")
+        # LOGGER.info("@@@@@@@@@@@@@ R2 Done")
         calculate_Reparative1_dollar_revenues_revinvested(tm_run_id)
         # LOGGER.info("@@@@@@@@@@@@@ R1 Done")
         calculate_Reparative2_ratio_revenues_revinvested(tm_run_id)
