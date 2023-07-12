@@ -32,8 +32,6 @@ library(readxl)
 
 # Set up directories, import TAZ/census block equivalence, install census key, set ACS year,set CPI inflation
 
-employment_2015_data           <- "M:/Data/BusinessData/Employment_by_TAZ_industry/BusinessData_2015_TAZ_industry_noincommute.csv"
-
 blockTAZ2020_in      <- "M:/Data/GIS layers/TM1_taz_census2020/2020block_to_TAZ1454.csv"
 censuskey            <- readLines("M:/Data/Census/API/api-key.txt")
 baycounties          <- c("01","13","41","55","75","81","85","95","97")
@@ -47,6 +45,11 @@ ACS_product="5"
 USERPROFILE          <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
 BOX_TM               <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
 PBA_TAZ_2015         <- file.path(BOX_TM, "Share Data", "plan-bay-area-2050", "tazdata","PBA50_FinalBlueprintLandUse_TAZdata.xlsx")
+
+# Bring in 2020 TAZ employment data
+
+PETRALE              <- file.path(USERPROFILE,"Documents","GitHub","Petrale","Applications","travel_model_lu_inputs")
+employment_2020_data <- read.csv(file.path(PETRALE,"2020","Employment","lodes_wac_employment.csv"),header = T)
 
 # County FIPS codes for ACS tract API calls
 

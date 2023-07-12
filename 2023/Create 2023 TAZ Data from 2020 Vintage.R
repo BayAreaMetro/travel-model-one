@@ -19,7 +19,7 @@ library(readxl)
 employment_2015_data           <- "M:/Data/BusinessData/Employment_by_TAZ_industry/BusinessData_2015_TAZ_industry_noincommute.csv"
 
 USERPROFILE          <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
-Petrale              <- file.path(USERPROFILE,"Documents","GitHub","Petrale","Applications","travel_model_lu_inputs")
+PETRALE              <- file.path(USERPROFILE,"Documents","GitHub","Petrale","Applications","travel_model_lu_inputs")
 
 # Bring in TAZ 2020 dataset, dataframe is named "final_2020"
 
