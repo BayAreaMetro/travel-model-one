@@ -1707,7 +1707,7 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
       how='left')
   LOGGER.debug("tm_network_links_with_epc_df.head() =\n{}".format(tm_network_links_with_epc_df.head()))
 
-  tm_ab_ctim_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] != 3)&(tm_loaded_network_df['ft'] != 6)]
+  tm_ab_ctim_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] == 1)&(tm_loaded_network_df['ft'] != 6)]
   tm_ab_ctim_df = tm_ab_ctim_df.copy()[['Grouping minor_AMPM','a_b','fft','ctimAM','ctimPM', 'distance','volEA_tot', 'volAM_tot', 'volMD_tot', 'volPM_tot', 'volEV_tot']]  
 
   # create df for parallel arterials  
@@ -2249,7 +2249,7 @@ def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id: str) -> pd.DataFrame:
     LOGGER.debug("goods_routes_a_b_links_df.head() =\n{}".format(goods_routes_a_b_links_df.head()))
     # merge loaded network with df containing route information
     # remove HOV lanes from the network
-    loaded_network_with_goods_routes_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] != 3)]
+    loaded_network_with_goods_routes_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] == 1)]
     loaded_network_with_goods_routes_df = loaded_network_with_goods_routes_df.copy()[['a','b','ctimAM','ctimMD','ctimPM']]
     loaded_network_with_goods_routes_df = pd.merge(left=loaded_network_with_goods_routes_df, right=goods_routes_a_b_links_df, how='left', left_on=['a','b'], right_on=['A','B'])
     LOGGER.debug("loaded_network_with_goods_routes_df.head() =\n{}".format(loaded_network_with_goods_routes_df.head()))
