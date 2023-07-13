@@ -203,7 +203,8 @@ df_hhldCosts <- df_hhldCosts %>%
     annual_auto_fixed_costs = hhld_autos *(AUTO_OWNERSHIP_COST_2020D + AUTO_FINANCE_COST_2020D + AUTO_FINANCE_COST_2020D + AUTO_REGISTRATION_TAXES_COST_2020D ) / INFLATION_00_20 * INFLATION_00_23
 )
 
-
+OUTFILE0 <- file.path(TARGET_DIR, "updated_output", "hhldCosts.csv")
+write.csv(df_hhldCosts, OUTFILE0, row.names = FALSE)
 # ------------------------------------------
 # get statistics of annual_value_toll
 # ------------------------------------------
