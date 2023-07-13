@@ -1,3 +1,19 @@
+USAGE = """
+
+  python summarize_ridership_and_vmt_to_cordon.py
+
+  Asana task: https://app.asana.com/0/1201809392759895/1204875936483953/f
+
+  Quick scripts to understand cordon effect (Pathway 2) on:
+    1. VMT
+        1.1  VMT on SF links
+        1.2  VMT to-from SF vs. rest
+
+    2. Mode share: this is not conducted by this script, but by https://app.asana.com/0/0/1204082986821822/f
+
+    3. SF cordon effect on transit ridership: summarize transit ridership for routes ending in the SF cordon
+"""
+
 import copy, os.path, re
 import pandas as pd
 import dbfread
@@ -6,12 +22,14 @@ import numpy as np
 import geopandas as gpd
 
 
+# read mode runs
+TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
+current_runs_df = pd.read_excel(NGFS_MODEL_RUNS_FILE, sheet_name='all_runs', usecols=['project','year','directory','run_set','category','short_name','status'])
 
-run_list = ["2035_TM152_NGF_NP10_Path4_02",
-            "2035_TM152_NGF_NP10_Path3a_02", "2035_TM152_NGF_NP10_Path3b_02",
-            "2035_TM152_NGF_NP10_Path1a_02","2035_TM152_NGF_NP10_Path1b_02",
-            "2035_TM152_NGF_NP10_Path2a_02_10pc", "2035_TM152_NGF_NP10_Path2b_02_10pc",
-          ]
+current_runs_df = current_runs_df.loc[ current_runs_df['status'] == 'current']
+
+run_list = current_runs_df['directory'].to_list()
 
 # 1. SF cordon effect on VMT
 # 1.1 VMT on SF links
