@@ -78,7 +78,7 @@ emp_scaling_vars_updated <- left_join(emp_scaling_vars,employment_scaling[,c("Co
 
 # Join everything back together and append 2023 employment file too
 
-scaling_vars_updated <- left_join(pop_scaling_vars_updated,emp_scaling_vars,
+scaling_vars_updated <- left_join(pop_scaling_vars_updated,emp_scaling_vars_updated,
                                   by=c("ZONE", "DISTRICT", "SD", "COUNTY", "County_Name")) %>% 
                         left_join(.,non_scaling_vars,by=c("ZONE", "DISTRICT", "SD", "COUNTY", "County_Name")) %>% 
                         left_join(.,employment_2023,by=c("ZONE"="TAZ1454"))
@@ -232,14 +232,32 @@ popsim_vars_county <- final_2023 %>%
 
 write.csv(popsim_vars_county, "TAZ1454 2023 Popsim Vars County.csv", row.names = FALSE, quote = T)
 
+# Bring in superdistrict name for joining
+
+superdistrict <- read_excel(file.path(PETRALE,"2015","TAZ1454 2015 Land Use.xlsx"),sheet="2010 District Summary") %>% 
+  select("DISTRICT","DISTRICT_NAME"="DISTRICT NAME") %>% 
+  filter(!(DISTRICT=="Bay Area")) %>% 
+  mutate(DISTRICT=as.numeric(DISTRICT))
+
 # Output into Tableau-friendly format
 
 Tableau2023 <- New2023 %>%
-  select(ZONE,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
+  left_join(.,county_joiner,by="ZONE") %>% 
+  left_join(.,superdistrict,by="DISTRICT") %>% 
+  mutate(Year=2023) %>% 
+  select(ZONE,DISTRICT,DISTRICT_NAME,COUNTY,County_Name,Year,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
          MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop) %>%
-  gather(Variable,Value2023,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
+  gather(Variable,Value,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
          MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)
 
 write.csv(Tableau2023,"TAZ1454_2023_Tableau_Version.csv",row.names = F)
+
+# Concatenated version of Tableau files
+
+Tableau2015     <- read.csv(file.path(PETRALE,"2015","TAZ1454_2015_Tableau_Version.csv"), header = T)
+Tableau2020     <- read.csv(file.path(PETRALE,"2020","TAZ1454_2020_Tableau_Version.csv"), header = T)
+Tableau15_20_23 <- bind_rows(Tableau2015,Tableau2020,Tableau2023)
+write.csv(Tableau15_20_23,"TAZ1454_2015_2020_2023_Tableau_Version.csv",row.names = F)
+
 
 
