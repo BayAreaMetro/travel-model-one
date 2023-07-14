@@ -32,16 +32,6 @@ current_runs_df = current_runs_df.loc[ current_runs_df['status'] == 'current']
 run_list = current_runs_df['directory'].to_list()
 print(run_list)
 
-# read TAZ and cordon files
-TAZ_shp         = gpd.read_file('X:/travel-model-one-master/utilities/geographies/bayarea_rtaz1454_rev1_WGS84.shp').to_crs(network_links_df.crs)
-TAZ_with_cordon = pd.read_csv('L:/Application/Model_One/NextGenFwys/INPUT_DEVELOPMENT/PopSyn_n_LandUse/2035_cordon/landuse/parking_strategy/tazData_parkingStrategy_v01_3cordons_LeaveOutTI.csv')
-
-TAZ_shp         = TAZ_shp.merge(TAZ_with_cordon, left_on='TAZ1454', right_on='ZONE', how='left')
-
-TAZ_sf_list = (TAZ_shp['TAZ1454'].loc[(TAZ_shp.CORDON == 10)]).to_list()
-TAZ_ok_list = (TAZ_shp['TAZ1454'].loc[(TAZ_shp.CORDON == 11)]).to_list()
-TAZ_sj_list = (TAZ_shp['TAZ1454'].loc[(TAZ_shp.CORDON == 12)]).to_list()
-
 # 1. SF cordon effect on VMT
 # 1.1 VMT on SF links
 network_links_df = pd.DataFrame()
@@ -53,6 +43,15 @@ for runid in run_list:
     # add to transit_assignment_df
     network_links_df = pd.concat([network_links_df, network_links])
 
+# read TAZ and cordon files
+TAZ_shp         = gpd.read_file('X:/travel-model-one-master/utilities/geographies/bayarea_rtaz1454_rev1_WGS84.shp').to_crs(network_links_df.crs)
+TAZ_with_cordon = pd.read_csv('L:/Application/Model_One/NextGenFwys/INPUT_DEVELOPMENT/PopSyn_n_LandUse/2035_cordon/landuse/parking_strategy/tazData_parkingStrategy_v01_3cordons_LeaveOutTI.csv')
+
+TAZ_shp         = TAZ_shp.merge(TAZ_with_cordon, left_on='TAZ1454', right_on='ZONE', how='left')
+
+TAZ_sf_list = (TAZ_shp['TAZ1454'].loc[(TAZ_shp.CORDON == 10)]).to_list()
+TAZ_ok_list = (TAZ_shp['TAZ1454'].loc[(TAZ_shp.CORDON == 11)]).to_list()
+TAZ_sj_list = (TAZ_shp['TAZ1454'].loc[(TAZ_shp.CORDON == 12)]).to_list()
 
 # Prep to summarize VMT on SF links
 network_links_df['VOL_TOT'] = network_links_df['VOLEA_TOT'] + network_links_df['VOLAM_TOT'] + network_links_df['VOLMD_TOT'] + network_links_df['VOLPM_TOT'] + network_links_df['VOLEV_TOT']
