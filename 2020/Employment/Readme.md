@@ -3,6 +3,8 @@
 
 Further discussion can be found in [Create 2020 land use file](https://app.asana.com/0/310827677834656/1204790289402872/f) > [Update employment data](https://app.asana.com/0/0/1204885735452348/f)
 
+Based on the below table, the [2020 TAZ-level employment](lodes_wac_employment.csv) is based on the Longitudinal Employer-Household Dynamics (LEHD) [Origin-Destination Employment Statistics (LODES)](https://lehd.ces.census.gov/data/#lodes) Workplace Area Characteristics (WAC) file, summarized to TAZs via [`lodes_wac_to_TAZ.py`](lodes_wac_to_TAZ.py).
+
 | Data Source | Spatial Level | Temporal Level | Data nuances | Data Availability/Cost | Data Location |
 | ------------|------------------|----------------|--------------|------------------------|---------------|
 | REMI | county | annual | | | 

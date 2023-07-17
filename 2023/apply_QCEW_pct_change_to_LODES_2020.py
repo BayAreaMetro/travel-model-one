@@ -2,7 +2,7 @@ USAGE = """
 
   Since more recent data is available from QCEW (as of July 2023), this script will:
    - calculate the percent change in annual employment, by county and ABAG6 industry 
-     categoriy, from 2020 to 2022 in the QCEW annual data, and
+     category, from 2020 to 2022 in the QCEW annual data, and
    - apply that percent change to the 2020 employment data.
 
   See discussion in Asana task: https://app.asana.com/0/0/1204885735452348/f
