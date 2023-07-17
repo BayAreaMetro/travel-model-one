@@ -38,12 +38,13 @@ employment_2020      <- read.csv(file.path(PETRALE,"2020","Employment","lodes_wa
 county_joiner<- final_2020 %>% select(ZONE,County_Name)
 
 employment_scaling <- left_join(employment_2020,employment_2023_joiner,by="TAZ1454") %>% 
-  left_join(.,county_joiner,by=c("TAZ1454"="ZONE")) %>% 
-  group_by(County_Name) %>% 
   summarize(TOTEMP_2020=sum(TOTEMP_2020),TOTEMP_2023=sum(TOTEMP_2023)) %>% 
   mutate(Ratio_2023_2020=TOTEMP_2023/TOTEMP_2020) %>% 
-  ungroup
+  ungroup()
 
+# Create vector for regional scaling
+
+Ratio_2023_2020 <- as.numeric(employment_scaling[1,3])
 
 # Select out population/housing scaling vars (scaled by population change), 
 # employment scaling vars (scaled by employment change), and non-scaled vars
@@ -71,9 +72,8 @@ pop_scaling_vars_updated <- left_join(pop_scaling_vars,DOF_scaling[,c("County_Na
   select(-Ratio_2023_2020) %>% 
   mutate_at(c(6:39),~round(.,0))
 
-emp_scaling_vars_updated <- left_join(emp_scaling_vars,employment_scaling[,c("County_Name","Ratio_2023_2020")],by=c("County_Name")) %>% 
+emp_scaling_vars_updated <- emp_scaling_vars %>% 
   mutate_at(c(6:12),~.*Ratio_2023_2020) %>% 
-  select(-Ratio_2023_2020) %>% 
   mutate_at(c(6:12),~round(.,0))
 
 # Join everything back together and append 2023 employment file too
