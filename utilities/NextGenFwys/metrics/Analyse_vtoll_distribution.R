@@ -42,7 +42,7 @@ library(dplyr)
 library(knitr) # for the kable function that creates well-formatted tables 
 
 # paths if running this script from command prompt
-TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
+TARGET_DIR   <- "//MODEL2-C/Model2C-Share/Projects/2035_TM152_NGF_NP10_Path4_02"  # The location of the input files
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
 
 # for NGF Round 1, the TARGET_DIR are: 
@@ -504,8 +504,23 @@ df_vNctoll_percentiles <- data.frame(vNctollPercentile = vNctoll_percentiles, vN
 OUTFILE2_vNctoll <- file.path(TARGET_DIR, "updated_output", "hhld_vNctoll_percentiles.csv")
 write.csv(df_vNctoll_percentiles , OUTFILE2_vNctoll, row.names = FALSE)
 
+# plot it for Q1 only
+vNctoll_percentiles <- seq(0, 100, 1)
+df_hhldCosts_Q1 <- 
+  df_hhldCosts %>%
+  filter(hhld_incQ == 1)
+vNctoll_values      <- quantile(df_hhldCosts_Q1$annual_valueNcordon_toll, probs = vNctoll_percentiles/100)
+jpeg(file.path(TARGET_DIR, "updated_output","hhld_vNctoll_percentile_Q1_plot.jpg"))
+plot(vNctoll_percentiles, vNctoll_values, type = "o", xlab = "Percentile", ylab = "annual_valueNcordon_toll", main = "Percentile vs. annual_valueNcordon_toll (Q1)")
+# Save and close the JPEG file
+dev.off()
 
+# Create new data frame for export, for plotting in PPT or Excel
+df_vNctoll_percentiles_Q1 <- data.frame(vNctollPercentile = vNctoll_percentiles, vNctollValue = vNctoll_values)
 
+# export
+OUTFILE2_vNctoll_Q1 <- file.path(TARGET_DIR, "updated_output", "hhld_vNctoll_percentiles_Q1.csv")
+write.csv(df_vNctoll_percentiles_Q1 , OUTFILE2_vNctoll_Q1, row.names = FALSE)
 
 # ------------------------------------------
 # focus on the low-income group
