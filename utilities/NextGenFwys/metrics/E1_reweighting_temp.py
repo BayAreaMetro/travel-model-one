@@ -183,7 +183,7 @@ for runid in run_list:
     all_ODs_trip_times_df.drop(columns=['_merge'], inplace=True)
     print(all_ODs_trip_times_df.head())
 
-    # select travel time for the trip_mode's associated simple skim mode and save into column run_id
+    # select travel time for the trip_mode's associated simple skim mode and save into column runid
     all_ODs_trip_times_df[runid] = -999.0
     for simple_skim_mode in SIMPLE_SKIM_MODES:
         all_ODs_trip_times_df.loc[all_ODs_trip_times_df.simple_skim_mode == simple_skim_mode, runid] = \
@@ -199,9 +199,10 @@ for runid in run_list:
     # drop skims columns
     all_ODs_trip_times_df.drop(columns=SIMPLE_SKIM_MODES, inplace=True)
 
+# columns are: orig_taz, orig_CITY, dest_taz, dest_CITY, trip_mode, inbound, max_num_trips, [runid1], [runid2], ...
+# where [runid1],[runid2],... is the skim travel time from the orig_taz to the dest_taz for the trip_mode/inbound for that run
+# convert [runid1] to total travel time = max_num_trips x travel time
 for runid in run_list:
-    # columns are: orig_taz, orig_CITY, dest_taz, dest_CITY, trip_mode, inbound, max_num_trips, [runid1], [runid2], ...
-    # convert [runid] to total travel time : max_num_trips x travel time
     all_ODs_trip_times_df[runid] = all_ODs_trip_times_df[runid]*all_ODs_trip_times_df.max_num_trips
 
 # convert to long - move runid to a single column
