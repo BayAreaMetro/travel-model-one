@@ -27,6 +27,7 @@
 # In Next Generation Freeway project, script was updated to
 # - split fatalities and injuries by facility type (freeway and non-freeway)
 # - split fatalities and injuries by geography (Equity Priority Communities (EPCs) and non-EPCs)
+# - split fatalities and injuries by geography and faclity type (local streets in Equity Priority Communities (EPCs) and local streets in non-EPCs): https://app.asana.com/0/0/1204858461227642/f
 # 
 # Inputs:
 #   1) MODEL_RUN_ID, MODEL_RUN_ID_NO_PROJECT: environment variables with the model run ID of the 
@@ -529,9 +530,14 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
   link_to_taz_df <- left_join(link_to_taz_df, TAZ_EPC_LOOKUP_DF, by=c("TAZ1454"))
   link_to_epc_df <- link_to_taz_df %>% group_by(a, b) %>% summarise(taz_epc = max(taz_epc))
   network_df     <- left_join(network_df, link_to_epc_df, by=c("a","b")) %>%
+                    #left_join(COLLISION_FT, by=c("ft")) %>%
                     mutate(
                       taz_epc = if_else(taz_epc==1, "EPC", "Non-EPC"),
-                      taz_epc = if_else(is.na(taz_epc), "Non-EPC", taz_epc)
+                      taz_epc = if_else(is.na(taz_epc), "Non-EPC", taz_epc),
+                      taz_epc_local = if_else(taz_epc=="EPC" & (ft == 3 | ft == 4 | ft == 6| ft == 7| ft == 9),"taz_epc_local","pass"),    #new
+                      taz_epc_local = if_else(is.na(taz_epc_local), "pass", taz_epc_local),                      #new
+                      Non_EPC_local = if_else(taz_epc=="Non-EPC" & (ft == 3 | ft == 4 | ft == 6| ft == 7| ft == 9),"non_epc_local","pass"),#new
+                      Non_EPC_local = if_else(is.na(Non_EPC_local), "pass", Non_EPC_local)                      #new
                     ) # convert 1 -> EPC; 0 or Na -> Non-EPC
   # print(head(network_df))
   population_forecast <- sum(tazdata_df$TOTPOP)
@@ -553,6 +559,16 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
                                 network_group_by_col="taz_epc", network_no_project_df)
   model_fatal_inj_epc_non <- correct_using_observed_factors(model_fatal_inj_epc_non, model_fatal_inj_base_year)
   print(model_fatal_inj_epc_non)
+  
+  model_fatal_inj_epc_local <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
+                                                           network_group_by_col="taz_epc_local", network_no_project_df)     
+  model_fatal_inj_epc_local <- correct_using_observed_factors(model_fatal_inj_epc_local, model_fatal_inj_base_year)
+  print(model_fatal_inj_epc_local)
+  # 
+  model_fatal_inj_non_epc_local <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
+                                                               network_group_by_col="Non_EPC_local", network_no_project_df)     
+  model_fatal_inj_non_epc_local <- correct_using_observed_factors(model_fatal_inj_non_epc_local, model_fatal_inj_base_year)
+  print(model_fatal_inj_non_epc_local)
 
 
   # save the fatalities & injuries results
@@ -560,7 +576,9 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
     results_df,
     mutate(model_fatal_inj$network_summary_df, key="all", model_run_type=model_run_type),
     mutate(rename(model_fatal_inj_fwy_non$network_summary_df, key=fwy_non), model_run_type=model_run_type),
-    mutate(rename(model_fatal_inj_epc_non$network_summary_df, key=taz_epc), model_run_type=model_run_type)
+    mutate(rename(model_fatal_inj_epc_non$network_summary_df, key=taz_epc), model_run_type=model_run_type),
+    mutate(rename(model_fatal_inj_epc_local$network_summary_df, key=taz_epc_local), model_run_type=model_run_type),
+    mutate(rename(model_fatal_inj_non_epc_local$network_summary_df, key=Non_EPC_local), model_run_type=model_run_type)
   )
 
   # if there's no scenario, we're done
