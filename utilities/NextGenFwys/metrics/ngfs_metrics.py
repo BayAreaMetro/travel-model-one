@@ -205,10 +205,10 @@ METRICS_COLUMNS = [
     'metric_id',
     'intermediate/final', # TODO: suggest renaming this to 'metric_level' since other options are used beyond intermediate and final
     'key',
+    'county',
     'metric_desc',
     'year',
-    'value',
-    'county'
+    'value'
 ]
 
 # TODO: remove these after metrics methodology is finilzed (for debugging)
