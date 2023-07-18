@@ -205,6 +205,7 @@ METRICS_COLUMNS = [
     'metric_id',
     'intermediate/final', # TODO: suggest renaming this to 'metric_level' since other options are used beyond intermediate and final
     'key',
+    'county',
     'metric_desc',
     'year',
     'value'
@@ -2517,7 +2518,19 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     loaded_network_df['grouping3'] = 'Non-tolled facilities'
     loaded_network_df.loc[loaded_network_df.tollclass > 700000, 'grouping3'] = 'Tolled facilities'
 
-    ft_metrics_df = loaded_network_df.groupby(by=['grouping1','key', 'grouping2', 'grouping3']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
+    # add field for county using TAZ
+    # reference: https://github.com/BayAreaMetro/modeling-website/wiki/TazData
+    loaded_network_df['county'] = 'San Francisco'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 190) & (loaded_network_df.TAZ1454 < 347), 'county'] = 'San Mateo'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 346) & (loaded_network_df.TAZ1454 < 715), 'county'] = 'Santa Clara'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 714) & (loaded_network_df.TAZ1454 < 1040), 'county'] = 'Alameda'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1039) & (loaded_network_df.TAZ1454 < 1211), 'county'] = 'Contra Costa'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1210) & (loaded_network_df.TAZ1454 < 1291), 'county'] = 'Solano'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1290) & (loaded_network_df.TAZ1454 < 1318), 'county'] = 'Napa'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1317) & (loaded_network_df.TAZ1454 < 1404), 'county'] = 'Sonoma'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1403) & (loaded_network_df.TAZ1454 < 1455), 'county'] = 'Marin'
+
+    ft_metrics_df = loaded_network_df.groupby(by=['grouping1','key', 'grouping2', 'grouping3', 'county']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
     LOGGER.debug("ft_metrics_df:\n{}".format(ft_metrics_df))
 
     # # Calculate equity metric: non-freeway VMT in region and EPCs
@@ -2553,7 +2566,7 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
 
     # put it together, move to long form and return
     metrics_df = pd.concat([auto_times_df, ft_metrics_df])
-    metrics_df = metrics_df.melt(id_vars=['grouping1','key','grouping2', 'grouping3'], var_name='metric_desc')
+    metrics_df = metrics_df.melt(id_vars=['grouping1','key','grouping2', 'grouping3', 'county'], var_name='metric_desc')
     metrics_df['modelrun_id'] = tm_run_id
     metrics_df['metric_id'] = METRIC_ID
     metrics_df['intermediate/final'] = 'final'
