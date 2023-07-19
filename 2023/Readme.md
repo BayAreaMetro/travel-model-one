@@ -3,10 +3,10 @@
 
 ## This directory relies on a dataset created for 2020 and then inflated for 2023. As new data become available for ACS in September and December, 2023, these scripts will be updated:
 
-### For 2020: [ACS 2017-2021 create TAZ data for 2020.R](../2020/ACS%202017-2021%20create%20TAZ%20data%20for%202020.R)
-### For 2023: [Create 2023 TAZ Data from 2020 Vintage.R](Create%202023%20TAZ%20Data%20from%202020%20Vintage.R)
+### For 2020: ['ACS 2017-2021 create TAZ data for 2020.R'](../2020/ACS%202017-2021%20create%20TAZ%20data%20for%202020.R)
+### For 2023: ['Create 2023 TAZ Data from 2020 Vintage.R'](Create%202023%20TAZ%20Data%20from%202020%20Vintage.R)
 
-These scripts bring in all inputs and creates 2023 input for [PopulationSim](https://github.com/BayAreaMetro/PopulationSim) and [tazdata](https://github.com/BayAreaMetro/modeling-website/wiki/TazData) input for [Travel Model 1.5](https://github.com/BayAreaMetro/travel-model-one)
+These scripts bring in all inputs and create 2023 input for [PopulationSim](https://github.com/BayAreaMetro/PopulationSim) and [tazdata](https://github.com/BayAreaMetro/modeling-website/wiki/TazData) input for [Travel Model 1.5](https://github.com/BayAreaMetro/travel-model-one).
 
 * Inputs: Input for the 2023 dataset is a mix of different types of variables: 
   * Household- and population-based variables are brought into the [main 2020 script](https://github.com/BayAreaMetro/petrale/blob/main/applications/travel_model_lu_inputs/2020/ACS%202017-2021%20create%20TAZ%20data%20for%202020.R) using 2020 decennial [Demographic and Housing Characteristics File (DHC)](https://www.census.gov/data/tables/2023/dec/2020-census-dhc.html) data where available and [ACS 2017-2021](https://www.census.gov/newsroom/press-kits/2022/acs-5-year.html) data otherwise. These data rely on the [Tidycensus R Package](https://walker-data.com/tidycensus/)
