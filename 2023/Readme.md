@@ -3,9 +3,9 @@
 
 ## This directory relies on a dataset created for 2020 and then inflated for 2023. As new data become available for ACS in September and December, 2023, these scripts will be updated:
 
-### [ACS 2017-2021 create TAZ data for 2020.R](../2020/ACS%202017-2021%20create%20TAZ%20data%20for%202020.R)
+### For 2020: [ACS 2017-2021 create TAZ data for 2020.R](../2020/ACS%202017-2021%20create%20TAZ%20data%20for%202020.R)
 
-### [Create 2023 TAZ Data from 2020 Vintage.R](Create%202023%20TAZ%20Data%20from%202020%20Vintage.R)
+### For 2023: [Create 2023 TAZ Data from 2020 Vintage.R](Create%202023%20TAZ%20Data%20from%202020%20Vintage.R)
 
 These scripts bring in all inputs and creates 2023 input for [PopulationSim](https://github.com/BayAreaMetro/PopulationSim) and [tazdata](https://github.com/BayAreaMetro/modeling-website/wiki/TazData) input for [Travel Model 1.5](https://github.com/BayAreaMetro/travel-model-one)
 
