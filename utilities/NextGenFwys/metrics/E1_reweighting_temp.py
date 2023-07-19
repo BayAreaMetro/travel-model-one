@@ -1,9 +1,14 @@
 USAGE = """
+  Calculates auto vs transit travel times between OD cities for the NGFS pathways.
+
   Asana task: https://app.asana.com/0/0/1204911549136921/f
 """
 import os, sys
 import pandas as pd
 import numpy
+pd.options.display.width = 1000
+pd.options.display.max_columns = 100
+
 
 # to read trips.rdata
 import rpy2.robjects as robjects
@@ -13,6 +18,7 @@ from rpy2.robjects import pandas2ri
 import ngfs_metrics
 print(ngfs_metrics.NGFS_OD_CITIES_OF_INTEREST_DF)
 
+NO_PRICING_RUNID = '2035_TM152_NGF_NP10_Path4_02'
 # https://github.com/BayAreaMetro/modeling-website/wiki/TravelModes#tour-and-trip-modes
 # https://github.com/BayAreaMetro/modeling-website/wiki/SimpleSkims
 TRIP_MODE_TO_SIMPLE_SKIM_MODE = [
@@ -52,6 +58,8 @@ run_list.remove('2035_TM152_FBP_Plus_24')
 run_list.remove('2035_TM152_NGF_NP10')
 run_list.remove('2035_TM152_NGF_NP10_Path2a_02')
 run_list.remove('2035_TM152_NGF_NP10_Path2b_02')
+# TEST - DO NOT COMMIT'
+# run_list = ['2035_TM152_NGF_NP10_Path4_02','2035_TM152_NGF_NP10_Path1a_02']
 
 # we need to read the trips directly because ODTravelTime_byModeTimeperiodIncome.csv does not distinguish between 
 # inbound vs outbound for transit, so we can't distinguish between drive-transit-walk vs walk-transit-drive modes
@@ -128,35 +136,95 @@ trips_od_travel_time_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df._
 trips_od_travel_time_df.drop(columns=['_merge'], inplace=True)
 print("Filtered to OD cities of interest, or {:,} rows; head:\n{}".format(
     len(trips_od_travel_time_df), trips_od_travel_time_df.head()))
-# columns: orig_taz, orig_CITY, dest_taz, dest_CITY, trip_mode, inbound, runid, total_trip_travel_time, num_trips
 
+# add aggregate trip_mode, agg_trip_mode
+trips_od_travel_time_df['agg_trip_mode'] = 'unset'
+trips_od_travel_time_df.loc[ trips_od_travel_time_df.trip_mode.isin(ngfs_metrics.MODES_PRIVATE_AUTO), 'agg_trip_mode'] = 'auto'
+trips_od_travel_time_df.loc[ trips_od_travel_time_df.trip_mode.isin(ngfs_metrics.MODES_TRANSIT),      'agg_trip_mode'] = 'transit'
+assert(len(trips_od_travel_time_df.loc[ trips_od_travel_time_df.agg_trip_mode =='unset'])==0)
+print(trips_od_travel_time_df.head())
+# columns: orig_taz, orig_CITY, dest_taz, dest_CITY, trip_mode, inbound, runid, agg_trip_mode, total_trip_travel_time, num_trips
 
-# trips weights: max(num of trips across all pathways)
-# https://app.asana.com/0/0/1204911549136921/1205043669589139/f
-all_ODs_trip_times_df = pd.pivot_table(
-    trips_od_travel_time_df,
-    index=['orig_taz','orig_CITY','dest_taz','dest_CITY','trip_mode','inbound'],
-    values=['num_trips'],
-    aggfunc={'num_trips':numpy.nanmax})
-all_ODs_trip_times_df.rename(columns={'num_trips':'max_num_trips'}, inplace=True)
-all_ODs_trip_times_df.reset_index(inplace=True)
-
-# join with TRIP_MODE_TO_SIMPLE_SKIM_MODE_DF
-all_ODs_trip_times_df = pd.merge(
-    left        = all_ODs_trip_times_df,
+# join with TRIP_MODE_TO_SIMPLE_SKIM_MODE_DF to add simple_skim_mode
+trips_od_travel_time_df = pd.merge(
+    left        = trips_od_travel_time_df,
     right       = TRIP_MODE_TO_SIMPLE_SKIM_MODE_DF,
     on          = ['trip_mode','inbound'],
     how         = 'left',
     indicator   = True
 )
 # verify join is completely successful
-assert(len(all_ODs_trip_times_df.loc[ all_ODs_trip_times_df._merge=='both']) == len(all_ODs_trip_times_df))
-all_ODs_trip_times_df.drop(columns=['_merge'], inplace=True)
-# columns: orig_taz, orig_CITY, dest_taz, dest_CITY, trip_mode, inbound, simple_skim_mode, max_num_trips
-print("max trips across pathways head:\n{}".format(all_ODs_trip_times_df.head()))
+assert(len(trips_od_travel_time_df.loc[ trips_od_travel_time_df._merge=='both']) == len(trips_od_travel_time_df))
+trips_od_travel_time_df.drop(columns=['_merge'], inplace=True)
+# columns: orig_taz, orig_CITY, dest_taz, dest_CITY, trip_mode, inbound, runid, agg_trip_mode, simple_skim_mode, 
+#          total_trip_travel_time, num_trips
+
+# taz_weight: NP_trips for o_taz/dtaz / trips for o_city/d_city
+no_pricing_trips_df = trips_od_travel_time_df.loc[ trips_od_travel_time_df.runid == NO_PRICING_RUNID]
+
+no_pricing_taz_trips_df = no_pricing_trips_df.groupby(
+    by=['orig_taz','orig_CITY','dest_taz','dest_CITY']).agg(
+        no_pricing_taz_trips  = pd.NamedAgg(column="num_trips",aggfunc="sum"))
+no_pricing_taz_trips_df.reset_index(drop=False, inplace=True)
+no_pricing_city_trips_df = no_pricing_trips_df.groupby(
+    by=['orig_CITY','dest_CITY']).agg(
+        no_pricing_city_trips = pd.NamedAgg(column="num_trips",aggfunc="sum"))
+no_pricing_city_trips_df.reset_index(drop=False, inplace=True)
+no_pricing_taz_trips_df = pd.merge(
+    left    = no_pricing_taz_trips_df,
+    right   = no_pricing_city_trips_df,
+    how     = 'left',
+    on      = ['orig_CITY','dest_CITY']
+)
+no_pricing_taz_trips_df['taz_weight'] = no_pricing_taz_trips_df['no_pricing_taz_trips']/no_pricing_taz_trips_df['no_pricing_city_trips']
+print("no_pricing_taz_trips_df:\n{}".format(no_pricing_taz_trips_df))
+print("no_pricing_taz_trips_df.columns:{}".format(list(no_pricing_taz_trips_df.columns)))
+print("taz_weight sum: {}".format(no_pricing_taz_trips_df.taz_weight.sum()))
+# columns: orig_taz, orig_CITY, dest_taz, dest_CITY, no_pricing_taz_trips, no_pricing_city_trips, taz_weight
+
+simple_skim_mode_trips_df = trips_od_travel_time_df.groupby(
+    by=['orig_CITY','dest_CITY','runid','agg_trip_mode','simple_skim_mode']).agg(
+        simple_skim_trips = pd.NamedAgg(column="num_trips",aggfunc="sum"))
+simple_skim_mode_trips_df.reset_index(drop=False, inplace=True)
+agg_trip_mode_trips_df = trips_od_travel_time_df.groupby(
+    by=['orig_CITY','dest_CITY','runid','agg_trip_mode']).agg(
+        agg_trip_mode_trips = pd.NamedAgg(column="num_trips",aggfunc="sum"))
+agg_trip_mode_trips_df.reset_index(drop=False, inplace=True)
+simple_skim_mode_trips_df = pd.merge(
+    left    = simple_skim_mode_trips_df,
+    right   = agg_trip_mode_trips_df,
+    how     = 'left',
+    on      = ['orig_CITY','dest_CITY','runid','agg_trip_mode']
+)
+simple_skim_mode_trips_df['simple_mode_weight'] = simple_skim_mode_trips_df['simple_skim_trips']/simple_skim_mode_trips_df['agg_trip_mode_trips']
+print("simple_skim_mode_trips_df:\n{}".format(simple_skim_mode_trips_df))
+print("simple_skim_mode_trips_df.columns:\n{}".format(list(simple_skim_mode_trips_df.columns)))
+print("simple_mode_weight sum: {}".format(simple_skim_mode_trips_df.simple_mode_weight.sum()))
+# columns: orig_CITY, dest_CITY, runid, agg_trip_mode, simple_skim_trips, agg_trip_mode_trips, simple_mode_weight
+
+weights_df = pd.merge(
+    left    = no_pricing_taz_trips_df,
+    right   = simple_skim_mode_trips_df,
+    how     = 'outer',
+    on      = ['orig_CITY','dest_CITY']
+)
+weights_df['taz_simple_mode_weight'] = weights_df['taz_weight']*weights_df['simple_mode_weight']
+print("weights_df.taz_simple_mode_weight sum:{}".format(weights_df.taz_simple_mode_weight.sum()))
+# save this
+OUTPUT_FILE = "E1_Path1a_weights.csv"
+weights_df.to_csv(OUTPUT_FILE, index=False)
+print("Wrote {:,} rows to {}".format(len(weights_df), OUTPUT_FILE))
+
+# drop unneeded columns
+weights_df.drop(columns=[
+    'no_pricing_taz_trips','no_pricing_city_trips','taz_weight',
+    'simple_skim_trips','agg_trip_mode_trips','simple_mode_weight'
+], inplace=True)
+print(weights_df.head())
+# columns: runid, orig_CITY, dest_CITY, orig_TAZ, dest_taz, simple_skim_mode, agg_trip_mode, taz_simple_mode_weight 
 
 # Step 2: join trips with skim time
-TimeSkimsDatabaseAM_df = pd.DataFrame()
+all_ODs_trip_times_df = pd.DataFrame()
 for runid in run_list:
     print("Adding skim information for runid {}".format(runid))
     
@@ -169,93 +237,79 @@ for runid in run_list:
     TimeSkimsDatabaseAM = pd.read_csv(TimeSkimsDatabaseAM_path,
                                       usecols=['orig','dest'] + SIMPLE_SKIM_MODES, 
                                       na_values=NA_VALS)
+    # Pathway 2 has some da/s2/s3 > 1,000,000 => convert to NA
+    TimeSkimsDatabaseAM.loc[ TimeSkimsDatabaseAM.da > 1000, 'da'] = pd.NA
+    TimeSkimsDatabaseAM.loc[ TimeSkimsDatabaseAM.s2 > 1000, 's2'] = pd.NA
+    TimeSkimsDatabaseAM.loc[ TimeSkimsDatabaseAM.s3 > 1000, 's3'] = pd.NA
     
-    # join to our max trip ODs
-    all_ODs_trip_times_df = pd.merge(
-        left     =all_ODs_trip_times_df,
+    # get the weights for this runid
+    ODs_trip_times_df = weights_df.loc[ weights_df.runid == runid ]
+    # join to skims
+    ODs_trip_times_df = pd.merge(
+        left     =ODs_trip_times_df,
         right    =TimeSkimsDatabaseAM.rename(columns={'orig':'orig_taz', 'dest':'dest_taz'}),
         on       =['orig_taz','dest_taz'],
         how      ='left',
         indicator=True
     )
     # verify join is completely successful
-    assert(len(all_ODs_trip_times_df.loc[ all_ODs_trip_times_df._merge=='both']) == len(all_ODs_trip_times_df))
-    all_ODs_trip_times_df.drop(columns=['_merge'], inplace=True)
-    print(all_ODs_trip_times_df.head())
+    assert(len(ODs_trip_times_df.loc[ ODs_trip_times_df._merge=='both']) == len(ODs_trip_times_df))
+    ODs_trip_times_df.drop(columns=['_merge'], inplace=True)
+    print(ODs_trip_times_df.head())
 
-    # select travel time for the trip_mode's associated simple skim mode and save into column runid
-    all_ODs_trip_times_df[runid] = -999.0
+    # select travel time for the trip_mode's associated simple skim mode and save into column travel_time
+    ODs_trip_times_df['travel_time'] = -999.0
     for simple_skim_mode in SIMPLE_SKIM_MODES:
-        all_ODs_trip_times_df.loc[all_ODs_trip_times_df.simple_skim_mode == simple_skim_mode, runid] = \
-            all_ODs_trip_times_df[simple_skim_mode]
-    print(all_ODs_trip_times_df.head())
+        ODs_trip_times_df.loc[ODs_trip_times_df.simple_skim_mode == simple_skim_mode, 'travel_time'] = \
+            ODs_trip_times_df[simple_skim_mode]
+    print(ODs_trip_times_df.head())
 
-    unset_rows = all_ODs_trip_times_df.loc[ all_ODs_trip_times_df[runid] < 0]
-    NA_rows    = all_ODs_trip_times_df.loc[ pd.isna(all_ODs_trip_times_df[runid]) ]
+    unset_rows = ODs_trip_times_df.loc[ ODs_trip_times_df['travel_time'] < 0]
+    NA_rows    = ODs_trip_times_df.loc[ pd.isna(ODs_trip_times_df['travel_time']) ]
     print("unset_rows: {:,}\n{}".format(len(unset_rows), unset_rows))
     print("NA_rows:    {:,}\n{}".format(len(NA_rows), NA_rows))
-    assert(len(NA_rows)==0)
+    # assert(len(NA_rows)==0)
 
     # drop skims columns
-    all_ODs_trip_times_df.drop(columns=SIMPLE_SKIM_MODES, inplace=True)
+    ODs_trip_times_df.drop(columns=SIMPLE_SKIM_MODES, inplace=True)
 
-# columns are: orig_taz, orig_CITY, dest_taz, dest_CITY, trip_mode, inbound, max_num_trips, [runid1], [runid2], ...
+    all_ODs_trip_times_df = pd.concat([all_ODs_trip_times_df, ODs_trip_times_df])
+
+# columns are: orig_taz, orig_CITY, dest_taz, dest_CITY, trip_mode, inbound, mean_num_trips, [runid1], [runid2], ...
 # where [runid1],[runid2],... is the skim travel time from the orig_taz to the dest_taz for the trip_mode/inbound for that run
-# convert [runid1] to total travel time = max_num_trips x travel time
+# convert [runid1] to total travel time = mean_num_trips x travel time
 for runid in run_list:
-    all_ODs_trip_times_df[runid] = all_ODs_trip_times_df[runid]*all_ODs_trip_times_df.max_num_trips
+    all_ODs_trip_times_df['weighted_travel_time'] = all_ODs_trip_times_df.travel_time * all_ODs_trip_times_df.taz_simple_mode_weight
 
-# convert to long - move runid to a single column
-all_ODs_trip_times_df = all_ODs_trip_times_df.melt(
-    id_vars=['orig_taz','orig_CITY','dest_taz','dest_CITY','trip_mode','inbound','max_num_trips'],
-    value_vars = run_list,
-    var_name='runid',
-    value_name='total_skim_travel_time')
-print("all_ODs_trip_times_df long:\n{}".format(all_ODs_trip_times_df))
-
-# and add back in original num_trips and avg_travel_time_in_mins from trips
-all_ODs_trip_times_df = pd.merge(
-    left    = all_ODs_trip_times_df,
-    right   = trips_od_travel_time_df,
-    on      = ['runid','orig_taz','orig_CITY','dest_taz','dest_CITY','trip_mode','inbound'],
-    how     = 'left'
-)
-print("after joining with trip columns:\n{}".format(all_ODs_trip_times_df.head()))
-
-# aggregate trip_mode
-all_ODs_trip_times_df['agg_trip_mode'] = 'unset'
-all_ODs_trip_times_df.loc[ all_ODs_trip_times_df.trip_mode.isin(ngfs_metrics.MODES_PRIVATE_AUTO), 'agg_trip_mode'] = 'auto'
-all_ODs_trip_times_df.loc[ all_ODs_trip_times_df.trip_mode.isin(ngfs_metrics.MODES_TRANSIT),      'agg_trip_mode'] = 'transit'
-assert(len(all_ODs_trip_times_df.loc[ all_ODs_trip_times_df.agg_trip_mode =='unset'])==0)
-print(all_ODs_trip_times_df.head())
+all_ODs_trip_times_df.reset_index(drop=True, inplace=True)
+print("all_ODs_trip_times_df:\n{}".format(all_ODs_trip_times_df))
+print("all_ODs_trip_times_df.columns:{}".format(list(all_ODs_trip_times_df.columns)))
 
 # for understanding NaNs
-# max_num_trips_for_NaN_num_trips = trips that would have been dropped
+# mean_num_trips_for_NaN_num_trips = trips that would have been dropped
 # so num_trips, total_trip_travel_time are missing
-all_ODs_trip_times_df['max_num_trips_for_NaN_num_trips'] = 0
-all_ODs_trip_times_df.loc[ pd.isna(all_ODs_trip_times_df.num_trips), 'max_num_trips_for_NaN_num_trips'] = \
-    all_ODs_trip_times_df['max_num_trips']
-all_ODs_trip_times_df['max_num_trips_for_NaN_skim_time'] = 0
-all_ODs_trip_times_df.loc[ pd.isna(all_ODs_trip_times_df.total_skim_travel_time), 'max_num_trips_for_NaN_skim_time'] = \
-    all_ODs_trip_times_df['max_num_trips']
+all_ODs_trip_times_df['weight_for_NaN_travel_time'] = 0
+all_ODs_trip_times_df.loc[ pd.isna(all_ODs_trip_times_df.travel_time), 
+                          'weight_for_NaN_travel_time'] = all_ODs_trip_times_df.taz_simple_mode_weight
+
+# save this TAZ-based aggregate version
+OUTPUT_FILE = "OD_taz_travel_times_E1_double_weighted.csv"
+all_ODs_trip_times_df.to_csv(OUTPUT_FILE, index=False)
+print("Wrote {:,} rows to {}".format(len(all_ODs_trip_times_df), OUTPUT_FILE))
 
 # summarize to orig_CITY, dest_CITY, mode
 OD_city_df = all_ODs_trip_times_df.groupby(
     by = ['orig_CITY','dest_CITY', 'runid', 'agg_trip_mode']
 ).agg(
-    max_num_trips    = pd.NamedAgg(column="max_num_trips",          aggfunc="sum"),
-    skim_travel_time = pd.NamedAgg(column="total_skim_travel_time", aggfunc="sum"),
-    run_num_trips    = pd.NamedAgg(column="num_trips",              aggfunc=numpy.nansum),
-    trip_travel_time = pd.NamedAgg(column="total_trip_travel_time", aggfunc=numpy.nansum),
+    weighted_travel_time   = pd.NamedAgg(column="weighted_travel_time",   aggfunc=numpy.nansum),
+    taz_simple_mode_weight = pd.NamedAgg(column="taz_simple_mode_weight", aggfunc=numpy.nansum),
     # checks
-    max_num_trips_for_NaN_num_trips = pd.NamedAgg(column="max_num_trips_for_NaN_num_trips", aggfunc="sum"),
-    max_num_trips_for_NaN_skim_time = pd.NamedAgg(column="max_num_trips_for_NaN_skim_time", aggfunc="sum"),
+    weight_for_NaN_travel_time = pd.NamedAgg(column="weight_for_NaN_travel_time", aggfunc="sum"),
 
 ).reset_index(drop=False)
-OD_city_df['avg_skim_travel_time'] = OD_city_df['skim_travel_time']/OD_city_df['max_num_trips']
-OD_city_df['avg_trip_travel_time'] = OD_city_df['trip_travel_time']/OD_city_df['run_num_trips']
+OD_city_df['avg_skim_travel_time'] = OD_city_df['weighted_travel_time']/OD_city_df['taz_simple_mode_weight']
 print(OD_city_df.head())
 
-OUTPUT_FILE = "OD_city_travel_times_E1.csv"
+OUTPUT_FILE = "OD_city_travel_times_E1_double_weighted.csv"
 OD_city_df.to_csv(OUTPUT_FILE, index=False)
 print("Wrote {:,} rows to {}".format(len(OD_city_df), OUTPUT_FILE))
