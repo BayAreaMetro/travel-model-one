@@ -1,7 +1,35 @@
 USAGE = """
   Calculates auto vs transit travel times between OD cities for the NGFS pathways.
 
-  Asana task: https://app.asana.com/0/0/1204911549136921/f
+  Applies two types of weights:
+  1) spatial weight:this is based on the distribution of taz-to-taz trips in the
+     base scenario (No New Pricing) for the OD city.
+  2) mode weight: because travelers are switching modes between the pathways so much,
+     we experimented with trying to use the per-pathway distribution of modes here.
+     However, we got unintuitive results having these vary, so this was simplified:
+     a) auto: use DA for No New Pricing and Cordon Pricing (since cordon tolls are not
+        valuye tolls)
+     b) transit: for each OD city, use a fixed share of WtrnW vs WtrnD based on the
+        average mode share between those two in across all pathways for each OD city.
+        This is caluclated in E1_reweighting tableau, DW trn mode weights worksheet.
+
+  Inputs:
+  1) ngfs_metrics.NGFS_MODEL_RUNS_FILE to read current scnarios (pathways)
+  2) for each scenario
+     a) trips.rdata (via rpy)
+     b) AM simple skims
+  
+  Outputs:
+  1) E1_double_weights_simple.csv with weights
+  2) OD_taz_travel_times_E1_double_weighted_simple.csv - taz-level summary
+  3) OD_city_travel_times_E1_double_weighted_simple.csv - city-level summary
+
+  See discusssion in:
+  - Efficient 1 (travel time of transit vs. auto) - O-D level Asana
+    https://app.asana.com/0/0/1204323747319780/f
+  - Evaluate/update methodology for E1 weighting
+    https://app.asana.com/0/0/1204911549136921/f
+
 """
 import os, sys
 import pandas as pd
@@ -16,7 +44,6 @@ from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri
 
 import ngfs_metrics
-print(ngfs_metrics.NGFS_OD_CITIES_OF_INTEREST_DF)
 
 NO_PRICING_RUNID = '2035_TM152_NGF_NP10_Path4_02'
 # https://github.com/BayAreaMetro/modeling-website/wiki/TravelModes#tour-and-trip-modes
@@ -44,6 +71,38 @@ TRIP_MODE_TO_SIMPLE_SKIM_MODE_DF = pd.DataFrame(data=TRIP_MODE_TO_SIMPLE_SKIM_MO
                                                 columns=['trip_mode','inbound','simple_skim_mode'])
 SIMPLE_SKIM_MODES = list(set(TRIP_MODE_TO_SIMPLE_SKIM_MODE_DF.simple_skim_mode.tolist()))
 
+# simplified transit mode weighting -- by OD city
+# Source: E1_reweighting.twb, DW trn mode weights worksheet
+#  (which is based on results from the previous iteration of this script)
+TRN_MODE_WEIGHTS = [
+    # orig CITY	                                    dest CITY	                    wTrnW   dTrnW, wTrnD,
+    ['Antioch',                                     'Central/West Oakland',         0.23,   0.77,   0.0],
+    ['Central San Jose',                            'San Francisco Downtown Area',  0.29,   0.71,   0.0],
+    ['Central/West Oakland',                        'Central San Jose',             0.58,   0.42,   0.0],
+    ['Central/West Oakland',                        'Palo Alto',                    0.76,   0.24,   0.0],
+    ['Central/West Oakland',                        'San Francisco Downtown Area',  0.77,   0.23,   0.0],
+    ['Danville, San Ramon, Dublin, and Pleasanton',  'San Francisco Downtown Area',  0.08,   0.92,   0.0],
+    ['Fairfield and Vacaville',                     'Richmond',                     0.03,   0.97,   0.0],
+    ['Livermore',                                   'Central San Jose',             0.18,   0.82,   0.0],
+    ['Santa Rosa',                                  'San Francisco Downtown Area',  0.15,   0.85,   0.0],
+    ['Vallejo',                                     'San Francisco Downtown Area',  0.11,   0.89,   0.0]
+]
+TRN_MODE_WEIGHTS_DF = pd.DataFrame(data=TRN_MODE_WEIGHTS, columns=['orig_CITY','dest_CITY','wTrnW','dTrnW','wTrnD'])
+
+AUTO_MODE_WEIGHTS = [
+    # These are using modeling pathway numbering
+    # pathway   da      daToll  s2      s2Toll  s3      s3Toll
+    ['Path4',   1.0,    0.0,    0.0,    0.0,    0.0,    0.0],   # No New Pricing
+    ['Path1a',  0.0,    1.0,    0.0,    0.0,    0.0,    0.0],   # All-Lane Tolling + Transit
+    ['Path1b',  0.0,    1.0,    0.0,    0.0,    0.0,    0.0],   # All-Lane Tolling + Affordable
+    ['Path2a',  0.0,    1.0,    0.0,    0.0,    0.0,    0.0],   # All-Lane & Arterial Tolling + Transit
+    ['Path2b',  0.0,    1.0,    0.0,    0.0,    0.0,    0.0],   # All-Lane & Arterial Tolling + Affordable
+    # these use da because cordon tolls aren't implemented as daToll
+    ['Path3a',  1.0,    0.0,    0.0,    0.0,    0.0,    0.0],   # Cordon Tolling + Transit
+    ['Path3b',  1.0,    0.0,    0.0,    0.0,    0.0,    0.0],   # Cordon Tolling + Affordable
+]
+AUTO_MODE_WEIGHTS_DF = pd.DataFrame(data=AUTO_MODE_WEIGHTS, columns=['pathway','da','daToll','s2','s2Toll','s3','s3Toll'])
+
 # Step 1: calculate weight
 # read mode runs
 current_runs_df = pd.read_excel(
@@ -60,6 +119,62 @@ run_list.remove('2035_TM152_NGF_NP10_Path2a_02')
 run_list.remove('2035_TM152_NGF_NP10_Path2b_02')
 # TEST - DO NOT COMMIT'
 # run_list = ['2035_TM152_NGF_NP10_Path4_02','2035_TM152_NGF_NP10_Path1a_02']
+
+# create simple mode weights
+# columns: orig_CITY, dest_CITY, runid, agg_trip_mode, simple_mode_weight, simple_mode_weight
+
+pathways_df = pd.DataFrame(data=run_list, columns=['runid'])
+pathways_df['pathway'] = pathways_df.runid.str.extract(r'_(?P<pathway>Path\d[ab]?)')
+print(pathways_df)
+
+# ---- transit ----
+transit_mode_weights_df = pd.melt(
+    frame       = TRN_MODE_WEIGHTS_DF,
+    id_vars     = ['orig_CITY','dest_CITY'],
+    value_vars  = ['wTrnW','dTrnW','wTrnD'],
+    var_name    = 'simple_skim_mode',
+    value_name  = 'simple_mode_weight'
+)
+transit_mode_weights_df['agg_trip_mode'] = 'transit'
+# transit is the same for all pathways
+transit_mode_weights_df = pd.merge(
+    left        = transit_mode_weights_df,
+    right       = pathways_df,
+    how         = 'cross'
+)
+# print("transit_mode_weights:\n{}".format(transit_mode_weights_df))
+
+# ---- auto ----
+auto_mode_weights_df = pd.melt(
+    frame       = AUTO_MODE_WEIGHTS_DF,
+    id_vars     = ['pathway'],
+    value_vars  = ['da','daToll','s2','s2Toll','s3','s3Toll'],
+    var_name    = 'simple_skim_mode',
+    value_name  = 'simple_mode_weight'
+)
+auto_mode_weights_df['agg_trip_mode'] = 'auto'
+auto_mode_weights_df = pd.merge(
+    left    = auto_mode_weights_df,
+    right   = pathways_df,
+    how     = 'inner'
+)
+print(auto_mode_weights_df)
+# auto is the same for all ODs
+auto_mode_weights_df = pd.merge(
+    left    = auto_mode_weights_df,
+    right   = ngfs_metrics.NGFS_OD_CITIES_OF_INTEREST_DF,
+    how     = 'cross'
+)
+# print(auto_mode_weights_df)
+
+# put them together
+simple_mode_weights_df = pd.merge(
+    left    = transit_mode_weights_df,
+    right   = auto_mode_weights_df,
+    how     = 'outer'
+)
+simple_mode_weights_df.drop(columns=['pathway'], inplace=True)
+print("simple_mode_weights_df:\n{}".format(simple_mode_weights_df))
 
 # we need to read the trips directly because ODTravelTime_byModeTimeperiodIncome.csv does not distinguish between 
 # inbound vs outbound for transit, so we can't distinguish between drive-transit-walk vs walk-transit-drive modes
@@ -182,45 +297,25 @@ print("no_pricing_taz_trips_df.columns:{}".format(list(no_pricing_taz_trips_df.c
 print("taz_weight sum: {}".format(no_pricing_taz_trips_df.taz_weight.sum()))
 # columns: orig_taz, orig_CITY, dest_taz, dest_CITY, no_pricing_taz_trips, no_pricing_city_trips, taz_weight
 
-simple_skim_mode_trips_df = trips_od_travel_time_df.groupby(
-    by=['orig_CITY','dest_CITY','runid','agg_trip_mode','simple_skim_mode']).agg(
-        simple_skim_trips = pd.NamedAgg(column="num_trips",aggfunc="sum"))
-simple_skim_mode_trips_df.reset_index(drop=False, inplace=True)
-agg_trip_mode_trips_df = trips_od_travel_time_df.groupby(
-    by=['orig_CITY','dest_CITY','runid','agg_trip_mode']).agg(
-        agg_trip_mode_trips = pd.NamedAgg(column="num_trips",aggfunc="sum"))
-agg_trip_mode_trips_df.reset_index(drop=False, inplace=True)
-simple_skim_mode_trips_df = pd.merge(
-    left    = simple_skim_mode_trips_df,
-    right   = agg_trip_mode_trips_df,
-    how     = 'left',
-    on      = ['orig_CITY','dest_CITY','runid','agg_trip_mode']
-)
-simple_skim_mode_trips_df['simple_mode_weight'] = simple_skim_mode_trips_df['simple_skim_trips']/simple_skim_mode_trips_df['agg_trip_mode_trips']
-print("simple_skim_mode_trips_df:\n{}".format(simple_skim_mode_trips_df))
-print("simple_skim_mode_trips_df.columns:\n{}".format(list(simple_skim_mode_trips_df.columns)))
-print("simple_mode_weight sum: {}".format(simple_skim_mode_trips_df.simple_mode_weight.sum()))
-# columns: orig_CITY, dest_CITY, runid, agg_trip_mode, simple_skim_trips, agg_trip_mode_trips, simple_mode_weight
-
 weights_df = pd.merge(
     left    = no_pricing_taz_trips_df,
-    right   = simple_skim_mode_trips_df,
+    right   = simple_mode_weights_df,
     how     = 'outer',
     on      = ['orig_CITY','dest_CITY']
 )
 weights_df['taz_simple_mode_weight'] = weights_df['taz_weight']*weights_df['simple_mode_weight']
 print("weights_df.taz_simple_mode_weight sum:{}".format(weights_df.taz_simple_mode_weight.sum()))
 # save this
-OUTPUT_FILE = "E1_Path1a_weights.csv"
+OUTPUT_FILE = "E1_double_weights_simple.csv"
 weights_df.to_csv(OUTPUT_FILE, index=False)
 print("Wrote {:,} rows to {}".format(len(weights_df), OUTPUT_FILE))
 
 # drop unneeded columns
 weights_df.drop(columns=[
     'no_pricing_taz_trips','no_pricing_city_trips','taz_weight',
-    'simple_skim_trips','agg_trip_mode_trips','simple_mode_weight'
+    'simple_mode_weight'
 ], inplace=True)
-print(weights_df.head())
+print("weights_df head:\n{}".format(weights_df.head()))
 # columns: runid, orig_CITY, dest_CITY, orig_TAZ, dest_taz, simple_skim_mode, agg_trip_mode, taz_simple_mode_weight 
 
 # Step 2: join trips with skim time
@@ -293,7 +388,7 @@ all_ODs_trip_times_df.loc[ pd.isna(all_ODs_trip_times_df.travel_time),
                           'weight_for_NaN_travel_time'] = all_ODs_trip_times_df.taz_simple_mode_weight
 
 # save this TAZ-based aggregate version
-OUTPUT_FILE = "OD_taz_travel_times_E1_double_weighted.csv"
+OUTPUT_FILE = "OD_taz_travel_times_E1_double_weighted_simple.csv"
 all_ODs_trip_times_df.to_csv(OUTPUT_FILE, index=False)
 print("Wrote {:,} rows to {}".format(len(all_ODs_trip_times_df), OUTPUT_FILE))
 
@@ -310,6 +405,6 @@ OD_city_df = all_ODs_trip_times_df.groupby(
 OD_city_df['avg_skim_travel_time'] = OD_city_df['weighted_travel_time']/OD_city_df['taz_simple_mode_weight']
 print(OD_city_df.head())
 
-OUTPUT_FILE = "OD_city_travel_times_E1_double_weighted.csv"
+OUTPUT_FILE = "OD_city_travel_times_E1_double_weighted_simple.csv"
 OD_city_df.to_csv(OUTPUT_FILE, index=False)
 print("Wrote {:,} rows to {}".format(len(OD_city_df), OUTPUT_FILE))
