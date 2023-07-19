@@ -166,7 +166,7 @@ df_hhldCosts <- df_trips %>%
 INFLATION_22_23 <- 1.03 # assumption
 INFLATION_00_22 <- 327.06 / 180.20 # source: https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
 INFLATION_00_23 <- INFLATION_00_22 * INFLATION_22_23
-N_DAYS_PER_YEAR <- 300 #source: https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/NextGenFwys/metrics/ngfs_metrics.py
+N_DAYS_PER_YEAR <- 260 #source: https://app.asana.com/0/0/1204323747319792/1205096179253657/f (Please note that for annualization of toll cost/revenue, we should use 260 days (as opposed to 300 days for other annualization calculations like fatalities) since the pathways only toll on weekdays.)
 
 df_hhldCosts <- df_hhldCosts %>%
   mutate(

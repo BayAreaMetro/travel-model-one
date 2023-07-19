@@ -11,3 +11,4 @@ A_B_tolled_artrials_tolled_freeways <-
   left_join(Toll, by=c('tollclass'='tollclass')) 
 
 
+write.csv(A_B_tolled_artrials_tolled_freeways, "C:/Users/llin/Documents/GitHub/travel-model-one/utilities/NextGenFwys/metrics/Input Files/a_b_tolled_arterials_tolled_freeways_lookup.csv")
