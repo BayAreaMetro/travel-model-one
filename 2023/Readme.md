@@ -1,7 +1,7 @@
 
-# Scripts and data used to create travel model land use inputs
+# Scripts and data used to create 2023 travel model land use inputs
 
-## This directory relies on a dataset created for 2020 and then inflated for 2023. As new data become available for ACS in September and December, 2023, these scripts will be updated:
+# This directory relies on a dataset created for 2020 and then inflated for 2023. As new data become available for ACS in September and December, 2023, these scripts will be updated:
 
 ### For 2020: [`ACS 2017-2021 create TAZ data for 2020.R`](../2020/ACS%202017-2021%20create%20TAZ%20data%20for%202020.R)
 ### For 2023: [`Create 2023 TAZ Data from 2020 Vintage.R`](Create%202023%20TAZ%20Data%20from%202020%20Vintage.R)
