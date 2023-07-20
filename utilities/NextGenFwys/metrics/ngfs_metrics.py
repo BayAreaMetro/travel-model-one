@@ -167,7 +167,6 @@ FORECAST_YEAR   = "2035"
 # assumptions for fatalities
 # constants below are observed values for year 2015 (fatalities/year)
 # copied from Box\Horizon and Plan Bay Area 2050\Equity and Performance\7_Analysis\Metrics\Metrics Development\Healthy\Fatalities Injuries\VZ_safety_calc_correction_v2.R
-N_DAYS_PER_YEAR = 300 # used in Affordable1
 OBS_N_MOTORIST_FATALITIES_15 = 301
 OBS_N_PED_FATALITIES_15 = 127
 OBS_N_BIKE_FATALITIES_15 = 27
@@ -599,18 +598,18 @@ def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
     #   Transit fare costs
 
     # annualize and convert daily costs from 2000 cents to 2023 dollars 
-    travel_cost_df['total_auto_op_cost_annual_2023d']    = travel_cost_df['total_auto_op_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_parking_cost_annual_2023d']    = travel_cost_df['total_parking_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_bridge_toll_cost_annual_2023d']    = travel_cost_df['total_bridge_toll']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_value_toll_cost_annual_2023d']    = travel_cost_df['total_value_toll']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_cordon_toll_cost_annual_2023d']    = travel_cost_df['total_cordon_toll']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_transit_op_cost_annual_2023d'] = travel_cost_df['total_fare']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_drive_to_transit_cost_annual_2023d'] = travel_cost_df['total_drv_trn_op_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_auto_op_cost_annual_2023d']    = travel_cost_df['total_auto_op_cost']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_parking_cost_annual_2023d']    = travel_cost_df['total_parking_cost']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_bridge_toll_cost_annual_2023d']    = travel_cost_df['total_bridge_toll']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_value_toll_cost_annual_2023d']    = travel_cost_df['total_value_toll']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_cordon_toll_cost_annual_2023d']    = travel_cost_df['total_cordon_toll']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_transit_op_cost_annual_2023d'] = travel_cost_df['total_fare']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_drive_to_transit_cost_annual_2023d'] = travel_cost_df['total_drv_trn_op_cost']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
     
-    travel_cost_df['total_taxitnc_cost_annual_2023d'] = travel_cost_df['total_taxitnc_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_taxitnc_cost_annual_2023d'] = travel_cost_df['total_taxitnc_cost']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
 
-    travel_cost_df['total_detailed_auto_cost_annual_2023d'] = travel_cost_df['total_detailed_auto_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_detailed_transit_cost_annual_2023d'] = travel_cost_df['total_detailed_transit_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_detailed_auto_cost_annual_2023d'] = travel_cost_df['total_detailed_auto_cost']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_detailed_transit_cost_annual_2023d'] = travel_cost_df['total_detailed_transit_cost']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
 
     # add fixed costs to df:
     #   ownership + finance
