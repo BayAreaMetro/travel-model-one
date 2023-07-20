@@ -2729,12 +2729,14 @@ if __name__ == "__main__":
     PATHWAY1_SCENARIO_RUN_ID = pathway1_runs['directory'].tolist()[-1] # take the last one
     LOGGER.info("=> PATHWAY1_SCENARIO_RUN_ID = {}".format(PATHWAY1_SCENARIO_RUN_ID))
     TOLLED_FWY_MINOR_GROUP_LINKS_DF = determine_tolled_minor_group_links(PATHWAY1_SCENARIO_RUN_ID, "fwy")
+    TOLLED_FWY_MINOR_GROUP_LINKS_DF.to_csv("TOLLED_FWY_MINOR_GROUP_LINKS.csv", index=False)
 
     # find the last pathway 2 run, since we'll use that to determine which links are in the tolled arterial minor groupings
     pathway2_runs = current_runs_df.loc[ current_runs_df['category'].str.startswith("Pathway 2")]
     PATHWAY2_SCENARIO_RUN_ID = pathway2_runs['directory'].tolist()[-1] # take the last one
     LOGGER.info("=> PATHWAY2_SCENARIO_RUN_ID = {}".format(PATHWAY2_SCENARIO_RUN_ID))
     TOLLED_ART_MINOR_GROUP_LINKS_DF = determine_tolled_minor_group_links(PATHWAY2_SCENARIO_RUN_ID, "arterial")
+    TOLLED_ART_MINOR_GROUP_LINKS_DF.to_csv("TOLLED_ART_MINOR_GROUP_LINKS.csv", index=False)
 
     # ______load base scenario network to use for speed comparisons in vmt corrections______
     tm_run_location_base = os.path.join(NGFS_SCENARIOS, BASE_SCENARIO_RUN_ID)
