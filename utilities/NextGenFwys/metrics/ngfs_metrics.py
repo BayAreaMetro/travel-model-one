@@ -167,7 +167,6 @@ FORECAST_YEAR   = "2035"
 # assumptions for fatalities
 # constants below are observed values for year 2015 (fatalities/year)
 # copied from Box\Horizon and Plan Bay Area 2050\Equity and Performance\7_Analysis\Metrics\Metrics Development\Healthy\Fatalities Injuries\VZ_safety_calc_correction_v2.R
-N_DAYS_PER_YEAR = 300 # used in Affordable1
 OBS_N_MOTORIST_FATALITIES_15 = 301
 OBS_N_PED_FATALITIES_15 = 127
 OBS_N_BIKE_FATALITIES_15 = 27
@@ -207,8 +206,7 @@ METRICS_COLUMNS = [
     'key',
     'metric_desc',
     'year',
-    'value',
-    'county'
+    'value'
 ]
 
 # TODO: remove these after metrics methodology is finilzed (for debugging)
@@ -599,18 +597,18 @@ def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
     #   Transit fare costs
 
     # annualize and convert daily costs from 2000 cents to 2023 dollars 
-    travel_cost_df['total_auto_op_cost_annual_2023d']    = travel_cost_df['total_auto_op_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_parking_cost_annual_2023d']    = travel_cost_df['total_parking_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_bridge_toll_cost_annual_2023d']    = travel_cost_df['total_bridge_toll']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_value_toll_cost_annual_2023d']    = travel_cost_df['total_value_toll']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_cordon_toll_cost_annual_2023d']    = travel_cost_df['total_cordon_toll']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_transit_op_cost_annual_2023d'] = travel_cost_df['total_fare']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_drive_to_transit_cost_annual_2023d'] = travel_cost_df['total_drv_trn_op_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_auto_op_cost_annual_2023d']    = travel_cost_df['total_auto_op_cost']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_parking_cost_annual_2023d']    = travel_cost_df['total_parking_cost']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_bridge_toll_cost_annual_2023d']    = travel_cost_df['total_bridge_toll']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_value_toll_cost_annual_2023d']    = travel_cost_df['total_value_toll']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_cordon_toll_cost_annual_2023d']    = travel_cost_df['total_cordon_toll']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_transit_op_cost_annual_2023d'] = travel_cost_df['total_fare']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_drive_to_transit_cost_annual_2023d'] = travel_cost_df['total_drv_trn_op_cost']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
     
-    travel_cost_df['total_taxitnc_cost_annual_2023d'] = travel_cost_df['total_taxitnc_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_taxitnc_cost_annual_2023d'] = travel_cost_df['total_taxitnc_cost']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
 
-    travel_cost_df['total_detailed_auto_cost_annual_2023d'] = travel_cost_df['total_detailed_auto_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
-    travel_cost_df['total_detailed_transit_cost_annual_2023d'] = travel_cost_df['total_detailed_transit_cost']*N_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_detailed_auto_cost_annual_2023d'] = travel_cost_df['total_detailed_auto_cost']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
+    travel_cost_df['total_detailed_transit_cost_annual_2023d'] = travel_cost_df['total_detailed_transit_cost']*REVENUE_DAYS_PER_YEAR * 0.01 * INFLATION_00_23
 
     # add fixed costs to df:
     #   ownership + finance
@@ -1963,28 +1961,124 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
   metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'final','Average Across Routes', 'peak_hour_travel_time', year] = goods_routes_average_peak_travel_time
 
   # sum the travel time for the different time periods on the route that begins on I680
-  travel_time_route_I680_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I680').agg('sum')
+  travel_time_untolled_corridor_I680_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I680').agg('sum')
   # Only use rows containing 'AM' since this is the direction toward the port of oakland
-  AM_travel_time_route_I680 = travel_time_route_I680_summed_df.loc['AM', 'ctimAM']
-  PM_travel_time_route_I680 = travel_time_route_I680_summed_df.loc['PM', 'ctimPM']
+  AM_travel_time_untolled_corridor_I680 = travel_time_untolled_corridor_I680_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_untolled_corridor_I680 = travel_time_untolled_corridor_I680_summed_df.loc['PM', 'ctimPM']
   # calculate average travel time for peak period
-  peak_average_travel_time_route_I680 = numpy.mean([AM_travel_time_route_I680,PM_travel_time_route_I680])
+  peak_average_travel_time_untolled_corridor_I680 = numpy.mean([AM_travel_time_untolled_corridor_I680,PM_travel_time_untolled_corridor_I680])
   # enter into metrics_dict
-  metrics_dict['untolled I680 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I680', 'travel_time_I680_AM', year] = AM_travel_time_route_I680
-  metrics_dict['untolled I680 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I680', 'travel_time_I680_PM', year] = PM_travel_time_route_I680
-  metrics_dict['untolled I680 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I680', 'peak_hour_travel_time_I680', year] = peak_average_travel_time_route_I680 
+  metrics_dict['untolled I680 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I680', 'travel_time_I680_AM', year] = AM_travel_time_untolled_corridor_I680
+  metrics_dict['untolled I680 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I680', 'travel_time_I680_PM', year] = PM_travel_time_untolled_corridor_I680
+  metrics_dict['untolled I680 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I680', 'peak_hour_travel_time_I680', year] = peak_average_travel_time_untolled_corridor_I680 
 
   # sum the travel time for the different time periods on the route that begins on SR85
-  travel_time_route_SR85_summed_df = loaded_network_with_goods_routes_df.copy().groupby('SR85').agg('sum')
+  travel_time_untolled_corridor_SR85_summed_df = loaded_network_with_goods_routes_df.copy().groupby('SR85').agg('sum')
   # Only use rows containing 'AM' since this is the direction toward the port of oakland
-  AM_travel_time_route_SR85 = travel_time_route_SR85_summed_df.loc['AM', 'ctimAM']
-  PM_travel_time_route_SR85 = travel_time_route_SR85_summed_df.loc['PM', 'ctimPM']
+  AM_travel_time_untolled_corridor_SR85 = travel_time_untolled_corridor_SR85_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_untolled_corridor_SR85 = travel_time_untolled_corridor_SR85_summed_df.loc['PM', 'ctimPM']
   # calculate average travel time for peak period
-  peak_average_travel_time_route_SR85 = numpy.mean([AM_travel_time_route_SR85,PM_travel_time_route_SR85])
+  peak_average_travel_time_untolled_corridor_SR85 = numpy.mean([AM_travel_time_untolled_corridor_SR85,PM_travel_time_untolled_corridor_SR85])
   # enter into metrics_dict
-  metrics_dict['untolled SR85 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR85', 'travel_time_SR85_AM', year] = AM_travel_time_route_SR85
-  metrics_dict['untolled SR85 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR85', 'travel_time_SR85_PM', year] = PM_travel_time_route_SR85
-  metrics_dict['untolled SR85 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR85', 'peak_hour_travel_time_SR85', year] = peak_average_travel_time_route_SR85 
+  metrics_dict['untolled SR85 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR85', 'travel_time_SR85_AM', year] = AM_travel_time_untolled_corridor_SR85
+  metrics_dict['untolled SR85 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR85', 'travel_time_SR85_PM', year] = PM_travel_time_untolled_corridor_SR85
+  metrics_dict['untolled SR85 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR85', 'peak_hour_travel_time_SR85', year] = peak_average_travel_time_untolled_corridor_SR85 
+
+  # sum the travel time for the different time periods on the route that begins on SR4
+  travel_time_untolled_corridor_SR4_summed_df = loaded_network_with_goods_routes_df.copy().groupby('SR4').agg('sum')
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_untolled_corridor_SR4 = travel_time_untolled_corridor_SR4_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_untolled_corridor_SR4 = travel_time_untolled_corridor_SR4_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_untolled_corridor_SR4 = numpy.mean([AM_travel_time_untolled_corridor_SR4,PM_travel_time_untolled_corridor_SR4])
+  # enter into metrics_dict
+  metrics_dict['untolled SR4 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR4', 'travel_time_SR4_AM', year] = AM_travel_time_untolled_corridor_SR4
+  metrics_dict['untolled SR4 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR4', 'travel_time_SR4_PM', year] = PM_travel_time_untolled_corridor_SR4
+  metrics_dict['untolled SR4 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR4', 'peak_hour_travel_time_SR4', year] = peak_average_travel_time_untolled_corridor_SR4 
+
+  # sum the travel time for the different time periods on the route that begins on SR13
+  travel_time_untolled_corridor_SR13_summed_df = loaded_network_with_goods_routes_df.copy().groupby('SR13').agg('sum')
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_untolled_corridor_SR13 = travel_time_untolled_corridor_SR13_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_untolled_corridor_SR13 = travel_time_untolled_corridor_SR13_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_untolled_corridor_SR13 = numpy.mean([AM_travel_time_untolled_corridor_SR13,PM_travel_time_untolled_corridor_SR13])
+  # enter into metrics_dict
+  metrics_dict['untolled SR13 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR13', 'travel_time_SR13_AM', year] = AM_travel_time_untolled_corridor_SR13
+  metrics_dict['untolled SR13 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR13', 'travel_time_SR13_PM', year] = PM_travel_time_untolled_corridor_SR13
+  metrics_dict['untolled SR13 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR13', 'peak_hour_travel_time_SR13', year] = peak_average_travel_time_untolled_corridor_SR13 
+
+  # sum the travel time for the different time periods on the route that begins on US101
+  travel_time_untolled_corridor_US101_summed_df = loaded_network_with_goods_routes_df.copy().groupby('US101').agg('sum')
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_untolled_corridor_US101 = travel_time_untolled_corridor_US101_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_untolled_corridor_US101 = travel_time_untolled_corridor_US101_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_untolled_corridor_US101 = numpy.mean([AM_travel_time_untolled_corridor_US101,PM_travel_time_untolled_corridor_US101])
+  # enter into metrics_dict
+  metrics_dict['untolled US101 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','US101', 'travel_time_US101_AM', year] = AM_travel_time_untolled_corridor_US101
+  metrics_dict['untolled US101 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','US101', 'travel_time_US101_PM', year] = PM_travel_time_untolled_corridor_US101
+  metrics_dict['untolled US101 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','US101', 'peak_hour_travel_time_US101', year] = peak_average_travel_time_untolled_corridor_US101 
+
+  # sum the travel time for the different time periods on the route that begins on SR37
+  travel_time_untolled_corridor_SR37_summed_df = loaded_network_with_goods_routes_df.copy().groupby('SR37').agg('sum')
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_untolled_corridor_SR37 = travel_time_untolled_corridor_SR37_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_untolled_corridor_SR37 = travel_time_untolled_corridor_SR37_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_untolled_corridor_SR37 = numpy.mean([AM_travel_time_untolled_corridor_SR37,PM_travel_time_untolled_corridor_SR37])
+  # enter into metrics_dict
+  metrics_dict['untolled SR37 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR37', 'travel_time_SR37_AM', year] = AM_travel_time_untolled_corridor_SR37
+  metrics_dict['untolled SR37 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR37', 'travel_time_SR37_PM', year] = PM_travel_time_untolled_corridor_SR37
+  metrics_dict['untolled SR37 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','SR37', 'peak_hour_travel_time_SR37', year] = peak_average_travel_time_untolled_corridor_SR37 
+
+  # sum the travel time for the different time periods on the route that begins on I580
+  travel_time_untolled_corridor_I580_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I580').agg('sum')
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_untolled_corridor_I580 = travel_time_untolled_corridor_I580_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_untolled_corridor_I580 = travel_time_untolled_corridor_I580_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_untolled_corridor_I580 = numpy.mean([AM_travel_time_untolled_corridor_I580,PM_travel_time_untolled_corridor_I580])
+  # enter into metrics_dict
+  metrics_dict['untolled I580 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I580', 'travel_time_I580_AM', year] = AM_travel_time_untolled_corridor_I580
+  metrics_dict['untolled I580 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I580', 'travel_time_I580_PM', year] = PM_travel_time_untolled_corridor_I580
+  metrics_dict['untolled I580 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I580', 'peak_hour_travel_time_I580', year] = peak_average_travel_time_untolled_corridor_I580 
+
+  # sum the travel time for the different time periods on the route that begins on CA84
+  travel_time_untolled_corridor_CA84_summed_df = loaded_network_with_goods_routes_df.copy().groupby('CA84').agg('sum')
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_untolled_corridor_CA84 = travel_time_untolled_corridor_CA84_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_untolled_corridor_CA84 = travel_time_untolled_corridor_CA84_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_untolled_corridor_CA84 = numpy.mean([AM_travel_time_untolled_corridor_CA84,PM_travel_time_untolled_corridor_CA84])
+  # enter into metrics_dict
+  metrics_dict['untolled CA84 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','CA84', 'travel_time_CA84_AM', year] = AM_travel_time_untolled_corridor_CA84
+  metrics_dict['untolled CA84 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','CA84', 'travel_time_CA84_PM', year] = PM_travel_time_untolled_corridor_CA84
+  metrics_dict['untolled CA84 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','CA84', 'peak_hour_travel_time_CA84', year] = peak_average_travel_time_untolled_corridor_CA84 
+
+  # sum the travel time for the different time periods on the route that begins on I80
+  travel_time_untolled_corridor_I80_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I80').agg('sum')
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_untolled_corridor_I80 = travel_time_untolled_corridor_I80_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_untolled_corridor_I80 = travel_time_untolled_corridor_I80_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_untolled_corridor_I80 = numpy.mean([AM_travel_time_untolled_corridor_I80,PM_travel_time_untolled_corridor_I80])
+  # enter into metrics_dict
+  metrics_dict['untolled I80 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I80', 'travel_time_I80_AM', year] = AM_travel_time_untolled_corridor_I80
+  metrics_dict['untolled I80 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I80', 'travel_time_I80_PM', year] = PM_travel_time_untolled_corridor_I80
+  metrics_dict['untolled I80 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I80', 'peak_hour_travel_time_I80', year] = peak_average_travel_time_untolled_corridor_I80 
+
+  # sum the travel time for the different time periods on the route that begins on CA92
+  travel_time_untolled_corridor_CA92_summed_df = loaded_network_with_goods_routes_df.copy().groupby('CA92').agg('sum')
+  # Only use rows containing 'AM' since this is the direction toward the port of oakland
+  AM_travel_time_untolled_corridor_CA92 = travel_time_untolled_corridor_CA92_summed_df.loc['AM', 'ctimAM']
+  PM_travel_time_untolled_corridor_CA92 = travel_time_untolled_corridor_CA92_summed_df.loc['PM', 'ctimPM']
+  # calculate average travel time for peak period
+  peak_average_travel_time_untolled_corridor_CA92 = numpy.mean([AM_travel_time_untolled_corridor_CA92,PM_travel_time_untolled_corridor_CA92])
+  # enter into metrics_dict
+  metrics_dict['untolled CA92 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','CA92', 'travel_time_CA92_AM', year] = AM_travel_time_untolled_corridor_CA92
+  metrics_dict['untolled CA92 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','CA92', 'travel_time_CA92_PM', year] = PM_travel_time_untolled_corridor_CA92
+  metrics_dict['untolled CA92 corridor', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','CA92', 'peak_hour_travel_time_CA92', year] = peak_average_travel_time_untolled_corridor_CA92 
 
   return [sum_of_weights, total_weighted_travel_time, n, total_travel_time, sum_of_weights_parallel_arterial, total_weighted_travel_time_parallel_arterial, total_travel_time_parallel_arterial, arterial_total_travel_time_region, arterial_total_travel_time_epc, arterial_total_travel_time_nonepc]
 
@@ -2519,18 +2613,19 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     loaded_network_df.loc[loaded_network_df.tollclass > 700000, 'grouping3'] = 'Tolled facilities'
 
     # add field for county using TAZ
+    # temporarily replacing 'year' column
     # reference: https://github.com/BayAreaMetro/modeling-website/wiki/TazData
-    loaded_network_df['county'] = 'San Francisco'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 190) & (loaded_network_df.TAZ1454 < 347), 'county'] = 'San Mateo'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 346) & (loaded_network_df.TAZ1454 < 715), 'county'] = 'Santa Clara'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 714) & (loaded_network_df.TAZ1454 < 1040), 'county'] = 'Alameda'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1039) & (loaded_network_df.TAZ1454 < 1211), 'county'] = 'Contra Costa'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1210) & (loaded_network_df.TAZ1454 < 1291), 'county'] = 'Solano'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1290) & (loaded_network_df.TAZ1454 < 1318), 'county'] = 'Napa'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1317) & (loaded_network_df.TAZ1454 < 1404), 'county'] = 'Sonoma'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1403) & (loaded_network_df.TAZ1454 < 1455), 'county'] = 'Marin'
+    loaded_network_df['year'] = 'San Francisco'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 190) & (loaded_network_df.TAZ1454 < 347), 'year'] = 'San Mateo'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 346) & (loaded_network_df.TAZ1454 < 715), 'year'] = 'Santa Clara'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 714) & (loaded_network_df.TAZ1454 < 1040), 'year'] = 'Alameda'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1039) & (loaded_network_df.TAZ1454 < 1211), 'year'] = 'Contra Costa'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1210) & (loaded_network_df.TAZ1454 < 1291), 'year'] = 'Solano'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1290) & (loaded_network_df.TAZ1454 < 1318), 'year'] = 'Napa'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1317) & (loaded_network_df.TAZ1454 < 1404), 'year'] = 'Sonoma'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1403) & (loaded_network_df.TAZ1454 < 1455), 'year'] = 'Marin'
 
-    ft_metrics_df = loaded_network_df.groupby(by=['grouping1','key', 'grouping2', 'grouping3', 'county']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
+    ft_metrics_df = loaded_network_df.groupby(by=['grouping1','key', 'grouping2', 'grouping3', 'year']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
     LOGGER.debug("ft_metrics_df:\n{}".format(ft_metrics_df))
 
     # # Calculate equity metric: non-freeway VMT in region and EPCs
@@ -2566,11 +2661,11 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
 
     # put it together, move to long form and return
     metrics_df = pd.concat([auto_times_df, ft_metrics_df])
-    metrics_df = metrics_df.melt(id_vars=['grouping1','key','grouping2', 'grouping3', 'county'], var_name='metric_desc')
+    metrics_df = metrics_df.melt(id_vars=['grouping1','key','grouping2', 'grouping3', 'year'], var_name='metric_desc')
     metrics_df['modelrun_id'] = tm_run_id
     metrics_df['metric_id'] = METRIC_ID
     metrics_df['intermediate/final'] = 'final'
-    metrics_df['year'] = tm_run_id[:4]
+    # metrics_df['year'] = tm_run_id[:4]
     LOGGER.debug("metrics_df for Safe 2:\n{}".format(metrics_df))
 
     return metrics_df
@@ -2730,12 +2825,14 @@ if __name__ == "__main__":
     PATHWAY1_SCENARIO_RUN_ID = pathway1_runs['directory'].tolist()[-1] # take the last one
     LOGGER.info("=> PATHWAY1_SCENARIO_RUN_ID = {}".format(PATHWAY1_SCENARIO_RUN_ID))
     TOLLED_FWY_MINOR_GROUP_LINKS_DF = determine_tolled_minor_group_links(PATHWAY1_SCENARIO_RUN_ID, "fwy")
+    TOLLED_FWY_MINOR_GROUP_LINKS_DF.to_csv("TOLLED_FWY_MINOR_GROUP_LINKS.csv", index=False)
 
     # find the last pathway 2 run, since we'll use that to determine which links are in the tolled arterial minor groupings
     pathway2_runs = current_runs_df.loc[ current_runs_df['category'].str.startswith("Pathway 2")]
     PATHWAY2_SCENARIO_RUN_ID = pathway2_runs['directory'].tolist()[-1] # take the last one
     LOGGER.info("=> PATHWAY2_SCENARIO_RUN_ID = {}".format(PATHWAY2_SCENARIO_RUN_ID))
     TOLLED_ART_MINOR_GROUP_LINKS_DF = determine_tolled_minor_group_links(PATHWAY2_SCENARIO_RUN_ID, "arterial")
+    TOLLED_ART_MINOR_GROUP_LINKS_DF.to_csv("TOLLED_ART_MINOR_GROUP_LINKS.csv", index=False)
 
     # ______load base scenario network to use for speed comparisons in vmt corrections______
     tm_run_location_base = os.path.join(NGFS_SCENARIOS, BASE_SCENARIO_RUN_ID)
