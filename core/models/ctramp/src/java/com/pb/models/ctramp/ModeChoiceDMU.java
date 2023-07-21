@@ -24,6 +24,8 @@ public class ModeChoiceDMU implements Serializable, VariableTable {
     protected int origSubzone;
     protected int destSubzone;
     protected int origCounty;
+    protected int origCordon;     // from TazData
+    protected int origCordonCost; // from TazData
     protected double accessibilityValueOfTime;
     
     protected float origTaxiWaitTime;
@@ -403,7 +405,22 @@ public class ModeChoiceDMU implements Serializable, VariableTable {
     public void setOrigCounty(int origCounty) {
         this.origCounty = origCounty;
     }
-    
+
+    public int getOrigCordon() {
+        return origCordon;
+    }
+
+    public void setOrigCordon(int origCordon) {
+        this.origCordon = origCordon;
+    }
+
+    public int getOrigCordonCost() {
+        return origCordonCost;
+    }
+
+    public void setOrigCordonCost(int origCordonCost) {
+        this.origCordonCost = origCordonCost;
+    }
     
     public void setAccessibilityValueOfTime( double valueOfTime ) {
         accessibilityValueOfTime = valueOfTime;

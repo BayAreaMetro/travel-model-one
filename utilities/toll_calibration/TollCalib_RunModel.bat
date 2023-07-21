@@ -58,19 +58,6 @@ if %ITER% NEQ 4 (
 
 :: ------------------------------------------------------------------------------------------------------
 ::
-:: Step 0: set paths, file location and folder structure
-::
-:: ------------------------------------------------------------------------------------------------------
-
-:: Use this for COMMPATH
-mkdir COMMPATH
-set COMMPATH=%CD%\COMMPATH
-echo COMMPATH is [%COMMPATH%]
-"C:\Program Files\Citilabs\CubeVoyager\Cluster" "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
-
-
-:: ------------------------------------------------------------------------------------------------------
-::
 :: Step 1: bring in ctramp and the highway network
 ::
 :: ------------------------------------------------------------------------------------------------------
@@ -103,6 +90,12 @@ copy /y "%TOLL_FILE%" hwy\tolls.csv
 :: ------------------------------------------------------------------------------------------------------
 :: set paths
 call CTRAMP\runtime\SetPath.bat
+
+:: Use this for COMMPATH
+mkdir COMMPATH
+set COMMPATH=%CD%\COMMPATH
+echo COMMPATH is [%COMMPATH%]
+"C:\Program Files\Citilabs\CubeVoyager\Cluster" "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 :preprocess
 set INSTANCE=%COMPUTERNAME%
@@ -301,6 +294,8 @@ if %computername%==MODEL2-C set HOST_IP_ADDRESS=192.168.1.208
 if %computername%==MODEL2-D set HOST_IP_ADDRESS=192.168.1.209
 if %computername%==MODEL3-A set HOST_IP_ADDRESS=10.164.0.200
 if %computername%==MODEL3-B set HOST_IP_ADDRESS=10.164.0.201
+if %computername%==MODEL3-C set HOST_IP_ADDRESS=10.164.0.202
+if %computername%==MODEL3-D set HOST_IP_ADDRESS=10.164.0.203
 if %computername%==PORMDLPPW01 set HOST_IP_ADDRESS=172.24.0.101
 if %computername%==PORMDLPPW02 set HOST_IP_ADDRESS=172.24.0.102
 if %computername%==MAINMODEL set HOST_IP_ADDRESS=192.168.1.200

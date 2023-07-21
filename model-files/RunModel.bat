@@ -26,12 +26,14 @@ C:\Windows\System32\where python
 Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 ::  Set the IP address of the host machine which sends tasks to the client machines 
-if %computername%==MODEL2-A            set HOST_IP_ADDRESS=192.168.1.206
+if %computername%==MODEL2-A            set HOST_IP_ADDRESS=10.1.1.206
 if %computername%==MODEL2-B            set HOST_IP_ADDRESS=192.168.1.207
 if %computername%==MODEL2-C            set HOST_IP_ADDRESS=192.168.1.208
 if %computername%==MODEL2-D            set HOST_IP_ADDRESS=192.168.1.209
 if %computername%==MODEL3-A            set HOST_IP_ADDRESS=10.164.0.200
 if %computername%==MODEL3-B            set HOST_IP_ADDRESS=10.164.0.201
+if %computername%==MODEL3-C            set HOST_IP_ADDRESS=10.164.0.202
+if %computername%==MODEL3-D            set HOST_IP_ADDRESS=10.164.0.203
 if %computername%==PORMDLPPW01         set HOST_IP_ADDRESS=172.24.0.101
 if %computername%==PORMDLPPW02         set HOST_IP_ADDRESS=172.24.0.102
 if %computername%==WIN-FK0E96C8BNI     set HOST_IP_ADDRESS=10.0.0.154
@@ -171,6 +173,15 @@ copy INPUT\telecommute_constants.csv   main\telecommute_constants_00.csv
 :: and synthesized household/population files in the appropriate places
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
+
+if %PROJECT%==NGF (
+    :: In NGF, because of the extensive tolling system, some TAZs may no longer have a free path
+    :: This will cause choice models that rely on non-toll distances or times to fail
+    :: To avoid this problem, their UECs are updated to use toll distances and times
+    :: Choice models that are updated: AutoOwnership.xls, IndividualMandatoryTourFrequency.xls, and TourDepartureAndDuration.xls
+   python CTRAMP\scripts\preprocess\updateUECsToUseTollDist.py
+   if ERRORLEVEL 1 goto done
+)
 
 :: Set the prices in the roadway network (convert csv to dbf first)
 python CTRAMP\scripts\preprocess\csvToDbf.py hwy\tolls.csv hwy\tolls.dbf
@@ -370,6 +381,9 @@ call RunPrepareEmfac.bat SB375 WithFreight
 ::
 :: ------------------------------------------------------------------------------------------------------
 
+rem for the NextGenFwy Project, we don't need to run logsums
+if %PROJECT%==NGF goto core_summaries
+
 : logsums
 
 :: call RunAccessibility
@@ -384,7 +398,7 @@ if ERRORLEVEL 2 goto done
 ::
 :: ------------------------------------------------------------------------------------------------------
 
-: core_summaries
+:core_summaries
 
 call RunCoreSummaries
 if ERRORLEVEL 2 goto done

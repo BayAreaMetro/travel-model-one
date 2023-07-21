@@ -40,7 +40,10 @@ def tally_travel_cost(iteration, sampleshare, metrics_dict):
                               sep=",", index_col=[0,1])
     auto_df = auto_df.groupby('Income').agg('sum')
     for inc_level in range(1,5):
-        metrics_dict['total_auto_cost_inc%d'  % inc_level] = auto_df.loc['inc%d' % inc_level, ['Total Cost', 'Bridge Tolls', 'Value Tolls']].sum()/100  # cents -> dollars
+        metrics_dict['total_auto_cost_inc%d'  % inc_level] = auto_df.loc['inc%d' % inc_level, ['Total Cost', 
+                                                                                               'Bridge Tolls', 
+                                                                                               'Value Tolls with discount',
+                                                                                               'Cordon tolls with discount']].sum()/100  # cents -> dollars
         metrics_dict['total_auto_trips_inc%d' % inc_level] = auto_df.loc['inc%d' % inc_level, 'Daily Person Trips']
 
     # Count households from disaggregate output

@@ -26,7 +26,10 @@ ITER <- as.numeric(ITER)
 # MAX_TOLL <- as.numeric(MAX_TOLL)
 
 HOV2_discount_factor <- Sys.getenv("DiscountFactor_HOV2")
+HOV2_discount_factor <- as.numeric(HOV2_discount_factor)
+
 HOV3_discount_factor <- Sys.getenv("DiscountFactor_HOV3")
+HOV3_discount_factor <- as.numeric(HOV3_discount_factor)
 
 #############################################################
 # specify the loaded network, unloaded network and other inputs
@@ -64,6 +67,8 @@ if (dir.exists(file.path(PROJECT_DIR, "CTRAMP"))) {
 TOLL_DESIGNATIONS_XLSX <- Sys.getenv("TOLL_DESIGNATIONS_XLSX")
 TOLL_DESIGNATIONS_XLSX <- gsub("\\\\","/",TOLL_DESIGNATIONS_XLSX) # switch slashes around
 TOLL_DESIGNATIONS_DF <- read_excel(TOLL_DESIGNATIONS_XLSX, sheet = "Inputs_for_tollcalib")
+TOLL_DESIGNATIONS_DF <- select(TOLL_DESIGNATIONS_DF, -c("Grouping major", "Grouping minor")) #delete columns not used in this process
+
 # this file specify which facilities is NOT dynamically tolled (thus don't need toll calibration)
 if (dir.exists(file.path(PROJECT_DIR, "CTRAMP"))) {
     # full runs
@@ -263,21 +268,21 @@ el_gp_summary_df <- el_gp_summary_df %>% left_join(toll_rates_df %>% select(-fac
 el_gp_summary_df <- el_gp_summary_df %>%
                                     mutate(tollam_da_new = case_when(Case_AM == "Case1 - raise tolls"         ~ tollam_da + round(((60 - avgspeed_AM)/100), digits=2),
                                                                      Case_AM == "Case2 - drop tolls"          ~ pmax((tollam_da - round((avgspeed_AM - THRESHOLD_SPEED)/100*2, digits=2)), MIN_TOLL),
-                                                                     Case_AM == "Case3 - ok"                  ~ tollam_da,
+                                                                     Case_AM == "Case3 - ok"                  ~ pmax(tollam_da, MIN_TOLL),
                                                                      Case_AM == "Case4 - drop tolls slightly" ~ pmax((tollam_da - round((avgspeed_AM - avgspeed_AM_GP)/100/2, digits=2)), MIN_TOLL),
                                                                      Case_AM == "Case5 - set to min"          ~ MIN_TOLL))
 
 el_gp_summary_df <- el_gp_summary_df %>%
                                     mutate(tollmd_da_new = case_when(Case_MD == "Case1 - raise tolls"          ~ tollmd_da + round(((60 - avgspeed_MD)/100), digits=2),
                                                                      Case_MD == "Case2 - drop tolls"           ~ pmax((tollmd_da - round((avgspeed_MD - THRESHOLD_SPEED)/100*2, digits=2)), MIN_TOLL),
-                                                                     Case_MD == "Case3 - ok"                   ~ tollmd_da,
+                                                                     Case_MD == "Case3 - ok"                   ~ pmax(tollmd_da, MIN_TOLL),
                                                                      Case_MD == "Case4 - drop tolls slightly"  ~ pmax((tollmd_da - round((avgspeed_MD - avgspeed_MD_GP)/100/2, digits=2)), MIN_TOLL),
                                                                      Case_MD == "Case5 - set to min"           ~ MIN_TOLL))
 
 el_gp_summary_df <- el_gp_summary_df %>%
                                     mutate(tollpm_da_new = case_when(Case_PM == "Case1 - raise tolls"          ~ tollpm_da + round(((60 - avgspeed_PM)/100), digits=2),
                                                                      Case_PM == "Case2 - drop tolls"           ~ pmax((tollpm_da - round((avgspeed_PM - THRESHOLD_SPEED)/100*2, digits=2)), MIN_TOLL),
-                                                                     Case_PM == "Case3 - ok"                   ~ tollpm_da,
+                                                                     Case_PM == "Case3 - ok"                   ~ pmax(tollpm_da, MIN_TOLL),
                                                                      Case_PM == "Case4 - drop tolls slightly"  ~ pmax((tollpm_da - round((avgspeed_PM - avgspeed_PM_GP)/100/2, digits=2)), MIN_TOLL),
                                                                      Case_PM == "Case5 - set to min"           ~ MIN_TOLL))
 

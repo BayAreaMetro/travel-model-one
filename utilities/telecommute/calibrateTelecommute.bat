@@ -61,6 +61,8 @@ if %computername%==MODEL2-C set HOST_IP_ADDRESS=192.168.1.208
 if %computername%==MODEL2-D set HOST_IP_ADDRESS=192.168.1.209
 if %computername%==MODEL3-A set HOST_IP_ADDRESS=10.164.0.200
 if %computername%==MODEL3-B set HOST_IP_ADDRESS=10.164.0.201
+if %computername%==MODEL3-C set HOST_IP_ADDRESS=10.164.0.202
+if %computername%==MODEL3-D set HOST_IP_ADDRESS=10.164.0.203
 
 set FUTURE=PBA50
 

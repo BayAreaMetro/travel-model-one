@@ -1,0 +1,23 @@
+;
+; Extract truck trip tables into csv files (e.g. for tableau)
+;
+
+; This script processes outputs from model-files\scripts\nonres\TruckTollChoice.job
+; nonres\tripstrk%TOKEN_PERIOD%_%TOKEN_CLASS%.tpp
+
+; to use this script, users need to specify %TOKEN_PERIOD% and %TOKEN_CLASS% and %MODEL_DIR%
+
+run PGM=MATRIX
+   filei mati[1] = "%MODEL_DIR%\nonres\tripstrk%TOKEN_PERIOD%_%TOKEN_CLASS%.tpp"
+   fileo mato[1] = "tripstrk%TOKEN_PERIOD%_%TOKEN_CLASS%_noheader.csv", FORMAT=txt, PATTERN=IJM:V, MO=1-3, DELIMITER=',', MAXFIELDS=3
+    
+    MW[1] = 1
+    FILLMW MW[2]=MI.1.1(2)
+      
+endrun
+      
+; add header
+*echo orig, dest, one_a, one_b, free, toll> "tripstrk%TOKEN_PERIOD%_%TOKEN_CLASS%.csv"
+*type "tripstrk%TOKEN_PERIOD%_%TOKEN_CLASS%_noheader.csv" >> "tripstrk%TOKEN_PERIOD%_%TOKEN_CLASS%.csv"
+*del "tripstrk%TOKEN_PERIOD%_%TOKEN_CLASS%_noheader.csv"
+  

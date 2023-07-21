@@ -1,24 +1,32 @@
 #
 # This R script distills the model outputs into the versions used by ICF calculator: "Targeted Transportation Alternatives v4.xlsx"
 #
-
+# Pass two arguments to the script:
+# 1) ModelRuns.xlsx with runs to process and
+# 2) Output directory
+#
 library(dplyr)
 library(reshape2)
+library(readxl)
 options(width = 180)
 
-USERNAME            <- Sys.getenv("USERNAME")
-BOX_BASE_DIR        <- file.path("C:/Users", USERNAME, "Box/Horizon and Plan Bay Area 2050/Blueprint/CARB SCS Evaluation")
+args = commandArgs(trailingOnly=TRUE)
+print(args)
+if (length(args) != 2) {
+  stop("Two arguments are required: ModelRuns.xlsx and output_dir")
+}
 MODEL_DATA_BASE_DIRS<- c(IP            ="M:/Application/Model One/RTP2021/IncrementalProgress",
                          DraftBlueprint="M:/Application/Model One/RTP2021/Blueprint",
                          FinalBlueprint="M:/Application/Model One/RTP2021/Blueprint",
-                         EIR           ="M:/Application/Model One/RTP2021/Blueprint")
-OUTPUT_DIR          <- file.path(BOX_BASE_DIR, "Final Blueprint/OffModel_FBP/ModelData")
+                         EIR           ="M:/Application/Model One/RTP2021/Blueprint",
+                         TRR           ="L:/Application/Model_One/TransitRecovery")
+MODEL_RUNS_FILE     <- args[1]
+OUTPUT_DIR          <- args[2]
 OUTPUT_FILE         <-file.path(OUTPUT_DIR, "Model Data - Targeted Transportation Alternatives.csv")
 
 # this is the currently running script
-SCRIPT                <- "X:/travel-model-one-master/utilities/RTP/Emissions/Off Model Calculators/TargetedTransportationAlternatives.R"
-# the model runs are RTP/ModelRuns.csv
-model_runs          <- read.table(file.path(dirname(SCRIPT),"..","..","ModelRuns.csv"), header=TRUE, sep=",", stringsAsFactors = FALSE)
+SCRIPT              <- "X:/travel-model-one-master/utilities/RTP/Emissions/Off Model Calculators/TargetedTransportationAlternatives.R"
+model_runs          <- read_excel(MODEL_RUNS_FILE)
 
 # filter to the current runs
 model_runs          <- model_runs[ which((model_runs$status == "current") | (model_runs$status == "DEIR")), ]
@@ -32,14 +40,14 @@ print(model_runs)
 TAZDATA_FIELDS <- c("ZONE", "SD", "COUNTY", "TOTEMP", "TOTHH", "CIACRE", "AREATYPE") # only care about these fields
 tazdata_df     <- data.frame()
 for (i in 1:nrow(model_runs)) {
-  if (model_runs[i,"directory"]=="2015_UrbanSim_FBP") { next }
-  MODEL_DATA_BASE_DIR <- MODEL_DATA_BASE_DIRS[model_runs[i,"run_set"]]
-  tazdata_file    <- file.path(MODEL_DATA_BASE_DIR, model_runs[i,"directory"],"INPUT","landuse","tazData.csv")
+  if (model_runs[[i,"directory"]]=="2015_UrbanSim_FBP") { next }
+  MODEL_DATA_BASE_DIR <- MODEL_DATA_BASE_DIRS[model_runs[[i,"run_set"]]]
+  tazdata_file    <- file.path(MODEL_DATA_BASE_DIR, model_runs[[i,"directory"]],"INPUT","landuse","tazData.csv")
   tazdata_file_df <- read.table(tazdata_file, header=TRUE, sep=",")
   tazdata_file_df <- tazdata_file_df[, TAZDATA_FIELDS] %>%
-    mutate(year      = model_runs[i,"year"],
-           directory = model_runs[i,"directory"],
-           category  = model_runs[i,"category"])
+    mutate(year      = model_runs[[i,"year"]],
+           directory = model_runs[[i,"directory"]],
+           category  = model_runs[[i,"category"]])
   tazdata_df      <- rbind(tazdata_df, tazdata_file_df)
 }
 remove(tazdata_file, tazdata_file_df)
@@ -54,16 +62,16 @@ tazdata_summary_df <- summarise(group_by(tazdata_df, year, category, directory),
 # Read trip-distance-by-mode-superdistrict.csv
 tripdist_df <- data.frame()
 for (i in 1:nrow(model_runs)) {
-  if (model_runs[i,"directory"]=="2015_UrbanSim_FBP") { next }
-  MODEL_DATA_BASE_DIR <- MODEL_DATA_BASE_DIRS[model_runs[i,"run_set"]]
-  tripdist_file    <- file.path(MODEL_DATA_BASE_DIR, model_runs[i,"directory"],"OUTPUT","bespoke","trip-distance-by-mode-superdistrict.csv")
+  if (model_runs[[i,"directory"]]=="2015_UrbanSim_FBP") { next }
+  MODEL_DATA_BASE_DIR <- MODEL_DATA_BASE_DIRS[model_runs[[i,"run_set"]]]
+  tripdist_file    <- file.path(MODEL_DATA_BASE_DIR, model_runs[[i,"directory"]],"OUTPUT","bespoke","trip-distance-by-mode-superdistrict.csv")
   if (!file.exists(tripdist_file)) {
     stop(paste0("File [",tripdist_file,"] does not exist"))
   }
   tripdist_file_df <- read.table(tripdist_file, header=TRUE, sep=",") %>% 
-    mutate(year      = model_runs[i,"year"],
-           directory = model_runs[i,"directory"],
-           category  = model_runs[i,"category"])
+    mutate(year      = model_runs[[i,"year"]],
+           directory = model_runs[[i,"directory"]],
+           category  = model_runs[[i,"category"]])
   tripdist_df      <- rbind(tripdist_df, tripdist_file_df)
 }
 remove(i, tripdist_file, tripdist_file_df)
