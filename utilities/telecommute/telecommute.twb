@@ -734,7 +734,7 @@
       <column caption='P(not going to work)' datatype='real' default-format='p0.0%' name='[Calculation_898468161146314758]' role='measure' type='quantitative'>
         <calculation class='tableau' formula='([Calculation_898468161146155013])/([Calculation_898468161141985281])' />
       </column>
-      <column caption='Workerers Not Working' datatype='real' name='[Calculation_898468161147060232]' role='measure' type='quantitative'>
+      <column caption='Workers Not Working' datatype='real' name='[Calculation_898468161147060232]' role='measure' type='quantitative'>
         <calculation class='tableau' formula='IF attr([PersonType])==&quot;Full-time worker&quot; then&#13;&#10;  [Calculation_898468161141985281]*[Parameters].[Parameter 2]&#13;&#10;ELSEIF attr([PersonType]==&quot;Part-time worker&quot;) then&#13;&#10;  [Calculation_898468161141985281]*[Parameters].[P(not working) FT (copy)_898468161146875911]&#13;&#10;ELSE&#13;&#10;  [Calculation_898468161146155013]&#13;&#10;end' />
       </column>
       <column caption='Workers Telecommuting' datatype='real' name='[Calculation_898468161147387913]' role='measure' type='quantitative'>
@@ -3198,7 +3198,7 @@
             <column caption='P(not going to work)' datatype='real' default-format='p0.0%' name='[Calculation_898468161146314758]' role='measure' type='quantitative'>
               <calculation class='tableau' formula='([Calculation_898468161146155013])/([Calculation_898468161141985281])' />
             </column>
-            <column caption='Workerers Not Working' datatype='real' name='[Calculation_898468161147060232]' role='measure' type='quantitative'>
+            <column caption='Workers Not Working' datatype='real' name='[Calculation_898468161147060232]' role='measure' type='quantitative'>
               <calculation class='tableau' formula='IF attr([PersonType])==&quot;Full-time worker&quot; then&#13;&#10;  [Calculation_898468161141985281]*[Parameters].[Parameter 2]&#13;&#10;ELSEIF attr([PersonType]==&quot;Part-time worker&quot;) then&#13;&#10;  [Calculation_898468161141985281]*[Parameters].[P(not working) FT (copy)_898468161146875911]&#13;&#10;ELSE&#13;&#10;  [Calculation_898468161146155013]&#13;&#10;end' />
             </column>
             <column caption='Workers Telecommuting' datatype='real' name='[Calculation_898468161147387913]' role='measure' type='quantitative'>
