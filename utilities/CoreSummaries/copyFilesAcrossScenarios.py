@@ -18,6 +18,7 @@ OUTPUT_FILES = {
         "topsheet",
         "scenario_metrics",
         "auto_times",
+        "auto_timesbyTimePeriod",
         "parking_costs_tour",
         "parking_costs_tour_destTaz",
         "parking_costs_tour_ptype_destTaz",
