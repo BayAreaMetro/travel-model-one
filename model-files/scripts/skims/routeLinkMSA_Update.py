@@ -74,7 +74,7 @@ for mode_ in modes:
 
     _csv = _csv[~_csv['NAME'].isin(suplinks)]
 
-    _csv=_csv[_csv['SEQ'].notnull()]
+    #_csv=_csv[_csv['SEQ'].notnull()]
 
     _csv.drop(columns='id', inplace=True)
 
@@ -95,7 +95,7 @@ agg_function = {'TIME': 'mean',
                 'STOP_B': 'mean',
                 'DIST': 'mean',
                 'FREQ': 'mean',
-                'SEQ': 'mean',
+                              
                 'AB_VOL': 'sum',
                 'AB_BRDA': 'sum',
                 'AB_XITA': 'sum',
@@ -111,7 +111,7 @@ agg_function = {'TIME': 'mean',
                 'MATRIX': 'first',
                 'COLOR': 'first'}
 
-mode_df_grouped = mode_df.groupby(['A','B','MODE']).agg(agg_function).reset_index()
+mode_df_grouped = mode_df.groupby(['A','B','MODE','SEQ']).agg(agg_function).reset_index()
 print ('Grouped')
 mode_df_grouped['A'] = mode_df_grouped['A'].astype(str)
 mode_df_grouped['B'] = mode_df_grouped['B'].astype(str)

@@ -106,7 +106,11 @@ if ERRORLEVEL 2 (
   set TRN_ERRORLEVEL=2
   goto donedone
 )
-
+runtpp %BASE_SCRIPTS%\skims\TransitSkims.job
+if ERRORLEVEL 2 (
+  set TRN_ERRORLEVEL=2
+  goto donedone
+)
 :: RUNNING OUT OF SPACE - delete this from the recycle bin too
 set THISDIR=%cd:X:\=X:\Recycle Bin\%
 IF "%THISDIR:~3,11%"=="Recycle Bin" (
@@ -196,11 +200,7 @@ goto trnassign_loop
 if ERRORLEVEL 2 goto donedone
 
 echo Done transit assignment; LastIters are %LASTITER_AM%, %LASTITER_MD%, %LASTITER_PM%, %LASTITER_EV%, %LASTITER_EA%
-runtpp %BASE_SCRIPTS%\skims\TransitSkims.job
-if ERRORLEVEL 2 (
-  set TRN_ERRORLEVEL=2
-  goto donedone
-)
+
 :copyup
 
 :: for core
