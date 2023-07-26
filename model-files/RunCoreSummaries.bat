@@ -37,8 +37,8 @@ if %NEED_SUMMARY% GTR 0 (
   echo %DATE% %TIME% Running summary script for %RUN_NAME%
   
   rem No .Rprofile -- we set the environment variables here.
-  echo "%R_HOME%\bin\x64\Rscript.exe"
-  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\CoreSummaries.R"
+  echo "%R_HOME%\Rscript.exe"
+  call "%R_HOME%\Rscript.exe" --vanilla "%CODE_DIR%\CoreSummaries.R"
   IF %ERRORLEVEL% GTR 0 goto done
   echo %DATE% %TIME% ...Done
   
@@ -59,12 +59,12 @@ if not exist core_summaries\TelecommuteByIncome.csv (
 )
 
 :: convert the avgload5period.csv
-if not exist "%TARGET_DIR%\core_summaries\avgload5period.tde" (
-  python "%CODE_DIR%\csvToTableauExtract.py" "%TARGET_DIR%\hwy\iter%ITER%" "%TARGET_DIR%\core_summaries" avgload5period.csv
-  if %ERRORLEVEL% GTR 0 goto done
+::if not exist "%TARGET_DIR%\core_summaries\avgload5period.tde" (
+::  python "%CODE_DIR%\csvToTableauExtract.py" "%TARGET_DIR%\hwy\iter%ITER%" "%TARGET_DIR%\core_summaries" avgload5period.csv
+::  if %ERRORLEVEL% GTR 0 goto done
   
-  echo.
-)
+::  echo.
+::)
 
 :: create trn\trnline.csv
 if not exist "%TARGET_DIR%\trn\trnline.csv" (

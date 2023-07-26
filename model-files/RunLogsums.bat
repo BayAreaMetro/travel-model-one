@@ -79,7 +79,7 @@ if not exist logsums\indivTripData_%ITER%.csv (
 
 set TARGET_DIR=%CD%
 if not exist logsums\mandatoryAccessibilities.csv (
-  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla ".\CTRAMP\scripts\core_summaries\logsumJoiner.R"
+  call "%R_HOME%\Rscript.exe" --vanilla ".\CTRAMP\scripts\core_summaries\logsumJoiner.R"
   IF %ERRORLEVEL% GTR 0 goto done
 )
 
@@ -94,7 +94,7 @@ if not exist core_summaries\AccessibilityMarkets.csv (
   if not exist %TARGET_DIR%\popsyn\hhFile.csv     ( copy %TARGET_DIR%\popsyn\hhFile.*.csv %TARGET_DIR%\popsyn\hhFile.csv )
   if not exist %TARGET_DIR%\popsyn\personFile.csv ( copy %TARGET_DIR%\popsyn\personFile.*.csv %TARGET_DIR%\popsyn\personFile.csv )
 
-  call "%R_HOME%\bin\x64\Rscript.exe" --vanilla ".\CTRAMP\scripts\core_summaries\AccessibilityMarkets.R"
+  call "%R_HOME%\Rscript.exe" --vanilla ".\CTRAMP\scripts\core_summaries\AccessibilityMarkets.R"
   IF %ERRORLEVEL% GTR 0 goto done
 )
 
