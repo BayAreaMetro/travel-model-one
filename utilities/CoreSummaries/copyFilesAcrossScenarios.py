@@ -53,6 +53,7 @@ OUTPUT_FILES = {
         "network_links_withXY",
         "network_trn_links",
         "network_trn_route_links",
+        "network_trn_lines"
     ]
 }
 
