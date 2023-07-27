@@ -149,9 +149,7 @@ loop period = 1, 5
       intrastep_range = token_intrastep_processlist_EV
    endif
    
-   ; do each time of day as a separate process
-   DistributeMultistep processid = 'ctramp', processNum = @period@
-   
+  
    
    ; do, more or less, the same skim procedure for each of seven classes of vehicles
    loop class = 1, 7
@@ -238,7 +236,11 @@ loop period = 1, 5
          token_excludegrp_toll = 'excludegrp = 4,'
          
       endif
-    
+
+	counter = 7 * (period - 1) + class
+   ; do each time of day as a separate process
+   DistributeMultistep processid = 'ctramp', processNum = counter
+   
       run pgm = highway
       
          ; give each time of day two additional processors to work with   
@@ -345,8 +347,93 @@ loop period = 1, 5
          endphase ; i loop 
        
       endrun
+	  
+   EndDistributeMultistep
    
    endloop ; token_class  
+
+
+
+   
+
+endloop ; token_period
+
+wait4files files = CTRAMP1.script.end, 
+   	              CTRAMP2.script.end, 
+   	              CTRAMP3.script.end, 
+   	              CTRAMP4.script.end, 
+   	              CTRAMP5.script.end, 
+   	              CTRAMP6.script.end, 
+   	              CTRAMP7.script.end, 
+   	              CTRAMP8.script.end, 
+   	              CTRAMP9.script.end, 
+   	              CTRAMP10.script.end, 
+   	              CTRAMP11.script.end, 
+   	              CTRAMP12.script.end, 
+   	              CTRAMP13.script.end, 
+   	              CTRAMP14.script.end, 
+   	              CTRAMP15.script.end,
+   	              CTRAMP16.script.end, 
+   	              CTRAMP17.script.end, 
+   	              CTRAMP18.script.end, 
+   	              CTRAMP19.script.end, 
+   	              CTRAMP20.script.end,	
+				  CTRAMP21.script.end, 
+   	              CTRAMP22.script.end, 
+   	              CTRAMP23.script.end, 
+   	              CTRAMP24.script.end, 
+   	              CTRAMP25.script.end,
+   	              CTRAMP26.script.end, 
+   	              CTRAMP27.script.end, 
+   	              CTRAMP28.script.end, 
+   	              CTRAMP29.script.end, 
+   	              CTRAMP30.script.end,	
+				  CTRAMP31.script.end, 
+   	              CTRAMP32.script.end, 
+   	              CTRAMP33.script.end, 
+   	              CTRAMP34.script.end, 
+   	              CTRAMP35.script.end,				  
+          printfiles = save, DelDistribFiles = t, CheckReturnCode = t
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+; do, more or less, the same skim procedure for each of the five time periods
+loop period = 1, 5
+     
+   ; set a debug filename prefix
+   token_debug_filename = 'logs\HwySkims'
+  
+   ; a two letter token is used for each time period
+   if (period = 1)   
+      token_period = 'EA'   
+      intrastep_range = token_intrastep_processlist_EA
+   elseif (period = 2)   
+      token_period = 'AM'    
+      intrastep_range = token_intrastep_processlist_AM
+   elseif (period = 3)   
+      token_period = 'MD'    
+      intrastep_range = token_intrastep_processlist_MD
+   elseif (period = 4)   
+      token_period = 'PM'
+      intrastep_range = token_intrastep_processlist_PM
+   elseif (period = 5)   
+      token_period = 'EV'
+      intrastep_range = token_intrastep_processlist_EV
+   endif
+   
+   ; do each time of day as a separate process
+   DistributeMultistep processid = 'ctramp', processNum = @period@
    
    ; combine the skims into two large tables per time period
    run pgm = matrix
@@ -458,13 +545,18 @@ loop period = 1, 5
       
    ENDRUN
    
+
    EndDistributeMultistep
 
 endloop ; token_period
 
-Wait4Files files = ctramp1.script.end, ctramp2.script.end, ctramp3.script.end, ctramp4.script.end, ctramp5.script.end, 
-           printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
+wait4files files = CTRAMP1.script.end, 
+   	              CTRAMP2.script.end, 
+   	              CTRAMP3.script.end, 
+   	              CTRAMP4.script.end, 
+   	              CTRAMP5.script.end,				  
+          printfiles = save, DelDistribFiles = t, CheckReturnCode = t
 
 
 
@@ -509,3 +601,9 @@ Wait4Files files = ctramp1.script.end, ctramp2.script.end, ctramp3.script.end, c
 * del skims\LRG_MD_taz.tpp
 * del skims\LRG_PM_taz.tpp
 * del skims\LRG_EV_taz.tpp
+
+* del skims\DA_EA_taz.tpp
+* del skims\DA_AM_taz.tpp
+* del skims\DA_MD_taz.tpp
+* del skims\DA_PM_taz.tpp
+* del skims\DA_EV_taz.tpp
