@@ -33,19 +33,19 @@ print "total rows in input file, personData = " + str(CountRows_personData)
 SizeCoeff_df = pd.read_csv(os.path.join(os.getcwd(), 'ctramp', 'model', 'DestinationChoiceSizeCoefficients.csv'), index_col=False, sep=",")
 
 # read in the input on % of jobs that can be performed at home by industry
-WFHbyIndustry_df = pd.read_csv(os.path.join('//mainmodel//MainModelShare//travel-model-one-master//utilities//RTP', 'wfh_by_industry.csv'), index_col=False, sep=",", nrows=7)
+WFHbyIndustry_df = pd.read_csv(os.path.join(os.getcwd(), 'ctramp','core_summaries', 'wfh_by_industry.csv'), index_col=False, sep=",", nrows=7)
 
 
 # for the super district level summary
 # ------
 # read in the taz-superdistrict correspondence
-tazSD_df = pd.read_csv(os.path.join('//mainmodel//MainModelShare//travel-model-one-master//utilities//geographies', 'taz-superdistrict-county.csv'), index_col=False, sep=",")
+#tazSD_df = pd.read_csv(os.path.join(os.getcwd(),'landuse', 'tazData.csv'), index_col=False, sep=",")
 
 # read in the land use data about job types
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/TazData
-tazData_df = pd.read_csv(os.path.join(os.getcwd(), 'INPUT', "landuse", "tazData.csv"), index_col=False, sep=",")
+tazData_df = pd.read_csv(os.path.join(os.getcwd(),"landuse", "tazData.csv"), index_col=False, sep=",")
 
-
+tazSD_df = tazData_df[['ZONE','SD','COUNTY']]
 # -----------------------
 # data processing - generates a core summary output of people with jobs/work locations who don't do work tours by income quantile
 # -----------------------
@@ -243,10 +243,11 @@ TelecommuteEligibleBySD_df = pd.merge(TelecommuteEligibleBySD_df, tazDataBySD_df
 # -----------------------
 
 # dedup the taz-SD correspondence file
-tazSDbySD_df = tazSD_df.drop_duplicates(subset=['SD', 'SD_NUM_NAME', 'COUNTY_NUM_NAME'], keep='last')
+#TODO: Get 'SD_NUM_NAME', 'COUNTY_NUM_NAME'
+tazSDbySD_df = tazSD_df.drop_duplicates(subset=['SD'], keep='last')
 
 # add in SD name
-TelecommuteEligibleBySD_df = pd.merge(TelecommuteEligibleBySD_df, tazSDbySD_df[['SD','SD_NUM_NAME','COUNTY_NUM_NAME']], left_on=['SD'], right_on=['SD'], how='left')
+TelecommuteEligibleBySD_df = pd.merge(TelecommuteEligibleBySD_df, tazSDbySD_df[['SD']], left_on=['SD'], right_on=['SD'], how='left')
 
 # add model run id to the output dataframe for Tableau (so we can use wildcard union)
 run_id = os.path.basename(os.getcwd())
