@@ -375,6 +375,7 @@ python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
 :: Step 11:  Build simplified skim databases
 ::
 :: ------------------------------------------------------------------------------------------------------
+goto donedone
 
 : database
 
