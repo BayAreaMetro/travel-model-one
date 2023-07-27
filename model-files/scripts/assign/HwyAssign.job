@@ -247,9 +247,10 @@ loop period = 1, 3
 
          ; adding at the recommendation of citilabs
          ;C = capacityfor(li.lanes,li.CAPCLASS)*@token_capfac_num@
-         ;IF (LI.LANES=0) C=0.01
+         
 		 ; set capacity from previous network step
 		 c = li.CAP_TOTFAC
+		 IF (LI.LANES=0) C=0.01
          ; set the input time to OT for fixed time links
 			 if (lw.tsin = 1)
 				t0 = lw.ot
@@ -512,9 +513,10 @@ loop period = 1, 2
 
          ; adding at the recommendation of citilabs
          ;C = capacityfor(li.lanes,li.CAPCLASS)*@token_capfac_num@
-         ;IF (LI.LANES=0) C=0.01
+         
 		 ; set capacity from previous network step
 		 c = li.CAP_TOTFAC
+		 IF (LI.LANES=0) C=0.01
          ; set the input time to OT for fixed time links
 			 if (lw.tsin = 1)
 				t0 = lw.ot
