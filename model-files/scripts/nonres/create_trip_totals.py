@@ -21,7 +21,7 @@ ext_zone=ext_zone.rename(columns={'origin':'EXT_ZONE'}).drop(columns=['destinati
 ext_zone.to_csv('nonres/ixDaily2015_totals.csv', index=False)
 
 ixex_config_original=pd.read_csv('nonres/tm15/ixex_config.csv')
-iz_ez_map=pd.read_csv('main/IZ_OZ_PCT_EXT_SJC.dat', sep='\t',names=['iz','ez','col_pct','row_pct'])
+iz_ez_map=pd.read_csv('landuse/IZ_OZ_PCT_EXT.dat', sep='\t',names=['iz','ez','col_pct','row_pct'])
 iz_ez_map=iz_ez_map[iz_ez_map['iz']>1454][['iz','ez']]
 ixex_config_new=pd.merge(ixex_config_original, iz_ez_map, left_on='EXT_ZONE', right_on=['iz'], how='left').drop(columns='EXT_ZONE')
 ixex_config_new=ixex_config_new.rename(columns={'ez':"EXT_ZONE"})[ixex_config_original.columns]
