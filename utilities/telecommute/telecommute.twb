@@ -2581,7 +2581,7 @@
           <table-calc ordering-type='Rows' />
         </calculation>
       </column>
-      <column caption='TOTAL Workers Telecommuting Share (of all workers)' datatype='real' default-format='p0.0%' name='[Calculation_898468161148092427]' role='measure' type='quantitative'>
+      <column caption='TOTAL Telecommute Share (of all workers)' datatype='real' default-format='p0.0%' name='[Calculation_898468161148092427]' role='measure' type='quantitative'>
         <calculation class='tableau' formula='[Calculation_898468161147871242]/total([Calculation_898468161141985281])'>
           <table-calc ordering-type='Rows' />
         </calculation>
@@ -2601,7 +2601,7 @@
           <table-calc ordering-type='Rows' />
         </calculation>
       </column>
-      <column caption='TOTAL Workers Telecommuting Share (of workers working)' datatype='real' default-format='p0.0%' name='[TOTAL Workers Telecommuting Share (copy)_1583859745887612928]' role='measure' type='quantitative'>
+      <column caption='TOTAL Telecommute Share (of workers working)' datatype='real' default-format='p0.0%' name='[TOTAL Telecommute Share (copy)_1583859745887612928]' role='measure' type='quantitative'>
         <calculation class='tableau' formula='[Calculation_898468161147871242]/[TOTAL Workers Telecommuting (copy)_1583859745923575810]'>
           <table-calc ordering-type='Rows' />
         </calculation>
@@ -2659,7 +2659,7 @@
       <column-instance column='[TOTAL Workers Telecommuting (copy)_1583859745923575810]' derivation='User' name='[usr:TOTAL Workers Telecommuting (copy)_1583859745923575810:qk]' pivot='key' type='quantitative'>
         <table-calc ordering-type='Rows' />
       </column-instance>
-      <column-instance column='[TOTAL Workers Telecommuting Share (copy)_1583859745887612928]' derivation='User' name='[usr:TOTAL Workers Telecommuting Share (copy)_1583859745887612928:qk]' pivot='key' type='quantitative'>
+      <column-instance column='[TOTAL Telecommute Share (copy)_1583859745887612928]' derivation='User' name='[usr:TOTAL Telecommute Share (copy)_1583859745887612928:qk]' pivot='key' type='quantitative'>
         <table-calc ordering-type='Rows' />
         <table-calc field='[federated.00g99ar1vnw7281gpf0ub1lhzlql].[Calculation_898468161147871242]' ordering-type='Rows' />
         <table-calc field='[federated.00g99ar1vnw7281gpf0ub1lhzlql].[TOTAL Workers Telecommuting (copy)_1583859745923575810]' ordering-type='Rows' />
@@ -2685,7 +2685,7 @@
               <bucket>&quot;[federated.00g99ar1vnw7281gpf0ub1lhzlql].[usr:Calculation_898468161148092427:qk]&quot;</bucket>
             </map>
             <map to='#59a14f'>
-              <bucket>&quot;[federated.00g99ar1vnw7281gpf0ub1lhzlql].[usr:TOTAL Workers Telecommuting Share (copy)_1583859745887612928:qk]&quot;</bucket>
+              <bucket>&quot;[federated.00g99ar1vnw7281gpf0ub1lhzlql].[usr:TOTAL Telecommute Share (copy)_1583859745887612928:qk]&quot;</bucket>
             </map>
             <map to='#79706e'>
               <bucket>&quot;[federated.00g99ar1vnw7281gpf0ub1lhzlql].[diff:usr:TOTAL Workers Telecommuting (copy)_1583859745923575810:qk]&quot;</bucket>
@@ -3153,7 +3153,7 @@
                 <table-calc ordering-type='Rows' />
               </calculation>
             </column>
-            <column caption='TOTAL Workers Telecommuting Share (of all workers)' datatype='real' default-format='p0.0%' name='[Calculation_898468161148092427]' role='measure' type='quantitative'>
+            <column caption='TOTAL Telecommute Share (of all workers)' datatype='real' default-format='p0.0%' name='[Calculation_898468161148092427]' role='measure' type='quantitative'>
               <calculation class='tableau' formula='[Calculation_898468161147871242]/total([Calculation_898468161141985281])'>
                 <table-calc ordering-type='Rows' />
               </calculation>
@@ -3166,7 +3166,7 @@
                 <table-calc ordering-type='Rows' />
               </calculation>
             </column>
-            <column caption='TOTAL Workers Telecommuting Share (of workers working)' datatype='real' default-format='p0.0%' name='[TOTAL Workers Telecommuting Share (copy)_1583859745887612928]' role='measure' type='quantitative'>
+            <column caption='TOTAL Telecommute Share (of workers working)' datatype='real' default-format='p0.0%' name='[TOTAL Telecommute Share (copy)_1583859745887612928]' role='measure' type='quantitative'>
               <calculation class='tableau' formula='[Calculation_898468161147871242]/[TOTAL Workers Telecommuting (copy)_1583859745923575810]'>
                 <table-calc ordering-type='Rows' />
               </calculation>
@@ -3194,7 +3194,7 @@
               <table-calc ordering-type='Rows' />
               <table-calc field='[federated.00g99ar1vnw7281gpf0ub1lhzlql].[Calculation_898468161147871242]' ordering-type='Rows' />
             </column-instance>
-            <column-instance column='[TOTAL Workers Telecommuting Share (copy)_1583859745887612928]' derivation='User' name='[usr:TOTAL Workers Telecommuting Share (copy)_1583859745887612928:qk]' pivot='key' type='quantitative'>
+            <column-instance column='[TOTAL Telecommute Share (copy)_1583859745887612928]' derivation='User' name='[usr:TOTAL Telecommute Share (copy)_1583859745887612928:qk]' pivot='key' type='quantitative'>
               <table-calc ordering-type='Rows' />
               <table-calc field='[federated.00g99ar1vnw7281gpf0ub1lhzlql].[Calculation_898468161147871242]' ordering-type='Rows' />
               <table-calc field='[federated.00g99ar1vnw7281gpf0ub1lhzlql].[TOTAL Workers Telecommuting (copy)_1583859745923575810]' ordering-type='Rows' />
@@ -3217,7 +3217,7 @@
               <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.00g99ar1vnw7281gpf0ub1lhzlql].[usr:Calculation_898468161147871242:qk]&quot;' />
               <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.00g99ar1vnw7281gpf0ub1lhzlql].[diff:usr:TOTAL Workers Telecommuting (copy)_1583859745923575810:qk]&quot;' />
               <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.00g99ar1vnw7281gpf0ub1lhzlql].[usr:Calculation_898468161148092427:qk]&quot;' />
-              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.00g99ar1vnw7281gpf0ub1lhzlql].[usr:TOTAL Workers Telecommuting Share (copy)_1583859745887612928:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.00g99ar1vnw7281gpf0ub1lhzlql].[usr:TOTAL Telecommute Share (copy)_1583859745887612928:qk]&quot;' />
             </groupfilter>
           </filter>
           <manual-sort column='[federated.00g99ar1vnw7281gpf0ub1lhzlql].[:Measure Names]' direction='ASC'>
@@ -3236,7 +3236,7 @@
               <bucket>&quot;[federated.00g99ar1vnw7281gpf0ub1lhzlql].[usr:Calculation_898468161147871242:qk]&quot;</bucket>
               <bucket>&quot;[federated.00g99ar1vnw7281gpf0ub1lhzlql].[diff:usr:TOTAL Workers Telecommuting (copy)_1583859745923575810:qk]&quot;</bucket>
               <bucket>&quot;[federated.00g99ar1vnw7281gpf0ub1lhzlql].[usr:Calculation_898468161148092427:qk]&quot;</bucket>
-              <bucket>&quot;[federated.00g99ar1vnw7281gpf0ub1lhzlql].[usr:TOTAL Workers Telecommuting Share (copy)_1583859745887612928:qk]&quot;</bucket>
+              <bucket>&quot;[federated.00g99ar1vnw7281gpf0ub1lhzlql].[usr:TOTAL Telecommute Share (copy)_1583859745887612928:qk]&quot;</bucket>
             </dictionary>
           </manual-sort>
           <manual-sort column='[federated.00g99ar1vnw7281gpf0ub1lhzlql].[none:PersonType (wsLocResults_3.csv):nk]' direction='ASC'>
