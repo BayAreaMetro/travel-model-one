@@ -100,7 +100,14 @@ loop period = 1,5
     ZONES = 6593
 	phase=linkmerge
 		
-		CTIM = li.2.CTIM
+		;CTIM = li.2.CTIM         
+		
+		; use free-flow time for links not in the assignable highway network
+		if(li.2.CTIM > 0)
+		   CTIM = li.2.CTIM
+		else
+		   CTIM = li.1.CTIM
+		endif
 	
 	endphase
    
@@ -136,8 +143,8 @@ loop period = 1,5
       else
       
          ; delay is minutes per mile
-         if (AT = 0) delayfactor = 2.46
-         if (AT = 1) delayfactor = 2.46
+         if (AT = 0) delayfactor = 2.00  ; was 2.46 in TM1.5
+         if (AT = 1) delayfactor = 2.00  ; was 2.46
          if (AT = 2) delayfactor = 1.74
          if (AT = 3) delayfactor = 1.74
          if (AT = 4) delayfactor = 1.14
