@@ -28,9 +28,10 @@ BayArea_UZAs = c(
 
 BOX_DIR          <- "E:\\Box"
 WORKING_DIR      <- file.path(BOX_DIR, "Modeling and Surveys", "Share Data", "national-transit-database")
-INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "April 2023 Complete Monthly Ridership (with adjustments and estimates).xlsx")
+INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "May 2023 Complete Monthly Ridership (with adjustments and estimates).xlsx")
 INPUT_WORKSHEETS <- c("VRM","VRH","UPT") # vehicle route miles, vehicle route hours, unlinked passenger trips
 INPUT_AGENCY_CSV <- file.path(WORKING_DIR, "AgencyToCommonAgencyName.csv")
+INPUT_UPT_MONTHLY_TO_DAILY <- file.path(WORKING_DIR, "MonthlyToTypicalWeekdayRidership.xlsx")
 
 # model/ntd files will get saved here
 MODEL_OUTPUT_DIR <- file.path(BOX_DIR, "Modeling and Surveys", "Projects", "Transit Recovery Scenario Modeling")
@@ -45,6 +46,7 @@ OUTPUT_FILE      <- file.path(WORKING_DIR, "NTD_long.rdata")
 DAYS_1900_TO_1970 <- 25569
 
 agency_df <- read.csv(file=INPUT_AGENCY_CSV)
+upt_monthly_to_daily_df <- read_excel(INPUT_UPT_MONTHLY_TO_DAILY)
 
 # model-specific summary
 NTD_model_df <- data.frame()
@@ -112,10 +114,19 @@ for (worksheet in INPUT_WORKSHEETS) {
     days_in_month = lubridate::days_in_month(as.Date(day_one))) %>%
     select(-day_one)
 
-  # add very simple average daily
-  NTD_long_df <- mutate(NTD_long_df,
-    average_daily = !!as.symbol(worksheet) / days_in_month
-  )
+  # for UPT, use clipper-based data relating monthly ridership to
+  # average modeled weekday
+  if (worksheet=="UPT") {
+    NTD_long_df <- left_join(NTD_long_df, upt_monthly_to_daily_df)
+    stopifnot(nrow(filter(NTD_long_df, is.na("Monthly_To_Typical_Weekday")))==0)
+    NTD_long_df <- mutate(NTD_long_df,
+                          average_daily = !!as.symbol(worksheet) * Monthly_To_Typical_Weekday)
+  } else {
+    # add very simple average daily
+    NTD_long_df <- mutate(NTD_long_df,
+      average_daily = !!as.symbol(worksheet) / days_in_month
+    )
+  }
   
   # rename column
   if (worksheet=="VRM") {
@@ -199,7 +210,7 @@ NTD_model_df[(NTD_model_df$Common.Agency.Name == "SFMTA") &
 
 # print the agency/mode and try a backup mode
 missing_df <- filter(select(NTD_model_df, Common.Agency.Name, Mode, "Mode backup", "Transit Mode"), 
-  is.na(NTD_model_df["Transit Mode"])) %>% distinct()
+  is.na(`Transit Mode`)) %>% distinct()
 print(paste("Missing Transit Mode: "))
 print(missing_df)
 
