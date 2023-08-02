@@ -1091,7 +1091,7 @@ print("finishd spatial joining")
 # Join network_trn_links.shp with network_trn_lines.shp with to get the FREQ fields
 TRN_LINES_SHPFILE = "network_trn_lines.shp"
 arcpy.management.JoinField(TRN_LINKS_SHPFILE_COUNTY, 'NAME', TRN_LINES_SHPFILE, 'NAME',
-                        ['NAME', 'FREQ_EA', 'FREQ_AM', 'FREQ_MD', 'FREQ_PM', 'FREQ_EV'])
+                        ['FREQ_EA', 'FREQ_AM', 'FREQ_MD', 'FREQ_PM', 'FREQ_EV'])
 print("finishd joining")
 # delete the previous network_trn_lines.shp
 arcpy.management.Delete(TRN_LINKS_SHPFILE)
