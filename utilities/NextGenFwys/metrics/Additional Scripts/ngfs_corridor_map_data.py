@@ -298,9 +298,9 @@ for run in runs:
   final_df['m2_arttrip'] = out_frame.copy().loc[(out_frame['metric_desc'].str.contains('pct') == False)&(out_frame['metric_desc'].str.contains('change') == True)&(out_frame['metric_desc'].str.contains('Parallel_Arterial_trips') == True)].reset_index(drop=True)['value']
   final_df['Model Run ID'] = tm_runid
   final_df = pd.merge(left=final_df, right=transit_vol_df, how='left', left_on=['Corridor','Model Run ID'], right_on=['Corridor','Model Run ID'])
-  final_df['freeway'] = round(final_df['m2_fwytrip'], -2)
-  final_df['arterial'] = round(final_df['m2_arttrip'], -2)
-  final_df['transit'] = round(final_df['m2_LRT_Bus'] + final_df['m2_Rail'], -2)
+  final_df['freeway'] = round(final_df['m2_fwytrip']/4, -2)
+  final_df['arterial'] = round(final_df['m2_arttrip']/4, -2)
+  final_df['transit'] = round((final_df['m2_LRT_Bus'] + final_df['m2_Rail'])/4, -2)
   new_directory = "C:\\Users\\jalatorre\\Box\\NextGen Freeways Study\\07 Tasks\\07_AnalysisRound1\\Corridor Level Visualization\\10 csvs for the 10 maps with final data\\{} (Compared to {})".format(tm_runid,tm_runid_base)
   # new_directory = os.path.join(os.getcwd(),"{} (Compared to {})".format(tm_runid,tm_runid_base))
   out_filename = new_directory + "\\NGFS_CorridorMaps_SketchData.csv"
