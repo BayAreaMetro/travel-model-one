@@ -11,7 +11,7 @@ USAGE = """
 
     2. Mode share: this is not conducted by this script, but by https://app.asana.com/0/0/1204082986821822/f
 
-    3. SF cordon effect on transit ridership: summarize transit ridership for routes ending in the SF cordon
+    3. SF cordon effect on transit ridership: summarize transit ridership for routes ending in the cordons
 
     Outputs are saved in "L:\Application\Model_One\NextGenFwys\cordon_effect"
 """
