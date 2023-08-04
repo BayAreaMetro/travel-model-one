@@ -467,10 +467,37 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     fifteen_year_toll_rev_2050_dollars = (annual_toll_rev_2035_dollars * (1- INFLATION_FACTOR**15))/(1 - INFLATION_FACTOR)
     
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily_toll_revenues_from_new_tolling_2000$', year] = daily_toll_rev_2000_dollars
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily_toll_revenues_from_new_tolling_2035$', year] = annual_toll_rev_2035_dollars/260
+    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily_toll_revenues_from_new_tolling_2035$', year] = annual_toll_rev_2035_dollars/REVENUE_DAYS_PER_YEAR
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Annual_toll_revenues_from_new_tolling_2035$', year] = annual_toll_rev_2035_dollars
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', '15_yr_toll_revenues_from_new_tolling_YOE$', year] = fifteen_year_toll_rev_2050_dollars
-
+    
+    # add split for cordon revenue from SF/Oak/SJ
+    if 'Path3' in tm_run_id:
+        for cordon in ['SF','Oak','SJ']:
+            tm_loaded_network_df_copy = tm_loaded_network_df.copy()
+            if cordon == 'SF':
+                network_with_tolls = tm_loaded_network_df_copy.loc[(tm_loaded_network_df_copy['TOLLCLASS'] == 10)] 
+            elif cordon == 'Oak':
+                network_with_tolls = tm_loaded_network_df_copy.loc[(tm_loaded_network_df_copy['TOLLCLASS'] == 11)] 
+            elif cordon == 'SJ':
+                network_with_tolls = tm_loaded_network_df_copy.loc[(tm_loaded_network_df_copy['TOLLCLASS'] == 12)] 
+            EA_total_tolls = (network_with_tolls['volEA_tot'] * network_with_tolls['TOLLEA_DA']).sum()/100
+            AM_total_tolls = (network_with_tolls['volAM_tot'] * network_with_tolls['TOLLAM_DA']).sum()/100
+            MD_total_tolls = (network_with_tolls['volMD_tot'] * network_with_tolls['TOLLMD_DA']).sum()/100
+            PM_total_tolls = (network_with_tolls['volPM_tot'] * network_with_tolls['TOLLPM_DA']).sum()/100
+            EV_total_tolls = (network_with_tolls['volEV_tot'] * network_with_tolls['TOLLEV_DA']).sum()/100
+            daily_toll_rev_2000_dollars = EA_total_tolls + AM_total_tolls + MD_total_tolls + PM_total_tolls + EV_total_tolls
+            daily_toll_rev_2023_dollars = daily_toll_rev_2000_dollars * INFLATION_00_23
+            annual_toll_rev_2023_dollars = daily_toll_rev_2023_dollars * REVENUE_DAYS_PER_YEAR
+            annual_toll_rev_2035_dollars = annual_toll_rev_2023_dollars*INFLATION_FACTOR**(2035-2023)
+            # compute sum of geometric series for year of expenditure value
+            fifteen_year_toll_rev_2050_dollars = (annual_toll_rev_2035_dollars * (1- INFLATION_FACTOR**15))/(1 - INFLATION_FACTOR)
+            
+            metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily_toll_revenues_from_{}_cordon_tolling_2000$'.format(cordon), year] = daily_toll_rev_2000_dollars
+            metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Daily_toll_revenues_from_{}_cordon_tolling_2035$'.format(cordon), year] = annual_toll_rev_2035_dollars/REVENUE_DAYS_PER_YEAR
+            metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', 'Annual_toll_revenues_from_{}_cordon_tolling_2035$'.format(cordon), year] = annual_toll_rev_2035_dollars
+            metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Toll Revenues', '15_yr_toll_revenues_from_{}_cordon_tolling_YOE$'.format(cordon), year] = fifteen_year_toll_rev_2050_dollars
+    
     # NEED HELP FROM FMS TEAM --> RE: INCOME ASSIGNMENT
     # calculate toll revenues by income quartile (calculation from scenarioMetrics.py)
     toll_revenues_overall = 0
