@@ -147,73 +147,76 @@ AutoTripsVMT_summarize.to_csv("L:/Application/Model_One/NextGenFwys/cordon_effec
 # Conducted in https://app.asana.com/0/0/1204082986821822/f
 
 # 3. SF cordon effect on transit ridership
-# summarize transit ridership for routes ending in the SF cordon
-# Step 1: use shapefile/network_trn_lines.shp to select routes ending in the each cordon
+# https://app.asana.com/0/0/1204875936483961/f
+# SF cordon effect on transit ridership (also OK and SJ)
+transit_assignment_summarized = pd.DataFrame()
 
-# network_trn_lines
-network_trn_links = gpd.read_file('L:/Application/Model_One/NextGenFwys/Scenarios/2035_TM152_NGF_NP10_Path1a_02/OUTPUT/shapefile/network_trn_links.shp')
-
-# spatial join
-network_trn_links_end   = network_trn_links.loc[network_trn_links.groupby('NAME').SEQ.idxmax()].reset_index(drop=True)
-network_trn_links_end["SF_cordon_links"] = network_trn_links_end.intersects(TAZ_sf.unary_union)
-network_trn_links_end["OK_cordon_links"] = network_trn_links_end.intersects(TAZ_ok.unary_union)
-network_trn_links_end["SJ_cordon_links"] = network_trn_links_end.intersects(TAZ_sj.unary_union)
-
-
-network_trn_links_end_sf = network_trn_links_end.loc[
-    (network_trn_links_end.SF_cordon_links == True) 
-]
-
-network_trn_links_end_ok = network_trn_links_end.loc[
-    network_trn_links_end.OK_cordon_links == True
-]
-
-network_trn_links_end_sj = network_trn_links_end.loc[
-    network_trn_links_end.SJ_cordon_links == True
-]
-
-network_trn_links_end_sf = list(set(network_trn_links_end_sf['NAME']))
-network_trn_links_end_sf.remove("*1")
-network_trn_links_end_sf.remove("*2")
-network_trn_links_end_sf.remove("*5")
-network_trn_links_end_ok = list(set(network_trn_links_end_ok['NAME']))
-network_trn_links_end_sj = list(set(network_trn_links_end_sj['NAME']))
-
-# Step 2: summarize rishership for the selected routes
-transit_assignment_df = pd.DataFrame()
-
-# read transit ridership data
-for runid in run_list:
+for runid in ['2035_TM152_NGF_NP10_Path3a_02', '2035_TM152_NGF_NP10_Path3b_02','2035_TM152_NGF_NP10_Path4_02']:
+    # read the AM transit ridreship data by runid
     transit_assignment_path = 'L:/Application/Model_One/NextGenFwys/Scenarios/' + runid +'/OUTPUT/trn/trnlinkam_withSupport.dbf'
-    transit_assignment      = pd.DataFrame(dbfread.DBF(transit_assignment_path))
+    transit_assignment_df   = pd.DataFrame(dbfread.DBF(transit_assignment_path))
     # note the runid
-    transit_assignment["runid"] = runid
+    transit_assignment_df["runid"] = runid
     # add to transit_assignment_df
-    transit_assignment_df = pd.concat([transit_assignment_df, transit_assignment])
+    # transit_assignment_df = pd.concat([transit_assignment_df, transit_assignment])
+    print(runid)
+    
+    # read the transit link file by runid
+    print("read network_trn_links")    
+    network_trn_links_path = 'L:/Application/Model_One/NextGenFwys/Scenarios/' + runid +'/OUTPUT/shapefile/network_trn_links.shp'
+    network_trn_links = gpd.read_file(network_trn_links_path)
+    
+    # spatial join the transit links and the cordons
+    print("select links")  
+    network_trn_links["SF_cordon_links"] = network_trn_links.within(TAZ_sf.unary_union)
+    network_trn_links["OK_cordon_links"] = network_trn_links.within(TAZ_ok.unary_union)
+    network_trn_links["SJ_cordon_links"] = network_trn_links.within(TAZ_sj.unary_union) # this won't capture Caltrains for SJ
 
-# select routes
-transit_assignment_sf = transit_assignment_df.loc[transit_assignment_df['NAME'].isin(network_trn_links_end_sf)].sort_values(by = ['NAME', 'SEQ'], ascending = [True, True])
-transit_assignment_ok = transit_assignment_df.loc[transit_assignment_df['NAME'].isin(network_trn_links_end_ok)].sort_values(by = ['NAME', 'SEQ'], ascending = [True, True])
-transit_assignment_sj = transit_assignment_df.loc[transit_assignment_df['NAME'].isin(network_trn_links_end_sj)].sort_values(by = ['NAME', 'SEQ'], ascending = [True, True])
+    
+    network_trn_links["SJ_cordon_intersect_links"] = network_trn_links.intersects(TAZ_sj.unary_union) # this can capture Caltrains for SJ
+    network_trn_links_sj_cordon_Caltrain = network_trn_links.loc[
+        (network_trn_links.SJ_cordon_intersect_links == True) &
+        (network_trn_links.MODE == 130)
+    ][['A', 'B', 'NAME','geometry']] #capture caltrains for SJ cordon
 
-# calculate ridership
-transit_assignment_sf_summarized = transit_assignment_sf.groupby(['NAME','runid']).agg({'AB_BRDA':'sum','AB_XITA':'sum', 'AB_VOL':'last'}).reset_index()
-transit_assignment_ok_summarized = transit_assignment_ok.groupby(['NAME','runid']).agg({'AB_BRDA':'sum','AB_XITA':'sum', 'AB_VOL':'last'}).reset_index()
-transit_assignment_sj_summarized = transit_assignment_sj.groupby(['NAME','runid']).agg({'AB_BRDA':'sum','AB_XITA':'sum', 'AB_VOL':'last'}).reset_index()
-transit_assignment_sf_summarized['RIDERSHIP'] = transit_assignment_sf_summarized['AB_BRDA'] + transit_assignment_sf_summarized['AB_XITA'] + transit_assignment_sf_summarized['AB_VOL']
-transit_assignment_ok_summarized['RIDERSHIP'] = transit_assignment_ok_summarized['AB_BRDA'] + transit_assignment_ok_summarized['AB_XITA'] + transit_assignment_ok_summarized['AB_VOL']
-transit_assignment_sj_summarized['RIDERSHIP'] = transit_assignment_sj_summarized['AB_BRDA'] + transit_assignment_sj_summarized['AB_XITA'] + transit_assignment_sj_summarized['AB_VOL']
+    # filter out transit links in cordons
+    network_trn_links_sf_cordon = network_trn_links.loc[
+        (network_trn_links.SF_cordon_links == True) 
+    ][['A', 'B', 'NAME','geometry']]
 
-# summarize by runs
-transit_assignment_sf_summarized = transit_assignment_sf_summarized.groupby(['runid']).agg({'RIDERSHIP':'sum'}).reset_index()
-transit_assignment_sf_summarized['Cordon'] = 'San Francisco'
-transit_assignment_ok_summarized = transit_assignment_ok_summarized.groupby(['runid']).agg({'RIDERSHIP':'sum'}).reset_index()
-transit_assignment_ok_summarized['Cordon'] = 'Oakland'
-transit_assignment_sj_summarized = transit_assignment_sj_summarized.groupby(['runid']).agg({'RIDERSHIP':'sum'}).reset_index()
-transit_assignment_sj_summarized['Cordon'] = 'San Jose'
+    network_trn_links_ok_cordon = network_trn_links.loc[
+        network_trn_links.OK_cordon_links == True
+    ][['A', 'B', 'NAME','geometry']]
 
-# append
-transit_assignment_summarized = pd.concat([transit_assignment_sf_summarized, transit_assignment_ok_summarized, transit_assignment_sj_summarized])
-# write out the output
-print(transit_assignment_summarized)
+    network_trn_links_sj_cordon = network_trn_links.loc[
+        network_trn_links.SJ_cordon_links == True
+    ][['A', 'B', 'NAME','geometry']]
+
+    network_trn_links_sj_cordon = pd.concat([network_trn_links_sj_cordon, network_trn_links_sj_cordon_Caltrain])
+    
+    
+    
+    # join the transit ridership to selected links
+    print('join the transit ridership to selected links')
+    transit_assignment_sf_cordon = network_trn_links_sf_cordon.merge(transit_assignment_df, how = 'left', on=['A','B','NAME'])
+    transit_assignment_ok_cordon = network_trn_links_ok_cordon.merge(transit_assignment_df, how = 'left', on=['A','B','NAME'])
+    transit_assignment_sj_cordon = network_trn_links_sj_cordon.merge(transit_assignment_df, how = 'left', on=['A','B','NAME'])
+    
+    # sum the exit
+    transit_assignment_sf_summarized = transit_assignment_sf_cordon.groupby(['runid']).agg({'AB_XITA':'sum'}).reset_index()
+    transit_assignment_sf_summarized['cordon'] = "SF"
+    transit_assignment_ok_summarized = transit_assignment_ok_cordon.groupby(['runid']).agg({'AB_XITA':'sum'}).reset_index()
+    transit_assignment_ok_summarized['cordon'] = "OK"
+    transit_assignment_sj_summarized = transit_assignment_sj_cordon.groupby(['runid']).agg({'AB_XITA':'sum'}).reset_index()
+    transit_assignment_sj_summarized['cordon'] = "SJ"
+    
+    # results by runid
+    results_by_runid = pd.concat([transit_assignment_sf_summarized, 
+                                  transit_assignment_ok_summarized,
+                                  transit_assignment_sj_summarized])
+    results_by_runid['runid'] = runid
+    print(results_by_runid)
+    
+    # combine the results
+    transit_assignment_summarized = pd.concat([transit_assignment_summarized, results_by_runid])
 transit_assignment_summarized.to_csv("L:/Application/Model_One/NextGenFwys/cordon_effect/transit_assignment_summarized.csv",index=False)
