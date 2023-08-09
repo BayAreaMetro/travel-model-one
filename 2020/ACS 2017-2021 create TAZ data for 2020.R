@@ -507,6 +507,8 @@ workingdata <- interim %>% mutate(
           unit10_19+
           unit20_49+
           unit50p)*sharebg,
+  hh_own=(own1+own2+own3+own4+own5+own6+own7p)*sharebg,
+  hh_rent=(rent1+rent2+rent3+rent4+rent5+rent6+rent7p)*sharebg,
   hh_size_1=(own1+rent1)*sharebg,
   hh_size_2=(own2+rent2)*sharebg,
   hh_size_3=(own3+rent3)*sharebg,
@@ -580,6 +582,8 @@ temp0 <- workingdata %>%
               AGE65P                  =sum(AGE65P),
               SFDU                    =sum(SFDU),
               MFDU                    =sum(MFDU),
+              hh_own                  =sum(hh_own),
+              hh_rent                 =sum(hh_rent),
               hh_size_1               =sum(hh_size_1),
               hh_size_2               =sum(hh_size_2),
               hh_size_3               =sum(hh_size_3),
@@ -643,8 +647,9 @@ temp1 <- temp0 %>%
 
 temp_rounded_adjusted <- temp1 %>%
   mutate (
-    sum_age            = AGE0004 + AGE0519 + AGE2044  +AGE4564 + AGE65P,       # First person totals by age
+    sum_age            = AGE0004 + AGE0519 + AGE2044  +AGE4564 + AGE65P,       # Person totals by age
     sum_groupquarters  = gq_type_univ + gq_type_mil + gq_type_othnon,          # GQ by type
+    sum_tenure         = hh_own + hh_rent,                                     # Households by tenure
     sum_size           = hh_size_1 + hh_size_2 + hh_size_3 + hh_size_4_plus,   # Now housing totals
     sum_hhworkers      = hh_wrks_0 + hh_wrks_1 + hh_wrks_2 + hh_wrks_3_plus,   # HHs by number of workers
     sum_kids           = hh_kids_yes + hh_kids_no,                             # HHs by kids or not
@@ -664,6 +669,7 @@ temp_rounded_adjusted <- temp1 %>%
     
     age_factor         = if_else(sum_age==0,0,TOTPOP/sum_age),
     gq_factor          = if_else(sum_groupquarters==0,0,gqpop/sum_groupquarters),
+    tenure_factor      = if_else(sum_tenure==0,0,TOTHH/sum_tenure),
     size_factor        = if_else(sum_size==0,0,TOTHH/sum_size),
     hhworkers_factor   = if_else(sum_hhworkers==0,0,TOTHH/sum_hhworkers),
     kids_factor        = if_else(sum_kids==0,0,TOTHH/sum_kids),
@@ -700,6 +706,9 @@ temp_rounded_adjusted <- temp1 %>%
     gq_type_mil           = gq_type_mil      * gq_factor,
     gq_type_othnon        = gq_type_othnon   * gq_factor,
 
+    hh_own                = hh_own           * tenure_factor,      # Households by tenure
+    hh_rent               = hh_rent          * tenure_factor,      
+
     hh_size_1             = hh_size_1        * size_factor,        # Households by size
     hh_size_2             = hh_size_2        * size_factor,
     hh_size_3             = hh_size_3        * size_factor,
@@ -729,7 +738,7 @@ temp_rounded_adjusted <- temp1 %>%
 # Round Data, remove sum variables and factors
 # Add in population over age 62 variable that is also needed (but should not be rounded, so added at the end)
   
-    select (-age_factor,-gq_factor,-size_factor,-hhworkers_factor,-kids_factor,-income_factor,-empres_init_factor,
+    select (-age_factor,-gq_factor,-tenure_factor, -size_factor,-hhworkers_factor,-kids_factor,-income_factor,-empres_init_factor,
             -empres_factor,-sum_age,-sum_groupquarters,-sum_size,-sum_hhworkers,-sum_kids,-sum_income,-sum_empres, 
             -sum_ethnicity,-ethnicity_factor) %>% 
     mutate_if(is.numeric,round,0) %>%
@@ -743,6 +752,7 @@ temp_rounded_adjusted <- temp1 %>%
    mutate (
     max_age    = max.col(.[c("AGE0004","AGE0519","AGE2044","AGE4564","AGE65P")],     ties.method="first"),
     max_gq     = max.col(.[c("gq_type_univ","gq_type_mil","gq_type_othnon")],        ties.method="first"),
+    max_tenure = max.col(.[c("hh_own","hh_rent")],                                   ties.method="first"),
     max_size   = max.col(.[c("hh_size_1","hh_size_2","hh_size_3","hh_size_4_plus")], ties.method="first"),
     max_workers= max.col(.[c("hh_wrks_0","hh_wrks_1","hh_wrks_2","hh_wrks_3_plus")], ties.method="first"),
     max_kids   = max.col(.[c("hh_kids_yes","hh_kids_no")],                           ties.method="first"),
@@ -784,7 +794,12 @@ temp_rounded_adjusted <- temp1 %>%
     gq_type_mil    = if_else(max_gq==2,gq_type_mil+(gqpop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_mil),
     gq_type_othnon = if_else(max_gq==3,gq_type_othnon+(gqpop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_othnon),
    
-    #Balance HH size categories
+    #Balance HH tenure categories
+    
+    hh_own         = if_else(max_tenure==1,hh_own       +(TOTHH-(hh_own+hh_rent)),hh_own),
+    hh_rent        = if_else(max_tenure==2,hh_rent      +(TOTHH-(hh_own+hh_rent)),hh_rent),
+
+     #Balance HH size categories
     
     hh_size_1      = if_else(max_size==1,hh_size_1     +(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_1),
     hh_size_2      = if_else(max_size==2,hh_size_2     +(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_2),
@@ -828,7 +843,7 @@ temp_rounded_adjusted <- temp1 %>%
   
 # Remove max variables
   
-  select(-max_age,-max_gq,-max_size,-max_workers,-max_kids,-max_income,-max_occ, -max_eth)
+  select(-max_age,-max_gq,-max_tenure,-max_size,-max_workers,-max_kids,-max_income,-max_occ, -max_eth)
 
 ### End of recoding
 
@@ -894,7 +909,7 @@ write.csv(summed20, "TAZ1454 2020 District Summary.csv", row.names = FALSE, quot
 
 popsim_vars <- temp_rounded_adjusted %>% 
   rename(TAZ=TAZ1454,gq_tot_pop=gqpop)%>%
-  select(TAZ,TOTHH,TOTPOP,hh_size_1,hh_size_2,hh_size_3,hh_size_4_plus,hh_wrks_0,hh_wrks_1,hh_wrks_2,hh_wrks_3_plus,
+  select(TAZ,TOTHH,TOTPOP,hh_own,hh_rent,hh_size_1,hh_size_2,hh_size_3,hh_size_4_plus,hh_wrks_0,hh_wrks_1,hh_wrks_2,hh_wrks_3_plus,
          hh_kids_no,hh_kids_yes,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,
          gq_tot_pop,gq_type_univ,gq_type_mil,gq_type_othnon)
 
