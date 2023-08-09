@@ -27,7 +27,8 @@ OUTPUT_FILES = {
         "emfac_ghg",
         "vmt_vht_metrics_by_taz",
         "trips_cordon_mode_summary",
-        "truck_trips_by_timeperiod"
+        "truck_trips_by_timeperiod",
+        "transit_crowding_complete"
     ],
     "core_summaries":[
         "ActiveTransport",
