@@ -3,9 +3,39 @@
 # Transforms NTD data from wide to long, and filters to Bay Area.
 # NTD Glossary: https://www.transit.dot.gov/ntd/national-transit-database-ntd-glossary
 #
-# It also creates versions simililarly formated to Travel Model 1+ output files in order to view
+# It also creates versions similarly formated to Travel Model 1+ output files in order to view
 # alongside travel model output.
 #
+# Input:
+#  1) NTD monthly data spreadsheet downloaded from the NTD website 
+#     (https://www.transit.dot.gov/ntd/data-product/monthly-module-raw-data-release)
+#     and saved tonational-transit-database > Source 
+#     (https://mtcdrive.box.com/s/786348kj1u364225mxfylklq0pt8yeay)
+#
+#  2) MonthlyToTypicalWeekdayRidership.xlsx
+#     (https://mtcdrive.box.com/s/mbhdippfw1uds8ike3d3pdhhpu7r0agh)
+#     that relates monthly boardings to average modeled weekday boardings based on Clipper data
+#    
+#  3) travel-model-one/TableauAliases.xlsx, sheet 'Transit Mode' which maps
+#     Travel Model One transit modes
+#     (https://github.com/BayAreaMetro/modeling-website/wiki/TransitModes) to 
+#     NTD's Common.Agency.Name and NTD.mode (i.e. MB, CB, etc)
+#
+# Output:
+#  1) NTD_long_[UPT,VRH,RVM].rdata (https://mtcdrive.box.com/v/national-transit-database)
+#     which is consumed by SanFranciscoBayArea_NationalTransitDatabase.twb and published to
+#     https://public.tableau.com/views/SanFranciscoBayArea_NationalTransitDatabase/Navigation
+#
+#  2) NTD_monthly_model.rdata (https://mtcdrive.box.com/v/national-transit-database)
+#     which is NTD data filtered to model months ('MAR','APR','MAY','SEP','OCT','NOV')
+#     Average daily columns of the variables are included in here.  For UPT, these are
+#     calculated using MonthlyToTypicalWeekdayRidership.xlsx (see Input note above).
+#     For the other variables, these are calculated by assuming dividing by the number
+#     of days in the month.
+#
+#  3) NTD_yearly_model.rdata (https://mtcdrive.box.com/v/national-transit-database)
+#     which is NTD data filtered to model months and aggregated (via mean) to years
+
 library(tidyr)
 library(dplyr)
 library(stringr)
@@ -33,12 +63,15 @@ INPUT_WORKSHEETS <- c("VRM","VRH","UPT") # vehicle route miles, vehicle route ho
 INPUT_AGENCY_CSV <- file.path(WORKING_DIR, "AgencyToCommonAgencyName.csv")
 INPUT_UPT_MONTHLY_TO_DAILY <- file.path(WORKING_DIR, "MonthlyToTypicalWeekdayRidership.xlsx")
 
-# model/ntd files will get saved here
+# model/ntd files will get saved here (trnline_YYYY_NTD.csv)
+# https://mtcdrive.box.com/s/vzsmmqa9oiz5jr6yqhmsnvm06hlwcoag
 MODEL_OUTPUT_DIR <- file.path(BOX_DIR, "Modeling and Surveys", "Projects", "Transit Recovery Scenario Modeling")
 
 # assuming cwd is travel-model-one
+print(paste("Reading",normalizePath(INPUT_MODEL_LOOKUP_XLSX)))
 INPUT_MODEL_LOOKUP_XLSX <- file.path("utilities","TableauAliases.xlsx")
 
+# in the WORKING_DIR
 OUTPUT_FILE      <- file.path(WORKING_DIR, "NTD_long.rdata")
 
 # Excel stores days as days since 1970-01-01
@@ -150,11 +183,11 @@ for (worksheet in INPUT_WORKSHEETS) {
   # Write it to rData
   out_file <- str_replace(OUTPUT_FILE, ".rdata", paste0("_",worksheet,".rdata"))
   print(paste("Saving", out_file))
-  save(NTD_long_df, file=out_file)
+  # save(NTD_long_df, file=out_file)
 
   INDEX_COLS <- c(
-    "NTD ID","Legacy NTD ID","Agency","Reporter Type",
-    "UZA","UZA Name","Mode","TOS","Common.Agency.Name")
+    "NTD ID","Legacy NTD ID","Agency","Status","Reporter Type",
+    "UZA","UACE CD","UZA Name","Mode","3 Mode","TOS","Common.Agency.Name")
 
   # model-specific summary -- filter to just model months
   NTD_long_df <- filter(NTD_long_df, month %in% c('MAR','APR','MAY','SEP','OCT','NOV'))
@@ -167,7 +200,11 @@ for (worksheet in INPUT_WORKSHEETS) {
     print(paste("Joining with other variables; nrow: ",nrow(NTD_model_df),"rows"))
     # print(head(NTD_model_df))
   }
+  
+  print("NTD_model_df columns:")
+  print(colnames(NTD_model_df))
 }
+
 
 # model data has been filtered to model months -- save this version
 model_output_file <- file.path(WORKING_DIR, "NTD_monthly_model.rdata")
@@ -193,7 +230,12 @@ NTD_model_rows = nrow(NTD_model_df)
 # start by aligning the mode numbers
 NTD_agency_mode_tm_lookup <- read_excel(INPUT_MODEL_LOOKUP_XLSX, sheet="Transit Mode")
 
+# let's look at the Common.Agency.Name versus NTD mode (CB, CC, etc)
+options(max.print=2000)
+print(table(NTD_model_df$Common.Agency.Name, NTD_model_df$Mode, useNA = "ifany"), n=100)
+
 # try to associate NTD_model_df with a travel model transit mode number
+# so each Common.Agency.Name/NTD.mode
 # note: multiple="first" works for dplyr 1.1.0
 NTD_model_df <- left_join(NTD_model_df, NTD_agency_mode_tm_lookup, 
   by=c("Common.Agency.Name"="Common.Agency.Name", "Mode"="NTD.mode"), 
@@ -212,7 +254,7 @@ NTD_model_df[(NTD_model_df$Common.Agency.Name == "SFMTA") &
 missing_df <- filter(select(NTD_model_df, Common.Agency.Name, Mode, "Mode backup", "Transit Mode"), 
   is.na(`Transit Mode`)) %>% distinct()
 print(paste("Missing Transit Mode: "))
-print(missing_df)
+print(missing_df, n=100)
 
 NTD_model_df <- left_join(NTD_model_df, NTD_agency_mode_tm_lookup,
   by=c("Common.Agency.Name"="Common.Agency.Name", "Mode backup"="NTD.mode"),
@@ -230,6 +272,8 @@ stopifnot(nrow(filter(NTD_model_df, is.na(`Transit Mode`)))==0)
 # remove backup cols
 NTD_model_df <- select(NTD_model_df, 
   -`Mode backup`, -`Transit Mode backup`, -`Transit Mode Name backup`, -`Mode Category backup`)
+
+print(table(NTD_model_df$Common.Agency.Name, NTD_model_df$`Transit Mode`, useNA = "ifany"))
 
 # transform columns to: 
 # name	mode	owner	frequency	line time	line dist	total boardings	passenger miles	passenger hours	path id
