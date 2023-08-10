@@ -16,8 +16,13 @@ library(readxl)
 
 # Set up directories
 
-USERPROFILE          <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
-PETRALE              <- file.path(USERPROFILE,"Documents","GitHub","Petrale","Applications","travel_model_lu_inputs")
+USERPROFILE <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
+GITHUB_DIR  <- file.path(USERPROFILE,"Documents","GitHub")
+# Virtual machines have small C drives so I put GitHub on E:
+if (Sys.getenv("USERNAME") %in% c("lzorn")) {
+  GITHUB_DIR  <- file.path("E://GitHub")
+}
+PETRALE     <- file.path(GITHUB_DIR,"petrale","applications","travel_model_lu_inputs")
 
 # Bring in TAZ 2020 dataset, dataframe is named "final_2020"
 

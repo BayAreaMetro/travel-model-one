@@ -44,11 +44,16 @@ ACS_product="5"
 
 USERPROFILE          <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
 BOX_TM               <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
+GITHUB_DIR           <- file.path(USERPROFILE,"Documents","GitHub")
+if (Sys.getenv("USERNAME") %in% c("lzorn")) {
+  GITHUB_DIR         <- file.path("E://GitHub")
+  BOX_TM             <- file.path("E://Box/Modeling and Surveys")
+}
 PBA_TAZ_2015         <- file.path(BOX_TM, "Share Data", "plan-bay-area-2050", "tazdata","PBA50_FinalBlueprintLandUse_TAZdata.xlsx")
 
 # Bring in 2020 TAZ employment data
 
-PETRALE              <- file.path(USERPROFILE,"Documents","GitHub","Petrale","Applications","travel_model_lu_inputs")
+PETRALE              <- file.path(GITHUB_DIR,"petrale","applications","travel_model_lu_inputs")
 employment_2020      <- read.csv(file.path(PETRALE,"2020","Employment","lodes_wac_employment.csv"),header = T)
 
 # County FIPS codes for ACS tract API calls
