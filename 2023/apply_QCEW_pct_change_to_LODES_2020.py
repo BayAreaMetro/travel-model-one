@@ -58,6 +58,9 @@ if __name__ == "__main__":
     # calculate diff and percent diff
     qcew_df['qcew_emp_diff'] = qcew_df.qcew_emp_2022 - qcew_df.qcew_emp_2020
     qcew_df['qcew_pct_diff'] = qcew_df.qcew_emp_diff / qcew_df.qcew_emp_2020
+
+    # 8/9/2023: employment is too high -- apply half
+    qcew_df['qcew_pct_diff'] = 0.5*qcew_df.qcew_pct_diff
     print("qcew_df final head():\n{}".format(qcew_df.head()))
 
     # read 2020 employment data
