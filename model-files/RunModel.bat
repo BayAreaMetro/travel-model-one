@@ -105,7 +105,6 @@ mkdir main
 mkdir logs
 mkdir database
 mkdir logsums
-mkdir nonres\tm15
 mkdir nonres\Inputs
 mkdir nonres\Inputs\Calib
 mkdir nonres\Inputs\Kfactors
@@ -120,7 +119,6 @@ copy INPUT\landuse\ZMAST%MODEL_YEAR_SHORT%.dbf             landuse\TAZDATA.dbf
 copy INPUT\popsyn\hhFile.%MODEL_YEAR%.csv              		popsyn\hhFile.%MODEL_YEAR%.csv
 copy INPUT\popsyn\personFile.%MODEL_YEAR%.csv              	popsyn\personFile.%MODEL_YEAR%.csv
 
-copy INPUT\nonres\tm15\              nonres\tm15\
 copy INPUT\nonres\              nonres\Inputs\
 copy INPUT\nonres\Calib\		nonres\Inputs\Calib\
 copy INPUT\nonres\Kfactors\		nonres\Inputs\Kfactors\

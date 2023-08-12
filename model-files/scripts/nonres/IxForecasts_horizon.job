@@ -36,52 +36,17 @@
 token_future = '%FUTURE%'
 FIRST_EXT_ZONE = 6594
 
-;Temporary step. Renumbers the ixDaily2015.tpp to BCM TAZ numbers.
-run pgm = matrix
-	  
-	  FILEI mati[1] = "nonres\tm15\ixDaily2015.tpp"
-
-      FILEO mato[1] = "nonres\ixDaily2015.tpp", mo = 1-4, name = ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
-	  
-	  mw[ 1] = mi.1.ix_daily_da
-      mw[ 2] = mi.1.ix_daily_sr2
-      mw[ 3] = mi.1.ix_daily_sr3
-      mw[ 4] = mw[1] + mw[2] + mw[3]
-	  
-	  RENUMBER FILE = "landuse\IZ_OZ_PCT_EXT.DAT", ZONES=6626, MISSINGZI=W,MISSINGZO=W
-	  
-	  loop value = 1,4
-	  
-		_x=ROWFIX (value,2)
-	
-	  endloop
-
-endrun
-
-RUN PGM=MATRIX 
-
-	FILEI MATI[1] = "nonres\ixDaily2015.tpp"
-	FILEO MATO[1] = "nonres\ixDaily2015_total_trips.csv", MO=1,DELIMITER=',',PATTERN=IJM:V
-
-	PAR ZONES=6626
-
-	MW[1]=MI.1.4
-
-ENDRUN
-
-*"%PYTHON_PATH%\python.exe" %BASE_SCRIPTS%\nonres\create_trip_totals.py
-
-*"%PYTHON_PATH%\python.exe" %BASE_SCRIPTS%\preprocess\csvToDbf.py nonres/ixDaily2015_totals.csv nonres/ixDaily2015_totals.dbf
+*"%PYTHON_PATH%\python.exe" %BASE_SCRIPTS%\preprocess\csvToDbf.py nonres/Inputs/ixDaily2015_totals.csv nonres/ixDaily2015_totals.dbf
 IF (RETURNCODE > 0) abort
 
-*"%PYTHON_PATH%\python.exe" %BASE_SCRIPTS%\preprocess\csvToDbf.py nonres/ixex_config.csv nonres/ixex_config.dbf
+*"%PYTHON_PATH%\python.exe" %BASE_SCRIPTS%\preprocess\csvToDbf.py nonres/Inputs/ixex_config.csv nonres/ixex_config.dbf
 IF (RETURNCODE > 0) abort
 
 ; Create MODEL_YEAR table using assumption for FUTURE
 run pgm = matrix
 
    ; Begin with 2005 base year matrix established above
-   mati = nonres\ixDaily2015.tpp
+   mati = nonres\Inputs\ixDaily2015.tpp
    
    ; Write out a year-specific matrix
    mato = nonres\ixDailyx4.tpp, mo = 1-4, name = ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
