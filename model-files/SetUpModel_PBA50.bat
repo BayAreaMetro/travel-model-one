@@ -5,16 +5,16 @@
 :: ------------------------------------------------------------------------------------------------------
 set YEAR=%1
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=E:\Models\BCM\%YEAR%_BaseY_BCM%YEAR%
+set M_DIR=D:\Models\BCM\%YEAR%_BaseY_BCM%YEAR%
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
 
 :: set the location of the Travel Model Release
 :: use master for now until we create a release
-set GITHUB_DIR=E:\Models\BCM\BCM_Model
-set ALL_BCM_INPUTS=E:\Models\BCM\BCM_Inputs
-set Software_Dir=E:\Models\BCM\BCM_Software
+set GITHUB_DIR=D:\Models\BCM\BCM_Model
+set ALL_BCM_INPUTS=D:\Models\BCM\BCM_Inputs
+set Software_Dir=D:\Models\BCM\BCM_Software
 
 
 
@@ -114,7 +114,6 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_NONRES%"                   							IN
 ::right now using the same values as Marin
 c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\telecommute"   		   				INPUT\landuse
 :: nonres
-c:\windows\system32\Robocopy.exe /E "%PREV_RUN_DIR%\tm15_nonres"                   				INPUT\nonres\tm15
 
 :: logsums and metrics
 c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\logsums_dummies"                    INPUT\logsums
