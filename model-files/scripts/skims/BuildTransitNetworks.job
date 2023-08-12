@@ -72,7 +72,7 @@ loop period = 1,5
    
    ; distribute the tasks
    ; calling GAWK doesn't appear to work when distributed.  Is the PATH different???
-   ;DistributeMultistep processid = "ctramp", processnum = @period@, commpath = '../../'
+   DistributeMultistep processid = "ctramp", processnum = @period@, commpath = '../../'
                               
    ; step 1: build walk access links
    run pgm = trnbuild
@@ -111,7 +111,7 @@ loop period = 1,5
       maxruntime  = 240
       
       ; we want walk access connectors -- mode 1 -- for all non-external i-j pairs
-      select i = 1-%taz_count%, j = 1-%taz_count%  
+      select i = 1-6593, j = 1-6593  
       select accessmodes = 1
       
       ; generate zone access links
@@ -176,7 +176,7 @@ loop period = 1,5
       maxruntime  = 240
       
       ; we want drive access connectors -- mode 2 -- for all non-external i-j pairs
-      select i = 1-%taz_count%, j = 1-%taz_count%  
+      select i = 1-6593, j = 1-6593  
       select accessmodes = 2
       
       ; park and ride parameters -- mode 2 is centroid to drive auxiliary nodes
@@ -199,13 +199,74 @@ loop period = 1,5
 	  ;read file = "%MODEL_DIR%\trn\test.lin"
 	  
    endrun   
+
+   EndDistributeMultistep
+           
+endloop ; period loop
+
+ ;wait for each time period to finish before proceeding
+Wait4Files files = ctramp1.script.end, 
+                   ctramp2.script.end, 
+                   ctramp3.script.end, 
+                   ctramp4.script.end, 
+                   ctramp5.script.end, 
+           printfiles = merge, deldistribfiles = t, checkreturncode = t
+
+
    
+; time period loop
+loop period = 1,5
+
+   ; define a two-letter token for each time period
+   if (period = 1)   
+      token_period = 'EA'
+      
+   elseif (period = 2)   
+      token_period = 'AM'
+      
+   elseif (period = 3)   
+      token_period = 'MD'
+      
+   elseif (period = 4)   
+      token_period = 'PM'
+      
+   elseif (period = 5)   
+      token_period = 'EV'
+      
+   endif 
    
    ; step 3: use a gawk script to reverse the access links to turn them into egress links   
    *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\reverselinks.awk" @token_period@_walk_acclinks.dat > @token_period@_walk_egrlinks.dat
    *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\reverselinks.awk" @token_period@_drive_acclinks.dat > @token_period@_drive_egrlinks.dat
+
+endloop ; period loop   
+
+
+; time period loop
+loop period = 1,5
+
+   ; define a two-letter token for each time period
+   if (period = 1)   
+      token_period = 'EA'
+      
+   elseif (period = 2)   
+      token_period = 'AM'
+      
+   elseif (period = 3)   
+      token_period = 'MD'
+      
+   elseif (period = 4)   
+      token_period = 'PM'
+      
+   elseif (period = 5)   
+      token_period = 'EV'
+      
+   endif 
    
-     
+   ; distribute the tasks
+   ; calling GAWK doesn't appear to work when distributed.  Is the PATH different???
+   DistributeMultistep processid = "ctramp", processnum = @period@, commpath = '../../'
+   
    ; step 4: build transfer links and combine with access and egress links
    run pgm = trnbuild
    
@@ -243,7 +304,7 @@ loop period = 1,5
       maxruntime  = 240
    
       ; allow paths to emerge from zones via walk (1) or drive (2) access modes
-      select i = 1-%taz_count%, j = 1-%taz_count%  
+      select i = 1-6593, j = 1-6593  
       select accessmodes = 1, 2
       
       ; we are not generating zone access links
@@ -265,6 +326,40 @@ loop period = 1,5
       read file = "transit@token_period@.lin"
    endrun
 
+   EndDistributeMultistep
+           
+endloop ; period loop
+
+ ;wait for each time period to finish before proceeding
+Wait4Files files = ctramp1.script.end, 
+                   ctramp2.script.end, 
+                   ctramp3.script.end, 
+                   ctramp4.script.end, 
+                   ctramp5.script.end, 
+           printfiles = merge, deldistribfiles = t, checkreturncode = t
+
+
+; time period loop
+loop period = 1,5
+
+   ; define a two-letter token for each time period
+   if (period = 1)   
+      token_period = 'EA'
+      
+   elseif (period = 2)   
+      token_period = 'AM'
+      
+   elseif (period = 3)   
+      token_period = 'MD'
+      
+   elseif (period = 4)   
+      token_period = 'PM'
+      
+   elseif (period = 5)   
+      token_period = 'EV'
+      
+   endif 
+   
    ; step 5: select two best park and ride locations for each mode and create the support links that are used in skimming/assignment  
    *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=walk          -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_walk.dat
    ;*gawk -f "%MODEL_DIR%\ctramp\scripts\skims\select_pnrs.awk" -v type=express_bus   -v period=@token_period@ @token_period@_transit_suplinks.dat > @token_period@_transit_suplinks_express_bus.dat
@@ -276,14 +371,6 @@ loop period = 1,5
    ; step 6: create KNR access links for local bus from walk access links
    *gawk -f "%MODEL_DIR%\ctramp\scripts\skims\createLocalBusKNRs.awk" @token_period@_transit_suplinks_walk.dat > @token_period@_bus_acclinks_KNR.dat
 
-   ;EndDistributeMultistep
            
 endloop ; period loop
 
-; wait for each time period to finish before proceeding
-;Wait4Files files = ctramp1.script.end, 
-;                   ctramp2.script.end, 
-;                   ctramp3.script.end, 
-;                   ctramp4.script.end, 
-;                   ctramp5.script.end, 
-;           printfiles = merge, deldistribfiles = t, checkreturncode = t
