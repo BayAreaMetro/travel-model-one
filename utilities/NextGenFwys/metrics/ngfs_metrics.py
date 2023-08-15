@@ -3038,7 +3038,7 @@ if __name__ == "__main__":
         metrics_df = pd.concat([metrics_df, metrics_dict_to_df(metrics_dict)])
         # print out table
 
-        metrics_df[METRICS_COLUMNS].to_csv(out_filename, float_format='%.5f', index=False) #, header=False
+        metrics_df[METRICS_COLUMNS].loc[(metrics_df['modelrun_id'] == tm_run_id)].to_csv(out_filename, float_format='%.5f', index=False) #, header=False
         LOGGER.info("Wrote {}".format(out_filename))
 
         # for testing, stop here
