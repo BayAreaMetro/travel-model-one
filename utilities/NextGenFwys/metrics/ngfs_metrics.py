@@ -992,7 +992,6 @@ def calculate_Affordable2_ratio_time_cost(tm_run_id, year, tm_loaded_network_df,
 
     # borrow from pba metrics calculate_Connected2_hwy_traveltimes(), but only for corridor disaggregation (and maybe commercial vs private vehicle. need to investigate income cat further)
     # make sure to run after the comparison functions have been run, as this takes them as inputs from the metrics dict
-    # takes Reliable 1 metric inputs
     # will need to compute a new average across corridors, since we are only interested in the AM period
     metric_id = 'Affordable 2'
     grouping1 = ' '
@@ -1942,12 +1941,12 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
   # merge loaded network with df containing route information
   # remove HOV lanes from the network
   loaded_network_with_goods_routes_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] != 3)]
-  loaded_network_with_goods_routes_df = loaded_network_with_goods_routes_df.copy()[['a','b','ctimAM','ctimPM']]
+  loaded_network_with_goods_routes_df = loaded_network_with_goods_routes_df.copy()[['a','b','ctimAM','ctimPM', 'USEAM']]
   loaded_network_with_goods_routes_df = pd.merge(left=loaded_network_with_goods_routes_df, right=goods_routes_a_b_links_df, how='left', left_on=['a','b'], right_on=['A','B'])
   LOGGER.debug("loaded_network_with_goods_routes_df.head() =\n{}".format(loaded_network_with_goods_routes_df.head()))
 
   # sum the travel time for the different time periods on the route that begins on I580
-  travel_time_route_I580_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I580_I238_I880_PortOfOakland').agg('sum')
+  travel_time_route_I580_summed_df = loaded_network_with_goods_routes_df.copy().loc[(loaded_network_with_goods_routes_df['USEAM'] == 1)].groupby('I580_I238_I880_PortOfOakland').agg('sum')
   LOGGER.debug("travel_time_route_I580_summed_df.head() =\n{}".format(travel_time_route_I580_summed_df.head()))
   # Only use rows containing 'AM' since this is the direction toward the port of oakland
   AM_travel_time_route_I580 = travel_time_route_I580_summed_df.loc['AM', 'ctimAM']
@@ -1960,7 +1959,7 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
   metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I580_I238_I880_PortOfOakland', 'peak_hour_travel_time_I580_I238_I880_PortOfOakland', year] = peak_average_travel_time_route_I580
 
   # sum the travel time for the different time periods on the route that begins on I101
-  travel_time_route_I101_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I101_I880_PortOfOakland').agg('sum')
+  travel_time_route_I101_summed_df = loaded_network_with_goods_routes_df.copy().loc[(loaded_network_with_goods_routes_df['USEAM'] == 1)].groupby('I101_I880_PortOfOakland').agg('sum')
   # Only use rows containing 'AM' since this is the direction toward the port of oakland
   AM_travel_time_route_I101 = travel_time_route_I101_summed_df.loc['AM', 'ctimAM']
   PM_travel_time_route_I101 = travel_time_route_I101_summed_df.loc['PM', 'ctimPM']
@@ -1972,7 +1971,7 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id, ye
   metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I101_I880_PortOfOakland', 'peak_hour_travel_time_I101_I880_PortOfOakland', year] = peak_average_travel_time_route_I101
     
   # sum the travel time for the different time periods on the route that begins on I80
-  travel_time_route_I80_summed_df = loaded_network_with_goods_routes_df.copy().groupby('I80_I880_PortOfOakland').agg('sum')
+  travel_time_route_I80_summed_df = loaded_network_with_goods_routes_df.copy().loc[(loaded_network_with_goods_routes_df['USEAM'] == 1)].groupby('I80_I880_PortOfOakland').agg('sum')
   # Only use rows containing 'AM' since this is the direction toward the port of oakland
   AM_travel_time_route_I80 = travel_time_route_I80_summed_df.loc['AM', 'ctimAM']
   PM_travel_time_route_I80 = travel_time_route_I80_summed_df.loc['PM', 'ctimPM']
@@ -2143,6 +2142,20 @@ def calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df
 
     n = this_run_metric[2]
 
+    # TODO: fix this hard-coded solution (should catch this error for all simple averages)
+    # calculate denominator for EPC calculation
+    metrics_dict_series = pd.Series(metrics_dict)
+    metrics_dict_df  = metrics_dict_series.to_frame().reset_index()
+    metrics_dict_df.columns = ['grouping1', 'grouping2', 'grouping3', 'modelrun_id','metric_id','intermediate/final','key','metric_desc','year','value']
+    LOGGER.debug("metrics_dict_df: \n{}".format(metrics_dict_df))
+    epc_arterials_metrics_df = metrics_dict_df.loc[(metrics_dict_df['grouping1'] == 'EPC')]
+    LOGGER.debug("epc_arterials_metrics_df: \n{}".format(epc_arterials_metrics_df))
+    epc_arterials_metrics_df = epc_arterials_metrics_df.loc[(epc_arterials_metrics_df['modelrun_id'] == tm_run_id)]
+    LOGGER.debug("epc_arterials_metrics_df: \n{}".format(epc_arterials_metrics_df))
+    epc_arterials_metrics_df = epc_arterials_metrics_df.loc[(epc_arterials_metrics_df['intermediate/final'] == 'intermediate')]
+    LOGGER.debug("epc_arterials_metrics_df: \n{}".format(epc_arterials_metrics_df))
+    n_epc_arterials = epc_arterials_metrics_df.shape[0]
+
     # add average across corridors to metric dict
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Freeways','Fwy_avg_peak_hour_travel_time_across_key_corridors_weighted_by_vmt',year]      = travel_time_weighted/sum_of_weights
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Freeways','Fwy_simple_avgpeak_hour_travel_time_across_key_corridors',year]      = total_travel_time/n
@@ -2151,7 +2164,7 @@ def calculate_Reliable1_change_travel_time(tm_run_id, year, tm_loaded_network_df
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'final','Parallel Arterials','Parallel_Arterial_simple_avg_peak_hour_travel_time_across_key_corridors',year]      = total_travel_time_parallel_arterial/n
     # tolled arterials
     metrics_dict['Region', grouping2, grouping3, tm_run_id, metric_id,'final','Tolled Arterials','peak hour travel time for tolled arterial road links, Regional average',year]      = arterial_travel_time_region_avg/n
-    metrics_dict['EPC', grouping2, grouping3, tm_run_id, metric_id,'final','Tolled Arterials','peak hour travel time for tolled arterial road links, EPC average',year]      = arterial_travel_time_epc_avg/n
+    metrics_dict['EPC', grouping2, grouping3, tm_run_id, metric_id,'final','Tolled Arterials','peak hour travel time for tolled arterial road links, EPC average',year]      = arterial_travel_time_epc_avg/n_epc_arterials
     metrics_dict['NonEPC', grouping2, grouping3, tm_run_id, metric_id,'final','Tolled Arterials','peak hour travel time for tolled arterial road links, Non-EPC average',year]      = arterial_travel_time_nonepc_avg/n
 
 def R2_aggregate_before_joining(tm_run_id):
@@ -2814,7 +2827,7 @@ if __name__ == "__main__":
     current_runs_df = pd.read_excel(NGFS_MODEL_RUNS_FILE, sheet_name='all_runs', usecols=['project','year','directory','run_set','category','short_name','status'])
     current_runs_df = current_runs_df.loc[ current_runs_df['status'] == 'current']
     # only process metrics for 2035 model runs 
-    # current_runs_df = current_runs_df.loc[ current_runs_df['year'] == 2035]
+    current_runs_df = current_runs_df.loc[ current_runs_df['year'] == 2035]
     # # TODO: delete later after NP10 runs are completed
     # current_runs_df = current_runs_df.loc[ (current_runs_df['directory'].str.contains('NP10') == False)]
 
