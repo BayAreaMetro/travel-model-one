@@ -255,14 +255,12 @@ Tableau2023 <- New2023 %>%
   gather(Variable,Value,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
          MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)
 
-write.csv(Tableau2023,"TAZ1454_2023_Tableau_Version.csv",row.names = F)
+write.csv(Tableau2023,"TAZ1454_2023_long.csv",row.names = F)
 
 # Concatenated version of Tableau files
 
-Tableau2015     <- read.csv(file.path(PETRALE,"2015","TAZ1454_2015_Tableau_Version.csv"), header = T)
-Tableau2020     <- read.csv(file.path(PETRALE,"2020","TAZ1454_2020_Tableau_Version.csv"), header = T)
-Tableau15_20_23 <- bind_rows(Tableau2015,Tableau2020,Tableau2023)
-write.csv(Tableau15_20_23,"TAZ1454_2015_2020_2023_Tableau_Version.csv",row.names = F)
+Tableau2015     <- read.csv(file.path(PETRALE,"2015","TAZ1454_2015_long.csv"), header = T)
+Tableau2020     <- read.csv(file.path(PETRALE,"2020","TAZ1454_2020_long.csv"), header = T)
 
 
 
