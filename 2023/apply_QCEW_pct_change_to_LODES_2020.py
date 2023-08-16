@@ -18,7 +18,6 @@ TAZ_EMPLOYMENT_2020_FILE        = "..\\2020\\Employment\\lodes_wac_employment.cs
 TAZ_SUPERDISTRICT_COUNTY_FILE   = "X:\\travel-model-one-master\\utilities\\geographies\\taz-superdistrict-county.csv"
 QCEW_FILE                       = "M:\\Data\\QCEW\\qcew_BayArea_{}_annual.csv" # arg is year
 OUTPUT_FILE                     = "employment_2020_with_QCEW_pct_change_applied.csv"
-OUTPUT_SUMMARY_FILE             = "employment_county_empsix_long.csv"
 
 if __name__ == "__main__":
 
@@ -141,13 +140,6 @@ if __name__ == "__main__":
 
     print('Summary:\n{}'.format(employment_2023_summary_df))
     print('Total change: {:,}'.format(employment_2023_summary_df['emp_diff'].sum()))
-
-    # summary to add to tableau
-    employment_2023_summary_df.reset_index(drop=False, inplace=True)
-    employment_2023_summary_df.drop(columns=['qcew_pct_diff','emp_diff','pct_diff'], inplace=True)
-    employment_2023_summary_df = pandas.wide_to_long(
-        employment_2023_summary_df, "emp", i=['county','empsix'], j='year', sep='_').reset_index(drop=False)
-    employment_2023_summary_df.to_csv(OUTPUT_SUMMARY_FILE, index=False)
 
     # convert back to format we need -- long back to wide
     employment_2023_df = pandas.pivot_table(
