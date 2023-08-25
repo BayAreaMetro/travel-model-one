@@ -44,7 +44,7 @@ def tally_travel_cost(iteration, sampleshare, metrics_dict):
                                                                                                'Bridge Tolls', 
                                                                                                'Value Tolls with discount',
                                                                                                'Cordon tolls with discount']].sum()/100  # cents -> dollars
-        metrics_dict['total_auto_trips_inc%d' % inc_level] = auto_df.loc['inc%d' % inc_level, 'Daily Person Trips']
+        metrics_dict['total_auto_trips_inc%d' % inc_level] = auto_df.loc['inc%d' % inc_level, 'Person Trips']
 
     # Count households from disaggregate output
     household_df = pandas.read_csv(os.path.join("main", "householdData_%d.csv" % iteration),
