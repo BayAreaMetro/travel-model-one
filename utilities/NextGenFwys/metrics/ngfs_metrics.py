@@ -371,14 +371,18 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     # metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','VMT','daily_household_vmt',year] = (vmt_hh_df.loc[:,'vmt'] * vmt_hh_df.loc[:,'freq']).sum()
 
     # calculate auto trips (as calculated in scenarioMetrics.py)
+    if tm_run_id == '2035_TM152_NGF_NP10_Path1x_01':
+        PERSON_TRIPS_FIELD_NAME = 'Person Trips'
+    else:
+        PERSON_TRIPS_FIELD_NAME = 'Daily Person Trips'
     auto_trips_overall = 0
     auto_times_summed = tm_auto_times_df.copy().groupby('Income').agg('sum')
     for inc_level in range(1,5):
-        metrics_dict['Income Level', 'Auto', grouping3, tm_run_id, metric_id,'top_level','Trips', 'inc%d' % inc_level, year] = auto_times_summed.loc['inc%d' % inc_level, 'Daily Person Trips']
+        metrics_dict['Income Level', 'Auto', grouping3, tm_run_id, metric_id,'top_level','Trips', 'inc%d' % inc_level, year] = auto_times_summed.loc['inc%d' % inc_level, PERSON_TRIPS_FIELD_NAME]
         metrics_dict['Income Level', 'Auto', grouping3, tm_run_id, metric_id,'top_level','VHT', 'inc%d' % inc_level, year] = auto_times_summed.loc['inc%d' % inc_level, 'Vehicle Minutes']/60
         metrics_dict['Income Level', 'Auto', grouping3, tm_run_id, metric_id,'top_level','VMT', 'inc%d' % inc_level, year] = auto_times_summed.loc['inc%d' % inc_level, 'Vehicle Miles']
         # total auto trips
-        auto_trips_overall += auto_times_summed.loc['inc%d' % inc_level, 'Daily Person Trips']
+        auto_trips_overall += auto_times_summed.loc['inc%d' % inc_level, PERSON_TRIPS_FIELD_NAME]
     metrics_dict[grouping1, 'Auto', grouping3, tm_run_id, metric_id,'top_level','Trips', 'Daily_total_auto_trips_overall', year] = auto_trips_overall
     # calculate vmt and trip breakdown to understand what's going on
     for auto_times_mode in ['truck', 'ix', 'air', 'zpv_tnc']:
@@ -386,7 +390,7 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
             modegrouping = 'Truck'
         else:
             modegrouping = 'Non-Household'
-        metrics_dict[modegrouping, modegrouping, grouping3, tm_run_id, metric_id,'top_level','Trips', '{}'.format(auto_times_mode), year] = tm_auto_times_df.copy().loc[(tm_auto_times_df['Mode'].str.contains(auto_times_mode) == True), 'Daily Person Trips'].sum()
+        metrics_dict[modegrouping, modegrouping, grouping3, tm_run_id, metric_id,'top_level','Trips', '{}'.format(auto_times_mode), year] = tm_auto_times_df.copy().loc[(tm_auto_times_df['Mode'].str.contains(auto_times_mode) == True), PERSON_TRIPS_FIELD_NAME].sum()
         metrics_dict[modegrouping, modegrouping, grouping3, tm_run_id, metric_id,'top_level','VHT', '{}'.format(auto_times_mode), year] = tm_auto_times_df.copy().loc[(tm_auto_times_df['Mode'].str.contains(auto_times_mode) == True), 'Vehicle Minutes'].sum()/60
         metrics_dict[modegrouping, modegrouping, grouping3, tm_run_id, metric_id,'top_level','VMT', '{}'.format(auto_times_mode), year] = tm_auto_times_df.copy().loc[(tm_auto_times_df['Mode'].str.contains(auto_times_mode) == True), 'Vehicle Miles'].sum()
 
