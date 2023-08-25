@@ -143,6 +143,18 @@ copy INPUT\hwy\complete_network_with_externals_v2.net                 hwy\comple
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py
 if ERRORLEVEL 1 goto done
 
+if %COMPUTER_SETTING%==HIGH (
+	copy CTRAMP\scripts\assign\HwyAssign_64core.job CTRAMP\scripts\assign\HwyAssign.job
+	copy CTRAMP\scripts\skims\HwySkims_64core.job CTRAMP\scripts\skims\HwySkims.job
+	copy CTRAMP\scripts\block\HwyIntraStep_64.block CTRAMP\scripts\block\HwyIntraStep.block
+)
+
+if %COMPUTER_SETTING%==MED (
+	copy CTRAMP\scripts\assign\HwyAssign_32core.job CTRAMP\scripts\assign\HwyAssign.job
+	copy CTRAMP\scripts\skims\HwySkims_32core.job CTRAMP\scripts\skims\HwySkims.job
+	copy CTRAMP\scripts\block\HwyIntraStep_32.block CTRAMP\scripts\block\HwyIntraStep.block
+)
+
 ::convert the landuse file from dbf to csv
 "%R_HOME%"\RScript.exe --vanilla %BASE_SCRIPTS%\preprocess\create_landuse_csv.R %MODEL_DIR%/landuse/ > create_landuse_csv.log 2>&1
 if ERRORLEVEL 1 goto done
@@ -288,7 +300,7 @@ set ITER=1
 set PREV_ITER=1
 set WGT=1.0
 set PREV_WGT=0.00
-set SAMPLESHARE=0.05
+set SAMPLESHARE=0.10
 set SEED=0
 
 :: Runtime configuration: set the workplace shadow pricing parameters
@@ -320,7 +332,7 @@ set ITER=2
 set PREV_ITER=1
 set WGT=0.50
 set PREV_WGT=0.50
-set SAMPLESHARE=0.05
+set SAMPLESHARE=0.10
 set SEED=0
 
 :: Runtime configuration: set the workplace shadow pricing parameters

@@ -12,10 +12,11 @@ set AddStrategies=Yes
 
 :: set the location of the Travel Model Release
 :: use master for now until we create a release
-set GITHUB_DIR=D:\Models\BCM\BCM_Model
-set ALL_BCM_INPUTS=D:\Models\BCM\BCM_Inputs
-set Software_Dir=D:\Models\BCM\BCM_Software
-
+set GITHUB_DIR=Z:\projects\ccta\31000190\Raghu\working_model\BCM_Model
+set ALL_BCM_INPUTS=Z:\projects\ccta\31000190\Raghu\working_model\BCM_Inputs
+set Software_Dir=Z:\projects\ccta\31000190\Raghu\working_model\BCM_Software
+:: HIGH or LOW
+set COMPUTER_SETTING=HIGH
 
 
 :: set the location of the networks (make sure the network version, year and variant are correct); currently set to the SharePoint location. 
@@ -64,6 +65,8 @@ echo HOST_IP_ADDRESS: %HOST_IP_ADDRESS%
 SET computer_prefix=%computername:~0,4%
 mkdir %M_DIR%
 echo SET SOFTWARE_DIR=%Software_Dir%> %M_DIR%\Set_Software_Dr.cmd
+echo SET COMPUTER_SETTING=%COMPUTER_SETTING%>> %M_DIR%\Set_Software_Dr.cmd
+COMPUTER_SETTING
 cd /d %M_DIR%
 :: copy over CTRAMP
 mkdir CTRAMP\model
