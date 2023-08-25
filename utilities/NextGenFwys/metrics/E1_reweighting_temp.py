@@ -307,7 +307,7 @@ trips_od_travel_time_df.rename(columns={"CITY": "dest_CITY"}, inplace=True)
 
 trips_od_travel_time_df_clean_copy = trips_od_travel_time_df.copy()
 
-TAZ_GROUPINGS = ['EPC', 'NA']
+TAZ_GROUPINGS = ['ALL', 'EPC', 'NA']
 for TAZ_SELECTION in TAZ_GROUPINGS:
     simple_mode_weights_df = create_simple_mode_weights_df(TAZ_SELECTION)
     print(simple_mode_weights_df)
