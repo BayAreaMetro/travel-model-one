@@ -72,11 +72,12 @@ def create_transfer_ods(o_d_distances, TRANSFER):
              (transfer_trips_df['route_ids_postXfer']=='Green-N,Orange-S')) |
             # NB Blue to Orange
             ((transfer_trips_df['route_ids_preXfer']=='Blue-S')&
-             (transfer_trips_df['route_ids_postXfer']=='Orange-N')) |
+              transfer_trips_df['route_ids_postXfer'].isin(['Orange-N','Orange-N MCAR Yellow-N'])) |
             # SB Orange to Blue
-            ((transfer_trips_df['route_ids_preXfer']=='Orange-S')&
+            (transfer_trips_df['route_ids_preXfer'].isin(['Orange-S','Yellow-S MCAR Orange-S'])&
              (transfer_trips_df['route_ids_postXfer']=='Blue-N'))
         ]
+
     elif TRANSFER == 'COLS':
         # must be to or from Beige
         transfer_trips_df = transfer_trips_df.loc[
@@ -222,19 +223,11 @@ if __name__ == '__main__':
     
     all_transfer_trips_df = pandas.DataFrame()
     # create transfer trips by transferring at these stations
-    for TRANSFER in ['DALY','MCAR','BAYF']:
+    for TRANSFER in ['DALY','MCAR','BAYF','COLS']:
         transfer_trips_df = create_transfer_ods(o_d_distances, TRANSFER)
             
-        all_transfer_trips_df = pandas.concat([all_transfer_trips_df, transfer_trips_df])
-    print("all_transfer_trips_df length: {:,}".format(len(all_transfer_trips_df)))
-
-    # put transfers together with direct links
-    o_d_distances = pandas.concat([o_d_distances, all_transfer_trips_df])
-
-    # do COLS transfer in second pass
-    transfer_trips_df = create_transfer_ods(o_d_distances, TRANSFER='COLS')
-    print("transfer_trips_df for COLS length: {:,}".format(len(transfer_trips_df)))
-    o_d_distances = pandas.concat([o_d_distances, transfer_trips_df])
+        # put transfers together with direct links
+        o_d_distances = pandas.concat([o_d_distances, transfer_trips_df])
 
     # check if we have duplicates
     o_d_distances_grouped = o_d_distances.groupby(by=['stop_id_A','stop_id_B'])
