@@ -19,7 +19,6 @@ python routeLinkMSA AM|MD|PM|EV|EA trnAssignIter VolumeDiffCondition
 
  Keeps running log in RouteLinkMSALog.csv
  
-This script bypasses NetworkWrangler, since the node numbers in the BiCounty Model are more than 5 characters.
 """
 
 if len(sys.argv) != 4:
@@ -55,17 +54,41 @@ for mode_ in modes:
     filename = 'trnlink'+timeperiod.lower()+'_'+mode_
     suplinks=['*1','*2','*3','*4','*5','*6','*7','*8','*9']
 
-    _csv = pd.read_csv(os.path.join(filename + '.csv'))
+    _csv = pd.read_csv(os.path.join(filename + '.csv'), names=["A","B","TIME","MODE", #"FREQ",
+                                                                    "PLOT", #"COLOR",
+                                                                    "STOP_A","STOP_B","DIST",
+                                                                    "NAME", #"SEQ",
+                                                                    "OWNER",
+                                                                    "AB_VOL","AB_BRDA","AB_XITA","AB_BRDB","AB_XITB",
+                                                                    "BA_VOL","BA_BRDA","BA_XITA","BA_BRDB","BA_XITB",'MATRIX'])
+
+    #_dbf = Dbf5(os.path.join(filename + '.dbf'))
+    #_dbf = _dbf.to_dataframe()[['FREQ','SEQ', 'COLOR']]
+    _dbf = pd.read_csv(os.path.join(filename + '_converted.csv'))
+    
+    _csv['id'] = _csv.index
+    _dbf['id'] = _dbf.index
+    
+    _csv['FREQ'] = _csv['id'].map(dict(zip(_dbf['id'], _dbf['FREQ'])))
+    _csv['SEQ'] = _csv['id'].map(dict(zip(_dbf['id'], _dbf['SEQ'])))
+    _csv['COLOR'] = _csv['id'].map(dict(zip(_dbf['id'], _dbf['COLOR'])))
 
     _csv = _csv[~_csv['NAME'].isin(suplinks)]
+
+    #_csv=_csv[_csv['SEQ'].notnull()]
+
+    _csv.drop(columns='id', inplace=True)
 
     combined_df_dict[mode_] = _csv
     print("Read ", filename)
 
     del(_csv)
+    del(_dbf)
 
 
 mode_df = pd.concat(combined_df_dict.values(), ignore_index=True)
+
+
 
 agg_function = {'TIME': 'mean',
                 'PLOT': 'mean',
@@ -73,6 +96,7 @@ agg_function = {'TIME': 'mean',
                 'STOP_B': 'mean',
                 'DIST': 'mean',
                 'FREQ': 'mean',
+                              
                 'AB_VOL': 'sum',
                 'AB_BRDA': 'sum',
                 'AB_XITA': 'sum',

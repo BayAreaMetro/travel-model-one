@@ -413,51 +413,21 @@ loop period = 1, 5
 
 			FILEI DBI[1]= trnlink@token_period@_@token_access@_@token_path@_@token_egress@.dbf,
 			  AUTOARRAY = ALLFIELDS
-			FILEI DBI[2]= trnlink@token_period@_@token_access@_@token_path@_@token_egress@.csv,
-				delimiter = ',',
-				A=#1,B=#2,TIME=#3,MODE=#4,PLOT=#5,STOP_A=#6,STOP_B=#7,DIST=#8,NAME(C)=#9,OWNER(C)=#10,
-				AB_VOL=#11,AB_BRDA=#12,AB_XITA=#13,AB_BRDB=#14,AB_XITB=#15,BA_VOL=#16,BA_BRDA=#17,BA_XITA=#18,BA_BRDB=#19,BA_XITB=#20,MATRIX(C)=#21
 
-			FILEO PRINTO[1] = trnlink@token_period@_@token_access@_@token_path@_@token_egress@.csv
+			FILEO PRINTO[1] = trnlink@token_period@_@token_access@_@token_path@_@token_egress@_converted.csv
 
-			LIST = "A","B","TIME","MODE", "FREQ","PLOT", "COLOR","STOP_A","STOP_B","DIST","NAME", "SEQ","OWNER",
-						 "AB_VOL","AB_BRDA","AB_XITA","AB_BRDB","AB_XITB","BA_VOL","BA_BRDA","BA_XITA","BA_BRDB","BA_XITB",'MATRIX', PRINTO=1, CSV=T
+			LIST = "FREQ","COLOR","SEQ", PRINTO=1, CSV=T
 			ZONES=1
-			LOOP LINE=1,DBI.2.NUMRECORDS
+			LOOP LINE=1,DBI.1.NUMRECORDS
 
-			csv = DBIReadRecord(2, LINE)
-			A=DI.2.A
-			B=DI.2.B
-			TIME=DI.2.TIME
-			MODE=DI.2.MODE
-			PLOT=DI.2.PLOT
-			STOP_A=DI.2.STOP_A
-			STOP_B=DI.2.STOP_B
-			DIST=DI.2.DIST
-			NAME=DI.2.NAME
-			OWNER=DI.2.OWNER
-			AB_VOL=DI.2.AB_VOL
-			AB_BRDA=DI.2.AB_BRDA
-			AB_XITA=DI.2.AB_XITA
-			AB_BRDB=DI.2.AB_BRDB
-			AB_XITB=DI.2.AB_XITB
-			BA_VOL=DI.2.BA_VOL
-			BA_BRDA=DI.2.BA_BRDA
-			BA_XITA=DI.2.BA_XITA
-			BA_BRDB=DI.2.BA_BRDB
-			BA_XITB=DI.2.BA_XITB
-			MATRIX=DI.2.MATRIX
+				dbf=DBIReadRecord(1,LINE)
 
+				SEQ=DI.1.SEQ
+				FREQ=DI.1.FREQ
+				COLOR=DI.1.COLOR
 
-			dbf=DBIReadRecord(1,LINE)
-
-			SEQ=DI.1.SEQ
-			FREQ=DI.1.FREQ
-			COLOR=DI.1.COLOR
-
-			LIST=A,B,TIME,MODE,FREQ,PLOT,COLOR,STOP_A,STOP_B,DIST,NAME,SEQ,OWNER,
-				AB_VOL,AB_BRDA,AB_XITA,AB_BRDB,AB_XITB,BA_VOL,BA_BRDA,BA_XITA,BA_BRDB,BA_XITB,MATRIX, PRINTO=1, CSV=T
-				
+				LIST=FREQ,COLOR,SEQ, PRINTO=1, CSV=T
+					
 			ENDLOOP
 
 
