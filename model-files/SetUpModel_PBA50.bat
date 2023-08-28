@@ -15,8 +15,8 @@ set AddStrategies=Yes
 set GITHUB_DIR=Z:\projects\ccta\31000190\Raghu\working_model\BCM_Model
 set ALL_BCM_INPUTS=Z:\projects\ccta\31000190\Raghu\working_model\BCM_Inputs
 set Software_Dir=Z:\projects\ccta\31000190\Raghu\working_model\BCM_Software
-:: HIGH or LOW
-set COMPUTER_SETTING=HIGH
+:: HIGH, MED or LOW
+set COMPUTER_SETTING=MED
 
 
 :: set the location of the networks (make sure the network version, year and variant are correct); currently set to the SharePoint location. 
