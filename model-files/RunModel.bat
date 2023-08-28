@@ -300,7 +300,7 @@ set ITER=1
 set PREV_ITER=1
 set WGT=1.0
 set PREV_WGT=0.00
-set SAMPLESHARE=0.10
+set SAMPLESHARE=0.05
 set SEED=0
 
 :: Runtime configuration: set the workplace shadow pricing parameters
