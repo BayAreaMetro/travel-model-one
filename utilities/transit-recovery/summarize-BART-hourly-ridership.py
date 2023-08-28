@@ -15,7 +15,7 @@ HOURLY_RIDERSHIP_DIR = pathlib.Path("M:\\Data\\Transit\\BART\\Hourly Ridership D
 BART_STATIONS_FILE = "BART_stations.csv"
 
 # OD Stations to distances
-BART_OD_DISTS = pathlib.Path("M:\\Data\\Transit\\511\\2023-08-GTFSTransitData_BA-orig-dest-distances.csv")
+BART_OD_DISTS = pathlib.Path("M:\\Data\\Transit\\511\\2023-08-GTFSTransitData_BA-related\\orig-dest-distances.csv")
 
 # output files
 MONTHLY_HOURLY_RIDERSHIP_OUTPUT     = HOURLY_RIDERSHIP_DIR.parents[0] / "BART-hourly-ridership.csv"

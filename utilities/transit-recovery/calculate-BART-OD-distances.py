@@ -7,11 +7,17 @@ USAGE = """
 import pathlib
 import pandas
 import partridge
+# for creating shapefile of BART lines
+import geopandas
+import shapely
 
 # this is used to figure out distances between stops
 BART_GTFS = pathlib.Path("M:\\Data\\Transit\\511\\2023-08-GTFSTransitData_BA.zip")
 # Ouput will be here
-OUTPUT_BART_OD_DISTS = BART_GTFS.parents[0] / "2023-08-GTFSTransitData_BA-orig-dest-distances.csv"
+OUTPUT_BART_OD_DISTS = BART_GTFS.parents[0] / "2023-08-GTFSTransitData_BA-related" / "orig-dest-distances.csv"
+# stops/links_shape
+OUTPUT_BART_STOPS_SHP = BART_GTFS.parents[0] / "2023-08-GTFSTransitData_BA-related" / "stops.shp"
+OUTPUT_BART_LINKS_SHP = BART_GTFS.parents[0] / "2023-08-GTFSTransitData_BA-related" / "links.shp"
 
 def create_transfer_ods(o_d_distances, TRANSFER):
     """ 
@@ -145,13 +151,19 @@ if __name__ == '__main__':
     print("routes: trip_id for longest trips:\n{}".format(trips_df))
     longest_trips_by_route_id = trips_df.to_dict(orient='index')
 
+    # for shapefiles
+    stop_ids = {} # track if stop is in shp_nodes
+    shp_stops = [] # stop_id, geometry
+    shp_links = [] # route_id, trip_id, stop_sequence_A, stop_sequence_B, stop_id_A, stop_id_B, geometry
+    feed_stop_dict = feed.stops.set_index('stop_id').to_dict(orient='index')
+
     o_d_distances = pandas.DataFrame()
     for route_id in longest_trips_by_route_id.keys():
         trip_id = longest_trips_by_route_id[route_id]['trip_id']
 
         trip_stop_times_df = stop_times_df.loc[
             stop_times_df.trip_id == trip_id,
-            ['route_id','stop_sequence','stop_id','shape_dist_traveled']].copy()
+            ['route_id','trip_id','stop_sequence','stop_id','shape_dist_traveled']].copy()
         trip_stop_times_df.sort_values(by='stop_sequence', inplace=True)
         trip_stop_times_df.reset_index(drop=True, inplace=True)
         # sometimes the stop sequence skips one so re-number
@@ -166,14 +178,14 @@ if __name__ == '__main__':
         link_df = pandas.merge(
             left = link_df,
             right = link_df,
-            left_on = ['route_id','stop_sequence_B'],
-            right_on = ['route_id','stop_sequence'],
+            left_on = ['route_id','trip_id','stop_sequence_B'],
+            right_on = ['route_id','trip_id','stop_sequence'],
             how = 'left',
             suffixes=['_A','_B']
         )
         # drop the last row, keep only relevant columns
         link_df = link_df.loc[pandas.notnull(link_df.stop_id_B),
-                              ['route_id',
+                              ['route_id','trip_id',
                               'stop_id_A','stop_id_B',
                               'shape_dist_traveled_A','shape_dist_traveled_B',
                               'stop_sequence_A','stop_sequence_B']]
@@ -209,6 +221,39 @@ if __name__ == '__main__':
         trip_ods_df.drop(columns=['stop_sequence_A','stop_sequence_B'], inplace=True)
 
         o_d_distances = pandas.concat([o_d_distances, trip_ods_df])
+
+        # shapefiles
+        for index, row in link_df.iterrows():
+            stop_id_A = row['stop_id_A']
+            stop_id_B = row['stop_id_B']
+
+            if stop_id_A not in stop_ids:
+                stop_ids[stop_id_A] = 1
+                shp_stops.append([
+                    stop_id_A,
+                    shapely.Point(feed_stop_dict[stop_id_A]['stop_lon'], 
+                                  feed_stop_dict[stop_id_A]['stop_lat'])
+                    ])
+
+            if stop_id_B not in stop_ids:
+                stop_ids[stop_id_B] = 1
+                shp_stops.append([
+                    stop_id_B,
+                    shapely.Point(feed_stop_dict[stop_id_B]['stop_lon'],
+                                  feed_stop_dict[stop_id_B]['stop_lat'])
+                    ])
+            shp_links.append([
+                row['route_id'],
+                row['trip_id'],
+                row['stop_sequence_A'],  row['stop_sequence_B'],
+                row['stop_id_A'],        row['stop_id_B'],
+                shapely.LineString([
+                    shapely.Point(feed_stop_dict[stop_id_A]['stop_lon'], 
+                                  feed_stop_dict[stop_id_A]['stop_lat']),
+                    shapely.Point(feed_stop_dict[stop_id_B]['stop_lon'],
+                                  feed_stop_dict[stop_id_B]['stop_lat'])
+                ]),
+            ])
 
     # print("o_d_distances.head(30):\n{}".format(o_d_distances.head(30)))
     # groupby stop_id_A, stop_id_B -- since the lines have shared segments
@@ -247,3 +292,19 @@ if __name__ == '__main__':
 
     o_d_distances.to_csv(OUTPUT_BART_OD_DISTS, index=False)
     print("Wrote {:,} rows to {}".format(len(o_d_distances), OUTPUT_BART_OD_DISTS))
+
+    stops_gdf =  geopandas.GeoDataFrame(
+        data=shp_stops,
+        columns=['stop_id','geometry'],
+        crs='EPSG:4326')
+    links_gdf = geopandas.GeoDataFrame(
+        data=shp_links, 
+        columns=['route_id','trip_id',
+                 'stop_seq_A','stop_seq_B',
+                 'stop_id_A','stop_id_B','geometry'],
+        crs='EPSG:4326')
+
+    stops_gdf.to_file(filename=OUTPUT_BART_STOPS_SHP)
+    print("Wrote {:,} rows to {}".format(len(stops_gdf), OUTPUT_BART_STOPS_SHP))
+    links_gdf.to_file(filename=OUTPUT_BART_LINKS_SHP)
+    print("Wrote {:,} rows to {}".format(len(links_gdf), OUTPUT_BART_LINKS_SHP))
