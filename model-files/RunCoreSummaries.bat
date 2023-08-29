@@ -68,7 +68,7 @@ if not exist core_summaries\TelecommuteByIncome.csv (
 
 :: create trn\trnline.csv
 if not exist "%TARGET_DIR%\trn\trnline.csv" (
-  call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\ConsolidateLoadedTransit.R"
+  call "%R_HOME%\Rscript.exe" "%CODE_DIR%\ConsolidateLoadedTransit.R"
   IF %ERRORLEVEL% GTR 0 goto done
 )
 

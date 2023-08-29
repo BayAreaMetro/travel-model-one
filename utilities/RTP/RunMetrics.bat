@@ -62,7 +62,7 @@ if not exist metrics\parking_costs_tour.csv (
   rem        landuse\tazData.csv
   rem Output: metrics\parking_costs_tour.csv,     metrics\parking_costs_tour_destTaz.csv
   rem         metrics\parking_costs_trip_destTaz, metrics\parking_costs_trip_distBins.csv
-  call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\tallyParking.R"
+  call "%R_HOME%\Rscript.exe" "%CODE_DIR%\tallyParking.R"
 )
 
 if not exist main\indivTripDataIncome_%ITER%.csv (
@@ -70,7 +70,7 @@ if not exist main\indivTripDataIncome_%ITER%.csv (
   rem Input : main\householdData_%ITER%.csv,
   rem         main\indivTripData_%ITER%.csv, main\jointTripData_%ITER%.csv
   rem Output: main\indivTripDataIncome.csv,  main\JointTripDataIncome.csv
-  call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\joinTripsWithIncome.R"
+  call "%R_HOME%\Rscript.exe" "%CODE_DIR%\joinTripsWithIncome.R"
   IF ERRORLEVEL 2 goto error
 )
 
@@ -181,7 +181,7 @@ if not exist metrics\topsheet.csv (
   rem Short summaries for across many runs
   rem Input: tazdata, popsyn files, avgload5period_vehclasses.csv, core_summaries\VehicleMilesTraveled.csv
   rem Output: metrics\topsheet.csv
-  call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\topsheet.R"
+  call "%R_HOME%\Rscript.exe" "%CODE_DIR%\topsheet.R"
 )
 
 if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")

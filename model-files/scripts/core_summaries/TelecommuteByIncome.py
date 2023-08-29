@@ -33,7 +33,7 @@ print "total rows in input file, personData = " + str(CountRows_personData)
 SizeCoeff_df = pd.read_csv(os.path.join(os.getcwd(), 'ctramp', 'model', 'DestinationChoiceSizeCoefficients.csv'), index_col=False, sep=",")
 
 # read in the input on % of jobs that can be performed at home by industry
-WFHbyIndustry_df = pd.read_csv(os.path.join(os.getcwd(), 'ctramp','core_summaries', 'wfh_by_industry.csv'), index_col=False, sep=",", nrows=7)
+WFHbyIndustry_df = pd.read_csv(os.path.join(os.getcwd(), 'ctramp', "scripts",'core_summaries' ,'wfh_by_industry.csv'), index_col=False, sep=",", nrows=7)
 
 
 # for the super district level summary
@@ -254,7 +254,7 @@ run_id = os.path.basename(os.getcwd())
 TelecommuteEligibleBySD_df['run_directory'] = run_id
 
 # reorder the columns
-TelecommuteEligibleBySD_df = TelecommuteEligibleBySD_df[['SD','SD_NUM_NAME', 'COUNTY_NUM_NAME',
+TelecommuteEligibleBySD_df = TelecommuteEligibleBySD_df[['SD',#'SD_NUM_NAME', 'COUNTY_NUM_NAME',
                                                          'ftworkers_RETEMPN','ftworkers_FPSEMPN', 'ftworkers_HEREMPN','ftworkers_OTHEMPN','ftworkers_AGREMPN','ftworkers_MWTEMPN',
                                                          'ftworkers_eligible_RETEMPN', 'ftworkers_eligible_FPSEMPN', 'ftworkers_eligible_HEREMPN', 'ftworkers_eligible_OTHEMPN', 'ftworkers_eligible_AGREMPN', 'ftworkers_eligible_MWTEMPN',
                                                          'RETEMPN_TazData','FPSEMPN_TazData','HEREMPN_TazData','OTHEMPN_TazData','AGREMPN_TazData','MWTEMPN_TazData',

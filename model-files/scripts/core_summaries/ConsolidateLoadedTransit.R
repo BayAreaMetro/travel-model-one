@@ -117,7 +117,7 @@ MODEL_DIR        <- gsub("\\\\","/",MODEL_DIR) # switch slashes around
 LINE_COL_NAMES   <- c("name","mode","owner","frequency","line time","line dist","total boardings","passenger miles","passenger hours","path id")
 LINK_COL_NAMES   <- c("A", "B", "time", "mode", "plot", "stopA","stopB","distance","name","owner","AB_VOL","AB_BRDA","AB_XITA","AB_BRDB","AB_XITB","BA_VOL","BA_BRDA","BA_XITA","BA_BRDB","BA_XITB","prn")
 ITER             <- Sys.getenv("ITER")
-
+print(MODEL_DIR)
 # this is required
 stopifnot(nchar(MODEL_DIR  )>0)
 
