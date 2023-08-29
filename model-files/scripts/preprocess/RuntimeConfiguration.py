@@ -228,8 +228,8 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
 
     BikeInfra_CIVT_Mult      = float(get_property(params_filename, params_contents, "Bike_Infra_C_IVT_Multiplier"))
 
-    WorkSharingPrefFactor     = float(get_property(params_filename, params_contents, "Work_Sharing_Pref_Factor"))
-    NonWorkSharingPrefFactor  = float(get_property(params_filename, params_contents, "NonWork_Sharing_Pref_Factor"))
+    WorkTransitHesitance     = float(get_property(params_filename, params_contents, "Work_Transit_Hesitance"))
+    NonWorkTransitHesitance  = float(get_property(params_filename, params_contents, "NonWork_Transit_Hesitance"))
 
     MeansBasedTollsQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q1Factor"))
     MeansBasedTollsQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q2Factor"))
@@ -300,8 +300,8 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
 
     replacements[filepath]["(\nBike_Infra_C_IVT_Multiplier[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % BikeInfra_CIVT_Mult
 
-    replacements[filepath]["(\nWork_Sharing_Pref_Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WorkSharingPrefFactor
-    replacements[filepath]["(\nNonWork_Sharing_Pref_Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % NonWorkSharingPrefFactor
+    replacements[filepath]["(\nWork_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WorkTransitHesitance
+    replacements[filepath]["(\nNonWork_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % NonWorkTransitHesitance
 
     replacements[filepath]["(\nMeans_Based_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ1Factor
     replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
