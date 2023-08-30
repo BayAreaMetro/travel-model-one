@@ -290,8 +290,11 @@ loop period = 1,5
           ;read file = "@token_model_dir@\trn\transitLines.link"
           read file = transit@token_period@.lin     
 
-          ; read in the generated walk support links
-          read file = @token_period@_transit_suplinks_walk.dat
+
+             ; read in the generated support links
+          read file = @token_period@_transit_suplinks_wlk.dat	;created by the BuildTransitNetwork.job script
+		  read file = @token_period@_transit_suplinks_drv.dat	;created by the BuildTransitNetwork.job script
+		  read file = @token_period@_bus_acclinks_KNR.dat		;created by the BuildTransitNetwork.job script
 
           ; read in the generated drive access/egress links for this mode             
           ;@token_drivelinks_express_bus@    read file = @token_period@_transit_suplinks_express_bus.dat
@@ -301,7 +304,7 @@ loop period = 1,5
           ;@token_drivelinks_commuter_rail@  read file = @token_period@_transit_suplinks_commuter_rail.dat            
 
           ; read in the generated KNR links for local bus
-          @token_bus_acclinks_KNR@    READ FILE = @TOKEN_PERIOD@_BUS_ACCLINKS_KNR.DAT
+          ;@token_bus_acclinks_KNR@    READ FILE = @TOKEN_PERIOD@_BUS_ACCLINKS_KNR.DAT
 
           ; set the service headways
           freqperiod = @period@
