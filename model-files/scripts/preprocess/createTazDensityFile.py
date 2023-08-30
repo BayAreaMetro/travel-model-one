@@ -34,6 +34,7 @@ from shutil import copyfile
 inTazNodes          = "hwy/taz_nodes.csv"
 inIntersectionNodes = "hwy/intersection_nodes.csv"
 inTazData           = "landuse/tazData.csv"
+inSeqTazNumber      = "hwy/complete_network_zone_seq.csv"
 outDensityData      = "landuse/taz_density.csv"
 outTazData          = "landuse/taz_data_withdensity.csv"
 start_time          = datetime.datetime.now()
@@ -93,13 +94,14 @@ readTazNodeFile.close()
 
 # read in taz data as pandas dataframe
 tazData = pd.read_csv(inTazData)
-
+taz_correspondence=pd.read_csv(inSeqTazNumber)
 # create dataset and pandas dataframe of taz xy and intersection count
 interDataSet = list(zip(taz_nonseq, taz_x, taz_y, int_cnt))
-tazIntersections = pd.DataFrame(data=interDataSet,columns=['ZONE', 'TAZ_X','TAZ_Y','INTER_CNT'])
+tazIntersections = pd.DataFrame(data=interDataSet,columns=['N', 'TAZ_X','TAZ_Y','INTER_CNT'])
+tazData['N'] = tazData['ZONE'].map(dict(zip(taz_correspondence['TAZSEQ'], taz_correspondence['N'])))
 
 # merge the taz xys with the taz data 
-tazData = pd.merge(tazData,tazIntersections,how='inner',on='ZONE')
+tazData = pd.merge(tazData,tazIntersections,how='inner',on='N')
 tazData['dest_x'] = 0
 tazData['dest_y'] = 0
 tazData['distance'] = 0
@@ -109,7 +111,7 @@ tazData.sort_values(by='ZONE')
 taz_x_seq = tazData['TAZ_X'].tolist()
 taz_y_seq = tazData['TAZ_Y'].tolist()
 taz_seqn = tazData['ZONE'].tolist()
-taz_nonseqn = tazData['ZONE'].tolist()
+taz_nonseqn = tazData['N'].tolist()
 
 # create writer
 writeTazDensityFile = open(outDensityData, "wb")
@@ -207,7 +209,7 @@ writeTazDensityFile.close()
 densityData = pd.read_csv(outDensityData)   
 
 # merge with taz data
-tazData = pd.merge(tazData,densityData,how='inner',on='ZONE')
+tazData = pd.merge(tazData,densityData,how='inner',right_on='ZONE',left_on='N')
 
 # drop unnecessary fields
 tazData.drop('INTER_CNT', axis=1, inplace=True)
@@ -215,6 +217,9 @@ tazData.drop('dest_x', axis=1, inplace=True)
 tazData.drop('dest_y', axis=1, inplace=True)
 tazData.drop('distance', axis=1, inplace=True)
 
+tazData.drop('ZONE_x', axis=1, inplace=True)
+tazData.drop('ZONE_y', axis=1, inplace=True)
+tazData=tazData.rename(columns={'N':'ZONE'})
 # write the data back out
 tazData.to_csv(outTazData, index=False)
 
