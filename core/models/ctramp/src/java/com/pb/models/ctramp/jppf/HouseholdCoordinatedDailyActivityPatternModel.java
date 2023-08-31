@@ -362,6 +362,10 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
             
             // set the person level dmu variables
             cdapDmuObject.setPersonA(personA);
+
+            // make the simple WFH choice
+            cdapDmuObject.setWorksFromHomeForPersonA(cdapLogger);
+
             
             // compute the single person utilities
             double[] firstPersonUtilities = onePersonUec.solve(cdapDmuObject.getIndexValues(), cdapDmuObject, availability);

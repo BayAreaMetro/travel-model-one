@@ -1,18 +1,102 @@
 package com.pb.mtc.ctramp;
 
 import java.util.HashMap;
+import java.util.Random;
+
+import org.apache.log4j.Logger;
 
 import com.pb.models.ctramp.CoordinatedDailyActivityPatternDMU;
-
+import com.pb.models.ctramp.Person;
+import com.pb.models.ctramp.TazDataIf;
 
 public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActivityPatternDMU {
 
+    private Logger cdapLogger = Logger.getLogger("cdap");
+    
+    // industry-base simple model specification
+    // wfh_rate = m*ln(income) + b
+    public static final String PROPERTIES_WFH_AGREMP_M = "CDAP.WFH.agremp.M";
+    public static final String PROPERTIES_WFH_AGREMP_B = "CDAP.WFH.agremp.B";
+    public static final String PROPERTIES_WFH_FPSEMP_M = "CDAP.WFH.fpsemp.M";
+    public static final String PROPERTIES_WFH_FPSEMP_B = "CDAP.WFH.fpsemp.B";
+    public static final String PROPERTIES_WFH_HEREMP_M = "CDAP.WFH.heremp.M";
+    public static final String PROPERTIES_WFH_HEREMP_B = "CDAP.WFH.heremp.B";
+    public static final String PROPERTIES_WFH_MWTEMP_M = "CDAP.WFH.mwtemp.M";
+    public static final String PROPERTIES_WFH_MWTEMP_B = "CDAP.WFH.mwtemp.B";
+    public static final String PROPERTIES_WFH_OTHEMP_M = "CDAP.WFH.othemp.M";
+    public static final String PROPERTIES_WFH_OTHEMP_B = "CDAP.WFH.othemp.B";
+    public static final String PROPERTIES_WFH_RETEMP_M = "CDAP.WFH.retemp.M";
+    public static final String PROPERTIES_WFH_RETEMP_B = "CDAP.WFH.retemp.B";
+    // additional factors
+    public static final String PROPERTIES_WFH_FULLTIMEWORKER_FACTOR = "CDAP.WFH.FullTimeWorker.Factor";
+    public static final String PROPERTIES_WFH_PARTTIMEWORKER_FACTOR = "CDAP.WFH.PartTimeworker.Factor";
 
-    public MtcCoordinatedDailyActivityPatternDMU() {
+    private float WFH_AGREMP_M; // Agriculture & Natural Resources
+    private float WFH_AGREMP_B;
+    private float WFH_FPSEMP_M; // Financial & Professional Services
+    private float WFH_FPSEMP_B;
+    private float WFH_HEREMP_M; // Health, Educational & Recreational Services
+    private float WFH_HEREMP_B;
+    private float WFH_MWTEMP_M; // Manufacturing, Wholesale & Transportation
+    private float WFH_MWTEMP_B;
+    private float WFH_OTHEMP_M; // Other
+    private float WFH_OTHEMP_B;
+    private float WFH_RETEMP_M; // Retail
+    private float WFH_RETEMP_B;
+
+    private float WFH_FULLTIMEWORKER_FACTOR;
+    private float WFH_PARTTIMEWORKER_FACTOR;
+
+    private int[] tazDataAgrEmpn;
+    private int[] tazDataFpsEmpn;
+    private int[] tazDataHerEmpn;
+    private int[] tazDataMwtEmpn;
+    private int[] tazDataOthEmpn;
+    private int[] tazDataRetEmpn;
+    private int[] tazDataTotEmp;
+
+    TazDataIf tazDataManager;
+
+    public MtcCoordinatedDailyActivityPatternDMU(TazDataIf tazData) {
         super ();
         setupMethodIndexMap();
+        logger.info("MtcCoordinatedDailyActivityPatternDMU constructor; tazData=" + tazData);
+        this.tazDataManager = tazData; // keep a reference to this
+        this.tazDataAgrEmpn = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_AGR_NATRES_EMP_FIELD_NAME);
+        this.tazDataFpsEmpn = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_FINANCE_PROF_EMP_FIELD_NAME);
+        this.tazDataHerEmpn = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_HEALTH_EDU_REC_EMP_FIELD_NAME);
+        this.tazDataMwtEmpn = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_MANU_WHOLESALE_TRANS_EMP_FIELD_NAME);
+        this.tazDataOthEmpn = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_OTHER_EMP_FIELD_NAME);
+        this.tazDataRetEmpn = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_RETAIL_EMP_FIELD_NAME);
+        this.tazDataTotEmp  = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_EMP_FIELD_NAME);
     }
 
+    public void setPropertyFileValues( HashMap<String, String> propertyMap) {
+        this.WFH_AGREMP_M = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_AGREMP_M));
+        this.WFH_AGREMP_B = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_AGREMP_B));
+        this.WFH_FPSEMP_M = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_FPSEMP_M));
+        this.WFH_FPSEMP_B = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_FPSEMP_B));
+        this.WFH_HEREMP_M = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HEREMP_M));
+        this.WFH_HEREMP_B = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HEREMP_B));
+        this.WFH_MWTEMP_M = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_MWTEMP_M));
+        this.WFH_MWTEMP_B = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_MWTEMP_B));
+        this.WFH_OTHEMP_M = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_OTHEMP_M));
+        this.WFH_OTHEMP_B = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_OTHEMP_B));
+        this.WFH_RETEMP_M = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_RETEMP_M));
+        this.WFH_RETEMP_B = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_RETEMP_B));
+
+        this.WFH_FULLTIMEWORKER_FACTOR = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_FULLTIMEWORKER_FACTOR));
+        this.WFH_PARTTIMEWORKER_FACTOR = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_PARTTIMEWORKER_FACTOR));
+
+        cdapLogger.info("Read properties agr-m:" + this.WFH_AGREMP_M + "; agr-b:" + this.WFH_AGREMP_B);
+        cdapLogger.info("Read properties fps-m:" + this.WFH_FPSEMP_M + "; fps-b:" + this.WFH_FPSEMP_B);
+        cdapLogger.info("Read properties her-m:" + this.WFH_HEREMP_M + "; her-b:" + this.WFH_HEREMP_B);
+        cdapLogger.info("Read properties mwt-m:" + this.WFH_MWTEMP_M + "; mwt-b:" + this.WFH_MWTEMP_B);
+        cdapLogger.info("Read properties oth-m:" + this.WFH_OTHEMP_M + "; oth-b:" + this.WFH_OTHEMP_B);
+        cdapLogger.info("Read properties ret-m:" + this.WFH_RETEMP_M + "; ret-b:" + this.WFH_RETEMP_B);
+
+        cdapLogger.info("Read properties fulltime worker factor:" + this.WFH_FULLTIMEWORKER_FACTOR + "; parttime worker factor:" + this.WFH_PARTTIMEWORKER_FACTOR);
+    }
 
     // household income
     public int getIncomeLess20k(){
@@ -41,6 +125,94 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         return personA.getPersonWorkLocationZone();
     }
 
+    /**
+	 * Simple works from home model for person based upon their household income and the industry
+	 * mix at their work location TAZ.
+	 * @param Logger
+	 */
+    public void setWorksFromHomeForPersonA(Logger cdapLogger) {
+        if (personA.getPersonIsWorker() == 0) {
+            personA.setPersWorksFromHomeCategory( Person.WorkFromHomeStatus.NOT_APPLICABLE.ordinal() );
+            return;
+        }
+		int workLocation = personA.getPersonWorkLocationZone();
+		if (workLocation == 0) {
+            // I don't think this should happen
+            personA.setPersWorksFromHomeCategory( Person.WorkFromHomeStatus.NOT_APPLICABLE.ordinal() );
+			return;
+		}
+        // get household income and employment taz shares
+		int hhinc = householdObject.getIncomeInDollars();
+        if (hhinc < 0) {
+            hhinc = 0;
+        }
+        double ln_hhinc = Math.log(hhinc);
+
+
+        // apply log model, constrained to [0.0, 1.0]
+        double agr_wfh = Math.min(1.0, Math.max(0.0, WFH_AGREMP_M*ln_hhinc + WFH_AGREMP_B));
+        double fps_wfh = Math.min(1.0, Math.max(0.0, WFH_FPSEMP_M*ln_hhinc + WFH_FPSEMP_B));
+        double her_wfh = Math.min(1.0, Math.max(0.0, WFH_HEREMP_M*ln_hhinc + WFH_HEREMP_B));
+        double mwt_wfh = Math.min(1.0, Math.max(0.0, WFH_MWTEMP_M*ln_hhinc + WFH_MWTEMP_B));
+        double oth_wfh = Math.min(1.0, Math.max(0.0, WFH_OTHEMP_M*ln_hhinc + WFH_OTHEMP_B));
+        double ret_wfh = Math.min(1.0, Math.max(0.0, WFH_RETEMP_M*ln_hhinc + WFH_RETEMP_B));
+
+        double agr_share = Double.valueOf(this.tazDataAgrEmpn[workLocation-1])/Double.valueOf(this.tazDataTotEmp[workLocation-1]);
+        double fps_share = Double.valueOf(this.tazDataFpsEmpn[workLocation-1])/Double.valueOf(this.tazDataTotEmp[workLocation-1]);
+        double her_share = Double.valueOf(this.tazDataHerEmpn[workLocation-1])/Double.valueOf(this.tazDataTotEmp[workLocation-1]);
+        double mwt_share = Double.valueOf(this.tazDataMwtEmpn[workLocation-1])/Double.valueOf(this.tazDataTotEmp[workLocation-1]);
+        double oth_share = Double.valueOf(this.tazDataOthEmpn[workLocation-1])/Double.valueOf(this.tazDataTotEmp[workLocation-1]);
+        double ret_share = Double.valueOf(this.tazDataRetEmpn[workLocation-1])/Double.valueOf(this.tazDataTotEmp[workLocation-1]);
+        // weighted average based on the industry mix at the work TAZ 
+        double overall_wfh = agr_wfh*agr_share +
+                             fps_wfh*fps_share +
+                             her_wfh*her_share +
+                             mwt_wfh*mwt_share +
+                             oth_wfh*oth_share +
+                             ret_wfh*ret_share;
+
+        // trace household debug
+        if(householdObject.getDebugChoiceModels()){
+            cdapLogger.debug(String.format(" HHID %d PersonID %d EmploymentCategory %s WorkLocation %d", 
+                householdObject.getHhId(), personA.getPersonId(), personA.getPersonEmploymentCategory(), workLocation));
+            cdapLogger.debug(String.format("     agr_wfh * agr_share = %.3f * %.3f", agr_wfh, agr_share));
+            cdapLogger.debug(String.format("     fps_wfh * fps_share = %.3f * %.3f", fps_wfh, fps_share));
+            cdapLogger.debug(String.format("     her_wfh * her_share = %.3f * %.3f", her_wfh, her_share));
+            cdapLogger.debug(String.format("     mwt_wfh * mwt_share = %.3f * %.3f", mwt_wfh, mwt_share));
+            cdapLogger.debug(String.format("     oth_wfh * oth_share = %.3f * %.3f", oth_wfh, oth_share));
+            cdapLogger.debug(String.format("     ret_wfh * ret_share = %.3f * %.3f", ret_wfh, ret_share));
+            cdapLogger.debug(String.format("                 = > wfh = %.3f", overall_wfh));
+        }
+        if (personA.getPersonIsFullTimeWorker() == 1) {
+            overall_wfh = overall_wfh*this.WFH_FULLTIMEWORKER_FACTOR;
+            if(householdObject.getDebugChoiceModels()){
+                cdapLogger.debug(String.format(" x FullTime factor %.3f = %.3f", this.WFH_FULLTIMEWORKER_FACTOR, overall_wfh));
+            }
+
+        } else if (personA.getPersonIsPartTimeWorker() == 1) {
+            overall_wfh = overall_wfh*WFH_PARTTIMEWORKER_FACTOR;
+            if(householdObject.getDebugChoiceModels()){
+                cdapLogger.debug(String.format(" x PartTime factor %.3f = %.3f", this.WFH_PARTTIMEWORKER_FACTOR, overall_wfh));
+            }
+        }
+
+        // should I be using this?
+        double rn = householdObject.getHhRandom().nextDouble();
+        if (rn < overall_wfh) {
+            personA.setPersWorksFromHomeCategory( Person.WorkFromHomeStatus.WORKS_FROM_HOME.ordinal());
+        } else {
+            personA.setPersWorksFromHomeCategory( Person.WorkFromHomeStatus.GOES_TO_WORK.ordinal());
+        }
+        if(householdObject.getDebugChoiceModels()){
+            cdapLogger.debug(String.format("           Random number = %.3f", rn));
+            cdapLogger.debug(String.format("         works_from_home = (%d) %s", personA.getPersonWorksFromHome(), personA.getPersonWfhCategory()));
+        }
+    }
+    
+    // added for simple works-from-home choice
+    public int getWorksFromHomeA(){
+        return personA.getPersonWorksFromHome();
+    }
 
     private void setupMethodIndexMap() {
         methodIndexMap = new HashMap<String, Integer>();
@@ -84,6 +256,8 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         methodIndexMap.put( "getHAnalyst", 35 );
         // added for cdap-worktaz
         methodIndexMap.put( "getUsualWorkLocationA", 36);
+        // added for simple works-from-home choice
+        methodIndexMap.put( "getWorksFromHomeA", 37);
     }
     
     
@@ -132,6 +306,8 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
             case 35: return getHAnalyst();
             // added for cdap-worktaz
             case 36: return getUsualWorkLocationA();
+            // added for simple works-from-home choice
+            case 37: return getWorksFromHomeA();
 
             default:
                 logger.error("method number = "+variableIndex+" not found");

@@ -381,7 +381,6 @@ public class HouseholdDataWriter {
         data.add(string(hh.getHumanVehicles()));
         data.add(string(hh.getAutonomousVehicles()));
         data.add(string(hh.getSampleRate()));
-
         return data;
     }
 
@@ -401,7 +400,7 @@ public class HouseholdDataWriter {
         data.add("workDCLogsum");
         data.add("schoolDCLogsum");
         data.add("sampleRate");
-
+        data.add("wfh_choice");
         return data;
     }
 
@@ -421,6 +420,7 @@ public class HouseholdDataWriter {
         data.add(SqliteDataTypes.REAL); 
         data.add(SqliteDataTypes.REAL); 
         data.add(SqliteDataTypes.REAL); 
+        data.add(SqliteDataTypes.INTEGER);
         return data;
     }
 
@@ -441,7 +441,7 @@ public class HouseholdDataWriter {
         data.add(string(p.getSchoolLocationLogsum()));
         float sampleRate = p.getSampleRate();
         data.add(string(sampleRate));
-        
+        data.add(string(p.getPersonWorksFromHome()));
         return data;
     }
 
