@@ -103,8 +103,11 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
 
         
         // create the coordinated daily activity pattern choice model DMU object.
+        logger.info( "About to create cdapDmuObject" );
         cdapDmuObject = dmuFactory.getCoordinatedDailyActivityPatternDMU();
-        
+        cdapDmuObject.setPropertyFileValues(propertyMap);
+        logger.info( "cdapDmuObject = " + cdapDmuObject );
+
         // create the uecs
         onePersonUec = new UtilityExpressionCalculator( new File(cdapUecFile), UEC_ONE_PERSON, UEC_DATA_PAGE, propertyMap, (VariableTable)cdapDmuObject );
         twoPeopleUec = new UtilityExpressionCalculator( new File(cdapUecFile), UEC_TWO_PERSON, UEC_DATA_PAGE, propertyMap, (VariableTable)cdapDmuObject );
@@ -318,7 +321,21 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
         
         // reorder persons for large households if need be
         reOrderPersonsForCdap(householdObject);
-        
+
+        // loop through each person for WFH
+        for(int i=0;i<modelHhSize;++i){
+            Person personA = getCdapPerson(i+1);
+            // set the person level dmu variables
+            cdapDmuObject.setPersonA(personA);
+
+            if(householdObject.getDebugChoiceModels()){
+                cdapLogger.info("Household " + householdObject.getHhId() + " Person " + i + " => " + personA.getPersonId());
+            }
+
+            // make the simple WFH choice
+            cdapDmuObject.setWorksFromHomeForPersonA(cdapLogger);
+        }
+
         // get the logit model we need and clear it of any lingering probilities
         LogitModel workingLogitModel = logitModelList.get(modelHhSize-1);
         workingLogitModel.clear();
@@ -362,10 +379,6 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
             
             // set the person level dmu variables
             cdapDmuObject.setPersonA(personA);
-
-            // make the simple WFH choice
-            cdapDmuObject.setWorksFromHomeForPersonA(cdapLogger);
-
             
             // compute the single person utilities
             double[] firstPersonUtilities = onePersonUec.solve(cdapDmuObject.getIndexValues(), cdapDmuObject, availability);
