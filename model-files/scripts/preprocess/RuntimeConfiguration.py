@@ -243,15 +243,8 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     MeansBasedCordonFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
 
     # WFH factors
-    WFH_HomeCounty_Factor_Alameda       = float(get_property(params_filename, params_contents, "WFH_HomeCounty_Factor_Alameda"     ))
-    WFH_HomeCounty_Factor_ContraCosta   = float(get_property(params_filename, params_contents, "WFH_HomeCounty_Factor_ContraCosta" ))
-    WFH_HomeCounty_Factor_Marin         = float(get_property(params_filename, params_contents, "WFH_HomeCounty_Factor_Marin"       ))
-    WFH_HomeCounty_Factor_Napa          = float(get_property(params_filename, params_contents, "WFH_HomeCounty_Factor_Napa"        ))
-    WFH_HomeCounty_Factor_SanFrancisco  = float(get_property(params_filename, params_contents, "WFH_HomeCounty_Factor_SanFrancisco"))
-    WFH_HomeCounty_Factor_SanMateo      = float(get_property(params_filename, params_contents, "WFH_HomeCounty_Factor_SanMateo"    ))
-    WFH_HomeCounty_Factor_SantaClara    = float(get_property(params_filename, params_contents, "WFH_HomeCounty_Factor_SantaClara"  ))
-    WFH_HomeCounty_Factor_Solano        = float(get_property(params_filename, params_contents, "WFH_HomeCounty_Factor_Solano"      ))
-    WFH_HomeCounty_Factor_Sonoma        = float(get_property(params_filename, params_contents, "WFH_HomeCounty_Factor_Sonoma"      ))
+    WFHFullTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_FullTimeWorker_Factor"))
+    WFHPartTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_PartTimeWorker_Factor"))
 
     Adjust_TNCsingle_TourMode = float(get_property(params_filename, params_contents, "Adjust_TNCsingle_TourMode"))
     Adjust_TNCshared_TourMode = float(get_property(params_filename, params_contents, "Adjust_TNCshared_TourMode"))
@@ -325,15 +318,8 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ2Factor
 
     # WFH factors
-    replacements[filepath]["(\nCDAP.WFH.HomeCounty_Factor_Alameda[ \t]*=[ \t]*)(\S*)"]      = r"\g<1>%.3f" % WFH_HomeCounty_Factor_Alameda
-    replacements[filepath]["(\nCDAP.WFH.HomeCounty_Factor_ContraCosta[ \t]*=[ \t]*)(\S*)"]  = r"\g<1>%.3f" % WFH_HomeCounty_Factor_ContraCosta 
-    replacements[filepath]["(\nCDAP.WFH.HomeCounty_Factor_Marin[ \t]*=[ \t]*)(\S*)"]        = r"\g<1>%.3f" % WFH_HomeCounty_Factor_Marin
-    replacements[filepath]["(\nCDAP.WFH.HomeCounty_Factor_Napa[ \t]*=[ \t]*)(\S*)"]         = r"\g<1>%.3f" % WFH_HomeCounty_Factor_Napa
-    replacements[filepath]["(\nCDAP.WFH.HomeCounty_Factor_SanFrancisco[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.3f" % WFH_HomeCounty_Factor_SanFrancisco
-    replacements[filepath]["(\nCDAP.WFH.HomeCounty_Factor_SanMateo[ \t]*=[ \t]*)(\S*)"]     = r"\g<1>%.3f" % WFH_HomeCounty_Factor_SanMateo
-    replacements[filepath]["(\nCDAP.WFH.HomeCounty_Factor_SantaClara[ \t]*=[ \t]*)(\S*)"]   = r"\g<1>%.3f" % WFH_HomeCounty_Factor_SantaClara
-    replacements[filepath]["(\nCDAP.WFH.HomeCounty_Factor_Solano[ \t]*=[ \t]*)(\S*)"]       = r"\g<1>%.3f" % WFH_HomeCounty_Factor_Solano
-    replacements[filepath]["(\nCDAP.WFH.HomeCounty_Factor_Sonoma [ \t]*=[ \t]*)(\S*)"]      = r"\g<1>%.3f" % WFH_HomeCounty_Factor_Sonoma
+    replacements[filepath]["(\nCDAP.WFH.FullTimeWorker.Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WFHFullTimeWorkerFactor
+    replacements[filepath]["(\nCDAP.WFH.PartTimeworker.Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WFHPartTimeWorkerFactor
 
     replacements[filepath]["(\nAdjust_TNCsingle_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCsingle_TourMode
     replacements[filepath]["(\nAdjust_TNCshared_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCshared_TourMode
@@ -790,6 +776,7 @@ if __name__ == '__main__':
         config_auto_opcost(params_filename, params_contents, False, replacements)
         config_host_ip(False, replacements)
         config_distribution(replacements)
+        config_cdap(params_filename, params_contents)
         config_freeparking(params_filename, params_contents)
     else:
         config_shadowprice(my_args.iter, replacements)

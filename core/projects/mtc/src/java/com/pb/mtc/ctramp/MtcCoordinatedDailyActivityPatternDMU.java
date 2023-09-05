@@ -28,15 +28,8 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
     public static final String PROPERTIES_WFH_RETEMP_M = "CDAP.WFH.retemp.M";
     public static final String PROPERTIES_WFH_RETEMP_B = "CDAP.WFH.retemp.B";
     // additional factors
-    public static final String PROPERTIES_WFH_HOMECOUNTY_FACTOR_ALAMEDA      = "CDAP.WFH.HomeCounty_Factor_Alameda";
-    public static final String PROPERTIES_WFH_HOMECOUNTY_FACTOR_CONTRACOSTA  = "CDAP.WFH.HomeCounty_Factor_ContraCosta";
-    public static final String PROPERTIES_WFH_HOMECOUNTY_FACTOR_MARIN        = "CDAP.WFH.HomeCounty_Factor_Marin";
-    public static final String PROPERTIES_WFH_HOMECOUNTY_FACTOR_NAPA         = "CDAP.WFH.HomeCounty_Factor_Napa";
-    public static final String PROPERTIES_WFH_HOMECOUNTY_FACTOR_SANFRANCISCO = "CDAP.WFH.HomeCounty_Factor_SanFrancisco";
-    public static final String PROPERTIES_WFH_HOMECOUNTY_FACTOR_SANMATEO     = "CDAP.WFH.HomeCounty_Factor_SanMateo";
-    public static final String PROPERTIES_WFH_HOMECOUNTY_FACTOR_SANTACLARA   = "CDAP.WFH.HomeCounty_Factor_SantaClara";
-    public static final String PROPERTIES_WFH_HOMECOUNTY_FACTOR_SOLANO       = "CDAP.WFH.HomeCounty_Factor_Solano";
-    public static final String PROPERTIES_WFH_HOMECOUNTY_FACTOR_SONOMA       = "CDAP.WFH.HomeCounty_Factor_Sonoma";
+    public static final String PROPERTIES_WFH_FULLTIMEWORKER_FACTOR = "CDAP.WFH.FullTimeWorker.Factor";
+    public static final String PROPERTIES_WFH_PARTTIMEWORKER_FACTOR = "CDAP.WFH.PartTimeworker.Factor";
 
     private float WFH_AGREMP_M; // Agriculture & Natural Resources
     private float WFH_AGREMP_B;
@@ -51,7 +44,8 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
     private float WFH_RETEMP_M; // Retail
     private float WFH_RETEMP_B;
 
-    private float[] WFH_HOMECOUNTY_FACTOR;
+    private float WFH_FULLTIMEWORKER_FACTOR;
+    private float WFH_PARTTIMEWORKER_FACTOR;
 
     private int[] tazDataAgrEmpn;
     private int[] tazDataFpsEmpn;
@@ -75,8 +69,6 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         this.tazDataOthEmpn = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_OTHER_EMP_FIELD_NAME);
         this.tazDataRetEmpn = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_RETAIL_EMP_FIELD_NAME);
         this.tazDataTotEmp  = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_EMP_FIELD_NAME);
-
-        this.WFH_HOMECOUNTY_FACTOR = new float[9];
     }
 
     public void setPropertyFileValues( HashMap<String, String> propertyMap) {
@@ -93,16 +85,8 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         this.WFH_RETEMP_M = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_RETEMP_M));
         this.WFH_RETEMP_B = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_RETEMP_B));
 
-        // 1=San Francisco; 2=San Mateo; 3=Santa Clara; 4=Alameda; 5=Contra Costa; 6=Solano; 7= Napa; 8=Sonoma; 9=Marin
-        this.WFH_HOMECOUNTY_FACTOR[0] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HOMECOUNTY_FACTOR_SANFRANCISCO));
-        this.WFH_HOMECOUNTY_FACTOR[1] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HOMECOUNTY_FACTOR_SANMATEO    ));
-        this.WFH_HOMECOUNTY_FACTOR[2] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HOMECOUNTY_FACTOR_SANTACLARA  ));
-        this.WFH_HOMECOUNTY_FACTOR[3] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HOMECOUNTY_FACTOR_ALAMEDA     ));
-        this.WFH_HOMECOUNTY_FACTOR[4] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HOMECOUNTY_FACTOR_CONTRACOSTA ));
-        this.WFH_HOMECOUNTY_FACTOR[5] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HOMECOUNTY_FACTOR_SOLANO      ));
-        this.WFH_HOMECOUNTY_FACTOR[6] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HOMECOUNTY_FACTOR_NAPA        ));
-        this.WFH_HOMECOUNTY_FACTOR[7] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HOMECOUNTY_FACTOR_SONOMA      ));
-        this.WFH_HOMECOUNTY_FACTOR[8] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HOMECOUNTY_FACTOR_MARIN       ));
+        this.WFH_FULLTIMEWORKER_FACTOR = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_FULLTIMEWORKER_FACTOR));
+        this.WFH_PARTTIMEWORKER_FACTOR = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_PARTTIMEWORKER_FACTOR));
 
         cdapLogger.info("Read properties agr-m:" + this.WFH_AGREMP_M + "; agr-b:" + this.WFH_AGREMP_B);
         cdapLogger.info("Read properties fps-m:" + this.WFH_FPSEMP_M + "; fps-b:" + this.WFH_FPSEMP_B);
@@ -110,6 +94,8 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         cdapLogger.info("Read properties mwt-m:" + this.WFH_MWTEMP_M + "; mwt-b:" + this.WFH_MWTEMP_B);
         cdapLogger.info("Read properties oth-m:" + this.WFH_OTHEMP_M + "; oth-b:" + this.WFH_OTHEMP_B);
         cdapLogger.info("Read properties ret-m:" + this.WFH_RETEMP_M + "; ret-b:" + this.WFH_RETEMP_B);
+
+        cdapLogger.info("Read properties fulltime worker factor:" + this.WFH_FULLTIMEWORKER_FACTOR + "; parttime worker factor:" + this.WFH_PARTTIMEWORKER_FACTOR);
     }
 
     // household income
@@ -197,13 +183,17 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
             cdapLogger.debug(String.format("     ret_wfh * ret_share = %.3f * %.3f", ret_wfh, ret_share));
             cdapLogger.debug(String.format("                 = > wfh = %.3f", overall_wfh));
         }
-        int homeCounty = this.tazDataManager.getZoneCounty(householdObject.getHhTaz());
-        // https://github.com/BayAreaMetro/modeling-website/wiki/TazData
-        float homeCountyFactor = this.WFH_HOMECOUNTY_FACTOR[homeCounty-1];
-        overall_wfh = homeCountyFactor* overall_wfh;
-        
-        if(householdObject.getDebugChoiceModels()){
-            cdapLogger.debug(String.format(" x homeCounty (%d) factor %.3f = %.3f", homeCounty, homeCountyFactor, overall_wfh));
+        if (personA.getPersonIsFullTimeWorker() == 1) {
+            overall_wfh = overall_wfh*this.WFH_FULLTIMEWORKER_FACTOR;
+            if(householdObject.getDebugChoiceModels()){
+                cdapLogger.debug(String.format(" x FullTime factor %.3f = %.3f", this.WFH_FULLTIMEWORKER_FACTOR, overall_wfh));
+            }
+
+        } else if (personA.getPersonIsPartTimeWorker() == 1) {
+            overall_wfh = overall_wfh*WFH_PARTTIMEWORKER_FACTOR;
+            if(householdObject.getDebugChoiceModels()){
+                cdapLogger.debug(String.format(" x PartTime factor %.3f = %.3f", this.WFH_PARTTIMEWORKER_FACTOR, overall_wfh));
+            }
         }
 
         // should I be using this?
