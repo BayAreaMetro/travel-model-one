@@ -15,34 +15,35 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
     
     // industry-base simple model specification
     // wfh_rate = m*ln(income) + b
-    public static final String PROPERTIES_WFH_AGREMP_M = "CDAP.WFH.agremp.M";
-    public static final String PROPERTIES_WFH_AGREMP_B = "CDAP.WFH.agremp.B";
-    public static final String PROPERTIES_WFH_FPSEMP_M = "CDAP.WFH.fpsemp.M";
-    public static final String PROPERTIES_WFH_FPSEMP_B = "CDAP.WFH.fpsemp.B";
-    public static final String PROPERTIES_WFH_HEREMP_M = "CDAP.WFH.heremp.M";
-    public static final String PROPERTIES_WFH_HEREMP_B = "CDAP.WFH.heremp.B";
-    public static final String PROPERTIES_WFH_MWTEMP_M = "CDAP.WFH.mwtemp.M";
-    public static final String PROPERTIES_WFH_MWTEMP_B = "CDAP.WFH.mwtemp.B";
-    public static final String PROPERTIES_WFH_OTHEMP_M = "CDAP.WFH.othemp.M";
-    public static final String PROPERTIES_WFH_OTHEMP_B = "CDAP.WFH.othemp.B";
-    public static final String PROPERTIES_WFH_RETEMP_M = "CDAP.WFH.retemp.M";
-    public static final String PROPERTIES_WFH_RETEMP_B = "CDAP.WFH.retemp.B";
+    public static final String PROPERTIES_WFH_AGREMP_M = "CDAP.WFH.CountyX.agremp.M";
+    public static final String PROPERTIES_WFH_AGREMP_B = "CDAP.WFH.CountyX.agremp.B";
+    public static final String PROPERTIES_WFH_FPSEMP_M = "CDAP.WFH.CountyX.fpsemp.M";
+    public static final String PROPERTIES_WFH_FPSEMP_B = "CDAP.WFH.CountyX.fpsemp.B";
+    public static final String PROPERTIES_WFH_HEREMP_M = "CDAP.WFH.CountyX.heremp.M";
+    public static final String PROPERTIES_WFH_HEREMP_B = "CDAP.WFH.CountyX.heremp.B";
+    public static final String PROPERTIES_WFH_MWTEMP_M = "CDAP.WFH.CountyX.mwtemp.M";
+    public static final String PROPERTIES_WFH_MWTEMP_B = "CDAP.WFH.CountyX.mwtemp.B";
+    public static final String PROPERTIES_WFH_OTHEMP_M = "CDAP.WFH.CountyX.othemp.M";
+    public static final String PROPERTIES_WFH_OTHEMP_B = "CDAP.WFH.CountyX.othemp.B";
+    public static final String PROPERTIES_WFH_RETEMP_M = "CDAP.WFH.CountyX.retemp.M";
+    public static final String PROPERTIES_WFH_RETEMP_B = "CDAP.WFH.CountyX.retemp.B";
     // additional factors
     public static final String PROPERTIES_WFH_FULLTIMEWORKER_FACTOR = "CDAP.WFH.FullTimeWorker.Factor";
     public static final String PROPERTIES_WFH_PARTTIMEWORKER_FACTOR = "CDAP.WFH.PartTimeworker.Factor";
 
-    private float WFH_AGREMP_M; // Agriculture & Natural Resources
-    private float WFH_AGREMP_B;
-    private float WFH_FPSEMP_M; // Financial & Professional Services
-    private float WFH_FPSEMP_B;
-    private float WFH_HEREMP_M; // Health, Educational & Recreational Services
-    private float WFH_HEREMP_B;
-    private float WFH_MWTEMP_M; // Manufacturing, Wholesale & Transportation
-    private float WFH_MWTEMP_B;
-    private float WFH_OTHEMP_M; // Other
-    private float WFH_OTHEMP_B;
-    private float WFH_RETEMP_M; // Retail
-    private float WFH_RETEMP_B;
+    // indexed by home county
+    private float[] WFH_AGREMP_M; // Agriculture & Natural Resources
+    private float[] WFH_AGREMP_B;
+    private float[] WFH_FPSEMP_M; // Financial & Professional Services
+    private float[] WFH_FPSEMP_B;
+    private float[] WFH_HEREMP_M; // Health, Educational & Recreational Services
+    private float[] WFH_HEREMP_B;
+    private float[] WFH_MWTEMP_M; // Manufacturing, Wholesale & Transportation
+    private float[] WFH_MWTEMP_B;
+    private float[] WFH_OTHEMP_M; // Other
+    private float[] WFH_OTHEMP_B;
+    private float[] WFH_RETEMP_M; // Retail
+    private float[] WFH_RETEMP_B;
 
     private float WFH_FULLTIMEWORKER_FACTOR;
     private float WFH_PARTTIMEWORKER_FACTOR;
@@ -69,31 +70,47 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         this.tazDataOthEmpn = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_OTHER_EMP_FIELD_NAME);
         this.tazDataRetEmpn = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_RETAIL_EMP_FIELD_NAME);
         this.tazDataTotEmp  = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_EMP_FIELD_NAME);
+        this.WFH_AGREMP_M = new float[9];
+        this.WFH_AGREMP_B = new float[9];
+        this.WFH_FPSEMP_M = new float[9];
+        this.WFH_FPSEMP_B = new float[9];
+        this.WFH_HEREMP_M = new float[9];
+        this.WFH_HEREMP_B = new float[9];
+        this.WFH_MWTEMP_M = new float[9];
+        this.WFH_MWTEMP_B = new float[9];
+        this.WFH_OTHEMP_M = new float[9];
+        this.WFH_OTHEMP_B = new float[9];
+        this.WFH_RETEMP_M = new float[9];
+        this.WFH_RETEMP_B = new float[9];
     }
 
     public void setPropertyFileValues( HashMap<String, String> propertyMap) {
-        this.WFH_AGREMP_M = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_AGREMP_M));
-        this.WFH_AGREMP_B = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_AGREMP_B));
-        this.WFH_FPSEMP_M = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_FPSEMP_M));
-        this.WFH_FPSEMP_B = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_FPSEMP_B));
-        this.WFH_HEREMP_M = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HEREMP_M));
-        this.WFH_HEREMP_B = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HEREMP_B));
-        this.WFH_MWTEMP_M = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_MWTEMP_M));
-        this.WFH_MWTEMP_B = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_MWTEMP_B));
-        this.WFH_OTHEMP_M = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_OTHEMP_M));
-        this.WFH_OTHEMP_B = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_OTHEMP_B));
-        this.WFH_RETEMP_M = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_RETEMP_M));
-        this.WFH_RETEMP_B = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_RETEMP_B));
+        for (int county_num=1; county_num<=9; county_num++) {
+            this.WFH_AGREMP_M[county_num-1] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_AGREMP_M.replace("CountyX","County"+county_num)));
+            this.WFH_AGREMP_B[county_num-1] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_AGREMP_B.replace("CountyX","County"+county_num)));
+            this.WFH_FPSEMP_M[county_num-1] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_FPSEMP_M.replace("CountyX","County"+county_num)));
+            this.WFH_FPSEMP_B[county_num-1] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_FPSEMP_B.replace("CountyX","County"+county_num)));
+            this.WFH_HEREMP_M[county_num-1] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HEREMP_M.replace("CountyX","County"+county_num)));
+            this.WFH_HEREMP_B[county_num-1] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_HEREMP_B.replace("CountyX","County"+county_num)));
+            this.WFH_MWTEMP_M[county_num-1] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_MWTEMP_M.replace("CountyX","County"+county_num)));
+            this.WFH_MWTEMP_B[county_num-1] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_MWTEMP_B.replace("CountyX","County"+county_num)));
+            this.WFH_OTHEMP_M[county_num-1] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_OTHEMP_M.replace("CountyX","County"+county_num)));
+            this.WFH_OTHEMP_B[county_num-1] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_OTHEMP_B.replace("CountyX","County"+county_num)));
+            this.WFH_RETEMP_M[county_num-1] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_RETEMP_M.replace("CountyX","County"+county_num)));
+            this.WFH_RETEMP_B[county_num-1] = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_RETEMP_B.replace("CountyX","County"+county_num)));
+
+            if (county_num==9) {
+                cdapLogger.info("Read County9 properties agr-m:" + this.WFH_AGREMP_M[county_num-1] + "; agr-b:" + this.WFH_AGREMP_B[county_num-1]);
+                cdapLogger.info("Read County9 properties fps-m:" + this.WFH_FPSEMP_M[county_num-1] + "; fps-b:" + this.WFH_FPSEMP_B[county_num-1]);
+                cdapLogger.info("Read County9 properties her-m:" + this.WFH_HEREMP_M[county_num-1] + "; her-b:" + this.WFH_HEREMP_B[county_num-1]);
+                cdapLogger.info("Read County9 properties mwt-m:" + this.WFH_MWTEMP_M[county_num-1] + "; mwt-b:" + this.WFH_MWTEMP_B[county_num-1]);
+                cdapLogger.info("Read County9 properties oth-m:" + this.WFH_OTHEMP_M[county_num-1] + "; oth-b:" + this.WFH_OTHEMP_B[county_num-1]);
+                cdapLogger.info("Read County9 properties ret-m:" + this.WFH_RETEMP_M[county_num-1] + "; ret-b:" + this.WFH_RETEMP_B[county_num-1]);
+            }
+        }
 
         this.WFH_FULLTIMEWORKER_FACTOR = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_FULLTIMEWORKER_FACTOR));
         this.WFH_PARTTIMEWORKER_FACTOR = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_PARTTIMEWORKER_FACTOR));
-
-        cdapLogger.info("Read properties agr-m:" + this.WFH_AGREMP_M + "; agr-b:" + this.WFH_AGREMP_B);
-        cdapLogger.info("Read properties fps-m:" + this.WFH_FPSEMP_M + "; fps-b:" + this.WFH_FPSEMP_B);
-        cdapLogger.info("Read properties her-m:" + this.WFH_HEREMP_M + "; her-b:" + this.WFH_HEREMP_B);
-        cdapLogger.info("Read properties mwt-m:" + this.WFH_MWTEMP_M + "; mwt-b:" + this.WFH_MWTEMP_B);
-        cdapLogger.info("Read properties oth-m:" + this.WFH_OTHEMP_M + "; oth-b:" + this.WFH_OTHEMP_B);
-        cdapLogger.info("Read properties ret-m:" + this.WFH_RETEMP_M + "; ret-b:" + this.WFH_RETEMP_B);
 
         cdapLogger.info("Read properties fulltime worker factor:" + this.WFH_FULLTIMEWORKER_FACTOR + "; parttime worker factor:" + this.WFH_PARTTIMEWORKER_FACTOR);
     }
@@ -147,15 +164,16 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
             hhinc = 0;
         }
         double ln_hhinc = Math.log(hhinc);
-
+        int homeCounty = this.tazDataManager.getZoneCounty(householdObject.getHhTaz());
+        // https://github.com/BayAreaMetro/modeling-website/wiki/TazData
 
         // apply log model, constrained to [0.0, 1.0]
-        double agr_wfh = Math.min(1.0, Math.max(0.0, WFH_AGREMP_M*ln_hhinc + WFH_AGREMP_B));
-        double fps_wfh = Math.min(1.0, Math.max(0.0, WFH_FPSEMP_M*ln_hhinc + WFH_FPSEMP_B));
-        double her_wfh = Math.min(1.0, Math.max(0.0, WFH_HEREMP_M*ln_hhinc + WFH_HEREMP_B));
-        double mwt_wfh = Math.min(1.0, Math.max(0.0, WFH_MWTEMP_M*ln_hhinc + WFH_MWTEMP_B));
-        double oth_wfh = Math.min(1.0, Math.max(0.0, WFH_OTHEMP_M*ln_hhinc + WFH_OTHEMP_B));
-        double ret_wfh = Math.min(1.0, Math.max(0.0, WFH_RETEMP_M*ln_hhinc + WFH_RETEMP_B));
+        double agr_wfh = Math.min(1.0, Math.max(0.0, this.WFH_AGREMP_M[homeCounty-1]*ln_hhinc + this.WFH_AGREMP_B[homeCounty-1]));
+        double fps_wfh = Math.min(1.0, Math.max(0.0, this.WFH_FPSEMP_M[homeCounty-1]*ln_hhinc + this.WFH_FPSEMP_B[homeCounty-1]));
+        double her_wfh = Math.min(1.0, Math.max(0.0, this.WFH_HEREMP_M[homeCounty-1]*ln_hhinc + this.WFH_HEREMP_B[homeCounty-1]));
+        double mwt_wfh = Math.min(1.0, Math.max(0.0, this.WFH_MWTEMP_M[homeCounty-1]*ln_hhinc + this.WFH_MWTEMP_B[homeCounty-1]));
+        double oth_wfh = Math.min(1.0, Math.max(0.0, this.WFH_OTHEMP_M[homeCounty-1]*ln_hhinc + this.WFH_OTHEMP_B[homeCounty-1]));
+        double ret_wfh = Math.min(1.0, Math.max(0.0, this.WFH_RETEMP_M[homeCounty-1]*ln_hhinc + this.WFH_RETEMP_B[homeCounty-1]));
 
         double agr_share = Double.valueOf(this.tazDataAgrEmpn[workLocation-1])/Double.valueOf(this.tazDataTotEmp[workLocation-1]);
         double fps_share = Double.valueOf(this.tazDataFpsEmpn[workLocation-1])/Double.valueOf(this.tazDataTotEmp[workLocation-1]);
@@ -173,8 +191,9 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
 
         // trace household debug
         if(householdObject.getDebugChoiceModels()){
-            cdapLogger.debug(String.format(" HHID %d PersonID %d EmploymentCategory %s WorkLocation %d", 
-                householdObject.getHhId(), personA.getPersonId(), personA.getPersonEmploymentCategory(), workLocation));
+            cdapLogger.debug(String.format(" HHID %d PersonID %d EmploymentCategory %s HomeTAZ %d HomeCounty %d WorkLocation %d", 
+                householdObject.getHhId(), personA.getPersonId(), personA.getPersonEmploymentCategory(), 
+                householdObject.getHhTaz(), homeCounty, workLocation));
             cdapLogger.debug(String.format("     agr_wfh * agr_share = %.3f * %.3f", agr_wfh, agr_share));
             cdapLogger.debug(String.format("     fps_wfh * fps_share = %.3f * %.3f", fps_wfh, fps_share));
             cdapLogger.debug(String.format("     her_wfh * her_share = %.3f * %.3f", her_wfh, her_share));

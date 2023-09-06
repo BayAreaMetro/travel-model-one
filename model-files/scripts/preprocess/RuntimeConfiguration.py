@@ -776,7 +776,6 @@ if __name__ == '__main__':
         config_auto_opcost(params_filename, params_contents, False, replacements)
         config_host_ip(False, replacements)
         config_distribution(replacements)
-        config_cdap(params_filename, params_contents)
         config_freeparking(params_filename, params_contents)
     else:
         config_shadowprice(my_args.iter, replacements)
