@@ -95,41 +95,6 @@ set ITER=3
 
 runtpp CTRAMP\scripts\database\SkimsDatabase.job
 if ERRORLEVEL 2 goto done
-goto done
-
-
-:: ------------------------------------------------------------------------------------------------------
-::
-:: Step 12:  Prepare inputs for EMFAC
-::
-:: ------------------------------------------------------------------------------------------------------
-
-::skip this step as the MergeNetwork.job already creates the avgload5period_vehclasses.csv (avgload5period.csv)
-skip run_emfac
-if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
-  rem Export network to csv version (with vehicle class volumn columns intact)
-  rem Input : hwy\iter%ITER%\avgload5period.net
-  rem Output: hwy\iter%ITER%\avgload5period_vehclasses.csv
-  runtpp "CTRAMP\scripts\metrics\net2csv_avgload5period.job"
-  IF ERRORLEVEL 2 goto error
-)
-: run_emfac
-:: Run Prepare EMFAC
-call RunPrepareEmfac.bat SB375 WithFreight
-
-:: ------------------------------------------------------------------------------------------------------
-::
-:: Step 13:  Build destination choice logsums
-::
-:: ------------------------------------------------------------------------------------------------------
-
-: logsums
-
-:: call RunAccessibility
-:: if ERRORLEVEL 2 goto done
-
-call RunLogsums
-if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
