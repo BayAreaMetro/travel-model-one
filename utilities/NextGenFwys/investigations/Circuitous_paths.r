@@ -75,9 +75,8 @@ joined_df$distance_diff <- joined_df$distance_build - joined_df$distance_base
 joined_df$time_diff <- joined_df$time_build - joined_df$time_base
 
 
-# Categorize data into bins and count trips
-binned_df <- joined_df %>%
-  mutate(bin = cut(distance_diff, breaks = bins)) %>%
+# Categorize data into distance bins and count trips
+binned_dist_df <- joined_df %>%
   mutate(bin = cut(
     distance_diff,
     breaks = c(-Inf, seq(0, 0, 1), seq(0.000001, max(distance_diff), 2), Inf),
@@ -86,3 +85,41 @@ binned_df <- joined_df %>%
   )) %>%
   group_by(bin) %>%
   summarise(trip_count = n())
+print(binned_dist_df)
+
+
+# Categorize data into time bins and count trips
+binned_time_df <- joined_df %>%
+  mutate(bin = cut(
+    time_diff,
+    breaks = c(-Inf, seq(0, 0, 1), seq(0.000001, 5, 1), seq(5, max(time_diff), 5), Inf),
+    include.lowest = TRUE,
+    right = FALSE
+  )) %>%
+  group_by(bin) %>%
+  summarise(trip_count = n())
+print(binned_time_df)
+
+# output joined_df as a csv file for creating histogram in Tableau
+#--------------------------------------------------------------------------------------------------------
+OUTFILE1 <- file.path("L:\\Application\\Model_One\\NextGenFwys\\Investigations\\Circuitous_paths\\trips_DaIncQ1AM.csv")
+write.csv(joined_df, OUTFILE1, row.names = FALSE)
+
+# output a file that is indexed by ODs for examining extreme cases
+#--------------------------------------------------------------------------------------------------------
+OD_TimeDist_df <- joined_df %>%
+  group_by(orig_taz, dest_taz) %>%
+  summarise(distance_diff = mean(distance_diff),
+            time_diff = mean(time_diff),
+            distance_build = mean(distance_build),
+            time_build = mean(time_build),
+            distance_base = mean(distance_base),
+            time_base = mean(time_base),
+            trip_count_build = n()) %>%
+  arrange(desc(distance_diff))
+
+OUTFILE2 <- file.path("L:\\Application\\Model_One\\NextGenFwys\\Investigations\\Circuitous_paths\\OD_TimeDistDiff.csv")
+write.csv(OD_TimeDist_df, OUTFILE2, row.names = FALSE)
+
+# The Tableau workbook that uses these output files are saved in: 
+# L:\Application\Model_One\NextGenFwys\Investigations\Circuitous_paths
