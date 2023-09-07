@@ -29,12 +29,10 @@ Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 :: ------------------------------
 :: specify selected ODs below
+:: use comma seperated values
 :: ------------------------------
 
-set ORIGIN=1
-set DESTINATION=234
+set ORIGIN=1,100,1000
+set DESTINATION=234,456
 runtpp X:\travel-model-one-master\utilities\NextGenFwys\public_engagement\HwyAssign_trace.job
 
-set ORIGIN=3
-set DESTINATION=456
-runtpp X:\travel-model-one-master\utilities\NextGenFwys\public_engagement\HwyAssign_trace.job
