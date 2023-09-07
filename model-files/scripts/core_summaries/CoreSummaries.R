@@ -1169,11 +1169,11 @@ work_locations <- left_join(work_locations,
                             select(households, hh_id, incQ, incQ_label))
 # add person type
 work_locations <- left_join(work_locations,
-                            select(persons, hh_id, person_num, ptype, ptype_label))
+                            select(persons, hh_id, person_num, ptype, ptype_label, wfh_choice))
 print(table(work_locations$ptype_label))
 
 # summarize
-journeytowork_mode_summary <- summarise(group_by(work_locations, incQ, incQ_label, ptype, ptype_label,
+journeytowork_mode_summary <- summarise(group_by(work_locations, incQ, incQ_label, ptype, ptype_label,wfh_choice,
                                                  homeSD, HomeSubZone, workSD, WorkSubZone,
                                                  tour_mode),
                                    freq     = n(),
