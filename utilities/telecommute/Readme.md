@@ -1,14 +1,27 @@
 
-# Telecommuting and Travel Model 1.5
+# Telecommuting and Travel Model 1.6
+
+In Travel Model 1.6, telecommuting (also known as working from home or WFH) has been made into a simple "submodel" of
+the Coordinated Daily Activity Pattern model. For each worker (with a work location), that worker's choice to work from home is made
+via a linear function based on the log of the person's household income; the model specification is additionally segmented
+by home county and employment industry. These models were estimated using [post-pandemic PUMS data](https://mtcdrive.box.com/s/0vux1bzeinjz7gtvazn0wzb57p7zqpt7).
+
+Since the worker's employment industry is unknown, the worker's work-from-home probability is
+the weighted average of employment industry jobs at that worker's work location TAZ.
+
+The work from home choice (`wfh_choice`) is stored as a person attribute, and written to the 
+[disaggregate person output file](WFH model adjustment & validation).
+
+More information can be found here:
+* [Pull request #63: Implement a simple WFH model in CDAP](https://github.com/BayAreaMetro/travel-model-one/pull/63)
+* [Asana task: WFH model adjustment & validation](https://app.asana.com/0/0/1205369234942623/f) - this is internal only.
 
 ## Files
 
-* [`calibrateTelecommute.bat`](calibrateTelecommute.bat) - script used to "calibrate" telecommute constants to achieve desired telecommute levels.
-* `telecommute_constants_20[xx].csv` - Superdistrict-based constants used for telecommuting in Plan Bay Area 2050 for Strategy EN7.
-* [`telecommute_max_rate_county.csv`](telecommute_max_rate_county.csv) - estimate of maximum telecommute rates by county and major (ABAG6) employment industry sector, used in Plan Bay Area 2050 model runs.
-* [`TelecommuteData.xslx`](TelecommuteData.xlsx) - summary of most recent Census ACS related to telecommuting
+* [`TelecommuteData.xlsx`](TelecommuteData.xlsx) - summary of most recent Census ACS related to telecommuting
+* [`telecommute.twb`](telecommute.twb) - tableau workbook for dropping into the `main` directory of a completed model run, summarizing commute modes including WFH.
 
-## Telecommuting Estimates
+## Telecommuting Estimates (Surveys, etc.)
 
 Further discussion can be found in [Identify/evaluate sources of post-pandemic telecommute data](https://app.asana.com/0/1204085012544660/1204893619957853/f).
 
