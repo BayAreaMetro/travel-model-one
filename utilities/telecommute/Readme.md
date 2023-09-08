@@ -10,7 +10,7 @@ Since the worker's employment industry is unknown, the worker's work-from-home p
 the weighted average of employment industry jobs at that worker's work location TAZ.
 
 The work from home choice (`wfh_choice`) is stored as a person attribute, and written to the 
-[disaggregate person output file](WFH model adjustment & validation).
+[disaggregate person output file](https://github.com/BayAreaMetro/modeling-website/wiki/Person).
 
 More information can be found here:
 * [Pull request #63: Implement a simple WFH model in CDAP](https://github.com/BayAreaMetro/travel-model-one/pull/63)
