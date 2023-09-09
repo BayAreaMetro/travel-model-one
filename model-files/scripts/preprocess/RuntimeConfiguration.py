@@ -230,6 +230,7 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
 
     WorkTransitHesitance     = float(get_property(params_filename, params_contents, "Work_Transit_Hesitance"))
     NonWorkTransitHesitance  = float(get_property(params_filename, params_contents, "NonWork_Transit_Hesitance"))
+    BARTTransitHesitance     = float(get_property(params_filename, params_contents, "BART_Transit_Hesitance"))
 
     MeansBasedTollsQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q1Factor"))
     MeansBasedTollsQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q2Factor"))
@@ -306,6 +307,7 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
 
     replacements[filepath]["(\nWork_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WorkTransitHesitance
     replacements[filepath]["(\nNonWork_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % NonWorkTransitHesitance
+    replacements[filepath]["(\nBART_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % BARTTransitHesitance
 
     replacements[filepath]["(\nMeans_Based_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ1Factor
     replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
