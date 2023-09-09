@@ -128,7 +128,7 @@ trnlink_dbf_data <- data.frame()
 for (timeperiod in c("AM","MD","PM","EV", "EA")) {
   # read the input dbfs
   filename <- paste0("trnlink",timeperiod,"_ALLMSA.dbf")
-  fullfile <- file.path(MODEL_DIR, "trn", filename)
+  fullfile <- file.path(MODEL_DIR, "trn", paste0("TransitAssignment.iter",ITER),'Subdir0',filename)
   trndata  <- read.dbf(file=fullfile, as.is=TRUE)
   trndata$timeperiod <- timeperiod
 
