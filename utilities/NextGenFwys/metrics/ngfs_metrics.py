@@ -425,7 +425,7 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     # MTC calculates two measures of delay 
     # - congested delay, or delay that occurs when speeds are below 35 miles per hour, 
     # and total delay, or delay that occurs when speeds are below the posted speed limit.
-    # https://www.vitalsigns.mtc.ca.gov/time-spent-congestion#:~:text=To%20illustrate%2C%20if%201%2C000%20vehicles,hours%20%3D%204.76%20vehicle%20hours%5D.
+    # https://vitalsigns.mtc.ca.gov/indicators/time-spent-in-congestion
     fwy_network_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['ft'] == 1)|(tm_loaded_network_df['ft'] == 2)|(tm_loaded_network_df['ft'] == 5)|(tm_loaded_network_df['ft'] == 8)]
     expwy_network_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['ft'] == 3)]
     local_road_network_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['ft'] == 4)|(tm_loaded_network_df['ft'] == 7)]
@@ -481,9 +481,26 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     local_road_PM_congested_delay = (local_road_PM_speeds_below_35_df['volPM_tot'] * (local_road_PM_speeds_below_35_df['ctimPM']-local_road_PM_speeds_below_35_df['fft'])).sum()/60
     local_road_EV_congested_delay = (local_road_EV_speeds_below_35_df['volEV_tot'] * (local_road_EV_speeds_below_35_df['ctimEV']-local_road_EV_speeds_below_35_df['fft'])).sum()/60
     
-    metrics_dict['Congested Delay', grouping2, grouping3, tm_run_id, metric_id,'top_level','Freeways', 'daily_congested_delay_veh_hrs', year] = EA_congested_delay + AM_congested_delay + MD_congested_delay + PM_congested_delay + EV_congested_delay
-    metrics_dict['Congested Delay', grouping2, grouping3, tm_run_id, metric_id,'top_level','Expressways', 'daily_congested_delay_veh_hrs', year] = expwy_EA_congested_delay + expwy_AM_congested_delay + expwy_MD_congested_delay + expwy_PM_congested_delay + expwy_EV_congested_delay
-    metrics_dict['Congested Delay', grouping2, grouping3, tm_run_id, metric_id,'top_level','Local Roads', 'daily_congested_delay_veh_hrs', year] = local_road_EA_congested_delay + local_road_AM_congested_delay + local_road_MD_congested_delay + local_road_PM_congested_delay + local_road_EV_congested_delay 
+    metrics_dict['Congested Delay', 'Daily', grouping3, tm_run_id, metric_id,'top_level','Freeways', 'congested_delay_veh_hrs', year] = EA_congested_delay + AM_congested_delay + MD_congested_delay + PM_congested_delay + EV_congested_delay
+    metrics_dict['Congested Delay', 'Early AM', grouping3, tm_run_id, metric_id,'top_level','Freeways', 'congested_delay_veh_hrs', year] = EA_congested_delay
+    metrics_dict['Congested Delay', 'AM Peak', grouping3, tm_run_id, metric_id,'top_level','Freeways', 'congested_delay_veh_hrs', year] = AM_congested_delay
+    metrics_dict['Congested Delay', 'Midday', grouping3, tm_run_id, metric_id,'top_level','Freeways', 'congested_delay_veh_hrs', year] = MD_congested_delay
+    metrics_dict['Congested Delay', 'PM Peak', grouping3, tm_run_id, metric_id,'top_level','Freeways', 'congested_delay_veh_hrs', year] = PM_congested_delay
+    metrics_dict['Congested Delay', 'Evening', grouping3, tm_run_id, metric_id,'top_level','Freeways', 'congested_delay_veh_hrs', year] = EV_congested_delay
+    
+    metrics_dict['Congested Delay', 'Daily', grouping3, tm_run_id, metric_id,'top_level','Expressways', 'congested_delay_veh_hrs', year] = expwy_EA_congested_delay + expwy_AM_congested_delay + expwy_MD_congested_delay + expwy_PM_congested_delay + expwy_EV_congested_delay
+    metrics_dict['Congested Delay', 'Early AM', grouping3, tm_run_id, metric_id,'top_level','Expressways', 'congested_delay_veh_hrs', year] = expwy_EA_congested_delay
+    metrics_dict['Congested Delay', 'AM Peak', grouping3, tm_run_id, metric_id,'top_level','Expressways', 'congested_delay_veh_hrs', year] = expwy_AM_congested_delay
+    metrics_dict['Congested Delay', 'Midday', grouping3, tm_run_id, metric_id,'top_level','Expressways', 'congested_delay_veh_hrs', year] = expwy_MD_congested_delay
+    metrics_dict['Congested Delay', 'PM Peak', grouping3, tm_run_id, metric_id,'top_level','Expressways', 'congested_delay_veh_hrs', year] = expwy_PM_congested_delay
+    metrics_dict['Congested Delay', 'Evening', grouping3, tm_run_id, metric_id,'top_level','Expressways', 'congested_delay_veh_hrs', year] = expwy_EV_congested_delay
+    
+    metrics_dict['Congested Delay', 'Daily', grouping3, tm_run_id, metric_id,'top_level','Local Roads', 'congested_delay_veh_hrs', year] = local_road_EA_congested_delay + local_road_AM_congested_delay + local_road_MD_congested_delay + local_road_PM_congested_delay + local_road_EV_congested_delay 
+    metrics_dict['Congested Delay', 'Early AM', grouping3, tm_run_id, metric_id,'top_level','Local Roads', 'congested_delay_veh_hrs', year] = local_road_EA_congested_delay
+    metrics_dict['Congested Delay', 'AM Peak', grouping3, tm_run_id, metric_id,'top_level','Local Roads', 'congested_delay_veh_hrs', year] = local_road_AM_congested_delay
+    metrics_dict['Congested Delay', 'Midday', grouping3, tm_run_id, metric_id,'top_level','Local Roads', 'congested_delay_veh_hrs', year] = local_road_MD_congested_delay
+    metrics_dict['Congested Delay', 'PM Peak', grouping3, tm_run_id, metric_id,'top_level','Local Roads', 'congested_delay_veh_hrs', year] = local_road_PM_congested_delay
+    metrics_dict['Congested Delay', 'Evening', grouping3, tm_run_id, metric_id,'top_level','Local Roads', 'congested_delay_veh_hrs', year] = local_road_EV_congested_delay
 
     # calculate toll revenues
     
