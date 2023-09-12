@@ -243,6 +243,10 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     MeansBasedCordonFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q1Factor"))
     MeansBasedCordonFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
 
+    # WFH factors
+    WFHFullTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_FullTimeWorker_Factor"))
+    WFHPartTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_PartTimeWorker_Factor"))
+
     Adjust_TNCsingle_TourMode = float(get_property(params_filename, params_contents, "Adjust_TNCsingle_TourMode"))
     Adjust_TNCshared_TourMode = float(get_property(params_filename, params_contents, "Adjust_TNCshared_TourMode"))
     Adjust_TNCsingle_TripMode = float(get_property(params_filename, params_contents, "Adjust_TNCsingle_TripMode"))
@@ -314,6 +318,10 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ2Factor
     replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ1Factor
     replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ2Factor
+
+    # WFH factors
+    replacements[filepath]["(\nCDAP.WFH.FullTimeWorker.Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WFHFullTimeWorkerFactor
+    replacements[filepath]["(\nCDAP.WFH.PartTimeworker.Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WFHPartTimeWorkerFactor
 
     replacements[filepath]["(\nAdjust_TNCsingle_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCsingle_TourMode
     replacements[filepath]["(\nAdjust_TNCshared_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCshared_TourMode
@@ -706,35 +714,6 @@ def config_uec(auto_operating_cost):
 
         wb.save(filepath)
 
-
-# define a function to put the telecommute constant into the Coordinated Daily Activity Pattern excel file
-def config_cdap(params_filename, params_contents):
-
-    # read the telecommute constant from the properties file
-    TelecommuteConstant_FT = float(get_property(params_filename, params_contents, "Telecommute_constant_FT"))
-    TelecommuteConstant_PT = float(get_property(params_filename, params_contents, "Telecommute_constant_PT"))
-
-    for bookname in ["CoordinatedDailyActivityPattern.xls"]:
-        filepath = os.path.join("CTRAMP","model",bookname)
-        shutil.move(filepath, "%s.original" % filepath)
-
-        print("Updating {}".format(filepath))
-        rb = xlrd.open_workbook("%s.original" % filepath, formatting_info=True, on_demand=True)
-        wb = xlutils.copy.copy(rb)
-        for sheet_num in range(rb.nsheets):
-            rs = rb.get_sheet(sheet_num)
-            for rownum in range(rs.nrows):
-                # print(rs.cell(rownum,1))
-                if rs.cell(rownum,2).value=='Simulate telecommuting by reducing mandatory patterns - global_FT':
-                    print("  Sheet '{}': replacing telecommute constant '{}' -> {:.2f}".format(
-                        rs.name, rs.cell(rownum,6).value, TelecommuteConstant_FT))
-                    wb.get_sheet(sheet_num).write(rownum,6, TelecommuteConstant_FT, xlwt.easyxf("align: horiz right"))
-                if rs.cell(rownum,2).value=='Simulate telecommuting by reducing mandatory patterns - global_PT':
-                    print("  Sheet '{}': replacing telecommute constant '{}' -> {:.2f}".format(
-                        rs.name, rs.cell(rownum,6).value, TelecommuteConstant_PT))
-                    wb.get_sheet(sheet_num).write(rownum,6, TelecommuteConstant_PT, xlwt.easyxf("align: horiz right"))                    
-        wb.save(filepath)
-
 def config_freeparking(params_filename, params_contents):
     """
     Transfer Free_Parking_Eligibility_OnOff to FreeParkingEligibility UECs
@@ -799,7 +778,6 @@ if __name__ == '__main__':
         config_auto_opcost(params_filename, params_contents, False, replacements)
         config_host_ip(False, replacements)
         config_distribution(replacements)
-        config_cdap(params_filename, params_contents)
         config_freeparking(params_filename, params_contents)
     else:
         config_shadowprice(my_args.iter, replacements)

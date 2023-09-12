@@ -5,14 +5,14 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2023_TM152_IPA_17
+set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2023_TM160_IPA_17
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=No
 
 :: set the location of the Travel Model Release
 :: use master for now until we create a release
-set GITHUB_DIR=\\tsclient\E\GitHub\travel-model-one-v1.6_develop
+set GITHUB_DIR=\\tsclient\E\GitHub\travel-model-one-v1.6_develop_WFH
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
 set INPUT_NETWORK=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_v09\net_2023_Blueprint
@@ -32,12 +32,7 @@ set PREV_RUN_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2023_TM152
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
-set PARAMS=\\tsclient\E\GitHub\travel-model-one-v1.6_develop\utilities\RTP\config_RTP2025\params_2023.properties
-:: test superdistrict-based telecommute constants
-:: for no project or base years, this will get generated/stay at zero
-set TELECOMMUTE_CONFIG=\\tsclient\E\GitHub\travel-model-one-v1.6_develop\utilities\telecommute\telecommute_constants_2025.csv
-:: for blueprint, use calibrated
-:: set TELECOMMUTE_CONFIG=\\tsclient\X\travel-model-one-cdap-worktaz\utilities\telecommute\telecommute_constants_2035.csv
+set PARAMS=\\tsclient\E\GitHub\travel-model-one-v1.6_develop_WFH\utilities\RTP\config_RTP2025\params_2023.properties
 
 :: set the location of the overrides directory (for Blueprint strategies)
 set BP_OVERRIDE_DIR=NA
@@ -86,7 +81,6 @@ c:\windows\system32\Robocopy.exe /NP /E "%INPUT_NETWORK%\trn"                   
 :: popsyn and land use
 c:\windows\system32\Robocopy.exe /NP /E "%INPUT_POPLU%\popsyn"                                       INPUT\popsyn
 c:\windows\system32\Robocopy.exe /NP /E "%INPUT_POPLU%\landuse"                                      INPUT\landuse
-copy /Y "%GITHUB_DIR%\utilities\telecommute\telecommute_max_rate_county.csv"                     INPUT\landuse
 
 :: nonres
 c:\windows\system32\Robocopy.exe /NP /NP /E "%INPUT_DEVELOPMENT_DIR%\nonres\nonres_00"                   INPUT\nonres
@@ -189,11 +183,6 @@ if %MODEL_YEAR_NUM% GEQ 2025 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMo
 :: Bay Skyway (formerly Bay Bridge West Span Bike Path)
 if %MODEL_YEAR_NUM% GEQ 2045 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMotorizedNetwork_BikeAccess_2045onwards.job"   "CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job")
 
-:: ------
-:: Telecommute V2 strategy
-:: ------
-copy /Y "%TELECOMMUTE_CONFIG%" "INPUT\telecommute_constants.csv"
- 
 :DoneAddingStrategies
 
 :: ------------------------------------------------------------------------------------------------------
