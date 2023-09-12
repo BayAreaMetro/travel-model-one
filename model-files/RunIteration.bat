@@ -30,7 +30,7 @@ if %ITER%==0 goto hwyAssign
 :: Create the automobile level-of-service matrices
 runtpp CTRAMP\scripts\skims\HwySkims.job
 if ERRORLEVEL 2 goto done
-echo Highway Skimming Completed  %DATE% %TIME% >> logs\feedback.rpt 
+echo HighwaySkimming Completed  %DATE% %TIME% >> logs\feedback.rpt 
 
 :: No need to build transit skims here; they were built by the previous assignment
 
@@ -97,7 +97,7 @@ if ERRORLEVEL 2 goto done
 ::Apply the BCM Airport model
 runtpp CTRAMP\scripts\nonres\BCMAirport.job
 if ERRORLEVEL 2 goto done
-echo Non ABM Completed  %DATE% %TIME% >> logs\feedback.rpt 
+echo NonABM Completed  %DATE% %TIME% >> logs\feedback.rpt 
 
 goto hwyassign
 :: Apply a transit submode choice model for transit trips to bay area HSR stations
@@ -117,11 +117,12 @@ if %ITER% GTR 0 (
 	runtpp CTRAMP\scripts\assign\PrepAssign.job
 	if ERRORLEVEL 2 goto done
 )
+echo PrepAssign Completed  %DATE% %TIME% >> logs\feedback.rpt 
 
 :: Assign the demand matrices to the highway network
 runtpp CTRAMP\scripts\assign\HwyAssign.job
 if ERRORLEVEL 2 goto done
-echo Highway Assignment Completed  %DATE% %TIME% >> logs\feedback.rpt 
+echo HighwayAssignment Completed  %DATE% %TIME% >> logs\feedback.rpt 
 
 :trnAssignSkim
 :: copy a local version for easier restarting
@@ -129,7 +130,7 @@ copy CTRAMP\scripts\skims\trnAssign.bat trnAssign_iter%ITER%.bat
 call trnAssign_iter%ITER%.bat
 SET BASE_SCRIPTS=CTRAMP\scripts
 if ERRORLEVEL 2 goto done
-echo Transit Batch File Completed  %DATE% %TIME% >> logs\feedback.rpt 
+echo TransitBatchFile Completed  %DATE% %TIME% >> logs\feedback.rpt 
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 5:  Prepare the networks for the next iteration
