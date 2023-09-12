@@ -427,6 +427,10 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     # and total delay, or delay that occurs when speeds are below the posted speed limit.
     # https://www.vitalsigns.mtc.ca.gov/time-spent-congestion#:~:text=To%20illustrate%2C%20if%201%2C000%20vehicles,hours%20%3D%204.76%20vehicle%20hours%5D.
     fwy_network_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['ft'] == 1)|(tm_loaded_network_df['ft'] == 2)|(tm_loaded_network_df['ft'] == 5)|(tm_loaded_network_df['ft'] == 8)]
+    expwy_network_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['ft'] == 3)]
+    local_road_network_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['ft'] == 4)|(tm_loaded_network_df['ft'] == 7)]
+
+    # LOGGER.debug("expwy_network_df:\n{}".format(expwy_network_df))
 
     EA_nonzero_spd_network_df = fwy_network_df.copy().loc[(fwy_network_df['cspdEA'] > 0)]
     EA_total_delay = (EA_nonzero_spd_network_df['distance'] * EA_nonzero_spd_network_df['volEA_tot'] * ((1/EA_nonzero_spd_network_df['cspdEA']).replace(numpy.inf, 0) - (1/EA_nonzero_spd_network_df['ffs']).replace(numpy.inf, 0))).sum()
@@ -440,19 +444,46 @@ def calculate_top_level_metrics(tm_run_id, year, tm_vmt_metrics_df, tm_auto_time
     EV_total_delay = (EV_nonzero_spd_network_df['distance'] * EV_nonzero_spd_network_df['volEV_tot'] * ((1/EV_nonzero_spd_network_df['cspdEV']).replace(numpy.inf, 0) - (1/EV_nonzero_spd_network_df['ffs']).replace(numpy.inf, 0))).sum()
     metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Freeway Delay', 'daily_total_freeway_delay_veh_hrs', year] = EA_total_delay + AM_total_delay + MD_total_delay + PM_total_delay + EV_total_delay
     # calculate congested delay
-    # only keep the links where the speeds  under 35 mph
+    # only keep the links where the speeds  under 35 mph for freeways
     EA_speeds_below_35_df = fwy_network_df.copy().loc[(fwy_network_df['cspdEA'] < 35)]
     AM_speeds_below_35_df = fwy_network_df.copy().loc[(fwy_network_df['cspdAM'] < 35)]
     MD_speeds_below_35_df = fwy_network_df.copy().loc[(fwy_network_df['cspdMD'] < 35)]
     PM_speeds_below_35_df = fwy_network_df.copy().loc[(fwy_network_df['cspdPM'] < 35)]
     EV_speeds_below_35_df = fwy_network_df.copy().loc[(fwy_network_df['cspdEV'] < 35)]
 
-    EA_congested_delay = (EA_speeds_below_35_df['distance'] * EA_speeds_below_35_df['volEA_tot'] * ((1/EA_speeds_below_35_df['cspdEA']).replace(numpy.inf, 0) - (1/35))).sum()
-    AM_congested_delay = (AM_speeds_below_35_df['distance'] * AM_speeds_below_35_df['volAM_tot'] * ((1/AM_speeds_below_35_df['cspdAM']).replace(numpy.inf, 0) - (1/35))).sum()
-    MD_congested_delay = (MD_speeds_below_35_df['distance'] * MD_speeds_below_35_df['volMD_tot'] * ((1/MD_speeds_below_35_df['cspdMD']).replace(numpy.inf, 0) - (1/35))).sum()
-    PM_congested_delay = (PM_speeds_below_35_df['distance'] * PM_speeds_below_35_df['volPM_tot'] * ((1/PM_speeds_below_35_df['cspdPM']).replace(numpy.inf, 0) - (1/35))).sum()
-    EV_congested_delay = (EV_speeds_below_35_df['distance'] * EV_speeds_below_35_df['volEV_tot'] * ((1/EV_speeds_below_35_df['cspdEV']).replace(numpy.inf, 0) - (1/35))).sum()
-    metrics_dict[grouping1, grouping2, grouping3, tm_run_id, metric_id,'top_level','Freeway Delay', 'daily_congested_freeway_delay_veh_hrs', year] = EA_congested_delay + AM_congested_delay + MD_congested_delay + PM_congested_delay + EV_congested_delay
+    EA_congested_delay = (EA_speeds_below_35_df['volEA_tot'] * (EA_speeds_below_35_df['ctimEA']-EA_speeds_below_35_df['fft'])).sum()/60
+    AM_congested_delay = (AM_speeds_below_35_df['volAM_tot'] * (AM_speeds_below_35_df['ctimAM']-AM_speeds_below_35_df['fft'])).sum()/60
+    MD_congested_delay = (MD_speeds_below_35_df['volMD_tot'] * (MD_speeds_below_35_df['ctimMD']-MD_speeds_below_35_df['fft'])).sum()/60
+    PM_congested_delay = (PM_speeds_below_35_df['volPM_tot'] * (PM_speeds_below_35_df['ctimPM']-PM_speeds_below_35_df['fft'])).sum()/60
+    EV_congested_delay = (EV_speeds_below_35_df['volEV_tot'] * (EV_speeds_below_35_df['ctimEV']-EV_speeds_below_35_df['fft'])).sum()/60
+    # only keep the links where the speeds  under Posted_Speed_limit * 0.6 mph for expressways
+    expwy_EA_speeds_below_35_df = expwy_network_df.copy().loc[(expwy_network_df['cspdEA'] < .6 * expwy_network_df['ffs'])]
+    expwy_AM_speeds_below_35_df = expwy_network_df.copy().loc[(expwy_network_df['cspdAM'] < .6 * expwy_network_df['ffs'])]
+    expwy_MD_speeds_below_35_df = expwy_network_df.copy().loc[(expwy_network_df['cspdMD'] < .6 * expwy_network_df['ffs'])]
+    expwy_PM_speeds_below_35_df = expwy_network_df.copy().loc[(expwy_network_df['cspdPM'] < .6 * expwy_network_df['ffs'])]
+    expwy_EV_speeds_below_35_df = expwy_network_df.copy().loc[(expwy_network_df['cspdEV'] < .6 * expwy_network_df['ffs'])]
+
+    expwy_EA_congested_delay = (expwy_EA_speeds_below_35_df['volEA_tot'] * (expwy_EA_speeds_below_35_df['ctimEA']-expwy_EA_speeds_below_35_df['fft'])).sum()/60
+    expwy_AM_congested_delay = (expwy_AM_speeds_below_35_df['volAM_tot'] * (expwy_AM_speeds_below_35_df['ctimAM']-expwy_AM_speeds_below_35_df['fft'])).sum()/60
+    expwy_MD_congested_delay = (expwy_MD_speeds_below_35_df['volMD_tot'] * (expwy_MD_speeds_below_35_df['ctimMD']-expwy_MD_speeds_below_35_df['fft'])).sum()/60
+    expwy_PM_congested_delay = (expwy_PM_speeds_below_35_df['volPM_tot'] * (expwy_PM_speeds_below_35_df['ctimPM']-expwy_PM_speeds_below_35_df['fft'])).sum()/60
+    expwy_EV_congested_delay = (expwy_EV_speeds_below_35_df['volEV_tot'] * (expwy_EV_speeds_below_35_df['ctimEV']-expwy_EV_speeds_below_35_df['fft'])).sum()/60
+    # only keep the links where the speeds  under Posted_Speed_limit * 0.6 mph for local roads
+    local_road_EA_speeds_below_35_df = local_road_network_df.copy().loc[(local_road_network_df['cspdEA'] < .6 * local_road_network_df['ffs'])]
+    local_road_AM_speeds_below_35_df = local_road_network_df.copy().loc[(local_road_network_df['cspdAM'] < .6 * local_road_network_df['ffs'])]
+    local_road_MD_speeds_below_35_df = local_road_network_df.copy().loc[(local_road_network_df['cspdMD'] < .6 * local_road_network_df['ffs'])]
+    local_road_PM_speeds_below_35_df = local_road_network_df.copy().loc[(local_road_network_df['cspdPM'] < .6 * local_road_network_df['ffs'])]
+    local_road_EV_speeds_below_35_df = local_road_network_df.copy().loc[(local_road_network_df['cspdEV'] < .6 * local_road_network_df['ffs'])]
+
+    local_road_EA_congested_delay = (local_road_EA_speeds_below_35_df['volEA_tot'] * (local_road_EA_speeds_below_35_df['ctimEA']-local_road_EA_speeds_below_35_df['fft'])).sum()/60
+    local_road_AM_congested_delay = (local_road_AM_speeds_below_35_df['volAM_tot'] * (local_road_AM_speeds_below_35_df['ctimAM']-local_road_AM_speeds_below_35_df['fft'])).sum()/60
+    local_road_MD_congested_delay = (local_road_MD_speeds_below_35_df['volMD_tot'] * (local_road_MD_speeds_below_35_df['ctimMD']-local_road_MD_speeds_below_35_df['fft'])).sum()/60
+    local_road_PM_congested_delay = (local_road_PM_speeds_below_35_df['volPM_tot'] * (local_road_PM_speeds_below_35_df['ctimPM']-local_road_PM_speeds_below_35_df['fft'])).sum()/60
+    local_road_EV_congested_delay = (local_road_EV_speeds_below_35_df['volEV_tot'] * (local_road_EV_speeds_below_35_df['ctimEV']-local_road_EV_speeds_below_35_df['fft'])).sum()/60
+    
+    metrics_dict['Congested Delay', grouping2, grouping3, tm_run_id, metric_id,'top_level','Freeways', 'daily_congested_delay_veh_hrs', year] = EA_congested_delay + AM_congested_delay + MD_congested_delay + PM_congested_delay + EV_congested_delay
+    metrics_dict['Congested Delay', grouping2, grouping3, tm_run_id, metric_id,'top_level','Expressways', 'daily_congested_delay_veh_hrs', year] = expwy_EA_congested_delay + expwy_AM_congested_delay + expwy_MD_congested_delay + expwy_PM_congested_delay + expwy_EV_congested_delay
+    metrics_dict['Congested Delay', grouping2, grouping3, tm_run_id, metric_id,'top_level','Local Roads', 'daily_congested_delay_veh_hrs', year] = local_road_EA_congested_delay + local_road_AM_congested_delay + local_road_MD_congested_delay + local_road_PM_congested_delay + local_road_EV_congested_delay 
 
     # calculate toll revenues
     
