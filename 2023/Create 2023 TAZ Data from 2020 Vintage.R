@@ -244,9 +244,9 @@ superdistrict <- read_excel(file.path(PETRALE,"2015","TAZ1454 2015 Land Use.xlsx
   filter(!(DISTRICT=="Bay Area")) %>% 
   mutate(DISTRICT=as.numeric(DISTRICT))
 
-# Output into Tableau-friendly format
+# Output into Tableau-friendly long format
 
-Tableau2023 <- New2023 %>%
+New2023_long <- New2023 %>%
   left_join(.,county_joiner,by="ZONE") %>% 
   left_join(.,superdistrict,by="DISTRICT") %>% 
   mutate(Year=2023) %>% 
@@ -255,12 +255,7 @@ Tableau2023 <- New2023 %>%
   gather(Variable,Value,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
          MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)
 
-write.csv(Tableau2023,"TAZ1454_2023_long.csv",row.names = F)
-
-# Concatenated version of Tableau files
-
-Tableau2015     <- read.csv(file.path(PETRALE,"2015","TAZ1454_2015_long.csv"), header = T)
-Tableau2020     <- read.csv(file.path(PETRALE,"2020","TAZ1454_2020_long.csv"), header = T)
+write.csv(New2023_long,"TAZ1454_2023_long.csv",row.names = F)
 
 
 

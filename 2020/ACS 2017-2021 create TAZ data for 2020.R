@@ -942,7 +942,7 @@ write.csv(popsim_vars_county, "TAZ1454 2020 Popsim Vars County.csv", row.names =
 
 # Output into Tableau-friendly format
 
-Tableau2015 <- PBA2015 %>%
+PBA2015_long <- PBA2015 %>%
   mutate(gqpop=TOTPOP-HHPOP) %>% 
   left_join(.,PBA2015_county,by=c("ZONE","COUNTY")) %>% 
   left_join(.,superdistrict,by="DISTRICT") %>% 
@@ -952,7 +952,7 @@ Tableau2015 <- PBA2015 %>%
   gather(Variable,Value,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
          MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)
 
-Tableau2020 <- New2020 %>%
+New2020_long <- New2020 %>%
   left_join(.,PBA2015_county,by=c("ZONE","COUNTY")) %>% 
   left_join(.,superdistrict,by="DISTRICT") %>% 
   mutate(Year=2020) %>% 
@@ -961,5 +961,5 @@ Tableau2020 <- New2020 %>%
   gather(Variable,Value,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
          MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)
 
-write.csv(Tableau2015,file.path(PETRALE,"2015","TAZ1454_2015_Tableau_Version.csv"),row.names = F)
-write.csv(Tableau2020,"TAZ1454_2020_Tableau_Version.csv",row.names = F)
+write.csv(PBA2015_long,file.path(PETRALE,"2015","TAZ1454_2015_long.csv"),row.names = F)
+write.csv(New2020_long,"TAZ1454_2020_long.csv",row.names = F)
