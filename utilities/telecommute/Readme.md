@@ -5,9 +5,17 @@ In Travel Model 1.6, telecommuting (also known as working from home or WFH) has 
 the Coordinated Daily Activity Pattern model. For each worker (with a work location), that worker's choice to work from home is made
 via a linear function based on the log of the person's household income; the model specification is additionally segmented
 by home county and employment industry. These models were estimated using [post-pandemic PUMS data](https://mtcdrive.box.com/s/0vux1bzeinjz7gtvazn0wzb57p7zqpt7).
+The linear functions are specified here:
+https://github.com/BayAreaMetro/travel-model-one/blob/3f490bcb919eb8186d27b7d06f324d3ea24b81fa/model-files/runtime/mtcTourBased.properties#L154-L278
 
 Since the worker's employment industry is unknown, the worker's work-from-home probability is
 the weighted average of employment industry jobs at that worker's work location TAZ.
+
+Additionally, in order to calibrate the overall WFH levels, there are two additional configuration options.
+These are specified in the `params.properties` configuration file:
+https://github.com/BayAreaMetro/travel-model-one/blob/3f490bcb919eb8186d27b7d06f324d3ea24b81fa/utilities/RTP/config_RTP2025/params_2023.properties#L17-L22
+
+And passed through to [`mtcTourBased.properties`](https://github.com/BayAreaMetro/travel-model-one/blob/3f490bcb919eb8186d27b7d06f324d3ea24b81fa/model-files/runtime/mtcTourBased.properties#L280-L282) via [`RuntimeConfiguration.py`](https://github.com/BayAreaMetro/travel-model-one/blob/3f490bcb919eb8186d27b7d06f324d3ea24b81fa/model-files/scripts/preprocess/RuntimeConfiguration.py#L322-L324).
 
 The work from home choice (`wfh_choice`) is stored as a person attribute, and written to the 
 [disaggregate person output file](https://github.com/BayAreaMetro/modeling-website/wiki/Person).
