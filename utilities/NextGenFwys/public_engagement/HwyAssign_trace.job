@@ -206,8 +206,10 @@ loop period = 2, 2
       read file = ctramp\scripts\block\SpeedCapacity_1hour.block
 
       ; print out paths for specific OD pairs for storytelling
-      fileo printo[1] = "%MODEL_DIR%\HwyAssign_trace\DApath_I%ORIGIN%_J%DESTINATION%.log"  
-      fileo printo[2] = "%MODEL_DIR%\HwyAssign_trace\DAtollpath_I%ORIGIN%_J%DESTINATION%.log" 
+      ;fileo printo[1] = "%MODEL_DIR%\HwyAssign_trace\DApath_I%ORIGIN%_J%DESTINATION%.log"  
+      ;fileo printo[2] = "%MODEL_DIR%\HwyAssign_trace\DAtollpath_I%ORIGIN%_J%DESTINATION%.log" 
+      fileo printo[1] = "%MODEL_DIR%\HwyAssign_trace\DApath.log"  
+      fileo printo[2] = "%MODEL_DIR%\HwyAssign_trace\DAtollpath.log" 
 
       ; set the working variables
       phase = linkread
