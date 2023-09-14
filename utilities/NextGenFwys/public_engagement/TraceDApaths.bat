@@ -1,5 +1,6 @@
 :: Batch file for outputting the AM drive-alone non tolled path and drive-alone tolled path for selected ODs
-:: On our modeling machines, it takes about 45 minutes to generate a set of paths for one pair of OD
+:: On our modeling machines, it takes about 45 minutes to complete one highway assignment iteration
+:: The time taken doesn't change significantly when we increase the number of OD paths to be printed out 
 :: The output paths can be found in 
 :: The output file are %MODEL_DIR%\HwyAssign_trace\DApath_I%ORIGIN%_J%DESTINATION%.log and %MODEL_DIR%\HwyAssign_trace\DAtollpath_I%ORIGIN%_J%DESTINATION%.log  
 
