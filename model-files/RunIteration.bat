@@ -192,6 +192,6 @@ del hwy\iter%ITER%\x*.net
 
 echo FINISHED ITERATION %ITER%  %DATE% %TIME% >> logs\feedback.rpt
 
-python "CTRAMP\scripts\notify_slack.py" "Finished iteration %ITER% in %MODEL_DIR%"
+@REM python "CTRAMP\scripts\notify_slack.py" "Finished iteration %ITER% in %MODEL_DIR%"
 
 :done
