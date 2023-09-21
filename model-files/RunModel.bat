@@ -431,7 +431,7 @@ if ERRORLEVEL 2 goto done
 
 :: Extract key files
 call extractkeyfiles
-c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
+@REM c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
 
 
 : cleanup
