@@ -156,14 +156,14 @@ python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraD
 python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex MD %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex PM %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 python ..\..\CTRAMP\scripts\skims\transitDwellAccess.py %TRNASSIGNMODE% NoExtraDelay Complex EV %TRNASSIGNITER% %PHTDIFFCOND% %MAXTRNITERS% complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
-
+if ERRORLEVEL 2 ECHO A_ERRORLEVEL2
 echo DONE    transitDwellAccess SubIter %TRNASSIGNITER% %DATE% %TIME% >> ..\..\logs\feedback.rpt
 
 :: did all of them reach end condition? count files and if there are new ones, copy them
 :: into place so the transit assignment will use them
 set EXISTCOUNT=0
 set /a NEXTTRNASSIGNITER = %TRNASSIGNITER%+1
-
+if ERRORLEVEL 2 ECHO B_ERRORLEVEL2
 FOR %%H in (%ALLTIMEPERIODS%) DO (
   IF EXIST transit%%H_%NEXTTRNASSIGNITER%.lin (
     set /a EXISTCOUNT+=1
@@ -172,7 +172,7 @@ FOR %%H in (%ALLTIMEPERIODS%) DO (
     copy /y transit%%H_%NEXTTRNASSIGNITER%.lin transit%%H.lin
   )
 )
-
+if ERRORLEVEL 2 ECHO C_ERRORLEVEL2
 :: if EA is the only holdout then that's not enough reason to keep iterating
 IF EXIST transitEA_%NEXTTRNASSIGNITER%.lin (
   IF %EXISTCOUNT%==1 (
@@ -183,7 +183,7 @@ IF EXIST transitEA_%NEXTTRNASSIGNITER%.lin (
     copy transitEA_%TRNASSIGNITER%.lin transitEA.lin
   )
 )
-
+if ERRORLEVEL 2 ECHO D_ERRORLEVEL2
 :: cleanup?
 
 :: converged! done
@@ -196,6 +196,7 @@ set /a TRNASSIGNITER+=1
 goto trnassign_loop
 ::============================== END LOOP ==============================
 :donetrnassign
+if ERRORLEVEL 2 ECHO E_ERRORLEVEL2
 :: if we have an error then stop
 if ERRORLEVEL 2 goto donedone
 
