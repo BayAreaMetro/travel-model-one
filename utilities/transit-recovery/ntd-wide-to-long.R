@@ -58,7 +58,7 @@ BayArea_UZAs = c(
 
 BOX_DIR          <- "E:\\Box"
 WORKING_DIR      <- file.path(BOX_DIR, "Modeling and Surveys", "Share Data", "national-transit-database")
-INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "May 2023 Complete Monthly Ridership (with adjustments and estimates).xlsx")
+INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "July 2023 Raw Monthly Ridership (no adjustments or estimates).xlsx")
 INPUT_WORKSHEETS <- c("VRM","VRH","UPT") # vehicle route miles, vehicle route hours, unlinked passenger trips
 INPUT_AGENCY_CSV <- file.path(WORKING_DIR, "AgencyToCommonAgencyName.csv")
 INPUT_UPT_MONTHLY_TO_DAILY <- file.path(WORKING_DIR, "MonthlyToTypicalWeekdayRidership.xlsx")
@@ -68,8 +68,8 @@ INPUT_UPT_MONTHLY_TO_DAILY <- file.path(WORKING_DIR, "MonthlyToTypicalWeekdayRid
 MODEL_OUTPUT_DIR <- file.path(BOX_DIR, "Modeling and Surveys", "Projects", "Transit Recovery Scenario Modeling")
 
 # assuming cwd is travel-model-one
+INPUT_MODEL_LOOKUP_XLSX <- file.path("..","TableauAliases.xlsx")
 print(paste("Reading",normalizePath(INPUT_MODEL_LOOKUP_XLSX)))
-INPUT_MODEL_LOOKUP_XLSX <- file.path("utilities","TableauAliases.xlsx")
 
 # in the WORKING_DIR
 OUTPUT_FILE      <- file.path(WORKING_DIR, "NTD_long.rdata")
@@ -183,11 +183,12 @@ for (worksheet in INPUT_WORKSHEETS) {
   # Write it to rData
   out_file <- str_replace(OUTPUT_FILE, ".rdata", paste0("_",worksheet,".rdata"))
   print(paste("Saving", out_file))
-  # save(NTD_long_df, file=out_file)
+  save(NTD_long_df, file=out_file)
 
   INDEX_COLS <- c(
     "NTD ID","Legacy NTD ID","Agency","Status","Reporter Type",
-    "UZA","UACE CD","UZA Name","Mode","3 Mode","TOS","Common.Agency.Name")
+    # "UZA",  # not present in July 2023 dataset
+    "UACE CD","UZA Name","Mode","3 Mode","TOS","Common.Agency.Name")
 
   # model-specific summary -- filter to just model months
   NTD_long_df <- filter(NTD_long_df, month %in% c('MAR','APR','MAY','SEP','OCT','NOV'))
