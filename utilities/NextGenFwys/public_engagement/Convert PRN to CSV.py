@@ -95,12 +95,24 @@ def process_saved_csvs(input_dir):
 
         # Get the origin from the file name
         origin = csv_file.split('_')[1].split('-')[0]
+        # Get the destination from the file name
+        destination = csv_file.split('_')[1].split('-')[1].split('.')[0]
+        # Get the iteration number from the file name
+        iteration = csv_file.split('_')[0].split('L')[1]
 
         # Add an 'origin' column to the DataFrame
         table['Column9'] = table['Column2'].shift(1)
 
         # Fill NaN values in 'origin' column with the first origin
         table.fillna(origin, inplace = True)
+
+        # cast Column9 as integers
+        table['Column9'] = table['Column9'].astype(int)
+        # add origin destination TAZ columns
+        table['Column10'] = int(origin)
+        table['Column11'] = int(destination)
+        # add iteration column
+        table['Column12'] = int(iteration)
 
         # Overwrite the original file with the processed table
         table.to_csv(input_path, index=False, header = False)
