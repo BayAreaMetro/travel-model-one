@@ -7,10 +7,10 @@ import os
 directory = os.getcwd()
 
 # Step 3: Get a list of all .prn files in the directory
-prn_files = ["TPPL{:04d}.PRN".format(i) for i in range(116, 126)]
+prn_files = ["TPPL{:04d}.PRN".format(i) for i in range(111, 126)]
 
 # Step 4: Open a new file for writing
-output_file = open('TPPL_combined.PRN', 'wb')  # Change 'combined.prn' to your desired output file name
+output_file = open('TPPL_AM_combined.PRN', 'wb')  # Change 'combined.prn' to your desired output file name
 
 # Step 5: Iterate through the list of .prn files and append their contents to the output file
 for prn_file in prn_files:

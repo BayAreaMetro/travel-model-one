@@ -65,7 +65,7 @@ def extract_tables_from_prn_files(input_dir, output_dir):
 
     # Generate a list of PRN file names (formatted as TPPLXXXX.PRN)
     # prn_files = [f for f in os.listdir(input_dir) if f.endswith(".PRN")]
-    prn_files = ["TPPL{:04d}.PRN".format(i) for i in range(116, 126)]
+    prn_files = ["TPPL{:04d}.PRN".format(i) for i in range(111, 126)]
 
     # Loop through the list of PRN files
     for prn_file in prn_files:
@@ -78,8 +78,19 @@ def extract_tables_from_prn_files(input_dir, output_dir):
 
 # Define a function to process saved CSV files
 def process_saved_csvs(input_dir):
+
+    # Define list of origins and destinations of interest
+    O = [410,972,146,478,820,767,558,607,234,16,742,1178,81,296,355,315,677,1145,1098,1176,1083,189,991,700,1421,1448,1270,1246,1366,1336,1402,1291,1412,1311]
+    D = [4,971,115,75,429,1019,558,871,355,311,257,608,1061,212,460,1113,777,188,1361,1146,742,1262,1439,1224,1299,1204,660,1342,1430,1168,707,1413,1310,1399]
+    
+    skipped = 0 #count how many OD pairs weren't relevant
+
+    # create output_dir
+    output_dir = os.path.join(input_dir, 'cleaned tables')
+    os.makedirs(output_dir, exist_ok=True)
+
     # Get a list of all CSV files in the specified directory
-    csv_files = [f for f in os.listdir(input_dir)]
+    csv_files = [f for f in os.listdir(input_dir) if f.endswith(".csv")]
 
     # Initialize a list to hold all the data frames
     df_list = []
@@ -99,7 +110,12 @@ def process_saved_csvs(input_dir):
         # Get the origin from the file name
         origin = float(csv_file.split('_')[1].split('-')[0])
         # Get the destination from the file name
-        destination = csv_file.split('_')[1].split('-')[1].split('.')[0]
+        destination = float(csv_file.split('_')[1].split('-')[1].split('.')[0])
+
+        # check to make sure the routes are of interest
+        if (origin not in O) | (destination not in D):
+            skipped += 1
+            continue
         # Get the iteration number from the file name
         iteration = csv_file.split('_')[0].split('L')[1]
 
@@ -193,8 +209,11 @@ def process_saved_csvs(input_dir):
         # add iteration column
         df['iteration'] = int(iteration)
 
-        # Overwrite the original file with the processed df
-        df.to_csv(input_path, index=False, header = False)
+        # create a new folder for cleaned tables
+        output_path = os.path.join(output_dir, csv_file)
+
+        # write the file with the processed df
+        df.to_csv(output_path, index=False, header = False)
 
         # Append the DataFrame to the list
         df_list.append(df)
@@ -209,12 +228,14 @@ def process_saved_csvs(input_dir):
     combined_df = combined_df[combined_df['iteration'] == max_iteration]
 
     # Save the combined DataFrame as a single CSV
-    combined_path = os.path.join(input_dir, 'TPPL.csv')
+    combined_path = os.path.join(output_dir, 'TPPL.csv')
     combined_df.to_csv(combined_path, index=False, header=False)
+
+    print("Skipped: " + str(skipped) + " OD pairs")
 
 if __name__ == "__main__":
     input_dir = os.getcwd()  # Use the current directory
-    output_dir = os.path.join(input_dir, 'tables')  # Output to 'tables' subfolder
+    output_dir = os.path.join(input_dir, 'tables(2)')  # Output to 'tables' subfolder
 
     # Call the function to extract tables from PRN files and save them as CSVs
     extract_tables_from_prn_files(input_dir, output_dir)
