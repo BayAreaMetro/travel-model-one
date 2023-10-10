@@ -62,7 +62,7 @@ def save_table(original_file_name, table_lines, output_dir):
 
 # Define a function to extract tables from multiple PRN files
 def extract_tables_from_prn_files(input_dir, output_dir):
-    
+
     # Generate a list of PRN file names (formatted as TPPLXXXX.PRN)
     # prn_files = [f for f in os.listdir(input_dir) if f.endswith(".PRN")]
     prn_files = ["TPPL{:04d}.PRN".format(i) for i in range(116, 126)]
@@ -97,7 +97,7 @@ def process_saved_csvs(input_dir):
         df = df[final_columns]
 
         # Get the origin from the file name
-        origin = csv_file.split('_')[1].split('-')[0]
+        origin = float(csv_file.split('_')[1].split('-')[0])
         # Get the destination from the file name
         destination = csv_file.split('_')[1].split('-')[1].split('.')[0]
         # Get the iteration number from the file name
@@ -110,18 +110,88 @@ def process_saved_csvs(input_dir):
         # cast 'a' column as integers
         df['a'] = df['a'].astype(int)
 
+        # replace all occurences of '--' with 0 in 'wait'
+        df['wait'] = df['wait'].replace('--', 0).astype(float)
+
+        # extract the name of the line before the weight value and overwrite the column with these cleaned strings
+        # Define a function to extract the desired part
+        def extract_part(s):
+            if pd.notnull(s) and isinstance(s, str) and '(' in s:
+                return str(s).split('(')[0].strip()
+            else:
+                return s
+
+        # Apply the function to Col9
+        df['lines'] = df['lines'].apply(extract_part)
+
+        # Identify non-zero strings in the second column of Table 1
+        non_zero_strings = df[df['lines'] != 0]['lines'].tolist()
+        # print('non_zero_strings:')
+        # print(non_zero_strings)
+
+        # Iterate through non-zero strings and perform operations
+        for string in non_zero_strings:
+
+            if not pd.isnull(string):
+                # Load corresponding CSV file
+                # get the pathway name from the input directory
+                scenarios_directory = 'L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\'
+                pathway_name = input_dir.split("\\trn")[0].split("Projects\\")[-1]
+                transit_lines_location = '\\INPUT\\trn\\TransitLineTables\\'
+                transit_lines_dir = scenarios_directory + pathway_name + transit_lines_location  # create the full directory of the csv file
+                csv_name = string.replace("-","")
+                csv_dir = os.path.join(transit_lines_dir, f'{csv_name}.csv')  # Output to 'tables' subfolder
+                # print('read: ' + csv_dir)
+
+                # try:
+                line_links = pd.read_csv(csv_dir) # Assuming the CSV files are named accordingly
+                # print('string: ' + string)
+                # print(line_links)
+                # locate index of string
+                idx_string = df.index[(df['lines'] == string)==True].tolist()[0]
+                # use index string to locate matches of nodes
+                match_a = df.iloc[idx_string - 1,4].item()
+                match_b = df.loc[df['lines'] == string,'b'].item()
+                if '-' in string:
+                    idx_start = line_links.index[line_links.b == match_b]
+                    idx_end = line_links.index[line_links.b == match_a]
+                else:
+                    idx_start = line_links.index[line_links.b == match_a]
+                    idx_end = line_links.index[line_links.b == match_b]
+
+                # print(idx_string, match_a, match_b, idx_start, idx_end)
+                good = list(zip(list(idx_start+1), list(idx_end)))#required sequences
+
+                #unpack list of list
+                g2 = [list(range(x[0],x[1]+1)) for x in good]
+
+                # Filter line_links for rows between match_a and match_b
+                filtered_rows = line_links.iloc[np.r_[[y for x in g2 for y in x]]]#If you want to return just the valid dataset
+
+                # Create a new DataFrame with values from filtered_rows
+                new_rows = pd.DataFrame({'a': filtered_rows['a'], 'b': filtered_rows['b']})
+
+                # print('filtered rows:')
+                # print(filtered_rows)
+                
+                # Append new_rows to df
+                df = pd.concat([df.iloc[:idx_string], new_rows, df.iloc[idx_string:]]).reset_index(drop=True)
+                # print('new df:')
+                # print(df)
+
+                # except:
+                #     print("Skipping: " + transit_lines_dir)
+                #     print("No such file or directory.")
+
+        # make sure wait column contains floats
+        df['wait'] = df['wait'].astype(float)
+
         # add origin TAZ column
         df['origin'] = int(origin)
         # add destination TAZ column
         df['destination'] = int(destination)
         # add iteration column
         df['iteration'] = int(iteration)
-
-        # replace all occurences of '--' with 0 in 'wait'
-        df['wait'] = df['wait'].replace('--', 0).astype(float)
-
-        # extract the name of the line before the weight value and overwrite the column with these cleaned strings
-        df['lines'] = df['lines'].str.extract(r'(.+?)\(')
 
         # Overwrite the original file with the processed df
         df.to_csv(input_path, index=False, header = False)
