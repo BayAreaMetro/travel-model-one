@@ -65,6 +65,8 @@ def extract_tables_from_prn_files(input_dir, output_dir):
 
     # Generate a list of PRN file names (formatted as TPPLXXXX.PRN)
     # prn_files = [f for f in os.listdir(input_dir) if f.endswith(".PRN")]
+    # select the range by visually scanning the dates of the new PRN files produced
+    # for details on how to produce the files, see https://app.asana.com/0/1201809392759895/1205348861092578/f
     prn_files = ["TPPL{:04d}.PRN".format(i) for i in range(111, 126)]
 
     # Loop through the list of PRN files
@@ -187,6 +189,10 @@ def process_saved_csvs(input_dir):
                 # Create a new DataFrame with values from filtered_rows
                 new_rows = pd.DataFrame({'a': filtered_rows['a'], 'b': filtered_rows['b']})
 
+                # add the line name and mode
+                new_rows['mode'] = df.loc[df['lines'] == string,'mode'].item()
+                new_rows['lines'] = string
+
                 # print('filtered rows:')
                 # print(filtered_rows)
                 
@@ -208,6 +214,8 @@ def process_saved_csvs(input_dir):
         df['destination'] = int(destination)
         # add iteration column
         df['iteration'] = int(iteration)
+        # add pathway column
+        df['pathway'] = pathway_name
 
         # create a new folder for cleaned tables
         output_path = os.path.join(output_dir, csv_file)
@@ -228,7 +236,7 @@ def process_saved_csvs(input_dir):
     combined_df = combined_df[combined_df['iteration'] == max_iteration]
 
     # Save the combined DataFrame as a single CSV
-    combined_path = os.path.join(output_dir, 'TPPL.csv')
+    combined_path = os.path.join(output_dir, f'TPPL_{pathway_name}.csv')
     combined_df.to_csv(combined_path, index=False, header=False)
 
     print("Skipped: " + str(skipped) + " OD pairs")

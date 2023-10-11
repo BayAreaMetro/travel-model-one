@@ -7,6 +7,8 @@ import os
 directory = os.getcwd()
 
 # Step 3: Get a list of all .prn files in the directory
+# select the range by visually scanning the dates of the new PRN files produced
+# for details on how to produce the files, see https://app.asana.com/0/1201809392759895/1205348861092578/f
 prn_files = ["TPPL{:04d}.PRN".format(i) for i in range(111, 126)]
 
 # Step 4: Open a new file for writing
