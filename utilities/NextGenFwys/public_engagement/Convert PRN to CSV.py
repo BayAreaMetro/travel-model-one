@@ -103,7 +103,7 @@ def process_saved_csvs(input_dir):
 
         # Define column names for the CSV
         column_names = ['mode', 'b', 'wait', 'time', 'actual', 'percvd', 'dist', 'total', 'lines', 'lines (2)', 'lines (3)']
-        final_columns = ['mode', 'lines', 'wait', 'time', 'b']
+        final_columns = ['mode', 'lines', 'wait', 'time', 'actual', 'b']
 
         # Read the CSV into a DataFrame and select specific columns
         df = pd.read_csv(input_path, names = column_names)
