@@ -86,6 +86,41 @@ import xlrd
 import xlwt
 import xlutils.copy
 
+
+def add_cordon_to_tazdata():
+    """
+    If INPUT\\landuse\\tazData.csv does not have CORDON or CORDONCOST, create them
+    Will overwrite file in INPUT\\landuse\\tazData.csv and create dbf file
+
+    Added for Transit 2050 PPA project to get required columns into data automatically
+    """
+    tazdata_file = os.path.join("INPUT", "landuse", "tazData.csv")
+    copied_tazdata_file = os.path.join("landuse", "tazData.csv")
+    tazdata_df = pandas.read_csv(tazdata_file)
+    tazdata_cols = list(tazdata_df.columns)
+
+    # If already exists, don't do anything
+    if ("CORDON" in tazdata_cols) & ("CORDONCOST" in tazdata_cols):
+        return
+    
+    if "CORDON" not in tazdata_cols:
+        tazdata_df['CORDON'] = 0
+    if "CORDONCOST" not in tazdata_cols:
+        tazdata_df['CORDONCOST'] = 0
+    
+    # write new files with CORDON and CORDONCOST set to 0
+    print(f"adding CORDON and CORDONCOST to {tazdata_file}")
+    tazdata_df.to_csv(tazdata_file, index=False)
+    csv_to_dbf_command = f"python CTRAMP\scripts\preprocess\csvToDbf.py {tazdata_file} {tazdata_file.replace('.csv', '.dbf')}"
+    os.system(csv_to_dbf_command)
+
+    # Want to replace the file in landuse\\tazData.csv too if necessary
+    if os.path.exists(copied_tazdata_file):
+        print(f"adding CORDON and CORDONCOST to {copied_tazdata_file}")
+        tazdata_df.to_csv(copied_tazdata_file, index=False)
+        csv_to_dbf_command = f"python CTRAMP\scripts\preprocess\csvToDbf.py {copied_tazdata_file} {copied_tazdata_file.replace('.csv', '.dbf')}"
+        os.system(csv_to_dbf_command)
+
 def check_tazdata():
     """
     Checks that INPUT\\landuse\\tazData.csv has new required columns, CORDON and CORDONCOST
@@ -788,6 +823,7 @@ if __name__ == '__main__':
         config_mobility_params(params_filename, params_contents, True, replacements)
         config_auto_opcost(params_filename, params_contents, True, replacements)
     elif my_args.iter == None:
+        add_cordon_to_tazdata()
         check_tazdata()
         config_project_dir(False, replacements)
         config_popsyn_files(replacements)
