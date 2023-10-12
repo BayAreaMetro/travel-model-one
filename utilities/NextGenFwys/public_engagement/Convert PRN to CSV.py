@@ -168,7 +168,7 @@ def process_saved_csvs(input_dir):
                 # locate index of string
                 idx_string = df.index[(df['lines'] == string)==True].tolist()[0]
                 # use index string to locate matches of nodes
-                match_a = df.iloc[idx_string - 1,4].item()
+                match_a = df.iloc[idx_string - 1,5].item()
                 match_b = df.loc[df['lines'] == string,'b'].item()
                 if '-' in string:
                     idx_start = line_links.index[line_links.b == match_b]
