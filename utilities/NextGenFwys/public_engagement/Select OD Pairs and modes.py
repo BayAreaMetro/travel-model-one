@@ -48,14 +48,14 @@ transit_paths_dir = 'L:\\Application\\Model_One\\NextGenFwys\\metrics\\Engagamen
 
 
 # Initialize a list to hold all the data frames
-combined_df = pd.DataFrame(columns=['orig_taz', 'dest_taz', 'actual', 'pathway', 'fare'])
+combined_df = pd.DataFrame(columns=['orig_taz', 'dest_taz', 'actual', 'runid', 'fare'])
 
-for pathway in pathways:
-    directory = os.path.join(scenarios_dir, pathway, 'OUTPUT', 'skims_csv')
+for runid in pathways:
+    directory = os.path.join(scenarios_dir, runid, 'OUTPUT', 'skims_csv')
 
-    existing_table = pd.read_csv(os.path.join(transit_paths_dir,f'TPPL_{pathway}.csv'))
-    existing_table.columns = ['mode', 'lines', 'wait', 'time', 'actual', 'b', 'a', 'orig_taz', 'dest_taz', 'iteration', 'pathway']
-    final_columns = ['orig_taz', 'dest_taz', 'actual', 'pathway']
+    existing_table = pd.read_csv(os.path.join(transit_paths_dir,f'TPPL_{runid}.csv'))
+    existing_table.columns = ['mode', 'lines', 'wait', 'time', 'actual', 'b', 'a', 'orig_taz', 'dest_taz', 'iteration', 'runid']
+    final_columns = ['orig_taz', 'dest_taz', 'actual', 'runid']
     existing_table = clean_existing_table(existing_table[final_columns])
 
     # Iterate through files in the directory
@@ -71,7 +71,7 @@ for pathway in pathways:
             combined_df = pd.concat([combined_df, merged_table], ignore_index=True)
 
 # drop duplicate rows
-combined_df = combined_df.drop_duplicates(['orig_taz', 'dest_taz', 'actual', 'pathway'])
+combined_df = combined_df.drop_duplicates(['orig_taz', 'dest_taz', 'actual', 'runid'])
 # Print the final merged table
 print(combined_df)
 
