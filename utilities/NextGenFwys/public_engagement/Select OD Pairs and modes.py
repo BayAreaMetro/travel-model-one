@@ -18,9 +18,9 @@ def process_csv(file_path):
     df_processed = df_processed[df_processed['orig_taz'].isin(O) & df_processed['dest_taz'].isin(D)]
     
     # Sum columns 4 to 11
-    df_processed['actual'] = (df.iloc[:, [3,6,7,8,9,10]]).sum(axis=1)
+    df_processed['total'] = (df.iloc[:, [3,6,7,8,9,10]]).sum(axis=1)
 
-    print(df_processed)
+    # print(df_processed)
     
     return df_processed
 
@@ -38,7 +38,7 @@ def clean_existing_table(existing_table):
 
 # Define a function to merge with another table
 def merge_with_existing(df_processed, existing_table):
-    return pd.merge(existing_table, df_processed, on=['orig_taz', 'dest_taz', 'actual'], how='inner')
+    return pd.merge(existing_table, df_processed, on=['orig_taz', 'dest_taz', 'access_egress'], how='inner')
 
 # Define a list of relevant pathways to process the files for
 pathways = ['2035_TM152_NGF_NP10', '2035_TM152_NGF_NP10_Path1a_02']
@@ -48,22 +48,25 @@ transit_paths_dir = 'L:\\Application\\Model_One\\NextGenFwys\\metrics\\Engagamen
 
 
 # Initialize a list to hold all the data frames
-combined_df = pd.DataFrame(columns=['orig_taz', 'dest_taz', 'actual', 'runid', 'fare'])
+combined_df = pd.DataFrame(columns=['orig_taz', 'dest_taz', 'actual', 'runid', 'fare', 'access_egress', 'total'])
 
 for runid in pathways:
     directory = os.path.join(scenarios_dir, runid, 'OUTPUT', 'skims_csv')
 
     existing_table = pd.read_csv(os.path.join(transit_paths_dir,f'TPPL_{runid}.csv'))
-    existing_table.columns = ['mode', 'lines', 'wait', 'time', 'actual', 'b', 'a', 'orig_taz', 'dest_taz', 'iteration', 'runid']
-    final_columns = ['orig_taz', 'dest_taz', 'actual', 'runid']
+    existing_table.columns = ['mode', 'lines', 'wait', 'time', 'actual', 'b', 'a', 'orig_taz', 'dest_taz', 'iteration', 'runid', 'access_egress']
+    final_columns = ['orig_taz', 'dest_taz', 'actual', 'runid', 'access_egress']
     existing_table = clean_existing_table(existing_table[final_columns])
 
     # Iterate through files in the directory
     for filename in os.listdir(directory):
         if filename.endswith(".csv") and 'trnskmam' in filename:
+            # pull access/egress combination from filename
+            access_egress = filename.split('trnskmam_')[-1].split('.')[0]
             file_path = os.path.join(directory, filename)
             print('read: ' + file_path)
             df_processed = process_csv(file_path)
+            df_processed['access_egress'] = access_egress
             merged_table = merge_with_existing(df_processed, existing_table)
             print('merged table:')
             print(merged_table)
@@ -71,7 +74,7 @@ for runid in pathways:
             combined_df = pd.concat([combined_df, merged_table], ignore_index=True)
 
 # drop duplicate rows
-combined_df = combined_df.drop_duplicates(['orig_taz', 'dest_taz', 'actual', 'runid'])
+combined_df = combined_df.drop_duplicates(['orig_taz', 'dest_taz', 'access_egress', 'runid'])
 # Print the final merged table
 print(combined_df)
 
