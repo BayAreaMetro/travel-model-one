@@ -43,12 +43,6 @@ run pgm = hwynet
 		ROADWAY = LTRIM(ROADWAY)
 
         FEET = DISTANCE * 5280
-		; keep the walk access and bike access links only
-		IF (WALK_ACCESS= 1 | BIKE_ACCESS = 1 | CNTYPE = 'TAZ' | CNTYPE = 'PED')
-			;keep record
-		ELSE
-			DELETE
-        ENDIF
 		
 		if (BIKE_ACCESS = 1) BIKEOK = 1
 		if (WALK_ACCESS = 1) WALKOK = 1
