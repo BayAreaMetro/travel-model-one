@@ -3,6 +3,92 @@ import csv
 import pandas as pd
 import numpy as np
 
+mode_dict = {
+    1: "wlk",
+    2: "drv",
+    3: "trn",
+    4: "drv",
+    5: "wlk",
+    6: "wlk",
+    7: "drv",
+    10: "loc",
+    11: "loc",
+    12: "loc",
+    13: "loc",
+    14: "loc",
+    15: "loc",
+    16: "loc",
+    17: "loc",
+    18: "loc",
+    19: "loc",
+    20: "loc",
+    21: "loc",
+    24: "loc",
+    27: "loc",
+    28: "loc",
+    30: "loc",
+    33: "loc",
+    38: "loc",
+    42: "loc",
+    44: "loc",
+    46: "loc",
+    49: "loc",
+    52: "loc",
+    55: "loc",
+    56: "loc",
+    58: "loc",
+    60: "loc",
+    63: "loc",
+    66: "loc",
+    68: "loc",
+    69: "loc",
+    70: "loc",
+    75: "loc",
+    78: "loc",
+    80: "exp",
+    81: "exp",
+    82: "exp",
+    83: "exp",
+    84: "exp",
+    85: "exp",
+    86: "exp",
+    87: "exp",
+    88: "exp",
+    89: "exp",
+    90: "exp",
+    91: "exp",
+    92: "exp",
+    93: "exp",
+    94: "exp",
+    95: "exp",
+    98: "exp",
+    100: "lrf",
+    101: "lrf",
+    102: "lrf",
+    103: "lrf",
+    104: "lrf",
+    105: "lrf",
+    106: "lrf",
+    110: "lrf",
+    111: "lrf",
+    112: "lrf",
+    113: "lrf",
+    114: "lrf",
+    115: "lrf",
+    116: "lrf",
+    117: "lrf",
+    120: "hvy",
+    121: "hvy",
+    130: "com",
+    131: "com",
+    132: "com",
+    133: "com",
+    134: "com",
+    135: "com",
+    136: "com",
+    137: "com"
+}
+
 # Define a function to extract tables from a given PRN file
 def extract_tables(original_file_name, input_file, output_dir):
     # Read all lines from the input PRN file
@@ -147,6 +233,9 @@ def process_saved_csvs(input_dir):
         # print('non_zero_strings:')
         # print(non_zero_strings)
 
+        # add mode category
+        df['mode_cat'] = df.replace({"mode": mode_dict})['mode'] 
+
         # Iterate through non-zero strings and perform operations
         for string in non_zero_strings:
 
@@ -193,6 +282,12 @@ def process_saved_csvs(input_dir):
                 new_rows['mode'] = df.loc[df['lines'] == string,'mode'].item()
                 new_rows['lines'] = string
 
+                # define strings for access/egress combinations
+                print(df)
+                access_mode = df.iloc[0,7]
+                middle_mode = df.loc[df['lines'] == string,'mode_cat'].item()
+                egress_mode = df.iloc[-1,7]
+
                 # print('filtered rows:')
                 # print(filtered_rows)
                 
@@ -216,6 +311,11 @@ def process_saved_csvs(input_dir):
         df['iteration'] = int(iteration)
         # add pathway column
         df['pathway'] = pathway_name
+
+        # add column with access/egress combination 
+        df['access_egress'] = str(access_mode) + '_' + str(middle_mode) + '_' + str(egress_mode)
+
+        df = df[['mode', 'lines', 'wait', 'time', 'actual', 'b', 'a', 'origin', 'destination', 'iteration', 'pathway','access_egress']]
 
         # create a new folder for cleaned tables
         output_path = os.path.join(output_dir, csv_file)
@@ -243,7 +343,7 @@ def process_saved_csvs(input_dir):
 
 if __name__ == "__main__":
     input_dir = os.getcwd()  # Use the current directory
-    output_dir = os.path.join(input_dir, 'tables(2)')  # Output to 'tables' subfolder
+    output_dir = os.path.join(input_dir, 'tables')  # Output to 'tables' subfolder
 
     # Call the function to extract tables from PRN files and save them as CSVs
     extract_tables_from_prn_files(input_dir, output_dir)
