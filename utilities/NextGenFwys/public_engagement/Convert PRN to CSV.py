@@ -236,10 +236,19 @@ def process_saved_csvs(input_dir):
         # add mode category
         df['mode_cat'] = df.replace({"mode": mode_dict})['mode'] 
 
+        # define counter to select first mode as middle mode in combination
+        count = 0
+        # initialize strings for access/egress combinations
+        access_mode = "none"
+        middle_mode = "none"
+        egress_mode = "none"
+
         # Iterate through non-zero strings and perform operations
         for string in non_zero_strings:
 
             if not pd.isnull(string):
+                count += 1
+                
                 # Load corresponding CSV file
                 # get the pathway name from the input directory
                 scenarios_directory = 'L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\'
@@ -282,11 +291,11 @@ def process_saved_csvs(input_dir):
                 new_rows['mode'] = df.loc[df['lines'] == string,'mode'].item()
                 new_rows['lines'] = string
 
-                # define strings for access/egress combinations
-                print(df)
-                access_mode = df.iloc[0,7]
-                middle_mode = df.loc[df['lines'] == string,'mode_cat'].item()
-                egress_mode = df.iloc[-1,7]
+                if count == 1:
+                    # define strings for access/egress combinations
+                    access_mode = df.iloc[0,7]
+                    middle_mode = df.loc[df['lines'] == string,'mode_cat'].item()
+                    egress_mode = df.iloc[-1,7]
 
                 # print('filtered rows:')
                 # print(filtered_rows)
