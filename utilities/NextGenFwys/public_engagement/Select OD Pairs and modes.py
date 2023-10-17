@@ -85,6 +85,10 @@ for runid in pathways:
 # drop duplicate rows
 combined_df['absolute_difference'] = abs(combined_df['actual'] - combined_df['total'])
 combined_df = combined_df.sort_values(by=['absolute_difference'], ascending=True).drop_duplicates(['orig_taz', 'dest_taz', 'runid'])
+rows_before = combined_df.shape[0]
+combined_df = combined_df[combined_df['absolute_difference'] < 3]
+rows_after = combined_df.shape[0]
+print(str(rows_before - rows_after) + ' rows had an absolute difference in travel time greater than 3 and thus were not included in the final table.')
 combined_df = combined_df[['orig_taz', 'dest_taz', 'actual', 'runid', 'fare', 'total']]
 # Print the final merged table
 print(combined_df)
