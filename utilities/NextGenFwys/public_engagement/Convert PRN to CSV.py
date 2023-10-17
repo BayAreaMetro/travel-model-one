@@ -236,18 +236,21 @@ def process_saved_csvs(input_dir):
         # add mode category
         df['mode_cat'] = df.replace({"mode": mode_dict})['mode'] 
 
-        # define counter to select first mode as middle mode in combination
-        count = 0
         # initialize strings for access/egress combinations
         access_mode = "none"
         middle_mode = "none"
         egress_mode = "none"
 
+        # initialize columns for all modes
+        modes = ["wlk_loc_wlk", "wlk_lrf_wlk", "wlk_exp_wlk", "wlk_hvy_wlk", "wlk_com_wlk", "drv_loc_wlk", "drv_lrf_wlk",\
+                "drv_exp_wlk", "drv_hvy_wlk", "drv_com_wlk", "wlk_loc_drv", "wlk_lrf_drv", "wlk_exp_drv", "wlk_hvy_drv", "wlk_com_drv"]
+        for col in modes:
+            df[col] = np.nan
+
         # Iterate through non-zero strings and perform operations
         for string in non_zero_strings:
 
             if not pd.isnull(string):
-                count += 1
                 
                 # Load corresponding CSV file
                 # get the pathway name from the input directory
@@ -291,11 +294,13 @@ def process_saved_csvs(input_dir):
                 new_rows['mode'] = df.loc[df['lines'] == string,'mode'].item()
                 new_rows['lines'] = string
 
-                if count == 1:
-                    # define strings for access/egress combinations
-                    access_mode = df.iloc[0,7]
-                    middle_mode = df.loc[df['lines'] == string,'mode_cat'].item()
-                    egress_mode = df.iloc[-1,7]
+                # define strings for access/egress combinations
+                access_mode = df.iloc[0,7]
+                middle_mode = df.loc[df['lines'] == string,'mode_cat'].item()
+                egress_mode = df.iloc[-1,7]
+                # add column with access/egress combination
+                access_egress = str(access_mode) + '_' + str(middle_mode) + '_' + str(egress_mode)
+                new_rows[access_egress] = access_egress
 
                 # print('filtered rows:')
                 # print(filtered_rows)
@@ -321,10 +326,14 @@ def process_saved_csvs(input_dir):
         # add pathway column
         df['pathway'] = pathway_name
 
-        # add column with access/egress combination 
-        df['access_egress'] = str(access_mode) + '_' + str(middle_mode) + '_' + str(egress_mode)
 
-        df = df[['mode', 'lines', 'wait', 'time', 'actual', 'b', 'a', 'origin', 'destination', 'iteration', 'pathway','access_egress']]
+        # Fill the columns with values from non-empty rows
+        modes = ["wlk_loc_wlk", "wlk_lrf_wlk", "wlk_exp_wlk", "wlk_hvy_wlk", "wlk_com_wlk", "drv_loc_wlk", "drv_lrf_wlk",\
+                 "drv_exp_wlk", "drv_hvy_wlk", "drv_com_wlk", "wlk_loc_drv", "wlk_lrf_drv", "wlk_exp_drv", "wlk_hvy_drv", "wlk_com_drv"]
+        for col in modes:
+            non_empty_values = df[col].dropna().tolist()
+            if non_empty_values:
+                df[col] = df[col].fillna(non_empty_values[0])
 
         # create a new folder for cleaned tables
         output_path = os.path.join(output_dir, csv_file)
@@ -337,6 +346,11 @@ def process_saved_csvs(input_dir):
 
     # Concatenate all DataFrames in the list
     combined_df = pd.concat(df_list)
+
+    combined_df = combined_df[['mode', 'lines', 'wait', 'time', 'actual', 'b', 'a', 'origin', 'destination', 'iteration', 'pathway',\
+                               "wlk_loc_wlk", "wlk_lrf_wlk", "wlk_exp_wlk", "wlk_hvy_wlk", "wlk_com_wlk", "drv_loc_wlk", "drv_lrf_wlk",\
+                                "drv_exp_wlk", "drv_hvy_wlk", "drv_com_wlk", "wlk_loc_drv", "wlk_lrf_drv", "wlk_exp_drv", "wlk_hvy_drv", "wlk_com_drv"]]
+
 
     # Find the maximum value of 'iteration' for each group of 'origin' and 'destination'
     max_iteration = combined_df.groupby(['origin', 'destination'])['iteration'].transform('max')
