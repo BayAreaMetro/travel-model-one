@@ -184,8 +184,9 @@ if not exist metrics\topsheet.csv (
   call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\topsheet.R"
 )
 
-if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")
-python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
+@REM if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")
+@REM python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
+python "%CODE_DIR%\RunResults.py" "%TARGET_DIR%"
 
 :cleanup
 move *.PRN logs
