@@ -19,7 +19,7 @@ transit_paths_dir = 'L:\\Application\\Model_One\\NextGenFwys\\metrics\\Engagamen
 
 
 # Initialize a list to hold all the data frames
-combined_df = pd.DataFrame(columns=['mode', 'A', 'B', 'orig_taz', 'dest_taz', 'runid', 'TAZ1454', 'N'])
+combined_df = pd.DataFrame(columns=['orig_taz', 'dest_taz'])
 
 for runid in pathways:
     directory = os.path.join(transit_paths_dir, f'network_nodes_TAZ_{runid}.csv')
@@ -35,14 +35,16 @@ for runid in pathways:
     mode2_table = existing_table[(existing_table['mode'] == 2)]
     mode_2_TAZs = process_csv(directory)
     merged_2_table = pd.merge(mode2_table, mode_2_TAZs, left_on=['B'], right_on=['N'], how='inner')
+    merged_2_table = pd.DataFrame({'orig_taz': merged_2_table['orig_taz'], 'dest_taz': merged_2_table['TAZ1454']})
 
     mode7_table = existing_table[(existing_table['mode'] == 7)]
     mode_7_TAZs = process_csv(directory)
     merged_7_table = pd.merge(mode7_table, mode_7_TAZs, left_on=['A'], right_on=['N'], how='inner')
+    merged_7_table = pd.DataFrame({'orig_taz': merged_7_table['TAZ1454'], 'dest_taz': merged_7_table['dest_taz']})
 
     # Append the DataFrame to the list
     combined_df = pd.concat([merged_2_table, merged_7_table], ignore_index=True)
-    combined_df = combined_df[['mode', 'A', 'B', 'orig_taz', 'dest_taz', 'runid', 'TAZ1454', 'N']]
+    combined_df = combined_df[['orig_taz', 'dest_taz']]
 
     # Save the combined DataFrame as a single CSV
     combined_path = os.path.join(transit_paths_dir, f'drive_to_transit_OD_pairs_{runid}.csv')
