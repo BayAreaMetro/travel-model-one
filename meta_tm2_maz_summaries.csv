@@ -1,0 +1,36 @@
+variable, long name, notes
+maz_id, MAZ number, was called zone_id and was the taz1454 number
+taz_id, TAZ number, added to represent new taz system
+SD, superdistrict number , may want to move to 100 of these zone system
+ZONE, zone, repeat of first variable DROP
+taz1454_id, old TAZ number, keep so we can run in either
+COUNTY, county number , in MTC system so SF is 1 and counterclockwise
+AGREMPN, , ABAG 6 sector there would be one of these for each emp category
+FPSEMPN, , ABAG 6 sector there would be one of these for each emp category
+HEREMPN, , ABAG 6 sector there would be one of these for each emp category
+RETEMPN, , ABAG 6 sector there would be one of these for each emp category
+TOTEMP, total employment , sum of all job categories
+MWTEMPN, , ABAG 6 sector there would be one of these for each emp category
+OTHEMPN, , ABAG 6 sector there would be one of these for each emp category
+HHINCQ1, , 4 pseudo quartiles there would be one of these for each cross section hh category
+HHINCQ2, , 4 pseudo quartiles there would be one of these for each cross section hh category
+HHINCQ3, , 4 pseudo quartiles there would be one of these for each cross section hh category
+HHINCQ4, , 4 pseudo quartiles there would be one of these for each cross section hh category
+SHPOP62P, , calculated off model from historical taz level AND income influence to match ABAG regional control
+TOTHH, total households, sum of 4 hh categories
+GQPOP, , pulled from off model calcs that match ABAG regional control total
+MFDU, , sum of urbansim mf units
+SFDU, , sum of urbanSim sf units
+CIACRE_UNWEIGHTED, , sum of urbansim commercial land
+RESACRE_UNWEIGHTED, , sum of urbansim residental land
+CIACRE, , reweighting to odd ABAG category MUST BE DROPPED
+RESACRE, , reweighting to odd ABAG category MUST BE DROPPEd
+TOTACRE, , sum of odd categories
+HHPOP, , calculated off model from historical taz level AND income influence to match ABAG regional control
+TOTPOP, , sum of hhpop and gqpop
+EMPRES, , calculated off model from historical taz level AND income influence to match ABAG regional control
+AGE0004, , calculated off model from historical taz level AND income influence to match ABAG regional control
+AGE0519, , calculated off model from historical taz level AND income influence to match ABAG regional control
+AGE2044, , calculated off model from historical taz level AND income influence to match ABAG regional control
+AGE4564, , calculated off model from historical taz level AND income influence to match ABAG regional control
+AGE65P, , calculated off model from historical taz level AND income influence to match ABAG regional control
