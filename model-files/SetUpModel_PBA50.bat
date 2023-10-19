@@ -5,18 +5,18 @@
 :: ------------------------------------------------------------------------------------------------------
 set YEAR=%1
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=E:\Models\BCM\%YEAR%_BaseY_BCM%YEAR%
+set M_DIR=D:\Models\BCM\%YEAR%_BaseY_BCM%YEAR%
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
 
 :: set the location of the Travel Model Release
 :: use master for now until we create a release
-set GITHUB_DIR=E:\Models\BCM\BCM_Model
-set ALL_BCM_INPUTS=E:\Models\BCM\BCM_Inputs
-set Software_Dir=E:\Models\BCM\BCM_Software
+set GITHUB_DIR=Z:\projects\ccta\31000190\Raghu\working_model\BCM_Model
+set ALL_BCM_INPUTS=Z:\projects\ccta\31000190\Raghu\working_model\BCM_Inputs
+set Software_Dir=Z:\projects\ccta\31000190\Raghu\working_model\BCM_Software
 :: HIGH, MED or LOW
-set COMPUTER_SETTING=MED
+set COMPUTER_SETTING=HIGH
 
 
 :: set the location of the networks (make sure the network version, year and variant are correct); currently set to the SharePoint location. 
