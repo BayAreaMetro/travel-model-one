@@ -22,6 +22,7 @@ copy /Y "%GITHUB_DIR%\model-files\RunModel.bat"                            .
 copy /Y "%GITHUB_DIR%\model-files\RunIteration.bat"                        CTRAMP
 copy /Y "%GITHUB_DIR%\model-files\RunLogsums.bat"                          .
 copy /Y "%GITHUB_DIR%\model-files\RunCoreSummaries.bat"                    .
+copy /Y "%GITHUB_DIR%\model-files\RunPPANetworkQAQC.bat"                   .
 copy /Y "%GITHUB_DIR%\utilities\RTP\RunMetrics.bat"                        .
 copy /Y "%GITHUB_DIR%\utilities\RTP\RunScenarioMetrics.bat"                .
 copy /Y "%GITHUB_DIR%\utilities\RTP\ExtractKeyFiles.bat"                   .
