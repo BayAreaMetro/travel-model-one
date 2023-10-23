@@ -339,7 +339,10 @@ loop period = 1,5
 
           ; perceived time factors: transfer wait time is equivalent to 2.0 minutes of ride time for modes 1 through 255 (xxx why not same as above xxx)
           factor xwaitfac = 139*2.0
-
+		  
+		  ; maximum wait time for shuttles at the Great America Station set to 5 minutes. NODE #2192946 is the Great America Station. The other two nodes are nearby shuttle stops.
+		  factor MAXWAITTIME=5, NODES=2019349, 2192946, 2019349
+			 
           ; perceived time factors: use token_skipmodes to remove modes from the network per the hierarchy
           @token_skipmodes@
 
