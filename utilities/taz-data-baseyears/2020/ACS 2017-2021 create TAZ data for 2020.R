@@ -56,7 +56,7 @@ PBA_TAZ_2015         <- file.path(BOX_TM, "Share Data", "plan-bay-area-2050", "t
 #PETRALE              <- file.path(GITHUB_DIR,"petrale","applications","travel_model_lu_inputs")
 
 # AO: Moved from Petrale to TM1 utilities Oct 2023
-TM1                   <- file.path(GITHUB_DIR,'utilities','taz-data-baseyears')
+TM1                   <- file.path(GITHUB_DIR,'travel-model-one','utilities','taz-data-baseyears')
 
 emp_wagesal_2020      <- read.csv(file.path(TM1,"2020","Employment","lodes_wac_employment.csv"),header = T)
 emp_selfemp_2020      <- read.csv(file.path(TM1,"2020","Self Employed Workers","taz_self_employed_workers_2020.csv"),header = T)
@@ -67,7 +67,7 @@ emp_selfemp_2020_w <- emp_selfemp_2020 %>%
   pivot_wider(names_from = industry, values_from = value, values_fill = 0) %>%
   mutate(TOTEMP = rowSums(select(., -zone_id))) %>%
   arrange(zone_id) %>% 
-  rename( c("zone_id" = "TAZ1454")) %>%
+  rename( c("TAZ1454" = "zone_id")) %>%
   rename_all(toupper)
 
 # Combine the two employment frames - wage/salary, and self-employment
