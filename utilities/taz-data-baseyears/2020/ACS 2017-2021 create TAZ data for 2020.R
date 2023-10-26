@@ -4,7 +4,7 @@
 
 # Notes
 
-# The working directory is set as the location of the script. All other paths in Petrale will be relative.
+# The working directory is set as the location of the script. All other paths in TM1 will be relative.
 
 wd <- paste0(dirname(rstudioapi::getActiveDocumentContext()$path),"/")
 setwd(wd)
@@ -53,10 +53,30 @@ PBA_TAZ_2015         <- file.path(BOX_TM, "Share Data", "plan-bay-area-2050", "t
 
 # Bring in 2020 TAZ employment data
 
-PETRALE              <- file.path(GITHUB_DIR,"petrale","applications","travel_model_lu_inputs")
-employment_2020      <- read.csv(file.path(PETRALE,"2020","Employment","lodes_wac_employment.csv"),header = T)
+#PETRALE              <- file.path(GITHUB_DIR,"petrale","applications","travel_model_lu_inputs")
 
-# County FIPS codes for ACS tract API calls
+# AO: Moved from Petrale to TM1 utilities Oct 2023
+TM1                   <- file.path(GITHUB_DIR,'utilities','taz-data-baseyears')
+
+emp_wagesal_2020      <- read.csv(file.path(TM1,"2020","Employment","lodes_wac_employment.csv"),header = T)
+emp_selfemp_2020      <- read.csv(file.path(TM1,"2020","Self Employed Workers","taz_self_employed_workers_2020.csv"),header = T)
+
+# Restructure employment frame to wide format
+emp_selfemp_2020_w <- emp_selfemp_2020 %>%
+  select(-c(X)) %>%
+  pivot_wider(names_from = industry, values_from = value, values_fill = 0) %>%
+  mutate(TOTEMP = rowSums(select(., -zone_id))) %>%
+  arrange(zone_id) %>% 
+  rename( c("zone_id" = "TAZ1454")) %>%
+  rename_all(toupper)
+
+# Combine the two employment frames - wage/salary, and self-employment
+total_employment_2020 <- bind_rows(emp_wagesal_2020, emp_selfemp_2020_w,.id='src')
+
+# Group by TAZ1454 and calculate the sum for total employment by taz (wage/salary plus self-employment)
+employment_2020 <- total_employment_2020 %>%
+  group_by(TAZ1454) %>%
+  summarize_if(is.numeric, sum, na.rm = F)
 
 baycounties <- c("01","13","41","55","75","81","85","95","97")
 state_code <- "06" 
@@ -82,7 +102,7 @@ PBA2015_county <- PBA2015 %>%                                    # Create and jo
 
 # Bring in superdistrict name for joining
 
-superdistrict <- read_excel(file.path(PETRALE,"2015","TAZ1454 2015 Land Use.xlsx"),sheet="2010 District Summary") %>% 
+superdistrict <- read_excel(file.path(TM1,"2015","TAZ1454 2015 Land Use.xlsx"),sheet="2010 District Summary") %>% 
                               select("DISTRICT","DISTRICT_NAME"="DISTRICT NAME") %>% 
                               filter(!(DISTRICT=="Bay Area")) %>% 
                               mutate(DISTRICT=as.numeric(DISTRICT))
@@ -961,5 +981,5 @@ New2020_long <- New2020 %>%
   gather(Variable,Value,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
          MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)
 
-write.csv(PBA2015_long,file.path(PETRALE,"2015","TAZ1454_2015_long.csv"),row.names = F)
+write.csv(PBA2015_long,file.path(TM1,"2015","TAZ1454_2015_long.csv"),row.names = F)
 write.csv(New2020_long,"TAZ1454_2020_long.csv",row.names = F)
