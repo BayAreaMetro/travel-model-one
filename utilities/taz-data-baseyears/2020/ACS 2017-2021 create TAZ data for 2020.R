@@ -647,7 +647,7 @@ temp0 <- workingdata %>%
 # The initial table values are actually households by number of "commuters" (people at work - not sick, vacation - in the ACS reference week)
 # This overstates 0-worker households and understates 3+-worker households. A correction needs to be applied.
 # Correction factors are calculated in ACSPUMS_WorkerTotals_2017-2021_Comparisons.xls, in
-# petrale\applications\travel_model_lu_inputs\2020\Workers
+# travel-model-one\utilities\taz-data-baseyears\2020\Workers
 # 1=San Francisco; 2=San Mateo; 3=Santa Clara; 4=Alameda; 5=Contra Costa; 6=Solano; 7= Napa; 8=Sonoma; 9=Marin
 # "counties" vector is defined below with this county order
 
