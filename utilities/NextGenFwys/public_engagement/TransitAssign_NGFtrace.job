@@ -1,4 +1,9 @@
 ; ----------------------------------------------------------------------------------------------------------------
+; this is a copy of TransitAssign.job
+; except that token_debug_origin_list and token_debug_destination_list are different
+; I could have moved created environmental variables for token_debug_destination_list and token_debug_destination_list
+; But I like that these variables are directly specified in TransitAssign.job so decided to have a special copy for NGF
+; ----------------------------------------------------------------------------------------------------------------
 ;
 ; TransitAssign.job
 ;
