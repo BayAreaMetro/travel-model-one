@@ -1063,3 +1063,40 @@ if __name__ == '__main__':
     del link_cursor
     logging.info("Wrote {} links to {}".format(len(links_df), TRN_ROUTE_LINKS_SHPFILE))
 
+# Amend the network_trn_links shapefile:
+# Join network_trn_links shapefile to include county and network_trn_lines shapefile. 
+# For links intersecting with multiple counties, it is joined to whichever county link's centroid is in
+# The amended shapefile is network_trn_links has the all columns from original network_trn_links.shp and the follownig additional columns:
+    # County: county name            
+    # FREQ_EA             
+    # FREQ_AM           
+    # FREQ_MD     
+    # FREQ_PM    
+    # FREQ_EV
+# Developed for task: Add transit VRH and transit boarding by county to Transit tableau
+# https://app.asana.com/0/1200580945030144/1205086281493905/f
+# Requires ArcPy
+print("Start the amendment the network_trn_links shapefile to include county and network_trn_lines shapefile")
+
+# read the existing network_trn_links.shp
+TRN_LINKS_SHPFILE = 'network_trn_links.shp'
+print(TRN_LINKS_SHPFILE)
+# read the county shapefile
+COUNTY_SHPFILE    = "X:/travel-model-one-master/utilities/geographies/region_county.shp"
+print(COUNTY_SHPFILE)
+# Spatially join the network_trn_links.shp with the county shapefile
+TRN_LINKS_SHPFILE_COUNTY = "network_trn_links_county.shp"
+arcpy.analysis.SpatialJoin(TRN_LINKS_SHPFILE, COUNTY_SHPFILE, TRN_LINKS_SHPFILE_COUNTY, match_option = "HAVE_THEIR_CENTER_IN")
+print("finishd spatial joining")
+# Join network_trn_links.shp with network_trn_lines.shp with to get the FREQ fields
+TRN_LINES_SHPFILE = "network_trn_lines.shp"
+arcpy.management.JoinField(TRN_LINKS_SHPFILE_COUNTY, 'NAME', TRN_LINES_SHPFILE, 'NAME',
+                        ['FREQ_EA', 'FREQ_AM', 'FREQ_MD', 'FREQ_PM', 'FREQ_EV'])
+print("finishd joining")
+# delete the previous network_trn_lines.shp
+arcpy.management.Delete(TRN_LINKS_SHPFILE)
+
+# rename the output as network_trn_lines.shp
+arcpy.management.Rename(TRN_LINKS_SHPFILE_COUNTY, 'network_trn_links.shp', "FeatureClass")
+print("finished Cube_to_Shapefile.py")
+    

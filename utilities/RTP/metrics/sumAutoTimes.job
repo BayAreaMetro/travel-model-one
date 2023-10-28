@@ -168,7 +168,12 @@ loop auto = 1,15
      FILEI ZDATI[1] = "landuse\tazData.dbf"  ; need cordon and cordon cost information
 
      ; Specify output file
-     FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T
+     FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T      ; Daily output
+     FILEO PRINTO[2] = "metrics\auto_times_EA_@token_auto@.csv",APPEND=T   ; EA output
+     FILEO PRINTO[3] = "metrics\auto_times_AM_@token_auto@.csv",APPEND=T   ; AM output
+     FILEO PRINTO[4] = "metrics\auto_times_MD_@token_auto@.csv",APPEND=T   ; MD output
+     FILEO PRINTO[5] = "metrics\auto_times_PM_@token_auto@.csv",APPEND=T   ; PM output
+     FILEO PRINTO[6] = "metrics\auto_times_EV_@token_auto@.csv",APPEND=T   ; EV output
 
     ; load lookup values for factoring taxi and TNC modes
     lookup lookupi=1, LIST=y, name=occ_factors,
@@ -310,10 +315,225 @@ loop auto = 1,15
       Cordon_tolls_w_discount  = Cordon_tolls_w_discount  + ROWSUM(55)
       Cordon_tolls_no_discount = Cordon_tolls_no_discount + ROWSUM(56)
 
+     ; Compute each time period's Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
+     ; EA
+     MW[57] =  mi.1.@token_auto@                          ; EA Person Trips
+     MW[58] = (mi.1.@token_auto@)/_occupancy              ; EA Vehicle Trips
+     MW[59] = MW[1]                                       ; EA Person minutes
+     MW[60] = MW[2]                                       ; EA Vehicle minutes
+     MW[61] = MW[3]                                       ; EA Person miles
+     MW[62] = MW[4]                                       ; EA Vehicle miles
+     MW[63] = MW[5]                                       ; EA Trip Cost
+     MW[64] = MW[6]                                       ; EA Bridge Tolls
+     MW[65] = MW[7]                                       ; EA Value Tolls  (considering discounts)
+     MW[66] = MW[8]                                       ; EA Value Tolls  (without discounts)
+     MW[67] = 0                                           ; EA doesn't have Cordon tolls (considering discounts)
+     MW[68] = 0                                           ; EA doesn't have Cordon tolls (without discounts)
+     
+     ; EA: count value tolls for toll options, including taxi and tnc
+     IF (@auto@==2 || @auto@==4 || @auto@==6 || @auto@==7 || @auto@==8 || @auto@==9 || @auto@==11 || @auto@==13 || @auto@==15)
+       ; EA doesn't count non-zero paths in the AM
+       _vtoll_am_nonzero = 0
+       _vtoll_md_nonzero = 0
+
+       ; only for EA tolls
+       Value_tolls_w_discount_EA        = Value_tolls_w_discount_EA    + ROWSUM(65)
+       Value_tolls_no_discount_EA       = Value_tolls_no_discount_EA   + ROWSUM(66)
+     else
+       _vtoll_am_nonzero = 0
+       _vtoll_md_nonzero = 0     
+       Value_tolls_w_discount_EA  = 0
+       Value_tolls_no_discount_EA = 0
+     ENDIF
+
+      Person_trips_EA  = Person_trips_EA  + ROWSUM(57)
+      Vehicle_trips_EA = Vehicle_trips_EA + ROWSUM(58)
+      Person_min_EA    = Person_min_EA    + ROWSUM(59)
+      Vehicle_min_EA   = Vehicle_min_EA   + ROWSUM(60)
+      Person_miles_EA  = Person_miles_EA  + ROWSUM(61)
+      Vehicle_miles_EA = Vehicle_miles_EA + ROWSUM(62)
+      Total_cost_EA    = Total_cost_EA    + ROWSUM(63)
+      Bridge_tolls_EA  = Bridge_tolls_EA  + ROWSUM(64)
+      Cordon_tolls_w_discount_EA  = Cordon_tolls_w_discount_EA  + ROWSUM(67)
+      Cordon_tolls_no_discount_EA = Cordon_tolls_no_discount_EA + ROWSUM(68)
+
+     ; AM
+     MW[69] =  mi.2.@token_auto@               ; Daily Person Trips
+     MW[70] = (mi.2.@token_auto@ )/_occupancy  ; Daily Vehicle Trips
+     MW[71] = MW[9]                            ; Person minutes
+     MW[72] = MW[10]   ; Vehicle minutes
+     MW[73] = MW[11]   ; Person miles
+     MW[74] = MW[12]   ; Vehicle miles
+     MW[75] = MW[13]   ; Trip Cost
+     MW[76] = MW[14]   ; Bridge Tolls
+     MW[77] = MW[15]   ; Value Tolls  (considering discounts)
+     MW[78] = MW[16]   ; Value Tolls  (without discounts)
+     MW[79] = MW[17]   ; Cordon tolls (considering discounts)
+     MW[80] = MW[18]   ; Cordon tolls (without discounts)
+     
+     ; AM: count value tolls for toll options, including taxi and tnc
+     IF (@auto@==2 || @auto@==4 || @auto@==6 || @auto@==7 || @auto@==8 || @auto@==9 || @auto@==11 || @auto@==13 || @auto@==15)
+       ; count non-zero paths in the AM
+       MW[81] = mi.7.@token_vtoll@
+       _vtoll_am_nonzero = _vtoll_am_nonzero  + ROWCNT(81)
+       _vtoll_md_nonzero = 0
+
+       ; only for tolls
+       Value_tolls_w_discount_AM       = Value_tolls_w_discount_AM    + ROWSUM(77)
+       Value_tolls_no_discount_AM       = Value_tolls_no_discount_AM  + ROWSUM(78)
+     else
+       _vtoll_am_nonzero = 0
+       _vtoll_md_nonzero = 0
+       Value_tolls_w_discount  = 0
+       Value_tolls_no_discount = 0
+     ENDIF
+
+      Person_trips_AM  = Person_trips_AM  + ROWSUM(69)
+      Vehicle_trips_AM = Vehicle_trips_AM + ROWSUM(70)
+      Person_min_AM    = Person_min_AM    + ROWSUM(71)
+      Vehicle_min_AM   = Vehicle_min_AM   + ROWSUM(72)
+      Person_miles_AM  = Person_miles_AM  + ROWSUM(73)
+      Vehicle_miles_AM = Vehicle_miles_AM + ROWSUM(74)
+      Total_cost_AM    = Total_cost_AM    + ROWSUM(75)
+      Bridge_tolls_AM  = Bridge_tolls_AM  + ROWSUM(76)
+      Cordon_tolls_w_discount_AM  = Cordon_tolls_w_discount_AM  + ROWSUM(79)
+      Cordon_tolls_no_discount_AM = Cordon_tolls_no_discount_AM + ROWSUM(80)
+
+     ; MD
+     MW[81] =  mi.3.@token_auto@               ; Daily Person Trips
+     MW[82] = (mi.3.@token_auto@)/_occupancy  ; Daily Vehicle Trips
+     MW[83] = MW[19]   ; Person minutes
+     MW[84] = MW[20]   ; Vehicle minutes
+     MW[85] = MW[21]   ; Person miles
+     MW[86] = MW[22]   ; Vehicle miles
+     MW[87] = MW[23]   ; Trip Cost
+     MW[88] = MW[24]   ; Bridge Tolls
+     MW[89] = MW[25]   ; Value Tolls  (considering discounts)
+     MW[90] = MW[26]   ; Value Tolls  (without discounts)
+     MW[91] = 0        ; Cordon tolls (considering discounts)
+     MW[92] = 0        ; Cordon tolls (without discounts)
+
+
+     ; MD: count value tolls for toll options, including taxi and tnc
+     IF (@auto@==2 || @auto@==4 || @auto@==6 || @auto@==7 || @auto@==8 || @auto@==9 || @auto@==11 || @auto@==13 || @auto@==15)
+       ; count non-zero paths in the AM
+       MW[93] = mi.8.@token_vtoll@
+       _vtoll_am_nonzero = 0
+       _vtoll_md_nonzero = _vtoll_md_nonzero  + ROWCNT(93)
+
+       ; only for tolls
+       Value_tolls_w_discount_MD       = Value_tolls_w_discount_MD    + ROWSUM(89)
+       Value_tolls_no_discount_MD       = Value_tolls_no_discount_MD  + ROWSUM(90)
+     else
+       _vtoll_am_nonzero = 0
+       _vtoll_md_nonzero = 0
+       Value_tolls_w_discount  = 0
+       Value_tolls_no_discount = 0
+     ENDIF
+
+      Person_trips_MD  = Person_trips_MD  + ROWSUM(81)
+      Vehicle_trips_MD = Vehicle_trips_MD + ROWSUM(82)
+      Person_min_MD    = Person_min_MD    + ROWSUM(83)
+      Vehicle_min_MD   = Vehicle_min_MD   + ROWSUM(84)
+      Person_miles_MD  = Person_miles_MD  + ROWSUM(85)
+      Vehicle_miles_MD = Vehicle_miles_MD + ROWSUM(86)
+      Total_cost_MD    = Total_cost_MD    + ROWSUM(87)
+      Bridge_tolls_MD  = Bridge_tolls_MD  + ROWSUM(88)
+      Cordon_tolls_w_discount_MD  = Cordon_tolls_w_discount_MD  + ROWSUM(91)
+      Cordon_tolls_no_discount_MD = Cordon_tolls_no_discount_MD + ROWSUM(92)
+
+     ; PM
+     MW[93]  =  mi.4.@token_auto@               ; Daily Person Trips
+     MW[94]  = (mi.4.@token_auto@)/_occupancy   ; Daily Vehicle Trips
+     MW[95]  = MW[27]   ; Person minutes
+     MW[96]  = MW[28]   ; Vehicle minutes
+     MW[97]  = MW[29]   ; Person miles
+     MW[98]  = MW[30]   ; Vehicle miles
+     MW[99]  = MW[31]   ; Trip Cost
+     MW[100] = MW[32]   ; Bridge Tolls
+     MW[101] = MW[33]   ; Value Tolls  (considering discounts)
+     MW[102] = MW[34]   ; Value Tolls  (without discounts)
+     MW[103] = MW[35]   ; Cordon tolls (considering discounts)
+     MW[104] = MW[36]   ; Cordon tolls (without discounts)
+
+
+     ; count value tolls for toll options, including taxi and tnc
+     IF (@auto@==2 || @auto@==4 || @auto@==6 || @auto@==7 || @auto@==8 || @auto@==9 || @auto@==11 || @auto@==13 || @auto@==15)
+       ; count non-zero paths in the AM
+       _vtoll_am_nonzero = 0
+       _vtoll_md_nonzero = 0
+
+       ; only for tolls
+       Value_tolls_w_discount_PM       = Value_tolls_w_discount_PM    + ROWSUM(101)
+       Value_tolls_no_discount_PM       = Value_tolls_no_discount_PM  + ROWSUM(102)
+     else
+       _vtoll_am_nonzero = 0
+       _vtoll_md_nonzero = 0
+       Value_tolls_w_discount  = 0
+       Value_tolls_no_discount = 0
+     ENDIF
+
+      Person_trips_PM  = Person_trips_PM  + ROWSUM(93)
+      Vehicle_trips_PM = Vehicle_trips_PM + ROWSUM(94)
+      Person_min_PM    = Person_min_PM    + ROWSUM(95)
+      Vehicle_min_PM   = Vehicle_min_PM   + ROWSUM(96)
+      Person_miles_PM  = Person_miles_PM  + ROWSUM(97)
+      Vehicle_miles_PM = Vehicle_miles_PM + ROWSUM(98)
+      Total_cost_PM    = Total_cost_PM   + ROWSUM(99)
+      Bridge_tolls_PM  = Bridge_tolls_PM  + ROWSUM(100)
+      Cordon_tolls_w_discount_PM  = Cordon_tolls_w_discount_PM  + ROWSUM(103)
+      Cordon_tolls_no_discount_PM = Cordon_tolls_no_discount_PM + ROWSUM(104)
+
+     ; EV
+     MW[105] =  mi.5.@token_auto@              ; Daily Person Trips
+     MW[106] = (mi.5.@token_auto@)/_occupancy  ; Daily Vehicle Trips
+     MW[107] = MW[37]   ; Person minutes
+     MW[108] = MW[38]   ; Vehicle minutes
+     MW[109] = MW[39]   ; Person miles
+     MW[110] = MW[40]   ; Vehicle miles
+     MW[111] = MW[41]   ; Trip Cost
+     MW[112] = MW[42]   ; Bridge Tolls
+     MW[113] = MW[43]   ; Value Tolls  (considering discounts)
+     MW[114] = MW[44]   ; Value Tolls  (without discounts)
+     MW[115] = 0            ; Cordon tolls (considering discounts)
+     MW[116] = 0            ; Cordon tolls (without discounts)
+
+
+     ; EV: count value tolls for toll options, including taxi and tnc
+     IF (@auto@==2 || @auto@==4 || @auto@==6 || @auto@==7 || @auto@==8 || @auto@==9 || @auto@==11 || @auto@==13 || @auto@==15)
+       ; count non-zero paths in the AM
+       _vtoll_am_nonzero = 0
+       _vtoll_md_nonzero = 0
+
+       ; only for tolls
+       Value_tolls_w_discount_EV       = Value_tolls_w_discount_EV    + ROWSUM(113)
+       Value_tolls_no_discount_EV       = Value_tolls_no_discount_EV  + ROWSUM(114)
+     else
+       _vtoll_am_nonzero = 0
+       _vtoll_md_nonzero = 0
+       Value_tolls_w_discount  = 0
+       Value_tolls_no_discount = 0
+     ENDIF
+
+      Person_trips_EV  = Person_trips_EV  + ROWSUM(105)
+      Vehicle_trips_EV = Vehicle_trips_EV + ROWSUM(106)
+      Person_min_EV    = Person_min_EV    + ROWSUM(107)
+      Vehicle_min_EV   = Vehicle_min_EV   + ROWSUM(108)
+      Person_miles_EV  = Person_miles_EV  + ROWSUM(109)
+      Vehicle_miles_EV = Vehicle_miles_EV + ROWSUM(110)
+      Total_cost_EV    = Total_cost_EV    + ROWSUM(111)
+      Bridge_tolls_EV  = Bridge_tolls_EV  + ROWSUM(112)
+      Cordon_tolls_w_discount_EV  = Cordon_tolls_w_discount_EV  + ROWSUM(115)
+      Cordon_tolls_no_discount_EV = Cordon_tolls_no_discount_EV + ROWSUM(116)
+
       Mode   = '@token_auto@'
       Income = '@token_inc@'
 
-      if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=1 LIST="Income,Mode,Daily Person Trips,Daily Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost,VTOLL nonzero AM,VTOLL nonzero MD,Bridge Tolls,Value Tolls with discount, Value Tolls without discount,Cordon tolls with discount,Cordon tolls without discount"
+
+      Mode   = '@token_auto@'
+      Income = '@token_inc@'
+      ; Daily results
+      if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=1 LIST="Income,Mode,Person Trips,Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost,VTOLL nonzero AM,VTOLL nonzero MD,Bridge Tolls,Value Tolls with discount, Value Tolls without discount,Cordon tolls with discount,Cordon tolls without discount"
       if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= Income, Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
                                                             Person_min(10.2L),   Vehicle_min(10.2L),
                                                             Person_miles(10.2L), Vehicle_miles(10.2L),
@@ -321,6 +541,56 @@ loop auto = 1,15
                                                             _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
                                                             Bridge_tolls(10.2L), Value_tolls_w_discount(10.2L), Value_tolls_no_discount(10.2L),
                                                             Cordon_tolls_w_discount(10.2L), Cordon_tolls_no_discount(10.2L)
+      ; Time period results
+      Period = 'EA'
+      if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=2 LIST="Period, Income,Mode,Person Trips,Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost,VTOLL nonzero AM,VTOLL nonzero MD,Bridge Tolls,Value Tolls with discount, Value Tolls without discount,Cordon tolls with discount,Cordon tolls without discount"
+      if(I = ZONES) PRINT PRINTO=2 CSV=T LIST= Period, Income, Mode, Person_trips_EA(10.2L), Vehicle_trips_EA(10.2L),
+                                                            Person_min_EA(10.2L),   Vehicle_min_EA(10.2L),
+                                                            Person_miles_EA(10.2L), Vehicle_miles_EA(10.2L),
+                                                            Total_cost_EA(10.2L),
+                                                            _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                                            Bridge_tolls_EA(10.2L), Value_tolls_w_discount_EA(10.2L), Value_tolls_no_discount_EA(10.2L),
+                                                            Cordon_tolls_w_discount_EA(10.2L), Cordon_tolls_no_discount_EA(10.2L)     
+
+      Period = 'AM'
+      ; if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=3 LIST="Period, Income,Mode, Person Trips, Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost,VTOLL nonzero AM,VTOLL nonzero MD,Bridge Tolls,Value Tolls with discount, Value Tolls without discount,Cordon tolls with discount,Cordon tolls without discount"
+      if(I = ZONES) PRINT PRINTO=3 CSV=T LIST= Period, Income, Mode, Person_trips_AM(10.2L), Vehicle_trips_AM(10.2L),
+                                                            Person_min_AM(10.2L),   Vehicle_min_AM(10.2L),
+                                                            Person_miles_AM(10.2L), Vehicle_miles_AM(10.2L),
+                                                            Total_cost_AM(10.2L),
+                                                            _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                                            Bridge_tolls_AM(10.2L), Value_tolls_w_discount_AM(10.2L), Value_tolls_no_discount_AM(10.2L),
+                                                            Cordon_tolls_w_discount_AM(10.2L), Cordon_tolls_no_discount_AM(10.2L)        
+
+      Period = 'MD'
+      ; if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=4 LIST="Period, Income,Mode, Person Trips, Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost,VTOLL nonzero AM,VTOLL nonzero MD,Bridge Tolls,Value Tolls with discount, Value Tolls without discount,Cordon tolls with discount,Cordon tolls without discount"
+      if(I = ZONES) PRINT PRINTO=4 CSV=T LIST= Period, Income, Mode, Person_trips_MD(10.2L), Vehicle_trips_MD(10.2L),
+                                                            Person_min_MD(10.2L),   Vehicle_min_MD(10.2L),
+                                                            Person_miles_MD(10.2L), Vehicle_miles_MD(10.2L),
+                                                            Total_cost_MD(10.2L),
+                                                            _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                                            Bridge_tolls_MD(10.2L), Value_tolls_w_discount_MD(10.2L), Value_tolls_no_discount_MD(10.2L),
+                                                            Cordon_tolls_w_discount_MD(10.2L), Cordon_tolls_no_discount_MD(10.2L)
+
+      Period = 'PM'
+      ; if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=5 LIST="Period, Income,Mode, Person Trips, Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost,VTOLL nonzero AM,VTOLL nonzero MD,Bridge Tolls,Value Tolls with discount, Value Tolls without discount,Cordon tolls with discount,Cordon tolls without discount"
+      if(I = ZONES) PRINT PRINTO=5 CSV=T LIST= Period, Income, Mode, Person_trips_PM(10.2L), Vehicle_trips_PM(10.2L),
+                                                            Person_min_PM(10.2L),   Vehicle_min_PM(10.2L),
+                                                            Person_miles_PM(10.2L), Vehicle_miles_PM(10.2L),
+                                                            Total_cost_PM(10.2L),
+                                                            _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                                            Bridge_tolls_PM(10.2L), Value_tolls_w_discount_PM(10.2L), Value_tolls_no_discount_PM(10.2L),
+                                                            Cordon_tolls_w_discount_PM(10.2L), Cordon_tolls_no_discount_PM(10.2L)      
+
+      Period = 'EV'
+      ; if(I = 1 & @inc@=1 & @auto@ = 1) PRINT PRINTO=6 LIST="Period, Income,Mode, Person Trips, Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost,VTOLL nonzero AM,VTOLL nonzero MD,Bridge Tolls,Value Tolls with discount, Value Tolls without discount,Cordon tolls with discount,Cordon tolls without discount"
+      if(I = ZONES) PRINT PRINTO=6 CSV=T LIST= Period, Income, Mode, Person_trips_EV(10.2L), Vehicle_trips_EV(10.2L),
+                                                            Person_min_EV(10.2L),   Vehicle_min_EV(10.2L),
+                                                            Person_miles_EV(10.2L), Vehicle_miles_EV(10.2L),
+                                                            Total_cost_EV(10.2L),
+                                                            _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                                            Bridge_tolls_EV(10.2L), Value_tolls_w_discount_EV(10.2L), Value_tolls_no_discount_EV(10.2L),
+                                                            Cordon_tolls_w_discount_EV(10.2L), Cordon_tolls_no_discount_EV(10.2L)                                                                                                                                                                                                                                                                                               
     ENDRUN
 
     ; owned zpv by income
@@ -343,7 +613,12 @@ loop auto = 1,15
         FILEI ZDATI[1] = "landuse\tazData.dbf"  ; need cordon and cordon cost information
 
         ; Specify output file
-        FILEO PRINTO[1] = "metrics\auto_times_zpv_av.csv",APPEND=T
+        FILEO PRINTO[1] = "metrics\auto_times_zpv_av.csv",APPEND=T            ; Daily output
+        FILEO PRINTO[2] = "metrics\auto_times_EA_zpv_av.csv",APPEND=T         ; EA output
+        FILEO PRINTO[3] = "metrics\auto_times_AM_zpv_av.csv",APPEND=T         ; AM output
+        FILEO PRINTO[4] = "metrics\auto_times_MD_zpv_av.csv",APPEND=T         ; MD output
+        FILEO PRINTO[5] = "metrics\auto_times_PM_zpv_av.csv",APPEND=T         ; PM output
+        FILEO PRINTO[6] = "metrics\auto_times_EV_zpv_av.csv",APPEND=T         ; EV output
 
         ; Trips EA * Skims EA
         MW[ 1] =  0                                             ; Person minutes
@@ -433,14 +708,153 @@ loop auto = 1,15
       Cordon_tolls_w_discount  = Cordon_tolls_w_discount  + ROWSUM(49)
       Cordon_tolls_no_discount = Cordon_tolls_no_discount + ROWSUM(50)
 
+       ; Compute each time period's Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls,   Value Tolls
+       ; EA
+       MW[51] = 0                                           ; Person Trips
+       MW[52] = mi.1.zpv_av                                 ; EA Vehicle Trips
+       MW[53] = MW[1]                                       ; EA Person minutes
+       MW[54] = MW[2]                                       ; EA Vehicle minutes
+       MW[55] = MW[3]                                       ; EA Person miles
+       MW[56] = MW[4]                                       ; EA Vehicle miles
+       MW[57] = MW[5]                                       ; EA Trip Cost
+       MW[58] = MW[6]                                       ; EA Bridge Tolls
+       MW[59] = MW[7]                                       ; EA Value Tolls
+       MW[60] = 0                                           ; EA doesn't have Cordon tolls (considering discounts)
+       MW[61] = 0                                           ; EA doesn't have Cordon tolls (without discounts)
+
+      Person_trips_EA  = Person_trips_EA  + ROWSUM(51)
+      Vehicle_trips_EA = Vehicle_trips_EA + ROWSUM(52)
+      Person_min_EA    = Person_min_EA    + ROWSUM(53)
+      Vehicle_min_EA   = Vehicle_min_EA   + ROWSUM(54)
+      Person_miles_EA  = Person_miles_EA  + ROWSUM(55)
+      Vehicle_miles_EA = Vehicle_miles_EA + ROWSUM(56)
+      Total_cost_EA    = Total_cost_EA    + ROWSUM(57)
+      Bridge_tolls_EA  = Bridge_tolls_EA  + ROWSUM(58)
+      ; assuming deadheading AVs pay tolls
+      Value_tolls_w_discount_EA   = Value_tolls_w_discount_EA   + ROWSUM(59)
+      Value_tolls_no_discount_EA  = Value_tolls_no_discount_EA  + ROWSUM(59)
+      Cordon_tolls_w_discount_EA  = Cordon_tolls_w_discount_EA  + ROWSUM(60)
+      Cordon_tolls_no_discount_EA = Cordon_tolls_no_discount_EA + ROWSUM(61)
       ; assuming value tolls for deadheading AV
 
+       ; AM
+       MW[62] = 0                                           ; Person Trips
+       MW[63] = mi.2.zpv_av                                 ; Vehicle Trips
+       MW[64] = MW[8]                                       ; Person minutes
+       MW[65] = MW[9]                                       ; Vehicle minutes
+       MW[66] = MW[10]                                      ; Person miles
+       MW[67] = MW[11]                                      ; Vehicle miles
+       MW[68] = MW[12]                                      ; Trip Cost
+       MW[69] = MW[13]                                      ; Bridge Tolls
+       MW[70] = MW[14]                                      ; Value Tolls
+       MW[71] = MW[15]                                      ; Cordon tolls (considering discounts)
+       MW[72] = MW[16]                                      ; Cordon tolls (without discounts)
+
+      Person_trips_AM  = Person_trips_AM  + ROWSUM(62)
+      Vehicle_trips_AM = Vehicle_trips_AM + ROWSUM(63)
+      Person_min_AM    = Person_min_AM    + ROWSUM(64)
+      Vehicle_min_AM   = Vehicle_min_AM   + ROWSUM(65)
+      Person_miles_AM  = Person_miles_AM  + ROWSUM(66)
+      Vehicle_miles_AM = Vehicle_miles_AM + ROWSUM(67)
+      Total_cost_AM    = Total_cost_AM    + ROWSUM(68)
+      Bridge_tolls_AM  = Bridge_tolls_AM  + ROWSUM(69)
+      ; assuming deadheading AVs pay tolls
+      Value_tolls_w_discount_AM   = Value_tolls_w_discount_AM   + ROWSUM(70)
+      Value_tolls_no_discount_AM  = Value_tolls_no_discount_AM  + ROWSUM(70)
+      Cordon_tolls_w_discount_AM  = Cordon_tolls_w_discount_AM  + ROWSUM(71)
+      Cordon_tolls_no_discount_AM = Cordon_tolls_no_discount_AM + ROWSUM(72)
+
+      ; MD
+       MW[73] = 0            ; Person Trips
+       MW[74] = mi.3.zpv_av  ; Vehicle Trips
+       MW[75] = MW[17]   ; Person minutes
+       MW[76] = MW[18]   ; Vehicle minutes
+       MW[77] = MW[19]   ; Person miles
+       MW[78] = MW[20]   ; Vehicle miles
+       MW[79] = MW[21]   ; Trip Cost
+       MW[80] = MW[22]   ; Bridge Tolls
+       MW[81] = MW[23]   ; Value Tolls
+       MW[82] = 0            ; Cordon tolls (considering discounts)
+       MW[83] = 0            ; Cordon tolls (without discounts)
+
+      Person_trips_MD  = Person_trips_MD  + ROWSUM(73)
+      Vehicle_trips_MD = Vehicle_trips_MD + ROWSUM(74)
+      Person_min_MD    = Person_min_MD    + ROWSUM(75)
+      Vehicle_min_MD   = Vehicle_min_MD   + ROWSUM(76)
+      Person_miles_MD  = Person_miles_MD  + ROWSUM(77)
+      Vehicle_miles_MD = Vehicle_miles_MD + ROWSUM(78)
+      Total_cost_MD    = Total_cost_MD    + ROWSUM(79)
+      Bridge_tolls_MD  = Bridge_tolls_MD  + ROWSUM(80)
+      ; assuming deadheading AVs pay tolls
+      Value_tolls_w_discount_MD   = Value_tolls_w_discount_MD   + ROWSUM(81)
+      Value_tolls_no_discount_MD  = Value_tolls_no_discount_MD  + ROWSUM(81)
+      Cordon_tolls_w_discount_MD  = Cordon_tolls_w_discount_MD  + ROWSUM(82)
+      Cordon_tolls_no_discount_MD = Cordon_tolls_no_discount_MD + ROWSUM(83)
+
+      ; PM
+       MW[84] = 0                                                    ; Person Trips
+       MW[85] = mi.4.zpv_av                                          ; Vehicle Trips
+       MW[86] = MW[24]   ; Person minutes
+       MW[87] = MW[25]   ; Vehicle minutes
+       MW[88] = MW[26]   ; Person miles
+       MW[89] = MW[27]   ; Vehicle miles
+       MW[90] = MW[28]   ; Trip Cost
+       MW[91] = MW[29]   ; Bridge Tolls
+       MW[92] = MW[30]   ; Value Tolls
+       MW[93] = MW[31]   ; Cordon tolls (considering discounts)
+       MW[94] = MW[32]   ; Cordon tolls (without discounts)
+
+      Person_trips_PM  = Person_trips_PM  + ROWSUM(84)
+      Vehicle_trips_PM = Vehicle_trips_PM + ROWSUM(85)
+      Person_min_PM    = Person_min_PM    + ROWSUM(86)
+      Vehicle_min_PM   = Vehicle_min_PM   + ROWSUM(87)
+      Person_miles_PM  = Person_miles_PM  + ROWSUM(88)
+      Vehicle_miles_PM = Vehicle_miles_PM + ROWSUM(89)
+      Total_cost_PM    = Total_cost_PM    + ROWSUM(90)
+      Bridge_tolls_PM  = Bridge_tolls_PM  + ROWSUM(91)
+      ; assuming deadheading AVs pay tolls
+      Value_tolls_w_discount_PM   = Value_tolls_w_discount_PM   + ROWSUM(92)
+      Value_tolls_no_discount_PM  = Value_tolls_no_discount_PM  + ROWSUM(92)
+      Cordon_tolls_w_discount_PM  = Cordon_tolls_w_discount_PM  + ROWSUM(93)
+      Cordon_tolls_no_discount_PM = Cordon_tolls_no_discount_PM + ROWSUM(94)
+
+
+      ; EV
+       MW[95]  = 0                                                    ; Person Trips
+       MW[96]  = mi.5.zpv_av  ; Vehicle Trips
+       MW[97]  = MW[33]   ; Person minutes
+       MW[98]  = MW[34]   ; Vehicle minutes
+       MW[99]  = MW[35]   ; Person miles
+       MW[100] = MW[36]   ; Vehicle miles
+       MW[101] = MW[37]   ; Trip Cost
+       MW[102] = MW[38]   ; Bridge Tolls
+       MW[103] = MW[39]   ; Value Tolls
+       MW[104] = 0            ; Cordon tolls (considering discounts)
+       MW[105] = 0            ; Cordon tolls (without discounts)
+
+      Person_trips_EV  = Person_trips_EV  + ROWSUM(95)
+      Vehicle_trips_EV = Vehicle_trips_EV + ROWSUM(96)
+      Person_min_EV    = Person_min_EV    + ROWSUM(97)
+      Vehicle_min_EV   = Vehicle_min_EV   + ROWSUM(98)
+      Person_miles_EV  = Person_miles_EV  + ROWSUM(99)
+      Vehicle_miles_EV = Vehicle_miles_EV + ROWSUM(100)
+      Total_cost_EV    = Total_cost_EV    + ROWSUM(101)
+      Bridge_tolls_EV  = Bridge_tolls_EV  + ROWSUM(102)
+      ; assuming deadheading AVs pay tolls
+      Value_tolls_w_discount_EV   = Value_tolls_w_discount_EV   + ROWSUM(103)
+      Value_tolls_no_discount_EV  = Value_tolls_no_discount_EV  + ROWSUM(103)
+      Cordon_tolls_w_discount_EV  = Cordon_tolls_w_discount_EV  + ROWSUM(104)
+      Cordon_tolls_no_discount_EV = Cordon_tolls_no_discount_EV + ROWSUM(105)
+
+
+      ; assuming value tolls for deadheading AV
       _vtoll_am_nonzero = 0
       _vtoll_md_nonzero = 0
 
       Mode   = 'owned_zpv'
       Income = '@token_inc@'
 
+      ; Daily rsults
       if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= Income, Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
                                                             Person_min(10.2L),   Vehicle_min(10.2L),
                                                             Person_miles(10.2L), Vehicle_miles(10.2L),
@@ -448,6 +862,47 @@ loop auto = 1,15
                                                             _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
                                                             Bridge_tolls(10.2L), Value_tolls_w_discount(10.2L), Value_tolls_no_discount(10.2L),
                                                             Cordon_tolls_w_discount(10.2L), Cordon_tolls_no_discount(10.2L)
+      ; Time period results
+      Period = 'EA'
+      if(I = ZONES) PRINT PRINTO=2 CSV=T LIST= Period, Income, Mode, Person_trips_EA(10.2L), Vehicle_trips_EA(10.2L),
+                                                            Person_min_EA(10.2L),   Vehicle_min_EA(10.2L),
+                                                            Person_miles_EA(10.2L), Vehicle_miles_EA(10.2L),
+                                                            Total_cost_EA(10.2L),
+                                                            _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                                            Bridge_tolls_EA(10.2L), Value_tolls_w_discount_EA(10.2L), Value_tolls_no_discount_EA(10.2L),
+                                                            Cordon_tolls_w_discount_EA(10.2L), Cordon_tolls_no_discount_EA(10.2L)        
+      Period = 'AM'
+      if(I = ZONES) PRINT PRINTO=3 CSV=T LIST= Period, Income, Mode, Person_trips_AM(10.2L), Vehicle_trips_AM(10.2L),
+                                                            Person_min_AM(10.2L),   Vehicle_min_AM(10.2L),
+                                                            Person_miles_AM(10.2L), Vehicle_miles_AM(10.2L),
+                                                            Total_cost_AM(10.2L),
+                                                            _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                                            Bridge_tolls_AM(10.2L), Value_tolls_w_discount_AM(10.2L), Value_tolls_no_discount_AM(10.2L),
+                                                            Cordon_tolls_w_discount_AM(10.2L), Cordon_tolls_no_discount_AM(10.2L)       
+      Period = 'MD'
+      if(I = ZONES) PRINT PRINTO=4 CSV=T LIST= Period, Income, Mode, Person_trips_MD(10.2L), Vehicle_trips_MD(10.2L),
+                                                            Person_min_MD(10.2L),   Vehicle_min_MD(10.2L),
+                                                            Person_miles_MD(10.2L), Vehicle_miles_MD(10.2L),
+                                                            Total_cost_MD(10.2L),
+                                                            _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                                            Bridge_tolls_MD(10.2L), Value_tolls_w_discount_MD(10.2L), Value_tolls_no_discount_MD(10.2L),
+                                                            Cordon_tolls_w_discount_MD(10.2L), Cordon_tolls_no_discount_MD(10.2L)                                                             
+      Period = 'PM'
+      if(I = ZONES) PRINT PRINTO=5 CSV=T LIST= Period, Income, Mode, Person_trips_PM(10.2L), Vehicle_trips_PM(10.2L),
+                                                            Person_min_PM(10.2L),   Vehicle_min_PM(10.2L),
+                                                            Person_miles_PM(10.2L), Vehicle_miles_PM(10.2L),
+                                                            Total_cost_PM(10.2L),
+                                                            _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                                            Bridge_tolls_PM(10.2L), Value_tolls_w_discount_PM(10.2L), Value_tolls_no_discount_PM(10.2L),
+                                                            Cordon_tolls_w_discount_PM(10.2L), Cordon_tolls_no_discount_PM(10.2L)    
+      Period = 'EV'
+      if(I = ZONES) PRINT PRINTO=6 CSV=T LIST= Period, Income, Mode, Person_trips_EV(10.2L), Vehicle_trips_EV(10.2L),
+                                                            Person_min_EV(10.2L),   Vehicle_min_EV(10.2L),
+                                                            Person_miles_EV(10.2L), Vehicle_miles_EV(10.2L),
+                                                            Total_cost_EV(10.2L),
+                                                            _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                                            Bridge_tolls_EV(10.2L), Value_tolls_w_discount_EV(10.2L), Value_tolls_no_discount_EV(10.2L),
+                                                            Cordon_tolls_w_discount_EV(10.2L), Cordon_tolls_no_discount_EV(10.2L)  
       ENDRUN
     ENDIF ; IF (auto=11) ; da_av_toll
 
@@ -475,7 +930,12 @@ loop auto = 1,15
 
      FILEI LOOKUPI[1] = taxi_tnc_occ_factors.csv
 
-     FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T
+     FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T      ; Daily output
+     FILEO PRINTO[2] = "metrics\auto_times_EA_@token_auto@.csv",APPEND=T   ; EA output
+     FILEO PRINTO[3] = "metrics\auto_times_AM_@token_auto@.csv",APPEND=T   ; AM output
+     FILEO PRINTO[4] = "metrics\auto_times_MD_@token_auto@.csv",APPEND=T   ; MD output
+     FILEO PRINTO[5] = "metrics\auto_times_PM_@token_auto@.csv",APPEND=T   ; PM_ output
+     FILEO PRINTO[6] = "metrics\auto_times_EV_@token_auto@.csv",APPEND=T   ; EV output
 
      FILEI ZDATI[1] = "landuse\tazData.dbf"  ; need cordon and cordon cost information
 
@@ -605,8 +1065,179 @@ loop auto = 1,15
      Cordon_tolls_w_discount  = Cordon_tolls_w_discount  + ROWSUM(49)
      Cordon_tolls_no_discount = Cordon_tolls_no_discount + ROWSUM(50)
 
-      Mode   = '@token_auto@' + '_ix'
+     ; Compute Each Tim Period's Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
+     ; EA
+     ; NOTE that the zones may be unconnected, resulting in huge skim values, so we need to exclude those here
 
+     MW[51] = mi.11.connected*mi.11.connected.t*( mi.1.@token_auto@)                   ; Person_trips
+     MW[52] = mi.11.connected*mi.11.connected.t*((mi.1.@token_auto@)/_occupancy)       ; Vehicle_trips 
+     MW[53] = mi.11.connected*mi.11.connected.t*(MW[1])   ; Person minutes
+     MW[54] = mi.11.connected*mi.11.connected.t*(MW[2])   ; Vehicle minutes
+     MW[55] = mi.11.connected*mi.11.connected.t*(MW[3])   ; Person miles
+     MW[56] = mi.11.connected*mi.11.connected.t*(MW[4])   ; Vehicle miles
+     MW[57] = mi.11.connected*mi.11.connected.t*(MW[5])   ; Trip Cost
+     MW[58] = mi.11.connected*mi.11.connected.t*(MW[6])   ; Bridge Tolls
+     MW[59] = mi.11.connected*mi.11.connected.t*(MW[7])   ; Value Tolls
+     MW[60] = 0                                           ; Cordon Tolls (considering discounts)
+     MW[61] = 0                                           ; Cordon Tolls (without discounts)
+
+     IF (@auto@=2 || @auto@==4 || @auto@==6)
+       ; only for tolls
+       Value_tolls_w_discount_EA       = Value_tolls_w_discount_EA        + ROWSUM(59)
+       Value_tolls_no_discount_EA      = Value_tolls_no_discount_EA       + ROWSUM(59)
+     else
+       Value_tolls_w_discount_EA       = 0
+       Value_tolls_no_discount_EA      = 0
+     ENDIF
+
+     Person_trips_EA  = Person_trips_EA  + ROWSUM(51)
+     Vehicle_trips_EA = Vehicle_trips_EA + ROWSUM(52)
+     Person_min_EA    = Person_min_EA    + ROWSUM(53)
+     Vehicle_min_EA   = Vehicle_min_EA   + ROWSUM(54)
+     Person_miles_EA  = Person_miles_EA  + ROWSUM(55)
+     Vehicle_miles_EA = Vehicle_miles_EA + ROWSUM(56)
+     Total_cost_EA    = Total_cost_EA    + ROWSUM(57)
+     Bridge_tolls_EA  = Bridge_tolls_EA  + ROWSUM(58)
+     Cordon_tolls_w_discount_EA  = Cordon_tolls_w_discount_EA  + ROWSUM(60)
+     Cordon_tolls_no_discount_EA = Cordon_tolls_no_discount_EA + ROWSUM(61)
+
+     ; AM
+     ; NOTE that the zones may be unconnected, resulting in huge skim values, so we need to exclude those here
+
+     MW[62] = mi.11.connected*mi.11.connected.t*( mi.2.@token_auto@)
+     MW[63] = mi.11.connected*mi.11.connected.t*((mi.2.@token_auto@)/_occupancy)
+     MW[64] = mi.11.connected*mi.11.connected.t*(MW[8]  )   ; Person minutes
+     MW[65] = mi.11.connected*mi.11.connected.t*(MW[9]  )   ; Vehicle minutes
+     MW[66] = mi.11.connected*mi.11.connected.t*(MW[10] )   ; Person miles
+     MW[67] = mi.11.connected*mi.11.connected.t*(MW[11] )   ; Vehicle miles
+     MW[68] = mi.11.connected*mi.11.connected.t*(MW[12] )   ; Trip Cost
+     MW[69] = mi.11.connected*mi.11.connected.t*(MW[13] )   ; Bridge Tolls
+     MW[70] = mi.11.connected*mi.11.connected.t*(MW[14] )   ; Value Tolls
+     MW[71] = mi.11.connected*mi.11.connected.t*(MW[15] )            ; Cordon Tolls (considering discounts)
+     MW[72] = mi.11.connected*mi.11.connected.t*(MW[16] )            ; Cordon Tolls (without discounts)V
+
+     IF (@auto@=2 || @auto@==4 || @auto@==6)
+       ; only for tolls
+       Value_tolls_w_discount_AM       = Value_tolls_w_discount_AM        + ROWSUM(70)
+       Value_tolls_no_discount_AM      = Value_tolls_no_discount_AM       + ROWSUM(70)
+     else
+       Value_tolls_w_discount_AM       = 0
+       Value_tolls_no_discount_AM      = 0
+     ENDIF
+
+     Person_trips_AM  = Person_trips_AM  + ROWSUM(62)
+     Vehicle_trips_AM = Vehicle_trips_AM + ROWSUM(63)
+     Person_min_AM    = Person_min_AM    + ROWSUM(64)
+     Vehicle_min_AM   = Vehicle_min_AM   + ROWSUM(65)
+     Person_miles_AM  = Person_miles_AM  + ROWSUM(66)
+     Vehicle_miles_AM = Vehicle_miles_AM + ROWSUM(67)
+     Total_cost_AM    = Total_cost_AM    + ROWSUM(68)
+     Bridge_tolls_AM  = Bridge_tolls_AM  + ROWSUM(69)
+     Cordon_tolls_w_discount_AM  = Cordon_tolls_w_discount_AM  + ROWSUM(71)
+     Cordon_tolls_no_discount_AM = Cordon_tolls_no_discount_AM + ROWSUM(72)
+
+     ; MD
+     MW[73] = mi.11.connected*mi.11.connected.t*( mi.3.@token_auto@)
+     MW[74] = mi.11.connected*mi.11.connected.t*((mi.3.@token_auto@)/_occupancy)
+     MW[75] = mi.11.connected*mi.11.connected.t*(MW[17])   ; Person minutes
+     MW[76] = mi.11.connected*mi.11.connected.t*(MW[18])   ; Vehicle minutes
+     MW[77] = mi.11.connected*mi.11.connected.t*(MW[19])   ; Person miles
+     MW[78] = mi.11.connected*mi.11.connected.t*(MW[20])   ; Vehicle miles
+     MW[79] = mi.11.connected*mi.11.connected.t*(MW[21])   ; Trip Cost
+     MW[80] = mi.11.connected*mi.11.connected.t*(MW[22])   ; Bridge Tolls
+     MW[81] = mi.11.connected*mi.11.connected.t*(MW[23])   ; Value Tolls
+     MW[82] = 0                                            ; Cordon Tolls (considering discounts)
+     MW[83] = 0                                            ; Cordon Tolls (without discounts)
+
+     IF (@auto@=2 || @auto@==4 || @auto@==6)
+       ; only for tolls
+       Value_tolls_w_discount_MD       = Value_tolls_w_discount_MD        + ROWSUM(81)
+       Value_tolls_no_discount_MD      = Value_tolls_no_discount_MD       + ROWSUM(81)
+     else
+       Value_tolls_w_discount_MD       = 0
+       Value_tolls_no_discount_MD      = 0
+     ENDIF
+
+     Person_trips_MD  = Person_trips_MD  + ROWSUM(73)
+     Vehicle_trips_MD = Vehicle_trips_MD + ROWSUM(74)
+     Person_min_MD    = Person_min_MD    + ROWSUM(75)
+     Vehicle_min_MD   = Vehicle_min_MD   + ROWSUM(76)
+     Person_miles_MD  = Person_miles_MD  + ROWSUM(77)
+     Vehicle_miles_MD = Vehicle_miles_MD + ROWSUM(78)
+     Total_cost_MD    = Total_cost_MD    + ROWSUM(79)
+     Bridge_tolls_MD  = Bridge_tolls_MD  + ROWSUM(80)
+     Cordon_tolls_w_discount_MD  = Cordon_tolls_w_discount_MD  + ROWSUM(82)
+     Cordon_tolls_no_discount_MD = Cordon_tolls_no_discount_MD + ROWSUM(83)     
+
+     ; PM
+     MW[84] = mi.11.connected*mi.11.connected.t*( mi.4.@token_auto@ )
+     MW[85] = mi.11.connected*mi.11.connected.t*((mi.4.@token_auto@ )/_occupancy)
+     MW[86] = mi.11.connected*mi.11.connected.t*(MW[24])   ; Person minutes
+     MW[87] = mi.11.connected*mi.11.connected.t*(MW[25])   ; Vehicle minutes
+     MW[88] = mi.11.connected*mi.11.connected.t*(MW[26])   ; Person miles
+     MW[89] = mi.11.connected*mi.11.connected.t*(MW[27])   ; Vehicle miles
+     MW[90] = mi.11.connected*mi.11.connected.t*(MW[28])   ; Trip Cost
+     MW[91] = mi.11.connected*mi.11.connected.t*(MW[29])   ; Bridge Tolls
+     MW[92] = mi.11.connected*mi.11.connected.t*(MW[30])   ; Value Tolls
+     MW[93] = mi.11.connected*mi.11.connected.t*(MW[31])   ; Cordon Tolls (considering discounts)
+     MW[94] = mi.11.connected*mi.11.connected.t*(MW[32])   ; Cordon Tolls (without discounts)
+
+     IF (@auto@=2 || @auto@==4 || @auto@==6)
+       ; only for tolls
+       Value_tolls_w_discount_PM       = Value_tolls_w_discount_PM        + ROWSUM(92)
+       Value_tolls_no_discount_PM      = Value_tolls_no_discount_PM       + ROWSUM(92)
+     else
+       Value_tolls_w_discount_PM       = 0
+       Value_tolls_no_discount_PM      = 0
+     ENDIF
+
+     Person_trips_PM  = Person_trips_PM  + ROWSUM(84)
+     Vehicle_trips_PM = Vehicle_trips_PM + ROWSUM(85)
+     Person_min_PM    = Person_min_PM    + ROWSUM(86)
+     Vehicle_min_PM   = Vehicle_min_PM   + ROWSUM(87)
+     Person_miles_PM  = Person_miles_PM  + ROWSUM(88)
+     Vehicle_miles_PM = Vehicle_miles_PM + ROWSUM(89)
+     Total_cost_PM    = Total_cost_PM    + ROWSUM(90)
+     Bridge_tolls_PM  = Bridge_tolls_PM  + ROWSUM(91)
+     Cordon_tolls_w_discount_PM  = Cordon_tolls_w_discount_PM  + ROWSUM(93)
+     Cordon_tolls_no_discount_PM = Cordon_tolls_no_discount_PM + ROWSUM(94)
+
+     ; EV
+     MW[95] = mi.11.connected*mi.11.connected.t*( mi.5.@token_auto@)
+     MW[96] = mi.11.connected*mi.11.connected.t*((mi.5.@token_auto@)/_occupancy)
+     MW[97] = mi.11.connected*mi.11.connected.t*(MW[33])   ; Person minutes
+     MW[98] = mi.11.connected*mi.11.connected.t*(MW[34])   ; Vehicle minutes
+     MW[99] = mi.11.connected*mi.11.connected.t*(MW[35])   ; Person miles
+     MW[100] = mi.11.connected*mi.11.connected.t*(MW[36])   ; Vehicle miles
+     MW[101] = mi.11.connected*mi.11.connected.t*(MW[37])   ; Trip Cost
+     MW[102] = mi.11.connected*mi.11.connected.t*(MW[38])   ; Bridge Tolls
+     MW[103] = mi.11.connected*mi.11.connected.t*(MW[39])   ; Value Tolls
+     MW[104] = 0                                            ; Cordon Tolls (considering discounts)
+     MW[105] = 0                                            ; Cordon Tolls (without discounts)
+
+     IF (@auto@=2 || @auto@==4 || @auto@==6)
+       ; only for tolls
+       Value_tolls_w_discount_EV       = Value_tolls_w_discount_EV        + ROWSUM(103)
+       Value_tolls_no_discount_EV      = Value_tolls_no_discount_EV       + ROWSUM(103)
+     else
+       Value_tolls_w_discount_EV       = 0
+       Value_tolls_no_discount_EV      = 0
+     ENDIF
+
+     Person_trips_EV  = Person_trips_EV  + ROWSUM(95)
+     Vehicle_trips_EV = Vehicle_trips_EV + ROWSUM(96)
+     Person_min_EV    = Person_min_EV    + ROWSUM(97)
+     Vehicle_min_EV   = Vehicle_min_EV   + ROWSUM(98)
+     Person_miles_EV  = Person_miles_EV  + ROWSUM(99)
+     Vehicle_miles_EV = Vehicle_miles_EV + ROWSUM(100)
+     Total_cost_EV    = Total_cost_EV    + ROWSUM(101)
+     Bridge_tolls_EV  = Bridge_tolls_EV  + ROWSUM(102)
+     Cordon_tolls_w_discount_EV  = Cordon_tolls_w_discount_EV  + ROWSUM(104)
+     Cordon_tolls_no_discount_EV = Cordon_tolls_no_discount_EV + ROWSUM(105)
+
+
+      Mode   = '@token_auto@' + '_ix'
+      ; Daily results
       if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= "na",   Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
                                                             Person_min(10.2L),   Vehicle_min(10.2L),
                                                             Person_miles(10.2L), Vehicle_miles(10.2L),
@@ -614,6 +1245,50 @@ loop auto = 1,15
                                                             "na","na",
                                                             Bridge_tolls(10.2L), Value_tolls_w_discount(10.2L), Value_tolls_no_discount(10.2L),
                                                             Cordon_tolls_w_discount(10.2L), Cordon_tolls_no_discount(10.2L)
+      ; Time period results
+      Period = 'EA'
+      if(I = ZONES) PRINT PRINTO=2 CSV=T LIST= Period, "na", Mode, Person_trips_EA(10.2L), Vehicle_trips_EA(10.2L),
+                                                            Person_min_EA(10.2L),   Vehicle_min_EA(10.2L),
+                                                            Person_miles_EA(10.2L), Vehicle_miles_EA(10.2L),
+                                                            Total_cost_EA(10.2L),
+                                                            "na","na",
+                                                            Bridge_tolls_EA(10.2L), Value_tolls_w_discount_EA(10.2L), Value_tolls_no_discount_EA(10.2L),
+                                                            Cordon_tolls_w_discount_EA(10.2L), Cordon_tolls_no_discount_EA(10.2L)    
+      Period = 'AM'
+      if(I = ZONES) PRINT PRINTO=3 CSV=T LIST= Period, "na", Mode, Person_trips_AM(10.2L), Vehicle_trips_AM(10.2L),
+                                                            Person_min_AM(10.2L),   Vehicle_min_AM(10.2L),
+                                                            Person_miles_AM(10.2L), Vehicle_miles_AM(10.2L),
+                                                            Total_cost_AM(10.2L),
+                                                            "na","na",
+                                                            Bridge_tolls_AM(10.2L), Value_tolls_w_discount_AM(10.2L), Value_tolls_no_discount_AM(10.2L),
+                                                            Cordon_tolls_w_discount_AM(10.2L), Cordon_tolls_no_discount_AM(10.2L)  
+
+      Period = 'MD'
+      if(I = ZONES) PRINT PRINTO=4 CSV=T LIST= Period, "na", Mode, Person_trips_MD(10.2L), Vehicle_trips_MD(10.2L),
+                                                            Person_min_MD(10.2L),   Vehicle_min_MD(10.2L),
+                                                            Person_miles_MD(10.2L), Vehicle_miles_MD(10.2L),
+                                                            Total_cost_MD(10.2L),
+                                                            "na","na",
+                                                            Bridge_tolls_MD(10.2L), Value_tolls_w_discount_MD(10.2L), Value_tolls_no_discount_MD(10.2L),
+                                                            Cordon_tolls_w_discount_MD(10.2L), Cordon_tolls_no_discount_MD(10.2L)  
+
+      Period = 'PM'
+      if(I = ZONES) PRINT PRINTO=5 CSV=T LIST= Period, "na", Mode, Person_trips_PM(10.2L), Vehicle_trips_PM(10.2L),
+                                                            Person_min_PM(10.2L),   Vehicle_min_PM(10.2L),
+                                                            Person_miles_PM(10.2L), Vehicle_miles_PM(10.2L),
+                                                            Total_cost_PM(10.2L),
+                                                            "na","na",
+                                                            Bridge_tolls_PM(10.2L), Value_tolls_w_discount_PM(10.2L), Value_tolls_no_discount_PM(10.2L),
+                                                            Cordon_tolls_w_discount_PM(10.2L), Cordon_tolls_no_discount_PM(10.2L)        
+
+      Period = 'EV'
+      if(I = ZONES) PRINT PRINTO=6 CSV=T LIST= Period, "na", Mode, Person_trips_EV(10.2L), Vehicle_trips_EV(10.2L),
+                                                            Person_min_EV(10.2L),   Vehicle_min_EV(10.2L),
+                                                            Person_miles_EV(10.2L), Vehicle_miles_EV(10.2L),
+                                                            Total_cost_EV(10.2L),
+                                                            "na","na",
+                                                            Bridge_tolls_EV(10.2L), Value_tolls_w_discount_EV(10.2L), Value_tolls_no_discount_EV(10.2L),
+                                                            Cordon_tolls_w_discount_EV(10.2L), Cordon_tolls_no_discount_EV(10.2L)                                                                                                                  
     ENDRUN
 
    RUN PGM = MATRIX
@@ -635,7 +1310,12 @@ loop auto = 1,15
 
      FILEI LOOKUPI[1] = taxi_tnc_occ_factors.csv
 
-     FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T
+     FILEO PRINTO[1] = "metrics\auto_times_@token_auto@.csv",APPEND=T      ; Daily output
+     FILEO PRINTO[2] = "metrics\auto_times_EA_@token_auto@.csv",APPEND=T   ; EA output
+     FILEO PRINTO[3] = "metrics\auto_times_AM_@token_auto@.csv",APPEND=T   ; AM output
+     FILEO PRINTO[4] = "metrics\auto_times_MD_@token_auto@.csv",APPEND=T   ; MD output
+     FILEO PRINTO[5] = "metrics\auto_times_PM_@token_auto@.csv",APPEND=T   ; PM output
+     FILEO PRINTO[6] = "metrics\auto_times_EV_@token_auto@.csv",APPEND=T   ; EV output
 
      FILEI ZDATI[1] = "landuse\tazData.dbf"  ; need cordon and cordon cost information
 
@@ -748,7 +1428,7 @@ loop auto = 1,15
      IF (@auto@==2 || @auto@==4 || @auto@==6)
        ; only for tolls
        Value_tolls_w_discount       = Value_tolls_w_discount        + ROWSUM(48)
-       Value_tolls_no_discount     = Value_tolls_no_discount       + ROWSUM(48)
+       Value_tolls_no_discount      = Value_tolls_no_discount       + ROWSUM(48)
      else
        Value_tolls_w_discount       = 0
        Value_tolls_no_discount      = 0
@@ -765,8 +1445,176 @@ loop auto = 1,15
      Cordon_tolls_w_discount  = Cordon_tolls_w_discount  + ROWSUM(49)
      Cordon_tolls_no_discount = Cordon_tolls_no_discount + ROWSUM(50)
 
-      Mode   = '@token_auto@' + '_air'
+     ; Compute each time period's Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
+     ; EA
+     ; NOTE that the zones may be unconnected, resulting in huge skim values, so we need to exclude those here
 
+     MW[51] = mi.11.connected*mi.11.connected.t*( mi.1.@token_auto@)*_occupancy
+     MW[52] = mi.11.connected*mi.11.connected.t*( mi.1.@token_auto@)
+     MW[53] = mi.11.connected*mi.11.connected.t*(MW[1])   ; Person minutes
+     MW[54] = mi.11.connected*mi.11.connected.t*(MW[2])   ; Vehicle minutes
+     MW[55] = mi.11.connected*mi.11.connected.t*(MW[3])   ; Person miles
+     MW[56] = mi.11.connected*mi.11.connected.t*(MW[4])   ; Vehicle miles
+     MW[57] = mi.11.connected*mi.11.connected.t*(MW[5])   ; Trip Cost
+     MW[58] = mi.11.connected*mi.11.connected.t*(MW[6])   ; Bridge Tolls
+     MW[59] = mi.11.connected*mi.11.connected.t*(MW[7])   ; Value Tolls
+     MW[60] = 0                                           ; Cordon Tolls (considering discounts)
+     MW[61] = 0                                           ; Cordon Tolls (without discounts)
+
+     IF (@auto@==2 || @auto@==4 || @auto@==6)
+       ; only for tolls
+       Value_tolls_w_discount_EA       = Value_tolls_w_discount_EA        + ROWSUM(59)
+       Value_tolls_no_discount_EA      = Value_tolls_no_discount_EA       + ROWSUM(59)
+     else
+       Value_tolls_w_discount       = 0
+       Value_tolls_no_discount      = 0
+     ENDIF
+
+     Person_trips_EA  = Person_trips_EA  + ROWSUM(51)
+     Vehicle_trips_EA = Vehicle_trips_EA + ROWSUM(52)
+     Person_min_EA    = Person_min_EA    + ROWSUM(53)
+     Vehicle_min_EA   = Vehicle_min_EA   + ROWSUM(54)
+     Person_miles_EA  = Person_miles_EA  + ROWSUM(55)
+     Vehicle_miles_EA = Vehicle_miles_EA + ROWSUM(56)
+     Total_cost_EA    = Total_cost_EA    + ROWSUM(57)
+     Bridge_tolls_EA  = Bridge_tolls_EA  + ROWSUM(58)
+     Cordon_tolls_w_discount_EA  = Cordon_tolls_w_discount_EA  + ROWSUM(60)
+     Cordon_tolls_no_discount_EA = Cordon_tolls_no_discount_EA + ROWSUM(61)
+
+     ; AM
+     MW[62] = mi.11.connected*mi.11.connected.t*( mi.2.@token_auto@ )*_occupancy
+     MW[63] = mi.11.connected*mi.11.connected.t*( mi.2.@token_auto@ )
+     MW[64] = mi.11.connected*mi.11.connected.t*(MW[8]  )   ; Person minutes
+     MW[65] = mi.11.connected*mi.11.connected.t*(MW[9]  )   ; Vehicle minutes
+     MW[66] = mi.11.connected*mi.11.connected.t*(MW[10] )   ; Person miles
+     MW[67] = mi.11.connected*mi.11.connected.t*(MW[11] )   ; Vehicle miles
+     MW[68] = mi.11.connected*mi.11.connected.t*(MW[12] )   ; Trip Cost
+     MW[69] = mi.11.connected*mi.11.connected.t*(MW[13] )   ; Bridge Tolls
+     MW[70] = mi.11.connected*mi.11.connected.t*(MW[14] )   ; Value Tolls
+     MW[71] = mi.11.connected*mi.11.connected.t*(MW[15] )            ; Cordon Tolls (considering discounts)
+     MW[72] = mi.11.connected*mi.11.connected.t*(MW[16] )            ; Cordon Tolls (without discounts)
+
+     IF (@auto@==2 || @auto@==4 || @auto@==6)
+       ; only for tolls
+       Value_tolls_w_discount_AM       = Value_tolls_w_discount_AM        + ROWSUM(70)
+       Value_tolls_no_discount_AM     = Value_tolls_no_discount_AM        + ROWSUM(70)
+     else
+       Value_tolls_w_discount       = 0
+       Value_tolls_no_discount      = 0
+     ENDIF
+
+     Person_trips_AM  = Person_trips_AM  + ROWSUM(62)
+     Vehicle_trips_AM = Vehicle_trips_AM + ROWSUM(63)
+     Person_min_AM    = Person_min_AM    + ROWSUM(64)
+     Vehicle_min_AM   = Vehicle_min_AM   + ROWSUM(65)
+     Person_miles_AM  = Person_miles_AM  + ROWSUM(66)
+     Vehicle_miles_AM = Vehicle_miles_AM + ROWSUM(67)
+     Total_cost_AM    = Total_cost_AM    + ROWSUM(68)
+     Bridge_tolls_AM  = Bridge_tolls_AM  + ROWSUM(69)
+     Cordon_tolls_w_discount_AM  = Cordon_tolls_w_discount_AM  + ROWSUM(71)
+     Cordon_tolls_no_discount_AM = Cordon_tolls_no_discount_AM + ROWSUM(72)
+
+     ; MD
+     MW[73] = mi.11.connected*mi.11.connected.t*( mi.3.@token_auto@)*_occupancy
+     MW[74] = mi.11.connected*mi.11.connected.t*( mi.3.@token_auto@)
+     MW[75] = mi.11.connected*mi.11.connected.t*(MW[17])   ; Person minutes
+     MW[76] = mi.11.connected*mi.11.connected.t*(MW[18])   ; Vehicle minutes
+     MW[77] = mi.11.connected*mi.11.connected.t*(MW[19])   ; Person miles
+     MW[78] = mi.11.connected*mi.11.connected.t*(MW[20])   ; Vehicle miles
+     MW[79] = mi.11.connected*mi.11.connected.t*(MW[21])   ; Trip Cost
+     MW[80] = mi.11.connected*mi.11.connected.t*(MW[22])   ; Bridge Tolls
+     MW[81] = mi.11.connected*mi.11.connected.t*(MW[23])   ; Value Tolls
+     MW[82] = 0                                            ; Cordon Tolls (considering discounts)
+     MW[83] = 0                                            ; Cordon Tolls (without discounts)
+
+     IF (@auto@==2 || @auto@==4 || @auto@==6)
+       ; only for tolls
+       Value_tolls_w_discount_MD       = Value_tolls_w_discount_MD        + ROWSUM(81)
+       Value_tolls_no_discount_MD     = Value_tolls_no_discount_MD        + ROWSUM(81)
+     else
+       Value_tolls_w_discount_MD       = 0
+       Value_tolls_no_discount_MD      = 0
+     ENDIF
+
+     Person_trips_MD  = Person_trips_MD  + ROWSUM(73)
+     Vehicle_trips_MD = Vehicle_trips_MD + ROWSUM(74)
+     Person_min_MD    = Person_min_MD    + ROWSUM(75)
+     Vehicle_min_MD   = Vehicle_min_MD   + ROWSUM(76)
+     Person_miles_MD  = Person_miles_MD  + ROWSUM(77)
+     Vehicle_miles_MD = Vehicle_miles_MD + ROWSUM(78)
+     Total_cost_MD    = Total_cost_MD    + ROWSUM(79)
+     Bridge_tolls_MD  = Bridge_tolls_MD  + ROWSUM(80)
+     Cordon_tolls_w_discount_MD  = Cordon_tolls_w_discount_MD  + ROWSUM(82)
+     Cordon_tolls_no_discount_MD = Cordon_tolls_no_discount_MD + ROWSUM(83)
+
+     ; PM     
+     MW[84] = mi.11.connected*mi.11.connected.t*( mi.4.@token_auto@)*_occupancy
+     MW[85] = mi.11.connected*mi.11.connected.t*( mi.4.@token_auto@)
+     MW[86] = mi.11.connected*mi.11.connected.t*(MW[24])   ; Person minutes
+     MW[87] = mi.11.connected*mi.11.connected.t*(MW[25])   ; Vehicle minutes
+     MW[88] = mi.11.connected*mi.11.connected.t*(MW[26])   ; Person miles
+     MW[89] = mi.11.connected*mi.11.connected.t*(MW[27])   ; Vehicle miles
+     MW[90] = mi.11.connected*mi.11.connected.t*(MW[28])   ; Trip Cost
+     MW[91] = mi.11.connected*mi.11.connected.t*(MW[29])   ; Bridge Tolls
+     MW[92] = mi.11.connected*mi.11.connected.t*(MW[30])   ; Value Tolls
+     MW[93] = mi.11.connected*mi.11.connected.t*(MW[31])   ; Cordon Tolls (considering discounts)
+     MW[94] = mi.11.connected*mi.11.connected.t*(MW[32])   ; Cordon Tolls (without discounts)
+
+     IF (@auto@==2 || @auto@==4 || @auto@==6)
+       ; only for tolls
+       Value_tolls_w_discount_PM       = Value_tolls_w_discount_PM        + ROWSUM(92)
+       Value_tolls_no_discount_PM     = Value_tolls_no_discount_PM        + ROWSUM(92)
+     else
+       Value_tolls_w_discount_PM       = 0
+       Value_tolls_no_discount_PM      = 0
+     ENDIF
+
+     Person_trips_PM  = Person_trips_PM  + ROWSUM(84)
+     Vehicle_trips_PM = Vehicle_trips_PM + ROWSUM(85)
+     Person_min_PM    = Person_min_PM    + ROWSUM(86)
+     Vehicle_min_PM   = Vehicle_min_PM   + ROWSUM(87)
+     Person_miles_PM  = Person_miles_PM  + ROWSUM(88)
+     Vehicle_miles_PM = Vehicle_miles_PM + ROWSUM(89)
+     Total_cost_PM    = Total_cost_PM    + ROWSUM(90)
+     Bridge_tolls_PM  = Bridge_tolls_PM  + ROWSUM(91)
+     Cordon_tolls_w_discount_PM  = Cordon_tolls_w_discount_PM  + ROWSUM(93)
+     Cordon_tolls_no_discount_PM = Cordon_tolls_no_discount_PM + ROWSUM(94)
+
+     ; EV
+     MW[95] = mi.11.connected*mi.11.connected.t*( mi.5.@token_auto@ )*_occupancy
+     MW[96] = mi.11.connected*mi.11.connected.t*( mi.5.@token_auto@)
+     MW[97] = mi.11.connected*mi.11.connected.t*(MW[33])   ; Person minutes
+     MW[98] = mi.11.connected*mi.11.connected.t*(MW[34])   ; Vehicle minutes
+     MW[99] = mi.11.connected*mi.11.connected.t*(MW[35])   ; Person miles
+     MW[100] = mi.11.connected*mi.11.connected.t*(MW[36])   ; Vehicle miles
+     MW[101] = mi.11.connected*mi.11.connected.t*(MW[37])   ; Trip Cost
+     MW[102] = mi.11.connected*mi.11.connected.t*(MW[38])   ; Bridge Tolls
+     MW[103] = mi.11.connected*mi.11.connected.t*(MW[39])   ; Value Tolls
+     MW[104] = 0                                            ; Cordon Tolls (considering discounts)
+     MW[105] = 0                                            ; Cordon Tolls (without discounts)
+
+     IF (@auto@==2 || @auto@==4 || @auto@==6)
+       ; only for tolls
+       Value_tolls_w_discount_EV       = Value_tolls_w_discount_EV        + ROWSUM(103)
+       Value_tolls_no_discount_EV     = Value_tolls_no_discount_EV        + ROWSUM(103)
+     else
+       Value_tolls_w_discount_EV       = 0
+       Value_tolls_no_discount_EV      = 0
+     ENDIF
+
+     Person_trips_EV  = Person_trips_EV  + ROWSUM(95)
+     Vehicle_trips_EV = Vehicle_trips_EV + ROWSUM(96)
+     Person_min_EV    = Person_min_EV    + ROWSUM(97)
+     Vehicle_min_EV   = Vehicle_min_EV   + ROWSUM(98)
+     Person_miles_EV  = Person_miles_EV  + ROWSUM(99)
+     Vehicle_miles_EV = Vehicle_miles_EV + ROWSUM(100)
+     Total_cost_EV    = Total_cost_EV    + ROWSUM(101)
+     Bridge_tolls_EV  = Bridge_tolls_EV  + ROWSUM(102)
+     Cordon_tolls_w_discount_EV  = Cordon_tolls_w_discount_EV  + ROWSUM(104)
+     Cordon_tolls_no_discount_EV = Cordon_tolls_no_discount_EV + ROWSUM(105)    
+
+      Mode   = '@token_auto@' + '_air'
+      ; Daily results
       if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= "na",   Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
                                                             Person_min(10.2L),   Vehicle_min(10.2L),
                                                             Person_miles(10.2L), Vehicle_miles(10.2L),
@@ -774,6 +1622,51 @@ loop auto = 1,15
                                                             "na","na",
                                                             Bridge_tolls(10.2L), Value_tolls_w_discount(10.2L), Value_tolls_no_discount(10.2L),
                                                             Cordon_tolls_w_discount(10.2L), Cordon_tolls_no_discount(10.2L)
+      ; Time period results
+      Period = 'EA'
+      if(I = ZONES) PRINT PRINTO=2 CSV=T LIST= Period, "na",   Mode, Person_trips_EA(10.2L), Vehicle_trips_EA(10.2L),
+                                                            Person_min_EA(10.2L),   Vehicle_min_EA(10.2L),
+                                                            Person_miles_EA(10.2L), Vehicle_miles_EA(10.2L),
+                                                            Total_cost_EA(10.2L),
+                                                            "na","na",
+                                                            Bridge_tolls_EA(10.2L), Value_tolls_w_discount_EA(10.2L), Value_tolls_no_discount_EA(10.2L),
+                                                            Cordon_tolls_w_discount_EA(10.2L), Cordon_tolls_no_discount_EA(10.2L)      
+
+      Period = 'AM'
+      if(I = ZONES) PRINT PRINTO=3 CSV=T LIST= Period, "na",   Mode, Person_trips_AM(10.2L), Vehicle_trips_AM(10.2L),
+                                                            Person_min_AM(10.2L),   Vehicle_min_AM(10.2L),
+                                                            Person_miles_AM(10.2L), Vehicle_miles_AM(10.2L),
+                                                            Total_cost_AM(10.2L),
+                                                            "na","na",
+                                                            Bridge_tolls_AM(10.2L), Value_tolls_w_discount_AM(10.2L), Value_tolls_no_discount_AM(10.2L),
+                                                            Cordon_tolls_w_discount_AM(10.2L), Cordon_tolls_no_discount_AM(10.2L)                                                            
+
+      Period = 'MD'
+      if(I = ZONES) PRINT PRINTO=4 CSV=T LIST= Period, "na",   Mode, Person_trips_MD(10.2L), Vehicle_trips_MD(10.2L),
+                                                            Person_min_MD(10.2L),   Vehicle_min_MD(10.2L),
+                                                            Person_miles_MD(10.2L), Vehicle_miles_MD(10.2L),
+                                                            Total_cost_MD(10.2L),
+                                                            "na","na",
+                                                            Bridge_tolls_MD(10.2L), Value_tolls_w_discount_MD(10.2L), Value_tolls_no_discount_MD(10.2L),
+                                                            Cordon_tolls_w_discount_MD(10.2L), Cordon_tolls_no_discount_MD(10.2L)     
+
+      Period = 'PM'
+      if(I = ZONES) PRINT PRINTO=5 CSV=T LIST= Period, "na",   Mode, Person_trips_PM(10.2L), Vehicle_trips_PM(10.2L),
+                                                            Person_min_PM(10.2L),   Vehicle_min_PM(10.2L),
+                                                            Person_miles_PM(10.2L), Vehicle_miles_PM(10.2L),
+                                                            Total_cost_PM(10.2L),
+                                                            "na","na",
+                                                            Bridge_tolls_PM(10.2L), Value_tolls_w_discount_PM(10.2L), Value_tolls_no_discount_PM(10.2L),
+                                                            Cordon_tolls_w_discount_PM(10.2L), Cordon_tolls_no_discount_PM(10.2L) 
+
+      Period = 'EV'
+      if(I = ZONES) PRINT PRINTO=6 CSV=T LIST= Period, "na",   Mode, Person_trips_EV(10.2L), Vehicle_trips_EV(10.2L),
+                                                            Person_min_EV(10.2L),   Vehicle_min_EV(10.2L),
+                                                            Person_miles_EV(10.2L), Vehicle_miles_EV(10.2L),
+                                                            Total_cost_EV(10.2L),
+                                                            "na","na",
+                                                            Bridge_tolls_EV(10.2L), Value_tolls_w_discount_EV(10.2L), Value_tolls_no_discount_EV(10.2L),
+                                                            Cordon_tolls_w_discount_EV(10.2L), Cordon_tolls_no_discount_EV(10.2L)                                                             
     ENDRUN
   ENDIF ; for the first six auto modes
 
@@ -787,9 +1680,20 @@ Wait4Files files=CTRAMP1.script.end, CTRAMP2.script.end, CTRAMP3.script.end, CTR
            printfiles = merge, deldistribfiles = t, CheckReturnCode = t
 
 ; combine the income files into one
+; Daily
 * copy metrics\auto_times_da.csv+metrics\auto_times_datoll.csv+metrics\auto_times_sr2.csv+metrics\auto_times_sr2toll.csv+metrics\auto_times_sr3.csv+metrics\auto_times_sr3toll.csv+metrics\auto_times_taxi.csv+metrics\auto_times_tnc_single.csv+metrics\auto_times_tnc_shared.csv+metrics\auto_times_da_av_notoll.csv+metrics\auto_times_da_av_toll.csv+metrics\auto_times_s2_av_notoll.csv+metrics\auto_times_s2_av_toll.csv+metrics\auto_times_s3_av_notoll.csv+metrics\auto_times_s3_av_toll.csv+metrics\auto_times_zpv_av.csv metrics\auto_times.csv
+; EA
+* copy metrics\auto_times_EA_da.csv+metrics\auto_times_EA_datoll.csv+metrics\auto_times_EA_sr2.csv+metrics\auto_times_EA_sr2toll.csv+metrics\auto_times_EA_sr3.csv+metrics\auto_times_EA_sr3toll.csv+metrics\auto_times_EA_taxi.csv+metrics\auto_times_EA_tnc_single.csv+metrics\auto_times_EA_tnc_shared.csv+metrics\auto_times_EA_da_av_notoll.csv+metrics\auto_times_EA_da_av_toll.csv+metrics\auto_times_EA_s2_av_notoll.csv+metrics\auto_times_EA_s2_av_toll.csv+metrics\auto_times_EA_s3_av_notoll.csv+metrics\auto_times_EA_s3_av_toll.csv+metrics\auto_times_EA_zpv_av.csv metrics\auto_times_EA.csv
+; AM
+* copy metrics\auto_times_AM_da.csv+metrics\auto_times_AM_datoll.csv+metrics\auto_times_AM_sr2.csv+metrics\auto_times_AM_sr2toll.csv+metrics\auto_times_AM_sr3.csv+metrics\auto_times_AM_sr3toll.csv+metrics\auto_times_AM_taxi.csv+metrics\auto_times_AM_tnc_single.csv+metrics\auto_times_AM_tnc_shared.csv+metrics\auto_times_AM_da_av_notoll.csv+metrics\auto_times_AM_da_av_toll.csv+metrics\auto_times_AM_s2_av_notoll.csv+metrics\auto_times_AM_s2_av_toll.csv+metrics\auto_times_AM_s3_av_notoll.csv+metrics\auto_times_AM_s3_av_toll.csv+metrics\auto_times_AM_zpv_av.csv metrics\auto_times_AM.csv
+; MD
+* copy metrics\auto_times_MD_da.csv+metrics\auto_times_MD_datoll.csv+metrics\auto_times_MD_sr2.csv+metrics\auto_times_MD_sr2toll.csv+metrics\auto_times_MD_sr3.csv+metrics\auto_times_MD_sr3toll.csv+metrics\auto_times_MD_taxi.csv+metrics\auto_times_MD_tnc_single.csv+metrics\auto_times_MD_tnc_shared.csv+metrics\auto_times_MD_da_av_notoll.csv+metrics\auto_times_MD_da_av_toll.csv+metrics\auto_times_MD_s2_av_notoll.csv+metrics\auto_times_MD_s2_av_toll.csv+metrics\auto_times_MD_s3_av_notoll.csv+metrics\auto_times_MD_s3_av_toll.csv+metrics\auto_times_MD_zpv_av.csv metrics\auto_times_MD.csv
+; PM
+* copy metrics\auto_times_PM_da.csv+metrics\auto_times_PM_datoll.csv+metrics\auto_times_PM_sr2.csv+metrics\auto_times_PM_sr2toll.csv+metrics\auto_times_PM_sr3.csv+metrics\auto_times_PM_sr3toll.csv+metrics\auto_times_PM_taxi.csv+metrics\auto_times_PM_tnc_single.csv+metrics\auto_times_PM_tnc_shared.csv+metrics\auto_times_PM_da_av_notoll.csv+metrics\auto_times_PM_da_av_toll.csv+metrics\auto_times_PM_s2_av_notoll.csv+metrics\auto_times_PM_s2_av_toll.csv+metrics\auto_times_PM_s3_av_notoll.csv+metrics\auto_times_PM_s3_av_toll.csv+metrics\auto_times_PM_zpv_av.csv metrics\auto_times_PM.csv
+; EV
+* copy metrics\auto_times_EV_da.csv+metrics\auto_times_EV_datoll.csv+metrics\auto_times_EV_sr2.csv+metrics\auto_times_EV_sr2toll.csv+metrics\auto_times_EV_sr3.csv+metrics\auto_times_EV_sr3toll.csv+metrics\auto_times_EV_taxi.csv+metrics\auto_times_EV_tnc_single.csv+metrics\auto_times_EV_tnc_shared.csv+metrics\auto_times_EV_da_av_notoll.csv+metrics\auto_times_EV_da_av_toll.csv+metrics\auto_times_EV_s2_av_notoll.csv+metrics\auto_times_EV_s2_av_toll.csv+metrics\auto_times_EV_s3_av_notoll.csv+metrics\auto_times_EV_s3_av_toll.csv+metrics\auto_times_EV_zpv_av.csv metrics\auto_times_EV.csv
 ; delete the individual ones
-* del metrics\auto_times_*.csv
+;* del metrics\auto_times_*.csv
 
 ; tnc zpv
 RUN PGM = MATRIX
@@ -810,7 +1714,12 @@ RUN PGM = MATRIX
   FILEI ZDATI[1] = "landuse\tazData.dbf"  ; need cordon and cordon cost information
 
   ; Specify output file
-  FILEO PRINTO[1] = "metrics\auto_times.csv",APPEND=T
+  FILEO PRINTO[1] = "metrics\auto_times.csv",APPEND=T                      ; Daily output
+  FILEO PRINTO[2] = "metrics\auto_times_EA.csv",APPEND=T                   ; EA output
+  FILEO PRINTO[3] = "metrics\auto_times_AM.csv",APPEND=T                   ; AM output
+  FILEO PRINTO[4] = "metrics\auto_times_MD.csv",APPEND=T                   ; MD output
+  FILEO PRINTO[5] = "metrics\auto_times_PM.csv",APPEND=T                   ; PM output
+  FILEO PRINTO[6] = "metrics\auto_times_EV.csv",APPEND=T                   ; EV output
 
   ; Trips EA * Skims EA
   MW[ 1] =  0                                            ; Person minutes
@@ -899,12 +1808,150 @@ RUN PGM = MATRIX
   Cordon_tolls_w_discount  = Cordon_tolls_w_discount  + ROWSUM(49)
   Cordon_tolls_no_discount = Cordon_tolls_no_discount + ROWSUM(50)
 
+
+  _vtoll_am_nonzero = 0
+  _vtoll_md_nonzero = 0
+ 
+  ; Compute each time period's Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
+  ; EA
+  MW[51] = 0                ; Person Trips
+  MW[52] = mi.1.zpv_tnc     ; Vehicle Trips
+  MW[53] = MW[1]            ; Person minutes
+  MW[54] = MW[2]            ; Vehicle minutes
+  MW[55] = MW[3]            ; Person miles
+  MW[56] = MW[4]            ; Vehicle miles
+  MW[57] = MW[5]            ; Trip Cost
+  MW[58] = MW[6]            ; Bridge Tolls
+  MW[59] = MW[7]            ; Value Tolls
+  MW[60] = 0                ; Cordon Tolls (considering discounts)
+  MW[61] = 0                ; Cordon Tolls (without discounts)
+
+  Person_trips_EA  = Person_trips_EA  + ROWSUM(51)
+  Vehicle_trips_EA = Vehicle_trips_EA + ROWSUM(52)
+  Person_min_EA    = Person_min_EA    + ROWSUM(53)
+  Vehicle_min_EA   = Vehicle_min_EA   + ROWSUM(54)
+  Person_miles_EA  = Person_miles_EA  + ROWSUM(55)
+  Vehicle_miles_EA = Vehicle_miles_EA + ROWSUM(56)
+  Total_cost_EA    = Total_cost_EA    + ROWSUM(57)
+  Bridge_tolls_EA  = Bridge_tolls_EA  + ROWSUM(58)
+  Value_tolls_w_discount_EA   = Value_tolls_w_discount_EA   + ROWSUM(59)
+  Value_tolls_no_discount_EA  = Value_tolls_no_discount_EA  + ROWSUM(59)
+  Cordon_tolls_w_discount_EA  = Cordon_tolls_w_discount_EA  + ROWSUM(60)
+  Cordon_tolls_no_discount_EA = Cordon_tolls_no_discount_EA + ROWSUM(61)
+
   _vtoll_am_nonzero = 0
   _vtoll_md_nonzero = 0
 
+  ; AM
+  MW[62] = 0                                                    ; Person Trips
+  MW[63] = mi.2.zpv_tnc   ; Vehicle Trips
+  MW[64] = MW[8]            ; Person minutes
+  MW[65] = MW[9]            ; Vehicle minutes
+  MW[66] = MW[10]            ; Person miles
+  MW[67] = MW[11]            ; Vehicle miles
+  MW[68] = MW[12]            ; Trip Cost
+  MW[69] = MW[13]            ; Bridge Tolls
+  MW[70] = MW[14]            ; Value Tolls
+  MW[71] = MW[15]            ; Cordon Tolls (considering discounts)
+  MW[72] = MW[16]            ; Cordon Tolls (without discounts)
+
+  Person_trips_AM  = Person_trips_AM  + ROWSUM(62)
+  Vehicle_trips_AM = Vehicle_trips_AM + ROWSUM(63)
+  Person_min_AM    = Person_min_AM    + ROWSUM(64)
+  Vehicle_min_AM   = Vehicle_min_AM   + ROWSUM(65)
+  Person_miles_AM  = Person_miles_AM  + ROWSUM(66)
+  Vehicle_miles_AM = Vehicle_miles_AM + ROWSUM(67)
+  Total_cost_AM    = Total_cost_AM    + ROWSUM(68)
+  Bridge_tolls_AM  = Bridge_tolls_AM  + ROWSUM(69)
+  Value_tolls_w_discount_AM   = Value_tolls_w_discount_AM   + ROWSUM(70)
+  Value_tolls_no_discount_AM  = Value_tolls_no_discount_AM  + ROWSUM(70)
+  Cordon_tolls_w_discount_AM  = Cordon_tolls_w_discount_AM  + ROWSUM(71)
+  Cordon_tolls_no_discount_AM = Cordon_tolls_no_discount_AM + ROWSUM(72)
+
+  ; MD
+  MW[73] = 0                                                    ; Person Trips
+  MW[74] = mi.3.zpv_tnc  ; Vehicle Trips
+  MW[75] = MW[17]            ; Person minutes
+  MW[76] = MW[18]            ; Vehicle minutes
+  MW[77] = MW[19]            ; Person miles
+  MW[78] = MW[20]            ; Vehicle miles
+  MW[79] = MW[21]            ; Trip Cost
+  MW[80] = MW[22]            ; Bridge Tolls
+  MW[81] = MW[23]            ; Value Tolls
+  MW[82] = 0                     ; Cordon Tolls (considering discounts)
+  MW[83] = 0                     ; Cordon Tolls (without discounts)
+
+  Person_trips_MD  = Person_trips_MD  + ROWSUM(73)
+  Vehicle_trips_MD = Vehicle_trips_MD + ROWSUM(74)
+  Person_min_MD    = Person_min_MD    + ROWSUM(75)
+  Vehicle_min_MD   = Vehicle_min_MD   + ROWSUM(76)
+  Person_miles_MD  = Person_miles_MD  + ROWSUM(77)
+  Vehicle_miles_MD = Vehicle_miles_MD + ROWSUM(78)
+  Total_cost_MD    = Total_cost_MD    + ROWSUM(79)
+  Bridge_tolls_MD  = Bridge_tolls_MD  + ROWSUM(80)
+  Value_tolls_w_discount_MD   = Value_tolls_w_discount_MD   + ROWSUM(81)
+  Value_tolls_no_discount_MD  = Value_tolls_no_discount_MD  + ROWSUM(81)
+  Cordon_tolls_w_discount_MD  = Cordon_tolls_w_discount_MD  + ROWSUM(82)
+  Cordon_tolls_no_discount_MD = Cordon_tolls_no_discount_MD + ROWSUM(83)
+  
+  ; PM
+  MW[84] = 0                                                    ; Person Trips
+  MW[85] = mi.4.zpv_tnc ; Vehicle Trips
+  MW[86] = MW[24]            ; Person minutes
+  MW[87] = MW[25]            ; Vehicle minutes
+  MW[88] = MW[26]            ; Person miles
+  MW[89] = MW[27]            ; Vehicle miles
+  MW[90] = MW[28]            ; Trip Cost
+  MW[91] = MW[29]            ; Bridge Tolls
+  MW[92] = MW[30]            ; Value Tolls
+  MW[93] = MW[31]            ; Cordon Tolls (considering discounts)
+  MW[94] = MW[32]            ; Cordon Tolls (without discounts)
+
+  Person_trips_PM  = Person_trips_PM  + ROWSUM(84)
+  Vehicle_trips_PM = Vehicle_trips_PM + ROWSUM(85)
+  Person_min_PM    = Person_min_PM    + ROWSUM(86)
+  Vehicle_min_PM   = Vehicle_min_PM   + ROWSUM(87)
+  Person_miles_PM  = Person_miles_PM  + ROWSUM(88)
+  Vehicle_miles_PM = Vehicle_miles_PM + ROWSUM(89)
+  Total_cost_PM    = Total_cost_PM    + ROWSUM(90)
+  Bridge_tolls_PM  = Bridge_tolls_PM  + ROWSUM(91)
+  Value_tolls_w_discount_PM   = Value_tolls_w_discount_PM   + ROWSUM(92)
+  Value_tolls_no_discount_PM  = Value_tolls_no_discount_PM  + ROWSUM(92)
+  Cordon_tolls_w_discount_PM  = Cordon_tolls_w_discount_PM  + ROWSUM(93)
+  Cordon_tolls_no_discount_PM = Cordon_tolls_no_discount_PM + ROWSUM(94)
+  
+  ; EV    
+  MW[95] = 0                                                    ; Person Trips
+  MW[96] = mi.5.zpv_tnc       ; Vehicle Trips
+  MW[97] = MW[33]             ; Person minutes
+  MW[98] = MW[34]             ; Vehicle minutes
+  MW[99] = MW[35]             ; Person miles
+  MW[100] = MW[36]            ; Vehicle miles
+  MW[101] = MW[37]            ; Trip Cost
+  MW[102] = MW[38]            ; Bridge Tolls
+  MW[103] = MW[39]            ; Value Tolls
+  MW[104] = 0                 ; Cordon Tolls (considering discounts)
+  MW[105] = 0                 ; Cordon Tolls (without discounts)
+
+  Person_trips_EV  = Person_trips_EV  + ROWSUM(95)
+  Vehicle_trips_EV = Vehicle_trips_EV + ROWSUM(96)
+  Person_min_EV    = Person_min_EV    + ROWSUM(97)
+  Vehicle_min_EV   = Vehicle_min_EV   + ROWSUM(98)
+  Person_miles_EV  = Person_miles_EV  + ROWSUM(99)
+  Vehicle_miles_EV = Vehicle_miles_EV + ROWSUM(100)
+  Total_cost_EV    = Total_cost_EV    + ROWSUM(101)
+  Bridge_tolls_EV  = Bridge_tolls_EV  + ROWSUM(102)
+  Value_tolls_w_discount_EV   = Value_tolls_w_discount_EV   + ROWSUM(103)
+  Value_tolls_no_discount_EV  = Value_tolls_no_discount_EV  + ROWSUM(103)
+  Cordon_tolls_w_discount_EV  = Cordon_tolls_w_discount_EV  + ROWSUM(104)
+  Cordon_tolls_no_discount_EV = Cordon_tolls_no_discount_EV + ROWSUM(105)
+
+  _vtoll_am_nonzero = 0
+  _vtoll_md_nonzero = 0
   Mode   = 'zpv_tnc'
   Income = 'na'
-
+  
+  ; Daily results
   if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= Income, Mode, Person_trips(10.2L), Vehicle_trips(10.2L),
                                           Person_min(10.2L),   Vehicle_min(10.2L),
                                           Person_miles(10.2L), Vehicle_miles(10.2L),
@@ -912,6 +1959,51 @@ RUN PGM = MATRIX
                                           _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
                                           Bridge_tolls(10.2L), Value_tolls_w_discount(10.2L), Value_tolls_no_discount(10.2L),
                                           Cordon_tolls_w_discount(10.2L), Cordon_tolls_no_discount(10.2L)
+
+  ; Time period results
+  Period = 'EA'
+  if(I = ZONES) PRINT PRINTO=2 CSV=T LIST= Period, Income, Mode, Person_trips_EA(10.2L), Vehicle_trips_EA(10.2L),
+                                          Person_min_EA(10.2L),   Vehicle_min_EA(10.2L),
+                                          Person_miles_EA(10.2L), Vehicle_miles_EA(10.2L),
+                                          Total_cost_EA(10.2L),
+                                          _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                          Bridge_tolls_EA(10.2L), Value_tolls_w_discount_EA(10.2L), Value_tolls_no_discount_EA(10.2L),
+                                          Cordon_tolls_w_discount_EA(10.2L), Cordon_tolls_no_discount_EA(10.2L)  
+
+  Period = 'AM'
+  if(I = ZONES) PRINT PRINTO=3 CSV=T LIST= Period, Income, Mode, Person_trips_AM(10.2L), Vehicle_trips_AM(10.2L),
+                                          Person_min_AM(10.2L),   Vehicle_min_AM(10.2L),
+                                          Person_miles_AM(10.2L), Vehicle_miles_AM(10.2L),
+                                          Total_cost_AM(10.2L),
+                                          _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                          Bridge_tolls_AM(10.2L), Value_tolls_w_discount_AM(10.2L), Value_tolls_no_discount_AM(10.2L),
+                                          Cordon_tolls_w_discount_AM(10.2L), Cordon_tolls_no_discount_AM(10.2L)  
+
+  Period = 'MD'
+  if(I = ZONES) PRINT PRINTO=4 CSV=T LIST= Period, Income, Mode, Person_trips_MD(10.2L), Vehicle_trips_MD(10.2L),
+                                          Person_min_MD(10.2L),   Vehicle_min_MD(10.2L),
+                                          Person_miles_MD(10.2L), Vehicle_miles_MD(10.2L),
+                                          Total_cost_MD(10.2L),
+                                          _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                          Bridge_tolls_MD(10.2L), Value_tolls_w_discount_MD(10.2L), Value_tolls_no_discount_MD(10.2L),
+                                          Cordon_tolls_w_discount_MD(10.2L), Cordon_tolls_no_discount_MD(10.2L)  
+  Period = 'PM'
+  if(I = ZONES) PRINT PRINTO=5 CSV=T LIST= Period, Income, Mode, Person_trips_PM(10.2L), Vehicle_trips_PM(10.2L),
+                                          Person_min_PM(10.2L),   Vehicle_min_PM(10.2L),
+                                          Person_miles_PM(10.2L), Vehicle_miles_PM(10.2L),
+                                          Total_cost_PM(10.2L),
+                                          _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                          Bridge_tolls_PM(10.2L), Value_tolls_w_discount_PM(10.2L), Value_tolls_no_discount_PM(10.2L),
+                                          Cordon_tolls_w_discount_PM(10.2L), Cordon_tolls_no_discount_PM(10.2L)  
+  Period = 'EV'
+  if(I = ZONES) PRINT PRINTO=6 CSV=T LIST= Period, Income, Mode, Person_trips_EV(10.2L), Vehicle_trips_EV(10.2L),
+                                          Person_min_EV(10.2L),   Vehicle_min_EV(10.2L),
+                                          Person_miles_EV(10.2L), Vehicle_miles_EV(10.2L),
+                                          Total_cost_EV(10.2L),
+                                          _vtoll_am_nonzero(10L), _vtoll_md_nonzero(10L),
+                                          Bridge_tolls_EV(10.2L), Value_tolls_w_discount_EV(10.2L), Value_tolls_no_discount_EV(10.2L),
+                                          Cordon_tolls_w_discount_EV(10.2L), Cordon_tolls_no_discount_EV(10.2L)  
+
 ENDRUN
 
 
@@ -968,7 +2060,12 @@ RUN PGM = MATRIX
   ; Read Truck Operating Cost from Properties file
   Read File = "CTRAMP\scripts\block\hwyParam.block"
 
-  FILEO PRINTO[1] = "metrics\auto_times.csv",APPEND=T
+  FILEO PRINTO[1] = "metrics\auto_times.csv",APPEND=T                   ; Daily output
+  FILEO PRINTO[2] = "metrics\auto_times_EA.csv",APPEND=T                ; EA output
+  FILEO PRINTO[3] = "metrics\auto_times_AM.csv",APPEND=T                ; AM output
+  FILEO PRINTO[4] = "metrics\auto_times_MD.csv",APPEND=T                ; MD output
+  FILEO PRINTO[5] = "metrics\auto_times_PM.csv",APPEND=T                ; PM output
+  FILEO PRINTO[6] = "metrics\auto_times_EV.csv",APPEND=T                ; EV output
 
   ; Trips EA * Skims EA
   MW[1]   = (mi.1.vstruck * mi.6.timevsm) +
@@ -1363,6 +2460,109 @@ RUN PGM = MATRIX
   Value_tolls_w_discount   = Value_tolls_w_discount   + ROWSUM(66)
   Value_tolls_no_discount  = Value_tolls_no_discount  + ROWSUM(66)
 
+  ; Compute each time period's Trips, TripTime, TripDist, TripCost, BridgeToll, ValueToll
+  ; EA
+  ; NOTE that the zones may be unconnected, resulting in huge skim values, so we need to exclude those here
+  MW[67] = mi.11.connected*mi.11.connected.t*
+          (mi.1.vstruck + mi.1.struck + mi.1.mtruck + mi.1.ctruck + mi.1.vstrucktoll + mi.1.strucktoll + mi.1.mtrucktoll + mi.1.ctrucktoll)
+  MW[68] = mi.11.connected*mi.11.connected.t*(MW[1] + MW[6]) ; TripTime
+  MW[69] = mi.11.connected*mi.11.connected.t*(MW[2] + MW[7]) ; TripDist
+  MW[70] = mi.11.connected*mi.11.connected.t*(MW[3] + MW[8]) ; TripCost
+  MW[71] = mi.11.connected*mi.11.connected.t*(MW[4] + MW[9]) ; BridgeToll
+  MW[72] = mi.11.connected*mi.11.connected.t*(MW[5] +MW[10]) ; CordonToll
+  MW[73] = mi.11.connected*mi.11.connected.t*(MW[11]) ; ValueToll
+
+  Daily_Trips_EA   = Daily_Trips_EA   + ROWSUM(67)
+  TripTime_EA      = TripTime_EA      + ROWSUM(68)
+  TripDist_EA      = TripDist_EA      + ROWSUM(69)
+  TripCost_EA      = TripCost_EA      + ROWSUM(70)
+  Bridge_tolls_EA  = Bridge_tolls_EA  + ROWSUM(71)
+  Cordon_tolls_w_discount_EA  = Cordon_tolls_w_discount_EA  + ROWSUM(72)
+  Cordon_tolls_no_discount_EA = Cordon_tolls_no_discount_EA + ROWSUM(72) ;truck has no income-based discount
+  Value_tolls_w_discount_EA   = Value_tolls_w_discount_EA   + ROWSUM(73)
+  Value_tolls_no_discount_EA  = Value_tolls_no_discount_EA  + ROWSUM(73)
+
+  ; AM
+  MW[74] = mi.11.connected*mi.11.connected.t*
+          (mi.2.vstruck + mi.2.struck + mi.2.mtruck + mi.2.ctruck + mi.2.vstrucktoll + mi.2.strucktoll + mi.2.mtrucktoll + mi.2.ctrucktoll)
+  MW[75] = mi.11.connected*mi.11.connected.t*(MW[12] + MW[17]) ; TripTime
+  MW[76] = mi.11.connected*mi.11.connected.t*(MW[13] + MW[18]) ; TripDist
+  MW[77] = mi.11.connected*mi.11.connected.t*(MW[14] + MW[19]) ; TripCost
+  MW[78] = mi.11.connected*mi.11.connected.t*(MW[15] + MW[20]) ; BridgeToll
+  MW[79] = mi.11.connected*mi.11.connected.t*(MW[16] + MW[21]) ; CordonToll
+  MW[80] = mi.11.connected*mi.11.connected.t*(MW[22])          ; ValueToll
+
+  Daily_Trips_AM   = Daily_Trips_AM   + ROWSUM(74)
+  TripTime_AM      = TripTime_AM      + ROWSUM(75)
+  TripDist_AM      = TripDist_AM      + ROWSUM(76)
+  TripCost_AM      = TripCost_AM      + ROWSUM(77)
+  Bridge_tolls_AM  = Bridge_tolls_AM  + ROWSUM(78)
+  Cordon_tolls_w_discount_AM  = Cordon_tolls_w_discount_AM  + ROWSUM(79)
+  Cordon_tolls_no_discount_AM = Cordon_tolls_no_discount_AM + ROWSUM(79) ;truck has no income-based discount
+  Value_tolls_w_discount_AM   = Value_tolls_w_discount_AM   + ROWSUM(80)
+  Value_tolls_no_discount_AM  = Value_tolls_no_discount_AM  + ROWSUM(80)
+
+  ; MD
+  MW[81] = mi.11.connected*mi.11.connected.t*
+          (mi.3.vstruck + mi.3.struck + mi.3.mtruck + mi.3.ctruck + mi.3.vstrucktoll + mi.3.strucktoll + mi.3.mtrucktoll + mi.3.ctrucktoll)
+  MW[82] = mi.11.connected*mi.11.connected.t*(MW[23] + MW[28]) ; TripTime
+  MW[83] = mi.11.connected*mi.11.connected.t*(MW[24] + MW[29]) ; TripDist
+  MW[84] = mi.11.connected*mi.11.connected.t*(MW[25] + MW[30]) ; TripCost
+  MW[85] = mi.11.connected*mi.11.connected.t*(MW[26] + MW[31]) ; BridgeToll
+  MW[86] = mi.11.connected*mi.11.connected.t*(MW[27] + MW[32]) ; CordonToll
+  MW[87] = mi.11.connected*mi.11.connected.t*(MW[33]) ; ValueToll
+
+  Daily_Trips_MD   = Daily_Trips_MD   + ROWSUM(81)
+  TripTime_MD      = TripTime_MD      + ROWSUM(82)
+  TripDist_MD      = TripDist_MD      + ROWSUM(83)
+  TripCost_MD      = TripCost_MD      + ROWSUM(84)
+  Bridge_tolls_MD  = Bridge_tolls_MD  + ROWSUM(85)
+  Cordon_tolls_w_discount_MD  = Cordon_tolls_w_discount_MD  + ROWSUM(86)
+  Cordon_tolls_no_discount_MD = Cordon_tolls_no_discount_MD + ROWSUM(86) ;truck has no income-based discount
+  Value_tolls_w_discount_MD   = Value_tolls_w_discount_MD   + ROWSUM(87)
+  Value_tolls_no_discount_MD  = Value_tolls_no_discount_MD  + ROWSUM(87)  
+
+  ; PM
+  MW[88] = mi.11.connected*mi.11.connected.t*
+          (mi.4.vstruck + mi.4.struck + mi.4.mtruck + mi.4.ctruck + mi.4.vstrucktoll + mi.4.strucktoll + mi.4.mtrucktoll + mi.4.ctrucktoll)
+  MW[89] = mi.11.connected*mi.11.connected.t*(MW[34] + MW[39]) ; TripTime
+  MW[90] = mi.11.connected*mi.11.connected.t*(MW[35] + MW[40]) ; TripDist
+  MW[91] = mi.11.connected*mi.11.connected.t*(MW[36] + MW[41]) ; TripCost
+  MW[92] = mi.11.connected*mi.11.connected.t*(MW[37] + MW[42]) ; BridgeToll
+  MW[93] = mi.11.connected*mi.11.connected.t*(MW[38] + MW[43]) ; CordonToll
+  MW[94] = mi.11.connected*mi.11.connected.t*(MW[44])          ; ValueToll
+
+  Daily_Trips_PM   = Daily_Trips_PM   + ROWSUM(88)
+  TripTime_PM      = TripTime_PM      + ROWSUM(89)
+  TripDist_PM      = TripDist_PM      + ROWSUM(90)
+  TripCost_PM      = TripCost_PM      + ROWSUM(91)
+  Bridge_tolls_PM  = Bridge_tolls_PM  + ROWSUM(92)
+  Cordon_tolls_w_discount_PM  = Cordon_tolls_w_discount_PM  + ROWSUM(93)
+  Cordon_tolls_no_discount_PM = Cordon_tolls_no_discount_PM + ROWSUM(93) ;truck has no income-based discount
+  Value_tolls_w_discount_PM   = Value_tolls_w_discount_PM   + ROWSUM(94)
+  Value_tolls_no_discount_PM  = Value_tolls_no_discount_PM  + ROWSUM(94)
+
+  ; EV
+  MW[95] = mi.11.connected*mi.11.connected.t*
+          (mi.5.vstruck + mi.5.struck + mi.5.mtruck + mi.5.ctruck + mi.5.vstrucktoll + mi.5.strucktoll + mi.5.mtrucktoll + mi.5.ctrucktoll)
+  MW[96] = mi.11.connected*mi.11.connected.t*(MW[45] + MW[50]) ; TripTime
+  MW[97] = mi.11.connected*mi.11.connected.t*(MW[46] + Mw[51]) ; TripDist
+  MW[98] = mi.11.connected*mi.11.connected.t*(MW[47] + MW[52]) ; TripCost
+  MW[99] = mi.11.connected*mi.11.connected.t*(MW[48] + MW[53]) ; BridgeToll
+  MW[100] = mi.11.connected*mi.11.connected.t*(MW[49] + MW[54]) ; CordonToll
+  MW[101] = mi.11.connected*mi.11.connected.t*(MW[55]) ; ValueToll
+
+  Daily_Trips_EV   = Daily_Trips_EV   + ROWSUM(95)
+  TripTime_EV      = TripTime_EV      + ROWSUM(96)
+  TripDist_EV      = TripDist_EV      + ROWSUM(97)
+  TripCost_EV      = TripCost_EV      + ROWSUM(98)
+  Bridge_tolls_EV  = Bridge_tolls_EV  + ROWSUM(99)
+  Cordon_tolls_w_discount_EV  = Cordon_tolls_w_discount_EV  + ROWSUM(100)
+  Cordon_tolls_no_discount_EV = Cordon_tolls_no_discount_EV + ROWSUM(100) ;truck has no income-based discount
+  Value_tolls_w_discount_EV   = Value_tolls_w_discount_EV   + ROWSUM(101)
+  Value_tolls_no_discount_EV  = Value_tolls_no_discount_EV  + ROWSUM(101)
+
+  ; Daily rsults
   ; "Income,Mode,Daily Person Trips,Daily Vehicle Trips,Person Minutes,Vehicle Minutes,Person Miles,Vehicle Miles,Total Cost"
   if(I = ZONES) PRINT PRINTO=1 CSV=T LIST= "na", "truck", Daily_Trips(10.2L), Daily_Trips(10.2L),
                                                          TripTime(10.2L),   TripTime(10.2L),
@@ -1371,4 +2571,56 @@ RUN PGM = MATRIX
                                                          "na","na",
                                                          Bridge_tolls(10.2L), Value_tolls_w_discount(10.2L), Value_tolls_no_discount(10.2L),
                                                          Cordon_tolls_w_discount(10.2L), Cordon_tolls_no_discount(10.2L)
+  ; Time period results
+  Period = 'EA'
+  if(I = ZONES) PRINT PRINTO=2 CSV=T LIST= Period, "na", "truck", Daily_Trips_EA(10.2L), Daily_Trips_EA(10.2L),
+                                                         TripTime_EA(10.2L),   TripTime_EA(10.2L),
+                                                         TripDist_EA(10.2L),   TripDist_EA(10.2L),
+                                                         TripCost_EA(10.2L),
+                                                         "na","na",
+                                                         Bridge_tolls_EA(10.2L), Value_tolls_w_discount_EA(10.2L), Value_tolls_no_discount_EA(10.2L),
+                                                         Cordon_tolls_w_discount_EA(10.2L), Cordon_tolls_no_discount_EA(10.2L)
+
+  Period = 'AM'
+  if(I = ZONES) PRINT PRINTO=3 CSV=T LIST= Period, "na", "truck", Daily_Trips_AM(10.2L), Daily_Trips_AM(10.2L),
+                                                         TripTime_AM(10.2L),   TripTime_AM(10.2L),
+                                                         TripDist_AM(10.2L),   TripDist_AM(10.2L),
+                                                         TripCost_AM(10.2L),
+                                                         "na","na",
+                                                         Bridge_tolls_AM(10.2L), Value_tolls_w_discount_AM(10.2L), Value_tolls_no_discount_AM(10.2L),
+                                                         Cordon_tolls_w_discount_AM(10.2L), Cordon_tolls_no_discount_AM(10.2L)
+
+  Period = 'MD'
+  if(I = ZONES) PRINT PRINTO=4 CSV=T LIST= Period, "na", "truck", Daily_Trips_MD(10.2L), Daily_Trips_MD(10.2L),
+                                                         TripTime_MD(10.2L),   TripTime_MD(10.2L),
+                                                         TripDist_MD(10.2L),   TripDist_MD(10.2L),
+                                                         TripCost_MD(10.2L),
+                                                         "na","na",
+                                                         Bridge_tolls_MD(10.2L), Value_tolls_w_discount_MD(10.2L), Value_tolls_no_discount_MD(10.2L),
+                                                         Cordon_tolls_w_discount_MD(10.2L), Cordon_tolls_no_discount_MD(10.2L)
+  
+  Period = 'PM'
+  if(I = ZONES) PRINT PRINTO=5 CSV=T LIST= Period, "na", "truck", Daily_Trips_PM(10.2L), Daily_Trips_PM(10.2L),
+                                                         TripTime_PM(10.2L),   TripTime_PM(10.2L),
+                                                         TripDist_PM(10.2L),   TripDist_PM(10.2L),
+                                                         TripCost_PM(10.2L),
+                                                         "na","na",
+                                                         Bridge_tolls_PM(10.2L), Value_tolls_w_discount_PM(10.2L), Value_tolls_no_discount_PM(10.2L),
+                                                         Cordon_tolls_w_discount_PM(10.2L), Cordon_tolls_no_discount_PM(10.2L)
+
+  Period = 'EV'
+  if(I = ZONES) PRINT PRINTO=6 CSV=T LIST= Period, "na", "truck", Daily_Trips_EV(10.2L), Daily_Trips_EV(10.2L),
+                                                         TripTime_EV(10.2L),   TripTime_EV(10.2L),
+                                                         TripDist_EV(10.2L),   TripDist_EV(10.2L),
+                                                         TripCost_EV(10.2L),
+                                                         "na","na",
+                                                         Bridge_tolls_EV(10.2L), Value_tolls_w_discount_EV(10.2L), Value_tolls_no_discount_EV(10.2L),
+                                                         Cordon_tolls_w_discount_EV(10.2L), Cordon_tolls_no_discount_EV(10.2L)                                                         
 ENDRUN
+
+
+; Combine time perod results together
+
+* copy metrics\auto_times_EA.csv + metrics\auto_times_AM.csv + metrics\auto_times_MD.csv + metrics\auto_times_PM.csv + metrics\auto_times_EV.csv metrics\auto_timesbyTimePeriod.csv
+; delete the individual ones
+* del metrics\auto_times_*.csv

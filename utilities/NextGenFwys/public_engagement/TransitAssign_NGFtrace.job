@@ -1,0 +1,434 @@
+; ----------------------------------------------------------------------------------------------------------------
+; this is a copy of TransitAssign.job
+; except that token_debug_origin_list and token_debug_destination_list are different
+; I could have moved created environmental variables for token_debug_destination_list and token_debug_destination_list
+; But I like that these variables are directly specified in TransitAssign.job so decided to have a special copy for NGF
+; ----------------------------------------------------------------------------------------------------------------
+;
+; TransitAssign.job
+;
+; TP+ script to perform a transit assignment.  A total of 75 assignments are performed, accounting for five time
+; periods, three access/egress combinations, and five line-haul mode combinations.  The script first loops 
+; through five time periods, which are: (a) early AM, before 6 am; (b) AM peak period, 6 am to 10 am; (c) midday, 
+; 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; and, (e) evening, after 7 pm. Next the script loops through 
+; three access/egress combinations, which are: walk/transit/walk; drive/transit/walk; and walk/transit/drive.  
+; Next, the script loops through six line-haul mode combinations, which are: (a) long-haul premium or commuter 
+; rail; (b) medium-haul premium or heavy rail (BART) (c) medium-haul basic or express bus; (d) short-haul premium
+; or light rail; (e) short-haul basic or local bus.
+;
+; Please note that ferry is included in the short-haul premium or light rail line-haul options.  This was done to
+; reduce the number of skims that need to be created.  Because light rail and ferry do not compete with each other, 
+; travelers in corridors with light rail are presented with the light rail choice and travelers in corridors with
+; ferry are presented with the ferry choice. 
+;
+; The hierarchy used to create transit path options is as follows: (1) long-haul premium; (2) medium-haul premium; 
+; (3) medium-haul basic; (4) short-haul premium; and, (5) short-haul basic.  Using more traditional mode names: 
+; (1) commuter rail; (2) heavy rail; (3) express bus; (4) light rail/ferry; (5) local bus.  All modes lower than
+; the line-haul mode are made available when assigning the line-haul mode path, in an effort to create a set of
+; reasonable transit paths for the mode choice model to assess for each traveler. 
+;
+; The transit network coding uses the following mode codes: 
+;	(1)   centroids to walk auxiliary rail nodes/bus stops, or "walk access connectors";
+;	(2)   centroids to drive auxiliary nodes, or "drive access connectors";
+;	(3)   transit stop to transit stop walk connectors, or "stop-to-stop" or "stop-to-station auxiliary links";
+;	(4)   drive auxiliary nodes to station platforms, or "drive access walk funnel links";
+;	(5)   walk auxiliary nodes to station platforms, or "walk access walk funnel links";
+;	(6)   walk auxiliary rail nodes/bus stops to centroids, or "walk egress connectors";
+;	(7)   drive auxiliary nodes to centroids, or "drive egress connectors";
+;	(8)   not used;
+;	(9)   not used;
+;	(10)  through  (79) local bus modes, coded by, at least, provider; 
+;	(80)  through  (99) express bus modes, coded by provider;
+;	(100) through (109) ferry service, coded by provider;
+;	(110) through (119) light rail, coded by provider;
+;	(120) through (129) heavy rail, coded by provider;
+;	(130) through (139) commuter rail, coded by provider.
+;
+; Input:  (A) A trip table with travel segmented into the following origin-destination trips: 
+;              (1)  Drive alone non-value-toll paying
+;              (2)  Drive alone value toll paying
+;              (3)  Shared ride 2 non-value-toll paying
+;              (4)  Shared ride 2 value toll paying
+;              (5)  Shared ride 3+ non-value-toll paying
+;              (6)  Shared ride 3+ value toll paying
+;              (7)  Walk
+;              (8)  Bicycle
+;              (9)  Walk - local bus - walk
+;              (10) Walk - express bus - walk
+;              (11) Walk - light rail/ferry - walk
+;              (12) Walk - heavy rail - walk
+;              (13) Walk - commuter rail - walk
+;              (14) Drive - local bus - walk
+;              (15) Drive - express bus - walk
+;              (16) Drive - light rail/ferry - walk
+;              (17) Drive - heavy rail - walk
+;              (18) Drive - commuter rail - walk
+;              (19) Walk - local bus - drive
+;              (20) Walk - express bus - drive
+;              (21) Walk - light rail/ferry - drive
+;              (22) Walk - heavy rail - drive
+;              (23) Walk - commuter rail - drive
+;	  (B) A .block file listing all of the origin/destination fare files for transit services that 
+;             charge o/d fares (transit_faremat.block);
+;         (C) Origin/destination fare files listed in the .block file above (.far files);
+;	  (D) A .far file setting fares to links as necessary to account for all the odd fares in the bay area (Farelinks.far);
+;	  (E) A .far file setting the transfer fares for all the 139 by 139 modal interchanges (xfare.far);
+;     (F) A transit line file and a transit link file
+;	  (G) Numerous support link files that connect zones to transit stations via walking or bicycling (*transit_suplinks*.dat);
+;	  (I) A .block file that lists commands to combine headways for all line-haul modes when the difference in path time
+;             is less than plus or minus five minutes (transit_combined_headways.block);
+;         (J) A .block file containing access- and egress-mode-specific transfer prohibitor tables (transferprohibitors*.block);
+;
+;
+; Output: (A) A link database for each time-of-day, access/egress, and line-haul mode combination containing the following data:
+;              (1)  A - "a" node
+;              (2)  B - "b" node
+;              (3)  TIME - time, in minutes times 100 (e.g. 460 = 4.60 minutes)
+;              (4)  MODE - the mode number of this link (see above); note that A, B, and MODE define a unique link
+;              (5)  FREQ - one-half times the headway of transit service, which is the assumed wait time
+;              (6)  COLOR - code used for display purposes
+;              (7)  STOP_A - boolean, true if the "a" node is a stop on the transit service
+;              (8)  STOP_B - boolean, true if the "b" node is a stop on the transit route servicing this link
+;              (9)  DIST - distance, in miles times 100 (e.g. 230 = 2.30 miles)
+;              (10) NAME - the name of the transit service that serves the link; "*1" through "*9" denote support links
+;              (11) SEQ - link sequence of the line (i.e. a transit route is a collection of ordered links)
+;              (12) OWNER - expected to designate operating agency; not used in the model
+;              (13) AB_VOL - trips on the link moving from A to B
+;              (14) AB_BRDA - trips boarding at node A and then using this link
+;              (15) AB_XITA - not used
+;              (16) AB_BRDB - not used
+;              (17) AB_XITB - trips alighting at node B after using this link
+;              (18) BA_VOL - not used
+;              (19) BA_BRDA - not used
+;              (20) BA_XITA - not used
+;              (21) BA_BRDB - not used
+;              (22) BA_XITB - not used
+;         (B) A line-by-line summary for each time-of-day, access/egress, and line-haul mode combination containing the following data
+;             (note the output CSV file does not contain headers):
+;              (1)  NAME - the route name as specified in the line files 
+;              (2)  MODE - the mode code for the route (see above)
+;              (3)  OWNER - expected to be the designated operating agency; not used in the model
+;              (4)  FREQ - the route frequency, or average headway
+;              (5)  TIME - the time it takes to travers the route (in minutes)
+;              (6)  DIST - the route distance (in miles)
+;              (7)  BOARDS - total route boardings
+;              (8)  PAXMILES - passenger miles, the number of total miles passengers travel on the route
+;              (9)  PAXHOURS - passenger hours, the number of total hours passengers travel on the route
+;              (10) ID - specified in the script as the path name (access_line haul_egress)
+;
+; Notes:  (1) The "xyfactor = 2.0" parameter has been removed.  
+;
+; See also: (1) PrepAssign.job -- Creates the transit trip table from the trip list  
+;           (2) TransitSkims.job -- Identical procedures are used to generate level-of-service matrices
+;
+; version:  Travel Model One
+; authors:  dto, be (2014 02 03); dto (2010 06 30); gde; 
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+token_model_dir = '%MODEL_DIR%'
+
+; time period loop
+loop period = 1, 5
+
+   ; initialize counter to so that no more than 18 tasks are created
+   counter = 0
+   
+   ; set a list of origins to trace (comma-separated)
+   token_debug_origin_list = '577,578,580,581,582,583,584,585,644,650,541,542,543,544,465,466,278,279,280,256,257,201,202,203,204,205,889,890,899,900,946,967,969,1055,1056,1065,1058,1224,1225,1234,1235,1256,1257,1258,1259,1260,1261,1262'
+      
+   ; set a list of destinations to trace (comma-separated)
+   token_debug_destination_list = '1,2,14,110,968,969,427,450,429,839,356,378,381,340,341,1145,1175,1169,4,971,115,75,429,1019,558,871,355,311,257,608,1061,212,460,1113,777,188,1361,1146,742,1262,1439,1224,1299,1204,660,1342,1430,1168,707,1413,1310,1399'
+  
+   if (period = 1)   
+      token_period   = 'ea'
+      
+   elseif (period = 2)   
+      token_period   = 'am'
+      
+   elseif (period = 3)   
+      token_period   = 'md'
+      
+   elseif (period = 4)   
+      token_period   = 'pm'
+      
+   elseif (period = 5)   
+      token_period   = 'ev' 
+      
+   endif 
+
+   ; access/egress loop (walk/walk, auto/walk, walk/auto)
+   loop accegg = 1,3
+   
+      if (accegg = 1)         
+         token_access = 'wlk'
+         token_egress = 'wlk'      
+         token_boardpen = 'factor boardpen = 0, 20, 45, 50, 60'
+      elseif (accegg = 2)        
+         token_access = 'drv'
+         token_egress = 'wlk'    
+         token_boardpen = 'factor boardpen = 0, 30, 45, 50, 60'
+      elseif (accegg = 3)       
+         token_access = 'wlk'
+         token_egress = 'drv'       
+         token_boardpen = 'factor boardpen = 0, 30, 45, 50, 60'
+      endif
+   
+      ; line haul loop
+      loop path = 1, 5
+      
+         ; commuter rail or long-haul premium
+         if (path = 1)         
+
+            ; drive access/egress links to this mode (';' means no)
+            ; allow higher-class PNRs to be read in case of shared lots
+            token_drivelinks_express_bus   = ';'
+            token_drivelinks_light_rail    = ';'
+            token_drivelinks_ferry         = ';'
+            token_drivelinks_heavy_rail    = ';'
+            token_drivelinks_commuter_rail = ' '  
+               
+            ; no KNR access links to local bus
+            token_bus_acclinks_KNR = ';'
+            
+            ; no transit modes are excluded from this path
+            token_skipmodes = '; do not skip any modes for this path'
+            
+            ; mode-specific perceived time factors
+            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
+            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.1,   10*1.0' 
+            
+            ; three-letter path name
+            token_path = 'com'
+
+         ; heavy rail or medium-haul premium
+         elseif (path = 2)
+
+            ; drive access/egress links to this mode (';' means no)
+            ; allow higher-class PNRs to be read in case of shared lots
+            token_drivelinks_express_bus   = ';'
+            token_drivelinks_light_rail    = ';'
+            token_drivelinks_ferry         = ';'
+            token_drivelinks_heavy_rail    = ' '
+            token_drivelinks_commuter_rail = ' ' 
+            
+            ; no KNR access links to local bus
+            token_bus_acclinks_KNR = ';'
+            
+            ; commuter rail excluded from this path
+            token_skipmodes = 'skipmodes =  130-139'
+            
+            ; mode-specific perceived time factors
+            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
+            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.0,   10*1.5'
+            
+            ; three-letter path name
+            token_path = 'hvy'
+
+         ; express bus or medium-haul basic
+         elseif (path = 3)
+
+            ; drive access/egress links to this mode (';' means no)
+            ; allow higher-class PNRs to be read in case of shared lots
+            token_drivelinks_express_bus   = ' '
+            token_drivelinks_light_rail    = ';'
+            token_drivelinks_ferry         = ';'
+            token_drivelinks_heavy_rail    = ' '
+            token_drivelinks_commuter_rail = ' ' 
+            
+            ; KNR access links to local bus
+            token_bus_acclinks_KNR = ';'
+            
+            ; commuter rail and heavy rail excluded from this path
+            token_skipmodes = 'skipmodes =  130-139,120-139'
+            
+            ; mode-specific perceived time factors
+            ;                        support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
+            token_modefac = 'modefac = 9*2.0,  70*1.5,  20*1.0, 10*1.5,  10*1.5,   10*1.5,   10*1.5'
+            
+            ; three-letter path name
+            token_path = 'exp'
+
+
+         ; light rail (or ferry) or short-haul premium
+         elseif (path = 4)
+
+            ; drive access/egress links to this mode (';' means no)
+            ; allow higher-class PNRs to be read in case of shared lots
+            token_drivelinks_express_bus   = ' '
+            token_drivelinks_light_rail    = ' '
+            token_drivelinks_ferry         = ' '
+            token_drivelinks_heavy_rail    = ' '
+            token_drivelinks_commuter_rail = ' ' 
+            
+            ; no KNR access links to local bus
+            token_bus_acclinks_KNR = ';'
+            
+            ; commuter rail, heavy rail, and express bus excluded from this path
+            token_skipmodes = 'skipmodes =  130-139,120-139,80-99'
+            
+            ; mode-specific perceived time factors
+            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
+            token_modefac = 'modefac =    9*2.0,  70*1.5,  20*1.5, 10*1.0,  10*1.0,   10*1.5,   10*1.5'  
+            
+            ; three-letter path name
+            token_path = 'lrf'
+
+         ; local bus or short-haul basic
+         elseif (path = 5)
+         
+            ; drive access/egress links to this mode (';' means no)
+            ; allow higher-class PNRs to be read in case of shared lots
+            token_drivelinks_express_bus   = ' '
+            token_drivelinks_light_rail    = ' '
+            token_drivelinks_ferry         = ' '
+            token_drivelinks_heavy_rail    = ' '
+            token_drivelinks_commuter_rail = ' ' 
+            
+            ; KNR access links to local bus
+            token_bus_acclinks_KNR = ' '
+            
+            ; commuter rail, heavy rail, express bus, light rail, and ferry excluded from this path
+            token_skipmodes = 'skipmodes =  130-139,120-139,80-99,100-119'
+            
+            ; mode-specific perceived time factors
+            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
+            token_modefac = 'modefac  =   9*2.0,  70*1.0,  20*1.5, 10*1.5,  10*1.5,   10*1.5,   10*1.5'  
+            
+            ; three-letter path name
+            token_path = 'loc'
+
+         
+         endif
+
+         ; increment the counter used to identify the process number 
+         counter = counter + 1
+         
+         ; distribute the tasks
+         DistributeMultistep processid = "ctramp", processnum = @counter@,  commpath = '%COMMPATH%' 
+
+         run pgm = trnbuild
+             
+             ; use the highway network with the computed bus times 
+             filei neti = @token_period@_transit_background.net
+             
+             ; read in the 23-table matrix created by prepAssign.job (see header for content details)
+             filei mati = "@token_model_dir@\main\trips@token_period@.tpp"
+             
+             ; path parameter: do not list (write out) all of the subsequent input
+             parameters listinput = no
+
+             ; read in the fare matrices
+             read file = "@token_model_dir@\trn\transit_faremat.block"
+             read file = "@token_model_dir@\trn\farelinks.far"
+             read file = "@token_model_dir@\trn\xfare.far"
+        
+             ; output the link volumes          
+             fileo linko = trnlink@token_period@_@token_access@_@token_path@_@token_egress@.dbf
+             fileo linkvolo = trnlink@token_period@_@token_access@_@token_path@_@token_egress@.csv, format = csv
+
+             ; output the line volumes
+             fileo linevolo = trnline@token_period@_@token_access@_@token_path@_@token_egress@.csv,
+                                      id = @token_period@_@token_access@_@token_path@_@token_egress@, format = csv  
+     
+             ; the bus times are based on those computed in the highway network
+             hwytime = BUS_TIME
+
+             
+             ; read the transit line and link files
+             read file = "@token_model_dir@\trn\transitLines.link"
+             read file = transit@token_period@.lin        
+             
+             ; read in the generated support links
+             read file = @token_period@_transit_suplinks_walk.dat
+             
+             ; read in the generated drive access/egress links for this mode             
+             @token_drivelinks_express_bus@    read file = @token_period@_transit_suplinks_express_bus.dat
+             @token_drivelinks_light_rail@     read file = @token_period@_transit_suplinks_light_rail.dat
+             @token_drivelinks_ferry@          read file = @token_period@_transit_suplinks_ferry.dat
+             @token_drivelinks_heavy_rail@     read file = @token_period@_transit_suplinks_heavy_rail.dat
+             @token_drivelinks_commuter_rail@  read file = @token_period@_transit_suplinks_commuter_rail.dat  
+             
+             ; read in the generated KNR links for local bus
+             @token_bus_acclinks_KNR@    READ FILE = @token_period@_bus_acclinks_KNR.DAT
+             
+             ; set the service headways
+             freqperiod = @period@
+             
+             ; we do not need access links built
+             zoneaccess generate = no
+             
+             ; path parameter: 0 - best path by mode; 1 - single best path
+             parameters pathstyle = 0
+             
+             ; path parameter: we want to build paths
+             parameters buildpaths = t   
+             
+             ; path parameter: assumed walking speed is 3.0 miles per hour
+             parameters walkspeed = 3.0
+             
+             
+             ; path parameter: we do not use the route time coded in the line files; bus times are a function of highway times
+             parameters useruntime = n        
+             
+             ; path parameter: the maximum path time for a single route is 3 hours or 180 minutes
+             parameters maxruntime = 180
+             
+             ; path parameter: the maximum perceived path time for a single route is 5 hours or 300 minutes
+             parameters maxpathtime = 300
+             
+             ; perceived time factors: first boarding is free; second, third, and fourth boarding adds fiftenn perceived minutes; 
+             ; discourage more than four transfers with a 60 minute penalty
+             @token_boardpen@
+
+             ; perceived time factors: initial wait time is equivalent to 2.8 minutes of ride time for modes 10 through 255  
+             factor iwaitfac = 9*0, 130*2.8
+             
+             ; perceived time factors: transfer wait time is equivalent to 2.8 minutes of ride time for modes 1 through 255
+             factor xwaitfac = 139*2.8             
+             
+             ; use token_skipmodes to remove modes from the network per the hierarchy
+             @token_skipmodes@
+              
+             ; perceived time factors: slow down non-key modes by 50 percent; walk and drive by 100 percent; use token_modefac
+             @token_modefac@
+                                        
+             ; combine paths if runtimes differ by less than 5 minutes
+             read file = "@token_model_dir@\ctramp\scripts\block\transit_combined_headways.block"
+             
+             ; read in the transfer prohibitors file
+             read file = "@token_model_dir@\ctramp\scripts\block\transferprohibitors_@token_access@_trn_@token_egress@.block"
+                                                
+             ; specify the table to assign from the demand matrix
+             trips matrix = mi.1.@token_access@_@token_path@_@token_egress@,  assign = true
+             
+             ; specify which paths to trace
+             trace = (i = @token_debug_origin_list@ && j = @token_debug_destination_list@)
+            
+         endrun
+         
+         enddistributemultistep
+         
+      endloop ; line haul loop
+      
+   endloop ; access/egress mode loop 
+   
+   wait4files files = ctramp1.script.end, 
+   	              ctramp2.script.end, 
+   	              ctramp3.script.end, 
+   	              ctramp4.script.end, 
+   	              ctramp5.script.end, 
+   	              ctramp6.script.end, 
+   	              ctramp7.script.end, 
+   	              ctramp8.script.end, 
+   	              ctramp9.script.end, 
+   	              ctramp10.script.end, 
+   	              ctramp11.script.end, 
+   	              ctramp12.script.end, 
+   	              ctramp13.script.end, 
+   	              ctramp14.script.end, 
+   	              ctramp15.script.end,                
+           printfiles = save, DelDistribFiles = t, CheckReturnCode = t
+
+endloop ; time of day  

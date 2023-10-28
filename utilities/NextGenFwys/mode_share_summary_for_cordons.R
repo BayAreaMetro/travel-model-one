@@ -80,7 +80,8 @@ trips_cordon_mode_summary <-
   trips_cordon %>%
   group_by(CORDON_NAME_orig,
            CORDON_NAME_dest,
-           trip_mode) %>%
+           trip_mode,
+           tour_purpose) %>%
   summarise(simulated_trips = n()) %>%
   mutate(CORDON_orig = as.numeric(sub("\\-.*", "", CORDON_NAME_orig)),
          CORDON_dest = as.numeric(sub("\\-.*", "", CORDON_NAME_dest)),
@@ -90,6 +91,7 @@ trips_cordon_mode_summary <-
          CORDON_orig,
          CORDON_NAME_dest,
          CORDON_dest,
+         tour_purpose,
          trip_mode,
          simulated_trips,
          estimated_trips,

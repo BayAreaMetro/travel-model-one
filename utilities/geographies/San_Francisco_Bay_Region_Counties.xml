@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?><metadata>
+    <idinfo>
+        <citation>
+            <citeinfo>
+                <pubdate>20211103</pubdate>
+                <title>San Francisco Bay Region Counties</title>
+                <geoform>vector digital data</geoform>
+                <onlink>https://services3.arcgis.com/i2dkYWmb4wHvYPda/arcgis/rest/services/region_county/FeatureServer</onlink>
+            </citeinfo>
+        </citation>
+        <descript>
+            <abstract>County boundaries for the San Francisco Bay Region. Features were extracted from California 2020 TIGER/Line shapefile by the Metropolitan Transportation Commission. The 2020 TIGER/Line Shapefiles reflect available governmental unit 
+boundaries of the counties and equivalent entities as of May 28, 2021.Counties and equivalent entities are primary legal divisions of states. In most states, these entities are termed “counties.” Each county or statistically equivalent entity is assigned a 3-character FIPS code that is unique within a state.</abstract>
+            <purpose>Provides county boundaries for the San Francisco Bay Region. Features were extracted from statewide feature set by the Metropolitan Transportation Commission.</purpose>
+        </descript>
+        <status>
+            <progress>Complete</progress>
+            <update>As needed</update>
+        </status>
+        <keywords>
+            <theme>
+                <themekt>ISO 19115 Topic Categories</themekt>
+                <themekey>boundaries</themekey>
+            </theme>
+            <theme>
+                <themekt>None</themekt>
+                <themekey>administrative</themekey>
+                <themekey>united states census bureau</themekey>
+                <themekey>mtc</themekey>
+                <themekey>metropolitan transportation commission</themekey>
+                <themekey>boundary</themekey>
+                <themekey>county</themekey>
+                <themekey>tiger data</themekey>
+            </theme>
+        </keywords>
+        <accconst>Other Constraints</accconst>
+        <useconst>This data is intended for planning purposes only. The Metropolitan Transportation Commission (MTC) provides spatial and attribute data (also referred to as &amp;quot;information&amp;quot;) &amp;quot;as-is,&amp;quot; and shall incur no responsibility or liability as to the completeness, currentness, or accuracy of this information. The MTC, and other agencies/cities/counties from which the data were sourced, assume no responsibility arising from use of this information by individuals, businesses, or other public entities. The data is provided with no warranty of any kind, expressed or implied, including but not limited to the implied warranties of merchantability and fitness for a particular purpose. Do not make any decisions based on this data before validating your decision with the appropriate city, county, or government entity.</useconst>
+        <datacred>United States Census Bureau, 2021</datacred>
+    </idinfo>
+    <spdoinfo>
+        <direct>Vector</direct>
+    </spdoinfo>
+    <eainfo>
+        <detailed>
+            <enttyp>
+                <enttypl>region_county</enttypl>
+            </enttyp>
+            <attr>
+                <attrlabl>fipst</attrlabl>
+                <attrdef>State Federal Information Processing Series (FIPS) code.
+
+The only value for this attribute is 06 (California).</attrdef>
+            </attr>
+            <attr>
+                <attrlabl>fipco</attrlabl>
+                <attrdef>County Federal Information Processing Standards (FIPS) code.</attrdef>
+                <attrdomv>
+                                        					
+                    
+                    <edom>
+                                                						
+                        
+                        <edomv>001</edomv>
+                                                						
+                        
+                        <edomvd>Alameda County</edomvd>
+                                                					
+                    
+                    </edom>
+                                        				
+                
+                </attrdomv>
+                <attrdomv>
+                                        					
+                    
+                    <edom>
+                                                						
+                        
+                        <edomv>013</edomv>
+                                                						
+                        
+                        <edomvd>Contra Costa County</edomvd>
+                                                					
+                    
+                    </edom>
+                                        				
+                
+                </attrdomv>
+                <attrdomv>
+                                        					
+                    
+                    <edom>
+                                                						
+                        
+                        <edomv>041</edomv>
+                                                						
+                        
+                        <edomvd>Marin County</edomvd>
+                                                					
+                    
+                    </edom>
+                                        				
+                
+                </attrdomv>
+                <attrdomv>
+                                        					
+                    
+                    <edom>
+                                                						
+                        
+                        <edomv>055</edomv>
+                                                						
+                        
+                        <edomvd>Napa County</edomvd>
+                                                					
+                    
+                    </edom>
+                                        				
+                
+                </attrdomv>
+                <attrdomv>
+                                        					
+                    
+                    <edom>
+                                                						
+                        
+                        <edomv>075</edomv>
+                                                						
+                        
+                        <edomvd>San Francisco, City and County of</edomvd>
+                                                					
+                    
+                    </edom>
+                                        				
+                
+                </attrdomv>
+                <attrdomv>
+                                        					
+                    
+                    <edom>
+                                                						
+                        
+                        <edomv>081</edomv>
+                                                						
+                        
+                        <edomvd>San Mateo County</edomvd>
+                                                					
+                    
+                    </edom>
+                                        				
+                
+                </attrdomv>
+                <attrdomv>
+                                        					
+                    
+                    <edom>
+                                                						
+                        
+                        <edomv>085</edomv>
+                                                						
+                        
+                        <edomvd>Santa Clara County</edomvd>
+                                                					
+                    
+                    </edom>
+                                        				
+                
+                </attrdomv>
+                <attrdomv>
+                                        					
+                    
+                    <edom>
+                                                						
+                        
+                        <edomv>095</edomv>
+                                                						
+                        
+                        <edomvd>Solano County</edomvd>
+                                                					
+                    
+                    </edom>
+                                        				
+                
+                </attrdomv>
+                <attrdomv>
+                                        					
+                    
+                    <edom>
+                                                						
+                        
+                        <edomv>097</edomv>
+                                                						
+                        
+                        <edomvd>Sonoma County</edomvd>
+                                                					
+                    
+                    </edom>
+                                        				
+                
+                </attrdomv>
+            </attr>
+            <attr>
+                <attrlabl>coname</attrlabl>
+                <attrdef>Current county name.</attrdef>
+            </attr>
+        </detailed>
+    </eainfo>
+    <metainfo>
+        <metd>20211103</metd>
+        <metc>
+            <cntinfo>
+                <!--no contact person or organization name available-->
+            </cntinfo>
+        </metc>
+        <metstdn>FGDC Content Standard for Digital Geospatial Metadata</metstdn>
+        <metstdv>FGDC-STD-001-1998</metstdv>
+        <mettc>local time</mettc>
+    </metainfo>
+</metadata>
