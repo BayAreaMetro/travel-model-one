@@ -21,7 +21,7 @@ if (Sys.getenv("USERNAME") %in% c("lzorn")) {
   BOX_TM <- file.path("E:/Box/Modeling and Surveys")
 }
 
-TM1 <- file.path(GITHUB_DIR, 'travel-model-one', 'utilities', 'taz-data-baseyears')
+TM1 <- file.path(GITHUB_DIR, 'travel-model-one', 'utilities', 'taz-data-baseyears', '2023')
 
 # Load the EDD lmid data
 edd_lf <- read.csv('Labor_Force_and_Unemployment_Rate_for_California_Counties_20231026.csv')
