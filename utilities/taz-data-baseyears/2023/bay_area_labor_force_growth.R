@@ -67,4 +67,4 @@ target_ratio <- sum(edd_lf_bayarea$Employment[edd_lf_bayarea$Date == TARGET_DATE
 print(target_ratio)
 
 # Save the result to a CSV file
-write.csv(target_ratio, file.path(TM1, "2023", "lf_growth_ratio_2020_2023.csv"), row.names = FALSE)
+write.csv(target_ratio, file.path(TM1, "lf_growth_ratio_2020_2023.csv"), row.names = FALSE)
