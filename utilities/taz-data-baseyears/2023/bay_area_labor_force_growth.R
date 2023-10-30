@@ -1,42 +1,36 @@
+
+# Script for calculating growth in labor force from Jan 2020 to Jan 2023 as a ratio
+
+
 library(tidyverse)
-library(dplyr)
 
-# ACS 2017-2021 create TAZ data for 2020.R
-# Create "2020" TAZ data from ACS 2017-2021 
-# SI
-
-# Notes
-
-# The working directory is set as the location of the script. All other paths in TM1 will be relative.
-
-wd <- paste0(dirname(rstudioapi::getActiveDocumentContext()$path),"/")
+# Set working directory as the location of the script
+wd <- dirname(rstudioapi::getActiveDocumentContext()$path)
 setwd(wd)
 
-
 # Import Libraries
-
 suppressMessages(library(tidyverse))
 
-# path preliminaries
-USERPROFILE          <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
-BOX_TM               <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
-GITHUB_DIR           <- file.path(USERPROFILE,"Documents","GitHub")
+# Define paths
+USERPROFILE <- gsub("\\\\", "/", Sys.getenv("USERPROFILE"))
+BOX_TM <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
+GITHUB_DIR <- file.path(USERPROFILE, "Documents", "GitHub")
+
 if (Sys.getenv("USERNAME") %in% c("lzorn")) {
-  GITHUB_DIR         <- file.path("E://GitHub")
-  BOX_TM             <- file.path("E://Box/Modeling and Surveys")
+  GITHUB_DIR <- file.path("E:/GitHub")
+  BOX_TM <- file.path("E:/Box/Modeling and Surveys")
 }
-TM1                   <- file.path(GITHUB_DIR,'travel-model-one','utilities','taz-data-baseyears')
 
-# Load the EDD lmid data - downloaded from 
-# https://data.edd.ca.gov/Labor-Force-and-Unemployment-Rates/Labor-Force-and-Unemployment-Rate-for-California-C/r8rw-9pxx
+TM1 <- file.path(GITHUB_DIR, 'travel-model-one', 'utilities', 'taz-data-baseyears')
 
+# Load the EDD lmid data
 edd_lf <- read.csv('Labor_Force_and_Unemployment_Rate_for_California_Counties_20231026.csv')
-edd_lf$Date <- as.Date(edd_lf$Date,format = '%m/%d/%Y')
+edd_lf$Date <- as.Date(edd_lf$Date, format = '%m/%d/%Y')
 
 # Remove spaces from column names
 colnames(edd_lf) <- gsub('\\.', '_', colnames(edd_lf))
 
-# Filter for AreaType=="County"
+# Filter for Area_Type=="County"
 edd_lf <- edd_lf %>%
   filter(Area_Type == "County")
 
@@ -72,15 +66,5 @@ target_ratio <- sum(edd_lf_bayarea$Employment[edd_lf_bayarea$Date == TARGET_DATE
 
 print(target_ratio)
 
-
-write.csv(target_ratio,file.path(TM1,"2023","lf_growth_ratio_2020_2023.csv"),row.names = F)
-
-
-# # Plot the data
-# edd_lf_bayarea %>%
-#   group_by(Date,county_name) %>%
-#   summarize(Employment = sum(Employment)) %>%
-#   ggplot(aes(x = Date, y = Employment, color = county_name)) +
-#   geom_line() +
-#   labs(title = 'Employed Residents, Bay Area, 1992-2023')
-
+# Save the result to a CSV file
+write.csv(target_ratio, file.path(TM1, "2023", "lf_growth_ratio_2020_2023.csv"), row.names = FALSE)
