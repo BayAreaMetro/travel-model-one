@@ -4,7 +4,7 @@
 
 # Notes
 
-# The working directory is set as the location of the script. All other paths in Petrale will be relative.
+# The working directory is set as the location of the script. All other paths will be relative.
 
 wd <- paste0(dirname(rstudioapi::getActiveDocumentContext()$path),"/")
 setwd(wd)
@@ -22,34 +22,30 @@ GITHUB_DIR  <- file.path(USERPROFILE,"Documents","GitHub")
 if (Sys.getenv("USERNAME") %in% c("lzorn")) {
   GITHUB_DIR  <- file.path("E://GitHub")
 }
-PETRALE     <- file.path(GITHUB_DIR,"petrale","applications","travel_model_lu_inputs")
+BASEYEAR     <- file.path(GITHUB_DIR,"travel-model-one","utilities","taz-data-baseyears")
 
 # Bring in TAZ 2020 dataset, dataframe is named "final_2020"
 
-load(file.path(PETRALE,"2020","TAZ Land Use File 2020.rdata"))
+load(file.path(BASEYEAR,"2020","TAZ Land Use File 2020.rdata"))
 
 # Bring in California Department of Finance 2023/2020 county scaling values for population/hh-based variables
 
-DOF_scaling <- read_excel(file.path(PETRALE,"2023","P2A_County_Total.xlsx"),sheet = "2023_2020 Ratio")
+DOF_scaling <- read_excel(file.path(BASEYEAR,"2023","P2A_County_Total.xlsx"),sheet = "2023_2020 Ratio")
 
-# Use total employment from 2023/2020 to scale by county for employment-related variables
+# Bring in 2023 data and TAZ-county equivalency for joining
 
-employment_2023        <- read.csv(file.path(PETRALE,"2023","employment_2020_with_QCEW_pct_change_applied.csv"),header = T) 
-employment_2023_joiner <- employment_2023 %>% select(TAZ1454,TOTEMP_2023=TOTEMP)
+employment_2023        <- read.csv(file.path(BASEYEAR,"2023","employment_2020_with_QCEW_pct_change_applied.csv"),header = T) 
+county_joiner          <- final_2020 %>% select(ZONE,County_Name)
 
-employment_2020      <- read.csv(file.path(PETRALE,"2020","Employment","lodes_wac_employment.csv"),header = T) %>% 
-  select(TAZ1454,TOTEMP_2020=TOTEMP)
+# Use total employment from 2023/2020 from EDD to scale by county for employment-related variables
+# Summary script to create scaling factor is here: 
+# https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/taz-data-baseyears/2023/bay_area_labor_force_growth.R
 
-county_joiner<- final_2020 %>% select(ZONE,County_Name)
-
-employment_scaling <- left_join(employment_2020,employment_2023_joiner,by="TAZ1454") %>% 
-  summarize(TOTEMP_2020=sum(TOTEMP_2020),TOTEMP_2023=sum(TOTEMP_2023)) %>% 
-  mutate(Ratio_2023_2020=TOTEMP_2023/TOTEMP_2020) %>% 
-  ungroup()
+employment_scaling  <- read.csv(file.path(BASEYEAR,"2023","lf_growth_ratio_2020_2023.csv"),header = T) 
 
 # Create vector for regional scaling
 
-Ratio_2023_2020 <- as.numeric(employment_scaling[1,3])
+Employ_ratio_2023_2020     <- as.numeric(employment_scaling[1,1])
 
 # Select out population/housing scaling vars (scaled by population change), 
 # employment scaling vars (scaled by employment change), and non-scaled vars
@@ -78,7 +74,7 @@ pop_scaling_vars_updated <- left_join(pop_scaling_vars,DOF_scaling[,c("County_Na
   mutate_at(c(6:39),~round(.,0))
 
 emp_scaling_vars_updated <- emp_scaling_vars %>% 
-  mutate_at(c(6:12),~.*Ratio_2023_2020) %>% 
+  mutate_at(c(6:12),~.*Employ_ratio_2023_2020) %>% 
   mutate_at(c(6:12),~round(.,0))
 
 # Join everything back together and append 2023 employment file too
@@ -239,7 +235,7 @@ write.csv(popsim_vars_county, "TAZ1454 2023 Popsim Vars County.csv", row.names =
 
 # Bring in superdistrict name for joining
 
-superdistrict <- read_excel(file.path(PETRALE,"2015","TAZ1454 2015 Land Use.xlsx"),sheet="2010 District Summary") %>% 
+superdistrict <- read_excel(file.path(BASEYEAR,"2015","TAZ1454 2015 Land Use.xlsx"),sheet="2010 District Summary") %>% 
   select("DISTRICT","DISTRICT_NAME"="DISTRICT NAME") %>% 
   filter(!(DISTRICT=="Bay Area")) %>% 
   mutate(DISTRICT=as.numeric(DISTRICT))
