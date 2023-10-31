@@ -15,7 +15,7 @@ nodes_list = pd.read_csv('../transit_background_nodes.csv')
 transit_nodes = pd.read_csv('../all_transit_nodes.csv', names=['Node'])
 
 
-pnr_nodes = nodes_list[nodes_list['PNR']=='1.0'][['N', 'X', 'Y']]
+pnr_nodes = nodes_list[nodes_list['PNR'].isin([1.0, '1.0'])][['N', 'X', 'Y']]
 pnr_nodes['coord'] = pnr_nodes[['X','Y']].values.tolist()
 
 transit_nodes=transit_nodes.drop_duplicates()
@@ -56,7 +56,7 @@ pnr_to_stops['Stop']=pnr_to_stops['Stop'].apply(lambda x: str(x).replace('.0',''
 pnr_to_stops['COL_1'] = 'PNR'
 pnr_to_stops['COL_2'] = 'NODE='+pnr_to_stops['PNR']+'-'+pnr_to_stops['Stop']
 pnr_to_stops['COL_3'] = 'ZONES=1-6593'
-
+pnr_to_stops=pnr_to_stops[pnr_to_stops['PNR']!=pnr_to_stops['Stop']]
 pnr_connector = r'../pnr_connectors.txt'
 
 with open (pnr_connector, 'w') as f:
