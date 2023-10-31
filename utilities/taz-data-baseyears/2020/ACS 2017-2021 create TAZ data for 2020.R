@@ -764,7 +764,7 @@ temp_rounded_adjusted <- temp1 %>%
 # Add in population over age 62 variable that is also needed (but should not be rounded, so added at the end)
   
     select (-age_factor,-gq_factor,-tenure_factor, -size_factor,-hhworkers_factor,-kids_factor,-income_factor,-empres_init_factor,
-            -empres_factor,-sum_age,-sum_groupquarters,-sum_size,-sum_hhworkers,-sum_kids,-sum_income,-sum_empres, 
+            -empres_factor,-sum_age,-sum_groupquarters,-sum_tenure,-sum_size,-sum_hhworkers,-sum_kids,-sum_income,-sum_empres, 
             -sum_ethnicity,-ethnicity_factor) %>% 
     mutate_if(is.numeric,round,0) %>%
     mutate(SHPOP62P = if_else(TOTPOP==0,0,AGE62P/TOTPOP)) %>% 
