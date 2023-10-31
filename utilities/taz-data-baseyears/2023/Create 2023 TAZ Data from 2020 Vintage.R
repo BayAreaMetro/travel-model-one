@@ -69,9 +69,9 @@ non_scaling_vars <- final_2020 %>% select("ZONE", "DISTRICT", "SD", "COUNTY", "C
   "SHPOP62P","HSENROLL", "COLLFTE", "COLLPTE")
 
 pop_scaling_vars_updated <- left_join(pop_scaling_vars,DOF_scaling[,c("County_Name","Ratio_2023_2020")],by=c("County_Name")) %>% 
-  mutate_at(c(6:39),~.*Ratio_2023_2020) %>% 
+  mutate_at(c(6:41),~.*Ratio_2023_2020) %>% 
   select(-Ratio_2023_2020) %>% 
-  mutate_at(c(6:39),~round(.,0))
+  mutate_at(c(6:41),~round(.,0))
 
 emp_scaling_vars_updated <- emp_scaling_vars %>% 
   mutate_at(c(6:12),~.*Employ_ratio_2023_2020) %>% 
