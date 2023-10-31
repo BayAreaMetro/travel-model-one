@@ -58,7 +58,7 @@ pop_scaling_vars <- final_2020 %>% select("ZONE", "DISTRICT", "SD", "COUNTY", "C
                                           "hh_size_4_plus", "hh_wrks_0", "hh_wrks_1", "hh_wrks_2", "hh_wrks_3_plus", 
                                           "hh_kids_yes", "hh_kids_no", "AGE62P", "gq_type_univ", "gq_type_mil", 
                                           "gq_type_othnon", "gqpop", "white_nonh", "black_nonh", "asian_nonh", 
-                                          "other_nonh", "hispanic", "TOTPOP")
+                                          "other_nonh", "hispanic", "TOTPOP", "hh_own","hh_rent")
 
 emp_scaling_vars <- final_2020 %>% select("ZONE", "DISTRICT", "SD", "COUNTY", "County_Name","EMPRES",  
                                           "pers_occ_management", "pers_occ_professional", "pers_occ_services", 
@@ -92,6 +92,7 @@ final_2023 <- scaling_vars_updated %>%
    mutate (
     max_age    = max.col(.[c("AGE0004","AGE0519","AGE2044","AGE4564","AGE65P")],     ties.method="first"),
     max_gq     = max.col(.[c("gq_type_univ","gq_type_mil","gq_type_othnon")],        ties.method="first"),
+    max_tenure = max.col(.[c("hh_own","hh_rent")],                                   ties.method="first"),
     max_size   = max.col(.[c("hh_size_1","hh_size_2","hh_size_3","hh_size_4_plus")], ties.method="first"),
     max_workers= max.col(.[c("hh_wrks_0","hh_wrks_1","hh_wrks_2","hh_wrks_3_plus")], ties.method="first"),
     max_kids   = max.col(.[c("hh_kids_yes","hh_kids_no")],                           ties.method="first"),
@@ -130,6 +131,11 @@ final_2023 <- scaling_vars_updated %>%
     gq_type_univ   = if_else(max_gq==1,gq_type_univ+(gqpop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_univ),
     gq_type_mil    = if_else(max_gq==2,gq_type_mil+(gqpop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_mil),
     gq_type_othnon = if_else(max_gq==3,gq_type_othnon+(gqpop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_othnon),
+
+    #Balance HH tenure categories
+
+    hh_own         = if_else(max_tenure==1,hh_own       +(TOTHH-(hh_own+hh_rent)),hh_own),
+    hh_rent        = if_else(max_tenure==2,hh_rent      +(TOTHH-(hh_own+hh_rent)),hh_rent),
    
     #Balance HH size categories
     
@@ -175,7 +181,7 @@ final_2023 <- scaling_vars_updated %>%
   
 # Remove max variables
   
-  select(-max_age,-max_gq,-max_size,-max_workers,-max_kids,-max_income,-max_occ, -max_eth) 
+  select(-max_age,-max_gq,-max_size,-max_workers,-max_kids,-max_income,-max_occ, -max_eth, -max_tenure) 
   
 ### End of recoding
 # Write out subsets of final 2020 data
@@ -207,7 +213,7 @@ write.csv(summed23, "TAZ1454 2023 District Summary.csv", row.names = FALSE, quot
 
 popsim_vars <- final_2023 %>% 
   rename(TAZ=ZONE,gq_tot_pop=gqpop)%>%
-  select(TAZ,TOTHH,TOTPOP,hh_size_1,hh_size_2,hh_size_3,hh_size_4_plus,hh_wrks_0,hh_wrks_1,hh_wrks_2,hh_wrks_3_plus,
+  select(TAZ,TOTHH,TOTPOP,hh_own,hh_rent,hh_size_1,hh_size_2,hh_size_3,hh_size_4_plus,hh_wrks_0,hh_wrks_1,hh_wrks_2,hh_wrks_3_plus,
          hh_kids_no,hh_kids_yes,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,
          gq_tot_pop,gq_type_univ,gq_type_mil,gq_type_othnon)
 
