@@ -30,17 +30,7 @@ set PATH=%PATH%;C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\
 :: Start the cube cluster
 Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
-set MAXITERATIONS=3
-
-:: --------TrnAssignment Setup -- Fast Configuration
-:: NOTE the blank ones should have a space
-set TRNCONFIG=FAST
-set COMPLEXMODES_DWELL= 
-set COMPLEXMODES_ACCESS= 
-set iter=3 
-
-:: in a full model run, the following is done in RunIteration.bat
-:: --------------------------------------------------------------------------
 :: run transit assignment in iteration 3 with trace
-:: note that trnAssign_trace.bat includes a subset of the commands in CTRAMP\scripts\skims\trnAssign.bat
-call X:\travel-model-one-master\utilities\NextGenFwys\public_engagement\trnAssign_trace.bat
+set iter=3
+cd trn\TransitAssignment.iter%ITER%
+runtpp X:\travel-model-one-master\utilities\NextGenFwys\public_engagement\TransitAssign_NGFtrace.jo
