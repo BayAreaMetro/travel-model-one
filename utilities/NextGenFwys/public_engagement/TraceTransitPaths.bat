@@ -33,4 +33,4 @@ Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 :: run transit assignment in iteration 3 with trace
 set iter=3
 cd trn\TransitAssignment.iter%ITER%
-runtpp X:\travel-model-one-master\utilities\NextGenFwys\public_engagement\TransitAssign_NGFtrace.jo
+runtpp X:\travel-model-one-master\utilities\NextGenFwys\public_engagement\TransitAssign_NGFtrace.job
