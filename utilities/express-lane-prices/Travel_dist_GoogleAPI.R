@@ -51,10 +51,9 @@ fwy_unique_D <-
   unique(fwy_LongLat[c("ExitReadPoint","exit_input")])
 
 # specify Google Distance Matrix API: https://developers.google.com/maps/documentation/distance-matrix/overview
-# Lufeng Lin's API: AIzaSyArCJ6Q_igPK9PrtbZqbXtu2AfTkbhv7yw
 # A free tier is provided - $200 monthly credit. This is enough for 40,000 Distance Matrix calls 
 # or 20,000 Distance Matrix Advanced calls
-google_api_key <- "AIzaSyArCJ6Q_igPK9PrtbZqbXtu2AfTkbhv7yw"
+google_api_key <- "YOUR KEY"
 set.api.key(google_api_key)
 
  
