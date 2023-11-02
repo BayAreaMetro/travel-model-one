@@ -23,6 +23,7 @@ call CTRAMP\runtime\SetPath.bat
 Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 ::  Set the IP address of the host machine which sends tasks to the client machines 
+set HOST_IP_ADDRESS=10.6.0.4
 if %computername%==MODEL2-A            set HOST_IP_ADDRESS=192.168.1.206
 if %computername%==MODEL2-B            set HOST_IP_ADDRESS=192.168.1.207
 if %computername%==MODEL2-C            set HOST_IP_ADDRESS=192.168.1.208
@@ -217,7 +218,7 @@ runtpp CTRAMP\scripts\skims\NonMotorizedSkims.job
 if ERRORLEVEL 2 goto done
 
 :: Step 4.5: Build initial transit files
-set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
+::set PYTHONPATH=%USERPROFILE%\Documents\GitHub\NetworkWrangler;%USERPROFILE%\Documents\GitHub\NetworkWrangler\_static
 python CTRAMP\scripts\skims\transitDwellAccess.py NORMAL NoExtraDelay Simple complexDwell %COMPLEXMODES_DWELL% complexAccess %COMPLEXMODES_ACCESS%
 if ERRORLEVEL 2 goto done
 
@@ -228,7 +229,7 @@ if ERRORLEVEL 2 goto done
 ::
 :: ------------------------------------------------------------------------------------------------------
 
-: iter0
+:iter0
 
 :: Set the iteration parameters
 set ITER=0
@@ -246,13 +247,16 @@ set PREV_WGT=0.00
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
+:: called again due to python2 not getting activated in conda env...
+call CTRAMP\runtime\SetPath.bat
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 7:  Prepare for iteration 1 and execute RunIteration batch file
 ::
 :: ------------------------------------------------------------------------------------------------------
 
-: iter1
+:iter1
 
 :: Set the iteration parameters
 set ITER=1
@@ -270,13 +274,16 @@ if ERRORLEVEL 1 goto done
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
+:: called again due to python2 not getting activated in conda env...
+call CTRAMP\runtime\SetPath.bat
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 8:  Prepare for iteration 2 and execute RunIteration batch file
 ::
 :: ------------------------------------------------------------------------------------------------------
 
-: iter2
+:iter2
 
 :: Set the iteration parameters
 set ITER=2
@@ -294,6 +301,8 @@ if ERRORLEVEL 1 goto done
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
+:: called again due to python2 not getting activated in conda env...
+call CTRAMP\runtime\SetPath.bat
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -318,6 +327,9 @@ if ERRORLEVEL 1 goto done
 :: Call RunIteration batch file
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
+
+:: called again due to python2 not getting activated in conda env...
+call CTRAMP\runtime\SetPath.bat
 
 :: Shut down java
 C:\Windows\SysWOW64\taskkill /f /im "java.exe"
@@ -386,7 +398,7 @@ if ERRORLEVEL 2 goto done
 
 :: Extract key files
 call extractkeyfiles
-c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
+@REM c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
 
 : cleanup
 
