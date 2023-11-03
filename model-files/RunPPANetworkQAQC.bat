@@ -169,6 +169,10 @@ set PREV_ITER=0
 set WGT=1.0
 set PREV_WGT=0.00
 
+:: Assign the demand matrices to the highway network
+runtpp CTRAMP\scripts\assign\HwyAssign.job
+if ERRORLEVEL 2 goto done
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Subset taken from trnAssign.bat
@@ -233,35 +237,21 @@ echo START TRNASSIGN BuildTransitNetworks %DATE% %TIME% >> ..\..\logs\feedback.r
 
 :: Prepare the highway network for use by the transit network
 runtpp ..\..\CTRAMP\scripts\skims\PrepHwyNet.job
-if ERRORLEVEL 2 (
-  set TRN_ERRORLEVEL=2
-  goto donedone
-)
+if ERRORLEVEL 2 goto done
 
 :: Create the transit networks
 runtpp ..\..\CTRAMP\scripts\skims\BuildTransitNetworks.job
-if ERRORLEVEL 2 (
-  set TRN_ERRORLEVEL=2
-  goto donedone
-)
+if ERRORLEVEL 2 goto done
 
 
 :transitSubAssign
 
 :: Assign the transit trips to the transit network
 runtpp ..\..\CTRAMP\scripts\assign\TransitAssign_NetworkQAQC.job
-if ERRORLEVEL 2 (
-  set TRN_ERRORLEVEL=2
-  echo ERRORLEVEL is %ERRORLEVEL%
-  goto donedone
-)
+if ERRORLEVEL 2 goto done
 :: And skim
 runtpp ..\..\CTRAMP\scripts\skims\TransitSkims.job
-if ERRORLEVEL 2 (
-  set TRN_ERRORLEVEL=2
-  echo ERRORLEVEL is %ERRORLEVEL%
-  goto donedone
-)
+if ERRORLEVEL 2 goto done
 
 :: Copy skims to skim folder and rename
 FOR %%A in (%ALLTRIPMODES% %ALLTOURMODES%) DO (
@@ -274,6 +264,53 @@ FOR %%A in (%ALLTRIPMODES% %ALLTOURMODES%) DO (
 
 cd ..
 cd ..
+
+
+:: Move assigned networks to a iteration-specific directory
+mkdir hwy\iter%ITER%      
+
+move hwy\LOADEA.net hwy\iter%ITER%\LOADEA.net
+move hwy\LOADAM.net hwy\iter%ITER%\LOADAM.net
+move hwy\LOADMD.net hwy\iter%ITER%\LOADMD.net
+move hwy\LOADPM.net hwy\iter%ITER%\LOADPM.net
+move hwy\LOADEV.net hwy\iter%ITER%\LOADEV.net
+
+:: Give the default TP+ variables more intuitive names
+runtpp CTRAMP\scripts\feedback\RenameAssignmentVariables.job
+if ERRORLEVEL 2 goto done
+
+:: Average the demand for this and the previous iteration and compute a speed estimate for each link 
+IF %ITER% GTR 1 (
+	runtpp CTRAMP\scripts\feedback\AverageNetworkVolumes.job
+	if ERRORLEVEL 2 goto done
+	runtpp CTRAMP\scripts\feedback\CalculateSpeeds.job
+	if ERRORLEVEL 2 goto done
+) ELSE (
+	copy hwy\iter%ITER%\LOADEA_renamed.net hwy\iter%ITER%\avgLOADEA.net /Y
+	copy hwy\iter%ITER%\LOADAM_renamed.net hwy\iter%ITER%\avgLOADAM.net /Y
+	copy hwy\iter%ITER%\LOADMD_renamed.net hwy\iter%ITER%\avgLOADMD.net /Y
+	copy hwy\iter%ITER%\LOADPM_renamed.net hwy\iter%ITER%\avgLOADPM.net /Y
+	copy hwy\iter%ITER%\LOADEV_renamed.net hwy\iter%ITER%\avgLOADEV.net /Y
+)
+
+:: Compute network statistics to measure convergence
+runtpp CTRAMP\scripts\feedback\TestNetworkConvergence.job
+if ERRORLEVEL 2 goto done
+
+:: Combine the time-of-day-specific networks into a single network
+runtpp CTRAMP\scripts\feedback\MergeNetworks.job  
+if ERRORLEVEL 2 goto done                
+
+:: Place a copy of the loaded networks into the root \hwy directory for access by the next iteration
+copy hwy\iter%ITER%\avgLOADEA.net hwy\avgLOADEA.net /Y
+copy hwy\iter%ITER%\avgLOADAM.net hwy\avgLOADAM.net /Y
+copy hwy\iter%ITER%\avgLOADMD.net hwy\avgLOADMD.net /Y
+copy hwy\iter%ITER%\avgLOADPM.net hwy\avgLOADPM.net /Y
+copy hwy\iter%ITER%\avgLOADEV.net hwy\avgLOADEV.net /Y
+
+:: Delete temporary files
+del hwy\iter%ITER%\x*.net
+
 
 :: Create the automobile level-of-service matrices
 runtpp CTRAMP\scripts\skims\HwySkims.job
