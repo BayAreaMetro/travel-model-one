@@ -26,7 +26,6 @@ EXOGENOUS_ROOT = BOX_ROOT / "Plan Bay Area 2050+/Federal and State Approvals/CAR
 CHSR_ROOT = EXOGENOUS_ROOT / "CHSR/CHSR_data_from_DB-ECO_July2023"
 
 MODEL_INPUTS_ROOT = BOX_ROOT / "Modeling and Surveys/Development/Travel_Model_1.6/Model_Inputs/CHSR" # check this
-# MODEL_INPUTS_ROOT = pathlib.Path(".") # Don't commit
 ACCESS_OUTPUT = MODEL_INPUTS_ROOT / "tripsHsr_YYYY.csv"  # year
 
 # Bay Area HSR stations to MTC TAZs
@@ -236,14 +235,15 @@ if __name__ == '__main__':
     for year in YEARS:
         int_ext_trips_by_year_df = int_ext_trips_df.loc[int_ext_trips_df.year == year]
         ACCESS_OUTPUT_FILE = pathlib.Path(str(ACCESS_OUTPUT).replace("YYYY", str(year)))
-        int_ext_trips_by_year_df[['ORIG_TAZ1454','DEST_TAZ1454',
+        output_df = int_ext_trips_by_year_df[['ORIG_TAZ1454','DEST_TAZ1454',
                                    'DA_EA','S2_EA','TAXI_EA','TRANSIT_EA',
                                    'DA_AM','S2_AM','TAXI_AM','TRANSIT_AM',
                                    'DA_MD','S2_MD','TAXI_MD','TRANSIT_MD',
                                    'DA_PM','S2_PM','TAXI_PM','TRANSIT_PM',
-                                   'DA_EV','S2_EV','TAXI_EV','TRANSIT_EV']].to_csv(
-                                       ACCESS_OUTPUT_FILE, index=False, float_format='%.5f')
-        print("Wrote {:,} rows to {}".format(len(int_ext_trips_by_year_df), ACCESS_OUTPUT_FILE))
+                                   'DA_EV','S2_EV','TAXI_EV','TRANSIT_EV']].copy()
+        output_df.sort_values(by=['ORIG_TAZ1454','DEST_TAZ1454'], inplace=True)
+        output_df.to_csv(ACCESS_OUTPUT_FILE, index=False, float_format='%.5f')
+        print("Wrote {:,} rows to {}".format(len(output_df), ACCESS_OUTPUT_FILE))
 
     summary_df = int_ext_trips_df.groupby(by=['type','year','DEST_TAZ1454','STATION']).agg(
         {'AUTO':'sum','TAXI':'sum','TRANSIT':'sum'})
