@@ -12,6 +12,12 @@
 
 token_model_dir = '%MODEL_DIR%'
 
+run pgm = matrix
+   FILEO MATO[1] = dummy_assign_matrix.tpp, MO=1
+   PAR ZONES=1454
+   MW[1] = 0.1
+endrun
+
 ; time period loop
 loop period = 1, 5
 
@@ -187,12 +193,6 @@ loop period = 1, 5
 
          ; increment the counter used to identify the process number 
          counter = counter + 1
-
-         run pgm = matrix
-            FILEO MATO[1] = dummy_assign_matrix.tpp, MO=1
-            PAR ZONES=1454
-            MW[1] = 0.1
-         endrun
          
          ; distribute the tasks
          DistributeMultistep processid = "ctramp", processnum = @counter@,  commpath = '%COMMPATH%' 
