@@ -10,6 +10,7 @@
 #     For trips from external zones, the zones are manually mapped to external MTC zones based on
 #     the nearest freeway/directions.
 #     Columns include: ORIG_TAZ1454,DEST_TAZ1454,[DA,S2,TAXI,TRANSIT]_[EA,AM,MD.PM,EV]
+#   tripsHsr_long.csv
 # See also:
 #   convert_access_trips_to_matrix.job
 #
@@ -25,7 +26,7 @@ BOX_ROOT = pathlib.Path("E:\Box")
 EXOGENOUS_ROOT = BOX_ROOT / "Plan Bay Area 2050+/Federal and State Approvals/CARB Technical Methodology/Exogenous Forces"
 CHSR_ROOT = EXOGENOUS_ROOT / "CHSR/CHSR_data_from_DB-ECO_July2023"
 
-MODEL_INPUTS_ROOT = BOX_ROOT / "Modeling and Surveys/Development/Travel_Model_1.6/Model_Inputs/CHSR" # check this
+MODEL_INPUTS_ROOT = BOX_ROOT / "Modeling and Surveys/Development/Travel_Model_1.6/Model_Inputs/CHSR"
 ACCESS_OUTPUT = MODEL_INPUTS_ROOT / "tripsHsr_YYYY.csv"  # year
 
 # Bay Area HSR stations to MTC TAZs
@@ -206,6 +207,10 @@ if __name__ == '__main__':
                                             (access_trips_df.external_merge=='both')].copy()
     external_trips_df.drop(columns=['ORIG_TAZ1454'], inplace=True)
     external_trips_df.rename(columns={'MTC_ex_TAZ':'ORIG_TAZ1454'}, inplace=True)
+
+    # collapse since many external trips come through the same MTC_ex_TAZ/ORIG_TAZ1454
+    external_trips_df = external_trips_df.groupby(by=['year','STATION','DEST_TAZ1454','ORIG_TAZ1454']).agg(
+        {'AUTO':'sum','TAXI':'sum','TRANSIT':'sum'}).reset_index()
     external_trips_df['type'] = 'external'
 
     # put internal and external together
@@ -244,6 +249,24 @@ if __name__ == '__main__':
         output_df.sort_values(by=['ORIG_TAZ1454','DEST_TAZ1454'], inplace=True)
         output_df.to_csv(ACCESS_OUTPUT_FILE, index=False, float_format='%.5f')
         print("Wrote {:,} rows to {}".format(len(output_df), ACCESS_OUTPUT_FILE))
+
+    # create long version
+    ACCESS_OUTPUT_FILE = pathlib.Path(str(ACCESS_OUTPUT).replace("YYYY", "long"))
+    output_df = pandas.wide_to_long(
+        df        = int_ext_trips_df[[
+                        'type','year','ORIG_TAZ1454','DEST_TAZ1454',
+                        'DA_EA','S2_EA','TAXI_EA','TRANSIT_EA',
+                        'DA_AM','S2_AM','TAXI_AM','TRANSIT_AM',
+                        'DA_MD','S2_MD','TAXI_MD','TRANSIT_MD',
+                        'DA_PM','S2_PM','TAXI_PM','TRANSIT_PM',
+                        'DA_EV','S2_EV','TAXI_EV','TRANSIT_EV']],
+        stubnames = ['DA','S2','TAXI','TRANSIT'],
+        i         = ['type','year','ORIG_TAZ1454','DEST_TAZ1454'],
+        j         = 'timeperiod',
+        sep       = '_',
+        suffix    = '(EA|AM|MD|PM|EV)').reset_index()
+    output_df.to_csv(ACCESS_OUTPUT_FILE, index=False, float_format='%.5f')
+    print("Wrote {:,} rows to {}".format(len(output_df), ACCESS_OUTPUT_FILE))
 
     summary_df = int_ext_trips_df.groupby(by=['type','year','DEST_TAZ1454','STATION']).agg(
         {'AUTO':'sum','TAXI':'sum','TRANSIT':'sum'})
