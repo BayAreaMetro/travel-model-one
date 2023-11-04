@@ -9,13 +9,15 @@ Files in this directory
 
 See October 2023 task, [Update interregional rail (CAHSR) travel assumptions](https://app.asana.com/0/1204085012544660/1203768378006034/f)
 
-* `createInputTripTablesFromHSR.py` - Script to read the HSR model access tables and convert CHSR zones to
+* [`createInputTripTablesFromHSR.py`](createInputTripTablesFromHSR.py) - Script to read the HSR model access tables and convert CHSR zones to
   TM1 zones. Outputs trips to the Bay Area HSR tables from within-region and external.  This script uses
   [Box: CHSR_data_from_DB-ECO_July2023 (internal only)](https://mtcdrive.box.com/s/pbf7j2taz45ulfl22ltauorninx6wwq6)
   and includes assumptions regarding annual-to-daily factors, daily-to-timeperiod distributions, and
   person trips to vehicle trip conversions.
 
-## Travel Model One v0.6
+* [`convert_access_trips_to_matrix.job`](convert_access_trips_to_matrix.job)
+
+## Travel Model One v0.6-v1.5
 
 See June 2016 task, [Add high speed rail external demand](https://app.asana.com/0/13098083395690/97041507197227/f)
 
@@ -35,3 +37,5 @@ These files have been superceded by the above.
   `renumberHRSRtoTM1.csv`.  It outputs `INPUT\nonres\tripsHsrXX_YYYY.tpp` where `xx` is a timeperiod and
   `YYYY` is the model year.  Asana task: Add high speed rail external demand > [Create input trip tables for HSR access/egress](https://app.asana.com/0/15119358130897/141338152083782)
 
+* [`export_TM1.5_trip_matrix_to_csv.job`](export_TM1.5_trip_matrix_to_csv.job) exports matrices from this
+  process to CSV to visualize alongside more recent versions
