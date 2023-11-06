@@ -1,9 +1,11 @@
 ; 
 ; Extract TM1.5 / RTP2021 input file into long form for comparison with TM1.6 / RTP2025 version
 ;
+; TOO: verify, but I think DA and SR2 are vehicle trips, and TRANSIT, WALK are person trips
+;
 
 ; header
-*echo type,year,ORIG_TAZ1454,DEST_TAZ1454,timeperiod,DA,S2,TRANSIT,WALK > "E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_inputs\CHSR\tripsHsr_RTP2021_long.csv"
+*echo year,ORIG_TAZ1454,DEST_TAZ1454,timeperiod,mode,trips> "E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_inputs\CHSR\tripsHsr_RTP2021_long.csv"
 
 loop year_idx = 1,3
 
@@ -15,30 +17,32 @@ loop year_idx = 1,3
     token_year = '2050'
   endif
 
-  run PGM=MATRIX
-    filei mati[1] = "M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\nonres\nonres_02\tripsHsrEA_@token_year@.tpp"
-    filei mati[2] = "M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\nonres\nonres_02\tripsHsrAM_@token_year@.tpp"
-    filei mati[3] = "M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\nonres\nonres_02\tripsHsrMD_@token_year@.tpp"
-    filei mati[4] = "M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\nonres\nonres_02\tripsHsrPM_@token_year@.tpp"
-    filei mati[5] = "M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\nonres\nonres_02\tripsHsrEV_@token_year@.tpp"
+  loop timeperiod_idx=1,5
+    if (timeperiod_idx = 1)
+      token_timeperiod = 'EA'
+    elseif (timeperiod_idx = 2)
+      token_timeperiod = 'AM'
+    elseif (timeperiod_idx = 3)
+      token_timeperiod = 'MD'
+    elseif (timeperiod_idx = 4)
+      token_timeperiod = 'PM'
+    elseif (timeperiod_idx = 5)
+      token_timeperiod = 'EV'
+    endif
 
-    fileo printo[1] = "E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_inputs\CHSR\tripsHsr_RTP2021_long.csv",  APPEND=T
+    run PGM=MATRIX
+      filei mati[1] = "M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\nonres\nonres_02\tripsHsr@token_timeperiod@_@token_year@.tpp"
+      fileo printo[1] = "E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_inputs\CHSR\tripsHsr_RTP2021_long.csv",  APPEND=T
 
-    JLOOP
-      IF ((I>1454) || (J>1454))
-        _INTEXT = 'external'
-      ELSE
-        _INTEXT = 'internal'
-      ENDIF
-      ; SF, Millbrae, San Jose, Gilroy (no 4th and king)
-      IF ((I==14) || (I==240) || (I==538) || (I==707) || (J==14) || (J==240) || (J==538) || (J==707))
-        PRINT CSV=T PRINTO=1 LIST=_INTEXT, @token_year@(12.0LRS), i(12.0LRS), j(12.0LRS), 'EA', MI.1.DA(12.5LRS), MI.1.SR2(12.5LRS), MI.1.TRANSIT(12.5LRS), MI.1.WALK(12.5LRS)
-        PRINT CSV=T PRINTO=1 LIST=_INTEXT, @token_year@(12.0LRS), i(12.0LRS), j(12.0LRS), 'AM', MI.2.DA(12.5LRS), MI.2.SR2(12.5LRS), MI.2.TRANSIT(12.5LRS), MI.2.WALK(12.5LRS)
-        PRINT CSV=T PRINTO=1 LIST=_INTEXT, @token_year@(12.0LRS), i(12.0LRS), j(12.0LRS), 'MD', MI.3.DA(12.5LRS), MI.3.SR2(12.5LRS), MI.3.TRANSIT(12.5LRS), MI.3.WALK(12.5LRS)
-        PRINT CSV=T PRINTO=1 LIST=_INTEXT, @token_year@(12.0LRS), i(12.0LRS), j(12.0LRS), 'PM', MI.4.DA(12.5LRS), MI.4.SR2(12.5LRS), MI.4.TRANSIT(12.5LRS), MI.4.WALK(12.5LRS)
-        PRINT CSV=T PRINTO=1 LIST=_INTEXT, @token_year@(12.0LRS), i(12.0LRS), j(12.0LRS), 'EV', MI.5.DA(12.5LRS), MI.5.SR2(12.5LRS), MI.5.TRANSIT(12.5LRS), MI.5.WALK(12.5LRS)
-      ENDIF
-    ENDJLOOP
-  ENDRUN
-
-endloop
+      JLOOP
+        ; SF, Millbrae, San Jose, Gilroy (no 4th and king)
+        IF ((I==14) || (I==240) || (I==538) || (I==707) || (J==14) || (J==240) || (J==538) || (J==707))
+          IF (MI.1.DA > 0)   PRINT CSV=T PRINTO=1 LIST=@token_year@(12.0LR), i(12.0LR), j(12.0LR), '@token_timeperiod@',      'DA', MI.1.DA(12.5LR)
+          IF (MI.1.SR2 > 0)  PRINT CSV=T PRINTO=1 LIST=@token_year@(12.0LR), i(12.0LR), j(12.0LR), '@token_timeperiod@',     'SR2', MI.1.SR2(12.5LR)
+          IF (MI.1.SR2 > 0)  PRINT CSV=T PRINTO=1 LIST=@token_year@(12.0LR), i(12.0LR), j(12.0LR), '@token_timeperiod@', 'TRANSIT', MI.1.TRANSIT(12.5LR)
+          IF (MI.1.SR2 > 0)  PRINT CSV=T PRINTO=1 LIST=@token_year@(12.0LR), i(12.0LR), j(12.0LR), '@token_timeperiod@',    'WALK', MI.1.WALK(12.5LR)
+        ENDIF
+      ENDJLOOP
+    ENDRUN
+  endloop ; timeperiod_idx
+endloop ; year_idx

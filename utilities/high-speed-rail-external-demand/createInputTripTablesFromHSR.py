@@ -9,7 +9,7 @@
 #     For trips from within-MTC-region, the trips are allocated to MTC zones using area-based calculations.
 #     For trips from external zones, the zones are manually mapped to external MTC zones based on
 #     the nearest freeway/directions.
-#     Columns include: ORIG_TAZ1454,DEST_TAZ1454,[DA,S2,TAXI,TRANSIT]_[EA,AM,MD.PM,EV]
+#     Columns include: ORIG_TAZ1454,DEST_TAZ1454,[DA,SR2,TAXI,TRANSIT]_[EA,AM,MD.PM,EV]
 #   tripsHsr_long.csv
 # See also:
 #   convert_access_trips_to_matrix.job
@@ -62,7 +62,7 @@ TIME_OF_DAY_DISTRIBUTION = {
 #
 AUTO_PERSON_TRIPS_TO_VEH_TRIPS = { # from above
     'DA': 5848 / 9276,           # DA veh trips  / total personal auto person trips
-    'S2': (1147+196+137) / 9276, # S2+ veh trips / total personal auto person trips
+    'SR2': (1147+196+137) / 9276, # SR2+ veh trips / total personal auto person trips
 }
 TAXI_PERSON_TRIPS_TO_VEH_TRIPS = 2427/2865  # from above, taxi/tnc veh trips / person trips
 print("Assuming AUTO_PERSON_TRIPS_TO_VEH_TRIPS: {}".format(AUTO_PERSON_TRIPS_TO_VEH_TRIPS))
@@ -224,13 +224,13 @@ if __name__ == '__main__':
 
     # convert person trips to vehicle trips
     int_ext_trips_df['DA']   = int_ext_trips_df['AUTO'] * AUTO_PERSON_TRIPS_TO_VEH_TRIPS['DA']
-    int_ext_trips_df['S2']   = int_ext_trips_df['AUTO'] * AUTO_PERSON_TRIPS_TO_VEH_TRIPS['S2']
+    int_ext_trips_df['SR2']   = int_ext_trips_df['AUTO'] * AUTO_PERSON_TRIPS_TO_VEH_TRIPS['SR2']
     int_ext_trips_df['TAXI'] = int_ext_trips_df['TAXI'] * TAXI_PERSON_TRIPS_TO_VEH_TRIPS
     # convert auto person trips to 
     # distribute across time periods
     for timeperiod in TIME_OF_DAY_DISTRIBUTION.keys():
         int_ext_trips_df['DA_{}'.format(timeperiod)     ] = int_ext_trips_df['DA'     ]*TIME_OF_DAY_DISTRIBUTION[timeperiod]
-        int_ext_trips_df['S2_{}'.format(timeperiod)     ] = int_ext_trips_df['S2'     ]*TIME_OF_DAY_DISTRIBUTION[timeperiod]
+        int_ext_trips_df['SR2_{}'.format(timeperiod)     ] = int_ext_trips_df['SR2'     ]*TIME_OF_DAY_DISTRIBUTION[timeperiod]
         int_ext_trips_df['TAXI_{}'.format(timeperiod)   ] = int_ext_trips_df['TAXI'   ]*TIME_OF_DAY_DISTRIBUTION[timeperiod]
         int_ext_trips_df['TRANSIT_{}'.format(timeperiod)] = int_ext_trips_df['TRANSIT']*TIME_OF_DAY_DISTRIBUTION[timeperiod]
     int_ext_trips_df.reset_index(drop=False, inplace=True)
@@ -241,11 +241,11 @@ if __name__ == '__main__':
         int_ext_trips_by_year_df = int_ext_trips_df.loc[int_ext_trips_df.year == year]
         ACCESS_OUTPUT_FILE = pathlib.Path(str(ACCESS_OUTPUT).replace("YYYY", str(year)))
         output_df = int_ext_trips_by_year_df[['ORIG_TAZ1454','DEST_TAZ1454',
-                                   'DA_EA','S2_EA','TAXI_EA','TRANSIT_EA',
-                                   'DA_AM','S2_AM','TAXI_AM','TRANSIT_AM',
-                                   'DA_MD','S2_MD','TAXI_MD','TRANSIT_MD',
-                                   'DA_PM','S2_PM','TAXI_PM','TRANSIT_PM',
-                                   'DA_EV','S2_EV','TAXI_EV','TRANSIT_EV']].copy()
+                                   'DA_EA','SR2_EA','TAXI_EA','TRANSIT_EA',
+                                   'DA_AM','SR2_AM','TAXI_AM','TRANSIT_AM',
+                                   'DA_MD','SR2_MD','TAXI_MD','TRANSIT_MD',
+                                   'DA_PM','SR2_PM','TAXI_PM','TRANSIT_PM',
+                                   'DA_EV','SR2_EV','TAXI_EV','TRANSIT_EV']].copy()
         output_df.sort_values(by=['ORIG_TAZ1454','DEST_TAZ1454'], inplace=True)
         output_df.to_csv(ACCESS_OUTPUT_FILE, index=False, float_format='%.5f')
         print("Wrote {:,} rows to {}".format(len(output_df), ACCESS_OUTPUT_FILE))
@@ -254,17 +254,25 @@ if __name__ == '__main__':
     ACCESS_OUTPUT_FILE = pathlib.Path(str(ACCESS_OUTPUT).replace("YYYY", "long"))
     output_df = pandas.wide_to_long(
         df        = int_ext_trips_df[[
-                        'type','year','ORIG_TAZ1454','DEST_TAZ1454',
-                        'DA_EA','S2_EA','TAXI_EA','TRANSIT_EA',
-                        'DA_AM','S2_AM','TAXI_AM','TRANSIT_AM',
-                        'DA_MD','S2_MD','TAXI_MD','TRANSIT_MD',
-                        'DA_PM','S2_PM','TAXI_PM','TRANSIT_PM',
-                        'DA_EV','S2_EV','TAXI_EV','TRANSIT_EV']],
-        stubnames = ['DA','S2','TAXI','TRANSIT'],
-        i         = ['type','year','ORIG_TAZ1454','DEST_TAZ1454'],
+                        'year','ORIG_TAZ1454','DEST_TAZ1454',
+                        'DA_EA','SR2_EA','TAXI_EA','TRANSIT_EA',
+                        'DA_AM','SR2_AM','TAXI_AM','TRANSIT_AM',
+                        'DA_MD','SR2_MD','TAXI_MD','TRANSIT_MD',
+                        'DA_PM','SR2_PM','TAXI_PM','TRANSIT_PM',
+                        'DA_EV','SR2_EV','TAXI_EV','TRANSIT_EV']],
+        stubnames = ['DA','SR2','TAXI','TRANSIT'],
+        i         = ['year','ORIG_TAZ1454','DEST_TAZ1454'],
         j         = 'timeperiod',
         sep       = '_',
         suffix    = '(EA|AM|MD|PM|EV)').reset_index()
+    # move mode to column
+    output_df = pandas.melt(
+        output_df, 
+        id_vars=['year','ORIG_TAZ1454','DEST_TAZ1454','timeperiod'],
+        value_vars=['DA','SR2','TAXI','TRANSIT'],
+        var_name='mode',
+        value_name='trips')
+    output_df = output_df.loc[output_df.trips > 0]
     output_df.to_csv(ACCESS_OUTPUT_FILE, index=False, float_format='%.5f')
     print("Wrote {:,} rows to {}".format(len(output_df), ACCESS_OUTPUT_FILE))
 
