@@ -12,11 +12,11 @@ run pgm=matrix
   ;  DA_VEH_EV,SR2_VEH_EV,TAXI_VEH_EV,TRANSIT_EV
   filei mati[1]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_%YEAR%.csv", pattern=ijm:v, fields=#1,2,0,3-22, skiprecs=1
 
-  fileo mato[1]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_%YEAR%_EA.tpp", mo= 1- 5, name=da_veh,sr2_veh,taxi_veh,transit,walk
-  fileo mato[2]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_%YEAR%_AM.tpp", mo=11-15, name=da_veh,sr2_veh,taxi_veh,transit,walk
-  fileo mato[3]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_%YEAR%_MD.tpp", mo=21-25, name=da_veh,sr2_veh,taxi_veh,transit,walk
-  fileo mato[4]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_%YEAR%_PM.tpp", mo=31-35, name=da_veh,sr2_veh,taxi_veh,transit,walk
-  fileo mato[5]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_%YEAR%_EV.tpp", mo=41-45, name=da_veh,sr2_veh,taxi_veh,transit,walk
+  fileo mato[1]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_EA_%YEAR%.tpp", mo= 1- 5, name=da_veh,sr2_veh,taxi_veh,transit,walk
+  fileo mato[2]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_AM_%YEAR%.tpp", mo=11-15, name=da_veh,sr2_veh,taxi_veh,transit,walk
+  fileo mato[3]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_MD_%YEAR%.tpp", mo=21-25, name=da_veh,sr2_veh,taxi_veh,transit,walk
+  fileo mato[4]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_PM_%YEAR%.tpp", mo=31-35, name=da_veh,sr2_veh,taxi_veh,transit,walk
+  fileo mato[5]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_EV_%YEAR%.tpp", mo=41-45, name=da_veh,sr2_veh,taxi_veh,transit,walk
 
   zones=1475
   ; ea
