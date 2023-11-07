@@ -23,7 +23,7 @@ See October 2023 task, [Update interregional rail (CAHSR) travel assumptions](ht
   version of the input, alongside the updated input. This is published (internally) to 
   [Tableau Online: Modeling/Plan Bay Area 2050+/HSR_access_egress](https://10ay.online.tableau.com/#/site/metropolitantransportationcommission/views/HSR_access_egress/RTP2025CHSRInputUpdate?:iid=1)
 
-* [`convert_access_trips_to_matrix.job`](convert_access_trips_to_matrix.job) - Script to convert resulting trips from
+* [`convert_access_egress_trips_to_matrix.job`](convert_access_egress_trips_to_matrix.job) - Script to convert resulting trips from
   `createInputTripTablesFromHSR.py` to Cube matrices for use during the model run.
 
   * [`convert_access_egress_trips_to_matrix_2040log.txt`](convert_access_egress_trips_to_matrix_2040log.txt) - Log file from
