@@ -1,7 +1,7 @@
 Page 1  (VOYAGER PILOT) 
 Metropolitan Transporation Commission (M
 ----------------------------------------
-PILOT (v.07/30/2020 [6.5.0 x64]) Tue Nov 07 14:17:51 2023
+PILOT (v.07/30/2020 [6.5.0 x64]) Tue Nov 07 14:44:33 2023
 
 Args: convert_access_egress_trips_to_matrix.job
 Input:   E:...il-external-demand\convert_access_egress_trips_to_matrix.job
@@ -13,7 +13,7 @@ PILOT Stack Size = 44 bytes.
 Page 2  (VOYAGER MATRIX) 
 Metropolitan Transporation Commission (M
 ----------------------------------------
-MATRIX (v.07/30/2020 [6.5.0 x64])  Tue Nov 07 14:17:54 2023
+MATRIX (v.07/30/2020 [6.5.0 x64])  Tue Nov 07 14:44:35 2023
 
 
   ; columns: ORIG_TAZ1454,DEST_TAZ1454,
@@ -24,11 +24,11 @@ MATRIX (v.07/30/2020 [6.5.0 x64])  Tue Nov 07 14:17:54 2023
   ;  DA_VEH_EV,SR2_VEH_EV,TAXI_VEH_EV,TRANSIT_EV
   filei mati[1]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_2040.csv", pattern=ijm:v, fields=#1,2,0,3-22, skiprecs=1
 
-  fileo mato[1]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_EA_2040.tpp", mo= 1- 5, name=da_veh,sr2_veh,taxi_veh,transit,walk
-  fileo mato[2]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_AM_2040.tpp", mo=11-15, name=da_veh,sr2_veh,taxi_veh,transit,walk
-  fileo mato[3]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_MD_2040.tpp", mo=21-25, name=da_veh,sr2_veh,taxi_veh,transit,walk
-  fileo mato[4]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_PM_2040.tpp", mo=31-35, name=da_veh,sr2_veh,taxi_veh,transit,walk
-  fileo mato[5]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_EV_2040.tpp", mo=41-45, name=da_veh,sr2_veh,taxi_veh,transit,walk
+  fileo mato[1]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsrEA_2040.tpp", mo= 1- 5, name=da_veh,sr2_veh,taxi_veh,transit,walk
+  fileo mato[2]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsrAM_2040.tpp", mo=11-15, name=da_veh,sr2_veh,taxi_veh,transit,walk
+  fileo mato[3]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsrMD_2040.tpp", mo=21-25, name=da_veh,sr2_veh,taxi_veh,transit,walk
+  fileo mato[4]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsrPM_2040.tpp", mo=31-35, name=da_veh,sr2_veh,taxi_veh,transit,walk
+  fileo mato[5]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsrEV_2040.tpp", mo=41-45, name=da_veh,sr2_veh,taxi_veh,transit,walk
 
   zones=1475
   ; ea
@@ -144,4 +144,4 @@ MATRIX   ReturnCode = 0  Elapsed Time = 00:00:02
 ################################################################################
 
 
-VOYAGER  ReturnCode = 0  Elapsed Time = 00:00:05
+VOYAGER  ReturnCode = 0  Elapsed Time = 00:00:04
