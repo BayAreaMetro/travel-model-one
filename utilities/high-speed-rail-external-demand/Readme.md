@@ -32,6 +32,14 @@ See October 2023 task, [Update interregional rail (CAHSR) travel assumptions](ht
   * [`convert_access_egress_trips_to_matrix_2050log.txt`](convert_access_egress_trips_to_matrix_2050log.txt) - Log file from
     running `convert_access_trips_to_matrix.job` for year 2050.
 
+Relevant downstream model scripts:
+* [`HsrTripGeneration.job`](../../model-files/scripts/preprocess/HsrTripGeneration.job) - Linearly interpolates between the
+  input tables (2040 and 2050) depending on model year.
+* [`IxTollChoice.job`](../../model-files/scripts/nonres/IxTollChoice.job) - Determines toll/no-toll choice for DA and SR2 trips.
+* [`HsrTransitSubmodeChoice.job`](../../model-files/scripts/nonres/HsrTransitSubmodeChoice.job) - Determines transit submode for
+  transit trips.
+* [`HwyAssign.job`](../../model-files/scripts/assign/HwyAssign.job) - Assigns taxi HSR access/egress trips as SR2 trips. Taxi dead-heading isn't handled.
+
 ## Travel Model One v0.6-v1.5
 
 See June 2016 task, [Add high speed rail external demand](https://app.asana.com/0/13098083395690/97041507197227/f)
