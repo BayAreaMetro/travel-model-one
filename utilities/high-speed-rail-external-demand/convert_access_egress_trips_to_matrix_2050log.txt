@@ -1,0 +1,147 @@
+Page 1  (VOYAGER PILOT) 
+Metropolitan Transporation Commission (M
+----------------------------------------
+PILOT (v.07/30/2020 [6.5.0 x64]) Tue Nov 07 14:43:07 2023
+
+Args: convert_access_egress_trips_to_matrix.job
+Input:   E:...il-external-demand\convert_access_egress_trips_to_matrix.job
+
+RUN PGM=matrix,139
+
+PILOT Stack Size = 44 bytes.
+................................................................................
+Page 2  (VOYAGER MATRIX) 
+Metropolitan Transporation Commission (M
+----------------------------------------
+MATRIX (v.07/30/2020 [6.5.0 x64])  Tue Nov 07 14:43:09 2023
+
+
+  ; columns: ORIG_TAZ1454,DEST_TAZ1454,
+  ;  DA_VEH_EA,SR2_VEH_EA,TAXI_VEH_EA,TRANSIT_EA,
+  ;  DA_VEH_AM,SR2_VEH_AM,TAXI_VEH_AM,TRANSIT_AM,
+  ;  DA_VEH_MD,SR2_VEH_MD,TAXI_VEH_MD,TRANSIT_MD,
+  ;  DA_VEH_PM,SR2_VEH_PM,TAXI_VEH_PM,TRANSIT_PM,
+  ;  DA_VEH_EV,SR2_VEH_EV,TAXI_VEH_EV,TRANSIT_EV
+  filei mati[1]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsr_2050.csv", pattern=ijm:v, fields=#1,2,0,3-22, skiprecs=1
+
+  fileo mato[1]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsrEA_2050.tpp", mo= 1- 5, name=da_veh,sr2_veh,taxi_veh,transit,walk
+  fileo mato[2]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsrAM_2050.tpp", mo=11-15, name=da_veh,sr2_veh,taxi_veh,transit,walk
+  fileo mato[3]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsrMD_2050.tpp", mo=21-25, name=da_veh,sr2_veh,taxi_veh,transit,walk
+  fileo mato[4]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsrPM_2050.tpp", mo=31-35, name=da_veh,sr2_veh,taxi_veh,transit,walk
+  fileo mato[5]="E:\Box\Modeling and Surveys\Development\Travel_Model_1.6\Model_Inputs\CHSR\tripsHsrEV_2050.tpp", mo=41-45, name=da_veh,sr2_veh,taxi_veh,transit,walk
+
+  zones=1475
+  ; ea
+  mw[1] = mi.1.1
+  mw[2] = mi.1.2
+  mw[3] = mi.1.3
+  mw[4] = mi.1.4
+  mw[5] = 0       ; walk
+  ; am
+  mw[11] = mi.1.5
+  mw[12] = mi.1.6
+  mw[13] = mi.1.7
+  mw[14] = mi.1.8
+  mw[15] = 0      ; walk
+  ; md
+  mw[21] = mi.1.9
+  mw[22] = mi.1.10
+  mw[23] = mi.1.11
+  mw[24] = mi.1.12
+  mw[25] = 0      ; walk
+  ; pm
+  mw[31] = mi.1.13
+  mw[32] = mi.1.14
+  mw[33] = mi.1.15
+  mw[34] = mi.1.16
+  mw[35] = 0      ; walk
+  ; ev
+  mw[41] = mi.1.17
+  mw[42] = mi.1.18
+  mw[43] = mi.1.19
+  mw[44] = mi.1.20
+  mw[45] = 0      ; walk
+
+MATRIX Stack Size = 3258 bytes.
+................................................................................
+
+
+M(651): MATI[1] Records read = 14,411   With errors = 0   Total = 112,422.092.Page 3  (VOYAGER MATRIX) 
+Metropolitan Transporation Commission (M
+----------------------------------------
+
+Totals after Iteration 1 I loop:
+
+	MI.01.001:    635.34375   @J=I:      2.42707
+	MI.01.002:    160.7902    @J=I:      0.61424
+	MI.01.003:  1,145.2481    @J=I:     38.04236
+	MI.01.004:  1,692.60354   @J=I:    141.55322
+	MI.01.005:  5,105.30523   @J=I:     16.51125
+	MI.01.006:  1,292.04003   @J=I:      4.17864
+	MI.01.007: 10,817.54168   @J=I:    427.6465 
+	MI.01.008: 17,057.2399    @J=I:  1,658.62312
+	MI.01.009:  3,430.72728   @J=I:     11.6961 
+	MI.01.010:    868.24182   @J=I:      2.96003
+	MI.01.011:  6,619.12636   @J=I:    245.46234
+	MI.01.012: 10,153.46204   @J=I:    927.96444
+	MI.01.013:  5,099.13152   @J=I:     16.50743
+	MI.01.014:  1,290.47761   @J=I:      4.17767
+	MI.01.015: 10,788.59619   @J=I:    426.01582
+	MI.01.016: 17,004.00422   @J=I:  1,651.75691
+	MI.01.017:  3,136.14156   @J=I:     10.6918 
+	MI.01.018:    793.68866   @J=I:      2.70587
+	MI.01.019:  6,050.76408   @J=I:    224.38531
+	MI.01.020:  9,281.61785   @J=I:    848.28323
+	MW[1]    :    635.34375   @J=I:      2.42707
+	MW[2]    :    160.7902    @J=I:      0.61424
+	MW[3]    :  1,145.2481    @J=I:     38.04236
+	MW[4]    :  1,692.60354   @J=I:    141.55322
+	MW[5]    :           --
+	MW[11]   :  5,105.30523   @J=I:     16.51125
+	MW[12]   :  1,292.04003   @J=I:      4.17864
+	MW[13]   : 10,817.54168   @J=I:    427.6465 
+	MW[14]   : 17,057.2399    @J=I:  1,658.62312
+	MW[15]   :           --
+	MW[21]   :  3,430.72728   @J=I:     11.6961 
+	MW[22]   :    868.24182   @J=I:      2.96003
+	MW[23]   :  6,619.12636   @J=I:    245.46234
+	MW[24]   : 10,153.46204   @J=I:    927.96444
+	MW[25]   :           --
+	MW[31]   :  5,099.13152   @J=I:     16.50743
+	MW[32]   :  1,290.47761   @J=I:      4.17767
+	MW[33]   : 10,788.59619   @J=I:    426.01582
+	MW[34]   : 17,004.00422   @J=I:  1,651.75691
+	MW[35]   :           --
+	MW[41]   :  3,136.14156   @J=I:     10.6918 
+	MW[42]   :    793.68866   @J=I:      2.70587
+	MW[43]   :  6,050.76408   @J=I:    224.38531
+	MW[44]   :  9,281.61785   @J=I:    848.28323
+	MW[45]   :           --
+	MO.01.001:    629.48   
+	MO.01.002:    153.28   
+	MO.01.003:  1,141.32   
+	MO.01.004:  1,691.47   
+	MO.02.001:  5,103.76   
+	MO.02.002:  1,286.55   Page 4  (VOYAGER MATRIX) 
+Metropolitan Transporation Commission (M
+----------------------------------------
+	MO.02.003: 10,815.83   
+	MO.02.004: 17,055.58   
+	MO.03.001:  3,428.38   
+	MO.03.002:    863.18   
+	MO.03.003:  6,616.13   
+	MO.03.004: 10,151.86   
+	MO.04.001:  5,097.64   
+	MO.04.002:  1,285.05   
+	MO.04.003: 10,786.8    
+	MO.04.004: 17,002.13   
+	MO.05.001:  3,133.02   
+	MO.05.002:    788.22   
+	MO.05.003:  6,047.81   
+	MO.05.004:  9,280.26   
+
+MATRIX   ReturnCode = 0  Elapsed Time = 00:00:02
+################################################################################
+
+
+VOYAGER  ReturnCode = 0  Elapsed Time = 00:00:04

@@ -13,9 +13,32 @@ See October 2023 task, [Update interregional rail (CAHSR) travel assumptions](ht
   TM1 zones. Outputs trips to the Bay Area HSR tables from within-region and external.  This script uses
   [Box: CHSR_data_from_DB-ECO_July2023 (internal only)](https://mtcdrive.box.com/s/pbf7j2taz45ulfl22ltauorninx6wwq6)
   and includes assumptions regarding annual-to-daily factors, daily-to-timeperiod distributions, and
-  person trips to vehicle trip conversions.
+  person trips to vehicle trip conversions.  It also creates detailed egress tables from the access tables
+  using the relationship between egress/access by station from the previous version of the data.
 
-* [`convert_access_trips_to_matrix.job`](convert_access_trips_to_matrix.job)
+  * [`createInputTripTablesFromHSR_log.txt`](createInputTripTablesFromHSR_log.txt) - Log file from running
+    `python .\createInputTripTablesFromHSR.py > .\createInputTripTablesFromHSR_log.txt 2>&1`
+
+* [`HSR_access_egress.twb`](HSR_access_egress.twb) tableau workbook visualizing the results of the Travel Model v0.6-1.5
+  version of the input, alongside the updated input. This is published (internally) to 
+  [Tableau Online: Modeling/Plan Bay Area 2050+/HSR_access_egress](https://10ay.online.tableau.com/#/site/metropolitantransportationcommission/views/HSR_access_egress/RTP2025CHSRInputUpdate?:iid=1)
+
+* [`convert_access_egress_trips_to_matrix.job`](convert_access_egress_trips_to_matrix.job) - Script to convert resulting trips from
+  `createInputTripTablesFromHSR.py` to Cube matrices for use during the model run.
+
+  * [`convert_access_egress_trips_to_matrix_2040log.txt`](convert_access_egress_trips_to_matrix_2040log.txt) - Log file from
+    running `convert_access_trips_to_matrix.job` for year 2040.
+
+  * [`convert_access_egress_trips_to_matrix_2050log.txt`](convert_access_egress_trips_to_matrix_2050log.txt) - Log file from
+    running `convert_access_trips_to_matrix.job` for year 2050.
+
+Relevant downstream model scripts:
+* [`HsrTripGeneration.job`](../../model-files/scripts/preprocess/HsrTripGeneration.job) - Linearly interpolates between the
+  input tables (2040 and 2050) depending on model year.
+* [`IxTollChoice.job`](../../model-files/scripts/nonres/IxTollChoice.job) - Determines toll/no-toll choice for DA and SR2 trips.
+* [`HsrTransitSubmodeChoice.job`](../../model-files/scripts/nonres/HsrTransitSubmodeChoice.job) - Determines transit submode for
+  transit trips.
+* [`HwyAssign.job`](../../model-files/scripts/assign/HwyAssign.job) - Assigns taxi HSR access/egress trips as SR2 trips. Taxi dead-heading isn't handled.
 
 ## Travel Model One v0.6-v1.5
 
