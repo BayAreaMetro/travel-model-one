@@ -126,7 +126,7 @@ class RunResults:
 
 
 
-    def __init__(self, rundir, overwrite_config=None):
+    def __init__(self, rundir, overwrite_config=None, find_base_in_Z_drive=False):
         """
     Parameters
     ----------
@@ -147,18 +147,24 @@ class RunResults:
         # else this is a project run, then read from configs_projects sheet of master input file
         #if 'CaltrainMod_00' not in rundir:  #for RTFF
         print("rundir:", rundir)
-        print("self.rundir:", self.rundir)
         if len(rundir) > 22:
             configs_df = pd.read_excel(self.ppa_master_input, sheet_name='configs_projects', header=0)
             configs_df = configs_df.drop(['Base Model', 'Base ID', 'Future Run', 'Iteration', 'Full Name'], axis=1)
             configs_df.insert(0,'Folder','')
-            configs_df['Folder'] =  configs_df[['Foldername - Project', 'Foldername - Future']].apply(lambda x: '\\'.join(x), axis=1)
+            # configs_df['Folder'] =  configs_df[['Foldername - Project', 'Foldername - Future']].apply(lambda x: '\\'.join(x), axis=1)
+            configs_df['Folder'] =  configs_df['Foldername - Future']
             configs_df.drop(['Foldername - Project', 'Foldername - Future'], axis=1)
         else:
             configs_df = pd.read_excel(self.ppa_master_input, sheet_name='configs_base', header=0)
+            if find_base_in_Z_drive:
+                self.rundir = os.path.join('Z:\\RTP2025_PPA\\Projects', rundir, 'OUTPUT', 'metrics')
+        
+        print("self.rundir:", self.rundir)
+        
         configs_df = configs_df.T
         configs_df.columns = configs_df.iloc[0]
         configs_df = configs_df[1:]
+        # print("cols:", configs_df.columns)
         self.config = configs_df[[rundir]].iloc[:,0]
         self.config['Project Run Dir'] = self.rundir
 
@@ -419,7 +425,8 @@ class RunResults:
             print self.base_dir
             #print base_overwrite_config
             self.base_results = RunResults(rundir = self.base_dir,
-                                           overwrite_config=base_overwrite_config)
+                                           overwrite_config=base_overwrite_config,
+                                           find_base_in_Z_drive=True)
 
     def updateDailyMetrics(self):
         """
@@ -685,7 +692,7 @@ class RunResults:
 
             # copy Tableau template into the project folder for mapping
             cs_tableau_filename = os.path.join(debug_dir, "consumer_surplus_{}.twb".format(config['Foldername - Future']))
-            cs_tableau_template="\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\consumer_surplus.twb"
+            cs_tableau_template="Z:\\RTP2025_PPA\\code\\TM151\\travel-model-one\\utilities\\PBA40\\metrics\\consumer_surplus.twb"
             copyfile(cs_tableau_template, cs_tableau_filename)
             print("Copied file to {}".format(cs_tableau_filename))
 
