@@ -171,10 +171,21 @@ if not exist metrics\transit_boards_miles.csv (
   rem Input: trn\quickboards.xls
   rem Output: metrics\transit_board_miles.csv
   call python "%CODE_DIR%\transit.py" trn\quickboards.xls
+  IF ERRORLEVEL 2 goto error
 )
 
-if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")
-python "%CODE_DIR%\RunResults.py" metrics "%ALL_PROJECT_METRICS_DIR%"
+if not exist metrics\transit_crowding.csv (
+  rem Summarize quickboards output to pull daily boardings and passenger miles
+  rem Input: trn\quickboards.xls
+  rem Output: metrics\transit_board_miles.csv
+  call python "%CODE_DIR%\transitcrowding.py" "%CD%"
+  IF ERRORLEVEL 2 goto error
+)
+
+:: if not exist "%ALL_PROJECT_METRICS_DIR%" (mkdir "%ALL_PROJECT_METRICS_DIR%")
+:: all project metrics dir set as default value in RunResults.py, can optionally pass with --all_projects_dir
+python "%CODE_DIR%\RunResults.py" "%CD%"
+IF ERRORLEVEL 2 goto error
 
 :cleanup
 move *.PRN logs
