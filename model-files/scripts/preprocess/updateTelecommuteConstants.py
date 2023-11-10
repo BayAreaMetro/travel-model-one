@@ -83,6 +83,11 @@ if __name__ == '__main__':
                UPDATE_CONSTANT = False
             else:
                UPDATE_CONSTANT = True      
+        # Rules to determine whether the telecommute constants should be turned on for STIP
+        if (MODEL_DIR.upper().find("STP") >= 0):
+            UPDATE_CONSTANT = False
+            sys.exit(0)
+
 
     print('MODEL_YEAR               = {}'.format(MODEL_YEAR))
     print('MODEL_DIR                = {}'.format(MODEL_DIR))
