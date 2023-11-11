@@ -26,6 +26,7 @@ C:\Windows\System32\where python
 Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 ::  Set the IP address of the host machine which sends tasks to the client machines 
+set HOST_IP_ADDRESS=10.6.0.4
 if %computername%==MODEL2-A            set HOST_IP_ADDRESS=10.1.1.206
 if %computername%==MODEL2-B            set HOST_IP_ADDRESS=192.168.1.207
 if %computername%==MODEL2-C            set HOST_IP_ADDRESS=192.168.1.208
@@ -112,7 +113,7 @@ if %FUTURE%==X (
 echo on
 echo turn echo back on
 
-python "CTRAMP\scripts\notify_slack.py" "Starting *%MODEL_DIR%*"
+@REM python "CTRAMP\scripts\notify_slack.py" "Starting *%MODEL_DIR%*"
 
 set MAXITERATIONS=3
 :: --------TrnAssignment Setup -- Standard Configuration
@@ -430,7 +431,7 @@ if ERRORLEVEL 2 goto done
 
 :: Extract key files
 call extractkeyfiles
-c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
+@REM c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
 
 
 : cleanup
@@ -453,7 +454,7 @@ call Run_QAQC
 :success
 ECHO FINISHED SUCCESSFULLY!
 
-python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%*"
+@REM python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%*"
 
 if "%COMPUTER_PREFIX%" == "WIN-" (
   
@@ -463,7 +464,7 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
   cd %myfolder%
 
   rem shutdown
-  python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%* - shutting down"
+  @REM python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%* - shutting down"
   C:\Windows\System32\shutdown.exe /s
 )
 
@@ -475,6 +476,6 @@ goto donedone
 ECHO FINISHED.  
 
 :: if we got here and didn't shutdown -- assume something went wrong
-python "CTRAMP\scripts\notify_slack.py" ":exclamation: Error in *%MODEL_DIR%*"
+@REM python "CTRAMP\scripts\notify_slack.py" ":exclamation: Error in *%MODEL_DIR%*"
 
 :donedone

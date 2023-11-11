@@ -85,7 +85,18 @@ if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
   IF ERRORLEVEL 2 goto error
 )
 
-copy INPUT\metrics\CommunitiesOfConcern.csv metrics
-python "%CODE_DIR%\scenarioMetrics.py"
+if exist INPUT\metrics\CommunitiesOfConcern.csv (
+  copy INPUT\metrics\CommunitiesOfConcern.csv metrics
+  python "%CODE_DIR%\scenarioMetrics.py"
+  if ERRORLEVEL 2 goto error
+) else (
+  echo WARNING! skipping scenarioMetrics.py due to missing CommunitiiesOfConcern.csv
+)
+
+goto done
 
 :error
+echo METRICS RUN ERROR %DATE% %TIME% >> logs\feedback.rpt
+echo METRICS FAILED
+
+:done
