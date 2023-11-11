@@ -46,7 +46,7 @@ class RunResults:
     REQUIRED_KEYS = [
       'Project ID'  ,  # String identifier for the project
       'Project Name',  # Descriptive name for the project
-      'County'      ,  # County where the project is located
+    #   'County'      ,  # County where the project is located
       'Project Type',  # Categorization of the project
       'Project Mode',  # Road or transit submode.  Used for Out-of-vehicle Transit Travel Time adjustments
       'Future'      ,  # Future scenario to run the project
@@ -126,7 +126,7 @@ class RunResults:
 
 
 
-    def __init__(self, rundir, overwrite_config=None):
+    def __init__(self, rundir, overwrite_config=None, find_base_in_Z_drive=False):
         """
     Parameters
     ----------
@@ -138,24 +138,33 @@ class RunResults:
 
     Read configuration and input data.
     """
-        self.ppa_master_input = "L:\\RTP2021_PPA\\Projects\\PPAMasterInput.xlsx"
+        self.ppa_master_input = "Z:\\RTP2025_PPA\\Projects\\PPAMasterInput.xlsx"
 
         # read the configs
-        self.rundir = os.path.join(os.path.abspath(rundir), 'OUTPUT', 'metrics')
+        # self.rundir = os.path.join(os.path.abspath(rundir), 'OUTPUT', 'metrics')
+        self.rundir = os.path.abspath('metrics')
         # if this is a baseline run, then read from configs_base sheet of master input file
         # else this is a project run, then read from configs_projects sheet of master input file
         #if 'CaltrainMod_00' not in rundir:  #for RTFF
+        print("rundir:", rundir)
         if len(rundir) > 22:
             configs_df = pd.read_excel(self.ppa_master_input, sheet_name='configs_projects', header=0)
             configs_df = configs_df.drop(['Base Model', 'Base ID', 'Future Run', 'Iteration', 'Full Name'], axis=1)
             configs_df.insert(0,'Folder','')
-            configs_df['Folder'] =  configs_df[['Foldername - Project', 'Foldername - Future']].apply(lambda x: '\\'.join(x), axis=1)
+            # configs_df['Folder'] =  configs_df[['Foldername - Project', 'Foldername - Future']].apply(lambda x: '\\'.join(x), axis=1)
+            configs_df['Folder'] =  configs_df['Foldername - Future']
             configs_df.drop(['Foldername - Project', 'Foldername - Future'], axis=1)
         else:
             configs_df = pd.read_excel(self.ppa_master_input, sheet_name='configs_base', header=0)
+            if find_base_in_Z_drive:
+                self.rundir = os.path.join('Z:\\RTP2025_PPA\\Projects', rundir, 'OUTPUT', 'metrics')
+        
+        print("self.rundir:", self.rundir)
+        
         configs_df = configs_df.T
         configs_df.columns = configs_df.iloc[0]
         configs_df = configs_df[1:]
+        # print("cols:", configs_df.columns)
         self.config = configs_df[[rundir]].iloc[:,0]
         self.config['Project Run Dir'] = self.rundir
 
@@ -217,44 +226,44 @@ class RunResults:
         print("")
         # read the csvs
         self.auto_times = \
-            pd.read_table(os.path.join(self.rundir, "auto_times.csv"),
+            pd.read_csv(os.path.join(self.rundir, "auto_times.csv"),
                           sep=",", index_col=[0,1])
         # print self.auto_times
 
         self.autos_owned = \
-            pd.read_table(os.path.join(self.rundir, "autos_owned.csv"),
+            pd.read_csv(os.path.join(self.rundir, "autos_owned.csv"),
                           sep=",")
         self.autos_owned['total autos'] = self.autos_owned['households']*self.autos_owned['autos']
         self.autos_owned.set_index(['incQ','autos'],inplace=True)
         # print self.autos_owned
 
         self.parking_costs = \
-            pd.read_table(os.path.join(self.rundir, "parking_costs.csv"),
+            pd.read_csv(os.path.join(self.rundir, "parking_costs.csv"),
                           sep=",")
         # print self.parking_costs.head()
 
         self.vmt_vht_metrics = \
-            pd.read_table(os.path.join(self.rundir, "vmt_vht_metrics.csv"),
+            pd.read_csv(os.path.join(self.rundir, "vmt_vht_metrics.csv"),
                           sep=",", index_col=[0,1])
         # print self.vmt_vht_metrics
 
         self.nonmot_times = \
-            pd.read_table(os.path.join(self.rundir, "nonmot_times.csv"),
+            pd.read_csv(os.path.join(self.rundir, "nonmot_times.csv"),
                                        sep=",", index_col=[0,1,2])
         # print self.nonmot_times
 
         self.transit_boards_miles = \
-            pd.read_table(os.path.join(self.rundir, "transit_boards_miles.csv"),
+            pd.read_csv(os.path.join(self.rundir, "transit_boards_miles.csv"),
                           sep=",", index_col=0)
         # print self.transit_boards_miles
 
         self.transit_times_by_acc_mode_egr = \
-            pd.read_table(os.path.join(self.rundir, "transit_times_by_acc_mode_egr.csv"),
+            pd.read_csv(os.path.join(self.rundir, "transit_times_by_acc_mode_egr.csv"),
                           sep=",", index_col=[0,1,2,3])
         # print self.transit_times_by_acc_mode_egr
 
         self.transit_times_by_mode_income = \
-            pd.read_table(os.path.join(self.rundir, "transit_times_by_mode_income.csv"),
+            pd.read_csv(os.path.join(self.rundir, "transit_times_by_mode_income.csv"),
                           sep=",", index_col=[0,1])
         # print self.transit_times_by_mode_income
 
@@ -317,15 +326,15 @@ class RunResults:
         # on M
         roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "avgload5period_vehclasses.csv"))
         if os.path.exists(roadway_netfile):
-            self.roadways_df = pd.read_table(roadway_netfile, sep=",")
+            self.roadways_df = pd.read_csv(roadway_netfile, sep=",")
             #print "Read roadways from %s" % roadway_netfile
             roadway_read = True
 
         # on model machine for reading baseline
         if not roadway_read:
-            roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "extractor", "avgload5period_vehclasses.csv"))
+            roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "OUTPUT", "avgload5period_vehclasses.csv"))
             if os.path.exists(roadway_netfile):
-                self.roadways_df = pd.read_table(roadway_netfile, sep=",")
+                self.roadways_df = pd.read_csv(roadway_netfile, sep=",")
                 print "Read roadways from %s" % roadway_netfile
                 roadway_read = True
 
@@ -337,7 +346,7 @@ class RunResults:
                 sys.exit(2)
 
             roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "hwy", "iter%s" % os.environ['ITER'], "avgload5period_vehclasses.csv"))
-            self.roadways_df = pd.read_table(roadway_netfile, sep=",")
+            self.roadways_df = pd.read_csv(roadway_netfile, sep=",")
             print "Read roadways from %s" % roadway_netfile
             roadway_read = True
 
@@ -355,7 +364,7 @@ class RunResults:
 
         for filename in ['mandatoryAccessibilities', 'nonMandatoryAccessibilities']:
             accessibilities = \
-                pd.read_table(os.path.join(self.rundir, "..", "logsums", "%s.csv" % filename),
+                pd.read_csv(os.path.join(self.rundir, "..", "logsums", "%s.csv" % filename),
                               sep=",")
             accessibilities.drop('destChoiceAlt', axis=1, inplace=True)
             accessibilities.set_index(['taz','subzone'], inplace=True)
@@ -383,7 +392,7 @@ class RunResults:
                 self.nonmandatoryAccessibilities = accessibilities
 
         self.accessibilityMarkets = \
-            pd.read_table(os.path.join(self.rundir, "..", "core_summaries", "AccessibilityMarkets.csv"),
+            pd.read_csv(os.path.join(self.rundir, "..", "core_summaries", "AccessibilityMarkets.csv"),
                           sep=",")
 
         self.accessibilityMarkets.rename(columns={'num_persons':'%s_num_persons' % col_prefix,
@@ -416,7 +425,8 @@ class RunResults:
             print self.base_dir
             #print base_overwrite_config
             self.base_results = RunResults(rundir = self.base_dir,
-                                           overwrite_config=base_overwrite_config)
+                                           overwrite_config=base_overwrite_config,
+                                           find_base_in_Z_drive=True)
 
     def updateDailyMetrics(self):
         """
@@ -682,7 +692,7 @@ class RunResults:
 
             # copy Tableau template into the project folder for mapping
             cs_tableau_filename = os.path.join(debug_dir, "consumer_surplus_{}.twb".format(config['Foldername - Future']))
-            cs_tableau_template="\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\consumer_surplus.twb"
+            cs_tableau_template="Z:\\RTP2025_PPA\\code\\TM151\\travel-model-one\\utilities\\PBA40\\metrics\\consumer_surplus.twb"
             copyfile(cs_tableau_template, cs_tableau_filename)
             print("Copied file to {}".format(cs_tableau_filename))
 
@@ -1557,11 +1567,14 @@ class RunResults:
             #################################################
 
             self.bc_metrics.name = 'values'
-            all_proj_filename = os.path.join(os.getcwd(), all_projects_dir, csv_name)
+            all_proj_filename = os.path.join(all_projects_dir, csv_name)
             self.bc_metrics.to_csv(all_proj_filename, header=True, float_format='%.5f')
-            print("Wrote the bc metrics csv %s" % csv_name)
+            print("Wrote the bc metrics csv %s" % all_proj_filename)
+            self.bc_metrics.to_csv(os.path.join(os.getcwd(), "metrics", csv_name), header=True, float_format='%.5f')
+            print("Wrote the bc metrics csv %s" % os.path.join(os.getcwd(), "metrics", csv_name))
 
-        copyfile(BC_detail_workbook, os.path.join(project_folder_name,"..","..","all_projects_bc_workbooks", workbook_name))
+        # copyfile(BC_detail_workbook, os.path.join(project_folder_name,"..","..","all_projects_bc_workbooks", workbook_name))
+        copyfile(BC_detail_workbook, os.path.join(all_projects_dir, workbook_name))
         print("Copied BC workbook into all_projects_bc_workbooks directory")
 
 
@@ -2576,11 +2589,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage=USAGE)
     parser.add_argument('project_dir',
                         help="The directory with the run results csvs.")
-    parser.add_argument('all_projects_dir',
-                        help="The directory in which to write the Benefit/Cost summary Series")
+    parser.add_argument('--all_projects_dir',
+                        help="The directory in which to write the Benefit/Cost summary Series",
+                        default="Z:\\RTP2025_PPA\\Projects\\all_project_metrics")
     args = parser.parse_args(sys.argv[1:])
 
-    rr = RunResults(args.project_dir)
+    project_dir = os.path.basename(args.project_dir)
+
+    # rr = RunResults(args.project_dir)
+    rr = RunResults(project_dir)
     rr.createBaseRunResults()
 
     rr.calculateDailyMetrics()
@@ -2589,13 +2606,18 @@ if __name__ == '__main__':
         rr.base_results.calculateDailyMetrics()
         rr.updateDailyMetrics()
 
-    # save the quick summary
+    # save the quick summary locally and to all_project_dir
+    assert os.path.exists(args.all_projects_dir), "Cannot find output directory %s" % args.all_projects_dir
     if rr.base_dir:
-        quicksummary_csv = os.path.join(os.getcwd(),args.all_projects_dir, "quicksummary_%s_base%s.csv"  % (rr.config.loc['Project ID'], rr.config.loc['base_dir']))
+        quicksummary_csv = os.path.join(args.all_projects_dir, "quicksummary_%s_base%s.csv"  % (rr.config.loc['Project ID'], rr.config.loc['base_dir']))
+        rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f', header=False)
+        quicksummary_csv = os.path.join(os.getcwd(), "metrics", "quicksummary_%s_base%s.csv"  % (rr.config.loc['Project ID'], rr.config.loc['base_dir']))
+        rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f', header=False)
     else:
-        quicksummary_csv = os.path.join(os.getcwd(),args.all_projects_dir, "quicksummary_base%s.csv"  % rr.config.loc['Project ID'])
+        quicksummary_csv = os.path.join(args.all_projects_dir, "quicksummary_base%s.csv"  % rr.config.loc['Project ID'])
+        rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f', header=False)
+        quicksummary_csv = os.path.join(os.getcwd(), "metrics", "quicksummary_base%s.csv"  % rr.config.loc['Project ID'])
+        rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f', header=False)
 
-    rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f')
-    #print rr.quick_summary
 
     rr.calculateBenefitCosts(args.project_dir, args.all_projects_dir)

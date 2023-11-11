@@ -236,7 +236,8 @@ if __name__ == '__main__':
     ch.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     logger.addHandler(ch)
     # file handler
-    fh = logging.FileHandler(os.path.join(my_args.project_dir, "OUTPUT", "metrics", LOG_FILE), mode='w')
+    # fh = logging.FileHandler(os.path.join(my_args.project_dir, "OUTPUT", "metrics", LOG_FILE), mode='w')
+    fh = logging.FileHandler(os.path.join(my_args.project_dir, "metrics", LOG_FILE), mode='w')
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     logger.addHandler(fh)
@@ -244,7 +245,8 @@ if __name__ == '__main__':
     logging.info("Args: {}".format(my_args))
 
     # import seat capacities from lookup file
-    seatcap_file = "\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\transitSeatCap.csv"
+    # seatcap_file = "\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\transitSeatCap.csv"
+    seatcap_file = os.path.join(os.getcwd(), "CTRAMP", "scripts", "metrics", "transitSeatCap.csv")
     transit_seatcap_df = pd.read_csv(seatcap_file)
     transit_seatcap_df.columns=transit_seatcap_df.columns.str.replace('%','pct')
     transit_seatcap_df.rename(columns={"VEHTYPE":"veh_type_updated", "100pctCapacity":"standcap"},inplace=True)
@@ -253,7 +255,8 @@ if __name__ == '__main__':
     # read the transit files
     all_trn_df = pd.DataFrame()
     for timeperiod in ['AM','EA','EV','MD','PM']:
-        trn_file = os.path.join(my_args.project_dir, 'OUTPUT', 'trn', 'trnlink{}_ALLMSA.dbf'.format(timeperiod))
+        # trn_file = os.path.join(my_args.project_dir, 'OUTPUT', 'trn', 'trnlink{}_ALLMSA.dbf'.format(timeperiod))
+        trn_file = os.path.join(my_args.project_dir, 'trn', 'trnlink{}_ALLMSA.dbf'.format(timeperiod))
         dbf      = simpledbf.Dbf5(trn_file)
         trn_df   = dbf.to_dataframe()
         trn_df["period"] = timeperiod
@@ -360,12 +363,14 @@ if __name__ == '__main__':
     all_trn_df.sort_values(by=["MODE","NAME","period","SEQ"], inplace=True)
 
     # writing file with all columns into output\metrics folder of the project
-    transit_crowding_filename = os.path.join(my_args.project_dir, 'OUTPUT', 'metrics', "transit_crowding_complete.csv")
+    # transit_crowding_filename = os.path.join(my_args.project_dir, 'OUTPUT', 'metrics', "transit_crowding_complete.csv")
+    transit_crowding_filename = os.path.join(my_args.project_dir, 'metrics', "transit_crowding_complete.csv")
     all_trn_df.to_csv(transit_crowding_filename,  header=True, index=False)
     logging.info("Wrote {} lines to {}".format(len(all_trn_df), transit_crowding_filename))
 
     # writing essential columns into output\metrics folder of the project
-    transit_crowding_filename = os.path.join(my_args.project_dir, 'OUTPUT', 'metrics', "transit_crowding.csv")
+    # transit_crowding_filename = os.path.join(my_args.project_dir, 'OUTPUT', 'metrics', "transit_crowding.csv")
+    transit_crowding_filename = os.path.join(my_args.project_dir, 'metrics', "transit_crowding.csv")
     all_trn_df[['NAME', 'SYSTEM','SEQ','A','B','AB_BRDA','period','ivtt_hours',\
                 'effective_ivtt_ukdft','effective_ivtt_metrolinx', 'effective_ivtt_metrolinx_max2pt5',\
                 'crowding_penalty_hrs_ukdft', 'crowding_penalty_hrs_metrolinx', 'crowding_penalty_hrs_metrolinx_max2pt5'

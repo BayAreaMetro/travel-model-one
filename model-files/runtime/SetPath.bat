@@ -2,7 +2,7 @@
 :: Utility to set the path.  Used in RunModel as well as RunMain and RunNodeX. 
 
 :: The commpath
-SET COMMPATH=X:\COMMPATH
+SET COMMPATH=%CD%
 if "%COMPUTER_PREFIX%" == "WIN-" (
   SET COMMPATH=D:\COMMPATH
 )
@@ -11,30 +11,40 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
 
 :: The location of the GAWK binary executable files
-set GAWK_PATH=X:\UTIL\Gawk
+set GAWK_PATH=E:\code\TM151\travel-model-one\utilities\gawk
 if "%COMPUTER_PREFIX%" == "WIN-" (
   set GAWK_PATH=C:\Software\Gawk
 )
 
 :: The location of R and R libraries
-set R_HOME=C:\Program Files\R\R-3.5.2
-set R_LIB=C:/Users/mtcpb/Documents/R/win-library/3.5
+set R_HOME=C:\Program Files\R\R-4.3.1
+set R_LIB=C:\Users\david.hensle\AppData\Local\R\win-library\4.3
 if "%COMPUTER_PREFIX%" == "WIN-" (
   set R_LIB=C:/Users/Administrator/Documents/R/win-library/3.5
 )
 
 :: The location of the RUNTPP executable from Citilabs
-set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI
+set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerAPI\Dlls\x64
 
 :: The location of python
-set PYTHON_PATH=C:\Python27
+::set PYTHON_PATH=C:\Python27
 
 :: The location of the MTC.JAR file
 set RUNTIME=CTRAMP/runtime
 
+:: The location of Anaconda; this run will use the conda environment tm15-python310
+set CONDA_PATH=C:\ProgramData\Anaconda3;C:\ProgramData\Anaconda3\Library\mingw-w64\bin;C:\ProgramData\Anaconda3\Library\usr\bin;C:\ProgramData\Anaconda3\Library\bin;C:\ProgramData\Anaconda3\Scripts;C:\ProgramData\Anaconda3\bin;C:\ProgramData\Anaconda3\condabin
+set ENV_NAME=tm151-python27
+
 :: Add these variables to the PATH environment variable, moving the current path to the back
-set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%PYTHON_PATH%
+set PATH=%RUNTIME%;%JAVA_PATH%/bin;%TPP_PATH%;%GAWK_PATH%/bin;%CONDA_PATH%
 
 ::  Set the Java classpath (locations where Java needs to find configuration and JAR files)
 set CLASSPATH=%RUNTIME%/config;%RUNTIME%;%RUNTIME%/config/jppf-2.4/jppf-2.4-admin-ui/lib/*;%RUNTIME%/mtc.jar
 
+:: Activate the correct conda environment -- this will update the PATH
+call activate %ENV_NAME%
+
+:: Deactivating and re-activating seems necessary for the python 2 env to work correctly..
+call conda deactivate
+call activate %ENV_NAME%

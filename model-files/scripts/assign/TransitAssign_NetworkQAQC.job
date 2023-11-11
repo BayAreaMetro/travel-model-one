@@ -1,0 +1,326 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; TransitAssign_NetworkQAQC.job
+;
+; TP+ script to perform a transit assignment.  This script differs from TransitAssign.job by just assigning a
+; demand matrix of 0.1 for all zones.  Used to QAQC network projects for PPA runs.
+;
+; version:  Travel Model One
+; authors: david.hensle@rsginc.com (Oct2023)
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+token_model_dir = '%MODEL_DIR%'
+
+run pgm = matrix
+   FILEO MATO[1] = dummy_assign_matrix.tpp, MO=1
+   PAR ZONES=1454
+   MW[1] = 0.1
+endrun
+
+; time period loop
+loop period = 1, 5
+
+   ; initialize counter to so that no more than 18 tasks are created
+   counter = 0
+   
+   ; set a list of origins to trace (comma-separated)
+   token_debug_origin_list = '240'
+        
+   ; set a list of destinations to trace (comma-separated)
+   token_debug_destination_list = '22'
+
+   if (period = 1)   
+      token_period   = 'ea'
+      
+   elseif (period = 2)   
+      token_period   = 'am'
+      
+   elseif (period = 3)   
+      token_period   = 'md'
+      
+   elseif (period = 4)   
+      token_period   = 'pm'
+      
+   elseif (period = 5)   
+      token_period   = 'ev' 
+      
+   endif 
+
+   ; access/egress loop (walk/walk, auto/walk, walk/auto)
+   loop accegg = 1,3
+   
+      if (accegg = 1)         
+         token_access = 'wlk'
+         token_egress = 'wlk'      
+         token_boardpen = 'factor boardpen = 0, 20, 45, 50, 60'
+      elseif (accegg = 2)        
+         token_access = 'drv'
+         token_egress = 'wlk'    
+         token_boardpen = 'factor boardpen = 0, 30, 45, 50, 60'
+      elseif (accegg = 3)       
+         token_access = 'wlk'
+         token_egress = 'drv'       
+         token_boardpen = 'factor boardpen = 0, 30, 45, 50, 60'
+      endif
+   
+      ; line haul loop
+      loop path = 1, 5
+      
+         ; commuter rail or long-haul premium
+         if (path = 1)         
+
+            ; drive access/egress links to this mode (';' means no)
+            ; allow higher-class PNRs to be read in case of shared lots
+            token_drivelinks_express_bus   = ';'
+            token_drivelinks_light_rail    = ';'
+            token_drivelinks_ferry         = ';'
+            token_drivelinks_heavy_rail    = ';'
+            token_drivelinks_commuter_rail = ' '  
+               
+            ; no KNR access links to local bus
+            token_bus_acclinks_KNR = ';'
+            
+            ; no transit modes are excluded from this path
+            token_skipmodes = '; do not skip any modes for this path'
+            
+            ; mode-specific perceived time factors
+            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
+            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.1,   10*1.0' 
+            
+            ; three-letter path name
+            token_path = 'com'
+
+         ; heavy rail or medium-haul premium
+         elseif (path = 2)
+
+            ; drive access/egress links to this mode (';' means no)
+            ; allow higher-class PNRs to be read in case of shared lots
+            token_drivelinks_express_bus   = ';'
+            token_drivelinks_light_rail    = ';'
+            token_drivelinks_ferry         = ';'
+            token_drivelinks_heavy_rail    = ' '
+            token_drivelinks_commuter_rail = ' ' 
+            
+            ; no KNR access links to local bus
+            token_bus_acclinks_KNR = ';'
+            
+            ; commuter rail excluded from this path
+            token_skipmodes = 'skipmodes =  130-139'
+            
+            ; mode-specific perceived time factors
+            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
+            token_modefac = 'modefac   =  9*2.0,  70*1.5,  20*1.2, 10*1.1,  10*1.1,   10*1.0,   10*1.5'
+            
+            ; three-letter path name
+            token_path = 'hvy'
+
+         ; express bus or medium-haul basic
+         elseif (path = 3)
+
+            ; drive access/egress links to this mode (';' means no)
+            ; allow higher-class PNRs to be read in case of shared lots
+            token_drivelinks_express_bus   = ' '
+            token_drivelinks_light_rail    = ';'
+            token_drivelinks_ferry         = ';'
+            token_drivelinks_heavy_rail    = ' '
+            token_drivelinks_commuter_rail = ' ' 
+            
+            ; KNR access links to local bus
+            token_bus_acclinks_KNR = ';'
+            
+            ; commuter rail and heavy rail excluded from this path
+            token_skipmodes = 'skipmodes =  130-139,120-139'
+            
+            ; mode-specific perceived time factors
+            ;                        support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
+            token_modefac = 'modefac = 9*2.0,  70*1.5,  20*1.0, 10*1.5,  10*1.5,   10*1.5,   10*1.5'
+            
+            ; three-letter path name
+            token_path = 'exp'
+
+
+         ; light rail (or ferry) or short-haul premium
+         elseif (path = 4)
+
+            ; drive access/egress links to this mode (';' means no)
+            ; allow higher-class PNRs to be read in case of shared lots
+            token_drivelinks_express_bus   = ' '
+            token_drivelinks_light_rail    = ' '
+            token_drivelinks_ferry         = ' '
+            token_drivelinks_heavy_rail    = ' '
+            token_drivelinks_commuter_rail = ' ' 
+            
+            ; no KNR access links to local bus
+            token_bus_acclinks_KNR = ';'
+            
+            ; commuter rail, heavy rail, and express bus excluded from this path
+            token_skipmodes = 'skipmodes =  130-139,120-139,80-99'
+            
+            ; mode-specific perceived time factors
+            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
+            token_modefac = 'modefac =    9*2.0,  70*1.5,  20*1.5, 10*1.0,  10*1.0,   10*1.5,   10*1.5'  
+            
+            ; three-letter path name
+            token_path = 'lrf'
+
+         ; local bus or short-haul basic
+         elseif (path = 5)
+         
+            ; drive access/egress links to this mode (';' means no)
+            ; allow higher-class PNRs to be read in case of shared lots
+            token_drivelinks_express_bus   = ' '
+            token_drivelinks_light_rail    = ' '
+            token_drivelinks_ferry         = ' '
+            token_drivelinks_heavy_rail    = ' '
+            token_drivelinks_commuter_rail = ' ' 
+            
+            ; KNR access links to local bus
+            token_bus_acclinks_KNR = ' '
+            
+            ; commuter rail, heavy rail, express bus, light rail, and ferry excluded from this path
+            token_skipmodes = 'skipmodes =  130-139,120-139,80-99,100-119'
+            
+            ; mode-specific perceived time factors
+            ;                           support  loc bus  exp bus   ferry  lt rail  hvy rail  com rail
+            token_modefac = 'modefac  =   9*2.0,  70*1.0,  20*1.5, 10*1.5,  10*1.5,   10*1.5,   10*1.5'  
+            
+            ; three-letter path name
+            token_path = 'loc'
+
+         
+         endif
+
+         ; increment the counter used to identify the process number 
+         counter = counter + 1
+         
+         ; distribute the tasks
+         DistributeMultistep processid = "ctramp", processnum = @counter@,  commpath = '%COMMPATH%' 
+
+         run pgm = trnbuild
+             
+             ; use the highway network with the computed bus times 
+             filei neti = @token_period@_transit_background.net
+             
+             ; read in the 23-table matrix created by prepAssign.job (see header for content details)
+             ; Not reading for network QAQC
+             ; filei mati = "@token_model_dir@\main\trips@token_period@.tpp"
+             filei mati = "dummy_assign_matrix.tpp"
+             
+             ; path parameter: do not list (write out) all of the subsequent input
+             parameters listinput = no
+
+             ; read in the fare matrices
+             read file = "@token_model_dir@\trn\transit_faremat.block"
+             read file = "@token_model_dir@\trn\farelinks.far"
+             read file = "@token_model_dir@\trn\xfare.far"
+        
+             ; output the link volumes          
+             fileo linko = trnlink@token_period@_@token_access@_@token_path@_@token_egress@.dbf
+             fileo linkvolo = trnlink@token_period@_@token_access@_@token_path@_@token_egress@.csv, format = csv
+
+             ; output the line volumes
+             fileo linevolo = trnline@token_period@_@token_access@_@token_path@_@token_egress@.csv,
+                                      id = @token_period@_@token_access@_@token_path@_@token_egress@, format = csv  
+     
+             ; the bus times are based on those computed in the highway network
+             hwytime = BUS_TIME
+
+             
+             ; read the transit line and link files
+             read file = "@token_model_dir@\trn\transitLines.link"
+             read file = transit@token_period@.lin        
+             
+             ; read in the generated support links
+             read file = @token_period@_transit_suplinks_walk.dat
+             
+             ; read in the generated drive access/egress links for this mode             
+             @token_drivelinks_express_bus@    read file = @token_period@_transit_suplinks_express_bus.dat
+             @token_drivelinks_light_rail@     read file = @token_period@_transit_suplinks_light_rail.dat
+             @token_drivelinks_ferry@          read file = @token_period@_transit_suplinks_ferry.dat
+             @token_drivelinks_heavy_rail@     read file = @token_period@_transit_suplinks_heavy_rail.dat
+             @token_drivelinks_commuter_rail@  read file = @token_period@_transit_suplinks_commuter_rail.dat  
+             
+             ; read in the generated KNR links for local bus
+             @token_bus_acclinks_KNR@    READ FILE = @token_period@_bus_acclinks_KNR.DAT
+             
+             ; set the service headways
+             freqperiod = @period@
+             
+             ; we do not need access links built
+             zoneaccess generate = no
+             
+             ; path parameter: 0 - best path by mode; 1 - single best path
+             parameters pathstyle = 0
+             
+             ; path parameter: we want to build paths
+             parameters buildpaths = t   
+             
+             ; path parameter: assumed walking speed is 3.0 miles per hour
+             parameters walkspeed = 3.0
+             
+             
+             ; path parameter: we do not use the route time coded in the line files; bus times are a function of highway times
+             parameters useruntime = n        
+             
+             ; path parameter: the maximum path time for a single route is 3 hours or 180 minutes
+             parameters maxruntime = 180
+             
+             ; path parameter: the maximum perceived path time for a single route is 5 hours or 300 minutes
+             parameters maxpathtime = 300
+             
+             ; perceived time factors: first boarding is free; second, third, and fourth boarding adds fiftenn perceived minutes; 
+             ; discourage more than four transfers with a 60 minute penalty
+             @token_boardpen@
+
+             ; perceived time factors: initial wait time is equivalent to 2.8 minutes of ride time for modes 10 through 255  
+             factor iwaitfac = 9*0, 130*2.8
+             
+             ; perceived time factors: transfer wait time is equivalent to 2.8 minutes of ride time for modes 1 through 255
+             factor xwaitfac = 139*2.8             
+             
+             ; use token_skipmodes to remove modes from the network per the hierarchy
+             @token_skipmodes@
+              
+             ; perceived time factors: slow down non-key modes by 50 percent; walk and drive by 100 percent; use token_modefac
+             @token_modefac@
+                                        
+             ; combine paths if runtimes differ by less than 5 minutes
+             read file = "@token_model_dir@\ctramp\scripts\block\transit_combined_headways.block"
+             
+             ; read in the transfer prohibitors file
+             read file = "@token_model_dir@\ctramp\scripts\block\transferprohibitors_@token_access@_trn_@token_egress@.block"
+                                                
+             ; assigning a "ones" matrix for transit assignment testing
+             ; mw[1] = .1
+             trips matrix = mi.1.1,  assign = true
+             
+             ; specify which paths to trace
+             trace = (i = @token_debug_origin_list@ && j = @token_debug_destination_list@)
+            
+         endrun
+         
+         enddistributemultistep
+         
+      endloop ; line haul loop
+      
+   endloop ; access/egress mode loop 
+   
+   wait4files files = ctramp1.script.end, 
+   	              ctramp2.script.end, 
+   	              ctramp3.script.end, 
+   	              ctramp4.script.end, 
+   	              ctramp5.script.end, 
+   	              ctramp6.script.end, 
+   	              ctramp7.script.end, 
+   	              ctramp8.script.end, 
+   	              ctramp9.script.end, 
+   	              ctramp10.script.end, 
+   	              ctramp11.script.end, 
+   	              ctramp12.script.end, 
+   	              ctramp13.script.end, 
+   	              ctramp14.script.end, 
+   	              ctramp15.script.end,                
+           printfiles = save, DelDistribFiles = t, CheckReturnCode = t
+
+endloop ; time of day  
