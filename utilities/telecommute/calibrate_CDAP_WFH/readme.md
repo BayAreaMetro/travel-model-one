@@ -1,5 +1,5 @@
 
-# Background: 
+## Background 
 
 Previously in TM1.5 the WFH workers were modelled within the CDAP universe. With the new "Simple WFH model" in TM1.6, WFH workers are taken out of the CDAP universe so we need more of the remaining workers to travel to work. This calibration ensured the number of workers going to work remain unchanged between TM1.5 and TM1.6.
  
@@ -8,7 +8,7 @@ They are in row 86 and 87 in CoordinatedDailyActivityPattern.xls
 * "Adjustment to FT workers (since WFH people are already taken out of the universe so we want more of the remaining people to travel to work)"
 * "Adjustment to PT workers (since WFH people are already taken out of the universe so we want more of the remaining people to travel to work)"
 
-# Calibration approach: 
+## Calibration steps 
 
 To calibrate, we only need to run core from the beginnng up to CDAP. This means editing CTRAMP\runtime\mtcTourBased.properties to turn off model components after CDAP.
  
