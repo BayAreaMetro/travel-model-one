@@ -86,7 +86,6 @@ if __name__ == '__main__':
         # Rules to determine whether the telecommute constants should be turned on for STIP
         if (MODEL_DIR.upper().find("STP") >= 0):
             UPDATE_CONSTANT = False
-            sys.exit(0)
 
 
     print('MODEL_YEAR               = {}'.format(MODEL_YEAR))
@@ -109,23 +108,24 @@ if __name__ == '__main__':
     tazdata_df = pandas.read_csv(TAZDATA_FILE, index_col=False, sep=',', usecols=TAZDATA_COLS)
     print('Read {} lines from {}; head:\n{}'.format(len(tazdata_df), TAZDATA_FILE, tazdata_df.head()))
 
-    # read max telecommute rate
-    telecommute_rate_df = pandas.read_csv(TELERATE_FILE, sep=',')
-    print('Read {} lines from {}; head:\n{}'.format(len(telecommute_rate_df), TELERATE_FILE, telecommute_rate_df.head()))
+    if UPDATE_CONSTANT:
+        # read max telecommute rate
+        telecommute_rate_df = pandas.read_csv(TELERATE_FILE, sep=',')
+        print('Read {} lines from {}; head:\n{}'.format(len(telecommute_rate_df), TELERATE_FILE, telecommute_rate_df.head()))
 
-    # join to tazdata to figure out effective max telecommute rate for each county
-    telecommute_rate_df = pandas.merge(left=tazdata_df, right=telecommute_rate_df, how='left', on='COUNTY')
-    telecommute_rate_df['max_telecommuters'] = \
-        (telecommute_rate_df['AGREMPN']*telecommute_rate_df['AGREMPN_tele']) + \
-        (telecommute_rate_df['FPSEMPN']*telecommute_rate_df['FPSEMPN_tele']) + \
-        (telecommute_rate_df['HEREMPN']*telecommute_rate_df['HEREMPN_tele']) + \
-        (telecommute_rate_df['MWTEMPN']*telecommute_rate_df['MWTEMPN_tele']) + \
-        (telecommute_rate_df['RETEMPN']*telecommute_rate_df['RETEMPN_tele']) + \
-        (telecommute_rate_df['OTHEMPN']*telecommute_rate_df['OTHEMPN_tele'])
-    # aggregate back to county
-    telecommute_rate_df = telecommute_rate_df.groupby('COUNTY').agg({'max_telecommuters':'sum', 'TOTEMP':'sum'}).reset_index()
-    telecommute_rate_df['max_telecommute_rate'] = telecommute_rate_df['max_telecommuters']/telecommute_rate_df['TOTEMP']
-    print(telecommute_rate_df)
+        # join to tazdata to figure out effective max telecommute rate for each county
+        telecommute_rate_df = pandas.merge(left=tazdata_df, right=telecommute_rate_df, how='left', on='COUNTY')
+        telecommute_rate_df['max_telecommuters'] = \
+            (telecommute_rate_df['AGREMPN']*telecommute_rate_df['AGREMPN_tele']) + \
+            (telecommute_rate_df['FPSEMPN']*telecommute_rate_df['FPSEMPN_tele']) + \
+            (telecommute_rate_df['HEREMPN']*telecommute_rate_df['HEREMPN_tele']) + \
+            (telecommute_rate_df['MWTEMPN']*telecommute_rate_df['MWTEMPN_tele']) + \
+            (telecommute_rate_df['RETEMPN']*telecommute_rate_df['RETEMPN_tele']) + \
+            (telecommute_rate_df['OTHEMPN']*telecommute_rate_df['OTHEMPN_tele'])
+        # aggregate back to county
+        telecommute_rate_df = telecommute_rate_df.groupby('COUNTY').agg({'max_telecommuters':'sum', 'TOTEMP':'sum'}).reset_index()
+        telecommute_rate_df['max_telecommute_rate'] = telecommute_rate_df['max_telecommuters']/telecommute_rate_df['TOTEMP']
+        print(telecommute_rate_df)
 
     # initialize primary df
     telecommute_df = tazdata_df[['ZONE','SD','COUNTY']].copy()
@@ -145,7 +145,8 @@ if __name__ == '__main__':
         # otherwise, default to zero
         telecommute_df['CALIB_ITER'] = int(CALIB_ITER)
         telecommute_df['telecommuteConstant'] = 0.0
-
+ 
+      
     # no results yet -- start at zero
     elif int(TELECOMMUTE_CALIBRATION)==1 and int(CALIB_ITER)==0:
 
