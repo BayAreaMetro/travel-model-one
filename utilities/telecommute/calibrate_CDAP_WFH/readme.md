@@ -3,8 +3,7 @@
 
 Previously in TM1.5 the WFH workers were modelled within the CDAP universe. With the new "Simple WFH model" in TM1.6, WFH workers are taken out of the CDAP universe so we need more of the remaining workers to travel to work. This calibration ensured the number of workers going to work remain unchanged between TM1.5 and TM1.6.
  
-This is achieved by two additional constants in the Coordinated Daily Activity Pattern (CDAP) Model
-They are in row 86 and 87 in CoordinatedDailyActivityPattern.xls
+This is achieved by two additional constants in the Coordinated Daily Activity Pattern (CDAP) Model. They are added a new rows in CoordinatedDailyActivityPattern.xls
 * "Adjustment to FT workers (since WFH people are already taken out of the universe so we want more of the remaining people to travel to work)"
 * "Adjustment to PT workers (since WFH people are already taken out of the universe so we want more of the remaining people to travel to work)"
 
