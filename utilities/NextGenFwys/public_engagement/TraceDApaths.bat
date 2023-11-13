@@ -33,13 +33,6 @@ Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 :: use comma seperated values
 :: ------------------------------
 
-:: Set default values for ORIGIN and DESTINATION
 set ORIGIN=9,138,106,128,113,16,110,971,969,946,945,979,970,968,967,972,947,558,557,549,548,563,448,391,413,377,381,388,379,456,445,409,410,412,415,416,411
 set DESTINATION=9,138,106,128,113,16,110,731,733,1188,1194,1190,1187,729,730,732,734,1183,1191,1193,1184,1065,1056,1058,1049,1060,1059,1050,309,304,317,315,313,312,325,531,529,681,564,559,528,526,323,320,301,524,525,487,491,485,490,488,484,479,460
-
-:: Check if arguments are passed, otherwise use default values
-if not "%1"=="" set ORIGIN=%1
-if not "%2"=="" set DESTINATION=%2
-
 runtpp X:\travel-model-one-master\utilities\NextGenFwys\public_engagement\HwyAssign_trace.job
-
