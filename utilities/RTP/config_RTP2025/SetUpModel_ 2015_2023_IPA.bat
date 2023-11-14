@@ -41,13 +41,6 @@ set PARAMS=M:\Application\Model One\RTP2025\IncrementalProgress\2015_TM160_IPA_0
 :: set the location of the overrides directory (for Blueprint strategies)
 set BP_OVERRIDE_DIR=NA
 
-
-:: ------------------------------------------------------------------------------------------------------
-::
-:: Step 2:  Set up folder structure and copy CTRAMP
-::
-:: ------------------------------------------------------------------------------------------------------
-
 :: --------------------------------------------
 :: before setting up the folder structure and copying CTRAMP
 :: check that the model run folder on the M drive has the same name as the folder on the modeling server
@@ -79,7 +72,13 @@ echo ERROR: The model run folder on the M drive does not have the same name as t
 goto :end
 
 :continue
-:: --------------------------------------------
+
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 2:  Set up folder structure and copy CTRAMP
+::
+:: ------------------------------------------------------------------------------------------------------
 
 SET computer_prefix=%computername:~0,4%
 
@@ -298,6 +297,7 @@ echo oLink.Save >> %TEMP_SCRIPT%
 C:\Windows\SysWOW64\cscript.exe %TEMP_SCRIPT%
 del %TEMP_SCRIPT%
 
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 7: log the git commit and git status of GITHUB_DIR
@@ -308,5 +308,6 @@ cd /d %GITHUB_DIR%
 git log -1
 git status
 cd /d %CURRENT_DIR%
+
 
 :end

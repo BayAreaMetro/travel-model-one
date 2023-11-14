@@ -45,11 +45,6 @@ set PARAMS=X:\travel-model-one-v1.6_develop\utilities\RTP\config_RTP2025\params_
 :: set the location of the overrides directory (for Blueprint strategies)
 set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-overrides
 
-:: ------------------------------------------------------------------------------------------------------
-::
-:: Step 2:  Set up folder structure and copy CTRAMP
-::
-:: ------------------------------------------------------------------------------------------------------
 
 :: --------------------------------------------
 :: before setting up the folder structure and copying CTRAMP
@@ -83,8 +78,11 @@ goto :end
 
 :continue
 
-:: --------------------------------------------
-
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 2:  Set up folder structure and copy CTRAMP
+::
+:: ------------------------------------------------------------------------------------------------------
 
 
 SET computer_prefix=%computername:~0,4%
