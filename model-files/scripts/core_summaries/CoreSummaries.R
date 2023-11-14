@@ -145,7 +145,7 @@ names(input.pop.households)[names(input.pop.households)=="HHID"] <- "hh_id"
 households <- inner_join(input.pop.households, input.ct.households, "hh_id")
 households <- inner_join(households, tazData, "taz")
 # wrap as a d data frame tbl so it's nicer for printing
-households <- tbl_df(households)
+households <- tibble::as_tibble(households)
 # clean up
 remove(input.pop.households, input.ct.households)
 print(paste("Read household files; have",prettyNum(nrow(households),big.mark=","),"rows"))
@@ -218,7 +218,7 @@ persons              <- left_join(persons, select(households, hh_id, incQ, incQ_
 persons              <- left_join(persons, LOOKUP_PTYPE, by=c("ptype"))
 
 # wrap as a d data frame tbl so it's nicer for printing
-persons              <- tbl_df(persons)
+persons              <- tibble::as_tibble(persons)
 # clean up
 remove(input.pop.persons, input.ct.persons)
 print(paste("Read persons files; have",prettyNum(nrow(persons),big.mark=","), "rows"))
@@ -237,7 +237,7 @@ remove(kidsNoDr_hhlds)
 
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour
 
-indiv_tours     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("indivTourData_",ITER,".csv")),
+indiv_tours     <- tibble::as_tibble(read.table(file=file.path(MAIN_DIR, paste0("indivTourData_",ITER,".csv")),
                                      header=TRUE, sep=","))
 indiv_tours     <- mutate(indiv_tours, tour_id=paste0("i",substr(tour_purpose,1,4),tour_id))
 
@@ -265,7 +265,7 @@ indiv_tours   <- mutate(indiv_tours, parking_rate=ifelse((substr(tour_purpose,0,
 
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/JointTour
 
-joint_tours    <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTourData_",ITER,".csv")),
+joint_tours    <- tibble::as_tibble(read.table(file=file.path(MAIN_DIR, paste0("jointTourData_",ITER,".csv")),
                                     header=TRUE, sep=","))
 joint_tours     <- mutate(joint_tours, tour_id=paste0("j",substr(tour_purpose,1,4),tour_id))
 
@@ -640,7 +640,7 @@ print(paste("Read",prettyNum(nrow(indiv_trips),big.mark=","),"individual trips")
 ## Data Reads: Joint Trips and recode a few variables
 
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/JointTrip
-joint_trips     <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("jointTripData_",ITER,".csv")),
+joint_trips     <- tibble::as_tibble(read.table(file=file.path(MAIN_DIR, paste0("jointTripData_",ITER,".csv")),
                                      header=TRUE, sep=","))
 joint_trips     <- select(joint_trips, hh_id, tour_id, orig_taz, orig_walk_segment, dest_taz, dest_walk_segment, trip_mode,
                           num_participants, tour_purpose, orig_purpose, dest_purpose, depart_hour, stop_id, tour_category, avAvailable, sampleRate, inbound,
@@ -780,7 +780,7 @@ remove(joint_trips,joint_tour_persons)
 indiv_trips <- mutate(indiv_trips, num_participants=1, tour_participants=as.character(person_num))
 print(toString(colnames(joint_person_trips)))
 print(toString(colnames(indiv_trips)))
-trips <- tbl_df(rbind(indiv_trips, joint_person_trips))
+trips <- tibble::as_tibble(rbind(indiv_trips, joint_person_trips))
 print(paste("Combined",prettyNum(nrow(indiv_trips),big.mark=","),
             "individual trips with",prettyNum(nrow(joint_person_trips),big.mark=","),
             "joint trips to make",prettyNum(nrow(trips),big.mark=",")," total trips with columns",toString(colnames(trips))))
@@ -825,7 +825,7 @@ trips <- mutate(trips,
 for (timeperiod in LOOKUP_TIMEPERIOD$timeperiod_abbrev) {
   trips <- add_distance(timeperiod, trips)
 }
-trips <- tbl_df(trips)
+trips <- tibble::as_tibble(trips)
 trips <- select(trips, -distance_mode)
 
 num_tours       <- nrow(tours)
@@ -862,7 +862,7 @@ trips <- trips %>%
 for (timeperiod in LOOKUP_TIMEPERIOD$timeperiod_abbrev) {
   trips <- add_active(timeperiod, trips)
 }
-trips <- tbl_df(trips)
+trips <- tibble::as_tibble(trips)
 
 ## Add Travel Cost and Travel Time to Trips
 print("Adding active travel cost and time to trips")
@@ -884,16 +884,16 @@ for (timeperiod in LOOKUP_TIMEPERIOD$timeperiod_abbrev) {
   trips <- add_cost(timeperiod, trips)
   trips <- add_time(timeperiod, trips)
 }
-trips <- tbl_df(trips)
+trips <- tibble::as_tibble(trips)
 
 
 # Summaries
 
 ## Active Transportation Summary
 # we only want some variables - sum them to hh_id/person_id
-trips_melt  <- tbl_df(melt(select(trips, hh_id, person_id, wlk_trip, bik_trip, wtr_trip, dtr_trip, active),
+trips_melt  <- tibble::as_tibble(melt(select(trips, hh_id, person_id, wlk_trip, bik_trip, wtr_trip, dtr_trip, active),
                            id.vars=c("hh_id","person_id")))
-trips_dcast <- tbl_df(dcast(trips_melt, hh_id+person_id ~ variable, fun.aggregate=sum))
+trips_dcast <- tibble::as_tibble(dcast(trips_melt, hh_id+person_id ~ variable, fun.aggregate=sum))
 # left join with persons --> one row per person!
 trips_by_person <- left_join(select(persons, hh_id, person_id, ptype, activity_pattern, value_of_time),
                              trips_dcast, by=c("hh_id","person_id"))
@@ -1112,7 +1112,7 @@ remove(commute_inc_summary_byjob, commute_inc_summary_byres)
 # Mandatory Locations
 
 # The fields are documented here: https://github.com/BayAreaMetro/modeling-website/wiki/MandatoryLocation
-mandatory_locations <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")),
+mandatory_locations <- tibble::as_tibble(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")),
                                          header=TRUE, sep=","))
 print(paste("Read",prettyNum(nrow(mandatory_locations),big.mark=","),"rows from mandatory_locations"))
 
@@ -1169,11 +1169,11 @@ work_locations <- left_join(work_locations,
                             select(households, hh_id, incQ, incQ_label))
 # add person type
 work_locations <- left_join(work_locations,
-                            select(persons, hh_id, person_num, ptype, ptype_label))
+                            select(persons, hh_id, person_num, ptype, ptype_label, wfh_choice))
 print(table(work_locations$ptype_label))
 
 # summarize
-journeytowork_mode_summary <- summarise(group_by(work_locations, incQ, incQ_label, ptype, ptype_label,
+journeytowork_mode_summary <- summarise(group_by(work_locations, incQ, incQ_label, ptype, ptype_label,wfh_choice,
                                                  homeSD, HomeSubZone, workSD, WorkSubZone,
                                                  tour_mode),
                                    freq     = n(),
@@ -1250,9 +1250,9 @@ trips       <- mutate(trips,
                       )
 
 # we only want some variables - sum them to hh_id
-trips_melt  <- tbl_df(melt(select(trips, hh_id, trip_cost_indiv, trip_cost_joint, cost_fail),
+trips_melt  <- tibble::as_tibble(melt(select(trips, hh_id, trip_cost_indiv, trip_cost_joint, cost_fail),
                            id.vars=c("hh_id")))
-trips_dcast <- tbl_df(dcast(trips_melt, hh_id ~ variable, fun.aggregate=sum))
+trips_dcast <- tibble::as_tibble(dcast(trips_melt, hh_id ~ variable, fun.aggregate=sum))
 # left join with household --> one row per household!
 costs_by_household <- left_join(select(households, hh_id, SD, COUNTY, county_name,
                                        PERSONS, incQ, incQ_label, autos),
@@ -1275,9 +1275,9 @@ tours       <- mutate(tours,
                       pcost_indiv = (num_participants==1)*parking_cost,
                       pcost_joint = (num_participants>1)*parking_cost)
 # sum them to hh_id
-tours_melt  <- tbl_df(melt(select(tours, hh_id, pcost_indiv, pcost_joint),
+tours_melt  <- tibble::as_tibble(melt(select(tours, hh_id, pcost_indiv, pcost_joint),
                            id.vars=c("hh_id")))
-tours_dcast <- tbl_df(dcast(tours_melt, hh_id ~ variable, fun.aggregate=sum))
+tours_dcast <- tibble::as_tibble(dcast(tours_melt, hh_id ~ variable, fun.aggregate=sum))
 
 # add to costs_by_household
 costs_by_household <- left_join(costs_by_household, tours_dcast, by=c("hh_id"))
@@ -1463,7 +1463,7 @@ save(model_summary, file=file.path(RESULTS_DIR, "VehicleMilesTraveled_households
 remove(vmt_summary, model_summary)
 
 # Vehicle Miles Travelef for Climate Action Plans Summary
-mandatory_locations <- tbl_df(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")),
+mandatory_locations <- tibble::as_tibble(read.table(file=file.path(MAIN_DIR, paste0("wsLocResults_",ITER,".csv")),
                                          header=TRUE, sep=","))
 # we only want work_locations to have hh_id, person_id, workLocation
 work_locations      <- subset(mandatory_locations, WorkLocation>0)

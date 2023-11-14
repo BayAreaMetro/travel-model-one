@@ -36,6 +36,12 @@ public class Person implements java.io.Serializable {
     public static final String[] employmentCategoryNameArray = {EMPLOYMENT_CATEGORY_FULL_TIME_WORKER_NAME,
         EMPLOYMENT_CATEGORY_PART_TIME_WORKER_NAME,EMPLOYMENT_CATEGORY_NOT_EMPLOYED_NAME,EMPLOYMENT_CATEGORY_UNDER_AGE_16_NAME};
 
+    public static final String WFH_CATEGORY_NA                              = "N/A";
+    public static final String WFH_CATEGORY_GOES_TO_WORK                    = "Goes to work";
+    public static final String WFH_WORKS_FROM_HOME                          = "Works from home";
+    
+    public static final String[] wfhCategoryNameArray = {WFH_CATEGORY_NA, WFH_CATEGORY_GOES_TO_WORK, WFH_WORKS_FROM_HOME};
+
     public static final String STUDENT_CATEGORY_GRADE_OR_HIGH_SCHOOL_NAME   = "Grade or high school";
     public static final String STUDENT_CATEGORY_COLLEGE_OR_HIGHER_NAME      = "College or higher";
     public static final String STUDENT_CATEGORY_NOT_STUDENT_NAME            = "Not student";
@@ -50,6 +56,7 @@ public class Person implements java.io.Serializable {
     private byte persAge;
     private byte persGender;
     private byte persEmploymentCategory;
+    private byte persWfhCategory;          // set by CoordinatedDailyActivityPatternModel
     private byte persStudentCategory;
     private byte personType;
     private float persValueOfTime;         // individual value-of-time in $/hr 
@@ -315,6 +322,10 @@ public class Person implements java.io.Serializable {
     public void setPersEmploymentCategory( int category ) {
         persEmploymentCategory = (byte)category;
     }
+
+    public void setPersWorksFromHomeCategory(int category) {
+        persWfhCategory = (byte)category;
+    }
     
     public void setPersStudentCategory( int category ){
     	persStudentCategory = (byte)category;
@@ -564,6 +575,10 @@ public class Person implements java.io.Serializable {
 
     public String getPersonEmploymentCategory() {
         return employmentCategoryNameArray[persEmploymentCategory-1];
+    }
+
+    public String getPersonWfhCategory() {
+        return wfhCategoryNameArray[persWfhCategory-1];
     }
 
     public String getPersonStudentCategory() {
@@ -863,6 +878,16 @@ public class Person implements java.io.Serializable {
         return persIsWorker();
     }
     
+    /**
+     * determine if person works from home.
+     * @return 1 if works from home, 0 otherwise
+     */
+    public int getPersonWorksFromHome() {
+        if (persWfhCategory == WorkFromHomeStatus.WORKS_FROM_HOME.ordinal() ) 
+            return 1;
+        else
+            return 0;
+    }
     /**
      * Determine if person is a student (of any age, independent of person type)
      * @return 1 if student, 0 otherwise
@@ -1265,6 +1290,7 @@ public class Person implements java.io.Serializable {
         Household.logHelper( logger, "persAge: ", persAge, totalChars );
         Household.logHelper( logger, "persGender: ", persGender, totalChars );
         Household.logHelper( logger, "persEmploymentCategory: ", persEmploymentCategory, totalChars );
+        Household.logHelper( logger, "persWfhCategory: ", persWfhCategory, totalChars );
         Household.logHelper( logger, "persStudentCategory: ", persStudentCategory, totalChars );
         Household.logHelper( logger, "personType: ", personType, totalChars );
         Household.logHelper( logger, "persValueOfTime: ", String.format("%6.2f", persValueOfTime), totalChars );
@@ -1419,6 +1445,7 @@ public class Person implements java.io.Serializable {
         Household.logHelper( logger, "persAge: ", persAge, totalChars );
         Household.logHelper( logger, "persGender: ", persGender, totalChars );
         Household.logHelper( logger, "persEmploymentCategory: ", persEmploymentCategory, totalChars );
+        Household.logHelper( logger, "persWfhCategory: ", persWfhCategory, totalChars );
         Household.logHelper( logger, "persStudentCategory: ", persStudentCategory, totalChars );
         Household.logHelper( logger, "personType: ", personType, totalChars );
         Household.logHelper( logger, "persValueOfTime: ", String.format("%6.2f", persValueOfTime), totalChars );
@@ -1578,7 +1605,14 @@ public class Person implements java.io.Serializable {
         NOT_EMPLOYED,
         UNDER16
     }
-    
+
+    public enum WorkFromHomeStatus {
+        nul,             // unset
+        NOT_APPLICABLE,  // non-worker
+        GOES_TO_WORK,
+        WORKS_FROM_HOME,
+    }
+
     public enum StudentStatus {
     	nul,
     	STUDENT_HIGH_SCHOOL_OR_LESS,
