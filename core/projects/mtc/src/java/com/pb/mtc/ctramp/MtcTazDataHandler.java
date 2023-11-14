@@ -39,8 +39,15 @@ public class MtcTazDataHandler extends TazDataHandler {
     public static final String ZONE_DATA_HIGH_SCHOOL_ENROLLMENT_FIELD_NAME = "hsenroll";
     public static final String ZONE_DATA_COLLEGE_PART_TIME_ENROLLMENT_FIELD_NAME = "collpte";
     public static final String ZONE_DATA_COLLEGE_FULL_TIME_ENROLLMENT_FIELD_NAME = "collfte";
-    
-    
+
+    // six industry employment categories
+    public static final String ZONE_DATA_AGR_NATRES_EMP_FIELD_NAME           = "AGREMPN";
+    public static final String ZONE_DATA_FINANCE_PROF_EMP_FIELD_NAME         = "FPSEMPN";
+    public static final String ZONE_DATA_HEALTH_EDU_REC_EMP_FIELD_NAME       = "HEREMPN";
+    public static final String ZONE_DATA_MANU_WHOLESALE_TRANS_EMP_FIELD_NAME = "MWTEMPN";
+    public static final String ZONE_DATA_OTHER_EMP_FIELD_NAME                = "OTHEMPN";
+    public static final String ZONE_DATA_RETAIL_EMP_FIELD_NAME               = "RETEMPN";
+
     private static final String ZONE_DATA_AREATYPE_FIELD_NAME = "areatype";
     
 
