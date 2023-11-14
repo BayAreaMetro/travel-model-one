@@ -82,7 +82,7 @@ if __name__ == '__main__':
             if (int(MODEL_YEAR) < 2035):
                UPDATE_CONSTANT = False
             else:
-               UPDATE_CONSTANT = True      
+               UPDATE_CONSTANT = True
         # Rules to determine whether the telecommute constants should be turned on for STIP
         if (MODEL_DIR.upper().find("STP") >= 0):
             UPDATE_CONSTANT = False
@@ -108,10 +108,11 @@ if __name__ == '__main__':
     tazdata_df = pandas.read_csv(TAZDATA_FILE, index_col=False, sep=',', usecols=TAZDATA_COLS)
     print('Read {} lines from {}; head:\n{}'.format(len(tazdata_df), TAZDATA_FILE, tazdata_df.head()))
 
+    # read max telecommute rate
     if UPDATE_CONSTANT:
-        # read max telecommute rate
         telecommute_rate_df = pandas.read_csv(TELERATE_FILE, sep=',')
         print('Read {} lines from {}; head:\n{}'.format(len(telecommute_rate_df), TELERATE_FILE, telecommute_rate_df.head()))
+
 
         # join to tazdata to figure out effective max telecommute rate for each county
         telecommute_rate_df = pandas.merge(left=tazdata_df, right=telecommute_rate_df, how='left', on='COUNTY')
@@ -145,8 +146,8 @@ if __name__ == '__main__':
         # otherwise, default to zero
         telecommute_df['CALIB_ITER'] = int(CALIB_ITER)
         telecommute_df['telecommuteConstant'] = 0.0
- 
-      
+
+
     # no results yet -- start at zero
     elif int(TELECOMMUTE_CALIBRATION)==1 and int(CALIB_ITER)==0:
 
@@ -243,9 +244,9 @@ if __name__ == '__main__':
                                           (work_tours_df['person_type_str']=='Part-time worker'), ]
         # aggregate to work SD
         work_mode_SD_df = work_tours_df.groupby(['person_type_str','COUNTY','SD','simple_mode']).agg({'num_workers':'sum'}).reset_index()
-        
+
         # move person_type_str and simple mode to columns
-        work_mode_SD_df = pandas.pivot_table(work_mode_SD_df, index=['COUNTY','SD'], 
+        work_mode_SD_df = pandas.pivot_table(work_mode_SD_df, index=['COUNTY','SD'],
                                              columns=['person_type_str','simple_mode'], values='num_workers').reset_index()
         # flatten columns
         work_mode_SD_df.columns = [' '.join(col).strip() for col in work_mode_SD_df.columns.values]
@@ -280,47 +281,51 @@ if __name__ == '__main__':
         work_mode_SD_df['auto_share']       = work_mode_SD_df['auto']        / work_mode_SD_df['working']
 
         # join with max telecommute rate (county-based)
-        work_mode_SD_df = pandas.merge(left  =work_mode_SD_df, 
+        if UPDATE_CONSTANT:
+            work_mode_SD_df = pandas.merge(left  =work_mode_SD_df,
                                        right =telecommute_rate_df[['COUNTY','max_telecommute_rate']],
                                        how   ='left',
                                        on    ='COUNTY')
 
-        print('work_mode_SD_df:\n{}'.format(work_mode_SD_df))
+            print('work_mode_SD_df:\n{}'.format(work_mode_SD_df))
 
         # read pervious CONSTANTS
         telecommute_df = pandas.read_csv(TELECOMMUTE_CONSTANTS_FILE.format(int(CALIB_ITER)-1))
 
         telecommute_df = telecommute_df[['ZONE','SD','COUNTY','telecommuteConstant']]
-        telecommute_df.rename(columns={'telecommuteConstant':'telecommuteConstant_prev'}, inplace=True)
-
-        # join with work_mode_SD_df
-        telecommute_df = pandas.merge(left=telecommute_df, right=work_mode_SD_df) 
-
-        # THIS IS IT
-        # start at previous value
-        telecommute_df['telecommuteConstant'] = telecommute_df['telecommuteConstant_prev']
-
-        # telecommute within threshold of max
-        telecommute_df['telecomute_diff']     = telecommute_df['max_telecommute_rate'] - telecommute_df['telecommute_rate']
-        telecommute_df['telecomute_near_max'] = telecommute_df['telecomute_diff'].abs() < TELECOMMUTE_RATE_THRESHHOLD
 
         if UPDATE_CONSTANT:
+            telecommute_df.rename(columns={'telecommuteConstant':'telecommuteConstant_prev'}, inplace=True)
+
+            # join with work_mode_SD_df
+            telecommute_df = pandas.merge(left=telecommute_df, right=work_mode_SD_df)
+
+            # THIS IS IT
+            # start at previous value
+            telecommute_df['telecommuteConstant'] = telecommute_df['telecommuteConstant_prev']
+
+            # telecommute within threshold of max
+            telecommute_df['telecomute_diff']     = telecommute_df['max_telecommute_rate'] - telecommute_df['telecommute_rate']
+            telecommute_df['telecomute_near_max'] = telecommute_df['telecomute_diff'].abs() < TELECOMMUTE_RATE_THRESHHOLD
+
             # increase (negative) if auto share is high and we're not at max
-            telecommute_df.loc[ (telecommute_df['auto_share'] > TARGET_AUTO_SHARE) & 
+            telecommute_df.loc[ (telecommute_df['auto_share'] > TARGET_AUTO_SHARE) &
                                 (telecommute_df['telecommute_rate'] < telecommute_df['max_telecommute_rate']) &
                                 (telecommute_df['telecomute_near_max'] == False),
                 'telecommuteConstant' ] = telecommute_df['telecommuteConstant'] - CONSTANT_INCREMENT
             # decrease if telecommute share is high
             telecommute_df.loc[ (telecommute_df['telecommute_rate'] > telecommute_df['max_telecommute_rate']) &
-                                (telecommute_df['telecomute_near_max'] == False), 
+                                (telecommute_df['telecomute_near_max'] == False),
                 'telecommuteConstant' ] = telecommute_df['telecommuteConstant'] + CONSTANT_DECREMENT
 
             # don't go positive
             telecommute_df.loc[ telecommute_df['telecommuteConstant'] > 0, 'telecommuteConstant' ] = 0
 
-        # drop person_type_str column and other temp cols
-        telecommute_df.drop(columns=['telecomute_diff','telecomute_near_max'], inplace=True)
-        telecommute_df['CALIB_ITER'] = int(CALIB_ITER)
+            # drop person_type_str column and other temp cols
+            telecommute_df.drop(columns=['telecomute_diff','telecomute_near_max'], inplace=True)
+
+    # need this whether we update the constants or not
+    telecommute_df['CALIB_ITER'] = int(CALIB_ITER)
 
 
     # write it with calib iter
