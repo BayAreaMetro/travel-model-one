@@ -240,9 +240,6 @@ public class MtcHouseholdDataManager extends HouseholdDataManager {
                 int empCat = (int)personTable.getValueAt( p, personTable.getColumnPosition( PERSON_EMPLOYMENT_CATEGORY_FIELD_NAME ) );
                 person.setPersEmploymentCategory ( empCat );
 
-                // set to null to start
-                person.setPersWorksFromHomeCategory( Person.WorkFromHomeStatus.nul.ordinal() );
-
                 // Student status (1 - student in grade or high school; 2 - student in college or higher; 3 - not a student)
                 int studentCat = (int)personTable.getValueAt( p, personTable.getColumnPosition(PERSON_STUDENT_CATEGORY_FIELD_NAME));
                 person.setPersStudentCategory(studentCat);

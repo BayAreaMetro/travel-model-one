@@ -5,25 +5,25 @@
 ; TP+ script to determine trips to and from Bay Area high speed rail stations based on output from the California
 ; High Speed Rail model.
 ;
-; Starting with input trip tables for 2040 and 2050 (future modeled year), the script will assume zero
+; Starting with input trip tables for 2035 (opening year for the Gilroy and San Jose stations), 2039 (opening
+; year for Millbrae and San Francisco stations), and 2050 (future modeled year), the script will assume zero
 ; trips before the opening year for the relevant station and interpolate the number of trips afterwards.
 ;
-; Input:   Trip tables representing trips to/from the four Bay Area HSR stations in 2040 and 2050, with the
-;          following four tables: (a) da. for drive alone, (b) sr2, for shared ride 2, (c) taxi, 
-;          (d) transit, and (e) walk.
+; Input:   Trip tables representing trips to/from the four Bay Area HSR stations in 2035, 2039, and 2050, with the
+;          following four tables: (a) da. for drive alone, (b) sr2, for shared ride 2, (c) transit, and (d) walk.
 ;
 ;          Additionally, the model year will be specified in the environment variable, MODEL_YEAR.
 ;
 ; Output:  Five, time-of-day-specific trip table matrices, each containing the following four tables: (a) da,
-;          for drive alone, (b) sr2, for shared ride 2, (c) taxi, (d) transit, and (e) walk.
+;          for drive alone, (b) sr2, for shared ride 2, (c) transit, and (d) walk.
 ;
 ; See also: (1) IxTollChoice.job, which applies a toll/no toll logit model for the auto trips and
 ;               follows this script.
 ;           (2) HsrTransitSubmodeChoice.job, which chooses the transit submode for the transit trips and
 ;               also follows.
 ;
-; version:  Travel Model One v1.6
-; authors:  lmz (2023 11 07), lmz (2016 06 21)
+; version:  Travel Model One v0.6
+; authors:  lmz (2016 06 21)
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 model_year = %MODEL_YEAR%
@@ -48,54 +48,62 @@ loop tpnum=1,5
   DistributeMultistep processid = 'ctramp', processNum = tpnum, commpath = '%COMMPATH%'
 
   RUN PGM=MATRIX
-    filei mati[1] = 'INPUT\nonres\tripsHsr@time_period@_2040.tpp'
-    filei mati[2] = 'INPUT\nonres\tripsHsr@time_period@_2050.tpp'
+    filei mati[1] = 'INPUT\nonres\tripsHsr@time_period@_2035.tpp'
+    filei mati[2] = 'INPUT\nonres\tripsHsr@time_period@_2039.tpp'
+    filei mati[3] = 'INPUT\nonres\tripsHsr@time_period@_2050.tpp'
 
-    fileo mato[1] = 'nonres\tripsHsr@time_period@_intermediate.tpp', mo=1-10, 
-       name=m_da, m_sr2, m_taxi, m_transit, m_walk, b_da, b_sr2, b_taxi, b_transit, b_walk
+    fileo mato[1] = 'nonres\tripsHsr@time_period@_intermediate.tpp', mo=1-8, name=m_da, m_sr2, m_transit, m_walk, b_da, b_sr2, b_transit, b_walk
 
     ; if the model year is before HSR opening OR HSR interregional travel is disabled by configuration
-    if ((@model_year@ < 2040) | (@HSR_Interregional_Disable@=1))
+    if ((@model_year@ < 2035) | (@HSR_Interregional_Disable@=1))
       ; nothing open
       MW[1] = 0
       MW[2] = 0
       MW[3] = 0
       MW[4] = 0
-      MW[5] = 0
 
+      MW[5] = 0
       MW[6] = 0
       MW[7] = 0
       MW[8] = 0
-      MW[9] = 0
-      MW[10]= 0
+    elseif (@model_year@ < 2039)
+      ;        change in trips    change in years
+      MW[1] = 100.0*(MI.2.da      - MI.1.da     )/(2039 - 2035)
+      MW[2] = 100.0*(MI.2.sr2     - MI.1.sr2    )/(2039 - 2035)
+      MW[3] = 100.0*(MI.2.transit - MI.1.transit)/(2039 - 2035)
+      MW[4] = 100.0*(MI.2.walk    - MI.1.walk   )/(2039 - 2035)
+
+      ;              trips       -  m x year
+      MW[5] = 100.0*(MI.1.da      - (MW[1]*0.01*2035))
+      MW[6] = 100.0*(MI.1.sr2     - (MW[2]*0.01*2035))
+      MW[7] = 100.0*(MI.1.transit - (MW[3]*0.01*2035))
+      MW[8] = 100.0*(MI.1.walk    - (MW[4]*0.01*2035))
+
     else
       ; (times 100 is to keep more precision)
-      ;        change in trips     change in years
-      MW[1] = 100.0*(MI.2.da_veh   - MI.1.da_veh  )/(2050 - 2040)
-      MW[2] = 100.0*(MI.2.sr2_veh  - MI.1.sr2_veh )/(2050 - 2040)
-      MW[3] = 100.0*(MI.2.taxi_Veh - MI.1.taxi_Veh)/(2050 - 2040)
-      MW[4] = 100.0*(MI.2.transit  - MI.1.transit )/(2050 - 2040)
-      MW[5] = 100.0*(MI.2.walk     - MI.1.walk    )/(2050 - 2040)
+      ; 100 x slope:     change in trips          change in years
+      MW[1] = 100.0*(MI.3.da      - MI.2.da     )/(2050 - 2039)
+      MW[2] = 100.0*(MI.3.sr2     - MI.2.sr2    )/(2050 - 2039)
+      MW[3] = 100.0*(MI.3.transit - MI.2.transit)/(2050 - 2039)
+      MW[4] = 100.0*(MI.3.walk    - MI.2.walk   )/(2050 - 2039)
 
-      ;              trips         -  m x year
-      MW[6] = 100.0*(MI.1.da_veh   - (MW[1]*0.01*2040))
-      MW[7] = 100.0*(MI.1.sr2_veh  - (MW[2]*0.01*2040))
-      MW[8] = 100.0*(MI.1.taxi_veh - (MW[3]*0.01*2040))
-      MW[9] = 100.0*(MI.1.transit  - (MW[4]*0.01*2040))
-      MW[10]= 100.0*(MI.1.walk     - (MW[5]*0.01*2040))
+      ; 100 x y-intercept:  trips -       slope x year
+      MW[5] = 100.0*(MI.2.da      - (MW[1]*0.01*2039))
+      MW[6] = 100.0*(MI.2.sr2     - (MW[2]*0.01*2039))
+      MW[7] = 100.0*(MI.2.transit - (MW[3]*0.01*2039))
+      MW[8] = 100.0*(MI.2.walk    - (MW[4]*0.01*2039))
     endif
   ENDRUN
 
   RUN PGM=MATRIX
     filei mati[1] = 'nonres\tripsHsr@time_period@_intermediate.tpp'
 
-    fileo mato[1] = 'nonres\tripsHsr@time_period@.tpp', mo=11-15, name=da_veh,sr2_veh,taxi_veh,transit,walk
+    fileo mato[1] = 'nonres\tripsHsr@time_period@.tpp', mo=11-14, name=da,sr2,transit,walk
 
     MW[11] = (0.01*MI.1.b_da     ) + (MI.1.m_da     *0.01*@model_year@)
     MW[12] = (0.01*MI.1.b_sr2    ) + (MI.1.m_sr2    *0.01*@model_year@)
-    MW[13] = (0.01*MI.1.b_taxi   ) + (MI.1.m_taxi   *0.01*@model_year@)
-    MW[14] = (0.01*MI.1.b_transit) + (MI.1.m_transit*0.01*@model_year@)
-    MW[15] = (0.01*MI.1.b_walk   ) + (MI.1.m_walk   *0.01*@model_year@)
+    MW[13] = (0.01*MI.1.b_transit) + (MI.1.m_transit*0.01*@model_year@)
+    MW[14] = (0.01*MI.1.b_walk   ) + (MI.1.m_walk   *0.01*@model_year@)
 
   ENDRUN
 

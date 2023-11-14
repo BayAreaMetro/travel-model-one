@@ -2,6 +2,7 @@
 ::
 :: This batch script helps QAQC of
 :: - AV share
+:: - Telecommute
 :: - Bike mode share (for the Complete Street strategy)
 :: - Max congested speed (for the Vision Zero strategy)
 ::
@@ -27,6 +28,11 @@ cd ..
 copy /y "%GITHUB_MASTER%\utilities\RTP\QAQC\Car_ownership_summary_2035.xlsx"       "%M_DIR%\OUTPUT\QAQC\Car_ownership_summary_2035.xlsx"
 copy /y "%GITHUB_MASTER%\utilities\RTP\QAQC\Car_ownership_summary_2050.xlsx"       "%M_DIR%\OUTPUT\QAQC\Car_ownership_summary_2050.xlsx"
 
+:: ---------------------------------
+:: check telecommute
+:: ---------------------------------
+copy /y "%GITHUB_MASTER%\utilities\RTP\QAQC\Report_TelecommuteLevel.py"       QAQC\Report_TelecommuteLevel.py
+python QAQC/report_telecommutelevel.py
 cd QAQC
 copy /y "PBA50_QAQC.csv"                                                "%M_DIR%\OUTPUT\QAQC\PBA50_QAQC.csv"
 cd ..

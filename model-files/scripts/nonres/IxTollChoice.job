@@ -98,17 +98,17 @@ loop period = 1,5
       ; drive alone
       if (class = 1) 
          token_class      = 'DA'
-         token_class_hsr  = 'DA_VEH'
+         token_class_hsr  = 'DA'
          token_cost_share = '1.0'
       
       elseif (class = 2)
          token_class      = 'S2'
-         token_class_hsr  = 'SR2_VEH'
+         token_class_hsr  = 'SR2'
          token_cost_share = 'SR2COSTSHARE' 
          
       elseif (class = 3)
          token_class      = 'S3'
-         token_class_hsr  = 'SR2_VEH' ; not used
+         token_class_hsr  = 'SR2' ; not used
          token_cost_share = 'SR3COSTSHARE'
          
       endif

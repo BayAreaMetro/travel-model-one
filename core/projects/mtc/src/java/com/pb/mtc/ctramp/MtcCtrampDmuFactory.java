@@ -65,7 +65,7 @@ public class MtcCtrampDmuFactory implements CtrampDmuFactoryIf, Serializable {
 
 
     public CoordinatedDailyActivityPatternDMU getCoordinatedDailyActivityPatternDMU() {
-        return new MtcCoordinatedDailyActivityPatternDMU( tazDataHandler );
+        return new MtcCoordinatedDailyActivityPatternDMU();
     }
 
 

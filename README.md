@@ -8,8 +8,7 @@ The following model versions are available in the repository:
 2. Version 0.4 -- Maintained in branch [`v04`](https://github.com/BayAreaMetro/travel-model-one/tree/v04).
 3. Version 0.5 -- Maintained in branch [`v05`](https://github.com/BayAreaMetro/travel-model-one/tree/v05).
 3. Version 0.6 -- Maintained in branch [`v06`](https://github.com/BayAreaMetro/travel-model-one/tree/v06).
-4. Version 1.5 -- Maintained in branch [`master`](https://github.com/BayAreaMetro/travel-model-one/tree/master). Latest relase is [TM1.5.2.6](https://github.com/BayAreaMetro/travel-model-one/releases/tag/TM1.5.2.6).
-5. Version 1.6 -- Maintained in branch [`master`](https://github.com/BayAreaMetro/travel-model-one/tree/master).
+4. Version 1.5 -- Maintained in branch [`master`](https://github.com/BayAreaMetro/travel-model-one/tree/master).
 
 Travel Model Two is also under development in a different repository: https://github.com/BayAreaMetro/travel-model-two
 

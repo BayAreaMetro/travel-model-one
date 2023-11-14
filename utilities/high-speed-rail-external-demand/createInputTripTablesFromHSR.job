@@ -1,7 +1,3 @@
-;
-; This script created the HSR external demand tables for Travel Model 1 v0.6
-; See 2016 Task, Add high speed rail external demand (https://app.asana.com/0/13098083395690/97041507197227/f)
-;
 
 loop model_run = 1,3
 
