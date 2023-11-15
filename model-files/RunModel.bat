@@ -383,6 +383,7 @@ call RunPrepareEmfac.bat SB375 WithFreight
 
 rem for the NextGenFwy Project, we don't need to run logsums
 if %PROJECT%==NGF goto core_summaries
+if %PROJECT%==STP goto core_summaries
 
 : logsums
 
