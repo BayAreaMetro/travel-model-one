@@ -26,6 +26,9 @@
 #     which is consumed by SanFranciscoBayArea_NationalTransitDatabase.twb and published to
 #     https://public.tableau.com/views/SanFranciscoBayArea_NationalTransitDatabase/Navigation
 #
+#  1.5) NTD_long_VRH_UPT.csv (https://mtcdrive.box.com/s/rtproamdd5zw4tjru2tv4d347d3291sc)
+#     which is consumed by NTD-transit-recovery.twb
+#
 #  2) NTD_monthly_model.rdata (https://mtcdrive.box.com/v/national-transit-database)
 #     which is NTD data filtered to model months ('MAR','APR','MAY','SEP','OCT','NOV')
 #     Average daily columns of the variables are included in here.  For UPT, these are
@@ -74,6 +77,10 @@ print(paste("Reading",normalizePath(INPUT_MODEL_LOOKUP_XLSX)))
 # in the WORKING_DIR
 OUTPUT_FILE      <- file.path(WORKING_DIR, "NTD_long.rdata")
 
+# special VRH_UPT file
+VRH_UPT_OUTPUT_FILE <- file.path(BOX_DIR, "Plan Bay Area 2050+", "Federal and State Approvals", "CARB Technical Methodology",
+  "Exogenous Forces", "Transit_hesitance", "NTD_long_VRH_UPT.csv")
+
 # Excel stores days as days since 1970-01-01
 # lubridate as days since 1900-01-01
 DAYS_1900_TO_1970 <- 25569
@@ -83,6 +90,8 @@ upt_monthly_to_daily_df <- read_excel(INPUT_UPT_MONTHLY_TO_DAILY)
 
 # model-specific summary
 NTD_model_df <- data.frame()
+# also output a text version with columns for VRH and UPT
+VRH_UPT_join_df <- data.frame()
 
 for (worksheet in INPUT_WORKSHEETS) {
   print(paste("Processing worksheet", worksheet))
@@ -173,17 +182,26 @@ for (worksheet in INPUT_WORKSHEETS) {
       Monthly.Vehicle.Revenue.Hours=VRH,
       average.daily.Vehicle.Revenue.Hours=average_daily
     )
+    # first just copy the VRH
+    VRH_UPT_join_df <- data.frame(NTD_long_df)
   }
   if (worksheet=="UPT") {
     NTD_long_df <- rename(NTD_long_df, 
       Monthly.Unlinked.Passenger.Trips=UPT,
       average.daily.Unlinked.Passenger.Trips=average_daily)
+    # join the VRH to UPT
+    VRH_UPT_join_df <- full_join(VRH_UPT_join_df, NTD_long_df)
+    print(paste("VRH_UPT_join_df columns:", colnames(VRH_UPT_join_df)))
   }
 
   # Write it to rData
   out_file <- str_replace(OUTPUT_FILE, ".rdata", paste0("_",worksheet,".rdata"))
   print(paste("Saving", out_file))
   save(NTD_long_df, file=out_file)
+
+  # write the VRH_UPT_join_df to a csv
+  print(paste("Saving", VRH_UPT_OUTPUT_FILE))
+  write.csv(VRH_UPT_join_df, file=VRH_UPT_OUTPUT_FILE, row.names=FALSE)
 
   INDEX_COLS <- c(
     "NTD ID","Legacy NTD ID","Agency","Status","Reporter Type",
