@@ -14,4 +14,8 @@ core/projects/**/build
 **/TPPL*.PRN
 **/*-checkpoint.ipynb
 utilities/NextGenFwys/metrics/*.csv
+*.class
+model-files/runtime/config/jppf-2.4/JPPF-2.4-application-template/classes/*
 
+# don't commit this
+**/.project
