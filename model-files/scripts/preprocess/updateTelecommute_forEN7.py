@@ -301,6 +301,13 @@ if __name__ == '__main__':
         (telecommute_df['wfh_share'] > telecommute_df['max_wfh_share']) &
         (telecommute_df['telecommute_near_max'] == False), 
         'change'] = 'decrease_wfh'
+    
+    # but if the wfh constant would go positive, we can't decrease
+    telecommute_df.loc[ 
+        (telecommute_df['change'] == 'decrease_wfh') &
+        (telecommute_df['wfh_EN7_constant'] + CONSTANT_DECREMENT > 0), 
+        'change' ] = 'decrease_but_at_max'
+
     # log summary
     logging.debug(telecommute_df[['COUNTY','change']].value_counts())
     
@@ -312,11 +319,7 @@ if __name__ == '__main__':
         telecommute_df.change == 'decrease_wfh',
         'wfh_EN7_constant' ] = telecommute_df['wfh_EN7_constant'] + CONSTANT_DECREMENT
 
-    # don't go positive
-    telecommute_df.loc[ telecommute_df['wfh_EN7_constant'] > 0, 'wfh_EN7_constant' ] = 0
-
-    # drop temp cols
-    telecommute_df.drop(columns=['telecomute_diff','telecommute_near_max','change'], inplace=True)
+    
     logging.debug("Final telecommute_df (len={}):\n{}".format(len(telecommute_df), telecommute_df))
 
     # write detail

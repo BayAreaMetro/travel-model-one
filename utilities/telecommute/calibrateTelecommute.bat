@@ -143,7 +143,7 @@ set ITER=2
 set SEED=0
 
 :: only need to do this the first time
-if "%ITER%"=="1" (
+if %ITER%==1 (
   rem copy the zero stubs over for use
   copy "%GITHUB_DIR%\utilities\telecommute\telecommute_EN7_zero.csv"  main\telecommute_EN7.csv
 
@@ -153,6 +153,9 @@ if "%ITER%"=="1" (
   @echo on
   rem Don't care about the response
 )
+
+:: copy the UEC again
+copy /Y "%GITHUB_DIR%\model-files\model\CoordinatedDailyActivityPattern.xls" CTRAMP\model\CoordinatedDailyActivityPattern.xls
 
 :: slack
 set INSTANCE=%COMPUTERNAME%
@@ -173,8 +176,11 @@ if ERRORLEVEL 2 goto done
 
 C:\Windows\SysWOW64\taskkill /f /im "java.exe"
 
-:: update EN7 constants based on this iteration output
-python "%GITHUB_DIR%\model-files\scripts\preprocess\updateTelecommut_forEN7.py
+:: main\telecommute_EN7_[ITER].csv will be the version *used* for ITER -- save this one now
+copy /Y "main\telecommute_EN7.csv" "main\telecommute_EN7_%ITER%.csv"
+
+:: update EN7 constants based on this iteration's output for next ITER
+python "%GITHUB_DIR%\model-files\scripts\preprocess\updateTelecommute_forEN7.py"
 :: if ERRORLEVEL 1 goto done
 
 set INSTANCE=%COMPUTERNAME%
