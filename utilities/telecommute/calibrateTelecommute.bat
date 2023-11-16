@@ -10,10 +10,7 @@
 ::
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :: uncomment this to iterate
-:: goto iter1
-
-set TELECOMMUTE_CALIBRATION=1
-set CALIB_ITER=00
+goto iter
 
 :setup_model
 :: Setup:: copy over CTRAMP
@@ -38,8 +35,11 @@ c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\hwy"          
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\trn"            INPUT\trn
 copy /Y "%MODEL_SETUP_BASE_DIR%\INPUT\params.properties"                          INPUT\params.properties
 
+copy /Y "%GITHUB_DIR%\utilities\telecommute\telecommute_max_rate_county.csv"      INPUT\landuse
+
 mkdir main
 copy "%MODEL_SETUP_BASE_DIR%\main\ShadowPricing_7.csv"                            main
+
 
 :: source of skims to copy
 set SKIM_DIR=%MODEL_SETUP_BASE_DIR%
@@ -136,18 +136,17 @@ copy "%SKIM_DIR%\skims\trnskm*"           skims
 copy "%SKIM_DIR%\skims\nonmotskm.tpp"     skims
 copy "%SKIM_DIR%\skims\accessibility.csv" skims
 
-:iter1
+:iter
 
 :: Set the iteration parameters
-set ITER=1
-set PREV_ITER=1
-set WGT=1.0
-set PREV_WGT=0.00
-set SAMPLESHARE=0.20
+set ITER=2
 set SEED=0
 
 :: only need to do this the first time
-if "%CALIB_ITER%"=="00" (
+if "%ITER%"=="1" (
+  rem copy the zero stubs over for use
+  copy "%GITHUB_DIR%\utilities\telecommute\telecommute_EN7_zero.csv"  main\telecommute_EN7.csv
+
   rem Prompt user to set the workplace shadow pricing parameters
   @echo off
   set /P c=Project Directory updated.  Update initial telecommute constants and workplace shadow pricing parameters press Enter to continue...
@@ -155,14 +154,9 @@ if "%CALIB_ITER%"=="00" (
   rem Don't care about the response
 )
 
-:: update or initialize Telecommute Constant
-:: python \\tsclient\E\GitHub\travel-model-one-tm16_en7\model-files\scripts\preprocess\updateTelecommuteConstants.py
-:: if ERRORLEVEL 1 goto done
-
-:: copy over result for use
-:: copy main\telecommute_constants_%CALIB_ITER%.csv main\telecommute_constants.csv
-
-python CTRAMP\scripts\notify_slack.py "Starting telecommute calibration iteration %CALIB_ITER%"
+:: slack
+set INSTANCE=%COMPUTERNAME%
+python CTRAMP\scripts\notify_slack.py "Starting telecommute calibration iteration %ITER%"
 
 :core
 rem run matrix manager, household manager and jppf driver
@@ -179,9 +173,11 @@ if ERRORLEVEL 2 goto done
 
 C:\Windows\SysWOW64\taskkill /f /im "java.exe"
 
+:: update EN7 constants based on this iteration output
+python "%GITHUB_DIR%\model-files\scripts\preprocess\updateTelecommut_forEN7.py
+:: if ERRORLEVEL 1 goto done
+
 set INSTANCE=%COMPUTERNAME%
 python CTRAMP\scripts\notify_slack.py "Finished telecommute calibration iteration %CALIB_ITER%"
-
-echo TODO: increment CALIB_ITER if you are calibrating SD-based constants. Otherwise, leave at 00.
 
 :done

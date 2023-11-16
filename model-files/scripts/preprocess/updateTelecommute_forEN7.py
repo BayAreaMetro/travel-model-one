@@ -2,10 +2,10 @@ USAGE = '''
   Uses environment variables EN7, ITER
   EN7 is expected to be one of ['ENABLED', 'DISABLED'] or the script will error.
 
-  Log is written to: logs\\update_WFH_forEN7_[ITER]_[YYYYmmdd-HHMM].log
-  Detailed output is written to main\WFH_for_EN7_detail_[ITER].csv
+  Log is written to: logs\\updateTelecommute_forEN7_[ITER]_[YYYYmmdd-HHMM].log
+  Detailed output is written to main\telecommute_forEN7_detail_[ITER].csv
 
-  IF EN7=='DISABLED', then a main\\telecommute_constants.csv is created with zeros
+  IF EN7=='DISABLED', then a main\\telecommute_EN7.csv is created with zeros
   IF EN7=='ENABLED', then the script:
     - Reads INPUT\\landuse\\tazData.csv and INPUT\\landuse\\telecommute_max_rate_county.csv
       to estimate maximum wfh by county based on the employment industry mix
@@ -13,11 +13,11 @@ USAGE = '''
     - Filters to workers only, and the first work tour for each person (dropping potential subsequent work tours)
     - Summarizes the (wfh choice, work tour mode) for workers
     - Aggregates to superdistrict
-    - Reads the existing main\\telecommute_constants.csv (columns: ZONE,SD,COUNTY,telecommuteConstant)
+    - Reads the existing main\\telecommute_EN7.csv (columns: ZONE,SD,COUNTY,telecommuteConstant)
     - Adjust telecommuteConstant:
       - For superdistricts with auto_share > TARGET_AUTO_SHARE and wfh_share < max, increase telecommuteConstant
       - For superdistricts with wfh_share > max, decrease telecommuteConstant
-    - Writes main\\telecommute_constants.csv (columns: ZONE,SD,COUNTY,telecommuteConstant)
+    - Writes main\\telecommute_EN7.csv (columns: ZONE,SD,COUNTY,telecommuteConstant)
 
 '''
 
@@ -35,12 +35,12 @@ TELERATE_FILE   = os.path.join('INPUT','landuse','telecommute_max_rate_county.cs
 PARAMS_FILENAME = os.path.join('INPUT','params.properties')
 
 # input and output
-TELECOMMUTE_CONSTANTS_FILE = os.path.join('main','telecommute_constants.csv')
+TELECOMMUTE_EN7_FILE = os.path.join('main','telecommute_EN7.csv')
 # detail output
-DETAIL_OUTPUT_FILE = os.path.join('main','WFH_for_EN7_detail_{}.csv')
+DETAIL_OUTPUT_FILE = os.path.join('main','telecommute_forEN7_detail_{}.csv')
 
 # output
-LOG_FILE = os.path.join('logs','update_WFH_forEN7_{}_{}.log'.format('{}',time.strftime("%Y%m%d-%H%M")))
+LOG_FILE = os.path.join('logs','updateTelecommute_forEN7_{}_{}.log'.format('{}',time.strftime("%Y%m%d-%H%M")))
 
 # EN7
 TARGET_AUTO_SHARE  = 0.40
@@ -95,13 +95,13 @@ if __name__ == '__main__':
     if EN7 == "DISABLED":
         telecommute_df = tazdata_df[['ZONE','SD','COUNTY']].copy()
         telecommute_df['telecommuteConstant'] = 0.0
-        telecommute_df.to_csv(TELECOMMUTE_CONSTANTS_FILE, header=True, index=False)
-        logging.info("Wrote {:,} lines to {}".format(len(telecommute_df), TELECOMMUTE_CONSTANTS_FILE))
+        telecommute_df.to_csv(TELECOMMUTE_EN7_FILE, header=True, index=False)
+        logging.info("Wrote {:,} lines to {}".format(len(telecommute_df), TELECOMMUTE_EN7_FILE))
         sys.exit(0)
 
-    # make sure a version of TELECOMMUTE_CONSTANTS_FILE exists
-    if not os.path.exists(TELECOMMUTE_CONSTANTS_FILE):
-        logging.fatal("EN7 is ENABLED but {} doesn't exist".format(TELECOMMUTE_CONSTANTS_FILE))
+    # make sure a version of TELECOMMUTE_EN7_FILE exists
+    if not os.path.exists(TELECOMMUTE_EN7_FILE):
+        logging.fatal("EN7 is ENABLED but {} doesn't exist".format(TELECOMMUTE_EN7_FILE))
         sys.exit(-1000)
 
     # read max telecommute rate
@@ -268,11 +268,11 @@ if __name__ == '__main__':
     logging.debug("work_mode_SD_df:\n{}".format(work_mode_SD_df))
 
     # read previous CONSTANTS
-    telecommute_df = pandas.read_csv(TELECOMMUTE_CONSTANTS_FILE)
+    telecommute_df = pandas.read_csv(TELECOMMUTE_EN7_FILE)
     telecommute_df = telecommute_df[['ZONE','SD','COUNTY','telecommuteConstant']]
     telecommute_df.rename(columns={'telecommuteConstant':'telecommuteConstant_prev'}, inplace=True)
     logging.info('Read {:,} lines from {}; head:\n{}'.format(
-        len(telecommute_df), TELECOMMUTE_CONSTANTS_FILE, telecommute_df.head()))
+        len(telecommute_df), TELECOMMUTE_EN7_FILE, telecommute_df.head()))
 
     # join with work_mode_SD_df
     telecommute_df = pandas.merge(
@@ -324,7 +324,7 @@ if __name__ == '__main__':
     logging.info("Wrote {} lines to {}".format(len(telecommute_df), DETAIL_OUTPUT_FILE.format(ITER)))
 
     # simple
-    telecommute_df[['ZONE','SD','COUNTY','telecommuteConstant']].to_csv(TELECOMMUTE_CONSTANTS_FILE, header=True, index=False)
-    logging.info("Wrote {} lines to {}".format(len(telecommute_df), TELECOMMUTE_CONSTANTS_FILE))
+    telecommute_df[['ZONE','SD','COUNTY','telecommuteConstant']].to_csv(TELECOMMUTE_EN7_FILE, header=True, index=False)
+    logging.info("Wrote {} lines to {}".format(len(telecommute_df), TELECOMMUTE_EN7_FILE))
 
     sys.exit(0)
