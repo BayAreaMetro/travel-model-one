@@ -158,8 +158,6 @@ copy INPUT\nonres\              nonres\
 copy INPUT\warmstart\main\      main\
 copy INPUT\warmstart\nonres\    nonres\
 copy INPUT\logsums              logsums\
-copy INPUT\telecommute_constants.csv   main\telecommute_constants.csv
-copy INPUT\telecommute_constants.csv   main\telecommute_constants_00.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -248,13 +246,6 @@ set PREV_WGT=0.00
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
-:: Runtime configuration: setup initial telecommute constants
-python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
-if ERRORLEVEL 1 goto done
-:: copy over result for use
-copy /Y main\telecommute_constants_0%ITER%.csv main\telecommute_constants.csv
-
-
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 7:  Prepare for iteration 1 and execute RunIteration batch file
@@ -279,12 +270,6 @@ if ERRORLEVEL 1 goto done
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
 
-:: Runtime configuration: update telecommute constants using iter1 results
-python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
-if ERRORLEVEL 1 goto done
-:: copy over result for use
-copy /Y main\telecommute_constants_0%ITER%.csv main\telecommute_constants.csv
-
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 8:  Prepare for iteration 2 and execute RunIteration batch file
@@ -308,12 +293,6 @@ if ERRORLEVEL 1 goto done
 :: Call RunIteration batch file
 call CTRAMP\RunIteration.bat
 if ERRORLEVEL 2 goto done
-
-:: Runtime configuration: update telecommute constants using iter2 results
-python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
-if ERRORLEVEL 1 goto done
-:: copy over result for use
-copy /Y main\telecommute_constants_0%ITER%.csv main\telecommute_constants.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -341,10 +320,6 @@ if ERRORLEVEL 2 goto done
 
 :: Shut down java
 C:\Windows\SysWOW64\taskkill /f /im "java.exe"
-
-
-:: update telecommute constants one more time just to evaluate the situation
-python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -389,8 +364,8 @@ if %PROJECT%==NGF goto core_summaries
 :: call RunAccessibility
 :: if ERRORLEVEL 2 goto done
 
-call RunLogsums
-if ERRORLEVEL 2 goto done
+:: call RunLogsums
+:: if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::

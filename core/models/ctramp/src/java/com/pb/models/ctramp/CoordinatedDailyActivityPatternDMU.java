@@ -32,6 +32,10 @@ public class CoordinatedDailyActivityPatternDMU implements Serializable, Variabl
     public CoordinatedDailyActivityPatternDMU(){
     	dmuIndex = new IndexValues();
     }
+
+    public void setPropertyFileValues( HashMap<String, String> propertyMap ) {
+        // pass
+    }
     
     public void setDmuIndexValues(int zoneId) {
         dmuIndex.setZoneIndex(zoneId);
@@ -65,6 +69,10 @@ public class CoordinatedDailyActivityPatternDMU implements Serializable, Variabl
 
         // set the stop zone as the work location
         dmuIndex.setStopZone(passedInPersonA.getPersonWorkLocationZone());
+    }
+
+    public void setWorksFromHomeForPersonA(Logger cdapLogger) {
+        // pass -- implemented in subclass
     }
     
     public void setPersonB(Person passedInPersonB){

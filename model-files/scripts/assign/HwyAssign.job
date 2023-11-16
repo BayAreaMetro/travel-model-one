@@ -173,6 +173,10 @@ loop period = 1, 5
       ; air passenger travel demand
       mati[4] = nonres\tripsAirPax@token_period@.tpp
 
+      ; taxi access/egress trips to HSR travel demand 
+      ; (personal auto has already been incorporated to tripsIx@token_period@.tpp)
+      mati[5] = nonres\tripsHsr@token_period@.tpp
+
       ; loaded time-specific highway network
       neto    = hwy\load@token_period@.net
 
@@ -294,8 +298,8 @@ loop period = 1, 5
          ; drive alone, value toll paying, exclude HOV facilities, internal demand plus intra-regional demand plus air passenger demand
          pathload path = lw.gencost_da, excludegrp = 23, vol[6] = mi.1.datoll + mi.2.datoll + mi.4.datoll
 
-         ; shared ride 2, value toll paying, exclude HOV 3+ facilities, internal demand plus intra-regional demand plus air passenger demand
-         pathload path = lw.gencost_s2, excludegrp = 3, vol[7] = mi.1.sr2toll / 2 + mi.2.sr2toll + mi.4.sr2toll
+         ; shared ride 2, value toll paying, exclude HOV 3+ facilities, internal demand plus intra-regional demand plus air passenger demand plus HSR access/egress taxi
+         pathload path = lw.gencost_s2, excludegrp = 3, vol[7] = mi.1.sr2toll / 2 + mi.2.sr2toll + mi.4.sr2toll + mi.5.taxi_veh
 
          ; shared ride 3+, value toll paying, no exclusions, internal demand plus intra-regional demand plus air passenger demand
          pathload path = lw.gencost_s3, vol[8] = mi.1.sr3toll / 3.25 + mi.2.sr3toll + mi.4.sr3toll

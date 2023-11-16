@@ -18,6 +18,7 @@ before the `freq` column.  These outputs include:
 * [CommuteByIncomeHousehold](#commutebyincomehousehold)
 * [CommuteByIncomeJob](#commutebyincomejob)
 * [JourneyToWork](#journeytowork)
+* [JourneyToWork_modes](#journeytowork_modes)
 * [PerTripTravelTime](#pertriptraveltime)
 * [TimeOfDay](#timeofday)
 * [TimeOfDay_personsTouring](#timeofday_personstouring)
@@ -174,6 +175,7 @@ Workplace location summaries (including when tours are not made) with commute mo
 | workSD | Work superdistrict |
 | WorkSubZone | Walk to transit zubzone of work |
 | tour_mode | Tour mode of commute trip |
+| wfh_choice| Work from home choice: 0=does not work from home, 1=works from home.  See [more information](../../../utilities/telecommute) |
 | freq | Number of persons |
 | distance | Total distance for the commute tour of this category |
 
