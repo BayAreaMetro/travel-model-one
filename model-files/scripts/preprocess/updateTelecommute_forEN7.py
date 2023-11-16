@@ -13,11 +13,11 @@ USAGE = '''
     - Filters to workers only, and the first work tour for each person (dropping potential subsequent work tours)
     - Summarizes the (wfh choice, work tour mode) for workers
     - Aggregates to superdistrict
-    - Reads the existing main\\telecommute_EN7.csv (columns: ZONE,SD,COUNTY,telecommuteConstant)
-    - Adjust telecommuteConstant:
-      - For superdistricts with auto_share > TARGET_AUTO_SHARE and wfh_share < max, increase telecommuteConstant
-      - For superdistricts with wfh_share > max, decrease telecommuteConstant
-    - Writes main\\telecommute_EN7.csv (columns: ZONE,SD,COUNTY,telecommuteConstant)
+    - Reads the existing main\\telecommute_EN7.csv (columns: ZONE,SD,COUNTY,wfh_EN7_constant)
+    - Adjust wfh_EN7_constant:
+      - For superdistricts with auto_share > TARGET_AUTO_SHARE and wfh_share < max, increase wfh_EN7_constant
+      - For superdistricts with wfh_share > max, decrease wfh_EN7_constant
+    - Writes main\\telecommute_EN7.csv (columns: ZONE,SD,COUNTY,wfh_EN7_constant)
 
 '''
 
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
     if EN7 == "DISABLED":
         telecommute_df = tazdata_df[['ZONE','SD','COUNTY']].copy()
-        telecommute_df['telecommuteConstant'] = 0.0
+        telecommute_df['wfh_EN7_constant'] = 0.0
         telecommute_df.to_csv(TELECOMMUTE_EN7_FILE, header=True, index=False)
         logging.info("Wrote {:,} lines to {}".format(len(telecommute_df), TELECOMMUTE_EN7_FILE))
         sys.exit(0)
@@ -269,8 +269,8 @@ if __name__ == '__main__':
 
     # read previous CONSTANTS
     telecommute_df = pandas.read_csv(TELECOMMUTE_EN7_FILE)
-    telecommute_df = telecommute_df[['ZONE','SD','COUNTY','telecommuteConstant']]
-    telecommute_df.rename(columns={'telecommuteConstant':'telecommuteConstant_prev'}, inplace=True)
+    telecommute_df = telecommute_df[['ZONE','SD','COUNTY','wfh_EN7_constant']]
+    telecommute_df.rename(columns={'wfh_EN7_constant':'wfh_EN7_constant_prev'}, inplace=True)
     logging.info('Read {:,} lines from {}; head:\n{}'.format(
         len(telecommute_df), TELECOMMUTE_EN7_FILE, telecommute_df.head()))
 
@@ -282,7 +282,7 @@ if __name__ == '__main__':
 
     # THIS IS IT
     # start at previous value
-    telecommute_df['telecommuteConstant'] = telecommute_df['telecommuteConstant_prev']
+    telecommute_df['wfh_EN7_constant'] = telecommute_df['wfh_EN7_constant_prev']
 
     # telecommute within threshold of max
     telecommute_df['telecomute_diff']     = telecommute_df['max_wfh_share'] - telecommute_df['wfh_share']
@@ -307,13 +307,13 @@ if __name__ == '__main__':
     # apply
     telecommute_df.loc[ 
         telecommute_df.change == 'increase_wfh',
-        'telecommuteConstant' ] = telecommute_df['telecommuteConstant'] - CONSTANT_INCREMENT
+        'wfh_EN7_constant' ] = telecommute_df['wfh_EN7_constant'] - CONSTANT_INCREMENT
     telecommute_df.loc[ 
         telecommute_df.change == 'decrease_wfh',
-        'telecommuteConstant' ] = telecommute_df['telecommuteConstant'] + CONSTANT_DECREMENT
+        'wfh_EN7_constant' ] = telecommute_df['wfh_EN7_constant'] + CONSTANT_DECREMENT
 
     # don't go positive
-    telecommute_df.loc[ telecommute_df['telecommuteConstant'] > 0, 'telecommuteConstant' ] = 0
+    telecommute_df.loc[ telecommute_df['wfh_EN7_constant'] > 0, 'wfh_EN7_constant' ] = 0
 
     # drop temp cols
     telecommute_df.drop(columns=['telecomute_diff','telecommute_near_max','change'], inplace=True)
@@ -324,7 +324,7 @@ if __name__ == '__main__':
     logging.info("Wrote {} lines to {}".format(len(telecommute_df), DETAIL_OUTPUT_FILE.format(ITER)))
 
     # simple
-    telecommute_df[['ZONE','SD','COUNTY','telecommuteConstant']].to_csv(TELECOMMUTE_EN7_FILE, header=True, index=False)
+    telecommute_df[['ZONE','SD','COUNTY','wfh_EN7_constant']].to_csv(TELECOMMUTE_EN7_FILE, header=True, index=False)
     logging.info("Wrote {} lines to {}".format(len(telecommute_df), TELECOMMUTE_EN7_FILE))
 
     sys.exit(0)
