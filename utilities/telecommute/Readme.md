@@ -26,7 +26,7 @@ More information can be found here:
 
 ## Strategy EN7: Expand Commute Trip Reduction Programs at Major Employers
 
-In addition, Strategy EN7: Expand Commute Trip Reduction Programs at Major Employers, was implemented as an additional work-from-home
+Strategy EN7: Expand Commute Trip Reduction Programs at Major Employers, is implemented as an additional work-from-home
 probability boost for workers based on their work place superdistrict: if the auto mode share is greater than the target auto mode share
 in that superdistrict *and* the work from home rate in that superdistrict is less than the estimated maximum, then an additional EN7 WFH
 probability boost is applied.  
