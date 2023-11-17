@@ -155,6 +155,7 @@ taz_in_2035p <- taz_in_2035p %>%
   mutate (
     max_gq     = max.col(.[c("gq_type_univ","gq_type_mil","gq_type_othnon")],        ties.method="first"),
     max_units  = max.col(.[c("MFDU","SFDU")],                                        ties.method="first"),
+    max_pop    = max.col(.[c("HHPOP","GQPOP")],                                      ties.method="first"),
     max_size   = max.col(.[c("hh_size_1","hh_size_2","hh_size_3","hh_size_4_plus")], ties.method="first"),
     max_workers= max.col(.[c("hh_wrks_0","hh_wrks_1","hh_wrks_2","hh_wrks_3_plus")], ties.method="first"),
     max_kids   = max.col(.[c("hh_kids_yes","hh_kids_no")],                           ties.method="first"),
@@ -167,26 +168,31 @@ taz_in_2035p <- taz_in_2035p %>%
     gq_type_mil    = if_else(max_gq==2,gq_type_mil    +(gq_tot_pop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_mil),
     gq_type_othnon = if_else(max_gq==3,gq_type_othnon +(gq_tot_pop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_othnon),
     
-    #Balance unit categories
+    # Balance unit categories
     
     MFDU           = if_else(max_units==1,MFDU          +(RES_UNITS-(MFDU+SFDU)),MFDU),
     SFDU           = if_else(max_units==2,SFDU          +(RES_UNITS-(MFDU+SFDU)),SFDU),
+
+    # Balance HHPOP and GQPOP
+
+    HHPOP          = if_else(max_pop==1,HHPOP          +(TOTPOP-(HHPOP+GQPOP)),HHPOP),
+    GQPOP          = if_else(max_pop==2,GQPOP          +(TOTPOP-(HHPOP+GQPOP)),GQPOP),
     
-    #Balance HH size categories
+    # Balance HH size categories
     
     hh_size_1      = if_else(max_size==1,hh_size_1     +(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_1),
     hh_size_2      = if_else(max_size==2,hh_size_2     +(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_2),
     hh_size_3      = if_else(max_size==3,hh_size_3     +(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_3),
     hh_size_4_plus = if_else(max_size==4,hh_size_4_plus+(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_4_plus),
     
-    #Balance HH worker categories
+    # Balance HH worker categories
     
     hh_wrks_0      = if_else(max_workers==1,hh_wrks_0+(TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_0),
     hh_wrks_1      = if_else(max_workers==2,hh_wrks_1+(TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_1),
     hh_wrks_2      = if_else(max_workers==3,hh_wrks_2+(TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_2),
     hh_wrks_3_plus = if_else(max_workers==4,hh_wrks_3_plus+(TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_3_plus),
     
-    #Balance HH kids categories
+    # Balance HH kids categories
     
     hh_kids_yes = if_else(max_kids==1,hh_kids_yes+(TOTHH-(hh_kids_yes+hh_kids_no)),hh_kids_yes),
     hh_kids_no  = if_else(max_kids==2,hh_kids_no +(TOTHH-(hh_kids_yes+hh_kids_no)),hh_kids_no),
@@ -195,9 +201,75 @@ taz_in_2035p <- taz_in_2035p %>%
   
   # Remove max variables
   
-  select(-max_gq,-max_units, -max_size,-max_workers,-max_kids)    
+  select(-max_gq,-max_units, -max_size,-max_workers,-max_kids) 
+  
+# Summarize marginals at the county level
+# First excerpt variables that won't change for later joining
 
+county_vars <- county_in_2035 %>% 
+  select(COUNTY_NAME,
+         SHPOP62P,
+         TOTACRE,
+         DENSITY,
+         AREATYPE,
+         RESACRE_UNWEIGHTED,
+         CIACRE_UNWEIGHTED,
+         CIACRE,
+         RESACRE)
 
+county_sum <- taz_in_2035p %>% 
+  group_by(COUNTY_NAME) %>% 
+  summarize(AGREMPN   =sum(AGREMPN),
+            FPSEMPN   =sum(FPSEMPN),
+            HEREMPN   =sum(HEREMPN),
+            RETEMPN   =sum(RETEMPN),
+            MWTEMPN   =sum(MWTEMPN),
+            OTHEMPN   =sum(OTHEMPN),
+            TOTEMP    =sum(TOTEMP),
+            HHINCQ1   =sum(HHINCQ1),
+            HHINCQ2   =sum(HHINCQ2),
+            HHINCQ3   =sum(HHINCQ3),
+            HHINCQ4   =sum(HHINCQ4),
+            HHPOP     =sum(HHPOP),
+            TOTHH     =sum(TOTHH),
+            GQPOP     =sum(GQPOP),
+            TOTPOP    =sum(TOTPOP),
+            RES_UNITS =sum(RES_UNITS),
+            MFDU      =sum(MFDU),
+            SFDU      =sum(SFDU),
+            EMPRES    =sum(EMPRES),
+            AGE0004   =sum(AGE0004),
+            AGE0519   =sum(AGE0519),
+            AGE2044   =sum(AGE2044),
+            AGE4564   =sum(AGE4564),
+            AGE65p    =sum(AGE65P) %>% 
+              ungroup()
+            
+            
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  )
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         
+         )
+  
 
          
 
