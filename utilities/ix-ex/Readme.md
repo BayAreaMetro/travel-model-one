@@ -1,3 +1,64 @@
+# Interregional Travel
+
+This folder contains material relevant to interriegional travel, also known as internal/external travel, or ix-ex.
+
+## Process documentation
+
+Asana task history (internal-only):
+* [Oct 2023: Update interregional highway travel assumptions](https://app.asana.com/0/1204085012544660/1203759802600901/f)
+* [Feb 2021: Interregional travel assumption...](https://app.asana.com/0/310827677834656/1199962632605860/f)
+* [Nov 2019: Modify interregional volumes and finalize for PBA50](https://app.asana.com/0/403262763383022/1107875685875486/f)
+* [Dec 2018: Horizon Futures IX/EX inputs](https://app.asana.com/0/403262763383021/802137197128986/f)
+
+### Preprocessing
+
+1. [`create_ix_2015.job`](create_ix_2015.job) was used to create the input files used below.
+    * Input: 
+        * `M:\Development\Travel Model One\InternalExternal\ixDaily2006x4.may2208.mat`
+    * Output:
+        * `ixDaily2005.tpp`, matrices: ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
+        * `ixDaily2015.tpp`, matrices: ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
+        * `ixDaily2005_totals.dbf`, fields: EXT_ZONE, PROD, ATTR
+        * `ixDaily2015_totals.dbf`, fields: EXT_ZONE, PROD, ATTR
+
+### Model Process
+Every iteration before assignment, the following scripts are run:
+
+1. [`IxForecasts_horizon.job`](../../model-files/scripts/nonres/IxForecasts_horizon.job)
+    * Summary: This script takes a base year (2015) daily trip matrix makes the following assumptions:
+        * For `FUTURE`==`PBA50`, assumes the non-commute share grows based on the configured slope.
+        * For `FUTURE`==`CleanAndGreen`, assumes no growth from 2015.
+        * For `FUTURE`==`BackToTheFuture`, assumes the total share grows based on the configured slope, with the slope adjusted upwards by 50% for gateways to the south and east.
+        * For `FUTURE`==`RisingTidesFallingFortunes`, assumes the total share grows based on the configured slope.
+        * Additionally, the script handles the external-to-extnernal trips between zones 1461 and 1462.
+    * Input: 
+        * Environment variable, `MODEL_YEAR`: a number higher than 2015
+        * Environment variable, `FUTURE`: one of `PBA50`,`CleanAndGreen`,`BackToTheFuture`, or `RisingTidesFallingFortunes`
+        * `nonres\ixDaily2015.tpp`, matrices: ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
+        * `nonres\ixDaily2015_totals.dbf`, fields: EXT_ZONE, PROD, ATTR.  These are the total daily trips produced and attracted to each external zone.
+        * `nonres\ixex_config.dbf`, fields: EXT_ZONE, comm_share (commute share), slope
+    * Output:
+        * `nonres\ixDailyx4.tpp`, fields: ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total. This is a forecast-year specific trip table containing internal/external, external/internal, and external/external vehicle travel.
+
+2. [`IxTimeOfDay.job`](../../model-files/scripts/nonres/IxTimeOfDay.job)
+    * Summary: Applies diurnal factors to the daily estimate of internal/external personal vehicle trips. Also moves some trips to truck trip tables.
+    * Input:
+        * `nonres\ixDailyx4.tpp`, fields: ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
+    * Output:
+        * `nonres\ixDailyx4_truck.tpp`, fields: vsm_daily, sml_daily, med_daily, lrg_daily
+        * `nonres\tripsIx[EA,AM,MD,PM,EV]x.tpp`: fields: DA, S2, S3
+
+3. [`IxTollChoice.job`](../../model-files/scripts/nonres/IxTollChoice.job)
+    * Summary: Applies binomial choice model to auto internal/external personal vehicle travel.
+    * Input:
+        * `nonres\tripsIx[EA,AM,MD,PM,EV]x.tpp`, fields: DA, S2, S3
+        * `nonres\tripsHsr[EA,AM,MD,PM,EV].tpp`, fields: DA_VEH, SR2_VEH
+        * `skims\hwyskm[EA,AM,MD,PM,EV].tpp`, matrices: [TOLL?]TIME[DA,S2,S3],[TOLL?]DIST[DA,S2,S3], [TOLL?]BTOLL[DA,S2,S3], TOLLVTOLL[DA,S2,S3]
+        * `ctramp\scripts\block\hwyparam.block`: for auto operating cost
+    * Output:
+        *  `nonres\tripsIx[EA,AM,MD,PM,EV].tpp`, fields : DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
+
+## Gateway Nodes
 
 
 |	Gateway ID	|	Gateway	|
