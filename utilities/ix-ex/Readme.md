@@ -12,7 +12,8 @@ Asana task history (internal-only):
 
 ### Preprocessing
 
-1. [`create_ix_2015.job`](create_ix_2015.job) was used to create the input files used below.
+1. [`create_ix_2015.job`](create_ix_2015.job) was used to create the 2015 base year input table.
+    * Summary: Created the 2015 base year table using [Interregional Volumes v3 (integrating SACOG feedback).xlsx](https://mtcdrive.box.com/s/1v6my109gjxq7v7kxc9j63sumzie9jbw). This file was created/updated for the 2021 RTP, or Plan Bay Area 2050.
     * Input: 
         * `M:\Development\Travel Model One\InternalExternal\ixDaily2006x4.may2208.mat`
     * Output:
@@ -20,6 +21,10 @@ Asana task history (internal-only):
         * `ixDaily2015.tpp`, matrices: ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
         * `ixDaily2005_totals.dbf`, fields: EXT_ZONE, PROD, ATTR
         * `ixDaily2015_totals.dbf`, fields: EXT_ZONE, PROD, ATTR
+
+2. [`create_ix_2021.job`](create_ix_2021.job) was used ot create the 2021 base year input table.
+    * Summary: Created the 2015 base year table using [MTC_Interregional Volumes pba50+_v2.xlsx](https://mtcdrive.box.com/s/agq4nyowcdpdb2udf2v2s3j1j32fazva). This file was created/updated for the 2025 RTP, or Plan Bay Area 2050+.
+    * Input: 
 
 ### Model Process
 Every iteration before assignment, the following scripts are run:
