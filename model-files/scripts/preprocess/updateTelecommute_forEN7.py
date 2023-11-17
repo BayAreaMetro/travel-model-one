@@ -50,10 +50,6 @@ TARGET_AUTO_SHARE  = 0.40
 # if max_wfh_share +/- this, then leave it alone
 WFH_SHARE_THRESHHOLD = 0.005
 
-# todo: make this more intelligent
-CONSTANT_INCREMENT = 0.05
-CONSTANT_DECREMENT = 0.05
-
 if __name__ == '__main__':
     EN7     = os.environ['EN7']
     ITER    = os.environ['ITER']
