@@ -301,9 +301,9 @@ if __name__ == '__main__':
         'change'] = 'decrease_wfh'
 
     # implement change: original plus share to bring it to max
-    # 0.8 is to back it off a bit
+    # 0.95 is to back it off a bit
     EN7_boost_df.loc[ EN7_boost_df.change != 'none',
-                     'en7_wfh_boost' ] = EN7_boost_df.en7_wfh_boost + (EN7_boost_df['max_wfh_share'] - EN7_boost_df['wfh_share'])*0.8
+                     'en7_wfh_boost' ] = EN7_boost_df.en7_wfh_boost + (EN7_boost_df['max_wfh_share'] - EN7_boost_df['wfh_share'])*0.95
     
     # but don't let it go negative; we're only boosting
     # this isn't that alarming; the estimated max is from pre-COVID times
