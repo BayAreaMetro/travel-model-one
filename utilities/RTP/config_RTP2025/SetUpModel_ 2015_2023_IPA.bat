@@ -9,11 +9,10 @@ set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2015_TM160_IPA_03
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=No
+set EN7=DISABLED
 
 :: set the location of the Travel Model Release
-:: use the develop branch for now
-set GITHUB_DIR=X:\travel-model-one-v1.6_develop
-
+set GITHUB_DIR=X:\travel-model-one-master
 :: set the location of the networks (make sure the network version, year and variant are correct)
 set INPUT_NETWORK=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_v09\net_2015_Blueprint
 
