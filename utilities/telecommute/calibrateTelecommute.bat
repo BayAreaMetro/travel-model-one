@@ -139,14 +139,11 @@ copy "%SKIM_DIR%\skims\accessibility.csv" skims
 :iter
 
 :: Set the iteration parameters
-set ITER=2
+set ITER=3
 set SEED=0
 
 :: only need to do this the first time
 if %ITER%==1 (
-  rem copy the zero stubs over for use
-  copy "%GITHUB_DIR%\utilities\telecommute\telecommute_EN7_zero.csv"  main\telecommute_EN7.csv
-
   rem Prompt user to set the workplace shadow pricing parameters
   @echo off
   set /P c=Project Directory updated.  Update initial telecommute constants and workplace shadow pricing parameters press Enter to continue...
@@ -154,8 +151,8 @@ if %ITER%==1 (
   rem Don't care about the response
 )
 
-:: copy the UEC again
-copy /Y "%GITHUB_DIR%\model-files\model\CoordinatedDailyActivityPattern.xls" CTRAMP\model\CoordinatedDailyActivityPattern.xls
+:: copy the UEC and jar
+copy /Y "%GITHUB_DIR%\core\projects\mtc\release\mtc.jar"                     CTRAMP\runtime\mtc.jar
 
 :: slack
 set INSTANCE=%COMPUTERNAME%
@@ -176,8 +173,8 @@ if ERRORLEVEL 2 goto done
 
 C:\Windows\SysWOW64\taskkill /f /im "java.exe"
 
-:: main\telecommute_EN7_[ITER].csv will be the version *used* for ITER -- save this one now
-copy /Y "main\telecommute_EN7.csv" "main\telecommute_EN7_%ITER%.csv"
+:: CTRAMP\runtime\mtcTourBased.properties_[ITER].csv will be the version *used* for ITER -- save this one now
+copy /Y "CTRAMP\runtime\mtcTourBased.properties" "CTRAMP\runtime\mtcTourBased.properties_%ITER%"
 
 :: update EN7 constants based on this iteration's output for next ITER
 python "%GITHUB_DIR%\model-files\scripts\preprocess\updateTelecommute_forEN7.py"
