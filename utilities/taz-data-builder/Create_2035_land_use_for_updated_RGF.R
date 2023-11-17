@@ -87,7 +87,7 @@ hh_scale     <- sum(taz_in_2035p$TOTHH)/sum(taz_in_2035$TOTHH)
 
 taz_in_2035p <- taz_in_2035p %>% 
   mutate(hh_kids_no   = round(hh_kids_no*hh_scale,0),           # Households with and without kids
-         hh_kids_yes  = round(hh_kids_yes*hhscale,0),
+         hh_kids_yes  = round(hh_kids_yes*hh_scale,0),
          
          hh_wrks_0       = round(hh_wrks_0*hh_scale,0),         # Households by number of workers
          hh_wrks_1       = round(hh_wrks_1*hh_scale,0),
@@ -107,14 +107,111 @@ taz_in_2035p <- taz_in_2035p %>%
          AGE4564         = round(AGE4564*age4564_scale,0),
          AGE65P          = round(AGE65P*age65p_scale,0),
 
-         TOTPOP          = sum(AGE0004 + AGE0519 + AGE2044 + AGE4564 + AGE65P)
+         TOTPOP          = AGE0004 + AGE0519 + AGE2044 + AGE4564 + AGE65P)
+
+
+# Calculate total population scale for other population components
+
+pop_scale     <- sum(taz_in_2035p$TOTPOP)/sum(taz_in_2035$TOTPOP)  
+
+# Scale remaining population variables
+
+taz_in_2035p <- taz_in_2035p %>% 
+  mutate(HHPOP          = round(HHPOP*pop_scale,0),
+         GQPOP          = round(GQPOP*pop_scale,0),
+         gq_type_univ   = round(gq_type_univ*pop_scale,0),
+         gq_type_mil    = round(gq_type_mil*pop_scale,0),
+         gq_type_othnon = round(gq_type_othnon*pop_scale,0),
+         
+         gq_tot_pop     = gq_type_univ + gq_type_mil + gq_type_othnon,
+         
+# Adjust the units
+
+         RES_UNITS      = round(RES_UNITS*units_scale,0),
+         MFDU           = round(MFDU*units_scale,0),
+         SFDU           = round(SFDU*units_scale,0),
+
+# Adjust the employed residents
+
+         EMPRES         = round(EMPRES*empres_scale,0),
+
+# Adjust the jobs by sector
+
+         AGREMPN        = round(AGREMPN*agrempn_scale,0),
+         FPSEMPN        = round(FPSEMPN*fpsempn_scale,0),
+         HEREMPN        = round(HEREMPN*herempn_scale,0),
+         RETEMPN        = round(RETEMPN*retempn_scale,0),
+         MWTEMPN        = round(MWTEMPN*mwtempn_scale,0),
+         OTHEMPN        = round(OTHEMPN*othempn_scale,0),
+
+         TOTEMP         = AGREMPN + FPSEMPN + HEREMPN + RETEMPN + MWTEMPN + OTHEMPN)
+
+# Marginal totals were summed from components for three categories:
+# Persons by age, households by income, and jobs by sector 
+# For the other marginals, components need to be reconciled so they cleanly add to total values
+# If unequal, the largest constituent cell is adjusted up or down such that the category sums match the marginal total
+
+taz_in_2035p <- taz_in_2035p %>%       
+  mutate (
+    max_gq     = max.col(.[c("gq_type_univ","gq_type_mil","gq_type_othnon")],        ties.method="first"),
+    max_units  = max.col(.[c("MFDU","SFDU")],                                        ties.method="first"),
+    max_size   = max.col(.[c("hh_size_1","hh_size_2","hh_size_3","hh_size_4_plus")], ties.method="first"),
+    max_workers= max.col(.[c("hh_wrks_0","hh_wrks_1","hh_wrks_2","hh_wrks_3_plus")], ties.method="first"),
+    max_kids   = max.col(.[c("hh_kids_yes","hh_kids_no")],                           ties.method="first"),
+
+# Now use max values determined above to find appropriate column for adjustment
+    
+    # Balance GQ population by type
+    
+    gq_type_univ   = if_else(max_gq==1,gq_type_univ   +(gq_tot_pop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_univ),
+    gq_type_mil    = if_else(max_gq==2,gq_type_mil    +(gq_tot_pop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_mil),
+    gq_type_othnon = if_else(max_gq==3,gq_type_othnon +(gq_tot_pop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_othnon),
+    
+    #Balance unit categories
+    
+    MFDU           = if_else(max_units==1,MFDU          +(RES_UNITS-(MFDU+SFDU)),MFDU),
+    SFDU           = if_else(max_units==2,SFDU          +(RES_UNITS-(MFDU+SFDU)),SFDU),
+    
+    #Balance HH size categories
+    
+    hh_size_1      = if_else(max_size==1,hh_size_1     +(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_1),
+    hh_size_2      = if_else(max_size==2,hh_size_2     +(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_2),
+    hh_size_3      = if_else(max_size==3,hh_size_3     +(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_3),
+    hh_size_4_plus = if_else(max_size==4,hh_size_4_plus+(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_4_plus),
+    
+    #Balance HH worker categories
+    
+    hh_wrks_0      = if_else(max_workers==1,hh_wrks_0+(TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_0),
+    hh_wrks_1      = if_else(max_workers==2,hh_wrks_1+(TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_1),
+    hh_wrks_2      = if_else(max_workers==3,hh_wrks_2+(TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_2),
+    hh_wrks_3_plus = if_else(max_workers==4,hh_wrks_3_plus+(TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_3_plus),
+    
+    #Balance HH kids categories
+    
+    hh_kids_yes = if_else(max_kids==1,hh_kids_yes+(TOTHH-(hh_kids_yes+hh_kids_no)),hh_kids_yes),
+    hh_kids_no  = if_else(max_kids==2,hh_kids_no +(TOTHH-(hh_kids_yes+hh_kids_no)),hh_kids_no),
+    
+) %>% 
+  
+  # Remove max variables
+  
+  select(-max_gq,-max_units, -max_size,-max_workers,-max_kids)    
+
+
+
+         
+
+         
+         
+         
+         
 
          
 
 
 
 
-)
+
 
 
 
