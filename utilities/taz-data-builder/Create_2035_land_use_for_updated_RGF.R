@@ -29,26 +29,105 @@ rgf_income      <- (read_excel(rgf_in,sheet = "Households by Income"))[c(3,6),1:
 rgf_age         <- read_excel(rgf_in,sheet = "Population by Age Detail")[5,2:7]
 rgf_jobs        <- read_excel(rgf_in,sheet = "Jobs by Sector")[1:6,c(1,5)]
 
-# Export names to retain same order/selection of final dataset
+# Export names to retain same order/selection of final datasets
 
-dataset_order <- names(taz_in_2035)
+taz_order    <- names(taz_in_2035)
+county_order <- names(county_in_2035)
 
-# Adjust households by income, sum updated household total from components
+# Calculate households by income scalers, total households will be summed from components
 
 income1_scale <- as.numeric(rgf_income[2,2])/sum(taz_in_2035$HHINCQ1)
 income2_scale <- as.numeric(rgf_income[2,3])/sum(taz_in_2035$HHINCQ2)
 income3_scale <- as.numeric(rgf_income[2,4])/sum(taz_in_2035$HHINCQ3)
 income4_scale <- as.numeric(rgf_income[2,5])/sum(taz_in_2035$HHINCQ4)
 
-# Adjust persons by age, sum updated employment totals from components
+# Calculate persons by age scalers, total employment will be summed from components
 
-age0004_scale <- as.numeric(rgf_income[2,5])/sum(taz_in_2035$HHINCQ4)
-age0519_scale <- as.numeric(rgf_income[2,5])/sum(taz_in_2035$HHINCQ4)
-age2044_scale <- as.numeric(rgf_income[2,5])/sum(taz_in_2035$HHINCQ4)
-age4564_scale <- as.numeric(rgf_income[2,5])/sum(taz_in_2035$HHINCQ4)
-age65p_scale  <- as.numeric(rgf_income[2,5])/sum(taz_in_2035$HHINCQ4)
+age0004_scale <- as.numeric(rgf_age[1,2])/sum(taz_in_2035$AGE0004)
+age0519_scale <- as.numeric(rgf_age[1,3])/sum(taz_in_2035$AGE0519)
+age2044_scale <- as.numeric(rgf_age[1,4])/sum(taz_in_2035$AGE2044)
+age4564_scale <- as.numeric(rgf_age[1,5])/sum(taz_in_2035$AGE4564)
+age65p_scale  <- as.numeric(rgf_age[1,6])/sum(taz_in_2035$AGE65P)
 
-# Adjust jobs by sector, sum updated job totals from components
+# Calculate jobs by sector scalers, total jobs will be summed from components
+
+agrempn_scale <- as.numeric(rgf_jobs[1,2])/sum(taz_in_2035$AGREMPN)
+fpsempn_scale <- as.numeric(rgf_jobs[2,2])/sum(taz_in_2035$FPSEMPN)
+herempn_scale <- as.numeric(rgf_jobs[3,2])/sum(taz_in_2035$HEREMPN)
+mwtempn_scale <- as.numeric(rgf_jobs[4,2])/sum(taz_in_2035$MWTEMPN)
+othempn_scale <- as.numeric(rgf_jobs[5,2])/sum(taz_in_2035$OTHEMPN)
+retempn_scale <- as.numeric(rgf_jobs[6,2])/sum(taz_in_2035$RETEMPN)
+
+# Calculate employed residents scaler
+
+empres_scale  <- as.numeric(rgf_main[5,2])/sum(taz_in_2035$EMPRES)
+
+# Adjust units
+
+units_scale   <- as.numeric(rgf_main[3,2])/sum(taz_in_2035$RES_UNITS)
+
+
+# Start adjustments, calling updated dataset taz_in_2035p to represent 2050+ values
+# Sum select totals from components as described above (e.g., households by income)
+
+
+taz_in_2035p <- taz_in_2035 %>% 
+  mutate(HHINCQ1      = round(HHINCQ1*income1_scale,0),         # Households by income
+         HHINCQ2      = round(HHINCQ2*income2_scale,0),
+         HHINCQ3      = round(HHINCQ3*income3_scale,0),
+         HHINCQ4      = round(HHINCQ4*income4_scale,0),
+         
+         TOTHH        = HHINCQ1 + HHINCQ2 + HHINCQ3 + HHINCQ4)   # Sum total households for this variable and later calcs
+
+# HH scale for other HH components
+
+hh_scale     <- sum(taz_in_2035p$TOTHH)/sum(taz_in_2035$TOTHH)    
+         
+# Apply HH scale to remaining household components
+
+taz_in_2035p <- taz_in_2035p %>% 
+  mutate(hh_kids_no   = round(hh_kids_no*hh_scale,0),           # Households with and without kids
+         hh_kids_yes  = round(hh_kids_yes*hhscale,0),
+         
+         hh_wrks_0       = round(hh_wrks_0*hh_scale,0),         # Households by number of workers
+         hh_wrks_1       = round(hh_wrks_1*hh_scale,0),
+         hh_wrks_2       = round(hh_wrks_2*hh_scale,0),
+         hh_wrks_3_plus  = round(hh_wrks_3_plus*hh_scale,0),
+         
+         hh_size_1       = round(hh_size_1*hh_scale,0),         # Households by size
+         hh_size_2       = round(hh_size_2*hh_scale,0),
+         hh_size_3       = round(hh_size_3*hh_scale,0),
+         hh_size_4_plus  = round(hh_size_4_plus*hh_scale,0),
+         
+# Apply age scalers and sum to total population
+         
+         AGE0004         = round(AGE0004*age0004_scale,0),
+         AGE0519         = round(AGE0519*age0519_scale,0),
+         AGE2044         = round(AGE2044*age2044_scale,0),
+         AGE4564         = round(AGE4564*age4564_scale,0),
+         AGE65P          = round(AGE65P*age65p_scale,0),
+
+         TOTPOP          = sum(AGE0004 + AGE0519 + AGE2044 + AGE4564 + AGE65P)
+
+         
+
+
+
+
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
