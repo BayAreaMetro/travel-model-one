@@ -663,6 +663,10 @@ public class TazDataHandler implements TazDataIf, Serializable {
         return (int)getZoneTableValue ( taz, tazDataCountyFieldName );
     }
 
+    public int getZoneDistrict( int taz ) {
+        return (int)getZoneTableValue ( taz, tazDataDistFieldName );
+    }
+
     private int getZoneIsInAreaType( int taz, int[] areaTypes  ) {
         int returnValue = 0;
         int tazAreaType = (int)getZoneTableValue ( taz, tazDataAtFieldName );

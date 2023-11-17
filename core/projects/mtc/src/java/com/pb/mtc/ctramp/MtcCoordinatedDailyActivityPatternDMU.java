@@ -30,6 +30,8 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
     // additional factors
     public static final String PROPERTIES_WFH_FULLTIMEWORKER_FACTOR = "CDAP.WFH.FullTimeWorker.Factor";
     public static final String PROPERTIES_WFH_PARTTIMEWORKER_FACTOR = "CDAP.WFH.PartTimeworker.Factor";
+    // EN7 superdistrict boosts
+    public static final String PROPERTIES_WFH_EN7_SUPERDISTRICT_BOOST = "CDAP.WFH.EN7.Superdistrict00";
 
     // indexed by home county
     private float[] WFH_AGREMP_M; // Agriculture & Natural Resources
@@ -44,6 +46,9 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
     private float[] WFH_OTHEMP_B;
     private float[] WFH_RETEMP_M; // Retail
     private float[] WFH_RETEMP_B;
+
+    // indexed by work superdistrict
+    private float[] WFH_EN7_BOOST;
 
     private float WFH_FULLTIMEWORKER_FACTOR;
     private float WFH_PARTTIMEWORKER_FACTOR;
@@ -82,6 +87,8 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         this.WFH_OTHEMP_B = new float[9];
         this.WFH_RETEMP_M = new float[9];
         this.WFH_RETEMP_B = new float[9];
+        // en7 superdistrict table
+        this.WFH_EN7_BOOST = new float[34];  // hardcoded 34 == bad but no time
     }
 
     public void setPropertyFileValues( HashMap<String, String> propertyMap) {
@@ -113,6 +120,12 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         this.WFH_PARTTIMEWORKER_FACTOR = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_PARTTIMEWORKER_FACTOR));
 
         cdapLogger.info("Read properties fulltime worker factor:" + this.WFH_FULLTIMEWORKER_FACTOR + "; parttime worker factor:" + this.WFH_PARTTIMEWORKER_FACTOR);
+
+        for (int district_num=1; district_num<=34; district_num++) {
+            this.WFH_EN7_BOOST[district_num-1] = Float.parseFloat(propertyMap.get(
+                PROPERTIES_WFH_EN7_SUPERDISTRICT_BOOST.replace("Superdistrict00",String.format("Superdistrict%02d",district_num))));
+        }
+        cdapLogger.info("Read superdistrict EN7 boosts; district21:" + this.WFH_EN7_BOOST[21-1]);
     }
 
     // household income
@@ -165,6 +178,7 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         }
         double ln_hhinc = Math.log(hhinc);
         int homeCounty = this.tazDataManager.getZoneCounty(householdObject.getHhTaz());
+        int workDistrict = this.tazDataManager.getZoneDistrict(workLocation);
         // https://github.com/BayAreaMetro/modeling-website/wiki/TazData
 
         // apply log model, constrained to [0.0, 1.0]
@@ -191,9 +205,9 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
 
         // trace household debug
         if(householdObject.getDebugChoiceModels()){
-            cdapLogger.debug(String.format(" HHID %d PersonID %d EmploymentCategory %s HomeTAZ %d HomeCounty %d WorkLocation %d", 
+            cdapLogger.debug(String.format(" HHID %d PersonID %d EmploymentCategory %s HomeTAZ %d HomeCounty %d WorkLocation %d WorkDistrict %d", 
                 householdObject.getHhId(), personA.getPersonId(), personA.getPersonEmploymentCategory(), 
-                householdObject.getHhTaz(), homeCounty, workLocation));
+                householdObject.getHhTaz(), homeCounty, workLocation, workDistrict));
             cdapLogger.debug(String.format("     agr_wfh * agr_share = %.3f * %.3f", agr_wfh, agr_share));
             cdapLogger.debug(String.format("     fps_wfh * fps_share = %.3f * %.3f", fps_wfh, fps_share));
             cdapLogger.debug(String.format("     her_wfh * her_share = %.3f * %.3f", her_wfh, her_share));
@@ -202,6 +216,7 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
             cdapLogger.debug(String.format("     ret_wfh * ret_share = %.3f * %.3f", ret_wfh, ret_share));
             cdapLogger.debug(String.format("                 = > wfh = %.3f", overall_wfh));
         }
+
         if (personA.getPersonIsFullTimeWorker() == 1) {
             overall_wfh = overall_wfh*this.WFH_FULLTIMEWORKER_FACTOR;
             if(householdObject.getDebugChoiceModels()){
@@ -213,6 +228,12 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
             if(householdObject.getDebugChoiceModels()){
                 cdapLogger.debug(String.format(" x PartTime factor %.3f = %.3f", this.WFH_PARTTIMEWORKER_FACTOR, overall_wfh));
             }
+        }
+        // EN7 boost
+        float EN7_boost = this.WFH_EN7_BOOST[workDistrict-1];
+        overall_wfh = overall_wfh + EN7_boost;
+        if(householdObject.getDebugChoiceModels()){
+            cdapLogger.debug(String.format("       + EN7 boost %.3f = %.3f", EN7_boost, overall_wfh));
         }
 
         // should I be using this?

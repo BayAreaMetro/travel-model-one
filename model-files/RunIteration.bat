@@ -62,6 +62,14 @@ java -showversion -Xmx6000m -cp %CLASSPATH% -Dlog4j.configuration=log4j.xml -Dja
 if ERRORLEVEL 2 goto done
 
 
+:: save the mtcTourBased.properties that was used for this iteration
+copy /Y "CTRAMP\runtime\mtcTourBased.properties" "CTRAMP\runtime\mtcTourBased.properties_%ITER%"
+
+IF %ITER% LSS %MAXITERATIONS% (
+  rem update EN7 constants based on this iteration's output for next ITER
+  python "CTRAMP\scripts\preprocess\updateTelecommute_forEN7.py"
+)
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 3:  Execute the internal/external and commercial vehicle models
