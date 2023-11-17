@@ -24,10 +24,28 @@ More information can be found here:
 * [Pull request #63: Implement a simple WFH model in CDAP](https://github.com/BayAreaMetro/travel-model-one/pull/63)
 * [Asana task: WFH model adjustment & validation](https://app.asana.com/0/0/1205369234942623/f) - this is internal only.
 
-## Files
+## Strategy EN7: Expand Commute Trip Reduction Programs at Major Employers
+
+In addition, Strategy EN7: Expand Commute Trip Reduction Programs at Major Employers, was implemented as an additional work-from-home
+probability boost for workers based on their work place superdistrict: if the auto mode share is greater than the target auto mode share
+in that superdistrict *and* the work from home rate in that superdistrict is less than the estimated maximum, then an additional EN7 WFH
+probability boost is applied.  
+
+EN7 boosts are enabled by setting the `EN7` environment variable to `ENABLED`; otherwise it should be set to `DISABLED`.
+
+The EN7 WFH boost is configured in [`mtcTourBased.properties`](../../model-files/runtime/mtcTourBased.properties):
+
+https://github.com/BayAreaMetro/travel-model-one/blob/5b1101241f27b95625b590c028911f49e0846cb8/model-files/runtime/mtcTourBased.properties#L284-L292
+
+At the end of each global iteration, the version used for that iteration is saved and 
+[`updateTelecommute_forEN7.py`](../../model-files/scripts/preprocess/updateTelecommute_forEN7.py) updates the probability boosts (if needed) in the
+properties file.
+
+## Additional Files
 
 * [`TelecommuteData.xlsx`](TelecommuteData.xlsx) - summary of most recent Census ACS related to telecommuting
 * [`telecommute.twb`](telecommute.twb) - tableau workbook for dropping into the `main` directory of a completed model run, summarizing commute modes including WFH.
+* [`en7_summary_copyToMain.twb`](en7_summary_copyToMain.twb) - tableau workbook for dropping into the `main` directory of a model run, summarizing the effects of EN7 WFH boosts.
 
 ## Telecommuting Estimates (Surveys, etc.)
 
