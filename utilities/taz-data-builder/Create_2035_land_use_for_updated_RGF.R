@@ -41,7 +41,7 @@ income2_scale <- as.numeric(rgf_income[2,3])/sum(taz_in_2035$HHINCQ2)
 income3_scale <- as.numeric(rgf_income[2,4])/sum(taz_in_2035$HHINCQ3)
 income4_scale <- as.numeric(rgf_income[2,5])/sum(taz_in_2035$HHINCQ4)
 
-# Calculate persons by age scalers, total employment will be summed from components
+# Calculate persons by age scalers, total population will be summed from components
 
 age0004_scale <- as.numeric(rgf_age[1,2])/sum(taz_in_2035$AGE0004)
 age0519_scale <- as.numeric(rgf_age[1,3])/sum(taz_in_2035$AGE0519)
@@ -49,7 +49,7 @@ age2044_scale <- as.numeric(rgf_age[1,4])/sum(taz_in_2035$AGE2044)
 age4564_scale <- as.numeric(rgf_age[1,5])/sum(taz_in_2035$AGE4564)
 age65p_scale  <- as.numeric(rgf_age[1,6])/sum(taz_in_2035$AGE65P)
 
-# Calculate jobs by sector scalers, total jobs will be summed from components
+# Calculate jobs by sector scalers, total employment will be summed from components
 
 agrempn_scale <- as.numeric(rgf_jobs[1,2])/sum(taz_in_2035$AGREMPN)
 fpsempn_scale <- as.numeric(rgf_jobs[2,2])/sum(taz_in_2035$FPSEMPN)
@@ -115,6 +115,7 @@ taz_in_2035p <- taz_in_2035p %>%
 pop_scale     <- sum(taz_in_2035p$TOTPOP)/sum(taz_in_2035$TOTPOP)  
 
 # Scale remaining population variables
+# gt_tot_pop calculated by summing group quarters components
 
 taz_in_2035p <- taz_in_2035p %>% 
   mutate(HHPOP          = round(HHPOP*pop_scale,0),
@@ -135,7 +136,8 @@ taz_in_2035p <- taz_in_2035p %>%
 
          EMPRES         = round(EMPRES*empres_scale,0),
 
-# Adjust the jobs by sector
+# Adjust the jobs by sector using individual component scalers
+# Sum total employment
 
          AGREMPN        = round(AGREMPN*agrempn_scale,0),
          FPSEMPN        = round(FPSEMPN*fpsempn_scale,0),
@@ -199,7 +201,7 @@ final_taz <- taz_in_2035p %>%
     
 ) %>% 
   
-  # Remove max variables
+  # Remove max variables from dataset
   
   select(-max_gq,-max_units, -max_size,-max_workers,-max_kids,-max_pop) 
   
@@ -244,6 +246,8 @@ county_sum <- final_taz %>%
             AGE4564   =sum(AGE4564),
             AGE65P    =sum(AGE65P)) %>% 
   ungroup()
+
+# Join summed variables to unchanged variables, reorder variables using select function
             
 final_county <- left_join(county_vars,county_sum,by="COUNTY_NAME") %>% 
   select(all_of(county_order))
