@@ -25,7 +25,7 @@ output          <- "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n
 taz_in_2035     <- read.csv(taz_in) %>% select(-X)
 county_in_2035  <- read.csv(county_in) 
 rgf_main        <- read_excel(rgf_in,sheet = "MAIN")[1:5,c(1,5)]
-rgf_income      <- (read_excel(rgf_in,sheet = "Households by Income"))[c(3,6),1:6]
+rgf_income      <- read_excel(rgf_in,sheet = "Households by Income")[c(3,6),1:6]
 rgf_age         <- read_excel(rgf_in,sheet = "Population by Age Detail")[5,2:7]
 rgf_jobs        <- read_excel(rgf_in,sheet = "Jobs by Sector")[1:6,c(1,5)]
 
