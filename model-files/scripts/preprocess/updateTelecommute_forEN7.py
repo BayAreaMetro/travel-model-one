@@ -3,22 +3,23 @@ USAGE = '''
   EN7 is expected to be one of ['ENABLED', 'DISABLED'] or the script will error.
 
   Log is written to: logs\\updateTelecommute_forEN7_[ITER]_[YYYYmmdd-HHMM].log
-  Detailed output is written to main\telecommute_forEN7_detail_[ITER].csv
+  Detailed debug output is written to main\\telecommute_forEN7_detail_[ITER].csv
 
-  IF EN7=='DISABLED', then a main\\telecommute_EN7.csv is created with zeros
-  IF EN7=='ENABLED', then the script:
-    - Reads INPUT\\landuse\\tazData.csv and INPUT\\landuse\\telecommute_max_rate_county.csv
-      to estimate maximum wfh by county based on the employment industry mix
-    - Reads individual tours, person records and work locations files for ITER
-    - Filters to workers only, and the first work tour for each person (dropping potential subsequent work tours)
-    - Summarizes the (wfh choice, work tour mode) for workers
-    - Aggregates to superdistrict
-    - Reads the existing main\\telecommute_EN7.csv (columns: ZONE,SD,COUNTY,wfh_EN7_constant)
-    - Adjust wfh_EN7_constant:
-      - For superdistricts with auto_share > TARGET_AUTO_SHARE and wfh_share < max, increase wfh_EN7_constant
-      - For superdistricts with wfh_share > max, decrease wfh_EN7_constant
-    - Writes main\\telecommute_EN7.csv (columns: ZONE,SD,COUNTY,wfh_EN7_constant)
+  IF EN7=='DISABLED', then the script does nothing.
+  IF EN7=='ENABLED', then the script will do the following:
 
+   (1) Reads INPUT\\landuse\\tazData.csv and INPUT\\landuse\\telecommute_max_rate_county.csv
+       to estimate maximum wfh by county based on the employment industry mix
+   (2) Reads individual tours, person records and work locations files for ITER
+   (3) Filters to workers only, and the first work tour for each person (dropping potential subsequent work tours)
+   (4) Summarizes the (wfh choice, simplified work tour mode) for workers
+   (5) Aggregates to superdistrict
+   (6) Adjust wfh_EN7_boost
+       (a) For superdistricts with auto_share > TARGET_AUTO_SHARE and wfh_share < max, 
+           increase CDAP.WFH.EN7.Superdistrict[SD]
+       (b) For superdistricts with wfh_share > max,
+           decrease CDAP.WFH.EN7.Superdistrict[SD]
+   (7) Writes CTRAMP\\runtime\\mtcTourBased.properties with CDAP.WFH.EN7.Superdistrict[SD] lines modified
 '''
 
 import logging,os,re,sys,time
@@ -34,8 +35,10 @@ WSLOC_FILE    = os.path.join('main','wsLocResults_{}.csv')
 TELERATE_FILE   = os.path.join('INPUT','landuse','telecommute_max_rate_county.csv')
 PARAMS_FILENAME = os.path.join('INPUT','params.properties')
 
-# input and output
-TELECOMMUTE_EN7_FILE = os.path.join('main','telecommute_EN7.csv')
+# update the superdistrict EN7 boosts in here
+PROPERTIES_FILE = os.path.join('CTRAMP','runtime','mtcTourBased.properties')
+PROPERTY_CDAP_WFH_EN7_RE  = re.compile(r"^CDAP.WFH.EN7.Superdistrict(\d+)\s*=\s*([\d\.]+)")  # read
+PROPERTY_CDAP_WFH_EN7_STR = "CDAP.WFH.EN7.Superdistrict{:02d}={:.4f}\n" # write
 # detail output
 DETAIL_OUTPUT_FILE = os.path.join('main','telecommute_forEN7_detail_{}.csv')
 
@@ -45,7 +48,7 @@ LOG_FILE = os.path.join('logs','updateTelecommute_forEN7_{}_{}.log'.format('{}',
 # EN7
 TARGET_AUTO_SHARE  = 0.40
 # if max_wfh_share +/- this, then leave it alone
-wfh_share_THRESHHOLD = 0.005
+WFH_SHARE_THRESHHOLD = 0.005
 
 # todo: make this more intelligent
 CONSTANT_INCREMENT = 0.05
@@ -69,7 +72,8 @@ if __name__ == '__main__':
     fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     logger.addHandler(fh)
 
-    pandas.options.display.width = 150
+    pandas.options.display.width = 500
+    pandas.options.display.max_columns = 30
 
     # expect EN7 to be ENABLED or DISABLED
     EN7_OPTIONS = ['ENABLED','DISABLED']
@@ -80,29 +84,20 @@ if __name__ == '__main__':
     logging.info("EN7   = {}".format(EN7))
     logging.info('ITER  = {}'.format(ITER))
 
-    # read INPUT\params.properties
-    # TODO: wait, why??
-    myfile          = open( PARAMS_FILENAME, 'r' )
-    PARAMS_CONTENTS = myfile.read()
-    myfile.close()
-    logging.info("Read {} lines from {}".format(len(PARAMS_CONTENTS), PARAMS_FILENAME))
-
     # read tazdata
     TAZDATA_COLS = ['ZONE','DISTRICT','SD','COUNTY','RETEMPN','FPSEMPN','HEREMPN','OTHEMPN','AGREMPN','MWTEMPN','TOTEMP']
     tazdata_df = pandas.read_csv(TAZDATA_FILE, index_col=False, sep=',', usecols=TAZDATA_COLS)
     logging.info('Read {:,} lines from {}; head:\n{}'.format(len(tazdata_df), TAZDATA_FILE, tazdata_df.head()))
 
     if EN7 == "DISABLED":
-        telecommute_df = tazdata_df[['ZONE','SD','COUNTY']].copy()
-        telecommute_df['wfh_EN7_constant'] = 0.0
-        telecommute_df.to_csv(TELECOMMUTE_EN7_FILE, header=True, index=False)
-        logging.info("Wrote {:,} lines to {}".format(len(telecommute_df), TELECOMMUTE_EN7_FILE))
+        logging.info("EN7 is disabled -- doing nothing.")
         sys.exit(0)
 
-    # make sure a version of TELECOMMUTE_EN7_FILE exists
-    if not os.path.exists(TELECOMMUTE_EN7_FILE):
-        logging.fatal("EN7 is ENABLED but {} doesn't exist".format(TELECOMMUTE_EN7_FILE))
-        sys.exit(-1000)
+
+    properties_f = open(PROPERTIES_FILE, "r")
+    properties_lines = properties_f.read().split("\n")
+    properties_f.close()
+    logging.debug("Read {:,} lines lines from {}".format(len(properties_lines), PROPERTIES_FILE))
 
     # read max telecommute rate
     wfh_share_df = pandas.read_csv(TELERATE_FILE, sep=',')
@@ -122,8 +117,6 @@ if __name__ == '__main__':
     wfh_share_df['max_wfh_share'] = wfh_share_df['max_telecommuters']/wfh_share_df['TOTEMP']
     logging.info("Maximum telecommute rate:\n{}".format(wfh_share_df))
 
-    # initialize primary df
-    telecommute_df = tazdata_df[['ZONE','SD','COUNTY']].copy()
     # read results, create metrics and update
 
     # read tours for tour mode choice
@@ -156,7 +149,7 @@ if __name__ == '__main__':
     # filter to employed people
     wslocs_df = wslocs_df.loc[(wslocs_df.EmploymentCategory=='Full-time worker') |
                               (wslocs_df.EmploymentCategory=='Part-time worker')]
-    logging.info('  Filtereed to {:,} rows with EmploymentCategory == Full|Part-time worker'.format(len(wslocs_df)))
+    logging.info('  Filtered to {:,} rows with EmploymentCategory == Full|Part-time worker'.format(len(wslocs_df)))
 
     # make columns consistent
     wslocs_df.rename(columns={'HHID':'hh_id',
@@ -267,67 +260,83 @@ if __name__ == '__main__':
         on    = 'COUNTY')
     logging.debug("work_mode_SD_df:\n{}".format(work_mode_SD_df))
 
-    # read previous CONSTANTS
-    telecommute_df = pandas.read_csv(TELECOMMUTE_EN7_FILE)
-    telecommute_df = telecommute_df[['ZONE','SD','COUNTY','wfh_EN7_constant']]
-    telecommute_df.rename(columns={'wfh_EN7_constant':'wfh_EN7_constant_prev'}, inplace=True)
-    logging.info('Read {:,} lines from {}; head:\n{}'.format(
-        len(telecommute_df), TELECOMMUTE_EN7_FILE, telecommute_df.head()))
+    # initialize primary df
+    EN7_boost_df = tazdata_df[['COUNTY','SD']].copy().drop_duplicates()
+    # create dataframe with current EN7_wfh_boost; columns = COUNTY, SD, en7_wfh_boost_prev
+    EN7_wfh_boost_dict_list = []
+    for line in properties_lines:
+        match = re.match(PROPERTY_CDAP_WFH_EN7_RE, line)
+        if match: 
+            # logging.debug(match.groups())
+            en7_dict = {'SD': int(match[1]), 'en7_wfh_boost_prev':float(match[2])}
+            EN7_wfh_boost_dict_list.append(en7_dict)
+    EN7_boost_df = pandas.merge(
+        left  = EN7_boost_df, # this just has COUNTY, district
+        right = pandas.DataFrame(EN7_wfh_boost_dict_list)
+    )
+    logging.debug("Properties file - EN7_boost_df:\n{}".format(EN7_boost_df))
 
     # join with work_mode_SD_df
-    telecommute_df = pandas.merge(
-         left  = telecommute_df, 
+    EN7_boost_df = pandas.merge(
+         left  = EN7_boost_df, 
          right = work_mode_SD_df)
-    logging.debug("After merge, telecommute_df (len={}):\n{}".format(len(telecommute_df), telecommute_df))
+    logging.debug("After merge, EN7_boost_df (len={}):\n{}".format(len(EN7_boost_df), EN7_boost_df))
 
     # THIS IS IT
     # start at previous value
-    telecommute_df['wfh_EN7_constant'] = telecommute_df['wfh_EN7_constant_prev']
+    EN7_boost_df['en7_wfh_boost'] = EN7_boost_df['en7_wfh_boost_prev']
 
-    # telecommute within threshold of max
-    telecommute_df['telecomute_diff']     = telecommute_df['max_wfh_share'] - telecommute_df['wfh_share']
-    telecommute_df['telecommute_near_max'] = telecommute_df['telecomute_diff'].abs() < wfh_share_THRESHHOLD
-    telecommute_df['change'] = 'none'
+    # wfh within threshold of max
+    EN7_boost_df['wfh_diff']     = EN7_boost_df['max_wfh_share'] - EN7_boost_df['wfh_share']
+    EN7_boost_df['wfh_near_max'] = EN7_boost_df['wfh_diff'].abs() < WFH_SHARE_THRESHHOLD
+    EN7_boost_df['change']       = 'none'
 
     # increase (negative) if auto share is high and we're not at max
-    telecommute_df.loc[ 
-        (telecommute_df['auto_share'] > TARGET_AUTO_SHARE) &
-        (telecommute_df['wfh_share'] < telecommute_df['max_wfh_share']) &
-        (telecommute_df['telecommute_near_max'] == False), 
+    EN7_boost_df.loc[ 
+        (EN7_boost_df['auto_share'] > TARGET_AUTO_SHARE) &
+        (EN7_boost_df['wfh_share'] < EN7_boost_df['max_wfh_share']) &
+        (EN7_boost_df['wfh_near_max'] == False), 
         'change'] = 'increase_wfh'
-    
-    # decrease if telecommute share is high
-    telecommute_df.loc[ 
-        (telecommute_df['wfh_share'] > telecommute_df['max_wfh_share']) &
-        (telecommute_df['telecommute_near_max'] == False), 
+
+    # decrease if wfh share is high
+    EN7_boost_df.loc[ 
+        (EN7_boost_df['wfh_share'] > EN7_boost_df['max_wfh_share']) &
+        (EN7_boost_df['wfh_near_max'] == False), 
         'change'] = 'decrease_wfh'
+
+    # implement change: original plus share to bring it to max
+    # 0.8 is to back it off a bit
+    EN7_boost_df.loc[ EN7_boost_df.change != 'none',
+                     'en7_wfh_boost' ] = EN7_boost_df.en7_wfh_boost + (EN7_boost_df['max_wfh_share'] - EN7_boost_df['wfh_share'])*0.8
     
-    # but if the wfh constant would go positive, we can't decrease
-    telecommute_df.loc[ 
-        (telecommute_df['change'] == 'decrease_wfh') &
-        (telecommute_df['wfh_EN7_constant'] + CONSTANT_DECREMENT > 0), 
-        'change' ] = 'decrease_but_at_max'
+    # but don't let it go negative; we're only boosting
+    # this isn't that alarming; the estimated max is from pre-COVID times
+    EN7_boost_df.loc[ EN7_boost_df.en7_wfh_boost < 0, 'change'        ] = 'wfh_higher_than_est_max'
+    EN7_boost_df.loc[ EN7_boost_df.en7_wfh_boost < 0, 'en7_wfh_boost' ] = 0
 
     # log summary
-    logging.debug(telecommute_df[['COUNTY','change']].value_counts())
-    
-    # apply
-    telecommute_df.loc[ 
-        telecommute_df.change == 'increase_wfh',
-        'wfh_EN7_constant' ] = telecommute_df['wfh_EN7_constant'] - CONSTANT_INCREMENT
-    telecommute_df.loc[ 
-        telecommute_df.change == 'decrease_wfh',
-        'wfh_EN7_constant' ] = telecommute_df['wfh_EN7_constant'] + CONSTANT_DECREMENT
-
-    
-    logging.debug("Final telecommute_df (len={}):\n{}".format(len(telecommute_df), telecommute_df))
+    logging.debug(EN7_boost_df[['COUNTY','change']].value_counts())
+    logging.debug("Final EN7_boost_df (len={}):\n{}".format(len(EN7_boost_df), EN7_boost_df))
 
     # write detail
-    telecommute_df.to_csv(DETAIL_OUTPUT_FILE.format(ITER), header=True, index=False)
-    logging.info("Wrote {} lines to {}".format(len(telecommute_df), DETAIL_OUTPUT_FILE.format(ITER)))
+    EN7_boost_df.to_csv(DETAIL_OUTPUT_FILE.format(ITER), header=True, index=False)
+    logging.info("Wrote {} lines to {}".format(len(EN7_boost_df), DETAIL_OUTPUT_FILE.format(ITER)))
 
-    # simple
-    telecommute_df[['ZONE','SD','COUNTY','wfh_EN7_constant']].to_csv(TELECOMMUTE_EN7_FILE, header=True, index=False)
-    logging.info("Wrote {} lines to {}".format(len(telecommute_df), TELECOMMUTE_EN7_FILE))
+    # create dict: SD => en7_wfh_boost
+    EN7_boost_df_dict = EN7_boost_df.set_index('SD')['en7_wfh_boost'].to_dict()
+    logging.debug(EN7_boost_df_dict)
+
+    # update properties file
+    PROPERTIES_OUTPUT_FILE = PROPERTIES_FILE # PROPERTIES_FILE.replace(".properties",".test")
+    properties_f = open(PROPERTIES_OUTPUT_FILE, "w")
+    for line in properties_lines:
+        match = re.match(PROPERTY_CDAP_WFH_EN7_RE, line)
+        if match: 
+            SD = int(match[1])
+            properties_f.write(PROPERTY_CDAP_WFH_EN7_STR.format(SD, EN7_boost_df_dict[SD]))
+        else:
+            properties_f.write(line + '\n')
+    properties_f.close()
+    logging.info("Wrote {} lines to {}".format(len(properties_lines), PROPERTIES_OUTPUT_FILE))
 
     sys.exit(0)
