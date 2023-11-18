@@ -768,7 +768,24 @@ temp_rounded_adjusted <- temp1 %>%
             -sum_ethnicity,-ethnicity_factor) %>% 
     mutate_if(is.numeric,round,0) %>%
     mutate(SHPOP62P = if_else(TOTPOP==0,0,AGE62P/TOTPOP)) %>% 
- 
+  
+  
+# The below step is so clunky. I refactored it and think it should be updated the next time this process is done using the below function:
+### Function to adjust values in each row
+#  adjustValues <- function(data, marginal_var,columns) {
+    # Iterate through rows and adjust values
+    #for (i in 1:nrow(data)) {
+    #  largest_value_index <- which.max(data[i, columns])
+    #  difference <- data[i, marginal_var] - sum(data[i, columns])
+    #  data[i, columns[largest_value_index]] <- data[i, columns[largest_value_index]] - difference
+    #}
+    #return(data)
+  #}
+
+# Apply the adjustValues function to the data frame
+#### my_data_adjusted <- adjustValues(my_data, "total", c("num1", "num2", "num3", "num4", "num5"))
+
+# For now, the unfactored old-bessy version that works
 # Scaling adjustments were done above, now make fix small variations due to rounding for precisely-matching totals
 # Find max value in categorical data to adjust totals so they match univariate totals
 # For example, the households by income across categories should sum to equal total HHs
