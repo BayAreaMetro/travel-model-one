@@ -2,6 +2,7 @@ import os
 import csv
 import pandas as pd
 import numpy as np
+from datetime import datetime
 
 mode_dict = {
     1: "wlk",
@@ -153,7 +154,21 @@ def extract_tables_from_prn_files(input_dir, output_dir):
     # prn_files = [f for f in os.listdir(input_dir) if f.endswith(".PRN")]
     # select the range by visually scanning the dates of the new PRN files produced
     # for details on how to produce the files, see https://app.asana.com/0/1201809392759895/1205348861092578/f
-    prn_files = ["TPPL{:04d}.PRN".format(i) for i in range(111, 126)]
+    # prn_files = ["TPPL{:04d}.PRN".format(i) for i in range(111, 126)]
+
+    todays_date = datetime.now()
+    today = todays_date.date()
+
+    # Create an empty list to store filenames
+    prn_files = []
+
+    for filename in os.listdir(input_dir):
+        file_time = os.path.getmtime(os.path.join(input_dir, filename))
+        file_date = datetime.fromtimestamp(file_time)
+        file_day = file_date.date()
+        
+        if (file_day == today) & (filename.endswith(".PRN")):
+            prn_files.append(os.path.join(filename))
 
     # Loop through the list of PRN files
     for prn_file in prn_files:
