@@ -3,22 +3,20 @@
 ; IxForecasts.job
 ;
 ; TP+ script to create a daily matrix that includes internal/external, external/internal, and external/external
-; passenger vehicle travel (based on Census 2000 journey-to-work flows).  These trip tables are based on total 
-; traffic counts, which include trucks, but trucks are not explicitly segmented from passenger vehicles.  This 
-; short-coming is a hold-over from BAYCAST and will be addressed in the next model update.
+; passenger vehicle travel based on the average daily commute trips from CTPP 2012-2016 data, combined with assumptions
+; on WFH pre-pandemic and post-pandemic difference.  These trip tables are based on total 
+; traffic counts, which include trucks; trucks are pulled out from these tables in a subsequent step, IxTimeOfDay.job.
 ;
-; The row and column totals are taken from count station data provided by Caltrans.  A 2015 matrix is used
-; as the base year; see documentation in utilities/ix-ex. The script generates estimates 
-; for the following forecast years: 2015, 2020, 2025, 2030, 2035, and 2040.  The growth rates were 
-; discussed with neighboring MPOs as part of the SB 375 target setting process. 
+; A 2021 matrix is used as the base year; see documentation in utilities/ix-ex. This script generates estimates 
+; for the forecast years 2021 and after. The growth rates were discussed with neighboring MPOs as
+; part of the SB 375 target setting process. 
 ;
 ; Input:  (1)  Station-specific assumed growth rates and commute shares for each forecast year
 ;              (the lack of external/external movements through the region allows simple factoring of cells
 ;              without re-balancing) (ixex_config.dbf)
-;         (2)  An input base matrix derived from the Census journey-to-work data (ixDaily2015.tpp) and 
-;              totals (ixDaily2015_totals.dbf)
-;         (3)  Environment variables: %MODEL_YEAR% (e.g. 2015, 2035, 2050, etc) and
-;                                     %FUTURE% (one of PBA50, CleanAndGreen, BackToTheFuture, or RisingTidesFallingFortunes)
+;         (2)  An input base matrix (ixDaily2021.tpp) and totals (ixDaily2021_totals.dbf)
+;         (3)  Environment variables: %MODEL_YEAR% (e.g. 2021 and after) and
+;                                     %FUTURE% (only PBA50 is supported now)
 ;
 ; Output: (1) Four-table, forecast-year specific trip tables containing internal/external, external/internal, and 
 ;             external/external vehicle travel. (nonres\ixDailyx4.tpp)
@@ -29,7 +27,7 @@
 ;               O/D matrix.
 ;
 ; version:  Travel Model One
-; authors:  dto (2010 12 30), lmz (2018 12 31)
+; authors:  dto (2010 12 30), lmz (2018 12 31), lmz (2023 11 17)
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 token_future = '%FUTURE%'
@@ -38,19 +36,19 @@ FIRST_EXT_ZONE = 1455
 ; Create MODEL_YEAR table using assumption for FUTURE
 run pgm = matrix
 
-   ; Begin with 2015 base year matrix established above
-   mati = nonres\ixDaily2015.tpp
+   ; Begin with 2021 base year matrix established above
+   mati = nonres\ixDaily2021.tpp
    
    ; Write out a year-specific matrix
    mato = nonres\ixDailyx4.tpp, mo = 1-4, name = ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
 
-   ; Also read the totals from 2015 calculated in previous step
-   filei lookupi[1] = nonres\ixDaily2015_totals.dbf
+   ; Also read the totals from 2021 calculated in previous step
+   filei lookupi[1] = nonres\ixDaily2021_totals.dbf
 
    ; And assumptions from Box\Horizon and Plan Bay Area 2050\Futures Planning\Modeling Characteristics\Interregional Volume Assumptions\Interregional Volumes v2.xlsx
    filei lookupi[2] = nonres\ixex_config.dbf
 
-   lookup lookupi=1, name=totals_2015,
+   lookup lookupi=1, name=totals_2021,
      lookup[1]=EXT_ZONE, result=PROD,  ; productions
      lookup[2]=EXT_ZONE, result=ATTR   ; attractions
 
@@ -65,72 +63,53 @@ run pgm = matrix
 
      ; first, figure out desired daily total
      LOOP EXT_ZONE = @FIRST_EXT_ZONE@,1475
-       prod_total_2015 = totals_2015(1,EXT_ZONE)
-       attr_total_2015 = totals_2015(2,EXT_ZONE)
+       prod_total_2021 = totals_2021(1,EXT_ZONE)
+       attr_total_2021 = totals_2021(2,EXT_ZONE)
 
        ; assumptions
        commute_share   = growth(1,EXT_ZONE)
        slope           = growth(2,EXT_ZONE)
-       total_2015      = prod_total_2015 + attr_total_2015
-       year_delta      = %MODEL_YEAR%-2015
+       total_2021      = prod_total_2021 + attr_total_2021
+       year_delta      = %MODEL_YEAR%-2021
 
-       ; figure out 2015 desired total -- this is future-dependent
+       ; figure out 2021 desired total -- this is future-dependent
        IF ('%FUTURE%'='PBA50')
 
-         IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--PBA50--%MODEL_YEAR%--  Non-commute share grows based on slope for ",year_delta," years"
-         total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@] = total_2015 + year_delta*(1.0-commute_share)*slope
-
-       ELSEIF ('%FUTURE%'=='CleanAndGreen')
-
-         IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--CleanAndGreen--%MODEL_YEAR%--  No growth"
-         total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@] = total_2015
-
-       ELSEIF ('%FUTURE%'='BackToTheFuture')
-
-         IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--BackToTheFuture--%MODEL_YEAR%--  Total share grows based on slope for ",year_delta," years, plus 50% for gateways to south and east"
-         if (EXT_ZONE >= 1459 & EXT_ZONE <= 1471)
-           total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@] = total_2015 + year_delta*slope*1.5
-         else
-           total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@] = total_2015 + year_delta*slope
-         endif
-
-       ELSEIF ('%FUTURE%'='RisingTidesFallingFortunes')
-
-         IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--RisingTidesFallingFortunes--%MODEL_YEAR%--  Total share grows based on slope for ",year_delta," years"
-         total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@] = total_2015 + year_delta*slope
+         IF (EXT_ZONE == @FIRST_EXT_ZONE@) PRINT LIST="--PBA50--%MODEL_YEAR%--  Forecast grows based on slope for ",year_delta," years"
+         total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@] = total_2021 + year_delta*(1.0-commute_share)*slope
 
        ELSE
-         print LIST="Do not understand token_future @token_future@"
-         ABORT MSG="Do not understand token_future @token_future@"
+         print LIST="Do not understand or support token_future @token_future@"
+         ABORT MSG="Do not understand or support token_future @token_future@"
        ENDIF
 
-       if (total_2015 == 0)
+       if (total_2021 == 0)
          factor[EXT_ZONE-@FIRST_EXT_ZONE@] = 1.0
        else
-         factor[EXT_ZONE-@FIRST_EXT_ZONE@] = total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@]/total_2015
+         factor[EXT_ZONE-@FIRST_EXT_ZONE@] = total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@]/total_2021
        endif
 
-       PRINT LIST="For external zone ",EXT_ZONE, " prod_2015: ", prod_total_2015, " attr_2015: ", attr_total_2015, 
+       PRINT LIST="For external zone ",EXT_ZONE, " prod_2021: ", prod_total_2021, " attr_2021: ", attr_total_2021, 
          " commute share: ", commute_share, " slope: ", slope,
-         " total 2015: ", total_2015, " total model_year: ", total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@], " => factor: ",factor[EXT_ZONE-@FIRST_EXT_ZONE@]
+         " total 2021: ", total_2021, " total model_year: ", total_modyear[EXT_ZONE-@FIRST_EXT_ZONE@], " => factor: ",factor[EXT_ZONE-@FIRST_EXT_ZONE@]
 
      ENDLOOP
 
      ; however there are X/X trips between 1461 and 1462
-     tot2015_1461_1462 = MATVAL(1,1,1461,1462) + MATVAL(1,2,1461,1462) + MATVAL(1,3,1461,1462)
-     tot2015_1462_1461 = MATVAL(1,1,1462,1461) + MATVAL(1,2,1462,1461) + MATVAL(1,3,1462,1461)
+     tot2021_1461_1462 = MATVAL(1,1,1461,1462) + MATVAL(1,2,1461,1462) + MATVAL(1,3,1461,1462)
+     tot2021_1462_1461 = MATVAL(1,1,1462,1461) + MATVAL(1,2,1462,1461) + MATVAL(1,3,1462,1461)
 
      ; so if we scale those according to 1461, then 1462 will be short this much
-     tot_1461 = (tot2015_1461_1462 + tot2015_1462_1461) * factor[1461-@FIRST_EXT_ZONE@]
-     tot_1462 = (tot2015_1461_1462 + tot2015_1462_1461) * factor[1462-@FIRST_EXT_ZONE@]
+     tot_1461 = (tot2021_1461_1462 + tot2021_1462_1461) * factor[1461-@FIRST_EXT_ZONE@]
+     tot_1462 = (tot2021_1461_1462 + tot2021_1462_1461) * factor[1462-@FIRST_EXT_ZONE@]
      diff_1462 = tot_1462 - tot_1461
 
-     PRINT LIST="XX trips for 1461-1462: ", tot2015_1461_1462, " 1462-1461: ", tot2015_1462_1461
+     PRINT LIST="XX trips for 1461-1462: ", tot2021_1461_1462, " 1462-1461: ", tot2021_1462_1461
      PRINT LIST="Using 1461 factor: ", tot_1461, "; Using 1462 factor: ", tot_1462, "; 1462 will be short by: ", diff_1462
 
-     ; so make up for it by upping the modyear target. Assuming two XX vals factor to tot2015_1461, remove them from the calc
-     total_2015 = totals_2015(1,1462) + totals_2015(2,1462)
-     factor[1462 - @FIRST_EXT_ZONE@] = (total_modyear[1462-@FIRST_EXT_ZONE@]-tot_1461)/(total_2015-tot2015_1461_1462-tot2015_1462_1461)
+     ; so make up for it by upping the modyear target. Assuming two XX vals factor to tot2021_1461, remove them from the calc
+     total_2021 = totals_2021(1,1462) + totals_2021(2,1462)
+     factor[1462 - @FIRST_EXT_ZONE@] = (total_modyear[1462-@FIRST_EXT_ZONE@]-tot_1461)/(total_2021-tot2021_1461_1462-tot2021_1462_1461)
      PRINT LIST=" => Updating factor 1462 to ", factor[1462 - @FIRST_EXT_ZONE@] 
 
    ENDIF

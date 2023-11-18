@@ -39,16 +39,13 @@ Every iteration before assignment, the following scripts are run:
 1. [`IxForecasts_horizon.job`](../../model-files/scripts/nonres/IxForecasts_horizon.job)
     * Summary: This script takes a base year (2015) daily trip matrix makes the following assumptions:
         * For `FUTURE`==`PBA50`, assumes the non-commute share grows based on the configured slope.
-        * For `FUTURE`==`CleanAndGreen`, assumes no growth from 2015.
-        * For `FUTURE`==`BackToTheFuture`, assumes the total share grows based on the configured slope, with the slope adjusted upwards by 50% for gateways to the south and east.
-        * For `FUTURE`==`RisingTidesFallingFortunes`, assumes the total share grows based on the configured slope.
-        * Additionally, the script handles the external-to-extnernal trips between zones 1461 and 1462.
+        * Additionally, the script handles the external-to-exterrnal trips between zones 1461 and 1462.
     * Input: 
         * Environment variable, `MODEL_YEAR`: a number higher than 2015
         * Environment variable, `FUTURE`: one of `PBA50`,`CleanAndGreen`,`BackToTheFuture`, or `RisingTidesFallingFortunes`
         * `nonres\ixDaily2015.tpp`, matrices: ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
         * `nonres\ixDaily2015_totals.dbf`, fields: EXT_ZONE, PROD, ATTR.  These are the total daily trips produced and attracted to each external zone.
-        * `nonres\ixex_config.dbf`, fields: EXT_ZONE, comm_share (commute share), slope
+        * `nonres\ixex_config.dbf`, fields: EXT_ZONE, comm_share (commute share), slope.  
     * Output:
         * `nonres\ixDailyx4.tpp`, fields: ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total. This is a forecast-year specific trip table containing internal/external, external/internal, and external/external vehicle travel.
 
