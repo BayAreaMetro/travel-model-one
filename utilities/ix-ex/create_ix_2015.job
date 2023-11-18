@@ -3,6 +3,7 @@
 ; create_ix_2015.job
 ;
 ; Working directory is M:\Development\Travel Model One\InternalExternal
+;   Nov 2023: Moved to M:\Development\Travel Model One\InternalExternal\RTP2021_PBA50
 ;
 ; ----------------------------------------------------------------------------------------------------------------
 FIRST_EXT_ZONE = 1455

@@ -23,8 +23,15 @@ Asana task history (internal-only):
         * `ixDaily2015_totals.dbf`, fields: EXT_ZONE, PROD, ATTR
 
 2. [`create_ix_2021.job`](create_ix_2021.job) was used ot create the 2021 base year input table.
-    * Summary: Created the 2015 base year table using [MTC_Interregional Volumes pba50+_v2.xlsx](https://mtcdrive.box.com/s/agq4nyowcdpdb2udf2v2s3j1j32fazva). This file was created/updated for the 2025 RTP, or Plan Bay Area 2050+.
-    * Input: 
+    * Summary: Created the 2015 base year table using [MTC_Interregional Volumes pba50+_v2.xlsx](https://mtcdrive.box.com/s/agq4nyowcdpdb2udf2v2s3j1j32fazva). It just scales the 2015 table based on the 2021 gateway total volumes. This file was created/updated for the 2025 RTP, or Plan Bay Area 2050+.
+    * See also: [MTC_Gateway Volume Forecast Methodology.docx](https://mtcdrive.box.com/s/q98g43riir786lhq19xa3w99tyzh8dsh)
+    * Input:
+        * `M:\Development\Travel Model One\InternalExternal\RTP2021_PBA50\ixDaily2015.tpp`, matrices: ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
+        * `ixDaily2015_totals.dbf`, fields: EXT_ZONE, PROD, ATTR
+        * [`totals_baseyears.dbf`](totals_baseyears.dbf), fields: EXT_ZONE,TOTAL_2015,TOTAL_2021
+    * Output:
+        * `ixDaily2021.tpp`, matrices: ix_daily_da, ix_daily_sr2, ix_daily_sr3, ix_daily_total
+        * `ixDaily2021_totals.dbf`, fields: EXT_ZONE, PROD, ATTR
 
 ### Model Process
 Every iteration before assignment, the following scripts are run:
