@@ -80,11 +80,7 @@ run pgm=matrix
    
       ; Apply gateway-specific adjustment factors 
       ; (no X/X trips mean the gateways act independently, other than the pair we compensated for above)
-      if (I=1464)
-         mw[1] = MATVAL(1,1,1465,J) * factor[I-@FIRST_EXT_ZONE@]
-         mw[2] = MATVAL(1,2,1465,J) * factor[I-@FIRST_EXT_ZONE@]
-         mw[3] = MATVAL(1,3,1465,J) * factor[I-@FIRST_EXT_ZONE@]
-      elseif (I >= @FIRST_EXT_ZONE@)
+      if (I >= @FIRST_EXT_ZONE@)
          ; 1461/1462 have XX trips -- use 1461 factor
          if ((I=1462) & (J=1461))
            mw[1] = mi.1.IX_Daily_DA  * factor[J-@FIRST_EXT_ZONE@]
@@ -95,10 +91,6 @@ run pgm=matrix
            mw[2] = mi.1.IX_Daily_SR2 * factor[I-@FIRST_EXT_ZONE@]
            mw[3] = mi.1.IX_Daily_SR3 * factor[I-@FIRST_EXT_ZONE@]
          endif
-      elseif (J=1464)
-         mw[1] = MATVAL(1,1,I,1465) * factor[J-@FIRST_EXT_ZONE@]
-         mw[2] = MATVAL(1,2,I,1465) * factor[J-@FIRST_EXT_ZONE@]
-         mw[3] = MATVAL(1,3,I,1465) * factor[J-@FIRST_EXT_ZONE@]
       elseif (J >= @FIRST_EXT_ZONE@)
          mw[1] = mi.1.IX_Daily_DA  * factor[J-@FIRST_EXT_ZONE@]
          mw[2] = mi.1.IX_Daily_SR2 * factor[J-@FIRST_EXT_ZONE@]
