@@ -5,14 +5,13 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_04
+set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_06
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
 
 :: set the location of the Travel Model Release
-:: use the v1.6_develop branch for now until we create a release
-set GITHUB_DIR=X:\travel-model-one-v1.6_develop
+set GITHUB_DIR=X:\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
 set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_64\net_2035_Blueprint
@@ -30,7 +29,7 @@ set tazDataFileName=tazData_parkingStrategy_v01_CORDONcolumns
 set UrbanSimScenario=s24
 
 :: set the location of the input directories for non resident travel, logsums and metrics
-set NONRES_INPUT_DIR=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\nonres\nonres_03
+set NONRES_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_04
 set LOGSUMS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\logsums_dummies
 set METRICS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\metrics_FinalBlueprint
 
@@ -40,11 +39,16 @@ set PREV_RUN_DIR=M:\Application\Model One\RTP2021\Blueprint\2035_TM152_FBP_Plus_
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
-set PARAMS=X:\travel-model-one-v1.6_develop\utilities\RTP\config_RTP2025\params_2035_IPA.properties
+set PARAMS=X:\travel-model-one-master\utilities\RTP\config_RTP2025\params_2035_IPA.properties
 
 :: set the location of the overrides directory (for Blueprint strategies)
 set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-overrides
 
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 2:  Set up folder structure and copy CTRAMP
+::
+:: ------------------------------------------------------------------------------------------------------
 
 :: --------------------------------------------
 :: before setting up the folder structure and copying CTRAMP
@@ -78,11 +82,8 @@ goto :end
 
 :continue
 
-:: ------------------------------------------------------------------------------------------------------
-::
-:: Step 2:  Set up folder structure and copy CTRAMP
-::
-:: ------------------------------------------------------------------------------------------------------
+:: --------------------------------------------
+
 
 
 SET computer_prefix=%computername:~0,4%
@@ -160,6 +161,8 @@ set /a MODEL_YEAR_NUM=%MODEL_YEAR% 2>nul
 :: Step 4: Overrides for Blueprint Strategies
 ::
 :: ------------------------------------------------------------------------------------------------------
+:: AddStrategies section will enable this if appropriate
+set EN7=DISABLED
 if %AddStrategies%==No goto DoneAddingStrategies
 
 :: ----------------------------------------
@@ -228,6 +231,14 @@ if %MODEL_YEAR_NUM% GEQ 2025 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMo
 :: Bay Skyway (formerly Bay Bridge West Span Bike Path)
 if %MODEL_YEAR_NUM% GEQ 2045 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMotorizedNetwork_BikeAccess_2045onwards.job"   "CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job")
 
+:: ------
+:: Blueprint EN7 Expand Commute Trip Reduction Programs at Major Employers
+:: ------
+if %MODEL_YEAR_NUM% GEQ 2035 (
+  set EN7=ENABLED
+) ELSE (
+  set EN7=DISABLED
+)
 :DoneAddingStrategies
 
 :: ------------------------------------------------------------------------------------------------------

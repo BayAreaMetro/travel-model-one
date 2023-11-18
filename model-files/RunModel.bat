@@ -109,6 +109,23 @@ if %FUTURE%==X (
   exit /b 2
 )
 
+:: EN7 ------------------------- make sure EN7 is one of [ENABLED,DISABLED] -------------------------
+:: see https://github.com/BayAreaMetro/travel-model-one/tree/tm16_en7/utilities/telecommute
+IF "%EN7%"=="" (
+  echo EN7 is not configured; set EN7 environment variable to ENABLED or DISABLED
+  goto done
+)
+IF "%EN7%"=="ENABLED" (
+  echo EN7 is ENABLED
+) ELSE (
+  IF "%EN7%"=="DISABLED" (
+    echo EN7 is DISABLED
+  ) ELSE (
+    echo EN7 value is not allowed; set EN7 environment variable to ENABLED or DISABLED
+    goto done
+  )
+)
+
 echo on
 echo turn echo back on
 

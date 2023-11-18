@@ -21,6 +21,7 @@ public interface TazDataIf {
     public int getZoneIsSuburban( int taz );
     public int getZoneIsRural( int taz );
     public int getZoneCounty( int taz );
+    public int getZoneDistrict( int taz );
     public int getZoneCordon( int taz );
     public int getZoneCordonCost( int taz );
 

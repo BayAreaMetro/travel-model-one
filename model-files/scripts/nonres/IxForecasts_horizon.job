@@ -7,9 +7,9 @@
 ; traffic counts, which include trucks, but trucks are not explicitly segmented from passenger vehicles.  This 
 ; short-coming is a hold-over from BAYCAST and will be addressed in the next model update.
 ;
-; The row and column totals are taken from count station data provided by Caltrans.  The BAYCAST 2006 IX matrix is
-; used as the base matrix and scaled to match forecast year growth assumptions. The script generates estimates 
-; for the following forecast years: 2005, 2010, 2015, 2020, 2025, 2030, 2035, and 2040.  The growth rates were 
+; The row and column totals are taken from count station data provided by Caltrans.  A 2015 matrix is used
+; as the base year; see documentation in utilities/ix-ex. The script generates estimates 
+; for the following forecast years: 2015, 2020, 2025, 2030, 2035, and 2040.  The growth rates were 
 ; discussed with neighboring MPOs as part of the SB 375 target setting process. 
 ;
 ; Input:  (1)  Station-specific assumed growth rates and commute shares for each forecast year
