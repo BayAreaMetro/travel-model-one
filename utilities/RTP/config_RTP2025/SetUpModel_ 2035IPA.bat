@@ -5,31 +5,32 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_06
+set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_07
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
 
 :: set the location of the Travel Model Release
+:: use the v1.6_develop branch for now until we create a release
 set GITHUB_DIR=X:\travel-model-one-master
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_64\net_2035_Blueprint
+:: set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_64\net_2035_Blueprint
 set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_64\net_2035_Blueprint_tollscsv
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 :: this path is updated since PBA50 because the tazdata file now requires the CORDON and CORDONCOST column
-set INPUT_POPLU=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\LandUse_n_Popsyn\POPLU_v225_UBI\2035
+set INPUT_POPLU=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\LandUse_n_Popsyn\2035_v01
 
 :: specify tazDataFileName
-set tazDataFileName=tazData_parkingStrategy_v01_CORDONcolumns
+set tazDataFileName=tazData_parking_cordoncols
 
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
 set UrbanSimScenario=s24
 
 :: set the location of the input directories for non resident travel, logsums and metrics
-set NONRES_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_04
+set NONRES_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_05
 set LOGSUMS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\logsums_dummies
 set METRICS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\metrics_FinalBlueprint
 
