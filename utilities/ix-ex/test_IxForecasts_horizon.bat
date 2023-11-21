@@ -1,15 +1,17 @@
 echo on
 setlocal enabledelayedexpansion
-set CODE_DIR=X:\travel-model-one-master
+set CODE_DIR=E:\GitHub\travel-model-one
 
 mkdir nonres
-copy "M:\Development\Travel Model One\InternalExternal\ixDaily2015.tpp"        nonres
-copy "M:\Development\Travel Model One\InternalExternal\ixDaily2015_totals.dbf" nonres
+copy /Y "M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_05\ixDaily2005.tpp"        nonres
+copy /Y "M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_05\ixDaily2015.tpp"        nonres
+copy /Y "M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_05\ixDaily2015_totals.dbf" nonres
+copy /Y "M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_05\ixDaily2021.tpp"        nonres
+copy /Y "M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_05\ixDaily2021_totals.dbf" nonres
+copy /Y "M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_05\ixex_config.dbf"        nonres
 
-
-:futures
-copy "%USERPROFILE%\Box\Horizon and Plan Bay Area 2050\Futures Planning\Modeling Characteristics\Interregional Volume Assumptions\ixex_config.dbf" nonres
-
+:: disabled -- skip
+goto blueprint_ipa
 :: FUTURE should be one of [PBA50, CleanAndGreen, BackToTheFuture, RisingTidesFallingFortunes]
 FOR %%H in (CleanAndGreen BackToTheFuture RisingTidesFallingFortunes) DO (
   FOR %%G in (2015 2030 2050) DO (
@@ -25,12 +27,18 @@ FOR %%H in (CleanAndGreen BackToTheFuture RisingTidesFallingFortunes) DO (
 )
 
 :blueprint_ipa
-copy "%USERPROFILE%\Box\Horizon and Plan Bay Area 2050\Blueprint\Transportation\ixex_config.dbf" nonres
 SET FUTURE=PBA50
-set MODEL_YEAR=2035
 
-runtpp "%CODE_DIR%\model-files\scripts\nonres\IxForecasts_horizon.job"
-IF ERRORLEVEL 1 goto done
-move nonres\ixDailyx4.tpp nonres\ixDailyx4_%MODEL_YEAR%_%FUTURE%.tpp
+FOR %%G in (2015 2019 2021 2022 2035 2050 2005) DO (
+  set MODEL_YEAR=%%G
+  runtpp "%CODE_DIR%\model-files\scripts\nonres\IxForecasts_horizon.job"
+  rem IF ERRORLEVEL 1 goto done
+  rem Testing error with 2019 so don't goto done
 
+  IF !MODEL_YEAR! NEQ 2019 (
+    runtpp "%CODE_DIR%\model-files\scripts\nonres\IxTimeOfDay.job
+  )
+  move nonres\ixDailyx4.tpp nonres\ixDailyx4_!MODEL_YEAR!.tpp
+
+)
 :done

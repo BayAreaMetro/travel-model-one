@@ -33,6 +33,28 @@
 token_future = '%FUTURE%'
 FIRST_EXT_ZONE = 1455
 
+; for 2005, just the use 2005 matrix
+IF (%MODEL_YEAR% == 2005)
+  *copy nonres\ixDaily2005.tpp nonres\ixDailyx4.tpp
+  EXIT
+ENDIF
+
+; for 2015, just use the 2015 matrix
+IF (%MODEL_YEAR% == 2015)
+  *copy nonres\ixDaily2015.tpp nonres\ixDailyx4.tpp
+  EXIT
+ENDIF
+
+IF (%MODEL_YEAR% < 2021)
+  print LIST="MODEL_YEAR less than 2021 is not supported (except for 2015)"
+  ABORT
+ENDIF
+
+IF (%MODEL_YEAR% == 2021)
+  *copy nonres\ixDaily2021.tpp nonres\ixDailyx4.tpp
+  EXIT
+ENDIF
+
 ; Create MODEL_YEAR table using assumption for FUTURE
 run pgm = matrix
 

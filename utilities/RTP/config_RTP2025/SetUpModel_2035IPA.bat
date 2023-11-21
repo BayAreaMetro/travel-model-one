@@ -5,40 +5,51 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2015_TM160_IPA_03
+set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_09
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
-set AddStrategies=No
-set EN7=DISABLED
+set AddStrategies=Yes
 
 :: set the location of the Travel Model Release
+:: use the v1.6_develop branch for now until we create a release
 set GITHUB_DIR=X:\travel-model-one-master
+
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_v09\net_2015_Blueprint
+:: set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_64\net_2035_Blueprint
+set INPUT_NETWORK=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_64\net_2035_Blueprint_tollscsv
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
-set INPUT_POPLU=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\LandUse_n_Popsyn\2015_v01
+:: this path is updated since PBA50 because the tazdata file now requires the CORDON and CORDONCOST column
+set INPUT_POPLU=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\LandUse_n_Popsyn\2035_v01
+
+:: specify tazDataFileName
+set tazDataFileName=tazData_parking_cordoncols
 
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
 set UrbanSimScenario=s24
 
 :: set the location of the input directories for non resident travel, logsums and metrics
-set NONRES_INPUT_DIR=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\nonres\nonres_03
-set LOGSUMS_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\logsums_dummies
-:: skip metrics input for now
-::set METRICS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\metrics_FinalBlueprint
+set NONRES_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_05
+set LOGSUMS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\logsums_dummies
+set METRICS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\metrics_FinalBlueprint
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2015_TM152_IPA_19
+set PREV_RUN_DIR=M:\Application\Model One\RTP2021\Blueprint\2035_TM152_FBP_Plus_24
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
-set PARAMS=M:\Application\Model One\RTP2025\IncrementalProgress\2015_TM160_IPA_03\INPUT_prep\params.properties
+set PARAMS=X:\travel-model-one-master\utilities\RTP\config_RTP2025\params_2035_IPA.properties
 
 :: set the location of the overrides directory (for Blueprint strategies)
-set BP_OVERRIDE_DIR=NA
+set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-overrides
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 2:  Set up folder structure and copy CTRAMP
+::
+:: ------------------------------------------------------------------------------------------------------
 
 :: --------------------------------------------
 :: before setting up the folder structure and copying CTRAMP
@@ -72,12 +83,9 @@ goto :end
 
 :continue
 
+:: --------------------------------------------
 
-:: ------------------------------------------------------------------------------------------------------
-::
-:: Step 2:  Set up folder structure and copy CTRAMP
-::
-:: ------------------------------------------------------------------------------------------------------
+
 
 SET computer_prefix=%computername:~0,4%
 
@@ -118,13 +126,14 @@ c:\windows\system32\Robocopy.exe /NP /E "%INPUT_NETWORK%\trn"                   
 :: popsyn and land use
 c:\windows\system32\Robocopy.exe /NP /E "%INPUT_POPLU%\popsyn"                                       INPUT\popsyn
 c:\windows\system32\Robocopy.exe /NP /E "%INPUT_POPLU%\landuse"                                      INPUT\landuse
+copy /Y "%GITHUB_DIR%\utilities\telecommute\telecommute_max_rate_county.csv"                         INPUT\landuse\telecommute_max_rate_county.csv
 
 :: nonres
 c:\windows\system32\Robocopy.exe /E "%NONRES_INPUT_DIR%"                                         INPUT\nonres
 
 :: logsums and metrics
 c:\windows\system32\Robocopy.exe /E "%LOGSUMS_INPUT_DIR%"                                        INPUT\logsums
-::c:\windows\system32\Robocopy.exe /E "%METRICS_INPUT_DIR%"                                        INPUT\metrics
+c:\windows\system32\Robocopy.exe /E "%METRICS_INPUT_DIR%"                                        INPUT\metrics
 
 :: warmstart (copy from the previous run)
 mkdir INPUT\warmstart\main
@@ -147,19 +156,23 @@ for %%f in (%PROJECT_DIR2%) do set myfolder=%%~nxf
 set MODEL_YEAR=%myfolder:~0,4%
 
 set /a MODEL_YEAR_NUM=%MODEL_YEAR% 2>nul
+
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 4: Overrides for Blueprint Strategies
 ::
 :: ------------------------------------------------------------------------------------------------------
+:: AddStrategies section will enable this if appropriate
+set EN7=DISABLED
 if %AddStrategies%==No goto DoneAddingStrategies
 
 :: ----------------------------------------
 :: Parking tazdata update (part of En9 - Expand Transportation Demand Management Initiatives)
 :: -----------------------------------------
 if %MODEL_YEAR_NUM% GEQ 2035 (
-  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.csv"  INPUT\landuse\tazData.csv
-  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\tazData_parkingStrategy_v01.dbf"  INPUT\landuse\tazData.dbf
+  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\%tazDataFileName%.csv"  INPUT\landuse\tazData.csv
+  copy /Y "%INPUT_POPLU%\landuse\parking_strategy\%tazDataFileName%.dbf"  INPUT\landuse\tazData.dbf
 )
 
 :: another part of this strategy is to turn off free parking eligibility, which is done via the properties file.
@@ -175,8 +188,8 @@ if %MODEL_YEAR_NUM% GEQ 2035 (
 
 if %MODEL_YEAR_NUM% GEQ 2035 (
   copy /Y  "%BP_OVERRIDE_DIR%\BusOnShoulder_by_TP\CreateFiveHighwayNetworks_BusOnShoulder.job"     CTRAMP\scripts\preprocess\CreateFiveHighwayNetworks.job
-  copy /Y  "M:\Application\Model One\NetworkProjects\FBP_MR_018_US101_BOS\mod_links.csv"           INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv
-  copy /Y  "M:\Application\Model One\NetworkProjects\MAJ_Bay_Area_Forward_all\mod_links_BRT.csv"   INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv
+  copy /Y  "M:\Application\Model One\NetworkProjects\_backup_20230719\FBP_MR_018_US101_BOS\mod_links.csv"           INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv
+  copy /Y  "M:\Application\Model One\NetworkProjects\_backup_20230719\MAJ_Bay_Area_Forward_all\mod_links_BRT.csv"   INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv
   copy INPUT\hwy\mod_links_BRT_FBP_MR_018_US101_BOS.csv+INPUT\hwy\mod_links_BRT_MAJ_Bay_Area_Forward_all.csv    INPUT\hwy\mod_links_BRT.csv
 )
 
@@ -220,6 +233,14 @@ if %MODEL_YEAR_NUM% GEQ 2025 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMo
 :: Bay Skyway (formerly Bay Bridge West Span Bike Path)
 if %MODEL_YEAR_NUM% GEQ 2045 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMotorizedNetwork_BikeAccess_2045onwards.job"   "CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job")
 
+:: ------
+:: Blueprint EN7 Expand Commute Trip Reduction Programs at Major Employers
+:: ------
+if %MODEL_YEAR_NUM% GEQ 2035 (
+  set EN7=ENABLED
+) ELSE (
+  set EN7=DISABLED
+)
 :DoneAddingStrategies
 
 :: ------------------------------------------------------------------------------------------------------
@@ -296,7 +317,6 @@ echo oLink.Save >> %TEMP_SCRIPT%
 C:\Windows\SysWOW64\cscript.exe %TEMP_SCRIPT%
 del %TEMP_SCRIPT%
 
-
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 7: log the git commit and git status of GITHUB_DIR
@@ -307,6 +327,5 @@ cd /d %GITHUB_DIR%
 git log -1
 git status
 cd /d %CURRENT_DIR%
-
 
 :end

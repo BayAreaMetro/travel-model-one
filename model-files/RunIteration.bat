@@ -68,6 +68,7 @@ copy /Y "CTRAMP\runtime\mtcTourBased.properties" "CTRAMP\runtime\mtcTourBased.pr
 IF %ITER% LSS %MAXITERATIONS% (
   rem update EN7 constants based on this iteration's output for next ITER
   python "CTRAMP\scripts\preprocess\updateTelecommute_forEN7.py"
+  if ERRORLEVEL 1 goto done
 )
 
 :: ------------------------------------------------------------------------------------------------------

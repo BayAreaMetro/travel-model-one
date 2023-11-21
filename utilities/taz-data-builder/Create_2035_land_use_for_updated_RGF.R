@@ -10,13 +10,22 @@ library(readxl)
 # Set up directories
 
 USERPROFILE     <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
-BAUS            <- file.path(USERPROFILE,"Box","Modeling and Surveys","Urban Modeling","Bay Area UrbanSim")
+BOX_FOLDER      <- file.path(USERPROFILE,"Box")
+# for VM-users, Box is typically in E: because C: is too small
+if (USERPROFILE %in% c("C:/Users/lzorn")) {
+  BOX_FOLDER    <- file.path("E:/Box")
+}
+BAUS            <- file.path(BOX_FOLDER,"Modeling and Surveys","Urban Modeling","Bay Area UrbanSim")
 BAUS_FOLDER     <- file.path(BAUS,"PBA50","Final Blueprint runs","Final Blueprint (s24)","BAUS v2.25 - FINAL VERSION")
 taz_in          <- file.path(BAUS_FOLDER,"run182_taz_summaries_2035_UBI.csv")
 county_in       <- file.path(BAUS_FOLDER,"run182_county_summaries_2035.csv")
-GROWTH_FOLDER   <- file.path(USERPROFILE,"Box","Plan Bay Area 2050+","Regional Growth Forecast","Presentations and Attachments","supporting_data")
+GROWTH_FOLDER   <- file.path(BOX_FOLDER,"Plan Bay Area 2050+","Regional Growth Forecast","Presentations and Attachments","supporting_data")
 rgf_in          <- file.path(GROWTH_FOLDER, "Draft Regional Growth Forecast_091423_RPP3.xlsx")
-output          <- "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/2035_v01"
+output          <- "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/LandUse_n_Popsyn/2035_v01/Create_2035_land_use_for_updated_RGF"
+print(BAUS_FOLDER)
+
+# relative to here
+COUNTY_NUM      <- file.path("..","geographies","superdistrict-county.csv")
 
 # Bring in PBA 2050 TAZ 2035 datasets, remove row number variable
 # Bring in county marginals
@@ -251,12 +260,18 @@ county_sum <- final_taz %>%
             
 final_county <- left_join(county_vars,county_sum,by="COUNTY_NAME") %>% 
   select(all_of(county_order))
-            
+
+# Need COUNTY number
+county_num_name_df <- read.csv(COUNTY_NUM)
+county_num_name_df <- select(county_num_name_df, COUNTY, COUNTY_NAME) %>%
+ distinct(.keep_all = TRUE)
+final_county <- left_join(final_county, county_num_name_df)
+
 # Output files
 
-write.csv(final_taz,file.path(output,"taz_2035p.csv"),row.names = F)
-write.csv(final_county,file.path(output,"county_2035p.csv"),row.names = F)
+write.csv(final_taz,   file.path(output,"PBA50_ScaleToRGF_taz_summaries_2035.csv"),row.names = F)
+write.csv(final_county,file.path(output,"PBA50_ScaleToRGF_county_marginals_2035.csv"),row.names = F)
 
-
-
+print(paste("Wrote",file.path(output,"PBA50_ScaleToRGF_taz_summaries_2035.csv")))
+print(paste("Wrote",file.path(output,"PBA50_ScaleToRGF_county_marginals_2035.csv")))
 
