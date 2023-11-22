@@ -1,5 +1,5 @@
 USAGE = '''
-  Uses environment variables EN7, ITER
+  Uses environment variables EN7, ITER, MAXITERATIONS
   EN7 is expected to be one of ['ENABLED', 'DISABLED'] or the script will error.
 
   Log is written to: logs\\updateTelecommute_forEN7_[ITER]_[YYYYmmdd-HHMM].log
@@ -19,7 +19,8 @@ USAGE = '''
            increase CDAP.WFH.EN7.Superdistrict[SD]
        (b) For superdistricts with wfh_share > max,
            decrease CDAP.WFH.EN7.Superdistrict[SD]
-   (7) Writes CTRAMP\\runtime\\mtcTourBased.properties with CDAP.WFH.EN7.Superdistrict[SD] lines modified
+   (7) IF ITER < MAXITERATIONS:
+       Writes CTRAMP\\runtime\\mtcTourBased.properties with CDAP.WFH.EN7.Superdistrict[SD] lines modified
 '''
 
 import logging,os,re,sys,time
@@ -51,8 +52,9 @@ TARGET_AUTO_SHARE  = 0.40
 WFH_SHARE_THRESHHOLD = 0.005
 
 if __name__ == '__main__':
-    EN7     = os.environ['EN7']
-    ITER    = os.environ['ITER']
+    EN7           = os.environ['EN7']
+    ITER          = os.environ['ITER']
+    MAXITERATIONS = os.environ['MAXITERATIONS']
 
     # create logger
     logger = logging.getLogger()
@@ -77,8 +79,9 @@ if __name__ == '__main__':
         logging.fatal("FATAL ERROR: EN7 environment variable (value={}) not in {}".format(EN7, EN7_OPTIONS))
         sys.exit(-100)
 
-    logging.info("EN7   = {}".format(EN7))
-    logging.info('ITER  = {}'.format(ITER))
+    logging.info("EN7           = {}".format(EN7))
+    logging.info('ITER          = {}'.format(ITER))
+    logging.info('MAXITERATIONS = {}'.format(ITER))
 
     # read tazdata
     TAZDATA_COLS = ['ZONE','DISTRICT','SD','COUNTY','RETEMPN','FPSEMPN','HEREMPN','OTHEMPN','AGREMPN','MWTEMPN','TOTEMP']
@@ -317,6 +320,13 @@ if __name__ == '__main__':
     # write detail
     EN7_boost_df.to_csv(DETAIL_OUTPUT_FILE.format(ITER), header=True, index=False)
     logging.info("Wrote {} lines to {}".format(len(EN7_boost_df), DETAIL_OUTPUT_FILE.format(ITER)))
+
+    if int(ITER) >= int(MAXITERATIONS):
+        logging.info("ITER {} >= MAXITERATIONS {} so stopping here without updating {}".format(
+             int(ITER), int(MAXITERATIONS), PROPERTIES_FILE
+        ))
+        sys.exit(0)
+    
 
     # create dict: SD => en7_wfh_boost
     EN7_boost_df_dict = EN7_boost_df.set_index('SD')['en7_wfh_boost'].to_dict()

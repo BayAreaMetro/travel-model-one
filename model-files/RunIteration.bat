@@ -65,11 +65,10 @@ if ERRORLEVEL 2 goto done
 :: save the mtcTourBased.properties that was used for this iteration
 copy /Y "CTRAMP\runtime\mtcTourBased.properties" "CTRAMP\runtime\mtcTourBased.properties_%ITER%"
 
-IF %ITER% LSS %MAXITERATIONS% (
-  rem update EN7 constants based on this iteration's output for next ITER
-  python "CTRAMP\scripts\preprocess\updateTelecommute_forEN7.py"
-  if ERRORLEVEL 1 goto done
-)
+rem Update EN7 constants based on this iteration's output for next ITER
+rem This won't update properties for ITER==MAXITERATIONS
+python "CTRAMP\scripts\preprocess\updateTelecommute_forEN7.py"
+if ERRORLEVEL 1 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
