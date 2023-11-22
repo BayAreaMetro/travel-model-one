@@ -15,10 +15,9 @@ print(args)
 if (length(args) != 2) {
   stop("Two arguments are required: ModelRuns.xlsx and output_dir")
 }
-MODEL_DATA_BASE_DIRS<- c(IP            ="M:/Application/Model One/RTP2021/IncrementalProgress",
-                         DraftBlueprint="M:/Application/Model One/RTP2021/Blueprint",
-                         FinalBlueprint="M:/Application/Model One/RTP2021/Blueprint",
-                         EIR           ="M:/Application/Model One/RTP2021/Blueprint",
+MODEL_DATA_BASE_DIRS<- c(RTP2021_IP    ="M:/Application/Model One/RTP2021/IncrementalProgress",
+                         RTP2021       ="M:/Application/Model One/RTP2021/Blueprint",
+                         RTP2025_IP    ="M:/Application/Model One/RTP2025/IncrementalProgress",
                          TRR           ="L:/Application/Model_One/TransitRecovery")
 MODEL_RUNS_FILE     <- args[1]
 OUTPUT_DIR          <- args[2]
