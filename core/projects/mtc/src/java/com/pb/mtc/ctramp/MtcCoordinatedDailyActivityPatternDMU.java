@@ -124,8 +124,8 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         for (int district_num=1; district_num<=34; district_num++) {
             this.WFH_EN7_BOOST[district_num-1] = Float.parseFloat(propertyMap.get(
                 PROPERTIES_WFH_EN7_SUPERDISTRICT_BOOST.replace("Superdistrict00",String.format("Superdistrict%02d",district_num))));
+            cdapLogger.info("Read superdistrict EN7 boosts for district " + district_num + ": " + this.WFH_EN7_BOOST[district_num-1]);
         }
-        cdapLogger.info("Read superdistrict EN7 boosts; district21:" + this.WFH_EN7_BOOST[21-1]);
     }
 
     // household income
