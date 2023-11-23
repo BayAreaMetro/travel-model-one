@@ -7,7 +7,7 @@
 #
 
 library(dplyr)
-library(reshape2)
+library(tidyr)
 library(readxl)
 options(width = 180)
 
@@ -35,6 +35,8 @@ model_runs          <- model_runs[ which((model_runs$status == "current") | (mod
 
 print(paste("MODEL_DATA_BASE_DIRS = ",MODEL_DATA_BASE_DIRS))
 print(paste("OUTPUT_DIR          = ",OUTPUT_DIR))
+
+model_runs <- select(model_runs, year, directory, run_set, category, description)
 print(model_runs)
 
 # Read tazdata
@@ -42,39 +44,47 @@ TAZDATA_FIELDS <- c("ZONE", "SD", "COUNTY","TOTPOP","TOTACRE") # only care about
 tazdata_df     <- data.frame()
 for (i in 1:nrow(model_runs)) {
   if (model_runs[i,"directory"]=="2015_UrbanSim_FBP") { next }
+  # print(paste("run_set =",model_runs[[i,"run_set"]]))
   MODEL_DATA_BASE_DIR <- MODEL_DATA_BASE_DIRS[model_runs[[i,"run_set"]]]
   tazdata_file    <- file.path(MODEL_DATA_BASE_DIR, model_runs[i,"directory"],"INPUT","landuse","tazData.csv")
   tazdata_file_df <- read.table(tazdata_file, header=TRUE, sep=",")
   tazdata_file_df <- tazdata_file_df[, TAZDATA_FIELDS] %>%
-    mutate(year      = model_runs[i,"year"],
-           directory = model_runs[i,"directory"],
-           category  = model_runs[i,"category"])
+    mutate(year      = model_runs[[i,"year"]],
+           directory = model_runs[[i,"directory"]],
+           category  = model_runs[[i,"category"]])
   tazdata_df      <- rbind(tazdata_df, tazdata_file_df)
 }
 remove(i, tazdata_file, tazdata_file_df)
 
 # summarise population by superdistrict
-tazdata_sd_df  <- summarise(group_by(tazdata_df, year, category, directory, SD, COUNTY),
-                           total_population = sum(TOTPOP),
-                           total_square_miles = sum(TOTACRE)/640.0)
-tazdata_all_df <- summarise(group_by(tazdata_df, year, category, directory),
-                            total_population = sum(TOTPOP),
-                            total_square_miles = sum(TOTACRE)/640.0) %>%
+tazdata_sd_df <- tazdata_df %>%
+  group_by(year, category, directory, SD, COUNTY) %>% 
+  summarise(total_population = sum(TOTPOP),
+          total_square_miles = sum(TOTACRE)/640.0,
+          .groups = "drop_last")
+
+tazdata_all_df <- 
+  group_by(tazdata_df, year, category, directory) %>%
+  summarise(total_population = sum(TOTPOP),
+            total_square_miles = sum(TOTACRE)/640.0,
+            .groups = "drop_last") %>%
   mutate(SD=0, COUNTY=0)
 
 tazdata_sd_df <- rbind(tazdata_sd_df, tazdata_all_df)
 
 # incorporate county population
-tazdata_county_df <- summarise(group_by(tazdata_df, year, category, directory, COUNTY),
-                               total_population_county = sum(TOTPOP))
+tazdata_county_df <- 
+  group_by(tazdata_df, year, category, directory, COUNTY) %>%
+  summarise(total_population_county = sum(TOTPOP), .groups="drop") %>%
+  ungroup()
 
 # summarise at superdistrict level
-tazdata_sd_df <- left_join(tazdata_sd_df,
-                           tazdata_county_df,
-                           by=c("year","category","directory","COUNTY")) %>%
+tazdata_sd_df <- left_join(
+  tazdata_sd_df,
+  tazdata_county_df,
+  by=c("year","category","directory","COUNTY")) %>%
   mutate(population_county_share = total_population/total_population_county)
 remove(tazdata_county_df)
-
 
 # Read trip-distance-by-mode-superdistrict.csv
 tripdist_df <- data.frame()
@@ -86,9 +96,9 @@ for (i in 1:nrow(model_runs)) {
     stop(paste0("File [",tripdist_file,"] does not exist"))
   }
   tripdist_file_df <- read.table(tripdist_file, header=TRUE, sep=",", stringsAsFactors=FALSE) %>% 
-    mutate(year      = model_runs[i,"year"],
-           directory = model_runs[i,"directory"],
-           category  = model_runs[i,"category"])
+    mutate(year      = model_runs[[i,"year"]],
+           directory = model_runs[[i,"directory"]],
+           category  = model_runs[[i,"category"]])
   tripdist_df      <- rbind(tripdist_df, tripdist_file_df)
 }
 remove(i, tripdist_file, tripdist_file_df)
@@ -100,21 +110,25 @@ tripdist_df <- mutate(tripdist_df,
                       sov_trips  = estimated_trips*(substr(mode_name,1,11)=="Drive alone"))
 
 # summarise at superdistrict level
-tripdist_sd_summary_df <- summarize(group_by(tripdist_df, year, category, directory, dest_sd),
-                                    bike_trips      = sum(bike_trips),
-                                    bike_dist       = sum(bike_dist),
-                                    sov_trips       = sum(sov_trips),
-                                    estimated_trips = sum(estimated_trips)) %>%
+tripdist_sd_summary_df <- 
+  group_by(tripdist_df, year, category, directory, dest_sd) %>%
+  summarize(bike_trips      = sum(bike_trips),
+            bike_dist       = sum(bike_dist),
+            sov_trips       = sum(sov_trips),
+            estimated_trips = sum(estimated_trips),
+            .groups         = "drop") %>%
   mutate(bike_trip_mode_share = bike_trips/estimated_trips,
          bike_avg_trip_dist   = bike_dist/bike_trips,
          sov_trip_mode_share  = sov_trips/estimated_trips)
 
 # and overall
-tripdist_all_summary_df <- summarize(group_by(tripdist_df, year, category, directory),
-                                     bike_trips      = sum(bike_trips),
-                                     bike_dist       = sum(bike_dist),
-                                     sov_trips       = sum(sov_trips),
-                                     estimated_trips = sum(estimated_trips)) %>%
+tripdist_all_summary_df <- 
+  group_by(tripdist_df, year, category, directory) %>%
+  summarize(bike_trips      = sum(bike_trips),
+            bike_dist       = sum(bike_dist),
+            sov_trips       = sum(sov_trips),
+            estimated_trips = sum(estimated_trips),
+            .groups         = "drop") %>%
   mutate(bike_trip_mode_share = bike_trips/estimated_trips,
          bike_avg_trip_dist   = bike_dist/bike_trips,
          sov_trip_mode_share  = sov_trips/estimated_trips,
@@ -129,15 +143,19 @@ summary_df <- left_join(tazdata_sd_df,
   rename(superdistrict=SD) %>%
   select(-bike_trips, -sov_trips, -COUNTY) # these were just intermediate
 
-
 # columns are: year, category, directory, superdistrict, variable, value
-summary_melted_df <- melt(summary_df, id.vars=c("year","category","directory","superdistrict"))
+summary_melted_df <- pivot_longer(summary_df, cols=!c(year,category,directory,superdistrict), names_to="variable")
 
 # add index column for vlookup
 summary_melted_df <- mutate(summary_melted_df,
                             index = paste0(year,"-",category,"-",superdistrict,"-",variable))
-summary_melted_df <- summary_melted_df[order(summary_melted_df$index),
-                                       c("index","year","category","directory","superdistrict","variable","value")]
+
+# sort by index and reorder columns
+summary_melted_df <- arrange(summary_melted_df, index) %>%
+  relocate(index, year, category, directory, superdistrict, variable, value)
+
+# remove existing file
+file.remove(OUTPUT_FILE)
 
 # prepend note
 prepend_note <- paste0("Output by ",SCRIPT," on ",format(Sys.time(), "%a %b %d %H:%M:%S %Y"))
