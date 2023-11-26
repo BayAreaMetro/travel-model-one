@@ -54,6 +54,8 @@ public class HouseholdChoiceModelsManager implements Serializable {
             return objInstance;
         }
         else {
+            // set propertyMap to current
+            objInstance.propertyMap = propertyMap;
             return objInstance;
         }
     }
