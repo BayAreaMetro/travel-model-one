@@ -58,22 +58,22 @@ output_csv = "emfac_prep\\emfac_ghg.csv"
 # Read the results in the "By Sub-Area" tab and then write them out
 # -------------------------------------------------------------------
 
-print "\n\n================================================================"
-print "Generating a regional-level summary of the EMFAC output"
-print "================================================================"
+print("\n\n================================================================")
+print("Generating a regional-level summary of the EMFAC output")
+print("================================================================")
 
-print "\nLoading the workbook "+emfac_output_xlsx_fullpath
+print("\nLoading the workbook "+emfac_output_xlsx_fullpath)
 workbook = load_workbook(filename=emfac_output_xlsx_fullpath)
-print "\nWhat are the different tabs in this workbook?"
-print workbook.sheetnames
+print("\nWhat are the different tabs in this workbook?")
+print(workbook.sheetnames)
 
 # make "By Sub-Area" the active tab
 sheet = workbook["By Sub-Area"]
-print "\nActivated the tab:"
-print sheet
+print("\nActivated the tab:")
+print(sheet)
 
 # Read the results in the "By Sub-Area" tab
-print "\nReading the data from the <By Sub-Area> tab"
+print("\nReading the data from the <By Sub-Area> tab")
 EMFACresults = sheet.values
 
 # Set the first row as the headers for the DataFrame
@@ -83,7 +83,7 @@ EMFACresults = list(EMFACresults)
 EMFACresults_df = pd.DataFrame(EMFACresults, columns=cols)
 
 # Read the results in the "By Sub-Area" tab
-print "\nFinished reading the data from the <By Sub-Area> tab"
+print("\nFinished reading the data from the <By Sub-Area> tab")
 
 # keep if the column "EMFAC2007 Category" = "All Vehicles"
 EMFACsummary_df = EMFACresults_df.loc[EMFACresults_df['EMFAC2007 Category'] == " All Vehicles"]
@@ -103,7 +103,7 @@ EMFACsummary_df = EMFACsummary_df[['Directory','VMT', 'Trips', 'CO2_RUNEX', 'CO2
 EMFACsummary_df.to_csv(output_csv, header=True, index=False)
 
 # Read the results in the "By Sub-Area" tab
-print "\nFinished writing out the regional-level EMFAC results to emfac_prep\\emfac_ghg.csv"
+print("\nFinished writing out the regional-level EMFAC results to emfac_prep\\emfac_ghg.csv")
 
 # copy emfac_ghg.csv back to the metrics folder in the model output directory on M
 M_DIR = os.getenv('M_DIR')
