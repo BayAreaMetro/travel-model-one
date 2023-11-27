@@ -1,3 +1,13 @@
+USAGE = """
+
+  python Convert_lin_to_csv.py
+
+  Run this from trn\TransitAssignment.iter3 of the model run dir.
+  example: \\model3-a\Model3A-Share\Projects\2035_TM152_NGF_NP10_Path1a_02\trn\TransitAssignment.iter3
+  Processes transitLines.lin and creates csv files for every transit line, each named after the respective line. See \INPUT\trn\TransitLineTables
+  
+"""
+
 import os
 import csv
 import pandas as pd
