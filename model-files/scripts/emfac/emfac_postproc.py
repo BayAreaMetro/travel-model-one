@@ -117,3 +117,12 @@ if not os.path.isdir(M_METRICS):
     os.mkdir(M_METRICS)
 
 shutil.copy2("emfac_prep\\emfac_ghg.csv", os.path.join(M_DIR,"OUTPUT","metrics"))
+
+# copy the output of EMFAC 2014 back to the metrics folder in the model output directory on M
+M_EMFAC = os.path.join(M_DIR, "OUTPUT", "emfac") 
+if not os.path.isdir(M_EMFAC):
+    os.mkdir(M_EMFAC)
+
+for emfacfile in glob.glob(EMFAC_PATH + "\\" + "ready4emfac_" + run_id + "_sb375*.xlsx"):
+    print(emfacfile)
+    os.rename(shutil.copy2(emfacfile, M_EMFAC), os.path.join(M_EMFAC, "emfac_" + run_id + "_sb375.xlsx"))
