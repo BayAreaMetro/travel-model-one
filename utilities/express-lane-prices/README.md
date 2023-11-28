@@ -1,6 +1,24 @@
+--------------------
+# Overview
+-------------------
 
+This directory includes: 
+- legacy tools that are no longer used in TM1.5 and subsequent model release
+- tools for processing express lane "Trip Transaction reports" obtained from MTC's express lane team
 
-In Nov 2023, we calcualted express lane toll per mile using the following materials from Bay Area Toll Authority (BATA) (YT Chang: ychang@bayareametro.gov)
+--------------------
+# Legacy tools from 2015
+-------------------
+These include:
+* Summarize Express Lane Prices.Rmd
+* express-lane-prices.Rproj
+* extract-express-lane-data.bat
+* extract-express-lane-data.job
+
+--------------------
+# Tools for processing express lane "Trip Transaction reports"
+--------------------
+In Nov 2023, we calcualted express lane toll per mile using the following materials from Bay Area Toll Authority (BATA)
 
 --------------------
 INPUTS
@@ -30,6 +48,3 @@ METHODS & OUTPUTS
 8. Then, we grouped network cube links to segments, made a crosswalk between links and segments: EL_Segment_crosswalk.csv
 9. Each segment is treated as a TOLLCLASS, so we updated links' tollclass with their segment information: see network project 'EXP_ObservedPrices_2023', and the toll.csv of it.
 
-
---------------------
-For questions, please contact Lufeng Lin (llin@bayareametro.gov)
