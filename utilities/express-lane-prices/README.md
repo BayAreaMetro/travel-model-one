@@ -18,7 +18,7 @@ These include:
 --------------------
 # Tools for processing express lane "Trip Transaction reports"
 --------------------
-In Nov 2023, we calcualted express lane toll per mile using the following materials from Bay Area Toll Authority (BATA) (YT Chang: ychang@bayareametro.gov)
+In Nov 2023, we calcualted express lane toll per mile using the following materials from Bay Area Toll Authority (BATA)
 
 --------------------
 INPUTS
