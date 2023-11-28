@@ -3,13 +3,13 @@
 -------------------
 
 This directory includes: 
-- legacy tools that are no longer used in TM1.5 and subsequent model release
+- legacy tools that are no longer used in TM1.5 and subsequent model versions.
 - tools for processing express lane "Trip Transaction reports" obtained from MTC's Field Operations and Asset Management section
 
 --------------------
-# Legacy tools from 2015
+# Legacy tools
 -------------------
-These include:
+The following legacy tools are no longer used in TM1.5 and subsequent model versions:
 * Summarize Express Lane Prices.Rmd
 * express-lane-prices.Rproj
 * extract-express-lane-data.bat
