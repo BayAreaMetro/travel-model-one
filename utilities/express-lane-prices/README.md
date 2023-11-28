@@ -1,14 +1,18 @@
 This directory includes: 
-* legacy tools that are no longer used in TM1.5 onwards
-* tools for processing express lane "Trip Transaction reports" obtained from MTC's express lane team
-  
+- legacy tools that are no longer used in TM1.5 onwards
+- tools for processing express lane "Trip Transaction reports" obtained from MTC's express lane team
+
+--------------------
 # Legacy tools from 2015
+-------------------
 Summarize Express Lane Prices.Rmd
 express-lane-prices.Rproj
 extract-express-lane-data.bat
 extract-express-lane-data.job
 
+--------------------
 # Tools for processing express lane "Trip Transaction reports"
+--------------------
 In Nov 2023, we calcualted express lane toll per mile using the following materials from Bay Area Toll Authority (BATA) (YT Chang: ychang@bayareametro.gov)
 
 --------------------
