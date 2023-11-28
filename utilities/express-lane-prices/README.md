@@ -19,6 +19,7 @@ These include:
 # Tools for processing express lane "Trip Transaction reports"
 --------------------
 In Nov 2023, we calcualted express lane toll per mile using the following materials from Bay Area Toll Authority (BATA)
+For MTC internal staff, see the communications here: Box\EL Pricing Data March 2023\RE Express lane pricing data for 2023.msg
 
 --------------------
 INPUTS
