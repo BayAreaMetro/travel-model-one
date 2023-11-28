@@ -1,5 +1,5 @@
 This directory includes: 
-- legacy tools that are no longer used in TM1.5 onwards
+- legacy tools that are no longer used in TM1.5 and subsequent model release
 - tools for processing express lane "Trip Transaction reports" obtained from MTC's express lane team
 
 --------------------
