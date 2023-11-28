@@ -1,8 +1,35 @@
+USAGE = """
+
+  python Convert_PRN_to_CSV.py
+
+  Run this from trn\TransitAssignment.iter3 of the model run dir.
+  example: \\model3-a\Model3A-Share\Projects\2035_TM152_NGF_NP10_Path1a_02\trn\TransitAssignment.iter3
+
+  Processes TPPLXXXX.PRN files (e.g., TPPL0001.PRN) and creates csv files for every OD. 
+  The the last iteration is kept for every OD and file is named by the file it was generated from and the OD pair info it conatins. 
+  All the csvs are then processed by compiling the detailed breakdown of a transit route used as well as relevant link node information.
+  The output is saved in a 'tables' subfolder. 
+
+  This Python script performs the following tasks:
+
+    Define a dictionary (mode_dict): Maps numeric codes to corresponding transportation modes.
+
+    Define a function (extract_tables): Reads a given PRN file, extracts tables delineated by "TRACE" sections, and saves each table as a separate CSV file.
+
+    Define a function (save_table): Creates a CSV file for a given table, based on the trace range and file name.
+
+    Define a function (extract_tables_from_prn_files): Processes multiple PRN files in a specified directory. For each file, it checks if it mentions "tripsam.tpp" and, if so, extracts tables using the extract_tables function.
+
+    Define a function (process_saved_csvs): Processes saved CSV files. It reads each CSV, selects specific columns, cleans and extracts relevant information, and then creates a new CSV file for each processed PRN file. It also combines all processed data into a single CSV file, filtering for the maximum iteration for each origin-destination pair.
+  
+"""
+
 import os
 import csv
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import sys
 
 mode_dict = {
     1: "wlk",
@@ -179,12 +206,30 @@ def extract_tables_from_prn_files(input_dir, output_dir):
             if 'tripsam.tpp' in f.read():  # Check if 'tripsam.tpp' is mentioned in the file
                 extract_tables(original_file_name, input_path, output_dir)
 
+def process_input(list1, list2):
+    # Convert comma-separated strings to lists of integers
+    numbers1 = [int(num) for num in list1.split(',')]
+    numbers2 = [int(num) for num in list2.split(',')]
+
+    # You can perform operations on the lists of integers here
+    # For now, let's just print the received lists
+    print("Received List 1:", numbers1)
+    print("Received List 2:", numbers2)
+
 # Define a function to process saved CSV files
 def process_saved_csvs(input_dir):
 
-    # Define list of origins and destinations of interest
-    O = [410,972,146,478,820,767,558,607,234,16,742,1178,81,296,355,315,677,1145,1098,1176,1083,189,991,700,1421,1448,1270,1246,1366,1336,1402,1291,1412,1311]
-    D = [4,971,115,75,429,1019,558,871,355,311,257,608,1061,212,460,1113,777,188,1361,1146,742,1262,1439,1224,1299,1204,660,1342,1430,1168,707,1413,1310,1399]
+    # Check if 3 command-line arguments are provided
+    if len(sys.argv) == 4:
+        # Extract ODs from command-line arguments (exclude the script name)
+        O, D = sys.argv[1], sys.argv[2]
+        process_input(O, D)
+    else:
+        print("Please provide command-line arguments for origins, destinations, and tables_version number.")
+
+        # Define default list of origins and destinations of interest
+        O = [410,972,146,478,820,767,558,607,234,16,742,1178,81,296,355,315,677,1145,1098,1176,1083,189,991,700,1421,1448,1270,1246,1366,1336,1402,1291,1412,1311]
+        D = [4,971,115,75,429,1019,558,871,355,311,257,608,1061,212,460,1113,777,188,1361,1146,742,1262,1439,1224,1299,1204,660,1342,1430,1168,707,1413,1310,1399]
     
     skipped = 0 #count how many OD pairs weren't relevant
 
@@ -373,6 +418,20 @@ def process_saved_csvs(input_dir):
     # Filter the DataFrame for rows where 'iteration' is equal to the maximum value
     combined_df = combined_df[combined_df['iteration'] == max_iteration]
 
+    # make sure wait, time, actual columns contains floats
+    combined_df['wait'] = combined_df['wait'].astype(float)
+    combined_df['time'] = combined_df['time'].astype(float)
+    combined_df['actual'] = combined_df['actual'].astype(float)
+
+    # make sure mode, b, a, origin, destination, iteration columns contains ints
+    combined_df['mode'] = combined_df['mode'].astype(int)
+    combined_df['b'] = combined_df['b'].astype(int)
+    combined_df['a'] = combined_df['a'].astype(int)
+    combined_df['origin'] = combined_df['origin'].astype(int)
+    combined_df['destination'] = combined_df['destination'].astype(int)
+    combined_df['iteration'] = combined_df['iteration'].astype(int)
+
+
     # Save the combined DataFrame as a single CSV
     combined_path = os.path.join(output_dir, f'TPPL_{pathway_name}.csv')
     combined_df.to_csv(combined_path, index=False, header=False)
@@ -380,8 +439,15 @@ def process_saved_csvs(input_dir):
     print("Skipped: " + str(skipped) + " OD pairs")
 
 if __name__ == "__main__":
+    # Check if 3 command-line arguments are provided
+    if len(sys.argv) == 4:
+        # Extract tables_version from command-line arguments 
+        tables_version = sys.argv[3]
+    else:
+        # initialize tables_version with default string
+        tables_version = '00'
     input_dir = os.getcwd()  # Use the current directory
-    output_dir = os.path.join(input_dir, 'tables')  # Output to 'tables' subfolder
+    output_dir = os.path.join(input_dir, f'tables_v{tables_version}')  # Output to 'tables' subfolder
 
     # Call the function to extract tables from PRN files and save them as CSVs
     extract_tables_from_prn_files(input_dir, output_dir)

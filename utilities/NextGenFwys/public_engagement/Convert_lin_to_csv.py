@@ -4,7 +4,21 @@ USAGE = """
 
   Run this from trn\TransitAssignment.iter3 of the model run dir.
   example: \\model3-a\Model3A-Share\Projects\2035_TM152_NGF_NP10_Path1a_02\trn\TransitAssignment.iter3
+
+  The script checks if the output directory exists and prints appropriate messages.
   Processes transitLines.lin and creates csv files for every transit line, each named after the respective line. See \INPUT\trn\TransitLineTables
+
+  This Python script performs the following tasks:
+
+    Define a function (extract_tables): Reads a given LIN file, extracts tables delineated by "LINE NAME" sections, and saves each table as a separate CSV file.
+
+    Define a function (save_table): Creates a CSV file for a given table, based on the LINE NAME from the table header.
+
+    Define a function (extract_tables_from_lin_files): Processes a specific LIN file (transitLines.lin) in a specified directory. It extracts tables using the extract_tables function.
+
+    Define a function (process_saved_csvs): Processes saved CSV files. It reads each CSV, selects specific columns, cleans and extracts relevant information, and then overwrites the original file with the processed DataFrame.
+      
+  Output tables used in X:\travel-model-one-master\utilities\NextGenFwys\public_engagement\Convert_PRN_to_CSV.py 
   
 """
 
