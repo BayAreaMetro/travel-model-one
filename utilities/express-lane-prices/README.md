@@ -18,7 +18,7 @@ These include:
 --------------------
 # Tools for processing express lane "Trip Transaction reports"
 --------------------
-In Nov 2023, we calcualted express lane toll per mile using the following materials from Bay Area Toll Authority (BATA).
+In Nov 2023, we calculated the express lane toll per mile using the following materials from the MTC Field Operations and Asset Management section
 
 For MTC internal staff, see the communications here: Box\EL Pricing Data March 2023\RE Express lane pricing data for 2023.msg
 
@@ -26,13 +26,13 @@ For MTC internal staff, see the communications here: Box\EL Pricing Data March 2
 INPUTS
 --------------------
 - March 2023 Express Lane Trip data, including SM-101, I-880, and I-680
-- Information of each Read Point (All RPLong Lat.xls0, which contains coordinate system of each read point
-- A google map of read points: https://www.google.com/maps/d/edit?mid=12jxQhxJTe41ACAHvugHjLOXGzGmuBR8&usp=sharing
+- Information of each Read Point (All RPLong Lat.xls0, which contains a coordinate system of each read point
+- A Google map of read points: https://www.google.com/maps/d/edit?mid=12jxQhxJTe41ACAHvugHjLOXGzGmuBR8&usp=sharing
 
 --------------------
 TOOLS
 --------------------
-Using the above data, we calculated express lane toll per mile at the segment level using Google Distance API by a R script.
+Using the above data, we calculated express lane toll per mile at the segment level using Google Distance API by an R script.
 - Google Distance API: https://developers.google.com/maps/documentation/distance-matrix/overview
 - R package implementing Google Distance API (gmapsdistance): https://cran.r-project.org/web/packages/gmapsdistance/readme/README.html
 - Sample R scripts implementing Google Distance API: https://jul-carras.github.io/2019/01/19/ggmap_distances/
