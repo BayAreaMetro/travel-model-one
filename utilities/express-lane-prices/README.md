@@ -48,6 +48,3 @@ METHODS & OUTPUTS
 8. Then, we grouped network cube links to segments, made a crosswalk between links and segments: EL_Segment_crosswalk.csv
 9. Each segment is treated as a TOLLCLASS, so we updated links' tollclass with their segment information: see network project 'EXP_ObservedPrices_2023', and the toll.csv of it.
 
-
---------------------
-For questions, please contact Lufeng Lin (llin@bayareametro.gov)
