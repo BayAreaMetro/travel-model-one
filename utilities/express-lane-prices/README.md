@@ -5,10 +5,11 @@ This directory includes:
 --------------------
 # Legacy tools from 2015
 -------------------
-Summarize Express Lane Prices.Rmd
-express-lane-prices.Rproj
-extract-express-lane-data.bat
-extract-express-lane-data.job
+These include:
+* Summarize Express Lane Prices.Rmd
+* express-lane-prices.Rproj
+* extract-express-lane-data.bat
+* extract-express-lane-data.job
 
 --------------------
 # Tools for processing express lane "Trip Transaction reports"
