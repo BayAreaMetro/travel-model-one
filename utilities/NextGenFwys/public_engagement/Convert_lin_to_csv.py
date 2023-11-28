@@ -1,3 +1,13 @@
+USAGE = """
+
+  python Convert_lin_to_csv.py
+
+  Run this from trn\TransitAssignment.iter3 of the model run dir.
+  example: \\model3-a\Model3A-Share\Projects\2035_TM152_NGF_NP10_Path1a_02\trn\TransitAssignment.iter3
+  Processes transitLines.lin and creates csv files for every transit line, each named after the respective line. See \INPUT\trn\TransitLineTables
+  
+"""
+
 import os
 import csv
 import pandas as pd
@@ -122,8 +132,16 @@ if __name__ == "__main__":
 
     output_dir = os.path.join(input_dir, 'TransitLineTables')  # Output to 'tables' subfolder
 
-    # Call the function to extract tables from lin files and save them as CSVs
-    extract_tables_from_lin_files(input_dir, output_dir)
+    # Check if the directory exists
+    if os.path.exists(output_dir):
+        # Directory exists, end script
+        print(f"The directory '{output_dir}' exists. End.")
+    else:
+        # Directory does not exist
+        print(f"The directory '{output_dir}' does not exist.  Executing extract_tables_from_lin_files.")
+        # Call the function to extract tables from lin files and save them as CSVs
+        extract_tables_from_lin_files(input_dir, output_dir)
 
-    # Then, process saved CSVs
-    process_saved_csvs(output_dir)
+        print("extract_tables_from_lin_files complete.  Executing process_saved_csvs.")
+        # Then, process saved CSVs
+        process_saved_csvs(output_dir)
