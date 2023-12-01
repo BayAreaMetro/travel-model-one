@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2005_TM160_IPA_02
+set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2005_TM160_IPA_03
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=No
@@ -26,6 +26,7 @@ set UrbanSimScenario=s24
 
 :: set the location of the input directories for non resident travel, logsums and metrics
 set NONRES_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_05
+set AIRPAX_INPUT_DIR=M:\Application\Model One\RTP2021\IncrementalProgress\2005_TM152_IPA_03\INPUT\nonres
 
 set LOGSUMS_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\logsums_dummies
 :: skip metrics input for now
@@ -124,6 +125,11 @@ copy /Y "%GITHUB_DIR%\utilities\telecommute\telecommute_max_rate_county.csv"    
 
 :: nonres
 c:\windows\system32\Robocopy.exe /E "%NONRES_INPUT_DIR%"                                         INPUT\nonres
+copy /Y "%AIRPAX_INPUT_DIR%\tripsAirPaxEA.tpp"                                                   INPUT\nonres\tripsAirPaxEA.tpp
+copy /Y "%AIRPAX_INPUT_DIR%\tripsAirPaxAM.tpp"                                                   INPUT\nonres\tripsAirPaxAM.tpp
+copy /Y "%AIRPAX_INPUT_DIR%\tripsAirPaxMD.tpp"                                                   INPUT\nonres\tripsAirPaxMD.tpp
+copy /Y "%AIRPAX_INPUT_DIR%\tripsAirPaxPM.tpp"                                                   INPUT\nonres\tripsAirPaxPM.tpp
+copy /Y "%AIRPAX_INPUT_DIR%\tripsAirPaxEV.tpp"                                                   INPUT\nonres\tripsAirPaxEV.tpp
 
 :: logsums and metrics
 c:\windows\system32\Robocopy.exe /E "%LOGSUMS_INPUT_DIR%"                                        INPUT\logsums
