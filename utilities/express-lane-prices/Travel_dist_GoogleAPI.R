@@ -27,9 +27,16 @@ RP_LongLat <-
          Name = paste(gsub( " .*$", "", `Read Point Name`), 
                       "-", 
                       str_sub(`Read Point Name`, start = -1)))
-INPUT <- "101 SB March 2023.xlsx"
+INPUT <- "101 NB March 2023.xlsx"
+# INPUT options: 
+# 101 NB March 2023.xlsx, 101 SB March 2023.xlsx
+# I680 NB March 2023.xlsx, I680 SB March 2023.xlsx
+# I880 NB March 2023.xlsx, I880 SB March 2023.xlsx
 fwy <- 
-  read_excel(INPUT) 
+  read_excel(INPUT) %>%
+  # filter out Saturday, Sunday and Friday data
+  mutate(Weekday = weekdays(as.Date(dTripRevenueDate))) %>%
+  filter(Weekday != 'Friday' & Weekday != 'Saturday' & Weekday != 'Sunday')
 
 fwy_LongLat <- 
   fwy %>%
@@ -53,7 +60,7 @@ fwy_unique_D <-
 # specify Google Distance Matrix API: https://developers.google.com/maps/documentation/distance-matrix/overview
 # A free tier is provided - $200 monthly credit. This is enough for 40,000 Distance Matrix calls 
 # or 20,000 Distance Matrix Advanced calls
-google_api_key <- "YOUR KEY"
+google_api_key <- "AIzaSyArCJ6Q_igPK9PrtbZqbXtu2AfTkbhv7yw"
 set.api.key(google_api_key)
 
  
@@ -78,4 +85,4 @@ fwy_output <-
   fwy %>%
   left_join(Distance, by = c('EntryReadPoint' = 'EntryReadPoint', 'ExitReadPoint' = 'ExitReadPoint'))
   
-write.csv(fwy_output, "101SB_dist.csv")
+write.csv(fwy_output, "101NB_dist.csv")
