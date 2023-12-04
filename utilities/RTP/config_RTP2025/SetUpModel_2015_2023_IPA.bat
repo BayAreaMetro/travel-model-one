@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2015_TM160_IPA_03
+set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2015_TM160_IPA_04
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=No
@@ -13,6 +13,7 @@ set EN7=DISABLED
 
 :: set the location of the Travel Model Release
 set GITHUB_DIR=X:\travel-model-one-master
+
 :: set the location of the networks (make sure the network version, year and variant are correct)
 set INPUT_NETWORK=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\Networks\BlueprintNetworks_v09\net_2015_Blueprint
 
@@ -24,7 +25,7 @@ set INPUT_POPLU=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\LandUse_n_Pop
 set UrbanSimScenario=s24
 
 :: set the location of the input directories for non resident travel, logsums and metrics
-set NONRES_INPUT_DIR=L:\Application\Model_One\NextGenFwys\INPUT_DEVELOPMENT\nonres\nonres_03
+set NONRES_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_06
 set LOGSUMS_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\logsums_dummies
 :: skip metrics input for now
 ::set METRICS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\metrics_FinalBlueprint
@@ -138,6 +139,14 @@ del INPUT\warmstart\nonres\ixDailyx4.tpp
 :: the properties file
 copy /Y "%PARAMS%"                                                                               INPUT\params.properties
 
+
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 3a: copy the air passenger trip matrices for the model year
+::
+:: ------------------------------------------------------------------------------------------------------
+
+
 :: Figure out the model year
 set MODEL_DIR=%CD%
 set PROJECT_DIR=%~p0
@@ -148,6 +157,71 @@ for %%f in (%PROJECT_DIR2%) do set myfolder=%%~nxf
 set MODEL_YEAR=%myfolder:~0,4%
 
 set /a MODEL_YEAR_NUM=%MODEL_YEAR% 2>nul
+
+::  Copy the air passenger trip matrices for the model year
+if %MODEL_YEAR_NUM%==2015 (
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2015b_tripsAirPaxEA.tpp"  INPUT\nonres\tripsAirPaxEA.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2015b_tripsAirPaxAM.tpp"  INPUT\nonres\tripsAirPaxAM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2015b_tripsAirPaxMD.tpp"  INPUT\nonres\tripsAirPaxMD.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2015b_tripsAirPaxPM.tpp"  INPUT\nonres\tripsAirPaxPM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2015b_tripsAirPaxEV.tpp"  INPUT\nonres\tripsAirPaxEV.tpp
+)
+if %MODEL_YEAR_NUM%==2023 (
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2023b_tripsAirPaxEA.tpp"  INPUT\nonres\tripsAirPaxEA.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2023b_tripsAirPaxAM.tpp"  INPUT\nonres\tripsAirPaxAM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2023b_tripsAirPaxMD.tpp"  INPUT\nonres\tripsAirPaxMD.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2023b_tripsAirPaxPM.tpp"  INPUT\nonres\tripsAirPaxPM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2023b_tripsAirPaxEV.tpp"  INPUT\nonres\tripsAirPaxEV.tpp
+)
+if %MODEL_YEAR_NUM%==2025 (
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2025b_tripsAirPaxEA.tpp"  INPUT\nonres\tripsAirPaxEA.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2025b_tripsAirPaxAM.tpp"  INPUT\nonres\tripsAirPaxAM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2025b_tripsAirPaxMD.tpp"  INPUT\nonres\tripsAirPaxMD.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2025b_tripsAirPaxPM.tpp"  INPUT\nonres\tripsAirPaxPM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2025b_tripsAirPaxEV.tpp"  INPUT\nonres\tripsAirPaxEV.tpp
+)
+if %MODEL_YEAR_NUM%==2030 (
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2030b_tripsAirPaxEA.tpp"  INPUT\nonres\tripsAirPaxEA.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2030b_tripsAirPaxAM.tpp"  INPUT\nonres\tripsAirPaxAM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2030b_tripsAirPaxMD.tpp"  INPUT\nonres\tripsAirPaxMD.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2030b_tripsAirPaxPM.tpp"  INPUT\nonres\tripsAirPaxPM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2030b_tripsAirPaxEV.tpp"  INPUT\nonres\tripsAirPaxEV.tpp
+)
+if %MODEL_YEAR_NUM%==2035 (
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2035b_tripsAirPaxEA.tpp"  INPUT\nonres\tripsAirPaxEA.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2035b_tripsAirPaxAM.tpp"  INPUT\nonres\tripsAirPaxAM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2035b_tripsAirPaxMD.tpp"  INPUT\nonres\tripsAirPaxMD.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2035b_tripsAirPaxPM.tpp"  INPUT\nonres\tripsAirPaxPM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2035b_tripsAirPaxEV.tpp"  INPUT\nonres\tripsAirPaxEV.tpp
+)
+if %MODEL_YEAR_NUM%==2040 (
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2040b_tripsAirPaxEA.tpp"  INPUT\nonres\tripsAirPaxEA.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2040b_tripsAirPaxAM.tpp"  INPUT\nonres\tripsAirPaxAM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2040b_tripsAirPaxMD.tpp"  INPUT\nonres\tripsAirPaxMD.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2040b_tripsAirPaxPM.tpp"  INPUT\nonres\tripsAirPaxPM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2040b_tripsAirPaxEV.tpp"  INPUT\nonres\tripsAirPaxEV.tpp
+)
+if %MODEL_YEAR_NUM%==2045 (
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2045b_tripsAirPaxEA.tpp"  INPUT\nonres\tripsAirPaxEA.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2045b_tripsAirPaxAM.tpp"  INPUT\nonres\tripsAirPaxAM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2045b_tripsAirPaxMD.tpp"  INPUT\nonres\tripsAirPaxMD.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2045b_tripsAirPaxPM.tpp"  INPUT\nonres\tripsAirPaxPM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2045b_tripsAirPaxEV.tpp"  INPUT\nonres\tripsAirPaxEV.tpp
+)
+if %MODEL_YEAR_NUM%==2050 (
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2050b_tripsAirPaxEA.tpp"  INPUT\nonres\tripsAirPaxEA.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2050b_tripsAirPaxAM.tpp"  INPUT\nonres\tripsAirPaxAM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2050b_tripsAirPaxMD.tpp"  INPUT\nonres\tripsAirPaxMD.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2050b_tripsAirPaxPM.tpp"  INPUT\nonres\tripsAirPaxPM.tpp
+    copy /Y "%NONRES_INPUT_DIR%\airpax\2050b_tripsAirPaxEV.tpp"  INPUT\nonres\tripsAirPaxEV.tpp
+)
+
+:: error handling:
+:: generate an error message in setupmodel.log if tripsAirPaxAM.tpp is missing
+copy /Y INPUT\nonres\tripsAirPaxAM.tpp  INPUT\nonres\tripsAirPaxAM.tpp
+
+
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 4: Overrides for Blueprint Strategies
@@ -298,6 +372,7 @@ C:\Windows\SysWOW64\cscript.exe %TEMP_SCRIPT%
 del %TEMP_SCRIPT%
 
 
+
 :: ------------------------------------------------------------------------------------------------------
 ::
 :: Step 7: log the git commit and git status of GITHUB_DIR
@@ -308,6 +383,7 @@ cd /d %GITHUB_DIR%
 git log -1
 git status
 cd /d %CURRENT_DIR%
+
 
 
 :end
