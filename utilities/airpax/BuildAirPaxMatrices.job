@@ -17,7 +17,7 @@
 ;
 ;
 ; The script reads in DBF files crated from Mr. Gosling's Excel files for 2007 and 2035, and uses a simple linear
-; interpolation to create versions for years other than 2007 and 2035, including 2015, 2020, 2025, 2030, 2040,
+; interpolation to create versions for years other than 2007 and 2035, including 2015, 2020, 2023, 2025, 2030, 2040,
 ; 2045 and 2050.
 ;
 ; These DBFs are then converted into Cube matrices, with optional variants* accounting for airport closures and diverting
@@ -62,7 +62,7 @@
 ;            (18)  Charter bus, shared ride 3+
 ;
 ;
-; Output: (A) For each forecast year (2007, 2015, 2020, 2025, 2030, 2035, and 2040), five time-of-day-specific
+; Output: (A) For each forecast year (2007, 2015, 2020, 2023, 2025, 2030, 2035, 2040 and 2050), five time-of-day-specific
 ;             tables, each containing origin/destination vehicle matrices for the following modes:
 ;           (1) drive alone (DA)
 ;           (2) shared ride 2 (SR2)
@@ -87,10 +87,10 @@ token_closures = '%CLOSURES%'
 ; ----------------------------------------------------------------------------------------------------------------
 ; STEP 1
 ; The script reads in DBF files crated from Mr. Gosling's Excel files for 2007 and 2035, and uses a simple linear
-; interpolation to create versions for years other than 2007 and 2035, including 2015, 2020, 2025, 2030, 2040,
+; interpolation to create versions for years other than 2007 and 2035, including 2015, 2020, 2023, 2025, 2030, 2040,
 ; 2045 and 2050.
 ; ----------------------------------------------------------------------------------------------------------------
-loop fYear = 1,8
+loop fYear = 1,9
 
    if (fYear = 1)
 
@@ -104,30 +104,35 @@ loop fYear = 1,8
 
    elseif (fYear = 3)
 
+      token_year  = '2023b'
+      token_scale = '(2023.0 - 2007.0)/(2035.0 - 2007.0)'
+
+   elseif (fYear = 4)
+
       token_year  = '2025b'
       token_scale = '(2025.0 - 2007.0)/(2035 - 2007.0)'
 
-   elseif (fYear = 4)
+   elseif (fYear = 5)
 
       token_year  = '2030b'
       token_scale = '(2030.0 - 2007.0)/(2035.0 - 2007.0)'
 
-   elseif (fYear = 5)
+   elseif (fYear = 6)
 
       token_year  = '2035b'
       token_scale = '(2035.0 - 2007.0)/(2035.0 - 2007.0)'
 
-   elseif (fYear = 6)
+   elseif (fYear = 7)
 
       token_year  = '2040b'
       token_scale = '(2040.0 - 2007.0)/(2035.0 - 2007.0)'
 
-   elseif (fYear = 7)
+   elseif (fYear = 8)
 
       token_year  = '2045b'
       token_scale = '(2045.0 - 2007.0)/(2035.0 - 2007.0)'
 
-   elseif (fYear = 8)
+   elseif (fYear = 9)
 
       token_year  = '2050b'
       token_scale = '(2050.0 - 2007.0)/(2035.0 - 2007.0)'
