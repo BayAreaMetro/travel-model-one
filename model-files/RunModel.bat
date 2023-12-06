@@ -19,8 +19,9 @@
 
 :: Set the path
 call CTRAMP\runtime\SetPath.bat
-:: Which conda am I running?
-C:\Windows\System32\where python
+
+:: Keep a record of the installed Python packages and their versions
+call CTRAMP\runtime\pip_list.bat  > pip_list.log 2>&1
 
 :: Start the cube cluster
 Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
@@ -429,6 +430,7 @@ c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
 
 :: Move all the TP+ printouts to the \logs folder
 copy *.prn logs\*.prn
+copy *.log logs\*.log
 
 :: Close the cube cluster
 Cluster "%COMMPATH%\CTRAMP" 1-48 Close Exit
