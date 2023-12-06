@@ -8,3 +8,4 @@ core/projects/**/build
 **/*.pyc
 model-files/model/ModeChoice.xls
 model-files/model/TripModeChoice.xls
+**/*.class

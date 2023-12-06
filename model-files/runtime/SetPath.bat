@@ -2,7 +2,7 @@
 :: Utility to set the path.  Used in RunModel as well as RunMain and RunNodeX. 
 
 :: The commpath
-SET COMMPATH=X:\COMMPATH
+SET COMMPATH=E:\Model2D-Share\COMMPATH
 if "%COMPUTER_PREFIX%" == "WIN-" (
   SET COMMPATH=D:\COMMPATH
 )
@@ -27,7 +27,7 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 set TPP_PATH=C:\Program Files\Citilabs\CubeVoyager;C:\Program Files\Citilabs\VoyagerFileAPI
 
 :: The location of python
-set PYTHON_PATH=C:\Python27
+set PYTHON_PATH=C:\Users\mtcpb\.conda\envs\tm15-python27
 
 :: The location of the MTC.JAR file
 set RUNTIME=CTRAMP/runtime

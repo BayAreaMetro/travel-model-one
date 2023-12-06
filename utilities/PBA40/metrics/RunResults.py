@@ -139,14 +139,15 @@ class RunResults:
 
     Read configuration and input data.
     """
-        self.ppa_master_input = "L:\\RTP2021_PPA\\Projects\\PPAMasterInput.xlsx"
+        self.ppa_master_input = "L:\\RTP2025_PPA\\Projects\\PPAMasterInput.xlsx"
 
         # read the configs
         self.rundir = os.path.join(os.path.abspath(rundir), 'OUTPUT', 'metrics')
+        print("rundir len={} rundir={}".format(len(rundir), rundir))
         # if this is a baseline run, then read from configs_base sheet of master input file
         # else this is a project run, then read from configs_projects sheet of master input file
         #if 'CaltrainMod_00' not in rundir:  #for RTFF
-        if len(rundir) > 22:
+        if len(rundir) > 28:
             configs_df = pd.read_excel(self.ppa_master_input, sheet_name='configs_projects', header=0)
             configs_df = configs_df.drop(['Base Model', 'Base ID', 'Future Run', 'Iteration', 'Full Name'], axis=1)
             configs_df.insert(0,'Folder','')
@@ -154,6 +155,7 @@ class RunResults:
             configs_df.drop(['Foldername - Project', 'Foldername - Future'], axis=1)
         else:
             configs_df = pd.read_excel(self.ppa_master_input, sheet_name='configs_base', header=0)
+            print(configs_df)
         configs_df = configs_df.T
         configs_df.columns = configs_df.iloc[0]
         configs_df = configs_df[1:]
@@ -247,7 +249,8 @@ class RunResults:
         self.transit_boards_miles = \
             pd.read_table(os.path.join(self.rundir, "transit_boards_miles.csv"),
                           sep=",", index_col=0)
-        # print self.transit_boards_miles
+        print("self.transit_boards_miles")
+        print(self.transit_boards_miles)
 
         self.transit_times_by_acc_mode_egr = \
             pd.read_table(os.path.join(self.rundir, "transit_times_by_acc_mode_egr.csv"),
