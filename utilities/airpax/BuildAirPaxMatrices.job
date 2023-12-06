@@ -81,8 +81,9 @@
 
 ; one of 'NONE', 'SFO', 'SFO_OAK'
 token_closures = '%CLOSURES%'
-*mkdir closures_%CLOSURES%
-*mkdir closures_%CLOSURES%\intermediate
+token_yyyymmdd = '%YYYYMMDD%'
+*mkdir closures_%CLOSURES%_%YYYYMMDD%
+*mkdir closures_%CLOSURES%_%YYYYMMDD%\intermediate
 
 ; ----------------------------------------------------------------------------------------------------------------
 ; STEP 1
@@ -375,7 +376,7 @@ loop fYear = 1,9
             filei ZDATI[1] = .\GoslingScaled\@token_year@_to@token_airport@.dbf,   Z=ORIG
             filei ZDATI[2] = .\GoslingScaled\@token_year@_from@token_airport@.dbf, Z=DEST
 
-            fileo mato[1] = closures_@token_closures@\intermediate\@token_year@_to@token_airport@_@token_tp@.tpp, mo = 1-18, name =
+            fileo mato[1] = closures_@token_closures@_@token_yyyymmdd@\intermediate\@token_year@_to@token_airport@_@token_tp@.tpp, mo = 1-18, name =
                @token_tp@_Escort_DA,@token_tp@_Escort_S2,@token_tp@_Escort_S3,
                @token_tp@_Park_DA,  @token_tp@_Park_S2,  @token_tp@_Park_S3,
                @token_tp@_Rent_DA,  @token_tp@_Rent_S2,  @token_tp@_Rent_S3,
@@ -386,7 +387,7 @@ loop fYear = 1,9
                @token_tp@_Chart_S3
 
             ; note this is the transpose
-            fileo mato[2] = closures_@token_closures@\intermediate\@token_year@_from@token_airport@_t_@token_tp@.tpp, mo = 101-118, name =
+            fileo mato[2] = closures_@token_closures@_@token_yyyymmdd@\intermediate\@token_year@_from@token_airport@_t_@token_tp@.tpp, mo = 101-118, name =
                @token_tp@_Escort_DA,@token_tp@_Escort_S2,@token_tp@_Escort_S3,
                @token_tp@_Park_DA,  @token_tp@_Park_S2,  @token_tp@_Park_S3,
                @token_tp@_Rent_DA,  @token_tp@_Rent_S2,  @token_tp@_Rent_S3,
@@ -690,16 +691,16 @@ loop fYear = 1,9
 
       run pgm = matrix
 
-         filei mati[1] = closures_@token_closures@\intermediate\@token_year@_toSFO_@token_tp@.tpp
-         filei mati[2] = closures_@token_closures@\intermediate\@token_year@_fromSFO_t_@token_tp@.tpp
+         filei mati[1] = closures_@token_closures@_@token_yyyymmdd@\intermediate\@token_year@_toSFO_@token_tp@.tpp
+         filei mati[2] = closures_@token_closures@_@token_yyyymmdd@\intermediate\@token_year@_fromSFO_t_@token_tp@.tpp
 
-         filei mati[3] = closures_@token_closures@\intermediate\@token_year@_toOAK_@token_tp@.tpp
-         filei mati[4] = closures_@token_closures@\intermediate\@token_year@_fromOAK_t_@token_tp@.tpp
+         filei mati[3] = closures_@token_closures@_@token_yyyymmdd@\intermediate\@token_year@_toOAK_@token_tp@.tpp
+         filei mati[4] = closures_@token_closures@_@token_yyyymmdd@\intermediate\@token_year@_fromOAK_t_@token_tp@.tpp
 
-         filei mati[5] = closures_@token_closures@\intermediate\@token_year@_toSJC_@token_tp@.tpp
-         filei mati[6] = closures_@token_closures@\intermediate\@token_year@_fromSJC_t_@token_tp@.tpp
+         filei mati[5] = closures_@token_closures@_@token_yyyymmdd@\intermediate\@token_year@_toSJC_@token_tp@.tpp
+         filei mati[6] = closures_@token_closures@_@token_yyyymmdd@\intermediate\@token_year@_fromSJC_t_@token_tp@.tpp
 
-         fileo mato[1] = closures_@token_closures@\@token_year@_tripsAirPax@token_tp@.tpp, mo =  1- 6, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
+         fileo mato[1] = closures_@token_closures@_@token_yyyymmdd@\@token_year@_tripsAirPax@token_tp@.tpp, mo =  1- 6, name =  DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
 
         ; combine trips by occupancy ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ;   - drive alone free
