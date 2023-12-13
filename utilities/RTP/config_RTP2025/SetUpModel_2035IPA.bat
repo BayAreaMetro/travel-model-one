@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_12
+set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_13
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
@@ -36,7 +36,7 @@ set METRICS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPME
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_11
+set PREV_RUN_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_12
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
