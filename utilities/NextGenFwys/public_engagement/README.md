@@ -15,14 +15,13 @@ As part of the second round of engagement for the [Next Generation Freeways Stud
     * [`TraceDApaths.bat`](https://github.com/BayAreaMetro/travel-model-one/blob/f37a3befc2e2d53d32054a17fde218c641f0b7f8/utilities/NextGenFwys/public_engagement/TraceDApaths.bat)
         * update variables `ORIGIN` & `DESTINATION`
     * Note that this step can be avoided by updating the relevant scripts to check for O/D lists passed in the command line as arguments as part of [`UpdateMapDataForNewOD.bat`](https://github.com/BayAreaMetro/travel-model-one/blob/f37a3befc2e2d53d32054a17fde218c641f0b7f8/utilities/NextGenFwys/public_engagement/UpdateMapDataForNewOD.bat) (an area for future improvement).
-https://github.com/BayAreaMetro/travel-model-one/blob/f37a3befc2e2d53d32054a17fde218c641f0b7f8/utilities/NextGenFwys/public_engagement/UpdateMapDataForNewOD.bat
 * run [`UpdateMapDataForNewOD.bat`](https://github.com/BayAreaMetro/travel-model-one/blob/f37a3befc2e2d53d32054a17fde218c641f0b7f8/utilities/NextGenFwys/public_engagement/UpdateMapDataForNewOD.bat) on a modeling server to generate the driven and transit trace paths
     * first verify the desired model runs in the script
     * update paths based on mapped drives on respective modeling server being used to run the batch file
     * Other steps included in this script:
         * clean the driven and transit trace paths
             * driven
-                * copy `HwyAssign_trace_to_csv.py` to the relevant HwyAssign_trace folder and run it from there
+                * copy [`HwyAssign_trace_to_csv.py`](https://github.com/BayAreaMetro/travel-model-one/blob/551f55aa064123c94b9b23761dc342b398bede0f/utilities/NextGenFwys/public_engagement/HwyAssign_trace_to_csv.py) to the relevant HwyAssign_trace folder and run it from there
                     * (done as part of [`UpdateMapDataForNewOD.bat`](https://github.com/BayAreaMetro/travel-model-one/blob/f37a3befc2e2d53d32054a17fde218c641f0b7f8/utilities/NextGenFwys/public_engagement/UpdateMapDataForNewOD.bat))
             * transit
                 * run [`Convert_lin_to_csv.py`](https://github.com/BayAreaMetro/travel-model-one/blob/f37a3befc2e2d53d32054a17fde218c641f0b7f8/utilities/NextGenFwys/public_engagement/Convert_lin_to_csv.py) to produce individual ab link tables for all transit lines contained in transitLines.lin
