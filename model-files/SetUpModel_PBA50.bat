@@ -19,26 +19,14 @@ set Software_Dir=Z:\projects\ccta\31000190\Raghu\working_model\BCM_Software
 set COMPUTER_SETTING=HIGH
 
 
-:: set the location of the networks (make sure the network version, year and variant are correct); currently set to the SharePoint location. 
-set INPUT_NETWORK=%ALL_BCM_INPUTS%\Base Network Externals
 set INPUT_TRN=%ALL_BCM_INPUTS%\trn
-:: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
-::set INPUT_POPLU=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\PopSyn_n_LandUse\POPLU_v225_UBI\2050
-set INPUT_LU=%ALL_BCM_INPUTS%\FINAL %YEAR% LANDUSE FILES
-::Latest PopulationSim results are in the Run_8 folder. 
-set INPUT_POP=%ALL_BCM_INPUTS%\INPUT_POP
 ::Inputs for the nonres models
 set INPUT_NONRES=%ALL_BCM_INPUTS%\nonres
-:: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
-:: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
-set UrbanSimScenario=s24
 
-:: set the location of the "input development" directory where other inputs are stored; currently set to the TM1.5 run for most cases
-set INPUT_DEVELOPMENT_DIR=%ALL_BCM_INPUTS%\downloaded_files\INPUT
 
 :: TODO  set the location of the previous run (where warmstart inputs will be copied):Currently set to be the calibration folder. The trip tables will be used in the 0th iteration HwyAssignment.job step
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=%ALL_BCM_INPUTS%\BCM Warmstart
+set PREV_RUN_DIR=%ALL_BCM_INPUTS%\warmstart
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
@@ -104,24 +92,32 @@ if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.59
 :: ------------------------------------------------------------------------------------------------------
 
 :: networks
-c:\windows\system32\Robocopy.exe /E "%INPUT_NETWORK%"                                        	INPUT\hwy
+mkdir INPUT\hwy
+copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\complete_network_with_externals.net"               INPUT\hwy\complete_network_with_externals.net
+copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\tolls.csv"                                        	INPUT\hwy\tolls.csv
 c:\windows\system32\Robocopy.exe /E "%INPUT_TRN%"                                        		INPUT\trn
 
 :: popsyn and land use
 mkdir popsyn
 mkdir INPUT\popsyn
-c:\windows\system32\Robocopy.exe /E "%INPUT_LU%"                                      			INPUT\landuse
-copy %INPUT_POP%\hhFile%YEAR%.csv																INPUT\popsyn\hhFile.%YEAR%.csv
-copy %INPUT_POP%\personFile%YEAR%.csv															INPUT\popsyn\personFile.%YEAR%.csv
+mkdir INPUT\landuse
+copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\IZ_OZ_PCT_EXT.dat"          	INPUT\landuse\IZ_OZ_PCT_EXT.dat
+copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\SD2TAZ_KF.prn"          		INPUT\landuse\SD2TAZ_KF.prn
+copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\TAZ2CO.prn"          			INPUT\landuse\TAZ2CO.prn
+copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\TAZ2COUNTY.prn"          		INPUT\landuse\TAZ2COUNTY.prn
+copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\TAZ2SD.prn"          			INPUT\landuse\TAZ2SD.prn
+copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\walkAccessBuffers.float.csv"    INPUT\landuse\walkAccessBuffers.float.csv
+copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\ZMAST20.dbf"          			INPUT\landuse\ZMAST20.dbf
+
+
+copy %ALL_BCM_INPUTS%\inputs_%YEAR%\hhFile%YEAR%.csv												INPUT\popsyn\hhFile.%YEAR%.csv
+copy %ALL_BCM_INPUTS%\inputs_%YEAR%\personFile%YEAR%.csv											INPUT\popsyn\personFile.%YEAR%.csv
 c:\windows\system32\Robocopy.exe /E "%INPUT_NONRES%"                   							INPUT\nonres
 ::need to update the maximum telecommute rate for San Joaquin County in the telecommute_max_rate_county.csv file
 ::right now using the same values as Marin
 c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\telecommute"   		   				INPUT\landuse
 :: nonres
 
-:: logsums and metrics
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\logsums_dummies"                    INPUT\logsums
-c:\windows\system32\Robocopy.exe /E "%INPUT_DEVELOPMENT_DIR%\metrics\metrics_FinalBlueprint"     INPUT\metrics
 :: copy the temporary transit skims to M_DIR. Created skims directory.
 mkdir skims
 :: warmstart (copy from the previous run)
@@ -129,9 +125,7 @@ mkdir INPUT\warmstart\main
 mkdir INPUT\warmstart\nonres
 copy /Y "%PREV_RUN_DIR%\main\*.tpp"                                                       		INPUT\warmstart\main
 copy /Y "%PREV_RUN_DIR%\nonres\*.tpp"                                                     		INPUT\warmstart\nonres
-copy /Y "%PREV_RUN_DIR%\main\*.dat" 															INPUT\warmstart\main
-del INPUT\warmstart\nonres\ixDaily2015.tpp
-del INPUT\warmstart\nonres\ixDailyx4.tpp 
+
 
 :: the properties file
 copy /Y "%PARAMS%"                                                                               INPUT\params.properties
