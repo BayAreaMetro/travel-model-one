@@ -66,6 +66,7 @@ RUN_SET_MODEL_PATHS = {
     'FinalBlueprint':'M:\\Application\\Model One\\RTP2021\\Blueprint',
     'EIR'           :'M:\\Application\\Model One\\RTP2021\\Blueprint',
     'NGF'           :'L:\\Application\\Model_One\\NextGenFwys\\Scenarios',
+    'NGF_Round2'    :'L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios',
     'RTP2025_IP'    :'M:\\Application\\Model One\\RTP2025\\IncrementalProgress',
     'STIP'          :'M:\\Application\\Model One\\STIP2024'
 }
