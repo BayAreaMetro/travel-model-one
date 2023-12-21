@@ -19,7 +19,7 @@ USAGE = """
 
 """
 
-import datetime, os, sys
+import datetime, os, pathlib, sys
 import numpy, pandas as pd
 from collections import OrderedDict, defaultdict
 
@@ -1177,8 +1177,8 @@ def calculate_Diverse2_LIHH_Displacement(runid, dbp, parcel_sum_df, tract_sum_df
 
 
 
-    tract_sum_filename = sum_outputs_filepath + "summary_output_tract_%s.csv"% dbp
-    tract_sum_df.to_csv(tract_sum_filename, header=True, sep=',', index=False)
+    tract_sum_filename = sum_outputs_filepath / f"summary_output_tract_{dbp}.csv"
+    # tract_sum_df.to_csv(tract_sum_filename, header=True, sep=',', index=False)
 
     SD_sum_df_sum   = tract_sum_df.groupby(["SD"])["tothh_2050","tothh_2015","hhq1_2050", "hhq1_2015","hhq2_2050", "hhq2_2015",\
                                                    "lost_hhq1_0pct", "lost_hhq1_abs_0pct", "lost_hhq1_10pct", "lost_hhq1_abs_10pct",\
@@ -1194,8 +1194,8 @@ def calculate_Diverse2_LIHH_Displacement(runid, dbp, parcel_sum_df, tract_sum_df
     SD_sum_df_count = tract_sum_df.groupby(["SD"])["tract_id"].count().reset_index().rename(columns={'tract_id':'num_tracts'})
     SD_sum_df = pd.merge(left=SD_sum_df_count, right=SD_sum_df_sum, left_on="SD", right_on="SD", how="left")
 
-    SD_sum_filename = sum_outputs_filepath + "summary_output_superdistrict_%s.csv"% dbp
-    SD_sum_df.to_csv(SD_sum_filename, header=True, sep=',', index=False)
+    SD_sum_filename = sum_outputs_filepath / f"summary_output_superdistrict_{dbp}.csv"
+    # SD_sum_df.to_csv(SD_sum_filename, header=True, sep=',', index=False)
 
 
 
@@ -1839,7 +1839,7 @@ def calc_urbansim_metrics():
 
     for us_runid in list_us_runid:
 
-        urbansim_runid = urbansim_run_location + us_runid
+        urbansim_runid = str(urbansim_run_location / us_runid)
 
         if "s20" in urbansim_runid:
             dbp = "NoProject"
@@ -1982,28 +1982,28 @@ def calc_urbansim_metrics():
         PDA_sum_2035_df = parcel_sum_2035_df.groupby(['pda_id_pba50_fb'])["tothh_2035","tothh_2015","totemp_2035","totemp_2015","hhq1_2035", "hhq1_2015","hhq2_2035", "hhq2_2015"].sum().reset_index()
         GGall_sum_2035_df = parcel_sum_2035_df.groupby(['juris','fbp_tra_id','fbp_tra_cat_id','fbp_hra_id','pda_id_pba50_fb'])["tothh_2035","tothh_2015","totemp_2035","totemp_2015","hhq1_2035", "hhq1_2015","hhq2_2035", "hhq2_2015"].sum().reset_index()
         
-        TRA_sum_filename = sum_outputs_filepath + "summary_output_TRA_%s.csv"% dbp
-        TRA_sum_df.to_csv(TRA_sum_filename, header=True, sep=',', index=False)
-        PDA_sum_filename = sum_outputs_filepath + "summary_output_PDA_%s.csv"% dbp
-        PDA_sum_df.to_csv(PDA_sum_filename, header=True, sep=',', index=False)
-        GGall_sum_filename = sum_outputs_filepath + "summary_output_GG_%s.csv"% dbp
-        GGall_sum_df.to_csv(GGall_sum_filename, header=True, sep=',', index=False)
+        TRA_sum_filename = sum_outputs_filepath / f"summary_output_TRA_{dbp}.csv"
+        # TRA_sum_df.to_csv(TRA_sum_filename, header=True, sep=',', index=False)
+        PDA_sum_filename = sum_outputs_filepath / f"summary_output_PDA_{dbp}.csv"
+        # PDA_sum_df.to_csv(PDA_sum_filename, header=True, sep=',', index=False)
+        GGall_sum_filename = sum_outputs_filepath / f"summary_output_GG_{dbp}.csv"
+        # GGall_sum_df.to_csv(GGall_sum_filename, header=True, sep=',', index=False)
 
-        TRA_sum_2035_filename = sum_outputs_filepath + "summary_output_TRA_2035_%s.csv"% dbp
-        TRA_sum_2035_df.to_csv(TRA_sum_2035_filename, header=True, sep=',', index=False)
-        PDA_sum_2035_filename = sum_outputs_filepath + "summary_output_PDA_2035_%s.csv"% dbp
-        PDA_sum_2035_df.to_csv(PDA_sum_2035_filename, header=True, sep=',', index=False)
-        GGall_sum_2035_filename = sum_outputs_filepath + "summary_output_GG_2035_%s.csv"% dbp
-        GGall_sum_2035_df.to_csv(GGall_sum_2035_filename, header=True, sep=',', index=False)
+        TRA_sum_2035_filename = sum_outputs_filepath / f"summary_output_TRA_2035_{dbp}.csv"
+        # TRA_sum_2035_df.to_csv(TRA_sum_2035_filename, header=True, sep=',', index=False)
+        PDA_sum_2035_filename = sum_outputs_filepath / f"summary_output_PDA_2035_{dbp}.csv"
+        # PDA_sum_2035_df.to_csv(PDA_sum_2035_filename, header=True, sep=',', index=False)
+        GGall_sum_2035_filename = sum_outputs_filepath / f"summary_output_GG_2035_{dbp}.csv"
+        # GGall_sum_2035_df.to_csv(GGall_sum_2035_filename, header=True, sep=',', index=False)
 
 
         ################### Create juris summary
         juris_sum_hra_df = parcel_sum_df.groupby(['juris_name_full','hra'])["tothh_2050","tothh_2015","hhq1_2050", "hhq1_2015"].sum().reset_index()
-        juris_sum_hra_filename = sum_outputs_filepath + "summary_output_juris_hra_%s.csv"% dbp
-        juris_sum_hra_df.to_csv(juris_sum_hra_filename, header=True, sep=',', index=False)
+        juris_sum_hra_filename = sum_outputs_filepath / f"summary_output_juris_hra_{dbp}.csv"
+        # juris_sum_hra_df.to_csv(juris_sum_hra_filename, header=True, sep=',', index=False)
         juris_sum_coc_df = parcel_sum_df.groupby(['juris_name_full','coc_flag_pba2050'])["tothh_2050","tothh_2015","hhq1_2050", "hhq1_2015"].sum().reset_index()
-        juris_sum_coc_filename = sum_outputs_filepath + "summary_output_juris_coc_%s.csv"% dbp
-        juris_sum_coc_df.to_csv(juris_sum_coc_filename, header=True, sep=',', index=False)
+        juris_sum_coc_filename = sum_outputs_filepath / f"summary_output_juris_coc_{dbp}.csv"
+        # juris_sum_coc_df.to_csv(juris_sum_coc_filename, header=True, sep=',', index=False)
 
         '''
         ################### Merging SLR data with parcel summary file
@@ -2030,8 +2030,8 @@ def calc_urbansim_metrics():
                                        pd.np.where(temp.str.contains("HRA"), "hra",
                                        pd.np.where(temp.str.contains("GG"), "other GG", "Remainder")))))
 
-        zoningcat_outcomes_filename = sum_outputs_filepath + "summary_output_zoningcat.csv"
-        zoningcat_sum_df.to_csv(zoningcat_outcomes_filename, header=True, sep=',', index=False)
+        zoningcat_outcomes_filename = sum_outputs_filepath / "summary_output_zoningcat.csv"
+        # zoningcat_sum_df.to_csv(zoningcat_outcomes_filename, header=True, sep=',', index=False)
 
 
         normalize_factor_Q1Q2  = calculate_normalize_factor_Q1Q2(parcel_sum_df)
@@ -2139,9 +2139,14 @@ if __name__ == '__main__':
 
     #pd.set_option('display.width', 500)
 
+    # Handle box drives in E: (e.g. for virtual machines)
+    USERNAME    = os.getenv('USERNAME')
+    BOX_DIR     = pathlib.Path(f"C:/Users/{USERNAME}/Box")
+    if USERNAME.lower() in ['lzorn']:
+        BOX_DIR = pathlib.Path("E:\Box")
 
     # Set location of UrbanSim inputs
-    urbansim_run_location           = 'C:/Users/{}/Box/Modeling and Surveys/Urban Modeling/Bay Area UrbanSim/PBA50/'.format(os.getenv('USERNAME'))
+    urbansim_run_location           = BOX_DIR / "Modeling and Surveys" / "Urban Modeling" / "Bay Area UrbanSim" / "PBA50" 
     us_2050_DBP_NoProject_runid     = 'EIR runs/Baseline Large (s25) runs/NP_v8_FINAL/run314'
     #us_2050_DBP_Basic_runid        = 'Blueprint Basic (s21)/v1.5/run939'
     #us_2050_DBP_runid              = 'Draft Blueprint runs/Blueprint Plus Crossing (s23)/v1.7.1- FINAL DRAFT BLUEPRINT/run98'
@@ -2169,41 +2174,42 @@ if __name__ == '__main__':
 
     # Set location of external inputs
     #All files are located in below folder / check sources.txt for sources
-    metrics_source_folder         = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/metrics_input_files/'.format(os.getenv('USERNAME'))
-    parcel_geography_file         = metrics_source_folder + '2021_02_25_parcels_geography.csv'
-    parcel_tract_crosswalk_file   = metrics_source_folder + 'parcel_tract_crosswalk.csv'
-    parcel_GG_newxwalk_file       = metrics_source_folder + 'parcel_tra_hra_pda_fbp_20210816.csv'
-    #parcel_PDA_xwalk_file         = metrics_source_folder + 'pda_id_2020.csv'
-    #parcel_TRA_xwalk_file         = metrics_source_folder + 'tra_id_2020_s23.csv'
-    #parcel_GG_crosswalk_file      = metrics_source_folder + 'parcel_GG_xwalk.csv'
-    tract_HRA_xwalk_file          = metrics_source_folder + 'tract_hra_xwalk.csv'
-    taz_coc_crosswalk_file        = metrics_source_folder + 'taz_coc_crosswalk.csv'
-    taz_hra_crosswalk_file        = metrics_source_folder + 'taz_hra_crosswalk.csv'
-    taz_areatype_file             = metrics_source_folder + 'taz_areatype.csv'
-    taz_urbanizedarea_file        = metrics_source_folder + 'taz_urbanizedarea.csv'
+    metrics_source_folder         = BOX_DIR / "Horizon and Plan Bay Area 2050" / "Equity and Performance" / "7_Analysis" / "Metrics" / "metrics_input_files"
+    parcel_geography_file         = metrics_source_folder / '2021_02_25_parcels_geography.csv'
+    parcel_tract_crosswalk_file   = metrics_source_folder / 'parcel_tract_crosswalk.csv'
+    parcel_GG_newxwalk_file       = metrics_source_folder / 'parcel_tra_hra_pda_fbp_20210816.csv'
+    #parcel_PDA_xwalk_file         = metrics_source_folder / 'pda_id_2020.csv'
+    #parcel_TRA_xwalk_file         = metrics_source_folder / 'tra_id_2020_s23.csv'
+    #parcel_GG_crosswalk_file      = metrics_source_folder / 'parcel_GG_xwalk.csv'
+    tract_HRA_xwalk_file          = metrics_source_folder / 'tract_hra_xwalk.csv'
+    taz_coc_crosswalk_file        = metrics_source_folder / 'taz_coc_crosswalk.csv'
+    taz_hra_crosswalk_file        = metrics_source_folder / 'taz_hra_crosswalk.csv'
+    taz_areatype_file             = metrics_source_folder / 'taz_areatype.csv'
+    taz_urbanizedarea_file        = metrics_source_folder / 'taz_urbanizedarea.csv'
 
-    udp_file                      = metrics_source_folder + 'udp_2017results.csv'
-    coc_flag_file                 = metrics_source_folder + 'COCs_ACS2018_tbl_TEMP.csv'
+    udp_file                      = metrics_source_folder / 'udp_2017results.csv'
+    coc_flag_file                 = metrics_source_folder / 'COCs_ACS2018_tbl_TEMP.csv'
     # These are SLR input files into Urbansim, which has info at parcel ID level, on which parcels are inundated and protected
-    #slr_basic_file                = metrics_source_folder + 'slr_parcel_inundation_basic.csv'
-    #slr_plus_file                 = metrics_source_folder + 'slr_parcel_inundation_plus.csv'
-    transit_operator_file         = metrics_source_folder + 'transit_system_lookup.csv'
-    hwy_corridor_links_file       = metrics_source_folder + 'maj_corridors_hwy_links.csv'
+    #slr_basic_file                = metrics_source_folder / 'slr_parcel_inundation_basic.csv'
+    #slr_plus_file                 = metrics_source_folder / 'slr_parcel_inundation_plus.csv'
+    transit_operator_file         = metrics_source_folder / 'transit_system_lookup.csv'
+    hwy_corridor_links_file       = metrics_source_folder / 'maj_corridors_hwy_links.csv'
     
     # Set location of intermediate metric outputs
     # These are for metrics generated by Raleigh, Bobby, James
-    intermediate_metrics_source_folder  = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/Metrics_Outputs_FinalBlueprint/Intermediate Metrics/'.format(os.getenv('USERNAME'))
-    housing_costs_file            = intermediate_metrics_source_folder + 'housing_costs_share_income.csv'         # from Bobby, based on Urbansim outputs only
-    transitproximity_file         = intermediate_metrics_source_folder + 'metrics_proximity.csv'                  # from Bobby, based on Urbansim outputs only
-    transit_asset_condition_file  = intermediate_metrics_source_folder + 'transit_asset_condition.csv'            # from Raleigh, not based on model outputs
-    safety_file                   = intermediate_metrics_source_folder + 'fatalities_injuries_export.csv'         # from Raleigh, based on Travel Model outputs 
-    commute_mode_share_file       = intermediate_metrics_source_folder + 'commute_mode_share.csv'                 # from Raleigh, based on Travel Model outputs
-    emfac_file                    = intermediate_metrics_source_folder + 'emfac.csv'                              # from James
-    remi_jobs_file                = intermediate_metrics_source_folder + 'emp by ind11_s23.csv'                   # from Bobby, based on REMI
-    jobs_wagelevel_file           = intermediate_metrics_source_folder + 'jobs_wagelevel.csv'                     # from Bobby, based on REMI
+    intermediate_metrics_source_folder  =  BOX_DIR / "Horizon and Plan Bay Area 2050" / "Equity and Performance" / "7_Analysis" / "Metrics" / \
+        "Metrics_Outputs_FinalBlueprint" / "Intermediate Metrics"
+    housing_costs_file            = intermediate_metrics_source_folder / 'housing_costs_share_income.csv'         # from Bobby, based on Urbansim outputs only
+    transitproximity_file         = intermediate_metrics_source_folder / 'metrics_proximity.csv'                  # from Bobby, based on Urbansim outputs only
+    transit_asset_condition_file  = intermediate_metrics_source_folder / 'transit_asset_condition.csv'            # from Raleigh, not based on model outputs
+    safety_file                   = intermediate_metrics_source_folder / 'fatalities_injuries_export.csv'         # from Raleigh, based on Travel Model outputs 
+    commute_mode_share_file       = intermediate_metrics_source_folder / 'commute_mode_share.csv'                 # from Raleigh, based on Travel Model outputs
+    emfac_file                    = intermediate_metrics_source_folder / 'emfac.csv'                              # from James
+    remi_jobs_file                = intermediate_metrics_source_folder / 'emp by ind11_s23.csv'                   # from Bobby, based on REMI
+    jobs_wagelevel_file           = intermediate_metrics_source_folder / 'jobs_wagelevel.csv'                     # from Bobby, based on REMI
 
     # All summarized outputs (i.e. by TRA or PDA or tract) will be written to this folder
-    sum_outputs_filepath = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/Metrics_Outputs_FinalBlueprint/Summary Outputs/'.format(os.getenv('USERNAME'))
+    sum_outputs_filepath = BOX_DIR / "Horizon and Plan Bay Area 2050" / "Equity and Performance" / "7_Analysis" / "Metrics" / "Metrics_Outputs_FinalBlueprint" / "Summary Outputs"
 
     '''
         # Script to create parcel_GG_crosswalk_file that is used above
@@ -2239,6 +2245,11 @@ if __name__ == '__main__':
     y_diff    = "2050"
 
     # Calculate all metrics
+
+    # Commenting out UrbanSim metrics since those will live in an UrbanSim (or related) repo
+    # See Update BAUS metrics for PBA50+: https://app.asana.com/0/0/1206208457681299/f
+    #
+
     print("Starting urbansim data gathering...")
     #calc_pba40urbansim()
     calc_urbansim_metrics()
@@ -2251,7 +2262,9 @@ if __name__ == '__main__':
     idx = pd.MultiIndex.from_tuples(metrics_dict.keys(), names=['modelrunID','metric','name','year','blueprint'])
     metrics = pd.Series(metrics_dict, index=idx)
     metrics.name = 'value'
-    out_filename = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/Metrics_Outputs_FinalBlueprint/metrics.csv'.format(os.getenv('USERNAME'))
+    # out_filename = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/Metrics_Outputs_FinalBlueprint/metrics.csv'.format(os.getenv('USERNAME'))
+    # write it locally for now
+    out_filename = 'metrics.csv'
     metrics.to_csv(out_filename, header=True, sep=',')
     
     print("Wrote metrics.csv output")
