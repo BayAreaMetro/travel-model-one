@@ -115,7 +115,7 @@ echo STARTED MODEL RUN  %DATE% %TIME% >> logs\feedback.rpt
 copy INPUT\hwy\                 hwy\
 copy INPUT\trn\                 trn\
 copy INPUT\landuse\             landuse\
-copy INPUT\landuse\ZMAST%MODEL_YEAR_SHORT%.dbf             landuse\TAZDATA.dbf
+copy INPUT\landuse\ZMAST.dbf             landuse\TAZDATA.dbf
 copy INPUT\popsyn\hhFile.%MODEL_YEAR%.csv              		popsyn\hhFile.%MODEL_YEAR%.csv
 copy INPUT\popsyn\personFile.%MODEL_YEAR%.csv              	popsyn\personFile.%MODEL_YEAR%.csv
 

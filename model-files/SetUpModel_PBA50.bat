@@ -107,7 +107,7 @@ copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\TAZ2CO.prn"          			INPUT\landuse\TAZ2C
 copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\TAZ2COUNTY.prn"          		INPUT\landuse\TAZ2COUNTY.prn
 copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\TAZ2SD.prn"          			INPUT\landuse\TAZ2SD.prn
 copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\walkAccessBuffers.float.csv"    INPUT\landuse\walkAccessBuffers.float.csv
-copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\ZMAST20.dbf"          			INPUT\landuse\ZMAST20.dbf
+copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\ZMAST.dbf"          			INPUT\landuse\ZMAST.dbf
 
 
 copy %ALL_BCM_INPUTS%\inputs_%YEAR%\hhFile%YEAR%.csv												INPUT\popsyn\hhFile.%YEAR%.csv
