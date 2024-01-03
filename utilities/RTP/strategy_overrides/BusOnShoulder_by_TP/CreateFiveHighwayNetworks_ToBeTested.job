@@ -1,0 +1,238 @@
+; ----------------------------------------------------------------------------------------------------------------
+;
+; CreateFiveHighwayNetworks.job
+;
+; TP+ script to create five time-of-day specific highway networks to be used in transit skimming and assignment. 
+; The five time periods are as follows: (a) early AM, 3 am to 6 am; (b) AM peak period, 6 am to 10 am; (c) midday, 
+; 10 am to 3 pm; (d) PM peak period, 3 pm to 7 pm; and, (e) evening, 7 pm to 3 am the next day.  The networks are 
+; identical save the following: (i) the reversible lanes on the Golden Gate bridge head southbound in the early AM, AM
+; peak period, and midday periods and northbound in the PM and evening periods; (ii) the Caldecott tunnel has 
+; X lanes headed westbound in the early AM, AM peak period and midday periods and X lanes headed eastbound in the
+; PM peak and evening periods; (iii) the fixed time toll delay links are given time-of-day specific values; (iv) 
+; the shared ride toll bypass lanes are either left in place or deleted.
+;
+; Park-and-ride connections are made in the PrepHwyNet.job file.  In this script, we create a variable
+; called PNROK, and then set this value to zero for certain bridges.  This variable is then used in the 
+; PrepHwyNet.job script to prevent park-and-ride paths from being built across these bridges. 
+;
+; Input: (1) A highway network containing the following fields: (a) TOLLCLASS (see SetTolls.job); (b) FFT, free
+;            flow travel time for fixed time links (i.e. volume has no impact); (c) LANES, which is the number
+;            of travel lanes. 
+;
+; Output: Five time-of-day-specific highway networks to be used in skimming and assignment. 
+;
+;
+; See also: (1) HwySkims.job, which does the skimming
+;	    (2) SetTolls.job, which sets the toll values in the network
+;	    (3) PrepHwyNet.job, which creates transit background networks and uses PNROK
+;
+; version:  Travel Model One
+; authors:  dto (2014 02 04); dto (2010 08 10)
+;
+;
+; ----------------------------------------------------------------------------------------------------------------
+
+; build a network for each time period
+loop period = 1, 5
+
+   ; exclude park-and-ride links from being built across certain bridges
+   token_benicia_bridge_nopnr   = '; allow park-and-ride' 
+   token_richmond_bridge_nopnr  = 'if ((a = 2341 & b = 2357) | (a = 2242 & b = 2358))  PNROK = 0'
+   token_carquinez_bridge_nopnr = '; allow park-and-ride'
+   token_golden_bridge_nopnr    = 'if ((a = 7319 & b = 7338) | (a = 7315 & b = 7339))  PNROK = 0'      
+   token_bay_bridge_east_nopnr  = 'if ((a = 2784 & b = 2802) | (a = 2803 & b = 2783))  PNROK = 0'
+   token_bay_bridge_west_nopnr  = 'if ((a = 7017 & b = 6971) | (a = 6970 & b = 7016))  PNROK = 0'
+   token_sanmateo_bridge_nopnr  = 'if ((a = 3642 & b = 3649) | (a = 3650 & b = 6381))  PNROK = 0'
+   token_dumbarton_bridge_nopnr = 'if ((a = 3895 & b = 3896) | (a = 3880 & b = 5938))  PNROK = 0'
+   token_antioch_bridge_nopnr   = '; allow park-and-ride'
+     
+   ; a two letter token is used for each time period
+   if (period = 1)   
+   
+      token_period = 'EA' 
+      
+      ; turn HOV into free flow
+      token_hov_to_freeflow = 'if (USE = 2 | USE = 3) USE = 1'
+      
+      ; reversible infrastructure
+      token_golden_gate_nb_lanes = '2'
+      token_golden_gate_sb_lanes = '4'
+      
+      token_sterling_onramp = 'USE = 1'
+      
+      ; shared ride bridge delay by-pass links
+      token_carquinez_bridge_sr_bypass = 'if (a = 9344  & b = 9345)  delete'
+      token_bay_bridge_sr_bypass       = 'if (a = 9867  & b = 9869)  delete'
+      token_sanmateo_bridge_sr_bypass  = 'if (a = 11123 & b = 10183) delete'
+      token_dumbarton_bridge_sr_bypass = 'if (a = 9894  & b = 9895)  delete'
+      
+  
+   elseif (period = 2)   
+      token_period = 'AM'
+      
+       ; do not turn HOV into free flow
+      token_hov_to_freeflow = '; do not turn HOV into free flow'
+      
+      ; reversible infrastructure
+      token_golden_gate_nb_lanes = '2'
+      token_golden_gate_sb_lanes = '4'
+      
+      token_sterling_onramp = 'USE = 1'
+      
+      ; shared ride bridge delay by-pass links
+      token_carquinez_bridge_sr_bypass = '; do not delete the link'
+      token_bay_bridge_sr_bypass       = '; do not delete the link'
+      token_sanmateo_bridge_sr_bypass  = '; do not delete the link'
+      token_dumbarton_bridge_sr_bypass = '; do not delete the link'
+  
+  
+   elseif (period = 3)   
+      token_period = 'MD' 
+      
+      ; turn HOV into free flow
+      token_hov_to_freeflow = 'if (USE = 2 | USE = 3) USE = 1'
+  
+      ; reversible infrastructure
+      token_golden_gate_nb_lanes = '2'
+      token_golden_gate_sb_lanes = '4'
+      
+      token_sterling_onramp = 'USE = 1'
+      
+      ; shared ride bridge delay by-pass links
+      token_carquinez_bridge_sr_bypass = 'if (a = 9344  & b = 9345)  delete'
+      token_bay_bridge_sr_bypass       = 'if (a = 9867  & b = 9869)  delete'
+      token_sanmateo_bridge_sr_bypass  = 'if (a = 11123 & b = 10183) delete'
+      token_dumbarton_bridge_sr_bypass = 'if (a = 9894  & b = 9895)  delete'
+
+  
+   elseif (period = 4)   
+      token_period = 'PM'
+      
+       ; do not turn HOV into free flow
+      token_hov_to_freeflow = '; do not turn HOV into free flow'
+      
+      ; reversible infrastructure
+      token_golden_gate_nb_lanes = '4'
+      token_golden_gate_sb_lanes = '2'
+      
+      token_sterling_onramp = 'USE = 3'
+      
+      ; shared ride bridge delay by-pass links
+      token_carquinez_bridge_sr_bypass = '; do not delete the link'
+      token_bay_bridge_sr_bypass       = '; do not delete the link'
+      token_sanmateo_bridge_sr_bypass  = '; do not delete the link'
+      token_dumbarton_bridge_sr_bypass = '; do not delete the link'
+      
+  
+   elseif (period = 5)   
+      token_period = 'EV'
+      
+      ; turn HOV into free flow
+      token_hov_to_freeflow = 'if (USE = 2 | USE = 3) USE = 1'
+      
+      ; reversible infrastructure
+      token_golden_gate_nb_lanes = '4'
+      token_golden_gate_sb_lanes = '2'
+      
+      token_sterling_onramp = 'USE = 1'
+      
+      ; shared ride bridge delay by-pass links
+      token_carquinez_bridge_sr_bypass = 'if (a = 9344  & b = 9345)  delete'
+      token_bay_bridge_sr_bypass       = 'if (a = 9867  & b = 9869)  delete'
+      token_sanmateo_bridge_sr_bypass  = 'if (a = 11123 & b = 10183) delete'
+      token_dumbarton_bridge_sr_bypass = 'if (a = 9894  & b = 9895)  delete'
+
+      
+   endif
+   
+   
+   run pgm = hwynet
+
+      ; begin with the input network with tolls added
+      neti = hwy\withTolls.net
+     
+      ; write out to the same name with the added variables   
+      neto = hwy\avgload@token_period@.net
+      
+      ; set the time-period-specific congested times to free-flow times
+      CTIM = FFT
+      
+      ; turn hov lanes off
+      @token_hov_to_freeflow@
+      
+      ; disallow park-and-ride across certain bridges
+      PNROK = 1
+      @token_benicia_bridge_nopnr@   
+      @token_richmond_bridge_nopnr@  
+      @token_carquinez_bridge_nopnr@ 
+      @token_golden_bridge_nopnr@         
+      @token_bay_bridge_east_nopnr@  
+      @token_bay_bridge_west_nopnr@  
+      @token_sanmateo_bridge_nopnr@  
+      @token_dumbarton_bridge_nopnr@ 
+      @token_antioch_bridge_nopnr@ 
+      
+      
+      ; golden gate bridge reversible lanes
+      if (a = 7317 & b = 7315) LANES = @token_golden_gate_sb_lanes@
+      if (a = 7315 & b = 7339) LANES = @token_golden_gate_sb_lanes@
+      if (a = 7339 & b = 7322) LANES = @token_golden_gate_sb_lanes@
+      if (a = 7322 & b = 7323) LANES = @token_golden_gate_sb_lanes@
+      if (a = 7323 & b = 7001) LANES = @token_golden_gate_sb_lanes@
+      if (a = 7001 & b = 7325) LANES = @token_golden_gate_sb_lanes@
+      
+      if (a = 7324 & b = 7004) LANES = @token_golden_gate_nb_lanes@
+      if (a = 7004 & b = 7320) LANES = @token_golden_gate_nb_lanes@
+      if (a = 7320 & b = 7319) LANES = @token_golden_gate_nb_lanes@
+      if (a = 7319 & b = 7338) LANES = @token_golden_gate_nb_lanes@
+      if (a = 7338 & b = 7318) LANES = @token_golden_gate_nb_lanes@
+      if (a = 7318 & b = 7316) LANES = @token_golden_gate_nb_lanes@
+      
+      ; sterling on-ramp
+      if (a = 7432 & b = 7017) @token_sterling_onramp@
+      
+      
+      ; benecia martinez bridge (no shared ride by-pass link)
+      
+      ; carquinez bridge
+      @token_carquinez_bridge_sr_bypass@
+      
+      ; richmond san rafael bridge (no shared ride by-pass link)
+      
+      ; golden gate bridge (no shared ride by-pass link)
+      
+      ; bay bridge
+      @token_bay_bridge_sr_bypass@ 
+            
+      ; san mateo bridge
+      @token_sanmateo_bridge_sr_bypass@ 
+            
+      ; dumbarton bridge
+      @token_dumbarton_bridge_sr_bypass@
+                  
+      ; antioch bridge (no shared ride by-pass link)
+            
+        
+   endrun
+
+    ; allow buses on shoulders during AM and PM peak
+    RUN PGM=network
+        NETI[2] = hwy\avgload@token_period@.net
+        LINKI[1]= "hwy\mod_links_BRT.csv", VAR=A,B,_PROJECT(C),_PROJ_BRT_EA,_PROJ_BRT_AM,_PROJ_BRT_MD,_PROJ_BRT_PM,_PROJ_BRT_EV START=(substr(record,1,2)='A,B,')
+        NETO    = hwy\avgload_BRT3@token_period@.net, EXCLUDE=_PROJ_BRT_EA,_PROJ_BRT_AM,_PROJ_BRT_MD,_PROJ_BRT_PM,_PROJ_BRT_EV
+
+        PHASE=LINKMERGE
+
+            IF (LI.1._PROJECT != '')
+                PROJ = LI.1._PROJECT
+                BRT = LI.1._PROJ_BRT_@token_period@
+            ENDIF
+
+        ENDPHASE
+
+    ENDRUN
+    *copy /y hwy\avgload_BRT3@token_period@.net hwy\avgload@token_period@.net
+
+   
+endloop ; token_period
+

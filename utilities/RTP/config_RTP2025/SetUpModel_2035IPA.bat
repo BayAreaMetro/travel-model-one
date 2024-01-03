@@ -43,7 +43,7 @@ set PREV_RUN_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160
 set PARAMS=X:\travel-model-one-master\utilities\RTP\config_RTP2025\params_2035_IPA.properties
 
 :: set the location of the overrides directory (for Blueprint strategies)
-set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-overrides
+set BP_OVERRIDE_DIR=%GITHUB_DIR%\utilities\RTP\strategy_overrides
 
 :: ------------------------------------------------------------------------------------------------------
 ::
