@@ -22,7 +22,7 @@ pd.set_option('display.width', 500)
 USAGE = """
 
 
-  This script reads "L:\\RTP2021_PPA\\Projects\\PPAMasterInput.xlsx"
+  This script reads "L:\\RTP2025_PPA\\Projects\\PPAMasterInput.xlsx"
   It also reads transit_crowding.csv. i.e. Prior to running this script, TransitCrowding.py needs to be executed.
 
   It calculates the project_metrics_dir and produces:
@@ -699,7 +699,7 @@ class RunResults:
 
             # copy Tableau template into the project folder for mapping
             cs_tableau_filename = os.path.join(debug_dir, "consumer_surplus_{}.twb".format(config['Foldername - Future']))
-            cs_tableau_template="\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\PBA40\\metrics\\consumer_surplus.twb"
+            cs_tableau_template = os.path.join(os.path.dirname(__file__), "consumer_surplus.twb")
             copyfile(cs_tableau_template, cs_tableau_filename)
             print("Copied file to {}".format(cs_tableau_filename))
 
