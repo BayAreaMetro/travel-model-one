@@ -155,6 +155,13 @@ if %COMPUTER_SETTING%==MED (
 	copy CTRAMP\scripts\block\HwyIntraStep_32.block CTRAMP\scripts\block\HwyIntraStep.block
 )
 
+if %MODEL_YEAR% LSS 2035 (
+  copy CTRAMP\scripts\skims\TransitSkims_before_2035.job CTRAMP\scripts\skims\TransitSkims.job
+) else (
+  copy CTRAMP\scripts\skims\TransitSkims_2035_and_beyond.job CTRAMP\scripts\skims\TransitSkims.job
+)
+
+
 ::convert the landuse file from dbf to csv
 "%R_HOME%"\RScript.exe --vanilla %BASE_SCRIPTS%\preprocess\create_landuse_csv.R %MODEL_DIR%/landuse/ > create_landuse_csv.log 2>&1
 if ERRORLEVEL 1 goto done
