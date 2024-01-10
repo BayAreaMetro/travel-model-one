@@ -224,9 +224,6 @@ loop period = 1, 5
       ; hwyParam.bock contains variables used in the remainder of the script, particularly in the generalized cost expressions
       read file = ctramp\scripts\block\hwyparam.block
 
-      ; read in the speed/capacity table
-      read file = ctramp\scripts\block\SpeedCapacity_1hour.block
-
       ; set the working variables
       phase = linkread
 		 ; the time variable is congested time specific to each time period
