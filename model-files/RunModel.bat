@@ -161,6 +161,12 @@ if %MODEL_YEAR% LSS 2035 (
   copy CTRAMP\scripts\skims\TransitSkims_2035_and_beyond.job CTRAMP\scripts\skims\TransitSkims.job
 )
 
+if %MODEL_YEAR% LSS 2030 (
+  copy CTRAMP\scripts\block\SpdCap_Lookup_before_2030.DAT CTRAMP\scripts\block\SpdCap_Lookup.DAT
+) else (
+  copy CTRAMP\scripts\block\SpdCap_Lookup_2030to2050.DAT CTRAMP\scripts\block\SpdCap_Lookup.DAT
+)
+
 
 ::convert the landuse file from dbf to csv
 "%R_HOME%"\RScript.exe --vanilla %BASE_SCRIPTS%\preprocess\create_landuse_csv.R %MODEL_DIR%/landuse/ > create_landuse_csv.log 2>&1
