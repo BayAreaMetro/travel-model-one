@@ -31,7 +31,7 @@ SET computer_prefix=%computername:~0,4%
 if "%COMPUTER_PREFIX%" == "WIN-" (
     call "%R_HOME%\bin\x64\Rscript.exe" TollCalib_CheckSpeeds.R
 ) else (
-    call "%R_HOME%\bin\x64\Rscript.exe" "X:\travel-model-one-master\utilities\toll_calibration\TollCalib_CheckSpeeds.R"
+    call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\toll_calibration\TollCalib_CheckSpeeds.R"
 )
 IF %ERRORLEVEL% NEQ 0 goto done
 
