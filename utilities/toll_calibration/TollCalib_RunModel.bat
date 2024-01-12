@@ -143,6 +143,7 @@ if %ITER%==4 (
     copy "%MODEL_BASE_DIR%\nonres\tripsIx??.tpp"     nonres\
     copy "%MODEL_BASE_DIR%\nonres\tripsTrk??.tpp"    nonres\
     copy "%MODEL_BASE_DIR%\nonres\tripsAirPax??.tpp" nonres\
+    copy "%MODEL_BASE_DIR%\nonres\tripsHsr??.tpp" nonres\
 
     mkdir logs
 )
