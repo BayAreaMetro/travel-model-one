@@ -325,6 +325,9 @@ if %ITER%==4 (
 
     mkdir INPUT\landuse
     c:\windows\system32\Robocopy.exe /E "%MODEL_BASE_DIR%\landuse" INPUT\landuse
+
+    mkdir INPUT\hwy
+    copy "%MODEL_BASE_DIR%\hwy\tolls.csv"             INPUT\hwy\tolls.csv
 )
 
 :: used by core java processes
