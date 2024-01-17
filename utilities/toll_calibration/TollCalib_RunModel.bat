@@ -236,8 +236,8 @@ set PROJECT_DIR=%cd%
 if "%COMPUTER_PREFIX%" == "WIN-" (
     call "%R_HOME%\bin\x64\Rscript.exe" TollCalib_CheckSpeeds.R
 ) else (
-    call "%R_HOME%\bin\x64\Rscript.exe" "\\mainmodel\MainModelShare\travel-model-one-master\utilities\toll_calibration\TollCalib_CheckSpeeds.R"
-    python "\\mainmodel\MainModelShare\travel-model-one-master\utilities\toll_calibration\TollCalib_stop.py"
+    call "%R_HOME%\bin\x64\Rscript.exe" "X:\travel-model-one-master\utilities\toll_calibration\TollCalib_CheckSpeeds.R"
+    python "X:\travel-model-one-master\utilities\toll_calibration\TollCalib_stop.py"
 )
 
 :: copy the output back to L
