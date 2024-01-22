@@ -65,9 +65,6 @@ if %ITER% NEQ 4 (
 if %ITER%==4 (
     :: Use the same CTRAMP as the BASE
     c:\windows\system32\Robocopy.exe /MIR "%MODEL_BASE_DIR%\CTRAMP"           CTRAMP
-
-    :: use a special mtcTourBased.properties to turn off workplace shadow pricing to reduce run time
-    copy /Y "X:\travel-model-one-master\utilities\toll_calibration\mtcTourBased_WorkplaceShadowPricingOff.properties"  CTRAMP\runtime\mtcTourBased.properties
     
     c:\windows\system32\Robocopy.exe /MIR "%MODEL_BASE_DIR%\INPUT\hwy"        hwy
 )
