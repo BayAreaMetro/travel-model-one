@@ -1,6 +1,8 @@
 # travel-model-one
 The Metropolitan Transportation Commission (MTC) maintains a simulation model of typical weekday travel to assist in regional planning activities.  MTC makes the software and scripts necessary to implement the model as well as detailed model results available to the public.  Users of the model and/or the model's results are entirely responsible for the outcomes, interpretations, and conclusions they reach from the information.  Users of the MTC model or model results shall in no way imply MTC's support or review of their findings or analyses.
 
+This transit_2050_tm15110 branch is based on TM1.5.1.10.  Updates were made to run on Azure VMs as part of the Transit 2050 work.  Branch was rebased ontop of https://github.com/BayAreaMetro/travel-model-one/tree/transit_2050_ppa on Jan 26, 2024.
+
 ## Model Versions
 The following model versions are available in the repository:
 

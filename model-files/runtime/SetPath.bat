@@ -11,7 +11,7 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 set JAVA_PATH=C:\Program Files\Java\jdk1.8.0_181
 
 :: The location of the GAWK binary executable files
-set GAWK_PATH=E:\code\TM151\travel-model-one\utilities\gawk
+set GAWK_PATH=Z:\RTP2025_PPA\code\TM151\travel-model-one\utilities\gawk
 if "%COMPUTER_PREFIX%" == "WIN-" (
   set GAWK_PATH=C:\Software\Gawk
 )
