@@ -41,50 +41,17 @@ if %NEED_SUMMARY% GTR 0 (
   call "%R_HOME%\bin\x64\Rscript.exe" --vanilla "%CODE_DIR%\CoreSummaries.R"
   IF %ERRORLEVEL% GTR 0 goto done
   echo %DATE% %TIME% ...Done
-  
-  rem This will make all the tdes stale
-  for %%X in (%RDATA%) DO (
-    del "%TARGET_DIR%\core_summaries\%%X.tde"
-  )
 )
 echo.
 
-:: convert the summaries to tde for just this dir
-for %%X in ("%TARGET_DIR%\core_summaries\*.rdata") DO (
-  if not exist "%TARGET_DIR%\core_summaries\%%~nX.tde" (
-    python "%CODE_DIR%\RdataToTableauExtract.py" "%TARGET_DIR%\core_summaries" "%TARGET_DIR%\core_summaries" %%~nxX
-    if %ERRORLEVEL% GTR 0 goto done
-    
-    echo.
-  )
-)
-
-:: convert the avgload5period.csv
-if not exist "%TARGET_DIR%\core_summaries\avgload5period.tde" (
-  python "%CODE_DIR%\csvToTableauExtract.py" "%TARGET_DIR%\hwy\iter%ITER%" "%TARGET_DIR%\core_summaries" avgload5period.csv
-  if %ERRORLEVEL% GTR 0 goto done
-  
-  echo.
-)
+::
+:: Jan 2024 - don't try to build tableau extracts
+::
 
 :: create trn\trnline.csv
 if not exist "%TARGET_DIR%\trn\trnline.csv" (
   call "%R_HOME%\bin\x64\Rscript.exe" "%CODE_DIR%\ConsolidateLoadedTransit.R"
   IF %ERRORLEVEL% GTR 0 goto done
-)
-
-:: convert the transit files
-if not exist "%TARGET_DIR%\core_summaries\trnline.tde" (
-  FOR %%H in (EA AM MD PM EV) DO (
-    FOR %%J in (loc lrf exp hvy com) DO (
-      rem walk -> transit -> walk
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append "%TARGET_DIR%\trn\TransitAssignment.iter%ITER%" "%TARGET_DIR%\core_summaries" trnline%%H_wlk_%%J_wlk.csv
-      rem drive -> transit -> walk
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv" --append "%TARGET_DIR%\trn\TransitAssignment.iter%ITER%" "%TARGET_DIR%\core_summaries" trnline%%H_drv_%%J_wlk.csv      
-      rem walk -> transit -> drive
-      python "%CODE_DIR%\csvToTableauExtract.py" --header "name,mode,owner,frequency,line time,line dist,total boardings,passenger miles,passenger hours,path id" --output trnline.tde --join "%CODE_DIR%\reference-transit-modes.csv"  --append "%TARGET_DIR%\trn\TransitAssignment.iter%ITER%" "%TARGET_DIR%\core_summaries" trnline%%H_wlk_%%J_drv.csv
-    )
-  )
 )
 
 endlocal
