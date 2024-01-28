@@ -147,7 +147,7 @@ class RunResults:
         # if this is a baseline run, then read from configs_base sheet of master input file
         # else this is a project run, then read from configs_projects sheet of master input file
         #if 'CaltrainMod_00' not in rundir:  #for RTFF
-        if len(rundir) > 28:
+        if len(rundir) > 32:
             configs_df = pd.read_excel(self.ppa_master_input, sheet_name='configs_projects', header=0)
             configs_df = configs_df.drop(['Base Model', 'Base ID', 'Future Run', 'Iteration', 'Full Name'], axis=1)
             configs_df.insert(0,'Folder','')
@@ -157,7 +157,9 @@ class RunResults:
             configs_df = pd.read_excel(self.ppa_master_input, sheet_name='configs_base', header=0)
             print(configs_df)
         configs_df = configs_df.T
+        print(configs_df)
         configs_df.columns = configs_df.iloc[0]
+        print(configs_df)
         configs_df = configs_df[1:]
         self.config = configs_df[[rundir]].iloc[:,0]
         self.config['Project Run Dir'] = self.rundir
