@@ -243,6 +243,11 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     MeansBasedCordonFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q1Factor"))
     MeansBasedCordonFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
 
+    # toll cap
+    TripTollCapQ1Factor            = float(get_property(params_filename, params_contents, "TripTollCap_Q1"))
+    TripTollCapFirstXpcOfQ2Factor  = float(get_property(params_filename, params_contents, "TripTollCap_firstXpercentOfQ2"))
+    HhldIncCutOff_forQ2subset      = float(get_property(params_filename, params_contents, "hhldinc_cutoff"))
+
     # WFH factors
     WFHFullTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_FullTimeWorker_Factor"))
     WFHPartTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_PartTimeWorker_Factor"))
@@ -318,6 +323,11 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ2Factor
     replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ1Factor
     replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ2Factor
+
+    # toll cap
+    replacements[filepath]["(\nTripTollCap_Q1[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % TripTollCapQ1Factor
+    replacements[filepath]["(\nTripTollCap_firstXpercentOfQ2[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % TripTollCapFirstXpcOfQ2Factor
+    replacements[filepath]["(\nhhldinc_cutoff[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % HhldIncCutOff_forQ2subset
 
     # WFH factors
     replacements[filepath]["(\nCDAP.WFH.FullTimeWorker.Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WFHFullTimeWorkerFactor
