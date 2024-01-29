@@ -176,7 +176,7 @@ print(paste("Percent of Q1 toll road users paying more than the daily toll cap (
 
 # calculate % of toll road users paying more than the daily toll cap (out of all persons)
 percent_Q1tollRoadUsersPayMoreThanCap_OutOfAllPersons = num_Q1tollRoadUsersPayMoreThanCap / total_population
-print(paste("Percent of Q1 toll road users paying more than the daily toll cap (out of all persons) =", percent_Q1personPayMoreThanCap_OutOfAllPersons))
+print(paste("Percent of Q1 toll road users paying more than the daily toll cap (out of all persons) =", percent_Q1tollRoadUsersPayMoreThanCap_OutOfAllPersons))
 # results: Putting the number of Q1 toll road users who pay more than the cap in context. This is about 6% of the population.
 
 #-----------------------------------------------
