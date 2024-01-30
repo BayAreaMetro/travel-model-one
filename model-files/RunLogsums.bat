@@ -19,7 +19,7 @@ echo on
 call CTRAMP\runtime\SetPath.bat
 
 ::  Set the IP address of the host machine which sends tasks to the client machines 
-if %computername%==MODEL2-A set HOST_IP_ADDRESS=192.168.1.206
+if %computername%==MODEL2-A set HOST_IP_ADDRESS=10.1.1.206
 if %computername%==MODEL2-B set HOST_IP_ADDRESS=192.168.1.207
 if %computername%==MODEL2-C set HOST_IP_ADDRESS=192.168.1.208
 if %computername%==MODEL2-D set HOST_IP_ADDRESS=192.168.1.209
