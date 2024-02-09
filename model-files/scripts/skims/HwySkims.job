@@ -358,6 +358,9 @@ loop period = 1, 5
    
       ; give each period thread more threads to work with   
       ;DistributeIntrastep processid = 'ctramp', processlist = 1-4, commpath = '%COMMPATH%', saveprn = f
+
+      ; block file containing highway parameters
+      read file=ctramp\scripts\block\hwyparam.block
       
       ; drive alone skim
       mati[1] = skims\DA_@token_period@.tpp
@@ -405,7 +408,7 @@ loop period = 1, 5
       mw[4]   = mi.1.TOLLTIMEDA
       mw[5]   = mi.1.TOLLDISTDA
       mw[6]   = mi.1.TOLLBTOLLDA
-      mw[7]   = mi.1.TOLLVTOLLDA
+      mw[7]   = max(mi.1.TOLLVTOLLDA, min_vtoll)
       
       ; shared ride 2
       mw[8]   = mi.2.TIMES2
@@ -414,7 +417,7 @@ loop period = 1, 5
       mw[11]  = mi.2.TOLLTIMES2
       mw[12]  = mi.2.TOLLDISTS2
       mw[13]  = mi.2.TOLLBTOLLS2
-      mw[14]  = mi.2.TOLLVTOLLS2
+      mw[14]  = max(mi.2.TOLLVTOLLS2, min_vtoll)
       
       ; shared ride 3+
       mw[15]  = mi.3.TIMES3
@@ -423,7 +426,7 @@ loop period = 1, 5
       mw[18]  = mi.3.TOLLTIMES3
       mw[19]  = mi.3.TOLLDISTS3
       mw[20]  = mi.3.TOLLBTOLLS3
-      mw[21]  = mi.3.TOLLVTOLLS3
+      mw[21]  = max(mi.3.TOLLVTOLLS3, min_vtoll)
       
       ; very small trucks
       mw[22]  = mi.4.TIMEVSM
@@ -432,7 +435,7 @@ loop period = 1, 5
       mw[25]  = mi.4.TOLLTIMEVSM
       mw[26]  = mi.4.TOLLDISTVSM
       mw[27]  = mi.4.TOLLBTOLLVSM
-      mw[28]  = mi.4.TOLLVTOLLVSM
+      mw[28]  = max(mi.4.TOLLVTOLLVSM, min_vtoll)
       
       ; small trucks
       mw[29]  = mi.5.TIMESML
@@ -441,7 +444,7 @@ loop period = 1, 5
       mw[32]  = mi.5.TOLLTIMESML
       mw[33]  = mi.5.TOLLDISTSML
       mw[34]  = mi.5.TOLLBTOLLSML
-      mw[35]  = mi.5.TOLLVTOLLSML
+      mw[35]  = max(mi.5.TOLLVTOLLSML, min_vtoll)
       
       ; medium trucks
       mw[36]  = mi.6.TIMEMED
@@ -450,7 +453,7 @@ loop period = 1, 5
       mw[39]  = mi.6.TOLLTIMEMED
       mw[40]  = mi.6.TOLLDISTMED
       mw[41]  = mi.6.TOLLBTOLLMED
-      mw[42]  = mi.6.TOLLVTOLLMED
+      mw[42]  = max(mi.6.TOLLVTOLLMED, min_vtoll)
       
       ; large trucks
       mw[43]  = mi.7.TIMELRG
@@ -459,7 +462,7 @@ loop period = 1, 5
       mw[46]  = mi.7.TOLLTIMELRG
       mw[47]  = mi.7.TOLLDISTLRG
       mw[48]  = mi.7.TOLLBTOLLLRG
-      mw[49]  = mi.7.TOLLVTOLLLRG
+      mw[49]  = max(mi.7.TOLLVTOLLLRG, min_vtoll)
       
    endrun
    
