@@ -6,15 +6,15 @@ USAGE = """
   Processes model outputs and creates a single csv with scenario metrics, called metrics\Safe2_change_in_vmt_XX.csv
   
   This file will have the following columns:
-    'grouping1',
-    'grouping2',
-    'grouping3',
-    'modelrun_id',
-    'metric_id',
-    'intermediate/final', 
-    'key',
-    'metric_desc',
-    'county',
+    'Freeway/Non-Freeway',
+    'EPC/Non-EPC',
+    'Tolled/Non-tolled Facilities',
+    'Model Run ID',
+    'Metric ID',
+    'Intermediate/Final', 
+    'Facility Type Definition',
+    'Metric Description',
+    'County',
     'value'
     
   Metrics are:
@@ -46,16 +46,16 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     and VMT segmented by whether or not the links are located in Equity Priority Communities (EPC) TAZS.
 
     Args:
-        tm_run_id (str): Travel model run ID
+        tm_run_id (str): Income Level/Travel model run ID
     
     Returns:
         pd.DataFrame: with columns including
-          metric_id          = 'Safe2'
-          modelrun_id        = tm_run_id
-          intermediate/final = final
+          Metric ID          = 'Safe2'
+          Model Run ID        = tm_run_id
+          Intermediate/Final = final
         Metrics return:
-          grouping1              key                                    metric_desc
-          Income Level           inc[1234]                              VMT|VHT  (category breakdown)
+          Freeway/Non-Freeway              Facility Type Definition                                    Metric Description
+          Household/Non-Household           inc[1234]                              VMT|VHT  (category breakdown)
           Non-Household          air|ix|zpv_tnc                         VMT|VHT
           Truck                  truck                                  VMT|VHT
           Freeway|Non-Freeway    Freeway|Arterial|Collector|Expressway  VMT|VHT  (facility type breakdown)
@@ -67,7 +67,6 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     * vmt_vht_metrics_by_taz.csv (for EPC/non-EPC breakdown)
     """
     METRIC_ID = 'Safe 2'
-    metric_id = METRIC_ID
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
 
     # read network-based auto times
@@ -76,14 +75,14 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     LOGGER.info("  Read {:,} rows from {}".format(len(auto_times_df), auto_times_file))
 
     # we'll summarize by these
-    auto_times_df['grouping1'] = 'Income Level'
-    auto_times_df['key']      = auto_times_df['Income']  # for households, use income
-    auto_times_df.loc[ auto_times_df.Mode.str.endswith('ix'),  ['grouping1', 'key']] = ['Non-Household', 'ix'     ]
-    auto_times_df.loc[ auto_times_df.Mode.str.endswith('air'), ['grouping1', 'key']] = ['Non-Household', 'air'    ]
-    auto_times_df.loc[ auto_times_df.Mode == 'zpv_tnc',        ['grouping1', 'key']] = ['Non-Household', 'zpv_tnc']
-    auto_times_df.loc[ auto_times_df.Mode == 'truck',          ['grouping1', 'key']] = ['Truck',         'truck'  ]
+    auto_times_df['Household/Non-Household'] = 'Household'
+    auto_times_df['Income Level/Travel Mode']      = auto_times_df['Income']  # for households, use income
+    auto_times_df.loc[ auto_times_df.Mode.str.endswith('ix'),  ['Household/Non-Household', 'Income Level/Travel Mode']] = ['Non-Household', 'ix'     ]
+    auto_times_df.loc[ auto_times_df.Mode.str.endswith('air'), ['Household/Non-Household', 'Income Level/Travel Mode']] = ['Non-Household', 'air'    ]
+    auto_times_df.loc[ auto_times_df.Mode == 'zpv_tnc',        ['Household/Non-Household', 'Income Level/Travel Mode']] = ['Non-Household', 'zpv_tnc']
+    auto_times_df.loc[ auto_times_df.Mode == 'truck',          ['Household/Non-Household', 'Income Level/Travel Mode']] = ['Truck',         'truck'  ]
 
-    auto_times_df = auto_times_df.groupby(by=['grouping1','key']).agg({'Vehicle Miles':'sum', 'Vehicle Minutes':'sum'}).reset_index()
+    auto_times_df = auto_times_df.groupby(by=['Household/Non-Household','Income Level/Travel Mode']).agg({'Vehicle Miles':'sum', 'Vehicle Minutes':'sum'}).reset_index()
     auto_times_df['VHT'] = auto_times_df['Vehicle Minutes']/60.0
     auto_times_df.drop(columns=['Vehicle Minutes'], inplace=True)
     auto_times_df.rename(columns={'Vehicle Miles':'VMT'}, inplace=True)
@@ -132,7 +131,7 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
         (loaded_network_df['ctimEV']*loaded_network_df['volEV_tot']))/60.0
     
     # https://github.com/BayAreaMetro/modeling-website/wiki/MasterNetworkLookupTables#facility-type-ft
-    ft_to_grouping_key_df = pd.DataFrame(columns=['ft','grouping1','key'], data=[
+    ft_to_grouping_key_df = pd.DataFrame(columns=['ft','Freeway/Non-Freeway','Facility Type Definition'], data=[
         ( 1, 'Freeway',    'Freeway'   ), # freeway-to-freeway connector
         ( 2, 'Freeway',    'Freeway'   ), # freeway
         ( 3, 'Non-Freeway','Expressway'), # expressway
@@ -152,36 +151,36 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     loaded_network_df = pd.merge(left=loaded_network_df, right=ft_to_grouping_key_df, on='ft', how='left')
 
     # Recode
-    loaded_network_df['grouping2'] = 'Non-EPCs'
-    loaded_network_df.loc[ loaded_network_df.taz_epc == 1, 'grouping2'] = 'EPCs'
+    loaded_network_df['EPC/Non-EPC'] = 'Non-EPCs'
+    loaded_network_df.loc[ loaded_network_df.taz_epc == 1, 'EPC/Non-EPC'] = 'EPCs'
 
     # identify tolled arterial links 
-    loaded_network_df['grouping3'] = 'Non-tolled facilities'
-    loaded_network_df.loc[loaded_network_df.tollclass > 700000, 'grouping3'] = 'Tolled facilities'
+    loaded_network_df['Tolled/Non-tolled Facilities'] = 'Non-tolled facilities'
+    loaded_network_df.loc[loaded_network_df.tollclass > 700000, 'Tolled/Non-tolled Facilities'] = 'Tolled facilities'
 
-    # add field for county using TAZ
-    # temporarily replacing 'county' column
+    # add field for County using TAZ
+    # temporarily replacing 'County' column
     # reference: https://github.com/BayAreaMetro/modeling-website/wiki/TazData
-    loaded_network_df['county'] = 'San Francisco'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 190) & (loaded_network_df.TAZ1454 < 347), 'county'] = 'San Mateo'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 346) & (loaded_network_df.TAZ1454 < 715), 'county'] = 'Santa Clara'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 714) & (loaded_network_df.TAZ1454 < 1040), 'county'] = 'Alameda'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1039) & (loaded_network_df.TAZ1454 < 1211), 'county'] = 'Contra Costa'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1210) & (loaded_network_df.TAZ1454 < 1291), 'county'] = 'Solano'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1290) & (loaded_network_df.TAZ1454 < 1318), 'county'] = 'Napa'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1317) & (loaded_network_df.TAZ1454 < 1404), 'county'] = 'Sonoma'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1403) & (loaded_network_df.TAZ1454 < 1455), 'county'] = 'Marin'
+    loaded_network_df['County'] = 'San Francisco'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 190) & (loaded_network_df.TAZ1454 < 347), 'County'] = 'San Mateo'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 346) & (loaded_network_df.TAZ1454 < 715), 'County'] = 'Santa Clara'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 714) & (loaded_network_df.TAZ1454 < 1040), 'County'] = 'Alameda'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1039) & (loaded_network_df.TAZ1454 < 1211), 'County'] = 'Contra Costa'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1210) & (loaded_network_df.TAZ1454 < 1291), 'County'] = 'Solano'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1290) & (loaded_network_df.TAZ1454 < 1318), 'County'] = 'Napa'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1317) & (loaded_network_df.TAZ1454 < 1404), 'County'] = 'Sonoma'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1403) & (loaded_network_df.TAZ1454 < 1455), 'County'] = 'Marin'
 
-    ft_metrics_df = loaded_network_df.groupby(by=['grouping1','key', 'grouping2', 'grouping3', 'county']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
+    ft_metrics_df = loaded_network_df.groupby(by=['Freeway/Non-Freeway','Facility Type Definition', 'EPC/Non-EPC', 'Tolled/Non-tolled Facilities', 'County']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
     LOGGER.debug("ft_metrics_df:\n{}".format(ft_metrics_df))
 
     # put it together, move to long form and return
     metrics_df = pd.concat([auto_times_df, ft_metrics_df])
-    metrics_df = metrics_df.melt(id_vars=['grouping1','key','grouping2', 'grouping3', 'county'], var_name='metric_desc')
-    metrics_df['modelrun_id'] = tm_run_id
-    metrics_df['metric_id'] = METRIC_ID
-    metrics_df['intermediate/final'] = 'final'
-    # metrics_df['year'] = tm_run_id[:4]
+    metrics_df = metrics_df.melt(id_vars=['Freeway/Non-Freeway','Facility Type Definition','EPC/Non-EPC', 'Tolled/Non-tolled Facilities', 'County', 'Household/Non-Household', 'Income Level/Travel Mode'], var_name='Metric Description')
+    metrics_df['Model Run ID'] = tm_run_id
+    metrics_df['Metric ID'] = METRIC_ID
+    metrics_df['Intermediate/Final'] = 'final'
+    metrics_df['Year'] = tm_run_id[:4]
     LOGGER.debug("metrics_df for Safe 2:\n{}".format(metrics_df))
 
     return metrics_df
