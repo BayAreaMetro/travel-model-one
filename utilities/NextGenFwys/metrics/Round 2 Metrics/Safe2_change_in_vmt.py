@@ -14,7 +14,7 @@ USAGE = """
     'intermediate/final', 
     'key',
     'metric_desc',
-    'year',
+    'county',
     'value'
     
   Metrics are:
@@ -40,19 +40,6 @@ LOGGER                  = None # will initialize in main
 NGFS_EPC_TAZ_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_epc_crosswalk.csv")
 NGFS_EPC_TAZ_DF      = pd.read_csv(NGFS_EPC_TAZ_FILE)
 
-METRICS_COLUMNS = [
-    'grouping1',
-    'grouping2',
-    'grouping3',
-    'modelrun_id',
-    'metric_id',
-    'intermediate/final', # TODO: suggest renaming this to 'metric_level' since other options are used beyond intermediate and final
-    'key',
-    'metric_desc',
-    'year',
-    'value'
-]
-
 def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     """ Calculates Safety 2: Change in vehicle miles travelled (VMT) on freeway and non-freeway facilities
     Additionally, calculates VMT segmented by different categories (households by income, non-houehold and trucks)
@@ -62,7 +49,7 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
         tm_run_id (str): Travel model run ID
     
     Returns:
-        pd.DataFrame: with columns a subset of METRICS_COLUMNS, including
+        pd.DataFrame: with columns including
           metric_id          = 'Safe2'
           modelrun_id        = tm_run_id
           intermediate/final = final
@@ -173,24 +160,24 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     loaded_network_df.loc[loaded_network_df.tollclass > 700000, 'grouping3'] = 'Tolled facilities'
 
     # add field for county using TAZ
-    # temporarily replacing 'year' column
+    # temporarily replacing 'county' column
     # reference: https://github.com/BayAreaMetro/modeling-website/wiki/TazData
-    loaded_network_df['year'] = 'San Francisco'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 190) & (loaded_network_df.TAZ1454 < 347), 'year'] = 'San Mateo'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 346) & (loaded_network_df.TAZ1454 < 715), 'year'] = 'Santa Clara'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 714) & (loaded_network_df.TAZ1454 < 1040), 'year'] = 'Alameda'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1039) & (loaded_network_df.TAZ1454 < 1211), 'year'] = 'Contra Costa'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1210) & (loaded_network_df.TAZ1454 < 1291), 'year'] = 'Solano'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1290) & (loaded_network_df.TAZ1454 < 1318), 'year'] = 'Napa'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1317) & (loaded_network_df.TAZ1454 < 1404), 'year'] = 'Sonoma'
-    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1403) & (loaded_network_df.TAZ1454 < 1455), 'year'] = 'Marin'
+    loaded_network_df['county'] = 'San Francisco'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 190) & (loaded_network_df.TAZ1454 < 347), 'county'] = 'San Mateo'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 346) & (loaded_network_df.TAZ1454 < 715), 'county'] = 'Santa Clara'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 714) & (loaded_network_df.TAZ1454 < 1040), 'county'] = 'Alameda'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1039) & (loaded_network_df.TAZ1454 < 1211), 'county'] = 'Contra Costa'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1210) & (loaded_network_df.TAZ1454 < 1291), 'county'] = 'Solano'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1290) & (loaded_network_df.TAZ1454 < 1318), 'county'] = 'Napa'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1317) & (loaded_network_df.TAZ1454 < 1404), 'county'] = 'Sonoma'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1403) & (loaded_network_df.TAZ1454 < 1455), 'county'] = 'Marin'
 
-    ft_metrics_df = loaded_network_df.groupby(by=['grouping1','key', 'grouping2', 'grouping3', 'year']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
+    ft_metrics_df = loaded_network_df.groupby(by=['grouping1','key', 'grouping2', 'grouping3', 'county']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
     LOGGER.debug("ft_metrics_df:\n{}".format(ft_metrics_df))
 
     # put it together, move to long form and return
     metrics_df = pd.concat([auto_times_df, ft_metrics_df])
-    metrics_df = metrics_df.melt(id_vars=['grouping1','key','grouping2', 'grouping3', 'year'], var_name='metric_desc')
+    metrics_df = metrics_df.melt(id_vars=['grouping1','key','grouping2', 'grouping3', 'county'], var_name='metric_desc')
     metrics_df['modelrun_id'] = tm_run_id
     metrics_df['metric_id'] = METRIC_ID
     metrics_df['intermediate/final'] = 'final'
@@ -247,14 +234,7 @@ if __name__ == "__main__":
 
         LOGGER.info("Processing run {}".format(tm_run_id))
 
-        # #temporary run location for testing purposes
-        tm_run_location = os.path.join(NGFS_SCENARIOS, tm_run_id)
-
-        # metric dict input: year
-        year = tm_run_id[:4]
-
         # results will be stored here
-        # key=grouping1, grouping2, grouping3, tm_run_id, metric_id, top_level|extra|intermediate|final, key, metric_desc, year
         # TODO: convert to pandas.DataFrame with these column headings.  It's far more straightforward.
         metrics_df = pd.DataFrame()
 
@@ -262,7 +242,7 @@ if __name__ == "__main__":
         LOGGER.info("@@@@@@@@@@@@@ S2 Done")
 
 
-        metrics_df[METRICS_COLUMNS].loc[(metrics_df['modelrun_id'] == tm_run_id)].to_csv(out_filename, float_format='%.5f', index=False) #, header=False
+        metrics_df.to_csv(out_filename, float_format='%.5f', index=False) #, header=False
         LOGGER.info("Wrote {}".format(out_filename))
 
         # for testing, stop here
