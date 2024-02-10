@@ -46,7 +46,7 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     and VMT segmented by whether or not the links are located in Equity Priority Communities (EPC) TAZS.
 
     Args:
-        tm_run_id (str): Income Level/Travel model run ID
+        tm_run_id (str): Travel model run ID
     
     Returns:
         pd.DataFrame: with columns including
@@ -117,12 +117,28 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
 
     # compute Fwy and Non_Fwy VMT
-    loaded_network_df['VMT'] = \
+    loaded_network_df['Total VMT'] = \
         (loaded_network_df['volEA_tot']+
          loaded_network_df['volAM_tot']+
          loaded_network_df['volMD_tot']+
          loaded_network_df['volPM_tot']+
          loaded_network_df['volEV_tot'])*loaded_network_df['distance']
+        
+    loaded_network_df['EA VMT'] = \
+        (loaded_network_df['volEA_tot'])*loaded_network_df['distance']
+        
+    loaded_network_df['AM VMT'] = \
+        (loaded_network_df['volAM_tot'])*loaded_network_df['distance']
+        
+    loaded_network_df['MD VMT'] = \
+        (loaded_network_df['volMD_tot'])*loaded_network_df['distance']
+        
+    loaded_network_df['PM VMT'] = \
+        (loaded_network_df['volPM_tot'])*loaded_network_df['distance']
+        
+    loaded_network_df['EV VMT'] = \
+        (loaded_network_df['volEV_tot'])*loaded_network_df['distance']
+                    
     loaded_network_df['VHT'] = (\
         (loaded_network_df['ctimEA']*loaded_network_df['volEA_tot']) + \
         (loaded_network_df['ctimAM']*loaded_network_df['volAM_tot']) + \
@@ -159,7 +175,6 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     loaded_network_df.loc[loaded_network_df.tollclass > 700000, 'Tolled/Non-tolled Facilities'] = 'Tolled facilities'
 
     # add field for County using TAZ
-    # temporarily replacing 'County' column
     # reference: https://github.com/BayAreaMetro/modeling-website/wiki/TazData
     loaded_network_df['County'] = 'San Francisco'
     loaded_network_df.loc[(loaded_network_df.TAZ1454 > 190) & (loaded_network_df.TAZ1454 < 347), 'County'] = 'San Mateo'
@@ -171,7 +186,13 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1317) & (loaded_network_df.TAZ1454 < 1404), 'County'] = 'Sonoma'
     loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1403) & (loaded_network_df.TAZ1454 < 1455), 'County'] = 'Marin'
 
-    ft_metrics_df = loaded_network_df.groupby(by=['Freeway/Non-Freeway','Facility Type Definition', 'EPC/Non-EPC', 'Tolled/Non-tolled Facilities', 'County']).agg({'VMT':'sum', 'VHT':'sum'}).reset_index()
+    ft_metrics_df = loaded_network_df.groupby(by=['Freeway/Non-Freeway','Facility Type Definition', 'EPC/Non-EPC', 'Tolled/Non-tolled Facilities', 'County']).agg({'Total VMT':'sum', \
+                                                                                                                                                                   'VHT':'sum', \
+                                                                                                                                                                   'EA VMT':'sum', \
+                                                                                                                                                                   'AM VMT':'sum', \
+                                                                                                                                                                   'MD VMT':'sum', \
+                                                                                                                                                                   'PM VMT':'sum', \
+                                                                                                                                                                   'EV VMT':'sum'}).reset_index()
     LOGGER.debug("ft_metrics_df:\n{}".format(ft_metrics_df))
 
     # put it together, move to long form and return
