@@ -26,11 +26,13 @@ import os
 import pandas as pd
 import argparse
 import logging
+import numpy
 
 # paths
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
+NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
 LOG_FILE                = "Safe2_change_in_vmt.log" # in the cwd
@@ -115,6 +117,9 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     
     loaded_network_df = pd.merge(left= loaded_network_df, right= tm_network_links_with_epc_df, left_on= ['a','b'], right_on= ['A', 'B'], how='left')
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
+    
+    # join to tolled minor group freeway links lookup table 
+    loaded_network_df = pd.merge(left=loaded_network_df, right=TOLLED_FWY_MINOR_GROUP_LINKS_DF, how='left', left_on=['a','b'], right_on=['a','b'])
 
     # compute Fwy and Non_Fwy VMT
     loaded_network_df['Total VMT'] = \
@@ -176,7 +181,8 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
 
     # add field for County using TAZ
     # reference: https://github.com/BayAreaMetro/modeling-website/wiki/TazData
-    loaded_network_df['County'] = 'San Francisco'
+    loaded_network_df['County'] = 'NA'
+    loaded_network_df.loc[(loaded_network_df.TAZ1454 > 0) & (loaded_network_df.TAZ1454 < 191), 'County'] = 'San Francisco'
     loaded_network_df.loc[(loaded_network_df.TAZ1454 > 190) & (loaded_network_df.TAZ1454 < 347), 'County'] = 'San Mateo'
     loaded_network_df.loc[(loaded_network_df.TAZ1454 > 346) & (loaded_network_df.TAZ1454 < 715), 'County'] = 'Santa Clara'
     loaded_network_df.loc[(loaded_network_df.TAZ1454 > 714) & (loaded_network_df.TAZ1454 < 1040), 'County'] = 'Alameda'
@@ -185,19 +191,23 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1290) & (loaded_network_df.TAZ1454 < 1318), 'County'] = 'Napa'
     loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1317) & (loaded_network_df.TAZ1454 < 1404), 'County'] = 'Sonoma'
     loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1403) & (loaded_network_df.TAZ1454 < 1455), 'County'] = 'Marin'
+    
+    # fill empty collumns of DF with a string to retain al values in the DF
+    loaded_network_df.grouping = loaded_network_df.grouping.fillna('NA')
+    loaded_network_df.grouping_dir = loaded_network_df.grouping_dir.fillna('NA')
 
-    ft_metrics_df = loaded_network_df.groupby(by=['Freeway/Non-Freeway','Facility Type Definition', 'EPC/Non-EPC', 'Tolled/Non-tolled Facilities', 'County']).agg({'Total VMT':'sum', \
-                                                                                                                                                                   'VHT':'sum', \
-                                                                                                                                                                   'EA VMT':'sum', \
-                                                                                                                                                                   'AM VMT':'sum', \
-                                                                                                                                                                   'MD VMT':'sum', \
-                                                                                                                                                                   'PM VMT':'sum', \
-                                                                                                                                                                   'EV VMT':'sum'}).reset_index()
+    ft_metrics_df = loaded_network_df.groupby(by=['Freeway/Non-Freeway','Facility Type Definition', 'EPC/Non-EPC', 'Tolled/Non-tolled Facilities', 'County', 'grouping', 'grouping_dir']).agg({'Total VMT':'sum', \
+                                                                                                                                                                                               'VHT':'sum', \
+                                                                                                                                                                                               'EA VMT':'sum', \
+                                                                                                                                                                                               'AM VMT':'sum', \
+                                                                                                                                                                                               'MD VMT':'sum', \
+                                                                                                                                                                                               'PM VMT':'sum',\
+                                                                                                                                                                                               'EV VMT':'sum'}).reset_index()
     LOGGER.debug("ft_metrics_df:\n{}".format(ft_metrics_df))
 
     # put it together, move to long form and return
     metrics_df = pd.concat([auto_times_df, ft_metrics_df])
-    metrics_df = metrics_df.melt(id_vars=['Freeway/Non-Freeway','Facility Type Definition','EPC/Non-EPC', 'Tolled/Non-tolled Facilities', 'County', 'Household/Non-Household', 'Income Level/Travel Mode'], var_name='Metric Description')
+    metrics_df = metrics_df.melt(id_vars=['Freeway/Non-Freeway','Facility Type Definition','EPC/Non-EPC', 'Tolled/Non-tolled Facilities', 'County', 'grouping', 'grouping_dir', 'Household/Non-Household', 'Income Level/Travel Mode'], var_name='Metric Description')
     metrics_df['Model Run ID'] = tm_run_id
     metrics_df['Metric ID'] = METRIC_ID
     metrics_df['Intermediate/Final'] = 'final'
@@ -205,6 +215,77 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     LOGGER.debug("metrics_df for Safe 2:\n{}".format(metrics_df))
 
     return metrics_df
+
+def determine_tolled_minor_group_links(tm_run_id: str, fwy_or_arterial: str) -> pd.DataFrame:
+    """ Given a travel model run ID, reads the loaded network and the tollclass designations,
+    and returns a table that will be used to define which links belong to which tollclass minor grouping.
+
+    If fwy_or_arterial == "fwy",      tm_run_id should be a Pathway 1 model run, and this will return tolled freeway links
+    If fwy_or_arterial == "arterial", tm_run_id should be a Pathway 2 model run, and this will return arterial freeway links
+
+    This replaces 'Input Files\\a_b_with_minor_groupings.csv' because this uses the model network information directly
+
+    Args:
+        tm_run_id (str):      travel model run ID (should be Pathway 1 or 2)
+        fwy_or_arterial(str): one of "fwy" or "arterial"
+
+    Returns:
+        pd.DataFrame: mapping from links to tollclass minor groupings.  Columns:
+        a (int):              link A node
+        b (int):              link B node
+        grouping (str):       minor grouping without direction, e.g. EastBay_68024980, EastBay_880680, etc.
+        grouping_dir (str):   either AM or PM for the grouping
+    """
+    if fwy_or_arterial not in ["fwy","arterial"]: raise ValueError
+
+    LOGGER.info("=== determine_tolled_minor_group_links({}, {}) ===".format(tm_run_id, fwy_or_arterial))
+    loaded_roadway_network = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
+    tm_loaded_network_df = pd.read_csv(loaded_roadway_network, 
+                                       usecols=['a','b','tollclass','ft'],
+                                       dtype={'a':numpy.int64, 'b':numpy.int64, 'tollclass':numpy.int64},
+                                       na_values=[''])
+    LOGGER.info("  Read {:,} rows from {}".format(len(tm_loaded_network_df), loaded_roadway_network))
+
+    # read toll class groupings
+    tollclass_df = pd.read_excel(NGFS_TOLLCLASS_FILE)
+    LOGGER.info("  Read {:,} rows from {}".format(len(tollclass_df), NGFS_TOLLCLASS_FILE))
+    # select NextGenFwy tollclasses where 'Grouping minor' exists
+    tollclass_df = tollclass_df.loc[(tollclass_df.project == 'NextGenFwy') & pd.notna(tollclass_df['Grouping minor'])]
+
+    # See TOLLCLASS_Designations.xlsx workbook, Readme - numbering convention
+    if fwy_or_arterial == "fwy":
+        tollclass_df = tollclass_df.loc[tollclass_df.tollclass > 900000]
+    elif fwy_or_arterial == "arterial":
+        tollclass_df = tollclass_df.loc[(tollclass_df.tollclass > 700000) & 
+                                        (tollclass_df.tollclass < 900000)]
+
+    LOGGER.info("  Filtered to {:,} rows for project=='NextGenFwy' with notna 'Grouping minor' and tollclass appropriate to {}".format(
+        len(tollclass_df), fwy_or_arterial))
+    # LOGGER.info("  Grouping minor: {}".format(sorted(tollclass_df['Grouping minor'].to_list())))
+
+    # add to loaded roadway network -- INNER JOIN
+    grouping_df = pd.merge(
+        left=tm_loaded_network_df,
+        right=tollclass_df[['tollclass','Grouping minor']],
+        on=['tollclass'],
+        how='inner'
+    )
+    # remove rows with 'Minor grouping' that doesn't end in AM or PM
+    grouping_df = grouping_df.loc[
+        grouping_df['Grouping minor'].str.endswith('_AM') |
+        grouping_df['Grouping minor'].str.endswith('_PM')
+    ]
+
+    # log the facility type summary
+    LOGGER.debug("  Tolled {} facility types:\n{}".format(fwy_or_arterial, grouping_df['ft'].value_counts()))
+
+    # split 'Grouping minor' to 'grouping' (now without direction) and 'grouping_dir'
+    grouping_df['grouping_dir'] = grouping_df['Grouping minor'].str[-2:]
+    grouping_df['grouping']     = grouping_df['Grouping minor'].str[:-3]
+    grouping_df.drop(columns=['Grouping minor','tollclass','ft'], inplace=True)
+    LOGGER.debug("  Returning {:,} links:\n{}".format(len(grouping_df), grouping_df))
+    return grouping_df
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -244,6 +325,13 @@ if __name__ == "__main__":
     LOGGER.info("current_runs_df: \n{}".format(current_runs_df))
 
     current_runs_list = current_runs_df['directory'].to_list()
+    
+    # find the last pathway 1 run, since we'll use that to determine which links are in the fwy minor groupings
+    pathway1_runs = current_runs_df.loc[ current_runs_df['category'].str.startswith("Pathway 1")]
+    PATHWAY1_SCENARIO_RUN_ID = pathway1_runs['directory'].tolist()[-1] # take the last one
+    LOGGER.info("=> PATHWAY1_SCENARIO_RUN_ID = {}".format(PATHWAY1_SCENARIO_RUN_ID))
+    TOLLED_FWY_MINOR_GROUP_LINKS_DF = determine_tolled_minor_group_links(PATHWAY1_SCENARIO_RUN_ID, "fwy")
+    TOLLED_FWY_MINOR_GROUP_LINKS_DF.to_csv("TOLLED_FWY_MINOR_GROUP_LINKS.csv", index=False)
 
     for tm_run_id in current_runs_list:
         out_filename = os.path.join(os.getcwd(),"Safe2_change_in_vmt_{}.csv".format(tm_run_id))
