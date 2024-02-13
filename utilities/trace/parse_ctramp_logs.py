@@ -1366,7 +1366,7 @@ if __name__ == '__main__':
 
             (new_lines_read,df) = read_tour_mode_choice_logsum_lines(log_fo, type_str, purpose, hh, persnum, ptype, destTaz, destSubz, args.base_or_build, args.log_file)
             lines_read += new_lines_read
-            tour_mc_df = tour_mc_df.append(df)
+            tour_mc_df = pandas.concat([tour_mc_df, df])
 
             continue
 
