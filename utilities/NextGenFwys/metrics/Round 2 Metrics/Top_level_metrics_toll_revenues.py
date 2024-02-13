@@ -89,7 +89,7 @@ def top_level_metrics_toll_revenues(tm_run_id: str) -> pd.DataFrame:
     adjust $2023 to $2035 and beyond to $2050 using inflation factor 1.03
     your output variables should be
     annual revenue
-    total 15 year revenue (2035-2050)
+    total 16 year revenue (2035-2050)
     each of those split by four income level and other (i.e. ix/air/truck)
     """
 
@@ -174,7 +174,7 @@ def top_level_metrics_toll_revenues(tm_run_id: str) -> pd.DataFrame:
     loaded_network_df['Annual DA Toll Revenue (2020$)'] = loaded_network_df['Annual DA Toll Revenue (2000$)'] * INFLATION_00_20
     loaded_network_df['Annual DA Toll Revenue (2023$)'] = loaded_network_df['Annual DA Toll Revenue (2000$)'] * INFLATION_00_23
     loaded_network_df['Annual DA Toll Revenue (2035$)'] = loaded_network_df['Annual DA Toll Revenue (2023$)'] * INFLATION_FACTOR**(2035-2023)
-    loaded_network_df['Fifteen Year DA Toll Revenue (YOE$)'] = (loaded_network_df['Annual DA Toll Revenue (2035$)'] * (1- INFLATION_FACTOR**15))/(1 - INFLATION_FACTOR)                    
+    loaded_network_df['Sixteen Year DA Toll Revenue (YOE$)'] = (loaded_network_df['Annual DA Toll Revenue (2035$)'] * (1- INFLATION_FACTOR**15))/(1 - INFLATION_FACTOR)                    
     
     # https://github.com/BayAreaMetro/modeling-website/wiki/MasterNetworkLookupTables#facility-type-ft
     ft_to_grouping_key_df = pd.DataFrame(columns=['FT','Freeway/Non-Freeway','Facility Type Definition'], data=[
@@ -222,7 +222,7 @@ def top_level_metrics_toll_revenues(tm_run_id: str) -> pd.DataFrame:
     
     # loaded_network_df.to_csv("test.csv", index=False)
 
-    ft_metrics_df = loaded_network_df.groupby(by=['Freeway/Non-Freeway','Facility Type Definition', 'EPC/Non-EPC', 'County', 'grouping', 'grouping_dir', 'TOLLCLASS']).agg({'Fifteen Year DA Toll Revenue (YOE$)':'sum', \
+    ft_metrics_df = loaded_network_df.groupby(by=['Freeway/Non-Freeway','Facility Type Definition', 'EPC/Non-EPC', 'County', 'grouping', 'grouping_dir', 'TOLLCLASS']).agg({'Sixteen Year DA Toll Revenue (YOE$)':'sum', \
                                                                                                                                                                                                'Daily EA DA Toll Revenue (2000$)':'sum', \
                                                                                                                                                                                                'Daily EA DA Toll Revenue (2020$)':'sum', \
                                                                                                                                                                                                'Daily EA DA Toll Revenue (2023$)':'sum', \
