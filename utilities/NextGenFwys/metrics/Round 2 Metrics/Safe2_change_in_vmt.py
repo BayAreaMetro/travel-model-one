@@ -331,7 +331,7 @@ if __name__ == "__main__":
     PATHWAY1_SCENARIO_RUN_ID = pathway1_runs['directory'].tolist()[-1] # take the last one
     LOGGER.info("=> PATHWAY1_SCENARIO_RUN_ID = {}".format(PATHWAY1_SCENARIO_RUN_ID))
     TOLLED_FWY_MINOR_GROUP_LINKS_DF = determine_tolled_minor_group_links(PATHWAY1_SCENARIO_RUN_ID, "fwy")
-    TOLLED_FWY_MINOR_GROUP_LINKS_DF.to_csv("TOLLED_FWY_MINOR_GROUP_LINKS.csv", index=False)
+    # TOLLED_FWY_MINOR_GROUP_LINKS_DF.to_csv("TOLLED_FWY_MINOR_GROUP_LINKS.csv", index=False)
 
     for tm_run_id in current_runs_list:
         out_filename = os.path.join(os.getcwd(),"Safe2_change_in_vmt_{}.csv".format(tm_run_id))
@@ -343,12 +343,10 @@ if __name__ == "__main__":
         LOGGER.info("Processing run {}".format(tm_run_id))
 
         # results will be stored here
-        # TODO: convert to pandas.DataFrame with these column headings.  It's far more straightforward.
         metrics_df = pd.DataFrame()
 
         metrics_df = calculate_Safe2_change_in_vmt(tm_run_id)
         LOGGER.info("@@@@@@@@@@@@@ S2 Done")
-
 
         metrics_df.to_csv(out_filename, float_format='%.5f', index=False) #, header=False
         LOGGER.info("Wrote {}".format(out_filename))
