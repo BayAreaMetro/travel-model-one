@@ -148,6 +148,11 @@ loop auto = 1,15
     if (inc = 1)  btoll_factor = Means_Based_Cordon_Tolling_Q1Factor
     if (inc = 2)  btoll_factor = Means_Based_Cordon_Tolling_Q2Factor
 
+    TripTollCap = 9999.0
+    if (inc = 1)  TripTollCap = TripTollCap_Q1 
+    if (inc = 2)  TripTollCap = TripTollCap_firstXpercentOfQ2
+    ; will need to come back here to differentiate the two subgroups within Q2 using hhldinc_cutoff             
+
   RUN PGM = MATRIX
 
   ; Read person trips for an income quartile for all time periods
@@ -212,7 +217,7 @@ loop auto = 1,15
       MW[4]   = (mi.1.@token_auto@ * mi.6.@token_dist@)/_occupancy                       ; Vehicle miles
       MW[5]   = (mi.1.@token_auto@/_occupancy) * (mi.6.@token_dist@ * @AUTOOPC@)         ; not including tolls
       MW[6]   = (mi.1.@token_auto@/_occupancy) *  mi.6.@token_btoll@                     ; Bridge tolls
-      MW[7]   = (mi.1.@token_auto@/_occupancy) *  mi.6.@token_vtoll@ * @vtoll_factor@    ; Value tolls (considering discounts)
+      MW[7]   = (mi.1.@token_auto@/_occupancy) *  min(mi.6.@token_vtoll@, @TripTollCap@) * @vtoll_factor@    ; Value tolls (considering discounts)
       MW[8]   = (mi.1.@token_auto@/_occupancy) *  mi.6.@token_vtoll@                     ; Value tolls (without discounts)
 
      ; Trips AM * Skims AM
@@ -222,7 +227,7 @@ loop auto = 1,15
       MW[12]  = (mi.2.@token_auto@ * mi.7.@token_dist@)/_occupancy                       ; Vehilce miles
       MW[13]  = (mi.2.@token_auto@/_occupancy) * (mi.7.@token_dist@ * @AUTOOPC@)         ; not including tolls
       ; MW[14] bridge tolls done in jloop below
-      MW[15]  = (mi.2.@token_auto@/_occupancy) *  mi.7.@token_vtoll@ * @vtoll_factor@    ; Value tolls (considering discounts)
+      MW[15]  = (mi.2.@token_auto@/_occupancy) *  min(mi.7.@token_vtoll@, @TripTollCap@) * @vtoll_factor@    ; Value tolls (considering discounts)
       MW[16]  = (mi.2.@token_auto@/_occupancy) *  mi.7.@token_vtoll@                     ; Value tolls (without discounts)
       ; MW[17] Cordon tolls (considering discounts) done in jloop below
       ; MW[18] Cordon tolls (without discounts) done in jloop below
@@ -240,7 +245,7 @@ loop auto = 1,15
       MW[22]  = (mi.3.@token_auto@ * mi.8.@token_dist@)/_occupancy                       ; Vehicle miles
       MW[23]  = (mi.3.@token_auto@/_occupancy) * (mi.8.@token_dist@ * @AUTOOPC@)         ; not including tolls
       MW[24]  = (mi.3.@token_auto@/_occupancy) *  mi.8.@token_btoll@                     ; Bridge tolls
-      MW[25]  = (mi.3.@token_auto@/_occupancy) *  mi.8.@token_vtoll@ * @vtoll_factor@    ; Value tolls (considering discounts)
+      MW[25]  = (mi.3.@token_auto@/_occupancy) *  min(mi.8.@token_vtoll@, @TripTollCap@) * @vtoll_factor@    ; Value tolls (considering discounts)
       MW[26]  = (mi.3.@token_auto@/_occupancy) *  mi.8.@token_vtoll@                     ; Value tolls (without discounts)
 
       ; Trips PM * Skims PM
@@ -250,7 +255,7 @@ loop auto = 1,15
       MW[30]   = (mi.4.@token_auto@ * mi.9.@token_dist@)/_occupancy                      ; Vehicle miles
       MW[31]   = (mi.4.@token_auto@/_occupancy) * (mi.9.@token_dist@ * @AUTOOPC@)        ; not including tolls
       ; MW[32] bridge tolls done in jloop below
-      MW[33]   = (mi.4.@token_auto@/_occupancy) *  mi.9.@token_vtoll@ * @vtoll_factor@   ; Value tolls (considering discounts)
+      MW[33]   = (mi.4.@token_auto@/_occupancy) *  min(mi.9.@token_vtoll@, @TripTollCap@) * @vtoll_factor@   ; Value tolls (considering discounts)
       MW[34]   = (mi.4.@token_auto@/_occupancy) *  mi.9.@token_vtoll@                    ; Value tolls (without discounts)
       ; MW[35] Cordon tolls (considering discounts) done in jloop below
       ; MW[36] Cordon tolls (without discounts) done in jloop below
@@ -268,7 +273,7 @@ loop auto = 1,15
       MW[40]   = (mi.5.@token_auto@ * mi.10.@token_dist@)/_occupancy                     ; Vehicle miles
       MW[41]   = (mi.5.@token_auto@/_occupancy) * (mi.10.@token_dist@ * @AUTOOPC@)       ; not including tolls
       MW[42]   = (mi.5.@token_auto@/_occupancy) *  mi.10.@token_btoll@                   ; Bridge tolls
-      MW[43]   = (mi.5.@token_auto@/_occupancy) *  mi.10.@token_vtoll@ * @vtoll_factor@  ; Value tolls (considering discounts)
+      MW[43]   = (mi.5.@token_auto@/_occupancy) *  min(mi.10.@token_vtoll@, @TripTollCap@) * @vtoll_factor@  ; Value tolls (considering discounts)
       MW[44]   = (mi.5.@token_auto@/_occupancy) *  mi.10.@token_vtoll@                   ; Value tolls (without discounts)
 
      ; Compute Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls
