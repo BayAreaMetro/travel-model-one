@@ -1109,7 +1109,12 @@ def read_tour_mode_choice_logsum_lines(file_object, type_str, purpose, hh, persn
     df = pandas.DataFrame.from_records(row_alt_dicts)
 
     # to keep reasonable, drop everything with coefficient == 0
-    df = df.loc[ df.coefficient != 0]
+    # except for a few tokens of interests
+    df = df.loc[ (df.coefficient != 0) |
+                  (df['row description'].isin(["token, autos",
+                                               "token, workers",
+                                               "token, walkTransitAvailable",
+                                               "token, driveTransitAvailable"]))]
     # drop alternative specific constants
     df = df.loc[ (df["row num"] < 396)|(df["row num"] > 463)]
 
@@ -1242,7 +1247,7 @@ def read_destination_choice_lines(file_object, type_str, purpose, hh, persnum, p
             row_alt_dict["row num"        ] = row_num
             row_alt_dict["row description"] = row_descr
             row_alt_dict["dest alt"       ] = dest_alt
-            # https://github.com/BayAreaMetro/travel-model-one/blob/master/core/models/ctramp/src/java/com/pb/models/ctramp/TazDataHandler.java#L464            row_alt_dict["dest alt"       ] = dest_alt 
+            # https://github.com/BayAreaMetro/travel-model-one/blob/master/core/models/ctramp/src/java/com/pb/models/ctramp/TazDataHandler.java#L464
             row_alt_dict["dest taz"       ] = int((dest_alt-1)/NUM_SUBZONES + 1)
             # https://github.com/BayAreaMetro/travel-model-one/blob/master/core/models/ctramp/src/java/com/pb/models/ctramp/TazDataHandler.java#L480
             row_alt_dict["dest subzone"   ] = int(dest_alt - (row_alt_dict["dest taz"]-1)*NUM_SUBZONES - 1)
@@ -1360,7 +1365,8 @@ if __name__ == '__main__':
             if nonm and "Individual Non-Mandatory" in nonm:
                 type_str = "NonMandLocChoice"
 
-            print("Found Tour Mode Choice logsum info for purpose={} hh={} persnum={} ptype={} destTaz={} destWalkSubzone={}".format(
+            if destSubz == 2: # quiet down a little
+                print("Found Tour Mode Choice logsum info for purpose={} hh={} persnum={} ptype={} destTaz={} destWalkSubzone={}".format(
                   purpose, hh, persnum, ptype, destTaz, destSubz))
 
 
