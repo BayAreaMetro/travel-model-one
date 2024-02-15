@@ -61,7 +61,7 @@ BayArea_UZAs = c(
 
 BOX_DIR          <- "E:\\Box"
 WORKING_DIR      <- file.path(BOX_DIR, "Modeling and Surveys", "Share Data", "national-transit-database")
-INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "September 2023 Raw Monthly Ridership (no adjustments or estimates).xlsx")
+INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "December 2023 Raw Monthly Ridership (no adjustments or estimates).xlsx")
 INPUT_WORKSHEETS <- c("VRM","VRH","UPT") # vehicle route miles, vehicle route hours, unlinked passenger trips
 INPUT_AGENCY_CSV <- file.path(WORKING_DIR, "AgencyToCommonAgencyName.csv")
 INPUT_UPT_MONTHLY_TO_DAILY <- file.path(WORKING_DIR, "MonthlyToTypicalWeekdayRidership.xlsx")
@@ -79,7 +79,7 @@ OUTPUT_FILE      <- file.path(WORKING_DIR, "NTD_long.rdata")
 
 # special VRH_UPT file
 VRH_UPT_OUTPUT_FILE <- file.path(BOX_DIR, "Plan Bay Area 2050+", "Federal and State Approvals", "CARB Technical Methodology",
-  "Exogenous Forces", "Transit_hesitance", "NTD_long_VRH_UPT.csv")
+  "Exogenous Forces", "Mode_Preference_Change", "NTD_long_VRH_UPT.csv")
 
 # Excel stores days as days since 1970-01-01
 # lubridate as days since 1900-01-01
