@@ -2,8 +2,13 @@ USAGE = r"""
 
   python scenarioMetrics.py
 
-  Run this from the model run dir.
+  Run this from the model run dir.  Requires environment variables ITERATION and SAMPLESHARE to be set.
   Processes model outputs and creates a single csv with scenario metrics, called metrics\scenario_metrics.csv
+  
+  Other required input files:
+  * INPUT\\metrics\\CommunitiesOfConcern.csv  columns: taz, in_set (0 or 1)
+  * INPUT\\metrics\\taz_hra_crosswalk.csv     columns: taz1454, taz_hra (blank, 0 or 1)
+  * INPUT\\metrics\\taz_urban_suburban.csv    columns: TAZ1454, area_type ('urban', 'suburban' or 'rural')
 
   This file will have 3 columns:
     1) scenario ID
@@ -11,33 +16,45 @@ USAGE = r"""
     3) metric value
 
   Metrics are:
+    * travel costs
+    * access to jobs
+    * goods movement delay
+    * nonauto mode share
+    * road (operating cost) and VMT
 
 """
 
-import datetime, os, sys
+import datetime, os, pathlib, sys
 import numpy, pandas
 
 def tally_travel_cost(iteration, sampleshare, metrics_dict):
-    """
+    r"""
+    Reads:
+       metrics\transit_times_by_mode_income.csv
+       metrics\auto_times.csv
+       main\householdData_3.csv
+
     Adds the following keys to metrics_dict:
-    total_transit_fares_inc[1-4] ($2000)
-    total_transit_person_trips_inc[1-4]
-    total_auto_cost_inc[1-4] ($2000)
-    total_auto_person_trips_inc[1-4]
-    total_households_inc[1-4]
-    total_hh_inc_inc[1-4] ($2000)
+    * total_transit_fares_inc[1-4] ($2000)
+    * total_transit_person_trips_inc[1-4]
+    * total_auto_cost_inc[1-4] ($2000)
+    * total_auto_person_trips_inc[1-4]
+    * total_households_inc[1-4]
+    * total_hh_inc_inc[1-4] ($2000)
     """
     print("Tallying travel costs")
-    transit_df = pandas.read_csv(os.path.join("metrics","transit_times_by_mode_income.csv"),
-                                 sep=",", index_col=[0,1])
+    input_file = pathlib.Path("metrics/transit_times_by_mode_income.csv")
+    print("  Reading {}".format(input_file))
+    transit_df = pandas.read_csv(input_file,sep=",", index_col=[0,1])
     transit_df['Total Cost'] = transit_df['Daily Trips']*transit_df['Avg Cost']
     transit_df = transit_df.groupby('Income').agg('sum')
     for inc_level in range(1,5):
         metrics_dict['total_transit_fares_inc%d' % inc_level] = transit_df.loc['_no_zpv_inc%d' % inc_level, 'Total Cost']
         metrics_dict['total_transit_trips_inc%d' % inc_level] = transit_df.loc['_no_zpv_inc%d' % inc_level, 'Daily Trips']
 
-    auto_df = pandas.read_csv(os.path.join("metrics","auto_times.csv"),
-                              sep=",", index_col=[0,1])
+    input_file = pathlib.Path("metrics/auto_times.csv")
+    print("  Reading {}".format(input_file))
+    auto_df = pandas.read_csv(input_file, sep=",", index_col=[0,1])
     auto_df = auto_df.groupby('Income').agg('sum')
     for inc_level in range(1,5):
         metrics_dict['total_auto_cost_inc%d'  % inc_level] = auto_df.loc['inc%d' % inc_level, ['Total Cost', 
@@ -47,8 +64,9 @@ def tally_travel_cost(iteration, sampleshare, metrics_dict):
         metrics_dict['total_auto_trips_inc%d' % inc_level] = auto_df.loc['inc%d' % inc_level, 'Person Trips']
 
     # Count households from disaggregate output
-    household_df = pandas.read_csv(os.path.join("main", "householdData_%d.csv" % iteration),
-                                   sep=",")
+    input_file = pathlib.Path("main/householdData_{}.csv".format(iteration))
+    print("  Reading {}".format(input_file))
+    household_df = pandas.read_csv(input_file, sep=",")
     household_df['income_cat'] = 0
     household_df.loc[                                 (household_df['income']< 30000), 'income_cat'] = 1
     household_df.loc[(household_df['income']>= 30000)&(household_df['income']< 60000), 'income_cat'] = 2
@@ -82,8 +100,9 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
 
     """
     print("Tallying access to jobs")
-    traveltime_df = pandas.read_csv(os.path.join("database","TimeSkimsDatabaseAM.csv"),
-                                    sep=",")
+    input_file = pathlib.Path("database/TimeSkimsDatabaseAM.csv")
+    print("  Reading {}".format(input_file))
+    traveltime_df = pandas.read_csv(input_file, sep=",")
     traveltime_df = traveltime_df[['orig','dest','da','wTrnW']]
     # -999 is really no-access
     traveltime_df.replace(to_replace=[-999.0], value=[None], inplace=True)
@@ -129,13 +148,17 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     # print(accessiblejobs_df.head())
 
     # read communities of concern
-    coc_df = pandas.read_csv(os.path.join("metrics", "CommunitiesOfConcern.csv"), sep=",")
+    input_file = pathlib.Path("INPUT/metrics/CommunitiesOfConcern.csv")
+    print("  Reading {}".format(input_file))
+    coc_df = pandas.read_csv(input_file, sep=",")
     tazdata_df = pandas.merge(left=tazdata_df, right=coc_df, left_on="ZONE", right_on="taz")
     tazdata_df.rename(columns={"in_set":"in_coc"}, inplace=True)
     print("  Read {} TAZs in communities of concern".format(tazdata_df["in_coc"].sum()))
 
     # read hra
-    hra_df = pandas.read_csv(os.path.join("INPUT", "metrics", "taz_hra_crosswalk.csv"))
+    input_file = pathlib.Path("INPUT/metrics/taz_hra_crosswalk.csv")
+    print("  Reading {}".format(input_file))
+    hra_df = pandas.read_csv(input_file)
     hra_df.loc[ pandas.isnull(hra_df["taz_hra"]), "taz_hra"] = 0  # make it 0 or 1
     hra_df["taz_hra"] = hra_df["taz_hra"].astype(int)
     print("  Read {} TAZs in HRAs".format(hra_df["taz_hra"].sum()))
@@ -143,7 +166,9 @@ def tally_access_to_jobs(iteration, sampleshare, metrics_dict):
     tazdata_df.rename(columns={"taz_hra":"in_hra"}, inplace=True)
 
     # read urban/suburban categories
-    urban_suburban_df = pandas.read_csv(os.path.join("INPUT","metrics", "taz_urban_suburban.csv"))
+    input_file = pathlib.Path("INPUT/metrics/taz_urban_suburban.csv")
+    print("  Reading {}".format(input_file))
+    urban_suburban_df = pandas.read_csv(input_file)
     urban_suburban_df.rename(columns={"area_type":"U_S_R"}, inplace=True)  # Urban Suburban Rural
     print("  Read urban_suburban_df:\n{}".format(urban_suburban_df["U_S_R"].value_counts()))
     tazdata_df = pandas.merge(left=tazdata_df, right=urban_suburban_df, left_on="ZONE", right_on="TAZ1454")
@@ -237,8 +262,9 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
 
     """
     print("Tallying access to jobs v2")
-    traveltime_df = pandas.read_csv(os.path.join("database","TimeSkimsDatabaseAM.csv"),
-                                    sep=",")
+    input_file = pathlib.Path("database/TimeSkimsDatabaseAM.csv")
+    print("  Reading {}".format(input_file))
+    traveltime_df = pandas.read_csv(input_file, sep=",")
     traveltime_df = traveltime_df[['orig','dest','da','daToll','wTrnW','bike','walk']]
     # -999 is really no-access
     traveltime_df.replace(to_replace=[-999.0], value=[None], inplace=True)
@@ -258,7 +284,9 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     traveltime_df.loc[ (traveltime_df.walk   <=20) , 'walk_20'] = 1
 
     # destinations are jobs => find number of jobs accessible from each TAZ within the travel time windows
-    tazdata_df = pandas.read_csv(os.path.join("landuse", "tazData.csv"), sep=",")
+    input_file = pathlib.Path("landuse/tazData.csv")
+    print("  Reading {}".format(input_file))
+    tazdata_df = pandas.read_csv(input_file, sep=",")
     tazdata_df = tazdata_df[['ZONE','TOTHH','HHINCQ1','HHINCQ2','HHINCQ3','HHINCQ4','TOTPOP','EMPRES','TOTEMP']]
     total_emp  = tazdata_df['TOTEMP'].sum()
     total_pop  = tazdata_df['TOTPOP'].sum()
@@ -299,13 +327,17 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     # print(accessiblejobs_df.head())
 
     # read communities of concern
-    coc_df = pandas.read_csv(os.path.join("metrics", "CommunitiesOfConcern.csv"), sep=",")
+    input_file = pathlib.Path("INPUT/metrics/CommunitiesOfConcern.csv")
+    print("  Reading {}".format(input_file))
+    coc_df = pandas.read_csv(input_file, sep=",")
     tazdata_df = pandas.merge(left=tazdata_df, right=coc_df, left_on="ZONE", right_on="taz")
     tazdata_df.rename(columns={"in_set":"in_coc"}, inplace=True)
     print("  Read {} TAZs in communities of concern".format(tazdata_df["in_coc"].sum()))
 
     # read hra
-    hra_df = pandas.read_csv(os.path.join("INPUT","metrics", "taz_hra_crosswalk.csv"))
+    input_file = pathlib.Path("INPUT/metrics/taz_hra_crosswalk.csv")
+    print("  Reading {}".format(input_file))
+    hra_df = pandas.read_csv(input_file)
     hra_df.loc[ pandas.isnull(hra_df["taz_hra"]), "taz_hra"] = 0  # make it 0 or 1
     hra_df["taz_hra"] = hra_df["taz_hra"].astype(int)
     print("  Read {} TAZs in HRAs".format(hra_df["taz_hra"].sum()))
@@ -313,7 +345,9 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
     tazdata_df.rename(columns={"taz_hra":"in_hra"}, inplace=True)
 
     # read urban/suburban categories
-    urban_suburban_df = pandas.read_csv(os.path.join("INPUT", "metrics", "taz_urban_suburban.csv"))
+    input_file = pathlib.Path("INPUT/metrics/taz_urban_suburban.csv")
+    print("  Reading {}".format(input_file))
+    urban_suburban_df = pandas.read_csv(input_file)
     urban_suburban_df.rename(columns={"area_type":"U_S_R"}, inplace=True)  # Urban Suburban Rural
     print("  Read urban_suburban_df:\n{}".format(urban_suburban_df["U_S_R"].value_counts()))
     tazdata_df = pandas.merge(left=tazdata_df, right=urban_suburban_df, left_on="ZONE", right_on="TAZ1454")
@@ -446,8 +480,14 @@ def tally_goods_movement_delay(iteration, sampleshare, metrics_dict):
     * goods_delay_vhd_per_person: goods_delay_vehicle_hours/goods_delay_total_pop
     """
     print("Tallying goods movement delay")
-    roadvols_df = pandas.read_csv(os.path.join("hwy","iter%d" % iteration, "avgload5period_vehclasses.csv"), sep=",")
-    tazdata_df  = pandas.read_csv(os.path.join("landuse", "tazData.csv"), sep=",")
+
+    input_file = pathlib.Path("hwy/iter{}/avgload5period_vehclasses.csv".format(iteration))
+    print("  Reading {}".format(input_file))
+    roadvols_df = pandas.read_csv(input_file, sep=",")
+
+    input_file = pathlib.Path("landuse/tazData.csv")
+    print("  Reading {}".format(input_file))
+    tazdata_df  = pandas.read_csv(input_file, sep=",")
 
     # filter to just those with freight
     roadvols_df = roadvols_df.loc[roadvols_df.regfreight != 0]
@@ -479,8 +519,9 @@ def tally_nonauto_mode_share(iteration, sampleshare, metrics_dict):
 
     trips_df = None
     for trip_type in ['indiv', 'joint']:
-        filename = os.path.join("main", "%sTripData_%d.csv" % (trip_type, iteration))
-        temp_trips_df = pandas.read_table(filename, sep=",")
+        input_file = pathlib.Path("main/{}TripData_{}.csv".format(trip_type, iteration))
+        print("  Reading {}".format(input_file))
+        temp_trips_df = pandas.read_table(input_file, sep=",")
         print("  Read {} {} trips".format(len(temp_trips_df), trip_type))
 
         if trip_type == 'indiv':
@@ -518,7 +559,10 @@ def tally_road_cost_vmt(iteration, sampleshare, metrics_dict):
 
     """
     print("Tallying roads cost and vmt")
-    roadvols_df = pandas.read_csv(os.path.join("hwy","iter%d" % iteration, "avgload5period_vehclasses.csv"), sep=",")
+
+    input_file = pathlib.Path("hwy/iter{}/avgload5period_vehclasses.csv".format(iteration))
+    print("  Reading {}".format(input_file))
+    roadvols_df = pandas.read_csv(input_file, sep=",")
     # [auto,smtr,lrtr]opc      = total opcost for autos, small trucks and large trucks in 2000 cents per mile
 
     # keep sums
@@ -574,8 +618,8 @@ if __name__ == '__main__':
     tally_nonauto_mode_share(iteration, sampleshare, metrics_dict)
     tally_road_cost_vmt(iteration, sampleshare, metrics_dict)
 
-    for key in sorted(metrics_dict.keys()):
-        print("{:50s} => {}".format(key, metrics_dict[key]))
+    # for key in sorted(metrics_dict.keys()):
+    #    print("{:50s} => {}".format(key, metrics_dict[key]))
 
     out_series = pandas.Series(metrics_dict)
     out_frame  = out_series.to_frame().reset_index()
