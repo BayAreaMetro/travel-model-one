@@ -19,12 +19,29 @@ USAGE = """
 
 """
 
-import datetime, os, pathlib, sys
+import argparse, datetime, logging,os, pathlib, sys
 import numpy, pandas as pd
 from collections import OrderedDict, defaultdict
 
+LOG_FILE = "pba50_metrics.log"
 
-def calculate_Affordable1_HplusT_costs(runid, year, dbp, tm_scen_metrics_df, tm_auto_owned_df, tm_auto_times_df, tm_travel_cost_df, tm_parking_cost_df, housing_costs_df, metrics_dict):
+# Handle box drives in E: (e.g. for virtual machines)
+USERNAME    = os.getenv('USERNAME')
+BOX_DIR     = pathlib.Path(f"C:/Users/{USERNAME}/Box")
+if USERNAME.lower() in ['lzorn']:
+    BOX_DIR = pathlib.Path("E:\Box")
+
+METRICS_COLUMNS = [
+    'modelrun_id',  # directory from ModelRuns.xlsx
+    'year',         # from ModelRuns.xlsx
+    'run_set',      # from ModelRuns.xlsx
+    'category',     # from ModelRuns.xlsx
+    'metric_id',    # e.g., Connected 1, Affordable 2, etc.
+    'metric_name',
+    'value'
+]
+
+def calculate_Affordable1_HplusT_costs(runid: str, run_info: dict) -> pd.DataFrame:
 
     metric_id = "A1"
 
@@ -288,6 +305,78 @@ def calculate_Affordable1_HplusT_costs(runid, year, dbp, tm_scen_metrics_df, tm_
     metrics_dict[runid,metric_id,'per_trip_fare_inc1and2',year,dbp] = (tm_tot_transit_fares_inc1 + tm_tot_transit_fares_inc2) / (tm_tot_transit_trips_inc1+tm_tot_transit_trips_inc2) * inflation_00_20 / days_per_year
     metrics_dict[runid,metric_id,'per_trip_fare_inc1',year,dbp]     = tm_tot_transit_fares_inc1 / tm_tot_transit_trips_inc1 * inflation_00_20 / days_per_year
 
+def extract_Connected1_JobAccess(model_runs_dict: dict):
+    """
+    Pulls the relevant Connected 1 - Job Access metrics from scenario_metrics.csv
+    These are calculated in scenarioMetrics.py:tally_access_to_jobs_v2() and have the prefix jobacc2_
+    We only keep the following: jobacc2_*_acc_accessible_job_share[_coc,_hra]
+
+    Args:
+        model_runs_dict: contents of ModelRuns.xlsx with modelrun_id key
+
+    Writes metrics_connected1_jobaccess.csv with columns:
+        modelrun_id
+        modelrun_alias
+        mode (e.g. 'bike', 'wtrn')
+        time (e.g. 20, 45) - time threshold
+        person_segment ('coc','hra','all')
+        job_share
+        accessible_jobs (job_share x TOTEMP)
+    """
+    LOGGER.info("extract_Connected1_JobAccess()")
+
+    job_acc_metrics_df = pd.DataFrame()
+    for tm_runid in model_runs_dict.keys():
+        if model_runs_dict[tm_runid]['run_set'] == "IP":
+            model_run_dir = TM_RUN_LOCATION_IP / tm_runid
+        else:
+            model_run_dir = TM_RUN_LOCATION_BP / tm_runid
+
+        # read tazdata for total employment
+        tazdata_file = model_run_dir / "INPUT" / "landuse" / "tazData.csv"
+        LOGGER.info("  Reading {}".format(tazdata_file))
+        tazdata_df = pd.read_csv(tazdata_file)
+        LOGGER.info("  TOTEMP: {:,}".format(tazdata_df['TOTEMP'].sum()))
+
+        # read scenario metrics
+        scenario_metrics_file = model_run_dir / "OUTPUT" / "metrics" / "scenario_metrics.csv"
+        LOGGER.info("  Reading {}".format(scenario_metrics_file))
+        scenario_metrics_df = pd.read_csv(scenario_metrics_file, header=None, names=['modelrun_id', 'metric_name','value'])
+
+        # filter to only jobacc2_* metrics and then strip that off
+        scenario_metrics_df = scenario_metrics_df.loc[ scenario_metrics_df.metric_name.str.startswith('jobacc2_')]
+        scenario_metrics_df['metric_name'] = scenario_metrics_df.metric_name.str[8:]
+
+        # filter to only acc_accessible_job_share[_coc,_hra]
+        scenario_metrics_df = scenario_metrics_df.loc[ 
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_coc') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_hra')]
+
+        # extract mode, time, person_segment
+        scenario_metrics_df['mode'] = scenario_metrics_df.metric_name.str.extract(r'^([a-z]+)')
+        scenario_metrics_df['time'] = scenario_metrics_df.metric_name.str.extract(r'^[a-z]+[_]([0-9]+)')
+        scenario_metrics_df['person_segment'] = scenario_metrics_df.metric_name.str.extract(r'share[_]([a-z]*)$')
+        scenario_metrics_df.loc[ pd.isna(scenario_metrics_df['person_segment']), 'person_segment' ] = 'all'
+        LOGGER.debug("scenario_metrics_df:\n{}".format(scenario_metrics_df))
+
+        # value is all job share
+        scenario_metrics_df.rename(columns={'value':'job_share'}, inplace=True)
+        # metric_name is not useful any longer -- drop it
+        scenario_metrics_df.drop(columns='metric_name', inplace=True)
+        # calculate the number of jobs
+        scenario_metrics_df['accessible_jobs'] = scenario_metrics_df['job_share']*tazdata_df['TOTEMP'].sum()
+        # pull alias from ModelRuns.xlsx info
+        scenario_metrics_df['modelrun_alias'] = model_runs_dict[tm_runid]['Alias']
+        LOGGER.debug("scenario_metrics_df:\n{}".format(scenario_metrics_df))
+
+        job_acc_metrics_df = pd.concat([job_acc_metrics_df, scenario_metrics_df])
+
+    # write it
+    output_file = 'metrics_connected1_jobaccess.csv'
+    job_acc_metrics_df.to_csv(output_file, index=False)
+    LOGGER.info("Wrote {}".format(output_file))
+
 def calculate_Connected1_proximity(runid, year, dbp, transitproximity_df, metrics_dict):
     
     metric_id = "C1"    
@@ -317,8 +406,8 @@ def calculate_Connected2_crowding(runid, year, dbp, transit_operator_df, metrics
     
     metric_id = "C2"
 
-    if "2015" in runid: tm_run_location = tm_run_location_ipa
-    else: tm_run_location = tm_run_location_bp
+    if "2015" in runid: tm_run_location = TM_RUN_LOCATION_IPA
+    else: tm_run_location = TM_RUN_LOCATION_BP
     tm_crowding_df = pd.read_csv(tm_run_location+runid+'/OUTPUT/metrics/transit_crowding_complete.csv')
 
     tm_crowding_df = tm_crowding_df[['TIME','SYSTEM','ABNAMESEQ','period','load_standcap','AB_VOL']]
@@ -345,33 +434,76 @@ def calculate_Connected2_crowding(runid, year, dbp, transit_operator_df, metrics
             metrics_dict[runid,metric_id,'crowded_pct_personhrs_AM_%s' % row['operator'],year,dbp] = row['pct_crowded'] 
 
 
-def calculate_Connected2_hwy_traveltimes(runid, year, dbp, hwy_corridor_links_df, metrics_dict):
+def calculate_Connected2_hwy_traveltimes(model_runs_dict: dict):
+    """
+    Reads loaded roadway network, filtering to highway corridor links,
+    as defined by METRICS_SOURCE_DIR/maj_corridors_hwy_links.csv
+    That file has columns, route, a, b
+    
+    Args:
+        model_runs_dict (dict): _description_
+    
+    Writes metrics_connected2_hwy_traveltimes.csv with columns:
+        modelrun_id
+        modelrun_alias
+        route - this is from METRICS_SOURCE_DIR/maj_corridors_hwy_links.csv
+        ctimAM - congested travel time in the AM, in minutes
+    """
+    LOGGER.info("calculate_Connected2_hwy_traveltimes()")
+    maj_corridors_hwy_links_file = METRICS_SOURCE_DIR / 'maj_corridors_hwy_links.csv'
+    maj_corridors_hwy_links_df   = pd.read_csv(maj_corridors_hwy_links_file)
+    maj_corridors_hwy_links_df   = maj_corridors_hwy_links_df[['route','a','b']]
+    LOGGER.debug("  maj_corridors_hwy_links_df (len={}):\n{}".format(
+        len(maj_corridors_hwy_links_df), maj_corridors_hwy_links_df.head(10)))
 
-    metric_id = "C2"
+    hwy_times_metrics_df = pd.DataFrame()
+    for tm_runid in model_runs_dict.keys():
+        if model_runs_dict[tm_runid]['run_set'] == "IP":
+            model_run_dir = TM_RUN_LOCATION_IP / tm_runid
+        else:
+            model_run_dir = TM_RUN_LOCATION_BP / tm_runid
 
-    if "2015" in runid: tm_run_location = tm_run_location_ipa
-    else: tm_run_location = tm_run_location_bp
-    tm_loaded_network_df = pd.read_csv(tm_run_location+runid+'/OUTPUT/avgload5period.csv')
+        # read the loaded roadway network
+        network_file = model_run_dir / "OUTPUT" / "avgload5period.csv"
+        LOGGER.info("  Reading {}".format(network_file))
+        tm_loaded_network_df = pd.read_csv(network_file)
 
-    # Keeping essential columns of loaded highway network: node A and B, distance, free flow time, congested time
-    tm_loaded_network_df = tm_loaded_network_df.rename(columns=lambda x: x.strip())
-    tm_loaded_network_df = tm_loaded_network_df[['a','b','distance','fft','ctimAM']]
-    tm_loaded_network_df['link'] = tm_loaded_network_df['a'].astype(str) + "_" + tm_loaded_network_df['b'].astype(str)
+        # Keeping essential columns of loaded highway network: node A and B, distance, free flow time, congested time
+        tm_loaded_network_df = tm_loaded_network_df.rename(columns=lambda x: x.strip())
+        tm_loaded_network_df = tm_loaded_network_df[['a','b','distance','fft','ctimAM']]
 
-    # merging df that has the list of all
-    hwy_corridor_links_df = pd.merge(left=hwy_corridor_links_df, right=tm_loaded_network_df, left_on="link", right_on="link", how="left")
-    corridor_travel_times_df = hwy_corridor_links_df[['distance','fft','ctimAM']].groupby(hwy_corridor_links_df['route']).sum().reset_index()
+        # Only keep those from maj_corridor_hwy_links
+        tm_loaded_network_df = pd.merge(left=maj_corridors_hwy_links_df,
+                                        right=tm_loaded_network_df,
+                                        on=['a','b'],
+                                        how='left')
+        LOGGER.debug("  tm_loaded_network_df filtered to maj_corridors_hwy_links (len={}):\n{}".format(
+            len(tm_loaded_network_df), tm_loaded_network_df.head(10)
+        ))
 
-    for index,row in corridor_travel_times_df.iterrows():
-        metrics_dict[runid,metric_id,'travel_time_AM_%s' % row['route'],year,dbp] = row['ctimAM'] 
+        # groupby route and sum the congested AM time
+        corridor_times_df = tm_loaded_network_df.groupby('route').agg({'ctimAM':'sum'}).reset_index()
+        LOGGER.debug('corridor_times_df:\n{}'.format(corridor_times_df))
+
+        # keep metadata
+        corridor_times_df['modelrun_id'] = tm_runid
+        corridor_times_df['modelrun_alias'] = model_runs_dict[tm_runid]['Alias']
+
+        # roll it up
+        hwy_times_metrics_df = pd.concat([hwy_times_metrics_df, corridor_times_df])
+
+    # write it
+    output_file = 'metrics_connected2_hwy_traveltimes.csv'
+    hwy_times_metrics_df.to_csv(output_file, index=False)
+    LOGGER.info("Wrote {}".format(output_file))
 
 
 def calculate_Connected2_trn_traveltimes(runid, year, dbp, transit_operator_df, metrics_dict):
 
     metric_id = "C2"
 
-    if "2015" in runid: tm_run_location = tm_run_location_ipa
-    else: tm_run_location = tm_run_location_bp
+    if "2015" in runid: tm_run_location = TM_RUN_LOCATION_IPA
+    else: tm_run_location = TM_RUN_LOCATION_BP
     tm_trn_line_df = pd.read_csv(tm_run_location+runid+'/OUTPUT/trn/trnline.csv')
 
     # It doesn't really matter which path ID we pick, as long as it is AM
@@ -716,139 +848,86 @@ def calculate_travelmodel_metrics_change(list_tm_runid_blueprintonly, metrics_di
             metrics_dict[tm_runid,metric_id,'time_per_dist_AM_change_2050noproject_%s' % mode_name,year,dbp] = metrics_dict[tm_runid,metric_id,'time_per_dist_AM_%s' % mode_name,year,dbp] / metrics_dict[tm_2050_FBP_NoProject_runid,metric_id,'time_per_dist_AM_%s' % mode_name,y2,'NoProject']  - 1
 
 
-def calc_travelmodel_metrics():
-
-    coc_flag_df                 = pd.read_csv(coc_flag_file)
-    transit_operator_df         = pd.read_csv(transit_operator_file)
-    hwy_corridor_links_df       = pd.read_csv(hwy_corridor_links_file)
-    safety_df                   = pd.read_csv(safety_file)
-    emfac_df                    = pd.read_csv(emfac_file)
-    commute_mode_share_df       = pd.read_csv(commute_mode_share_file)
-    transitproximity_df         = pd.read_csv(transitproximity_file)
-    transit_asset_condition_df  = pd.read_csv(transit_asset_condition_file)
-    housing_costs_df            = pd.read_csv(housing_costs_file)
-    taz_coc_xwalk_df            = pd.read_csv(taz_coc_crosswalk_file)
-    taz_hra_xwalk_df            = pd.read_csv(taz_hra_crosswalk_file)
-    taz_areatype_df             = pd.read_csv(taz_areatype_file)
-    taz_urbanizedarea_df        = pd.read_csv(taz_urbanizedarea_file)
-
-    for tm_runid in list_tm_runid:
-
-        year = tm_runid[:4]
-
-        if "NoProject" in tm_runid:
-            dbp = "NoProject"
-        elif "DBP_Plus" in tm_runid:
-            dbp = "DBP"
-        elif "FBP_Plus" in tm_runid:
-            dbp = "Plus"
-        elif "Alt1" in tm_runid:
-            dbp = "Alt1"
-        elif "Alt2" in tm_runid:
-            dbp = "Alt2"            
-        elif  "2015" in tm_runid:
-            dbp = "2015"
-        else:
-            dbp = "Unknown"
-        
-        # Read relevant metrics files
-        if "2015" in tm_runid: tm_run_location = tm_run_location_ipa
-        else: tm_run_location = tm_run_location_bp
-        tm_scen_metrics_df    = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/scenario_metrics.csv',names=["runid", "metric_name", "value"])
-        tm_auto_owned_df      = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/autos_owned.csv')
-        tm_auto_times_df      = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/auto_times.csv',sep=",", index_col=[0,1])
-        tm_travel_cost_df     = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/core_summaries/TravelCost.csv')
-        tm_parking_cost_df    = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/parking_costs_tour.csv')       
-        tm_commute_df         = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/core_summaries/CommuteByIncomeHousehold.csv')
-        tm_taz_input_df       = pd.read_csv(tm_run_location+tm_runid+'/INPUT/landuse/tazData.csv')
-        
-        tm_vmt_metrics_df    = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/vmt_vht_metrics_by_taz.csv')            
-        #tm_vmt_metrics_df    = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/vmt_vht_metrics.csv')            
-        tm_vmt_metrics_df = pd.merge(left=tm_vmt_metrics_df, right=taz_coc_xwalk_df, left_on="TAZ1454", right_on="TAZ1454", how="left")
-        tm_vmt_metrics_df = pd.merge(left=tm_vmt_metrics_df, right=taz_hra_xwalk_df, left_on="TAZ1454", right_on="TAZ1454", how="left")
-        tm_taz_input_df = pd.merge(left=tm_taz_input_df, right=taz_coc_xwalk_df, left_on="ZONE", right_on="TAZ1454", how="left")
-        tm_taz_input_df = pd.merge(left=tm_taz_input_df, right=taz_hra_xwalk_df, left_on="ZONE", right_on="TAZ1454", how="left")
-        tm_taz_input_df = pd.merge(left=tm_taz_input_df, right=taz_areatype_df, left_on="ZONE", right_on="TAZ1454", how="left")
-        tm_taz_input_df = pd.merge(left=tm_taz_input_df, right=taz_urbanizedarea_df, left_on="ZONE", right_on="TAZ1454", how="left")
-        
-        
-        print("Starting travel model functions for %s..."% dbp)
-        calculate_Affordable1_HplusT_costs(tm_runid, year, dbp, tm_scen_metrics_df, tm_auto_owned_df, tm_auto_times_df, tm_travel_cost_df, tm_parking_cost_df, housing_costs_df, metrics_dict)
-        print("@@@@@@@@@@@@@ A1 Done")
-        calculate_Connected1_proximity(tm_runid, year, dbp, transitproximity_df, metrics_dict)
-        print("@@@@@@@@@@@@@ C1 Done")
-        calculate_Connected2_hwy_traveltimes(tm_runid, year, dbp, hwy_corridor_links_df, metrics_dict)
-        calculate_Connected2_trn_traveltimes(tm_runid, year, dbp, transit_operator_df, metrics_dict)
-        calculate_Connected2_crowding(tm_runid, year, dbp, transit_operator_df, metrics_dict)
-        print("@@@@@@@@@@@@@ C2 Done")
-        calculate_Connected2_transit_asset_condition(tm_runid, year, dbp, transit_asset_condition_df, metrics_dict)
-        calculate_Healthy1_safety(tm_runid, year, dbp, tm_taz_input_df, safety_df, metrics_dict)
-        calculate_Healthy1_safety_TAZ(tm_runid, year, dbp, tm_taz_input_df, tm_vmt_metrics_df, metrics_dict)
-        print("@@@@@@@@@@@@@ H1 Done")
-        calculate_Healthy2_GHGemissions(tm_runid, year, dbp, tm_taz_input_df, tm_auto_times_df, emfac_df, metrics_dict)
-        calculate_Healthy2_PM25emissions(tm_runid, year, dbp, tm_taz_input_df, tm_vmt_metrics_df, metrics_dict)
-        calculate_Healthy2_commutemodeshare(tm_runid, year, dbp, commute_mode_share_df, metrics_dict)
-        print("@@@@@@@@@@@@@ H2 Done")
-        calculate_Vibrant1_median_commute(tm_runid, year, dbp, tm_commute_df, metrics_dict)
-        print("@@@@@@@@@@@@@ V1 Done")
-        print("@@@@@@@@@@@@@%s Done"% dbp)
-    
-    #calculate_travelmodel_metrics_change(list_tm_runid_blueprintonly, metrics_dict)
-
-
-
 if __name__ == '__main__':
 
-    #pd.set_option('display.width', 500)
+    parser = argparse.ArgumentParser(
+        description = USAGE,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('rtp', type=str, choices=['RTP2021','RTP2025'])
+    my_args = parser.parse_args()
 
-    # Handle box drives in E: (e.g. for virtual machines)
-    USERNAME    = os.getenv('USERNAME')
-    BOX_DIR     = pathlib.Path(f"C:/Users/{USERNAME}/Box")
-    if USERNAME.lower() in ['lzorn']:
-        BOX_DIR = pathlib.Path("E:\Box")
+    pd.options.display.width = 500 # redirect output to file so this will be readable
+    pd.options.display.max_columns = 100
+    pd.options.display.max_rows = 500
+    pd.options.mode.chained_assignment = None  # default='warn'
 
-    # Set location of Travel model inputs
-    tm_run_location_bp                = 'M:/Application/Model One/RTP2021/Blueprint/'
-    tm_run_location_ipa               = 'M:/Application/Model One/RTP2021/IncrementalProgress/'
-    tm_2015_runid                     = '2015_TM152_IPA_17'
-    #tm_2050_DBP_NoProject_runid      = '2050_TM152_DBP_NoProject_08'
-    #tm_2050_DBP_runid                = '2050_TM152_DBP_PlusCrossing_08'
-    #tm_2050_DBP_PlusFixItFirst_runid = '2050_TM152_DBP_PlusCrossing_01'
-    tm_2050_FBP_NoProject_runid       = '2050_TM152_FBP_NoProject_24'
-    tm_2050_FBP_runid                 = '2050_TM152_FBP_PlusCrossing_24'
-    tm_2050_FBP_EIRAlt1_runid         = '2050_TM152_EIR_Alt1_06'
-    tm_2050_FBP_EIRAlt2_runid         = '2050_TM152_EIR_Alt2_05'
-    list_tm_runid                     = [tm_2015_runid, tm_2050_FBP_NoProject_runid, tm_2050_FBP_runid, tm_2050_FBP_EIRAlt1_runid, tm_2050_FBP_EIRAlt2_runid]
-    #list_tm_runid                     = [tm_2015_runid, tm_2050_FBP_runid]
-    list_tm_runid_blueprintonly       = [tm_2050_FBP_runid]
+    # set up logging
+    # create logger
+    LOGGER = logging.getLogger(__name__)
+    LOGGER.setLevel('DEBUG')
+
+    # console handler
+    ch = logging.StreamHandler()
+    ch.setLevel('INFO')
+    ch.setFormatter(logging.Formatter('%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
+    LOGGER.addHandler(ch)
+    # file handler -- append if skip_if_exists is passed
+    fh = logging.FileHandler(LOG_FILE, mode='w')
+    fh.setLevel('DEBUG')
+    fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
+    LOGGER.addHandler(fh)
+
+    LOGGER.debug("args = {}".format(my_args))
+
+    TM_RUN_LOCATION      = pathlib.Path('M:/Application/Model One/{}/'.format(my_args.rtp))
+    TM_RUN_LOCATION_IP   = TM_RUN_LOCATION / 'IncrementalProgress'
+    TM_RUN_LOCATION_BP   = TM_RUN_LOCATION / 'Blueprint'
+    MODELRUNS_XLSX       = pathlib.Path('../config_{}/ModelRuns_{}.xlsx'.format(my_args.rtp, my_args.rtp))
+
+    model_runs_df = pd.read_excel(MODELRUNS_XLSX)
+    # select current
+    model_runs_df = model_runs_df.loc[ model_runs_df.status == 'current' ]
+    # select base year (pre 2025) and horizon year (2050)
+    model_runs_df = model_runs_df.loc[ (model_runs_df.year < 2025) | (model_runs_df.year == 2050) ]
+    # select out UrbanSim run since it's a dummy and not really a travel model run
+    model_runs_df = model_runs_df.loc[ model_runs_df.directory.str.find('UrbanSim') == -1 ]
+    model_runs_df.set_index(keys='directory', inplace=True)
+    LOGGER.info('Model runs from {}:\n{}'.format(MODELRUNS_XLSX, model_runs_df))
+    model_runs_dict = model_runs_df.to_dict(orient='index')
+    # directory -> { dict with keys project, year, run_set, category, urbansim_path, urbansim_runid, status, network
+    # LOGGER.debug(model_runs_dict)
 
     # Set location of external inputs
     #All files are located in below folder / check sources.txt for sources
-    metrics_source_folder         = BOX_DIR / "Horizon and Plan Bay Area 2050" / "Equity and Performance" / "7_Analysis" / "Metrics" / "metrics_input_files"
-    taz_coc_crosswalk_file        = metrics_source_folder / 'taz_coc_crosswalk.csv'
-    taz_hra_crosswalk_file        = metrics_source_folder / 'taz_hra_crosswalk.csv'
-    taz_areatype_file             = metrics_source_folder / 'taz_areatype.csv'
-    taz_urbanizedarea_file        = metrics_source_folder / 'taz_urbanizedarea.csv'
+    if my_args.rtp == 'RTP2021':
+        METRICS_SOURCE_DIR           = BOX_DIR / "Horizon and Plan Bay Area 2050" / "Equity and Performance" / "7_Analysis" / "Metrics" / "metrics_input_files"
+    else:
+        # todo
+        raise
 
-    coc_flag_file                 = metrics_source_folder / 'COCs_ACS2018_tbl_TEMP.csv'
-    transit_operator_file         = metrics_source_folder / 'transit_system_lookup.csv'
-    hwy_corridor_links_file       = metrics_source_folder / 'maj_corridors_hwy_links.csv'
+    extract_Connected1_JobAccess(model_runs_dict)
+    calculate_Connected2_hwy_traveltimes(model_runs_dict)
+
+    taz_coc_crosswalk_file          = METRICS_SOURCE_DIR / 'taz_coc_crosswalk.csv'
+    taz_hra_crosswalk_file          = METRICS_SOURCE_DIR / 'taz_hra_crosswalk.csv'
+    taz_areatype_file               = METRICS_SOURCE_DIR / 'taz_areatype.csv'
+    taz_urbanizedarea_file          = METRICS_SOURCE_DIR / 'taz_urbanizedarea.csv'
+
+    coc_flag_file                   = METRICS_SOURCE_DIR / 'COCs_ACS2018_tbl_TEMP.csv'
+    transit_operator_file           = METRICS_SOURCE_DIR / 'transit_system_lookup.csv'
     
     # Set location of intermediate metric outputs
     # These are for metrics generated by Raleigh, Bobby, James
-    intermediate_metrics_source_folder  =  BOX_DIR / "Horizon and Plan Bay Area 2050" / "Equity and Performance" / "7_Analysis" / "Metrics" / \
+    INTERMEDIATE_METRICS_SOURCE_DIR  =  BOX_DIR / "Horizon and Plan Bay Area 2050" / "Equity and Performance" / "7_Analysis" / "Metrics" / \
         "Metrics_Outputs_FinalBlueprint" / "Intermediate Metrics"
-    housing_costs_file            = intermediate_metrics_source_folder / 'housing_costs_share_income.csv'         # from Bobby, based on Urbansim outputs only
-    transitproximity_file         = intermediate_metrics_source_folder / 'metrics_proximity.csv'                  # from Bobby, based on Urbansim outputs only
-    transit_asset_condition_file  = intermediate_metrics_source_folder / 'transit_asset_condition.csv'            # from Raleigh, not based on model outputs
-    safety_file                   = intermediate_metrics_source_folder / 'fatalities_injuries_export.csv'         # from Raleigh, based on Travel Model outputs 
-    commute_mode_share_file       = intermediate_metrics_source_folder / 'commute_mode_share.csv'                 # from Raleigh, based on Travel Model outputs
-    emfac_file                    = intermediate_metrics_source_folder / 'emfac.csv'                              # from James
-    remi_jobs_file                = intermediate_metrics_source_folder / 'emp by ind11_s23.csv'                   # from Bobby, based on REMI
-    jobs_wagelevel_file           = intermediate_metrics_source_folder / 'jobs_wagelevel.csv'                     # from Bobby, based on REMI
-
-    # All summarized outputs (i.e. by TRA or PDA or tract) will be written to this folder
-    sum_outputs_filepath = BOX_DIR / "Horizon and Plan Bay Area 2050" / "Equity and Performance" / "7_Analysis" / "Metrics" / "Metrics_Outputs_FinalBlueprint" / "Summary Outputs"
+    housing_costs_file            = INTERMEDIATE_METRICS_SOURCE_DIR / 'housing_costs_share_income.csv'         # from Bobby, based on Urbansim outputs only
+    transitproximity_file         = INTERMEDIATE_METRICS_SOURCE_DIR / 'metrics_proximity.csv'                  # from Bobby, based on Urbansim outputs only
+    transit_asset_condition_file  = INTERMEDIATE_METRICS_SOURCE_DIR / 'transit_asset_condition.csv'            # from Raleigh, not based on model outputs
+    safety_file                   = INTERMEDIATE_METRICS_SOURCE_DIR / 'fatalities_injuries_export.csv'         # from Raleigh, based on Travel Model outputs 
+    commute_mode_share_file       = INTERMEDIATE_METRICS_SOURCE_DIR / 'commute_mode_share.csv'                 # from Raleigh, based on Travel Model outputs
+    emfac_file                    = INTERMEDIATE_METRICS_SOURCE_DIR / 'emfac.csv'                              # from James
+    remi_jobs_file                = INTERMEDIATE_METRICS_SOURCE_DIR / 'emp by ind11_s23.csv'                   # from Bobby, based on REMI
+    jobs_wagelevel_file           = INTERMEDIATE_METRICS_SOURCE_DIR / 'jobs_wagelevel.csv'                     # from Bobby, based on REMI
 
     # Global Inputs
 
@@ -868,18 +947,72 @@ if __name__ == '__main__':
     y_diff    = "2050"
 
     # Calculate all metrics
-    print("Starting travel model data gathering...")
-    calc_travelmodel_metrics()
-    print("*****************#####################Completed calc_travelmodel_metrics#####################*******************")
+    coc_flag_df                 = pd.read_csv(coc_flag_file)
+    transit_operator_df         = pd.read_csv(transit_operator_file)
+    safety_df                   = pd.read_csv(safety_file)
+    emfac_df                    = pd.read_csv(emfac_file)
+    commute_mode_share_df       = pd.read_csv(commute_mode_share_file)
+    transitproximity_df         = pd.read_csv(transitproximity_file)
+    transit_asset_condition_df  = pd.read_csv(transit_asset_condition_file)
+    housing_costs_df            = pd.read_csv(housing_costs_file)
+    taz_coc_xwalk_df            = pd.read_csv(taz_coc_crosswalk_file)
+    taz_hra_xwalk_df            = pd.read_csv(taz_hra_crosswalk_file)
+    taz_areatype_df             = pd.read_csv(taz_areatype_file)
+    taz_urbanizedarea_df        = pd.read_csv(taz_urbanizedarea_file)
+
+    # columns are METRICS_COLUMNS
+    all_metrics_df = pd.DataFrame()
+
+    for tm_runid in model_runs_dict.keys():
+        LOGGER.info("Processing {}".format(tm_runid))
+        tm_run_info_dict = model_runs_dict[tm_runid]
+        year = tm_run_info_dict['year']
+        
+        # Read relevant metrics files
+        # if "2015" in tm_runid: tm_run_location = TM_RUN_LOCATION_IPA
+        # else: tm_run_location = TM_RUN_LOCATION_BP
+        # tm_scen_metrics_df    = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/scenario_metrics.csv',names=["runid", "metric_name", "value"])
+        # tm_auto_owned_df      = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/autos_owned.csv')
+        # tm_auto_times_df      = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/auto_times.csv',sep=",", index_col=[0,1])
+        # tm_travel_cost_df     = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/core_summaries/TravelCost.csv')
+        # tm_parking_cost_df    = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/parking_costs_tour.csv')       
+        # tm_commute_df         = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/core_summaries/CommuteByIncomeHousehold.csv')
+        # tm_taz_input_df       = pd.read_csv(tm_run_location+tm_runid+'/INPUT/landuse/tazData.csv')
+        # 
+        # tm_vmt_metrics_df    = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/vmt_vht_metrics_by_taz.csv')            
+        # #tm_vmt_metrics_df    = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/vmt_vht_metrics.csv')            
+        # tm_vmt_metrics_df = pd.merge(left=tm_vmt_metrics_df, right=taz_coc_xwalk_df, left_on="TAZ1454", right_on="TAZ1454", how="left")
+        # tm_vmt_metrics_df = pd.merge(left=tm_vmt_metrics_df, right=taz_hra_xwalk_df, left_on="TAZ1454", right_on="TAZ1454", how="left")
+        # tm_taz_input_df = pd.merge(left=tm_taz_input_df, right=taz_coc_xwalk_df, left_on="ZONE", right_on="TAZ1454", how="left")
+        # tm_taz_input_df = pd.merge(left=tm_taz_input_df, right=taz_hra_xwalk_df, left_on="ZONE", right_on="TAZ1454", how="left")
+        # tm_taz_input_df = pd.merge(left=tm_taz_input_df, right=taz_areatype_df, left_on="ZONE", right_on="TAZ1454", how="left")
+        # tm_taz_input_df = pd.merge(left=tm_taz_input_df, right=taz_urbanizedarea_df, left_on="ZONE", right_on="TAZ1454", how="left")
+        
+        # all_metrics_df = pd.concat([all_metrics_df, ])
+        # calculate_Affordable1_HplusT_costs(tm_runid, year, metrics_dict)
+        # print("@@@@@@@@@@@@@ A1 Done")
+        # calculate_Connected1_proximity(tm_runid, year, dbp, transitproximity_df, metrics_dict)
+        # print("@@@@@@@@@@@@@ C1 Done")
+        # calculate_Connected2_trn_traveltimes(tm_runid, year, dbp, transit_operator_df, metrics_dict)
+        # calculate_Connected2_crowding(tm_runid, year, dbp, transit_operator_df, metrics_dict)
+        # print("@@@@@@@@@@@@@ C2 Done")
+        # calculate_Connected2_transit_asset_condition(tm_runid, year, dbp, transit_asset_condition_df, metrics_dict)
+        # calculate_Healthy1_safety(tm_runid, year, dbp, tm_taz_input_df, safety_df, metrics_dict)
+        # calculate_Healthy1_safety_TAZ(tm_runid, year, dbp, tm_taz_input_df, tm_vmt_metrics_df, metrics_dict)
+        # print("@@@@@@@@@@@@@ H1 Done")
+        # calculate_Healthy2_GHGemissions(tm_runid, year, dbp, tm_taz_input_df, tm_auto_times_df, emfac_df, metrics_dict)
+        # calculate_Healthy2_PM25emissions(tm_runid, year, dbp, tm_taz_input_df, tm_vmt_metrics_df, metrics_dict)
+        # calculate_Healthy2_commutemodeshare(tm_runid, year, dbp, commute_mode_share_df, metrics_dict)
+        # print("@@@@@@@@@@@@@ H2 Done")
+        # calculate_Vibrant1_median_commute(tm_runid, year, dbp, tm_commute_df, metrics_dict)
+        # print("@@@@@@@@@@@@@ V1 Done")
+        # print("@@@@@@@@@@@@@%s Done"% dbp)
 
     # Write output
-    idx = pd.MultiIndex.from_tuples(metrics_dict.keys(), names=['modelrunID','metric','name','year','blueprint'])
-    metrics = pd.Series(metrics_dict, index=idx)
-    metrics.name = 'value'
     # out_filename = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/Metrics_Outputs_FinalBlueprint/metrics.csv'.format(os.getenv('USERNAME'))
     # write it locally for now
     out_filename = 'metrics.csv'
-    metrics.to_csv(out_filename, header=True, sep=',')
+    all_metrics_df.to_csv(out_filename, index=False)
     
     print("Wrote metrics.csv output")
 
