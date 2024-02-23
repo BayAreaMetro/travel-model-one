@@ -402,37 +402,101 @@ def calculate_Connected1_proximity(runid, year, dbp, transitproximity_df, metric
 
 
 
-def calculate_Connected2_crowding(runid, year, dbp, transit_operator_df, metrics_dict):
-    
-    metric_id = "C2"
+def calculate_Connected2_crowding(model_runs_dict: dict):
+    """
+    Reads the transit crowding results for each model run and summarizes percent of person-time in
+    crowded (load_standcap > 0.85) and over capacity (load_standcap > 1.0) conditions.
 
-    if "2015" in runid: tm_run_location = TM_RUN_LOCATION_IPA
-    else: tm_run_location = TM_RUN_LOCATION_BP
-    tm_crowding_df = pd.read_csv(tm_run_location+runid+'/OUTPUT/metrics/transit_crowding_complete.csv')
+    Person time is summarized using the mapping in METRICS_SOURCE_DIR / transit_system_lookup.csv
+    which includes columns: mode, SYSTEM, operator, mode_name
+    We only use mode -> operator here
 
-    tm_crowding_df = tm_crowding_df[['TIME','SYSTEM','ABNAMESEQ','period','load_standcap','AB_VOL']]
-    tm_crowding_df = tm_crowding_df.loc[tm_crowding_df['period'] == "AM"]
-    tm_crowding_df['time_overcapacity'] = tm_crowding_df.apply (lambda row: row['TIME'] if (row['load_standcap']>1) else 0, axis=1)
-    tm_crowding_df['time_crowded'] = tm_crowding_df.apply (lambda row: row['TIME'] if (row['load_standcap']>0.85) else 0, axis=1)
-    tm_crowding_df['person_hrs_total'] = tm_crowding_df['TIME'] * tm_crowding_df['AB_VOL']  
-    tm_crowding_df['person_hrs_overcap'] = tm_crowding_df['time_overcapacity'] * tm_crowding_df['AB_VOL']  
-    tm_crowding_df['person_hrs_crowded'] = tm_crowding_df['time_crowded'] * tm_crowding_df['AB_VOL']  
+    Args:
+        model_runs_dict (dict): ModelRuns.xlsx contents, indexed by modelrun_id
 
+    Writes metrics_connected2_trn_crowding.csv with columns:
+        modelrun_id
+        modelrun_alias
+        operator - this is based on the mode -> operator mapping from transit_system_lookup.csv
+        pct_crowded - percent of person-time in crowded vehicles
+        pct_overcapacity - percent of person-time in overcapacity vehicles
+    """
+    LOGGER.info("calculate_Connected2_crowding()")
 
-    tm_crowding_df = pd.merge(left=tm_crowding_df, right=transit_operator_df, left_on="SYSTEM", right_on="SYSTEM", how="left")
+    TRN_MODE_OPERATOR_LOOKUP_FILE = METRICS_SOURCE_DIR / 'transit_system_lookup.csv'
+    LOGGER.info("  Reading {}".format(TRN_MODE_OPERATOR_LOOKUP_FILE))
+    trn_mode_operator_df = pd.read_csv(TRN_MODE_OPERATOR_LOOKUP_FILE, usecols=['mode','SYSTEM','operator'])
 
-    system_crowding_df = tm_crowding_df[['person_hrs_total','person_hrs_overcap','person_hrs_crowded']].groupby(tm_crowding_df['operator']).sum().reset_index()
-    system_crowding_df['pct_overcapacity'] = system_crowding_df['person_hrs_overcap'] / system_crowding_df['person_hrs_total'] 
-    system_crowding_df['pct_crowded'] = system_crowding_df['person_hrs_crowded'] / system_crowding_df['person_hrs_total'] 
+    # verify SYSTEM is unique
+    trn_mode_operator_df['SYSTEM_dupe'] = trn_mode_operator_df.duplicated(subset=['SYSTEM'], keep=False)
+    # note: it is not
+    LOGGER.debug("  trn_mode_operator_df with SYSTEM_dupe:\n{}".format(
+        trn_mode_operator_df.loc[ trn_mode_operator_df.SYSTEM_dupe == True]))
 
-    for index,row in system_crowding_df.iterrows():
-        if row['operator'] in ['Shuttle','SFMTA LRT','SFMTA Bus','SamTrans Local','VTA Bus Local','AC Transit Local','Alameda Bus Operators','Contra Costa Bus Operators',\
-                               'Solano Bus Operators','Napa Bus Operators','Sonoma Bus Operators','GGT Local','CC AV Shuttle','ReX Express','SamTrans Express','VTA Bus Express',\
-                               'AC Transit Transbay','County Connection Express','GGT Express','WestCAT Express','Soltrans Express','FAST Express','VINE Express','SMART Express',\
-                               'WETA','Golden Gate Ferry','Hovercraft','VTA LRT','Dumbarton GRT','Oakland/Alameda Gondola','Contra Costa Gondolas','BART','Caltrain',\
-                               'Capitol Corridor','Amtrak','ACE','Dumbarton Rail','SMART', 'Valley Link','High-Speed Rail']:
-            metrics_dict[runid,metric_id,'crowded_pct_personhrs_AM_%s' % row['operator'],year,dbp] = row['pct_crowded'] 
+    all_trn_crowding_df = pd.DataFrame()
+    for tm_runid in model_runs_dict.keys():
+        if model_runs_dict[tm_runid]['run_set'] == "IP":
+            model_run_dir = TM_RUN_LOCATION_IP / tm_runid
+        else:
+            model_run_dir = TM_RUN_LOCATION_BP / tm_runid
 
+        # read the transit crowing model results
+        trn_crowding_file = model_run_dir / "OUTPUT" / "metrics" / "transit_crowding_complete.csv"
+        LOGGER.info("  Reading {}".format(trn_crowding_file))
+        tm_crowding_df = pd.read_csv(trn_crowding_file, usecols=['TIME','SYSTEM','MODE','ABNAMESEQ','period','load_standcap','AB_VOL'])
+
+        # select only AM
+        tm_crowding_df = tm_crowding_df.loc[tm_crowding_df['period'] == "AM"]
+        LOGGER.debug("tm_crowding_df.head(10)\n{}".format(tm_crowding_df))
+
+        # set time for links that are overcapacity (load_standcap > 1)
+        tm_crowding_df['time_overcapacity'] = 0.0
+        tm_crowding_df.loc[ tm_crowding_df.load_standcap > 1, 'time_overcapacity'] = tm_crowding_df.TIME
+
+        # set time for links that are crowded (load_standcap > 0.85)
+        tm_crowding_df['time_crowded'] = 0.0
+        tm_crowding_df.loc[ tm_crowding_df.load_standcap > 0.85, 'time_crowded'] = tm_crowding_df.TIME
+
+        # convert to person-time (TIME is in hundredths of a minute)
+        tm_crowding_df['person_time_total']   = tm_crowding_df['AB_VOL']*tm_crowding_df['TIME']
+        tm_crowding_df['person_time_overcap'] = tm_crowding_df['AB_VOL']*tm_crowding_df['time_overcapacity']
+        tm_crowding_df['person_time_crowded'] = tm_crowding_df['AB_VOL']*tm_crowding_df['time_crowded']
+
+        # join with SYSTEM -> operator
+        # TODO: I think joinin on SYSTEM is wrong since there are duplicates - Leaving bug in for now, but
+        # TODO: this should be fixed
+        tm_crowding_df = pd.merge(
+            left     = tm_crowding_df, 
+            right    = trn_mode_operator_df, 
+            # left_on  = 'MODE',
+            # right_on = 'mode',
+            on       = 'SYSTEM',
+            how      = "left")
+
+        system_crowding_df = tm_crowding_df.groupby('operator').agg({
+            'person_time_total'  :'sum',
+            'person_time_overcap':'sum',
+            'person_time_crowded':'sum'
+        }).reset_index()
+        
+        system_crowding_df['pct_overcapacity'] = system_crowding_df['person_time_overcap'] / system_crowding_df['person_time_total'] 
+        system_crowding_df['pct_crowded']      = system_crowding_df['person_time_crowded'] / system_crowding_df['person_time_total'] 
+        LOGGER.debug("system_crowding_df:\n{}".format(system_crowding_df))
+
+        # drop intermediate columns
+        system_crowding_df.drop(columns=['person_time_total','person_time_overcap','person_time_crowded'], inplace=True)
+
+        # keep metadata
+        system_crowding_df['modelrun_id'] = tm_runid
+        system_crowding_df['modelrun_alias'] = model_runs_dict[tm_runid]['Alias']
+
+        # roll it up
+        all_trn_crowding_df = pd.concat([all_trn_crowding_df, system_crowding_df])
+
+    # write it
+    output_file = 'metrics_connected2_trn_crowding.csv'
+    all_trn_crowding_df.to_csv(output_file, index=False)
+    LOGGER.info("Wrote {}".format(output_file))
 
 def calculate_Connected2_hwy_traveltimes(model_runs_dict: dict):
     """
@@ -441,7 +505,7 @@ def calculate_Connected2_hwy_traveltimes(model_runs_dict: dict):
     That file has columns, route, a, b
     
     Args:
-        model_runs_dict (dict): _description_
+        model_runs_dict (dict): ModelRuns.xlsx contents, indexed by modelrun_id
     
     Writes metrics_connected2_hwy_traveltimes.csv with columns:
         modelrun_id
@@ -450,8 +514,9 @@ def calculate_Connected2_hwy_traveltimes(model_runs_dict: dict):
         ctimAM - congested travel time in the AM, in minutes
     """
     LOGGER.info("calculate_Connected2_hwy_traveltimes()")
-    maj_corridors_hwy_links_file = METRICS_SOURCE_DIR / 'maj_corridors_hwy_links.csv'
-    maj_corridors_hwy_links_df   = pd.read_csv(maj_corridors_hwy_links_file)
+    MAJ_CORRIDORS_HWY_LINKS_FILE = METRICS_SOURCE_DIR / 'maj_corridors_hwy_links.csv'
+    LOGGER.info(f"  Reading {MAJ_CORRIDORS_HWY_LINKS_FILE}")
+    maj_corridors_hwy_links_df   = pd.read_csv(MAJ_CORRIDORS_HWY_LINKS_FILE)
     maj_corridors_hwy_links_df   = maj_corridors_hwy_links_df[['route','a','b']]
     LOGGER.debug("  maj_corridors_hwy_links_df (len={}):\n{}".format(
         len(maj_corridors_hwy_links_df), maj_corridors_hwy_links_df.head(10)))
@@ -473,10 +538,11 @@ def calculate_Connected2_hwy_traveltimes(model_runs_dict: dict):
         tm_loaded_network_df = tm_loaded_network_df[['a','b','distance','fft','ctimAM']]
 
         # Only keep those from maj_corridor_hwy_links
-        tm_loaded_network_df = pd.merge(left=maj_corridors_hwy_links_df,
-                                        right=tm_loaded_network_df,
-                                        on=['a','b'],
-                                        how='left')
+        tm_loaded_network_df = pd.merge(
+            left  = maj_corridors_hwy_links_df,
+            right = tm_loaded_network_df,
+            on    = ['a','b'],
+            how   = 'left')
         LOGGER.debug("  tm_loaded_network_df filtered to maj_corridors_hwy_links (len={}):\n{}".format(
             len(tm_loaded_network_df), tm_loaded_network_df.head(10)
         ))
@@ -526,14 +592,70 @@ def calculate_Connected2_trn_traveltimes(runid, year, dbp, transit_operator_df, 
         metrics_dict[runid,metric_id,'time_per_dist_AM_%s' % row['mode_name'],year,dbp] = row['time_per_dist_AM'] 
 
 
-def calculate_Connected2_transit_asset_condition(runid, year, dbp, transit_asset_condition_df, metrics_dict):
+def calculate_Connected2_transit_asset_condition(model_runs_dict: dict):
+    """
+    This is really just a passthrough for the file, 
+    INTERMEDIATE_METRICS_SOURCE_DIR/transit_asset_condition.csv which has columns:
+    metric, name, year, blueprint, value
+
+    Retains rows from this file where
+        blueprint=identifier corresponding to a run
+        metric=[transit_revveh_beyondlife_pct_of_count|
+                transit_nonveh_beyondlife_pct_of_value]   
     
-    metric_id = "C2"                         
-                     
-    metrics_dict[runid,metric_id,'asset_life_transit_revveh_beyondlife_pct_of_count',year,dbp]      = transit_asset_condition_df.loc[(transit_asset_condition_df['name']=="transit_revveh_beyondlife_pct_of_count")      & (transit_asset_condition_df['year']==int(year)) & (transit_asset_condition_df['blueprint'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'asset_life_transit_nonveh_beyondlife_pct_of_value',year,dbp]      = transit_asset_condition_df.loc[(transit_asset_condition_df['name']=="transit_nonveh_beyondlife_pct_of_value")      & (transit_asset_condition_df['year']==int(year)) & (transit_asset_condition_df['blueprint'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'asset_life_transit_all_beyondlife_pct_of_value',year,dbp]   = transit_asset_condition_df.loc[(transit_asset_condition_df['name']=="transit_allassets_beyondlife_pct_of_value")   & (transit_asset_condition_df['year']==int(year)) & (transit_asset_condition_df['blueprint'].str.contains(dbp)), 'value'].sum()
-  
+    Args:
+        model_runs_dict (dict): ModelRuns.xlsx contents, indexed by modelrun_id
+
+    Writes metrics_connected2_transit_asset_conditions.csv with columns:
+        modelrun_id
+        modelrun_alias
+        transit_allassets_beyondlife_pct_of_value
+        transit_nonveh_beyondlife_pct_of_value
+        transit_revveh_beyondlife_pct_of_count
+    """
+    LOGGER.info("calculate_Connected2_transit_asset_condition()")
+    TRANSIT_ASSET_CONDITION_FILE = INTERMEDIATE_METRICS_SOURCE_DIR / 'transit_asset_condition.csv' # from Raleigh, not based on model outputs
+    LOGGER.info(f"  Reading {TRANSIT_ASSET_CONDITION_FILE}")
+    transit_asset_condition_df   = pd.read_csv(TRANSIT_ASSET_CONDITION_FILE)
+    LOGGER.debug("  transit_asset_condition_df (len={}):\n{}".format(
+        len(transit_asset_condition_df), transit_asset_condition_df.head(10)))
+    
+    # drop unused column ('metric'), convert long to wide
+    transit_asset_condition_df.drop(columns=['metric'], inplace=True)
+    transit_asset_condition_df = transit_asset_condition_df.pivot(index=['year','blueprint'], columns=['name'], values='value')
+    transit_asset_condition_df.reset_index(inplace=True)
+    LOGGER.debug("  transit_asset_condition_df (len={}):\n{}".format(
+        len(transit_asset_condition_df), transit_asset_condition_df.head(10)))
+
+    all_assets_conditions_df = pd.DataFrame()
+    for tm_runid in model_runs_dict.keys():
+        LOGGER.info("  Processing {}: category={}".format(tm_runid, model_runs_dict[tm_runid]['category']))
+
+        # filter to year
+        run_asset_condition_df = transit_asset_condition_df.loc[transit_asset_condition_df.year==model_runs_dict[tm_runid]['year']]
+
+        # some translation for "blueprint" (should be scenario)
+        category = model_runs_dict[tm_runid]['category']
+        if model_runs_dict[tm_runid]['year'] == 2015: category = "2015"
+        if category=="No Project": category = "NoProject"
+
+        # filter to the category
+        run_asset_condition_df = transit_asset_condition_df.loc[transit_asset_condition_df.blueprint==category]
+        # assert we found one row
+        assert(len(run_asset_condition_df) == 1)
+        run_asset_condition_df.drop(columns=['year','blueprint'], inplace=True)
+
+        # keep metadata
+        run_asset_condition_df['modelrun_id'] = tm_runid
+        run_asset_condition_df['modelrun_alias'] = model_runs_dict[tm_runid]['Alias']
+
+        # roll it up
+        all_assets_conditions_df = pd.concat([all_assets_conditions_df, run_asset_condition_df])
+
+    # write it
+    output_file = 'metrics_connected2_transit_asset_conditions.csv'
+    all_assets_conditions_df.to_csv(output_file, index=False)
+    LOGGER.info("Wrote {}".format(output_file))
 
 def calculate_Healthy1_safety(runid, year, dbp, tm_taz_input_df, safety_df, metrics_dict):
 
@@ -883,7 +1005,7 @@ if __name__ == '__main__':
     TM_RUN_LOCATION_IP   = TM_RUN_LOCATION / 'IncrementalProgress'
     TM_RUN_LOCATION_BP   = TM_RUN_LOCATION / 'Blueprint'
     MODELRUNS_XLSX       = pathlib.Path('../config_{}/ModelRuns_{}.xlsx'.format(my_args.rtp, my_args.rtp))
-
+    
     model_runs_df = pd.read_excel(MODELRUNS_XLSX)
     # select current
     model_runs_df = model_runs_df.loc[ model_runs_df.status == 'current' ]
@@ -900,13 +1022,17 @@ if __name__ == '__main__':
     # Set location of external inputs
     #All files are located in below folder / check sources.txt for sources
     if my_args.rtp == 'RTP2021':
-        METRICS_SOURCE_DIR           = BOX_DIR / "Horizon and Plan Bay Area 2050" / "Equity and Performance" / "7_Analysis" / "Metrics" / "metrics_input_files"
+        METRICS_BOX_DIR                  = BOX_DIR / "Horizon and Plan Bay Area 2050" / "Equity and Performance" / "7_Analysis" / "Metrics"
+        METRICS_SOURCE_DIR               = METRICS_BOX_DIR / "metrics_input_files"
+        INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR / "Metrics_Outputs_FinalBlueprint" / "Intermediate Metrics"
     else:
         # todo
         raise
 
     extract_Connected1_JobAccess(model_runs_dict)
     calculate_Connected2_hwy_traveltimes(model_runs_dict)
+    calculate_Connected2_crowding(model_runs_dict)
+    calculate_Connected2_transit_asset_condition(model_runs_dict)
 
     taz_coc_crosswalk_file          = METRICS_SOURCE_DIR / 'taz_coc_crosswalk.csv'
     taz_hra_crosswalk_file          = METRICS_SOURCE_DIR / 'taz_hra_crosswalk.csv'
@@ -918,11 +1044,8 @@ if __name__ == '__main__':
     
     # Set location of intermediate metric outputs
     # These are for metrics generated by Raleigh, Bobby, James
-    INTERMEDIATE_METRICS_SOURCE_DIR  =  BOX_DIR / "Horizon and Plan Bay Area 2050" / "Equity and Performance" / "7_Analysis" / "Metrics" / \
-        "Metrics_Outputs_FinalBlueprint" / "Intermediate Metrics"
     housing_costs_file            = INTERMEDIATE_METRICS_SOURCE_DIR / 'housing_costs_share_income.csv'         # from Bobby, based on Urbansim outputs only
     transitproximity_file         = INTERMEDIATE_METRICS_SOURCE_DIR / 'metrics_proximity.csv'                  # from Bobby, based on Urbansim outputs only
-    transit_asset_condition_file  = INTERMEDIATE_METRICS_SOURCE_DIR / 'transit_asset_condition.csv'            # from Raleigh, not based on model outputs
     safety_file                   = INTERMEDIATE_METRICS_SOURCE_DIR / 'fatalities_injuries_export.csv'         # from Raleigh, based on Travel Model outputs 
     commute_mode_share_file       = INTERMEDIATE_METRICS_SOURCE_DIR / 'commute_mode_share.csv'                 # from Raleigh, based on Travel Model outputs
     emfac_file                    = INTERMEDIATE_METRICS_SOURCE_DIR / 'emfac.csv'                              # from James
@@ -953,7 +1076,6 @@ if __name__ == '__main__':
     emfac_df                    = pd.read_csv(emfac_file)
     commute_mode_share_df       = pd.read_csv(commute_mode_share_file)
     transitproximity_df         = pd.read_csv(transitproximity_file)
-    transit_asset_condition_df  = pd.read_csv(transit_asset_condition_file)
     housing_costs_df            = pd.read_csv(housing_costs_file)
     taz_coc_xwalk_df            = pd.read_csv(taz_coc_crosswalk_file)
     taz_hra_xwalk_df            = pd.read_csv(taz_hra_crosswalk_file)
@@ -996,7 +1118,6 @@ if __name__ == '__main__':
         # calculate_Connected2_trn_traveltimes(tm_runid, year, dbp, transit_operator_df, metrics_dict)
         # calculate_Connected2_crowding(tm_runid, year, dbp, transit_operator_df, metrics_dict)
         # print("@@@@@@@@@@@@@ C2 Done")
-        # calculate_Connected2_transit_asset_condition(tm_runid, year, dbp, transit_asset_condition_df, metrics_dict)
         # calculate_Healthy1_safety(tm_runid, year, dbp, tm_taz_input_df, safety_df, metrics_dict)
         # calculate_Healthy1_safety_TAZ(tm_runid, year, dbp, tm_taz_input_df, tm_vmt_metrics_df, metrics_dict)
         # print("@@@@@@@@@@@@@ H1 Done")
