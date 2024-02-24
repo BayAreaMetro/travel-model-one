@@ -4,7 +4,7 @@ Create crosswalk between TAZ and Census geographies (e.g. tract, block, etc.), o
 It is based on "largest area within" method, i.e. if a TAZ falls into multiple Census Tracts, it is assigned to the Tract with the largest intersection area with the TAZ.
 
 Example call: 
-    python TAZ_Census_crosswalk.py "M:/Data/GIS layers/TM1_taz/bayarea_rtaz1454_rev1_WGS84.shp" "TAZ1454"  "TAZ1454" "M:/Data/Census/Geography/tl_2020_06_tract/tl_2020_06_tract_bayarea.shp" "tract2020" "GEOID" "M:/Data/GIS layers/TM1_taz_census2020"
+    python TAZ_Census_otherGeographies_overlay_crosswalk.py "M:/Data/Census/Geography/tl_2020_06_tract/tl_2020_06_tract_bayarea.shp" "tract2020" "GEOID" "C:/Users/ywang/Box/Modeling and Surveys/Urban Modeling/Bay Area UrbanSim/p10 Datasets for PBA2050plus/raw_data_to_build_parcels_geography/pba50plus_GrowthGeographies_p10tagging/PBA50Plus_Growth_Geographies_120823.shp" "ggPBA50plus" "gg_id" "M:/Application/PBA50Plus_Data_Processing/crosswalks/interim" --scenario DBP
 
 """
 
@@ -93,27 +93,34 @@ def geo_assign_fields(id_df, id_field, overlay_df, overlay_fields, return_inters
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
-    parser.add_argument('Base_geo_file', help='Base geography spatial file with the full directory')
-    parser.add_argument('Base_geo_name', help='Base geography name, e.g. "TAZ1454"')
-    parser.add_argument('Base_geo_unique_ID', help='Specify the unique ID of the base geography, e.g. "TAZ1454"')
-    parser.add_argument('Overlay_geo_file',  help='Overlay geography spatial file with the full directory')
-    parser.add_argument('Overlay_geo_name', help='Overlay geography name, e.g. "tract2020", "block2010"')
-    parser.add_argument('Overlay_geo_unique_ID', help='Specify the unique ID of the Overlay geography, e.g. "GEOID"')
+    parser.add_argument('base_geo_file', help='Base geography spatial file with the full directory')
+    parser.add_argument('base_geo_name', help='Base geography name, e.g. "TAZ1454"')
+    parser.add_argument('base_geo_unique_ID', help='Specify the unique ID of the base geography, e.g. "TAZ1454"')
+    parser.add_argument('overlay_geo_file',  help='Overlay geography spatial file with the full directory')
+    parser.add_argument('overlay_geo_name', help='Overlay geography name, e.g. "tract2020", "block2010"')
+    parser.add_argument('overlay_geo_unique_ID', help='Specify the unique ID of the Overlay geography, e.g. "GEOID"')
     parser.add_argument('output_dir',  help='Output directory')
-    # parser.add_argument('--output_filename', help='Output file name')
+    # optional input, choices=['DBP','FBP','NP','EIR1','EIR2'] when creating plan-scenario based crosswalk
+    parser.add_argument('--scenario', help='Plan scenario')
     args = parser.parse_args()
 
     # input
-    BASE_GEO_FILE = args.Base_geo_file
-    BASE_NAME = args.Base_geo_name
-    BASE_GEO_ID = args.Base_geo_unique_ID
-    OVERLAY_GEO_FILE = args.Overlay_geo_file
-    OVERLAY_NAME = args.Overlay_geo_name
-    OVERLAY_GEO_ID = args.Overlay_geo_unique_ID
+    BASE_GEO_FILE = args.base_geo_file
+    BASE_NAME = args.base_geo_name
+    BASE_GEO_ID = args.base_geo_unique_ID
+    OVERLAY_GEO_FILE = args.overlay_geo_file
+    OVERLAY_NAME = args.overlay_geo_name
+    OVERLAY_GEO_ID = args.overlay_geo_unique_ID
+    SCENARIO = args.scenario
+    
     # output
     OUTPUT_DIR = args.output_dir
-    OUTPUT_FILE = os.path.join(OUTPUT_DIR, '{}_{}_crosswalk.csv'.format(BASE_NAME, OVERLAY_NAME))
-    LOG_FILE = os.path.join(OUTPUT_DIR, 'create_{}_{}_crossawlk_{}.log'.format(BASE_NAME, OVERLAY_NAME, today))
+    if SCENARIO is not None:
+        OUTPUT_FILE = os.path.join(OUTPUT_DIR, '{}_{}_crosswalk_{}.csv'.format(BASE_NAME, OVERLAY_NAME, SCENARIO))
+        LOG_FILE = os.path.join(OUTPUT_DIR, 'create_{}_{}_crossawlk_{}_{}.log'.format(BASE_NAME, OVERLAY_NAME, SCENARIO, today))
+    else:
+        OUTPUT_FILE = os.path.join(OUTPUT_DIR, '{}_{}_crosswalk.csv'.format(BASE_NAME, OVERLAY_NAME))
+        LOG_FILE = os.path.join(OUTPUT_DIR, 'create_{}_{}_crossawlk_{}.log'.format(BASE_NAME, OVERLAY_NAME, today))        
 
     # set up logging
     logger = logging.getLogger()
@@ -132,26 +139,29 @@ if __name__ == '__main__':
     logger.info('overlaying {} onto {}'.format(OVERLAY_NAME, BASE_NAME))
 
     # loading the input files - base layer
-    logger.info('loading base geography data: {}'.format(BASE_GEO_FILE))
+    logger.info('loading base geography data: {}, from {}'.format(BASE_NAME, BASE_GEO_FILE))
     base_geo = gpd.read_file(BASE_GEO_FILE)
-    logger.debug('{} rows, {} unique {}'.format(base_geo.shape[0], base_geo[BASE_GEO_ID].nunique(), BASE_GEO_ID))
+    logger.info('{} rows, {} unique {}'.format(base_geo.shape[0], base_geo[BASE_GEO_ID].nunique(), BASE_GEO_ID))
     
     # loading the input files - overlay layer
-    logger.info('loading Census geography data: {}'.format(OVERLAY_GEO_FILE))
+    logger.info('loading overlay geography data: {}, from {}'.format(OVERLAY_NAME, OVERLAY_GEO_FILE))
     # census_geo = gpd.read_file(r'M:\Data\Census\Geography\tl_2020_06_tract\tl_2020_06_tract_bayarea.shp')
     overlay_geo = gpd.read_file(OVERLAY_GEO_FILE)
     # there are cases when the overlay data doesn't have a unique ID, i.e. only one record (one geography category), then add a field
     if OVERLAY_GEO_ID not in overlay_geo:
         overlay_geo[OVERLAY_GEO_ID] = OVERLAY_NAME
-    logger.debug('{} rows, {} unique {}'.format(overlay_geo.shape[0], overlay_geo[OVERLAY_GEO_ID].nunique(), OVERLAY_GEO_ID))
+    logger.info('{} rows, {} unique {}'.format(overlay_geo.shape[0], overlay_geo[OVERLAY_GEO_ID].nunique(), OVERLAY_GEO_ID))
 
-    # create crosswalk between TAZ1454 and Census geography ID
-    logger.info('creating TAZ - Census geography crosswalk')
+    # create crosswalk between base data ID and overlay data ID
+    logger.info('creating {} - {} crosswalk'.format(BASE_NAME, OVERLAY_NAME))
     crosswalk = geo_assign_fields(base_geo, BASE_GEO_ID, overlay_geo, [OVERLAY_GEO_ID], return_intersection_area=True)
-    logger.debug('crosswalk created: {} rows, {} unique {}, with header {}'.format(
+    logger.info('crosswalk created: {} rows, {} unique {}, with header \n{}'.format(
         crosswalk.shape[0], crosswalk[BASE_GEO_ID].nunique(), BASE_GEO_ID, crosswalk.head()))
     # add overlay name to the ID column name for clarity
     crosswalk.rename(columns = {OVERLAY_GEO_ID: OVERLAY_GEO_ID+'_'+OVERLAY_NAME}, inplace=True)
+    # add scenario column
+    if SCENARIO is not None:
+        crosswalk['scen'] = SCENARIO
 
     # write out
     logger.info('writing out to {}'.format(OUTPUT_FILE))
