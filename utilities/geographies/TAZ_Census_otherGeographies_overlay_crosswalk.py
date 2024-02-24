@@ -3,6 +3,26 @@ USAGE = """
 Create crosswalk between TAZ and Census geographies (e.g. tract, block, etc.), or between TAZ / Tract and other geographies (e.g. Growth Geographies, TRA).
 It is based on "largest area within" method, i.e. if a TAZ falls into multiple Census Tracts, it is assigned to the Tract with the largest intersection area with the TAZ.
 
+Args:
+    base_geo_file: full directory of the base spatial layer
+    base_geo_name: short name of the base layer, e.g. 'TAZ1454', 'Tract20', 'TRA'
+    base_geo_unique_ID: unique ID of the base geography, e.g. 'TAZ1454', 'GEOID'
+    overlay_geo_file: full directory of the overlay spatial layer
+    overlay_geo_name: short name of the base layer, e.g. 'TAZ1454', 'Tract20', 'TRA'
+    overlay_geo_unique_ID: unique ID of the overlay geography, e.g. 'TAZ1454', 'GEOID'
+    output_dir: directory of the output
+    --scenario: optional, plan scenario, e.g. 'DBP','FBP','NP','EIR1','EIR2'
+
+Output: 
+    [base_geo_name]_[overlay_geo_name]_crosswalk_[scenario].csv. With fields:
+        * base_geo_unique_ID
+        * base_sq_m: size of each base polygon in square-meter
+        * overlay_geo_unique_ID + overlay_geo_name
+        * intersection_sq_m: size of the intersection between each base polygon and the matched overlay polygon (the one with the largest intersection)
+        * area_share: the ratio of the intersection's area to the total area for each base polygon. 
+        * scen: scenario
+    It should have the same record count as the base layer.
+
 Example call: 
     python TAZ_Census_otherGeographies_overlay_crosswalk.py "M:/Data/Census/Geography/tl_2020_06_tract/tl_2020_06_tract_bayarea.shp" "tract2020" "GEOID" "C:/Users/ywang/Box/Modeling and Surveys/Urban Modeling/Bay Area UrbanSim/p10 Datasets for PBA2050plus/raw_data_to_build_parcels_geography/pba50plus_GrowthGeographies_p10tagging/PBA50Plus_Growth_Geographies_120823.shp" "ggPBA50plus" "gg_id" "M:/Application/PBA50Plus_Data_Processing/crosswalks/interim" --scenario DBP
 
