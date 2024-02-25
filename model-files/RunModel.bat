@@ -426,6 +426,6 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 ECHO FINISHED.  
 
 :: if we got here and didn't shutdown -- assume something went wrong
-python "CTRAMP\scripts\notify_slack.py" ":exclamation: Error in *%MODEL_DIR%*"
+:: python "CTRAMP\scripts\notify_slack.py" ":exclamation: Error in *%MODEL_DIR%*"
 
 :donedone
