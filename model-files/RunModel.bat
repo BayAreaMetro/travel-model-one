@@ -114,7 +114,7 @@ if %FUTURE%==X (
 echo on
 echo turn echo back on
 
-set INSTANCE=unknown-instance
+set INSTANCE=%computername%
 if "%COMPUTER_PREFIX%" == "WIN-" (
   rem figure out instance
   for /f "delims=" %%I in ('"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -Command (wget http://169.254.169.254/latest/meta-data/instance-id).Content"') do set INSTANCE=%%I
