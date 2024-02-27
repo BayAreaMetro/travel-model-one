@@ -1,0 +1,924 @@
+<?xml version='1.0' encoding='utf-8' ?>
+
+<!-- build 20233.24.0112.1233                               -->
+<workbook original-version='18.1' source-build='2023.3.2 (20233.24.0112.1233)' source-platform='win' version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <document-format-change-manifest>
+    <_.fcp.AccessibleZoneTabOrder.true...AccessibleZoneTabOrder />
+    <_.fcp.AnimationOnByDefault.true...AnimationOnByDefault />
+    <AutoCreateAndUpdateDSDPhoneLayouts />
+    <_.fcp.MarkAnimation.true...MarkAnimation />
+    <_.fcp.ObjectModelEncapsulateLegacy.true...ObjectModelEncapsulateLegacy />
+    <_.fcp.ObjectModelTableType.true...ObjectModelTableType />
+    <_.fcp.SchemaViewerObjectModel.true...SchemaViewerObjectModel />
+    <SetMembershipControl />
+    <SheetIdentifierTracking />
+    <SortTagCleanup />
+    <WindowsPersistSimpleIdentifiers />
+    <WorksheetBackgroundTransparency />
+  </document-format-change-manifest>
+  <preferences>
+    <preference name='ui.encoding.shelf.height' value='24' />
+    <preference name='ui.shelf.height' value='26' />
+  </preferences>
+  <_.fcp.AnimationOnByDefault.false...style>
+    <_.fcp.AnimationOnByDefault.false..._.fcp.MarkAnimation.true...style-rule element='animation'>
+      <_.fcp.AnimationOnByDefault.false...format attr='animation-on' value='ao-on' />
+    </_.fcp.AnimationOnByDefault.false..._.fcp.MarkAnimation.true...style-rule>
+  </_.fcp.AnimationOnByDefault.false...style>
+  <datasources>
+    <datasource caption='metrics_affordable1_HplusT_costs' inline='true' name='federated.0y535bg0h87kjj1983khk1p0lhfu' version='18.1'>
+      <connection class='federated'>
+        <named-connections>
+          <named-connection caption='metrics_affordable1_HplusT_costs' name='textscan.1i6jpbp1ka2ziu100qaeh0er050u'>
+            <connection class='textscan' directory='.' filename='metrics_affordable1_HplusT_costs.csv' password='' server='' />
+          </named-connection>
+        </named-connections>
+        <_.fcp.ObjectModelEncapsulateLegacy.false...relation connection='textscan.1i6jpbp1ka2ziu100qaeh0er050u' name='metrics_affordable1_HplusT_costs.csv' table='[metrics_affordable1_HplusT_costs#csv]' type='table'>
+          <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
+            <column datatype='string' name='modelrun_id' ordinal='0' />
+            <column datatype='string' name='incQ' ordinal='1' />
+            <column datatype='real' name='total_auto_cost' ordinal='2' />
+            <column datatype='real' name='total_auto_trips' ordinal='3' />
+            <column datatype='real' name='total_hh_inc' ordinal='4' />
+            <column datatype='real' name='total_households' ordinal='5' />
+            <column datatype='real' name='total_transit_fares' ordinal='6' />
+            <column datatype='real' name='total_transit_trips' ordinal='7' />
+            <column datatype='real' name='total_hh_inc_with_UBI' ordinal='8' />
+            <column datatype='real' name='parking_cost' ordinal='9' />
+            <column datatype='real' name='total_autos' ordinal='10' />
+            <column datatype='real' name='total_auto_ownership_cost_annual' ordinal='11' />
+            <column datatype='real' name='total_auto_op_cost_annual' ordinal='12' />
+            <column datatype='real' name='total_transit_fares_annual' ordinal='13' />
+            <column datatype='real' name='total_parking_cost_annual' ordinal='14' />
+            <column datatype='real' name='total_tansp_cost_annual' ordinal='15' />
+            <column datatype='real' name='transp_cost_share_of_hh_income' ordinal='16' />
+            <column datatype='string' name='modelrun_alias' ordinal='17' />
+            <column datatype='real' name='housing_cost_share_of_hh_income' ordinal='18' />
+            <column datatype='real' name='H+T_cost_share_of_hh_income' ordinal='19' />
+          </columns>
+        </_.fcp.ObjectModelEncapsulateLegacy.false...relation>
+        <_.fcp.ObjectModelEncapsulateLegacy.true...relation connection='textscan.1i6jpbp1ka2ziu100qaeh0er050u' name='metrics_affordable1_HplusT_costs.csv' table='[metrics_affordable1_HplusT_costs#csv]' type='table'>
+          <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
+            <column datatype='string' name='modelrun_id' ordinal='0' />
+            <column datatype='string' name='incQ' ordinal='1' />
+            <column datatype='real' name='total_auto_cost' ordinal='2' />
+            <column datatype='real' name='total_auto_trips' ordinal='3' />
+            <column datatype='real' name='total_hh_inc' ordinal='4' />
+            <column datatype='real' name='total_households' ordinal='5' />
+            <column datatype='real' name='total_transit_fares' ordinal='6' />
+            <column datatype='real' name='total_transit_trips' ordinal='7' />
+            <column datatype='real' name='total_hh_inc_with_UBI' ordinal='8' />
+            <column datatype='real' name='parking_cost' ordinal='9' />
+            <column datatype='real' name='total_autos' ordinal='10' />
+            <column datatype='real' name='total_auto_ownership_cost_annual' ordinal='11' />
+            <column datatype='real' name='total_auto_op_cost_annual' ordinal='12' />
+            <column datatype='real' name='total_transit_fares_annual' ordinal='13' />
+            <column datatype='real' name='total_parking_cost_annual' ordinal='14' />
+            <column datatype='real' name='total_tansp_cost_annual' ordinal='15' />
+            <column datatype='real' name='transp_cost_share_of_hh_income' ordinal='16' />
+            <column datatype='string' name='modelrun_alias' ordinal='17' />
+            <column datatype='real' name='housing_cost_share_of_hh_income' ordinal='18' />
+            <column datatype='real' name='H+T_cost_share_of_hh_income' ordinal='19' />
+          </columns>
+        </_.fcp.ObjectModelEncapsulateLegacy.true...relation>
+        <metadata-records>
+          <metadata-record class='capability'>
+            <remote-name />
+            <remote-type>0</remote-type>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias />
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='character-set'>&quot;UTF-8&quot;</attribute>
+              <attribute datatype='string' name='collation'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='field-delimiter'>&quot;,&quot;</attribute>
+              <attribute datatype='string' name='header-row'>&quot;true&quot;</attribute>
+              <attribute datatype='string' name='locale'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='single-char'>&quot;&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>modelrun_id</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[modelrun_id]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>modelrun_id</remote-alias>
+            <ordinal>0</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>incQ</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[incQ]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>incQ</remote-alias>
+            <ordinal>1</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>total_auto_cost</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[total_auto_cost]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>total_auto_cost</remote-alias>
+            <ordinal>2</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>total_auto_trips</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[total_auto_trips]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>total_auto_trips</remote-alias>
+            <ordinal>3</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>total_hh_inc</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[total_hh_inc]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>total_hh_inc</remote-alias>
+            <ordinal>4</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>total_households</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[total_households]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>total_households</remote-alias>
+            <ordinal>5</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>total_transit_fares</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[total_transit_fares]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>total_transit_fares</remote-alias>
+            <ordinal>6</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>total_transit_trips</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[total_transit_trips]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>total_transit_trips</remote-alias>
+            <ordinal>7</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>total_hh_inc_with_UBI</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[total_hh_inc_with_UBI]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>total_hh_inc_with_UBI</remote-alias>
+            <ordinal>8</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>parking_cost</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[parking_cost]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>parking_cost</remote-alias>
+            <ordinal>9</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>total_autos</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[total_autos]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>total_autos</remote-alias>
+            <ordinal>10</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>total_auto_ownership_cost_annual</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[total_auto_ownership_cost_annual]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>total_auto_ownership_cost_annual</remote-alias>
+            <ordinal>11</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>total_auto_op_cost_annual</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[total_auto_op_cost_annual]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>total_auto_op_cost_annual</remote-alias>
+            <ordinal>12</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>total_transit_fares_annual</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[total_transit_fares_annual]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>total_transit_fares_annual</remote-alias>
+            <ordinal>13</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>total_parking_cost_annual</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[total_parking_cost_annual]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>total_parking_cost_annual</remote-alias>
+            <ordinal>14</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>total_tansp_cost_annual</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[total_tansp_cost_annual]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>total_tansp_cost_annual</remote-alias>
+            <ordinal>15</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>transp_cost_share_of_hh_income</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[transp_cost_share_of_hh_income]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>transp_cost_share_of_hh_income</remote-alias>
+            <ordinal>16</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>modelrun_alias</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[modelrun_alias]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>modelrun_alias</remote-alias>
+            <ordinal>17</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>housing_cost_share_of_hh_income</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[housing_cost_share_of_hh_income]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>housing_cost_share_of_hh_income</remote-alias>
+            <ordinal>18</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>H+T_cost_share_of_hh_income</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[H+T_cost_share_of_hh_income]</local-name>
+            <parent-name>[metrics_affordable1_HplusT_costs.csv]</parent-name>
+            <remote-alias>H+T_cost_share_of_hh_income</remote-alias>
+            <ordinal>19</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+        </metadata-records>
+      </connection>
+      <aliases enabled='yes' />
+      <column datatype='string' name='[:Measure Names]' role='dimension' type='nominal'>
+        <aliases>
+          <alias key='&quot;[federated.0y535bg0h87kjj1983khk1p0lhfu].[sum:H+T_cost_share_of_hh_income:qk]&quot;' value='Housing + Transportation' />
+          <alias key='&quot;[federated.0y535bg0h87kjj1983khk1p0lhfu].[sum:housing_cost_share_of_hh_income:qk]&quot;' value='Housing' />
+          <alias key='&quot;[federated.0y535bg0h87kjj1983khk1p0lhfu].[sum:transp_cost_share_of_hh_income:qk]&quot;' value='Transportation' />
+        </aliases>
+      </column>
+      <column caption='H+T Cost Share of Hh Income' datatype='real' default-format='p0%' name='[H+T_cost_share_of_hh_income]' role='measure' type='quantitative' />
+      <_.fcp.ObjectModelTableType.true...column caption='metrics_affordable1_HplusT_costs.csv' datatype='table' name='[__tableau_internal_object_id__].[metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E]' role='measure' type='quantitative' />
+      <column caption='Housing Cost Share of Hh Income' datatype='real' default-format='p0%' name='[housing_cost_share_of_hh_income]' role='measure' type='quantitative' />
+      <column datatype='string' name='[incQ]' role='dimension' type='nominal'>
+        <aliases>
+          <alias key='&quot;1&quot;' value='Households with Low Incomes' />
+          <alias key='&quot;all&quot;' value='All Households' />
+        </aliases>
+      </column>
+      <column caption='Modelrun Alias' datatype='string' name='[modelrun_alias]' role='dimension' type='nominal' />
+      <column caption='Parking Cost' datatype='real' name='[parking_cost]' role='measure' type='quantitative' />
+      <column caption='Total Auto Cost' datatype='real' name='[total_auto_cost]' role='measure' type='quantitative' />
+      <column caption='Total Auto Op Cost Annual' datatype='real' name='[total_auto_op_cost_annual]' role='measure' type='quantitative' />
+      <column caption='Total Auto Ownership Cost Annual' datatype='real' name='[total_auto_ownership_cost_annual]' role='measure' type='quantitative' />
+      <column caption='Total Auto Trips' datatype='real' name='[total_auto_trips]' role='measure' type='quantitative' />
+      <column caption='Total Autos' datatype='real' name='[total_autos]' role='measure' type='quantitative' />
+      <column caption='Total Hh Inc' datatype='real' name='[total_hh_inc]' role='measure' type='quantitative' />
+      <column caption='Total Hh Inc with UBI' datatype='real' name='[total_hh_inc_with_UBI]' role='measure' type='quantitative' />
+      <column caption='Total Households' datatype='real' name='[total_households]' role='measure' type='quantitative' />
+      <column caption='Total Parking Cost Annual' datatype='real' name='[total_parking_cost_annual]' role='measure' type='quantitative' />
+      <column caption='Total Tansp Cost Annual' datatype='real' name='[total_tansp_cost_annual]' role='measure' type='quantitative' />
+      <column caption='Total Transit Fares' datatype='real' name='[total_transit_fares]' role='measure' type='quantitative' />
+      <column caption='Total Transit Fares Annual' datatype='real' name='[total_transit_fares_annual]' role='measure' type='quantitative' />
+      <column caption='Total Transit Trips' datatype='real' name='[total_transit_trips]' role='measure' type='quantitative' />
+      <column caption='Transp Cost Share of Hh Income' datatype='real' default-format='p0%' name='[transp_cost_share_of_hh_income]' role='measure' type='quantitative' />
+      <column-instance column='[H+T_cost_share_of_hh_income]' derivation='Sum' name='[sum:H+T_cost_share_of_hh_income:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[housing_cost_share_of_hh_income]' derivation='Sum' name='[sum:housing_cost_share_of_hh_income:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[transp_cost_share_of_hh_income]' derivation='Sum' name='[sum:transp_cost_share_of_hh_income:qk]' pivot='key' type='quantitative' />
+      <layout _.fcp.SchemaViewerObjectModel.false...dim-percentage='0.5' _.fcp.SchemaViewerObjectModel.false...measure-percentage='0.4' dim-ordering='alphabetic' measure-ordering='alphabetic' show-aliased-fields='true' show-structure='true' />
+      <semantic-values>
+        <semantic-value key='[Country].[Name]' value='&quot;United States&quot;' />
+      </semantic-values>
+      <_.fcp.ObjectModelEncapsulateLegacy.true...object-graph>
+        <objects>
+          <object caption='metrics_affordable1_HplusT_costs.csv' id='metrics_affordable1_HplusT_costs.csv_8CD8ECF5B23B4C50881D1866B089744E'>
+            <properties context=''>
+              <relation connection='textscan.1i6jpbp1ka2ziu100qaeh0er050u' name='metrics_affordable1_HplusT_costs.csv' table='[metrics_affordable1_HplusT_costs#csv]' type='table'>
+                <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
+                  <column datatype='string' name='modelrun_id' ordinal='0' />
+                  <column datatype='string' name='incQ' ordinal='1' />
+                  <column datatype='real' name='total_auto_cost' ordinal='2' />
+                  <column datatype='real' name='total_auto_trips' ordinal='3' />
+                  <column datatype='real' name='total_hh_inc' ordinal='4' />
+                  <column datatype='real' name='total_households' ordinal='5' />
+                  <column datatype='real' name='total_transit_fares' ordinal='6' />
+                  <column datatype='real' name='total_transit_trips' ordinal='7' />
+                  <column datatype='real' name='total_hh_inc_with_UBI' ordinal='8' />
+                  <column datatype='real' name='parking_cost' ordinal='9' />
+                  <column datatype='real' name='total_autos' ordinal='10' />
+                  <column datatype='real' name='total_auto_ownership_cost_annual' ordinal='11' />
+                  <column datatype='real' name='total_auto_op_cost_annual' ordinal='12' />
+                  <column datatype='real' name='total_transit_fares_annual' ordinal='13' />
+                  <column datatype='real' name='total_parking_cost_annual' ordinal='14' />
+                  <column datatype='real' name='total_tansp_cost_annual' ordinal='15' />
+                  <column datatype='real' name='transp_cost_share_of_hh_income' ordinal='16' />
+                  <column datatype='string' name='modelrun_alias' ordinal='17' />
+                  <column datatype='real' name='housing_cost_share_of_hh_income' ordinal='18' />
+                  <column datatype='real' name='H+T_cost_share_of_hh_income' ordinal='19' />
+                </columns>
+              </relation>
+            </properties>
+          </object>
+        </objects>
+      </_.fcp.ObjectModelEncapsulateLegacy.true...object-graph>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='A1 H+T'>
+      <layout-options>
+        <caption>
+          <formatted-text>
+            <run>Note for these summaries, &quot;Households with Low Incomes&quot; are Q1 households only.
+The big shift in the shares is due to the UBI.</run>
+          </formatted-text>
+        </caption>
+      </layout-options>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='metrics_affordable1_HplusT_costs' name='federated.0y535bg0h87kjj1983khk1p0lhfu' />
+          </datasources>
+          <datasource-dependencies datasource='federated.0y535bg0h87kjj1983khk1p0lhfu'>
+            <column caption='H+T Cost Share of Hh Income' datatype='real' default-format='p0%' name='[H+T_cost_share_of_hh_income]' role='measure' type='quantitative' />
+            <column caption='Housing Cost Share of Hh Income' datatype='real' default-format='p0%' name='[housing_cost_share_of_hh_income]' role='measure' type='quantitative' />
+            <column datatype='string' name='[incQ]' role='dimension' type='nominal'>
+              <aliases>
+                <alias key='&quot;1&quot;' value='Households with Low Incomes' />
+                <alias key='&quot;all&quot;' value='All Households' />
+              </aliases>
+            </column>
+            <column caption='Modelrun Alias' datatype='string' name='[modelrun_alias]' role='dimension' type='nominal' />
+            <column-instance column='[incQ]' derivation='None' name='[none:incQ:nk]' pivot='key' type='nominal' />
+            <column-instance column='[modelrun_alias]' derivation='None' name='[none:modelrun_alias:nk]' pivot='key' type='nominal' />
+            <column-instance column='[H+T_cost_share_of_hh_income]' derivation='Sum' name='[sum:H+T_cost_share_of_hh_income:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[housing_cost_share_of_hh_income]' derivation='Sum' name='[sum:housing_cost_share_of_hh_income:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[transp_cost_share_of_hh_income]' derivation='Sum' name='[sum:transp_cost_share_of_hh_income:qk]' pivot='key' type='quantitative' />
+            <column caption='Transp Cost Share of Hh Income' datatype='real' default-format='p0%' name='[transp_cost_share_of_hh_income]' role='measure' type='quantitative' />
+          </datasource-dependencies>
+          <filter class='categorical' column='[federated.0y535bg0h87kjj1983khk1p0lhfu].[:Measure Names]'>
+            <groupfilter function='union' user:ui-domain='relevant' user:ui-enumeration='inclusive' user:ui-marker='enumerate'>
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0y535bg0h87kjj1983khk1p0lhfu].[sum:H+T_cost_share_of_hh_income:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0y535bg0h87kjj1983khk1p0lhfu].[sum:housing_cost_share_of_hh_income:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.0y535bg0h87kjj1983khk1p0lhfu].[sum:transp_cost_share_of_hh_income:qk]&quot;' />
+            </groupfilter>
+          </filter>
+          <manual-sort column='[federated.0y535bg0h87kjj1983khk1p0lhfu].[:Measure Names]' direction='ASC'>
+            <dictionary>
+              <bucket>&quot;[federated.0y535bg0h87kjj1983khk1p0lhfu].[sum:H+T_cost_share_of_hh_income:qk]&quot;</bucket>
+              <bucket>&quot;[federated.0y535bg0h87kjj1983khk1p0lhfu].[sum:transp_cost_share_of_hh_income:qk]&quot;</bucket>
+              <bucket>&quot;[federated.0y535bg0h87kjj1983khk1p0lhfu].[sum:housing_cost_share_of_hh_income:qk]&quot;</bucket>
+            </dictionary>
+          </manual-sort>
+          <filter class='categorical' column='[federated.0y535bg0h87kjj1983khk1p0lhfu].[none:incQ:nk]'>
+            <groupfilter function='union' user:ui-domain='database' user:ui-enumeration='inclusive' user:ui-marker='enumerate'>
+              <groupfilter function='member' level='[none:incQ:nk]' member='&quot;1&quot;' />
+              <groupfilter function='member' level='[none:incQ:nk]' member='&quot;all&quot;' />
+            </groupfilter>
+          </filter>
+          <manual-sort column='[federated.0y535bg0h87kjj1983khk1p0lhfu].[none:incQ:nk]' direction='ASC'>
+            <dictionary>
+              <bucket>&quot;1&quot;</bucket>
+              <bucket>&quot;all&quot;</bucket>
+            </dictionary>
+          </manual-sort>
+          <manual-sort column='[federated.0y535bg0h87kjj1983khk1p0lhfu].[none:modelrun_alias:nk]' direction='ASC'>
+            <dictionary>
+              <bucket>&quot;2015&quot;</bucket>
+              <bucket>&quot;2050 No Project&quot;</bucket>
+              <bucket>&quot;2050 Plan&quot;</bucket>
+              <bucket>&quot;2050 EIR Alt1&quot;</bucket>
+              <bucket>&quot;2050 EIR Alt2&quot;</bucket>
+            </dictionary>
+          </manual-sort>
+          <slices>
+            <column>[federated.0y535bg0h87kjj1983khk1p0lhfu].[:Measure Names]</column>
+            <column>[federated.0y535bg0h87kjj1983khk1p0lhfu].[none:incQ:nk]</column>
+          </slices>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='cell'>
+            <format attr='width' field='[federated.0y535bg0h87kjj1983khk1p0lhfu].[none:modelrun_alias:nk]' value='91' />
+          </style-rule>
+          <style-rule element='header'>
+            <format attr='width' field='[federated.0y535bg0h87kjj1983khk1p0lhfu].[:Measure Names]' value='164' />
+            <format attr='width' field='[federated.0y535bg0h87kjj1983khk1p0lhfu].[none:incQ:nk]' value='184' />
+          </style-rule>
+          <style-rule element='worksheet'>
+            <format attr='display-field-labels' scope='rows' value='false' />
+            <format attr='display-field-labels' scope='cols' value='false' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Automatic' />
+            <encodings>
+              <text column='[federated.0y535bg0h87kjj1983khk1p0lhfu].[Multiple Values]' />
+            </encodings>
+            <style>
+              <style-rule element='mark'>
+                <format attr='mark-labels-show' value='true' />
+              </style-rule>
+              <style-rule element='pane'>
+                <format attr='minwidth' value='-1' />
+                <format attr='maxwidth' value='-1' />
+              </style-rule>
+            </style>
+          </pane>
+        </panes>
+        <rows>([federated.0y535bg0h87kjj1983khk1p0lhfu].[:Measure Names] / [federated.0y535bg0h87kjj1983khk1p0lhfu].[none:incQ:nk])</rows>
+        <cols>[federated.0y535bg0h87kjj1983khk1p0lhfu].[none:modelrun_alias:nk]</cols>
+      </table>
+      <simple-id uuid='{F145C1E7-56ED-4632-BC57-E91724239EC7}' />
+    </worksheet>
+  </worksheets>
+  <dashboards>
+    <dashboard _.fcp.AccessibleZoneTabOrder.true...enable-sort-zone-taborder='true' name='Affordable Dashboard'>
+      <style />
+      <size maxheight='1100' maxwidth='850' minheight='1100' minwidth='850' preset-index='10' sizing-mode='fixed' />
+      <zones>
+        <zone h='100000' id='4' type-v2='layout-basic' w='100000' x='0' y='0'>
+          <zone h='98546' id='3' param='vert' type-v2='layout-flow' w='98118' x='941' y='727'>
+            <zone h='4091' id='5' type-v2='text' w='98118' x='941' y='727'>
+              <formatted-text>
+                <run bold='true' fontcolor='#d6401f' fontname='Tableau Bold' fontsize='20'>AFFORDABLE</run>
+              </formatted-text>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+            <zone h='2454' id='6' type-v2='text' w='98118' x='941' y='4818'>
+              <formatted-text>
+                <run bold='true' fontcolor='#555555' fontname='Trebuchet MS,sans-serif' fontsize='12' italic='true'>Will Bay Area residents spend less on housing and transportation?</run>
+              </formatted-text>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+            <zone h='15363' id='7' name='A1 H+T' show-title='false' w='98118' x='941' y='7272'>
+              <layout-cache fixed-size-h='161' type-h='fixed' type-w='fixed' />
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+          </zone>
+          <zone-style>
+            <format attr='border-color' value='#000000' />
+            <format attr='border-style' value='none' />
+            <format attr='border-width' value='0' />
+            <format attr='margin' value='8' />
+          </zone-style>
+        </zone>
+        <zone h='3818' id='8' type-v2='text' w='37765' x='1176' y='7364'>
+          <formatted-text>
+            <run bold='true' fontcolor='#d6401f'>Housing + Transportation Costs as a Share of Income</run>
+          </formatted-text>
+        </zone>
+      </zones>
+      <devicelayouts>
+        <devicelayout auto-generated='true' name='Phone'>
+          <size maxheight='700' minheight='700' sizing-mode='vscroll' />
+          <zones>
+            <zone h='100000' id='16' type-v2='layout-basic' w='100000' x='0' y='0'>
+              <zone h='98546' id='15' param='vert' type-v2='layout-flow' w='98118' x='941' y='727'>
+                <zone h='4091' id='5' type-v2='text' w='98118' x='941' y='727'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#d6401f' fontname='Tableau Bold' fontsize='20'>AFFORDABLE</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone h='2454' id='6' type-v2='text' w='98118' x='941' y='4818'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#555555' fontname='Trebuchet MS,sans-serif' fontsize='12' italic='true'>Will Bay Area residents spend less on housing and transportation?</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone fixed-size='161' h='15363' id='7' is-fixed='true' name='A1 H+T' show-title='false' w='98118' x='941' y='7272'>
+                  <layout-cache fixed-size-h='161' type-h='fixed' type-w='fixed' />
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone h='3818' id='8' type-v2='text' w='37765' x='1176' y='7364'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#d6401f'>Housing + Transportation Costs as a Share of Income</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+              </zone>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='8' />
+              </zone-style>
+            </zone>
+          </zones>
+        </devicelayout>
+      </devicelayouts>
+      <simple-id uuid='{E77FA38C-F898-4574-BC80-067C771AF303}' />
+    </dashboard>
+  </dashboards>
+  <windows source-height='30'>
+    <window class='dashboard' maximized='true' name='Affordable Dashboard'>
+      <viewpoints>
+        <viewpoint name='A1 H+T' />
+      </viewpoints>
+      <active id='-1' />
+      <simple-id uuid='{28D4FE92-10D6-4A61-980B-7A4FDCE02480}' />
+    </window>
+    <window class='worksheet' name='A1 H+T'>
+      <cards>
+        <edge name='left'>
+          <strip size='160'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+            <card type='measures' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='31'>
+            <card type='title' />
+          </strip>
+        </edge>
+        <edge name='bottom'>
+          <strip size='96'>
+            <card type='caption' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <highlight>
+          <color-one-way>
+            <field>[federated.0y535bg0h87kjj1983khk1p0lhfu].[none:incQ:nk]</field>
+            <field>[federated.0y535bg0h87kjj1983khk1p0lhfu].[none:modelrun_alias:nk]</field>
+          </color-one-way>
+        </highlight>
+      </viewpoint>
+      <simple-id uuid='{23D1FC69-7A97-482A-AF4B-887E9EAFFF22}' />
+    </window>
+  </windows>
+  <thumbnails>
+    <thumbnail height='164' name='A1 H+T' width='192'>
+      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
+      Y+r09iZv5yzu6V+D63s6gx0tGsNEFq1N9zxvYuysHDpOe65CWn3daWgKVPKmHm2M1icnJOjv
+      fl2h1+i6ruvn9GNffaf/84Ku63qNXrb5Bd04+W39x0vr/1FffeQnvaJG1y989Zo+1rPPqo/n
+      6sYXNutlNbqu11ToPx08rJfouq7ru/Vk41h94Wdn9Au6rl/4YbOeGBauZ+Trun56kz41KFpf
+      9lWZXqPX6GU7k/XwoLn6x/+6vN3k2Cn64lz3tu4hXD2lqSw5rB/5yTP+C1/pr40N0tP+3vj6
+      +u5k3Rj9pnt8LRjD/G3u81FTtll/wRitv1nS6j8NpTU7BXL9Q7evX6AnTHtOf25agr5gvb19
+      p0BX9tN2w1XwBrGJf6fklxr3ooAH6nTR9iNgWF/clb+98PGU53oPvoeBB1aQMK+Ex0LNhDw6
+      nMutwT70H3wXXgADIokwLyIr30FF770cDLawZIQvBsB3VCzRd0exNw9GhwBU0N+yhLnmOt2m
+      DejmdY4P5icxreA8DdX9NqUir7kx+DA0cAg+7vJc2rM9Vx0dqie4Xj9tXhazbN2Z+7+7eeIu
+      L0/vVQt24x/PuzkPcfDzL9i2bSFrFg8gaVMmEVeV3blwucDQovLcvvjf0/SbH8rISXuRo0Fv
+      sX11ID0M7hLwztieq44O1RNcz4Vqqnr24t9u98JVeYI9+463aLOyvI/4snwgD06YysJlKUTe
+      bqfgUmmwiwvu8lzOH8rCtiuAUQ/70dMYzIN7N7Dm0HlcuDi/ay3vFI8i+KrG6ctuu80Hjn9L
+      kRNPEXU17rrfPngZnJw9upe6db9Xr3+l6xmDuPFuXABGWnje7wOmB5t4PH4dP3nf2aLNvDnF
+      xnkRhGoaWmgiewOSsFwqDf6Bjc8/jkkLYkzifoa/lollENAnileXaxx+KYIgLYiIFRVEZ/03
+      o3s2/jq9/vBHYn61kZhgDVN8NmfwY1xcFI6McILME/jzJ1XUrfu9ev16rmMMoj11uZ7gXFK0
+      LO7ObruCa9G5KdYTLAEQrdeJAyBE68nNcEJpEgChNAmAUJrcDCc6FfmHsYRoQxIAoTQJgFCa
+      BEAoTQIguhipSRUqk5pUoTKpSRUKk5pUoTKpSRUqk5pUoTCpSRUqk5pUoTKpSRVKkLtBhWhD
+      EgChNAmAUJoEQChNalKF0uRXIKE0mQIJpUkAhNIkAEJprQiAA5tFIyX36mUWm7Rdic6hc10B
+      HDYsmgXJl2hIvtVKfr1lp7elYa2/sI7OdTfooBg22GNu9ihEF9K+VwBXMdlJ4wkzuWtGJ6Xv
+      otTTJeSwWa6YKtV97CrOJulpd72oZg4ndl1h7Uru+lX3A2wWjYTlNpLGu6tMzc9mkudpXnWV
+      7iJ9knu5KWw80597hgVXTNeEaIMrwNZEzVNCdllAOICLvKXTWKlPZf3uSAZQxNopMcyw2tgc
+      79/EHqvZ+UY6NTE72B/pC5Wl5B93Nrp2ZQ8jaestLDEcISNqCu/nzcQYUoR1xny+ffR1tq4b
+      gS9FrLZEc6q1Bys6twYaYlodgDEZdlJDah+5mxR3AFDE/lwvol6NZIAXgD+xceG8nrUPR5MB
+      8GbwPQM5sCKBeSWPEWoO4dHhgxtdu1/AMPq6u1Xp5YO7XNWxj9wfRhEXPwJfA0B3uneuyZ64
+      Lh2qJvX6+ce/S85DB/n8i21sW7iGxQOS2JQZwVXNqE0y0KLGVNGFdKiaVH+CQpxkW7dw0gk4
+      i1hr3cHAEBO1lV6lJ0/hxEXliT18uL+2g7SMvI++pHzgg0yYupBlKZHcbi/g+0ZepUF+gdzn
+      s4ecLSdxAs6zJ/ixvC2PTXQV7RgAA8bZq5hxywYmh2poofF8du8iVsa5pz9+5ifx3zmHYNPj
+      TF5ZTL+htR2k3nBqI/MiQtE0jdDEvQQkWRjZ+As18NIjmf7KOM6umECwZmbC4j2cb+vDE51M
+      l6tJbUoFpSd+pqdff3y8XFSe+BtzonfyyHtrmHht8yjRiShWk9qUMj5NjWfRxyX8UgPdfhPI
+      Uy8vZu6ovh3zS4+4abpoAIRomc51K4QQbUwCIJQmARBKk++EolORfxhLiDYkARBKkwAIpUkA
+      hNIkAEJpEgDRxUhPsFCZ9AQLlUlPsFCY9AQLlUlPsFCZ9AQLhUlPsFCZ9AQLlUlPsFCC3A4t
+      RBv6f/trElWo2851AAAAAElFTkSuQmCC
+    </thumbnail>
+    <thumbnail height='192' name='Affordable Dashboard' width='192'>
+      iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAACXBIWXMAAA7DAAAOwwHHb6hk
+      AAAcgklEQVR4nO3daZAc533f8W/39HTPfe7s7I09ACwuEiBBkTTBW5Fki5Kdw1bZSjmRq6xy
+      VfwiiStV8atElRd5k0qVKuWknMRO2So7dlyWJapESbR4CAQJkCAIAgQWi2t3sbuzOzs7O3fP
+      1WderLAGCAogsEsQYD+fN9iZ6nn2mcb8uvt5/k/PSq7rugiCR8mfdgcE4dMkAiB4mgiA4Gki
+      AIKnKR9+wnVdqt/7Y6TkJInnnsdcOEv1tVcACD78BeT2As3pC4BE7IVv4A9aVF/+O1w5TPyL
+      /xRfQKbyN/8Duwv+0QeJP/M8nVOvop8+gxxJEfv8r+FPxnFtg8p3/ze+wQPEDx3CuHyS2ptv
+      gCQTePBpog/upvLDvyb25X+Jzw+td39Cc+r8ej8Ofp7IAw/c1R0lfDbdcAZwK5eo/PRnlL7z
+      bRwHzMUpmhfnCR14HDWboXX8J9hECR14DF/Qx/J/+BfYThS5u8zif/z36x/s7/01gQc/R+PF
+      b1M7epL2+69idvwoAZOFf/c7WB0Le+kMtcNHKP3Ff8dxwZg5SXuxSGj3blb/y7/GqDSovPjn
+      OOZ6v1rvvozthNf70dt7t/eT8Bl1QwCa77xG6PGvEMzKtGbyH9rad80DCfRFWisKPb/+myR+
+      /fdxV97GrNsgBwjtfwx/Twq73QRAHZ4k/sLvoCUM2rOLNN95lfBzX8Ov1ekslQCwVhfQjx9G
+      O/B5lLB6Q2eN+Wlap97GLFW3bg8InnZ9AFwX/dhrmAtnsVoW+vHDANilpfUP3tr6B9W4co7W
+      6XewLR+S1cSxXbC7uJYPSZFxuyvM/fNDtOsJks8cuqZ5B7drImsq+tuHMWbex+l0aZ54GwCl
+      d4Tw557BmjuJ1Wjd0Fl1225CBx7Hn0l/UvtD8JjrxgCuWaV5cZW+P/wD3LW9rL74OrHR51En
+      HyXzjX8DQPsViDzzz0g99wSu65B4ai9L/+kP8DlrBJ/5bfwhCUnrY+SP/5KlP/wm+gdnAWge
+      /QHmme/hJA8QSDm0iw79v/0C1uIg5aOvE3x2F9bqAu0z72Hp62cNjCblv/w2gb2Prj+cn6Yl
+      Nwn6wqiZnru4m4TPKunaSrDbqdNZXCG4Yyeua9I+exZtZBCz3iUwPAyAmbsE4V78yfj6a1wX
+      Y/YsjhQiMD4Bjk3n/BkCew7gVFborlbwxzSMwipyJEVgYgduq0K3UCE4PoFrdehcvIS/r4fu
+      wjxIMtrobpRokPb0+zimjS89iE/uYhTXAPD3j6Fms5/C7hI+aySxFELwMlEHEDxNBEDwNBEA
+      wdOuC4Druvzs8GFOvnWEwuoCR987w9TUBb7//Rd5/aXvUzNdrNYaf/K//pTXj538hY3WVuc5
+      OTV7Rx1ybZOp6QsAHH3tR6w17Q9t4XDixHt31HZh5n2On8vhmjovvvTK7ffNavD//valm26j
+      l/NcWVq7/nW3GGb9+KUfYjouRmON0xfmbrtf1/wmTpw4cd0zp06cwHRszk6du2Hr/JUL/M8/
+      +6tN/L7733XToBKwsnCZE1euIJ8a51cOTXJ+2UKWA1SNFnG/RH52jlKjRmy1yF/82Z9S0B0e
+      2pbE0UL0TDzM/rEMR985ialEmT/1GlLPOMtnj1F0kzyxs5cPLszw9d/7t6QVnf/2R3/Cvr2T
+      vHHkTQ594SucOvoWX/rik5y/Uub40bdYa3QprX2Hw+/N8PxTj5BfzjOy60HeffMtKqs5zuV0
+      /tXvfp2Zk4f50btX2JENsFap0js4wTtHXmX3wUPoa3lMWaU/7GM2t8Jv/u7vUyvmiMQT/NF/
+      /c9USbE760PJ7qZw7i32Pf1rPLF/gr/5q/9LvtphNBtnaWmJL/3W79HrFJifv8j/+U6dAB1K
+      LZveRITJkTRzq01mlmvsy0o4oR5e+/sCwXiKykoOJdTLN7/xG7z6w+9y6sxFHn70IeYXloik
+      +qivraIb8MuSxLtvH+aDSoj3D7/EyM59LM7OUOlKbM+GmL9yhX2PPMbRkzM8MJqgVi0R7x+n
+      sLREMJGhnjvP/scP8fpPfkqzVubS5Utkdz7K5eMv0zUaTM9XOfnOMWqWwnDSx2Iuz8EnnuPZ
+      Z575lD5694brL4EkiUgozNd+62uMTu5FNjsMJkO4oTim5QAwv7BANJYippoUKi3iiSS7dk1w
+      4nyB/RN9nDtxhNVal4VcDkOJ85XnPke12uSXv/iPWFjKgxwmFVOp5uc5+Pw/JhtTCaXG2DfW
+      ixZQsUyLTCZGo22QSKeplis88uTzmF2Lh/ftJBZWCcUzBENBJNfCJ0s0DRvZcSgWV5FklbDf
+      wdGSPLS9l8mHHicTi7BSruJTw6RiQSrFAuFIhGq9yRe/9Hl8Ph+tWhlFDWA5Eo7Zpliuk0ql
+      aTsKOyYmSEZU8kuLPP3s84SDKms1nXS6l0alwCvHpkglwihYmHIYs93m0GMP0ts3QgCDfQ89
+      hAQs5BaxA1HqFZ0nHt6Fz7XpOC6pVA+SBO2Ozei2AYLxLI/t3UZJ75JIJOg4CttGJvD7ZRSf
+      Q2WtgO0oaJJB13Lo7YmSHtzFo/sm8GlxmvUatuvQ25tGVlTioRD92RSlRofeTArLF2F0eJRu
+      W2d028Cn8LG7d2zBNKjD4ZdfYuTBQ4z1p7amV3fC7vLGsVM8/eRjn14fPkSvFPjxy6+w65Fn
+      eWD74Ja06bouR958k6efempL2vM6UQcQPE3MAgmeJgJwF+i6juM4n3Y3hI8gAiB42g13hAmf
+      TfXSCmcv5hgaSFJtOvisOsFEH7XCAgMT+2isXCaWGcKRAvT1RD/t7t411wXAyM0jYSL3bcf3
+      oWhY1TK+RArp2iddF7vZRFah8fYRAnseQ+35eDNBrtXB6YIvHFj/2XBwjS5KInnddp2L7yNF
+      smgD/zBdZ9er+GKJm7bvtGu0p87iS2ZQx3Yi3+RcZy7PQKAHp76KNrrjY/X/fhOJJ+nUT3PR
+      Mgn6bIxWnZRr4UhxLl+8CFaNleUlamaEoAaPP/0sIQ8cHq97i53zJ7GLeXy7KtDtoGYyYLdo
+      T19AndgDM1PYXQdZ6kKgh8BAkvrRYyS++nXkQACpMYdeXMOc+ilK3w7sjoEvHMKX6MVcvoAc
+      TuJ2DVBUfJqJWdOQ2lcgHMd1E6gJjVa9iqQp2K0ukcefwyy1CA/4qf/sRyBLSNEsxsz7qH39
+      KEP7UPwtam+9h9YfQ93+GG59jtbsKvFfOoil6zh6le7iAkpMxqwZSJaL5NZw/FlCo710cnns
+      tTzhZ3+V7vxljNwlJL+Ga/uRNIAATuMKbkdBCobpzM2S/vo38an316fj8pmTSLEUmaBCvW0x
+      ODBEuWnQbeToH38As6VBs4zRVMAxPu3u3jXX/S/6BybQBoYwTXBYvxMMNYwkm1htEzUcRw46
+      WKUlnFoV5cABIk8EkRXwRRMggTaQxc714Rom2uAgLn6MpTmcRhVfrAcXQIsS3DuBc3oKV0ri
+      S2V/fu/vzweKsow6OISLiqwYdJeXAfAlejAKK2jDY/iiUcx8DqI+lN4sSiqIkc8hu22URAxJ
+      0ZBVcN0oajKOWS3iCwdRIlmc1gpq7xjYOgDaxAP4k3HMRApZC+C2K9jta/ZL3zCYfsy1EsF9
+      B5F899/QaedDv8TOm27RD8Deu9GZe8gd1AFcujNn8WUnUCKhj/cKx8JptfFFvHNteS1d1wmF
+      Qsg3uw77BTp6lcXVBpmYn64cwm+1iKSzXDp7kr7R3aTjH+//4KoPTr6NL5xh7+TEz59xqVRq
+      JJOJjcf1WoNYPHaLllwW5y4T7RmkXFgmkkiyulYhG9fwhdMEaHN5cY2RoX5i8dgvnG2pFPPo
+      lh+/pRNK9bJ4+SJ928aprK0xPjHO3MWzyKEkiZDGYi7H+M69RAIyS8tF4rEgwXAcWXIorBbp
+      u+4mKZcrly+SHthGYSnHQF+a6Zkck2ODVFo2gz0RTp85h+9b3/rWt25rDyKhpLLIqv/jv0KS
+      kVXt9n7NZ4hhGPj9fiRJuvXGH9Jsd/jg9PtUaw1KxVXa+Xl82TTHDn/A/of3oci31+aJd4+h
+      twxmZy6xtlZkYblAp17iRz94kUrToFIvc/SNY0zu28dNT3SuQ1uvcuyNI6AFef3sInvGsszN
+      LLC6uoLPqNJodnnn9CUSYZnllSLzly/SQSMZC2800+10Of3+OzSaLrnLp5lZbRKR2+jNFm0p
+      zNSpt+kf7mf63fcwg1GWFvIklA4vHTmJ6jQ5+uZxwqkUF6anGR8bu6Z/Ns16mcN//zqRZJhX
+      33qPnv5hlhfnqJfXSEdk3jq3JKZB73Xnjr+BE0rjmm3aFlSqJXKLZXaMRzl97spttze6fTdf
+      ev4pBoZHCfglwKVWrbNtYhc9iRA+f4jRbf23bMe1TV76yWtMTG6nsJTjgeE4J068h9GuYksK
+      rm3RkiOM98U5+e7bHD95EtOGwlLhunaOvPpjkv2jtOpFCPcwnvYzs1RicWmFkLZ+kHXs9Uvj
+      qVOnCCeTXJydJ+k3yK016O3twTK7LOcWqLWuGbtYXX748hEm925ncT7H7r37yF04g2GaVPQu
+      V48bYinEXbCZS6BPmtluUGlDb8qbl6cbAXBdF13XP+3+fCa12200TbsnA+B1N5wBSlfOYqa3
+      szI7y4H9e67b2LE61FsOidj1A6+VfJ6+/j7OvP06Zf8Azxzc9bE7sJhbYHhoZOPnSDhKMpm8
+      6WvajQZKQKXVdYhHgh+5TaPRIBr9+VHN6lLtOIT84Ep+tA9NYbZaLXyKD8MwiEaiWO02pqIQ
+      9N84ztEbDSLR2zta3ukZoN1uk8vlSKfTtFotLMui0+nQbDbZtm0bqVRq06G6cOECfr+fRqNB
+      JBKh0+nQ399PKrW5lb2NRoMLFy6QyWTI5/OEw2Gy2SyxWIxAILCptufn5zEMA8MwsCwL13UZ
+      Hh4mlUrd9jjrhsnsbrPK+1feoz53nuXcLHU5ymR/jLXFi0Qy/RTmlujICsF4BrPT4J98+XkO
+      Hz7MM1/4FQYHMvjI8Lff/TsSIYXlmklYMYlEo8ws1hgdjIHjQ5JMfI5D05emU7nCYG8Pl/IN
+      Qj6D7NAIitWhY9g09AaZ0b08/cj1k3PN6hrL1SqSHAQcItE4Qc3HyuIVerL9nJ66yOjIID6/
+      is8y0AJ+Wo6Pdq1GQPMjh5L0JwMUS1XUQBjZNckt50nEIzhygLGeJJ1AgMLCLLak4Jd9mJZF
+      ZnCElq6znJvHrwVpdy00VcKWNJx2la7lEAlFOH/pCsNDaXr6xxnI3LxgdzPBYBBZlkmlUlSr
+      VRKJBPl8HsMwmJ6eZnx8nMHBO19m7bou5XIZv9+Prus0m00sy6JSqfDQQw8RDodv3cgvoOs6
+      hmEwMDBAu91G13XOnTvH8PAwExMTt27gJqrVKqqqMjo6yuLiIoVCAV3X2bNnz20H94YARHtH
+      ODTeR7EvQaFYZcdAllJVZ2JyHxY+kuEU4USMmUsXubjaxqeGeeGFF4hEo7SVXjIEefTxX6Jd
+      K5JxfCTjMYxOk1iswVppmfEdu7D0MuF4imiyj1I+iuPKPJxV0ejgDyeQzSZdVyESDoHvxtkj
+      LRRjZ28vy0srNNtdbKNFoWGRTMTQ9Q6jY2P0JBMoiku5UATJh6b4MBQ/8WSSYkUnPJBgFWh3
+      usTCAdLJOJFECr8sIysyufkFQj4X/CpdowWSREjzY6kq6Ww/TrdNu/sPt2tm+oaQsGhUG4yN
+      jxGPKOiNBmwiAM1mk9nZWXw+H3Nzc4yMjOD3+5mYmKBcLtPpdO647atUVcXn86FpGj09PYTD
+      YZaWljAMY1MBCAaDSJJEuVymt7eXgYEB8vk87Xb71i++hXg8Trlcplwus2PHDuLxOMVi8Y7a
+      FoPgu+BeHgR73X1Vz3ccZ0uOendbt9sFEAG4B91XAdjgOiznV0lEg7Rs6ImF0Ns2ttUlHo9/
+      5Eu63TaSpKKq699wXavViMfj6LpOJBK5m72/baurqxSLRaLRKJ1Oh1ardceDvg9rtVqsrKyg
+      6zqpVIpGo0FfX98tJyI+junpaZLJJOVyGUmS6OnpIRaLoWmbK4palsXs7CwDAwMUCgWazSZD
+      Q0Mkk8nb3h/31SXQ1TNAp1FmNrdGKhqgZklMDvdw+uxlJFkioCoofpVYOEa9XsKQNWrLcwTT
+      WTAcEqkYrXaXQFADq0vXMKnqXQ4+fOC2q6of12anQS9dukSr1Vr/Htafz37Isszo6CgDA3d+
+      U7vruly4cAHbttF1HV3XCQQCyLLM/v37CYVub5nFtUqlEtPT02QyGQzDwDTNjQ/q2LUV2zsw
+      MzNDq9VCVVV0XafdbiPLMrt3777t4N6X5+SG3kKWbLqWSzCgATLD28boy6zPAMiyRD6/jBaJ
+      YnRaJDN9pFMpto0MgbteVdQ0Dddx0EIRgn5p41sv7kWxWIxOp4Pf70dRFHbt2kVPT8+WXA7a
+      tr0xBbpr1y7Gx8dRVRXD2NyKUNu2N/rc6XSYmJigr69vSwbBV2evrk6DXh0I38n+uC/PAPcb
+      UQi7d22MAUQl+JNj2za2bd/yG+KEu++GM0B5dYk3jr7HF7/8FULqxztiLeQWGRka3vh5MJOm
+      afmIhT+ZFaBeqQRf6+zZs0QiEUzTpF6vb1kl+OogOBKJ0Gw2abVaW1IJrtfrXLhwgWw2S6VS
+      QVEUMpnMllSCFxYW0HUdWZZRFAVd1+94UuDGSyDX4djRd2k3SiSTcX585BSf27+DdsehXV4g
+      mRygJVk4vgiaz8FpNGjaJgcfmOR7P3iZzOh2nto7wvGZCnG5g+ULILnwq1/50qbe9LXWFuc+
+      8UpwOxCgtrxwYyW4WqJeLd1WJXizAVhcXGRpaYlgMIiqqqyuriLL8pZUgs+dO4fruliWhWEY
+      dDodZFnedCXYcRwuXbpEu92mVqsRDAY3Zq82WwlutVrkcjnW1ta/g9U0TXw+39ZUgkFiaHgQ
+      GCSoODz5hMrIUD8+HOqVNKXcCm58iO19MXTDJR0Jo0gGjXaXJ558kmzfAIrP5ZG9adbKNQb6
+      M1s+1+qVSvBVrutSrVbJZDLUajV27969ZZVgx3GoVCoEAgE0TWNoaGhLKsG5XI5KpUI0GkVV
+      VXbu3EmhUNiSQfD09DShUAi/308wGCSdTotK8L1MVILvXfdVIex+nQUSleB7130VgKtcx+Ti
+      zAJ9yQg1S2IkE6fcMLG6LXqzH/1HtFutOrIcIhBYf8urqwV6e7OUy+VND/g+acVikZmZGRKJ
+      BH6/n3w+z/DwMCMjI5uuBF++fBnTNNE0jUajgW3b9Pf3099/67vCbqZerzM9Pc3u3bs5e/Ys
+      mqaRSCQYGhradCV4cXGRUqlEKBSi2WzS7XYZHh5mYGBg88uh7wf1UoHlpTwhdZi2KwMOi/Nz
+      SJJDYXUVSXJIxdLUmxVqbYtOpUiyfxC7bRAIB7BMi1A0Ru38FA4Sp06f4dBTT6Ep9+YROhAI
+      0Nvbi+M4NBoNgsEguVwO27YZHx/fVNvhcBjHcTh+/DipVAq/38/MzAzBYJBE4s7HL5qmkUwm
+      mZqaolAosH37dpaXl+l2u+zZs+fWDdxEKBRCkiRkWd6Yup+fn0eW5dsO7n0ZAEmN8uQTj1Cp
+      1AlqGkgKE9t3YFsdauUSgUiMylqJVE8vwa4FiQiBWIJoIEi7rVPVu6STcZo1G8kfZNQf4JNZ
+      BLE1yuUyuq4Ti8UIhUJkMpktq6gWi0VisRhf/epXaTQauK5LoVBAVdVNtV2tVmk2mxw8eHBj
+      FujqNOtmXZ39sW2bVCpFPB7fGMjfrvvqlkjXdTeup+8n3W4XVVU3fbkibD0xC3QXiFmge9cN
+      l0DL597C6DvAlQ9O0ZftYWBoAEmCZrUEih9dNzFMk+GBNLnVGrt3bG5l351olEr4IwHqLZve
+      5Ed/gVOpVCKdTq8/MJusNBwSGtiyRjh4/em91WphOzaGYZBOpTEaDbqqSvQjBmvlUonU1Xbv
+      klwuR7VaRZZlut0utVqN0dFRRkZGNh2qYrHIysoKoVCIer2OZVkMDg5uapUprC83P3fuHNFo
+      dGPRWjKZZHh4eEvuCb56GaSq6kZlfHBwcAsGwa7L1AenKJ9/n1DoIEdfWWLvUBjF7oLksjib
+      Jz3Uz6lLS4ykZPgUAtBt1ZlbXsA0JXIL4FfDREMqxdwswViauVyB8W2DLK3kkUwLTVMwJYWc
+      3iYU8KFbCjuHUswvraAGY2iyTbFcIRGPkMsXmRzIYikK56c+wJZ9SLaDaVpsm9yLYRic/eAk
+      Plmh66qosoklqdCt0bUcVJ/GYr7IUH+cQGKIXeOb/9NIq6urtFotAoEAhmEQCoVYWFjAtu1N
+      VVVd1+Wdd95BlmWazSapVApN07h06RLBYHBT9wQEAgFSqRSBQICpqSkGBwdZWlqi2+2yb9++
+      O24X1gfusixTq9UoFAoEAgHm5uaQJOm2K+M3BCA9+gCf3xmhvX8PhZVVfuO5NPlyi5DURY2m
+      2Da6G39Ao2fhMmfmSpt6I3cqnOhhd98A1WqVUrlOIham2uwyMDyKTw2iaCGyvb0oikSlWCAQ
+      jiLJPtbcEul0grDhEE8m6bVlcCAYVFH8CpFEGr8soSgyK7klotEYkrq+VEJCIhZUUewI4egO
+      cCxWVkqEwiFsNJKxASQcjHYbLRwlHgsgKXe+nv5aY2NjzM3Nrf/BvE5ny5YVS5LECy+8wNra
+      Gslkknq9DsDKysqmB8GVSoVGo0E4HGZsbIzh4eGNG+83q1gsAutH/z179qBpGpVKhWDwo9eF
+      3cx9NQZwXfe+/EsrV4/eYgxw77mvpkHv11kgwzA25q2Fe8t9FYCrvFYJXl1d3bgH9mpNYCsr
+      wYZhoOs6yWSSRqOxpZXgoaEhut0ulUplyyvBV8cZs7OzohL8Wa4EX51JiUQirKysbHkl+OrN
+      9leXQ29lJbivr4+FhQWCweCWV4JDodDGJbGoBH+GK8HVapVYLLbxbzab3dJKcDQaxe/309PT
+      Q39//5ZWgvP5PGtra0xOTm58xeNmXZ0CbTQa+P1+JicnRSX4XiYqwfeu+2oWSBC22r150SsI
+      d4kIgOBpIgCCp4kACJ4mAiB4mgiA4GkiAIKniQAIniYCIHiaCIDgaSIAgqeJAAieJgIgeJoI
+      gOBpIgCCp4kACJ4mAiB4mgiA4GkiAIKniQAIniYCIHiaCIDgaSIAgqeJAAieJgIgeJoIgOBp
+      IgCCp4kACJ4mAiB4mgiA4GkiAIKniQAIniYCIHiaCIDgaSIAgqeJAAieJgIgeJoIgOBpIgCC
+      p4kACJ4mAiB4mgiA4GkiAIKniQAIniYCIHiaCIDgaSIAgqeJAAieJgIgeJoIgOBpIgCCp4kA
+      CJ4mAiB4mgiA4GkiAIKniQAIniYCIHiaCIDgaSIAgqeJAAieJgIgeJoIgOBpIgCCp4kACJ4m
+      AiB4mgiA4GkiAIKniQAIniYCIHiaCIDgaSIAgqeJAAieJgIgeJoIgOBpIgCCp4kACJ4mAiB4
+      mgiA4GkiAIKniQAIniYCIHiaCIDgaSIAgqeJAAieJgIgeJoIgOBpIgCCp4kACJ4mAiB4mgiA
+      4GkiAIKniQAIniYCIHiaCIDgaSIAgqeJAAieJgIgeJoIgOBpIgCCp4kACJ4mAiB4mgiA4Gki
+      AIKniQAIniYCIHiaCIDgaSIAgqeJAAieJgIgeJoIgOBpIgCCp4kACJ4mAiB4mgiA4GkiAIKn
+      iQAIniYCIHiaCIDgaSIAgqeJAAieJgIgeJoIgOBpIgCCp4kACJ4mAiB4mgiA4GkiAIKniQAI
+      niYCIHiaCIDgaf8f7eRGY9mt5NEAAAAASUVORK5CYII=
+    </thumbnail>
+  </thumbnails>
+</workbook>
