@@ -738,39 +738,80 @@ def calculate_Connected2_transit_asset_condition(model_runs_dict: dict):
     all_assets_conditions_df.to_csv(output_file, index=False)
     LOGGER.info("Wrote {}".format(output_file))
 
-def calculate_Healthy1_safety(runid, year, dbp, tm_taz_input_df, safety_df, metrics_dict):
+def extract_Healthy1_safety(model_runs_dict: dict, args_rtp: str):
+    """
+    Calculates fatalities and injuries per 100 thousand residents.
 
-    metric_id = "H1"
-    population = tm_taz_input_df.TOTPOP.sum()
-    per_x_people = 100000
-    print('population %d' % population)
+    For PBA50, this works by reading INTERMEDIATE_METRICS_SOURCE_DIR/fatalities_injuries_export.csv
 
-    fatalities   = safety_df.loc[(safety_df['index']=="N_total_fatalities")     & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    fatalities_m = safety_df.loc[(safety_df['index']=="N_motorist_fatalities")  & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    fatalities_b = safety_df.loc[(safety_df['index']=="N_bike_fatalities")      & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum() 
-    fatalities_p = safety_df.loc[(safety_df['index']=="N_ped_fatalities")       & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum() 
-    injuries     = safety_df.loc[(safety_df['index']=="N_injuries")             & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum() 
-                                                                               
-    metrics_dict[runid,metric_id,'fatalities_annual_per_100Kppl_calc',year,dbp]         = float(fatalities)   / float(population / per_x_people)
-    metrics_dict[runid,metric_id,'fatalities_auto_annual_per_100Kppl_calc',year,dbp]    = float(fatalities_m) / float(population / per_x_people)
-    metrics_dict[runid,metric_id,'fatalities_bike_annual_per_100Kppl_calc',year,dbp]    = float(fatalities_b) / float(population / per_x_people)
-    metrics_dict[runid,metric_id,'fatalities_ped_annual_per_100Kppl_calc',year,dbp]     = float(fatalities_p) / float(population / per_x_people)
-    metrics_dict[runid,metric_id,'injuries_annual_per_100Kppl_calc',year,dbp]           = float(injuries)     / float(population / per_x_people)
+    For PBA50+, the source script, VZ_saftey_calc_correction_v2.R, has been updated so 
+      this works by reading [modelrun_id]\\OUTPUT\\metrics\\fatalies_injuries.csv
 
-    metrics_dict[runid,metric_id,'fatalities_annual_per_100MVMT',year,dbp]         = safety_df.loc[(safety_df['index']=="N_total_fatalities_per_100M_VMT")     & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'fatalities_auto_annual_per_100MVMT',year,dbp]    = safety_df.loc[(safety_df['index']=="N_motorist_fatalities_per_100M_VMT")  & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'fatalities_bike_annual_per_100MVMT',year,dbp]    = safety_df.loc[(safety_df['index']=="N_bike_fatalities_per_100M_VMT")      & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'fatalities_ped_annual_per_100MVMT',year,dbp]     = safety_df.loc[(safety_df['index']=="N_ped_fatalities_per_100M_VMT")       & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'injuries_annual_per_100MVMT',year,dbp]           = safety_df.loc[(safety_df['index']=="N_injuries_per_100M_VMT")             & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
+    Args:
+        model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
 
-    metrics_dict[runid,metric_id,'fatalities_annual_per_100Kppl',year,dbp]         = safety_df.loc[(safety_df['index']=="N_total_fatalities_per_100K_pop")     & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'fatalities_auto_annual_per_100Kppl',year,dbp]    = safety_df.loc[(safety_df['index']=="N_motorist_fatalities_per_100K_pop")  & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'fatalities_bike_annual_per_100Kppl',year,dbp]    = safety_df.loc[(safety_df['index']=="N_bike_fatalities_per_100K_pop")      & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'fatalities_ped_annual_per_100Kppl',year,dbp]     = safety_df.loc[(safety_df['index']=="N_ped_fatalities_per_100K_pop")       & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'injuries_annual_per_100Kppl',year,dbp]           = safety_df.loc[(safety_df['index']=="N_injuries_per_100K_pop")             & (safety_df['modelrunID'].str.contains(dbp)), 'value'].sum()
+    Writes metrics_healthy1_safety.csv with columns:
+        modelrun_id
+        modelrun_alias
+      # these are from VZ_safety_calc_correction_V2.R
+        N_bike_fatalities
+        N_bike_fatalities_per_100K_pop
+        N_bike_fatalities_per_100M_VMT
+        N_injuries  N_injuries_per_100K_pop
+        N_injuries_per_100M_VMT
+        N_motorist_fatalities
+        N_motorist_fatalities_per_100K_pop
+        N_motorist_fatalities_per_100M_VMT
+        N_ped_fatalities
+        N_ped_fatalities_per_100K_pop
+        N_ped_fatalities_per_100M_VMT
+        N_total_fatalities
+        N_total_fatalities_per_100K_pop
+        N_total_fatalities_per_100M_VMT
+        Population 
+        annual_VMT
+    """
+    LOGGER.info("extract_Healthy1_safety()")
 
+    safety_df = pd.DataFrame()
+    if args_rtp == "RTP2021":
+        SAFETY_FILE = INTERMEDIATE_METRICS_SOURCE_DIR / 'fatalities_injuries_export.csv'         # from Raleigh, based on Travel Model outputs 
+        LOGGER.info("  Reading {}".format(SAFETY_FILE))
+        safety_df = pd.read_csv(SAFETY_FILE)
+        LOGGER.debug("  safety_df.head(10)\n:{}".format(safety_df.head(10)))
+        # columns are index, value, Year, modelrunID
 
-def calculate_Healthy1_safety_TAZ(runid, year, dbp, tm_taz_input_df, tm_vmt_metrics_df, metrics_dict):
+        # strip leading and trailing '/' from modelRunID
+        safety_df['modelrunID'] = safety_df.modelrunID.str.strip('/')
+        # and leading IncrementalProgress/
+        safety_df['modelrunID'] = safety_df.modelrunID.str.replace(r'IncrementalProgress/', '')
+        LOGGER.debug("  safety_df.head(10)\n:{}".format(safety_df.head(10)))
+
+        # long to wide
+        safety_df = pd.pivot_table(safety_df, values='value', index=['modelrunID','Year'], columns='index').reset_index(drop=False)
+
+        # drop Year and rename modelrunID to modelrun_id
+        safety_df.drop(columns=['Year'], inplace=True)
+        safety_df.rename(columns={'modelrunID':'modelrun_id'}, inplace=True)
+        # add alias
+        aliases_dict = {runid:model_runs_dict[runid]['Alias'] for runid in model_runs_dict.keys()}
+        # input file seems to be based on previous version
+        aliases_dict['2050_TM152_EIR_Alt1_05'] = '2050 EIR Alt1'
+
+        safety_df['modelrun_alias'] = safety_df.modelrun_id.map(aliases_dict)
+        LOGGER.debug("  aliases_dict:{}".format(aliases_dict))
+        LOGGER.debug("  safety_df.head(10)\n:{}".format(safety_df.head(10)))
+
+    else:
+        # TODO
+        raise
+    
+     # write it
+    output_file = METRICS_OUTPUT_DIR / 'metrics_healthy1_safety.csv'
+    safety_df.to_csv(output_file, index=False)
+    LOGGER.info(f"Wrote {output_file}")
+
+def extract_Healthy1_safety_TAZ(runid, year, dbp, tm_taz_input_df, tm_vmt_metrics_df, metrics_dict):
 
     metric_id = "H1"
 
@@ -1136,6 +1177,9 @@ if __name__ == '__main__':
     calculate_Connected2_crowding(model_runs_dict)
     calculate_Connected2_transit_asset_condition(model_runs_dict)
 
+    # Healthy
+    extract_Healthy1_safety(model_runs_dict, my_args.rtp)
+
     # TODO: deprecating the below code
     taz_coc_crosswalk_file          = METRICS_SOURCE_DIR / 'taz_coc_crosswalk.csv'
     taz_hra_crosswalk_file          = METRICS_SOURCE_DIR / 'taz_hra_crosswalk.csv'
@@ -1148,7 +1192,6 @@ if __name__ == '__main__':
     # Set location of intermediate metric outputs
     # These are for metrics generated by Raleigh, Bobby, James
     transitproximity_file         = INTERMEDIATE_METRICS_SOURCE_DIR / 'metrics_proximity.csv'                  # from Bobby, based on Urbansim outputs only
-    safety_file                   = INTERMEDIATE_METRICS_SOURCE_DIR / 'fatalities_injuries_export.csv'         # from Raleigh, based on Travel Model outputs 
     commute_mode_share_file       = INTERMEDIATE_METRICS_SOURCE_DIR / 'commute_mode_share.csv'                 # from Raleigh, based on Travel Model outputs
     emfac_file                    = INTERMEDIATE_METRICS_SOURCE_DIR / 'emfac.csv'                              # from James
     remi_jobs_file                = INTERMEDIATE_METRICS_SOURCE_DIR / 'emp by ind11_s23.csv'                   # from Bobby, based on REMI
@@ -1162,7 +1205,6 @@ if __name__ == '__main__':
     # Calculate all metrics
     coc_flag_df                 = pd.read_csv(coc_flag_file)
     transit_operator_df         = pd.read_csv(transit_operator_file)
-    safety_df                   = pd.read_csv(safety_file)
     emfac_df                    = pd.read_csv(emfac_file)
     commute_mode_share_df       = pd.read_csv(commute_mode_share_file)
     transitproximity_df         = pd.read_csv(transitproximity_file)
@@ -1204,8 +1246,8 @@ if __name__ == '__main__':
         # calculate_Connected2_trn_traveltimes(tm_runid, year, dbp, transit_operator_df, metrics_dict)
         # calculate_Connected2_crowding(tm_runid, year, dbp, transit_operator_df, metrics_dict)
         # print("@@@@@@@@@@@@@ C2 Done")
-        # calculate_Healthy1_safety(tm_runid, year, dbp, tm_taz_input_df, safety_df, metrics_dict)
-        # calculate_Healthy1_safety_TAZ(tm_runid, year, dbp, tm_taz_input_df, tm_vmt_metrics_df, metrics_dict)
+        # extract_Healthy1_safety(tm_runid, year, dbp, tm_taz_input_df, safety_df, metrics_dict)
+        # extract_Healthy1_safety_TAZ(tm_runid, year, dbp, tm_taz_input_df, tm_vmt_metrics_df, metrics_dict)
         # print("@@@@@@@@@@@@@ H1 Done")
         # calculate_Healthy2_GHGemissions(tm_runid, year, dbp, tm_taz_input_df, tm_auto_times_df, emfac_df, metrics_dict)
         # calculate_Healthy2_PM25emissions(tm_runid, year, dbp, tm_taz_input_df, tm_vmt_metrics_df, metrics_dict)

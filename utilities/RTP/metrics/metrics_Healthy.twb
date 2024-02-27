@@ -1,0 +1,1068 @@
+<?xml version='1.0' encoding='utf-8' ?>
+
+<!-- build 20233.24.0112.1233                               -->
+<workbook original-version='18.1' source-build='2023.3.2 (20233.24.0112.1233)' source-platform='win' version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <document-format-change-manifest>
+    <_.fcp.AccessibleZoneTabOrder.true...AccessibleZoneTabOrder />
+    <_.fcp.AnimationOnByDefault.true...AnimationOnByDefault />
+    <AutoCreateAndUpdateDSDPhoneLayouts />
+    <_.fcp.MarkAnimation.true...MarkAnimation />
+    <_.fcp.ObjectModelEncapsulateLegacy.true...ObjectModelEncapsulateLegacy />
+    <_.fcp.ObjectModelTableType.true...ObjectModelTableType />
+    <_.fcp.SchemaViewerObjectModel.true...SchemaViewerObjectModel />
+    <SetMembershipControl />
+    <SheetIdentifierTracking />
+    <SortTagCleanup />
+    <WindowsPersistSimpleIdentifiers />
+    <WorksheetBackgroundTransparency />
+  </document-format-change-manifest>
+  <preferences>
+    <preference name='ui.encoding.shelf.height' value='24' />
+    <preference name='ui.shelf.height' value='26' />
+  </preferences>
+  <_.fcp.AnimationOnByDefault.false...style>
+    <_.fcp.AnimationOnByDefault.false..._.fcp.MarkAnimation.true...style-rule element='animation'>
+      <_.fcp.AnimationOnByDefault.false...format attr='animation-on' value='ao-on' />
+    </_.fcp.AnimationOnByDefault.false..._.fcp.MarkAnimation.true...style-rule>
+  </_.fcp.AnimationOnByDefault.false...style>
+  <datasources>
+    <datasource caption='metrics_healthy1_safety' inline='true' name='federated.145jr0506ug7jl1eb2qcj10otung' version='18.1'>
+      <connection class='federated'>
+        <named-connections>
+          <named-connection caption='metrics_healthy1_safety' name='textscan.0q7yexm0kvz3q61dlpfae04u1wg9'>
+            <connection class='textscan' directory='E:/GitHub/travel-model-one/utilities/RTP/metrics' filename='metrics_healthy1_safety.csv' password='' server='' />
+          </named-connection>
+        </named-connections>
+        <_.fcp.ObjectModelEncapsulateLegacy.false...relation connection='textscan.0q7yexm0kvz3q61dlpfae04u1wg9' name='metrics_healthy1_safety.csv' table='[metrics_healthy1_safety#csv]' type='table'>
+          <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
+            <column datatype='string' name='modelrun_id' ordinal='0' />
+            <column datatype='real' name='N_bike_fatalities' ordinal='1' />
+            <column datatype='real' name='N_bike_fatalities_per_100K_pop' ordinal='2' />
+            <column datatype='real' name='N_bike_fatalities_per_100M_VMT' ordinal='3' />
+            <column datatype='real' name='N_injuries' ordinal='4' />
+            <column datatype='real' name='N_injuries_per_100K_pop' ordinal='5' />
+            <column datatype='real' name='N_injuries_per_100M_VMT' ordinal='6' />
+            <column datatype='real' name='N_motorist_fatalities' ordinal='7' />
+            <column datatype='real' name='N_motorist_fatalities_per_100K_pop' ordinal='8' />
+            <column datatype='real' name='N_motorist_fatalities_per_100M_VMT' ordinal='9' />
+            <column datatype='real' name='N_ped_fatalities' ordinal='10' />
+            <column datatype='real' name='N_ped_fatalities_per_100K_pop' ordinal='11' />
+            <column datatype='real' name='N_ped_fatalities_per_100M_VMT' ordinal='12' />
+            <column datatype='real' name='N_total_fatalities' ordinal='13' />
+            <column datatype='real' name='N_total_fatalities_per_100K_pop' ordinal='14' />
+            <column datatype='real' name='N_total_fatalities_per_100M_VMT' ordinal='15' />
+            <column datatype='real' name='Population' ordinal='16' />
+            <column datatype='real' name='annual_VMT' ordinal='17' />
+            <column datatype='string' name='modelrun_alias' ordinal='18' />
+          </columns>
+        </_.fcp.ObjectModelEncapsulateLegacy.false...relation>
+        <_.fcp.ObjectModelEncapsulateLegacy.true...relation connection='textscan.0q7yexm0kvz3q61dlpfae04u1wg9' name='metrics_healthy1_safety.csv' table='[metrics_healthy1_safety#csv]' type='table'>
+          <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
+            <column datatype='string' name='modelrun_id' ordinal='0' />
+            <column datatype='real' name='N_bike_fatalities' ordinal='1' />
+            <column datatype='real' name='N_bike_fatalities_per_100K_pop' ordinal='2' />
+            <column datatype='real' name='N_bike_fatalities_per_100M_VMT' ordinal='3' />
+            <column datatype='real' name='N_injuries' ordinal='4' />
+            <column datatype='real' name='N_injuries_per_100K_pop' ordinal='5' />
+            <column datatype='real' name='N_injuries_per_100M_VMT' ordinal='6' />
+            <column datatype='real' name='N_motorist_fatalities' ordinal='7' />
+            <column datatype='real' name='N_motorist_fatalities_per_100K_pop' ordinal='8' />
+            <column datatype='real' name='N_motorist_fatalities_per_100M_VMT' ordinal='9' />
+            <column datatype='real' name='N_ped_fatalities' ordinal='10' />
+            <column datatype='real' name='N_ped_fatalities_per_100K_pop' ordinal='11' />
+            <column datatype='real' name='N_ped_fatalities_per_100M_VMT' ordinal='12' />
+            <column datatype='real' name='N_total_fatalities' ordinal='13' />
+            <column datatype='real' name='N_total_fatalities_per_100K_pop' ordinal='14' />
+            <column datatype='real' name='N_total_fatalities_per_100M_VMT' ordinal='15' />
+            <column datatype='real' name='Population' ordinal='16' />
+            <column datatype='real' name='annual_VMT' ordinal='17' />
+            <column datatype='string' name='modelrun_alias' ordinal='18' />
+          </columns>
+        </_.fcp.ObjectModelEncapsulateLegacy.true...relation>
+        <metadata-records>
+          <metadata-record class='capability'>
+            <remote-name />
+            <remote-type>0</remote-type>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias />
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <attributes>
+              <attribute datatype='string' name='character-set'>&quot;UTF-8&quot;</attribute>
+              <attribute datatype='string' name='collation'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='field-delimiter'>&quot;,&quot;</attribute>
+              <attribute datatype='string' name='header-row'>&quot;true&quot;</attribute>
+              <attribute datatype='string' name='locale'>&quot;en_US&quot;</attribute>
+              <attribute datatype='string' name='single-char'>&quot;&quot;</attribute>
+            </attributes>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>modelrun_id</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[modelrun_id]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>modelrun_id</remote-alias>
+            <ordinal>0</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_bike_fatalities</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_bike_fatalities]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_bike_fatalities</remote-alias>
+            <ordinal>1</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_bike_fatalities_per_100K_pop</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_bike_fatalities_per_100K_pop]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_bike_fatalities_per_100K_pop</remote-alias>
+            <ordinal>2</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_bike_fatalities_per_100M_VMT</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_bike_fatalities_per_100M_VMT]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_bike_fatalities_per_100M_VMT</remote-alias>
+            <ordinal>3</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_injuries</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_injuries]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_injuries</remote-alias>
+            <ordinal>4</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_injuries_per_100K_pop</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_injuries_per_100K_pop]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_injuries_per_100K_pop</remote-alias>
+            <ordinal>5</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_injuries_per_100M_VMT</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_injuries_per_100M_VMT]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_injuries_per_100M_VMT</remote-alias>
+            <ordinal>6</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_motorist_fatalities</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_motorist_fatalities]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_motorist_fatalities</remote-alias>
+            <ordinal>7</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_motorist_fatalities_per_100K_pop</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_motorist_fatalities_per_100K_pop]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_motorist_fatalities_per_100K_pop</remote-alias>
+            <ordinal>8</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_motorist_fatalities_per_100M_VMT</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_motorist_fatalities_per_100M_VMT]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_motorist_fatalities_per_100M_VMT</remote-alias>
+            <ordinal>9</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_ped_fatalities</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_ped_fatalities]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_ped_fatalities</remote-alias>
+            <ordinal>10</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_ped_fatalities_per_100K_pop</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_ped_fatalities_per_100K_pop]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_ped_fatalities_per_100K_pop</remote-alias>
+            <ordinal>11</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_ped_fatalities_per_100M_VMT</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_ped_fatalities_per_100M_VMT]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_ped_fatalities_per_100M_VMT</remote-alias>
+            <ordinal>12</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_total_fatalities</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_total_fatalities]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_total_fatalities</remote-alias>
+            <ordinal>13</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_total_fatalities_per_100K_pop</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_total_fatalities_per_100K_pop]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_total_fatalities_per_100K_pop</remote-alias>
+            <ordinal>14</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>N_total_fatalities_per_100M_VMT</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[N_total_fatalities_per_100M_VMT]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>N_total_fatalities_per_100M_VMT</remote-alias>
+            <ordinal>15</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>Population</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[Population]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>Population</remote-alias>
+            <ordinal>16</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>annual_VMT</remote-name>
+            <remote-type>5</remote-type>
+            <local-name>[annual_VMT]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>annual_VMT</remote-alias>
+            <ordinal>17</ordinal>
+            <local-type>real</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+          <metadata-record class='column'>
+            <remote-name>modelrun_alias</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[modelrun_alias]</local-name>
+            <parent-name>[metrics_healthy1_safety.csv]</parent-name>
+            <remote-alias>modelrun_alias</remote-alias>
+            <ordinal>18</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <contains-null>true</contains-null>
+            <collation flag='0' name='LEN_RUS' />
+            <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
+          </metadata-record>
+        </metadata-records>
+      </connection>
+      <aliases enabled='yes' />
+      <column datatype='string' name='[:Measure Names]' role='dimension' type='nominal'>
+        <aliases>
+          <alias key='&quot;[federated.145jr0506ug7jl1eb2qcj10otung].[attr:N_injuries_per_100K_pop:qk]&quot;' value='Injuries' />
+          <alias key='&quot;[federated.145jr0506ug7jl1eb2qcj10otung].[attr:N_total_fatalities_per_100K_pop:qk]&quot;' value='Fatalities' />
+        </aliases>
+      </column>
+      <column caption='N bike fatalities' datatype='real' name='[N_bike_fatalities]' role='measure' type='quantitative' />
+      <column caption='N bike fatalities per 100K pop' datatype='real' name='[N_bike_fatalities_per_100K_pop]' role='measure' type='quantitative' />
+      <column caption='N bike fatalities per 100M VMT' datatype='real' name='[N_bike_fatalities_per_100M_VMT]' role='measure' type='quantitative' />
+      <column caption='N injuries' datatype='real' name='[N_injuries]' role='measure' type='quantitative' />
+      <column caption='N injuries per 100K pop' datatype='real' default-format='n#,##0.0;-#,##0.0' name='[N_injuries_per_100K_pop]' role='measure' type='quantitative' />
+      <column caption='N injuries per 100M VMT' datatype='real' name='[N_injuries_per_100M_VMT]' role='measure' type='quantitative' />
+      <column caption='N motorist fatalities' datatype='real' name='[N_motorist_fatalities]' role='measure' type='quantitative' />
+      <column caption='N motorist fatalities per 100K pop' datatype='real' name='[N_motorist_fatalities_per_100K_pop]' role='measure' type='quantitative' />
+      <column caption='N motorist fatalities per 100M VMT' datatype='real' name='[N_motorist_fatalities_per_100M_VMT]' role='measure' type='quantitative' />
+      <column caption='N ped fatalities' datatype='real' name='[N_ped_fatalities]' role='measure' type='quantitative' />
+      <column caption='N ped fatalities per 100K pop' datatype='real' name='[N_ped_fatalities_per_100K_pop]' role='measure' type='quantitative' />
+      <column caption='N ped fatalities per 100M VMT' datatype='real' name='[N_ped_fatalities_per_100M_VMT]' role='measure' type='quantitative' />
+      <column caption='N total fatalities' datatype='real' name='[N_total_fatalities]' role='measure' type='quantitative' />
+      <column caption='N total fatalities per 100K pop' datatype='real' default-format='n#,##0.0;-#,##0.0' name='[N_total_fatalities_per_100K_pop]' role='measure' type='quantitative' />
+      <column caption='N total fatalities per 100M VMT' datatype='real' name='[N_total_fatalities_per_100M_VMT]' role='measure' type='quantitative' />
+      <_.fcp.ObjectModelTableType.true...column caption='metrics_healthy1_safety.csv' datatype='table' name='[__tableau_internal_object_id__].[metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F]' role='measure' type='quantitative' />
+      <column caption='annual VMT' datatype='real' name='[annual_VMT]' role='measure' type='quantitative' />
+      <column caption='Modelrun Alias' datatype='string' name='[modelrun_alias]' role='dimension' type='nominal' />
+      <column caption='Modelrun Id' datatype='string' name='[modelrun_id]' role='dimension' type='nominal' />
+      <column-instance column='[N_injuries_per_100K_pop]' derivation='Attribute' name='[attr:N_injuries_per_100K_pop:qk]' pivot='key' type='quantitative' />
+      <column-instance column='[N_total_fatalities_per_100K_pop]' derivation='Attribute' name='[attr:N_total_fatalities_per_100K_pop:qk]' pivot='key' type='quantitative' />
+      <layout _.fcp.SchemaViewerObjectModel.false...dim-percentage='0.5' _.fcp.SchemaViewerObjectModel.false...measure-percentage='0.4' dim-ordering='alphabetic' measure-ordering='alphabetic' show-structure='true' />
+      <semantic-values>
+        <semantic-value key='[Country].[Name]' value='&quot;United States&quot;' />
+      </semantic-values>
+      <_.fcp.ObjectModelEncapsulateLegacy.true...object-graph>
+        <objects>
+          <object caption='metrics_healthy1_safety.csv' id='metrics_healthy1_safety.csv_B5807D412C2B4A1FA22C9275D1C5F80F'>
+            <properties context=''>
+              <relation connection='textscan.0q7yexm0kvz3q61dlpfae04u1wg9' name='metrics_healthy1_safety.csv' table='[metrics_healthy1_safety#csv]' type='table'>
+                <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
+                  <column datatype='string' name='modelrun_id' ordinal='0' />
+                  <column datatype='real' name='N_bike_fatalities' ordinal='1' />
+                  <column datatype='real' name='N_bike_fatalities_per_100K_pop' ordinal='2' />
+                  <column datatype='real' name='N_bike_fatalities_per_100M_VMT' ordinal='3' />
+                  <column datatype='real' name='N_injuries' ordinal='4' />
+                  <column datatype='real' name='N_injuries_per_100K_pop' ordinal='5' />
+                  <column datatype='real' name='N_injuries_per_100M_VMT' ordinal='6' />
+                  <column datatype='real' name='N_motorist_fatalities' ordinal='7' />
+                  <column datatype='real' name='N_motorist_fatalities_per_100K_pop' ordinal='8' />
+                  <column datatype='real' name='N_motorist_fatalities_per_100M_VMT' ordinal='9' />
+                  <column datatype='real' name='N_ped_fatalities' ordinal='10' />
+                  <column datatype='real' name='N_ped_fatalities_per_100K_pop' ordinal='11' />
+                  <column datatype='real' name='N_ped_fatalities_per_100M_VMT' ordinal='12' />
+                  <column datatype='real' name='N_total_fatalities' ordinal='13' />
+                  <column datatype='real' name='N_total_fatalities_per_100K_pop' ordinal='14' />
+                  <column datatype='real' name='N_total_fatalities_per_100M_VMT' ordinal='15' />
+                  <column datatype='real' name='Population' ordinal='16' />
+                  <column datatype='real' name='annual_VMT' ordinal='17' />
+                  <column datatype='string' name='modelrun_alias' ordinal='18' />
+                </columns>
+              </relation>
+            </properties>
+          </object>
+        </objects>
+      </_.fcp.ObjectModelEncapsulateLegacy.true...object-graph>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='H1 Safety'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='metrics_healthy1_safety' name='federated.145jr0506ug7jl1eb2qcj10otung' />
+          </datasources>
+          <datasource-dependencies datasource='federated.145jr0506ug7jl1eb2qcj10otung'>
+            <column caption='N injuries per 100K pop' datatype='real' default-format='n#,##0.0;-#,##0.0' name='[N_injuries_per_100K_pop]' role='measure' type='quantitative' />
+            <column caption='N total fatalities per 100K pop' datatype='real' default-format='n#,##0.0;-#,##0.0' name='[N_total_fatalities_per_100K_pop]' role='measure' type='quantitative' />
+            <column-instance column='[N_injuries_per_100K_pop]' derivation='Attribute' name='[attr:N_injuries_per_100K_pop:qk]' pivot='key' type='quantitative' />
+            <column-instance column='[N_total_fatalities_per_100K_pop]' derivation='Attribute' name='[attr:N_total_fatalities_per_100K_pop:qk]' pivot='key' type='quantitative' />
+            <column caption='Modelrun Alias' datatype='string' name='[modelrun_alias]' role='dimension' type='nominal' />
+            <column-instance column='[modelrun_alias]' derivation='None' name='[none:modelrun_alias:nk]' pivot='key' type='nominal' />
+          </datasource-dependencies>
+          <filter class='categorical' column='[federated.145jr0506ug7jl1eb2qcj10otung].[:Measure Names]'>
+            <groupfilter function='union' user:op='manual'>
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.145jr0506ug7jl1eb2qcj10otung].[attr:N_injuries_per_100K_pop:qk]&quot;' />
+              <groupfilter function='member' level='[:Measure Names]' member='&quot;[federated.145jr0506ug7jl1eb2qcj10otung].[attr:N_total_fatalities_per_100K_pop:qk]&quot;' />
+            </groupfilter>
+          </filter>
+          <manual-sort column='[federated.145jr0506ug7jl1eb2qcj10otung].[:Measure Names]' direction='ASC'>
+            <dictionary>
+              <bucket>&quot;[federated.145jr0506ug7jl1eb2qcj10otung].[attr:N_total_fatalities_per_100K_pop:qk]&quot;</bucket>
+              <bucket>&quot;[federated.145jr0506ug7jl1eb2qcj10otung].[attr:N_injuries_per_100K_pop:qk]&quot;</bucket>
+            </dictionary>
+          </manual-sort>
+          <manual-sort column='[federated.145jr0506ug7jl1eb2qcj10otung].[none:modelrun_alias:nk]' direction='ASC'>
+            <dictionary>
+              <bucket>&quot;2015&quot;</bucket>
+              <bucket>&quot;2050 No Project&quot;</bucket>
+              <bucket>&quot;2050 Plan&quot;</bucket>
+              <bucket>&quot;2050 EIR Alt1&quot;</bucket>
+              <bucket>&quot;2050 EIR Alt2&quot;</bucket>
+            </dictionary>
+          </manual-sort>
+          <slices>
+            <column>[federated.145jr0506ug7jl1eb2qcj10otung].[:Measure Names]</column>
+          </slices>
+          <aggregation value='true' />
+        </view>
+        <style>
+          <style-rule element='cell'>
+            <format attr='width' field='[federated.145jr0506ug7jl1eb2qcj10otung].[none:modelrun_alias:nk]' value='86' />
+          </style-rule>
+          <style-rule element='header'>
+            <format attr='width' field='[federated.145jr0506ug7jl1eb2qcj10otung].[:Measure Names]' value='324' />
+            <format attr='height' field='[federated.145jr0506ug7jl1eb2qcj10otung].[none:modelrun_alias:nk]' value='32' />
+          </style-rule>
+          <style-rule element='label'>
+            <format attr='wrap' field='[federated.145jr0506ug7jl1eb2qcj10otung].[none:modelrun_alias:nk]' value='on' />
+          </style-rule>
+          <style-rule element='worksheet'>
+            <format attr='display-field-labels' scope='cols' value='false' />
+          </style-rule>
+        </style>
+        <panes>
+          <pane selection-relaxation-option='selection-relaxation-allow'>
+            <view>
+              <breakdown value='auto' />
+            </view>
+            <mark class='Automatic' />
+            <encodings>
+              <text column='[federated.145jr0506ug7jl1eb2qcj10otung].[Multiple Values]' />
+            </encodings>
+            <style>
+              <style-rule element='mark'>
+                <format attr='mark-labels-show' value='true' />
+              </style-rule>
+              <style-rule element='pane'>
+                <format attr='minwidth' value='-1' />
+                <format attr='maxwidth' value='-1' />
+              </style-rule>
+            </style>
+          </pane>
+        </panes>
+        <rows>[federated.145jr0506ug7jl1eb2qcj10otung].[:Measure Names]</rows>
+        <cols>[federated.145jr0506ug7jl1eb2qcj10otung].[none:modelrun_alias:nk]</cols>
+      </table>
+      <simple-id uuid='{C950C4B9-B227-4264-B4B7-30ED7351343F}' />
+    </worksheet>
+  </worksheets>
+  <dashboards>
+    <dashboard _.fcp.AccessibleZoneTabOrder.true...enable-sort-zone-taborder='true' name='Healthy Indicators'>
+      <style />
+      <size maxheight='1100' maxwidth='850' minheight='1100' minwidth='850' preset-index='10' sizing-mode='fixed' />
+      <zones>
+        <zone h='100000' id='4' type-v2='layout-basic' w='100000' x='0' y='0'>
+          <zone h='98546' id='3' param='vert' type-v2='layout-flow' w='98118' x='941' y='727'>
+            <zone h='4091' id='5' type-v2='text' w='98118' x='941' y='727'>
+              <formatted-text>
+                <run bold='true' fontcolor='#1cc17a' fontname='Tableau Bold' fontsize='20'>HEALTHY</run>
+              </formatted-text>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+            <zone h='2454' id='6' type-v2='text' w='98118' x='941' y='4818'>
+              <formatted-text>
+                <run bold='true' fontcolor='#555555' fontname='Trebuchet MS' fontsize='12' italic='true'>Will Bay Area residents be healthier and safer? </run>
+              </formatted-text>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+            <zone h='2272' id='7' type-v2='text' w='98118' x='941' y='7272'>
+              <formatted-text>
+                <run bold='true' fontcolor='#1cc17a'>Percent of Households in Risk-Prone Areas/Buildings that are Protected/Retrofit</run>
+              </formatted-text>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+            <zone fixed-size='67' forceUpdate='true' h='6818' id='8' is-fixed='true' type-v2='text' w='98118' x='941' y='9544'>
+              <formatted-text>
+                <run fontsize='14'>TODO: BAUS H1 Resilience</run>
+              </formatted-text>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+            <zone h='2272' id='9' type-v2='text' w='98118' x='941' y='16362'>
+              <formatted-text>
+                <run bold='true' fontcolor='#1cc17a'>Reduction in Building Risk Exposure to Damage from Earthquake or Wildfire</run>
+              </formatted-text>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+            <zone fixed-size='53' h='5545' id='10' is-fixed='true' type-v2='text' w='98118' x='941' y='18634'>
+              <formatted-text>
+                <run fontsize='15'>TODO: BAUS H1 Building Risk</run>
+              </formatted-text>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+            <zone h='7363' id='12' name='H1 Safety' show-title='false' w='98118' x='941' y='24179'>
+              <layout-cache fixed-size-h='73' type-h='fixed' type-w='fixed' />
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+            <zone h='2272' id='15' type-v2='text' w='98118' x='941' y='31542'>
+              <formatted-text>
+                <run bold='true' fontcolor='#1cc17a'>Daily PM2.5 Emissions (tons)</run>
+              </formatted-text>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+            <zone h='2272' id='16' type-v2='text' w='98118' x='941' y='33814'>
+              <formatted-text>
+                <run bold='true' fontcolor='#1cc17a'>Parks and Trails Per Thousand Residents</run>
+              </formatted-text>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+            <zone h='2454' id='17' type-v2='text' w='98118' x='941' y='36086'>
+              <formatted-text>
+                <run bold='true' fontcolor='#555555' fontname='Trebuchet MS,sans-serif' fontsize='12' italic='true'>Will the environment of the Bay Area be healthier and safer?</run>
+              </formatted-text>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='4' />
+              </zone-style>
+            </zone>
+          </zone>
+          <zone-style>
+            <format attr='border-color' value='#000000' />
+            <format attr='border-style' value='none' />
+            <format attr='border-width' value='0' />
+            <format attr='margin' value='8' />
+          </zone-style>
+        </zone>
+        <zone h='1818' id='11' type-v2='text' w='38941' x='1647' y='24273'>
+          <formatted-text>
+            <run bold='true' fontcolor='#1cc17a'>Annual Incidents, per One Hundred Thousand Residents</run>
+          </formatted-text>
+        </zone>
+      </zones>
+      <devicelayouts>
+        <devicelayout auto-generated='true' name='Phone'>
+          <size maxheight='800' minheight='800' sizing-mode='vscroll' />
+          <zones>
+            <zone h='100000' id='21' type-v2='layout-basic' w='100000' x='0' y='0'>
+              <zone h='98546' id='20' param='vert' type-v2='layout-flow' w='98118' x='941' y='727'>
+                <zone h='4091' id='5' type-v2='text' w='98118' x='941' y='727'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#1cc17a' fontname='Tableau Bold' fontsize='20'>HEALTHY</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone h='2454' id='6' type-v2='text' w='98118' x='941' y='4818'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#555555' fontname='Trebuchet MS' fontsize='12' italic='true'>Will Bay Area residents be healthier and safer? </run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone h='2272' id='7' type-v2='text' w='98118' x='941' y='7272'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#1cc17a'>Percent of Households in Risk-Prone Areas/Buildings that are Protected/Retrofit</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone fixed-size='67' forceUpdate='true' h='6818' id='8' type-v2='text' w='98118' x='941' y='9544'>
+                  <formatted-text>
+                    <run fontsize='14'>TODO: BAUS H1 Resilience</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone h='2272' id='9' type-v2='text' w='98118' x='941' y='16362'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#1cc17a'>Reduction in Building Risk Exposure to Damage from Earthquake or Wildfire</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone fixed-size='53' h='5545' id='10' type-v2='text' w='98118' x='941' y='18634'>
+                  <formatted-text>
+                    <run fontsize='15'>TODO: BAUS H1 Building Risk</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone fixed-size='73' h='7363' id='12' is-fixed='true' name='H1 Safety' show-title='false' w='98118' x='941' y='24179'>
+                  <layout-cache type-h='fixed' type-w='fixed' />
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone h='1818' id='11' type-v2='text' w='38941' x='1647' y='24273'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#1cc17a'>Annual Incidents, per One Hundred Thousand Residents</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone h='2272' id='15' type-v2='text' w='98118' x='941' y='31542'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#1cc17a'>Daily PM2.5 Emissions (tons)</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone h='2272' id='16' type-v2='text' w='98118' x='941' y='33814'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#1cc17a'>Parks and Trails Per Thousand Residents</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+                <zone h='2454' id='17' type-v2='text' w='98118' x='941' y='36086'>
+                  <formatted-text>
+                    <run bold='true' fontcolor='#555555' fontname='Trebuchet MS,sans-serif' fontsize='12' italic='true'>Will the environment of the Bay Area be healthier and safer?</run>
+                  </formatted-text>
+                  <zone-style>
+                    <format attr='border-color' value='#000000' />
+                    <format attr='border-style' value='none' />
+                    <format attr='border-width' value='0' />
+                    <format attr='margin' value='4' />
+                    <format attr='padding' value='0' />
+                  </zone-style>
+                </zone>
+              </zone>
+              <zone-style>
+                <format attr='border-color' value='#000000' />
+                <format attr='border-style' value='none' />
+                <format attr='border-width' value='0' />
+                <format attr='margin' value='8' />
+              </zone-style>
+            </zone>
+          </zones>
+        </devicelayout>
+      </devicelayouts>
+      <simple-id uuid='{BD568989-DED4-4D2C-BEE1-AE05249E9F18}' />
+    </dashboard>
+  </dashboards>
+  <windows source-height='30'>
+    <window class='dashboard' maximized='true' name='Healthy Indicators'>
+      <viewpoints>
+        <viewpoint name='H1 Safety' />
+      </viewpoints>
+      <active id='3' />
+      <simple-id uuid='{34E11BF0-5368-4617-A149-AD2338908DBB}' />
+    </window>
+    <window class='worksheet' name='H1 Safety'>
+      <cards>
+        <edge name='left'>
+          <strip size='160'>
+            <card type='pages' />
+            <card type='filters' />
+            <card type='marks' />
+            <card type='measures' />
+          </strip>
+        </edge>
+        <edge name='top'>
+          <strip size='2147483647'>
+            <card type='columns' />
+          </strip>
+          <strip size='2147483647'>
+            <card type='rows' />
+          </strip>
+          <strip size='31'>
+            <card type='title' />
+          </strip>
+        </edge>
+      </cards>
+      <viewpoint>
+        <highlight>
+          <color-one-way>
+            <field>[federated.145jr0506ug7jl1eb2qcj10otung].[none:modelrun_alias:nk]</field>
+          </color-one-way>
+        </highlight>
+      </viewpoint>
+      <simple-id uuid='{02F75D8A-D656-47A5-89D0-440C18F6DCBD}' />
+    </window>
+  </windows>
+  <thumbnails>
+    <thumbnail height='84' name='H1 Safety' width='192'>
+      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
+      gofi/wGJzxuDDxHU1wAAAABJRU5ErkJggg==
+    </thumbnail>
+    <thumbnail height='192' name='Healthy Indicators' width='192'>
+      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
+    </thumbnail>
+  </thumbnails>
+</workbook>
