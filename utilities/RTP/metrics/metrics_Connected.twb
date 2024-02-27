@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8' ?>
 
 <!-- build 20233.24.0112.1233                               -->
-<workbook original-version='18.1' source-build='2023.3.2 (20233.24.0112.1233)' source-platform='win' version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+<workbook original-version='18.1' source-build='2023.3.2 (20233.24.0112.1233)' source-platform='win' version='18.1' xml:base='https://10ay.online.tableau.com' xmlns:user='http://www.tableausoftware.com/xml/user'>
   <document-format-change-manifest>
     <_.fcp.AccessibleZoneTabOrder.true...AccessibleZoneTabOrder />
     <_.fcp.AnimationOnByDefault.true...AnimationOnByDefault />
@@ -16,6 +16,7 @@
     <WindowsPersistSimpleIdentifiers />
     <WorksheetBackgroundTransparency />
   </document-format-change-manifest>
+  <repository-location id='metrics_Connected' path='/t/metropolitantransportationcommission/workbooks' revision='1.0' site='metropolitantransportationcommission' />
   <preferences>
     <preference name='ui.encoding.shelf.height' value='24' />
     <preference name='ui.shelf.height' value='26' />
@@ -30,7 +31,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='metrics_connected1_jobaccess' name='textscan.01533y105g8h3j10id50m01xyck4'>
-            <connection class='textscan' directory='.' filename='metrics_connected1_jobaccess.csv' password='' server='' />
+            <connection class='textscan' directory='.' filename='metrics_connected1_jobaccess.csv' password='' server='' workgroup-auth-mode='as-is' />
           </named-connection>
         </named-connections>
         <_.fcp.ObjectModelEncapsulateLegacy.false...relation connection='textscan.01533y105g8h3j10id50m01xyck4' name='metrics_connected1_jobaccess.csv' table='[metrics_connected1_jobaccess#csv]' type='table'>
@@ -237,7 +238,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='metrics_connected2_hwy_traveltimes' name='textscan.1fcjw500bnm45c18swwz200g3hbc'>
-            <connection class='textscan' directory='.' filename='metrics_connected2_hwy_traveltimes.csv' password='' server='' />
+            <connection class='textscan' directory='.' filename='metrics_connected2_hwy_traveltimes.csv' password='' server='' workgroup-auth-mode='as-is' />
           </named-connection>
         </named-connections>
         <_.fcp.ObjectModelEncapsulateLegacy.false...relation connection='textscan.1fcjw500bnm45c18swwz200g3hbc' name='metrics_connected2_hwy_traveltimes.csv' table='[metrics_connected2_hwy_traveltimes#csv]' type='table'>
@@ -391,7 +392,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='metrics_connected2_trn_crowding' name='textscan.0mrn9c306x9e111bxqnty02irq6x'>
-            <connection class='textscan' directory='.' filename='metrics_connected2_trn_crowding.csv' password='' server='' />
+            <connection class='textscan' directory='.' filename='metrics_connected2_trn_crowding.csv' password='' server='' workgroup-auth-mode='as-is' />
           </named-connection>
         </named-connections>
         <_.fcp.ObjectModelEncapsulateLegacy.false...relation connection='textscan.0mrn9c306x9e111bxqnty02irq6x' name='metrics_connected2_trn_crowding.csv' table='[metrics_connected2_trn_crowding#csv]' type='table'>
@@ -552,7 +553,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='metrics_connected2_transit_asset_conditions' name='textscan.0uoagj00ag14a414au2kh1k546df'>
-            <connection class='textscan' directory='.' filename='metrics_connected2_transit_asset_conditions.csv' password='' server='' />
+            <connection class='textscan' directory='.' filename='metrics_connected2_transit_asset_conditions.csv' password='' server='' workgroup-auth-mode='as-is' />
           </named-connection>
         </named-connections>
         <_.fcp.ObjectModelEncapsulateLegacy.false...relation connection='textscan.0uoagj00ag14a414au2kh1k546df' name='metrics_connected2_transit_asset_conditions.csv' table='[metrics_connected2_transit_asset_conditions#csv]' type='table'>
@@ -1250,8 +1251,8 @@
         <devicelayout auto-generated='true' name='Phone'>
           <size maxheight='1450' minheight='1450' sizing-mode='vscroll' />
           <zones>
-            <zone h='100000' id='46' type-v2='layout-basic' w='100000' x='0' y='0'>
-              <zone h='98546' id='45' param='vert' type-v2='layout-flow' w='98118' x='941' y='727'>
+            <zone h='100000' id='50' type-v2='layout-basic' w='100000' x='0' y='0'>
+              <zone h='98546' id='49' param='vert' type-v2='layout-flow' w='98118' x='941' y='727'>
                 <zone h='4091' id='6' type-v2='text' w='98118' x='941' y='727'>
                   <formatted-text>
                     <run bold='true' fontcolor='#e86624' fontname='Tableau Bold' fontsize='20'>CONNECTED</run>

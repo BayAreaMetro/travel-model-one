@@ -29,6 +29,9 @@ LOG_FILE = "pba50_metrics.log"
 INFLATION_2000_TO_2020 = 1.53
 INFLATION_2018_TO_2020 = 1.04
 
+# annualization used in calculate_Affordable1_HplusT_costs()
+DAYS_PER_YEAR = 300
+
 # Used in calculate_Affordable1_HplusT_costs()
 UNIVERSAL_BASIC_INCOME_START_YEAR = 2025
 UNIVERSAL_BASIC_INCOME_IN_2020_DOLLARS = 6000
@@ -47,17 +50,7 @@ BOX_DIR     = pathlib.Path(f"C:/Users/{USERNAME}/Box")
 if USERNAME.lower() in ['lzorn']:
     BOX_DIR = pathlib.Path("E:\Box")
 
-METRICS_COLUMNS = [
-    'modelrun_id',  # directory from ModelRuns.xlsx
-    'year',         # from ModelRuns.xlsx
-    'run_set',      # from ModelRuns.xlsx
-    'category',     # from ModelRuns.xlsx
-    'metric_id',    # e.g., Connected 1, Affordable 2, etc.
-    'metric_name',
-    'value'
-]
-
-def calculate_Affordable1_HplusT_costs(model_runs_dict: dict):
+def calculate_Affordable1_HplusT_costs(model_runs_dict: dict) -> pd.DataFrame:
     """Pulls transportation costs from other files and converts to annual
     to calculate them as a percentage of household income; these calculations
     are segmented by income quartiles.
@@ -84,12 +77,28 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict):
     Writes metrics_affordable1_HplusT_costs.csv with columns:
         modelrun_id
         modelrun_alias
+        incQ                                one of ['1','2','3','4','all','1&2']
+        total_auto_cost                     daily auto operating cost, from scenario_metrics.csv
+        total_auto_trips                    daily auto trips, from scenario_metrics.csv
+        total_hh_inc                        sum of all annual household income for households in this quartile, in 2000 dollars, from scenario_metrics.csv
+        total_hh_inc_with_UBI               the same as total_hh_inc, but with Universal Basic Income applied to q1 households
+        total_households                    total number of households, from scenario_metrics.csv
+        total_transit_fares                 sum of daily transit fares, in 2000 dollars, from scenario_metrics.csv
+        total_transit_trips                 daily transit trips, from scenario_metrics.csv
+        parking_cost                        daily parking costs, from parking_costs_tour.csv
+        total_autos                         total household autos, from autos_owned.csv
+        total_auto_ownership_cost_annual    annual auto ownership cost based on total_autos and auto ownership cost assumptions, in 2000 dollars
+        total_auto_op_cost_annual           total_auto_cost, annualized
+        total_transit_fares_annual          total_transit_fares, annualized
+        total_parking_cost_annual           parking_cost, annualized
+        total_tansp_cost_annual             annual transportation costs: auto op cost, auto ownership cost, parking cost, transit fares
+        transp_cost_share_of_hh_income      total_tansp_cost_annual / total_hh_inc_with_UBI
+        housing_cost_share_of_hh_income     housing cost as a share of household income, from housing_costs_share_income.csv
+        H+T_cost_share_of_hh_income         sum of housing + transportation costs as a share of household income
 
+    Returns DataFrame written
     """
     LOGGER.info("calculate_Affordable1_HplusT_costs()")
-
-    # assumptions
-    DAYS_PER_YEAR = 300
 
     # Read Housing costs intermediate input
     HOUSING_COSTS_FILE = INTERMEDIATE_METRICS_SOURCE_DIR / 'housing_costs_share_income.csv' # from Bobby, based on Urbansim outputs only
@@ -237,7 +246,6 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict):
         # h+t = h + t
         tm_scen_metrics_df['H+T_cost_share_of_hh_income'] = tm_scen_metrics_df.housing_cost_share_of_hh_income + tm_scen_metrics_df.transp_cost_share_of_hh_income
 
-
         LOGGER.debug("  tm_scen_metrics_df:\n{}".format(tm_scen_metrics_df))
         affordable_hplust_costs_df = pd.concat([affordable_hplust_costs_df, tm_scen_metrics_df])
 
@@ -245,141 +253,138 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict):
     output_file = METRICS_OUTPUT_DIR / 'metrics_affordable1_HplusT_costs.csv'
     affordable_hplust_costs_df.to_csv(output_file, index=False)
     LOGGER.info("Wrote {}".format(output_file))
+    return affordable_hplust_costs_df
 
-    return
+def calculate_Affordable1_trip_costs(model_runs_dict: dict, affordable_hplust_costs_df:pd.DataFrame):
+    """ Building off calculate_Affordable1_HplusT_costs(), calculates per auto trip auto costs
+    and per transit trip transit fares.
 
-    # Tolls & Fares
+    The only new data source here is the use of
+    [model_run_dir]/OUTPUT/metrics/auto_times.csv for tolls = bridge tolls + value tolls
 
-    # Reading auto times file
-    tm_auto_times_df = tm_auto_times_df.sum(level='Income')
+    Args:
+        model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
+        pandas.DataFrame: Dataframe. see calculate_Affordable1_HplusT_costs() for description.
 
-    # Calculating Total Tolls per day = bridge tolls + value tolls  (2000$)
-    total_tolls       = OrderedDict()
-    total_opcost      = OrderedDict()
-    total_valuetolls  = OrderedDict()
-    total_bridgetolls = OrderedDict()
-    for inc_level in range(1,5): 
-        total_tolls['inc%d'  % inc_level]        = tm_auto_times_df.loc['inc%d' % inc_level, ['Bridge Tolls', 'Value Tolls']].sum()/100  # cents -> dollars
-        total_opcost['inc%d'  % inc_level]       = tm_auto_times_df.loc['inc%d' % inc_level, ['Total Cost']].sum()/100  # cents -> dollars
-        total_valuetolls['inc%d'  % inc_level]   = tm_auto_times_df.loc['inc%d' % inc_level, ['Value Tolls']].sum()/100  # cents -> dollars
-        total_bridgetolls['inc%d'  % inc_level]  = tm_auto_times_df.loc['inc%d' % inc_level, ['Bridge Tolls']].sum()/100  # cents -> dollars
+    Writes metrics_affordable1_trip_costs.csv with columns:
+        modelrun_id
+        modelrun_alias
+      (same as metrics_affordable1_HplusT_costs.csv)
+        incQ                                one of ['1','2','3','4','all','1&2']
+        total_households                    total number of households, from scenario_metrics.csv
+        total_auto_trips                    daily auto trips, from scenario_metrics.csv
+        total_transit_trips                 daily transit trips, from scenario_metrics.csv
+        total_auto_cost                     daily auto operating cost, from scenario_metrics.csv
+        parking_cost                        daily parking costs, from parking_costs_tour.csv
+        total_transit_fares                 sum of daily transit fares, in 2000 dollars, from scenario_metrics.csv
+      (new!)
+        auto_times_bridge_tolls                  daily bridge tolls, from auto_times.csv, in 2000 dollars
+        auto_times_value_tolls                   daily value tolls, from auto_times.csv, in 2000 dollars
+        auto_times_auto_op_cost                  daily auto operating cost, from auto_times.csv, in 2000 dollars
+        auto_times_total_tolls                   auto_times_bridge_tolls + auto_times_value_tolls
+        mean_transit_fare_2020dollars            total_transit_fares / total_transit_trips, converted to 2020 dollars
+        mean_auto_op_cost_2020dollars            total_auto_cost / total_auto_trips, converted to 2020 dollars
+        mean_parking_cost_2020dollars            parking_cost / total_auto_trips, converted to 2020 dollars
+        mean_tolls_cost_2020dollars              auto_times_total_tolls / total_auto_trips, converted to 2020 dollars
+        # TODO: I think this last row isn't intuitive; parking is out of pocket but not tolls?
+        mean_auto_outofpocket_cost_2020dollars   mean_auto_op_cost_2020dollars + mean_parking_cost_2020dollars
+    """
 
-    total_tolls_allHH        = sum(total_tolls.values())
-    total_tolls_inc1and2     = total_tolls['inc1'] + total_tolls['inc2']
+    affordable_trip_costs_df = pd.DataFrame()
+    for tm_runid in model_runs_dict.keys():
+        if model_runs_dict[tm_runid]['run_set'] == "IP":
+            model_run_dir = TM_RUN_LOCATION_IP / tm_runid
+        else:
+            model_run_dir = TM_RUN_LOCATION_BP / tm_runid
+        model_run_category = model_runs_dict[tm_runid]['category']
+        LOGGER.info(f"  Processing {tm_runid} with categery {model_run_category}")
 
-    tm_tot_auto_op_cost_fuel_maint   = sum(total_opcost.values())       * days_per_year
-    tm_tot_auto_op_cost_valuetolls   = sum(total_valuetolls.values())   * days_per_year
-    tm_tot_auto_op_cost_bridgetolls  = sum(total_bridgetolls.values())  * days_per_year
-    # this is to make sure the op costs sourced by this script is equal to the op costs calcuated in scenario_metrics.csv
-    tm_tot_auto_op_cost_check        = tm_tot_auto_op_cost_fuel_maint + tm_tot_auto_op_cost_valuetolls + tm_tot_auto_op_cost_bridgetolls
+        # start with columns from calculate_Affordable1_HplusT_costs() filtered to this run
+        trip_costs_df = affordable_hplust_costs_df.loc[ 
+            affordable_hplust_costs_df.modelrun_alias == model_runs_dict[tm_runid]['Alias']]
+        # LOGGER.debug('  trip_costs_df from affordable_hplust_costs_df:\n{}'.format(trip_costs_df))
+        trip_costs_df = trip_costs_df[
+            ['modelrun_id','modelrun_alias','incQ','total_households',
+             # trips detail since we want avg per trip
+             'total_auto_trips','total_transit_trips',
+             # keep daily cost detail
+             'total_auto_cost','parking_cost','total_transit_fares']]
+        LOGGER.debug('  trip_costs_df from affordable_hplust_costs_df:\n{}'.format(trip_costs_df))
 
-    tm_tot_auto_op_cost_fuel_maint_inc1   = total_opcost['inc1']       * days_per_year
-    tm_tot_auto_op_cost_valuetolls_inc1   = total_valuetolls['inc1']   * days_per_year
-    tm_tot_auto_op_cost_bridgetolls_inc1  = total_bridgetolls['inc1']  * days_per_year
-    # this is to make sure the op costs sourced by this script is equal to the op costs calcuated in scenario_metrics.csv
-    tm_tot_auto_op_cost_check_inc1        = tm_tot_auto_op_cost_fuel_maint_inc1 + tm_tot_auto_op_cost_valuetolls_inc1 + tm_tot_auto_op_cost_bridgetolls_inc1
-    
+        # read auto_times.csv
+        auto_times_file = model_run_dir / "OUTPUT" / "metrics" / "auto_times.csv"
+        LOGGER.info(f"  Reading {auto_times_file}")
+        tm_auto_times_df = pd.read_csv(auto_times_file)
+        LOGGER.debug("  tm_auto_times_df.head(10):\n{}".format(tm_auto_times_df.head(10)))
 
-    # Mean annual transportation cost per household in 2020$
+        # what are the Income==na?
+        # looks like these are ix, air, zpv_tnc and truck
+        # ok to drop
+        # LOGGER.debug("  tm_auto_times_df with Income==na? \n{}".format(tm_auto_times_df.loc[ tm_auto_times_df.Income=='na']))
+        tm_auto_times_df = tm_auto_times_df.loc[ tm_auto_times_df.Income != 'na' ]
 
-    '''
-    # Breakdown of op costs in 2000$   (output is in cents in 2000$)
-    tm_tot_auto_op_cost_fuel_maint  = tm_auto_times_df.loc[(tm_auto_times_df['Income'].str.contains("inc") == True), 'Total Cost'].sum()   / 100  * days_per_year
-    tm_tot_auto_op_cost_valuetolls  = tm_auto_times_df.loc[(tm_auto_times_df['Income'].str.contains("inc") == True), 'Value Tolls'].sum()  / 100  * days_per_year
-    tm_tot_auto_op_cost_bridgetolls = tm_auto_times_df.loc[(tm_auto_times_df['Income'].str.contains("inc") == True), 'Bridge Tolls'].sum() / 100  * days_per_year
-    tm_tot_auto_op_cost_check       = tm_tot_auto_op_cost_fuel_maint + tm_tot_auto_op_cost_valuetolls + tm_tot_auto_op_cost_bridgetolls
-    '''
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_numHH',year,dbp]       = tm_tot_hh * INFLATION_2000_TO_2020
+        # columns are Income, Mode, Daily Person Trips, Daily Vehicle Trips, Person Minutes, Vehicle Minutes, Person Miles, Vehicle Miles
+        #            Total Cost, VTOLL nonzero AM, VTOLL nonzero MD,  Bridge Tolls,  Value Tolls
+        # costs are in 2000 cents
+        # groupby income and sum
+        tm_auto_times_df = tm_auto_times_df.groupby(by='Income').aggregate({
+            'Bridge Tolls':'sum',
+            'Value Tolls':'sum',
+            'Total Cost':'sum'}).reset_index()
 
-    # All households
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$',year,dbp]             = tp_cost / tm_tot_hh * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_autoown',year,dbp]     = tm_tot_auto_owner_cost / tm_tot_hh * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_autoop',year,dbp]      = tm_tot_auto_op_cost / tm_tot_hh * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_autopark',year,dbp]    = tm_tot_auto_park_cost / tm_tot_hh * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_transitfare',year,dbp] = tm_tot_transit_fares / tm_tot_hh * INFLATION_2000_TO_2020
+        # convert to 2000 dollars (from cents)
+        tm_auto_times_df['Bridge Tolls'] = 0.01*tm_auto_times_df['Bridge Tolls']
+        tm_auto_times_df['Value Tolls' ] = 0.01*tm_auto_times_df['Value Tolls']
+        tm_auto_times_df['Total Cost'  ] = 0.01*tm_auto_times_df['Total Cost']
+        # combine tolls
+        tm_auto_times_df['auto_times_total_tolls'] = tm_auto_times_df['Bridge Tolls'] + tm_auto_times_df['Value Tolls']
 
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_autoop_check',year,dbp]         = tm_tot_auto_op_cost_check / tm_tot_hh * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_autoop_fuel_maint',year,dbp]    = tm_tot_auto_op_cost_fuel_maint  / tm_tot_hh * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_autoop_valuetolls',year,dbp]    = tm_tot_auto_op_cost_valuetolls  / tm_tot_hh * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_autoop_bridgetolls',year,dbp]   = tm_tot_auto_op_cost_bridgetolls / tm_tot_hh * INFLATION_2000_TO_2020   
-    
-    # Q1 HHs
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_inc1',year,dbp]             = tp_cost_inc1 / tm_tot_hh_inc1 * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_autoown_inc1',year,dbp]     = tm_tot_auto_owner_cost_inc1 / tm_tot_hh_inc1 * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_autoop_inc1',year,dbp]      = tm_tot_auto_op_cost_inc1 / tm_tot_hh_inc1 * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_autopark_inc1',year,dbp]    = tm_tot_auto_park_cost_inc1 / tm_tot_hh_inc1 * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_transitfare_inc1',year,dbp] = tm_tot_transit_fares_inc1 / tm_tot_hh_inc1 * INFLATION_2000_TO_2020
+        # rename
+        tm_auto_times_df.rename(columns={
+            'Bridge Tolls':'auto_times_bridge_tolls',
+            'Value Tolls':'auto_times_value_tolls',
+            'Total Cost':'auto_times_auto_op_cost'},
+            inplace=True)
 
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_autoop_check_inc1',year,dbp]         = tm_tot_auto_op_cost_check_inc1 / tm_tot_hh_inc1 * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_autoop_fuel_maint_inc1',year,dbp]    = tm_tot_auto_op_cost_fuel_maint_inc1  / tm_tot_hh_inc1 * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_autoop_valuetolls_inc1',year,dbp]    = tm_tot_auto_op_cost_valuetolls_inc1  / tm_tot_hh_inc1 * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_autoop_bridgetolls_inc1',year,dbp]   = tm_tot_auto_op_cost_bridgetolls_inc1 / tm_tot_hh_inc1 * INFLATION_2000_TO_2020   
+        # recode income to be consistent with trip_costs_df and make it the index
+        tm_auto_times_df.rename(columns={'Income':'incQ'}, inplace=True)
+        tm_auto_times_df['incQ'] = tm_auto_times_df.incQ.str[-1:]
+        tm_auto_times_df.set_index('incQ', inplace=True)
+        LOGGER.debug("  tm_auto_times_df.groupby(Income):\n{}".format(tm_auto_times_df))
 
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_inc1',year,dbp] = tp_cost_inc1 / tm_tot_hh_inc1 * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'mean_transportation_cost_2020$_inc2',year,dbp] = tp_cost_inc2 / tm_tot_hh_inc2 * INFLATION_2000_TO_2020
+        # add aggregte rows: all incomes, incQ1 & incQ2
+        tm_auto_times_df.loc['all',:] = tm_auto_times_df.sum(axis=0)
+        tm_auto_times_df.loc['1&2',:] = tm_auto_times_df.loc[ tm_auto_times_df.index.isin(['1','2']) ].sum(axis=0)
+        LOGGER.debug("  tm_auto_times_df.groupby(Income):\n{}".format(tm_auto_times_df))
 
-    
-    
-    # Average Daily Tolls per household
-    metrics_dict[runid,metric_id,'tolls_per_HH',year,dbp]           = total_tolls_allHH / tm_tot_hh * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'tolls_per_inc1and2HH',year,dbp]   = total_tolls_inc1and2 / (tm_tot_hh_inc1+tm_tot_hh_inc2) * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'tolls_per_inc1HH',year,dbp]       = total_tolls['inc1'] / tm_tot_hh_inc1 * INFLATION_2000_TO_2020
+        # merge it back with trip_costs_df from scenario_metrics.csv
+        trip_costs_df = pd.merge(
+            left        = trip_costs_df,
+            right       = tm_auto_times_df,
+            how         = 'left',
+            left_on     = ['incQ'],
+            right_index = True,
+            validate    = 'one_to_one'
+        )
+        LOGGER.debug("  trip_costs_df:\n{}".format(trip_costs_df))
 
-    # Average Daily Fares per Household   (note: transit fares totals calculated above are annual and need to be divided by days_per_year)
-    metrics_dict[runid,metric_id,'fares_per_HH',year,dbp]     = tm_tot_transit_fares / tm_tot_hh * INFLATION_2000_TO_2020 / days_per_year
-    metrics_dict[runid,metric_id,'fares_per_inc1and2HH',year,dbp]   = (tm_tot_transit_fares_inc1 + tm_tot_transit_fares_inc2) / (tm_tot_hh_inc1+tm_tot_hh_inc2) * INFLATION_2000_TO_2020 / days_per_year
-    metrics_dict[runid,metric_id,'fares_per_inc1HH',year,dbp] = tm_tot_transit_fares_inc1 / tm_tot_hh_inc1 * INFLATION_2000_TO_2020 / days_per_year
+        # convert to avg per trip cost in 2020 dollars
+        trip_costs_df['mean_transit_fare_2020dollars'] = (trip_costs_df.total_transit_fares     / trip_costs_df.total_transit_trips) * INFLATION_2000_TO_2020
+        trip_costs_df['mean_auto_op_cost_2020dollars'] = (trip_costs_df.total_auto_cost         / trip_costs_df.total_auto_trips   ) * INFLATION_2000_TO_2020
+        trip_costs_df['mean_parking_cost_2020dollars'] = (trip_costs_df.parking_cost            / trip_costs_df.total_auto_trips   ) * INFLATION_2000_TO_2020
+        # auto times sourced
+        trip_costs_df['mean_tolls_cost_2020dollars'  ] = (trip_costs_df.auto_times_total_tolls  / trip_costs_df.total_auto_trips   ) * INFLATION_2000_TO_2020
+        # out of pocket = auto op cost + parking cost (but not tolls...)
+        trip_costs_df['mean_auto_outofpocket_cost_2020dollars'] = trip_costs_df.mean_auto_op_cost_2020dollars + trip_costs_df.mean_parking_cost_2020dollars
+        LOGGER.debug("  trip_costs_df:\n{}".format(trip_costs_df))
 
-    
+        # save
+        affordable_trip_costs_df = pd.concat([affordable_trip_costs_df, trip_costs_df])
 
-    ####### per trip auto
-
-    # Total auto trips per day (model outputs are in trips, per day)
-    tm_tot_auto_trips      = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'].str.contains("total_auto_trips") == True), 'value'].sum()
-    tm_tot_auto_trips_inc1 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_auto_trips_inc1"),'value'].item() 
-    tm_tot_auto_trips_inc2 = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_auto_trips_inc2"),'value'].item() 
-    metrics_dict[runid,metric_id,'trips_total_auto_perday',year,dbp]          = tm_tot_auto_trips
-    metrics_dict[runid,metric_id,'trips_total_auto_perday_inc1',year,dbp]     = tm_tot_auto_trips_inc1
-
-    # Average Tolls per trip  (total_tolls_xx is calculated above as per day tolls in 2000 dollars)
-    metrics_dict[runid,metric_id,'per_trip_tolls',year,dbp]          = total_tolls_allHH / tm_tot_auto_trips * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'per_trip_tolls_inc1and2',year,dbp] = total_tolls_inc1and2 / (tm_tot_auto_trips_inc1+tm_tot_auto_trips_inc2) * INFLATION_2000_TO_2020
-    metrics_dict[runid,metric_id,'per_trip_tolls_inc1',year,dbp]     = total_tolls['inc1'] / tm_tot_auto_trips_inc1 * INFLATION_2000_TO_2020
-
-    # Total auto operating cost per trip (tm_tot_auto_op_cost and tm_tot_auto_park_cost are calculated above as annual costs in 2000 dollars)
-    metrics_dict[runid,metric_id,'per_trip_autocost',year,dbp]           = (tm_tot_auto_op_cost + tm_tot_auto_park_cost) / tm_tot_auto_trips * INFLATION_2000_TO_2020 / days_per_year
-    metrics_dict[runid,metric_id,'per_trip_autocost_park',year,dbp]      = tm_tot_auto_park_cost / tm_tot_auto_trips * INFLATION_2000_TO_2020 / days_per_year
-    metrics_dict[runid,metric_id,'per_trip_autocost_op',year,dbp]        = tm_tot_auto_op_cost / tm_tot_auto_trips * INFLATION_2000_TO_2020 / days_per_year
-
-    metrics_dict[runid,metric_id,'per_trip_autocost_op_check',year,dbp]             = tm_tot_auto_op_cost_check / tm_tot_auto_trips * INFLATION_2000_TO_2020 / days_per_year
-    metrics_dict[runid,metric_id,'per_trip_autocost_op_fuel_maint',year,dbp]        = tm_tot_auto_op_cost_fuel_maint / tm_tot_auto_trips * INFLATION_2000_TO_2020 / days_per_year
-    metrics_dict[runid,metric_id,'per_trip_autocost_op_valuetolls',year,dbp]        = tm_tot_auto_op_cost_valuetolls / tm_tot_auto_trips * INFLATION_2000_TO_2020 / days_per_year
-    metrics_dict[runid,metric_id,'per_trip_autocost_op_bridgetolls',year,dbp]       = tm_tot_auto_op_cost_bridgetolls / tm_tot_auto_trips * INFLATION_2000_TO_2020 / days_per_year
-
-    metrics_dict[runid,metric_id,'per_trip_autocost_inc1',year,dbp]  = (tm_tot_auto_op_cost_inc1 + tm_tot_auto_park_cost_inc1) / tm_tot_auto_trips_inc1 * INFLATION_2000_TO_2020 / days_per_year 
-    metrics_dict[runid,metric_id,'per_trip_autocost_inc1_op',year,dbp]               = tm_tot_auto_op_cost_inc1             / tm_tot_auto_trips_inc1 * INFLATION_2000_TO_2020 / days_per_year
-    metrics_dict[runid,metric_id,'per_trip_autocost_inc1_op_check',year,dbp]         = tm_tot_auto_op_cost_check_inc1       / tm_tot_auto_trips_inc1 * INFLATION_2000_TO_2020 / days_per_year
-    metrics_dict[runid,metric_id,'per_trip_autocost_inc1_op_fuel_maint',year,dbp]    = tm_tot_auto_op_cost_fuel_maint_inc1  / tm_tot_auto_trips_inc1 * INFLATION_2000_TO_2020 / days_per_year
-    metrics_dict[runid,metric_id,'per_trip_autocost_inc1_op_valuetolls',year,dbp]    = tm_tot_auto_op_cost_valuetolls_inc1  / tm_tot_auto_trips_inc1 * INFLATION_2000_TO_2020 / days_per_year
-    metrics_dict[runid,metric_id,'per_trip_autocost_inc1_op_bridgetolls',year,dbp]   = tm_tot_auto_op_cost_bridgetolls_inc1 / tm_tot_auto_trips_inc1 * INFLATION_2000_TO_2020 / days_per_year
-    metrics_dict[runid,metric_id,'per_trip_autocost_inc1_park',year,dbp]             = tm_tot_auto_park_cost_inc1           / tm_tot_auto_trips_inc1 * INFLATION_2000_TO_2020 / days_per_year
-
-    metrics_dict[runid,metric_id,'per_trip_autocost_inc1and2',year,dbp]  = (tm_tot_auto_op_cost_inc1 + tm_tot_auto_op_cost_inc2 + tm_tot_auto_park_cost_inc1 + tm_tot_auto_park_cost_inc2) / (tm_tot_auto_trips_inc1+tm_tot_auto_trips_inc2) * INFLATION_2000_TO_2020  / days_per_year
-
-
-    ####### per trip transit
-
-    # Total transit trips per day (model outputs are in trips, per day)
-    tm_tot_transit_trips            = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'].str.contains("total_transit_trips") == True), 'value'].sum() 
-    tm_tot_transit_trips_inc1       = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_transit_trips_inc1"),'value'].item() 
-    tm_tot_transit_trips_inc2       = tm_scen_metrics_df.loc[(tm_scen_metrics_df['metric_name'] == "total_transit_trips_inc2"),'value'].item() 
-    metrics_dict[runid,metric_id,'trips_total_transit_perday',year,dbp]          = tm_tot_transit_trips
-    metrics_dict[runid,metric_id,'trips_total_transit_perday_inc1',year,dbp]     = tm_tot_transit_trips_inc1
-
-    # Average Fares per trip   (note: transit fares totals calculated above are annual and need to be divided by days_per_year)
-    metrics_dict[runid,metric_id,'per_trip_fare',year,dbp]          = tm_tot_transit_fares / tm_tot_transit_trips * INFLATION_2000_TO_2020 / days_per_year
-    metrics_dict[runid,metric_id,'per_trip_fare_inc1and2',year,dbp] = (tm_tot_transit_fares_inc1 + tm_tot_transit_fares_inc2) / (tm_tot_transit_trips_inc1+tm_tot_transit_trips_inc2) * INFLATION_2000_TO_2020 / days_per_year
-    metrics_dict[runid,metric_id,'per_trip_fare_inc1',year,dbp]     = tm_tot_transit_fares_inc1 / tm_tot_transit_trips_inc1 * INFLATION_2000_TO_2020 / days_per_year
+    # write it
+    output_file = METRICS_OUTPUT_DIR / 'metrics_affordable1_trip_costs.csv'
+    affordable_trip_costs_df.to_csv(output_file, index=False)
+    LOGGER.info("Wrote {}".format(output_file))
 
 def extract_Connected1_JobAccess(model_runs_dict: dict):
     """
@@ -1119,9 +1124,11 @@ if __name__ == '__main__':
 
 
     #### Calculate/pull metrics ###################################################################################################
+    # Note: These methods iterate through all the relevant runs and output the metrics results
 
     # Affordable
-    calculate_Affordable1_HplusT_costs(model_runs_dict)
+    affordable_hplust_costs_df = calculate_Affordable1_HplusT_costs(model_runs_dict)
+    calculate_Affordable1_trip_costs(model_runs_dict, affordable_hplust_costs_df)
 
     # Connected
     extract_Connected1_JobAccess(model_runs_dict)
