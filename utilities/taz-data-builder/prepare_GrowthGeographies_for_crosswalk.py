@@ -1,6 +1,7 @@
 # create intersection of Growth Geography and TRAs for PBA50+.
 
-import geopandas as gpd 
+import geopandas as gpd
+import fiona
 import pandas as pd
 import numpy as np
 import os, logging
@@ -15,6 +16,7 @@ TAZ_INPUT_FILE = r'M:\Data\GIS layers\TM1_taz\bayarea_rtaz1454_rev1_WGS84.shp'
 # PBA50plus
 BOX_DIR = r'C:\Users\{}\Box\Modeling and Surveys\Urban Modeling\Bay Area UrbanSim\p10 Datasets for PBA2050plus\raw_data_to_build_parcels_geography'.format(os.getenv('USERNAME'))
 GG_INPUT_FILE = os.path.join(BOX_DIR, 'pba50plus_GrowthGeographies_p10tagging', 'PBA50Plus_Growth_Geographies_120823.shp')
+PPA_INPUT_FILE = os.path.join(BOX_DIR, 'pba50plus_GrowthGeographies_p10tagging', 'pba50plus_GrowthGeographies_p10tagging.gdb')
 TRA_INPUT_FILE = os.path.join(BOX_DIR, 'pba50plus_GrowthGeographies_p10tagging', 'PBA50_Plus_TRA_v2_121123.shp')
 
 # PBA50
@@ -28,6 +30,7 @@ TRA_INPUT_PBA50_FILE3 = os.path.join(GEOGRAPHIES_PBA50_DIR, 'Final_Blueprint_TRA
 OUTPUT_M_DIR = r'M:\Application\PBA50Plus_Data_Processing\Draft_Blueprint_Growth_Geographies'
 QAQC_DIR = os.path.join(OUTPUT_M_DIR, 'QAQC')
 GG_TRA_SHAPE_FILE = os.path.join(QAQC_DIR, 'gg_tra_pba50plus.shp')
+GG_nonPPA_TRA_SHAPE_FILE = os.path.join(QAQC_DIR, 'gg_nonPPA_tra_pba50plus.shp')
 GG_TRA_SHAPE_PBA50_FILE = os.path.join(QAQC_DIR, 'gg_tra_pba50.shp')
 
 LOG_FILE = os.path.join(QAQC_DIR, 'prepare_GrowthGeographies_for_crosswalk.log')
@@ -57,29 +60,54 @@ gg_gdf_proj = gg_gdf.to_crs(analysis_crs)
 # write out for QAQC
 gg_gdf_proj.to_file(os.path.join(QAQC_DIR, 'GG_pba50plus.shp'))
 
+## PPAs
+logging.info('getting PPA data from {}'.format(PPA_INPUT_FILE))
+layers = fiona.listlayers(PPA_INPUT_FILE)
+logging.info('the gdb contains the following layers: {}'.format(layers))
+ppa_gdf = gpd.read_file(PPA_INPUT_FILE, driver='fileGDB', layer='PPA_ExportFeatures')
+
+logger.info('initial crs: {}'.format(ppa_gdf.crs))
+ppa_gdf_proj = ppa_gdf.to_crs(analysis_crs)
+logger.debug(ppa_gdf_proj.head())
+
 ## TRAs
 logging.info('read TRA file from {}'.format(TRA_INPUT_FILE))
 tra_gdf = gpd.read_file(TRA_INPUT_FILE)
 logging.debug(tra_gdf.head())
 logging.debug(tra_gdf['PBA50_Geo'].value_counts(dropna=False))
 
-logger.info('crs: {}'.format(tra_gdf.crs))
+logging.info('crs: {}'.format(tra_gdf.crs))
 tra_gdf_proj = tra_gdf.to_crs(analysis_crs)
 
 # combine TRA 1/2/3 categories and dissolve into TRA
+logging.info('dissolve TRA categories')
 tra_gdf_proj['tra_50plus'] = ''
 tra_gdf_proj.loc[tra_gdf_proj['PBA50_Geo'].notnull(), 'tra_50plus'] = 'tra'
 tra_dissolve_gdf = tra_gdf_proj.dissolve(by='tra_50plus').reset_index()
+logging.debug('after dissolving, unique TRA values: {}'.format(tra_dissolve_gdf['tra_50plus'].unique()))
 # write out for QAQC
+logging.info('write out dissolved TRA data for QAQC')
 tra_gdf_proj.to_file(os.path.join(QAQC_DIR, 'tra_pba50plus.shp'))
 
-# GG and TRA
-gg_tra_gdf = gpd.overlay(gg_gdf_proj, tra_dissolve_gdf)
+# generic GG and TRA intersection
+logging.info('create intersection of GG and TRA')
+gg_tra_gdf = gpd.overlay(gg_gdf_proj, tra_dissolve_gdf, how='intersection')
+
+# for travel model parking policies - need GG & TRA intersection, but without PPA in GG
+logging.info('create GG_nonPPA by clipping PPA out from GG')
+gg_nonPPA_gdf = gg_gdf_proj.overlay(ppa_gdf_proj, how='difference')
+gg_nonPPA_gdf['gg_50plus'] = 'gg_nonPPA'
+logging.info('write out the clipped GG data for QAQC')
+gg_nonPPA_gdf.to_file(os.path.join(QAQC_DIR, 'gg_nonPPA_pba50plus.shp'))
+logging.info('create intersection of GG_nonPPA and TRA')
+gg_nonPPA_tra_gdf = gpd.overlay(gg_nonPPA_gdf, tra_dissolve_gdf, how='intersection')
 
 # write out GG-TRA intersection
 logger.info('write out GG_TRA intersection geography to {}'.format(GG_TRA_SHAPE_FILE))
 gg_tra_gdf[['gg_50plus', 'tra_50plus', 'geometry']].to_file(GG_TRA_SHAPE_FILE)
 
+logger.info('write out GG_nonPPA_TRA intersection geography to {}'.format(GG_nonPPA_TRA_SHAPE_FILE))
+gg_nonPPA_tra_gdf[['gg_50plus', 'tra_50plus', 'geometry']].to_file(GG_nonPPA_TRA_SHAPE_FILE)
 
 #### PBA50
 # GG
