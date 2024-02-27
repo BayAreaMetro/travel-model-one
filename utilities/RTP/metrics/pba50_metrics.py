@@ -246,7 +246,7 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict):
     affordable_hplust_costs_df.to_csv(output_file, index=False)
     LOGGER.info("Wrote {}".format(output_file))
 
-    sys.exit()
+    return
 
     # Tolls & Fares
 
