@@ -749,6 +749,7 @@ def extract_Healthy1_safety(model_runs_dict: dict, args_rtp: str):
 
     Args:
         model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
+        args_rtp (str): one of 'RTP2021' or 'RTP2025'
 
     Writes metrics_healthy1_safety.csv with columns:
         modelrun_id
@@ -879,22 +880,22 @@ def extract_Healthy1_safety_TAZ(runid, year, dbp, tm_taz_input_df, tm_vmt_metric
     metrics_dict[runid,metric_id,'VMT_per100K_nonfwy_hra',year,dbp]     =  tm_vmt_metrics_df.loc[((tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_hra']==1)),'VMT'].sum()  / float(population_hra / per_x_people)
 
 
-def calculate_Healthy2_commutemodeshare(runid, year, dbp, commute_mode_share_df, metrics_dict):
-    
-    # Note - these metrics are grabbed directly from metrics_manual.xlsx
+def calculate_Healthy2_commutemodeshare(model_runs_dict: dict, args_rtp: str):
+    """
+    This is only implemented for RTP2025 since the RTP2021 TM1.5 version was significantly more complicated.
 
-    '''
-    metric_id = "H2"
-    year = int(year)                              
+    Args:
+        model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
+        args_rtp (str): one of 'RTP2021' or 'RTP2025'
+    """
+    LOGGER.info("calculate_Healthy2_commutemodeshare()")
+    if args_rtp == 'RTP2021':
+        LOGGER.warn("Not implemented for RTP2021 because the methodology changed so QA code is not useful")
+        return
     
-    metrics_dict[runid,metric_id,'Commute_mode_share_sov',year,dbp]          = commute_mode_share_df.loc[(commute_mode_share_df['name']=="Commute_mode_share_sov")         & (commute_mode_share_df['year']==year) & (commute_mode_share_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'Commute_mode_share_hov',year,dbp]          = commute_mode_share_df.loc[(commute_mode_share_df['name']=="Commute_mode_share_hov")         & (commute_mode_share_df['year']==year) & (commute_mode_share_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'Commute_mode_share_taxi_tnc',year,dbp]     = commute_mode_share_df.loc[(commute_mode_share_df['name']=="Commute_mode_share_taxi_tnc")    & (commute_mode_share_df['year']==year) & (commute_mode_share_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'Commute_mode_share_transit',year,dbp]      = commute_mode_share_df.loc[(commute_mode_share_df['name']=="Commute_mode_share_transit")     & (commute_mode_share_df['year']==year) & (commute_mode_share_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'Commute_mode_share_bike',year,dbp]         = commute_mode_share_df.loc[(commute_mode_share_df['name']=="Commute_mode_share_bike")        & (commute_mode_share_df['year']==year) & (commute_mode_share_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'Commute_mode_share_walk',year,dbp]         = commute_mode_share_df.loc[(commute_mode_share_df['name']=="Commute_mode_share_walk")        & (commute_mode_share_df['year']==year) & (commute_mode_share_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    metrics_dict[runid,metric_id,'Commute_mode_share_telecommute',year,dbp]  = commute_mode_share_df.loc[(commute_mode_share_df['name']=="Commute_mode_share_telecommute") & (commute_mode_share_df['year']==year) & (commute_mode_share_df['modelrunID'].str.contains(dbp)), 'value'].sum()
-    '''
+    # TODO: Implement
+    raise
+
 
 def calculate_Vibrant1_median_commute(runid, year, dbp, tm_commute_df, metrics_dict):
     
