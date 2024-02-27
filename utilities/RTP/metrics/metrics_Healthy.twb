@@ -31,7 +31,7 @@
       <connection class='federated'>
         <named-connections>
           <named-connection caption='metrics_healthy1_safety' name='textscan.0q7yexm0kvz3q61dlpfae04u1wg9'>
-            <connection class='textscan' directory='E:/GitHub/travel-model-one/utilities/RTP/metrics' filename='metrics_healthy1_safety.csv' password='' server='' workgroup-auth-mode='as-is' />
+            <connection class='textscan' directory='.' filename='metrics_healthy1_safety.csv' password='' server='' workgroup-auth-mode='as-is' />
           </named-connection>
         </named-connections>
         <_.fcp.ObjectModelEncapsulateLegacy.false...relation connection='textscan.0q7yexm0kvz3q61dlpfae04u1wg9' name='metrics_healthy1_safety.csv' table='[metrics_healthy1_safety#csv]' type='table'>
