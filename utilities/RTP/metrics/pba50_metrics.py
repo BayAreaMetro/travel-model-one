@@ -897,91 +897,56 @@ def calculate_Healthy2_commutemodeshare(model_runs_dict: dict, args_rtp: str):
     raise
 
 
-def calculate_Vibrant1_median_commute(runid, year, dbp, tm_commute_df, metrics_dict):
-    
-    metric_id = "V1"
+def calculate_Vibrant1_mean_commute(model_runs_dict: dict):
+    """
+    Extracts mean commute distance from [modelrun_id]/OUTPUT/core_summaries/CommuteByIncomeHousehold.csv
+    See https://github.com/BayAreaMetro/travel-model-one/tree/master/model-files/scripts/core_summaries#commutebyincomehousehold
 
-    tm_commute_df['total_commute_miles'] = tm_commute_df['freq'] * tm_commute_df['distance']
-   
-    commute_dist_df = tm_commute_df[['incQ','freq','total_commute_miles']].groupby(['incQ']).sum()
-        
-    metrics_dict[runid,metric_id,'mean_commute_distance',year,dbp] = commute_dist_df['total_commute_miles'].sum() / commute_dist_df['freq'].sum()
-    metrics_dict[runid,metric_id,'mean_commute_distance_inc1',year,dbp] = commute_dist_df['total_commute_miles'][1] / commute_dist_df['freq'][1] 
-    metrics_dict[runid,metric_id,'mean_commute_distance_inc2',year,dbp] = commute_dist_df['total_commute_miles'][2] / commute_dist_df['freq'][2]
-    metrics_dict[runid,metric_id,'mean_commute_distance_inc3',year,dbp] = commute_dist_df['total_commute_miles'][3] / commute_dist_df['freq'][3]
-    metrics_dict[runid,metric_id,'mean_commute_distance_inc4',year,dbp] = commute_dist_df['total_commute_miles'][4] / commute_dist_df['freq'][4]
+    Args:
+        model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
 
-def calculate_travelmodel_metrics_change(list_tm_runid_blueprintonly, metrics_dict):
+    Writes metrics_vibrant1_mean_commute_distance.csv with columns:
+        modelrun_id
+        modelrun_alias
+        incQ                                one of ['1','2','3','4','all']
+        total_commute_miles                 total commute miles (freq x commute miles)
+        freq                                number of tours
+        mean_commute_dist                   total commute miles divided by freq
+    """
+    LOGGER.info("calculate_Vibrant1_mean_commute()")
 
-
-    for tm_runid in list_tm_runid_blueprintonly:
-
-        year = tm_runid[:4]
-        
-        if "Basic" in tm_runid:
-            dbp = "Basic"
-        elif "Plus" in tm_runid:
-            dbp = "Plus"
-        #elif "PlusCrossing_01" in tm_runid:
-        #    dbp = "Plus_01"  
-        #elif  "PlusFixItFirst" in tm_runid:
-        #    dbp = "PlusFixItFirst"
+    all_tm_commute_df = pd.DataFrame()
+    for tm_runid in model_runs_dict.keys():
+        if model_runs_dict[tm_runid]['run_set'] == "IP":
+            model_run_dir = TM_RUN_LOCATION_IP / tm_runid
         else:
-            dbp = "Unknown"
-
-        '''
-        metric_id = "A1"
-
-        # Tolls
-        metrics_dict[tm_runid,metric_id,'tolls_per_HH_change_2015',year,dbp] = metrics_dict[tm_runid,metric_id,'tolls_per_HH',year,dbp] / metrics_dict[tm_2015_runid,metric_id,'tolls_per_HH',y1,'2015']  - 1
-        metrics_dict[tm_runid,metric_id,'tolls_per_HH_change_2050noproject',year,dbp] =  metrics_dict[tm_runid,metric_id,'tolls_per_HH',year,dbp] / metrics_dict[tm_2050_FBP_NoProject_runid,metric_id,'tolls_per_HH',y2,"NoProject"] - 1
-        metrics_dict[tm_runid,metric_id,'tolls_per_LIHH_change_2015',year,dbp] = metrics_dict[tm_runid,metric_id,'tolls_per_LIHH',year,dbp] / metrics_dict[tm_2015_runid,metric_id,'tolls_per_LIHH',y1,'2015']  - 1
-        metrics_dict[tm_runid,metric_id,'tolls_per_LIHH_change_2050noproject',year,dbp] =  metrics_dict[tm_runid,metric_id,'tolls_per_LIHH',year,dbp] / metrics_dict[tm_2050_FBP_NoProject_runid,metric_id,'tolls_per_LIHH',y2,"NoProject"] - 1
-        metrics_dict[tm_runid,metric_id,'tolls_per_inc1HH_change_2015',year,dbp] = metrics_dict[tm_runid,metric_id,'tolls_per_inc1HH',year,dbp] / metrics_dict[tm_2015_runid,metric_id,'tolls_per_inc1HH',y1,'2015']  - 1
-        metrics_dict[tm_runid,metric_id,'tolls_per_inc1HH_change_2050noproject',year,dbp] =  metrics_dict[tm_runid,metric_id,'tolls_per_inc1HH',year,dbp] / metrics_dict[tm_2050_FBP_NoProject_runid,metric_id,'tolls_per_inc1HH',y2,"NoProject"] - 1
-        # Transit Fares
-        metrics_dict[tm_runid,metric_id,'fares_per_HH_change_2015',year,dbp] = metrics_dict[tm_runid,metric_id,'fares_per_HH',year,dbp] / metrics_dict[tm_2015_runid,metric_id,'fares_per_HH',y1,'2015']  - 1
-        metrics_dict[tm_runid,metric_id,'fares_per_HH_change_2050noproject',year,dbp] =  metrics_dict[tm_runid,metric_id,'fares_per_HH',year,dbp] / metrics_dict[tm_2050_FBP_NoProject_runid,metric_id,'fares_per_HH',y2,"NoProject"] - 1
-        metrics_dict[tm_runid,metric_id,'fares_per_LIHH_change_2015',year,dbp] = metrics_dict[tm_runid,metric_id,'fares_per_LIHH',year,dbp] / metrics_dict[tm_2015_runid,metric_id,'fares_per_LIHH',y1,'2015']  - 1
-        metrics_dict[tm_runid,metric_id,'fares_per_LIHH_change_2050noproject',year,dbp] =  metrics_dict[tm_runid,metric_id,'fares_per_LIHH',year,dbp] / metrics_dict[tm_2050_FBP_NoProject_runid,metric_id,'fares_per_LIHH',y2,"NoProject"] - 1
-        metrics_dict[tm_runid,metric_id,'fares_per_inc1HH_change_2015',year,dbp] = metrics_dict[tm_runid,metric_id,'fares_per_inc1HH',year,dbp] / metrics_dict[tm_2015_runid,metric_id,'fares_per_inc1HH',y1,'2015']  - 1
-        metrics_dict[tm_runid,metric_id,'fares_per_inc1HH_change_2050noproject',year,dbp] =  metrics_dict[tm_runid,metric_id,'fares_per_inc1HH',year,dbp] / metrics_dict[tm_2050_FBP_NoProject_runid,metric_id,'fares_per_inc1HH',y2,"NoProject"] - 1
-        '''
-
-        metric_id = "C2"
-
-        # Highway corridor travel times
-        for route in ['Antioch_SF','Vallejo_SF','SanJose_SF','Oakland_SanJose','Oakland_SF']:
-            metrics_dict[tm_runid,metric_id,'travel_time_AM_change_2015_%s' % route,year,dbp] = metrics_dict[tm_runid,metric_id,'travel_time_AM_%s' % route,year,dbp] / metrics_dict[tm_2015_runid,metric_id,'travel_time_AM_%s' % route,y1,'2015']  - 1
-            metrics_dict[tm_runid,metric_id,'travel_time_AM_change_2050noproject_%s' % route,year,dbp] = metrics_dict[tm_runid,metric_id,'travel_time_AM_%s' % route,year,dbp] / metrics_dict[tm_2050_FBP_NoProject_runid,metric_id,'travel_time_AM_%s' % route,y2,'NoProject']  - 1
+            model_run_dir = TM_RUN_LOCATION_BP / tm_runid
         
+        commute_file = model_run_dir / "OUTPUT" / "core_summaries" / "CommuteByIncomeHousehold.csv"
+        LOGGER.info(f"  Reading {commute_file}")
+        tm_commute_df = pd.read_csv(commute_file)
+        LOGGER.debug("  tm_commute_df.head(10):\n{}".format(tm_commute_df))
 
-        # Transit Crowding by operator
-        for operator in ['Shuttle','SFMTA LRT','SFMTA Bus','SamTrans Local','VTA Bus Local','AC Transit Local','Alameda Bus Operators','Contra Costa Bus Operators',\
-                               'Solano Bus Operators','Napa Bus Operators','Sonoma Bus Operators','GGT Local','CC AV Shuttle','ReX Express','SamTrans Express','VTA Bus Express',\
-                               'AC Transit Transbay','County Connection Express','GGT Express','WestCAT Express','Soltrans Express','FAST Express','VINE Express','SMART Express',\
-                               'WETA','Golden Gate Ferry','Hovercraft','VTA LRT','Dumbarton GRT','Oakland/Alameda Gondola','Contra Costa Gondolas','BART','Caltrain',\
-                               'Capitol Corridor','Amtrak','ACE','Dumbarton Rail','SMART', 'Valley Link','High-Speed Rail']:
-            try:
-                metrics_dict[tm_runid,metric_id,'crowded_pct_personhrs_AM_change_2015_%s' % operator,year,dbp] = metrics_dict[tm_runid,metric_id,'crowded_pct_personhrs_AM_%s' % operator,year,dbp] / metrics_dict[tm_2015_runid,metric_id,'crowded_pct_personhrs_AM_%s' % operator,y1,'2015']  - 1
-            except:
-                metrics_dict[tm_runid,metric_id,'crowded_pct_personhrs_AM_change_2015_%s' % operator,year,dbp] = 0
-            try:
-                metrics_dict[tm_runid,metric_id,'crowded_pct_personhrs_AM_change_2050noproject_%s' % operator,year,dbp] = metrics_dict[tm_runid,metric_id,'crowded_pct_personhrs_AM_%s' % operator,year,dbp] / metrics_dict[tm_2050_FBP_NoProject_runid,metric_id,'crowded_pct_personhrs_AM_%s' % operator,y2,'NoProject']  - 1
-            except:
-                metrics_dict[tm_runid,metric_id,'crowded_pct_personhrs_AM_change_2050noproject_%s' % operator,year,dbp] = 0
-        
+        tm_commute_df['total_commute_miles'] = tm_commute_df['freq'] * tm_commute_df['distance']
+        tm_commute_df = tm_commute_df.groupby(by='incQ').agg({'total_commute_miles':'sum', 'freq':'sum'})
 
-         # Transit travel times by operator (for bus only)
-        for operator in ['AC Transit Local','AC Transit Transbay','SFMTA Bus','VTA Bus Local','SamTrans Local','GGT Express','SamTrans Express', 'ReX Express']:
-            metrics_dict[tm_runid,metric_id,'time_per_dist_AM_change_2015_%s' % operator,year,dbp] = metrics_dict[tm_runid,metric_id,'time_per_dist_AM_%s' % operator,year,dbp] / metrics_dict[tm_2015_runid,metric_id,'time_per_dist_AM_%s' % operator,y1,'2015']  - 1
-            metrics_dict[tm_runid,metric_id,'time_per_dist_AM_change_2050noproject_%s' % operator,year,dbp] = metrics_dict[tm_runid,metric_id,'time_per_dist_AM_%s' % operator,year,dbp] / metrics_dict[tm_2050_FBP_NoProject_runid,metric_id,'time_per_dist_AM_%s' % operator,y2,'NoProject']  - 1
+        # add aggregate row: all incomes
+        tm_commute_df.loc['all'] = tm_commute_df.sum(axis=0)
+        tm_commute_df['mean_commute_dist']   = tm_commute_df['total_commute_miles']/tm_commute_df['freq']
 
-         # Transit travel times by mode
-        for mode_name in ['Local','Express','Ferry','Light Rail','Heavy Rail','Commuter Rail']:
-            metrics_dict[tm_runid,metric_id,'time_per_dist_AM_change_2015_%s' % mode_name,year,dbp] = metrics_dict[tm_runid,metric_id,'time_per_dist_AM_%s' % mode_name,year,dbp] / metrics_dict[tm_2015_runid,metric_id,'time_per_dist_AM_%s' % mode_name,y1,'2015']  - 1
-            metrics_dict[tm_runid,metric_id,'time_per_dist_AM_change_2050noproject_%s' % mode_name,year,dbp] = metrics_dict[tm_runid,metric_id,'time_per_dist_AM_%s' % mode_name,year,dbp] / metrics_dict[tm_2050_FBP_NoProject_runid,metric_id,'time_per_dist_AM_%s' % mode_name,y2,'NoProject']  - 1
+        # add metadata
+        # reset index and pull alias from ModelRuns.xlsx info
+        tm_commute_df.reset_index(drop=False, inplace=True)
+        tm_commute_df['modelrun_id']    = tm_runid
+        tm_commute_df['modelrun_alias'] = model_runs_dict[tm_runid]['Alias']
+        LOGGER.debug("  tm_commute_df:\n{}".format(tm_commute_df))
 
+        all_tm_commute_df = pd.concat([all_tm_commute_df, tm_commute_df])
+
+    # write it
+    output_file = METRICS_OUTPUT_DIR / 'metrics_vibrant1_mean_commute_distance.csv'
+    all_tm_commute_df.to_csv(output_file, index=False)
+    LOGGER.info("Wrote {}".format(output_file))
 
 if __name__ == '__main__':
 
@@ -1071,88 +1036,6 @@ if __name__ == '__main__':
     # Healthy
     extract_Healthy1_safety(model_runs_dict, my_args.rtp)
 
-    # TODO: deprecating the below code
-    taz_coc_crosswalk_file          = METRICS_SOURCE_DIR / 'taz_coc_crosswalk.csv'
-    taz_hra_crosswalk_file          = METRICS_SOURCE_DIR / 'taz_hra_crosswalk.csv'
-    taz_areatype_file               = METRICS_SOURCE_DIR / 'taz_areatype.csv'
-    taz_urbanizedarea_file          = METRICS_SOURCE_DIR / 'taz_urbanizedarea.csv'
-
-    coc_flag_file                   = METRICS_SOURCE_DIR / 'COCs_ACS2018_tbl_TEMP.csv'
-    transit_operator_file           = METRICS_SOURCE_DIR / 'transit_system_lookup.csv'
-    
-    # Set location of intermediate metric outputs
-    # These are for metrics generated by Raleigh, Bobby, James
-    transitproximity_file         = INTERMEDIATE_METRICS_SOURCE_DIR / 'metrics_proximity.csv'                  # from Bobby, based on Urbansim outputs only
-    commute_mode_share_file       = INTERMEDIATE_METRICS_SOURCE_DIR / 'commute_mode_share.csv'                 # from Raleigh, based on Travel Model outputs
-    emfac_file                    = INTERMEDIATE_METRICS_SOURCE_DIR / 'emfac.csv'                              # from James
-    remi_jobs_file                = INTERMEDIATE_METRICS_SOURCE_DIR / 'emp by ind11_s23.csv'                   # from Bobby, based on REMI
-    jobs_wagelevel_file           = INTERMEDIATE_METRICS_SOURCE_DIR / 'jobs_wagelevel.csv'                     # from Bobby, based on REMI
-
-    metrics_dict = OrderedDict()
-    y1        = "2015"
-    y2        = "2050"
-    y_diff    = "2050"
-
-    # Calculate all metrics
-    coc_flag_df                 = pd.read_csv(coc_flag_file)
-    transit_operator_df         = pd.read_csv(transit_operator_file)
-    emfac_df                    = pd.read_csv(emfac_file)
-    commute_mode_share_df       = pd.read_csv(commute_mode_share_file)
-    transitproximity_df         = pd.read_csv(transitproximity_file)
-    taz_coc_xwalk_df            = pd.read_csv(taz_coc_crosswalk_file)
-    taz_hra_xwalk_df            = pd.read_csv(taz_hra_crosswalk_file)
-    taz_areatype_df             = pd.read_csv(taz_areatype_file)
-    taz_urbanizedarea_df        = pd.read_csv(taz_urbanizedarea_file)
-
-    # columns are METRICS_COLUMNS
-    all_metrics_df = pd.DataFrame()
-
-    for tm_runid in model_runs_dict.keys():
-        LOGGER.info("Processing {}".format(tm_runid))
-        tm_run_info_dict = model_runs_dict[tm_runid]
-        year = tm_run_info_dict['year']
-        
-        # Read relevant metrics files
-        # if "2015" in tm_runid: tm_run_location = TM_RUN_LOCATION_IPA
-        # else: tm_run_location = TM_RUN_LOCATION_BP
-        # tm_scen_metrics_df    = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/scenario_metrics.csv',names=["runid", "metric_name", "value"])
-        # tm_auto_times_df      = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/auto_times.csv',sep=",", index_col=[0,1])
-        # tm_travel_cost_df     = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/core_summaries/TravelCost.csv')
-        # tm_commute_df         = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/core_summaries/CommuteByIncomeHousehold.csv')
-        # tm_taz_input_df       = pd.read_csv(tm_run_location+tm_runid+'/INPUT/landuse/tazData.csv')
-        # 
-        # tm_vmt_metrics_df    = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/vmt_vht_metrics_by_taz.csv')            
-        # #tm_vmt_metrics_df    = pd.read_csv(tm_run_location+tm_runid+'/OUTPUT/metrics/vmt_vht_metrics.csv')            
-        # tm_vmt_metrics_df = pd.merge(left=tm_vmt_metrics_df, right=taz_coc_xwalk_df, left_on="TAZ1454", right_on="TAZ1454", how="left")
-        # tm_vmt_metrics_df = pd.merge(left=tm_vmt_metrics_df, right=taz_hra_xwalk_df, left_on="TAZ1454", right_on="TAZ1454", how="left")
-        # tm_taz_input_df = pd.merge(left=tm_taz_input_df, right=taz_coc_xwalk_df, left_on="ZONE", right_on="TAZ1454", how="left")
-        # tm_taz_input_df = pd.merge(left=tm_taz_input_df, right=taz_hra_xwalk_df, left_on="ZONE", right_on="TAZ1454", how="left")
-        # tm_taz_input_df = pd.merge(left=tm_taz_input_df, right=taz_areatype_df, left_on="ZONE", right_on="TAZ1454", how="left")
-        # tm_taz_input_df = pd.merge(left=tm_taz_input_df, right=taz_urbanizedarea_df, left_on="ZONE", right_on="TAZ1454", how="left")
-        
-        # all_metrics_df = pd.concat([all_metrics_df, ])
-        # print("@@@@@@@@@@@@@ A1 Done")
-        # calculate_Connected1_proximity(tm_runid, year, dbp, transitproximity_df, metrics_dict)
-        # print("@@@@@@@@@@@@@ C1 Done")
-        # calculate_Connected2_trn_traveltimes(tm_runid, year, dbp, transit_operator_df, metrics_dict)
-        # calculate_Connected2_crowding(tm_runid, year, dbp, transit_operator_df, metrics_dict)
-        # print("@@@@@@@@@@@@@ C2 Done")
-        # extract_Healthy1_safety(tm_runid, year, dbp, tm_taz_input_df, safety_df, metrics_dict)
-        # extract_Healthy1_safety_TAZ(tm_runid, year, dbp, tm_taz_input_df, tm_vmt_metrics_df, metrics_dict)
-        # print("@@@@@@@@@@@@@ H1 Done")
-        # calculate_Healthy2_GHGemissions(tm_runid, year, dbp, tm_taz_input_df, tm_auto_times_df, emfac_df, metrics_dict)
-        # calculate_Healthy2_PM25emissions(tm_runid, year, dbp, tm_taz_input_df, tm_vmt_metrics_df, metrics_dict)
-        # calculate_Healthy2_commutemodeshare(tm_runid, year, dbp, commute_mode_share_df, metrics_dict)
-        # print("@@@@@@@@@@@@@ H2 Done")
-        # calculate_Vibrant1_median_commute(tm_runid, year, dbp, tm_commute_df, metrics_dict)
-        # print("@@@@@@@@@@@@@ V1 Done")
-        # print("@@@@@@@@@@@@@%s Done"% dbp)
-
-    # Write output
-    # out_filename = 'C:/Users/{}/Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/Metrics_Outputs_FinalBlueprint/metrics.csv'.format(os.getenv('USERNAME'))
-    # write it locally for now
-    # out_filename = 'metrics.csv'
-    # all_metrics_df.to_csv(out_filename, index=False)
-    # print("Wrote metrics.csv output")
-
+    # Vibrant
+    calculate_Vibrant1_mean_commute(model_runs_dict)
     
