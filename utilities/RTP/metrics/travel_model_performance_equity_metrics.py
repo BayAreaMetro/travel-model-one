@@ -2,21 +2,25 @@ USAGE = """
 
   python travel_model_performance_equity_metrics.py
 
-  Needs access to these box folders and M Drive
-    Box/Modeling and Surveys/Urban Modeling/Bay Area UrbanSim 1.5/PBA50/Draft Blueprint runs/
-    Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/
+  The script calculates or extracts Performance and Equity metrics related to travel model output
+  for the current set of runs.  Each metric is output to its own file:
+  e.g. 
+   1) metrics_affordable1_HplusT_costs.csv
+   2) metrics_affordable1_trip_costs.csv
+   3) metrics_connected1_jobaccess.csv
+   4) metrics_connected2_hwy_traveltimes.csv
+   5) metrics_connected2_trn_crowding.csv
+   6) metrics_connected2_transit_asset_conditions.csv
+   7) metrics_healthy1_safety.csv
+   8) metrics_vibrant1_mean_commute_distance.csv
 
-  Processes model outputs and creates a single csv with scenario metrics in this folder:
-    Box/Horizon and Plan Bay Area 2050/Equity and Performance/7_Analysis/Metrics/
+  For more detail regarding each of these files, see inline method documentation.
+  
+  The script also writes two logs, 
+   1) travel_model_performance_equity_metrics_info.log and 
+   2) travel_model_performance_equity_metrics_debug.log
 
-  This csv file will have 6 columns:
-    1) modelrun ID
-    2) metric ID
-    3) metric name
-    4) year  (note: for metrics that depict change from 2015 to 2050, this value will be 2050)
-    5) blueprint type
-    6) metric value
-
+  The first logs all input and output, and the second includes detailed debug information.
 """
 
 import argparse, datetime, logging,os, pathlib, sys
