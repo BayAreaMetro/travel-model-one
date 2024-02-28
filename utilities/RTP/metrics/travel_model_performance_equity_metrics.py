@@ -1,6 +1,6 @@
 USAGE = """
 
-  python pba50_metrics.py
+  python travel_model_performance_equity_metrics.py
 
   Needs access to these box folders and M Drive
     Box/Modeling and Surveys/Urban Modeling/Bay Area UrbanSim 1.5/PBA50/Draft Blueprint runs/
