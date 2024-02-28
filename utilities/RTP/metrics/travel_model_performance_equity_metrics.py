@@ -23,7 +23,7 @@ import argparse, datetime, logging,os, pathlib, sys
 import numpy, pandas as pd
 from collections import OrderedDict, defaultdict
 
-LOG_FILE = "pba50_metrics.log"
+LOG_FILE = "travel_model_performance_equity_metrics_{}.log"
 
 # Global Assumptions
 INFLATION_2000_TO_2020 = 1.53
@@ -129,11 +129,11 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict) -> pd.DataFrame:
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
         model_run_category = model_runs_dict[tm_runid]['category']
-        LOGGER.info(f"  Processing {tm_runid} with categery {model_run_category}")
+        LOGGER.info(f"  Processing {tm_runid} with category {model_run_category}")
 
         # read scenario metrics
         scenario_metrics_file = model_run_dir / "OUTPUT" / "metrics" / "scenario_metrics.csv"
-        LOGGER.info(f"  Reading {scenario_metrics_file}")
+        LOGGER.info(f"    Reading {scenario_metrics_file}")
         tm_scen_metrics_df = pd.read_csv(scenario_metrics_file, header=None, names=['modelrun_id', 'metric_name','value'])
 
         # filter to metric_name in: [total_auto_cost,total_auto_trips,total_hh_inc,total_households,total_transit_fares,total_transit_trips]_inc[1,2,3,4]
@@ -165,7 +165,7 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict) -> pd.DataFrame:
 
         # read parking costs; these are daily costs in 2000 dollars
         parking_cost_file = model_run_dir / "OUTPUT" / "metrics" / "parking_costs_tour.csv"
-        LOGGER.info(f"  Reading {parking_cost_file}")
+        LOGGER.info(f"    Reading {parking_cost_file}")
         tm_parking_cost_df = pd.read_csv(parking_cost_file)
         # LOGGER.debug("  tm_parking_cost_df:\n{}".format(tm_parking_cost_df))
         tm_parking_cost_df = tm_parking_cost_df.groupby(by='incQ').agg({'parking_cost':'sum'}).reset_index()
@@ -180,7 +180,7 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict) -> pd.DataFrame:
 
         # read auto ownership summary
         autos_owned_file = model_run_dir / "OUTPUT" / "metrics" / "autos_owned.csv"
-        LOGGER.info(f"  Reading {autos_owned_file}")
+        LOGGER.info(f"    Reading {autos_owned_file}")
         tm_auto_owned_df = pd.read_csv(autos_owned_file)
         # LOGGER.debug("  tm_auto_owned_df:\n{}".format(tm_auto_owned_df))
         tm_auto_owned_df['total_autos'] = tm_auto_owned_df.autos * tm_auto_owned_df.households
@@ -313,7 +313,7 @@ def calculate_Affordable1_trip_costs(model_runs_dict: dict, affordable_hplust_co
 
         # read auto_times.csv
         auto_times_file = model_run_dir / "OUTPUT" / "metrics" / "auto_times.csv"
-        LOGGER.info(f"  Reading {auto_times_file}")
+        LOGGER.info(f"    Reading {auto_times_file}")
         tm_auto_times_df = pd.read_csv(auto_times_file)
         LOGGER.debug("  tm_auto_times_df.head(10):\n{}".format(tm_auto_times_df.head(10)))
 
@@ -412,16 +412,17 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
+        LOGGER.info(f"  Processing {tm_runid}")
 
         # read tazdata for total employment
         tazdata_file = model_run_dir / "INPUT" / "landuse" / "tazData.csv"
-        LOGGER.info("  Reading {}".format(tazdata_file))
+        LOGGER.info("    Reading {}".format(tazdata_file))
         tazdata_df = pd.read_csv(tazdata_file)
-        LOGGER.info("  TOTEMP: {:,}".format(tazdata_df['TOTEMP'].sum()))
+        LOGGER.debug("  TOTEMP: {:,}".format(tazdata_df['TOTEMP'].sum()))
 
         # read scenario metrics
         scenario_metrics_file = model_run_dir / "OUTPUT" / "metrics" / "scenario_metrics.csv"
-        LOGGER.info("  Reading {}".format(scenario_metrics_file))
+        LOGGER.info("    Reading {}".format(scenario_metrics_file))
         scenario_metrics_df = pd.read_csv(scenario_metrics_file, header=None, names=['modelrun_id', 'metric_name','value'])
 
         # filter to only jobacc2_* metrics and then strip that off
@@ -520,10 +521,11 @@ def calculate_Connected2_crowding(model_runs_dict: dict):
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
+        LOGGER.info(f"  Processing {tm_runid}")
 
         # read the transit crowing model results
         trn_crowding_file = model_run_dir / "OUTPUT" / "metrics" / "transit_crowding_complete.csv"
-        LOGGER.info("  Reading {}".format(trn_crowding_file))
+        LOGGER.info("    Reading {}".format(trn_crowding_file))
         tm_crowding_df = pd.read_csv(trn_crowding_file, usecols=['TIME','SYSTEM','MODE','ABNAMESEQ','period','load_standcap','AB_VOL'])
 
         # select only AM
@@ -608,10 +610,11 @@ def calculate_Connected2_hwy_traveltimes(model_runs_dict: dict):
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
+        LOGGER.info(f"  Processing {tm_runid}")
 
         # read the loaded roadway network
         network_file = model_run_dir / "OUTPUT" / "avgload5period.csv"
-        LOGGER.info("  Reading {}".format(network_file))
+        LOGGER.info("    Reading {}".format(network_file))
         tm_loaded_network_df = pd.read_csv(network_file)
 
         # Keeping essential columns of loaded highway network: node A and B, distance, free flow time, congested time
@@ -1000,11 +1003,18 @@ if __name__ == '__main__':
     ch.setLevel('INFO')
     ch.setFormatter(logging.Formatter('%(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     LOGGER.addHandler(ch)
-    # file handler -- append if skip_if_exists is passed
-    fh = logging.FileHandler(METRICS_OUTPUT_DIR / LOG_FILE, mode='w')
+    # file handlers
+    fh = logging.FileHandler(METRICS_OUTPUT_DIR / LOG_FILE.format("debug"), mode='w')
     fh.setLevel('DEBUG')
     fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     LOGGER.addHandler(fh)
+    # file handlers
+    fh = logging.FileHandler(METRICS_OUTPUT_DIR / LOG_FILE.format("info"), mode='w')
+    fh.setLevel('INFO')
+    fh.setFormatter(logging.Formatter('%(message)s'))
+    LOGGER.addHandler(fh)
+
+    LOGGER.info("The following log is output by https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/RTP/metrics/travel_model_performance_equity_metrics.py")
     LOGGER.debug("args = {}".format(my_args))
 
     #### Read ModelRuns.xlsx ######################################################################################################
@@ -1016,7 +1026,7 @@ if __name__ == '__main__':
     # select out UrbanSim run since it's a dummy and not really a travel model run
     model_runs_df = model_runs_df.loc[ model_runs_df.directory.str.find('UrbanSim') == -1 ]
     model_runs_df.set_index(keys='directory', inplace=True)
-    LOGGER.info('Model runs from {}:\n{}'.format(MODELRUNS_XLSX, model_runs_df))
+    LOGGER.info('Using Model runs with status==current from {}:\n{}\n\n'.format(MODELRUNS_XLSX, model_runs_df))
     model_runs_dict = model_runs_df.to_dict(orient='index')
 
 
