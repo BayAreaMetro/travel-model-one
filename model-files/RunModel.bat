@@ -24,6 +24,8 @@ Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 
 ::  Set the IP address of the host machine which sends tasks to the client machines 
 set HOST_IP_ADDRESS=10.6.0.4
+if %computername%==azmdlppw06          set HOST_IP_ADDRESS=10.6.0.4
+if %computername%==azmdlppw07          set HOST_IP_ADDRESS=10.0.0.4
 if %computername%==MODEL2-A            set HOST_IP_ADDRESS=192.168.1.206
 if %computername%==MODEL2-B            set HOST_IP_ADDRESS=192.168.1.207
 if %computername%==MODEL2-C            set HOST_IP_ADDRESS=192.168.1.208

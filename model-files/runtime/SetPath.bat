@@ -18,7 +18,8 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 
 :: The location of R and R libraries
 set R_HOME=C:\Program Files\R\R-4.3.1
-set R_LIB=C:\Users\david.hensle\AppData\Local\R\win-library\4.3
+@REM set R_LIB=C:\Users\david.hensle\AppData\Local\R\win-library\4.3
+set R_LIB=C:\Users\%username%\AppData\Local\R\win-library\4.3
 if "%COMPUTER_PREFIX%" == "WIN-" (
   set R_LIB=C:/Users/Administrator/Documents/R/win-library/3.5
 )

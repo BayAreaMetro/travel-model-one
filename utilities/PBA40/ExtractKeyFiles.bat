@@ -104,6 +104,7 @@ copy logsums\workDCLogsum.csv                        OUTPUT\logsums
 copy logsums\person_workDCLogsum.csv                 OUTPUT\logsums
 copy logsums\mandatoryAccessibilities.csv            OUTPUT\logsums
 copy logsums\nonMandatoryAccessibilities.csv         OUTPUT\logsums
+copy logsums\consumer_surplus*                       OUTPUT\logsums
 
 :: Core summaries
 mkdir OUTPUT\core_summaries
@@ -118,6 +119,10 @@ if exist metrics\ITHIM (
   mkdir OUTPUT\metrics\ITHIM
   copy metrics\ITHIM\*.* OUTPUT\metrics\ITHIM
 )
+
+:: logs
+mkdir OUTPUT\logs
+copy logs\*.* OUTPUT\logs
 
 :success
 echo ExtractKeyFiles into OUTPUT for PBAU Complete
