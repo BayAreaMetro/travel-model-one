@@ -27,8 +27,7 @@ set UrbanSimScenario=s24
 :: set the location of the input directories for non resident travel, logsums and metrics
 set NONRES_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_06
 set LOGSUMS_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\logsums_dummies
-:: skip metrics input for now
-::set METRICS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\metrics_FinalBlueprint
+set METRICS_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\metrics\metrics_01
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
