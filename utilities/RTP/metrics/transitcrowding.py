@@ -15,7 +15,7 @@ they represent.  The pseudo lines must be mapped to actual lines via the PSEUDO_
 may be suppressed with the arg --no_pseudo_move but it is on by default.
 
 transitcrowding.py is run with the proj folder as an argument. eg:
-projects root dir\python transitcrowding.py 1_CaltrainMod\\2050_TM150_BF_00_1_CaltrainMod_00
+projects root dir\\python transitcrowding.py 1_CaltrainMod\\2050_TM150_BF_00_1_CaltrainMod_00
 
 Input:
 * TransitSeatCap.csv, containing VEHTYPE, seatcap and standcap
@@ -31,7 +31,7 @@ If OUTPUT has a ? because if OUTPUT dir doesn't exist, assumes this is running o
 """
 
 LOG_FILE = "transit_crowding.log"
-SEATCAP_FILE = "\\\\mainmodel\\MainModelShare\\travel-model-one-master\\utilities\\RTP\\metrics\\transitSeatCap.csv"
+SEATCAP_FILE = "\\\\model3-a\\Model3A-Share\\travel-model-one-master\\utilities\\RTP\\metrics\\transitSeatCap.csv"
 
 
 PSEUDO_LINE_MAPPING = {
