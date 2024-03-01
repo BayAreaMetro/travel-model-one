@@ -123,7 +123,7 @@ loop period = 1,5
       @token_capfac@ 
        
       ; read in the speed/capacity table
-      read file = ctramp\scripts\block\SpeedCapacity_1hour.block 
+;      read file = ctramp\scripts\block\SpeedCapacity_1hour.block 
       
       ; set the working variables
       phase = linkread

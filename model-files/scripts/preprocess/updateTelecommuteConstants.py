@@ -32,8 +32,9 @@ TARGET_AUTO_SHARE  = 0.40
 TELECOMMUTE_RATE_THRESHHOLD = 0.005
 
 # todo: make this more intelligent
-CONSTANT_INCREMENT = 0.05
-CONSTANT_DECREMENT = 0.05
+#BCM 2035 Update: We want the precalibrated (?) telecommute constants to carry over through each iteration. So setting the two following constants to 0.
+CONSTANT_INCREMENT = 0 #0.05
+CONSTANT_DECREMENT = 0 #0.05
 
 # see EN7 Telecommuting.xlsx (https://mtcdrive.box.com/s/uw3n8wyervle6r2cgoz1j6k4i5lmv253)
 # for 2015 and before
@@ -69,13 +70,13 @@ if __name__ == '__main__':
         CALIB_ITER = "0"+ITER
 
         UPDATE_CONSTANT = False
-        if (MODEL_DIR.upper().find("FBP") >= 0):
-            if (int(MODEL_YEAR) < 2035) or \
-               (MODEL_DIR.upper().find("NOPROJECT") >= 0) or \
-               (MODEL_DIR.upper().find("NOTRANSPORTPROJECT") >= 0):
-               UPDATE_CONSTANT = False
-            else:
-               UPDATE_CONSTANT = True
+        # if (MODEL_DIR.upper().find("FBP") >= 0): #BCM Update: BCM's folder naming structure is different from MTC. Removing this line.
+        if (int(MODEL_YEAR) < 2035) or \
+            (MODEL_DIR.upper().find("NOPROJECT") >= 0) or \
+            (MODEL_DIR.upper().find("NOTRANSPORTPROJECT") >= 0):
+            UPDATE_CONSTANT = False
+        else:
+            UPDATE_CONSTANT = True
 
     print('MODEL_YEAR               = {}'.format(MODEL_YEAR))
     print('MODEL_DIR                = {}'.format(MODEL_DIR))
