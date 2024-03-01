@@ -29,6 +29,7 @@ Example call:
 """
 
 import pandas as pd
+import numpy as np
 import geopandas as gpd
 import argparse, os, sys, logging, time
 
@@ -57,7 +58,7 @@ def project_to_analysis_crs(geo_df):
     return geo_df
 
 
-def geo_assign_fields(id_df, id_field, overlay_df, overlay_fields, return_intersection_area=False):
+def geo_assign_fields(id_df, id_field, overlay_df, overlay_fields, return_intersection_area=False, use_half_area_rule=True):
     """Given an id_df and an overlay_df, assigns the overlay fields.
 
     Methodology:
@@ -75,6 +76,8 @@ def geo_assign_fields(id_df, id_field, overlay_df, overlay_fields, return_inters
         overlay_fields (list): A list of overlay fields to assign to the ID GeoDataFrame
         return_intersection_area (bool, optional): Flag for whether to return the intersection area
             of the overlay. Defaults to False.
+        use_half_area_rule (bool, optional): Flag for whether to add "the intersection area is at least 50% of
+            id_df area" condition in the assignment. Defaults to True.
 
     Returns:
         geopandas GeoDataFrame: The ID GeoDataFrame with the overlay fields assigned by largest
@@ -99,15 +102,21 @@ def geo_assign_fields(id_df, id_field, overlay_df, overlay_fields, return_inters
     join_df = join_df.merge(max_idxs)
 
     final_fields = [id_field] + overlay_fields
+
+    # calculate intersection area and share of id_df in intersection
+    id_df['base_sq_m'] = id_df.geometry.area
+    final_assignment = id_df[[id_field, 'base_sq_m']].merge(join_df[final_fields+['intersection_sq_m']], how="left")
+    final_assignment['area_share'] = final_assignment['intersection_sq_m'] / final_assignment['base_sq_m']
+
+    # set the assignment to NaN if no more than 50%
+    if use_half_area_rule:
+        for i in overlay_fields:
+            final_assignment.loc[final_assignment['area_share'] < 0.5, i] = np.nan
+
     if return_intersection_area:
-        final_fields.append("intersection_sq_m")
-        id_df['base_sq_m'] = id_df.geometry.area
-        final_assignment = id_df[[id_field, 'base_sq_m']].merge(join_df[final_fields], how="left")
-        final_assignment['area_share'] = final_assignment['intersection_sq_m'] / final_assignment['base_sq_m']
+        return final_assignment[final_fields+['base_sq_m', 'intersection_sq_m', 'area_share']]
     else:
-        final_assignment = id_df[[id_field]].merge(join_df[final_fields], how="left")
-    
-    return final_assignment
+        return final_assignment
 
 
 if __name__ == '__main__':
