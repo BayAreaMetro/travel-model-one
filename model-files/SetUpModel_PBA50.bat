@@ -31,11 +31,7 @@ set PREV_RUN_DIR=%ALL_BCM_INPUTS%\warmstart
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
 set PARAMS=%GITHUB_DIR%\config\params_%YEAR%.properties
-:: test superdistrict-based telecommute constants
-:: for no project or base years, this will get generated/stay at zero
-set TELECOMMUTE_CONFIG=%GITHUB_DIR%\utilities\telecommute\telecommute_constants_2050.csv
-:: for blueprint, use calibrated
-:: set TELECOMMUTE_CONFIG=\\tsclient\X\travel-model-one-cdap-worktaz\utilities\telecommute\telecommute_constants_2035.csv
+
 
 :: set the location of the overrides directory (for Blueprint strategies)
 set BP_OVERRIDE_DIR=D:\Projects\BCM\2015_BaseY_BCM2015\travel-model-overrides
@@ -95,8 +91,9 @@ if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.59
 mkdir INPUT\hwy
 copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\complete_network_with_externals.net"               INPUT\hwy\complete_network_with_externals.net
 copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\tolls.csv"                                        	INPUT\hwy\tolls.csv
-c:\windows\system32\Robocopy.exe /E "%INPUT_TRN%"                                        		INPUT\trn
 
+c:\windows\system32\Robocopy.exe /E "%INPUT_TRN%"                                        		INPUT\trn
+copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\transit.lin"                                        	INPUT\trn\transit.lin
 :: popsyn and land use
 mkdir popsyn
 mkdir INPUT\popsyn
@@ -216,6 +213,7 @@ if %MODEL_YEAR_NUM% GEQ 2045 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMo
 :: ------
 :: Telecommute V2 strategy
 :: ------
+set TELECOMMUTE_CONFIG=%ALL_BCM_INPUTS%\inputs_%YEAR%\telecommute_constants_%YEAR%.csv
 mkdir main
 copy /Y "%TELECOMMUTE_CONFIG%" "main/telecommute_constants_00.csv"
 copy /Y "%TELECOMMUTE_CONFIG%" "main/telecommute_constants.csv"
