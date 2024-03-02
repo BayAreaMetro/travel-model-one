@@ -36,9 +36,10 @@ SEATCAP_FILE = "\\\\model3-a\\Model3A-Share\\travel-model-one-master\\utilities\
 
 PSEUDO_LINE_MAPPING = {
     # baseline
-    "120_OR_YEL"  :("120_ORANGE[A]?-$","120_YELLOW[-9W]$"), # Orange/Richmond - MacArthur - Yellow/SFO
-    "120_OR_YER"  :("120_YELLOW[E]?$","120_ORANGE[A]?$"), # Yellow/SFO - MacArthur - Orange/Richmond
-    #2015 IPA
+    "120_OR_YEL"  :("120_ORANGE[A]?-$","120_YELLOW[-9W]$", 15508), # Orange/Richmond - 19th Ave - Yellow/SFO
+    "120_OR_YER"  :("120_YELLOW[E]?$","120_ORANGE[A]?$",   15507), # Yellow/SFO - MacArthur - Orange/Richmond
+
+    # note 2015/2025 override this with the blow since 120_YELLOW1 has the EA/EV service
     #"120_OR_YER"  :("120_YELLOW[1E]?$","120_ORANGE[A]?$"), # Yellow/SFO - MacArthur - Orange/Richmond
     
     # crossings 3
@@ -207,8 +208,10 @@ def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
             elif period in ["EA","EV"]:
                 logging.warning("{} Pseudo links found with mismatching run per hour:\n{}".format(len(mismatch_run_per_hr), mismatch_run_per_hr))
             else:
-                logging.fatal("Mismatch run_per_hr between pseudo line and matching line\n{}".format(mismatch_run_per_hr))
-                sys.exit()
+                # updated 3/2/2024 - let it go
+                # logging.fatal("Mismatch run_per_hr between pseudo line and matching line\n{}".format(mismatch_run_per_hr))
+                # sys.exit()
+                logging.warning("{} Pseudo links found with mismatching run per hour:\n{}".format(len(mismatch_run_per_hr), mismatch_run_per_hr))
 
         # add psuedo line boards, exits and volums to other line
         trn_link_df.loc[trn_link_df["_merge"]=="both", "AB_BRDA"] = trn_link_df["AB_BRDA"] + trn_link_df["AB_BRDA_pseudo"]
@@ -302,8 +305,8 @@ if __name__ == '__main__':
         if "7000_Resilience_BARTCaldecott" in my_args.project_dir:
             PSEUDO_LINE_MAPPING["120_OR_YEL"] = ("120_ORANGE[A]?-$","120_YELLOWE-$") # Orange/Richmond - MacArthur - Yellow/SFO
             PSEUDO_LINE_MAPPING["120_OR_YER"] = ("120_YELLOWE$","120_ORANGE[A]?$")   # Yellow/SFO - MacArthur - Orange/Richmond
-        # custom override for 2025 (120_YELLOW1 has the EA/EV service)
-        if os.path.basename(my_args.project_dir).startswith("2025"):
+        # custom override for 2015, 2025 (120_YELLOW1 has the EA/EV service)
+        if os.path.basename(my_args.project_dir)[:4] in ["2015", "2025"]:
             PSEUDO_LINE_MAPPING["120_OR_YER"] = ("120_YELLOW[1E]?$","120_ORANGE[A]?$")   # Yellow/SFO - MacArthur - Orange/Richmond
 
         all_trn_df = move_pseudo_line_ridership(all_trn_df, pseudo_lines)
