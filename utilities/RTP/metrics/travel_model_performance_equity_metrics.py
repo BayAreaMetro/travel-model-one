@@ -54,7 +54,7 @@ BOX_DIR     = pathlib.Path(f"C:/Users/{USERNAME}/Box")
 if USERNAME.lower() in ['lzorn']:
     BOX_DIR = pathlib.Path("E:\Box")
 
-def calculate_Affordable1_HplusT_costs(model_runs_dict: dict) -> pd.DataFrame:
+def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str) -> pd.DataFrame:
     """Pulls transportation costs from other files and converts to annual
     to calculate them as a percentage of household income; these calculations
     are segmented by income quartiles.
@@ -77,6 +77,7 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict) -> pd.DataFrame:
 
     Args:
         model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
+        args_rtp (str): one of 'RTP2021' or 'RTP2025'
 
     Writes metrics_affordable1_HplusT_costs.csv with columns:
         modelrun_id
@@ -104,31 +105,47 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict) -> pd.DataFrame:
     """
     LOGGER.info("calculate_Affordable1_HplusT_costs()")
 
-    # Read Housing costs intermediate input
-    HOUSING_COSTS_FILE = INTERMEDIATE_METRICS_SOURCE_DIR / 'housing_costs_share_income.csv' # from Bobby, based on Urbansim outputs only
-    LOGGER.info(f"  Reading {HOUSING_COSTS_FILE}")
-    housing_costs_df   = pd.read_csv(HOUSING_COSTS_FILE)
-    LOGGER.debug("  housing_costs_df (len={}):\n{}".format(
-        len(housing_costs_df), housing_costs_df))
-    # select to only these cols
-    housing_costs_df = housing_costs_df[['year','blueprint','w_q1','w_q2','w_q3','w_q4','w_q1_q2','w_all']]
-    # convert to long - move income quartiles to rows
-    housing_costs_df = pd.wide_to_long(df=housing_costs_df, i=['year','blueprint'], 
-                                       stubnames='w', sep='_', suffix='(all|q[1-4](_q2)?)', j='incQ').reset_index()
-    # rename "w" column to be more clear; recode quartiles
-    housing_costs_df.rename(columns={'w':'housing_cost_share_of_hh_income'}, inplace=True)
-    housing_costs_df['incQ']  = housing_costs_df.incQ.map({'q1':'1', 'q2':'2', 'q3':'3', 'q4':'4', 'q1_q2':'1&2', 'all':'all'})
-    # recode year/blueprint to model run alias
-    housing_costs_df['modelrun_alias'] = housing_costs_df.year.astype(str) + " " + housing_costs_df.blueprint
-    housing_costs_df['modelrun_alias'] = housing_costs_df.modelrun_alias.map({
-        '2015 2015':'2015', '2050 NoProject':'2050 No Project', '2050 Plus':'2050 Plan', '2050 Alt1':'2050 EIR Alt1', '2050 Alt2':'2050 EIR Alt2'})
-    housing_costs_df.drop(columns=['year','blueprint'], inplace=True)
-    LOGGER.debug("  housing_costs_df (len={}):\n{}".format(
-        len(housing_costs_df), housing_costs_df))
+    if args_rtp == "RTP2021":
+        # Read Housing costs intermediate input
+        HOUSING_COSTS_FILE = INTERMEDIATE_METRICS_SOURCE_DIR / 'housing_costs_share_income.csv'
+        LOGGER.info(f"  Reading {HOUSING_COSTS_FILE}")
+        housing_costs_df = pd.read_csv(HOUSING_COSTS_FILE)
+        LOGGER.debug("  housing_costs_df (len={}):\n{}".format(
+            len(housing_costs_df), housing_costs_df))
+        # select to only these cols
+        housing_costs_df = housing_costs_df[['year','blueprint','w_q1','w_q2','w_q3','w_q4','w_q1_q2','w_all']]
+        # convert to long - move income quartiles to rows
+        housing_costs_df = pd.wide_to_long(df=housing_costs_df, i=['year','blueprint'], 
+                                           stubnames='w', sep='_', suffix='(all|q[1-4](_q2)?)', j='incQ').reset_index()
+        # rename "w" column to be more clear; recode quartiles
+        housing_costs_df.rename(columns={'w':'housing_cost_share_of_hh_income'}, inplace=True)
+        housing_costs_df['incQ']  = housing_costs_df.incQ.map({'q1':'1', 'q2':'2', 'q3':'3', 'q4':'4', 'q1_q2':'1&2', 'all':'all'})
+        # recode year/blueprint to model run alias
+        housing_costs_df['modelrun_alias'] = housing_costs_df.year.astype(str) + " " + housing_costs_df.blueprint
+        housing_costs_df['modelrun_alias'] = housing_costs_df.modelrun_alias.map({
+            '2015 2015':'2015', '2050 NoProject':'2050 No Project', '2050 Plus':'2050 Plan', '2050 Alt1':'2050 EIR Alt1', '2050 Alt2':'2050 EIR Alt2'})
+        housing_costs_df.drop(columns=['year','blueprint'], inplace=True)
+        LOGGER.debug("  housing_costs_df (len={}):\n{}".format(
+            len(housing_costs_df), housing_costs_df))
+    else:
+        # Read Housing costs intermediate input
+        HOUSING_COSTS_FILE = INTERMEDIATE_METRICS_SOURCE_DIR / 'DUMMY_housing_costs_share_income.csv'
+        LOGGER.info(f"  Reading {HOUSING_COSTS_FILE}")
+        housing_costs_df = pd.read_csv(HOUSING_COSTS_FILE)
+        LOGGER.debug("  housing_costs_df (len={}):\n{}".format(
+            len(housing_costs_df), housing_costs_df))
+
+    #  incQ  housing_cost_share_of_hh_income   modelrun_alias
+    #     1                         0.680000             2015
+    #     2                         0.310000             2015
+    #     3                         0.230000             2015
+    #     4                         0.140000             2015
+    #   1&2                              NaN             2015
+    #   all                         0.330000             2015
 
     affordable_hplust_costs_df = pd.DataFrame()
     for tm_runid in model_runs_dict.keys():
-        if model_runs_dict[tm_runid]['run_set'] == "IP":
+        if model_runs_dict[tm_runid]['run_set'] in ["IP","RTP2025_IP"]:
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
@@ -137,6 +154,7 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict) -> pd.DataFrame:
 
         # read scenario metrics
         scenario_metrics_file = model_run_dir / "OUTPUT" / "metrics" / "scenario_metrics.csv"
+        if not os.path.exists(scenario_metrics_file): continue  # not ready yet
         LOGGER.info(f"    Reading {scenario_metrics_file}")
         tm_scen_metrics_df = pd.read_csv(scenario_metrics_file, header=None, names=['modelrun_id', 'metric_name','value'])
 
@@ -293,15 +311,16 @@ def calculate_Affordable1_trip_costs(model_runs_dict: dict, affordable_hplust_co
         # TODO: I think this last row isn't intuitive; parking is out of pocket but not tolls?
         mean_auto_outofpocket_cost_2020dollars   mean_auto_op_cost_2020dollars + mean_parking_cost_2020dollars
     """
+    LOGGER.info("calculate_Affordable1_trip_costs()")
 
     affordable_trip_costs_df = pd.DataFrame()
     for tm_runid in model_runs_dict.keys():
-        if model_runs_dict[tm_runid]['run_set'] == "IP":
+        if model_runs_dict[tm_runid]['run_set'] in ["IP","RTP2025_IP"]:
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
         model_run_category = model_runs_dict[tm_runid]['category']
-        LOGGER.info(f"  Processing {tm_runid} with categery {model_run_category}")
+        LOGGER.info(f"  Processing {tm_runid} with category {model_run_category}")
 
         # start with columns from calculate_Affordable1_HplusT_costs() filtered to this run
         trip_costs_df = affordable_hplust_costs_df.loc[ 
@@ -317,6 +336,7 @@ def calculate_Affordable1_trip_costs(model_runs_dict: dict, affordable_hplust_co
 
         # read auto_times.csv
         auto_times_file = model_run_dir / "OUTPUT" / "metrics" / "auto_times.csv"
+        if not os.path.exists(auto_times_file): continue  # not ready yet
         LOGGER.info(f"    Reading {auto_times_file}")
         tm_auto_times_df = pd.read_csv(auto_times_file)
         LOGGER.debug("  tm_auto_times_df.head(10):\n{}".format(tm_auto_times_df.head(10)))
@@ -329,6 +349,11 @@ def calculate_Affordable1_trip_costs(model_runs_dict: dict, affordable_hplust_co
 
         # columns are Income, Mode, Daily Person Trips, Daily Vehicle Trips, Person Minutes, Vehicle Minutes, Person Miles, Vehicle Miles
         #            Total Cost, VTOLL nonzero AM, VTOLL nonzero MD,  Bridge Tolls,  Value Tolls
+        AUTO_TIMES_COLUMNS = list(tm_auto_times_df.columns.values)
+        LOGGER.debug("  AUTO_TIMES_COLUMNS:{}".format(AUTO_TIMES_COLUMNS))
+        if 'Value Tolls with discount' in AUTO_TIMES_COLUMNS and 'Cordon tolls with discount' in AUTO_TIMES_COLUMNS:
+            tm_auto_times_df['Value Tolls'] = tm_auto_times_df['Value Tolls with discount'] + tm_auto_times_df['Cordon tolls with discount']
+
         # costs are in 2000 cents
         # groupby income and sum
         tm_auto_times_df = tm_auto_times_df.groupby(by='Income').aggregate({
@@ -412,7 +437,7 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
 
     job_acc_metrics_df = pd.DataFrame()
     for tm_runid in model_runs_dict.keys():
-        if model_runs_dict[tm_runid]['run_set'] == "IP":
+        if model_runs_dict[tm_runid]['run_set'] in ["IP","RTP2025_IP"]:
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
@@ -426,6 +451,7 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
 
         # read scenario metrics
         scenario_metrics_file = model_run_dir / "OUTPUT" / "metrics" / "scenario_metrics.csv"
+        if not os.path.exists(scenario_metrics_file): continue  # not ready yet
         LOGGER.info("    Reading {}".format(scenario_metrics_file))
         scenario_metrics_df = pd.read_csv(scenario_metrics_file, header=None, names=['modelrun_id', 'metric_name','value'])
 
@@ -521,7 +547,7 @@ def calculate_Connected2_crowding(model_runs_dict: dict):
 
     all_trn_crowding_df = pd.DataFrame()
     for tm_runid in model_runs_dict.keys():
-        if model_runs_dict[tm_runid]['run_set'] == "IP":
+        if model_runs_dict[tm_runid]['run_set'] in ["IP","RTP2025_IP"]:
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
@@ -610,7 +636,7 @@ def calculate_Connected2_hwy_traveltimes(model_runs_dict: dict):
 
     hwy_times_metrics_df = pd.DataFrame()
     for tm_runid in model_runs_dict.keys():
-        if model_runs_dict[tm_runid]['run_set'] == "IP":
+        if model_runs_dict[tm_runid]['run_set'] in ["IP","RTP2025_IP"]:
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
@@ -618,7 +644,8 @@ def calculate_Connected2_hwy_traveltimes(model_runs_dict: dict):
 
         # read the loaded roadway network
         network_file = model_run_dir / "OUTPUT" / "avgload5period.csv"
-        LOGGER.info("    Reading {}".format(network_file))
+        if not os.path.exists(network_file): continue  # not ready yet
+        LOGGER.info(f"    Reading {network_file}")
         tm_loaded_network_df = pd.read_csv(network_file)
 
         # Keeping essential columns of loaded highway network: node A and B, distance, free flow time, congested time
@@ -680,7 +707,7 @@ def calculate_Connected2_trn_traveltimes(runid, year, dbp, transit_operator_df, 
         metrics_dict[runid,metric_id,'time_per_dist_AM_%s' % row['mode_name'],year,dbp] = row['time_per_dist_AM'] 
 
 
-def calculate_Connected2_transit_asset_condition(model_runs_dict: dict):
+def extract_Connected2_transit_asset_condition(model_runs_dict: dict):
     """
     This is really just a passthrough for the file, 
     INTERMEDIATE_METRICS_SOURCE_DIR/transit_asset_condition.csv which has columns:
@@ -701,7 +728,7 @@ def calculate_Connected2_transit_asset_condition(model_runs_dict: dict):
         transit_nonveh_beyondlife_pct_of_value
         transit_revveh_beyondlife_pct_of_count
     """
-    LOGGER.info("calculate_Connected2_transit_asset_condition()")
+    LOGGER.info("extract_Connected2_transit_asset_condition()")
     TRANSIT_ASSET_CONDITION_FILE = INTERMEDIATE_METRICS_SOURCE_DIR / 'transit_asset_condition.csv' # from Raleigh, not based on model outputs
     LOGGER.info(f"  Reading {TRANSIT_ASSET_CONDITION_FILE}")
     transit_asset_condition_df   = pd.read_csv(TRANSIT_ASSET_CONDITION_FILE)
@@ -812,80 +839,12 @@ def extract_Healthy1_safety(model_runs_dict: dict, args_rtp: str):
 
     else:
         # TODO
-        raise
+        return
     
      # write it
     output_file = METRICS_OUTPUT_DIR / 'metrics_healthy1_safety.csv'
     safety_df.to_csv(output_file, index=False)
     LOGGER.info(f"Wrote {output_file}")
-
-def extract_Healthy1_safety_TAZ(runid, year, dbp, tm_taz_input_df, tm_vmt_metrics_df, metrics_dict):
-
-    metric_id = "H1"
-
-    population        = tm_taz_input_df.TOTPOP.sum()
-    population_coc    = tm_taz_input_df.loc[(tm_taz_input_df['taz_coc']==1),'TOTPOP'].sum()
-    population_noncoc = tm_taz_input_df.loc[(tm_taz_input_df['taz_coc']==0),'TOTPOP'].sum()
-    population_hra    = tm_taz_input_df.loc[(tm_taz_input_df['taz_hra']==1),'TOTPOP'].sum()
-
- 
-
-    per_x_people      = 100000
-    days_per_year     = 300
-
-    metrics_dict[runid,metric_id,'fatalities_annual',year,dbp] = float(tm_vmt_metrics_df.loc[:,'Motor Vehicle Fatality'].sum() + \
-                                                                           tm_vmt_metrics_df.loc[:,'Walk Fatality'].sum() + \
-                                                                           tm_vmt_metrics_df.loc[:,'Bike Fatality'].sum()) * days_per_year                                                         
-    metrics_dict[runid,metric_id,'injuries_annual',year,dbp]   = float(tm_vmt_metrics_df.loc[:,'Motor Vehicle Injury'].sum() + \
-                                                                           tm_vmt_metrics_df.loc[:,'Walk Injury'].sum() + \
-                                                                           tm_vmt_metrics_df.loc[:,'Bike Injury'].sum())  * days_per_year                                                              
-
-
-    metrics_dict[runid,metric_id,'fatalities_annual_per100K',year,dbp] = float(tm_vmt_metrics_df.loc[:,'Motor Vehicle Fatality'].sum() + \
-                                                                           tm_vmt_metrics_df.loc[:,'Walk Fatality'].sum() + \
-                                                                           tm_vmt_metrics_df.loc[:,'Bike Fatality'].sum()) / float(population / per_x_people) * days_per_year                                                          
-    metrics_dict[runid,metric_id,'injuries_annual_per100K',year,dbp]   = float(tm_vmt_metrics_df.loc[:,'Motor Vehicle Injury'].sum() + \
-                                                                           tm_vmt_metrics_df.loc[:,'Walk Injury'].sum() + \
-                                                                           tm_vmt_metrics_df.loc[:,'Bike Injury'].sum()) / float(population / per_x_people) * days_per_year
-
-
-
-    metrics_dict[runid,metric_id,'fatalities_annual_per100K_nonfwy',year,dbp] = float(tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway"),'Motor Vehicle Fatality'].sum() + \
-                                                                           tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway"),'Walk Fatality'].sum() + \
-                                                                           tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway"),'Bike Fatality'].sum()) / float(population / per_x_people) * days_per_year
-    metrics_dict[runid,metric_id,'injuries_annual_per100K_nonfwy',year,dbp]   = float(tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway"),'Motor Vehicle Injury'].sum() + \
-                                                                           tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway"),'Walk Injury'].sum() + \
-                                                                           tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway"),'Bike Injury'].sum()) / float(population / per_x_people) * days_per_year                                                           
-
-
-    metrics_dict[runid,metric_id,'fatalities_annual_per100K_nonfwy_coc',year,dbp] =    float(tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_coc']==1),'Motor Vehicle Fatality'].sum() + \
-                                                                                      tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_coc']==1),'Walk Fatality'].sum() + \
-                                                                                      tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_coc']==1),'Bike Fatality'].sum()) / float(population_coc / per_x_people) * days_per_year     
-    metrics_dict[runid,metric_id,'injuries_annual_per100K_nonfwy_coc',year,dbp]   =    float(tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_coc']==1),'Motor Vehicle Injury'].sum() + \
-                                                                                      tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_coc']==1),'Walk Injury'].sum() + \
-                                                                                      tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_coc']==1),'Bike Injury'].sum()) / float(population_coc / per_x_people) * days_per_year                                                               
-  
-    metrics_dict[runid,metric_id,'fatalities_annual_per100K_nonfwy_noncoc',year,dbp] = float(tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_coc']==0),'Motor Vehicle Fatality'].sum() + \
-                                                                                      tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_coc']==0),'Walk Fatality'].sum() + \
-                                                                                      tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_coc']==0),'Bike Fatality'].sum()) / float(population_noncoc / per_x_people) * days_per_year                                                              
-    metrics_dict[runid,metric_id,'injuries_annual_per100K_nonfwy_noncoc',year,dbp]   = float(tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_coc']==0),'Motor Vehicle Injury'].sum() + \
-                                                                                      tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_coc']==0),'Walk Injury'].sum() + \
-                                                                                      tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_coc']==0),'Bike Injury'].sum()) / float(population_noncoc / per_x_people) * days_per_year                                                              
-
-    metrics_dict[runid,metric_id,'fatalities_annual_per100K_nonfwy_hra',year,dbp] = float(tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_hra']==1),'Motor Vehicle Fatality'].sum() + \
-                                                                                      tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_hra']==1),'Walk Fatality'].sum() + \
-                                                                                      tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_hra']==1),'Bike Fatality'].sum()) / float(population_hra / per_x_people) * days_per_year                                                                
-    metrics_dict[runid,metric_id,'injuries_annual_per100K_nonfwy_hra',year,dbp]   = float(tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_hra']==1),'Motor Vehicle Injury'].sum() + \
-                                                                                      tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_hra']==1),'Walk Injury'].sum() + \
-                                                                                      tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_hra']==1),'Bike Injury'].sum()) / float(population_hra / per_x_people) * days_per_year                                                               
-    
-
-    #VMT density per 100K people 
-    metrics_dict[runid,metric_id,'VMT_per100K_nonfwy',year,dbp]         =  tm_vmt_metrics_df.loc[(tm_vmt_metrics_df['road_type']=="non-freeway"),'VMT'].sum()  / float(population / per_x_people)
-    metrics_dict[runid,metric_id,'VMT_per100K_nonfwy_coc',year,dbp]     =  tm_vmt_metrics_df.loc[((tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_coc']==1)),'VMT'].sum()  / float(population_coc / per_x_people)
-    metrics_dict[runid,metric_id,'VMT_per100K_nonfwy_noncoc',year,dbp]  =  tm_vmt_metrics_df.loc[((tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_coc']==0)),'VMT'].sum()  / float(population_noncoc / per_x_people)
-    metrics_dict[runid,metric_id,'VMT_per100K_nonfwy_hra',year,dbp]     =  tm_vmt_metrics_df.loc[((tm_vmt_metrics_df['road_type']=="non-freeway") & (tm_vmt_metrics_df['taz_hra']==1)),'VMT'].sum()  / float(population_hra / per_x_people)
-
 
 def calculate_Healthy2_commutemodeshare(model_runs_dict: dict, args_rtp: str):
     """
@@ -924,7 +883,7 @@ def calculate_Vibrant1_mean_commute(model_runs_dict: dict):
 
     all_tm_commute_df = pd.DataFrame()
     for tm_runid in model_runs_dict.keys():
-        if model_runs_dict[tm_runid]['run_set'] == "IP":
+        if model_runs_dict[tm_runid]['run_set'] in ["IP","RTP2025_IP"]:
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
@@ -987,9 +946,10 @@ if __name__ == '__main__':
         # This is for reproducing RTP2021 (PBA50) metrics for QAQC
         METRICS_OUTPUT_DIR               = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "PBA50_reproduce_for_QA"
     else:
-        # todo
         METRICS_BOX_DIR                  = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "Draft_Blueprint"
-        raise
+        METRICS_SOURCE_DIR               = METRICS_BOX_DIR / "metrics_input_files"
+        INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR # These aren't really "intermediate"
+        METRICS_OUTPUT_DIR               = METRICS_BOX_DIR
 
     #### Test Mode ################################################################################################################
     # test mode -- write output here
@@ -1023,10 +983,20 @@ if __name__ == '__main__':
 
     #### Read ModelRuns.xlsx ######################################################################################################
     model_runs_df = pd.read_excel(MODELRUNS_XLSX)
-    # select current
+    # we only care about these columns
+    MODELRUNS_COLUMNS = ['directory','year','run_set','category','status','Alias']
+    if my_args.rtp == 'RTP2025': MODELRUNS_COLUMNS = MODELRUNS_COLUMNS + ['description']
+    model_runs_df = model_runs_df[MODELRUNS_COLUMNS]
+    # select current runs with Alias
     model_runs_df = model_runs_df.loc[ model_runs_df.status == 'current' ]
-    # select base year (pre 2025) and horizon year (2050)
-    model_runs_df = model_runs_df.loc[ (model_runs_df.year < 2025) | (model_runs_df.year == 2050) ]
+    model_runs_df = model_runs_df.loc[ pd.notna(model_runs_df.Alias) ]
+
+    if my_args.rtp == 'RTP2021':
+        # for RTP2021, select base year (pre 2025) and horizon year (2050)
+        model_runs_df = model_runs_df.loc[ (model_runs_df.year < 2025) | (model_runs_df.year == 2050) ]
+    else:
+        pass
+
     # select out UrbanSim run since it's a dummy and not really a travel model run
     model_runs_df = model_runs_df.loc[ model_runs_df.directory.str.find('UrbanSim') == -1 ]
     model_runs_df.set_index(keys='directory', inplace=True)
@@ -1038,14 +1008,16 @@ if __name__ == '__main__':
     # Note: These methods iterate through all the relevant runs and output the metrics results
 
     # Affordable
-    affordable_hplust_costs_df = calculate_Affordable1_HplusT_costs(model_runs_dict)
+    affordable_hplust_costs_df = calculate_Affordable1_HplusT_costs(model_runs_dict, my_args.rtp)
     calculate_Affordable1_trip_costs(model_runs_dict, affordable_hplust_costs_df)
 
     # Connected
     extract_Connected1_JobAccess(model_runs_dict)
     calculate_Connected2_hwy_traveltimes(model_runs_dict)
     calculate_Connected2_crowding(model_runs_dict)
-    calculate_Connected2_transit_asset_condition(model_runs_dict)
+    # don't bother for RTP2025; this script doesn't add anything
+    if my_args.rtp == "RTP2021":
+        extract_Connected2_transit_asset_condition(model_runs_dict)
 
     # Healthy
     extract_Healthy1_safety(model_runs_dict, my_args.rtp)
