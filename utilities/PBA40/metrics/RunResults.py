@@ -8,6 +8,7 @@ import sys
 import csv
 from collections import OrderedDict, defaultdict
 from shutil import copyfile
+import six
 
 import pandas as pd     # yay for DataFrames and Series!
 import numpy
@@ -36,6 +37,8 @@ USAGE = """
 
 """
 
+baseline_runs_location = 'Z:\\RTP2025_PPA\\Projects'
+
 class RunResults:
     """
     This represents the run results for a single model run, to be used to calculate
@@ -60,7 +63,7 @@ class RunResults:
 
     ANNUALIZATION               = 300
     WORK_ANNUALIZATION          = 250
-    DISCOUNT_RATE               = 0.03
+    DISCOUNT_RATE               = 0.04   # changed for 2024 PPA from 0.03
 
     # per 100000. Crude mortality rate.  For HEAT mortality calcs    ##### AT CHECK THIS
     BAY_AREA_MORTALITY_RATE_2074YRS = 340
@@ -127,7 +130,7 @@ class RunResults:
 
 
 
-    def __init__(self, rundir, overwrite_config=None, find_base_in_Z_drive=False):
+    def __init__(self, rundir, foldername=None, overwrite_config=None):
         """
     Parameters
     ----------
@@ -140,15 +143,30 @@ class RunResults:
     Read configuration and input data.
     """
         self.ppa_master_input = "Z:\\RTP2025_PPA\\Projects\\PPAMasterInput.xlsx"
+        self.ppa_cost_spreadsheet = 'project_costs_2023'
+
+        # find the folder with all the data we read in for this 
+        # first look to see if there's a metrics directory
+        data_dir = os.path.join(rundir, 'metrics')
+        if os.path.isdir(data_dir) == False:
+            # if no metrics dir, look to see if there's an 'OUTPUT' / metrics dir instead
+            data_dir = os.path.join(rundir, 'OUTPUT', 'metrics')
+        assert os.path.isdir(data_dir), "cannot find data directory {}".format(data_dir)
 
         # read the configs
-        # self.rundir = os.path.join(os.path.abspath(rundir), 'OUTPUT', 'metrics')
-        self.rundir = os.path.abspath('metrics')
+
+        self.rundir = data_dir
+        print("getting data from: ",  self.rundir)
+
+        if foldername is None:
+            foldername = os.path.basename(rundir)
+        print("foldername:", foldername)
+
+        # self.rundir = os.path.abspath('metrics')
         # if this is a baseline run, then read from configs_base sheet of master input file
         # else this is a project run, then read from configs_projects sheet of master input file
         #if 'CaltrainMod_00' not in rundir:  #for RTFF
-        print("rundir:", rundir)
-        if len(rundir) > 22:
+        if len(foldername) > 26:
             configs_df = pd.read_excel(self.ppa_master_input, sheet_name='configs_projects', header=0)
             configs_df = configs_df.drop(['Base Model', 'Base ID', 'Future Run', 'Iteration', 'Full Name'], axis=1)
             configs_df.insert(0,'Folder','')
@@ -157,8 +175,6 @@ class RunResults:
             configs_df.drop(['Foldername - Project', 'Foldername - Future'], axis=1)
         else:
             configs_df = pd.read_excel(self.ppa_master_input, sheet_name='configs_base', header=0)
-            if find_base_in_Z_drive:
-                self.rundir = os.path.join('Z:\\RTP2025_PPA\\Projects', rundir, 'OUTPUT', 'metrics')
         
         print("self.rundir:", self.rundir)
         
@@ -166,7 +182,8 @@ class RunResults:
         configs_df.columns = configs_df.iloc[0]
         configs_df = configs_df[1:]
         # print("cols:", configs_df.columns)
-        self.config = configs_df[[rundir]].iloc[:,0]
+        self.config = configs_df[[foldername]].iloc[:,0]
+        # self.config['Project Run Dir'] = foldername
         self.config['Project Run Dir'] = self.rundir
 
         # read the Benefit Valuations depending on future
@@ -179,7 +196,7 @@ class RunResults:
         self.BENEFIT_VALUATION = valuations_df.set_index(['Benefit Category 1','Benefit Category 2','Benefit Category 3']).T.to_dict('list')
 
         # dict with 3-tuple keys and some have a 3rd val of "NAN"
-        old_keys = self.BENEFIT_VALUATION.keys()
+        old_keys = list(self.BENEFIT_VALUATION.keys())
 
         for dict_key in old_keys:
             # this one is bad
@@ -191,13 +208,13 @@ class RunResults:
                 None
 
         if self.config.loc['Future'] in ['CAG']:
-            for k, v in self.BENEFIT_VALUATION.iteritems():
+            for k, v in six.viewitems(self.BENEFIT_VALUATION):
                 del v[3], v[2], v[0]
         elif self.config.loc['Future'] in ['RTFF']:
-            for k, v in self.BENEFIT_VALUATION.iteritems():
+            for k, v in six.viewitems(self.BENEFIT_VALUATION):
                 del v[3], v[0], v[0]
         elif self.config.loc['Future'] in ['BTTF']:
-            for k, v in self.BENEFIT_VALUATION.iteritems():
+            for k, v in six.viewitems(self.BENEFIT_VALUATION):
                 del v[0], v[0], v[0]
 
 
@@ -218,59 +235,58 @@ class RunResults:
         if overwrite_config:
             self.is_base_dir = True
             for key in overwrite_config.keys(): self.config[key] = overwrite_config[key]
-            print ("OVERWRITE_CONFIG FOR BASE_DIR: ")
-            print self.config
+            print(("OVERWRITE_CONFIG FOR BASE_DIR: "))
+            print(self.config)
 
         elif 'base_dir' not in self.config.keys():
             self.is_base_dir = True
 
-        print("")
         # read the csvs
         self.auto_times = \
             pd.read_csv(os.path.join(self.rundir, "auto_times.csv"),
                           sep=",", index_col=[0,1])
-        # print self.auto_times
+        # print(self.auto_times)
 
         self.autos_owned = \
             pd.read_csv(os.path.join(self.rundir, "autos_owned.csv"),
                           sep=",")
         self.autos_owned['total autos'] = self.autos_owned['households']*self.autos_owned['autos']
         self.autos_owned.set_index(['incQ','autos'],inplace=True)
-        # print self.autos_owned
+        # print(self.autos_owned)
 
         self.parking_costs = \
             pd.read_csv(os.path.join(self.rundir, "parking_costs.csv"),
                           sep=",")
-        # print self.parking_costs.head()
+        # print(self.parking_costs.head())
 
         self.vmt_vht_metrics = \
             pd.read_csv(os.path.join(self.rundir, "vmt_vht_metrics.csv"),
                           sep=",", index_col=[0,1])
-        # print self.vmt_vht_metrics
+        # print(self.vmt_vht_metrics)
 
         self.nonmot_times = \
             pd.read_csv(os.path.join(self.rundir, "nonmot_times.csv"),
                                        sep=",", index_col=[0,1,2])
-        # print self.nonmot_times
+        # print(self.nonmot_times)
 
         self.transit_boards_miles = \
             pd.read_csv(os.path.join(self.rundir, "transit_boards_miles.csv"),
                           sep=",", index_col=0)
-        print("self.transit_boards_miles")
-        print(self.transit_boards_miles)
+        # print("self.transit_boards_miles")
+        # print(self.transit_boards_miles)
 
         self.transit_times_by_acc_mode_egr = \
             pd.read_csv(os.path.join(self.rundir, "transit_times_by_acc_mode_egr.csv"),
                           sep=",", index_col=[0,1,2,3])
-        # print self.transit_times_by_acc_mode_egr
+        # print(self.transit_times_by_acc_mode_egr)
 
         self.transit_times_by_mode_income = \
             pd.read_csv(os.path.join(self.rundir, "transit_times_by_mode_income.csv"),
                           sep=",", index_col=[0,1])
-        # print self.transit_times_by_mode_income
+        # print(self.transit_times_by_mode_income)
 
         self.unique_active_travelers = pd.read_csv(os.path.join(self.rundir, "unique_active_travelers.csv"),index_col=0, header=None, squeeze=True)
-        # print self.unique_active_travelers
+        # print(self.unique_active_travelers)
 
         self.crowding_df = pd.read_csv(os.path.join(self.rundir, "transit_crowding.csv"))
         self.crowding_complete_df = pd.read_csv(os.path.join(self.rundir, "transit_crowding_complete.csv"))
@@ -281,7 +297,7 @@ class RunResults:
         if 'base_dir' in self.config.keys():
 
             # Project costs
-            df_costs = pd.read_excel(self.ppa_master_input, sheet_name='project_costs', header=0)
+            df_costs = pd.read_excel(self.ppa_master_input, sheet_name=self.ppa_cost_spreadsheet, header=0)
             df_costs = df_costs.drop(['Project Name'], axis=1)
             df_costs = df_costs[df_costs['project_id'] == int(self.config.loc['Project ID'].split('_')[0])]
             self.proj_costs = df_costs.to_dict('records', into=OrderedDict)[0]
@@ -329,7 +345,7 @@ class RunResults:
         roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "avgload5period_vehclasses.csv"))
         if os.path.exists(roadway_netfile):
             self.roadways_df = pd.read_csv(roadway_netfile, sep=",")
-            #print "Read roadways from %s" % roadway_netfile
+            #print("Read roadways from %s" % roadway_netfile)
             roadway_read = True
 
         # on model machine for reading baseline
@@ -337,19 +353,19 @@ class RunResults:
             roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "OUTPUT", "avgload5period_vehclasses.csv"))
             if os.path.exists(roadway_netfile):
                 self.roadways_df = pd.read_csv(roadway_netfile, sep=",")
-                print "Read roadways from %s" % roadway_netfile
+                print("Read roadways from %s" % roadway_netfile)
                 roadway_read = True
 
         # on model machine for reading non-baseline
         if not roadway_read:
             if 'ITER' not in os.environ:
-                print "Could not find roadway network in %s" % roadway_netfile
-                print "So looking in hwy/iterX but ITER isn't in the environment."
+                print("Could not find roadway network in %s" % roadway_netfile)
+                print("So looking in hwy/iterX but ITER isn't in the environment.")
                 sys.exit(2)
 
             roadway_netfile = os.path.abspath(os.path.join(self.rundir, "..", "hwy", "iter%s" % os.environ['ITER'], "avgload5period_vehclasses.csv"))
             self.roadways_df = pd.read_csv(roadway_netfile, sep=",")
-            print "Read roadways from %s" % roadway_netfile
+            print("Read roadways from %s" % roadway_netfile)
             roadway_read = True
 
         # aggregate truck volumes
@@ -409,7 +425,7 @@ class RunResults:
         """
         try:
             self.base_dir     = self.config.loc['base_dir']
-            print self.base_dir
+            print(self.base_dir)
         except:
             # this is ok -- no base_dir specified
             self.base_dir     = None
@@ -424,11 +440,42 @@ class RunResults:
             base_overwrite_config = {}
             base_overwrite_config['Project Mode'] = self.config.loc['Project Mode']
 
-            print self.base_dir
-            #print base_overwrite_config
-            self.base_results = RunResults(rundir = self.base_dir,
-                                           overwrite_config=base_overwrite_config,
-                                           find_base_in_Z_drive=True)
+            base_rundir = os.path.join(baseline_runs_location, self.base_dir)
+            print("base rundir: ", base_rundir)
+
+            # Use OUTPUT folder if available, otherwise average run folders
+            if os.path.isdir(os.path.join(base_rundir, 'OUTPUT')):
+                print(self.base_dir)
+                #print(base_overwrite_config)
+                self.base_results = RunResults(
+                    rundir=base_rundir,
+                    overwrite_config=base_overwrite_config,
+                )
+                self.base_results.calculateDailyMetrics(ovtt_adjustment=self.ovtt_adjustment)
+
+            else:
+                # grab all run* folders
+                baseline_folders = [f for f in os.listdir(base_rundir) if (os.path.isdir(os.path.join(base_rundir, f)) & (f.startswith('run')))]
+                assert len(baseline_folders) > 0, "could not find run* folders in {}".format(base_rundir)
+
+                # create RunResults object for each run
+                base_results_array = []
+                for baseline_subdir in baseline_folders:
+                    rundir = os.path.join(base_rundir, baseline_subdir)
+                    assert os.path.isdir(rundir), "cannot find {}".format(rundir)
+                    base_results = RunResults(
+                        rundir=rundir,
+                        foldername=self.base_dir,
+                        overwrite_config=base_overwrite_config,
+                    )
+                    
+                    # calculate daily metrics
+                    base_results.calculateDailyMetrics(ovtt_adjustment=self.ovtt_adjustment)
+                    base_results_array.append(base_results)
+
+                # return the average of base results
+                self.base_results = averageBaseRunResults(base_results_array)
+
 
     def updateDailyMetrics(self):
         """
@@ -583,11 +630,11 @@ class RunResults:
 
             if "Zero Negative Logsum TAZs" in config:
                 zero_neg_taz_list = RunResults.parseNumList(str(config["Zero Negative Logsum TAZs"]))
-                print "Zeroing out negative diffs for tazs %s" % str(zero_neg_taz_list)
+                print("Zeroing out negative diffs for tazs %s" % str(zero_neg_taz_list))
 
             if "Zero Logsum TAZs" in config:
                 zero_taz_list = RunResults.parseNumList(str(config["Zero Logsum TAZs"]))
-                print "Zeroing out diffs for tazs %s" % str(zero_taz_list)
+                print("Zeroing out diffs for tazs %s" % str(zero_taz_list))
 
         # Take the difference and convert utils to minutes (k_ivt = 0.0134 k_mc_ls = 1.0 in access calcs);
         # TODO: is k_mc_ls = 1.0?  DestinationChoice.cls has different values
@@ -713,8 +760,30 @@ class RunResults:
 
         return (mandatoryAccessibilities, nonmandatoryAccessibilities,
                 mandatoryAccess,          nonmandatoryAccess)
+    
 
-    def calculateDailyMetrics(self):
+    def set_ovtt_adjustment(self):
+        # ovtt adjustment comes from the project and gets applied to the base metrics
+        # needs to be set before calculateDailyMetrics
+        transit_byclass = self.transit_times_by_acc_mode_egr.loc['all'].sum(level='Mode')
+
+        # just running base dir gets this set to 0
+        self.ovtt_adjustment = 0
+
+        if self.config.loc['Project Mode'] in ['com','hvy','exp','lrf','loc']:
+            self.ovtt_adjustment = transit_byclass.loc[self.config.loc['Project Mode'],'Out-of-vehicle hours'] / \
+                                   transit_byclass.loc[self.config.loc['Project Mode'],'Transit Trips']
+
+        elif self.config.loc['Project Mode'] == 'road':
+            self.ovtt_adjustment = transit_byclass.loc[:,'Out-of-vehicle hours'].sum() / \
+                                   transit_byclass.loc[:,'Transit Trips'].sum()
+        else:
+            raise Exception("Invalid Project Mode:'%s'; Should be one of 'road','com','hvy','exp','lrf','loc'" % \
+                            self.config.loc['Project Mode'])
+        assert self.ovtt_adjustment is not None, "self.ovtt_adjustment not yet set for project "
+
+
+    def calculateDailyMetrics(self, ovtt_adjustment=None):
         """
         Calculates the daily output metrics which will actually get used for the benefits/cost
         analysis.
@@ -1113,36 +1182,38 @@ class RunResults:
         transit_person_trips = transit_byclass.loc[:,'Transit Trips'].sum()
         quick_summary['Transit person trips'] = transit_person_trips
 
-        # If this is base dir, ovtt adjustment comes from project
-        if self.is_base_dir:
-            # self.ovtt_adjustment should already be set below if we're using this as a base for a scenario
-            try:
-                print "ovtt_adjustment = ", self.ovtt_adjustment
-            except AttributeError:
-                self.ovtt_adjustment = 0
-            pass
-        elif self.config.loc['Project Mode'] in ['com','hvy','exp','lrf','loc']:
-            self.ovtt_adjustment = transit_byclass.loc[self.config.loc['Project Mode'],'Out-of-vehicle hours'] / \
-                                   transit_byclass.loc[self.config.loc['Project Mode'],'Transit Trips']
+        # # If this is base dir, ovtt adjustment comes from project
+        # if self.is_base_dir:
+        #     # ovtt_adjustment should already be set below if we're using this as a base for a scenario
+        #     if ovtt_adjustment is None:
+        #         # just running this for base scenario
+        #         self.ovtt_adjustment = 0
+        #     else:
+        #         self.ovtt_adjustment = ovtt_adjustment
 
-        elif self.config.loc['Project Mode'] == 'road':
-            self.ovtt_adjustment = transit_byclass.loc[:,'Out-of-vehicle hours'].sum() / \
-                                   transit_byclass.loc[:,'Transit Trips'].sum()
-        else:
-            raise Exception("Invalid Project Mode:'%s'; Should be one of 'road','com','hvy','exp','lrf','loc'" % \
-                            self.config.loc['Project Mode'])
-        # tell the base
-        if self.base_results:
-            self.base_results.ovtt_adjustment = self.ovtt_adjustment
+        # elif self.config.loc['Project Mode'] in ['com','hvy','exp','lrf','loc']:
+        #     self.ovtt_adjustment = transit_byclass.loc[self.config.loc['Project Mode'],'Out-of-vehicle hours'] / \
+        #                            transit_byclass.loc[self.config.loc['Project Mode'],'Transit Trips']
+
+        # elif self.config.loc['Project Mode'] == 'road':
+        #     self.ovtt_adjustment = transit_byclass.loc[:,'Out-of-vehicle hours'].sum() / \
+        #                            transit_byclass.loc[:,'Transit Trips'].sum()
+        # else:
+        #     raise Exception("Invalid Project Mode:'%s'; Should be one of 'road','com','hvy','exp','lrf','loc'" % \
+        #                     self.config.loc['Project Mode'])
+        # assert self.ovtt_adjustment is not None, "self.ovtt_adjustment not yet set for project "
+
+        assert ovtt_adjustment >= 0, "ovtt_adjustment not greater than zero!"
+        print("using ovtt_adjustment of ", ovtt_adjustment)
 
         # OVTT adjustment multiplier
         if self.config.loc['Project Mode'] in ['com','hvy','exp','lrf','loc']:
              # Adjustment for transit: auto person trips x avg OVTT in Scenario
-             daily_results[(cat1,cat2,'OVTT Adjustment')] = self.ovtt_adjustment * auto_person_trips
+             daily_results[(cat1,cat2,'OVTT Adjustment')] = ovtt_adjustment * auto_person_trips
 
         elif self.config.loc['Project Mode'] == 'road':
             # Adjustment for road: transit person trips x avg OVTT in Scenario
-            daily_results[(cat1,cat2,'OVTT Adjustment')] = self.ovtt_adjustment * transit_person_trips
+            daily_results[(cat1,cat2,'OVTT Adjustment')] = ovtt_adjustment * transit_person_trips
 
         cat2            = 'Walk/Bike (Hours)'
         daily_results[(cat1,cat2,'Walk')] = nonmot_byclass.loc['Walk','Total Time (Hours)']
@@ -1285,10 +1356,10 @@ class RunResults:
 
 
         cat2            = 'Operating Costs ($2000)'
-        print(auto_byclass)
+        # print(auto_byclass)
         daily_results[(cat1,cat2,'Auto Households' )] = \
             0.01*auto_byclass.loc[['da','datoll','da_av_toll', 'da_av_notoll',\
-                                    'sr2','sr2toll','s2_av_toll', 's2_av_notoll'\
+                                    'sr2','sr2toll','s2_av_toll', 's2_av_notoll',\
                                     'sr3','sr3toll', 's3_av_toll', 's3_av_notoll'],'Total Cost'].sum()
         daily_results[(cat1,cat2,'Auto Households ZOV' )] = \
             0.01*auto_byclass.loc['owned_zpv','Total Cost'].sum()
@@ -1308,11 +1379,11 @@ class RunResults:
 
         # Parking
         cat2            = 'Parking Costs'
-        for countynum,countyname in RunResults.COUNTY_NUM_TO_NAME.iteritems():
+        for countynum,countyname in six.viewitems(RunResults.COUNTY_NUM_TO_NAME):
             daily_results[(cat1,cat2,'($2000) Work Tours to %s'     % countyname)] = \
                 self.parking_costs.loc[(self.parking_costs.parking_category=='Work'    )&
                                        (self.parking_costs.dest_county     ==countynum ),  'parking_cost'].sum()
-        for countynum,countyname in RunResults.COUNTY_NUM_TO_NAME.iteritems():
+        for countynum,countyname in six.viewitems(RunResults.COUNTY_NUM_TO_NAME):
             daily_results[(cat1,cat2,'($2000) Non-Work Tours to %s' % countyname)] = \
                 self.parking_costs.loc[(self.parking_costs.parking_category=='Non-Work')&
                                        (self.parking_costs.dest_county     ==countynum ),  'parking_cost'].sum()
@@ -1480,7 +1551,7 @@ class RunResults:
 
         # sum to categories
         self.daily_category_results = self.daily_results.sum(level=[0,1])
-        # print self.daily_category_results
+        # print(self.daily_category_results)
 
         self.quick_summary = pd.Series(quick_summary)
         self.quick_summary = self.quick_summary.append(self.config)
@@ -1497,7 +1568,7 @@ class RunResults:
         workbook_name = "BC_%s.xlsx" % self.config.loc['Project ID']
         csv_name      = "BC_%s.csv"  % self.config.loc['Project ID']
         if not self.is_base_dir and self.config.loc['base_dir']:
-            print "BASE = ",self.config.loc['base_dir']
+            print("BASE = ",self.config.loc['base_dir'])
             base_str_re = re.compile("(19|20)[0-9][0-9]_05_[A-Za-z0-9]{3}[^\\\)]*")
             base_match  = base_str_re.search(self.config.loc['base_dir'])
             if base_match:
@@ -1507,12 +1578,13 @@ class RunResults:
                 self.config['Base Project ID'] = self.config.loc['base_dir']
 
             self.config['Project Compare ID'] = "%s vs %s" % (self.config.loc['Project ID'], self.config['Base Project ID'])
-            # print "base_match = [%s]" % base_match.group(0)
+            # print("base_match = [%s]" % base_match.group(0))
             workbook_name = "BC_%s_base%s.xlsx" % (self.config.loc['Project ID'], self.config['Base Project ID'])
             csv_name      = "BC_%s_base%s.csv"  % (self.config.loc['Project ID'], self.config['Base Project ID'])
 
-        project_folder_name = project_dir.split('\\OUTPUT')[0]
-        BC_detail_workbook = os.path.join(project_folder_name, workbook_name)
+        # project_folder_name = project_dir.split('\\OUTPUT')[0]
+        # BC_detail_workbook = os.path.join(project_folder_name, workbook_name)
+        BC_detail_workbook = os.path.join(project_dir, workbook_name)
         workbook        = xlsxwriter.Workbook(BC_detail_workbook)
 
         scen_minus_base = self.writeBCWorksheet(workbook)
@@ -1522,8 +1594,6 @@ class RunResults:
                 base_minus_scen = self.writeBCWorksheet(workbook, scen_minus_baseline=False)
         workbook.close()
         print("Wrote the BC workbook %s" % BC_detail_workbook)
-
-
 
         # writing simple csv file with all bc metrics
 
@@ -1548,6 +1618,7 @@ class RunResults:
 
             # Getting key B/C metrics from just created workbook
 
+            print("BC_detail_workbook:", BC_detail_workbook)
             # Need to first open and save the workbook so all formulas get calculated
             app = xl.App(visible=False)
             book = app.books.open(BC_detail_workbook)
@@ -1680,7 +1751,7 @@ class RunResults:
         # key = (category1, category2, category3, variable name)
         bc_metrics      = collections.OrderedDict()
         # put config in here first
-        for key,val in self.config.iteritems():
+        for key,val in six.viewitems(self.config.to_dict()):
             bc_metrics[(key,"","","")] = val
 
 
@@ -1790,7 +1861,7 @@ class RunResults:
         row_remember = row+1
         row_list = []
 
-        for key,value in colA.daily_results.iteritems():
+        for key,value in six.viewitems(colA.daily_results.to_dict()):
 
             # What's the valuation of this metric?
             valuation = None
@@ -2031,7 +2102,7 @@ class RunResults:
 
         # insert present values of benefits for each benefit item from the newly created streams worksheet
         row = row_remember -1
-        for key,value in colA.daily_results.iteritems():
+        for key,value in six.viewitems(colA.daily_results.to_dict()):
 
             if cat1 != key[0]:
                 cat1 = key[0]
@@ -2135,9 +2206,9 @@ class RunResults:
             worksheet.write(TABLE_HEADER_ROW-3, 7, "",format_bc_header)
             worksheet.write(TABLE_HEADER_ROW-2, 7, "",format_bc_header)
 
-            sum_indices = cat1_sums.keys()
-            sum_indices_PV1 = cat1_sumsPV1.keys()
-            sum_indices_PV2 = cat1_sumsPV2.keys()
+            sum_indices = list(cat1_sums.keys())
+            sum_indices_PV1 = list(cat1_sumsPV1.keys())
+            sum_indices_PV2 = list(cat1_sumsPV2.keys())
 
             # choose the correct major categories for summing; drop 1,3,4 = logsum no cem, travel time, travel cost
             sum_indices = [sum_indices[0]] + sum_indices[2:7]
@@ -2239,7 +2310,8 @@ class RunResults:
         worksheet.write(row,0,'Project Type', format_basicstats)
         worksheet.write(row,1, self.config.loc['Project Type'], format_basicstats)
 
-        writer = pd.ExcelWriter(workbook, engine = 'xlsxwriter')
+        # writer = pd.ExcelWriter(workbook, engine = 'xlsxwriter')
+        writer = pd.ExcelWriter(workbook.filename, engine = 'xlsxwriter')
         writer.sheets['proxies'] = worksheet
         df_proxies.to_excel(writer, sheet_name = 'proxies', startrow=4, index=False)
 
@@ -2317,14 +2389,14 @@ class RunResults:
 
 
         bc_metrics_annual_benefit = collections.OrderedDict()
-        for key,val in bc_metrics.iteritems():
+        for key,val in six.viewitems(bc_metrics):
             if "for reference only" not in key[0]:
                 if key[3]=='Horizon Yr Benefit (2019$)':
                     bc_metrics_annual_benefit[key] = val
 
         bc_metrics_withNPV = collections.OrderedDict()
 
-        for key,val in bc_metrics_annual_benefit.iteritems():
+        for key,val in six.viewitems(bc_metrics_annual_benefit):
 
             # insert first few columns as categories and labels from bc_metrics
             worksheet.write(row, 0, key[0])
@@ -2434,7 +2506,7 @@ class RunResults:
         # Capital and O&M cost rows
 
         row+=1
-        for key,val in self.proj_costs.iteritems():
+        for key,val in six.viewitems(self.proj_costs):
             if key in self.asset_life.keys():     # if key is a capital cost
                 asset_life_value = self.asset_life.get(key)
                 worksheet.write(row, 0, "Capital Cost")
@@ -2472,7 +2544,7 @@ class RunResults:
 
         # Rehab and Replacement costs; Remaining asset value
 
-        for key,val in self.proj_costs.iteritems():
+        for key,val in six.viewitems(self.proj_costs):
 
             if key == "Road - Pavement":
                 worksheet.write(row, 0, "Rehab Cost")
@@ -2669,30 +2741,70 @@ class RunResults:
         return int(imp_years)
 
 
+def averageBaseRunResults(base_results_array):
+    
+    avg_daily_results = None
+    avg_quick_summary = None
 
+    # loop through all results 
+    for base_result in base_results_array:
+        
+        # init if first entry
+        if avg_daily_results is None:
+            avg_daily_results = base_result.daily_results.copy()
+            # quick summary has string columns too we don't want to sum
+            avg_quick_summary = pd.to_numeric(base_result.quick_summary.copy(), errors='coerce')
 
+        # sum results together
+        else:
+            avg_daily_results = avg_daily_results + base_result.daily_results
+            avg_quick_summary = avg_quick_summary + pd.to_numeric(base_result.quick_summary.copy(), errors='coerce')
+
+    avg_daily_results = avg_daily_results / len(base_results_array)
+    avg_quick_summary = avg_quick_summary / len(base_results_array)
+    # merge strings back in to fill the NA values
+    avg_quick_summary = avg_quick_summary.combine_first(base_results_array[0].quick_summary)
+
+    # re-calculate lil_cats
+    lil_cats = {}
+    grouped = avg_daily_results.groupby(level=['category1','category2'])
+    for name,group in grouped:
+        if group.sum() < 1000:
+            lil_cats[name] = 1
+
+    
+    # return object with averaged data
+    base_results = base_results_array[0]
+    base_results.daily_results = avg_daily_results
+    base_results.daily_category_results = base_results.daily_results.sum(level=[0,1])
+    base_results.lil_cats = lil_cats
+    base_results.quick_summary = avg_quick_summary
+
+    return base_results
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(usage=USAGE)
-    parser.add_argument('--discount_rate', help="The discount rate.", type=float, default=0.03)
     parser.add_argument('project_dir',
-                        help="The directory with the run results csvs.")
+                        help="The directory the model was run in or the OUTPUTS stored.")
     parser.add_argument('--all_projects_dir',
                         help="The directory in which to write the Benefit/Cost summary Series",
                         default="Z:\\RTP2025_PPA\\Projects\\all_project_metrics")
     args = parser.parse_args(sys.argv[1:])
-    RunResults.DISCOUNT_RATE = args.discount_rate
 
-    project_dir = os.path.basename(args.project_dir)
-
-    # rr = RunResults(args.project_dir)
-    rr = RunResults(project_dir)
+    rr = RunResults(args.project_dir)
+    # need to calculate ovtt_adjustment can apply to base
+    rr.set_ovtt_adjustment()
+    
+    # create base scenario and average metrics if more than one base run exists
     rr.createBaseRunResults()
 
-    rr.calculateDailyMetrics()
+    # needs to be run after base so that accessibilities are calculated
+    rr.calculateDailyMetrics(ovtt_adjustment=rr.ovtt_adjustment)
+
 
     if rr.base_results:
-        rr.base_results.calculateDailyMetrics()
+        # daily metrics calculated in above createBaseRunResults
+        # rr.base_results.calculateDailyMetrics()
         rr.updateDailyMetrics()
 
     # save the quick summary locally and to all_project_dir
