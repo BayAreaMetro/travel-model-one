@@ -17,7 +17,16 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 )
 
 :: The location of R and R libraries
-set R_HOME=C:\Program Files\R\R-4.3.1
+set R_HOME=C:\Program Files\R\R-4.3.2
+if %computername%==azmdlppw06          set R_HOME=C:\Program Files\R\R-4.3.1
+if %computername%==azmdlppw07          set R_HOME=C:\Program Files\R\R-4.3.1
+if %computername%==azmdlppw08          set R_HOME=C:\Program Files\R\R-4.3.2
+if %computername%==azmdlppw09          set R_HOME=C:\Program Files\R\R-4.3.2
+if %computername%==AZMDLPPW10          set R_HOME=C:\Program Files\R\R-4.3.2
+if %computername%==AZMDLPPW11          set R_HOME=C:\Program Files\R\R-4.3.2
+if %computername%==AZMDLPPW12          set R_HOME=C:\Program Files\R\R-4.3.2
+if %computername%==AZMDLPPW13          set R_HOME=C:\Program Files\R\R-4.3.2
+if %computername%==MODEL-GRTM          set R_HOME=C:\Program Files\R\R-4.3.1
 @REM set R_LIB=C:\Users\david.hensle\AppData\Local\R\win-library\4.3
 set R_LIB=C:\Users\%username%\AppData\Local\R\win-library\4.3
 if "%COMPUTER_PREFIX%" == "WIN-" (

@@ -39,10 +39,10 @@ def average_shadowpricing(files, output_path=None):
  
 if __name__ == "__main__":
     files = [
-        r"Z:\RTP2025_PPA\Projects\2050_TM151_PPA_BF_18\run1\OUTPUT\main\ShadowPricing_7_.csv",
+        r"Z:\RTP2025_PPA\Projects\2050_TM151_PPA_BF_18\run1\OUTPUT\main\ShadowPricing_7.csv",
         r"Z:\RTP2025_PPA\Projects\2050_TM151_PPA_BF_18\run2\OUTPUT\main\ShadowPricing_7.csv",
         r"Z:\RTP2025_PPA\Projects\2050_TM151_PPA_BF_18\run3\OUTPUT\main\ShadowPricing_7.csv",
     ]
-    output_path = r"Z:\RTP2025_PPA\Projects\2050_TM151_PPA_BF_18\INPUT\ShadowPricing_7.csv"
+    output_path = r"Z:\RTP2025_PPA\Projects\2050_TM151_PPA_BF_18\INPUT\logsums\ShadowPricing_7.csv"
     averaged_df = average_shadowpricing(files, output_path)
  

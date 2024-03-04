@@ -26,6 +26,13 @@ Cluster "%COMMPATH%\CTRAMP" 1-48 Starthide Exit
 set HOST_IP_ADDRESS=10.6.0.4
 if %computername%==azmdlppw06          set HOST_IP_ADDRESS=10.6.0.4
 if %computername%==azmdlppw07          set HOST_IP_ADDRESS=10.0.0.4
+if %computername%==azmdlppw08          set HOST_IP_ADDRESS=10.0.0.4
+if %computername%==azmdlppw09          set HOST_IP_ADDRESS=10.0.0.4
+if %computername%==AZMDLPPW10          set HOST_IP_ADDRESS=10.0.0.4
+if %computername%==AZMDLPPW11          set HOST_IP_ADDRESS=10.0.0.4
+if %computername%==AZMDLPPW12          set HOST_IP_ADDRESS=10.0.0.4
+if %computername%==AZMDLPPW13          set HOST_IP_ADDRESS=10.6.0.5
+if %computername%==MODEL-GRTM          set HOST_IP_ADDRESS=10.120.0.23
 if %computername%==MODEL2-A            set HOST_IP_ADDRESS=192.168.1.206
 if %computername%==MODEL2-B            set HOST_IP_ADDRESS=192.168.1.207
 if %computername%==MODEL2-C            set HOST_IP_ADDRESS=192.168.1.208

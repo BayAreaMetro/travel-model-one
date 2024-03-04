@@ -30,7 +30,7 @@ if "%COMPUTER_PREFIX%" == "WIN-"    (copy "%GITHUB_DIR%\utilities\monitoring\not
 if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.33
 
 :: copy over INPUTs from baseline
-set MODEL_SETUP_BASE_DIR=Z:\RTP2025_PPA\Projects\2050_TM151_PPA_CG_17
+set MODEL_SETUP_BASE_DIR=Z:\RTP2025_PPA\Projects\2050_TM151_PPA_CG_18
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\landuse"                       INPUT\landuse
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\logsums"                       INPUT\logsums
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_BASE_DIR%\INPUT\metrics"                       INPUT\metrics
@@ -41,10 +41,10 @@ copy /Y "%MODEL_SETUP_BASE_DIR%\INPUT\params.properties"                        
 
 :: copy over ShadowPricing file from baseline
 :: needed for all project runs; not needed for baseline runs
-copy /Y "%MODEL_SETUP_BASE_DIR%\OUTPUT\main\ShadowPricing_7.csv"                                 INPUT\logsums
+copy /Y "%MODEL_SETUP_BASE_DIR%\INPUT\logsums\ShadowPricing_7.csv"                                 INPUT\logsums
 
 :: copy over project specific inputs
-set MODEL_SETUP_DIR=Z:\RTP2025_PPA\Projects\2050_TM151_PPA_CG_17\INPUT
+set MODEL_SETUP_DIR=Z:\RTP2025_PPA\Projects\GGT_Service_Imp\2050_TM151_PPA_CG_18_GGT_Service_Imp_00\INPUT
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_DIR%\hwy"                           INPUT\hwy
 c:\windows\system32\Robocopy.exe /E "%MODEL_SETUP_DIR%\trn"                           INPUT\trn
 
