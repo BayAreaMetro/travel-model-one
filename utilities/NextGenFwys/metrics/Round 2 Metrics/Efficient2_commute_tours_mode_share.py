@@ -1,9 +1,9 @@
 USAGE = """
 
-  python Efficient2_commute_mode_share.py
+  python Efficient2_commute_tours_mode_share.py
 
   Run this from the model run dir.
-  Processes model outputs and creates a single csv with scenario metrics, called metrics\Efficient2_commute_mode_share_XX.csv
+  Processes model outputs and creates a single csv with scenario metrics, called metrics\Efficient2_commute_tours_mode_share_XX.csv
   
   This file will have the following columns:
     'Freeway/Non-Freeway',
@@ -26,21 +26,15 @@ import os
 import pandas as pd
 import argparse
 import logging
-import numpy
 
 # paths
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
-NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
-LOG_FILE                = "Efficient2_commute_mode_share.log" # in the cwd
+LOG_FILE                = "Efficient2_commute_tours_mode_share.log" # in the cwd
 LOGGER                  = None # will initialize in main     
-
-# EPC lookup file - indicates whether a TAZ is designated as an EPC in PBA2050
-NGFS_EPC_TAZ_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_epc_crosswalk.csv")
-NGFS_EPC_TAZ_DF      = pd.read_csv(NGFS_EPC_TAZ_FILE)
 
 # travel model tour and trip modes
 # https://github.com/BayAreaMetro/modeling-website/wiki/TravelModes#tour-and-trip-modes
@@ -52,57 +46,7 @@ MODES_PRIVATE_AUTO = MODES_SOV + MODES_HOV
 MODES_WALK         = [7]
 MODES_BIKE         = [8]
 
-# travel model tour purpose
-# https://github.com/BayAreaMetro/modeling-website/wiki/IndividualTour
-PURPOSES_COMMUTE = ['work_low','work_med','work_high','work_very high']
-
-# travel model time periods
-# https://github.com/BayAreaMetro/modeling-website/wiki/TimePeriods
-TIME_PERIODS_PEAK    = ['AM','PM']
-
-def trips_commute_mode_pkop(tm_run_id, metric_id):
-    ################################### trips by peak/off-peak, commute/noncommute, auto/transit ###################################
-    # key                       intermediate/final    metric_desc
-    # [commute]_[mode]_[pkop]   top_level/E2b             trips
-    # [commute]_[mode]_[pkop]   top_level/E2b             trips
-    metrics_df = pd.DataFrame()
-    trip_distance_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "TripDistance.csv")
-    tm_trips_df = pd.read_csv(trip_distance_file)
-    LOGGER.info("  Read {:,} rows from {}".format(len(tm_trips_df), trip_distance_file))
-    LOGGER.debug("tm_trips_df.head():\n{}".format(tm_trips_df.head()))
-
-    # simplify to auto versus transit versus active
-    tm_trips_df['agg_trip_mode'] = 'active'
-    tm_trips_df.loc[ tm_trips_df.trip_mode.isin(MODES_TRANSIT),      'agg_trip_mode' ] = 'transit'
-    tm_trips_df.loc[ tm_trips_df.trip_mode.isin(MODES_PRIVATE_AUTO), 'agg_trip_mode' ] = 'auto'
-    tm_trips_df.loc[ tm_trips_df.trip_mode.isin(MODES_TAXI_TNC),     'agg_trip_mode' ] = 'other'
-
-    # simplify to commute versus noncommute
-    tm_trips_df['commute_non'] = 'noncommute'
-    tm_trips_df.loc[ tm_trips_df.tour_purpose.isin(PURPOSES_COMMUTE), 'commute_non' ] = 'commute'
-
-    # simplify to peak versus nonpeak
-    tm_trips_df['peak_non'] = 'offpeak'
-    tm_trips_df.loc[ tm_trips_df.timeCode.isin(TIME_PERIODS_PEAK), 'peak_non' ] = 'peak'
-
-    # roll it up
-    tm_trips_df = tm_trips_df.groupby(by=['agg_trip_mode', 'commute_non', 'peak_non']).agg({'freq':'sum'}).reset_index()
-    tm_trips_df.rename(columns={'freq':'trips'}, inplace=True)
-    LOGGER.debug('Aggregated tm_trips_df:\n{}'.format(tm_trips_df))
-
-    # metrics: total trips
-    metrics_trip_df = tm_trips_df.copy()
-    metrics_trip_df['intermediate/final'] = metric_id
-    metrics_trip_df['metric_desc'] = 'trips'
-    metrics_trip_df.rename(columns={'trips':'value', 'agg_trip_mode':'commute mode'}, inplace=True)
-    LOGGER.debug('metrics_trip_df:\n{}'.format(metrics_trip_df))
-    metrics_df = pd.concat([metrics_df, metrics_trip_df])
-
-    metrics_df['shares'] = metrics_df['value'] / metrics_df.loc[:,'value'].sum()
-
-    return metrics_df
-
-def calculate_Efficient2_commute_mode_share(tm_run_id: str) -> pd.DataFrame:
+def calculate_Efficient2_commute_tours_mode_share(tm_run_id: str) -> pd.DataFrame:
     """ Calculates Efficient 2: Transit, walk, bike and telecommute mode share of commute *tours*
 
     Args:
@@ -217,11 +161,21 @@ def calculate_Efficient2_commute_mode_share(tm_run_id: str) -> pd.DataFrame:
     
     tm_journey_to_work_df['shares'] = tm_journey_to_work_shares_df['shares']
     tm_journey_to_work_df['commute_non'] = 'commute'
-
+    
+    commute_mode_to_grouping_key_df = pd.DataFrame(columns=['commute mode','Aggregate Tour Mode'], data=[
+        ('HOV', 'HOV'), # high-occupancy vehicle
+        ('SOV', 'SOV'), # single-occupancy vehicle
+        ('bike', 'Active'), # bike
+        ('taxi/TNC', 'SOV' ), # taxi/Transportation Network Companies
+        ('transit', 'transit'), # transit
+        ('walk', 'Active'), # walk
+        ('telecommute', 'telecommute'), # telecommute
+        ('all_modes excl time off', 'all_modes excl time off') # all_modes excl time off
+    ])
+    LOGGER.debug("  Using facility type categories:\n{}".format(commute_mode_to_grouping_key_df))
+    tm_journey_to_work_df = pd.merge(left=tm_journey_to_work_df, right=commute_mode_to_grouping_key_df, on='commute mode', how='left')
+    
     metrics_df = tm_journey_to_work_df
-    # metrics_df.rename(columns={'All workers':'value', 'commute mode':'key'}, inplace=True)
-    # add 2b metric for modeshare by trips for non commute trips
-    metrics_df = pd.concat([metrics_df, trips_commute_mode_pkop(tm_run_id, 'Efficient 2b')])
     metrics_df['Model Run ID'] = tm_run_id
     metrics_df['Metric ID'] = METRIC_ID
     metrics_df['Year'] = tm_run_id[:4]
@@ -269,7 +223,7 @@ if __name__ == "__main__":
     current_runs_list = current_runs_df['directory'].to_list()
 
     for tm_run_id in current_runs_list:
-        out_filename = os.path.join(os.getcwd(),"Efficient2_commute_mode_share_{}.csv".format(tm_run_id))
+        out_filename = os.path.join(os.getcwd(),"Efficient2_commute_tours_mode_share_{}.csv".format(tm_run_id))
 
         if args.skip_if_exists and os.path.exists(out_filename):
             LOGGER.info("Skipping {} -- {} exists".format(tm_run_id, out_filename))
@@ -280,7 +234,7 @@ if __name__ == "__main__":
         # results will be stored here
         metrics_df = pd.DataFrame()
 
-        metrics_df = calculate_Efficient2_commute_mode_share(tm_run_id)
+        metrics_df = calculate_Efficient2_commute_tours_mode_share(tm_run_id)
         LOGGER.info("@@@@@@@@@@@@@ E2 Done")
 
         metrics_df.to_csv(out_filename, float_format='%.5f', index=False) #, header=False
