@@ -1,9 +1,9 @@
 USAGE = """
 
-  python Safe2_change_in_vmt.py
+  python Change_in_vmt_from_loaded_network.py
 
   Run this from the model run dir.
-  Processes model outputs and creates a single csv with scenario metrics, called metrics\Safe2_change_in_vmt_XX.csv
+  Processes model outputs and creates a single csv with scenario metrics, called metrics\Change_in_vmt_from_loaded_network_XX.csv
   
   This file will have the following columns:
     'Freeway/Non-Freeway',
@@ -35,14 +35,14 @@ NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
 NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
-LOG_FILE                = "Safe2_change_in_vmt.log" # in the cwd
+LOG_FILE                = "Change_in_vmt_from_loaded_network.log" # in the cwd
 LOGGER                  = None # will initialize in main     
 
 # EPC lookup file - indicates whether a TAZ is designated as an EPC in PBA2050
 NGFS_EPC_TAZ_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_epc_crosswalk.csv")
 NGFS_EPC_TAZ_DF      = pd.read_csv(NGFS_EPC_TAZ_FILE)
 
-def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
+def calculate_Change_in_vmt_from_loaded_network(tm_run_id: str) -> pd.DataFrame:
     """ Calculates Safety 2: Change in vehicle miles travelled (VMT) on freeway and non-freeway facilities
     Additionally, calculates VMT segmented by different categories (households by income, non-houehold and trucks)
     and VMT segmented by whether or not the links are located in Equity Priority Communities (EPC) TAZS.
@@ -64,31 +64,11 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
           Freeway|Non-Freeway    EPCs|Non-EPCs|Region                   VMT|VHT  (EPC/non-EPC breakdown)
 
     Notes: Uses
-    * auto_times.csv (for category breakdown)
     * avgload5period.csv (for facility type breakdown)
     * vmt_vht_metrics_by_taz.csv (for EPC/non-EPC breakdown)
     """
     METRIC_ID = 'Safe 2'
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
-
-    # read network-based auto times
-    auto_times_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "metrics", "auto_times.csv")
-    auto_times_df = pd.read_csv(auto_times_file)
-    LOGGER.info("  Read {:,} rows from {}".format(len(auto_times_df), auto_times_file))
-
-    # we'll summarize by these
-    auto_times_df['Household/Non-Household'] = 'Household'
-    auto_times_df['Income Level/Travel Mode']      = auto_times_df['Income']  # for households, use income
-    auto_times_df.loc[ auto_times_df.Mode.str.endswith('ix'),  ['Household/Non-Household', 'Income Level/Travel Mode']] = ['Non-Household', 'ix'     ]
-    auto_times_df.loc[ auto_times_df.Mode.str.endswith('air'), ['Household/Non-Household', 'Income Level/Travel Mode']] = ['Non-Household', 'air'    ]
-    auto_times_df.loc[ auto_times_df.Mode == 'zpv_tnc',        ['Household/Non-Household', 'Income Level/Travel Mode']] = ['Non-Household', 'zpv_tnc']
-    auto_times_df.loc[ auto_times_df.Mode == 'truck',          ['Household/Non-Household', 'Income Level/Travel Mode']] = ['Truck',         'truck'  ]
-
-    auto_times_df = auto_times_df.groupby(by=['Household/Non-Household','Income Level/Travel Mode']).agg({'Vehicle Miles':'sum', 'Vehicle Minutes':'sum'}).reset_index()
-    auto_times_df['VHT'] = auto_times_df['Vehicle Minutes']/60.0
-    auto_times_df.drop(columns=['Vehicle Minutes'], inplace=True)
-    auto_times_df.rename(columns={'Vehicle Miles':'VMT'}, inplace=True)
-    LOGGER.debug("auto_times_df:\n{}".format(auto_times_df))
 
     loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period.csv")
     loaded_network_df = pd.read_csv(loaded_network_file)
@@ -206,8 +186,8 @@ def calculate_Safe2_change_in_vmt(tm_run_id: str) -> pd.DataFrame:
     LOGGER.debug("ft_metrics_df:\n{}".format(ft_metrics_df))
 
     # put it together, move to long form and return
-    metrics_df = pd.concat([auto_times_df, ft_metrics_df])
-    metrics_df = metrics_df.melt(id_vars=['Freeway/Non-Freeway','Facility Type Definition','EPC/Non-EPC', 'Tolled/Non-tolled Facilities', 'County', 'grouping', 'grouping_dir', 'Household/Non-Household', 'Income Level/Travel Mode'], var_name='Metric Description')
+    metrics_df = ft_metrics_df
+    metrics_df = metrics_df.melt(id_vars=['Freeway/Non-Freeway','Facility Type Definition','EPC/Non-EPC', 'Tolled/Non-tolled Facilities', 'County', 'grouping', 'grouping_dir'], var_name='Metric Description')
     metrics_df['Model Run ID'] = tm_run_id
     metrics_df['Metric ID'] = METRIC_ID
     metrics_df['Intermediate/Final'] = 'final'
@@ -334,7 +314,7 @@ if __name__ == "__main__":
     # TOLLED_FWY_MINOR_GROUP_LINKS_DF.to_csv("TOLLED_FWY_MINOR_GROUP_LINKS.csv", index=False)
 
     for tm_run_id in current_runs_list:
-        out_filename = os.path.join(os.getcwd(),"Safe2_change_in_vmt_{}.csv".format(tm_run_id))
+        out_filename = os.path.join(os.getcwd(),"Change_in_vmt_from_loaded_network_{}.csv".format(tm_run_id))
 
         if args.skip_if_exists and os.path.exists(out_filename):
             LOGGER.info("Skipping {} -- {} exists".format(tm_run_id, out_filename))
@@ -345,7 +325,7 @@ if __name__ == "__main__":
         # results will be stored here
         metrics_df = pd.DataFrame()
 
-        metrics_df = calculate_Safe2_change_in_vmt(tm_run_id)
+        metrics_df = calculate_Change_in_vmt_from_loaded_network(tm_run_id)
         LOGGER.info("@@@@@@@@@@@@@ S2 Done")
 
         metrics_df.to_csv(out_filename, float_format='%.5f', index=False) #, header=False
