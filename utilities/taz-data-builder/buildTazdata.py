@@ -15,7 +15,7 @@ USAGE = r"""
 
 """
 
-import argparse, logging, os, sys
+import argparse, logging, os, pathlib, sys
 import numpy, pandas
 
 LOG_FILE                = "buildTazdata.log"
@@ -254,6 +254,28 @@ if __name__ == '__main__':
     logging.info("Read {}\n{}".format(args.urbansim_taz_summary, tazdata_df.head()))
     logging.debug("dtypes:\n{}".format(tazdata_df.dtypes))
 
+    # if COUNTY is a string, it's a the county name; rename and join to county number
+    if 'COUNTY' not in tazdata_df.select_dtypes(include='number'):
+        logging.info("COUNTY is not numeric; adding numeric version of COUNTY")
+        tazdata_df.rename(columns={'COUNTY':'COUNTY_NAME'}, inplace=True)
+
+        this_script = pathlib.Path(__file__)
+        superdistrict_county_file = this_script.parents[1] / "geographies" / "superdistrict-county.csv"
+        logging.info(f"Reading {superdistrict_county_file} for county name/county correspondence")
+        county_names_df = pandas.read_csv(superdistrict_county_file)
+        county_names_df = county_names_df[['COUNTY','COUNTY_NAME']].drop_duplicates()
+        logging.debug("county_names_df\n{}".format(county_names_df))
+        tazdata_df = pandas.merge(
+            left=tazdata_df,
+            right=county_names_df,
+            how='left',
+            on='COUNTY_NAME',
+            validate='many_to_one'
+        )
+        # drop COUNTY_NAME column
+        tazdata_df.drop(columns=['COUNTY_NAME'], inplace=True)
+        logging.debug("tazdata_df\n{}".format(tazdata_df))
+
     tazdata_df = createParkingCostDataSet(baseyear_tazdata_df, tazdata_df)
 
     # only createSchoolEnrollmentDataSet() if needed
@@ -282,7 +304,7 @@ if __name__ == '__main__':
     tazdata_dtypes["TOTACRE"] = "float64"
     tazdata_dtypes["RESACRE"] = "float64"
     tazdata_dtypes["CIACRE" ] = "float64"
-    print(tazdata_dtypes)
+    logging.debug(tazdata_dtypes)
     tazdata_df = tazdata_df.astype(dtype=tazdata_dtypes)
     tazdata_df.to_csv("tazData.csv", header=True, index=False, float_format='%.5f')
 
