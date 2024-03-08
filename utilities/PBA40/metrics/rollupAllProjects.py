@@ -1,11 +1,15 @@
 import os
 import csv
 import pandas as pd
-#from pandas import qs_dataframe
+import sys
 
+# Get the directory path from the command-line argument
+#par_dir = sys.argv[1]
 
 #os.chdir(os.path.join(os.getcwd(), 'all_projects_metrics_dir'))
+par_dir = r"Z:\RTP2025_PPA\Projects\all_project_metrics\BCA only and 3 RSG Run"
 
+os.chdir(par_dir)
 
 ############ rolling up all bc_metrics
 

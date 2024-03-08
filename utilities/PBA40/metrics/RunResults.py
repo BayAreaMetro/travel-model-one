@@ -1710,8 +1710,14 @@ class RunResults:
             all_proj_filename = os.path.join(all_projects_dir, csv_name)
             self.bc_metrics.to_csv(all_proj_filename, header=True, float_format='%.5f')
             print("Wrote the bc metrics csv %s" % all_proj_filename)
-            self.bc_metrics.to_csv(os.path.join(os.getcwd(), "metrics", csv_name), header=True, float_format='%.5f')
-            print("Wrote the bc metrics csv %s" % os.path.join(os.getcwd(), "metrics", csv_name))
+
+            # save local copy to metrics folder if it exists (aka in project run directory) or OUTPUT/metrics otherwise
+            local_output_folder = os.path.join(args.project_dir, "metrics")
+            if not os.path.exists(local_output_folder):
+                local_output_folder = os.path.join(args.project_dir, "OUTPUT", "metrics")
+            self.bc_metrics.to_csv(os.path.join(local_output_folder, csv_name), header=True, float_format='%.5f')
+
+            print("Wrote the bc metrics csv %s" % os.path.join(local_output_folder, csv_name))
 
         # copyfile(BC_detail_workbook, os.path.join(project_folder_name,"..","..","all_projects_bc_workbooks", workbook_name))
         copyfile(BC_detail_workbook, os.path.join(all_projects_dir, workbook_name))
@@ -2808,17 +2814,30 @@ if __name__ == '__main__':
         rr.updateDailyMetrics()
 
     # save the quick summary locally and to all_project_dir
-    assert os.path.exists(args.all_projects_dir), "Cannot find output directory %s" % args.all_projects_dir
+    assert os.path.exists(args.all_projects_dir), "Cannot find all_projects_dir directory %s" % args.all_projects_dir
+
+    # save local copy to metrics folder if it exists (aka in project run directory) or OUTPUT/metrics otherwise
+    local_output_folder = os.path.join(args.project_dir, "metrics")
+    if not os.path.exists(local_output_folder):
+        local_output_folder = os.path.join(args.project_dir, "OUTPUT", "metrics")
+    
+    assert os.path.exists(local_output_folder), "Cannot find local output directory %s" % local_output_folder
+
     if rr.base_dir:
-        quicksummary_csv = os.path.join(args.all_projects_dir, "quicksummary_%s_base%s.csv"  % (rr.config.loc['Project ID'], rr.config.loc['base_dir']))
-        rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f', header=False)
-        quicksummary_csv = os.path.join(os.getcwd(), "metrics", "quicksummary_%s_base%s.csv"  % (rr.config.loc['Project ID'], rr.config.loc['base_dir']))
-        rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f', header=False)
+        qs_file_name = "quicksummary_%s_base%s.csv"  % (rr.config.loc['Project ID'], rr.config.loc['base_dir'])
+
+        # write to all projects dir
+        rr.quick_summary.to_csv(os.path.join(args.all_projects_dir, qs_file_name), float_format='%.5f', header=False)
+        # also write to local folder
+        rr.quick_summary.to_csv(os.path.join(local_output_folder, qs_file_name), float_format='%.5f', header=False)
     else:
+        qs_file_name = "quicksummary_base%s.csv"  % rr.config.loc['Project ID']
+
         quicksummary_csv = os.path.join(args.all_projects_dir, "quicksummary_base%s.csv"  % rr.config.loc['Project ID'])
-        rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f', header=False)
-        quicksummary_csv = os.path.join(os.getcwd(), "metrics", "quicksummary_base%s.csv"  % rr.config.loc['Project ID'])
-        rr.quick_summary.to_csv(quicksummary_csv, float_format='%.5f', header=False)
+        # write to all projects dir
+        rr.quick_summary.to_csv(os.path.join(args.all_projects_dir, qs_file_name), float_format='%.5f', header=False)
+        # also write to local folder
+        rr.quick_summary.to_csv(os.path.join(local_output_folder, qs_file_name), float_format='%.5f', header=False)
 
 
     rr.calculateBenefitCosts(args.project_dir, args.all_projects_dir)
