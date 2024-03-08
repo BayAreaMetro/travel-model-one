@@ -306,6 +306,15 @@ if __name__ == '__main__':
     tazdata_dtypes["CIACRE" ] = "float64"
     logging.debug(tazdata_dtypes)
     tazdata_df = tazdata_df.astype(dtype=tazdata_dtypes)
+
+    # add new CORDON and CORDONCOST columns
+    # assume zero for now but this may be updated to automatically add for the cordons we have coded
+    # See https://github.com/BayAreaMetro/modeling-website/wiki/TazData
+    # and https://github.com/BayAreaMetro/travel-model-one/pull/55
+    # and https://github.com/BayAreaMetro/modeling-website/wiki/MasterNetworkLookupTables#toll-code-tollclass
+    tazdata_df['CORDON'] = 0
+    tazdata_df['CORDONCOST'] = 0
+
     tazdata_df.to_csv("tazData.csv", header=True, index=False, float_format='%.5f')
 
     logging.info("Wrote tazData.csv")
