@@ -26,8 +26,8 @@ mkdir popsyn
 
 echo
 echo *****THE SOURCES OF THE POPSYN FILES ARE:*****
-copy \\model3-a\Model3A-Share\populationsim_outputs\hh_gq\output_%1_%2_%4_%3\synthetic_households.csv     popsyn\hhFile.%1.%4.%3.csv
-copy \\model3-a\Model3A-Share\populationsim_outputs\hh_gq\output_%1_%2_%4_%3\synthetic_persons.csv        popsyn\personFile.%1.%4.%3.csv
+copy \\model3-a\Model3A-Share\populationsim_outputs\hh_gq\output_%1_%2_%4_%3\synthetic_households_recode.csv     popsyn\hhFile.%1.%4.%3.csv
+copy \\model3-a\Model3A-Share\populationsim_outputs\hh_gq\output_%1_%2_%4_%3\synthetic_persons_recode.csv        popsyn\personFile.%1.%4.%3.csv
 
 ::-----------------------------
 :: land use files
