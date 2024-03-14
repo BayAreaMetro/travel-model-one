@@ -490,30 +490,6 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
     job_acc_metrics_df.to_csv(output_file, index=False)
     LOGGER.info("Wrote {}".format(output_file))
 
-def calculate_Connected1_proximity(runid, year, dbp, transitproximity_df, metrics_dict):
-    
-    metric_id = "C1"    
-
-    for area_type in ['Region','CoCs','HRAs','rural','suburban','urban']:
-        # households
-        metrics_dict[runid,metric_id,'transitproximity_majorstop_shareof_tothh_%s' % area_type,year,dbp]    = transitproximity_df.loc[(transitproximity_df['Service_Level']=="Major_Transit_Stop") \
-                                                                                                              & (transitproximity_df['year']==int(year)) & (transitproximity_df['blueprint'].str.contains(dbp)) \
-                                                                                                              & (transitproximity_df['area']==area_type), 'tothh_share'].sum()
-        metrics_dict[runid,metric_id,'transitproximity_majorstop_shareof_hhq1_%s' % area_type,year,dbp]     = transitproximity_df.loc[(transitproximity_df['Service_Level']=="Major_Transit_Stop") \
-                                                                                                              & (transitproximity_df['year']==int(year)) & (transitproximity_df['blueprint'].str.contains(dbp)) \
-                                                                                                              & (transitproximity_df['area']==area_type), 'hhq1_share'].sum()
-        # jobs
-        metrics_dict[runid,metric_id,'transitproximity_majorstop_shareof_totemp_%s' % area_type,year,dbp]       = transitproximity_df.loc[(transitproximity_df['Service_Level']=="Major_Transit_Stop") \
-                                                                                                                 & (transitproximity_df['year']==int(year)) & (transitproximity_df['blueprint'].str.contains(dbp)) \
-                                                                                                                  & (transitproximity_df['area']==area_type), 'totemp_share'].sum()
-        metrics_dict[runid,metric_id,'transitproximity_majorstop_shareof_RETEMPNjobs_%s' % area_type,year,dbp]  = transitproximity_df.loc[(transitproximity_df['Service_Level']=="Major_Transit_Stop") \
-                                                                                                                  & (transitproximity_df['year']==int(year)) & (transitproximity_df['blueprint'].str.contains(dbp)) \
-                                                                                                                  & (transitproximity_df['area']==area_type), 'RETEMPN_share'].sum()
-        metrics_dict[runid,metric_id,'transitproximity_majorstop_shareof_MWTEMPNjobs_%s' % area_type,year,dbp]  = transitproximity_df.loc[(transitproximity_df['Service_Level']=="Major_Transit_Stop") \
-                                                                                                                  & (transitproximity_df['year']==int(year)) & (transitproximity_df['blueprint'].str.contains(dbp)) \
-                                                                                                                  & (transitproximity_df['area']==area_type), 'MWTEMPN_share'].sum()
-
-
 
 def calculate_Connected2_crowding(model_runs_dict: dict):
     """
@@ -678,34 +654,6 @@ def calculate_Connected2_hwy_traveltimes(model_runs_dict: dict):
     output_file = METRICS_OUTPUT_DIR / 'metrics_connected2_hwy_traveltimes.csv'
     hwy_times_metrics_df.to_csv(output_file, index=False)
     LOGGER.info("Wrote {}".format(output_file))
-
-
-def calculate_Connected2_trn_traveltimes(runid, year, dbp, transit_operator_df, metrics_dict):
-
-    metric_id = "C2"
-
-    if "2015" in runid: tm_run_location = TM_RUN_LOCATION_IPA
-    else: tm_run_location = TM_RUN_LOCATION_BP
-    tm_trn_line_df = pd.read_csv(tm_run_location+runid+'/OUTPUT/trn/trnline.csv')
-
-    # It doesn't really matter which path ID we pick, as long as it is AM
-    tm_trn_line_df = tm_trn_line_df.loc[tm_trn_line_df['path id'] == "am_wlk_loc_wlk"]
-    tm_trn_line_df = pd.merge(left=tm_trn_line_df, right=transit_operator_df, left_on="mode", right_on="mode", how="left")
-
-    # grouping by transit operator, and summing all line times and distances, to get metric of "time per unit distance", in minutes/mile
-    trn_operator_travel_times_df = tm_trn_line_df[['line time','line dist']].groupby(tm_trn_line_df['operator']).sum().reset_index()
-    trn_operator_travel_times_df['time_per_dist_AM'] = trn_operator_travel_times_df['line time'] / trn_operator_travel_times_df['line dist']
-
-    # grouping by mode, and summing all line times and distances, to get metric of "time per unit distance", in minutes/mile
-    trn_mode_travel_times_df = tm_trn_line_df[['line time','line dist']].groupby(tm_trn_line_df['mode_name']).sum().reset_index()
-    trn_mode_travel_times_df['time_per_dist_AM'] = trn_mode_travel_times_df['line time'] / trn_mode_travel_times_df['line dist']
-
-    for index,row in trn_operator_travel_times_df.iterrows():    # for bus only
-        if row['operator'] in ['AC Transit Local','AC Transit Transbay','SFMTA Bus','VTA Bus Local','SamTrans Local','GGT Express','SamTrans Express', 'ReX Express']:
-            metrics_dict[runid,metric_id,'time_per_dist_AM_%s' % row['operator'],year,dbp] = row['time_per_dist_AM'] 
-
-    for index,row in trn_mode_travel_times_df.iterrows():
-        metrics_dict[runid,metric_id,'time_per_dist_AM_%s' % row['mode_name'],year,dbp] = row['time_per_dist_AM'] 
 
 
 def extract_Connected2_transit_asset_condition(model_runs_dict: dict):
