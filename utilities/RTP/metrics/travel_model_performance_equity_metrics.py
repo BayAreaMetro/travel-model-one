@@ -463,6 +463,7 @@ def extract_Connected1_JobAccess(model_runs_dict: dict):
         scenario_metrics_df = scenario_metrics_df.loc[ 
             scenario_metrics_df.metric_name.str.endswith('accessible_job_share') |
             scenario_metrics_df.metric_name.str.endswith('accessible_job_share_coc') |
+            scenario_metrics_df.metric_name.str.endswith('accessible_job_share_epc') |
             scenario_metrics_df.metric_name.str.endswith('accessible_job_share_hra')]
 
         # extract mode, time, person_segment
