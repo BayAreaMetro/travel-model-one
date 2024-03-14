@@ -6,7 +6,6 @@ Most of the files are run at the end of a model run via [RunMetrics.bat](../RunM
 
 ## Table of Contents
   * [Inputs & Configuration](#inputs--configuration)
-    * [Example `BC_config.csv`](#example-bc_configcsv)
   * [Output](#output)
   * [Output Detail](#output-detail)
     * [Travel Time & Cost](#travel-time--cost)
@@ -42,7 +41,6 @@ in `INPUT\metrics`:
 | buildings_w_earthquake_codes.csv                                               | lookups between building ID, building attributes, and hazard-related   attributes including earthquake, fragility, fire                                                                                            | buildings_w_earthquake_codes.csv                                                                            | ?                                                                                        |                                                                                          |
 | n/a                                                                            | a subset of fields of buildings_w_earthquake_codes.csv                                                                                                                                                             | eq_codes.csv                                                                                                | drop                                                                                     |                                                                                          |
 | slr_parcel_inundation.csv                                                      | UrbanSim p10 sea-level-rise tagging                                                                                                                                                                                | slr_parcel_inundation_plus.csv                                                                              | yes                                                                                      |                                                                                          |
-| n/a                                                                            | scenario specifics (Project ID, Project Name, County, Project Type,   Project Mode, Costs, Life of Project, and optional baseline directory for   comparison)                                                      | BC_config.csv                                                                                               | drop                                                                                     |                                                                                          |
 |                                                                                | maps roadways (indexed by area type, facility type and number of lanes)   to different rates of fatality, injury or property damage                                                                                | collisionLookup.csv                                                                                         | no                                                                                       |                                                                                          |
 |                                                                                | maps VMT (by period, vehicle class and speed) to emissions rates                                                                                                                                                   | emissionsLookup.csv                                                                                         |                                                                                          |                                                                                          |
 |                                                                                | maps V/C ratios to delay depending on the number of lanes                                                                                                                                                          | nonRecurringDelayLookup.csv                                                                                 |                                                                                          |                                                                                          |
@@ -50,47 +48,6 @@ in `INPUT\metrics`:
 | maj_corridors_hwy_links.csv                                                    | a-b links on 10 major corridors, including Antioch_SF, Vallejo_SF,   SanJose_SF, Oakland_SanJose, Oakland_SF, Livermore-SJ, Santa Rosa - SF   Financial Dist, Antioch-Oakland, Fairfield-Dublin, Oakland-Palo Alto | maj_corridors_hwy_links.csv                                                                                 | no?                                                                                      |                                                                                          |
 | nodes.xls                                                                      | node lookup for quickboards, mapping node numbers to human-readable names                                                                                                                                          | nodes.xls                                                                                                   | yes?                                                                                     |                                                                                          |
 | Transit Operator LSR VMT Estimates.xlsx                                        | maps transit operator codes to estimates of the share of their VMT on   local streets & roads (vs highways), as well as how that local VMT   is distributed by county                                              | Transit Operator LSR VMT Estimates.xlsx                                                                     | no?                                                                                      |                                                                                          |
-
-### Example `BC_config.csv`
-
-An example baseline config:
-
-```
-Project ID,2010_05_XXX
-Project Name,2010 Baseline
-County,all
-Project Type,not applicable
-Project Mode,road
-Capital Costs (millions of $2017),0
-Annual O&M Costs (millions of $2017),0
-Farebox Recovery Ratio,0
-Life of Project (years),1
-Compare,not applicable
-```
-
-An example project config:
-
-```
-Project ID,2010_05_155
-Project Name,2010 Oakland SGR
-County,Alameda
-Project Type,Pavement
-Project Mode,road
-Capital Costs (millions of $2017),0
-Annual O&M Costs (millions of $2017),0
-Farebox Recovery Ratio,0
-Life of Project (years),1
-base_dir,M:\Projects\2010_05_XXX\metrics
-Compare,scenario-baseline
-Zero Negative Logsum TAZs,"1-190"
-Zero Logsum TAZs,500
-```
-
-Note that the last two lines, `Zero Negative Logsum TAZs` and `Zero Logsum TAZs` is _optional_ and should be used only
-when investigations have concluded that a modeling limitation is affecting the logsum diffs inappropriately.
-(For example, inconsistencies in path finding weights and utility weights might cause logsums to decrease slightly even
-if all we're doing is increasing transit frequency.)  If it's used, a README file will be required to be present to
-explain why it's there.
 
 ## Output
 
