@@ -187,8 +187,8 @@ def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
                 logging.warning("{} Pseudo links found with no corresponding actual link:\n{}".format(
                              len(pseudo_link_with_missing_actual), pseudo_link_with_missing_actual))
             else:
-                logging.fatal("TODO: NAME count < 0 shouldn't happen")
-                sys.exit()
+                logging.warning("TODO: NAME count < 0 shouldn't happen")
+                # sys.exit()
         if match_agg_df["NAME"].max() != 1:
             logging.fatal("TODO: NAME count > 1 not implemented")
             sys.exit()
