@@ -141,13 +141,17 @@ if not exist metrics\nonmot_times.csv (
   if ERRORLEVEL 2 goto error
 )
 
-if not exist metrics\vmt_vht_metrics.csv (
+rem Deprecating since inputs have not been refreshed, but also this does not appear to be used. See:
+rem   Decide on PBA50+ refresh of CollisionLookupFINAL.xlsx (https://app.asana.com/0/0/1206847050252431/f)
+rem   Decide on PBA50+ refresh of nonRecurringDelayLookup.csv (https://app.asana.com/0/0/1206847050252437/f)
+rem   Decide on PBA50+ refresh of emissionsLookup.csv (https://app.asana.com/0/0/1206847050252432/f)
+rem if not exist metrics\vmt_vht_metrics.csv (
   rem Summarize network links to vmt, vht, and other collision and emissions estimations
   rem Input: hwy\iter%ITER%\avgload5period_vehclasses.csv
   rem Output: metrics\vmt_vht_metrics.csv
-  call python "%CODE_DIR%\hwynet.py" --filter %FUTURE% --year %MODEL_YEAR% hwy\iter%ITER%\avgload5period_vehclasses.csv
-  IF ERRORLEVEL 2 goto error
-)
+  rem call python "%CODE_DIR%\hwynet.py" --filter %FUTURE% --year %MODEL_YEAR% hwy\iter%ITER%\avgload5period_vehclasses.csv
+  rem IF ERRORLEVEL 2 goto error
+rem )
 
 if not exist trn\quickboards.xls (
   rem Create quickboards summaries of transit output
