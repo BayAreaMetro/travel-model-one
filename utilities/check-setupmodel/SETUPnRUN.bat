@@ -6,6 +6,10 @@
 :: It requires python to be in your path
 :: ------------------------------------------------
 
+:: copy the Check script
+copy X:\travel-model-one-master\utilities\check-setupmodel\Check_SetupModelLog.py .
+IF ERRORLEVEL 1 goto done
+
 :: run setupmodel with a log
 call setupmodel > setupmodel.log 2>&1
 
