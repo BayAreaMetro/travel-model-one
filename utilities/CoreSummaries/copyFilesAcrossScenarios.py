@@ -61,6 +61,7 @@ OUTPUT_FILES = {
 # mapping based on 'run_set' column to location of model runs on M/L
 RUN_SET_MODEL_PATHS = {
     'RTP_2025IP'    :'M:\\Application\\Model One\\RTP2025\\IncrementalProgress',
+    'RTP2025'       :'M:\\Application\\Model One\\RTP2025\\Blueprint',
     'IP'            :'M:\\Application\\Model One\\RTP2021\\IncrementalProgress',
     'DraftBlueprint':'M:\\Application\\Model One\\RTP2021\\IncrementalProgress',
     'FinalBlueprint':'M:\\Application\\Model One\\RTP2021\\Blueprint',
