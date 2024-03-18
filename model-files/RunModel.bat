@@ -440,9 +440,6 @@ del *.prn
 del *.script.*
 del *.script
 
-:: run QA/QC for PBA50
-call Run_QAQC
-
 :: Success target and message
 :success
 ECHO FINISHED SUCCESSFULLY!
