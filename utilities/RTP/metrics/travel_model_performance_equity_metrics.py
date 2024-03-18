@@ -514,13 +514,9 @@ def calculate_Connected2_crowding(model_runs_dict: dict):
 
     TRN_MODE_OPERATOR_LOOKUP_FILE = METRICS_SOURCE_DIR / 'transit_system_lookup.csv'
     LOGGER.info("  Reading {}".format(TRN_MODE_OPERATOR_LOOKUP_FILE))
-    trn_mode_operator_df = pd.read_csv(TRN_MODE_OPERATOR_LOOKUP_FILE, usecols=['mode','SYSTEM','operator'])
-
-    # verify SYSTEM is unique
-    trn_mode_operator_df['SYSTEM_dupe'] = trn_mode_operator_df.duplicated(subset=['SYSTEM'], keep=False)
-    # note: it is not
-    LOGGER.debug("  trn_mode_operator_df with SYSTEM_dupe:\n{}".format(
-        trn_mode_operator_df.loc[ trn_mode_operator_df.SYSTEM_dupe == True]))
+    trn_mode_operator_df = pd.read_csv(TRN_MODE_OPERATOR_LOOKUP_FILE, usecols=['mode','operator'])
+    trn_mode_operator_df = trn_mode_operator_df.drop_duplicates(ignore_index=True)
+    LOGGER.debug("trn_mode_operator_df:\n{}".format(trn_mode_operator_df))
 
     all_trn_crowding_df = pd.DataFrame()
     for tm_runid in model_runs_dict.keys():
@@ -553,15 +549,13 @@ def calculate_Connected2_crowding(model_runs_dict: dict):
         tm_crowding_df['person_time_crowded'] = tm_crowding_df['AB_VOL']*tm_crowding_df['time_crowded']
 
         # join with SYSTEM -> operator
-        # TODO: I think joinin on SYSTEM is wrong since there are duplicates - Leaving bug in for now, but
-        # TODO: this should be fixed
         tm_crowding_df = pd.merge(
             left     = tm_crowding_df, 
             right    = trn_mode_operator_df, 
-            # left_on  = 'MODE',
-            # right_on = 'mode',
-            on       = 'SYSTEM',
-            how      = "left")
+            left_on  = 'MODE',
+            right_on = 'mode',
+            how      = "left",
+            validate = 'many_to_one')
 
         system_crowding_df = tm_crowding_df.groupby('operator').agg({
             'person_time_total'  :'sum',
@@ -741,7 +735,8 @@ def extract_Healthy1_safety(model_runs_dict: dict, args_rtp: str):
         N_bike_fatalities
         N_bike_fatalities_per_100K_pop
         N_bike_fatalities_per_100M_VMT
-        N_injuries  N_injuries_per_100K_pop
+        N_injuries
+        N_injuries_per_100K_pop
         N_injuries_per_100M_VMT
         N_motorist_fatalities
         N_motorist_fatalities_per_100K_pop
