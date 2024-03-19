@@ -732,23 +732,14 @@ def extract_Healthy1_safety(model_runs_dict: dict, args_rtp: str):
         modelrun_id
         modelrun_alias
       # these are from VZ_safety_calc_correction_V2.R
-        N_bike_fatalities
-        N_bike_fatalities_per_100K_pop
-        N_bike_fatalities_per_100M_VMT
         N_injuries
         N_injuries_per_100K_pop
         N_injuries_per_100M_VMT
-        N_motorist_fatalities
-        N_motorist_fatalities_per_100K_pop
-        N_motorist_fatalities_per_100M_VMT
-        N_ped_fatalities
-        N_ped_fatalities_per_100K_pop
-        N_ped_fatalities_per_100M_VMT
         N_total_fatalities
         N_total_fatalities_per_100K_pop
         N_total_fatalities_per_100M_VMT
-        Population 
-        annual_VMT
+        Population (for RTP2021 only)
+        annual_VMT (for RTP2021 only)
     """
     LOGGER.info("extract_Healthy1_safety()")
 
@@ -778,12 +769,64 @@ def extract_Healthy1_safety(model_runs_dict: dict, args_rtp: str):
         aliases_dict['2050_TM152_EIR_Alt1_05'] = '2050 EIR Alt1'
 
         safety_df['modelrun_alias'] = safety_df.modelrun_id.map(aliases_dict)
+
+        # only keep these
+        safety_df = safety_df[[
+            'modelrun_id',
+            'modelrun_alias',
+            'N_injuries',
+            'N_injuries_per_100K_pop',
+            'N_injuries_per_100M_VMT',
+            'N_total_fatalities',
+            'N_total_fatalities_per_100K_pop',
+            'N_total_fatalities_per_100M_VMT',
+            'Population',
+            'annual_VMT'
+        ]]
         LOGGER.debug("  aliases_dict:{}".format(aliases_dict))
         LOGGER.debug("  safety_df.head(10)\n:{}".format(safety_df.head(10)))
 
     else:
-        # TODO
-        return
+        safety_df = pd.DataFrame()
+        for tm_runid in model_runs_dict.keys():
+            if model_runs_dict[tm_runid]['run_set'] in ["IP","RTP2025_IP"]:
+                model_run_dir = TM_RUN_LOCATION_IP / tm_runid
+            else:
+                model_run_dir = TM_RUN_LOCATION_BP / tm_runid
+        
+            fatalities_injuries_file = model_run_dir / "OUTPUT" / "metrics" / "fatalities_injuries.csv"
+            LOGGER.info(f"  Reading {fatalities_injuries_file}")
+            tm_safety_df = pd.read_csv(fatalities_injuries_file)
+            LOGGER.debug("  tm_safety_df.head(10):\n{}".format(tm_safety_df))
+
+            # select only key=all, model_run_id = this one
+            tm_safety_df = tm_safety_df.loc[ (tm_safety_df.key=='all') & (tm_safety_df.model_run_id == tm_runid)]
+            # rename columns
+            tm_safety_df.rename(columns={
+                'model_run_id':'modelrun_id',
+                'N_serious_injuries':'N_injuries',
+                'N_serious_injuries_per_100K_pop':'N_injuries_per_100K_pop',
+                'N_serious_injuries_per_100M_VMT':'N_injuries_per_100M_VMT',
+                'N_fatalities_total':'N_total_fatalities',
+                'N_fatalities_per_100K_pop_total':'N_total_fatalities_per_100K_pop',
+                'N_fatalities_per_100M_VMT_total':'N_total_fatalities_per_100M_VMT',
+            }, inplace=True)
+            tm_safety_df['modelrun_alias'] = model_runs_dict[tm_runid]['Alias']
+
+            # compile with others
+            safety_df = pd.concat([safety_df, tm_safety_df])
+
+        safety_df = safety_df[[
+            'modelrun_id',
+            'modelrun_alias',
+            'N_injuries',
+            'N_injuries_per_100K_pop',
+            'N_injuries_per_100M_VMT',
+            'N_total_fatalities',
+            'N_total_fatalities_per_100K_pop',
+            'N_total_fatalities_per_100M_VMT',
+        ]]
+        LOGGER.debug("safety_df:\n{}".format(safety_df))
     
      # write it
     output_file = METRICS_OUTPUT_DIR / 'metrics_healthy1_safety.csv'
