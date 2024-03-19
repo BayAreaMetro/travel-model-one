@@ -16,3 +16,5 @@ model-files/SetUpModel_PBA50.bat.bak
 model-files/scripts/preprocess/taz_densities.job.bak
 *.bak
 model-files/SetUpModel_PBA50.log
+model-files/SetUpModel_PBA50_2035.log
+model-files/SetUpModel_PBA50_2015.log
