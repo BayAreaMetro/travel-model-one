@@ -99,8 +99,8 @@ if (PROJECT == "PBA50+") {
   BASE_YEAR                 <- 2015
   MODEL_RUN_ID_BASE_YEAR    <- "2015_TM160_IPA_06"
 
-  # 2023 and earlier runs are in IncrementalProgress
-  if (FORECAST_YEAR <= 2023) {
+  # IPA runs
+  if (str_detect(MODEL_RUN_ID_SCENARIO, "IPA")) {
     PROJECT_SCENARIOS_DIR     <- str_replace(PROJECT_SCENARIOS_DIR, "Blueprint", "IncrementalProgress")
     MODEL_FULL_DIR_BASE_YEAR  <- file.path(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_BASE_YEAR)
   }
