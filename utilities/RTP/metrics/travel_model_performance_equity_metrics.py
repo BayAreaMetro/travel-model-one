@@ -846,9 +846,67 @@ def calculate_Healthy2_commutemodeshare(model_runs_dict: dict, args_rtp: str):
         LOGGER.warn("Not implemented for RTP2021 because the methodology changed so QA code is not useful")
         return
     
-    # TODO: Implement
-    raise
+    all_jtw_modes_df = pd.DataFrame()
+    for tm_runid in model_runs_dict.keys():
+        if model_runs_dict[tm_runid]['run_set'] in ["IP","RTP2025_IP"]:
+            model_run_dir = TM_RUN_LOCATION_IP / tm_runid
+        else:
+            model_run_dir = TM_RUN_LOCATION_BP / tm_runid
+        
+        jtw_modes_file = model_run_dir / "OUTPUT" / "core_summaries" / "JourneyToWork_modes.csv"
+        LOGGER.info(f"  Reading {jtw_modes_file}")
+        jtw_modes_df = pd.read_csv(jtw_modes_file)
+        LOGGER.debug("  jtw_modes_df.head(10):\n{}".format(jtw_modes_df.head(10)))
 
+        # groupby ptype_label, wfh_choice, tour_mode
+        jtw_modes_df =  jtw_modes_df.groupby(by=['ptype_label','wfh_choice','tour_mode']).agg({'freq':'sum'}).reset_index()
+        # LOGGER.debug("  jtw_modes_df:\n{}".format(jtw_modes_df))
+
+        # keep rows with workers either making a work tour or telecommuting; drop people not working this day
+        jtw_modes_df = jtw_modes_df.loc[ (jtw_modes_df.wfh_choice == 1) | (jtw_modes_df.tour_mode > 0)]
+        # https://github.com/BayAreaMetro/modeling-website/wiki/TravelModes#tour-and-trip-modes
+        # categorize to Auto: Single Occupancy, Auto: Other, Transit, Active Modes (Bike/Walk), Telecommute
+        mode_mapping = {
+            0:  "telecommute",  # these are telecommuters
+            1:  "auto_SOV",
+            2:  "auto_SOV",
+            3:  "auto_other",
+            4:  "auto_other",
+            5:  "auto_other",
+            6:  "auto_other",
+            7:  "walk_bike",
+            8:  "walk_bike",
+            9:  "transit",
+            10: "transit",
+            11: "transit",
+            12: "transit",
+            13: "transit",
+            14: "transit",
+            15: "transit",
+            16: "transit",
+            17: "transit",
+            18: "transit",
+            19: "auto_other", # taxi
+            20: "auto_other", # tnc single
+            21: "auto_other", # tnc shared
+        }
+        jtw_modes_df = jtw_modes_df.assign(tour_mode_simple = jtw_modes_df.tour_mode.map(mode_mapping))
+        # LOGGER.debug("  jtw_modes_df.head(10):\n{}".format(jtw_modes_df))
+
+        # summarize it further to tour_mode_simple
+        jtw_modes_df =  jtw_modes_df.groupby(by=['ptype_label','tour_mode_simple']).agg({'freq':'sum'}).reset_index()
+
+        # this is sufficient; shares and ptype filtering can be done in Tableau. Ship it squirrel
+        jtw_modes_df['modelrun_id'] = tm_runid
+        jtw_modes_df['modelrun_alias'] = model_runs_dict[tm_runid]['Alias']
+        LOGGER.debug("  jtw_modes_df:\n{}".format(jtw_modes_df))
+
+        all_jtw_modes_df = pd.concat([all_jtw_modes_df, jtw_modes_df])
+
+    # write it
+    output_file = METRICS_OUTPUT_DIR / 'metrics_healthy2_commute_mode_share.csv'
+    all_jtw_modes_df.to_csv(output_file, index=False)
+    LOGGER.info("Wrote {}".format(output_file))
 
 def calculate_Vibrant1_mean_commute(model_runs_dict: dict):
     """
@@ -1008,6 +1066,7 @@ if __name__ == '__main__':
 
     # Healthy
     extract_Healthy1_safety(model_runs_dict, my_args.rtp)
+    calculate_Healthy2_commutemodeshare(model_runs_dict, my_args.rtp)
 
     # Vibrant
     calculate_Vibrant1_mean_commute(model_runs_dict)
