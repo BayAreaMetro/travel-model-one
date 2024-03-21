@@ -1,9 +1,9 @@
 USAGE = """
 
-  python Change_in_vmt_from_loaded_network.py
+  python Reliable1_change_in_travel_time.py
 
   Run this from the model run dir.
-  Processes model outputs and creates a single csv with scenario metrics, called metrics\Change_in_vmt_from_loaded_network_XX.csv
+  Processes model outputs and creates a single csv with scenario metrics, called metrics\Reliable1_change_in_travel_time_XX.csv
   
   This file will have the following columns:
     'Freeway/Non-Freeway',
@@ -36,7 +36,7 @@ NGFS_ROUND2_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2
 NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
-LOG_FILE                = "Change_in_vmt_from_loaded_network.log" # in the cwd
+LOG_FILE                = "Reliable1_change_in_travel_time.log" # in the cwd
 LOGGER                  = None # will initialize in main     
 
 # EPC lookup file - indicates whether a TAZ is designated as an EPC in PBA2050
@@ -65,33 +65,13 @@ def calculate_Reliable1_change_travel_time_on_freeways(tm_run_id: str) -> pd.Dat
     METRIC_ID = 'Reliable 1'
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
 
-    loaded_network_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period.csv")
+    loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period.csv")
+    # loaded_network_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period.csv")
+    
     loaded_network_df = pd.read_csv(loaded_network_file)
     loaded_network_df.rename(columns=lambda x: x.strip(), inplace=True)
     LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
-    LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
-
-    # load network_links_TAZ.csv as lookup df to use for equity metric:
-    #     --> calculate VMT for arterial road links in EPCs vs region
-    #         --> tolled aerterials within EPCs 
-    # load network link to TAZ lookup file
-
-    # tm_network_links_taz_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "shapefile", "network_links_TAZ.csv")
-    tm_network_links_taz_file = os.path.join('L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\2035_TM152_NGF_NP10_Path1a_02\\OUTPUT\\shapefile\\network_links_TAZ.csv')
-    tm_network_links_taz_df = pd.read_csv(tm_network_links_taz_file)[['A', 'B', 'TAZ1454', 'linktaz_share']]
-    LOGGER.info("  Read {:,} rows from {}".format(len(tm_network_links_taz_df), tm_network_links_taz_file))
-    # join to epc lookup table
-    tm_network_links_with_epc_df = pd.merge(
-        left=tm_network_links_taz_df,
-        right=NGFS_EPC_TAZ_DF,
-        left_on="TAZ1454",
-        right_on="TAZ1454",
-        how='left')
-    tm_network_links_with_epc_df = tm_network_links_with_epc_df.sort_values('linktaz_share', ascending=False).drop_duplicates(['A', 'B']).sort_index()
-    LOGGER.debug("tm_network_links_with_epc_df =\n{}".format(tm_network_links_with_epc_df))
-    
-    loaded_network_df = pd.merge(left= loaded_network_df, right= tm_network_links_with_epc_df, left_on= ['a','b'], right_on= ['A', 'B'], how='left')
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
     
     # join to tolled minor group freeway links lookup table 
@@ -105,13 +85,26 @@ def calculate_Reliable1_change_travel_time_on_freeways(tm_run_id: str) -> pd.Dat
     loaded_network_df.grouping = loaded_network_df.grouping.fillna('NA')
     loaded_network_df.grouping_dir = loaded_network_df.grouping_dir.fillna('NA')
 
-    ft_metrics_df = loaded_network_df.groupby(by=['grouping', 'grouping_dir']).agg({'ctimAM':'sum', \
+    ctim_metrics_df = loaded_network_df.groupby(by=['grouping', 'grouping_dir']).agg({'ctimAM':'sum', \
                                                                                     'ctimPM':'sum'}).reset_index()
-    LOGGER.debug("ft_metrics_df:\n{}".format(ft_metrics_df))
+    LOGGER.debug("ctim_metrics_df:\n{}".format(ctim_metrics_df))
+    
+    ctimAM_metrics_df = ctim_metrics_df.loc[(ctim_metrics_df.grouping_dir == 'AM'), ['grouping', 'ctimAM']]
+    ctimPM_metrics_df = ctim_metrics_df.loc[(ctim_metrics_df.grouping_dir == 'PM'), ['grouping', 'ctimPM']]
+    ctim_df = pd.merge(left=ctimAM_metrics_df, right=ctimPM_metrics_df, how='left', left_on=['grouping'], right_on=['grouping'])
+    ctim_df['AVGctimPEAK'] = (ctim_df['ctimAM'] + ctim_df['ctimPM'])/2
+
+    # add row for averages from the corridors
+    average_values = ctim_df.select_dtypes(include=['number']).mean()
+    # Convert the Pandas Series to a DataFrame
+    average_df = pd.DataFrame([average_values])
+    average_df['grouping'] = 'Simple Average from Corridors'
+    ctim_df = pd.concat([ctim_df, average_df], ignore_index=True)
 
     # put it together, move to long form and return
-    fwy_travel_times_df = ft_metrics_df
-    fwy_travel_times_df = fwy_travel_times_df.melt(id_vars=['grouping', 'grouping_dir'], var_name='Metric Description')
+    fwy_travel_times_df = ctim_df
+    fwy_travel_times_df = fwy_travel_times_df.melt(id_vars=['grouping'], var_name='Metric Description')
+    fwy_travel_times_df['Road Type'] = 'Congested Freeway'
     fwy_travel_times_df['Model Run ID'] = tm_run_id
     fwy_travel_times_df['Metric ID'] = METRIC_ID
     fwy_travel_times_df['Intermediate/Final'] = 'final'
@@ -120,36 +113,79 @@ def calculate_Reliable1_change_travel_time_on_freeways(tm_run_id: str) -> pd.Dat
 
     return fwy_travel_times_df
 
-# def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_run_id):
+def calculate_Reliable1_change_travel_time_on_GoodsRoutes_and_OtherFreeways(tm_run_id: str) -> pd.DataFrame:  
+    """ Calculates Reliable 1: Change in travel time on goods routes and other freeways
 
-#   # add metric for goods routes: Calculate [Change in peak hour travel time] for 3 truck routes (using link-level)
-#   # load table with links for each goods route
-#   # columns: A, B, I580_I238_I880_PortOfOakland, I101_I880_PortOfOakland, I80_I880_PortOfOakland
-#   # the table also includes links for the untolled 680 corridor (see asana task below)
-#   # https://app.asana.com/0/0/1204972308899338/f  
-#   goods_routes_a_b_links_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "goods_routes_a_b.csv")
-#   goods_routes_a_b_links_df = pd.read_csv(goods_routes_a_b_links_file)
-#   LOGGER.info("  Read {:,} rows from {}".format(len(goods_routes_a_b_links_df), goods_routes_a_b_links_file))
-#   LOGGER.debug("goods_routes_a_b_links_df.head() =\n{}".format(goods_routes_a_b_links_df.head()))
-#   # merge loaded network with df containing route information
-#   # remove HOV lanes from the network
-#   loaded_network_with_goods_routes_df = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['USEAM'] != 3)]
-#   loaded_network_with_goods_routes_df = loaded_network_with_goods_routes_df.copy()[['a','b','ctimAM','ctimPM', 'USEAM']]
-#   loaded_network_with_goods_routes_df = pd.merge(left=loaded_network_with_goods_routes_df, right=goods_routes_a_b_links_df, how='left', left_on=['a','b'], right_on=['A','B'])
-#   LOGGER.debug("loaded_network_with_goods_routes_df.head() =\n{}".format(loaded_network_with_goods_routes_df.head()))
+    Args:
+        tm_run_id (str): Travel model run ID
+    
+    Returns:
+        pd.DataFrame: with columns including
+          Metric ID          = 'Reliable 1'
+          Model Run ID        = tm_run_id
+          Intermediate/Final = final
+        Metrics return:
+          goods routes and other freeways                             Metric Description
+          goods routes and other freeways                             Travel Time       
 
-#   # sum the travel time for the different time periods on the route that begins on I580
-#   travel_time_route_I580_summed_df = loaded_network_with_goods_routes_df.copy().loc[(loaded_network_with_goods_routes_df['USEAM'] == 1)].groupby('I580_I238_I880_PortOfOakland').agg('sum')
-#   LOGGER.debug("travel_time_route_I580_summed_df.head() =\n{}".format(travel_time_route_I580_summed_df.head()))
-#   # Only use rows containing 'AM' since this is the direction toward the port of oakland
-#   AM_travel_time_route_I580 = travel_time_route_I580_summed_df.loc['AM', 'ctimAM']
-#   PM_travel_time_route_I580 = travel_time_route_I580_summed_df.loc['PM', 'ctimPM']
-#   # calculate average travel time for peak period
-#   peak_average_travel_time_route_I580 = numpy.mean([AM_travel_time_route_I580,PM_travel_time_route_I580])
-#   # enter into metrics_dict
-#   metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I580_I238_I880_PortOfOakland', 'travel_time_I580_I238_I880_PortOfOakland_AM', year] = AM_travel_time_route_I580
-#   metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I580_I238_I880_PortOfOakland', 'travel_time_I580_I238_I880_PortOfOakland_PM', year] = PM_travel_time_route_I580
-#   metrics_dict['Goods Routes', 'Peak Hour', grouping3, tm_run_id, metric_id,'intermediate','I580_I238_I880_PortOfOakland', 'peak_hour_travel_time_I580_I238_I880_PortOfOakland', year] = peak_average_travel_time_route_I580
+    Notes: Uses
+    * avgload5period.csv (for facility type breakdown)
+    """
+    
+    METRIC_ID = 'Reliable 1'
+    LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
+
+    loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
+    # loaded_network_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
+    
+    loaded_network_df = pd.read_csv(loaded_network_file)
+    loaded_network_df.rename(columns=lambda x: x.strip(), inplace=True)
+    LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
+    LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
+    LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
+
+    goods_routes_a_b_links_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "goods_routes_a_b.csv")
+    goods_routes_a_b_links_df = pd.read_csv(goods_routes_a_b_links_file)
+    goods_routes_a_b_links_df.rename(columns={"A":"a", "B":"b"}, inplace=True)
+    # merge loaded network with df containing route information
+    # remove HOV lanes from the network
+    loaded_network_with_goods_routes_df = loaded_network_df.loc[(loaded_network_df['useAM'] != 3)]
+    loaded_network_with_goods_routes_df = loaded_network_with_goods_routes_df[['a','b','ctimAM','ctimPM']]
+    loaded_network_with_goods_routes_df = pd.merge(left=loaded_network_with_goods_routes_df, right=goods_routes_a_b_links_df, how='left', left_on=['a','b'], right_on=['a','b'])    
+    loaded_network_with_goods_routes_df = loaded_network_with_goods_routes_df.melt(id_vars=['a','b','ctimAM','ctimPM'], var_name='grouping', value_name='time_period')  
+    loaded_network_with_goods_routes_df = loaded_network_with_goods_routes_df.groupby(by=['grouping', 'time_period']).agg({'ctimAM':'sum', \
+                                                                                'ctimPM':'sum'}).reset_index()
+    ctimAM_metrics_df = loaded_network_with_goods_routes_df.loc[(loaded_network_with_goods_routes_df.time_period == 'AM'), ['grouping', 'ctimAM']]
+    ctimPM_metrics_df = loaded_network_with_goods_routes_df.loc[(loaded_network_with_goods_routes_df.time_period == 'PM'), ['grouping', 'ctimPM']]
+    ctim_df = pd.merge(left=ctimAM_metrics_df, right=ctimPM_metrics_df, how='left', left_on=['grouping'], right_on=['grouping'])
+    ctim_df['AVGctimPEAK'] = (ctim_df['ctimAM'] + ctim_df['ctimPM'])/2
+
+    # add row for averages from the goods routes
+    average_values_from_goodsroutes = ctim_df.select_dtypes(include=['number']).mean()
+    # Convert the Pandas Series to a DataFrame
+    average_from_goodsroutes_df = pd.DataFrame([average_values_from_goodsroutes])
+    average_from_goodsroutes_df['grouping'] = 'Simple Average from Goods Routes'
+
+    # add row for averages from the other freeways
+    average_values_from_otherfreeways = ctim_df.select_dtypes(include=['number']).mean()
+    # Convert the Pandas Series to a DataFrame
+    average_from_otherfreeways_df = pd.DataFrame([average_values_from_otherfreeways])
+    average_from_otherfreeways_df['grouping'] = 'Simple Average from Other Freeways'
+
+    ctim_df = pd.concat([ctim_df, average_from_goodsroutes_df, average_from_otherfreeways_df], ignore_index=True)
+
+    # put it together, move to long form and return
+    grouping_travel_times_df = ctim_df
+    grouping_travel_times_df = grouping_travel_times_df.melt(id_vars=['grouping'], var_name='Metric Description')
+    grouping_travel_times_df['Road Type'] = 'Goods Routes'
+    grouping_travel_times_df.loc[(grouping_travel_times_df['grouping'].str.contains('Port') == False) & (grouping_travel_times_df['grouping'].str.contains('Goods') == False), 'Road Type'] = 'Other Freeway'
+    grouping_travel_times_df['Model Run ID'] = tm_run_id
+    grouping_travel_times_df['Metric ID'] = METRIC_ID
+    grouping_travel_times_df['Intermediate/Final'] = 'final'
+    grouping_travel_times_df['Year'] = tm_run_id[:4]
+    LOGGER.debug("grouping_travel_times_df for reliable 1:\n{}".format(grouping_travel_times_df))
+
+    return grouping_travel_times_df
 
 def determine_tolled_minor_group_links(tm_run_id: str, fwy_or_arterial: str) -> pd.DataFrame:
     """ Given a travel model run ID, reads the loaded network and the tollclass designations,
@@ -254,14 +290,12 @@ if __name__ == "__main__":
     current_runs_df = current_runs_df.loc[ current_runs_df['status'] == 'current']
     # only process metrics for 2035 model runs 
     current_runs_df = current_runs_df.loc[ current_runs_df['year'] == 2035]
-    # # TODO: delete later after NP10 runs are completed
-    # current_runs_df = current_runs_df.loc[ (current_runs_df['directory'].str.contains('NP10') == False)]
 
     LOGGER.info("current_runs_df: \n{}".format(current_runs_df))
 
-    # current_runs_list = current_runs_df['directory'].to_list()
+    current_runs_list = current_runs_df['directory'].to_list()
     
-    current_runs_list = ['2035_TM160_NGF_r2_NoProject_01', '2035_TM160_NGF_r2_NoProject_01_AOCx1.25_v2', '2035_TM160_NGF_r2_NoProject_03_pretollcalib']
+    # current_runs_list = ['2035_TM160_NGF_r2_NoProject_01', '2035_TM160_NGF_r2_NoProject_01_AOCx1.25_v2', '2035_TM160_NGF_r2_NoProject_03_pretollcalib']
     
     # find the last pathway 1 run, since we'll use that to determine which links are in the fwy minor groupings
     pathway1_runs = current_runs_df.loc[ current_runs_df['category'].str.startswith("Pathway 1")]
@@ -271,7 +305,7 @@ if __name__ == "__main__":
     # TOLLED_FWY_MINOR_GROUP_LINKS_DF.to_csv("TOLLED_FWY_MINOR_GROUP_LINKS.csv", index=False)
 
     for tm_run_id in current_runs_list:
-        out_filename = os.path.join(os.getcwd(),"Change_in_vmt_from_loaded_network_{}.csv".format(tm_run_id))
+        out_filename = os.path.join(os.getcwd(),"Reliable1_change_in_travel_time_{}.csv".format(tm_run_id))
 
         if args.skip_if_exists and os.path.exists(out_filename):
             LOGGER.info("Skipping {} -- {} exists".format(tm_run_id, out_filename))
@@ -282,7 +316,8 @@ if __name__ == "__main__":
         # results will be stored here
         metrics_df = pd.DataFrame()
 
-        metrics_df = calculate_Reliable1_change_travel_time_on_freeways(tm_run_id)
+        metrics_df = pd.concat([calculate_Reliable1_change_travel_time_on_freeways(tm_run_id),\
+            calculate_Reliable1_change_travel_time_on_GoodsRoutes_and_OtherFreeways(tm_run_id)])
         LOGGER.info("@@@@@@@@@@@@@ S2 Done")
 
         metrics_df.to_csv(out_filename, float_format='%.5f', index=False) #, header=False
