@@ -124,7 +124,7 @@ c:\windows\system32\Robocopy.exe /E "%NONRES_INPUT_DIR%"                        
 
 :: logsums and metrics
 c:\windows\system32\Robocopy.exe /E "%LOGSUMS_INPUT_DIR%"                                        INPUT\logsums
-::c:\windows\system32\Robocopy.exe /E "%METRICS_INPUT_DIR%"                                        INPUT\metrics
+c:\windows\system32\Robocopy.exe /E "%METRICS_INPUT_DIR%"                                        INPUT\metrics
 
 :: warmstart (copy from the previous run)
 mkdir INPUT\warmstart\main
