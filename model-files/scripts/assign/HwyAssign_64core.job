@@ -162,6 +162,7 @@ loop period = 1, 5
 	
         PHASE=LINKMERGE
 		IF (FFS = 0) DELETE
+		IF (LANES = 0) DELETE
 	;
         ; Capacity and Speed Lookups
         ;
