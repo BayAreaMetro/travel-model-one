@@ -65,14 +65,15 @@ def calculate_Reliable1_change_travel_time_on_freeways(tm_run_id: str) -> pd.Dat
     METRIC_ID = 'Reliable 1'
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
 
-    loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period.csv")
-    # loaded_network_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period.csv")
+    loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
+    # loaded_network_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
     
     loaded_network_df = pd.read_csv(loaded_network_file)
     loaded_network_df.rename(columns=lambda x: x.strip(), inplace=True)
     LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
+    loaded_network_df = loaded_network_df.loc[(loaded_network_df['useAM'] == 1)&(loaded_network_df['ft'] != 6)]
     
     # join to tolled minor group freeway links lookup table 
     loaded_network_df = pd.merge(left=loaded_network_df, right=TOLLED_FWY_MINOR_GROUP_LINKS_DF, how='left', left_on=['a','b'], right_on=['a','b'])
@@ -161,13 +162,13 @@ def calculate_Reliable1_change_travel_time_on_GoodsRoutes_and_OtherFreeways(tm_r
     ctim_df['AVGctimPEAK'] = (ctim_df['ctimAM'] + ctim_df['ctimPM'])/2
 
     # add row for averages from the goods routes
-    average_values_from_goodsroutes = ctim_df.select_dtypes(include=['number']).mean()
+    average_values_from_goodsroutes = ctim_df.loc[(ctim_df['grouping'].str.contains('Port') == True)].select_dtypes(include=['number']).mean()
     # Convert the Pandas Series to a DataFrame
     average_from_goodsroutes_df = pd.DataFrame([average_values_from_goodsroutes])
     average_from_goodsroutes_df['grouping'] = 'Simple Average from Goods Routes'
 
     # add row for averages from the other freeways
-    average_values_from_otherfreeways = ctim_df.select_dtypes(include=['number']).mean()
+    average_values_from_otherfreeways = ctim_df.loc[(ctim_df['grouping'].str.contains('Port') == False)].select_dtypes(include=['number']).mean()
     # Convert the Pandas Series to a DataFrame
     average_from_otherfreeways_df = pd.DataFrame([average_values_from_otherfreeways])
     average_from_otherfreeways_df['grouping'] = 'Simple Average from Other Freeways'
