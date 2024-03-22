@@ -25,10 +25,9 @@ PEMS_DATA_FILE <- "pems_period.csv"
 TM_VERSION     <- "TM1" # set to TM1 or TM2
 
 CROSSWALK_DIR  <- paste0("M:/Crosswalks/PeMSStations_",TM_VERSION,"network")
-TM_NETWORK_DIR <- "M:/Application/Model One/Networks/TM1_2015_Base_Network/shapefile"
-#TM_NETWORK_DIR <- "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v13/net_2023_Blueprint/shapefile_forPeMScrosswalk"
+#TM_NETWORK_DIR <- "M:/Application/Model One/Networks/TM1_2015_Base_Network/shapefile"
+TM_NETWORK_DIR <- "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v13/net_2023_Blueprint/shapefile_forPeMScrosswalk"
 TM_NETWORK     <- paste0(TM_VERSION,"_freeways_wgs84")
-#TM_NETWORK     <- paste0(TM_VERSION,"_2023v13_freeways_wgs84v2")
 
 VALIDATION_YEAR<- 2023
 PEMS_YEARS     <- c(2022,2023)    # select pems stations with data for these years since PEMS stations may move
