@@ -8,19 +8,19 @@
 DISTANCE_CAP = max(DISTANCE,0.25)
 
 FUNCTION
-TC[2]  = 60 * ( (DISTANCE/LI.FFS) + ( 0.25 *( ( (V/C) - 1) + ( ( ( ( (V/C) - 1)^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE_CAP^2) ) )^0.5) ) ) )
+TC[2]  = 60 * ( (DISTANCE/LI.FFS) + ( 0.25 *( ( (V/C) - 1) + ( ( ( ( (V/C) - 1)^2 ) + (16 * (lw.Ja10000/10000) * (V/C) * (DISTANCE_CAP^2) ) )^0.5) ) ) )
 
 FUNCTION
-TC[4]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE_CAP^2) ) )^0.5) ) ) )
+TC[4]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (lw.Ja10000/10000) * (V/C) * (DISTANCE_CAP^2) ) )^0.5) ) ) )
 
 FUNCTION
-TC[5]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE_CAP^2) ) )^0.5) ) ) )
+TC[5]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (lw.Ja10000/10000) * (V/C) * (DISTANCE_CAP^2) ) )^0.5) ) ) )
 
 FUNCTION
-TC[6]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE_CAP^2) ) )^0.5) ) ) )
+TC[6]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (lw.Ja10000/10000) * (V/C) * (DISTANCE_CAP^2) ) )^0.5) ) ) )
 
 FUNCTION
-TC[7]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (Ja10000/10000) * (V/C) * (DISTANCE_CAP^2) ) )^0.5) ) ) )
+TC[7]  = 60 * ( (DISTANCE/LI.FFS) + (0.25 * ( ( (V/C) - 1) + ( ( ( ( (V/C) - 1 )^2 ) + (16 * (lw.Ja10000/10000) * (V/C) * (DISTANCE_CAP^2) ) )^0.5) ) ) )
 
 FUNCTION
 TC[8]  = T0    ;For time based links congested time TC = coded time OT = T0

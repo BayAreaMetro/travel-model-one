@@ -81,6 +81,6 @@ IF (LI.FT=1-7) ; exclude centroid connectors
    Tc = (DISTANCE / CritSpd)
    To = (DISTANCE / LI.FFS)
    
-   Ja10000 = (((Tc-To)^2)/(DISTANCE^2))*10000  ;DISTANCE^2 can be deleted if deleted in Akcelik formula
+   lw.Ja10000 = (((Tc-To)^2)/(DISTANCE^2))*10000  ;DISTANCE^2 can be deleted if deleted in Akcelik formula
 
 ENDIF
