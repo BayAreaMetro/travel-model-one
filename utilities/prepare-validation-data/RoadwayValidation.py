@@ -70,7 +70,7 @@ import pandas
 
 TIMEPERIODS         = ['EA','AM','MD','PM','EV']
 TM_HOV_TO_GP_FILE   = "M:\Crosswalks\PeMSStations_TM1network\hov_to_gp_links.csv"
-PEMS_MAP_FILE       = "M:\Crosswalks\PeMSStations_TM1network\crosswalk_2015.csv"
+PEMS_MAP_FILE       = "M:\Crosswalks\PeMSStations_TM1network\crosswalk_2023.csv"
 TRUCK_MAP_FILE      = "M:\Crosswalks\PeMSStations_TM1network\\truck_census_stations_manual.csv"
 CALTRANS_MAP_FILE   = "M:\Crosswalks\CaltransCountLocations_TM1network\\typical-weekday-counts-xy-TM1link.csv"
 MODEL_FILE          = "avgload5period.csv"
