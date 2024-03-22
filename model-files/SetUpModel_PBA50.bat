@@ -24,9 +24,6 @@ set INPUT_TRN=%ALL_BCM_INPUTS%\trn
 set INPUT_NONRES=%ALL_BCM_INPUTS%\nonres
 
 
-:: TODO  set the location of the previous run (where warmstart inputs will be copied):Currently set to be the calibration folder. The trip tables will be used in the 0th iteration HwyAssignment.job step
-:: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=%ALL_BCM_INPUTS%\warmstart
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
@@ -114,6 +111,13 @@ c:\windows\system32\Robocopy.exe /E "%INPUT_NONRES%"                   							IN
 ::right now using the same values as Marin
 c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\telecommute"   		   				INPUT\landuse
 :: nonres
+
+
+:: TODO  set the location of the previous run (where warmstart inputs will be copied):Currently set to be the calibration folder. The trip tables will be used in the 0th iteration HwyAssignment.job step
+:: the INPUT folder of the previous run will also be used as the base for the compareinputs log
+set PREV_RUN_DIR=%ALL_BCM_INPUTS%\inputs_%YEAR%\warmstart
+
+
 
 :: copy the temporary transit skims to M_DIR. Created skims directory.
 mkdir skims
