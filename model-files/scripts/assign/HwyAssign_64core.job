@@ -106,7 +106,7 @@ loop period = 1, 5
       token_hov_xfer_pen = 'li.HOVXPEN'
 
       ; set the relative gap convergence criterion
-      token_relativegap = 'parameters relativegap = 0.005'
+      token_relativegap = 'parameters relativegap = 0.001'
 
       ; set the maximum number of iterations
       token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS%'
@@ -117,7 +117,7 @@ loop period = 1, 5
       token_capfac_num = '5'
       token_intrastep_processlist = token_intrastep_processlist_MD
       token_hov_xfer_pen = 'li.HOVXPEN'
-      token_relativegap = 'parameters relativegap = 0.005'
+      token_relativegap = 'parameters relativegap = 0.001'
       token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS%'
 
    elseif (period = 3)
@@ -126,7 +126,7 @@ loop period = 1, 5
       token_capfac_num = '8'
       token_intrastep_processlist = token_intrastep_processlist_EV
       token_hov_xfer_pen = 'li.HOVXPEN'
-      token_relativegap = 'parameters relativegap = 0.005'
+      token_relativegap = 'parameters relativegap = 0.001'
       token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS%'
 
    elseif (period = 4)
@@ -135,7 +135,7 @@ loop period = 1, 5
       token_capfac_num = '4'
       token_intrastep_processlist = token_intrastep_processlist_AM
       token_hov_xfer_pen = 'li.HOVXPEN'
-      token_relativegap = 'parameters relativegap = 0.005'
+      token_relativegap = 'parameters relativegap = 0.001'
       token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS%'
 
    elseif (period = 5)
@@ -144,7 +144,7 @@ loop period = 1, 5
       token_capfac_num = '4'
       token_intrastep_processlist = token_intrastep_processlist_PM
       token_hov_xfer_pen = 'li.HOVXPEN'
-      token_relativegap = 'parameters relativegap = 0.005'
+      token_relativegap = 'parameters relativegap = 0.001'
       token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS%'
 
    endif
