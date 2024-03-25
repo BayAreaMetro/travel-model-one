@@ -109,7 +109,7 @@ loop period = 1, 3
       token_relativegap = 'parameters relativegap = 0.001'
 
       ; set the maximum number of iterations
-      token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS%'
+      token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS_EA_EV%'
 
    elseif (period = 2)
       token_period = 'MD'
@@ -118,7 +118,7 @@ loop period = 1, 3
       token_intrastep_processlist = token_intrastep_processlist_MD
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.001'
-      token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS%'
+      token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS_AM_PM_MD%'
 
    elseif (period = 3)
       token_period = 'EV'
@@ -127,7 +127,7 @@ loop period = 1, 3
       token_intrastep_processlist = token_intrastep_processlist_EV
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.001'
-      token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS%'
+      token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS_EA_EV%'
 
    endif
 
@@ -404,7 +404,7 @@ loop period = 1, 2
       token_relativegap = 'parameters relativegap = 0.001'
 
       ; set the maximum number of iterations
-      token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS%'
+      token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS_AM_PM_MD%'
 
    elseif (period = 2)
       token_period = 'PM'
@@ -413,7 +413,7 @@ loop period = 1, 2
       token_intrastep_processlist = token_intrastep_processlist_PM
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.001'
-      token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS%'
+      token_maxiters = 'parameters maxiters = %MAX_HWY_ITERS_AM_PM_MD%'
 
    endif
 
