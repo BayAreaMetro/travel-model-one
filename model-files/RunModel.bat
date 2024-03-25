@@ -282,7 +282,8 @@ set ITER=0
 set PREV_ITER=0
 set WGT=1.0
 set PREV_WGT=0.00
-set MAX_HWY_ITERS=20
+set MAX_HWY_ITERS_EA_EV=5
+set MAX_HWY_ITERS_AM_PM_MD=12
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -315,7 +316,8 @@ set WGT=1.0
 set PREV_WGT=0.00
 set SAMPLESHARE=0.15
 set SEED=0
-set MAX_HWY_ITERS=20
+set MAX_HWY_ITERS_EA_EV=7
+set MAX_HWY_ITERS_AM_PM_MD=16
 
 :: Runtime configuration: set the workplace shadow pricing parameters
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --iter %ITER%
@@ -348,7 +350,8 @@ set WGT=0.50
 set PREV_WGT=0.50
 set SAMPLESHARE=0.15
 set SEED=0
-set MAX_HWY_ITERS=20
+set MAX_HWY_ITERS_EA_EV=7
+set MAX_HWY_ITERS_AM_PM_MD=16
 
 :: Runtime configuration: set the workplace shadow pricing parameters
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --iter %ITER%
@@ -379,7 +382,8 @@ set WGT=0.33
 set PREV_WGT=0.67
 set SAMPLESHARE=0.15
 set SEED=0
-set MAX_HWY_ITERS=40
+set MAX_HWY_ITERS_EA_EV=14
+set MAX_HWY_ITERS_AM_PM_MD=24
 
 :: Runtime configuration: set the workplace shadow pricing parameters
 python CTRAMP\scripts\preprocess\RuntimeConfiguration.py --iter %ITER%
