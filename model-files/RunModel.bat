@@ -379,11 +379,11 @@ if %PROJECT%==NGF goto core_summaries
 
 : logsums
 
-:: call RunAccessibility
-:: if ERRORLEVEL 2 goto done
+call RunAccessibility
+if ERRORLEVEL 2 goto done
 
-:: call RunLogsums
-:: if ERRORLEVEL 2 goto done
+call RunLogsums
+if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
