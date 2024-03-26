@@ -19,18 +19,17 @@ echo on
 call CTRAMP\runtime\SetPath.bat
 
 ::  Set the IP address of the host machine which sends tasks to the client machines 
-if %computername%==MODEL2-A set HOST_IP_ADDRESS=192.168.1.206
-if %computername%==MODEL2-B set HOST_IP_ADDRESS=192.168.1.207
-if %computername%==MODEL2-C set HOST_IP_ADDRESS=192.168.1.208
-if %computername%==MODEL2-D set HOST_IP_ADDRESS=192.168.1.209
-if %computername%==MODEL3-A set HOST_IP_ADDRESS=10.164.0.200
-if %computername%==MODEL3-B set HOST_IP_ADDRESS=10.164.0.201
-if %computername%==MODEL3-C set HOST_IP_ADDRESS=10.164.0.202
-if %computername%==MODEL3-D set HOST_IP_ADDRESS=10.164.0.203
-if %computername%==PORMDLPPW01 set HOST_IP_ADDRESS=172.24.0.101
-if %computername%==PORMDLPPW02 set HOST_IP_ADDRESS=172.24.0.102
-if %computername%==SATMODEL set HOST_IP_ADDRESS=192.168.1.201
-if %computername%==SATMODEL4 set HOST_IP_ADDRESS=192.168.1.205
+if %computername%==MODEL2-A            set HOST_IP_ADDRESS=10.1.1.206
+if %computername%==MODEL2-B            set HOST_IP_ADDRESS=192.168.1.207
+if %computername%==MODEL2-C            set HOST_IP_ADDRESS=192.168.1.208
+if %computername%==MODEL2-D            set HOST_IP_ADDRESS=192.168.1.209
+if %computername%==MODEL3-A            set HOST_IP_ADDRESS=10.164.0.200
+if %computername%==MODEL3-B            set HOST_IP_ADDRESS=10.164.0.201
+if %computername%==MODEL3-C            set HOST_IP_ADDRESS=10.164.0.202
+if %computername%==MODEL3-D            set HOST_IP_ADDRESS=10.164.0.203
+if %computername%==PORMDLPPW01         set HOST_IP_ADDRESS=172.24.0.101
+if %computername%==PORMDLPPW02         set HOST_IP_ADDRESS=172.24.0.102
+if %computername%==WIN-FK0E96C8BNI     set HOST_IP_ADDRESS=10.0.0.154
 
 :: ShadowPricing should come from baseline run, copied into logsums by SetUpModel.bat
 :: If it's not there, this is a baseline
