@@ -96,7 +96,6 @@ c:\windows\system32\Robocopy.exe /NP /E "%GITHUB_DIR%\utilities\RTP\metrics"   C
 copy /Y "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"                CTRAMP\scripts
 copy /Y "%GITHUB_DIR%\model-files\RunIteration.bat"                        CTRAMP
 copy /Y "%GITHUB_DIR%\model-files\RunModel.bat"                            .
-copy /Y "%GITHUB_DIR%\model-files\RunAccessibility.bat"                    .
 copy /Y "%GITHUB_DIR%\model-files\RunLogsums.bat"                          .
 copy /Y "%GITHUB_DIR%\model-files\RunCoreSummaries.bat"                    .
 copy /Y "%GITHUB_DIR%\model-files\RunPrepareEmfac.bat"                     .
