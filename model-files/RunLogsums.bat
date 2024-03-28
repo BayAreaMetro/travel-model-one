@@ -101,6 +101,17 @@ if not exist core_summaries\AccessibilityMarkets.csv (
   IF %ERRORLEVEL% GTR 0 goto done
 )
 
+:: ------------------------------------------------------------------------------------------------------
+::
+:: Step 5:  Accessibilities (logsums) for Bay Area UrbanSim
+::
+:: ------------------------------------------------------------------------------------------------------
+
+if not exist logsums\subzone_logsums_for_BAUS.csv (
+  rem Create accessibility logsums for BAUS weighted by market segment
+  python CTRAMP\scripts\core_summaries\createAccessibilitiesForBAUS.py
+  IF %ERRORLEVEL% GTR 0 goto done
+)
 :: Complete target and message
 :done
 ECHO FINISHED.  
