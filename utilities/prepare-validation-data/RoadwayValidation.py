@@ -69,7 +69,7 @@ import argparse, os, sys
 import pandas
 
 TIMEPERIODS         = ['EA','AM','MD','PM','EV']
-TM_HOV_TO_GP_FILE   = "M:\Crosswalks\PeMSStations_TM1network\hov_to_gp_links_{}.csv" # include model_year
+TM_HOVnEL_TO_GP_FILE= "M:\Crosswalks\PeMSStations_TM1network\HOVnEL_to_GP_links_{}.csv" # include model_year
 PEMS_MAP_FILE       = "M:\Crosswalks\PeMSStations_TM1network\crosswalk_{}.csv"  # include model_year
 TRUCK_MAP_FILE      = "M:\Crosswalks\PeMSStations_TM1network\\truck_census_stations_manual.csv"
 CALTRANS_MAP_FILE   = "M:\Crosswalks\CaltransCountLocations_TM1network\\typical-weekday-counts-xy-TM1link.csv"
@@ -194,7 +194,7 @@ if __name__ == '__main__':
     # the model data has a, b, lanes, vol*
     # but some of these links are HOV links and the volums should be summed to the same link as the non-hov link
     # read the hov -> gp mapping
-    model_hov_to_gp_df = pandas.read_csv(TM_HOV_TO_GP_FILE.format(args.model_year))
+    model_hov_to_gp_df = pandas.read_csv(TM_HOVnEL_TO_GP_FILE.format(args.model_year))
     # keep only those where we succeeded finding GP for now
     model_hov_to_gp_df = model_hov_to_gp_df.loc[ model_hov_to_gp_df.A_B_GP != "NA_NA"]
     # print(model_hov_to_gp_df.head())
