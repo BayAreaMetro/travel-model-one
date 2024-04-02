@@ -46,7 +46,7 @@
 #      a) INPUT\landuse\tazData.csv - for population
 #      b) OUTPUT\avgload5period.csv - for loaded network VMT
 #      c) OUTPUT\shapefile\network_links_TAZ.csv - used with TAZ_EPC_LOOKUP associate links to EPC
-#         This is not used for base year.
+#         This is not used for base year.  Use cube-to-shapefile\correspond_link_to_TAZ.py to generate this
 #   4) Additionally, for the base year, the observed values. See observed_fatalities_injuries()
 #
 #  Output files:

@@ -1,6 +1,6 @@
 USAGE = """
 
-  Joins network link shapefile to TAZ (or any otherr) shapefile and determines correspondence between link => shape, portion of link
+  Joins network link shapefile to TAZ (or any other) shapefile and determines correspondence between link => shape, portion of link
   Note that some links may span more than one shape.
 
   Output csv has the following columns:
@@ -13,6 +13,10 @@ USAGE = """
 
   Requires GeoPandas. 
   TODO: Add geopandas to tm15-python310 environment (https://github.com/BayAreaMetro/modeling-website/wiki/SetupConfiguration)
+
+  Example usage:
+  PS [M_dir for model run]\OUTPUT\shapefile> python X:\\travel-model-one-master\\utilities\\cube-to-shapefile\\correspond_link_to_TAZ.py 
+    network_links.shp network_links_TAZ.csv
 
   Developed for task: Calculate metrics for emissions and fatalities at TAZ level
   https://app.asana.com/0/13098083395690/1195902248890525/f
