@@ -126,7 +126,7 @@ set emfac_input_template=ByVehFuel_%emfacVersion%_%1_Yr%MODEL_YEAR%_11Subareas.x
 copy "CTRAMP\scripts\emfac\Custom_Activity_Templates\%emfac_input_template%" emfac_prep\%emfac_input_template%
 
 :: run the emfac input template prep script
-python CTRAMP\scripts\emfac\emfac_prep.py
+python CTRAMP\scripts\emfac\emfac_prep.py ByVehFuel_%emfacVersion%_%1_Yr%MODEL_YEAR%_11Subareas.xlsx
 
 
 
