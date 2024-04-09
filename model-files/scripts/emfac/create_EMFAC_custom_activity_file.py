@@ -27,10 +27,10 @@ USAGE = """
        3) Sub-Area - and then selecting the 11 Sub-Areas in the 9 Bay Area Counites
 
     Inputs: 
-      1) emfrac/emfac_prep/CreateSpeedBinsBetweenZones_sums.csv
-      2) emfrac/emfac_prep/CreateSpeedBinsWithinZones_sums.csv
+      1) [OUTPUT/]emfac/emfac_prep/CreateSpeedBinsBetweenZones_sums.csv
+      2) [OUTPUT/]emfac/emfac_prep/CreateSpeedBinsWithinZones_sums.csv
     Outputs:
-      1) emfac/{args.analysis_type}/  (one of ['SB375','EIR','AQConformity'])
+      1) [OUTPUT/]emfac/{args.analysis_type}/  (one of ['SB375','EIR','AQConformity'])
            E{args.emfac_version}/
              E{args.emfac_version}_{MODEL_RUN_ID}_{args.season}.xlsx  => Custom Activity File
              E{args.emfac_version}_{MODEL_RUN_ID}_{args.season}.log   => Log file
@@ -146,7 +146,7 @@ def overwrite_worksheet_data(sheet, sheet_cols, sheet_index_cols, new_data_df):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description=USAGE)
+    parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--analysis_type",                 required=True, choices=['SB375','EIR','AQConformity'],
                         help="IF SB375 passed, assume 'Generate SB375 Template' is true")
     parser.add_argument("--emfac_version",                 required=True, choices=['2014','2017','2021'])
