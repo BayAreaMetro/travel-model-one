@@ -14,7 +14,7 @@
 : make sure the user specifies either SB375 or Plan-EIR in the argument
 IF "%1"=="" (
   ECHO Please make sure the required arguments are specified.
-  ECHO First argument can be either "SB375" or "EIR"
+  ECHO First argument can be either "SB375" or "EIR""
   ECHO Second argument should always WithFreight, until further notice.
   ECHO For example, the command for running this script can be: RunPrepareEmfac.bat SB375 WithFreight 
   GOTO :end
@@ -106,8 +106,7 @@ if %1==EIR (
 )
 
 :: run the emfac prep script with arguments related to how we'll run emfac
-:: python CTRAMP\scripts\emfac\emfac_prep.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season annual --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
-python E:\GitHub\travel-model-one\model-files\scripts\emfac\emfac_prep.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season annual --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
+python CTRAMP\scripts\emfac\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season annual --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
 
 
 :end
