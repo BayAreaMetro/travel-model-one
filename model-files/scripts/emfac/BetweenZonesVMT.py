@@ -22,7 +22,7 @@ loadednet_df = pd.read_csv(os.path.join(os.getcwd(), "hwy", "iter3", "avgload5pe
 
 # Todo: add truck or no truck
 
-output_csv = "emfac_prep\\CreateSpeedBinsBetweenZones_sums.csv"
+output_csv = "emfac\\emfac_prep\\CreateSpeedBinsBetweenZones_sums.csv"
 
 
 # -------------------------------------------------------------------
