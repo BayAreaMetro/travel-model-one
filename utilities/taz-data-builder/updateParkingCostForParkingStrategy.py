@@ -17,7 +17,7 @@ import argparse, logging, os, sys
 import numpy, pandas
 
 LOG_FILE                  = "updateParkingCostForParkingStrategy.log"
-TAZ_GG_TRA_FILE           = "M:\\Application\\Model One\\RTP2025\\INPUT_DEVELOPMENT\\parking_strategy\\taz1454_GG_TRA_crosswalk.csv"
+TAZ_GG_TRA_FILE           = "M:\\Application\\Model One\\RTP2025\\INPUT_DEVELOPMENT\\parking_strategy\\taz1454_GGnonPPA_TRA_crosswalk.csv"
 PCT_AREA_THRESHOLD        = 0.20
 BASE_PARKING_MIN_COST     = 25.0 # 2000 cents
 STRATEGY_PARKING_INCREASE = 1.25 # multiplier
