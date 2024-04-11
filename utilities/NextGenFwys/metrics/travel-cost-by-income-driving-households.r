@@ -363,7 +363,7 @@ add_detailed_cost <- function(model_params, this_timeperiod, input_trips) {
     # apply means-based value toll factor
     relevant <- mutate(relevant,
         value_toll = ifelse(incQ == 1, model_params$means_based_toll_q1_factor*value_toll, value_toll),
-        value_toll = ifelse(incQ == 2, model_params$means_based_toll_q1_factor*value_toll, value_toll)
+        value_toll = ifelse(incQ == 2, model_params$means_based_toll_q2_factor*value_toll, value_toll)
     )
 
     # summarize with means-based toll factors
