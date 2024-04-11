@@ -70,13 +70,13 @@ if __name__ == '__main__':
 
     # base or strategy: apply BASE_PARKING_MIN_COST to TAZs in GG (determined by threshold)
     logging.info("Applying minimum parking price of {} to GG".format(BASE_PARKING_MIN_COST))
-    tazdata_df.loc[ (tazdata_df.pct_area_within_GG >= PCT_AREA_THRESHOLD)&(tazdata_df[ "PRKCST"]<BASE_PARKING_MIN_COST),  "PRKCST"] = BASE_PARKING_MIN_COST
-    tazdata_df.loc[ (tazdata_df.pct_area_within_GG >= PCT_AREA_THRESHOLD)&(tazdata_df["OPRKCST"]<BASE_PARKING_MIN_COST), "OPRKCST"] = BASE_PARKING_MIN_COST
+    tazdata_df.loc[ (tazdata_df.pct_area_within_GGnonPPA >= PCT_AREA_THRESHOLD)&(tazdata_df[ "PRKCST"]<BASE_PARKING_MIN_COST),  "PRKCST"] = BASE_PARKING_MIN_COST
+    tazdata_df.loc[ (tazdata_df.pct_area_within_GGnonPPA >= PCT_AREA_THRESHOLD)&(tazdata_df["OPRKCST"]<BASE_PARKING_MIN_COST), "OPRKCST"] = BASE_PARKING_MIN_COST
 
     # strategy only: apply STRATEGY_PARKING_INCREASE to TAZs in GG+TRA (determined by threshold)
     logging.info("Applying strategy parking increase of {}".format(STRATEGY_PARKING_INCREASE))
-    tazdata_df.loc[ tazdata_df.pct_area_within_GG_TRA >= PCT_AREA_THRESHOLD,  "PRKCST"] = tazdata_df[ "PRKCST"]*STRATEGY_PARKING_INCREASE
-    tazdata_df.loc[ tazdata_df.pct_area_within_GG_TRA >= PCT_AREA_THRESHOLD, "OPRKCST"] = tazdata_df["OPRKCST"]*STRATEGY_PARKING_INCREASE
+    tazdata_df.loc[ tazdata_df.pct_area_within_GGnonPPA_TRA >= PCT_AREA_THRESHOLD,  "PRKCST"] = tazdata_df[ "PRKCST"]*STRATEGY_PARKING_INCREASE
+    tazdata_df.loc[ tazdata_df.pct_area_within_GGnonPPA_TRA >= PCT_AREA_THRESHOLD, "OPRKCST"] = tazdata_df["OPRKCST"]*STRATEGY_PARKING_INCREASE
 
     # output full version for debug
     debug_file = args.output_tazdata.replace(".csv", ".debug.csv")
