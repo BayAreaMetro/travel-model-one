@@ -65,6 +65,9 @@ copy nonres\ixDailyx4.tpp         extractor\nonres
 copy nonres\tripsIX*.tpp          extractor\nonres
 copy nonres\tripsTrk*.tpp         extractor\nonres
 
+:: take the whole emfac foler
+c:\windows\system32\Robocopy.exe /E emfac extractor\emfac
+
 :: copy skims\hwyskmEA.tpp extractor\emfac\hwyskmEA.tpp
 :: copy skims\hwyskmAM.tpp extractor\emfac\hwyskmAM.tpp
 :: copy skims\hwyskmMD.tpp extractor\emfac\hwyskmMD.tpp
