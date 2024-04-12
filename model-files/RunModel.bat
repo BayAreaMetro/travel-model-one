@@ -379,11 +379,8 @@ if %PROJECT%==NGF goto core_summaries
 
 : logsums
 
-:: call RunAccessibility
-:: if ERRORLEVEL 2 goto done
-
-:: call RunLogsums
-:: if ERRORLEVEL 2 goto done
+call RunLogsums
+if ERRORLEVEL 2 goto done
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -444,9 +441,6 @@ Cluster "%COMMPATH%\CTRAMP" 1-48 Close Exit
 del *.prn
 del *.script.*
 del *.script
-
-:: run QA/QC for PBA50
-call Run_QAQC
 
 :: Success target and message
 :success

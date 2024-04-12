@@ -18,17 +18,19 @@ library(dplyr)
 library(reshape)
 library(foreign)
 
-HOME_DIR       <- Sys.getenv("HOME")
-BOX_PEMS_DIR   <- file.path(HOME_DIR, "../Box/Modeling and Surveys/Share Data/pems-typical-weekday")  # Box Drive default
+#HOME_DIR       <- Sys.getenv("HOME")
+HOME_DIR       <- "//tsclient/C/Users/ftsang"
+BOX_PEMS_DIR   <- file.path(HOME_DIR, "/Box/Modeling and Surveys/Share Data/pems-typical-weekday")  # Box Drive default
 PEMS_DATA_FILE <- "pems_period.csv"
 TM_VERSION     <- "TM1" # set to TM1 or TM2
 
 CROSSWALK_DIR  <- paste0("M:/Crosswalks/PeMSStations_",TM_VERSION,"network")
-TM_NETWORK_DIR <- "M:/Application/Model One/Networks/TM1_2015_Base_Network/shapefile/freeflow_links.dbf"
+#TM_NETWORK_DIR <- "M:/Application/Model One/Networks/TM1_2015_Base_Network/shapefile"
+TM_NETWORK_DIR <- "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v13/net_2023_Blueprint/shapefile_forPeMScrosswalk"
 TM_NETWORK     <- paste0(TM_VERSION,"_freeways_wgs84")
 
-VALIDATION_YEAR<- 2015
-PEMS_YEARS     <- c(2014,2015,2016)    # select pems stations with data for these years since PEMS stations may move
+VALIDATION_YEAR<- 2023
+PEMS_YEARS     <- c(2022,2023)    # select pems stations with data for these years since PEMS stations may move
 
 # output files
 CROSSWALK_FILE <- "crosswalk"  # will output csv and dbf

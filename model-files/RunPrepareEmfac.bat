@@ -1,28 +1,29 @@
-:: ** Work in progress batch file to execute steps needed for EMFAC2014 input            **
-:: ** Now only running"SumSpeedBins1.awk" script version which accounts for the          **
-:: ** entire 9 County VMT [not Air Basin only] including Eastern Solano and Northern     **
-:: ** Sonoma Counties.   ** With Original Speed Bin Ranges  **                           **
-:: ** Based on Model One Version 0.3 Year [Forecast Yr]_03_YYY Run for VMT Calibration   **
-:: ** New Futures Runs for Fuel Consumption and Fuel Economy Estimates                   **
-:: ** These runs forward account for speed bin VMT overlap      hmb.   12/11/19.         **
-
+:: This can be run from a model run directory on a modeling machine OR
+:: from the model run directory on M.
+::
+:: However, the first time it runs it needs to run on a modeling machine
+:: since the modeling output files are used. The functionality for running
+:: on M is for testing variations later.
+::
 :: added an argument to indicate whether we are running emfac with no trucks
 :: To run this batch file, use command: 
 :: RunPrepareEmfac.bat SB375 WithFreight 
 :: (Or, RunPrepareEmfac.bat Plan-EIR WithFreight)
-
+::
 
 : make sure the user specifies either SB375 or Plan-EIR in the argument
-IF "%1"=="" (ECHO Hi! Please make sure the required arguments are specified.
-             ECHO First argument can be either "SB375" or "Plan-EIR""
-             ECHO Second argument should always WithFreight, until further notice.
-             ECHO For example, the command for running this script can be: RunPrepareEmfac.bat SB375 WithFreight 
-             GOTO :end)
+IF "%1"=="" (
+  ECHO Please make sure the required arguments are specified.
+  ECHO First argument can be either "SB375" or "EIR""
+  ECHO Second argument should always WithFreight, until further notice.
+  ECHO For example, the command for running this script can be: RunPrepareEmfac.bat SB375 WithFreight 
+  GOTO :end
+)
 
 IF %1==SB375    goto check_argument2
-IF %1==Plan-EIR  goto check_argument2 
+IF %1==EIR      goto check_argument2 
 :: if neither, print error_message
-ECHO Hi! Please make sure "SB375" or "Plan-EIR" is specified. Note that it is case-sensitive.
+ECHO Please make sure "SB375" or "EIR" is specified. Note that it is case-sensitive.
 GOTO :end
 
 : make sure the user specifies either NoFreight or WithFreight in the argument
@@ -30,56 +31,39 @@ GOTO :end
 IF %2==NoFreight    goto start
 IF %2==WithFreight  goto start 
 :: if neither, print error_message
-ECHO Hi! Please make sure "NoFreight" or "WithFreight" is specified. Note that it is case-sensitive.
+ECHO Please make sure "NoFreight" or "WithFreight" is specified. Note that it is case-sensitive.
 GOTO :end
- 
+
+:: If we're running on the M drive, paths are relative to OUTPUT
+set EMFAC_DIR=emfac
+if exist OUTPUT\ (
+  set EMFAC_DIR=OUTPUT\emfac
+)
+
 :start
-call  ctramp\runtime\setpath
-mkdir emfac_prep
+mkdir %EMFAC_DIR%\emfac_prep
 
 :: Step One
-python ctramp\scripts\emfac\betweenzonesvmt.py
+:: input:  hwy\iter3\avgload5period_vehclasses.csv
+:: output: emfac\emfac_prep\CreateSpeedBinsBetweenZones_sums.csv
+if not exist %EMFAC_DIR%\emfac_prep\CreateSpeedBinsBetweenZones_sums.csv (
+  python ctramp\scripts\emfac\betweenzonesvmt.py
+)
 
 :: Step Two
-call runtpp CTRAMP\scripts\emfac\CreateSpeedBinsWithinZones.job
+:: input:  main\trips[EA|AM|MD|PM|EV].tpp
+::         skims\hwyskm[EA|AM|MD|PM|EV].tpp
+::         skims\com_hwyskim[EA|AM|MD|PM|EV].tpp
+:: output: emfac\emfac_prep\CreateSpeedBinsWithinZones_sums.csv
+::         emfac\emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv
+if not exist %EMFAC_DIR%\emfac_prep\CreateSpeedBinsWithinZones_sums.csv (
+  call runtpp CTRAMP\scripts\emfac\CreateSpeedBinsWithinZones.job
 
-:: Step Three
+  rem if we want to run emfac without freight, use the "no truck" file
+  if %2==NoFreight rename %EMFAC_DIR%\emfac_prep\CreateSpeedBinsWithinZones_sums.csv %EMFAC_DIR%\emfac_prep\CreateSpWithinZones_NotUsed.csv
 
-: if we want to run emfac without freight, use the "no truck" file
-if %2==NoFreight rename emfac_prep\CreateSpeedBinsWithinZones_sums.csv CreateSpWithinZones_NotUsed.csv
-
-:: if we want to run emfac with freight, use the "with truck" files 
-if %2==WithFreight rename emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv CreateSpWithinZonesNoTruck_NotUsed.csv
-
-:: --------------------------------------------------------------------------------------------
-:: copy the EMFAC relevant custom activity template based on analysis year and SB375/notSB375
-:: --------------------------------------------------------------------------------------------
-:: Figure out the model year
-set MODEL_DIR=%CD%
-set PROJECT_DIR=%~p0
-set PROJECT_DIR2=%PROJECT_DIR:~0,-1%
-:: get the base dir only
-for %%f in (%PROJECT_DIR2%) do set myfolder=%%~nxf
-:: the first four characters are model year
-set MODEL_YEAR=%myfolder:~0,4%
-
-:: MODEL YEAR ------------------------- make sure it's numeric --------------------------------
-set /a MODEL_YEAR_NUM=%MODEL_YEAR% 2>nul
-if %MODEL_YEAR_NUM%==%MODEL_YEAR% (
-  echo Numeric model year [%MODEL_YEAR%]
-) else (
-  echo Couldn't determine numeric model year from project dir [%PROJECT_DIR%]
-  echo Guessed [%MODEL_YEAR%]
-  exit /b 2
-)
-:: MODEL YEAR ------------------------- make sure it's in [2000,3000] -------------------------
-if %MODEL_YEAR% LSS 2000 (
-  echo Model year [%MODEL_YEAR%] is less than 2000
-  exit /b 2
-)
-if %MODEL_YEAR% GTR 3000 (
-  echo Model year [%MODEL_YEAR%] is greater than 3000
-  exit /b 2
+  rem if we want to run emfac with freight, use the "with truck" files 
+  if %2==WithFreight rename %EMFAC_DIR%\emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv %EMFAC_DIR%\emfac_prep\CreateSpWithinZonesNoTruck_NotUsed.csv
 )
 
 :: Figure out the EMFAC version
@@ -101,30 +85,28 @@ if %MODEL_YEAR% GTR 3000 (
 :: Year 2040 - Emfac2017 (AQ Conformity)
 :: Year 2050 - Emfac2017 (AQ Conformity + EIR)
 
-if %1==SB375 if %MODEL_YEAR%==2005 (set emfacVersion=Emfac2007)
-if %1==SB375 if %MODEL_YEAR%==2015 (set emfacVersion=Emfac2014)
-if %1==SB375 if %MODEL_YEAR%==2020 (set emfacVersion=Emfac2014)
-if %1==SB375 if %MODEL_YEAR%==2035 (set emfacVersion=Emfac2014)
-if %1==SB375 if %MODEL_YEAR%==2050 (set emfacVersion=Emfac2014)
+if %1==SB375 (
+  if %MODEL_YEAR%==2005 (set emfacVersion=2007)
+  if %MODEL_YEAR%==2015 (set emfacVersion=2014)
+  if %MODEL_YEAR%==2020 (set emfacVersion=2014)
+  if %MODEL_YEAR%==2023 (set emfacVersion=2014)
+  :: rem for SACOG's federal air quality plan
+  if %MODEL_YEAR%==2026 (set emfacVersion=2014)
+  if %MODEL_YEAR%==2035 (set emfacVersion=2014)
+  if %MODEL_YEAR%==2050 (set emfacVersion=2014)
+)
 
-if %1==Plan-EIR if %MODEL_YEAR%==2015 (set emfacVersion=Emfac2017)
-if %1==Plan-EIR if %MODEL_YEAR%==2020 (set emfacVersion=Emfac2017)
-if %1==Plan-EIR if %MODEL_YEAR%==2030 (set emfacVersion=Emfac2017)
-if %1==Plan-EIR if %MODEL_YEAR%==2035 (set emfacVersion=Emfac2017)
-if %1==Plan-EIR if %MODEL_YEAR%==2040 (set emfacVersion=Emfac2017)
-if %1==Plan-EIR if %MODEL_YEAR%==2050 (set emfacVersion=Emfac2017)
+if %1==EIR (
+  if %MODEL_YEAR%==2015 (set emfacVersion=2017)
+  if %MODEL_YEAR%==2020 (set emfacVersion=2017)
+  if %MODEL_YEAR%==2030 (set emfacVersion=2017)
+  if %MODEL_YEAR%==2035 (set emfacVersion=2017)
+  if %MODEL_YEAR%==2040 (set emfacVersion=2017)
+  if %MODEL_YEAR%==2050 (set emfacVersion=2017)
+)
 
-:: additional years for SACOG's federal air quality plan
-if %1==SB375 if %MODEL_YEAR%==2023 (set emfacVersion=Emfac2014)
-if %1==SB375 if %MODEL_YEAR%==2026 (set emfacVersion=Emfac2014)
-
-:: as an example, the custom activity template for SB375 and analysis year 2035 is named as ByVehFuel_Emfac2014_SB375_Yr2035_11Subareas
-set emfac_input_template=ByVehFuel_%emfacVersion%_%1_Yr%MODEL_YEAR%_11Subareas.xlsx
-copy "CTRAMP\scripts\emfac\Custom_Activity_Templates\%emfac_input_template%" emfac_prep\%emfac_input_template%
-
-:: run them emfac input template prep script
-python CTRAMP\scripts\emfac\emfac_prep.py
-
+:: run the emfac prep script with arguments related to how we'll run emfac
+python CTRAMP\scripts\emfac\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season annual --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
 
 
 :end

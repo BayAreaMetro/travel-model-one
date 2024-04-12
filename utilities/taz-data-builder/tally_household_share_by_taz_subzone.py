@@ -31,8 +31,8 @@ if __name__ == '__main__':
     parser.add_argument("output_file",      help='Output file')
     args = parser.parse_args()
 
-    pandas.set_option('max_columns',   200)
-    pandas.set_option('display.width', 200)
+    pandas.set_option('display.max_columns', 200)
+    pandas.set_option('display.width',       200)
 
     parcel_data_file     = os.path.join(URBANSIM_RUN_DIR, args.parcel_data_file)
     print(" {:20}: {}".format("parcel_data_file", parcel_data_file))
@@ -58,8 +58,15 @@ if __name__ == '__main__':
     print(parcel_data_df.head())
 
     # join
-    parcel_data_df = pandas.merge(left=parcel_data_df, right=parcel_to_subzone_df, how="left", left_on="parcel_id", right_on="PARCEL_ID")
+    parcel_data_df = pandas.merge(
+        left=parcel_data_df, 
+        right=parcel_to_subzone_df, 
+        how="left", 
+        left_on="parcel_id",
+        right_on="PARCEL_ID",
+        indicator=True)
     print("After merge, parcel_data_df.head():\n{}".format(parcel_data_df.head()))
+    print("parcel_data_df._merge:\n{}".format(parcel_data_df._merge.value_counts()))
 
     # summarize to taz and subzone
     taz_subzone_hh = parcel_data_df.groupby(['ZONE_ID','subzone']).agg({'tothh':'sum'}).reset_index()

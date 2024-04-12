@@ -176,6 +176,7 @@ MODE_NUM_TO_NAME = {
     103:["Tiburon Ferry",                             "Other"      ],
     104:["Vallejo Baylink Ferry",                     "Other"      ],
     105:["South City Ferry",                          "Other"      ],
+    107:["Treasure Island Ferry",                     "Other"      ],
     # Light Rail
     110:["MUNI Metro",                                "SF_Muni"    ],
     111:["Santa Clara VTA LRT",                       "SC_VTA"     ],

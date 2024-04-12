@@ -402,12 +402,12 @@ run pgm = matrix
       list = "countyName, arbCounty, speedBin, hour01, hour02, hour03, hour04, hour05, hour06,",
              "hour07, hour08, hour09, hour10, hour11, hour12, hour13, hour14, hour15, hour16,",
              "hour17, hour18, hour19, hour20, hour21, hour22, hour23, hour24",
-             file = emfac_prep\CreateSpeedBinsWithinZones_sums.csv
+             file = emfac\emfac_prep\CreateSpeedBinsWithinZones_sums.csv
 
       list = "countyName, arbCounty, speedBin, hour01, hour02, hour03, hour04, hour05, hour06,",
              "hour07, hour08, hour09, hour10, hour11, hour12, hour13, hour14, hour15, hour16,",
              "hour17, hour18, hour19, hour20, hour21, hour22, hour23, hour24",
-             file = emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv
+             file = emfac\emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv
 
       ; build an array to let us write out the results in alphabetical order
       array _alphaCounty = 10
@@ -582,7 +582,7 @@ run pgm = matrix
                    _vmtArray[_speedBin * 100 + 16](8.2),",", _vmtArray[_speedBin * 100 + 17](8.2),",", _vmtArray[_speedBin * 100 + 18](8.2),",",
                    _vmtArray[_speedBin * 100 + 19](8.2),",", _vmtArray[_speedBin * 100 + 20](8.2),",", _vmtArray[_speedBin * 100 + 21](8.2),",",
                    _vmtArray[_speedBin * 100 + 22](8.2),",", _vmtArray[_speedBin * 100 + 23](8.2),",", _vmtArray[_speedBin * 100 + 24](8.2),
-                   file = emfac_prep\CreateSpeedBinsWithinZones_sums.csv
+                   file = emfac\emfac_prep\CreateSpeedBinsWithinZones_sums.csv
 
             list = _countyName,",",_arbCounty,",",_speedBin,",",
                    _vmtArray_NoTrk[_speedBin * 100 + 1](8.2), ",", _vmtArray_NoTrk[_speedBin * 100 + 2](8.2), ",", _vmtArray_NoTrk[_speedBin * 100 + 3](8.2), ",",
@@ -593,7 +593,7 @@ run pgm = matrix
                    _vmtArray_NoTrk[_speedBin * 100 + 16](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 17](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 18](8.2),",",
                    _vmtArray_NoTrk[_speedBin * 100 + 19](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 20](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 21](8.2),",",
                    _vmtArray_NoTrk[_speedBin * 100 + 22](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 23](8.2),",", _vmtArray_NoTrk[_speedBin * 100 + 24](8.2),
-                  file = emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv
+                  file = emfac\emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv
 
 
 

@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_14
+set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_17
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
@@ -31,19 +31,19 @@ set UrbanSimScenario=s24
 
 :: set the location of the input directories for non resident travel, logsums and metrics
 set NONRES_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_06
-set LOGSUMS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\logsums_dummies
-set METRICS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\metrics_FinalBlueprint
+set LOGSUMS_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\logsums_dummies
+set METRICS_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\metrics\metrics_01
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_13
+set PREV_RUN_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_16
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
 set PARAMS=X:\travel-model-one-master\utilities\RTP\config_RTP2025\params_2035_IPA.properties
 
 :: set the location of the overrides directory (for Blueprint strategies)
-set BP_OVERRIDE_DIR=%GITHUB_DIR%\utilities\RTP\strategy_overrides
+set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-overrides
 
 :: ------------------------------------------------------------------------------------------------------
 ::

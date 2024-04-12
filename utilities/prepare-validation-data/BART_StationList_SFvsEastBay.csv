@@ -1,0 +1,51 @@
+BART_stations,NodeName,SF_vs_EastBay
+RM,BART Richmond,East_Bay
+EN,BART El Cerrito Del Norte,East_Bay
+EP,BART El Cerrito Plaza,East_Bay
+NB,BART North Berkeley,East_Bay
+BK,BART Berkeley,East_Bay
+AS,BART Ashby,East_Bay
+MA,BART MacArthur,East_Bay
+19th,BART 19th St./Oakland,East_Bay
+12th,BART 12th St./Oakland City Center,East_Bay
+LM,BART Lake Merritt,East_Bay
+FV,BART Fruitvale,East_Bay
+CL,BART Coliseum/Oakland Airport,East_Bay
+SL,BART San Leandro,East_Bay
+BF,BART Bay Fair,East_Bay
+HY,BART Hayward,East_Bay
+SH,BART South Hayward,East_Bay
+UC,BART Union City,East_Bay
+FM,BART Fremont,East_Bay
+CN,BART Concord,East_Bay
+PH,BART Pleasant Hill,East_Bay
+WC,BART Walnut Creek,East_Bay
+LF,BART Lafayette,East_Bay
+OR,BART Orinda,East_Bay
+RR,BART Rockridge,East_Bay
+OW,BART West Oakland,East_Bay
+EM,BART Embarcadero,SF
+MT,BART Montgomery,SF
+PL,BART Powell,SF
+CC,BART Civic Center,SF
+16th,BART 16th St. Mission,SF
+24th,BART 24th St. Mission,SF
+GP,BART Glen Park,SF
+BP,BART Balboa Park,SF
+DC,BART Daly City,SF
+CM,BART Colma,SF
+CV,BART Castro Valley,East_Bay
+ED,BART Dublin/Pleasanton,East_Bay
+NC,BART North Concord,East_Bay
+WP,BART Pittsburg/Bay Point,East_Bay
+SS,BART South San Francisco,SF
+SB,BART San Bruno,SF
+SO,BART SFO,SF
+MB,BART Millbrae,SF
+WD,BART West Dublin,East_Bay
+OA,BART Coliseum/Oakland Airport,East_Bay
+WS,BART Warm Springs,East_Bay
+ML,BART Milpitas - SR237,East_Bay
+BE,BART Berryessa,East_Bay
+PC,EBART Railroad Avenue,East_Bay
+AN,EBART Hillcrest,East_Bay

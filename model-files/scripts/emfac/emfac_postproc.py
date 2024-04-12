@@ -5,26 +5,14 @@ USAGE = """
 
     To run this script, start from the model run directory, e.g. A:\Projects\2050_TM152_FBP_PlusCrossing_16
 
-    - Set M_DIR according to the path in setupmodel.bat, so the output will get copied to the right place on the M drive
-      e.g. set M_DIR=M:\Application\Model One\RTP2021\Blueprint\2050_TM152_FBP_PlusCrossing_16
-
-    - Run this scrpit, with SB375 or EIR as an argument
-      e.g. python ctramp/scripts/emfac/emfac_postproc.py SB375
+    - Run this script, with two arguments: SB375 or EIR, and M_DIR
+      e.g. python ctramp\scripts\emfac\emfac_postproc.py SB375  "M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160_IPA_17"
 
 """
 
+import argparse, glob, shutil, os
+import openpyxl
 import pandas as pd
-
-import os.path
-from os import path
-
-import shutil 
-import glob
-
-from openpyxl import load_workbook
-from openpyxl.utils.dataframe import dataframe_to_rows
-
-import argparse
 
 # -------------------------------------------------------------------
 # Input/output file names and locations
@@ -33,7 +21,8 @@ project_dir = os.getcwd()
 run_id = project_dir.split('\\')[-1]
 
 parser = argparse.ArgumentParser(description=USAGE)
-parser.add_argument("emfacVersion", help="Specify SB375 or EIR.")
+parser.add_argument("emfacVersion", help="Specify SB375 or EIR", choices=["SB375","EIR"])
+parser.add_argument("M_DIR", help="Specify the M_DIR path for this model run")
 args = parser.parse_args()
 
 if args.emfacVersion=="SB375":
@@ -63,7 +52,7 @@ print("Generating a regional-level summary of the EMFAC output")
 print("================================================================")
 
 print("\nLoading the workbook "+emfac_output_xlsx_fullpath)
-workbook = load_workbook(filename=emfac_output_xlsx_fullpath)
+workbook = openpyxl.load_workbook(filename=emfac_output_xlsx_fullpath)
 print("\nWhat are the different tabs in this workbook?")
 print(workbook.sheetnames)
 
@@ -106,20 +95,18 @@ EMFACsummary_df.to_csv(output_csv, header=True, index=False)
 print("\nFinished writing out the regional-level EMFAC results to emfac_prep\\emfac_ghg.csv")
 
 # copy emfac_ghg.csv back to the metrics folder in the model output directory on M
-M_DIR = os.getenv('M_DIR')
-
-M_OUTPUT = os.path.join(M_DIR, "OUTPUT") 
+M_OUTPUT = os.path.join(args.M_DIR, "OUTPUT") 
 if not os.path.isdir(M_OUTPUT):
     os.mkdir(M_OUTPUT)
 
-M_METRICS = os.path.join(M_DIR, "OUTPUT", "metrics") 
+M_METRICS = os.path.join(args.M_DIR, "OUTPUT", "metrics") 
 if not os.path.isdir(M_METRICS):
     os.mkdir(M_METRICS)
 
-shutil.copy2("emfac_prep\\emfac_ghg.csv", os.path.join(M_DIR,"OUTPUT","metrics"))
+shutil.copy2("emfac_prep\\emfac_ghg.csv", os.path.join(args.M_DIR,"OUTPUT","metrics"))
 
 # copy the output of EMFAC 2014 back to the metrics folder in the model output directory on M
-M_EMFAC = os.path.join(M_DIR, "OUTPUT", "emfac") 
+M_EMFAC = os.path.join(args.M_DIR, "OUTPUT", "emfac") 
 if not os.path.isdir(M_EMFAC):
     os.mkdir(M_EMFAC)
 

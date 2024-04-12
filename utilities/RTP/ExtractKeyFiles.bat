@@ -46,8 +46,9 @@ copy logs\feedback.rpt    extractor\feedback.rpt
 copy logs\SpeedErrors.log extractor\SpeedErrors.log
 
 :: Skim databases
-mkdir extractor\skimDB
-copy database\*.csv extractor\skimDB\*.csv
+:: These are huge - don't do this until final runs
+:: mkdir extractor\skimDB
+:: copy database\*.csv extractor\skimDB\*.csv
 
 :: Trip tables
 mkdir extractor\main
@@ -86,12 +87,6 @@ copy nonres\tripsTrk*.tpp         extractor\nonres
 copy CTRAMP\runtime\mtcTourBased.properties extractor\mtcTourBased.properties
 copy CTRAMP\runtime\mtcTourBased.properties extractor\logsums.properties
 
-:: Accessibility files
-mkdir extractor\accessibilities
-copy accessibilities\nonMandatoryAccessibilities.csv extractor\accessibilities
-copy accessibilities\mandatoryAccessibilities.csv    extractor\accessibilities
-copy skims\accessibility.csv                         extractor\accessibilities
-
 :: Accessibility files - model results
 mkdir extractor\logsums
 copy logsums\householdData_%ITER%.csv                extractor\logsums
@@ -106,11 +101,9 @@ copy logsums\workDCLogsum.csv                        extractor\logsums
 copy logsums\person_workDCLogsum.csv                 extractor\logsums
 copy logsums\mandatoryAccessibilities.csv            extractor\logsums
 copy logsums\nonMandatoryAccessibilities.csv         extractor\logsums
-
-mkdir extractor\logsums\ForUrbanSim
-copy logsums\mandatoryAccessibilities.csv            extractor\logsums\ForUrbanSim\mandatoryAccessibilities_%model_year%_%UrbanSimScenario%.csv 
-copy logsums\nonMandatoryAccessibilities.csv         extractor\logsums\ForUrbanSim\nonMandatoryAccessibilities_%model_year%_%UrbanSimScenario%.csv   
-copy core_summaries\AccessibilityMarkets.csv         extractor\logsums\ForUrbanSim\AccessibilityMarkets_%model_year%_%UrbanSimScenario%.csv   
+:: for BAUS
+copy logsums\subzone_logsums_for_BAUS.csv            extractor\logsums
+copy logsums\taz_logsums_for_BAUS.csv                extractor\logsums
 
 :: Core summaries
 mkdir extractor\core_summaries

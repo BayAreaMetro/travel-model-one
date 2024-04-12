@@ -16,7 +16,7 @@ library(dplyr)
 ##################
 
 # users to specify the project directory:
-PROJECT_DIR = "M:/Application/Model One/RTP2025/IncrementalProgress/2015_TM160_IPA_03"
+PROJECT_DIR = "M:/Application/Model One/RTP2025/IncrementalProgress/2015_TM160_IPA_05"
 
 # typically, users do not need to specify other input paths, as they do not change across model runs
 # onboard survey data
@@ -146,4 +146,6 @@ compare_df <- full_join(
 )
 
 # output the observed vs modelled table
-write.csv(compare_df, file.path(PROJECT_DIR, "OUTPUT", "validation", "transit", "ridership_observed_vs_modelled.csv"), row.names = FALSE)
+OUTPUT_FILE <- file.path(PROJECT_DIR, "OUTPUT", "validation", "transit", "ridership_observed_vs_modelled.csv")
+write.csv(compare_df, OUTPUT_FILE, row.names = FALSE)
+print(paste("Wrote", OUTPUT_FILE))

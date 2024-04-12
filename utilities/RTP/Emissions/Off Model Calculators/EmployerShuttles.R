@@ -19,6 +19,7 @@ if (length(args) != 2) {
 MODEL_DATA_BASE_DIRS<- c(RTP2021_IP    ="M:/Application/Model One/RTP2021/IncrementalProgress",
                          RTP2021       ="M:/Application/Model One/RTP2021/Blueprint",
                          RTP2025_IP    ="M:/Application/Model One/RTP2025/IncrementalProgress",
+                         RTP2025       ="M:/Application/Model One/RTP2025/Blueprint",
                          TRR           ="L:/Application/Model_One/TransitRecovery")
 MODEL_RUNS_FILE     <- args[1]
 OUTPUT_DIR          <- args[2]

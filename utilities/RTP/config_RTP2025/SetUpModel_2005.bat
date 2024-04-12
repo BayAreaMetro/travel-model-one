@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2005_TM160_IPA_03
+set M_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2005_TM160_IPA_04
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=No
@@ -22,7 +22,7 @@ set INPUT_POPLU=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\LandUse_n_Pop
 
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
-set UrbanSimScenario=s24
+set UrbanSimScenario=NA
 
 :: set the location of the input directories for non resident travel, logsums and metrics
 set NONRES_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\nonres\nonres_05
@@ -34,7 +34,7 @@ set LOGSUMS_INPUT_DIR=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\logsums
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=M:\Application\Model One\RTP2021\IncrementalProgress\2005_TM152_IPA_03
+set PREV_RUN_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2005_TM160_IPA_03
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
@@ -102,7 +102,6 @@ copy /Y "%GITHUB_DIR%\model-files\RunPrepareEmfac.bat"                     .
 copy /Y "%GITHUB_DIR%\utilities\RTP\RunMetrics.bat"                        .
 copy /Y "%GITHUB_DIR%\utilities\RTP\RunScenarioMetrics.bat"                .
 copy /Y "%GITHUB_DIR%\utilities\RTP\ExtractKeyFiles.bat"                   .
-copy /Y "%GITHUB_DIR%\utilities\check-setupmodel\Check_SetupModelLog.py"   .
 
 if "%COMPUTER_PREFIX%" == "WIN-" (copy "%GITHUB_DIR%\utilities\monitoring\notify_slack.py"  "CTRAMP\scripts\notify_slack.py")
 if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.59
