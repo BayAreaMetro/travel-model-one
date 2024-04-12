@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGFr2_NP04_Path1_01_TripTollCapTest
+set M_DIR=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGFr2_NP03_Path1_01
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 :: The NGF NoProject scenario excludes some Blueprint strategies. Most of them are excluded via the netspec.
@@ -15,8 +15,8 @@ set AddStrategies=Yes
 set NGFNoProject=No
 
 :: set the location of the Travel Model Release/Branch
-:: set GITHUB_DIR=X:\travel-model-one-MinVtoll_TollCap
-set GITHUB_DIR=X:\travel-model-one-TripTollCap
+set GITHUB_DIR=X:\travel-model-one-MinVtoll_TollCap
+
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
 set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys_Round2\INPUT_DEVELOPMENT\Networks\R2_ALT
@@ -46,7 +46,7 @@ set PREV_RUN_DIR=M:\Application\Model One\RTP2025\IncrementalProgress\2035_TM160
 :: often the properties file is on master during the active application phase
 :: set PARAMS=\\mainmodel\MainModelShare\travel-model-one-master\config\params_PBA50_Blueprint2035.properties
 :: set PARAMS=X:\travel-model-one-master\utilities\RTP\config_RTP2025\params_2035_IPA.properties
-set PARAMS=X:\travel-model-one-TripTollCap\utilities\NextGenFwys\config_NGF_Round2\params_NGFr2_P1_AllLaneTolling.properties
+set PARAMS=%GITHUB_DIR%\utilities\NextGenFwys\config_NGF_Round2\params_NGFr2_P1_AllLaneTolling.properties
 
 :: set the location of the overrides directory (for Blueprint strategies)
 set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-overrides
@@ -54,7 +54,7 @@ set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-over
 :: use special input tolls.csv?
 set SwapTollsCsv=Yes
 :: if the above is Yes, where is the input tolls.csv?
-set TOLLS_CSV=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGFr2_NP04_Path1_01\INPUT_prep\tolls.csv
+set TOLLS_CSV=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGFr2_NP03_Path1_01\INPUT_prep\tolls.csv
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -139,6 +139,11 @@ if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.59
 :: networks
 c:\windows\system32\Robocopy.exe /NP /E "%INPUT_NETWORK%\hwy"                                        INPUT\hwy
 c:\windows\system32\Robocopy.exe /NP /E "%INPUT_NETWORK%\trn"                                        INPUT\trn
+
+:: for NextGenFwy
+if %SwapTollsCsv%==Yes (
+    copy /Y "%TOLLS_CSV%"                                                                            INPUT\hwy\tolls.csv
+    )
 
 :: popsyn and land use
 c:\windows\system32\Robocopy.exe /NP /E "%INPUT_POPLU%\popsyn"                                       INPUT\popsyn
