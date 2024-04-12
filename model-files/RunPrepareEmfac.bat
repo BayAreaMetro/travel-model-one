@@ -11,6 +11,9 @@
 :: (Or, RunPrepareEmfac.bat Plan-EIR WithFreight)
 ::
 
+echo on
+setlocal enabledelayedexpansion
+
 : make sure the user specifies either SB375 or Plan-EIR in the argument
 IF "%1"=="" (
   ECHO Please make sure the required arguments are specified.
@@ -34,13 +37,13 @@ IF %2==WithFreight  goto start
 ECHO Please make sure "NoFreight" or "WithFreight" is specified. Note that it is case-sensitive.
 GOTO :end
 
+:start
 :: If we're running on the M drive, paths are relative to OUTPUT
 set EMFAC_DIR=emfac
 if exist OUTPUT\ (
   set EMFAC_DIR=OUTPUT\emfac
 )
-
-:start
+echo EMFAC_DIR=%EMFAC_DIR%
 mkdir %EMFAC_DIR%\emfac_prep
 
 :: Step One
