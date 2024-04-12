@@ -170,6 +170,10 @@ model_parameters <- function(target_dir) {
         "means_based_toll_q1_factor"        ="^Means_Based_Tolling_Q1Factor\\s*=\\s*([[:digit:].]+)\\s*.*$",
         "means_based_toll_q2_factor"        ="^Means_Based_Tolling_Q2Factor\\s*=\\s*([[:digit:].]+)\\s*.*$",
         "means_based_toll_q2_factor"        ="^Means_Based_Tolling_Q2Factor\\s*=\\s*([[:digit:].]+)\\s*.*$",
+        #trip toll cap
+        "TollCap_Q2subsetCutOff"            ="^hhldinc_cutoff\\s*=\\s*([[:digit:].]+)\\s*.*$",
+        "TollCap_Q1_InCents"                ="^TripTollCap_Q1 \\s*=\\s*([[:digit:].]+)\\s*.*$",
+        "TollCap_Q2subset_InCents"          ="^TripTollCap_firstXpercentOfQ2\\s*=\\s*([[:digit:].]+)\\s*.*$",
         "means_based_cordon_toll_q1_factor" ="^Means_Based_Cordon_Tolling_Q1Factor\\s*=\\s*([[:digit:].]+)\\s*.*$",
         "means_based_cordon_toll_q2_factor" ="^Means_Based_Cordon_Tolling_Q2Factor\\s*=\\s*([[:digit:].]+)\\s*.*$",
         "means_based_fare_q1_factor"        ="^Means_Based_Fare_Q1Factor\\s*=\\s*([[:digit:].]+)\\s*.*$",
@@ -211,6 +215,9 @@ print.model_parameters <- function(params) {
     print("model_parameters - means-based discounts")
     print(paste("  means_based_toll_q1_factor        =",params$means_based_toll_q1_factor))
     print(paste("  means_based_toll_q2_factor        =",params$means_based_toll_q2_factor))
+    print(paste("  TollCap_Q2subsetCutOff            =",params$TollCap_Q2subsetCutOff))
+    print(paste("  TollCap_Q1_InCents                =",params$TollCap_Q1_InCents))
+    print(paste("  TollCap_Q2subset_InCents          =",params$TollCap_Q2subset_InCents))
     print(paste("  means_based_cordon_toll_q1_factor =",params$means_based_cordon_toll_q1_factor))
     print(paste("  means_based_cordon_toll_q2_factor =",params$means_based_cordon_toll_q2_factor))
     print(paste("  means_based_fare_q1_factor        =",params$means_based_fare_q1_factor))
@@ -360,10 +367,11 @@ add_detailed_cost <- function(model_params, this_timeperiod, input_trips) {
     else {
         relevant <- mutate(relevant, cordon_toll=NA)
     }
-    # apply means-based value toll factor
+    # apply means-based value toll factor and trip toll cap
     relevant <- mutate(relevant,
-        value_toll = ifelse(incQ == 1, model_params$means_based_toll_q1_factor*value_toll, value_toll),
-        value_toll = ifelse(incQ == 2, model_params$means_based_toll_q2_factor*value_toll, value_toll)
+        value_toll = ifelse(incQ == 1,                                                 model_params$means_based_toll_q1_factor * pmin(value_toll, model_params$TollCap_Q1_InCents), value_toll),
+        value_toll = ifelse(incQ == 2 & income < model_params$TollCap_Q2subsetCutOff,  model_params$means_based_toll_q2_factor * pmin(value_toll, model_params$TollCap_Q2subset_InCents), value_toll),
+        value_toll = ifelse(incQ == 2 & income >= model_params$TollCap_Q2subsetCutOff, model_params$means_based_toll_q2_factor * value_toll, value_toll)
     )
 
     # summarize with means-based toll factors
