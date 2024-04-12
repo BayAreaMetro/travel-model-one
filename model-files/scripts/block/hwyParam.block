@@ -41,6 +41,9 @@ Means_Based_Tolling_Q2Factor  = xx.xx         ; a factor between 0 to 1 indicati
 Means_Based_Cordon_Tolling_Q1Factor = xx.xx   ; a factor between 0 to 1 indicating the cordon toll discount by income group
 Means_Based_Cordon_Tolling_Q2Factor = xx.xx   ; a factor between 0 to 1 indicating the cordon toll discount by income group
 
+; set by RuntimeConfiguration.py -- Minimum value toll, in 2000 cents
+min_vtoll = xx.xx
+
 ; set by RuntimeConfiguration.py -- Trip toll cap (aka pseudo monthly toll cap)
 ; these factors are not used in assignment; they are only used in summarization (e.g., sumAutoTimes.job and CoreSummaries.R)
 TripTollCap_Q1  = xxxx.xx                   ; trip toll cap for household income group Q1, in 2000 cents
