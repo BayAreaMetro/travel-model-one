@@ -155,6 +155,7 @@ if __name__ == '__main__':
     parser.add_argument("--season",                        required=True, choices=['annual','summer','winter'])
     parser.add_argument("--VMT_data_type",                 required=True, choices=['totalDailyVMT','VMTbyVehFuelType'])
     parser.add_argument("--custom_hourly_speed_fractions", action='store_true', help="For 'Custom Hourly Speed Fractions' checkbox")
+    parser.add_argument("--file_suffix", required=False, help="Optional suffix for output folders/files; to QA/compare against manually created versions")
 
     args = parser.parse_args()
 
@@ -163,7 +164,9 @@ if __name__ == '__main__':
     assert((calendar_year >= 2000) & (calendar_year <= 2050))
 
     # ================= Input custom activity template file is based on the emfac args =================
-    input_custom_activity_template = f"E{args.emfac_version}_{args.run_mode}_{args.sub_area}_{calendar_year}_{args.season}_{args.VMT_data_type}"
+    # Note that the template is the same for all seasons, so our templates will just reflect annual
+    # And we'll change the custom activity file to reflect args.season later
+    input_custom_activity_template = f"E{args.emfac_version}_{args.run_mode}_{args.sub_area}_{calendar_year}_annual_{args.VMT_data_type}"
     # store true are optional add-ins
     if args.custom_hourly_speed_fractions:
         input_custom_activity_template = input_custom_activity_template + "_CustSpeed"
@@ -175,9 +178,9 @@ if __name__ == '__main__':
     input_custom_activity_template_fullpath = pathlib.Path(__file__).parent / "Custom_Activity_Templates" / input_custom_activity_template
 
     # ================= Output custom activity file is based on Harold's convention =================
-    output_custom_activity_file = f"E{args.emfac_version}_{MODEL_RUN_ID}_{args.season}.xlsx"
+    output_custom_activity_file = f"E{args.emfac_version}_{MODEL_RUN_ID}_{args.season}{args.file_suffix}.xlsx"
     # and it's local
-    output_custom_activity_dir = CWD_OUTPUT / "emfac" / args.analysis_type / f"E{args.emfac_version}"
+    output_custom_activity_dir = CWD_OUTPUT / "emfac" / args.analysis_type / f"E{args.emfac_version}{args.file_suffix}"
     # create it since log file will go there
     output_custom_activity_dir.mkdir(parents=True, exist_ok=True)
     output_custom_activity_file_fullpath = output_custom_activity_dir / output_custom_activity_file
@@ -335,6 +338,21 @@ if __name__ == '__main__':
     logging.info("================================================================")
     logging.info("Reading from and writing to the EMFAC Custom Activity Template")
     logging.info("================================================================")
+
+    workbook = openpyxl.load_workbook(filename=input_custom_activity_template_fullpath)
+    logging.info("Workbook sheetnames: {}".format(workbook.sheetnames))
+
+    # custom activity template is annual
+    # if args.season differs, update settings
+    if args.season != 'annual':
+        logging.info("-------------settings --------------------")
+        sheet = workbook["Settings"]
+
+        logging.info("sheet[A3].value=[{}]".format(sheet["A3"].value))
+        assert(sheet["A3"].value == "Season/Month")
+        sheet["B4"] = args.season.capitalize()
+        logging.info(f"Saved Settings > Season/Month to {args.season.capitalize()}")
+
     # -------------------------------------------------------------------
     # Reading from and writing to the EMFAC Custom Activity Template
     # Part 1: custom_hourly_speed_fractions
@@ -342,8 +360,6 @@ if __name__ == '__main__':
     if args.custom_hourly_speed_fractions:
         logging.info("------------- custom_hourly_speed_fractions --------------------")
         logging.info(f"Loading the workbook {input_custom_activity_template_fullpath}")
-        workbook = openpyxl.load_workbook(filename=input_custom_activity_template_fullpath)
-        logging.info("Workbook sheetnames: {}".format(workbook.sheetnames))
 
         # select the hourly fraction worksheet
         sheet = workbook["Hourly_Fraction_Veh_Tech_Speed"]
@@ -357,6 +373,9 @@ if __name__ == '__main__':
         DefaultHourlyFraction_df = pd.DataFrame(DefaultHourlyFraction, columns=sheet_cols)
         logging.info("Finished reading <Hourly_Fraction_Veh_Tech_Speed>")
         logging.debug("DefaultHourlyFraction_df with columns={}:\n{}".format(sheet_cols, DefaultHourlyFraction_df))
+        # log Veh_Tech categories
+        Veh_Tech_List = DefaultHourlyFraction_df.Veh_Tech.unique().tolist()
+        logging.debug("DefaultHourlyFraction_df.Veh_Tech:\n{}".format(str("\n").join(Veh_Tech_List)))
         
         # Some further notes about the "Hourly_Fraction_Veh_Tech_Speed" worksheet:
 
