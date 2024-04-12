@@ -33,6 +33,9 @@ If no iteration is specified, then these include:
  * Means Based Fare (Q1 and Q2) factors
    + They will be propagated to CTRAMP\\scripts\\block\\trnParam.block
                                 CTRAMP\\runtime\\mtcTourBased.properties
+ * Trip toll cap (aka pseudo monthly toll cap)
+   + They will be propagated to CTRAMP\\scripts\\block\\hwyParam.block
+                                CTRAMP\\runtime\\mtcTourBased.properties
  * HSR Interregional trips disable flag
    + It will be propagated to CTRAMP\\scripts\\block\\trnParam.block
  * Host IP - where the household manager, matrix manager and JPPF Server run
@@ -93,7 +96,7 @@ def check_tazdata():
     tazdata_file = os.path.join("INPUT", "landuse", "tazData.csv")
     tazdata_df = pandas.read_csv(tazdata_file)
     tazdata_cols = list(tazdata_df.columns)
-    
+
     # check if the CORDON and CORDONCOST columns are in tazdata
     assert("CORDON" in tazdata_cols)
     assert("CORDONCOST" in tazdata_cols)
@@ -109,7 +112,7 @@ def check_tazdata():
         print("No cordons found in tollclasses")
         return
 
-    for i in cordon_toll: 
+    for i in cordon_toll:
         tollam_da = float(toll_df.loc[(toll_df.tollclass == i)]['tollam_da'])
         try:
             CORDONCOST = float(tazdata_df.loc[tazdata_df.CORDON == i].groupby('CORDON').agg({'CORDONCOST':'mean'})['CORDONCOST'])/100
@@ -117,7 +120,7 @@ def check_tazdata():
             CORDONCOST = None # Handle errors occur when some tollclass from tolls.csv don't exist in tazData.csv
 
         if tollam_da != CORDONCOST:
-            print("ERROR: tollclass "+ str(i)+" from toll.csv tollam_da DOESN'T match with tazData.csv CORDONCOST") 
+            print("ERROR: tollclass "+ str(i)+" from toll.csv tollam_da DOESN'T match with tazData.csv CORDONCOST")
             assert tollam_da == CORDONCOST, "ERROR: tollclass "+ str(i)+" from toll.csv tollam_da DOESN'T matches with tazData.csv CORDONCOST"
         else:
             print("tollclass "+ str(i)+" from toll.csv tollam_da matches with tazData.csv CORDONCOST")
@@ -243,6 +246,18 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     MeansBasedCordonFareQ1Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q1Factor"))
     MeansBasedCordonFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
 
+    # toll cap
+    TripTollCapQ1Factor            = float(get_property(params_filename, params_contents, "TripTollCap_Q1"))
+    TripTollCapFirstXpcOfQ2Factor  = float(get_property(params_filename, params_contents, "TripTollCap_firstXpercentOfQ2"))
+    HhldIncCutOff_forQ2subset      = float(get_property(params_filename, params_contents, "hhldinc_cutoff"))
+
+    # We decided to disable the feature to apply the trip toll cap to a subset of Q2 
+    # in order to minimize the time and effort required to modify the summarization script sumautotimes.job
+    # see: https://app.asana.com/0/0/1206291367285833/1207048219216893/f
+    # raise an assertion error if HhldIncCutOff_forQ2subset is not equal to 60000
+    if HhldIncCutOff_forQ2subset != 60000:
+       raise AssertionError("The feature to apply the toll cap to a subset of Q2 is disabled; hhldinc_cutoff in the properties file has to be equal to 60000.")
+
     # WFH factors
     WFHFullTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_FullTimeWorker_Factor"))
     WFHPartTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_PartTimeWorker_Factor"))
@@ -318,6 +333,11 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ2Factor
     replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ1Factor
     replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ2Factor
+
+    # toll cap
+    replacements[filepath]["(\nTripTollCap_Q1[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % TripTollCapQ1Factor
+    replacements[filepath]["(\nTripTollCap_firstXpercentOfQ2[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % TripTollCapFirstXpcOfQ2Factor
+    replacements[filepath]["(\nhhldinc_cutoff[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % HhldIncCutOff_forQ2subset
 
     # WFH factors
     replacements[filepath]["(\nCDAP.WFH.FullTimeWorker.Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WFHFullTimeWorkerFactor
@@ -451,6 +471,9 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     MeansBasedFareQ2Factor        = float(get_property(params_filename, params_contents, "Means_Based_Fare_Q2Factor"))
     MeansBasedCordonFareQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q1Factor"))
     MeansBasedCordonFareQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
+    TripTollCapQ1Factor           = float(get_property(params_filename, params_contents, "TripTollCap_Q1"))
+    TripTollCapFirstXpcOfQ2Factor = float(get_property(params_filename, params_contents, "TripTollCap_firstXpercentOfQ2"))
+    HhldIncCutOff_forQ2subset     = float(get_property(params_filename, params_contents, "hhldinc_cutoff"))
     HSRInterregionalDisable       =   int(get_property(params_filename, params_contents, "HSR_Interregional_Disable"))
 
     # put the av pce factors into the CTRAMP\scripts\block\hwyParam.block
@@ -473,6 +496,10 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
     replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ1Factor
     replacements[filepath]["(\nMeans_Based_Cordon_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonTollsQ2Factor
+
+    replacements[filepath]["(\nTripTollCap_Q1[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % TripTollCapQ1Factor
+    replacements[filepath]["(\nTripTollCap_firstXpercentOfQ2[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % TripTollCapFirstXpcOfQ2Factor
+    replacements[filepath]["(\nhhldinc_cutoff[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % HhldIncCutOff_forQ2subset
 
     # put the means based fare discount factors into CTRAMP\scripts\block\trnParam.block
     filepath = os.path.join("CTRAMP","scripts","block","trnParam.block")

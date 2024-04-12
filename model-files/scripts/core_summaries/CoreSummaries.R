@@ -33,6 +33,7 @@ if (JUST_MES=="1") {
 # read means-based cost factors
 MBT_factors <- readLines(file.path(TARGET_DIR,"ctramp/scripts/block/hwyParam.block"))
 MBF_factors <- readLines(file.path(TARGET_DIR,"ctramp/scripts/block/trnParam.block"))
+TollCap_factors <- readLines(file.path(TARGET_DIR,"ctramp/scripts/block/hwyParam.block"))
 
 MBT_Q1_line <- grep("Means_Based_Tolling_Q1Factor",MBT_factors,value=TRUE)
 MBT_Q1_string <- substr(MBT_Q1_line,32,39)
@@ -48,6 +49,20 @@ MBF_Q2_line <- grep("Means_Based_Fare_Q2Factor",MBF_factors,value=TRUE)
 MBF_Q2_string <- substr(MBF_Q2_line,29,36)
 MBF_Q2_factor <- as.numeric(MBF_Q2_string)
 
+TollCap_Q1_line <- grep("TripTollCap_Q1", TollCap_factors,value=TRUE)
+TollCap_Q1_string <- substr(TollCap_Q1_line,19,22)
+TollCap_Q1_InCents <- as.numeric(TollCap_Q1_string)
+TollCap_Q2subset_line <- grep("TripTollCap_firstXpercentOfQ2", TollCap_factors,value=TRUE)
+TollCap_Q2subset_string <- substr(TollCap_Q2subset_line,34,39)
+TollCap_Q2subset_InCents <- as.numeric(TollCap_Q2subset_string)
+TollCap_Q2subsetCutOff_line   <- grep("hhldinc_cutoff", TollCap_factors,value=TRUE)
+TollCap_Q2subsetCutOff_string <- substr(TollCap_Q2subsetCutOff_line,18,22)
+TollCap_Q2subsetCutOff <- as.numeric(TollCap_Q2subsetCutOff_string)
+
+
+print(paste("Trip toll cap for household income group Q1, in 2000 cents:", TollCap_Q1_InCents))
+print(paste("Trip toll cap for the first X% of household income group Q2, in 2000 cents:", TollCap_Q2subset_InCents))
+print(paste("The household income cutoff for the subset of Q2 household that receives the toll cap:", TollCap_Q2subsetCutOff))
 
 # write results in TARGET_DIR/core_summaries
 if (!file.exists(RESULTS_DIR)) {
@@ -329,16 +344,19 @@ add_cost <- function(this_timeperiod, input_trips_or_tours, reverse_od = FALSE) 
   # assign cost value if we can to new column cost2
   relevant <- relevant %>%
     mutate(cost2 = (costMode == 1) * da +
-             (costMode == 2 & incQ == 1) * daToll * MBT_Q1_factor + 
-             (costMode == 2 & incQ == 2) * daToll * MBT_Q2_factor + 
+             (costMode == 2 & incQ == 1) * pmin(daToll, TollCap_Q1_InCents) * MBT_Q1_factor + 
+             (costMode == 2 & incQ == 2 & income < TollCap_Q2subsetCutOff) * pmin(daToll, TollCap_Q2subset_InCents) * MBT_Q2_factor +              
+             (costMode == 2 & incQ == 2 & income >= TollCap_Q2subsetCutOff) * daToll * MBT_Q2_factor + 
              (costMode == 2 & incQ >= 3) * daToll +
              (costMode == 3) * s2 +
-             (costMode == 4 & incQ == 1) * s2Toll * MBT_Q1_factor + 
-             (costMode == 4 & incQ == 2) * s2Toll * MBT_Q2_factor + 
+             (costMode == 4 & incQ == 1) * pmin(s2Toll, TollCap_Q1_InCents) * MBT_Q1_factor + 
+             (costMode == 4 & incQ == 2 & income < TollCap_Q2subsetCutOff) * pmin(s2Toll, TollCap_Q2subset_InCents) * MBT_Q2_factor + 
+             (costMode == 4 & incQ == 2 & income >= TollCap_Q2subsetCutOff) * s2Toll * MBT_Q2_factor + 
              (costMode == 4 & incQ >= 3) * s2Toll +
              (costMode == 5) * s3 +
-             (costMode == 6 & incQ == 1) * s3Toll* MBT_Q1_factor + 
-             (costMode == 6 & incQ == 2) * s3Toll* MBT_Q2_factor + 
+             (costMode == 6 & incQ == 1) * pmin(s3Toll, TollCap_Q1_InCents)* MBT_Q1_factor + 
+             (costMode == 6 & incQ == 2 & income < TollCap_Q2subsetCutOff) * pmin(s3Toll, TollCap_Q2subset_InCents) * MBT_Q2_factor + 
+             (costMode == 6 & incQ == 2 & income >= TollCap_Q2subsetCutOff) * s3Toll* MBT_Q2_factor +              
              (costMode == 6 & incQ >= 3) * s3Toll +
              (costMode == 7) * 0.0 +
              (costMode == 8) * 0.0 +
