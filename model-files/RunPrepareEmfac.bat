@@ -108,8 +108,16 @@ if %1==EIR (
   if %MODEL_YEAR%==2050 (set emfacVersion=2017)
 )
 
-:: run the emfac prep script with arguments related to how we'll run emfac
-python CTRAMP\scripts\emfac\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season annual --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
+set SEASON=annual
 
+:: run the emfac prep script with arguments related to how we'll run emfac
+python CTRAMP\scripts\emfac\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season %SEASON% --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
+
+:: for EIR, also run SEASON=winter
+if %1==EIR (
+  set SEASON=winter
+  python CTRAMP\scripts\emfac\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season %SEASON% --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
+
+)
 
 :end
