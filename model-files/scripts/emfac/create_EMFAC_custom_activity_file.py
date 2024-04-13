@@ -155,7 +155,7 @@ if __name__ == '__main__':
     parser.add_argument("--season",                        required=True, choices=['annual','summer','winter'])
     parser.add_argument("--VMT_data_type",                 required=True, choices=['totalDailyVMT','VMTbyVehFuelType'])
     parser.add_argument("--custom_hourly_speed_fractions", action='store_true', help="For 'Custom Hourly Speed Fractions' checkbox")
-    parser.add_argument("--file_suffix", required=False, help="Optional suffix for output folders/files; to QA/compare against manually created versions")
+    parser.add_argument("--file_suffix", default="", help="Optional suffix for output folders/files; to QA/compare against manually created versions")
 
     args = parser.parse_args()
 
