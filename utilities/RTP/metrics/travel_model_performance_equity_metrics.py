@@ -787,6 +787,71 @@ def extract_Healthy1_safety(model_runs_dict: dict, args_rtp: str):
     safety_df.to_csv(output_file, index=False)
     LOGGER.info(f"Wrote {output_file}")
 
+def extract_Healthy1_PM25(model_runs_dict: dict, args_rtp: str):
+    """
+    Extracts PM2.5 from the EMFAC output.
+
+    Per Harold in Update emission / pollution metrics (PM2.5)
+    https://app.asana.com/0/0/1206701395344040/f
+    this comes from EIR\E2017\E2017_[modelrun_id]_winter_planning_[timestamp].xlsx
+
+    Args:
+        model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
+        args_rtp (str): one of 'RTP2021' or 'RTP2025'
+
+    Writes metrics_healthy1_PM25.csv with columns:
+        modelrun_id
+        modelrun_alias
+        area = 'Regionwide'
+        PM2_5_TOTAL
+    """
+    LOGGER.info("extract_Healthy1_PM25()")
+
+    pm25_results = [] # dict records
+    for tm_runid in model_runs_dict.keys():
+        if model_runs_dict[tm_runid]['run_set'] in ["IP","RTP2025_IP"]:
+            model_run_dir = TM_RUN_LOCATION_IP / tm_runid
+        else:
+            model_run_dir = TM_RUN_LOCATION_BP / tm_runid
+
+            # this comes from EIR\E2017\E2017_[modelrun_id]_winter_planning_[timestamp].xlsx
+        emfac2017_dir = model_run_dir / "OUTPUT/emfac/EIR/E2017"
+        emfac2017_winter_planning_files = sorted(emfac2017_dir.glob(f"E2017_{tm_runid}_winter_planning_*.xlsx"))
+        if len(emfac2017_winter_planning_files) != 1:
+            LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2017_winter_planning_files: {emfac2017_winter_planning_files}")
+            LOGGER.info("  Skipping...")
+            continue
+        LOGGER.info(f"  Reading {tm_runid} emfac2017_winter_planning_file:")
+        LOGGER.info(f"     {emfac2017_winter_planning_files[0]}")
+        emfac2017_winter_df = pd.read_excel(emfac2017_winter_planning_files[0], sheet_name="Total MTC")
+        # remove leading or trailing spaces
+        emfac2017_winter_df.Veh_Tech = emfac2017_winter_df.Veh_Tech.str.strip()
+        LOGGER.debug("  emfac2017_winter_df.head():\n{}".format(emfac2017_winter_df.head()))
+
+        # select row with All Vehicles
+        emfac2017_winter_df = emfac2017_winter_df.loc[ emfac2017_winter_df.Veh_Tech == 'All Vehicles', :]
+        assert(len(emfac2017_winter_df)==1)
+        all_veh_series = emfac2017_winter_df.squeeze()
+        LOGGER.debug(f"  all_veh_series:\n{all_veh_series}")
+
+        # verify other values
+        assert(all_veh_series.Area == 'MTC')
+        assert(all_veh_series.Season == 'Winter')
+        assert(all_veh_series['Cal. Year'] == model_runs_dict[tm_runid]['year'])
+        LOGGER.debug(f"  all_veh_series['PM2_5_TOTAL']:\n{all_veh_series['PM2_5_TOTAL']}")
+
+        pm25_results.append({
+            'modelrun_id'   : tm_runid,
+            'modelrun_alias': model_runs_dict[tm_runid]['Alias'],
+            'area'          : 'Regionwide',
+            'PM2_5_TOTAL'   : all_veh_series['PM2_5_TOTAL']
+        })
+    pm25_results_df = pd.DataFrame(pm25_results)
+    # write it
+    output_file = METRICS_OUTPUT_DIR / 'metrics_healthy1_PM25.csv'
+    pm25_results_df.to_csv(output_file, index=False)
+    LOGGER.info("Wrote {}".format(output_file))
+
 def calculate_Healthy2_commutemodeshare(model_runs_dict: dict, args_rtp: str):
     """
     This is only implemented for RTP2025 since the RTP2021 TM1.5 version was significantly more complicated.
@@ -921,6 +986,8 @@ if __name__ == '__main__':
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('rtp', type=str, choices=['RTP2021','RTP2025'])
     parser.add_argument('--test', action='store_true', help='If passed, writes output to cwd instead of METRICS_OUTPUT_DIR')
+    parser.add_argument('--only', required=False, choices=['affordable','connected','diverse','growth','healthy','vibrant'], 
+                        help='To only run one metric set')
     my_args = parser.parse_args()
 
     #### Pandas options ############################################################################################################
@@ -1007,21 +1074,26 @@ if __name__ == '__main__':
     # Note: These methods iterate through all the relevant runs and output the metrics results
 
     # Affordable
-    affordable_hplust_costs_df = calculate_Affordable1_HplusT_costs(model_runs_dict, my_args.rtp)
-    calculate_Affordable1_trip_costs(model_runs_dict, affordable_hplust_costs_df)
+    if (my_args.only == None) or (my_args.only == 'affordable'):
+        affordable_hplust_costs_df = calculate_Affordable1_HplusT_costs(model_runs_dict, my_args.rtp)
+        calculate_Affordable1_trip_costs(model_runs_dict, affordable_hplust_costs_df)
 
     # Connected
-    extract_Connected1_JobAccess(model_runs_dict)
-    calculate_Connected2_hwy_traveltimes(model_runs_dict)
-    calculate_Connected2_crowding(model_runs_dict)
-    # don't bother for RTP2025; this script doesn't add anything
-    if my_args.rtp == "RTP2021":
-        extract_Connected2_transit_asset_condition(model_runs_dict)
+    if (my_args.only == None) or (my_args.only == 'connected'):
+        extract_Connected1_JobAccess(model_runs_dict)
+        calculate_Connected2_hwy_traveltimes(model_runs_dict)
+        calculate_Connected2_crowding(model_runs_dict)
+        # don't bother for RTP2025; this script doesn't add anything
+        if my_args.rtp == "RTP2021":
+            extract_Connected2_transit_asset_condition(model_runs_dict)
 
     # Healthy
-    extract_Healthy1_safety(model_runs_dict, my_args.rtp)
-    calculate_Healthy2_commutemodeshare(model_runs_dict, my_args.rtp)
+    if (my_args.only == None) or (my_args.only == 'healthy'):
+        extract_Healthy1_safety(model_runs_dict, my_args.rtp)
+        extract_Healthy1_PM25(model_runs_dict, my_args.rtp)
+        calculate_Healthy2_commutemodeshare(model_runs_dict, my_args.rtp)
 
     # Vibrant
-    calculate_Vibrant1_mean_commute(model_runs_dict)
+    if (my_args.only == None) or (my_args.only == 'vibrant'):
+        calculate_Vibrant1_mean_commute(model_runs_dict)
     
