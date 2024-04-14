@@ -1,7 +1,7 @@
 # Calculate Safe1 metrics -- fatalities and injuries -- from MTC model outputs
 #
 # Pass two arguments to the script:
-# 1) Project (one of NGF or PBA50+)
+# 1) Project (one of NGF, PBA50 or PBA50+)
 # 2) MODEL_RUN_ID_NO_PROjeCT
 # 3) MODEL_RUN_ID_SCENARIO
 #
@@ -41,6 +41,7 @@
 # Inputs:
 #   1) TAZ_EPC_LOOKUP: 
 #       For NGF: X:\travel-model-one-master\utilities\NextGenFwys\metrics\Input Files\taz_epc_crosswalk.csv
+#       For PBA50: M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\metrics_FinalBlueprint\CommunitiesOfConcern.csv
 #       For PBA50+: M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\metrics\metrics_01\taz1454_epcPBA50plus_2024_02_23.csv"
 #   3) For base year and forecast year
 #      a) INPUT\landuse\tazData.csv - for population
@@ -53,20 +54,24 @@
 #   1) results:  MODEL_RUN_ID\OUTPUT\metrics\fatalies_injuries.csv
 #   2) log file: MODEL_RUN_ID\OUTPUT\metrics\fatalies_injuries.log
 # 
-#  Notes: Additionally, a lot of debug output is written by the script (that's hopefully readable!)
-#  So recommend running: RScript VZ_safety_calc_correction_v2.R > VZ_safety_calc_correction_v2.log
 
 library(dplyr)
 library(tidyr)
 library(stringr)
 library(readxl)
 
-# disable sci notation
-options(scipen=999)
+options(
+  scipen=999, # disable sci notation
+  width=150,
+  pillar.print_max=50,
+  dplyr.print_max=50,
+  tibble.print_max=50,
+  pillar.sigfig = 6
+)
 
 args = commandArgs(trailingOnly=TRUE)
 if (length(args) != 3) {
-  stop("Three arguments are required: PROJECT (NGF or PBA50+), MODEL_RUN_ID_NO_PROjeCT and MODEL_RUN_ID_SCENARIO")
+  stop("Three arguments are required: PROJECT (NGF, PBA50 or PBA50+), MODEL_RUN_ID_NO_PROjeCT and MODEL_RUN_ID_SCENARIO")
 }
 PROJECT                 <- args[1]
 MODEL_RUN_ID_NO_PROjeCT <- args[2]
@@ -74,7 +79,7 @@ MODEL_RUN_ID_SCENARIO   <- args[3]
 FORECAST_YEAR           <- strtoi(substr(MODEL_RUN_ID_SCENARIO, start=1, stop=4))
 
 # PROJECT must be one of NGF or PBA50+
-stopifnot(PROJECT %in% list("NGF","PBA50+"))
+stopifnot(PROJECT %in% list("NGF","PBA50","PBA50+"))
 
 if (PROJECT == "NGF") {
   ##################################### NextGen Fwy settings #####################################
@@ -87,6 +92,30 @@ if (PROJECT == "NGF") {
   BASE_YEAR                 <- 2015
   MODEL_RUN_ID_BASE_YEAR    <- "2015_TM152_NGF_05"
   MODEL_FULL_DIR_BASE_YEAR  <- file.path(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_BASE_YEAR)
+}
+if (PROJECT == "PBA50") {
+  ##################################### PBA50 settings #####################################
+  # to replicate PBA50 results (without corrections updates)
+  TAZ_EPC_FILE <- "M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/metrics/metrics_FinalBlueprint/CommunitiesOfConcern.csv"
+
+  # Scenario Directory on L or M
+  PROJECT_SCENARIOS_DIR     <- "M:/Application/Model One/RTP2021/Blueprint"
+
+  # BASE YEAR -- required for 1) General correction
+  BASE_YEAR                 <- 2015
+  MODEL_RUN_ID_BASE_YEAR    <- "2015_TM152_IPA_17"
+
+  # IPA runs
+  if (str_detect(MODEL_RUN_ID_SCENARIO, "IPA")) {
+    PROJECT_SCENARIOS_DIR     <- str_replace(PROJECT_SCENARIOS_DIR, "Blueprint", "IncrementalProgress")
+    MODEL_FULL_DIR_BASE_YEAR  <- file.path(PROJECT_SCENARIOS_DIR, MODEL_RUN_ID_BASE_YEAR)
+  }
+  # for other runs, the base year is still in IncrementalProgress
+  else {
+    MODEL_FULL_DIR_BASE_YEAR  <- file.path(
+      str_replace(PROJECT_SCENARIOS_DIR, "Blueprint","IncrementalProgress"),
+      MODEL_RUN_ID_BASE_YEAR)
+  }
 }
 if (PROJECT == "PBA50+") {
   ##################################### PBA50+ settings #####################################
@@ -156,6 +185,7 @@ collision_rates_df = read_excel(COLLISION_RATES_EXCEL, sheet = "Lookup Table") %
     fatality_rate_motorist = k_motor, # Count per 1 million vehicle miles traveled
     fatality_rate_bike = k_bike       # Count per 1 million vehicle miles traveled
   ) %>% select(ft_collision, at_collision, fatality_rate, serious_injury_rate, fatality_rate_motorist, fatality_rate_ped, fatality_rate_bike)
+  print("head(collision_rates_df):")
   print(head(collision_rates_df))
 
 COLLISION_FT <- data.frame(ft = integer(), fatality_exponent = numeric(), injury_exponent = numeric(), 
@@ -183,6 +213,20 @@ COLLISION_FT$fatality_exponent <- as.numeric(COLLISION_FT$fatality_exponent)
 COLLISION_FT$injury_exponent   <- as.numeric(COLLISION_FT$injury_exponent)
 COLLISION_FT$fwy_non           <- factor(COLLISION_FT$fwy_non)
 COLLISION_FT$ft_collision      <- as.numeric(COLLISION_FT$ft_collision)
+# TODO: This implements PBA50 errors for PBA50
+if (PROJECT == "PBA50") {
+  COLLISION_FT[ 5, "ft_collision"] <- 4 # freeway ramp
+  COLLISION_FT[ 9, "ft_collision"] <- 4 # special facility
+  COLLISION_FT[10, "ft_collision"] <- 4 # toll plaza
+  # PBA50 assigns exponent *after* renaming ft=ft_collision but I don't think that's on purpose
+  COLLISION_FT$fatality_exponent <- 0.0
+  COLLISION_FT$fatality_exponent[ COLLISION_FT$ft_collision %in% c(1,2,3,5,6,8)] <- 4.6 # only -1,2,3,4 are valid
+  COLLISION_FT$fatality_exponent[ COLLISION_FT$ft_collision %in% c(4,7)        ] <- 3.0 # only -1,2,3,4 are valid
+  COLLISION_FT$injury_exponent <- 0.0
+  COLLISION_FT$injury_exponent[ COLLISION_FT$ft_collision %in% c(1,2,3,5,6,8)] <- 3.5 # only -1,2,3,4 are valid
+  COLLISION_FT$injury_exponent[ COLLISION_FT$ft_collision %in% c(4,7)        ] <- 2.0 # only -1,2,3,4 are valid
+  
+}
 print("COLLSION_FT")
 print(COLLISION_FT)
 # print(str(COLLISION_FT))
@@ -204,7 +248,12 @@ print(COLLISION_AT)
 # columns are TAZ1454, taz_epc (which is either 0 or 1)
 TAZ_EPC_LOOKUP_DF <- read.csv(TAZ_EPC_FILE)
 print(paste("Read",nrow(TAZ_EPC_LOOKUP_DF), "lines of TAZ_EPC_LOOKUP from",TAZ_EPC_FILE))
-
+# make PBA50 version compatible
+if (PROJECT=="PBA50") {
+  TAZ_EPC_LOOKUP_DF <- rename(TAZ_EPC_LOOKUP_DF, TAZ1454=taz, taz_epc = in_set)
+}
+print("head(TAZ_EPC_LOOKUP_DF):")
+print(head(TAZ_EPC_LOOKUP_DF))
 # create a simple list-based class to hold these
 # http://adv-r.had.co.nz/S3.html
 # constructor
@@ -246,10 +295,10 @@ print.fatalities_injuries <- function(fatal_inj) {
 
   if (!is.null(fatal_inj$correct_N_fatalities_motorist)) {
     print("-- Correction (to observed) factors:")
-    print(paste("  correct_N_fatalities_motorist = ", format(fatal_inj$correct_N_fatalities_motorist, digits=3)))
-    print(paste("  correct_N_fatalities_ped      = ", format(fatal_inj$correct_N_fatalities_ped     , digits=3)))
-    print(paste("  correct_N_fatalities_bike     = ", format(fatal_inj$correct_N_fatalities_bike    , digits=3)))
-    print(paste("  correct_N_serious_injuries    = ", format(fatal_inj$correct_N_serious_injuries   , digits=3)))
+    print(paste("  correct_N_fatalities_motorist = ", format(fatal_inj$correct_N_fatalities_motorist, digits=5)))
+    print(paste("  correct_N_fatalities_ped      = ", format(fatal_inj$correct_N_fatalities_ped     , digits=5)))
+    print(paste("  correct_N_fatalities_bike     = ", format(fatal_inj$correct_N_fatalities_bike    , digits=5)))
+    print(paste("  correct_N_serious_injuries    = ", format(fatal_inj$correct_N_serious_injuries   , digits=5)))
   }
 }
 
@@ -399,13 +448,16 @@ modeled_fatalities_injuries <- function(model_run_id, model_year, model_network_
   }
 
   # join to collision rates and calculate annual VMT, avg speed, fatalies, injuries by link
+  # TODO: This is applying the speed correction from average speeds across all time periods
+  # TODO: I think it would be more appropriate to use the timeperiod-based speed
+  # TODO: e.g., fatality_speed_correction_tp instead of fatality_speed_correction_avg
   model_network_df <- left_join(model_network_df, collision_rates_df, by=c("ft_collision","at_collision"))
   model_network_df <- mutate(model_network_df,
-      N_fatalities_motorist = fatality_speed_correction_tp * (annual_VMT/ONE_MILLION) * fatality_rate_motorist,
-      N_fatalities_ped      = fatality_speed_correction_tp * (annual_VMT/ONE_MILLION) * fatality_rate_ped,
-      N_fatalities_bike     = fatality_speed_correction_tp * (annual_VMT/ONE_MILLION) * fatality_rate_bike,
+      N_fatalities_motorist = fatality_speed_correction_avg * (annual_VMT/ONE_MILLION) * fatality_rate_motorist,
+      N_fatalities_ped      = fatality_speed_correction_avg * (annual_VMT/ONE_MILLION) * fatality_rate_ped,
+      N_fatalities_bike     = fatality_speed_correction_avg * (annual_VMT/ONE_MILLION) * fatality_rate_bike,
       N_fatalities_total    = N_fatalities_motorist + N_fatalities_ped + N_fatalities_bike,
-      N_serious_injuries    = injury_speed_correction_tp * (annual_VMT/ONE_MILLION) * serious_injury_rate
+      N_serious_injuries    = injury_speed_correction_avg * (annual_VMT/ONE_MILLION) * serious_injury_rate
     )
 
   # save for debugging
@@ -514,30 +566,43 @@ add_speed_correction_columns <- function(model_network_df, network_no_project_df
     injury_speed_correction_avg   = (avg_speed/avg_speed_no_project)^injury_exponent      # based on avg speed
   )
   # these are multiplicative so default to 1.0 in place of NA
-  model_network_df <- mutate(model_network_df,
-    # fatality
-    fatality_speed_correction_tp  = if_else(is.na(fatality_speed_correction_tp),  1.0, fatality_speed_correction_tp),
-    fatality_speed_correction_avg = if_else(is.na(fatality_speed_correction_avg), 1.0, fatality_speed_correction_avg),
-    # injury_else
-    injury_speed_correction_tp    = if_else(is.na(injury_speed_correction_tp),    1.0, injury_speed_correction_tp),
-    injury_speed_correction_avg   = if_else(is.na(injury_speed_correction_avg),   1.0, injury_speed_correction_avg)
-  )
+  # TODO: PBA50 original code didn't do this but I think it should be done or the join fails get dropped
+  # TODO: Keeping this bug for PBA50 only
+  if (PROJECT != "PBA50") {
+    model_network_df <- mutate(model_network_df,
+      # fatality
+      fatality_speed_correction_tp  = if_else(is.na(fatality_speed_correction_tp),  1.0, fatality_speed_correction_tp),
+      fatality_speed_correction_avg = if_else(is.na(fatality_speed_correction_avg), 1.0, fatality_speed_correction_avg),
+      # injury_else
+      injury_speed_correction_tp    = if_else(is.na(injury_speed_correction_tp),    1.0, injury_speed_correction_tp),
+      injury_speed_correction_avg   = if_else(is.na(injury_speed_correction_avg),   1.0, injury_speed_correction_avg)
+    )
+  }
   # save it for debugging
   # write.csv(model_network_df, paste0("corrections_",model_fatal_inj$model_run_id,".csv"))
 
+  # this was in the original PBA50 code via pmin
+  # TODO: I don't think we should do this -- if we take credit for slowing down traffic, we should also
+  # TODO: take credit for speeding it up and increaasing fatalities/injuries
+  # TODO: Reproducing for PBA50 only
+  if (PROJECT == "PBA50") {
+    # these are multiplicative so default to 1.0 in place of NA
+    model_network_df <- mutate(model_network_df,
+      # fatality
+      fatality_speed_correction_tp  = if_else(fatality_speed_correction_tp  > 1.0,  1.0, fatality_speed_correction_tp),
+      fatality_speed_correction_avg = if_else(fatality_speed_correction_avg > 1.0,  1.0, fatality_speed_correction_avg),
+      # injury_else
+      injury_speed_correction_tp    = if_else(injury_speed_correction_tp  > 1.0,    1.0, injury_speed_correction_tp),
+      injury_speed_correction_avg   = if_else(injury_speed_correction_avg > 1.0,    1.0, injury_speed_correction_avg)
+    )
+  }
   # print(head(filter(model_network_df, ft != 6)))
 
   # return it
   model_network_df
 }
 
-options(
-  width=150,
-  pillar.print_max=50,
-  dplyr.print_max=50,
-  tibble.print_max=50,
-  pillar.sigfig = 6
-)
+
 ####### Calculate for the base year to determine correction factors #######
 tazdata_base_year_df      <- read.csv(file.path(MODEL_FULL_DIR_BASE_YEAR, "INPUT", "landuse","tazData.csv"))
 network_base_year_df      <- read.csv(file.path(MODEL_FULL_DIR_BASE_YEAR, "OUTPUT", "avgload5period.csv"))
@@ -554,6 +619,7 @@ print(model_fatal_inj_base_year)
 
 model_fatal_inj_base_year <- create_correction_factors_for_observed(model_fatal_inj_base_year, OBSERVED_FATALITIES_INJURIES_BASE_YEAR)
 model_fatal_inj_base_year <- correct_using_observed_factors(model_fatal_inj_base_year, model_fatal_inj_base_year)
+print("--------------------------------------")
 print("AFTER CORRECTION to BASE YEAR OBSERVED")
 print(model_fatal_inj_base_year)
 
@@ -608,26 +674,32 @@ for (model_run_type in c("NO_PROJECT", "SCENARIO")) {
   if (model_run_type == "NO_PROJECT") {
     model_fatal_no_project <- model_fatal_inj
   }
+  print("--------------------------------------")
   print(model_fatal_inj)
+
 
   model_fatal_inj_fwy_non <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, 
                                 network_group_by_col="fwy_non", network_no_project_df=network_no_project_df)
   model_fatal_inj_fwy_non <- correct_using_observed_factors(model_fatal_inj_fwy_non, model_fatal_inj_base_year)
+  print("--------------------------------------")
   print(model_fatal_inj_fwy_non)
 
   model_fatal_inj_epc_non <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, 
                                 network_group_by_col="taz_epc", network_no_project_df)
   model_fatal_inj_epc_non <- correct_using_observed_factors(model_fatal_inj_epc_non, model_fatal_inj_base_year)
+  print("--------------------------------------")
   print(model_fatal_inj_epc_non)
   
   model_fatal_inj_epc_local <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
                                                            network_group_by_col="taz_epc_local", network_no_project_df)     
   model_fatal_inj_epc_local <- correct_using_observed_factors(model_fatal_inj_epc_local, model_fatal_inj_base_year)
+  print("--------------------------------------")
   print(model_fatal_inj_epc_local)
   # 
   model_fatal_inj_non_epc_local <- modeled_fatalities_injuries(model_run_id, FORECAST_YEAR, network_df, population_forecast, #new
                                                                network_group_by_col="Non_EPC_local", network_no_project_df)     
   model_fatal_inj_non_epc_local <- correct_using_observed_factors(model_fatal_inj_non_epc_local, model_fatal_inj_base_year)
+  print("--------------------------------------")
   print(model_fatal_inj_non_epc_local)
 
 
