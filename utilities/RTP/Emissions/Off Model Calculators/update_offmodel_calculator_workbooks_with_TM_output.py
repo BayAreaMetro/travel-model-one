@@ -49,17 +49,14 @@ def update_bikeshare_calculator(model_runID_ls):
 
     print(bikeshare_master_workbook_file)
     print(bikeshare_new_workbook_file)
-
     shutil.copy2(bikeshare_master_workbook_file, bikeshare_new_workbook_file)
 
     # load and filter model run data of selected runs
     bikeshare_model_data = pd.read_csv(
         os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - Bikeshare.csv'),
         skiprows=1)
-
     # display(bikeshare_model_data.head(5))
     print(bikeshare_model_data['directory'].unique())
-
     bikeshare_model_data = bikeshare_model_data.loc[
         bikeshare_model_data['directory'].isin(model_runID_ls)]
 
@@ -69,7 +66,6 @@ def update_bikeshare_calculator(model_runID_ls):
         bikeshare_model_data.to_excel(writer, sheet_name='Model Data', index=False, startrow=1, startcol=0)
 
     # get needed data into the worksheet
-
     model_data_info = pd.read_csv(
         os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - Bikeshare.csv'),
         nrows=0)
@@ -109,10 +105,8 @@ def update_carshare_calculator(model_runID_ls):
     carshare_model_data = pd.read_csv(
         os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - carshare.csv'),
         skiprows=2)
-
     print(carshare_model_data.head(5))
     print(carshare_model_data['directory'].unique())
-
     carshare_model_data = carshare_model_data.loc[
         carshare_model_data['directory'].isin(model_runID_ls)]
 
@@ -161,18 +155,15 @@ def update_targetedTransAlt_calculator(model_runID_ls):
 
     print(targetedTransAlt_master_workbook_file)
     print(targetedTransAlt_new_workbook_file)
-
     shutil.copy2(targetedTransAlt_master_workbook_file, targetedTransAlt_new_workbook_file)
 
     # load and filter model run data of selected runs
     targetedTransAlt_model_data = pd.read_csv(
         os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - Targeted Transportation Alternatives.csv'),
-        skiprows=1
-    )
+        skiprows=1)
 
     # display(targetedTransAlt_model_data.head(5))
     print(targetedTransAlt_model_data['directory'].unique())
-
     targetedTransAlt_model_data = targetedTransAlt_model_data.loc[
         targetedTransAlt_model_data['directory'].isin(model_runID_ls)]
 
@@ -182,7 +173,6 @@ def update_targetedTransAlt_calculator(model_runID_ls):
         targetedTransAlt_model_data.to_excel(writer, sheet_name='Model Data', index=False, startrow=1, startcol=0)
 
     # get needed data into the worksheet
-
     model_data_info = pd.read_csv(
         os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - Targeted Transportation Alternatives.csv'),
         nrows=0)
@@ -215,7 +205,6 @@ def update_valpools_calculator(model_runID_ls):
 
     print(vanpool_master_workbook_file)
     print(vanpool_new_workbook_file)
-
     shutil.copy2(vanpool_master_workbook_file, vanpool_new_workbook_file)
 
     # load and filter model run data of selected runs
@@ -225,7 +214,6 @@ def update_valpools_calculator(model_runID_ls):
 
     # display(vanpool_model_data.head(5))
     print(vanpool_model_data['directory'].unique())
-
     vanpool_model_data = vanpool_model_data.loc[
         vanpool_model_data['directory'].isin(model_runID_ls)]
 
@@ -235,7 +223,6 @@ def update_valpools_calculator(model_runID_ls):
         vanpool_model_data.to_excel(writer, sheet_name='Model Data', index=False, startrow=1, startcol=0)
 
     # get needed data into the worksheet
-
     model_data_info = pd.read_csv(
         os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - Employer Shuttles.csv'),
         nrows=0)
@@ -256,6 +243,7 @@ def update_valpools_calculator(model_runID_ls):
     # save file
     vanpool_new_workbook.save(vanpool_new_workbook_file)
 
+# TODO: add function for the new e-bike calculator
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=USAGE)
@@ -263,6 +251,8 @@ if __name__ == '__main__':
     parser.add_argument('model_run_id_2035', help='travel model run_id of a 2035 run')
     parser.add_argument('model_run_id_2050', help='travel model run_id of a 2050 run')
     args = parser.parse_args()
+
+    # TODO: add logging
 
     MODEL_RUNS = [args.model_run_id_2035, args.model_run_id_2050]
 
@@ -274,8 +264,3 @@ if __name__ == '__main__':
         update_targetedTransAlt_calculator(MODEL_RUNS)
     elif args.calculator == VAN_POOL:
         update_valpools_calculator(MODEL_RUNS)
-
-#      = 'bike share'
-#  = 'car share'
-#  = 'targeted trans alt'
-#  = 'vanpools'
