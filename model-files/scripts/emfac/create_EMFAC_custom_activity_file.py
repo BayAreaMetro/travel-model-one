@@ -350,7 +350,7 @@ if __name__ == '__main__':
 
         logging.info("sheet[A3].value=[{}]".format(sheet["A3"].value))
         assert(sheet["A3"].value == "Season/Month")
-        sheet["B4"] = args.season.capitalize()
+        sheet["B3"] = args.season.capitalize()
         logging.info(f"Saved Settings > Season/Month to {args.season.capitalize()}")
 
     # -------------------------------------------------------------------
