@@ -596,6 +596,17 @@ add_speed_correction_columns <- function(model_network_df, network_no_project_df
       injury_speed_correction_avg   = if_else(injury_speed_correction_avg > 1.0,    1.0, injury_speed_correction_avg)
     )
   }
+  else {
+    # TODO: For now, I'm going to disable speed correction for non-PBA50
+    model_network_df <- mutate(model_network_df,
+      # fatality
+      fatality_speed_correction_tp  = 1.0,
+      fatality_speed_correction_avg = 1.0,
+      # injury_else
+      injury_speed_correction_tp    = 1.0,
+      injury_speed_correction_avg   = 1.0,
+    )
+  }
   # print(head(filter(model_network_df, ft != 6)))
 
   # return it
