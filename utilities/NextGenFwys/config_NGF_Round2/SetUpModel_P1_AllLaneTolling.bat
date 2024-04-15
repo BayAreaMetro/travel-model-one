@@ -24,10 +24,8 @@ set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys_Round2\INPUT_DEVELOPMENT\
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 set INPUT_POPLU=M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\LandUse_n_Popsyn\2035_IPA_v01
 
-:: choose one of the following tazDataFileName
-:: for NGF, NoProject, pathway 1a, 1b, 2a, 2b, and 4, set tazDataFileName=tazData_parkingStrategy_v01_LeaveOutTI
-:: for pathway 3a and 3b, set tazDataFileName=tazData_parkingStrategy_v01_3cordons_LeaveOutTI
-set tazDataFileName=tazData_parking_cordoncols
+:: specify tazDataFileName
+set tazDataFileName=tazData_parking_ZEROcordoncols
 
 :: draft blueprint was s23; final blueprint is s24; final blueprint no project is s25.
 :: note that UrbanSimScenario relates to the land use scenario to which the TM output will be applied (not the input land use scenario for the TM)
