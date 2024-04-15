@@ -40,8 +40,10 @@ GOTO :end
 :start
 :: If we're running on the M drive, paths are relative to OUTPUT
 set EMFAC_DIR=emfac
+set EMFAC_SCRIPT_DIR=CTRAMP\scripts\emfac
 if exist OUTPUT\ (
   set EMFAC_DIR=OUTPUT\emfac
+  set EMFAC_SCRIPT_DIR=X:\travel-model-one-master\model-files\scripts\emfac
 )
 echo EMFAC_DIR=%EMFAC_DIR%
 mkdir %EMFAC_DIR%\emfac_prep
@@ -50,7 +52,7 @@ mkdir %EMFAC_DIR%\emfac_prep
 :: input:  hwy\iter3\avgload5period_vehclasses.csv
 :: output: emfac\emfac_prep\CreateSpeedBinsBetweenZones_sums.csv
 if not exist %EMFAC_DIR%\emfac_prep\CreateSpeedBinsBetweenZones_sums.csv (
-  python ctramp\scripts\emfac\betweenzonesvmt.py
+  python %EMFAC_SCRIPT_DIR%\betweenzonesvmt.py
 )
 
 :: Step Two
@@ -60,7 +62,7 @@ if not exist %EMFAC_DIR%\emfac_prep\CreateSpeedBinsBetweenZones_sums.csv (
 :: output: emfac\emfac_prep\CreateSpeedBinsWithinZones_sums.csv
 ::         emfac\emfac_prep\CreateSpeedBinsWithinZones_sums_NoTrk.csv
 if not exist %EMFAC_DIR%\emfac_prep\CreateSpeedBinsWithinZones_sums.csv (
-  call runtpp CTRAMP\scripts\emfac\CreateSpeedBinsWithinZones.job
+  call runtpp %EMFAC_SCRIPT_DIR%\CreateSpeedBinsWithinZones.job
 
   rem if we want to run emfac without freight, use the "no truck" file
   if %2==NoFreight rename %EMFAC_DIR%\emfac_prep\CreateSpeedBinsWithinZones_sums.csv %EMFAC_DIR%\emfac_prep\CreateSpWithinZones_NotUsed.csv
@@ -111,12 +113,12 @@ if %1==EIR (
 set SEASON=annual
 
 :: run the emfac prep script with arguments related to how we'll run emfac
-python CTRAMP\scripts\emfac\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season %SEASON% --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
+python %EMFAC_SCRIPT_DIR%create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season %SEASON% --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
 
 :: for EIR, also run SEASON=winter
 if %1==EIR (
   set SEASON=winter
-  python CTRAMP\scripts\emfac\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season %SEASON% --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
+  python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season %SEASON% --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
 
 )
 
