@@ -46,6 +46,8 @@ if exist OUTPUT\ (
   set EMFAC_SCRIPT_DIR=X:\travel-model-one-master\model-files\scripts\emfac
 )
 echo EMFAC_DIR=%EMFAC_DIR%
+echo EMFAC_SCRIPT_DIR=%EMFAC_SCRIPT_DIR%
+echo MODEL_YEAR=%MODEL_YEAR%
 mkdir %EMFAC_DIR%\emfac_prep
 
 :: Step One
@@ -91,29 +93,30 @@ if not exist %EMFAC_DIR%\emfac_prep\CreateSpeedBinsWithinZones_sums.csv (
 :: Year 2050 - Emfac2017 (AQ Conformity + EIR)
 
 if %1==SB375 (
-  if %MODEL_YEAR%==2005 (set emfacVersion=2007)
-  if %MODEL_YEAR%==2015 (set emfacVersion=2014)
-  if %MODEL_YEAR%==2020 (set emfacVersion=2014)
-  if %MODEL_YEAR%==2023 (set emfacVersion=2014)
+  if %MODEL_YEAR% EQU 2005 (set emfacVersion=2007)
+  if %MODEL_YEAR% EQU 2015 (set emfacVersion=2014)
+  if %MODEL_YEAR% EQU 2020 (set emfacVersion=2014)
+  if %MODEL_YEAR% EQU 2023 (set emfacVersion=2014)
   :: rem for SACOG's federal air quality plan
-  if %MODEL_YEAR%==2026 (set emfacVersion=2014)
-  if %MODEL_YEAR%==2035 (set emfacVersion=2014)
-  if %MODEL_YEAR%==2050 (set emfacVersion=2014)
+  if %MODEL_YEAR% EQU 2026 (set emfacVersion=2014)
+  if %MODEL_YEAR% EQU 2035 (set emfacVersion=2014)
+  if %MODEL_YEAR% EQU 2050 (set emfacVersion=2014)
 )
 
 if %1==EIR (
-  if %MODEL_YEAR%==2015 (set emfacVersion=2017)
-  if %MODEL_YEAR%==2020 (set emfacVersion=2017)
-  if %MODEL_YEAR%==2030 (set emfacVersion=2017)
-  if %MODEL_YEAR%==2035 (set emfacVersion=2017)
-  if %MODEL_YEAR%==2040 (set emfacVersion=2017)
-  if %MODEL_YEAR%==2050 (set emfacVersion=2017)
+  if %MODEL_YEAR% EQU 2005 (set emfacVersion=2017)
+  if %MODEL_YEAR% EQU 2015 (set emfacVersion=2017)
+  if %MODEL_YEAR% EQU 2020 (set emfacVersion=2017)
+  if %MODEL_YEAR% EQU 2030 (set emfacVersion=2017)
+  if %MODEL_YEAR% EQU 2035 (set emfacVersion=2017)
+  if %MODEL_YEAR% EQU 2040 (set emfacVersion=2017)
+  if %MODEL_YEAR% EQU 2050 (set emfacVersion=2017)
 )
-
+echo emfacVersion=%emfacVersion%
 set SEASON=annual
 
 :: run the emfac prep script with arguments related to how we'll run emfac
-python %EMFAC_SCRIPT_DIR%create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season %SEASON% --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
+python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season %SEASON% --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
 
 :: for EIR, also run SEASON=winter
 if %1==EIR (
