@@ -78,7 +78,7 @@ def find_pseudo_lines(trn_link_df):
 
     for group_id, line in line_group:
         if group_id[0] not in [120]: continue   #  ie do this only for BART and Reg Rail
-        if len(line) < 3: continue      # pseudo lines must have board + transfer + exit  
+        if len(line) < 6: continue      # pseudo lines must have board + transfer + exit and they're generally longer
 
         seq_last_board = line["seq_brda"].max()
         seq_first_exit = line["seq_xitb"].min()
@@ -94,6 +94,7 @@ def find_pseudo_lines(trn_link_df):
     # remove temp columns
     trn_link_df.drop(columns=["seq_brda","seq_xitb"], inplace=True)
 
+    logging.debug(f'find_pseudo_lines() returning:\n{pseudo_lines}')
     return pseudo_lines
 
 def move_pseudo_line_ridership(trn_link_df, pseudo_lines):
