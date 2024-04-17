@@ -819,10 +819,10 @@ def extract_Healthy1_PM25(model_runs_dict: dict, args_rtp: str):
         emfac2017_winter_planning_files = sorted(emfac2017_dir.glob(f"E2017_{tm_runid}_winter_planning_*.xlsx"))
         if len(emfac2017_winter_planning_files) != 1:
             LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2017_winter_planning_files: {emfac2017_winter_planning_files}")
-            LOGGER.info("  Skipping...")
+            LOGGER.info("    Skipping...")
             continue
         LOGGER.info(f"  Reading {tm_runid} emfac2017_winter_planning_file:")
-        LOGGER.info(f"     {emfac2017_winter_planning_files[0]}")
+        LOGGER.info(f"    {emfac2017_winter_planning_files[0]}")
         emfac2017_winter_df = pd.read_excel(emfac2017_winter_planning_files[0], sheet_name="Total MTC")
         # remove leading or trailing spaces
         emfac2017_winter_df.Veh_Tech = emfac2017_winter_df.Veh_Tech.str.strip()
@@ -850,6 +850,73 @@ def extract_Healthy1_PM25(model_runs_dict: dict, args_rtp: str):
     # write it
     output_file = METRICS_OUTPUT_DIR / 'metrics_healthy1_PM25.csv'
     pm25_results_df.to_csv(output_file, index=False)
+    LOGGER.info("Wrote {}".format(output_file))
+
+def extract_Healthy2_CO2_Emissions(model_runs_dict: dict, args_rtp: str):
+    """
+    Extracts CO2_TOTEX from the EMFAC output.
+
+    Per Harold in Update emission / pollution metrics (PM2.5)
+    https://app.asana.com/0/0/1206701395344040/f
+    this comes from EIR\E2017\E2017_[modelrun_id]_annnual_planning_[timestamp].xlsx
+
+    Args:
+        model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
+        args_rtp (str): one of 'RTP2021' or 'RTP2025'
+
+    Writes metrics_healthy2_CO2_emissions.csv with columns:
+        modelrun_id
+        modelrun_alias
+        veh_type = 'All Vehicles'
+        SB375 = False
+        CO2_TOTEX
+    """
+    LOGGER.info("extract_Healthy2_CO2_Emissions()")
+
+    co2_results = [] # dict records
+    for tm_runid in model_runs_dict.keys():
+        if model_runs_dict[tm_runid]['run_set'] in ["IP","RTP2025_IP"]:
+            model_run_dir = TM_RUN_LOCATION_IP / tm_runid
+        else:
+            model_run_dir = TM_RUN_LOCATION_BP / tm_runid
+
+        # this comes from EIR\E2017\E2017_[modelrun_id]_annual_planning_[timestamp].xlsx
+        emfac2017_dir = model_run_dir / "OUTPUT/emfac/EIR/E2017"
+        emfac2017_annual_planning_files = sorted(emfac2017_dir.glob(f"E2017_{tm_runid}_annual_planning_*.xlsx"))
+        if len(emfac2017_annual_planning_files) != 1:
+            LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2017_annual_planning_files: {emfac2017_annual_planning_files}")
+            LOGGER.info("    Skipping...")
+            continue
+        LOGGER.info(f"  Reading {tm_runid} emfac2017_annual_planning_file:")
+        LOGGER.info(f"    {emfac2017_annual_planning_files[0]}")
+        emfac2017_annual_df = pd.read_excel(emfac2017_annual_planning_files[0], sheet_name="Total MTC")
+        # remove leading or trailing spaces
+        emfac2017_annual_df.Veh_Tech = emfac2017_annual_df.Veh_Tech.str.strip()
+        LOGGER.debug("  emfac2017_annual_df.head():\n{}".format(emfac2017_annual_df.head()))
+
+        # select row with All Vehicles
+        emfac2017_annual_df = emfac2017_annual_df.loc[ emfac2017_annual_df.Veh_Tech == 'All Vehicles', :]
+        assert(len(emfac2017_annual_df)==1)
+        all_veh_series = emfac2017_annual_df.squeeze()
+        LOGGER.debug(f"  all_veh_series:\n{all_veh_series}")
+
+        # verify other values
+        assert(all_veh_series.Area == 'MTC')
+        assert(all_veh_series.Season == 'Annual')
+        assert(all_veh_series['Cal. Year'] == model_runs_dict[tm_runid]['year'])
+        LOGGER.debug(f"  all_veh_series['CO2_TOTEX']:\n{all_veh_series['CO2_TOTEX']}")
+
+        co2_results.append({
+            'modelrun_id'   : tm_runid,
+            'modelrun_alias': model_runs_dict[tm_runid]['Alias'],
+            'veh_type'      : 'All Vehicles',
+            'SB375'         : False,
+            'CO2_TOTEX'     : all_veh_series['CO2_TOTEX']
+        })
+    co2_results_df = pd.DataFrame(co2_results)
+    # write it
+    output_file = METRICS_OUTPUT_DIR / 'metrics_healthy2_CO2_emissions.csv'
+    co2_results_df.to_csv(output_file, index=False)
     LOGGER.info("Wrote {}".format(output_file))
 
 def calculate_Healthy2_commutemodeshare(model_runs_dict: dict, args_rtp: str):
@@ -1091,6 +1158,7 @@ if __name__ == '__main__':
     if (my_args.only == None) or (my_args.only == 'healthy'):
         extract_Healthy1_safety(model_runs_dict, my_args.rtp)
         extract_Healthy1_PM25(model_runs_dict, my_args.rtp)
+        extract_Healthy2_CO2_Emissions(model_runs_dict, my_args.rtp)
         calculate_Healthy2_commutemodeshare(model_runs_dict, my_args.rtp)
 
     # Vibrant
