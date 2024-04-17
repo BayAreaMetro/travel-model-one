@@ -25,6 +25,15 @@ library(knitr) # for the kable function that creates well-formatted tables
 TARGET_DIR   <- Sys.getenv("TARGET_DIR")  # The location of the input files
 TARGET_DIR   <- gsub("\\\\","/",TARGET_DIR) # switch slashes around
 
+# for NGF Round 1, the TARGET_DIR are: 
+#TARGET_DIR = "//MODEL2-C/Model2C-Share/Projects/2035_TM152_NGF_NP10_Path4_02"       # new numbering: P1
+#TARGET_DIR = "//MODEL3-C/Model3C-Share/Projects/2035_TM152_NGF_NP10_Path3a_02"      # new numbering: 2A
+#TARGET_DIR = "//MODEL3-D/Model3D-Share/Projects/2035_TM152_NGF_NP10_Path3b_02"       # new numbering: 2B
+#TARGET_DIR = "//MODEL3-A/Model3A-Share/Projects/2035_TM152_NGF_NP10_Path1a_02"      # new numbering: 3A
+#TARGET_DIR = "//MODEL3-B/Model3B-Share/Projects/2035_TM152_NGF_NP10_Path1b_02"      # new numbering: P3B
+#TARGET_DIR = "//MODEL2-D/Model2D-Share/Projects/2035_TM152_NGF_NP10_Path2a_02_10pc" # new numbering: P4A
+#TARGET_DIR = "//MODEL3-D/Model3D-Share/Projects/2035_TM152_NGF_NP10_Path2b_02_10pc" # new numbering: P4B
+
 # create temporary directory for testing purposes
 # Define the output directory
 output_dir <- file.path(TARGET_DIR, "updated_output_copy")
@@ -34,15 +43,6 @@ if (!file.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }
 
-
-# for NGF Round 1, the TARGET_DIR are: 
-#TARGET_DIR = "//MODEL2-C/Model2C-Share/Projects/2035_TM152_NGF_NP10_Path4_02"       # new numbering: P1
-#TARGET_DIR = "//MODEL3-C/Model3C-Share/Projects/2035_TM152_NGF_NP10_Path3a_02"      # new numbering: 2A
-#TARGET_DIR = "//MODEL3-D/Model3D-Share/Projects/2035_TM152_NGF_NP10_Path3b_02"       # new numbering: 2B
-#TARGET_DIR = "//MODEL3-A/Model3A-Share/Projects/2035_TM152_NGF_NP10_Path1a_02"      # new numbering: 3A
-#TARGET_DIR = "//MODEL3-B/Model3B-Share/Projects/2035_TM152_NGF_NP10_Path1b_02"      # new numbering: P3B
-#TARGET_DIR = "//MODEL2-D/Model2D-Share/Projects/2035_TM152_NGF_NP10_Path2a_02_10pc" # new numbering: P4A
-#TARGET_DIR = "//MODEL3-D/Model3D-Share/Projects/2035_TM152_NGF_NP10_Path2b_02_10pc" # new numbering: P4B
 
 # read inputs
 detailedCost_file <- file.path(TARGET_DIR, "updated_output", "trips_with_detailed_cost.rdata")
