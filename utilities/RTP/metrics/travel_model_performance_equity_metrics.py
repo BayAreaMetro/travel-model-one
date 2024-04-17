@@ -869,7 +869,9 @@ def extract_Healthy2_CO2_Emissions(model_runs_dict: dict, args_rtp: str):
         modelrun_alias
         veh_type = 'All Vehicles'
         SB375 = False
+        TOTPOP
         CO2_TOTEX
+        CO2_TOTEX_per_capita
     """
     LOGGER.info("extract_Healthy2_CO2_Emissions()")
 
@@ -879,6 +881,13 @@ def extract_Healthy2_CO2_Emissions(model_runs_dict: dict, args_rtp: str):
             model_run_dir = TM_RUN_LOCATION_IP / tm_runid
         else:
             model_run_dir = TM_RUN_LOCATION_BP / tm_runid
+
+        # read tazdata for total population
+        tazdata_file = model_run_dir / "INPUT" / "landuse" / "tazData.csv"
+        LOGGER.info("    Reading {}".format(tazdata_file))
+        tazdata_df = pd.read_csv(tazdata_file)
+        TOTPOP = tazdata_df['TOTPOP'].sum()
+        LOGGER.debug("  TOTPOP: {:,}".format(TOTPOP))
 
         # this comes from EIR\E2017\E2017_[modelrun_id]_annual_planning_[timestamp].xlsx
         emfac2017_dir = model_run_dir / "OUTPUT/emfac/EIR/E2017"
@@ -911,7 +920,9 @@ def extract_Healthy2_CO2_Emissions(model_runs_dict: dict, args_rtp: str):
             'modelrun_alias': model_runs_dict[tm_runid]['Alias'],
             'veh_type'      : 'All Vehicles',
             'SB375'         : False,
-            'CO2_TOTEX'     : all_veh_series['CO2_TOTEX']
+            'TOTPOP'        : TOTPOP,
+            'CO2_TOTEX'     : all_veh_series['CO2_TOTEX'],
+            'CO2_TOTEX_per_capita': all_veh_series['CO2_TOTEX']/TOTPOP
         })
     co2_results_df = pd.DataFrame(co2_results)
     # write it
