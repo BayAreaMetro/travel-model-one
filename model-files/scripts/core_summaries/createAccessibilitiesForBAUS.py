@@ -22,7 +22,7 @@ USAGE = r"""
   2) logsums/taz_logsums_for_BAUS.csv
 """
 
-import os, pathlib
+import argparse, os, pathlib
 import pandas as pd
 
 # see c_ivt in ModeChoice.xls
@@ -40,12 +40,25 @@ MAGIC_NUMBER_NEGATIVE_SET = 1
 if __name__ == '__main__':
   pd.set_option('display.width', 500)
 
+  parser = argparse.ArgumentParser(
+    description = USAGE,
+    formatter_class=argparse.RawDescriptionHelpFormatter)
+  parser.add_argument('--rtp',    type=str, choices=['RTP2021','RTP2025'], default='RTP2025')
+  parser.add_argument('--suffix', type=str, default='', help="options input/output file suffix")
+  my_args = parser.parse_args()
+  print(my_args)
+
   # read the existing logsum files using the model run year
   CORE_SUMMARIES_DIR  = pathlib.Path("core_summaries")
   LOGSUMS_DIR         = pathlib.Path("logsums")
-  markets_df      = pd.read_csv(CORE_SUMMARIES_DIR / "AccessibilityMarkets.csv")
-  mandatory_df    = pd.read_csv(LOGSUMS_DIR / "mandatoryAccessibilities.csv")
-  nonmandatory_df = pd.read_csv(LOGSUMS_DIR / "nonMandatoryAccessibilities.csv")
+
+  if my_args.rtp == 'RTP2021':
+    CORE_SUMMARIES_DIR  = pathlib.Path(".")
+    LOGSUMS_DIR         = pathlib.Path(".")
+
+  markets_df      = pd.read_csv(CORE_SUMMARIES_DIR / f"AccessibilityMarkets{my_args.suffix}.csv")
+  mandatory_df    = pd.read_csv(LOGSUMS_DIR / f"mandatoryAccessibilities{my_args.suffix}.csv")
+  nonmandatory_df = pd.read_csv(LOGSUMS_DIR / f"nonMandatoryAccessibilities{my_args.suffix}.csv")
 
   # label markets so they match the accessibility columns
   print("markets_df:\n{}".format(markets_df))
@@ -140,11 +153,11 @@ if __name__ == '__main__':
 
   # write subzone logsums to file
   mand_nonmand_df = mand_nonmand_df[['taz', 'taz_subzone', 'mandatory_logsum', 'nonmandatory_logsum', 'combo_logsum_prescale', 'combo_logsum']]
-  mand_nonmand_df.to_csv(LOGSUMS_DIR / "subzone_logsums_for_BAUS.csv", index=False)
-  print("Wrote {}".format(LOGSUMS_DIR / "subzone_logsums_for_BAUS.csv"))
+  mand_nonmand_df.to_csv(LOGSUMS_DIR / f"subzone_logsums_for_BAUS{my_args.suffix}.csv", index=False)
+  print("Wrote {}".format(LOGSUMS_DIR / f"subzone_logsums_for_BAUS{my_args.suffix}.csv"))
   
   # write taz logsums to file
   taz_mand_nonmand_df = taz_mand_nonmand_df[['taz', 'mandatory_logsum', 'nonmandatory_logsum', 'combo_logsum_prescale', 'combo_logsum']]
-  taz_mand_nonmand_df.to_csv(LOGSUMS_DIR / "taz_logsums_for_BAUS.csv", index=False)
-  print("Wrote {}".format(LOGSUMS_DIR / "taz_logsums_for_BAUS.csv"))
+  taz_mand_nonmand_df.to_csv(LOGSUMS_DIR / f"taz_logsums_for_BAUS{my_args.suffix}.csv", index=False)
+  print("Wrote {}".format(LOGSUMS_DIR / f"taz_logsums_for_BAUS{my_args.suffix}.csv"))
   
