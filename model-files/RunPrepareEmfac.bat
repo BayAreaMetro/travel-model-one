@@ -121,7 +121,7 @@ python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %
 :: for EIR, also run SEASON=winter
 if %1==EIR (
   set SEASON=winter
-  python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season %SEASON% --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
+  python %EMFAC_SCRIPT_DIR%\create_EMFAC_custom_activity_file.py --analysis_type %1 --emfac %emfacVersion% --run_mode emissions --sub_area MPO-MTC --season winter --VMT_data_type totalDailyVMT --custom_hourly_speed_fractions
 
 )
 
