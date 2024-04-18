@@ -102,17 +102,9 @@ COUNTY_GAI_AIRBASIN_DF = pd.DataFrame.from_records(COUNTY_GAI_AIRBASIN, columns=
 # The Travel Model doesn't have the concept of Veh_Tech, so
 # - For the following 9 technologies, use the travel model's hourly fraction
 # - For the rest, keep the default hourly fraction from the EMFAC template
-USE_TRAVEL_MODEL_VMT_FOR_VEH_TECH = [
-    'LDA - Dsl',
-    'LDA - Gas',
-    'LDT1 - Dsl',
-    'LDT1 - Gas',
-    'LDT2 - Dsl',
-    'LDT2 - Gas',
-    'MCY - Gas',
-    'MDV - Dsl',
-    'MDV - Gas'
-]
+VEH_TECH_EXTRACT_TO_PARTS = r'^(?P<vehicle>[^\-]+\S)(?P<space>\s?[-]\s?)(?P<tech>Gas|Elec|Dsl|NG|Phe)$'
+# vehicles that match these will use travel-model-VMT for speed distribution
+USE_TRAVEL_MODEL_VMT_FOR_VEHICLE = ['LDA','LDT1','LDT2','MCY','MDV']
 
 # args.VMT_data_type -> sheetname
 ACTIVITY_TEMPLATE_VMT_SHEETNAME = {
@@ -145,6 +137,9 @@ def overwrite_worksheet_data(sheet, sheet_cols, sheet_index_cols, new_data_df):
     return
 
 if __name__ == '__main__':
+    pd.options.display.width = 500 # this goes to log file
+    pd.options.display.max_columns = 100
+    pd.options.display.max_rows = 500
 
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--analysis_type",                 required=True, choices=['SB375','EIR','AQConformity'],
@@ -395,10 +390,23 @@ if __name__ == '__main__':
         )
         logging.debug("TM_HourlyFraction_df:\n{}".format(TM_HourlyFraction_df))
         logging.debug("TM_HourlyFraction_df.columns:\n{}".format(TM_HourlyFraction_df.columns))
+        
+        # split Veh_Tech into vehicle and tech
+        veh_tech_parts = TM_HourlyFraction_df.Veh_Tech.str.extract(VEH_TECH_EXTRACT_TO_PARTS)
+        TM_HourlyFraction_df = pd.concat([TM_HourlyFraction_df, veh_tech_parts], axis='columns')
+        logging.debug("TM_HourlyFraction_df.vehicle.unique().tolist():{}".format(TM_HourlyFraction_df.vehicle.unique().tolist()))
+        TM_HourlyFraction_df['use_TM_VMT'] = TM_HourlyFraction_df.vehicle.isin(USE_TRAVEL_MODEL_VMT_FOR_VEHICLE)
 
-        # use the TM version for those rows where Veh_Tech is in USE_TRAVEL_MODEL_VMT_FOR_VEH_TECH
+        logging.debug('TM_HourlyFraction_df[["Veh_Tech","vehicle","space","tech","use_TM_VMT"]].drop_duplicates():\n{}'.format(
+            TM_HourlyFraction_df[["Veh_Tech","vehicle","space","tech","use_TM_VMT"]].drop_duplicates()
+        ))
+        # verify no failures in extracting parts
+        logging.debug(pd.isna(TM_HourlyFraction_df.tech).sum())
+        assert(pd.isna(TM_HourlyFraction_df.tech).sum() == 0)
+
+        # use the TM version for those rows where Veh_Tech is in VEH_TECH_EXTRACT_TO_PARTS
         for speedbin in SPEED_BIN_TO_LABEL_DF.speedBin_label.tolist():
-            TM_HourlyFraction_df.loc[ TM_HourlyFraction_df.Veh_Tech.isin(USE_TRAVEL_MODEL_VMT_FOR_VEH_TECH), speedbin] = \
+            TM_HourlyFraction_df.loc[ TM_HourlyFraction_df.use_TM_VMT == True, speedbin] = \
                 TM_HourlyFraction_df[f'HourlyFraction_{speedbin}']
 
         # use original columns - replace all cells
