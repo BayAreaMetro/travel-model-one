@@ -24,11 +24,12 @@ OUTPUT_FILES = {
         "parking_costs_tour_ptype_destTaz",
         "parking_costs_trip_destTaz",
         "parking_costs_trip_distBins",
-        "emfac_ghg",
+        "emfac_summary",
         "vmt_vht_metrics_by_taz",
         "trips_cordon_mode_summary",
         "truck_trips_by_timeperiod",
-        "transit_crowding_complete"
+        "transit_crowding_complete",
+        "ActivityDurationSummary"
     ],
     "core_summaries":[
         "ActiveTransport",
