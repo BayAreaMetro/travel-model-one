@@ -36,11 +36,11 @@ MODEL_RUN_ID     = CWD.name  # run this from M_DIR or model run dir on modeling 
 CWD_OUTPUT_EMFAC = CWD / "OUTPUT/emfac"
 OUTPUT_FILE      = CWD_OUTPUT_EMFAC / "emfac_summary.csv"
 # columns to extract
-EXTRACT_COLUMNS  = ['Veh_Tech', 'VMT', 'Trips', 'CO2_RUNEX', 'CO2_IDLEX', 'CO2_STREX', 'CO2_TOTEX']
+EXTRACT_COLUMNS  = ['Veh_Tech', 'VMT', 'Trips', 'CO2_RUNEX', 'CO2_IDLEX', 'CO2_STREX', 'CO2_TOTEX', 'PM2_5_TOTAL']
 
 # emfac output file ends with timestamp: _YYYYMMDDHHMMSS.xlsx  e.g. _20240410131422.xlsx
 # by convention, it's E[emfacversion]_[model_run_id]_[season][_sb375?]_[YYYYMMDDHHMMSS].xlsx
-EMFAC_OUTPUT_STR = f"E(?P<emfac_version>2014|2017|2021)_{MODEL_RUN_ID}_(?P<season>annual|summer|winter)(?P<planning>_planning)?(?P<sb375>_sb375)?_(?P<run_timestamp>\d{{14}}).xlsx"
+EMFAC_OUTPUT_STR = f"E(?P<emfac_version>2014|2017|2017web|2021|2021web)_{MODEL_RUN_ID}_(?P<season>annual|summer|winter)(?P<planning>_planning)?(?P<sb375>_sb375)?_(?P<run_timestamp>\d{{14}}).xlsx"
 EMFAC_OUTPUT_RE  = re.compile(EMFAC_OUTPUT_STR)
 
 if __name__ == '__main__':
@@ -85,14 +85,23 @@ if __name__ == '__main__':
 
             # remove leading or trailing spaces
             total_mtc_df.Veh_Tech = total_mtc_df.Veh_Tech.str.strip()
+            total_mtc_columns = total_mtc_df.columns
+            # print(f"total_mtc_columns = {total_mtc_columns}")
 
             # select row with All Vehicles
             total_mtc_df = total_mtc_df.loc[ total_mtc_df.Veh_Tech == 'All Vehicles', :]
             assert(len(total_mtc_df)==1)
+            
             all_veh_series = total_mtc_df.squeeze()
             # print(all_veh_series)
             for extract_column in EXTRACT_COLUMNS:
-                emfac_run_data[extract_column] = all_veh_series[extract_column]
+                # in EMFAC2021, VMT is 'Total_VMT'
+                emfac_extract_column = extract_column
+                if (match.group('emfac_version') in ['2021','2021web']) and (extract_column == 'VMT'):
+                    emfac_extract_column = 'Total_VMT'
+
+                if emfac_extract_column in total_mtc_columns: 
+                    emfac_run_data[extract_column] = all_veh_series[emfac_extract_column]
 
             all_emfac_run_data.append(emfac_run_data)
             continue

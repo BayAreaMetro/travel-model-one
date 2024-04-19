@@ -24,7 +24,6 @@ OUTPUT_FILES = {
         "parking_costs_tour_ptype_destTaz",
         "parking_costs_trip_destTaz",
         "parking_costs_trip_distBins",
-        "emfac_ghg",
         "vmt_vht_metrics_by_taz",
         "trips_cordon_mode_summary",
         "truck_trips_by_timeperiod",
@@ -45,7 +44,8 @@ OUTPUT_FILES = {
         "TravelCost",
         "TripDistance",
         "VehicleMilesTraveled",
-        "ODTravelTime_byModeTimeperiodIncome"
+        "ODTravelTime_byModeTimeperiodIncome",
+        "ActivityDurationSummary"
     ],
     "trn":[
         "trnline",
@@ -55,6 +55,9 @@ OUTPUT_FILES = {
         "network_trn_links",
         "network_trn_route_links",
         "network_trn_lines"
+    ],
+    "emfac":[
+        "emfac_summary",
     ]
 }
 

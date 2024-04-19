@@ -367,6 +367,7 @@ if not exist hwy\iter%ITER%\avgload5period_vehclasses.csv (
 
 :: Run Prepare EMFAC
 call RunPrepareEmfac.bat SB375 WithFreight
+call RunPrepareEmfac.bat EIR WithFreight
 
 :: ------------------------------------------------------------------------------------------------------
 ::

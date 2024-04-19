@@ -793,7 +793,7 @@ def extract_Healthy1_PM25(model_runs_dict: dict, args_rtp: str):
 
     Per Harold in Update emission / pollution metrics (PM2.5)
     https://app.asana.com/0/0/1206701395344040/f
-    this comes from EIR\E2017\E2017_[modelrun_id]_winter_planning_[timestamp].xlsx
+    this comes from EIR\E2017\E2017web_[modelrun_id]_winter_planning_[timestamp].xlsx
 
     Args:
         model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
@@ -816,7 +816,7 @@ def extract_Healthy1_PM25(model_runs_dict: dict, args_rtp: str):
 
             # this comes from EIR\E2017\E2017_[modelrun_id]_winter_planning_[timestamp].xlsx
         emfac2017_dir = model_run_dir / "OUTPUT/emfac/EIR/E2017"
-        emfac2017_winter_planning_files = sorted(emfac2017_dir.glob(f"E2017_{tm_runid}_winter_planning_*.xlsx"))
+        emfac2017_winter_planning_files = sorted(emfac2017_dir.glob(f"E2017web_{tm_runid}_winter_planning_*.xlsx"))
         if len(emfac2017_winter_planning_files) != 1:
             LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2017_winter_planning_files: {emfac2017_winter_planning_files}")
             LOGGER.info("    Skipping...")
@@ -858,7 +858,7 @@ def extract_Healthy2_CO2_Emissions(model_runs_dict: dict, args_rtp: str):
 
     Per Harold in Update emission / pollution metrics (PM2.5)
     https://app.asana.com/0/0/1206701395344040/f
-    this comes from EIR\E2017\E2017_[modelrun_id]_annnual_planning_[timestamp].xlsx
+    this comes from EIR\E2017\E2017web_[modelrun_id]_annnual_planning_[timestamp].xlsx
 
     Args:
         model_runs_dict (dict): contents of ModelRuns.xlsx with modelrun_id key
@@ -891,7 +891,7 @@ def extract_Healthy2_CO2_Emissions(model_runs_dict: dict, args_rtp: str):
 
         # this comes from EIR\E2017\E2017_[modelrun_id]_annual_planning_[timestamp].xlsx
         emfac2017_dir = model_run_dir / "OUTPUT/emfac/EIR/E2017"
-        emfac2017_annual_planning_files = sorted(emfac2017_dir.glob(f"E2017_{tm_runid}_annual_planning_*.xlsx"))
+        emfac2017_annual_planning_files = sorted(emfac2017_dir.glob(f"E2017web_{tm_runid}_annual_planning_*.xlsx"))
         if len(emfac2017_annual_planning_files) != 1:
             LOGGER.info(f"  {tm_runid} Found 0 or 2+ emfac2017_annual_planning_files: {emfac2017_annual_planning_files}")
             LOGGER.info("    Skipping...")

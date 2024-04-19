@@ -30,8 +30,8 @@ OUTPUT_FILE         <- file.path(OUTPUT_DIR, "Model Data - Bikeshare.csv")
 SCRIPT                <- "X:/travel-model-one-master/utilities/RTP/Emissions/Off Model Calculators/BikeShare.R"
 model_runs          <- read_excel(MODEL_RUNS_FILE)
 
-# filter to the current runs
-model_runs          <- model_runs[ which((model_runs$status == "current") | (model_runs$status == "DEIR")), ]
+# filter to the runs that need off-model calculation
+model_runs          <- model_runs[ which((model_runs$run_offmodel == "yes") | (model_runs$status == "DEIR")), ]
 
 print(paste("MODEL_DATA_BASE_DIRS = ",MODEL_DATA_BASE_DIRS))
 print(paste("OUTPUT_DIR          = ",OUTPUT_DIR))
