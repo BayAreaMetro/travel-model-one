@@ -14,7 +14,8 @@ USAGE = """
     'Intermediate/Final', 
     'Facility Type Definition',
     'Metric Description',
-    'County',
+    'County', 
+    'Revenue Source',
     'value'
     
   Metrics are:
@@ -173,11 +174,19 @@ def calculate_Change_in_vmt_from_loaded_network(tm_run_id: str) -> pd.DataFrame:
     loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1317) & (loaded_network_df.TAZ1454 < 1404), 'County'] = 'Sonoma'
     loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1403) & (loaded_network_df.TAZ1454 < 1455), 'County'] = 'Marin'
     
+    # add field for ALT, EL, Bridges, Cordons using TAZ
+    loaded_network_df['Revenue Source'] = 'NA'
+    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 0) & (loaded_network_df.TOLLCLASS < 9), 'Revenue Source'] = 'Bridge Tolls'
+    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 8) & (loaded_network_df.TOLLCLASS < 37), 'Revenue Source'] = 'Cordon Tolls'
+    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 36) & (loaded_network_df.TOLLCLASS < 700000), 'Revenue Source'] = 'Express Lane Tolls'
+    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 699999) & (loaded_network_df.TOLLCLASS < 900000), 'Revenue Source'] = 'All Lane Tolling'    
+    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 899999) & (loaded_network_df.TOLLCLASS < 1000000), 'Revenue Source'] = 'All Lane Tolling'    
+    
     # fill empty collumns of DF with a string to retain all values in the DF
     loaded_network_df.grouping = loaded_network_df.grouping.fillna('NA')
     loaded_network_df.grouping_dir = loaded_network_df.grouping_dir.fillna('NA')
 
-    ft_metrics_df = loaded_network_df.groupby(by=['Freeway/Non-Freeway','Facility Type Definition', 'EPC/Non-EPC', 'Tolled/Non-tolled Facilities', 'County', 'grouping', 'grouping_dir','tollclass']).agg({'Total VMT':'sum', \
+    ft_metrics_df = loaded_network_df.groupby(by=['Freeway/Non-Freeway','Facility Type Definition', 'EPC/Non-EPC', 'Tolled/Non-tolled Facilities', 'County', 'Revenue Source', 'grouping', 'grouping_dir','tollclass']).agg({'Total VMT':'sum', \
                                                                                                                                                                                                'VHT':'sum', \
                                                                                                                                                                                                'EA VMT':'sum', \
                                                                                                                                                                                                'AM VMT':'sum', \
@@ -188,7 +197,7 @@ def calculate_Change_in_vmt_from_loaded_network(tm_run_id: str) -> pd.DataFrame:
 
     # put it together, move to long form and return
     metrics_df = ft_metrics_df
-    metrics_df = metrics_df.melt(id_vars=['Freeway/Non-Freeway','Facility Type Definition','EPC/Non-EPC', 'Tolled/Non-tolled Facilities', 'County', 'grouping', 'grouping_dir', 'tollclass'], var_name='Metric Description')
+    metrics_df = metrics_df.melt(id_vars=['Freeway/Non-Freeway','Facility Type Definition','EPC/Non-EPC', 'Tolled/Non-tolled Facilities', 'County', 'Revenue Source', 'grouping', 'grouping_dir', 'tollclass'], var_name='Metric Description')
     metrics_df['Model Run ID'] = tm_run_id
     metrics_df['Metric ID'] = METRIC_ID
     metrics_df['Intermediate/Final'] = 'final'

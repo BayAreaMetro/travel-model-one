@@ -15,6 +15,8 @@ USAGE = """
     'Facility Type Definition',
     'Metric Description',
     'County',
+    'Revenue Facilities',
+    'Grouping',
     'value',
     'TOLLCLASS'
     
@@ -154,27 +156,28 @@ def top_level_metrics_toll_revenues(tm_run_id: str) -> pd.DataFrame:
         else:
             # All Lane Tolling string:
             VOL_string = 'VOL{}_TOT'.format(time_period)
-        loaded_network_df['Daily {} DA Toll Revenue (2000$)'.format(time_period)] = (loaded_network_df[VOL_string]) * loaded_network_df['TOLL{}_DA'.format(time_period)] / 100
-        loaded_network_df['Daily {} DA Toll Revenue (2020$)'.format(time_period)] = loaded_network_df['Daily {} DA Toll Revenue (2000$)'.format(time_period)] * INFLATION_00_20
-        loaded_network_df['Daily {} DA Toll Revenue (2023$)'.format(time_period)] = loaded_network_df['Daily {} DA Toll Revenue (2000$)'.format(time_period)] * INFLATION_00_23
-        loaded_network_df['Daily {} DA Toll Revenue (2035$)'.format(time_period)] = loaded_network_df['Daily {} DA Toll Revenue (2023$)'.format(time_period)] * INFLATION_FACTOR**(2035-2023)
+            
+        loaded_network_df['Daily {} Toll Revenue (2000$)'.format(time_period)] = (loaded_network_df[VOL_string]) * loaded_network_df['TOLL{}_DA'.format(time_period)] / 100
+        loaded_network_df['Daily {} Toll Revenue (2020$)'.format(time_period)] = loaded_network_df['Daily {} Toll Revenue (2000$)'.format(time_period)] * INFLATION_00_20
+        loaded_network_df['Daily {} Toll Revenue (2023$)'.format(time_period)] = loaded_network_df['Daily {} Toll Revenue (2000$)'.format(time_period)] * INFLATION_00_23
+        loaded_network_df['Daily {} Toll Revenue (2035$)'.format(time_period)] = loaded_network_df['Daily {} Toll Revenue (2023$)'.format(time_period)] * INFLATION_FACTOR**(2035-2023)
         
-    loaded_network_df['Daily DA Toll Revenue (2000$)'] = \
-            (loaded_network_df['Daily EA DA Toll Revenue (2000$)']+
-            loaded_network_df['Daily AM DA Toll Revenue (2000$)']+
-            loaded_network_df['Daily MD DA Toll Revenue (2000$)']+
-            loaded_network_df['Daily PM DA Toll Revenue (2000$)']+
-            loaded_network_df['Daily EV DA Toll Revenue (2000$)'])
+    loaded_network_df['Daily Toll Revenue (2000$)'] = \
+            (loaded_network_df['Daily EA Toll Revenue (2000$)']+
+            loaded_network_df['Daily AM Toll Revenue (2000$)']+
+            loaded_network_df['Daily MD Toll Revenue (2000$)']+
+            loaded_network_df['Daily PM Toll Revenue (2000$)']+
+            loaded_network_df['Daily EV Toll Revenue (2000$)'])
             
-    loaded_network_df['Daily DA Toll Revenue (2020$)'] = loaded_network_df['Daily DA Toll Revenue (2000$)'] * INFLATION_00_20
-    loaded_network_df['Daily DA Toll Revenue (2023$)'] = loaded_network_df['Daily DA Toll Revenue (2000$)'] * INFLATION_00_23
-    loaded_network_df['Daily DA Toll Revenue (2035$)'] = loaded_network_df['Daily DA Toll Revenue (2023$)'] * INFLATION_FACTOR**(2035-2023)
+    loaded_network_df['Daily Toll Revenue (2020$)'] = loaded_network_df['Daily Toll Revenue (2000$)'] * INFLATION_00_20
+    loaded_network_df['Daily Toll Revenue (2023$)'] = loaded_network_df['Daily Toll Revenue (2000$)'] * INFLATION_00_23
+    loaded_network_df['Daily Toll Revenue (2035$)'] = loaded_network_df['Daily Toll Revenue (2023$)'] * INFLATION_FACTOR**(2035-2023)
             
-    loaded_network_df['Annual DA Toll Revenue (2000$)'] = loaded_network_df['Daily DA Toll Revenue (2000$)'] * REVENUE_DAYS_PER_YEAR        
-    loaded_network_df['Annual DA Toll Revenue (2020$)'] = loaded_network_df['Annual DA Toll Revenue (2000$)'] * INFLATION_00_20
-    loaded_network_df['Annual DA Toll Revenue (2023$)'] = loaded_network_df['Annual DA Toll Revenue (2000$)'] * INFLATION_00_23
-    loaded_network_df['Annual DA Toll Revenue (2035$)'] = loaded_network_df['Annual DA Toll Revenue (2023$)'] * INFLATION_FACTOR**(2035-2023)
-    loaded_network_df['Sixteen Year DA Toll Revenue (YOE$)'] = (loaded_network_df['Annual DA Toll Revenue (2035$)'] * (1- INFLATION_FACTOR**15))/(1 - INFLATION_FACTOR)                    
+    loaded_network_df['Annual Toll Revenue (2000$)'] = loaded_network_df['Daily Toll Revenue (2000$)'] * REVENUE_DAYS_PER_YEAR        
+    loaded_network_df['Annual Toll Revenue (2020$)'] = loaded_network_df['Annual Toll Revenue (2000$)'] * INFLATION_00_20
+    loaded_network_df['Annual Toll Revenue (2023$)'] = loaded_network_df['Annual Toll Revenue (2000$)'] * INFLATION_00_23
+    loaded_network_df['Annual Toll Revenue (2035$)'] = loaded_network_df['Annual Toll Revenue (2023$)'] * INFLATION_FACTOR**(2035-2023)
+    loaded_network_df['Sixteen Year Toll Revenue (YOE$)'] = (loaded_network_df['Annual Toll Revenue (2035$)'] * (1- INFLATION_FACTOR**15))/(1 - INFLATION_FACTOR)                    
     
     # https://github.com/BayAreaMetro/modeling-website/wiki/MasterNetworkLookupTables#facility-type-ft
     ft_to_grouping_key_df = pd.DataFrame(columns=['FT','Freeway/Non-Freeway','Facility Type Definition'], data=[
@@ -213,6 +216,14 @@ def top_level_metrics_toll_revenues(tm_run_id: str) -> pd.DataFrame:
     loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1317) & (loaded_network_df.TAZ1454 < 1404), 'County'] = 'Sonoma'
     loaded_network_df.loc[(loaded_network_df.TAZ1454 > 1403) & (loaded_network_df.TAZ1454 < 1455), 'County'] = 'Marin'
     
+    # add field for ALT, EL, Bridges, Cordons using TAZ
+    loaded_network_df['Revenue Facilities'] = 'NA'
+    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 0) & (loaded_network_df.TOLLCLASS < 9), 'Revenue Facilities'] = 'Bridge Tolls'
+    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 8) & (loaded_network_df.TOLLCLASS < 37), 'Revenue Facilities'] = 'Cordon Tolls'
+    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 36) & (loaded_network_df.TOLLCLASS < 700000), 'Revenue Facilities'] = 'Express Lane Tolls'
+    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 699999) & (loaded_network_df.TOLLCLASS < 900000), 'Revenue Facilities'] = 'All Lane Tolling'    
+    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 899999) & (loaded_network_df.TOLLCLASS < 1000000), 'Revenue Facilities'] = 'All Lane Tolling'    
+    
     # fill empty collumns of DF with a string to retain al values in the DF
     loaded_network_df.grouping = loaded_network_df.grouping.fillna('NA')
     loaded_network_df.grouping_dir = loaded_network_df.grouping_dir.fillna('NA')
@@ -222,39 +233,39 @@ def top_level_metrics_toll_revenues(tm_run_id: str) -> pd.DataFrame:
     
     # loaded_network_df.to_csv("test.csv", index=False)
 
-    ft_metrics_df = loaded_network_df.groupby(by=['Freeway/Non-Freeway','Facility Type Definition', 'EPC/Non-EPC', 'County', 'grouping', 'grouping_dir', 'TOLLCLASS']).agg({'Sixteen Year DA Toll Revenue (YOE$)':'sum', \
-                                                                                                                                                                                               'Daily EA DA Toll Revenue (2000$)':'sum', \
-                                                                                                                                                                                               'Daily EA DA Toll Revenue (2020$)':'sum', \
-                                                                                                                                                                                               'Daily EA DA Toll Revenue (2023$)':'sum', \
-                                                                                                                                                                                               'Daily EA DA Toll Revenue (2035$)':'sum', \
-                                                                                                                                                                                               'Daily AM DA Toll Revenue (2000$)':'sum', \
-                                                                                                                                                                                               'Daily AM DA Toll Revenue (2020$)':'sum', \
-                                                                                                                                                                                               'Daily AM DA Toll Revenue (2023$)':'sum', \
-                                                                                                                                                                                               'Daily AM DA Toll Revenue (2035$)':'sum', \
-                                                                                                                                                                                               'Daily MD DA Toll Revenue (2000$)':'sum', \
-                                                                                                                                                                                               'Daily MD DA Toll Revenue (2020$)':'sum', \
-                                                                                                                                                                                               'Daily MD DA Toll Revenue (2023$)':'sum', \
-                                                                                                                                                                                               'Daily MD DA Toll Revenue (2035$)':'sum', \
-                                                                                                                                                                                               'Daily PM DA Toll Revenue (2000$)':'sum', \
-                                                                                                                                                                                               'Daily PM DA Toll Revenue (2020$)':'sum', \
-                                                                                                                                                                                               'Daily PM DA Toll Revenue (2023$)':'sum', \
-                                                                                                                                                                                               'Daily PM DA Toll Revenue (2035$)':'sum', \
-                                                                                                                                                                                               'Daily EV DA Toll Revenue (2000$)':'sum', \
-                                                                                                                                                                                               'Daily EV DA Toll Revenue (2020$)':'sum', \
-                                                                                                                                                                                               'Daily EV DA Toll Revenue (2023$)':'sum', \
-                                                                                                                                                                                               'Daily EV DA Toll Revenue (2035$)':'sum', \
-                                                                                                                                                                                               'Daily DA Toll Revenue (2000$)':'sum', \
-                                                                                                                                                                                               'Daily DA Toll Revenue (2020$)':'sum', \
-                                                                                                                                                                                               'Daily DA Toll Revenue (2023$)':'sum', \
-                                                                                                                                                                                               'Daily DA Toll Revenue (2035$)':'sum', \
-                                                                                                                                                                                               'Annual DA Toll Revenue (2000$)':'sum', \
-                                                                                                                                                                                               'Annual DA Toll Revenue (2020$)':'sum', \
-                                                                                                                                                                                               'Annual DA Toll Revenue (2023$)':'sum', \
-                                                                                                                                                                                               'Annual DA Toll Revenue (2035$)':'sum'}).reset_index()
+    ft_metrics_df = loaded_network_df.groupby(by=['Freeway/Non-Freeway','Facility Type Definition', 'EPC/Non-EPC', 'County', 'Revenue Facilities', 'grouping', 'grouping_dir', 'TOLLCLASS']).agg({'Sixteen Year Toll Revenue (YOE$)':'sum', \
+                                                                                                                                                                                               'Daily EA Toll Revenue (2000$)':'sum', \
+                                                                                                                                                                                               'Daily EA Toll Revenue (2020$)':'sum', \
+                                                                                                                                                                                               'Daily EA Toll Revenue (2023$)':'sum', \
+                                                                                                                                                                                               'Daily EA Toll Revenue (2035$)':'sum', \
+                                                                                                                                                                                               'Daily AM Toll Revenue (2000$)':'sum', \
+                                                                                                                                                                                               'Daily AM Toll Revenue (2020$)':'sum', \
+                                                                                                                                                                                               'Daily AM Toll Revenue (2023$)':'sum', \
+                                                                                                                                                                                               'Daily AM Toll Revenue (2035$)':'sum', \
+                                                                                                                                                                                               'Daily MD Toll Revenue (2000$)':'sum', \
+                                                                                                                                                                                               'Daily MD Toll Revenue (2020$)':'sum', \
+                                                                                                                                                                                               'Daily MD Toll Revenue (2023$)':'sum', \
+                                                                                                                                                                                               'Daily MD Toll Revenue (2035$)':'sum', \
+                                                                                                                                                                                               'Daily PM Toll Revenue (2000$)':'sum', \
+                                                                                                                                                                                               'Daily PM Toll Revenue (2020$)':'sum', \
+                                                                                                                                                                                               'Daily PM Toll Revenue (2023$)':'sum', \
+                                                                                                                                                                                               'Daily PM Toll Revenue (2035$)':'sum', \
+                                                                                                                                                                                               'Daily EV Toll Revenue (2000$)':'sum', \
+                                                                                                                                                                                               'Daily EV Toll Revenue (2020$)':'sum', \
+                                                                                                                                                                                               'Daily EV Toll Revenue (2023$)':'sum', \
+                                                                                                                                                                                               'Daily EV Toll Revenue (2035$)':'sum', \
+                                                                                                                                                                                               'Daily Toll Revenue (2000$)':'sum', \
+                                                                                                                                                                                               'Daily Toll Revenue (2020$)':'sum', \
+                                                                                                                                                                                               'Daily Toll Revenue (2023$)':'sum', \
+                                                                                                                                                                                               'Daily Toll Revenue (2035$)':'sum', \
+                                                                                                                                                                                               'Annual Toll Revenue (2000$)':'sum', \
+                                                                                                                                                                                               'Annual Toll Revenue (2020$)':'sum', \
+                                                                                                                                                                                               'Annual Toll Revenue (2023$)':'sum', \
+                                                                                                                                                                                               'Annual Toll Revenue (2035$)':'sum'}).reset_index()
     LOGGER.debug("ft_metrics_df:\n{}".format(ft_metrics_df))
 
     # move to long form and return
-    metrics_df = ft_metrics_df.melt(id_vars=['Freeway/Non-Freeway','Facility Type Definition','EPC/Non-EPC', 'County', 'grouping', 'grouping_dir', 'TOLLCLASS'], var_name='Metric Description')
+    metrics_df = ft_metrics_df.melt(id_vars=['Freeway/Non-Freeway','Facility Type Definition','EPC/Non-EPC', 'County', 'Revenue Facilities', 'grouping', 'grouping_dir', 'TOLLCLASS'], var_name='Metric Description')
     metrics_df['Model Run ID'] = tm_run_id
     metrics_df['Metric ID'] = METRIC_ID
     metrics_df['Intermediate/Final'] = 'final'
