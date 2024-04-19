@@ -72,11 +72,15 @@ main <- function() {
       dest_purpose == "work_med"       ~ "work",
       dest_purpose == "work_high"      ~ "work",
       dest_purpose == "work_very high" ~ "work",
+      dest_purpose == "work"           ~ "work",
+      dest_purpose == "Work"           ~ "work",
       dest_purpose == "university"     ~ "university/school",
       dest_purpose == "school_high"    ~ "university/school",
       dest_purpose == "school_grade"   ~ "university/school",
       TRUE                             ~ "other"),
   )
+  # print(table(trips$dest_purpose, trips$dest_purpose_simple))
+
   print("Before filtering:")
   print(head(select(trips, -ptype_label, -incQ_label), 20))
 
