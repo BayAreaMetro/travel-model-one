@@ -514,23 +514,9 @@ if __name__ == '__main__':
     # plus the "within zone vmt (excluding external zones)" from CreateSpeedBinsWithinZones.job
     # note that *external zones are excluded* when checking totals
 
-    # emfac2021 refuses metadata
-    if args.emfac_version != '2021':
-        # -------------------------------------------------------------------
-        # Metadata
-        # -------------------------------------------------------------------
-        logging.info(f"------------- metadata --------------------")
-        workbook.create_sheet(title="metadata")
-        sheet = workbook['metadata']
-        sheet["A1"] = "Workbook written by:"
-        sheet["B1"] = str(__file__)
-        sheet["A2"] = "Custom Activity Template:"
-        sheet["B2"] = str(input_custom_activity_template_fullpath)
-        sheet["A3"] = "Log file:"
-        sheet["B3"] = str(log_file_full_path)
-
-        sheet.column_dimensions['A'].width = 25
-        sheet.column_dimensions['B'].width = 160
+    # emfac2021 refuses a metadata worksheet
+    # emfac2017 web refuses it too
+    # rely on logfile instead
 
     # save it once here
     workbook.save(output_custom_activity_file_fullpath)
