@@ -21,6 +21,7 @@ TARGETED_TRANS_ALT = 'targeted_trans_alt'
 VAN_POOL = 'vanpools'
 CHARGER = 'regional_charger'
 VEH_BUYBACK = 'vehicle_buyback'
+EBIKE = 'ebike'
 
 #####################################
 # inputs and outputs 
@@ -295,6 +296,45 @@ def get_vehBuyBack_result():
     
     return vehBuyBack_summary_all
 
+######### get e-bike result
+def get_ebike_result():
+
+    ebike_summary_all = pd.DataFrame()
+
+    ebike_wb_file = os.path.join(OFF_MODEL_CALCULATOR_DIR, 'PBA50+_OffModel_Ebike.xlsx')
+    print(ebike_wb_file)
+    if os.path.exists(ebike_wb_file):
+        ebike_df = pd.read_excel(
+            ebike_wb_file,
+            sheet_name='Main sheet',
+            header=None
+        )
+
+        # verify the calculator name
+        print(ebike_df.iloc[0, 0] == 'Electric Bicycle Rebates')
+
+        # print(ebike_df)
+        ebike_df = ebike_df.iloc[23:26, [0, 2, 3]]
+        print(ebike_df)
+        ebike_df.columns = ['Variable', '2035', '2050']
+        # print(ebike_df)
+
+        for model_year in ['2035', '2050']:
+            ebike_summary = ebike_df.loc[
+                ebike_df['Variable'].isin(
+                    ['Total daily VMT reductions', 'Total daily GHG reductions (tons)'])][['Variable', model_year]]
+
+            ebike_summary = ebike_summary.set_index('Variable').transpose().reset_index()
+            ebike_summary.columns = ['year'] + off_model_metrics[1:]
+            ebike_summary['strategy'] = 'electric bike rebates'
+
+            ebike_summary_all = pd.concat([ebike_summary_all, ebike_summary])
+            # print(ebike_summary)
+            print(ebike_summary_all)
+    else:
+        print('{} does not exist'.format(ebike_wb_file))
+    
+    return ebike_summary_all
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=USAGE)
@@ -308,6 +348,7 @@ if __name__ == '__main__':
     parser.add_argument('--include_vanpools', required=False, help='whether to include vanpools calculation')
     parser.add_argument('--include_evCharger', required=False, help='whether to include ev charger calculation')
     parser.add_argument('--include_vehBuyBack', required=False, help='whether to include vehicle buy back calculation')
+    parser.add_argument('--include_ebike', required=False, help='whether to include e-bike calculation')
     
 
     args = parser.parse_args()
@@ -343,6 +384,10 @@ if __name__ == '__main__':
     if args.include_vehBuyBack == VEH_BUYBACK:
         vehBuyBack_result = get_vehBuyBack_result()
         strategies_to_include.append(vehBuyBack_result)
+    
+    if args.include_ebike == EBIKE:
+        ebike_result = get_ebike_result()
+        strategies_to_include.append(ebike_result)
 
     off_model_summary = pd.concat(strategies_to_include)
 
