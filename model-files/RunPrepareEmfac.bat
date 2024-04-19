@@ -107,6 +107,7 @@ if %1==EIR (
   if %MODEL_YEAR% EQU 2005 (set emfacVersion=2017)
   if %MODEL_YEAR% EQU 2015 (set emfacVersion=2017)
   if %MODEL_YEAR% EQU 2020 (set emfacVersion=2017)
+  if %MODEL_YEAR% EQU 2023 (set emfacVersion=2017)
   if %MODEL_YEAR% EQU 2030 (set emfacVersion=2017)
   if %MODEL_YEAR% EQU 2035 (set emfacVersion=2017)
   if %MODEL_YEAR% EQU 2040 (set emfacVersion=2017)
