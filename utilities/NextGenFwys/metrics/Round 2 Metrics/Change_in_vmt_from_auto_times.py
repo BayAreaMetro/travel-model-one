@@ -29,6 +29,8 @@ import logging
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
+# line below for round 2 runs
+# NGFS_ROUND2_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
 NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
@@ -64,6 +66,8 @@ def calculate_Change_in_vmt_from_auto_times(tm_run_id: str) -> pd.DataFrame:
 
     # read network-based auto times
     auto_times_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "metrics", "auto_times.csv")
+    # line below for round 2 runs
+    # auto_times_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "metrics", "auto_times.csv")
     auto_times_df = pd.read_csv(auto_times_file)
     LOGGER.info("  Read {:,} rows from {}".format(len(auto_times_df), auto_times_file))
 
@@ -129,6 +133,9 @@ if __name__ == "__main__":
     LOGGER.info("current_runs_df: \n{}".format(current_runs_df))
 
     current_runs_list = current_runs_df['directory'].to_list()
+    
+    # line below for round 2 runs
+    # current_runs_list = ['2035_TM160_NGF_r2_NoProject_01', '2035_TM160_NGF_r2_NoProject_01_AOCx1.25_v2', '2035_TM160_NGF_r2_NoProject_03_pretollcalib']
 
     for tm_run_id in current_runs_list:
         out_filename = os.path.join(os.getcwd(),"Change_in_vmt_from_auto_times_{}.csv".format(tm_run_id))

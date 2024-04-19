@@ -32,7 +32,8 @@ import numpy
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
-NGFS_ROUND2_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
+# line below for round 2 runs
+# NGFS_ROUND2_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
 NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
@@ -66,6 +67,7 @@ def calculate_Reliable1_change_travel_time_on_freeways(tm_run_id: str) -> pd.Dat
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
 
     loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
+    # line below for round 2 runs
     # loaded_network_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
     
     loaded_network_df = pd.read_csv(loaded_network_file)
@@ -158,6 +160,7 @@ def calculate_Reliable1_change_travel_time_on_GoodsRoutes(tm_run_id: str) -> pd.
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
 
     loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
+    # line below for round 2 runs
     # loaded_network_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
     
     loaded_network_df = pd.read_csv(loaded_network_file)
@@ -250,6 +253,7 @@ def calculate_Reliable1_change_travel_time_on_Othercorridors(tm_run_id: str) -> 
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
 
     loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
+    # line below for round 2 runs
     # loaded_network_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
     
     loaded_network_df = pd.read_csv(loaded_network_file)
@@ -427,6 +431,7 @@ if __name__ == "__main__":
 
     current_runs_list = current_runs_df['directory'].to_list()
     
+    # line below for round 2 runs
     # current_runs_list = ['2035_TM160_NGF_r2_NoProject_01', '2035_TM160_NGF_r2_NoProject_01_AOCx1.25_v2', '2035_TM160_NGF_r2_NoProject_03_pretollcalib']
     
     # find the last pathway 1 run, since we'll use that to determine which links are in the fwy minor groupings
