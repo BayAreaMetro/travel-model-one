@@ -3,45 +3,25 @@
 # https://app.asana.com/0/1182463234225195/1207094912644751/f
 #
 # This script will summarize people who spend time in a TAZ (not in their home) over X hours
+# Input: 
+#   [OUTPUT]/updated_output/trips.rdata
+# Output:
+#   [OUTPUT]/core_summaries/ActivityDurationSummary.csv with columns:
+#   --- index columns ---
+#     dest_taz: trip destination TAZ
+#     desT_purpose_simple: one of work, university/school, other
+#     taz_duration: int, representing hours
+#   --- value columns --- or the trips going to the given dest_taz for the given purpose and the given taz_duration:
+#     avg_distance: the average distance of that trip
+#     num_persons: the number of persons who made trips
+#     num_trips: the number of persons who made trips
 #
-
 library(dplyr)
+library(data.table)
 options(width = 180)
 
 # 3 hours
 TAZ_DURATION_THRESHOLD <- 3
-
-summarize_duration_activity <- function(person_trips, person_id_tibble) {
-  # used with group_modify.
-  # person_id_tibble = tibble with hh_id, person_id, person_num
-  # person_trips is the list of trips
-  
-  # sort by depart_hour
-  person_trips <- person_trips %>% arrange(depart_hour)
-  person_trips <- person_trips %>% mutate(
-    next_depart_hour = lead(depart_hour),
-    taz_duration     = next_depart_hour - depart_hour
-  )
-  # DEBUG output
-  if (FALSE) {
-    print(person_id_tibble)
-    print("DEBUG person_trips:")
-    print(select(person_trips,
-                 tour_id, stop_id,
-                 orig_taz, orig_purpose,
-                 dest_taz, dest_purpose,
-                 depart_hour, next_depart_hour, taz_duration))
-  }
-  # only keep those with taz_duration > THRESHOLD
-  person_trips <- person_trips %>% 
-    filter(!is.na(taz_duration)) %>%
-    filter(taz_duration > TAZ_DURATION_THRESHOLD) %>%
-    # and drop dest_purpose = Home, that's not really activity
-    filter(dest_purpose != "Home")
-
-  # print(person_trips)
-  return(person_trips)
-}
 
 ############# main #############################################################
 main <- function() {
@@ -63,29 +43,75 @@ main <- function() {
     ptype_label, incQ_label, # add wfh_choice if available
     home_taz, trip_mode, sampleRate,
     orig_taz, orig_purpose, dest_taz, dest_purpose,
-    depart_hour
+    depart_hour, distance
   )
-  print(head(trips))
-  
-  # test mode - don't commit
-  trips <- trips %>% filter(hh_id < 10000)
 
-  # group_by person and summarize duration activity
-  activity_duration_df <- trips %>% 
-    group_by(hh_id, person_id, person_num) %>%
-    group_modify(summarize_duration_activity) %>%
-    mutate(num_trips = 1.0/sampleRate)
+  # Convert df to data.table for fast sort
+  trips_dt <- as.data.table(trips)
+  setorder(trips_dt, person_id, depart_hour)
+  print("Sorted trips_dt:")
+  print(head(trips_dt))
+  # convert back to data.frame
+  trips <- as.data.frame(trips_dt)
+  print("Converted to data frame")
+  rm(trips_dt)
+
+  trips <- trips %>% mutate(
+    next_person_id   = lead(person_id),
+    next_depart_hour = lead(depart_hour),
+    taz_duration     = next_depart_hour - depart_hour,
+    trip_mode_simple = case_when(
+      trip_mode <= 6 ~ 'auto',
+      trip_mode == 7 ~ 'walk',
+      trip_mode == 8 ~ 'bike',
+      ((trip_mode >= 9) & (trip_mode <= 18)) ~ 'transit',
+      trip_mode >= 19 ~ 'auto'),
+    dest_purpose_simple = case_when(
+      dest_purpose == "Home"           ~ "Home",
+      dest_purpose == "work_low"       ~ "work",
+      dest_purpose == "work_med"       ~ "work",
+      dest_purpose == "work_high"      ~ "work",
+      dest_purpose == "work_very high" ~ "work",
+      dest_purpose == "university"     ~ "university/school",
+      dest_purpose == "school_high"    ~ "university/school",
+      dest_purpose == "school_grade"   ~ "university/school",
+      TRUE                             ~ "other"),
+  )
+  print("Before filtering:")
+  print(head(select(trips, -ptype_label, -incQ_label), 20))
+
+  trips <- trips %>% 
+    filter(next_person_id == person_id) %>%
+    filter(taz_duration >= TAZ_DURATION_THRESHOLD) %>%
+    # and drop dest_purpose = Home, that's not really activity
+    filter(dest_purpose != "Home")
+  print("After filtering:")
+  print(head(select(trips, -ptype_label, -incQ_label), 20))
+
+  print(paste("Number of trips:", prettyNum(nrow(trips),big.mark=",")))
+  print(paste("Number of persons:", prettyNum(n_distinct(trips$person_id),big.mark=",")))
 
   # summarize this
-  activity_duration_summary_df <- activity_duration_df %>% group_by(
-    ptype_label, incQ_label, home_taz, dest_taz, dest_purpose, taz_duration
-  ) %>% summarise(num_trips = sum(num_trips))
-  
+  # also available: incQ_label, home_taz, ptype_label
+  activity_duration_summary_df <- trips %>% group_by(
+    dest_taz, dest_purpose_simple, taz_duration
+  ) %>% summarise(
+      avg_distance = mean(distance),
+      sampleRate   = first(sampleRate), 
+      num_persons  = n_distinct(person_id),
+      num_trips    = n()
+    ) %>% mutate(
+      num_persons  = num_persons/sampleRate,
+      num_trips    = num_trips/sampleRate
+    ) %>% select(-sampleRate)
+  print(paste("Done with group_by and summarise; nrows:",
+    prettyNum(nrow(activity_duration_summary_df),big.mark=",")))
+
   # save it
   write.table(activity_duration_summary_df, 
               file.path(RESULTS_DIR,"ActivityDurationSummary.csv"),
               sep=",", row.names=FALSE)
-  print(paste("Wrote",nrow(activity_duration_summary_df),"to",file.path(RESULTS_DIR,"ActivityDurationSummary.csv")))
+  print(paste("Wrote",file.path(RESULTS_DIR,"ActivityDurationSummary.csv")))
 }
 
 main()
