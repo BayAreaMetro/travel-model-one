@@ -176,11 +176,11 @@ def calculate_Change_in_vmt_from_loaded_network(tm_run_id: str) -> pd.DataFrame:
     
     # add field for ALT, EL, Bridges, Cordons using TAZ
     loaded_network_df['Revenue Facilities'] = 'NA'
-    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 0) & (loaded_network_df.TOLLCLASS < 9), 'Revenue Facilities'] = 'Bridge Tolls'
-    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 8) & (loaded_network_df.TOLLCLASS < 37), 'Revenue Facilities'] = 'Cordon Tolls'
-    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 36) & (loaded_network_df.TOLLCLASS < 700000), 'Revenue Facilities'] = 'Express Lane Tolls'
-    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 699999) & (loaded_network_df.TOLLCLASS < 900000), 'Revenue Facilities'] = 'All Lane Tolling'    
-    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 899999) & (loaded_network_df.TOLLCLASS < 1000000), 'Revenue Facilities'] = 'All Lane Tolling'    
+    loaded_network_df.loc[(loaded_network_df.tollclass > 0) & (loaded_network_df.tollclass < 9), 'Revenue Facilities'] = 'Bridge Tolls'
+    loaded_network_df.loc[(loaded_network_df.tollclass > 8) & (loaded_network_df.tollclass < 37), 'Revenue Facilities'] = 'Cordon Tolls'
+    loaded_network_df.loc[(loaded_network_df.tollclass > 36) & (loaded_network_df.tollclass < 700000), 'Revenue Facilities'] = 'Express Lane Tolls'
+    loaded_network_df.loc[(loaded_network_df.tollclass > 699999) & (loaded_network_df.tollclass < 900000), 'Revenue Facilities'] = 'All Lane Tolling'    
+    loaded_network_df.loc[(loaded_network_df.tollclass > 899999) & (loaded_network_df.tollclass < 1000000), 'Revenue Facilities'] = 'All Lane Tolling'    
     
     # fill empty collumns of DF with a string to retain all values in the DF
     loaded_network_df.grouping = loaded_network_df.grouping.fillna('NA')
