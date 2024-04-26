@@ -6,7 +6,7 @@ Prerequisite: run off-model prep R scripts (https://github.com/BayAreaMetro/trav
 to create a set of "model data" for the off-model calculators.
 
 Example call: 
-`python update_offmodel_calculator_workbooks.py bike_share 2035_TM160_DBP_Plan_04 2050_TM160_DBP_Plan_04`
+`python update_offmodel_calculator_workbooks_with_TM_output.py bike_share 2035_TM160_DBP_Plan_04 2050_TM160_DBP_Plan_04`
 
 Inputs: off-model calculator, including -
     - bike share
@@ -63,6 +63,7 @@ def update_bikeshare_calculator(model_runID_ls):
     # add model data of selected runs to 'Model Data' sheet
     print(bikeshare_new_workbook_file)
     with pd.ExcelWriter(bikeshare_new_workbook_file, engine='openpyxl', mode = 'a', if_sheet_exists = 'replace') as writer:
+        # note this only works with pandas=1.4.3 or later; in earlier version, it will not overwrite sheet, but add new one with sheet name 'Model Data1'
         bikeshare_model_data.to_excel(writer, sheet_name='Model Data', index=False, startrow=1, startcol=0)
 
     # get needed data into the worksheet
