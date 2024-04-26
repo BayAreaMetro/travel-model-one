@@ -46,7 +46,6 @@ NGFS_EPC_TAZ_DF      = pd.read_csv(NGFS_EPC_TAZ_FILE)
 
 def calculate_Reliable1_change_travel_time_on_freeways(tm_run_id: str) -> pd.DataFrame:  
     """ Calculates Reliable 1: Change in travel time on freeway and non-freeway facilities
-    Additionally, calculates traveltime segmented by whether or not the links are located in Equity Priority Communities (EPC) TAZS.
 
     Args:
         tm_run_id (str): Travel model run ID
@@ -136,6 +135,105 @@ def calculate_Reliable1_change_travel_time_on_freeways(tm_run_id: str) -> pd.Dat
     LOGGER.debug("fwy_travel_times_df for reliable 1:\n{}".format(fwy_travel_times_df))
 
     return fwy_travel_times_df
+
+def calculate_Reliable1_change_travel_time_on_parallel_arterials(tm_run_id: str) -> pd.DataFrame:  
+    """ Calculates Reliable 1: Change in travel time on parallel arterials
+
+    Args:
+        tm_run_id (str): Travel model run ID
+    
+    Returns:
+        pd.DataFrame: with columns including
+          Metric ID          = 'Reliable 1'
+          Model Run ID        = tm_run_id
+          Intermediate/Final = final
+        Metrics return:
+          Freeway/Non-Freeway               Facility Type Definition               Metric Description
+          Freeway|Non-Freeway               EPCs|Non-EPCs|Region                   Travel Time                      (EPC/non-EPC breakdown)
+
+    Notes: Uses
+    * avgload5period.csv (for facility type breakdown)
+    """
+    METRIC_ID = 'Reliable 1'
+    LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
+
+    loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
+    # line below for round 2 runs
+    # loaded_network_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
+    
+    loaded_network_df = pd.read_csv(loaded_network_file)
+    loaded_network_df.rename(columns=lambda x: x.strip(), inplace=True)
+    loaded_network_df['vmtAM_tot'] = loaded_network_df['distance'] * loaded_network_df['volAM_tot']
+    LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
+    LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
+    LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
+    loaded_network_df = loaded_network_df.loc[(loaded_network_df['useAM'] == 1)&(loaded_network_df['ft'] != 6)]
+    
+    # join to parallel arterial links lookup table
+    parallel_arterials_file =  'L:\\Application\\Model_One\\NextGenFwys_Round2\\Metrics\\Input Files\\ParallelArterialLinks.csv'
+    parallel_arterials_links_df = pd.read_csv(parallel_arterials_file)
+    parallel_arterials_links_df.rename(columns=lambda x: x.strip(), inplace=True)
+    parallel_arterials_links_df.rename(columns={"A":"a", "B":"b"}, inplace=True)
+    # split 'Parallel_Corridor' to 'grouping' (now without direction) and 'grouping_dir'
+    parallel_arterials_links_df['grouping_dir'] = parallel_arterials_links_df['Parallel_Corridor'].str[-2:]
+    parallel_arterials_links_df['grouping']     = parallel_arterials_links_df['Parallel_Corridor'].str[:-3]
+    loaded_network_df = pd.merge(left=loaded_network_df, right=parallel_arterials_links_df, how='left', left_on=['a','b'], right_on=['a','b'])
+
+    # compute Fwy and Non_Fwy travel time
+                    
+    loaded_network_df['AVGctimPEAK'] = (loaded_network_df['ctimAM'] + loaded_network_df['ctimPM'])/2
+    
+    # fill empty collumns of DF with a string to retain all values in the DF
+    loaded_network_df.grouping = loaded_network_df.grouping.fillna('NA')
+    loaded_network_df.grouping_dir = loaded_network_df.grouping_dir.fillna('NA')
+
+    ctim_metrics_df = loaded_network_df.groupby(by=['grouping', 'grouping_dir']).agg({'ctimAM':'sum', \
+                                                                                    'ctimPM':'sum',\
+                                                                                    'distance':'sum',\
+                                                                                    'vmtAM_tot':'sum'}).reset_index()
+
+    ctim_metrics_df['vmt_weighted_ctimAM'] = ctim_metrics_df['vmtAM_tot'] * ctim_metrics_df['ctimAM']
+
+    LOGGER.debug("ctim_metrics_df:\n{}".format(ctim_metrics_df))
+    
+    ctimAM_metrics_df = ctim_metrics_df.loc[(ctim_metrics_df.grouping_dir == 'AM'), ['grouping', 'ctimAM', 'distance', 'vmtAM_tot', 'vmt_weighted_ctimAM']]
+    ctimPM_metrics_df = ctim_metrics_df.loc[(ctim_metrics_df.grouping_dir == 'PM'), ['grouping', 'ctimPM']]
+    ctim_df = pd.merge(left=ctimAM_metrics_df, right=ctimPM_metrics_df, how='left', left_on=['grouping'], right_on=['grouping'])
+    ctim_df['AVGctimPEAK'] = (ctim_df['ctimAM'] + ctim_df['ctimPM'])/2
+
+    # add row for averages from the corridors
+    average_values = ctim_df.select_dtypes(include=['number']).mean()
+    # Convert the Pandas Series to a DataFrame
+    average_df = pd.DataFrame([average_values])
+    average_df['grouping'] = 'Simple Average from Corridors'
+    # add row for sum of values 
+    sum_of_values = ctim_df.select_dtypes(include=['number']).sum()
+    # convert pandas series to a dataframe
+    sum_df = pd.DataFrame([sum_of_values])
+    sum_df['grouping'] = 'Sum of Values for Weighted Average'
+    ctim_df = pd.concat([ctim_df, sum_df, average_df], ignore_index=True)
+
+    # add column post summation for weighted average
+    ctim_df['VMTweightedAVG_ctimAM'] = ctim_df['vmt_weighted_ctimAM'] / ctim_df['vmtAM_tot']
+
+    # put it together, move to long form and return
+    parallel_arterials_travel_times_df = ctim_df
+    parallel_arterials_travel_times_df = parallel_arterials_travel_times_df.melt(id_vars=['grouping'], var_name='Metric Description')
+    parallel_arterials_travel_times_df['Road Type'] = 'Parallel Arterials'
+    parallel_arterials_travel_times_df['Model Run ID'] = tm_run_id
+    parallel_arterials_travel_times_df['Metric ID'] = METRIC_ID
+    parallel_arterials_travel_times_df['Intermediate/Final'] = 'final'
+    # identify extra, intermediate, or debug steps for easy filtering
+    parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['Metric Description'].str.contains('distance') == True), 'Intermediate/Final'] = 'Extra'
+    parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['Metric Description'].str.contains('vmtAM_tot') == True), 'Intermediate/Final'] = 'Intermediate'
+    parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['Metric Description'].str.contains('vmt_weighted_ctimAM') == True), 'Intermediate/Final'] = 'Intermediate'
+    parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['grouping'].str.contains('Sum of Values for Weighted Average') == False) & (parallel_arterials_travel_times_df['Metric Description'].str.contains('VMTweightedAVG_ctimAM') == True), 'Intermediate/Final'] = 'Debug Step'
+    parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['grouping'].str.contains('Sum of Values for Weighted Average') == True) & (parallel_arterials_travel_times_df['Metric Description'].str.contains('VMTweightedAVG_ctimAM') == False), 'Intermediate/Final'] = 'Debug Step'
+
+    parallel_arterials_travel_times_df['Year'] = tm_run_id[:4]
+    LOGGER.debug("parallel_arterials_travel_times_df for reliable 1:\n{}".format(parallel_arterials_travel_times_df))
+
+    return parallel_arterials_travel_times_df
 
 def calculate_Reliable1_change_travel_time_on_GoodsRoutes(tm_run_id: str) -> pd.DataFrame:  
     """ Calculates Reliable 1: Change in travel time on goods routes and other corridors
@@ -454,6 +552,7 @@ if __name__ == "__main__":
         metrics_df = pd.DataFrame()
 
         metrics_df = pd.concat([calculate_Reliable1_change_travel_time_on_freeways(tm_run_id),\
+            calculate_Reliable1_change_travel_time_on_parallel_arterials(tm_run_id),\
             calculate_Reliable1_change_travel_time_on_GoodsRoutes(tm_run_id),\
             calculate_Reliable1_change_travel_time_on_Othercorridors(tm_run_id)])
         LOGGER.info("@@@@@@@@@@@@@ R1 Done")
