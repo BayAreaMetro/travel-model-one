@@ -54,16 +54,16 @@ BOX_DIR     = pathlib.Path(f"C:/Users/{USERNAME}/Box")
 if USERNAME.lower() in ['lzorn']:
     BOX_DIR = pathlib.Path("E:\Box")
 
-def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str) -> pd.DataFrame:
+def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str, 
+                                       BOX_METRICS_OUTPUT_DIR: pathlib.Path) -> pd.DataFrame:
     """Pulls transportation costs from other files and converts to annual
     to calculate them as a percentage of household income; these calculations
     are segmented by income quartiles.
 
     Reads the following files:
-    1. INTERMEDIATE_METRICS_SOURCE_DIR/housing_costs_share_income.csv which has columns:
-       year, blueprint, w_q1, w_q2, w_q2, w_q4, w_q1_q2, w_all -- which presumably mean the share of household income spent on housing.
-       This looks like it was produced by
-       https://github.com/BayAreaMetro/regional_forecast/blob/main/housing_income_share_metric/Share_Housing_Costs_Q1-4.R
+    1. BOX_METRICS_OUTPUT_DIR/metrics_affordable1_housing_cost_share_of_income.csv which has columns:
+       modelrun_id,modelrun_alias,year,quartile,tenure,households,share_income
+       This was produced by: https://github.com/BayAreaMetro/bayarea_urbansim/blob/metrics_update/scripts/metrics/metrics_affordable.py
 
     2. [model_run_dir]/OUTPUT/metrics/scenario_metrics.csv for income-segmented
        total_households, total_hh_inc,
@@ -105,43 +105,52 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str) -> 
     """
     LOGGER.info("calculate_Affordable1_HplusT_costs()")
 
-    if args_rtp == "RTP2021":
-        # Read Housing costs intermediate input
-        HOUSING_COSTS_FILE = INTERMEDIATE_METRICS_SOURCE_DIR / 'housing_costs_share_income.csv'
-        LOGGER.info(f"  Reading {HOUSING_COSTS_FILE}")
-        housing_costs_df = pd.read_csv(HOUSING_COSTS_FILE)
-        LOGGER.debug("  housing_costs_df (len={}):\n{}".format(
-            len(housing_costs_df), housing_costs_df))
-        # select to only these cols
-        housing_costs_df = housing_costs_df[['year','blueprint','w_q1','w_q2','w_q3','w_q4','w_q1_q2','w_all']]
-        # convert to long - move income quartiles to rows
-        housing_costs_df = pd.wide_to_long(df=housing_costs_df, i=['year','blueprint'], 
-                                           stubnames='w', sep='_', suffix='(all|q[1-4](_q2)?)', j='incQ').reset_index()
-        # rename "w" column to be more clear; recode quartiles
-        housing_costs_df.rename(columns={'w':'housing_cost_share_of_hh_income'}, inplace=True)
-        housing_costs_df['incQ']  = housing_costs_df.incQ.map({'q1':'1', 'q2':'2', 'q3':'3', 'q4':'4', 'q1_q2':'1&2', 'all':'all'})
-        # recode year/blueprint to model run alias
-        housing_costs_df['modelrun_alias'] = housing_costs_df.year.astype(str) + " " + housing_costs_df.blueprint
-        housing_costs_df['modelrun_alias'] = housing_costs_df.modelrun_alias.map({
-            '2015 2015':'2015', '2050 NoProject':'2050 No Project', '2050 Plus':'2050 Plan', '2050 Alt1':'2050 EIR Alt1', '2050 Alt2':'2050 EIR Alt2'})
-        housing_costs_df.drop(columns=['year','blueprint'], inplace=True)
-        LOGGER.debug("  housing_costs_df (len={}):\n{}".format(
-            len(housing_costs_df), housing_costs_df))
-    else:
-        # Read Housing costs intermediate input
-        HOUSING_COSTS_FILE = INTERMEDIATE_METRICS_SOURCE_DIR / 'DUMMY_housing_costs_share_income.csv'
-        LOGGER.info(f"  Reading {HOUSING_COSTS_FILE}")
-        housing_costs_df = pd.read_csv(HOUSING_COSTS_FILE)
-        LOGGER.debug("  housing_costs_df (len={}):\n{}".format(
-            len(housing_costs_df), housing_costs_df))
+    # BOX_METRICS_OUTPUT_DIR/metrics_affordable1_housing_cost_share_of_income.csv which has columns:
+    #   modelrun_id,modelrun_alias,year,quartile,tenure,households,share_income
+    #   This was produced by: https://github.com/BayAreaMetro/bayarea_urbansim/blob/metrics_update/scripts/metrics/metrics_affordable.py
 
-    #  incQ  housing_cost_share_of_hh_income   modelrun_alias
-    #     1                         0.680000             2015
-    #     2                         0.310000             2015
-    #     3                         0.230000             2015
-    #     4                         0.140000             2015
-    #   1&2                              NaN             2015
-    #   all                         0.330000             2015
+    # Read Housing costs input
+    HOUSING_COSTS_FILE = BOX_METRICS_OUTPUT_DIR / 'metrics_affordable1_housing_cost_share_of_income.csv'
+    LOGGER.info(f"  Reading {HOUSING_COSTS_FILE}")
+    housing_costs_df = pd.read_csv(HOUSING_COSTS_FILE)
+    LOGGER.debug("  housing_costs_df.head() (len={}):\n{}".format(
+        len(housing_costs_df), housing_costs_df.head()))
+    LOGGER.debug(f"{housing_costs_df.modelrun_alias.unique().tolist()}")
+    
+    # select only columns we need
+    housing_costs_df = housing_costs_df.loc[ 
+        ((housing_costs_df.quartile=='Quartile1'  )&(housing_costs_df.tenure=='all_tenures')) | # low income
+        ((housing_costs_df.quartile=='all_incomes')&(housing_costs_df.tenure=='all_tenures')) ] # all incomes
+    housing_costs_df.drop(columns=['tenure','year','households'],inplace=True)
+
+    # RTP2021 travel model aliases: 2015, 2050 No Project, 2050 Plan, 2050 EIR Alt1, 2050 EIR Alt2
+    #                 BAUS aliases: 2015 No Project, 2050 No Project, 2050 FBP, 2050 EIR Alt1, 2050 EIR Alt2
+    # RTP2025 travel model aliases: 2023, 2050 No Project, 2050 Plan
+    #                 BAUS aliases: 2023 No Project, 2050 No Project, 2050 DBP
+    # convert BAUS modelrun_alias to match travel model
+    housing_costs_df.replace(to_replace={
+        '2015 No Project':'2015',
+        '2023 No Project':'2023',
+        '2050 FBP'       :'2050 Plan',
+        '2050 DBP'       :'2050 Plan',
+        '2050 EIR Alt 1' :'2050 EIR Alt1',
+        '2050 EIR Alt 2' :'2050 EIR Alt2',
+    }, inplace=True)
+
+    # rename quartile and recode to match
+    housing_costs_df.rename(columns={
+        'quartile'    :'incQ',
+        'modelrun_id' :'BAUS_modelrun_id',
+        'share_income':'housing_cost_share_of_hh_income',
+    }, inplace=True)
+    housing_costs_df.replace(to_replace={
+        'Quartile1':'1',
+        'Quartile2':'2',
+        'Quartile3':'3',
+        'Quartile4':'4',
+        'all_incomes':'all'
+    }, inplace=True)
+    LOGGER.debug(f"  housing_costs_df:\n{housing_costs_df}")
 
     affordable_hplust_costs_df = pd.DataFrame()
     for tm_runid in model_runs_dict.keys():
@@ -264,6 +273,7 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str) -> 
             on      = ['modelrun_alias', 'incQ'],
             validate='one_to_one'
         )
+        LOGGER.debug("  tm_scen_metrics_df:\n{}".format(tm_scen_metrics_df))
 
         # h+t = h + t
         tm_scen_metrics_df['H+T_cost_share_of_hh_income'] = tm_scen_metrics_df.housing_cost_share_of_hh_income + tm_scen_metrics_df.transp_cost_share_of_hh_income
@@ -1088,12 +1098,14 @@ if __name__ == '__main__':
         METRICS_SOURCE_DIR               = METRICS_BOX_DIR / "metrics_input_files"
         INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR / "Metrics_Outputs_FinalBlueprint" / "Intermediate Metrics"
         # This is for reproducing RTP2021 (PBA50) metrics for QAQC
-        METRICS_OUTPUT_DIR               = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "PBA50_reproduce_for_QA"
+        BOX_METRICS_OUTPUT_DIR           = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "PBA50_reproduce_for_QA"
+        METRICS_OUTPUT_DIR               = BOX_METRICS_OUTPUT_DIR
     else:
         METRICS_BOX_DIR                  = BOX_DIR / "Plan Bay Area 2050+" / "Performance and Equity" / "Plan Performance" / "Equity_Performance_Metrics" / "Draft_Blueprint"
         METRICS_SOURCE_DIR               = METRICS_BOX_DIR / "metrics_input_files"
         INTERMEDIATE_METRICS_SOURCE_DIR  = METRICS_BOX_DIR # These aren't really "intermediate"
-        METRICS_OUTPUT_DIR               = METRICS_BOX_DIR
+        BOX_METRICS_OUTPUT_DIR           = METRICS_BOX_DIR
+        METRICS_OUTPUT_DIR               = BOX_METRICS_OUTPUT_DIR
 
     #### Test Mode ################################################################################################################
     # test mode -- write output here
@@ -1153,7 +1165,7 @@ if __name__ == '__main__':
 
     # Affordable
     if (my_args.only == None) or (my_args.only == 'affordable'):
-        affordable_hplust_costs_df = calculate_Affordable1_HplusT_costs(model_runs_dict, my_args.rtp)
+        affordable_hplust_costs_df = calculate_Affordable1_HplusT_costs(model_runs_dict, my_args.rtp, BOX_METRICS_OUTPUT_DIR)
         calculate_Affordable1_trip_costs(model_runs_dict, affordable_hplust_costs_df)
 
     # Connected
