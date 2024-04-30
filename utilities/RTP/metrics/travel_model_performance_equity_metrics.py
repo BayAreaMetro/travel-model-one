@@ -298,7 +298,7 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
     # additional output for investigation
     LOGGER.debug(f"affordable_hplust_costs_df:\n{affordable_hplust_costs_df}")
     # only q1 and all incomes
-    cost_detail_df = affordable_hplust_costs_df.loc[ affordable_hplust_costs_df.incQ.isin(['1','qll'])].copy()
+    cost_detail_df = affordable_hplust_costs_df.loc[ affordable_hplust_costs_df.incQ.isin(['1','all'])].copy()
     # only cost and incomes
     cost_detail_df = cost_detail_df[['modelrun_alias','modelrun_id','BAUS_modelrun_id','incQ',
                          'total_hh_inc_with_UBI',
