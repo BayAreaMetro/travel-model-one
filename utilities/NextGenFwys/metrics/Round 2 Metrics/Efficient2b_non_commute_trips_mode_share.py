@@ -85,7 +85,7 @@ def trips_commute_mode_pkop(tm_run_id, metric_id):
     tm_trips_df.loc[ tm_trips_df.timeCode.isin(TIME_PERIODS_PEAK), 'peak_non' ] = 'peak'
 
     # roll it up
-    tm_trips_df = tm_trips_df.groupby(by=['agg_trip_mode', 'commute_non', 'peak_non']).agg({'freq':'sum'}).reset_index()
+    tm_trips_df = tm_trips_df.groupby(by=['agg_trip_mode', 'commute_non', 'peak_non', 'trip_mode', 'timeCode']).agg({'freq':'sum'}).reset_index()
     tm_trips_df.rename(columns={'freq':'trips'}, inplace=True)
     LOGGER.debug('Aggregated tm_trips_df:\n{}'.format(tm_trips_df))
 
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     current_runs_list = current_runs_df['directory'].to_list()
     
     # line below for round 2 runs
-    # current_runs_list = ['2035_TM160_NGF_r2_NoProject_01', '2035_TM160_NGF_r2_NoProject_01_AOCx1.25_v2', '2035_TM160_NGF_r2_NoProject_03_pretollcalib', '2035_TM160_NGFr2_NP03_Path1_01']
+    # current_runs_list = ['2035_TM160_NGF_r2_NoProject_01', '2035_TM160_NGF_r2_NoProject_01_AOCx1.25_v2', '2035_TM160_NGF_r2_NoProject_03_pretollcalib', '2035_TM160_NGFr2_NP04_Path1_02']
 
     for tm_run_id in current_runs_list:
         out_filename = os.path.join(os.getcwd(),"Efficient2b_non_commute_trips_mode_share_{}.csv".format(tm_run_id))
