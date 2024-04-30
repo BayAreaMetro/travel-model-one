@@ -5,16 +5,16 @@ USAGE = r"""
   Takes an arg with the ModelRuns.xlsx
 
 """
-import argparse, os, re, shutil
+import argparse, os, re, pathlib, shutil
 import pandas
 
 # output_dir -> file_list
-OUTPUT_FILES = {
-    ".":[
+COPY_FILES = {
+    "OUTPUT":[
         "avgload5period",
         "avgload5period_vehclasses"
     ],
-    "metrics":[
+    "OUTPUT\\metrics":[
         "topsheet",
         "scenario_metrics",
         "auto_times",
@@ -29,7 +29,7 @@ OUTPUT_FILES = {
         "truck_trips_by_timeperiod",
         "transit_crowding_complete"
     ],
-    "core_summaries":[
+    "OUTPUT\\core_summaries":[
         "ActiveTransport",
         "ActivityPattern",
         "AutomobileOwnership",
@@ -47,17 +47,20 @@ OUTPUT_FILES = {
         "ODTravelTime_byModeTimeperiodIncome",
         "ActivityDurationSummary"
     ],
-    "trn":[
+    "OUTPUT\\trn":[
         "trnline",
     ],
-    "shapefile":[
+    "OUTPUT\\shapefile":[
         "network_links_withXY",
         "network_trn_links",
         "network_trn_route_links",
         "network_trn_lines"
     ],
-    "emfac":[
+    "OUTPUT\\emfac":[
         "emfac_summary",
+    ],
+    "INPUT\\landuse":[
+        "tazData",
     ]
 }
 
@@ -66,6 +69,7 @@ RUN_SET_MODEL_PATHS = {
     'RTP_2025IP'    :'M:\\Application\\Model One\\RTP2025\\IncrementalProgress',
     'RTP2025'       :'M:\\Application\\Model One\\RTP2025\\Blueprint',
     'IP'            :'M:\\Application\\Model One\\RTP2021\\IncrementalProgress',
+    'RTP2021'       :'M:\\Application\\Model One\\RTP2021\\Blueprint',
     'DraftBlueprint':'M:\\Application\\Model One\\RTP2021\\IncrementalProgress',
     'FinalBlueprint':'M:\\Application\\Model One\\RTP2021\\Blueprint',
     'EIR'           :'M:\\Application\\Model One\\RTP2021\\Blueprint',
@@ -83,7 +87,7 @@ if __name__ == '__main__':
     my_args = parser.parse_args()
 
     model_runs_df = pandas.read_excel(my_args.ModelRuns_xlsx)
-    print("Read {}; head:\n{}".format(my_args.ModelRuns_xlsx, model_runs_df.head()))
+    print(f"Read {my_args.ModelRuns_xlsx}; head:\n{model_runs_df.head()}")
     print(model_runs_df.dtypes)
 
     # expects columns: 'project','year','directory','run_set','category','urbansim_path','urbansim_runid','status'
@@ -96,7 +100,7 @@ if __name__ == '__main__':
     assert(os.path.isdir(my_args.dest_dir))
 
     status_values_set = set(model_runs_df['status'].tolist())
-    print("Which runs do you want to copy?  Found these options for status: {}".format(status_values_set))
+    print(f"Which runs do you want to copy?  Found these options for status: {status_values_set}")
     print("Enter 'all' or a comma-delimited list: ", end="")
     status_to_copy = input()
     if status_to_copy=="all":
@@ -113,22 +117,22 @@ if __name__ == '__main__':
     directory_copy_list = list(model_runs_df.loc[model_runs_df['status'].isin(my_args.status_to_copy)]['directory'])
     # lower case these
     directory_copy_list = [dir.lower() for dir in directory_copy_list]
-    print("directory_copy_list={}".format(directory_copy_list))
+    print(f"{directory_copy_list=}")
 
     # copy files
-    for output_dir in OUTPUT_FILES.keys():
-        print("Copying files for {}".format(output_dir))
+    for copy_dir in COPY_FILES.keys():
+        print(f"Copying files for {copy_dir}")
 
-        for output_file in OUTPUT_FILES[output_dir]:
+        for copy_file in COPY_FILES[copy_dir]:
 
             if my_args.delete_other_run_files == "y":
-                print("  Looking for other versions of output_file to delete: {}".format(output_file))
+                print(f"  Looking for other versions of output_file to delete: {copy_file}")
 
                 # these are the files we're ok to delete
                 # assume model run ID starts with 4-digit year
                 potential_file_to_delete_re_str = r"^{}_(?P<run_id>\d\d\d\d_.+)\.{}$".format(
-                    output_file,
-                    "csv" if output_dir != "shapefile" else "(shp|shp.xml|cpg|dbf|prj|shx)")
+                    copy_file,
+                    "csv" if copy_dir != "shapefile" else "(shp|shp.xml|cpg|dbf|prj|shx)")
                 # print(potential_file_to_delete_re_str)
                 potential_file_to_delete_re = re.compile(potential_file_to_delete_re_str)
 
@@ -137,10 +141,10 @@ if __name__ == '__main__':
                     if match == None: continue
 
                     if match.group('run_id').lower() not in directory_copy_list:
-                        print("    => Deleting {}".format(potential_file_to_delete))
+                        print(f"    => Deleting {potential_file_to_delete}")
                         os.remove(os.path.join(my_args.dest_dir, potential_file_to_delete))
 
-            print("  Copying output_file: {}".format(output_file))
+            print(f"  Copying copy_file: {copy_file}")
 
             for model_run in model_runs_df.itertuples():
                 # only copy if model run status was specified above
@@ -148,32 +152,31 @@ if __name__ == '__main__':
                     continue
 
                 if model_run.run_set not in RUN_SET_MODEL_PATHS.keys():
-                    print("    run_set value {} not recognized; skipping".format(model_run.run_set))
+                    print(f"    run_set value {model_run.run_set} not recognized; skipping")
                     continue
 
-                source_dir = os.path.join(RUN_SET_MODEL_PATHS[model_run.run_set], model_run.directory)
+                source_dir = pathlib.Path(RUN_SET_MODEL_PATHS[model_run.run_set]) / model_run.directory
 
                 file_suffix_list = ["csv"]
-                if output_dir == "shapefile":
+                if copy_dir.endswith("shapefile"):
                     file_suffix_list = ["shp", "shp.xml", "cpg", "dbf", "prj", "shx"]
                 
                 for file_suffix in file_suffix_list:
-                    source_file = os.path.join(source_dir, "OUTPUT", output_dir, "{}.{}".format(output_file, file_suffix))
-                    dest_file = os.path.join(my_args.dest_dir, "{}_{}.{}".format(output_file, model_run.directory, file_suffix))
-
+                    source_file =  source_dir / copy_dir / f"{copy_file}.{file_suffix}"
+                    dest_file = pathlib.Path(my_args.dest_dir) / f"{copy_file}_{model_run.directory}.{file_suffix}"
                     # skip if it exists already
                     if os.path.isfile(dest_file):
-                        print("    Destination file {} exists -- skipping".format(dest_file))
+                        print(f"    Destination file {dest_file} exists -- skipping")
                         continue
 
                     # skip if source file doesn't exist
                     if not os.path.isfile(source_file):
-                        print("   Source file {} does not exist -- skipping".format(source_file))
+                        print(f"   Source file {source_file} does not exist -- skipping")
                         continue
 
                     # log it
-                    print("    Copying {}".format(source_file))
-                    print("      => {}".format(dest_file))
+                    print(f"    Copying {source_file}")
+                    print(f"      => {dest_file}")
                     shutil.copyfile(source_file, dest_file)
 
     print("Complete")
