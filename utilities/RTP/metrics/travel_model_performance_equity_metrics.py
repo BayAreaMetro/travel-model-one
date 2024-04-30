@@ -82,6 +82,7 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
     Writes metrics_affordable1_HplusT_costs.csv with columns:
         modelrun_id
         modelrun_alias
+        BAUS_modelrun_id                    BAUS modelrun_id (source for housing_cost_share_of_hh_income)
         incQ                                one of ['1','2','3','4','all','1&2']
         total_auto_cost                     daily auto operating cost, from scenario_metrics.csv
         total_auto_trips                    daily auto trips, from scenario_metrics.csv
@@ -93,13 +94,21 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
         parking_cost                        daily parking costs, from parking_costs_tour.csv
         total_autos                         total household autos, from autos_owned.csv
         total_auto_ownership_cost_annual    annual auto ownership cost based on total_autos and auto ownership cost assumptions, in 2000 dollars
-        total_auto_op_cost_annual           total_auto_cost, annualized
+        total_auto_op_cost_annual           total_auto_cost, annualized (per-mile cost plus bridge, value and cordon tolls)
         total_transit_fares_annual          total_transit_fares, annualized
         total_parking_cost_annual           parking_cost, annualized
         total_tansp_cost_annual             annual transportation costs: auto op cost, auto ownership cost, parking cost, transit fares
         transp_cost_share_of_hh_income      total_tansp_cost_annual / total_hh_inc_with_UBI
         housing_cost_share_of_hh_income     housing cost as a share of household income, from housing_costs_share_income.csv
         H+T_cost_share_of_hh_income         sum of housing + transportation costs as a share of household income
+
+    Also writes metrics_affordable1_HplusT_costs_detail.csv with columns:
+        modelrun_alias
+        modelrun_id
+        BAUS_modelrun_id                    BAUS modelrun_id (source for housing_cost_share_of_hh_income)
+        incQ                                one of ['1','all']
+        cost_type                           one of ['housing_cost','transit_fare','auto_op_cost','auto_own_cost','parking_cost']
+        share_of_hh_income                  percentage of household income
 
     Returns DataFrame written
     """
@@ -285,6 +294,38 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
     output_file = METRICS_OUTPUT_DIR / 'metrics_affordable1_HplusT_costs.csv'
     affordable_hplust_costs_df.to_csv(output_file, index=False)
     LOGGER.info("Wrote {}".format(output_file))
+
+    # additional output for investigation
+    LOGGER.debug(f"affordable_hplust_costs_df:\n{affordable_hplust_costs_df}")
+    # only q1 and all incomes
+    cost_detail_df = affordable_hplust_costs_df.loc[ affordable_hplust_costs_df.incQ.isin(['1','qll'])].copy()
+    # only cost and incomes
+    cost_detail_df = cost_detail_df[['modelrun_alias','modelrun_id','BAUS_modelrun_id','incQ',
+                         'total_hh_inc_with_UBI',
+                         'total_transit_fares',
+                         'total_auto_op_cost_annual','total_auto_ownership_cost_annual','total_parking_cost_annual',
+                         'housing_cost_share_of_hh_income']]
+    # make them all fractions
+    cost_detail_df['transit_fare_share_of_hh_income' ] = cost_detail_df.total_transit_fares              / cost_detail_df.total_hh_inc_with_UBI
+    cost_detail_df['auto_op_cost_share_of_hh_income' ] = cost_detail_df.total_auto_op_cost_annual        / cost_detail_df.total_hh_inc_with_UBI
+    cost_detail_df['auto_own_cost_share_of_hh_income'] = cost_detail_df.total_auto_ownership_cost_annual / cost_detail_df.total_hh_inc_with_UBI
+    cost_detail_df['parking_cost_share_of_hh_income' ] = cost_detail_df.total_parking_cost_annual        / cost_detail_df.total_hh_inc_with_UBI
+    # drop other columns, cost type to column
+    cost_detail_df.drop(columns=['total_hh_inc_with_UBI','total_transit_fares',
+                         'total_auto_op_cost_annual','total_auto_ownership_cost_annual','total_parking_cost_annual'], inplace=True)
+    cost_detail_df = pd.melt(
+        cost_detail_df, 
+        id_vars=['modelrun_alias','modelrun_id','BAUS_modelrun_id','incQ'],
+        var_name='cost_type',
+        value_name='share_of_hh_income'
+    )
+    cost_detail_df['cost_type'] = cost_detail_df.cost_type.str.replace('_share_of_hh_income','')
+    
+    # write it
+    output_file = METRICS_OUTPUT_DIR / 'metrics_affordable1_HplusT_costs_detail.csv'
+    cost_detail_df.to_csv(output_file, index=False)
+    LOGGER.info("Wrote {}".format(output_file))
+
     return affordable_hplust_costs_df
 
 def calculate_Affordable1_trip_costs(model_runs_dict: dict, affordable_hplust_costs_df:pd.DataFrame):
