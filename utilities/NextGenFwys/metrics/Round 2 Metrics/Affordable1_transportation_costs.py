@@ -265,37 +265,45 @@ def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
         inplace=True)
 
     LOGGER.debug("  travel_cost_df:\n{}".format(travel_cost_df))
+    travel_cost_df.rename(columns={'total_hhld_autos':'total_hhld_num_autos'}, inplace=True)
     # move columns to rows
     metrics_df = pd.melt(travel_cost_df,
                          id_vars=['key'],
                          var_name='metric_desc',
                          value_name='value')
+    metrics_df[['income levels', 'modes']] = metrics_df['key'].str.split(' ', n=1, expand=True)
+    metrics_df.drop(columns=['key'], inplace=True)
     metrics_df['intermediate/final'] = 'intermediate'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('num_'), 'intermediate/final'] = 'extra'
     metrics_df.loc[ metrics_df['metric_desc'].str.endswith('_pct_of_income'), 'intermediate/final'] = 'final'
     metrics_df['modelrun_id'] = tm_run_id
     metrics_df['year'] = tm_run_id[:4]
     metrics_df['metric_id'] = METRIC_ID
-    # add grouping for Tableau view
-    metrics_df.loc[ metrics_df['metric_desc'] == 'num_hhlds', 'grouping1'] = 'Households'
-    metrics_df.loc[ metrics_df['metric_desc'] == 'avg_hhld_income_annual_2023d_per_hhld', 'grouping1'] = 'Households'
-    metrics_df.loc[ metrics_df['metric_desc'] == 'avg_num_autos_per_hhld', 'grouping1'] = 'Households'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('auto_own_finance_cost') == True, 'grouping1'] = 'Fixed Costs'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('auto_insurance_cost') == True, 'grouping1'] = 'Fixed Costs'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('auto_registration_taxes_cost') == True, 'grouping1'] = 'Fixed Costs'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('auto_op_cost') == True , 'grouping1'] = 'Variable Costs'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('parking_cost') == True , 'grouping1'] = 'Variable Costs'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('bridge_toll_cost') == True , 'grouping1'] = 'Variable Costs'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('value_toll_cost') == True , 'grouping1'] = 'Variable Costs'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('cordon_toll_cost') == True , 'grouping1'] = 'Variable Costs'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('transit_op_cost') == True , 'grouping1'] = 'Variable Costs'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('drive_to_transit_cost') == True , 'grouping1'] = 'Variable Costs'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('taxitnc_cost') == True , 'grouping1'] = 'Variable Costs'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('transportation_cost') == True , 'grouping1'] = 'Total Costs'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('cost_annual_2023d_per_hhld') == True , 'grouping2'] = 'cost per household'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('_cost_pct_of_income') == True , 'grouping2'] = 'cost percent of income'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('_per_trip') == True , 'grouping2'] = 'cost per trip'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('auto_cost') == True , 'grouping1'] = 'Variable Costs'
-    metrics_df.loc[ metrics_df['metric_desc'].str.contains('transit_cost') == True , 'grouping1'] = 'Variable Costs'
+    
+    # add column for value type
+    metrics_df['value type'] = 'actual/count'
+    metrics_df.loc[metrics_df['metric_desc'].str.contains('per') == True, 'value type'] = 'average/ratio'
+    metrics_df.loc[metrics_df['metric_desc'].str.contains('pct') == True, 'value type'] = 'percent'
+    
+    # add column for 'Households, Income, Autos, Trips, Costs' for Tableau view
+    metrics_df.loc[ metrics_df['metric_desc'] == 'num_hhlds', 'Households, Income, Autos, Trips, Costs'] = 'Households'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('hhld_income') == True, 'Households, Income, Autos, Trips, Costs'] = 'Income'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('num_autos') == True, 'Households, Income, Autos, Trips, Costs'] = 'Autos'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('_trips') == True, 'Households, Income, Autos, Trips, Costs'] = 'Trips'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('auto_own_finance_cost') == True, 'Households, Income, Autos, Trips, Costs'] = 'Fixed Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('auto_insurance_cost') == True, 'Households, Income, Autos, Trips, Costs'] = 'Fixed Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('auto_registration_taxes_cost') == True, 'Households, Income, Autos, Trips, Costs'] = 'Fixed Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('auto_op_cost') == True , 'Households, Income, Autos, Trips, Costs'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('parking_cost') == True , 'Households, Income, Autos, Trips, Costs'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('bridge_toll_cost') == True , 'Households, Income, Autos, Trips, Costs'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('value_toll_cost') == True , 'Households, Income, Autos, Trips, Costs'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('cordon_toll_cost') == True , 'Households, Income, Autos, Trips, Costs'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('transit_op_cost') == True , 'Households, Income, Autos, Trips, Costs'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('drive_to_transit_cost') == True , 'Households, Income, Autos, Trips, Costs'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('taxitnc_cost') == True , 'Households, Income, Autos, Trips, Costs'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('transportation_cost') == True , 'Households, Income, Autos, Trips, Costs'] = 'Total Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('auto_cost') == True , 'Households, Income, Autos, Trips, Costs'] = 'Variable Costs'
+    metrics_df.loc[ metrics_df['metric_desc'].str.contains('transit_cost') == True , 'Households, Income, Autos, Trips, Costs'] = 'Variable Costs'
 
     LOGGER.debug("  returning:\n{}".format(metrics_df))
 
