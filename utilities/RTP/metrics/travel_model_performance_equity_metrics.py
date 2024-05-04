@@ -145,6 +145,9 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
         '2050 EIR Alt 1' :'2050 EIR Alt1',
         '2050 EIR Alt 2' :'2050 EIR Alt2',
     }, inplace=True)
+    # RTP2025 Draft Blueprint - 2050 Trend instead of 2050 No Project
+    if args_rtp=="RTP2025":
+        housing_costs_df.replace(to_replace={'2050 No Project':'2050 Trend'}, inplace=True)
 
     # rename quartile and recode to match
     housing_costs_df.rename(columns={
