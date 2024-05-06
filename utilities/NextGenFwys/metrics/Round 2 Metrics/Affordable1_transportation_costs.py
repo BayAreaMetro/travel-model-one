@@ -78,6 +78,8 @@ def calculate_Affordable1_transportation_costs(tm_run_id: str) -> pd.DataFrame:
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
 
     travel_cost_by_travel_hhld_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "travel-cost-hhldtraveltype.csv")
+    # line below for round 2 runs
+    # travel_cost_by_travel_hhld_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "travel-cost-hhldtraveltype.csv")
     travel_cost_df = pd.read_csv(travel_cost_by_travel_hhld_file)
     LOGGER.info("  Read {:,} rows from {}".format(len(travel_cost_df), travel_cost_by_travel_hhld_file))
     LOGGER.debug("  Head:\n{}".format(travel_cost_df.head()))
@@ -349,7 +351,7 @@ if __name__ == "__main__":
     current_runs_list = current_runs_df['directory'].to_list()
     
     # line below for round 2 runs
-    # current_runs_list = ['2035_TM160_NGF_r2_NoProject_01', '2035_TM160_NGF_r2_NoProject_01_AOCx1.25_v2', '2035_TM160_NGF_r2_NoProject_03_pretollcalib']
+    # current_runs_list = ['2035_TM160_NGF_r2_NoProject_01', '2035_TM160_NGF_r2_NoProject_01_AOCx1.25_v2', '2035_TM160_NGF_r2_NoProject_03_pretollcalib', '2035_TM160_NGFr2_NP04_Path1_02']
 
     for tm_run_id in current_runs_list:
         out_filename = os.path.join(os.getcwd(),"Affordable1_transportation_costs_{}.csv".format(tm_run_id))
