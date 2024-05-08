@@ -189,9 +189,9 @@ METRICS_COLUMNS = [
 
 # TODO deprecate use of the file below
 # load minor groupings, to be merged with loaded network
-MINOR_LINKS_FILE = pd.read_csv('L:\\Application\\Model_One\\NextGenFwys\\metrics\\Input Files\\a_b_with_minor_groupings.csv')
+MINOR_LINKS_DF = pd.read_csv('L:\\Application\\Model_One\\NextGenFwys\\metrics\\Input Files\\a_b_with_minor_groupings.csv')
 # list for iteration
-MINOR_GROUPS = MINOR_LINKS_FILE['Grouping minor'].unique()[1:] #exclude 'other' and NaN
+MINOR_GROUPS = MINOR_LINKS_DF['Grouping minor'].unique()[1:] #exclude 'other' and NaN
 MINOR_GROUPS = numpy.delete(MINOR_GROUPS, 2)
 
 def calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year, metric_id, metrics_dict):
@@ -434,6 +434,10 @@ def Affordable2_ratio_time_cost(tm_run_id):
     tm_loaded_network_df = tm_loaded_network_dbf.to_dataframe()
     tm_loaded_network_df = tm_loaded_network_df.rename(columns=lambda x: x.strip())
     tm_loaded_network_df['a_b'] = tm_loaded_network_df['A'].astype(str) + "_" + tm_loaded_network_df['B'].astype(str)
+    
+    # merge MINOR_GROUPS_DF
+    tm_loaded_network_df = tm_loaded_network_df.merge(MINOR_LINKS_DF, on='a_b', how='left')
+    
     LOGGER.info("  Read {:,} rows from {}".format(len(tm_loaded_network_df), loaded_roadway_network))
     LOGGER.debug("  Head:\n{}".format(tm_loaded_network_df.head()))
 
@@ -443,6 +447,10 @@ def Affordable2_ratio_time_cost(tm_run_id):
     tm_loaded_network_df_base = tm_base_loaded_network_dbf.to_dataframe()
     tm_loaded_network_df_base = tm_loaded_network_df_base.rename(columns=lambda x: x.strip())
     tm_loaded_network_df_base['a_b'] = tm_loaded_network_df_base['A'].astype(str) + "_" + tm_loaded_network_df_base['B'].astype(str)
+    
+    # merge MINOR_GROUPS_DF
+    tm_loaded_network_df_base = tm_loaded_network_df_base.merge(MINOR_LINKS_DF, on='a_b', how='left')
+    
     LOGGER.info("  Read {:,} rows from {}".format(len(tm_loaded_network_df_base), base_loaded_roadway_network))
     LOGGER.debug("  Head:\n{}".format(tm_loaded_network_df_base.head()))
     
