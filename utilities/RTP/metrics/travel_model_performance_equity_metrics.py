@@ -350,7 +350,7 @@ def calculate_Affordable1_trip_costs(model_runs_dict: dict, affordable_hplust_co
         total_households                    total number of households, from scenario_metrics.csv
         total_auto_trips                    daily auto trips, from scenario_metrics.csv
         total_transit_trips                 daily transit trips, from scenario_metrics.csv
-        total_auto_cost                     daily auto operating cost, from scenario_metrics.csv
+        total_auto_cost                     daily auto operating cost, from scenario_metrics.csv (AOC-based, plus bridge, value and cordong tolls)
         parking_cost                        daily parking costs, from parking_costs_tour.csv
         total_transit_fares                 sum of daily transit fares, in 2000 dollars, from scenario_metrics.csv
       (new!)
