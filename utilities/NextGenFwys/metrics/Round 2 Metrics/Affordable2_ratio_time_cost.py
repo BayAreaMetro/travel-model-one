@@ -175,13 +175,13 @@ TIME_PERIODS_PEAK    = ['AM','PM']
 TIME_PERIOD_LABELS_PEAK    = ['AM Peak','PM Peak']
 TIME_PERIOD_LABELS_NONPEAK = ['Midday']
 METRICS_COLUMNS = [
-    'grouping1',
-    'grouping2',
-    'grouping3',
+    'Corridor',
+    'Value Type',
+    'Income Group/Occupation',
     'modelrun_id',
     'metric_id',
     'intermediate/final', # TODO: suggest renaming this to 'metric_level' since other options are used beyond intermediate and final
-    'key',
+    'Household/Commercial',
     'metric_desc',
     'year',
     'value'
@@ -202,7 +202,7 @@ def calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year,
     grouping3 = ' '
     metrics_dict_series = pd.Series(metrics_dict)
     metrics_dict_df  = metrics_dict_series.to_frame().reset_index()
-    metrics_dict_df.columns = ['grouping1', 'grouping2', 'grouping3', 'modelrun_id','metric_id','intermediate/final','key','metric_desc','year','value']
+    metrics_dict_df.columns = ['Corridor', 'Value Type', 'Income Group/Occupation', 'modelrun_id','metric_id','intermediate/final','Household/Commercial','metric_desc','year','value']
     #     make a list of the metrics from the run of interest to iterate through and calculate a difference with
     LOGGER.debug("   metrics_dict_df:\n{}".format(metrics_dict_df))
     metrics_list = metrics_dict_df.copy().loc[(metrics_dict_df['modelrun_id'] == tm_run_id)]
@@ -316,6 +316,8 @@ def calculate_auto_travel_time_for_pathway3(tm_run_id, origin_city_abbreviation)
 
     # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
     ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv") #changed "ODTravelTime_byModeTimeperiodIncome.csv" to a variable for better performance during debugging
+    # line below for round 2 runs
+    # ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv") #changed "ODTravelTime_byModeTimeperiodIncome.csv" to a variable for better performance during debugging
     # this is large so join/subset it immediately
     trips_od_travel_time_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
     LOGGER.info("  Read {:,} rows from {}".format(len(trips_od_travel_time_df), ODTravelTime_byModeTimeperiod_file))
@@ -396,7 +398,7 @@ def calculate_auto_travel_time_for_pathway3(tm_run_id, origin_city_abbreviation)
     trips_od_travel_time_df['intermediate/final']   = 'intermediate'
     
     # key is orig_ZONE, dest_CORDON
-    trips_od_travel_time_df['key']  = trips_od_travel_time_df['orig_ZONE'] + "_into_" + trips_od_travel_time_df['dest_CORDON']
+    trips_od_travel_time_df['Household/Commercial']  = trips_od_travel_time_df['orig_ZONE'] + "_into_" + trips_od_travel_time_df['dest_CORDON']
     trips_od_travel_time_df.drop(columns=['orig_ZONE','dest_CORDON'], inplace=True)
 
     trips_od_travel_time_df['modelrun_id'] = tm_run_id
@@ -405,9 +407,9 @@ def calculate_auto_travel_time_for_pathway3(tm_run_id, origin_city_abbreviation)
 
     LOGGER.info(trips_od_travel_time_df)
 
-    for OD in trips_od_travel_time_df['key']:
+    for OD in trips_od_travel_time_df['Household/Commercial']:
         # add travel times to metric dict
-        OD_cordon_travel_time_df = trips_od_travel_time_df.loc[trips_od_travel_time_df['key'] == OD]
+        OD_cordon_travel_time_df = trips_od_travel_time_df.loc[trips_od_travel_time_df['Household/Commercial'] == OD]
         LOGGER.info(OD_cordon_travel_time_df)
         OD_cordon_travel_time = OD_cordon_travel_time_df.loc[OD_cordon_travel_time_df['metric_desc'] == 'avg_travel_time_in_mins_auto'].iloc[0]['value']
         LOGGER.info(OD_cordon_travel_time)
@@ -428,8 +430,11 @@ def Affordable2_ratio_time_cost(tm_run_id):
     grouping3 = ' '
     LOGGER.info("Calculating {} for {}".format(metric_id, tm_run_id))
     
-        # load scenario loaded network for analysis
+    # load scenario loaded network for analysis
     loaded_roadway_network = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "shapefile", "network_links.DBF")
+    # line below for round 2 runs
+    # loaded_roadway_network = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "shapefile", "network_links.DBF")
+    
     tm_loaded_network_dbf = simpledbf.Dbf5(loaded_roadway_network)
     tm_loaded_network_df = tm_loaded_network_dbf.to_dataframe()
     tm_loaded_network_df = tm_loaded_network_df.rename(columns=lambda x: x.strip())
@@ -442,7 +447,7 @@ def Affordable2_ratio_time_cost(tm_run_id):
     LOGGER.debug("  Head:\n{}".format(tm_loaded_network_df.head()))
 
     # load base scenario loaded network for comparison
-    base_loaded_roadway_network = os.path.join(NGFS_SCENARIOS, '2035_TM152_NGF_NP10_Path4_02', "OUTPUT", "shapefile", "network_links.DBF")
+    base_loaded_roadway_network = os.path.join(NGFS_SCENARIOS, BASE_SCENARIO_RUN_ID, "OUTPUT", "shapefile", "network_links.DBF")
     tm_base_loaded_network_dbf = simpledbf.Dbf5(base_loaded_roadway_network)
     tm_loaded_network_df_base = tm_base_loaded_network_dbf.to_dataframe()
     tm_loaded_network_df_base = tm_loaded_network_df_base.rename(columns=lambda x: x.strip())
@@ -494,7 +499,7 @@ def Affordable2_ratio_time_cost(tm_run_id):
     metrics_dict_series = pd.Series(metrics_dict)
     metrics_dict_df  = metrics_dict_series.to_frame().reset_index()
     LOGGER.debug('metrics_dict_df:\n{}'.format(metrics_dict_df))
-    metrics_dict_df.columns = ['grouping1', 'grouping2', 'grouping3', 'modelrun_id','metric_id','intermediate/final','key','metric_desc','year','value']
+    metrics_dict_df.columns = ['Corridor', 'Value Type', 'Income Group/Occupation', 'modelrun_id','metric_id','intermediate/final','Household/Commercial','metric_desc','year','value']
     corridor_vmt_df = metrics_dict_df.copy().loc[(metrics_dict_df['metric_desc'].str.contains('_AM_vmt') == True)&(metrics_dict_df['metric_desc'].str.contains('change') == False)]
     LOGGER.debug('corridor_vmt_df:\n{}'.format(corridor_vmt_df))
     # simplify df to relevant model run
