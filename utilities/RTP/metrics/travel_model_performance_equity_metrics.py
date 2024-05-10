@@ -305,16 +305,16 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
     # only cost and incomes
     cost_detail_df = cost_detail_df[['modelrun_alias','modelrun_id','BAUS_modelrun_id','incQ',
                          'total_hh_inc_with_UBI',
-                         'total_transit_fares',
+                         'total_transit_fares_annual',
                          'total_auto_op_cost_annual','total_auto_ownership_cost_annual','total_parking_cost_annual',
                          'housing_cost_share_of_hh_income']]
     # make them all fractions
-    cost_detail_df['transit_fare_share_of_hh_income' ] = cost_detail_df.total_transit_fares              / cost_detail_df.total_hh_inc_with_UBI
+    cost_detail_df['transit_fare_share_of_hh_income' ] = cost_detail_df.total_transit_fares_annual       / cost_detail_df.total_hh_inc_with_UBI
     cost_detail_df['auto_op_cost_share_of_hh_income' ] = cost_detail_df.total_auto_op_cost_annual        / cost_detail_df.total_hh_inc_with_UBI
     cost_detail_df['auto_own_cost_share_of_hh_income'] = cost_detail_df.total_auto_ownership_cost_annual / cost_detail_df.total_hh_inc_with_UBI
     cost_detail_df['parking_cost_share_of_hh_income' ] = cost_detail_df.total_parking_cost_annual        / cost_detail_df.total_hh_inc_with_UBI
     # drop other columns, cost type to column
-    cost_detail_df.drop(columns=['total_hh_inc_with_UBI','total_transit_fares',
+    cost_detail_df.drop(columns=['total_hh_inc_with_UBI','total_transit_fares_annual',
                          'total_auto_op_cost_annual','total_auto_ownership_cost_annual','total_parking_cost_annual'], inplace=True)
     cost_detail_df = pd.melt(
         cost_detail_df, 
@@ -994,7 +994,7 @@ def calculate_Healthy2_commutemodeshare(model_runs_dict: dict, args_rtp: str):
     """
     LOGGER.info("calculate_Healthy2_commutemodeshare()")
     if args_rtp == 'RTP2021':
-        LOGGER.warn("Not implemented for RTP2021 because the methodology changed so QA code is not useful")
+        LOGGER.warning("Not implemented for RTP2021 because the methodology changed so QA code is not useful")
         return
     
     all_jtw_modes_df = pd.DataFrame()
