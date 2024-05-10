@@ -37,7 +37,7 @@ def tally_travel_cost(iteration, sampleshare, metrics_dict):
     Adds the following keys to metrics_dict:
     * total_transit_fares_inc[1-4] ($2000)
     * total_transit_person_trips_inc[1-4]
-    * total_auto_cost_inc[1-4] ($2000)
+    * total_auto_cost_inc[1-4] ($2000) - includes AOC-based cost, bridge tolls, value tolls (with discount), cordon tolls (with discount)
     * total_auto_person_trips_inc[1-4]
     * total_households_inc[1-4]
     * total_hh_inc_inc[1-4] ($2000)
