@@ -157,8 +157,10 @@ if %COMPUTER_SETTING%==MED (
 
 if %MODEL_YEAR% LSS 2035 (
   copy CTRAMP\scripts\skims\TransitSkims_before_2035.job CTRAMP\scripts\skims\TransitSkims.job
+  copy CTRAMP\scripts\block\seemless_xfers_before_2035.block CTRAMP\scripts\block\seemless_xfers.block
 ) else (
   copy CTRAMP\scripts\skims\TransitSkims_2035_and_beyond.job CTRAMP\scripts\skims\TransitSkims.job
+  copy CTRAMP\scripts\block\seemless_xfers_2035_and_beyond.block CTRAMP\scripts\block\seemless_xfers.block
 )
 
 if %MODEL_YEAR% LSS 2030 (
