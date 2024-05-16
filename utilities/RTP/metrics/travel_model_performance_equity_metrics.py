@@ -39,7 +39,6 @@ DAYS_PER_YEAR = 300
 # Used in calculate_Affordable1_HplusT_costs()
 UNIVERSAL_BASIC_INCOME_START_YEAR = 2025
 UNIVERSAL_BASIC_INCOME_IN_2020_DOLLARS = 6000
-UNIVERSAL_BASIC_INCOME_CATEGORIES = ['Plus','Alt1','Alt2'] # model run categories
 
 # Annual Auto ownership cost in 2018$
 # Source: Consumer Expenditure Survey 2018 (see Box\Horizon and Plan Bay Area 2050\Equity and Performance\7_Analysis\Metrics\Affordable\auto_ownership_costs.xlsx)
@@ -198,8 +197,25 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
         LOGGER.debug("  pivoted tm_scen_metrics_df:\n{}".format(tm_scen_metrics_df))
 
         # Universal Basic Income: check year and model category
+        # The upstream processing moved some Q1 households to Q2 because some would have been on the threshold and a UBI would have shifted them over
+        # The below logic increases the household income of the Q1 households
+        # NOTE: This assumes the Q1 households had incorrectly low incomes for the travel model run, which isn't ideal.
+        #       This logic should be performed upstream of just the metrics process.
         tm_scen_metrics_df['total_hh_inc_with_UBI'] = tm_scen_metrics_df.total_hh_inc
-        if (model_run_category in UNIVERSAL_BASIC_INCOME_CATEGORIES) and (model_runs_dict[tm_runid]['year'] >= UNIVERSAL_BASIC_INCOME_START_YEAR):
+        scenario_includes_UBI = False
+        if model_runs_dict[tm_runid]['year'] < UNIVERSAL_BASIC_INCOME_START_YEAR:
+            # hasn't started yet
+            pass
+        elif args_rtp == "RTP2021":
+            # From previous version os script:
+            # https://github.com/BayAreaMetro/travel-model-one/blob/24a6ca135f4fcf71f3fdc7d310075466c23883b2/utilities/RTP/metrics/pba50_metrics.py#L229-L234
+            scenario_includes_UBI = model_run_category in ['Plus','Alt1','Alt2']
+        elif args_rtp == "RTP2025":
+            # Plan run includes UBI
+            scenario_includes_UBI = (model_runs_dict[tm_runid]['Alias'].find(' Plan') >= 0)
+        LOGGER.info(f"    => scenario_includes_UBI: {scenario_includes_UBI}")
+
+        if scenario_includes_UBI:
             # add in UBI for Q1 households; since this is *total* income, it's multiplied by the number of households
             assert(len(tm_scen_metrics_df.loc[ tm_scen_metrics_df.incQ == 1 ]) == 1)
             tm_scen_metrics_df.loc[ tm_scen_metrics_df.incQ == 1, 'total_hh_inc_with_UBI'] = tm_scen_metrics_df.total_hh_inc + \
@@ -305,16 +321,16 @@ def calculate_Affordable1_HplusT_costs(model_runs_dict: dict, args_rtp: str,
     # only cost and incomes
     cost_detail_df = cost_detail_df[['modelrun_alias','modelrun_id','BAUS_modelrun_id','incQ',
                          'total_hh_inc_with_UBI',
-                         'total_transit_fares',
+                         'total_transit_fares_annual',
                          'total_auto_op_cost_annual','total_auto_ownership_cost_annual','total_parking_cost_annual',
                          'housing_cost_share_of_hh_income']]
     # make them all fractions
-    cost_detail_df['transit_fare_share_of_hh_income' ] = cost_detail_df.total_transit_fares              / cost_detail_df.total_hh_inc_with_UBI
+    cost_detail_df['transit_fare_share_of_hh_income' ] = cost_detail_df.total_transit_fares_annual       / cost_detail_df.total_hh_inc_with_UBI
     cost_detail_df['auto_op_cost_share_of_hh_income' ] = cost_detail_df.total_auto_op_cost_annual        / cost_detail_df.total_hh_inc_with_UBI
     cost_detail_df['auto_own_cost_share_of_hh_income'] = cost_detail_df.total_auto_ownership_cost_annual / cost_detail_df.total_hh_inc_with_UBI
     cost_detail_df['parking_cost_share_of_hh_income' ] = cost_detail_df.total_parking_cost_annual        / cost_detail_df.total_hh_inc_with_UBI
     # drop other columns, cost type to column
-    cost_detail_df.drop(columns=['total_hh_inc_with_UBI','total_transit_fares',
+    cost_detail_df.drop(columns=['total_hh_inc_with_UBI','total_transit_fares_annual',
                          'total_auto_op_cost_annual','total_auto_ownership_cost_annual','total_parking_cost_annual'], inplace=True)
     cost_detail_df = pd.melt(
         cost_detail_df, 
@@ -994,7 +1010,7 @@ def calculate_Healthy2_commutemodeshare(model_runs_dict: dict, args_rtp: str):
     """
     LOGGER.info("calculate_Healthy2_commutemodeshare()")
     if args_rtp == 'RTP2021':
-        LOGGER.warn("Not implemented for RTP2021 because the methodology changed so QA code is not useful")
+        LOGGER.warning("Not implemented for RTP2021 because the methodology changed so QA code is not useful")
         return
     
     all_jtw_modes_df = pd.DataFrame()
