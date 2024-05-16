@@ -29,10 +29,8 @@ import logging
 
 # paths
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
-NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
-NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
-# line below for round 2 runs
-# NGFS_ROUND2_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
+NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns_Round2.xlsx")
+NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
 NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
@@ -64,8 +62,6 @@ def trips_commute_mode_pkop(tm_run_id, metric_id):
     # [commute]_[mode]_[pkop]   top_level/E2b             trips
     metrics_df = pd.DataFrame()
     trip_distance_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "TripDistance.csv")
-    # line below for round 2 runs
-    # trip_distance_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "TripDistance.csv")
     tm_trips_df = pd.read_csv(trip_distance_file)
     LOGGER.info("  Read {:,} rows from {}".format(len(tm_trips_df), trip_distance_file))
     LOGGER.debug("tm_trips_df.head():\n{}".format(tm_trips_df.head()))
@@ -172,9 +168,6 @@ if __name__ == "__main__":
 
     current_runs_list = current_runs_df['directory'].to_list()
     
-    # line below for round 2 runs
-    # current_runs_list = ['2035_TM160_NGF_r2_NoProject_01', '2035_TM160_NGF_r2_NoProject_01_AOCx1.25_v2', '2035_TM160_NGF_r2_NoProject_03_pretollcalib', '2035_TM160_NGFr2_NP04_Path1_02']
-
     for tm_run_id in current_runs_list:
         out_filename = os.path.join(os.getcwd(),"Efficient2b_non_commute_trips_mode_share_{}.csv".format(tm_run_id))
 

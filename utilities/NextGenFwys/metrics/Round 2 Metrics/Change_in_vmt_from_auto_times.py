@@ -143,7 +143,7 @@ if __name__ == "__main__":
         metrics_df = pd.DataFrame()
 
         metrics_df = calculate_Change_in_vmt_from_auto_times(tm_run_id)
-        LOGGER.info("@@@@@@@@@@@@@ S2 Done")
+        LOGGER.info("@@@@@@@@@@@@@ Done")
 
         metrics_df.to_csv(out_filename, float_format='%.5f', index=False) #, header=False
         LOGGER.info("Wrote {}".format(out_filename))

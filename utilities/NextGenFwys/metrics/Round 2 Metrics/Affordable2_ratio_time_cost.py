@@ -29,10 +29,8 @@ import simpledbf
 
 # paths
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
-NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
-NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
-# line below for round 2 runs
-# NGFS_ROUND2_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
+NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns_Round2.xlsx")
+NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
 NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
@@ -316,8 +314,6 @@ def calculate_auto_travel_time_for_pathway3(tm_run_id, origin_city_abbreviation)
 
     # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
     ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv") #changed "ODTravelTime_byModeTimeperiodIncome.csv" to a variable for better performance during debugging
-    # line below for round 2 runs
-    # ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv") #changed "ODTravelTime_byModeTimeperiodIncome.csv" to a variable for better performance during debugging
     # this is large so join/subset it immediately
     trips_od_travel_time_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
     LOGGER.info("  Read {:,} rows from {}".format(len(trips_od_travel_time_df), ODTravelTime_byModeTimeperiod_file))
@@ -431,10 +427,7 @@ def Affordable2_ratio_time_cost(tm_run_id):
     LOGGER.info("Calculating {} for {}".format(metric_id, tm_run_id))
     
     # load scenario loaded network for analysis
-    loaded_roadway_network = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "shapefile", "network_links.DBF")
-    # line below for round 2 runs
-    # loaded_roadway_network = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "shapefile", "network_links.DBF")
-    
+    loaded_roadway_network = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "shapefile", "network_links.DBF") 
     tm_loaded_network_dbf = simpledbf.Dbf5(loaded_roadway_network)
     tm_loaded_network_df = tm_loaded_network_dbf.to_dataframe()
     tm_loaded_network_df = tm_loaded_network_df.rename(columns=lambda x: x.strip())
@@ -894,10 +887,7 @@ if __name__ == "__main__":
     LOGGER.info("current_runs_df: \n{}".format(current_runs_df))
 
     current_runs_list = current_runs_df['directory'].to_list()
-    
-    # line below for round 2 runs
-    # current_runs_list = ['2035_TM160_NGF_r2_NoProject_01', '2035_TM160_NGF_r2_NoProject_01_AOCx1.25_v2', '2035_TM160_NGF_r2_NoProject_03_pretollcalib', '2035_TM160_NGFr2_NP04_Path1_02']
-
+ 
     # define base run inputs
     # # base year run for comparisons = most recent Pathway 4 (No New Pricing) run
     pathway4_runs = current_runs_df.loc[ current_runs_df['category']=="Pathway 4" ]

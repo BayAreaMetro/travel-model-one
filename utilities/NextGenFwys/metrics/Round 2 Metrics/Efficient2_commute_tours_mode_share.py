@@ -29,10 +29,8 @@ import logging
 
 # paths
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
-NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
-NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
-# line below for round 2 runs
-# NGFS_ROUND2_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
+NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns_Round2.xlsx")
+NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
 
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
 LOG_FILE                = "Efficient2_commute_tours_mode_share.log" # in the cwd
@@ -79,8 +77,6 @@ def calculate_Efficient2_commute_tours_mode_share(tm_run_id: str) -> pd.DataFram
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
 
     journey_to_work_modes_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "JourneyToWork_modes.csv")
-    # line below for round 2 runs
-    # journey_to_work_modes_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "JourneyToWork_modes.csv")
     tm_journey_to_work_df = pd.read_csv(journey_to_work_modes_file)
     LOGGER.info("  Read {:,} rows from {}".format(len(tm_journey_to_work_df), journey_to_work_modes_file))
     LOGGER.debug("tm_journey_to_work_df.head() =\n{}".format(tm_journey_to_work_df.head()))
@@ -225,10 +221,7 @@ if __name__ == "__main__":
     LOGGER.info("current_runs_df: \n{}".format(current_runs_df))
 
     current_runs_list = current_runs_df['directory'].to_list()
-    
-    # line below for round 2 runs
-    # current_runs_list = ['2035_TM160_NGF_r2_NoProject_01', '2035_TM160_NGF_r2_NoProject_01_AOCx1.25_v2', '2035_TM160_NGF_r2_NoProject_03_pretollcalib', '2035_TM160_NGFr2_NP03_Path1_01']
-
+ 
     for tm_run_id in current_runs_list:
         out_filename = os.path.join(os.getcwd(),"Efficient2_commute_tours_mode_share_{}.csv".format(tm_run_id))
 
