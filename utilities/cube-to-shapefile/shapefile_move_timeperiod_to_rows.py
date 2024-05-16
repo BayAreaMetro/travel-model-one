@@ -67,5 +67,13 @@ if __name__ == '__main__':
         how='left'
     )
     print(f"type(network_long_shp): {type(network_long_shp)}")
+
+    # filter out zero rows
+    if 'FREQ' in network_long_shp.columns.to_list():
+        num_rows = len(network_long_shp)
+        network_long_shp = network_long_shp.loc[network_long_shp['FREQ'] != 0]
+        print(f"Filtered out rows with FREQ=0, from {num_rows:,} to {len(network_long_shp):,} rows")
+
+    # save it
     network_long_shp.to_file(my_args.output_shapefile)
     print(f"Wrote {len(network_long_shp):,} rows to {my_args.output_shapefile}")
