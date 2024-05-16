@@ -54,6 +54,7 @@ COPY_FILES = {
         "network_links",
         "network_links_withXY",
         "network_trn_links",
+        "network_trn_links_long", # via shapefile_move_timeperiod_to_rows.py
         "network_trn_route_links",
         "network_trn_lines"
     ],
