@@ -31,10 +31,8 @@ import numpy
 
 # paths
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
-NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
-NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
-# line below for round 2 runs
-# NGFS_ROUND2_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
+NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns_Round2.xlsx")
+NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
 NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
@@ -74,8 +72,6 @@ def calculate_Change_in_vmt_from_loaded_network(tm_run_id: str) -> pd.DataFrame:
     LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
 
     loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period.csv")
-    # line below for round 2 runs
-    # loaded_network_file = os.path.join(NGFS_ROUND2_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period.csv")
     loaded_network_df = pd.read_csv(loaded_network_file)
     loaded_network_df.rename(columns=lambda x: x.strip(), inplace=True)
     LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
@@ -88,8 +84,6 @@ def calculate_Change_in_vmt_from_loaded_network(tm_run_id: str) -> pd.DataFrame:
     # load network link to TAZ lookup file
 
     tm_network_links_taz_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "shapefile", "network_links_TAZ.csv")
-    # line below for round 2 runs
-    # tm_network_links_taz_file = os.path.join('L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\2035_TM152_NGF_NP10_Path1a_02\\OUTPUT\\shapefile\\network_links_TAZ.csv')
     tm_network_links_taz_df = pd.read_csv(tm_network_links_taz_file)[['A', 'B', 'TAZ1454', 'linktaz_share']]
     LOGGER.info("  Read {:,} rows from {}".format(len(tm_network_links_taz_df), tm_network_links_taz_file))
     # join to epc lookup table
@@ -321,10 +315,7 @@ if __name__ == "__main__":
     LOGGER.info("current_runs_df: \n{}".format(current_runs_df))
 
     current_runs_list = current_runs_df['directory'].to_list()
-    
-    # line below for round 2 runs
-    # current_runs_list = ['2035_TM160_NGF_r2_NoProject_01', '2035_TM160_NGF_r2_NoProject_01_AOCx1.25_v2', '2035_TM160_NGF_r2_NoProject_03_pretollcalib', '2035_TM160_NGFr2_NP03_Path1_01']
-        
+            
     # find the last pathway 1 run, since we'll use that to determine which links are in the fwy minor groupings
     pathway1_runs = current_runs_df.loc[ current_runs_df['category'].str.startswith("Pathway 1")]
     PATHWAY1_SCENARIO_RUN_ID = pathway1_runs['directory'].tolist()[-1] # take the last one
@@ -345,7 +336,7 @@ if __name__ == "__main__":
         metrics_df = pd.DataFrame()
 
         metrics_df = calculate_Change_in_vmt_from_loaded_network(tm_run_id)
-        LOGGER.info("@@@@@@@@@@@@@ S2 Done")
+        LOGGER.info("@@@@@@@@@@@@@ Done")
 
         metrics_df.to_csv(out_filename, float_format='%.5f', index=False) #, header=False
         LOGGER.info("Wrote {}".format(out_filename))
