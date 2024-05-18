@@ -584,7 +584,7 @@ add_speed_correction_columns <- function(model_network_df, network_no_project_df
   # this was in the original PBA50 code via pmin
   # TODO: I don't think we should do this -- if we take credit for slowing down traffic, we should also
   # TODO: take credit for speeding it up and increaasing fatalities/injuries
-  if (PROJECT %in% c("PBA50","PBA50+")) {
+  if (PROJECT %in% c("PBA50","PBA50+", "NGF")) {
     # these are multiplicative so default to 1.0 in place of NA
     model_network_df <- mutate(model_network_df,
       # fatality
