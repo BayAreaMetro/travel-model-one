@@ -29,7 +29,8 @@ BOX_DIR = r'C:\Users\{}\Box\Plan Bay Area 2050+\Blueprint\Off-Model\PBA50+ Off-M
 MODEL_DATA_BOX_DIR = os.path.join(BOX_DIR, 'model_data_all')
 
 # TODO: make directory an argument
-OFF_MODEL_CALCULATOR_DIR = os.path.join(BOX_DIR, 'DBP_v1', 'PBA50+ Off-Model Calculators')
+OFF_MODEL_CALCULATOR_DIR = os.path.join(BOX_DIR, 'DBP_v2', 'PBA50+ Off-Model Calculators')
+# OFF_MODEL_CALCULATOR_DIR = os.path.join(BOX_DIR, 'IPA_TM2_v2_refactor', 'PBA50+ Off-Model Calculators')
 SUMMARY_M_DIR = r'M:\Application\Model One\RTP2025\Blueprint\across_runs'
 
 # OFF_MODEL_CALCULATOR_DIR = os.path.join(BOX_DIR, 'IPA_TM2_v2_refactor', 'PBA50+ Off-Model Calculators')
