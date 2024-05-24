@@ -5,7 +5,13 @@ USAGE = """
   Run this from the model run dir.
   Processes model outputs and creates a single csv with scenario metrics, called metrics\top_level_metrics_toll_revenues_XX.csv
   
-  This file will have the following columns:
+  Input Files:
+    network_links.DBF: Roadway network information containing attributes like facility type, volume, and toll class designations.
+    network_links_TAZ.csv: Lookup table linking network links to Traffic Analysis Zones (TAZ) for geographic analysis.
+    TOLLCLASS_Designations.xlsx: Excel file defining toll class designations used for categorizing toll facilities.
+    taz_epc_crosswalk.csv: Lookup file indicating Equity Priority Communitiy (EPC) designation for TAZs, used for classification.
+  
+  The generated CSV will contain the following columns:
     'Freeway/Non-Freeway',
     'EPC/Non-EPC',
     'Tolled/Non-tolled Facilities',
@@ -51,8 +57,6 @@ NGFS_EPC_TAZ_DF      = pd.read_csv(NGFS_EPC_TAZ_FILE)
 INFLATION_FACTOR = 1.03
 INFLATION_00_23 = (327.06 / 180.20) * INFLATION_FACTOR
 INFLATION_00_20 = 300.08 / 180.20
-INFLATION_00_18 = 285.55 / 180.20
-INFLATION_18_20 = 300.08 / 285.55
 REVENUE_DAYS_PER_YEAR = 260
 
 def top_level_metrics_toll_revenues(tm_run_id: str) -> pd.DataFrame:

@@ -90,21 +90,7 @@ NGFS_OD_CORDONS_OF_INTEREST_DF = pd.DataFrame(
 INFLATION_FACTOR = 1.03
 INFLATION_00_23 = (327.06 / 180.20) * INFLATION_FACTOR
 INFLATION_00_20 = 300.08 / 180.20
-INFLATION_00_18 = 285.55 / 180.20
-INFLATION_18_20 = 300.08 / 285.55
-REVENUE_DAYS_PER_YEAR = 260
 
-# Average Annual Costs of Driving a Car in 2020$
-# Source: AAA Driving Costs 2020; mid-size sedan
-# \Box\NextGen Freeways Study\04 Engagement\02_Stakeholder Engagement\Advisory Group\Meeting 02 - Apr 2022 Existing Conditions\NGFS_Advisory Group Meeting 2_Apr2022.pptx
-AUTO_OWNERSHIP_COST_2020D           = 3400
-AUTO_MAINTENANCE_COST_2020D         = 1430 # use a model output instead
-AUTO_INSURANCE_COST_2020D           = 1250
-AUTO_FINANCE_COST_2020D             = 680
-AUTO_REGISTRATION_TAXES_COST_2020D  = 730
-AUTO_GAS_COST_2020D                 = 1250 # use a model output instead
-
-# TODO: deprecate the use of these in Affordable 2 (don't affect results, just need to clean up the code)
 # sourced from USDOT Benefit-Cost Analysis Guidance  in 2020 dollars
 # chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.transportation.gov/sites/dot.gov/files/2022-03/Benefit%20Cost%20Analysis%20Guidance%202022%20Update%20%28Final%29.pdf
 # inflation adjustment CPI 2020, 2000 reference https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions

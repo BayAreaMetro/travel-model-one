@@ -42,9 +42,6 @@ NGFS_OD_CITIES_DF      = pd.read_csv(NGFS_OD_CITIES_FILE)
 NGFS_EPC_TAZ_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_epc_crosswalk.csv")
 NGFS_EPC_TAZ_DF      = pd.read_csv(NGFS_EPC_TAZ_FILE)
 
-# tollclass designations
-TOLLCLASS_LOOKUP_DF     = pd.read_excel(NGFS_TOLLCLASS_FILE, sheet_name='Inputs_for_tollcalib', usecols=['project','facility_name','tollclass','s2toll_mandatory','THRESHOLD_SPEED','MAX_TOLL','MIN_TOLL','Grouping major','Grouping minor'])
-
 # define origin destination pairs
 NGFS_OD_CITIES_OF_INTEREST = [
     ['Central/West Oakland',                           'San Francisco Downtown Area'],
@@ -62,97 +59,6 @@ NGFS_OD_CITIES_OF_INTEREST_DF = pd.DataFrame(
     data=NGFS_OD_CITIES_OF_INTEREST,
     columns=['orig_CITY', 'dest_CITY']
 )
-# define origin destination pairs to use for Efficient 1, Pathway 3 Travel Time calculation
-NGFS_OD_CORDONS_OF_INTEREST = [
-    ['Richmond',   'San Francisco Cordon'],
-    ['Mission/Bayview',   'San Francisco Cordon'],
-    ['Sunset',   'San Francisco Cordon'],
-    ['Daly City',   'San Francisco Cordon'],
-    ['Oakland/Alameda',   'San Francisco Cordon'],
-    ['Oakland/Alameda',   'Oakland Cordon'],
-    ['Berkeley',   'Oakland Cordon'],
-    ['Hayward',   'Oakland Cordon'],
-    ['Downtown San Jose',   'San Jose Cordon'],
-    ['East San Jose',   'San Jose Cordon'],
-    ['South San Jose',   'San Jose Cordon'],
-    ['Sunnyvale',   'San Jose Cordon'],
-    ['Cupertino',   'San Jose Cordon'],
-]
-NGFS_OD_CORDONS_OF_INTEREST_DF = pd.DataFrame(
-    data=NGFS_OD_CORDONS_OF_INTEREST,
-    columns=['orig_ZONE', 'dest_CORDON']
-)
-
-# source: https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
-INFLATION_FACTOR = 1.03
-INFLATION_00_23 = (327.06 / 180.20) * INFLATION_FACTOR
-INFLATION_00_20 = 300.08 / 180.20
-INFLATION_00_18 = 285.55 / 180.20
-INFLATION_18_20 = 300.08 / 285.55
-REVENUE_DAYS_PER_YEAR = 260
-
-# Average Annual Costs of Driving a Car in 2020$
-# Source: AAA Driving Costs 2020; mid-size sedan
-# \Box\NextGen Freeways Study\04 Engagement\02_Stakeholder Engagement\Advisory Group\Meeting 02 - Apr 2022 Existing Conditions\NGFS_Advisory Group Meeting 2_Apr2022.pptx
-AUTO_OWNERSHIP_COST_2020D           = 3400
-AUTO_MAINTENANCE_COST_2020D         = 1430 # use a model output instead
-AUTO_INSURANCE_COST_2020D           = 1250
-AUTO_FINANCE_COST_2020D             = 680
-AUTO_REGISTRATION_TAXES_COST_2020D  = 730
-AUTO_GAS_COST_2020D                 = 1250 # use a model output instead
-
-# TODO: deprecate the use of these in Efficient 1 (don't affect results, just need to clean up the code)
-# sourced from USDOT Benefit-Cost Analysis Guidance  in 2020 dollars
-# chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://www.transportation.gov/sites/dot.gov/files/2022-03/Benefit%20Cost%20Analysis%20Guidance%202022%20Update%20%28Final%29.pdf
-# inflation adjustment CPI 2020, 2000 reference https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
-VOT_2023D_PERSONAL             = 17.8 / INFLATION_00_20 * INFLATION_00_23  # based on "All Purposes" in Table A-3
-VOT_2023D_COMMERCIAL           = 32.0 / INFLATION_00_20 * INFLATION_00_23  # based on Commercial Vehicle Operators - Truck Drivers
-
-A2_CONSTANTS = """
-
- - Avg hourly wage ($/hr)
-    - source: ACS PUMS 2021, see M:\Data\Requests\Anup Tapase\ACS PUMS 2021 Mean Wage by Quartile.csv
- - Monetary Value of travel time (% of wage rate)
-    - source: Table 5.2.11-1 https://www.vtpi.org/tca/tca0502.pdf
-    - source: Table 1 (Revision - 2016 Update) https://www.transportation.gov/sites/dot.gov/files/docs/2016%20Revised%20Value%20of%20Travel%20Time%20Guidance.pdf
- - Monetary Value of travel time ($/hr)
-
-"""
-
-# for households and commercial
-# updated 6/19/2023: https://app.asana.com/0/0/1204482774098821/1204820567114779/f
-Q1_MEDIAN_HOURLY_WAGE_2023D = 15.33286
-Q2_MEDIAN_HOURLY_WAGE_2023D = 30.05282
-Q3_MEDIAN_HOURLY_WAGE_2023D = 53.90458
-Q4_MEDIAN_HOURLY_WAGE_2023D = 114.96050
-
-# BLS wage rates for the following categories
-# source: https://www.bls.gov/oes/current/oes_41860.htm
-HEAVY_TRUCK_OPERATORS_MEAN_HOURLY_WAGE_2023D = 30.83 * INFLATION_FACTOR
-SALES_WORKERS_MEAN_HOURLY_WAGE_2023D = 35.04 * INFLATION_FACTOR
-CONSTRUCTION_WORKERS_MEAN_HOURLY_WAGE_2023D = 39.35 * INFLATION_FACTOR
-
-Q1_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D = .5
-Q2_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D = .5
-Q3_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D = .5
-Q4_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D = .5
-# USDOT calculates value of travel time savings for commercial/business vehicles by expanding  the wage rate to total compensation using a factor of 1.54 (deduced from page 15 and 16)
-# https://www.transportation.gov/sites/dot.gov/files/docs/2016%20Revised%20Value%20of%20Travel%20Time%20Guidance.pdf
-# for simplicity the compensation factor is included below along with the Recommended Values of Travel Time Savings (per person-hour as a percentage of total earnings) 
-HEAVY_TRUCK_OPERATORS_VOT_PCT_HOURLY_WAGE_2023D = 1 * 1.54
-SALES_WORKERS_VOT_PCT_HOURLY_WAGE_2023D = 1 * 1.54
-CONSTRUCTION_WORKERS_VOT_PCT_HOURLY_WAGE_2023D = 1 * 1.54
-
-Q1_HOUSEHOLD_VOT_2023D = Q1_MEDIAN_HOURLY_WAGE_2023D * Q1_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
-Q2_HOUSEHOLD_VOT_2023D = Q2_MEDIAN_HOURLY_WAGE_2023D * Q2_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
-Q3_HOUSEHOLD_VOT_2023D = Q3_MEDIAN_HOURLY_WAGE_2023D * Q3_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
-Q4_HOUSEHOLD_VOT_2023D = Q4_MEDIAN_HOURLY_WAGE_2023D * Q4_HOUSEHOLD_VOT_PCT_HOURLY_WAGE_2023D
-HEAVY_TRUCK_OPERATORS_VOT_2023D = HEAVY_TRUCK_OPERATORS_MEAN_HOURLY_WAGE_2023D * HEAVY_TRUCK_OPERATORS_VOT_PCT_HOURLY_WAGE_2023D
-SALES_WORKERS_VOT_2023D = SALES_WORKERS_MEAN_HOURLY_WAGE_2023D * SALES_WORKERS_VOT_PCT_HOURLY_WAGE_2023D
-CONSTRUCTION_WORKERS_VOT_2023D = CONSTRUCTION_WORKERS_MEAN_HOURLY_WAGE_2023D * CONSTRUCTION_WORKERS_VOT_PCT_HOURLY_WAGE_2023D
-
-BASE_YEAR       = "2015"
-FORECAST_YEAR   = "2035"
 
 # travel model tour and trip modes
 # https://github.com/BayAreaMetro/modeling-website/wiki/TravelModes#tour-and-trip-modes
@@ -163,31 +69,6 @@ MODES_HOV          = [3,4,5,6]
 MODES_PRIVATE_AUTO = MODES_SOV + MODES_HOV
 MODES_WALK         = [7]
 MODES_BIKE         = [8]
-
-# travel model time periods
-# https://github.com/BayAreaMetro/modeling-website/wiki/TimePeriods
-TIME_PERIODS_PEAK    = ['AM','PM']
-TIME_PERIOD_LABELS_PEAK    = ['AM Peak','PM Peak']
-TIME_PERIOD_LABELS_NONPEAK = ['Midday']
-METRICS_COLUMNS = [
-    'grouping1',
-    'grouping2',
-    'grouping3',
-    'modelrun_id',
-    'metric_id',
-    'intermediate/final', # TODO: suggest renaming this to 'metric_level' since other options are used beyond intermediate and final
-    'Origin and Destination',
-    'metric_desc',
-    'year',
-    'value'
-]
-
-# TODO deprecate use of the file below
-# load minor groupings, to be merged with loaded network
-MINOR_LINKS_DF = pd.read_csv('L:\\Application\\Model_One\\NextGenFwys\\metrics\\Input Files\\a_b_with_minor_groupings.csv')
-# list for iteration
-MINOR_GROUPS = MINOR_LINKS_DF['Grouping minor'].unique()[1:] #exclude 'other' and NaN
-MINOR_GROUPS = numpy.delete(MINOR_GROUPS, 2)
 
 def return_E1_DF(tm_run_id, od_df, All_or_EPC):
     # change orig_CITY to 'All TAZs

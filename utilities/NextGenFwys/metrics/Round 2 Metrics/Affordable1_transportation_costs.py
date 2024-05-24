@@ -39,8 +39,6 @@ LOGGER                  = None # will initialize in main
 INFLATION_FACTOR = 1.03
 INFLATION_00_23 = (327.06 / 180.20) * INFLATION_FACTOR
 INFLATION_00_20 = 300.08 / 180.20
-INFLATION_00_18 = 285.55 / 180.20
-INFLATION_18_20 = 300.08 / 285.55
 REVENUE_DAYS_PER_YEAR = 260
 
 # Average Annual Costs of Driving a Car in 2020$
