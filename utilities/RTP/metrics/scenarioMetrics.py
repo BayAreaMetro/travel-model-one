@@ -2,7 +2,7 @@ USAGE = r"""
 
   python scenarioMetrics.py
 
-  Run this from the model run dir.  Requires environment variables ITERATION and SAMPLESHARE to be set.
+  Run this from the model run dir.  Requires environment variables ITER and SAMPLESHARE to be set.
   Processes model outputs and creates a single csv with scenario metrics, called metrics\scenario_metrics.csv
   
   Other required input files:
@@ -73,7 +73,7 @@ def tally_travel_cost(iteration, sampleshare, metrics_dict):
     household_df.loc[(household_df['income']>= 60000)&(household_df['income']<100000), 'income_cat'] = 3
     household_df.loc[(household_df['income']>=100000)                                , 'income_cat'] = 4
     household_df['num_hhs'] = 1.0/sampleshare
-
+    household_df['income']  = household_df.income/sampleshare
 
     for inc_level in range(1,5):
         metrics_dict['total_households_inc%d' % inc_level] = household_df.loc[household_df.income_cat==inc_level, 'num_hhs'].sum()
@@ -406,6 +406,12 @@ def tally_access_to_jobs_v2(iteration, sampleshare, metrics_dict):
         elif suffix == "_rural":
             accjob_subset_df = accessiblejobs_df.loc[accessiblejobs_df["U_S_R"]=="rural"]
             totalpop_subset  = tazdata_df.loc[tazdata_df["U_S_R"]=="rural", "TOTPOP"].sum()
+
+        if suffix=="":
+            print(f"suffix=[{suffix}] accjob_subset_df.columns:{accjob_subset_df.columns} accjob_subset_df head:()\n{accjob_subset_df.head()}")
+            debug_output_file = pathlib.Path("metrics/debug_jobaccess_detail.csv")
+            accjob_subset_df.to_csv(debug_output_file)
+            print(f"Wrote {len(accjob_subset_df)} lines to {debug_output_file}")
 
         # numerator = accessible jobs weighted by persons
         #  e.g. sum over TAZs of (totpop at TAZ x totemp jobs accessible)
