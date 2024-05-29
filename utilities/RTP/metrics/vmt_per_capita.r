@@ -1,6 +1,10 @@
 library(dplyr)
 library(sf)
 
+# example call:
+  # set PATH=%PATH%;C:\Program Files\R\R-3.6.2\bin
+  # Rscript X:\travel-model-one-master\utilities\RTP\metrics\vmt_per_capita.r 2025
+
 #########################################################################
 # Calculates VMT per capita by place of residence and place of work
 # for VMT Maps on arcgis online
@@ -20,14 +24,22 @@ library(sf)
 #     https://mtc.maps.arcgis.com/home/item.html?id=5264fa93cf7648469221d1405f6a3174 (feature layer)
 #     https://mtc.maps.arcgis.com/home/item.html?id=6253e74fca1d463c92c15011a12a4a69 (web map)
 #########################################################################
+
+args = commandArgs(trailingOnly=TRUE)
+print(args)
+if (length(args) != 1) {
+  stop("One arguments is required: RTP number, e.g. 2025")
+}
+
 # VMT data from model output
-RTP        <- 2021
+RTP <- args[1]
 RTP_DIR    <- paste0("M:/Application/Model One/RTP",RTP)
 if (RTP==2013) { SCEN_DIR <- file.path(RTP_DIR, "Scenarios","Round 05 -- Final")}
 if (RTP==2017) { SCEN_DIR <- file.path(RTP_DIR, "Scenarios")}
 if (RTP==2021) { SCEN_DIR <- RTP_DIR}
+if (RTP==2025) { SCEN_DIR <- RTP_DIR}
 
-if (RTP==2021) {
+if ((RTP==2021) || (RTP==2025)) {
   OUTPUT_DIR <- file.path(SCEN_DIR, "Blueprint", "VMT per capita or worker")
 } else {
   OUTPUT_DIR <- file.path(RTP_DIR, "VMT per capita or worker")}
@@ -49,6 +61,11 @@ if (RTP==2013) {
                      "2040_TM152_FBP_Plus_24",
                      "2050_TM152_FBP_NoProject_24", "2050_TM152_FBP_PlusCrossing_24",
                      "2050_TM152_EIR_Alt1_06", "2050_TM152_EIR_Alt2_05")
+} else if (RTP==2025) {
+  MODEL_RUN_IDS <- c("2015_TM160_IPA_06",
+                     "2023_TM160_IPA_55",
+                     "2035_TM160_DBP_Plan_08b",
+                     "2050_TM160_DBP_Plan_08b")
 }
 
 
@@ -59,16 +76,21 @@ taz_shp <- st_read('M:\\Data\\GIS layers\\Travel_Analysis_Zones_(TAZ1454)\\Trave
 # Loop through runs
 for (MODEL_RUN_ID in MODEL_RUN_IDS) {
 
+  # directory of core_summaries
   if ((RTP==2013) || (RTP==2017)) {
-    vmt_data <- file.path(
-      SCEN_DIR,MODEL_RUN_ID,"OUTPUT","core_summaries","AutoTripsVMT_perOrigDestHomeWork.rdata")
-  } else if ((RTP==2021) && (MODEL_RUN_ID!='2015_TM152_IPA_17')) {
-    vmt_data <- file.path(
-      SCEN_DIR,'Blueprint', MODEL_RUN_ID,"OUTPUT","core_summaries","AutoTripsVMT_perOrigDestHomeWork.rdata")
-  } else if ((RTP==2021) && (MODEL_RUN_ID=='2015_TM152_IPA_17')) {
-    vmt_data <- file.path(
-      SCEN_DIR,'IncrementalProgress', MODEL_RUN_ID,"OUTPUT","core_summaries","AutoTripsVMT_perOrigDestHomeWork.rdata")
-  }
+      CORE_SUMMARIES_DIR <- file.path(SCEN_DIR,MODEL_RUN_ID,"OUTPUT","core_summaries")
+    } else if ((RTP==2021) && (MODEL_RUN_ID!='2015_TM152_IPA_17')) {
+      CORE_SUMMARIES_DIR <- file.path(SCEN_DIR,'Blueprint', MODEL_RUN_ID,"OUTPUT","core_summaries")
+    } else if ((RTP==2021) && (MODEL_RUN_ID=='2015_TM152_IPA_17')) {
+      CORE_SUMMARIES_DIR <- file.path(SCEN_DIR,'IncrementalProgress', MODEL_RUN_ID,"OUTPUT","core_summaries")
+    } else if ((RTP==2025) && ((MODEL_RUN_ID=='2015_TM160_IPA_06') || (MODEL_RUN_ID=='2023_TM160_IPA_55'))) {
+      CORE_SUMMARIES_DIR <- file.path(SCEN_DIR,'IncrementalProgress', MODEL_RUN_ID,"OUTPUT","core_summaries")
+    } else if ((RTP==2025) && (MODEL_RUN_ID!='2015_TM160_IPA_06') && (MODEL_RUN_ID!='2023_TM160_IPA_55')) {
+      CORE_SUMMARIES_DIR <- file.path(SCEN_DIR,'Blueprint', MODEL_RUN_ID,"OUTPUT","core_summaries")
+    }
+  
+  vmt_data <- file.path(CORE_SUMMARIES_DIR, "AutoTripsVMT_perOrigDestHomeWork.rdata")
+
   print(vmt_data)
   load(vmt_data)
 
@@ -76,17 +98,7 @@ for (MODEL_RUN_ID in MODEL_RUN_IDS) {
   total_vmt_by_residence <- ungroup(model_summary) %>% group_by(taz) %>% summarise(total_vmt = sum(vmt))
   total_vmt_by_workplace <- ungroup(model_summary) %>% group_by(WorkLocation) %>% summarise(total_vmt = sum(vmt))
   
-  
-  if ((RTP==2013) || (RTP==2017)) {
-    persons_data <- file.path(
-      SCEN_DIR,MODEL_RUN_ID,"OUTPUT","core_summaries","AutoTripsVMT_personsHomeWork.rdata")
-  } else if ((RTP==2021) && (MODEL_RUN_ID!='2015_TM152_IPA_17')) {
-    persons_data <- file.path(
-      SCEN_DIR,'Blueprint', MODEL_RUN_ID,"OUTPUT","core_summaries","AutoTripsVMT_personsHomeWork.rdata")
-  } else if ((RTP==2021) && (MODEL_RUN_ID=='2015_TM152_IPA_17')) {
-    persons_data <- file.path(
-      SCEN_DIR,'IncrementalProgress', MODEL_RUN_ID,"OUTPUT","core_summaries","AutoTripsVMT_personsHomeWork.rdata")
-  }
+  persons_data <- file.path(CORE_SUMMARIES_DIR, "AutoTripsVMT_personsHomeWork.rdata")
   print(persons_data)
   load(persons_data)
 
