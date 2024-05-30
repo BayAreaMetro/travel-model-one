@@ -44,15 +44,9 @@ if "%computername%" == "MODEL3-D" (
   set R_LIB=C:\Users\mtcpb\AppData\Local\R\win-library\4.2
 )
 
-:: check if it's being run on AWS
-:: if the prefix will be "WIN-"
-SET computer_prefix=%computername:~0,4%
+:: summarize express lane speeds and generate a new tolls.csv 
+call "%R_HOME%\bin\x64\Rscript.exe" TollCalib_CheckSpeeds.R
 
-if "%COMPUTER_PREFIX%" == "WIN-" (
-    call "%R_HOME%\bin\x64\Rscript.exe" TollCalib_CheckSpeeds.R
-) else (
-    call "%R_HOME%\bin\x64\Rscript.exe" "X:\travel-model-one-master\utilities\toll_calibration\TollCalib_CheckSpeeds.R"
-)
 IF %ERRORLEVEL% NEQ 0 goto done
 
 copy %PROJECT_DIR%\tollcalib_iter\el_gp_summary_ALL.csv tollcalib_iter\el_gp_summary_ALL.csv

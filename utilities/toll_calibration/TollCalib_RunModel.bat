@@ -250,12 +250,8 @@ if "%computername%" == "MODEL3-D" (
 :: System variables to be passed to the R code
 set PROJECT_DIR=%cd%
 
-if "%COMPUTER_PREFIX%" == "WIN-" (
-    call "%R_HOME%\bin\x64\Rscript.exe" TollCalib_CheckSpeeds.R
-) else (
-    call "%R_HOME%\bin\x64\Rscript.exe" "X:\travel-model-one-master\utilities\toll_calibration\TollCalib_CheckSpeeds.R"
-    python "X:\travel-model-one-master\utilities\toll_calibration\TollCalib_stop.py"
-)
+:: summarize express lane speeds and generate a new tolls.csv 
+call "%R_HOME%\bin\x64\Rscript.exe" TollCalib_CheckSpeeds.R
 
 :: copy the output back to L
 if %ITER%==4 (
