@@ -4,7 +4,7 @@ USAGE = """
 
 """
 
-import pathlib, sys
+import argparse, pathlib, sys
 import openpyxl
 import openpyxl.utils.dataframe
 import pandas as pd
@@ -13,10 +13,22 @@ SHEET_NAMES = ["Daily_VMT_By_Veh_Tech","Hourly_Fraction_Veh_Tech_Speed"]
 
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--emfac_version",  required=True, choices=['2014','2021'])
+    parser.add_argument("--sb375",          action='store_true', help="For 'Custom Hourly Speed Fractions' checkbox")
+    args = parser.parse_args()
+
     template_dir = pathlib.Path(__file__).parent / "Custom_Activity_Templates"
-    template_list = sorted(template_dir.glob("E2014_emissions_MPO-MTC_*_annual_VMTbyVehFuelType_CustSpeed_SB375.xlsx"))
     print(f"{template_dir=}")
+
+    suffix_sb375 = "_SB375" if args.sb375 else ""
+    glob_str = f"E{args.emfac_version}_emissions_MPO-MTC_*_annual_VMTbyVehFuelType_CustSpeed{suffix_sb375}.xlsx"
+    print(f"{glob_str=}")
+    template_list = sorted(template_dir.glob(glob_str))
     # print(f"{template_list=}")
+    if len(template_list) == 0:
+        print(f"No templates found for {glob_str}")
+        sys.exit(1)
 
     dataframes = {}
     for template_file in template_list:
@@ -31,7 +43,7 @@ if __name__ == '__main__':
                 dataframes[sheet_name] = pd.concat([dataframes[sheet_name], sheet_df])
 
     # save as csv
-    outfile = f"E2014_emissions_MPO-MTC_allyears_annual_VMTbyVehFuelType_CustSpeed_SB375.xlsx"
+    outfile = f"E{args.emfac_version}_emissions_MPO-MTC_allyears_annual_VMTbyVehFuelType_CustSpeed{suffix_sb375}.xlsx"
     wb = openpyxl.Workbook()
 
     first_sheet = True
