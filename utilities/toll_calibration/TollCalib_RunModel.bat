@@ -154,7 +154,6 @@ if ERRORLEVEL 2 goto done
 
 :: Complete
 echo FINISHED HIGHWAY ASSIGNMENT  %DATE% %TIME% >> logs\feedback.rpt
-"C:\Program Files\Citilabs\CubeVoyager\Cluster" "%COMMPATH%\CTRAMP" 1-48 Close Exit
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -389,6 +388,9 @@ if %ITER%==4 (
 :: after executing demand models, translate the trip lists to demand matrices
 runtpp CTRAMP\scripts\assign\PrepAssign.job
 if ERRORLEVEL 2 goto done
+
+:: close the cluster
+"C:\Program Files\Citilabs\CubeVoyager\Cluster" "%COMMPATH%\CTRAMP" 1-48 Close Exit
 
 :: ------------------------------------------------------------------------------------------------------
 ::
