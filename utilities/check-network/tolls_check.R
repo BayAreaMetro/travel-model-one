@@ -22,8 +22,8 @@ library(readxl)
 
 # Load files
 
-NETWORK_DIR <- "L:/Application/Model_One/NextGenFwys/INPUT_DEVELOPMENT/Networks/NGF_Network_P3a_3Cordons_01/NGF_P3_3Cordons_network_2035"
-NETWORK_DBF_PATH <- paste(NETWORK_DIR, "shapefile", "network_links.dbf", sep = "/")
+NETWORK_DIR <- "L:/RTP2025_PPA/Projects/3000_P4ExpLanes/3000_P4ExpLanes_BF02"
+NETWORK_DBF_PATH <- paste(NETWORK_DIR, "shapefile", "freeflow.dbf", sep = "/")
 TOLLS_CSV_PATH <- paste(NETWORK_DIR, "hwy", "tolls.csv", sep = "/")
 TOLLCLASS_DES_PATH <- "X:/travel-model-one-master/utilities/NextGenFwys/TOLLCLASS_Designations.xlsx"
 
@@ -77,7 +77,13 @@ print("The following TOLLCLASS values are missing from the Tollclass Designation
 print(missing_des)
 sink()
 
-colnames(min_tolls) <- c("use", "tollclass", "use_tc", "facility_name", "s2toll_mandatory")
+# Rename the "facility_name_toll_des" in the min_tolls data frame to "facility_name", etc
+min_tolls <- min_tolls %>%
+  rename(
+    facility_name = facility_name_toll_des,
+    use = USE,
+    tollclass = TOLLCLASS
+  )
 min_tolls$fac_index <- min_tolls$tollclass*1000 + min_tolls$use  # Calculate the facility index from the use and tollclass
 min_tolls$tollseg <- rep(0, nrow(min_tolls))
 min_tolls$tolltype <- rep("unknown", nrow(min_tolls))
