@@ -214,7 +214,19 @@ RUN PGM=HWYNET
 
     ; check that all bridge and value tolls are set
     if (TOLLCLASS > 0)
-      IF ((TOLLAM_DA == 0) && (TOLLPM_DA == 0))
+      IF ((TOLLAM_DA == 0) && (TOLLPM_DA == 0) && USE=1)
+        print LIST="Link ",A,"-",B," has TOLLCLASS ", TOLLCLASS, "and USE ", USE," but no non-zero peak period DA tolls"
+        ABORT MSG ="Link has TOLLCLASS and no non-zero peak period tolls; see log file; and verify that tolls.csv has this TOLLCLASS and USE combination"
+      ENDIF
+      IF ((TOLLAM_S2 == 0) && (TOLLPM_S2 == 0) && USE=2)
+        print LIST="Link ",A,"-",B," has TOLLCLASS ", TOLLCLASS, "and USE ", USE," but no non-zero peak period DA tolls"
+        ABORT MSG ="Link has TOLLCLASS and no non-zero peak period tolls; see log file; and verify that tolls.csv has this TOLLCLASS and USE combination"
+      ENDIF
+      IF ((TOLLAM_S3 == 0) && (TOLLPM_S3 == 0) && USE=3)
+        print LIST="Link ",A,"-",B," has TOLLCLASS ", TOLLCLASS, "and USE ", USE," but no non-zero peak period DA tolls"
+        ABORT MSG ="Link has TOLLCLASS and no non-zero peak period tolls; see log file; and verify that tolls.csv has this TOLLCLASS and USE combination"
+      ENDIF
+      IF ((TOLLAM_DA == 0) && (TOLLPM_DA == 0) && USE=4)
         print LIST="Link ",A,"-",B," has TOLLCLASS ", TOLLCLASS, "and USE ", USE," but no non-zero peak period DA tolls"
         ABORT MSG ="Link has TOLLCLASS and no non-zero peak period tolls; see log file; and verify that tolls.csv has this TOLLCLASS and USE combination"
       ENDIF
