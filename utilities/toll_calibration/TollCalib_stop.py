@@ -1,3 +1,10 @@
+###################################### 
+#  
+# THIS STOPPING CRITERIA SCRIPT IS STILL UNDEVELOPMENT
+# IT IS NOT INCORPORATED AS PART OF THE TOLL CALIBRATION PROCEDURES YET 
+#
+###################################### 
+
 # TollCalibration.py
 # Script that reads in the average speed by facility of two successive iterations, calculate the sum of square differences of the two
 # Outputs a csv file indicating calibration should stop when 
