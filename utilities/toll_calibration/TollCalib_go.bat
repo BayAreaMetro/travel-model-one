@@ -1,7 +1,6 @@
 rem -------------------------------------
 rem
 rem This batch file copies the inputs and scripts needed for toll calibration. 
-rem It requires six pieces of information
 rem Scripts are copied from travel-model-one-master on the X drive.
 rem 
 rem -------------------------------------
@@ -12,17 +11,17 @@ rem -------------------------------------
 
 rem where is TOLLCLASS Designations.xlsx?
 rem (this file indicates which facilities have mandatory s2 tolls)
-set TOLL_DESIGNATIONS_XLSX=\\tsclient\L\RTP2021_PPA\Projects\TOLLCLASS_Designations.xlsx
+set TOLL_DESIGNATIONS_XLSX=X:\travel-model-one-master\utilities\NextGenFwys\TOLLCLASS_Designations.xlsx
 
 rem if this is being run on aws, what's the Private IP Address?
 if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.70
 
 rem what is the location of the base run (i.e. pre toll calibration) directory - the full run is needed because it needs the CTRAMP directory
-set MODEL_BASE_DIR=E:\Model2C-Share\Projects\2050_TM151_PPA_BF_17_preTollCalib
+set MODEL_BASE_DIR=E:\Model3B-Share\Projects\2035_TM160_NGF_r2_NoProject_03_pretollcalib
 
 :: Where do you want the toll calibration outputs to be stored?
-:: (this shoudl be the location of the output folder "tollcalib_iter" on the L drive)
-set L_DIR=L:\RTP2021_PPA\Projects\2050_TM151_PPA_BF_17_preTollCalib
+:: (this is typically pretollcalib run directory on the L drive)
+set L_DIR=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGF_r2_NoProject_03_pretollcalib
 
 :: specify any HOV discount for the all-lane tolling system 
 :: (note that these discounts are for all-lane tolling only, and won't be applied to express lanes) 
@@ -48,8 +47,6 @@ copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_I
 copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_RunModel.bat TollCalib_RunModel.bat
 
 copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_CheckSpeeds.R TollCalib_CheckSpeeds.R
-
-copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_stop.py TollCalib_stop.py
 
 rem generate network_links.dbf
 rem -------------------------------------
