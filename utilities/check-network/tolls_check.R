@@ -1,7 +1,7 @@
 #
-# In order to run successfully, TM1 requires that all combinations of USE and
+# In order to catch potential user errors, TM1 requires that all combinations of USE and
 # non-zero TOLLCLASS in the input network have their time period and vehicle 
-# class-specific tolls represented in the input tolls.csv file. This script 
+# class-specific tolls to be explicityly represented in the input tolls.csv file. This script 
 # checks that all USE/TC combos are present in a given network's corresponding
 # tolls.csv. 
 #
