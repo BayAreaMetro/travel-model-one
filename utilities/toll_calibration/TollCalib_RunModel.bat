@@ -344,7 +344,6 @@ if %ITER%==4 (
 
 :: used by core java processes
 copy "%MODEL_BASE_DIR%\main\ShadowPricing_5.csv"           main\ShadowPricing_5.csv
-copy "%MODEL_BASE_DIR%\main\telecommute_constants.csv"     main\telecommute_constants.csv
 
 :: Runtime configuration: set project directory, auto operating cost, 
 :: and synthesized household/population files in the appropriate places
