@@ -335,6 +335,9 @@ if %ITER%==4 (
     copy "%MODEL_BASE_DIR%\popsyn\hhFile.csv"         INPUT\popsyn\hhFile.csv
     copy "%MODEL_BASE_DIR%\popsyn\personFile.csv"     INPUT\popsyn\personFile.csv
 
+    mkdir landuse
+    c:\windows\system32\Robocopy.exe /E "%MODEL_BASE_DIR%\landuse" landuse
+
     mkdir INPUT\landuse
     c:\windows\system32\Robocopy.exe /E "%MODEL_BASE_DIR%\landuse" INPUT\landuse
 
