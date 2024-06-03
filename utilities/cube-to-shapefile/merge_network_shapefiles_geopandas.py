@@ -7,7 +7,7 @@ today = time.strftime('%Y_%m_%d')
 # TODO: make the following inputs use-defined args
 M_dir = r'M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\Networks'
 network_versions = ['v18']
-years = [2023, 2025]
+years = [2023, 2025, 2035, 2050]
 scens = ['Blueprint', 'Baseline']
 
 # LOG_FILE = os.path.join(M_dir, 'network_comparison', 'merge_networks_{}.log'.format(today))
