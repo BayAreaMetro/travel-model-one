@@ -86,7 +86,7 @@ if (PROJECT == "NGF") {
   TAZ_EPC_FILE <- "X:/travel-model-one-master/utilities/NextGenFwys/metrics/Input Files/taz_epc_crosswalk.csv"
 
   # Scenario Directory on L or M
-  PROJECT_SCENARIOS_DIR     <- "L:/Application/Model_One/NextGenFwys/Scenarios"
+  PROJECT_SCENARIOS_DIR     <- "L:/Application/Model_One/NextGenFwys_Round2/Scenarios"
 
   # BASE YEAR -- required for 1) General correction
   BASE_YEAR                 <- 2015
