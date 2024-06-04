@@ -31,6 +31,7 @@ IF "%SKIP%"=="--skip_if_exists" (
   call python "%CODE_DIR%\Reliable1_change_travel_time.py" --skip_if_exists
   call python "%CODE_DIR%\Reliable2_ratio_peak_nonpeak.py" --skip_if_exists
   call python "%CODE_DIR%\Top_level_metrics_toll_revenues.py" --skip_if_exists
+  call python "%CODE_DIR%\run_fatalities_Rscript.py" --skip_if_exists
 
 ) else (
   echo not skipping
@@ -44,6 +45,7 @@ IF "%SKIP%"=="--skip_if_exists" (
   call python "%CODE_DIR%\Reliable1_change_travel_time.py"
   call python "%CODE_DIR%\Reliable2_ratio_peak_nonpeak.py"
   call python "%CODE_DIR%\Top_level_metrics_toll_revenues.py"
+  call python "%CODE_DIR%\run_fatalities_Rscript.py"
 )
 
 :success
