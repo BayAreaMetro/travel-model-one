@@ -83,7 +83,7 @@ stopifnot(PROJECT %in% list("NGF","PBA50","PBA50+"))
 
 if (PROJECT == "NGF") {
   ##################################### NextGen Fwy settings #####################################
-  TAZ_EPC_FILE <- "M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\metrics\metrics_01\taz1454_epcPBA50plus_2024_02_23.csv"
+  TAZ_EPC_FILE <- "M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/metrics/metrics_01/taz1454_epcPBA50plus_2024_02_23.csv"
 
   # Scenario Directory on L or M
   PROJECT_SCENARIOS_DIR     <- "L:/Application/Model_One/NextGenFwys_Round2/Scenarios"
