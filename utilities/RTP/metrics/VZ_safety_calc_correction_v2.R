@@ -40,7 +40,7 @@
 # 
 # Inputs:
 #   1) TAZ_EPC_LOOKUP: 
-#       For NGF: X:\travel-model-one-master\utilities\NextGenFwys\metrics\Input Files\taz_epc_crosswalk.csv
+#       For NGF: M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\metrics\metrics_01\taz1454_epcPBA50plus_2024_02_23.csv
 #       For PBA50: M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPMENT\metrics\metrics_FinalBlueprint\CommunitiesOfConcern.csv
 #       For PBA50+: M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\metrics\metrics_01\taz1454_epcPBA50plus_2024_02_23.csv"
 #   3) For base year and forecast year
@@ -83,7 +83,7 @@ stopifnot(PROJECT %in% list("NGF","PBA50","PBA50+"))
 
 if (PROJECT == "NGF") {
   ##################################### NextGen Fwy settings #####################################
-  TAZ_EPC_FILE <- "X:/travel-model-one-master/utilities/NextGenFwys/metrics/Input Files/taz_epc_crosswalk.csv"
+  TAZ_EPC_FILE <- "M:\Application\Model One\RTP2025\INPUT_DEVELOPMENT\metrics\metrics_01\taz1454_epcPBA50plus_2024_02_23.csv"
 
   # Scenario Directory on L or M
   PROJECT_SCENARIOS_DIR     <- "L:/Application/Model_One/NextGenFwys_Round2/Scenarios"
