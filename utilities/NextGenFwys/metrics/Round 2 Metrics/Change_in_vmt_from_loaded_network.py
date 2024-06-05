@@ -39,8 +39,8 @@ NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", 
 LOG_FILE                = "Change_in_vmt_from_loaded_network.log" # in the cwd
 LOGGER                  = None # will initialize in main     
 
-# EPC lookup file - indicates whether a TAZ is designated as an EPC in PBA2050
-NGFS_EPC_TAZ_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_epc_crosswalk.csv")
+# EPC lookup file - indicates whether a TAZ is designated as an EPC in PBA2050+
+NGFS_EPC_TAZ_FILE    = "M:\\Application\\Model One\\RTP2025\\INPUT_DEVELOPMENT\\metrics\\metrics_01\\taz1454_epcPBA50plus_2024_02_23.csv"
 NGFS_EPC_TAZ_DF      = pd.read_csv(NGFS_EPC_TAZ_FILE)
 
 def calculate_Change_in_vmt_from_loaded_network(tm_run_id: str) -> pd.DataFrame:
