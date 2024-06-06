@@ -3,6 +3,33 @@ USAGE = "
     github: https://github.com/BayAreaMetro/pems-typical-weekday
     box:    https://mtcdrive.box.com/v/pems-typical-weekday
   based on crosswalk type, route number and direction (e.g. mainline 101 N) and location.
+
+  Input:
+  1) PeMS locations via Box/Modeling and Surveys/Share Data/pems-typical-weekday/pems_period.csv
+  2) Model links shapefile for freeways & ramps:
+     2015: M:/Application/Model One/Networks/TM1_2015_Base_Network/shapefile/TM1_freeways_wgs84.shp
+     2023: M:/Application/Model One/RTP2025/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_v13/net_2023_Blueprint/shapefile_forPeMScrosswalk/TM1_freeways_wgs84.shp
+  
+  Output:
+  1) Debug log file: M:/Crosswalks/PeMSStations_TM1network/crosswalk_pems_to_TM_[2015,2023].log
+
+  2) PeMS locations: M:/Crosswalks/PeMSStations_TM1network/shapefiles/pems_locs_[2015,2023].shp
+     These are the PeMS points the script is trying to crosswalk to model links
+
+  3) Crosswalk files: M:/Crosswalks/PeMSStations_TM1network/crosswalk_[2015,2023].[csv,dbf]
+     The resulting crosswalk. Columns are:
+       station district route direction type  abs_pm latitude longitude     A    B   distlink stationsonlink bad_match
+      bad_match indicates if the PeMS station is too far from the link, but for this file, it's filtered to False
+
+  4) Crosswalk as shapefile: M:/Crosswalks/PeMSStations_TM1network/shapefiles/pems_locs_with_crosswalk_[2015,2023].shp
+     Same as PeMS locations file but with route link information included.
+     This includes all stations, without filtering based on bad_match.
+
+  5) Crosswalk visualization: M:/Crosswalks/PeMSStations_TM1network/shapefiles/TM_links_with_pems_[2015,2023].shp
+     This is a list of triangles, starting at each PeMS station, and then following the associated link.
+     This includes all stations, without filtering based on bad_match (and is helpful for determining the
+     bad_match rules)
+
 "
 
 suppressPackageStartupMessages({
@@ -400,16 +427,28 @@ xwalk <- left_join(xwalk, mult_pems, by=join_by(A,B))
 print("head(xwalk)")
 print(head(xwalk))
 
-# write it
-write.csv(xwalk, file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,"_",argv$validation_year,".csv")), row.names=FALSE, quote=FALSE)
-print(paste("Wrote crosswalk:",file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,".csv"))))
+# new -- quality control
+xwalk <- mutate(xwalk, 
+  bad_match = case_when(
+    ((type == 'OR') | (type == 'FR') | (type == 'RA')) & (distlink > 400) ~ TRUE, # drop ramps with distlink > 400m
+    (distlink > 1400) ~ TRUE, # mainline should be closer than this too, but we have some imprecise links
+    .default = FALSE
+  ))
+print("bad_match values:")
+print(table(xwalk$bad_match))
 
-foreign::write.dbf(xwalk, file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,"_",argv$validation_year,".dbf")), factor2char=TRUE)
-print(paste("Wrote crosswalk:",file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,".dbf"))))
+# write it
+output_file <- file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,"_",argv$validation_year,".csv"))
+write.csv(filter(xwalk, bad_match==FALSE), output_file, row.names=FALSE, quote=FALSE)
+print(paste("Wrote",nrow(filter(xwalk, bad_match==FALSE)),"rows to",output_file))
+
+output_file <- file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,"_",argv$validation_year,".dbf"))
+foreign::write.dbf(filter(xwalk, bad_match==FALSE), output_file, factor2char=TRUE)
+print(paste("Wrote",nrow(filter(xwalk, bad_match==FALSE)),"rows to",output_file))
 
 # write pems_loc joined with xwalk as shapefile
 # some pems will correspond to multiple links so they'll show up twice
-pems_df <- left_join(pems_df, xwalk)
+pems_df <- inner_join(pems_df, xwalk)
 print(paste("pems_df after joining to xwalk has",nrow(pems_df),"rows"))
 print("head(pems_df)")
 print(head(pems_df))
@@ -417,7 +456,7 @@ pems_locs <- sf::st_as_sf(pems_df, coords=c("longitude","latitude"), crs = 4326)
 
 output_file <- file.path(CROSSWALK_DIR, "shapefiles", paste0(PEMS_LOCS_WITH_CROSSWALK,"_",argv$validation_year,".shp"))
 sf::write_sf(pems_locs, output_file)
-print(paste0("Wrote PEMS locations with crosswalk: ",file.path(CROSSWALK_DIR, "shapefiles", paste0(PEMS_LOCS_WITH_CROSSWALK,"_",argv$validation_year,".shp"))))
+print(paste("Wrote", nrow(pems_df), "PEMS locations with crosswalk: ",output_file))
 
 # write links joined with pems as shapefile
 
@@ -451,6 +490,6 @@ st_crs(feature) <- 4326
 
 output_file <- file.path(CROSSWALK_DIR, "shapefiles", paste0(TM_LINKS_WITH_PEMS_LOCS,"_",argv$validation_year, ".shp"))
 sf::write_sf(feature, output_file)
-print(paste("Wrote",output_file))
+print(paste("Wrote",nrow(route_links_with_pems),"rows to",output_file))
 
 sink(file=NULL, type=c("output","message"))
