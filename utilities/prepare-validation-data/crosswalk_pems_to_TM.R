@@ -18,8 +18,8 @@ USAGE = "
 
   3) Crosswalk files: M:/Crosswalks/PeMSStations_TM1network/crosswalk_[2015,2023].[csv,dbf]
      The resulting crosswalk. Columns are:
-       station district route direction type  abs_pm latitude longitude     A    B   distlink stationsonlink bad_match
-      bad_match indicates if the PeMS station is too far from the link, but for this file, it's filtered to False
+       station district route direction type  abs_pm latitude longitude     A    B   distlink stationsonlink
+     This file is filtered to bad_match==False, so this column is excluded
 
   4) Crosswalk as shapefile: M:/Crosswalks/PeMSStations_TM1network/shapefiles/pems_locs_with_crosswalk_[2015,2023].shp
      Same as PeMS locations file but with route link information included.
@@ -97,7 +97,8 @@ print(head(pems_df))
 
 # add unique key (e.g. "404594 4 280 N" and select out to key, postmile/lat/lon, year
 pems_df <- mutate(pems_df, key=paste(station, district, route, direction)) %>%
-  select(key, station, district, route, direction, type, abs_pm, latitude, longitude, year)
+  select(key, station, district, route, direction, type, abs_pm, latitude, longitude, year, lanes) %>%
+  dplyr::rename(pems_lanes=lanes)
 
 # remove the ones without coords
 pems_df <- pems_df %>% 
@@ -413,7 +414,7 @@ xwalk <- filter(xwalk, pems_rowid_count==1) %>% select(-pems_rowid_count)
 print(paste("Filtered to single matches only, or", nrow(xwalk), "rows"))
 
 # go back to original columns, plus A, B, distance
-xwalk <- select(xwalk, station, district, route, direction, type, abs_pm, latitude, longitude, A, B, distance_m) %>%
+xwalk <- select(xwalk, station, district, route, direction, type, pems_lanes, abs_pm, latitude, longitude, A, B, distance_m) %>%
   dplyr::rename(distlink=distance_m)
 
 # summarize how many pems ids join to a single link
@@ -439,11 +440,11 @@ print(table(xwalk$bad_match))
 
 # write it
 output_file <- file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,"_",argv$validation_year,".csv"))
-write.csv(filter(xwalk, bad_match==FALSE), output_file, row.names=FALSE, quote=FALSE)
+write.csv(filter(xwalk, bad_match==FALSE) %>% select(-bad_match), output_file, row.names=FALSE, quote=FALSE)
 print(paste("Wrote",nrow(filter(xwalk, bad_match==FALSE)),"rows to",output_file))
 
 output_file <- file.path(CROSSWALK_DIR, paste0(CROSSWALK_FILE,"_",argv$validation_year,".dbf"))
-foreign::write.dbf(filter(xwalk, bad_match==FALSE), output_file, factor2char=TRUE)
+foreign::write.dbf(filter(xwalk, bad_match==FALSE) %>% select(-bad_match), output_file, factor2char=TRUE)
 print(paste("Wrote",nrow(filter(xwalk, bad_match==FALSE)),"rows to",output_file))
 
 # write pems_loc joined with xwalk as shapefile
