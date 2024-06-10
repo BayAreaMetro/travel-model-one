@@ -14,16 +14,26 @@
 # Any USE/TC combos found in the tolls.csv but not the network are dropped from
 # the tolls.csv.
 # 
-
+# WFT June 1, 2024: updated to work with travel-model-one/utilities/temp_patches/tollsCSV_patch.bat 
 
 library(dplyr)
 library(foreign)
 library(readxl)
 
 # Load files
+WORKING_DIR <- Sys.getenv("WORKING_DIR")
+WORKING_DIR <- gsub("\\\\","/",WORKING_DIR) # switch slashes around
+print(paste("Current working directory in :", WORKING_DIR))
 
-NETWORK_DIR <- "L:/RTP2025_PPA/Projects/3000_P4ExpLanes/3000_P4ExpLanes_BF02"
-NETWORK_DBF_PATH <- paste(NETWORK_DIR, "shapefile", "freeflow.dbf", sep = "/")
+SCENARIO <- Sys.getenv("SCENARIO")
+SCENARIO <- gsub("\\\\","/",SCENARIO) # switch slashes around
+print(paste("Scenario:", SCENARIO))
+
+#NETWORK_DIR <- "L:/RTP2025_PPA/Projects/3000_P4ExpLanes/3000_P4ExpLanes_BF02"
+NETWORK_DIR      <- file.path(WORKING_DIR, SCENARIO)
+NETWORK_DBF_PATH <- file.path(NETWORK_DIR, "shapefile", "network_links.dbf")
+print(paste("Network dbf path:", NETWORK_DBF_PATH))
+
 TOLLS_CSV_PATH <- paste(NETWORK_DIR, "hwy", "tolls.csv", sep = "/")
 TOLLCLASS_DES_PATH <- "X:/travel-model-one-master/utilities/NextGenFwys/TOLLCLASS_Designations.xlsx"
 
