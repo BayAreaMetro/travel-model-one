@@ -10,22 +10,15 @@ if "%computername%" == "MODEL3-C" (
   set R_HOME=C:\Program Files\R\R-4.2.1
 )
 
-cd /d "C:\Users\ftsang\Box\Plan Bay Area 2050+\Performance and Equity\Project Performance\Express_lane_networks"
+rem cd /d "C:\Users\ftsang\Box\Plan Bay Area 2050+\Performance and Equity\Project Performance\Express_lane_networks"
 rem cd /d L:\RTP2025_PPA\Projects\Express_lane_networks
+cd /d L:\Application\Model_One\NextGenFwys_Round2\INPUT_DEVELOPMENT\Networks
 
 setlocal enabledelayedexpansion
 
 for /d %%f in (
 
-    3000_P5ExpLanes\3000_P5ExpLanes_BF05
-    3000_P5ExpLanes\3000_P5ExpLanes_CG05
-    3000_P5ExpLanes\3000_P5ExpLanes_RT05
-    3000_P6ExpLanes\3000_P6ExpLanes_BF08
-    3000_P6ExpLanes\3000_P6ExpLanes_CG08
-    3000_P6ExpLanes\3000_P6ExpLanes_RT08
-    3000_P7ExpLanes\3000_P7ExpLanes_BF02
-    3000_P7ExpLanes\3000_P7ExpLanes_CG02
-    3000_P7ExpLanes\3000_P7ExpLanes_RT02
+NGF_Networks_NGFround2_P6_11\NGF_R2_R2P6_Dual_Express_Lanes_network_2035
 
 )    do    (
 
