@@ -75,10 +75,7 @@ def calculate_Reliable1_change_travel_time_on_freeways(tm_run_id: str) -> pd.Dat
     # join to tolled minor group freeway links lookup table 
     loaded_network_df = pd.merge(left=loaded_network_df, right=TOLLED_FWY_MINOR_GROUP_LINKS_DF, how='left', left_on=['a','b'], right_on=['a','b'])
 
-    # compute Fwy and Non_Fwy travel time
-                    
-    loaded_network_df['AVGctimPEAK'] = (loaded_network_df['ctimAM'] + loaded_network_df['ctimPM'])/2
-    
+    # compute Fwy and Non_Fwy travel time    
     # fill empty collumns of DF with a string to retain all values in the DF
     loaded_network_df.grouping = loaded_network_df.grouping.fillna('NA')
     loaded_network_df.grouping_dir = loaded_network_df.grouping_dir.fillna('NA')
@@ -193,10 +190,7 @@ def calculate_Reliable1_change_travel_time_on_parallel_arterials(tm_run_id: str)
     parallel_arterials_links_df['grouping']     = parallel_arterials_links_df['Parallel_Corridor'].str[:-3]
     loaded_network_df = pd.merge(left=loaded_network_df, right=parallel_arterials_links_df, how='left', left_on=['a','b'], right_on=['a','b'])
 
-    # compute Fwy and Non_Fwy travel time
-                    
-    loaded_network_df['AVGctimPEAK'] = (loaded_network_df['ctimAM'] + loaded_network_df['ctimPM'])/2
-    
+    # compute Fwy and Non_Fwy travel time    
     # fill empty collumns of DF with a string to retain all values in the DF
     loaded_network_df.grouping = loaded_network_df.grouping.fillna('NA')
     loaded_network_df.grouping_dir = loaded_network_df.grouping_dir.fillna('NA')
@@ -211,7 +205,58 @@ def calculate_Reliable1_change_travel_time_on_parallel_arterials(tm_run_id: str)
     LOGGER.debug("ctim_metrics_df:\n{}".format(ctim_metrics_df))
     
     ctimAM_metrics_df = ctim_metrics_df.loc[(ctim_metrics_df.grouping_dir == 'AM'), ['grouping', 'ctimAM', 'distance', 'vmtAM_tot', 'vmt_weighted_ctimAM']]
+    # TODO: replace this hardcoded solution to using the same links for 2 corridors
+    # Specify the conditions for filtering
+    column_grouping_condition = 'SanMateo_101_AM_SanMateo_28092'
+    # Filter the DataFrame based on conditions
+    filtered_rows = ctimAM_metrics_df[(ctimAM_metrics_df['grouping'] == column_grouping_condition)]
+
+    # Check if any rows meet the conditions
+    if not filtered_rows.empty:
+        # Assuming only one row matches the conditions, if multiple rows can match, handle accordingly
+        row_to_duplicate = filtered_rows
+        
+        # Modify 'grouping' column value in the original row
+        ctimAM_metrics_df.loc[filtered_rows.index, 'grouping'] = 'SanMateo_101'
+        
+        # Modify 'grouping' column value in the copied row
+        row_to_duplicate_copy = row_to_duplicate.copy()
+        row_to_duplicate_copy['grouping'] = 'SanMateo_28092'
+        
+        # Concatenate the DataFrame with the modified copied row
+        ctimAM_metrics_df = pd.concat([ctimAM_metrics_df, row_to_duplicate_copy], ignore_index=True)
+        print("Row duplicated and added to DataFrame.")
+    else:
+        print("No rows found matching the specified conditions.")
+        
     ctimPM_metrics_df = ctim_metrics_df.loc[(ctim_metrics_df.grouping_dir == 'PM'), ['grouping', 'ctimPM']]
+    # TODO: replace this hardcoded solution to using the same links for 2 corridors
+    # Specify the conditions for filtering
+    column_grouping_condition = 'SanMateo_101_PM_SanMateo_28092'
+    # Filter the DataFrame based on conditions
+    filtered_rows = ctimPM_metrics_df[(ctimPM_metrics_df['grouping'] == column_grouping_condition)]
+
+    LOGGER.debug("filtered_rows:\n{}".format(filtered_rows))
+
+    # Check if any rows meet the conditions
+    if not filtered_rows.empty:
+        # Assuming only one row matches the conditions, if multiple rows can match, handle accordingly
+        row_to_duplicate = filtered_rows
+        
+        # Modify 'grouping' column value in the original row
+        ctimPM_metrics_df.loc[filtered_rows.index, 'grouping'] = 'SanMateo_101'
+        
+        # Modify 'grouping' column value in the copied row
+        row_to_duplicate_copy = row_to_duplicate.copy()
+        row_to_duplicate_copy['grouping'] = 'SanMateo_28092'
+        
+        # Concatenate the DataFrame with the modified copied row
+        ctimPM_metrics_df = pd.concat([ctimPM_metrics_df, row_to_duplicate_copy], ignore_index=True)
+        print("Row duplicated and added to DataFrame.")
+    else:
+        print("No rows found matching the specified conditions.")
+        
+    # merge the dataframes with different peak directions/periods
     ctim_df = pd.merge(left=ctimAM_metrics_df, right=ctimPM_metrics_df, how='left', left_on=['grouping'], right_on=['grouping'])
     ctim_df['AVGctimPEAK'] = (ctim_df['ctimAM'] + ctim_df['ctimPM'])/2
 
@@ -265,6 +310,182 @@ def calculate_Reliable1_change_travel_time_on_parallel_arterials(tm_run_id: str)
     parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['grouping'].str.contains('Sum of Values for Weighted Average') == True) & (parallel_arterials_travel_times_df['Metric Description'].str.contains('VMTweightedAVG_ctimAM') == False), 'Intermediate/Final'] = 'Debug Step'
     parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['grouping'].str.contains('Congested Segment') == True), 'congested/other'] = 'congested segment'
     parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['grouping'].str.contains('Other Segment') == True), 'congested/other'] = 'other segment'
+    
+    parallel_arterials_travel_times_df['Year'] = tm_run_id[:4]
+    LOGGER.debug("parallel_arterials_travel_times_df for reliable 1:\n{}".format(parallel_arterials_travel_times_df))
+
+    return parallel_arterials_travel_times_df
+
+def calculate_Reliable1_change_travel_time_on_parallel_arterials_epc_non(tm_run_id: str) -> pd.DataFrame:  
+    """ Calculates Reliable 1: Change in travel time on parallel arterials
+
+    Args:
+        tm_run_id (str): Travel model run ID
+    
+    Returns:
+        pd.DataFrame: with columns including
+          Metric ID          = 'Reliable 1'
+          Model Run ID        = tm_run_id
+          Intermediate/Final = final
+        Metrics return:
+          Freeway/Non-Freeway               Facility Type Definition               Metric Description
+          Freeway|Non-Freeway               EPCs|Non-EPCs|Region                   Travel Time                      (EPC/non-EPC breakdown)
+
+    Notes: Uses
+    * avgload5period.csv (for facility type breakdown)
+    """
+    METRIC_ID = 'Reliable 1'
+    LOGGER.info("Calculating {} for {}".format(METRIC_ID, tm_run_id))
+
+    loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
+    loaded_network_df = pd.read_csv(loaded_network_file)
+    loaded_network_df.rename(columns=lambda x: x.strip(), inplace=True)
+    loaded_network_df['vmtAM_tot'] = loaded_network_df['distance'] * loaded_network_df['volAM_tot']
+    LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
+    LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
+    LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
+    loaded_network_df = loaded_network_df.loc[(loaded_network_df['useAM'] == 1)&(loaded_network_df['ft'] != 6)]
+    
+    # join to parallel arterial links lookup table
+    parallel_arterials_file =  'L:\\Application\\Model_One\\NextGenFwys_Round2\\Metrics\\Input Files\\ParallelArterialLinks.csv'
+    parallel_arterials_links_df = pd.read_csv(parallel_arterials_file)
+    parallel_arterials_links_df.rename(columns=lambda x: x.strip(), inplace=True)
+    parallel_arterials_links_df.rename(columns={"A":"a", "B":"b"}, inplace=True)
+    # split 'Parallel_Corridor' to 'grouping' (now without direction) and 'grouping_dir'
+    parallel_arterials_links_df['grouping_dir'] = parallel_arterials_links_df['Parallel_Corridor'].str[-2:]
+    parallel_arterials_links_df['grouping']     = parallel_arterials_links_df['Parallel_Corridor'].str[:-3]
+    loaded_network_df = pd.merge(left=loaded_network_df, right=parallel_arterials_links_df, how='left', left_on=['a','b'], right_on=['a','b'])
+    
+    # load network_links_TAZ.csv as lookup df to use for equity metric:
+    #     --> calculate VMT for arterial road links in EPCs vs region
+    #         --> tolled aerterials within EPCs 
+    # load network link to TAZ lookup file
+
+    tm_network_links_taz_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "shapefile", "network_links_TAZ.csv")
+    tm_network_links_taz_df = pd.read_csv(tm_network_links_taz_file)[['A', 'B', 'TAZ1454', 'linktaz_share']]
+    LOGGER.info("  Read {:,} rows from {}".format(len(tm_network_links_taz_df), tm_network_links_taz_file))
+    # join to epc lookup table
+    tm_network_links_with_epc_df = pd.merge(
+        left=tm_network_links_taz_df,
+        right=NGFS_EPC_TAZ_DF,
+        left_on="TAZ1454",
+        right_on="TAZ1454",
+        how='left')
+    tm_network_links_with_epc_df = tm_network_links_with_epc_df.sort_values('linktaz_share', ascending=False).drop_duplicates(['A', 'B']).sort_index()
+    LOGGER.debug("tm_network_links_with_epc_df =\n{}".format(tm_network_links_with_epc_df))
+    
+    loaded_network_df = pd.merge(left= loaded_network_df, right= tm_network_links_with_epc_df, left_on= ['a','b'], right_on= ['A', 'B'], how='left')
+    LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
+
+    # compute Fwy and Non_Fwy travel time    
+    # fill empty collumns of DF with a string to retain all values in the DF
+    loaded_network_df.grouping = loaded_network_df.grouping.fillna('NA')
+    loaded_network_df.grouping_dir = loaded_network_df.grouping_dir.fillna('NA')
+
+    ctim_metrics_df = loaded_network_df.groupby(by=['grouping', 'grouping_dir', 'taz_epc']).agg({'ctimAM':'sum', \
+                                                                                    'ctimPM':'sum',\
+                                                                                    'distance':'sum',\
+                                                                                    'vmtAM_tot':'sum'}).reset_index()
+
+    ctim_metrics_df['vmt_weighted_ctimAM'] = ctim_metrics_df['vmtAM_tot'] * ctim_metrics_df['ctimAM']
+
+    LOGGER.debug("ctim_metrics_df:\n{}".format(ctim_metrics_df))
+    
+    ctimAM_metrics_df = ctim_metrics_df.loc[(ctim_metrics_df.grouping_dir == 'AM'), ['grouping', 'taz_epc', 'ctimAM', 'distance', 'vmtAM_tot', 'vmt_weighted_ctimAM']]
+    # TODO: replace this hardcoded solution to using the same links for 2 corridors
+    # Specify the conditions for filtering
+    column_grouping_condition = 'SanMateo_101_AM_SanMateo_28092'
+    # Filter the DataFrame based on conditions
+    filtered_rows = ctimAM_metrics_df[(ctimAM_metrics_df['grouping'] == column_grouping_condition)]
+
+    LOGGER.debug("filtered_rows:\n{}".format(filtered_rows))
+
+    # Check if any rows meet the conditions
+    if not filtered_rows.empty:
+        # Assuming only one row matches the conditions, if multiple rows can match, handle accordingly
+        row_to_duplicate = filtered_rows
+        
+        # Modify 'grouping' column value in the original row
+        ctimAM_metrics_df.loc[filtered_rows.index, 'grouping'] = 'SanMateo_101'
+        
+        # Modify 'grouping' column value in the copied row
+        row_to_duplicate_copy = row_to_duplicate.copy()
+        row_to_duplicate_copy['grouping'] = 'SanMateo_28092'
+        
+        # Concatenate the DataFrame with the modified copied row
+        ctimAM_metrics_df = pd.concat([ctimAM_metrics_df, row_to_duplicate_copy], ignore_index=True)
+        print("Row duplicated and added to DataFrame.")
+    else:
+        print("No rows found matching the specified conditions.")
+        
+    ctimPM_metrics_df = ctim_metrics_df.loc[(ctim_metrics_df.grouping_dir == 'PM'), ['grouping', 'taz_epc', 'ctimPM']]
+    # TODO: replace this hardcoded solution to using the same links for 2 corridors
+    # Specify the conditions for filtering
+    column_grouping_condition = 'SanMateo_101_PM_SanMateo_28092'
+    # Filter the DataFrame based on conditions
+    filtered_rows = ctimPM_metrics_df[(ctimPM_metrics_df['grouping'] == column_grouping_condition)]
+
+    LOGGER.debug("filtered_rows:\n{}".format(filtered_rows))
+
+    # Check if any rows meet the conditions
+    if not filtered_rows.empty:
+        # Assuming only one row matches the conditions, if multiple rows can match, handle accordingly
+        row_to_duplicate = filtered_rows
+        
+        # Modify 'grouping' column value in the original row
+        ctimPM_metrics_df.loc[filtered_rows.index, 'grouping'] = 'SanMateo_101'
+        
+        # Modify 'grouping' column value in the copied row
+        row_to_duplicate_copy = row_to_duplicate.copy()
+        row_to_duplicate_copy['grouping'] = 'SanMateo_28092'
+        
+        # Concatenate the DataFrame with the modified copied row
+        ctimPM_metrics_df = pd.concat([ctimPM_metrics_df, row_to_duplicate_copy], ignore_index=True)
+        print("Row duplicated and added to DataFrame.")
+    else:
+        print("No rows found matching the specified conditions.")
+        
+    # merge the dataframes with different peak directions/periods
+    ctim_df = pd.merge(left=ctimAM_metrics_df, right=ctimPM_metrics_df, how='left', left_on=['grouping', 'taz_epc'], right_on=['grouping', 'taz_epc'])
+    ctim_df['AVGctimPEAK'] = (ctim_df['ctimAM'] + ctim_df['ctimPM'])/2
+    
+    # take average for taz vs non segments 
+    # filter out the taz segments
+    EPC_segments_df = ctim_df.loc[ctim_df['taz_epc'] == 1]
+    # add row for the averages from the EPC segments
+    EPC_segments_average_values = EPC_segments_df.select_dtypes(include=['number']).mean()
+    # convert the pandas series to a dataframe
+    EPC_segments_average_df = pd.DataFrame([EPC_segments_average_values])
+    EPC_segments_average_df['grouping'] = 'Simple Average of EPC Segments'
+    
+    # filter out the non segments
+    NonEPC_segments_df = ctim_df.loc[ctim_df['taz_epc'] == 0]
+    # add row for the averages from the EPC segments
+    NonEPC_segments_average_values = NonEPC_segments_df.select_dtypes(include=['number']).mean()
+    # convert the pandas series to a dataframe
+    NonEPC_segments_average_df = pd.DataFrame([NonEPC_segments_average_values])
+    NonEPC_segments_average_df['grouping'] = 'Simple Average of NonEPC Segments'
+
+    # combine all DFs together
+    ctim_df = pd.concat([ctim_df, EPC_segments_average_df, NonEPC_segments_average_df], ignore_index=True)
+
+    # put it together, move to long form and return
+    parallel_arterials_travel_times_df = ctim_df
+    parallel_arterials_travel_times_df = parallel_arterials_travel_times_df.melt(id_vars=['grouping', 'taz_epc'], var_name='Metric Description')
+    parallel_arterials_travel_times_df['Road Type'] = 'Parallel Arterials'
+    parallel_arterials_travel_times_df['Model Run ID'] = tm_run_id
+    parallel_arterials_travel_times_df['Metric ID'] = METRIC_ID
+    parallel_arterials_travel_times_df['Intermediate/Final'] = 'final'
+    # identify extra, intermediate, or debug steps for easy filtering
+    parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['Metric Description'].str.contains('distance') == True), 'Intermediate/Final'] = 'Extra'
+    parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['Metric Description'].str.contains('vmtAM_tot') == True), 'Intermediate/Final'] = 'Intermediate'
+    parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['Metric Description'].str.contains('vmt_weighted_ctimAM') == True), 'Intermediate/Final'] = 'Intermediate'
+    parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['grouping'].str.contains('Sum of Values for Weighted Average') == False) & (parallel_arterials_travel_times_df['Metric Description'].str.contains('VMTweightedAVG_ctimAM') == True), 'Intermediate/Final'] = 'Debug Step'
+    parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['grouping'].str.contains('Sum of Values for Weighted Average') == True) & (parallel_arterials_travel_times_df['Metric Description'].str.contains('VMTweightedAVG_ctimAM') == False), 'Intermediate/Final'] = 'Debug Step'
+    parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['grouping'].str.contains('EPC Segment') == True), 'taz_epc'] = 'EPC segment'
+    parallel_arterials_travel_times_df.loc[(parallel_arterials_travel_times_df['grouping'].str.contains('NonEPC Segment') == True), 'taz_epc'] = 'NonEPC segment'
+    parallel_arterials_travel_times_df.loc[parallel_arterials_travel_times_df['taz_epc'] == 1, 'taz_epc'] = 'EPC segment'
+    parallel_arterials_travel_times_df.loc[parallel_arterials_travel_times_df['taz_epc'] == 0, 'taz_epc'] = 'NonEPC segment'
     
     parallel_arterials_travel_times_df['Year'] = tm_run_id[:4]
     LOGGER.debug("parallel_arterials_travel_times_df for reliable 1:\n{}".format(parallel_arterials_travel_times_df))
@@ -632,7 +853,7 @@ if __name__ == "__main__":
     TOLLED_FWY_MINOR_GROUP_LINKS_DF = determine_tolled_minor_group_links(PATHWAY1_SCENARIO_RUN_ID, "fwy")
     # TOLLED_FWY_MINOR_GROUP_LINKS_DF.to_csv("TOLLED_FWY_MINOR_GROUP_LINKS.csv", index=False)
     TOLLED_FWY_CONGESTED_LINKS_DF = determine_congested_segment_links(PATHWAY1_SCENARIO_RUN_ID)
-    TOLLED_FWY_CONGESTED_LINKS_DF.to_csv("TOLLED_FWY_CONGESTED_LINKS.csv", index=False)
+    # TOLLED_FWY_CONGESTED_LINKS_DF.to_csv("TOLLED_FWY_CONGESTED_LINKS.csv", index=False)
 
     for tm_run_id in current_runs_list:
         out_filename = os.path.join(os.getcwd(),"Reliable1_change_in_travel_time_{}.csv".format(tm_run_id))
@@ -648,6 +869,7 @@ if __name__ == "__main__":
 
         metrics_df = pd.concat([calculate_Reliable1_change_travel_time_on_freeways(tm_run_id),\
             calculate_Reliable1_change_travel_time_on_parallel_arterials(tm_run_id),\
+            calculate_Reliable1_change_travel_time_on_parallel_arterials_epc_non(tm_run_id),\
             calculate_Reliable1_change_travel_time_on_GoodsRoutes(tm_run_id),\
             calculate_Reliable1_change_travel_time_on_Othercorridors(tm_run_id)])
         LOGGER.info("@@@@@@@@@@@@@ R1 Done")
