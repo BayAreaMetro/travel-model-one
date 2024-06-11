@@ -3,6 +3,15 @@ USAGE = r"""
   Replaces the old summarizeAcrossScenariosUnion.bat but moving into python because .bat files are limited.
 
   Takes an arg with the ModelRuns.xlsx
+  
+  optional arguments for dest_dir, status_to_copy, and delete_other_run_files
+  ModelRuns.xlsx is the required positional argument.
+  --dest_dir /path/to/destination specifies the destination directory.
+  --status_to_copy status1,status2 specifies the status values to copy (comma-separated).
+  --delete_other_run_files indicates that files related to other runs should be deleted.
+  
+  sample call with all optional arguments specified:
+  python copyFilesAcrossScenarios.py ModelRuns.xlsx --dest_dir . --status_to_copy current --delete_other_run_files n
 
 """
 import argparse, os, re, pathlib, shutil
@@ -85,6 +94,10 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter,)
     parser.add_argument("ModelRuns_xlsx", metavar="ModelRuns.xlsx", help="ModelRuns.xlsx")
+    parser.add_argument("--dest_dir", help="Destination directory")
+    parser.add_argument("--status_to_copy", help="Status values to copy")
+    parser.add_argument("--delete_other_run_files", help="Delete files related to other runs")
+
     # topsheet + scenario_metrics only option?
     my_args = parser.parse_args()
 
@@ -97,22 +110,29 @@ if __name__ == '__main__':
     assert('status' in model_runs_df.columns)
     assert('directory' in model_runs_df.columns)
 
-    print("Enter destination directory: ", end="")
-    my_args.dest_dir = input()
+    if my_args.dest_dir is None:
+        print("Enter destination directory: ", end="")
+        my_args.dest_dir = input()
     assert(os.path.isdir(my_args.dest_dir))
 
-    status_values_set = set(model_runs_df['status'].tolist())
-    print(f"Which runs do you want to copy?  Found these options for status: {status_values_set}")
-    print("Enter 'all' or a comma-delimited list: ", end="")
-    status_to_copy = input()
-    if status_to_copy=="all":
-        my_args.status_to_copy = status_values_set
-    else:
-        my_args.status_to_copy = set(status_to_copy.split(","))
+    if my_args.status_to_copy is None:
+        status_values_set = set(model_runs_df['status'].tolist())
+        print(f"Which runs do you want to copy?  Found these options for status: {status_values_set}")
+        print("Enter 'all' or a comma-delimited list: ", end="")
+        status_to_copy = input()
+        if status_to_copy=="all":
+            my_args.status_to_copy = status_values_set
+        else:
+            my_args.status_to_copy = set(status_to_copy.split(","))
+            
+    # Convert single string to list if needed
+    if not isinstance(my_args.status_to_copy, list):
+        my_args.status_to_copy = [my_args.status_to_copy]
 
     # option to delete files
-    print("Do you want to delete files related to any other runs? (y/n): ", end="")
-    my_args.delete_other_run_files = input().lower()
+    if my_args.delete_other_run_files is None:
+        print("Do you want to delete files related to any other runs? (y/n): ", end="")
+        my_args.delete_other_run_files = input().lower()
     print(my_args)
 
     # create list of model run directories to copy
