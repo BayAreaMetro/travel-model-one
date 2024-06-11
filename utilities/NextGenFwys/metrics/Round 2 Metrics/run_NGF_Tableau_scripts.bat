@@ -48,6 +48,10 @@ IF "%SKIP%"=="--skip_if_exists" (
   call python "%CODE_DIR%\run_fatalities_Rscript.py"
 )
 
+rem Update Round 2 across_runs_union folder
+cd L:\Application\Model_One\NextGenFwys_Round2\across_runs_union
+call python "X:\travel-model-one-master\utilities\CoreSummaries\copyFilesAcrossScenarios.py" X:\travel-model-one-master\utilities\NextGenFwys\ModelRuns_Round2.xlsx --dest_dir . --status_to_copy current --delete_other_run_files n
+
 :success
 echo FINISHED run_NGF_Tableau_scripts successfully!
 echo ENDED NGFS METRICS  %DATE% %TIME%
