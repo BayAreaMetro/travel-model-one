@@ -58,3 +58,6 @@ echo ENDED NGFS METRICS  %DATE% %TIME%
 
 :error
 echo ERRORLEVEL=%ERRORLEVEL%
+
+rem Keep the command prompt window open for review in case of errors
+pause
