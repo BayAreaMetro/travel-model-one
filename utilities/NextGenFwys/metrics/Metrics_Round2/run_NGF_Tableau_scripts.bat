@@ -4,7 +4,7 @@
 :: optional environment variable SKIP
 :: example usage:
 :: set SKIP=--skip_if_exists
-:: "X:\travel-model-one-master\utilities\NextGenFwys\metrics\Round 2 Metrics\run_NGF_Tableau_scripts.bat"
+:: "X:\travel-model-one-master\utilities\NextGenFwys\metrics\Metrics_Round2\run_NGF_Tableau_scripts.bat"
 ::
 
 :: Stamp the feedback report with the date and time
@@ -13,7 +13,7 @@ echo STARTED NGFS METRICS  %DATE% %TIME%
 IF defined SKIP (echo Using SKIP=%SKIP%)
 
 :: Location of the metrics scripts
-set CODE_DIR=X:\travel-model-one-master\utilities\NextGenFwys\metrics\Round 2 Metrics
+set CODE_DIR=X:\travel-model-one-master\utilities\NextGenFwys\metrics\Metrics_Round2
 
 :: Location of the model files
 set TARGET_DIR=%CD%

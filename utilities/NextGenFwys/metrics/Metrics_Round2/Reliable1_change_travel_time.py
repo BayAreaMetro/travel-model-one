@@ -522,7 +522,7 @@ def calculate_Reliable1_change_travel_time_on_GoodsRoutes(tm_run_id: str) -> pd.
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
 
-    goods_routes_a_b_links_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Round 2 Metrics", "Input Files", "goods_routes_a_b.csv")
+    goods_routes_a_b_links_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Metrics_Round2", "Input Files", "goods_routes_a_b.csv")
     goods_routes_a_b_links_df = pd.read_csv(goods_routes_a_b_links_file)
     goods_routes_a_b_links_df.rename(columns={"A":"a", "B":"b"}, inplace=True)
     # merge loaded network with df containing route information
@@ -612,7 +612,7 @@ def calculate_Reliable1_change_travel_time_on_Othercorridors(tm_run_id: str) -> 
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
 
-    goods_routes_a_b_links_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Round 2 Metrics", "Input Files", "goods_routes_a_b.csv")
+    goods_routes_a_b_links_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Metrics_Round2", "Input Files", "goods_routes_a_b.csv")
     goods_routes_a_b_links_df = pd.read_csv(goods_routes_a_b_links_file)
     goods_routes_a_b_links_df.rename(columns={"A":"a", "B":"b"}, inplace=True)
     # merge loaded network with df containing route information
