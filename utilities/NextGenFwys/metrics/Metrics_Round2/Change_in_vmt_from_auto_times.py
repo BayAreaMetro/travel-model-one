@@ -1,6 +1,6 @@
 USAGE = """
 
-  python Change_in_vmt_from_auto_times.py
+  python Safe2_vmt_from_auto_times.py
 
   Run this from the model run dir.
   Processes model outputs and creates a single csv with scenario metrics, called metrics\Change_in_vmt_from_auto_times_XX.csv
@@ -32,10 +32,10 @@ NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scena
 NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
-LOG_FILE                = "Change_in_vmt_from_auto_times.log" # in the cwd
+LOG_FILE                = "Safe2_vmt_from_auto_times.log" # in the cwd
 LOGGER                  = None # will initialize in main     
 
-def calculate_Change_in_vmt_from_auto_times(tm_run_id: str) -> pd.DataFrame:
+def calculate_Safe2_vmt_from_auto_times(tm_run_id: str) -> pd.DataFrame:
     """ Calculates Safety 2: Change in vehicle miles travelled (VMT) on freeway and non-freeway facilities
     Additionally, calculates VMT segmented by different categories (households by income, non-houehold and trucks)
     and VMT segmented by whether or not the links are located in Equity Priority Communities (EPC) TAZS.
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         # results will be stored here
         metrics_df = pd.DataFrame()
 
-        metrics_df = calculate_Change_in_vmt_from_auto_times(tm_run_id)
+        metrics_df = calculate_Safe2_vmt_from_auto_times(tm_run_id)
         LOGGER.info("@@@@@@@@@@@@@ Done")
 
         metrics_df.to_csv(out_filename, float_format='%.5f', index=False) #, header=False

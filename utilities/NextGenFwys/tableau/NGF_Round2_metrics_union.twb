@@ -20997,7 +20997,7 @@ The data is filtered on Metric Description, which keeps Total VMT. VHT is also a
             <run>Top-level metric
 
 source: auto_times.csv
-source script: Change_in_vmt_from_auto_times.py
+source script: Safe2_vmt_from_auto_times.py
 
 </run>
             <run fontcolor='#000000' fontname='Benton Sans Book'>Daily Vehicle Miles Travelled</run>
@@ -26810,7 +26810,7 @@ The data is filtered on Metric Description, which keeps Total VMT. VHT is also a
             <run>VMT calculated from the auto_times.csv
 
 source: auto_times.csv
-source script: Change_in_vmt_from_auto_times.py
+source script: Safe2_vmt_from_auto_times.py
 
 break down available by Short Name vs. Household/Non-Household and Income Level/Travel Mode. 
 
