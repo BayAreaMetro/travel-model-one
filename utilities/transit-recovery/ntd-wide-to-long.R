@@ -61,7 +61,7 @@ BayArea_UZAs = c(
 
 BOX_DIR          <- "E:\\Box"
 WORKING_DIR      <- file.path(BOX_DIR, "Modeling and Surveys", "Share Data", "national-transit-database")
-INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "December 2023 Raw Monthly Ridership (no adjustments or estimates).xlsx")
+INPUT_WORKBOOK   <- file.path(WORKING_DIR, "Source", "April 2024 Complete Monthly Ridership (with adjustments and estimates)_240603.xlsx")
 INPUT_WORKSHEETS <- c("VRM","VRH","UPT") # vehicle route miles, vehicle route hours, unlinked passenger trips
 INPUT_AGENCY_CSV <- file.path(WORKING_DIR, "AgencyToCommonAgencyName.csv")
 INPUT_UPT_MONTHLY_TO_DAILY <- file.path(WORKING_DIR, "MonthlyToTypicalWeekdayRidership.xlsx")
@@ -204,7 +204,7 @@ for (worksheet in INPUT_WORKSHEETS) {
   write.csv(VRH_UPT_join_df, file=VRH_UPT_OUTPUT_FILE, row.names=FALSE)
 
   INDEX_COLS <- c(
-    "NTD ID","Legacy NTD ID","Agency","Status","Reporter Type",
+    "NTD ID","Legacy NTD ID","Agency","Mode/Type of Service Status","Reporter Type",
     # "UZA",  # not present in July 2023 dataset
     "UACE CD","UZA Name","Mode","3 Mode","TOS","Common.Agency.Name")
 
@@ -214,7 +214,7 @@ for (worksheet in INPUT_WORKSHEETS) {
   if (nrow(NTD_model_df) == 0)
     NTD_model_df <- NTD_long_df
   else {
-     NTD_model_df <- full_join(NTD_model_df, NTD_long_df,
+    NTD_model_df <- full_join(NTD_model_df, NTD_long_df,
       by=append(INDEX_COLS, c("month","year","month_int","days_in_month")))
     print(paste("Joining with other variables; nrow: ",nrow(NTD_model_df),"rows"))
     # print(head(NTD_model_df))
