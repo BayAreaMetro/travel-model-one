@@ -18,6 +18,9 @@ set CODE_DIR=X:\travel-model-one-master\utilities\NextGenFwys\metrics\Metrics_Ro
 :: Location of the model files
 set TARGET_DIR=%CD%
 
+rem run post_run_model_steps.py
+call python "%CODE_DIR%\post_run_model_steps.py"
+
 rem Check if the variable SKIP equals "n"
 IF "%SKIP%"=="n" (
   echo not skipping
