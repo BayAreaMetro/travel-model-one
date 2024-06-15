@@ -3,13 +3,14 @@ USAGE = """
   python top_level_metrics_toll_revenues.py
 
   Run this from the model run dir.
-  Processes model outputs and creates a single csv with scenario metrics, called metrics\top_level_metrics_toll_revenues_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\top_level_metrics_toll_revenues_XX.csv
   
   Input Files:
     network_links.DBF: Roadway network information containing attributes like facility type, volume, and toll class designations.
+    avgload5period_vehclasses.csv: Roadway network information containing attributes like facility type, volume, and toll class designations.
     network_links_TAZ.csv: Lookup table linking network links to Traffic Analysis Zones (TAZ) for geographic analysis.
     TOLLCLASS_Designations.xlsx: Excel file defining toll class designations used for categorizing toll facilities.
-    taz_epc_crosswalk.csv: Lookup file indicating Equity Priority Communitiy (EPC) designation for TAZs, used for classification.
+    taz1454_epcPBA50plus_2024_02_23.csv: Lookup file indicating Equity Priority Communitiy (EPC) designation for TAZs, used for classification.
   
   The generated CSV will contain the following columns:
     'Freeway/Non-Freeway',
@@ -49,8 +50,8 @@ NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", 
 LOG_FILE                = "top_level_metrics_toll_revenues.log" # in the cwd
 LOGGER                  = None # will initialize in main     
 
-# EPC lookup file - indicates whether a TAZ is designated as an EPC in PBA2050
-NGFS_EPC_TAZ_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_epc_crosswalk.csv")
+# EPC lookup file - indicates whether a TAZ is designated as an EPC in PBA2050+
+NGFS_EPC_TAZ_FILE    = "M:\\Application\\Model One\\RTP2025\\INPUT_DEVELOPMENT\\metrics\\metrics_01\\taz1454_epcPBA50plus_2024_02_23.csv"
 NGFS_EPC_TAZ_DF      = pd.read_csv(NGFS_EPC_TAZ_FILE)
 
 # source: https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions

@@ -3,19 +3,21 @@ USAGE = """
   python Efficient2_commute_tours_mode_share.py
 
   Run this from the model run dir.
-  Processes model outputs and creates a single csv with scenario metrics, called metrics\Efficient2_commute_tours_mode_share_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\Efficient2_commute_tours_mode_share_XX.csv
+  
+  Input Files:
+    JourneyToWork_modes.csv: JourneyToWork summary with SD, subzone, and commute mode
   
   This file will have the following columns:
-    'Freeway/Non-Freeway',
-    'EPC/Non-EPC',
-    'Tolled/Non-tolled Facilities',
+    'commute mode',
+    'value',
+    'metric_desc'
+    'shares',
+    'commute_non',
+    'Aggregate Tour Mode',
     'Model Run ID',
     'Metric ID',
-    'Intermediate/Final', 
-    'Facility Type Definition',
-    'Metric Description',
-    'County',
-    'value'
+    'Year'
     
   Metrics are:
     1) Efficient 2: Transit, walk, bike and telecommute mode share of commute *tours*

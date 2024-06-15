@@ -3,15 +3,28 @@ USAGE = """
   python Reliable2_ratio_peak_nonpeak.py
 
   Run this from the model run dir.
-  Processes model outputs and creates a single csv with scenario metrics, called metrics\Reliable2_ratio_peak_nonpeak_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\Reliable2_ratio_peak_nonpeak_XX.csv
   
+  Inputs:
+    taz_with_cities.csv: Lookup table linking Traffic Analysis Zones (TAZ) to groups of named cities for geographic analysis.
+    taz1454_epcPBA50plus_2024_02_23.csv: Lookup file indicating Equity Priority Communitiy (EPC) designation for TAZs, used for classification.
+    TOLLCLASS_Designations.xlsx: Excel file defining toll class designations used for categorizing toll facilities.
+    ODTravelTime_byModeTimeperiodIncome.csv: OD travel time summarized by mode, time period and income group
+    goods_routes_a_b.csv: Lookup file indicating goods routes designation for Roadway network, used for classification.
+    avgload5period_vehclasses.csv: Roadway network information containing attributes like facility type, volume, and toll class designations.
+
   This file will have the following columns:
+    'metric_desc',
     'value',
-    'Model Run ID',
-    'Metric ID',
-    'Intermediate/Final', 
-    'Metric Description',
-    'Year'
+    'intermediate/final',
+    'Origin and Destination',
+    'modelrun_id',
+    'year',
+    'metric_id',
+    'Goods Routes Y/N',
+    'Peak/Non',
+    'N/A',
+    'Route'
     
   Metrics are:
     1) Reliable 2: Travel time during peak hours vs. off-peak hours on freeways for people and goods
@@ -38,8 +51,8 @@ LOGGER                  = None # will initialize in main
 NGFS_OD_CITIES_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_with_cities.csv")
 NGFS_OD_CITIES_DF      = pd.read_csv(NGFS_OD_CITIES_FILE)
 
-# EPC lookup file - indicates whether a TAZ is designated as an EPC in PBA2050
-NGFS_EPC_TAZ_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_epc_crosswalk.csv")
+# EPC lookup file - indicates whether a TAZ is designated as an EPC in PBA2050+
+NGFS_EPC_TAZ_FILE    = "M:\\Application\\Model One\\RTP2025\\INPUT_DEVELOPMENT\\metrics\\metrics_01\\taz1454_epcPBA50plus_2024_02_23.csv"
 NGFS_EPC_TAZ_DF      = pd.read_csv(NGFS_EPC_TAZ_FILE)
 
 # tollclass designations
@@ -182,13 +195,6 @@ METRICS_COLUMNS = [
     'value'
 ]
 
-# TODO deprecate use of the file below
-# load minor groupings, to be merged with loaded network
-MINOR_LINKS_DF = pd.read_csv('L:\\Application\\Model_One\\NextGenFwys\\metrics\\Input Files\\a_b_with_minor_groupings.csv')
-# list for iteration
-MINOR_GROUPS = MINOR_LINKS_DF['Grouping minor'].unique()[1:] #exclude 'other' and NaN
-MINOR_GROUPS = numpy.delete(MINOR_GROUPS, 2)
-
 def R2_aggregate_before_joining(tm_run_id):
     """
 
@@ -200,8 +206,7 @@ def R2_aggregate_before_joining(tm_run_id):
     LOGGER.info("Reliable 2: Aggregating before joining for {}".format(tm_run_id)) 
 
     # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
-    ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv") #changed "ODTravelTime_byModeTimeperiodIncome.csv" to a variable for better performance during debugging
-    
+    ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv")
     # this is large so join/subset it immediately
     trips_od_travel_time_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
     LOGGER.info("  Read {:,} rows from {}".format(len(trips_od_travel_time_df), ODTravelTime_byModeTimeperiod_file))

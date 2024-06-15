@@ -3,17 +3,22 @@ USAGE = """
   python Affordable1_transportation_costs.py
 
   Run this from the model run dir.
-  Processes model outputs and creates a single csv with scenario metrics, called metrics\Affordable1_transportation_costs_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\Affordable1_transportation_costs_XX.csv
+  
+  Input Files:
+    travel-cost-hhldtraveltype.csv: transportation costs summarized by income, home_taz, hhld_travel type
   
   This file will have the following columns:
-    'Income Level',
-    'Travel Mode',
+    'metric_desc',
     'value',
-    'Model Run ID',
-    'Metric ID',
-    'Intermediate/Final', 
-    'Metric Description',
-    'Year'
+    'income levels',
+    'modes',
+    'intermediate/final',
+    'modelrun_id',
+    'year',
+    'metric_id',
+    'value type',
+    'Households, Income, Autos, Trips, Costs'
     
   Metrics are:
     1) Affordable 1: Transportation costs as a share of household income, by different income groups
@@ -29,7 +34,6 @@ import logging
 TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns_Round2.xlsx")
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
-NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
 LOG_FILE                = "Affordable1_transportation_costs.log" # in the cwd

@@ -3,15 +3,23 @@ USAGE = """
   python Efficient1_ratio_travel_time.py
 
   Run this from the model run dir.
-  Processes model outputs and creates a single csv with scenario metrics, called metrics\Efficient1_ratio_travel_time_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\Efficient1_ratio_travel_time_XX.csv
+  
+  Input Files:
+    taz_with_cities.csv: Lookup table linking Traffic Analysis Zones (TAZ) to groups of named cities for geographic analysis.
+    ODTravelTime_byModeTimeperiodIncome.csv: OD travel time summarized by mode, time period and income group
+    avgload5period_vehclasses.csv: Roadway network information containing attributes like facility type, volume, and toll class designations.
+    TOLLCLASS_Designations.xlsx: Excel file defining toll class designations used for categorizing toll facilities.
+    taz1454_epcPBA50plus_2024_02_23.csv: Lookup file indicating Equity Priority Communitiy (EPC) designation for TAZs, used for classification.
   
   This file will have the following columns:
+    'metric_desc',
     'value',
-    'Model Run ID',
-    'Metric ID',
-    'Intermediate/Final', 
-    'Metric Description',
-    'Year'
+    'intermediate/final',
+    'Origin and Destination',
+    'modelrun_id',
+    'year',
+    'metric_id'
     
   Metrics are:
     1) Efficient 1: Travel time by transit vs. auto in the region and EPCs
@@ -144,11 +152,11 @@ def E1_aggregate_before_joining(tm_run_id):
     LOGGER.info("Efficient 1: Aggregating before joining for {}".format(tm_run_id)) 
 
     # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
-    ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv") #changed "ODTravelTime_byModeTimeperiodIncome.csv" to a variable for better performance during debugging
+    ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv") 
     
     # TODO fix hardcoded solution below
     if tm_run_id == BASE_SCENARIO_RUN_ID:
-        ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv") #changed "ODTravelTime_byModeTimeperiodIncome.csv" to a variable for better performance during debugging
+        ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv") 
     
     # this is large so join/subset it immediately
     trips_od_travel_time_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)

@@ -3,17 +3,29 @@ USAGE = """
   python Affordable2_ratio_time_cost.py
 
   Run this from the model run dir.
-  Processes model outputs and creates a single csv with scenario metrics, called metrics\Affordable2_ratio_time_cost_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\Affordable2_ratio_time_cost_XX.csv
+  
+  Input Files:
+    taz_with_cities.csv: Lookup table linking Traffic Analysis Zones (TAZ) to groups of named cities for geographic analysis.
+    taz_with_origins.csv: Lookup table that contain TAZs for trips originating within and outside of the cordons and headed to the cordons, for geographic analysis.
+    taz_with_cordons.csv: Lookup table indicating cordon designations for Traffic Analysis Zones (TAZ), for geographic analysis.
+    ODTravelTime_byModeTimeperiodIncome.csv: OD travel time summarized by mode, time period and income group
+    network_links.DBF: Roadway network information containing attributes like facility type, volume, and toll class designations.
+    avgload5period.csv: Roadway network information containing attributes like facility type, volume, and toll class designations.
+    avgload5period_vehclasses.csv: Roadway network information containing attributes like facility type, volume, and toll class designations.
+    TOLLCLASS_Designations.xlsx: Excel file defining toll class designations used for categorizing toll facilities.
   
   This file will have the following columns:
-    'Income Level',
-    'Travel Mode',
-    'value',
-    'Model Run ID',
-    'Metric ID',
-    'Intermediate/Final', 
-    'Metric Description',
-    'Year'
+    'Corridor',
+    'Value Type',
+    'Income Group/Occupation',
+    'modelrun_id',
+    'metric_id',
+    'intermediate/final',
+    'Household/Commercial',
+    'metric_desc',
+    'year',
+    'value'
     
   Metrics are:
     1) Affordable 2: Transportation costs as a share of household income, by different income groups
@@ -40,10 +52,6 @@ LOGGER                  = None # will initialize in main
 # maps TAZs to a few selected cities for Origin/Destination analysis
 NGFS_OD_CITIES_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_with_cities.csv")
 NGFS_OD_CITIES_DF      = pd.read_csv(NGFS_OD_CITIES_FILE)
-
-# EPC lookup file - indicates whether a TAZ is designated as an EPC in PBA2050
-NGFS_EPC_TAZ_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "taz_epc_crosswalk.csv")
-NGFS_EPC_TAZ_DF      = pd.read_csv(NGFS_EPC_TAZ_FILE)
 
 # tollclass designations
 TOLLCLASS_LOOKUP_DF     = pd.read_excel(NGFS_TOLLCLASS_FILE, sheet_name='Inputs_for_tollcalib', usecols=['project','facility_name','tollclass','s2toll_mandatory','THRESHOLD_SPEED','MAX_TOLL','MIN_TOLL','Grouping major','Grouping minor'])
@@ -299,7 +307,7 @@ def calculate_auto_travel_time_for_pathway3(tm_run_id, origin_city_abbreviation)
     LOGGER.info("  Read {:,} rows from {}".format(len(NGFS_OD_CORDONS_DF), NGFS_OD_CORDONS_FILE))
 
     # columns: orig_taz, dest_taz, trip_mode, timeperiod_label, incQ, incQ_label, num_trips, avg_travel_time_in_mins
-    ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv") #changed "ODTravelTime_byModeTimeperiodIncome.csv" to a variable for better performance during debugging
+    ODTravelTime_byModeTimeperiod_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "core_summaries", "ODTravelTime_byModeTimeperiodIncome.csv")
     # this is large so join/subset it immediately
     trips_od_travel_time_df = pd.read_csv(ODTravelTime_byModeTimeperiod_file)
     LOGGER.info("  Read {:,} rows from {}".format(len(trips_od_travel_time_df), ODTravelTime_byModeTimeperiod_file))

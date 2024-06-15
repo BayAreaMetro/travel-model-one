@@ -3,20 +3,31 @@ USAGE = """
   python Safe2_vmt_from_loaded_network.py
 
   Run this from the model run dir.
-  Processes model outputs and creates a single csv with scenario metrics, called metrics\Change_in_vmt_from_loaded_network_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\Change_in_vmt_from_loaded_network_XX.csv
+  
+  Inputs:
+    taz1454_epcPBA50plus_2024_02_23.csv: Lookup file indicating Equity Priority Communitiy (EPC) designation for TAZs, used for classification.
+    avgload5period.csv: Roadway network information containing attributes like facility type, volume, and toll class designations.
+    network_links_TAZ.csv: Lookup table linking network links to Traffic Analysis Zones (TAZ) for geographic analysis.
+    avgload5period_vehclasses.csv: Roadway network information containing attributes like facility type, volume, and toll class designations.
+    TOLLCLASS_Designations.xlsx: Excel file defining toll class designations used for categorizing toll facilities.
   
   This file will have the following columns:
     'Freeway/Non-Freeway',
+    'Facility Type Definition',
     'EPC/Non-EPC',
     'Tolled/Non-tolled Facilities',
+    'County',
+    'Revenue Facilities',
+    'grouping',
+    'grouping_dir',
+    'tollclass',
+    'Metric Description',
+    'value',
     'Model Run ID',
     'Metric ID',
     'Intermediate/Final', 
-    'Facility Type Definition',
-    'Metric Description',
-    'County', 
-    'Revenue Facilities',
-    'value'
+    'Year' 
     
   Metrics are:
     1) Safe 2: Change in vehicle miles travelled on freeway and adjacent non-freeway facilities
