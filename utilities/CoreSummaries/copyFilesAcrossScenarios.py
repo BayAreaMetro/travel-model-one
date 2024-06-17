@@ -102,7 +102,7 @@ if __name__ == '__main__':
     my_args = parser.parse_args()
 
     model_runs_df = pandas.read_excel(my_args.ModelRuns_xlsx)
-    print(f"Read {my_args.ModelRuns_xlsx}; head:\n{model_runs_df.head()}")
+    print(f"Read {my_args.ModelRuns_xlsx}; head:\n{model_runs_df.head()}\ntail:\n{model_runs_df.tail()}")
     print(model_runs_df.dtypes)
 
     # expects columns: 'project','year','directory','run_set','category','urbansim_path','urbansim_runid','status'
@@ -126,7 +126,7 @@ if __name__ == '__main__':
             my_args.status_to_copy = set(status_to_copy.split(","))
             
     # Convert single string to list if needed
-    if not isinstance(my_args.status_to_copy, list):
+    if not isinstance(my_args.status_to_copy, set):
         my_args.status_to_copy = [my_args.status_to_copy]
 
     # option to delete files
