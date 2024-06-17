@@ -3,7 +3,7 @@ USAGE = """
   python Reliable2_ratio_peak_nonpeak.py
 
   Run this from the model run dir.
-  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\Reliable2_ratio_peak_nonpeak_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\\Reliable2_ratio_peak_nonpeak_XX.csv
   
   Inputs:
     taz_with_cities.csv: Lookup table linking Traffic Analysis Zones (TAZ) to groups of named cities for geographic analysis.
@@ -407,7 +407,7 @@ def calculate_Reliable2_ratio_peak_nonpeak(tm_run_id: str) -> pd.DataFrame:
     # add metric for goods routes: Calculate [Ratio of travel time during peak hours vs. non-peak hours] for 3 truck routes (using link-level)
     # load table with links for each goods route
     # columns: A, B, I580_I238_I880_PortOfOakland, I101_I880_PortOfOakland, I80_I880_PortOfOakland
-    goods_routes_a_b_links_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "goods_routes_a_b.csv")
+    goods_routes_a_b_links_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Metrics_Round2", "Input Files", "goods_routes_a_b.csv")
     # TODO: this is large so join/subset it immediately
     goods_routes_a_b_links_df = pd.read_csv(goods_routes_a_b_links_file)
     LOGGER.info("  Read {:,} rows from {}".format(len(goods_routes_a_b_links_df), goods_routes_a_b_links_file))

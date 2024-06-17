@@ -3,7 +3,7 @@ USAGE = """
   python Reliable1_change_in_travel_time.py
 
   Run this from the model run dir.
-  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\Reliable1_change_in_travel_time_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\\Reliable1_change_in_travel_time_XX.csv
   
   Inputs:
     taz1454_epcPBA50plus_2024_02_23.csv: Lookup file indicating Equity Priority Communitiy (EPC) designation for TAZs, used for classification.
@@ -188,7 +188,7 @@ def calculate_Reliable1_change_travel_time_on_parallel_arterials(tm_run_id: str)
     loaded_network_df = loaded_network_df.loc[(loaded_network_df['useAM'] == 1)&(loaded_network_df['ft'] != 6)]
     
     # join to parallel arterial links lookup table
-    parallel_arterials_file =  'L:\\Application\\Model_One\\NextGenFwys_Round2\\Metrics\\Input Files\\ParallelArterialLinks.csv'
+    parallel_arterials_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Metrics_Round2", "Input Files", "ParallelArterialLinks.csv")
     parallel_arterials_links_df = pd.read_csv(parallel_arterials_file)
     parallel_arterials_links_df.rename(columns=lambda x: x.strip(), inplace=True)
     parallel_arterials_links_df.rename(columns={"A":"a", "B":"b"}, inplace=True)
@@ -354,7 +354,7 @@ def calculate_Reliable1_change_travel_time_on_parallel_arterials_epc_non(tm_run_
     loaded_network_df = loaded_network_df.loc[(loaded_network_df['useAM'] == 1)&(loaded_network_df['ft'] != 6)]
     
     # join to parallel arterial links lookup table
-    parallel_arterials_file =  'L:\\Application\\Model_One\\NextGenFwys_Round2\\Metrics\\Input Files\\ParallelArterialLinks.csv'
+    parallel_arterials_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Metrics_Round2", "Input Files", "ParallelArterialLinks.csv")
     parallel_arterials_links_df = pd.read_csv(parallel_arterials_file)
     parallel_arterials_links_df.rename(columns=lambda x: x.strip(), inplace=True)
     parallel_arterials_links_df.rename(columns={"A":"a", "B":"b"}, inplace=True)

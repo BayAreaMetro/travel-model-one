@@ -20,7 +20,7 @@ TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__
 NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns_Round2.xlsx")
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
 # Path to your R script
-R_SCRIPT_PATH = "C:\\Program Files\\R\\R-4.3.3\\bin\\x64\\Rscript.exe"
+R_SCRIPT_PATH = os.environ.get('RSCRIPT_PATH')
 SAFETY_CALC_SCRIPT = "X:\\travel-model-one-master\\utilities\\RTP\\metrics\\VZ_safety_calc_correction_v2.R"
 # No Project Pathway
 NO_PROJECT_PATHWAY = "2035_TM160_NGF_r2_NoProject_03_pretollcalib"

@@ -3,7 +3,7 @@ USAGE = """
   python Efficient1_ratio_travel_time.py
 
   Run this from the model run dir.
-  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\Efficient1_ratio_travel_time_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\\Efficient1_ratio_travel_time_XX.csv
   
   Input Files:
     taz_with_cities.csv: Lookup table linking Traffic Analysis Zones (TAZ) to groups of named cities for geographic analysis.

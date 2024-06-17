@@ -14,7 +14,7 @@ USAGE = """
             Shapefiles output from above are required
             Correspond links to taz by running (in the shapefile directory):  python X:\\travel-model-one-master\\utilities\\cube-to-shapefile\\correspond_link_to_TAZ.py network_links.shp network_links_TAZ.csv
             Rerun hwynet.py in the model run directory on the modeling machine: python X:\\travel-model-one-master\\utilities\\RTP\\metrics\\hwynet.py --filter PBA50 --year 2035 --link_mapping L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\[Scenario]\\OUTPUT\\shapefile\\network_links_TAZ.csv TAZ1454 linktaz_share _by_taz .\\hwy\\iter3\\avgload5period_vehclasses.csv
-            Copy resulting vmt_vht_metrics_by_taz.csv to L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\[Scenario]\OUTPUT\metrics
+            Copy resulting vmt_vht_metrics_by_taz.csv to L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\[Scenario]\\OUTPUT\\metrics
             run copyFilesAcrossScenarios.py again to copy the files to the across_runs_union directory (see detailed steps under Step 1 of "across_NGFS_runs_union tableau")        
 
 """

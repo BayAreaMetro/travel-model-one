@@ -3,7 +3,7 @@ USAGE = """
   python Affordable1_transportation_costs.py
 
   Run this from the model run dir.
-  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\Affordable1_transportation_costs_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\\Affordable1_transportation_costs_XX.csv
   
   Input Files:
     travel-cost-hhldtraveltype.csv: transportation costs summarized by income, home_taz, hhld_travel type

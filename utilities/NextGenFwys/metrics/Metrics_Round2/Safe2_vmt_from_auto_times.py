@@ -3,7 +3,7 @@ USAGE = """
   python Safe2_vmt_from_auto_times.py
 
   Run this from the model run dir.
-  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\Change_in_vmt_from_auto_times_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\\Change_in_vmt_from_auto_times_XX.csv
   
   Inputs:
     auto_times.csv: Daily Person Trips, Daily Vehicle Trips, PersonTime, VehicleTime, PersonMiles, VehicleMiles, TotalCost, Bridge Tolls, Value Tolls

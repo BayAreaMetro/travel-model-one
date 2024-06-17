@@ -3,7 +3,7 @@ USAGE = """
   python Affordable2_ratio_time_cost.py
 
   Run this from the model run dir.
-  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\Affordable2_ratio_time_cost_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\\Affordable2_ratio_time_cost_XX.csv
   
   Input Files:
     taz_with_cities.csv: Lookup table linking Traffic Analysis Zones (TAZ) to groups of named cities for geographic analysis.
@@ -108,7 +108,7 @@ VOT_2023D_COMMERCIAL           = 32.0 / INFLATION_00_20 * INFLATION_00_23  # bas
 A2_CONSTANTS = """
 
  - Avg hourly wage ($/hr)
-    - source: ACS PUMS 2021, see M:\Data\Requests\Anup Tapase\ACS PUMS 2021 Mean Wage by Quartile.csv
+    - source: ACS PUMS 2021, see M:\\Data\\Requests\\Anup Tapase\\ACS PUMS 2021 Mean Wage by Quartile.csv
  - Monetary Value of travel time (% of wage rate)
     - source: Table 5.2.11-1 https://www.vtpi.org/tca/tca0502.pdf
     - source: Table 1 (Revision - 2016 Update) https://www.transportation.gov/sites/dot.gov/files/docs/2016%20Revised%20Value%20of%20Travel%20Time%20Guidance.pdf

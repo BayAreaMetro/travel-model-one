@@ -3,7 +3,7 @@ USAGE = """
   python Efficient2_commute_tours_mode_share.py
 
   Run this from the model run dir.
-  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\Efficient2_commute_tours_mode_share_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\\Efficient2_commute_tours_mode_share_XX.csv
   
   Input Files:
     JourneyToWork_modes.csv: JourneyToWork summary with SD, subzone, and commute mode

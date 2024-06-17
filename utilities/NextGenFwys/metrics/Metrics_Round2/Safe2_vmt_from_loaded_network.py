@@ -3,7 +3,7 @@ USAGE = """
   python Safe2_vmt_from_loaded_network.py
 
   Run this from the model run dir.
-  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\Change_in_vmt_from_loaded_network_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\\Change_in_vmt_from_loaded_network_XX.csv
   
   Inputs:
     taz1454_epcPBA50plus_2024_02_23.csv: Lookup file indicating Equity Priority Communitiy (EPC) designation for TAZs, used for classification.

@@ -3,7 +3,7 @@ USAGE = """
   python top_level_metrics_toll_revenues.py
 
   Run this from the model run dir.
-  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\top_level_metrics_toll_revenues_XX.csv
+  Processes model outputs and creates csvs for the relevant metric for every relevant scenario, called metrics\\top_level_metrics_toll_revenues_XX.csv
   
   Input Files:
     network_links.DBF: Roadway network information containing attributes like facility type, volume, and toll class designations.
