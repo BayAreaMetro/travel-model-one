@@ -14,7 +14,7 @@ PeMS data is collected/processed via scripts in https://github.com/BayAreaMetro/
 
 By convention, for base years, model validation is done in `[M_drive_model_dir]\OUTPUT\validations\pems`, so that is where [RoadwayValidation.py](RoadwayValidation.py) should be run.
 
-3. [Roadways_PeMS_2015.twb](Roadways_PeMS_2015.twb) - this Tableau visualizes the results from the previous steps.  It also consumes one of [pems_screenlines_2015.csv](pems_screenlines_2015.csv) or [pems_screenlines_2023.csv]([pems_screenlines_2023.csv) to create visualize a Screenline dashboard.
+3. [Roadways_PeMS_2015.twb](Roadways_PeMS_2015.twb) - this Tableau visualizes the results from the previous steps.  It also consumes [pems_screenline_stations.csv](pems_screenline_stations.csv) to create visualize a Screenline dashboard.
    1. Copy this tableau into `[M_drive_model_dir]\OUTPUT\validations\pems`.
    2. Rename the tableau to include the model directory since it's important to know which model run to which this tableau refers; e.g. `Roadways_PeMS_[model_dir].twb`
    3. Open the tableau file in a text editor and replace the existing model directory embedded in the file with the model directory in question.
