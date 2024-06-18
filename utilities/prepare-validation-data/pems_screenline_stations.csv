@@ -39,3 +39,15 @@ Station_2015,Station_2023,County From,County To,Route Num,Route Dir,Bridge
 400127,400127,San Mateo,Alameda,84,East,Dumbarton Bridge
 406713,406713,Alameda,San Mateo,92,West,San Mateo-Hayward Bridge
 406688,406688,San Mateo,Alameda,92,East,San Mateo-Hayward Bridge
+000000,000000,Santa Clara,Santa Cruz,17,South,Gateway
+400108,400108,Santa Cruz,Santa Clara,17,North,Gateway
+409926,409926,Santa Clara,San Benito,101,South,Gateway
+409868,409868,San Benito,Santa Clara,101,North,Gateway
+401665,401665,Santa Clara,San Benito,25,South,Gateway
+401674,401674,San Benito,Santa Clara,25,North,Gateway
+404668,426772,Santa Clara,Tracy,580,West,Gateway
+402410,427093,Tracy,Santa Clara,580,East,Gateway
+402269,402269,Solano,Yolo,80,West,Gateway
+402270,402268,Yolo,Solano,80,East,Gateway
+402763,402777,Sonoma,Mendocino,101,North,Gateway
+402780,402778,Mendocino,Sonoma,101,South,Gateway
