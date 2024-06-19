@@ -1165,8 +1165,8 @@ RUN PGM=MATRIX
     NAME= Auto_RB,Auto_RNB,Auto_VB,Auto_VNB,Auto_AirPass,
           Transit_RB,Transit_RNB,Transit_VB,Transit_VNB,Transit_AirPass,
           AirPass_HBW, AirPass_HSR, AirPass_NHB, AirPass_Total
-  MATO[2] = nonres\2015_APVEHTRIPS.MAT, MO=16-18,
-    NAME= Auto_DA,Auto_SR2,Auto_SR3
+  MATO[2] = nonres\2015_APVEHTRIPS.MAT, MO=16-20,
+    NAME= Auto_DA,Auto_SR2,Auto_SR3,wlk_hvy_wlk, drv_hvy_wlk
          
   ; Auto Trips (add Auto and On-Call)
   MW[1] = MI.1.Auto + MI.1.OnCall   ; Resident Business (add to HBW)
@@ -1196,6 +1196,20 @@ RUN PGM=MATRIX
   ; Shared Ride 3+
   MW[18]=MI.1.Auto*0.24/3.52+MI.1.OnCall*0.96/5.32+MI.2.Auto*0.37/3.55+MI.2.OnCall*0.95/5.38+MI.3.Auto*0.58/3.84+MI.3.OnCall*1/5.38+
   MI.4.Auto*0.58/3.65+MI.4.OnCall*0.98/4.72 
+
+	;All transit modes
+	;wlk_loc_wlk, wlk_lrf_wlk, wlk_exp_wlk, wlk_hvy_wlk, wlk_com_wlk,
+	;drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
+	;wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv
+	
+	;Allowable transit modes, drive egress not considered, only heavy rail modes considered
+	;
+	;wlk_hvy_wlk, drv_hvy_wlk
+	
+  MW[19] = MW[10]/2
+  MW[20] = MW[10]/2
+	
+					
 
 ENDRUN
 
@@ -1227,6 +1241,14 @@ RUN PGM=MATRIX
   MATO[3] = nonres\tripsAirPaxMD.tpp, MO=13-18, NAME=DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
   MATO[4] = nonres\tripsAirPaxPM.tpp, MO=19-24, NAME=DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
   MATO[5] = nonres\tripsAirPaxEV.tpp, MO=25-30, NAME=DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
+  
+  MATO[6]  = nonres\trntripsAirPaxEA.tpp, MO=31-32, NAME = wlk_hvy_wlk, drv_hvy_wlk
+  MATO[7]  = nonres\trntripsAirPaxAM.tpp, MO=33-34, NAME = wlk_hvy_wlk, drv_hvy_wlk
+  MATO[8]  = nonres\trntripsAirPaxMD.tpp, MO=35-36, NAME = wlk_hvy_wlk, drv_hvy_wlk
+  MATO[9]  = nonres\trntripsAirPaxPM.tpp, MO=37-38, NAME = wlk_hvy_wlk, drv_hvy_wlk
+  MATO[10] = nonres\trntripsAirPaxEV.tpp, MO=39-40, NAME = wlk_hvy_wlk, drv_hvy_wlk 
+  
+  
   
   MW[1]=(MI.1.1+MI.1.1.T) *0
   MW[2]=(MI.1.2+MI.1.2.T) *0
@@ -1262,5 +1284,21 @@ RUN PGM=MATRIX
   MW[28]=0
   MW[29]=0
   MW[30]=0
+  
+  
+  MW[31] = (MI.1.4 + MI.1.4.T) *2 * 0
+  MW[32] = (MI.1.5 + MI.1.5.T) *2 * 0
+  
+  MW[33] = (MI.1.4 + MI.1.4.T) *2 * 0.1111/100
+  MW[34] = (MI.1.5 + MI.1.5.T) *2 * 0.1111/100
+  
+  MW[35] = (MI.1.4 + MI.1.4.T) *2 * 0.1667/100
+  MW[36] = (MI.1.5 + MI.1.5.T) *2 * 0.1667/100
+  
+  MW[37] = (MI.1.4 + MI.1.4.T) *2 * 0.1111/100
+  MW[38] = (MI.1.5 + MI.1.5.T) *2 * 0.1111/100
+  
+  MW[39] = (MI.1.4 + MI.1.4.T) *2 * 0.1111/100
+  MW[40] = (MI.1.5 + MI.1.5.T) *2 * 0.1111/100
    
 ENDRUN
