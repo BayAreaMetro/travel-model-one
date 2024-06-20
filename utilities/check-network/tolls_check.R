@@ -80,11 +80,17 @@ missing_des <- paste(subset(min_tolls, is.na(TOLLCLASS))$TOLLCLASS, collapse = "
 
 sink(LOG_OUTPUT)
 print("Tolls.csv is missing the following USE/TOLLCLASS combos:")
-print(missing_tc)
+for (use_tc in missing_tc) {
+  print(use_tc)
+}
 print("Tolls.csv includes the following extra USE/TOLLCLASS combos:")
-print(extra_tc)
+for (use_tc in extra_tc) {
+  print(use_tc)
+}
 print("The following TOLLCLASS values are missing from the Tollclass Designation file:")
-print(missing_des)
+for (use_tc in missing_des) {
+  print(use_tc)
+}
 sink()
 
 # Rename the "facility_name_toll_des" in the min_tolls data frame to "facility_name", etc
