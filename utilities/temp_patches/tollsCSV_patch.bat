@@ -18,12 +18,12 @@ setlocal enabledelayedexpansion
 
 for /d %%f in (
 
-    3000_P4ExpLanes\3000_P7ExpLanes_BF09
-    3000_P4ExpLanes\3000_P7ExpLanes_CG09
-    3000_P4ExpLanes\3000_P7ExpLanes_RT09
-    3000_P6ExpLanes\3000_P7ExpLanes_BF13
-    3000_P6ExpLanes\3000_P7ExpLanes_CG13
-    3000_P6ExpLanes\3000_P7ExpLanes_RT13
+    3000_P4ExpLanes\3000_P4ExpLanes_BF09
+    3000_P4ExpLanes\3000_P4ExpLanes_CG09
+    3000_P4ExpLanes\3000_P4ExpLanes_RT09
+    3000_P6ExpLanes\3000_P6ExpLanes_BF13
+    3000_P6ExpLanes\3000_P6ExpLanes_CG13
+    3000_P6ExpLanes\3000_P6ExpLanes_RT13
     3000_P7ExpLanes\3000_P7ExpLanes_BF04
     3000_P7ExpLanes\3000_P7ExpLanes_CG04
     3000_P7ExpLanes\3000_P7ExpLanes_RT04
