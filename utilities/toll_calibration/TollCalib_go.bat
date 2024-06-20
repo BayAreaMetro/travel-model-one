@@ -48,6 +48,8 @@ copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_R
 
 copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\TollCalib_CheckSpeeds.R TollCalib_CheckSpeeds.R
 
+copy \\tsclient\X\travel-model-one-master\utilities\toll_calibration\get_model_year.py get_model_year.py
+
 rem generate network_links.dbf
 rem -------------------------------------
 copy \\tsclient\X\travel-model-one-master\utilities\cube-to-shapefile\export_network.job  tollcalib_iter\export_network.job

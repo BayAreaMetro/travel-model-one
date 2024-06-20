@@ -31,7 +31,16 @@ set L_DIR=%L_DIR%
 :: to run highway assignment only, enter 1 below; 
 :: to run highway assigment + skimming + core, enter 0 below
 set hwyassignONLY=0
-set MODEL_YEAR=2050
+
+REM set MODEL_YEAR
+for /f "delims=" %%i in ('python get_model_year.py') do (
+    
+    set model_year=%%i
+
+)
+rem if ERRORLEVEL 1 goto done
+
+
 
 :: -------------------------------------------------
 :: check that all the paths are valid
@@ -138,3 +147,4 @@ if "%COMPUTER_PREFIX%" == "WIN-" (
 :: -------------------------------------------------
 :end
 
+:done
