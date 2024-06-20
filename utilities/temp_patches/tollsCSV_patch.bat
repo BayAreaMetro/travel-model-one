@@ -1,4 +1,3 @@
-
 # -------------------------------------------------------------------------------
 # rem this script is a temp patch for the tolls.csv for the express lane scenarios for RTP025 PPA
 # -------------------------------------------------------------------------------
@@ -11,22 +10,16 @@ if "%computername%" == "MODEL3-C" (
   set R_HOME=C:\Program Files\R\R-4.2.1
 )
 
-cd /d "C:\Users\ftsang\Box\Plan Bay Area 2050+\Performance and Equity\Project Performance\Express_lane_networks"
+rem cd /d "C:\Users\ftsang\Box\Plan Bay Area 2050+\Performance and Equity\Project Performance\Express_lane_networks"
 rem cd /d L:\RTP2025_PPA\Projects\Express_lane_networks
+cd /d L:\Application\Model_One\NextGenFwys_Round2\INPUT_DEVELOPMENT\Networks
 
 setlocal enabledelayedexpansion
 
 for /d %%f in (
 
-    3000_P4ExpLanes\3000_P4ExpLanes_BF09
-    3000_P4ExpLanes\3000_P4ExpLanes_CG09
-    3000_P4ExpLanes\3000_P4ExpLanes_RT09
-    3000_P6ExpLanes\3000_P6ExpLanes_BF13
-    3000_P6ExpLanes\3000_P6ExpLanes_CG13
-    3000_P6ExpLanes\3000_P6ExpLanes_RT13
-    3000_P7ExpLanes\3000_P7ExpLanes_BF04
-    3000_P7ExpLanes\3000_P7ExpLanes_CG04
-    3000_P7ExpLanes\3000_P7ExpLanes_RT04
+NGF_Networks_NGFround2_P4_09\NGF_R2_R2P4_2035_Express_Lanes_network_2035
+NGF_Networks_NGFround2_P6_13\NGF_R2_R2P6_Dual_Express_Lanes_network_2035
 
 )    do    (
 
