@@ -45,3 +45,9 @@ It took about 4.5 to 5 hours between iterations on AWS machines (for Back to the
 5. Run [`TollCalib_go.bat`](TollCalib_go.bat) in the command prompt
 
 For runs on aws, keep the Remote Desktop Connection connected for the duration of the toll calibration run, so results will be automatically copied back to a the drive location specified by the user (`L_DIR` in [`TollCalib_Iterate.bat`](TollCalib_Iterate.bat)).
+
+
+## Additional tips and tricks
+Often, while waiting for the pre-toll-calibration run to complete, analysts may perform further QAQC of the network and correct errors in the network. If the errors are not significant, analysts might choose not to rerun pre-toll-calibration to save time. Instead, analysts might choose to proceed with the toll calibration procedure using the revised network.
+
+In such cases, prior to starting the toll calibration procedure, analysts will need to swap the freeflow.net and tolls.csv in the pre-toll-calibration run (aka the base run). DOS commands to perform such a network swap can be found in [Swab_network_prior_to_tollcalib.bat.](https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/toll_calibration/Swab_network_prior_to_tollcalib.bat)
