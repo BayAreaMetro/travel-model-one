@@ -9,25 +9,30 @@ rem -------------------------------------
 rem need user inputs here
 rem -------------------------------------
 
+rem what is the location of the base run (i.e. pre toll calibration) directory - the full run is needed because it needs the CTRAMP directory
+set MODEL_BASE_DIR=\\MODEL2-B\Model2B-Share\Projects\2035_TM160_NGFr2_NP04_Path6_01_pretollcalib
+
+:: Where do you want the toll calibration outputs to be stored?
+:: (this is typically pretollcalib run directory on the L drive)
+set L_DIR=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGFr2_NP04_Path6_01_tollcalib
+
 rem where is TOLLCLASS Designations.xlsx?
 rem (this file indicates which facilities have mandatory s2 tolls)
 set TOLL_DESIGNATIONS_XLSX=X:\travel-model-one-master\utilities\NextGenFwys\TOLLCLASS_Designations.xlsx
 
-rem if this is being run on aws, what's the Private IP Address?
-if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.70
-
-rem what is the location of the base run (i.e. pre toll calibration) directory - the full run is needed because it needs the CTRAMP directory
-set MODEL_BASE_DIR=E:\Model3B-Share\Projects\2035_TM160_NGF_r2_NoProject_03_pretollcalib
-
-:: Where do you want the toll calibration outputs to be stored?
-:: (this is typically pretollcalib run directory on the L drive)
-set L_DIR=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGF_r2_NoProject_03_pretollcalib
+rem where is NonDynamicTollFacilities.csv?
+set NonDynamicTollFacilities_CSV=X:\travel-model-one-master\utilities\NextGenFwys\NonDynamicTollFacilities.csv
 
 :: specify any HOV discount for the all-lane tolling system 
 :: (note that these discounts are for all-lane tolling only, and won't be applied to express lanes) 
 :: A DiscountFactor of 0.5 means half price; a DiscountFactor of 0 means free; and a DiscountFactor of 1 means no discount.
 set DiscountFactor_HOV2=1 
 set DiscountFactor_HOV3=0.5
+
+rem if this is being run on aws, what's the Private IP Address?
+if %computername%==WIN-A4SJP19GCV5     set HOST_IP_ADDRESS=10.0.0.70
+
+
 
 
 rem copy the two toll calibration inputs 

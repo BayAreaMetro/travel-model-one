@@ -12,7 +12,7 @@ set PROJECT_DIR=%MODEL_BASE_DIR%
 
 
 :: the rest doesn't require user inputs if TollCalib_setup.bat is run
-:: otherwise user may need to specify the locations of UNLOADED_NETWORK_DBF and TOLL_DESIGNATIONS_XLSX
+:: otherwise user may need to specify the locations of UNLOADED_NETWORK_DBF, TOLL_DESIGNATIONS_XLSX and NonDynamicTollFacilities_CSV
 
 :: Unloaded network dbf, generated from cube_to_shapefile.py, needed for the R script that determine toll adjustment 
 :: (okay to borrow it from a different Future as long as we're sure the unloaded network is the same across Futures)
@@ -20,6 +20,11 @@ set UNLOADED_NETWORK_DBF=tollcalib_iter\network_links.dbf
 
 :: The file indicating which facilities have mandatory s2 tolls
 set TOLL_DESIGNATIONS_XLSX=tollcalib_iter\TOLLCLASS_Designations.xlsx
+
+:: The file indicating which facilities is not dynamically tolled
+:: Make sure NonDynamicTollFacilities.csv is copied to INPUT/hwy and hwy in the pre-toll-calibration run (aka the base run) 
+copy %NonDynamicTollFacilities_CSV% %PROJECT_DIR%\INPUT\hwy
+copy %NonDynamicTollFacilities_CSV% %PROJECT_DIR%\hwy
 
 :: set R location
 set R_HOME=C:\Program Files\R\R-3.5.2
