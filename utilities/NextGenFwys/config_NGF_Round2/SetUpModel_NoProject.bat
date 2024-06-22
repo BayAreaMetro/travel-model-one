@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGF_r2_NoProject_02_pretollcalib
+set M_DIR=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGF_r2_NoProject_04
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
@@ -14,11 +14,10 @@ set AddStrategies=Yes
 set VisionZero=OFF
 
 :: set the location of the Travel Model Release
-:: use the v1.6_develop branch for now until we create a release
-set GITHUB_DIR=X:\travel-model-one-master
+set GITHUB_DIR=X:\travel-model-one-MinVtoll_TollCap
 
 :: set the location of the networks (make sure the network version, year and variant are correct)
-set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys_Round2\INPUT_DEVELOPMENT\Networks\NGF_Networks_NGFround2NoProject_02\net_2035_NGFround2NoProject
+set INPUT_NETWORK=L:\Application\Model_One\NextGenFwys_Round2\INPUT_DEVELOPMENT\Networks\NGF_Networks_NGFround2NoProject_04\net_2035_NGFround2NoProject
 
 :: set the location of the populationsim and land use inputs (make sure the land use version and year are correct) 
 :: this path is updated since PBA50 because the tazdata file now requires the CORDON and CORDONCOST column
@@ -38,14 +37,20 @@ set METRICS_INPUT_DIR=M:\Application\Model One\RTP2021\Blueprint\INPUT_DEVELOPME
 
 :: set the location of the previous run (where warmstart inputs will be copied)
 :: the INPUT folder of the previous run will also be used as the base for the compareinputs log
-set PREV_RUN_DIR=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGF_r2_NoProject_01
+set PREV_RUN_DIR=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGF_r2_NoProject_04_pretollcalib
 
 :: set the name and location of the properties file
 :: often the properties file is on master during the active application phase
-set PARAMS=X:\travel-model-one-master\utilities\NextGenFwys\config_NGF_Round2\params_NoProject.properties
+set PARAMS=X:\travel-model-one-MinVtoll_TollCap\utilities\NextGenFwys\config_NGF_Round2\params_NoProject.properties
 
 :: set the location of the overrides directory (for Blueprint strategies)
 set BP_OVERRIDE_DIR=M:\Application\Model One\RTP2021\Blueprint\travel-model-overrides
+
+:: use special input tolls.csv?
+set SwapTollsCsv=Yes
+:: if the above is Yes, where is the input tolls.csv?
+set TOLLS_CSV=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGF_r2_NoProject_04_tollcalib\tollcalib_iter\tolls_iter15.csv
+
 
 :: ------------------------------------------------------------------------------------------------------
 ::
@@ -125,6 +130,10 @@ if "%COMPUTER_PREFIX%" == "WIN-"    set HOST_IP_ADDRESS=10.0.0.59
 :: networks
 c:\windows\system32\Robocopy.exe /NP /E "%INPUT_NETWORK%\hwy"                                        INPUT\hwy
 c:\windows\system32\Robocopy.exe /NP /E "%INPUT_NETWORK%\trn"                                        INPUT\trn
+
+if %SwapTollsCsv%==Yes (
+    copy /Y "%TOLLS_CSV%"                                                                            INPUT\hwy\tolls.csv
+    )
 
 :: popsyn and land use
 c:\windows\system32\Robocopy.exe /NP /E "%INPUT_POPLU%\popsyn"                                       INPUT\popsyn
