@@ -1,7 +1,7 @@
 
 rem ------------------------------------------------------------------------------------------
 rem
-rem Often, after the pre-toll-calibration run, the analyst may identify and correct errors in the network. 
+rem Often, while waiting for the pre-toll-calibration run to complete, the analyst may perform further QAQC of the network and correct errors in the network.
 rem If these errors are NOT significant, the analyst might choose not to rerun the pre-toll-calibration run, 
 rem and proceed with the toll calibration procedure using the updated network.
 rem
@@ -11,6 +11,7 @@ rem
 rem The following commands perform these network swapping steps.
 rem 
 rem ------------------------------------------------------------------------------------------
+
 
 
 rem ---------------------------------------------
