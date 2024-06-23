@@ -799,6 +799,7 @@ def determine_congested_segment_links(tm_run_id: str) -> pd.DataFrame:
     # grouping_df['toll_per_mile_PeakPeriod_da'] = grouping_df['toll_per_mile_PeakPeriod_da'].round()     # Round the result
 
     # remove rows with 'toll_per_mile_PeakPeriod_da' that isn't 3, 5, or 16 cents
+    # meant to remove links with bridge tolls
     grouping_df = grouping_df.loc[
         (grouping_df.toll_per_mile_PeakPeriod_da > 0) & 
         (grouping_df.toll_per_mile_PeakPeriod_da < 17)
