@@ -67,7 +67,7 @@ if (dir.exists(file.path(PROJECT_DIR, "CTRAMP"))) {
 TOLL_DESIGNATIONS_XLSX <- Sys.getenv("TOLL_DESIGNATIONS_XLSX")
 TOLL_DESIGNATIONS_XLSX <- gsub("\\\\","/",TOLL_DESIGNATIONS_XLSX) # switch slashes around
 TOLL_DESIGNATIONS_DF <- read_excel(TOLL_DESIGNATIONS_XLSX, sheet = "Inputs_for_tollcalib")
-TOLL_DESIGNATIONS_DF <- select(TOLL_DESIGNATIONS_DF, -c("Grouping major", "Grouping minor")) #delete columns not used in this process
+TOLL_DESIGNATIONS_DF <- select(TOLL_DESIGNATIONS_DF, -c("PBA2050_RTP_ID","Grouping major", "Grouping minor")) #delete columns not used in this process
 
 # this file specify which facilities is NOT dynamically tolled (thus don't need toll calibration)
 if (dir.exists(file.path(PROJECT_DIR, "CTRAMP"))) {
