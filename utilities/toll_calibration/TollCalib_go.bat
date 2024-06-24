@@ -10,11 +10,11 @@ rem need user inputs here
 rem -------------------------------------
 
 rem what is the location of the base run (i.e. pre toll calibration) directory - the full run is needed because it needs the CTRAMP directory
-set MODEL_BASE_DIR=\\MODEL2-B\Model2B-Share\Projects\2035_TM160_NGFr2_NP04_Path6_01_pretollcalib
+set MODEL_BASE_DIR=\\model3-c\Model3C-Share\Projects\2035_TM160_NGFr2_NP04_Path4_02_pretollcalib
 
 :: Where do you want the toll calibration outputs to be stored?
-:: (this is typically pretollcalib run directory on the L drive)
-set L_DIR=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGFr2_NP04_Path6_01_tollcalib
+:: (this is typically the [run_id]_tollcalib directory on the L drive)
+set L_DIR=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGFr2_NP04_Path4_02_tollcalib
 
 rem where is TOLLCLASS Designations.xlsx?
 rem (this file indicates which facilities have mandatory s2 tolls)
