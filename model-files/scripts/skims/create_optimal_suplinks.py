@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import warnings
+warnings.filterwarnings('ignore')
 pd.set_option('display.max_colwidth', 255)
 
 model_run_dir           = sys.argv[0]
@@ -12,6 +14,12 @@ supplink_filename       = os.path.join("{}_transit_suplinks.dat".format(timeperi
 wlklink_filename        = os.path.join("{}_transit_suplinks_wlk.dat".format(timeperiod))
 drvlink_filename        = os.path.join("{}_transit_suplinks_drv.dat".format(timeperiod))
 knr_filename            = os.path.join("{}_bus_acclinks_KNR.dat".format(timeperiod))
+
+pnr_penalty             = pd.read_csv("../pnr_penalty.csv")
+pnr_penalty             =pnr_penalty[(pnr_penalty['PNR_impedence']!=0)&(pnr_penalty['pnr node'].notnull())]
+
+
+pnr_to_stops_grouped = pd.read_csv('../PNR_STOP.csv')
 
 supplink_file=pd.read_csv(supplink_filename, sep='=', names=['type','link-mode','mode-dist','dist-speed','speed-oneway','oneway'])
 
@@ -31,20 +39,36 @@ supplink_file['speed']=supplink_file['speed-oneway'].apply(lambda x: x.split(' '
 supplink_file=supplink_file[['type','link','mode','dist','speed','oneway']]
 
 all_drive_links=supplink_file[supplink_file['mode'].isin([2,7])]
-all_walk_links=supplink_file[~supplink_file['mode'].isin([2,7])]
+all_walk_links=supplink_file[supplink_file['mode'].isin([1,3,6])]
 knr_links=supplink_file[supplink_file['mode'].isin([1,6])]
+all_pnr_to_stop_links=supplink_file[supplink_file['mode'].isin([4])]
 
 all_drive_links['origin']=all_drive_links['link'].apply(lambda x: int(x.split('-')[0]))
 all_drive_links['destination']=all_drive_links['link'].apply(lambda x: int(x.split('-')[1]))
 
+all_pnr_to_stop_links['origin']=all_pnr_to_stop_links['link'].apply(lambda x: int(x.split('-')[0]))
+all_pnr_to_stop_links['destination']=all_pnr_to_stop_links['link'].apply(lambda x: int(x.split('-')[1]))
+
 all_drive_access_links=all_drive_links[all_drive_links['origin']<6594].sort_values(by=['origin','mode','dist'])
 all_drive_egress_links=all_drive_links[all_drive_links['origin']>6593].sort_values(by=['destination','mode','dist'])
 
+all_drive_access_links_pnr = all_drive_access_links.merge(pnr_to_stops_grouped[['PNR','Stop','transit_mode','distance']], left_on=['destination'], right_on=['PNR']).sort_values(by=['origin','transit_mode','dist','distance'])
+selected_drive_access_links = all_drive_access_links_pnr.groupby(['origin','transit_mode'], as_index=False).apply(lambda x: x.head(2)).reset_index()
 
-selected_drive_access_links = all_drive_access_links.groupby(['origin','mode'], as_index=False).apply(lambda x: x.head(number_of_links)).reset_index()
-selected_drive_egress_links = all_drive_egress_links.groupby(['destination','mode'], as_index=False).apply(lambda x: x.head(number_of_links)).reset_index()
+selected_drive_access_links_reduced=selected_drive_access_links[['type','link','mode','dist','speed','oneway']]
+selected_drive_access_links_reduced = selected_drive_access_links_reduced.drop_duplicates('link')
 
-selected_drive_links=pd.concat([selected_drive_access_links, selected_drive_egress_links], ignore_index=True)
+all_drive_egress_links_pnr = all_drive_egress_links.merge(pnr_to_stops_grouped[['PNR','Stop','transit_mode','distance']], left_on=['origin'], right_on=['PNR']).sort_values(by=['destination','transit_mode','dist','distance'])
+selected_drive_egress_links = all_drive_egress_links_pnr.groupby(['destination','transit_mode'], as_index=False).apply(lambda x: x.head(2)).reset_index()
+
+selected_drive_egress_links_reduced=selected_drive_egress_links[['type','link','mode','dist','speed','oneway']]
+selected_drive_egress_links_reduced = selected_drive_egress_links_reduced.drop_duplicates('link')
+
+all_pnr_to_stop_links['TIME']=all_pnr_to_stop_links['destination'].map(dict(zip(pnr_penalty['pnr node'], pnr_penalty['PNR_impedence'])))
+
+selected_drive_links=pd.concat([selected_drive_access_links_reduced, selected_drive_egress_links_reduced], ignore_index=True)
+all_walk_links_with_pnr=pd.concat([all_walk_links,all_pnr_to_stop_links], ignore_index=True)
+all_walk_links_with_pnr['TIME']=all_walk_links_with_pnr['TIME'].fillna(0)
 
 knr_links['mode']=knr_links['mode'].apply(lambda x: x+1)
 knr_links['speed']=20
@@ -52,31 +76,51 @@ knr_links['speed']=20
 
 for col in selected_drive_links.columns:
     selected_drive_links[col]=selected_drive_links[col].astype(str)
-for col in all_walk_links.columns:
-    all_walk_links[col]=all_walk_links[col].astype(str)
+for col in all_walk_links_with_pnr.columns:
+    all_walk_links_with_pnr[col]=all_walk_links_with_pnr[col].astype(str)
+for col in all_pnr_to_stop_links.columns:
+    all_pnr_to_stop_links[col]=all_pnr_to_stop_links[col].astype(str)
 for col in knr_links.columns:
     knr_links[col]=knr_links[col].astype(str)
-
+    
 selected_drive_links['text'] = np.where(selected_drive_links['speed']!='',
-                                        selected_drive_links['type']+'= '+selected_drive_links['link']+' MODE='+selected_drive_links['mode']+' DIST='+selected_drive_links['dist']+' SPEED='+
-                                            selected_drive_links['speed']+' ONEWAY='+selected_drive_links['oneway'],
-                                        selected_drive_links['type']+'= '+selected_drive_links['link']+' MODE='+selected_drive_links['mode']+' DIST='+selected_drive_links['dist']+' ONEWAY='+selected_drive_links['oneway'])
+                                        selected_drive_links['type']+'= '+selected_drive_links['link']+
+                                        ' MODE='+selected_drive_links['mode']+' DIST='+selected_drive_links['dist']+
+                                        ' SPEED='+selected_drive_links['speed']+
+                                        ' ONEWAY='+selected_drive_links['oneway'],
+                                        selected_drive_links['type']+'= '+selected_drive_links['link']+
+                                        ' MODE='+selected_drive_links['mode']+
+                                        ' DIST='+selected_drive_links['dist']+
+                                        ' ONEWAY='+selected_drive_links['oneway'])
 
-all_walk_links['text'] = np.where(all_walk_links['speed']!='',
-                                        all_walk_links['type']+'= '+all_walk_links['link']+' MODE='+all_walk_links['mode']+' DIST='+all_walk_links['dist']+' SPEED='+
-                                            all_walk_links['speed']+' ONEWAY='+all_walk_links['oneway'],
-                                        all_walk_links['type']+'= '+all_walk_links['link']+' MODE='+all_walk_links['mode']+' DIST='+all_walk_links['dist']+' ONEWAY='+all_walk_links['oneway'])
+all_walk_links_with_pnr['text'] = np.where(all_walk_links_with_pnr['speed']!='',
+                                        all_walk_links_with_pnr['type']+'= '+all_walk_links_with_pnr['link']+
+                                        ' MODE='+all_walk_links_with_pnr['mode']+
+                                        ' DIST='+all_walk_links_with_pnr['dist']+
+                                        ' SPEED='+all_walk_links_with_pnr['speed']+
+                                        ' ONEWAY='+all_walk_links_with_pnr['oneway'],
+                                        all_walk_links_with_pnr['type']+'= '+all_walk_links_with_pnr['link']+
+                                        ' MODE='+all_walk_links_with_pnr['mode']+
+                                        ' DIST='+all_walk_links_with_pnr['dist']+
+                                         ' TIME='+all_walk_links_with_pnr['TIME']+
+                                        ' ONEWAY='+all_walk_links_with_pnr['oneway'])
 
 knr_links['text'] = np.where(knr_links['speed']!='',
-                                        knr_links['type']+'= '+knr_links['link']+' MODE='+knr_links['mode']+' DIST='+knr_links['dist']+' SPEED='+
-                                            knr_links['speed']+' ONEWAY='+knr_links['oneway'],
-                                        knr_links['type']+'= '+knr_links['link']+' MODE='+knr_links['mode']+' DIST='+knr_links['dist']+' ONEWAY='+knr_links['oneway'])
+                             knr_links['type']+'= '+knr_links['link']+
+                             ' MODE='+knr_links['mode']+
+                             ' DIST='+knr_links['dist']+
+                             ' SPEED='+knr_links['speed']+
+                             ' ONEWAY='+knr_links['oneway'],
+                             knr_links['type']+'= '+knr_links['link']+
+                             ' MODE='+knr_links['mode']+
+                             ' DIST='+knr_links['dist']+
+                             ' ONEWAY='+knr_links['oneway'])
 
 
 
 with open (wlklink_filename, 'w') as f:
 
-    df_string  = all_walk_links[['text']].to_string(header=False, index=False)
+    df_string  = all_walk_links_with_pnr[['text']].to_string(header=False, index=False)
     f.write(df_string)
 
 print "Wrote walk links for {} period".format(timeperiod)
