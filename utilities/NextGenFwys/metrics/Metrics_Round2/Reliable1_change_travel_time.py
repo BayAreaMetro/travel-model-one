@@ -859,9 +859,9 @@ if __name__ == "__main__":
     PATHWAY1_SCENARIO_RUN_ID = pathway1_runs['directory'].tolist()[-1] # take the last one
     LOGGER.info("=> PATHWAY1_SCENARIO_RUN_ID = {}".format(PATHWAY1_SCENARIO_RUN_ID))
     TOLLED_FWY_MINOR_GROUP_LINKS_DF = determine_tolled_minor_group_links(PATHWAY1_SCENARIO_RUN_ID, "fwy")
-    # TOLLED_FWY_MINOR_GROUP_LINKS_DF.to_csv("TOLLED_FWY_MINOR_GROUP_LINKS.csv", index=False)
+    TOLLED_FWY_MINOR_GROUP_LINKS_DF.to_csv("TOLLED_FWY_MINOR_GROUP_LINKS.csv", index=False)
     TOLLED_FWY_CONGESTED_LINKS_DF = determine_congested_segment_links(PATHWAY1_SCENARIO_RUN_ID)
-    # TOLLED_FWY_CONGESTED_LINKS_DF.to_csv("TOLLED_FWY_CONGESTED_LINKS.csv", index=False)
+    TOLLED_FWY_CONGESTED_LINKS_DF.to_csv("TOLLED_FWY_CONGESTED_LINKS.csv", index=False)
 
     for tm_run_id in current_runs_list:
         out_filename = os.path.join(os.getcwd(),"Reliable1_change_in_travel_time_{}.csv".format(tm_run_id))
