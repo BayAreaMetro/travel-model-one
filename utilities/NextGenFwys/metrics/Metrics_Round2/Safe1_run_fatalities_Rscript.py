@@ -22,7 +22,7 @@ NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scena
 # Path to your R script
 if os.getenv("USERNAME") == 'jalatorre':
     R_SCRIPT_PATH = "C:\\Program Files\\R\\R-4.3.3\\bin\\x64\\Rscript.exe"
-elif os.getenv("USERNAME") == 'jalatorre':
+elif os.getenv("USERNAME") == 'mtcpb':
     R_SCRIPT_PATH = "C:\\Program Files\\R\\R-4.2.1\\bin\\x64\\Rscript.exe"
 else:
     # TODO: debug this to avoid hardcoding path
