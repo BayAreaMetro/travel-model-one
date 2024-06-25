@@ -1,23 +1,23 @@
 ﻿grouping,congested/other
-SF,Congested
-SFOSanMateo_101,Congested
-SFOSanMateo_280380,Congested
-SanMateo_101,Congested
-SanMateo_28092,Other
-SouthBay_Inner,Congested
-SouthBay_Outer10187,Congested
-SouthBay_Outer280680,Congested
-SCL_85,Congested
-Periphery_101SouthBay,Other
-AL_680,Congested
-CC_Southern_680,Other
-Periphery_580,Other
-EastBay_Outer580,Congested
-EastBay_Inner580,Congested
-EastBay_880680,Congested
-EastBay_InnerBBApproach80580880,Congested
-EastBay_68024980,Congested
-EastBay_Outer80,Congested
-Periphery_SR4,Congested
-Periphery_80Solano,Other
-Periphery_101NorthBay,Other
+SF,congested segment
+SFOSanMateo_101,congested segment
+SFOSanMateo_280380,congested segment
+SanMateo_101,congested segment
+SanMateo_28092,other segment
+SouthBay_Inner,congested segment
+SouthBay_Outer10187,congested segment
+SouthBay_Outer280680,congested segment
+SCL_85,congested segment
+Periphery_101SouthBay,other segment
+AL_680,congested segment
+CC_Southern_680,other segment
+Periphery_580,other segment
+EastBay_Outer580,congested segment
+EastBay_Inner580,congested segment
+EastBay_880680,congested segment
+EastBay_InnerBBApproach80580880,congested segment
+EastBay_68024980,congested segment
+EastBay_Outer80,congested segment
+Periphery_SR4,congested segment
+Periphery_80Solano,other segment
+Periphery_101NorthBay,other segment
