@@ -41,6 +41,10 @@ NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", 
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
 NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
 
+# load lookup table for congested minor groupings
+CONGESTED_GROUPINGS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "Round_2_ALT_Toll_Rates_Input.csv")
+CONGESTED_GROUPINGS_DF = pd.read_csv(CONGESTED_GROUPINGS_FILE)
+
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
 LOG_FILE                = "Reliable1_change_in_travel_time.log" # in the cwd
 LOGGER                  = None # will initialize in main     
@@ -73,7 +77,15 @@ def calculate_Reliable1_change_travel_time_on_freeways(tm_run_id: str) -> pd.Dat
     loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")    
     loaded_network_df = pd.read_csv(loaded_network_file)
     loaded_network_df.rename(columns=lambda x: x.strip(), inplace=True)
-    loaded_network_df['vmtAM_tot'] = loaded_network_df['distance'] * loaded_network_df['volAM_tot']
+
+    # load base network to use as source for VMT for weighted averages
+    base_network_file = os.path.join(NGFS_SCENARIOS, BASE_SCENARIO_RUN_ID, "OUTPUT", "avgload5period_vehclasses.csv")    
+    base_network_df = pd.read_csv(base_network_file)
+    base_network_df.rename(columns=lambda x: x.strip(), inplace=True)
+    base_network_df = base_network_df[['a', 'b', 'distance', 'volAM_tot']]
+    base_network_df['vmtAM_tot'] = base_network_df['distance'] * base_network_df['volAM_tot']
+    base_network_df.drop(columns=['distance','volAM_tot'], inplace=True)
+    loaded_network_df = pd.merge(left=loaded_network_df, right=base_network_df, how='left', left_on=['a','b'], right_on=['a','b'])
     LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
@@ -113,7 +125,7 @@ def calculate_Reliable1_change_travel_time_on_freeways(tm_run_id: str) -> pd.Dat
     sum_df['grouping'] = 'Sum of Values for Weighted Average'
     
     # add column for congested vs other segments then take average for both groupings
-    ctim_df = pd.merge(left = ctim_df, right = TOLLED_FWY_CONGESTED_LINKS_DF, how = 'left', left_on = ['grouping'], right_on = ['grouping'])
+    ctim_df = pd.merge(left = ctim_df, right = CONGESTED_GROUPINGS_DF, how = 'left', left_on = ['grouping'], right_on = ['grouping'])
     # filter out the congested segments
     congested_segments_df = ctim_df.loc[ctim_df['congested/other'] == 'congested segment']
     # add row for the averages from the congested segments
@@ -181,7 +193,15 @@ def calculate_Reliable1_change_travel_time_on_parallel_arterials(tm_run_id: str)
     loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
     loaded_network_df = pd.read_csv(loaded_network_file)
     loaded_network_df.rename(columns=lambda x: x.strip(), inplace=True)
-    loaded_network_df['vmtAM_tot'] = loaded_network_df['distance'] * loaded_network_df['volAM_tot']
+
+    # load base network to use as source for VMT for weighted averages
+    base_network_file = os.path.join(NGFS_SCENARIOS, BASE_SCENARIO_RUN_ID, "OUTPUT", "avgload5period_vehclasses.csv")    
+    base_network_df = pd.read_csv(base_network_file)
+    base_network_df.rename(columns=lambda x: x.strip(), inplace=True)
+    base_network_df = base_network_df[['a', 'b', 'distance', 'volAM_tot']]
+    base_network_df['vmtAM_tot'] = base_network_df['distance'] * base_network_df['volAM_tot']
+    base_network_df.drop(columns=['distance','volAM_tot'], inplace=True)
+    loaded_network_df = pd.merge(left=loaded_network_df, right=base_network_df, how='left', left_on=['a','b'], right_on=['a','b'])
     LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
@@ -279,7 +299,7 @@ def calculate_Reliable1_change_travel_time_on_parallel_arterials(tm_run_id: str)
     sum_df['grouping'] = 'Sum of Values for Weighted Average'
     
     # add column for congested vs other segments then take average for both groupings
-    ctim_df = pd.merge(left = ctim_df, right = TOLLED_FWY_CONGESTED_LINKS_DF, how = 'left', left_on = ['grouping'], right_on = ['grouping'])
+    ctim_df = pd.merge(left = ctim_df, right = CONGESTED_GROUPINGS_DF, how = 'left', left_on = ['grouping'], right_on = ['grouping'])
     # filter out the congested segments
     congested_segments_df = ctim_df.loc[ctim_df['congested/other'] == 'congested segment']
     # add row for the averages from the congested segments
@@ -347,7 +367,15 @@ def calculate_Reliable1_change_travel_time_on_parallel_arterials_epc_non(tm_run_
     loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
     loaded_network_df = pd.read_csv(loaded_network_file)
     loaded_network_df.rename(columns=lambda x: x.strip(), inplace=True)
-    loaded_network_df['vmtAM_tot'] = loaded_network_df['distance'] * loaded_network_df['volAM_tot']
+
+    # load base network to use as source for VMT for weighted averages
+    base_network_file = os.path.join(NGFS_SCENARIOS, BASE_SCENARIO_RUN_ID, "OUTPUT", "avgload5period_vehclasses.csv")    
+    base_network_df = pd.read_csv(base_network_file)
+    base_network_df.rename(columns=lambda x: x.strip(), inplace=True)
+    base_network_df = base_network_df[['a', 'b', 'distance', 'volAM_tot']]
+    base_network_df['vmtAM_tot'] = base_network_df['distance'] * base_network_df['volAM_tot']
+    base_network_df.drop(columns=['distance','volAM_tot'], inplace=True)
+    loaded_network_df = pd.merge(left=loaded_network_df, right=base_network_df, how='left', left_on=['a','b'], right_on=['a','b'])
     LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
@@ -524,7 +552,15 @@ def calculate_Reliable1_change_travel_time_on_GoodsRoutes(tm_run_id: str) -> pd.
     loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
     loaded_network_df = pd.read_csv(loaded_network_file)
     loaded_network_df.rename(columns=lambda x: x.strip(), inplace=True)
-    loaded_network_df['vmtAM_tot'] = loaded_network_df['distance'] * loaded_network_df['volAM_tot']
+
+    # load base network to use as source for VMT for weighted averages
+    base_network_file = os.path.join(NGFS_SCENARIOS, BASE_SCENARIO_RUN_ID, "OUTPUT", "avgload5period_vehclasses.csv")    
+    base_network_df = pd.read_csv(base_network_file)
+    base_network_df.rename(columns=lambda x: x.strip(), inplace=True)
+    base_network_df = base_network_df[['a', 'b', 'distance', 'volAM_tot']]
+    base_network_df['vmtAM_tot'] = base_network_df['distance'] * base_network_df['volAM_tot']
+    base_network_df.drop(columns=['distance','volAM_tot'], inplace=True)
+    loaded_network_df = pd.merge(left=loaded_network_df, right=base_network_df, how='left', left_on=['a','b'], right_on=['a','b'])
     LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
@@ -614,7 +650,15 @@ def calculate_Reliable1_change_travel_time_on_Othercorridors(tm_run_id: str) -> 
     loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
     loaded_network_df = pd.read_csv(loaded_network_file)
     loaded_network_df.rename(columns=lambda x: x.strip(), inplace=True)
-    loaded_network_df['vmtAM_tot'] = loaded_network_df['distance'] * loaded_network_df['volAM_tot']
+
+    # load base network to use as source for VMT for weighted averages
+    base_network_file = os.path.join(NGFS_SCENARIOS, BASE_SCENARIO_RUN_ID, "OUTPUT", "avgload5period_vehclasses.csv")    
+    base_network_df = pd.read_csv(base_network_file)
+    base_network_df.rename(columns=lambda x: x.strip(), inplace=True)
+    base_network_df = base_network_df[['a', 'b', 'distance', 'volAM_tot']]
+    base_network_df['vmtAM_tot'] = base_network_df['distance'] * base_network_df['volAM_tot']
+    base_network_df.drop(columns=['distance','volAM_tot'], inplace=True)
+    loaded_network_df = pd.merge(left=loaded_network_df, right=base_network_df, how='left', left_on=['a','b'], right_on=['a','b'])
     LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
@@ -749,74 +793,6 @@ def determine_tolled_minor_group_links(tm_run_id: str, fwy_or_arterial: str) -> 
     LOGGER.debug("  Returning {:,} links:\n{}".format(len(grouping_df), grouping_df))
     return grouping_df
 
-def determine_congested_segment_links(tm_run_id: str) -> pd.DataFrame:
-    """ Given a travel model run ID, reads the loaded network and the tollclass designations,
-    and returns a table that will be used to define which links belong to which tollclass minor grouping.
-
-        Args:
-        tm_run_id (str):      travel model run ID (should be Pathway 1 or 2)
-
-    Returns:
-        pd.DataFrame: mapping from links to tollclass minor groupings.  Columns:
-        a (int):              link A node
-        b (int):              link B node
-    """
-
-    LOGGER.info("=== determine_congested_segment_links({}) ===".format(tm_run_id))
-    loaded_roadway_network = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "avgload5period_vehclasses.csv")
-    tm_loaded_network_df = pd.read_csv(loaded_roadway_network, 
-                                       usecols=['a', 'b', 'tollclass', 'useAM', 'distance', 'tollAM_da', 'tollPM_da'],
-                                       dtype={'a':numpy.int64, 'b':numpy.int64, 'tollclass':numpy.int64},
-                                       na_values=[''])
-    LOGGER.info("  Read {:,} rows from {}".format(len(tm_loaded_network_df), loaded_roadway_network))
-
-    # read toll class groupings
-    tollclass_df = pd.read_excel(NGFS_TOLLCLASS_FILE)
-    LOGGER.info("  Read {:,} rows from {}".format(len(tollclass_df), NGFS_TOLLCLASS_FILE))
-    # select NextGenFwy tollclasses where 'Grouping minor' exists
-    tollclass_df = tollclass_df.loc[(tollclass_df.project == 'NextGenFwy') & pd.notna(tollclass_df['Grouping minor'])]
-
-    # See TOLLCLASS_Designations.xlsx workbook, Readme - numbering convention
-    tollclass_df = tollclass_df.loc[(tollclass_df.tollclass > 30)]
-    
-    LOGGER.info("  Filtered to {:,} rows for project=='NextGenFwy' with notna 'Grouping minor' and links in the peak AM direction".format(
-    len(tollclass_df)))
-    # LOGGER.info("  Grouping minor: {}".format(sorted(tollclass_df['Grouping minor'].to_list())))
-
-    # add to loaded roadway network -- INNER JOIN
-    grouping_df = pd.merge(
-        left=tm_loaded_network_df,
-        right=tollclass_df[['tollclass','Grouping minor']],
-        on=['tollclass'],
-        how='inner'
-    )
-    
-    # calculate toll per mile for each link
-    grouping_df['toll_per_mile_AM_da'] = grouping_df['tollAM_da'] / grouping_df['distance']
-    grouping_df['toll_per_mile_PM_da'] = grouping_df['tollPM_da'] / grouping_df['distance']
-    # Calculate row-wise average and round the result
-    grouping_df['toll_per_mile_PeakPeriod_da'] = (grouping_df['toll_per_mile_AM_da'] + grouping_df['toll_per_mile_PM_da']) / 2  # Calculate average
-    # grouping_df['toll_per_mile_PeakPeriod_da'] = grouping_df['toll_per_mile_PeakPeriod_da'].round()     # Round the result
-
-    # remove rows with 'toll_per_mile_PeakPeriod_da' that isn't 3, 5, or 16 cents
-    # meant to remove links with bridge tolls
-    grouping_df = grouping_df.loc[
-        (grouping_df.toll_per_mile_PeakPeriod_da > 0) & 
-        (grouping_df.toll_per_mile_PeakPeriod_da < 17)
-    ]
-    # remove rows of HOV links
-    grouping_df = grouping_df.loc[(grouping_df.useAM == 1)]
-
-    # split 'Grouping minor' to 'grouping' (now without direction)
-    grouping_df['grouping']     = grouping_df['Grouping minor'].str[:-3]
-    grouping_df['congested/other'] = 'other segment'
-    grouping_df.loc[(grouping_df.toll_per_mile_PeakPeriod_da > 10),'congested/other'] = 'congested segment'
-    grouping_df = grouping_df.groupby(by=['grouping', 'congested/other']).agg({'toll_per_mile_PeakPeriod_da':'mean'}).reset_index()
-    grouping_df.drop(columns=['toll_per_mile_PeakPeriod_da'], inplace=True)
-    LOGGER.debug("  Returning {:,} links:\n{}".format(len(grouping_df), grouping_df))
-    return grouping_df
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=USAGE, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--skip_if_exists", action="store_true", help="Use this option to skip creating metrics files if one exists already")
@@ -853,6 +829,11 @@ if __name__ == "__main__":
     LOGGER.info("current_runs_df: \n{}".format(current_runs_df))
 
     current_runs_list = current_runs_df['directory'].to_list()
+    
+    # define base run inputs
+    # # base year run for comparisons = most recent Pathway 4 (No New Pricing) run
+    pathway4_runs = current_runs_df.loc[ current_runs_df['category']=="Pathway 4" ]
+    BASE_SCENARIO_RUN_ID = pathway4_runs['directory'].tolist()[-1] # take the last one
       
     # find the last pathway 1 run, since we'll use that to determine which links are in the fwy minor groupings
     pathway1_runs = current_runs_df.loc[ current_runs_df['category'].str.startswith("P1_AllLaneTolling")]
@@ -860,8 +841,6 @@ if __name__ == "__main__":
     LOGGER.info("=> PATHWAY1_SCENARIO_RUN_ID = {}".format(PATHWAY1_SCENARIO_RUN_ID))
     TOLLED_FWY_MINOR_GROUP_LINKS_DF = determine_tolled_minor_group_links(PATHWAY1_SCENARIO_RUN_ID, "fwy")
     TOLLED_FWY_MINOR_GROUP_LINKS_DF.to_csv("TOLLED_FWY_MINOR_GROUP_LINKS.csv", index=False)
-    TOLLED_FWY_CONGESTED_LINKS_DF = determine_congested_segment_links(PATHWAY1_SCENARIO_RUN_ID)
-    TOLLED_FWY_CONGESTED_LINKS_DF.to_csv("TOLLED_FWY_CONGESTED_LINKS.csv", index=False)
 
     for tm_run_id in current_runs_list:
         out_filename = os.path.join(os.getcwd(),"Reliable1_change_in_travel_time_{}.csv".format(tm_run_id))
