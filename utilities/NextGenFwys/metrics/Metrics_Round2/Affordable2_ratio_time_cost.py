@@ -179,13 +179,6 @@ METRICS_COLUMNS = [
     'value'
 ]
 
-# TODO deprecate use of the file below
-# load minor groupings, to be merged with loaded network
-MINOR_LINKS_DF = pd.read_csv('L:\\Application\\Model_One\\NextGenFwys\\metrics\\Input Files\\a_b_with_minor_groupings.csv')
-# list for iteration
-MINOR_GROUPS = MINOR_LINKS_DF['Grouping minor'].unique()[1:] #exclude 'other' and NaN
-MINOR_GROUPS = numpy.delete(MINOR_GROUPS, 2)
-
 def calculate_change_between_run_and_base(tm_run_id, BASE_SCENARIO_RUN_ID, year, metric_id, metrics_dict):
     #function to compare two runs and enter difference as a metric in dictionary
     LOGGER.debug("calculating change between run and base for metric: \n{} for runs \n{} and \n{}".format(metric_id, tm_run_id, BASE_SCENARIO_RUN_ID))
@@ -428,8 +421,8 @@ def Affordable2_ratio_time_cost(tm_run_id):
     tm_loaded_network_df['a_b'] = tm_loaded_network_df['A'].astype(str) + "_" + tm_loaded_network_df['B'].astype(str)
     
     # merge MINOR_GROUPS_DF
-    tm_loaded_network_df = tm_loaded_network_df.merge(MINOR_LINKS_DF, on='a_b', how='left')
-    
+    tm_loaded_network_df = pd.merge(left=tm_loaded_network_df, right=TOLLED_FWY_MINOR_GROUP_LINKS_DF, how='left', left_on=['A','B'], right_on=['a','b'])
+
     LOGGER.info("  Read {:,} rows from {}".format(len(tm_loaded_network_df), loaded_roadway_network))
     LOGGER.debug("  Head:\n{}".format(tm_loaded_network_df.head()))
 
@@ -441,7 +434,7 @@ def Affordable2_ratio_time_cost(tm_run_id):
     tm_loaded_network_df_base['a_b'] = tm_loaded_network_df_base['A'].astype(str) + "_" + tm_loaded_network_df_base['B'].astype(str)
     
     # merge MINOR_GROUPS_DF
-    tm_loaded_network_df_base = tm_loaded_network_df_base.merge(MINOR_LINKS_DF, on='a_b', how='left')
+    tm_loaded_network_df_base = pd.merge(left=tm_loaded_network_df_base, right=TOLLED_FWY_MINOR_GROUP_LINKS_DF, how='left', left_on=['A','B'], right_on=['a','b'])
     
     LOGGER.info("  Read {:,} rows from {}".format(len(tm_loaded_network_df_base), base_loaded_roadway_network))
     LOGGER.debug("  Head:\n{}".format(tm_loaded_network_df_base.head()))
@@ -892,6 +885,9 @@ if __name__ == "__main__":
     PATHWAY1_SCENARIO_RUN_ID = pathway1_runs['directory'].tolist()[-1] # take the last one
     LOGGER.info("=> PATHWAY1_SCENARIO_RUN_ID = {}".format(PATHWAY1_SCENARIO_RUN_ID))
     TOLLED_FWY_MINOR_GROUP_LINKS_DF = determine_tolled_minor_group_links(PATHWAY1_SCENARIO_RUN_ID, "fwy")
+    TOLLED_FWY_MINOR_GROUP_LINKS_DF['Grouping minor_AMPM'] = TOLLED_FWY_MINOR_GROUP_LINKS_DF['grouping'] + '_' + TOLLED_FWY_MINOR_GROUP_LINKS_DF['grouping_dir']
+    # list for iteration
+    MINOR_GROUPS = TOLLED_FWY_MINOR_GROUP_LINKS_DF['grouping'].unique()
     # TOLLED_FWY_MINOR_GROUP_LINKS_DF.to_csv("TOLLED_FWY_MINOR_GROUP_LINKS.csv", index=False)
     
     for tm_run_id in current_runs_list:
