@@ -10,9 +10,8 @@ set M_DIR=L:\Application\Model_One\NextGenFwys_Round2\Scenarios\2035_TM160_NGFr2
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 :: The NGF NoProject scenario excludes some Blueprint strategies. Most of them are excluded via the netspec.
 :: But Vision Zero needs to be excluded via the setupmodel (in additional to via the netspec)
-:: set NGFNoProject=Yes if this is a NGF NoProject run.
 set AddStrategies=Yes
-set NGFNoProject=No
+set VisionZero=ON
 
 :: set the location of the Travel Model Release/Branch
 set GITHUB_DIR=X:\travel-model-one-MinVtoll_TollCap
@@ -298,8 +297,12 @@ if %MODEL_YEAR_NUM% GEQ 2035 (
 :: Start year (freeways): 2030
 :: Start year (local streets): 2025
 
-if %MODEL_YEAR_NUM%==2025 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapacity_1hour_2025.block"            "CTRAMP\scripts\block\SpeedCapacity_1hour.block")
-if %MODEL_YEAR_NUM% GEQ 2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapacity_1hour_2030to2050.block"   "CTRAMP\scripts\block\SpeedCapacity_1hour.block")
+if %VisionZero%==ON ( 
+   rem Start year (freeways): 2030
+   rem Start year (local streets): 2025
+   if %MODEL_YEAR_NUM%==2025 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapacity_1hour_2025.block"            "CTRAMP\scripts\block\SpeedCapacity_1hour.block")   
+   if %MODEL_YEAR_NUM% GEQ 2030 (copy /Y "%BP_OVERRIDE_DIR%\Vision_Zero\SpeedCapacity_1hour_2030to2050.block"   "CTRAMP\scripts\block\SpeedCapacity_1hour.block")
+)
 
 :: ------
 :: Blueprint Per-Mile Tolling on Congested Freeways
