@@ -468,7 +468,7 @@ if __name__ == "__main__":
 
     # define base run inputs
     # # base year run for comparisons = most recent Pathway 4 (No New Pricing) run
-    pathway4_runs = current_runs_df.loc[ current_runs_df['category']=="Pathway 4" ]
+    pathway4_runs = current_runs_df.loc[ current_runs_df['category']=="NoProject" ]
     BASE_SCENARIO_RUN_ID = pathway4_runs['directory'].tolist()[-1] # take the last one
     LOGGER.info("=> BASE_SCENARIO_RUN_ID = {}".format(BASE_SCENARIO_RUN_ID))
 
