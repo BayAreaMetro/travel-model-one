@@ -289,7 +289,7 @@ for run in runs:
   final_df['m1_TTS_pct'] = out_frame.copy().loc[(out_frame['metric_desc'].str.contains('pct') == True)&(out_frame['metric_desc'].str.contains('time') == True)].reset_index(drop=True)['value']
   # map 1 Toll Value (per mile, 2023$)
   final_df['m1_TollVal'] = out_frame.copy().loc[(out_frame['metric_desc'].str.contains('change') == False)&(out_frame['metric_desc'].str.contains('toll') == True)].reset_index(drop=True)['value']
-  # final_df['Freeway Trips'] = out_frame.copy().loc[(out_frame['metric_desc'].str.contains('change') == False)&(out_frame['metric_desc'].str.contains('Freeway_trips') == True)].reset_index(drop=True)['value']
+  final_df['Freeway Trips'] = (out_frame.copy().loc[(out_frame['metric_desc'].str.contains('change') == False)&(out_frame['metric_desc'].str.contains('Freeway_trips') == True)].reset_index(drop=True)['value'])/4
   # map 2 Trips change (absolute number) on: freeways
   final_df['m2_fwytrip'] = out_frame.copy().loc[(out_frame['metric_desc'].str.contains('pct') == False)&(out_frame['metric_desc'].str.contains('change') == True)&(out_frame['metric_desc'].str.contains('Freeway_trips') == True)].reset_index(drop=True)['value']
   # final_df['Freeway Trips Pct Change'] = out_frame.copy().loc[(out_frame['metric_desc'].str.contains('pct') == True)&(out_frame['metric_desc'].str.contains('change') == True)&(out_frame['metric_desc'].str.contains('Freeway_trips') == True)].reset_index(drop=True)['value']
