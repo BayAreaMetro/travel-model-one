@@ -18,8 +18,7 @@ setlocal enabledelayedexpansion
 
 for /d %%f in (
 
-NGF_Networks_NGFround2_P4_09\NGF_R2_R2P4_2035_Express_Lanes_network_2035
-NGF_Networks_NGFround2_P6_13\NGF_R2_R2P6_Dual_Express_Lanes_network_2035
+NGF_Networks_NGFround2_P6_14\NGF_R2_R2P6_Dual_Express_Lanes_network_2035
 
 )    do    (
 

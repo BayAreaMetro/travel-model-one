@@ -144,3 +144,6 @@ new_tolls <- new_tolls[order(new_tolls$tollclass),]
 
 file.rename(TOLLS_CSV_PATH, paste(NETWORK_DIR, "hwy", "tolls_old.csv", sep = "/"))
 write.csv(new_tolls, paste(NETWORK_DIR, "hwy", "tolls.csv", sep = "/"), row.names = FALSE)
+
+# Save missing tolls to tolls_missing.csv for committing to the relevant NetworkProject
+write.csv(min_tolls, paste(NETWORK_DIR, "hwy", "tolls_missing.csv", sep = "/"), row.names = FALSE)
