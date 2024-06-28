@@ -30,6 +30,17 @@ TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__
 NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns_Round2.xlsx")
 NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
 CORRESPOND_LINK_TO_TAZ_SCRIPT = "X:\\travel-model-one-master\\utilities\\cube-to-shapefile\\correspond_link_to_TAZ.py"
+RUN_NEXT_GEN_FWYS_METRICS_BAT = "X:\\travel-model-one-master\\utilities\\NextGenFwys\\RunNextGenFwysMetrics.bat"
+ANALYSE_VTOLL_DISTRIBUTION_SCRIPT = 'X:\\travel-model-one-master\\utilities\\NextGenFwys\\metrics\\Analyse_vtoll_distribution_Copy.R'
+
+# Path to your R script
+if os.getenv("USERNAME") == 'jalatorre':
+    R_SCRIPT_PATH = "C:\\Program Files\\R\\R-4.3.3\\bin\\x64\\Rscript.exe"
+    R_HOME = "C:\\Program Files\\R\\R-4.3.3"
+elif os.getenv("USERNAME") == 'mtcpb':
+    R_SCRIPT_PATH = "C:\\Program Files\\R\\R-4.4.1\\bin\\x64\\Rscript.exe"
+    R_HOME = "C:\\Program Files\\R\\R-4.4.1"
+    
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
 LOG_FILE                = "post_run_model_steps.log" # in the cwd
 LOGGER                  = None # will initialize in main     
@@ -59,7 +70,7 @@ if __name__ == "__main__":
     fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p'))
     LOGGER.addHandler(fh)
 
-    current_runs_df = pd.read_excel(NGFS_MODEL_RUNS_FILE, sheet_name='all_runs', usecols=['project','year','directory','run_set','category','short_name','status'])
+    current_runs_df = pd.read_excel(NGFS_MODEL_RUNS_FILE, sheet_name='all_runs', usecols=['project','year','directory','run_set','category','short_name','status','path_on_model3-a'])
     current_runs_df = current_runs_df.loc[current_runs_df['status'] == 'current']
     # only process metrics for 2035 model runs 
     current_runs_df = current_runs_df.loc[current_runs_df['year'] == 2035]
@@ -114,6 +125,95 @@ if __name__ == "__main__":
             
         else:
             print(network_links_TAZ_directory + " exists.")
+
+        LOGGER.info("@@@@@@@@@@@@@ Done")
+
+        # for testing, stop here
+        # sys.exit()
+        
+    # run run_vNctoll_Analysis.bat and RunNextGenFwysMetrics.bat using mapped network drives
+    current_runs_list = current_runs_df['path_on_model3-a'].to_list()
+    script1_to_copy = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "extract_cost_skims.job")
+    script2_to_copy = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "travel-cost-by-income-driving-households.r")
+
+    for project_path in current_runs_list:
+        LOGGER.info("Processing run {}".format(project_path))
+        
+        # Change the directory to the desired location
+        new_directory = os.path.join(project_path)
+        os.chdir(new_directory)
+        # Set environment variables
+        os.environ["ITER"] = "3"
+        os.environ["SAMPLEHARE"] = "0.5"
+        os.environ["MODEL_YEAR"] = "2035"
+        os.environ["R_HOME"] = R_HOME
+        
+        # define directory for file and script of interest
+        file_to_check_directory = os.path.join(project_path, "skims", "trnskm_cost_ev.csv")
+        script1_destination = os.path.join(project_path, "CTRAMP", "scripts", "metrics", "extract_cost_skims.job")
+        script2_destination = os.path.join(project_path, "CTRAMP", "scripts", "metrics", "travel-cost-by-income-driving-households.r")
+        
+        # Check if the network_links.shp file exists
+        if not os.path.exists(file_to_check_directory):
+            print(file_to_check_directory + " does not exist, running RunNextGenFwysMetrics.bat")
+            # Run the batch script
+            try:
+                print("copying scripts: extract_cost_skims.job & travel-cost-by-income-driving-households.r")
+                # Copy file
+                shutil.copy(script1_to_copy, script1_destination)
+                print(f"File copied successfully from {script1_to_copy} to {script1_destination}")
+                shutil.copy(script2_to_copy, script2_destination)
+                print(f"File copied successfully from {script2_to_copy} to {script2_destination}")
+                
+                print("RunNextGenFwysMetrics.bat started.")
+                # Execute the batch file
+                subprocess.run(RUN_NEXT_GEN_FWYS_METRICS_BAT, shell=True)
+                print("RunNextGenFwysMetrics.bat executed successfully!")
+                # programatically "press enter" to continue with other subprocesses
+                os.system("\n")
+            except subprocess.CalledProcessError as e:
+                print(f"Error executing RunNextGenFwysMetrics.bat: {e}")
+            
+        else:
+            print(file_to_check_directory + " exists.")
+            
+        # define directory for file
+        affordable_percentiles_file_directory = os.path.join(project_path, "updated_output_copy", "hhld_vNctoll_percentiles_Q4.csv")
+            
+        # Check if the network_links_TAZ.csv file exists
+        if not os.path.exists(affordable_percentiles_file_directory):
+            print(affordable_percentiles_file_directory + " does not exist, running Analyse_vtoll_distribution_Copy.R")
+            # Run the batch script
+            try:
+                # Get the current working directory
+                current_dir = os.getcwd()
+
+                # Set TARGET_DIR to the current working directory
+                TARGET_DIR = current_dir
+                
+                print("Analyse_vtoll_distribution_Copy.R started.")
+                # Define the command to run script
+                command = [R_SCRIPT_PATH, ANALYSE_VTOLL_DISTRIBUTION_SCRIPT]
+                # Run the command
+                subprocess.run(command, check=True)
+                print("Analyse_vtoll_distribution_Copy.R executed successfully!")
+                # programatically "press enter" to continue with other subprocesses
+                os.system("\n")
+            except subprocess.CalledProcessError as e:
+                print(f"Error executing Analyse_vtoll_distribution_Copy.R: {e}")
+                
+            run_id = os.path.basename(project_path)  # Extracting the last part of the directory as run_id
+
+            # Perform the file copy
+            for Q in [1,2,3,4]:
+                # Define source and destination paths for each file
+                source = os.path.join(TARGET_DIR, 'updated_output_copy', 'hhld_vNctoll_percentiles_Q{}.csv'.format(Q))
+                destination = 'L:\\Application\\Model_One\\NextGenFwys_Round2\\across_runs_union\\hhld_vNctoll_percentiles_Q{}_{}.csv'.format(Q,run_id)
+                shutil.copy(source, destination)
+                print(f"File copied: {source} --> {destination}")
+            
+        else:
+            print(affordable_percentiles_file_directory + " exists.")
 
         LOGGER.info("@@@@@@@@@@@@@ Done")
 
