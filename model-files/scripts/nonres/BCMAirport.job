@@ -416,7 +416,7 @@ RUN PGM=MATRIX
   ZONES = 6593
 
   MATI[1] = skims\HWYSKMMD.TPP
-  MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.TPP
+  MATI[3] = skims\TRNSKMMD_WLK_COM_WLK.TPP
   MATI[5] = nonres\2015_PTrips_AirPass.MAT
   ZDATI[1] = landuse\TAZDATA.DBF
   
@@ -589,7 +589,7 @@ RUN PGM=MATRIX
   ZONES = 6593
 
   MATI[1] = skims\HWYSKMMD.TPP
-  MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.TPP
+  MATI[3] = skims\TRNSKMMD_WLK_COM_WLK.TPP
   MATI[5] = nonres\2015_PTrips_AirPass.MAT
   ZDATI[1] = landuse\TAZDATA.DBF
   
@@ -773,7 +773,7 @@ RUN PGM=MATRIX
   ZONES = 6593
 
   MATI[1] = skims\HWYSKMMD.TPP
-  MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.TPP
+  MATI[3] = skims\TRNSKMMD_WLK_COM_WLK.TPP
   MATI[5] = nonres\2015_PTrips_AirPass.MAT
   ZDATI[1] = landuse\TAZDATA.DBF
   
@@ -949,7 +949,7 @@ RUN PGM=MATRIX
   ZONES = 6593
 
   MATI[1] = skims\HWYSKMMD.TPP
-  MATI[3] = skims\TRNSKMMD_WLK_TRN_WLK.TPP
+  MATI[3] = skims\TRNSKMMD_WLK_COM_WLK.TPP
   MATI[5] = nonres\2015_PTrips_AirPass.MAT
   ZDATI[1] = landuse\TAZDATA.DBF
   
@@ -1166,7 +1166,7 @@ RUN PGM=MATRIX
           Transit_RB,Transit_RNB,Transit_VB,Transit_VNB,Transit_AirPass,
           AirPass_HBW, AirPass_HSR, AirPass_NHB, AirPass_Total
   MATO[2] = nonres\2015_APVEHTRIPS.MAT, MO=16-20,
-    NAME= Auto_DA,Auto_SR2,Auto_SR3,wlk_hvy_wlk, drv_hvy_wlk
+    NAME= Auto_DA,Auto_SR2,Auto_SR3,wlk_com_wlk, drv_com_wlk
          
   ; Auto Trips (add Auto and On-Call)
   MW[1] = MI.1.Auto + MI.1.OnCall   ; Resident Business (add to HBW)
@@ -1202,12 +1202,12 @@ RUN PGM=MATRIX
 	;drv_loc_wlk, drv_lrf_wlk, drv_exp_wlk, drv_hvy_wlk, drv_com_wlk,
 	;wlk_loc_drv, wlk_lrf_drv, wlk_exp_drv, wlk_hvy_drv, wlk_com_drv
 	
-	;Allowable transit modes, drive egress not considered, only heavy rail modes considered
+	;Allowable transit modes
 	;
-	;wlk_hvy_wlk, drv_hvy_wlk
+	;wlk_com_wlk, drv_com_wlk
 	
-  MW[19] = MW[10]/2
-  MW[20] = MW[10]/2
+  MW[19] = MW[10]*1.0
+  MW[20] = MW[10]*0.0
 	
 					
 
@@ -1242,11 +1242,11 @@ RUN PGM=MATRIX
   MATO[4] = nonres\tripsAirPaxPM.tpp, MO=19-24, NAME=DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
   MATO[5] = nonres\tripsAirPaxEV.tpp, MO=25-30, NAME=DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
   
-  MATO[6]  = nonres\trntripsAirPaxEA.tpp, MO=31-32, NAME = wlk_hvy_wlk, drv_hvy_wlk
-  MATO[7]  = nonres\trntripsAirPaxAM.tpp, MO=33-34, NAME = wlk_hvy_wlk, drv_hvy_wlk
-  MATO[8]  = nonres\trntripsAirPaxMD.tpp, MO=35-36, NAME = wlk_hvy_wlk, drv_hvy_wlk
-  MATO[9]  = nonres\trntripsAirPaxPM.tpp, MO=37-38, NAME = wlk_hvy_wlk, drv_hvy_wlk
-  MATO[10] = nonres\trntripsAirPaxEV.tpp, MO=39-40, NAME = wlk_hvy_wlk, drv_hvy_wlk 
+  MATO[6]  = nonres\trntripsAirPaxEA.tpp, MO=31-32, NAME = wlk_com_wlk, drv_com_wlk
+  MATO[7]  = nonres\trntripsAirPaxAM.tpp, MO=33-34, NAME = wlk_com_wlk, drv_com_wlk
+  MATO[8]  = nonres\trntripsAirPaxMD.tpp, MO=35-36, NAME = wlk_com_wlk, drv_com_wlk
+  MATO[9]  = nonres\trntripsAirPaxPM.tpp, MO=37-38, NAME = wlk_com_wlk, drv_com_wlk
+  MATO[10] = nonres\trntripsAirPaxEV.tpp, MO=39-40, NAME = wlk_com_wlk, drv_com_wlk 
   
   
   
