@@ -4,6 +4,7 @@ from collections import OrderedDict, defaultdict
 from dbfread import DBF
 import math
 import csv
+import simpledbf
 pd.options.mode.chained_assignment = None  # default='warn'
 INFLATION_FACTOR = 1.03
 INFLATION_00_23 = (327.06 / 180.20) * INFLATION_FACTOR
@@ -144,41 +145,25 @@ def calculate_map_data(tm_runid, year, tm_loaded_network_df, representative_link
     # find the change in thravel time for each corridor
     calculate_change_between_run_and_base(tm_runid, tm_runid_base, year, 'Reliable 1', metrics_dict)
 
-TM1_GIT_DIR             = "C:\\Users\\jalatorre\\Documents\\GitHub\\travel-model-one"
-NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns.xlsx")
+
+# paths
+TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "ModelRuns_Round2.xlsx")
+NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Scenarios"
 NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "TOLLCLASS_Designations.xlsx")
-# TM1_GIT_DIR             = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-# NGFS_MODEL_RUNS_FILE    = os.path.join(TM1_GIT_DIR, "NextGenFwys", "ModelRuns.xlsx")
-# NGFS_TOLLCLASS_FILE     = os.path.join(TM1_GIT_DIR, "NextGenFwys", "TOLLCLASS_Designations.xlsx")
-NGFS_SCENARIOS          = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios"
 current_runs_df = pd.read_excel(NGFS_MODEL_RUNS_FILE, sheet_name='all_runs', usecols=['project','year','directory','run_set','category','short_name','status'])
 current_runs_df = current_runs_df.loc[ current_runs_df['status'] == 'current']
 # only process metrics for 2035 model runs 
 current_runs_df = current_runs_df.loc[ current_runs_df['year'] == 2035]
-pathway1_runs = current_runs_df.loc[ current_runs_df['category'].str.startswith("Pathway 1")]
+pathway1_runs = current_runs_df.loc[ current_runs_df['category'].str.startswith("P1")]
 PATHWAY1_SCENARIO_RUN_ID = pathway1_runs['directory'].tolist()[-1] # take the last one
 TOLLED_FWY_MINOR_GROUP_LINKS_DF = determine_tolled_minor_group_links(PATHWAY1_SCENARIO_RUN_ID, "fwy")
 
-TOLLED_FWY_MINOR_GROUP_LINKS_DF
-
-# # all current runs
-# current_runs_location = "C:\\Users\\jalatorre\\Documents\\GitHub\\travel-model-one\\utilities\\NextGenFwys\\ModelRuns1.xlsx"
-# current_runs_df = pd.read_excel(current_runs_location, sheet_name='all_runs')
-# current_runs_list = current_runs_df.loc[current_runs_df['status'] == 'current', 'directory']
-# # only process metrics for 2035 model runs 
-# current_runs_df = current_runs_df.loc[ current_runs_df['year'] == 2035]
-run1a = current_runs_df.loc[ current_runs_df['directory'].str.contains('Path1a') == True].iloc[-1]['directory']
-run1b = current_runs_df.loc[ current_runs_df['directory'].str.contains('Path1b') == True].iloc[-1]['directory']
-run2a = current_runs_df.loc[ current_runs_df['directory'].str.contains('Path2a') == True].iloc[-1]['directory']
-run2b = current_runs_df.loc[ current_runs_df['directory'].str.contains('Path2b') == True].iloc[-1]['directory']
-run4 = current_runs_df.loc[ current_runs_df['directory'].str.contains('Path4') == True].iloc[-1]['directory']
-runs = [run1a, run1b, run2a, run2b, run4]
+current_runs_list = current_runs_df['directory'].to_list()
 
 # load minor groupings, to be merged with loaded network
-# minor_links_df = pd.read_csv('C:\\Users\\jalatorre\\Box\\NextGen Freeways Study\\07 Tasks\\07_AnalysisRound1\\202302 Metrics Scripting\\Input Files\\a_b_with_minor_groupings.csv')
 minor_links_df = TOLLED_FWY_MINOR_GROUP_LINKS_DF
-representative_links_lookup = "C:\\Users\\jalatorre\\Box\\NextGen Freeways Study\\07 Tasks\\07_AnalysisRound1\\Corridor Level Visualization\\NGFS_CorridorMaps_SketchData_v3.xlsx"
-# representative_links_lookup = os.path.join(TM1_GIT_DIR, "NextGenFwys", "metrics", "Input Files", "NGFS_CorridorMaps_SketchData_v3.xlsx")
+representative_links_lookup = os.path.join(TM1_GIT_DIR, "NextGenFwys", "metrics", "Input Files", "NGFS_CorridorMaps_SketchData_v3.xlsx")
 representative_links_df = pd.read_excel(representative_links_lookup, sheet_name='am_links')
 # list for iteration
 # minor_groups = minor_links_df['Grouping minor'].dropna().unique()[1:] #exclude 'other' and NaN
@@ -188,8 +173,8 @@ minor_groups = TOLLED_FWY_MINOR_GROUP_LINKS_DF['grouping'].unique()
 # define base run inputs
 # # base year run for comparisons (no project)
 # ______load no project network to use for speed comparisons in vmt corrections______
-tm_run_location_base = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\2035_TM152_NGF_NP10_Path4_02"
-tm_runid_base = tm_run_location_base.split('\\')[-1]
+tm_runid_base = "2035_TM160_NGF_r2_NoProject_04"
+tm_run_location_base = os.path.join(NGFS_SCENARIOS, tm_runid_base)
 # tm_run_location_base = os.path.join(NGFS_SCENARIOS, run4)
 # tm_runid_base = run4
 # ______define the base run inputs for "change in" comparisons______
@@ -197,13 +182,13 @@ tm_loaded_network_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/avgload5pe
 tm_loaded_network_df_base = tm_loaded_network_df_base.rename(columns=lambda x: x.strip())
 # merging df that has the list of minor segments with loaded network - for corridor analysis
 tm_loaded_network_df_base['a_b'] = tm_loaded_network_df_base['a'].astype(str) + "_" + tm_loaded_network_df_base['b'].astype(str)
-network_links_dbf_base = pd.read_csv(tm_run_location_base + '\\OUTPUT\\shapefile\\network_links_reduced_file.csv')
+network_links_dbf_base_file = os.path.join(tm_run_location_base, "OUTPUT", "shapefile", "network_links.DBF")
+network_links_dbf_base = simpledbf.Dbf5(network_links_dbf_base_file)
 tm_loaded_network_df_base = tm_loaded_network_df_base.copy().merge(network_links_dbf_base.copy(), on='a_b', how='left')
 tm_loaded_network_df_base = pd.merge(left=tm_loaded_network_df_base.copy(), right=minor_links_df, how='left', left_on=['a','b'], right_on=['a','b'])
 
 # load transit data
-transit_vol_AM = "C:\\Users\\jalatorre\\Box\\NextGen Freeways Study\\07 Tasks\\07_AnalysisRound1\\Corridor Level Visualization\\10 csvs for the 10 maps with final data\\transit_vols_AM.csv"
-# transit_vol_AM = os.path.join(TM1_GIT_DIR, "NextGenFwys", "metrics", "Input Files", "transit_vols_AM.csv")
+transit_vol_AM = os.path.join(TM1_GIT_DIR, "NextGenFwys", "metrics", "Input Files", "transit_vols_AM.csv")
 transit_vol_df = pd.read_csv(transit_vol_AM).fillna(0)
 # parallel and express bus
 transit_vol_df['m2_LRT_Bus'] = transit_vol_df.iloc[:,5] + transit_vol_df.iloc[:,7] + transit_vol_df.iloc[:,9]
@@ -212,7 +197,7 @@ transit_vol_df['m2_Rail'] = transit_vol_df.iloc[:,11] + transit_vol_df.iloc[:,13
 transit_vol_df = transit_vol_df[['Corridor','Model Run ID', 'm2_LRT_Bus', 'm2_Rail']]
 
 
-for run in runs:
+for tm_runid in current_runs_list:
   USAGE = """
 
     python ngfs_corridor_map_data.py
@@ -247,27 +232,19 @@ for run in runs:
 
       """
 
-  # ______run______
-  # add the run name... use the current dir
-  # tm_run_location = os.getcwd()
-  # tm_runid = os.path.split(os.getcwd())[1]
-
-  # #temporary run location for testing purposes
-  tm_run_location = "L:\\Application\\Model_One\\NextGenFwys\\Scenarios\\" + run
-  tm_runid = tm_run_location.split('\\')[-1]
-
   # metric dict input: year
   year = tm_runid[:4]
 
   # ______define the inputs_______
-  tm_loaded_network_df = pd.read_csv(tm_run_location+'/OUTPUT/avgload5period.csv')
+  tm_loaded_network_df = os.path.join(NGFS_SCENARIOS, tm_runid, "OUTPUT", "avgload5period.csv")
   tm_loaded_network_df = tm_loaded_network_df.rename(columns=lambda x: x.strip())
   # ----merging df that has the list of minor segments with loaded network - for corridor analysis
   tm_loaded_network_df['a_b'] = tm_loaded_network_df['a'].astype(str) + "_" + tm_loaded_network_df['b'].astype(str)
   tm_loaded_network_df = pd.merge(left=tm_loaded_network_df, right=minor_links_df, how='left', left_on=['a','b'], right_on=['a','b'])
 
-  # ----import network links file from reduced dbf as a dataframe to merge with loaded network and get toll rates
-  network_links_dbf = pd.read_csv(tm_run_location + '\\OUTPUT\\shapefile\\network_links_reduced_file.csv')
+  # ----import network links file from dbf as a dataframe to merge with loaded network and get toll rates
+  network_links_dbf_file = os.path.join(tm_run_location_base, "OUTPUT", "shapefile", "network_links.DBF")
+  network_links_dbf = simpledbf.Dbf5(network_links_dbf_file)
   tm_loaded_network_df = tm_loaded_network_df.copy().merge(network_links_dbf.copy(), on='a_b', how='left')
 
   metrics_dict = {} 
@@ -301,7 +278,7 @@ for run in runs:
   final_df['freeway'] = round(final_df['m2_fwytrip']/4, -2)
   final_df['arterial'] = round(final_df['m2_arttrip']/4, -2)
   final_df['transit'] = round((final_df['m2_LRT_Bus'] + final_df['m2_Rail'])/4, -2)
-  new_directory = "C:\\Users\\jalatorre\\Box\\NextGen Freeways Study\\07 Tasks\\07_AnalysisRound1\\Corridor Level Visualization\\10 csvs for the 10 maps with final data\\{} (Compared to {})".format(tm_runid,tm_runid_base)
+  new_directory = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Metrics\\Map_Data\\{} (Compared to {})".format(tm_runid,tm_runid_base)
   # new_directory = os.path.join(os.getcwd(),"{} (Compared to {})".format(tm_runid,tm_runid_base))
   out_filename = new_directory + "\\NGFS_CorridorMaps_SketchData.csv"
   try:
