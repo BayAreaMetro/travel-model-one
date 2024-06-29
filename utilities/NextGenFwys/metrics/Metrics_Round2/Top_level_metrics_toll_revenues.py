@@ -25,7 +25,8 @@ USAGE = """
     'Revenue Facilities',
     'Grouping',
     'value',
-    'TOLLCLASS'
+    'TOLLCLASS',
+    'USEAM'
     
   Metrics are:
     1) Toll Revenues: toll revenues from new tolling (ie exclude any express lane or bridge toll revenues)
@@ -108,7 +109,7 @@ def top_level_metrics_toll_revenues(tm_run_id: str) -> pd.DataFrame:
     loaded_network_file = os.path.join(NGFS_SCENARIOS, tm_run_id, "OUTPUT", "shapefile", "network_links.DBF")
     LOGGER.info("Reading {}".format(loaded_network_file))
     network_links_dbf = simpledbf.Dbf5(loaded_network_file)
-    loaded_network_df = network_links_dbf.to_dataframe()[['A', 'B', 'FT', 'TOLLCLASS', \
+    loaded_network_df = network_links_dbf.to_dataframe()[['A', 'B', 'FT', 'USEAM',  'TOLLCLASS', \
                                                                          'VOLEA_DAT', \
                                                                          'VOLAM_DAT', \
                                                                          'VOLMD_DAT', \
@@ -228,7 +229,7 @@ def top_level_metrics_toll_revenues(tm_run_id: str) -> pd.DataFrame:
     loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 36) & (loaded_network_df.TOLLCLASS < 700000), 'Revenue Facilities'] = 'Express Lane Tolls'
     loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 699999) & (loaded_network_df.TOLLCLASS < 900000), 'Revenue Facilities'] = 'All Lane Tolling'    
     loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 899999) & (loaded_network_df.TOLLCLASS < 1000000), 'Revenue Facilities'] = 'All Lane Tolling'    
-    
+    loaded_network_df.loc[(loaded_network_df.TOLLCLASS > 1000000) , 'Revenue Facilities'] = 'Express Lane Tolls'
     # fill empty collumns of DF with a string to retain al values in the DF
     loaded_network_df.grouping = loaded_network_df.grouping.fillna('NA')
     loaded_network_df.grouping_dir = loaded_network_df.grouping_dir.fillna('NA')
@@ -238,7 +239,7 @@ def top_level_metrics_toll_revenues(tm_run_id: str) -> pd.DataFrame:
     
     # loaded_network_df.to_csv("test.csv", index=False)
 
-    ft_metrics_df = loaded_network_df.groupby(by=['Freeway/Non-Freeway','Facility Type Definition', 'EPC/Non-EPC', 'County', 'Revenue Facilities', 'grouping', 'grouping_dir', 'TOLLCLASS']).agg({'Sixteen Year Toll Revenue (YOE$)':'sum', \
+    ft_metrics_df = loaded_network_df.groupby(by=['Freeway/Non-Freeway','Facility Type Definition', 'EPC/Non-EPC', 'County', 'Revenue Facilities', 'grouping', 'grouping_dir', 'TOLLCLASS', 'USEAM']).agg({'Sixteen Year Toll Revenue (YOE$)':'sum', \
                                                                                                                                                                                                'Daily EA Toll Revenue (2000$)':'sum', \
                                                                                                                                                                                                'Daily EA Toll Revenue (2020$)':'sum', \
                                                                                                                                                                                                'Daily EA Toll Revenue (2023$)':'sum', \
@@ -270,7 +271,7 @@ def top_level_metrics_toll_revenues(tm_run_id: str) -> pd.DataFrame:
     LOGGER.debug("ft_metrics_df:\n{}".format(ft_metrics_df))
 
     # move to long form and return
-    metrics_df = ft_metrics_df.melt(id_vars=['Freeway/Non-Freeway','Facility Type Definition','EPC/Non-EPC', 'County', 'Revenue Facilities', 'grouping', 'grouping_dir', 'TOLLCLASS'], var_name='Metric Description')
+    metrics_df = ft_metrics_df.melt(id_vars=['Freeway/Non-Freeway','Facility Type Definition','EPC/Non-EPC', 'County', 'Revenue Facilities', 'grouping', 'grouping_dir', 'TOLLCLASS', 'USEAM'], var_name='Metric Description')
     metrics_df['Model Run ID'] = tm_run_id
     metrics_df['Metric ID'] = METRIC_ID
     metrics_df['Intermediate/Final'] = 'final'
