@@ -15,11 +15,11 @@ IF defined SKIP (echo Using SKIP=%SKIP%)
 :: Location of the metrics scripts
 set CODE_DIR=X:\travel-model-one-master\utilities\NextGenFwys\metrics\Metrics_Round2
 
-:: Location of the model files
-set TARGET_DIR=%CD%
-
 rem run post_run_model_steps.py
 call python "%CODE_DIR%\post_run_model_steps.py"
+
+:: Location of the model files
+set TARGET_DIR=%CD%
 
 rem Check if the variable SKIP equals "n"
 IF "%SKIP%"=="n" (

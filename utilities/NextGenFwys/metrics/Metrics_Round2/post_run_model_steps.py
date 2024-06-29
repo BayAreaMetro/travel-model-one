@@ -140,11 +140,10 @@ if __name__ == "__main__":
         LOGGER.info("Processing run {}".format(project_path))
         
         # Change the directory to the desired location
-        new_directory = os.path.join(project_path)
-        os.chdir(new_directory)
+        os.chdir(project_path)
         # Set environment variables
         os.environ["ITER"] = "3"
-        os.environ["SAMPLEHARE"] = "0.5"
+        os.environ["SAMPLESHARE"] = "0.5"
         os.environ["MODEL_YEAR"] = "2035"
         os.environ["R_HOME"] = R_HOME
         
@@ -177,6 +176,8 @@ if __name__ == "__main__":
         else:
             print(file_to_check_directory + " exists.")
             
+        # Change the directory to the desired location
+        os.chdir(project_path)
         # define directory for file
         affordable_percentiles_file_directory = os.path.join(project_path, "updated_output_copy", "hhld_vNctoll_percentiles_Q4.csv")
             
@@ -185,11 +186,8 @@ if __name__ == "__main__":
             print(affordable_percentiles_file_directory + " does not exist, running Analyse_vtoll_distribution_Copy.R")
             # Run the batch script
             try:
-                # Get the current working directory
-                current_dir = os.getcwd()
-
                 # Set TARGET_DIR to the current working directory
-                TARGET_DIR = current_dir
+                os.environ["TARGET_DIR"] = project_path
                 
                 print("Analyse_vtoll_distribution_Copy.R started.")
                 # Define the command to run script
@@ -199,19 +197,20 @@ if __name__ == "__main__":
                 print("Analyse_vtoll_distribution_Copy.R executed successfully!")
                 # programatically "press enter" to continue with other subprocesses
                 os.system("\n")
+                
+                run_id = os.path.basename(project_path)  # Extracting the last part of the directory as run_id
+
+                # Perform the file copy
+                for Q in [1,2,3,4]:
+                    # Define source and destination paths for each file
+                    source = os.path.join(project_path, 'updated_output_copy', 'hhld_vNctoll_percentiles_Q{}.csv'.format(Q))
+                    destination = 'L:\\Application\\Model_One\\NextGenFwys_Round2\\across_runs_union\\hhld_vNctoll_percentiles_Q{}_{}.csv'.format(Q,run_id)
+                    shutil.copy(source, destination)
+                    print(f"File copied: {source} --> {destination}")
+                    
             except subprocess.CalledProcessError as e:
                 print(f"Error executing Analyse_vtoll_distribution_Copy.R: {e}")
-                
-            run_id = os.path.basename(project_path)  # Extracting the last part of the directory as run_id
-
-            # Perform the file copy
-            for Q in [1,2,3,4]:
-                # Define source and destination paths for each file
-                source = os.path.join(TARGET_DIR, 'updated_output_copy', 'hhld_vNctoll_percentiles_Q{}.csv'.format(Q))
-                destination = 'L:\\Application\\Model_One\\NextGenFwys_Round2\\across_runs_union\\hhld_vNctoll_percentiles_Q{}_{}.csv'.format(Q,run_id)
-                shutil.copy(source, destination)
-                print(f"File copied: {source} --> {destination}")
-            
+                            
         else:
             print(affordable_percentiles_file_directory + " exists.")
 
