@@ -96,14 +96,13 @@ def calculate_change_between_run_and_base(tm_runid, tm_runid_base, year, metric_
         metrics_dict[tm_runid, metric_id,'extra',key,'pct_change_in_{}'.format(metric),year] = ((val_run-val_base)/val_base)
 
 def sum_grouping(network_df,period): #sum congested time across selected toll class groupings
-    return network_df['ctim'+period].sum()
+    return network_df['CTIM'+period].sum()
 
 def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_runid, year, tm_loaded_network_df, representative_links_df, metrics_dict):
   # Keeping essential columns of loaded highway network: node A and B, distance, free flow time, congested time
   metric_id = 'Reliable 1'
 
   tm_ab_ctim_df = tm_loaded_network_df.copy()
-  # tm_ab_ctim_df = tm_ab_ctim_df.copy()[['Grouping minor_AMPM','a_b','ctimAM','ctimPM', 'distance','volEA_tot', 'volAM_tot', 'volMD_tot', 'volPM_tot', 'volEV_tot']]  
   tm_ab_ctim_df['Grouping minor_AMPM'] = tm_ab_ctim_df['grouping'] + '_' + tm_ab_ctim_df['grouping_dir']
   # create df for parallel arterials
   # keep this separate as there are duplicate rows
@@ -115,19 +114,19 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_runid, yea
     metrics_dict[tm_runid,metric_id,'extra',i,'%s_AM_travel_time' % i, year] = minor_group_am
 
     # add vmt to metric dict
-    minor_group_am_vmt =(minor_group_am_df['distance']*(minor_group_am_df['volAM_tot'])).sum()
+    minor_group_am_vmt =(minor_group_am_df['DISTANCE']*(minor_group_am_df['VOLAM_TOT'])).sum()
     metrics_dict[tm_runid,metric_id,'extra',i,'%s' % i + '_AM_vmt',year] = minor_group_am_vmt
 
     # add toll per mile in 2023$
-    minor_group_am_toll_per_mile =round(((minor_group_am_df['TOLLAM_DA']).sum()/100) / (minor_group_am_df['distance'] ).sum() * INFLATION_00_23, 2)
+    minor_group_am_toll_per_mile =round(((minor_group_am_df['TOLLAM_DA']).sum()/100) / (minor_group_am_df['DISTANCE'] ).sum() * INFLATION_00_23, 2)
     metrics_dict[tm_runid,metric_id,'extra',i,'%s' % i + '_AM_toll_per_mile',year] = minor_group_am_toll_per_mile 
 
     # add trips (for freeways and arterials)
     tm_parallel_arterials_df = tm_links_df.copy().loc[tm_links_df['parallel_art_rep_link'] == i]
     tm_minor_groupings_df = tm_links_df.copy().loc[(tm_links_df['minor_group_rep_link'] == i)]
 
-    parallel_arterials_trips = tm_parallel_arterials_df.copy().loc[:, 'volAM_tot'].sum()
-    minor_groups_trips = tm_minor_groupings_df.copy().loc[:, 'volAM_tot'].sum()
+    parallel_arterials_trips = tm_parallel_arterials_df.copy().loc[:, 'VOLAM_TOT'].sum()
+    minor_groups_trips = tm_minor_groupings_df.copy().loc[:, 'VOLAM_TOT'].sum()
     
     # add trips to metric dict
     metrics_dict[tm_runid,metric_id,'extra',i,'%s_AM_Parallel_Arterial_trips' % i,year] = parallel_arterials_trips
@@ -162,11 +161,9 @@ TOLLED_FWY_MINOR_GROUP_LINKS_DF = determine_tolled_minor_group_links(PATHWAY1_SC
 current_runs_list = current_runs_df['directory'].to_list()
 
 # load minor groupings, to be merged with loaded network
-minor_links_df = TOLLED_FWY_MINOR_GROUP_LINKS_DF
-representative_links_lookup = os.path.join(TM1_GIT_DIR, "NextGenFwys", "metrics", "Input Files", "NGFS_CorridorMaps_SketchData_v3.xlsx")
+representative_links_lookup = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "NGFS_CorridorMaps_SketchData_v3.xlsx")
 representative_links_df = pd.read_excel(representative_links_lookup, sheet_name='am_links')
 # list for iteration
-# minor_groups = minor_links_df['Grouping minor'].dropna().unique()[1:] #exclude 'other' and NaN
 minor_groups = TOLLED_FWY_MINOR_GROUP_LINKS_DF['grouping'].unique()
 # load lookup file for parallel arterial links
 
@@ -178,17 +175,15 @@ tm_run_location_base = os.path.join(NGFS_SCENARIOS, tm_runid_base)
 # tm_run_location_base = os.path.join(NGFS_SCENARIOS, run4)
 # tm_runid_base = run4
 # ______define the base run inputs for "change in" comparisons______
-tm_loaded_network_df_base = pd.read_csv(tm_run_location_base+'/OUTPUT/avgload5period.csv')
-tm_loaded_network_df_base = tm_loaded_network_df_base.rename(columns=lambda x: x.strip())
-# merging df that has the list of minor segments with loaded network - for corridor analysis
-tm_loaded_network_df_base['a_b'] = tm_loaded_network_df_base['a'].astype(str) + "_" + tm_loaded_network_df_base['b'].astype(str)
 network_links_dbf_base_file = os.path.join(tm_run_location_base, "OUTPUT", "shapefile", "network_links.DBF")
 network_links_dbf_base = simpledbf.Dbf5(network_links_dbf_base_file)
-tm_loaded_network_df_base = tm_loaded_network_df_base.copy().merge(network_links_dbf_base.copy(), on='a_b', how='left')
-tm_loaded_network_df_base = pd.merge(left=tm_loaded_network_df_base.copy(), right=minor_links_df, how='left', left_on=['a','b'], right_on=['a','b'])
+tm_loaded_network_df_base = network_links_dbf_base.to_dataframe()
+tm_loaded_network_df_base = tm_loaded_network_df_base.rename(columns=lambda x: x.strip())
+tm_loaded_network_df_base = pd.merge(left=tm_loaded_network_df_base.copy(), right=TOLLED_FWY_MINOR_GROUP_LINKS_DF, how='left', left_on=['A','B'], right_on=['a','b'])
+tm_loaded_network_df_base['a_b'] = tm_loaded_network_df_base['A'].astype(str) + "_" + tm_loaded_network_df_base['B'].astype(str)
 
 # load transit data
-transit_vol_AM = os.path.join(TM1_GIT_DIR, "NextGenFwys", "metrics", "Input Files", "transit_vols_AM.csv")
+transit_vol_AM = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "transit_vols_AM.csv")
 transit_vol_df = pd.read_csv(transit_vol_AM).fillna(0)
 # parallel and express bus
 transit_vol_df['m2_LRT_Bus'] = transit_vol_df.iloc[:,5] + transit_vol_df.iloc[:,7] + transit_vol_df.iloc[:,9]
@@ -236,23 +231,22 @@ for tm_runid in current_runs_list:
   year = tm_runid[:4]
 
   # ______define the inputs_______
-  tm_loaded_network_df = os.path.join(NGFS_SCENARIOS, tm_runid, "OUTPUT", "avgload5period.csv")
+  # ----import network links file from dbf as a dataframe
+  network_links_dbf_file = os.path.join(NGFS_SCENARIOS, tm_runid, "OUTPUT", "shapefile", "network_links.DBF")
+  network_links_dbf = simpledbf.Dbf5(network_links_dbf_file)
+  tm_loaded_network_df = network_links_dbf.to_dataframe()
   tm_loaded_network_df = tm_loaded_network_df.rename(columns=lambda x: x.strip())
   # ----merging df that has the list of minor segments with loaded network - for corridor analysis
-  tm_loaded_network_df['a_b'] = tm_loaded_network_df['a'].astype(str) + "_" + tm_loaded_network_df['b'].astype(str)
-  tm_loaded_network_df = pd.merge(left=tm_loaded_network_df, right=minor_links_df, how='left', left_on=['a','b'], right_on=['a','b'])
-
-  # ----import network links file from dbf as a dataframe to merge with loaded network and get toll rates
-  network_links_dbf_file = os.path.join(tm_run_location_base, "OUTPUT", "shapefile", "network_links.DBF")
-  network_links_dbf = simpledbf.Dbf5(network_links_dbf_file)
-  tm_loaded_network_df = tm_loaded_network_df.copy().merge(network_links_dbf.copy(), on='a_b', how='left')
-
+  tm_loaded_network_df['a_b'] = tm_loaded_network_df['A'].astype(str) + "_" + tm_loaded_network_df['B'].astype(str)
+  tm_loaded_network_df = pd.merge(left=tm_loaded_network_df, right=TOLLED_FWY_MINOR_GROUP_LINKS_DF, how='left', left_on=['A','B'], right_on=['a','b'])
+  
   metrics_dict = {} 
   calculate_map_data(tm_runid, year, tm_loaded_network_df, representative_links_df, metrics_dict)
 
   # _________output table__________
   out_series = pd.Series(metrics_dict)
   out_frame  = out_series.to_frame().reset_index()
+  out_frame.to_csv("DEBUG.csv", float_format='%.5f', index=False) #, header=False
   out_frame.columns = ['modelrun_id','metric_id','intermediate/final','key','metric_desc','year','value']
   # print out table
   out_frame = out_frame.loc[out_frame['modelrun_id'] == tm_runid]
