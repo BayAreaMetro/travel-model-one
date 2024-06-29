@@ -246,7 +246,8 @@ for tm_runid in current_runs_list:
   # _________output table__________
   out_series = pd.Series(metrics_dict)
   out_frame  = out_series.to_frame().reset_index()
-  out_frame.to_csv("DEBUG.csv", float_format='%.5f', index=False) #, header=False
+  # debug file
+  # out_frame.to_csv("DEBUG.csv", float_format='%.5f', index=False) #, header=False
   out_frame.columns = ['modelrun_id','metric_id','intermediate/final','key','metric_desc','year','value']
   # print out table
   out_frame = out_frame.loc[out_frame['modelrun_id'] == tm_runid]
