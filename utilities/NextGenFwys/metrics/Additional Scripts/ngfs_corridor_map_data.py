@@ -161,7 +161,7 @@ TOLLED_FWY_MINOR_GROUP_LINKS_DF = determine_tolled_minor_group_links(PATHWAY1_SC
 current_runs_list = current_runs_df['directory'].to_list()
 
 # load minor groupings, to be merged with loaded network
-representative_links_lookup = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Input Files", "NGFS_CorridorMaps_SketchData_v3.xlsx")
+representative_links_lookup = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Metrics_Round2", "Input Files", "NGFS_CorridorMaps_SketchData_R2.xlsx")
 representative_links_df = pd.read_excel(representative_links_lookup, sheet_name='am_links')
 # list for iteration
 minor_groups = TOLLED_FWY_MINOR_GROUP_LINKS_DF['grouping'].unique()
