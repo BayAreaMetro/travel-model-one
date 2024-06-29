@@ -439,8 +439,10 @@ def Affordable2_ratio_time_cost(tm_run_id):
     LOGGER.info("  Read {:,} rows from {}".format(len(tm_loaded_network_df_base), base_loaded_roadway_network))
     LOGGER.debug("  Head:\n{}".format(tm_loaded_network_df_base.head()))
     
-    network_with_nonzero_tolls = tm_loaded_network_df.copy().loc[(tm_loaded_network_df['TOLLCLASS'] > 1000) | (tm_loaded_network_df['TOLLCLASS'] == 99) |(tm_loaded_network_df['TOLLCLASS'] == 10)|(tm_loaded_network_df['TOLLCLASS'] == 11)|(tm_loaded_network_df['TOLLCLASS'] == 12)]
-    network_with_nonzero_tolls = network_with_nonzero_tolls.copy().loc[(network_with_nonzero_tolls['USEAM'] == 1)&(network_with_nonzero_tolls['FT'] != 6)]
+    network_with_nonzero_tolls = tm_loaded_network_df.loc[(tm_loaded_network_df['USEAM'] == 1)|(tm_loaded_network_df['USEAM'] == 4)]
+    network_with_nonzero_tolls = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['FT'] != 6)]
+    if any(x in tm_run_id for x in ['Path4', 'Path5', 'Path6']):
+        network_with_nonzero_tolls = network_with_nonzero_tolls.loc[(network_with_nonzero_tolls['TOLLCLASS'] == 0)]
     network_with_nonzero_tolls['sum of tolls'] = network_with_nonzero_tolls['TOLLAM_DA'] + network_with_nonzero_tolls['TOLLAM_LRG'] + network_with_nonzero_tolls['TOLLAM_S3']
     # check if run has all lane tolling, if not return 0 for this metric 
     if (network_with_nonzero_tolls['sum of tolls'].sum() == 0):
