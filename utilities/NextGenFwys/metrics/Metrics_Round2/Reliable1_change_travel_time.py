@@ -89,7 +89,10 @@ def calculate_Reliable1_change_travel_time_on_freeways(tm_run_id: str) -> pd.Dat
     LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
-    loaded_network_df = loaded_network_df.loc[(loaded_network_df['useAM'] == 1)&(loaded_network_df['ft'] != 6)]
+    loaded_network_df = loaded_network_df.loc[(loaded_network_df['useAM'] == 1)|(loaded_network_df['useAM'] == 4)]
+    loaded_network_df = loaded_network_df.loc[(loaded_network_df['ft'] != 6)]
+    if any(x in tm_run_id for x in ['Path4', 'Path5', 'Path6']):
+        loaded_network_df = loaded_network_df.loc[(loaded_network_df['tollclass'] == 0)]
     
     # join to tolled minor group freeway links lookup table 
     loaded_network_df = pd.merge(left=loaded_network_df, right=TOLLED_FWY_MINOR_GROUP_LINKS_DF, how='left', left_on=['a','b'], right_on=['a','b'])
@@ -205,7 +208,10 @@ def calculate_Reliable1_change_travel_time_on_parallel_arterials(tm_run_id: str)
     LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
-    loaded_network_df = loaded_network_df.loc[(loaded_network_df['useAM'] == 1)&(loaded_network_df['ft'] != 6)]
+    loaded_network_df = loaded_network_df.loc[(loaded_network_df['useAM'] == 1)|(loaded_network_df['useAM'] == 4)]
+    loaded_network_df = loaded_network_df.loc[(loaded_network_df['ft'] != 6)]
+    if any(x in tm_run_id for x in ['Path4', 'Path5', 'Path6']):
+        loaded_network_df = loaded_network_df.loc[(loaded_network_df['tollclass'] == 0)]
     
     # join to parallel arterial links lookup table
     parallel_arterials_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Metrics_Round2", "Input Files", "ParallelArterialLinks.csv")
@@ -379,7 +385,10 @@ def calculate_Reliable1_change_travel_time_on_parallel_arterials_epc_non(tm_run_
     LOGGER.info("  Read {:,} rows from {}".format(len(loaded_network_df), loaded_network_file))
     LOGGER.debug("  Columns:".format(list(loaded_network_df.columns)))
     LOGGER.debug("loaded_network_df =\n{}".format(loaded_network_df))
-    loaded_network_df = loaded_network_df.loc[(loaded_network_df['useAM'] == 1)&(loaded_network_df['ft'] != 6)]
+    loaded_network_df = loaded_network_df.loc[(loaded_network_df['useAM'] == 1)|(loaded_network_df['useAM'] == 4)]
+    loaded_network_df = loaded_network_df.loc[(loaded_network_df['ft'] != 6)]
+    if any(x in tm_run_id for x in ['Path4', 'Path5', 'Path6']):
+        loaded_network_df = loaded_network_df.loc[(loaded_network_df['tollclass'] == 0)]
     
     # join to parallel arterial links lookup table
     parallel_arterials_file = os.path.join(TM1_GIT_DIR, "utilities", "NextGenFwys", "metrics", "Metrics_Round2", "Input Files", "ParallelArterialLinks.csv")
