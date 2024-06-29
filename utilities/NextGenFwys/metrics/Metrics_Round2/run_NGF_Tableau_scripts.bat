@@ -58,6 +58,9 @@ call python "X:\travel-model-one-master\utilities\CoreSummaries\copyFilesAcrossS
 rem run ngfs_corridor_map_data.py
 call python "X:\travel-model-one-master\utilities\NextGenFwys\metrics\Additional Scripts\ngfs_corridor_map_data.py"
 
+rem copy TOLLED_FWY_MINOR_GROUP_LINKS.csv
+copy "L:\Application\Model_One\NextGenFwys_Round2\Metrics\TOLLED_FWY_MINOR_GROUP_LINKS.csv" "L:\Application\Model_One\NextGenFwys_Round2\across_runs_union\TOLLED_FWY_MINOR_GROUP_LINKS.csv"
+
 :success
 echo FINISHED run_NGF_Tableau_scripts successfully!
 echo ENDED NGFS METRICS  %DATE% %TIME%
