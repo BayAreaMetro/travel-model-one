@@ -10,39 +10,6 @@
 ::
 ::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:: ------------------------------------------------------------------------------------------------------
-::
-:: User input (moved to wrapper batch file - TollCalib_Iterate.bat)
-::
-:: ------------------------------------------------------------------------------------------------------
-
-:: to run highway assignment only, enter 1 below; 
-:: to run highway assigment + skimming + core, enter 0 below
-:: set hwyassignONLY=0
-
-:: set iteration number, starting from 4 as we assume this is a continuation of a "normal" model run
-:: set ITER=5
-:: set MODEL_YEAR=2050
-
-:: if %ITER%==4 (
-    :: Location of the base run directory - the full run is needed because it has the CTRAMP directory
-::    set MODEL_BASE_DIR=L:\RTP2021_PPA\Projects_onAWS\2050_TM151_PPA_BF_07
-:: )
-
-:: -------------------------------------------------
-:: Before running - user input (part 2)
-:: For the R script that determine toll adjustment
-:: -------------------------------------------------
-
-:: Unloaded network dbf, generated from cube_to_shapefile.py
-:: set UNLOADED_NETWORK_DBF=L:\RTP2021_PPA\Projects\2050_TM151_PPA_baselines_before07\2050_TM151_PPA_BF_06\INPUT\shapefiles\network_links.dbf
-
-:: The file containing the bridge tolls (i.e. the first half of toll.csv)
-:: SET BRIDGE_TOLLS_CSV=M:\Application\Model One\NetworkProjects\Bridge_Toll_Updates\tolls_2050.csv
-
-:: The file indicating which facilities have mandatory s2 tolls
-:: set TOLL_DESIGNATIONS_XLSX= M:\Application\Model One\Networks\TOLLCLASS Designations.xlsx
-
 
 :: ------------------------------------------------------------------------------------------------------
 ::

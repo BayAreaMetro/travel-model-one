@@ -19,11 +19,6 @@ ITER <- Sys.getenv("ITER")        # The iteration of model outputs to be read
 ITER <- as.numeric(ITER)
 
 # THRESHOLD_SPEED and MAX_TOLL would be defined by TOLL_DESIGNATIONS_XLSX
-# THRESHOLD_SPEED <- Sys.getenv("THRESHOLD_SPEED")
-# THRESHOLD_SPEED <- as.numeric(THRESHOLD_SPEED)
-#
-# MAX_TOLL <- Sys.getenv("MAX_TOLL")
-# MAX_TOLL <- as.numeric(MAX_TOLL)
 
 HOV2_discount_factor <- Sys.getenv("DiscountFactor_HOV2")
 HOV2_discount_factor <- as.numeric(HOV2_discount_factor)
