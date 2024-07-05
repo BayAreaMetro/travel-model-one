@@ -48,7 +48,7 @@ Process=2
 # Please specify working directories and run ids
 project_dir                  ="L:/Application/Model_One/NextGenFwys_Round2/"
 modelrun_with_NoProject      = "2035_TM160_NGF_r2_NoProject_04"
-output_dir                   = "INPUT_DEVELOPMENT/Toll_Plans/AllLane_30cCongested_10cOther_v01"
+output_dir                   = "INPUT_DEVELOPMENT/Toll_Plans/AllLane_30cCongested_10cOther_v02"
 
 # Specify HOV discount levels
 # A DiscountFactor of 0.75 means a 25% discount; a DiscountFactor of 0 means free; and a DiscountFactor of 1 means no discount.
@@ -102,7 +102,7 @@ tolls_in_midday = "true"
 
 # Specify toll input file and toll plan option
 toll_input_file="C:/Users/ftsang/Box/NextGen Freeways Study/05 Modeling/3_Coding/Round 2/All lane tolling/Round 2 ALT Toll Rates Input.xlsx"
-toll_plan_option="Toll_Inputs_2000prices" #This is the name of the excel worksheet
+toll_plan_option="Toll_Inputs_2000$_pastedValues" #This is the name of the excel worksheet
 # Note that Process 2 assumes the values in the toll input file are in 2000$ - it doesn't do any price conversion
 
 tollcsv_with_allcombos = "L:/Application/Model_One/NextGenFwys_Round2/Scenarios/2035_TM160_NGFr2_NP04_Path1_03/INPUT/hwy/tolls.csv"
@@ -151,7 +151,7 @@ def Process2_InputProc():
     cols = next(TollInputs)
     TollInputs = list(TollInputs)
     TollInputs_df = pd.DataFrame(TollInputs, columns=cols)
-    # drop irrelevant columns
+    # keep only irrelevant columns
     TollInputs_df = TollInputs_df[['Grouping major','Grouping minor', 'tollam_da', 'tollmd_da','tollpm_da']]
 
     # input 2
@@ -179,10 +179,16 @@ def Process1_Averaging():
 
 
     # keep only the links that are part of the all-lane tolling system i.e. tollclass > 700,000
-    loadednetwork_100psegs_shp_gdf = loadednetwork_100psegs_shp_gdf.loc[loadednetwork_100psegs_shp_gdf['TOLLCLASS'] > 700000]
-
-
-
+    loadednetwork_100psegs_shp_gdf = loadednetwork_100psegs_shp_gdf.loc[
+        (
+            (loadednetwork_100psegs_shp_gdf['TOLLCLASS'] > 700000) & 
+            (loadednetwork_100psegs_shp_gdf['TOLLCLASS'] <= 799999)
+        ) | 
+        (
+            (loadednetwork_100psegs_shp_gdf['TOLLCLASS'] > 900000) & 
+            (loadednetwork_100psegs_shp_gdf['TOLLCLASS'] <= 999999)
+        )
+    ]
 
     # ------------------
     # Convert average toll rates to high, medium, low 
@@ -376,6 +382,11 @@ if __name__ == '__main__':
                         indicator=False)
 
 
+    # debug_July5
+    output_filename_debug1 = os.path.join(project_dir, output_dir, "debug1.csv")
+    new_tollscsv_df.to_csv(output_filename_debug1, header=True, index=False)
+
+
     if Process==1:
         # merge in the new toll values 
         new_tollscsv_df = pd.merge(new_tollscsv_df,
@@ -390,11 +401,14 @@ if __name__ == '__main__':
         new_tollscsv_df = pd.merge(new_tollscsv_df,
                         TollInputs_df,
                         how='left',
-                        left_on=['Grouping minor'], 
-                        right_on = ['Grouping minor'],
+                        left_on=['Grouping major'], 
+                        right_on = ['Grouping major'],
                         suffixes=('', '_new'),
                         indicator=False)
 
+        # debug_July5
+        output_filename_debug2 = os.path.join(project_dir, output_dir, "debug2.csv")
+        new_tollscsv_df.to_csv(output_filename_debug2, header=True, index=False)
 
     #-------------------
     # replace the values
@@ -405,89 +419,89 @@ if __name__ == '__main__':
     # arterials
 
     #am    
-    new_tollscsv_df["tollam_da"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollam_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollam_da"])
-    new_tollscsv_df["tollam_s2"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollam_da_new']).astype(float)*ArterialFactor*DiscountFactor_HOV2, new_tollscsv_df["tollam_s2"])
-    new_tollscsv_df["tollam_s3"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollam_da_new']).astype(float)*ArterialFactor*DiscountFactor_HOV3, new_tollscsv_df["tollam_s3"])
+    new_tollscsv_df["tollam_da"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollam_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollam_da"])
+    new_tollscsv_df["tollam_s2"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollam_da_new']).astype(float)*ArterialFactor*DiscountFactor_HOV2, new_tollscsv_df["tollam_s2"])
+    new_tollscsv_df["tollam_s3"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollam_da_new']).astype(float)*ArterialFactor*DiscountFactor_HOV3, new_tollscsv_df["tollam_s3"])
     # trucks (vsm, sml, med and lrg) are assumed to pay the same toll as da
-    new_tollscsv_df["tollam_vsm"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollam_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollam_vsm"])
-    new_tollscsv_df["tollam_sml"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollam_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollam_sml"])
-    new_tollscsv_df["tollam_med"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollam_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollam_med"])
-    new_tollscsv_df["tollam_lrg"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollam_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollam_lrg"])
+    new_tollscsv_df["tollam_vsm"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollam_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollam_vsm"])
+    new_tollscsv_df["tollam_sml"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollam_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollam_sml"])
+    new_tollscsv_df["tollam_med"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollam_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollam_med"])
+    new_tollscsv_df["tollam_lrg"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollam_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollam_lrg"])
         
     #pm
-    new_tollscsv_df["tollpm_da"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollpm_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollpm_da"])
-    new_tollscsv_df["tollpm_s2"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollpm_da_new']).astype(float)*ArterialFactor*DiscountFactor_HOV2, new_tollscsv_df["tollpm_s2"])
-    new_tollscsv_df["tollpm_s3"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollpm_da_new']).astype(float)*ArterialFactor*DiscountFactor_HOV3, new_tollscsv_df["tollpm_s3"])
+    new_tollscsv_df["tollpm_da"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollpm_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollpm_da"])
+    new_tollscsv_df["tollpm_s2"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollpm_da_new']).astype(float)*ArterialFactor*DiscountFactor_HOV2, new_tollscsv_df["tollpm_s2"])
+    new_tollscsv_df["tollpm_s3"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollpm_da_new']).astype(float)*ArterialFactor*DiscountFactor_HOV3, new_tollscsv_df["tollpm_s3"])
     # trucks (vsm, sml, med and lrg) are assumed to pay the spme toll as da
-    new_tollscsv_df["tollpm_vsm"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollpm_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollpm_vsm"])
-    new_tollscsv_df["tollpm_sml"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollpm_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollpm_sml"])
-    new_tollscsv_df["tollpm_med"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollpm_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollpm_med"])
-    new_tollscsv_df["tollpm_lrg"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollpm_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollpm_lrg"])
+    new_tollscsv_df["tollpm_vsm"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollpm_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollpm_vsm"])
+    new_tollscsv_df["tollpm_sml"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollpm_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollpm_sml"])
+    new_tollscsv_df["tollpm_med"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollpm_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollpm_med"])
+    new_tollscsv_df["tollpm_lrg"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollpm_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollpm_lrg"])
 
 
     #md
     if tolls_in_midday == "true": 
         # use simplified tolls 
-        new_tollscsv_df["tollmd_da"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollmd_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollmd_da"])
-        new_tollscsv_df["tollmd_s2"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollmd_da_new']).astype(float)*ArterialFactor*DiscountFactor_HOV2, new_tollscsv_df["tollmd_s2"])
-        new_tollscsv_df["tollmd_s3"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollmd_da_new']).astype(float)*ArterialFactor*DiscountFactor_HOV3, new_tollscsv_df["tollmd_s3"])
+        new_tollscsv_df["tollmd_da"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollmd_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollmd_da"])
+        new_tollscsv_df["tollmd_s2"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollmd_da_new']).astype(float)*ArterialFactor*DiscountFactor_HOV2, new_tollscsv_df["tollmd_s2"])
+        new_tollscsv_df["tollmd_s3"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollmd_da_new']).astype(float)*ArterialFactor*DiscountFactor_HOV3, new_tollscsv_df["tollmd_s3"])
         # trucks (vsm, sml, med and lrg) are assumed to pay the smde toll as da
-        new_tollscsv_df["tollmd_vsm"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollmd_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollmd_vsm"])
-        new_tollscsv_df["tollmd_sml"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollmd_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollmd_sml"])
-        new_tollscsv_df["tollmd_med"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollmd_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollmd_med"])
-        new_tollscsv_df["tollmd_lrg"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), (new_tollscsv_df['tollmd_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollmd_lrg"])
+        new_tollscsv_df["tollmd_vsm"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollmd_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollmd_vsm"])
+        new_tollscsv_df["tollmd_sml"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollmd_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollmd_sml"])
+        new_tollscsv_df["tollmd_med"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollmd_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollmd_med"])
+        new_tollscsv_df["tollmd_lrg"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), (new_tollscsv_df['tollmd_da_new']).astype(float)*ArterialFactor                    , new_tollscsv_df["tollmd_lrg"])
     else: 
         # set midday tolls to zero 
-        new_tollscsv_df["tollmd_da"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), 0, new_tollscsv_df["tollpm_da"])
-        new_tollscsv_df["tollmd_s2"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), 0, new_tollscsv_df["tollpm_s2"])
-        new_tollscsv_df["tollmd_s3"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), 0, new_tollscsv_df["tollpm_s3"])
-        new_tollscsv_df["tollmd_vsm"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), 0, new_tollscsv_df["tollpm_vsm"])
-        new_tollscsv_df["tollmd_sml"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), 0, new_tollscsv_df["tollpm_sml"])
-        new_tollscsv_df["tollmd_med"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), 0, new_tollscsv_df["tollpm_med"])
-        new_tollscsv_df["tollmd_lrg"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<900000)), 0, new_tollscsv_df["tollpm_lrg"])
+        new_tollscsv_df["tollmd_da"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), 0, new_tollscsv_df["tollpm_da"])
+        new_tollscsv_df["tollmd_s2"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), 0, new_tollscsv_df["tollpm_s2"])
+        new_tollscsv_df["tollmd_s3"]  = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), 0, new_tollscsv_df["tollpm_s3"])
+        new_tollscsv_df["tollmd_vsm"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), 0, new_tollscsv_df["tollpm_vsm"])
+        new_tollscsv_df["tollmd_sml"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), 0, new_tollscsv_df["tollpm_sml"])
+        new_tollscsv_df["tollmd_med"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), 0, new_tollscsv_df["tollpm_med"])
+        new_tollscsv_df["tollmd_lrg"] = np.where(((new_tollscsv_df["tollclass"] >= 700000) & (new_tollscsv_df["tollclass"]<800000)), 0, new_tollscsv_df["tollpm_lrg"])
 
     # freeways
     #am
-    new_tollscsv_df["tollam_da"]  = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollam_da_new']                                    , new_tollscsv_df["tollam_da"])
-    new_tollscsv_df["tollam_s2"]  = np.where(new_tollscsv_df["tollclass"] >= 900000, (new_tollscsv_df['tollam_da_new']).astype(float)*DiscountFactor_HOV2, new_tollscsv_df["tollam_s2"])
-    new_tollscsv_df["tollam_s3"]  = np.where(new_tollscsv_df["tollclass"] >= 900000, (new_tollscsv_df['tollam_da_new']).astype(float)*DiscountFactor_HOV3, new_tollscsv_df["tollam_s3"])
+    new_tollscsv_df["tollam_da"]  = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollam_da_new']                                    , new_tollscsv_df["tollam_da"])
+    new_tollscsv_df["tollam_s2"]  = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), (new_tollscsv_df['tollam_da_new']).astype(float)*DiscountFactor_HOV2, new_tollscsv_df["tollam_s2"])
+    new_tollscsv_df["tollam_s3"]  = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), (new_tollscsv_df['tollam_da_new']).astype(float)*DiscountFactor_HOV3, new_tollscsv_df["tollam_s3"])
     # trucks (vsm, sml, med and lrg) are assumed to pay the same toll as da
-    new_tollscsv_df["tollam_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollam_da_new']                                    , new_tollscsv_df["tollam_vsm"])
-    new_tollscsv_df["tollam_sml"] = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollam_da_new']                                    , new_tollscsv_df["tollam_sml"])
-    new_tollscsv_df["tollam_med"] = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollam_da_new']                                    , new_tollscsv_df["tollam_med"])
-    new_tollscsv_df["tollam_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollam_da_new']                                    , new_tollscsv_df["tollam_lrg"])
+    new_tollscsv_df["tollam_vsm"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollam_da_new']                                    , new_tollscsv_df["tollam_vsm"])
+    new_tollscsv_df["tollam_sml"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollam_da_new']                                    , new_tollscsv_df["tollam_sml"])
+    new_tollscsv_df["tollam_med"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollam_da_new']                                    , new_tollscsv_df["tollam_med"])
+    new_tollscsv_df["tollam_lrg"] = np.where(((new_tollscsv_df["tollclass"] >= 900000 )& (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollam_da_new']                                    , new_tollscsv_df["tollam_lrg"])
         
     #pm
-    new_tollscsv_df["tollpm_da"]  = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollpm_da_new']                                    , new_tollscsv_df["tollpm_da"])
-    new_tollscsv_df["tollpm_s2"]  = np.where(new_tollscsv_df["tollclass"] >= 900000, (new_tollscsv_df['tollpm_da_new']).astype(float)*DiscountFactor_HOV2, new_tollscsv_df["tollpm_s2"])
-    new_tollscsv_df["tollpm_s3"]  = np.where(new_tollscsv_df["tollclass"] >= 900000, (new_tollscsv_df['tollpm_da_new']).astype(float)*DiscountFactor_HOV3, new_tollscsv_df["tollpm_s3"])
+    new_tollscsv_df["tollpm_da"]  = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollpm_da_new']                                    , new_tollscsv_df["tollpm_da"])
+    new_tollscsv_df["tollpm_s2"]  = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), (new_tollscsv_df['tollpm_da_new']).astype(float)*DiscountFactor_HOV2, new_tollscsv_df["tollpm_s2"])
+    new_tollscsv_df["tollpm_s3"]  = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), (new_tollscsv_df['tollpm_da_new']).astype(float)*DiscountFactor_HOV3, new_tollscsv_df["tollpm_s3"])
     # trucks (vsm, sml, med and lrg) are assumed to pay the spme toll as da
-    new_tollscsv_df["tollpm_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollpm_da_new']                                    , new_tollscsv_df["tollpm_vsm"])
-    new_tollscsv_df["tollpm_sml"] = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollpm_da_new']                                    , new_tollscsv_df["tollpm_sml"])
-    new_tollscsv_df["tollpm_med"] = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollpm_da_new']                                    , new_tollscsv_df["tollpm_med"])
-    new_tollscsv_df["tollpm_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollpm_da_new']                                    , new_tollscsv_df["tollpm_lrg"])
+    new_tollscsv_df["tollpm_vsm"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollpm_da_new']                                    , new_tollscsv_df["tollpm_vsm"])
+    new_tollscsv_df["tollpm_sml"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollpm_da_new']                                    , new_tollscsv_df["tollpm_sml"])
+    new_tollscsv_df["tollpm_med"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollpm_da_new']                                    , new_tollscsv_df["tollpm_med"])
+    new_tollscsv_df["tollpm_lrg"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollpm_da_new']                                    , new_tollscsv_df["tollpm_lrg"])
 
 
     #md
     if tolls_in_midday == "true": 
         # use simplified tolls
-        new_tollscsv_df["tollmd_da"]  = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollmd_da_new']                                    , new_tollscsv_df["tollmd_da"])
-        new_tollscsv_df["tollmd_s2"]  = np.where(new_tollscsv_df["tollclass"] >= 900000, (new_tollscsv_df['tollmd_da_new']).astype(float)*DiscountFactor_HOV2, new_tollscsv_df["tollmd_s2"])
-        new_tollscsv_df["tollmd_s3"]  = np.where(new_tollscsv_df["tollclass"] >= 900000, (new_tollscsv_df['tollmd_da_new']).astype(float)*DiscountFactor_HOV3, new_tollscsv_df["tollmd_s3"])
+        new_tollscsv_df["tollmd_da"]  = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollmd_da_new']                                    , new_tollscsv_df["tollmd_da"])
+        new_tollscsv_df["tollmd_s2"]  = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), (new_tollscsv_df['tollmd_da_new']).astype(float)*DiscountFactor_HOV2, new_tollscsv_df["tollmd_s2"])
+        new_tollscsv_df["tollmd_s3"]  = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), (new_tollscsv_df['tollmd_da_new']).astype(float)*DiscountFactor_HOV3, new_tollscsv_df["tollmd_s3"])
         # trucks (vsm, sml, med and lrg) are assumed to pay the smde toll as da
-        new_tollscsv_df["tollmd_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollmd_da_new']                                    , new_tollscsv_df["tollmd_vsm"])
-        new_tollscsv_df["tollmd_sml"] = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollmd_da_new']                                    , new_tollscsv_df["tollmd_sml"])
-        new_tollscsv_df["tollmd_med"] = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollmd_da_new']                                    , new_tollscsv_df["tollmd_med"])
-        new_tollscsv_df["tollmd_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 900000, new_tollscsv_df['tollmd_da_new']                                    , new_tollscsv_df["tollmd_lrg"])
+        new_tollscsv_df["tollmd_vsm"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollmd_da_new']                                    , new_tollscsv_df["tollmd_vsm"])
+        new_tollscsv_df["tollmd_sml"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollmd_da_new']                                    , new_tollscsv_df["tollmd_sml"])
+        new_tollscsv_df["tollmd_med"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollmd_da_new']                                    , new_tollscsv_df["tollmd_med"])
+        new_tollscsv_df["tollmd_lrg"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), new_tollscsv_df['tollmd_da_new']                                    , new_tollscsv_df["tollmd_lrg"])
     else: 
         # set midday tolls to zero 
-        new_tollscsv_df["tollmd_da"]  = np.where(new_tollscsv_df["tollclass"] >= 900000, 0, new_tollscsv_df["tollpm_da"])
-        new_tollscsv_df["tollmd_s2"]  = np.where(new_tollscsv_df["tollclass"] >= 900000, 0, new_tollscsv_df["tollpm_s2"])
-        new_tollscsv_df["tollmd_s3"]  = np.where(new_tollscsv_df["tollclass"] >= 900000, 0, new_tollscsv_df["tollpm_s3"])
-        new_tollscsv_df["tollmd_vsm"] = np.where(new_tollscsv_df["tollclass"] >= 900000, 0, new_tollscsv_df["tollpm_vsm"])
-        new_tollscsv_df["tollmd_sml"] = np.where(new_tollscsv_df["tollclass"] >= 900000, 0, new_tollscsv_df["tollpm_sml"])
-        new_tollscsv_df["tollmd_med"] = np.where(new_tollscsv_df["tollclass"] >= 900000, 0, new_tollscsv_df["tollpm_med"])
-        new_tollscsv_df["tollmd_lrg"] = np.where(new_tollscsv_df["tollclass"] >= 900000, 0, new_tollscsv_df["tollpm_lrg"])
+        new_tollscsv_df["tollmd_da"]  = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), 0, new_tollscsv_df["tollpm_da"])
+        new_tollscsv_df["tollmd_s2"]  = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), 0, new_tollscsv_df["tollpm_s2"])
+        new_tollscsv_df["tollmd_s3"]  = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), 0, new_tollscsv_df["tollpm_s3"])
+        new_tollscsv_df["tollmd_vsm"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), 0, new_tollscsv_df["tollpm_vsm"])
+        new_tollscsv_df["tollmd_sml"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), 0, new_tollscsv_df["tollpm_sml"])
+        new_tollscsv_df["tollmd_med"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), 0, new_tollscsv_df["tollpm_med"])
+        new_tollscsv_df["tollmd_lrg"] = np.where(((new_tollscsv_df["tollclass"] >= 900000) & (new_tollscsv_df["tollclass"]<=999999)), 0, new_tollscsv_df["tollpm_lrg"])
 
 
     # rounding the values to 4 decimals
@@ -519,6 +533,10 @@ if __name__ == '__main__':
     # keep only variables that are part of the tolls.csv
     new_tollscsv_df.rename(columns = {'facility_name_x':'facility_name'}, inplace = True)
     new_tollscsv_df = new_tollscsv_df[['facility_name', 'fac_index', 'tollclass', 'tollseg', 'tolltype', 'use', 'tollea_da', 'tollam_da', 'tollmd_da', 'tollpm_da', 'tollev_da', 'tollea_s2', 'tollam_s2', 'tollmd_s2', 'tollpm_s2', 'tollev_s2', 'tollea_s3', 'tollam_s3', 'tollmd_s3', 'tollpm_s3', 'tollev_s3', 'tollea_vsm', 'tollam_vsm', 'tollmd_vsm', 'tollpm_vsm', 'tollev_vsm', 'tollea_sml', 'tollam_sml', 'tollmd_sml', 'tollpm_sml', 'tollev_sml', 'tollea_med', 'tollam_med', 'tollmd_med', 'tollpm_med', 'tollev_med', 'tollea_lrg', 'tollam_lrg', 'tollmd_lrg', 'tollpm_lrg', 'tollev_lrg', 'toll_flat']]
+
+    # debug_July5
+    output_filename_debug3 = os.path.join(project_dir, output_dir, "debug3.csv")
+    new_tollscsv_df.to_csv(output_filename_debug3, header=True, index=False)
 
     # main output 
     output_filename4 = os.path.join(project_dir, output_dir, "tolls_simplified.csv")
