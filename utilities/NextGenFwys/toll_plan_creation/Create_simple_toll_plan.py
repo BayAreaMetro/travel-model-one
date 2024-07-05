@@ -46,26 +46,26 @@ import shutil
 Process=2
 
 # Please specify working directories and run ids
-project_dir                  ="L:/Application/Model_One/NextGenFwys/" 
-modelrun_with_NoProject      = "2035_TM152_NGF_NP08"
-output_dir                   = "INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P2b_V12_10pc"
+project_dir                  ="L:/Application/Model_One/NextGenFwys_Round2/"
+modelrun_with_NoProject      = "2035_TM160_NGF_r2_NoProject_04"
+output_dir                   = "INPUT_DEVELOPMENT/Toll_Plans/AllLane_30cCongested_10cOther_v01"
 
 # Specify HOV discount levels
 # A DiscountFactor of 0.75 means a 25% discount; a DiscountFactor of 0 means free; and a DiscountFactor of 1 means no discount.
 # In NGF Pathway 1a, 1b, 2a and 2b, there is a carpool discounts of 50% for HOV3
-DiscountFactor_HOV2 = 1.0
+DiscountFactor_HOV2 = 0.5
 DiscountFactor_HOV3 = 0.5
 
 # Specify the relationship between arterial tolls and freeway tolls
 # For example, if ArterialFactor = 0.2, this script will set arterial tolls to be 20% of freeway tolls
 # If the pathway does not have arterial tolling, ArterialFactor won't be applied 
-ArterialFactor = 0.1
+ArterialFactor = 0.0
 
 #-------------------
 # User settings needed Process 1:
 # (Can skip if running process 2) 
 #-------------------
-modelrun_with_TollCalibrated = "2035_TM152_NGF_NP07_Path1b_01_TollCalibrated01"
+modelrun_with_TollCalibrated = "2035_TM160_NGFr2_NP04_Path1_03"
 
 # toll rates in 2023$
 high_toll_cents      = 50
@@ -101,12 +101,11 @@ tolls_in_midday = "true"
 #-------------------
 
 # Specify toll input file and toll plan option
-toll_input_file="L:/Application/Model_One/NextGenFwys/INPUT_DEVELOPMENT/Static_toll_plans/Static_toll_P1b_V11/SimpleToll_MinorGroupingX3TP.xlsx"
-toll_plan_option="new1b" #This is the name of the excel worksheet
+toll_input_file="C:/Users/ftsang/Box/NextGen Freeways Study/05 Modeling/3_Coding/Round 2/All lane tolling/Round 2 ALT Toll Rates Input.xlsx"
+toll_plan_option="Toll_Inputs_2000prices" #This is the name of the excel worksheet
 # Note that Process 2 assumes the values in the toll input file are in 2000$ - it doesn't do any price conversion
 
-tollcsv_with_allcombos = "L:/Application/Model_One/NextGenFwys/Scenarios/2035_TM152_NGF_NP07_Path2b_02/INPUT/hwy/tolls.csv"
-
+tollcsv_with_allcombos = "L:/Application/Model_One/NextGenFwys_Round2/Scenarios/2035_TM160_NGFr2_NP04_Path1_03/INPUT/hwy/tolls.csv"
 
 # ------------------
 # Input processing
