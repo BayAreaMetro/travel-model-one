@@ -48,7 +48,7 @@ Process=2
 # Please specify working directories and run ids
 project_dir                  ="L:/Application/Model_One/NextGenFwys_Round2/"
 modelrun_with_NoProject      = "2035_TM160_NGF_r2_NoProject_04"
-output_dir                   = "INPUT_DEVELOPMENT/Toll_Plans/AllLane_30cCongested_10cOther_v02"
+output_dir                   = "INPUT_DEVELOPMENT/Toll_Plans/AllLane_30cCongested_10cOther_v03"
 
 # Specify HOV discount levels
 # A DiscountFactor of 0.75 means a 25% discount; a DiscountFactor of 0 means free; and a DiscountFactor of 1 means no discount.
@@ -382,7 +382,7 @@ if __name__ == '__main__':
                         indicator=False)
 
 
-    # debug_July5
+    # debug
     output_filename_debug1 = os.path.join(project_dir, output_dir, "debug1.csv")
     new_tollscsv_df.to_csv(output_filename_debug1, header=True, index=False)
 
@@ -401,12 +401,12 @@ if __name__ == '__main__':
         new_tollscsv_df = pd.merge(new_tollscsv_df,
                         TollInputs_df,
                         how='left',
-                        left_on=['Grouping major'], 
-                        right_on = ['Grouping major'],
+                        left_on=['Grouping minor'], 
+                        right_on = ['Grouping minor'],
                         suffixes=('', '_new'),
                         indicator=False)
 
-        # debug_July5
+        # debug
         output_filename_debug2 = os.path.join(project_dir, output_dir, "debug2.csv")
         new_tollscsv_df.to_csv(output_filename_debug2, header=True, index=False)
 
@@ -534,7 +534,7 @@ if __name__ == '__main__':
     new_tollscsv_df.rename(columns = {'facility_name_x':'facility_name'}, inplace = True)
     new_tollscsv_df = new_tollscsv_df[['facility_name', 'fac_index', 'tollclass', 'tollseg', 'tolltype', 'use', 'tollea_da', 'tollam_da', 'tollmd_da', 'tollpm_da', 'tollev_da', 'tollea_s2', 'tollam_s2', 'tollmd_s2', 'tollpm_s2', 'tollev_s2', 'tollea_s3', 'tollam_s3', 'tollmd_s3', 'tollpm_s3', 'tollev_s3', 'tollea_vsm', 'tollam_vsm', 'tollmd_vsm', 'tollpm_vsm', 'tollev_vsm', 'tollea_sml', 'tollam_sml', 'tollmd_sml', 'tollpm_sml', 'tollev_sml', 'tollea_med', 'tollam_med', 'tollmd_med', 'tollpm_med', 'tollev_med', 'tollea_lrg', 'tollam_lrg', 'tollmd_lrg', 'tollpm_lrg', 'tollev_lrg', 'toll_flat']]
 
-    # debug_July5
+    # debug
     output_filename_debug3 = os.path.join(project_dir, output_dir, "debug3.csv")
     new_tollscsv_df.to_csv(output_filename_debug3, header=True, index=False)
 
