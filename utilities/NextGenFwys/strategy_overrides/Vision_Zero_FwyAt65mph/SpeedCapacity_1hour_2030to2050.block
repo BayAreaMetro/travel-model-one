@@ -1,0 +1,30 @@
+; The Blueprint Vision Zero version is here: https://github.com/BayAreaMetro/travel-model-one/blob/067e459f291ad593d1eea02088bac35fbe1292ab/utilities/RTP/strategy_overrides/Vision_Zero/SpeedCapacity_1hour_2030to2050.block
+
+; This NextGenFwy Round 2 specific version pivots from the Blueprint Vision Zero version.
+; It downgrades:
+; - area type 2 (urban business) and facility type 3 (expressways) to 40mph
+; - area type 4 (suburban) and facility type 3 (expressways) to 45mph
+
+; This is an additional change for NextGenFwy Round 2
+; Create a version of Vision Zero in which the freeway has a free flow speed of 65mph
+; We want to see its impact on limiting arterial diversion 
+; Affects facility type 2 (Freeway) and 8 (Managed Freeway)
+
+
+SPDCAP CAPACITY[01] = 1850, 2050, 1450, 600, 1450, 0,  900, 2150, 2100, 1500
+SPDCAP CAPACITY[11] = 1850, 2050, 1450, 650, 1500, 0,  950, 2150, 2150, 1650
+SPDCAP CAPACITY[21] = 1950, 2100, 1600, 700, 1550, 0, 1000, 2200, 2200, 1700
+SPDCAP CAPACITY[31] = 1950, 2100, 1600, 700, 1550, 0, 1000, 2200, 1950, 1000
+SPDCAP CAPACITY[41] = 2000, 2150, 1650, 900, 1550, 0, 1050, 2250, 2000, 1050
+SPDCAP CAPACITY[51] = 2000, 2150, 1650, 950, 1550, 0, 1050, 2250, 2050, 1100
+SPDCAP CAPACITY[61] = 2000, 2150
+
+SPDCAP SPEED[01]=40,65,40,10,30,18,20,65,55,40
+SPDCAP SPEED[11]=40,65,40,15,30,18,20,65,55,45
+SPDCAP SPEED[21]=45,65,40,20,35,18,20,65,55,55
+SPDCAP SPEED[31]=45,65,45,25,35,18,25,65,50,25
+SPDCAP SPEED[41]=50,65,45,30,40,18,30,65,45,30
+SPDCAP SPEED[51]=50,65,55,35,40,18,35,65,50,30
+SPDCAP SPEED[61]=50,65
+
+REPORT SPEED = YES CAPACITY = YES        ;report speed/capacity tables in network
