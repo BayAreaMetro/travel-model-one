@@ -273,10 +273,11 @@ for tm_runid in current_runs_list:
   final_df['freeway'] = round(final_df['m2_fwytrip']/4, -2)
   final_df['arterial'] = round(final_df['m2_arttrip']/4, -2)
   final_df['transit'] = round((final_df['m2_LRT_Bus'] + final_df['m2_Rail'])/4, -2)
-  new_directory = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Metrics\\Map_Data\\{} (Compared to {})".format(tm_runid,tm_runid_base)
+  new_directory = "L:\\Application\\Model_One\\NextGenFwys_Round2\\Metrics\\Map_Data"
   # new_directory = os.path.join(os.getcwd(),"{} (Compared to {})".format(tm_runid,tm_runid_base))
-  out_filename = new_directory + "\\NGFS_CorridorMaps_SketchData.csv"
+  out_filename = new_directory + "\\NGFS_CorridorMapData_{}_{}.csv".format(tm_runid,tm_runid_base)
   try:
+    '''
     # skip if it exists already
     if os.path.exists(new_directory):
         print("    Destination folder {} exists ".format(new_directory))
@@ -286,6 +287,7 @@ for tm_runid in current_runs_list:
     # final_df.style.format({'m1_VMT_pct': '{:,.2f}%',
     #                        'm1_TTS_pct': '{:,.2f}%',
     #                        'm1_TollVal': '${:,.2f}'}).to_excel(out_filename, engine='openpyxl')
+    '''
     final_df.to_csv(out_filename, float_format='%.5f', index=False) #, header=False
     print("Wrote {}".format(out_filename))
   except:
