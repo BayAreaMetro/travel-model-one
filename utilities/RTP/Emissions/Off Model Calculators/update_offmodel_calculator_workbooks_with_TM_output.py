@@ -18,84 +18,70 @@ Outputs: a copy of the calculator Excel workbook, with updated travel model data
 
 """
 
-import argparse, datetime, os, sys
+import argparse, os
 import shutil, openpyxl
 import pandas as pd
 
-from helper import runs
+from helper import mons
+
+# Main directory
+ABS_DIRNAME = os.path.dirname(__file__).replace("\\","/")
 
 # calculator names
-
 BIKE_SHARE = 'bike_share'
 CAR_SHARE = 'car_share'
 TARGETED_TRANS_ALT = 'targeted_trans_alt'
 VAN_POOL = 'vanpools'
 
 #####################################
-#### inputs paths
-ABS_DIRNAME = os.path.dirname(__file__).replace("\\","/")
-# BOX_DIR = r'C:\Users\{}\Box\Plan Bay Area 2050+\Blueprint\Off-Model\PBA50+ Off-Model'.format(os.environ.get('USERNAME'))
-BOX_DIR = ABS_DIRNAME+r"\data\input\IPA_TM2".replace("\\","/")
-# MODEL_DATA_BOX_DIR = os.path.join(BOX_DIR, 'model_data_all')
-MODEL_DATA_BOX_DIR = BOX_DIR+"/ModelData"
-# OFF_MODEL_CALCULATOR_DIR = os.path.join(BOX_DIR, 'DBP_v2', 'PBA50+ Off-Model Calculators')
-
-#### Calculators
-OFF_MODEL_CALCULATOR_DIR = ABS_DIRNAME+r"\data\input\IPA_TM2\PBA50+ Off-Model Calculators".replace("\\","/")
-
-#### Output path
-OFF_MODEL_CALCULATOR_DIR_OUTPUT = ABS_DIRNAME+r"\data\output".replace("\\","/")
+def get_directory_constants(dirType):
+    # directory file paths (input, models, outputs)
+    if dirType=="external":
+        from templates.external import (
+                        MODEL_DATA_BOX_DIR,
+                        OFF_MODEL_CALCULATOR_DIR,
+                        )
+    else:
+        from templates.mtc import (
+                    MODEL_DATA_BOX_DIR,
+                    OFF_MODEL_CALCULATOR_DIR,
+                    )
+    
+    return MODEL_DATA_BOX_DIR, OFF_MODEL_CALCULATOR_DIR
 
 ########## Bike Share
 def update_bikeshare_calculator(model_runID_ls, verbose=False):
-    print("####### TEST CREATE LOG ######")
-    workbookFile=runs.createNewRun(model_runID_ls, verbose=True)
-    print("####### END TEST LOG ######")
-    # make a copy of the workbook
-    bikeshare_master_workbook_file = OFF_MODEL_CALCULATOR_DIR+'/PBA50+_OffModel_Bikeshare.xlsx'
-    bikeshare_new_workbook_file = OFF_MODEL_CALCULATOR_DIR_OUTPUT+'/PBA50+_OffModel_Bikeshare__{}__{}.xlsx'.format(model_runID_ls[0], model_runID_ls[1])
     
-    if verbose:
-        print(bikeshare_master_workbook_file)
-        print(bikeshare_new_workbook_file)
+    masterWorkbookName="PBA50+_OffModel_Bikeshare" 
 
-    shutil.copy2(bikeshare_master_workbook_file, bikeshare_new_workbook_file)
+    # Step 1: Create run and copy files  
+    try:
+        newWBpath = mons.copy_workbook(masterWorkbookName
+                                            , OFF_MODEL_CALCULATOR_DIR
+                                            ,model_runID_ls
+                                            # ,verbose=True
+                                            )
+    except NameError:
+        print("The calculator name is wrong. Can't locate file.")
 
-    # load and filter model run data of selected runs
-    bikeshare_model_data = pd.read_csv(
-        os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - Bikeshare.csv'),
-        skiprows=1)
-    # display(bikeshare_model_data.head(5))
-    print(bikeshare_model_data['directory'].unique())
-    bikeshare_model_data = bikeshare_model_data.loc[
-        bikeshare_model_data['directory'].isin(model_runID_ls)]
+    # Step 2: load and filter model data of selected runs
+    
+    rawModelDataFileName="Model Data - Bikeshare"
+    modelData, metaData=mons.get_model_data(MODEL_DATA_BOX_DIR
+                                , rawModelDataFileName
+                                , model_runID_ls
+                                # , verbose=True
+                                )
 
-    # add model data of selected runs to 'Model Data' sheet
-    print(bikeshare_new_workbook_file)
-    with pd.ExcelWriter(bikeshare_new_workbook_file, engine='openpyxl', mode = 'a', if_sheet_exists = 'replace') as writer:
-        # note this only works with pandas=1.4.3 or later; in earlier version, it will not overwrite sheet, but add new one with sheet name 'Model Data1'
-        bikeshare_model_data.to_excel(writer, sheet_name='Model Data', index=False, startrow=1, startcol=0)
-
-    # get needed data into the worksheet
-    model_data_info = pd.read_csv(
-        os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - Bikeshare.csv'),
-        nrows=0)
-    model_data_info = model_data_info.columns[0]
-    print(model_data_info)
-
-    # also add model data log info
-    bikeshare_new_workbook = openpyxl.load_workbook(bikeshare_new_workbook_file)
-    model_data_ws = bikeshare_new_workbook['Model Data']
-    model_data_ws['A1'] = model_data_info
-
-    # also add run_id to 'Main sheet'
-    bikeshare_mainsheet = bikeshare_new_workbook['Main sheet']
-    bikeshare_mainsheet['C14'] = model_runID_ls[0]
-    bikeshare_mainsheet['D14'] = model_runID_ls[1]
-
-    # save file
-    bikeshare_new_workbook.save(bikeshare_new_workbook_file)
-
+    # Step 3: add model data of selected runs to 'Model Data' sheet
+    mons.write_model_data_to_excel(newWBpath,modelData,metaData)
+    
+    # Step 4:
+    mons.write_runid_to_mainsheet(newWBpath
+                                  ,model_runID_ls
+                                #   , verbose= True
+                                  )
+    
 
 ########## Car Share
 def update_carshare_calculator(model_runID_ls):
@@ -261,11 +247,14 @@ if __name__ == '__main__':
     parser.add_argument('calculator', choices=[BIKE_SHARE,CAR_SHARE,TARGETED_TRANS_ALT,VAN_POOL], help='Calculator name')
     parser.add_argument('model_run_id_2035', help='travel model run_id of a 2035 run')
     parser.add_argument('model_run_id_2050', help='travel model run_id of a 2050 run')
+    parser.add_argument('-d', choices=['mtc','external'], default='external', help='choose directory mtc or external')
     args = parser.parse_args()
+
 
     # TODO: add logging
 
     MODEL_RUNS = [args.model_run_id_2035, args.model_run_id_2050]
+    MODEL_DATA_BOX_DIR, OFF_MODEL_CALCULATOR_DIR = get_directory_constants(args.d)
 
     if args.calculator == BIKE_SHARE:
         update_bikeshare_calculator(MODEL_RUNS)
