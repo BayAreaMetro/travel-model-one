@@ -22,6 +22,8 @@ import argparse, datetime, os, sys
 import shutil, openpyxl
 import pandas as pd
 
+from helper import runs
+
 # calculator names
 
 BIKE_SHARE = 'bike_share'
@@ -30,25 +32,33 @@ TARGETED_TRANS_ALT = 'targeted_trans_alt'
 VAN_POOL = 'vanpools'
 
 #####################################
-# inputs and outputs 
-BOX_DIR = r'C:\Users\{}\Box\Plan Bay Area 2050+\Blueprint\Off-Model\PBA50+ Off-Model'.format(os.environ.get('USERNAME'))
-MODEL_DATA_BOX_DIR = os.path.join(BOX_DIR, 'model_data_all')
+#### inputs paths
+ABS_DIRNAME = os.path.dirname(__file__).replace("\\","/")
+# BOX_DIR = r'C:\Users\{}\Box\Plan Bay Area 2050+\Blueprint\Off-Model\PBA50+ Off-Model'.format(os.environ.get('USERNAME'))
+BOX_DIR = ABS_DIRNAME+r"\data\input\IPA_TM2".replace("\\","/")
+# MODEL_DATA_BOX_DIR = os.path.join(BOX_DIR, 'model_data_all')
+MODEL_DATA_BOX_DIR = BOX_DIR+"/ModelData"
+# OFF_MODEL_CALCULATOR_DIR = os.path.join(BOX_DIR, 'DBP_v2', 'PBA50+ Off-Model Calculators')
 
-OFF_MODEL_CALCULATOR_DIR = os.path.join(BOX_DIR, 'DBP_v2', 'PBA50+ Off-Model Calculators')
+#### Calculators
+OFF_MODEL_CALCULATOR_DIR = ABS_DIRNAME+r"\data\input\IPA_TM2\PBA50+ Off-Model Calculators".replace("\\","/")
 
+#### Output path
+OFF_MODEL_CALCULATOR_DIR_OUTPUT = ABS_DIRNAME+r"\data\output".replace("\\","/")
 
 ########## Bike Share
-def update_bikeshare_calculator(model_runID_ls):
+def update_bikeshare_calculator(model_runID_ls, verbose=False):
+    print("####### TEST CREATE LOG ######")
+    workbookFile=runs.createNewRun(model_runID_ls, verbose=True)
+    print("####### END TEST LOG ######")
     # make a copy of the workbook
-    bikeshare_master_workbook_file = os.path.join(
-        OFF_MODEL_CALCULATOR_DIR, 
-        'PBA50+_OffModel_Bikeshare.xlsx')
-    bikeshare_new_workbook_file = os.path.join(
-        OFF_MODEL_CALCULATOR_DIR, 
-        'PBA50+_OffModel_Bikeshare__{}__{}.xlsx'.format(model_runID_ls[0], model_runID_ls[1]))
+    bikeshare_master_workbook_file = OFF_MODEL_CALCULATOR_DIR+'/PBA50+_OffModel_Bikeshare.xlsx'
+    bikeshare_new_workbook_file = OFF_MODEL_CALCULATOR_DIR_OUTPUT+'/PBA50+_OffModel_Bikeshare__{}__{}.xlsx'.format(model_runID_ls[0], model_runID_ls[1])
+    
+    if verbose:
+        print(bikeshare_master_workbook_file)
+        print(bikeshare_new_workbook_file)
 
-    print(bikeshare_master_workbook_file)
-    print(bikeshare_new_workbook_file)
     shutil.copy2(bikeshare_master_workbook_file, bikeshare_new_workbook_file)
 
     # load and filter model run data of selected runs
