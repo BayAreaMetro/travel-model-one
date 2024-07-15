@@ -12,7 +12,7 @@ class Bikeshare(Calc):
         newWorkbook = openpyxl.load_workbook(self.new_workbook_file)
         mainsheet = newWorkbook['Main sheet']
         
-        # Run name and year
+        # Write run name and year
         cells=['C','D']
         for ix in range(2):
             mainsheet[f'{cells[ix]}14'] = Calc.get_ipa(self, self.runs[ix])[0]
