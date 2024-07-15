@@ -23,6 +23,7 @@ import shutil, openpyxl
 import pandas as pd
 
 from helper import mons
+from helper.bikeshare import Bikeshare
 
 # Main directory
 ABS_DIRNAME = os.path.dirname(__file__).replace("\\","/")
@@ -34,20 +35,19 @@ TARGETED_TRANS_ALT = 'targeted_trans_alt'
 VAN_POOL = 'vanpools'
 
 #####################################
-def get_directory_constants(dirType):
-    # directory file paths (input, models, outputs)
-    if dirType=="external":
-        from templates.external import (
-                        MODEL_DATA_BOX_DIR,
-                        OFF_MODEL_CALCULATOR_DIR,
-                        )
-    else:
-        from templates.mtc import (
-                    MODEL_DATA_BOX_DIR,
-                    OFF_MODEL_CALCULATOR_DIR,
-                    )
+def update_calculator(clc):
     
-    return MODEL_DATA_BOX_DIR, OFF_MODEL_CALCULATOR_DIR
+    # Step 1: Create run and copy files  
+    clc.copy_workbook()
+
+    # Step 2: load and filter model data of selected runs
+    modelData, metaData=clc.get_model_data()
+
+    # Step 3: add model data of selected runs to 'Model Data' sheet
+    clc.write_model_data_to_excel(modelData,metaData)
+    
+    # Step 4:
+    clc.write_runid_to_mainsheet()    
 
 ########## Bike Share
 def update_bikeshare_calculator(model_runID_ls, verbose=False):
@@ -59,7 +59,7 @@ def update_bikeshare_calculator(model_runID_ls, verbose=False):
         newWBpath = mons.copy_workbook(masterWorkbookName
                                             , OFF_MODEL_CALCULATOR_DIR
                                             ,model_runID_ls
-                                            # ,verbose=True
+                                            ,verbose
                                             )
     except NameError:
         print("The calculator name is wrong. Can't locate file.")
@@ -70,7 +70,7 @@ def update_bikeshare_calculator(model_runID_ls, verbose=False):
     modelData, metaData=mons.get_model_data(MODEL_DATA_BOX_DIR
                                 , rawModelDataFileName
                                 , model_runID_ls
-                                # , verbose=True
+                                , verbose
                                 )
 
     # Step 3: add model data of selected runs to 'Model Data' sheet
@@ -79,7 +79,7 @@ def update_bikeshare_calculator(model_runID_ls, verbose=False):
     # Step 4:
     mons.write_runid_to_mainsheet(newWBpath
                                   ,model_runID_ls
-                                #   , verbose= True
+                                  , verbose
                                   )
     
 
@@ -254,10 +254,23 @@ if __name__ == '__main__':
     # TODO: add logging
 
     MODEL_RUNS = [args.model_run_id_2035, args.model_run_id_2050]
-    MODEL_DATA_BOX_DIR, OFF_MODEL_CALCULATOR_DIR = get_directory_constants(args.d)
-
+    MODEL_DATA_DIR, CALCULATOR_DIR = mons.get_directory_constants(args.d)
+    print()
     if args.calculator == BIKE_SHARE:
-        update_bikeshare_calculator(MODEL_RUNS)
+        # update_bikeshare_calculator(MODEL_RUNS)
+        print("### TEST NEW CALC class ###")
+        MASTER_WORKBOOK_NAME="PBA50+_OffModel_Bikeshare" 
+        MODEL_DATA_FILE_NAME="Model Data - Bikeshare"
+        c=Bikeshare(MASTER_WORKBOOK_NAME
+                    ,MODEL_RUNS
+                    , MODEL_DATA_DIR
+                    , CALCULATOR_DIR 
+                    , MODEL_DATA_FILE_NAME
+                    , False
+        )
+        update_calculator(c)
+        print("### END TEST ###")
+
     elif args.calculator == CAR_SHARE:
         update_carshare_calculator(MODEL_RUNS)
     elif args.calculator == TARGETED_TRANS_ALT:
