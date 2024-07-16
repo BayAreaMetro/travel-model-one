@@ -5,20 +5,20 @@ import shutil
 import pandas as pd
 import re
 
-from helper import runs
+from helper import (mons,runs)
 
 
 class Calc:
 
-    def __init__(self, masterFileName, modelRuns, modelDataDir, masterDir, modelDataName, verbose):
-        self.runs = modelRuns
-        self.modelDataPath = modelDataDir
-        self.masterFilePath = masterDir
+    def __init__(self, masterFileName, modelDataName, args, verbose):
+        self.runs = [args.model_run_id_2035, args.model_run_id_2050]
+        self.modelDataPath, self.masterFilePath = mons.get_directory_constants(args.d)
         self.masterWbName=masterFileName
         self.dataFileName = modelDataName
+        self.varsDir=mons.get_vars_directory(args.d)
+        self.v=Calc.get_variable_locations(self)
         self.verbose=verbose
-        # print(self.masterFilePath)
-
+        
     def copy_workbook(self):
         # Start run
         newWbFilePath=runs.createNewRun(self.runs)
@@ -99,4 +99,16 @@ class Calc:
         
         if self.verbose:
             print(f"Metadata: {meta}")
+
+    def get_variable_locations(self):
+    
+        allVars=pd.read_excel(self.varsDir)
+        calcVars=allVars.loc[allVars.Workbook.isin([self.masterWbName])].drop(columns=['Workbook','Description'])
+        groups=set(calcVars.Sheet)
+        self.v={}
+        for group in groups:
+            self.v.setdefault(group,dict())
+            self.v[group]=[{vn:l} for vn,l in zip(calcVars['Variable Name'],calcVars['Location'])]
+            print(self.v)
+            print(self.v['Main sheet'][0]['VMT_displaced_conventional'])
             

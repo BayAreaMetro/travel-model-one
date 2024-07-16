@@ -1,9 +1,7 @@
 import os
 from templates.external import (
-    BOX_DIR,
-    MODEL_DATA_BOX_DIR,
-    OFF_MODEL_CALCULATOR_DIR,
-    OFF_MODEL_CALCULATOR_DIR_OUTPUT)
+    OFF_MODEL_CALCULATOR_DIR_OUTPUT
+    )
 
 def getNextFilePath(output_folder, run):
     

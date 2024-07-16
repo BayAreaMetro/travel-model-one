@@ -16,3 +16,6 @@ OFF_MODEL_CALCULATOR_DIR = os.path.join(
 
 # Outputs
 OFF_MODEL_CALCULATOR_DIR_OUTPUT = OFF_MODEL_CALCULATOR_DIR
+
+# Variables locations
+VARS=r"utilities\RTP\Emissions\Off Model Calculators\models\Variable_locations.xlsx".replace("\\","/")

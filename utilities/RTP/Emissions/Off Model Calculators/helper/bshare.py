@@ -8,6 +8,10 @@ class Bikeshare(Calc):
         super(Bikeshare, self).__init__(*args, **kwargs)
     
     def write_runid_to_mainsheet(self):
+        # get variables location in calculator
+        v=Calc.get_variable_locations(self)
+        print(v)
+        
         # add run_id to 'Main sheet'
         newWorkbook = openpyxl.load_workbook(self.new_workbook_file)
         mainsheet = newWorkbook['Main sheet']

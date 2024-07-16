@@ -20,3 +20,16 @@ def get_directory_constants(dirType):
                     )
     
     return MODEL_DATA_BOX_DIR, OFF_MODEL_CALCULATOR_DIR
+
+def get_vars_directory(dirType):
+    # directory file paths (input, models, outputs)
+    if dirType=="external":
+        from templates.external import (
+                        VARS
+                        )
+    else:
+        from templates.mtc import (
+                    VARS
+                    )
+        
+    return VARS
