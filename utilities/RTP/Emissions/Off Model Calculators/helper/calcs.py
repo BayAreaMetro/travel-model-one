@@ -10,14 +10,14 @@ from helper import (mons,runs)
 
 class Calc:
 
-    def __init__(self, masterFileName, modelDataName, args, verbose):
+    def __init__(self, args, verbose=False):
         self.runs = [args.model_run_id_2035, args.model_run_id_2050]
         self.modelDataPath, self.masterFilePath = mons.get_directory_constants(args.d)
-        self.masterWbName=masterFileName
-        self.dataFileName = modelDataName
+        self.masterWbName=""
+        self.dataFileName=""
+        self.verbose=verbose
         self.varsDir=mons.get_vars_directory(args.d)
         self.v=Calc.get_variable_locations(self)
-        self.verbose=verbose
         
     def copy_workbook(self):
         # Start run
@@ -37,8 +37,6 @@ class Calc:
         return self.new_workbook_file
 
     def get_model_metadata(self):
-        print("Model Data File Path:")
-        print(self.modelDataPath)
         metaData=pd.read_csv(
             f"{self.modelDataPath}/{self.dataFileName}.csv",
             nrows=0)
@@ -101,14 +99,19 @@ class Calc:
             print(f"Metadata: {meta}")
 
     def get_variable_locations(self):
-    
+
         allVars=pd.read_excel(self.varsDir)
         calcVars=allVars.loc[allVars.Workbook.isin([self.masterWbName])].drop(columns=['Workbook','Description'])
         groups=set(calcVars.Sheet)
         self.v={}
         for group in groups:
             self.v.setdefault(group,dict())
-            self.v[group]=[{vn:l} for vn,l in zip(calcVars['Variable Name'],calcVars['Location'])]
+            self.v[group]=dict(zip(calcVars['Variable Name'],calcVars['Location']))
+        
+        if self.verbose:
+            print("Calculator variables and locations in Excel:")
             print(self.v)
-            print(self.v['Main sheet'][0]['VMT_displaced_conventional'])
+
+     
+            
             
