@@ -1,6 +1,3 @@
-'''
-Class for the common calculator methods.
-'''
 import shutil
 import pandas as pd
 import re
@@ -8,17 +5,32 @@ import re
 from helper import (mons,runs)
 
 
-class Calc:
+class OffModelCalculator:
+    """
+    Off-model calculator general methods to copy, update, and output results
+    given two specific model_run_id_year (input).
 
-    def __init__(self, args, verbose=False):
-        self.runs = [args.model_run_id_2035, args.model_run_id_2050]
-        self.pathType=args.d
+    Attributes:
+        runs: input model_run_id_year in model data input file.
+        pathType: where to look for directories. Mtc points to box absolute paths. External to repo relative paths.
+        modelDataPath: string, absolute path to model data directory.
+        masterFilePath: string, absolute path to offModelCalculators directory.
+        masterWbName: string, name of offModelCalculator of interest (e.g. bikeshare)
+        dataFileName: string, name of model data file (input).
+        verbose: print each method calculations.
+        varsDir: master file with all variable locations in all OffModelCalculators.
+        v: dictionary, all variable names and values for the OffModelCalculator chosen.
+    """
+
+    def __init__(self, model_run_id, directory, verbose=False):
+        self.runs = [model_run_id[0], model_run_id[1]]
+        self.pathType=directory
         self.modelDataPath, self.masterFilePath = mons.get_directory_constants(self.pathType)
         self.masterWbName=""
         self.dataFileName=""
         self.verbose=verbose
         self.varsDir=mons.get_vars_directory(self.pathType)
-        self.v=Calc.get_variable_locations(self)
+        self.v=OffModelCalculator.get_variable_locations(self)
         
     def copy_workbook(self):
         # Start run
@@ -56,7 +68,7 @@ class Calc:
         filteredData=rawData.loc[rawData.directory.isin(self.runs)]
 
         # Get metadata from model data
-        metaData=Calc.get_model_metadata(self)
+        metaData=OffModelCalculator.get_model_metadata(self)
         
         if self.verbose:
             print("Unique directories:")
