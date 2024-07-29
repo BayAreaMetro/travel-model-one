@@ -2,6 +2,10 @@ import os
 from helper.mons import get_paths
 
 def getNextFilePath(output_folder, run):
+    """
+    This method checks for folders with the same name.
+    If the folder exists, provides the next number in the sequence.
+    """
     
     lastRunId=0
     for f in os.listdir(output_folder):
@@ -16,6 +20,12 @@ def getNextFilePath(output_folder, run):
     return lastRunId + 1
 
 def createNewRun(c, verbose=False):
+    """
+    Given the two model_run_id_year selected, an output folder is created.
+    In this folder, outputs will be saved.
+    If the output folder already exists, a sequence is created
+    to differentiate outputs.
+    """
 
     path=get_paths(c.pathType)
 
