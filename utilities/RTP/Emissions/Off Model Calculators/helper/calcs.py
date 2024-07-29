@@ -12,16 +12,17 @@ class Calc:
 
     def __init__(self, args, verbose=False):
         self.runs = [args.model_run_id_2035, args.model_run_id_2050]
-        self.modelDataPath, self.masterFilePath = mons.get_directory_constants(args.d)
+        self.pathType=args.d
+        self.modelDataPath, self.masterFilePath = mons.get_directory_constants(self.pathType)
         self.masterWbName=""
         self.dataFileName=""
         self.verbose=verbose
-        self.varsDir=mons.get_vars_directory(args.d)
+        self.varsDir=mons.get_vars_directory(self.pathType)
         self.v=Calc.get_variable_locations(self)
         
     def copy_workbook(self):
         # Start run
-        newWbFilePath=runs.createNewRun(self.runs)
+        newWbFilePath=runs.createNewRun(self)
         
         # make a copy of the workbook
         master_workbook_file = f"{self.masterFilePath}/{self.masterWbName}.xlsx"

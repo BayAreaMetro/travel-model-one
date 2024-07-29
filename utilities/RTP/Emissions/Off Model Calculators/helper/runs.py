@@ -1,7 +1,5 @@
 import os
-from templates.external import (
-    OFF_MODEL_CALCULATOR_DIR_OUTPUT
-    )
+from helper.mons import get_paths
 
 def getNextFilePath(output_folder, run):
     
@@ -17,19 +15,23 @@ def getNextFilePath(output_folder, run):
 
     return lastRunId + 1
 
-def createNewRun(model_run_ids_list, verbose=False):
+def createNewRun(c, verbose=False):
 
-    runName=model_run_ids_list[0]+"__"+model_run_ids_list[0]
-    pathToRun=f"{OFF_MODEL_CALCULATOR_DIR_OUTPUT}/{runName}__0"
+    path=get_paths(c.pathType)
+
+    runName=c.runs[0]+"__"+c.runs[1]
+    pathToRun=os.path.join(path['OFF_MODEL_CALCULATOR_DIR_OUTPUT'],
+                           f"{runName}__0")
 
     if not os.path.exists(pathToRun):
         runNameNumber=runName+"__0"
         os.makedirs(pathToRun)
         
     else:
-        runID=getNextFilePath(OFF_MODEL_CALCULATOR_DIR_OUTPUT,runName)
+        runID=getNextFilePath(path['OFF_MODEL_CALCULATOR_DIR_OUTPUT'],runName)
         runNameNumber=f"{runName}__{runID}"
-        pathToRun=f"{OFF_MODEL_CALCULATOR_DIR_OUTPUT}/{runNameNumber}"
+        pathToRun=os.path.join(path['OFF_MODEL_CALCULATOR_DIR_OUTPUT'],
+                               runNameNumber)
         os.makedirs(pathToRun)
 
     if verbose:
