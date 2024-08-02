@@ -76,46 +76,51 @@ def get_vars_directory(dirType):
         
     return paths['VARS']
 
-# method depricated, now file names added inside subclasses
-def get_master_and_data_file_names(calcChoice):
+def getNextFilePath(output_folder, run):
     """
-    This function contains the calculator official names and corresponding
-    model data name (input) that will be updated in the calculator.
+    This method checks for folders with the same name.
+    If the folder exists, provides the next number in the sequence.
     """
     
-    if calcChoice=='bike_share':
-        MASTER_WORKBOOK_NAME="PBA50+_OffModel_Bikeshare" 
-        MODEL_DATA_FILE_NAME="Model Data - Bikeshare"
-    
-    elif calcChoice=='car_share':
-        MASTER_WORKBOOK_NAME="PBA50+_OffModel_Carshare" 
-        MODEL_DATA_FILE_NAME="Model Data - Carshare"
+    lastRunId=0
+    for f in os.listdir(output_folder):
+        fileNameList=f.split("__")
+        if f"{fileNameList[0]}__{fileNameList[1]}"== run:
+            if int(fileNameList[2])>lastRunId:
+                lastRunId=int(fileNameList[2])
 
-    elif calcChoice=='ebike':
-        MASTER_WORKBOOK_NAME="PBA50+_OffModel_EBIKE" 
-        MODEL_DATA_FILE_NAME=None # Needs model data name
+        else:
+            continue
 
-    elif calcChoice=='regional_charger':
-        MASTER_WORKBOOK_NAME="PBA50+_OffModel_RegionalCharger" 
-        MODEL_DATA_FILE_NAME=None # Needs model data name
+    return lastRunId + 1
 
-    elif calcChoice=='regional_charger_accii':
-        MASTER_WORKBOOK_NAME="PBA50+_OffModel_RegionalCharger_ACCII" 
-        MODEL_DATA_FILE_NAME=None # Needs model data name
+def createNewRun(c, verbose=False):
+    """
+    Given the two model_run_id_year selected, an output folder is created.
+    In this folder, outputs will be saved.
+    If the output folder already exists, a sequence is created
+    to differentiate outputs.
+    """
 
-    elif calcChoice=='targeted_trans_alt':
-        MASTER_WORKBOOK_NAME="PBA50+_OffModel_TargetedTransAlt" 
-        MODEL_DATA_FILE_NAME="Model Data - Targeted Transportation Alternatives"
+    path=get_paths(c.pathType)
 
-    elif calcChoice=='vanpools':
-        MASTER_WORKBOOK_NAME="PBA50+_OffModel_Vanpools" 
-        MODEL_DATA_FILE_NAME="Model Data - Employer Shuttles" # confirm  name
+    runName=c.runs[0]+"__"+c.runs[1]
+    pathToRun=os.path.join(path['OFF_MODEL_CALCULATOR_DIR_OUTPUT'],
+                           f"{runName}__0")
 
-    elif calcChoice=='vehicle_buyback':
-        MASTER_WORKBOOK_NAME="PBA50+_OffModel_VehicleBuyback" 
-        MODEL_DATA_FILE_NAME=None # Needs model data name
-    
+    if not os.path.exists(pathToRun):
+        runNameNumber=runName+"__0"
+        os.makedirs(pathToRun)
+        
     else:
-        raise ValueError("Choice not in options. Check the calculator name is correct.")
-    
-    return MASTER_WORKBOOK_NAME, MODEL_DATA_FILE_NAME
+        runID=getNextFilePath(path['OFF_MODEL_CALCULATOR_DIR_OUTPUT'],runName)
+        runNameNumber=f"{runName}__{runID}"
+        pathToRun=os.path.join(path['OFF_MODEL_CALCULATOR_DIR_OUTPUT'],
+                               runNameNumber)
+        os.makedirs(pathToRun)
+
+    if verbose:
+        print(f"New run created: {runNameNumber}")
+        print(f"Location: {pathToRun}")
+
+    return pathToRun
