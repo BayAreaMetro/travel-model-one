@@ -17,3 +17,5 @@ utilities/NextGenFwys/metrics/*.csv
 utilities/RTP/Emissions/Off Model Calculators/Model Data*.csv
 *.class
 model-files/runtime/config/jppf-2.4/JPPF-2.4-application-template/classes/*
+*.project
+utilities/RTP/metrics/metrics*.csv
