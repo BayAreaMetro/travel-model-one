@@ -13,7 +13,6 @@ def get_paths(dirType):
     dirType='external'
     Import relative paths from repo pointing to sample folders.
     """
-
     if dirType=='mtc':
         # Input data paths
         box_dir = r'C:\Users\{}\Box\Plan Bay Area 2050+\Blueprint\Off-Model\PBA50+ Off-Model'\
@@ -28,7 +27,10 @@ def get_paths(dirType):
         off_model_calculator_dir_output = off_model_calculator_dir
 
         # Variables locations
-        vars=os.path.join(off_model_calculator_dir, "Variable_locations.xlsx")    
+        vars=os.path.join(off_model_calculator_dir, "Variable_locations.xlsx")
+
+        sb_dir=os.path.join(off_model_calculator_dir,
+                        "SB375_data.csv")   
     
     elif dirType=='external':
     
@@ -50,6 +52,9 @@ def get_paths(dirType):
         # Variables locations
         vars=os.path.join(abs_dirname,
                         r"models\Variable_locations.xlsx")
+        
+        sb_dir=os.path.join(abs_dirname,
+                        r"models\SB375_data.csv")
     else:
         raise ValueError("-d can be either mtc or external")
 
@@ -57,7 +62,8 @@ def get_paths(dirType):
             'MODEL_DATA_BOX_DIR':model_data_box_dir, 
             'OFF_MODEL_CALCULATOR_DIR':off_model_calculator_dir,
             'OFF_MODEL_CALCULATOR_DIR_OUTPUT':off_model_calculator_dir_output, 
-            'VARS':vars}
+            'VARS':vars,
+            'SB375':sb_dir}
 
 
 def get_directory_constants(dirType):
