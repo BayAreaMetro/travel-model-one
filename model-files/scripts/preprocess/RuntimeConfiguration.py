@@ -258,6 +258,9 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     if HhldIncCutOff_forQ2subset != 60000:
        raise AssertionError("The feature to apply the toll cap to a subset of Q2 is disabled; hhldinc_cutoff in the properties file has to be equal to 60000.")
 
+    # Mileage-Based User fees (MBUF)
+    MileageBasedUserFees           = float(get_property(params_filename, params_contents, "Mileage_Based_User_Fees"))
+
     # WFH factors
     WFHFullTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_FullTimeWorker_Factor"))
     WFHPartTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_PartTimeWorker_Factor"))
@@ -474,6 +477,7 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     TripTollCapQ1Factor           = float(get_property(params_filename, params_contents, "TripTollCap_Q1"))
     TripTollCapFirstXpcOfQ2Factor = float(get_property(params_filename, params_contents, "TripTollCap_firstXpercentOfQ2"))
     HhldIncCutOff_forQ2subset     = float(get_property(params_filename, params_contents, "hhldinc_cutoff"))
+    MileageBasedUserFees          = float(get_property(params_filename, params_contents, "Mileage_Based_User_Fees"))
     HSRInterregionalDisable       =   int(get_property(params_filename, params_contents, "HSR_Interregional_Disable"))
 
     # put the av pce factors into the CTRAMP\scripts\block\hwyParam.block
@@ -501,6 +505,8 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     replacements[filepath]["(\nTripTollCap_firstXpercentOfQ2[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % TripTollCapFirstXpcOfQ2Factor
     replacements[filepath]["(\nhhldinc_cutoff[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % HhldIncCutOff_forQ2subset
 
+    replacements[filepath]["(\nMBUF[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MileageBasedUserFees
+
     # put the means based fare discount factors into CTRAMP\scripts\block\trnParam.block
     filepath = os.path.join("CTRAMP","scripts","block","trnParam.block")
     replacements[filepath]["(\nMeans_Based_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedFareQ1Factor
@@ -508,6 +514,7 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ1Factor
     replacements[filepath]["(\nMeans_Based_Cordon_Fare_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedCordonFareQ2Factor
     replacements[filepath]["(\nHSR_Interregional_Disable[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d"   % HSRInterregionalDisable
+
 
 def config_logsums(replacements, append):
     filepath = os.path.join("CTRAMP","runtime","logsums.properties")

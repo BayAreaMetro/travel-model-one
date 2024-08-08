@@ -49,3 +49,7 @@ min_vtoll = xx.xx
 TripTollCap_Q1  = xxxx.xx                   ; trip toll cap for household income group Q1, in 2000 cents
 TripTollCap_firstXpercentOfQ2  = xxxx.xx    ; trip toll cap for the first X% of household income group Q2, in 2000 cents
 hhldinc_cutoff = xxxxx                    ; the hhld inc cutoff for the 2nd tier that receives the toll cap - a number between 30000 and 60000 in 2000$
+
+; set by RuntimeConfiguration.py -- Mileage-Based User fees 
+; this factor will be used by settolls.job
+MBUF = xx.xx   ; year 2000 cents per mile

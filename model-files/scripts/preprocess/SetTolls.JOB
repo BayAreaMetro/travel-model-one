@@ -319,6 +319,59 @@ RUN PGM=HWYNET
 
   ENDIF
 
+   ; Linked-based Mileage-Based User fees (MBUF) implementation
+   ; ------------------------------------------------------------
+   ; If MBUF is greater than 0, the link will be given a value toll -- except for bridge toll booth links (which can be identified by having a non-zero TOLLCLASS < firstvalue)
+   ; MBUF is specified by users via the properties file. And then via RuntimeConfiguration.py, it gets passed to hwyParam.block.
+   ; The unit is Year 2000 cents
+
+  IF (TOLLCLASS==0 |TOLLCLASS>firstvalue)
+
+     TOLLEA_DA = DISTANCE*MBUF
+     TOLLAM_DA = DISTANCE*MBUF
+     TOLLMD_DA = DISTANCE*MBUF
+     TOLLPM_DA = DISTANCE*MBUF
+     TOLLEV_DA = DISTANCE*MBUF
+
+     TOLLEA_S2 = DISTANCE*MBUF
+     TOLLAM_S2 = DISTANCE*MBUF
+     TOLLMD_S2 = DISTANCE*MBUF
+     TOLLPM_S2 = DISTANCE*MBUF
+     TOLLEV_S2 = DISTANCE*MBUF
+
+     TOLLEA_S3 = DISTANCE*MBUF
+     TOLLAM_S3 = DISTANCE*MBUF
+     TOLLMD_S3 = DISTANCE*MBUF
+     TOLLPM_S3 = DISTANCE*MBUF
+     TOLLEV_S3 = DISTANCE*MBUF
+
+     TOLLEA_VSM = DISTANCE*MBUF
+     TOLLAM_VSM = DISTANCE*MBUF
+     TOLLMD_VSM = DISTANCE*MBUF
+     TOLLPM_VSM = DISTANCE*MBUF
+     TOLLEV_VSM = DISTANCE*MBUF
+
+     TOLLEA_SML = DISTANCE*MBUF
+     TOLLAM_SML = DISTANCE*MBUF
+     TOLLMD_SML = DISTANCE*MBUF
+     TOLLPM_SML = DISTANCE*MBUF
+     TOLLEV_SML = DISTANCE*MBUF
+
+     TOLLEA_MED = DISTANCE*MBUF
+     TOLLAM_MED = DISTANCE*MBUF
+     TOLLMD_MED = DISTANCE*MBUF
+     TOLLPM_MED = DISTANCE*MBUF
+     TOLLEV_MED = DISTANCE*MBUF
+
+     TOLLEA_LRG = DISTANCE*MBUF
+     TOLLAM_LRG = DISTANCE*MBUF
+     TOLLMD_LRG = DISTANCE*MBUF
+     TOLLPM_LRG = DISTANCE*MBUF
+     TOLLEV_LRG = DISTANCE*MBUF
+
+  ENDIF
+
+
     ; AV impacts on roadway capacity - represented by adjusting the PCE
     ; Make these factors into link attributes
     IF (FT = 1)  AV_PCE = AV_PCE_FT01
