@@ -1,6 +1,10 @@
 import shutil
 import pandas as pd
 import re
+import win32com.client
+import os
+from datetime import datetime
+
 
 from helper import common
 
@@ -23,6 +27,7 @@ class OffModelCalculator:
     """
 
     def __init__(self, model_run_id, directory, verbose=False):
+        self.uid=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         self.runs = [model_run_id[0], model_run_id[1]]
         self.pathType=directory
         self.modelDataPath, self.masterFilePath = common.get_directory_constants(self.pathType)
@@ -35,11 +40,11 @@ class OffModelCalculator:
         
     def copy_workbook(self):
         # Start run
-        newWbFilePath=common.createNewRun(self)
+        self.newWbFilePath=common.createNewRun(self)
         
         # make a copy of the workbook
-        master_workbook_file = f"{self.masterFilePath}/{self.masterWbName}.xlsx"
-        self.new_workbook_file = f"{newWbFilePath}/{self.masterWbName}__{self.runs[0]}__{self.runs[1]}.xlsx"
+        master_workbook_file = os.path.join(self.masterFilePath,f"{self.masterWbName}.xlsx")
+        self.new_workbook_file = os.path.join(self.newWbFilePath,f"{self.masterWbName}__{self.runs[0]}__{self.runs[1]}.xlsx")
         
         
         shutil.copy2(master_workbook_file, self.new_workbook_file)
@@ -53,7 +58,7 @@ class OffModelCalculator:
     def get_model_metadata(self):
         
         metaData=pd.read_csv(
-            f"{self.modelDataPath}/{self.dataFileName}.csv",
+            os.path.join(self.modelDataPath,f"{self.dataFileName}.csv"),
             nrows=self.metaRow,
             header=None)
         
@@ -65,7 +70,7 @@ class OffModelCalculator:
     def get_model_data(self):
         # Get Model Data as df
         rawData=pd.read_csv(
-            f"{self.modelDataPath}/{self.dataFileName}.csv",
+            os.path.join(self.modelDataPath,f"{self.dataFileName}.csv"),
             skiprows=self.dataRow)
         
         filteredData=rawData.loc[rawData.directory.isin(self.runs+[self.baselineDir])]
@@ -152,9 +157,27 @@ class OffModelCalculator:
             print(self.v)
 
     ## Step 5: open/close Excel, autosave
-        # todo
-        # 
-        # Step 6: log runs in master
+    def open_excel_app(self):
+        
+        self.updated_workbook_file=os.path.join(self.newWbFilePath,
+                                                f"{self.uid.replace(':','--')}__{self.masterWbName}.xlsx")
+        
+        print(self.new_workbook_file)
+        print("File exist?: ",os.path.exists(self.new_workbook_file))
+        # print(self.updated_workbook_file)
+        
+        excel = win32com.client.Dispatch("Excel.Application")
+        wb = excel.Workbooks.Open(self.new_workbook_file)
+        excel.Visible=True
+        wb.RefreshAll()
+        wb.SaveAs(self.updated_workbook_file)
+        wb.Close()
+        excel.Quit()
+        
+        # Remove old file
+        os.remove(self.new_workbook_file)
+
+    # Step 6: log runs in master
         # todo  
 
     

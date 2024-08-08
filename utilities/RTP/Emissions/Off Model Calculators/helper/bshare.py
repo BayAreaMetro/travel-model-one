@@ -31,7 +31,8 @@ class Bikeshare(OffModelCalculator):
 
         # save file
         newWorkbook.save(self.new_workbook_file)
-
+        newWorkbook.close()
+        
         if self.verbose:
             print(f"Main sheet updated with {self.runs} in location\n{self.new_workbook_file}")
 
@@ -48,6 +49,10 @@ class Bikeshare(OffModelCalculator):
         
         # Step 4:
         self.write_runid_to_mainsheet()
+
+        OffModelCalculator.open_excel_app(self)
+
+        # OffModelCalculator.remove_old_calculator(self)
 
         ## Step 5: open/close Excel, autosave
         # todo

@@ -33,6 +33,7 @@ class Carshare(OffModelCalculator):
         
         # save file
         newWorkbook.save(self.new_workbook_file)
+        newWorkbook.close()
 
 
     def update_calculator(self):
@@ -48,5 +49,7 @@ class Carshare(OffModelCalculator):
         
         # Step 4:
         self.write_runid_to_mainsheet()
+
+        OffModelCalculator.open_excel_app(self)
 
     
