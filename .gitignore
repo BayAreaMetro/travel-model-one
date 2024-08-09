@@ -19,3 +19,13 @@ utilities/RTP/Emissions/Off Model Calculators/Model Data*.csv
 model-files/runtime/config/jppf-2.4/JPPF-2.4-application-template/classes/*
 *.project
 utilities/RTP/metrics/metrics*.csv
+.project
+core/cmf/common-base/.project
+core/cmf/common-daf-v2/.project
+core/models/censusdata/.project
+core/models/synpop/.project
+core/models/utils/.project
+core/projects/mtc/.project
+core/third-party/jppf-2.4/.project
+core/third-party/jppf-2.4/client/.project
+core/third-party/sqlitejdbc/.project
