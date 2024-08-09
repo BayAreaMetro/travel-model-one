@@ -12,3 +12,9 @@ class BuyBack(OffModelCalculator):
         OffModelCalculator.copy_workbook(self)
         # Step 2: copy sb375 data
         OffModelCalculator.write_sbdata_to_excel(self)
+        # Step 3: open close new wb
+        OffModelCalculator.open_excel_app(self)
+        # Step 4: update log
+        OffModelCalculator.get_variable_locations(self)
+        logVariables=OffModelCalculator.get_calculator_names(self)
+        OffModelCalculator.log_run(self,logVariables)

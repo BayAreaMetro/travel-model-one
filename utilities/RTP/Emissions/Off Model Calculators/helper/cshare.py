@@ -1,4 +1,5 @@
 import openpyxl
+import pandas as pd
 
 from helper.calcs import OffModelCalculator
 
@@ -35,6 +36,15 @@ class Carshare(OffModelCalculator):
         newWorkbook.save(self.new_workbook_file)
         newWorkbook.close()
 
+    def get_calculator_names(self):
+        log=pd.read_excel(self.master_workbook_file
+                                 , sheet_name='Output'
+                                 , header=[1]
+                                 , skiprows=0
+                    )
+
+        return log.columns.tolist()[3:]
+
 
     def update_calculator(self):
     
@@ -50,6 +60,11 @@ class Carshare(OffModelCalculator):
         # Step 4:
         self.write_runid_to_mainsheet()
 
+        # Step 5: open close new wb
         OffModelCalculator.open_excel_app(self)
+
+        # Step 6: update log
+        logVariables=self.get_calculator_names()
+        OffModelCalculator.log_run(self,logVariables)
 
     

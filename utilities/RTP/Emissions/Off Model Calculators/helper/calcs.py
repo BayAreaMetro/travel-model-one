@@ -4,6 +4,7 @@ import re
 import win32com.client
 import os
 from datetime import datetime
+import openpyxl
 
 
 from helper import common
@@ -36,21 +37,20 @@ class OffModelCalculator:
         self.baselineDir=None
         self.verbose=verbose
         self.varsDir=common.get_vars_directory(self.pathType)
-        self.v=OffModelCalculator.get_variable_locations(self)
         
     def copy_workbook(self):
         # Start run
         self.newWbFilePath=common.createNewRun(self)
         
         # make a copy of the workbook
-        master_workbook_file = os.path.join(self.masterFilePath,f"{self.masterWbName}.xlsx")
+        self.master_workbook_file = os.path.join(self.masterFilePath,f"{self.masterWbName}.xlsx")
         self.new_workbook_file = os.path.join(self.newWbFilePath,f"{self.masterWbName}__{self.runs[0]}__{self.runs[1]}.xlsx")
         
         
-        shutil.copy2(master_workbook_file, self.new_workbook_file)
+        shutil.copy2(self.master_workbook_file, self.new_workbook_file)
 
         if self.verbose:
-            print(master_workbook_file)
+            print(self.master_workbook_file)
             print(self.new_workbook_file)
 
         # return self.new_workbook_file
@@ -162,23 +162,81 @@ class OffModelCalculator:
         self.updated_workbook_file=os.path.join(self.newWbFilePath,
                                                 f"{self.uid.replace(':','--')}__{self.masterWbName}.xlsx")
         
-        print(self.new_workbook_file)
-        print("File exist?: ",os.path.exists(self.new_workbook_file))
-        # print(self.updated_workbook_file)
-        
         excel = win32com.client.Dispatch("Excel.Application")
         wb = excel.Workbooks.Open(self.new_workbook_file)
         excel.Visible=True
         wb.RefreshAll()
         wb.SaveAs(self.updated_workbook_file)
         wb.Close()
-        excel.Quit()
+        # excel.Quit()
         
         # Remove old file
         os.remove(self.new_workbook_file)
 
-    # Step 6: log runs in master
-        # todo  
+    ##Step 6: log runs in master
+
+    def extract_data_from_mainsheet(self, vNames):
+        # Select Main sheet variables
+        vMS=self.v['Main sheet']
+        
+        # open main sheet
+        newWorkbook = openpyxl.load_workbook(self.updated_workbook_file,data_only=True)
+        mainsheet = newWorkbook['Main sheet']
+
+        # collect data of interest
+        data=[]
+        data+=[self.uid,self.runs[0],self.runs[1]]
+        for metric in vNames:
+            try:
+                data.append(mainsheet[vMS[metric]].value)
+                if self.verbose:
+                    print(f"Metric: {metric}\nlocation:{vMS[metric]}\nValue: {mainsheet[vMS[metric]].value}")
+                
+            except:
+                print(f"{metric} Not found.")
+                pass
+
+        vNames=['Timestamp','Baseline Run ID','Horizon Run ID']+vNames
+        row=dict(map(lambda i,j : (i,[j]) , vNames,data))
+        # open output sheet
+        log=pd.DataFrame(row)
+
+        return log
+    
+    def check_last_log_index(self):
+        last_entry=pd.read_excel(self.master_workbook_file
+                                 , sheet_name='Output'
+                                 , header=[1]
+                                 , usecols=[0]
+                                #  , engine=openpyxl
+                                 , skiprows=0
+                    )
+        if self.verbose:
+            print(f"Length of log: {len(last_entry)}")
+        
+        return len(last_entry)
+    
+    def get_calculator_names(self):
+        log=pd.read_excel(self.master_workbook_file
+                                 , sheet_name='Output'
+                                 , header=[1]
+                                 , skiprows=0
+                    )
+
+        return log.columns.tolist()[3:]
+    
+    def log_run(self, vNames):
+
+        dataTolog=self.extract_data_from_mainsheet(vNames)
+        logLength=self.check_last_log_index()
+
+        with pd.ExcelWriter(self.master_workbook_file, engine='openpyxl', mode = 'a', if_sheet_exists = 'overlay') as writer:  
+            # add log to main calc
+            dataTolog.to_excel(writer, 
+                        sheet_name='Output', 
+                        index=False,
+                        header=False,
+                        startrow=logLength+2)
 
     
 

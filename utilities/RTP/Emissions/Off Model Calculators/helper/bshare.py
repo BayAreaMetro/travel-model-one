@@ -1,4 +1,5 @@
 import openpyxl
+import pandas as pd
 
 from helper.calcs import OffModelCalculator
 
@@ -13,7 +14,7 @@ class Bikeshare(OffModelCalculator):
     
     def write_runid_to_mainsheet(self):
         # get variables location in calculator
-        OffModelCalculator.get_variable_locations(self)
+        # self.v=OffModelCalculator.get_variable_locations(self)
         
         # add run_id to 'Main sheet'
         newWorkbook = openpyxl.load_workbook(self.new_workbook_file)
@@ -35,6 +36,17 @@ class Bikeshare(OffModelCalculator):
         
         if self.verbose:
             print(f"Main sheet updated with {self.runs} in location\n{self.new_workbook_file}")
+    
+
+    
+    def get_calculator_names(self):
+        log=pd.read_excel(self.master_workbook_file
+                                 , sheet_name='Output'
+                                 , header=[1]
+                                 , skiprows=0
+                    )
+
+        return log.columns.tolist()[3:]
 
     def update_calculator(self):
     
@@ -50,12 +62,9 @@ class Bikeshare(OffModelCalculator):
         # Step 4:
         self.write_runid_to_mainsheet()
 
+        # Step 5: open close new wb
         OffModelCalculator.open_excel_app(self)
 
-        # OffModelCalculator.remove_old_calculator(self)
-
-        ## Step 5: open/close Excel, autosave
-        # todo
-        # 
-        # Step 6: log runs in master
-        # todo   
+        # Step 6: update log
+        logVariables=self.get_calculator_names()
+        OffModelCalculator.log_run(self,logVariables)
