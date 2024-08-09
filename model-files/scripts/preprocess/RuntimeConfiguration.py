@@ -475,6 +475,7 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     TripTollCapFirstXpcOfQ2Factor = float(get_property(params_filename, params_contents, "TripTollCap_firstXpercentOfQ2"))
     HhldIncCutOff_forQ2subset     = float(get_property(params_filename, params_contents, "hhldinc_cutoff"))
     MileageBasedUserFees          = float(get_property(params_filename, params_contents, "Mileage_Based_User_Fees"))
+    FirstExpLaneTollClass         =   int(get_property(params_filename, params_contents, "FIRST_EL_TollClass"))
     HSRInterregionalDisable       =   int(get_property(params_filename, params_contents, "HSR_Interregional_Disable"))
 
     # put the av pce factors into the CTRAMP\scripts\block\hwyParam.block
@@ -503,6 +504,8 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     replacements[filepath]["(\nhhldinc_cutoff[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % HhldIncCutOff_forQ2subset
 
     replacements[filepath]["(\nMBUF[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MileageBasedUserFees
+
+    replacements[filepath]["(\nfirstvalue[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%d" % FirstExpLaneTollClass
 
     # put the means based fare discount factors into CTRAMP\scripts\block\trnParam.block
     filepath = os.path.join("CTRAMP","scripts","block","trnParam.block")

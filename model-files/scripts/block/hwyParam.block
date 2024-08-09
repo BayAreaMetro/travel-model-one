@@ -10,7 +10,11 @@ TRUCKVOT      = 30.0      ; year 2000 dollars per hour
 SR2COSTSHARE  = 1.75      ; scales toll cost for SR2 occupancy
 SR3COSTSHARE  = 2.50      ; scales toll cost for SR3+ occupancy
 TRKPCE        = 2.0       ; passenger car equivalent for combo trucks
-FIRSTVALUE    = 31	      ; first value toll has a TOLL code of 31
+
+; Set by RuntimeConfiguration.py
+; Typically, express lane toll classes are numbered 31 or higher i.e. FIRSTVALUE = 31
+; However, in some model applications, we want to include SR37 toll as a bridge toll rather than an express lane (e.g. in NextGenFwy Round 2 where express lane toll discount is not a strategy)
+FIRSTVALUE    = xx	      ; the lowest express lane tollclass number
 
 ; set by RuntimeConfiguration.py 
 ; TruckTripDistribution gravity LOS term is a blended travel time
