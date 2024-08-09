@@ -329,11 +329,11 @@ RUN PGM=HWYNET
     ; before applying MBUF, verify that there are no express lanes in the scenario
     IF ((MBUF>0) && (TOLLCLASS>firstvalue) && ((TOLLAM_DA>0) | (TOLLPM_DA>0)))
         print LIST="MBUF is on, and there are express lanes in the network. Review Link ",A,"-",B," which has TOLLCLASS ", TOLLCLASS, "and USE ", USE,"
-        ABORT MSG ="MBUF is on, and there are express lanes in the network; see log file; verify that all express lane tollclasses in tolls.csv have a toll rate less than 0.00011 dollars"
+        ABORT MSG ="MBUF is on, and there are express lanes (EL) in the network; see log file; verify that all EL tollclasses in tolls.csv have a toll rate less than 0.00011 dollars"
     ENDIF
 
 
-  IF (TOLLCLASS==0 |TOLLCLASS>firstvalue)
+    IF ((MBUF>0) && (TOLLCLASS==0 |TOLLCLASS>firstvalue))
 
      TOLLEA_DA = DISTANCE*MBUF
      TOLLAM_DA = DISTANCE*MBUF
@@ -377,7 +377,7 @@ RUN PGM=HWYNET
      TOLLPM_LRG = DISTANCE*MBUF
      TOLLEV_LRG = DISTANCE*MBUF
 
-  ENDIF
+    ENDIF
 
 
     ; AV impacts on roadway capacity - represented by adjusting the PCE
