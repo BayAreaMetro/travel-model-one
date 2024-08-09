@@ -1,5 +1,4 @@
 from helper.calcs import OffModelCalculator
-
 class BuyBack(OffModelCalculator):
     
     def __init__(self, *args, **kwargs):

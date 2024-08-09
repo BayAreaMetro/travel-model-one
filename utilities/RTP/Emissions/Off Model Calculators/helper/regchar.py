@@ -1,5 +1,4 @@
 from helper.calcs import OffModelCalculator
-
 class RegionalCharger(OffModelCalculator):
     
     def __init__(self, *args, **kwargs):

@@ -1,6 +1,5 @@
 from helper.calcs import OffModelCalculator
 import pandas as pd
-
 class EBike(OffModelCalculator):
     
     def __init__(self, *args, **kwargs):

@@ -2,7 +2,6 @@ import openpyxl
 import pandas as pd
 
 from helper.calcs import OffModelCalculator
-
 class Carshare(OffModelCalculator):
     
     def __init__(self, *args, **kwargs):
@@ -44,7 +43,6 @@ class Carshare(OffModelCalculator):
                     )
 
         return log.columns.tolist()[3:]
-
 
     def update_calculator(self):
     

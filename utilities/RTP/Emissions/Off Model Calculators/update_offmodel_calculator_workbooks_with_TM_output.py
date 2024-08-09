@@ -6,25 +6,12 @@ Prerequisite: run off-model prep R scripts (https://github.com/BayAreaMetro/trav
 to create a set of "model data" for the off-model calculators.
 
 Example call: 
-`python update_offmodel_calculator_workbooks_with_TM_output.py bike_share 2035_TM160_DBP_Plan_04 2050_TM160_DBP_Plan_04`
-
-Args inputs: 
-off-model calculator, including -
-    - bike share (req: r1,r2)
-    - car share (req: r1,r2)
-    - targeted transportation alternatives (req: r1,r2)
-    - vanpools (req: r1,r2)
-    - ebike
-    - vehicle buy back
-    - regional charger
-    - complete streets (req: r1,r2)
-
+`python update_offmodel_calculator_workbooks_with_TM_output.py`
+Args inputs:  
  Flags:
  -d: directory paths
  for MTC team, select -d mtc (set as default)
  for external team members -d external 
--r1: run_name_a - following the pattern for the name year_model_runid (e.g.2035_TM160_IPA_16)
--r2: run_name_b - following the pattern for the name year_model_runid (e.g.2050_TM160_IPA_16)
 
 Models:
 Includes all Excel sheet master model calculators. These models contain the logs of runs created after running the script.
@@ -37,13 +24,14 @@ Data:
            |PBA50+ Off-Model Calculators
             -> Calculators (not used)
     |output: contains a copy of the calculator Excel workbook, with updated travel model data.
-        |run folder: named based on the run. If same run names used, then creates id
-                e.g. 2035_TM160_IPA_16__2050_TM160_IPA_16__0
-                e.g. 2035_TM160_IPA_16__2050_TM160_IPA_16__1
-        -> New calculator with updated data
-
+        |run folder: named based on the uid (timestamp).
+                e.g. 2024-08-09 15--50--53 (format:YYYY-MM-DD 24H--MM--SS)
 """
+
 import argparse
+import pandas as pd
+import os
+from datetime import datetime
  
 from helper.bshare import Bikeshare
 from helper.cshare import Carshare
@@ -62,68 +50,62 @@ E_BIKE = 'e_bike'
 BUY_BACK='buy_back'
 REG_CHARGER='regional_charger'
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=USAGE)
+# template location
+CWD=os.path.dirname(__file__)
+TEMPLATE_DIR=os.path.join(CWD, r'update_omc_template.xlsx')
 
-    # Args used in all calculators
-    parser.add_argument('calculator', choices=[BIKE_SHARE,CAR_SHARE,\
-                                               TARGETED_TRANS_ALT,VAN_POOL,\
-                                               E_BIKE,BUY_BACK,REG_CHARGER], \
-                                               help='Calculator name'\
-    )
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description=USAGE)
     parser.add_argument('-d', choices=['mtc','external'], default='external', 
                         help='choose directory mtc or external'
     )
-    
-    # Args used in some calcs (optional)
-    parser.add_argument('-r1','--model_run_id_2035', 
-                        default="r1",
-                        help='travel model run_id of a 2035 run'
-    )
-    parser.add_argument('-r2','--model_run_id_2050', 
-                        default="r2",
-                        help='travel model run_id of a 2050 run'
-    )
     ARGS = parser.parse_args()
-
-    MODEL_RUN_IDS=[ARGS.model_run_id_2035,ARGS.model_run_id_2050]
     DIRECTORY=ARGS.d
+    UID=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
-    # TODO: add logging
-    if ARGS.calculator == BIKE_SHARE:
-        # Create Calculator instance
-        c=Bikeshare(MODEL_RUN_IDS,DIRECTORY, False)
-        c.update_calculator()
-
-    elif ARGS.calculator == CAR_SHARE:
-        ## TODO: add subclass
-        c=Carshare(MODEL_RUN_IDS,DIRECTORY, False)
-        c.update_calculator()
+    templateData=pd.read_excel(TEMPLATE_DIR
+                               ,sheet_name='Template'
+                               ,header=[0]).fillna("")
     
-    elif ARGS.calculator == TARGETED_TRANS_ALT:
-        c=TargetedTransAlt(MODEL_RUN_IDS,DIRECTORY, False)
-        c.update_calculator()
+    for ix in range(len(templateData)):
+        CALCULATOR=templateData.iloc[ix]['Calculator']
+        R1=templateData.iloc[ix]['model_run_id baseline']
+        R2=templateData.iloc[ix]['model_run_id horizon']
+        MODEL_RUN_IDS=[R1,R2]
+        
+        if CALCULATOR == BIKE_SHARE:
+            c=Bikeshare(MODEL_RUN_IDS,DIRECTORY, UID, False)
+            c.update_calculator()
 
-    elif ARGS.calculator == VAN_POOL:
-        c=VanPools(MODEL_RUN_IDS,DIRECTORY, False)
-        c.update_calculator()
+        elif CALCULATOR == CAR_SHARE:
+            c=Carshare(MODEL_RUN_IDS,DIRECTORY, UID, False)
+            c.update_calculator()
+        
+        elif CALCULATOR == TARGETED_TRANS_ALT:
+            c=TargetedTransAlt(MODEL_RUN_IDS,DIRECTORY, UID, False)
+            c.update_calculator()
 
-    elif ARGS.calculator == E_BIKE:
-        c=EBike(MODEL_RUN_IDS,DIRECTORY, False)
-        c.update_calculator()
+        elif CALCULATOR == VAN_POOL:
+            c=VanPools(MODEL_RUN_IDS,DIRECTORY, UID, False)
+            c.update_calculator()
 
-    elif ARGS.calculator == BUY_BACK:
-        c=BuyBack(MODEL_RUN_IDS,DIRECTORY, False)
-        c.update_calculator()
-    
-    elif ARGS.calculator == REG_CHARGER:
-        c=RegionalCharger(MODEL_RUN_IDS,DIRECTORY, False)
-        c.update_calculator()
+        elif CALCULATOR == E_BIKE:
+            c=EBike(MODEL_RUN_IDS,DIRECTORY, UID, False)
+            c.update_calculator()
 
-    ## TODO: Add Complete Streets calculator
+        elif CALCULATOR == BUY_BACK:
+            c=BuyBack(MODEL_RUN_IDS,DIRECTORY, UID, False)
+            c.update_calculator()
+        
+        elif CALCULATOR == REG_CHARGER:
+            c=RegionalCharger(MODEL_RUN_IDS,DIRECTORY, UID, False)
+            c.update_calculator()
 
-    else:
-        raise ValueError(
-            "Choice not in options. Check the calculator name is correct.")
-    
+        ## TODO: Add Complete Streets calculator
+
+        else:
+            raise ValueError(
+                "Choice not in options. Check the calculator name is correct.")
+        

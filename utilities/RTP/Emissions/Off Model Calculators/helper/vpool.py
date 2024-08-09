@@ -1,7 +1,6 @@
 import openpyxl
 
 from helper.calcs import OffModelCalculator
-
 class VanPools(OffModelCalculator):
     
     def __init__(self, *args, **kwargs):
@@ -46,4 +45,9 @@ class VanPools(OffModelCalculator):
         # Step 4:
         self.write_runid_to_mainsheet()
 
+        # Step 5: open close new wb
         OffModelCalculator.open_excel_app(self)
+
+        # Step 6: update log
+        logVariables=self.get_calculator_names()
+        OffModelCalculator.log_run(self,logVariables)

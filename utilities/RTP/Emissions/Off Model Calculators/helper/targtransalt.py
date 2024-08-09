@@ -2,7 +2,6 @@ import openpyxl
 import pandas as pd
 
 from helper.calcs import OffModelCalculator
-
 class TargetedTransAlt(OffModelCalculator):
     
     def __init__(self, *args, **kwargs):

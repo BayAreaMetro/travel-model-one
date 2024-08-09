@@ -3,7 +3,6 @@ import pandas as pd
 import re
 import win32com.client
 import os
-from datetime import datetime
 import openpyxl
 
 
@@ -27,8 +26,8 @@ class OffModelCalculator:
         v: dictionary, all variable names and values for the OffModelCalculator chosen.
     """
 
-    def __init__(self, model_run_id, directory, verbose=False):
-        self.uid=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    def __init__(self, model_run_id, directory, uid, verbose=False):
+        self.uid=uid
         self.runs = [model_run_id[0], model_run_id[1]]
         self.pathType=directory
         self.modelDataPath, self.masterFilePath = common.get_directory_constants(self.pathType)
@@ -74,7 +73,6 @@ class OffModelCalculator:
             skiprows=self.dataRow)
         
         filteredData=rawData.loc[rawData.directory.isin(self.runs+[self.baselineDir])]
-        # print(filteredData)
         # Get metadata from model data
         metaData=OffModelCalculator.get_model_metadata(self)
         
@@ -168,7 +166,6 @@ class OffModelCalculator:
         wb.RefreshAll()
         wb.SaveAs(self.updated_workbook_file)
         wb.Close()
-        # excel.Quit()
         
         # Remove old file
         os.remove(self.new_workbook_file)
@@ -208,7 +205,6 @@ class OffModelCalculator:
                                  , sheet_name='Output'
                                  , header=[1]
                                  , usecols=[0]
-                                #  , engine=openpyxl
                                  , skiprows=0
                     )
         if self.verbose:
