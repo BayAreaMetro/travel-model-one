@@ -258,9 +258,6 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     if HhldIncCutOff_forQ2subset != 60000:
        raise AssertionError("The feature to apply the toll cap to a subset of Q2 is disabled; hhldinc_cutoff in the properties file has to be equal to 60000.")
 
-    # Mileage-Based User fees (MBUF)
-    MileageBasedUserFees           = float(get_property(params_filename, params_contents, "Mileage_Based_User_Fees"))
-
     # WFH factors
     WFHFullTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_FullTimeWorker_Factor"))
     WFHPartTimeWorkerFactor = float(get_property(params_filename, params_contents, "WFH_PartTimeWorker_Factor"))
