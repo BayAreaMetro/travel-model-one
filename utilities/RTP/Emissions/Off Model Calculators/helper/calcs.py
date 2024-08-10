@@ -4,6 +4,7 @@ import re
 import win32com.client
 import os
 import openpyxl
+import time
 
 
 from helper import common
@@ -168,10 +169,23 @@ class OffModelCalculator:
         wb.Close()
         
         # Remove old file
-        os.remove(self.new_workbook_file)
+        print(f"Trying to remove {self.masterWbName}")
+        timesTried=0
+        while True:
+            try:  
+                os.remove(self.new_workbook_file)
+                print("Removed")
+                break
+            except:
+                timesTried+=1
+                if timesTried<3:
+                    time.sleep(8)
+                    print("retries: ",timesTried)
+                else:
+                    print("cannot remove old file.")
+                    break
 
     ##Step 6: log runs in master
-
     def extract_data_from_mainsheet(self, vNames):
         # Select Main sheet variables
         vMS=self.v['Main sheet']
