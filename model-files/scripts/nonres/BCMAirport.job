@@ -426,12 +426,10 @@ RUN PGM=MATRIX
   MW[2]=MI.1.1        ;congested highway travel time 3+
   MW[3]=MI.1.2        ;highway distance
 
-  COMP MW[6]=(MI.1.1)/100      ;offpeak transit ivtt
-  ; Subtract 8 minutes from 10 minute walk model assumes at Airport
-  COMP MW[7]=(MI.3.4+MI.3.5+MI.3.6)/100      ;offpeak transit aux (walk)
+  COMP MW[6]=(MI.3.1)/100      ;offpeak transit ivtt
+  COMP MW[7]=(MI.3.5+MI.3.6+MI.3.7)/100      ;offpeak transit aux (walk)
   COMP MW[8]=(MI.3.2+MI.3.3)/100      ;offpeak transit wait
-  MW[9]=MI.3.9        ;offpeak transit fare
-  ;MW[10]=MI.4         ;on-call fare matrix, not used
+  MW[9]=MI.3.10        ;offpeak transit fare
   MW[11]=MI.5.RB*100         ;resident business trips
 
   ;Auto Operating Costs
@@ -454,7 +452,7 @@ RUN PGM=MATRIX
       COMP MW[21] = EXP ((-0.071 * (MW[2] + 10.0)) + (-0.2585 * (TERMINAL + 6.0)) + (-0.00277 * ((MW[3]*AOCOST) + 1080)/1.6))
 
       ; Transit Utility
-      COMP MW[23] = EXP ((-0.073 * MW[6]) + (-0.2585 * MW[7]) + (-0.107 * MW[8]) + (-0.00277 * MW[9]) - 6.56)
+      COMP MW[23] = EXP ((-0.073 * MW[6]) + (-0.2585 * MW[7]) + (-0.107 * MW[8]) + (-0.00277 * MW[9]) - 1.56)
 
       ; On-Call Utility
       ; Add 2 minute average walk time between taxi and terminal
@@ -498,7 +496,7 @@ RUN PGM=MATRIX
       COMP MW[21] = EXP ((-0.071 * (MW[2] + 10.0)) + (-0.2585 * (TERMINAL + 6.0)) + (-0.00277 * ((MW[3]*AOCOST) + 1080)/1.6))
 
       ; Transit Utility
-      COMP MW[23] = EXP ((-0.073 * MW[6]) + (-0.2585 * MW[7]) + (-0.107 * MW[8]) + (-0.00277 * MW[9]) - 6.56)
+      COMP MW[23] = EXP ((-0.073 * MW[6]) + (-0.2585 * MW[7]) + (-0.107 * MW[8]) + (-0.00277 * MW[9]) - 1.56)
 
       ; On-Call Utility
       ; Add 2 minute average walk time between taxi and terminal
@@ -543,7 +541,7 @@ RUN PGM=MATRIX
       COMP MW[21] = EXP ((-0.071 * (MW[2] + 10.0)) + (-0.2585 * (TERMINAL + 6.0)) + (-0.00277 * ((MW[3]*AOCOST) + 1080)/1.6))
 
       ; Transit Utility
-      COMP MW[23] = EXP ((-0.073 * MW[6]) + (-0.2585 * MW[7]) + (-0.107 * MW[8]) + (-0.00277 * MW[9]) - 6.56)
+      COMP MW[23] = EXP ((-0.073 * MW[6]) + (-0.2585 * MW[7]) + (-0.107 * MW[8]) + (-0.00277 * MW[9]) - 1.56)
 
       ; On-Call Utility
       ; Add 2 minute average walk time between taxi and terminal
@@ -599,12 +597,10 @@ RUN PGM=MATRIX
   MW[2]=MI.1.1        ;congested highway travel time 3+
   MW[3]=MI.1.2        ;highway distance
 
-  COMP MW[6]=(MI.1.1)/100      ;offpeak transit ivtt
-  ; Subtract 8 minutes from 10 minute walk model assumes at Airport
-  COMP MW[7]=(MI.3.4+MI.3.5+MI.3.6)/100      ;offpeak transit aux (walk)
+  COMP MW[6]=(MI.3.1)/100      ;offpeak transit ivtt
+  COMP MW[7]=(MI.3.5+MI.3.6+MI.3.7)/100      ;offpeak transit aux (walk)
   COMP MW[8]=(MI.3.2+MI.3.3)/100      ;offpeak transit wait
-  MW[9]=MI.3.9        ;offpeak transit fare
-  ;MW[10]=MI.4         ;on-call fare matrix, not used
+  MW[9]=MI.3.10        ;offpeak transit fare
   MW[11]=MI.5.RNB*100         ;resident business trips
 
   ;Auto Operating Costs
@@ -633,7 +629,7 @@ RUN PGM=MATRIX
       COMP MW[21] = EXP ((-0.044 * (MW[2] + 10.0)) + (-0.164 * (TERMINAL + 6.0)) + (-1.04 * ((MW[3]*AOCOST) + 1760)/(MHHINC^1.5)/2.4))
 
       ; Transit Utility
-      COMP MW[23] = EXP ((-0.041 * MW[6]) + (-0.164 * MW[7]) + (-0.077 * MW[8]) + (-1.04 * MW[9]/(MHHINC^1.5)) - 4.72)
+      COMP MW[23] = EXP ((-0.041 * MW[6]) + (-0.164 * MW[7]) + (-0.077 * MW[8]) + (-1.04 * MW[9]/(MHHINC^1.5)) - 0.22)
 
       ; On-Call Utility
       ; Add 2 minute average walk time between taxi and terminal
@@ -680,7 +676,7 @@ RUN PGM=MATRIX
       COMP MW[21] = EXP ((-0.044 * (MW[2] + 10.0)) + (-0.164 * (TERMINAL + 6.0)) + (-1.04 * ((MW[3]*AOCOST) + 1760)/(MHHINC^1.5)/2.4))
 
       ; Transit Utility
-      COMP MW[23] = EXP ((-0.041 * MW[6]) + (-0.164 * MW[7]) + (-0.077 * MW[8]) + (-1.04 * MW[9]/(MHHINC^1.5)) - 4.72)
+      COMP MW[23] = EXP ((-0.041 * MW[6]) + (-0.164 * MW[7]) + (-0.077 * MW[8]) + (-1.04 * MW[9]/(MHHINC^1.5)) - 0.22)
 
       ; On-Call Utility
       ; Add 2 minute average walk time between taxi and terminal
@@ -727,7 +723,7 @@ RUN PGM=MATRIX
       COMP MW[21] = EXP ((-0.044 * (MW[2] + 10.0)) + (-0.164 * (TERMINAL + 6.0)) + (-1.04 * ((MW[3]*AOCOST) + 1760)/(MHHINC^1.5)/2.4))
 
       ; Transit Utility
-      COMP MW[23] = EXP ((-0.041 * MW[6]) + (-0.164 * MW[7]) + (-0.077 * MW[8]) + (-1.04 * MW[9]/(MHHINC^1.5)) - 4.72)
+      COMP MW[23] = EXP ((-0.041 * MW[6]) + (-0.164 * MW[7]) + (-0.077 * MW[8]) + (-1.04 * MW[9]/(MHHINC^1.5)) - 0.22)
 
       ; On-Call Utility
       ; Add 2 minute average walk time between taxi and terminal
@@ -783,12 +779,10 @@ RUN PGM=MATRIX
   MW[2]=MI.1.1        ;congested highway travel time 3+
   MW[3]=MI.1.2        ;highway distance
 
-  COMP MW[6]=(MI.1.1)/100      ;offpeak transit ivtt
-  ; Subtract 8 minutes from 10 minute walk model assumes at Airport
-  COMP MW[7]=(MI.3.4+MI.3.5+MI.3.6)/100      ;offpeak transit aux (walk)
+  COMP MW[6]=(MI.3.1)/100      ;offpeak transit ivtt
+  COMP MW[7]=(MI.3.5+MI.3.6+MI.3.7)/100      ;offpeak transit aux (walk)
   COMP MW[8]=(MI.3.2+MI.3.3)/100      ;offpeak transit wait
-  MW[9]=MI.3.9        ;offpeak transit fare
-  ;MW[10]=MI.4         ;on-call fare matrix, not used
+  MW[9]=MI.3.10        ;offpeak transit fare
   MW[11]=MI.5.VB*100         ;resident business trips
 
   ;Auto Operating Costs
@@ -810,7 +804,7 @@ RUN PGM=MATRIX
       COMP MW[21] = EXP ((-0.068 * (MW[2] + 10.0)) + (-0.2345 * (TERMINAL + 6.0)) + (-0.00256 * ((MW[3]*AOCOST) + 200)/2.6))
 
       ; Transit Utility
-      COMP MW[23] = EXP ((-0.070 * MW[6]) + (-0.2345 * MW[7]) + (-0.096 * MW[8]) + (-0.00256 * MW[9]) - 4.93)
+      COMP MW[23] = EXP ((-0.070 * MW[6]) + (-0.2345 * MW[7]) + (-0.096 * MW[8]) + (-0.00256 * MW[9]) - 0.43)
 
       ; On-Call Utility
       ; Add 2 minute average walk time between taxi and terminal
@@ -856,7 +850,7 @@ RUN PGM=MATRIX
       COMP MW[21] = EXP ((-0.068 * (MW[2] + 10.0)) + (-0.2345 * (TERMINAL + 6.0)) + (-0.00256 * ((MW[3]*AOCOST) + 200)/2.6))
 
       ; Transit Utility
-      COMP MW[23] = EXP ((-0.070 * MW[6]) + (-0.2345 * MW[7]) + (-0.096 * MW[8]) + (-0.00256 * MW[9]) - 4.93)
+      COMP MW[23] = EXP ((-0.070 * MW[6]) + (-0.2345 * MW[7]) + (-0.096 * MW[8]) + (-0.00256 * MW[9]) - 0.43)
 
       ; On-Call Utility
       ; Add 2 minute average walk time between taxi and terminal
@@ -902,7 +896,7 @@ RUN PGM=MATRIX
       COMP MW[21] = EXP ((-0.068 * (MW[2] + 10.0)) + (-0.2345 * (TERMINAL + 6.0)) + (-0.00256 * ((MW[3]*AOCOST) + 200)/2.6))
 
       ; Transit Utility
-      COMP MW[23] = EXP ((-0.070 * MW[6]) + (-0.2345 * MW[7]) + (-0.096 * MW[8]) + (-0.00256 * MW[9]) - 4.93)
+      COMP MW[23] = EXP ((-0.070 * MW[6]) + (-0.2345 * MW[7]) + (-0.096 * MW[8]) + (-0.00256 * MW[9]) - 0.43)
 
       ; On-Call Utility
       ; Add 2 minute average walk time between taxi and terminal
@@ -959,12 +953,10 @@ RUN PGM=MATRIX
   MW[2]=MI.1.1        ;congested highway travel time 3+
   MW[3]=MI.1.2        ;highway distance
 
-  COMP MW[6]=(MI.1.1)/100      ;offpeak transit ivtt
-  ; Subtract 8 minutes from 10 minute walk model assumes at Airport
-  COMP MW[7]=(MI.3.4+MI.3.5+MI.3.6)/100      ;offpeak transit aux (walk)
+  COMP MW[6]=(MI.3.1)/100      ;offpeak transit ivtt
+  COMP MW[7]=(MI.3.5+MI.3.6+MI.3.7)/100      ;offpeak transit aux (walk)
   COMP MW[8]=(MI.3.2+MI.3.3)/100      ;offpeak transit wait
-  MW[9]=MI.3.9        ;offpeak transit fare
-  ;MW[10]=MI.4         ;on-call fare matrix, not used
+  MW[9]=MI.3.10        ;offpeak transit fare
   MW[11]=MI.5.VNB*100         ;resident business trips
 
   ;Auto Operating Costs
@@ -989,7 +981,7 @@ ENDIF
       COMP MW[21] = EXP ((-0.039 * (MW[2] + 10.0)) + (-0.147 * (TERMINAL + 6.0)) + (-0.973 * ((MW[3]*AOCOST) + 200)/(MHHINC^1.5)/ 2.8))
 
       ; Transit Utility
-      COMP MW[23] = EXP ((-0.037 * MW[6]) + (-0.147 * MW[7]) + (-0.071 * MW[8]) + (-0.973 * MW[9]/(MHHINC^1.5)) - 4.56)
+      COMP MW[23] = EXP ((-0.037 * MW[6]) + (-0.147 * MW[7]) + (-0.071 * MW[8]) + (-0.973 * MW[9]/(MHHINC^1.5)) - 0.16)
 
       ; On-Call Utility
       ; Add 2 minute average walk time between taxi and terminal
@@ -1036,7 +1028,7 @@ ENDIF
       COMP MW[21] = EXP ((-0.039 * (MW[2] + 10.0)) + (-0.147 * (TERMINAL + 6.0)) + (-0.973 * ((MW[3]*AOCOST) + 200)/(MHHINC^1.5)/ 2.8))
 
       ; Transit Utility
-      COMP MW[23] = EXP ((-0.037 * MW[6]) + (-0.147 * MW[7]) + (-0.071 * MW[8]) + (-0.973 * MW[9]/(MHHINC^1.5)) - 4.56)
+      COMP MW[23] = EXP ((-0.037 * MW[6]) + (-0.147 * MW[7]) + (-0.071 * MW[8]) + (-0.973 * MW[9]/(MHHINC^1.5)) - 0.16)
 
       ; On-Call Utility
       ; Add 2 minute average walk time between taxi and terminal
@@ -1084,7 +1076,7 @@ ENDIF
       COMP MW[21] = EXP ((-0.039 * (MW[2] + 10.0)) + (-0.147 * (TERMINAL + 6.0)) + (-0.973 * ((MW[3]*AOCOST) + 200)/(MHHINC^1.5)/ 2.8))
 
       ; Transit Utility
-      COMP MW[23] = EXP ((-0.037 * MW[6]) + (-0.147 * MW[7]) + (-0.071 * MW[8]) + (-0.973 * MW[9]/(MHHINC^1.5)) - 4.56)
+      COMP MW[23] = EXP ((-0.037 * MW[6]) + (-0.147 * MW[7]) + (-0.071 * MW[8]) + (-0.973 * MW[9]/(MHHINC^1.5)) - 0.16)
 
       ; On-Call Utility
       ; Add 2 minute average walk time between taxi and terminal
