@@ -331,9 +331,14 @@ RUN PGM=HWYNET
         print LIST="MBUF is on, and there are express lanes in the network. Review Link ",A,"-",B," which has TOLLCLASS ", TOLLCLASS, "and USE ", USE,"
         ABORT MSG ="MBUF is on, and there are express lanes (EL) in the network; see log file; verify that all EL tollclasses in tolls.csv have a toll rate less than 0.00011 dollars"
     ENDIF
+    
+    ; update every link with tollclass=0 to tollclass=999
+    ; this step is needed because having TOLLCLASS==0 in a MBUF scenario would be inconsistent with the logic in HwyAssign
+    ; https://github.com/BayAreaMetro/travel-model-one/blob/2149dab2440f74840ea926d91a039f6eb10e7c53/model-files/scripts/assign/HwyAssign.job#L266C47-L268
+    IF ((MBUF>0) && (TOLLCLASS==0)) TOLLCLASS=999
 
-
-    IF ((MBUF>0) && (TOLLCLASS==0 |TOLLCLASS>firstvalue))
+    ; apply MBUF
+    IF ((MBUF>0) && (TOLLCLASS>firstvalue))
 
      TOLLEA_DA = DISTANCE*MBUF
      TOLLAM_DA = DISTANCE*MBUF
