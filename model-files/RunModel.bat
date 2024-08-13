@@ -407,7 +407,7 @@ python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
 :: Step 11:  Build simplified skim databases
 ::
 :: ------------------------------------------------------------------------------------------------------
-goto donedone
+goto cleanup
 
 : database
 
@@ -502,28 +502,10 @@ del *.prn
 del *.script.*
 del *.script
 
-:: run QA/QC for PBA50
-call Run_QAQC
+cd trn 
 
-:: Success target and message
-:success
-ECHO FINISHED SUCCESSFULLY!
-
-:: slack notification disabled
-:: python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%*"
-
-if "%COMPUTER_PREFIX%" == "WIN-" (
-  
-  rem go up a directory and sync model folder to s3
-  cd ..
-  "C:\Program Files\Amazon\AWSCLI\aws" s3 sync %myfolder% s3://travel-model-runs/%myfolder%
-  cd %myfolder%
-
-  rem shutdown
-  python "CTRAMP\scripts\notify_slack.py" "Finished *%MODEL_DIR%* - shutting down"
-  C:\Windows\System32\shutdown.exe /s
-)
-
+del /S *.tpp
+del /S *_converted.csv
 :: no errors
 goto donedone
 
