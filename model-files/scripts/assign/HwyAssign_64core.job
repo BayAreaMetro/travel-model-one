@@ -62,7 +62,10 @@
 ;              (14) V8_1  - volume of vehicles in assigment class eight: three-or-more-occupant vehicles, value toll
 ;              (15) V9_1  - volume of vehicles in assigment class nine: very small, small, and medium trucks, value toll
 ;              (16) V10_1 - volume of vehicles in assigment class ten: combination trucks, value toll
-;              (17) VT_1 and VXT_1, where X is 1 through 10, are the b-to-a volumes
+;              (17) V11_1 - volume of vehicles in assigment class eleven: DA AV and TNC, value toll
+;              (18) V12_1 - volume of vehicles in assigment class twelve: S2 AV and TNC, value toll
+;              (19) V13_1 - volume of vehicles in assigment class thirteen: S3+ AV and TNC, value toll
+;              (20) VT_1 and VXT_1, where X is 1 through 13, are the b-to-a volumes
 ;
 ;
 ; Notes: (1) Four types of commercial vehicle demand is estimated: very small, small, medium, and large commercial
