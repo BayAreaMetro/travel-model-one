@@ -5,7 +5,7 @@
 :: ------------------------------------------------------------------------------------------------------
 set YEAR=%1
 :: set the location of the model run folder on M; this is where the input and output directories will be copied to
-set M_DIR=D:\Models\BCM\%YEAR%_BaseY_BCM%YEAR%
+set M_DIR=D:\Scenarios\%YEAR%_BaseY_BCM%YEAR%
 
 :: Should strategies be included? AddStrategies=Yes for Project runs; AddStrategies=No for NoProject runs.
 set AddStrategies=Yes
