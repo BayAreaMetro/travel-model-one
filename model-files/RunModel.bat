@@ -398,6 +398,8 @@ if ERRORLEVEL 2 goto done
 :: Shut down java
 C:\Windows\SysWOW64\taskkill /f /im "java.exe"
 
+set MODEL_DIR=%CD%
+"%R_HOME%"\RScript.exe --vanilla %BASE_SCRIPTS%\core_summaries\transit_aggregate.R > transit_aggregate.log 2>&1
 
 :: update telecommute constants one more time just to evaluate the situation
 python CTRAMP\scripts\preprocess\updateTelecommuteConstants.py
@@ -493,6 +495,7 @@ c:\windows\system32\Robocopy.exe /E extractor "%M_DIR%\OUTPUT"
 
 :: Move all the TP+ printouts to the \logs folder
 copy *.prn logs\*.prn
+copy *.log logs\*.log
 
 :: Close the cube cluster
 Cluster "CTRAMP" 1-%NUMBER_OF_PROCESSORS% Close Exit
