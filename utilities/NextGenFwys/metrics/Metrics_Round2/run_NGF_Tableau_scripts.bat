@@ -21,7 +21,7 @@ call python "%CODE_DIR%\post_run_model_steps.py"
 :: Location of the model files
 set TARGET_DIR=%CD%
 
-rem Check if the variable SKIP equals "n"
+:: rem Check if the variable SKIP equals "n"
 IF "%SKIP%"=="n" (
   echo not skipping
   call python "%CODE_DIR%\Affordable1_transportation_costs.py"
