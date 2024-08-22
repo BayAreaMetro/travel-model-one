@@ -24,17 +24,17 @@ set TARGET_DIR=%CD%
 rem Check if the variable SKIP equals "n"
 IF "%SKIP%"=="n" (
   echo not skipping
-  :: call python "%CODE_DIR%\Affordable1_transportation_costs.py"
-  :: call python "%CODE_DIR%\Affordable2_ratio_time_cost.py"
-  :: call python "%CODE_DIR%\Safe2_vmt_from_auto_times.py"
-  :: call python "%CODE_DIR%\Safe2_vmt_from_loaded_network.py"
+  call python "%CODE_DIR%\Affordable1_transportation_costs.py"
+  call python "%CODE_DIR%\Affordable2_ratio_time_cost.py"
+  call python "%CODE_DIR%\Safe2_vmt_from_auto_times.py"
+  call python "%CODE_DIR%\Safe2_vmt_from_loaded_network.py"
   call python "%CODE_DIR%\Efficient1_ratio_travel_time.py"
   call python "%CODE_DIR%\Efficient2_commute_tours_mode_share.py"
   call python "%CODE_DIR%\Efficient2b_non_commute_trips_mode_share.py"
   call python "%CODE_DIR%\Reliable1_change_travel_time.py"
   call python "%CODE_DIR%\Reliable2_ratio_peak_nonpeak.py"
-  :: call python "%CODE_DIR%\Top_level_metrics_toll_revenues.py"
-  :: call python "%CODE_DIR%\Safe1_run_fatalities_Rscript.py"
+  call python "%CODE_DIR%\Top_level_metrics_toll_revenues.py"
+  call python "%CODE_DIR%\Safe1_run_fatalities_Rscript.py"
 
 ) else (
   echo skipping if files exist
