@@ -24,7 +24,7 @@ set TARGET_DIR=%CD%
 rem Check if the variable SKIP equals "n"
 IF "%SKIP%"=="n" (
   echo not skipping
-  :: call python "%CODE_DIR%\Affordable1_transportation_costs.py"
+  call python "%CODE_DIR%\Affordable1_transportation_costs.py"
   :: call python "%CODE_DIR%\Affordable2_ratio_time_cost.py"
   :: call python "%CODE_DIR%\Safe2_vmt_from_auto_times.py"
   :: call python "%CODE_DIR%\Safe2_vmt_from_loaded_network.py"
