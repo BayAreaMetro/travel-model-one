@@ -5,11 +5,11 @@
 ; have minimum diffs with baseline
 
 ; rename existing air passenger trip matrices
-*copy /y nonres\tripsAirPaxEA.tpp nonres\tripsAirPaxEA_notolltrips.tpp
-*copy /y nonres\tripsAirPaxAM.tpp nonres\tripsAirPaxAM_notolltrips.tpp
-*copy /y nonres\tripsAirPaxMD.tpp nonres\tripsAirPaxMD_notolltrips.tpp
-*copy /y nonres\tripsAirPaxPM.tpp nonres\tripsAirPaxPM_notolltrips.tpp
-*copy /y nonres\tripsAirPaxEV.tpp nonres\tripsAirPaxEV_notolltrips.tpp
+*copy /y INPUT\nonres\tripsAirPaxEA.tpp nonres\tripsAirPaxEA_notolltrips.tpp
+*copy /y INPUT\nonres\tripsAirPaxAM.tpp nonres\tripsAirPaxAM_notolltrips.tpp
+*copy /y INPUT\nonres\tripsAirPaxMD.tpp nonres\tripsAirPaxMD_notolltrips.tpp
+*copy /y INPUT\nonres\tripsAirPaxPM.tpp nonres\tripsAirPaxPM_notolltrips.tpp
+*copy /y INPUT\nonres\tripsAirPaxEV.tpp nonres\tripsAirPaxEV_notolltrips.tpp
 
 loop period = 1,5
   if (period = 1)
