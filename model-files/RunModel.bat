@@ -509,6 +509,21 @@ cd trn
 
 del /S *.tpp
 del /S *_converted.csv
+
+cd ..
+
+cd hwy
+
+del complete_network_tolls_at_capclass.net
+del complete_network_with_tolls_with_xferpenalties.net
+del complete_network_tolls.net
+del complete_network_zone_seq.net
+del complete_network_base.net
+del complete_network.net
+del /S *_complete.net
+del /S msa*_taz.net
+del /S *_delete.net
+
 :: no errors
 goto donedone
 

@@ -212,30 +212,45 @@ temp3 <- temp3 %>% mutate(
   trmode = substr(source,15,17),
   egress = substr(source,19,21)
 )
+
+output_summary <- temp3 %>% group_by(Mode) %>% summarise(numboardings=sum(AB_BRDA,na.rm=T)) %>% filter(Mode>=10) %>% data.table()
 print("Summary by mode")
-temp3 %>% group_by(Mode) %>% summarise(numboardings=sum(AB_BRDA,na.rm=T)) %>% filter(Mode>=10) %>% data.table()
+output_summary
+write_csv(output_summary,paste0(trn_dr,iter,'mode_summary.csv'))
 
-print("summary by station for BART")
-temp3 %>% filter(Mode==120) %>% group_by(A,access) %>% summarise(boardings=sum(AB_BRDA,na.rm=T)) %>% 
+
+output_summary <- temp3 %>% filter(Mode==120) %>% group_by(A,access) %>% summarise(boardings=sum(AB_BRDA,na.rm=T)) %>% 
   pivot_wider(names_from=access,values_from=boardings) %>% data.table()
+print("summary by station for BART")
+output_summary
+write_csv(output_summary,paste0(trn_dr,iter,'BART_station_summary.csv'))
 
+output_summary <- temp3 %>% filter(Mode==133) %>% group_by(A,access) %>% summarise(boardings=sum(AB_BRDA,na.rm=T)) %>% 
+  pivot_wider(names_from=access,values_from=boardings)  %>% data.table()
 print("summary by station for ACE")
-temp3 %>% filter(Mode==133) %>% group_by(A,access) %>% summarise(boardings=sum(AB_BRDA,na.rm=T)) %>% 
-  pivot_wider(names_from=access,values_from=boardings)  %>% data.table()
+output_summary
+write_csv(output_summary,paste0(trn_dr,iter,'ACE_station_summary.csv'))
 
+output_summary <- temp3 %>% filter(Mode==130) %>% group_by(A,access) %>% summarise(boardings=sum(AB_BRDA,na.rm=T)) %>% 
+  pivot_wider(names_from=access,values_from=boardings)  %>% data.table()
 print("summary by station for Caltrain")
-temp3 %>% filter(Mode==130) %>% group_by(A,access) %>% summarise(boardings=sum(AB_BRDA,na.rm=T)) %>% 
-  pivot_wider(names_from=access,values_from=boardings)  %>% data.table()
+output_summary
+write_csv(output_summary,paste0(trn_dr,iter,'Caltrain_station_summary.csv'))
 
-print("summary by station for VTA")
-temp3 %>% filter(Mode==111) %>% group_by(A,access) %>% summarise(boardings=sum(AB_BRDA,na.rm=T)) %>% 
+output_summary <- temp3 %>% filter(Mode==111) %>% group_by(A,access) %>% summarise(boardings=sum(AB_BRDA,na.rm=T)) %>% 
   pivot_wider(names_from=access,values_from=boardings)  %>% data.frame()
+print("summary by station for VTA")
+output_summary
+write_csv(output_summary,paste0(trn_dr,iter,'VTA_station_summary.csv'))
 
 final_transit <- temp3 %>% left_join(dd,by=c('Name'='linename'))
 final_transit_2 <- final_transit %>% filter(!is.na(mode)) %>% select(-Plot,-BA_VOL,-BA_BRDA,-BA_XITA,-BA_BRDB,-BA_XITB,-usera1,-usera2,-slnum,-source,-mode)
 
-print("AC Transit  by route")
-final_transit_2 %>% filter(Mode==30|Mode==84) %>% group_by(Name, longname, shortname) %>%
+
+output_summary <- final_transit_2 %>% filter(Mode==30|Mode==84) %>% group_by(Name, longname, shortname) %>%
   summarise(boardings = sum(AB_BRDA,na.rm=T)) %>% data.frame()
+print("AC Transit  by route")
+output_summary
+write_csv(output_summary,paste0(trn_dr,iter,'ACT_route_summary.csv'))
 
 write_csv(final_transit_2,paste0(trn_dr,iter,'trnlink_final.csv'))
