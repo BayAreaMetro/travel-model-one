@@ -26,7 +26,8 @@ def get_paths(dirType):
         vars=os.path.join(off_model_calculator_dir, "Variable_locations.xlsx")
 
         sb_dir=os.path.join(off_model_calculator_dir,
-                        "SB375_data.csv")   
+                        "SB375_data.csv")
+        
     
     elif dirType=='external':
     
@@ -51,7 +52,7 @@ def get_paths(dirType):
         
         sb_dir=os.path.join(abs_dirname,
                         r"models\SB375_data.csv")
-        
+                
     else:
         raise ValueError("-d can be either mtc or external")
 
@@ -60,7 +61,8 @@ def get_paths(dirType):
             'OFF_MODEL_CALCULATOR_DIR':off_model_calculator_dir,
             'OFF_MODEL_CALCULATOR_DIR_OUTPUT':off_model_calculator_dir_output, 
             'VARS':vars,
-            'SB375':sb_dir}
+            'SB375':sb_dir,
+            }
 
 
 def get_directory_constants(dirType):

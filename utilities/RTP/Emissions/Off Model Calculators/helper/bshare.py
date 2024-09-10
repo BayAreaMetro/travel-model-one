@@ -9,6 +9,7 @@ class Bikeshare(OffModelCalculator):
         super().__init__(*args, **kwargs)
         self.masterWbName="PBA50+_OffModel_Bikeshare"
         self.dataFileName="Model Data - Bikeshare"
+        self.strategy="bike share"
         self.metaRow=1
         self.dataRow=1
     
@@ -65,3 +66,21 @@ class Bikeshare(OffModelCalculator):
         # Step 6: update log
         logVariables=self.get_calculator_names()
         OffModelCalculator.log_run(self,logVariables)
+
+    def update_summary_file(self, summaryPath, folderName):
+        df=pd.read_csv(summaryPath)
+        row={
+            'year': [2035, 2050],
+            'daily_vehTrip_reduction': [self.rowDict['Out_bikeshare_trips_2035'][0],
+                                        self.rowDict['Out_bikeshare_trips_2050'][0]],
+            'daily_vmt_reduction':[self.rowDict['Out_daily_VMT_reduced_2035'][0],
+                                   self.rowDict['Out_daily_VMT_reduced_2050'][0]],
+            'daily_ghg_reduction':[self.rowDict['Out_daily_GHG_reduced_2035'][0],
+                                   self.rowDict['Out_daily_GHG_reduced_2050'][0]],
+            'strategy':[self.strategy,self.strategy],
+            'directory':[folderName,folderName],
+        }
+
+        df_new=pd.DataFrame(row, index=None)
+        df=pd.concat([df,df_new], ignore_index=True)
+        df.to_csv(summaryPath, index=False)

@@ -40,6 +40,7 @@ from helper.vpool import VanPools
 from helper.ebk import EBike
 from helper.vbuyback import BuyBack
 from helper.regchar import RegionalCharger
+from helper.common import get_paths
 
 # calculator name choices
 BIKE_SHARE = 'bike_share'
@@ -74,38 +75,42 @@ if __name__ == '__main__':
         R1=templateData.iloc[ix]['model_run_id baseline']
         R2=templateData.iloc[ix]['model_run_id horizon']
         MODEL_RUN_IDS=[R1,R2]
+        FOLDER_NAME='2050_TM160_DBP_PLAN_08b'
         
         if CALCULATOR == BIKE_SHARE:
             c=Bikeshare(MODEL_RUN_IDS,DIRECTORY, UID, False)
-            c.update_calculator()
 
         elif CALCULATOR == CAR_SHARE:
             c=Carshare(MODEL_RUN_IDS,DIRECTORY, UID, False)
-            c.update_calculator()
-        
+                    
         elif CALCULATOR == TARGETED_TRANS_ALT:
             c=TargetedTransAlt(MODEL_RUN_IDS,DIRECTORY, UID, False)
-            c.update_calculator()
 
         elif CALCULATOR == VAN_POOL:
             c=VanPools(MODEL_RUN_IDS,DIRECTORY, UID, False)
-            c.update_calculator()
 
         elif CALCULATOR == E_BIKE:
             c=EBike(MODEL_RUN_IDS,DIRECTORY, UID, False)
-            c.update_calculator()
 
         elif CALCULATOR == BUY_BACK:
             c=BuyBack(MODEL_RUN_IDS,DIRECTORY, UID, False)
-            c.update_calculator()
         
         elif CALCULATOR == REG_CHARGER:
             c=RegionalCharger(MODEL_RUN_IDS,DIRECTORY, UID, False)
-            c.update_calculator()
 
         ## TODO: Add Complete Streets calculator
 
         else:
             raise ValueError(
                 "Choice not in options. Check the calculator name is correct.")
+        
+        c.update_calculator()
+        c.paths=get_paths(DIRECTORY)
+        outputSummary=c.create_output_summary_path(FOLDER_NAME)            
+        if not os.path.exists(outputSummary):
+            c.initialize_summary_file(outputSummary)
+        else:
+            print("Summary file exists.")
+        
+        c.update_summary_file(outputSummary,FOLDER_NAME)
         

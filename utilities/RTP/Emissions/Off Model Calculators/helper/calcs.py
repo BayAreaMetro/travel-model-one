@@ -208,9 +208,10 @@ class OffModelCalculator:
                 pass
 
         vNames=['Timestamp','Baseline Run ID','Horizon Run ID']+vNames
-        row=dict(map(lambda i,j : (i,[j]) , vNames,data))
+        self.rowDict=dict(map(lambda i,j : (i,[j]) , vNames,data))
+        
         # open output sheet
-        log=pd.DataFrame(row)
+        log=pd.DataFrame(self.rowDict)
 
         return log
     
@@ -248,7 +249,21 @@ class OffModelCalculator:
                         header=False,
                         startrow=logLength+2)
 
-    
+    def initialize_summary_file(self, outputPath):
+               
+        # Create empty summary csv
+        header=['year','daily_vehTrip_reduction','daily_vmt_reduction',
+                'daily_ghg_reduction','strategy','directory']
+        df=pd.DataFrame(columns=header)
+        df.to_csv(outputPath, index=False)
+
+    def create_output_summary_path(self,baseRun):
+        summaryPath=os.path.join(
+                self.paths['OFF_MODEL_CALCULATOR_DIR_OUTPUT']
+                , self.uid.replace(':','--')
+                , f"off_model_summary_by_strategy_{baseRun}.csv")
+        
+        return summaryPath
 
      
             
