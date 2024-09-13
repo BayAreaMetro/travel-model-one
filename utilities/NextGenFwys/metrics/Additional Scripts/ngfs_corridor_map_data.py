@@ -110,8 +110,8 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_runid, yea
   for i in minor_groups:
     # filter df for minor groupings (travel time)
     minor_group_am_df = tm_ab_ctim_df.copy().loc[tm_ab_ctim_df['Grouping minor_AMPM'] == i+'_AM']
-    #minor_group_am = sum_grouping(minor_group_am_df.loc[tm_loaded_network_df['USEAM'] == 1],'AM')
-    minor_group_am = sum_grouping(minor_group_am_df.loc[(tm_loaded_network_df['USEAM'] == 1) & (tm_loaded_network_df['USEAM'] == 4)],'AM')
+    minor_group_am = sum_grouping(minor_group_am_df.loc[tm_loaded_network_df['USEAM'] == 1],'AM')
+    #minor_group_am = sum_grouping(minor_group_am_df.loc[(tm_loaded_network_df['USEAM'] == 1) & (tm_loaded_network_df['USEAM'] == 4)],'AM')
 
     metrics_dict[tm_runid,metric_id,'extra',i,'%s_AM_travel_time' % i, year] = minor_group_am
 
