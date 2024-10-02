@@ -60,7 +60,7 @@ hov_group1_df   <- inner_join(hov_group1_df, gp_notruck_links_df,
 print(paste("Group1: found general purpose links for", nrow(hov_group1_df), "links"))
 
 # join back to hov_links
-hov_el_links_df <- left_join(hov_el_links_df, select(hov_group1_df, A,B,A_GP,B_GP))
+hov_el_links_df <- left_join(hov_el_links_df, select(hov_group1_df, A,B,A_GP,B_GP,LANES_GP))
 
 #### output for looking at these
 hov_el_links_df <- mutate(hov_el_links_df, A_B=paste0(A,"_",B), A_B_GP=paste0(A_GP,"_",B_GP))
