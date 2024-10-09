@@ -145,7 +145,7 @@
                 <column datatype='string' name='WFH_PartTimeWorker_Factor' ordinal='17' />
                 <column datatype='real' name='Work_Transit_Hesitance' ordinal='18' />
                 <column datatype='integer' name='NonWork_Transit_Hesitance' ordinal='19' />
-                <column datatype='string' name='BART_Transit_Hesitance' ordinal='20' />
+                <column datatype='string' name='Rail_Transit_Hesitance' ordinal='20' />
                 <column datatype='string' name='Alias' ordinal='21' />
               </columns>
             </relation>
@@ -249,7 +249,7 @@
                 <column datatype='string' name='WFH_PartTimeWorker_Factor' ordinal='17' />
                 <column datatype='real' name='Work_Transit_Hesitance' ordinal='18' />
                 <column datatype='integer' name='NonWork_Transit_Hesitance' ordinal='19' />
-                <column datatype='string' name='BART_Transit_Hesitance' ordinal='20' />
+                <column datatype='string' name='Rail_Transit_Hesitance' ordinal='20' />
                 <column datatype='string' name='Alias' ordinal='21' />
               </columns>
             </relation>
@@ -1134,11 +1134,11 @@
             <_.fcp.ObjectModelEncapsulateLegacy.true...object-id>[tazData_2023_TM160_IPA_55.csv_45BFF0E7E50D4E7798D296FE41003527]</_.fcp.ObjectModelEncapsulateLegacy.true...object-id>
           </metadata-record>
           <metadata-record class='column'>
-            <remote-name>BART_Transit_Hesitance</remote-name>
+            <remote-name>Rail_Transit_Hesitance</remote-name>
             <remote-type>130</remote-type>
-            <local-name>[BART_Transit_Hesitance]</local-name>
+            <local-name>[Rail_Transit_Hesitance]</local-name>
             <parent-name>[ModelRuns]</parent-name>
-            <remote-alias>BART_Transit_Hesitance</remote-alias>
+            <remote-alias>Rail_Transit_Hesitance</remote-alias>
             <ordinal>64</ordinal>
             <local-type>string</local-type>
             <aggregation>Count</aggregation>
@@ -1226,7 +1226,7 @@
       <column caption='Areatype' datatype='integer' hidden='true' name='[AREATYPE]' role='measure' type='quantitative' />
       <column datatype='string' hidden='true' name='[Alias]' role='dimension' type='nominal' />
       <column datatype='string' hidden='true' name='[Asana Link]' role='dimension' type='nominal' />
-      <column caption='BART Transit Hesitance' datatype='string' hidden='true' name='[BART_Transit_Hesitance]' role='dimension' type='nominal' />
+      <column caption='BART Transit Hesitance' datatype='string' hidden='true' name='[Rail_Transit_Hesitance]' role='dimension' type='nominal' />
       <column caption='Ciacre' datatype='real' name='[CIACRE]' role='measure' type='quantitative' />
       <column caption='Collfte' datatype='real' hidden='true' name='[COLLFTE]' role='measure' type='quantitative' />
       <column caption='Collpte' datatype='real' hidden='true' name='[COLLPTE]' role='measure' type='quantitative' />
@@ -1368,7 +1368,7 @@
         <field-sort-custom-order field='WFH_PartTimeWorker_Factor' />
         <field-sort-custom-order field='Work_Transit_Hesitance' />
         <field-sort-custom-order field='NonWork_Transit_Hesitance' />
-        <field-sort-custom-order field='BART_Transit_Hesitance' />
+        <field-sort-custom-order field='Rail_Transit_Hesitance' />
         <field-sort-custom-order field='Alias' />
         <field-sort-custom-order field='SUPERD' />
         <field-sort-custom-order field='TAZ1454' />
@@ -1483,7 +1483,7 @@
                       <column datatype='string' name='WFH_PartTimeWorker_Factor' ordinal='17' />
                       <column datatype='real' name='Work_Transit_Hesitance' ordinal='18' />
                       <column datatype='integer' name='NonWork_Transit_Hesitance' ordinal='19' />
-                      <column datatype='string' name='BART_Transit_Hesitance' ordinal='20' />
+                      <column datatype='string' name='Rail_Transit_Hesitance' ordinal='20' />
                       <column datatype='string' name='Alias' ordinal='21' />
                     </columns>
                   </relation>

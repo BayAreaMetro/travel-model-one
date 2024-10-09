@@ -230,7 +230,7 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
 
     WorkTransitHesitance     = float(get_property(params_filename, params_contents, "Work_Transit_Hesitance"))
     NonWorkTransitHesitance  = float(get_property(params_filename, params_contents, "NonWork_Transit_Hesitance"))
-    BARTTransitHesitance     = float(get_property(params_filename, params_contents, "BART_Transit_Hesitance"))
+    RailTransitHesitance     = float(get_property(params_filename, params_contents, "Rail_Transit_Hesitance"))
 
     MeansBasedTollsQ1Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q1Factor"))
     MeansBasedTollsQ2Factor  = float(get_property(params_filename, params_contents, "Means_Based_Tolling_Q2Factor"))
@@ -307,7 +307,7 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
 
     replacements[filepath]["(\nWork_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WorkTransitHesitance
     replacements[filepath]["(\nNonWork_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % NonWorkTransitHesitance
-    replacements[filepath]["(\nBART_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % BARTTransitHesitance
+    replacements[filepath]["(\nRail_Transit_Hesitance[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % RailTransitHesitance
 
     replacements[filepath]["(\nMeans_Based_Tolling_Q1Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ1Factor
     replacements[filepath]["(\nMeans_Based_Tolling_Q2Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MeansBasedTollsQ2Factor
@@ -398,6 +398,15 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
     if for_logsums:
         filepath = os.path.join("CTRAMP","runtime","logsums.properties")
     replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc
+
+
+    # find the minimum value toll
+    MinimumValueToll = float(get_property(params_filename, params_contents, "min_vtoll"))
+
+    # put them into the CTRAMP\scripts\block\hwyParam.block
+    filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
+    replacements[filepath]["(\nmin_vtoll[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MinimumValueToll
+
 
     # put it into the UECs
     config_uec("%.2f" % auto_opc)
