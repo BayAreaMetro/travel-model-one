@@ -399,6 +399,15 @@ def config_auto_opcost(params_filename, params_contents, for_logsums, replacemen
         filepath = os.path.join("CTRAMP","runtime","logsums.properties")
     replacements[filepath]["(\nAuto.Operating.Cost[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % auto_opc
 
+
+    # find the minimum value toll
+    MinimumValueToll = float(get_property(params_filename, params_contents, "min_vtoll"))
+
+    # put them into the CTRAMP\scripts\block\hwyParam.block
+    filepath = os.path.join("CTRAMP","scripts","block","hwyParam.block")
+    replacements[filepath]["(\nmin_vtoll[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % MinimumValueToll
+
+
     # put it into the UECs
     config_uec("%.2f" % auto_opc)
 
