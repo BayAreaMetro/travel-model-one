@@ -5,6 +5,7 @@ import java.util.Random;
 
 import org.apache.log4j.Logger;
 
+import com.pb.common.calculator.MatrixDataManager;
 import com.pb.models.ctramp.CoordinatedDailyActivityPatternDMU;
 import com.pb.models.ctramp.Person;
 import com.pb.models.ctramp.TazDataIf;
@@ -30,6 +31,7 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
     // additional factors
     public static final String PROPERTIES_WFH_FULLTIMEWORKER_FACTOR = "CDAP.WFH.FullTimeWorker.Factor";
     public static final String PROPERTIES_WFH_PARTTIMEWORKER_FACTOR = "CDAP.WFH.PartTimeworker.Factor";
+    public static final String PROPERTIES_WFH_DISTANCE_FACTOR       = "CDAP.WFH.Distance.Factor";
     // EN7 superdistrict boosts
     public static final String PROPERTIES_WFH_EN7_SUPERDISTRICT_BOOST = "CDAP.WFH.EN7.Superdistrict00";
 
@@ -52,6 +54,7 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
 
     private float WFH_FULLTIMEWORKER_FACTOR;
     private float WFH_PARTTIMEWORKER_FACTOR;
+    private float WFH_DISTANCE_FACTOR;
 
     private int[] tazDataAgrEmpn;
     private int[] tazDataFpsEmpn;
@@ -62,6 +65,8 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
     private int[] tazDataTotEmp;
 
     TazDataIf tazDataManager;
+    private MatrixDataManager matrixDataManager = null;
+    private int DIST_MATRIX_INDEX = -1;
 
     public MtcCoordinatedDailyActivityPatternDMU(TazDataIf tazData) {
         super ();
@@ -118,14 +123,23 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
 
         this.WFH_FULLTIMEWORKER_FACTOR = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_FULLTIMEWORKER_FACTOR));
         this.WFH_PARTTIMEWORKER_FACTOR = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_PARTTIMEWORKER_FACTOR));
+        this.WFH_DISTANCE_FACTOR       = Float.parseFloat(propertyMap.get(PROPERTIES_WFH_DISTANCE_FACTOR));
 
         cdapLogger.info("Read properties fulltime worker factor:" + this.WFH_FULLTIMEWORKER_FACTOR + "; parttime worker factor:" + this.WFH_PARTTIMEWORKER_FACTOR);
+        cdapLogger.info("Read properties distance factor:" + this.WFH_DISTANCE_FACTOR);
 
         for (int district_num=1; district_num<=34; district_num++) {
             this.WFH_EN7_BOOST[district_num-1] = Float.parseFloat(propertyMap.get(
                 PROPERTIES_WFH_EN7_SUPERDISTRICT_BOOST.replace("Superdistrict00",String.format("Superdistrict%02d",district_num))));
             cdapLogger.info("Read superdistrict EN7 boosts for district " + district_num + ": " + this.WFH_EN7_BOOST[district_num-1]);
         }
+    }
+
+    public void setMatrixManager(MatrixDataManager passedMatrixDataManager){
+        this.matrixDataManager = passedMatrixDataManager;
+        this.DIST_MATRIX_INDEX = this.matrixDataManager.findMatrixIndex("DIST");
+        // cdapLogger.info("setMatrixManager:" + this.matrixDataManager);
+        // cdapLogger.info("this.DIST_MATRIX_INDEX:" + this.DIST_MATRIX_INDEX);
     }
 
     // household income
@@ -216,6 +230,29 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
             cdapLogger.debug(String.format("     ret_wfh * ret_share = %.3f * %.3f", ret_wfh, ret_share));
             cdapLogger.debug(String.format("                 = > wfh = %.3f", overall_wfh));
         }
+        // Add distance-to-work factor -- assume that there's additional motivation for folks who have a longer distance commute to WFH
+        // Ideally this would be a mode choice logsum but accessing that seems difficult
+        // Starting with linear factor
+        try {
+            double distance_home_work = this.matrixDataManager.getValueForIndex(this.DIST_MATRIX_INDEX, 
+                householdObject.getHhTaz(), workLocation);
+            double distance_wfh = this.WFH_DISTANCE_FACTOR*distance_home_work;
+            overall_wfh = overall_wfh + distance_wfh;
+            if(householdObject.getDebugChoiceModels()){
+                cdapLogger.debug(String.format("  + distfactor x dist = %.3f x %.3f = %.3f", 
+                    this.WFH_DISTANCE_FACTOR, distance_home_work, distance_wfh));
+                cdapLogger.debug(String.format("                 = > wfh = %.3f", overall_wfh));
+            }
+        }
+        catch (Exception e) {
+            cdapLogger.warn("Exception occurred calculating distance_home_work");
+            cdapLogger.warn("hhtaz:"+householdObject.getHhTaz());
+            cdapLogger.warn("workLocation:"+workLocation);
+            StackTraceElement[] stackTrace = e.getStackTrace();
+            for (StackTraceElement element : stackTrace) {
+                cdapLogger.warn(element);
+            }
+        }
 
         if (personA.getPersonIsFullTimeWorker() == 1) {
             overall_wfh = overall_wfh*this.WFH_FULLTIMEWORKER_FACTOR;
@@ -229,6 +266,7 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
                 cdapLogger.debug(String.format(" x PartTime factor %.3f = %.3f", this.WFH_PARTTIMEWORKER_FACTOR, overall_wfh));
             }
         }
+
         // EN7 boost
         float EN7_boost = this.WFH_EN7_BOOST[workDistrict-1];
         overall_wfh = overall_wfh + EN7_boost;

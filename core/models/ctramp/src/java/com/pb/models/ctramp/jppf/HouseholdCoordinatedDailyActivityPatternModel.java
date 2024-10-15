@@ -312,6 +312,9 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
      */
     public String getCoordinatedDailyActivityPatternChoice( Household householdObject ){
         
+        // give cdapDmuObject access to one person UEC matrix manager
+        cdapDmuObject.setMatrixManager(onePersonUec.getMatrixData());
+
         // set all household level dmu variables
         cdapDmuObject.setHousehold(householdObject);
         

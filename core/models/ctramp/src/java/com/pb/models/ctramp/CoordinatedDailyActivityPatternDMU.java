@@ -6,6 +6,7 @@ import java.util.HashMap;
 import org.apache.log4j.Logger;
 
 import com.pb.common.calculator.IndexValues;
+import com.pb.common.calculator.MatrixDataManager;
 import com.pb.common.calculator.VariableTable;
 
 /**
@@ -53,6 +54,8 @@ public class CoordinatedDailyActivityPatternDMU implements Serializable, Variabl
         return dmuIndex; 
     }
     
+    public void setMatrixManager(MatrixDataManager passedMatrixDataManager) {}
+
     public void setHousehold(Household passedInHouseholdObject){
     	
     	householdObject = passedInHouseholdObject;
