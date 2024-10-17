@@ -40,7 +40,7 @@ from helper.vpool import VanPools
 from helper.ebk import EBike
 from helper.vbuyback import BuyBack
 from helper.regchar import RegionalCharger
-from helper.common import get_paths
+from helper.common import (get_paths,get_year_modelrun_id)
 
 # calculator name choices
 BIKE_SHARE = 'bike_share'
@@ -53,7 +53,8 @@ REG_CHARGER='regional_charger'
 
 # template location
 CWD=os.path.dirname(__file__)
-TEMPLATE_DIR=os.path.join(CWD, r'update_omc_template.xlsx')
+# TEMPLATE_DIR=os.path.join(CWD, r'update_omc_template.xlsx')
+RTP_DIR=os.path.join(CWD,r"..\..","config_RTP2025","ModelRuns_RTP2025.xlsx")
 
 if __name__ == '__main__':
 
@@ -66,37 +67,58 @@ if __name__ == '__main__':
     UID=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
-    templateData=pd.read_excel(TEMPLATE_DIR
-                               ,sheet_name='Template'
-                               ,header=[0]).fillna("")
+    # templateData=pd.read_excel(TEMPLATE_DIR
+    #                            ,sheet_name='Template'
+    #                            ,header=[0]).fillna("")
     
-    for ix in range(len(templateData)):
-        CALCULATOR=templateData.iloc[ix]['Calculator']
-        R1=templateData.iloc[ix]['model_run_id baseline']
-        R2=templateData.iloc[ix]['model_run_id horizon']
-        MODEL_RUN_IDS=[R1,R2]
-        FOLDER_NAME='2050_TM160_DBP_PLAN_08b'
+    calculators_list=['bike_share','car_share','targeted_trans_alt'
+                      ,'vanpools','e_bike','buy_back','regional_charger']
+    
+    rtp_file=pd.read_excel(RTP_DIR
+                               ,sheet_name='ModelRuns'
+                               ,header=[0])
+    
+    # print(rtp_file.loc[rtp_file.run_offmodel=="yes","directory"])
+    offmodel_dir_list=rtp_file.loc[rtp_file.run_offmodel=="yes","directory"].to_list()
+
+    travel_runs=[]
+    for dir_name in offmodel_dir_list:
+        run=get_year_modelrun_id(dir_name)
+
+        if run:
+            travel_runs.append(run)
+    
+    for calc_name in calculators_list[5:6]:
+
+        for r in travel_runs:
+            if r['run']=="2035_TM160_IPA_15":
+                print(r['run'])
+
+                CALCULATOR=calc_name
+                MODEL_RUN_ID=r
+            else:
+                continue
         
         if CALCULATOR == BIKE_SHARE:
-            c=Bikeshare(MODEL_RUN_IDS,DIRECTORY, UID, False)
+            c=Bikeshare(MODEL_RUN_ID,DIRECTORY, UID, False)
 
         elif CALCULATOR == CAR_SHARE:
-            c=Carshare(MODEL_RUN_IDS,DIRECTORY, UID, False)
+            c=Carshare(MODEL_RUN_ID,DIRECTORY, UID, False)
                     
         elif CALCULATOR == TARGETED_TRANS_ALT:
-            c=TargetedTransAlt(MODEL_RUN_IDS,DIRECTORY, UID, False)
+            c=TargetedTransAlt(MODEL_RUN_ID,DIRECTORY, UID, False)
 
         elif CALCULATOR == VAN_POOL:
-            c=VanPools(MODEL_RUN_IDS,DIRECTORY, UID, False)
+            c=VanPools(MODEL_RUN_ID,DIRECTORY, UID, False)
 
         elif CALCULATOR == E_BIKE:
-            c=EBike(MODEL_RUN_IDS,DIRECTORY, UID, False)
+            c=EBike(MODEL_RUN_ID,DIRECTORY, UID, False)
 
         elif CALCULATOR == BUY_BACK:
-            c=BuyBack(MODEL_RUN_IDS,DIRECTORY, UID, False)
+            c=BuyBack(MODEL_RUN_ID,DIRECTORY, UID, False)
         
         elif CALCULATOR == REG_CHARGER:
-            c=RegionalCharger(MODEL_RUN_IDS,DIRECTORY, UID, False)
+            c=RegionalCharger(MODEL_RUN_ID,DIRECTORY, UID, False)
 
         ## TODO: Add Complete Streets calculator
 
@@ -105,12 +127,12 @@ if __name__ == '__main__':
                 "Choice not in options. Check the calculator name is correct.")
         
         c.update_calculator()
-        c.paths=get_paths(DIRECTORY)
-        outputSummary=c.create_output_summary_path(FOLDER_NAME)            
-        if not os.path.exists(outputSummary):
-            c.initialize_summary_file(outputSummary)
-        else:
-            print("Summary file exists.")
+    #     c.paths=get_paths(DIRECTORY)
+    #     outputSummary=c.create_output_summary_path(FOLDER_NAME)            
+    #     if not os.path.exists(outputSummary):
+    #         c.initialize_summary_file(outputSummary)
+    #     else:
+    #         print("Summary file exists.")
         
-        c.update_summary_file(outputSummary,FOLDER_NAME)
+    #     c.update_summary_file(outputSummary,FOLDER_NAME)
         

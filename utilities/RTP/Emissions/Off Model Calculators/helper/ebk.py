@@ -15,7 +15,7 @@ class EBike(OffModelCalculator):
                                  , skiprows=0
                     )
 
-        return log.columns.tolist()[3:]
+        return log.columns.tolist()[2:]
 
     def update_calculator(self):
         # Step 1: Create run and copy files  

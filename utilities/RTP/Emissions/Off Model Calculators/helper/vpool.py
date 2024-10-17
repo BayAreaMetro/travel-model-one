@@ -24,10 +24,8 @@ class VanPools(OffModelCalculator):
         vMS=self.v['Main sheet']
 
         # Write run name and year
-        mainsheet[vMS['Run_directory_2035']] = OffModelCalculator.get_ipa(self, 0)[0]
-        mainsheet[vMS['Run_directory_2050']] = OffModelCalculator.get_ipa(self, 1)[0]
-        mainsheet[vMS['year_a']] = OffModelCalculator.get_ipa(self, 0)[1]
-        mainsheet[vMS['year_b']] = OffModelCalculator.get_ipa(self, 1)[1]
+        mainsheet[vMS['Run_directory_2035']] = self.runs['id']
+        mainsheet[vMS['year_a']] = int(self.runs['year'])
 
         # save file
         newWorkbook.save(self.new_workbook_file)

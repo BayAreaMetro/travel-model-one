@@ -1,5 +1,6 @@
 import openpyxl
 import pandas as pd
+import os
 
 from helper.calcs import OffModelCalculator
 class TargetedTransAlt(OffModelCalculator):
@@ -13,6 +14,24 @@ class TargetedTransAlt(OffModelCalculator):
         self.dataRow=1
         self.baselineDir='2015_TM152_IPA_16'
 
+    def get_model_data(self):
+        '''This method includes baseline data from the baselineDir
+        compared to the one in the super class.'''
+        # Get Model Data as df
+        rawData=pd.read_csv(
+            os.path.join(self.modelDataPath,f"{self.dataFileName}.csv"),
+            skiprows=self.dataRow)
+        
+        filteredData=rawData.loc[rawData.directory.isin([self.runs['run'], self.baselineDir])]
+        # Get metadata from model data
+        metaData=OffModelCalculator.get_model_metadata(self)
+        
+        if self.verbose:
+            print("Unique directories:")
+            print(rawData['directory'].unique())
+
+        return filteredData, metaData
+    
     def write_runid_to_mainsheet(self):
         # get variables location in calculator
         OffModelCalculator.get_variable_locations(self)
@@ -27,16 +46,14 @@ class TargetedTransAlt(OffModelCalculator):
         # Select Main sheet variables
         vMS=self.v['Main sheet']
 
-        # Write other variables       
+        # Write other variables     
         mainsheet[vMS['Total_households_baseline']]=modeldatasheet.loc[(modeldatasheet.directory==self.baselineDir) \
-                                                & (modeldatasheet.variable=='total_households')]['value'].values[0]
+                                                & (modeldatasheet.variable=='total_households'),'value'].values[0]
         mainsheet[vMS['Total_jobs_baseline']]=modeldatasheet.loc[(modeldatasheet.directory==self.baselineDir) \
-                                                & (modeldatasheet.variable=='total_jobs')]['value'].values[0]
+                                                & (modeldatasheet.variable=='total_jobs'),'value'].values[0]
         # Write run name and year
-        mainsheet[vMS['Run_directory_2035']] = OffModelCalculator.get_ipa(self, 0)[0]
-        mainsheet[vMS['Run_directory_2050']] = OffModelCalculator.get_ipa(self, 1)[0]
-        mainsheet[vMS['year_a']] = OffModelCalculator.get_ipa(self, 0)[1]
-        mainsheet[vMS['year_b']] = OffModelCalculator.get_ipa(self, 1)[1]
+        mainsheet[vMS['Run_directory_2035']] = self.runs['id']
+        mainsheet[vMS['year_a']] = int(self.runs['year'])
 
         # save file
         newWorkbook.save(self.new_workbook_file)
@@ -49,7 +66,7 @@ class TargetedTransAlt(OffModelCalculator):
                                  , skiprows=0
                     )
 
-        return log.columns.tolist()[3:]
+        return log.columns.tolist()[2:]
 
     def update_calculator(self):
     
@@ -57,7 +74,7 @@ class TargetedTransAlt(OffModelCalculator):
         OffModelCalculator.copy_workbook(self)
 
         # Step 2: load and filter model data of selected runs
-        modelData, metaData=OffModelCalculator.get_model_data(self)
+        modelData, metaData=self.get_model_data()
 
         # Step 3: add model data of selected runs to 'Model Data' sheet
         OffModelCalculator.write_model_data_to_excel(self,modelData,metaData)

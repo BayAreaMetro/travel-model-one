@@ -29,7 +29,7 @@ class OffModelCalculator:
 
     def __init__(self, model_run_id, directory, uid, verbose=False):
         self.uid=uid
-        self.runs = [model_run_id[0], model_run_id[1]]
+        self.runs = model_run_id
         self.pathType=directory
         self.modelDataPath, self.masterFilePath = common.get_directory_constants(self.pathType)
         self.masterWbName=""
@@ -44,7 +44,7 @@ class OffModelCalculator:
         
         # make a copy of the workbook
         self.master_workbook_file = os.path.join(self.masterFilePath,f"{self.masterWbName}.xlsx")
-        self.new_workbook_file = os.path.join(self.newWbFilePath,f"{self.masterWbName}__{self.runs[0]}__{self.runs[1]}.xlsx")
+        self.new_workbook_file = os.path.join(self.newWbFilePath,f"{self.masterWbName}__{self.runs['run']}.xlsx")
         
         
         shutil.copy2(self.master_workbook_file, self.new_workbook_file)
@@ -73,7 +73,7 @@ class OffModelCalculator:
             os.path.join(self.modelDataPath,f"{self.dataFileName}.csv"),
             skiprows=self.dataRow)
         
-        filteredData=rawData.loc[rawData.directory.isin(self.runs+[self.baselineDir])]
+        filteredData=rawData.loc[rawData.directory.isin([self.runs['run']])]
         # Get metadata from model data
         metaData=OffModelCalculator.get_model_metadata(self)
         
@@ -86,20 +86,6 @@ class OffModelCalculator:
     def get_sb_data(self):
         sbPath=common.get_paths(self.pathType)
         return pd.read_csv(sbPath['SB375'])
-
-    def get_ipa(self, arg):
-        name=self.runs[arg]
-        pattern = r"(\d{4})_(TM\d{3})_(.*)"
-        matches = re.search(pattern, name)
-
-        if matches:
-            ipa = matches.group(3)
-            year = matches.group(1)
-
-        if self.verbose:
-            print(ipa)
-        
-        return [ipa, int(year)]
 
     def write_sbdata_to_excel(self):
         # add sb375 data
@@ -196,7 +182,7 @@ class OffModelCalculator:
 
         # collect data of interest
         data=[]
-        data+=[self.uid,self.runs[0],self.runs[1]]
+        data+=[self.uid,self.runs['run']]
         for metric in vNames:
             try:
                 data.append(mainsheet[vMS[metric]].value)
@@ -207,7 +193,7 @@ class OffModelCalculator:
                 print(f"{metric} Not found.")
                 pass
 
-        vNames=['Timestamp','Baseline Run ID','Horizon Run ID']+vNames
+        vNames=['Timestamp','directory']+vNames
         self.rowDict=dict(map(lambda i,j : (i,[j]) , vNames,data))
         
         # open output sheet
@@ -234,7 +220,7 @@ class OffModelCalculator:
                                  , skiprows=0
                     )
 
-        return log.columns.tolist()[3:]
+        return log.columns.tolist()[2:]
     
     def log_run(self, vNames):
 

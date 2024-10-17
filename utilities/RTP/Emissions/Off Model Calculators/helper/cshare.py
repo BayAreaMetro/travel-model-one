@@ -27,10 +27,8 @@ class Carshare(OffModelCalculator):
         # Write model data
         mainsheet[vMS['Min_carshare_population_density']]=modeldatasheet[vMS['k_min_pop_density']].value
         # Write run name and year
-        mainsheet[vMS['Run_directory_2035']] = OffModelCalculator.get_ipa(self, 0)[0]
-        mainsheet[vMS['Run_directory_2050']] = OffModelCalculator.get_ipa(self, 1)[0]
-        mainsheet[vMS['year_a']] = OffModelCalculator.get_ipa(self, 0)[1]
-        mainsheet[vMS['year_b']] = OffModelCalculator.get_ipa(self, 1)[1]
+        mainsheet[vMS['Run_directory_2035']] = self.runs['id']
+        mainsheet[vMS['year_a']] = int(self.runs['year'])
         
         # save file
         newWorkbook.save(self.new_workbook_file)
@@ -43,7 +41,7 @@ class Carshare(OffModelCalculator):
                                  , skiprows=0
                     )
 
-        return log.columns.tolist()[3:]
+        return log.columns.tolist()[2:]
 
     def update_calculator(self):
     

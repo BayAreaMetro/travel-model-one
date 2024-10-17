@@ -1,4 +1,5 @@
 import os
+import re
 
 def get_paths(dirType):
     """
@@ -121,3 +122,28 @@ def createNewRun(c, verbose=False):
         print(f"Location: {pathToRun}")
 
     return pathToRun
+
+def get_year_modelrun_id(directory_string):
+    # Define the regex pattern
+    pattern = r"(\d{4})_(TM\d{3})_([A-Za-z0-9_]+)"
+    
+    # Search for matches
+    match = re.match(pattern, directory_string)
+    
+    if match:
+        year = match.group(1)
+        model = match.group(2)
+        id_value = match.group(3)
+        
+        if "NoProject" in id_value:
+            return None
+        
+        return {
+            'run':directory_string,
+            'year': year,
+            'model': model,
+            'id': id_value
+        }
+    else:
+        print(f"Could not find a match for {directory_string}")
+        return None
