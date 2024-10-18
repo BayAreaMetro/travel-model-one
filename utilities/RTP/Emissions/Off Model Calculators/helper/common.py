@@ -28,7 +28,40 @@ def get_paths(dirType):
 
         sb_dir=os.path.join(off_model_calculator_dir,
                         "SB375_data.csv")
+    
+    elif dirType=='test':
+        username=os.environ.get('USERNAME')
+
+        # abs_dirname would be Box in the future
+        box_dir_test=r"C:\Users\{}\Box\ICF PBA50+ Off-Model_EXT shared\Scripting\demo_for_ICF_20240916"\
+                    .format(username)
         
+        masterWorkbookFolder, newestWorkbookMaster=get_latest_masterworkbook(box_dir_test)
+        
+        abs_dirname=os.path.join(os.path.dirname(__file__),"..")
+
+        # Input data paths
+        box_dir = os.path.join(abs_dirname,
+                            r"data\input\IPA_TM2")
+        
+        model_data_box_dir = os.path.join(box_dir,"ModelData")
+
+         # Models (From Box Demo Folder)
+        off_model_calculator_dir = os.path.join(masterWorkbookFolder
+                                                ,newestWorkbookMaster
+        )
+        print(off_model_calculator_dir)
+
+        # Output
+        off_model_calculator_dir_output = os.path.join(abs_dirname,
+                                                    r"data\output")
+
+        # Variables locations
+        vars=os.path.join(abs_dirname,
+                        r"models\Variable_locations.xlsx")
+        
+        sb_dir=os.path.join(abs_dirname,
+                        r"models\SB375_data.csv")
     
     elif dirType=='external':
     
@@ -65,6 +98,36 @@ def get_paths(dirType):
             'SB375':sb_dir,
             }
 
+def get_last_workbook_version(listWorkbooks):
+    maxVersion=None
+    currentName=None
+    for name in listWorkbooks:
+        # Use regex to find all versions that start with 'v' followed by digits
+        versions = re.findall(r'v(\d+)', name)
+        
+        # Convert versions to integers and find the maximum
+        if versions:
+            if maxVersion==None:
+                maxVersion=max(map(int, versions))
+                currentName=name
+                currentVersion=max(map(int, versions))
+            else:
+                currentVersion=max(map(int, versions))
+
+            if currentVersion>maxVersion:
+                maxVersion=currentVersion
+                currentName=name
+    return currentName
+         
+
+def get_latest_masterworkbook(boxDirectory):
+    # masterWorkbooks folder inside demo
+    masterWorkbookFolder="BOX_off_model_calculator_masterWorkbook"
+    offmodelDirectory=os.path.join(boxDirectory,masterWorkbookFolder)
+    foldersList=[name for name in os.listdir(offmodelDirectory)
+            if os.path.isdir(os.path.join(offmodelDirectory, name))]
+    masterWorkbookName=get_last_workbook_version(foldersList)
+    return offmodelDirectory, masterWorkbookName
 
 def get_directory_constants(dirType):
     '''

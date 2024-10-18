@@ -40,7 +40,7 @@ from helper.vpool import VanPools
 from helper.ebk import EBike
 from helper.vbuyback import BuyBack
 from helper.regchar import RegionalCharger
-from helper.common import (get_paths,get_year_modelrun_id)
+from helper.common import (get_year_modelrun_id)
 
 # calculator name choices
 BIKE_SHARE = 'bike_share'
@@ -53,23 +53,17 @@ REG_CHARGER='regional_charger'
 
 # template location
 CWD=os.path.dirname(__file__)
-# TEMPLATE_DIR=os.path.join(CWD, r'update_omc_template.xlsx')
 RTP_DIR=os.path.join(CWD,r"..\..","config_RTP2025","ModelRuns_RTP2025.xlsx")
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description=USAGE)
-    parser.add_argument('-d', choices=['mtc','external'], default='external', 
+    parser.add_argument('-d', choices=['mtc','external','test'], default='external', 
                         help='choose directory mtc or external'
     )
     ARGS = parser.parse_args()
     DIRECTORY=ARGS.d
     UID=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-
-    # templateData=pd.read_excel(TEMPLATE_DIR
-    #                            ,sheet_name='Template'
-    #                            ,header=[0]).fillna("")
     
     calculators_list=['bike_share','car_share','targeted_trans_alt'
                       ,'vanpools','e_bike','buy_back','regional_charger']
@@ -78,7 +72,6 @@ if __name__ == '__main__':
                                ,sheet_name='ModelRuns'
                                ,header=[0])
     
-    # print(rtp_file.loc[rtp_file.run_offmodel=="yes","directory"])
     offmodel_dir_list=rtp_file.loc[rtp_file.run_offmodel=="yes","directory"].to_list()
 
     travel_runs=[]
@@ -88,7 +81,7 @@ if __name__ == '__main__':
         if run:
             travel_runs.append(run)
     
-    for calc_name in calculators_list[5:6]:
+    for calc_name in calculators_list[:1]:
 
         for r in travel_runs:
             if r['run']=="2035_TM160_IPA_15":

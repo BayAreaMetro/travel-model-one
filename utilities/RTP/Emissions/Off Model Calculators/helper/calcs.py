@@ -46,7 +46,6 @@ class OffModelCalculator:
         self.master_workbook_file = os.path.join(self.masterFilePath,f"{self.masterWbName}.xlsx")
         self.new_workbook_file = os.path.join(self.newWbFilePath,f"{self.masterWbName}__{self.runs['run']}.xlsx")
         
-        
         shutil.copy2(self.master_workbook_file, self.new_workbook_file)
 
         if self.verbose:
@@ -249,6 +248,7 @@ class OffModelCalculator:
                 , self.uid.replace(':','--')
                 , f"off_model_summary_by_strategy_{baseRun}.csv")
         
+
         return summaryPath
 
      
