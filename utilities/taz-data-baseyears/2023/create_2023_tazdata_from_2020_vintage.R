@@ -6,8 +6,8 @@
 
 # The working directory is set as the location of the script. All other paths will be relative.
 
-wd <- paste0(dirname(rstudioapi::getActiveDocumentContext()$path),"/")
-setwd(wd)
+# wd <- paste0(dirname(rstudioapi::getActiveDocumentContext()$path),"/")
+# setwd(wd)
 
 # Import Libraries
 
