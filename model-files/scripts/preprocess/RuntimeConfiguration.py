@@ -324,7 +324,7 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     # WFH factors
     replacements[filepath]["(\nCDAP.WFH.FullTimeWorker.Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WFHFullTimeWorkerFactor
     replacements[filepath]["(\nCDAP.WFH.PartTimeworker.Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WFHPartTimeWorkerFactor
-    replacements[filepath]["(\nCDAP.WFH.Distance.Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % WFHDistanceFactor
+    replacements[filepath]["(\nCDAP.WFH.Distance.Factor[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.3f" % WFHDistanceFactor
 
     replacements[filepath]["(\nAdjust_TNCsingle_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCsingle_TourMode
     replacements[filepath]["(\nAdjust_TNCshared_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCshared_TourMode
