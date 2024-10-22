@@ -1,29 +1,32 @@
-# ACS 2017-2021 create TAZ data for 2020.R
 # Create "2020" TAZ data from ACS 2017-2021 
 # SI
-
+#
 # Notes
+# 1. ACS data here is downloaded for the 2017-2021 5-year dataset. The end year can be updated 
+#    by changing the *ACS_year* variable. 
+# 
+# 2. ACS block group variables used in all instances where not suppressed. If suppressed at the block group 
+#    level, tract-level data used instead. Suppressed variables may change if ACS_year is changed. This 
+#    should be checked, as this change could cause the script not to work.
+# 
+# 3. Different than the effort for 2015, many small area variables (such as age, total population, etc.) are
+#    available from Census 2020 data. 
+# 
+# 4. TAZs are scaled up to match Census 2020 totals 
+#    
+
+options(width=500)
+options(max.print=2000)
 
 # The working directory is set as the location of the script. All other paths in TM1 will be relative.
+tryCatch(
+{
+  wd <- paste0(dirname(rstudioapi::getActiveDocumentContext()$path),"/")
+  setwd(wd)
+}, error = function(cond) {
+  # don't worry if it doesn't work -- maybe someone isn't using rstudio
+})
 
-wd <- paste0(dirname(rstudioapi::getActiveDocumentContext()$path),"/")
-setwd(wd)
-
-"
-
-1. ACS data here is downloaded for the 2017-2021 5-year dataset. The end year can be updated 
-   by changing the *ACS_year* variable. 
-
-2. ACS block group variables used in all instances where not suppressed. If suppressed at the block group 
-   level, tract-level data used instead. Suppressed variables may change if ACS_year is changed. This 
-   should be checked, as this change could cause the script not to work.
-
-3. Different than the effort for 2015, many small area variables (such as age, total population, etc.) are
-   available from Census 2020 data. 
-
-4. TAZs are scaled up to match Census 2020 totals 
-   
-"
 # Import Libraries
 
 suppressMessages(library(tidyverse))
@@ -38,9 +41,19 @@ baycounties          <- c("01","13","41","55","75","81","85","95","97")
 state                <- "06"
 census_api_key(censuskey, install = TRUE, overwrite = TRUE)
 
-ACS_year <- 2021
+
+# write to log
+run_log <- "create_2020_tazdata.log"
+print(paste("Writing log to",run_log))
+sink(run_log, append=FALSE, type = c('output', 'message'))
+
+
 sf1_year <- 2020
-ACS_product="5"
+# this is for acs5; 2021 and 2022 supported
+ACS_year <- 2021
+
+# https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
+DOLLARS_2000_to_202X <- c("2021"=1.72, "2022"=1.81)
 
 USERPROFILE          <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
 BOX_TM               <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
@@ -53,11 +66,7 @@ PBA_TAZ_2015         <- file.path(BOX_TM, "Share Data", "plan-bay-area-2050", "t
 
 # Bring in 2020 TAZ employment data
 
-#PETRALE              <- file.path(GITHUB_DIR,"petrale","applications","travel_model_lu_inputs")
-
-# AO: Moved from Petrale to TM1 utilities Oct 2023
 TM1                   <- file.path(GITHUB_DIR,'travel-model-one','utilities','taz-data-baseyears')
-
 emp_wagesal_2020      <- read.csv(file.path(TM1,"2020","Employment","lodes_wac_employment.csv"),header = T)
 emp_selfemp_2020      <- read.csv(file.path(TM1,"2020","Self Employed Workers","taz_self_employed_workers_2020.csv"),header = T)
 
@@ -107,39 +116,154 @@ superdistrict <- read_excel(file.path(TM1,"2015","TAZ1454 2015 Land Use.xlsx"),s
                               filter(!(DISTRICT=="Bay Area")) %>% 
                               mutate(DISTRICT=as.numeric(DISTRICT))
 
-# Income table - Guidelines for HH income values used from ACS
-"
+# Because the 2021$ and 2022$ equivalent categories don't align with the 2000$
+# categories, households within these categories will be apportioned above and below.
+# 
+# Using the ACS 5-year PUMS data, 
+# Figure out how to split household income into travel model income categories
+# https://github.com/BayAreaMetro/modeling-website/wiki/TazData
 
-    2000 income breaks 2021 CPI equivalent   Nearest 2021 ACS breakpoint
-    ------------------ -------------------   ---------------------------
-    $30,000            $51,563               $50,000
-    $60,000            $103,125              $100,000 
-    $100,000           $171,876              $171,876*
-    ------------------ -------------------   ---------------------------
+# Read the PUMS data consistent with the 5-year ACS data
+PUMS_DIR <- sprintf("PUMS %d-%02d", ACS_year-4, ACS_year %% 100)
+PUMS_FILE <-sprintf("hbayarea%02d%02d.Rdata", (ACS_year-4) %% 100, ACS_year %% 100)
+PUMS_FULL_PATH <- file.path("M:/Data/Census/PUMS", PUMS_DIR, PUMS_FILE)
+load(PUMS_FULL_PATH)
 
-    * Because the 2021$ equivalent of $100,000 in 2000$ ($171,876) doesn't closely align with 2021 ACS income 
-      categories, households within the $150,000-$199,999 category will be apportioned above and below $171,876. 
-      Using the ACS 2017-2021 PUMS data, the share of households above $171,876 within the $150,000-$199,999 
-      category is 0.5035511.That is, approximately 50 percent of HHs in the $150,000-$199,999 category will be 
-      apportioned above this value (Q3) and approximately 50 percent below it (Q2). The table below compares 2000$ and 2021$.
+if (ACS_year == 2021) {
+  PUMS_hhbayarea <- hbayarea1721
+  rm(hbayarea1721)
+} else {
+  PUMS_hhbayarea <- hbayarea
+  rm(hbayarea)
+}
+print(paste0("Loaded ",nrow(PUMS_hhbayarea)," rows from",PUMS_FULL_PATH))
 
-Household Income Category Equivalency, 2000$ and 2017$
+PUMS_hhbayarea <- PUMS_hhbayarea %>% 
+  select(NP, HINCP, ADJINC, WGTP) %>%
+  filter(NP > 0) %>%     # filter out vacant units
+  filter(WGTP > 0) %>%   # filter out group quarter placeholder records
+  filter(HINCP >= 0) %>% # filter out negative household income
+  mutate(
+    # From AMERICAN COMMUNITY SURVEY 2017-2021 5-YEAR PUMS User Guide and Overview, Page 17
+    # G. Note on Income and Earnings Inflation Factor (ADJINC)
+    # Divide ADJINC by 1,000,000 to obtain the inflation adjustment factor and multiply it to
+    # the PUMS variable value to adjust it to 2021 dollars.
+    #
+    # From AMERICAN COMMUNITY SURVEY 2018-2022 5-YEAR PUMS User Guide and Overview, Page 17
+    # G. Note on Income and Earnings Inflation Factor (ADJINC)
+    # Divide ADJINC by 1,000,000 to obtain the inflation adjustment factor and multiply it to
+    # the PUMS variable value to adjust it to 2022 dollars.
 
-          Year      Lower Bound     Upper Bound
-          ----      ------------    -----------
-HHINCQ1   2000      $-inf           $29,999
-          2021      $-inf           $49,999
-HHINCQ2   2000      $30,000         $59,999
-          2021      $50,000         $99,999
-HHINCQ3   2000      $60,000         $99,999
-          2021      $100,000        $171,876
-HHINCQ4   2000      $100,000        $inf
-          2021      $171,877        $inf
-          ----      -------------   -----------
+    # => this is 2021 or 2022 dollars depending on ACS_year
+    householdinc_202xdollars = (ADJINC/1000000.0)*HINCP,  
+    # this is 2000 dollars
+    householdinc_2000dollars = householdinc_202xdollars/DOLLARS_2000_to_202X[[as.character(ACS_year)]],
+    # add ACS categories from household income in 202X dollars
+    householdinc_acs_cat = case_when(
+      (householdinc_202xdollars >=      0) & (householdinc_202xdollars <  10000) ~ "hhinc000_010",
+      (householdinc_202xdollars >=  10000) & (householdinc_202xdollars <  15000) ~ "hhinc010_015",
+      (householdinc_202xdollars >=  15000) & (householdinc_202xdollars <  20000) ~ "hhinc015_020",
+      (householdinc_202xdollars >=  20000) & (householdinc_202xdollars <  25000) ~ "hhinc020_025",
+      (householdinc_202xdollars >=  25000) & (householdinc_202xdollars <  30000) ~ "hhinc025_030",
+      (householdinc_202xdollars >=  30000) & (householdinc_202xdollars <  35000) ~ "hhinc030_035",
+      (householdinc_202xdollars >=  35000) & (householdinc_202xdollars <  40000) ~ "hhinc035_040", 
+      (householdinc_202xdollars >=  40000) & (householdinc_202xdollars <  45000) ~ "hhinc040_045", 
+      (householdinc_202xdollars >=  45000) & (householdinc_202xdollars <  50000) ~ "hhinc045_050",
+      (householdinc_202xdollars >=  50000) & (householdinc_202xdollars <  60000) ~ "hhinc050_060",
+      (householdinc_202xdollars >=  60000) & (householdinc_202xdollars <  75000) ~ "hhinc060_075",
+      (householdinc_202xdollars >=  75000) & (householdinc_202xdollars < 100000) ~ "hhinc075_100",
+      (householdinc_202xdollars >= 100000) & (householdinc_202xdollars < 125000) ~ "hhinc100_125",
+      (householdinc_202xdollars >= 125000) & (householdinc_202xdollars < 150000) ~ "hhinc125_150",
+      (householdinc_202xdollars >= 150000) & (householdinc_202xdollars < 200000) ~ "hhinc150_200",
+      (householdinc_202xdollars >= 200000)                                       ~ "hhinc200p"
+    ),
+    # add TM1 categories from household income in 2000 dollars
+    householdinc_TM1_cat = case_when(
+      (householdinc_2000dollars >=      0) & (householdinc_2000dollars <  30000) ~ 'HHINCQ1',
+      (householdinc_2000dollars >=  30000) & (householdinc_2000dollars <  60000) ~ 'HHINCQ2',
+      (householdinc_2000dollars >=  60000) & (householdinc_2000dollars < 100000) ~ 'HHINCQ3',
+      (householdinc_2000dollars >= 100000)                                       ~ 'HHINCQ4',
+    )
+  )
+print(head(PUMS_hhbayarea, n=20))
 
-"
+# columns are now:
+# NP, HINCP, ADJINC, WGTP, householdinc_202xdollars, householdinc_2000dollars, householdinc_acs_cat, householdinc_TM1_cat
+# calculate weighted shares
+PUMS_hhinc_cat <- PUMS_hhbayarea %>% 
+  group_by(householdinc_acs_cat, householdinc_TM1_cat) %>% 
+  summarise(WGTP = sum(WGTP))
+print(PUMS_hhinc_cat)
 
-shareabove171876 <- 0.5035511 # Use this value to later divvy up HHs in the 60-100k and 100k+ respective quartiles.
+# columns are now: householdinc_acs_cat, householdinc_TM1_cat, WGTP
+# move householdinc_TM1_cat values to columns
+PUMS_hhinc_cat <- PUMS_hhinc_cat %>%
+  pivot_wider(names_from = householdinc_TM1_cat, values_from = WGTP, values_fill = 0) %>%
+  mutate(
+    TOT_WGTP = HHINCQ1 + HHINCQ2 + HHINCQ3 + HHINCQ4,
+    HHINCQ1 = HHINCQ1/TOT_WGTP,
+    HHINCQ2 = HHINCQ2/TOT_WGTP,
+    HHINCQ3 = HHINCQ3/TOT_WGTP,
+    HHINCQ4 = HHINCQ4/TOT_WGTP,
+  )
+
+print("PUMS_hhinc_cat:")
+print(PUMS_hhinc_cat)
+
+# For ACS 2017-2021:
+#    householdinc_acs_cat HHINCQ1 HHINCQ2 HHINCQ3 HHINCQ4 TOT_WGTP
+#    <chr>                  <dbl>   <dbl>   <dbl>   <dbl>    <int>
+#  1 hhinc000_010           1       0       0       0        95721
+#  2 hhinc010_015           1       0       0       0        76657
+#  3 hhinc015_020           1       0       0       0        55377
+#  4 hhinc020_025           1       0       0       0        60885
+#  5 hhinc025_030           1       0       0       0        65006
+#  6 hhinc030_035           1       0       0       0        62007
+#  7 hhinc035_040           1       0       0       0        60806
+#  8 hhinc040_045           1       0       0       0        66497
+#  9 hhinc045_050           1       0       0       0        52429
+# 10 hhinc050_060           0.176   0.824   0       0       123796
+# 11 hhinc060_075           0       1       0       0       182229
+# 12 hhinc075_100           0       1       0       0       284374
+# 13 hhinc100_125           0       0.154   0.846   0       258129
+# 14 hhinc125_150           0       0       1       0       219125
+# 15 hhinc150_200           0       0       0.499   0.501   337074
+# 16 hhinc200p              0       0       0       1       753256
+
+# pivot for joining
+PUMS_hhinc_cat <- PUMS_hhinc_cat %>% 
+  select(-TOT_WGTP) %>%
+  pivot_longer(
+    !householdinc_acs_cat,
+    names_to  = 'HHINCQ',
+    values_to = 'acs_to_hhincq_share'
+  ) %>%
+  filter(acs_to_hhincq_share > 0)
+
+print("PUMS_hhinc_cat:")
+print(PUMS_hhinc_cat)
+# Groups:   householdinc_acs_cat [16]
+#    householdinc_acs_cat HHINCQ  acs_to_hhincq_share
+#    <chr>                <chr>                 <dbl>
+#  1 hhinc000_010         HHINCQ1               1    
+#  2 hhinc010_015         HHINCQ1               1    
+#  3 hhinc015_020         HHINCQ1               1    
+#  4 hhinc020_025         HHINCQ1               1    
+#  5 hhinc025_030         HHINCQ1               1    
+#  6 hhinc030_035         HHINCQ1               1    
+#  7 hhinc035_040         HHINCQ1               1    
+#  8 hhinc040_045         HHINCQ1               1    
+#  9 hhinc045_050         HHINCQ1               1    
+# 10 hhinc050_060         HHINCQ1               0.176
+# 11 hhinc050_060         HHINCQ2               0.824
+# 12 hhinc060_075         HHINCQ2               1    
+# 13 hhinc075_100         HHINCQ2               1    
+# 14 hhinc100_125         HHINCQ2               0.154
+# 15 hhinc100_125         HHINCQ3               0.846
+# 16 hhinc125_150         HHINCQ3               1    
+# 17 hhinc150_200         HHINCQ3               0.499
+# 18 hhinc150_200         HHINCQ4               0.501
+# 19 hhinc200p            HHINCQ4               1    
 
 # Import decennial census (DHC file) and ACS for variable inspection, use to get variable numbers
 
@@ -235,8 +359,7 @@ DHC_BG_variables <- c(
 
 ACS_BG_variables <- c(
   
-# Units   
-      
+# Units
   unit1d_           ="B25024_002",    # 1 unit detached    
   unit1a_           ="B25024_003",		# 1 unit attached 
   unit2_            ="B25024_004",		# 2 units
@@ -248,32 +371,29 @@ ACS_BG_variables <- c(
   mobile_           ="B25024_010",		# mobile homes
   boat_RV_Van_      ="B25024_011",		# boats, RVs, vans
   
-# Employment  
-  
+# Employment
   employed_         ="B23025_004",    # Civilian employed residents (employed residents is "employed" + "armed forces")
   armedforces_      ="B23025_006", 	  # Armed forces
 
-# Household income
-                      
-  hhinc0_10_        ="B19001_002",    # Household income 0 to $10k 
-  hhinc10_15_       ="B19001_003",		# Household income $10 to $15k
-  hhinc15_20_       ="B19001_004",		# Household income $15 to $20k
-  hhinc20_25_       ="B19001_005",		# Household income $20 to $25k
-  hhinc25_30_       ="B19001_006",		# Household income $25 to $30k
-  hhinc30_35_       ="B19001_007",		# Household income $30 to $35k
-  hhinc35_40_       ="B19001_008",		# Household income $35 to $40k
-  hhinc40_45_       ="B19001_009",		# Household income $40 to $45k
-  hhinc45_50_       ="B19001_010",		# Household income $45 to $50k
-  hhinc50_60_       ="B19001_011",		# Household income 50 to $60k
-  hhinc60_75_       ="B19001_012",		# Household income 60 to $75k
-  hhinc75_100_      ="B19001_013",		# Household income 75 to $100k
+# Household income                  
+  hhinc000_010_     ="B19001_002",    # Household income 0 to $10k 
+  hhinc010_015_     ="B19001_003",		# Household income $10 to $15k
+  hhinc015_020_     ="B19001_004",		# Household income $15 to $20k
+  hhinc020_025_     ="B19001_005",		# Household income $20 to $25k
+  hhinc025_030_     ="B19001_006",		# Household income $25 to $30k
+  hhinc030_035_     ="B19001_007",		# Household income $30 to $35k
+  hhinc035_040_     ="B19001_008",		# Household income $35 to $40k
+  hhinc040_045_     ="B19001_009",		# Household income $40 to $45k
+  hhinc045_050_     ="B19001_010",		# Household income $45 to $50k
+  hhinc050_060_     ="B19001_011",		# Household income 50 to $60k
+  hhinc060_075_     ="B19001_012",		# Household income 60 to $75k
+  hhinc075_100_     ="B19001_013",		# Household income 75 to $100k
   hhinc100_125_     ="B19001_014",		# Household income $100 to $1$25k
   hhinc125_150_     ="B19001_015",		# Household income $1$25 to $150k
   hhinc150_200_     ="B19001_016",		# Household income $150 to $200k
   hhinc200p_        ="B19001_017",		# Household income $200k+
   
-# Occupation, male    
-  
+# Occupation, male
   occ_m_manage_     ="C24010_005", # Management
   occ_m_prof_biz_   ="C24010_006", # Business and financial
   occ_m_prof_comp_  ="C24010_007", # Computer, engineering, and science
@@ -294,7 +414,6 @@ ACS_BG_variables <- c(
   occ_m_man_prod_   ="C24010_034", # Production, transportation, and material moving
   
 # Occupation, female
-  
   occ_f_manage_     ="C24010_041", # Management
   occ_f_prof_biz_   ="C24010_042", # Business and financial
   occ_f_prof_comp_  ="C24010_043", # Computer, engineering, and science
@@ -312,49 +431,55 @@ ACS_BG_variables <- c(
   occ_f_ret_sales_  ="C24010_064", # Sales and related
   occ_f_svc_off_    ="C24010_065", # Office and administrative support
   occ_f_man_nat_    ="C24010_066", # Natural resources, construction, and maintenance
-  occ_f_man_prod_   ="C24010_070")  # Production, transportation, and material moving
+  occ_f_man_prod_   ="C24010_070"  # Production, transportation, and material moving
+)
 
-# Households by number of workers, households by number of kids
                       
-ACS_tract_variables <-  c(hhwrks0_                    = "B08202_002", # 0-worker HH
-                          hhwrks1_                    = "B08202_003",	# 1-worker HH
-                          hhwrks2_                    = "B08202_004",	# 2-worker HH
-                          hhwrks3p_                   = "B08202_005", # 3+-worker HH
-                                
-                          ownkidsyes_                 = "B25012_003", # Own with related kids under 18
-                          rentkidsyes_                = "B25012_011", # Rent with related kids under 18
-                          ownkidsno_                  = "B25012_009", # Own without related kids under 18
-                          rentkidsno_                 = "B25012_017"  # Rent without related kids under 18
-                          )
+ACS_tract_variables <-  c(
+# Households by number of workers
+  hhwrks0_          = "B08202_002", # 0-worker HH
+  hhwrks1_          = "B08202_003",	# 1-worker HH
+  hhwrks2_          = "B08202_004",	# 2-worker HH
+  hhwrks3p_         = "B08202_005", # 3+-worker HH
 
+# Households by number of kids
+  ownkidsyes_       = "B25012_003", # Own with related kids under 18
+  rentkidsyes_      = "B25012_011", # Rent with related kids under 18
+  ownkidsno_        = "B25012_009", # Own without related kids under 18
+  rentkidsno_       = "B25012_017"  # Rent without related kids under 18
+)
+
+
+DHC_tract_variables <-  c(
 # Group quarters for tracts by age and type of resident
-
-DHC_tract_variables <-  c(gq_noninst_m_0017_univ      = "PCT19_024N", # Male non-inst. under 18 university
-                          gq_noninst_m_0017_mil       = "PCT19_025N", # Male non-inst. under 18 military
-                          gq_noninst_m_0017_oth       = "PCT19_028N", # Male non-inst. under 18 other
-                          gq_noninst_m_1864_univ      = "PCT19_056N", # Male non-inst. 18-64 university
-                          gq_noninst_m_1864_mil       = "PCT19_057N", # Male non-inst. 18-64 military
-                          gq_noninst_m_1864_oth       = "PCT19_060N", # Male non-inst. 18-64 other
-                          gq_noninst_m_65p_univ       = "PCT19_088N", # Male non-inst. 65+ university
-                          gq_noninst_m_65p_mil        = "PCT19_089N", # Male non-inst. 65+ military
-                          gq_noninst_m_65p_oth        = "PCT19_092N", # Male non-inst. 65+ other
-                          gq_noninst_f_0017_univ      = "PCT19_121N", # Female non-inst. under 18 university
-                          gq_noninst_f_0017_mil       = "PCT19_122N", # Female non-inst. under 18 military
-                          gq_noninst_f_0017_oth       = "PCT19_125N", # Female non-inst. under 18 other
-                          gq_noninst_f_1864_univ      = "PCT19_153N", # Female non-inst. 18-64 university
-                          gq_noninst_f_1864_mil       = "PCT19_154N", # Female non-inst. 18-64 military
-                          gq_noninst_f_1864_oth       = "PCT19_157N", # Female non-inst. 18-64 other
-                          gq_noninst_f_65p_univ       = "PCT19_185N", # Female non-inst. 65+ university
-                          gq_noninst_f_65p_mil        = "PCT19_186N", # Female non-inst. 65+ military
-                          gq_noninst_f_65p_oth        = "PCT19_189N") # Female non-inst. 65+ other
+  gq_noninst_m_0017_univ      = "PCT19_024N", # Male non-inst. under 18 university
+  gq_noninst_m_0017_mil       = "PCT19_025N", # Male non-inst. under 18 military
+  gq_noninst_m_0017_oth       = "PCT19_028N", # Male non-inst. under 18 other
+  gq_noninst_m_1864_univ      = "PCT19_056N", # Male non-inst. 18-64 university
+  gq_noninst_m_1864_mil       = "PCT19_057N", # Male non-inst. 18-64 military
+  gq_noninst_m_1864_oth       = "PCT19_060N", # Male non-inst. 18-64 other
+  gq_noninst_m_65p_univ       = "PCT19_088N", # Male non-inst. 65+ university
+  gq_noninst_m_65p_mil        = "PCT19_089N", # Male non-inst. 65+ military
+  gq_noninst_m_65p_oth        = "PCT19_092N", # Male non-inst. 65+ other
+  gq_noninst_f_0017_univ      = "PCT19_121N", # Female non-inst. under 18 university
+  gq_noninst_f_0017_mil       = "PCT19_122N", # Female non-inst. under 18 military
+  gq_noninst_f_0017_oth       = "PCT19_125N", # Female non-inst. under 18 other
+  gq_noninst_f_1864_univ      = "PCT19_153N", # Female non-inst. 18-64 university
+  gq_noninst_f_1864_mil       = "PCT19_154N", # Female non-inst. 18-64 military
+  gq_noninst_f_1864_oth       = "PCT19_157N", # Female non-inst. 18-64 other
+  gq_noninst_f_65p_univ       = "PCT19_185N", # Female non-inst. 65+ university
+  gq_noninst_f_65p_mil        = "PCT19_186N", # Female non-inst. 65+ military
+  gq_noninst_f_65p_oth        = "PCT19_189N"  # Female non-inst. 65+ other
+)
 
 # Bring in 2020 block/TAZ equivalency, create block group ID and tract ID fields for later joining to ACS data
 # Add zero on that is lost in CSV conversion
 # Remove San Quentin block from file and move other blocks with population in TAZ 1439 to adjacent 1438
 
-blockTAZ <- read.csv(blockTAZ2020_in,header=TRUE) %>% mutate(      
-  blockgroup = paste0("0",blockgroup),
-  tract = paste0("0",tract)) %>% 
+blockTAZ <- read.csv(
+    blockTAZ2020_in,
+    header=TRUE, 
+    colClasses=c("GEOID"="character","blockgroup"="character","tract"="character")) %>% 
   filter (!(NAME=="Block 1007, Block Group 1, Census Tract 1220, Marin County, California")) %>%  # San Quentin block
   mutate(TAZ1454=case_when(
     NAME=="Block 1006, Block Group 1, Census Tract 1220, Marin County, California"   ~ as.integer(1438),
@@ -372,7 +497,7 @@ blockTAZTract <- blockTAZ %>%
   group_by(tract) %>%
   summarize(TractTotal=sum(block_POPULATION))
 
-# Create 2020 block share of total population for block/block group and block/tract, append to comnbined_block file
+# Create 2020 block share of total population for block/block group and block/tract, append to combined_block file
 # Be mindful of divide by zero error associated with 0-pop block groups and tracts
 
 combined_block <- left_join(blockTAZ,blockTAZBG,by="blockgroup") %>% mutate(
@@ -381,15 +506,19 @@ combined_block <- left_join(blockTAZ,blockTAZBG,by="blockgroup") %>% mutate(
 combined_block <- left_join(combined_block,blockTAZTract,by="tract") %>% mutate(
   sharetract=if_else(block_POPULATION==0,0,block_POPULATION/TractTotal))
 
+print(paste("combined_block has",nrow(combined_block),"rows"))
+print("head(combined_block):")
+print(head(combined_block, n=20))
+
 # Function to make tract and block group data API calls by county for ACS 2017-2021
 
 ACS_tract_raw <- get_acs(
-          geography = "tract", variables = ACS_tract_variables,
-          state = state_code, county=baycounties,
-          year=ACS_year,
-          output="wide",
-          survey = "acs5",
-          key = censuskey)
+  geography = "tract", variables = ACS_tract_variables,
+  state = state_code, county=baycounties,
+  year=ACS_year,
+  output="wide",
+  survey = "acs5",
+  key = censuskey)
 
 ACS_BG_raw <- get_acs(
   geography = "block group", variables = ACS_BG_variables,
@@ -427,7 +556,12 @@ ACS_tract_raw <- ACS_tract_raw %>% select(!(ends_with("_M"))) %>% select(-NAME)
 ACS_BG_raw <- ACS_BG_raw %>% select(!(ends_with("_M"))) %>% select(-NAME)
 names(ACS_tract_raw) <- str_replace_all(names(ACS_tract_raw), c("_E" = ""))
 names(ACS_BG_raw) <- str_replace_all(names(ACS_BG_raw), c("_E" = ""))
-                                                                             
+
+print(paste0("ACS_tract_raw (",nrow(ACS_tract_raw)," rows):"))
+print(ACS_tract_raw)
+
+print(paste0("ACS_BG_raw (",nrow(ACS_BG_raw)," rows):"))
+print(ACS_BG_raw)                                                                           
 
 # Join 2017-2021 ACS and DHC block group and tract variables to combined_block file
 # Combine and collapse ACS categories to get land use control totals, as appropriate
@@ -437,27 +571,15 @@ interim <- left_join(combined_block,ACS_BG_raw, by=c("blockgroup"="GEOID")) %>%
   left_join(.,ACS_tract_raw, by=c("tract"="GEOID"))%>% 
   left_join(.,DHC_BG_raw, by=c("blockgroup"="GEOID"))%>%
   left_join(.,DHC_tract_raw, by=c("tract"="GEOID"))
+
+print(paste0("interim (",nrow(interim)," rows):"))
+print(interim)
+
 workingdata <- interim %>% mutate(
   TOTHH=tothh*sharebg,
   HHPOP=hhpop*sharebg,
   EMPRES=(employed+armedforces)*sharebg,
-  HHINCQ1=(hhinc0_10+
-             hhinc10_15+
-             hhinc15_20+
-             hhinc20_25+
-             hhinc25_30+
-             hhinc30_35+
-             hhinc35_40+
-             hhinc40_45+
-             hhinc45_50)*sharebg,
-  HHINCQ2=(  hhinc50_60+
-             hhinc60_75+
-             hhinc75_100)*sharebg,
-  HHINCQ3=(  hhinc100_125+
-             hhinc125_150+
-             (hhinc150_200*(1-shareabove171876)))*sharebg, # Apportions HHs below $171,876 within $150,000-$200,000 range
-  HHINCQ4=((hhinc150_200*shareabove171876)+                # Apportions HHs above $171,876 within $150,000-$200,000 range
-             hhinc200p)*sharebg,
+  # household income moved to next step
   AGE0004=(male0_4+female0_4)*sharebg,
   AGE0519=(male5_9+
              male10_14+
@@ -589,6 +711,48 @@ workingdata <- interim %>% mutate(
                          gq_noninst_f_1864_oth  +
                          gq_noninst_f_65p_oth)*sharetract)
 
+print(paste0("workingdata (",nrow(workingdata)," rows):"))
+print(workingdata)
+
+# take out income columns and handle separately
+workingdata_hhinc <- workingdata %>% select(
+  starts_with(c("GEOID","blockgroup","tract","TAZ1454","sharebg","hhinc"))
+)
+print(paste0("Initial workingdata_hhinc (",nrow(workingdata_hhinc)," rows):"))
+print(workingdata_hhinc)
+
+# pivot hhinc categories from columns to rows
+workingdata_hhinc <- workingdata_hhinc %>% pivot_longer(
+  cols = starts_with("hhinc"),
+  names_to = "householdinc_acs_cat",
+  values_to = "num_households",
+  values_drop_na = TRUE
+)
+print(paste0("After pivint hhinc categories to rows, workingdata_hhinc (",nrow(workingdata_hhinc)," rows):"))
+print(workingdata_hhinc)
+
+# join with mapping from householdinc_acs_cat to HHINCQ from PUMS
+workingdata_hhinc <- workingdata_hhinc %>% 
+  # apply sharebg
+  mutate(num_households = num_households * sharebg) %>%
+  left_join(PUMS_hhinc_cat, 
+    by="householdinc_acs_cat", 
+    relationship="many-to-many") %>%
+  # apply the share to households to allocate to hhincq
+  mutate(num_households = num_households * acs_to_hhincq_share)
+
+print(paste0("After joining with PUMS-based mapping, workingdata_hhinc (",nrow(workingdata_hhinc)," rows):"))
+print(workingdata_hhinc)
+
+# summarize to TAZ
+TAZ_hhinc <- workingdata_hhinc %>%
+  group_by(TAZ1454, HHINCQ) %>% 
+  summarise(num_households = sum(num_households), .groups='drop') %>%
+  pivot_wider(names_from = "HHINCQ", values_from = "num_households")
+
+print(paste0("Resulting TAZ_hhinc (",nrow(TAZ_hhinc)," rows):"))
+print(TAZ_hhinc)
+
 # Summarize to TAZ and select only variables of interest
 
 temp0 <- workingdata %>%
@@ -596,10 +760,6 @@ temp0 <- workingdata %>%
   summarize(  TOTHH                   =sum(TOTHH),
               HHPOP                   =sum(HHPOP),
               EMPRES                  =sum(EMPRES),
-              HHINCQ1                 =sum(HHINCQ1),
-              HHINCQ2                 =sum(HHINCQ2),
-              HHINCQ3                 =sum(HHINCQ3),
-              HHINCQ4                 =sum(HHINCQ4),
               AGE0004                 =sum(AGE0004),
               AGE0519                 =sum(AGE0519),
               AGE2044                 =sum(AGE2044),
@@ -635,6 +795,11 @@ temp0 <- workingdata %>%
               asian_nonh              =sum(asian_nonh),
               other_nonh              =sum(other_nonh),   
               hispanic                =sum(hispanic))
+
+temp0 <- left_join(temp0, TAZ_hhinc, by="TAZ1454", relationship="one-to-one")
+
+print(paste0("temp0 (", nrow(temp0)," rows):"))
+print(temp0)
 
 # Confirmed values for 2020 are:
     # Total regional HH pop is 7590783
@@ -895,6 +1060,7 @@ ethnic <- temp_rounded_adjusted %>%
   select(TAZ1454,hispanic, white_nonh,black_nonh,asian_nonh,other_nonh,TOTPOP, COUNTY, County_Name)
 
 write.csv (ethnic,file = "TAZ1454_Ethnicity.csv",row.names = FALSE)
+print(paste("Wrote","TAZ1454_Ethnicity.csv"))
 
 # Read in old PBA data sets and select variables for joining to new 2020 dataset
 # Join 2020 employment data
@@ -911,6 +1077,7 @@ joined_employment <- left_join(joined_15_20,employment_2020, by=c("ZONE"="TAZ145
 
 final_2020 <- joined_employment
 save(final_2020,file="TAZ Land Use File 2020.rdata")
+print(paste("Wrote","TAZ Land Use File 2020.rdata"))
 
 # Write out subsets of final 2020 data
  
@@ -944,8 +1111,13 @@ summed20 <- New2020 %>%
 # Export new 2020 data, 2015 and 2020 district summary data
 
 write.csv(New2020, "TAZ1454 2020 Land Use.csv", row.names = FALSE, quote = T)
+print(paste("Wrote","TAZ1454 2020 Land Use.csv"))
+
 write.csv(summed15, "TAZ1454 2015 District Summary.csv", row.names = FALSE, quote = T)
+print(paste("Wrote","TAZ1454 2015 District Summary.csv"))
+
 write.csv(summed20, "TAZ1454 2020 District Summary.csv", row.names = FALSE, quote = T)
+print(paste("Wrote","TAZ1454 2020 District Summary.csv"))
 
 # Select out PopSim variables and export to separate csv
 
@@ -956,6 +1128,7 @@ popsim_vars <- temp_rounded_adjusted %>%
          gq_tot_pop,gq_type_univ,gq_type_mil,gq_type_othnon)
 
 write.csv(popsim_vars, "TAZ1454 2020 Popsim Vars.csv", row.names = FALSE, quote = T)
+print(paste("Wrote","TAZ1454 2020 Popsim Vars.csv"))
 
 # region popsim vars
 popsim_vars_region <- popsim_vars %>% 
@@ -964,6 +1137,7 @@ popsim_vars_region <- popsim_vars %>%
   summarize(gq_num_hh_region=sum(gq_tot_pop))
 
 write.csv(popsim_vars_region, "TAZ1454 2020 Popsim Vars Region.csv", row.names = FALSE, quote = T)
+print(paste("Wrote","TAZ1454 2020 Popsim Vars Region.csv"))
 
 # county popsim vars
 popsim_vars_county <- joined_15_20 %>%
@@ -976,6 +1150,7 @@ popsim_vars_county <- joined_15_20 %>%
     pers_occ_military    =sum(pers_occ_military))
 
 write.csv(popsim_vars_county, "TAZ1454 2020 Popsim Vars County.csv", row.names = FALSE, quote = T)
+print(paste("Wrote","TAZ1454 2020 Popsim Vars County.csv"))
 
 # Output into Tableau-friendly format
 
@@ -999,4 +1174,7 @@ New2020_long <- New2020 %>%
          MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)
 
 write.csv(PBA2015_long,file.path(TM1,"2015","TAZ1454_2015_long.csv"),row.names = F)
+print(paste("Wrote",file.path(TM1,"2015","TAZ1454_2015_long.csv")))
+
 write.csv(New2020_long,"TAZ1454_2020_long.csv",row.names = F)
+print(paste("Wrote","TAZ1454_2020_long.csv"))
