@@ -6,262 +6,111 @@ Prerequisite: run off-model prep R scripts (https://github.com/BayAreaMetro/trav
 to create a set of "model data" for the off-model calculators.
 
 Example call: 
-`python update_offmodel_calculator_workbooks_with_TM_output.py bike_share 2035_TM160_DBP_Plan_04 2050_TM160_DBP_Plan_04`
+`python update_offmodel_calculator_workbooks_with_TM_output.py`
+Args inputs:  
+ Flags:
+ -d: directory paths
+ for MTC team, select -d mtc (set as default)
+ for external team members -d external 
 
-Inputs: off-model calculator, including -
-    - bike share
-    - car share
-    - targeted transportation alternatives
-    - vanpools
+Models:
+Includes all Excel sheet master model calculators. These models contain the logs of runs created after running the script.
 
-Outputs: a copy of the calculator Excel workbook, with updated travel model data.
-
+Data:
+    |input: includes a folder with the following strucure
+        |name: IPA_TM2
+        -> |ModelData
+            -> All model data input files (xlsx)
+           |PBA50+ Off-Model Calculators
+            -> Calculators (not used)
+    |output: contains a copy of the calculator Excel workbook, with updated travel model data.
+        |run folder: named based on the uid (timestamp).
+                e.g. 2024-08-09 15--50--53 (format:YYYY-MM-DD 24H--MM--SS)
 """
 
-import argparse, datetime, os, sys
-import shutil, openpyxl
+import argparse
 import pandas as pd
+import os
+from datetime import datetime
+ 
+from helper.bshare import Bikeshare
+from helper.cshare import Carshare
+from helper.targtransalt import TargetedTransAlt
+from helper.vpool import VanPools
+from helper.ebk import EBike
+from helper.vbuyback import BuyBack
+from helper.regchar import RegionalCharger
+from helper.common import get_paths
 
-# calculator names
-
+# calculator name choices
 BIKE_SHARE = 'bike_share'
 CAR_SHARE = 'car_share'
 TARGETED_TRANS_ALT = 'targeted_trans_alt'
 VAN_POOL = 'vanpools'
+E_BIKE = 'e_bike'
+BUY_BACK='buy_back'
+REG_CHARGER='regional_charger'
 
-#####################################
-# inputs and outputs 
-BOX_DIR = r'C:\Users\{}\Box\Plan Bay Area 2050+\Blueprint\Off-Model\PBA50+ Off-Model'.format(os.environ.get('USERNAME'))
-MODEL_DATA_BOX_DIR = os.path.join(BOX_DIR, 'model_data_all')
-
-OFF_MODEL_CALCULATOR_DIR = os.path.join(BOX_DIR, 'DBP_v2', 'PBA50+ Off-Model Calculators')
-
-
-########## Bike Share
-def update_bikeshare_calculator(model_runID_ls):
-    # make a copy of the workbook
-    bikeshare_master_workbook_file = os.path.join(
-        OFF_MODEL_CALCULATOR_DIR, 
-        'PBA50+_OffModel_Bikeshare.xlsx')
-    bikeshare_new_workbook_file = os.path.join(
-        OFF_MODEL_CALCULATOR_DIR, 
-        'PBA50+_OffModel_Bikeshare__{}__{}.xlsx'.format(model_runID_ls[0], model_runID_ls[1]))
-
-    print(bikeshare_master_workbook_file)
-    print(bikeshare_new_workbook_file)
-    shutil.copy2(bikeshare_master_workbook_file, bikeshare_new_workbook_file)
-
-    # load and filter model run data of selected runs
-    bikeshare_model_data = pd.read_csv(
-        os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - Bikeshare.csv'),
-        skiprows=1)
-    # display(bikeshare_model_data.head(5))
-    print(bikeshare_model_data['directory'].unique())
-    bikeshare_model_data = bikeshare_model_data.loc[
-        bikeshare_model_data['directory'].isin(model_runID_ls)]
-
-    # add model data of selected runs to 'Model Data' sheet
-    print(bikeshare_new_workbook_file)
-    with pd.ExcelWriter(bikeshare_new_workbook_file, engine='openpyxl', mode = 'a', if_sheet_exists = 'replace') as writer:
-        # note this only works with pandas=1.4.3 or later; in earlier version, it will not overwrite sheet, but add new one with sheet name 'Model Data1'
-        bikeshare_model_data.to_excel(writer, sheet_name='Model Data', index=False, startrow=1, startcol=0)
-
-    # get needed data into the worksheet
-    model_data_info = pd.read_csv(
-        os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - Bikeshare.csv'),
-        nrows=0)
-    model_data_info = model_data_info.columns[0]
-    print(model_data_info)
-
-    # also add model data log info
-    bikeshare_new_workbook = openpyxl.load_workbook(bikeshare_new_workbook_file)
-    model_data_ws = bikeshare_new_workbook['Model Data']
-    model_data_ws['A1'] = model_data_info
-
-    # also add run_id to 'Main sheet'
-    bikeshare_mainsheet = bikeshare_new_workbook['Main sheet']
-    bikeshare_mainsheet['C14'] = model_runID_ls[0]
-    bikeshare_mainsheet['D14'] = model_runID_ls[1]
-
-    # save file
-    bikeshare_new_workbook.save(bikeshare_new_workbook_file)
-
-
-########## Car Share
-def update_carshare_calculator(model_runID_ls):
-    # make a copy of the workbook
-    carshare_master_workbook_file = os.path.join(
-        OFF_MODEL_CALCULATOR_DIR, 
-        'PBA50+_OffModel_Carshare.xlsx')
-    carshare_new_workbook_file = os.path.join(
-        OFF_MODEL_CALCULATOR_DIR, 
-        'PBA50+_OffModel_Carshare__{}__{}.xlsx'.format(model_runID_ls[0], model_runID_ls[1]))
-
-    print(carshare_master_workbook_file)
-    print(carshare_new_workbook_file)
-
-    shutil.copy2(carshare_master_workbook_file, carshare_new_workbook_file)
-
-    # load and filter model run data of selected runs
-    carshare_model_data = pd.read_csv(
-        os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - carshare.csv'),
-        skiprows=2)
-    print(carshare_model_data.head(5))
-    print(carshare_model_data['directory'].unique())
-    carshare_model_data = carshare_model_data.loc[
-        carshare_model_data['directory'].isin(model_runID_ls)]
-
-    # add model data of selected runs to 'Model Data' sheet
-    print(carshare_new_workbook_file)
-    with pd.ExcelWriter(carshare_new_workbook_file, engine='openpyxl', mode = 'a', if_sheet_exists = 'replace') as writer:
-        carshare_model_data.to_excel(writer, sheet_name='Model Data', index=False, startrow=2, startcol=0)
-
-    # get needed data into the worksheet
-    model_data_info_df = pd.read_csv(
-        os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - Carshare.csv'),
-        nrows=1)
-    model_data_info_df.reset_index(inplace=True)
-    model_data_info = model_data_info_df.columns[0]
-    model_data_var = model_data_info_df.iloc[0, 0]
-    model_data_val = model_data_info_df.iloc[0, 1]
-    print(model_data_info)
-    print(model_data_var)
-    print(model_data_val)
-
-    # also add model data log info
-    carshare_new_workbook = openpyxl.load_workbook(carshare_new_workbook_file)
-    model_data_ws = carshare_new_workbook['Model Data']
-    model_data_ws['A1'] = model_data_var
-    model_data_ws['B1'] = model_data_val
-    model_data_ws['A2'] = model_data_info
-
-    # also add run_id to 'Main sheet'
-    carshare_mainsheet = carshare_new_workbook['Main Sheet']
-    carshare_mainsheet['C36'] = model_runID_ls[0]
-    carshare_mainsheet['D36'] = model_runID_ls[1]
-
-    # save file
-    carshare_new_workbook.save(carshare_new_workbook_file)
-
-
-########## targeted transportation alternatives
-def update_targetedTransAlt_calculator(model_runID_ls):
-    # make a copy of the workbook
-    targetedTransAlt_master_workbook_file = os.path.join(
-        OFF_MODEL_CALCULATOR_DIR, 
-        'PBA50+_OffModel_TargetedTransAlt.xlsx')
-    targetedTransAlt_new_workbook_file = os.path.join(
-        OFF_MODEL_CALCULATOR_DIR, 
-        'PBA50+_OffModel_TargetedTransAlt__{}__{}.xlsx'.format(model_runID_ls[0], model_runID_ls[1]))
-
-    print(targetedTransAlt_master_workbook_file)
-    print(targetedTransAlt_new_workbook_file)
-    shutil.copy2(targetedTransAlt_master_workbook_file, targetedTransAlt_new_workbook_file)
-
-    # load and filter model run data of selected runs
-    targetedTransAlt_model_data = pd.read_csv(
-        os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - Targeted Transportation Alternatives.csv'),
-        skiprows=1)
-
-    # display(targetedTransAlt_model_data.head(5))
-    print(targetedTransAlt_model_data['directory'].unique())
-    targetedTransAlt_model_data = targetedTransAlt_model_data.loc[
-        targetedTransAlt_model_data['directory'].isin(model_runID_ls)]
-
-    # add model data of selected runs to 'Model Data' sheet
-    print(targetedTransAlt_new_workbook_file)
-    with pd.ExcelWriter(targetedTransAlt_new_workbook_file, engine='openpyxl', mode = 'a', if_sheet_exists = 'replace') as writer:
-        targetedTransAlt_model_data.to_excel(writer, sheet_name='Model Data', index=False, startrow=1, startcol=0)
-
-    # get needed data into the worksheet
-    model_data_info = pd.read_csv(
-        os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - Targeted Transportation Alternatives.csv'),
-        nrows=0)
-    model_data_info = model_data_info.columns[0]
-    print(model_data_info)
-
-    # also add model data log info
-    targetedTransAlt_new_workbook = openpyxl.load_workbook(targetedTransAlt_new_workbook_file)
-    model_data_ws = targetedTransAlt_new_workbook['Model Data']
-    model_data_ws['A1'] = model_data_info
-
-    # also add run_id to 'Main sheet'
-    targetedTransAlt_mainsheet = targetedTransAlt_new_workbook['Main sheet']
-    targetedTransAlt_mainsheet['C26'] = model_runID_ls[0]
-    targetedTransAlt_mainsheet['D26'] = model_runID_ls[1]
-
-    # save file
-    targetedTransAlt_new_workbook.save(targetedTransAlt_new_workbook_file)
-
-
-########## van pools
-def update_valpools_calculator(model_runID_ls):
-    # make a copy of the workbook
-    vanpool_master_workbook_file = os.path.join(
-        OFF_MODEL_CALCULATOR_DIR, 
-        'PBA50+_OffModel_Vanpools.xlsx')
-    vanpool_new_workbook_file = os.path.join(
-        OFF_MODEL_CALCULATOR_DIR, 
-        'PBA50+_OffModel_Vanpools__{}__{}.xlsx'.format(model_runID_ls[0], model_runID_ls[1]))
-
-    print(vanpool_master_workbook_file)
-    print(vanpool_new_workbook_file)
-    shutil.copy2(vanpool_master_workbook_file, vanpool_new_workbook_file)
-
-    # load and filter model run data of selected runs
-    vanpool_model_data = pd.read_csv(
-        os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - Employer Shuttles.csv'),
-        skiprows=1)
-
-    # display(vanpool_model_data.head(5))
-    print(vanpool_model_data['directory'].unique())
-    vanpool_model_data = vanpool_model_data.loc[
-        vanpool_model_data['directory'].isin(model_runID_ls)]
-
-    # add model data of selected runs to 'Model Data' sheet
-    print(vanpool_new_workbook_file)
-    with pd.ExcelWriter(vanpool_new_workbook_file, engine='openpyxl', mode = 'a', if_sheet_exists = 'replace') as writer:
-        vanpool_model_data.to_excel(writer, sheet_name='Model Data', index=False, startrow=1, startcol=0)
-
-    # get needed data into the worksheet
-    model_data_info = pd.read_csv(
-        os.path.join(MODEL_DATA_BOX_DIR, 'Model Data - Employer Shuttles.csv'),
-        nrows=0)
-    model_data_info = model_data_info.columns[0]
-    print(model_data_info)
-
-    # also add model data log info
-    vanpool_new_workbook = openpyxl.load_workbook(vanpool_new_workbook_file)
-    model_data_ws = vanpool_new_workbook['Model Data']
-    model_data_ws['A1'] = model_data_info
-
-    # also add run_id to 'Main sheet'
-    vanpool_mainsheet = vanpool_new_workbook['Main Sheet']
-    vanpool_mainsheet['C12'] = model_runID_ls[0]
-    vanpool_mainsheet['D12'] = model_runID_ls[1]
-    vanpool_mainsheet['E12'] = model_runID_ls[1]
-
-    # save file
-    vanpool_new_workbook.save(vanpool_new_workbook_file)
-
-# TODO: add function for the new e-bike calculator
+# template location
+CWD=os.path.dirname(__file__)
+TEMPLATE_DIR=os.path.join(CWD, r'update_omc_template.xlsx')
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser(description=USAGE)
-    parser.add_argument('calculator', choices=[BIKE_SHARE,CAR_SHARE,TARGETED_TRANS_ALT,VAN_POOL], help='Calculator name')
-    parser.add_argument('model_run_id_2035', help='travel model run_id of a 2035 run')
-    parser.add_argument('model_run_id_2050', help='travel model run_id of a 2050 run')
-    args = parser.parse_args()
+    parser.add_argument('-d', choices=['mtc','external'], default='external', 
+                        help='choose directory mtc or external'
+    )
+    ARGS = parser.parse_args()
+    DIRECTORY=ARGS.d
+    UID=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    # TODO: add logging
 
-    MODEL_RUNS = [args.model_run_id_2035, args.model_run_id_2050]
+    templateData=pd.read_excel(TEMPLATE_DIR
+                               ,sheet_name='Template'
+                               ,header=[0]).fillna("")
+    
+    for ix in range(len(templateData)):
+        CALCULATOR=templateData.iloc[ix]['Calculator']
+        R1=templateData.iloc[ix]['model_run_id baseline']
+        R2=templateData.iloc[ix]['model_run_id horizon']
+        MODEL_RUN_IDS=[R1,R2]
+        FOLDER_NAME='2050_TM160_DBP_PLAN_08b'
+        
+        if CALCULATOR == BIKE_SHARE:
+            c=Bikeshare(MODEL_RUN_IDS,DIRECTORY, UID, False)
 
-    if args.calculator == BIKE_SHARE:
-        update_bikeshare_calculator(MODEL_RUNS)
-    elif args.calculator == CAR_SHARE:
-        update_carshare_calculator(MODEL_RUNS)
-    elif args.calculator == TARGETED_TRANS_ALT:
-        update_targetedTransAlt_calculator(MODEL_RUNS)
-    elif args.calculator == VAN_POOL:
-        update_valpools_calculator(MODEL_RUNS)
+        elif CALCULATOR == CAR_SHARE:
+            c=Carshare(MODEL_RUN_IDS,DIRECTORY, UID, False)
+                    
+        elif CALCULATOR == TARGETED_TRANS_ALT:
+            c=TargetedTransAlt(MODEL_RUN_IDS,DIRECTORY, UID, False)
+
+        elif CALCULATOR == VAN_POOL:
+            c=VanPools(MODEL_RUN_IDS,DIRECTORY, UID, False)
+
+        elif CALCULATOR == E_BIKE:
+            c=EBike(MODEL_RUN_IDS,DIRECTORY, UID, False)
+
+        elif CALCULATOR == BUY_BACK:
+            c=BuyBack(MODEL_RUN_IDS,DIRECTORY, UID, False)
+        
+        elif CALCULATOR == REG_CHARGER:
+            c=RegionalCharger(MODEL_RUN_IDS,DIRECTORY, UID, False)
+
+        ## TODO: Add Complete Streets calculator
+
+        else:
+            raise ValueError(
+                "Choice not in options. Check the calculator name is correct.")
+        
+        c.update_calculator()
+        c.paths=get_paths(DIRECTORY)
+        outputSummary=c.create_output_summary_path(FOLDER_NAME)            
+        if not os.path.exists(outputSummary):
+            c.initialize_summary_file(outputSummary)
+        else:
+            print("Summary file exists.")
+        
+        c.update_summary_file(outputSummary,FOLDER_NAME)
+        
