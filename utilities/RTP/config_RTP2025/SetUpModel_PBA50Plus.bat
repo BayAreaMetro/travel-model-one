@@ -293,6 +293,16 @@ if %MODEL_YEAR_NUM% GEQ 2025 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMo
 :: Bay Skyway (formerly Bay Bridge West Span Bike Path)
 if %MODEL_YEAR_NUM% GEQ 2045 (copy /Y "%BP_OVERRIDE_DIR%\Bike_access\CreateNonMotorizedNetwork_BikeAccess_2045onwards.job"   "CTRAMP\scripts\skims\CreateNonMotorizedNetwork.job")
 
+:: ------
+:: Off-model calculation 
+:: ------
+set runOffModel=Yes
+if "%runOffModel%"=="Yes" (
+    mkdir CTRAMP\scripts\offmodel
+    c:\windows\system32\Robocopy.exe /NP /E "%GITHUB_DIR%\utilities\RTP\Emissions\Off Model Calculators"   CTRAMP\scripts\offmodel
+    copy /Y "%GITHUB_DIR%\utilities\RTP\RunOffmodel.bat" %CURRENT_DIR%
+)
+
 :DoneAddingStrategies
 
 :: ------------------------------------------------------------------------------------------------------
