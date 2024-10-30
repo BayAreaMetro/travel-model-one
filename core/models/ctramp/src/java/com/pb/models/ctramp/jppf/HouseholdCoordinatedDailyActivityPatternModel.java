@@ -99,13 +99,7 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
     private void setupCoordinatedDailyActivityPatternModelApplication( HashMap<String, String> propertyMap, CtrampDmuFactoryIf dmuFactory ) {
         
         logger.info( "setting up CDAP choice model." );
-        // todo: this is for debugging; remove
-        for (Person.WorkFromHomeStatus wfh_status : Person.WorkFromHomeStatus.values()) {
-            logger.info(" wfh_status: " + wfh_status + "; orinal(): " + wfh_status.ordinal());
-        }
-        for (Person.IndustryStatus ind_status : Person.IndustryStatus.values()) {
-            logger.info(" ind_status: " + ind_status + "; orinal(): " + ind_status.ordinal());
-        }
+
         // locate the coordinated daily activity pattern choice model UEC
         String projectDirectory = propertyMap.get( CtrampApplication.PROPERTIES_PROJECT_DIRECTORY );
         String cdapUecFile = propertyMap.get( PROPERTIES_UEC_DAILY_ACTIVITY_PATTERN);
@@ -115,7 +109,6 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
         // create the coordinated daily activity pattern choice model DMU object.
         logger.info( "About to create cdapDmuObject" );
         cdapDmuObject = dmuFactory.getCoordinatedDailyActivityPatternDMU();
-        cdapDmuObject.setPropertyFileValues(propertyMap);
         logger.info( "cdapDmuObject = " + cdapDmuObject );
 
         // create the uecs
@@ -323,9 +316,6 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
      * the activity pattern for that person, in order (see Household.reOrderPersonsForCdap method).
      */
     public String getCoordinatedDailyActivityPatternChoice( Household householdObject ){
-        
-        // give cdapDmuObject access to one person UEC matrix manager
-        cdapDmuObject.setMatrixManager(onePersonUec.getMatrixData());
 
         // set all household level dmu variables
         cdapDmuObject.setHousehold(householdObject);

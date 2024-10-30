@@ -33,10 +33,6 @@ public class CoordinatedDailyActivityPatternDMU implements Serializable, Variabl
     public CoordinatedDailyActivityPatternDMU(){
     	dmuIndex = new IndexValues();
     }
-
-    public void setPropertyFileValues( HashMap<String, String> propertyMap ) {
-        // pass
-    }
     
     public void setDmuIndexValues(int hhId, int homeTaz, int workTaz) {
         dmuIndex.setHHIndex(hhId);
@@ -54,8 +50,6 @@ public class CoordinatedDailyActivityPatternDMU implements Serializable, Variabl
     public IndexValues getIndexValues() {
         return dmuIndex; 
     }
-    
-    public void setMatrixManager(MatrixDataManager passedMatrixDataManager) {}
 
     public void setHousehold(Household passedInHouseholdObject){
     	

@@ -13,12 +13,6 @@ import com.pb.models.ctramp.TazDataIf;
 public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActivityPatternDMU {
 
     private Logger cdapLogger = Logger.getLogger("cdap");
-    
-    // EN7 superdistrict boosts
-    public static final String PROPERTIES_WFH_EN7_SUPERDISTRICT_BOOST = "CDAP.WFH.EN7.Superdistrict00";
-
-    // indexed by work superdistrict
-    private float[] WFH_EN7_BOOST;
 
     private int[] tazDataAgrEmpn;
     private int[] tazDataFpsEmpn;
@@ -29,8 +23,6 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
     private int[] tazDataTotEmp;
 
     TazDataIf tazDataManager;
-    private MatrixDataManager matrixDataManager = null;
-    private int DIST_MATRIX_INDEX = -1;
 
     public MtcCoordinatedDailyActivityPatternDMU(TazDataIf tazData) {
         super ();
@@ -44,24 +36,6 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         this.tazDataOthEmpn = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_OTHER_EMP_FIELD_NAME);
         this.tazDataRetEmpn = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_RETAIL_EMP_FIELD_NAME);
         this.tazDataTotEmp  = tazData.getZoneTableIntColumn(MtcTazDataHandler.ZONE_DATA_EMP_FIELD_NAME);
-        // en7 superdistrict table
-        this.WFH_EN7_BOOST = new float[34];  // hardcoded 34 == bad but no time
-    }
-
-    public void setPropertyFileValues( HashMap<String, String> propertyMap) {
-
-        for (int district_num=1; district_num<=34; district_num++) {
-            this.WFH_EN7_BOOST[district_num-1] = Float.parseFloat(propertyMap.get(
-                PROPERTIES_WFH_EN7_SUPERDISTRICT_BOOST.replace("Superdistrict00",String.format("Superdistrict%02d",district_num))));
-            // cdapLogger.info("Read superdistrict EN7 boosts for district " + district_num + ": " + this.WFH_EN7_BOOST[district_num-1]);
-        }
-    }
-
-    public void setMatrixManager(MatrixDataManager passedMatrixDataManager){
-        this.matrixDataManager = passedMatrixDataManager;
-        this.DIST_MATRIX_INDEX = this.matrixDataManager.findMatrixIndex("DIST");
-        // cdapLogger.info("setMatrixManager:" + this.matrixDataManager);
-        // cdapLogger.info("this.DIST_MATRIX_INDEX:" + this.DIST_MATRIX_INDEX);
     }
 
     // household income
