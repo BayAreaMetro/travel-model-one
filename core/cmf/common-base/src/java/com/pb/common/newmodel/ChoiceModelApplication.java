@@ -47,6 +47,14 @@ public class ChoiceModelApplication implements java.io.Serializable {
     private long totalCount;
     private long otherCount;
 
+	public ChoiceModelApplication (String controlFileName, int modelSheet, int dataSheet, HashMap<String,String> propertyMap, Object dmuClassObject, Logger logger) {
+        // call the original constructor
+        this(controlFileName, modelSheet, dataSheet, propertyMap, dmuClassObject);
+        
+        if (logger != null) {
+            debugLogger = logger;
+        }
+    }
 
 	public ChoiceModelApplication (String controlFileName, int modelSheet, int dataSheet, HashMap<String,String> propertyMap, Object dmuObject) {
 
@@ -594,7 +602,7 @@ public class ChoiceModelApplication implements java.io.Serializable {
     {
         debugLogger
                 .debug("****************************************************************************************************************");
-        debugLogger.debug(String.format("HH DEBUG:  %s Logit Calcuations for %s", choiceModelLabel,
+        debugLogger.debug(String.format("HH DEBUG:  %s Logit Calculations for %s", choiceModelLabel,
                 decisionMakerLabel));
         debugLogger
                 .debug("****************************************************************************************************************");

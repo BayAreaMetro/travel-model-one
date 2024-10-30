@@ -38,16 +38,17 @@ public class CoordinatedDailyActivityPatternDMU implements Serializable, Variabl
         // pass
     }
     
-    public void setDmuIndexValues(int zoneId) {
-        dmuIndex.setZoneIndex(zoneId);
-
+    public void setDmuIndexValues(int hhId, int homeTaz, int workTaz) {
+        dmuIndex.setHHIndex(hhId);
+        dmuIndex.setOriginZone(homeTaz);
+        dmuIndex.setDestZone(workTaz);
         dmuIndex.setDebug(false);
-        dmuIndex.setDebugLabel ( "" );
+        dmuIndex.setDebugLabel("");
+
         if ( householdObject.getDebugChoiceModels() ) {
             dmuIndex.setDebug(true);
-            dmuIndex.setDebugLabel ( "Debug CDAP UEC" );
+            dmuIndex.setDebugLabel ("Debug CDAP UEC");
         }
-
     }
     
     public IndexValues getIndexValues() {
@@ -74,9 +75,13 @@ public class CoordinatedDailyActivityPatternDMU implements Serializable, Variabl
         dmuIndex.setStopZone(passedInPersonA.getPersonWorkLocationZone());
     }
 
-    public void setWorksFromHomeForPersonA(Logger cdapLogger) {
+    public void setIndustryForPersonA(Logger cdapLogger) {
         // pass -- implemented in subclass
     }
+    public IndexValues getDmuIndexValues() {
+        return dmuIndex;
+    }
+    
     
     public void setPersonB(Person passedInPersonB){
     	this.personB = passedInPersonB;
