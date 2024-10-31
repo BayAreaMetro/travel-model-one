@@ -328,8 +328,8 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
         reOrderPersonsForCdap(householdObject);
 
         // loop through each person for industry and WFH
-        for(int i=0;i<modelHhSize;++i){
-            Person personA = getCdapPerson(i+1);
+        for(int i=1;i<actualHhSize+1;++i){
+            Person personA = householdObject.getPersons()[i];
             // set the person level dmu variables
             cdapDmuObject.setPersonA(personA);
 
