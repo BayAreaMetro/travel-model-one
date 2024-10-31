@@ -1,4 +1,4 @@
-# Create "2020" TAZ data from ACS 2017-2021 
+# Create "2020" TAZ data from ACS 2018-2022 
 # SI
 #
 # Notes
@@ -49,8 +49,8 @@ sink(run_log, append=FALSE, type = c('output', 'message'))
 
 
 sf1_year <- 2020
-# this is for acs5; 2021 and 2022 supported
-ACS_year <- 2021
+# this is for acs5; 2021 (which is 2017-2021) and 2022 (which is 2018-2022) supported
+ACS_year <- 2022
 
 # https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
 DOLLARS_2000_to_202X <- c("2021"=1.72, "2022"=1.81)
@@ -510,7 +510,7 @@ print(paste("combined_block has",nrow(combined_block),"rows"))
 print("head(combined_block):")
 print(head(combined_block, n=20))
 
-# Function to make tract and block group data API calls by county for ACS 2017-2021
+# Function to make tract and block group data API calls by county for specified 5-year ACS
 
 ACS_tract_raw <- get_acs(
   geography = "tract", variables = ACS_tract_variables,
@@ -563,9 +563,9 @@ print(ACS_tract_raw)
 print(paste0("ACS_BG_raw (",nrow(ACS_BG_raw)," rows):"))
 print(ACS_BG_raw)                                                                           
 
-# Join 2017-2021 ACS and DHC block group and tract variables to combined_block file
+# Join specfied 5-year ACS and DHC block group and tract variables to combined_block file
 # Combine and collapse ACS categories to get land use control totals, as appropriate
-# Apply block share of 2013-2017 ACS variables using block/block group and block/tract shares of 2020 total population
+# Apply block share of ACS variables using block/block group and block/tract shares of 2020 total population
 
 interim <- left_join(combined_block,ACS_BG_raw, by=c("blockgroup"="GEOID")) %>% 
   left_join(.,ACS_tract_raw, by=c("tract"="GEOID"))%>% 
