@@ -15,19 +15,19 @@ library(dplyr)
 # Specify inputs
 ##################
 
-# users to specify the project directory:
-PROJECT_DIR = "M:/Application/Model One/RTP2025/IncrementalProgress/2015_TM160_IPA_05"
+# Run this from the [M_run_dir]\OUTPUT\validation\transit
+# That is the working dir
 
 # typically, users do not need to specify other input paths, as they do not change across model runs
 # onboard survey data
-F_INPUT_SURVEY_DIR         <- "M:/Data/OnBoard/Data and Reports/_data Standardized/share_data/model_version"
+F_INPUT_SURVEY_DIR         <- "M:/Data/OnBoard/Data and Reports/_data_Standardized/share_data/model_version"
 F_INPUT_CONSOLIDATED_RDATA <- file.path(F_INPUT_SURVEY_DIR, "TPS_Model_Version_PopulationSim_Weights2021-09-02.Rdata")
 
 # file specifying how the operators are grouped
 ConsolidatedDB_OperatorGroups_CSV    <- "X:/travel-model-one-master/utilities/prepare-validation-data/ConsolidatedDB_OperatorGroups.csv"
 
 # file with modelled boardings
-trnline_CSV    <- file.path(PROJECT_DIR, "OUTPUT","trn", "trnline.csv")
+trnline_CSV    <- file.path("..","..","trn","trnline.csv")
 
 # file specifying how the transit modes in the model are grouped
 TransitMode_OperatorGroups_CSV    <- "X:/travel-model-one-master/utilities/prepare-validation-data/TransitMode_OperatorGroups.csv"
@@ -146,6 +146,6 @@ compare_df <- full_join(
 )
 
 # output the observed vs modelled table
-OUTPUT_FILE <- file.path(PROJECT_DIR, "OUTPUT", "validation", "transit", "ridership_observed_vs_modelled.csv")
+OUTPUT_FILE <- file.path("ridership_observed_vs_modelled.csv")
 write.csv(compare_df, OUTPUT_FILE, row.names = FALSE)
 print(paste("Wrote", OUTPUT_FILE))
