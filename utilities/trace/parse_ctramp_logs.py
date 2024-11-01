@@ -20,7 +20,7 @@ USAGE = r"""
 
 """
 
-import argparse, re, os, shutil, sys
+import argparse, re, os, shutil, pathlib, sys
 import numpy, pandas
 
 NUM_TAZ      = 1454
@@ -29,7 +29,7 @@ NUM_DEST_ALT = NUM_TAZ*NUM_SUBZONES
 NUM_MC_ALT   = 21
 
 # start of every log line
-DATE_LOG_TYPE_RE_TXT  = "^(\d\d-\w\w\w-\d\d\d\d \d\d:\d\d:\d\d, INFO, )"
+DATE_LOG_TYPE_RE_TXT  = r"^(\d\d-\w\w\w-\d\d\d\d \d\d:\d\d:\d\d, (?P<log_level>DEBUG|INFO), )"
 
 # marks the start of what we're looking for in the work location choice log
 TOURDC_RE_TXT         = "(Utility Expressions for (Usual Location Choice Model for:|Individual Non-Mandatory Tour Destination Choice Model,) Purpose=([ A-Za-z\-_]+) for HH=(\d+), PersonNum=(\d+), PersonType=([ A-Za-z\-]+), Tour(Num|Id)=(\d+))"
@@ -50,6 +50,9 @@ TOURMC_RE_TXT         = r"(?P<full_line>Utility Expressions for(?P<nonm> Individ
 TRIPMC_RE_TXT         = r"(?P<full_line>Utility Expressions for Trip Mode Choice Model for (?P<attrs>.*).)$"
 TRIPMC_ORIGDEST_RE_TXT= "(\s+(orig|origWalkSegment|dest|destWalkSegment|direction): \s+(\d+|inbound|outbound))"
 
+# marks the start of the Work-From-Home lines in the cdap log
+WFH_RE_TXT         = r"(?P<full_line>Utility Expressions for Work-From-Home Choice (?P<attrs>.*))$"
+
 # utility expression for one term - coefficient x variable
 UTILITY_RE_TXT        = "(\s+([\.\-0-9]+) [*]\s+(([\.\-0-9]+e[+-]\d\d)|NaN|Infinity))"
 # utility expression for all terms - expression number  (coefficient x variable)xNUM_DEST_ALT
@@ -58,6 +61,10 @@ UTILITY_RE            = re.compile("{}{}".format(DATE_LOG_TYPE_RE_TXT, FULL_UTIL
 # utility expression for tour mc terms - expression number  (coefficient x variable)NUM_MC_ALT
 MC_UTILITY_RE_TXT     = "(\d+)" + UTILITY_RE_TXT*NUM_MC_ALT
 MC_UTILITY_RE         = re.compile("{}{}".format(DATE_LOG_TYPE_RE_TXT, MC_UTILITY_RE_TXT))
+# utility expression for WFH
+NUM_WFH_ALT           = 2
+WFH_UTILITY_RE_TXT    = "(\d+)" + UTILITY_RE_TXT*NUM_WFH_ALT
+WFH_UTILITY_RE        = re.compile("{}{}".format(DATE_LOG_TYPE_RE_TXT, WFH_UTILITY_RE_TXT))
 
 # utility express for total utility
 TOTAL_UTIL_RE_TXT     = "(\s+(([\.\-0-9]+e[+-]\d\d)|NaN|Infinity))"
@@ -67,6 +74,9 @@ TOTAL_UTILITY_RE      = re.compile("{}{}".format(DATE_LOG_TYPE_RE_TXT, TOTAL_UTI
 # utility expression for all mode choice terms
 MC_TOTAL_UTILITY_RE_TXT = "(Alt Utility)" + TOTAL_UTIL_RE_TXT*NUM_MC_ALT
 MC_TOTAL_UTILITY_RE     = re.compile("{}{}".format(DATE_LOG_TYPE_RE_TXT, MC_TOTAL_UTILITY_RE_TXT))
+# utiliyt expression for all WFH choice terms
+WFH_TOTAL_UTILITY_RE_TXT = "(Alt Utility)" + TOTAL_UTIL_RE_TXT*NUM_WFH_ALT
+WFH_TOTAL_UTILITY_RE     = re.compile("{}{}".format(DATE_LOG_TYPE_RE_TXT, WFH_TOTAL_UTILITY_RE_TXT))
 
 def read_tour_mode_choice_logsum_lines(file_object, type_str, attr_dict, base_or_build, log_file):
     """
@@ -1069,11 +1079,11 @@ def read_tour_mode_choice_logsum_lines(file_object, type_str, attr_dict, base_or
         line     = file_object.readline().strip()
         # print("parsing line: [{}]".format(line))
         match    = MC_UTILITY_RE.match(line)
-        row_num   = int(match.group(2)) # row number
+        row_num   = int(match.group(3)) # row number
         row_descr = ROW_NAMES[row_num]
         # print("row_num = {}, utils_read = {}".format(row_num, utils_read))
 
-        full_idx  = 3  # coefficient x variable
+        full_idx  = 4  # coefficient x variable
         for mode_alt in range(1, NUM_MC_ALT+1):
             row_alt_dict = attr_dict.copy() # start with these keys
             row_alt_dict["row num"        ] = row_num
@@ -1107,7 +1117,7 @@ def read_tour_mode_choice_logsum_lines(file_object, type_str, attr_dict, base_or
     if attr_dict['Dest'] == "1" and attr_dict['DestSubZ'] == "0":
         print(match.groups())
 
-    full_idx = 3 # TOTAL_UTIL_RE_TXT
+    full_idx = 4 # TOTAL_UTIL_RE_TXT
     for mode_alt in range(1,NUM_MC_ALT+1):
         row_alt_dict = attr_dict.copy()
         row_alt_dict["row num"        ] = -1
@@ -1722,11 +1732,11 @@ def read_trip_mode_choice_lines(file_object, type_str, attr_dict, base_or_build,
         line     = file_object.readline().strip()
         match    = MC_UTILITY_RE.match(line)
         if match == None: print("match == None for utils_read={} line={}".format(utils_read, line))
-        row_num   = int(match.group(2)) # row number
+        row_num   = int(match.group(3)) # row number
         row_descr = ROW_NAMES[row_num]
         assert(utils_read == row_num)
 
-        full_idx  = 3  # coefficient x variable
+        full_idx  = 4  # coefficient x variable
         for mode_alt in range(1, NUM_MC_ALT+1):
             row_alt_dict = attr_dict.copy()
             row_alt_dict["row num"         ] = row_num
@@ -1907,10 +1917,10 @@ def read_destination_choice_lines(file_object, type_str, purpose, hh, persnum, p
 
 
         # print(match.group(0))
-        row_num   = int(match.group(2)) # row number
+        row_num   = int(match.group(3)) # row number
         row_descr = ROW_NAMES[row_num]
 
-        full_idx  = 3  # coefficient x variable
+        full_idx  = 4  # coefficient x variable
         for dest_alt in range(1,NUM_DEST_ALT+1):
             # print("row_num {} dest_alt {} full=[{}] coeff={} var={}".format(row_num, dest_alt, match.group(full_idx), match.group(full_idx+1), match.group(full_idx+2)))
 
@@ -1994,6 +2004,153 @@ def read_destination_choice_lines(file_object, type_str, purpose, hh, persnum, p
 
     return (lines_read + utils_read, output_dir)
 
+def read_wfh_choice_lines(file_object, attr_dict, base_or_build, log_file):
+    """
+    Read the destination choice utilities from the file_object
+    Saves as destchoice_[type_str]_hh[hh]_pers[persnum]/[base_or_build]_dc_utilities.csv
+    Also copies log file into that directory as backup
+    """
+    # read 5 lines that we don't care about
+    for lines_read in range(1,6):
+        line = file_object.readline().strip()
+        print(f"Skipping [{line}]")
+
+    # from CoordinatedDailyActivityPattern.xls UEC, WorkFromHome
+    WFH_ROW_NAMES = {
+        1 : "token, income (2000 dollars)",
+        2 : "token, industry is AGR",
+        3 : "token, industry is HER",
+        4 : "token, industry is MWT",
+        5 : "token, industry is RET",
+        6 : "token, home county",
+        7 : "token, work superdistrict",
+        8 : "token, distance home-to-work",
+        9 : "token, income (2023 dollars)",
+        10: "Estimated constant",
+        11: "Household income 75-100k (2023$)",
+        12: "Household income 100-200k (2023$)",
+        13: "Household income 200k+ (2023$)",
+        14: "Industry is Agricultural and natural resources",
+        15: "Industry is Health, educational and recreational service",
+        16: "Industry is Manufacturing, wholesale trade and transportation",
+        17: "Industry is Retail trade",
+        18: "Home county is North Bay",
+        19: "Distance from home to work (in miles)",
+        20: "Calibration constant",
+        21: "EN7 Boost for Superdistrict 01",
+        22: "EN7 Boost for Superdistrict 02",
+        23: "EN7 Boost for Superdistrict 03",
+        24: "EN7 Boost for Superdistrict 04",
+        25: "EN7 Boost for Superdistrict 05",
+        26: "EN7 Boost for Superdistrict 06",
+        27: "EN7 Boost for Superdistrict 07",
+        28: "EN7 Boost for Superdistrict 08",
+        29: "EN7 Boost for Superdistrict 09",
+        30: "EN7 Boost for Superdistrict 10",
+        31: "EN7 Boost for Superdistrict 11",
+        32: "EN7 Boost for Superdistrict 12",
+        33: "EN7 Boost for Superdistrict 13",
+        34: "EN7 Boost for Superdistrict 14",
+        35: "EN7 Boost for Superdistrict 15",
+        36: "EN7 Boost for Superdistrict 16",
+        37: "EN7 Boost for Superdistrict 17",
+        38: "EN7 Boost for Superdistrict 18",
+        39: "EN7 Boost for Superdistrict 19",
+        40: "EN7 Boost for Superdistrict 20",
+        41: "EN7 Boost for Superdistrict 21",
+        42: "EN7 Boost for Superdistrict 22",
+        43: "EN7 Boost for Superdistrict 23",
+        44: "EN7 Boost for Superdistrict 24",
+        45: "EN7 Boost for Superdistrict 25",
+        46: "EN7 Boost for Superdistrict 26",
+        47: "EN7 Boost for Superdistrict 27",
+        48: "EN7 Boost for Superdistrict 28",
+        49: "EN7 Boost for Superdistrict 29",
+        50: "EN7 Boost for Superdistrict 30",
+        51: "EN7 Boost for Superdistrict 31",
+        52: "EN7 Boost for Superdistrict 32",
+        53: "EN7 Boost for Superdistrict 33",
+        54: "EN7 Boost for Superdistrict 34",
+    }
+
+    row_alt_dicts = []
+
+    # read utiltities
+    for utils_read in range(1,len(WFH_ROW_NAMES)+1):
+        line     = file_object.readline().strip()
+        match    = WFH_UTILITY_RE.match(line)
+        # print(f"parsing line: [{line}]")
+        # print(f"WFH_UTILITY_RE: [{WFH_UTILITY_RE}]")
+        # print(f"match: [{match}]")
+
+        row_num   = int(match.group(3)) # row number
+        row_descr = WFH_ROW_NAMES[row_num]
+
+        full_idx  = 4  # coefficient x variable
+        for wfh_alt in range(1, NUM_WFH_ALT+1):
+            row_alt_dict = attr_dict.copy() # start with these keys
+            row_alt_dict["row num"        ] = row_num
+            row_alt_dict["row description"] = row_descr
+            row_alt_dict["wfh alt"        ] = wfh_alt
+            row_alt_dict["coefficient"    ] = float(match.group(full_idx+1))
+            row_alt_dict["variable"       ] = match.group(full_idx+2)
+            if row_alt_dict["variable"] == "Infinity":
+                row_alt_dict["variable"] = numpy.Infinity
+            elif row_alt_dict["variable"] == "NaN":
+                row_alt_dict["variable"] = numpy.NaN
+            else:
+                row_alt_dict["variable"] = float(row_alt_dict["variable"])
+
+            row_alt_dicts.append(row_alt_dict)
+            full_idx += 4 # go to next alt
+
+    # 31-Oct-2024 11:16:47, INFO, 54          1.00000 *   0.00000e+00       0.00000 *   0.00000e+00   
+    # 31-Oct-2024 11:16:47, INFO, --------------------------------------------------------------------
+    # 31-Oct-2024 11:16:47, INFO, Alt Utility             7.45000e+00                   0.00000e+00   
+
+    # read 1 more lines that we don't care about, the dashes
+    line     = file_object.readline().strip()
+    assert("----------------------------" in line)
+    lines_read += 1
+
+    # total utility
+    line     = file_object.readline().strip()
+    match    = WFH_TOTAL_UTILITY_RE.match(line)
+    print(match.groups())
+    full_idx = 4
+    for wfh_alt in range(1,NUM_WFH_ALT+1):
+        row_alt_dict = attr_dict.copy()
+        row_alt_dict["row num"        ] = -1
+        row_alt_dict["row description"] = "Total Utility"
+        row_alt_dict["wfh alt"       ] = wfh_alt
+        row_alt_dict["coefficient"    ] = 1.0
+        row_alt_dict["variable"       ] = match.group(full_idx+1)
+        if row_alt_dict["variable"] == "Infinity":
+            row_alt_dict["variable"] = numpy.Infinity
+        elif row_alt_dict["variable"] == "NaN":
+            row_alt_dict["variable"] = numpy.NaN
+        else:
+            row_alt_dict["variable"] = float(row_alt_dict["variable"])
+        # print(row_alt_dict["variable"])
+
+        row_alt_dicts.append(row_alt_dict)
+
+        full_idx += 3 # go to next alt
+
+    df = pandas.DataFrame.from_records(row_alt_dicts)
+
+    output_dir      = pathlib.Path(".") # just save this local
+    output_filename = f"cdap_wfh_hhid{attr_dict['HHID']}_persid{attr_dict['PERSID']}.csv"
+    df.to_csv(os.path.join(output_dir,output_filename), index=False)
+    print("Wrote {}".format(os.path.join(output_dir,output_filename)))
+
+    # copy source log file
+    # shutil.copyfile(log_file, os.path.join(output_dir, log_file))
+    # print("Copied {} to {}".format(log_file, output_dir))
+
+    return (lines_read + utils_read, output_dir)
+
+
 if __name__ == '__main__':
     pandas.options.display.width = 1000
     pandas.options.display.max_columns = 100
@@ -2005,12 +2162,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
 
-    line_re       = re.compile("{}(.*)$".format(DATE_LOG_TYPE_RE_TXT))
-    tour_dc_re    = re.compile("{}{}".format(DATE_LOG_TYPE_RE_TXT, TOURDC_RE_TXT))
-    tour_mc_re    = re.compile("{}{}".format(DATE_LOG_TYPE_RE_TXT, TOURMC_RE_TXT))
-    trip_mc_re    = re.compile("{}{}".format(DATE_LOG_TYPE_RE_TXT, TRIPMC_RE_TXT))
-    trip_mc_od_re = re.compile("{}{}".format(DATE_LOG_TYPE_RE_TXT, TRIPMC_ORIGDEST_RE_TXT))
+    line_re       = re.compile(f"{DATE_LOG_TYPE_RE_TXT}(.*)$")
+    tour_dc_re    = re.compile(f"{DATE_LOG_TYPE_RE_TXT}{TOURDC_RE_TXT}")
+    tour_mc_re    = re.compile(f"{DATE_LOG_TYPE_RE_TXT}{TOURMC_RE_TXT}")
+    trip_mc_re    = re.compile(f"{DATE_LOG_TYPE_RE_TXT}{TRIPMC_RE_TXT}")
+    trip_mc_od_re = re.compile(f"{DATE_LOG_TYPE_RE_TXT}{TRIPMC_ORIGDEST_RE_TXT}")
+    cdap_wfh_re   = re.compile(f"{DATE_LOG_TYPE_RE_TXT}{WFH_RE_TXT}")
     attrs_re      = re.compile(r"(?P<attr_name>[A-Za-z]+)=(?P<attr_value>[0-9A-Za-z\-_]+[ ]?[0-9A-Za-z\-_]*)")  # may have one space in attr_value
+    attrs_nospc_re= re.compile(r"(?P<attr_name>[A-Za-z]+)=(?P<attr_value>[0-9A-Za-z\-_]+)")  # may have one space in attr_value
+
 
     print("Reading {}".format(args.log_file))
     log_fo = open(args.log_file, 'r')
@@ -2020,9 +2180,11 @@ if __name__ == '__main__':
     trip_mc_od = {}
 
     while True:
-        line = log_fo.readline().strip()
+        line = log_fo.readline()
         # check for eof
         if line == "": break
+        # strip trailing/leading whitespace
+        line = line.strip()
 
         lines_read += 1
 
@@ -2095,10 +2257,24 @@ if __name__ == '__main__':
                 modechoice_df = pandas.concat([modechoice_df, df])
             continue
 
+        match = cdap_wfh_re.match(line)
+        if match:
+            print(f"cdap_wfh_re match: {match.groupdict()}")
+            # parse the attrs
+            attrs_dict = dict(attrs_nospc_re.findall(match.group('attrs')))
+            print(f"{match.group('attrs')=}")
+            print(f"{attrs_dict=}")
+
+            print("Found WFH Choice info attributes: {}".format(attrs_dict))
+
+            (new_lines_read,df) = read_wfh_choice_lines(log_fo, attrs_dict, args.base_or_build, args.log_file)
+            continue
+
         match = line_re.match(line)
 
         if lines_read <= 10:
-            print(match.group(2))
+            if match: print(f"{lines_read:7} generic match: {match.group(3)}")
+            else: print(f"{lines_read:7} No match: {line}")
 
         # end for line in log file object
     log_fo.close()
