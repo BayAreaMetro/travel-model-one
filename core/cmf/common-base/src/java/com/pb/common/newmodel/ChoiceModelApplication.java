@@ -646,6 +646,10 @@ public class ChoiceModelApplication implements java.io.Serializable {
     		}
     	}
     }
+    
+    public void logDataValues(Logger localLogger, int origTaz, int destTaz) {
+        uec.logDataValues(localLogger, origTaz, destTaz, 0);
+    }
 
     public void logUECResults ( Logger localLogger ){
         logUECResults( localLogger, description );

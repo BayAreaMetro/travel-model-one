@@ -366,8 +366,13 @@ public class HouseholdCoordinatedDailyActivityPatternModel implements Serializab
 
             // write choice model alternative info to log file
             if ( householdObject.getDebugChoiceModels() ) {
-                workFromHomeChoiceModelApp.logUECResults(cdapLogger, "Work-From-Home Choice");
-                workFromHomeChoiceModelApp.logAlternativesInfo("Work-From-Home Choice", String.format("PERS_%d", personA.getPersonId()));
+                // workFromHomeChoiceModelApp.logDataValues(cdapLogger, householdObject.getHhTaz(), personA.getUsualWorkLocation());
+
+                String header = "Work-From-Home Choice ";
+                String headerInfo = String.format("HHID=%d PERSID=%d personIndustry=%s ", householdObject.getHhId(), personA.getPersonId(), personIndustry);
+                headerInfo += String.format("homeTAZ=%d workTAZ=%d ", householdObject.getHhTaz(), personA.getUsualWorkLocation());
+                workFromHomeChoiceModelApp.logUECResults(cdapLogger, header + headerInfo);
+                workFromHomeChoiceModelApp.logAlternativesInfo(header, headerInfo);
             }
             // set it: in the UEC, Alt1 = WFH, Alt2 = Does not WFH
             if (chosenAlt == 1) {

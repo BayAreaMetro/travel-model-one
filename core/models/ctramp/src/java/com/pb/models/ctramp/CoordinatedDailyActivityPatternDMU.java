@@ -34,6 +34,13 @@ public class CoordinatedDailyActivityPatternDMU implements Serializable, Variabl
     	dmuIndex = new IndexValues();
     }
     
+    public void setDmuIndexValues(int hhId, int homeTaz, int workTaz, Logger localLogger) {
+        setDmuIndexValues(hhId, homeTaz, workTaz);
+        if ( householdObject.getDebugChoiceModels() ) {
+            localLogger.info("CoordinatedDailyActivityPatternDMU.setDmuIndexValues(): " + dmuIndex.toString());
+        }
+    }
+
     public void setDmuIndexValues(int hhId, int homeTaz, int workTaz) {
         dmuIndex.setHHIndex(hhId);
         dmuIndex.setOriginZone(homeTaz);
