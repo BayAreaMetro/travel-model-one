@@ -87,10 +87,14 @@ loop period = 1, 5
       ; air passenger travel demand
       mati[4] = nonres\tripsAirPax@token_period@.tpp
 
+      ; taxi access/egress trips to HSR travel demand 
+      ; (personal auto has already been incorporated to tripsIx@token_period@.tpp)
+      mati[5] = nonres\tripsHsr@token_period@.tpp
+
       ; loaded time-specific highway network
       ; neto    = hwy\load@token_period@.net
-      neto    = "hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs_v2.net"
-      mato    = "hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs_v2.tpp", MO=1-13, NAME=vol_da,vol_s2,vol_s3,vol_sm,vol_hv,vol_daT,vol_s2T,vol_s3T,vol_smT,vol_hvT,vol_daAVTNC,vol_s2AVTNC,vol_s3AVTNC
+      neto    = "hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs.net"
+      mato    = "hwy\selectlink\load@token_period@_selectlink_@token_link@_ODs.tpp", MO=1-13, NAME=vol_da,vol_s2,vol_s3,vol_sm,vol_hv,vol_daT,vol_s2T,vol_s3T,vol_smT,vol_hvT,vol_daAVTNC,vol_s2AVTNC,vol_s3AVTNC
 
       ; set the assignment paramters -- equilibrium assignment, frank-wolfe
       parameters combine = equi; , enhance = 2
