@@ -1,0 +1,810 @@
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set YEAR=2020 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set M_DIR=D:\Scenarios\2020_BaseY_BCM2020 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set AddStrategies=Yes 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set GITHUB_DIR=Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set ALL_BCM_INPUTS=Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set Software_Dir=Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Software 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set COMPUTER_SETTING=HIGH 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set INPUT_TRN=Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\trn 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set INPUT_NONRES=Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set PARAMS=Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\config\params_2020.properties 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set BP_OVERRIDE_DIR=D:\Projects\BCM\2015_BaseY_BCM2015\travel-model-overrides 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>for /F "delims=[] tokens=2" %a in ('ping -4 -n 1 VUS22-603-0061 | findstr [') do set HOST_IP_ADDRESS=%a 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>set HOST_IP_ADDRESS=10.246.226.202 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>SET HOST_IP_ADDRESS=localhost 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>echo HOST_IP_ADDRESS: localhost 
+HOST_IP_ADDRESS: localhost
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>SET computer_prefix=VUS2 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>mkdir D:\Scenarios\2020_BaseY_BCM2020 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>echo SET SOFTWARE_DIR=Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Software 1>D:\Scenarios\2020_BaseY_BCM2020\Set_Software_Dr.cmd 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>echo SET COMPUTER_SETTING=HIGH 1>>D:\Scenarios\2020_BaseY_BCM2020\Set_Software_Dr.cmd 
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>COMPUTER_SETTING
+'COMPUTER_SETTING' is not recognized as an internal or external command,
+operable program or batch file.
+
+Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files>cd /d D:\Scenarios\2020_BaseY_BCM2020 
+
+D:\Scenarios\2020_BaseY_BCM2020>mkdir CTRAMP\model 
+
+D:\Scenarios\2020_BaseY_BCM2020>mkdir CTRAMP\runtime 
+
+D:\Scenarios\2020_BaseY_BCM2020>mkdir CTRAMP\scripts 
+
+D:\Scenarios\2020_BaseY_BCM2020>mkdir CTRAMP\scripts\metrics 
+
+D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\model"       CTRAMP\model 
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : Monday, October 28, 2024 1:53:57 PM
+   Source : Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\model\
+     Dest : D:\Scenarios\2020_BaseY_BCM2020\CTRAMP\model\
+
+    Files : *.*
+	    
+  Options : *.* /S /E /DCOPY:DA /COPY:DAT /R:1000000 /W:30 
+
+------------------------------------------------------------------------------
+
+	                  30	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\model\
+	    New File  		  286720	accessibility_utility.xls 45%   91%  100%  
+	    New File  		   24576	accessibility_utility_constants.xls100%  
+	    New File  		   34816	AtWorkSubtourFrequency.xls100%  
+	    New File  		  409088	AutoOwnership.xls 32%   64%   96%  100%  
+	    New File  		  116759	BATS2000_TripHour_ByTourHour_adjusted.csv100%  
+	    New File  		   70320	CBDParkingZones.csv100%  
+	    New File  		  187904	CoordinatedDailyActivityPattern.xls 69%  100%  
+	    New File  		  363520	DestinationChoice.xls 36%   72%  100%  
+	    New File  		  262498	DestinationChoiceAlternatives.csv 49%   99%  100%  
+	    New File  		   76800	DestinationChoiceAlternativeSample.xls100%  
+	    New File  		     844	DestinationChoiceSizeCoefficients.csv100%  
+	    New File  		   2.0 m	FreeParkingEligibility.xls 24%   49%   73%   98%  100%  
+	    New File  		  209408	IndividualMandatoryTourFrequency.xls 62%  100%  
+	    New File  		  283648	IndividualNonMandatoryTourFrequency.xls 46%   92%  100%  
+	    New File  		    1578	IndividualNonMandatoryTourFrequencyAlternatives.csv100%  
+	    New File  		    4178	IndividualNonMandatoryTourFrequencyExtensionProbabilities.csv100%  
+	    New File  		  134656	JointTours.xls 97%  100%  
+	    New File  		     231	mandatory_accessibility_alts.csv100%  
+	    New File  		   1.0 m	ModeChoice.xls 23%   47%   70%   94%  100%  
+	    New File  		     231	nonMandatory_accessibility_alts.csv100%  
+	    New File  		   60416	ParkingLocationChoice.xls100%  
+	    New File  		   86528	StopDestinationChoice.xls100%  
+	    New File  		   98816	StopDestinationChoiceAlternativeSample.xls100%  
+	    New File  		     507	StopDestinationChoiceSizeCoefficients.csv100%  
+	    New File  		  344064	StopFrequency.xls 38%   76%  100%  
+	    New File  		    9712	StopPurposeLookup.csv100%  
+	    New File  		  193024	TourDepartureAndDuration.xls 67%  100%  
+	    New File  		    2329	TourDepartureAndDurationAlternatives.csv100%  
+	    New File  		   38912	TravelTime.xls100%  
+	    New File  		   1.1 m	TripModeChoice.xls 22%   45%   67%   90%  100%  
+	  New Dir          4	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\model\TM1.0 version\
+	    New File  		  230912	AutoOwnership_TM1.xls 56%  100%  
+	    New File  		  175104	DestinationChoice_TM1.xls 74%  100%  
+	    New File  		   1.0 m	ModeChoice_TM1.xls 24%   49%   74%   99%  100%  
+	    New File  		   1.0 m	TripModeChoice_TM1.xls 23%   46%   69%   92%  100%  
+	  New Dir          2	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\model\TM1.5.1 version\
+	    New File  		   1.0 m	ModeChoice_TM1.5.1.xls 23%   47%   71%   94%  100%  
+	    New File  		   1.0 m	TripModeChoice_TM1.5.1.xls 24%   48%   72%   96%  100%  
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :         3         2         1         0         0         0
+   Files :        36        36         0         0         0         0
+   Bytes :   11.91 m   11.91 m         0         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+
+
+   Speed :            32288255 Bytes/sec.
+   Speed :            1847.548 MegaBytes/min.
+   Ended : Monday, October 28, 2024 1:53:57 PM
+
+
+D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime"     CTRAMP\runtime 
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : Monday, October 28, 2024 1:53:57 PM
+   Source : Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\
+     Dest : D:\Scenarios\2020_BaseY_BCM2020\CTRAMP\runtime\
+
+    Files : *.*
+	    
+  Options : *.* /S /E /DCOPY:DA /COPY:DAT /R:1000000 /W:30 
+
+------------------------------------------------------------------------------
+
+	                  15	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\
+	    New File  		    4787	accessibilities.properties100%  
+	    New File  		   8.9 m	accessibility.jar 11.2% 22.4% 33.6% 44.9% 56.1% 67.3% 78.5% 89.8%100%  
+	    New File  		     798	JavaOnly_runMain.cmd100%  
+	    New File  		     354	JavaOnly_runNode0.cmd100%  
+	    New File  		     354	JavaOnly_runNode1.cmd100%  
+	    New File  		     354	JavaOnly_runNode2.cmd100%  
+	    New File  		     354	JavaOnly_runNode3.cmd100%  
+	    New File  		     354	JavaOnly_runNode4.cmd100%  
+	    New File  		      23	killjava.cmd100%  
+	    New File  		   8.9 m	mtc.jar 11.1% 22.3% 33.5% 44.7% 55.9% 67.1% 78.2% 89.4%100%  
+	    New File  		   18814	mtcTourBased.properties100%  
+	    New File  		   19332	quickboards.jar100%  
+	    New File  		    1770	SetPath.bat100%  
+	    New File  		  417851	sfcta.jar 31%   62%   94%  100%  
+	    New File  		     318	StartHHMgrForNonDist.cmd100%  
+	  New Dir         18	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\
+	    New File  		    6670	jppf-clientDistributed.properties100%  
+	    New File  		    6664	jppf-clientLocal.properties100%  
+	    New File  		    7095	jppf-driver.properties100%  
+	    New File  		    7082	jppf-node0.properties100%  
+	    New File  		    6931	jppf-node1.properties100%  
+	    New File  		    6930	jppf-node2.properties100%  
+	    New File  		    6930	jppf-node3.properties100%  
+	    New File  		    6930	jppf-node4.properties100%  
+	    New File  		    2458	log4j-driver.properties100%  
+	    New File  		   11128	log4j-node0.xml100%  
+	    New File  		   11163	log4j-node1.xml100%  
+	    New File  		   11167	log4j-node2.xml100%  
+	    New File  		   11171	log4j-node3.xml100%  
+	    New File  		   11171	log4j-node4.xml100%  
+	    New File  		    1198	log4j.xml100%  
+	    New File  		    1204	log4j_hh.xml100%  
+	    New File  		    1205	log4j_mtx.xml100%  
+	    New File  		    1208	log4j_mtx_32.xml100%  
+	  New Dir          1	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\
+	    New File  		   12239	.installationinformation100%  
+	  New Dir          2	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-admin-ui\
+	    New File  		    2304	build.xml100%  
+	    New File  		   10905	LICENSE.txt100%  
+	  New Dir          3	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-admin-ui\config\
+	    New File  		    7386	jppf-gui.properties100%  
+	    New File  		    2452	log4j-gui.properties100%  
+	    New File  		    2335	logging-gui.properties100%  
+	  New Dir         19	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-admin-ui\lib\
+	    New File  		   4.3 m	groovy-all-1.6.5.jar 11%   23%   34%   46%   57%   69%   80%   92%  100%  
+	    New File  		  309294	jcommon-1.0.15.jar 42%   84%  100%  
+	    New File  		   1.3 m	jfreechart-1.0.12.jar 19%   38%   57%   76%   95%  100%  
+	    New File  		  297252	jppf-admin-src.jar 44%   88%  100%  
+	    New File  		  373478	jppf-admin.jar 35%   70%  100%  
+	    New File  		   69900	jppf-client-src.jar100%  
+	    New File  		   79249	jppf-client.jar100%  
+	    New File  		  262343	jppf-common-node-src.jar 49%   99%  100%  
+	    New File  		  280753	jppf-common-node.jar 46%   93%  100%  
+	    New File  		  250789	jppf-common-src.jar 52%  100%  
+	    New File  		  233976	jppf-common.jar 56%  100%  
+	    New File  		  182595	jppf-server-src.jar 71%  100%  
+	    New File  		  217962	jppf-server.jar 60%  100%  
+	    New File  		  756883	js.jar 34%   69%  100%  
+	    New File  		  391834	log4j-1.2.15.jar 33%   66%  100%  
+	    New File  		  406422	looks-2.2.2.jar 32%   64%   96%  100%  
+	    New File  		   75284	miglayout-3.7-swing.jar100%  
+	    New File  		   25496	slf4j-api-1.6.1.jar100%  
+	    New File  		    9753	slf4j-log4j12-1.6.1.jar100%  
+	  New Dir          2	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-application-template\
+	    New File  		     126	build.properties100%  
+	    New File  		    4046	build.xml100%  
+	  New Dir          4	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-application-template\config\
+	    New File  		    2206	commons-logging.properties100%  
+	    New File  		    7593	jppf.properties100%  
+	    New File  		    2204	log4j.properties100%  
+	    New File  		    2465	logging.properties100%  
+	  New Dir          9	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-application-template\lib\
+	    New File  		   69900	jppf-client-src.jar100%  
+	    New File  		   79249	jppf-client.jar100%  
+	    New File  		  262343	jppf-common-node-src.jar 49%   99%  100%  
+	    New File  		  280753	jppf-common-node.jar 46%   93%  100%  
+	    New File  		  250789	jppf-common-src.jar 52%  100%  
+	    New File  		  233976	jppf-common.jar 56%  100%  
+	    New File  		  391834	log4j-1.2.15.jar 33%   66%  100%  
+	    New File  		   25496	slf4j-api-1.6.1.jar100%  
+	    New File  		    9753	slf4j-log4j12-1.6.1.jar100%  
+	  New Dir          0	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-application-template\src\
+	  New Dir          0	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-application-template\src\org\
+	  New Dir          0	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-application-template\src\org\jppf\
+	  New Dir          0	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-application-template\src\org\jppf\application\
+	  New Dir          3	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-application-template\src\org\jppf\application\template\
+	    New File  		     162	package.html100%  
+	    New File  		    5800	TemplateApplicationRunner.java100%  
+	    New File  		    3064	TemplateJPPFTask.java100%  
+	  New Dir          4	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-driver\
+	    New File  		    2199	build.xml100%  
+	    New File  		    1987	InstallDriverService.bat100%  
+	    New File  		   10905	LICENSE.txt100%  
+	    New File  		    1937	UninstallDriverService.bat100%  
+	  New Dir          5	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-driver\config\
+	    New File  		   14432	jppf-driver.properties100%  
+	    New File  		    8015	jppf.policy100%  
+	    New File  		    2395	log4j-driver.properties100%  
+	    New File  		    2425	logging-driver.properties100%  
+	    New File  		    6132	wrapper-driver.conf100%  
+	  New Dir          9	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-driver\lib\
+	    New File  		  262343	jppf-common-node-src.jar 49%   99%  100%  
+	    New File  		  280753	jppf-common-node.jar 46%   93%  100%  
+	    New File  		  250789	jppf-common-src.jar 52%  100%  
+	    New File  		  233976	jppf-common.jar 56%  100%  
+	    New File  		  182595	jppf-server-src.jar 71%  100%  
+	    New File  		  217962	jppf-server.jar 60%  100%  
+	    New File  		  391834	log4j-1.2.15.jar 33%   66%  100%  
+	    New File  		   25496	slf4j-api-1.6.1.jar100%  
+	    New File  		    9753	slf4j-log4j12-1.6.1.jar100%  
+	  New Dir          4	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-node\
+	    New File  		    2176	build.xml100%  
+	    New File  		    1981	InstallNodeService.bat100%  
+	    New File  		   10905	LICENSE.txt100%  
+	    New File  		    1935	UninstallNodeService.bat100%  
+	  New Dir          5	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-node\config\
+	    New File  		   14209	jppf-node.properties100%  
+	    New File  		    8015	jppf.policy100%  
+	    New File  		    2442	log4j-node.properties100%  
+	    New File  		    2517	logging-node.properties100%  
+	    New File  		    6078	wrapper-node.conf100%  
+	  New Dir          5	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-node\lib\
+	    New File  		  262343	jppf-common-node-src.jar 49%   99%  100%  
+	    New File  		  280753	jppf-common-node.jar 46%   93%  100%  
+	    New File  		  391834	log4j-1.2.15.jar 33%   66%  100%  
+	    New File  		   25496	slf4j-api-1.6.1.jar100%  
+	    New File  		    9753	slf4j-log4j12-1.6.1.jar100%  
+	  New Dir          1	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\JPPF-2.4-User-Guide\
+	    New File  		   2.2 m	JPPF-User-Guide.pdf 22%   44%   67%   89%  100%  
+	  New Dir          1	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\Uninstaller\
+	    New File  		  178056	uninstaller.jar 73%  100%  
+	  New Dir          5	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\runtime\config\jppf-2.4\Uninstaller\IzpackWebTemp\
+	    New File  		  901878	izpacktempfile1254710501989778918jar 29%   58%   87%  100%  
+	    New File  		   1.6 m	izpacktempfile4595068868080150691jar 15%   30%   46%   61%   76%   92%  100%  
+	    New File  		   8.7 m	izpacktempfile6296850830921762649jar 11.3% 22.7% 34.1% 45.5% 56.9% 68.3% 79.7% 91.1%100%  
+	    New File  		   1.4 m	izpacktempfile854598152783851446jar 17%   35%   53%   71%   89%  100%  
+	    New File  		   2.0 m	izpacktempfile961210127342926473jar 24%   49%   74%   99%  100%  
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :        23        22         1         0         0         0
+   Files :       115       115         0         0         0         0
+   Bytes :   49.53 m   49.53 m         0         0         0         0
+   Times :   0:00:01   0:00:01                       0:00:00   0:00:00
+
+
+   Speed :            45881619 Bytes/sec.
+   Speed :            2625.367 MegaBytes/min.
+   Ended : Monday, October 28, 2024 1:53:59 PM
+
+
+D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts"     CTRAMP\scripts 
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : Monday, October 28, 2024 1:53:59 PM
+   Source : Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\
+     Dest : D:\Scenarios\2020_BaseY_BCM2020\CTRAMP\scripts\
+
+    Files : *.*
+	    
+  Options : *.* /S /E /DCOPY:DA /COPY:DAT /R:1000000 /W:30 
+
+------------------------------------------------------------------------------
+
+	                   0	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\
+	*EXTRA Dir        -1	D:\Scenarios\2020_BaseY_BCM2020\CTRAMP\scripts\metrics\
+	  New Dir          4	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\assign\
+	    New File  		   34053	HwyAssign_32core.job100%  
+	    New File  		   21454	HwyAssign_64core.job100%  
+	    New File  		   42541	PrepAssign.job100%  
+	    New File  		   22099	TransitAssign.job100%  
+	  New Dir         18	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\block\
+	    New File  		   37015	Capclass_Speed_Capacity.xlsx100%  
+	    New File  		    1895	DTKTG_ACCMA.CAL100%  
+	    New File  		    3474	FreeFlowSpeed.block100%  
+	    New File  		     274	HwyIntraStep_32.block100%  
+	    New File  		     275	HwyIntraStep_64.block100%  
+	    New File  		    2447	hwyParam.block100%  
+	    New File  		     544	maxCosts.block100%  
+	    New File  		     464	seemless_xfers_2035_and_beyond.block100%  
+	    New File  		     232	seemless_xfers_before_2035.block100%  
+	    New File  		     686	SpdCap_Lookup_2030to2050.DAT100%  
+	    New File  		     686	SpdCap_Lookup_before_2030.DAT100%  
+	    New File  		    1339	SpeedFlowCurve.block100%  
+	    New File  		    6765	transferProhibitors_DRV_TRN_WLK.block100%  
+	    New File  		    6767	transferProhibitors_WLK_TRN_DRV.block100%  
+	    New File  		    6767	transferProhibitors_WLK_TRN_WLK.block100%  
+	    New File  		    9737	transit_combined_headways.block100%  
+	    New File  		     544	trnParam.block100%  
+	    New File  		   61245	TruckTrip Debug.xlsx100%  
+	  New Dir         14	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\core_summaries\
+	    New File  		    8299	AccessibilityMarkets.R100%  
+	    New File  		   10179	ConsolidateLoadedTransit.R100%  
+	    New File  		   78346	CoreSummaries.R100%  
+	    New File  		   13082	csvToTableauExtract.py100%  
+	    New File  		   13081	csvTotableausdk_Extract.py100%  
+	    New File  		    6290	logsumJoiner.R100%  
+	    New File  		   11397	RdataToTableauExtract.py100%  
+	    New File  		   31714	Readme.md100%  
+	    New File  		    3822	reference-transit-modes.csv100%  
+	    New File  		      56	scaleLogsums.py100%  
+	    New File  		    3315	shareModel.bat100%  
+	    New File  		   19207	TelecommuteByIncome.py100%  
+	    New File  		   10960	transit_aggregate.r100%  
+	    New File  		     308	wfh_by_industry.csv100%  
+	  New Dir          1	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\database\
+	    New File  		   19408	SkimsDatabase.JOB100%  
+	  New Dir          6	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\emfac\
+	    New File  		    9132	BetweenZonesVMT.py100%  
+	    New File  		   25570	CreateSpeedBinsWithinZones.job100%  
+	    New File  		    4446	emfac_postproc.py100%  
+	    New File  		   33497	emfac_prep.py100%  
+	    New File  		    5616	readme.md100%  
+	    New File  		   11570	reference_scripts.job100%  
+	  New Dir          4	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\emfac\Custom_Activity_Templates\
+	    New File  		   1.2 m	ByVehFuel_Emfac2014_SB375_Yr2023_11Subareas.xlsx 19%   39%   59%   79%   99%  100%  
+	    New File  		   1.2 m	ByVehFuel_Emfac2014_SB375_Yr2026_11Subareas.xlsx 19%   39%   59%   79%   99%  100%  
+	    New File  		   1.2 m	ByVehFuel_Emfac2014_SB375_Yr2035_11Subareas.xlsx 19%   39%   59%   79%   99%  100%  
+	    New File  		   1.2 m	ByVehFuel_Emfac2014_SB375_Yr2050_11Subareas.xlsx 19%   39%   59%   79%   99%  100%  
+	  New Dir          6	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\emfac\wiki_images\
+	    New File  		  229099	1.emfac_start_a_new_run.PNG 57%  100%  
+	    New File  		  240359	2.emfac_load_input_file.PNG 54%  100%  
+	    New File  		  235934	3.emfac_select_a_file_to_load.PNG 55%  100%  
+	    New File  		  244416	4.emfac_imported.PNG 53%  100%  
+	    New File  		  233163	5.emfac_run.PNG 56%  100%  
+	    New File  		  102349	emfac_flow_chart.png100%  
+	  New Dir          5	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\feedback\
+	    New File  		    8252	AverageNetworkVolumes.job100%  
+	    New File  		   10938	CalculateSpeeds.job100%  
+	    New File  		   16017	MergeNetworks.job100%  
+	    New File  		    6041	RenameAssignmentVariables.job100%  
+	    New File  		   11540	TestNetworkConvergence.job100%  
+	  New Dir         12	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\nonres\
+	    New File  		   47862	BCMAirport.job100%  
+	    New File  		   16796	BCMTrucks.job100%  
+	    New File  		    1901	create_trip_totals.py100%  
+	    New File  		   15100	HsrTransitSubmodeChoice.job100%  
+	    New File  		   16097	IxForecasts.job100%  
+	    New File  		    9495	IxForecasts_horizon.job100%  
+	    New File  		    4152	IxTimeOfDay.job100%  
+	    New File  		   12155	IxTollChoice.job100%  
+	    New File  		    5834	TruckTimeOfDay.job100%  
+	    New File  		   10665	TruckTollChoice.job100%  
+	    New File  		    7021	TruckTripDistribution.job100%  
+	    New File  		    7557	TruckTripGeneration.job100%  
+	  New Dir         22	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\preprocess\
+	    New File  		    6235	BuildTazNetworks.job100%  
+	    New File  		    4216	codeLinkAreaType.py100%  
+	    New File  		    4449	CreateFiveHighwayNetworks.job100%  
+	    New File  		    1635	CreatePnRList.job100%  
+	    New File  		    7889	createTazDensityFile.py100%  
+	    New File  		    5757	create_pnr_connectors.py100%  
+	    New File  		    3287	csvToDbf.py100%  
+	    New File  		    3119	filterUnconnectedDummyHouseholds.py100%  
+	    New File  		    5015	HsrTripGeneration.job100%  
+	    New File  		    1482	list_all_transit_nodes.py100%  
+	    New File  		     687	preprocess_input_net.job100%  
+	    New File  		    3163	renumber_duplicated_transit_stops.py100%  
+	    New File  		   41427	RuntimeConfiguration.py100%  
+	    New File  		    2462	SetCapClass.job100%  
+	    New File  		    1353	SetHovXferPenalties.JOB100%  
+	    New File  		   11665	SetTolls.JOB100%  
+	    New File  		    1922	taz_densities.job100%  
+	    New File  		   17627	updateTelecommuteConstants.py100%  
+	    New File  		    7037	update_transit_line_file.py100%  
+	    New File  		    1817	writeZoneSystems.job100%  
+	    New File  		    9674	zone_seq_disseminator.py100%  
+	    New File  		    3271	zone_seq_net_builder.job100%  
+	  New Dir         22	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\scripts\skims\
+	    New File  		   23879	Accessibility.job100%  
+	    New File  		   27317	accessibilityCom.job100%  
+	    New File  		   27323	accessibilityDrvTrn.job100%  
+	    New File  		   15757	BuildTransitNetworks.job100%  
+	    New File  		    4355	convert_to_dbf.R100%  
+	    New File  		     583	createLocalBusKNRs.awk100%  
+	    New File  		    2430	CreateNonMotorizedNetwork.job100%  
+	    New File  		    8043	create_optimal_suplinks.py100%  
+	    New File  		     300	FindNoAccessZones.job100%  
+	    New File  		   31533	HwySkims_32core.job100%  
+	    New File  		   25718	HwySkims_64core.job100%  
+	    New File  		    3807	NonMotorizedSkims.job100%  
+	    New File  		    8437	PrepHwyNet.job100%  
+	    New File  		     604	reverseLinks.awk100%  
+	    New File  		    5187	routeLinkMSA.py100%  
+	    New File  		   11168	routeLinkMSA_Update.py100%  
+	    New File  		    5662	Select_PNRs.awk100%  
+	    New File  		   24762	transitDwellAccess.py100%  
+	    New File  		   46140	TransitSkims_2035_and_beyond.job100%  
+	    New File  		   44904	TransitSkims_before_2035.job100%  
+	    New File  		    9490	trnAssign.bat100%  
+	    New File  		    9763	trnAssign_32bit.bat100%  
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :        12        11         1         0         0         1
+   Files :       114       114         0         0         0         0
+   Bytes :    7.47 m    7.47 m         0         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+
+
+   Speed :            11324450 Bytes/sec.
+   Speed :             647.990 MegaBytes/min.
+   Ended : Monday, October 28, 2024 1:54:00 PM
+
+
+D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\RTP\metrics"   CTRAMP\scripts\metrics 
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : Monday, October 28, 2024 1:54:00 PM
+   Source : Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\RTP\metrics\
+     Dest : D:\Scenarios\2020_BaseY_BCM2020\CTRAMP\scripts\metrics\
+
+    Files : *.*
+	    
+  Options : *.* /S /E /DCOPY:DA /COPY:DAT /R:1000000 /W:30 
+
+------------------------------------------------------------------------------
+
+	                  36	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\RTP\metrics\
+	    New File  		   10789	bus_opcost.py100%  
+	    New File  		  213062	Cobra Tableau.twb 61%  100%  
+	    New File  		  182780	consumer_surplus.twb 71%  100%  
+	    New File  		   12525	copy_files_to_M.py100%  
+	    New File  		   22140	countTrips.py100%  
+	    New File  		   14763	debugAirportTravel.job100%  
+	    New File  		    1999	fix_hwynet_rows.py100%  
+	    New File  		   20682	hwynet.py100%  
+	    New File  		    2828	joinTripsWithIncome.R100%  
+	    New File  		  483435	King-cobra.png 27%   54%   81%  100%  
+	    New File  		  402019	logsum_diff.twb 32%   65%   97%  100%  
+	    New File  		    5203	mapAccessibilityDiffs.py100%  
+	    New File  		    5541	net2csv_avgload5period.job100%  
+	    New File  		  128312	pba50_metrics.py100%  
+	    New File  		    8503	prepAssignIncome.job100%  
+	    New File  		     903	quickboards.bat100%  
+	    New File  		     612	quickboards.ctl100%  
+	    New File  		   92457	QuickSummary.twb100%  
+	    New File  		   16074	Readme.md100%  
+	    New File  		    1781	rollupAllProjects.py100%  
+	    New File  		    7436	RunCobra.bat100%  
+	    New File  		  173720	RunResults.py 75%  100%  
+	    New File  		   39897	scenarioMetrics.py100%  
+	    New File  		    4256	setupCobraForRunSet.py100%  
+	    New File  		   54181	sumAutoTimes.job100%  
+	    New File  		   77899	sumAutoTimes_HorizonRound2_TP_MeansBasedTolls.job100%  
+	    New File  		    4012	sumNonmotTimes.job100%  
+	    New File  		   18326	sumTransitTimes.job100%  
+	    New File  		    1472	tallyAutos.py100%  
+	    New File  		   14481	tallyParking.R100%  
+	    New File  		    7846	topsheet.R100%  
+	    New File  		    2022	transit.py100%  
+	    New File  		   28705	transitcrowding.py100%  
+	    New File  		    2061	transitSeatCap.csv100%  
+	    New File  		    5736	vmt_per_capita.r100%  
+	    New File  		   22750	vmt_per_capita_for_Tableau.ipynb100%  
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :         1         0         1         0         0         0
+   Files :        36        36         0         0         0         0
+   Bytes :    1.99 m    1.99 m         0         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+
+
+   Speed :             7337571 Bytes/sec.
+   Speed :             419.859 MegaBytes/min.
+   Ended : Monday, October 28, 2024 1:54:00 PM
+
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\monitoring\notify_slack.py"                CTRAMP\scripts 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\RunIteration.bat"                        CTRAMP 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\RunModel.bat"                            . 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\click_to_runmodel.bat"                   . 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\RunPostProcess.bat"                      . 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\RunLogsums.bat"                          . 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\RunCoreSummaries.bat"                    . 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\model-files\RunPrepareEmfac.bat"                     . 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\RTP\RunMetrics.bat"                        . 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\RTP\RunScenarioMetrics.bat"                . 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\RTP\ExtractKeyFiles.bat"                   . 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\RTP\QAQC\Run_QAQC.bat"                     . 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\check-setupmodel\Check_SetupModelLog.py"   . 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\dbf_to_csv\create_landuse_csv.R"   		   CTRAMP\scripts\preprocess 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>if "VUS2" == "WIN-" (copy "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\monitoring\notify_slack.py"  "CTRAMP\scripts\notify_slack.py" ) 
+
+D:\Scenarios\2020_BaseY_BCM2020>if "VUS2" == "WIN-" set HOST_IP_ADDRESS=10.0.0.59 
+
+D:\Scenarios\2020_BaseY_BCM2020>mkdir INPUT\hwy 
+
+D:\Scenarios\2020_BaseY_BCM2020>copy "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\complete_network_with_externals.net"               INPUT\hwy\complete_network_with_externals.net 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\tolls.csv"                                        	INPUT\hwy\tolls.csv 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\trn"                                        		INPUT\trn 
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : Monday, October 28, 2024 1:54:01 PM
+   Source : Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\trn\
+     Dest : D:\Scenarios\2020_BaseY_BCM2020\INPUT\trn\
+
+    Files : *.*
+	    
+  Options : *.* /S /E /DCOPY:DA /COPY:DAT /R:1000000 /W:30 
+
+------------------------------------------------------------------------------
+
+	  New Dir         15	Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\trn\
+	    New File  		    2146	ace.far100%  
+	    New File  		    3524	amtrak.far100%  
+	    New File  		   51833	bart.far100%  
+	    New File  		   43630	caltrain.far100%  
+	    New File  		    5971	farelinks.far100%  
+	    New File  		   59118	fareMatrix.txt100%  
+	    New File  		   16805	fares.far100%  
+	    New File  		   11785	faresystem_crosswalk.txt100%  
+	    New File  		     860	Ferry.far100%  
+	    New File  		    9617	pnr_penalty.csv100%  
+	    New File  		    4240	transitVehicleToCapacity.csv100%  
+	    New File  		    2617	transit_dummy.lin100%  
+	    New File  		     363	transit_faremat.block100%  
+	    New File  		    3442	vehtype.pts100%  
+	    New File  		   51977	xfare.far100%  
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :         1         1         0         0         0         0
+   Files :        15        15         0         0         0         0
+   Bytes :   261.6 k   261.6 k         0         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+
+
+   Speed :             2850297 Bytes/sec.
+   Speed :             163.095 MegaBytes/min.
+   Ended : Monday, October 28, 2024 1:54:01 PM
+
+
+D:\Scenarios\2020_BaseY_BCM2020>copy "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\transit.lin"                                        	INPUT\trn\transit.lin 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>mkdir popsyn 
+
+D:\Scenarios\2020_BaseY_BCM2020>mkdir INPUT\popsyn 
+
+D:\Scenarios\2020_BaseY_BCM2020>mkdir INPUT\landuse 
+
+D:\Scenarios\2020_BaseY_BCM2020>copy "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres\IZ_OZ_PCT_EXT.dat"          	INPUT\landuse\IZ_OZ_PCT_EXT.dat 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres\SD2TAZ_KF.prn"          		INPUT\landuse\SD2TAZ_KF.prn 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres\TAZ2CO.prn"          			INPUT\landuse\TAZ2CO.prn 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres\TAZ2COUNTY.prn"          		INPUT\landuse\TAZ2COUNTY.prn 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres\TAZ2SD.prn"          			INPUT\landuse\TAZ2SD.prn 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres\walkAccessBuffers.float.csv"    INPUT\landuse\walkAccessBuffers.float.csv 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\ZMAST.dbf"          			INPUT\landuse\ZMAST.dbf 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\hhFile2020.csv												INPUT\popsyn\hhFile.2020.csv 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\personFile2020.csv											INPUT\popsyn\personFile.2020.csv 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres"                   							INPUT\nonres 
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : Monday, October 28, 2024 1:54:02 PM
+   Source : Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres\
+     Dest : D:\Scenarios\2020_BaseY_BCM2020\INPUT\nonres\
+
+    Files : *.*
+	    
+  Options : *.* /S /E /DCOPY:DA /COPY:DAT /R:1000000 /W:30 
+
+------------------------------------------------------------------------------
+
+	  New Dir         11	Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres\
+	    New File  		     290	2015_XX_Trips.DBF100%  
+	    New File  		   17669	AC10IXXI.DBF100%  
+	    New File  		   1.2 m	ixDaily2015.tpp 20%   40%   61%   81%  100%  
+	    New File  		    1086	ixDaily2015_totals.csv100%  
+	    New File  		     578	ixex_config.csv100%  
+	    New File  		  248657	IZ_OZ_PCT_EXT.dat 52%  100%  
+	    New File  		  110186	SD2TAZ_KF.prn100%  
+	    New File  		  119068	TAZ2CO.prn100%  
+	    New File  		  118691	TAZ2COUNTY.prn100%  
+	    New File  		   56906	TAZ2SD.prn100%  
+	    New File  		   64838	walkAccessBuffers.float.csv100%  
+	  New Dir          5	Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres\Calib\
+	    New File  		  534195	PORT_SG_2015.DBF 49%   98%  100%  
+	    New File  		    3635	TRUCKFF_IEEI.DAT100%  
+	    New File  		    2645	TRUCKFF_II.DAT100%  
+	    New File  		    2837	TRUCKFF_IItm15.DAT100%  
+	    New File  		    1452	vstruck.fftm15.dat100%  
+	  New Dir          1	Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\nonres\Kfactors\
+	    New File  		   28129	Kfactors_SD.MAT100%  
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :         3         3         0         0         0         0
+   Files :        17        17         0         0         0         0
+   Bytes :    2.47 m    2.47 m         0         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+
+
+   Speed :            22784877 Bytes/sec.
+   Speed :            1303.761 MegaBytes/min.
+   Ended : Monday, October 28, 2024 1:54:02 PM
+
+
+D:\Scenarios\2020_BaseY_BCM2020>c:\windows\system32\Robocopy.exe /E "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\telecommute"   		   				INPUT\landuse 
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : Monday, October 28, 2024 1:54:03 PM
+   Source : Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\telecommute\
+     Dest : D:\Scenarios\2020_BaseY_BCM2020\INPUT\landuse\
+
+    Files : *.*
+	    
+  Options : *.* /S /E /DCOPY:DA /COPY:DAT /R:1000000 /W:30 
+
+------------------------------------------------------------------------------
+
+	                   8	Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\utilities\telecommute\
+	  *EXTRA File 		  248657	IZ_OZ_PCT_EXT.dat
+	  *EXTRA File 		  110186	SD2TAZ_KF.prn
+	  *EXTRA File 		  119068	TAZ2CO.prn
+	  *EXTRA File 		  118691	TAZ2COUNTY.prn
+	  *EXTRA File 		   56906	TAZ2SD.prn
+	  *EXTRA File 		   64838	walkAccessBuffers.float.csv
+	  *EXTRA File 		   3.2 m	ZMAST.dbf
+	    New File  		    6863	calibrateTelecommute.bat100%  
+	    New File  		  409007	telecommute.twb 32%   64%   96%  100%  
+	    New File  		   20291	telecommute_constants_2025.csv100%  
+	    New File  		   20291	telecommute_constants_2030.csv100%  
+	    New File  		   24018	telecommute_constants_2035.csv100%  
+	    New File  		   29694	telecommute_constants_2040.csv100%  
+	    New File  		   23886	telecommute_constants_2050.csv100%  
+	    New File  		     733	telecommute_max_rate_county.csv100%  
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :         1         0         1         0         0         0
+   Files :         8         8         0         0         0         7
+   Bytes :   522.2 k   522.2 k         0         0         0    3.88 m
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+
+
+   Speed :            10913938 Bytes/sec.
+   Speed :             624.500 MegaBytes/min.
+   Ended : Monday, October 28, 2024 1:54:03 PM
+
+
+D:\Scenarios\2020_BaseY_BCM2020>set PREV_RUN_DIR=Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart 
+
+D:\Scenarios\2020_BaseY_BCM2020>mkdir skims 
+
+D:\Scenarios\2020_BaseY_BCM2020>mkdir INPUT\warmstart\main 
+
+D:\Scenarios\2020_BaseY_BCM2020>mkdir INPUT\warmstart\nonres 
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\main\*.tpp"                                                       		INPUT\warmstart\main 
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\main\tripsAM.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\main\tripsEA.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\main\tripsEV.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\main\tripsMD.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\main\tripsPM.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\main\trips_transitHsrAM.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\main\trips_transitHsrEA.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\main\trips_transitHsrEV.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\main\trips_transitHsrMD.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\main\trips_transitHsrPM.tpp
+       10 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\*.tpp"                                                     		INPUT\warmstart\nonres 
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsAirPaxAM.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsAirPaxEA.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsAirPaxEV.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsAirPaxMD.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsAirPaxPM.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsHsrAM.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsHsrEA.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsHsrEV.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsHsrMD.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsHsrPM.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsIXAM.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsIXEA.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsIXEV.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsIXMD.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripsIXPM.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripstrkAM.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripstrkEA.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripstrkEV.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripstrkMD.tpp
+Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\warmstart\nonres\tripstrkPM.tpp
+       20 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\AlaCC_Model\config\params_2020.properties"                                                                               INPUT\params.properties 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>set TELECOMMUTE_CONFIG=Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\telecommute_constants_2020.csv 
+
+D:\Scenarios\2020_BaseY_BCM2020>mkdir main 
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\telecommute_constants_2020.csv" "main/telecommute_constants_00.csv" 
+        1 file(s) copied.
+
+D:\Scenarios\2020_BaseY_BCM2020>copy /Y "Z:\projects\ccta\31000190\Raghu\release_model\Alacc_Inputs\inputs_2020\telecommute_constants_2020.csv" "main/telecommute_constants.csv" 
+        1 file(s) copied.
