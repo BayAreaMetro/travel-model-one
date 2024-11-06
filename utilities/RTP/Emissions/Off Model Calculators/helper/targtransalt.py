@@ -52,7 +52,7 @@ class TargetedTransAlt(OffModelCalculator):
         mainsheet[vMS['Total_jobs_baseline']]=modeldatasheet.loc[(modeldatasheet.directory==self.baselineDir) \
                                                 & (modeldatasheet.variable=='total_jobs'),'value'].values[0]
         # Write run name and year
-        mainsheet[vMS['Run_directory_2035']] = self.runs['id']
+        mainsheet[vMS['Run_directory_2035']] = self.runs['run']
         mainsheet[vMS['year_a']] = int(self.runs['year'])
 
         # save file
@@ -60,8 +60,9 @@ class TargetedTransAlt(OffModelCalculator):
         newWorkbook.close()
     
     def get_calculator_names(self):
-        log=pd.read_excel(self.master_workbook_file
-                                 , sheet_name='Output'
+        print("sheet name: ", self.masterWbName[:-1])
+        log=pd.read_excel(self.masterLogPath
+                                 , sheet_name=self.masterWbName[:-1]
                                  , header=[1]
                                  , skiprows=0
                     )

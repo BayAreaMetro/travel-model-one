@@ -25,7 +25,7 @@ class Bikeshare(OffModelCalculator):
         vMS=self.v['Main sheet']
 
         # Write run name and year
-        mainsheet[vMS['Run_directory_2035']] = self.runs['id']
+        mainsheet[vMS['Run_directory_2035']] = self.runs['run']
         mainsheet[vMS['year_a']] = int(self.runs['year'])
 
         # save file
@@ -36,8 +36,8 @@ class Bikeshare(OffModelCalculator):
             print(f"Main sheet updated with {self.runs['run']} in location\n{self.new_workbook_file}")
     
     def get_calculator_names(self):
-        log=pd.read_excel(self.master_workbook_file
-                                 , sheet_name='Output'
+        log=pd.read_excel(self.masterLogPath
+                                 , sheet_name=self.masterWbName
                                  , header=[1]
                                  , skiprows=0
                     )

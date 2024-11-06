@@ -30,6 +30,7 @@ def get_paths(dirType):
                         "SB375_data.csv")
     
     elif dirType=='test':
+        print("Running test paths")
         username=os.environ.get('USERNAME')
 
         # abs_dirname would be Box in the future
@@ -50,11 +51,13 @@ def get_paths(dirType):
         off_model_calculator_dir = os.path.join(masterWorkbookFolder
                                                 ,newestWorkbookMaster
         )
-        print(off_model_calculator_dir)
 
         # Output
         off_model_calculator_dir_output = os.path.join(abs_dirname,
                                                     r"data\output")
+        
+        off_model_calculator_log_file_path=os.path.join(masterWorkbookFolder
+                                                  ,"offmodel_master_log_all_versions_all_runs.xlsx")
 
         # Variables locations
         vars=os.path.join(abs_dirname,
@@ -64,7 +67,15 @@ def get_paths(dirType):
                         r"models\SB375_data.csv")
     
     elif dirType=='external':
-    
+        # BOX
+        # abs_dirname would be Box in the future
+        username=os.environ.get('USERNAME')
+        box_dir_test=r"C:\Users\{}\Box\ICF PBA50+ Off-Model_EXT shared\Scripting\demo_for_ICF_20240916"\
+                    .format(username)
+        
+        masterWorkbookFolder, newestWorkbookMaster=get_latest_masterworkbook(box_dir_test)
+
+        # LOCAL
         abs_dirname=os.path.join(os.path.dirname(__file__),"..")
         # Input data paths
         box_dir = os.path.join(abs_dirname,
@@ -79,6 +90,10 @@ def get_paths(dirType):
         # Output
         off_model_calculator_dir_output = os.path.join(abs_dirname,
                                                     r"data\output")
+        
+        off_model_calculator_log_file_path=os.path.join(masterWorkbookFolder
+                                                  ,"offmodel_master_log_all_versions_all_runs.xlsx")
+
 
         # Variables locations
         vars=os.path.join(abs_dirname,
@@ -94,6 +109,7 @@ def get_paths(dirType):
             'MODEL_DATA_BOX_DIR':model_data_box_dir, 
             'OFF_MODEL_CALCULATOR_DIR':off_model_calculator_dir,
             'OFF_MODEL_CALCULATOR_DIR_OUTPUT':off_model_calculator_dir_output, 
+            'OFF_MODEL_CALCULATOR_LOG_PATH':off_model_calculator_log_file_path,
             'VARS':vars,
             'SB375':sb_dir,
             }
@@ -144,6 +160,10 @@ def get_vars_directory(dirType):
     paths=get_paths(dirType)
         
     return paths['VARS']
+
+def get_master_log_path(dirType):
+    paths=get_paths(dirType)
+    return paths['OFF_MODEL_CALCULATOR_LOG_PATH']
 
 def getNextFilePath(output_folder, run):
     """

@@ -4,13 +4,13 @@ class EBike(OffModelCalculator):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.masterWbName="PBA50+_OffModel_EBIKE"
+        self.masterWbName="PBA50+_OffModel_Ebike"
         self.strategy="electric bike rebates"
         self.dataFileName=None
 
     def get_calculator_names(self):
-        log=pd.read_excel(self.master_workbook_file
-                                 , sheet_name='Output'
+        log=pd.read_excel(self.masterLogPath
+                                 , sheet_name=self.masterWbName
                                  , header=[1]
                                  , skiprows=0
                     )

@@ -81,7 +81,7 @@ if __name__ == '__main__':
         if run:
             travel_runs.append(run)
     
-    for calc_name in calculators_list[:1]:
+    for calc_name in calculators_list[2:3]:
 
         for r in travel_runs:
             if r['run']=="2035_TM160_IPA_15":

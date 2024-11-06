@@ -27,7 +27,7 @@ class Carshare(OffModelCalculator):
         # Write model data
         mainsheet[vMS['Min_carshare_population_density']]=modeldatasheet[vMS['k_min_pop_density']].value
         # Write run name and year
-        mainsheet[vMS['Run_directory_2035']] = self.runs['id']
+        mainsheet[vMS['Run_directory_2035']] = self.runs['run']
         mainsheet[vMS['year_a']] = int(self.runs['year'])
         
         # save file
@@ -35,8 +35,8 @@ class Carshare(OffModelCalculator):
         newWorkbook.close()
 
     def get_calculator_names(self):
-        log=pd.read_excel(self.master_workbook_file
-                                 , sheet_name='Output'
+        log=pd.read_excel(self.masterLogPath
+                                 , sheet_name=self.masterWbName
                                  , header=[1]
                                  , skiprows=0
                     )
