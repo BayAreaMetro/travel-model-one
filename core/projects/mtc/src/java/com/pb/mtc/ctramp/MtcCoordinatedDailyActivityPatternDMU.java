@@ -107,6 +107,12 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         if (work_taz == 0) { return 0; }
         return this.tazDataManager.getZoneDistrict(work_taz);
     }
+    // get the work county of the person
+    public int getWorkCounty(){
+        int work_taz = personA.getUsualSchoolLocation();
+        if (work_taz == 0) { return 0; }
+        return this.tazDataManager.getZoneCounty(work_taz);
+    }
     /**
 	 * Simple industry guesser (random) for person based upon the industry
 	 * mix at their work location TAZ.
@@ -236,6 +242,7 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         methodIndexMap.put("getIndustryRET", 42);
         methodIndexMap.put("getHomeCounty", 43);
         methodIndexMap.put("getWorkSD", 44);
+        methodIndexMap.put("getWorkCounty", 45);
     }
     
     public double getValueForIndex(int variableIndex, int arrayIndex) {
@@ -290,6 +297,7 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
             case 42: return getIndustryRET();
             case 43: return getHomeCounty();
             case 44: return getWorkSD();
+            case 45: return getWorkCounty();
 
             default:
                 logger.error("method number = "+variableIndex+" not found");
