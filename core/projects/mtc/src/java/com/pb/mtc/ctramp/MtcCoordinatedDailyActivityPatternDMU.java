@@ -114,7 +114,7 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         return this.tazDataManager.getZoneCounty(work_taz);
     }
     // return 1 if home/work is EastBay/SF or vice versa
-    public int getEastbaySF(){
+    public int getEastBaySF(){
         int home_county = getHomeCounty();
         int work_county = getWorkCounty();
         if ((home_county==1) && ((work_county==4)  || (work_county==5))) { return 1; }
@@ -251,7 +251,7 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         methodIndexMap.put("getHomeCounty", 43);
         methodIndexMap.put("getWorkSD", 44);
         methodIndexMap.put("getWorkCounty", 45);
-        methodIndexMap.put("getEastbaySF", 46);
+        methodIndexMap.put("getEastBaySF", 46);
     }
     
     public double getValueForIndex(int variableIndex, int arrayIndex) {
@@ -307,7 +307,7 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
             case 43: return getHomeCounty();
             case 44: return getWorkSD();
             case 45: return getWorkCounty();
-            case 46: return getEastbaySF();
+            case 46: return getEastBaySF();
 
             default:
                 logger.error("method number = "+variableIndex+" not found");
