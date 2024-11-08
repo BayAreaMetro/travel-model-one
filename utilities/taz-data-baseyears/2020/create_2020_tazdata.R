@@ -13,7 +13,12 @@
 #    available from Census 2020 data. 
 # 
 # 4. TAZs are scaled up to match Census 2020 totals 
-#    
+#
+# 5. Employment is not 2020!  It's based on 2021 data (lodes_wac_employment_2021.csv)
+#    although the estimates of self-employment are from based on other sources.
+#    This is ok because we're not modeling 2020 so the results here are only an interim product
+#    for creating 2023 TAZ data.
+#  
 
 options(width=500)
 options(max.print=2000)
@@ -57,17 +62,16 @@ DOLLARS_2000_to_202X <- c("2021"=1.72, "2022"=1.81)
 
 USERPROFILE          <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
 BOX_TM               <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
-GITHUB_DIR           <- file.path(USERPROFILE,"Documents","GitHub")
 if (Sys.getenv("USERNAME") %in% c("lzorn")) {
-  GITHUB_DIR         <- file.path("E://GitHub")
   BOX_TM             <- file.path("E://Box/Modeling and Surveys")
 }
 PBA_TAZ_2015         <- file.path(BOX_TM, "Share Data", "plan-bay-area-2050", "tazdata","PBA50_FinalBlueprintLandUse_TAZdata.xlsx")
 
 # Bring in 2020 TAZ employment data
+# NOTE: Since 2021 lodes_wac_employment is available, we'll use it since it's more current
 
-TM1                   <- file.path(GITHUB_DIR,'travel-model-one','utilities','taz-data-baseyears')
-emp_wagesal_2020      <- read.csv(file.path(TM1,"2020","Employment","lodes_wac_employment.csv"),header = T)
+TM1                   <- file.path("..")
+emp_wagesal_2021      <- read.csv(file.path(TM1,"2020","Employment","lodes_wac_employment_2021.csv"),header = T)
 emp_selfemp_2020      <- read.csv(file.path(TM1,"2020","Self Employed Workers","taz_self_employed_workers_2020.csv"),header = T)
 
 # Restructure employment frame to wide format
@@ -80,10 +84,10 @@ emp_selfemp_2020_w <- emp_selfemp_2020 %>%
   rename_all(toupper)
 
 # Combine the two employment frames - wage/salary, and self-employment
-total_employment_2020 <- bind_rows(emp_wagesal_2020, emp_selfemp_2020_w,.id='src')
+total_employment_2021 <- bind_rows(emp_wagesal_2021, emp_selfemp_2020_w,.id='src')
 
 # Group by TAZ1454 and calculate the sum for total employment by taz (wage/salary plus self-employment)
-employment_2020 <- total_employment_2020 %>%
+employment_2021 <- total_employment_2021 %>%
   group_by(TAZ1454) %>%
   summarize_if(is.numeric, sum, na.rm = F)
 
@@ -1063,7 +1067,7 @@ write.csv (ethnic,file = "TAZ1454_Ethnicity.csv",row.names = FALSE)
 print(paste("Wrote","TAZ1454_Ethnicity.csv"))
 
 # Read in old PBA data sets and select variables for joining to new 2020 dataset
-# Join 2020 employment data
+# Join 2021 employment data
 # Bring in school and parking data from 2015 TAZ data 
 # Add HHLDS variable (same as TOTHH), select new 2015 output
 
@@ -1071,7 +1075,7 @@ PBA2015_joiner <- PBA2015%>%
   select(ZONE,DISTRICT,SD,TOTACRE,RESACRE,CIACRE,PRKCST,OPRKCST,AREATYPE,HSENROLL,COLLFTE,COLLPTE,TOPOLOGY,TERMINAL, ZERO)
 
 joined_15_20      <- left_join(PBA2015_joiner,temp_rounded_adjusted, by=c("ZONE"="TAZ1454")) # Join 2015 topology, parking, enrollment
-joined_employment <- left_join(joined_15_20,employment_2020, by=c("ZONE"="TAZ1454"))        # Join employment
+joined_employment <- left_join(joined_15_20,employment_2021, by=c("ZONE"="TAZ1454"))         # Join employment
 
 # Save R version of data for 2020 to later inflate to 2023
 
