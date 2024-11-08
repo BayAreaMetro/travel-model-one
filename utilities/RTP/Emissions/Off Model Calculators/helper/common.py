@@ -1,7 +1,7 @@
 import os
 import re
 
-def get_paths(dirType):
+def get_paths(dirType,run_dir_name):
     """
     dirType='mtc'
     Import the absolute paths used within the MTC team. 
@@ -42,11 +42,20 @@ def get_paths(dirType):
         abs_dirname=os.path.join(os.path.dirname(__file__),"..")
 
         # Input data paths
-        box_dir = os.path.join(abs_dirname,
-                            r"data\input\IPA_TM2")
+        # box_dir = os.path.join(abs_dirname,
+        #                     r"data\input\IPA_TM2")
+        model_data_box_dir = os.path.join(box_dir_test
+                                , "NETWORKDRIVE_travel_model_data"
+                                , run_dir_name['run']
+                                , "OUTPUT"
+                                , "off_model"
+                                , "input")
         
-        model_data_box_dir = os.path.join(box_dir,"ModelData")
+        # model_data_box_dir = os.path.join(box_dir,"ModelData")
 
+        sb_dir=os.path.join(model_data_box_dir,
+                            "Model Data - SB375_data.csv")
+        
          # Models (From Box Demo Folder)
         off_model_calculator_dir = os.path.join(masterWorkbookFolder
                                                 ,newestWorkbookMaster
@@ -63,8 +72,7 @@ def get_paths(dirType):
         vars=os.path.join(abs_dirname,
                         r"models\Variable_locations.xlsx")
         
-        sb_dir=os.path.join(abs_dirname,
-                        r"models\SB375_data.csv")
+        
     
     elif dirType=='external':
         # BOX
@@ -105,7 +113,8 @@ def get_paths(dirType):
     else:
         raise ValueError("-d can be either mtc or external")
 
-    return {'BOX_DIR': box_dir, 
+    return {
+        # 'BOX_DIR': box_dir, 
             'MODEL_DATA_BOX_DIR':model_data_box_dir, 
             'OFF_MODEL_CALCULATOR_DIR':off_model_calculator_dir,
             'OFF_MODEL_CALCULATOR_DIR_OUTPUT':off_model_calculator_dir_output, 
@@ -145,24 +154,24 @@ def get_latest_masterworkbook(boxDirectory):
     masterWorkbookName=get_last_workbook_version(foldersList)
     return offmodelDirectory, masterWorkbookName
 
-def get_directory_constants(dirType):
+def get_directory_constants(dirType,run_dir_name):
     '''
     This function extracts the corresponding relative or absolute paths
     used in the external or mtc options.
     '''
     # directory file paths (input, models)
-    paths=get_paths(dirType)
+    paths=get_paths(dirType, run_dir_name)
     
     return paths['MODEL_DATA_BOX_DIR'], paths['OFF_MODEL_CALCULATOR_DIR']
 
-def get_vars_directory(dirType):
+def get_vars_directory(dirType, run_dir_name):
     # directory file paths (variable locations)
-    paths=get_paths(dirType)
+    paths=get_paths(dirType, run_dir_name)
         
     return paths['VARS']
 
-def get_master_log_path(dirType):
-    paths=get_paths(dirType)
+def get_master_log_path(dirType, run_dir_name):
+    paths=get_paths(dirType, run_dir_name)
     return paths['OFF_MODEL_CALCULATOR_LOG_PATH']
 
 def getNextFilePath(output_folder, run):
@@ -191,7 +200,7 @@ def createNewRun(c, verbose=False):
     to differentiate outputs.
     """
 
-    path=get_paths(c.pathType)
+    path=get_paths(c.pathType, c.runs)
 
     runName=c.uid.replace(':','--')
     pathToRun=os.path.join(path['OFF_MODEL_CALCULATOR_DIR_OUTPUT'],

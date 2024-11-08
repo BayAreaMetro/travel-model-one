@@ -24,7 +24,7 @@ class VanPools(OffModelCalculator):
         vMS=self.v['Main sheet']
 
         # Write run name and year
-        mainsheet[vMS['Run_directory_2035']] = self.runs['id']
+        mainsheet[vMS['Run_directory_2035']] = self.runs['run']
         mainsheet[vMS['year_a']] = int(self.runs['year'])
 
         # save file
@@ -38,13 +38,15 @@ class VanPools(OffModelCalculator):
 
         # Step 2: load and filter model data of selected runs
         modelData, metaData=OffModelCalculator.get_model_data(self)
-
-        # Step 3: add model data of selected runs to 'Model Data' sheet
-        OffModelCalculator.write_model_data_to_excel(self,modelData,metaData)
         
-        # Step 4:
+        # Step 3: add model data of selected runs to 'Model Data' sheet
+        if len(modelData)>1:
+            OffModelCalculator.write_model_data_to_excel(self,modelData,metaData)
+        OffModelCalculator.write_sbdata_to_excel(self)
+        
+        # Step 4: Write model 
         self.write_runid_to_mainsheet()
-
+        
         # Step 5: open close new wb
         OffModelCalculator.open_excel_app(self)
 

@@ -31,13 +31,13 @@ class OffModelCalculator:
         self.uid=uid
         self.runs = model_run_id
         self.pathType=directory
-        self.modelDataPath, self.masterFilePath = common.get_directory_constants(directory)
+        self.modelDataPath, self.masterFilePath = common.get_directory_constants(directory, model_run_id)
         self.masterWbName=""
         self.dataFileName=""
         self.baselineDir=None
-        self.masterLogPath=common.get_master_log_path(directory)
+        self.masterLogPath=common.get_master_log_path(directory, model_run_id)
         self.verbose=verbose
-        self.varsDir=common.get_vars_directory(directory)
+        self.varsDir=common.get_vars_directory(directory, model_run_id)
         
     def copy_workbook(self):
         # Start run
@@ -88,20 +88,22 @@ class OffModelCalculator:
         return filteredData, metaData
 
     def get_sb_data(self):
-        sbPath=common.get_paths(self.pathType)
+        sbPath=common.get_paths(self.pathType, self.runs)
         return pd.read_csv(sbPath['SB375'])
 
     def write_sbdata_to_excel(self):
         # add sb375 data
         data=OffModelCalculator.get_sb_data(self)
-        sbData=data.T.loc[['Year','Population', 'DailyCO2','RunID']]
+        data.loc[0,'dailyCO']=0   
+        sbData=data[['year','value', 'dailyCO','category','directory']].T
+
         with pd.ExcelWriter(self.new_workbook_file, engine='openpyxl', mode = 'a'
                             , if_sheet_exists = 'overlay'
                             ) as writer:  
             sbData.to_excel(writer,
-                            sheet_name='SB 375 Calcs',
+                            sheet_name='SB 375 calcs',
                             index=False,
-                            startcol=1,
+                            startcol=3,
                             header=False)
             
         if self.verbose:
@@ -150,7 +152,7 @@ class OffModelCalculator:
         
         self.updated_workbook_file=os.path.join(self.newWbFilePath,
                                                 f"{self.uid.replace(':','--')}__{self.masterWbName}.xlsx")
-        
+
         excel = win32com.client.Dispatch("Excel.Application")
         wb = excel.Workbooks.Open(self.new_workbook_file)
         excel.Visible=True

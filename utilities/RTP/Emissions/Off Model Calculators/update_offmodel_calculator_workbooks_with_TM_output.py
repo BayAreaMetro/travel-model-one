@@ -72,8 +72,8 @@ if __name__ == '__main__':
                                ,sheet_name='ModelRuns'
                                ,header=[0])
     
+    # Get all the off-model directories from RTP2025 file
     offmodel_dir_list=rtp_file.loc[rtp_file.run_offmodel=="yes","directory"].to_list()
-
     travel_runs=[]
     for dir_name in offmodel_dir_list:
         run=get_year_modelrun_id(dir_name)
@@ -81,7 +81,8 @@ if __name__ == '__main__':
         if run:
             travel_runs.append(run)
     
-    for calc_name in calculators_list[2:3]:
+    # Update off-model calculators
+    for calc_name in calculators_list[5:6]:
 
         for r in travel_runs:
             if r['run']=="2035_TM160_IPA_15":
