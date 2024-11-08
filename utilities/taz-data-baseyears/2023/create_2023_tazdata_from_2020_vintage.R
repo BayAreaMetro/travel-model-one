@@ -16,13 +16,7 @@ library(readxl)
 
 # Set up directories
 
-USERPROFILE <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
-GITHUB_DIR  <- file.path(USERPROFILE,"Documents","GitHub")
-# Virtual machines have small C drives so I put GitHub on E:
-if (Sys.getenv("USERNAME") %in% c("lzorn")) {
-  GITHUB_DIR  <- file.path("E://GitHub")
-}
-BASEYEAR     <- file.path(GITHUB_DIR,"travel-model-one","utilities","taz-data-baseyears")
+BASEYEAR    <- file.path("..")
 
 # Bring in TAZ 2020 dataset, dataframe is named "final_2020"
 
@@ -34,7 +28,7 @@ DOF_scaling <- read_excel(file.path(BASEYEAR,"2023","P2A_County_Total.xlsx"),she
 
 # Bring in 2023 data and TAZ-county equivalency for joining
 
-employment_2023        <- read.csv(file.path(BASEYEAR,"2023","employment_2020_with_QCEW_pct_change_applied.csv"),header = T) 
+employment_2023        <- read.csv(file.path(BASEYEAR,"2023","employment_2021_with_QCEW_pct_change_applied.csv"),header = T) 
 county_joiner          <- final_2020 %>% select(ZONE,County_Name)
 
 # Use total employment from 2023/2020 from EDD to scale by county for employment-related variables
