@@ -40,7 +40,7 @@ from helper.vpool import VanPools
 from helper.ebk import EBike
 from helper.vbuyback import BuyBack
 from helper.regchar import RegionalCharger
-from helper.common import (get_year_modelrun_id)
+from helper.common import (get_year_modelrun_id,get_paths)
 
 # calculator name choices
 BIKE_SHARE = 'bike_share'
@@ -82,51 +82,48 @@ if __name__ == '__main__':
             travel_runs.append(run)
     
     # Update off-model calculators
-    for calc_name in calculators_list[5:6]:
-
-        for r in travel_runs:
-            if r['run']=="2035_TM160_IPA_15":
+    for r in travel_runs:
+        if r['run']=="2035_TM160_IPA_15":
                 print(r['run'])
-
-                CALCULATOR=calc_name
                 MODEL_RUN_ID=r
-            else:
-                continue
-        
-        if CALCULATOR == BIKE_SHARE:
-            c=Bikeshare(MODEL_RUN_ID,DIRECTORY, UID, False)
-
-        elif CALCULATOR == CAR_SHARE:
-            c=Carshare(MODEL_RUN_ID,DIRECTORY, UID, False)
-                    
-        elif CALCULATOR == TARGETED_TRANS_ALT:
-            c=TargetedTransAlt(MODEL_RUN_ID,DIRECTORY, UID, False)
-
-        elif CALCULATOR == VAN_POOL:
-            c=VanPools(MODEL_RUN_ID,DIRECTORY, UID, False)
-
-        elif CALCULATOR == E_BIKE:
-            c=EBike(MODEL_RUN_ID,DIRECTORY, UID, False)
-
-        elif CALCULATOR == BUY_BACK:
-            c=BuyBack(MODEL_RUN_ID,DIRECTORY, UID, False)
-        
-        elif CALCULATOR == REG_CHARGER:
-            c=RegionalCharger(MODEL_RUN_ID,DIRECTORY, UID, False)
-
-        ## TODO: Add Complete Streets calculator
-
         else:
-            raise ValueError(
-                "Choice not in options. Check the calculator name is correct.")
+            continue
+
+        for calc_name in calculators_list:
+            CALCULATOR=calc_name
         
-        c.update_calculator()
-    #     c.paths=get_paths(DIRECTORY)
-    #     outputSummary=c.create_output_summary_path(FOLDER_NAME)            
-    #     if not os.path.exists(outputSummary):
-    #         c.initialize_summary_file(outputSummary)
-    #     else:
-    #         print("Summary file exists.")
+            if CALCULATOR == BIKE_SHARE:
+                c=Bikeshare(MODEL_RUN_ID,DIRECTORY, UID, False)
+
+            elif CALCULATOR == CAR_SHARE:
+                c=Carshare(MODEL_RUN_ID,DIRECTORY, UID, False)
+                        
+            elif CALCULATOR == TARGETED_TRANS_ALT:
+                c=TargetedTransAlt(MODEL_RUN_ID,DIRECTORY, UID, False)
+
+            elif CALCULATOR == VAN_POOL:
+                c=VanPools(MODEL_RUN_ID,DIRECTORY, UID, False)
+
+            elif CALCULATOR == E_BIKE:
+                c=EBike(MODEL_RUN_ID,DIRECTORY, UID, False)
+
+            elif CALCULATOR == BUY_BACK:
+                c=BuyBack(MODEL_RUN_ID,DIRECTORY, UID, False)
+            
+            elif CALCULATOR == REG_CHARGER:
+                c=RegionalCharger(MODEL_RUN_ID,DIRECTORY, UID, False)
+
+            else:
+                raise ValueError(
+                    "Choice not in options. Check the calculator name is correct.")
         
-    #     c.update_summary_file(outputSummary,FOLDER_NAME)
+            c.update_calculator()
+            c.paths=get_paths(DIRECTORY, r)
+            outputSummary=c.create_output_summary_path(r['run'])            
+            if not os.path.exists(outputSummary):
+                c.initialize_summary_file(outputSummary)
+            else:
+                print("Summary file exists.")
+            
+            c.update_summary_file(outputSummary,r['run'])
         

@@ -27,8 +27,8 @@ class Carshare(OffModelCalculator):
         # Write model data
         mainsheet[vMS['Min_carshare_population_density']]=modeldatasheet[vMS['k_min_pop_density']].value
         # Write run name and year
-        mainsheet[vMS['Run_directory_2035']] = self.runs['run']
-        mainsheet[vMS['year_a']] = int(self.runs['year'])
+        mainsheet[vMS['Run_directory']] = self.runs['run']
+        mainsheet[vMS['year']] = int(self.runs['year'])
         
         # save file
         newWorkbook.save(self.new_workbook_file)
@@ -67,15 +67,12 @@ class Carshare(OffModelCalculator):
     def update_summary_file(self, summaryPath, folderName):
         df=pd.read_csv(summaryPath)
         row={
-            'year': [2035, 2050],
-            'daily_vehTrip_reduction': [None,
-                                        None],
-            'daily_vmt_reduction':[self.rowDict['Out_daily_VMT_reduced_2035'][0],
-                                   self.rowDict['Out_daily_VMT_reduced_2050'][0]],
-            'daily_ghg_reduction':[self.rowDict['Out_daily_GHG_reduced_2035'][0],
-                                   self.rowDict['Out_daily_GHG_reduced_2050'][0]],
-            'strategy':[self.strategy,self.strategy],
-            'directory':[folderName,folderName],
+            'year': [self.runs['year']],
+            'daily_vehTrip_reduction': [None],
+            'daily_vmt_reduction':[self.rowDict['Out_daily_VMT_reduced'][0]],
+            'daily_ghg_reduction':[self.rowDict['Out_daily_GHG_reduced'][0]],
+            'strategy':[self.strategy],
+            'directory':[folderName],
         }
 
         df_new=pd.DataFrame(row, index=None)

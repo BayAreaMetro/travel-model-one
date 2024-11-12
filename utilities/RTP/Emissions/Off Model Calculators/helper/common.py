@@ -42,16 +42,12 @@ def get_paths(dirType,run_dir_name):
         abs_dirname=os.path.join(os.path.dirname(__file__),"..")
 
         # Input data paths
-        # box_dir = os.path.join(abs_dirname,
-        #                     r"data\input\IPA_TM2")
         model_data_box_dir = os.path.join(box_dir_test
                                 , "NETWORKDRIVE_travel_model_data"
                                 , run_dir_name['run']
                                 , "OUTPUT"
                                 , "off_model"
                                 , "input")
-        
-        # model_data_box_dir = os.path.join(box_dir,"ModelData")
 
         sb_dir=os.path.join(model_data_box_dir,
                             "Model Data - SB375_data.csv")
@@ -62,15 +58,19 @@ def get_paths(dirType,run_dir_name):
         )
 
         # Output
-        off_model_calculator_dir_output = os.path.join(abs_dirname,
-                                                    r"data\output")
+        off_model_calculator_dir_output = os.path.join(box_dir_test
+                                                    , "NETWORKDRIVE_travel_model_data"
+                                                    , run_dir_name['run']
+                                                    , "OUTPUT"
+                                                    , "off_model"
+                                                    , "output")
         
         off_model_calculator_log_file_path=os.path.join(masterWorkbookFolder
                                                   ,"offmodel_master_log_all_versions_all_runs.xlsx")
 
         # Variables locations
-        vars=os.path.join(abs_dirname,
-                        r"models\Variable_locations.xlsx")
+        vars=os.path.join(off_model_calculator_dir,
+                        "Variable_locations.xlsx")
         
         
     
