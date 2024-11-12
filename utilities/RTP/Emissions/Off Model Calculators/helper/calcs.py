@@ -6,9 +6,7 @@ import os
 import openpyxl
 import time
 
-
 from helper import common
-
 
 class OffModelCalculator:
     """
@@ -88,7 +86,7 @@ class OffModelCalculator:
         return filteredData, metaData
 
     def get_sb_data(self):
-        sbPath=common.get_paths(self.pathType, self.runs)
+        sbPath=common.get_paths(self.runs)
         return pd.read_csv(sbPath['SB375'])
 
     def write_sbdata_to_excel(self):
