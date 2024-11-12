@@ -57,12 +57,7 @@ RTP_DIR=os.path.join(CWD,r"..\..","config_RTP2025","ModelRuns_RTP2025.xlsx")
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description=USAGE)
-    parser.add_argument('-d', choices=['mtc','external','test'], default='external', 
-                        help='choose directory mtc or external'
-    )
-    ARGS = parser.parse_args()
-    DIRECTORY=ARGS.d
+    DIRECTORY="mtc"
     UID=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
     calculators_list=['bike_share','car_share','targeted_trans_alt'
@@ -83,7 +78,7 @@ if __name__ == '__main__':
     
     # Update off-model calculators
     for r in travel_runs:
-        if r['run']=="2035_TM160_IPA_15":
+        if r['run']=="2035_TM160_DBP_Plan_08b":
                 print(r['run'])
                 MODEL_RUN_ID=r
         else:
@@ -118,7 +113,7 @@ if __name__ == '__main__':
                     "Choice not in options. Check the calculator name is correct.")
         
             c.update_calculator()
-            c.paths=get_paths(DIRECTORY, r)
+            c.paths=get_paths(r)
             outputSummary=c.create_output_summary_path(r['run'])            
             if not os.path.exists(outputSummary):
                 c.initialize_summary_file(outputSummary)
