@@ -111,6 +111,8 @@ def calculate_travel_time_and_return_weighted_sum_across_corridors(tm_runid, yea
     # filter df for minor groupings (travel time)
     minor_group_am_df = tm_ab_ctim_df.copy().loc[tm_ab_ctim_df['Grouping minor_AMPM'] == i+'_AM']
     minor_group_am = sum_grouping(minor_group_am_df.loc[tm_loaded_network_df['USEAM'] == 1],'AM')
+    #minor_group_am = sum_grouping(minor_group_am_df.loc[(tm_loaded_network_df['USEAM'] == 1) & (tm_loaded_network_df['USEAM'] == 4)],'AM')
+
     metrics_dict[tm_runid,metric_id,'extra',i,'%s_AM_travel_time' % i, year] = minor_group_am
 
     # add vmt to metric dict
@@ -170,7 +172,7 @@ minor_groups = TOLLED_FWY_MINOR_GROUP_LINKS_DF['grouping'].unique()
 # define base run inputs
 # # base year run for comparisons (no project)
 # ______load no project network to use for speed comparisons in vmt corrections______
-tm_runid_base = "2035_TM160_NGF_r2_NoProject_04"
+tm_runid_base = "2035_TM160_NGF_r2_NoProject_06"
 tm_run_location_base = os.path.join(NGFS_SCENARIOS, tm_runid_base)
 # tm_run_location_base = os.path.join(NGFS_SCENARIOS, run4)
 # tm_runid_base = run4

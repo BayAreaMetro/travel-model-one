@@ -30,7 +30,7 @@ else:
     
 SAFETY_CALC_SCRIPT = "X:\\travel-model-one-master\\utilities\\RTP\\metrics\\VZ_safety_calc_correction_v2.R"
 # No Project Pathway
-NO_PROJECT_PATHWAY = "2035_TM160_NGF_r2_NoProject_04"
+NO_PROJECT_PATHWAY = "2035_TM160_NGF_r2_NoProject_06"
 # These calculations are complex enough that a debug log file would be helpful to track what's happening
 LOG_FILE                = "Safe1_run_fatalities_Rscript.log" # in the cwd
 LOGGER                  = None # will initialize in main     
