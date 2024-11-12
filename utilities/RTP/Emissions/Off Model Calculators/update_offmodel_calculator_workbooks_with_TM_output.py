@@ -7,28 +7,20 @@ to create a set of "model data" for the off-model calculators.
 
 Example call: 
 `python update_offmodel_calculator_workbooks_with_TM_output.py`
-Args inputs:  
- Flags:
- -d: directory paths
- for MTC team, select -d mtc (set as default)
- for external team members -d external 
 
 Models:
 Includes all Excel sheet master model calculators. These models contain the logs of runs created after running the script.
 
 Data:
     |input: includes a folder with the following strucure
-        |name: IPA_TM2
-        -> |ModelData
+        |directory in BOX: IPA_TM2/OUTPUT/off_model
+        -> |input
             -> All model data input files (xlsx)
-           |PBA50+ Off-Model Calculators
-            -> Calculators (not used)
     |output: contains a copy of the calculator Excel workbook, with updated travel model data.
         |run folder: named based on the uid (timestamp).
                 e.g. 2024-08-09 15--50--53 (format:YYYY-MM-DD 24H--MM--SS)
 """
 
-import argparse
 import pandas as pd
 import os
 from datetime import datetime
@@ -78,6 +70,7 @@ if __name__ == '__main__':
     
     # Update off-model calculators
     for r in travel_runs:
+        # This line only for testing in shared box. Remove when in production.
         if r['run']=="2035_TM160_DBP_Plan_08b":
                 print(r['run'])
                 MODEL_RUN_ID=r
