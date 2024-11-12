@@ -34,8 +34,13 @@ class VanPools(OffModelCalculator):
     def update_calculator(self):
         # Step 1: Create run and copy files  
         OffModelCalculator.copy_workbook(self)
-        # Step 2: copy sb375 data
-        OffModelCalculator.write_sbdata_to_excel(self)
+
+        # Step 2: load and filter model data of selected runs
+        modelData, metaData=OffModelCalculator.get_model_data(self)
+
+        # Step 3: add model data of selected runs to 'Model Data' sheet
+        OffModelCalculator.write_model_data_to_excel(self,modelData,metaData)
+
         # Step 4: Write model 
         self.write_runid_to_mainsheet()
         # Step 5: open close new wb
