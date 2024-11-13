@@ -34,7 +34,7 @@
 ; authors:  jmh (02/23/2023)
 ; ----------------------------------------------------------------------------------------------------------------
 token_future = '%FUTURE%'
-FIRST_EXT_ZONE = 6594
+FIRST_EXT_ZONE = %TAZ_COUNT% + 1
 
 *"%PYTHON_PATH%\python.exe" %BASE_SCRIPTS%\preprocess\csvToDbf.py nonres/Inputs/ixDaily2015_totals.csv nonres/ixDaily2015_totals.dbf
 IF (RETURNCODE > 0) abort
@@ -71,7 +71,7 @@ run pgm = matrix
    IF (I==1)
 
      ; first, figure out desired daily total
-     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,6626
+     LOOP EXT_ZONE = %TAZ_COUNT%+1,%TAZ_EXTS_COUNT%
        prod_total_2015 = totals_2015(1,EXT_ZONE)
        attr_total_2015 = totals_2015(2,EXT_ZONE)
 
@@ -169,16 +169,16 @@ run pgm = matrix
 
       ; Sum the working matrices to form the total
       mw[4] = mw[1] + mw[2] + mw[3]
-      IF (J>6593) attr_tot[J-@FIRST_EXT_ZONE@] = attr_tot[J-@FIRST_EXT_ZONE@] + Mw[4]
+      IF (J>%TAZ_COUNT%) attr_tot[J-@FIRST_EXT_ZONE@] = attr_tot[J-@FIRST_EXT_ZONE@] + Mw[4]
 
    endjloop
    
-   IF (I>6593) prod_tot[I-@FIRST_EXT_ZONE@] = prod_tot[I-@FIRST_EXT_ZONE@] + ROWSUM(4)
+   IF (I>%TAZ_COUNT%) prod_tot[I-@FIRST_EXT_ZONE@] = prod_tot[I-@FIRST_EXT_ZONE@] + ROWSUM(4)
 
    ; write production/attraction totals to the log file and dbf
    IF (I==ZONES)
      print LIST="-----RESULTS-----"
-     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,6626
+     LOOP EXT_ZONE = @FIRST_EXT_ZONE@,%TAZ_EXTS_COUNT%
        total = prod_tot[EXT_ZONE-@FIRST_EXT_ZONE@] + attr_tot[EXT_ZONE-@FIRST_EXT_ZONE@]
        print LIST="For external zone ",EXT_ZONE, " production: ", prod_tot[EXT_ZONE-@FIRST_EXT_ZONE@], " attraction: ", attr_tot[EXT_ZONE-@FIRST_EXT_ZONE@], " total: ", total
      ENDLOOP

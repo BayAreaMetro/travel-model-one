@@ -192,7 +192,7 @@ loop period = 1, 3
       parameters combine = equi , enhance = 2
 
       ; set the assignment parameters -- 6593 internal zones + 33 external zones
-      parameters zones = 6626
+      parameters zones = %TAZ_EXTS_COUNT%
 
       ; set the assignment parameters -- maximum number of iterations to 300
       @token_maxiters@
@@ -478,7 +478,7 @@ loop period = 1, 2
       parameters combine = equi , enhance = 2
 
       ; set the assignment parameters -- 6593 internal zones + 33 external zones
-      parameters zones = 6626
+      parameters zones = %TAZ_EXTS_COUNT%
 
       ; set the assignment parameters -- maximum number of iterations to 300
       @token_maxiters@

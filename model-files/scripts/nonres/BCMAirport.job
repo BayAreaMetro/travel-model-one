@@ -18,7 +18,7 @@ RUN PGM=MATRIX
   
 ;  READ FILE = INPUTS\ClusterControl.DAT
 
-  ZONES = 6593
+  ZONES = %TAZ_COUNT%
 
   ZDATI[1] = landuse\TAZDATA.DBF
   MATO[1] = nonres\2015_PTrips_AirPass.MAT, MO=1-4, NAME=RB,RNB,VB,VNB
@@ -394,7 +394,7 @@ RUN PGM=MATRIX
 
   ; Summarize Airport Passenger Person Trips by COunty
   
-  ZONES = 6593
+  ZONES = %TAZ_COUNT%
   
   MATI[1] = nonres\2015_PTrips_Airpass.MAT
   MATO[1] = nonres\2015_APTrips_CTY.MAT, MO=1-4, NAME=RB,RNB,VB,VNB
@@ -413,7 +413,7 @@ RUN PGM=MATRIX
 
 ;  READ FILE = INPUTS\ClusterControl.DAT
 
-  ZONES = 6593
+  ZONES = %TAZ_COUNT%
 
   MATI[1] = skims\HWYSKMMD.TPP
   MATI[3] = skims\TRNSKMMD_WLK_HVY_WLK.TPP
@@ -584,7 +584,7 @@ RUN PGM=MATRIX
   
 ;  READ FILE = c:\bcm\INPUTS\ClusterControl.DAT
 
-  ZONES = 6593
+  ZONES = %TAZ_COUNT%
 
   MATI[1] = skims\HWYSKMMD.TPP
   MATI[3] = skims\TRNSKMMD_WLK_HVY_WLK.TPP
@@ -766,7 +766,7 @@ RUN PGM=MATRIX
   
  ; READ FILE = INPUTS\ClusterControl.DAT
 
-  ZONES = 6593
+  ZONES = %TAZ_COUNT%
 
   MATI[1] = skims\HWYSKMMD.TPP
   MATI[3] = skims\TRNSKMMD_WLK_HVY_WLK.TPP
@@ -940,7 +940,7 @@ RUN PGM=MATRIX
 
  ; READ FILE = INPUTS\ClusterControl.DAT
 
-  ZONES = 6593
+  ZONES = %TAZ_COUNT%
 
   MATI[1] = skims\HWYSKMMD.TPP
   MATI[3] = skims\TRNSKMMD_WLK_HVY_WLK.TPP
@@ -1120,7 +1120,7 @@ RUN PGM=MATRIX
   
 ; READ FILE = INPUTS\ClusterControl.DAT
 
-  ZONES = 6593
+  ZONES = %TAZ_COUNT%
 
   MATI[1] = nonres\2015_APTrips_RB.MAT
   MATI[2] = nonres\2015_APTrips_RNB.MAT
@@ -1146,7 +1146,7 @@ RUN PGM=MATRIX
   
 ;  READ FILE = INPUTS\ClusterControl.DAT
 
-  ZONES = 6593
+  ZONES = %TAZ_COUNT%
 
   MATI[1] = nonres\2015_APTrips_RB.MAT
   MATI[2] = nonres\2015_APTrips_RNB.MAT
@@ -1209,7 +1209,7 @@ RUN PGM=MATRIX
 
   ; Calculate Peak period Vehicle Trips for Highway Assignments
   
-  ZONES = 6593
+  ZONES = %TAZ_COUNT%
   MATI[1] = nonres\2015_APVEHTRIPS.MAT
   MATO[1] = nonres\2015_APPKVEHTRIPS.MAT, MO=1-5,
     NAME= Auto_AM,Auto_MD,Auto_PM,Auto_EV,Auto_EA
@@ -1225,7 +1225,7 @@ RUN PGM=MATRIX
 
   ; Calculate Peak period Vehicle Trips for Highway Assignments
   
-  ZONES = 6593
+  ZONES = %TAZ_COUNT%
   MATI[1] = nonres\2015_APVEHTRIPS.MAT
   
   MATO[1] = nonres\tripsAirPaxEA.tpp, MO=1-6, NAME=DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL

@@ -19,10 +19,11 @@
 ; ----------------------------------------------------------------------------------------------------------------
 
 ;start cluster nodes
+	
+  
 
 ; do, more or less, the same skim procedure for each of the five time periods
 loop period = 1, 5
-  
    ; a two letter token is used for each time period
    if (period = 1)   
       token_period = 'EA'
@@ -43,8 +44,12 @@ loop period = 1, 5
     node_start = 1000000 ;all tazs or mazs can fit beneath this
     ;tazs include external stations (900,000 - 1,000,000)
     taz_selector = '(N < 1000000)'
+	;run zoneSystem.bat script
+	* %MODEL_DIR%\zoneSystem.bat
+	IF (RETURNCODE > 0) abort
+	;token_taz_count = %TAZ_COUNT%
 	;max zones
-	taz_count = 6593
+	;taz_count = %TAZ_COUNT%
     
     ;create sequential taz numbers
     RUN PGM=NETWORK
@@ -96,7 +101,7 @@ loop period = 1, 5
 ;        PAR NODES=10000000
         NETI = hwy\temp2@token_period@.net
         NETO = hwy\avgload@token_period@_complete.net
-        ZONES = 6593
+        ;ZONES = %TAZ_COUNT%
     ENDRUN
 
     ;filter roadway that is not used in highway assignment
