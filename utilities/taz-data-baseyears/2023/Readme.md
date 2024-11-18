@@ -3,14 +3,14 @@
 
 This directory relies on a [dataset created for 2020](../2020/) which is then inflated for 2023. As new data become available for ACS in September and December, 2023, these scripts will be updated.
 
-##  [`Create 2023 TAZ Data from 2020 Vintage.R`](Create%202023%20TAZ%20Data%20from%202020%20Vintage.R)
+##  [`create_2023_tazdata_from_2020_vintage.R`](create_2023_tazdata_from_2020_vintage.R)
 
-This script brings in all inputs and create 2023 input for [PopulationSim](https://github.com/BayAreaMetro/PopulationSim) and [tazdata](https://github.com/BayAreaMetro/modeling-website/wiki/TazData) input for [Travel Model 1.5](https://github.com/BayAreaMetro/travel-model-one).
+This script brings in all inputs and creates 2023 input for [PopulationSim](https://github.com/BayAreaMetro/PopulationSim) and [tazdata](https://github.com/BayAreaMetro/modeling-website/wiki/TazData) input for [Travel Model 1.6](https://github.com/BayAreaMetro/travel-model-one).
 
 ### Inputs
 
 * **Household- and population-based variables**: Because no good data sources exist for all of the 2023 data, population and household data were inflated from [2020 values](../2020/) to 2023 values using a ratio of county-level 2023/2020 [population forecasts](https://dof.ca.gov/wp-content/uploads/sites/352/Forecasting/Demographics/Documents/P2A_County_Total.xlsx) from the [California Department of Finance projections](https://dof.ca.gov/forecasting/demographics/projections/).
-* **[Employment variables](./employment_2020_with_QCEW_pct_change_applied.csv)** are based on the [2020 employment estimates](../2020/Employment/), but modified (via [`apply_QCEW_pct_change_to_LODES_2020.py`](./apply_QCEW_pct_change_to_LODES_2020.py)) by applying the percent change in QCEW annual employment from 2020 to 2022, by county and ABAG6 industry category
+* **[Employment variables](./employment_2020_with_QCEW_pct_change_applied.csv)** are based on the [2020 (actually 2021) employment estimates](../2020/Employment/), but modified (via [`apply_QCEW_pct_change_to_LODES_2020.py`](./apply_QCEW_pct_change_to_LODES_2020.py)) by applying the percent change in QCEW annual employment from 2021 to 2023, by county and ABAG6 industry category
 * **Employed residents** (with their occupations): Scale the 2020 Employed Residents by the Bay Area regional ratio of [Employment Development Department](https://labormarketinfo.edd.ca.gov/data/unemployment-and-labor-force.html) (EDD) labor force [2023 jobs/2020 jobs](lf_growth_ratio_2020_2023.csv), produced by this [script](https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/taz-data-baseyears/2023/bay_area_labor_force_growth.R).
   
 ### Outputs:
