@@ -6,7 +6,7 @@ Additionally, travel behavior during this year varied widely between February (b
 As such, we have not prioritized doing travel modeling for this year, and this 2020 dataset primarily serves
 to inform the [2023 TAZ data](../2023/).
 
-## [`ACS 2017-2021 create TAZ data for 2020.R`](ACS%202017-2021%20create%20TAZ%20data%20for%202020.R)
+## [`create_2020_tazdata.R`](create_2020_tazdata.R)
 
 ### Input
 * **Household- and population-based variables** are tabulated from the 2020 decennial [Demographic and Housing Characteristics File (DHC)](https://www.census.gov/data/tables/2023/dec/2020-census-dhc.html) data where available and [ACS 2017-2021](https://www.census.gov/newsroom/press-kits/2022/acs-5-year.html) data otherwise. These data rely on the [Tidycensus R Package](https://walker-data.com/tidycensus/)
