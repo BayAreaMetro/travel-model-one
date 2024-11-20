@@ -29,7 +29,7 @@ DOF_scaling <- read_excel(file.path(BASEYEAR,"2023","P2A_County_Total.xlsx"),she
 
 # Bring in 2023 data and TAZ-county equivalency for joining
 
-employment_2023        <- read.csv(file.path(BASEYEAR,"2023","employment_2021_with_QCEW_pct_change_applied.csv"),header = T) 
+employment_2023        <- read.csv(file.path(BASEYEAR,"2023","employment_2021_with_EDD_pct_change_applied.csv"),header = T) 
 county_joiner          <- final_2020 %>% select(ZONE,County_Name)
 
 # Select out population/housing scaling vars (scaled by population change), 
