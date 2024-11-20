@@ -32,16 +32,6 @@ DOF_scaling <- read_excel(file.path(BASEYEAR,"2023","P2A_County_Total.xlsx"),she
 employment_2023        <- read.csv(file.path(BASEYEAR,"2023","employment_2021_with_QCEW_pct_change_applied.csv"),header = T) 
 county_joiner          <- final_2020 %>% select(ZONE,County_Name)
 
-# Use total employment from 2023/2020 from EDD to scale by county for employment-related variables
-# Summary script to create scaling factor is here: 
-# https://github.com/BayAreaMetro/travel-model-one/blob/master/utilities/taz-data-baseyears/2023/bay_area_labor_force_growth.R
-
-employment_scaling  <- read.csv(file.path(BASEYEAR,"2023","lf_growth_ratio_2020_2023.csv"),header = T) 
-
-# Create vector for regional scaling
-
-Employ_ratio_2023_2020     <- as.numeric(employment_scaling[1,1])
-
 # Select out population/housing scaling vars (scaled by population change), 
 # employment scaling vars (scaled by employment change), and non-scaled vars
 # apply respective scaling factors to relevant columns and round values
