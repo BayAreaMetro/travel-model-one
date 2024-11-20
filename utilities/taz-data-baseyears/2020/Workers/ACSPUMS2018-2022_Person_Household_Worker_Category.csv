@@ -1,37 +1,37 @@
 "County_Name","worker_total_rc","total_hhs"
-"Alameda","0_workers",22758
-"Alameda","1_worker",40065
-"Alameda","2_workers",41365
-"Alameda","3p_workers",10936
-"Contra Costa","0_workers",18780
-"Contra Costa","1_worker",28346
-"Contra Costa","2_workers",27935
-"Contra Costa","3p_workers",8522
-"Marin","0_workers",5647
-"Marin","1_worker",7683
-"Marin","2_workers",5803
-"Marin","3p_workers",1466
-"Napa","0_workers",2588
-"Napa","1_worker",3472
-"Napa","2_workers",2618
-"Napa","3p_workers",823
-"San Francisco","0_workers",14640
-"San Francisco","1_worker",27205
-"San Francisco","2_workers",23676
-"San Francisco","3p_workers",6016
-"San Mateo","0_workers",10489
-"San Mateo","1_worker",18938
-"San Mateo","2_workers",18211
-"San Mateo","3p_workers",5332
-"Santa Clara","0_workers",22029
-"Santa Clara","1_worker",48258
-"Santa Clara","2_workers",46982
-"Santa Clara","3p_workers",14740
-"Solano","0_workers",8317
-"Solano","1_worker",11008
-"Solano","2_workers",8689
-"Solano","3p_workers",3040
-"Sonoma","0_workers",9846
-"Sonoma","1_worker",13418
-"Sonoma","2_workers",11970
-"Sonoma","3p_workers",3742
+"Alameda","0_workers",115464
+"Alameda","1_worker",209577
+"Alameda","2_workers",203189
+"Alameda","3p_workers",57584
+"Contra Costa","0_workers",90943
+"Contra Costa","1_worker",143627
+"Contra Costa","2_workers",131407
+"Contra Costa","3p_workers",42560
+"Marin","0_workers",28384
+"Marin","1_worker",36969
+"Marin","2_workers",31586
+"Marin","3p_workers",6771
+"Napa","0_workers",13070
+"Napa","1_worker",16880
+"Napa","2_workers",14478
+"Napa","3p_workers",4790
+"San Francisco","0_workers",80453
+"San Francisco","1_worker",134938
+"San Francisco","2_workers",113071
+"San Francisco","3p_workers",32379
+"San Mateo","0_workers",50761
+"San Mateo","1_worker",89198
+"San Mateo","2_workers",95451
+"San Mateo","3p_workers",28914
+"Santa Clara","0_workers",111009
+"Santa Clara","1_worker",235469
+"Santa Clara","2_workers",227465
+"Santa Clara","3p_workers",76409
+"Solano","0_workers",36080
+"Solano","1_worker",56041
+"Solano","2_workers",46575
+"Solano","3p_workers",16291
+"Sonoma","0_workers",50924
+"Sonoma","1_worker",63038
+"Sonoma","2_workers",57605
+"Sonoma","3p_workers",18086

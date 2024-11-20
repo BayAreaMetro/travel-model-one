@@ -1,28 +1,28 @@
 "County_Name","worker_total_rc","total"
-"Alameda","1_worker",43437
-"Alameda","2_workers",85618
-"Alameda","3p_workers",41741
-"Contra Costa","1_worker",29245
-"Contra Costa","2_workers",56988
-"Contra Costa","3p_workers",31379
-"Marin","1_worker",7977
-"Marin","2_workers",11746
-"Marin","3p_workers",5606
-"Napa","1_worker",3771
-"Napa","2_workers",5432
-"Napa","3p_workers",3361
-"San Francisco","1_worker",28792
-"San Francisco","2_workers",47626
-"San Francisco","3p_workers",20933
-"San Mateo","1_worker",19971
-"San Mateo","2_workers",37582
-"San Mateo","3p_workers",20000
-"Santa Clara","1_worker",51044
-"Santa Clara","2_workers",96289
-"Santa Clara","3p_workers",53933
-"Solano","1_worker",11700
-"Solano","2_workers",18005
-"Solano","3p_workers",11757
-"Sonoma","1_worker",14182
-"Sonoma","2_workers",24417
-"Sonoma","3p_workers",13191
+"Alameda","1_worker",225429
+"Alameda","2_workers",423722
+"Alameda","3p_workers",222147
+"Contra Costa","1_worker",149180
+"Contra Costa","2_workers",268863
+"Contra Costa","3p_workers",154334
+"Marin","1_worker",39283
+"Marin","2_workers",65220
+"Marin","3p_workers",24634
+"Napa","1_worker",18187
+"Napa","2_workers",30320
+"Napa","3p_workers",19014
+"San Francisco","1_worker",142857
+"San Francisco","2_workers",231358
+"San Francisco","3p_workers",122858
+"San Mateo","1_worker",94056
+"San Mateo","2_workers",198249
+"San Mateo","3p_workers",111677
+"Santa Clara","1_worker",251771
+"Santa Clara","2_workers",466326
+"Santa Clara","3p_workers",286315
+"Solano","1_worker",58614
+"Solano","2_workers",95574
+"Solano","3p_workers",60244
+"Sonoma","1_worker",66303
+"Sonoma","2_workers",117848
+"Sonoma","3p_workers",65338

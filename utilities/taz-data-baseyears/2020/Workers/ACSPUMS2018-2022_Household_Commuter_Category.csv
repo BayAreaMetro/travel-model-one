@@ -1,37 +1,37 @@
 "County_Name","worker_total_rc","total_hhs","total_gq","total_total"
-"Alameda","0_workers",24056,0,24056
-"Alameda","1_worker",40556,0,40556
-"Alameda","2_workers",40232,0,40232
-"Alameda","3p_workers",10280,0,10280
-"Contra Costa","0_workers",19895,0,19895
-"Contra Costa","1_worker",28975,0,28975
-"Contra Costa","2_workers",26706,0,26706
-"Contra Costa","3p_workers",8007,0,8007
-"Marin","0_workers",5799,0,5799
-"Marin","1_worker",7703,0,7703
-"Marin","2_workers",5676,0,5676
-"Marin","3p_workers",1421,0,1421
-"Napa","0_workers",2683,0,2683
-"Napa","1_worker",3427,0,3427
-"Napa","2_workers",2670,0,2670
-"Napa","3p_workers",721,0,721
-"San Francisco","0_workers",15104,0,15104
-"San Francisco","1_worker",27310,0,27310
-"San Francisco","2_workers",23316,0,23316
-"San Francisco","3p_workers",5807,0,5807
-"San Mateo","0_workers",11114,0,11114
-"San Mateo","1_worker",19194,0,19194
-"San Mateo","2_workers",17548,0,17548
-"San Mateo","3p_workers",5114,0,5114
-"Santa Clara","0_workers",23152,0,23152
-"Santa Clara","1_worker",49534,0,49534
-"Santa Clara","2_workers",45484,0,45484
-"Santa Clara","3p_workers",13839,0,13839
-"Solano","0_workers",8711,0,8711
-"Solano","1_worker",11220,0,11220
-"Solano","2_workers",8233,0,8233
-"Solano","3p_workers",2890,0,2890
-"Sonoma","0_workers",10215,0,10215
-"Sonoma","1_worker",13759,0,13759
-"Sonoma","2_workers",11455,0,11455
-"Sonoma","3p_workers",3547,0,3547
+"Alameda","0_workers",131536,0,131536
+"Alameda","1_worker",213327,0,213327
+"Alameda","2_workers",189213,0,189213
+"Alameda","3p_workers",51738,0,51738
+"Contra Costa","0_workers",95899,0,95899
+"Contra Costa","1_worker",147871,0,147871
+"Contra Costa","2_workers",125211,0,125211
+"Contra Costa","3p_workers",39556,0,39556
+"Marin","0_workers",29105,0,29105
+"Marin","1_worker",37767,0,37767
+"Marin","2_workers",30283,0,30283
+"Marin","3p_workers",6555,0,6555
+"Napa","0_workers",13584,0,13584
+"Napa","1_worker",16897,0,16897
+"Napa","2_workers",14218,0,14218
+"Napa","3p_workers",4519,0,4519
+"San Francisco","0_workers",83929,0,83929
+"San Francisco","1_worker",135722,0,135722
+"San Francisco","2_workers",110118,0,110118
+"San Francisco","3p_workers",31072,0,31072
+"San Mateo","0_workers",53029,0,53029
+"San Mateo","1_worker",91203,0,91203
+"San Mateo","2_workers",92716,0,92716
+"San Mateo","3p_workers",27376,0,27376
+"Santa Clara","0_workers",117110,0,117110
+"Santa Clara","1_worker",241012,0,241012
+"Santa Clara","2_workers",220467,0,220467
+"Santa Clara","3p_workers",71763,0,71763
+"Solano","0_workers",38124,0,38124
+"Solano","1_worker",56649,0,56649
+"Solano","2_workers",44590,0,44590
+"Solano","3p_workers",15624,0,15624
+"Sonoma","0_workers",52977,0,52977
+"Sonoma","1_worker",64005,0,64005
+"Sonoma","2_workers",55697,0,55697
+"Sonoma","3p_workers",16974,0,16974
