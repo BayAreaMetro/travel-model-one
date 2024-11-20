@@ -815,17 +815,16 @@ print(temp0)
 # Apply households by number of workers correction factors
 # The initial table values are actually households by number of "commuters" (people at work - not sick, vacation - in the ACS reference week)
 # This overstates 0-worker households and understates 3+-worker households. A correction needs to be applied.
-# Correction factors are calculated in ACSPUMS_WorkerTotals_2017-2021_Comparisons.xls, in
-# travel-model-one\utilities\taz-data-baseyears\2020\Workers
+# Correction factors are calculated in .\Workers\ACSPUMS2018-2022_WorkerTotals_Comparisons.xlsx
 # 1=San Francisco; 2=San Mateo; 3=Santa Clara; 4=Alameda; 5=Contra Costa; 6=Solano; 7= Napa; 8=Sonoma; 9=Marin
 # "counties" vector is defined below with this county order
 
 counties  <- c(1,2,3,4,5,6,7,8,9)                             # Matching county values for factor ordering
 
-workers0  <- c(0.75147,0.74299,0.68878,0.59029,0.80718,0.79450,0.70344,0.83817,0.81702)
-workers1  <- c(1.05364,1.02063,1.04834,1.06543,1.01895,1.02327,1.09197,1.03080,1.05727)
-workers2	<- c(1.06342,1.06356,1.05941,1.14105,1.07070,1.06588,1.08631,1.08274,1.06551)
-workers3p	<- c(1.18711,1.18950,1.15641,1.27100,1.15972,1.20442,1.18671,1.10573,1.13854)
+workers0  <- c(0.80949, 0.73872, 0.71114, 0.64334, 0.83551, 0.81965, 0.79384, 0.86188, 0.84022)
+workers1  <- c(1.04803, 1.02080, 1.04346, 1.05696, 1.00905, 1.03175, 1.08663, 1.02549, 1.04765)
+workers2	<- c(1.04826, 1.07896, 1.05444, 1.11641, 1.06367, 1.04932, 1.03722, 1.06810, 1.06777)
+workers3p	<- c(1.12707, 1.16442, 1.15440, 1.22406, 1.15324, 1.18291, 1.14513, 1.10387, 1.11526)
 
 
 temp1 <- temp0 %>%
