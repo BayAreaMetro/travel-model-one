@@ -13,6 +13,7 @@
 
 suppressMessages(library(tidyverse))
 library(readxl)
+library(tidycensus)
 
 # Set up directories
 
@@ -67,9 +68,72 @@ pop_scaling_vars_updated <- left_join(pop_scaling_vars,DOF_scaling[,c("County_Na
   select(-Ratio_2023_2020) %>% 
   mutate_at(c(6:41),~round(.,0))
 
-emp_scaling_vars_updated <- emp_scaling_vars %>% 
-  mutate_at(c(6:12),~.*Employ_ratio_2023_2020) %>% 
-  mutate_at(c(6:12),~round(.,0))
+options("width"=200)
+
+# scale empres and other employed resident columns to match 
+# ACS 2023 Table B23025: Employment Status for the population 16 years and over by county
+censuskey    <- readLines("M:/Data/Census/API/api-key.txt")
+baycounties  <- c("01","13","41","55","75","81","85","95","97")
+state_code   <- "06"
+census_api_key(censuskey, install = TRUE, overwrite = TRUE)
+ACS_EMPRES_variables <- c(
+  employed_    ="B23025_004",    # Civilian employed residents (employed residents is "employed" + "armed forces")
+  armedforces_ ="B23025_006" 	  # Armed forces
+)
+# fetch the ACS employment (by residence county) data
+ACS_EMPRES <- get_acs(
+  geography = "county", variables = ACS_EMPRES_variables,
+  state = state_code, county=baycounties,
+  year=2023,
+  output="wide",
+  survey = "acs1",
+  key = censuskey)
+ACS_EMPRES <- ACS_EMPRES %>% select(!(ends_with("_M"))) %>% select(-NAME)
+names(ACS_EMPRES) <- str_replace_all(names(ACS_EMPRES), c("_E" = ""))
+ACS_EMPRES <- ACS_EMPRES %>% 
+  mutate(
+    ACS_EMPRES_2023=employed+armedforces,
+    COUNTY=case_match(GEOID,
+      "06001" ~ 4, # Alameda
+      "06013" ~ 5, # Contra Costa
+      "06041" ~ 9, # Marin
+      "06055" ~ 7, # Napa
+      "06075" ~ 1, # San Francisco
+      "06081" ~ 2, # San Mateo
+      "06085" ~ 3, # Santa Clara
+      "06095" ~ 6, # Solano
+      "06097" ~ 8 # Sonoma
+    )
+  )
+
+# join with 2020 empres summed to county and calculate scaling factor to get to ACS EMPRES 2023
+ACS_EMPRES <-inner_join(
+  ACS_EMPRES,
+  summarise(emp_scaling_vars, EMPRES = sum(EMPRES), .by=c("COUNTY", "County_Name")),
+  by = "COUNTY"
+) %>% mutate(
+  ACS_EMPRES_2023_OVER_EMPRES_2020 = ACS_EMPRES_2023/EMPRES
+)
+print("ACS_EMPRES")
+print(ACS_EMPRES)
+
+emp_scaling_vars_updated <- left_join(
+  emp_scaling_vars, 
+  select(ACS_EMPRES, COUNTY, ACS_EMPRES_2023_OVER_EMPRES_2020),
+  by="COUNTY"
+) %>% mutate(
+  EMPRES               = round(ACS_EMPRES_2023_OVER_EMPRES_2020*EMPRES               ,0),
+  pers_occ_management  = round(ACS_EMPRES_2023_OVER_EMPRES_2020*pers_occ_management  ,0),
+  pers_occ_professional= round(ACS_EMPRES_2023_OVER_EMPRES_2020*pers_occ_professional,0),
+  pers_occ_services    = round(ACS_EMPRES_2023_OVER_EMPRES_2020*pers_occ_services    ,0),
+  pers_occ_retail      = round(ACS_EMPRES_2023_OVER_EMPRES_2020*pers_occ_retail      ,0),
+  pers_occ_manual      = round(ACS_EMPRES_2023_OVER_EMPRES_2020*pers_occ_manual      ,0),
+  pers_occ_military    = round(ACS_EMPRES_2023_OVER_EMPRES_2020*pers_occ_military    ,0),
+) %>% select(-ACS_EMPRES_2023_OVER_EMPRES_2020)
+print("emp_scaling_vars")
+print(head(emp_scaling_vars))
+print("emp_scaling_vars_updated")
+print(head(emp_scaling_vars_updated))
 
 # Join everything back together and append 2023 employment file too
 
