@@ -4,6 +4,7 @@
 # where "Speed" is joined on int(CSPD)
 #
 # PlanBayArea2050 / RTP2021 Asana Task: https://app.asana.com/0/316552326098022/1200007791721297/f
+# PlanBayArea2050 / RTP2021 Amd1 Asana Task: https://app.asana.com/0/1201730518396783/1208059626391587/f
 
 library(dplyr)
 library(tidyr)
@@ -18,6 +19,7 @@ MODEL_DIRS <-
   c(IP_2015  ="M:/Application/Model One/RTP2021/IncrementalProgress/2015_TM152_IPA_17",
     NP_2050  ="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_NoProject_24",
     FBP_2050 ="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_PlusCrossing_24",
+    FBP_Amd1_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_FBP_PlusCrossing_24_Amd1",
     Alt1_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt1_06",
     Alt2_2050="M:/Application/Model One/RTP2021/Blueprint/2050_TM152_EIR_Alt2_05")
 
@@ -26,12 +28,13 @@ NETWORK_CARE_DIRS <-
   c(IP_2015  ="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_62/net_2015_Baseline/shapefile",
     NP_2050  ="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_62/net_2050_Baseline/shapefile",
     FBP_2050 ="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_64/net_2050_Blueprint/shapefile",
+    FBP_Amd1_2050 ="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_64_Amd1/net_2050_Blueprint/shapefile",
     Alt1_2050="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_64/net_2050_Alt1/shapefile",
     Alt2_2050="M:/Application/Model One/RTP2021/Blueprint/INPUT_DEVELOPMENT/Networks/BlueprintNetworks_64/net_2050_Alt2/shapefile")
 
 # all files are expected to be here (note R's preference for slashes)
 if (Sys.getenv("USERNAME") == "lzorn") {
-  BASE_DIR <- "C:/Users/lzorn/Box/CARE Communities/CARE-Data-PBA50"
+  BASE_DIR <- "E:/Box/CARE Communities/CARE-Data-PBA50"
 } else {
   BASE_DIR <- "~/Desktop/CARE-Data_R"
 }
@@ -43,7 +46,9 @@ special_cols <- c("distance","lanes","ft","at","tollclass","ffs")
 emissions_rates <- list()
 # use Tableau wildcard union -- no need to put these in a single file
 # loop through each network file
-for (network in c("IP_2015","NP_2050","FBP_2050","Alt1_2050","Alt2_2050")) {
+# for (network in c("IP_2015","NP_2050","FBP_2050","Alt1_2050","Alt2_2050")) {
+# for Plan amendment, just run the Plan scenario
+for (network in c("FBP_Amd1_2050")) {
   model_dir  <- basename(MODEL_DIRS[network])
   model_year <- substr(model_dir,0,4)
   print(paste("Processing",network," for year",model_year,":",model_dir))
