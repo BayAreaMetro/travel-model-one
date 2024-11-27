@@ -104,6 +104,16 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"Exception {e}")
 
-    output_file = WORKING_DIR / f"LODES_Bay_Area_{args.year}.csv"
+    output_file = WORKING_DIR / f"LODES_Bay_Area_tract_{args.year}.csv"
+    full_dataframe.to_csv(output_file, index=False)
+    print(f"Wrote {len(full_dataframe)} rows to {output_file}")
+
+    # create county version
+    full_dataframe = full_dataframe.groupby(['w_state','h_state','w_county','h_county']).agg(
+        Total_Workers=pd.NamedAgg(column="Total_Workers", aggfunc="sum"),
+    ).reset_index(drop=False)
+    print(f"Aggregated to county")
+
+    output_file = WORKING_DIR / f"LODES_Bay_Area_county_{args.year}.csv"
     full_dataframe.to_csv(output_file, index=False)
     print(f"Wrote {len(full_dataframe)} rows to {output_file}")
