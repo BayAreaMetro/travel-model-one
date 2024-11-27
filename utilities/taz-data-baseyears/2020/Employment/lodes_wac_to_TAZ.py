@@ -20,7 +20,7 @@ from common import BAY_AREA_COUNTY_FIPS, NAICS2_EMPSIX
 # arg is year
 WAC_FILE = "M:\\Data\\Census\\LEHD\\Workplace Area Characteristics (WAC)\\ca_wac_S000_JT00_{}.csv"
 CENSUS_2020_BLOCK_TO_TAZ = "M:\\Data\\GIS layers\\TM1_taz_census2020\\2020block_to_TAZ1454.csv"
-OUTPUT_FILE = "lodes_wac_employment.csv"
+OUTPUT_FILE = "lodes_wac_employment_{}.csv"
 
 # from LODESTechDoc8.0.pdf
 CNS_NAICS = {
@@ -104,6 +104,6 @@ if __name__ == "__main__":
 
     # write result
     wac_NAICS_df[['TAZ1454', 'TOTEMP', 'RETEMPN', 'FPSEMPN', 'HEREMPN', 'AGREMPN', 'MWTEMPN', 'OTHEMPN']].to_csv(
-        OUTPUT_FILE, index=False
+        OUTPUT_FILE.format(args.year), index=False
     )
-    print("Wrote {:,} lines to {}".format(len(wac_NAICS_df), OUTPUT_FILE))
+    print("Wrote {:,} lines to {}".format(len(wac_NAICS_df), OUTPUT_FILE.format(args.year)))
