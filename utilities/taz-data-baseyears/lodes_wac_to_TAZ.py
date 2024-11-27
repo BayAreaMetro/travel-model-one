@@ -5,7 +5,7 @@ USAGE = """
   Workplace Area Characteristics (WAC) to TM1 TAZ geographies and the
   six TM1 employment categories.
 
-  Outputs to lodes_wac_employment.csv in the current working directory.
+  Outputs to lodes_wac_employment_YYYY.csv in the current working directory.
 
   Note: this file does *not* do any scaling, for totals nor to remove incommute.
 
@@ -22,7 +22,7 @@ WAC_FILE = "M:\\Data\\Census\\LEHD\\Workplace Area Characteristics (WAC)\\ca_wac
 CENSUS_2020_BLOCK_TO_TAZ = "M:\\Data\\GIS layers\\TM1_taz_census2020\\2020block_to_TAZ1454.csv"
 OUTPUT_FILE = "lodes_wac_employment_{}.csv"
 
-# from LODESTechDoc8.0.pdf
+# from M:\Data\Census\LEHD\LODESTechDoc.pdf
 CNS_NAICS = {
     'CNS01': 'NAICS 11',    # Agriculture, Forestry, Fishing and Hunting
     'CNS02': 'NAICS 21',    # Mining, Quarrying, and Oil and Gas Extraction
