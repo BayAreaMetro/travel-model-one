@@ -45,7 +45,14 @@ self_emp <- self_emp %>%
 employment_2023 <- left_join(
   select(employment_2023, -COUNTY_NAME), 
   self_emp,
-  by="TAZ1454")
+  by="TAZ1454") %>%
+  replace_na(list(
+    AGREMPN=0, self_AGREMPN=0,
+    FPSEMPN=0, self_FPSEMPN=0,
+    HEREMPN=0, self_HEREMPN=0,
+    MWTEMPN=0, self_MWTEMPN=0,
+    OTHEMPN=0, self_OTHEMPN=0)
+  )
 
 employment_2023 <- employment_2023 %>%
   mutate(
