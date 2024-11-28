@@ -51,6 +51,7 @@ employment_2023 <- left_join(
     FPSEMPN=0, self_FPSEMPN=0,
     HEREMPN=0, self_HEREMPN=0,
     MWTEMPN=0, self_MWTEMPN=0,
+    RETEMPN=0, self_RETEMPN=0,
     OTHEMPN=0, self_OTHEMPN=0)
   )
 
