@@ -29,8 +29,34 @@ DOF_scaling <- read_excel(file.path(BASEYEAR,"2023","P2A_County_Total.xlsx"),she
 
 # Bring in 2023 data and TAZ-county equivalency for joining
 
-employment_2023        <- read.csv(file.path(BASEYEAR,"2023","employment_2021_with_EDD_pct_change_applied.csv"),header = T) 
 county_joiner          <- final_2020 %>% select(ZONE,County_Name)
+
+# For employment, read 2022 LODES data scaled to Bay Area resident workers (see lodes_wac_to_TAZ.csv) and add self-employed estimates for 2023
+employment_2023        <- read.csv(file.path(BASEYEAR,"2023","lodes_wac_employment_2022.csv"),header = T) 
+self_emp               <- read.csv(file.path(BASEYEAR,"2023","taz_self_employed_workers_2023.csv"), header=T)
+
+# convert self-employment to similar form and add to employment
+self_emp <- self_emp %>% 
+  select(-X) %>% 
+  rename(TAZ1454=zone_id) %>% 
+  mutate(industry=paste0("self_",toupper(industry))) %>%
+  pivot_wider(id_cols=c(TAZ1454), names_from=industry, values_from=value)
+
+employment_2023 <- left_join(
+  select(employment_2023, -COUNTY_NAME), 
+  self_emp,
+  by="TAZ1454")
+
+employment_2023 <- employment_2023 %>%
+  mutate(
+    AGREMPN = AGREMPN + self_AGREMPN,
+    FPSEMPN = FPSEMPN + self_FPSEMPN,
+    HEREMPN = HEREMPN + self_HEREMPN,
+    MWTEMPN = MWTEMPN + self_MWTEMPN,
+    RETEMPN = RETEMPN + self_RETEMPN,
+    OTHEMPN = OTHEMPN + self_OTHEMPN,
+    TOTEMP = AGREMPN + FPSEMPN + HEREMPN + MWTEMPN + RETEMPN + OTHEMPN) %>%
+    select(-starts_with('self'))
 
 # Select out population/housing scaling vars (scaled by population change), 
 # employment scaling vars (scaled by employment change), and non-scaled vars
