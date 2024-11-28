@@ -24,6 +24,11 @@ This script brings in all inputs and creates 2023 input for [PopulationSim](http
 * [TAZ1454 2023 Popsim Vars Region.csv](TAZ1454%202023%20Popsim%20Vars%20Region.csv)
 * [TAZ1454 2023 Popsim Vars County.csv](TAZ1454%202023%20Popsim%20Vars%20County.csv)
 
+
+#### Version History:
+* [TAZ1454_2023_long_20231030.csv](TAZ1454_2023_long_20231030.csv) - Version used in PBA50+ Draft Blueprint, `LandUse_n_Popsyn\2023_v04` [source](https://github.com/BayAreaMetro/travel-model-one/blob/e140e06c6c3885360339184f754da3d596a40274/utilities/taz-data-baseyears/2023/TAZ1454_2023_long.csv)
+* [TAZ1454_2023_long_20241119.csv](TAZ1454_2023_long_20241119.csv) - Initial source updates included, `LandUse_n_Popsyn\2023_v06` [source](https://github.com/BayAreaMetro/travel-model-one/commits/da7bcc6492ae5c9a4e40416eea9b3756b5cd59fb/utilities/taz-data-baseyears/2023/TAZ1454_2023_long.csv)
+
 See also:
   * [Asana task: Prepare 2023 land use input](https://app.asana.com/0/0/1204384692879834/f)
   * [Asana task: Refresh 2023 travel model tazdata](https://app.asana.com/0/15119358130897/1208403592422847/f)
