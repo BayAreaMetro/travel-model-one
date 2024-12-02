@@ -15,35 +15,12 @@
 RUN PGM=MATRIX
 
   ; Calculate Airport Trips By Category By County
-  
-;  READ FILE = INPUTS\ClusterControl.DAT
 
   ZONES = %TAZ_COUNT%
-
   ZDATI[1] = landuse\TAZDATA.DBF
-  MATO[1] = nonres\2015_PTrips_AirPass.MAT, MO=1-4, NAME=RB,RNB,VB,VNB
+  MATO[1] = nonres\PTrips_AirPass_Share.MAT, MO=1-4, NAME=RB,RNB,VB,VNB
 
-  ; Average daily passenger trips (arrivals+departures) requiring ground access at SJO:
-  ;   2000: 29,000
-  ;   2010: 53,000
-  ; Trip generation rates in VTA model scaled to generate 29,000 trips in 2000
-  ;
-  ; Oakland passenger forecasts from 2000 RASP and BART OAC EIS, converted to average daily ground access trips:
-  ;   1999: 24,600
-  ;   2005: 35,100
-  ;   2020: 65,000
-  
-  ; 2015 
-  INP_OAK_Passengers = 34850
-  INP_SFO_Passengers = 90150
-  INP_SJC_Passengers = 25400
-   
-  
-  ; Scale total trips based on ratio of scenario year OAK passengers and 
-  ;   25,000 OAK passengers in 2000
-  COMP FACT = INP_OAK_Passengers / 25000
-  COMP FACT1 = INP_SFO_Passengers / 48400
-  COMP FACT2 = INP_SJC_Passengers / 29000
+
 
   ; VTA trip generation rates for SJO were set to generate the correct numbers
   ;   of SJO air passengers from each county (year 2000)
@@ -206,198 +183,267 @@ RUN PGM=MATRIX
 ; Calculate SJC Productions  (BCM TAZ = 1887)
 
 ;Calculate trips originiated in San Francisco County
-IF (zi.1.county=1 & J=1887) ;then
-;RB Trips
-COMP MW[1] = (0.081*HHINCQ1 + 0.079*HHINCQ2 + 0.068*HHINCQ3 + 0.065*HHINCQ4 + 0.009*TOTEMPN)/1000 * 0.96
-;RNB Trips
-COMP MW[2] = (0.081*HHINCQ1 + 0.079*HHINCQ2 + 0.205*HHINCQ3 + 0.065*HHINCQ4 + 0.036*TOTEMPN)/1000 * 0.96
-;NRB Trips
-COMP MW[3] = (0.036*TOTEMPN + 0.454*FPSEMPN + 0.018*TOTHH)/1000 * 1.11
-;NRNB Trips
-COMP MW[4] = (0.009*TOTEMPN + 0.268*FPSEMPN + 0.054*TOTHH)/1000 * 1.12
-ELSE
-ENDIF
+	IF (zi.1.county=1 & J=1887) ;then
+		;RB Trips
+		COMP MW[1] = (0.081*HHINCQ1 + 0.079*HHINCQ2 + 0.068*HHINCQ3 + 0.065*HHINCQ4 + 0.009*TOTEMPN)/1000 * 0.96
+		;RNB Trips
+		COMP MW[2] = (0.081*HHINCQ1 + 0.079*HHINCQ2 + 0.205*HHINCQ3 + 0.065*HHINCQ4 + 0.036*TOTEMPN)/1000 * 0.96
+		;NRB Trips
+		COMP MW[3] = (0.036*TOTEMPN + 0.454*FPSEMPN + 0.018*TOTHH)/1000 * 1.11
+		;NRNB Trips
+		COMP MW[4] = (0.009*TOTEMPN + 0.268*FPSEMPN + 0.054*TOTHH)/1000 * 1.12
+	ELSE
+	ENDIF
 
 ;Calculate trips originiated in San Mateo County
-IF (zi.1.county=2 & J=1887) ;then 
-;RB Trips
-COMP MW[1] = (0.000*HHINCQ1 + 0.762*HHINCQ2 + 0.698*HHINCQ3 + 1.649*HHINCQ4 + 0.211*TOTEMPN)/1000 * 0.97
-;RNB Trips
-COMP MW[2] = (2.558*HHINCQ1 + 2.394*HHINCQ2 + 2.024*HHINCQ3 + 1.015*HHINCQ4 + 0.136*TOTEMPN)/1000 * 0.99
-;NRB Trips
-COMP MW[3] = (0.271*TOTEMPN + 0.295*FPSEMPN + 0.158*TOTHH)/1000 * 0.98
-;NRNB Trips
-COMP MW[4] = (0.000*TOTEMPN + 0.716*FPSEMPN + 1.195*TOTHH)/1000 * 1.04
-ELSE
-ENDIF
+	IF (zi.1.county=2 & J=1887) ;then 
+		;RB Trips
+		COMP MW[1] = (0.000*HHINCQ1 + 0.762*HHINCQ2 + 0.698*HHINCQ3 + 1.649*HHINCQ4 + 0.211*TOTEMPN)/1000 * 0.97
+		;RNB Trips
+		COMP MW[2] = (2.558*HHINCQ1 + 2.394*HHINCQ2 + 2.024*HHINCQ3 + 1.015*HHINCQ4 + 0.136*TOTEMPN)/1000 * 0.99
+		;NRB Trips
+		COMP MW[3] = (0.271*TOTEMPN + 0.295*FPSEMPN + 0.158*TOTHH)/1000 * 0.98
+		;NRNB Trips
+		COMP MW[4] = (0.000*TOTEMPN + 0.716*FPSEMPN + 1.195*TOTHH)/1000 * 1.04
+	ELSE
+	ENDIF
   
 ;Calculate trips originiated in Santa Clara County
-IF (zi.1.county=3 & J=1887) ;then 
-;RB Trips
-COMP MW[1] = (2.037*HHINCQ1 + 4.977*HHINCQ2 + 9.285*HHINCQ3 + 6.804*HHINCQ4 + 1.341*TOTEMPN)/1000 * 0.96
-;RNB Trips
-COMP MW[2] = (18.334*HHINCQ1 + 14.075*HHINCQ2 + 11.740*HHINCQ3 + 6.482*HHINCQ4 + 0.745*TOTEMPN)/1000 * 0.98
-;NRB Trips
-COMP MW[3] = (2.709*TOTEMPN + 10.937*FPSEMPN + 1.051*TOTHH)/1000 * 1.03
-;NRNB Trips
-COMP MW[4] = (0.202*TOTEMPN + 3.567*FPSEMPN + 5.843*TOTHH)/1000 * 1.03
-ELSE
-ENDIF
+	IF (zi.1.county=3 & J=1887) ;then 
+		;RB Trips
+		COMP MW[1] = (2.037*HHINCQ1 + 4.977*HHINCQ2 + 9.285*HHINCQ3 + 6.804*HHINCQ4 + 1.341*TOTEMPN)/1000 * 0.96
+		;RNB Trips
+		COMP MW[2] = (18.334*HHINCQ1 + 14.075*HHINCQ2 + 11.740*HHINCQ3 + 6.482*HHINCQ4 + 0.745*TOTEMPN)/1000 * 0.98
+		;NRB Trips
+		COMP MW[3] = (2.709*TOTEMPN + 10.937*FPSEMPN + 1.051*TOTHH)/1000 * 1.03
+		;NRNB Trips
+		COMP MW[4] = (0.202*TOTEMPN + 3.567*FPSEMPN + 5.843*TOTHH)/1000 * 1.03
+	ELSE
+	ENDIF
 
 ;Calculate trips originiated in Alameda County
-IF (zi.1.county=4 & J=1887) ;then 
-;RB Trips
-COMP MW[1] = (0.099*HHINCQ1 + 0.374*HHINCQ2 + 1.327*HHINCQ3 + 1.324*HHINCQ4 + 0.101*TOTEMPN)/1000 * 0.98
-;RNB Trips
-COMP MW[2] = (0.943*HHINCQ1 + 0.608*HHINCQ2 + 1.668*HHINCQ3 + 1.004*HHINCQ4 + 0.016*TOTEMPN)/1000 * 1.02
-;NRB Trips
-COMP MW[3] = (0.261*TOTEMPN + 0.807*FPSEMPN + 0.089*TOTHH)/1000 * 0.98
-;NRNB Trips
-COMP MW[4] = (0.032*TOTEMPN + 0.268*FPSEMPN + 0.646*TOTHH)/1000 * 1.02
-ELSE
-ENDIF
+	IF (zi.1.county=4 & J=1887) ;then 
+		;RB Trips
+		COMP MW[1] = (0.099*HHINCQ1 + 0.374*HHINCQ2 + 1.327*HHINCQ3 + 1.324*HHINCQ4 + 0.101*TOTEMPN)/1000 * 0.98
+		;RNB Trips
+		COMP MW[2] = (0.943*HHINCQ1 + 0.608*HHINCQ2 + 1.668*HHINCQ3 + 1.004*HHINCQ4 + 0.016*TOTEMPN)/1000 * 1.02
+		;NRB Trips
+		COMP MW[3] = (0.261*TOTEMPN + 0.807*FPSEMPN + 0.089*TOTHH)/1000 * 0.98
+		;NRNB Trips
+		COMP MW[4] = (0.032*TOTEMPN + 0.268*FPSEMPN + 0.646*TOTHH)/1000 * 1.02
+	ELSE
+	ENDIF
 
 ;Calculate trips originiated in Contra Costa County
-IF (zi.1.county=5 & J=1887) ;then 
-;RB Trips
-COMP MW[1] = (0.098*HHINCQ1 + 0.160*HHINCQ2 + 0.223*HHINCQ3 + 0.379*HHINCQ4 + 0.016*TOTEMPN)/1000 * 0.99
-;RNB Trips
-COMP MW[2] = (0.000*HHINCQ1 + 0.000*HHINCQ2 + 0.167*HHINCQ3 + 0.216*HHINCQ4 + 0.016*TOTEMPN)/1000 * 0.98
-;NRB Trips
-COMP MW[3] = (0.159*TOTEMPN + 0.217*FPSEMPN + 0.051*TOTHH)/1000 * 1.06
-;NRNB Trips
-COMP MW[4] = (0.000*TOTEMPN + 0.173*FPSEMPN + 0.135*TOTHH)/1000 * 1.12
-ELSE
-ENDIF
+	IF (zi.1.county=5 & J=1887) ;then 
+		;RB Trips
+		COMP MW[1] = (0.098*HHINCQ1 + 0.160*HHINCQ2 + 0.223*HHINCQ3 + 0.379*HHINCQ4 + 0.016*TOTEMPN)/1000 * 0.99
+		;RNB Trips
+		COMP MW[2] = (0.000*HHINCQ1 + 0.000*HHINCQ2 + 0.167*HHINCQ3 + 0.216*HHINCQ4 + 0.016*TOTEMPN)/1000 * 0.98
+		;NRB Trips
+		COMP MW[3] = (0.159*TOTEMPN + 0.217*FPSEMPN + 0.051*TOTHH)/1000 * 1.06
+		;NRNB Trips
+		COMP MW[4] = (0.000*TOTEMPN + 0.173*FPSEMPN + 0.135*TOTHH)/1000 * 1.12
+	ELSE
+	ENDIF
 
 
 ; Calculate SFO Trip Productions (BCM TAZ = 1020)
 
 ;Calculate trips originiated in San Francisco County
-IF (zi.1.county=1 & J=1020) ;then
-;RB Trips
-COMP MW[1] = (1.71*HHINCQ1 + 4.18*HHINCQ2 + 7.79*HHINCQ3 + 5.71*HHINCQ4 + 1.17*TOTEMPN)/1000 * 0.93
-;RNB Trips
-COMP MW[2] = (2.44*HHINCQ1 + 2.38*HHINCQ2 + 6.17*HHINCQ3 + 1.96*HHINCQ4 + 1.09*TOTEMPN)/1000 * 0.92
-;NRB Trips
-COMP MW[3] = (1.28*TOTEMPN + 16.10*FPSEMPN + 0.64*TOTHH)/1000 * 1.06
-;NRNB Trips
-COMP MW[4] = (1.22*TOTEMPN + 36.15*FPSEMPN + 7.28*TOTHH)/1000 * 1.06
-ELSE
-ENDIF
+	IF (zi.1.county=1 & J=1020) ;then
+		;RB Trips
+		COMP MW[1] = (1.71*HHINCQ1 + 4.18*HHINCQ2 + 7.79*HHINCQ3 + 5.71*HHINCQ4 + 1.17*TOTEMPN)/1000 * 0.93
+		;RNB Trips
+		COMP MW[2] = (2.44*HHINCQ1 + 2.38*HHINCQ2 + 6.17*HHINCQ3 + 1.96*HHINCQ4 + 1.09*TOTEMPN)/1000 * 0.92
+		;NRB Trips
+		COMP MW[3] = (1.28*TOTEMPN + 16.10*FPSEMPN + 0.64*TOTHH)/1000 * 1.06
+		;NRNB Trips
+		COMP MW[4] = (1.22*TOTEMPN + 36.15*FPSEMPN + 7.28*TOTHH)/1000 * 1.06
+	ELSE
+	ENDIF
 
 ;Calculate trips originiated in San Mateo County
-IF (zi.1.county=2 & J=1020) ;then 
-;RB Trips
-COMP MW[1] = (0.001*HHINCQ1 + 3.75*HHINCQ2 + 3.4*HHINCQ3 + 8.12*HHINCQ4 + 1.04*TOTEMPN)/1000 * 0.92
-;RNB Trips
-COMP MW[2] = (9.96*HHINCQ1 + 9.32*HHINCQ2 + 7.88*HHINCQ3 + 3.95*HHINCQ4 + 0.53*TOTEMPN)/1000 * 0.95
-;NRB Trips
-COMP MW[3] = (2.74*TOTEMPN + 2.98*FPSEMPN + 1.59*TOTHH)/1000 * 0.93
-;NRNB Trips
-COMP MW[4] = (0.01*TOTEMPN + 7.25*FPSEMPN + 12.10*TOTHH)/1000 * 0.99
-ELSE
-ENDIF
+	IF (zi.1.county=2 & J=1020) ;then 
+		;RB Trips
+		COMP MW[1] = (0.001*HHINCQ1 + 3.75*HHINCQ2 + 3.4*HHINCQ3 + 8.12*HHINCQ4 + 1.04*TOTEMPN)/1000 * 0.92
+		;RNB Trips
+		COMP MW[2] = (9.96*HHINCQ1 + 9.32*HHINCQ2 + 7.88*HHINCQ3 + 3.95*HHINCQ4 + 0.53*TOTEMPN)/1000 * 0.95
+		;NRB Trips
+		COMP MW[3] = (2.74*TOTEMPN + 2.98*FPSEMPN + 1.59*TOTHH)/1000 * 0.93
+		;NRNB Trips
+		COMP MW[4] = (0.01*TOTEMPN + 7.25*FPSEMPN + 12.10*TOTHH)/1000 * 0.99
+	ELSE
+	ENDIF
   
 ;Calculate trips originiated in Santa Clara County
-IF (zi.1.county=3 & J=1020) ;then 
-;RB Trips
-COMP MW[1] = (0.49*HHINCQ1 + 1.18*HHINCQ2 + 2.19*HHINCQ3 + 1.61*HHINCQ4 + 0.32*TOTEMPN)/1000 * 0.92
-;RNB Trips
-COMP MW[2] = (1.69*HHINCQ1 + 1.30*HHINCQ2 + 1.08*HHINCQ3 + 0.60*HHINCQ4 + 0.07*TOTEMPN)/1000 * 0.94
-;NRB Trips
-COMP MW[3] = (0.39*TOTEMPN + 1.57*FPSEMPN + 0.15*TOTHH)/1000 * 0.98
-;NRNB Trips
-COMP MW[4] = (0.08*TOTEMPN + 1.35*FPSEMPN + 2.22*TOTHH)/1000 * 0.99
-ELSE
-ENDIF
+	IF (zi.1.county=3 & J=1020) ;then 
+		;RB Trips
+		COMP MW[1] = (0.49*HHINCQ1 + 1.18*HHINCQ2 + 2.19*HHINCQ3 + 1.61*HHINCQ4 + 0.32*TOTEMPN)/1000 * 0.92
+		;RNB Trips
+		COMP MW[2] = (1.69*HHINCQ1 + 1.30*HHINCQ2 + 1.08*HHINCQ3 + 0.60*HHINCQ4 + 0.07*TOTEMPN)/1000 * 0.94
+		;NRB Trips
+		COMP MW[3] = (0.39*TOTEMPN + 1.57*FPSEMPN + 0.15*TOTHH)/1000 * 0.98
+		;NRNB Trips
+		COMP MW[4] = (0.08*TOTEMPN + 1.35*FPSEMPN + 2.22*TOTHH)/1000 * 0.99
+	ELSE
+	ENDIF
 
 ;Calculate trips originiated in Alameda County
-IF (zi.1.county=4 & J=1020) ;then 
-;RB Trips
-COMP MW[1] = (0.14*HHINCQ1 + 0.56*HHINCQ2 + 1.82*HHINCQ3 + 1.81*HHINCQ4 + 0.14*TOTEMPN)/1000 * 0.94
-;RNB Trips
-COMP MW[2] = (1.74*HHINCQ1 + 1.12*HHINCQ2 + 3.08*HHINCQ3 + 1.85*HHINCQ4 + 0.03*TOTEMPN)/1000 * 0.98
-;NRB Trips
-COMP MW[3] = (0.37*TOTEMPN + 0.99*FPSEMPN + 0.11*TOTHH)/1000 * 0.93
-;NRNB Trips
-COMP MW[4] = (0.12*TOTEMPN + 0.98*FPSEMPN + 2.37*TOTHH)/1000 * 0.98
-ELSE
-ENDIF
+	IF (zi.1.county=4 & J=1020) ;then 
+		;RB Trips
+		COMP MW[1] = (0.14*HHINCQ1 + 0.56*HHINCQ2 + 1.82*HHINCQ3 + 1.81*HHINCQ4 + 0.14*TOTEMPN)/1000 * 0.94
+		;RNB Trips
+		COMP MW[2] = (1.74*HHINCQ1 + 1.12*HHINCQ2 + 3.08*HHINCQ3 + 1.85*HHINCQ4 + 0.03*TOTEMPN)/1000 * 0.98
+		;NRB Trips
+		COMP MW[3] = (0.37*TOTEMPN + 0.99*FPSEMPN + 0.11*TOTHH)/1000 * 0.93
+		;NRNB Trips
+		COMP MW[4] = (0.12*TOTEMPN + 0.98*FPSEMPN + 2.37*TOTHH)/1000 * 0.98
+	ELSE
+	ENDIF
 
 ;Calculate trips originiated in Contra Costa County
-IF (zi.1.county=5 & J=1020) ;then 
-;RB Trips
-COMP MW[1] = (0.56*HHINCQ1 + 0.90*HHINCQ2 + 1.27*HHINCQ3 + 2.16*HHINCQ4 + 0.09*TOTEMPN)/1000 * 0.93
-;RNB Trips
-COMP MW[2] = (0.02*HHINCQ1 + 0.02*HHINCQ2 + 2.00*HHINCQ3 + 2.59*HHINCQ4 + 0.19*TOTEMPN)/1000 * 0.93
-;NRB Trips
-COMP MW[3] = (0.20*TOTEMPN + 0.27*FPSEMPN + 0.07*TOTHH)/1000 * 1.01
-;NRNB Trips
-COMP MW[4] = (0.01*TOTEMPN + 1.77*FPSEMPN + 1.38*TOTHH)/1000 * 1.09
-ELSE
-ENDIF
+	IF (zi.1.county=5 & J=1020) ;then 
+		;RB Trips
+		COMP MW[1] = (0.56*HHINCQ1 + 0.90*HHINCQ2 + 1.27*HHINCQ3 + 2.16*HHINCQ4 + 0.09*TOTEMPN)/1000 * 0.93
+		;RNB Trips
+		COMP MW[2] = (0.02*HHINCQ1 + 0.02*HHINCQ2 + 2.00*HHINCQ3 + 2.59*HHINCQ4 + 0.19*TOTEMPN)/1000 * 0.93
+		;NRB Trips
+		COMP MW[3] = (0.20*TOTEMPN + 0.27*FPSEMPN + 0.07*TOTHH)/1000 * 1.01
+		;NRNB Trips
+		COMP MW[4] = (0.01*TOTEMPN + 1.77*FPSEMPN + 1.38*TOTHH)/1000 * 1.09
+	ELSE
+	ENDIF
 
 ;Calculate trips originiated in Sonoma County
-IF (zi.1.county=8 & J=1020) ;then 
-;RB Trips
-COMP MW[1] = (0.76*HHINCQ1 + 1.14*HHINCQ2 + 1.61*HHINCQ3 + 2.71*HHINCQ4 + 0.11*TOTEMPN)/1000 * 0.93
-;RNB Trips
-COMP MW[2] = (0.02*HHINCQ1 + 0.02*HHINCQ2 + 2.90*HHINCQ3 + 3.78*HHINCQ4 + 0.28*TOTEMPN)/1000 * 0.91
-;NRB Trips
-COMP MW[3] = (0.74*TOTEMPN + 0.86*FPSEMPN + 0.26*TOTHH)/1000 * 1.04
-;NRNB Trips
-COMP MW[4] = (0.02*TOTEMPN + 3.48*FPSEMPN + 2.74*TOTHH)/1000 * 1.15
-ELSE
-ENDIF
+	IF (zi.1.county=8 & J=1020) ;then 
+		;RB Trips
+		COMP MW[1] = (0.76*HHINCQ1 + 1.14*HHINCQ2 + 1.61*HHINCQ3 + 2.71*HHINCQ4 + 0.11*TOTEMPN)/1000 * 0.93
+		;RNB Trips
+		COMP MW[2] = (0.02*HHINCQ1 + 0.02*HHINCQ2 + 2.90*HHINCQ3 + 3.78*HHINCQ4 + 0.28*TOTEMPN)/1000 * 0.91
+		;NRB Trips
+		COMP MW[3] = (0.74*TOTEMPN + 0.86*FPSEMPN + 0.26*TOTHH)/1000 * 1.04
+		;NRNB Trips
+		COMP MW[4] = (0.02*TOTEMPN + 3.48*FPSEMPN + 2.74*TOTHH)/1000 * 1.15
+	ELSE
+	ENDIF
 
 ;Calculate trips originated in Marin County
-IF (zi.1.county=9 & J=1020) ;then 
-;RB Trips
-COMP MW[1] = (2.37*HHINCQ1 + 3.55*HHINCQ2 + 4.99*HHINCQ3 + 8.41*HHINCQ4 + 0.34*TOTEMPN)/1000 * 0.93
-;RNB Trips
-COMP MW[2] = (0.03*HHINCQ1 + 0.03*HHINCQ2 + 5.20*HHINCQ3 + 6.77*HHINCQ4 + 0.50*TOTEMPN)/1000 * 0.94
-;NRB Trips
-COMP MW[3] = (0.75*TOTEMPN + 0.86*FPSEMPN + 0.26*TOTHH)/1000 * 1.02
-;NRNB Trips
-COMP MW[4] = (0.04*TOTEMPN + 6.35*FPSEMPN + 4.99*TOTHH)/1000 * 1.04
-ELSE
-ENDIF
-
-if (J=2989) ;then
-    COMP MW[1]=MW[1]*FACT
-    COMP MW[2]=MW[2]*FACT
-    COMP MW[3]=MW[3]*FACT
-    COMP MW[4]=MW[4]*FACT
-else
-endif
-
-if (J=1887) ;then
-comp mw[1]=mw[1]*fact2
-comp mw[2]=mw[2]*fact2
-comp mw[3]=mw[3]*fact2
-comp mw[4]=mw[4]*fact2
-else
-endif
-
-if (J=1020) ;then
-comp mw[1]=mw[1]*fact1
-comp mw[2]=mw[2]*fact1
-comp mw[3]=mw[3]*fact1
-comp mw[4]=mw[4]*fact1
-else
-endif
-  ENDJLOOP
+	IF (zi.1.county=9 & J=1020) ;then 
+		;RB Trips
+		COMP MW[1] = (2.37*HHINCQ1 + 3.55*HHINCQ2 + 4.99*HHINCQ3 + 8.41*HHINCQ4 + 0.34*TOTEMPN)/1000 * 0.93
+		;RNB Trips
+		COMP MW[2] = (0.03*HHINCQ1 + 0.03*HHINCQ2 + 5.20*HHINCQ3 + 6.77*HHINCQ4 + 0.50*TOTEMPN)/1000 * 0.94
+		;NRB Trips
+		COMP MW[3] = (0.75*TOTEMPN + 0.86*FPSEMPN + 0.26*TOTHH)/1000 * 1.02
+		;NRNB Trips
+		COMP MW[4] = (0.04*TOTEMPN + 6.35*FPSEMPN + 4.99*TOTHH)/1000 * 1.04
+		ELSE
+	ENDIF
   
+ENDJLOOP
+
 ENDRUN
+
+RUN PGM=MATRIX
+
+  ; Calculate Total Trips Genarated from the SE data and calculate Market Shares
+
+  ZONES = %TAZ_COUNT%
+  
+  MATI[1] = nonres\PTrips_AirPass_Share.MAT
+  FILEO PRINTO[1] = nonres\Inputs\airpasstrips_control.CSV
+  
+  ; Read Airport Enplanements
+  ;
+  oak_lookup = %MODEL_YEAR%  * 100 + 1
+  sfo_lookup = %MODEL_YEAR%  * 100 + 2
+  sjc_lookup = %MODEL_YEAR%  * 100 + 3
+
+  LOOKUP LIST=N, FILE= nonres\Inputs\airport_enplanements.dbf,name=enplanements,
+	LOOKUP[1] = lkp, result = total
+
+	INP_OAK_Passengers = enplanements(1, oak_lookup)
+	INP_SFO_Passengers = enplanements(1, sfo_lookup)
+	INP_SJC_Passengers = enplanements(1, sjc_lookup)
+  
+  OAK_TOTAL = OAK_TOTAL +MI.1.1[2989] +MI.1.2[2989] +MI.1.3[2989] +MI.1.4[2989]
+  SJC_TOTAL = SJC_TOTAL +MI.1.1[1887] +MI.1.2[1887] +MI.1.3[1887] +MI.1.4[1887]
+  SFO_TOTAL = SFO_TOTAL +MI.1.1[1020] +MI.1.2[1020] +MI.1.3[1020] +MI.1.4[1020]
+  
+  IF (I=%TAZ_COUNT%)
+	  LIST="AIRPORT","LKP","ENPLANE","TRIP_GEN", PRINTO=1, CSV=T
+	  LIST = "OAK", oak_lookup(6), INP_OAK_Passengers, OAK_TOTAL, PRINTO=1, CSV=T
+	  LIST = "SFO", sfo_lookup(6), INP_SFO_Passengers, SJC_TOTAL, PRINTO=1, CSV=T
+	  LIST = "SJC", sjc_lookup(6), INP_SJC_Passengers, SFO_TOTAL, PRINTO=1, CSV=T
+  ENDIF
+ENDRUN
+
+;run script to add area type to network links
+*"%PYTHON_PATH%\python.exe" %BASE_SCRIPTS%\preprocess\csvToDbf.py nonres\Inputs\airpasstrips_control.csv nonres\Inputs\airpasstrips_control.dbf
+IF (RETURNCODE > 0) abort
+
+RUN PGM=MATRIX
+
+  ; Calculate Airport Trips By Category By County
+
+  ZONES = %TAZ_COUNT%
+  
+  MATI[1] = nonres\PTrips_AirPass_Share.MAT
+  MATO[1] = nonres\PTrips_AirPass.MAT, MO=1-4,  NAME=RB,RNB,VB,VNB
+  FILEI LOOKUPI[1] = nonres\Inputs\airpasstrips_control.dbf
+  
+  LOOKUP lookupi=1, name=get_factors,
+	LOOKUP[1] = LKP, result = ENPLANE,
+	LOOKUP[2] = LKP, result = TRIP_GEN
+  
+  ; Read Airport Enplanements
+  ;
+  oak_lookup = %MODEL_YEAR% * 100 + 1
+  sfo_lookup = %MODEL_YEAR% * 100 + 2
+  sjc_lookup = %MODEL_YEAR% * 100 + 3
+
+  
+  OAK_FACT = get_factors(1, oak_lookup)/get_factors(2, oak_lookup)
+  SFO_FACT = get_factors(1, sfo_lookup)/get_factors(2, sfo_lookup)
+  SJC_FACT = get_factors(1, sjc_lookup)/get_factors(2, sjc_lookup)
+  
+ JLOOP	;TAZ market share
+	if (J=2989) ;then
+		MW[1] = mi.1.1[J]*OAK_FACT
+		MW[2] = mi.1.2[J]*OAK_FACT
+		MW[3] = mi.1.3[J]*OAK_FACT
+		MW[4] = mi.1.4[J]*OAK_FACT
+	else
+	endif
+
+	if (J=1887) ;then
+		MW[1] = mi.1.1[J]*SJC_FACT
+		MW[2] = mi.1.2[J]*SJC_FACT
+		MW[3] = mi.1.3[J]*SJC_FACT
+		MW[4] = mi.1.4[J]*SJC_FACT
+	else
+	endif
+
+	if (J=1020) ;then
+		MW[1] = mi.1.1[J]*SFO_FACT
+		MW[2] = mi.1.2[J]*SFO_FACT
+		MW[3] = mi.1.3[J]*SFO_FACT
+		MW[4] = mi.1.4[J]*SFO_FACT
+	else
+	endif
+
+ENDJLOOP
+
+
 RUN PGM=MATRIX
 
   ; Summarize Airport Passenger Person Trips by COunty
   
   ZONES = %TAZ_COUNT%
   
-  MATI[1] = nonres\2015_PTrips_Airpass.MAT
-  MATO[1] = nonres\2015_APTrips_CTY.MAT, MO=1-4, NAME=RB,RNB,VB,VNB
+  MATI[1] = nonres\PTrips_AirPass.MAT
+  MATO[1] = nonres\APTrips_CTY.MAT, MO=1-4, NAME=RB,RNB,VB,VNB
 
   MW[1] = MI.1.1   ; Resident Business Transit Person Trips
   MW[2] = MI.1.2   ; Resident Non Business Transit Person Trips
@@ -417,11 +463,10 @@ RUN PGM=MATRIX
 
   MATI[1] = skims\HWYSKMMD.TPP
   MATI[3] = skims\TRNSKMMD_WLK_HVY_WLK.TPP
-  MATI[5] = nonres\2015_PTrips_AirPass.MAT
+  MATI[5] = nonres\PTrips_AirPass.MAT
   ZDATI[1] = landuse\TAZDATA.DBF
   
-  MATO[1] = nonres\2015_APTrips_RB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
-  ;MATO[2] = c:\bcm\airport\?_Util_RB.MAT, mo=21,23,24, NAME=Auto,Transit,OnCall, DEC=9
+  MATO[1] = nonres\APTrips_RB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
 
   MW[2]=MI.1.1        ;congested highway travel time 3+
   MW[3]=MI.1.2        ;highway distance
@@ -588,10 +633,10 @@ RUN PGM=MATRIX
 
   MATI[1] = skims\HWYSKMMD.TPP
   MATI[3] = skims\TRNSKMMD_WLK_HVY_WLK.TPP
-  MATI[5] = nonres\2015_PTrips_AirPass.MAT
+  MATI[5] = nonres\PTrips_AirPass.MAT
   ZDATI[1] = landuse\TAZDATA.DBF
   
-  MATO[1] = nonres\2015_APTrips_RNB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
+  MATO[1] = nonres\APTrips_RNB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
   ;MATO[2] = c:\bcm\airport\?_Util_RB.MAT, mo=21,23,24, NAME=Auto,Transit,OnCall, DEC=9
 
   MW[2]=MI.1.1        ;congested highway travel time 3+
@@ -770,11 +815,10 @@ RUN PGM=MATRIX
 
   MATI[1] = skims\HWYSKMMD.TPP
   MATI[3] = skims\TRNSKMMD_WLK_HVY_WLK.TPP
-  MATI[5] = nonres\2015_PTrips_AirPass.MAT
+  MATI[5] = nonres\PTrips_AirPass.MAT
   ZDATI[1] = landuse\TAZDATA.DBF
   
-  MATO[1] = nonres\2015_APTrips_VB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
-  ;MATO[2] = c:\bcm\airport\?_Util_RB.MAT, mo=21,23,24, NAME=Auto,Transit,OnCall, DEC=9
+  MATO[1] = nonres\APTrips_VB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
 
   MW[2]=MI.1.1        ;congested highway travel time 3+
   MW[3]=MI.1.2        ;highway distance
@@ -944,11 +988,10 @@ RUN PGM=MATRIX
 
   MATI[1] = skims\HWYSKMMD.TPP
   MATI[3] = skims\TRNSKMMD_WLK_HVY_WLK.TPP
-  MATI[5] = nonres\2015_PTrips_AirPass.MAT
+  MATI[5] = nonres\PTrips_AirPass.MAT
   ZDATI[1] = landuse\TAZDATA.DBF
   
-  MATO[1] = nonres\2015_APTrips_VNB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
-  ;MATO[2] = c:\bcm\airport\?_Util_RB.MAT, mo=21,23,24, NAME=Auto,Transit,OnCall, DEC=9
+  MATO[1] = nonres\APTrips_VNB.MAT, mo=31,33,34, NAME=Auto,Transit,OnCall, DEC=6
 
   MW[2]=MI.1.1        ;congested highway travel time 3+
   MW[3]=MI.1.2        ;highway distance
@@ -1122,12 +1165,12 @@ RUN PGM=MATRIX
 
   ZONES = %TAZ_COUNT%
 
-  MATI[1] = nonres\2015_APTrips_RB.MAT
-  MATI[2] = nonres\2015_APTrips_RNB.MAT
-  MATI[3] = nonres\2015_APTrips_VB.MAT
-  MATI[4] = nonres\2015_APTrips_VNB.MAT
+  MATI[1] = nonres\APTrips_RB.MAT
+  MATI[2] = nonres\APTrips_RNB.MAT
+  MATI[3] = nonres\APTrips_VB.MAT
+  MATI[4] = nonres\APTrips_VNB.MAT
 
-  MATO[1] = nonres\2015_APTrips_SD.MAT, MO=1-4, NAME=RB,RNB,VB,VNB
+  MATO[1] = nonres\APTrips_SD.MAT, MO=1-4, NAME=RB,RNB,VB,VNB
 
   MW[1] = MI.1.1   ; Resident Business Transit Person Trips
   MW[2] = MI.2.1   ; Resident Non Business Transit Person Trips
@@ -1148,16 +1191,16 @@ RUN PGM=MATRIX
 
   ZONES = %TAZ_COUNT%
 
-  MATI[1] = nonres\2015_APTrips_RB.MAT
-  MATI[2] = nonres\2015_APTrips_RNB.MAT
-  MATI[3] = nonres\2015_APTrips_VB.MAT
-  MATI[4] = nonres\2015_APTrips_VNB.MAT
+  MATI[1] = nonres\APTrips_RB.MAT
+  MATI[2] = nonres\APTrips_RNB.MAT
+  MATI[3] = nonres\APTrips_VB.MAT
+  MATI[4] = nonres\APTrips_VNB.MAT
 
-  MATO[1] = nonres\2015_APTRIPS.MAT, MO=1-13,15,
+  MATO[1] = nonres\APTRIPS.MAT, MO=1-13,15,
     NAME= Auto_RB,Auto_RNB,Auto_VB,Auto_VNB,Auto_AirPass,
           Transit_RB,Transit_RNB,Transit_VB,Transit_VNB,Transit_AirPass,
           AirPass_HBW, AirPass_HSR, AirPass_NHB, AirPass_Total
-  MATO[2] = nonres\2015_APVEHTRIPS.MAT, MO=16-20,
+  MATO[2] = nonres\APVEHTRIPS.MAT, MO=16-20,
     NAME= Auto_DA,Auto_SR2,Auto_SR3,wlk_hvy_wlk, drv_hvy_wlk
          
   ; Auto Trips (add Auto and On-Call)
@@ -1210,8 +1253,8 @@ RUN PGM=MATRIX
   ; Calculate Peak period Vehicle Trips for Highway Assignments
   
   ZONES = %TAZ_COUNT%
-  MATI[1] = nonres\2015_APVEHTRIPS.MAT
-  MATO[1] = nonres\2015_APPKVEHTRIPS.MAT, MO=1-5,
+  MATI[1] = nonres\APVEHTRIPS.MAT
+  MATO[1] = nonres\APPKVEHTRIPS.MAT, MO=1-5,
     NAME= Auto_AM,Auto_MD,Auto_PM,Auto_EV,Auto_EA
   MW[1]=(MI.1.1+MI.1.2+MI.1.3+MI.1.1.T+MI.1.2.T+MI.1.3.T)*0.1111/100
   MW[2]=(MI.1.1+MI.1.2+MI.1.3+MI.1.1.T+MI.1.2.T+MI.1.3.T)*0.1667/100
@@ -1226,7 +1269,7 @@ RUN PGM=MATRIX
   ; Calculate Peak period Vehicle Trips for Highway Assignments
   
   ZONES = %TAZ_COUNT%
-  MATI[1] = nonres\2015_APVEHTRIPS.MAT
+  MATI[1] = nonres\APVEHTRIPS.MAT
   
   MATO[1] = nonres\tripsAirPaxEA.tpp, MO=1-6, NAME=DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
   MATO[2] = nonres\tripsAirPaxAM.tpp, MO=7-12, NAME=DA, SR2, SR3, DATOLL, SR2TOLL, SR3TOLL
