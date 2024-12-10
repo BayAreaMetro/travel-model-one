@@ -7,6 +7,40 @@ DOLLARS_2000_to_202X <- c(
     "2022"=1.81
 )
 
+censuskey            <- readLines("M:/Data/Census/API/api-key.txt")
+baycounties          <- c("01","13","41","55","75","81","85","95","97")
+state                <- "06"
+census_api_key(censuskey, install = TRUE, overwrite = TRUE)
+
+# Bring in 2020 block/TAZ equivalency, create block group ID and tract ID fields for later joining to ACS data
+# Add zero on that is lost in CSV conversion
+# Remove San Quentin block from file and move other blocks with population in TAZ 1439 to adjacent 1438
+
+BLOCK2020_to_TAZ1454_FILE <- "M:/Data/GIS layers/TM1_taz_census2020/2020block_to_TAZ1454.csv"
+BLOCK2020_TAZ1454 <- read.csv(
+    BLOCK2020_to_TAZ1454_FILE,
+    header=TRUE, 
+    colClasses=c("GEOID"="character","blockgroup"="character","tract"="character")) %>% 
+  filter (!(NAME=="Block 1007, Block Group 1, Census Tract 1220, Marin County, California")) %>%  # San Quentin block
+  mutate(TAZ1454=case_when(
+    NAME=="Block 1006, Block Group 1, Census Tract 1220, Marin County, California"   ~ as.integer(1438),
+    NAME=="Block 1002, Block Group 1, Census Tract 1220, Marin County, California"   ~ as.integer(1438),
+    TRUE                                                                             ~ TAZ1454
+  ))
+
+# columns are: GEOID, NAME, variable, blockgroup, tract, TAZ1454, SUPERD, block_POPULATION
+# e.g.
+#               GEOID                                                                         NAME variable   blockgroup       tract TAZ1454 SUPERD block_POPULATION
+#   1 060855017001008 Block 1008, Block Group 1, Census Tract 5017, Santa Clara County, California  P1_001N 060855017001 06085501700     560     11                0
+#   2 060855109001003 Block 1003, Block Group 1, Census Tract 5109, Santa Clara County, California  P1_001N 060855109001 06085510900     360      8               81
+#   3 060014351032020  Block 2020, Block Group 2, Census Tract 4351.03, Alameda County, California  P1_001N 060014351032 06001435103     820     17                0
+#   4 060014305003017     Block 3017, Block Group 3, Census Tract 4305, Alameda County, California  P1_001N 060014305003 06001430500     853     17              116
+#   5 060014506071030  Block 1030, Block Group 1, Census Tract 4506.07, Alameda County, California  P1_001N 060014506071 06001450607     739     15                0
+#   6 060014507451018  Block 1018, Block Group 1, Census Tract 4507.45, Alameda County, California  P1_001N 060014507451 06001450745     743     15              140
+
+print("BLOCK2020_TAZ1454:")
+print(head(BLOCK2020_TAZ1454))
+
 map_ACS5year_household_income_to_TM1_categories <- function(ACS_year) {
   # Because the 2021$ and 2022$ equivalent categories don't align with the 2000$
   # categories, households within these categories will be apportioned above and below.

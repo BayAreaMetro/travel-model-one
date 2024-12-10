@@ -329,35 +329,26 @@ DHC_tract_variables <-  c(
   gq_noninst_f_65p_oth        = "PCT19_189N"  # Female non-inst. 65+ other
 )
 
-# Bring in 2020 block/TAZ equivalency, create block group ID and tract ID fields for later joining to ACS data
-# Add zero on that is lost in CSV conversion
-# Remove San Quentin block from file and move other blocks with population in TAZ 1439 to adjacent 1438
 
-blockTAZ <- read.csv(
-    blockTAZ2020_in,
-    header=TRUE, 
-    colClasses=c("GEOID"="character","blockgroup"="character","tract"="character")) %>% 
-  filter (!(NAME=="Block 1007, Block Group 1, Census Tract 1220, Marin County, California")) %>%  # San Quentin block
-  mutate(TAZ1454=case_when(
-    NAME=="Block 1006, Block Group 1, Census Tract 1220, Marin County, California"   ~ as.integer(1438),
-    NAME=="Block 1002, Block Group 1, Census Tract 1220, Marin County, California"   ~ as.integer(1438),
-    TRUE                                                                             ~ TAZ1454
-  ))
 
 # Summarize block population by block group and tract 
 
-blockTAZBG <- blockTAZ %>% 
+blockTAZBG <- BLOCK2020_TAZ1454 %>% 
   group_by(blockgroup) %>%
   summarize(BGTotal=sum(block_POPULATION))
+print(paste("blockTAZBG has",nrow(blockTAZBG),"rows:"))
+print(head(blockTAZBG))
 
-blockTAZTract <- blockTAZ %>% 
+blockTAZTract <- BLOCK2020_TAZ1454 %>% 
   group_by(tract) %>%
   summarize(TractTotal=sum(block_POPULATION))
+print(paste("blockTAZTract has",nrow(blockTAZTract),"rows:"))
+print(head(blockTAZTract))
 
 # Create 2020 block share of total population for block/block group and block/tract, append to combined_block file
 # Be mindful of divide by zero error associated with 0-pop block groups and tracts
 
-combined_block <- left_join(blockTAZ,blockTAZBG,by="blockgroup") %>% mutate(
+combined_block <- left_join(BLOCK2020_TAZ1454,blockTAZBG,by="blockgroup") %>% mutate(
   sharebg=if_else(block_POPULATION==0,0,block_POPULATION/BGTotal))
 
 combined_block <- left_join(combined_block,blockTAZTract,by="tract") %>% mutate(
