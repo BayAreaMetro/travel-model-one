@@ -105,12 +105,10 @@ ACS_table <- load_variables(year=2021, dataset="acs5", cache=TRUE)
 DHC_BG_variables <- c(
 
 # Household totals
-  
   tothh             ="H12_001N",    # Total HHs 
   hhpop             ="P15_001N",	  # HH pop 
 
 # Age, male
-  
   male0_4           ="P12_003N",    # male aged 0 to 4 
   male5_9           ="P12_004N",		# male aged 5 to 9 
   male10_14         ="P12_005N",		# male aged 10 to 14
@@ -136,7 +134,6 @@ DHC_BG_variables <- c(
   male85p           ="P12_025N",		# male aged 85+ 
 
 # Age, female   
-    
   female0_4         ="P12_027N",   # female aged 0 to 4 
   female5_9         ="P12_028N",		# female aged 5 to 9 
   female10_14       ="P12_029N",		# female aged 10 to 14
@@ -161,8 +158,7 @@ DHC_BG_variables <- c(
   female80_84       ="P12_048N",		# female aged 80 to 84 
   female85p         ="P12_049N",		# female aged 85+ 
 
-# Household size by tenure
-
+# Household size by tenure -- replace with ACS5: B25009_004
   own1              ="H12_003N",    # own 1 person in HH 	     
   own2              ="H12_004N",    # own 2 persons in HH 
   own3              ="H12_005N",    # own 3 persons in HH 
@@ -178,8 +174,7 @@ DHC_BG_variables <- c(
   rent6             ="H12_016N",    # rent 6 persons in HH 
   rent7p            ="H12_017N",    # rent 7+ persons in HH
 
-# Race/Ethnicity variables
-
+# Race/Ethnicity variables # B03002_001
   white_nonh        ="P5_003N",   # White alone, not Hispanic
   black_nonh        ="P5_004N",   # Black alone, not Hispanic
   asian_nonh        ="P5_006N",   # Asian alone, not Hispanic
@@ -187,57 +182,79 @@ DHC_BG_variables <- c(
   total_hisp        ="P5_010N")   # Total Hispanic
 
 ACS_BG_variables <- c(
-  
-# Age, male
-  acs_male0_4_          ="B01001_003",    # male aged 0 to 4 
-  acs_male5_9_          ="B01001_004",		# male aged 5 to 9 
-  acs_male10_14_        ="B01001_005",		# male aged 10 to 14
-  acs_male15_17_        ="B01001_006",		# male aged 15 to 17
-  acs_male18_19_        ="B01001_007",		# male aged 18 to 19
-  acs_male20_           ="B01001_008",		# male aged 20 
-  acs_male21_           ="B01001_009",		# male aged 21 
-  acs_male22_24_        ="B01001_010",		# male aged 22 to 24 
-  acs_male25_29_        ="B01001_011",		# male aged 25 to 29 
-  acs_male30_34_        ="B01001_012",		# male aged 30 to 34 
-  acs_male35_39_        ="B01001_013",		# male aged 35 to 39 
-  acs_male40_44_        ="B01001_014",		# male aged 40 to 44 
-  acs_male45_49_        ="B01001_015",		# male aged 45 to 49 
-  acs_male50_54_        ="B01001_016",		# male aged 50 to 54 
-  acs_male55_59_        ="B01001_017",		# male aged 55 to 59 
-  acs_male60_61_        ="B01001_018",		# male aged 60 to 61 
-  acs_male62_64_        ="B01001_019",		# male aged 62 to 64 
-  acs_male65_66_        ="B01001_020",		# male aged 65 to 66 
-  acs_male67_69_        ="B01001_021",		# male aged 67 to 69 
-  acs_male70_74_        ="B01001_022",		# male aged 70 to 74 
-  acs_male75_79_        ="B01001_023",		# male aged 75 to 79 
-  acs_male80_84_        ="B01001_024",		# male aged 80 to 84 
-  acs_male85p_          ="B01001_025",		# male aged 85+ 
 
-# Age, female   
-    
-  acs_female0_4_        ="B01001_027",   # female aged 0 to 4 
-  acs_female5_9_        ="B01001_028",		# female aged 5 to 9 
-  acs_female10_14_      ="B01001_029",		# female aged 10 to 14
-  acs_female15_17_      ="B01001_030",		# female aged 15 to 17
-  acs_female18_19_      ="B01001_031",		# female aged 18 to 19
-  acs_female20_         ="B01001_032",		# female aged 20 
-  acs_female21_         ="B01001_033",		# female aged 21 
-  acs_female22_24_      ="B01001_034",		# female aged 22 to 24 
-  acs_female25_29_      ="B01001_035",		# female aged 25 to 29 
-  acs_female30_34_      ="B01001_036",		# female aged 30 to 34 
-  acs_female35_39_      ="B01001_037",		# female aged 35 to 39 
-  acs_female40_44_      ="B01001_038",		# female aged 40 to 44 
-  acs_female45_49_      ="B01001_039",		# female aged 45 to 49 
-  acs_female50_54_      ="B01001_040",		# female aged 50 to 54 
-  acs_female55_59_      ="B01001_041",		# female aged 55 to 59 
-  acs_female60_61_      ="B01001_042",		# female aged 60 to 61 
-  acs_female62_64_      ="B01001_043",		# female aged 62 to 64 
-  acs_female65_66_      ="B01001_044",		# female aged 65 to 66 
-  acs_female67_69_      ="B01001_045",		# female aged 67 to 69 
-  acs_female70_74_      ="B01001_046",		# female aged 70 to 74 
-  acs_female75_79_      ="B01001_047",		# female aged 75 to 79 
-  acs_female80_84_      ="B01001_048",		# female aged 80 to 84 
-  acs_female85p_        ="B01001_049",		# female aged 85+ 
+# Age, male
+  acs_male0_4_      ="B01001_003",      # male aged 0 to 4 
+  acs_male5_9_      ="B01001_004",    # male aged 5 to 9 
+  acs_male10_14_    ="B01001_005",    # male aged 10 to 14
+  acs_male15_17_    ="B01001_006",    # male aged 15 to 17
+  acs_male18_19_    ="B01001_007",    # male aged 18 to 19
+  acs_male20_       ="B01001_008",    # male aged 20 
+  acs_male21_       ="B01001_009",    # male aged 21 
+  acs_male22_24_    ="B01001_010",    # male aged 22 to 24 
+  acs_male25_29_    ="B01001_011",    # male aged 25 to 29 
+  acs_male30_34_    ="B01001_012",    # male aged 30 to 34 
+  acs_male35_39_    ="B01001_013",    # male aged 35 to 39 
+  acs_male40_44_    ="B01001_014",    # male aged 40 to 44 
+  acs_male45_49_    ="B01001_015",    # male aged 45 to 49 
+  acs_male50_54_    ="B01001_016",    # male aged 50 to 54 
+  acs_male55_59_    ="B01001_017",    # male aged 55 to 59 
+  acs_male60_61_    ="B01001_018",    # male aged 60 to 61 
+  acs_male62_64_    ="B01001_019",    # male aged 62 to 64 
+  acs_male65_66_    ="B01001_020",    # male aged 65 to 66 
+  acs_male67_69_    ="B01001_021",    # male aged 67 to 69 
+  acs_male70_74_    ="B01001_022",    # male aged 70 to 74 
+  acs_male75_79_    ="B01001_023",    # male aged 75 to 79 
+  acs_male80_84_    ="B01001_024",    # male aged 80 to 84 
+  acs_male85p_      ="B01001_025",    # male aged 85+ 
+
+# Age, female
+  acs_female0_4_    ="B01001_027",     # female aged 0 to 4 
+  acs_female5_9_    ="B01001_028",    # female aged 5 to 9 
+  acs_female10_14_  ="B01001_029",    # female aged 10 to 14
+  acs_female15_17_  ="B01001_030",    # female aged 15 to 17
+  acs_female18_19_  ="B01001_031",    # female aged 18 to 19
+  acs_female20_     ="B01001_032",    # female aged 20 
+  acs_female21_     ="B01001_033",    # female aged 21 
+  acs_female22_24_  ="B01001_034",    # female aged 22 to 24 
+  acs_female25_29_  ="B01001_035",    # female aged 25 to 29 
+  acs_female30_34_  ="B01001_036",    # female aged 30 to 34 
+  acs_female35_39_  ="B01001_037",    # female aged 35 to 39 
+  acs_female40_44_  ="B01001_038",    # female aged 40 to 44 
+  acs_female45_49_  ="B01001_039",    # female aged 45 to 49 
+  acs_female50_54_  ="B01001_040",    # female aged 50 to 54 
+  acs_female55_59_  ="B01001_041",    # female aged 55 to 59 
+  acs_female60_61_  ="B01001_042",    # female aged 60 to 61 
+  acs_female62_64_  ="B01001_043",    # female aged 62 to 64 
+  acs_female65_66_  ="B01001_044",    # female aged 65 to 66 
+  acs_female67_69_  ="B01001_045",    # female aged 67 to 69 
+  acs_female70_74_  ="B01001_046",    # female aged 70 to 74 
+  acs_female75_79_  ="B01001_047",    # female aged 75 to 79 
+  acs_female80_84_  ="B01001_048",    # female aged 80 to 84 
+  acs_female85p_    ="B01001_049",    # female aged 85+ 
+
+# Household size by tenure
+  acs_own1_         ="B25009_003",    # own 1 person in HH 	     
+  acs_own2_         ="B25009_004",    # own 2 persons in HH 
+  acs_own3_         ="B25009_005",    # own 3 persons in HH 
+  acs_own4_         ="B25009_006",    # own 4 persons in HH 
+  acs_own5_         ="B25009_007",    # own 5 persons in HH 
+  acs_own6_         ="B25009_008",    # own 6 persons in HH 
+  acs_own7p_        ="B25009_009",    # own 7+ persons in HH 
+  acs_rent1_        ="B25009_011",    # rent 1 person in HH
+  acs_rent2_        ="B25009_012",    # rent 2 persons in HH 
+  acs_rent3_        ="B25009_013",    # rent 3 persons in HH 
+  acs_rent4_        ="B25009_014",    # rent 4 persons in HH 
+  acs_rent5_        ="B25009_015",    # rent 5 persons in HH 
+  acs_rent6_        ="B25009_016",    # rent 6 persons in HH 
+  acs_rent7p_       ="B25009_017",    # rent 7+ persons in HH
+
+# Race/Ethnicity variables # B03002_001
+  acs_white_nonh_   ="B03002_003",   # White alone, not Hispanic
+  acs_black_nonh_   ="B03002_004",   # Black alone, not Hispanic
+  acs_asian_nonh_   ="B03002_006",   # Asian alone, not Hispanic
+  acs_total_nonh_   ="B03002_002",   # Total, not Hispanic
+  acs_total_hisp_   ="B03002_012",   # Total Hispanic
 
 # Units
   unit1d_           ="B25024_002",    # 1 unit detached    
@@ -351,8 +368,6 @@ DHC_tract_variables <-  c(
   gq_noninst_f_65p_mil        = "PCT19_186N", # Female non-inst. 65+ military
   gq_noninst_f_65p_oth        = "PCT19_189N"  # Female non-inst. 65+ other
 )
-
-
 
 # Summarize block population by block group and tract 
 
@@ -488,36 +503,40 @@ workingdata <- interim %>% mutate(
   asian_nonh=asian_nonh*sharebg,
   other_nonh=(total_nonh-(white_nonh+black_nonh+asian_nonh))*sharebg,   # "Other, non-Hisp is total non-Hisp minus white,black,Asian
   hispanic=total_hisp*sharebg,
-  SFDU=(unit1d+
-          unit1a+
-          mobile+
-          boat_RV_Van)*sharebg,
-  MFDU=(unit2+
-          unit3_4+
-          unit5_9+
-          unit10_19+
-          unit20_49+
-          unit50p)*sharebg,
+  # ACS version
+  acs_white_nonh=acs_white_nonh*sharebg,
+  acs_black_nonh=acs_black_nonh*sharebg,
+  acs_asian_nonh=acs_asian_nonh*sharebg,
+  acs_other_nonh=(acs_total_nonh-(acs_white_nonh+acs_black_nonh+acs_asian_nonh))*sharebg,   # "Other, non-Hisp is total non-Hisp minus white,black,Asian
+  acs_hispanic=acs_total_hisp*sharebg,
+  # single family versus mult-family
+  SFDU=(unit1d+unit1a+mobile+boat_RV_Van)*sharebg,
+  MFDU=(unit2+unit3_4+unit5_9+unit10_19+unit20_49+unit50p)*sharebg,
+  # tenure
   hh_own=(own1+own2+own3+own4+own5+own6+own7p)*sharebg,
   hh_rent=(rent1+rent2+rent3+rent4+rent5+rent6+rent7p)*sharebg,
+  # households by size
   hh_size_1=(own1+rent1)*sharebg,
   hh_size_2=(own2+rent2)*sharebg,
   hh_size_3=(own3+rent3)*sharebg,
-  hh_size_4_plus=(own4+
-                   own5+
-                   own6+
-                   own7p+
-                   rent4+
-                   rent5+
-                   rent6+
-                   rent7p)*sharebg,
+  hh_size_4_plus=(own4+own5+own6+own7p+rent4+rent5+rent6+rent7p)*sharebg,
+  # ACS version
+  acs_hh_own=(acs_own1+acs_own2+acs_own3+acs_own4+acs_own5+acs_own6+acs_own7p)*sharebg,
+  acs_hh_rent=(acs_rent1+acs_rent2+acs_rent3+acs_rent4+acs_rent5+acs_rent6+acs_rent7p)*sharebg,
+  acs_hh_size_1=(acs_own1+acs_rent1)*sharebg,
+  acs_hh_size_2=(acs_own2+acs_rent2)*sharebg,
+  acs_hh_size_3=(acs_own3+acs_rent3)*sharebg,
+  acs_hh_size_4_plus=(acs_own4+acs_own5+acs_own6+acs_own7p+acs_rent4+acs_rent5+acs_rent6+acs_rent7p)*sharebg,
+
   # households by number of workers
   hh_wrks_0=hhwrks0*sharetract,
   hh_wrks_1=hhwrks1*sharetract,
   hh_wrks_2=hhwrks2*sharetract,
   hh_wrks_3_plus=hhwrks3p*sharetract,
+  # households with children or not
   hh_kids_yes=(ownkidsyes+rentkidsyes)*sharetract,
   hh_kids_no=(ownkidsno+rentkidsno)*sharetract,
+  # persons by occupation
   pers_occ_management   = (occ_m_manage    + occ_f_manage   )*sharebg,
   pers_occ_professional = (occ_m_prof_biz  + occ_f_prof_biz  +
                            occ_m_prof_comp + occ_f_prof_comp +
@@ -537,6 +556,7 @@ workingdata <- interim %>% mutate(
                            occ_m_man_nat   + occ_f_man_nat   +
                            occ_m_man_prod  + occ_f_man_prod )*sharebg,
   pers_occ_military     = (armedforces)*sharebg,
+  # group quarters
   gq_type_univ  =(gq_noninst_m_0017_univ +
                          gq_noninst_m_1864_univ +
                          gq_noninst_m_65p_univ  +
@@ -659,14 +679,37 @@ print(temp0)
 print("str(temp0):")
 print(str(temp0))
 
+print("DHC GQ population:")
+DHC_gqpop <- temp0 %>%
+  select(TAZ1454, gq_type_univ, gq_type_mil, gq_type_othnon, gqpop) %>% 
+  left_join(., select(TAZ_SD_COUNTY,ZONE,County_Name), by=c("TAZ1454"="ZONE")) %>% 
+  group_by(County_Name) %>% summarize(
+    gq_type_univ  =sum(gq_type_univ), 
+    gq_type_mil   =sum(gq_type_mil),
+    gq_type_othnon=sum(gq_type_othnon),
+    gqpop         =sum(gqpop))
+print(DHC_gqpop)
+print("Regional totals --")
+print(paste("gq_type_univ  :", format(sum(DHC_gqpop$gq_type_univ),   nsmall=0, big.mark=',')))
+print(paste("gq_type_mil   :", format(sum(DHC_gqpop$gq_type_mil),    nsmall=0, big.mark=',')))
+print(paste("gq_type_othnon:", format(sum(DHC_gqpop$gq_type_othnon), nsmall=0, big.mark=',')))
+print(paste("gqpop         :", format(sum(DHC_gqpop$gqpop),          nsmall=0, big.mark=',')))
+
 print("DHC population by age versus ACS population by age:")
-print(select(temp0, TAZ1454,
-  sum_age, sum_ACS_age, 
-  AGE0004, ACS_AGE0004, 
-  AGE0519, ACS_AGE0519, 
-  AGE2044, ACS_AGE2044, 
-  AGE4564, ACS_AGE4564, 
-  AGE65P,  ACS_AGE65P))
+DHC_sum_age_ACS_sum_age <- temp0 %>%
+  select(TAZ1454,
+    sum_age, sum_ACS_age, 
+    AGE0004, ACS_AGE0004, 
+    AGE0519, ACS_AGE0519, 
+    AGE2044, ACS_AGE2044, 
+    AGE4564, ACS_AGE4564, 
+    AGE65P,  ACS_AGE65P
+  ) %>% left_join(., select(TAZ_SD_COUNTY,ZONE,County_Name), by=c("TAZ1454"="ZONE"))
+print(DHC_sum_age_ACS_sum_age)
+
+print("by county:")
+print(DHC_sum_age_ACS_sum_age %>% group_by(County_Name) %>% summarize(
+  sum_age=sum(sum_age), sum_ACS_age=sum(sum_ACS_age)))
 
 print("DHC total households versus ACS total households (from households by number of workers)")
 print(select(temp0, TAZ1454,
@@ -1032,9 +1075,6 @@ write.csv(popsim_vars_county, "TAZ1454 2020 Popsim Vars County.csv", row.names =
 print(paste("Wrote","TAZ1454 2020 Popsim Vars County.csv"))
 
 # Output into Tableau-friendly format
-
-print("str(PBA2015):")
-print(str(PBA2015))
 
 PBA2015_long <- PBA2015 %>%
   mutate(gqpop=TOTPOP-HHPOP) %>% 
