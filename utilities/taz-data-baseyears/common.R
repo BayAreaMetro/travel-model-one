@@ -3,13 +3,13 @@
 
 # https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
 DOLLARS_2000_to_202X <- c(
-    "2021"=1.72, 
-    "2022"=1.81
+  "2021"=1.72, 
+  "2022"=1.81
 )
 
-censuskey            <- readLines("M:/Data/Census/API/api-key.txt")
-baycounties          <- c("01","13","41","55","75","81","85","95","97")
-state                <- "06"
+censuskey    <- readLines("M:/Data/Census/API/api-key.txt")
+baycounties  <- c("01","13","41","55","75","81","85","95","97")
+state        <- "06"
 census_api_key(censuskey, install = TRUE, overwrite = TRUE)
 
 # Bring in 2020 block/TAZ equivalency, create block group ID and tract ID fields for later joining to ACS data
@@ -18,15 +18,15 @@ census_api_key(censuskey, install = TRUE, overwrite = TRUE)
 
 BLOCK2020_to_TAZ1454_FILE <- "M:/Data/GIS layers/TM1_taz_census2020/2020block_to_TAZ1454.csv"
 BLOCK2020_TAZ1454 <- read.csv(
-    BLOCK2020_to_TAZ1454_FILE,
-    header=TRUE, 
-    colClasses=c("GEOID"="character","blockgroup"="character","tract"="character")) %>% 
-  filter (!(NAME=="Block 1007, Block Group 1, Census Tract 1220, Marin County, California")) %>%  # San Quentin block
-  mutate(TAZ1454=case_when(
-    NAME=="Block 1006, Block Group 1, Census Tract 1220, Marin County, California"   ~ as.integer(1438),
-    NAME=="Block 1002, Block Group 1, Census Tract 1220, Marin County, California"   ~ as.integer(1438),
-    TRUE                                                                             ~ TAZ1454
-  ))
+  BLOCK2020_to_TAZ1454_FILE,
+  header=TRUE, 
+  colClasses=c("GEOID"="character","blockgroup"="character","tract"="character")) %>% 
+filter (!(NAME=="Block 1007, Block Group 1, Census Tract 1220, Marin County, California")) %>%  # San Quentin block
+mutate(TAZ1454=case_when(
+  NAME=="Block 1006, Block Group 1, Census Tract 1220, Marin County, California"   ~ as.integer(1438),
+  NAME=="Block 1002, Block Group 1, Census Tract 1220, Marin County, California"   ~ as.integer(1438),
+  TRUE                                                                             ~ TAZ1454)
+)
 
 # columns are: GEOID, NAME, variable, blockgroup, tract, TAZ1454, SUPERD, block_POPULATION
 # e.g.
@@ -227,4 +227,34 @@ map_ACS5year_household_income_to_TM1_categories <- function(ACS_year) {
   print(paste0("########################## map_ACS5year_household_income_to_TM1_categories(",ACS_year,") end ##########################"))
 
   return(PUMS_hhinc_cat)
+}
+
+check_consistency_empres_hhworkers <- function(tazdata) {
+  # Required tazdata columns: ZONE, EMPRES, TOTHH, hh_wrks_0, hh_wrks_1, hh_wrks_2, hh_wrks_3_plus
+  #
+  # Perform a simple check of consistency between EMPRES and hh_wrks_0, hh_wrks_1, hh_wrks_2, hh_wrks_3_plus
+  # by looking at implied number of workers in households with 3+ workers
+  # and implied number of workers per household in those households
+  tazdata_with_check <- tazdata %>% select(
+        ZONE, EMPRES, TOTHH, hh_wrks_0, hh_wrks_1, hh_wrks_2, hh_wrks_3_plus
+    ) %>% mutate(
+    # verify (hh_wrks_0 + hh_wrks_1 + hh_wrks_2 + hh_wrks_3_plus == TOTHH)
+    tot_hh_wrks = hh_wrks_0 + hh_wrks_1 + hh_wrks_2 + hh_wrks_3_plus,
+    # number of workers in households with 3+ workers
+    implied_wrks_3_plus = EMPRES - (1*hh_wrks_1) - (2*hh_wrks_2),
+    implied_wrks_3_plus_per_hhld = ifelse(hh_wrks_3_plus==0, 0, implied_wrks_3_plus/hh_wrks_3_plus)
+  )
+  print("###### check_consistency_empres_hhworkers: implied_wrks_3_plus, implied_wrks_3_plus_per_hhld:")
+  print(tazdata_with_check)
+
+  # print out lines with negative implied_wrks_3_plus
+  print("tazdata_with_check with negative implied_wrks_3_plus:")
+  print(filter(tazdata_with_check, implied_wrks_3_plus < 0))
+
+  print("tazdata_with_check with <3 implied_wrks_3_plus_per_hhld:")
+  print(filter(tazdata_with_check, implied_wrks_3_plus_per_hhld < 3 ))
+}
+
+correct_households_by_number_of_workers <- function(ACS5_year) {
+  # This function corrects households by number of workers
 }
