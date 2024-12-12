@@ -1,74 +1,72 @@
-# Create "2020" TAZ data from ACS 2018-2022 
-# SI
-#
+USAGE = "
+  Create 202X TAZ data from ACS 5-year data.
+"
 # Notes
-# 1. ACS data here is downloaded for the 2017-2021 5-year dataset. The end year can be updated 
-#    by changing the *ACS_year* variable. 
+# 1. Group quarter data is not available below state level from ACS, so 2020 Decennial census numbers
+#    are used instead, and then scaled (if applicable)
+#
+# 2. ACS data here is downloaded for relevant 5-year dataset. 
 # 
-# 2. ACS block group variables used in all instances where not suppressed. If suppressed at the block group 
+# 3. ACS block group variables used in all instances where not suppressed. If suppressed at the block group 
 #    level, tract-level data used instead. Suppressed variables may change if ACS_year is changed. This 
 #    should be checked, as this change could cause the script not to work.
-# 
-# 3. Different than the effort for 2015, many small area variables (such as age, total population, etc.) are
-#    available from Census 2020 data. 
-# 
-# 4. TAZs are scaled up to match Census 2020 totals 
 #
-# 5. Employment is not 2020!  It's based on 2021 data (lodes_wac_employment_2021.csv)
-#    although the estimates of self-employment are from based on other sources.
-#    This is ok because we're not modeling 2020 so the results here are only an interim product
-#    for creating 2023 TAZ data.
-#  
 
 options(width=500)
 options(max.print=2000)
 options(show.error.locations = TRUE)
 
-# The working directory is set as the location of the script. All other paths in TM1 will be relative.
-tryCatch(
-{
-  wd <- paste0(dirname(rstudioapi::getActiveDocumentContext()$path),"/")
-  setwd(wd)
-}, error = function(cond) {
-  # don't worry if it doesn't work -- maybe someone isn't using rstudio
-})
-
 # Import Libraries
-
 suppressMessages(library(tidyverse))
 library(tidycensus)
 library(readxl)
+library(argparser)
+
+argparser <- arg_parser(USAGE, hide.opts=TRUE)
+argparser <- add_argument(parser=argparser, arg="year", type="integer", help="Year for TAZ data")
+# parse the command line arguments
+argv <- parse_args(argparser)
+stopifnot(argv$year %in% c(2020, 2021, 2023))
 
 # write to log
-run_log <- "create_2020_tazdata.log"
+run_log <- file.path(argv$year, paste0("create_tazdata_",argv$year,".log"))
 print(paste("Writing log to",run_log))
 sink(run_log, append=FALSE, type = c('output', 'message'))
 
 # Bring in common methods
-source("../common.R")
+source("./common.R")
 
-# this is for acs5; 2021 (which is 2017-2021) and 2022 (which is 2018-2022) supported
-ACS_year <- 2022
+# figure out our primary datasource - which ACS5-year
+ACS_5YEAR_LATEST <- 2022
+ACS_year <- argv$year + 2  # ACS 5 year would then go from argv$year - 2 to argv$year + 2
+ACS_year <- min(ACS_year, ACS_5YEAR_LATEST)
+print(paste("ACS_year:", ACS_year))
 
-USERPROFILE          <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
-BOX_TM               <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
+# lodes year
+LODES_YEAR_LATEST <- 2022
+LODES_YEAR = min(argv$year, LODES_YEAR_LATEST)
+
+# setup paths
+USERPROFILE        <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
+BOX_TM             <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
 if (Sys.getenv("USERNAME") %in% c("lzorn")) {
-  BOX_TM             <- file.path("E://Box/Modeling and Surveys")
+  BOX_TM           <- file.path("E://Box/Modeling and Surveys")
 }
-PBA_TAZ_2015         <- file.path(BOX_TM, "Share Data", "plan-bay-area-2050", "tazdata","PBA50_FinalBlueprintLandUse_TAZdata.xlsx")
-
-# Bring in 2020 TAZ employment data
-# NOTE: Since 2021 lodes_wac_employment is available, we'll use it since it's more current
-
-TM1                   <- file.path("..")
-emp_wagesal_2021      <- read.csv(file.path(TM1,"2020","Employment","lodes_wac_employment_2021.csv"),header = T)
-emp_selfemp_2020      <- read.csv(file.path(TM1,"2020","Self Employed Workers","taz_self_employed_workers_2020.csv"),header = T)
-TAZ_SD_COUNTY         <- read.csv(file.path("..","..","geographies","taz-superdistrict-county.csv"), header=T) %>% 
+PBA_TAZ_2015       <- file.path(BOX_TM, "Share Data", "plan-bay-area-2050", "tazdata","PBA50_FinalBlueprintLandUse_TAZdata.xlsx")
+TM1                <- file.path(".")
+emp_wage_salary    <- read.csv(file.path(TM1,LODES_YEAR,paste0("lodes_wac_employment_",LODES_YEAR,".csv")),header = T)
+emp_self_employed  <- read.csv(file.path(TM1,argv$year,paste0("taz_self_employed_workers_",argv$year,".csv")),header = T)
+TAZ_SD_COUNTY      <- read.csv(file.path("..","geographies","taz-superdistrict-county.csv"), header=T) %>% 
   rename(County_Name=COUNTY_NAME, DISTRICT=SD, DISTRICT_NAME=SD_NAME) %>% select(-SD_NUM_NAME, -COUNTY_NUM_NAME)
 # TAZ_SD_COUNTY columns: ZONE,DISTRICT,COUNTY,DISTRICT_NAME,County_Name
 
+PUMS_COUNTY_3P_WORKERS <- read.csv(file.path("M:/Data/Census/PUMS", 
+  sprintf("PUMS %d-%02d", ACS_year-4, ACS_year %% 100), "Avg_3p_Workers_County.csv"), header=T)
+print("PUMS_COUNTY_3P_WORKERS:")
+print(PUMS_COUNTY_3P_WORKERS)
+
 # Restructure employment frame to wide format
-emp_selfemp_2020_w <- emp_selfemp_2020 %>%
+emp_self_employed_w <- emp_self_employed %>%
   select(-c(X)) %>%
   pivot_wider(names_from = industry, values_from = value, values_fill = 0) %>%
   mutate(TOTEMP = rowSums(select(., -zone_id))) %>%
@@ -77,184 +75,99 @@ emp_selfemp_2020_w <- emp_selfemp_2020 %>%
   rename_all(toupper)
 
 # Combine the two employment frames - wage/salary, and self-employment
-total_employment_2021 <- bind_rows(emp_wagesal_2021, emp_selfemp_2020_w,.id='src')
+employment <- bind_rows(emp_wage_salary, emp_self_employed_w,.id='src')
 
 # Group by TAZ1454 and calculate the sum for total employment by taz (wage/salary plus self-employment)
-employment_2021 <- total_employment_2021 %>%
+employment <- employment %>%
   group_by(TAZ1454) %>%
   summarize_if(is.numeric, sum, na.rm = F)
 
 baycounties <- c("01","13","41","55","75","81","85","95","97")
 state_code <- "06" 
 
-# Bring in PBA 2050 2015 land use data for county equivalencies and other data needs
-# 1=San Francisco; 2=San Mateo; 3=Santa Clara; 4=Alameda; 5=Contra Costa; 6=Solano; 7= Napa; 8=Sonoma; 9=Marin
-
-PBA2015 <- read_excel(PBA_TAZ_2015,sheet="census2015") 
-
-PUMS_hhinc_cat <- map_ACS5year_household_income_to_TM1_categories(ACS_year)
-
 # Import decennial census (DHC file) and ACS for variable inspection, use to get variable numbers
-
 DHC_table <- load_variables(year=2020, dataset="dhc", cache=TRUE)
-ACS_table <- load_variables(year=2021, dataset="acs5", cache=TRUE)
+ACS_table <- load_variables(year=ACS_year, dataset="acs5", cache=TRUE)
 
 # Identify the 2020 decennial census variables
 # Some variables skipped in sequence due to nesting
 
-DHC_BG_variables <- c(
-
-# Household totals
-  tothh             ="H12_001N",    # Total HHs 
-  hhpop             ="P15_001N",	  # HH pop 
-
-# Age, male
-  male0_4           ="P12_003N",    # male aged 0 to 4 
-  male5_9           ="P12_004N",		# male aged 5 to 9 
-  male10_14         ="P12_005N",		# male aged 10 to 14
-  male15_17         ="P12_006N",		# male aged 15 to 17
-  male18_19         ="P12_007N",		# male aged 18 to 19
-  male20            ="P12_008N",		# male aged 20 
-  male21            ="P12_009N",		# male aged 21 
-  male22_24         ="P12_010N",		# male aged 22 to 24 
-  male25_29         ="P12_011N",		# male aged 25 to 29 
-  male30_34         ="P12_012N",		# male aged 30 to 34 
-  male35_39         ="P12_013N",		# male aged 35 to 39 
-  male40_44         ="P12_014N",		# male aged 40 to 44 
-  male45_49         ="P12_015N",		# male aged 45 to 49 
-  male50_54         ="P12_016N",		# male aged 50 to 54 
-  male55_59         ="P12_017N",		# male aged 55 to 59 
-  male60_61         ="P12_018N",		# male aged 60 to 61 
-  male62_64         ="P12_019N",		# male aged 62 to 64 
-  male65_66         ="P12_020N",		# male aged 65 to 66 
-  male67_69         ="P12_021N",		# male aged 67 to 69 
-  male70_74         ="P12_022N",		# male aged 70 to 74 
-  male75_79         ="P12_023N",		# male aged 75 to 79 
-  male80_84         ="P12_024N",		# male aged 80 to 84 
-  male85p           ="P12_025N",		# male aged 85+ 
-
-# Age, female   
-  female0_4         ="P12_027N",   # female aged 0 to 4 
-  female5_9         ="P12_028N",		# female aged 5 to 9 
-  female10_14       ="P12_029N",		# female aged 10 to 14
-  female15_17       ="P12_030N",		# female aged 15 to 17
-  female18_19       ="P12_031N",		# female aged 18 to 19
-  female20          ="P12_032N",		# female aged 20 
-  female21          ="P12_033N",		# female aged 21 
-  female22_24       ="P12_034N",		# female aged 22 to 24 
-  female25_29       ="P12_035N",		# female aged 25 to 29 
-  female30_34       ="P12_036N",		# female aged 30 to 34 
-  female35_39       ="P12_037N",		# female aged 35 to 39 
-  female40_44       ="P12_038N",		# female aged 40 to 44 
-  female45_49       ="P12_039N",		# female aged 45 to 49 
-  female50_54       ="P12_040N",		# female aged 50 to 54 
-  female55_59       ="P12_041N",		# female aged 55 to 59 
-  female60_61       ="P12_042N",		# female aged 60 to 61 
-  female62_64       ="P12_043N",		# female aged 62 to 64 
-  female65_66       ="P12_044N",		# female aged 65 to 66 
-  female67_69       ="P12_045N",		# female aged 67 to 69 
-  female70_74       ="P12_046N",		# female aged 70 to 74 
-  female75_79       ="P12_047N",		# female aged 75 to 79 
-  female80_84       ="P12_048N",		# female aged 80 to 84 
-  female85p         ="P12_049N",		# female aged 85+ 
-
-# Household size by tenure -- replace with ACS5: B25009_004
-  own1              ="H12_003N",    # own 1 person in HH 	     
-  own2              ="H12_004N",    # own 2 persons in HH 
-  own3              ="H12_005N",    # own 3 persons in HH 
-  own4              ="H12_006N",    # own 4 persons in HH 
-  own5              ="H12_007N",    # own 5 persons in HH 
-  own6              ="H12_008N",    # own 6 persons in HH 
-  own7p             ="H12_009N",    # own 7+ persons in HH 
-  rent1             ="H12_011N",    # rent 1 person in HH
-  rent2             ="H12_012N",    # rent 2 persons in HH 
-  rent3             ="H12_013N",    # rent 3 persons in HH 
-  rent4             ="H12_014N",    # rent 4 persons in HH 
-  rent5             ="H12_015N",    # rent 5 persons in HH 
-  rent6             ="H12_016N",    # rent 6 persons in HH 
-  rent7p            ="H12_017N",    # rent 7+ persons in HH
-
-# Race/Ethnicity variables # B03002_001
-  white_nonh        ="P5_003N",   # White alone, not Hispanic
-  black_nonh        ="P5_004N",   # Black alone, not Hispanic
-  asian_nonh        ="P5_006N",   # Asian alone, not Hispanic
-  total_nonh        ="P5_002N",   # Total, not Hispanic
-  total_hisp        ="P5_010N")   # Total Hispanic
-
 ACS_BG_variables <- c(
+# total households
+  tothh_        ="B19001_001",    # Total households
+  hhpop_        ="B28005_001",    # Universe: Population in households
 
-# Age, male
-  acs_male0_4_      ="B01001_003",      # male aged 0 to 4 
-  acs_male5_9_      ="B01001_004",    # male aged 5 to 9 
-  acs_male10_14_    ="B01001_005",    # male aged 10 to 14
-  acs_male15_17_    ="B01001_006",    # male aged 15 to 17
-  acs_male18_19_    ="B01001_007",    # male aged 18 to 19
-  acs_male20_       ="B01001_008",    # male aged 20 
-  acs_male21_       ="B01001_009",    # male aged 21 
-  acs_male22_24_    ="B01001_010",    # male aged 22 to 24 
-  acs_male25_29_    ="B01001_011",    # male aged 25 to 29 
-  acs_male30_34_    ="B01001_012",    # male aged 30 to 34 
-  acs_male35_39_    ="B01001_013",    # male aged 35 to 39 
-  acs_male40_44_    ="B01001_014",    # male aged 40 to 44 
-  acs_male45_49_    ="B01001_015",    # male aged 45 to 49 
-  acs_male50_54_    ="B01001_016",    # male aged 50 to 54 
-  acs_male55_59_    ="B01001_017",    # male aged 55 to 59 
-  acs_male60_61_    ="B01001_018",    # male aged 60 to 61 
-  acs_male62_64_    ="B01001_019",    # male aged 62 to 64 
-  acs_male65_66_    ="B01001_020",    # male aged 65 to 66 
-  acs_male67_69_    ="B01001_021",    # male aged 67 to 69 
-  acs_male70_74_    ="B01001_022",    # male aged 70 to 74 
-  acs_male75_79_    ="B01001_023",    # male aged 75 to 79 
-  acs_male80_84_    ="B01001_024",    # male aged 80 to 84 
-  acs_male85p_      ="B01001_025",    # male aged 85+ 
-
-# Age, female
-  acs_female0_4_    ="B01001_027",     # female aged 0 to 4 
-  acs_female5_9_    ="B01001_028",    # female aged 5 to 9 
-  acs_female10_14_  ="B01001_029",    # female aged 10 to 14
-  acs_female15_17_  ="B01001_030",    # female aged 15 to 17
-  acs_female18_19_  ="B01001_031",    # female aged 18 to 19
-  acs_female20_     ="B01001_032",    # female aged 20 
-  acs_female21_     ="B01001_033",    # female aged 21 
-  acs_female22_24_  ="B01001_034",    # female aged 22 to 24 
-  acs_female25_29_  ="B01001_035",    # female aged 25 to 29 
-  acs_female30_34_  ="B01001_036",    # female aged 30 to 34 
-  acs_female35_39_  ="B01001_037",    # female aged 35 to 39 
-  acs_female40_44_  ="B01001_038",    # female aged 40 to 44 
-  acs_female45_49_  ="B01001_039",    # female aged 45 to 49 
-  acs_female50_54_  ="B01001_040",    # female aged 50 to 54 
-  acs_female55_59_  ="B01001_041",    # female aged 55 to 59 
-  acs_female60_61_  ="B01001_042",    # female aged 60 to 61 
-  acs_female62_64_  ="B01001_043",    # female aged 62 to 64 
-  acs_female65_66_  ="B01001_044",    # female aged 65 to 66 
-  acs_female67_69_  ="B01001_045",    # female aged 67 to 69 
-  acs_female70_74_  ="B01001_046",    # female aged 70 to 74 
-  acs_female75_79_  ="B01001_047",    # female aged 75 to 79 
-  acs_female80_84_  ="B01001_048",    # female aged 80 to 84 
-  acs_female85p_    ="B01001_049",    # female aged 85+ 
+# Sex by Age; Universe = Total Population
+  male0_4_      ="B01001_003",    # male aged 0 to 4 
+  male5_9_      ="B01001_004",    # male aged 5 to 9 
+  male10_14_    ="B01001_005",    # male aged 10 to 14
+  male15_17_    ="B01001_006",    # male aged 15 to 17
+  male18_19_    ="B01001_007",    # male aged 18 to 19
+  male20_       ="B01001_008",    # male aged 20 
+  male21_       ="B01001_009",    # male aged 21 
+  male22_24_    ="B01001_010",    # male aged 22 to 24 
+  male25_29_    ="B01001_011",    # male aged 25 to 29 
+  male30_34_    ="B01001_012",    # male aged 30 to 34 
+  male35_39_    ="B01001_013",    # male aged 35 to 39 
+  male40_44_    ="B01001_014",    # male aged 40 to 44 
+  male45_49_    ="B01001_015",    # male aged 45 to 49 
+  male50_54_    ="B01001_016",    # male aged 50 to 54 
+  male55_59_    ="B01001_017",    # male aged 55 to 59 
+  male60_61_    ="B01001_018",    # male aged 60 to 61 
+  male62_64_    ="B01001_019",    # male aged 62 to 64 
+  male65_66_    ="B01001_020",    # male aged 65 to 66 
+  male67_69_    ="B01001_021",    # male aged 67 to 69 
+  male70_74_    ="B01001_022",    # male aged 70 to 74 
+  male75_79_    ="B01001_023",    # male aged 75 to 79 
+  male80_84_    ="B01001_024",    # male aged 80 to 84 
+  male85p_      ="B01001_025",    # male aged 85+ 
+  # female
+  female0_4_    ="B01001_027",    # female aged 0 to 4 
+  female5_9_    ="B01001_028",    # female aged 5 to 9 
+  female10_14_  ="B01001_029",    # female aged 10 to 14
+  female15_17_  ="B01001_030",    # female aged 15 to 17
+  female18_19_  ="B01001_031",    # female aged 18 to 19
+  female20_     ="B01001_032",    # female aged 20 
+  female21_     ="B01001_033",    # female aged 21 
+  female22_24_  ="B01001_034",    # female aged 22 to 24 
+  female25_29_  ="B01001_035",    # female aged 25 to 29 
+  female30_34_  ="B01001_036",    # female aged 30 to 34 
+  female35_39_  ="B01001_037",    # female aged 35 to 39 
+  female40_44_  ="B01001_038",    # female aged 40 to 44 
+  female45_49_  ="B01001_039",    # female aged 45 to 49 
+  female50_54_  ="B01001_040",    # female aged 50 to 54 
+  female55_59_  ="B01001_041",    # female aged 55 to 59 
+  female60_61_  ="B01001_042",    # female aged 60 to 61 
+  female62_64_  ="B01001_043",    # female aged 62 to 64 
+  female65_66_  ="B01001_044",    # female aged 65 to 66 
+  female67_69_  ="B01001_045",    # female aged 67 to 69 
+  female70_74_  ="B01001_046",    # female aged 70 to 74 
+  female75_79_  ="B01001_047",    # female aged 75 to 79 
+  female80_84_  ="B01001_048",    # female aged 80 to 84 
+  female85p_    ="B01001_049",    # female aged 85+ 
 
 # Household size by tenure
-  acs_own1_         ="B25009_003",    # own 1 person in HH 	     
-  acs_own2_         ="B25009_004",    # own 2 persons in HH 
-  acs_own3_         ="B25009_005",    # own 3 persons in HH 
-  acs_own4_         ="B25009_006",    # own 4 persons in HH 
-  acs_own5_         ="B25009_007",    # own 5 persons in HH 
-  acs_own6_         ="B25009_008",    # own 6 persons in HH 
-  acs_own7p_        ="B25009_009",    # own 7+ persons in HH 
-  acs_rent1_        ="B25009_011",    # rent 1 person in HH
-  acs_rent2_        ="B25009_012",    # rent 2 persons in HH 
-  acs_rent3_        ="B25009_013",    # rent 3 persons in HH 
-  acs_rent4_        ="B25009_014",    # rent 4 persons in HH 
-  acs_rent5_        ="B25009_015",    # rent 5 persons in HH 
-  acs_rent6_        ="B25009_016",    # rent 6 persons in HH 
-  acs_rent7p_       ="B25009_017",    # rent 7+ persons in HH
+  own1_         ="B25009_003",    # own 1 person in HH 	     
+  own2_         ="B25009_004",    # own 2 persons in HH 
+  own3_         ="B25009_005",    # own 3 persons in HH 
+  own4_         ="B25009_006",    # own 4 persons in HH 
+  own5_         ="B25009_007",    # own 5 persons in HH 
+  own6_         ="B25009_008",    # own 6 persons in HH 
+  own7p_        ="B25009_009",    # own 7+ persons in HH 
+  rent1_        ="B25009_011",    # rent 1 person in HH
+  rent2_        ="B25009_012",    # rent 2 persons in HH 
+  rent3_        ="B25009_013",    # rent 3 persons in HH 
+  rent4_        ="B25009_014",    # rent 4 persons in HH 
+  rent5_        ="B25009_015",    # rent 5 persons in HH 
+  rent6_        ="B25009_016",    # rent 6 persons in HH 
+  rent7p_       ="B25009_017",    # rent 7+ persons in HH
 
-# Race/Ethnicity variables # B03002_001
-  acs_white_nonh_   ="B03002_003",   # White alone, not Hispanic
-  acs_black_nonh_   ="B03002_004",   # Black alone, not Hispanic
-  acs_asian_nonh_   ="B03002_006",   # Asian alone, not Hispanic
-  acs_total_nonh_   ="B03002_002",   # Total, not Hispanic
-  acs_total_hisp_   ="B03002_012",   # Total Hispanic
+# Race/Ethnicity variables
+  white_nonh_   ="B03002_003",   # White alone, not Hispanic
+  black_nonh_   ="B03002_004",   # Black alone, not Hispanic
+  asian_nonh_   ="B03002_006",   # Asian alone, not Hispanic
+  total_nonh_   ="B03002_002",   # Total, not Hispanic
+  total_hisp_   ="B03002_012",   # Total Hispanic
 
 # Units
   unit1d_           ="B25024_002",    # 1 unit detached    
@@ -268,11 +181,11 @@ ACS_BG_variables <- c(
   mobile_           ="B25024_010",		# mobile homes
   boat_RV_Van_      ="B25024_011",		# boats, RVs, vans
   
-# Employment
+# Employment - Universe = Population 16 years and Over.  Not included: there's also Civilian unemployed
   employed_         ="B23025_004",    # Civilian employed residents (employed residents is "employed" + "armed forces")
   armedforces_      ="B23025_006", 	  # Armed forces
 
-# Household income                  
+# Household income. Universe = Households
   hhinc000_010_     ="B19001_002",    # Household income 0 to $10k 
   hhinc010_015_     ="B19001_003",		# Household income $10 to $15k
   hhinc015_020_     ="B19001_004",		# Household income $15 to $20k
@@ -290,6 +203,7 @@ ACS_BG_variables <- c(
   hhinc150_200_     ="B19001_016",		# Household income $150 to $200k
   hhinc200p_        ="B19001_017",		# Household income $200k+
   
+# C24010 Sex by Occupation for the Civilian Employed Population 16 Years and Over
 # Occupation, male
   occ_m_manage_     ="C24010_005", # Management
   occ_m_prof_biz_   ="C24010_006", # Business and financial
@@ -330,10 +244,9 @@ ACS_BG_variables <- c(
   occ_f_man_nat_    ="C24010_066", # Natural resources, construction, and maintenance
   occ_f_man_prod_   ="C24010_070"  # Production, transportation, and material moving
 )
-
-                      
+  
 ACS_tract_variables <-  c(
-# Households by number of workers
+# Households by number of workers.  Universe = Households
   hhwrks0_          = "B08202_002", # 0-worker HH
   hhwrks1_          = "B08202_003",	# 1-worker HH
   hhwrks2_          = "B08202_004",	# 2-worker HH
@@ -346,7 +259,7 @@ ACS_tract_variables <-  c(
   rentkidsno_       = "B25012_017"  # Rent without related kids under 18
 )
 
-
+# Get group quarters from Decennial census because ACS only includes these at the state level
 DHC_tract_variables <-  c(
 # Group quarters for tracts by age and type of resident
   gq_noninst_m_0017_univ      = "PCT19_024N", # Male non-inst. under 18 university
@@ -400,7 +313,7 @@ print(head(combined_block, n=20))
 
 # Function to make tract and block group data API calls by county for specified 5-year ACS
 
-ACS_tract_raw <- get_acs(
+ACS_tract_raw <- tidycensus::get_acs(
   geography = "tract", variables = ACS_tract_variables,
   state = state_code, county=baycounties,
   year=ACS_year,
@@ -408,7 +321,7 @@ ACS_tract_raw <- get_acs(
   survey = "acs5",
   key = censuskey)
 
-ACS_BG_raw <- get_acs(
+ACS_BG_raw <- tidycensus::get_acs(
   geography = "block group", variables = ACS_BG_variables,
   state = state_code, county=baycounties,
   year=ACS_year,
@@ -416,16 +329,8 @@ ACS_BG_raw <- get_acs(
   survey = "acs5",
   key = censuskey)
 
-DHC_tract_raw <- get_decennial(
+DHC_tract_raw <- tidycensus::get_decennial(
   geography = "tract", variables = DHC_tract_variables,
-  state = state_code, county=baycounties,
-  year=2020,
-  output="wide",
-  sumfile = "dhc",
-  key = censuskey)
-
-DHC_BG_raw <- get_decennial(
-  geography = "block group", variables = DHC_BG_variables,
   state = state_code, county=baycounties,
   year=2020,
   output="wide",
@@ -435,13 +340,10 @@ DHC_BG_raw <- get_decennial(
 # Remove NAME variable from decennial files for later joining
 
 DHC_tract_raw <- DHC_tract_raw %>% select(-NAME)
-DHC_BG_raw    <- DHC_BG_raw %>% select(-NAME)
 
 print(paste0("DHC_tract_raw (",nrow(DHC_tract_raw)," rows):"))
 print(DHC_tract_raw)
 
-print(paste0("DHC_BG_raw (",nrow(DHC_BG_raw)," rows):"))
-print(DHC_BG_raw)
 
 # Remove MOEs from ACS variables,rename to drop "_E" suffix
 # Drop NAME variable for later joining
@@ -463,7 +365,6 @@ print(ACS_BG_raw)
 
 interim <- left_join(combined_block,ACS_BG_raw, by=c("blockgroup"="GEOID")) %>% 
   left_join(.,ACS_tract_raw, by=c("tract"="GEOID"))%>% 
-  left_join(.,DHC_BG_raw, by=c("blockgroup"="GEOID"))%>%
   left_join(.,DHC_tract_raw, by=c("tract"="GEOID"))
 
 print(paste0("interim (",nrow(interim)," rows):"))
@@ -485,30 +386,12 @@ workingdata <- interim %>% mutate(
           female65_66+female67_69+female70_74+female75_79+female80_84+female85p)*sharebg,
   AGE62P=(  male62_64+  male65_66+  male67_69+  male70_74+  male75_79+  male80_84+  male85p+
           female62_64+female65_66+female67_69+female70_74+female75_79+female80_84+female85p)*sharebg,
-  # ACS version
-  ACS_AGE0004=(acs_male0_4+acs_female0_4)*sharebg,
-  ACS_AGE0519=(  acs_male5_9+  acs_male10_14+  acs_male15_17+  acs_male18_19+
-               acs_female5_9+acs_female10_14+acs_female15_17+acs_female18_19)*sharebg,
-  ACS_AGE2044=(  acs_male20+  acs_male21+  acs_male22_24+  acs_male25_29+  acs_male30_34+  acs_male35_39+  acs_male40_44+
-               acs_female20+acs_female21+acs_female22_24+acs_female25_29+acs_female30_34+acs_female35_39+acs_female40_44)*sharebg,
-  ACS_AGE4564=(  acs_male45_49+  acs_male50_54+  acs_male55_59+  acs_male60_61+  acs_male62_64+
-               acs_female45_49+acs_female50_54+acs_female55_59+acs_female60_61+acs_female62_64)*sharebg,
-  ACS_AGE65P=(  acs_male65_66+  acs_male67_69+  acs_male70_74+  acs_male75_79+  acs_male80_84+  acs_male85p+
-              acs_female65_66+acs_female67_69+acs_female70_74+acs_female75_79+acs_female80_84+acs_female85p)*sharebg,
-  ACS_AGE62P=(  acs_male62_64+  acs_male65_66+  acs_male67_69+  acs_male70_74+  acs_male75_79+  acs_male80_84+  acs_male85p+
-              acs_female62_64+acs_female65_66+acs_female67_69+acs_female70_74+acs_female75_79+acs_female80_84+acs_female85p)*sharebg,
   # race/ethnicity
   white_nonh=white_nonh*sharebg,
   black_nonh=black_nonh*sharebg,
   asian_nonh=asian_nonh*sharebg,
   other_nonh=(total_nonh-(white_nonh+black_nonh+asian_nonh))*sharebg,   # "Other, non-Hisp is total non-Hisp minus white,black,Asian
   hispanic=total_hisp*sharebg,
-  # ACS version
-  acs_white_nonh=acs_white_nonh*sharebg,
-  acs_black_nonh=acs_black_nonh*sharebg,
-  acs_asian_nonh=acs_asian_nonh*sharebg,
-  acs_other_nonh=(acs_total_nonh-(acs_white_nonh+acs_black_nonh+acs_asian_nonh))*sharebg,   # "Other, non-Hisp is total non-Hisp minus white,black,Asian
-  acs_hispanic=acs_total_hisp*sharebg,
   # single family versus mult-family
   SFDU=(unit1d+unit1a+mobile+boat_RV_Van)*sharebg,
   MFDU=(unit2+unit3_4+unit5_9+unit10_19+unit20_49+unit50p)*sharebg,
@@ -520,14 +403,6 @@ workingdata <- interim %>% mutate(
   hh_size_2=(own2+rent2)*sharebg,
   hh_size_3=(own3+rent3)*sharebg,
   hh_size_4_plus=(own4+own5+own6+own7p+rent4+rent5+rent6+rent7p)*sharebg,
-  # ACS version
-  acs_hh_own=(acs_own1+acs_own2+acs_own3+acs_own4+acs_own5+acs_own6+acs_own7p)*sharebg,
-  acs_hh_rent=(acs_rent1+acs_rent2+acs_rent3+acs_rent4+acs_rent5+acs_rent6+acs_rent7p)*sharebg,
-  acs_hh_size_1=(acs_own1+acs_rent1)*sharebg,
-  acs_hh_size_2=(acs_own2+acs_rent2)*sharebg,
-  acs_hh_size_3=(acs_own3+acs_rent3)*sharebg,
-  acs_hh_size_4_plus=(acs_own4+acs_own5+acs_own6+acs_own7p+acs_rent4+acs_rent5+acs_rent6+acs_rent7p)*sharebg,
-
   # households by number of workers
   hh_wrks_0=hhwrks0*sharetract,
   hh_wrks_1=hhwrks1*sharetract,
@@ -593,10 +468,12 @@ workingdata_hhinc <- workingdata_hhinc %>% pivot_longer(
   values_to = "num_households",
   values_drop_na = TRUE
 )
-print(paste0("After pivint hhinc categories to rows, workingdata_hhinc (",nrow(workingdata_hhinc)," rows):"))
+print(paste0("After pivoting hhinc categories to rows, workingdata_hhinc (",nrow(workingdata_hhinc)," rows):"))
 print(workingdata_hhinc)
 
 # join with mapping from householdinc_acs_cat to HHINCQ from PUMS
+PUMS_hhinc_cat <- map_ACS5year_household_income_to_TM1_categories(ACS_year)
+
 workingdata_hhinc <- workingdata_hhinc %>% 
   # apply sharebg
   mutate(num_households = num_households * sharebg) %>%
@@ -619,8 +496,7 @@ print(paste0("Resulting TAZ_hhinc (",nrow(TAZ_hhinc)," rows):"))
 print(TAZ_hhinc)
 
 # Summarize to TAZ and select only variables of interest
-
-temp0 <- workingdata %>%
+tazdata_census <- workingdata %>%
   group_by(TAZ1454) %>%
   summarize(  TOTHH                   =sum(TOTHH),
               HHPOP                   =sum(HHPOP),
@@ -631,14 +507,6 @@ temp0 <- workingdata %>%
               AGE4564                 =sum(AGE4564),
               AGE65P                  =sum(AGE65P),
               sum_age                 =AGE0004 + AGE0519 + AGE2044  +AGE4564 + AGE65P,
-              # ACS versions
-              ACS_AGE0004             =sum(ACS_AGE0004),
-              ACS_AGE0519             =sum(ACS_AGE0519),
-              ACS_AGE2044             =sum(ACS_AGE2044),
-              ACS_AGE4564             =sum(ACS_AGE4564),
-              ACS_AGE65P              =sum(ACS_AGE65P),
-              sum_ACS_age             =ACS_AGE0004 + ACS_AGE0519 + ACS_AGE2044 + ACS_AGE4564 + ACS_AGE65P,
-
               SFDU                    =sum(SFDU),
               MFDU                    =sum(MFDU),
               hh_own                  =sum(hh_own),
@@ -651,8 +519,6 @@ temp0 <- workingdata %>%
               hh_wrks_1               =sum(hh_wrks_1),
               hh_wrks_2               =sum(hh_wrks_2),
               hh_wrks_3_plus          =sum(hh_wrks_3_plus),
-              sum_hhworkers           =hh_wrks_0 + hh_wrks_1 + hh_wrks_2 + hh_wrks_3_plus, # to compare with TOTHH
-
               hh_kids_yes             =sum(hh_kids_yes),
               hh_kids_no              =sum(hh_kids_no),
               AGE62P                  =sum(AGE62P),
@@ -672,15 +538,17 @@ temp0 <- workingdata %>%
               other_nonh              =sum(other_nonh),   
               hispanic                =sum(hispanic))
 
-temp0 <- left_join(temp0, TAZ_hhinc, by="TAZ1454", relationship="one-to-one")
+tazdata_census <- left_join(tazdata_census, TAZ_hhinc, by="TAZ1454", relationship="one-to-one")
+# add county, County_name, DISTRICT, District_NAme, etc
+tazdata_census <- left_join(tazdata_census, TAZ_SD_COUNTY, by=c("TAZ1454"="ZONE"))
 
-print(paste0("temp0 (", nrow(temp0)," rows):"))
-print(temp0)
-print("str(temp0):")
-print(str(temp0))
+print(paste0("tazdata_census (", nrow(tazdata_census)," rows):"))
+print(tazdata_census)
+print("str(tazdata_census):")
+print(str(tazdata_census))
 
 print("DHC GQ population:")
-DHC_gqpop <- temp0 %>%
+DHC_gqpop <- tazdata_census %>%
   select(TAZ1454, gq_type_univ, gq_type_mil, gq_type_othnon, gqpop) %>% 
   left_join(., select(TAZ_SD_COUNTY,ZONE,County_Name), by=c("TAZ1454"="ZONE")) %>% 
   group_by(County_Name) %>% summarize(
@@ -695,66 +563,18 @@ print(paste("gq_type_mil   :", format(sum(DHC_gqpop$gq_type_mil),    nsmall=0, b
 print(paste("gq_type_othnon:", format(sum(DHC_gqpop$gq_type_othnon), nsmall=0, big.mark=',')))
 print(paste("gqpop         :", format(sum(DHC_gqpop$gqpop),          nsmall=0, big.mark=',')))
 
-print("DHC population by age versus ACS population by age:")
-DHC_sum_age_ACS_sum_age <- temp0 %>%
-  select(TAZ1454,
-    sum_age, sum_ACS_age, 
-    AGE0004, ACS_AGE0004, 
-    AGE0519, ACS_AGE0519, 
-    AGE2044, ACS_AGE2044, 
-    AGE4564, ACS_AGE4564, 
-    AGE65P,  ACS_AGE65P
-  ) %>% left_join(., select(TAZ_SD_COUNTY,ZONE,County_Name), by=c("TAZ1454"="ZONE"))
-print(DHC_sum_age_ACS_sum_age)
-
-print("by county:")
-print(DHC_sum_age_ACS_sum_age %>% group_by(County_Name) %>% summarize(
-  sum_age=sum(sum_age), sum_ACS_age=sum(sum_ACS_age)))
-
-print("DHC total households versus ACS total households (from households by number of workers)")
-print(select(temp0, TAZ1454,
-  TOTHH, sum_hhworkers))
- 
-check_consistency_empres_hhworkers(rename(temp0, ZONE = TAZ1454))
-
-# Confirmed values for 2020 are:
-    # Total regional HH pop is 7590783
-    # Total regional non-institutional GQ pop is 126779
-    # Total regional institutional pop is 48078
-    # Total pop (including institutional pop) is 7765640
-    # Total pop (excluding institutional pop) is 7717562
-  
-# Apply households by number of workers correction factors
-# The initial table values are actually households by number of "commuters" (people at work - not sick, vacation - in the ACS reference week)
-# This overstates 0-worker households and understates 3+-worker households. A correction needs to be applied.
-# Correction factors are calculated in .\Workers\ACSPUMS2018-2022_WorkerTotals_Comparisons.xlsx
-# 1=San Francisco; 2=San Mateo; 3=Santa Clara; 4=Alameda; 5=Contra Costa; 6=Solano; 7= Napa; 8=Sonoma; 9=Marin
-# "counties" vector is defined below with this county order
-
-counties  <- c(1,2,3,4,5,6,7,8,9)                             # Matching county values for factor ordering
-
-workers0  <- c(0.80949, 0.73872, 0.71114, 0.64334, 0.83551, 0.81965, 0.79384, 0.86188, 0.84022)
-workers1  <- c(1.04803, 1.02080, 1.04346, 1.05696, 1.00905, 1.03175, 1.08663, 1.02549, 1.04765)
-workers2	<- c(1.04826, 1.07896, 1.05444, 1.11641, 1.06367, 1.04932, 1.03722, 1.06810, 1.06777)
-workers3p	<- c(1.12707, 1.16442, 1.15440, 1.22406, 1.15324, 1.18291, 1.14513, 1.10387, 1.11526)
-
-
-temp1 <- temp0 %>%
-  left_join(.,select(TAZ_SD_COUNTY,ZONE,COUNTY,County_Name),by=c("TAZ1454"="ZONE")) %>% 
-  mutate(
-    hh_wrks_0      = hh_wrks_0*workers0[match(COUNTY,counties)], # Apply the above index values for correction factors
-    hh_wrks_1      = hh_wrks_1*workers1[match(COUNTY,counties)],
-    hh_wrks_2      = hh_wrks_2*workers2[match(COUNTY,counties)],
-    hh_wrks_3_plus = hh_wrks_3_plus*workers3p[match(COUNTY,counties)]) 
-
-print("For 'temp1':")
-check_consistency_empres_hhworkers(rename(temp1, ZONE = TAZ1454))
+if (argv$year > 2020) {
+  print(sprintf("TODO: year %d > 2020", argv$year))
+  print("TODO: SCALE scale Group Quarters population to ACS 1-years")
+}
+# TODO: add this back -- but leave this low for now
+# tazdata_census <- correct_households_by_number_of_workers(tazdata_census)
+# print("For 'tazdata_census':")
+# check_consistency_empres_hhworkers(rename(tazdata_census, ZONE = TAZ1454), PUMS_COUNTY_3P_WORKERS)
 
 
 # Sum constituent parts to compare with marginal totals
-# Begin process of scaling constituent values so category subtotals match marginal totals for 2020
-
-temp_rounded_adjusted <- temp1 %>%
+tazdata_census <- tazdata_census %>%
   mutate (
     sum_age            = AGE0004 + AGE0519 + AGE2044  +AGE4564 + AGE65P,       # Person totals by age
     sum_groupquarters  = gq_type_univ + gq_type_mil + gq_type_othnon,          # GQ by type
@@ -765,96 +585,46 @@ temp_rounded_adjusted <- temp1 %>%
     sum_income         = HHINCQ1 + HHINCQ2 + HHINCQ3 + HHINCQ4,                # HHs by income
     sum_empres         = pers_occ_management + pers_occ_professional+          # Employed residents by industry
       pers_occ_services + pers_occ_retail + pers_occ_manual + pers_occ_military,
-    HHPOP              = round(HHPOP,0),                                        # Round and sum total pop from HH and GQ pop
+    TOTPOP             = sum_age,  # universe = total population
     gqpop              = round(gqpop,0),
-    TOTPOP             = HHPOP+gqpop, 
-    sum_ethnicity      = white_nonh+black_nonh+asian_nonh+other_nonh+hispanic,
-    
-# Create inflation/deflation factors
-# Empres takes a 2-step approach. The first step (init) scales the total empres to constituent parts (they likely already agree)
-# Second step (empres_factor) scales 2018-2022 5-year totals to value that is the average of ACS 2019 and 2021 Table 23025 values
-# The average of 2019 and 2021 is a proxy for ACS 2020 data that is missing due to Covid lack of data collection
-# Values calculated in ACSPUMS2018-2022_WorkerTotals_Comparisons.xlsx, with location provided above
-    
-    age_factor         = if_else(sum_age==0,0,TOTPOP/sum_age),
-    gq_factor          = if_else(sum_groupquarters==0,0,gqpop/sum_groupquarters),
-    tenure_factor      = if_else(sum_tenure==0,0,TOTHH/sum_tenure),
-    size_factor        = if_else(sum_size==0,0,TOTHH/sum_size),
-    hhworkers_factor   = if_else(sum_hhworkers==0,0,TOTHH/sum_hhworkers),
-    kids_factor        = if_else(sum_kids==0,0,TOTHH/sum_kids),
-    income_factor      = if_else(sum_income==0,0,TOTHH/sum_income),
-    empres_init_factor = if_else(sum_empres==0,0,EMPRES/sum_empres),
-    empres_factor      = case_when(
-                         County_Name=="Alameda"            ~ empres_init_factor*0.98670,
-                         County_Name=="Contra Costa"       ~ empres_init_factor*0.99733,
-                         County_Name=="Marin"              ~ empres_init_factor*0.98121,
-                         County_Name=="Napa"               ~ empres_init_factor*0.97815,
-                         County_Name=="San Francisco"      ~ empres_init_factor*0.96432,
-                         County_Name=="San Mateo"          ~ empres_init_factor*0.97861,
-                         County_Name=="Santa Clara"        ~ empres_init_factor*0.98314,
-                         County_Name=="Solano"             ~ empres_init_factor*0.99228,
-                         County_Name=="Sonoma"             ~ empres_init_factor*0.99204
-    ),
-    ethnicity_factor   = if_else(sum_ethnicity==0,0,TOTPOP/sum_ethnicity),
+    sum_ethnicity      = white_nonh+black_nonh+asian_nonh+other_nonh+hispanic
+  )
+print("households consistency checks")
+print(tazdata_census %>% group_by(County_Name) %>% summarize(
+  TOTHH        =sum(TOTHH), 
+  sum_tenure   =sum(sum_tenure),
+  sum_size     =sum(sum_size),
+  sum_hhworkers=sum(sum_hhworkers),
+  sum_kids     =sum(sum_kids),
+  sum_income   =sum(sum_income)))
 
-# Apply factors to correct for scale up or down constituent parts to match marginal totals
+print("population consistency checks")
+print(tazdata_census %>% group_by(County_Name) %>% summarize(
+  TOTPOP        =sum(TOTPOP), 
+  sum_age       =sum(sum_age),
+  sum_ethnicity =sum(sum_ethnicity)))
 
-    AGE0004               = AGE0004          * age_factor,         # Persons by age correction
-    AGE0519               = AGE0519          * age_factor,  
-    AGE2044               = AGE2044          * age_factor,  
-    AGE4564               = AGE4564          * age_factor,
-    AGE65P                = AGE65P           * age_factor,
+# empres consistency check
+check_consistency_empres_hhworkers(rename(tazdata_census, ZONE = TAZ1454), PUMS_COUNTY_3P_WORKERS)
 
-    white_nonh            = white_nonh       * ethnicity_factor,  # Persons by ethnicity correction
-    black_nonh            = black_nonh       * ethnicity_factor,
-    asian_nonh            = asian_nonh       * ethnicity_factor,
-    other_nonh            = other_nonh       * ethnicity_factor,
-    hispanic              = hispanic         * ethnicity_factor,
-
-    gq_type_univ          = gq_type_univ     * gq_factor,          # Group quarters by type
-    gq_type_mil           = gq_type_mil      * gq_factor,
-    gq_type_othnon        = gq_type_othnon   * gq_factor,
-
-    hh_own                = hh_own           * tenure_factor,      # Households by tenure
-    hh_rent               = hh_rent          * tenure_factor,      
-
-    hh_size_1             = hh_size_1        * size_factor,        # Households by size
-    hh_size_2             = hh_size_2        * size_factor,
-    hh_size_3             = hh_size_3        * size_factor,
-    hh_size_4_plus        = hh_size_4_plus   * size_factor,
-
-    hh_wrks_0             = hh_wrks_0        * hhworkers_factor,   # Households by number of workers   
-    hh_wrks_1             = hh_wrks_1        * hhworkers_factor,
-    hh_wrks_2             = hh_wrks_2        * hhworkers_factor,
-    hh_wrks_3_plus        = hh_wrks_3_plus   * hhworkers_factor,
-
-    hh_kids_yes           = hh_kids_yes      * kids_factor,        # Households by presence of kids
-    hh_kids_no            = hh_kids_no       * kids_factor,
-
-    HHINCQ1               = HHINCQ1          * income_factor,      # Households by income  
-    HHINCQ2               = HHINCQ2          * income_factor,
-    HHINCQ3               = HHINCQ3          * income_factor,
-    HHINCQ4               = HHINCQ4          * income_factor,
-
-    EMPRES=EMPRES*empres_factor,                                   # Employed residents total then by occupation  
-    pers_occ_management   = pers_occ_management   * empres_factor, 
-    pers_occ_professional = pers_occ_professional * empres_factor,            
-    pers_occ_services     = pers_occ_services     * empres_factor,
-    pers_occ_retail       = pers_occ_retail       * empres_factor, 
-    pers_occ_manual       = pers_occ_manual       * empres_factor,
-    pers_occ_military     = pers_occ_military     * empres_factor
-  ) %>% 
-
-# Round Data, remove sum variables and factors
+# Round Data, remove sum variables
 # Add in population over age 62 variable that is also needed (but should not be rounded, so added at the end)
+tazdata_census <- tazdata_census %>%
+  select(-sum_age,-sum_groupquarters,-sum_tenure,-sum_size,-sum_hhworkers,-sum_kids,-sum_income,-sum_empres, -sum_ethnicity) %>% 
+  mutate_if(is.numeric,round,0) %>%
+  mutate(SHPOP62P = if_else(TOTPOP==0,0,AGE62P/TOTPOP))
   
-    select (-age_factor,-gq_factor,-tenure_factor, -size_factor,-hhworkers_factor,-kids_factor,-income_factor,-empres_init_factor,
-            -empres_factor,-sum_age,-sum_groupquarters,-sum_tenure,-sum_size,-sum_hhworkers,-sum_kids,-sum_income,-sum_empres, 
-            -sum_ethnicity,-ethnicity_factor) %>% 
-    mutate_if(is.numeric,round,0) %>%
-    mutate(SHPOP62P = if_else(TOTPOP==0,0,AGE62P/TOTPOP)) %>% 
-  
-  
+# ACS_year should be argv$year + 2 -- if it's not, then scale up using ACS1-year totals
+if (ACS_year < argv$year+2) {
+  print(sprintf("TODO: ACS_year %d < year+2 = %d", ACS_year, argv$year+2))
+  print("TODO: SCALE population, households to ACS1-year totals")
+}
+
+if (LODES_YEAR < argv$year) {
+  print(sprintf("TODO: LODES_YEAR %d < year %d", LODES_YEAR, argv$year))
+  print("TODO: SCALE employment to ACS1-year totals")
+}
+
 # The below step is so clunky. I refactored it and think it should be updated the next time this process is done using the below function:
 ### Function to adjust values in each row
 #  adjustValues <- function(data, marginal_var,columns) {
@@ -875,7 +645,7 @@ temp_rounded_adjusted <- temp1 %>%
 # Find max value in categorical data to adjust totals so they match univariate totals
 # For example, the households by income across categories should sum to equal total HHs
 # If unequal, the largest constituent cell is adjusted up or down such that the category sums match the marginal total
-
+tazdata_census <- tazdata_census %>%
    mutate (
     max_age    = max.col(.[c("AGE0004","AGE0519","AGE2044","AGE4564","AGE65P")],     ties.method="first"),
     max_gq     = max.col(.[c("gq_type_univ","gq_type_mil","gq_type_othnon")],        ties.method="first"),
@@ -893,9 +663,7 @@ temp_rounded_adjusted <- temp1 %>%
 # Now use max values determined above to find appropriate column for adjustment
 
    mutate(
-    
     # Balance population by age
-    
     AGE0004 = if_else(max_age==1,AGE0004+(TOTPOP-(AGE0004+AGE0519+AGE2044+AGE4564+AGE65P)),AGE0004),
     AGE0519 = if_else(max_age==2,AGE0519+(TOTPOP-(AGE0004+AGE0519+AGE2044+AGE4564+AGE65P)),AGE0519),
     AGE2044 = if_else(max_age==3,AGE2044+(TOTPOP-(AGE0004+AGE0519+AGE2044+AGE4564+AGE65P)),AGE2044),
@@ -903,116 +671,104 @@ temp_rounded_adjusted <- temp1 %>%
     AGE65P  = if_else(max_age==5,AGE65P +(TOTPOP-(AGE0004+AGE0519+AGE2044+AGE4564+AGE65P)),AGE65P), 
     
     # Balance population by ethnicity
-    
-    white_nonh = if_else(max_eth==1,white_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+
-                                                          hispanic)),white_nonh),
-    black_nonh = if_else(max_eth==2,black_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+
-                                                          hispanic)),black_nonh),
-    asian_nonh = if_else(max_eth==3,asian_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+
-                                                          hispanic)),asian_nonh),
-    other_nonh = if_else(max_eth==4,other_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+
-                                                          hispanic)),other_nonh),
-    hispanic = if_else(max_eth==5,hispanic+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+
-                                                          hispanic)),hispanic),
+    white_nonh = if_else(max_eth==1,white_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+hispanic)),white_nonh),
+    black_nonh = if_else(max_eth==2,black_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+hispanic)),black_nonh),
+    asian_nonh = if_else(max_eth==3,asian_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+hispanic)),asian_nonh),
+    other_nonh = if_else(max_eth==4,other_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+hispanic)),other_nonh),
+    hispanic   = if_else(max_eth==5,hispanic  +(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+hispanic)),hispanic),
     
     # Balance GQ population by type
-    
-    gq_type_univ   = if_else(max_gq==1,gq_type_univ+(gqpop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_univ),
-    gq_type_mil    = if_else(max_gq==2,gq_type_mil+(gqpop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_mil),
+    gq_type_univ   = if_else(max_gq==1,gq_type_univ  +(gqpop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_univ),
+    gq_type_mil    = if_else(max_gq==2,gq_type_mil   +(gqpop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_mil),
     gq_type_othnon = if_else(max_gq==3,gq_type_othnon+(gqpop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_othnon),
    
-    #Balance HH tenure categories
-    
+    # Balance HH tenure categories
     hh_own         = if_else(max_tenure==1,hh_own       +(TOTHH-(hh_own+hh_rent)),hh_own),
     hh_rent        = if_else(max_tenure==2,hh_rent      +(TOTHH-(hh_own+hh_rent)),hh_rent),
 
-     #Balance HH size categories
-    
+    # Balance HH size categories
     hh_size_1      = if_else(max_size==1,hh_size_1     +(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_1),
     hh_size_2      = if_else(max_size==2,hh_size_2     +(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_2),
     hh_size_3      = if_else(max_size==3,hh_size_3     +(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_3),
     hh_size_4_plus = if_else(max_size==4,hh_size_4_plus+(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_4_plus),
     
-    #Balance HH worker categories
-    
-    hh_wrks_0      = if_else(max_workers==1,hh_wrks_0+(TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_0),
-    hh_wrks_1      = if_else(max_workers==2,hh_wrks_1+(TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_1),
-    hh_wrks_2      = if_else(max_workers==3,hh_wrks_2+(TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_2),
+    # Balance HH worker categories
+
+    hh_wrks_0      = if_else(max_workers==1,hh_wrks_0+     (TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_0),
+    hh_wrks_1      = if_else(max_workers==2,hh_wrks_1+     (TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_1),
+    hh_wrks_2      = if_else(max_workers==3,hh_wrks_2+     (TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_2),
     hh_wrks_3_plus = if_else(max_workers==4,hh_wrks_3_plus+(TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_3_plus),
     
-    #Balance HH kids categories
-    
+    # Balance HH kids categories
     hh_kids_yes = if_else(max_kids==1,hh_kids_yes+(TOTHH-(hh_kids_yes+hh_kids_no)),hh_kids_yes),
     hh_kids_no  = if_else(max_kids==2,hh_kids_no +(TOTHH-(hh_kids_yes+hh_kids_no)),hh_kids_no),
     
     # Balance HH income categories
-    
+  
     HHINCQ1 = if_else(max_income==1,HHINCQ1+(TOTHH-(HHINCQ1+HHINCQ2+HHINCQ3+HHINCQ4)),HHINCQ1),
     HHINCQ2 = if_else(max_income==2,HHINCQ2+(TOTHH-(HHINCQ1+HHINCQ2+HHINCQ3+HHINCQ4)),HHINCQ2),
     HHINCQ3 = if_else(max_income==3,HHINCQ3+(TOTHH-(HHINCQ1+HHINCQ2+HHINCQ3+HHINCQ4)),HHINCQ3),
     HHINCQ4 = if_else(max_income==4,HHINCQ4+(TOTHH-(HHINCQ1+HHINCQ2+HHINCQ3+HHINCQ4)),HHINCQ4),
 
     # Balance workers by occupation categories
-    
-    pers_occ_management   = if_else(max_occ==1,pers_occ_management+(EMPRES-(pers_occ_management+pers_occ_professional+
-                                      pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_management),
-    pers_occ_professional = if_else(max_occ==2,pers_occ_professional+(EMPRES-(pers_occ_management+pers_occ_professional+
-                                      pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_professional),
-    pers_occ_services     = if_else(max_occ==3,pers_occ_services+(EMPRES-(pers_occ_management+pers_occ_professional+
-                                      pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_services),
-    pers_occ_retail       = if_else(max_occ==4,pers_occ_retail+(EMPRES-(pers_occ_management+pers_occ_professional+
-                                      pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_retail),
-    pers_occ_manual       = if_else(max_occ==5,pers_occ_manual+(EMPRES-(pers_occ_management+pers_occ_professional+
-                                      pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_manual),
-    pers_occ_military     = if_else(max_occ==6,pers_occ_military+(EMPRES-(pers_occ_management+pers_occ_professional+
-                                      pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_military)
+    pers_occ_management   = if_else(max_occ==1,pers_occ_management  +(EMPRES-(pers_occ_management+pers_occ_professional+pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_management),
+    pers_occ_professional = if_else(max_occ==2,pers_occ_professional+(EMPRES-(pers_occ_management+pers_occ_professional+pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_professional),
+    pers_occ_services     = if_else(max_occ==3,pers_occ_services    +(EMPRES-(pers_occ_management+pers_occ_professional+pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_services),
+    pers_occ_retail       = if_else(max_occ==4,pers_occ_retail      +(EMPRES-(pers_occ_management+pers_occ_professional+pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_retail),
+    pers_occ_manual       = if_else(max_occ==5,pers_occ_manual      +(EMPRES-(pers_occ_management+pers_occ_professional+pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_manual),
+    pers_occ_military     = if_else(max_occ==6,pers_occ_military    +(EMPRES-(pers_occ_management+pers_occ_professional+pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_military)
 ) %>% 
   
-# Remove max variables
-  
+  # Remove max variables
   select(-max_age,-max_gq,-max_tenure,-max_size,-max_workers,-max_kids,-max_income,-max_occ, -max_eth)
 
 ### End of recoding
 
 # Write out ethnic variables
 
-ethnic <- temp_rounded_adjusted %>% 
+ethnic <- tazdata_census %>% 
   select(TAZ1454,hispanic, white_nonh,black_nonh,asian_nonh,other_nonh,TOTPOP, COUNTY, County_Name)
 
-write.csv (ethnic,file = "TAZ1454_Ethnicity.csv",row.names = FALSE)
-print(paste("Wrote","TAZ1454_Ethnicity.csv"))
+write.csv(ethnic,file = file.path(argv$year, "TAZ1454_Ethnicity.csv"),row.names = FALSE)
+print(paste("Wrote",file.path(argv$year,"TAZ1454_Ethnicity.csv")))
 
 # Read in old PBA data sets and select variables for joining to new 2020 dataset
 # Join 2021 employment data
 # Bring in school and parking data from 2015 TAZ data 
 # Add HHLDS variable (same as TOTHH), select new 2015 output
 
-PBA2015_joiner <- PBA2015%>%
-  select(ZONE,DISTRICT,SD,TOTACRE,RESACRE,CIACRE,PRKCST,OPRKCST,AREATYPE,HSENROLL,COLLFTE,COLLPTE,TOPOLOGY,TERMINAL, ZERO)
+# Bring in PBA 2050 2015 land use data for county equivalencies and other data needs
+PBA2015 <- read_excel(PBA_TAZ_2015,sheet="census2015") 
 
-joined_15_20      <- left_join(PBA2015_joiner,temp_rounded_adjusted, by=c("ZONE"="TAZ1454")) # Join 2015 topology, parking, enrollment
-joined_employment <- left_join(joined_15_20,employment_2021, by=c("ZONE"="TAZ1454"))         # Join employment
+PBA2015_joiner <- PBA2015 %>%
+  select(ZONE,SD,TOTACRE,RESACRE,CIACRE,PRKCST,OPRKCST,AREATYPE,HSENROLL,COLLFTE,COLLPTE,TOPOLOGY,TERMINAL, ZERO)
+
+tazdata_census <- left_join(PBA2015_joiner,tazdata_census, by=c("ZONE"="TAZ1454"))   # Join 2015 topology, parking, enrollment
+tazdata_census <- left_join(tazdata_census,employment, by=c("ZONE"="TAZ1454"))       # Join employment
 
 # Save R version of data for 2020 to later inflate to 2023
+output_file=file.path(argv$year, sprintf("TAZ Land Use File %d.rdata", argv$year))
+save(tazdata_census,file=output_file)
+print(paste("Wrote",output_file))
 
-final_2020 <- joined_employment
-save(final_2020,file="TAZ Land Use File 2020.rdata")
-print(paste("Wrote","TAZ Land Use File 2020.rdata"))
+check_consistency_empres_hhworkers(tazdata_census, PUMS_COUNTY_3P_WORKERS)
 
-check_consistency_empres_hhworkers(final_2020)
-
-# Write out subsets of final 2020 data
+# Write out subsets of final data
  
-New2020 <- joined_employment %>%
+tazdata_landuse <- tazdata_census %>%
   mutate(hhlds=TOTHH) %>%
   select(ZONE,DISTRICT,SD,COUNTY,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,TOTACRE,
          RESACRE,CIACRE,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
          MWTEMPN,OTHEMPN,PRKCST,OPRKCST,AREATYPE,HSENROLL,COLLFTE,COLLPTE,TERMINAL,TOPOLOGY,ZERO,hhlds,
          gqpop) 
 
-# Summarize ACS and employment data by superdistrict for both 2015 and 2020
+output_file <- file.path(argv$year, sprintf("TAZ1454 %d Land Use.csv", argv$year))
+write.csv(tazdata_landuse, output_file, row.names = FALSE, quote = T)
+print(paste("Wrote", output_file))
 
-summed15 <- PBA2015 %>%
+# Summarize ACS and employment data by superdistrict for both 2015 and the given year
+
+district_summary_2015 <- PBA2015 %>%
   group_by(DISTRICT) %>%
   summarize(TOTHH=sum(TOTHH),HHPOP=sum(HHPOP),TOTPOP=sum(TOTPOP),EMPRES=sum(EMPRES),SFDU=sum(SFDU),MFDU=sum(MFDU),
             HHINCQ1=sum(HHINCQ1),HHINCQ2=sum(HHINCQ2),HHINCQ3=sum(HHINCQ3),HHINCQ4=sum(HHINCQ4),TOTEMP=sum(TOTEMP),
@@ -1021,7 +777,11 @@ summed15 <- PBA2015 %>%
             OTHEMPN=sum(OTHEMPN),HSENROLL=sum(HSENROLL),COLLFTE=sum(COLLFTE),COLLPTE=sum(COLLPTE),gqpop=TOTPOP-HHPOP) %>% 
   ungroup()
 
-summed20 <- New2020 %>%
+output_file <- file.path(2015, sprintf("TAZ1454 %d District Summary.csv", 2015))
+write.csv(district_summary_2015, output_file, row.names = FALSE, quote = T)
+print(paste("Wrote",output_file))
+
+district_summary <- tazdata_census %>%
   group_by(DISTRICT) %>%
   summarize(TOTHH=sum(TOTHH),HHPOP=sum(HHPOP),TOTPOP=sum(TOTPOP),EMPRES=sum(EMPRES),SFDU=sum(SFDU),MFDU=sum(MFDU),
             HHINCQ1=sum(HHINCQ1),HHINCQ2=sum(HHINCQ2),HHINCQ3=sum(HHINCQ3),HHINCQ4=sum(HHINCQ4),TOTEMP=sum(TOTEMP),
@@ -1030,27 +790,21 @@ summed20 <- New2020 %>%
             OTHEMPN=sum(OTHEMPN),HSENROLL=sum(HSENROLL),COLLFTE=sum(COLLFTE),COLLPTE=sum(COLLPTE),gqpop=sum(gqpop)) %>% 
   ungroup()
 
-# Export new 2020 data, 2015 and 2020 district summary data
-
-write.csv(New2020, "TAZ1454 2020 Land Use.csv", row.names = FALSE, quote = T)
-print(paste("Wrote","TAZ1454 2020 Land Use.csv"))
-
-write.csv(summed15, "TAZ1454 2015 District Summary.csv", row.names = FALSE, quote = T)
-print(paste("Wrote","TAZ1454 2015 District Summary.csv"))
-
-write.csv(summed20, "TAZ1454 2020 District Summary.csv", row.names = FALSE, quote = T)
-print(paste("Wrote","TAZ1454 2020 District Summary.csv"))
+output_file <- file.path(argv$year, sprintf("TAZ1454 %d District Summary.csv", argv$year))
+write.csv(district_summary, output_file, row.names = FALSE, quote = T)
+print(paste("Wrote", output_file))
 
 # Select out PopSim variables and export to separate csv
 
-popsim_vars <- temp_rounded_adjusted %>% 
-  rename(TAZ=TAZ1454,gq_tot_pop=gqpop)%>%
+popsim_vars <- tazdata_census %>% 
+  rename(TAZ=ZONE,gq_tot_pop=gqpop)%>%
   select(TAZ,TOTHH,TOTPOP,hh_own,hh_rent,hh_size_1,hh_size_2,hh_size_3,hh_size_4_plus,hh_wrks_0,hh_wrks_1,hh_wrks_2,hh_wrks_3_plus,
          hh_kids_no,hh_kids_yes,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,
          gq_tot_pop,gq_type_univ,gq_type_mil,gq_type_othnon)
 
-write.csv(popsim_vars, "TAZ1454 2020 Popsim Vars.csv", row.names = FALSE, quote = T)
-print(paste("Wrote","TAZ1454 2020 Popsim Vars.csv"))
+output_file <- file.path(argv$year, sprintf("TAZ1454 %d Popsim Vars.csv", argv$year))
+write.csv(popsim_vars, output_file, row.names = FALSE, quote = T)
+print(paste("Wrote",output_file))
 
 # region popsim vars
 popsim_vars_region <- popsim_vars %>% 
@@ -1058,11 +812,12 @@ popsim_vars_region <- popsim_vars %>%
   group_by(REGION) %>%
   summarize(gq_num_hh_region=sum(gq_tot_pop))
 
-write.csv(popsim_vars_region, "TAZ1454 2020 Popsim Vars Region.csv", row.names = FALSE, quote = T)
-print(paste("Wrote","TAZ1454 2020 Popsim Vars Region.csv"))
+output_file <- file.path(argv$year, sprintf("TAZ1454 %d Popsim Vars Region.csv", argv$year))
+write.csv(popsim_vars_region, output_file, row.names = FALSE, quote = T)
+print(paste("Wrote",output_file))
 
 # county popsim vars
-popsim_vars_county <- joined_15_20 %>%
+popsim_vars_county <- tazdata_census %>%
   group_by(COUNTY) %>% summarize(
     pers_occ_management  =sum(pers_occ_management),
     pers_occ_professional=sum(pers_occ_professional),
@@ -1071,8 +826,9 @@ popsim_vars_county <- joined_15_20 %>%
     pers_occ_manual      =sum(pers_occ_manual),
     pers_occ_military    =sum(pers_occ_military))
 
-write.csv(popsim_vars_county, "TAZ1454 2020 Popsim Vars County.csv", row.names = FALSE, quote = T)
-print(paste("Wrote","TAZ1454 2020 Popsim Vars County.csv"))
+output_file <- file.path(argv$year, sprintf("TAZ1454 %d Popsim Vars County.csv", argv$year))
+write.csv(popsim_vars_county, output_file, row.names = FALSE, quote = T)
+print(paste("Wrote",output_file))
 
 # Output into Tableau-friendly format
 
@@ -1085,16 +841,17 @@ PBA2015_long <- PBA2015 %>%
   gather(Variable,Value,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
          MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)
 
-New2020_long <- New2020 %>%
-  left_join(.,select(TAZ_SD_COUNTY,ZONE,County_Name,DISTRICT_NAME),by=c("ZONE")) %>% # add County_Name, DISTRICT_NAME
-  mutate(Year=2020) %>% 
+output_file <- file.path(2015, sprintf("TAZ1454_%d_long.csv", 2015))
+write.csv(PBA2015_long,output_file,row.names = F)
+print(paste("Wrote",output_file))
+
+tazdata_census_long <- tazdata_census %>%
+  mutate(Year=argv$year) %>% 
   select(ZONE,DISTRICT,DISTRICT_NAME,COUNTY,County_Name,Year,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
          MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop) %>%
   gather(Variable,Value,TOTHH,HHPOP,TOTPOP,EMPRES,SFDU,MFDU,HHINCQ1,HHINCQ2,HHINCQ3,HHINCQ4,SHPOP62P,TOTEMP,AGE0004,AGE0519,AGE2044,AGE4564,AGE65P,RETEMPN,FPSEMPN,HEREMPN,AGREMPN,
          MWTEMPN,OTHEMPN,PRKCST,OPRKCST,HSENROLL,COLLFTE,COLLPTE,gqpop)
 
-write.csv(PBA2015_long,file.path(TM1,"2015","TAZ1454_2015_long.csv"),row.names = F)
-print(paste("Wrote",file.path(TM1,"2015","TAZ1454_2015_long.csv")))
-
-write.csv(New2020_long,"TAZ1454_2020_long.csv",row.names = F)
-print(paste("Wrote","TAZ1454_2020_long.csv"))
+output_file <- file.path(argv$year, sprintf("TAZ1454_%d_long.csv", argv$year))
+write.csv(tazdata_census_long,output_file,row.names = F)
+print(paste("Wrote",output_file))

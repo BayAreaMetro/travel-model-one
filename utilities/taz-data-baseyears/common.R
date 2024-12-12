@@ -229,32 +229,70 @@ map_ACS5year_household_income_to_TM1_categories <- function(ACS_year) {
   return(PUMS_hhinc_cat)
 }
 
-check_consistency_empres_hhworkers <- function(tazdata) {
-  # Required tazdata columns: ZONE, EMPRES, TOTHH, hh_wrks_0, hh_wrks_1, hh_wrks_2, hh_wrks_3_plus
+check_consistency_empres_hhworkers <- function(df, PUMS_COUNTY_3P_WORKERS) {
+  # Required df columns: ZONE, County_Name, EMPRES, TOTHH, hh_wrks_0, hh_wrks_1, hh_wrks_2, hh_wrks_3_plus
+  # PUMS_COUNTY_3P_WORKERS has columns County_Name, avg3p
   #
   # Perform a simple check of consistency between EMPRES and hh_wrks_0, hh_wrks_1, hh_wrks_2, hh_wrks_3_plus
   # by looking at implied number of workers in households with 3+ workers
   # and implied number of workers per household in those households
-  tazdata_with_check <- tazdata %>% select(
-        ZONE, EMPRES, TOTHH, hh_wrks_0, hh_wrks_1, hh_wrks_2, hh_wrks_3_plus
-    ) %>% mutate(
+  df_with_check <- df %>% 
+  select(ZONE, County_Name, EMPRES, TOTHH, hh_wrks_0, hh_wrks_1, hh_wrks_2, hh_wrks_3_plus) %>% 
+  left_join(., PUMS_COUNTY_3P_WORKERS, by=c("County_Name")) %>%
+  mutate(
     # verify (hh_wrks_0 + hh_wrks_1 + hh_wrks_2 + hh_wrks_3_plus == TOTHH)
-    tot_hh_wrks = hh_wrks_0 + hh_wrks_1 + hh_wrks_2 + hh_wrks_3_plus,
+    sum_hh_wrks = hh_wrks_0 + hh_wrks_1 + hh_wrks_2 + hh_wrks_3_plus,
     # number of workers in households with 3+ workers
-    implied_wrks_3_plus = EMPRES - (1*hh_wrks_1) - (2*hh_wrks_2),
-    implied_wrks_3_plus_per_hhld = ifelse(hh_wrks_3_plus==0, 0, implied_wrks_3_plus/hh_wrks_3_plus)
+    implied_min_workers     = (1*hh_wrks_1) + (2*hh_wrks_2) + (3*hh_wrks_3_plus),
+    estimated_total_workers = (1*hh_wrks_1) + (2*hh_wrks_2) + (avg3p*hh_wrks_3_plus),
+  ) %>% 
+  select( # reorder
+    ZONE, County_Name, hh_wrks_0, hh_wrks_1, hh_wrks_2, hh_wrks_3_plus, 
+    TOTHH, sum_hh_wrks, 
+    EMPRES, implied_min_workers, estimated_total_workers)
+  print("###### check_consistency_empres_hhworkers: implied_min_workers, estimate_total_workers:")
+  print(df_with_check)
+
+  print("by county:")
+  print(df_with_check %>% group_by(County_Name) %>% summarize(
+    TOTHH                  =sum(TOTHH),
+    sum_hh_wrks            =sum(sum_hh_wrks),
+    EMPRES                 =sum(EMPRES),
+    implied_min_workers    =sum(implied_min_workers),
+    estimated_total_workers=sum(estimated_total_workers))
   )
-  print("###### check_consistency_empres_hhworkers: implied_wrks_3_plus, implied_wrks_3_plus_per_hhld:")
-  print(tazdata_with_check)
 
-  # print out lines with negative implied_wrks_3_plus
-  print("tazdata_with_check with negative implied_wrks_3_plus:")
-  print(filter(tazdata_with_check, implied_wrks_3_plus < 0))
+  # print out lines with EMPRES < implied_min_workers
+  print("df_with_check with EMPRES < implied_min_workers")
+  print(filter(df_with_check, EMPRES < implied_min_workers))
 
-  print("tazdata_with_check with <3 implied_wrks_3_plus_per_hhld:")
-  print(filter(tazdata_with_check, implied_wrks_3_plus_per_hhld < 3 ))
+  # print out lines with EMPRES > estimated_total_workers
+  print("df_with_check with EMPRES > estimated_total_workers")
+  print(filter(df_with_check, EMPRES > estimated_total_workers))
 }
 
-correct_households_by_number_of_workers <- function(ACS5_year) {
-  # This function corrects households by number of workers
+correct_households_by_number_of_workers <- function(df) {
+  # Apply households by number of workers correction factors
+  # The initial table values are actually households by number of "commuters" 
+  # (people at work - not sick, vacation - in the ACS reference week)
+  # This overstates 0-worker households and understates 3+-worker households.
+  # A correction needs to be applied.
+
+  # TODO: Implement this directly rather in excel
+  counties  <- c(1,2,3,4,5,6,7,8,9)  # Matching county values for factor ordering
+
+  workers0  <- c(0.80949, 0.73872, 0.71114, 0.64334, 0.83551, 0.81965, 0.79384, 0.86188, 0.84022)
+  workers1  <- c(1.04803, 1.02080, 1.04346, 1.05696, 1.00905, 1.03175, 1.08663, 1.02549, 1.04765)
+  workers2	<- c(1.04826, 1.07896, 1.05444, 1.11641, 1.06367, 1.04932, 1.03722, 1.06810, 1.06777)
+  workers3p	<- c(1.12707, 1.16442, 1.15440, 1.22406, 1.15324, 1.18291, 1.14513, 1.10387, 1.11526)
+
+  df <- df %>%
+    left_join(.,select(TAZ_SD_COUNTY,ZONE,COUNTY,County_Name),by=c("TAZ1454"="ZONE")) %>% 
+    mutate(
+      hh_wrks_0      = hh_wrks_0*workers0[match(COUNTY,counties)], # Apply the above index values for correction factors
+      hh_wrks_1      = hh_wrks_1*workers1[match(COUNTY,counties)],
+      hh_wrks_2      = hh_wrks_2*workers2[match(COUNTY,counties)],
+      hh_wrks_3_plus = hh_wrks_3_plus*workers3p[match(COUNTY,counties)]) 
+    
+  return(df)
 }
