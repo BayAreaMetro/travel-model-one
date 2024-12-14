@@ -8,7 +8,7 @@ USAGE = "
 # 2. ACS data here is downloaded for relevant 5-year dataset. 
 # 
 # 3. ACS block group variables used in all instances where not suppressed. If suppressed at the block group 
-#    level, tract-level data used instead. Suppressed variables may change if ACS_year is changed. This 
+#    level, tract-level data used instead. Suppressed variables may change if ACS_5year is changed. This 
 #    should be checked, as this change could cause the script not to work.
 #
 
@@ -36,11 +36,19 @@ sink(run_log, append=FALSE, type = c('output', 'message'))
 # Bring in common methods
 source("./common.R")
 
+# These are the most recent ACS datasets available
+ACS_PUMS_5YEAR_LATEST <- 2022
+ACS_PUMS_1YEAR_LATEST <- 2023
+ACS_5YEAR_LATEST      <- ACS_PUMS_5YEAR_LATEST # don't use inconsistent versions
+
 # figure out our primary datasource - which ACS5-year
-ACS_5YEAR_LATEST <- 2022
-ACS_year <- argv$year + 2  # ACS 5 year would then go from argv$year - 2 to argv$year + 2
-ACS_year <- min(ACS_year, ACS_5YEAR_LATEST)
-print(paste("ACS_year:", ACS_year))
+ACS_5year <- argv$year + 2  # ACS 5 year would then go from argv$year - 2 to argv$year + 2
+ACS_5year <- min(ACS_5year, ACS_5YEAR_LATEST)
+print(paste("ACS_5year:", ACS_5year))
+
+# Used for avg workers per 3+ person households
+ACS_PUMS_1year <- min(ACS_PUMS_1YEAR_LATEST, argv$year)
+ACS_PUMS_5year <- min(ACS_PUMS_5YEAR_LATEST, argv$year + 2)
 
 # lodes year
 LODES_YEAR_LATEST <- 2022
@@ -60,8 +68,14 @@ TAZ_SD_COUNTY      <- read.csv(file.path("..","geographies","taz-superdistrict-c
   rename(County_Name=COUNTY_NAME, DISTRICT=SD, DISTRICT_NAME=SD_NAME) %>% select(-SD_NUM_NAME, -COUNTY_NUM_NAME)
 # TAZ_SD_COUNTY columns: ZONE,DISTRICT,COUNTY,DISTRICT_NAME,County_Name
 
+# this is output by census-tools-for-planning\analysis_by_topic\PUMS_HH_and_Person_Worker_Research.R
 PUMS_COUNTY_3P_WORKERS <- read.csv(file.path("M:/Data/Census/PUMS", 
-  sprintf("PUMS %d-%02d", ACS_year-4, ACS_year %% 100), "Avg_3p_Workers_County.csv"), header=T)
+  sprintf("PUMS %d", ACS_PUMS_1year), "summaries", "county_hh_worker_summary_long.csv"), header=T)
+PUMS_COUNTY_3P_WORKERS <- PUMS_COUNTY_3P_WORKERS %>%
+  filter(hh_wrks == "hh_wrks1245_3plus") %>%
+  select(County_Name, avg_workers) %>%
+  rename(avg3p = avg_workers)
+
 print("PUMS_COUNTY_3P_WORKERS:")
 print(PUMS_COUNTY_3P_WORKERS)
 
@@ -87,7 +101,7 @@ state_code <- "06"
 
 # Import decennial census (DHC file) and ACS for variable inspection, use to get variable numbers
 DHC_table <- load_variables(year=2020, dataset="dhc", cache=TRUE)
-ACS_table <- load_variables(year=ACS_year, dataset="acs5", cache=TRUE)
+ACS_table <- load_variables(year=ACS_5year, dataset="acs5", cache=TRUE)
 
 # Identify the 2020 decennial census variables
 # Some variables skipped in sequence due to nesting
@@ -146,7 +160,7 @@ ACS_BG_variables <- c(
   female80_84_  ="B01001_048",    # female aged 80 to 84 
   female85p_    ="B01001_049",    # female aged 85+ 
 
-# Household size by tenure
+# Household size by tenure; B25009: Tenure by Household Size. Universe = Occupied Housing Units
   own1_         ="B25009_003",    # own 1 person in HH 	     
   own2_         ="B25009_004",    # own 2 persons in HH 
   own3_         ="B25009_005",    # own 3 persons in HH 
@@ -162,7 +176,7 @@ ACS_BG_variables <- c(
   rent6_        ="B25009_016",    # rent 6 persons in HH 
   rent7p_       ="B25009_017",    # rent 7+ persons in HH
 
-# Race/Ethnicity variables
+# Race/Ethnicity variables; B03002: Hispanic or Latino Origin by Race. Universe=Total Population
   white_nonh_   ="B03002_003",   # White alone, not Hispanic
   black_nonh_   ="B03002_004",   # Black alone, not Hispanic
   asian_nonh_   ="B03002_006",   # Asian alone, not Hispanic
@@ -252,7 +266,7 @@ ACS_tract_variables <-  c(
   hhwrks2_          = "B08202_004",	# 2-worker HH
   hhwrks3p_         = "B08202_005", # 3+-worker HH
 
-# Households by number of kids
+# Households by number of kids; B25012: Tenure by Families and Presence of Own Children. Universe = Occupied Housing Units
   ownkidsyes_       = "B25012_003", # Own with related kids under 18
   rentkidsyes_      = "B25012_011", # Rent with related kids under 18
   ownkidsno_        = "B25012_009", # Own without related kids under 18
@@ -316,7 +330,7 @@ print(head(combined_block, n=20))
 ACS_tract_raw <- tidycensus::get_acs(
   geography = "tract", variables = ACS_tract_variables,
   state = state_code, county=baycounties,
-  year=ACS_year,
+  year=ACS_5year,
   output="wide",
   survey = "acs5",
   key = censuskey)
@@ -324,7 +338,7 @@ ACS_tract_raw <- tidycensus::get_acs(
 ACS_BG_raw <- tidycensus::get_acs(
   geography = "block group", variables = ACS_BG_variables,
   state = state_code, county=baycounties,
-  year=ACS_year,
+  year=ACS_5year,
   output="wide",
   survey = "acs5",
   key = censuskey)
@@ -343,7 +357,6 @@ DHC_tract_raw <- DHC_tract_raw %>% select(-NAME)
 
 print(paste0("DHC_tract_raw (",nrow(DHC_tract_raw)," rows):"))
 print(DHC_tract_raw)
-
 
 # Remove MOEs from ACS variables,rename to drop "_E" suffix
 # Drop NAME variable for later joining
@@ -412,44 +425,40 @@ workingdata <- interim %>% mutate(
   hh_kids_yes=(ownkidsyes+rentkidsyes)*sharetract,
   hh_kids_no=(ownkidsno+rentkidsno)*sharetract,
   # persons by occupation
-  pers_occ_management   = (occ_m_manage    + occ_f_manage   )*sharebg,
-  pers_occ_professional = (occ_m_prof_biz  + occ_f_prof_biz  +
-                           occ_m_prof_comp + occ_f_prof_comp +
-                           occ_m_prof_leg  + occ_f_prof_leg  +
-                           occ_m_prof_edu  + occ_f_prof_edu  +
-                           occ_m_prof_heal + occ_f_prof_heal)*sharebg,
-  pers_occ_services     = (occ_m_svc_comm  + occ_f_svc_comm  +
-                           occ_m_svc_ent   + occ_f_svc_ent   +
-                           occ_m_svc_heal  + occ_f_svc_heal  +
-                           occ_m_svc_fire  + occ_f_svc_fire  +
-                           occ_m_svc_law   + occ_f_svc_law   +
-                           occ_m_svc_pers  + occ_f_svc_pers  +
-                           occ_m_svc_off   + occ_f_svc_off  )*sharebg,
-  pers_occ_retail       = (occ_m_ret_eat   + occ_f_ret_eat   +
-                           occ_m_ret_sales + occ_f_ret_sales)*sharebg,
-  pers_occ_manual       = (occ_m_man_build + occ_f_man_build +
-                           occ_m_man_nat   + occ_f_man_nat   +
-                           occ_m_man_prod  + occ_f_man_prod )*sharebg,
+  pers_occ_management   = (
+    occ_m_manage    + occ_f_manage   )*sharebg,
+  pers_occ_professional = (
+    occ_m_prof_biz  + occ_f_prof_biz  +
+    occ_m_prof_comp + occ_f_prof_comp +
+    occ_m_prof_leg  + occ_f_prof_leg  +
+    occ_m_prof_edu  + occ_f_prof_edu  +
+    occ_m_prof_heal + occ_f_prof_heal)*sharebg,
+  pers_occ_services     = (
+    occ_m_svc_comm  + occ_f_svc_comm  +
+    occ_m_svc_ent   + occ_f_svc_ent   +
+    occ_m_svc_heal  + occ_f_svc_heal  +
+    occ_m_svc_fire  + occ_f_svc_fire  +
+    occ_m_svc_law   + occ_f_svc_law   +
+    occ_m_svc_pers  + occ_f_svc_pers  +
+    occ_m_svc_off   + occ_f_svc_off  )*sharebg,
+  pers_occ_retail       = (
+    occ_m_ret_eat   + occ_f_ret_eat   +
+    occ_m_ret_sales + occ_f_ret_sales)*sharebg,
+  pers_occ_manual       = (
+    occ_m_man_build + occ_f_man_build +
+    occ_m_man_nat   + occ_f_man_nat   +
+    occ_m_man_prod  + occ_f_man_prod )*sharebg,
   pers_occ_military     = (armedforces)*sharebg,
   # group quarters
-  gq_type_univ  =(gq_noninst_m_0017_univ +
-                         gq_noninst_m_1864_univ +
-                         gq_noninst_m_65p_univ  +
-                         gq_noninst_f_0017_univ +
-                         gq_noninst_f_1864_univ +
-                         gq_noninst_f_65p_univ)*sharetract,
-         gq_type_mil   =(gq_noninst_m_0017_mil  +
-                         gq_noninst_m_1864_mil  +
-                         gq_noninst_m_65p_mil   +
-                         gq_noninst_f_0017_mil  +
-                         gq_noninst_f_1864_mil  +
-                         gq_noninst_f_65p_mil)*sharetract,
-         gq_type_othnon=(gq_noninst_m_0017_oth  +
-                         gq_noninst_m_1864_oth  +
-                         gq_noninst_m_65p_oth   +
-                         gq_noninst_f_0017_oth  +
-                         gq_noninst_f_1864_oth  +
-                         gq_noninst_f_65p_oth)*sharetract)
+  gq_type_univ  =(
+    gq_noninst_m_0017_univ + gq_noninst_m_1864_univ + gq_noninst_m_65p_univ  +
+    gq_noninst_f_0017_univ + gq_noninst_f_1864_univ + gq_noninst_f_65p_univ)*sharetract,
+  gq_type_mil   =(
+    gq_noninst_m_0017_mil  + gq_noninst_m_1864_mil  + gq_noninst_m_65p_mil   +
+    gq_noninst_f_0017_mil  + gq_noninst_f_1864_mil  + gq_noninst_f_65p_mil)*sharetract,
+  gq_type_othnon=(
+    gq_noninst_m_0017_oth  + gq_noninst_m_1864_oth  + gq_noninst_m_65p_oth   +
+    gq_noninst_f_0017_oth  + gq_noninst_f_1864_oth  + gq_noninst_f_65p_oth)*sharetract)
 
 print(paste0("workingdata (",nrow(workingdata)," rows):"))
 print(workingdata)
@@ -457,9 +466,9 @@ print(workingdata)
 # take out income columns and handle separately
 workingdata_hhinc <- workingdata %>% select(
   starts_with(c("GEOID","blockgroup","tract","TAZ1454","sharebg","hhinc"))
-)
+) %>% tibble()
 print(paste0("Initial workingdata_hhinc (",nrow(workingdata_hhinc)," rows):"))
-print(workingdata_hhinc)
+print(workingdata_hhinc, n=20)
 
 # pivot hhinc categories from columns to rows
 workingdata_hhinc <- workingdata_hhinc %>% pivot_longer(
@@ -472,7 +481,7 @@ print(paste0("After pivoting hhinc categories to rows, workingdata_hhinc (",nrow
 print(workingdata_hhinc)
 
 # join with mapping from householdinc_acs_cat to HHINCQ from PUMS
-PUMS_hhinc_cat <- map_ACS5year_household_income_to_TM1_categories(ACS_year)
+PUMS_hhinc_cat <- map_ACS5year_household_income_to_TM1_categories(ACS_5year)
 
 workingdata_hhinc <- workingdata_hhinc %>% 
   # apply sharebg
@@ -563,10 +572,41 @@ print(paste("gq_type_mil   :", format(sum(DHC_gqpop$gq_type_mil),    nsmall=0, b
 print(paste("gq_type_othnon:", format(sum(DHC_gqpop$gq_type_othnon), nsmall=0, big.mark=',')))
 print(paste("gqpop         :", format(sum(DHC_gqpop$gqpop),          nsmall=0, big.mark=',')))
 
+# GQ population is from Decennial census so represents 2020
+# Bring it to be consistent with ACS5_year
+# Read ACS1 year for 2020 and ACS_PUMS_5year
 if (argv$year > 2020) {
-  print(sprintf("TODO: year %d > 2020", argv$year))
-  print("TODO: SCALE scale Group Quarters population to ACS 1-years")
+  GQ_2020 <- read.csv("M:/Data/Census/PUMS/PUMS 2020/summaries/noninst_gq_summary.csv", header=T)
+  GQ_ACS5_year <- read.csv(
+    file.path("M:/Data/Census/PUMS", 
+      sprintf("PUMS %d-%02d", ACS_PUMS_5year-4, ACS_PUMS_5year %% 100),
+      "summaries", "noninst_gq_summary.csv"), header=T)
+  
+  GQ_both <- left_join(
+    GQ_2020, GQ_ACS5_year,
+    by          =c("County_Name"),
+    suffix      =c(".2020", ".ACS5year"),
+    relationship="one-to-one"
+  ) %>% mutate(
+    gq_mil_diff   = gq_mil.ACS5year   - gq_mil.2020,
+    gq_oth_diff   = gq_oth.ACS5year   - gq_oth.2020,
+    gq_univ_diff  = gq_univ.ACS5year  - gq_univ.2020,
+    gq_tot_diff   = gq_tot.ACS5year   - gq_tot.2020,
+    workers_diff  = workers.ACS5year  - workers.2020,
+    AGE_0004_diff = AGE_0004.ACS5year - AGE_0004.2020,
+    AGE_0519_diff = AGE_0519.ACS5year - AGE_0519.2020,
+    AGE_2044_diff = AGE_2044.ACS5year - AGE_2044.2020,
+    AGE_4564_diff = AGE_4564.ACS5year - AGE_4564.2020,
+    AGE_65P_diff  = AGE_65P.ACS5year  - AGE_65P.2020
+  )
+  print("GQ_both")
+  print(GQ_both)
+  # print(select(GQ_both, County_Name, ends_with("_diff")))
+
+  # TODO: Incorporate GQ diffs
+  print("TODO: Incorporate GQ diffs")
 }
+
 # TODO: add this back -- but leave this low for now
 # tazdata_census <- correct_households_by_number_of_workers(tazdata_census)
 # print("For 'tazdata_census':")
@@ -594,9 +634,10 @@ print(tazdata_census %>% group_by(County_Name) %>% summarize(
   TOTHH        =sum(TOTHH), 
   sum_tenure   =sum(sum_tenure),
   sum_size     =sum(sum_size),
+  sum_income   =sum(sum_income),
   sum_hhworkers=sum(sum_hhworkers),
-  sum_kids     =sum(sum_kids),
-  sum_income   =sum(sum_income)))
+  sum_kids     =sum(sum_kids)
+))
 
 print("population consistency checks")
 print(tazdata_census %>% group_by(County_Name) %>% summarize(
@@ -614,9 +655,9 @@ tazdata_census <- tazdata_census %>%
   mutate_if(is.numeric,round,0) %>%
   mutate(SHPOP62P = if_else(TOTPOP==0,0,AGE62P/TOTPOP))
   
-# ACS_year should be argv$year + 2 -- if it's not, then scale up using ACS1-year totals
-if (ACS_year < argv$year+2) {
-  print(sprintf("TODO: ACS_year %d < year+2 = %d", ACS_year, argv$year+2))
+# ACS_5year should be argv$year + 2 -- if it's not, then scale up using ACS1-year totals
+if (ACS_5year < argv$year+2) {
+  print(sprintf("TODO: ACS_5year %d < year+2 = %d", ACS_5year, argv$year+2))
   print("TODO: SCALE population, households to ACS1-year totals")
 }
 
