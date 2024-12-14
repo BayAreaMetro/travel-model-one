@@ -655,9 +655,70 @@ tazdata_census <- tazdata_census %>%
   mutate_if(is.numeric,round,0) %>%
   mutate(SHPOP62P = if_else(TOTPOP==0,0,AGE62P/TOTPOP))
   
-# ACS_5year should be argv$year + 2 -- if it's not, then scale up using ACS1-year totals
-if (ACS_5year < argv$year+2) {
-  print(sprintf("TODO: ACS_5year %d < year+2 = %d", ACS_5year, argv$year+2))
+# ACS_5year should be ACS_PUMS_1year + 2 -- if it's not, then scale up using ACS1-year totals
+if (ACS_5year < ACS_PUMS_1year+2) {
+  print(sprintf("TODO: ACS_5year %d < ACS_PUMS_1year + 2 = %d", ACS_5year, ACS_PUMS_1year + 2))
+
+  ACS_target_vars = c(
+    tothh_        ="B19001_001",    # Total households
+    totpop_       ="B01001_001",    # Total population
+    hhpop_        ="B28005_001",    # Universe: Population in households
+    employed_     ="B23025_004",    # Civilian employed residents (employed residents is "employed" + "armed forces")
+    armedforces_  ="B23025_006" 	  # Armed forces
+  )
+  
+  simplify_col <- function(name) { gsub("_E", "", name) }
+
+  ACS_1year_target <- tidycensus::get_acs(
+      geography = "county", variables = ACS_target_vars,
+      state = state_code, county=baycounties,
+      year = ACS_PUMS_1year,
+      output="wide",
+      survey = "acs1",
+      key = censuskey)
+  ACS_1year_target <- ACS_1year_target %>%
+    select(-ends_with("_M")) %>%
+    rename_with(simplify_col, ends_with("_E")) %>%
+    mutate(
+      NAME = str_replace_all(NAME," County, California", ""),
+      empres = employed + armedforces) %>%
+    select(-GEOID, -employed, -armedforces) %>%
+    rename(
+      County_Name   = NAME,
+      TOTHH_target  = tothh,
+      TOTPOP_target = totpop,
+      HHPOP_target  = hhpop,
+      EMPRES_target = empres
+    )
+
+  print("ACS_1year_target:")
+  print(ACS_1year_target)
+
+  current_county_totals <- tazdata_census %>% 
+    group_by(County_Name) %>% 
+    summarize(
+      TOTHH  = sum(TOTHH),
+      TOTPOP = sum(TOTPOP),
+      HHPOP  = sum(HHPOP),
+      EMPRES = sum(EMPRES)
+    )
+  print("current_county_totals:")
+  print(current_county_totals)
+
+  # put them together
+  scale_county_totals <- left_join(
+    current_county_totals, 
+    ACS_1year_target, 
+    by=c("County_Name"))
+  
+  scale_county_totals <- scale_county_totals %>% mutate(
+    TOTHH_diff  = TOTHH_target  - TOTHH,
+    TOTPOP_diff = TOTPOP_target - TOTPOP,
+    HHPOP_diff  = HHPOP_target  - HHPOP,
+    EMPRES_diff = EMPRES_target - EMPRES
+  )
+  print("scale_county_totals:")
+  print(scale_county_totals)
   print("TODO: SCALE population, households to ACS1-year totals")
 }
 
