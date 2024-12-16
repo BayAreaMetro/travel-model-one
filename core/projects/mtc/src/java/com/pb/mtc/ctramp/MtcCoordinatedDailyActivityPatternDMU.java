@@ -114,11 +114,12 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
         return this.tazDataManager.getZoneCounty(work_taz);
     }
     // return 1 if home/work is EastBay/SF or vice versa
+    // where here "EastBay" = Alameda, Contra Costa, or Solano (which is really East North Bay)
     public int getEastBaySF(){
         int home_county = getHomeCounty();
         int work_county = getWorkCounty();
-        if ((home_county==1) && ((work_county==4)  || (work_county==5))) { return 1; }
-        if ((work_county==1) && ((home_county==4)  || (home_county==5))) { return 1; }
+        if ((home_county==1) && ((work_county==4) || (work_county==5) || (work_county==6))) { return 1; }
+        if ((work_county==1) && ((home_county==4) || (home_county==5) || (home_county==6))) { return 1; }
         return 0;
     }
     /**
