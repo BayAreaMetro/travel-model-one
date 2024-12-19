@@ -41,6 +41,62 @@ mutate(TAZ1454=case_when(
 print("BLOCK2020_TAZ1454:")
 print(head(BLOCK2020_TAZ1454))
 
+### Function to fix rounding artifacts for columns which should sum to a total column
+# For example, if we have col_a = 2.3 => 2, col_b = 3.4 => 3, col_c = 4.3 => 4, tot_col = 10 
+# but the sum of the rounded cols is only 9. So this would allocate the additional 1 to the largest col, or col_c.
+#
+# usage: adjusted <- fix_rounding_artifacts(my_data, "tot_col", c("col_a", "col_b", "col_c"))
+fix_rounding_artifacts <- function(df, id_var, sum_var, partial_vars) {
+  print(paste("fix_rounding_artifacts() with id_var:", id_var, "; sum_var:", sum_var, "and partial_vars:"))
+  print(partial_vars)
+
+  original_order <- colnames(df)
+
+  # select the columns we care about
+  my_df <- df %>% select(all_of(c(id_var, sum_var, partial_vars)))
+  my_df <- my_df %>%
+    rowwise() %>%
+    mutate(
+      # this will be the column name with the max value out of the columns listed in partial_vars
+      max_col = names(my_df)[which.max(c_across(all_of(partial_vars)))+2],
+      # this is the discrepancy between partial vars and sum_var to be resolved
+      diff_col = get(sum_var) - sum(c_across(all_of(partial_vars)))
+    ) %>% ungroup()
+  # these are the rows that need updating
+  print("Rows needing updating:")
+  print(filter(my_df, diff_col != 0))
+
+  # for each column in partial_vars, update the value by diff if max_col matches
+  for (partial_name in partial_vars) {
+    my_df <- my_df %>% mutate(
+      my_diff_col = ifelse(max_col==partial_name, diff_col, 0),
+      !!sym(partial_name) := .data[[partial_name]] + my_diff_col,
+    )
+  }
+  # print(filter(my_df, diff_col != 0))
+
+  # verify things worked by recalculating diff_col
+  my_df <- my_df %>% 
+    rowwise() %>%
+    mutate(
+      diff_col = get(sum_var) - sum(c_across(all_of(partial_vars)))
+    ) %>% ungroup()
+  stopifnot(all(my_df$diff_col == 0))
+  # verified!
+
+  # select to just id_var, partial_vars
+  my_df <- my_df %>% select(all_of(c(id_var, partial_vars)))
+
+  # replace the partial_vars in the original df
+  df <- df %>% select(-any_of(partial_vars)) %>% 
+    left_join(., my_df, by=id_var)
+
+  # keep columns in same order
+  df <- df %>% select(all_of(original_order))
+
+  return(df)
+}
+
 map_ACS5year_household_income_to_TM1_categories <- function(ACS_year) {
   # Because the 2021$ and 2022$ equivalent categories don't align with the 2000$
   # categories, households within these categories will be apportioned above and below.
@@ -294,5 +350,30 @@ correct_households_by_number_of_workers <- function(df) {
       hh_wrks_2      = hh_wrks_2*workers2[match(COUNTY,counties)],
       hh_wrks_3_plus = hh_wrks_3_plus*workers3p[match(COUNTY,counties)]) 
     
+  return(df)
+}
+
+update_gqop_to_county_totals <- function(df, target_GQ_df, ACS_PUMS_1year) {
+  # df is a TAZ-based tibble including columns:
+  #   TAZ1454, 
+  #   gq_type_[univ,mil,othnon], gqpop         
+  #   AGE[0004,0519,2044,4564,65P], sum_age
+  #   pers_occ_[management,professional,services,retail,manual,military], empres
+  #   TODO: race/ethnicity variables should be done as well but I don't think they're used
+  # target_GQ_df is a tibble with columns County_Name, GQPOP, GQPOP_target
+  # ACS_PUMS_1year is the year corresponding to the target; we'll use the ACS PUMS 1-year data
+  #   distributions for GQ workers to make these updates.
+  print(paste0("########################## update_ggop_to_county_totals(",ACS_PUMS_1year,") ##########################"))
+
+  # this file is output by 
+  # GitHub\census-tools-for-planning\analysis_by_topic\summarize_noninst_group_quarters.R
+  GQ_PUMS1YEAR_FILE <- file.path("M:/Data/Census/PUMS",
+    sprintf("PUMS %d", ACS_PUMS_1year),"summaries","noninst_gq_summary.csv")
+  GQ_PUMS1YEAR_SUMMARY <- read.csv(GQ_PUMS1YEAR_FILE, header=T)
+  print(paste("Read",nrow(GQ_PUMS1YEAR_SUMMARY),"rows from",GQ_PUMS1YEAR_FILE))
+  print(GQ_PUMS1YEAR_SUMMARY)
+
+  print(select(target_GQ_df, County_Name, GQPOP, GQPOP_target))
+
   return(df)
 }

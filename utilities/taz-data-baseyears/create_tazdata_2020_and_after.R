@@ -103,8 +103,7 @@ state_code <- "06"
 DHC_table <- load_variables(year=2020, dataset="dhc", cache=TRUE)
 ACS_table <- load_variables(year=ACS_5year, dataset="acs5", cache=TRUE)
 
-# Identify the 2020 decennial census variables
-# Some variables skipped in sequence due to nesting
+# ACS Block Group Variables
 
 ACS_BG_variables <- c(
 # total households
@@ -325,7 +324,7 @@ print(paste("combined_block has",nrow(combined_block),"rows"))
 print("head(combined_block):")
 print(head(combined_block, n=20))
 
-# Function to make tract and block group data API calls by county for specified 5-year ACS
+# Download ACS data (and DHC data for group quarters)
 
 ACS_tract_raw <- tidycensus::get_acs(
   geography = "tract", variables = ACS_tract_variables,
@@ -553,8 +552,8 @@ tazdata_census <- left_join(tazdata_census, TAZ_SD_COUNTY, by=c("TAZ1454"="ZONE"
 
 print(paste0("tazdata_census (", nrow(tazdata_census)," rows):"))
 print(tazdata_census)
-print("str(tazdata_census):")
-print(str(tazdata_census))
+# print("str(tazdata_census):")
+# print(str(tazdata_census))
 
 print("DHC GQ population:")
 DHC_gqpop <- tazdata_census %>%
@@ -612,7 +611,6 @@ if (argv$year > 2020) {
 # print("For 'tazdata_census':")
 # check_consistency_empres_hhworkers(rename(tazdata_census, ZONE = TAZ1454), PUMS_COUNTY_3P_WORKERS)
 
-
 # Sum constituent parts to compare with marginal totals
 tazdata_census <- tazdata_census %>%
   mutate (
@@ -648,11 +646,29 @@ print(tazdata_census %>% group_by(County_Name) %>% summarize(
 # empres consistency check
 check_consistency_empres_hhworkers(rename(tazdata_census, ZONE = TAZ1454), PUMS_COUNTY_3P_WORKERS)
 
-# Round Data, remove sum variables
+# Round Data
+tazdata_census <- tazdata_census %>%
+  mutate_if(is.numeric,round,0)
+
+# population
+tazdata_census <- fix_rounding_artifacts(tazdata_census, "TAZ1454", "TOTPOP", c("AGE0004","AGE0519","AGE2044","AGE4564","AGE65P"))
+tazdata_census <- fix_rounding_artifacts(tazdata_census, "TAZ1454", "TOTPOP", c("white_nonh","black_nonh","asian_nonh","other_nonh","hispanic"))
+# group quarters
+tazdata_census <- fix_rounding_artifacts(tazdata_census, "TAZ1454", "gqpop",  c("gq_type_univ","gq_type_mil","gq_type_othnon"))
+# households
+tazdata_census <- fix_rounding_artifacts(tazdata_census, "TAZ1454", "TOTHH",  c("hh_own","hh_rent"))
+tazdata_census <- fix_rounding_artifacts(tazdata_census, "TAZ1454", "TOTHH",  c("hh_size_1","hh_size_2","hh_size_3","hh_size_4_plus"))
+tazdata_census <- fix_rounding_artifacts(tazdata_census, "TAZ1454", "TOTHH",  c("hh_kids_yes","hh_kids_no"))
+tazdata_census <- fix_rounding_artifacts(tazdata_census, "TAZ1454", "TOTHH", c("HHINCQ1","HHINCQ2","HHINCQ3","HHINCQ4"))
+# TODO: this one is making adjustments bigger than +/- 1 so it should be done with sampling.  They all could be done that way.
+tazdata_census <- fix_rounding_artifacts(tazdata_census, "TAZ1454", "TOTHH",  c("hh_wrks_0","hh_wrks_1","hh_wrks_2","hh_wrks_3_plus"))
+# employed residents
+tazdata_census <- fix_rounding_artifacts(tazdata_census, "TAZ1454", "EMPRES", c("pers_occ_management","pers_occ_professional",
+                                                                                "pers_occ_services","pers_occ_retail",
+                                                                                "pers_occ_manual","pers_occ_military"))
+
 # Add in population over age 62 variable that is also needed (but should not be rounded, so added at the end)
 tazdata_census <- tazdata_census %>%
-  select(-sum_age,-sum_groupquarters,-sum_tenure,-sum_size,-sum_hhworkers,-sum_kids,-sum_income,-sum_empres, -sum_ethnicity) %>% 
-  mutate_if(is.numeric,round,0) %>%
   mutate(SHPOP62P = if_else(TOTPOP==0,0,AGE62P/TOTPOP))
   
 # ACS_5year should be ACS_PUMS_1year + 2 -- if it's not, then scale up using ACS1-year totals
@@ -689,7 +705,9 @@ if (ACS_5year < ACS_PUMS_1year+2) {
       TOTPOP_target = totpop,
       HHPOP_target  = hhpop,
       EMPRES_target = empres
-    )
+    ) %>% 
+    mutate(GQPOP_target = TOTPOP_target - HHPOP_target,
+)
 
   print("ACS_1year_target:")
   print(ACS_1year_target)
@@ -699,6 +717,7 @@ if (ACS_5year < ACS_PUMS_1year+2) {
     summarize(
       TOTHH  = sum(TOTHH),
       TOTPOP = sum(TOTPOP),
+      GQPOP  = sum(gqpop),
       HHPOP  = sum(HHPOP),
       EMPRES = sum(EMPRES)
     )
@@ -715,11 +734,21 @@ if (ACS_5year < ACS_PUMS_1year+2) {
     TOTHH_diff  = TOTHH_target  - TOTHH,
     TOTPOP_diff = TOTPOP_target - TOTPOP,
     HHPOP_diff  = HHPOP_target  - HHPOP,
+    GQPOP_diff  = GQPOP_target  - GQPOP,
     EMPRES_diff = EMPRES_target - EMPRES
   )
   print("scale_county_totals:")
   print(scale_county_totals)
+
+  print("Regional totals:")
+  print(scale_county_totals %>% summarise(across(where(is.numeric), sum)))
+  
   print("TODO: SCALE population, households to ACS1-year totals")
+  # update from most specific to least specific
+  # 1. group quarters population (includes employed residents and persons by age)
+  tazdata_census <- update_gqop_to_county_totals(tazdata_census, scale_county_totals, ACS_PUMS_1year)
+  # 2. employed residents
+  # 3. total households and population
 }
 
 if (LODES_YEAR < argv$year) {
@@ -727,102 +756,14 @@ if (LODES_YEAR < argv$year) {
   print("TODO: SCALE employment to ACS1-year totals")
 }
 
-# The below step is so clunky. I refactored it and think it should be updated the next time this process is done using the below function:
-### Function to adjust values in each row
-#  adjustValues <- function(data, marginal_var,columns) {
-    # Iterate through rows and adjust values
-    #for (i in 1:nrow(data)) {
-    #  largest_value_index <- which.max(data[i, columns])
-    #  difference <- data[i, marginal_var] - sum(data[i, columns])
-    #  data[i, columns[largest_value_index]] <- data[i, columns[largest_value_index]] - difference
-    #}
-    #return(data)
-  #}
+print(paste0("tazdata_census (", nrow(tazdata_census)," rows):"))
+print(tazdata_census)
+# print("str(tazdata_census):")
+# print(str(tazdata_census))
 
-# Apply the adjustValues function to the data frame
-#### my_data_adjusted <- adjustValues(my_data, "total", c("num1", "num2", "num3", "num4", "num5"))
-
-# For now, the unfactored old-bessy version that works
-# Scaling adjustments were done above, now make fix small variations due to rounding for precisely-matching totals
-# Find max value in categorical data to adjust totals so they match univariate totals
-# For example, the households by income across categories should sum to equal total HHs
-# If unequal, the largest constituent cell is adjusted up or down such that the category sums match the marginal total
+# Remove sum variables
 tazdata_census <- tazdata_census %>%
-   mutate (
-    max_age    = max.col(.[c("AGE0004","AGE0519","AGE2044","AGE4564","AGE65P")],     ties.method="first"),
-    max_gq     = max.col(.[c("gq_type_univ","gq_type_mil","gq_type_othnon")],        ties.method="first"),
-    max_tenure = max.col(.[c("hh_own","hh_rent")],                                   ties.method="first"),
-    max_size   = max.col(.[c("hh_size_1","hh_size_2","hh_size_3","hh_size_4_plus")], ties.method="first"),
-    max_workers= max.col(.[c("hh_wrks_0","hh_wrks_1","hh_wrks_2","hh_wrks_3_plus")], ties.method="first"),
-    max_kids   = max.col(.[c("hh_kids_yes","hh_kids_no")],                           ties.method="first"),
-    max_income = max.col(.[c("HHINCQ1","HHINCQ2","HHINCQ3","HHINCQ4")],              ties.method="first"),
-    max_occ    = max.col(.[c("pers_occ_management","pers_occ_professional",
-                             "pers_occ_services","pers_occ_retail",
-                             "pers_occ_manual","pers_occ_military")],                ties.method="first"),
-    max_eth    = max.col(.[c("white_nonh","black_nonh","asian_nonh","other_nonh",
-                             "hispanic")],                                           ties.method="first"))%>% 
-    
-# Now use max values determined above to find appropriate column for adjustment
-
-   mutate(
-    # Balance population by age
-    AGE0004 = if_else(max_age==1,AGE0004+(TOTPOP-(AGE0004+AGE0519+AGE2044+AGE4564+AGE65P)),AGE0004),
-    AGE0519 = if_else(max_age==2,AGE0519+(TOTPOP-(AGE0004+AGE0519+AGE2044+AGE4564+AGE65P)),AGE0519),
-    AGE2044 = if_else(max_age==3,AGE2044+(TOTPOP-(AGE0004+AGE0519+AGE2044+AGE4564+AGE65P)),AGE2044),
-    AGE4564 = if_else(max_age==4,AGE4564+(TOTPOP-(AGE0004+AGE0519+AGE2044+AGE4564+AGE65P)),AGE4564),
-    AGE65P  = if_else(max_age==5,AGE65P +(TOTPOP-(AGE0004+AGE0519+AGE2044+AGE4564+AGE65P)),AGE65P), 
-    
-    # Balance population by ethnicity
-    white_nonh = if_else(max_eth==1,white_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+hispanic)),white_nonh),
-    black_nonh = if_else(max_eth==2,black_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+hispanic)),black_nonh),
-    asian_nonh = if_else(max_eth==3,asian_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+hispanic)),asian_nonh),
-    other_nonh = if_else(max_eth==4,other_nonh+(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+hispanic)),other_nonh),
-    hispanic   = if_else(max_eth==5,hispanic  +(TOTPOP-(white_nonh+black_nonh+asian_nonh+other_nonh+hispanic)),hispanic),
-    
-    # Balance GQ population by type
-    gq_type_univ   = if_else(max_gq==1,gq_type_univ  +(gqpop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_univ),
-    gq_type_mil    = if_else(max_gq==2,gq_type_mil   +(gqpop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_mil),
-    gq_type_othnon = if_else(max_gq==3,gq_type_othnon+(gqpop-(gq_type_univ+gq_type_mil+gq_type_othnon)),gq_type_othnon),
-   
-    # Balance HH tenure categories
-    hh_own         = if_else(max_tenure==1,hh_own       +(TOTHH-(hh_own+hh_rent)),hh_own),
-    hh_rent        = if_else(max_tenure==2,hh_rent      +(TOTHH-(hh_own+hh_rent)),hh_rent),
-
-    # Balance HH size categories
-    hh_size_1      = if_else(max_size==1,hh_size_1     +(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_1),
-    hh_size_2      = if_else(max_size==2,hh_size_2     +(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_2),
-    hh_size_3      = if_else(max_size==3,hh_size_3     +(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_3),
-    hh_size_4_plus = if_else(max_size==4,hh_size_4_plus+(TOTHH-(hh_size_1+hh_size_2+hh_size_3+hh_size_4_plus)),hh_size_4_plus),
-    
-    # Balance HH worker categories
-
-    hh_wrks_0      = if_else(max_workers==1,hh_wrks_0+     (TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_0),
-    hh_wrks_1      = if_else(max_workers==2,hh_wrks_1+     (TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_1),
-    hh_wrks_2      = if_else(max_workers==3,hh_wrks_2+     (TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_2),
-    hh_wrks_3_plus = if_else(max_workers==4,hh_wrks_3_plus+(TOTHH-(hh_wrks_0+hh_wrks_1+hh_wrks_2+hh_wrks_3_plus)),hh_wrks_3_plus),
-    
-    # Balance HH kids categories
-    hh_kids_yes = if_else(max_kids==1,hh_kids_yes+(TOTHH-(hh_kids_yes+hh_kids_no)),hh_kids_yes),
-    hh_kids_no  = if_else(max_kids==2,hh_kids_no +(TOTHH-(hh_kids_yes+hh_kids_no)),hh_kids_no),
-    
-    # Balance HH income categories
-  
-    HHINCQ1 = if_else(max_income==1,HHINCQ1+(TOTHH-(HHINCQ1+HHINCQ2+HHINCQ3+HHINCQ4)),HHINCQ1),
-    HHINCQ2 = if_else(max_income==2,HHINCQ2+(TOTHH-(HHINCQ1+HHINCQ2+HHINCQ3+HHINCQ4)),HHINCQ2),
-    HHINCQ3 = if_else(max_income==3,HHINCQ3+(TOTHH-(HHINCQ1+HHINCQ2+HHINCQ3+HHINCQ4)),HHINCQ3),
-    HHINCQ4 = if_else(max_income==4,HHINCQ4+(TOTHH-(HHINCQ1+HHINCQ2+HHINCQ3+HHINCQ4)),HHINCQ4),
-
-    # Balance workers by occupation categories
-    pers_occ_management   = if_else(max_occ==1,pers_occ_management  +(EMPRES-(pers_occ_management+pers_occ_professional+pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_management),
-    pers_occ_professional = if_else(max_occ==2,pers_occ_professional+(EMPRES-(pers_occ_management+pers_occ_professional+pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_professional),
-    pers_occ_services     = if_else(max_occ==3,pers_occ_services    +(EMPRES-(pers_occ_management+pers_occ_professional+pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_services),
-    pers_occ_retail       = if_else(max_occ==4,pers_occ_retail      +(EMPRES-(pers_occ_management+pers_occ_professional+pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_retail),
-    pers_occ_manual       = if_else(max_occ==5,pers_occ_manual      +(EMPRES-(pers_occ_management+pers_occ_professional+pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_manual),
-    pers_occ_military     = if_else(max_occ==6,pers_occ_military    +(EMPRES-(pers_occ_management+pers_occ_professional+pers_occ_services+pers_occ_retail+pers_occ_manual+pers_occ_military)),pers_occ_military)
-) %>% 
-  
-  # Remove max variables
-  select(-max_age,-max_gq,-max_tenure,-max_size,-max_workers,-max_kids,-max_income,-max_occ, -max_eth)
+  select(-sum_age,-sum_groupquarters,-sum_tenure,-sum_size,-sum_hhworkers,-sum_kids,-sum_income,-sum_empres, -sum_ethnicity)
 
 ### End of recoding
 
