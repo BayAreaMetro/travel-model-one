@@ -47,8 +47,8 @@ print(head(BLOCK2020_TAZ1454))
 #
 # usage: adjusted <- fix_rounding_artifacts(my_data, "tot_col", c("col_a", "col_b", "col_c"))
 fix_rounding_artifacts <- function(df, id_var, sum_var, partial_vars) {
-  print(paste("fix_rounding_artifacts(id_var=", id_var, ", sum_var=", sum_var, 
-    ", partial_vars=",toString(partial_vars),")"))
+  print(sprintf("fix_rounding_artifacts(id_var=%s, sum_var=%s, partial_vars=%s)",
+    id_var,sum_var,toString(partial_vars)))
 
   original_order <- colnames(df)
 
@@ -63,7 +63,7 @@ fix_rounding_artifacts <- function(df, id_var, sum_var, partial_vars) {
       diff_col = get(sum_var) - sum(c_across(all_of(partial_vars)))
     ) %>% ungroup()
   # these are the rows that need updating
-  print("Rows needing updating:")
+  print("fix_rounding_artifacts(): Rows needing updating:")
   print(filter(my_df, diff_col != 0))
 
   # for each column in partial_vars, update the value by diff if max_col matches
@@ -102,7 +102,8 @@ fix_rounding_artifacts <- function(df, id_var, sum_var, partial_vars) {
 # target_df: a dataframe with columns id_var, sum_var_target
 # returns: source_df with sum_var == sum_var_target and partial_vars have the same distribution but still add to sum_var
 scale_data_to_targets <- function(source_df, target_df, id_var, sum_var, partial_vars) {
-  print(paste("scale_data_to_targets(id_var=",id_var,", sum_var=",sum_var,", partial_vars=",toString(partial_vars),")"))
+  print(sprintf("scale_data_to_targets(id_var=%s, sum_var=%s, partial_vars=%s)", 
+    id_var, sum_var, toString(partial_vars)))
 
   sum_var_target <- paste0(sum_var,"_target")
   # add the sum_var_target column into the source table
@@ -111,7 +112,7 @@ scale_data_to_targets <- function(source_df, target_df, id_var, sum_var, partial
     select(target_df, all_of(c(id_var, sum_var_target))),
     by=id_var
   )
-  print("source_df before:")
+  print("scale_data_to_targets(): source_df before:")
   print(select(source_df, all_of(c(id_var, sum_var, sum_var_target, partial_vars))))
   # scale the sum_var
   source_df <- source_df %>% mutate(
@@ -127,7 +128,7 @@ scale_data_to_targets <- function(source_df, target_df, id_var, sum_var, partial
   # fix rounding artifacts
   source_df <- fix_rounding_artifacts(source_df, id_var, sum_var, partial_vars)
 
-  print("source_df after:")
+  print("scale_data_to_targets(): source_df after:")
   print(select(source_df, all_of(c(id_var, sum_var, sum_var_target, partial_vars))))
   source_df <- source_df %>% select(-all_of(sum_var_target)) # remove target column from source
 
@@ -450,6 +451,10 @@ correct_households_by_number_of_workers <- function(df) {
   return(df)
 }
 
+# Updates GQ population in source_df to totals in target_GQ_df.
+# Since group quarters are included in total population (age categories) and 
+# employed residents (pers_occ categories), those are updated as we..
+#
 # source_df is a TAZ-based tibble including columns:
 #   id variables: County_Name, TAZ1454, 
 #   GQ variables: gq_type_[univ,mil,othnon], gqpop         
@@ -461,7 +466,7 @@ correct_households_by_number_of_workers <- function(df) {
 #   distributions for GQ workers to make these updates.
 update_gqop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year) {
 
-  print(paste0("########################## update_ggop_to_county_totals(",ACS_PUMS_1year,") ##########################"))
+  print(sprintf("########################## update_ggop_to_county_totals(%d) ##########################", ACS_PUMS_1year))
   # copy only needed target columns
   target_df <- select(target_GQ_df, County_Name, GQPOP, GQPOP_target, GQPOP_diff)
 
@@ -643,3 +648,89 @@ update_gqop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year
   return(source_df)
 }
 
+# Update empres population in source_df to totals in target_EMPRES_df.
+# source_df is a TAZ-based tibble including columns:
+#   id variables: County_Name, TAZ1454
+#   total employed resident variables: pers_occ_[management,professional,services,retail,manual,military], EMPRES
+# target_EMPRES_df is a tibble with columns County_Name, EMPRES
+update_empres_to_county_totals <- function(source_df, target_EMPRES_df) {
+  print("########################## update_empres_to_county_totals() ##########################")
+  # copy only needed target columns
+  target_df <- select(target_EMPRES_df, County_Name, EMPRES_target)
+  print(sprintf("target_EMPRES_df EMPRES_target total=%d:", sum(target_df$EMPRES_target)))
+
+  # first, summarize existing pers_occ by county
+  source_empres_county <- source_df %>% group_by(County_Name) %>% summarize(
+    EMPRES                = sum(EMPRES),
+    pers_occ_management   = sum(pers_occ_management),
+    pers_occ_professional = sum(pers_occ_professional),
+    pers_occ_services     = sum(pers_occ_services),
+    pers_occ_retail       = sum(pers_occ_retail),
+    pers_occ_manual       = sum(pers_occ_manual),
+    pers_occ_military     = sum(pers_occ_military),
+  )
+  print(sprintf("source_empres_county from source_df (regional total=%d):", sum(source_empres_county$EMPRES)))
+  print(source_empres_county)
+
+  # use this to figure out target pers_occ by county
+  target_occ_county <- scale_data_to_targets(
+    source_df = source_empres_county, 
+    target_df = target_df,
+    id_var    = "County_Name",
+    sum_var   = "EMPRES",
+    partial_vars = c("pers_occ_management", "pers_occ_professional", "pers_occ_services", 
+                    "pers_occ_retail", "pers_occ_manual","pers_occ_military")) %>%
+    rename(
+      EMPRES_target                = EMPRES,
+      pers_occ_management_target   = pers_occ_management,
+      pers_occ_professional_target = pers_occ_professional,
+      pers_occ_services_target     = pers_occ_services,
+      pers_occ_retail_target       = pers_occ_retail,
+      pers_occ_manual_target       = pers_occ_manual,
+      pers_occ_military_target     = pers_occ_military
+    )
+  print("target_occ_county before diffs:")
+  print(target_occ_county)
+
+  # join with original to calculate diffs
+  target_occ_county <- left_join(
+    target_occ_county,
+    source_empres_county,
+    by="County_Name"
+  ) %>% mutate(
+    EMPRES_diff                = EMPRES_target                - EMPRES,
+    pers_occ_management_diff   = pers_occ_management_target   - pers_occ_management,
+    pers_occ_professional_diff = pers_occ_professional_target - pers_occ_professional,
+    pers_occ_services_diff     = pers_occ_services_target     - pers_occ_services,
+    pers_occ_retail_diff       = pers_occ_retail_target       - pers_occ_retail,
+    pers_occ_manual_diff       = pers_occ_manual_target       - pers_occ_manual,
+    pers_occ_military_diff     = pers_occ_military_target     - pers_occ_military,
+  )
+  print("target_occ_county:")
+  print(target_occ_county)
+
+  # apply to TAZs
+  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, target_occ_county, "TAZ1454", "County_Name", "pers_occ_management")
+  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, target_occ_county, "TAZ1454", "County_Name", "pers_occ_professional")
+  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, target_occ_county, "TAZ1454", "County_Name", "pers_occ_services")
+  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, target_occ_county, "TAZ1454", "County_Name", "pers_occ_retail")
+  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, target_occ_county, "TAZ1454", "County_Name", "pers_occ_manual")
+  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, target_occ_county, "TAZ1454", "County_Name", "pers_occ_military")
+  source_df <- source_df %>% mutate(EMPRES = pers_occ_management + pers_occ_professional + pers_occ_services +
+                                             pers_occ_retail + pers_occ_manual + pers_occ_military)
+
+  print("Resuting empres and pers_occ by county :")
+  print(source_df %>% group_by(County_Name) %>% summarize(
+    EMPRES                = sum(EMPRES),
+    pers_occ_management   = sum(pers_occ_management),
+    pers_occ_professional = sum(pers_occ_professional),
+    pers_occ_services     = sum(pers_occ_services),
+    pers_occ_retail       = sum(pers_occ_retail),
+    pers_occ_manual       = sum(pers_occ_manual),
+    pers_occ_military     = sum(pers_occ_military)
+  ))
+  print("Regional totals:")
+  print(source_df %>% select(EMPRES, starts_with("pers_occ")) %>% summarise(across(where(is.numeric), sum)))
+
+  return(source_df)
+}

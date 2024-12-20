@@ -753,7 +753,7 @@ if (ACS_5year < ACS_PUMS_1year+2) {
   # 1. group quarters population (includes employed residents and persons by age)
   tazdata_census <- update_gqop_to_county_totals(tazdata_census, scale_county_totals, ACS_PUMS_1year)
   # 2. employed residents
-  # tazdata_census <- update_empres_to_county_totals(tazdata_census, scale_county_totals, ACS_PUMS_1year)
+  tazdata_census <- update_empres_to_county_totals(tazdata_census, scale_county_totals)
   # 3. total households and population
   # tazdata_census <- update_hhpop_to_county_totals(tazdata_census, scale_county_totals, ACS_PUMS_1year)
 }
