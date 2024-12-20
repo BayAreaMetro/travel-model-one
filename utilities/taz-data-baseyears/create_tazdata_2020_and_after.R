@@ -325,6 +325,7 @@ print("head(combined_block):")
 print(head(combined_block, n=20))
 
 # Download ACS data (and DHC data for group quarters)
+USE_TIDYCENSUS_CACHING = TRUE
 
 ACS_tract_raw <- tidycensus::get_acs(
   geography = "tract", variables = ACS_tract_variables,
@@ -332,6 +333,7 @@ ACS_tract_raw <- tidycensus::get_acs(
   year=ACS_5year,
   output="wide",
   survey = "acs5",
+  cache_table = USE_TIDYCENSUS_CACHING,
   key = censuskey)
 
 ACS_BG_raw <- tidycensus::get_acs(
@@ -340,6 +342,7 @@ ACS_BG_raw <- tidycensus::get_acs(
   year=ACS_5year,
   output="wide",
   survey = "acs5",
+  cache_table = USE_TIDYCENSUS_CACHING,
   key = censuskey)
 
 DHC_tract_raw <- tidycensus::get_decennial(
@@ -348,6 +351,7 @@ DHC_tract_raw <- tidycensus::get_decennial(
   year=2020,
   output="wide",
   sumfile = "dhc",
+  cache_table = USE_TIDYCENSUS_CACHING,
   key = censuskey)
 
 # Remove NAME variable from decennial files for later joining
@@ -670,7 +674,7 @@ tazdata_census <- fix_rounding_artifacts(tazdata_census, "TAZ1454", "EMPRES", c(
 # Add in population over age 62 variable that is also needed (but should not be rounded, so added at the end)
 tazdata_census <- tazdata_census %>%
   mutate(SHPOP62P = if_else(TOTPOP==0,0,AGE62P/TOTPOP))
-  
+
 # ACS_5year should be ACS_PUMS_1year + 2 -- if it's not, then scale up using ACS1-year totals
 if (ACS_5year < ACS_PUMS_1year+2) {
   print(sprintf("TODO: ACS_5year %d < ACS_PUMS_1year + 2 = %d", ACS_5year, ACS_PUMS_1year + 2))
@@ -691,6 +695,7 @@ if (ACS_5year < ACS_PUMS_1year+2) {
       year = ACS_PUMS_1year,
       output="wide",
       survey = "acs1",
+      cache_table = USE_TIDYCENSUS_CACHING,
       key = censuskey)
   ACS_1year_target <- ACS_1year_target %>%
     select(-ends_with("_M")) %>%
@@ -748,7 +753,9 @@ if (ACS_5year < ACS_PUMS_1year+2) {
   # 1. group quarters population (includes employed residents and persons by age)
   tazdata_census <- update_gqop_to_county_totals(tazdata_census, scale_county_totals, ACS_PUMS_1year)
   # 2. employed residents
+  # tazdata_census <- update_empres_to_county_totals(tazdata_census, scale_county_totals, ACS_PUMS_1year)
   # 3. total households and population
+  # tazdata_census <- update_hhpop_to_county_totals(tazdata_census, scale_county_totals, ACS_PUMS_1year)
 }
 
 if (LODES_YEAR < argv$year) {
