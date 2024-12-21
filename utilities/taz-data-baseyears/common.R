@@ -46,7 +46,7 @@ print(head(BLOCK2020_TAZ1454))
 # but the sum of the rounded cols is only 9. So this would allocate the additional 1 to the largest col, or col_c.
 #
 # usage: adjusted <- fix_rounding_artifacts(my_data, "tot_col", c("col_a", "col_b", "col_c"))
-fix_rounding_artifacts <- function(df, id_var, sum_var, partial_vars) {
+fix_rounding_artifacts <- function(df, id_var, sum_var, partial_vars, logging=TRUE) {
   print(sprintf("fix_rounding_artifacts(id_var=%s, sum_var=%s, partial_vars=%s)",
     id_var,sum_var,toString(partial_vars)))
 
@@ -63,8 +63,10 @@ fix_rounding_artifacts <- function(df, id_var, sum_var, partial_vars) {
       diff_col = get(sum_var) - sum(c_across(all_of(partial_vars)))
     ) %>% ungroup()
   # these are the rows that need updating
-  print("fix_rounding_artifacts(): Rows needing updating:")
-  print(filter(my_df, diff_col != 0))
+  if (logging) {
+    print("fix_rounding_artifacts(): Rows needing updating:")
+    print(filter(my_df, diff_col != 0))
+  }
 
   # for each column in partial_vars, update the value by diff if max_col matches
   for (partial_name in partial_vars) {
@@ -101,7 +103,7 @@ fix_rounding_artifacts <- function(df, id_var, sum_var, partial_vars) {
 # source_df: a dataframe with columns id_var, sum_var, partial_vars where partial_vars sum to sum_var
 # target_df: a dataframe with columns id_var, sum_var_target
 # returns: source_df with sum_var == sum_var_target and partial_vars have the same distribution but still add to sum_var
-scale_data_to_targets <- function(source_df, target_df, id_var, sum_var, partial_vars) {
+scale_data_to_targets <- function(source_df, target_df, id_var, sum_var, partial_vars, logging=FALSE) {
   print(sprintf("scale_data_to_targets(id_var=%s, sum_var=%s, partial_vars=%s)", 
     id_var, sum_var, toString(partial_vars)))
 
@@ -112,8 +114,10 @@ scale_data_to_targets <- function(source_df, target_df, id_var, sum_var, partial
     select(target_df, all_of(c(id_var, sum_var_target))),
     by=id_var
   )
-  print("scale_data_to_targets(): source_df before:")
-  print(select(source_df, all_of(c(id_var, sum_var, sum_var_target, partial_vars))))
+  if (logging) {
+    print("scale_data_to_targets(): source_df before:")
+    print(select(source_df, all_of(c(id_var, sum_var, sum_var_target, partial_vars))))
+  }
   # scale the sum_var
   source_df <- source_df %>% mutate(
     target_scale = get(sum_var_target) / get(sum_var),
@@ -128,10 +132,12 @@ scale_data_to_targets <- function(source_df, target_df, id_var, sum_var, partial
   # drop this, we're done with it
   source_df <- source_df %>% select(-target_scale)
   # fix rounding artifacts
-  source_df <- fix_rounding_artifacts(source_df, id_var, sum_var, partial_vars)
+  source_df <- fix_rounding_artifacts(source_df, id_var, sum_var, partial_vars, logging)
 
-  print("scale_data_to_targets(): source_df after:")
-  print(select(source_df, all_of(c(id_var, sum_var, sum_var_target, partial_vars))))
+  if (logging) {
+    print("scale_data_to_targets(): source_df after:")
+    print(select(source_df, all_of(c(id_var, sum_var, sum_var_target, partial_vars))))
+  }
   source_df <- source_df %>% select(-all_of(sum_var_target)) # remove target column from source
 
   return(source_df)
@@ -254,14 +260,18 @@ update_tazdata_to_county_target <- function(source_df, target_df, sum_var, parti
   for (partial_var in partial_vars) {
     source_df <- update_disaggregate_data_to_aggregate_targets(source_df, target_partials_county, "TAZ1454", "County_Name", partial_var)
   }
+  source_df <- source_df %>% mutate(!!sum_var := rowSums(across(all_of(partial_vars))))
+
 
   # check result
   print(sprintf("Resuting %s and c(%s) by county:",sum_var,toString(partial_vars)))
   print(source_df %>% group_by(County_Name) %>% 
         summarise(across(all_of(c(sum_var, partial_vars)), sum, .names = "{col}")))
+        
   print("Regional totals:")
   print(source_df %>% select(all_of(c(sum_var, partial_vars))) %>% summarise(across(where(is.numeric), sum)))
-
+  print(sprintf("Compare to target_df %s total=%d:", sum_var_target, 
+    target_df %>% summarise(sum = sum(!!sym(sum_var_target))) %>% pull(sum)))
   return(source_df)
 }
 
