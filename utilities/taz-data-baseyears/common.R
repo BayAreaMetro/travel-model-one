@@ -125,6 +125,8 @@ scale_data_to_targets <- function(source_df, target_df, id_var, sum_var, partial
       !!sym(partial_name) := as.integer(round(.data[[partial_name]] * target_scale))
     )
   }
+  # drop this, we're done with it
+  source_df <- source_df %>% select(-target_scale)
   # fix rounding artifacts
   source_df <- fix_rounding_artifacts(source_df, id_var, sum_var, partial_vars)
 
@@ -192,6 +194,74 @@ update_disaggregate_data_to_aggregate_targets <- function(source_df, target_df, 
   # verify
   # print("Result:")
   # print(source_df %>% group_by(!!sym(agg_id_var)) %>% summarise(total = sum(!!sym(col_name))))
+  return(source_df)
+}
+
+## Combination of the above. This is effectively the generic form of update_empres_to_county_totals()
+# 
+# Parameters:
+#  source_df: a TAZ-based tibble including columns:
+#    id variables: County_Name, TAZ1454
+#    sum_var comprised of partial_vars 
+#        e.g. sum_var = "EMPRES", partial_vars = c("pers_occ_management", "pers_occ_professional", ...)
+#  target_df: a county-based tibble including columns: County_Name, [sum_var]_target
+#  sum_var: string indicating the sum variable
+#  partial_vars: vector of strings indicating the variables which comprise the sum_var
+#
+update_tazdata_to_county_target <- function(source_df, target_df, sum_var, partial_vars) {
+  print(sprintf("########################## update_tazdata_to_county_target(sum_var=%s, partial_vars=c(%s)) ##########################",
+    sum_var, toString(partial_vars)))
+
+  # copy only needed target columns
+  sum_var_target <- paste0(sum_var, "_target")
+  target_df <- target_df %>% select(all_of(c("County_Name", sum_var_target)))
+  print(sprintf("target_df %s total=%d:", sum_var_target, 
+    target_df %>% summarise(sum = sum(!!sym(sum_var_target))) %>% pull(sum)))
+
+  # summarize current totals for sum_var and partial_vars
+  source_county_summary <- source_df %>% group_by(County_Name) %>%
+    summarise(across(all_of(c(sum_var, partial_vars)), sum, .names = "{col}"))
+  print(sprintf("source_county_summary from source_df (regional total=%d):",
+    source_county_summary %>% summarise(sum = sum(!!sym(sum_var))) %>% pull(sum)))
+  print(source_county_summary)
+
+  # use this to figure out target partial_vars by county
+  target_partials_county <- scale_data_to_targets(
+    source_df = source_county_summary, 
+    target_df = target_df,
+    id_var    = "County_Name",
+    sum_var   = sum_var,
+    partial_vars = partial_vars) %>%
+  rename_with(~ paste0(., "_target"), all_of(c(sum_var, partial_vars)))
+  print("target_partials_county before diffs:")
+  print(target_partials_county)
+
+  # join with original to calculate diffs
+  target_partials_county <- left_join(
+    target_partials_county,
+    source_county_summary,
+    by="County_Name"
+  ) %>% mutate(
+      across(all_of(c(sum_var, partial_vars)), ~ get(paste0(cur_column(), "_target")) - ., .names = "{.col}_diff"))
+  #  EMPRES_diff                = EMPRES_target                - EMPRES,
+  #  pers_occ_management_diff   = pers_occ_management_target   - pers_occ_management,
+  #  ... etc ...
+
+  print("target_partials_county:")
+  print(target_partials_county)
+
+  # apply to TAZs for each partial_var
+  for (partial_var in partial_vars) {
+    source_df <- update_disaggregate_data_to_aggregate_targets(source_df, target_partials_county, "TAZ1454", "County_Name", partial_var)
+  }
+
+  # check result
+  print(sprintf("Resuting %s and c(%s) by county:",sum_var,toString(partial_vars)))
+  print(source_df %>% group_by(County_Name) %>% 
+        summarise(across(all_of(c(sum_var, partial_vars)), sum, .names = "{col}")))
+  print("Regional totals:")
+  print(source_df %>% select(all_of(c(sum_var, partial_vars))) %>% summarise(across(where(is.numeric), sum)))
+
   return(source_df)
 }
 
@@ -452,23 +522,31 @@ correct_households_by_number_of_workers <- function(df) {
 }
 
 # Updates GQ population in source_df to totals in target_GQ_df.
-# Since group quarters are included in total population (age categories) and 
-# employed residents (pers_occ categories), those are updated as we..
 #
-# source_df is a TAZ-based tibble including columns:
-#   id variables: County_Name, TAZ1454, 
-#   GQ variables: gq_type_[univ,mil,othnon], gqpop         
-#   total population variables: AGE[0004,0519,2044,4564,65P], sum_age 
-#   total employed resident variables: pers_occ_[management,professional,services,retail,manual,military], EMPRES
-#   TODO: race/ethnicity variables should be done as well but I don't think they're used
-# target_GQ_df is a tibble with columns County_Name, GQPOP, GQPOP_target, GQPOP_diff
-# ACS_PUMS_1year is the year corresponding to the target; we'll use the ACS PUMS 1-year data
-#   distributions for GQ workers to make these updates.
+# Parameters:
+#   source_df is a TAZ-based tibble including columns:
+#     id variables: County_Name, TAZ1454, 
+#     GQ variables: gq_type_[univ,mil,othnon], gqpop         
+#   target_GQ_df is a tibble with columns County_Name, GQPOP_target
+#   ACS_PUMS_1year is the year corresponding to the target; we'll use the ACS PUMS 1-year data
+#     distributions for GQ workers to make these updates.
+#
+# Returns:
+#   source_df with updated data in columns gq_type_[mil,othnon,univ], gqpop
+#   estimated detailed_GQ_county_targets with columns:
+#     id variable: County_Name
+#     GQ variables: gq_type_[mil,othnon,univ], gqpop
+#     GQ population variables: AGE[0004,0519,2044,4564,65P], sum_age, where sum_age==gqpop
+#     GQ employed resident variables: pers_occ_[management,professional,services,retail,manual,military], EMPRES
+#         where EMPRES = (GQ_PUMS1YEAR_SUMMARY$EMPRES / GQ_PUMS1YEAR_SUMMARY$gqpop) * gqpop
+#         In other words, we assume that the share of PUMS1 GQ population that was employed remains the same
 update_gqop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year) {
 
-  print(sprintf("########################## update_ggop_to_county_totals(%d) ##########################", ACS_PUMS_1year))
+  print(sprintf("########################## update_gqop_to_county_totals(%d) ##########################", ACS_PUMS_1year))
   # copy only needed target columns
-  target_df <- select(target_GQ_df, County_Name, GQPOP, GQPOP_target, GQPOP_diff)
+  target_df <- select(target_GQ_df, County_Name, GQPOP_target)
+  print(sprintf("target_df with GQPOP_target total=%d:", sum(target_df$GQPOP_target)))
+  print(target_df)
 
   # this file is output by 
   # GitHub\census-tools-for-planning\analysis_by_topic\summarize_noninst_group_quarters.R
@@ -484,17 +562,17 @@ update_gqop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year
   # target_EMPRES will be target * worker_share
   target_df <- left_join(target_df, select(GQ_PUMS1YEAR_SUMMARY, County_Name, worker_share), by="County_Name") %>%
     mutate(EMPRES_target = as.integer(round(GQPOP_target*worker_share)))
-  print("target_df:")
+  print("target_df with EMPRES_target refering to gqpop's EMPRES:")
   print(target_df)
   print(target_df %>% summarise(across(where(is.numeric), sum)))
 
   # Adjust GQ_PUMS1YEAR_SUMMARY to be consistent with the given targets 
-  print("GQ_PUMS1YEAR_SUMMARY:")
+  print("Initial GQ_PUMS1YEAR_SUMMARY:")
   print(GQ_PUMS1YEAR_SUMMARY)
   print(GQ_PUMS1YEAR_SUMMARY %>% summarise(across(where(is.numeric), sum)))
 
   # scale PUMS summary to the target total: gqtype distribution
-  GQ_PUMS1YEAR_SUMMARY <- scale_data_to_targets(
+  detailed_GQ_county_targets <- scale_data_to_targets(
     source_df = GQ_PUMS1YEAR_SUMMARY,
     target_df = target_df %>% rename(gqpop_target = GQPOP_target),
     id_var = "County_Name",
@@ -502,8 +580,8 @@ update_gqop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year
     partial_vars = c("gq_type_univ", "gq_type_mil", "gq_type_othnon")
   )
   # scale PUMS summary to the target total: age distribution
-  GQ_PUMS1YEAR_SUMMARY <- scale_data_to_targets(
-    source_df = GQ_PUMS1YEAR_SUMMARY %>% mutate(sum_age = AGE0004 + AGE0519 + AGE2044 + AGE4564 + AGE65P),
+  detailed_GQ_county_targets <- scale_data_to_targets(
+    source_df = detailed_GQ_county_targets %>% mutate(sum_age = AGE0004 + AGE0519 + AGE2044 + AGE4564 + AGE65P),
     target_df = target_df %>% rename(sum_age_target = GQPOP_target),
     id_var = "County_Name",
     sum_var = "sum_age",
@@ -511,18 +589,20 @@ update_gqop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year
   )
   # scale PUMS summary to the target total: occupation distribution
   # note here the worker target is worker_share * gq_target
-  GQ_PUMS1YEAR_SUMMARY <- scale_data_to_targets(
-    source_df = GQ_PUMS1YEAR_SUMMARY,
+  detailed_GQ_county_targets <- scale_data_to_targets(
+    source_df = detailed_GQ_county_targets,
     target_df = target_df,
     id_var = "County_Name",
     sum_var = "EMPRES",
     partial_vars = c("pers_occ_management", "pers_occ_professional", "pers_occ_services", 
                     "pers_occ_retail", "pers_occ_manual","pers_occ_military")
   )
+  # drop these
+  detailed_GQ_county_targets <- detailed_GQ_county_targets %>% select(-worker_share)
 
-  print("After adjusting to given target, GQ_PUMS1YEAR_SUMMARY:")
-  print(GQ_PUMS1YEAR_SUMMARY)
-  print(GQ_PUMS1YEAR_SUMMARY %>% summarise(across(where(is.numeric), sum)))
+  print("After adjusting to given target, detailed_GQ_county_targets:")
+  print(detailed_GQ_county_targets)
+  print(detailed_GQ_county_targets %>% summarise(across(where(is.numeric), sum)))
 
   print("source_df:")
   print(source_df)
@@ -567,92 +647,19 @@ update_gqop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year
     gqpop          = sum(gqpop)
   ))
 
-  # Now the gq_type_* and gqpop columns in source_df are ok
-  # So lets decrease totpop by age as well as we can
-  # First, apply the gqpop_diff to age categories (so these can be positive or negative)
-  age_diffs_county <- scale_data_to_targets(
-    source_df = select(GQ_PUMS1YEAR_SUMMARY, County_Name, sum_age, AGE0004, AGE0519, AGE2044, AGE4564, AGE65P), 
-    target_df = source_county_df %>% select(County_Name, gqpop_diff) %>% rename(sum_age_target = gqpop_diff),
-    id_var    = "County_Name",
-    sum_var   = "sum_age",
-    partial_vars = c("AGE0004", "AGE0519", "AGE2044", "AGE4564", "AGE65P")
-  )
-  # these are diffs -- relabel them as such
-  age_diffs_county <- age_diffs_county %>% rename(
-    sum_age_diff = sum_age,
-    AGE0004_diff = AGE0004,
-    AGE0519_diff = AGE0519,
-    AGE2044_diff = AGE2044,
-    AGE4564_diff = AGE4564,
-    AGE65P_diff  = AGE65P
-  )
-  print("age_diffs_county:")
-  print(age_diffs_county)
-  print(age_diffs_county %>% summarise(across(where(is.numeric), sum)))
-
-  prev_sum_age <- sum(source_df$sum_age)
-  print(sprintf("Total sum_age is now %d", prev_sum_age))
-
-  # apply them to the tazdata
-  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, age_diffs_county, "TAZ1454", "County_Name", "AGE0004")
-  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, age_diffs_county, "TAZ1454", "County_Name", "AGE0519")
-  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, age_diffs_county, "TAZ1454", "County_Name", "AGE2044")
-  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, age_diffs_county, "TAZ1454", "County_Name", "AGE4564")
-  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, age_diffs_county, "TAZ1454", "County_Name", "AGE65P")
-  source_df <- source_df %>% mutate(sum_age = AGE0004 + AGE0519 + AGE2044 + AGE4564 + AGE65P)
-  print(sprintf("Total sum_age is now %d, diff from previous is %d", 
-    sum(source_df$sum_age), sum(source_df$sum_age)-prev_sum_age))
-
-
-  # Now lets decrease EMPRES by occupation as well as we can
-  # First, apply the gqpop_diff to pers_occ categories (so these can be positive or negative) -- these are diffs
-  pers_occ_diffs_county <- scale_data_to_targets(
-    source_df = select(GQ_PUMS1YEAR_SUMMARY, County_Name, EMPRES, 
-                       pers_occ_management, pers_occ_professional, pers_occ_services, 
-                       pers_occ_retail, pers_occ_manual, pers_occ_military), 
-    target_df = source_county_df %>% select(County_Name, gqpop_diff) %>% rename(EMPRES_target = gqpop_diff),
-    id_var    = "County_Name",
-    sum_var   = "EMPRES",
-    partial_vars = c("pers_occ_management", "pers_occ_professional", "pers_occ_services", 
-                     "pers_occ_retail", "pers_occ_manual", "pers_occ_military")
-  )
-  # these are diffs -- relabel them as such
-  pers_occ_diffs_county <- pers_occ_diffs_county %>% rename(
-    EMPRES_diff                = EMPRES,
-    pers_occ_management_diff   = pers_occ_management,
-    pers_occ_professional_diff = pers_occ_professional,
-    pers_occ_services_diff     = pers_occ_services,
-    pers_occ_retail_diff       = pers_occ_retail,
-    pers_occ_manual_diff       = pers_occ_manual,
-    pers_occ_military_diff     = pers_occ_military
-  )
-  print("pers_occ_diffs_county:")
-  print(pers_occ_diffs_county)
-  print(pers_occ_diffs_county %>% summarise(across(where(is.numeric), sum)))
-
-  prev_EMPRES <- sum(source_df$EMPRES)
-  print(sprintf("Total EMPRES is now %d", prev_EMPRES))
-
-  # apply them to the tazdata
-  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, pers_occ_diffs_county, "TAZ1454", "County_Name", "pers_occ_management")
-  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, pers_occ_diffs_county, "TAZ1454", "County_Name", "pers_occ_professional")
-  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, pers_occ_diffs_county, "TAZ1454", "County_Name", "pers_occ_services")
-  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, pers_occ_diffs_county, "TAZ1454", "County_Name", "pers_occ_retail")
-  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, pers_occ_diffs_county, "TAZ1454", "County_Name", "pers_occ_manual")
-  source_df <- update_disaggregate_data_to_aggregate_targets(source_df, pers_occ_diffs_county, "TAZ1454", "County_Name", "pers_occ_military")
-  source_df <- source_df %>% mutate(EMPRES = pers_occ_management + pers_occ_professional + pers_occ_services +
-                                             pers_occ_retail + pers_occ_manual + pers_occ_military)
-  print(sprintf("Total EMPRES is now %d, diff from previous is %d", 
-    sum(source_df$EMPRES), sum(source_df$EMPRES)-prev_EMPRES))
-
-  return(source_df)
+  return(list(source_df=source_df, detailed_GQ_county_targets=detailed_GQ_county_targets))
 }
 
 # Update empres population in source_df to totals in target_EMPRES_df.
-# source_df is a TAZ-based tibble including columns:
-#   id variables: County_Name, TAZ1454
-#   total employed resident variables: pers_occ_[management,professional,services,retail,manual,military], EMPRES
-# target_EMPRES_df is a tibble with columns County_Name, EMPRES
+# 
+# Parameters:
+#   source_df is a TAZ-based tibble including columns:
+#     id variables: County_Name, TAZ1454
+#     employed resident variables: pers_occ_[management,professional,services,retail,manual,military], EMPRES
+#   target_EMPRES_df is a tibble with columns County_Name, EMPRES_target
+#
+# Returns:
+#   source_df with updated columns pers_occ_[management,professional,services,retail,manual,military], EMPRES
 update_empres_to_county_totals <- function(source_df, target_EMPRES_df) {
   print("########################## update_empres_to_county_totals() ##########################")
   # copy only needed target columns

@@ -620,6 +620,7 @@ tazdata_census <- tazdata_census %>%
   mutate (
     sum_age            = AGE0004 + AGE0519 + AGE2044  +AGE4564 + AGE65P,       # Person totals by age
     sum_groupquarters  = gq_type_univ + gq_type_mil + gq_type_othnon,          # GQ by type
+    sum_DU             = MFDU + SFDU,                                          # Households by dwelling unit (mult-family or single-family)
     sum_tenure         = hh_own + hh_rent,                                     # Households by tenure
     sum_size           = hh_size_1 + hh_size_2 + hh_size_3 + hh_size_4_plus,   # Now housing totals
     sum_hhworkers      = hh_wrks_0 + hh_wrks_1 + hh_wrks_2 + hh_wrks_3_plus,   # HHs by number of workers
@@ -751,11 +752,71 @@ if (ACS_5year < ACS_PUMS_1year+2) {
   print("TODO: SCALE population, households to ACS1-year totals")
   # update from most specific to least specific
   # 1. group quarters population (includes employed residents and persons by age)
-  tazdata_census <- update_gqop_to_county_totals(tazdata_census, scale_county_totals, ACS_PUMS_1year)
-  # 2. employed residents
-  tazdata_census <- update_empres_to_county_totals(tazdata_census, scale_county_totals)
+  return_list <- update_gqop_to_county_totals(tazdata_census, scale_county_totals, ACS_PUMS_1year)
+  tadata_census              <- return_list$source_df
+  detailed_GQ_county_targets <- return_list$detailed_GQ_county_targets
+  # 2. employed residents (not including households by workers)
+  tazdata_census_orig   <- update_empres_to_county_totals(tazdata_census, scale_county_totals)
+  # use the generic version
+  tazdata_census<- update_tazdata_to_county_target(
+    source_df    = tazdata_census, 
+    target_df    = scale_county_totals, 
+    sum_var      = "EMPRES", 
+    partial_vars = c("pers_occ_management", "pers_occ_professional", "pers_occ_services", 
+                     "pers_occ_retail", "pers_occ_manual","pers_occ_military")
+  )
+
   # 3. total households and population
-  # tazdata_census <- update_hhpop_to_county_totals(tazdata_census, scale_county_totals, ACS_PUMS_1year)
+  tazdata_census<- update_tazdata_to_county_target(
+    source_df    = tazdata_census, 
+    target_df    = scale_county_totals %>% rename(sum_age_target = TOTPOP_target), 
+    sum_var      = "sum_age", 
+    partial_vars = c("AGE0004", "AGE0519", "AGE2044", "AGE4564", "AGE65P")
+  )
+  tazdata_census<- update_tazdata_to_county_target(
+    source_df    = tazdata_census, 
+    target_df    = scale_county_totals %>% rename(sum_ethnicity_target = TOTPOP_target), 
+    sum_var      = "sum_ethnicity", 
+    partial_vars = c("white_nonh", "black_nonh", "asian_nonh", "other_nonh", "hispanic")
+  )
+  tazdata_census<- update_tazdata_to_county_target(
+    source_df    = tazdata_census, 
+    target_df    = scale_county_totals %>% rename(sum_DU_target = TOTHH_target), 
+    sum_var      = "sum_DU", 
+    partial_vars = c("SFDU", "MFDU")
+  )
+  tazdata_census<- update_tazdata_to_county_target(
+    source_df    = tazdata_census, 
+    target_df    = scale_county_totals %>% rename(sum_tenure_target = TOTHH_target), 
+    sum_var      = "sum_tenure", 
+    partial_vars = c("hh_own", "hh_rent")
+  )
+  tazdata_census<- update_tazdata_to_county_target(
+    source_df    = tazdata_census, 
+    target_df    = scale_county_totals %>% rename(sum_kids_target = TOTHH_target), 
+    sum_var      = "sum_kids", 
+    partial_vars = c("hh_kids_yes", "hh_kids_no")
+  )
+  tazdata_census<- update_tazdata_to_county_target(
+    source_df    = tazdata_census, 
+    target_df    = scale_county_totals %>% rename(sum_income_target = TOTHH_target), 
+    sum_var      = "sum_income", 
+    partial_vars = c("HHINCQ1", "HHINCQ2", "HHINCQ3", "HHINCQ4")
+  )
+  # households by workers and households by size are trickier because the partial columns have different weights
+  # start with a straightforward 
+  tazdata_census<- update_tazdata_to_county_target(
+    source_df    = tazdata_census, 
+    target_df    = scale_county_totals %>% rename(sum_size_target = TOTHH_target), 
+    sum_var      = "sum_size", 
+    partial_vars = c("hh_size_1", "hh_size_2", "hh_size_3", "hh_size_4_plus")
+  )
+  tazdata_census<- update_tazdata_to_county_target(
+    source_df    = tazdata_census, 
+    target_df    = scale_county_totals %>% rename(sum_hhworkers_target = TOTHH_target), 
+    sum_var      = "sum_hhworkers", 
+    partial_vars = c("hh_wrks_0", "hh_wrks_1", "hh_wrks_2", "hh_wrks_3_plus")
+  )
 }
 
 if (LODES_YEAR < argv$year) {
