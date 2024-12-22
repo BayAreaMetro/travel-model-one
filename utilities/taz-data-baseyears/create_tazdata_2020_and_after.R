@@ -27,6 +27,7 @@ argparser <- add_argument(parser=argparser, arg="year", type="integer", help="Ye
 # parse the command line arguments
 argv <- parse_args(argparser)
 stopifnot(argv$year %in% c(2020, 2021, 2023))
+set.seed(argv$year)
 
 # write to log
 run_log <- file.path(argv$year, paste0("create_tazdata_",argv$year,".log"))
@@ -758,7 +759,7 @@ if (ACS_5year < ACS_PUMS_1year+2) {
   # 2. employed residents (not including households by workers)
   tazdata_census_orig   <- update_empres_to_county_totals(tazdata_census, scale_county_totals)
   # use the generic version
-  tazdata_census<- update_tazdata_to_county_target(
+  tazdata_census <- update_tazdata_to_county_target(
     source_df    = tazdata_census, 
     target_df    = scale_county_totals, 
     sum_var      = "EMPRES", 
@@ -767,55 +768,72 @@ if (ACS_5year < ACS_PUMS_1year+2) {
   )
 
   # 3. total households and population
-  tazdata_census<- update_tazdata_to_county_target(
+  tazdata_census <- update_tazdata_to_county_target(
     source_df    = tazdata_census, 
     target_df    = scale_county_totals %>% rename(sum_age_target = TOTPOP_target), 
     sum_var      = "sum_age", 
     partial_vars = c("AGE0004", "AGE0519", "AGE2044", "AGE4564", "AGE65P")
   )
-  tazdata_census<- update_tazdata_to_county_target(
+  tazdata_census <- update_tazdata_to_county_target(
     source_df    = tazdata_census, 
     target_df    = scale_county_totals %>% rename(sum_ethnicity_target = TOTPOP_target), 
     sum_var      = "sum_ethnicity", 
     partial_vars = c("white_nonh", "black_nonh", "asian_nonh", "other_nonh", "hispanic")
   )
-  tazdata_census<- update_tazdata_to_county_target(
+  tazdata_census <- update_tazdata_to_county_target(
     source_df    = tazdata_census, 
     target_df    = scale_county_totals %>% rename(sum_DU_target = TOTHH_target), 
     sum_var      = "sum_DU", 
     partial_vars = c("SFDU", "MFDU")
   )
-  tazdata_census<- update_tazdata_to_county_target(
+  tazdata_census <- update_tazdata_to_county_target(
     source_df    = tazdata_census, 
     target_df    = scale_county_totals %>% rename(sum_tenure_target = TOTHH_target), 
     sum_var      = "sum_tenure", 
     partial_vars = c("hh_own", "hh_rent")
   )
-  tazdata_census<- update_tazdata_to_county_target(
+  tazdata_census <- update_tazdata_to_county_target(
     source_df    = tazdata_census, 
     target_df    = scale_county_totals %>% rename(sum_kids_target = TOTHH_target), 
     sum_var      = "sum_kids", 
     partial_vars = c("hh_kids_yes", "hh_kids_no")
   )
-  tazdata_census<- update_tazdata_to_county_target(
+  tazdata_census <- update_tazdata_to_county_target(
     source_df    = tazdata_census, 
     target_df    = scale_county_totals %>% rename(sum_income_target = TOTHH_target), 
     sum_var      = "sum_income", 
     partial_vars = c("HHINCQ1", "HHINCQ2", "HHINCQ3", "HHINCQ4")
   )
-  # households by workers and households by size are trickier because the partial columns have different weights
-  # start with a straightforward 
-  tazdata_census<- update_tazdata_to_county_target(
+  # households by size are trickier because the partial columns have different weights
+  # start with a straightforward approach
+  tazdata_census <- update_tazdata_to_county_target(
     source_df    = tazdata_census, 
     target_df    = scale_county_totals %>% rename(sum_size_target = TOTHH_target), 
     sum_var      = "sum_size", 
     partial_vars = c("hh_size_1", "hh_size_2", "hh_size_3", "hh_size_4_plus")
   )
-  tazdata_census<- update_tazdata_to_county_target(
+  # Now make adjustment for HHPOP
+  # popsyn_ACS_PUMS_5year: https://github.com/BayAreaMetro/populationsim/blob/master/bay_area/create_seed_population.py
+  tazdata_census <- make_hhsizes_consistent_with_population(
+    source_df             = tazdata_census, 
+    target_df             = scale_county_totals,
+    size_or_workers       = "hh_size",
+    popsyn_ACS_PUMS_5year = 2021
+  )
+  # Ditto fo households by workers
+  tazdata_census <- update_tazdata_to_county_target(
     source_df    = tazdata_census, 
     target_df    = scale_county_totals %>% rename(sum_hhworkers_target = TOTHH_target), 
     sum_var      = "sum_hhworkers", 
     partial_vars = c("hh_wrks_0", "hh_wrks_1", "hh_wrks_2", "hh_wrks_3_plus")
+  )
+  # Now make adjustment for EMPRES
+  # popsyn_ACS_PUMS_5year: https://github.com/BayAreaMetro/populationsim/blob/master/bay_area/create_seed_population.py
+  tazdata_census <- make_hhsizes_consistent_with_population(
+    source_df             = tazdata_census, 
+    target_df             = scale_county_totals,
+    size_or_workers       = "hh_wrks",
+    popsyn_ACS_PUMS_5year = 2021
   )
 }
 

@@ -179,7 +179,7 @@ update_disaggregate_data_to_aggregate_targets <- function(source_df, target_df, 
       weight_by=!!sym(col_name)
     )
     # aggregate to TAZ
-    modify_sample <- modify_sample %>% group_by(!!sym(disagg_id_var)) %>% summarise(TO_MODIFY = n())
+    modify_sample <- modify_sample %>% group_by(!!sym(disagg_id_var)) %>% summarise(TO_MODIFY = n(), .groups = 'drop')
     # print(paste("modify_sample len=", nrow(modify_sample)))
     # print(modify_sample)
 
@@ -226,7 +226,7 @@ update_tazdata_to_county_target <- function(source_df, target_df, sum_var, parti
 
   # summarize current totals for sum_var and partial_vars
   source_county_summary <- source_df %>% group_by(County_Name) %>%
-    summarise(across(all_of(c(sum_var, partial_vars)), sum, .names = "{col}"))
+    summarise(across(all_of(c(sum_var, partial_vars)), sum, .names = "{col}"), .groups = 'drop')
   print(sprintf("source_county_summary from source_df (regional total=%d):",
     source_county_summary %>% summarise(sum = sum(!!sym(sum_var))) %>% pull(sum)))
   print(source_county_summary)
@@ -264,9 +264,9 @@ update_tazdata_to_county_target <- function(source_df, target_df, sum_var, parti
 
 
   # check result
-  print(sprintf("Resuting %s and c(%s) by county:",sum_var,toString(partial_vars)))
+  print(sprintf("Resulting %s and c(%s) by county:",sum_var,toString(partial_vars)))
   print(source_df %>% group_by(County_Name) %>% 
-        summarise(across(all_of(c(sum_var, partial_vars)), sum, .names = "{col}")))
+        summarise(across(all_of(c(sum_var, partial_vars)), sum, .names = "{col}"), .groups = 'drop'))
         
   print("Regional totals:")
   print(source_df %>% select(all_of(c(sum_var, partial_vars))) %>% summarise(across(where(is.numeric), sum)))
@@ -384,7 +384,7 @@ map_ACS5year_household_income_to_TM1_categories <- function(ACS_year) {
   # calculate weighted shares
   PUMS_hhinc_cat <- PUMS_hhbayarea %>% 
     group_by(householdinc_acs_cat, householdinc_TM1_cat) %>% 
-    summarise(WGTP = sum(WGTP))
+    summarise(WGTP = sum(WGTP), .groups = 'drop')
   print("PUMS_hhinc_cat:")
   print(PUMS_hhinc_cat)
 
@@ -493,7 +493,8 @@ check_consistency_empres_hhworkers <- function(df, PUMS_COUNTY_3P_WORKERS) {
     sum_hh_wrks            =sum(sum_hh_wrks),
     EMPRES                 =sum(EMPRES),
     implied_min_workers    =sum(implied_min_workers),
-    estimated_total_workers=sum(estimated_total_workers))
+    estimated_total_workers=sum(estimated_total_workers), 
+    .groups = 'drop')
   )
 
   # print out lines with EMPRES < implied_min_workers
@@ -623,7 +624,8 @@ update_gqop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year
     gq_type_univ   = sum(gq_type_univ),
     gq_type_mil    = sum(gq_type_mil),
     gq_type_othnon = sum(gq_type_othnon),
-    gqpop          = sum(gqpop)
+    gqpop          = sum(gqpop),
+    .groups = 'drop'
   )
   source_county_df <- left_join(
     source_county_df, 
@@ -654,7 +656,8 @@ update_gqop_to_county_totals <- function(source_df, target_GQ_df, ACS_PUMS_1year
     gq_type_univ   = sum(gq_type_univ),
     gq_type_mil    = sum(gq_type_mil),
     gq_type_othnon = sum(gq_type_othnon),
-    gqpop          = sum(gqpop)
+    gqpop          = sum(gqpop),
+    .groups = 'drop'
   ))
 
   return(list(source_df=source_df, detailed_GQ_county_targets=detailed_GQ_county_targets))
@@ -685,6 +688,7 @@ update_empres_to_county_totals <- function(source_df, target_EMPRES_df) {
     pers_occ_retail       = sum(pers_occ_retail),
     pers_occ_manual       = sum(pers_occ_manual),
     pers_occ_military     = sum(pers_occ_military),
+    .groups = 'drop'
   )
   print(sprintf("source_empres_county from source_df (regional total=%d):", sum(source_empres_county$EMPRES)))
   print(source_empres_county)
@@ -744,10 +748,264 @@ update_empres_to_county_totals <- function(source_df, target_EMPRES_df) {
     pers_occ_services     = sum(pers_occ_services),
     pers_occ_retail       = sum(pers_occ_retail),
     pers_occ_manual       = sum(pers_occ_manual),
-    pers_occ_military     = sum(pers_occ_military)
+    pers_occ_military     = sum(pers_occ_military),
+    .groups = 'drop'
   ))
   print("Regional totals:")
   print(source_df %>% select(EMPRES, starts_with("pers_occ")) %>% summarise(across(where(is.numeric), sum)))
+
+  return(source_df)
+}
+
+# After naively updating household size partials (either hh_size_* or hhwrks_*) columns to achieve
+# target TOTHH, they may be inconsistent with persons (either HHPOP or EMPRES).
+# This keeps total households constant, but shifts households between categories to achieve
+# target persons.
+#
+# Parameters:
+#   size_or_workers: one of "hh_size" or "hh_wrks"
+#   source_df is a TAZ-based tibble including columns:
+#     id variables: County_Name, TAZ1454
+#     sum_var and partial_Vars: e.g., sum_size & hh_size_[1,2,3,4_plus] OR 
+#                                     sum_hhworkers & hh_wrks_[0,1,2,3_plus]
+#     pop_var: pop var to match. e.g., HHPOP or EMPRES
+#   target_pop_df: a dataframe with columns County_name, pop_var_target
+#   popsyn_ACS_PUMS_5year: the ACS5 year PUMS used for population synthesis. This is used to estimate
+#     number of persons or workers in the largest bucket by county
+#     e.g. Number of persons in 4+ person households by county
+make_hhsizes_consistent_with_population <- function(source_df, target_df, size_or_workers, popsyn_ACS_PUMS_5year) {
+  print(sprintf("########################## make_hhsizes_consistent_with_population(%s, popsyn_ACS_PUMS_5year=%d) ##########################",
+    size_or_workers, popsyn_ACS_PUMS_5year))
+
+  popsyn_PUMS_summary_dir <- sprintf("M:/Data/Census/PUMS/PUMS %d-%d/summaries", popsyn_ACS_PUMS_5year-4, popsyn_ACS_PUMS_5year %% 100)
+  if (size_or_workers == "hh_size") {
+    pop_var        <- "HHPOP"
+    sum_var        <- "sum_size"
+    partial_vars   <- c("hh_size_1", "hh_size_2", "hh_size_3", "hh_size_4_plus")
+    big_cat_file   <- file.path(popsyn_PUMS_summary_dir, "county_hh_size_summary_wide.csv")
+    big_cat_col    <- "avg_persons.hh.hh_size_4plus"
+  } else if (size_or_workers == "hh_wrks") {
+    pop_var        <- "EMPRES"
+    sum_var        <- "sum_hhworkers"
+    partial_vars   <- c("hh_wrks_0", "hh_wrks_1", "hh_wrks_2", "hh_wrks_3_plus")
+    big_cat_file   <- file.path(popsyn_PUMS_summary_dir, "county_hh_worker_summary_wide.csv")
+    big_cat_col    <- "avg_workers.hh.hh_wrks14_3plus"
+  } else {
+    stop("Not implemented")
+  }
+  # copy only needed target columns
+  pop_var_target <- paste0(pop_var,"_target")
+  target_df <- target_df %>% select(all_of(c("County_Name", pop_var_target)))
+  print(sprintf("target_df (%s total=%d):", pop_var_target, 
+    target_df %>% summarise(sum = sum(!!sym(pop_var_target))) %>% pull(sum)))
+  print(target_df)
+
+  # read the big cat file to get the avg size of the biggest category
+  big_cat_df <- read.csv(big_cat_file, header=T)
+  print(paste("Read",big_cat_file))
+  big_cat_df <- big_cat_df %>% 
+    select(all_of(c("County_Name", big_cat_col))) %>%
+    rename(big_cat_avg =!!sym(big_cat_col))
+  print("big_cat_df:")
+  print(big_cat_df)
+
+  # join to source_df and use to estimate pop_var
+  pop_var_est  <- paste0(pop_var, "_est")
+  source_df <- left_join(source_df, big_cat_df, by="County_Name")
+  if (size_or_workers == "hh_size") {
+    source_df <- source_df %>% mutate(
+      !!pop_var_est := (hh_size_1*1) + (hh_size_2*2) + (hh_size_3*3) + (hh_size_4_plus*big_cat_avg)
+    )
+  } else if (size_or_workers == "hh_wrks") {
+    source_df <- source_df %>% mutate(
+      !!pop_var_est := (hh_wrks_1*1) + (hh_wrks_2*2) + (hh_wrks_3_plus*big_cat_avg)
+    )
+  }
+  print("source_df with estimated pop_var")
+  print(source_df %>% select(all_of(c("County_Name", sum_var, partial_vars, pop_var_est))))
+
+  # summarize current totals for sum_var and partial_vars
+  source_county_summary <- source_df %>% group_by(County_Name, big_cat_avg) %>%
+    summarise(across(all_of(c(sum_var, partial_vars, pop_var_est)), sum, .names = "{col}"), .groups = 'drop')
+  # join with target_df
+  source_county_summary <- left_join(source_county_summary, target_df,  by="County_Name")
+  # calculate diff from target
+  pop_var_diff <- paste0(pop_var, "_diff")
+  source_county_summary <- source_county_summary %>% mutate(
+    !!pop_var_diff := !!sym(pop_var_target) - !!sym(pop_var_est)
+  )
+  # also calculate avg pop value of category change
+  if (size_or_workers == "hh_size") {
+    source_county_summary <- source_county_summary %>% mutate(
+      avg_incr_value = (hh_size_1 + hh_size_2 + (hh_size_3*(big_cat_avg-3)))/(hh_size_1+hh_size_2+hh_size_3),
+      avg_decr_value = (hh_size_2 + hh_size_3 + (hh_size_4_plus*(big_cat_avg-3)))/(hh_size_2 + hh_size_3 + hh_size_4_plus)
+    )
+  } else if (size_or_workers == "hh_wrks") {
+    source_county_summary <- source_county_summary %>% mutate(
+      avg_incr_value = (hh_wrks_0 + hh_wrks_1 + (hh_wrks_2*(big_cat_avg-2)))/(hh_wrks_0+hh_wrks_1+hh_wrks_2),
+      avg_decr_value = (hh_wrks_1 + hh_wrks_2 + (hh_wrks_3_plus*(big_cat_avg-2)))/(hh_wrks_1 + hh_wrks_2 + hh_wrks_3_plus)
+    )
+  }
+
+  print(sprintf("source_county_summary from source_df (regional %s=%.0f %s=%.0f %s=%.0f):",
+    pop_var_est,    source_county_summary %>% summarise(sum = sum(!!sym(pop_var_est)))    %>% pull(sum),
+    pop_var_target, source_county_summary %>% summarise(sum = sum(!!sym(pop_var_target))) %>% pull(sum),
+    pop_var_diff,   source_county_summary %>% summarise(sum = sum(!!sym(pop_var_diff)))   %>% pull(sum)
+  ))
+  print(source_county_summary)
+
+  # loop through counties
+  county_list <- source_county_summary %>% pull(County_Name)
+  new_taz_tibble <- tibble()
+  for (county in county_list) {
+    diff_value <- source_county_summary %>% filter(County_Name == county) %>% pull(!!sym(pop_var_diff))
+    county_big_cat_avg <- big_cat_df %>% filter(County_Name == county) %>% pull(big_cat_avg)
+
+    # these are the rows for this county from which to sample
+    filtered_source_df <- source_df %>% 
+      select(all_of(c("TAZ1454", "County_Name", sum_var, partial_vars, pop_var_est))) %>% 
+      filter(County_Name == county) %>%
+      filter(get(pop_var_est) > 0)
+
+    # if the diff is negative, then we're moving households from bigger sizes to smaller sizes
+    # for each reduction, we want to sample a household to reduce
+    # first, let's distribute our reduction amongst TAZs weighted by pop_var_est
+    
+    # it won't be 1-to-1 because changes to/from the biggest category count as more than one
+    # but let's not worry about that now
+    if (diff_value > 0) {
+      avg_change <- source_county_summary %>% filter(County_Name == county) %>% pull(avg_incr_value)
+    } else {
+      avg_change <- source_county_summary %>% filter(County_Name == county) %>% pull(avg_decr_value)
+    }
+    slice_size <- as.integer(abs(diff_value/avg_change))
+
+    print(sprintf("  Processing county %13s (big_cat_avg=%.2f avg_change=%.2f) with diff=%6.0f slice_size=%6.0f; filtered_source_df has %4d rows",
+      county, county_big_cat_avg, avg_change, diff_value, slice_size,nrow(filtered_source_df)))
+    # print("filtered_source_df")
+    # print(filtered_source_df)
+
+    modify_sample <- filtered_source_df %>% slice_sample(
+      n=slice_size,
+      replace=TRUE,
+      weight_by=!!sym(pop_var_est)
+    )
+    # aggregate to TAZ
+    modify_sample <- modify_sample %>% group_by(TAZ1454) %>% summarise(TO_MODIFY = n(), .groups = 'drop')
+    # print(paste("modify_sample len=", nrow(modify_sample)))
+    # print(modify_sample)
+
+    diff_value <- source_county_summary %>% filter(County_Name == county) %>% pull(!!sym(pop_var_diff))
+
+    # for each TAZ, if we're removing/adding, we need to pick which category we're moving down/up from
+    TAZ_list <- modify_sample %>% pull(TAZ1454)
+    for (TAZ in TAZ_list) {
+
+      TAZ_long <- filtered_source_df %>% filter(TAZ1454==TAZ) %>% pivot_longer(
+        cols = all_of(partial_vars),
+        names_to = "category", 
+        values_to = "num_hh"
+      ) %>% select(category, num_hh)
+
+      TAZ_diff <- modify_sample %>% filter(TAZ1454 == TAZ) %>% pull(TO_MODIFY)
+      # if we're reducing, don't include smallest category - we can't have fewer than that
+      # if we're adding, don't include largest category
+      if (diff_value < 0) {
+        TAZ_diff <- -1*TAZ_diff
+        TAZ_long_to_sample <- TAZ_long %>% mutate(num_hh = ifelse(category == head(partial_vars,1), 0, num_hh))
+      } else {
+        TAZ_long_to_sample <- TAZ_long %>% mutate(num_hh = ifelse(category == tail(partial_vars,1), 0, num_hh))
+      }
+      # print(sprintf("Targetting diff %.0f in TAZ %d", TAZ_diff, TAZ))
+
+      # sample categories to reduce and aggregate to category
+      category_sample <- TAZ_long_to_sample %>% slice_sample(
+        n=as.integer(abs(TAZ_diff)),
+        replace=TRUE,
+        weight_by=num_hh
+      ) %>% group_by(category) %>% summarize(move_from = -1*n())
+      TAZ_long <- left_join(TAZ_long, category_sample, by="category")
+
+      # if TAZ_diff < 0 then these we're moving them down a category and these are negative
+      if (TAZ_diff < 0) {
+        TAZ_long <- TAZ_long %>% mutate(move_to = -1*lead(move_from))
+      }
+      else {
+        TAZ_long <- TAZ_long %>% mutate(move_to = -1*lag(move_from))
+      }
+      TAZ_long <- TAZ_long %>% replace_na(list(move_from = 0, move_to = 0))
+      # print("TAZ_long before applying")
+      # print(TAZ_long)
+
+      # apply it
+      TAZ_long <- TAZ_long %>% 
+        mutate(num_hh = num_hh + move_from + move_to)
+      # stopf if it goes negative
+      negative_hh <- TAZ_long %>% filter(num_hh < 0)
+      if (nrow(negative_hh) > 0) {
+        print("Negative resuling num_hh:")
+        print(TAZ_long)
+        TAZ_long <- TAZ_long %>% mutate(num_hh = max(0, num_hh))
+      }
+
+      TAZ_wide <- TAZ_long %>% 
+        select(-move_from, -move_to) %>%
+        pivot_wider(names_from=category, values_from=num_hh) %>%
+        mutate(TAZ1454=TAZ, County_Name=county) %>%
+        relocate(TAZ1454,     .before = 1) %>%
+        relocate(County_Name, .before = 1)
+      # print("TAZ_wide after applying")
+      # print(TAZ_wide)
+
+      new_taz_tibble <- rbind(new_taz_tibble, TAZ_wide)
+    }
+  }
+  # note: new_taz_tibble doesn't necessarily have all the TAZ rows; some wouldn't have come up in sampling
+  print("full new_taz_tibble:")
+  print(new_taz_tibble)
+
+  # join to source_df and replace if the join succeeded and the new value isn't na
+  new_partial_vars <- paste0(partial_vars, ".new")
+  source_df <- left_join(source_df, new_taz_tibble, 
+    by=c("County_Name","TAZ1454"), suffix = c("", ".new")) %>%
+    mutate(across(all_of(partial_vars), ~ if_else(!is.na(get(paste0(cur_column(), ".new"))), 
+                                             get(paste0(cur_column(), ".new")), .))) %>%
+    select(-all_of(new_partial_vars))
+  print("source_df with new replacements")
+  print(source_df %>% select(all_of(c("County_Name","TAZ1454","big_cat_avg",partial_vars))))
+
+  # recalculate sum_var and pop_var_est
+  if (size_or_workers == "hh_size") {
+    source_df <- source_df %>% mutate(
+      !!sum_var     := hh_size_1 + hh_size_2 + hh_size_3 + hh_size_4_plus,
+      !!pop_var_est := (hh_size_1*1) + (hh_size_2*2) + (hh_size_3*3) + (hh_size_4_plus*big_cat_avg)
+    )
+  } else if (size_or_workers == "hh_wrks") {
+    source_df <- source_df %>% mutate(
+      !!sum_var     := hh_wrks_0 + hh_wrks_1 + hh_wrks_2 + hh_wrks_3_plus,
+      !!pop_var_est := (hh_wrks_1*1) + (hh_wrks_2*2) + (hh_wrks_3_plus*big_cat_avg)
+    )
+  }
+
+  print("Returning source_df:")
+  print(source_df %>% select(all_of(c("County_Name","TAZ1454",partial_vars,sum_var,pop_var_est))))
+  source_df <- source_df %>% select(-big_cat_avg) # don't return this column
+
+  # summarize final totals for sum_var and partial_vars
+  source_county_summary <- source_df %>% group_by(County_Name) %>%
+    summarise(across(all_of(c(sum_var, partial_vars, pop_var_est)), sum, .names = "{col}"), .groups = 'drop')
+  # join with target_df for pop_var_target
+  source_county_summary <- left_join(source_county_summary, target_df,  by="County_Name")
+  # calculate diff from target
+  source_county_summary <- source_county_summary %>% mutate(
+    !!pop_var_diff := !!sym(pop_var_target) - !!sym(pop_var_est)
+  )  
+  print(sprintf("source_county_summary (regional %s=%.0f %s=%.0f %s=%.0f):",
+    pop_var_est,    source_county_summary %>% summarise(sum = sum(!!sym(pop_var_est)))    %>% pull(sum),
+    pop_var_target, source_county_summary %>% summarise(sum = sum(!!sym(pop_var_target))) %>% pull(sum),
+    pop_var_diff,   source_county_summary %>% summarise(sum = sum(!!sym(pop_var_diff)))   %>% pull(sum)
+  ))
+  print(source_county_summary)
 
   return(source_df)
 }
