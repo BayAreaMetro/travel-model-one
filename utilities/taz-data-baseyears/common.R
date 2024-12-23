@@ -1,6 +1,17 @@
 # Pull out some common methods for tazdata preparation here
 #
 
+BAY_AREA_COUNTIES = c(
+  "Alameda",
+  "Contra Costa",
+  "Marin",
+  "Napa",
+  "San Francisco",
+  "San Mateo",
+  "Santa Clara",
+  "Solano",
+  "Sonoma"
+)
 # https://github.com/BayAreaMetro/modeling-website/wiki/InflationAssumptions
 DOLLARS_2000_to_202X <- c(
   "2021"=1.72, 
@@ -9,7 +20,7 @@ DOLLARS_2000_to_202X <- c(
 
 censuskey    <- readLines("M:/Data/Census/API/api-key.txt")
 baycounties  <- c("01","13","41","55","75","81","85","95","97")
-state        <- "06"
+state_code   <- "06"
 census_api_key(censuskey, install = TRUE, overwrite = TRUE)
 
 # Bring in 2020 block/TAZ equivalency, create block group ID and tract ID fields for later joining to ACS data

@@ -55,6 +55,13 @@ ACS_PUMS_5year <- min(ACS_PUMS_5YEAR_LATEST, argv$year + 2)
 LODES_YEAR_LATEST <- 2022
 LODES_YEAR = min(argv$year, LODES_YEAR_LATEST)
 
+# Employment numbers for workers who live AND work in the Bay Area vary significantly between
+# ACS (high) and LEHD LODES (low).  This parameter is for doing a blended approach.
+# Set to 0.0 to use only ACS, set to 1.0 to use only LODES; set to 0.5 to use something in between
+#
+# Note that currently LEHD WAC is used for employment (TOTEMP and [AGR,FPS,HER,MWT,RET,OTH]EMPN)
+EMPRES_LODES_WEIGHT = 1.0
+
 # setup paths
 USERPROFILE        <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
 BOX_TM             <- file.path(USERPROFILE, "Box", "Modeling and Surveys")
@@ -65,6 +72,8 @@ PBA_TAZ_2015       <- file.path(BOX_TM, "Share Data", "plan-bay-area-2050", "taz
 TM1                <- file.path(".")
 emp_wage_salary    <- read.csv(file.path(TM1,LODES_YEAR,paste0("lodes_wac_employment_",LODES_YEAR,".csv")),header = T)
 emp_self_employed  <- read.csv(file.path(TM1,argv$year,paste0("taz_self_employed_workers_",argv$year,".csv")),header = T)
+lehd_lodes         <- read.csv(file.path("M://Data/Census/LEHD/Origin-Destination Employment Statistics (LODES)",
+                      sprintf("LODES_Bay_Area_county_%d.csv", LODES_YEAR)), header=T) %>% tibble()
 TAZ_SD_COUNTY      <- read.csv(file.path("..","geographies","taz-superdistrict-county.csv"), header=T) %>% 
   rename(County_Name=COUNTY_NAME, DISTRICT=SD, DISTRICT_NAME=SD_NAME) %>% select(-SD_NUM_NAME, -COUNTY_NUM_NAME)
 # TAZ_SD_COUNTY columns: ZONE,DISTRICT,COUNTY,DISTRICT_NAME,County_Name
@@ -77,17 +86,60 @@ emp_self_employed_w <- emp_self_employed %>%
   arrange(zone_id) %>% 
   rename( c("TAZ1454" = "zone_id")) %>%
   rename_all(toupper)
+print("emp_self_employed_w:")
+print(emp_self_employed_w)
+
+lehd_lodes <- lehd_lodes %>% select(-w_state, -h_state) %>%
+  rename(TOTEMP = Total_Workers) %>%
+  group_by(w_county,h_county) %>% 
+  summarise(TOTEMP = sum(TOTEMP), .groups='drop')
+
+# get self employment ready to add to this by summarizing to county and setting h_county = w_county
+emp_self_employed_county <- left_join(
+    emp_self_employed_w,
+    select(TAZ_SD_COUNTY, ZONE, County_Name),
+    by=c("TAZ1454"="ZONE")) %>% 
+  group_by(County_Name) %>%
+  summarise(TOTEMP_self=sum(TOTEMP), .groups='drop') %>%
+  rename(h_county = County_Name) %>%
+  mutate(w_county = h_county)
+# print(emp_self_employed_county)
+print(sprintf("emp_self_employed_county total: %s", format(
+  emp_self_employed_county %>% summarise(TOTEMP_self=sum(TOTEMP_self)) %>% pull(TOTEMP_self),
+  big.mark = ",", scientific = FALSE)))
+
+# add estimated USPS jobs, consistent with lodes_wac_to_TAZ.py
+USPS_PER_THOUSAND_JOBS = 1.83
+lehd_lodes <- lehd_lodes %>% mutate(
+  TOTEMP = as.integer(round(TOTEMP*(1.0 + USPS_PER_THOUSAND_JOBS/1000.0)))
+)
+# add self-employment to lehd lodes
+lehd_lodes <- left_join(
+    lehd_lodes, emp_self_employed_county, by=c("h_county","w_county")) %>%
+    mutate(TOTEMP_self = replace_na(TOTEMP_self, 0))
+lehd_lodes <- lehd_lodes %>%
+    mutate(TOTEMP = TOTEMP + TOTEMP_self) %>%
+    select(-TOTEMP_self)
+
+# columns are w_county, h_county, TOTEMP
+print(sprintf("LEHD LODES from %d (after adding self-employment):", LODES_YEAR))
+print(lehd_lodes)
+
+
 
 # Combine the two employment frames - wage/salary, and self-employment
-employment <- bind_rows(emp_wage_salary, emp_self_employed_w,.id='src')
+employment <- bind_rows(emp_wage_salary, emp_self_employed_w, .id='src') %>% tibble()
 
 # Group by TAZ1454 and calculate the sum for total employment by taz (wage/salary plus self-employment)
 employment <- employment %>%
   group_by(TAZ1454) %>%
   summarize_if(is.numeric, sum, na.rm = F)
-
-baycounties <- c("01","13","41","55","75","81","85","95","97")
-state_code <- "06" 
+# columns are: TAZ1454, AGREMPN, FPSEMPN, HEREMPN, MWTEMPN, RETEMPN, OTHEMPN, TOTEMP
+print("employment:")
+print(employment)
+print(sprintf("TOTEMP: %s", format(
+  employment %>% summarise(TOTEMP=sum(TOTEMP)) %>% pull(TOTEMP),
+  big.mark = ",", scientific = FALSE)))
 
 # Import decennial census (DHC file) and ACS for variable inspection, use to get variable numbers
 DHC_table <- load_variables(year=2020, dataset="dhc", cache=TRUE)
@@ -543,6 +595,8 @@ tazdata_census <- workingdata %>%
 tazdata_census <- left_join(tazdata_census, TAZ_hhinc, by="TAZ1454", relationship="one-to-one")
 # add county, County_name, DISTRICT, District_NAme, etc
 tazdata_census <- left_join(tazdata_census, TAZ_SD_COUNTY, by=c("TAZ1454"="ZONE"))
+# add employment
+tazdata_census <- left_join(tazdata_census,employment, by="TAZ1454")
 
 print(paste0("tazdata_census (", nrow(tazdata_census)," rows):"))
 print(tazdata_census)
@@ -594,7 +648,7 @@ print(tazdata_census %>% group_by(County_Name) %>% summarize(
 
 print("population consistency checks")
 print(tazdata_census %>% group_by(County_Name) %>% summarize(
-  TOTPOP        =sum(TOTPOP), 
+  TOTPOP        =sum(TOTPOP),
   sum_age       =sum(sum_age),
   sum_ethnicity =sum(sum_ethnicity)))
 
@@ -625,6 +679,35 @@ tazdata_census <- fix_rounding_artifacts(tazdata_census, "TAZ1454", "EMPRES", c(
 tazdata_census <- tazdata_census %>%
   mutate(SHPOP62P = if_else(TOTPOP==0,0,AGE62P/TOTPOP))
 
+###############################################################################################################################################
+#
+# If there are more recent (but incomplete) alternative data sources, we may
+# create updated county-based targets in the following steps
+
+current_county_totals <- tazdata_census %>% 
+  group_by(County_Name) %>% 
+  summarise(
+    TOTHH  = sum(TOTHH),
+    TOTPOP = sum(TOTPOP),
+    GQPOP  = sum(gqpop),
+    HHPOP  = sum(HHPOP),
+    EMPRES = sum(EMPRES),
+    TOTEMP = sum(TOTEMP)
+  )
+print("current_county_totals:")
+print(current_county_totals)
+
+# assume targets are the same as we have to begin with, but adjust below
+county_targets <- current_county_totals %>% mutate(
+  TOTHH_target  = TOTHH,
+  TOTPOP_target = TOTPOP,
+  GQPOP_target  = GQPOP,
+  HHPOP_target  = HHPOP,
+  EMPRES_target = EMPRES,
+  TOTEMP_target = TOTEMP,
+)
+
+
 # ACS_5year should be ACS_PUMS_1year + 2 -- if it's not, then scale up using ACS1-year totals
 if (ACS_5year < ACS_PUMS_1year+2) {
   print("##########################################################################################")
@@ -637,7 +720,7 @@ if (ACS_5year < ACS_PUMS_1year+2) {
     employed_     ="B23025_004",    # Civilian employed residents (employed residents is "employed" + "armed forces")
     armedforces_  ="B23025_006" 	  # Armed forces
   )
-  
+
   simplify_col <- function(name) { gsub("_E", "", name) }
 
   ACS_1year_target <- tidycensus::get_acs(
@@ -662,136 +745,156 @@ if (ACS_5year < ACS_PUMS_1year+2) {
       HHPOP_target  = hhpop,
       EMPRES_target = empres
     ) %>% 
-    mutate(GQPOP_target = TOTPOP_target - HHPOP_target,
-)
+    mutate(GQPOP_target = TOTPOP_target - HHPOP_target)
 
   print("ACS_1year_target:")
   print(ACS_1year_target)
 
-  current_county_totals <- tazdata_census %>% 
-    group_by(County_Name) %>% 
-    summarize(
-      TOTHH  = sum(TOTHH),
-      TOTPOP = sum(TOTPOP),
-      GQPOP  = sum(gqpop),
-      HHPOP  = sum(HHPOP),
-      EMPRES = sum(EMPRES)
-    )
-  print("current_county_totals:")
-  print(current_county_totals)
+  # replace in county_targets
+  county_targets <- county_targets %>% 
+    select(-TOTHH_target, -TOTPOP_target, -HHPOP_target, -EMPRES_target, -GQPOP_target) %>%
+    left_join(., ACS_1year_target, by="County_Name")
+}
 
-  # put them together
-  county_targets_ACS1year <- left_join(
-    current_county_totals, 
-    ACS_1year_target, 
-    by=c("County_Name"))
+# factor EMPRES by LODES
+print(sprintf("  Workers with h_county in BayArea: %s", format(
+  lehd_lodes %>% filter(h_county %in% BAY_AREA_COUNTIES) %>% 
+    summarise(TOTEMP=sum(TOTEMP)) %>% pull(TOTEMP),
+  big.mark = ",", scientific = FALSE)))
+print(sprintf("  Workers with w_county in BayArea: %s", format(
+  lehd_lodes %>% filter(w_county %in% BAY_AREA_COUNTIES) %>%
+    summarise(TOTEMP=sum(TOTEMP)) %>% pull(TOTEMP),
+  big.mark = ",", scientific = FALSE)))
+print(sprintf("  Workers with h_county AND w_county in BayArea: %s", format(
+  lehd_lodes %>% filter(w_county %in% BAY_AREA_COUNTIES) %>% 
+                 filter(h_county %in% BAY_AREA_COUNTIES) %>%
+    summarise(TOTEMP=sum(TOTEMP)) %>% pull(TOTEMP),
+  big.mark = ",", scientific = FALSE)))
+
+# blend lehd_lodes and existing county_targets based upon EMPRES_LEHD_target
+lehd_lodes_h_county <- lehd_lodes %>% 
+  filter(w_county %in% BAY_AREA_COUNTIES) %>% # include on jobs in bay area
+  filter(h_county %in% BAY_AREA_COUNTIES) %>% # held by residents of the bay area
+  group_by(h_county) %>%
+  summarise(EMPRES_LEHD_target=sum(TOTEMP)) %>%
+  rename(County_Name = h_county) # EMPRES since we're summing to home county
+print("lehd_lodes_h_county:")
+print(lehd_lodes_h_county)
+
+county_targets <- left_join(county_targets, lehd_lodes_h_county, by="County_Name")
+print(sprintf("Incorporating EMPRES_LODES_WEIGHT=%.2f; county_targets before adjustment:", EMPRES_LODES_WEIGHT))
+print(county_targets)
+
+county_targets <- county_targets %>% 
+  mutate(
+    EMPRES_target = EMPRES_LODES_WEIGHT*EMPRES_LEHD_target + (1.0-EMPRES_LODES_WEIGHT)*EMPRES_target
+  ) %>% select(-EMPRES_LEHD_target)
+print("county_targets after adjustment:")
+print(county_targets)
+
+###############################################################################################################################################
+# Implement county_targets
+print("Implementing County Targets:")
   
-  county_targets_ACS1year <- county_targets_ACS1year %>% mutate(
+county_targets <- county_targets %>% mutate(
     TOTHH_diff  = TOTHH_target  - TOTHH,
     TOTPOP_diff = TOTPOP_target - TOTPOP,
     HHPOP_diff  = HHPOP_target  - HHPOP,
     GQPOP_diff  = GQPOP_target  - GQPOP,
-    EMPRES_diff = EMPRES_target - EMPRES
-  )
-  print("county_targets_ACS1year:")
-  print(county_targets_ACS1year)
+    EMPRES_diff = EMPRES_target - EMPRES,
+    TOTEMP_diff = TOTEMP_target - TOTEMP
+)
+print(county_targets)
 
-  print("Regional totals:")
-  print(county_targets_ACS1year %>% summarise(across(where(is.numeric), sum)))
+print("Regional totals:")
+print(county_targets %>% summarise(across(where(is.numeric), sum)))
   
-  print("Scaling population, households to ACS1-year totals")
-  # update from most specific to least specific
-  # 1. group quarters population (includes employed residents and persons by age)
-  return_list <- update_gqop_to_county_totals(tazdata_census, county_targets_ACS1year, ACS_PUMS_1year)
-  tadata_census              <- return_list$source_df
-  detailed_GQ_county_targets <- return_list$detailed_GQ_county_targets
+# update from most specific to least specific
+# 1. group quarters population (includes employed residents and persons by age)
+return_list <- update_gqop_to_county_totals(tazdata_census, county_targets, ACS_PUMS_1year)
+tadata_census              <- return_list$source_df
+detailed_GQ_county_targets <- return_list$detailed_GQ_county_targets
 
-  # 2. employed residents (not including households by workers)
-  tazdata_census_orig   <- update_empres_to_county_totals(tazdata_census, county_targets_ACS1year)
+# 2. employed residents (not including households by workers)
+tazdata_census_orig   <- update_empres_to_county_totals(tazdata_census, county_targets)
 
-  # use the generic version to verify these do the same thing (they do!)
-  tazdata_census <- update_tazdata_to_county_target(
-    source_df    = tazdata_census, 
-    target_df    = county_targets_ACS1year, 
-    sum_var      = "EMPRES", 
-    partial_vars = c("pers_occ_management", "pers_occ_professional", "pers_occ_services", 
-                     "pers_occ_retail", "pers_occ_manual","pers_occ_military")
-  )
+# use the generic version to verify these do the same thing (they do!)
+tazdata_census <- update_tazdata_to_county_target(
+  source_df    = tazdata_census, 
+  target_df    = county_targets, 
+  sum_var      = "EMPRES", 
+  partial_vars = c("pers_occ_management", "pers_occ_professional", "pers_occ_services", 
+                   "pers_occ_retail", "pers_occ_manual","pers_occ_military")
+)
 
-  # 3. total households and population
-  tazdata_census <- update_tazdata_to_county_target(
-    source_df    = tazdata_census, 
-    target_df    = county_targets_ACS1year %>% rename(sum_age_target = TOTPOP_target), 
-    sum_var      = "sum_age", 
-    partial_vars = c("AGE0004", "AGE0519", "AGE2044", "AGE4564", "AGE65P")
-  )
-  tazdata_census <- update_tazdata_to_county_target(
-    source_df    = tazdata_census, 
-    target_df    = county_targets_ACS1year %>% rename(sum_ethnicity_target = TOTPOP_target), 
-    sum_var      = "sum_ethnicity", 
-    partial_vars = c("white_nonh", "black_nonh", "asian_nonh", "other_nonh", "hispanic")
-  )
-  tazdata_census <- update_tazdata_to_county_target(
-    source_df    = tazdata_census, 
-    target_df    = county_targets_ACS1year %>% rename(sum_DU_target = TOTHH_target), 
-    sum_var      = "sum_DU", 
-    partial_vars = c("SFDU", "MFDU")
-  )
-  tazdata_census <- update_tazdata_to_county_target(
-    source_df    = tazdata_census, 
-    target_df    = county_targets_ACS1year %>% rename(sum_tenure_target = TOTHH_target), 
-    sum_var      = "sum_tenure", 
-    partial_vars = c("hh_own", "hh_rent")
-  )
-  tazdata_census <- update_tazdata_to_county_target(
-    source_df    = tazdata_census, 
-    target_df    = county_targets_ACS1year %>% rename(sum_kids_target = TOTHH_target), 
-    sum_var      = "sum_kids", 
-    partial_vars = c("hh_kids_yes", "hh_kids_no")
-  )
-  tazdata_census <- update_tazdata_to_county_target(
-    source_df    = tazdata_census, 
-    target_df    = county_targets_ACS1year %>% rename(sum_income_target = TOTHH_target), 
-    sum_var      = "sum_income", 
-    partial_vars = c("HHINCQ1", "HHINCQ2", "HHINCQ3", "HHINCQ4")
-  )
-  # households by size are trickier because the partial columns have different weights
-  # start with a straightforward approach
-  tazdata_census <- update_tazdata_to_county_target(
-    source_df    = tazdata_census, 
-    target_df    = county_targets_ACS1year %>% rename(sum_size_target = TOTHH_target), 
-    sum_var      = "sum_size", 
-    partial_vars = c("hh_size_1", "hh_size_2", "hh_size_3", "hh_size_4_plus")
-  )
-  # Now make adjustment for HHPOP
-  # popsyn_ACS_PUMS_5year: https://github.com/BayAreaMetro/populationsim/blob/master/bay_area/create_seed_population.py
-  tazdata_census <- make_hhsizes_consistent_with_population(
-    source_df             = tazdata_census, 
-    target_df             = county_targets_ACS1year,
-    size_or_workers       = "hh_size",
-    popsyn_ACS_PUMS_5year = 2021
-  )
-  # Ditto fo households by workers
-  tazdata_census <- update_tazdata_to_county_target(
-    source_df    = tazdata_census, 
-    target_df    = county_targets_ACS1year %>% rename(sum_hhworkers_target = TOTHH_target), 
-    sum_var      = "sum_hhworkers", 
-    partial_vars = c("hh_wrks_0", "hh_wrks_1", "hh_wrks_2", "hh_wrks_3_plus")
-  )
-  # Now make adjustment for EMPRES
-  # popsyn_ACS_PUMS_5year: https://github.com/BayAreaMetro/populationsim/blob/master/bay_area/create_seed_population.py
-  tazdata_census <- make_hhsizes_consistent_with_population(
-    source_df             = tazdata_census, 
-    target_df             = county_targets_ACS1year,
-    size_or_workers       = "hh_wrks",
-    popsyn_ACS_PUMS_5year = 2021
-  )
-}
-
-if (LODES_YEAR < argv$year) {
-  print(sprintf("TODO: LODES_YEAR %d < year %d", LODES_YEAR, argv$year))
-  print("TODO: SCALE employment to ACS1-year totals")
-}
+# 3. total households and population
+tazdata_census <- update_tazdata_to_county_target(
+  source_df    = tazdata_census, 
+  target_df    = county_targets %>% rename(sum_age_target = TOTPOP_target), 
+  sum_var      = "sum_age", 
+  partial_vars = c("AGE0004", "AGE0519", "AGE2044", "AGE4564", "AGE65P")
+)
+tazdata_census <- update_tazdata_to_county_target(
+  source_df    = tazdata_census, 
+  target_df    = county_targets %>% rename(sum_ethnicity_target = TOTPOP_target), 
+  sum_var      = "sum_ethnicity", 
+  partial_vars = c("white_nonh", "black_nonh", "asian_nonh", "other_nonh", "hispanic")
+)
+tazdata_census <- update_tazdata_to_county_target(
+  source_df    = tazdata_census, 
+  target_df    = county_targets %>% rename(sum_DU_target = TOTHH_target), 
+  sum_var      = "sum_DU", 
+  partial_vars = c("SFDU", "MFDU")
+)
+tazdata_census <- update_tazdata_to_county_target(
+  source_df    = tazdata_census, 
+  target_df    = county_targets %>% rename(sum_tenure_target = TOTHH_target), 
+  sum_var      = "sum_tenure", 
+  partial_vars = c("hh_own", "hh_rent")
+)
+tazdata_census <- update_tazdata_to_county_target(
+  source_df    = tazdata_census, 
+  target_df    = county_targets %>% rename(sum_kids_target = TOTHH_target), 
+  sum_var      = "sum_kids", 
+  partial_vars = c("hh_kids_yes", "hh_kids_no")
+)
+tazdata_census <- update_tazdata_to_county_target(
+  source_df    = tazdata_census, 
+  target_df    = county_targets %>% rename(sum_income_target = TOTHH_target), 
+  sum_var      = "sum_income", 
+  partial_vars = c("HHINCQ1", "HHINCQ2", "HHINCQ3", "HHINCQ4")
+)
+# households by size are trickier because the partial columns have different weights
+# start with a straightforward approach
+tazdata_census <- update_tazdata_to_county_target(
+  source_df    = tazdata_census, 
+  target_df    = county_targets %>% rename(sum_size_target = TOTHH_target), 
+  sum_var      = "sum_size", 
+  partial_vars = c("hh_size_1", "hh_size_2", "hh_size_3", "hh_size_4_plus")
+)
+# Now make adjustment for HHPOP
+# popsyn_ACS_PUMS_5year: https://github.com/BayAreaMetro/populationsim/blob/master/bay_area/create_seed_population.py
+tazdata_census <- make_hhsizes_consistent_with_population(
+  source_df             = tazdata_census, 
+  target_df             = county_targets,
+  size_or_workers       = "hh_size",
+  popsyn_ACS_PUMS_5year = 2021
+)
+# Ditto fo households by workers
+tazdata_census <- update_tazdata_to_county_target(
+  source_df    = tazdata_census, 
+  target_df    = county_targets %>% rename(sum_hhworkers_target = TOTHH_target), 
+  sum_var      = "sum_hhworkers", 
+  partial_vars = c("hh_wrks_0", "hh_wrks_1", "hh_wrks_2", "hh_wrks_3_plus")
+)
+# Now make adjustment for EMPRES
+# popsyn_ACS_PUMS_5year: https://github.com/BayAreaMetro/populationsim/blob/master/bay_area/create_seed_population.py
+tazdata_census <- make_hhsizes_consistent_with_population(
+  source_df             = tazdata_census, 
+  target_df             = county_targets,
+  size_or_workers       = "hh_wrks",
+  popsyn_ACS_PUMS_5year = 2021
+)
 
 print(paste0("tazdata_census (", nrow(tazdata_census)," rows):"))
 print(tazdata_census)
@@ -813,7 +916,6 @@ write.csv(ethnic,file = file.path(argv$year, "TAZ1454_Ethnicity.csv"),row.names 
 print(paste("Wrote",file.path(argv$year,"TAZ1454_Ethnicity.csv")))
 
 # Read in old PBA data sets and select variables for joining to new 2020 dataset
-# Join 2021 employment data
 # Bring in school and parking data from 2015 TAZ data 
 # Add HHLDS variable (same as TOTHH), select new 2015 output
 
@@ -824,7 +926,6 @@ PBA2015_joiner <- PBA2015 %>%
   select(ZONE,SD,TOTACRE,RESACRE,CIACRE,PRKCST,OPRKCST,AREATYPE,HSENROLL,COLLFTE,COLLPTE,TOPOLOGY,TERMINAL, ZERO)
 
 tazdata_census <- left_join(PBA2015_joiner,tazdata_census, by=c("ZONE"="TAZ1454"))   # Join 2015 topology, parking, enrollment
-tazdata_census <- left_join(tazdata_census,employment, by=c("ZONE"="TAZ1454"))       # Join employment
 
 # Save R version of data for 2020 to later inflate to 2023
 output_file=file.path(argv$year, sprintf("TAZ Land Use File %d.rdata", argv$year))
