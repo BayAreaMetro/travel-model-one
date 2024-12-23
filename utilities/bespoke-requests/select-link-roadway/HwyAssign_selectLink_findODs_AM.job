@@ -1,7 +1,6 @@
 
 ; HwyAssign_selectLink_findODs.job - compare to HwyAssign.job
 
-read file = ctramp\scripts\block\HwyIntraStep_AM.block
 token_link = '%SELECT_LINK%'
 
 ; LETS JUST DO AM
@@ -10,18 +9,17 @@ loop period = 2,2
       token_period = 'AM'
       token_capfac = 'parameters capfac = 4'
       token_capfac_num = '4'
-      token_intrastep_processlist = token_intrastep_processlist_AM
       token_hov_xfer_pen = 'li.HOVXPEN'
       token_relativegap = 'parameters relativegap = 0.0005'
       token_maxiters = 'parameters maxiters = 1000'
 
    ; distribute via cluster
-   DistributeMultistep processid = 'CTRAMP', processNum = @period@, commpath = '%COMMPATH%'
+   DistributeMultistep processid = 'CTRAMP', processNum = 1, commpath = '%COMMPATH%'
 
    run pgm = highway
 
       ; distribute via cluster
-      DistributeIntrastep processid = 'CTRAMP', processlist = @token_intrastep_processlist@, commpath = '%COMMPATH%', saveprn = f
+      DistributeIntrastep processid = 'CTRAMP', processlist = 2-48, commpath = '%COMMPATH%', saveprn = f
 
       ; time-specific input highway network
       neti    = hwy\avgload@token_period@.net
@@ -244,4 +242,4 @@ loop period = 2,2
 
 endloop ; time period loop
 
-Wait4Files files = CTRAMP2.script.end, PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t
+Wait4Files files = CTRAMP1.script.end, PrintFiles = merge, DelDistribFiles = t, CheckReturnCode = t
