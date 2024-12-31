@@ -25,9 +25,9 @@ If no iteration is specified, then these include:
  * Truck Trip Distribution gravity LOS term part from tolled time
    + Specify the value in INPUT\\params.properties
    + It will be propagated to CTRAMP\\scripts\\block\\hwyParam.block
- * WFH factor (WFH_Calibration_constant)
-   + Specify the value in INPUT\\params.properties
-   + It will be propagated to CTRAMP\\runtime\\mtcTourBased.properties
+ * WFH factors (WFH_Calibration_constant, WFH_Calibration_eastbay_SF)
+   + Specify the values in INPUT\\params.properties
+   + They will be propagated to CTRAMP\\runtime\\mtcTourBased.properties
  * Means Based Tolling (Q1 and Q2) factors
    + They will be propagated to CTRAMP\\scripts\\block\\hwyParam.block
                                 CTRAMP\\runtime\\mtcTourBased.properties
@@ -245,7 +245,8 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
     MeansBasedCordonFareQ2Factor   = float(get_property(params_filename, params_contents, "Means_Based_Cordon_Fare_Q2Factor"))
 
     # WFH factor
-    WFH_Calibration_constant = float(get_property(params_filename, params_contents, "WFH_Calibration_constant"))
+    WFH_Calibration_constant   = float(get_property(params_filename, params_contents, "WFH_Calibration_constant"))
+    WFH_Calibration_eastbay_SF = float(get_property(params_filename, params_contents, "WFH_Calibration_eastbay_SF"))
 
     Adjust_TNCsingle_TourMode = float(get_property(params_filename, params_contents, "Adjust_TNCsingle_TourMode"))
     Adjust_TNCshared_TourMode = float(get_property(params_filename, params_contents, "Adjust_TNCshared_TourMode"))
@@ -321,6 +322,7 @@ def config_mobility_params(params_filename, params_contents, for_logsums, replac
 
     # WFH factor
     replacements[filepath]["(\nCDAP.WFH.CalibrationConstant[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.3f" % WFH_Calibration_constant
+    replacements[filepath]["(\nCDAP.WFH.Calibration.eastbay_SF[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.3f" % WFH_Calibration_eastbay_SF
 
     replacements[filepath]["(\nAdjust_TNCsingle_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCsingle_TourMode
     replacements[filepath]["(\nAdjust_TNCshared_TourMode[ \t]*=[ \t]*)(\S*)"] = r"\g<1>%.2f" % Adjust_TNCshared_TourMode
