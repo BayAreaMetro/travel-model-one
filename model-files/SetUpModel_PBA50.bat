@@ -108,7 +108,6 @@ copy "%ALL_BCM_INPUTS%\inputs_%YEAR%\ZMAST.dbf"          			INPUT\landuse\ZMAST.
 copy %ALL_BCM_INPUTS%\inputs_%YEAR%\hhFile%YEAR%.csv												INPUT\popsyn\hhFile.%YEAR%.csv
 copy %ALL_BCM_INPUTS%\inputs_%YEAR%\personFile%YEAR%.csv											INPUT\popsyn\personFile.%YEAR%.csv
 c:\windows\system32\Robocopy.exe /E "%INPUT_NONRES%"                   							INPUT\nonres
-c:\windows\system32\Robocopy.exe /E "%GITHUB_DIR%\utilities\telecommute"   		   				INPUT\landuse
 
 
 set PREV_RUN_DIR=%ALL_BCM_INPUTS%\inputs_%YEAR%\warmstart
@@ -132,7 +131,7 @@ copy /Y "%PARAMS%"                                                              
 :: ------
 set TELECOMMUTE_CONFIG=%ALL_BCM_INPUTS%\inputs_%YEAR%\telecommute_constants_%YEAR%.csv
 mkdir main
-copy /Y "%TELECOMMUTE_CONFIG%" "main/telecommute_constants_00.csv"
-copy /Y "%TELECOMMUTE_CONFIG%" "main/telecommute_constants.csv"
+copy /Y "%TELECOMMUTE_CONFIG%" "INPUT/landuse/telecommute_constants.csv"
+copy /Y "%ALL_BCM_INPUTS%\inputs_%YEAR%\telecommute_max_rate_county.csv" "INPUT/landuse/telecommute_max_rate_county.csv"
  
 :end

@@ -67,7 +67,7 @@ RUN PGM=TRIPGEN
     P[1] = VSTRUCKP
     A[1] = VSTRUCKA
 
-    IF (I=1-4454)
+    IF (I=1-%TAZ_COUNT%)
       P[1] = P[1] * APA(1,ZI.1.SD)
       A[1] = A[1] * APA(2,ZI.1.SD)
     ENDIF
@@ -131,10 +131,14 @@ RUN PGM=TRIPGEN
 		;
 		; If special generators exist, replace calculated total truck trips 
 		;
+		year_delta      = %MODEL_YEAR%-2015
+		sg_growth_factor = 0.015
+		
+		sg_growth = (1 + year_delta * sg_growth_factor)
 		IF (ZI.2.SMALL>0 || ZI.2.MEDIUM>0 || ZI.2.COMBO>0)
-			P_TOT_SML = ZI.2.SMALL
-			P_TOT_MED = ZI.2.MEDIUM
-			P_TOT_COM = ZI.2.COMBO
+			P_TOT_SML = sg_growth * ZI.2.SMALL
+			P_TOT_MED = sg_growth * ZI.2.MEDIUM
+			P_TOT_COM = sg_growth * ZI.2.COMBO
 		ENDIF
 		;
 		;Update II vs. IX truck trips after special generators
@@ -318,7 +322,7 @@ RUN PGM=TRIPDIST
   ;REPORT ACOMP=1-3 ITERATIONS=99   ; report attraction balancing for all 3 purposes
 
   SETPA INCLUDE=1-%TAZ_COUNT%,  P[1]=ZI.1.P4 P[2]=ZI.1.P5 P[3]=ZI.1.P6         ; set Prods & Attrs
-  SETPA INCLUDE=%TAZ_EXTS_COUNT%+1-%TAZ_EXTS_COUNT%, A[1]=ZI.1.A4 A[2]=ZI.1.A5 A[3]=ZI.1.A6         ; set Prods & Attrs
+  SETPA INCLUDE=%TAZ_COUNT%+1-%TAZ_EXTS_COUNT%, A[1]=ZI.1.A4 A[2]=ZI.1.A5 A[3]=ZI.1.A6         ; set Prods & Attrs
   ;
   ; Read Friction Factors
   ;
@@ -355,8 +359,8 @@ RUN PGM=TRIPDIST
   ;REPORT ZDAT=Y                    ; report trip end data
   ;REPORT ACOMP=1-3 ITERATIONS=99   ; report attraction balancing for all 3 purposes
 
-  SETPA INCLUDE=4455-4485,  P[1]=ZI.1.P4 P[2]=ZI.1.P5 P[3]=ZI.1.P6         ; set Prods & Attrs
-  SETPA INCLUDE=1-4454, A[1]=ZI.1.A4 A[2]=ZI.1.A5 A[3]=ZI.1.A6         ; set Prods & Attrs
+  SETPA INCLUDE=%TAZ_COUNT%+1-%TAZ_EXTS_COUNT%,  P[1]=ZI.1.P4 P[2]=ZI.1.P5 P[3]=ZI.1.P6         ; set Prods & Attrs
+  SETPA INCLUDE=1-%TAZ_COUNT%, A[1]=ZI.1.A4 A[2]=ZI.1.A5 A[3]=ZI.1.A6         ; set Prods & Attrs
   ;
   ; Read Friction Factors
   ;
