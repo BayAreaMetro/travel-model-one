@@ -103,13 +103,13 @@ public class MtcCoordinatedDailyActivityPatternDMU extends CoordinatedDailyActiv
     }
     // get the work SD of the person
     public int getWorkSD(){
-        int work_taz = personA.getUsualSchoolLocation();
+        int work_taz = personA.getUsualWorkLocation();
         if (work_taz == 0) { return 0; }
         return this.tazDataManager.getZoneDistrict(work_taz);
     }
     // get the work county of the person
     public int getWorkCounty(){
-        int work_taz = personA.getUsualSchoolLocation();
+        int work_taz = personA.getUsualWorkLocation();
         if (work_taz == 0) { return 0; }
         return this.tazDataManager.getZoneCounty(work_taz);
     }
