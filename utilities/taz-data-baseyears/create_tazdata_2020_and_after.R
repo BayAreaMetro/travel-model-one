@@ -60,7 +60,7 @@ LODES_YEAR = min(argv$year, LODES_YEAR_LATEST)
 # Set to 0.0 to use only ACS, set to 1.0 to use only LODES; set to 0.5 to use something in between
 #
 # Note that currently LEHD WAC is used for employment (TOTEMP and [AGR,FPS,HER,MWT,RET,OTH]EMPN)
-EMPRES_LODES_WEIGHT = 1.0
+EMPRES_LODES_WEIGHT = 0.5
 
 # setup paths
 USERPROFILE        <- gsub("\\\\","/", Sys.getenv("USERPROFILE"))
