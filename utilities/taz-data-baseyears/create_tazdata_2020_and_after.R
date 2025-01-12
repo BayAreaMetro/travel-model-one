@@ -1,17 +1,31 @@
 USAGE = "
-  Create 202X TAZ data from ACS 5-year data.
+  Create 202X TAZ data from ACS 5-year data.  
+  The year for which to generate the tazdata is passed as an argument to this script.
 "
 # Notes
-# 1. Group quarter data is not available below state level from ACS, so 2020 Decennial census numbers
-#    are used instead, and then scaled (if applicable)
+# - Household- and population-based variables are based on the ACS5-year dataset which centers around the
+#   given year, or the latest ACS5-year dataset that is available (see variable, ACS_5year). 
+#   The script fetches this data using tidycensus.
 #
-# 2. ACS data here is downloaded for relevant 5-year dataset. 
+# - ACS block group variables used in all instances where not suppressed. If suppressed at the block group 
+#   level, tract-level data used instead. Suppressed variables may change if ACS_5year is changed. This 
+#   should be checked, as this change could cause the script not to work.
+#
+# - Group quarter data is not available below state level from ACS, so 2020 Decennial census numbers
+#   are used instead, and then scaled (if applicable)
+#
+# - Wage/Salary Employment data is sourced from LODES for the given year, or the latest LODES dataset that is available.
+#   (See variable, LODES_YEAR)
+# - Self-employed persons are also added from taz_self_employed_workers_[year].csv
 # 
-# 3. ACS block group variables used in all instances where not suppressed. If suppressed at the block group 
-#    level, tract-level data used instead. Suppressed variables may change if ACS_5year is changed. This 
-#    should be checked, as this change could cause the script not to work.
+# - If ACS1-year data is available that is more recent than that used above, these totals are used to scale
+#   the above at a county-level.
 #
-
+# - Employed Residents, which includes people who live *and* work in the Bay Area are quite different
+#   between ACS and LODES, with ACS regional totals being much higher than LODES regional totals.
+#   This script includes a parameter, EMPRES_LODES_WEIGHT, which can be used to specify a blended target
+#   between the two.
+#
 options(width=500)
 options(max.print=2000)
 options(show.error.locations = TRUE)
@@ -880,7 +894,7 @@ tazdata_census <- make_hhsizes_consistent_with_population(
   size_or_workers       = "hh_size",
   popsyn_ACS_PUMS_5year = 2021
 )
-# Ditto fo households by workers
+# Ditto for households by workers
 tazdata_census <- update_tazdata_to_county_target(
   source_df    = tazdata_census, 
   target_df    = county_targets %>% rename(sum_hhworkers_target = TOTHH_target), 
