@@ -122,6 +122,9 @@ if exist metrics\ITHIM (
   copy metrics\ITHIM\*.* extractor\metrics\ITHIM
 )
 
+:: offmodel
+c:\windows\system32\Robocopy.exe /E offmodel extractor\offmodel
+
 :: make generating shapefile outputs easier
 mkdir extractor\shapefile
 copy X:\travel-model-one-master\utilities\cube-to-shapefile\run_CubeToShapefile.bat extractor\shapefile
